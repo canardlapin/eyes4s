@@ -42,16 +42,29 @@ final case class RecentProjects private (paths: Vector[HostPath]) derives CanEqu
   /** `path` opened now: first, and once. */
   def opened(path: HostPath): RecentProjects = RecentProjects.of(path +: paths)
 
-  /** `path` no longer offered (it was moved or deleted). */
-  def forget(path: HostPath): RecentProjects = new RecentProjects(paths.filterNot(_ == path))
+  /** `path` no longer offered (it was moved or deleted). S2.9's project
+    * lifecycle calls it when an open finds a recent project gone.
+    */
+  def forget(path: HostPath): RecentProjects =
+    new RecentProjects(paths.filterNot(_ == RecentProjects.normalise(path)))
 
 object RecentProjects:
   val Max: Int = 10
 
   val empty: RecentProjects = new RecentProjects(Vector.empty)
 
-  /** `paths` in order, repeats and those past [[Max]] dropped. */
-  def of(paths: Vector[HostPath]): RecentProjects = new RecentProjects(paths.distinct.take(Max))
+  /** `paths` in order, each normalised (no trailing separator), repeats and
+    * those past [[Max]] dropped. Symbolic links and case-insensitive file
+    * systems are not resolved: that needs the host (S2.9).
+    */
+  def of(paths: Vector[HostPath]): RecentProjects =
+    new RecentProjects(paths.map(normalise).distinct.take(Max))
+
+  /** `path` without trailing separators, the root kept as it is. */
+  def normalise(path: HostPath): HostPath =
+    val trimmed = path.value.reverse.dropWhile(c => c == '/' || c == '\\').reverse
+    if trimmed.isEmpty || trimmed == path.value then path
+    else HostPath.of(trimmed).getOrElse(path)
 
 /** Per-user settings that outlive any project (ticket S2.8): the
   * appearance, the projects opened last, the stage surround a new project
@@ -192,58 +205,92 @@ enum PreferencesProblem derives CanEqual:
   /** The file could not be read. */
   case Unreadable(path: HostPath, error: PlatformError)
 
-  /** The file was read but its content refused; it was kept at `kept`, when
-    * that copy could be written, so the next save does not destroy it.
+  /** The file was read but its content refused. It stays as it is; a save
+    * copies it beside itself first ([[PreferencesStore.save]]).
     */
-  case Corrupt(path: HostPath, error: PreferencesError, kept: Option[HostPath])
+  case Corrupt(path: HostPath, error: PreferencesError)
 
   case Unwritable(path: HostPath, error: PlatformError)
+
+  /** A save would have replaced a file that cannot be read now, so it was
+    * not written: what the file holds is kept.
+    */
+  case NotOverwritten(path: HostPath, error: PlatformError)
+
+  /** A save would have replaced an unusable file, and the copy of it could
+    * not be written, so the save was not made.
+    */
+  case NotKept(path: HostPath, copy: HostPath, error: PlatformError)
 
   def message: String = this match
     case Unreadable(p, e) =>
       s"Preferences ${p.value} could not be read (${e.message}); using defaults."
-    case Corrupt(p, e, kept) =>
-      s"Preferences ${p.value} are unusable (${e.message}); using defaults" +
-        kept.fold(".")(k => s"; the file was kept as ${k.value}.")
-    case Unwritable(p, e) => s"Preferences ${p.value} could not be saved: ${e.message}"
+    case Corrupt(p, e) =>
+      s"Preferences ${p.value} are unusable (${e.message}); using defaults. The file is " +
+        "kept, and copied beside itself before it is ever replaced."
+    case Unwritable(p, e)     => s"Preferences ${p.value} could not be saved: ${e.message}"
+    case NotOverwritten(p, e) =>
+      s"Preferences ${p.value} were not saved: the file cannot be read (${e.message}), so " +
+        "it is kept as it is."
+    case NotKept(p, c, e) =>
+      s"Preferences ${p.value} were not saved: the unusable file could not be copied to " +
+        s"${c.value} (${e.message})."
 
 /** The user's preferences file (ticket S2.8) on a host's [[FileSystem]]: the
   * desktop's lives in Application Support, a web host's wherever its file
-  * system puts `path`. Reading never fails: a missing file is the defaults,
-  * and an unreadable or corrupt one is the defaults plus a
-  * [[PreferencesProblem]] for the log; a corrupt file is first copied
-  * beside itself with the suffix `.corrupt`.
+  * system puts `path`.
+  *
+  * Reading never fails: a missing file is the defaults, and an unreadable,
+  * corrupt or newer-version one is the defaults plus a
+  * [[PreferencesProblem]] for the log, the file left as it is. A save never
+  * destroys a file it cannot use: an unusable file is first copied beside
+  * itself as `<file>.corrupt-<stamp>`, `stamp` being the save's time in
+  * epoch milliseconds (so successive copies never replace one another), and
+  * a file that cannot be read at all is not replaced.
   */
-final class PreferencesStore[F[_]: Monad](files: FileSystem[F], val path: HostPath):
+final class PreferencesStore[F[_]: Monad](
+    files: FileSystem[F],
+    val path: HostPath,
+    stamp: F[Long]
+):
+
+  private def text(bytes: IArray[Byte]): String =
+    String(IArray.genericWrapArray(bytes).toArray, UTF_8)
 
   /** The preferences, and what went wrong reading them. */
   def load: F[(UserPreferences, Vector[PreferencesProblem])] =
-    files.read(path).flatMap {
-      case Left(PlatformError.Missing(_)) => (UserPreferences.defaults, Vector.empty).pure[F]
-      case Left(e)                        =>
-        (UserPreferences.defaults, Vector(PreferencesProblem.Unreadable(path, e))).pure[F]
+    files.read(path).map {
+      case Left(PlatformError.Missing(_)) => (UserPreferences.defaults, Vector.empty)
+      case Left(e) => (UserPreferences.defaults, Vector(PreferencesProblem.Unreadable(path, e)))
       case Right(bytes) =>
-        UserPreferences.decode(String(IArray.genericWrapArray(bytes).toArray, UTF_8)) match
-          case Right(p) => (p, Vector.empty).pure[F]
+        UserPreferences.decode(text(bytes)) match
+          case Right(p) => (p, Vector.empty)
           case Left(e)  =>
-            kept.fold(
-              (UserPreferences.defaults, Vector(PreferencesProblem.Corrupt(path, e, None)))
-                .pure[F]
-            ) { copy =>
-              files.write(copy, bytes).map { written =>
-                (
-                  UserPreferences.defaults,
-                  Vector(PreferencesProblem.Corrupt(path, e, written.toOption.map(_ => copy)))
-                )
-              }
-            }
+            (UserPreferences.defaults, Vector(PreferencesProblem.Corrupt(path, e)))
     }
 
-  /** Writes `p`, replacing the file. */
-  def save(p: UserPreferences): F[Either[PreferencesProblem, Unit]] =
-    files
-      .write(path, IArray.unsafeFromArray(UserPreferences.encode(p).getBytes(UTF_8)))
-      .map(_.left.map(PreferencesProblem.Unwritable(path, _)))
-
-  /** Where a corrupt file is kept: `path` with `.corrupt` appended. */
-  private def kept: Option[HostPath] = HostPath.of(path.value + ".corrupt").toOption
+  /** Writes `p`, replacing the file, but never destroying one it cannot
+    * use: an unusable file is copied aside first, an unreadable one is not
+    * replaced. `Right` names the copy made, if one was.
+    */
+  def save(p: UserPreferences): F[Either[PreferencesProblem, Option[HostPath]]] =
+    val bytes = IArray.unsafeFromArray(UserPreferences.encode(p).getBytes(UTF_8))
+    def write(kept: Option[HostPath]): F[Either[PreferencesProblem, Option[HostPath]]] =
+      files
+        .write(path, bytes)
+        .map(_.left.map(PreferencesProblem.Unwritable(path, _)).map(_ => kept))
+    files.read(path).flatMap {
+      case Left(PlatformError.Missing(_)) => write(None)
+      case Left(e) => Monad[F].pure(Left(PreferencesProblem.NotOverwritten(path, e)))
+      case Right(old) if UserPreferences.decode(text(old)).isRight => write(None)
+      case Right(old)                                              =>
+        stamp.flatMap { now =>
+          HostPath.of(s"${path.value}.corrupt-$now") match
+            case Left(e)     => Monad[F].pure(Left(PreferencesProblem.NotKept(path, path, e)))
+            case Right(copy) =>
+              files.write(copy, old).flatMap {
+                case Left(e)  => Monad[F].pure(Left(PreferencesProblem.NotKept(path, copy, e)))
+                case Right(_) => write(Some(copy))
+              }
+        }
+    }

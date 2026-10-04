@@ -37,7 +37,8 @@ class AppearancePreferenceFxSuite extends ShellFxSuite:
     val file  = dir.resolve("preferences.json")
     val store = PreferencesStore[IO](
       JvmFileSystem,
-      HostPath.of(file.toString).fold(e => fail(e.message), identity)
+      HostPath.of(file.toString).fold(e => fail(e.message), identity),
+      IO.pure(1L)
     )
     try
       val w    = boot(fx, StoryModels.t2Compare)
@@ -58,4 +59,48 @@ class AppearancePreferenceFxSuite extends ShellFxSuite:
       assertEquals(runOnFx(host.current.appearance), AppearanceChoice.Dark)
     finally
       Files.walk(dir).sorted(java.util.Comparator.reverseOrder()).forEach(p => Files.delete(p))
+  }
+
+  fxStage.test("a Dark preference on a Light project writes nothing until the user chooses") {
+    fx =>
+      val dir   = Files.createTempDirectory("eyes4s-appearance-")
+      val file  = dir.resolve("preferences.json")
+      val store = PreferencesStore[IO](
+        JvmFileSystem,
+        HostPath.of(file.toString).fold(e => fail(e.message), identity),
+        IO.pure(1L)
+      )
+      try
+        val w    = boot(fx, StoryModels.t2Compare)
+        val dark = UserPreferences.defaults.withAppearance(AppearanceChoice.Dark)
+        val host = AppearancePreferenceHost(Some(store), dark, m => fail(m))
+        runOnFx(host.attach(w.runtime))
+        // The project keeps its Light theme; nothing is written at boot.
+        assertEquals(
+          runOnFx(w.runtime.model.document.presentation.theme),
+          eyes4s.studio.core.document.Theme.Light
+        )
+        fx.awaitLayout()
+        assert(!Files.exists(file))
+        // A platform report and a perspective switch are not choices.
+        runOnFx(w.runtime.dispatch(Intent.SystemTheme(eyes4s.studio.core.document.Theme.Dark)))
+        runOnFx(
+          w.runtime.dispatch(
+            Intent.SwitchPerspective(eyes4s.studio.core.document.Perspective.Data)
+          )
+        )
+        fx.awaitLayout()
+        assert(!Files.exists(file))
+        // The user chooses Light: that is written.
+        runOnFx(w.runtime.dispatch(Intent.SetAppearance(Appearance.Light)))
+        eventually(fx, "the saved Light") {
+          Files.exists(file) &&
+          store.load.unsafeRunSync()._1.appearance == AppearanceChoice.Light
+        }
+        assertEquals(runOnFx(host.saved.appearance), AppearanceChoice.Light)
+      finally
+        Files
+          .walk(dir)
+          .sorted(java.util.Comparator.reverseOrder())
+          .forEach(p => Files.delete(p))
   }

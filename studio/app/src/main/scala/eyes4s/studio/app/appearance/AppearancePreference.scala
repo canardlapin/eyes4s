@@ -17,14 +17,21 @@
 package eyes4s.studio.app.appearance
 
 import eyes4s.studio.app.{AppModel, Intent}
+import eyes4s.studio.core.document.Theme
 import eyes4s.studio.core.preferences.{AppearanceChoice, UserPreferences}
 
 /** The appearance as a user preference (ticket S2.8; S1.10's View ›
-  * Appearance). Following the platform's theme is a preference only, never a
-  * document field (lead's decision on bead S2.8): a fixed Light or Dark is
-  * the document's own theme, which a preference never overrides. So the
-  * preference applied at boot is System alone, and the preference saved is
-  * whatever the user last chose.
+  * Appearance; lead's decision on bead S2.8):
+  *
+  *  - System follows the platform's theme. It is a preference only, never a
+  *    document field, and is applied when a window opens.
+  *  - Light or Dark is the theme a NEW project starts with
+  *    ([[newProjectTheme]]); a project that opens keeps its own document
+  *    theme, so a fixed preference is not applied at boot.
+  *
+  * The preference changes only when the user chooses an appearance
+  * ([[chosen]] on `Intent.SetAppearance`): never when a window opens, a
+  * project opens with another theme, or an undo changes the theme shown.
   */
 object AppearancePreference:
 
@@ -49,13 +56,20 @@ object AppearancePreference:
       )
       .toVector
 
-  /** The appearance `m` shows, as a preference. */
-  def shown(m: AppModel): AppearanceChoice =
-    toChoice(m.appearance.shown(m.document.presentation.theme))
-
-  /** The preferences to save after a model change, when the appearance
-    * shown differs from the one `prefs` holds; `None` when nothing changed.
+  /** The preferences after the user dispatched `intent`: `Some` only for
+    * an explicit View › Appearance choice (even of the appearance already
+    * preferred, so a host can retry a save that failed).
     */
-  def changed(prefs: UserPreferences, m: AppModel): Option[UserPreferences] =
-    val now = shown(m)
-    Option.when(now != prefs.appearance)(prefs.withAppearance(now))
+  def chosen(prefs: UserPreferences, intent: Intent): Option[UserPreferences] =
+    intent match
+      case Intent.SetAppearance(a) => Some(prefs.withAppearance(toChoice(a)))
+      case _                       => None
+
+  /** The theme a new project starts with: the fixed preference, or the
+    * platform's theme `system` when the preference is to follow it.
+    */
+  def newProjectTheme(prefs: UserPreferences, system: Theme): Theme =
+    prefs.appearance match
+      case AppearanceChoice.Light  => Theme.Light
+      case AppearanceChoice.Dark   => Theme.Dark
+      case AppearanceChoice.System => system

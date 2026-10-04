@@ -64,6 +64,10 @@ object PreferencesLocation:
       sys.env.get
     )
 
-  /** The store of this JVM's file. */
+  /** The store of this JVM's file; a kept copy is stamped with the wall clock. */
   def store: Either[PlatformError, PreferencesStore[IO]] =
-    default.map(PreferencesStore[IO](JvmFileSystem, _))
+    default.map(PreferencesStore[IO](JvmFileSystem, _, IO.realTime.map(_.toMillis)))
+
+  /** `message` with the user's home directory written `~`, for the log. */
+  def redact(message: String, home: String = sys.props.getOrElse("user.home", "")): String =
+    if home.isEmpty then message else message.replace(home, "~")

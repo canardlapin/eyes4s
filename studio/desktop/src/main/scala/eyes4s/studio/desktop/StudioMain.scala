@@ -55,7 +55,7 @@ final class StudioApplication extends Application:
       .foreach(p => System.err.println(p.message))
     val (loaded, problems) = StudioMain.loadPreferences()
     preferences = loaded
-    problems.foreach(System.err.println)
+    problems.foreach(m => System.err.println(PreferencesLocation.redact(m)))
 
   override def start(stage: Stage): Unit =
     stage.setTitle(StudioMain.title)
@@ -75,7 +75,7 @@ final class StudioApplication extends Application:
         AppearancePreferenceHost(
           PreferencesLocation.store.toOption,
           preferences,
-          System.err.println
+          m => System.err.println(PreferencesLocation.redact(m))
         ).attach(w.runtime)
         stage.setScene(Scene(w.root, 1440, 900))
         stage.setOnCloseRequest(_ => w.captureLayouts())

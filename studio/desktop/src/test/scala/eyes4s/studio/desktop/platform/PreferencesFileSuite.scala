@@ -83,7 +83,7 @@ class PreferencesFileSuite extends munit.FunSuite:
 
   private def storeIn(dir: Path): (Path, PreferencesStore[IO]) =
     val file = dir.resolve("Eyes Studio").resolve("preferences.json")
-    (file, PreferencesStore[IO](JvmFileSystem, right(HostPath.of(file.toString))))
+    (file, PreferencesStore[IO](JvmFileSystem, right(HostPath.of(file.toString)), IO.pure(1L)))
 
   test("round trip through a real file, its directory created") {
     withDirectory { dir =>
@@ -95,13 +95,13 @@ class PreferencesFileSuite extends munit.FunSuite:
           RecentProjects.empty.opened(right(HostPath.of(dir.resolve("a.eyes").toString)))
         )
       assertEquals(store.load.unsafeRunSync(), (UserPreferences.defaults, Vector.empty))
-      assertEquals(store.save(p).unsafeRunSync(), Right(()))
+      assertEquals(store.save(p).unsafeRunSync(), Right(None))
       assert(Files.isRegularFile(file))
       assertEquals(store.load.unsafeRunSync(), (p, Vector.empty))
     }
   }
 
-  test("a corrupt file: defaults, one logged problem, and the file kept as .corrupt") {
+  test("a corrupt file: defaults and a logged problem; a save copies it aside first") {
     withDirectory { dir =>
       val (file, store) = storeIn(dir)
       Files.createDirectories(file.getParent)
@@ -109,13 +109,23 @@ class PreferencesFileSuite extends munit.FunSuite:
       val (prefs, problems) = store.load.unsafeRunSync()
       assertEquals(prefs, UserPreferences.defaults)
       problems match
-        case Vector(p @ PreferencesProblem.Corrupt(_, _, Some(kept))) =>
-          assertEquals(kept.value, file.toString + ".corrupt")
+        case Vector(p @ PreferencesProblem.Corrupt(_, _)) =>
           assert(p.message.startsWith(s"Preferences $file are unusable"), p.message)
         case other => fail(s"expected one Corrupt problem, got $other")
+      val copy = Paths.get(file.toString + ".corrupt-1")
+      assert(!Files.exists(copy))
       assertEquals(
-        Files.readString(Paths.get(file.toString + ".corrupt"), UTF_8),
-        """{"version": 1, "preferences": """
+        store.save(UserPreferences.defaults).unsafeRunSync().map(_.map(_.value)),
+        Right(Some(copy.toString))
       )
+      assertEquals(Files.readString(copy, UTF_8), """{"version": 1, "preferences": """)
+      assertEquals(store.load.unsafeRunSync(), (UserPreferences.defaults, Vector.empty))
     }
+  }
+
+  test("the log names the home directory as ~") {
+    assertEquals(
+      PreferencesLocation.redact("Preferences /Users/me/Library/x are unusable", "/Users/me"),
+      "Preferences ~/Library/x are unusable"
+    )
   }

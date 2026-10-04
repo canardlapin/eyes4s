@@ -28,9 +28,9 @@ import java.nio.charset.StandardCharsets.UTF_8
 /** User preferences (ticket S2.8), JVM and JS: the versioned file round-trips
   * through the store on a host file system; a missing file is the defaults;
   * a corrupt, malformed or newer-version file is the defaults plus a problem
-  * for the log, and is kept beside itself so the next save does not destroy
-  * it; the recent-projects list stays distinct, most recent first and
-  * capped.
+  * for the log, and is copied aside (stamped) before a save replaces it; an
+  * unreadable file is never replaced; the recent-projects list stays
+  * normalised, distinct, most recent first and capped.
   */
 class PreferencesSuite extends CatsEffectSuite with munit.ScalaCheckSuite:
 
@@ -72,7 +72,9 @@ class PreferencesSuite extends CatsEffectSuite with munit.ScalaCheckSuite:
   }
 
   private def store: IO[(InMemoryPlatform[IO], PreferencesStore[IO])] =
-    InMemoryPlatform.create[IO]().map(p => (p, PreferencesStore(p.platform.files, file)))
+    InMemoryPlatform
+      .create[IO]()
+      .map(p => (p, PreferencesStore(p.platform.files, file, IO.pure(1790000000000L))))
 
   test("round trip through the store: saved preferences load as saved, with no problem") {
     val p = right(
@@ -89,7 +91,7 @@ class PreferencesSuite extends CatsEffectSuite with munit.ScalaCheckSuite:
       saved    <- s.save(p)
       reloaded <- s.load
     yield
-      assertEquals(saved, Right(()))
+      assertEquals(saved, Right(None))
       assertEquals(reloaded, (p, Vector.empty))
   }
 
@@ -106,20 +108,32 @@ class PreferencesSuite extends CatsEffectSuite with munit.ScalaCheckSuite:
 
   // --- corrupt files ------------------------------------------------------------------------
 
-  private def loaded(bytes: Array[Byte]) =
+  private val stampOf                     = 1790000000000L
+  private def copyAt(stamp: Long)         = path(s"${file.value}.corrupt-$stamp")
+  private def textOf(bytes: IArray[Byte]) =
+    String(IArray.genericWrapArray(bytes).toArray, UTF_8)
+
+  /** Load a file holding `bytes`, then save over it: what was read, the
+    * save's answer, the kept copy and the file afterwards.
+    */
+  private def loadedThenSaved(bytes: Array[Byte]) =
     for
       (p, s) <- store
       _      <- p.platform.files.write(file, IArray.unsafeFromArray(bytes)).map(right)
       result <- s.load
-      kept   <- p.platform.files.read(path(file.value + ".corrupt"))
-    yield (result, kept.map(k => String(IArray.genericWrapArray(k).toArray, UTF_8)))
+      before <- p.platform.files.read(copyAt(stampOf))
+      saved  <- s.save(UserPreferences.defaults.withAppearance(AppearanceChoice.Dark))
+      kept   <- p.platform.files.read(copyAt(stampOf))
+      reload <- s.load
+    yield (result, before.isLeft, saved, kept.map(textOf), reload)
 
   private val corrupt: Vector[(String, String)] = Vector(
-    "garbage"      -> "\u0000\u0001 not json {",
-    "truncated"    -> UserPreferences.encode(UserPreferences.defaults).dropRight(7),
-    "wrong shape"  -> """{"version": 1, "preferences": {"appearance": 3}}""",
-    "no version"   -> """{"preferences": {}}""",
-    "a blank path" ->
+    "garbage"         -> "\u0000\u0001 not json {",
+    "truncated"       -> UserPreferences.encode(UserPreferences.defaults).dropRight(7),
+    "wrong shape"     -> """{"version": 1, "preferences": {"appearance": 3}}""",
+    "no version"      -> """{"preferences": {}}""",
+    "a newer version" -> """{"version": 2, "preferences": {"anything": true}}""",
+    "a blank path"    ->
       """{"version": 1, "preferences": {"appearance": {"Dark": {}}, "stage": {"Dark": {}},
         |"recentProjects": ["  "], "layouts": [], "exportDirectory": null}}""".stripMargin,
     "two layouts of a perspective" ->
@@ -129,59 +143,89 @@ class PreferencesSuite extends CatsEffectSuite with munit.ScalaCheckSuite:
   )
 
   corrupt.foreach { (name, text) =>
-    test(s"a corrupt file ($name) is the defaults, a problem for the log, and is kept") {
-      loaded(text.getBytes(UTF_8)).map { case ((prefs, problems), kept) =>
+    test(s"a corrupt file ($name): defaults and a problem; it is copied aside before a save") {
+      loadedThenSaved(text.getBytes(UTF_8)).map { (result, notYetCopied, saved, kept, reload) =>
+        val (prefs, problems) = result
         assertEquals(prefs, UserPreferences.defaults)
         problems match
-          case Vector(PreferencesProblem.Corrupt(`file`, _, Some(k))) =>
-            assertEquals(k, path(file.value + ".corrupt"))
+          case Vector(PreferencesProblem.Corrupt(`file`, _)) => ()
           case other => fail(s"expected one Corrupt problem, got $other")
-        assertEquals(kept, Right(text))
         assert(problems.head.message.contains("using defaults"), problems.head.message)
+        // Reading touches nothing; the save keeps the file before replacing it.
+        assert(notYetCopied)
+        assertEquals(saved, Right(Some(copyAt(stampOf))))
+        assertEquals(kept, Right(text))
+        assertEquals(
+          reload,
+          (UserPreferences.defaults.withAppearance(AppearanceChoice.Dark), Vector.empty)
+        )
       }
     }
   }
 
   test("a newer schema version is not read as this one") {
-    val newer = """{"version": 2, "preferences": {"anything": true}}"""
-    loaded(newer.getBytes(UTF_8)).map { case ((prefs, problems), _) =>
-      assertEquals(prefs, UserPreferences.defaults)
-      assertEquals(
-        problems.collect { case PreferencesProblem.Corrupt(_, e, _) => e },
-        Vector(PreferencesError.UnknownVersion(2, 1))
-      )
-    }
+    loadedThenSaved("""{"version": 2, "preferences": {"anything": true}}""".getBytes(UTF_8))
+      .map { (result, _, _, _, _) =>
+        assertEquals(
+          result._2.collect { case PreferencesProblem.Corrupt(_, e) => e },
+          Vector(PreferencesError.UnknownVersion(2, 1))
+        )
+      }
   }
 
-  test("an unreadable file is the defaults and a problem; a directory is not preferences") {
+  test("an unreadable file is the defaults and a problem, and a save does not replace it") {
     for
       (p, s) <- store
       _      <- p.makeDirectory(file)
       result <- s.load
+      saved  <- s.save(UserPreferences.defaults.withAppearance(AppearanceChoice.Dark))
     yield
       assertEquals(result._1, UserPreferences.defaults)
       result._2 match
         case Vector(PreferencesProblem.Unreadable(`file`, _: PlatformError)) => ()
         case other => fail(s"expected one Unreadable problem, got $other")
+      saved match
+        case Left(pr @ PreferencesProblem.NotOverwritten(`file`, _)) =>
+          assert(pr.message.contains("kept as it is"), pr.message)
+        case other => fail(s"expected NotOverwritten, got $other")
   }
 
-  test("saving over a corrupt file writes good preferences; the corrupt copy stays") {
+  test("successive copies never replace one another: each is stamped with its save") {
+    for
+      p     <- InMemoryPlatform.create[IO]()
+      clock <- cats.effect.Ref[IO].of(stampOf)
+      s = PreferencesStore(p.platform.files, file, clock.getAndUpdate(_ + 1))
+      _  <- p.platform.files.write(file, IArray.unsafeFromArray("{".getBytes(UTF_8))).map(right)
+      a  <- s.save(UserPreferences.defaults)
+      _  <- p.platform.files.write(file, IArray.unsafeFromArray("[".getBytes(UTF_8))).map(right)
+      b  <- s.save(UserPreferences.defaults)
+      ka <- p.platform.files.read(copyAt(stampOf))
+      kb <- p.platform.files.read(copyAt(stampOf + 1))
+    yield
+      assertEquals((a, b), (Right(Some(copyAt(stampOf))), Right(Some(copyAt(stampOf + 1)))))
+      assertEquals((ka.map(textOf), kb.map(textOf)), (Right("{"), Right("[")))
+  }
+
+  test("a usable file is replaced with no copy") {
     for
       (p, s) <- store
-      _ <- p.platform.files.write(file, IArray.unsafeFromArray("{".getBytes(UTF_8))).map(right)
-      first  <- s.load
-      _      <- s.save(first._1.withAppearance(AppearanceChoice.Dark)).map(right)
-      second <- s.load
-      kept   <- p.platform.files.read(path(file.value + ".corrupt"))
+      _      <- s.save(UserPreferences.defaults).map(right)
+      again  <- s.save(UserPreferences.defaults.withAppearance(AppearanceChoice.System))
+      copy   <- p.platform.files.read(copyAt(stampOf))
     yield
-      assertEquals(
-        second,
-        (UserPreferences.defaults.withAppearance(AppearanceChoice.Dark), Vector.empty)
-      )
-      assertEquals(kept.map(k => String(IArray.genericWrapArray(k).toArray, UTF_8)), Right("{"))
+      assertEquals(again, Right(None))
+      assert(copy.isLeft)
   }
 
   // --- the fields -----------------------------------------------------------------------------
+
+  test("recent paths are normalised before they are compared: a trailing separator") {
+    val a = path("/p/study.eyes")
+    val r = RecentProjects.empty.opened(a).opened(path("/p/study.eyes/"))
+    assertEquals(r.paths, Vector(a))
+    assertEquals(r.forget(path("/p/study.eyes//")).paths, Vector.empty)
+    assertEquals(RecentProjects.normalise(path("/")), path("/"))
+  }
 
   test("recent projects: most recent first, once each, at most ten; forget drops one") {
     val ps     = (1 to 12).toVector.map(i => path(s"/p/$i.eyes"))
