@@ -14423,6 +14423,7 @@
     "method eyes4s.io.PsychologyWorkflow$.prepare(eyes4s.io.AdserpWorkflowPlan,java.lang.String):scala.util.Either": "ioJVM/eyes4s.io.PsychologyWorkflowSuite",
     "method eyes4s.io.PsychologyWorkflow$.run(eyes4s.io.AdserpWorkflowPlan,java.lang.String):scala.util.Either": "ioJVM/eyes4s.io.PsychologyWorkflowSuite",
     "method eyes4s.io.PsychologyWorkflow$.runAnalysis(1,eyes4s.io.StudyTrial,eyes4s.io.DelimitedImport,eyes4s.plan.RecordingPlan):scala.util.Either": "ioJVM/eyes4s.io.PsychologyWorkflowSuite",
+    "method eyes4s.io.PsychologyWorkflow$.tidy(1,eyes4s.io.StudyTrial,eyes4s.io.DelimitedImport,eyes4s.plan.RecordingAnalysis):scala.util.Either": "ioJVM/eyes4s.io.PsychologyWorkflowSuite",
     "method eyes4s.io.PsychologyWorkflowError.message():": "ioJVM/consumer.PublicIoSuite",
     "method eyes4s.io.PsychologyWorkflowResult.explain():": "ioJVM/eyes4s.io.PsychologyWorkflowSuite",
     "method eyes4s.io.PsychologyWorkflowResult.provenance():": "ioJVM/eyes4s.io.PsychologyWorkflowSuite",
@@ -18361,7 +18362,8 @@
       "invalid plans and input failures remain named values",
       "recording prerequisites retain missing geometry and synchronization before execution",
       "recording registry rejects unavailable methods, incompatible schemas and invalid parameters",
-      "the real recording saves and reloads all scientific choices through the pure plan"
+      "the real recording saves and reloads all scientific choices through the pure plan",
+      "the tidy stage refuses an analysis that ran on another recording, naming both"
     ],
     "ioJS/eyes4s.io.RepetitionGuideSuite": [
       "bad input stays inspectable and blocks a saved analysis without dropping a trial",
@@ -21593,7 +21595,8 @@
       "every public error enum has a Diagnose instance and a sampled family",
       "every sampled family is a public enum of the inventory",
       "no public signature projects to Diagnostic[Any]",
-      "the inventory lists the public error enums of every shipped module"
+      "the inventory lists the public error enums of every shipped module",
+      "the retired EyeLink evidence apparatus is not public API of eyes4s-io"
     ],
     "ioJVM/eyes4s.io.DiagnosticsDocJvmSuite": [
       "docs/DIAGNOSTICS.md contains exactly the generated code table",
@@ -21978,7 +21981,8 @@
       "invalid plans and input failures remain named values",
       "recording prerequisites retain missing geometry and synchronization before execution",
       "recording registry rejects unavailable methods, incompatible schemas and invalid parameters",
-      "the real recording saves and reloads all scientific choices through the pure plan"
+      "the real recording saves and reloads all scientific choices through the pure plan",
+      "the tidy stage refuses an analysis that ran on another recording, naming both"
     ],
     "ioJVM/eyes4s.io.RepetitionGuideSuite": [
       "bad input stays inspectable and blocks a saved analysis without dropping a trial",
