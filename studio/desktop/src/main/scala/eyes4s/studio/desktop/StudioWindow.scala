@@ -25,6 +25,7 @@ import eyes4s.studio.app.tokens.Theme
 import eyes4s.studio.app.{ClockTime, ProjectName}
 import eyes4s.studio.core.fixture.StoryMoment
 import eyes4s.studio.desktop.admission.{AdmissionLedgerHost, LedgerInputs}
+import eyes4s.studio.desktop.explore.{NavigatorInputs, TrialsNavigatorHost}
 import eyes4s.studio.desktop.dock.{DockGesture, PerspectiveHost}
 import eyes4s.studio.desktop.runtime.{
   DesktopEffects,
@@ -60,7 +61,8 @@ final class StudioWindow private (
     val effects: DesktopEffects,
     val project: Option[ProjectPort],
     val columnMapping: ColumnMappingPaneHost,
-    val admission: AdmissionLedgerHost
+    val admission: AdmissionLedgerHost,
+    val navigator: TrialsNavigatorHost
 ):
   /** The window content, with the studio stylesheets. */
   def root: javafx.scene.Parent = shell.root
@@ -72,6 +74,8 @@ final class StudioWindow private (
   def paneStops(pane: PaneId): Vector[FocusStop] =
     if pane == StudioLayouts.columnMapping then columnMapping.focusStops
     else if pane == StudioLayouts.admission then admission.focusStops
+    else if pane == StudioLayouts.trials then navigator.trialsStops
+    else if pane == StudioLayouts.items then navigator.itemsStops
     else Vector.empty
 
   /** Store each perspective's arrangement in the document (view-only). */
@@ -275,4 +279,11 @@ object StudioWindow:
     ledger = Some(admission)
     host.host(StudioLayouts.admission, admission.node)
     r.listen(admission.sync)
-    Right(StudioWindow(session, r, host, shell, effects, project, mapping, admission))
+    // The trials navigator (Explore): the latest admitted revision's trials.
+    val navigator = TrialsNavigatorHost(() => r.model, dispatch, NavigatorInputs.of(session))
+    host.host(StudioLayouts.trials, navigator.trials.node)
+    host.host(StudioLayouts.items, navigator.items.node)
+    r.listen(navigator.sync)
+    Right(
+      StudioWindow(session, r, host, shell, effects, project, mapping, admission, navigator)
+    )

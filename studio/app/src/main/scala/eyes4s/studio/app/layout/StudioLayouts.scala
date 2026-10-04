@@ -102,14 +102,18 @@ object StudioLayouts:
 
   // --- Explore ------------------------------------------------------------------
 
+  /** The panes that host the trials navigator (S6.1): its tree, and its items. */
+  val trials: PaneId = new PaneId("explore.trials")
+  val items: PaneId  = new PaneId("explore.items")
+
   /** Explore.dc.html. */
   val explore: PerspectiveLayout = layout(
     "explore",
     Perspective.Explore,
     columns(
       navigator(
-        pane("explore.trials", "Trials", Navigator),
-        pane("explore.items", "Items", Navigator)
+        PaneDecl(trials, PaneTitle.Fixed("Trials"), Navigator),
+        PaneDecl(items, PaneTitle.Fixed("Items"), Navigator)
       ),
       split(
         Axis.Vertical,

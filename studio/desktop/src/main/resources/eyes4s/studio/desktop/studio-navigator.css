@@ -1,0 +1,183 @@
+/*
+ * Copyright 2026 canardlapin
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+/* The trials navigator (ticket S6.1; docs/studio/design/Explore.dc.html,
+ * left). Colours are token names only; sizes come from studio-type.css
+ * classes; weights are face families (DESIGN_SPEC 14). */
+
+.nav-panel {
+  -fx-background-color: -es-surface;
+  -fx-focus-color: -es-accent;
+  -fx-faint-focus-color: transparent;
+}
+
+.nav-bar {
+  -fx-padding: 6 8 6 8;
+  -fx-background-color: -es-hairline, -es-surface;
+  -fx-background-insets: 0, 0 0 1 0;
+}
+
+.nav-filter {
+  -fx-pref-height: 22px;
+  -fx-background-color: -es-hairline, -es-surface;
+  -fx-background-insets: 0, 1;
+  -fx-background-radius: 4, 3;
+  -fx-text-fill: -es-ink;
+  -fx-prompt-text-fill: -es-ink-3;
+  -fx-padding: 0 8 0 8;
+}
+
+.nav-filter:focused {
+  -fx-background-color: -es-accent, -es-surface;
+}
+
+.nav-status {
+  -fx-padding: 6 10 6 10;
+  -fx-spacing: 4;
+}
+
+.nav-note {
+  -fx-text-fill: -es-ink-2;
+}
+
+.nav-button {
+  -fx-pref-height: 24px;
+  -fx-padding: 0 10 0 10;
+  -fx-background-color: -es-hairline, -es-surface;
+  -fx-background-insets: 0, 1;
+  -fx-background-radius: 4, 3;
+  -fx-text-fill: -es-ink;
+}
+
+.nav-button:focused {
+  -fx-background-color: -es-accent, -es-surface;
+}
+
+/* ---- the rows --------------------------------------------------------------- */
+
+.nav-rows,
+.nav-rows > .virtual-flow > .clipped-container > .sheet {
+  -fx-background-color: -es-surface;
+  -fx-background-insets: 0;
+  -fx-padding: 0;
+}
+
+.nav-rows:focused {
+  -fx-background-color: -es-accent, -es-surface;
+  -fx-background-insets: 0, 1;
+}
+
+.nav-rows .list-cell {
+  -fx-background-color: -es-surface;
+  -fx-text-fill: -es-ink;
+  -fx-padding: 2 10 2 10;
+}
+
+.nav-rows .list-cell:selected {
+  -fx-background-color: -es-accent-soft;
+}
+
+.nav-row-box {
+  -fx-spacing: 6;
+}
+
+.nav-arrow {
+  -fx-min-width: 10px;
+  -fx-text-fill: -es-ink-2;
+}
+
+.nav-label {
+  -fx-min-width: 50px;
+  -fx-text-fill: -es-ink;
+}
+
+.nav-item {
+  -fx-text-fill: -es-ink;
+}
+
+.nav-detail {
+  -fx-text-fill: -es-ink-2;
+}
+
+.list-cell.nav-participant .nav-label,
+.list-cell.nav-item .nav-label {
+  -fx-font-family: "IBM Plex Sans SmBld";
+}
+
+.list-cell.nav-phase .nav-label {
+  -fx-text-fill: -es-ink-3;
+  -fx-font-family: "IBM Plex Sans SmBld";
+}
+
+.list-cell.nav-trial .nav-detail,
+.list-cell.nav-range .nav-detail {
+  -fx-text-fill: -es-ink-3;
+}
+
+.list-cell.current .nav-label {
+  -fx-font-family: "IBM Plex Mono SmBld";
+}
+
+.list-cell.warn .nav-item,
+.list-cell.warn .nav-detail {
+  -fx-text-fill: -es-warn-text;
+}
+
+/* ---- glyphs ------------------------------------------------------------------ */
+
+.nav-glyph .glyph-frame {
+  -fx-fill: transparent;
+  -fx-stroke: -es-ink-2;
+  -fx-stroke-width: 1.2;
+}
+
+.nav-glyph .glyph-mark {
+  -fx-stroke: -es-ink-2;
+  -fx-stroke-width: 1;
+}
+
+.nav-glyph.glyph-not-admitted .glyph-frame {
+  -fx-stroke: -es-warn-text;
+  -fx-stroke-dash-array: 2 1.5;
+}
+
+.nav-glyph.glyph-missing .glyph-frame,
+.nav-glyph.glyph-missing .glyph-mark {
+  -fx-stroke: -es-warn-text;
+}
+
+/* ---- the legend and the footer ------------------------------------------------- */
+
+.nav-foot {
+  -fx-padding: 8 12 8 12;
+  -fx-spacing: 3;
+  -fx-background-color: -es-hairline, -es-surface;
+  -fx-background-insets: 0, 1 0 0 0;
+}
+
+.nav-legend {
+  -fx-hgap: 10;
+  -fx-vgap: 2;
+}
+
+.nav-legend-item {
+  -fx-spacing: 4;
+}
+
+.nav-legend-label,
+.nav-footer {
+  -fx-text-fill: -es-ink-2;
+}
