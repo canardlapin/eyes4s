@@ -723,10 +723,12 @@ object GoldenRoute:
         expect("participants.csv rows", 24 * 2, participants.size - 1),
         listed(
           "panel C",
-          "Panel C reads \"highest of 19 · B 0.35\".",
-          // The panel words it "highest of 19 controls street-112 0.61 · control
-          // mean B 0.35"; the board's numbers, in other words.
-          panelC.exists(c => c.contains("highest of 19") && c.contains("B 0.35")),
+          "Panel C reads \"Matched 0.73 · highest of 19 controls street-112 0.61 · control mean B 0.35 · D +0.38\".",
+          panelC.exists(
+            _.contains(
+              "Matched 0.73 · highest of 19 controls street-112 0.61 · control mean B 0.35 · D +0.38"
+            )
+          ),
           panelC.toString
         )
       )
