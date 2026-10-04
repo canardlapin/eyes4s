@@ -72,19 +72,34 @@ class ThemeFxSuite extends ShellFxSuite:
     runOnFx(choice(w, a).fire())
     fx.awaitLayout()
 
-  /** Every text the window's scene shows or announces, in scene order. */
+  /** Every text the window's scene shows or announces, in the order shown. */
   private def values(root: Node): Vector[String] =
+    // A virtualised list's cells are children in the order the flow last
+    // reused them, not the order it shows them, and it keeps spare cells
+    // hidden: what is shown is the visible cells by their index.
+    def shownOrder(children: Vector[Node]): Vector[Node] =
+      val cells = children.collect { case c: javafx.scene.control.IndexedCell[?] => c }
+      if cells.isEmpty then children
+      else
+        val byIndex = cells.sortBy(_.getIndex).iterator
+        children.map {
+          case _: javafx.scene.control.IndexedCell[?] => byIndex.next()
+          case other                                  => other
+        }
     def walk(n: Node): Vector[String] =
-      val own = n match
-        case l: Labeled          => Vector(l.getText)
-        case t: TextInputControl => Vector(t.getText)
-        case t: Text             => Vector(t.getText)
-        case _                   => Vector.empty
-      val said     = Option(n.getAccessibleText).toVector
-      val children = n match
-        case p: javafx.scene.Parent => p.getChildrenUnmodifiable.asScala.toVector.flatMap(walk)
-        case _                      => Vector.empty
-      (own ++ said).filter(s => s != null && s.nonEmpty) ++ children
+      if !n.isVisible then Vector.empty
+      else
+        val own = n match
+          case l: Labeled          => Vector(l.getText)
+          case t: TextInputControl => Vector(t.getText)
+          case t: Text             => Vector(t.getText)
+          case _                   => Vector.empty
+        val said     = Option(n.getAccessibleText).toVector
+        val children = n match
+          case p: javafx.scene.Parent =>
+            shownOrder(p.getChildrenUnmodifiable.asScala.toVector).flatMap(walk)
+          case _ => Vector.empty
+        (own ++ said).filter(s => s != null && s.nonEmpty) ++ children
     walk(root)
 
   // The window's values once its asynchronous reads have answered: the same
@@ -101,6 +116,19 @@ class ThemeFxSuite extends ShellFxSuite:
       stable = now == last
       last = now
     last
+
+  /** What `after` changed of `before`, in the order the hash reads them: the
+    * first position they differ at with the texts around it, and the texts
+    * each has more of, so any hash difference is explained.
+    */
+  private def changed(before: Vector[String], after: Vector[String]): String =
+    val at = before.zip(after).indexWhere(_ != _) match
+      case -1 => math.min(before.size, after.size)
+      case i  => i
+    def around(v: Vector[String]) = v.slice(math.max(0, at - 3), at + 4).mkString(" | ")
+    s"sizes ${before.size} → ${after.size}; first difference at $at: " +
+      s"before [${around(before)}] after [${around(after)}]; " +
+      s"only before ${before.diff(after)}; only after ${after.diff(before)}"
 
   private def hash(texts: Vector[String]): String =
     MessageDigest
@@ -145,7 +173,7 @@ class ThemeFxSuite extends ShellFxSuite:
         assertEquals(resolved(w, ThemedToken.Surface), dark(ThemedToken.Surface).hexRgb)
         assertEquals(resolved(w, ThemedToken.Query), dark(ThemedToken.Query).hexRgb)
         val after = settled(fx, w)
-        assertEquals(hash(after), hash(before), after.diff(before))
+        assertEquals(hash(after), hash(before), changed(before, after))
         fx.snapshot(StudioTheme.Dark)
         // And back: the light sheets, the same values.
         choose(fx, w, Appearance.Light)
