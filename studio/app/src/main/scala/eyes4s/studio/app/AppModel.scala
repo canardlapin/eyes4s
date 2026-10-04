@@ -23,7 +23,7 @@ import eyes4s.studio.app.keys.{CommandId, CommandRegistry, KeyChord}
 import eyes4s.studio.app.layout.{LayoutId, PaneId, PerspectiveLayout, StudioLayouts}
 import eyes4s.studio.app.nav.{Location, Navigation, Place, Provenance}
 import eyes4s.studio.app.text.{Format, MessageId, Messages, SourcesText}
-import eyes4s.studio.core.assets.{InputCheck, SourceCheck, SourceFinding}
+import eyes4s.studio.core.assets.{InputCheck, SourceBlock, SourceCheck}
 import eyes4s.studio.core.bundle.InputStatus
 import eyes4s.studio.core.backend.{AnalysisRevision, DatasetRevision, JobId, RunId, TrialKey}
 import eyes4s.studio.core.execution.{
@@ -172,10 +172,10 @@ enum Notice derives CanEqual:
   /** The platform's save of the project failed; the last save stands. */
   case SaveFailed(reason: String)
 
-  /** Save & run was refused: the sources of `dataset` that the project no
-    * longer holds as recorded (S2.5).
+  /** Save & run was refused: the sources of `dataset` are not known to be
+    * held as recorded (S2.5), and why.
     */
-  case SourcesBlocked(dataset: DatasetRevision, findings: Vector[SourceFinding])
+  case SourcesBlocked(dataset: DatasetRevision, block: SourceBlock)
 
   def message: String = message(Messages.english)
 
@@ -195,7 +195,7 @@ enum Notice derives CanEqual:
     case LayoutsReset(ps, reason) =>
       messages(MessageId.NoticeLayoutsReset, ps.map(_.label).mkString(", "), reason)
     case SaveFailed(reason)                     => messages(MessageId.NoticeSaveFailed, reason)
-    case SourcesBlocked(dataset, findings)      => SourcesText.blocked(dataset, findings)
+    case SourcesBlocked(dataset, block)         => SourcesText.blocked(dataset, block)
     case Outdated(Confirmation.DiscardDraft(d)) =>
       s"Draft ${d.label} is no longer the draft; nothing was discarded."
 
@@ -260,6 +260,11 @@ enum AppEffect derives CanEqual:
 
   /** Show the project bundle in the platform's file browser (S1.4). */
   case RevealProject
+
+  /** Check the project's stored inputs against their digests (S2.5); the
+    * answer is [[Intent.InputsChecked]] or [[Intent.InputsCheckFailed]].
+    */
+  case CheckInputs
 
   /** Return every layout of `perspective` to its default arrangement
     * (View › Reset perspective, S1.5a); the document's saved layout is
@@ -396,8 +401,16 @@ enum Intent derives CanEqual:
   /** Progress, outcomes and the latest draft check (freshness inputs). */
   case SessionChanged(facts: SessionFacts)
 
+  /** Check the project's stored inputs against their digests (S2.5): a
+    * window with a project asks this when it opens.
+    */
+  case CheckInputs
+
   /** The project's stored inputs were checked against their digests (S2.5). */
   case InputsChecked(statuses: Vector[InputStatus])
+
+  /** The check of the project's stored inputs failed; runs stay blocked. */
+  case InputsCheckFailed(reason: String)
   case ItemsLoaded(items: TrialItems)
 
   /** The resolved-design pane counted a backend preview to the end (S7.5): a
@@ -483,7 +496,8 @@ final case class AppModel private (
     save: SaveState,
     prepared: Option[PreparedDesign],
     appearance: AppearanceState,
-    inputs: InputCheck
+    inputs: InputCheck,
+    runAfterCheck: Option[Command.SaveAndRun]
 ) derives CanEqual:
 
   def document: StudioDocument = history.document
@@ -498,17 +512,16 @@ final case class AppModel private (
   /** The stored state of every dataset source, as last checked (S2.5). */
   lazy val sources: SourceCheck = SourceCheck.of(document, inputs)
 
-  /** The dataset revision Save & run would run, and its sources that block
-    * it: the draft's dataset, else its base's (the reducer's rule).
+  /** The dataset revision Save & run would run, and why it may not: the
+    * draft's dataset, else its base's (the reducer's rule).
     */
-  def runBlockers: Option[(DatasetRevision, Vector[SourceFinding])] =
+  def runBlock: Option[(DatasetRevision, SourceBlock)] =
     for
       draft <- document.draft
       base  <- document.analysis(draft.base)
-      target   = draft.dataset.getOrElse(base.dataset)
-      blocking = sources.blocking(target)
-      if blocking.nonEmpty
-    yield (target, blocking)
+      target = draft.dataset.getOrElse(base.dataset)
+      block <- sources.block(target)
+    yield (target, block)
 
   /** The derived freshness (S2.7). */
   lazy val freshness: Freshness = Freshness.of(document, session)
@@ -591,7 +604,8 @@ object AppModel:
       SaveState.never,
       None,
       AppearanceState.initial,
-      InputCheck.Unchecked
+      InputCheck.NoProject,
+      None
     )
 
   /** The Analysis trail of the current draft, or of the latest revision. */
@@ -656,12 +670,13 @@ object AppModel:
         case None      => m.hover.filterNot(_.view == view)
       (m.copy(hover = next), none)
 
+    case Intent.Dispatch(run: Command.SaveAndRun) if m.inputs != InputCheck.NoProject =>
+      // Every Save & run of a project checks its stored inputs first, then
+      // runs only if they are present as recorded (S2.5; fail closed).
+      if m.runAfterCheck.isDefined then (m, none)
+      else (m.copy(runAfterCheck = Some(run)), Vector(AppEffect.CheckInputs))
     case Intent.Dispatch(command) =>
-      (command, m.runBlockers) match
-        // A source the project no longer holds as recorded blocks the run (S2.5).
-        case (_: Command.SaveAndRun, Some((dataset, findings))) =>
-          (m.copy(notice = Some(Notice.SourcesBlocked(dataset, findings))), none)
-        case _ => applyHistory(m, JournalEntry.Apply(command), m.history.apply(command))
+      applyHistory(m, JournalEntry.Apply(command), m.history.apply(command))
     case Intent.Undo(stack) => applyHistory(m, undoEntry(stack), m.history.undoOn(stack))
     case Intent.Redo(stack) => applyHistory(m, redoEntry(stack), m.history.redoOn(stack))
 
@@ -751,10 +766,15 @@ object AppModel:
       outcomeOf(received.document, event).fold((received, none)) { command =>
         applyHistory(received, JournalEntry.Apply(command), received.history.apply(command))
       }
-    case Intent.JobsChanged(jobs)       => (m.copy(jobs = m.jobs.withJobs(jobs)), none)
-    case Intent.SessionChanged(f)       => (m.copy(session = f), none)
+    case Intent.JobsChanged(jobs) => (m.copy(jobs = m.jobs.withJobs(jobs)), none)
+    case Intent.SessionChanged(f) => (m.copy(session = f), none)
+    case Intent.CheckInputs       =>
+      val asked = if m.inputs == InputCheck.NoProject then InputCheck.Unchecked else m.inputs
+      (m.copy(inputs = asked), Vector(AppEffect.CheckInputs))
     case Intent.InputsChecked(statuses) =>
-      (m.copy(inputs = InputCheck.Checked(statuses)), none)
+      checkedThenRun(m.copy(inputs = InputCheck.Checked(statuses)))
+    case Intent.InputsCheckFailed(reason) =>
+      checkedThenRun(m.copy(inputs = InputCheck.CheckFailed(reason)))
     case Intent.ItemsLoaded(items)            => (m.copy(items = items), none)
     case Intent.DesignPrepared(r)             => (m.copy(prepared = Some(r)), none)
     case Intent.DesignWithdrawn               => (m.copy(prepared = None), none)
@@ -944,6 +964,20 @@ object AppModel:
     case _                                             => None
 
   /** Record the move in the history, then arrive. */
+  /** After a check: the Save & run that asked for it runs, or is refused
+    * with why its sources block it.
+    */
+  private def checkedThenRun(m: AppModel): (AppModel, Vector[AppEffect]) =
+    m.runAfterCheck match
+      case None      => (m, Vector.empty)
+      case Some(run) =>
+        val next = m.copy(runAfterCheck = None)
+        next.runBlock match
+          case Some((dataset, block)) =>
+            (next.copy(notice = Some(Notice.SourcesBlocked(dataset, block))), Vector.empty)
+          case None =>
+            applyHistory(next, JournalEntry.Apply(run), next.history.apply(run))
+
   private def navigate(m: AppModel, to: Location): (AppModel, Vector[AppEffect]) =
     arrive(m, m.copy(navigation = m.navigation.go(m.location, to)), to)
 

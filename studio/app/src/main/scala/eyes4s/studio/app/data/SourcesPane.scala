@@ -22,7 +22,14 @@ import eyes4s.studio.app.geometry.{GeometryPanel, Loading}
 import eyes4s.studio.app.nav.{Location, Place}
 import eyes4s.studio.app.text.{Format, SourcesText, SourcesTextId}
 import eyes4s.studio.app.{AppModel, Intent}
-import eyes4s.studio.core.assets.{AssetFile, AssetRef, AssetRegistry, DisplayKind}
+import eyes4s.studio.core.assets.{
+  AssetFile,
+  AssetLink,
+  AssetRef,
+  AssetRegistry,
+  DisplayKind,
+  SourceBlock
+}
 import eyes4s.studio.core.backend.DatasetRevision
 import eyes4s.studio.core.command.Command
 import eyes4s.studio.core.document.{
@@ -60,15 +67,17 @@ enum SourcesIntent derives CanEqual:
   case RepairSource(role: SourceRole)
 
   /** The user chose `bytes` for `dataset`'s `role` source. */
-  case SourceChosen(dataset: DatasetRevision, role: SourceRole, bytes: IArray[Byte])
+  case SourceChosen(
+      dataset: DatasetRevision,
+      role: SourceRole,
+      bytes: IArray[Byte],
+      sha256: ByteDigest
+  )
 
   /** The platform could not read a file for `role`, or the user cancelled
     * (`None`).
     */
   case SourceNotChosen(role: SourceRole, reason: Option[String])
-
-  /** The project's stored inputs could not be checked. */
-  case CheckFailed(reason: String)
 
   /** The platform put `dataset`'s `role` source's exact bytes back. */
   case SourceRestored(dataset: DatasetRevision, role: SourceRole, result: Either[String, Unit])
@@ -109,11 +118,6 @@ enum SourcesEffect derives CanEqual:
     */
   case Store(dataset: DatasetRevision, replacement: Source, bytes: IArray[Byte])
 
-  /** Check the project's stored inputs against their digests, and answer
-    * [[Intent.InputsChecked]].
-    */
-  case CheckInputs
-
 /** The Data perspective's Sources pane (ticket S5.7; Data.dc.html, left):
   * the selected dataset revision's source files, what each trial displayed
   * by kind and phase, and its missing image files with Repair….
@@ -123,6 +127,14 @@ enum SourcesEffect derives CanEqual:
   * the registry's own trials. A repair stores the chosen bytes in the project
   * and records [[Command.RelinkAsset]]: the inventory's name, the stored
   * bytes' digest.
+  *
+  * A source the project no longer holds as recorded (S2.5) is repaired from
+  * a chosen file, hashed where it was read. Its recorded bytes are re-copied
+  * over the stored copy: not a command, so not undone, and whatever bytes
+  * were at that address are discarded, since they were not the recorded
+  * ones. Other bytes are stored as a new input and replace the source in a
+  * new pending revision (an undoable ImportSources); undoing it removes the
+  * revision but leaves the stored input in the bundle, unreferenced.
   */
 final case class SourcesPane(
     dataset: Option[DatasetRevisionSpec],
@@ -233,13 +245,12 @@ object SourcesPane:
           source <- spec.sources.entries.find(_.role == role)
         yield SourcesEffect.LocateSource(spec.id, source)
         (pane.copy(note = None), target.toVector)
-      case SourceChosen(d, role, bytes) =>
+      case SourceChosen(d, role, bytes, found) =>
         pane.dataset.filter(_.id == d).flatMap(_.sources.entries.find(_.role == role)) match
           case None =>
             // The revision changed while the file was chosen: nothing is stored.
             (pane.copy(note = Some(t(SourcesTextId.RevisionChanged, role.label))), none)
           case Some(source) =>
-            val found = ByteDigest.sha256(bytes)
             // The recorded bytes are re-copied; other bytes replace the source in
             // a new pending revision, which is admitted before it runs.
             if found == source.bytes then
@@ -251,8 +262,6 @@ object SourcesPane:
                   SourcesEffect.Store(d, source.copy(bytes = found, semantic = None), bytes)
                 )
               )
-      case CheckFailed(reason) =>
-        (pane.copy(note = Some(t(SourcesTextId.CheckFailed, reason))), none)
       case SourceNotChosen(role, reason) =>
         (
           pane.copy(note = reason.map(r => t(SourcesTextId.SourceRepairFailed, role.label, r))),
@@ -271,7 +280,7 @@ object SourcesPane:
               .fold("")(_.bytes.hex.take(12))
             (
               pane.copy(note = Some(t(SourcesTextId.SourceRecopied, name, d.label, sha))),
-              Vector(SourcesEffect.CheckInputs)
+              Vector(SourcesEffect.App(Intent.CheckInputs))
             )
       case SourceStored(d, replacement, result) =>
         val name = replacement.path.value.split('/').last
@@ -293,7 +302,10 @@ object SourcesPane:
                   pane.copy(note =
                     Some(t(SourcesTextId.SourceReplaced, name, d.label, next.label))
                   ),
-                  Vector(SourcesEffect.App(Intent.Dispatch(command)), SourcesEffect.CheckInputs)
+                  Vector(
+                    SourcesEffect.App(Intent.Dispatch(command)),
+                    SourcesEffect.App(Intent.CheckInputs)
+                  )
                 )
       case ShowTrials =>
         val first = registry(pane, model)
@@ -355,6 +367,7 @@ final case class SourcesVM(
     missing: Option[MissingVM],
     repairsTitle: String,
     repairs: Vector[String],
+    check: Option[String],
     note: Option[String]
 ) derives CanEqual
 
@@ -378,6 +391,7 @@ object SourcesVM:
           None,
           t(RepairsTitle),
           Vector.empty,
+          None,
           None
         )
       case Some(spec) =>
@@ -425,8 +439,21 @@ object SourcesVM:
           registry.toVector.flatMap(_ =>
             Vector(tally(DisplayCount.ImagesFound), tally(DisplayCount.ImagesNamed))
           ),
-          // Stored images whose bytes changed or went missing (they block nothing).
-          Option(model.sources.images.size)
+          // This revision's stored images whose bytes changed or went missing
+          // (they block nothing; a withheld image is neither).
+          registry
+            .map(r =>
+              model.sources
+                .imagesUnstored(
+                  r.trials
+                    .flatMap(_.asset)
+                    .collect { case AssetLink.Present(a) =>
+                      a.sha256
+                    }
+                    .toSet
+                )
+                .size
+            )
             .filter(_ > 0)
             .map(n => t(ImagesUnstored, count(n))),
           None
@@ -509,5 +536,10 @@ object SourcesVM:
             .map(r =>
               t(RepairLine, r.file.value, r.asset.file.value, r.asset.sha256.hex.take(12))
             ),
+          // Whether the project's stored files are known to be as recorded.
+          model.sources.block(id).collect {
+            case b @ (SourceBlock.Unchecked | SourceBlock.CheckFailed(_)) =>
+              SourcesText.blocked(id, b)
+          },
           pane.note
         )

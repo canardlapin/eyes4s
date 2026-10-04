@@ -122,9 +122,20 @@ final class DesktopEffects(
             defect(e.productPrefix, failure)
           }
       }
-    case AppEffect.OpenDialog(d)     => dialogs.open(d, dispatch)
-    case AppEffect.ResetLayouts(p)   => resetLayouts(p)
-    case AppEffect.Dock(command)     => dock(command)
+    case AppEffect.OpenDialog(d)   => dialogs.open(d, dispatch)
+    case AppEffect.ResetLayouts(p) => resetLayouts(p)
+    case AppEffect.Dock(command)   => dock(command)
+    // Without a project there is nothing to check, and so nothing is known
+    // to be as recorded: the check fails, and runs stay blocked (S2.5).
+    case AppEffect.CheckInputs =>
+      project match
+        case None => dispatch(Intent.InputsCheckFailed("this window has no project to check"))
+        case Some(port) =>
+          port.checkInputs { answer =>
+            ui { () =>
+              dispatch(answer.fold(Intent.InputsCheckFailed(_), Intent.InputsChecked(_)))
+            }
+          }
     case e @ AppEffect.RevealProject => report(EffectProblem.NotWired(e, "S2.9"))
     case e @ AppEffect.Persist(mark) =>
       project.fold(report(EffectProblem.NotWired(e, "S2.9"))) {

@@ -242,10 +242,11 @@ object StudioDriver:
         }
       case AppEffect.OpenDialog(dialog) =>
         Applicative[F].pure(done.record(DriverRecord.Dialog(dialog)))
-      // Saving belongs to S2.4, and the rest act on a shell's own window and
-      // dock; headless, each is only recorded.
+      // Saving belongs to S2.4, checking stored inputs to a project store
+      // (S2.5), and the rest act on a shell's own window and dock; headless,
+      // each is only recorded.
       case AppEffect.Persist(_) | AppEffect.Journal(_) | AppEffect.RevealProject |
-          AppEffect.ResetLayouts(_) | AppEffect.Dock(_) =>
+          AppEffect.ResetLayouts(_) | AppEffect.Dock(_) | AppEffect.CheckInputs =>
         Applicative[F].pure(done)
 
 /** One scripted step: a name and what it does to the driver. */

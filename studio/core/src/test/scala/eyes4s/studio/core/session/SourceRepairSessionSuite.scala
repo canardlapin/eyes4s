@@ -18,7 +18,7 @@ package eyes4s.studio.core.session
 
 import cats.effect.{IO, Ref}
 import eyes4s.codec.ByteDigest
-import eyes4s.studio.core.assets.{InputCheck, SourceCheck, SourceState}
+import eyes4s.studio.core.assets.{InputCheck, SourceBlock, SourceCheck, SourceState}
 import eyes4s.studio.core.bundle.*
 import eyes4s.studio.core.document.DocumentSamples.t1
 import eyes4s.studio.core.document.SourceRole
@@ -146,8 +146,80 @@ class SourceRepairSessionSuite extends SessionConformance:
           .distinct,
         Vector(SourceState.Missing)
       )
+      // Fail closed: unchecked, or a failed check, blocks; only no project does not.
       assertEquals(
-        SourceCheck.of(document, InputCheck.Unchecked).blocking(revision.id),
-        Vector.empty
+        SourceCheck.of(document, InputCheck.Unchecked).block(revision.id),
+        Some(SourceBlock.Unchecked)
       )
+      assertEquals(
+        SourceCheck.of(document, InputCheck.CheckFailed("store offline")).block(revision.id),
+        Some(SourceBlock.CheckFailed("store offline"))
+      )
+      assertEquals(SourceCheck.of(document, InputCheck.NoProject).block(revision.id), None)
+  }
+
+  test(
+    "two revisions with a fixations.csv each: only the damaged one is changed, matched by digest"
+  ) {
+    import eyes4s.studio.core.command.{Command, Reducer}
+    val other    = bytes("participant,phase,trial,x,y\nP01,Encoding,enc_01,3,4\n")
+    val fix      = source(SourceRole.Fixations)
+    val replaced = fix.copy(bytes = ByteDigest.sha256(other), semantic = None)
+    val sources  = eyes4s.studio.core.document.Sources
+      .of(
+        revision.sources.entries
+          .map(s => if s.role == SourceRole.Fixations then replaced else s)
+      )
+      .fold(e => fail(e.message), identity)
+    val next = Reducer
+      .step(
+        document,
+        Command.ImportSources(
+          Some(revision.id),
+          sources,
+          revision.mapping,
+          revision.units,
+          revision.geometry,
+          revision.attributes,
+          Some(revision.admission),
+          revision.inventory
+        )
+      )
+      .fold(e => fail(e.toString), _._1)
+    val r4                                                     = next.datasets.last.id
+    def entry(kind: InputKind, name: String, of: IArray[Byte]) =
+      InputEntry
+        .of(kind, name, ByteDigest.sha256(of), of.length.toLong)
+        .fold(e => fail(e.message), identity)
+    val fixKind = InputKind.Source(SourceRole.Fixations)
+    // The newer revision's fixations.csv is listed first, and is the damaged one.
+    val statuses = Vector(
+      InputStatus
+        .Changed(entry(fixKind, "fixations.csv", other), ByteDigest.sha256(bytes("x"))),
+      InputStatus.Present(entry(fixKind, "fixations.csv", fixations)),
+      InputStatus.Present(entry(InputKind.Source(SourceRole.Trials), "trials.csv", trials))
+    )
+    val check = SourceCheck.of(next, InputCheck.Checked(statuses))
+    assertEquals(check.block(revision.id), None)
+    assertEquals(
+      check.block(r4).map {
+        case SourceBlock.Damaged(fs) => fs.map(f => (f.dataset, f.name))
+        case other                   => fail(s"$other")
+      },
+      Some(Vector((r4, "fixations.csv")))
+    )
+    // A withheld image is not counted as changed or missing; a missing one is, by digest.
+    val img        = entry(InputKind.StimulusImage, "a.png", bytes("a"))
+    val gone       = entry(InputKind.StimulusImage, "b.png", bytes("b"))
+    val withImages = SourceCheck.of(
+      next,
+      InputCheck.Checked(
+        statuses ++ Vector(InputStatus.Withheld(img.withheld), InputStatus.Missing(gone))
+      )
+    )
+    assertEquals(
+      withImages.imagesUnstored(Set(img.sha256, gone.sha256)),
+      Vector(InputStatus.Missing(gone))
+    )
+    assertEquals(withImages.imagesUnstored(Set(img.sha256)), Vector.empty)
   }

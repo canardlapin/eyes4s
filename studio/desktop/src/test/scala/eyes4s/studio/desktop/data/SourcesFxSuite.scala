@@ -126,6 +126,16 @@ class SourcesFxSuite extends ShellFxSuite:
       val project = Stores()
       val w       = ready(fx, Some(project), chosen)
       val v       = w.sources.view
+      // A project that cannot check its stored files fails closed (S2.5).
+      eventually(fx, "the failed check")(
+        w.runtime.model.inputs ==
+          eyes4s.studio.core.assets.InputCheck
+            .CheckFailed("this project cannot check its stored files")
+      )
+      assert(
+        runOnFx(v.check.getText).contains("could not be checked"),
+        runOnFx(v.check.getText)
+      )
       runOnFx(v.repair.fire())
       eventually(fx, "the relink")(
         w.runtime.model.document.relinks.of(StoryMoments.r3).nonEmpty
@@ -201,16 +211,14 @@ class SourcesFxSuite extends ShellFxSuite:
     // The project finds r3's fixations changed at their address.
     val project = new Stores:
       override def checkInputs(
-          done: Either[String, Option[Vector[InputStatus]]] => Unit
+          done: Either[String, Vector[InputStatus]] => Unit
       ): Unit =
         done(
           Right(
-            Some(
-              sources.map(s =>
-                if s.role == SourceRole.Fixations then
-                  InputStatus.Changed(entry(s), ByteDigest.sha256(edited))
-                else InputStatus.Present(entry(s))
-              )
+            sources.map(s =>
+              if s.role == SourceRole.Fixations then
+                InputStatus.Changed(entry(s), ByteDigest.sha256(edited))
+              else InputStatus.Present(entry(s))
             )
           )
         )

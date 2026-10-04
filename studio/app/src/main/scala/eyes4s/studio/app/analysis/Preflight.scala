@@ -119,8 +119,8 @@ object Preflight:
       case (None, _)                => Some(PreflightText(NothingToCheck))
       case (Some(t), _) if !isDraft => Some(PreflightText(NoDraft, t.revision.label))
       // A changed or missing source blocks the run until repaired or replaced (S2.5).
-      case (Some(_), _) if m.runBlockers.isDefined =>
-        m.runBlockers.map((dataset, findings) => SourcesText.blocked(dataset, findings))
+      case (Some(_), _) if m.runBlock.isDefined =>
+        m.runBlock.map((dataset, block) => SourcesText.blocked(dataset, block))
       case (Some(_), DesignPreview.Refused(why)) => Some(PreflightText(Refused, label, why))
       case (Some(_), DesignPreview.Counting(_, _, _, Some(p))) =>
         Some(

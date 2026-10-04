@@ -215,7 +215,7 @@ final class ProjectSession[F[_]: Concurrent] private (
         )
         entry <- EitherT.fromEither[F](
           s.inputs
-            .find(_.path.contains(path))
+            .find(e => e.path.contains(path) && e.kind == InputKind.Source(source.role))
             .toRight(
               SessionError.Bundle(
                 operation,

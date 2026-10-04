@@ -211,9 +211,6 @@ final class SourcesPaneHost(
   /** The view-model now shown. */
   def vm: SourcesVM = SourcesVM.of(pane, model())
 
-  // The project's stored inputs are checked once the window has its project (S2.5).
-  perform(project.toVector.map(_ => SourcesEffect.CheckInputs))
-
   /** The pane's controls after its own stop: each source's Repair…, Retry,
     * Repair… and Show….
     */
@@ -249,16 +246,7 @@ final class SourcesPaneHost(
     effects.foreach {
       case SourcesEffect.ReadRegistry(spec, ask) =>
         displays.read(spec, r => later(SourcesIntent.RegistryRead(spec.id, ask, r)))
-      case SourcesEffect.App(intent) => app(intent)
-      case SourcesEffect.CheckInputs =>
-        project.foreach(
-          _.checkInputs {
-            case Right(Some(statuses)) =>
-              Platform.runLater(() => if !disposed then app(Intent.InputsChecked(statuses)))
-            case Right(None)  => ()
-            case Left(reason) => later(SourcesIntent.CheckFailed(reason))
-          }
-        )
+      case SourcesEffect.App(intent)                   => app(intent)
       case SourcesEffect.LocateSource(dataset, source) =>
         project match
           case None =>
@@ -276,7 +264,9 @@ final class SourcesPaneHost(
                   later(SourcesIntent.SourceNotChosen(source.role, Some(reason)))
                 case Right(None)      => later(SourcesIntent.SourceNotChosen(source.role, None))
                 case Right(Some(raw)) =>
-                  later(SourcesIntent.SourceChosen(dataset, source.role, raw))
+                  // Hashed here, off the JavaFX thread, where the file was read.
+                  val sha = ByteDigest.sha256(raw)
+                  later(SourcesIntent.SourceChosen(dataset, source.role, raw, sha))
               }
             )
       case SourcesEffect.Restore(dataset, source, bytes) =>
@@ -376,12 +366,26 @@ final class SourcesView(dispatch: SourcesIntent => Unit):
   missing.getStyleClass.add("sources-missing")
   val note: Label = label("sources-note", "t11")
   note.setWrapText(true)
+  val check: Label = label("sources-problem", "t11")
+  check.setWrapText(true)
   val repairsTitle: Label = label("sources-title", "lbl")
   val repairs: VBox       = VBox(3.0)
   repairs.getStyleClass.add("sources-repairs")
 
   val node: VBox =
-    VBox(empty, sources, title, kinds, status, retry, missing, repairsTitle, repairs, note)
+    VBox(
+      empty,
+      check,
+      sources,
+      title,
+      kinds,
+      status,
+      retry,
+      missing,
+      repairsTitle,
+      repairs,
+      note
+    )
   node.getStyleClass.add("sources-panel")
   Option(getClass.getClassLoader.getResource(SourcesPaneHost.stylesheetResource))
     .foreach(url => node.getStylesheets.add(url.toExternalForm))
@@ -411,6 +415,7 @@ final class SourcesView(dispatch: SourcesIntent => Unit):
 
   def render(vm: SourcesVM): Unit =
     show(empty, vm.empty)
+    show(check, vm.check)
     sources.getChildren.setAll(vm.sources.map { s =>
       val name = label("sources-name", "mono", "t12")
       name.setText(s.name)

@@ -17,10 +17,12 @@
 package eyes4s.studio.app.data
 
 import eyes4s.codec.ByteDigest
-import eyes4s.studio.app.analysis.{Preflight, ResolvedDesign}
+import eyes4s.studio.app.analysis.{DesignEffect, DesignPreview, Preflight, ResolvedDesign}
 import eyes4s.studio.app.explore.DisplaySource
-import eyes4s.studio.app.{AppModel, Intent, Notice, StoryModels}
-import eyes4s.studio.core.assets.{SourceFinding, SourceState}
+import eyes4s.studio.app.{AppEffect, AppModel, Intent, Notice, StoryModels}
+import eyes4s.studio.app.text.SourcesText
+import eyes4s.studio.core.backend.DatasetRevision
+import eyes4s.studio.core.assets.{SourceBlock, SourceFinding, SourceState}
 import eyes4s.studio.core.bundle.{InputEntry, InputKind, InputStatus}
 import eyes4s.studio.core.command.Command
 import eyes4s.studio.core.document.{AdmissionDecision, Source, SourceRole, StudioDocument}
@@ -64,62 +66,118 @@ class SourceRepairSuite extends munit.FunSuite:
 
   private val edited = bytes("participant,phase,trial\nedited\n")
 
-  test("a changed source blocks Save & run: the run card says why, and a run is refused") {
+  /** The fixture model as a project window that asked for its check. */
+  private def project(m: AppModel): AppModel =
+    val (asked, effects) = AppModel.update(m, Intent.CheckInputs)
+    assertEquals(effects, Vector(AppEffect.CheckInputs))
+    asked
+
+  private def damaged(findings: SourceFinding*): Option[(DatasetRevision, SourceBlock)] =
+    Some((r3, SourceBlock.Damaged(findings.toVector)))
+
+  test(
+    "fail closed: before its first check, or when the check fails, a project runs and previews nothing"
+  ) {
+    val m     = StoryModels.t2Analysis
+    val asked = project(m)
+    assertEquals(asked.runBlock, Some((r3, SourceBlock.Unchecked)))
+    val unchecked =
+      "r3 is blocked until the project's stored files are checked against their digests."
+    def card(at: AppModel) =
+      Preflight.vm(ResolvedDesign.sync(ResolvedDesign.empty, at)._1, at).card
+    assertEquals((card(asked).enabled, card(asked).reason), (false, Some(unchecked)))
+    // The design is not previewed: no backend preview is asked for.
+    val (design, effects) = ResolvedDesign.sync(ResolvedDesign.empty, asked)
+    assertEquals(effects.collect { case e: DesignEffect.StartPreview => e }, Vector.empty)
+    assertEquals(design.preview, DesignPreview.Refused(unchecked))
+    // A failed check blocks, naming why.
+    val failed = AppModel.update(asked, Intent.InputsCheckFailed("store offline"))._1
+    assertEquals(failed.runBlock, Some((r3, SourceBlock.CheckFailed("store offline"))))
+    assertEquals(
+      card(failed).reason,
+      Some("r3 is blocked: the project's stored files could not be checked (store offline).")
+    )
+    // A window with no project store has nothing stored to check, and runs.
+    assertEquals(m.runBlock, None)
+    val ran = AppModel.update(m, Intent.Dispatch(Command.SaveAndRun(None)))._1
+    assertEquals(ran.document.runs.size, m.document.runs.size + 1)
+  }
+
+  test(
+    "a changed source blocks: the run card says why, and every Save & run checks again first"
+  ) {
     val m       = StoryModels.t2Analysis
-    val blocked = AppModel.update(m, changed(m.document, edited))._1
+    val blocked = AppModel.update(project(m), changed(m.document, edited))._1
     val fix     = sourceOf(m.document, SourceRole.Fixations)
     val found   = ByteDigest.sha256(edited)
-    assertEquals(
-      blocked.runBlockers,
-      Some((r3, Vector(SourceFinding(r3, fix, SourceState.Changed(found)))))
-    )
+    val finding = SourceFinding(r3, fix, SourceState.Changed(found))
+    assertEquals(blocked.runBlock, damaged(finding))
     val card = Preflight.vm(ResolvedDesign.sync(ResolvedDesign.empty, blocked)._1, blocked).card
-    assertEquals(card.enabled, false)
-    assertEquals(card.run, None)
+    assertEquals((card.enabled, card.run), (false, None))
     assertEquals(
       card.reason,
       Some(
-        s"r3 cannot be run: fixations.csv is changed since it was stored · " +
-          s"sha256:${fix.bytes.hex.take(12)} recorded, ${found.hex.take(12)} found. " +
+        s"r3 is blocked: fixations.csv is changed since it was stored " +
+          s"(sha256:${fix.bytes.hex} recorded, ${found.hex} found). " +
           "Repair it in Data · Sources, or admit a revision that replaces it."
       )
     )
-    // A run dispatched anyway is refused, and nothing changes.
-    val (refused, effects) = AppModel.update(blocked, Intent.Dispatch(Command.SaveAndRun(None)))
-    assertEquals(effects, Vector.empty)
+    // A run dispatched anyway asks for a check first, and is refused when the
+    // check still finds the source changed; nothing changes.
+    val (waiting, ask) = AppModel.update(blocked, Intent.Dispatch(Command.SaveAndRun(None)))
+    assertEquals(ask, Vector(AppEffect.CheckInputs))
+    assertEquals(waiting.document, blocked.document)
+    val (refused, none) = AppModel.update(waiting, changed(m.document, edited))
+    assertEquals(none, Vector.empty)
     assertEquals(refused.document, blocked.document)
     assertEquals(
       refused.notice,
-      Some(
-        Notice.SourcesBlocked(r3, Vector(SourceFinding(r3, fix, SourceState.Changed(found))))
-      )
+      Some(Notice.SourcesBlocked(r3, SourceBlock.Damaged(Vector(finding))))
     )
-    // Unchecked, or with every source present, the run goes ahead.
+    // Repaired since: the run's own check finds every source present, and it runs.
     val present = Intent.InputsChecked(
       m.document.dataset(r3).get.sources.entries.map(s => InputStatus.Present(entry(s)))
     )
-    for unblocked <- Vector(m, AppModel.update(m, present)._1) do
-      assertEquals(unblocked.runBlockers, None)
-      val ran = AppModel.update(unblocked, Intent.Dispatch(Command.SaveAndRun(None)))._1
-      assertEquals(ran.document.runs.size, m.document.runs.size + 1)
+    val (asking, again) = AppModel.update(refused, Intent.Dispatch(Command.SaveAndRun(None)))
+    assertEquals(again, Vector(AppEffect.CheckInputs))
+    val ran = AppModel.update(asking, present)._1
+    assertEquals(ran.runBlock, None)
+    assertEquals(ran.document.runs.size, m.document.runs.size + 1)
+    // A source damaged after the last check is found by the run's own check.
+    val clean        = AppModel.update(project(m), present)._1
+    val (pending, _) = AppModel.update(clean, Intent.Dispatch(Command.SaveAndRun(None)))
+    val (stopped, _) = AppModel.update(pending, changed(m.document, edited))
+    assertEquals(stopped.document.runs.size, m.document.runs.size)
+    assertEquals(
+      stopped.notice,
+      Some(Notice.SourcesBlocked(r3, SourceBlock.Damaged(Vector(finding))))
+    )
   }
 
-  test("a source missing from the project, or not listed at all, blocks too") {
-    val m       = StoryModels.t2Analysis
+  test(
+    "a source missing from the project, or not listed at all, blocks too, naming its digest"
+  ) {
+    val m       = project(StoryModels.t2Analysis)
     val sources = m.document.dataset(r3).get.sources.entries
+    val fix     = sourceOf(m.document, SourceRole.Fixations)
     val missing = Intent.InputsChecked(
       sources.map(s =>
         if s.role == SourceRole.Fixations then InputStatus.Missing(entry(s))
         else InputStatus.Present(entry(s))
       )
     )
+    val blocked = AppModel.update(m, missing)._1
+    assertEquals(blocked.runBlock, damaged(SourceFinding(r3, fix, SourceState.Missing)))
     assertEquals(
-      AppModel.update(m, missing)._1.runBlockers.map(_._2.map(f => (f.name, f.state))),
-      Some(Vector(("fixations.csv", SourceState.Missing)))
+      SourcesText.state(SourceFinding(r3, fix, SourceState.Missing)),
+      s"missing from the project (sha256:${fix.bytes.hex} recorded)"
     )
     val unlisted = Intent.InputsChecked(Vector.empty)
     assertEquals(
-      AppModel.update(m, unlisted)._1.runBlockers.map(_._2.map(_.state).distinct),
+      AppModel.update(m, unlisted)._1.runBlock.map {
+        case (_, SourceBlock.Damaged(fs)) => fs.map(_.state).distinct
+        case other                        => fail(s"$other")
+      },
       Some(Vector(SourceState.Missing))
     )
   }
@@ -135,17 +193,25 @@ class SourceRepairSuite extends munit.FunSuite:
     "the source card says what changed and offers Repair…; other bytes make a pending revision"
   ) {
     val m =
-      AppModel.update(StoryModels.t2Explore, changed(StoryModels.t2Explore.document, edited))._1
+      AppModel
+        .update(project(StoryModels.t2Explore), changed(StoryModels.t2Explore.document, edited))
+        ._1
     val pane = loaded(m)
     val vm   = SourcesVM.of(pane, m)
-    val fix  = sourceOf(m.document, SourceRole.Fixations)
-    val row  = vm.sources.head
+    // Checked: the pane says nothing of the check itself.
+    assertEquals(vm.check, None)
+    assertEquals(
+      SourcesVM.of(pane, project(StoryModels.t2Explore)).check,
+      Some("r3 is blocked until the project's stored files are checked against their digests.")
+    )
+    val fix = sourceOf(m.document, SourceRole.Fixations)
+    val row = vm.sources.head
     assertEquals(row.name, "fixations.csv")
     assertEquals(
       row.problem,
       Some(
-        s"changed since it was stored · sha256:${fix.bytes.hex.take(12)} recorded, " +
-          s"${ByteDigest.sha256(edited).hex.take(12)} found"
+        s"changed since it was stored (sha256:${fix.bytes.hex} recorded, " +
+          s"${ByteDigest.sha256(edited).hex} found)"
       )
     )
     assertEquals(
@@ -164,7 +230,11 @@ class SourceRepairSuite extends munit.FunSuite:
     val other       = bytes("participant,phase,trial\nanother\n")
     val replacement = fix.copy(bytes = ByteDigest.sha256(other), semantic = None)
     val (_, store)  =
-      SourcesPane.update(pane, m, SourcesIntent.SourceChosen(r3, SourceRole.Fixations, other))
+      SourcesPane.update(
+        pane,
+        m,
+        SourcesIntent.SourceChosen(r3, SourceRole.Fixations, other, ByteDigest.sha256(other))
+      )
     assertEquals(store, Vector(SourcesEffect.Store(r3, replacement, other)))
     val (stored, dispatched) =
       SourcesPane.update(pane, m, SourcesIntent.SourceStored(r3, replacement, Right(())))
@@ -178,7 +248,7 @@ class SourceRepairSuite extends munit.FunSuite:
     val command = dispatched
       .collectFirst { case SourcesEffect.App(Intent.Dispatch(c)) => c }
       .getOrElse(fail("no command"))
-    assertEquals(dispatched.last, SourcesEffect.CheckInputs)
+    assertEquals(dispatched.last, SourcesEffect.App(Intent.CheckInputs))
     val after = AppModel.update(m, Intent.Dispatch(command))._1
     val spec  = after.document.dataset(next).getOrElse(fail("no new revision"))
     val old   = m.document.dataset(r3).get
@@ -222,7 +292,12 @@ class SourceRepairSuite extends munit.FunSuite:
     )
     assertEquals(
       SourcesPane
-        .update(pane, m, SourcesIntent.SourceChosen(r3, SourceRole.Fixations, original))
+        .update(
+          pane,
+          m,
+          SourcesIntent
+            .SourceChosen(r3, SourceRole.Fixations, original, ByteDigest.sha256(original))
+        )
         ._2,
       Vector(SourcesEffect.Restore(r3, fix, original))
     )
@@ -232,7 +307,7 @@ class SourceRepairSuite extends munit.FunSuite:
         m,
         SourcesIntent.SourceRestored(r3, SourceRole.Fixations, Right(()))
       )
-    assertEquals(check, Vector(SourcesEffect.CheckInputs))
+    assertEquals(check, Vector(SourcesEffect.App(Intent.CheckInputs)))
     assertEquals(
       restored.note,
       Some(
@@ -247,7 +322,8 @@ class SourceRepairSuite extends munit.FunSuite:
         SourcesIntent.SourceChosen(
           StoryMoments.r3.copy(number = 9),
           SourceRole.Fixations,
-          original
+          original,
+          ByteDigest.sha256(original)
         )
       )
     assertEquals(none, Vector.empty)

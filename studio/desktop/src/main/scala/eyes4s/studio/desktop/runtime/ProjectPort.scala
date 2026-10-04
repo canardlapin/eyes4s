@@ -70,11 +70,10 @@ trait ProjectPort:
     done(Left("this project cannot list its stored files"))
 
   /** Check every stored input's bytes against its digest (S2.5). A port that
-    * cannot check answers `None`: its inputs stay unchecked, so nothing is
-    * blocked on their account.
+    * cannot check refuses, and the window's runs stay blocked (fail closed).
     */
-  def checkInputs(done: Either[String, Option[Vector[InputStatus]]] => Unit): Unit =
-    done(Right(None))
+  def checkInputs(done: Either[String, Vector[InputStatus]] => Unit): Unit =
+    done(Left("this project cannot check its stored files"))
 
   /** Put `source`'s exact bytes back in the project (S2.5); a port that
     * cannot store inputs refuses, naming the file.
@@ -170,9 +169,9 @@ final class SessionPort private (
     )
 
   /** Queued after the imports and restores before it. */
-  override def checkInputs(done: Either[String, Option[Vector[InputStatus]]] => Unit): Unit =
+  override def checkInputs(done: Either[String, Vector[InputStatus]] => Unit): Unit =
     enqueue(
-      answering(session.checkInputs.map(s => Right(Some(s))), done),
+      answering(session.checkInputs.map(Right(_)), done),
       "check stored inputs",
       Some(reason => done(Left(reason)))
     )
