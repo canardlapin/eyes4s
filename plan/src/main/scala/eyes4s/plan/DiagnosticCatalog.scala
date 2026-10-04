@@ -754,7 +754,10 @@ object DiagnosticCatalog:
     "RankTolerance",
     "RankDeficient",
     "ColumnArithmetic",
-    "RowArithmetic"
+    "RowArithmetic",
+    "DualTolerance",
+    "NotConverged",
+    "Stalled"
   )
 
   /** Retired: `TemplateFitError` became part of `TemplateError` (see [[retired]]). */

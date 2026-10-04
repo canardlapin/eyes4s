@@ -53,7 +53,7 @@
         "no intercept in trial-response fit; fixed scaled QR rank threshold 1e-12",
         "explicit intercept in surface regression",
         "native and historical R method/schema meanings remain distinct",
-        "robust and NNLS variants deferred; logistic on continuous mass excluded"
+        "cellwise NNLS and rank (partial Spearman) are separate surface decompositions, pinned under surface-decomposition-nnls and surface-partial-spearman; robust variants deferred; logistic on continuous mass excluded"
       ],
       "backend_dependencies": [
         "native Scala Householder QR",
@@ -80,7 +80,7 @@
       ],
       "independent_case": "Exact fixed-feature slopes (1,2), prediction 7 and response-700 control; learned mean (2/3,1/3), slope sqrt(5), held-out prediction 3/sqrt(2), changed held-out map prediction 1; exact rational surface OLS oracle; analytic cosine and per-fold exclusions.",
       "status": "verified-intentional-divergence",
-      "divergence": "Native learned mean/cosine trial response regression is a named recipe, not eyesim learned-transform parity. Explicit recorded folds replace R RNG assignment; pinned CV restores the caller's RNG stream. R selects first duplicate reference and drops unmatched source rows, while native pairing retains ambiguity/missing records. Normalized cellwise OLS and trial prediction remain different estimands. PCA/CORAL/CCA and robust/NNLS variants are not claimed.",
+      "divergence": "Native learned mean/cosine trial response regression is a named recipe, not eyesim learned-transform parity. Explicit recorded folds replace R RNG assignment; pinned CV restores the caller's RNG stream. R selects first duplicate reference and drops unmatched source rows, while native pairing retains ambiguity/missing records. Normalized cellwise OLS and trial prediction remain different estimands. PCA/CORAL/CCA and robust variants are not claimed; cellwise NNLS and rank are claimed only by surface-decomposition-nnls and surface-partial-spearman.",
       "evidence": [
         "docs/TEMPLATE_CV.md",
         "docs/TEMPLATE_FITTING.md",
