@@ -90,12 +90,32 @@ class AnalysisArchiveSuite extends munit.FunSuite:
     val graph    = get(saved())
     val resolved = get(resolve(graph, decoders.withAnalyses(registry)))
     assertEquals(result.fixations, 3)
-    resolved.analysisPlan(name("count-plan")) match
-      case Some(p: LoadedPlan) => assertEquals(p.plan, plan)
-      case other               => fail(s"$other")
-    resolved.analysisResult(name("count")) match
-      case Some(r: LoadedResult) => assertEquals(r.result, result)
-      case other                 => fail(s"$other")
+    val loadedPlan   = resolved.analysisPlan(name("count-plan")).getOrElse(fail("no plan"))
+    val loadedResult = resolved.analysisResult(name("count")).getOrElse(fail("no result"))
+    assertEquals(LoadedAnalysisPlan.typed(plans)(loadedPlan), Some(plan))
+    assertEquals(LoadedAnalysisResult.typed(results)(loadedResult), Some(result))
+    // Typed only by the codec that decoded it.
+    assertEquals(LoadedAnalysisPlan.typed(embeddedPlans)(loadedPlan), None)
+    assertEquals(LoadedAnalysisResult.typed(embeddedResults)(loadedResult), None)
+    // What the resolver reads of each, and each re-encodes to the document it was read from.
+    assertEquals(loadedPlan.schema, planSchema)
+    assertEquals(loadedPlan.description, plan.description)
+    assertEquals(loadedPlan.embeddedInputs, Vector.empty)
+    assertEquals(loadedPlan.encode, plans.encode(plan))
+    assertEquals(loadedResult.schema, resultSchema)
+    assertEquals(loadedResult.description, plan.description)
+    assertEquals(loadedResult.inputs, result.inputs)
+    assertEquals(loadedResult.encode, results.encode(result))
+    // The stored entries are those documents.
+    Vector(name("count-plan") -> loadedPlan.encode, name("count") -> loadedResult.encode)
+      .foreach { (entry, encoded) =>
+        val stored = graph.artifacts.find(_.name == entry).getOrElse(fail(s"no $entry"))
+        assertEquals(
+          io.circe.parser.parse(String(Array.from(stored.bytes), "UTF-8")).toOption,
+          encoded.toOption,
+          entry
+        )
+      }
     assertEquals(resolved.analysisPlans.map(_._1), Vector(name("count-plan")))
   }
 
@@ -316,9 +336,12 @@ class AnalysisArchiveSuite extends munit.FunSuite:
     val r        = get(StoredArtifact.analysisResult("count", embeddedResults, result))
     val g        = graph(p, r, (_, _) => AnalysisInputs.EmbeddedInPlan)
     val resolved = get(resolve(g, decoders.withAnalyses(registry)).left.map(_.toVector))
-    resolved.analysisResult(name("count")) match
-      case Some(loaded: LoadedEmbeddedResult) => assertEquals(loaded.result, result)
-      case other                              => fail(s"$other")
+    val loaded   = resolved.analysisResult(name("count")).getOrElse(fail("no result"))
+    assertEquals(LoadedAnalysisResult.typed(embeddedResults)(loaded), Some(result))
+    assertEquals(
+      resolved.analysisPlan(name("count-plan")).map(_.embeddedInputs),
+      Some(Vector(study.hash))
+    )
     // The result cites another input than the one the plan carries.
     val elsewhere = get(
       StoredArtifact.analysisResult("count", embeddedResults, run(plan, other, _.phase))
@@ -335,21 +358,11 @@ class AnalysisArchiveSuite extends munit.FunSuite:
       Some(RelationMismatch.UndeclaredEmbedding(planSchema))
     )
     // A family that declares an embedded input but whose plan exposes none.
-    val silent = registration.copy(
-      decodePlan = json =>
-        embeddedPlans
-          .decode(json)
-          .map { e =>
-            val loaded = LoadedEmbeddedPlan(e)
-            new LoadedAnalysisPlan:
-              val schema      = loaded.schema
-              def description = loaded.description
-              def encode      = loaded.encode
-          },
-      plan = embeddedPlanSchema,
-      result = embeddedResultSchema,
-      decodeResult = embeddedRegistration.decodeResult,
-      embedsInput = true
+    val silent = AnalysisRegistration.of(embeddedPlans, embeddedResults)(
+      _.count.description,
+      _.plan.description,
+      _.inputs,
+      embedded = Some(_ => Vector.empty)
     )
     assertEquals(
       resolve(g, decoders.withAnalyses(get(AnalysisRegistry.of(Vector(silent))))).left.toOption

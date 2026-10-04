@@ -280,18 +280,45 @@ class ManifestLawSuite extends munit.DisciplineSuite:
       r.recordingInputs.map(_._2.reference) == Vector(g.recordingInput.reference) &&
       r.recordings.map(_._2.contentHash) == Vector(g.recording.contentHash) &&
       r.payloads.size == 4 &&
-      r.analysisResults.map(_._2).collect { case c: AnalysisFixtures.LoadedResult =>
-        c.result
-      } ==
+      r.analysisResults.flatMap(a =>
+        LoadedAnalysisResult.typed(AnalysisFixtures.results)(a._2)
+      ) ==
       Vector(counts(g)) &&
-      r.analysisResults.map(_._2).collect { case c: AnalysisFixtures.LoadedEmbeddedResult =>
-        c.result
-      } ==
+      r.analysisResults.flatMap(a =>
+        LoadedAnalysisResult.typed(AnalysisFixtures.embeddedResults)(a._2)
+      ) ==
       Vector(AnalysisFixtures.run(countPlan, g.base, _.phase))
 
   private val laws = ManifestLaws.verifiedResolution(graphs, write, decoders, reproduces)
 
   checkAll("saved study graph", laws)
+
+  test("the counting decoders count every decoding and return exactly the delegate's") {
+    // The corruption law trusts this count to see any decoding at all, so
+    // every kind of document a graph can hold must be counted.
+    val g       = graphs.sample.getOrElse(fail("no graph"))
+    val counted = ManifestLaws.counting(decoders)
+    val plan    = get(AnalysisFixtures.plans.encode(countPlan))
+    val result  = get(AnalysisFixtures.results.encode(counts(g)))
+    assertEquals(
+      counted.analyses.plan(AnalysisFixtures.planSchema, plan).map(_.description),
+      decoders.analyses.plan(AnalysisFixtures.planSchema, plan).map(_.description)
+    )
+    assertEquals(counted.calls, 1)
+    assertEquals(
+      counted.analyses.result(AnalysisFixtures.resultSchema, result).map(_.inputs),
+      Right(Vector(g.input.hash))
+    )
+    assertEquals(counted.calls, 2)
+    // Unregistered here: refused, as the delegate refuses them, and still counted.
+    val document = io.circe.Json.obj("schema" -> io.circe.Json.fromString("x@1"))
+    assertEquals(counted.report(document), decoders.report(document))
+    assertEquals(counted.importSpec(document), decoders.importSpec(document))
+    assertEquals(counted.calls, 4)
+    // The counted registry keeps the delegate's families and their order.
+    assertEquals(counted.analyses.planSchemas, decoders.analyses.planSchemas)
+    assertEquals(counted.analyses.resultSchemas, decoders.analyses.resultSchemas)
+  }
 
   private val parameters = Test.Parameters.default.withMinSuccessfulTests(40)
 
