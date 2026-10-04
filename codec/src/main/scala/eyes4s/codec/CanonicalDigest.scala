@@ -68,6 +68,61 @@ object CanonicalDigest:
   private[codec] def document[A](json: Json): Either[CodecError, CanonicalDigest[A]] =
     CanonicalBytes.of(json).map(bytes => new CanonicalDigest(ByteDigest.sha256(bytes)))
 
+  /** The digest of the document `doc` describes, exactly `document` of its
+    * JSON, computed while the document is described: each array item is made,
+    * rendered into the hash and dropped before the next, so no more than one
+    * item of an array is held at a time.
+    */
+  private[codec] def streamed[A](doc: CanonicalDoc): Either[CodecError, CanonicalDigest[A]] =
+    val hasher = new eyes4s.results.Sha256Core.Hasher
+    CanonicalBytes
+      .stream(doc, "$", hasher.update(_))
+      .map(_ => new CanonicalDigest(ByteDigest.finished(hasher)))
+
+/** A canonical document described member by member, whose arrays make their
+  * items on demand. `json` makes the whole document; `CanonicalDigest.streamed`
+  * digests it one item at a time. Both read the same description, so the
+  * document a codec writes and the one it digests cannot differ. A failure
+  * making an item is the failure of the whole document.
+  */
+private[codec] enum CanonicalDoc:
+  case Leaf(value: Json)
+  case Obj(members: Vector[(String, CanonicalDoc)])
+  case Arr(size: Int, item: Int => Either[CodecError, CanonicalDoc])
+
+  /** The whole document, every item made. */
+  def json: Either[CodecError, Json] = this match
+    case Leaf(value)  => Right(value)
+    case Obj(members) =>
+      members
+        .foldLeft[Either[CodecError, Vector[(String, Json)]]](Right(Vector.empty)) {
+          case (acc, (key, member)) =>
+            acc.flatMap(done => member.json.map(j => done :+ (key -> j)))
+        }
+        .map(Json.fromFields)
+    case Arr(size, item) =>
+      (0 until size)
+        .foldLeft[Either[CodecError, Vector[Json]]](Right(Vector.empty)) { (acc, i) =>
+          acc.flatMap(done => item(i).flatMap(_.json).map(done :+ _))
+        }
+        .map(Json.fromValues)
+
+  /** The same document, every failure making an item passed through `f`. */
+  def mapError(f: CodecError => CodecError): CanonicalDoc = this match
+    case leaf: Leaf      => leaf
+    case Obj(members)    => Obj(members.map((key, member) => key -> member.mapError(f)))
+    case Arr(size, item) => Arr(size, i => item(i).left.map(f).map(_.mapError(f)))
+
+object CanonicalDoc:
+  /** An array of `values`, each made by `item` when it is reached. */
+  private[codec] def items[A](values: IndexedSeq[A])(
+      item: (A, Int) => Either[CodecError, CanonicalDoc]
+  ): CanonicalDoc =
+    CanonicalDoc.Arr(values.size, i => item(values(i), i))
+
+  private[codec] def obj(members: (String, CanonicalDoc)*): CanonicalDoc =
+    CanonicalDoc.Obj(members.toVector)
+
 /** A prefix-free binary rendering of a JSON value: a tag byte per node,
   * lengths before contents, strings as UTF-16 code units and object members
   * in document order. A number is exactly a 64-bit integer or a finite
@@ -107,20 +162,57 @@ private[codec] object CanonicalBytes:
 
   def of(json: Json): Either[CodecError, IArray[Byte]] =
     unrepresentable(json, "$") match
-      case Some(path) =>
-        Left(
-          CodecError.Unsupported(
-            path,
-            "a digested number must be exactly a 64-bit integer or a finite double"
-          )
-        )
-      case None => Right(render(json))
+      case Some(path) => Left(refusal(path))
+      case None       => Right(render(json))
+
+  /** Render the document `doc` describes into `out`, refusing the first
+    * number that is neither (named by its path from `path`), with each array
+    * item made, checked and rendered before the next is made.
+    */
+  private[codec] def stream(
+      doc: CanonicalDoc,
+      path: String,
+      out: Byte => Unit
+  ): Either[CodecError, Unit] = doc match
+    case CanonicalDoc.Leaf(value) =>
+      unrepresentable(value, path) match
+        case Some(at) => Left(refusal(at))
+        case None     => Right(write(value, out))
+    case CanonicalDoc.Obj(members) =>
+      Renderer(out).header(7, members.size)
+      members.foldLeft[Either[CodecError, Unit]](Right(())) { case (acc, (key, member)) =>
+        acc.flatMap { _ =>
+          Renderer(out).string(key)
+          stream(member, s"$path.$key", out)
+        }
+      }
+    case CanonicalDoc.Arr(size, item) =>
+      Renderer(out).header(6, size)
+      var i                                = 0
+      var result: Either[CodecError, Unit] = Right(())
+      while result.isRight && i < size do
+        val at = i
+        result = item(at).flatMap(stream(_, s"$path[$at]", out))
+        i += 1
+      result
+
+  private def refusal(path: String): CodecError =
+    CodecError.Unsupported(
+      path,
+      "a digested number must be exactly a 64-bit integer or a finite double"
+    )
 
   private def render(json: Json): IArray[Byte] =
-    val out                    = Array.newBuilder[Byte]
-    def byte(value: Int): Unit =
-      out += value.toByte
-      ()
+    val out = Array.newBuilder[Byte]
+    write(json, b => { out += b; () })
+    IArray.unsafeFromArray(out.result())
+
+  /** The tag, count, string and number renderings, written to `out`. */
+  private final class Renderer(out: Byte => Unit):
+    def byte(value: Int): Unit             = out(value.toByte)
+    def header(tag: Int, count: Int): Unit =
+      byte(tag)
+      int(count)
     def int(value: Int): Unit =
       var shift = 24
       while shift >= 0 do
@@ -147,27 +239,27 @@ private[codec] object CanonicalBytes:
         case _ =>
           byte(3)
           long(java.lang.Double.doubleToLongBits(value.toDouble))
-    def write(value: Json): Unit =
+
+  private def write(json: Json, out: Byte => Unit): Unit =
+    val r                       = Renderer(out)
+    def loop(value: Json): Unit =
       value.fold[Unit](
-        byte(0),
-        b => byte(if b then 2 else 1),
-        number,
+        r.byte(0),
+        b => r.byte(if b then 2 else 1),
+        r.number,
         s =>
-          byte(5)
-          string(s)
+          r.byte(5)
+          r.string(s)
         ,
         items =>
-          byte(6)
-          int(items.size)
-          items.foreach(write)
+          r.header(6, items.size)
+          items.foreach(loop)
         ,
         members =>
-          byte(7)
-          int(members.size)
+          r.header(7, members.size)
           members.toIterable.foreach { (key, member) =>
-            string(key)
-            write(member)
+            r.string(key)
+            loop(member)
           }
       )
-    write(json)
-    IArray.unsafeFromArray(out.result())
+    loop(json)

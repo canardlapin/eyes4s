@@ -161,7 +161,8 @@ final class VersionedCodec[A] private (
     write: A => Either[CodecError, (DefinitionId, Json)],
     read: (DefinitionId, Json) => Either[CodecError, A],
     role: Option[String],
-    val ladder: Option[SchemaLadder[A]]
+    val ladder: Option[SchemaLadder[A]],
+    canonical: Option[A => Either[CodecError, CanonicalDoc]] = None
 ):
   def encode(value: A): Either[CodecError, Json] =
     write(value).map { case (id, payload) =>
@@ -184,7 +185,14 @@ final class VersionedCodec[A] private (
     * canonical document (see [[CanonicalDigest]]).
     */
   def digest(value: A): Either[CodecError, CanonicalDigest[A]] =
-    encode(value).flatMap(CanonicalDigest.document)
+    canonical match
+      case None           => encode(value).flatMap(CanonicalDigest.document)
+      case Some(describe) =>
+        describe(value).flatMap(payload =>
+          CanonicalDigest.streamed(
+            CanonicalDoc.obj("schema" -> CanonicalDoc.Leaf(Wire.id(schema)), "value" -> payload)
+          )
+        )
   def parse(input: String): Either[CodecError, A] =
     io.circe.parser
       .parse(input)
@@ -228,6 +236,25 @@ object VersionedCodec:
       (_, json) => read(json),
       None,
       None
+    )
+
+  /** A codec whose document is described by `describe` (see [[CanonicalDoc]]):
+    * it encodes the whole document, and digests it one array item at a time,
+    * so a value whose document does not fit in memory still has its digest.
+    */
+  private[codec] def described[A](schema: DefinitionId)(
+      describe: A => Either[CodecError, CanonicalDoc]
+  )(
+      read: Json => Either[CodecError, A]
+  ): VersionedCodec[A] =
+    new VersionedCodec(
+      schema,
+      Vector(schema),
+      value => describe(value).flatMap(_.json).map(schema -> _),
+      (_, json) => read(json),
+      None,
+      None,
+      Some(describe)
     )
 
   /** The codec of a [[SchemaLadder]]: `write` chooses each value's version
