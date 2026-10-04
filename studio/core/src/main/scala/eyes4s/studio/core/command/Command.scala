@@ -114,8 +114,17 @@ enum Command derives CanEqual:
   case SetGeometry(dataset: DatasetRevision, geometry: Geometry)
   case SetOffScreenPolicy(dataset: DatasetRevision, policy: OffScreenChoice)
 
-  /** Insert a correction rule at `index` (0 to the rule count). */
+  /** Insert a correction rule at `index` (0 to the rule count). A rule that
+    * would cover a trial another rule covers is refused
+    * (`DocumentError.CorrectionsOverlap`, S5.5).
+    */
   case AddCorrection(dataset: DatasetRevision, index: Int, rule: CorrectionRule)
+
+  /** Remove the rule at `index`. Its undo is AddCorrection, refused like any
+    * other: in a document stored with overlapping rules (before S5.5 refused
+    * them), undoing the removal of one of them is refused with
+    * `CorrectionsOverlap`, a typed refusal; such a revision is not admitted.
+    */
   case RemoveCorrection(dataset: DatasetRevision, index: Int)
 
   /** Send a pending revision to the backend for verification (story moment

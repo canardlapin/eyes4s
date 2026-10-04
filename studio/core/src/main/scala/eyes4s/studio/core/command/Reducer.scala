@@ -91,7 +91,7 @@ object Reducer:
           attributes,
           inventory
         )
-        _    <- correctionsApart(d, c, id, spec.admission)
+        _    <- correctionsApart(rule, d, c, id, spec.admission)
         next <- rebuild(d, c)(datasets = d.datasets :+ spec)
       yield reversible(next, DiscardDataset(id))
 
@@ -180,7 +180,7 @@ object Reducer:
         policy
       )(SetOffScreenPolicy(id, _))
 
-    case AddCorrection(id, index, rule) =>
+    case AddCorrection(id, index, correction) =>
       for
         spec <- editable(d, id)
         rules = spec.admission.corrections
@@ -189,8 +189,8 @@ object Reducer:
           (),
           CorrectionIndex(id, index, rules.size)
         )
-        added = spec.admission.copy(corrections = rules.patch(index, Vector(rule), 0))
-        _    <- correctionsApart(d, c, id, added)
+        added = spec.admission.copy(corrections = rules.patch(index, Vector(correction), 0))
+        _    <- correctionsApart(rule, d, c, id, added)
         next <- replaceDataset(d, c)(spec.copy(admission = added))
       yield reversible(next, RemoveCorrection(id, index))
 
@@ -213,7 +213,7 @@ object Reducer:
         _    <- inventoryMapped(rule, d, c, id, spec.sources, spec.inventory)
         _    <- keysAgree(rule, d, c, id, spec.sources, spec.mapping, spec.inventory)
         // A revision stored with overlapping rules is not admitted either.
-        _       <- correctionsApart(d, c, id, spec.admission)
+        _       <- correctionsApart(rule, d, c, id, spec.admission)
         content <- contentOf(spec)
         next <- replaceDataset(d, c)(spec.copy(decision = AdmissionDecision.Verifying(content)))
       yield Outcome(
@@ -239,6 +239,7 @@ object Reducer:
         _    <- admissible(rule, d, c, spec.mapping)
         _    <- inventoryMapped(rule, d, c, id, spec.sources, spec.inventory)
         _    <- keysAgree(rule, d, c, id, spec.sources, spec.mapping, spec.inventory)
+        _    <- correctionsApart(rule, d, c, id, spec.admission)
         next <- replaceDataset(d, c)(spec.copy(decision = AdmissionDecision.Verifying(content)))
       yield reversible(next, WithdrawVerification(id))
 
@@ -254,6 +255,7 @@ object Reducer:
         _       <- admissible(rule, d, c, spec.mapping)
         _       <- inventoryMapped(rule, d, c, id, spec.sources, spec.inventory)
         _       <- keysAgree(rule, d, c, id, spec.sources, spec.mapping, spec.inventory)
+        _       <- correctionsApart(rule, d, c, id, spec.admission)
         current <- contentOf(spec)
         _       <- Either.cond(
           current == recorded,
@@ -563,17 +565,20 @@ object Reducer:
     * refused whatever the rule, since an overlapping policy is never admitted.
     */
   private def correctionsApart(
+      rule: MappingRule,
       d: StudioDocument,
       c: Command,
       id: DatasetRevision,
       choice: AdmissionChoice
-  ): Either[CommandError, Unit] =
-    AdmissionChoice
-      .overlap(choice)
-      .map((a, b) =>
-        Refused(c.name, targetOf(d, c), DocumentError.CorrectionsOverlap(id, a, b))
-      )
-      .toLeft(())
+  ): Either[CommandError, Unit] = rule match
+    case MappingRule.Replay => Right(())
+    case MappingRule.Commit =>
+      AdmissionChoice
+        .overlap(choice)
+        .map((a, b) =>
+          Refused(c.name, targetOf(d, c), DocumentError.CorrectionsOverlap(id, a, b))
+        )
+        .toLeft(())
 
   /** The fixations and the inventory name a trial by the same key, at commit. */
   private def keysAgree(
