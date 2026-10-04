@@ -239,6 +239,12 @@ class CompareSummaryFxSuite extends ShellFxSuite:
           address: eyes4s.studio.core.backend.ResultAddress,
           done: eyes4s.studio.app.compare.PairAnswer => Unit
       ): Unit = ()
+      def ladder(
+          run: RunId,
+          query: eyes4s.studio.core.backend.TrialKey,
+          scales: Vector[String],
+          done: eyes4s.studio.app.compare.LadderAnswer => Unit
+      ): Unit = ()
     val none = new EffectPerformer:
       def perform(effect: AppEffect, dispatch: Intent => Unit): Unit = ()
     val runtime = StudioRuntime(StoryModels.t3Summary, none)

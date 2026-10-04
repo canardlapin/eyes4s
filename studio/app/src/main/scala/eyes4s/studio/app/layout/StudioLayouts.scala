@@ -74,6 +74,9 @@ object StudioLayouts:
   val queryTrial: PaneId     = new PaneId("compare.query-trial")
   val referenceTrial: PaneId = new PaneId("compare.reference-trial")
 
+  /** The pane that hosts Compare's scale ladder and contrast readout (S8.3). */
+  val contrast: PaneId = new PaneId("compare.contrast")
+
   /** DataEmpty.dc.html: no dataset yet. */
   val dataFirstRun: PerspectiveLayout = layout(
     "data.first-run",

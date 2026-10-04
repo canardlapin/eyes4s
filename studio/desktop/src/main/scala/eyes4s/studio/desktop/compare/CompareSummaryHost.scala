@@ -18,14 +18,20 @@ package eyes4s.studio.desktop.compare
 
 import cats.effect.IO
 import eyes4s.studio.app.compare.*
-import eyes4s.studio.app.plot.{ParticipantColumns, PlotSource, ProfileColumns}
+import eyes4s.studio.app.plot.{
+  LadderColumns,
+  ParticipantColumns,
+  PlotSource,
+  ProfileColumns,
+  ScaleLadder
+}
 import eyes4s.studio.app.tokens.Theme
 import eyes4s.studio.app.{AppModel, Intent}
-import eyes4s.studio.core.backend.{PageRequest, QueryRow, ResultAddress, RunId}
+import eyes4s.studio.core.backend.{PageRequest, QueryRow, ResultAddress, RunId, TrialKey}
 import eyes4s.studio.core.selection.ViewId
 import eyes4s.studio.desktop.plot.{PlotTwin, TableTwinView}
 import eyes4s.studio.desktop.runtime.StudioSession
-import eyes4s.studio.viz.plot.{ParticipantPlot, ScaleProfilePlot}
+import eyes4s.studio.viz.plot.{ParticipantPlot, ScaleLadderPlot, ScaleProfilePlot}
 import javafx.application.Platform
 import javafx.geometry.Pos
 import javafx.scene.control.{Button, Label, ToggleButton, ToggleGroup, Tooltip}
@@ -40,6 +46,14 @@ trait SummaryInputs:
 
   /** Inspects one result item: the trial panels' pair (S8.2). */
   def inspect(run: RunId, address: ResultAddress, done: PairAnswer => Unit): Unit
+
+  /** Reads a query's scale ladder at the run's scales (S8.3). */
+  def ladder(
+      run: RunId,
+      query: TrialKey,
+      scales: Vector[String],
+      done: LadderAnswer => Unit
+  ): Unit
 
 object SummaryInputs:
 
@@ -57,6 +71,20 @@ object SummaryInputs:
           case Left(e)          => done(PairAnswer.Failed(reason(e)))
           case Right(Left(err)) => done(PairAnswer.Refused(err))
           case Right(Right(i))  => done(PairAnswer.Answered(i))
+        }
+      def ladder(
+          run: RunId,
+          query: TrialKey,
+          scales: Vector[String],
+          done: LadderAnswer => Unit
+      ): Unit =
+        val backend = session.backend
+        session.run(
+          ScaleLadder.load[IO](backend.inspect, backend.navigator)(run, query, scales)
+        ) {
+          case Left(e)            => done(LadderAnswer.Failed(reason(e)))
+          case Right(Left(err))   => done(LadderAnswer.Failed(err.message))
+          case Right(Right(full)) => done(LadderAnswer.Answered(full))
         }
       def queries(run: RunId, done: QueriesAnswer => Unit): Unit =
         def from(offset: Int, got: Vector[QueryRow]): IO[Either[String, Vector[QueryRow]]] =
@@ -101,6 +129,7 @@ final class CompareSummaryHost(
   private val selection  = model().selection
   private var navigator  = QueriesNavigator.initial
   private var panelState = TrialPanels.empty
+  private var contrast   = ContrastPane.empty
 
   /** The participant plot and its table. */
   val participantPlot: PlotTwin = PlotTwin
@@ -208,9 +237,90 @@ final class CompareSummaryHost(
     panelState = TrialPanels.update(panelState, intent)
     render(model())
 
+  private val ladderColumns: LadderColumns =
+    LadderColumns.standard.fold(e => throw IllegalStateException(e.message), identity)
+
+  /** The contrast pane's scale ladder and its table (S8.3). A pick of a
+    * pair in the ladder also opens it, so the reference panel follows.
+    */
+  val ladder: PlotTwin = PlotTwin
+    .attach(
+      ScaleLadderPlot(ladderColumns, None),
+      view("compare.contrast"),
+      view("compare.contrast.table"),
+      selection,
+      picked
+    )
+    .fold(e => throw IllegalStateException(e.message), identity)
+
+  // The ladder focuses the trail's scale; a new focus rebuilds the plot.
+  private var ladderFocus: Option[String] = None
+
+  private def picked(intent: Intent): Unit =
+    app(intent)
+    intent match
+      case Intent.Select(input) =>
+        input.refs match
+          case Vector(ref @ eyes4s.studio.core.selection.StudioRef.Pair(_, _, _, focal, _))
+              if panelState.focus.exists(_.query == focal) =>
+            app(Intent.Explain(eyes4s.studio.app.nav.Place.At(ref)))
+          case _ => ()
+      case _ => ()
+
+  /** The contrast readout beside the ladder. */
+  val readout: ContrastReadoutView = ContrastReadoutView(app)
+
+  /** The contrast pane: the ladder and its readout. */
+  val contrastNode: HBox =
+    HBox.setHgrow(ladder.plotNode, Priority.ALWAYS)
+    // The readout scrolls when the pane is shorter than it, never overflowing the tabs.
+    val side = javafx.scene.control.ScrollPane(readout.node)
+    side.setFitToWidth(true)
+    side.setHbarPolicy(javafx.scene.control.ScrollPane.ScrollBarPolicy.NEVER)
+    side.setMinWidth(javafx.scene.layout.Region.USE_PREF_SIZE)
+    side.setFocusTraversable(false)
+    val box = HBox(ladder.plotNode, side)
+    box.setMinHeight(0.0)
+    box
+
+  /** The stops inside the contrast pane: the ladder, one stop with a roving
+    * cursor named by the plot it draws, while it shows one, then Prev and Next.
+    */
+  def contrastStops: Vector[eyes4s.studio.app.vm.FocusStop] =
+    val plot = Option(ladder.plotHost.getAccessibleText)
+      .filter(_ => ladder.plotHost.isFocusTraversable)
+      .map(eyes4s.studio.app.vm.FocusStop(eyes4s.studio.app.vm.A11yRole.Region, _))
+    plot.toVector ++ ContrastPane.focusStops(contrastVM)
+
+  /** The contrast pane's view-model now. */
+  def contrastVM: ContrastVM =
+    val focus = panelState.focus
+    ContrastPane.vm(
+      contrast,
+      focus,
+      focus.flatMap(f => TrialPanels.referenceOf(f, rows)),
+      ladderColumns
+    )
+
   private def syncPanels(m: AppModel): Unit =
     val (next, effects) = TrialPanels.sync(panelState, m, rows)
     panelState = next
+    if scaleLabels.nonEmpty then
+      val (c, loads) = ContrastPane.sync(contrast, next.focus)
+      contrast = c
+      loads.foreach { case ContrastEffect.LoadLadder(run, query) =>
+        inputs.ladder(
+          run,
+          query,
+          scaleLabels,
+          a =>
+            Platform.runLater { () =>
+              if !disposed then
+                contrast = ContrastPane.read(contrast, run, query, a)
+                render(model())
+            }
+        )
+      }
     effects.foreach { case PanelsEffect.InspectPair(run, address, pair) =>
       inputs.inspect(
         run,
@@ -246,6 +356,7 @@ final class CompareSummaryHost(
     syncPanels(m)
     participantPlot.project(m.selection)
     scaleProfile.project(m.selection)
+    ladder.project(m.selection)
     participantTable.project(m.selection)
     queryTable.project(m.selection)
     render(m)
@@ -326,6 +437,12 @@ final class CompareSummaryHost(
         participantTable.clear()
       )
       show("query-table", v.queries, theme)(queryTable.show, queryTable.clear())
+      val cv = contrastVM
+      readout.render(cv)
+      if ladderFocus != cv.focusScale then
+        ladderFocus = cv.focusScale
+        ladder.rebuild(ScaleLadderPlot(ladderColumns, cv.focusScale))
+      show("ladder", cv.ladder.map(Right(_)), theme)(ladder.show(_, theme), ladder.clear())
 
   // Draws a part when its source or the theme changes. A part with no source
   // (the run is still being read) or one that could not be built is cleared,
@@ -347,3 +464,4 @@ final class CompareSummaryHost(
       scaleProfile.dispose()
       participantTable.dispose()
       queryTable.dispose()
+      ladder.dispose()

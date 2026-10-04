@@ -81,6 +81,7 @@ final class StudioWindow private (
       eyes4s.studio.app.compare.TrialPanels.queryStops(summary.panelsVM)
     else if pane == StudioLayouts.referenceTrial then
       eyes4s.studio.app.compare.TrialPanels.referenceStops(summary.panelsVM)
+    else if pane == StudioLayouts.contrast then summary.contrastStops
     else Vector.empty
 
   /** Store each perspective's arrangement in the document (view-only). */
@@ -298,6 +299,7 @@ object StudioWindow:
       "compare.queries"                -> summary.queries.node,
       "compare.query-trial"            -> summary.panels.queryNode,
       "compare.reference-trial"        -> summary.panels.referenceNode,
+      "compare.contrast"               -> summary.contrastNode,
       "compare.items"                  -> summary.items.node
     ).foreach((id, node) => PaneId.of(id).foreach(host.host(_, node)))
     val summaryListener: AppModel => Unit = summary.sync
