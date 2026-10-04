@@ -81,7 +81,9 @@ object Place:
           case StudioRef.Participant(_) =>
             if fromSummary then Perspective.Compare else Perspective.Explore
           case StudioRef.FigurePanel(_, _) => Perspective.Figures
-          case StudioRef.WindowTally(_, _) | StudioRef.InventoryCount(_, _) => Perspective.Data
+          case StudioRef.WindowTally(_, _) | StudioRef.InventoryCount(_, _) |
+              StudioRef.DisplayTally(_, _) =>
+            Perspective.Data
           case StudioRef.DesignTally(_, _) => Perspective.Analysis
           case _                           => Perspective.Compare
     }
@@ -113,6 +115,12 @@ final case class Navigation private (
   def go(from: Location, to: Location): Navigation =
     if from == to then this
     else Navigation((from :: back).take(Navigation.Depth), remember(to), Nil)
+
+  /** Stay where one is with the trail of `to`: no back step, the forward
+    * steps kept. A trail that follows the selection (S6.6) moves this way;
+    * deliberate navigation goes through [[go]].
+    */
+  def replace(to: Location): Navigation = Navigation(back, remember(to), forward)
 
   /** The location one step back, and the history after taking it. */
   def goBack(from: Location): Option[(Location, Navigation)] = back match

@@ -310,6 +310,12 @@ enum Intent derives CanEqual:
     */
   case Explain(target: Place)
 
+  /** The trail follows the selection to `target` (S6.6): as [[Explain]],
+    * but it replaces the current trail without a Back step, and only within
+    * the current perspective (a follow never switches perspective).
+    */
+  case Follow(target: Place)
+
   // --- Selection and hover (S3.3) ------------------------------------------------
   case Select(input: SelectionInput)
   case HoverOver(view: ViewId, target: Option[StudioRef])
@@ -575,6 +581,10 @@ object AppModel:
     case Intent.Explain(target) =>
       val trail = Provenance.explain(m.location.trail, target)
       navigate(m, Location(Place.home(trail).getOrElse(m.perspective), trail))
+    case Intent.Follow(target) =>
+      val trail = Provenance.explain(m.location.trail, target)
+      if Place.home(trail).getOrElse(m.perspective) != m.perspective then (m, none)
+      else (m.copy(navigation = m.navigation.replace(Location(m.perspective, trail))), none)
 
     case Intent.Select(input) =>
       m.selection

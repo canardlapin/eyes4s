@@ -19,7 +19,7 @@ package eyes4s.studio.desktop.runtime
 import cats.effect.IO
 import cats.effect.std.Queue
 import cats.effect.unsafe.IORuntime
-import eyes4s.studio.core.bundle.{Inclusion, InputKind, SharingOptions}
+import eyes4s.studio.core.bundle.{Inclusion, InputEntry, InputKind, SharingOptions}
 import eyes4s.studio.core.command.JournalEntry
 import eyes4s.studio.core.document.Source
 import eyes4s.studio.core.session.{ProjectSession, SaveReceipt}
@@ -62,6 +62,12 @@ trait ProjectPort:
       @unused images: Boolean,
       done: Either[String, Unit] => Unit
   ): Unit = done(Left("this project is not saved in a bundle, so it has no snapshot"))
+
+  /** The inputs the project stores (S5.7: its stimulus images); a port that
+    * cannot list them refuses.
+    */
+  def storedInputs(done: Either[String, Vector[InputEntry]] => Unit): Unit =
+    done(Left("this project cannot list its stored files"))
 
 /** A [[ProjectPort]] on a studio-core [[ProjectSession]]: every operation
   * joins one queue, which a single fibre drains, so a journal entry is
@@ -136,6 +142,14 @@ final class SessionPort private (
         done
       ),
       s"import $name",
+      Some(reason => done(Left(reason)))
+    )
+
+  /** Queued after the imports before it, so a file just imported is listed. */
+  override def storedInputs(done: Either[String, Vector[InputEntry]] => Unit): Unit =
+    enqueue(
+      answering(session.inputs.map(Right(_)), done),
+      "list stored inputs",
       Some(reason => done(Left(reason)))
     )
 

@@ -4,6 +4,8 @@ button: Back (⌘[)
 button: Dataset r3 (draft)
 button: Admission, current location
 list: Sources
+button: Repair…
+button: Show 4 trials
 region: Column mapping
 text-field: Preset name
 button: Revert
