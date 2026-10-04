@@ -23,8 +23,9 @@ enum Appearance derives CanEqual:
   case Light, Dark, System
 
 /** Whether the studio follows the platform's theme, and the platform's
-  * theme as last reported. The theme shown is always the document's
-  * (`presentation.theme`); following the platform keeps it equal to `system`.
+  * theme as last reported. The document's theme (`presentation.theme`) is the
+  * user's last fixed choice; while following the platform the studio shows
+  * `system` instead, and records nothing.
   */
 final case class AppearanceState(followSystem: Boolean, system: Theme) derives CanEqual:
 
@@ -35,6 +36,9 @@ final case class AppearanceState(followSystem: Boolean, system: Theme) derives C
       theme match
         case Theme.Light => Appearance.Light
         case Theme.Dark  => Appearance.Dark
+
+  /** The theme shown, given the document's. */
+  def effective(theme: Theme): Theme = if followSystem then system else theme
 
   /** The theme `appearance` asks for. */
   def themeFor(appearance: Appearance): Theme = appearance match

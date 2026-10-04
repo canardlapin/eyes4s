@@ -463,6 +463,11 @@ final case class AppModel private (
 ) derives CanEqual:
 
   def document: StudioDocument = history.document
+
+  /** The theme the studio shows (S1.10): the platform's while View ›
+    * Appearance › System is chosen, else the document's.
+    */
+  def theme: Theme             = appearance.effective(document.presentation.theme)
   def perspective: Perspective = document.presentation.perspective
   def location: Location       = navigation.at(perspective)
 
@@ -724,12 +729,16 @@ object AppModel:
     case Intent.RevealProject =>
       (m, m.project.fold(none)(_ => Vector(AppEffect.RevealProject)))
     case Intent.ShowProjectInfo => (m, Vector(AppEffect.OpenDialog(PlatformDialog.ProjectInfo)))
+    // Light and Dark are the user's choice, recorded in the document (a
+    // view-only SetTheme); System records nothing: the platform's theme is
+    // shown while it is chosen, and a platform change is no edit.
+    case Intent.SetAppearance(Appearance.System) =>
+      (m.copy(appearance = m.appearance.copy(followSystem = true)), none)
     case Intent.SetAppearance(a) =>
-      val next = m.copy(appearance = m.appearance.copy(followSystem = a == Appearance.System))
+      val next = m.copy(appearance = m.appearance.copy(followSystem = false))
       followTheme(next, next.appearance.themeFor(a))
     case Intent.SystemTheme(t) =>
-      val next = m.copy(appearance = m.appearance.copy(system = t))
-      if next.appearance.followSystem then followTheme(next, t) else (next, none)
+      (m.copy(appearance = m.appearance.copy(system = t)), none)
 
     case Intent.ResetPerspective =>
       // The default arrangement: its default focus, nothing maximized.

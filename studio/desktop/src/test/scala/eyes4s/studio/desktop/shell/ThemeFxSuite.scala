@@ -241,11 +241,25 @@ class ThemeFxSuite extends ShellFxSuite:
     assertEquals(runOnFx(w.themes.theme), Some(Theme.Dark))
   }
 
-  fxStage.test("a registered window (the import wizard's) follows a switch") { fx =>
-    val w     = boot(fx, StoryModels.t2Compare, StoryMoment.T2)
-    val scene = runOnFx(javafx.scene.Scene(javafx.scene.layout.StackPane()))
-    runOnFx(w.themes.register(scene))
-    assert(runOnFx(scene.getStylesheets.asScala.exists(_.endsWith("/studio.css"))))
-    choose(fx, w, Appearance.Dark)
-    assert(runOnFx(scene.getStylesheets.asScala.exists(_.endsWith("/studio-dark.css"))))
+  fxStage.test("a registered window (the import wizard's) follows a switch until it closes") {
+    fx =>
+      val w     = boot(fx, StoryModels.t2Compare, StoryMoment.T2)
+      val stage = runOnFx {
+        val st = javafx.stage.Stage()
+        st.setScene(javafx.scene.Scene(javafx.scene.layout.StackPane(), 200, 100))
+        st.show()
+        st
+      }
+      val scene = runOnFx(stage.getScene)
+      runOnFx(w.themes.register(scene))
+      assertEquals(runOnFx(w.themes.registered), 1)
+      assert(runOnFx(scene.getStylesheets.asScala.exists(_.endsWith("/studio.css"))))
+      choose(fx, w, Appearance.Dark)
+      assert(runOnFx(scene.getStylesheets.asScala.exists(_.endsWith("/studio-dark.css"))))
+      // Closed, it is forgotten: a later switch no longer restyles it.
+      runOnFx(stage.hide())
+      fx.awaitLayout()
+      assertEquals(runOnFx(w.themes.registered), 0)
+      choose(fx, w, Appearance.Light)
+      assert(runOnFx(scene.getStylesheets.asScala.exists(_.endsWith("/studio-dark.css"))))
   }

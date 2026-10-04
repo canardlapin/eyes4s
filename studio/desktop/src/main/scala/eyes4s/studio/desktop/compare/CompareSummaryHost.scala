@@ -432,7 +432,7 @@ final class CompareSummaryHost(
       queries.render(navigatorVMOf(m))
       items.render(navigatorVMOf(m))
       val v     = CompareSummaryVM.of(state, m)
-      val theme = m.document.presentation.theme match
+      val theme = m.theme match
         case eyes4s.studio.core.document.Theme.Light => Theme.Light
         case eyes4s.studio.core.document.Theme.Dark  => Theme.Dark
       // The run's status, then why any part could not be drawn.

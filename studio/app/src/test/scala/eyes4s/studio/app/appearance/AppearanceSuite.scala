@@ -33,7 +33,8 @@ class AppearanceSuite extends munit.FunSuite:
   private def run(m: AppModel, intents: Intent*): AppModel =
     AppModel.run(m, intents.toVector)._1
 
-  private def theme(m: AppModel): Theme = m.document.presentation.theme
+  // The theme shown: the document's, or the platform's under System.
+  private def theme(m: AppModel): Theme = m.theme
 
   private def checked(m: AppModel): Vector[(String, Boolean)] =
     Menus

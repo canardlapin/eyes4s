@@ -23,7 +23,8 @@ import javafx.application.{ColorScheme, Platform}
 import javafx.beans.value.ChangeListener
 import scaladock.fx.{Dock, DockTheme}
 
-/** A window's theme (ticket S1.10): it follows the document's theme, restyling
+/** A window's theme (ticket S1.10): it follows the model's theme (the
+  * document's, or the platform's under View › Appearance › System), restyling
   * the window, its dock with the theme's generated `DockTheme.Custom` (so
   * every floating dock window follows), and each scene it was given (the
   * import wizard); and it reports the platform's colour scheme for View ›
@@ -44,12 +45,23 @@ final class ThemeHost(root: javafx.scene.Parent, dock: Dock, app: Intent => Unit
     app(ThemeHost.reported(preferences.getColorScheme))
 
   /** Follow the model's theme. */
-  def sync(m: AppModel): Unit = show(m.document.presentation.theme)
+  def sync(m: AppModel): Unit = show(m.theme)
 
-  /** Style `scene` in the window's theme, now and on every change. */
+  /** Style `scene` in the window's theme, now and on every change, until its
+    * window is hidden.
+    */
   def register(scene: javafx.scene.Scene): Unit =
     scenes :+= scene
+    Option(scene.getWindow).foreach(
+      _.addEventHandler(
+        javafx.stage.WindowEvent.WINDOW_HIDDEN,
+        (_: javafx.stage.WindowEvent) => scenes = scenes.filterNot(_ eq scene)
+      )
+    )
     shown.foreach(t => ThemeHost.sheets(t).foreach(s => scene.getStylesheets.setAll(s*)))
+
+  /** The scenes restyled with the window now. */
+  def registered: Int = scenes.size
 
   private def show(t: Theme): Unit =
     if !shown.contains(t) then

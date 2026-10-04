@@ -185,7 +185,7 @@ object StudioWindow:
           a.show()
         case PlatformDialog.ImportSources =>
           // The import wizard (S5.2): its commands come back as intents.
-          val theme = model().document.presentation.theme match
+          val theme = model().theme match
             case eyes4s.studio.core.document.Theme.Light => Theme.Light
             case eyes4s.studio.core.document.Theme.Dark  => Theme.Dark
           val sheets     = StudioStyles.stylesheets(theme).getOrElse(Nil)
@@ -220,7 +220,7 @@ object StudioWindow:
       panels: PanelSources = PanelSources.notServed
   )(using IORuntime): Either[WindowError, StudioWindow] =
     // The window starts in the document's theme and follows it (S1.10).
-    val theme = initial.document.presentation.theme
+    val theme = initial.theme
     for
       _      <- ThemeHost.sheets(theme).left.map(WindowError.Styles(_))
       dock   <- ThemeHost.dockTheme(theme).left.map(WindowError.Styles(_))
