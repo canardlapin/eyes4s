@@ -447,16 +447,21 @@ class RepetitionPlanSuite extends munit.FunSuite:
     // Another plan's analyses under this plan: refused by the result's reconstruction.
     val other   = plan(sel = Selection.All)
     val swapped = get(results.codec.encode(RepetitionRun(other, plan().run)))
-    assert(
-      results.codec.decode(swapped).left.exists {
-        case CodecError.RepetitionResult(
-              RepetitionPlanError.ResultEvaluation(RepetitionStage.Matched, expected, found)
-            ) =>
-          expected != found
-        case _ => false
-      },
-      results.codec.decode(swapped)
+    val refused = results.codec.decode(swapped)
+    assertEquals(
+      refused.left.toOption,
+      Some(
+        CodecError.RepetitionResult(
+          RepetitionPlanError.ResultEvaluation(
+            RepetitionStage.Matched,
+            other.run.matched.evaluation,
+            plan().run.matched.evaluation
+          )
+        )
+      )
     )
+    assertNotEquals(other.run.matched.evaluation, plan().run.matched.evaluation)
+    assert(refused.left.exists(_.message.contains("was evaluated as")), refused)
     // Another input's analyses: the input hash is checked first, naming both.
     val fewer = plan(trials = Trials(rows.init))
     assertEquals(
@@ -486,12 +491,15 @@ class RepetitionPlanSuite extends munit.FunSuite:
     )
     // Controls evaluated by another plan of the same input.
     val other = plan(sel = Selection.All)
-    assert(
-      RepetitionPlanResult.reconstruct(p, p.run.matched, other.run.controls).left.exists {
-        case RepetitionPlanError.ResultEvaluation(RepetitionStage.Control, _, _) => true
-        case _                                                                   => false
-      } || other.run.controls == p.run.controls,
-      RepetitionPlanResult.reconstruct(p, p.run.matched, other.run.controls)
+    assertEquals(
+      RepetitionPlanResult.reconstruct(p, p.run.matched, other.run.controls).left.toOption,
+      Some(
+        RepetitionPlanError.ResultEvaluation(
+          RepetitionStage.Control,
+          p.run.controls.evaluation,
+          other.run.controls.evaluation
+        )
+      )
     )
     // The matched analysis standing in for the controls.
     assert(

@@ -51,7 +51,7 @@ enum RepetitionPlanError derives CanEqual:
   /** A stored `role` analysis was evaluated as `found`, not as this plan
     * evaluates it (`expected`: its method under its specification).
     */
-  case ResultEvaluation(role: RepetitionStage, expected: String, found: String)
+  case ResultEvaluation(role: RepetitionStage, expected: EvaluationInfo, found: EvaluationInfo)
 
   /** A stored `role` analysis holds `found` pairs where this plan's pairing
     * selects `expected`; `firstDifference` is the first pair whose keys
@@ -76,7 +76,8 @@ enum RepetitionPlanError derives CanEqual:
     case ResultInput(role, expected, found) =>
       s"The stored $role analysis was computed on input ${found.render}, not ${expected.render}."
     case ResultEvaluation(role, expected, found) =>
-      s"The stored $role analysis was evaluated as $found, not $expected."
+      s"The stored $role analysis was evaluated as ${RepetitionPlanResult.render(found)}, " +
+        s"not ${RepetitionPlanResult.render(expected)}."
     case ResultPairs(role, expected, found, first) =>
       s"The stored $role analysis holds $found pairs where the plan selects $expected" +
         first.fold("; its pairing report differs.")(i => s"; pair $i differs.")
@@ -534,7 +535,7 @@ object RepetitionPlanResult:
       if a.provenance.inputs != plan.inputHash then
         Some(RepetitionPlanError.ResultInput(stage, plan.inputHash, a.provenance.inputs))
       else if a.evaluation != info then
-        Some(RepetitionPlanError.ResultEvaluation(stage, render(info), render(a.evaluation)))
+        Some(RepetitionPlanError.ResultEvaluation(stage, info, a.evaluation))
       else if found != expected then
         Some(
           RepetitionPlanError.ResultPairs(
@@ -560,7 +561,7 @@ object RepetitionPlanResult:
   /** An evaluation as a refusal names it: its name and scale, then its
     * specification's method, revision, parameters, components, geometry and time.
     */
-  private def render(info: EvaluationInfo): String =
+  private[plan] def render(info: EvaluationInfo): String =
     (Vector(info.name, info.scale.toString) ++ info.specification.toVector.flatMap(s =>
       Vector(s"${s.method}@${s.revision}") ++
         s.parameters.map((k, v) => s"$k=${v.render}") ++
