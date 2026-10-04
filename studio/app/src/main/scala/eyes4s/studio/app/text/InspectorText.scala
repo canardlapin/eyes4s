@@ -26,7 +26,8 @@ enum InspectorTextId derives CanEqual:
   case Inside, OutsideExcluded, OutsideFails, OffScreen, DroppedInitial
   case FrameNote
   case SourceTitle, File, Record, RecordOf, Digest, DigestShort, Ledger, Admitted, ShowRaw
-  case UsedByTitle, UsedByNoRun, MatchedOne, MatchedMany, AsControl, AsQuery, UsedByNone
+  case UsedByTitle, UsedByNoScale, UsedByNoRun, MatchedOne, MatchedMany, AsControl, AsQuery,
+    UsedByNone
   case TrialTitle, Key, KeyValue, DisplayLabel, DisplayImage, DisplayBlank, DisplayCross
   case DisplayCue, DisplayUnknown, MatchItem, Fixations, FixationsValue
   case NoFixation, Reading
@@ -62,11 +63,12 @@ object InspectorText:
       case Ledger         => "Ledger"
       case Admitted       => "Admitted · dataset {0}"
       case ShowRaw        => "Show raw record"
-      case UsedByTitle    => "Used by (run {0})"
+      case UsedByTitle    => "Used by (run {0}, {1})"
+      case UsedByNoScale  => "Used by (run {0}): its scales are not in the project"
       case UsedByNoRun    => "Used by (no run shown)"
       case MatchedOne     => "{0} contrast (matched reference)"
       case MatchedMany    => "{0} queries (matched reference)"
-      case AsControl      => "{0} other admitted {1} queries (as a control)"
+      case AsControl      => "{0} pairs (as a control)"
       case AsQuery        => "its own contrast ({0} pairs as the query)"
       case UsedByNone     => "No pair of the run uses this trial"
       case TrialTitle     => "Trial"

@@ -52,7 +52,7 @@ class FixationInspectorFxSuite extends ShellFxSuite:
     val lines = runOnFx(w.inspector.lines).toMap
     assertEquals(lines("Onset · duration"), "2,160 ms · 412 ms")
     assertEquals(lines("Screen px (raw)"), "1148.0, 456.0")
-    assertEquals(lines("Image frame px"), "700.0, 300.0")
+    assertEquals(lines("Image frame px"), "700, 300")
     assertEquals(lines("Degrees from centre"), "+5.4°, +2.4°")
     assertEquals(lines("Analysis window"), "Inside")
     assertEquals(lines("Record"), "7,214 of 11,520")
@@ -70,7 +70,7 @@ class FixationInspectorFxSuite extends ShellFxSuite:
   }
 
   fxStage.test(
-    "'Used by' links: ret_07 (matched) opens its pair in Compare; 18 P17 queries as a control"
+    "'Used by' links: ret_07 (matched) opens its pair in Compare; 18 pairs as a control"
   ) { fx =>
     val w = boot(fx, StoryModels.t2Explore, StoryMoment.T2, records = GoldenRecords.source)
     ready(fx, w)
@@ -78,7 +78,7 @@ class FixationInspectorFxSuite extends ShellFxSuite:
       runOnFx(w.inspector.linkLabels),
       Vector(
         "ret_07 contrast (matched reference)",
-        "18 other admitted P17 queries (as a control)"
+        "18 pairs (as a control)"
       )
     )
     runOnFx(w.inspector.follow("ret_07 contrast (matched reference)"))

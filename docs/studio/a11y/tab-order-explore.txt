@@ -21,4 +21,4 @@ toggle-button: Show raw record
 region: Inspector
 toggle-button: Show raw record
 hyperlink: ret_07 contrast (matched reference)
-hyperlink: 18 other admitted P17 queries (as a control)
+hyperlink: 18 pairs (as a control)

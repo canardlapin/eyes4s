@@ -29,7 +29,7 @@ import eyes4s.studio.core.backend.{
   TrialFixations,
   TrialKey
 }
-import eyes4s.studio.core.document.{DatasetRevisionSpec, Perspective}
+import eyes4s.studio.core.document.{DatasetRevisionSpec, Perspective, Sigma}
 import cats.Monad
 import cats.data.EitherT
 import eyes4s.studio.core.backend.{PageError, PageRequest}
@@ -86,6 +86,9 @@ enum InspectorEffect derives CanEqual:
   case ReadUsedBy(map: StudioRef, ask: Int)
   case ReadDisplays(dataset: DatasetRevisionSpec, ask: Int)
 
+/** The scale the inspector's used-by links are read at, and its σ. */
+final case class UsedByScale(index: ScaleIndex, sigma: Sigma) derives CanEqual
+
 /** A labelled value of the inspector. */
 final case class InspectorLine(label: String, value: String) derives CanEqual
 
@@ -120,6 +123,7 @@ final case class FixationInspector(
     run: Option[RunId],
     dataset: Option[DatasetRevisionSpec],
     focus: Option[StudioRef.Fixation],
+    scale: Option[UsedByScale],
     ask: Int,
     fixations: Loading[BackendAnswer[TrialFixations]],
     record: Loading[BackendAnswer[SourceRecordPage]],
@@ -157,6 +161,7 @@ object FixationInspector:
     None,
     None,
     None,
+    None,
     0,
     Loading.Idle,
     Loading.Idle,
@@ -172,18 +177,29 @@ object FixationInspector:
       case StudioRef.SourceRecord(trial, Some(index), _, _) => StudioRef.Fixation(trial, index)
     }
 
-  /** The scale of the Compare trail's query, else the first: a used-by link
-    * opens its pair there.
+  /** The scale the used-by links of run `run` are read at: the scale of the
+    * Compare trail's latest query or pair of that run, else the run's first
+    * declared scale; with its σ, which the title names. None when the run's
+    * analysis is not in the document.
     */
-  def scaleOf(m: AppModel): ScaleIndex =
-    m.navigation
+  def scaleOf(m: AppModel, run: RunId): Option[UsedByScale] =
+    val scales = m.document
+      .run(run)
+      .flatMap(r => m.document.analysis(r.analysis))
+      .map(_.recipe.scales.values)
+    val visited = m.navigation
       .trail(Perspective.Compare)
       .reverseIterator
       .collectFirst {
-        case Place.At(StudioRef.QueryContrast(_, scale, _)) => scale
-        case Place.At(StudioRef.Pair(_, scale, _, _, _))    => scale
+        case Place.At(StudioRef.QueryContrast(`run`, scale, _)) => scale
+        case Place.At(StudioRef.Pair(`run`, scale, _, _, _))    => scale
       }
-      .getOrElse(ScaleIndex.of(0).fold(e => throw IllegalStateException(e.message), identity))
+    for
+      ss    <- scales
+      index <- visited
+        .filter(_.value < ss.size)
+        .orElse(Option.when(ss.nonEmpty)(ScaleIndex.first))
+    yield UsedByScale(index, ss(index.value))
 
   /** Follows the model: a newly selected fixation, or a new revision, is
     * read afresh.
@@ -195,7 +211,9 @@ object FixationInspector:
       .flatMap(m.document.analysis)
       .flatMap(a => m.document.dataset(a.dataset))
     val focus = focusOf(m)
-    if revision == s.revision && focus == s.focus && run == s.run then (s, Vector.empty)
+    val scale = run.flatMap(scaleOf(m, _))
+    if revision == s.revision && focus == s.focus && run == s.run && scale == s.scale then
+      (s, Vector.empty)
     else
       val ask  = s.ask + 1
       val next = empty.copy(
@@ -203,12 +221,16 @@ object FixationInspector:
         run = run,
         dataset = dataset,
         focus = focus,
+        scale = scale,
         ask = ask,
         raw = s.raw
       )
       (revision, focus) match
         case (Some(r), Some(f)) =>
-          val map = run.map(StudioRef.TrialMap(_, scaleOf(m), f.trial))
+          val map = for
+            r <- run
+            x <- scale
+          yield StudioRef.TrialMap(r, x.index, f.trial)
           (
             next.copy(
               fixations = Loading.Waiting,
@@ -317,7 +339,7 @@ object FixationInspector:
           ),
           InspectorLine(
             t(ImagePx),
-            r.flatMap(_.image).fold(none)(pair(_, Format.decimal(_, 1)))
+            r.flatMap(_.image).fold(none)(pair(_, Format.decimal(_, 0)))
           ),
           InspectorLine(t(ScreenRaw), r.fold(none)(x => t(Pair, x.rawX, x.rawY))),
           InspectorLine(
@@ -350,12 +372,14 @@ object FixationInspector:
           ),
           InspectorLine(t(Ledger), fs.fold(none)(x => t(Admitted, x.dataset.label)))
         )
-        val (title, links, note) = usedByOf(s, f)
+        val (title, links, note) = usedByOf(s)
         val display              = s.displays.toOption
           .collect { case DisplaySource.Served(reg) => reg }
           .flatMap(_.display(f.trial))
-        val outside = fs.map(_.fixations.count(_.placement != MapPlacement.InMap))
-        val trial   = Vector(
+        val outside = fs.map(_.fixations.count(_.placement match
+          case MapPlacement.OutsideWindow(_) => true
+          case _                             => false))
+        val trial = Vector(
           InspectorLine(
             t(Key),
             t(
@@ -398,14 +422,16 @@ object FixationInspector:
           trial
         )
 
-  // "Used by (run 7)": the pairs that use the trial's map, as links.
+  // "Used by (run 7, σ 2°)": the pairs that use the trial's map, as links.
   private def usedByOf(
-      s: FixationInspector,
-      f: StudioRef.Fixation
+      s: FixationInspector
   ): (String, Vector[InspectorLink], Option[String]) =
     import InspectorTextId.*
     def t(id: InspectorTextId, args: String*) = InspectorText(id, args*)
-    val title = s.run.fold(t(UsedByNoRun))(r => t(UsedByTitle, r.number.toString))
+    val title                                 = (s.run, s.scale) match
+      case (Some(r), Some(x)) => t(UsedByTitle, r.number.toString, x.sigma.render)
+      case (Some(r), None)    => t(UsedByNoScale, r.number.toString)
+      case _                  => t(UsedByNoRun)
     s.usedBy match
       case Loading.Ready(BackendAnswer.Answered(u)) =>
         def focal(ref: StudioRef): Option[String] = ref match
@@ -418,11 +444,14 @@ object FixationInspector:
             else t(MatchedMany, u.counts.asMatched.toString)
           InspectorLink(label, Intent.Explain(Place.At(ref)))
         }
+        // A control link opens Compare's query view of the first query it
+        // controls, where the control list shows it (the board's Main).
         val control = u.asControl.headOption.map { ref =>
-          InspectorLink(
-            t(AsControl, u.counts.asControl.toString, f.trial.participant),
-            Intent.Explain(Place.At(ref))
-          )
+          val go = ref match
+            case StudioRef.Pair(run, scale, _, focal, _) =>
+              Place.At(StudioRef.QueryContrast(run, scale, focal))
+            case other => Place.At(other)
+          InspectorLink(t(AsControl, u.counts.asControl.toString), Intent.Explain(go))
         }
         val query = u.asQuery.headOption.map { ref =>
           InspectorLink(t(AsQuery, u.counts.asQuery.toString), Intent.Explain(Place.At(ref)))
