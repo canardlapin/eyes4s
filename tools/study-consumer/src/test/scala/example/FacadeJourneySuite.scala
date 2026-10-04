@@ -234,7 +234,7 @@ class FacadeJourneySuite extends munit.FunSuite:
         .obj(
           "runtime"      -> Json.fromString(runtime),
           "source"       -> Json.fromString(direct.imported.sourceDigest.hex),
-          "plan"         -> Json.fromString(json.noSpaces),
+          "plan"         -> json,
           "csv_sha256"   -> Json.fromString(Sha256.ofUtf8(direct.csv).hex),
           "rows"         -> Json.fromInt(report.result.resultRows),
           "events"       -> Json.fromInt(report.detectedEvents),
