@@ -64,6 +64,11 @@ class ImportWizardSuite extends munit.FunSuite:
     source(SourceRole.Fixations, "inputs/fixations.csv", text)
       .copy(bytes = document.dataset(dataset).flatMap(_.sources.fixations).get.bytes)
 
+  /** The trials records above, read as `dataset`'s own trials file. */
+  def ownTrials(document: StudioDocument, dataset: DatasetRevision): SniffedSource =
+    source(SourceRole.Trials, "inputs/trials.csv", trials)
+      .copy(bytes = document.dataset(dataset).flatMap(_.sources.trials).get.bytes)
+
   def run(
       w: ImportWizard,
       document: StudioDocument,
@@ -667,8 +672,8 @@ class ImportWizardSuite extends munit.FunSuite:
       unmapped,
       WizardIntent.SourceRead(own(unmapped, r3, golden)),
       WizardIntent.DropTrials(true),
-      // A late read of the trials file is not taken back in.
-      WizardIntent.SourceRead(source(SourceRole.Trials, "inputs/trials.csv", trials))
+      // A late read of the trials file is set aside, not taken in.
+      WizardIntent.SourceRead(ownTrials(unmapped, r3))
     )
     assertEquals((dropped.dropTrials, dropped.trials), (true, None))
     val vm = ImportWizardVM.of(dropped, unmapped)
@@ -702,9 +707,23 @@ class ImportWizardSuite extends munit.FunSuite:
       verified.document.dataset(r4.id).exists(_.decision != AdmissionDecision.Pending),
       verified.notice
     )
-    // Keeping it again restores the re-map that keeps trials.csv.
+    // Keeping it again restores the re-map that keeps trials.csv, with the
+    // file's draft (read while it was dropped) and its rows.
     val kept = run(dropped, unmapped, WizardIntent.DropTrials(false))._1
     assertEquals(kept.dropTrials, false)
+    assertEquals(kept.trials.map(_._1.preview.file), Some("trials.csv"))
+    assert(ImportWizardVM.of(kept, unmapped).trials.rows.nonEmpty)
+    // A draft read before Drop comes back on Keep exactly as it was.
+    val read = run(
+      w0,
+      unmapped,
+      WizardIntent.SourceRead(own(unmapped, r3, golden)),
+      WizardIntent.SourceRead(ownTrials(unmapped, r3))
+    )._1
+    val roundTrip =
+      run(read, unmapped, WizardIntent.DropTrials(true), WizardIntent.DropTrials(false))._1
+    assertEquals(roundTrip.trials, read.trials)
+    assert(read.trials.isDefined)
     // A new import has no revision's inventory to remove.
     val fresh = ImportWizard.newImport(empty, ImportPresets.empty)
     assertEquals(

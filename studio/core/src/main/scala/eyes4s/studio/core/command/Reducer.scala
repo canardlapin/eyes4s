@@ -231,8 +231,13 @@ object Reducer:
       yield reversible(next, ResumeVerification(id, content))
 
     case ResumeVerification(id, content) =>
+      // Resuming is verifying again: VerifyDataset's checks, so a direct
+      // command cannot bring a revision Verify refuses to admission.
       for
         spec <- editable(d, id)
+        _    <- admissible(rule, d, c, spec.mapping)
+        _    <- inventoryMapped(rule, d, c, id, spec.sources, spec.inventory)
+        _    <- keysAgree(rule, d, c, id, spec.sources, spec.mapping, spec.inventory)
         next <- replaceDataset(d, c)(spec.copy(decision = AdmissionDecision.Verifying(content)))
       yield reversible(next, WithdrawVerification(id))
 
@@ -243,8 +248,11 @@ object Reducer:
           case AdmissionDecision.Verifying(content) => Right(content)
           case _                                    => Left(NotVerified(id))
         _ <- Either.cond(verified == recorded, (), VerificationMismatch(id, recorded, verified))
-        // A backstop: VerifyDataset already refuses an inadmissible mapping.
+        // A backstop: VerifyDataset already refuses these, but a replayed or
+        // stored Verifying revision did not pass them.
         _       <- admissible(rule, d, c, spec.mapping)
+        _       <- inventoryMapped(rule, d, c, id, spec.sources, spec.inventory)
+        _       <- keysAgree(rule, d, c, id, spec.sources, spec.mapping, spec.inventory)
         current <- contentOf(spec)
         _       <- Either.cond(
           current == recorded,

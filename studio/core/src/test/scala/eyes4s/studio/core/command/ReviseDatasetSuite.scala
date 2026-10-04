@@ -273,3 +273,78 @@ class ReviseDatasetSuite extends munit.FunSuite:
       )
     )
   }
+
+  test("Admit and ResumeVerification backstop the trial key and inventory checks (S5.4)") {
+    // r3 re-mapped so its keys disagree, then sent for verification as a
+    // replayed journal does (Replay does not check).
+    val disagreeing = History
+      .start(t1)
+      .apply(
+        ReviseDataset(r3, remapped, seconds, pending.geometry, attributes, pending.inventory)
+      )
+      .fold(e => fail(e.message), _.history.document)
+    val verifying = Reducer
+      .run(disagreeing, VerifyDataset(r3), MappingRule.Replay)
+      .fold(e => fail(e.message), _.document)
+    val content = verifying.dataset(r3).map(_.decision) match
+      case Some(AdmissionDecision.Verifying(c)) => c
+      case other                                => fail(s"expected Verifying, got $other")
+    def admitOf(c: eyes4s.codec.CanonicalDigest[DatasetRevisionSpec]) = Admit(
+      r3,
+      c,
+      Some(eyes4s.plan.AdmissionDecision.RequireComplete),
+      CoreBinding.unbound,
+      CoreBinding.unbound
+    )
+    val admit = admitOf(content)
+    val keys  = "both files must name the trial by the same key"
+    assert(
+      Reducer.step(verifying, admit).left.exists(_.message.contains(keys)),
+      Reducer.step(verifying, admit)
+    )
+    // A direct ResumeVerification is VerifyDataset's checks too.
+    val digest = DatasetRevisionSpec
+      .contentDigest(disagreeing.dataset(r3).get)
+      .fold(e => fail(e.message), identity)
+    assert(
+      Reducer
+        .step(disagreeing, ResumeVerification(r3, digest))
+        .left
+        .exists(_.message.contains(keys))
+    )
+    // An unmapped trials file is refused the same way.
+    val unmapped = StudioDocument
+      .of(
+        t1.datasets.map(d => if d.id == r3 then d.copy(inventory = None) else d),
+        t1.analyses,
+        t1.draft,
+        t1.runs,
+        t1.reporting,
+        t1.figures,
+        t1.presentation,
+        t1.jobs
+      )
+      .fold(e => fail(e.toString), identity)
+    val unmappedVerifying = Reducer
+      .run(unmapped, VerifyDataset(r3), MappingRule.Replay)
+      .fold(e => fail(e.message), _.document)
+    val unmappedContent = unmappedVerifying.dataset(r3).map(_.decision) match
+      case Some(AdmissionDecision.Verifying(c)) => c
+      case other                                => fail(s"expected Verifying, got $other")
+    assert(
+      Reducer
+        .step(unmappedVerifying, admitOf(unmappedContent))
+        .left
+        .exists(_.message.contains("are not mapped"))
+    )
+    assert(
+      Reducer
+        .step(unmapped, ResumeVerification(r3, unmappedContent))
+        .left
+        .exists(_.message.contains("are not mapped"))
+    )
+    // Agreeing keys verify, resume and admit as before.
+    val t1content =
+      DatasetRevisionSpec.contentDigest(pending).fold(e => fail(e.message), identity)
+    assert(Reducer.step(t1, ResumeVerification(r3, t1content)).isRight)
+  }

@@ -197,7 +197,8 @@ final case class ImportWizard private (
     problem: Option[WizardProblem],
     note: Option[WizardNote],
     keys: KeyChecks = KeyChecks.none,
-    dropTrials: Boolean = false
+    dropTrials: Boolean = false,
+    setAside: Option[(SniffedSource, TrialMetadataDraft)] = None
 ) derives CanEqual:
 
   /** Every issue that blocks the commit: the fixation mapping's, then the
@@ -315,9 +316,12 @@ object ImportWizard:
             fixationDraft(w, source, document) match
               case Left(p)      => refuse(p)
               case Right(draft) => (cleared.copy(fixations = Some((source, draft))), none)
-          // A re-map that leaves the inventory out does not read it again.
-          case SourceRole.Trials if w.dropTrials => (w, none)
-          case SourceRole.Trials                 =>
+          // A re-map that leaves the inventory out keeps it aside, for Keep.
+          case SourceRole.Trials if w.dropTrials =>
+            trialDraft(w, source, document) match
+              case Left(p)      => refuse(p)
+              case Right(draft) => (cleared.copy(setAside = Some((source, draft))), none)
+          case SourceRole.Trials =>
             trialDraft(w, source, document) match
               case Left(p)      => refuse(p)
               case Right(draft) => (cleared.copy(trials = Some((source, draft))), none)
@@ -327,7 +331,11 @@ object ImportWizard:
         w.target match
           case WizardTarget.Remap(id)
               if document.dataset(id).exists(_.sources.trials.isDefined) =>
-            (cleared.copy(dropTrials = drop, trials = if drop then None else w.trials), none)
+            // The draft is set aside while dropped, and comes back on Keep.
+            if drop == w.dropTrials then (cleared, none)
+            else if drop then
+              (cleared.copy(dropTrials = true, trials = None, setAside = w.trials), none)
+            else (cleared.copy(dropTrials = false, trials = w.setAside, setAside = None), none)
           case _ => refuse(WizardProblem.NoTrials)
       case WizardIntent.RequestFile(role) => (cleared, Vector(WizardEffect.OpenFile(role)))
 
