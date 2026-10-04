@@ -16,7 +16,9 @@
 
 package eyes4s.studio.desktop.explore
 
-import eyes4s.studio.app.AppModel
+import eyes4s.studio.app.{AppModel, Intent}
+import eyes4s.studio.app.plot.ViewSelection
+import eyes4s.studio.core.selection.{InputCause, SelectionMode, ViewId}
 import eyes4s.studio.app.explore.*
 import eyes4s.studio.app.maps.{ColourLimits, MapOpacity, MapPalette}
 import eyes4s.studio.core.backend.{
@@ -28,7 +30,7 @@ import eyes4s.studio.core.backend.{
 }
 import eyes4s.studio.core.document.{DatasetRevisionSpec, Perspective}
 import eyes4s.studio.desktop.runtime.StudioSession
-import eyes4s.studio.desktop.trial.{MapRequest, StimulusSource, TrialView}
+import eyes4s.studio.desktop.trial.{MapRequest, StimulusSource, TrialInputAdapter, TrialView}
 import eyes4s.studio.viz.trial.{
   MapCoverage,
   MarkStyle,
@@ -91,13 +93,36 @@ object TrialViewInputs:
 final class ExploreTrialViewHost(
     model: () => AppModel,
     inputs: TrialViewInputs,
-    stimuli: StimulusSource
+    stimuli: StimulusSource,
+    app: Intent => Unit
 ):
   private var view    = ExploreTrialView.empty
   private var started = false
 
-  val trialView: TrialView                   = TrialView(stimuli)
-  val pane: ExploreTrialViewPane             = ExploreTrialViewPane(dispatch, trialView)
+  val trialView: TrialView       = TrialView(stimuli)
+  val pane: ExploreTrialViewPane = ExploreTrialViewPane(dispatch, trialView, step)
+
+  /** The marks' input (S6.6): a pick, Enter or Escape selects through the
+    * one selection, as every Explore view does.
+    */
+  val input: TrialInputAdapter = TrialInputAdapter
+    .attach(trialView, ExploreTrialViewHost.viewId, model().selection, app)
+    .fold(e => throw IllegalStateException(e.message), identity)
+
+  // Prev and Next submit as their own view, so their stamps never meet the marks'.
+  private var stepping =
+    ViewSelection.initial(ExploreTrialViewHost.stepViewId, model().selection)
+
+  // The trail follows a change of the selection (ExploreLinked's TrailFollow).
+  private var trail = TrailFollow.initial(model())
+
+  /** Previous (-1) or Next (+1) fixation: selects it everywhere. */
+  def step(by: Int): Unit =
+    ExploreLinked.step(view, model(), by).foreach { f =>
+      val (next, intent) = stepping.submit(SelectionMode.Replace, Vector(f), InputCause.Pointer)
+      stepping = next
+      app(intent)
+    }
   def node: javafx.scene.Node                = pane.node
   private var drawn: Option[TrialSceneInput] = None
   private var mapped: Option[MapRequest]     = None
@@ -114,13 +139,31 @@ final class ExploreTrialViewHost(
 
   /** The pane's focus stops after its own (none until it has started). */
   def focusStops: Vector[eyes4s.studio.app.vm.FocusStop] =
-    if !started then Vector.empty else ExploreTrialViewVM.focusStops(vm)
+    import eyes4s.studio.app.vm.{A11yRole, FocusStop}
+    if !started then Vector.empty
+    else
+      // The toggles, Prev and Next while each can step, then the marks' one stop.
+      val m = model()
+      ExploreTrialViewVM.focusStops(vm) ++
+        Option
+          .when(ExploreLinked.canStep(view, m, -1))(
+            FocusStop(A11yRole.Button, pane.prev.getAccessibleText)
+          )
+          .toVector ++
+        Option
+          .when(ExploreLinked.canStep(view, m, 1))(
+            FocusStop(A11yRole.Button, pane.next.getAccessibleText)
+          )
+          .toVector ++
+        Option(trialView.plotHost.getAccessibleText).map(FocusStop(A11yRole.Region, _)).toVector
 
   /** The view-model now shown. */
   def vm: ExploreTrialViewVM = ExploreTrialViewVM.of(view, model())
 
   /** Follow the model. Nothing is read until Explore has been shown. */
   def sync(m: AppModel): Unit =
+    input.project(m.selection)
+    stepping = stepping.project(m.selection)._1
     started = started || m.perspective == Perspective.Explore
     if started then
       val (next, effects) = ExploreTrialView.sync(view, m)
@@ -135,7 +178,9 @@ final class ExploreTrialViewHost(
     perform(effects)
     render(model())
 
-  def dispose(): Unit = trialView.dispose()
+  def dispose(): Unit =
+    input.dispose()
+    trialView.dispose()
 
   private def render(m: AppModel): Unit =
     val vm               = ExploreTrialViewVM.of(view, m)
@@ -144,8 +189,13 @@ final class ExploreTrialViewHost(
         val (i, r) = ExploreTrialViewHost.sceneInput(s)
         (Some(i), r)
       )
-    pane.render(vm, refused)
+    pane.render(
+      vm,
+      refused,
+      (ExploreLinked.canStep(view, m, -1), ExploreLinked.canStep(view, m, 1))
+    )
     changed.foreach(_())
+    follow(m)
     if input != drawn then
       drawn = input
       input.fold(trialView.clear())(trialView.show)
@@ -155,6 +205,13 @@ final class ExploreTrialViewHost(
     if request != mapped then
       mapped = request
       trialView.showMap(request)
+
+  // The trail follows the selected fixation to its fixation and record crumbs.
+  // Asked after the update that shows it, never from inside one.
+  private def follow(m: AppModel): Unit =
+    val (next, wanted) = TrailFollow.step(trail, view, m)
+    trail = next
+    wanted.foreach(i => Platform.runLater(() => app(i)))
 
   private def perform(effects: Vector[TrialViewEffect]): Unit =
     effects.foreach {
@@ -178,6 +235,14 @@ final class ExploreTrialViewHost(
     }
 
 object ExploreTrialViewHost:
+
+  /** The trial view's marks as a selection view, and its Prev and Next. */
+  val viewId: ViewId =
+    ViewId.of("explore.trial-view").fold(e => throw IllegalStateException(e.message), identity)
+  val stepViewId: ViewId =
+    ViewId
+      .of("explore.trial-view.step")
+      .fold(e => throw IllegalStateException(e.message), identity)
 
   /** The preview map of a shown trial as the trial view draws it: over the
     * screen region its grid covers, at the document's opacity.

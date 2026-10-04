@@ -17,6 +17,7 @@
 package eyes4s.studio.desktop.explore
 
 import eyes4s.studio.app.explore.*
+import eyes4s.studio.app.text.{ExploreText, ExploreTextId}
 import eyes4s.studio.core.assets.DisplayKind
 import eyes4s.studio.desktop.tokens.TokenFiles
 import eyes4s.studio.desktop.trial.TrialView
@@ -30,7 +31,11 @@ import javafx.scene.shape.{Circle, Line, Rectangle, Shape}
   * label and the canvas hint), the trial on its stage, and the legend. It
   * binds an [[ExploreTrialViewVM]]; every word and state comes from it.
   */
-final class ExploreTrialViewPane(dispatch: TrialViewIntent => Unit, trialView: TrialView):
+final class ExploreTrialViewPane(
+    dispatch: TrialViewIntent => Unit,
+    trialView: TrialView,
+    stepped: Int => Unit
+):
   import ExploreTrialViewPane.*
 
   // Programmatic updates of controls must not echo back as intents.
@@ -52,10 +57,23 @@ final class ExploreTrialViewPane(dispatch: TrialViewIntent => Unit, trialView: T
   val mapNote: Label  = label("explore-note", "t11")
   val hint: Label     = label("explore-hint", "t11")
 
+  /** Previous and Next fixation (S6.6): `stepped` gets -1 or +1. */
+  private def stepButton(glyph: ExploreTextId, name: ExploreTextId, by: Int): Button =
+    // The glyph is drawn, the name is read (Explore.dc.html: an icon button).
+    val b = Button()
+    b.setGraphic(Label(ExploreText(glyph)))
+    b.setMnemonicParsing(false)
+    b.setAccessibleText(ExploreText(name))
+    b.getStyleClass.addAll("explore-button", "explore-step", "t12")
+    b.setOnAction(_ => if !rendering then stepped(by))
+    b
+  val prev: Button = stepButton(ExploreTextId.PrevGlyph, ExploreTextId.PrevFixation, -1)
+  val next: Button = stepButton(ExploreTextId.NextGlyph, ExploreTextId.NextFixation, 1)
+
   private val bar = HBox(
     (Vector[javafx.scene.Node](title) ++
       TrialToggle.values.toVector.map(toggles) ++
-      Vector(mapLabel, mapNote, spacer(), hint))*
+      Vector(mapLabel, mapNote, spacer(), hint, prev, next))*
   )
   bar.getStyleClass.add("explore-bar")
   bar.setAlignment(Pos.CENTER_LEFT)
@@ -92,9 +110,11 @@ final class ExploreTrialViewPane(dispatch: TrialViewIntent => Unit, trialView: T
   /** Bind `vm`: the toolbar, the status and the legend; `refused` are the
     * marks the scene could not draw.
     */
-  def render(vm: ExploreTrialViewVM, refused: Vector[String]): Unit =
+  def render(vm: ExploreTrialViewVM, refused: Vector[String], steps: (Boolean, Boolean)): Unit =
     rendering = true
     try
+      prev.setDisable(!steps._1)
+      next.setDisable(!steps._2)
       show(title, Option(vm.title).filter(_.nonEmpty))
       vm.toggles.foreach { t =>
         val b = toggles(t.toggle)

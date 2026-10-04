@@ -410,7 +410,12 @@ object StudioWindow:
     sources.sync(r.model)
     // Explore's trial view: the explored trial under the shown run's revision.
     val explore =
-      ExploreTrialViewHost(() => r.model, TrialViewInputs.of(session, displays), stimuli)
+      ExploreTrialViewHost(
+        () => r.model,
+        TrialViewInputs.of(session, displays),
+        stimuli,
+        dispatch
+      )
     host.host(StudioLayouts.trialView, explore.node)
     val exploreListener: AppModel => Unit = explore.sync
     r.listen(exploreListener)
