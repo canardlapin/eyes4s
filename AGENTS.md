@@ -74,6 +74,16 @@ What runs where (all generated from `build.sbt`):
   `target/study-consumer`).
 - `performance.yml`, weekly and on demand: the two-hour EyeLink performance court.
 
+Studio FX tests (`studioDesktop/test`, suites extending `StudioFxSuite`) run **headless by
+default**: Monocle's Headless glass (`org.testfx:openjfx-monocle`, test scope) on a virtual
+1920x1200 screen at output scale 1, with the software pipeline. They open no OS window and take no OS
+focus, and the harness refuses to start on any other glass while the build asks for headless.
+`sbt -Deyes4s.studio.fx.visible=true ...` (or `EYES4S_STUDIO_FX_VISIBLE=true`) uses the
+platform's own glass, for watching a run; it opens real windows, so do not use it on a machine
+someone is working at. The macOS CI job opts out to exercise the Mac glass. A run still takes the
+machine-wide FX lock (`FxRunLock`), so one FX test JVM runs at a time; while iterating, prefer
+`testOnly` on the suites you touched.
+
 Locally, `python3 tools/check-docs.py` (default `--platform all`) needs both platforms'
 test reports, a current `docs/tlSite`, and a consumer receipt from `--run-consumer`.
 

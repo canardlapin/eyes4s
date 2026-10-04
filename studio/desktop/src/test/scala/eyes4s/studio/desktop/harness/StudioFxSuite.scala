@@ -57,9 +57,14 @@ enum SnapshotScale(val factor: Int):
   * `<snapshots>` is the `eyes4s.studio.snapshots` property set by the build
   * (`target/studio-snapshots`).
   *
-  * CI runs these tests on Linux under `xvfb-run` with the software pipeline, and
-  * on macOS as functional tests only: golden comparisons, when added, are
-  * Linux-only.
+  * '''Headless by default.''' The build runs these tests on Monocle's
+  * Headless glass with the software pipeline (`eyes4s.studio.fx.headless`): no
+  * OS window opens and none takes OS focus, and the toolkit refuses to start on any
+  * other glass while that property is set (see [[StudioFxSuite.startToolkit]]).
+  * `sbt -Deyes4s.studio.fx.visible=true` uses the platform's own glass instead.
+  * CI runs these tests on Linux with the software pipeline, and on macOS, on
+  * the real Mac glass, as functional tests only: golden comparisons, when
+  * added, are Linux-only.
   *
   * '''Render failures fail the test.''' JavaFX catches a failure during a pulse
   * or a render job and only prints it, so a test could pass while its scene
@@ -290,8 +295,28 @@ object StudioFxSuite:
   val snapshotRoot: Path =
     Paths.get(sys.props.getOrElse("eyes4s.studio.snapshots", "target/studio-snapshots"))
 
+  /** Set by the build when the tests must run on Monocle's Headless glass. */
+  val headless: Boolean = sys.props.get("eyes4s.studio.fx.headless").contains("true")
+
+  /** The class of the running glass application, e.g. `MonocleApplication`. */
+  def glassApplication: String = runOnFx(glassApplicationClass)
+
+  private def glassApplicationClass: String =
+    com.sun.glass.ui.Application.GetApplication().getClass.getName
+
+  private val MonocleApplication = "com.sun.glass.ui.monocle.MonocleApplication"
+
   private lazy val started: Unit =
     FxRunLock.hold()
+    // Checked before startup: a missing Monocle must fail here, not fall back
+    // to a glass that opens windows on the developer's screen.
+    if headless then
+      val platform = sys.props.get("glass.platform")
+      if !platform.contains("Monocle") then
+        throw AssertionError(s"headless FX tests need glass.platform=Monocle, not $platform")
+      Try(Class.forName(MonocleApplication)).failed.foreach { e =>
+        throw AssertionError(s"headless FX tests need Monocle on the test classpath: $e")
+      }
     RenderFailures.installStream()
     val ready = CountDownLatch(1)
     try
@@ -308,8 +333,15 @@ object StudioFxSuite:
     Platform.setImplicitExit(false)
     if !ready.await(TimeoutSeconds, TimeUnit.SECONDS) then
       throw AssertionError(s"JavaFX toolkit did not start within $TimeoutSeconds s")
+    if headless then
+      // Not runOnFx: it would re-enter this initializer.
+      val running = CompletableFuture[String]()
+      Platform.runLater(() => running.complete(glassApplicationClass): Unit)
+      val glass = running.get(TimeoutSeconds, TimeUnit.SECONDS)
+      if glass != MonocleApplication then
+        throw AssertionError(s"headless FX tests started on $glass, not $MonocleApplication")
 
-  /** Starts the JavaFX toolkit once per JVM. */
+  /** Starts the JavaFX toolkit once per JVM; when [[headless]], only on Monocle. */
   def startToolkit(): Unit = started
 
   /** Runs `body` on the FX application thread, rethrowing its failure here. */

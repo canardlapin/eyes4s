@@ -439,7 +439,9 @@ object DiagnosticCatalog:
     "DefaultRefused",
     "UntranslatableLegacy",
     "FormViewMismatch",
-    "RulePartKind"
+    "RulePartKind",
+    // Appended by the CR6c review: a numeric field of a non-numeric quantity.
+    "NonNumericQuantity"
   )
 
   /** Finding severity is the finding's own blocker/warning classification. */
