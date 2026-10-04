@@ -32,8 +32,10 @@ import eyes4s.studio.desktop.explore.{
   NavigatorInputs,
   TrialViewInputs,
   TrialsNavigatorHost,
+  FixationInspectorHost,
   RecordSources,
-  SourceRecordsHost
+  SourceRecordsHost,
+  UsedByInputs
 }
 import eyes4s.studio.desktop.trial.StimulusSource
 import eyes4s.studio.desktop.dock.{DockGesture, PerspectiveHost}
@@ -82,7 +84,9 @@ final class StudioWindow private (
     val resolvedDesign: ResolvedDesignHost,
     designListener: AppModel => Unit,
     val sourceRecords: SourceRecordsHost,
-    recordsListener: AppModel => Unit
+    recordsListener: AppModel => Unit,
+    val inspector: FixationInspectorHost,
+    inspectorListener: AppModel => Unit
 ):
   /** The window content, with the studio stylesheets. */
   def root: javafx.scene.Parent = shell.root
@@ -99,6 +103,7 @@ final class StudioWindow private (
     else if pane == StudioLayouts.trialView then explore.focusStops
     else if pane == StudioLayouts.resolvedDesign then resolvedDesign.focusStops
     else if pane == StudioLayouts.sourceRecords then sourceRecords.focusStops
+    else if pane == StudioLayouts.exploreInspector then inspector.focusStops
     else Vector.empty
 
   /** Store each perspective's arrangement in the document (view-only). */
@@ -115,6 +120,8 @@ final class StudioWindow private (
     runtime.unlisten(designListener)
     runtime.unlisten(recordsListener)
     sourceRecords.dispose()
+    runtime.unlisten(inspectorListener)
+    inspector.dispose()
     summary.dispose()
     project.foreach(_.close())
     session.close()
@@ -358,6 +365,17 @@ object StudioWindow:
     val recordsListener: AppModel => Unit = sourceRecords.sync
     r.listen(recordsListener)
     sourceRecords.sync(r.model)
+    // Explore's fixation inspector: the selected fixation (S6.5).
+    val inspector = FixationInspectorHost(
+      dispatch,
+      TrialViewInputs.of(session, displays),
+      records,
+      UsedByInputs.of(session)
+    )
+    host.host(StudioLayouts.exploreInspector, inspector.node)
+    val inspectorListener: AppModel => Unit = inspector.sync
+    r.listen(inspectorListener)
+    inspector.sync(r.model)
     Right(
       StudioWindow(
         session,
@@ -377,6 +395,8 @@ object StudioWindow:
         design,
         designListener,
         sourceRecords,
-        recordsListener
+        recordsListener,
+        inspector,
+        inspectorListener
       )
     )

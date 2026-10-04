@@ -19,3 +19,6 @@ plot: Timeline
 table: Source records
 toggle-button: Show raw record
 region: Inspector
+toggle-button: Show raw record
+hyperlink: ret_07 contrast (matched reference)
+hyperlink: 18 other admitted P17 queries (as a control)

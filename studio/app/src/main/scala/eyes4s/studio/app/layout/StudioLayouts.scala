@@ -112,6 +112,9 @@ object StudioLayouts:
   /** The pane that hosts Explore's source records table (S6.4). */
   val sourceRecords: PaneId = new PaneId("explore.source-records")
 
+  /** The pane that hosts Explore's fixation inspector (S6.5). */
+  val exploreInspector: PaneId = new PaneId("explore.inspector")
+
   /** Explore.dc.html. */
   val explore: PerspectiveLayout = layout(
     "explore",
