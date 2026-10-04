@@ -591,7 +591,7 @@ object ProjectBundle:
   /** Strict UTF-8: the text must survive the round trip, so a lone surrogate
     * or a malformed byte sequence is refused rather than replaced.
     */
-  private def utf8(target: String, text: String): Either[BundleError, IArray[Byte]] =
+  private[core] def utf8(target: String, text: String): Either[BundleError, IArray[Byte]] =
     val bytes = text.getBytes(UTF_8)
     Either.cond(
       String(bytes, UTF_8) == text,
@@ -599,7 +599,7 @@ object ProjectBundle:
       BundleError.NotUtf8(target)
     )
 
-  private def parseJson(target: String, bytes: IArray[Byte]): Either[BundleError, Json] =
+  private[core] def parseJson(target: String, bytes: IArray[Byte]): Either[BundleError, Json] =
     val array = Array.from(bytes)
     val text  = String(array, UTF_8)
     for
