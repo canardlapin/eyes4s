@@ -289,23 +289,36 @@ final class SourceRecordsHost(
   // not hold (the cursor can arrive before the first page says how many rows
   // there are).
   private var reveal: Option[Int] = None
+  // Layout passes left to bring the pending row into view before giving up.
+  private var revealTries = 0
 
   private def scrollTo(i: Int): Unit =
     reveal = Some(i)
+    revealTries = 8
     revealPending()
 
   private def revealPending(): Unit =
     watchFlow()
     reveal.filter(_ < list.getItems.size).foreach { i =>
       (flow.filter(_.getHeight > 0), shownRange) match
-        case (Some(_), Some((first, last))) =>
-          // A row above the view goes to the top, one below it to the bottom
-          // (scrolling the row before it to the top would leave it cut off).
-          if i < first then list.scrollTo(i)
-          else if i > last then list.scrollTo(math.max(0, i - (last - first) + 1))
+        case (Some(_), Some((first, last))) if first <= i && i <= last =>
           reveal = None
-        case _ => list.scrollTo(i)
+        case (Some(f), Some(_)) =>
+          // The flow scrolls the least that shows the row whole: a row above
+          // the view comes to its top, one below it to its bottom.
+          f.scrollTo(i)
+          again()
+        case _ =>
+          list.scrollTo(i)
+          again()
     }
+
+  // A scroll holds only once the flow has laid out: look again on the next
+  // pulse, a bounded number of times, until the row is shown.
+  private def again(): Unit =
+    revealTries -= 1
+    if revealTries > 0 then Platform.runLater(() => if !disposed then revealPending())
+    else reveal = None
 
   /** The first and last rows the flow shows. */
   def shownRange: Option[(Int, Int)] =
