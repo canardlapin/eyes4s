@@ -1,0 +1,110 @@
+/*
+ * Copyright 2026 canardlapin
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package eyes4s.studio.app.text
+
+import eyes4s.studio.core.assets.DisplayKind
+import eyes4s.studio.core.backend.DatasetRevision
+import eyes4s.studio.core.selection.DisplayCount
+
+/** The Data perspective's Sources pane strings (ticket S5.7; Data.dc.html,
+  * left), kept apart from the other catalogues so the pane adds its own ids.
+  * Templates name their arguments by position, as [[Messages]] does.
+  */
+enum SourcesTextId derives CanEqual:
+  // --- The sources -----------------------------------------------------------------
+  case KindFixations, KindInventory, KindImages, Stored, InventoryTrials, ImagesFound
+  case ImagesNotServed, Stimuli, NoDataset
+
+  // --- What each trial displayed --------------------------------------------------------
+  case DisplaysTitle, ShownRow, NoneShown, Reading, Unreadable, RetryRead
+
+  // --- Kinds ----------------------------------------------------------------------------------
+  case Image, Blank, BlankWithFixationCross, Cue, Unknown
+
+  // --- Missing assets ---------------------------------------------------------------------
+  case MissingTitle, MissingTitleOne, MissingBody, MissingTrialsOf, Repair, ShowTrials
+  case RepairNeedsProject, RepairFailed, Repaired
+
+  // --- Tallies as paths -------------------------------------------------------------------
+  case TallyShown, TallyNamed, TallyFound, TallyMissingFiles, TallyMissingTrials
+
+/** The Sources pane's strings in the board's wording. */
+object SourcesText:
+  import SourcesTextId.*
+
+  /** The reference English template of `id`. */
+  def english(id: SourcesTextId): String = id match
+    case KindFixations   => "Fixations"
+    case KindInventory   => "Inventory"
+    case KindImages      => "Images"
+    case Stored          => "byte digest recorded · copied into project"
+    case InventoryTrials => "{0} trials · inventory"
+    case ImagesFound     => "{0} of {1} images found"
+    case ImagesNotServed => "Display kinds are not served for this revision"
+    case Stimuli         => "stimuli/"
+    case NoDataset       => "No dataset revision is selected."
+
+    case DisplaysTitle => "What each trial displayed"
+    case ShownRow      => "{0} · {1}"
+    case NoneShown     => "{0}"
+    case Reading       => "Reading the trial displays…"
+    case Unreadable    => "The trial displays cannot be read: {0}"
+    case RetryRead     => "Retry"
+
+    case Image                  => "Image"
+    case Blank                  => "Blank"
+    case BlankWithFixationCross => "Blank + fixation cross"
+    case Cue                    => "Cue"
+    case Unknown                => "Unknown"
+
+    case MissingTitle    => "{0} image files missing"
+    case MissingTitleOne => "1 image file missing"
+    case MissingBody     =>
+      "{0}. Their {1} trials ({2}) are drawn as missing asset, never as blank. " +
+        "Gaze and scores are unaffected."
+    case MissingTrialsOf    => "{0} {1}"
+    case Repair             => "Repair…"
+    case ShowTrials         => "Show {0} trials"
+    case RepairNeedsProject => "Save the project to store a repaired image."
+    case RepairFailed       => "{0} could not be repaired: {1}"
+    case Repaired           => "{0} repaired with {1}"
+
+    case TallyShown         => "{0} · {1} · {2}"
+    case TallyNamed         => "{0} · image files named"
+    case TallyFound         => "{0} · image files found"
+    case TallyMissingFiles  => "{0} · image files missing"
+    case TallyMissingTrials => "{0} · trials with a missing image"
+
+  /** `id`'s English template with `args` filled in. */
+  def apply(id: SourcesTextId, args: String*): String =
+    Messages.fill(english(id), args.toVector)
+
+  /** A display kind as the board names it. */
+  def kind(k: DisplayKind): String = k match
+    case DisplayKind.Image                  => apply(Image)
+    case DisplayKind.Blank                  => apply(Blank)
+    case DisplayKind.BlankWithFixationCross => apply(BlankWithFixationCross)
+    case DisplayKind.Cue                    => apply(Cue)
+    case DisplayKind.Unknown                => apply(Unknown)
+
+  /** A display tally as a path ("r3 · Image · Encoding"). */
+  def tally(dataset: DatasetRevision, count: DisplayCount): String = count match
+    case DisplayCount.Shown(k, phase) => apply(TallyShown, dataset.label, kind(k), phase.label)
+    case DisplayCount.ImagesNamed     => apply(TallyNamed, dataset.label)
+    case DisplayCount.ImagesFound     => apply(TallyFound, dataset.label)
+    case DisplayCount.MissingFiles    => apply(TallyMissingFiles, dataset.label)
+    case DisplayCount.MissingTrials   => apply(TallyMissingTrials, dataset.label)

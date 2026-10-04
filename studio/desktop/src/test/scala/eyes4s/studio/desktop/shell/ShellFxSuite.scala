@@ -89,7 +89,9 @@ abstract class ShellFxSuite extends StudioFxSuite:
       displays: NavigatorDisplays = NavigatorDisplays.golden,
       // The golden fixture's stimuli.
       stimuli: StimulusSource =
-        StimulusSource.directory(eyes4s.studio.desktop.trial.GoldenTrials.stimuli)
+        StimulusSource.directory(eyes4s.studio.desktop.trial.GoldenTrials.stimuli),
+      // Repair… opens no chooser in a test unless a suite brings its files.
+      assetFiles: eyes4s.studio.desktop.data.AssetFiles = (_, done) => done(Right(None))
   ): StudioWindow =
     val w = runOnFx(
       StudioWindow
@@ -103,7 +105,8 @@ abstract class ShellFxSuite extends StudioFxSuite:
           project = project,
           clock = clock,
           nativeMenu = nativeMenu,
-          presets = presets
+          presets = presets,
+          assetFiles = Some(assetFiles)
         )
         .fold(e => fail(e.message), identity)
     )

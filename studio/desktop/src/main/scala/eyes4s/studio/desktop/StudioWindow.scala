@@ -26,6 +26,7 @@ import eyes4s.studio.app.{ClockTime, ProjectName}
 import eyes4s.studio.core.fixture.StoryMoment
 import eyes4s.studio.desktop.admission.{AdmissionLedgerHost, LedgerInputs}
 import eyes4s.studio.desktop.compare.{CompareSummaryHost, SummaryInputs}
+import eyes4s.studio.desktop.data.{AssetFiles, SourcesPaneHost}
 import eyes4s.studio.desktop.explore.{
   ExploreTimelineHost,
   ExploreTrialViewHost,
@@ -76,6 +77,8 @@ final class StudioWindow private (
     summaryListener: AppModel => Unit,
     val navigator: TrialsNavigatorHost,
     navigatorListener: AppModel => Unit,
+    val sources: SourcesPaneHost,
+    sourcesListener: AppModel => Unit,
     val explore: ExploreTrialViewHost,
     exploreListener: AppModel => Unit,
     val timeline: ExploreTimelineHost,
@@ -93,6 +96,7 @@ final class StudioWindow private (
   def paneStops(pane: PaneId): Vector[FocusStop] =
     if pane == StudioLayouts.columnMapping then columnMapping.focusStops
     else if pane == StudioLayouts.admission then admission.focusStops
+    else if pane == StudioLayouts.sources then sources.focusStops
     else if pane == StudioLayouts.trials then navigator.trialsStops
     else if pane == StudioLayouts.items then navigator.itemsStops
     else if pane == StudioLayouts.trialView then explore.focusStops
@@ -109,6 +113,8 @@ final class StudioWindow private (
   def close(): Unit =
     runtime.unlisten(summaryListener)
     runtime.unlisten(navigatorListener)
+    runtime.unlisten(sourcesListener)
+    sources.dispose()
     runtime.unlisten(exploreListener)
     runtime.unlisten(timelineListener)
     explore.dispose()
@@ -202,7 +208,8 @@ object StudioWindow:
       project: Option[ProjectPort] = None,
       clock: () => Option[ClockTime] = DesktopEffects.wallClock,
       nativeMenu: Boolean = AppShell.systemMenuBar,
-      presets: FilePresetStore = FilePresetStore.userDefault
+      presets: FilePresetStore = FilePresetStore.userDefault,
+      assetFiles: Option[AssetFiles] = None
   )(using IORuntime): Either[WindowError, StudioWindow] =
     for
       sheets <- StudioStyles.stylesheets(theme).left.map(WindowError.Styles(_))
@@ -218,7 +225,8 @@ object StudioWindow:
         project,
         clock,
         nativeMenu,
-        presets
+        presets,
+        assetFiles
       )
     yield
       window.root.getStylesheets.setAll(sheets*)
@@ -235,7 +243,8 @@ object StudioWindow:
       project: Option[ProjectPort],
       clock: () => Option[ClockTime],
       nativeMenu: Boolean,
-      presets: FilePresetStore
+      presets: FilePresetStore,
+      assetFiles: Option[AssetFiles]
   )(using IORuntime): Either[WindowError, StudioWindow] =
     // Late-bound: the runtime, the host and the effects refer to each other.
     var runtime: Option[StudioRuntime] = None
@@ -334,6 +343,20 @@ object StudioWindow:
     host.host(StudioLayouts.items, navigator.items.node)
     val navigatorListener: AppModel => Unit = navigator.sync
     r.listen(navigatorListener)
+    // The Sources pane (Data): the selected revision's sources, displays and repairs.
+    val sources = SourcesPaneHost(
+      () => r.model,
+      dispatch,
+      displays,
+      assetFiles.getOrElse(
+        AssetFiles.chooser(() => Option(shell.root.getScene).map(_.getWindow).orNull)
+      ),
+      project
+    )
+    host.host(StudioLayouts.sources, sources.node)
+    val sourcesListener: AppModel => Unit = sources.sync
+    r.listen(sourcesListener)
+    sources.sync(r.model)
     // Explore's trial view: the explored trial under the shown run's revision.
     val explore =
       ExploreTrialViewHost(() => r.model, TrialViewInputs.of(session, displays), stimuli)
@@ -368,6 +391,8 @@ object StudioWindow:
         summaryListener,
         navigator,
         navigatorListener,
+        sources,
+        sourcesListener,
         explore,
         exploreListener,
         timeline,

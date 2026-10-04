@@ -58,7 +58,9 @@ object StudioLayouts:
 
   // --- Data -------------------------------------------------------------------
 
-  private val sources = pane("data.sources", "Sources", Navigator)
+  /** The pane that hosts the Sources navigator: sources, displays, repairs (S5.7). */
+  val sources: PaneId               = new PaneId("data.sources")
+  private val sourcesPane: PaneDecl = PaneDecl(sources, PaneTitle.Fixed("Sources"), Navigator)
 
   /** The pane that hosts the import wizard on the selected dataset revision. */
   val columnMapping: PaneId = new PaneId("data.column-mapping")
@@ -71,7 +73,7 @@ object StudioLayouts:
     "data.first-run",
     Perspective.Data,
     columns(
-      navigator(sources),
+      navigator(sourcesPane),
       group(pane("data.import", "Import", Start)),
       group(pane("data.checklist", "Checklist", Inspector))
     ),
@@ -83,7 +85,7 @@ object StudioLayouts:
     "data.verify",
     Perspective.Data,
     columns(
-      navigator(sources),
+      navigator(sourcesPane),
       split(
         Axis.Vertical,
         group(

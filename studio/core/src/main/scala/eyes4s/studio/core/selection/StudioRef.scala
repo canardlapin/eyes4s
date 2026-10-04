@@ -26,6 +26,7 @@ import eyes4s.studio.core.backend.{
   RunId,
   TrialKey
 }
+import eyes4s.studio.core.assets.DisplayKind
 import eyes4s.studio.core.document.{FigureId, PanelLetter, ReportingId, SourceRole}
 import io.circe.{Codec, Decoder, Encoder}
 
@@ -173,6 +174,11 @@ enum StudioRef derives CanEqual, Codec.AsObject:
     */
   case TrialGroup(dataset: DatasetRevision, group: TrialGrouping)
 
+  /** A dataset revision's count of trial displays or asset files, as its
+    * asset registry states them (ticket S5.7).
+    */
+  case DisplayTally(dataset: DatasetRevision, tally: DisplayCount)
+
   def kind: RefKind = this match
     case Participant(_)                                       => RefKind.Entity
     case Trial(_) | Fixation(_, _) | SourceRecord(_, _, _, _) => RefKind.Observation
@@ -183,7 +189,8 @@ enum StudioRef derives CanEqual, Codec.AsObject:
         case ResultAddress.Reduction(_, _, _) | ResultAddress.ContrastRow(_, _) =>
           RefKind.Aggregate
     case ParticipantSummary(_, _, _, _, _) | GroupCell(_, _, _, _) | FigurePanel(_, _) |
-        WindowTally(_, _) | DesignTally(_, _) | InventoryCount(_, _) | TrialGroup(_, _) =>
+        WindowTally(_, _) | DesignTally(_, _) | InventoryCount(_, _) | TrialGroup(_, _) |
+        DisplayTally(_, _) =>
       RefKind.Aggregate
 
   def isAggregate: Boolean = kind == RefKind.Aggregate
@@ -235,6 +242,21 @@ enum StudioRef derives CanEqual, Codec.AsObject:
       group match
         case TrialGrouping.PhaseOf(participant, _) => Some(Participant(participant))
         case TrialGrouping.MatchedOn(_)            => None
+    case DisplayTally(dataset, tally) =>
+      tally match
+        case DisplayCount.ImagesFound   => Some(DisplayTally(dataset, DisplayCount.ImagesNamed))
+        case DisplayCount.MissingTrials =>
+          Some(DisplayTally(dataset, DisplayCount.MissingFiles))
+        case _ => None
+
+/** Which count of a dataset revision's displays a [[StudioRef.DisplayTally]]
+  * names: the trials showing one kind in one phase (a missing asset is not
+  * shown, so it is not counted there), the distinct image files named and
+  * those found, and the files missing with the trials naming them.
+  */
+enum DisplayCount derives CanEqual, Codec.AsObject:
+  case Shown(kind: DisplayKind, phase: Phase)
+  case ImagesNamed, ImagesFound, MissingFiles, MissingTrials
 
 /** Which trials a [[StudioRef.TrialGroup]] holds: one participant's trials
   * of one phase, or every trial matched on one item.

@@ -430,6 +430,18 @@ final case class AssetRegistry private (
 
   def count(kind: DisplayKind): Int = trials.count(_.kind == kind)
 
+  /** The registry with the document's repairs of its dataset revision: each
+    * relinked file that is missing here is present under its inventory name
+    * with the repaired bytes' digest (S5.7). A repair of a file not missing
+    * here is refused.
+    */
+  def withRelinks(relinks: Vector[AssetRelink]): Either[AssetError, AssetRegistry] =
+    relinks
+      .filter(_.dataset == dataset)
+      .foldLeft[Either[AssetError, AssetRegistry]](Right(this))((acc, r) =>
+        acc.flatMap(_.repair(r.file, AssetRef(r.file, r.asset.sha256)))
+      )
+
   /** Resolve every display missing `file` to the stored `asset` (Repair). */
   def repair(file: AssetFile, asset: AssetRef): Either[AssetError, AssetRegistry] =
     val absent = missing.map(_.file)
