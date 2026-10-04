@@ -58,10 +58,25 @@ enum PreviewError derives CanEqual:
   case Negative(field: String, value: Long)
   case BeyondTotal(field: String, done: Long, total: Long)
 
+  /** The focal trials by status do not add up to those requested. */
+  case QueryPartition(
+      requested: Int,
+      eligible: Int,
+      unmatched: Int,
+      notAdmitted: Int,
+      byDesign: Option[Int]
+  )
+
   def message: String = this match
     case Negative(field, value)          => s"Preview $field is negative: $value."
     case BeyondTotal(field, done, total) =>
       s"Preview $field reports $done, beyond its total $total."
+    case QueryPartition(requested, eligible, unmatched, notAdmitted, byDesign) =>
+      val parts =
+        Vector(s"$eligible eligible", s"$unmatched unmatched", s"$notAdmitted not admitted") ++
+          byDesign.map(n => s"$n by design")
+      s"Preview requests $requested queries, but ${parts.mkString(" + ")} is " +
+        s"${eligible.toLong + unmatched + notAdmitted + byDesign.getOrElse(0)}."
 
 private object PreviewCount:
   def nonNegative(field: String, value: Long): Either[PreviewError, Unit] =
@@ -237,7 +252,7 @@ final case class PreviewCounts private (
     eligiblePairsPerScale: Long,
     eligiblePairs: Long,
     eligibleQueries: QueryCount,
-    unmatchedQueries: Int,
+    unmatchedQueries: QueryCount,
     ambiguousMatches: Int
 ) derives CanEqual
 
@@ -259,7 +274,7 @@ object PreviewCounts:
       eligiblePairsPerScale,
       eligiblePairs,
       new QueryCount(eligibleQueries),
-      unmatchedQueries,
+      new QueryCount(unmatchedQueries),
       ambiguousMatches
     )
 
@@ -275,7 +290,7 @@ object PreviewCounts:
         c.eligiblePairsPerScale,
         c.eligiblePairs,
         c.eligibleQueries.value,
-        c.unmatchedQueries,
+        c.unmatchedQueries.value,
         c.ambiguousMatches
       )
     )
@@ -292,15 +307,63 @@ object PreviewCounts:
 
 /** Receipt of a ready backend-owned preview. A caller may carry this receipt,
   * but cannot manufacture a snapshot from it.
+  *
+  * Its query counts partition the requested focal trials: requested =
+  * eligible + unmatched + not admitted (+ by design, when the recipe has that
+  * category), so no count exceeds the requested ones.
   */
-final case class PreviewReady(
+final case class PreviewReady private (
     id: PreviewId,
     stamp: RunStamp,
     candidates: PreviewCandidates,
     counts: PreviewCounts,
     diagnostics: Vector[StudioDiagnostic]
-) derives CanEqual,
-      Codec.AsObject
+) derives CanEqual
+
+object PreviewReady:
+  def of(
+      id: PreviewId,
+      stamp: RunStamp,
+      candidates: PreviewCandidates,
+      counts: PreviewCounts,
+      diagnostics: Vector[StudioDiagnostic]
+  ): Either[PreviewError, PreviewReady] =
+    partition(candidates, counts).map(_ =>
+      new PreviewReady(id, stamp, candidates, counts, diagnostics)
+    )
+
+  /** Whether `counts` partition the queries `candidates` requests. */
+  def partition(
+      candidates: PreviewCandidates,
+      counts: PreviewCounts
+  ): Either[PreviewError, Unit] =
+    val requested   = candidates.requestedQueries.value
+    val eligible    = counts.eligibleQueries.value
+    val unmatched   = counts.unmatchedQueries.value
+    val notAdmitted = candidates.queriesNotAdmitted.value
+    val byDesign    = candidates.byDesignQueries.map(_.value)
+    val total       = eligible.toLong + unmatched + notAdmitted + byDesign.getOrElse(0)
+    Either.cond(
+      total == requested,
+      (),
+      PreviewError.QueryPartition(requested, eligible, unmatched, notAdmitted, byDesign)
+    )
+
+  given Encoder.AsObject[PreviewReady] =
+    Encoder.forProduct5("id", "stamp", "candidates", "counts", "diagnostics")(r =>
+      (r.id, r.stamp, r.candidates, r.counts, r.diagnostics)
+    )
+
+  given Decoder[PreviewReady] = PreviewCount.decoder(
+    Decoder.forProduct5[
+      Either[PreviewError, PreviewReady],
+      PreviewId,
+      RunStamp,
+      PreviewCandidates,
+      PreviewCounts,
+      Vector[StudioDiagnostic]
+    ]("id", "stamp", "candidates", "counts", "diagnostics")(of)
+  )
 
 /** Frames of a bounded preview page. Creation starts with Initial; continuations
   * emit only progress or the ready receipt. Each page contains at most its

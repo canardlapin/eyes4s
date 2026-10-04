@@ -72,7 +72,7 @@ final case class ResolvedDesignVM(
     rows: Vector[DesignRowVM],
     cursor: Option[Int],
     rowsNote: Option[String],
-    counting: Option[String],
+    counting: Option[DesignNoteVM],
     notes: Vector[DesignNoteVM],
     problem: Option[String],
     accessible: String,
@@ -123,7 +123,10 @@ object ResolvedDesignVM:
         case DesignFilter.NoMatch =>
           (
             t(ChipNoMatch),
-            known(ready.map(_.counts.unmatchedQueries.toLong), DesignCount.UnmatchedQueries),
+            known(
+              ready.map(_.counts.unmatchedQueries.value.toLong),
+              DesignCount.UnmatchedQueries
+            ),
             true
           )
         case DesignFilter.NotAdmitted =>
@@ -158,7 +161,15 @@ object ResolvedDesignVM:
     val counting = panel.preview match
       case DesignPreview.Counting(_, _, c, progress) =>
         val done = progress.fold(0)(_.completedParticipants)
-        Some(t(CountingChip, Format.count(done.toLong), Format.count(c.participants.toLong)))
+        // The total is the candidates' participant count; the done count is
+        // progress, as a job's meter is.
+        Some(
+          DesignNoteVM(
+            t(CountingChip, Format.count(done.toLong), Format.count(c.participants.toLong)),
+            tally(DesignCount.Participants).toVector,
+            mono = false
+          )
+        )
       case _ => None
 
     val candidateNote = candidates.map { c =>
@@ -195,7 +206,7 @@ object ResolvedDesignVM:
         mono = true
       )
     }
-    val countingNote = counting.map(c => DesignNoteVM(t(CountingNote, c), Vector.empty, false))
+    val countingNote = counting.map(c => DesignNoteVM(t(CountingNote, c.text), c.refs, false))
     val same         = ready.map(_ => DesignNoteVM(t(SameDesign), Vector.empty, mono = false))
 
     val rowsNote = panel.rowState match

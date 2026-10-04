@@ -129,7 +129,7 @@ final class ResolvedDesignView(dispatch: DesignIntent => Unit):
         chip.button.setDisable(!c.enabled)
         chip.button.setSelected(c.on)
       }
-      shown(counting, vm.counting)
+      shown(counting, vm.counting.map(_.text))
       mode.setText(vm.mode)
       modeBox.pseudoClassStateChanged(Exact, vm.exact)
       if head.getChildren.isEmpty then

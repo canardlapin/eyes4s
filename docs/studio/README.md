@@ -120,7 +120,8 @@ real eyes4s.
 
 `PreviewCandidates` also carries the query counts known before paging (requested,
 not admitted, and the recipe's by-design category, or none), and `PreviewCounts`
-the eligible queries after it (protocol 1.5). The fake serves the `FIXTURE.md`
+the eligible queries after it; a `PreviewReady` refuses counts that do not partition
+the requested queries (protocol 1.5). The fake serves the `FIXTURE.md`
 counts; the real backend (S3.7) must source them from eyes4s's own preview of the
 prepared study (`StudyPreview`/`PreparedStudy`), not compute them in Studio.
 
@@ -132,7 +133,12 @@ are the backend's, each traced by a `StudioRef.DesignTally`; rows come from
 `previewRows`; every row opens its trial. A counted receipt goes to the app with
 the recipe it was prepared from (`Intent.DesignPrepared`). A Save & run of the same
 stamp and recipe emits `ExecutionEffect.SubmitPreview`, so execution consumes that
-prepared design (E2E-05); any other run submits its stamp. The board's split of the
+prepared design (E2E-05); any other run submits its stamp. The receipt is
+submitted once, withdrawn when the pane retargets, and a refused receipt (an evicted
+or stale preview) falls back to submitting the run's stamp, so the recorded run is not
+orphaned. The recipe comparison is the client's own check: S3.7 must make the backend
+refuse a receipt whose recipe or plan identity changed (bead
+bd-01M3DPFHY9YW5BPSJQ8VBBXHVN). The board's split of the
 457 eligible queries into 454 contributing and 3 failing in the window, and the
 per-row reasons ("1 control fewer", "0 of 11 fixations inside window"), need fields
 `PreviewRow` does not carry yet.

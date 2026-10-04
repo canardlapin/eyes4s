@@ -383,6 +383,17 @@ enum Intent derives CanEqual:
     */
   case DesignPrepared(design: PreparedDesign)
 
+  /** The resolved-design pane left the design it prepared (another target, a
+    * changed draft): no run submits that receipt any longer.
+    */
+  case DesignWithdrawn
+
+  /** The execution service refused to submit a prepared design (the backend
+    * no longer retains it, or it is stale). The run Save & run recorded is
+    * then submitted by its stamp, as any other run, so it is not orphaned.
+    */
+  case PreparedRefused(ready: PreviewReady, error: ExecutionError)
+
   /** The project session finished an atomic save at `at` of every edit up
     * to `upTo` (the mark of the `Persist` it performed, S2.4a).
     */
@@ -669,10 +680,16 @@ object AppModel:
       outcomeOf(received.document, event).fold((received, none)) { command =>
         applyHistory(received, JournalEntry.Apply(command), received.history.apply(command))
       }
-    case Intent.JobsChanged(jobs)  => (m.copy(jobs = m.jobs.withJobs(jobs)), none)
-    case Intent.SessionChanged(f)  => (m.copy(session = f), none)
-    case Intent.ItemsLoaded(items) => (m.copy(items = items), none)
-    case Intent.DesignPrepared(r)  => (m.copy(prepared = Some(r)), none)
+    case Intent.JobsChanged(jobs)             => (m.copy(jobs = m.jobs.withJobs(jobs)), none)
+    case Intent.SessionChanged(f)             => (m.copy(session = f), none)
+    case Intent.ItemsLoaded(items)            => (m.copy(items = items), none)
+    case Intent.DesignPrepared(r)             => (m.copy(prepared = Some(r)), none)
+    case Intent.DesignWithdrawn               => (m.copy(prepared = None), none)
+    case Intent.PreparedRefused(ready, error) =>
+      (
+        m.copy(prepared = None, notice = Some(Notice.ExecutionRefused(error))),
+        Vector(AppEffect.Execution(ExecutionEffect.Submit(ready.stamp)))
+      )
     case Intent.Saved(at, upTo)    => (m.copy(save = m.save.saved(at, upTo)), none)
     case Intent.SaveFailed(reason) => (m.copy(notice = Some(Notice.SaveFailed(reason))), none)
 
@@ -765,11 +782,17 @@ object AppModel:
         .filter(s => submits.isEmpty && !requestedStamp(m.document).contains(s))
         .map(s => AppEffect.Execution(ExecutionEffect.Require(s)))
       val jobs = (submits ++ require.flatMap(_ => required)).foldLeft(m.jobs)(_.require(_))
+      // A prepared design is submitted once: a later run prepares again.
+      val submitted = effects.exists {
+        case AppEffect.Execution(ExecutionEffect.SubmitPreview(_)) => true
+        case _                                                     => false
+      }
       val next = m.copy(
         history = step.history,
         jobs = jobs,
         notice = None,
-        save = save
+        save = save,
+        prepared = if submitted then None else m.prepared
       )
       (rebased(m, next), (AppEffect.Journal(entry) +: effects) ++ require)
 

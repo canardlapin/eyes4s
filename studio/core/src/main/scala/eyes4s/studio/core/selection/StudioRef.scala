@@ -238,6 +238,9 @@ enum DesignCount derives CanEqual, Codec.AsObject:
   case RequestedQueries, EligibleQueries, UnmatchedQueries, QueriesNotAdmitted, ByDesignQueries
   case FocalTrials, ReferenceTrials, CandidatePairsPerScale, EligiblePairsPerScale
 
+  /** The participants the preview counts, one page of pairs each. */
+  case Participants
+
 /** Which inventory trials a [[StudioRef.InventoryCount]] counts, by their
   * admission disposition. `Quarantined` holds every trial admission held
   * back: those quarantined with a cause and the no-fixations trials, whose

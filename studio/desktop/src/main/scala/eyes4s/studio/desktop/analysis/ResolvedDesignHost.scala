@@ -21,7 +21,6 @@ import eyes4s.studio.app.analysis.*
 import eyes4s.studio.app.vm.FocusStop
 import eyes4s.studio.app.{AppModel, Intent}
 import eyes4s.studio.core.backend.{AnalysisRevision, BackendError, PageRequest, PreviewPage}
-import eyes4s.studio.core.document.Perspective
 import eyes4s.studio.core.preview.{PreviewBudget, PreviewEvent, PreviewId}
 import eyes4s.studio.desktop.runtime.StudioSession
 import fs2.Stream
@@ -101,8 +100,7 @@ object DesignInputs:
   * design) go to `app`. Use on the JavaFX thread.
   */
 final class ResolvedDesignHost(app: Intent => Unit, inputs: DesignInputs):
-  private var panel   = ResolvedDesign.empty
-  private var started = false
+  private var panel = ResolvedDesign.empty
 
   val view: ResolvedDesignView = ResolvedDesignView(dispatch)
   def node: javafx.scene.Node  = view.node
@@ -113,16 +111,12 @@ final class ResolvedDesignHost(app: Intent => Unit, inputs: DesignInputs):
   /** The pane's focus stops after its own: the choosable chips, then the table. */
   def focusStops: Vector[FocusStop] = ResolvedDesignVM.of(panel).focusStops
 
-  /** Follow the model. Nothing is asked of the backend until the Analysis
-    * perspective has been shown.
-    */
+  /** Follow the model ([[ResolvedDesign.sync]]). */
   def sync(m: AppModel): Unit =
-    started = started || m.perspective == Perspective.Analysis
-    if started then
-      val (next, effects) = ResolvedDesign.sync(panel, m)
-      panel = next
-      perform(effects)
-      view.render(ResolvedDesignVM.of(panel))
+    val (next, effects) = ResolvedDesign.sync(panel, m)
+    panel = next
+    perform(effects)
+    view.render(ResolvedDesignVM.of(panel))
 
   /** A user action or a backend answer. */
   def dispatch(intent: DesignIntent): Unit =

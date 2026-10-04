@@ -67,13 +67,13 @@ class PreviewSnapshotSuite extends munit.CatsEffectSuite:
           ScriptedSegment(Segment.Comparing(0, PairDesign.Matched), ProgressTotal.Exact(7))
         )
       )
-      customReceipt = receipt.copy(counts =
+      customReceipt = ProtocolSamples.remade(receipt)(counts =
         right(
           PreviewCounts.of(
             7L,
             7L,
             receipt.counts.eligibleQueries.value,
-            receipt.counts.unmatchedQueries,
+            receipt.counts.unmatchedQueries.value,
             receipt.counts.ambiguousMatches
           )
         )

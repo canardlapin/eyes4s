@@ -151,7 +151,8 @@ object StudioLayouts:
           pane("analysis.description", "Description", Text)
         ) -> 0.6,
         group(
-          PaneDecl(resolvedDesign, PaneTitle.Fixed("Resolved design"), Table),
+          // A region (the board's section) holding the table's own focus stop.
+          PaneDecl(resolvedDesign, PaneTitle.Fixed("Resolved design"), Form),
           table("analysis.resolved-design")
         ) -> 0.4
       ),

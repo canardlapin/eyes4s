@@ -44,6 +44,7 @@ enum DesignTextId derives CanEqual:
   // --- Tallies (StudioRef.DesignTally) -------------------------------------------------------
   case TallyRequested, TallyEligible, TallyUnmatched, TallyNotAdmitted, TallyByDesign
   case TallyFocalTrials, TallyReferenceTrials, TallyCandidatePairs, TallyEligiblePairs, TallyOf
+  case TallyParticipants
 
 /** The resolved-design pane's strings in the board's wording. */
 object DesignText:
@@ -105,6 +106,7 @@ object DesignText:
     case TallyUnmatched       => "Queries with no match"
     case TallyNotAdmitted     => "Queries not admitted"
     case TallyByDesign        => "Queries without a study trial, by design"
+    case TallyParticipants    => "Participants"
     case TallyFocalTrials     => "Focal trials"
     case TallyReferenceTrials => "Reference trials"
     case TallyCandidatePairs  => "Candidate pairs per scale"
@@ -122,6 +124,7 @@ object DesignText:
       case DesignCount.UnmatchedQueries       => TallyUnmatched
       case DesignCount.QueriesNotAdmitted     => TallyNotAdmitted
       case DesignCount.ByDesignQueries        => TallyByDesign
+      case DesignCount.Participants           => TallyParticipants
       case DesignCount.FocalTrials            => TallyFocalTrials
       case DesignCount.ReferenceTrials        => TallyReferenceTrials
       case DesignCount.CandidatePairsPerScale => TallyCandidatePairs

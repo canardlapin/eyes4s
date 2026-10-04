@@ -80,15 +80,15 @@ class PreviewPagingSuite extends CatsEffectSuite:
       receipt = b
         .collectFirst { case PreviewEvent.Ready(value) => value }
         .getOrElse(fail("no ready"))
-      incomplete <- fake.submitPreview(receipt.copy(id = aId))
+      incomplete <- fake.submitPreview(ProtocolSamples.remade(receipt)(id = aId))
       tampered   <- fake.submitPreview(
-        receipt.copy(counts =
+        ProtocolSamples.remade(receipt)(counts =
           right(
             PreviewCounts.of(
               receipt.counts.eligiblePairsPerScale,
               receipt.counts.eligiblePairs,
               receipt.counts.eligibleQueries.value,
-              receipt.counts.unmatchedQueries,
+              receipt.counts.unmatchedQueries.value,
               1
             )
           )
@@ -106,13 +106,13 @@ class PreviewPagingSuite extends CatsEffectSuite:
       ready = page
         .collectFirst { case PreviewEvent.Ready(value) => value }
         .getOrElse(fail("not ready"))
-      tampered = ready.copy(counts =
+      tampered = ProtocolSamples.remade(ready)(counts =
         right(
           PreviewCounts.of(
             1L,
             ready.counts.eligiblePairs,
             ready.counts.eligibleQueries.value,
-            ready.counts.unmatchedQueries,
+            ready.counts.unmatchedQueries.value,
             ready.counts.ambiguousMatches
           )
         )
@@ -307,6 +307,32 @@ class PreviewPagingSuite extends CatsEffectSuite:
       PreviewError.BeyondTotal("completedParticipants", 25, 24).message,
       "Preview completedParticipants reports 25, beyond its total 24."
     )
+  }
+
+  test("a ready receipt's query counts partition the requested queries") {
+    val stamp      = ProtocolSamples.previewReady.stamp
+    val candidates = right(PreviewCandidates.of(480, 480, 24, 230400L, 480, 14, None))
+    val lures      = right(PreviewCandidates.of(480, 480, 24, 230400L, 480, 14, Some(3)))
+    val counts     = right(PreviewCounts.of(8969L, 44845L, 457, 9, 0))
+    assert(PreviewReady.of(PreviewId(1L), stamp, candidates, counts, Vector.empty).isRight)
+    assertEquals(
+      PreviewReady.of(PreviewId(1L), stamp, lures, counts, Vector.empty),
+      Left(PreviewError.QueryPartition(480, 457, 9, 14, Some(3)))
+    )
+    val over = right(PreviewCounts.of(8969L, 44845L, 481, 9, 0))
+    assertEquals(
+      PreviewReady.of(PreviewId(1L), stamp, candidates, over, Vector.empty),
+      Left(PreviewError.QueryPartition(480, 481, 9, 14, None))
+    )
+    assertEquals(
+      PreviewError.QueryPartition(480, 481, 9, 14, None).message,
+      "Preview requests 480 queries, but 481 eligible + 9 unmatched + 14 not admitted is 504."
+    )
+    import io.circe.syntax.*
+    val wire = ProtocolSamples.previewReady.asJson
+    val bad  =
+      wire.hcursor.downField("counts").downField("eligibleQueries").withFocus(_ => 456.asJson)
+    assert(bad.top.exists(_.as[PreviewReady].isLeft))
   }
 
   test("preview decoders refuse what the constructors refuse") {

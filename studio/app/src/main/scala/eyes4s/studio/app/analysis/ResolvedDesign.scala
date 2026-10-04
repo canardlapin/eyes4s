@@ -159,7 +159,8 @@ final case class ResolvedDesign(
     rows: Vector[PreviewRow],
     rowState: DesignRows,
     filter: DesignFilter,
-    cursor: Option[TrialKey]
+    cursor: Option[TrialKey],
+    started: Boolean
 ) derives CanEqual:
 
   /** The rows the filter passes, in source order. */
@@ -179,7 +180,8 @@ object ResolvedDesign:
       Vector.empty,
       DesignRows.Complete,
       DesignFilter.All,
-      None
+      None,
+      started = false
     )
 
   /** Participants counted per backend request: small enough that counting
@@ -223,12 +225,20 @@ object ResolvedDesign:
     * rows; the filter is kept.
     */
   def sync(panel: ResolvedDesign, model: AppModel): (ResolvedDesign, Vector[DesignEffect]) =
-    val now = target(model)
-    if now == panel.target then (panel, none)
+    // Nothing is asked of the backend until the Analysis perspective has
+    // been shown; from then on the pane follows its target.
+    val started = panel.started || model.perspective == Perspective.Analysis
+    val now     = target(model)
+    if !started || now == panel.target then (panel, none)
     else
       val generation = panel.generation + 1
+      // The design prepared for the old target is no longer the one shown.
+      val withdraw =
+        if panel.target.isDefined then Vector(DesignEffect.App(Intent.DesignWithdrawn))
+        else none
       now match
-        case None    => (empty.copy(generation = generation, filter = panel.filter), none)
+        case None =>
+          (empty.copy(generation = generation, filter = panel.filter, started = true), withdraw)
         case Some(t) =>
           val start = PreviewBudget.of(ParticipantsPerPage) match
             case Left(e)       => (DesignPreview.Refused(e.message), none)
@@ -249,9 +259,10 @@ object ResolvedDesign:
               Vector.empty,
               read._1,
               panel.filter,
-              None
+              None,
+              started = true
             ),
-            start._2 ++ read._2
+            withdraw ++ start._2 ++ read._2
           )
 
   /** The Elm-style update: pure; effects are data. */
@@ -261,6 +272,10 @@ object ResolvedDesign:
   ): (ResolvedDesign, Vector[DesignEffect]) =
     import DesignIntent.*
     intent match
+      // A recipe without a by-design category has nothing to filter by.
+      case ChooseFilter(DesignFilter.ByDesign)
+          if !panel.preview.knownCandidates.exists(_.byDesignQueries.isDefined) =>
+        (panel, none)
       case ChooseFilter(f) =>
         val next = panel.copy(filter = f)
         (next.copy(cursor = next.cursorIndex.flatMap(_ => panel.cursor)), none)

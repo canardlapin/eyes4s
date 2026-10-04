@@ -18,6 +18,7 @@ package eyes4s.studio.core.backend
 
 import io.circe.syntax.*
 import io.circe.{Decoder, Encoder, Json}
+import eyes4s.studio.core.execution.RunStamp
 import eyes4s.studio.core.preview.*
 
 /** One named protocol value: its JSON is pinned in [[ProtocolPins]]. */
@@ -70,13 +71,23 @@ object ProtocolSamples:
   )
 
   val previewBudget: PreviewBudget = right(PreviewBudget.of(24))
-  val previewReady: PreviewReady   = PreviewReady(
-    PreviewId(1L),
-    PreviewStamp.fake(AnalysisRevision(5), DatasetRevision(3)),
-    right(PreviewCandidates.of(480, 480, 24, 230400L, 480, 14, None)),
-    right(PreviewCounts.of(8969L, 44845L, 457, 9, 0)),
-    Vector(diagnostic)
+  val previewReady: PreviewReady   = right(
+    PreviewReady.of(
+      PreviewId(1L),
+      PreviewStamp.fake(AnalysisRevision(5), DatasetRevision(3)),
+      right(PreviewCandidates.of(480, 480, 24, 230400L, 480, 14, None)),
+      right(PreviewCounts.of(8969L, 44845L, 457, 9, 0)),
+      Vector(diagnostic)
+    )
   )
+
+  /** `r` with another id, stamp or counts, as a backend or a tamperer would send it. */
+  def remade(r: PreviewReady)(
+      id: PreviewId = r.id,
+      stamp: RunStamp = r.stamp,
+      counts: PreviewCounts = r.counts
+  ): PreviewReady =
+    right(PreviewReady.of(id, stamp, r.candidates, counts, r.diagnostics))
 
   val address: ResultAddress = ResultAddress.PairRow(2, PairDesign.Control, query, matched)
 
@@ -162,7 +173,7 @@ object ProtocolSamples:
       previewReady.stamp.copy(dataset = DatasetRevision(4))
     ),
     BackendError.TamperedPreview(
-      previewReady.copy(counts = right(PreviewCounts.of(8969L, 44845L, 457, 9, 1))),
+      remade(previewReady)(counts = right(PreviewCounts.of(8969L, 44845L, 457, 9, 1))),
       previewReady
     ),
     BackendError.Unavailable(DiagnosticLocus.Dataset(DatasetRevision(2))),

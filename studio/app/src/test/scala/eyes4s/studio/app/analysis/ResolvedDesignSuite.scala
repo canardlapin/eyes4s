@@ -43,7 +43,7 @@ class ResolvedDesignSuite extends munit.FunSuite:
 
   private val candidates = ok(PreviewCandidates.of(480, 480, 24, 230400L, 480, 14, None))
   private val counts     = ok(PreviewCounts.of(8969L, 44845L, 457, 9, 0))
-  private val ready      = PreviewReady(id, stamp, candidates, counts, Vector.empty)
+  private val ready      = ok(PreviewReady.of(id, stamp, candidates, counts, Vector.empty))
 
   private val ret07 = MockStudy.key("P17", "ret_07")
   private val ret09 = MockStudy.key("P17", "ret_09")
@@ -151,7 +151,15 @@ class ResolvedDesignSuite extends munit.FunSuite:
     val vm = ResolvedDesignVM.of(panel)
     assertEquals(vm.mode, "paging")
     assert(!vm.exact)
-    assertEquals(vm.counting, Some("counting eligible pairs… 18 of 24 participants"))
+    assertEquals(
+      vm.counting.map(c => (c.text, c.refs)),
+      Some(
+        (
+          "counting eligible pairs… 18 of 24 participants",
+          Vector(StudioRef.DesignTally(rev5, DesignCount.Participants))
+        )
+      )
+    )
     assertEquals(
       vm.chips.map(c => (c.label, c.count, c.enabled)),
       Vector(
@@ -251,7 +259,10 @@ class ResolvedDesignSuite extends munit.FunSuite:
     assertEquals((stale, e1), (synced._1, Vector.empty))
     val (refused, e2) = step(
       synced._1,
-      DesignIntent.Previewed(g, PreviewEvent.Ready(ready.copy(stamp = other)))
+      DesignIntent.Previewed(
+        g,
+        PreviewEvent.Ready(ok(PreviewReady.of(id, other, candidates, counts, Vector.empty)))
+      )
     )
     assertEquals(e2, Vector.empty)
     assertEquals(
@@ -337,9 +348,18 @@ class ResolvedDesignSuite extends munit.FunSuite:
     assertEquals(shown(DesignFilter.Eligible), Vector(ret07, ret01))
     assertEquals(shown(DesignFilter.NoMatch), Vector(ret11))
     assertEquals(shown(DesignFilter.NotAdmitted), Vector(ret09))
-    assertEquals(shown(DesignFilter.ByDesign), Vector.empty)
-    val empty =
-      ResolvedDesignVM.of(step(counted, DesignIntent.ChooseFilter(DesignFilter.ByDesign))._1)
+    // No by-design category: the chip is refused and every row stays shown.
+    assertEquals(shown(DesignFilter.ByDesign), rows.map(_.query))
+    val g        = synced._1.generation
+    val lures    = ok(PreviewCandidates.of(480, 480, 24, 230400L, 480, 14, Some(0)))
+    val byDesign = step(
+      synced._1,
+      DesignIntent.Previewed(g, PreviewEvent.Initial(id, stamp, lures)),
+      DesignIntent.RowsRead(g, Right(page(0, rows.size))),
+      DesignIntent.ChooseFilter(DesignFilter.ByDesign)
+    )._1
+    val empty = ResolvedDesignVM.of(byDesign)
+    assertEquals(empty.rows, Vector.empty)
     assertEquals(empty.rowsNote, Some("No query has this status."))
     assert(ResolvedDesignVM.of(counted).chips.head.on)
   }
@@ -420,8 +440,33 @@ class ResolvedDesignSuite extends munit.FunSuite:
       case AppEffect.Execution(ExecutionEffect.Submit(_)) => true
       case _                                              => false
     })
+    // The prepared stamp is the run's own: no separate Require accompanies it.
+    assert(!effects.exists {
+      case AppEffect.Execution(ExecutionEffect.Require(_)) => true
+      case _                                               => false
+    })
     assertEquals(ran.jobs.shelf.required, Some(ready.stamp))
     assertEquals(AppModel.stampOf(ran.document, rev5, r3), ready.stamp)
+    // A prepared design is submitted once.
+    assertEquals(ran.prepared, None)
+  }
+
+  test("E2E-05: a refused prepared design falls back to submitting the run's stamp") {
+    val recipe   = model.document.draftRecipe.getOrElse(fail("no draft"))
+    val prepared =
+      AppModel.update(model, Intent.DesignPrepared(PreparedDesign(ready, recipe)))._1
+    val (ran, _) = AppModel.update(prepared, Intent.Dispatch(Command.SaveAndRun(None)))
+    val running  = ran.document.running.map(_.id)
+    assert(running.nonEmpty)
+    val error = eyes4s.studio.core.execution.ExecutionError
+      .Backend(BackendError.UnknownPreview(ready.id, Vector.empty))
+    val (fell, effects) = AppModel.update(ran, Intent.PreparedRefused(ready, error))
+    assertEquals(effects, Vector(AppEffect.Execution(ExecutionEffect.Submit(ready.stamp))))
+    assertEquals(fell.prepared, None)
+    assertEquals(fell.notice.map(_.message), Some(error.message))
+    // The run Save & run recorded is still the running one: not orphaned.
+    assertEquals(fell.document.running.map(_.id), running)
+    assertEquals(fell.jobs.shelf.required, Some(ready.stamp))
   }
 
   test("E2E-05: a draft edited after its preview runs its own stamp, not the stale design") {
@@ -436,6 +481,9 @@ class ResolvedDesignSuite extends munit.FunSuite:
     // The edit is a new target: the pane prepares the edited draft again.
     val (again, restart) = ResolvedDesign.sync(counted, edited)
     assertEquals(again.preview, DesignPreview.Preparing)
+    // ...and withdraws the design it had prepared.
+    assertEquals(restart.headOption, Some(DesignEffect.App(Intent.DesignWithdrawn)))
+    assertEquals(AppModel.update(prepared, Intent.DesignWithdrawn)._1.prepared, None)
     assert(restart.exists {
       case DesignEffect.StartPreview(_, `rev5`, _) => true
       case _                                       => false
@@ -444,4 +492,34 @@ class ResolvedDesignSuite extends munit.FunSuite:
     val (_, plain) = AppModel.update(model, Intent.Dispatch(Command.SaveAndRun(None)))
     assert(plain.contains(AppEffect.Execution(ExecutionEffect.Submit(stamp))), plain)
     assertEquals(stamp.plan, CoreBinding.unbound)
+  }
+
+  test("nothing is asked of the backend until the Analysis perspective is shown") {
+    val elsewhere = StoryModels.t2Compare
+    assertNotEquals(elsewhere.perspective, eyes4s.studio.core.document.Perspective.Analysis)
+    assertEquals(
+      ResolvedDesign.sync(ResolvedDesign.empty, elsewhere),
+      (ResolvedDesign.empty, Vector.empty)
+    )
+    val (shown, effects) = ResolvedDesign.sync(ResolvedDesign.empty, model)
+    assert(shown.started)
+    assert(effects.exists {
+      case DesignEffect.StartPreview(_, `rev5`, _) => true
+      case _                                       => false
+    })
+    // Once started it follows the target from any perspective.
+    assertEquals(ResolvedDesign.sync(shown, elsewhere)._1.started, true)
+  }
+
+  test("the by-design chip cannot be chosen while the recipe has no such category") {
+    val (p, e) = step(counted, DesignIntent.ChooseFilter(DesignFilter.ByDesign))
+    assertEquals((p, e), (counted, Vector.empty))
+    val g              = synced._1.generation
+    val lures          = ok(PreviewCandidates.of(480, 480, 24, 230400L, 480, 14, Some(0)))
+    val (withLures, _) =
+      step(synced._1, DesignIntent.Previewed(g, PreviewEvent.Initial(id, stamp, lures)))
+    assertEquals(
+      step(withLures, DesignIntent.ChooseFilter(DesignFilter.ByDesign))._1.filter,
+      DesignFilter.ByDesign
+    )
   }

@@ -7,7 +7,7 @@ button: Draft rev 5, current location
 button: Draft rev 5 · 1 change · ready; review in Analysis
 list: Analyses
 region: Recipe
-table: Resolved design
+region: Resolved design
 toggle-button: All requested
 toggle-button: Eligible
 toggle-button: No match
