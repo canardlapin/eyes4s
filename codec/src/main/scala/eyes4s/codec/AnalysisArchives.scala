@@ -30,6 +30,13 @@ trait LoadedAnalysisPlan:
   def description: Vector[(String, Vector[Provenance.Param])]
   def encode: Either[CodecError, Json]
 
+  /** The semantic identities of the input the plan document carries, in
+    * order; none for a plan that references its input instead. A result
+    * related to this plan with `AnalysisInputs.EmbeddedInPlan` is checked
+    * against them.
+    */
+  def embeddedInputs: Vector[ContentHash] = Vector.empty
+
 /** A decoded result of an analysis family stored under the generic
   * `analysis-result` role: its schema, the plan description it was computed
   * under, the semantic identities of the inputs it was computed on, in order,
@@ -42,13 +49,16 @@ trait LoadedAnalysisResult:
   def encode: Either[CodecError, Json]
 
 /** One analysis family's archives as the resolver sees them: the plan and
-  * result schemas it decodes and a decoder for each.
+  * result schemas it decodes, a decoder for each, and whether its plan
+  * embeds its input (so a result's relation may say
+  * `AnalysisInputs.EmbeddedInPlan`).
   */
 final case class AnalysisRegistration(
     plan: DefinitionId,
     result: DefinitionId,
     decodePlan: Json => Either[CodecError, LoadedAnalysisPlan],
-    decodeResult: Json => Either[CodecError, LoadedAnalysisResult]
+    decodeResult: Json => Either[CodecError, LoadedAnalysisResult],
+    embedsInput: Boolean = false
 )
 
 /** The analysis families a resolver decodes under the generic roles, by
@@ -66,6 +76,10 @@ final class AnalysisRegistry private (val entries: Vector[AnalysisRegistration])
       case None         =>
         if entry.plan == entry.result then Left(CodecError.DuplicateResultCodec(entry.plan))
         else Right(new AnalysisRegistry(entries :+ entry))
+
+  /** The family whose result schema is `schema`. */
+  def forResult(schema: DefinitionId): Option[AnalysisRegistration] =
+    entries.find(_.result == schema)
 
   /** The plan schemas, then the result schemas, in registration order. */
   def planSchemas: Vector[DefinitionId]   = entries.map(_.plan)

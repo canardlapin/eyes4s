@@ -643,15 +643,22 @@ object ArtifactCodecLawSuite:
         yield ManifestRelation.TemporalResultOf(r, p, i)
       )
     )
-    // An analysis result cites one or more distinct identity-bearing inputs.
+    // An analysis result cites one or more distinct identity-bearing inputs, or an
+    // input its plan embeds.
     identified = entries.filter(_.role.identityBearing).map(_.name)
     analyses <- Gen.sequence[Vector[ManifestRelation], ManifestRelation](
       byRole(ArtifactRole.AnalysisResult).map(r =>
         for
           p  <- Gen.oneOf(byRole(ArtifactRole.AnalysisPlan))
-          n  <- Gen.choose(1, identified.size)
+          n  <- Gen.choose(0, identified.size)
           on <- Gen.pick(n, identified)
-        yield ManifestRelation.AnalysisResultOf(r, p, on.toVector)
+        yield ManifestRelation.AnalysisResultOf(
+          r,
+          p,
+          cats.data.NonEmptyVector
+            .fromVector(on.toVector)
+            .fold(AnalysisInputs.EmbeddedInPlan)(AnalysisInputs.Entries(_))
+        )
       )
     )
     relations =

@@ -856,7 +856,7 @@ Relations are typed edges, checked against decoded values rather than names:
 | `RecordingResultOf` | recording result, recording plan, recording input | exactly one per recording result | the result's input reference is the input's channels (`contentHash`), its description is the plan's, and the plan agrees with this input's evidence (`RecordingInput.disagreements`), since the channels do not cover the source, viewing geometry or marks |
 | `TemporalPlanInput` | temporal plan, temporal input | exactly one per temporal plan | `plan.prerequisites(input)` is empty |
 | `TemporalResultOf` | temporal result, temporal plan, temporal input | exactly one per temporal result | the result's input reference is the temporal input's, and its description is the plan's |
-| `AnalysisResultOf` | analysis result, analysis plan, inputs (a list) | exactly one per analysis result; one or more distinct identity-bearing inputs | the result's input identities are the inputs' declared identities, in order, and its plan description is the plan's |
+| `AnalysisResultOf` | analysis result, analysis plan, and `AnalysisInputs`: `Entries` (one or more distinct identity-bearing inputs) or `EmbeddedInPlan` | exactly one per analysis result | the result's registration pairs it with the plan's schema; its input identities are, in order, the entries' declared identities, or, for a family whose registration declares `embedsInput`, the identities the plan carries; its plan description is the plan's |
 | `ReportOf` | report, report spec, result, input, ledger (or `null`) | exactly one per report | the report's specification is the spec entry's, and its binding names the canonical digests of the stored result, input, the result's plan (by its `ResultOf`) and ledger (`RelationMismatch.ReportBinding` names the field); reports decode through `ArtifactDecoders.withReports` (see [reducing study results](REDUCING_RESULTS.md)) |
 
 `ScientificManifest.of` checks structure only: unique names, relations naming existing entries of
@@ -1021,7 +1021,13 @@ them to a `LoadedAnalysisPlan` or `LoadedAnalysisResult` (the family's own subcl
 typed value). An entry of a schema no registration names is refused as
 `CodecError.UnsupportedSchema` naming the role, the schema and the schemas the registry supports;
 registering a schema twice is `CodecError.DuplicateResultCodec`. A resolved manifest lists them as
-`analysisPlans` and `analysisResults`.
+`analysisPlans` and `analysisResults`. The relation names where the result's inputs are: input
+entries (`AnalysisInputs.Entries`, written as a list of names) or inside the plan
+(`AnalysisInputs.EmbeddedInPlan`, written as the string `embedded-in-plan`; an empty list is
+refused). The resolver refuses a result related to another family's plan
+(`RelationMismatch.AnalysisFamily`) and an embedded input for a family that does not declare one
+(`RelationMismatch.UndeclaredEmbedding`); an embedded input is checked against the identities the
+plan exposes (`LoadedAnalysisPlan.embeddedInputs`), never skipped.
 
 `eyes4s.laws.ManifestLaws.verifiedResolution(graphs, write, decoders, reproduces)` is the published
 conformance for an application's own graphs and registrations, over a writer producing a

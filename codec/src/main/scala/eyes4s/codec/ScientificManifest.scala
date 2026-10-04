@@ -16,6 +16,7 @@
 
 package eyes4s.codec
 
+import cats.data.NonEmptyVector
 import cats.syntax.all.*
 import eyes4s.core.*
 import eyes4s.kernel.*
@@ -237,13 +238,14 @@ enum ManifestRelation derives CanEqual:
     */
   case ResultPayloadOf(result: ArtifactName, payload: ArtifactName)
 
-  /** The analysis result was produced by the analysis plan on the inputs:
-    * the result's plan description is the plan's, and the inputs it was
-    * computed on are the inputs' semantic identities, in order. The inputs
-    * are distinct identity-bearing entries (study, recording, recording or
-    * temporal inputs), at least one. Exactly one per analysis result.
+  /** The analysis result was produced by the analysis plan on its inputs:
+    * the result and plan are of one registered family, the result's plan
+    * description is the plan's, and the inputs it was computed on are, in
+    * order, the input entries' semantic identities or, for a family whose
+    * plan embeds its input, the identities the plan carries. Exactly one per
+    * analysis result.
     */
-  case AnalysisResultOf(result: ArtifactName, plan: ArtifactName, inputs: Vector[ArtifactName])
+  case AnalysisResultOf(result: ArtifactName, plan: ArtifactName, inputs: AnalysisInputs)
 
   def kind: String = this match
     case LedgerSource(_, _, _, _)   => "ledger-source"
@@ -340,10 +342,12 @@ enum ManifestRelation derives CanEqual:
         ("input", input, ArtifactRole.StudyInput)
       ) ++ covariates.map(("covariates", _, ArtifactRole.AdmissionLedger))
 
-  /** The input entries of an analysis result, in order; none otherwise. */
+  /** The input entries of an analysis result, in order; none otherwise, and
+    * none when its plan embeds its input.
+    */
   def analysisInputs: Vector[ArtifactName] = this match
-    case AnalysisResultOf(_, _, inputs) => inputs
-    case _                              => Vector.empty
+    case AnalysisResultOf(_, _, AnalysisInputs.Entries(names)) => names.toVector
+    case _                                                     => Vector.empty
 
   def source: ArtifactName = this match
     case AnalysisResultOf(result, _, _)  => result
@@ -366,11 +370,28 @@ enum ManifestRelation derives CanEqual:
       case LedgerSource(_, _, _, value) => Vector(s"role=${value.wire}")
       case _                            => Vector.empty
     val listed = this match
-      case AnalysisResultOf(_, _, inputs) =>
-        Vector(inputs.map(_.value).mkString("inputs=[", ", ", "]"))
+      case AnalysisResultOf(_, _, AnalysisInputs.Entries(names)) =>
+        Vector(names.toVector.map(_.value).mkString("inputs=[", ", ", "]"))
+      case AnalysisResultOf(_, _, AnalysisInputs.EmbeddedInPlan) =>
+        Vector("inputs=embedded-in-plan")
       case _ => Vector.empty
     (endpoints.map { case (field, name, _) => s"$field=${name.value}" } ++ listed ++ role)
       .mkString(s"$kind(", ", ", ")")
+
+/** Where an analysis result's inputs are: input entries of the manifest, or
+  * inside its plan.
+  */
+enum AnalysisInputs derives CanEqual:
+  /** Distinct identity-bearing entries (study, recording, recording or
+    * temporal inputs), in the order the result cites them.
+    */
+  case Entries(names: NonEmptyVector[ArtifactName])
+
+  /** The plan document carries its input, as a supplied-map plan does. Legal
+    * only for a family whose registration declares it
+    * ([[AnalysisRegistration.embedsInput]]); the resolver refuses it otherwise.
+    */
+  case EmbeddedInPlan
 
 /** Why a manifest, entry or artifact name is malformed; every case names
   * the entry or relation at fault.
@@ -457,6 +478,9 @@ final case class ScientificManifest private (
 object ScientificManifest:
   val schema: DefinitionId = DefinitionId.manifest
 
+  /** The wire form of [[AnalysisInputs.EmbeddedInPlan]]. */
+  private val EmbeddedInPlanWire = "embedded-in-plan"
+
   /** Structural checks only; semantic relations are checked on resolution.
     * Names are unique; relations name existing entries of the required roles;
     * recording payload owners use packed recordings and result payload owners
@@ -509,13 +533,13 @@ object ScientificManifest:
             ManifestError.AnalysisInput(relation, name, byName(name).role)
         })
         .orElse(relation match
-          case ManifestRelation.AnalysisResultOf(result, _, inputs)
-              if inputs.isEmpty || inputs.distinct.size != inputs.size =>
+          case ManifestRelation.AnalysisResultOf(result, _, AnalysisInputs.Entries(names))
+              if names.toVector.distinct.size != names.length =>
             Some(
               ManifestError.RelationCount(
                 result,
                 "analysis-input",
-                inputs.size,
+                names.length,
                 "at least one, each distinct"
               )
             )
@@ -617,8 +641,11 @@ object ScientificManifest:
         case ManifestRelation.LedgerSource(_, _, _, role) =>
           Vector("role" -> Json.fromString(role.wire))
         case ManifestRelation.ReportOf(_, _, _, _, None) => Vector("covariates" -> Json.Null)
-        case ManifestRelation.AnalysisResultOf(_, _, inputs) =>
-          Vector("inputs" -> Json.arr(inputs.map(n => Json.fromString(n.value))*))
+        // An embedded input is a string, never an empty list of entries.
+        case ManifestRelation.AnalysisResultOf(_, _, AnalysisInputs.Entries(names)) =>
+          Vector("inputs" -> Json.arr(names.toVector.map(n => Json.fromString(n.value))*))
+        case ManifestRelation.AnalysisResultOf(_, _, AnalysisInputs.EmbeddedInPlan) =>
+          Vector("inputs" -> Json.fromString(EmbeddedInPlanWire))
         case _ => Vector.empty
       Json.fromFields(
         (("kind" -> Json.fromString(r.kind)) +:
@@ -722,13 +749,39 @@ object ScientificManifest:
             .flatMap(_.traverse(v => ArtifactName.of(v).left.map(CodecError.Manifest.apply)))
         ).mapN(ManifestRelation.ReportOf.apply)
       case "analysis-result-of" =>
-        (
-          name(json, "result"),
-          name(json, "plan"),
-          Wire
-            .field[Vector[String]](json, "inputs")
-            .flatMap(_.traverse(v => ArtifactName.of(v).left.map(CodecError.Manifest.apply)))
-        ).mapN(ManifestRelation.AnalysisResultOf.apply)
+        def inputs(result: ArtifactName): Either[CodecError, AnalysisInputs] =
+          Wire.field[Json](json, "inputs").flatMap { value =>
+            value.asString match
+              case Some(EmbeddedInPlanWire) => Right(AnalysisInputs.EmbeddedInPlan)
+              case Some(other)              =>
+                Left(CodecError.Field("inputs", json, s"unknown input placement '$other'"))
+              case None =>
+                Wire
+                  .field[Vector[String]](json, "inputs")
+                  .flatMap(
+                    _.traverse(v => ArtifactName.of(v).left.map(CodecError.Manifest.apply))
+                  )
+                  .flatMap(names =>
+                    NonEmptyVector
+                      .fromVector(names)
+                      .map(AnalysisInputs.Entries(_))
+                      .toRight(
+                        CodecError.Manifest(
+                          ManifestError.RelationCount(
+                            result,
+                            "analysis-input",
+                            0,
+                            "at least one, each distinct"
+                          )
+                        )
+                      )
+                  )
+          }
+        for
+          result <- name(json, "result")
+          plan   <- name(json, "plan")
+          placed <- inputs(result)
+        yield ManifestRelation.AnalysisResultOf(result, plan, placed)
       case other => Left(CodecError.Field("kind", json, s"unknown relation kind '$other'"))
     }
 

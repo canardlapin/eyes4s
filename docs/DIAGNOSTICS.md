@@ -1599,6 +1599,8 @@ fails after rewriting, so review the change and run it again.
 | `relation.source-binding` | `SourceBinding` | `field`, `expected`, `found` |
 | `relation.run-plan` | `RunPlan` | `reported`, `current`, `changes` |
 | `relation.run-input` | `RunInput` | `reported`, `current` |
+| `relation.analysis-family` | `AnalysisFamily` | `result`, `plan`, `expected` |
+| `relation.undeclared-embedding` | `UndeclaredEmbedding` | `plan` |
 
 ### `manifest` — `ManifestError`
 
