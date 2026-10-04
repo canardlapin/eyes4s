@@ -18,6 +18,7 @@ package eyes4s.studio.app.vm
 
 import eyes4s.studio.app.AppModel
 import eyes4s.studio.app.admission.AdmissionLedgerVM
+import eyes4s.studio.app.explore.TrialsNavigatorVM
 import eyes4s.studio.app.nav.{DataSection, Place}
 import eyes4s.studio.app.text.{
   Format,
@@ -166,6 +167,7 @@ final class Labels(model: AppModel, messages: Messages):
     case StudioRef.FigurePanel(_, letter)            => messages(CrumbPanel, letter.value)
     case StudioRef.WindowTally(dataset, region)      => tally(dataset, region)
     case StudioRef.InventoryCount(_, _)              => AdmissionLedgerVM.countLabel(ref)
+    case StudioRef.TrialGroup(_, group)              => TrialsNavigatorVM.groupLabel(group)
     case StudioRef.Result(run, address)              =>
       val scale = address.scale
       address.value match
@@ -228,6 +230,8 @@ final class Labels(model: AppModel, messages: Messages):
       case StudioRef.WindowTally(dataset, region) => tally(dataset, region)
       case StudioRef.InventoryCount(dataset, _)   =>
         LedgerText(LedgerTextId.PathCount, dataset.label, AdmissionLedgerVM.countTitle(ref))
+      case StudioRef.TrialGroup(dataset, group) =>
+        LedgerText(LedgerTextId.PathCount, dataset.label, TrialsNavigatorVM.groupLabel(group))
       case StudioRef.Result(run, address) =>
         val s = sigma(run, address.scale)
         address.value match

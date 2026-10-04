@@ -21,8 +21,8 @@ import eyes4s.studio.app.geometry.Loading
 import eyes4s.studio.app.text.{Format, NavigatorText, NavigatorTextId}
 import eyes4s.studio.app.vm.{A11yRole, FocusStop}
 import eyes4s.studio.core.assets.{AssetRegistry, DisplayKind, DisplayState}
-import eyes4s.studio.core.backend.{LedgerEntry, TrialDisposition, TrialKey}
-import eyes4s.studio.core.selection.StudioRef
+import eyes4s.studio.core.backend.{DatasetRevision, LedgerEntry, TrialDisposition, TrialKey}
+import eyes4s.studio.core.selection.{StudioRef, TrialGrouping}
 
 /** How a row of the navigator is set: a participant, one of its phases, the
   * collapsed run of a phase's trials, a trial, or an item.
@@ -61,6 +61,7 @@ final case class LegendVM(glyph: TrialGlyph, label: String) derives CanEqual
 /** Everything one navigator pane (Trials or Items) shows. */
 final case class NavigatorPaneVM(
     title: String,
+    filterLabel: String,
     filterPrompt: String,
     filter: String,
     list: String,
@@ -163,6 +164,19 @@ object TrialsNavigatorVM:
     f.isEmpty || Vector(entry.trial.participant, entry.trial.trial, entry.item)
       .exists(_.toLowerCase.contains(f))
 
+  /** "P17 · Retrieval", "beach-042": what a group of trials names. */
+  def groupLabel(group: TrialGrouping): String = group match
+    case TrialGrouping.PhaseOf(participant, phase) => t(GroupLabel, participant, phase.label)
+    case TrialGrouping.MatchedOn(item)             => itemName(item)
+
+  /** "1 image missing", "2 images missing". */
+  private def imagesMissing(count: Int): String =
+    if count == 1 then t(ImageMissing, n(count)) else t(ImagesMissing, n(count))
+
+  /** The served registry, if the displays were read and served. */
+  private def registry(nav: TrialsNavigator): Option[AssetRegistry] =
+    nav.displays.toOption.collect { case DisplaySource.Served(r) => r }
+
   private def openness(open: Boolean): String = if open then t(Expanded) else t(Collapsed)
 
   /** The status of the panes, when they cannot list everything: still
@@ -175,8 +189,9 @@ object TrialsNavigatorVM:
       case Loading.Failed(why) => Some(t(ReadFailed, label, why))
       case _                   => None
     val shown = nav.displays match
-      case Loading.Failed(why) => Some(t(DisplaysFailed, label, why))
-      case _                   => None
+      case Loading.Failed(why)                    => Some(t(DisplaysFailed, label, why))
+      case Loading.Ready(DisplaySource.NotServed) => Some(t(DisplaysNotServed, label))
+      case _                                      => None
     val failed = (nav.entries, nav.displays) match
       case (Loading.Failed(_), _) | (_, Loading.Failed(_)) => true
       case _                                               => false
@@ -189,7 +204,7 @@ object TrialsNavigatorVM:
   private def inventoryFile(nav: TrialsNavigator): String =
     nav.dataset
       .flatMap(_.sources.trials)
-      .fold("the trial inventory")(_.path.value.split('/').last)
+      .fold(t(InventoryFallback))(_.path.value.split('/').last)
 
   private def trialRow(
       entry: LedgerEntry,
@@ -219,8 +234,9 @@ object TrialsNavigatorVM:
     val shown = entries.flatMap(glyph(_, displays)).toSet
     TrialGlyph.values.toVector.filter(shown.contains).map(g => LegendVM(g, glyphName(g)))
 
-  /** A participant's figures: its trials, then those quarantined (with
-    * no-fixations), absent and missing their image, when there are any.
+  /** A participant's figures: its trials, then those quarantined, those
+    * with no fixations (as the admission ledger counts them apart), absent
+    * and missing their image, when there are any.
     */
   private def participantDetail(
       entries: Vector[LedgerEntry],
@@ -228,15 +244,17 @@ object TrialsNavigatorVM:
   ): String =
     val quarantined = entries.count(e =>
       e.disposition match
-        case TrialDisposition.Quarantined(_) | TrialDisposition.NoFixations => true
-        case _                                                              => false
+        case TrialDisposition.Quarantined(_) => true
+        case _                               => false
     )
-    val absent  = entries.count(_.disposition == TrialDisposition.Absent)
-    val missing = entries.count(isMissing(_, displays))
+    val noFixations = entries.count(_.disposition == TrialDisposition.NoFixations)
+    val absent      = entries.count(_.disposition == TrialDisposition.Absent)
+    val missing     = entries.count(isMissing(_, displays))
     (Vector(t(ParticipantDetail, n(entries.size))) ++
       Option.when(quarantined > 0)(t(Quarantined, n(quarantined))) ++
+      Option.when(noFixations > 0)(t(NoFixationsCount, n(noFixations))) ++
       Option.when(absent > 0)(t(Absent, n(absent))) ++
-      Option.when(missing > 0)(t(ImagesMissing, n(missing)))).mkString(" · ")
+      Option.when(missing > 0)(imagesMissing(missing))).mkString(" · ")
 
   /** The kind every trial of `entries` showed, when they agree. */
   private def commonKind(
@@ -249,17 +267,24 @@ object TrialsNavigatorVM:
         .when(kinds.size == 1 && entries.forall(e => r.display(e.trial).isDefined))(kinds.head)
     }
 
-  /** The Trials pane: participant → phase → trial. */
+  /** The Trials pane: participant → phase → trial.
+    *
+    * Board parity (Explore.dc.html, left): the board's per-trial fixation
+    * count (`{{t.nf}}`, "enc_03 · 13") is not shown. It waits on serving
+    * fixation timing from the backend (bead bd-01M425ARKH0V5Z124VJQNFKTBT);
+    * the ledger entries hold no fixation count.
+    */
   def trials(nav: TrialsNavigator, model: AppModel): NavigatorPaneVM =
-    val (note, retry) = notes(nav)
-    val entries       = nav.entries.toOption.getOrElse(Vector.empty)
-    val displays      = nav.displays.toOption
-    val selected      = TrialsNavigator.selected(model)
-    val inventory     = inventoryFile(nav)
-    val filtering     = nav.filter.trim.nonEmpty
-    val label         = nav.dataset.fold("")(_.id.label)
-    val participants  = entries.map(_.trial.participant).distinct
-    val rows          = participants.flatMap { p =>
+    val (note, retry)                    = notes(nav)
+    val entries                          = nav.entries.toOption.getOrElse(Vector.empty)
+    val displays                         = registry(nav)
+    val selected                         = TrialsNavigator.selected(model)
+    val inventory                        = inventoryFile(nav)
+    val filtering                        = nav.filter.trim.nonEmpty
+    val label                            = nav.dataset.fold("")(_.id.label)
+    val dataset: Option[DatasetRevision] = nav.dataset.map(_.id)
+    val participants                     = entries.map(_.trial.participant).distinct
+    val rows                             = participants.flatMap { p =>
       val all    = entries.filter(_.trial.participant == p)
       val shown  = all.filter(matches(_, nav.filter))
       val group  = NavigatorGroup.Participant(p)
@@ -283,6 +308,7 @@ object TrialsNavigatorVM:
       val phases = shown.map(_.trial.phase).distinct.flatMap { phase =>
         val inPhase = shown.filter(_.trial.phase == phase)
         val pg      = NavigatorGroup.PhaseOf(p, phase)
+        val pref    = dataset.map(StudioRef.TrialGroup(_, TrialGrouping.PhaseOf(p, phase)))
         val popen   = filtering || TrialsNavigator.isOpen(nav, pg, model)
         val head    = commonKind(inPhase, displays).fold(
           t(PhaseHeaderMixed, phase.label, n(inPhase.size))
@@ -301,7 +327,7 @@ object TrialsNavigatorVM:
           false,
           t(GroupAccessible, p, head, openness(popen)),
           Some(NavigatorIntent.Toggle(pg)),
-          None
+          pref
         )
         val body =
           if popen then
@@ -322,7 +348,7 @@ object TrialsNavigatorVM:
               false,
               t(GroupAccessible, span, count, openness(false)),
               Some(NavigatorIntent.Toggle(pg)),
-              None
+              pref
             )
             val exceptions = inPhase
               .filter(e => e.disposition != TrialDisposition.Admitted || isMissing(e, displays))
@@ -338,6 +364,7 @@ object TrialsNavigatorVM:
     NavigatorPaneVM(
       t(TrialsTitle),
       t(TrialsFilter),
+      t(TrialsFilterPrompt),
       nav.filter,
       t(TrialsList, label),
       rows,
@@ -349,14 +376,15 @@ object TrialsNavigatorVM:
 
   /** The Items pane: each match item, opening to the trials matched on it. */
   def items(nav: TrialsNavigator, model: AppModel): NavigatorPaneVM =
-    val (note, retry) = notes(nav)
-    val entries       = nav.entries.toOption.getOrElse(Vector.empty)
-    val displays      = nav.displays.toOption
-    val selected      = TrialsNavigator.selected(model)
-    val inventory     = inventoryFile(nav)
-    val label         = nav.dataset.fold("")(_.id.label)
-    val f             = nav.itemFilter.trim.toLowerCase
-    val byItem        = entries
+    val (note, retry)                    = notes(nav)
+    val entries                          = nav.entries.toOption.getOrElse(Vector.empty)
+    val displays                         = registry(nav)
+    val selected                         = TrialsNavigator.selected(model)
+    val inventory                        = inventoryFile(nav)
+    val label                            = nav.dataset.fold("")(_.id.label)
+    val dataset: Option[DatasetRevision] = nav.dataset.map(_.id)
+    val f                                = nav.itemFilter.trim.toLowerCase
+    val byItem                           = entries
       .groupBy(_.item)
       .toVector
       .filter((item, _) => f.isEmpty || item.toLowerCase.contains(f))
@@ -366,7 +394,7 @@ object TrialsNavigatorVM:
       val open    = TrialsNavigator.isOpen(nav, group, model)
       val missing = trials.count(isMissing(_, displays))
       val detail  = (Vector(t(ItemDetail, n(trials.size))) ++
-        Option.when(missing > 0)(t(ImagesMissing, n(missing)))).mkString(" · ")
+        Option.when(missing > 0)(imagesMissing(missing))).mkString(" · ")
       val name = itemName(item)
       NavigatorRowVM(
         NavigatorRowKind.Item,
@@ -380,7 +408,7 @@ object TrialsNavigatorVM:
         false,
         t(GroupAccessible, name, detail, openness(open)),
         Some(NavigatorIntent.Toggle(group)),
-        None
+        dataset.map(StudioRef.TrialGroup(_, TrialGrouping.MatchedOn(item)))
       ) +: (if open then
               trials.map(e =>
                 trialRow(
@@ -400,6 +428,7 @@ object TrialsNavigatorVM:
     NavigatorPaneVM(
       t(ItemsTitle),
       t(ItemsFilter),
+      t(ItemsFilter),
       nav.itemFilter,
       t(ItemsList, label),
       rows,
@@ -413,5 +442,5 @@ object TrialsNavigatorVM:
     * Retry after a failed read.
     */
   def focusStops(vm: NavigatorPaneVM): Vector[FocusStop] =
-    Vector(FocusStop(A11yRole.TextField, vm.filterPrompt), FocusStop(A11yRole.List, vm.list)) ++
+    Vector(FocusStop(A11yRole.TextField, vm.filterLabel), FocusStop(A11yRole.List, vm.list)) ++
       vm.retry.map(FocusStop(A11yRole.Button, _))

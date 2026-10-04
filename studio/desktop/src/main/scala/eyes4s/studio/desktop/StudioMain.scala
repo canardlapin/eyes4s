@@ -22,6 +22,7 @@ import eyes4s.studio.core.fixture.{MockStudy, StoryMoment, StoryMoments}
 import javafx.application.{Application, Platform}
 import javafx.scene.Scene
 import javafx.scene.control.Label
+import eyes4s.studio.desktop.explore.NavigatorDisplays
 import javafx.stage.Stage
 
 /** The JavaFX application: renders view-models and dispatches intents
@@ -44,7 +45,7 @@ final class StudioApplication extends Application:
   override def start(stage: Stage): Unit =
     stage.setTitle(StudioMain.title)
     StudioMain.initialModel.flatMap(
-      StudioWindow.open(_, StoryMoment.T2).left.map(_.message)
+      StudioWindow.open(_, StoryMoment.T2, StudioMain.displays).left.map(_.message)
     ) match
       case Left(problem) =>
         stage.setScene(Scene(Label(problem), 480, 240))
@@ -61,6 +62,11 @@ final class StudioApplication extends Application:
 
 /** Entry point for the desktop shell. Tests never launch it. */
 object StudioMain:
+
+  /** The application's trial displays: none is served before S5.7, so the
+    * trials navigator never shows fixture display kinds for a project.
+    */
+  val displays: NavigatorDisplays = NavigatorDisplays.notServed
 
   /** The window title before a project is shown. */
   val title: String = "Eyes Studio"

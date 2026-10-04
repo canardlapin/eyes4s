@@ -82,6 +82,9 @@ final class TrialsNavigatorView(
   )
   private def current: Option[NavigatorRowVM] = Option(rows.getSelectionModel.getSelectedItem)
 
+  /** The trial Explore's trail was on at the last render, as a row. */
+  private var lastExplored: Option[RowIdentity] = None
+
   private val legend = FlowPane()
   legend.getStyleClass.add("nav-legend")
   val footer: Label = label("nav-footer", "t11")
@@ -99,7 +102,7 @@ final class TrialsNavigatorView(
     rendering = true
     try
       filter.setPromptText(vm.filterPrompt)
-      filter.setAccessibleText(vm.filterPrompt)
+      filter.setAccessibleText(vm.filterLabel)
       if filter.getText != vm.filter then filter.setText(vm.filter)
       show(note, vm.note)
       vm.retry.foreach { r =>
@@ -109,13 +112,23 @@ final class TrialsNavigatorView(
       visible(retry, vm.retry.isDefined)
       visible(status, vm.note.isDefined || vm.retry.isDefined)
       rows.setAccessibleText(vm.list)
-      if !rows.getItems.toArray.sameElements(vm.rows) then
-        val at = current.flatMap(r => vm.rows.find(v => v.ref.isDefined && v.ref == r.ref))
-        rows.getItems.setAll(vm.rows*)
-        // The selection follows Explore's trial, else stays on its row.
-        vm.rows.indexWhere(_.selected) match
-          case -1 => at.foreach(r => rows.getSelectionModel.select(r))
-          case i  => rows.getSelectionModel.select(i)
+      // The list selects Explore's trial when that trial changes; otherwise
+      // the row the user is on stays selected, by identity, whatever it is.
+      val explored = vm.rows.find(_.selected).map(rowIdentity(_))
+      val kept     = current.map(rowIdentity(_))
+      if !rows.getItems.toArray.sameElements(vm.rows) then rows.getItems.setAll(vm.rows*): Unit
+      val target =
+        if explored.isDefined && explored != lastExplored then explored else kept
+      // A closed phase's run that opens gives way to its phase's row.
+      target.map(k =>
+        Some(vm.rows.indexWhere(rowIdentity(_) == k))
+          .filter(_ >= 0)
+          .getOrElse(vm.rows.indexWhere(_.activate == k._2))
+      ) match
+        case Some(i) if i >= 0 =>
+          if rows.getSelectionModel.getSelectedIndex != i then rows.getSelectionModel.select(i)
+        case _ => rows.getSelectionModel.clearSelection()
+      lastExplored = explored
       legend.getChildren.setAll(vm.legend.map { l =>
         val text = label("nav-legend-label", "t11")
         text.setText(l.label)
@@ -128,6 +141,14 @@ final class TrialsNavigatorView(
     finally rendering = false
 
 object TrialsNavigatorView:
+
+  /** A row's identity across renders: its kind and what activating it does
+    * (the group it opens or closes, or the trial it explores), which no two
+    * rows of a pane share.
+    */
+  type RowIdentity = (NavigatorRowKind, Option[NavigatorIntent])
+
+  def rowIdentity(row: NavigatorRowVM): RowIdentity = (row.kind, row.activate)
 
   val stylesheetResource: String = s"${TokenFiles.resourceDirectory}/studio-navigator.css"
 

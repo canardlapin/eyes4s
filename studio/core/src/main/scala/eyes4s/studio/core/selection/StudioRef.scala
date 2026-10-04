@@ -19,6 +19,7 @@ package eyes4s.studio.core.selection
 import eyes4s.studio.core.backend.{
   DatasetRevision,
   PairDesign,
+  Phase,
   ResultAddress,
   Response,
   RunId,
@@ -160,6 +161,12 @@ enum StudioRef derives CanEqual, Codec.AsObject:
     */
   case InventoryCount(dataset: DatasetRevision, count: InventoryKind)
 
+  /** A group of a dataset revision's trials as the trials navigator lists
+    * them (ticket S6.1): one participant's phase, or the trials matched on
+    * one item. Its figures count the backend ledger's entries in it.
+    */
+  case TrialGroup(dataset: DatasetRevision, group: TrialGrouping)
+
   def kind: RefKind = this match
     case Participant(_)                                       => RefKind.Entity
     case Trial(_) | Fixation(_, _) | SourceRecord(_, _, _, _) => RefKind.Observation
@@ -170,7 +177,7 @@ enum StudioRef derives CanEqual, Codec.AsObject:
         case ResultAddress.Reduction(_, _, _) | ResultAddress.ContrastRow(_, _) =>
           RefKind.Aggregate
     case ParticipantSummary(_, _, _, _, _) | GroupCell(_, _, _, _) | FigurePanel(_, _) |
-        WindowTally(_, _) | InventoryCount(_, _) =>
+        WindowTally(_, _) | InventoryCount(_, _) | TrialGroup(_, _) =>
       RefKind.Aggregate
 
   def isAggregate: Boolean = kind == RefKind.Aggregate
@@ -187,7 +194,8 @@ enum StudioRef derives CanEqual, Codec.AsObject:
     *  - query contrast ⊃ its reductions ⊃ their pairs (same run and scale).
     *  - group cell ⊃ participant summary (same run, spec and scale);
     *  - quarantined trials ⊃ the trials of each quarantine cause and the
-    *    no-fixations trials (same dataset).
+    *    no-fixations trials (same dataset);
+    *  - participant ⊃ the trials of one of its phases.
     *
     * Which group a query belongs to depends on the data; a view that knows it
     * supplies it through [[Lineage]].
@@ -216,6 +224,17 @@ enum StudioRef derives CanEqual, Codec.AsObject:
         case InventoryKind.Cause(_) | InventoryKind.NoFixations =>
           Some(InventoryCount(dataset, InventoryKind.Quarantined))
         case _ => None
+    case TrialGroup(_, group) =>
+      group match
+        case TrialGrouping.PhaseOf(participant, _) => Some(Participant(participant))
+        case TrialGrouping.MatchedOn(_)            => None
+
+/** Which trials a [[StudioRef.TrialGroup]] holds: one participant's trials
+  * of one phase, or every trial matched on one item.
+  */
+enum TrialGrouping derives CanEqual, Codec.AsObject:
+  case PhaseOf(participant: String, phase: Phase)
+  case MatchedOn(item: String)
 
 /** Which frame a [[StudioRef.WindowTally]] counts records outside of: the
   * analysis window (the image frame, on the screen) or the screen itself.

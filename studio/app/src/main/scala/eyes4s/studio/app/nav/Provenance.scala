@@ -145,6 +145,8 @@ object Provenance:
           ref.parent.map(Place.At(_))
         // A cause under the quarantined count that holds it.
         case StudioRef.InventoryCount(_, _) => ref.parent.map(Place.At(_))
+        // A participant's phase lies under the participant.
+        case StudioRef.TrialGroup(_, _) => ref.parent.map(Place.At(_))
         case StudioRef.Participant(_) | StudioRef.FigurePanel(_, _) |
             StudioRef.WindowTally(_, _) =>
           None

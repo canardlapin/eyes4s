@@ -24,7 +24,7 @@ import eyes4s.studio.core.backend.*
 import eyes4s.studio.core.document.Perspective
 import eyes4s.studio.core.fixture.{GoldenAssets, MockStudy, StoryMoment, StoryMoments}
 import eyes4s.studio.core.headless.HeadlessSession
-import eyes4s.studio.core.selection.StudioRef
+import eyes4s.studio.core.selection.{StudioRef, TrialGrouping}
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -67,7 +67,7 @@ class TrialsNavigatorSuite extends munit.FunSuite:
     )
     Vector(
       NavigatorIntent.EntriesRead(r3, 1, Right(entries)),
-      NavigatorIntent.DisplaysRead(r3, 1, Right(displays(m)))
+      NavigatorIntent.DisplaysRead(r3, 1, Right(DisplaySource.Served(displays(m))))
     ).foldLeft(synced)((n, i) => TrialsNavigator.update(n, m, i)._1)
 
   private def row(vm: NavigatorPaneVM, label: String): NavigatorRowVM =
@@ -274,12 +274,16 @@ class TrialsNavigatorSuite extends munit.FunSuite:
       val all     = TrialsNavigatorVM.items(loaded(model, entries), model)
       val missing = displays(model).missing.map(_.file.value.stripSuffix(".png"))
       assertEquals(missing, Vector("forest-044", "kitchen-081"))
-      missing.foreach(item =>
-        assert(
-          row(all, item).detail.contains("image missing") && row(all, item).warn,
-          row(all, item)
+      // Each is named by as many trials as name it: "2 images missing".
+      displays(model).missing.foreach { m =>
+        val item   = m.file.value.stripSuffix(".png")
+        val trials = entries.count(_.item == item)
+        val shown  = m.trials.size
+        assertEquals(
+          (row(all, item).detail, row(all, item).warn),
+          (s"$trials trials · $shown ${if shown == 1 then "image" else "images"} missing", true)
         )
-      )
+      }
     }
   }
 
@@ -304,7 +308,7 @@ class TrialsNavigatorSuite extends munit.FunSuite:
       assertEquals(
         TrialsNavigatorVM.focusStops(vm).map(_.render),
         Vector(
-          "text-field: Filter participant, trial, item",
+          "text-field: Filter trials",
           "list: Trials of r3",
           "button: Retry"
         )
@@ -335,8 +339,119 @@ class TrialsNavigatorSuite extends munit.FunSuite:
       assertEquals(bare.note, Some("The displays of r3 are not available: no registry"))
       assertEquals(header(bare, "P17").detail, "40 · 1 absent")
       assertEquals(bare.legend.map(_.glyph), Vector(TrialGlyph.NotAdmitted))
+      // Retry asks again only for what failed: the displays.
+      val (again, only) = TrialsNavigator.update(noDisplays, model, NavigatorIntent.Retry)
+      assertEquals(
+        only,
+        Vector(NavigatorEffect.RequestDisplays(model.document.dataset(r3).get, 3))
+      )
+      assertEquals((again.entries, again.displays), (Loading.Ready(entries), Loading.Waiting))
+      // With nothing failed, Retry does nothing.
+      assertEquals(
+        TrialsNavigator.update(read, model, NavigatorIntent.Retry),
+        (read, Vector.empty)
+      )
       // Syncing the same revision asks nothing.
       assertEquals(TrialsNavigator.sync(read, model), (read, Vector.empty))
+    }
+  }
+
+  test("an answer for another revision is ignored, whatever its ask") {
+    ledger.map { entries =>
+      val (synced, _) = TrialsNavigator.sync(TrialsNavigator.empty, model)
+      val r2          = StoryMoments.r2
+      val other       = Vector(
+        NavigatorIntent.EntriesRead(r2, synced.ask, Right(entries)),
+        NavigatorIntent.DisplaysRead(r2, synced.ask, Right(DisplaySource.NotServed))
+      ).foldLeft(synced)((n, i) => TrialsNavigator.update(n, model, i)._1)
+      assertEquals(other, synced)
+      assertEquals((other.entries, other.displays), (Loading.Waiting, Loading.Waiting))
+    }
+  }
+
+  test("display kinds not served: no display glyphs, a neutral note, no Retry") {
+    ledger.map { entries =>
+      val (synced, _) = TrialsNavigator.sync(TrialsNavigator.empty, model)
+      val nav         = Vector(
+        NavigatorIntent.EntriesRead(r3, 1, Right(entries)),
+        NavigatorIntent.DisplaysRead(r3, 1, Right(DisplaySource.NotServed))
+      ).foldLeft(synced)((n, i) => TrialsNavigator.update(n, model, i)._1)
+      val all = nav.copy(toggled =
+        entries
+          .map(_.trial.participant)
+          .distinct
+          .map(NavigatorGroup.Participant(_) -> true)
+          .toMap ++
+          entries
+            .map(e => NavigatorGroup.PhaseOf(e.trial.participant, e.trial.phase) -> true)
+            .toMap
+      )
+      val vm = TrialsNavigatorVM.trials(all, model)
+      assertEquals(
+        vm.note,
+        Some(
+          "Display kinds of r3 are not served for this project yet: the trials are listed " +
+            "without them."
+        )
+      )
+      assertEquals(vm.retry, None)
+      val trials = vm.rows.filter(_.kind == NavigatorRowKind.Trial)
+      assertEquals(trials.size, entries.size)
+      // Only the ledger's own fact is drawn: a trial not admitted.
+      assertEquals(
+        trials.flatMap(_.glyph).distinct,
+        Vector(TrialGlyph.NotAdmitted)
+      )
+      assert(!trials.exists(_.detail.contains("image missing")), trials)
+      assertEquals(vm.legend.map(_.glyph), Vector(TrialGlyph.NotAdmitted))
+      assert(
+        vm.rows
+          .filter(_.kind == NavigatorRowKind.Phase)
+          .forall(r => r.label.count(_ == '·') == 1),
+        vm.rows.filter(_.kind == NavigatorRowKind.Phase).map(_.label)
+      )
+      val items = TrialsNavigatorVM.items(nav, model)
+      assert(!items.rows.exists(r => r.detail.contains("missing") || r.warn), items.rows)
+    }
+  }
+
+  test("every count traces to a ref: participant, phase, run and item") {
+    ledger.map { entries =>
+      val vm = TrialsNavigatorVM.trials(loaded(model, entries), model)
+      assert(vm.rows.forall(_.ref.isDefined), vm.rows.filter(_.ref.isEmpty))
+      val phase = StudioRef.TrialGroup(r3, TrialGrouping.PhaseOf("P17", Phase.Retrieval))
+      assertEquals(
+        vm.rows.filter(_.ref.contains(phase)).map(_.kind),
+        Vector(NavigatorRowKind.Phase, NavigatorRowKind.Range)
+      )
+      assertEquals(phase.parent, Some(StudioRef.Participant("P17")))
+      val items = TrialsNavigatorVM.items(loaded(model, entries), model)
+      assert(items.rows.forall(_.ref.isDefined))
+      assertEquals(
+        items.rows.find(_.label == "beach-042").flatMap(_.ref),
+        Some(StudioRef.TrialGroup(r3, TrialGrouping.MatchedOn("beach-042")))
+      )
+      // The status bar and trail name them.
+      val labels = eyes4s.studio.app.vm.Labels(model, eyes4s.studio.app.text.Messages.english)
+      assertEquals(labels.selected(phase), "r3 · P17 · Retrieval")
+    }
+  }
+
+  test("a filter holds the groups open: toggling one leaves it as it was") {
+    ledger.map { entries =>
+      val nav = TrialsNavigator
+        .update(loaded(model, entries), model, NavigatorIntent.Filter("ret_09"))
+        ._1
+      val p16 = NavigatorGroup.Participant("P16")
+      assertEquals(
+        TrialsNavigator.update(nav, model, NavigatorIntent.Toggle(p16)),
+        (nav, Vector.empty)
+      )
+      val item = NavigatorGroup.Item("beach-042")
+      assertEquals(
+        TrialsNavigator.update(nav, model, NavigatorIntent.Toggle(item))._1.toggled,
+        Map(item -> true)
+      )
     }
   }
 

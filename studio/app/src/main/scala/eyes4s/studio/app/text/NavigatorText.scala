@@ -22,11 +22,13 @@ package eyes4s.studio.app.text
   */
 enum NavigatorTextId derives CanEqual:
   // --- The panes ---------------------------------------------------------------
-  case TrialsTitle, ItemsTitle, TrialsFilter, ItemsFilter, TrialsList, ItemsList
+  case TrialsTitle, ItemsTitle, TrialsFilter, TrialsFilterPrompt, ItemsFilter, TrialsList
+  case ItemsList, InventoryFallback, DisplaysNotServed
   case NoDataset, Reading, ReadFailed, DisplaysFailed, Retry, NoMatch, Footer
 
   // --- Rows ----------------------------------------------------------------------
-  case ParticipantDetail, Quarantined, Absent, ImagesMissing, Matching, PhaseHeader
+  case ParticipantDetail, Quarantined, NoFixationsCount, Absent, ImageMissing, ImagesMissing
+  case Matching, PhaseHeader, GroupLabel
   case PhaseHeaderMixed, Range, RangeAdmitted, Occurrence, ItemDetail, NoItem
   case TrialOf, Collapsed, Expanded, GroupAccessible
 
@@ -38,17 +40,25 @@ enum NavigatorTextId derives CanEqual:
   case KindImage, KindBlank, KindBlankWithCross, KindCue, KindUnknown, KindMissing
   case KindNotAdmitted
 
-/** The trials navigator's strings in the board's wording. */
+/** The trials navigator's strings in the board's wording. The Trials
+  * filter is named "Filter trials", the board's label, and prompts with the
+  * board's placeholder, "Filter participant, trial, item".
+  */
 object NavigatorText:
   import NavigatorTextId.*
 
   /** The reference English template of `id`. */
   def english(id: NavigatorTextId): String = id match
-    case TrialsTitle    => "Trials"
-    case ItemsTitle     => "Items"
-    case TrialsFilter   => "Filter participant, trial, item"
-    case ItemsFilter    => "Filter items"
-    case TrialsList     => "Trials of {0}"
+    case TrialsTitle        => "Trials"
+    case ItemsTitle         => "Items"
+    case TrialsFilter       => "Filter trials"
+    case TrialsFilterPrompt => "Filter participant, trial, item"
+    case ItemsFilter        => "Filter items"
+    case TrialsList         => "Trials of {0}"
+    case InventoryFallback  => "the trial inventory"
+    case DisplaysNotServed  =>
+      "Display kinds of {0} are not served for this project yet: the trials are listed " +
+        "without them."
     case ItemsList      => "Items of {0}"
     case NoDataset      => "No admitted dataset revision yet: admit one in Data."
     case Reading        => "Reading the trials of {0}…"
@@ -60,11 +70,14 @@ object NavigatorText:
 
     case ParticipantDetail => "{0}"
     case Quarantined       => "{0} quar."
+    case NoFixationsCount  => "{0} no-fixations"
     case Absent            => "{0} absent"
-    case ImagesMissing     => "{0} image missing"
+    case ImageMissing      => "{0} image missing"
+    case ImagesMissing     => "{0} images missing"
     case Matching          => "{0} match"
     case PhaseHeader       => "{0} · {1} · {2}"
     case PhaseHeaderMixed  => "{0} · {1}"
+    case GroupLabel        => "{0} · {1}"
     case Range             => "{0}–{1}"
     case RangeAdmitted     => "{0} admitted"
     case Occurrence        => "{0} occ {1}"

@@ -122,10 +122,11 @@ class TrialsNavigatorFxSuite extends ShellFxSuite:
       "Explore is view-only. Nothing here changes an analysis."
     )
     assertEquals(runOnFx(v.rows.getAccessibleText), "Trials of r3")
-    assertEquals(runOnFx(v.filter.getAccessibleText), "Filter participant, trial, item")
+    assertEquals(runOnFx(v.filter.getAccessibleText), "Filter trials")
+    assertEquals(runOnFx(v.filter.getPromptText), "Filter participant, trial, item")
     assertEquals(
-      w.navigator.trialsStops.map(_.render),
-      Vector("text-field: Filter participant, trial, item", "list: Trials of r3")
+      runOnFx(w.navigator.trialsStops).map(_.render),
+      Vector("text-field: Filter trials", "list: Trials of r3")
     )
   }
 
@@ -148,14 +149,39 @@ class TrialsNavigatorFxSuite extends ShellFxSuite:
       items(v).filter(_.kind == NavigatorRowKind.Range).map(_.label),
       Vector("enc_01–20")
     )
-    // P16 opens with Right and closes with Left.
+    // P16 opens with Right and closes with Left; the list stays on P16.
+    def onP16 = runOnFx(Option(v.rows.getSelectionModel.getSelectedItem).map(_.label))
     val p16 = items(v).find(r => r.kind == NavigatorRowKind.Participant && r.label == "P16").get
     runOnFx(v.rows.getSelectionModel.select(p16))
     press(fx, v, KeyCode.RIGHT)
     assertEquals(items(v).find(_.label == "P16").flatMap(_.open), Some(true))
-    runOnFx(v.rows.getSelectionModel.select(items(v).find(_.label == "P16").get))
+    assertEquals(onP16, Some("P16"))
     press(fx, v, KeyCode.LEFT)
     assertEquals(items(v).find(_.label == "P16").flatMap(_.open), Some(false))
+    assertEquals(onP16, Some("P16"))
+  }
+
+  fxStage.test("the user's row keeps the selection: Right twice on P16 stays on P16") { fx =>
+    val w        = ready(fx)
+    val v        = w.navigator.trials
+    def selected = runOnFx(Option(v.rows.getSelectionModel.getSelectedItem))
+    val p16 = items(v).find(r => r.kind == NavigatorRowKind.Participant && r.label == "P16").get
+    runOnFx(v.rows.getSelectionModel.select(p16))
+    press(fx, v, KeyCode.RIGHT)
+    assertEquals(selected.map(r => (r.label, r.open)), Some(("P16", Some(true))))
+    press(fx, v, KeyCode.RIGHT)
+    assertEquals(selected.map(r => (r.label, r.open)), Some(("P16", Some(true))))
+    // A row without a trial keeps it too: P16's first closed run.
+    val range = items(v).find(_.kind == NavigatorRowKind.Range).get
+    runOnFx(v.rows.getSelectionModel.select(range))
+    press(fx, v, KeyCode.LEFT)
+    assertEquals(selected.map(_.kind), Some(NavigatorRowKind.Range))
+    // Opening it moves the user to its phase's row, not to Explore's trial.
+    press(fx, v, KeyCode.RIGHT)
+    assertEquals(
+      selected.map(r => (r.kind, r.ref, r.open)),
+      Some((NavigatorRowKind.Phase, range.ref, Some(true)))
+    )
   }
 
   fxStage.test("the filter lists matching trials; the Items pane opens an item") { fx =>
@@ -166,7 +192,7 @@ class TrialsNavigatorFxSuite extends ShellFxSuite:
     val trials = items(v).filter(_.kind == NavigatorRowKind.Trial)
     assert(trials.nonEmpty)
     assert(trials.forall(_.label == "ret_09"), trials.map(_.label))
-    assertEquals(w.navigator.state.filter, "ret_09")
+    assertEquals(runOnFx(w.navigator.state.filter), "ret_09")
     // The Items pane, shown in the navigator's group.
     runOnFx(w.runtime.dispatch(eyes4s.studio.app.Intent.FocusPane(StudioLayouts.items)))
     fx.awaitLayout()
@@ -175,7 +201,7 @@ class TrialsNavigatorFxSuite extends ShellFxSuite:
     fx.awaitLayout()
     val item = items(i).find(_.kind == NavigatorRowKind.Item).get
     assertEquals(item.label, "forest-044")
-    assert(item.detail.contains("image missing"), item.detail)
+    assert(item.detail.endsWith("images missing"), item.detail)
     runOnFx(i.rows.getSelectionModel.select(item))
     press(fx, i, KeyCode.ENTER)
     val opened = items(i).filter(_.kind == NavigatorRowKind.Trial)

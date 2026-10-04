@@ -19,7 +19,6 @@ package eyes4s.studio.desktop.explore
 import eyes4s.studio.app.explore.*
 import eyes4s.studio.app.vm.FocusStop
 import eyes4s.studio.app.{AppModel, Intent}
-import eyes4s.studio.core.assets.AssetRegistry
 import eyes4s.studio.core.backend.{DatasetRevision, LedgerEntry, LedgerPages}
 import eyes4s.studio.core.document.{DatasetRevisionSpec, Perspective}
 import eyes4s.studio.core.fixture.GoldenAssets
@@ -31,14 +30,31 @@ import javafx.application.Platform
   */
 trait NavigatorInputs:
   def entries(dataset: DatasetRevision, done: Either[String, Vector[LedgerEntry]] => Unit): Unit
-  def displays(dataset: DatasetRevisionSpec, done: Either[String, AssetRegistry] => Unit): Unit
+  def displays(dataset: DatasetRevisionSpec, done: Either[String, DisplaySource] => Unit): Unit
+
+/** Where a window's trial displays come from: injected, since only a story
+  * session has a registry to serve before S5.7.
+  */
+trait NavigatorDisplays:
+  def displays(dataset: DatasetRevisionSpec): Either[String, DisplaySource]
+
+object NavigatorDisplays:
+  /** Production until S5.7 serves a project's stored registry: no display
+    * kinds, so the trials are listed without them and nothing is invented.
+    */
+  val notServed: NavigatorDisplays = _ => Right(DisplaySource.NotServed)
+
+  /** The story and fake sessions: fixtures/studio-golden's registry, served
+    * only for a revision whose trial inventory is the golden trials.csv,
+    * byte for byte; any other revision's display kinds are not served.
+    */
+  val golden: NavigatorDisplays = dataset =>
+    if !GoldenAssets.describes(dataset) then Right(DisplaySource.NotServed)
+    else GoldenAssets.registry(dataset).map(DisplaySource.Served(_))
 
 object NavigatorInputs:
-  /** The window's backend for the trials. The displays are the asset
-    * registry of fixtures/studio-golden, which every story session imports;
-    * a project's own stored registry is S5.7's.
-    */
-  def of(session: StudioSession): NavigatorInputs =
+  /** The window's backend for the trials, and `source` for the displays. */
+  def of(session: StudioSession, source: NavigatorDisplays): NavigatorInputs =
     new NavigatorInputs:
       def entries(
           dataset: DatasetRevision,
@@ -51,8 +67,8 @@ object NavigatorInputs:
         }
       def displays(
           dataset: DatasetRevisionSpec,
-          done: Either[String, AssetRegistry] => Unit
-      ): Unit = done(GoldenAssets.registry(dataset))
+          done: Either[String, DisplaySource] => Unit
+      ): Unit = done(source.displays(dataset))
 
 /** Explore's trials navigator on the desktop (Explore.dc.html, left; see
   * [[TrialsNavigator]]): the Trials pane and the Items pane over one state.

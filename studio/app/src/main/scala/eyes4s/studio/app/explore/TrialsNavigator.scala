@@ -32,9 +32,21 @@ enum NavigatorGroup derives CanEqual:
   case PhaseOf(participant: String, phase: Phase)
   case Item(item: String)
 
+/** What the platform says about a dataset revision's trial displays. */
+enum DisplaySource derives CanEqual:
+  /** The revision's asset registry: each trial's display kind and asset. */
+  case Served(registry: AssetRegistry)
+
+  /** Display kinds of this revision are not served (a project's own
+    * registry is S5.7's): the trials are listed without them.
+    */
+  case NotServed
+
 /** A user action or platform fact the navigator's panes dispatch. */
 enum NavigatorIntent derives CanEqual:
-  /** Open a closed group, or close an open one. */
+  /** Open a closed group, or close an open one. A filter holds the Trials
+    * pane's groups open, so it leaves them as they are.
+    */
   case Toggle(group: NavigatorGroup)
 
   /** The Trials pane's filter text (participant, trial or item). */
@@ -46,7 +58,9 @@ enum NavigatorIntent derives CanEqual:
   /** A trial was activated: explore it. */
   case OpenTrial(trial: TrialKey)
 
-  /** Read the trials and displays again, after a read failed. */
+  /** Read again what failed (the trials, the displays, or both), and what
+    * is still outstanding.
+    */
   case Retry
 
   /** The backend's whole ledger of `dataset`, asked for by ask `ask`. */
@@ -56,10 +70,8 @@ enum NavigatorIntent derives CanEqual:
       result: Either[String, Vector[LedgerEntry]]
   )
 
-  /** The trial displays of `dataset` (its asset registry), asked for by ask
-    * `ask`.
-    */
-  case DisplaysRead(dataset: DatasetRevision, ask: Int, result: Either[String, AssetRegistry])
+  /** The trial displays of `dataset`, asked for by ask `ask`. */
+  case DisplaysRead(dataset: DatasetRevision, ask: Int, result: Either[String, DisplaySource])
 
 /** What the platform or the app must do after a navigator update. */
 enum NavigatorEffect derives CanEqual:
@@ -80,9 +92,10 @@ enum NavigatorEffect derives CanEqual:
   *
   * Every trial and its status are the backend ledger's entries
   * ([[LedgerEntry]]); display kinds and missing images are the dataset's
-  * asset registry. Nothing is counted here beyond the rows listed: a
-  * participant's figures are the number of its ledger entries with each
-  * disposition. Activating a trial explores it ([[Intent.Explain]]); the
+  * asset registry, when the platform serves one ([[DisplaySource]]).
+  * Nothing is counted here beyond the rows listed: a participant's, phase's
+  * or item's figures are the number of its ledger entries with each
+  * disposition, under its [[StudioRef]]. Activating a trial explores it ([[Intent.Explain]]); the
   * trial Explore's trail is on is the selected one, and the groups that
   * hold it are open unless closed by hand.
   *
@@ -93,7 +106,7 @@ final case class TrialsNavigator(
     dataset: Option[DatasetRevisionSpec],
     ask: Int,
     entries: Loading[Vector[LedgerEntry]],
-    displays: Loading[AssetRegistry],
+    displays: Loading[DisplaySource],
     toggled: Map[NavigatorGroup, Boolean],
     filter: String,
     itemFilter: String
@@ -139,19 +152,32 @@ object TrialsNavigator:
     )
 
   private def askFor(navigator: TrialsNavigator, spec: DatasetRevisionSpec) =
+    reread(navigator.copy(dataset = Some(spec)), spec, entries = true, displays = true)
+
+  /** Ask again, by a new ask, for the trials and/or the displays of `spec`. */
+  private def reread(
+      navigator: TrialsNavigator,
+      spec: DatasetRevisionSpec,
+      entries: Boolean,
+      displays: Boolean
+  ): (TrialsNavigator, Vector[NavigatorEffect]) =
     val next = navigator.ask + 1
     (
       navigator.copy(
-        dataset = Some(spec),
         ask = next,
-        entries = Loading.Waiting,
-        displays = Loading.Waiting
+        entries = if entries then Loading.Waiting else navigator.entries,
+        displays = if displays then Loading.Waiting else navigator.displays
       ),
-      Vector(
-        NavigatorEffect.RequestEntries(spec.id, next),
-        NavigatorEffect.RequestDisplays(spec, next)
-      )
+      Option.when(entries)(NavigatorEffect.RequestEntries(spec.id, next)).toVector ++
+        Option.when(displays)(NavigatorEffect.RequestDisplays(spec, next))
     )
+
+  /** Whether a read must be asked again: it failed, or its answer is still
+    * outstanding (a new ask would make that answer stale).
+    */
+  private def unanswered(read: Loading[?]): Boolean = read match
+    case Loading.Ready(_) => false
+    case _                => true
 
   /** Follow the model's latest admitted dataset revision: a new one resets
     * the navigator (keeping its filters) and asks for its trials and
@@ -184,8 +210,14 @@ object TrialsNavigator:
     import NavigatorIntent.*
     intent match
       case Toggle(group) =>
-        val open = isOpen(navigator, group, model)
-        (navigator.copy(toggled = navigator.toggled.updated(group, !open)), none)
+        val forced = group match
+          case NavigatorGroup.Participant(_) | NavigatorGroup.PhaseOf(_, _) =>
+            navigator.filter.trim.nonEmpty
+          case NavigatorGroup.Item(_) => false
+        if forced then (navigator, none)
+        else
+          val open = isOpen(navigator, group, model)
+          (navigator.copy(toggled = navigator.toggled.updated(group, !open)), none)
       case Filter(text)      => (navigator.copy(filter = text), none)
       case FilterItems(text) => (navigator.copy(itemFilter = text), none)
       case OpenTrial(key)    =>
@@ -194,13 +226,25 @@ object TrialsNavigator:
           Vector(NavigatorEffect.App(Intent.Explain(Place.At(StudioRef.Trial(key)))))
         )
       case Retry =>
-        navigator.dataset.fold((navigator, none))(askFor(navigator, _))
+        navigator.dataset match
+          case Some(spec) if failed(navigator.entries) || failed(navigator.displays) =>
+            reread(
+              navigator,
+              spec,
+              unanswered(navigator.entries),
+              unanswered(navigator.displays)
+            )
+          case _ => (navigator, none)
       case EntriesRead(dataset, n, result) =>
         if !answers(navigator, dataset, n) then (navigator, none)
         else (navigator.copy(entries = result.fold(Loading.Failed(_), Loading.Ready(_))), none)
       case DisplaysRead(dataset, n, result) =>
         if !answers(navigator, dataset, n) then (navigator, none)
         else (navigator.copy(displays = result.fold(Loading.Failed(_), Loading.Ready(_))), none)
+
+  private def failed(read: Loading[?]): Boolean = read match
+    case Loading.Failed(_) => true
+    case _                 => false
 
   private def answers(navigator: TrialsNavigator, dataset: DatasetRevision, n: Int): Boolean =
     navigator.dataset.exists(_.id == dataset) && navigator.ask == n

@@ -25,7 +25,7 @@ import eyes4s.studio.app.tokens.Theme
 import eyes4s.studio.app.{ClockTime, ProjectName}
 import eyes4s.studio.core.fixture.StoryMoment
 import eyes4s.studio.desktop.admission.{AdmissionLedgerHost, LedgerInputs}
-import eyes4s.studio.desktop.explore.{NavigatorInputs, TrialsNavigatorHost}
+import eyes4s.studio.desktop.explore.{NavigatorDisplays, NavigatorInputs, TrialsNavigatorHost}
 import eyes4s.studio.desktop.dock.{DockGesture, PerspectiveHost}
 import eyes4s.studio.desktop.runtime.{
   DesktopEffects,
@@ -164,6 +164,7 @@ object StudioWindow:
   def open(
       initial: AppModel,
       moment: StoryMoment,
+      displays: NavigatorDisplays,
       theme: Theme = Theme.Light,
       dialogs: Option[PlatformDialogs] = None,
       messages: Messages = Messages.english,
@@ -178,6 +179,7 @@ object StudioWindow:
       window <- build(
         initial,
         moment,
+        displays,
         dock,
         dialogs,
         messages,
@@ -193,6 +195,7 @@ object StudioWindow:
   private def build(
       initial: AppModel,
       moment: StoryMoment,
+      displays: NavigatorDisplays,
       dockTheme: DockTheme,
       dialogs: Option[PlatformDialogs],
       messages: Messages,
@@ -280,7 +283,8 @@ object StudioWindow:
     host.host(StudioLayouts.admission, admission.node)
     r.listen(admission.sync)
     // The trials navigator (Explore): the latest admitted revision's trials.
-    val navigator = TrialsNavigatorHost(() => r.model, dispatch, NavigatorInputs.of(session))
+    val navigator =
+      TrialsNavigatorHost(() => r.model, dispatch, NavigatorInputs.of(session, displays))
     host.host(StudioLayouts.trials, navigator.trials.node)
     host.host(StudioLayouts.items, navigator.items.node)
     r.listen(navigator.sync)
