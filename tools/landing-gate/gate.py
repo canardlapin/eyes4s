@@ -2,9 +2,10 @@
 """Run the full local landing gate once, in the order the landing policy requires.
 
 AGENTS.md, "Landing a branch": the full gate is everything CI runs plus the API audit
-and the published-artifact consumer, and the audit is recorded first, because
-DiagnosticCoverageJvmSuite reads the committed inventory; a testAll that runs before
-the re-record passes against a stale one. The steps, in order:
+and the published-artifact consumer. The audit generates its compiler inventory before
+its own tests, and --record writes the inventory with its provenance and removes any
+locally prepared candidate, so the testAll after it checks DiagnosticCoverageJvmSuite
+against the recorded inventory of this very tree. The steps, in order:
 
   1. hygiene    sbt headerCheckAll scalafmtCheckAll scalafmtSbtCheck githubWorkflowCheck
   2. werror     GITHUB_ACTIONS=true sbt 'project rootJVM' Test/compile 'project rootJS' Test/compile

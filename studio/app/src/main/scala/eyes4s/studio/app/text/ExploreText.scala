@@ -25,6 +25,9 @@ enum ExploreTextId derives CanEqual:
   case Title, TitleNoItem, Points, Order, Map, ToggleOn, ToggleOff, MapPreview
   case MapNotServed, CanvasHint
 
+  // --- Prev and Next (S6.6) ---------------------------------------------------------
+  case PrevFixation, NextFixation, PrevGlyph, NextGlyph
+
   // --- What the view cannot show ------------------------------------------------------
   case NoTrial, NoRevision, Reading, ReadFailed, DisplaysFailed, DisplaysNotServed, Retry
   case SkippedMark, PreviewUndrawable
@@ -53,6 +56,10 @@ object ExploreText:
     case MapPreview   => "Map: preview · σ {0}° · not a result"
     case MapNotServed => "Map preview not available: {0}"
     case CanvasHint   => "Canvas focused · arrows move · Enter selects · Esc clears"
+    case PrevFixation => "Previous fixation"
+    case NextFixation => "Next fixation"
+    case PrevGlyph    => "‹"
+    case NextGlyph    => "›"
 
     case NoTrial    => "Choose a trial in the Trials navigator to explore it."
     case NoRevision =>

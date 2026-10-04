@@ -17,11 +17,14 @@
 package eyes4s.studio.desktop.explore
 
 import eyes4s.studio.app.explore.*
+import eyes4s.studio.app.text.{ExploreText, ExploreTextId}
 import eyes4s.studio.core.assets.DisplayKind
+import eyes4s.studio.core.selection.InputCause
 import eyes4s.studio.desktop.tokens.TokenFiles
 import eyes4s.studio.desktop.trial.TrialView
 import javafx.geometry.Pos
-import javafx.scene.control.{Button, Label, ToggleButton}
+import javafx.scene.control.{Button, ButtonBase, Label, ToggleButton}
+import javafx.scene.input.{KeyEvent, MouseEvent}
 import javafx.scene.layout.*
 import javafx.scene.shape.{Circle, Line, Rectangle, Shape}
 
@@ -30,7 +33,11 @@ import javafx.scene.shape.{Circle, Line, Rectangle, Shape}
   * label and the canvas hint), the trial on its stage, and the legend. It
   * binds an [[ExploreTrialViewVM]]; every word and state comes from it.
   */
-final class ExploreTrialViewPane(dispatch: TrialViewIntent => Unit, trialView: TrialView):
+final class ExploreTrialViewPane(
+    dispatch: TrialViewIntent => Unit,
+    trialView: TrialView,
+    stepped: (Int, InputCause) => Unit
+):
   import ExploreTrialViewPane.*
 
   // Programmatic updates of controls must not echo back as intents.
@@ -52,10 +59,26 @@ final class ExploreTrialViewPane(dispatch: TrialViewIntent => Unit, trialView: T
   val mapNote: Label  = label("explore-note", "t11")
   val hint: Label     = label("explore-hint", "t11")
 
+  /** Previous and Next fixation (S6.6): `stepped` gets -1 or +1 and what
+    * pressed the button: a pointer, a key (Space or Enter), or neither (a
+    * programmatic fire).
+    */
+  private def stepButton(glyph: ExploreTextId, name: ExploreTextId, by: Int): Button =
+    // The glyph is drawn, the name is read (Explore.dc.html: an icon button).
+    val b = Button()
+    b.setGraphic(Label(ExploreText(glyph)))
+    b.setMnemonicParsing(false)
+    b.setAccessibleText(ExploreText(name))
+    b.getStyleClass.addAll("explore-button", "explore-step", "t12")
+    onPress(b)(cause => if !rendering then stepped(by, cause))
+    b
+  val prev: Button = stepButton(ExploreTextId.PrevGlyph, ExploreTextId.PrevFixation, -1)
+  val next: Button = stepButton(ExploreTextId.NextGlyph, ExploreTextId.NextFixation, 1)
+
   private val bar = HBox(
     (Vector[javafx.scene.Node](title) ++
       TrialToggle.values.toVector.map(toggles) ++
-      Vector(mapLabel, mapNote, spacer(), hint))*
+      Vector(mapLabel, mapNote, spacer(), hint, prev, next))*
   )
   bar.getStyleClass.add("explore-bar")
   bar.setAlignment(Pos.CENTER_LEFT)
@@ -92,9 +115,11 @@ final class ExploreTrialViewPane(dispatch: TrialViewIntent => Unit, trialView: T
   /** Bind `vm`: the toolbar, the status and the legend; `refused` are the
     * marks the scene could not draw.
     */
-  def render(vm: ExploreTrialViewVM, refused: Vector[String]): Unit =
+  def render(vm: ExploreTrialViewVM, refused: Vector[String], steps: (Boolean, Boolean)): Unit =
     rendering = true
     try
+      prev.setDisable(!steps._1)
+      next.setDisable(!steps._2)
       show(title, Option(vm.title).filter(_.nonEmpty))
       vm.toggles.foreach { t =>
         val b = toggles(t.toggle)
@@ -127,6 +152,26 @@ final class ExploreTrialViewPane(dispatch: TrialViewIntent => Unit, trialView: T
     finally rendering = false
 
 object ExploreTrialViewPane:
+
+  /** Call `f` on each action of `b` with what pressed it: a pointer, a key
+    * (Space or Enter), or neither (a programmatic `fire`). The press that
+    * leads to an action names its cause; the action consumes it, and the
+    * release forgets it once its own action (if any) has run, so a press
+    * dragged off the button or a Tab that only moves focus names nothing.
+    */
+  def onPress(b: ButtonBase)(f: InputCause => Unit): Unit =
+    var cause          = InputCause.Programmatic
+    def forget(): Unit =
+      javafx.application.Platform.runLater(() => cause = InputCause.Programmatic)
+    b.addEventFilter(MouseEvent.MOUSE_PRESSED, _ => cause = InputCause.Pointer)
+    b.addEventFilter(KeyEvent.KEY_PRESSED, _ => cause = InputCause.Keyboard)
+    b.addEventFilter(MouseEvent.MOUSE_RELEASED, _ => forget())
+    b.addEventFilter(KeyEvent.KEY_RELEASED, _ => forget())
+    b.setOnAction { _ =>
+      val pressed = cause
+      cause = InputCause.Programmatic
+      f(pressed)
+    }
 
   val stylesheetResource: String = s"${TokenFiles.resourceDirectory}/studio-explore.css"
 

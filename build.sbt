@@ -373,11 +373,14 @@ githubWorkflowCheck := {
     "name: Check module and kernel boundaries"
   ).foreach(requireText("checks.yml", _))
   requireText("checks.yml", "python3 tools/check-docs.py --platform jvm --skip-consumer")
+  requireText("checks.yml", "python3 tools/api-audit/run.py --prepare")
   requireText("checks.yml", "python3 tools/check-docs.py --platform js --skip-consumer")
   forbidText("checks.yml", "tlCiRelease")
   forbidText("checks.yml", "sbt-dependency-submission")
-  // Slow evidence belongs to evidence.yml, never to the per-push matrix.
-  forbidText("checks.yml", "tools/api-audit/run.py")
+  // Slow evidence belongs to evidence.yml, never to the per-push matrix: the per-push
+  // matrix may only prepare the compiler inventory, never run or record the audit.
+  if ("tools/api-audit/run\\.py(?! --prepare)".r.findFirstIn(rendered("checks.yml")).isDefined)
+    sys.error("checks.yml runs the API audit; only `run.py --prepare` belongs there")
   forbidText("checks.yml", "--run-consumer")
 
   requireText("security.yml", "contents: write")
@@ -411,6 +414,15 @@ githubWorkflowCheck := {
   requireText("studio.yml", "EYES4S_STUDIO_SMALL_DISPLAY: skip")
   forbidText("checks.yml", "studio")
 }
+
+// DiagnosticCoverageJvmSuite reads a compiler inventory whose fingerprint matches the
+// sources under test (tools/api-audit/candidate.py), so the JVM test step needs one
+// prepared first; preparation compiles and inventories, it runs no tests.
+ThisBuild / githubWorkflowBuildPreamble += WorkflowStep.Run(
+  List("python3 tools/api-audit/run.py --prepare"),
+  name = Some("Prepare the compiler API inventory for diagnostic coverage"),
+  cond = Some("matrix.project == 'rootJVM'")
+)
 
 // Both boundary invariants run in CI, not just on a developer's machine.
 // A rule that is only checked locally is a rule that is checked when it is
@@ -803,7 +815,8 @@ lazy val laws = crossProject(JVMPlatform, JSPlatform)
     Test / unmanagedSources ++= Seq(
       file("codec/src/test/scala/eyes4s/codec/PointSamplingFixture.scala").getAbsoluteFile,
       file("codec/src/test/scala/eyes4s/codec/RepetitionPlanFixture.scala").getAbsoluteFile,
-      file("codec/src/test/scala/eyes4s/codec/FormFixtures.scala").getAbsoluteFile
+      file("codec/src/test/scala/eyes4s/codec/FormFixtures.scala").getAbsoluteFile,
+      file("codec/src/test/scala/eyes4s/codec/AnalysisFixtures.scala").getAbsoluteFile
     ),
     libraryDependencies ++= Seq(
       "org.scalameta"  %%% "munit"            % munitV,

@@ -85,7 +85,7 @@ object StudioMain:
   /** The application's trial displays: the golden registry of the story
     * session, which answers only for the golden trials.csv.
     */
-  val displays: NavigatorDisplays = NavigatorDisplays.of(backend)
+  val displays: NavigatorDisplays = NavigatorDisplays.of(backend, None)
 
   /** The story session's stimuli: fixtures/studio-golden's `stimuli/`, read
     * from the working directory (a checkout, as `sbt studioDesktop/run` has).

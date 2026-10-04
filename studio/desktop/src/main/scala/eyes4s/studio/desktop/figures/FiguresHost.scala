@@ -162,7 +162,7 @@ object FigureInputs:
       def displays(
           dataset: DatasetRevisionSpec,
           done: Either[String, DisplaySource] => Unit
-      ): Unit = done(source.displays(dataset))
+      ): Unit = source.read(dataset, done)
       def methods(
           run: RunId,
           dataset: DatasetRevision,
