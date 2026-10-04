@@ -71,23 +71,8 @@ object AnalysisFixtures:
   val results: VersionedCodec[CountResult] =
     VersionedCodec.of[CountResult](resultSchema)(writeCount)(readCount)
 
-  final class LoadedPlan(val plan: CountPlan) extends LoadedAnalysisPlan:
-    val schema: DefinitionId = planSchema
-    def description          = plan.description
-    def encode               = plans.encode(plan)
-
-  final class LoadedResult(val result: CountResult) extends LoadedAnalysisResult:
-    val schema: DefinitionId = resultSchema
-    def description          = result.plan.description
-    def inputs               = result.inputs
-    def encode               = results.encode(result)
-
-  val registration: AnalysisRegistration = AnalysisRegistration(
-    planSchema,
-    resultSchema,
-    json => plans.decode(json).map(LoadedPlan(_)),
-    json => results.decode(json).map(LoadedResult(_))
-  )
+  val registration: AnalysisRegistration =
+    AnalysisRegistration.of(plans, results)(_.description, _.plan.description, _.inputs)
 
   /** A second family whose plan embeds the identity of the input it counts,
     * so its results relate to it with `AnalysisInputs.EmbeddedInPlan`. Its
@@ -116,25 +101,13 @@ object AnalysisFixtures:
   val embeddedResults: VersionedCodec[CountResult] =
     VersionedCodec.of[CountResult](embeddedResultSchema)(writeCount)(readCount)
 
-  final class LoadedEmbeddedPlan(val plan: EmbeddedPlan) extends LoadedAnalysisPlan:
-    val schema: DefinitionId    = embeddedPlanSchema
-    def description             = plan.count.description
-    def encode                  = embeddedPlans.encode(plan)
-    override def embeddedInputs = Vector(plan.input)
-
-  final class LoadedEmbeddedResult(val result: CountResult) extends LoadedAnalysisResult:
-    val schema: DefinitionId = embeddedResultSchema
-    def description          = result.plan.description
-    def inputs               = result.inputs
-    def encode               = embeddedResults.encode(result)
-
-  val embeddedRegistration: AnalysisRegistration = AnalysisRegistration(
-    embeddedPlanSchema,
-    embeddedResultSchema,
-    json => embeddedPlans.decode(json).map(LoadedEmbeddedPlan(_)),
-    json => embeddedResults.decode(json).map(LoadedEmbeddedResult(_)),
-    embedsInput = true
-  )
+  val embeddedRegistration: AnalysisRegistration =
+    AnalysisRegistration.of(embeddedPlans, embeddedResults)(
+      _.count.description,
+      _.plan.description,
+      _.inputs,
+      embedded = Some(p => Vector(p.input))
+    )
 
   /** Both families. */
   val registry: AnalysisRegistry =
