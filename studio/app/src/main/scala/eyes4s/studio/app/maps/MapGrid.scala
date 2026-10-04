@@ -16,7 +16,7 @@
 
 package eyes4s.studio.app.maps
 
-import eyes4s.studio.core.backend.{ResultAddress, RunId, TrialKey}
+import eyes4s.studio.core.backend.{AnalysisRevision, ResultAddress, RunId, TrialKey}
 import eyes4s.studio.core.selection.ScaleIndex
 
 /** Why a map grid was refused. Every case names the map and what failed. */
@@ -40,15 +40,33 @@ enum MapGridError derives CanEqual:
     case NotFinite(m, i, v)    => s"Map ${m.label}: cell $i holds $v, which is not finite."
     case Level(m, i, l) => s"Map ${m.label}: isoline level $i is $l, which is not finite."
 
-/** Which map a grid is: the density estimate of one trial at one scale in
-  * one run, the eyes4s result at [[address]]. The run is part of the
-  * identity: a rerun's map is another map, never a stale copy of this one.
+/** Which map a grid is. A run's result map is the density estimate of one
+  * trial at one scale in one run, the eyes4s result at [[address]]; the run
+  * is part of the identity, so a rerun's map is another map, never a stale
+  * copy of this one. A preview (S6.2) is the backend's preview density of a
+  * trial under an analysis revision, which no run produced: it has no result
+  * address.
   */
-final case class MapId(run: RunId, trial: TrialKey, scale: ScaleIndex) derives CanEqual:
-  def label: String = s"${trial.label} at scale ${scale.value} in run ${run.number}"
+enum MapId derives CanEqual:
+  case Result(run: RunId, trial: TrialKey, scale: ScaleIndex)
+  case Preview(revision: AnalysisRevision, trial: TrialKey)
 
-  /** The map's result address in its run. */
-  def address: ResultAddress = ResultAddress.Estimation(scale.value, trial)
+  /** The trial the map is of. */
+  def trial: TrialKey
+
+  def label: String = this match
+    case Result(run, trial, scale) =>
+      s"${trial.label} at scale ${scale.value} in run ${run.number}"
+    case Preview(revision, trial) => s"${trial.label} preview under ${revision.label}"
+
+  /** The map's result address in its run; a preview has none. */
+  def address: Option[ResultAddress] = this match
+    case Result(_, trial, scale) => Some(ResultAddress.Estimation(scale.value, trial))
+    case Preview(_, _)           => None
+
+object MapId:
+  /** A run's result map. */
+  def apply(run: RunId, trial: TrialKey, scale: ScaleIndex): MapId = Result(run, trial, scale)
 
 /** Which stored row of a grid is at the top of the map: the protocol's
   * [[eyes4s.studio.core.backend.RowOrder]], which a backend's preview grid
