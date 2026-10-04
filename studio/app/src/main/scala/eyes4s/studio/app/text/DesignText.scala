@@ -44,7 +44,7 @@ enum DesignTextId derives CanEqual:
   // --- Tallies (StudioRef.DesignTally) -------------------------------------------------------
   case TallyRequested, TallyEligible, TallyUnmatched, TallyNotAdmitted, TallyByDesign
   case TallyFocalTrials, TallyReferenceTrials, TallyCandidatePairs, TallyEligiblePairs, TallyOf
-  case TallyEligiblePairsAll
+  case TallyEligiblePairsAll, TallyScales
   case TallyParticipants
 
 /** The resolved-design pane's strings in the board's wording. */
@@ -113,6 +113,7 @@ object DesignText:
     case TallyCandidatePairs   => "Candidate pairs per scale"
     case TallyEligiblePairs    => "Eligible pairs per scale"
     case TallyEligiblePairsAll => "Eligible pairs over every scale"
+    case TallyScales           => "Scales declared"
     case TallyOf               => "{0} · {1}"
 
   def apply(id: DesignTextId, args: String*): String =
@@ -132,4 +133,5 @@ object DesignText:
       case DesignCount.CandidatePairsPerScale => TallyCandidatePairs
       case DesignCount.EligiblePairsPerScale  => TallyEligiblePairs
       case DesignCount.EligiblePairs          => TallyEligiblePairsAll
+      case DesignCount.Scales                 => TallyScales
     apply(TallyOf, revision.label, english(what))

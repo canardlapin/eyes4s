@@ -128,7 +128,7 @@ class DiagnosticsPresenterSuite extends munit.FunSuite:
     val (fa, fb) = (DiagnosticsPresenter.finding(a), DiagnosticsPresenter.finding(b))
     assertEquals((fa.title, fa.detail), (fb.title, fb.detail))
     assertEquals(fa.title, "Empty map in window")
-    assertEquals(fa.detail, "1 trials (P11)")
+    assertEquals(fa.detail, "1 trial (P11)")
     assert(!fa.title.contains("wording") && !fa.detail.contains("wording"))
     val unknown = DiagnosticsPresenter.finding(
       diagnostic(
@@ -159,7 +159,8 @@ class DiagnosticsPresenterSuite extends munit.FunSuite:
     val vm = DiagnosticsPresenter.present(Vector(budget))
     assertEquals(vm.eyes4s.head.remedy, None)
     assertEquals((vm.runnable, vm.verdict), (true, "Ready"))
-    // A diagnostic from before protocol 1.8 names its trials by its subject.
+    // A diagnostic built in-process without affected trials (a studio
+    // check) names its trials by its subject.
     val old = StudioDiagnostic(
       "study-failure.off-window",
       DiagnosticLevel.Error,
@@ -171,5 +172,48 @@ class DiagnosticsPresenterSuite extends munit.FunSuite:
     assertEquals(
       DiagnosticsPresenter.finding(old).title,
       "Trial fails: fixations outside the window"
+    )
+  }
+
+  test("every code the studio words is an eyes4s catalog code") {
+    val catalog = eyes4s.plan.DiagnosticCatalog.codes.map(_.render).toSet
+    assertEquals(DiagnosticsPresenter.wordedCodes -- catalog, Set.empty[String])
+  }
+
+  test("remedies and classes are eyes4s's, worded by the studio; one is singular") {
+    val one = StudioDiagnostic(
+      "study-finding.unmatched-focal",
+      DiagnosticLevel.Warning,
+      DiagnosticOrigin.EyesCore,
+      Vector(DiagnosticLocus.Trial(ret05)),
+      "no match",
+      Vector(ret05),
+      Some(eyes4s.plan.FindingClass.DataDependent.toString),
+      Some(eyes4s.plan.Remedy.ReviewAnalysisWindow.toString)
+    )
+    val f = DiagnosticsPresenter.finding(one)
+    assertEquals(f.detail, "Depends on the data · 1 trial affected")
+    assertEquals(f.remedy.map(_.label), Some("Review the analysis window"))
+    // A class or remedy eyes4s does not have is not shown by its name.
+    val unknown =
+      DiagnosticsPresenter.finding(one.copy(category = Some("Novel"), remedy = Some("Novel")))
+    assertEquals(unknown.detail, "1 trial affected")
+    assertEquals(unknown.remedy.map(_.label), Some("Open the affected trials"))
+    // Every eyes4s remedy and class parses.
+    eyes4s.plan.Remedy.values.foreach(r =>
+      assertEquals(DiagnosticsPresenter.remedyOf(one.copy(remedy = Some(r.toString))), Some(r))
+    )
+    eyes4s.plan.FindingClass.values.foreach(c =>
+      assertEquals(
+        DiagnosticsPresenter.categoryOf(one.copy(category = Some(c.toString))),
+        Some(c)
+      )
+    )
+    assertEquals(
+      DiagnosticsPresenter
+        .grouped(DiagnosticsPresenter.present(Vector(one)))
+        .eyes4s
+        .map(_.detail),
+      Vector("Depends on the data · 1 trial affected")
     )
   }

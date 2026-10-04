@@ -48,13 +48,13 @@ object PreflightText:
       case RunButton        => "Save & run {0} · {1} pairs"
       case Ready            => "Ready"
       case BlockedShort     => "Blocked"
-      case Blocked          => "Save & run disabled: {0} blockers"
+      case Blocked          => "Save & run disabled: {0}"
       case Checking         => "Checking {0}…"
       case CheckingProgress => "Checking {0}: {1} of {2} participants"
       case NoDraft          => "Only a draft can be saved and run; {0} is saved"
       case NothingToCheck   => "No analysis revision to check"
       case Refused          => "The check of {0} could not be made: {1}"
-      case Verdict          => "{0} · {1} blockers · {2} warnings reported with the run"
+      case Verdict          => "{0} · {1} · {2} reported with the run"
 
   def apply(id: PreflightTextId, args: String*): String =
     Messages.fill(english(id), args.toVector)

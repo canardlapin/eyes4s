@@ -16,6 +16,7 @@
 
 package eyes4s.studio.app.diagnostics
 
+import eyes4s.plan.{FindingClass, Remedy}
 import eyes4s.studio.app.Intent
 import eyes4s.studio.app.nav.{Location, Place}
 import eyes4s.studio.app.plot.ViewSelection
@@ -112,10 +113,7 @@ object DiagnosticsPresenter:
           case many        =>
             val trials = many.flatMap(_.affected).distinct
             val people = trials.map(_.participant).distinct.mkString(", ")
-            val detail =
-              if trials.isEmpty then DiagnosticText(DiagnosticTextId.TrialsAffected, "0")
-              else
-                DiagnosticText(DiagnosticTextId.TrialsAffectedIn, trials.size.toString, people)
+            val detail = DiagnosticText.trialsAffectedIn(trials.size, people)
             many.head.copy(
               detail = detail,
               affected = trials,
@@ -145,66 +143,88 @@ object DiagnosticsPresenter:
         case _                          => Vector.empty
       }.distinct
 
+  // What a code's detail says: a focal trial's references, the trials it
+  // names, or how many trials, after the finding's class.
+  private enum Detail derives CanEqual:
+    case References, InTrials, Counted
+
+  // The studio's words for each code it knows: a title and a detail.
+  private val wording: Map[String, (DiagnosticTextId, Detail)] =
+    import DiagnosticTextId.*
+    Map(
+      "study-finding.matched-cardinality"     -> (MatchedCardinality, Detail.References),
+      "study-finding.no-fixation-in-window"   -> (NoFixationInWindow, Detail.InTrials),
+      "study-finding.off-window-fixations"    -> (OffWindowFixations, Detail.InTrials),
+      "study-finding.unmatched-focal"         -> (UnmatchedFocal, Detail.Counted),
+      "study-finding.uncontrolled-focal"      -> (UncontrolledFocal, Detail.Counted),
+      "study-finding.duplicate-trial"         -> (DuplicateTrial, Detail.Counted),
+      "study-finding.ambiguous-references"    -> (AmbiguousReferences, Detail.InTrials),
+      "study-finding.unmatched-focal-refused" -> (UnmatchedFocalRefused, Detail.InTrials),
+      "study-finding.match-item-conflict"     -> (MatchItemConflict, Detail.InTrials),
+      "study-finding.no-fixation-kept"        -> (NoFixationKept, Detail.InTrials),
+      "study-failure.off-window"              -> (FailsOffWindow, Detail.InTrials)
+    )
+
+  /** The codes the studio has words for; each is an eyes4s catalog code. */
+  val wordedCodes: Set[String] = wording.keySet
+
+  /** A diagnostic's finding class, when it names one eyes4s has. */
+  def categoryOf(d: StudioDiagnostic): Option[FindingClass] =
+    d.category.flatMap(c => FindingClass.values.find(_.toString == c))
+
+  /** A diagnostic's remedy, when it names one eyes4s has. */
+  def remedyOf(d: StudioDiagnostic): Option[Remedy] =
+    d.remedy.flatMap(r => Remedy.values.find(_.toString == r))
+
   def finding(d: StudioDiagnostic): FindingVM =
     import DiagnosticTextId.*
     val trials   = affected(d)
     val severity = d.level match
       case DiagnosticLevel.Error   => FindingSeverity.Blocker
       case DiagnosticLevel.Warning => FindingSeverity.Warning
-    val count    = trials.size.toString
-    val people   = trials.map(_.participant).distinct.mkString(", ")
-    val inTrials =
-      if trials.isEmpty then DiagnosticText(TrialsAffected, "0")
-      else DiagnosticText(TrialsAffectedIn, count, people)
+    val people                     = trials.map(_.participant).distinct.mkString(", ")
+    val inTrials                   = DiagnosticText.trialsAffectedIn(trials.size, people)
     def withCategory(text: String) =
-      d.category.fold(text)(c => DiagnosticText(CategoryAndCount, c, text))
-    val (title, detail) = d.code match
-      case "study-finding.matched-cardinality" =>
+      categoryOf(d).fold(text) { c =>
+        val name = c match
+          case FindingClass.UnavailableInput  => DiagnosticText(ClassUnavailableInput)
+          case FindingClass.IncompatibleInput => DiagnosticText(ClassIncompatibleInput)
+          case FindingClass.InvalidSetting    => DiagnosticText(ClassInvalidSetting)
+          case FindingClass.DataDependent     => DiagnosticText(ClassDataDependent)
+        DiagnosticText(CategoryAndCount, name, text)
+      }
+    val (title, detail) = wording.get(d.code) match
+      case Some((t, Detail.References)) =>
         val focal      = d.subject.collectFirst { case DiagnosticLocus.Trial(k) => k }
         val references = trials.filterNot(focal.contains)
         (
-          DiagnosticText(MatchedCardinality),
+          DiagnosticText(t),
           focal.fold(inTrials)(f =>
-            DiagnosticText(
-              ReferencesOf,
-              references.size.toString,
+            DiagnosticText.referencesOf(
+              references.size,
               f.label,
               references.map(_.occurrence.toString).mkString(", ")
             )
           )
         )
-      case "study-finding.no-fixation-in-window" =>
-        (DiagnosticText(NoFixationInWindow), inTrials)
-      case "study-finding.off-window-fixations" =>
-        (DiagnosticText(OffWindowFixations), inTrials)
-      case "study-finding.unmatched-focal" =>
-        (DiagnosticText(UnmatchedFocal), withCategory(DiagnosticText(TrialsAffected, count)))
-      case "study-finding.uncontrolled-focal" =>
-        (DiagnosticText(UncontrolledFocal), withCategory(DiagnosticText(TrialsAffected, count)))
-      case "study-finding.duplicate-trial" =>
-        (DiagnosticText(DuplicateTrial), withCategory(DiagnosticText(TrialsAffected, count)))
-      case "study-finding.ambiguous-references" =>
-        (DiagnosticText(AmbiguousReferences), inTrials)
-      case "study-finding.unmatched-focal-refused" =>
-        (DiagnosticText(UnmatchedFocalRefused), inTrials)
-      case "study-finding.match-item-conflict" => (DiagnosticText(MatchItemConflict), inTrials)
-      case "study-finding.no-fixation-kept"    => (DiagnosticText(NoFixationKept), inTrials)
-      case "study-failure.off-window"          => (DiagnosticText(FailsOffWindow), inTrials)
-      case other                               => (other, DiagnosticText(UnknownCode, inTrials))
-    FindingVM(d.code, severity, title, detail, trials, remedyOf(d, trials))
+      case Some((t, Detail.InTrials)) => (DiagnosticText(t), inTrials)
+      case Some((t, Detail.Counted))  =>
+        (DiagnosticText(t), withCategory(DiagnosticText.trialsAffected(trials.size)))
+      case None => (d.code, DiagnosticText(UnknownCode, inTrials))
+    FindingVM(d.code, severity, title, detail, trials, remedyVM(d, trials))
 
   // A remedy names the action and opens exactly the affected trials; one
   // that names no trial has nothing to open.
-  private def remedyOf(d: StudioDiagnostic, trials: Vector[TrialKey]): Option[RemedyVM] =
+  private def remedyVM(d: StudioDiagnostic, trials: Vector[TrialKey]): Option[RemedyVM] =
     import DiagnosticTextId.*
     Option.when(trials.nonEmpty) {
-      val label = d.remedy match
-        case Some("ChooseMatchedReference")      => DiagnosticText(ChooseOccurrence)
-        case Some("ReviewAnalysisWindow")        => DiagnosticText(ReviewWindow)
-        case Some("ResolveDuplicateTrials")      => DiagnosticText(ResolveDuplicates)
-        case Some("ResolveMatchItemConflict")    => DiagnosticText(ResolveItemConflict)
-        case Some("ReviseInitialFixationPolicy") => DiagnosticText(ReviseInitialFixations)
-        case _                                   => DiagnosticText(OpenTrials)
+      val label = remedyOf(d) match
+        case Some(Remedy.ChooseMatchedReference)      => DiagnosticText(ChooseOccurrence)
+        case Some(Remedy.ReviewAnalysisWindow)        => DiagnosticText(ReviewWindow)
+        case Some(Remedy.ResolveDuplicateTrials)      => DiagnosticText(ResolveDuplicates)
+        case Some(Remedy.ResolveMatchItemConflict)    => DiagnosticText(ResolveItemConflict)
+        case Some(Remedy.ReviseInitialFixationPolicy) => DiagnosticText(ReviseInitialFixations)
+        case _                                        => DiagnosticText(OpenTrials)
       RemedyVM(label, trials)
     }
 

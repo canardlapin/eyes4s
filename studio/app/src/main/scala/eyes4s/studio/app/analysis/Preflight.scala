@@ -17,12 +17,12 @@
 package eyes4s.studio.app.analysis
 
 import eyes4s.studio.app.diagnostics.{DiagnosticsPresenter, DiagnosticsVM}
-import eyes4s.studio.app.text.{Format, PreflightText, PreflightTextId}
+import eyes4s.studio.app.text.{DiagnosticText, Format, PreflightText, PreflightTextId}
 import eyes4s.studio.app.{AppModel, Intent}
 import eyes4s.studio.core.command.Command
 import eyes4s.studio.core.document.RecipeChange
 import eyes4s.studio.core.freshness.FreshnessText
-import eyes4s.studio.core.selection.{DesignCount, StudioRef}
+import eyes4s.studio.core.selection.{DesignCount, SelectionError, StudioRef, ViewId}
 
 /** A value of the run card, with the refs its numbers trace to. */
 final case class RunLine(label: String, value: String, refs: Vector[StudioRef]) derives CanEqual
@@ -59,6 +59,9 @@ final case class PreflightVM(
   */
 object Preflight:
 
+  /** The view the pane's remedies select from. */
+  val viewId: Either[SelectionError, ViewId] = ViewId.of("analysis.preflight")
+
   def vm(design: ResolvedDesign, m: AppModel): PreflightVM =
     import PreflightTextId.*
     val target   = design.target
@@ -74,6 +77,7 @@ object Preflight:
     // The run card's lines: pair rows per scale, the scales and the total;
     // and what the draft changes against its base.
     val counts = design.preview.receipt.map(_.counts)
+    // The scales the target recipe declares; the receipt is of that recipe.
     val scales = target.map(_.recipe.scales.values.size)
     val pairs  = for
       t <- target
@@ -89,6 +93,7 @@ object Preflight:
       ),
       Vector(
         StudioRef.DesignTally(t.revision, DesignCount.EligiblePairsPerScale),
+        StudioRef.DesignTally(t.revision, DesignCount.Scales),
         StudioRef.DesignTally(t.revision, DesignCount.EligiblePairs)
       )
     )
@@ -118,7 +123,7 @@ object Preflight:
           )
         )
       case (Some(_), DesignPreview.Ready(_)) if blockers > 0 =>
-        Some(PreflightText(Blocked, blockers.toString))
+        Some(PreflightText(Blocked, DiagnosticText.blockers(blockers)))
       case (Some(_), DesignPreview.Ready(_)) => None
       case (Some(_), _)                      => Some(PreflightText(Checking, label))
     val total   = counts.fold("")(c => Format.count(c.eligiblePairs))
@@ -127,8 +132,8 @@ object Preflight:
         Verdict,
         if f.runnable then PreflightText(Ready)
         else PreflightText(BlockedShort),
-        f.blockers.toString,
-        f.warnings.toString
+        DiagnosticText.blockers(f.blockers),
+        DiagnosticText.warnings(f.warnings)
       )
     )
     PreflightVM(

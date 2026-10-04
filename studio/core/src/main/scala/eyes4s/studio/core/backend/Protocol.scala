@@ -441,6 +441,9 @@ object DiagnosticLocus:
   * diagnostic names (eyes4s `affectedTrials`: its subject, then its operands
   * and causes, each once), and for a preflight finding its eyes4s
   * `FindingClass` and `Remedy`, by case name. Other operands stay in eyes4s.
+  * The defaults serve diagnostics built in-process (a studio check, a fake);
+  * on the wire every field is required, since client and backend speak the
+  * same minor version.
   */
 final case class StudioDiagnostic(
     code: String,

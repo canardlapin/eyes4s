@@ -265,6 +265,11 @@ enum DesignCount derives CanEqual, Codec.AsObject:
     */
   case EligiblePairs
 
+  /** The scales the revision's recipe declares: a run compares every pair
+    * at each (S7.6's run card).
+    */
+  case Scales
+
   /** The participants the preview counts, one page of pairs each. */
   case Participants
 

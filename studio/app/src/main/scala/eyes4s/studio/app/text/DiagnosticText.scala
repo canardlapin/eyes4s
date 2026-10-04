@@ -35,14 +35,18 @@ enum DiagnosticTextId derives CanEqual:
   /** Details: references of a focal trial, trials affected, and a code the
     * studio has no words for.
     */
-  case ReferencesOf, TrialsAffected, TrialsAffectedIn, CategoryAndCount, UnknownCode
+  case ReferencesOf, ReferenceOf, NoReferenceOf, TrialsAffected, TrialAffected,
+    TrialsAffectedIn, TrialAffectedIn, CategoryAndCount, UnknownCode
+
+  /** eyes4s's finding classes. */
+  case ClassUnavailableInput, ClassIncompatibleInput, ClassInvalidSetting, ClassDataDependent
 
   /** Remedies. */
   case ChooseOccurrence, ReviewWindow, OpenTrials, ResolveDuplicates, ResolveItemConflict,
     ReviseInitialFixations
 
   /** The run's verdict: ready or blocked, with its counts. */
-  case Ready, Blocked, Counts
+  case Ready, Blocked, BlockerCount, BlockersCount, WarningCount, WarningsCount
 
 object DiagnosticText:
 
@@ -66,8 +70,16 @@ object DiagnosticText:
       case NoFixationKept         => "No fixation kept"
       case FailsOffWindow         => "Trial fails: fixations outside the window"
       case ReferencesOf           => "{0} matched references for {1} (occurrences {2})"
+      case ReferenceOf            => "1 matched reference for {1} (occurrence {2})"
+      case NoReferenceOf          => "No matched reference for {1}"
       case TrialsAffected         => "{0} trials affected"
+      case TrialAffected          => "1 trial affected"
       case TrialsAffectedIn       => "{0} trials ({1})"
+      case TrialAffectedIn        => "1 trial ({1})"
+      case ClassUnavailableInput  => "Unavailable input"
+      case ClassIncompatibleInput => "Incompatible input"
+      case ClassInvalidSetting    => "Invalid setting"
+      case ClassDataDependent     => "Depends on the data"
       case CategoryAndCount       => "{0} · {1}"
       case UnknownCode            => "{0} · no Studio text for this code"
       case ChooseOccurrence       => "Choose occurrence…"
@@ -78,7 +90,49 @@ object DiagnosticText:
       case ReviseInitialFixations => "Revise the initial-fixation policy"
       case Ready                  => "Ready"
       case Blocked                => "Save & run disabled"
-      case Counts                 => "{0} blockers · {1} warnings"
+      case BlockerCount           => "1 blocker"
+      case BlockersCount          => "{0} blockers"
+      case WarningCount           => "1 warning"
+      case WarningsCount          => "{0} warnings"
 
   def apply(id: DiagnosticTextId, args: String*): String =
     Messages.fill(english(id), args.toVector)
+
+  // The singular form for one, the plural otherwise (0 included).
+  private def counted(n: Int, one: DiagnosticTextId, many: DiagnosticTextId, rest: String*) =
+    apply(if n == 1 then one else many, (n.toString +: rest)*)
+
+  /** "1 trial affected", "9 trials affected". */
+  def trialsAffected(n: Int): String =
+    counted(n, DiagnosticTextId.TrialAffected, DiagnosticTextId.TrialsAffected)
+
+  /** "1 trial (P11)", "9 trials (P03, P07)"; "0 trials affected" for none. */
+  def trialsAffectedIn(n: Int, participants: String): String =
+    if n == 0 then trialsAffected(0)
+    else
+      counted(
+        n,
+        DiagnosticTextId.TrialAffectedIn,
+        DiagnosticTextId.TrialsAffectedIn,
+        participants
+      )
+
+  /** "1 matched reference for P11 · ret_05 (occurrence 1)", or "2 … (occurrences 1, 2)". */
+  def referencesOf(n: Int, focal: String, occurrences: String): String =
+    if n == 0 then apply(DiagnosticTextId.NoReferenceOf, "0", focal)
+    else
+      counted(
+        n,
+        DiagnosticTextId.ReferenceOf,
+        DiagnosticTextId.ReferencesOf,
+        focal,
+        occurrences
+      )
+
+  /** "1 blocker", "2 blockers". */
+  def blockers(n: Int): String =
+    counted(n, DiagnosticTextId.BlockerCount, DiagnosticTextId.BlockersCount)
+
+  /** "1 warning", "0 warnings". */
+  def warnings(n: Int): String =
+    counted(n, DiagnosticTextId.WarningCount, DiagnosticTextId.WarningsCount)

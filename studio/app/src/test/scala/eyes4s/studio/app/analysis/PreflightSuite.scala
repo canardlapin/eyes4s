@@ -91,13 +91,14 @@ class PreflightSuite extends munit.FunSuite:
         "8,969 × 5 scales = 44,845",
         Vector(
           StudioRef.DesignTally(rev5, DesignCount.EligiblePairsPerScale),
+          StudioRef.DesignTally(rev5, DesignCount.Scales),
           StudioRef.DesignTally(rev5, DesignCount.EligiblePairs)
         )
       )
     )
     assertEquals(card.lines(1).label, "Change vs rev 4")
     assert(card.lines(1).value.contains("8°"), card.lines(1).value)
-    assertEquals(card.verdict, "Ready · 0 blockers · 1 warnings reported with the run")
+    assertEquals(card.verdict, "Ready · 0 blockers · 1 warning reported with the run")
     assertEquals(vm.report, "StudyReport · rev 5")
     assertEquals(
       vm.findings.map(_.eyes4s.map(_.title)),
@@ -122,12 +123,16 @@ class PreflightSuite extends munit.FunSuite:
     assert(f.eyes4s(1).detail.startsWith("2 matched references for P11"), f.eyes4s(1).detail)
   }
 
+  test("the pane's view id is valid") {
+    assert(Preflight.viewId.isRight, Preflight.viewId)
+  }
+
   test("any blocker disables Save & run, with its reason") {
     val vm = Preflight.vm(checked(warning, blocker), model)
     assertEquals(vm.card.enabled, false)
     assertEquals(vm.card.run, None)
-    assertEquals(vm.card.reason, Some("Save & run disabled: 1 blockers"))
-    assertEquals(vm.card.verdict, "Blocked · 1 blockers · 1 warnings reported with the run")
+    assertEquals(vm.card.reason, Some("Save & run disabled: 1 blocker"))
+    assertEquals(vm.card.verdict, "Blocked · 1 blocker · 1 warning reported with the run")
     // Running the draft anyway is not offered.
     val f = vm.findings.get
     assertEquals(

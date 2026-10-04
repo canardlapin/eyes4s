@@ -22,7 +22,6 @@ import eyes4s.studio.app.plot.ViewSelection
 import eyes4s.studio.app.text.{DiagnosticText, DiagnosticTextId, PreflightText, PreflightTextId}
 import eyes4s.studio.app.vm.{A11yRole, FocusStop}
 import eyes4s.studio.app.{AppModel, Intent}
-import eyes4s.studio.core.selection.ViewId
 import eyes4s.studio.desktop.plot.TableTwinView
 import javafx.geometry.Pos
 import javafx.scene.control.{Button, Label, ScrollPane}
@@ -38,9 +37,9 @@ import javafx.scene.layout.{GridPane, HBox, Priority, Region, VBox}
   */
 final class PreflightHost(model: () => AppModel, app: Intent => Unit):
   private var design = ResolvedDesign.empty
-  private val viewId =
-    ViewId.of("analysis.preflight").fold(e => throw IllegalStateException(e.message), identity)
-  private var selection = ViewSelection.initial(viewId, model().selection)
+  // The view the remedies select from (a constant; PreflightSuite checks it).
+  private var selection =
+    Preflight.viewId.toOption.map(ViewSelection.initial(_, model().selection))
 
   private def label(text: String, styles: String*): Label =
     val l = Label(text)
@@ -118,24 +117,24 @@ final class PreflightHost(model: () => AppModel, app: Intent => Unit):
   /** Save & run as shown: its label, whether it is enabled, and why not. */
   def runButton: (String, Boolean, String) = (run.getText, !run.isDisabled, verdict.getText)
 
-  /** The findings shown, by section: (title, severity, remedy label). */
-  def shown: (Vector[String], Vector[String]) =
+  /** The findings shown, by section: the studio's, then eyes4s's. */
+  def shown: (Vector[FindingVM], Vector[FindingVM]) =
     import scala.jdk.CollectionConverters.*
-    def titles(box: VBox) = box.getChildren.asScala.toVector.flatMap {
+    def findings(box: VBox) = box.getChildren.asScala.toVector.flatMap {
       case v: VBox =>
         v.getUserData match
-          case s: String => Vector(s)
-          case _         => Vector.empty
+          case f: FindingVM => Vector(f)
+          case _            => Vector.empty
       case _ => Vector.empty
     }
-    (titles(studio), titles(eyes))
+    (findings(studio), findings(eyes))
 
-  /** Clicks the remedy of the finding titled `title`, as the user does. */
-  def remedy(title: String): Unit =
+  /** Clicks the remedy of the finding `finding`, as the user does. */
+  def remedy(finding: FindingVM): Unit =
     import scala.jdk.CollectionConverters.*
     (studio.getChildren.asScala ++ eyes.getChildren.asScala)
       .collectFirst {
-        case v: VBox if v.getUserData == title =>
+        case v: VBox if v.getUserData == finding =>
           v.getChildren.asScala.collectFirst { case b: Button => b }
       }
       .flatten
@@ -160,7 +159,7 @@ final class PreflightHost(model: () => AppModel, app: Intent => Unit):
 
   /** Follows the model: the selection the remedies submit against. */
   def sync(m: AppModel): Unit =
-    selection = selection.project(m.selection)._1
+    selection = selection.map(_.project(m.selection)._1)
     render()
 
   private def findingNode(f: FindingVM): VBox =
@@ -176,14 +175,16 @@ final class PreflightHost(model: () => AppModel, app: Intent => Unit):
       b.getStyleClass.add("chip")
       b.setAccessibleText(r.label)
       b.setOnAction { _ =>
-        val (next, intents) = DiagnosticsPresenter.open(r, selection)
-        selection = next
-        intents.foreach(app)
+        selection.foreach { s =>
+          val (next, intents) = DiagnosticsPresenter.open(r, s)
+          selection = Some(next)
+          intents.foreach(app)
+        }
       }
       box.getChildren.add(b)
     }
     box.getStyleClass.add("find")
-    box.setUserData(f.title)
+    box.setUserData(f)
     box
 
   private def render(): Unit =

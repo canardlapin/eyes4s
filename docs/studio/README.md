@@ -64,7 +64,9 @@ trial the diagnostic names, eyes4s's `affectedTrials` (its subject, then its ope
 and causes, each once), so a remedy opens exactly those trials; `category` and
 `remedy` carry a preflight finding's eyes4s `FindingClass` and `Remedy` by case
 name. The studio words a diagnostic by its code (`DiagnosticsPresenter`), never by
-its message. The pins that hold a diagnostic were re-recorded; the other 1.7 pins are
+its message. On the wire the three fields are required, since client and backend
+speak the same minor; their empty defaults serve diagnostics built in-process (a
+studio check, a fake). The pins that hold a diagnostic were re-recorded; the other 1.7 pins are
 unchanged; the envelope version is now 1.8.
 
 Protocol 1.7 (S6.4) adds the source records view for Explore, additive on 1.6:
