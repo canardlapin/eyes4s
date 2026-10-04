@@ -88,6 +88,27 @@ class TimelinePlotSuite extends FunSuite:
     assert(tall.y < short.y, s"$tall vs $short")
   }
 
+  test(
+    "each bar covers exactly [onset, onset + duration): picked just inside both ends, not past its end"
+  ) {
+    val plot      = built(board)
+    val surface   = right(PlotSurface(2000, 300, 1.0))
+    val transform = right(PlotTransform.resolve(plot.plot, surface))
+    val picking   = right(NamedPicking.compile(plot.plot.scene, transform.renderContext))
+    val t         = right(PlotTargets.resolve(plot, transform, picking))
+    board.fixations.zip(board.refs).foreach { (f, ref) =>
+      val y     = f.durationMs / 2.0
+      val start = right(transform.dataToDevice(DataPoint(f.onsetMs.toDouble, y)))
+      val end = right(transform.dataToDevice(DataPoint((f.onsetMs + f.durationMs).toDouble, y)))
+      def at(dx: Double) = right(t.pick(DevicePoint(dx, start.y), 0.0)).map(_.ref)
+      assertEquals(at(start.x + 1.0), Some(ref), s"$ref just after its onset")
+      assertEquals(at(end.x - 1.0), Some(ref), s"$ref just before its end")
+      // Every gap between bars is at least 80 ms: past the end is no bar.
+      assertEquals(at(end.x + 1.0), None, s"$ref just past its end")
+      assertEquals(at(start.x - 1.0).filter(_ == ref), None, s"$ref just before its onset")
+    }
+  }
+
   test("a drag selects exactly the fixations whose bars it touches") {
     val t = targetsOn(built(board))
     // The board's brush, 1.20 to 2.80 s: fixations 4 to 7 (3 ends at 1.072 s,

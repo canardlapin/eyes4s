@@ -114,7 +114,16 @@ class S45ePlotFxSuite extends StudioFxSuite:
       )
     )
     runOnFx(runtime.listen(m => twin.project(m.selection)))
-    val brush = runOnFx(PlotBrushAdapter.attach(twin, TimelineColumns.brushRule(columns)))
+    // The spans the brush reports, as a host would keep them (S6.3).
+    var reported = Vector.empty[Option[HalfOpenSpan]]
+    val brush    = runOnFx(
+      PlotBrushAdapter.attach(
+        twin,
+        TimelineColumns.brushRule(columns),
+        span => TimelinePlot(columns, span, Some(2160.0)),
+        span => reported = reported :+ span
+      )
+    )
     def host: CanvasPlotHost        = twin.plotHost
     def selected: Vector[StudioRef] = runOnFx(runtime.model.selection.selected)
     def hover: Option[HoverAt]      = runOnFx(runtime.model.hover)
@@ -170,6 +179,15 @@ class S45ePlotFxSuite extends StudioFxSuite:
       at: DevicePoint,
       still: Boolean,
       kinds: EventType[MouseEvent]*
+  ): Unit = fireWith(w, t, at, still, false, kinds*)
+
+  private def fireWith(
+      w: Wired,
+      t: PlotTargets,
+      at: DevicePoint,
+      still: Boolean,
+      shift: Boolean,
+      kinds: EventType[MouseEvent]*
   ): Unit =
     val c       = t.transform.deviceToCanvas(at)
     val inScene = runOnFx(w.host.localToScene(Point2D(c.x, c.y)))
@@ -190,7 +208,7 @@ class S45ePlotFxSuite extends StudioFxSuite:
               else MouseButton.PRIMARY,
               if kind == MouseEvent.MOUSE_MOVED || kind == MouseEvent.MOUSE_EXITED then 0
               else 1,
-              false,
+              shift,
               false,
               false,
               false,
@@ -261,10 +279,29 @@ class S45ePlotFxSuite extends StudioFxSuite:
 
   // A drag from `a` to `b` ms: press, drag, release, and the click JavaFX
   // sends after a release, none of them still since the press.
-  private def drag(w: Wired, t: PlotTargets, a: Double, b: Double): Unit =
+  private def drag(w: Wired, t: PlotTargets, a: Double, b: Double): PlotTargets =
+    val before = runOnFx(w.twin.plot)
     fire(w, t, device(t, a), true, MouseEvent.MOUSE_PRESSED)
     fire(w, t, device(t, (a + b) / 2.0), false, MouseEvent.MOUSE_DRAGGED)
     fire(w, t, device(t, b), false, MouseEvent.MOUSE_RELEASED, MouseEvent.MOUSE_CLICKED)
+    redrawn(w, before)
+
+  // The targets once the plot is drawn again after `before` (a brush redraws it).
+  private def redrawn(w: Wired, before: Option[eyes4s.studio.viz.plot.BuiltPlot]): PlotTargets =
+    val deadline = System.currentTimeMillis + TimeoutMillis
+    def settled  = runOnFx {
+      (w.twin.status.get, w.host.status.get) match
+        case (PlotTwinStatus.Shown(plot), PlotHostStatus.Drawn(frame))
+            if !before.exists(_ eq plot) && (frame.plan.scene eq plot.plot.scene) =>
+          w.twin.input.targets
+        case _ => None
+    }
+    var result = settled
+    while result.isEmpty do
+      if System.currentTimeMillis > deadline then fail("not redrawn")
+      Thread.sleep(5)
+      result = settled
+    result.get
 
   fxStage.test(
     "a brush selects exactly the fixations whose bars it overlaps, in plot and table"
@@ -290,7 +327,7 @@ class S45ePlotFxSuite extends StudioFxSuite:
     assert(anchor(t, ref(6)).x < mid.x)
 
     // The board's brush, 1.20 to 2.80 s: it touches the bars of 4 to 7.
-    drag(w, t, 1200.0, 2800.0)
+    val t2      = drag(w, t, 1200.0, 2800.0)
     val brushed = runOnFx(w.brush.brushed).getOrElse(fail("no brush"))
     // The span is where the pointer was, to within one device pixel.
     val perPx = t.transform.deviceToData(DevicePoint(1.0, 0.0)).x -
@@ -313,7 +350,25 @@ class S45ePlotFxSuite extends StudioFxSuite:
       runOnFx(w.twin.input.state.selectionRings(t)).map(_.ref),
       expected
     )
+    // The plot is drawn again with the span shaded, and the span is kept.
+    assertEquals(runOnFx(w.brush.span), Some(brushed.span))
+    assertEquals(w.reported, Vector(Some(brushed.span)))
+    val surface3                           = Tokens.themed(Theme.Light, ThemedToken.Surface3)
+    val surface                            = Tokens.themed(Theme.Light, ThemedToken.Surface)
+    def shaded(t: PlotTargets, ms: Double) =
+      val image = snapshot(w)
+      val p     = right(t.transform.dataToDevice(DataPoint(ms, 440.0)))
+      (near(image, p, surface3, 6), near(image, p, surface, 6))
+    // Above the bars, in the gap between 4 and 5, inside the span; over 8, outside it.
+    assertEquals(shaded(t2, 1700.0), (true, false))
+    assertEquals(shaded(t2, 3000.0), (false, true))
     fx.snapshot(StudioTheme.Light)
+    // A kept span is drawn again on restore, and none clears it.
+    val before = runOnFx(w.twin.plot)
+    runOnFx(w.brush.restore(None))
+    val t3 = redrawn(w, before)
+    assertEquals(shaded(t3, 1700.0), (false, true))
+    assertEquals(w.selected, expected)
 
     // Dragged backwards over 0.30 to 1.00 s: fixations 2 and 3.
     drag(w, t, 1000.0, 300.0)
@@ -332,6 +387,23 @@ class S45ePlotFxSuite extends StudioFxSuite:
     // A still click still picks one bar.
     click(w, t, right(t.transform.dataToDevice(DataPoint(2160.0 + 206.0, 100.0))))
     assertEquals(w.selected, Vector(ref(6)))
+
+    // A still shift-press released a pixel away is a toggle click, not a
+    // brush: 2 joins 6, and no span is drawn.
+    val spans = w.reported.size
+    val at2   = right(t.transform.dataToDevice(DataPoint(336.0 + 160.0, 100.0)))
+    fireWith(w, t, at2, true, true, MouseEvent.MOUSE_PRESSED)
+    fireWith(
+      w,
+      t,
+      DevicePoint(at2.x + 1.0, at2.y),
+      true,
+      true,
+      MouseEvent.MOUSE_RELEASED,
+      MouseEvent.MOUSE_CLICKED
+    )
+    assertEquals(w.selected, Vector(ref(6), ref(2)))
+    assertEquals(w.reported.size, spans)
     runOnFx(w.brush.dispose())
     runOnFx(w.twin.dispose())
   }

@@ -22,9 +22,11 @@ import intaglio.DevicePoint
 
 /** A drag across a plot as a brush (ticket S4.5e): the span of the plot's
   * numeric x axis between the drag's two ends, and the rows a
-  * [[BrushRule]] picks from it ([[PlotBrush.rows]]). The span is read through the plot's one
-  * transform, so a brush selects exactly the rows whose values lie under
-  * it on screen.
+  * [[eyes4s.studio.app.plot.BrushRule]] picks from it ([[PlotBrush.rows]]).
+  * The span is read through the plot's one transform. "Exactly" holds in
+  * data space: the rule is applied to the source's values against the
+  * span's data ends, so a row boundary within the release's pixel is
+  * resolved by its sub-pixel value, not by what the pixel shows.
   */
 final case class Brushed(span: HalfOpenSpan, refs: Vector[StudioRef]) derives CanEqual
 

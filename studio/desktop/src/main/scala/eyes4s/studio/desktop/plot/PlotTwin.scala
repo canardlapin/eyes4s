@@ -86,13 +86,15 @@ enum PlotTwinError derives CanEqual:
   * ([[eyes4s.studio.app.layout.StudioLayouts]]). FX thread only.
   */
 final class PlotTwin private (
-    builder: PlotBuilder,
+    initialBuilder: PlotBuilder,
     plotView: ViewId,
     tableView: ViewId,
     selection: SelectionState,
     dispatch: Intent => Unit,
     toleranceLogicalPx: Double
 ):
+
+  private var builder: PlotBuilder = initialBuilder
 
   /** The plot's canvas host. */
   val plotHost: CanvasPlotHost = CanvasPlotHost()
@@ -230,6 +232,19 @@ final class PlotTwin private (
           statusWrapper.set(PlotTwinStatus.Refused(source, error))
       input.refresh()
       describeMark()
+
+  /** Draws the shown source again with `next`, as a brush's span changes
+    * the timeline's builder (S4.5e); the table, which reads the same source,
+    * is unchanged. With nothing shown, `next` draws the next source.
+    */
+  def rebuild(next: PlotBuilder): Unit =
+    onFxThread("rebuild")
+    if !disposed then
+      builder = next
+      statusWrapper.get match
+        case PlotTwinStatus.Shown(plot)                     => show(plot.source, theme)
+        case PlotTwinStatus.Refused(source, _)              => show(source, theme)
+        case PlotTwinStatus.Empty | PlotTwinStatus.Disposed => ()
 
   /** Shows nothing. */
   def clear(): Unit =
