@@ -58,10 +58,25 @@ enum PreviewError derives CanEqual:
   case Negative(field: String, value: Long)
   case BeyondTotal(field: String, done: Long, total: Long)
 
+  /** The focal trials by status do not add up to those requested. */
+  case QueryPartition(
+      requested: Int,
+      eligible: Int,
+      unmatched: Int,
+      notAdmitted: Int,
+      byDesign: Option[Int]
+  )
+
   def message: String = this match
     case Negative(field, value)          => s"Preview $field is negative: $value."
     case BeyondTotal(field, done, total) =>
       s"Preview $field reports $done, beyond its total $total."
+    case QueryPartition(requested, eligible, unmatched, notAdmitted, byDesign) =>
+      val parts =
+        Vector(s"$eligible eligible", s"$unmatched unmatched", s"$notAdmitted not admitted") ++
+          byDesign.map(n => s"$n by design")
+      s"Preview requests $requested queries, but ${parts.mkString(" + ")} is " +
+        s"${eligible.toLong + unmatched + notAdmitted + byDesign.getOrElse(0)}."
 
 private object PreviewCount:
   def nonNegative(field: String, value: Long): Either[PreviewError, Unit] =
@@ -79,14 +94,31 @@ object ParticipantCount:
   given Encoder[ParticipantCount] = Encoder.encodeInt.contramap(_.value)
   given Decoder[ParticipantCount] = PreviewCount.decoder(Decoder.decodeInt.map(of))
 
+/** A number of focal trials (queries), never negative. */
+final case class QueryCount private[preview] (value: Int) derives CanEqual
+object QueryCount:
+  def of(value: Int): Either[PreviewError, QueryCount] =
+    PreviewCount.nonNegative("query count", value).map(_ => new QueryCount(value))
+  given Encoder[QueryCount] = Encoder.encodeInt.contramap(_.value)
+  given Decoder[QueryCount] = PreviewCount.decoder(Decoder.decodeInt.map(of))
+
 /** The immutable candidate metadata known before eligibility has been counted.
   * No count is negative.
+  *
+  * The query counts come from the trial inventory and the recipe, before any
+  * pair is counted: `requestedQueries` focal trials the design asks for, of
+  * which `queriesNotAdmitted` the admission refused, and `byDesignQueries`
+  * focal trials the recipe states have no reference by design (a recognition
+  * lure), or `None` when the recipe has no such category.
   */
 final case class PreviewCandidates private (
     focalTrials: Int,
     referenceTrials: Int,
     participants: Int,
-    candidatePairsPerScale: Long
+    candidatePairsPerScale: Long,
+    requestedQueries: QueryCount,
+    queriesNotAdmitted: QueryCount,
+    byDesignQueries: Option[QueryCount]
 ) derives CanEqual
 
 object PreviewCandidates:
@@ -94,34 +126,73 @@ object PreviewCandidates:
       focalTrials: Int,
       referenceTrials: Int,
       participants: Int,
-      candidatePairsPerScale: Long
+      candidatePairsPerScale: Long,
+      requestedQueries: Int,
+      queriesNotAdmitted: Int,
+      byDesignQueries: Option[Int]
   ): Either[PreviewError, PreviewCandidates] =
     for
       _ <- PreviewCount.nonNegative("focalTrials", focalTrials)
       _ <- PreviewCount.nonNegative("referenceTrials", referenceTrials)
       _ <- PreviewCount.nonNegative("participants", participants)
       _ <- PreviewCount.nonNegative("candidatePairsPerScale", candidatePairsPerScale)
+      _ <- PreviewCount.nonNegative("requestedQueries", requestedQueries)
+      _ <- PreviewCount.nonNegative("queriesNotAdmitted", queriesNotAdmitted)
+      _ <- Either.cond(
+        queriesNotAdmitted <= requestedQueries,
+        (),
+        PreviewError.BeyondTotal("queriesNotAdmitted", queriesNotAdmitted, requestedQueries)
+      )
+      _ <- byDesignQueries.fold(Right(()))(PreviewCount.nonNegative("byDesignQueries", _))
     yield new PreviewCandidates(
       focalTrials,
       referenceTrials,
       participants,
-      candidatePairsPerScale
+      candidatePairsPerScale,
+      new QueryCount(requestedQueries),
+      new QueryCount(queriesNotAdmitted),
+      byDesignQueries.map(new QueryCount(_))
     )
 
   given Encoder.AsObject[PreviewCandidates] =
-    Encoder.forProduct4(
+    Encoder.forProduct7(
       "focalTrials",
       "referenceTrials",
       "participants",
-      "candidatePairsPerScale"
-    )(c => (c.focalTrials, c.referenceTrials, c.participants, c.candidatePairsPerScale))
+      "candidatePairsPerScale",
+      "requestedQueries",
+      "queriesNotAdmitted",
+      "byDesignQueries"
+    )(c =>
+      (
+        c.focalTrials,
+        c.referenceTrials,
+        c.participants,
+        c.candidatePairsPerScale,
+        c.requestedQueries.value,
+        c.queriesNotAdmitted.value,
+        c.byDesignQueries.map(_.value)
+      )
+    )
 
   given Decoder[PreviewCandidates] = PreviewCount.decoder(
-    Decoder.forProduct4[Either[PreviewError, PreviewCandidates], Int, Int, Int, Long](
+    Decoder.forProduct7[
+      Either[PreviewError, PreviewCandidates],
+      Int,
+      Int,
+      Int,
+      Long,
+      Int,
+      Int,
+      Option[Int]
+    ](
       "focalTrials",
       "referenceTrials",
       "participants",
-      "candidatePairsPerScale"
+      "candidatePairsPerScale",
+      "requestedQueries",
+      "queriesNotAdmitted",
+      "byDesignQueries"
     )(of)
   )
 
@@ -174,12 +245,14 @@ object PreviewProgress:
   )
 
 /** Exact result of a retained preview. These are counts, not a scientific
-  * result, and none is negative.
+  * result, and none is negative. `eligibleQueries` focal trials enter the
+  * comparisons; `unmatchedQueries` were admitted without a matched reference.
   */
 final case class PreviewCounts private (
     eligiblePairsPerScale: Long,
     eligiblePairs: Long,
-    unmatchedQueries: Int,
+    eligibleQueries: QueryCount,
+    unmatchedQueries: QueryCount,
     ambiguousMatches: Int
 ) derives CanEqual
 
@@ -187,33 +260,46 @@ object PreviewCounts:
   def of(
       eligiblePairsPerScale: Long,
       eligiblePairs: Long,
+      eligibleQueries: Int,
       unmatchedQueries: Int,
       ambiguousMatches: Int
   ): Either[PreviewError, PreviewCounts] =
     for
       _ <- PreviewCount.nonNegative("eligiblePairsPerScale", eligiblePairsPerScale)
       _ <- PreviewCount.nonNegative("eligiblePairs", eligiblePairs)
+      _ <- PreviewCount.nonNegative("eligibleQueries", eligibleQueries)
       _ <- PreviewCount.nonNegative("unmatchedQueries", unmatchedQueries)
       _ <- PreviewCount.nonNegative("ambiguousMatches", ambiguousMatches)
     yield new PreviewCounts(
       eligiblePairsPerScale,
       eligiblePairs,
-      unmatchedQueries,
+      new QueryCount(eligibleQueries),
+      new QueryCount(unmatchedQueries),
       ambiguousMatches
     )
 
   given Encoder.AsObject[PreviewCounts] =
-    Encoder.forProduct4(
+    Encoder.forProduct5(
       "eligiblePairsPerScale",
       "eligiblePairs",
+      "eligibleQueries",
       "unmatchedQueries",
       "ambiguousMatches"
-    )(c => (c.eligiblePairsPerScale, c.eligiblePairs, c.unmatchedQueries, c.ambiguousMatches))
+    )(c =>
+      (
+        c.eligiblePairsPerScale,
+        c.eligiblePairs,
+        c.eligibleQueries.value,
+        c.unmatchedQueries.value,
+        c.ambiguousMatches
+      )
+    )
 
   given Decoder[PreviewCounts] = PreviewCount.decoder(
-    Decoder.forProduct4[Either[PreviewError, PreviewCounts], Long, Long, Int, Int](
+    Decoder.forProduct5[Either[PreviewError, PreviewCounts], Long, Long, Int, Int, Int](
       "eligiblePairsPerScale",
       "eligiblePairs",
+      "eligibleQueries",
       "unmatchedQueries",
       "ambiguousMatches"
     )(of)
@@ -221,15 +307,63 @@ object PreviewCounts:
 
 /** Receipt of a ready backend-owned preview. A caller may carry this receipt,
   * but cannot manufacture a snapshot from it.
+  *
+  * Its query counts partition the requested focal trials: requested =
+  * eligible + unmatched + not admitted (+ by design, when the recipe has that
+  * category), so no count exceeds the requested ones.
   */
-final case class PreviewReady(
+final case class PreviewReady private (
     id: PreviewId,
     stamp: RunStamp,
     candidates: PreviewCandidates,
     counts: PreviewCounts,
     diagnostics: Vector[StudioDiagnostic]
-) derives CanEqual,
-      Codec.AsObject
+) derives CanEqual
+
+object PreviewReady:
+  def of(
+      id: PreviewId,
+      stamp: RunStamp,
+      candidates: PreviewCandidates,
+      counts: PreviewCounts,
+      diagnostics: Vector[StudioDiagnostic]
+  ): Either[PreviewError, PreviewReady] =
+    partition(candidates, counts).map(_ =>
+      new PreviewReady(id, stamp, candidates, counts, diagnostics)
+    )
+
+  /** Whether `counts` partition the queries `candidates` requests. */
+  def partition(
+      candidates: PreviewCandidates,
+      counts: PreviewCounts
+  ): Either[PreviewError, Unit] =
+    val requested   = candidates.requestedQueries.value
+    val eligible    = counts.eligibleQueries.value
+    val unmatched   = counts.unmatchedQueries.value
+    val notAdmitted = candidates.queriesNotAdmitted.value
+    val byDesign    = candidates.byDesignQueries.map(_.value)
+    val total       = eligible.toLong + unmatched + notAdmitted + byDesign.getOrElse(0)
+    Either.cond(
+      total == requested,
+      (),
+      PreviewError.QueryPartition(requested, eligible, unmatched, notAdmitted, byDesign)
+    )
+
+  given Encoder.AsObject[PreviewReady] =
+    Encoder.forProduct5("id", "stamp", "candidates", "counts", "diagnostics")(r =>
+      (r.id, r.stamp, r.candidates, r.counts, r.diagnostics)
+    )
+
+  given Decoder[PreviewReady] = PreviewCount.decoder(
+    Decoder.forProduct5[
+      Either[PreviewError, PreviewReady],
+      PreviewId,
+      RunStamp,
+      PreviewCandidates,
+      PreviewCounts,
+      Vector[StudioDiagnostic]
+    ]("id", "stamp", "candidates", "counts", "diagnostics")(of)
+  )
 
 /** Frames of a bounded preview page. Creation starts with Initial; continuations
   * emit only progress or the ready receipt. Each page contains at most its

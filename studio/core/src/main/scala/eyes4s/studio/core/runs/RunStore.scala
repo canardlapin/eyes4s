@@ -37,6 +37,7 @@ import eyes4s.studio.core.document.{
   RunRef,
   StudioDocument
 }
+import eyes4s.studio.core.figures.{FigureError, FigureSource}
 
 /** Why the run store refused or failed. Every case names what it was
   * applied to; `message` is a default English rendering, never an identity.
@@ -65,8 +66,9 @@ enum RunStoreError derives CanEqual:
   case MissingEntry(run: RunId, name: ArtifactName, path: BundlePath)
   case EntryLength(run: RunId, name: ArtifactName, expected: Long, found: Long)
   case EntryDigest(run: RunId, name: ArtifactName, expected: ByteDigest, found: ByteDigest)
-  case UnknownFigure(figure: FigureId, known: Vector[FigureId])
-  case UnknownRun(run: RunId, referrer: String, known: Vector[RunId])
+
+  /** The figure's binding did not resolve (`FigureSource.of`). */
+  case Unbound(error: FigureError)
   case NothingToPrune
   case NotInStorage(run: RunId, stored: Vector[RunId])
 
@@ -101,11 +103,7 @@ enum RunStoreError derives CanEqual:
       s"Entry $name of ${run.label}'s archive has $found bytes; its index lists $expected."
     case EntryDigest(run, name, expected, found) =>
       s"Entry $name of ${run.label}'s archive has SHA-256 ${found.hex}; its index lists ${expected.hex}."
-    case UnknownFigure(figure, known) =>
-      s"The document has no ${figure.label} (it has ${RunStoreError.listed(known.map(_.label))})."
-    case UnknownRun(run, referrer, known) =>
-      s"$referrer names ${run.label}, which the document does not have " +
-        s"(it has ${RunStoreError.listed(known.map(_.label))})."
+    case Unbound(error)            => error.message
     case NothingToPrune            => "No run archive was chosen for pruning."
     case NotInStorage(run, stored) =>
       s"${run.label} has no stored archive to prune (stored: ${RunStoreError.listed(stored.map(_.label))})."
@@ -248,15 +246,8 @@ final class RunStore[F[_]: Monad](store: ProjectStore[F]):
     */
   def figure(document: StudioDocument, figure: FigureId): F[Either[RunStoreError, RunArchive]] =
     (for
-      spec <- EitherT.fromOption[F](
-        document.figures.find(_.id == figure),
-        UnknownFigure(figure, document.figures.map(_.id))
-      )
-      run <- EitherT.fromOption[F](
-        document.run(spec.run),
-        UnknownRun(spec.run, figure.label, document.runs.map(_.id))
-      )
-      archive <- EitherT(load(run))
+      source  <- EitherT.fromEither[F](FigureSource.of(document, figure).left.map(Unbound(_)))
+      archive <- EitherT(load(source.run))
     yield archive).value
 
   /** Every stored archive area, reading only indexes. An index that cannot
