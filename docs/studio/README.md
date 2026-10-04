@@ -59,6 +59,15 @@ To change the plan, edit `studio_plan.py`, rerun `render`, and update the matchi
 
 ## Backend protocol versions
 
+Protocol 1.8 (S3.5) widens `StudioDiagnostic`, additive on 1.5 (1.6 and 1.7 are
+the trial and source-record views on branches not yet landed): `affected` lists every
+trial the diagnostic names, eyes4s's `affectedTrials` (its subject, then its operands
+and causes, each once), so a remedy opens exactly those trials; `category` and
+`remedy` carry a preflight finding's eyes4s `FindingClass` and `Remedy` by case
+name. The studio words a diagnostic by its code (`DiagnosticsPresenter`), never by
+its message. Ten pins that hold a diagnostic were re-recorded; the envelope version
+is now 1.8.
+
 Protocol 1.5 (S7.5) adds the resolved-design counts: `PreviewCandidates` carries
 `requestedQueries`, `queriesNotAdmitted` and `byDesignQueries` (absent when the
 recipe has no by-design category: not applicable, not zero), and `PreviewCounts`
@@ -91,7 +100,7 @@ only and decodes the typed envelope body before checking the version; it does no
 negotiate minor capabilities. Mixed-minor deployments are unsupported. Protocol
 1.2 added `ProgressTotal.Counting`, which a 1.0/1.1 decoder cannot read; 1.3 adds
 the inventory join; 1.4 adds the exact large-count policy; 1.5 adds the
-resolved-design counts. `ProtocolCodecSuite`
+resolved-design counts; 1.8 adds the diagnostic's affected trials, class and remedy. `ProtocolCodecSuite`
 retains the frozen legacy-total probe, while `ProtocolLongSuite` verifies that
 safe-number 1.2 envelopes remain readable. This does not establish mixed-version peer compatibility.
 
