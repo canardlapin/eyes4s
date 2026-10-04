@@ -744,10 +744,11 @@ private final class FactText(facts: MethodsFacts):
       )
     }
 
-  /** "Results were reported by retrieval response; groups held 2–17
-    * participants; n = 24 Remembered and 23 Forgotten; the paired contrast
-    * held 24. 1 participant-group cell had fewer queries than the minimum
-    * (P05 · Forgotten · 1 query)."
+  /** "Results were reported by retrieval response; n = 24 Remembered and 23
+    * Forgotten; the paired contrast held 24. Per participant, groups held
+    * 2–17 queries; groups with fewer than 3 queries were left out. 1
+    * participant-group cell had fewer queries than the minimum (P05 ·
+    * Forgotten · 1 query)."
     */
   def reporting: Vector[Clause] =
     val groups = facts.facts.collect {
@@ -756,13 +757,6 @@ private final class FactText(facts: MethodsFacts):
     }
     val head = Vector(
       at(FactSlot.ReportingSpec).map(r => Vector(w("results were reported by "), r)),
-      at(FactSlot.GroupSizeRange).map(g =>
-        Vector(
-          w("groups held "),
-          g,
-          w(noun(FactSlot.GroupSizeRange, " participant", " participants"))
-        )
-      ),
       Option.when(groups.nonEmpty)(Vector(w("n = ")) ++ joined(groups)),
       at(FactSlot.PairedN).map(n => Vector(w("the paired contrast held "), n))
     ).flatten
@@ -772,9 +766,27 @@ private final class FactText(facts: MethodsFacts):
         capitalised(head.head ++ head.tail.flatMap(p => w("; ") +: p)) :+ w(".")
       )
     )
+    val minimum = at(FactSlot.MinimumQueries).map(m =>
+      Vector(
+        w("groups with fewer than "),
+        m,
+        w(noun(FactSlot.MinimumQueries, " query were left out", " queries were left out"))
+      )
+    )
+    val sizes = at(FactSlot.GroupSizeRange) match
+      case Some(r) =>
+        Some(
+          Vector(
+            w("Per participant, groups held "),
+            r,
+            w(noun(FactSlot.GroupSizeRange, " query", " queries"))
+          ) ++ minimum.toVector.flatMap(w("; ") +: _) :+ w(".")
+        )
+      case None => minimum.map(m => capitalised(m) :+ w("."))
     val below = breakdown(FactSlot.BelowMinimumQueries, " had fewer queries than the minimum")
     val smallest = breakdown(FactSlot.SmallestGroups, " had the fewest queries")
-    main.toVector ++ below.toVector ++ smallest.toVector
+    main.toVector ++ sizes.map(Clause(ClauseTopic.Reporting, _)).toVector ++ below.toVector ++
+      smallest.toVector
 
 private object FactText:
   /** The value a fact token shows for the whole fact. */

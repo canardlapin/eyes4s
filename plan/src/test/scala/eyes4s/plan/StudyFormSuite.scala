@@ -494,6 +494,7 @@ class StudyFormSuite extends munit.FunSuite:
           FactSource.ReportSpec("by-response"),
           FactValue.Label("retrieval response")
         ),
+        fact(FactSlot.MinimumQueries, FactSource.ReportSpec("by-response"), count(3)),
         fact(FactSlot.GroupSizeRange, FactSource.ReportCells(cells), FactValue.Range(2, 17)),
         fact(
           FactSlot.GroupN("Remembered"),
@@ -546,8 +547,9 @@ class StudyFormSuite extends munit.FunSuite:
     assertEquals(
       byTopic(ClauseTopic.Reporting),
       Vector(
-        "Results were reported by retrieval response; groups held 2–17 participants; " +
-          "n = 24 Remembered and 23 Forgotten; the paired contrast held 24.",
+        "Results were reported by retrieval response; n = 24 Remembered and 23 Forgotten; " +
+          "the paired contrast held 24.",
+        "Per participant, groups held 2–17 queries; groups with fewer than 3 queries were left out.",
         "1 participant-group cell had fewer queries than the minimum (P05 · Forgotten · 1 query).",
         "2 participant-group cells had the fewest queries (P17 · Forgotten · 2 queries, " +
           "P21 · Forgotten · 2 queries)."
@@ -736,6 +738,10 @@ class StudyFormSuite extends munit.FunSuite:
       topic(ClauseTopic.Reporting, fixturePlan, only(FactSlot.PairedN)),
       Vector("The paired contrast held 24.")
     )
+    assertEquals(
+      topic(ClauseTopic.Reporting, fixturePlan, only(FactSlot.MinimumQueries)),
+      Vector("Groups with fewer than 3 queries were left out.")
+    )
   }
 
   test("CR6d: one of a thing is singular") {
@@ -756,7 +762,7 @@ class StudyFormSuite extends munit.FunSuite:
     val text = StudyText.methods(fixturePlan, one).clauses.map(_.text)
     assert(text.contains("Of 1 requested query, 1 was eligible."), text)
     assert(text.contains("Of the compared queries, 1 had 1 control."), text)
-    assert(text.contains("Groups held 1 participant."), text)
+    assert(text.contains("Per participant, groups held 1 query."), text)
   }
 
   test("CR6d: a fact must have the value its slot takes") {
@@ -920,6 +926,7 @@ class StudyFormSuite extends munit.FunSuite:
         "failedQueries",
         "controlsPerQuery",
         "reportingSpec",
+        "minimumQueries",
         "groupSizeRange",
         "pairedN",
         "belowMinimumQueries",

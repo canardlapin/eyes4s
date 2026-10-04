@@ -172,9 +172,10 @@ beyond the plan (CR6d):
 - the design: requested, eligible, contributing, failed (by failure code),
   unmatched and not-admitted queries, and the controls of the compared queries
   (a query count for every control count, with an optional `TrialLoss`);
-- the reporting: the reporting specification, group size range, n per group,
-  paired n, and the participant-group cells below the minimum or with the
-  fewest queries.
+- the reporting: the reporting specification, n per group, paired n, the
+  range of queries per participant and group, the minimum queries per group,
+  and the participant-group cells below the minimum or with the fewest
+  queries.
 
 Every number and name is its own `Token.Fact` with its `FactSlot`, the
 `FactPart` it shows (the value, the slot's name, a control or query count, a
@@ -201,6 +202,15 @@ method-determined words: what M, B and D are (M is the mean of the matched
 scores under `MeanOfAll`), that D measures spatial correspondence rather than
 sequential replay, and, under the require-all failure policy, that a query's
 contrast needed all its pairs. The confound sentence is the host's.
+
+`eyes4s.results.ReportFacts.of(report, name)` reads the reporting facts from a
+`Report`, for its first selected role and component unless others are named:
+the specification (with the host's display name), a participant-means minimum
+above one, n per group, the paired n of a one-stratum level contrast, the range
+of queries per participant and group, and either the cells the minimum left
+out or, with no minimum, the cells with the fewest queries. Each source names
+the report cells (with the scale and, for a breakdown cell, the participant),
+the contrast or the specification.
 
 A host holding an erased `FieldError[Any]` from `ParameterSet.validate` projects
 it with `Diagnose.reportedFormField`.

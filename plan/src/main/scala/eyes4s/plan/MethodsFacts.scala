@@ -146,7 +146,7 @@ enum FactSlot derives CanEqual:
   case ContributingQueries, FailedQueries
   case FailureCause(code: FactCode)
   case ControlsPerQuery
-  case ReportingSpec, GroupSizeRange
+  case ReportingSpec, MinimumQueries, GroupSizeRange
   case GroupN(level: String)
   case PairedN, BelowMinimumQueries, SmallestGroups
 
@@ -180,6 +180,7 @@ enum FactSlot derives CanEqual:
     case FailureCause(c)      => s"${FactSlot.FailurePrefix}$c"
     case ControlsPerQuery     => "controlsPerQuery"
     case ReportingSpec        => "reportingSpec"
+    case MinimumQueries       => "minimumQueries"
     case GroupSizeRange       => "groupSizeRange"
     case GroupN(level)        => s"${FactSlot.GroupPrefix}$level"
     case PairedN              => "pairedN"
@@ -215,6 +216,7 @@ object FactSlot:
     FailedQueries,
     ControlsPerQuery,
     ReportingSpec,
+    MinimumQueries,
     GroupSizeRange,
     PairedN,
     BelowMinimumQueries,
@@ -364,7 +366,8 @@ object Fact:
             QuarantineCause(_) | NoFixations | Absent | RecordsOutsideWindow |
             TrialsOutsideWindow | RecordsOutsideScreen | TrialsOutsideScreen |
             RequestedQueries | EligibleQueries | NotAdmittedQueries | UnmatchedQueries |
-            ContributingQueries | FailedQueries | FailureCause(_) | GroupN(_) | PairedN,
+            ContributingQueries | FailedQueries | FailureCause(_) | MinimumQueries | GroupN(_) |
+            PairedN,
             FactValue.Count(n)
           ) =>
         count(n)
