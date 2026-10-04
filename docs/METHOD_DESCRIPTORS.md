@@ -212,6 +212,21 @@ out or, with no minimum, the cells with the fewest queries. Each source names
 the report cells (with the scale and, for a breakdown cell, the participant),
 the contrast or the specification.
 
+`eyes4s.results.AdmissionFacts.of(ledger, tallies)` reads the admission facts
+from an `AdmissionLedger` and the plan's window tallies
+(`StudyPlan.windowTallies`): the source records; with a trial inventory, every
+inventory trial's disposition (without one, the trials the records name, and no
+absent count); the tallied records, the records and trials outside the window
+and the screen, and the outside-window share of fixation duration when it is
+defined; and the off-screen policy. `eyes4s.results.RunFacts.of(table)` reads a
+run's query totals from one scale's `QueryTable` by each query's stored contrast
+row (eligible, contributing, failed by failure code, unmatched), and
+`RunFacts.study(result, table)` adds the controls of the compared queries from
+the run's control reductions. The requested and not-admitted queries are
+counted against the trial inventory and are the host's to state. A host joins
+these with its own facts (the dataset revision) in `MethodsFacts.of`, which
+checks that the totals agree.
+
 A host holding an erased `FieldError[Any]` from `ParameterSet.validate` projects
 it with `Diagnose.reportedFormField`.
 
