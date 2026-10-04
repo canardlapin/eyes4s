@@ -31,7 +31,9 @@ import eyes4s.studio.desktop.explore.{
   NavigatorDisplays,
   NavigatorInputs,
   TrialViewInputs,
-  TrialsNavigatorHost
+  TrialsNavigatorHost,
+  RecordSources,
+  SourceRecordsHost
 }
 import eyes4s.studio.desktop.trial.StimulusSource
 import eyes4s.studio.desktop.dock.{DockGesture, PerspectiveHost}
@@ -78,7 +80,9 @@ final class StudioWindow private (
     val explore: ExploreTrialViewHost,
     exploreListener: AppModel => Unit,
     val resolvedDesign: ResolvedDesignHost,
-    designListener: AppModel => Unit
+    designListener: AppModel => Unit,
+    val sourceRecords: SourceRecordsHost,
+    recordsListener: AppModel => Unit
 ):
   /** The window content, with the studio stylesheets. */
   def root: javafx.scene.Parent = shell.root
@@ -94,6 +98,7 @@ final class StudioWindow private (
     else if pane == StudioLayouts.items then navigator.itemsStops
     else if pane == StudioLayouts.trialView then explore.focusStops
     else if pane == StudioLayouts.resolvedDesign then resolvedDesign.focusStops
+    else if pane == StudioLayouts.sourceRecords then sourceRecords.focusStops
     else Vector.empty
 
   /** Store each perspective's arrangement in the document (view-only). */
@@ -108,6 +113,8 @@ final class StudioWindow private (
     runtime.unlisten(exploreListener)
     explore.dispose()
     runtime.unlisten(designListener)
+    runtime.unlisten(recordsListener)
+    sourceRecords.dispose()
     summary.dispose()
     project.foreach(_.close())
     session.close()
@@ -196,7 +203,8 @@ object StudioWindow:
       project: Option[ProjectPort] = None,
       clock: () => Option[ClockTime] = DesktopEffects.wallClock,
       nativeMenu: Boolean = AppShell.systemMenuBar,
-      presets: FilePresetStore = FilePresetStore.userDefault
+      presets: FilePresetStore = FilePresetStore.userDefault,
+      records: eyes4s.studio.app.explore.SourceRecordsSource = RecordSources.notServed
   )(using IORuntime): Either[WindowError, StudioWindow] =
     for
       sheets <- StudioStyles.stylesheets(theme).left.map(WindowError.Styles(_))
@@ -212,7 +220,8 @@ object StudioWindow:
         project,
         clock,
         nativeMenu,
-        presets
+        presets,
+        records
       )
     yield
       window.root.getStylesheets.setAll(sheets*)
@@ -229,7 +238,8 @@ object StudioWindow:
       project: Option[ProjectPort],
       clock: () => Option[ClockTime],
       nativeMenu: Boolean,
-      presets: FilePresetStore
+      presets: FilePresetStore,
+      records: eyes4s.studio.app.explore.SourceRecordsSource
   )(using IORuntime): Either[WindowError, StudioWindow] =
     // Late-bound: the runtime, the host and the effects refer to each other.
     var runtime: Option[StudioRuntime] = None
@@ -341,6 +351,13 @@ object StudioWindow:
     val designListener: AppModel => Unit = design.sync
     r.listen(designListener)
     design.sync(r.model)
+    // Explore's source records: the shown revision's fixation table (S6.4).
+    val sourceRecords =
+      SourceRecordsHost(() => r.model, dispatch, records, TrialViewInputs.of(session, displays))
+    host.host(StudioLayouts.sourceRecords, sourceRecords.node)
+    val recordsListener: AppModel => Unit = sourceRecords.sync
+    r.listen(recordsListener)
+    sourceRecords.sync(r.model)
     Right(
       StudioWindow(
         session,
@@ -358,6 +375,8 @@ object StudioWindow:
         explore,
         exploreListener,
         design,
-        designListener
+        designListener,
+        sourceRecords,
+        recordsListener
       )
     )

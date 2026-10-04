@@ -17,4 +17,5 @@ toggle-button: Order, on
 toggle-button: Map, on
 plot: Timeline
 table: Source records
+toggle-button: Show raw record
 region: Inspector

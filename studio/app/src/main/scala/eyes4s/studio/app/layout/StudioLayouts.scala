@@ -109,6 +109,9 @@ object StudioLayouts:
   /** The pane that hosts Explore's trial view (S6.2). */
   val trialView: PaneId = new PaneId("explore.trial-view")
 
+  /** The pane that hosts Explore's source records table (S6.4). */
+  val sourceRecords: PaneId = new PaneId("explore.source-records")
+
   /** Explore.dc.html. */
   val explore: PerspectiveLayout = layout(
     "explore",

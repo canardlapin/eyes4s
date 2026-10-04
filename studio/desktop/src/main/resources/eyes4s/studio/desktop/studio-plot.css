@@ -114,3 +114,29 @@
   -fx-border-color: -es-accent;
   -fx-border-width: 0 0 0 2;
 }
+
+/* ---- Explore's source records (S6.4; Explore.dc.html, bottom) -------------------- */
+
+.records-header {
+  -fx-text-fill: -es-ink-3;
+  -fx-font-family: "IBM Plex Sans SmBld";
+}
+
+.records-row {
+  -fx-padding: 0;
+  -fx-background-color: transparent;
+}
+
+.records-row:selected {
+  -fx-background-color: -es-surface-2;
+}
+
+.records-row:cursor {
+  -fx-background-color: -es-ink, -es-surface-2;
+  -fx-background-insets: 0, 2;
+}
+
+.records-raw {
+  -fx-padding: 4 16 4 16;
+  -fx-background-color: -es-surface-2;
+}
