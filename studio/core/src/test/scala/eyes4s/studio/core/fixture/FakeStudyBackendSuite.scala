@@ -555,3 +555,71 @@ class FakeStudyBackendSuite extends CatsEffectSuite:
       assertEquals(unheld, Left(BackendError.ContentNotHeld(r3, story)))
       assert(unknown.left.exists(_.isInstanceOf[BackendError.UnknownDataset]), unknown)
   }
+
+  test(
+    "placement: every golden record placed by eyes4s, its trials' tallies and density (S5.5)"
+  ) {
+    val r3 = StoryMoments.t2
+      .flatMap(_.dataset(DatasetRevision(3)).toRight("no r3"))
+      .fold(e => fail(e), identity)
+    for
+      fake    <- FakeStudyBackend.create[IO](StoryMoment.T2)
+      preview <- ok(fake.placement(r3))
+      // A draft with a recorded correction is placed too: P05 shifted right.
+      shifted = r3.copy(admission =
+        r3.admission.copy(corrections =
+          Vector(
+            eyes4s.studio.core.document.CorrectionRule(
+              eyes4s.studio.core.document.CorrectionTarget.Participant(
+                eyes4s.studio.core.document.ParticipantId
+                  .of("P05")
+                  .fold(e => fail(e.message), identity)
+              ),
+              eyes4s.studio.core.document.CoordinateCorrection.FlipX
+            )
+          )
+        )
+      )
+      draft <- ok(fake.placement(shifted.copy(id = DatasetRevision(9))))
+      other <- fake.placement(
+        r3.copy(
+          sources = eyes4s.studio.core.document.Sources
+            .of(
+              Vector(
+                r3.sources.fixations.get
+                  .copy(bytes = eyes4s.codec.ByteDigest.sha256(IArray.from("x".getBytes)))
+              )
+            )
+            .fold(e => fail(e.message), identity),
+          inventory = None
+        )
+      )
+    yield
+      // The fixture's counts: 543 of 11,520 records outside the frame, in 409 trials.
+      assertEquals(preview.records.size, 11520)
+      assertEquals(preview.records.count(_.placement == RecordPlacement.OutsideWindow), 543)
+      assertEquals(preview.trials.count(_.outsideWindow > 0), 409)
+      assertEquals(preview.trials.map(_.records).sum, 11520)
+      assertEquals(preview.density.placed, 11520)
+      // Record 7,214 (fixation 6 of P17 enc_03): image (700, 300), (+5.4°, +2.4°).
+      val focus = preview.record(7214).getOrElse(fail("no record 7214"))
+      assertEquals((focus.imageX, focus.imageY), (700.0, 300.0))
+      assert(
+        focus.degrees.exists((x, y) => math.abs(x - 5.4) < 0.05 && math.abs(y - 2.4) < 0.05),
+        focus
+      )
+      // The draft is placed under its own rules: every P05 record corrected by rule 0.
+      assertEquals(draft.dataset, DatasetRevision(9))
+      val p05 = draft.records.filter(_.trial.participant == "P05")
+      assert(p05.nonEmpty && p05.forall(_.rule.contains(0)))
+      assert(p05.forall(r => r.correctedX == r3.geometry.screen.width - r.rawX), p05.take(2))
+      // Another fixation file is refused, naming both digests.
+      assert(
+        other.left.exists {
+          case BackendError.PlacementRefused(DatasetRevision(3), reason) =>
+            reason.contains("this backend holds sha256:")
+          case _ => false
+        },
+        other
+      )
+  }

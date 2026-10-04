@@ -313,6 +313,9 @@ final class FakeStudyBackend[F[_]] private[fixture] (
       _.flatMap(d => known(d, trial).flatMap(FakeTrialViews.preview(moment, r, _, trial)))
     )
 
+  def placement(spec: DatasetRevisionSpec): F[Either[BackendError, PlacementPreview]] =
+    Concurrent[F].pure(FakePlacement.of(spec))
+
   def sourceRecords(
       r: AnalysisRevision,
       from: Int,

@@ -215,7 +215,8 @@ object ProtocolSamples:
     ),
     BackendError.UnknownScale(run, 4, Vector("0.5°", "1°", "2°", "4°")),
     BackendError.ContentMismatch(DatasetRevision(3), content("ab"), content("cd")),
-    BackendError.ContentNotHeld(DatasetRevision(9), content("ab"))
+    BackendError.ContentNotHeld(DatasetRevision(9), content("ab")),
+    BackendError.PlacementRefused(DatasetRevision(3), "it has no fixation source")
   )
 
   /** A dataset revision's content digest: `pair` repeated to 64 digits. */
@@ -513,7 +514,10 @@ object ProtocolSamples:
     BackendRequest.TrialPreviewOf(AnalysisRevision(4), query),
     BackendRequest.SourceRecordsOf(AnalysisRevision(4), 7214, 60),
     BackendRequest.PairRowsOf(run, 2, page),
-    BackendRequest.Verify(DatasetRevision(3), content("ab"))
+    BackendRequest.Verify(DatasetRevision(3), content("ab")),
+    BackendRequest.PlacementOf(
+      eyes4s.studio.core.document.DocumentSamples.t1.dataset(DatasetRevision(3)).get
+    )
   )
 
   val responses: Vector[BackendResponse] = Vector(
@@ -615,7 +619,44 @@ object ProtocolSamples:
     BackendResponse.TrialFixationsOf(trialFixations),
     BackendResponse.TrialPreviewOf(trialPreview),
     BackendResponse.SourceRecordsOf(sourceRecordPage),
-    BackendResponse.PairRowsOf(pairRowPage)
+    BackendResponse.PairRowsOf(pairRowPage),
+    BackendResponse.PlacementOf(placementPreview)
+  )
+
+  /** Two records of one trial, one inside the image frame and one off the screen. */
+  lazy val placementPreview: PlacementPreview = PlacementPreview(
+    DatasetRevision(3),
+    Vector(
+      PlacedRecord(
+        7214,
+        query,
+        1148.0,
+        456.0,
+        None,
+        1148.0,
+        456.0,
+        700.0,
+        300.0,
+        RecordPlacement.Inside,
+        Some((5.375, 2.375))
+      ),
+      PlacedRecord(
+        7215,
+        query,
+        -40.5,
+        500.0,
+        Some(0),
+        1960.5,
+        500.0,
+        1512.5,
+        344.0,
+        RecordPlacement.OutsideScreen,
+        None
+      )
+    ),
+    Vector(UnplacedSourceRecord(7216, "x is not a number")),
+    Vector(TrialPlacement(query, 2, 0, 1)),
+    PlacementDensityGrid(2, 1, Vector(1.0, 0.0), 2)
   )
 
   val events: Vector[JobEvent] =

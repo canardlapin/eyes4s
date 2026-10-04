@@ -436,6 +436,7 @@ private final class Silent(fake: FakeStudyBackend[IO]) extends StudyBackend[IO]:
   export fake.{
     admission,
     verify,
+    placement,
     cancel,
     inspect,
     job,
@@ -472,6 +473,7 @@ private final class Gated(
   export fake.{
     admission,
     verify,
+    placement,
     cancel,
     inspect,
     job,

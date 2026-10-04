@@ -375,6 +375,9 @@ object RemoteStudyBackend:
     ): F[Either[BackendError, AdmissionSummary]] =
       ask(Q.Verify(dataset, content)) { case A.Admission(s) => s }
 
+    def placement(spec: DatasetRevisionSpec): F[Either[BackendError, PlacementPreview]] =
+      ask(Q.PlacementOf(spec)) { case A.PlacementOf(p) => p }
+
     def ledger(
         dataset: DatasetRevision,
         page: PageRequest

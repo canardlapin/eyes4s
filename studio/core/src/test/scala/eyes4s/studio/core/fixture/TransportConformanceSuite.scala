@@ -102,6 +102,9 @@ abstract class TransportConformanceSuite extends BackendConformanceSuite:
       _.admission(DatasetRevision(3)),
       _.admission(DatasetRevision(9999)),
       _.verify(DatasetRevision(3), eyes4s.studio.core.backend.ProtocolSamples.content("ab")),
+      _.placement(
+        eyes4s.studio.core.document.DocumentSamples.t1.dataset(DatasetRevision(3)).get
+      ),
       _.preview(AnalysisRevision(5)),
       _.runs,
       _.jobs,
