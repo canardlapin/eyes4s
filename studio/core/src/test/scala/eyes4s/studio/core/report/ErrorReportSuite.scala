@@ -89,7 +89,46 @@ class ErrorReportSuite extends munit.FunSuite:
     a.initCause(b)
     val chain =
       Iterator.iterate(Option(FailureTrace.of(a)))(_.flatMap(_.cause)).takeWhile(_.isDefined)
-    assert(chain.size <= FailureTrace.MaxCauses + 1)
+    // Each throwable of a cycle is rendered once: a, then b, then stop.
+    assertEquals(chain.size, 2)
+  }
+
+  test("a native frame has no line number, and a frame-shaped message line is no frame") {
+    val e = RuntimeException("x")
+    e.setStackTrace(
+      Array(
+        StackTraceElement("a.Native", "call", "Native.java", -2),
+        // How Scala.js reads a message line that looks like a JS frame.
+        StackTraceElement("<jscode>", "P17.secret", "file:///Users/someone/fixations.csv", 11),
+        StackTraceElement("<jscode>", "ret_07", "/Users/someone/x.js", 1)
+      )
+    )
+    val t = FailureTrace.of(e)
+    assertEquals(t.frames, Vector(StackLine("a.Native", "call", Some("Native.java"), None)))
+    assertEquals(t.frames.head.render, "a.Native.call(Native.java)")
+    assertEquals(t.omittedFrames, 2)
+  }
+
+  test("a message shaped like JS stack frames leaks nothing on either platform") {
+    val planted = "boom\n    at P17.secret (file:///Users/someone/fixations.csv:11:22)\n" +
+      "    at ret_07 (/Users/someone/x.js:1:2)"
+    val t = FailureTrace.of(
+      try throw IllegalStateException(planted)
+      catch case e: Throwable => e
+    )
+    val text = t.lines.mkString("\n")
+    Vector("P17", "ret_07", "secret", "fixations.csv", "x.js", "/Users/someone").foreach(s =>
+      assert(!text.contains(s), s"trace holds $s:\n$text")
+    )
+  }
+
+  test("a throwable whose stack cannot be read still yields a trace") {
+    val broken = new RuntimeException("P17"):
+      override def getStackTrace: Array[StackTraceElement] = throw IllegalStateException("no")
+      override def getCause: Throwable                     = throw IllegalStateException("no")
+    val t = FailureTrace.of(broken)
+    assertEquals((t.frames, t.cause), (Vector.empty, None))
+    assert(t.exception.nonEmpty)
   }
 
   test("the bundle names build, origin, project digest and stack, and no data value") {

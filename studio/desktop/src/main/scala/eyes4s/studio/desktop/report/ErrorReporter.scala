@@ -48,22 +48,28 @@ final class ErrorReporter(
 ):
   private val open = AtomicBoolean(false)
 
-  /** Report `error` from `origin`; the bundle reported. */
-  def report(origin: FailureOrigin, error: Throwable): ErrorBundle =
-    val bundle = ErrorBundle(
-      clock().toString,
-      facts,
-      origin,
-      FailureTrace.of(error),
-      safely(project()).flatten
-    )
-    safely(logger.fold(System.err.println(bundle.render))(_.error(bundle.render)))
-    if open.compareAndSet(false, true) then
-      val vm = ErrorDialog.vm(bundle, log)
-      onFx { () =>
-        safely(show(vm, () => open.set(false))).getOrElse(open.set(false))
-      }
-    bundle
+  /** Report `error` from `origin`; the bundle reported, or `None` if the
+    * report itself failed (then said on standard error, by class only).
+    */
+  def report(origin: FailureOrigin, error: Throwable): Option[ErrorBundle] =
+    safely {
+      val bundle = ErrorBundle(
+        clock().toString,
+        facts,
+        origin,
+        FailureTrace.of(error),
+        safely(project()).flatten
+      )
+      safely(logger.fold(System.err.println(bundle.render))(_.error(bundle.render)))
+      if open.compareAndSet(false, true) then
+        safely(ErrorDialog.vm(bundle, log)) match
+          case None     => open.set(false)
+          case Some(vm) =>
+            onFx { () =>
+              safely(show(vm, () => open.set(false))).getOrElse(open.set(false))
+            }
+      bundle
+    }
 
   /** The handler for uncaught exceptions: the JavaFX thread's are UI
     * failures, every other thread's background failures.
@@ -93,7 +99,12 @@ final class ErrorReporter(
     ErrorReporter.Installed(previousDefault, previousFx)
 
   private def onFx(f: () => Unit): Unit =
-    if Platform.isFxApplicationThread then f() else Platform.runLater(() => f())
+    if Platform.isFxApplicationThread then f()
+    else
+      try Platform.runLater(() => f())
+      catch
+        // No toolkit: the failure is logged; there is no dialog to open.
+        case NonFatal(_) => open.set(false)
 
   private def runOnFx[A](body: => A): A =
     if Platform.isFxApplicationThread then body
@@ -122,12 +133,15 @@ object ErrorReporter:
     /** Put them back (the FX thread's on the FX thread). */
     def restore(): Unit =
       Thread.setDefaultUncaughtExceptionHandler(default)
-      val done = java.util.concurrent.CompletableFuture[Unit]()
-      Platform.runLater { () =>
+      if Platform.isFxApplicationThread then
         Thread.currentThread.setUncaughtExceptionHandler(fx)
-        done.complete(()): Unit
-      }
-      done.get()
+      else
+        val done = java.util.concurrent.CompletableFuture[Unit]()
+        Platform.runLater { () =>
+          Thread.currentThread.setUncaughtExceptionHandler(fx)
+          done.complete(()): Unit
+        }
+        done.get()
 
   /** This build on this JVM. */
   def facts: BuildFacts =

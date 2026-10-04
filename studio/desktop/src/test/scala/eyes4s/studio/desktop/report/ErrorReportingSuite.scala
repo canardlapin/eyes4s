@@ -18,7 +18,14 @@ package eyes4s.studio.desktop.report
 
 import ch.qos.logback.classic.LoggerContext
 import eyes4s.studio.app.{AppModel, StoryModels}
+import cats.effect.IO
+import cats.effect.unsafe.implicits.global
+import eyes4s.studio.app.AppEffect
+import eyes4s.studio.core.backend.{BackendError, DatasetRevision, JobId, Phase, TrialKey}
+import eyes4s.studio.core.execution.{ExecutionEffect, ExecutionError}
+import eyes4s.studio.core.fixture.StoryMoment
 import eyes4s.studio.core.report.{ErrorBundle, FailureOrigin}
+import eyes4s.studio.desktop.runtime.{DesktopEffects, StudioSession}
 import eyes4s.studio.desktop.harness.StudioFxSuite
 import javafx.application.Platform
 import javafx.scene.control.{Alert, Button, TextArea}
@@ -148,4 +155,59 @@ class ErrorReportingSuite extends StudioFxSuite:
     )
     if sys.props("os.name").toLowerCase.contains("mac") then
       assertEquals(StudioLog.defaultDirectory, home.resolve("Library/Logs/Eyes Studio"))
+  }
+
+  reporting.test("a defect and a refusal through DesktopEffects log their kinds, no values") {
+    f =>
+      val session = StudioSession.start(StoryMoment.T2, _ => ())
+      try
+        // The first Cancel fails with a defect, the second is refused naming a trial.
+        val calls   = java.util.concurrent.atomic.AtomicInteger(0)
+        val refusal = ExecutionError.Backend(
+          BackendError.UnknownTrial(
+            DatasetRevision(3),
+            TrialKey("P17", Phase.Retrieval, "ret_07", 1)
+          )
+        )
+        val effects = DesktopEffects(
+          session,
+          (_, _) => (),
+          _ => (),
+          _ => (),
+          ui = g => Platform.runLater(() => g()),
+          defect = f.reporter.jobFailed,
+          execute = Some(_ =>
+            if calls.getAndIncrement() == 0 then IO.raiseError(IllegalStateException(message))
+            else IO.pure(Left(refusal))
+          )
+        )
+        val cancel = AppEffect.Execution(ExecutionEffect.Cancel(JobId(1)))
+        effects.perform(cancel, _ => ())
+        await("the dialog")(f.shown.size == 1)
+        effects.perform(cancel, _ => ())
+        await("the refusal")(f.logText.contains("refused Cancel"))
+        val logged = f.logText
+        assert(
+          logged.contains(
+            "The execution service failed on Cancel: java.lang.IllegalStateException"
+          ),
+          logged
+        )
+        assert(
+          logged.contains(s"The execution service refused Cancel: ${refusal.code}"),
+          logged
+        )
+        assert(reportOf(f.shown.peek).contains("Where: job (Cancel)"))
+        assertClean(logged, "the log")
+        assertClean(runOnFx(effects.problems.map(_.logLine).mkString("\n")), "the problems")
+      finally session.close()
+  }
+
+  reporting.test("the handlers are restored from the JavaFX thread as from any other") { f =>
+    val before    = runOnFx(Thread.currentThread.getUncaughtExceptionHandler)
+    val installed = f.reporter.install()
+    assert(runOnFx(Thread.currentThread.getUncaughtExceptionHandler) eq f.reporter.handler)
+    // runOnFx fails on a timeout if restore() waits for the thread it runs on.
+    runOnFx(installed.restore())
+    assert(runOnFx(Thread.currentThread.getUncaughtExceptionHandler) eq before)
   }

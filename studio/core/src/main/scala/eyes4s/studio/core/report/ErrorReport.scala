@@ -18,6 +18,8 @@ package eyes4s.studio.core.report
 
 import eyes4s.studio.core.backend.ProtocolVersion
 
+import scala.util.Try
+
 /** Where an unexpected failure happened (ticket S1.12). */
 enum FailureOrigin derives CanEqual:
   /** An uncaught exception on the UI thread (the JavaFX application thread). */
@@ -78,27 +80,38 @@ object FailureTrace:
   private def fileName(file: String): String =
     file.split("[/\\\\]").lastOption.filter(_.nonEmpty).getOrElse(file)
 
+  /** What Scala.js names a frame it did not decode to a Scala method: a line
+    * of the message itself can arrive in this shape, with a file.
+    */
+  private val JsCode = "<jscode>"
+
   private def of(error: Throwable, causes: Int, seen: Set[Throwable]): FailureTrace =
-    // Only frames with a source file are code locations: on Scala.js the
-    // message itself arrives as file-less pseudo-frames. A file is kept by
-    // name, never by its path.
-    val all = Option(error.getStackTrace)
-      .fold(Vector.empty[StackTraceElement])(_.toVector)
-      .flatMap(f => Option(f.getFileName).filter(_.nonEmpty).map(f -> fileName(_)))
+    // Only frames of code with a source file are code locations: on Scala.js
+    // lines of the message arrive as pseudo-frames, file-less or `<jscode>`.
+    // A file is kept by name, never by its path. Reading a throwable may
+    // itself throw; what cannot be read is left out.
+    val raw = Try(Option(error.getStackTrace).fold(Vector.empty[StackTraceElement])(_.toVector))
+      .getOrElse(Vector.empty)
+    val all = raw.flatMap(f =>
+      Option(f.getFileName)
+        .filter(_.nonEmpty)
+        .filter(_ => Option(f.getClassName).exists(c => c.nonEmpty && c != JsCode))
+        .map(f -> fileName(_))
+    )
     val frames = all.take(MaxFrames).map { (f, file) =>
       StackLine(
         f.getClassName,
-        f.getMethodName,
+        String.valueOf(f.getMethodName),
         Some(file),
         Option.when(f.getLineNumber >= 0)(f.getLineNumber)
       )
     }
-    val next    = Option(error.getCause).filter(c => causes > 0 && !seen(c) && (c ne error))
-    val dropped = Option(error.getStackTrace).fold(0)(_.length) - all.size
+    val next = Try(Option(error.getCause)).toOption.flatten
+      .filter(c => causes > 0 && !seen(c) && (c ne error))
     FailureTrace(
       error.getClass.getName,
       frames,
-      all.size - frames.size + dropped,
+      raw.size - frames.size,
       next.map(of(_, causes - 1, seen + error))
     )
 
