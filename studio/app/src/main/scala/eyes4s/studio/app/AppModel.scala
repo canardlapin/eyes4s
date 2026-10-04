@@ -52,6 +52,7 @@ import eyes4s.studio.core.document.{
   PresentationState,
   Recipe,
   RunLifecycle,
+  SourceRole,
   StudioDocument,
   Theme
 }
@@ -429,6 +430,9 @@ enum Intent derives CanEqual:
     */
   case CheckInputs
 
+  /** Stop waiting: the Save & run waiting for its check is not run (S2.5). */
+  case CancelWaitingRun
+
   /** Check `round` of the project's stored inputs found `statuses` (S2.5). */
   case InputsChecked(round: Long, statuses: Vector[InputStatus])
 
@@ -669,8 +673,13 @@ object AppModel:
       val (checks, round) = next.checks.ask
       (next.copy(checks = checks), effects :+ AppEffect.CheckInputs(round))
 
-  private def sourcesOf(d: StudioDocument): Set[eyes4s.codec.ByteDigest] =
-    d.datasets.flatMap(_.sources.entries.map(_.bytes)).toSet
+  /** Each source as SourceCheck matches it to an input: role, digest and
+    * file name. The same bytes imported under another name are a new input.
+    */
+  private def sourcesOf(d: StudioDocument): Set[(SourceRole, eyes4s.codec.ByteDigest, String)] =
+    d.datasets
+      .flatMap(_.sources.entries.map(s => (s.role, s.bytes, s.path.value.split('/').last)))
+      .toSet
 
   private def step(m: AppModel, intent: Intent): (AppModel, Vector[AppEffect]) = intent match
     case Intent.SwitchPerspective(p) => navigate(m, m.navigation.at(p))
@@ -818,6 +827,8 @@ object AppModel:
       val asked = if m.inputs == InputCheck.NoProject then InputCheck.Unchecked else m.inputs
       val (checks, round) = m.checks.ask
       (m.copy(inputs = asked, checks = checks), Vector(AppEffect.CheckInputs(round)))
+    case Intent.CancelWaitingRun =>
+      (m.copy(checks = m.checks.copy(runAfter = None)), none)
     case Intent.InputsChecked(round, statuses) =>
       answered(m, round, InputCheck.Checked(statuses))
     case Intent.InputsCheckFailed(round, reason) =>
@@ -1021,7 +1032,8 @@ object AppModel:
       round: Long,
       found: InputCheck
   ): (AppModel, Vector[AppEffect]) =
-    if round <= m.checks.answered then (m, Vector.empty)
+    // A round never asked is no answer (it could only be forged or scripted).
+    if round <= m.checks.answered || round > m.checks.asked then (m, Vector.empty)
     else
       val next = m.copy(inputs = found, checks = m.checks.copy(answered = round))
       next.checks.runAfter match

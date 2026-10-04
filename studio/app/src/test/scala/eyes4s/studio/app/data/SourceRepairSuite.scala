@@ -423,3 +423,72 @@ class SourceRepairSuite extends munit.FunSuite:
     val stale = AppModel.update(ran, Intent.InputsCheckFailed(1L, "late"))._1
     assertEquals(stale.inputs, ran.inputs)
   }
+
+  test("an answer for a round never asked is ignored; the asked round still decides") {
+    val m       = StoryModels.t2Analysis
+    val present =
+      m.document.datasets.flatMap(_.sources.entries).map(s => InputStatus.Present(entry(s)))
+    val (waiting, _) = AppModel.update(project(m), Intent.Dispatch(Command.SaveAndRun(None)))
+    val forged       = AppModel.update(waiting, Intent.InputsChecked(99L, present))._1
+    assertEquals(forged, waiting)
+    // The real answer to the asked round is still taken.
+    val ran = AppModel.update(forged, Intent.InputsChecked(waiting.checks.asked, present))._1
+    assertEquals(ran.document.runs.size, m.document.runs.size + 1)
+  }
+
+  test("the same bytes imported under another name are checked again, never shown missing") {
+    val m      = StoryModels.t2Explore
+    val all    = m.document.datasets.flatMap(_.sources.entries).distinct
+    val clean  = answer(project(m), all.map(s => InputStatus.Present(entry(s))))
+    val r3spec = m.document.dataset(r3).get
+    val fix    = r3spec.sources.fixations.get
+      .copy(path = ok(eyes4s.studio.core.document.SourcePath.of("inputs/renamed.csv")))
+    val sources = ok(
+      eyes4s.studio.core.document.Sources.of(
+        r3spec.sources.entries.map(s => if s.role == SourceRole.Fixations then fix else s)
+      )
+    )
+    val (imported, effects) = AppModel.update(
+      clean,
+      Intent.Dispatch(
+        Command.ImportSources(
+          Some(r3),
+          sources,
+          r3spec.mapping,
+          r3spec.units,
+          r3spec.geometry,
+          r3spec.attributes,
+          None,
+          r3spec.inventory
+        )
+      )
+    )
+    assertEquals(effects.collect { case c: AppEffect.CheckInputs => c }.size, 1)
+    val r4 = imported.document.datasets.last.id
+    assertEquals(
+      imported.sources.of(r4).find(_.name == "renamed.csv").map(_.state),
+      Some(SourceState.Unchecked)
+    )
+  }
+
+  test("a waiting Save & run can be cancelled from the run card") {
+    val m            = StoryModels.t2Analysis
+    val (waiting, _) = AppModel.update(project(m), Intent.Dispatch(Command.SaveAndRun(None)))
+    val card = Preflight.vm(ResolvedDesign.sync(ResolvedDesign.empty, waiting)._1, waiting).card
+    assertEquals(
+      (card.button, card.enabled, card.run),
+      ("Cancel the waiting Save & run", true, Some(Intent.CancelWaitingRun))
+    )
+    assertEquals(
+      card.reason,
+      Some("Save & run is already waiting for the project's stored files to be checked.")
+    )
+    val cancelled = AppModel.update(waiting, Intent.CancelWaitingRun)._1
+    assertEquals(cancelled.checks.runAfter, None)
+    // Its check's answer then runs nothing.
+    val present =
+      m.document.datasets.flatMap(_.sources.entries).map(s => InputStatus.Present(entry(s)))
+    val after =
+      AppModel.update(cancelled, Intent.InputsChecked(waiting.checks.asked, present))._1
+    assertEquals(after.document.runs.size, m.document.runs.size)
+  }

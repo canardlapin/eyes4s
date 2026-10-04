@@ -47,7 +47,7 @@ enum SourcesTextId derives CanEqual:
   // --- Source repair (S2.5) ------------------------------------------------------------------
   case SourceChanged, SourceMissing, SourceWithheld, SourceUnreadable, RepairSource
   case SourceProblem, RunBlocked, SourceRecopied, SourceReplaced, SourceRepairFailed
-  case BlockedUnchecked, BlockedCheckFailed, SourceUnchecked, RunWaiting
+  case BlockedUnchecked, BlockedCheckFailed, SourceUnchecked, RunWaiting, CancelWaiting
   case ImagesUnstored, RevisionChanged
 
 /** The Sources pane's strings in the board's wording. */
@@ -111,7 +111,8 @@ object SourcesText:
       "{0} is blocked: {1}. Repair it in Data · Sources, or admit a revision that replaces it."
     case SourceUnchecked =>
       "not checked yet (sha256:{0} recorded); the project's stored files are being checked"
-    case RunWaiting =>
+    case CancelWaiting => "Cancel the waiting Save & run"
+    case RunWaiting    =>
       "Save & run is already waiting for the project's stored files to be checked."
     case BlockedUnchecked =>
       "{0} is blocked until the project's stored files are checked against their digests."

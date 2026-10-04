@@ -22,7 +22,8 @@ import eyes4s.studio.app.text.{
   Format,
   PreflightText,
   PreflightTextId,
-  SourcesText
+  SourcesText,
+  SourcesTextId
 }
 import eyes4s.studio.app.{AppModel, Intent}
 import eyes4s.studio.core.command.Command
@@ -145,17 +146,29 @@ object Preflight:
         DiagnosticText.warnings(f.warnings)
       )
     )
+    // A Save & run waiting for its check can be called off from the card (S2.5).
+    val waiting = m.checks.runAfter.isDefined
     PreflightVM(
       status,
       PreflightText(StudyReport, label),
       findings,
       PreflightText(NotChecked),
-      RunCardVM(
-        pairs.toVector ++ change.toVector,
-        PreflightText(RunButton, label, total),
-        reason.isEmpty,
-        reason,
-        Option.when(reason.isEmpty)(Intent.Dispatch(Command.SaveAndRun(None))),
-        verdict
-      )
+      if waiting then
+        RunCardVM(
+          pairs.toVector ++ change.toVector,
+          SourcesText(SourcesTextId.CancelWaiting),
+          true,
+          Some(SourcesText(SourcesTextId.RunWaiting)),
+          Some(Intent.CancelWaitingRun),
+          verdict
+        )
+      else
+        RunCardVM(
+          pairs.toVector ++ change.toVector,
+          PreflightText(RunButton, label, total),
+          reason.isEmpty,
+          reason,
+          Option.when(reason.isEmpty)(Intent.Dispatch(Command.SaveAndRun(None))),
+          verdict
+        )
     )
