@@ -406,6 +406,8 @@ githubWorkflowCheck := {
   requireText("studio.yml", "studioAll studioStyleCheck")
   requireText("studio.yml", "paths: [studio/**")
   requireText("studio.yml", "macos-15")
+  // Only the macOS job opts out of headless FX tests, for the real Mac glass.
+  requireText("studio.yml", "-Deyes4s.studio.fx.visible=true")
   requireText("studio.yml", "EYES4S_STUDIO_SMALL_DISPLAY: skip")
   forbidText("checks.yml", "studio")
 }
@@ -1216,6 +1218,9 @@ lazy val studioDesktop = project
     libraryDependencies ++= Seq("javafx-base", "javafx-graphics", "javafx-controls").map(
       "org.openjfx" % _ % javaFxV classifier javaFxClassifier
     ),
+    // Monocle's headless glass for the FX tests (studioFxTestOptions). It declares
+    // JavaFX `provided`, so no second OpenJFX reaches the guard below.
+    libraryDependencies += "org.testfx" % "openjfx-monocle" % monocleV % Test,
     libraryDependencies ++=
       (if (intaglioLocal.isDefined) Nil else Seq(intaglioPinned("javafx"))) ++
         (if (scaladockLocal.isDefined) Nil
@@ -1250,14 +1255,38 @@ lazy val studioDesktop = project
   .settings(studioTokenSettings)
 
 // Snapshots go to <build>/target/studio-snapshots/<suite>/<test>/<theme>-<scale>x.png.
-// java.awt.headless keeps AWT (used only for PNG encoding) off the display. On CI,
-// as in scaladock, JavaFX renders through the software pipeline; Linux CI wraps
-// sbt in xvfb-run. Greyscale text antialiasing keeps software snapshots stable.
-def studioFxTestOptions(buildRoot: File): Seq[String] =
+// java.awt.headless keeps AWT (used only for PNG encoding) off the display.
+//
+// FX tests run headless by default: Monocle's Headless glass, on a virtual
+// 1920x1200 screen at output scale 1, opens no OS window and takes no OS focus. A
+// developer who wants to watch passes -Deyes4s.studio.fx.visible=true to sbt (or
+// sets EYES4S_STUDIO_FX_VISIBLE=true) for the platform's own glass; the macOS CI
+// job does, to exercise the real Mac glass. Headless runs, and CI as in
+// scaladock, render through the software pipeline with greyscale text
+// antialiasing, which keeps snapshots stable. Linux CI still wraps sbt in xvfb-run,
+// which a headless run does not use.
+val monocleV = "21.0.2" // the newest org.testfx build; runs on OpenJFX 24.0.1
+
+def studioFxVisible: Boolean =
+  sys.props
+    .get("eyes4s.studio.fx.visible")
+    .orElse(sys.env.get("EYES4S_STUDIO_FX_VISIBLE"))
+    .exists(_.equalsIgnoreCase("true"))
+
+def studioFxTestOptions(buildRoot: File): Seq[String] = {
+  val software = Seq("-Dprism.order=sw", "-Dprism.lcdtext=false")
+  val headless = Seq(
+    "-Deyes4s.studio.fx.headless=true",
+    "-Dglass.platform=Monocle",
+    "-Dmonocle.platform=Headless",
+    "-Dheadless.geometry=1920x1200-32"
+  )
   Seq(
     s"-Deyes4s.studio.snapshots=${(buildRoot / "target" / "studio-snapshots").getAbsolutePath}",
     "-Djava.awt.headless=true"
-  ) ++ (if (sys.env.contains("CI")) Seq("-Dprism.order=sw", "-Dprism.lcdtext=false") else Nil)
+  ) ++ (if (studioFxVisible) Nil else headless) ++
+    (if (!studioFxVisible || sys.env.contains("CI")) software else Nil)
+}
 
 lazy val studioCrossModules = Seq("studioCore", "studioApp", "studioViz")
 lazy val studioProjects     =
@@ -1403,7 +1432,9 @@ lazy val studioMacosJob = WorkflowJob(
   "Studio (macOS, functional JavaFX)",
   studioJobSetup ::: List(
     WorkflowStep.Run(
-      List("sbt -J-Xmx4g -Djavafx.platform=mac-aarch64 studioDesktop/test"),
+      List(
+        "sbt -J-Xmx4g -Djavafx.platform=mac-aarch64 -Deyes4s.studio.fx.visible=true studioDesktop/test"
+      ),
       name = Some("Run functional JavaFX tests (no goldens)"),
       // The runner's display is 1024x768, which clamps a 1440x900 stage: tests
       // that need the full stage skip here and run in the Linux job.
