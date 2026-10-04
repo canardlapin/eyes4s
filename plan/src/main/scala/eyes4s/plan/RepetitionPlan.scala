@@ -377,6 +377,15 @@ final class RepetitionCursor[K] private[plan] (
     case RepetitionPhase.Matched(_, _) => RepetitionStage.Matched
     case RepetitionPhase.Control(_, _) => RepetitionStage.Control
 
+  /** The pairs `stage` compares in all: known from the start, since both
+    * pairings are made before the first step.
+    */
+  def totalPairs(stage: RepetitionStage): Long = (stage, phase) match
+    case (RepetitionStage.Matched, RepetitionPhase.Matched(m, _)) => m.totalPairs.toLong
+    case (RepetitionStage.Matched, RepetitionPhase.Control(m, _)) => m.rows.size.toLong
+    case (RepetitionStage.Control, RepetitionPhase.Matched(_, c)) => c.totalPairs.toLong
+    case (RepetitionStage.Control, RepetitionPhase.Control(_, c)) => c.totalPairs.toLong
+
   def advance(
       quanta: WorkQuanta
   ): Either[Nothing, WorkStep[RepetitionStage, RepetitionCursor[K], RepetitionPlanResult[K]]] =
