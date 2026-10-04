@@ -68,6 +68,14 @@ ThisBuild / githubWorkflowPermissions           := Some(
 lazy val trustWorkflowContents =
   taskKey[Map[String, String]]("Render every generated eyes4s workflow.")
 
+// A project's module name as sbt-github-dependency-submission computes it
+// (GithubDependencyGraphPlugin.getModuleName), paired with publish / skip.
+lazy val submissionModule = Def.task {
+  val crossVersion =
+    CrossVersion((artifactName / scalaVersion).value, (artifactName / scalaBinaryVersion).value)
+  crossVersion(projectID.value).name -> (publish / skip).value
+}
+
 def bundledCleanWorkflow: String = {
   val stream = Option(GenerativePlugin.getClass.getResourceAsStream("/clean.yml"))
     .getOrElse(sys.error("sbt-github-actions clean.yml resource is unavailable"))
@@ -236,13 +244,24 @@ trustWorkflowContents := {
     sbtCommand
   )
 
+  // The submission graph is the published artifacts' graph. Every unpublished
+  // project (the root aggregates, the guide, and the Studio projects, whose
+  // Intaglio and scaladock pins exist only after studio.yml publishes them) is
+  // ignored by the module name sbt-github-dependency-submission matches on.
+  val unpublishedModules = submissionModule
+    .all(ScopeFilter(inAnyProject))
+    .value
+    .collect { case (name, true) => name }
+    .distinct
+    .sorted
+
   val dependencySubmission = WorkflowJob(
     "dependency-submission",
     "Submit Dependencies",
     githubWorkflowJobSetup.value.toList ::: List(
       WorkflowStep.DependencySubmission(
         workingDirectory = None,
-        modulesIgnore = Some(List("rootjs_3", "rootjvm_3", "rootnative_3")),
+        modulesIgnore = Some(unpublishedModules.toList),
         configsIgnore = Some(List("test", "scala-tool", "scala-doc-tool", "test-internal")),
         token = None
       )
@@ -364,6 +383,8 @@ githubWorkflowCheck := {
   requireText("security.yml", "contents: write")
   requireText("security.yml", "scalacenter/sbt-dependency-submission@v2")
   forbidText("security.yml", "tlCiRelease")
+  List("eyes4s-studio-viz_3", "eyes4s-studio-viz_sjs1_3", "eyes4s-studio-desktop_3")
+    .foreach(m => requireText("security.yml", s" $m"))
 
   requireText("release.yml", "tags: [v*]")
   requireText("release.yml", "startsWith(github.ref, 'refs/tags/v')")
