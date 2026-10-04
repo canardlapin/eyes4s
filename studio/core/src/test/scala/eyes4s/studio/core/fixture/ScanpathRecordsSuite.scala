@@ -17,6 +17,7 @@
 package eyes4s.studio.core.fixture
 
 import eyes4s.studio.core.backend.*
+import eyes4s.plan.{MapPlacement, OffWindowPolicy}
 
 /** The fixture's scanpaths keep every admitted record, as eyes4s does: an
   * off-screen record stays in its trial's scanpath, marked `OutsideScreen`,
@@ -72,6 +73,22 @@ class ScanpathRecordsSuite extends munit.FunSuite:
     }
     val outside = golden.values.flatten.count(_.placement == OutsideScreen)
     assertEquals(outside, GoldenInventory.outsideScreen)
+  }
+
+  test("the fixture screen marker preserves core placement without deriving window policy") {
+    assertEquals(OnScreen.withCorePlacement(MapPlacement.InMap), MapPlacement.InMap)
+    assertEquals(
+      OnScreen.withCorePlacement(MapPlacement.OutsideWindow(OffWindowPolicy.FailTrial)),
+      MapPlacement.OutsideWindow(OffWindowPolicy.FailTrial)
+    )
+    assertEquals(
+      OutsideScreen.withCorePlacement(MapPlacement.InMap),
+      MapPlacement.OutsideScreen
+    )
+    assertEquals(
+      OutsideScreen.withCorePlacement(MapPlacement.DroppedInitial),
+      MapPlacement.DroppedInitial
+    )
   }
 
   test("P17 enc_03: 13 fixations, fixation 6 is record 7,214") {

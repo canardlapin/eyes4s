@@ -21,7 +21,8 @@ import eyes4s.studio.core.backend.{Phase, TrialKey}
 import eyes4s.studio.core.document.ScreenSize
 import eyes4s.studio.core.fixture.{GoldenAssets, StoryMoments}
 import eyes4s.studio.core.selection.FixationIndex
-import eyes4s.studio.viz.trial.{TrialFixation, WindowSide}
+import eyes4s.plan.{MapPlacement, OffWindowPolicy}
+import eyes4s.studio.viz.trial.TrialFixation
 
 import java.nio.charset.StandardCharsets.UTF_8
 import java.nio.file.{Files, Path, Paths}
@@ -90,7 +91,8 @@ object GoldenTrials:
             x,
             y,
             r(8).toInt,
-            if inside then WindowSide.Inside else WindowSide.Outside
+            if inside then MapPlacement.InMap
+            else MapPlacement.OutsideWindow(OffWindowPolicy.Exclude)
           )
           .fold(e => sys.error(e.message), identity)
       }

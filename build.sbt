@@ -1063,6 +1063,7 @@ lazy val studioCore = crossProject(JVMPlatform, JSPlatform)
     libraryDependencies ++= Seq(
       "io.circe"      %%% "circe-core"        % circeV,
       "io.circe"      %%% "circe-parser"      % circeV,
+      "io.circe"      %%% "circe-jawn"        % circeV,
       "org.typelevel" %%% "munit-cats-effect" % munitCatsEffectV % Test
     ),
     // S3.0: studio-core may not read files (it links for Scala.js), so the mock

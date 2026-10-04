@@ -19,6 +19,7 @@ package eyes4s.studio.core.fixture
 import cats.Monad
 import cats.data.EitherT
 import cats.syntax.all.*
+import eyes4s.plan.MapPlacement
 import eyes4s.studio.core.backend.*
 import eyes4s.studio.core.document.{ReportingId, SourceRole}
 import eyes4s.studio.core.navigation.*
@@ -340,6 +341,19 @@ object FakeNavigator:
   */
 enum ScreenPlacement derives CanEqual:
   case OnScreen, OutsideScreen
+
+  /** Retains the fixture's screen finding when it is combined with an
+    * already-decided core placement. `DroppedInitial` remains first because
+    * the core classifier gives the initial-fixation policy precedence over
+    * screen membership. This adapter deliberately does not infer an
+    * outside-window policy from an on-screen fixture record.
+    */
+  def withCorePlacement(placement: MapPlacement): MapPlacement = placement match
+    case MapPlacement.DroppedInitial => placement
+    case _                           =>
+      this match
+        case OnScreen      => placement
+        case OutsideScreen => MapPlacement.OutsideScreen
 
 /** One record of a fixture scanpath: its fixations.csv data record (from 1,
   * header excluded) and where it falls against the screen.

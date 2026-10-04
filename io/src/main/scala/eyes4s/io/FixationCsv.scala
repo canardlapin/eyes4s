@@ -50,10 +50,7 @@ object FixationColumns:
   * is matched on: keys with one identity must carry one value.
   */
 private[io] trait KeyAttribute[K]:
-  type Identity
-  def identity(key: K): Identity
-  def item(key: K): String
-  def occurrence(key: K): Int
+  def trialKey(key: K): TrialKey
 
 final class FixationKeyReader[K] private (
     val columns: Vector[String],
@@ -134,10 +131,7 @@ object FixationKeyReader:
         reader.clock,
         reader.participant,
         Some(new KeyAttribute[TrialKey]:
-          type Identity = (String, String, String)
-          def identity(key: TrialKey)   = (key.participant, key.phase, key.trial)
-          def item(key: TrialKey)       = key.item
-          def occurrence(key: TrialKey) = key.occurrence.value)
+          def trialKey(key: TrialKey): TrialKey = key)
       )
     )
 
@@ -383,30 +377,31 @@ object FixationCsv:
         )
       val invalid = parsed.collect { case Left(error) => error }
       val valid   = parsed.collect { case Right(value) => value }
-      // Keys that name one trial but disagree on its item or occurrence:
-      // each maps to the trial's first key, all its records and the cause,
-      // so the trial is quarantined once.
+      // The plan-layer fold is also the Studio admission seam. It receives all
+      // parsed keys, including rows later rejected for another reason, so a
+      // conflict quarantines its whole trial exactly once.
       val itemConflicts: Map[K, (K, Vector[Int], QuarantineCause)] =
         keys.attribute.fold(Map.empty) { rule =>
           val keyed = valid.map(v => v.key -> v.row) ++
             invalid.flatMap(r => r.key.map(_ -> r.rowNumber))
-          keyed
-            .map(_._1)
-            .distinct
-            .groupBy(rule.identity)
-            .values
-            .collect {
-              case group if group.size > 1 =>
-                val items       = group.map(rule.item).distinct.sorted
-                val occurrences = group.map(rule.occurrence).distinct.sorted
-                val cause       =
-                  if items.size > 1 then QuarantineCause.ItemConflict(items)
-                  else QuarantineCause.OccurrenceConflict(occurrences)
-                val rows = keyed.collect { case (k, r) if group.contains(k) => r }.sorted
-                group.map(_ -> (group.min, rows, cause))
-            }
-            .flatten
-            .toMap
+          val rows = keyed.map { case (key, record) =>
+            key -> TrialConflictRow.fromParsed(rule.trialKey(key), record)
+          }
+          val sourceKeys = rows.map { case (key, row) => row.key -> key }.toMap
+          val conflicts  = TrialConflictGrouping.group(rows.map(_._2)).flatMap { group =>
+            group.classification match
+              case TrialConflictClassification.ItemConflict(items) =>
+                Some(group -> QuarantineCause.ItemConflict(items))
+              case TrialConflictClassification.OccurrenceConflict(occurrences) =>
+                Some(group -> QuarantineCause.OccurrenceConflict(occurrences.map(_.value)))
+              case TrialConflictClassification.Ok => None
+          }
+          conflicts.flatMap { case (group, cause) =>
+            val representative = sourceKeys(group.representative)
+            group.keys.map(key =>
+              sourceKeys(key) -> (representative, group.records.map(_.value), cause)
+            )
+          }.toMap
         }
       assemble(header, rows, valid, invalid, frame, keys.clock, itemConflicts, policy)._1
     }

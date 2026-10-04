@@ -17,6 +17,7 @@
 package eyes4s.studio.desktop.trial
 
 import eyes4s.studio.app.text.TrialText
+import eyes4s.plan.MapPlacement
 import eyes4s.studio.app.tokens.{Colour, StageToken, StageVariant, Theme, ThemedToken, Tokens}
 import eyes4s.studio.app.{AppEffect, AppModel, Intent}
 import eyes4s.studio.core.assets.TrialDisplay
@@ -328,7 +329,7 @@ class InputAdapterFxSuite extends StudioFxSuite:
       assertEquals(w.selected, Vector(target.ref))
       assertEquals(
         runOnFx(w.host.getAccessibleText),
-        TrialText.mark(target.ref, selected = true)
+        TrialText.mark(target.ref, target.mark.placement, selected = true)
       )
     }
     // Arrows: to the nearest mark strictly on that side.
@@ -369,7 +370,10 @@ class InputAdapterFxSuite extends StudioFxSuite:
     // in the outer casing band, 1 px beyond the accent (device px at 2x).
     assert(onCircle(image, ring.centre, ring.radius + 4.0, accent) >= 16, "no accent ring")
     assert(onCircle(image, ring.centre, ring.radius + 7.0, halo) >= 16, "no halo casing")
-    assertEquals(runOnFx(w.host.getAccessibleText), TrialText.mark(t.targets.head.ref, false))
+    assertEquals(
+      runOnFx(w.host.getAccessibleText),
+      TrialText.mark(t.targets.head.ref, t.targets.head.mark.placement, false)
+    )
     assertEquals(f.surface.deviceScale, 2.0)
     assertEquals(runOnFx(w.adapter.lastOverlayError), None)
     runOnFx(w.adapter.dispose())
@@ -552,7 +556,7 @@ class InputAdapterFxSuite extends StudioFxSuite:
           452.0 + col * (1016.0 / (Columns - 1)),
           160.0 + row * (760.0 / (Rows - 1)),
           40,
-          WindowSide.Inside
+          MapPlacement.InMap
         )
       )
     }.toVector

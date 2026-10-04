@@ -19,7 +19,8 @@ package eyes4s.studio.core.backend
 import cats.Functor
 import cats.effect.{Concurrent, Deferred, Ref}
 import cats.syntax.all.*
-import fs2.{Pipe, RaiseThrowable, Stream, text}
+import eyes4s.studio.core.preview.PreviewEvent
+import fs2.{Pipe, Pull, RaiseThrowable, Stream, text}
 import io.circe.syntax.*
 import io.circe.{Decoder, Encoder}
 
@@ -113,6 +114,10 @@ object WireFormat:
   /** The longest line either side accepts, in characters (16 MiB). */
   val MaxLineLength: Int = 16 * 1024 * 1024
 
+  // Preserve numeric text on Scala.js, too: native JSON.parse can round a
+  // fractional number into a valid integer before a count decoder sees it.
+  private val parser = io.circe.jawn.JawnParser(MaxLineLength)
+
   /** How much of a bad line an error quotes. */
   val ExcerptLength: Int = 200
 
@@ -122,13 +127,13 @@ object WireFormat:
   def line[A: Encoder](envelope: Envelope[A]): String = envelope.asJson.noSpaces + "\n"
 
   def parse[A: Decoder](line: String): Either[TransportError, Envelope[A]] =
-    io.circe.parser
+    parser
       .decode[Envelope[A]](line)
       .leftMap(e => TransportError.Malformed(excerpt(line), e.getMessage))
 
   /** The request id of a line that is JSON with an `id`, whatever its body. */
   def requestId(line: String): Option[RequestId] =
-    io.circe.parser
+    parser
       .parse(line)
       .toOption
       .flatMap(_.hcursor.downField("id").as[RequestId].toOption)
@@ -336,10 +341,50 @@ object RemoteStudyBackend:
     ): F[Either[BackendError, PreviewPage]] =
       ask(Q.PreviewRows(revision, page)) { case A.PreviewRows(p) => p }
 
+    private def previewEvents(
+        request: BackendRequest
+    ): Stream[F, Either[BackendError, PreviewEvent]] =
+      def events(tail: Stream[F, ServerFrame]): Stream[F, Either[BackendError, PreviewEvent]] =
+        tail
+          .evalMap {
+            case ServerFrame.Preview(event)             => Concurrent[F].pure(Right(event))
+            case ServerFrame.Response(A.Refused(error)) => Concurrent[F].pure(Left(error))
+            case other => failure(TransportError.Unexpected(request, other))
+          }
+          .takeThrough(_.isRight)
+      frames(request).pull.uncons1.flatMap {
+        case None => Pull.raiseError(TransportFailure(TransportError.Unanswered(request)))
+        case Some((ServerFrame.Response(A.Refused(error)), _))     => Pull.output1(Left(error))
+        case Some((ServerFrame.Response(A.PreviewAccepted), tail)) =>
+          tail.pull.uncons1.flatMap {
+            case None => Pull.raiseError(TransportFailure(TransportError.Unanswered(request)))
+            case Some((head, rest)) => events(Stream.emit(head) ++ rest).pull.echo
+          }
+        case Some((other, _)) =>
+          Pull.raiseError(TransportFailure(TransportError.Unexpected(request, other)))
+      }.stream
+
+    def previewCounting(
+        revision: AnalysisRevision,
+        budget: eyes4s.studio.core.preview.PreviewBudget
+    ): Stream[F, Either[BackendError, eyes4s.studio.core.preview.PreviewEvent]] =
+      previewEvents(Q.PreviewCounting(revision, budget))
+
+    def continuePreview(
+        preview: eyes4s.studio.core.preview.PreviewId,
+        budget: eyes4s.studio.core.preview.PreviewBudget
+    ): Stream[F, Either[BackendError, eyes4s.studio.core.preview.PreviewEvent]] =
+      previewEvents(Q.ContinuePreview(preview, budget))
+
     def runs: F[Vector[RunSummary]] = always(Q.Runs) { case A.Runs(r) => r }
 
     def submit(revision: AnalysisRevision): F[Either[BackendError, JobStatus]] =
       ask(Q.Submit(revision)) { case A.Job(s) => s }
+
+    def submitPreview(
+        ready: eyes4s.studio.core.preview.PreviewReady
+    ): F[Either[BackendError, JobStatus]] =
+      ask(Q.SubmitPreview(ready)) { case A.Job(s) => s }
 
     def jobs: F[Vector[JobStatus]] = always(Q.Jobs) { case A.Jobs(j) => j }
 
