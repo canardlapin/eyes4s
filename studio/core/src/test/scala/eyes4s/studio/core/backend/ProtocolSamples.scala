@@ -515,9 +515,7 @@ object ProtocolSamples:
     BackendRequest.SourceRecordsOf(AnalysisRevision(4), 7214, 60),
     BackendRequest.PairRowsOf(run, 2, page),
     BackendRequest.Verify(DatasetRevision(3), content("ab")),
-    BackendRequest.PlacementOf(
-      eyes4s.studio.core.document.DocumentSamples.t1.dataset(DatasetRevision(3)).get
-    )
+    BackendRequest.PlacementOf(placementSpec)
   )
 
   val responses: Vector[BackendResponse] = Vector(
@@ -623,20 +621,37 @@ object ProtocolSamples:
     BackendResponse.PlacementOf(placementPreview)
   )
 
-  /** Two records of one trial, one inside the image frame and one off the screen. */
+  /** t1's r3 declared at 35.5 px/°: an integral double prints as `35.0` on
+    * the JVM and `35` on Scala.js, so the pinned spec carries a fraction.
+    */
+  lazy val placementSpec: eyes4s.studio.core.document.DatasetRevisionSpec =
+    import eyes4s.studio.core.document.{DeclaredPixelsPerDegree, Geometry}
+    val r3  = eyes4s.studio.core.document.DocumentSamples.t1.dataset(DatasetRevision(3)).get
+    val ppd =
+      DeclaredPixelsPerDegree.of(35.5).fold(e => throw AssertionError(e.message), identity)
+    r3.copy(geometry =
+      Geometry
+        .of(r3.geometry.screen, r3.geometry.image, ppd)
+        .fold(e => throw AssertionError(e.message), identity)
+    )
+
+  /** Two records of one trial, one inside the image frame and one off the
+    * screen. Its numbers are fractional: an integral double prints as
+    * `1148.0` on the JVM and `1148` on Scala.js.
+    */
   lazy val placementPreview: PlacementPreview = PlacementPreview(
     DatasetRevision(3),
     Vector(
       PlacedRecord(
         7214,
         query,
-        1148.0,
-        456.0,
+        1148.25,
+        456.75,
         None,
-        1148.0,
-        456.0,
-        700.0,
-        300.0,
+        1148.25,
+        456.75,
+        700.25,
+        300.75,
         RecordPlacement.Inside,
         Some((5.375, 2.375))
       ),
@@ -644,19 +659,19 @@ object ProtocolSamples:
         7215,
         query,
         -40.5,
-        500.0,
+        500.25,
         Some(0),
         1960.5,
-        500.0,
+        500.25,
         1512.5,
-        344.0,
+        344.25,
         RecordPlacement.OutsideScreen,
         None
       )
     ),
     Vector(UnplacedSourceRecord(7216, "x is not a number")),
     Vector(TrialPlacement(query, 2, 0, 1)),
-    PlacementDensityGrid(2, 1, Vector(1.0, 0.0), 2)
+    PlacementDensityGrid(2, 1, Vector(1.5, 0.5), 2)
   )
 
   val events: Vector[JobEvent] =
