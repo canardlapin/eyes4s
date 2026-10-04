@@ -5,8 +5,7 @@
     "admittedTrials" : 937,
     "candidatePairsPerScale" : 219486,
     "contributingQueries" : 454,
-    "controlPairsOfUnmatchedQueriesPerScale" : 171,
-    "controlPairsPerScale" : 8683,
+    "controlPairsPerScale" : 8512,
     "controlsPerQuery" : {
       "18" : 171,
       "19" : 286
@@ -20,9 +19,8 @@
     "matchedPairsPerScale" : 457,
     "multipleMatchQueries" : 0,
     "noMatchQueries" : 9,
-    "pairRowsAllScales" : 36560,
-    "pairRowsOfMatchedQueriesPerScale" : 8969,
-    "pairRowsPerScale" : 9140,
+    "pairRowsAllScales" : 35876,
+    "pairRowsPerScale" : 8969,
     "quarantinedByCause" : {
       "DuplicateOrdinals" : 4,
       "Overlap" : 6,
@@ -31,13 +29,13 @@
     },
     "quarantinedTrials" : 17,
     "queriesNotAdmitted" : 14,
+    "queriesWithAMatch" : 457,
     "records" : 11520,
     "recordsOutsideScreen" : 0,
     "recordsOutsideWindow" : 543,
     "referenceTrials" : 471,
     "rejectedRecords" : 209,
     "requestedQueries" : 480,
-    "studyCountsEligibleQueries" : 466,
     "trialsOutsideWindow" : 409
   },
   "format" : "eyes4s.studio-golden.scores",
@@ -1967,22 +1965,22 @@
       "response" : "Remembered",
       "scales" : {
         "0.5" : {
-          "B" : 0.034718,
+          "B" : null,
           "D" : null,
           "M" : null
         },
         "1" : {
-          "B" : 0.119401,
+          "B" : null,
           "D" : null,
           "M" : null
         },
         "2" : {
-          "B" : 0.328709,
+          "B" : null,
           "D" : null,
           "M" : null
         },
         "4" : {
-          "B" : 0.692696,
+          "B" : null,
           "D" : null,
           "M" : null
         }
@@ -5158,22 +5156,22 @@
       "response" : "Forgotten",
       "scales" : {
         "0.5" : {
-          "B" : 0.016586,
+          "B" : null,
           "D" : null,
           "M" : null
         },
         "1" : {
-          "B" : 0.055942,
+          "B" : null,
           "D" : null,
           "M" : null
         },
         "2" : {
-          "B" : 0.205358,
+          "B" : null,
           "D" : null,
           "M" : null
         },
         "4" : {
-          "B" : 0.621936,
+          "B" : null,
           "D" : null,
           "M" : null
         }
@@ -5651,22 +5649,22 @@
       "response" : "Remembered",
       "scales" : {
         "0.5" : {
-          "B" : 0.049342,
+          "B" : null,
           "D" : null,
           "M" : null
         },
         "1" : {
-          "B" : 0.106724,
+          "B" : null,
           "D" : null,
           "M" : null
         },
         "2" : {
-          "B" : 0.323061,
+          "B" : null,
           "D" : null,
           "M" : null
         },
         "4" : {
-          "B" : 0.750237,
+          "B" : null,
           "D" : null,
           "M" : null
         }
@@ -7208,22 +7206,22 @@
       "response" : "Remembered",
       "scales" : {
         "0.5" : {
-          "B" : 0.044619,
+          "B" : null,
           "D" : null,
           "M" : null
         },
         "1" : {
-          "B" : 0.125586,
+          "B" : null,
           "D" : null,
           "M" : null
         },
         "2" : {
-          "B" : 0.300654,
+          "B" : null,
           "D" : null,
           "M" : null
         },
         "4" : {
-          "B" : 0.659545,
+          "B" : null,
           "D" : null,
           "M" : null
         }
@@ -7739,22 +7737,22 @@
       "response" : "Remembered",
       "scales" : {
         "0.5" : {
-          "B" : 0.044251,
+          "B" : null,
           "D" : null,
           "M" : null
         },
         "1" : {
-          "B" : 0.130369,
+          "B" : null,
           "D" : null,
           "M" : null
         },
         "2" : {
-          "B" : 0.395353,
+          "B" : null,
           "D" : null,
           "M" : null
         },
         "4" : {
-          "B" : 0.744218,
+          "B" : null,
           "D" : null,
           "M" : null
         }
@@ -9866,22 +9864,22 @@
       "response" : "Remembered",
       "scales" : {
         "0.5" : {
-          "B" : 0.070529,
+          "B" : null,
           "D" : null,
           "M" : null
         },
         "1" : {
-          "B" : 0.170380,
+          "B" : null,
           "D" : null,
           "M" : null
         },
         "2" : {
-          "B" : 0.411073,
+          "B" : null,
           "D" : null,
           "M" : null
         },
         "4" : {
-          "B" : 0.780595,
+          "B" : null,
           "D" : null,
           "M" : null
         }
@@ -10967,22 +10965,22 @@
       "response" : "Remembered",
       "scales" : {
         "0.5" : {
-          "B" : 0.034150,
+          "B" : null,
           "D" : null,
           "M" : null
         },
         "1" : {
-          "B" : 0.078006,
+          "B" : null,
           "D" : null,
           "M" : null
         },
         "2" : {
-          "B" : 0.248789,
+          "B" : null,
           "D" : null,
           "M" : null
         },
         "4" : {
-          "B" : 0.659123,
+          "B" : null,
           "D" : null,
           "M" : null
         }
@@ -13208,22 +13206,22 @@
       "response" : "Remembered",
       "scales" : {
         "0.5" : {
-          "B" : 0.036971,
+          "B" : null,
           "D" : null,
           "M" : null
         },
         "1" : {
-          "B" : 0.102764,
+          "B" : null,
           "D" : null,
           "M" : null
         },
         "2" : {
-          "B" : 0.293169,
+          "B" : null,
           "D" : null,
           "M" : null
         },
         "4" : {
-          "B" : 0.681853,
+          "B" : null,
           "D" : null,
           "M" : null
         }
@@ -15069,22 +15067,22 @@
       "response" : "Forgotten",
       "scales" : {
         "0.5" : {
-          "B" : 0.059641,
+          "B" : null,
           "D" : null,
           "M" : null
         },
         "1" : {
-          "B" : 0.164233,
+          "B" : null,
           "D" : null,
           "M" : null
         },
         "2" : {
-          "B" : 0.441748,
+          "B" : null,
           "D" : null,
           "M" : null
         },
         "4" : {
-          "B" : 0.731780,
+          "B" : null,
           "D" : null,
           "M" : null
         }
@@ -17871,10 +17869,10 @@
       },
       "grand" : {
         "B" : {
-          "estimate" : 0.049002,
-          "failed" : 3,
+          "estimate" : 0.049132,
+          "failed" : 12,
           "participants" : 24,
-          "queries" : 463
+          "queries" : 454
         },
         "D" : {
           "estimate" : 0.271359,
@@ -17923,7 +17921,7 @@
           "queries" : 19
         },
         "P03" : {
-          "B" : 0.047794,
+          "B" : 0.048483,
           "D" : 0.340368,
           "M" : 0.388850,
           "byResponse" : {
@@ -17987,7 +17985,7 @@
           "queries" : 19
         },
         "P07" : {
-          "B" : 0.039789,
+          "B" : 0.041010,
           "D" : 0.237650,
           "M" : 0.278660,
           "byResponse" : {
@@ -18003,7 +18001,7 @@
           "queries" : 19
         },
         "P08" : {
-          "B" : 0.058584,
+          "B" : 0.059070,
           "D" : 0.293615,
           "M" : 0.352685,
           "byResponse" : {
@@ -18035,7 +18033,7 @@
           "queries" : 19
         },
         "P10" : {
-          "B" : 0.051778,
+          "B" : 0.052155,
           "D" : 0.256872,
           "M" : 0.309027,
           "byResponse" : {
@@ -18051,7 +18049,7 @@
           "queries" : 19
         },
         "P11" : {
-          "B" : 0.049145,
+          "B" : 0.049403,
           "D" : 0.219079,
           "M" : 0.268482,
           "byResponse" : {
@@ -18099,7 +18097,7 @@
           "queries" : 19
         },
         "P14" : {
-          "B" : 0.046767,
+          "B" : 0.045516,
           "D" : 0.280933,
           "M" : 0.326449,
           "byResponse" : {
@@ -18115,7 +18113,7 @@
           "queries" : 19
         },
         "P15" : {
-          "B" : 0.040677,
+          "B" : 0.041021,
           "D" : 0.238154,
           "M" : 0.279175,
           "byResponse" : {
@@ -18163,7 +18161,7 @@
           "queries" : 19
         },
         "P18" : {
-          "B" : 0.060309,
+          "B" : 0.061537,
           "D" : 0.322477,
           "M" : 0.384014,
           "byResponse" : {
@@ -18211,7 +18209,7 @@
           "queries" : 19
         },
         "P21" : {
-          "B" : 0.055222,
+          "B" : 0.054990,
           "D" : 0.242310,
           "M" : 0.297299,
           "byResponse" : {
@@ -18298,10 +18296,10 @@
       },
       "grand" : {
         "B" : {
-          "estimate" : 0.137453,
-          "failed" : 3,
+          "estimate" : 0.137914,
+          "failed" : 12,
           "participants" : 24,
-          "queries" : 463
+          "queries" : 454
         },
         "D" : {
           "estimate" : 0.418287,
@@ -18350,7 +18348,7 @@
           "queries" : 19
         },
         "P03" : {
-          "B" : 0.129482,
+          "B" : 0.130013,
           "D" : 0.502148,
           "M" : 0.632161,
           "byResponse" : {
@@ -18414,7 +18412,7 @@
           "queries" : 19
         },
         "P07" : {
-          "B" : 0.119946,
+          "B" : 0.123314,
           "D" : 0.385775,
           "M" : 0.509090,
           "byResponse" : {
@@ -18430,7 +18428,7 @@
           "queries" : 19
         },
         "P08" : {
-          "B" : 0.159114,
+          "B" : 0.161871,
           "D" : 0.414610,
           "M" : 0.576481,
           "byResponse" : {
@@ -18462,7 +18460,7 @@
           "queries" : 19
         },
         "P10" : {
-          "B" : 0.147310,
+          "B" : 0.148453,
           "D" : 0.453222,
           "M" : 0.601675,
           "byResponse" : {
@@ -18478,7 +18476,7 @@
           "queries" : 19
         },
         "P11" : {
-          "B" : 0.138925,
+          "B" : 0.139375,
           "D" : 0.369392,
           "M" : 0.508767,
           "byResponse" : {
@@ -18526,7 +18524,7 @@
           "queries" : 19
         },
         "P14" : {
-          "B" : 0.136824,
+          "B" : 0.135058,
           "D" : 0.402313,
           "M" : 0.537371,
           "byResponse" : {
@@ -18542,7 +18540,7 @@
           "queries" : 19
         },
         "P15" : {
-          "B" : 0.121046,
+          "B" : 0.123311,
           "D" : 0.407045,
           "M" : 0.530356,
           "byResponse" : {
@@ -18590,7 +18588,7 @@
           "queries" : 19
         },
         "P18" : {
-          "B" : 0.155995,
+          "B" : 0.158797,
           "D" : 0.449426,
           "M" : 0.608223,
           "byResponse" : {
@@ -18638,7 +18636,7 @@
           "queries" : 19
         },
         "P21" : {
-          "B" : 0.155079,
+          "B" : 0.154597,
           "D" : 0.406063,
           "M" : 0.560660,
           "byResponse" : {
@@ -18725,10 +18723,10 @@
       },
       "grand" : {
         "B" : {
-          "estimate" : 0.357766,
-          "failed" : 3,
+          "estimate" : 0.358495,
+          "failed" : 12,
           "participants" : 24,
-          "queries" : 463
+          "queries" : 454
         },
         "D" : {
           "estimate" : 0.375907,
@@ -18777,7 +18775,7 @@
           "queries" : 19
         },
         "P03" : {
-          "B" : 0.333234,
+          "B" : 0.333473,
           "D" : 0.468433,
           "M" : 0.801906,
           "byResponse" : {
@@ -18841,7 +18839,7 @@
           "queries" : 19
         },
         "P07" : {
-          "B" : 0.341353,
+          "B" : 0.348510,
           "D" : 0.344846,
           "M" : 0.693356,
           "byResponse" : {
@@ -18857,7 +18855,7 @@
           "queries" : 19
         },
         "P08" : {
-          "B" : 0.406393,
+          "B" : 0.410779,
           "D" : 0.341746,
           "M" : 0.752525,
           "byResponse" : {
@@ -18889,7 +18887,7 @@
           "queries" : 19
         },
         "P10" : {
-          "B" : 0.364477,
+          "B" : 0.367836,
           "D" : 0.427242,
           "M" : 0.795078,
           "byResponse" : {
@@ -18905,7 +18903,7 @@
           "queries" : 19
         },
         "P11" : {
-          "B" : 0.344171,
+          "B" : 0.341477,
           "D" : 0.360117,
           "M" : 0.701594,
           "byResponse" : {
@@ -18953,7 +18951,7 @@
           "queries" : 19
         },
         "P14" : {
-          "B" : 0.378159,
+          "B" : 0.376427,
           "D" : 0.338965,
           "M" : 0.715391,
           "byResponse" : {
@@ -18969,7 +18967,7 @@
           "queries" : 19
         },
         "P15" : {
-          "B" : 0.341663,
+          "B" : 0.346551,
           "D" : 0.381809,
           "M" : 0.728360,
           "byResponse" : {
@@ -19017,7 +19015,7 @@
           "queries" : 19
         },
         "P18" : {
-          "B" : 0.372926,
+          "B" : 0.377124,
           "D" : 0.382922,
           "M" : 0.760046,
           "byResponse" : {
@@ -19065,7 +19063,7 @@
           "queries" : 19
         },
         "P21" : {
-          "B" : 0.397974,
+          "B" : 0.395670,
           "D" : 0.364300,
           "M" : 0.759970,
           "byResponse" : {
@@ -19152,10 +19150,10 @@
       },
       "grand" : {
         "B" : {
-          "estimate" : 0.706053,
-          "failed" : 3,
+          "estimate" : 0.706247,
+          "failed" : 12,
           "participants" : 24,
-          "queries" : 463
+          "queries" : 454
         },
         "D" : {
           "estimate" : 0.187366,
@@ -19204,7 +19202,7 @@
           "queries" : 19
         },
         "P03" : {
-          "B" : 0.663283,
+          "B" : 0.661735,
           "D" : 0.263201,
           "M" : 0.924936,
           "byResponse" : {
@@ -19268,7 +19266,7 @@
           "queries" : 19
         },
         "P07" : {
-          "B" : 0.700119,
+          "B" : 0.704233,
           "D" : 0.168156,
           "M" : 0.872390,
           "byResponse" : {
@@ -19284,7 +19282,7 @@
           "queries" : 19
         },
         "P08" : {
-          "B" : 0.773701,
+          "B" : 0.774936,
           "D" : 0.130288,
           "M" : 0.905224,
           "byResponse" : {
@@ -19316,7 +19314,7 @@
           "queries" : 19
         },
         "P10" : {
-          "B" : 0.693220,
+          "B" : 0.694993,
           "D" : 0.228836,
           "M" : 0.923829,
           "byResponse" : {
@@ -19332,7 +19330,7 @@
           "queries" : 19
         },
         "P11" : {
-          "B" : 0.680821,
+          "B" : 0.677484,
           "D" : 0.199087,
           "M" : 0.876571,
           "byResponse" : {
@@ -19380,7 +19378,7 @@
           "queries" : 19
         },
         "P14" : {
-          "B" : 0.745786,
+          "B" : 0.743954,
           "D" : 0.153223,
           "M" : 0.897177,
           "byResponse" : {
@@ -19396,7 +19394,7 @@
           "queries" : 19
         },
         "P15" : {
-          "B" : 0.698610,
+          "B" : 0.700689,
           "D" : 0.187228,
           "M" : 0.887917,
           "byResponse" : {
@@ -19444,7 +19442,7 @@
           "queries" : 19
         },
         "P18" : {
-          "B" : 0.711216,
+          "B" : 0.712762,
           "D" : 0.185071,
           "M" : 0.897833,
           "byResponse" : {
@@ -19492,7 +19490,7 @@
           "queries" : 19
         },
         "P21" : {
-          "B" : 0.743998,
+          "B" : 0.744641,
           "D" : 0.172373,
           "M" : 0.917013,
           "byResponse" : {

@@ -47,42 +47,38 @@ class StudioFixtureRealSuite extends munit.FunSuite:
   private def int(j: Json): Long =
     j.asNumber.flatMap(_.toLong).getOrElse(fail(s"not a count: $j"))
 
-  /** FIXTURE.md's counts (and the golden README's), by SCORES.json name. */
+  /** FIXTURE.md's counts (and the golden README's), by SCORES.json name.
+    * Since the owner's decision on bead S0.7b, a query without a match is not
+    * eligible and has no control pairs, and candidates are counted over
+    * admitted trials; every count agrees.
+    */
   private val fixtureCounts: Map[String, Long] = Map(
-    "inventoryTrials"                  -> 960,
-    "admittedTrials"                   -> 937,
-    "quarantinedTrials"                -> 17,
-    "absentTrials"                     -> 6,
-    "records"                          -> 11520,
-    "admittedRecords"                  -> 11311,
-    "rejectedRecords"                  -> 209,
-    "recordsOutsideWindow"             -> 543,
-    "trialsOutsideWindow"              -> 409,
-    "recordsOutsideScreen"             -> 0,
-    "items"                            -> 259,
-    "requestedQueries"                 -> 480,
-    "queriesNotAdmitted"               -> 14,
-    "noMatchQueries"                   -> 9,
-    "multipleMatchQueries"             -> 0,
-    "failedQueries"                    -> 3,
-    "contributingQueries"              -> 454,
-    "eligibleQueries"                  -> 457,
-    "matchedPairsPerScale"             -> 457,
-    "pairRowsOfMatchedQueriesPerScale" -> 8969
-  )
-
-  /** Counts where the library and FIXTURE.md differ: (FIXTURE.md, eyes4s). */
-  private val differences: Map[String, (Long, Long)] = Map(
-    // FIXTURE.md: 480 retrieval x 480 encoding inventory trials; eyes4s counts
-    // the admitted focal (466) x reference (471) trials.
-    "candidatePairsPerScale" -> (230400L, 219486L),
-    // FIXTURE.md counts the pair rows of the 457 matched queries only; eyes4s
-    // also schedules the 171 control rows of the 9 queries without a match.
-    "pairRowsPerScale"  -> (8969L, 9140L),
-    "pairRowsAllScales" -> (35876L, 36560L),
-    // eyes4s StudyCounts counts every focal query as eligible (466), the
-    // 9 without a match included; FIXTURE.md's 457 excludes them.
-    "studyCountsEligibleQueries" -> (457L, 466L)
+    "inventoryTrials"        -> 960,
+    "admittedTrials"         -> 937,
+    "quarantinedTrials"      -> 17,
+    "absentTrials"           -> 6,
+    "records"                -> 11520,
+    "admittedRecords"        -> 11311,
+    "rejectedRecords"        -> 209,
+    "recordsOutsideWindow"   -> 543,
+    "trialsOutsideWindow"    -> 409,
+    "recordsOutsideScreen"   -> 0,
+    "items"                  -> 259,
+    "requestedQueries"       -> 480,
+    "queriesNotAdmitted"     -> 14,
+    "noMatchQueries"         -> 9,
+    "multipleMatchQueries"   -> 0,
+    "failedQueries"          -> 3,
+    "contributingQueries"    -> 454,
+    "eligibleQueries"        -> 457,
+    "queriesWithAMatch"      -> 457,
+    "matchedPairsPerScale"   -> 457,
+    "controlPairsPerScale"   -> 8512,
+    "pairRowsPerScale"       -> 8969,
+    "pairRowsAllScales"      -> 35876,
+    "candidatePairsPerScale" -> 219486,
+    "focalTrials"            -> 466,
+    "referenceTrials"        -> 471
   )
 
   test("every FIXTURE.md count reproduces through eyes4s") {
@@ -110,14 +106,6 @@ class StudioFixtureRealSuite extends munit.FunSuite:
       failed.map(q => (str(q, "participant"), str(q, "trial"))).toSet,
       StudioFixture.offImage
     )
-  }
-
-  test("where eyes4s and FIXTURE.md count differently, eyes4s's count is pinned") {
-    val c = counts(body)
-    differences.toVector.sortBy(_._1).foreach { case (name, (fixture, library)) =>
-      assertEquals(c.get(name).map(int), Some(library), s"$name (FIXTURE.md: $fixture)")
-      assertNotEquals(fixture, library, name)
-    }
   }
 
   test("SCORES.json regenerates byte for byte") {

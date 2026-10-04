@@ -293,9 +293,6 @@ object StudioScores:
       s.matched.keys.toVector
         .map(k => s.controls.getOrElse(k, 0))
         .groupMapReduce(identity)(_ => 1)(_ + _)
-    val matchedPairs    = s.matched.values.map(_.size).sum
-    val controlPairs    = s.matched.keys.toVector.map(k => s.controls.getOrElse(k, 0)).sum
-    val allControlPairs = s.controls.values.sum
 
     val counts = Json.obj(
       "inventoryTrials"    -> Json.fromInt(inv.trials.size),
@@ -320,21 +317,17 @@ object StudioScores:
       "multipleMatchQueries" -> Json.fromInt(cardinality.multiple.size),
       "failedQueries"        -> Json.fromInt(statusCounts.getOrElse("failed", 0)),
       "contributingQueries"  -> Json.fromInt(statusCounts.getOrElse("contributing", 0)),
-      "eligibleQueries"      -> Json.fromInt(s.matched.size),
+      "eligibleQueries"      -> Json.fromLong(s.studyCounts.eligibleQueries),
+      "queriesWithAMatch"    -> Json.fromInt(s.matched.size),
       "controlsPerQuery"     -> Json.fromFields(
         controlCounts.toVector.sorted.map((k, v) => k.toString -> Json.fromInt(v))
       ),
       // eyes4s StudyCounts: every scheduled pair row, failed outcomes included.
-      "pairRowsPerScale"           -> Json.fromLong(s.studyCounts.pairRowsPerScale),
-      "pairRowsAllScales"          -> Json.fromLong(s.studyCounts.totalPairs),
-      "matchedPairsPerScale"       -> Json.fromLong(s.studyCounts.matched.eligiblePairs),
-      "controlPairsPerScale"       -> Json.fromLong(s.studyCounts.controls.eligiblePairs),
-      "studyCountsEligibleQueries" -> Json.fromLong(s.studyCounts.eligibleQueries),
-      "mapsPerScale"               -> Json.fromLong(s.studyCounts.mapsPerScale),
-      // The pair schedules read pair by pair: rows of queries with a match,
-      // and the control rows of queries without one.
-      "pairRowsOfMatchedQueriesPerScale"       -> Json.fromInt(matchedPairs + controlPairs),
-      "controlPairsOfUnmatchedQueriesPerScale" -> Json.fromInt(allControlPairs - controlPairs),
+      "pairRowsPerScale"       -> Json.fromLong(s.studyCounts.pairRowsPerScale),
+      "pairRowsAllScales"      -> Json.fromLong(s.studyCounts.totalPairs),
+      "matchedPairsPerScale"   -> Json.fromLong(s.studyCounts.matched.eligiblePairs),
+      "controlPairsPerScale"   -> Json.fromLong(s.studyCounts.controls.eligiblePairs),
+      "mapsPerScale"           -> Json.fromLong(s.studyCounts.mapsPerScale),
       "candidatePairsPerScale" -> Json.fromLong(preview.matched.candidatePairCount)
     )
 
