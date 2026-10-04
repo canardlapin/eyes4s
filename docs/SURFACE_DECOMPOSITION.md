@@ -117,6 +117,16 @@ covers a constant map and a map that the covariates explain, which have no parti
 and would otherwise return a correlation of rounding noise. The result has no p-value,
 records its method and covariate keys, and carries provenance over every input.
 
+## Persistence scope
+
+OLS, NNLS and simplex decompositions and partial association are direct computations over maps
+already in memory. No saved study plan or codec can store or replay them: no `DefinitionId`,
+schema or recipe names these operations. The only supported form is the direct call, so there
+is no saved form for the direct result to disagree with. Rerunning a decomposition from saved
+inputs means saving the input maps through their own archives and calling the operation again.
+A saved decomposition recipe would need its own definition, codec, law and pinned fixture
+(`docs/DOMAIN_CODECS.md`).
+
 ## Evidence
 
 `ConstrainedDecompositionSuite` runs on the JVM and Scala.js against exact rational oracles in
