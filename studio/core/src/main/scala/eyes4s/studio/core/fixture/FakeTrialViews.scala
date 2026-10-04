@@ -100,7 +100,7 @@ object FakeTrialViews:
   private def refused(e: TrialViewError): BackendError = BackendError.TrialViewRefused(e)
 
   /** The saved recipe of `revision` at `moment`, and its dataset's geometry. */
-  private def study(
+  private[fixture] def study(
       moment: StoryMoment,
       revision: AnalysisRevision
   ): Either[BackendError, (Recipe, Geometry)] =
@@ -119,7 +119,7 @@ object FakeTrialViews:
   /** The recipe's off-window choice as eyes4s's policy; a recipe without a
     * window has no off-window fixation, and eyes4s's default is `Exclude`.
     */
-  private def policy(recipe: Recipe): OffWindowPolicy = recipe.offWindow match
+  private[fixture] def policy(recipe: Recipe): OffWindowPolicy = recipe.offWindow match
     case Some(OffWindowChoice.FailTrial) => OffWindowPolicy.FailTrial
     case _                               => OffWindowPolicy.Exclude
 

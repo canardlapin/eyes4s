@@ -290,6 +290,13 @@ final class FakeStudyBackend[F[_]] private[fixture] (
       _.flatMap(d => known(d, trial).flatMap(FakeTrialViews.preview(moment, r, _, trial)))
     )
 
+  def sourceRecords(
+      r: AnalysisRevision,
+      from: Int,
+      count: Int
+  ): F[Either[BackendError, SourceRecordPage]] =
+    revision(r).map(_.flatMap(FakeSourceRecords.page(moment, r, _, from, count)))
+
   /** `d` when `trial` is in its inventory; a trial outside it is refused. */
   private def known(
       d: DatasetRevision,

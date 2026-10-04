@@ -40,7 +40,8 @@ object StudioFixture {
     val cached = FileFunction.cached(cache, FilesInfo.hash, FilesInfo.exists) { _ =>
       Set(
         embedJson(json, out / "FixtureJson.scala"),
-        goldenInventory(golden, out / "GoldenInventory.scala")
+        goldenInventory(golden, out / "GoldenInventory.scala"),
+        embedFixationsCsv(golden / "fixations.csv", out / "GoldenFixationsCsv.scala")
       )
     }
     // The stimulus folder's listing is an input too: a removed image changes it.
@@ -86,6 +87,26 @@ object StudioFixture {
           |
           |/** The exact text of docs/studio/fixture/fixture.json. */
           |private[core] object FixtureJson:
+          |  val text: String = Vector(
+          |    ${chunked(IO.read(source, IO.utf8))}
+          |  ).mkString
+          |""".stripMargin,
+      IO.utf8
+    )
+    out
+  }
+
+  /** `private[core] object GoldenFixationsCsv` with the exact text of
+    * fixtures/studio-golden/fixations.csv (S6.4: the source records table
+    * shows each record's verbatim line).
+    */
+  def embedFixationsCsv(source: File, out: File): File = {
+    IO.write(
+      out,
+      s"""|${header}package eyes4s.studio.core.fixture
+          |
+          |/** The exact text of fixtures/studio-golden/fixations.csv. */
+          |private[core] object GoldenFixationsCsv:
           |  val text: String = Vector(
           |    ${chunked(IO.read(source, IO.utf8))}
           |  ).mkString

@@ -1,0 +1,170 @@
+/*
+ * Copyright 2026 canardlapin
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package eyes4s.studio.core.fixture
+
+import cats.syntax.all.*
+import eyes4s.kernel.*
+import eyes4s.studio.core.backend.*
+import eyes4s.studio.core.document.{Geometry, SourceRole}
+import eyes4s.studio.core.selection.{FixationIndex, RecordNumber, StudioRef}
+
+/** The fake's source records (protocol 1.7, S6.4): fixtures/studio-golden's
+  * fixations.csv, embedded verbatim ([[GoldenFixationsCsv]]), one row per
+  * data record in file order, numbered from 1.
+  *
+  * A record's cells are read as the file states them. Its image position is
+  * the kernel's image `Subframe` entered from the screen frame, and its
+  * degrees the kernel's `LinearAngularScale` on that image (the dataset's
+  * declared pixels per degree, from the image's centre, y up); the fake
+  * writes no geometry arithmetic. A record in an admitted trial's scanpath
+  * ([[GoldenFixations]]) names its fixation and the placement
+  * [[FakeTrialViews]] gives it under the revision's study.
+  */
+object FakeSourceRecords:
+
+  /** The file's lines: the header, then one per data record. */
+  private lazy val lines: Vector[String] =
+    GoldenFixationsCsv.text.stripSuffix("\n").split("\n", -1).toVector
+
+  /** The number of data records. */
+  def total: Int = lines.size - 1
+
+  /** Record `n`'s verbatim line (from 1). */
+  def line(n: Int): Option[String] = Option.when(n >= 1 && n <= total)(lines(n))
+
+  private lazy val columns: Map[String, Int] =
+    lines.headOption.toVector.flatMap(_.split(",", -1).toVector).zipWithIndex.toMap
+
+  /** Each admitted fixation's trial and scanpath position, by record. */
+  private lazy val fixationOf: Either[String, Map[Int, (TrialKey, FixationIndex)]] =
+    GoldenFixations.byTrial.flatMap(
+      _.toVector
+        .flatTraverse((trial, fs) =>
+          fs.zipWithIndex.traverse((f, i) =>
+            FixationIndex.of(i + 1).bimap(_.message, ix => f.record -> (trial, ix))
+          )
+        )
+        .map(_.toMap)
+    )
+
+  private def refused(r: AnalysisRevision, e: SourceRecordsError): BackendError =
+    BackendError.SourceRecordsRefused(r, e)
+
+  /** The image frame within the screen, and the warp from it into degrees. */
+  private def imageFrames(
+      geometry: Geometry
+  ): Either[GeometryError, (Subframe[Unit2D.Px], Warp[Unit2D.Px, Unit2D.Deg])] =
+    val image = geometry.image
+    for
+      screen <- Frame.screen("screen", geometry.screen.width, geometry.screen.height)
+      region <- Bounds.of[Unit2D.Px](
+        image.left.toDouble,
+        image.top.toDouble,
+        image.left.toDouble + image.width,
+        image.top.toDouble + image.height
+      )
+      frame   <- Subframe.of(screen, FrameId("image"), region)
+      scale   <- LinearAngularScale.of(screen, geometry.pixelsPerDegree.value)
+      onImage <- scale.on(frame)
+      degrees <- onImage.angular(FrameId("degrees"))
+    yield (frame, degrees)
+
+  /** Records `from` to `from + count - 1` of the revision's fixation file. */
+  def page(
+      moment: StoryMoment,
+      revision: AnalysisRevision,
+      dataset: DatasetRevision,
+      from: Int,
+      count: Int
+  ): Either[BackendError, SourceRecordPage] =
+    def study(step: String)(reason: String) =
+      refused(revision, SourceRecordsError.Study(step, reason))
+    val unavailable = BackendError.Unavailable(DiagnosticLocus.Revision(revision))
+    for
+      _ <- Either.cond(
+        from >= 1 && count >= 1 && count <= SourceRecordPage.Limit,
+        (),
+        refused(revision, SourceRecordsError.RangeInvalid(from, count, SourceRecordPage.Limit))
+      )
+      _ <- Either.cond(
+        from <= total,
+        (),
+        refused(revision, SourceRecordsError.PastEnd(from, total))
+      )
+      (recipe, geometry) <- FakeTrialViews.study(moment, revision)
+      doc                <- StorySeed.document(moment).leftMap(_ => unavailable)
+      source             <- doc
+        .dataset(dataset)
+        .flatMap(_.sources.fixations)
+        .toRight(unavailable)
+      screen <- Frame
+        .screen("screen", geometry.screen.width, geometry.screen.height)
+        .leftMap(e => study("screen")(e.message))
+      window <- recipe.window
+        .fold(Right(screen.bounds))(w => Bounds.of[Unit2D.Px](w.xMin, w.yMin, w.xMax, w.yMax))
+        .flatMap(Subframe.of(screen, FrameId("window"), _))
+        .leftMap(e => study("window")(e.message))
+      (image, degrees) <- imageFrames(geometry).leftMap(e => study("image frame")(e.message))
+      fixations        <- fixationOf.leftMap(study("fixation source"))
+      policy = FakeTrialViews.policy(recipe)
+      rows <- (from until math.min(total + 1, from + count)).toVector.traverse { n =>
+        val cells                = lines(n).split(",", -1).toVector
+        def cell(name: String)   = columns.get(name).flatMap(cells.lift).map(_.trim)
+        def int(name: String)    = cell(name).flatMap(_.toIntOption)
+        def double(name: String) = cell(name).flatMap(_.toDoubleOption).filter(_.isFinite)
+        val placed               = fixations.get(n)
+        for
+          trial <- (cell("participant"), cell("phase"), cell("trial"), int("occurrence"))
+            .mapN((p, ph, t, o) => TrialKey(p, Phase(ph), t, o))
+            .toRight(study("record")(s"record $n names no trial"))
+          record   <- RecordNumber.of(n).leftMap(e => study("record")(e.message))
+          screenAt <- (double("x"), double("y")).tupled.traverse((x, y) =>
+            PlanePoint.of(n, "screen", x, y).leftMap(refused(revision, _))
+          )
+          centre = screenAt.map(p => Pt[Unit2D.Px](p.x, p.y))
+          imageAt <- centre
+            .flatMap(c => image.enter(c).map(c -> _))
+            .traverse((c, local) =>
+              PlanePoint
+                .of(n, "image", local.x, local.y)
+                .bimap(refused(revision, _), ImagePosition(_, image.locate(c).isInside))
+            )
+          degreesAt <- centre
+            .flatMap(c => image.enter(c).flatMap(degrees(_)))
+            .traverse(d => PlanePoint.of(n, "degrees", d.x, d.y).leftMap(refused(revision, _)))
+          row <- SourceRecordRow
+            .of(
+              StudioRef.SourceRecord(trial, placed.map(_._2), SourceRole.Fixations, record),
+              int("ordinal"),
+              double("onset_ms"),
+              double("duration_ms"),
+              int("sample_count"),
+              screenAt,
+              imageAt,
+              degreesAt,
+              placed.flatMap(_ =>
+                centre.map(c => FakeTrialViews.placement(screen, window, policy, c.x, c.y))
+              ),
+              lines(n)
+            )
+            .leftMap(refused(revision, _))
+        yield row
+      }
+      page <- SourceRecordPage
+        .of(revision, dataset, source, total, from, rows)
+        .leftMap(refused(revision, _))
+    yield page
