@@ -19,6 +19,8 @@ package eyes4s.studio.desktop
 import cats.effect.unsafe.implicits.global
 import eyes4s.studio.app.{AppModel, Intent, ProjectName, TrialItems}
 import eyes4s.studio.core.fixture.{MockStudy, StoryMoment, StoryMoments}
+import eyes4s.studio.core.preferences.UserPreferences
+import eyes4s.studio.desktop.platform.PreferencesLocation
 import javafx.application.{Application, Platform}
 import javafx.scene.Scene
 import javafx.scene.control.Label
@@ -36,12 +38,22 @@ final class StudioApplication extends Application:
 
   private var window: Option[StudioWindow] = None
 
+  /** The user's preferences (S2.8), read before the first window opens. */
+  private var preferences: UserPreferences = UserPreferences.defaults
+
+  /** The preferences this run read (S1.10, S1.5b and S2.9 apply them). */
+  def userPreferences: UserPreferences = preferences
+
   // S1.2: register the bundled faces before the first scene reads its CSS. A
   // face that fails to load falls back to the platform font; say which.
+  // S2.8: read the preferences; an unusable file is the defaults, logged.
   override def init(): Unit =
     eyes4s.studio.desktop.typography.StudioFonts
       .loadAll()
       .foreach(p => System.err.println(p.message))
+    val (loaded, problems) = StudioMain.loadPreferences()
+    preferences = loaded
+    problems.foreach(System.err.println)
 
   override def start(stage: Stage): Unit =
     stage.setTitle(StudioMain.title)
@@ -84,6 +96,14 @@ object StudioMain:
     StimulusSource.directory(
       java.nio.file.Paths.get(sys.props("user.dir"), "fixtures", "studio-golden", "stimuli")
     )
+
+  /** The user's preferences from their file, and what to log about it. */
+  def loadPreferences(): (UserPreferences, Vector[String]) =
+    PreferencesLocation.store match
+      case Left(e) => (UserPreferences.defaults, Vector(s"No preferences file: ${e.message}"))
+      case Right(store) =>
+        val (p, problems) = store.load.unsafeRunSync()
+        (p, problems.map(_.message))
 
   /** The window title before a project is shown. */
   val title: String = "Eyes Studio"
