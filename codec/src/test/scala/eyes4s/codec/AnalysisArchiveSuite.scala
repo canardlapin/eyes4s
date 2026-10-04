@@ -334,6 +334,29 @@ class AnalysisArchiveSuite extends munit.FunSuite:
       refusal(graph(counted, r2, (_, _) => AnalysisInputs.EmbeddedInPlan)),
       Some(RelationMismatch.UndeclaredEmbedding(planSchema))
     )
+    // A family that declares an embedded input but whose plan exposes none.
+    val silent = registration.copy(
+      decodePlan = json =>
+        embeddedPlans
+          .decode(json)
+          .map { e =>
+            val loaded = LoadedEmbeddedPlan(e)
+            new LoadedAnalysisPlan:
+              val schema      = loaded.schema
+              def description = loaded.description
+              def encode      = loaded.encode
+          },
+      plan = embeddedPlanSchema,
+      result = embeddedResultSchema,
+      decodeResult = embeddedRegistration.decodeResult,
+      embedsInput = true
+    )
+    assertEquals(
+      resolve(g, decoders.withAnalyses(get(AnalysisRegistry.of(Vector(silent))))).left.toOption
+        .map(_.head)
+        .collect { case ResolveError.Relation(_, m) => m },
+      Some(RelationMismatch.EmptyEmbedding(embeddedPlanSchema))
+    )
     // The two placements have distinct wire forms, and an empty list is no placement.
     val json      = get(ScientificManifest.codec.encode(g.manifest))
     val relations = json.hcursor.downField("value").downField("relations")
