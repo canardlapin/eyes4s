@@ -186,7 +186,7 @@ class ImportWizardSuite extends munit.FunSuite:
     assertEquals(effects.last, WizardEffect.Close)
     commands(effects) match
       case Vector(
-            c @ Command.ImportSources(parent, sources, mapping, units, geometry, attrs)
+            c @ Command.ImportSources(parent, sources, mapping, units, geometry, attrs, _, _)
           ) =>
         assertEquals(c.kind, ChangeKind.DatasetReadmit)
         assertEquals(parent, Some(DatasetRevision(3)))
@@ -227,7 +227,7 @@ class ImportWizardSuite extends munit.FunSuite:
     val (done, fx) = run(w, empty, (geometry :+ WizardIntent.Commit)*)
     assertEquals(done.problem, None)
     commands(fx) match
-      case Vector(Command.ImportSources(None, _, _, _, g, _)) =>
+      case Vector(Command.ImportSources(None, _, _, _, g, _, _, _)) =>
         assertEquals(g.image.render, "1024×768 px at (448, 156)")
       case other => fail(s"expected one ImportSources, got $other")
   }
@@ -264,7 +264,8 @@ class ImportWizardSuite extends munit.FunSuite:
           r3.mapping,
           DeclaredUnits(Some(TimeUnit.Microseconds)),
           r3.geometry,
-          r3.attributes
+          r3.attributes,
+          r3.inventory
         )
       )
     )
@@ -292,7 +293,7 @@ class ImportWizardSuite extends munit.FunSuite:
     assertEquals(w.problem, None)
     val r3 = t2.dataset(DatasetRevision(3)).get
     commands(fx) match
-      case Vector(Command.ImportSources(Some(parent), sources, mapping, _, _, attrs)) =>
+      case Vector(Command.ImportSources(Some(parent), sources, mapping, _, _, attrs, _, _)) =>
         assertEquals(parent, DatasetRevision(3))
         assertEquals(sources, r3.sources)
         assertEquals(mapping.column(ColumnRole.Occurrence), None)
@@ -300,6 +301,48 @@ class ImportWizardSuite extends munit.FunSuite:
         assertEquals(attrs.columns, Vector(col("occurrence")))
       case other => fail(s"expected a re-import, got $other")
     assertEquals(ImportWizardVM.of(w0, t2).commit, "Re-admit as r4")
+  }
+
+  test("a re-map restores the revision's own inventory mapping and re-maps it (S5.4)") {
+    // r2 keeps trials.csv's occurrence as an attribute, which the suggested
+    // roles would not: the draft is the revision's mapping, not a proposal.
+    val r2        = t2.dataset(DatasetRevision(2)).get
+    val ownTrials =
+      source(SourceRole.Trials, "inputs/trials.csv", trials)
+        .copy(bytes = r2.sources.trials.get.bytes)
+    val w0     = ok(ImportWizard.remap(t2, r2.id, ImportPresets.empty))
+    val (w, _) = run(
+      w0,
+      t2,
+      WizardIntent.SourceRead(own(t2, r2.id, golden)),
+      WizardIntent.SourceRead(ownTrials)
+    )
+    assertEquals(w.problem, None)
+    assertEquals(w.trials.map(_._2.resolve), Some(Right(r2.inventory.get)))
+    // Mapping the occurrence changes the inventory mapping the re-import records
+    // (r2's onsets were undeclared; the re-map declares them).
+    val (after, fx) = run(
+      w,
+      t2,
+      WizardIntent.DeclareTime(Some(TimeUnit.Milliseconds)),
+      WizardIntent
+        .Choose(SourceRole.Trials, col("occurrence"), ColumnChoice.Role(ColumnRole.Occurrence)),
+      WizardIntent.Commit
+    )
+    commands(fx) match
+      case Vector(Command.ImportSources(Some(parent), _, _, _, _, _, _, Some(inventory))) =>
+        assertEquals(parent, r2.id)
+        assertEquals(inventory.column(ColumnRole.Occurrence), Some(col("occurrence")))
+        assertEquals(
+          inventory.attributes.columns,
+          Vector(col("display_kind"), col("image_file"))
+        )
+      case other =>
+        fail(s"expected a re-import with an inventory, got $other (${after.problem})")
+    // Another file than the revision's own trials file is refused.
+    val (refused, _) =
+      run(w0, t2, WizardIntent.SourceRead(source(SourceRole.Trials, "other.csv", trials)))
+    assertEquals(refused.problem, Some(WizardProblem.NotDatasetSource(r2.id, "other.csv")))
   }
 
   test("a preset saved from one file re-applies to a second file") {
@@ -329,7 +372,7 @@ class ImportWizardSuite extends munit.FunSuite:
     )
     assertEquals(w.problem, None)
     commands(fx) match
-      case Vector(Command.ImportSources(_, _, mapping, units, _, _)) =>
+      case Vector(Command.ImportSources(_, _, mapping, units, _, _, _, _)) =>
         assertEquals(mapping.column(ColumnRole.Ordinal), Some(col("FixNum")))
         assertEquals(mapping.column(ColumnRole.Participant), Some(col("Subject")))
         assertEquals(units.time, Some(TimeUnit.Milliseconds))
@@ -416,7 +459,9 @@ class ImportWizardSuite extends munit.FunSuite:
               r3.mapping,
               DeclaredUnits(Some(TimeUnit.Seconds)),
               r3.geometry,
-              DeclaredAttributes.empty
+              DeclaredAttributes.empty,
+              None,
+              r3.inventory
             )
           )
         )
@@ -432,7 +477,7 @@ class ImportWizardSuite extends munit.FunSuite:
       WizardIntent.Commit
     )
     commands(fx) match
-      case Vector(Command.ImportSources(parent, _, _, _, _, _)) =>
+      case Vector(Command.ImportSources(parent, _, _, _, _, _, _, _)) =>
         assertEquals(parent, Some(DatasetRevision(4)))
       case other => fail(s"expected one ImportSources, got $other")
   }
@@ -459,7 +504,12 @@ class ImportWizardSuite extends munit.FunSuite:
       w.problem,
       Some(WizardProblem.NotDatasetSource(DatasetRevision(3), "session2.csv"))
     )
-    assert(ImportWizardVM.of(w, t1).problem.exists(_.contains("session2.csv is not r3's")))
+    assert(
+      ImportWizardVM
+        .of(w, t1)
+        .problem
+        .exists(_.contains("session2.csv is not one of r3's files"))
+    )
   }
 
   test("unknown columns reach the command as declared attributes") {
@@ -475,7 +525,7 @@ class ImportWizardSuite extends munit.FunSuite:
       WizardIntent.Commit
     )
     commands(fx) match
-      case Vector(Command.ImportSources(_, _, _, _, _, attrs)) =>
+      case Vector(Command.ImportSources(_, _, _, _, _, attrs, _, _)) =>
         assertEquals(attrs.columns.map(_.value), Vector("Pupil", "Notes"))
       case other => fail(s"expected one ImportSources, got $other")
     val next = AppModel.run(AppModel.open(t2, None), WizardEffect.appIntents(fx))._1
@@ -485,23 +535,41 @@ class ImportWizardSuite extends munit.FunSuite:
     )
   }
 
-  test("trial metadata issues are warnings: shown in Data issues, never blocking") {
+  test("trial metadata issues block the import (S5.4), naming the column and the file") {
     val noPhase = trials.replace("participant,phase,", "participant,stage_x,")
-    val (w, fx) = run(
+    val (w, _)  = run(
       ImportWizard.newImport(t2, ImportPresets.empty),
       t2,
       WizardIntent.SourceRead(source(SourceRole.Fixations, "fixations.csv", golden)),
       WizardIntent.SourceRead(source(SourceRole.Trials, "trials.csv", noPhase)),
       WizardIntent.DeclareTime(Some(TimeUnit.Milliseconds))
     )
-    assertEquals(w.issues, Vector.empty)
-    assertEquals(w.warnings.size, 1)
-    val vm      = ImportWizardVM.of(w, t2)
-    val warning = vm.issues.find(!_.blocking).get
-    assert(warning.text.startsWith("Warning (trial metadata, mapped in S5.4)"), warning.text)
-    assert(warning.text.contains("phase role"), warning.text)
-    assert(vm.trialsNote.contains("mapped in S5.4"), vm.trialsNote)
-    assertEquals(commands(run(w, t2, WizardIntent.Commit)._2).size, 1)
+    assertEquals(w.trialIssues.size, 1)
+    assertEquals(w.issues, w.trialIssues)
+    val vm    = ImportWizardVM.of(w, t2)
+    val issue = vm.issues.find(_.blocking).get
+    assert(
+      issue.text.startsWith("trials.csv: no column has the required phase role"),
+      issue.text
+    )
+    assert(!vm.trialsNote.contains("S5.4"), vm.trialsNote)
+    val (refused, fx) = run(w, t2, WizardIntent.Commit)
+    assertEquals(commands(fx), Vector.empty)
+    assertEquals(refused.tab, WizardTab.DataIssues)
+    // Mapping the phase clears it, and the commit records the inventory mapping.
+    val (fixed, done) = run(
+      w,
+      t2,
+      WizardIntent
+        .Choose(SourceRole.Trials, col("stage_x"), ColumnChoice.Role(ColumnRole.Phase)),
+      WizardIntent.Commit
+    )
+    assertEquals(fixed.issues, Vector.empty)
+    commands(done) match
+      case Vector(Command.ImportSources(_, _, _, _, _, _, _, Some(inventory))) =>
+        assertEquals(inventory.column(ColumnRole.Phase), Some(col("stage_x")))
+        assertEquals(inventory.column(ColumnRole.Item), Some(col("item")))
+      case other => fail(s"expected one ImportSources with an inventory, got $other")
   }
 
   test("a header-only file is refused on commit, naming the file") {

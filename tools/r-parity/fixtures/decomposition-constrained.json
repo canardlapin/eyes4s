@@ -1,0 +1,177 @@
+{
+  "eyesim_revision": "735d010911c5ec86fae430c8a0010b8107a4431c",
+  "input_sha256": "32aa588c95d8bfa3a524bf7dc5a646727dfbdfdd36368524a08780b58ee8b6e9",
+  "tolerance": {
+    "absolute": 1e-12,
+    "relative": 0
+  },
+  "exact": {
+    "nnls": [
+      {
+        "name": "two-maps-interior",
+        "coefficients": [
+          "708/1399",
+          "9264/18187"
+        ]
+      },
+      {
+        "name": "three-maps-boundary",
+        "coefficients": [
+          "1070/1131",
+          "50/377",
+          "0"
+        ]
+      },
+      {
+        "name": "exact-equal-mixture",
+        "coefficients": [
+          "1/2",
+          "1/2"
+        ]
+      }
+    ],
+    "rank": [
+      {
+        "name": "tied-ranks",
+        "spearman": [
+          0.11123942427483949,
+          0.6698017039585982
+        ],
+        "pearson": [
+          0.21872983418096886,
+          0.5069906187635477
+        ]
+      },
+      {
+        "name": "distinct-ranks",
+        "spearman": [
+          -0.7777137710478189,
+          -0.6286185570937122
+        ],
+        "pearson": [
+          -0.9380933284900151,
+          -0.833813359769239
+        ]
+      }
+    ]
+  },
+  "reference": {
+    "nnls": [
+      {
+        "name": "two-maps-interior",
+        "terms": [
+          "a",
+          "b"
+        ],
+        "coefficients": [
+          0.506075768406005,
+          0.509374828173971
+        ],
+        "coefficients_intercept_true": [
+          0.506075768406005,
+          0.509374828173971
+        ]
+      },
+      {
+        "name": "three-maps-boundary",
+        "terms": [
+          "a",
+          "b",
+          "c"
+        ],
+        "coefficients": [
+          0.94606542882405,
+          0.13262599469496,
+          0
+        ],
+        "coefficients_intercept_true": [
+          0.94606542882405,
+          0.13262599469496,
+          0
+        ]
+      },
+      {
+        "name": "exact-equal-mixture",
+        "terms": [
+          "a",
+          "b"
+        ],
+        "coefficients": [
+          0.5,
+          0.5
+        ],
+        "coefficients_intercept_true": [
+          0.5,
+          0.5
+        ]
+      }
+    ],
+    "rank": [
+      {
+        "name": "tied-ranks",
+        "beta_baseline": 0.111239424274839,
+        "beta_source": 0.669801703958598,
+        "pearson_baseline": 0.218729834180969,
+        "pearson_source": 0.506990618763548
+      },
+      {
+        "name": "distinct-ranks",
+        "beta_baseline": -0.777713771047819,
+        "beta_source": -0.628618557093712,
+        "pearson_baseline": -0.938093328490015,
+        "pearson_source": -0.833813359769239
+      }
+    ],
+    "R": "4.5.1",
+    "packages": {
+      "KernSmooth": "2.23.26",
+      "MASS": "7.3.65",
+      "Matrix": "1.7.3",
+      "R6": "2.6.1",
+      "RColorBrewer": "1.1.3",
+      "Rcpp": "1.1.2",
+      "S7": "0.2.2",
+      "assertthat": "0.2.1",
+      "backports": "1.5.1",
+      "base": "4.5.1",
+      "broom": "1.0.13",
+      "cli": "3.6.6",
+      "compiler": "4.5.1",
+      "datasets": "4.5.1",
+      "dplyr": "1.2.1",
+      "eyesim": "0.1.0.9000",
+      "farver": "2.1.2",
+      "generics": "0.1.4",
+      "ggplot2": "4.0.3",
+      "glue": "1.8.1",
+      "grDevices": "4.5.1",
+      "graphics": "4.5.1",
+      "grid": "4.5.1",
+      "gtable": "0.3.6",
+      "jsonlite": "2.0.0",
+      "ks": "1.15.1",
+      "lattice": "0.22.7",
+      "lifecycle": "1.0.5",
+      "magrittr": "2.0.5",
+      "mclust": "6.1.2",
+      "methods": "4.5.1",
+      "mvtnorm": "1.3.6",
+      "nnls": "1.6",
+      "pillar": "1.11.1",
+      "pkgconfig": "2.0.3",
+      "ppcor": "1.1",
+      "pracma": "2.4.6",
+      "proxy": "0.4.29",
+      "purrr": "1.2.2",
+      "rlang": "1.3.0",
+      "scales": "1.4.0",
+      "stats": "4.5.1",
+      "tibble": "3.3.1",
+      "tidyr": "1.3.2",
+      "tidyselect": "1.2.1",
+      "tools": "4.5.1",
+      "utils": "4.5.1",
+      "vctrs": "0.7.3"
+    }
+  }
+}

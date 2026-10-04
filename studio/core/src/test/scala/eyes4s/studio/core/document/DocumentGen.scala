@@ -17,6 +17,7 @@
 package eyes4s.studio.core.document
 
 import eyes4s.codec.{ByteDigest, CanonicalDigest}
+import eyes4s.plan.AdmissionDecision as CoreAdmissionDecision
 import eyes4s.studio.core.backend.*
 import org.scalacheck.Gen
 
@@ -104,6 +105,56 @@ object DocumentGen:
       )
     )
 
+  /** A trial inventory's mapping (S5.4): the required identity, some optional
+    * roles, and attribute columns beside them.
+    */
+  val inventoryMapping: Gen[InventoryMapping] =
+    for
+      optional <- Gen.someOf(
+        InventoryMapping.offered.filterNot(InventoryMapping.required.contains)
+      )
+      roles = InventoryMapping.required ++ optional
+      shuffled <- Gen.pick(roles.size, roles)
+      bindings = shuffled.toVector.map(r =>
+        ColumnBinding(r, right(ColumnName.of(s"inv_${r.label}")))
+      )
+      n     <- Gen.choose(0, 2)
+      kinds <- Gen.listOfN(n, Gen.oneOf(AttributeKindChoice.values.toSeq))
+    yield right(
+      InventoryMapping.of(
+        bindings,
+        right(
+          DeclaredAttributes.of(
+            kinds.zipWithIndex.toVector
+              .map((k, i) => AttributeBinding(right(ColumnName.of(s"inv_attr_$i")), k))
+          )
+        )
+      )
+    )
+
+  /** An inventory mapping for `s`'s trials source, mostly; never without one. */
+  def inventoryFor(s: Sources): Gen[Option[InventoryMapping]] =
+    if s.trials.isEmpty then Gen.const(None)
+    else Gen.frequency(9 -> inventoryMapping.map(Some(_)), 1 -> Gen.const(None))
+
+  /** The identity-only mapping of an inventory, without an attribute. */
+  val identityInventory: InventoryMapping =
+    right(
+      InventoryMapping.of(
+        InventoryMapping.required.map(r =>
+          ColumnBinding(r, right(ColumnName.of(s"inv_${r.label}")))
+        ),
+        DeclaredAttributes.empty
+      )
+    )
+
+  /** A stored revision's inventory mapping: the identity-only one when it
+    * has a trials source. It draws nothing, so the documents a seed yields
+    * are those it yielded before S5.4 recorded the mapping.
+    */
+  def storedInventory(s: Sources): Option[InventoryMapping] =
+    s.trials.map(_ => identityInventory)
+
   val units: Gen[DeclaredUnits] =
     Gen.option(Gen.oneOf(TimeUnit.values.toSeq)).map(DeclaredUnits(_))
 
@@ -145,7 +196,11 @@ object DocumentGen:
     Gen.const(AdmissionDecision.Pending),
     canonical[DatasetRevisionSpec].map(AdmissionDecision.Verifying(_)),
     Gen
-      .zip(binding[AdmissionLedgerArtifact], binding[TrialInventoryArtifact])
+      .zip(
+        Gen.option(Gen.oneOf(CoreAdmissionDecision.values.toSeq)),
+        binding[AdmissionLedgerArtifact],
+        binding[TrialInventoryArtifact]
+      )
       .map(AdmissionDecision.Admitted.apply)
   )
 
@@ -168,7 +223,8 @@ object DocumentGen:
       g,
       a,
       d,
-      at
+      at,
+      storedInventory(s)
     )
 
   // --- Analyses -------------------------------------------------------------

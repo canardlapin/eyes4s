@@ -16,6 +16,7 @@
 
 package eyes4s.studio.viz.trial
 
+import eyes4s.studio.app.maps.{GridPoint, Isolines, MapGrid, MapId, MapOpacity, MapRaster}
 import eyes4s.studio.app.text.{TrialText, TrialTextId}
 import eyes4s.studio.app.tokens.{
   FontFace,
@@ -31,6 +32,7 @@ import eyes4s.studio.core.assets.{AssetFile, AssetRef, DisplayKind, DisplayState
 import eyes4s.studio.core.backend.TrialKey
 import eyes4s.studio.core.document.ScreenSize
 import eyes4s.studio.core.selection.{FixationIndex, StudioRef}
+import eyes4s.plan.{MapPlacement, OffWindowPolicy}
 import eyes4s.studio.viz.plot.{
   DataPanel,
   DataPoint,
@@ -60,8 +62,10 @@ import intaglio.{
   PatternRecipe,
   Point,
   PointShape,
+  RasterDimensions,
   RasterImage,
   RasterInterpolation,
+  Rgba32,
   Rgba,
   Scene,
   Size,
@@ -100,6 +104,12 @@ enum TrialSceneError derives CanEqual:
   /** Intaglio refused a value while building `part` of the scene. */
   case Graphics(trial: TrialKey, part: String, error: GraphicsError)
 
+  /** The map layer's raster is of `raster`, not of its grid's map `grid`. */
+  case MapMismatch(trial: TrialKey, raster: MapId, grid: MapId)
+
+  /** The map layer is of `map`, another trial's. */
+  case MapOfAnotherTrial(trial: TrialKey, map: MapId)
+
   def message: String = this match
     case NonFinitePosition(t, i, x, y) =>
       s"Trial ${t.label}: fixation $i is at ($x, $y), which is not a finite screen position."
@@ -110,28 +120,31 @@ enum TrialSceneError derives CanEqual:
       s"The trial extent [$l, $r] × [$t, $b] (screen px) has no area or is not finite."
     case Plot(t, e)           => s"Trial ${t.label}: ${e.message}"
     case Graphics(t, part, e) => s"Trial ${t.label}: Intaglio refused the $part: ${e.message}"
+    case MapMismatch(t, raster, grid) =>
+      s"Trial ${t.label}: the map layer's raster is of ${raster.label}, its grid of ${grid.label}."
+    case MapOfAnotherTrial(t, map) =>
+      s"Trial ${t.label}: the map layer is ${map.label}, another trial's."
 
 // ---------------------------------------------------------------------------
 // Inputs
 // ---------------------------------------------------------------------------
 
-/** Whether a fixation lies in the analysis window (the image frame). The
-  * data source says so; the trial view never decides it.
-  */
-enum WindowSide derives CanEqual:
-  case Inside, Outside
-
 /** One fixation as the trial view draws it: its index in the trial, its
   * position in screen pixels (origin top-left, y down), its duration and
-  * whether it lies in the analysis window.
+  * its already-decided core map placement. The trial view never derives this
+  * classification from screen coordinates: `DroppedInitial` takes precedence
+  * over `OutsideScreen`, and an outside-window fixation retains the plan's
+  * Exclude or FailTrial policy.
   */
 final case class TrialFixation private (
     index: FixationIndex,
     screenX: Double,
     screenY: Double,
     durationMs: Int,
-    window: WindowSide
-) derives CanEqual
+    placement: MapPlacement
+) derives CanEqual:
+  /** Whether core includes this fixation in the trial map. */
+  def contributesToMap: Boolean = placement == MapPlacement.InMap
 
 object TrialFixation:
   def of(
@@ -140,13 +153,13 @@ object TrialFixation:
       screenX: Double,
       screenY: Double,
       durationMs: Int,
-      window: WindowSide
+      placement: MapPlacement
   ): Either[TrialSceneError, TrialFixation] =
     if !screenX.isFinite || !screenY.isFinite then
       Left(TrialSceneError.NonFinitePosition(trial, index.value, screenX, screenY))
     else if durationMs <= 0 then
       Left(TrialSceneError.DurationNotPositive(trial, index.value, durationMs))
-    else Right(new TrialFixation(index, screenX, screenY, durationMs, window))
+    else Right(new TrialFixation(index, screenX, screenY, durationMs, placement))
 
 /** The role a trial plays in a comparison (DESIGN_SPEC section 5). */
 enum TrialRole derives CanEqual:
@@ -231,6 +244,36 @@ final case class TrialSceneOptions(
     extent: TrialExtent = TrialExtent.Gaze
 ) derives CanEqual
 
+/** A result map drawn over the trial (ticket S4.3b): the run's grid, its
+  * raster from the map raster cache (S4.4), and the one global opacity it
+  * is drawn with. The raster covers the image frame cell for cell; the
+  * grid's backend-supplied isoline levels are contoured over it, cased.
+  */
+final case class TrialMap(
+    grid: MapGrid,
+    raster: MapRaster,
+    opacity: MapOpacity = MapOpacity.Default,
+    covers: MapCoverage = MapCoverage.ImageFrame
+) derives CanEqual
+
+/** Which region of the screen a map's grid covers: the image frame (a run's
+  * map over the analysis window that is the image), or a stated region of
+  * the screen in screen pixels (a backend preview over its study's window,
+  * S6.2), which is drawn there and never stretched over the image.
+  */
+enum MapCoverage derives CanEqual:
+  case ImageFrame
+  case Region(region: ScreenRect)
+
+/** The image a retrieval trial's participant was remembering, which the
+  * trial did not display: absent when there is none, hidden by default, or
+  * shown as an underlay with a disclosure that it was not displayed.
+  */
+enum RememberedImage derives CanEqual:
+  case Absent
+  case Hidden(asset: AssetRef)
+  case Shown(asset: AssetRef)
+
 /** Everything a trial scene is built from.
   *
   * `rasters` holds the decoded images the host has for stored assets; an
@@ -245,7 +288,9 @@ final case class TrialSceneInput(
     theme: Theme,
     stage: StageVariant,
     rasters: Map[AssetRef, StimulusRaster] = Map.empty,
-    options: TrialSceneOptions = TrialSceneOptions()
+    options: TrialSceneOptions = TrialSceneOptions(),
+    map: Option[TrialMap] = None,
+    remembered: RememberedImage = RememberedImage.Absent
 )
 
 // ---------------------------------------------------------------------------
@@ -267,7 +312,7 @@ final case class TrialMark(
     at: DataPoint,
     radiusPx: Double,
     reachPx: Double,
-    window: WindowSide,
+    placement: MapPlacement,
     order: Int,
     name: GraphicsName
 ) derives CanEqual
@@ -296,7 +341,9 @@ final case class TrialScene private (
     extent: ScreenRect,
     frameArt: FrameArt,
     caption: String,
-    marks: Vector[TrialMark]
+    marks: Vector[TrialMark],
+    map: Option[MapId],
+    disclosure: Option[String]
 ):
   private lazy val byName: Map[GraphicsName, TrialMark] = marks.map(m => m.name -> m).toMap
 
@@ -321,6 +368,16 @@ object TrialScene:
   val OrderName: String    = "trial-order"
   val MarksName: String    = "trial-fixations"
   val CaptionName: String  = "trial-caption"
+  val UnderlayName: String = "trial-underlay"
+  val MapName: String      = "trial-map"
+  val IsolinesName: String = "trial-isolines"
+  val RememberName: String = "trial-remembered"
+
+  /** A map isoline: its ink, and the halo casing under it, 2 units of ink
+    * over 4 of casing (bead S4.3b, bd-01M3DPFM4ZG9GV0RTYWWA1M2P9).
+    */
+  val IsolinePx: Double       = 2.0
+  val IsolineCasingPx: Double = 4.0
 
   /** The data panel's viewport group: Intaglio resolves its frame by this name. */
   val PanelName: String = "trial-panel"
@@ -367,9 +424,12 @@ object TrialScene:
   private def pt(px: Double): Double = px * PointsPerPixel
 
   // Dash rhythms (device pixels; see the report on Intaglio's dash units).
-  private val OrderDash   = DashPattern.unsafe(6.0, 5.0)
-  private val OutsideDash = DashPattern.unsafe(3.0, 2.5)
-  private val WindowDash  = DashPattern.unsafe(8.0, 6.0)
+  private val OrderDash            = DashPattern.unsafe(6.0, 5.0)
+  private val DroppedInitialDash   = DashPattern.unsafe(1.5, 3.0)
+  private val OutsideScreenDash    = DashPattern.unsafe(7.0, 2.0)
+  private val OutsideExcludeDash   = DashPattern.unsafe(3.0, 2.5)
+  private val OutsideFailTrialDash = DashPattern.unsafe(5.0, 1.5)
+  private val WindowDash           = DashPattern.unsafe(8.0, 6.0)
 
   /** The radius of a mark for a fixation of `durationMs`, in logical pixels. */
   def radiusPx(durationMs: Int): Double = RadiusPerRootMs * math.sqrt(durationMs.toDouble)
@@ -402,6 +462,15 @@ object TrialScene:
         input.fixations
           .foldLeft(frame)((r, f) => r.including(f.screenX, f.screenY))
           .grown(GazeMarginPx)
+
+  /** One extent for trials shown side by side (S8.2's query and reference
+    * panels): the smallest region covering each one's [[TrialExtent.Gaze]]
+    * extent, so both are drawn at one scale. None for no inputs.
+    */
+  def sharedExtent(inputs: Vector[TrialSceneInput]): Option[ScreenRect] =
+    inputs
+      .map(i => extentOf(i.copy(options = i.options.copy(extent = TrialExtent.Gaze))))
+      .reduceOption((a, b) => a.including(b.left, b.top).including(b.right, b.bottom))
 
   /** What the frame shows: a stored image only when it is loaded, a missing
     * asset hatched, never a blank in place of an image.
@@ -459,6 +528,7 @@ object TrialScene:
     val trial = input.display.trial
     for
       _     <- duplicates(trial, input.fixations)
+      _     <- input.map.fold(Right(()))(m => mapOf(trial, m))
       id    <- sceneId(input).left.map(TrialSceneError.Plot(trial, _))
       built <- Builder(input).build.left.map { (part, e) =>
         TrialSceneError.Graphics(trial, part, e)
@@ -466,7 +536,31 @@ object TrialScene:
       (grobs, viewport, extent, art, caption, marks) = built
       panel <- DataPanel(id, viewport).left.map(TrialSceneError.Plot(trial, _))
       plot  <- PlotScene(id, Scene(grobs), panel).left.map(TrialSceneError.Plot(trial, _))
-    yield new TrialScene(plot, extent, art, caption, marks)
+    yield new TrialScene(
+      plot,
+      extent,
+      art,
+      caption,
+      marks,
+      input.map.map(_.grid.map),
+      disclosureOf(input)
+    )
+
+  /** What the trial view says about the remembered image: that it was not
+    * displayed, whenever it is shown as an underlay, and that it is not
+    * shown otherwise.
+    */
+  def disclosureOf(input: TrialSceneInput): Option[String] = input.remembered match
+    case RememberedImage.Absent    => None
+    case RememberedImage.Hidden(_) => Some(TrialText(TrialTextId.RememberedHidden))
+    case RememberedImage.Shown(_)  => Some(TrialText(TrialTextId.RememberedShown))
+
+  private def mapOf(trial: TrialKey, m: TrialMap): Either[TrialSceneError, Unit] =
+    if m.raster.key.map != m.grid.map then
+      Left(TrialSceneError.MapMismatch(trial, m.raster.key.map, m.grid.map))
+    else if m.grid.map.trial != trial then
+      Left(TrialSceneError.MapOfAnotherTrial(trial, m.grid.map))
+    else Right(())
 
   private def duplicates(
       trial: TrialKey,
@@ -579,6 +673,106 @@ object TrialScene:
             yield Vector(img)
           )
         case _ => Right(Vector.empty) // frameArtOf never pictures an unloaded asset
+
+    // A stored image drawn across the image frame, under `label`.
+    private def frameImage(image: RasterImage, label: String, smooth: Boolean) =
+      for
+        centre <- Point.native(centreX, centreY)
+        w      <- ExtentExpr.native(frameW)
+        h      <- ExtentExpr.native(frameH)
+        n      <- name(label)
+        img    <- Grob.image(
+          image,
+          centre,
+          Size.fromExtents(w, h),
+          interpolation =
+            if smooth then RasterInterpolation.Smooth else RasterInterpolation.Nearest,
+          name = Some(n)
+        )
+      yield img
+
+    // The remembered image, under the map, when it is shown and loaded.
+    private def underlay: R[Vector[Grob]] =
+      input.remembered match
+        case RememberedImage.Shown(asset) =>
+          input.rasters.get(asset) match
+            case Some(StimulusRaster.Loaded(image)) =>
+              part("remembered-image underlay")(frameImage(image, UnderlayName, true))
+                .map(Vector(_))
+            case _ => Right(Vector.empty)
+        case _ => Right(Vector.empty)
+
+    // The screen region a map covers: (left, top, width, height).
+    private def coverage(m: TrialMap): (Double, Double, Double, Double) = m.covers match
+      case MapCoverage.ImageFrame => (frameLeft, frameTop, frameW, frameH)
+      case MapCoverage.Region(r)  => (r.left, r.top, r.width, r.height)
+
+    // The map's raster at the global opacity, cell for cell over the region
+    // it covers, and its isolines, cased.
+    private def mapLayer: R[Vector[Grob]] =
+      input.map.fold[R[Vector[Grob]]](Right(Vector.empty)) { m =>
+        val raster            = m.raster
+        val drawn             = raster.drawn(m.opacity)
+        val (left, top, w, h) = coverage(m)
+        for
+          dims <- part("map raster")(RasterDimensions(raster.width, raster.height))
+          image = RasterImage.tabulate(dims) { (x, y) =>
+            val p = drawn(y * raster.width + x)
+            Rgba32.unsafe((p >> 16) & 0xff, (p >> 8) & 0xff, p & 0xff, (p >>> 24) & 0xff)
+          }
+          layer <- part("map raster")(
+            for
+              centre <- Point.native(left + w / 2.0, top + h / 2.0)
+              we     <- ExtentExpr.native(w)
+              he     <- ExtentExpr.native(h)
+              n      <- name(MapName)
+              img    <- Grob.image(
+                image,
+                centre,
+                Size.fromExtents(we, he),
+                interpolation = RasterInterpolation.Nearest,
+                name = Some(n)
+              )
+            yield img
+          )
+          lines <- isolines(m.grid, left, top, w, h)
+        yield layer +: lines
+      }
+
+    private def isolines(
+        grid: MapGrid,
+        left: Double,
+        top: Double,
+        w: Double,
+        h: Double
+    ): R[Vector[Grob]] =
+      val cellW            = w / grid.columns
+      val cellH            = h / grid.rows
+      def at(p: GridPoint) = Point.native(left + p.x * cellW, top + p.y * cellH)
+      val segments         = Isolines.of(grid).flatMap(_.segments)
+      if segments.isEmpty then Right(Vector.empty)
+      else
+        part("isolines")(
+          for
+            ink    <- stroke(palette(PaletteToken.IsolineInk), IsolinePx)
+            width  <- StrokeWidth.points(pt(IsolineCasingPx))
+            casing <- StrokeCasing.checked(
+              palette(PaletteToken.IsolineCase),
+              CasingWidth.Absolute(width)
+            )
+            pairs <- segments.foldLeft[Either[GraphicsError, Vector[(Point, Point)]]](
+              Right(Vector.empty)
+            ) { case (acc, (a, b)) =>
+              for
+                ps <- acc
+                pa <- at(a)
+                pb <- at(b)
+              yield ps :+ (pa -> pb)
+            }
+            n     <- name(IsolinesName)
+            lines <- Grob.segments(pairs, gp = ink.withCasing(casing), name = Some(n))
+          yield Vector(lines)
+        )
 
     private def screenFill: R[Grob] =
       part("blank screen")(fill(palette(PaletteToken.Screen)).flatMap(frameRect(_, FrameName)))
@@ -696,27 +890,35 @@ object TrialScene:
       case MarkStyle.Role(TrialRole.Matched) => PointShape.Diamond
       case _                                 => PointShape.Circle
 
-    // A mark's paint (DESIGN_SPEC sections 5, 12, 14): filled marks carry a
-    // halo stroke; a control is a hollow outline, cased by the halo; a mark
-    // outside the analysis window is a dashed halo outline, unfilled.
+    // A mark's paint (DESIGN_SPEC sections 5, 9, 12, 14): each core placement
+    // has its own visible treatment. Only InMap is filled; the two window
+    // policies remain visible even though neither adds an out-of-window point.
     private def markParams(f: TrialFixation): Either[GraphicsError, GraphicParams] =
       val halo = staged(StageToken.Halo)
-      (f.window, input.marks) match
-        case (WindowSide.Outside, _) =>
-          stroke(halo, HaloPx, LineType.Custom(OutsideDash))
-        case (WindowSide.Inside, MarkStyle.Role(TrialRole.Control)) =>
-          stroke(markColour(TrialRole.Control), HaloPx)
-        case (WindowSide.Inside, MarkStyle.Role(role)) =>
-          stroke(halo, HaloPx).map(_.withSolidFill(Some(markColour(role))))
-        case (WindowSide.Inside, MarkStyle.Neutral) =>
-          stroke(halo, HaloPx).map(_.withSolidFill(Some(themed(ThemedToken.NeutralMark))))
+      def included(line: LineType): Either[GraphicsError, GraphicParams] = input.marks match
+        case MarkStyle.Role(TrialRole.Control) =>
+          stroke(markColour(TrialRole.Control), HaloPx, line)
+        case MarkStyle.Role(role) =>
+          stroke(halo, HaloPx, line).map(_.withSolidFill(Some(markColour(role))))
+        case MarkStyle.Neutral =>
+          stroke(halo, HaloPx, line).map(_.withSolidFill(Some(themed(ThemedToken.NeutralMark))))
+      f.placement match
+        case MapPlacement.DroppedInitial =>
+          stroke(halo, HaloPx, LineType.Custom(DroppedInitialDash))
+        case MapPlacement.OutsideScreen =>
+          stroke(halo, HaloPx, LineType.Custom(OutsideScreenDash))
+        case MapPlacement.OutsideWindow(OffWindowPolicy.Exclude) =>
+          stroke(halo, HaloPx, LineType.Custom(OutsideExcludeDash))
+        case MapPlacement.OutsideWindow(OffWindowPolicy.FailTrial) =>
+          stroke(halo, HaloPx, LineType.Custom(OutsideFailTrialDash))
+        case MapPlacement.InMap => included(LineType.Solid)
 
     private def sizeOf(f: TrialFixation): Either[GraphicsError, ExtentExpr] =
       ExtentExpr.points(pt(radiusPx(f.durationMs)))
 
-    // A hollow control mark inside the analysis window is cased by the halo.
+    // A hollow control mark in the map is cased by the halo.
     private def cased(f: TrialFixation): Boolean =
-      f.window == WindowSide.Inside && input.marks == MarkStyle.Role(TrialRole.Control)
+      f.placement == MapPlacement.InMap && input.marks == MarkStyle.Role(TrialRole.Control)
 
     // A cased mark is a closed ring with an Intaglio StrokeCasing: Intaglio
     // paints casings on linear outlines only, not on point marks. The casing
@@ -786,7 +988,7 @@ object TrialScene:
                   DataPoint(f.screenX, f.screenY),
                   radiusPx(f.durationMs),
                   reach(f, shape),
-                  f.window,
+                  f.placement,
                   i,
                   n
                 )
@@ -848,6 +1050,21 @@ object TrialScene:
                 )
                 .map(Vector(_))
             else Right(Vector.empty)
+          remembered <- disclosureOf(input).fold[Either[GraphicsError, Vector[Grob]]](
+            Right(Vector.empty)
+          ) { said =>
+            name(RememberName).flatMap(n =>
+              Grob
+                .text(
+                  said,
+                  Point(right - points(8.0), line2),
+                  Anchor(HJust.Right, VJust.Top),
+                  gp = gp,
+                  name = Some(n)
+                )
+                .map(Vector(_))
+            )
+          }
           note <-
             if input.options.order && input.fixations.size >= 2 then
               Grob
@@ -859,7 +1076,7 @@ object TrialScene:
                 )
                 .map(Vector(_))
             else Right(Vector.empty)
-        yield (main +: area) ++ note
+        yield (main +: area) ++ note ++ remembered
       )
 
     def build: R[(Vector[Grob], Viewport, ScreenRect, FrameArt, String, Vector[TrialMark])] =
@@ -894,6 +1111,8 @@ object TrialScene:
         )
         panel       <- part("data panel")(name(PanelName))
         artGrobs    <- frameArt(art)
+        under       <- underlay
+        mapGrobs    <- mapLayer
         windowGrobs <- window(art)
         orderGrobs  <- order
         marked      <- marks
@@ -903,7 +1122,7 @@ object TrialScene:
         Vector(
           stage,
           Grob.group(
-            artGrobs ++ windowGrobs ++ orderGrobs ++ markGrobs,
+            artGrobs ++ under ++ mapGrobs ++ windowGrobs ++ orderGrobs ++ markGrobs,
             viewport = Some(viewport),
             name = Some(panel)
           )

@@ -18,6 +18,7 @@ package eyes4s.studio.core.fixture
 
 import cats.syntax.all.*
 import eyes4s.codec.ByteDigest
+import eyes4s.plan.AdmissionDecision as CoreAdmissionDecision
 import eyes4s.studio.core.backend.{
   AnalysisRevision,
   DatasetRevision,
@@ -95,6 +96,32 @@ object StoryMoments:
       .traverse((role, name) => ColumnName.of(name).map(ColumnBinding(role, _)))
       .flatMap(ColumnMapping.of)
 
+  /** trials.csv's columns (S5.4): the trial identity, the occurrence when the
+    * fixation key reads it (r3), the item and response, and the display
+    * columns as text attributes.
+    */
+  def inventory(occurrence: Boolean): Either[DocumentError, InventoryMapping] =
+    val roles = Vector(
+      ColumnRole.Participant -> "participant",
+      ColumnRole.Phase       -> "phase",
+      ColumnRole.Trial       -> "trial",
+      ColumnRole.Item        -> "item",
+      ColumnRole.Response    -> "response"
+    ) ++ Option.when(occurrence)(ColumnRole.Occurrence -> "occurrence")
+    val attributes = Option.unless(occurrence)("occurrence").toVector ++
+      Vector("display_kind", "image_file")
+    for
+      bindings <- roles.traverse((role, name) =>
+        ColumnName.of(name).map(ColumnBinding(role, _))
+      )
+      declared <- attributes
+        .traverse(name =>
+          ColumnName.of(name).map(AttributeBinding(_, AttributeKindChoice.Text))
+        )
+        .flatMap(DeclaredAttributes.of)
+      mapping <- InventoryMapping.of(bindings, declared)
+    yield mapping
+
   /** Screen 1920×1080; image 1024×768 centred; declared 35 px/°. */
   val geometry: Either[DocumentError, Geometry] =
     for
@@ -104,12 +131,19 @@ object StoryMoments:
       g      <- Geometry.of(screen, image, ppd)
     yield g
 
+  /** An admitted revision was admitted reviewing its exclusions: the story's
+    * ledger quarantines trials, which `RequireComplete` refuses.
+    */
   private val admitted: AdmissionDecision =
-    AdmissionDecision.Admitted(CoreBinding.unbound, CoreBinding.unbound)
+    AdmissionDecision.Admitted(
+      Some(CoreAdmissionDecision.ReviewExclusions),
+      CoreBinding.unbound,
+      CoreBinding.unbound
+    )
 
   /** r2: onset units undeclared, occurrence unmapped. */
   private def datasetR2(sources: Sources): Either[DocumentError, DatasetRevisionSpec] =
-    (mapping(occurrence = false), geometry).mapN((m, g) =>
+    (mapping(occurrence = false), geometry, inventory(occurrence = false)).mapN((m, g, i) =>
       DatasetRevisionSpec(
         r2,
         None,
@@ -118,7 +152,8 @@ object StoryMoments:
         DeclaredUnits(None),
         g,
         AdmissionChoice.default,
-        admitted
+        admitted,
+        inventory = Some(i)
       )
     )
 
@@ -127,7 +162,7 @@ object StoryMoments:
       sources: Sources,
       decision: AdmissionDecision
   ): Either[DocumentError, DatasetRevisionSpec] =
-    (mapping(occurrence = true), geometry).mapN((m, g) =>
+    (mapping(occurrence = true), geometry, inventory(occurrence = true)).mapN((m, g, i) =>
       DatasetRevisionSpec(
         r3,
         Some(r2),
@@ -136,7 +171,8 @@ object StoryMoments:
         DeclaredUnits(Some(TimeUnit.Milliseconds)),
         g,
         AdmissionChoice.default,
-        decision
+        decision,
+        inventory = Some(i)
       )
     )
 

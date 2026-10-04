@@ -247,6 +247,59 @@ object FormLaws extends Laws:
       }
     )
 
+  /** Laws for a stored form (`eyes4s.form-view@1`, `eyes4s.form-values@1`):
+    * a host that saves a form's view and its values and reads them back has
+    * the same form.
+    *
+    *  - the view and the values decode to what was encoded, and re-encode to
+    *    the same document;
+    *  - every field of the restored view checks each stored value, and each
+    *    probe, as the original field does: the same acceptance and the same
+    *    refusal, naming the same field.
+    *
+    * `forms` pairs a view with values for it; `probes` are raw values to
+    * check besides the stored ones (malformed text, out-of-range numbers).
+    */
+  def stored(forms: Gen[(FormView, FormValues)], probes: Vector[RawValue]): RuleSet =
+    import eyes4s.codec.FormCodecs
+    def again[A](codec: eyes4s.codec.VersionedCodec[A], a: A) =
+      codec.encode(a).flatMap(json => codec.decode(json).map(json -> _))
+    new SimpleRuleSet(
+      "storedForm",
+      "the view and its values read back as written" -> forAll(forms) { (view, values) =>
+        val v = again(FormCodecs.view, view)
+        val x = again(FormCodecs.values, values)
+        Prop(v.exists(_._2 == view) && x.exists(_._2 == values)) :| s"$v; $x" &&
+        Prop(
+          v.flatMap((json, read) => FormCodecs.view.encode(read).map(_ == json)) == Right(
+            true
+          ) &&
+            x.flatMap((json, read) => FormCodecs.values.encode(read).map(_ == json)) == Right(
+              true
+            )
+        ) :| "re-encoding differs"
+      },
+      "the restored view checks every value as the original does" -> forAll(forms) {
+        (view, values) =>
+          val restored = again(FormCodecs.view, view).map(_._2)
+          val problems = restored.fold(
+            e => Vector(e.message),
+            read =>
+              view.fields.flatMap { f =>
+                val raws = values.get(f.id) +: probes
+                read.field(f.id) match
+                  case None    => Vector(s"${f.id}: missing after reading")
+                  case Some(r) =>
+                    raws.collect {
+                      case raw if r.check(raw) != f.check(raw) =>
+                        s"${f.id}: $raw checks as ${r.check(raw)}, not ${f.check(raw)}"
+                    }
+              }
+          )
+          Prop(problems.isEmpty) :| problems.mkString("; ")
+      }
+    )
+
   /** A study form rebuilds the plan it was filled from: the plan's values
     * parse, and the recipe builds a plan with the same description.
     */

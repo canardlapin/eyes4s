@@ -143,7 +143,16 @@ object Provenance:
             .orElse(Some(Place.At(StudioRef.Trial(trial))))
         case StudioRef.SourceRecord(_, _, _, _) | StudioRef.Trial(_) =>
           ref.parent.map(Place.At(_))
-        case StudioRef.Participant(_) | StudioRef.FigurePanel(_, _) => None
+        case StudioRef.DesignTally(revision, _) => Some(Place.Revision(revision))
+        // An outcome's tally lies under the requested queries' tally.
+        case StudioRef.QueryTally(_, _) => ref.parent.map(Place.At(_))
+        // A cause under the quarantined count that holds it.
+        case StudioRef.InventoryCount(_, _) => ref.parent.map(Place.At(_))
+        // A participant's phase lies under the participant.
+        case StudioRef.TrialGroup(_, _) => ref.parent.map(Place.At(_))
+        case StudioRef.Participant(_) | StudioRef.FigurePanel(_, _) |
+            StudioRef.WindowTally(_, _) =>
+          None
     case _ => None
 
   /** The trail that lands on `target` from `trail`: the longest prefix of

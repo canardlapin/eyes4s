@@ -21,8 +21,9 @@ import java.nio.file.{Path, Paths, StandardOpenOption}
 
 /** One JavaFX test run per machine at a time.
   *
-  * The FX suites show real windows, so parallel runs from several worktrees
-  * fight over the screen and each costs a test JVM. The first FX test of a
+  * Each run costs a large test JVM, and a visible run
+  * (`-Deyes4s.studio.fx.visible=true`) fights other runs for the screen, so
+  * parallel runs from several worktrees are serialised. The first FX test of a
   * forked test JVM takes an exclusive lock on [[file]] and holds it until the
   * JVM exits, which releases it even when the run is killed. A run that finds
   * the lock held says so on stderr and waits, up to [[WaitMinutes]].

@@ -144,10 +144,15 @@ final class RecordingResultCodec[P](
 
 /** A decoded recording analysis whose detector parameters stay abstract. */
 trait LoadedRecordingResult:
+  /** The detector parameter type of the decoded method, fixed by its registration. */
   type Parameters
   val analysis: RecordingAnalysis[Parameters]
   def encode: Either[CodecError, Json]
 
+/** One recording result codec as a registry sees it: the method it decodes, its envelope
+  * schema and a decoder. Sealed: only `RecordingResultCodec.registration` builds one, so a
+  * registration always agrees with the codec that encodes the same archives.
+  */
 sealed trait RecordingResultRegistration:
   val methodId: DefinitionId
   val schema: DefinitionId
@@ -341,12 +346,20 @@ final class TemporalResultCodec[K, U <: Unit2D, P, S, D](
 
 /** A decoded temporal result whose parameter, score and difference types stay abstract. */
 trait LoadedTemporalResult[K, U <: Unit2D]:
+  /** The base study's method parameter type. */
   type Parameters
+
+  /** The pair score type the base study's method produces. */
   type Score
+
+  /** The type of a difference between two scores of that method. */
   type Difference
   val result: TemporalStudyResult[K, U, Parameters, Score, Difference]
   def encode: Either[CodecError, Json]
 
+/** One temporal result codec as a registry sees it, keyed by its base study's method.
+  * Sealed: only the temporal result codec's `registration` builds one.
+  */
 sealed trait TemporalResultRegistration[K, U <: Unit2D]:
   def id: DefinitionId
   def schema: DefinitionId

@@ -288,7 +288,7 @@ class AdmissionPolicySuite extends munit.FunSuite:
     assertEquals(ledger.quarantined.size, 1)
   }
 
-  test("records of one trial naming two occurrences quarantine it, naming both") {
+  test("a parsed key on an otherwise invalid row still joins its occurrence conflict") {
     val keys = get(
       FixationKeyReader.trial("participant", "phase", "trial", "item", Some("occurrence"))
     )
@@ -311,7 +311,7 @@ class AdmissionPolicySuite extends munit.FunSuite:
         Rfc4180.encode(
           Vector(
             header,
-            Vector("p1", "retrieval", "t1", "1", "0", "2", "3", "0", "100", "10", "d"),
+            Vector("p1", "retrieval", "t1", "1", "0", "bad", "3", "0", "100", "10", "d"),
             Vector("p1", "retrieval", "t1", "2", "1", "4", "3", "200", "100", "10", "d")
           )
         ),
@@ -325,7 +325,48 @@ class AdmissionPolicySuite extends munit.FunSuite:
     assertEquals(
       imported.rejected.map(_.error).distinct,
       Vector(
+        FixationRowError.Number("x", "bad", "a finite number"),
         FixationRowError.Trial(Vector(2, 3), QuarantineCause.OccurrenceConflict(Vector(1, 2)))
+      )
+    )
+  }
+
+  test("item conflict takes precedence when a trial label also disagrees on occurrence") {
+    val keys = get(
+      FixationKeyReader.trial("participant", "phase", "trial", "item", Some("occurrence"))
+    )
+    val header = Vector(
+      "participant",
+      "phase",
+      "trial",
+      "occurrence",
+      "fixation",
+      "x",
+      "y",
+      "onset",
+      "duration",
+      "n",
+      "item"
+    )
+    val imported = get(
+      FixationCsv.read(
+        Rfc4180.encode(
+          Vector(
+            header,
+            Vector("p1", "retrieval", "t1", "2", "0", "2", "3", "0", "100", "10", "b"),
+            Vector("p1", "retrieval", "t1", "1", "1", "4", "3", "200", "100", "10", "a")
+          )
+        ),
+        columns,
+        keys,
+        screen,
+        TimestampUnit.Milliseconds
+      )
+    )
+    assertEquals(
+      imported.rejected.map(_.error).distinct,
+      Vector(
+        FixationRowError.Trial(Vector(2, 3), QuarantineCause.ItemConflict(Vector("a", "b")))
       )
     )
   }

@@ -22,6 +22,8 @@ import eyes4s.studio.core.fixture.{MockStudy, StoryMoment, StoryMoments}
 import javafx.application.{Application, Platform}
 import javafx.scene.Scene
 import javafx.scene.control.Label
+import eyes4s.studio.desktop.explore.{NavigatorDisplays, SessionBackend}
+import eyes4s.studio.desktop.trial.StimulusSource
 import javafx.stage.Stage
 
 /** The JavaFX application: renders view-models and dispatches intents
@@ -44,7 +46,10 @@ final class StudioApplication extends Application:
   override def start(stage: Stage): Unit =
     stage.setTitle(StudioMain.title)
     StudioMain.initialModel.flatMap(
-      StudioWindow.open(_, StoryMoment.T2).left.map(_.message)
+      StudioWindow
+        .open(_, StoryMoment.T2, StudioMain.displays, StudioMain.stimuli)
+        .left
+        .map(_.message)
     ) match
       case Left(problem) =>
         stage.setScene(Scene(Label(problem), 480, 240))
@@ -61,6 +66,24 @@ final class StudioApplication extends Application:
 
 /** Entry point for the desktop shell. Tests never launch it. */
 object StudioMain:
+
+  /** The application's session: the story at t2 on the fake backend. */
+  val backend: SessionBackend = SessionBackend.Story
+
+  /** The application's trial displays: the golden registry of the story
+    * session, which answers only for the golden trials.csv.
+    */
+  val displays: NavigatorDisplays = NavigatorDisplays.of(backend)
+
+  /** The story session's stimuli: fixtures/studio-golden's `stimuli/`, read
+    * from the working directory (a checkout, as `sbt studioDesktop/run` has).
+    * Elsewhere none is stored, and the trial view says the asset is
+    * unreadable rather than showing another image.
+    */
+  def stimuli: StimulusSource =
+    StimulusSource.directory(
+      java.nio.file.Paths.get(sys.props("user.dir"), "fixtures", "studio-golden", "stimuli")
+    )
 
   /** The window title before a project is shown. */
   val title: String = "Eyes Studio"

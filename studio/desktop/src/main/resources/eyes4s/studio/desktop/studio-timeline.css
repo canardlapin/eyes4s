@@ -1,0 +1,58 @@
+/*
+ * Copyright 2026 canardlapin
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+/* Explore's timeline (ticket S6.3; docs/studio/design/Explore.dc.html,
+ * timeline). Colours are token names only; sizes come from studio-type.css
+ * classes; weights are face families (DESIGN_SPEC 14). */
+
+.timeline-panel {
+  -fx-background-color: -es-surface;
+  -fx-focus-color: -es-accent;
+  -fx-faint-focus-color: transparent;
+}
+
+.timeline-bar {
+  -fx-padding: 4 8 4 8;
+  -fx-spacing: 4;
+  -fx-background-color: -es-hairline, -es-surface;
+  -fx-background-insets: 0, 0 0 1 0;
+}
+
+.timeline-button,
+.timeline-speed {
+  -fx-pref-height: 20px;
+  -fx-padding: 0 8 0 8;
+  -fx-background-color: -es-hairline, -es-surface;
+  -fx-background-insets: 0, 1;
+  -fx-background-radius: 4, 3;
+  -fx-text-fill: -es-ink;
+}
+
+.timeline-speed:selected {
+  -fx-background-color: -es-hairline, -es-accent-soft;
+}
+
+.timeline-button:focused,
+.timeline-speed:focused {
+  -fx-background-color: -es-accent, -es-surface;
+}
+
+.timeline-status,
+.timeline-disclaimer,
+.timeline-note {
+  -fx-text-fill: -es-ink-2;
+  -fx-padding: 0 0 0 6;
+}

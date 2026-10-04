@@ -17,6 +17,7 @@
 package eyes4s.studio.desktop.trial
 
 import eyes4s.studio.app.text.TrialText
+import eyes4s.plan.MapPlacement
 import eyes4s.studio.app.tokens.{Colour, StageToken, StageVariant, Theme, ThemedToken, Tokens}
 import eyes4s.studio.app.{AppEffect, AppModel, Intent}
 import eyes4s.studio.core.assets.TrialDisplay
@@ -183,7 +184,8 @@ class InputAdapterFxSuite extends StudioFxSuite:
       w: Wired,
       kind: EventType[MouseEvent],
       at: Point2D,
-      toggle: Boolean = false
+      toggle: Boolean = false,
+      still: Boolean = true
   ): Unit =
     val host     = w.host
     val inScene  = host.localToScene(at)
@@ -209,7 +211,7 @@ class InputAdapterFxSuite extends StudioFxSuite:
           false,
           true,
           false,
-          true,
+          still,
           PickResult(host, inScene.getX, inScene.getY)
         )
       )
@@ -296,6 +298,22 @@ class InputAdapterFxSuite extends StudioFxSuite:
     runOnFx(w.view.dispose())
   }
 
+  fxStage.test("a click whose press drifted still picks: a trial view has no brush") { fx =>
+    val w                = Wired(viewIn(fx))
+    val (frame, targets) = showAndDraw(w, input(enc03, enc03Fix), 1.0)
+    val t                = targets.targets(5)
+    val at               = local(frame, t.anchor)
+    val moved            = Point2D(at.getX + 1.0, at.getY)
+    runOnFx {
+      mouse(w, MouseEvent.MOUSE_PRESSED, at)
+      mouse(w, MouseEvent.MOUSE_RELEASED, moved, still = false)
+      mouse(w, MouseEvent.MOUSE_CLICKED, moved, still = false)
+    }
+    assertEquals(w.selected, Vector(t.ref))
+    runOnFx(w.adapter.dispose())
+    runOnFx(w.view.dispose())
+  }
+
   fxStage.test("pointer hover is local: it is drawn and reported, never selected") { fx =>
     val w                = Wired(viewIn(fx))
     val (frame, targets) = showAndDraw(w, input(enc03, enc03Fix), 2.0)
@@ -328,7 +346,7 @@ class InputAdapterFxSuite extends StudioFxSuite:
       assertEquals(w.selected, Vector(target.ref))
       assertEquals(
         runOnFx(w.host.getAccessibleText),
-        TrialText.mark(target.ref, selected = true)
+        TrialText.mark(target.ref, target.mark.placement, selected = true)
       )
     }
     // Arrows: to the nearest mark strictly on that side.
@@ -369,7 +387,10 @@ class InputAdapterFxSuite extends StudioFxSuite:
     // in the outer casing band, 1 px beyond the accent (device px at 2x).
     assert(onCircle(image, ring.centre, ring.radius + 4.0, accent) >= 16, "no accent ring")
     assert(onCircle(image, ring.centre, ring.radius + 7.0, halo) >= 16, "no halo casing")
-    assertEquals(runOnFx(w.host.getAccessibleText), TrialText.mark(t.targets.head.ref, false))
+    assertEquals(
+      runOnFx(w.host.getAccessibleText),
+      TrialText.mark(t.targets.head.ref, t.targets.head.mark.placement, false)
+    )
     assertEquals(f.surface.deviceScale, 2.0)
     assertEquals(runOnFx(w.adapter.lastOverlayError), None)
     runOnFx(w.adapter.dispose())
@@ -444,11 +465,15 @@ class InputAdapterFxSuite extends StudioFxSuite:
     val w      = Wired(viewIn(fx))
     val (_, t) = showAndDraw(w, input(ret07, ret07Fix), 2.0)
     val target = t.targets(4)
-    val before = runOnFx(w.host.profile)
-    selectByOther(w, target.ref, 0L)
+    // Measure one projection in one FX turn: an OS focus event may redraw
+    // the overlay between separate runOnFx calls, independently of selection.
+    val (before, after) = runOnFx {
+      val before = w.host.profile
+      selectByOther(w, target.ref, 0L)
+      (before, w.host.profile)
+    }
     assertEquals(w.selected, Vector(target.ref))
     assertEquals(w.emitted.toVector, Vector.empty, "the view echoed a projected selection")
-    val after = runOnFx(w.host.profile)
     assertEquals(
       after,
       before.copy(overlayDraws = before.overlayDraws + 1, underDraws = before.underDraws + 1)
@@ -548,7 +573,7 @@ class InputAdapterFxSuite extends StudioFxSuite:
           452.0 + col * (1016.0 / (Columns - 1)),
           160.0 + row * (760.0 / (Rows - 1)),
           40,
-          WindowSide.Inside
+          MapPlacement.InMap
         )
       )
     }.toVector

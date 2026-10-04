@@ -251,7 +251,7 @@ class ImportWizardFxSuite extends StudioFxSuite:
       assertEquals(drawn(m.view.commit), "Import as r4")
       fx.robot.click(m.view.commit)
       dispatched(m) match
-        case Vector(c @ Command.ImportSources(parent, sources, mapping, units, _, _)) =>
+        case Vector(c @ Command.ImportSources(parent, sources, mapping, units, _, _, _, _)) =>
           assertEquals(c.kind, ChangeKind.DatasetReadmit)
           assertEquals(parent, Some(DatasetRevision(3)))
           // The same bytes as the story moment's sources: the golden files.
@@ -319,7 +319,7 @@ class ImportWizardFxSuite extends StudioFxSuite:
       assertEquals(drawn(next.view.status), "Applied preset Golden export to session2.csv.")
       fx.robot.click(next.view.commit)
       dispatched(next) match
-        case Vector(Command.ImportSources(_, _, mapping, units, _, _)) =>
+        case Vector(Command.ImportSources(_, _, mapping, units, _, _, _, _)) =>
           assertEquals(mapping.column(ColumnRole.Occurrence), None)
           assertEquals(
             mapping.bindings,
@@ -367,7 +367,8 @@ class ImportWizardFxSuite extends StudioFxSuite:
           t1.dataset(DatasetRevision(3)).get.mapping,
           DeclaredUnits(Some(TimeUnit.Microseconds)),
           t1.dataset(DatasetRevision(3)).get.geometry,
-          DeclaredAttributes.empty
+          DeclaredAttributes.empty,
+          t1.dataset(DatasetRevision(3)).get.inventory
         )
       )
     )

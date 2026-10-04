@@ -17,6 +17,7 @@
 package eyes4s.studio.core.command
 
 import eyes4s.codec.CanonicalDigest
+import eyes4s.plan.AdmissionDecision as CoreAdmissionDecision
 import eyes4s.studio.core.backend.*
 import eyes4s.studio.core.document.*
 import eyes4s.studio.core.document.DocumentGen.right
@@ -79,7 +80,13 @@ class CommandReducerSuite extends munit.FunSuite:
 
   private val verified                                           = CommandSamples.verified
   private def admitR3As(v: CanonicalDigest[DatasetRevisionSpec]) =
-    Admit(r3, v, CoreBinding.unbound, CoreBinding.unbound)
+    Admit(
+      r3,
+      v,
+      Some(CoreAdmissionDecision.ReviewExclusions),
+      CoreBinding.unbound,
+      CoreBinding.unbound
+    )
   private val admitR3 = admitR3As(verified)
 
   test("verifying r3 records its content digest and requests admission of exactly that") {
@@ -101,6 +108,26 @@ class CommandReducerSuite extends munit.FunSuite:
     val verified = ok(History.start(t1).apply(VerifyDataset(r3))).history
     val admit    = ok(verified.apply(admitR3))
     assert(admit.history.document.dataset(r3).exists(_.decision.isAdmitted))
+    // The revision records the policy it was admitted under (S5.6).
+    assertEquals(
+      admit.history.document.dataset(r3).flatMap(_.decision.admittedUnder),
+      Some(CoreAdmissionDecision.ReviewExclusions)
+    )
+    val required = ok(
+      verified.apply(
+        Admit(
+          r3,
+          CommandSamples.verified,
+          Some(CoreAdmissionDecision.RequireComplete),
+          CoreBinding.unbound,
+          CoreBinding.unbound
+        )
+      )
+    )
+    assertEquals(
+      required.history.document.dataset(r3).flatMap(_.decision.admittedUnder),
+      Some(CoreAdmissionDecision.RequireComplete)
+    )
     assertEquals(
       admit.history.undo.map(_.history),
       Left(CommandError.UndoBlocked(HistoryBarrier.DatasetAdmitted(r3)))
@@ -276,7 +303,9 @@ class CommandReducerSuite extends munit.FunSuite:
           parent.mapping,
           parent.units,
           parent.geometry,
-          DeclaredAttributes.empty
+          DeclaredAttributes.empty,
+          None,
+          parent.inventory
         )
       )
       .toOption

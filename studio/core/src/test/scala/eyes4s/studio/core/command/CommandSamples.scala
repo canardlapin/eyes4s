@@ -17,6 +17,7 @@
 package eyes4s.studio.core.command
 
 import eyes4s.codec.CanonicalDigest
+import eyes4s.plan.AdmissionDecision as CoreAdmissionDecision
 import eyes4s.studio.core.backend.*
 import eyes4s.studio.core.document.*
 import eyes4s.studio.core.document.DocumentGen.right
@@ -58,7 +59,9 @@ object CommandSamples:
       pending.mapping,
       pending.units,
       pending.geometry,
-      DeclaredAttributes.empty
+      DeclaredAttributes.empty,
+      None,
+      None
     ),
     "ImportSources.attributes" -> ImportSources(
       Some(r2),
@@ -66,14 +69,27 @@ object CommandSamples:
       pending.mapping,
       pending.units,
       pending.geometry,
-      pupil
+      pupil,
+      None,
+      None
+    ),
+    "ImportSources.admission" -> ImportSources(
+      Some(r3),
+      pending.sources,
+      pending.mapping,
+      pending.units,
+      pending.geometry,
+      DeclaredAttributes.empty,
+      Some(AdmissionChoice(OffScreenChoice.QuarantineTrial, Vector(rule))),
+      None
     ),
     "ReviseDataset" -> ReviseDataset(
       r3,
       pending.mapping,
       DeclaredUnits(Some(TimeUnit.Seconds)),
       pending.geometry,
-      pupil
+      pupil,
+      None
     ),
     "RestoreDataset"       -> RestoreDataset(pending),
     "DiscardDataset"       -> DiscardDataset(r3),
@@ -86,9 +102,15 @@ object CommandSamples:
     "VerifyDataset"        -> VerifyDataset(r3),
     "WithdrawVerification" -> WithdrawVerification(r3),
     "ResumeVerification"   -> ResumeVerification(r3, verified),
-    "Admit"                -> Admit(r3, verified, CoreBinding.unbound, CoreBinding.unbound),
-    "StartDraft"           -> StartDraft(rev4, None, draft.changes),
-    "RestoreDraft"         -> RestoreDraft(draft),
+    "Admit"                -> Admit(
+      r3,
+      verified,
+      Some(CoreAdmissionDecision.ReviewExclusions),
+      CoreBinding.unbound,
+      CoreBinding.unbound
+    ),
+    "StartDraft"   -> StartDraft(rev4, None, draft.changes),
+    "RestoreDraft" -> RestoreDraft(draft),
     "ChangeRecipe" -> ChangeRecipe(RecipeChange.Grid(rev4Rec.grid, right(GridSize.of(32, 24)))),
     "RebaseDraft"  -> RebaseDraft(r2),
     "DiscardDraft" -> DiscardDraft,

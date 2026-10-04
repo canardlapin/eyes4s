@@ -17,9 +17,28 @@
 package eyes4s.studio.app.vm
 
 import eyes4s.studio.app.AppModel
+import eyes4s.studio.app.admission.AdmissionLedgerVM
+import eyes4s.studio.app.explore.TrialsNavigatorVM
 import eyes4s.studio.app.nav.{DataSection, Place}
-import eyes4s.studio.app.text.{Format, MessageId, Messages}
-import eyes4s.studio.core.backend.{PairDesign, ResultAddress, RunId, StageKind, TrialKey}
+import eyes4s.studio.app.text.{
+  DesignText,
+  Format,
+  GeometryText,
+  GeometryTextId,
+  LedgerText,
+  LedgerTextId,
+  MessageId,
+  Messages,
+  SummaryText
+}
+import eyes4s.studio.core.backend.{
+  DatasetRevision,
+  PairDesign,
+  ResultAddress,
+  RunId,
+  StageKind,
+  TrialKey
+}
 import eyes4s.studio.core.document.{
   FigureId,
   PanelLetter,
@@ -30,7 +49,7 @@ import eyes4s.studio.core.document.{
   ReportingId,
   SourceRole
 }
-import eyes4s.studio.core.selection.{ScaleIndex, StudioRef}
+import eyes4s.studio.core.selection.{ScaleIndex, StudioRef, TallyRegion}
 
 /** The words for typed places and refs, resolved against one model: item
   * names from the ledger, file names from the dataset, σ from the run's
@@ -148,6 +167,11 @@ final class Labels(model: AppModel, messages: Messages):
     case StudioRef.ParticipantSummary(_, _, _, _, p) => p
     case StudioRef.GroupCell(_, _, _, group)         => group.label
     case StudioRef.FigurePanel(_, letter)            => messages(CrumbPanel, letter.value)
+    case StudioRef.WindowTally(dataset, region)      => tally(dataset, region)
+    case StudioRef.DesignTally(revision, count)      => DesignText.tally(revision, count)
+    case StudioRef.QueryTally(run, count)            => SummaryText.tally(run, count)
+    case StudioRef.InventoryCount(_, _)              => AdmissionLedgerVM.countLabel(ref)
+    case StudioRef.TrialGroup(_, group)              => TrialsNavigatorVM.groupLabel(group)
     case StudioRef.Result(run, address)              =>
       val scale = address.scale
       address.value match
@@ -159,6 +183,13 @@ final class Labels(model: AppModel, messages: Messages):
           messages(CrumbMap, key.trial, sigma(run, scale))
         case ResultAddress.Reduction(_, d, key) =>
           messages(CrumbReduction, key.trial, design(d), sigma(run, scale))
+
+  /** "r3 · Outside image frame" (S5.5's geometry counts). */
+  private def tally(dataset: DatasetRevision, region: TallyRegion): String =
+    val what = region match
+      case TallyRegion.OutsideWindow => GeometryTextId.OutsideWindowTitle
+      case TallyRegion.OutsideScreen => GeometryTextId.OutsideScreenTitle
+    s"${dataset.label} · ${GeometryText(what)}"
 
   /** A status-bar path of places ("fixations.csv › Admission"). */
   def path(places: Vector[Place]): String =
@@ -199,8 +230,15 @@ final class Labels(model: AppModel, messages: Messages):
         )
       case StudioRef.GroupCell(run, reporting, scale, group) =>
         messages(PathGroupCell, group.label, this.reporting(reporting), sigma(run, scale))
-      case StudioRef.FigurePanel(figure, letter) => panel(figure, letter)
-      case StudioRef.Result(run, address)        =>
+      case StudioRef.FigurePanel(figure, letter)  => panel(figure, letter)
+      case StudioRef.WindowTally(dataset, region) => tally(dataset, region)
+      case StudioRef.DesignTally(revision, count) => DesignText.tally(revision, count)
+      case StudioRef.QueryTally(run, count)       => SummaryText.tally(run, count)
+      case StudioRef.InventoryCount(dataset, _)   =>
+        LedgerText(LedgerTextId.PathCount, dataset.label, AdmissionLedgerVM.countTitle(ref))
+      case StudioRef.TrialGroup(dataset, group) =>
+        LedgerText(LedgerTextId.PathCount, dataset.label, TrialsNavigatorVM.groupLabel(group))
+      case StudioRef.Result(run, address) =>
         val s = sigma(run, address.scale)
         address.value match
           case ResultAddress.PairRow(_, d, focal, reference) =>

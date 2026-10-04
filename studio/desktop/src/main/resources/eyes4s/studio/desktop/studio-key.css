@@ -1,0 +1,115 @@
+/*
+ * Copyright 2026 canardlapin
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+/* The trial key builder (ticket S5.3; docs/studio/design/Data.dc.html, key
+ * builder). Colours are token names only; sizes come from studio-type.css
+ * classes; weights are face families (DESIGN_SPEC 14). */
+
+/* Board: padding 10px 14px, gap 7px, a hairline above. */
+.key-builder {
+  -fx-padding: 10 14 10 14;
+  -fx-spacing: 7;
+  -fx-background-color: -es-hairline, -es-surface;
+  -fx-background-insets: 0, 1 0 0 0;
+}
+
+.key-heading, .key-row {
+  -fx-alignment: center-left;
+}
+
+.key-row {
+  -fx-spacing: 6;
+}
+
+.key-title {
+  -fx-text-fill: -es-ink;
+}
+
+.key-rule, .key-detail, .key-line, .key-empty {
+  -fx-text-fill: -es-ink-2;
+}
+
+/* Board .keyblk: 26 px, 0 10 px padding, a 1 px ink-2 border, 4 px radius. */
+.key-block {
+  -fx-min-height: 26px;
+  -fx-pref-height: 26px;
+  -fx-max-height: 26px;
+  -fx-padding: 0 10 0 10;
+  -fx-alignment: center;
+  -fx-background-color: -es-ink-2, -es-surface;
+  -fx-background-insets: 0, 1;
+  -fx-background-radius: 4, 3;
+  -fx-text-fill: -es-ink;
+  -fx-font-family: "IBM Plex Sans Medm";
+}
+
+/* A part the key leaves out: drawn faint, never removed. */
+.key-block.left-out {
+  -fx-background-color: -es-hairline, -es-surface-2;
+  -fx-text-fill: -es-ink-3;
+}
+
+.key-toggle:focused {
+  -fx-background-color: -es-accent, -es-surface;
+  -fx-background-insets: 0, 2;
+}
+
+.key-toggle:disabled {
+  -fx-opacity: 1;
+}
+
+.key-sep {
+  -fx-text-fill: -es-ink-3;
+}
+
+.key-count {
+  -fx-text-fill: -es-ink;
+}
+
+.key-detail.warning, .key-line.warning {
+  -fx-text-fill: -es-warn-text;
+}
+
+.key-detail.blocking, .key-line.blocking, .key-check {
+  -fx-text-fill: -es-fail;
+}
+
+.key-repeats-scroll {
+  -fx-max-height: 96px;
+  -fx-pref-height: 96px;
+}
+
+.key-repeats-scroll,
+.key-repeats-scroll > .viewport {
+  -fx-background-color: -es-surface;
+  -fx-background-insets: 0;
+  -fx-padding: 0;
+}
+
+.key-repeat {
+  -fx-min-height: 20px;
+  -fx-spacing: 10;
+  -fx-alignment: center-left;
+}
+
+.key-repeat-key {
+  -fx-text-fill: -es-ink;
+  -fx-min-width: 180px;
+}
+
+.key-repeat-trials, .key-repeat-more {
+  -fx-text-fill: -es-ink-2;
+}

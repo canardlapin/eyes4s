@@ -17,8 +17,10 @@
 package eyes4s.studio.core.command
 
 import eyes4s.codec.CanonicalDigest
+import eyes4s.plan.AdmissionDecision as CoreAdmissionDecision
 import eyes4s.studio.core.backend.{AnalysisRevision, DatasetRevision, JobId, RunId}
 import eyes4s.studio.core.document.*
+import eyes4s.studio.core.document.AdmissionDecision.coreDecision
 import eyes4s.studio.core.document.DigestJson.given
 import io.circe.Codec
 
@@ -51,10 +53,15 @@ enum Command derives CanEqual, Codec.AsObject:
   // --- Dataset · re-admit --------------------------------------------------
 
   /** A new pending dataset revision with the next id, from freshly imported
-    * sources; a re-import names its `parent` and inherits its admission
-    * choices. `attributes` are the fixation columns without a role, declared
+    * sources. `attributes` are the fixation columns without a role, declared
     * so they pass through admission (UI-H); a journal line written before
-    * S5.2 has none.
+    * S5.2 has none. `admission` is the new revision's off-screen policy and
+    * correction rules; without one, a re-import inherits its `parent`'s and
+    * a first import takes the default. A re-admit that changes the policy or
+    * the corrections of an admitted revision is therefore one command, and
+    * one undo (S5.5). A journal line written before S5.5 has none.
+    * `inventory` maps the trials source (S5.4); a journal line written before
+    * S5.4 has none.
     */
   case ImportSources(
       parent: Option[DatasetRevision],
@@ -62,19 +69,22 @@ enum Command derives CanEqual, Codec.AsObject:
       mapping: ColumnMapping,
       units: DeclaredUnits,
       geometry: Geometry,
-      attributes: DeclaredAttributes
+      attributes: DeclaredAttributes,
+      admission: Option[AdmissionChoice],
+      inventory: Option[InventoryMapping]
   )
 
-  /** Revise a pending revision's column mapping, declared units, geometry
-    * and attributes in one step (the import wizard's commit, S5.2): one
-    * undo restores all four.
+  /** Revise a pending revision's column mapping, declared units, geometry,
+    * attributes and inventory mapping in one step (the import wizard's
+    * commit, S5.2, S5.4): one undo restores them all.
     */
   case ReviseDataset(
       dataset: DatasetRevision,
       mapping: ColumnMapping,
       units: DeclaredUnits,
       geometry: Geometry,
-      attributes: DeclaredAttributes
+      attributes: DeclaredAttributes,
+      inventory: Option[InventoryMapping]
   )
 
   /** Put a discarded pending dataset revision back. */
@@ -114,12 +124,15 @@ enum Command derives CanEqual, Codec.AsObject:
   /** Record the admission decision for the content that was verified: the
     * verifying revision becomes admitted, bound to the ledger and inventory
     * the backend produced. `verified` is the digest the backend was sent; it
-    * must be the recorded one and the revision's current content. A history
-    * barrier.
+    * must be the recorded one and the revision's current content. `policy`
+    * is the eyes4s `AdmissionDecision` the revision is admitted under,
+    * recorded in [[AdmissionDecision.Admitted]] (S5.6); a journal line
+    * written before S5.6 has none. A history barrier.
     */
   case Admit(
       dataset: DatasetRevision,
       verified: CanonicalDigest[DatasetRevisionSpec],
+      policy: Option[CoreAdmissionDecision],
       ledger: CoreBinding[AdmissionLedgerArtifact],
       inventory: CoreBinding[TrialInventoryArtifact]
   )

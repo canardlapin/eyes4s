@@ -1,8 +1,8 @@
 # eyes4s infrastructure for an external UI consumer
 
 Implementation plan lodged in Mote on 2026-09-16 by the
-`codex-eyes4s-ui-foundation-plan` actor and reviewed on 2026-09-17 at the owner's request
-([tracker triage](TRACKER_TRIAGE_2026-09-17.md), Tier 1). Except where a ticket
+`codex-eyes4s-ui-foundation-plan` actor and reviewed on 2026-09-17 at the owner's request,
+in a tracker triage whose decisions are recorded as notes on the Mote tickets. Except where a ticket
 is marked closed, this document is a plan, not implementation or passing-test
 evidence. The UI will live in another repository; [the app vision](UI_APP_VISION.md)
 supplies the intended consumer.
@@ -908,8 +908,8 @@ against the already implemented APIs without inheriting unrelated milestone bloc
 G1 also belongs to the existing M5 external-consumer issue
 `bd-01M214CXBZN8R7R4P0M5ACY25H`.
 
-**Tracker changes on 2026-09-17**, recorded against
-[the triage](TRACKER_TRIAGE_2026-09-17.md) by the `claude-eyes4s-backlog` actor:
+**Tracker changes on 2026-09-17**, recorded in that triage by the
+`claude-eyes4s-backlog` actor:
 
 - X1, S1 and M1 were closed on 2026-09-16 by the implementing actor; the
   planning ticket `bd-01M2N2EHPN8XGSRHCMXF65NHAQ` is closed.

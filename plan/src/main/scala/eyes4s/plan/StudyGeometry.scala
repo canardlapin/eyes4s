@@ -238,9 +238,14 @@ sealed trait StudyGeometry[U <: Unit2D] derives CanEqual:
   def grid: Grid[U]
 
 object StudyGeometry:
+  /** Maps the whole admission frame: the grid's own frame is the admission frame. */
   final case class WholeFrame[U <: Unit2D](grid: Grid[U]) extends StudyGeometry[U]:
     def admission: Frame[U] = grid.frame
 
+  /** Maps a window of the admission frame on a grid over the window's frame, with an explicit
+    * policy for fixations off the window. Built only by `windowed`, which checks through
+    * `Agreement.frames` that the grid lies on the window's frame.
+    */
   final case class Windowed[U <: Unit2D] private[plan] (
       window: Subframe[U],
       grid: Grid[U],

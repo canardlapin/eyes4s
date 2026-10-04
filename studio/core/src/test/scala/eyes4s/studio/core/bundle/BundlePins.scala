@@ -23,9 +23,9 @@ package eyes4s.studio.core.bundle
   */
 object BundlePins:
   val t2Parts: Vector[String] = Vector(
-    "datasets/r2.d6dd2f9e4604774f.json",
+    "datasets/r2.ae6dd534739238ee.json",
     "mappings/r2.5d9b410cd0b48432.json",
-    "datasets/r3.d57039d646bfa035.json",
+    "datasets/r3.9bc7a776790d1794.json",
     "mappings/r3.8e0b0f8f226a2cbb.json",
     "analyses/rev3.29b70541a44c0723.json",
     "analyses/rev4.cdb907e8a8200e54.json",
@@ -39,7 +39,7 @@ object BundlePins:
   )
 
   val t2ManifestSha256: String =
-    "8d8824b0820061078294bd85290ba25aa567b99d01de90f9d5d2c55c12267521"
+    "1eb72ef5b0a1c5b0796c971356b626eb8c4a247793188f97c9daa858bbcb6250"
 
   /** The t2 bundle's manifest as the pre-release version 1 wrote it: no
     * sharing options (everything travelled) and no science digest. Written
@@ -49,7 +49,7 @@ object BundlePins:
     """{
       |  "schema": { "name": "studio.project", "version": 1 },
       |  "value": {
-      |    "document": { "name": "studio.document", "version": 1 },
+      |    "document": { "name": "studio.document", "version": 3 },
       |    "inputs": [
       |      {
       |        "kind": { "Source": { "role": { "Fixations": {} } } },
@@ -68,9 +68,9 @@ object BundlePins:
       |      "datasets": [
       |        {
       |          "dataset": {
-      |            "path": "datasets/r2.d6dd2f9e4604774f.json",
-      |            "sha256": "d6dd2f9e4604774fec82085eee748f570ef72cdcc82f5016f6ac27d73d0bbfae",
-      |            "length": 614
+      |            "path": "datasets/r2.ae6dd534739238ee.json",
+      |            "sha256": "ae6dd534739238eef6ef6b5166d19b5e50b219a8f9e8785f73ff26af311e3820",
+      |            "length": 1031
       |          },
       |          "mapping": {
       |            "path": "mappings/r2.5d9b410cd0b48432.json",
@@ -80,9 +80,9 @@ object BundlePins:
       |        },
       |        {
       |          "dataset": {
-      |            "path": "datasets/r3.d57039d646bfa035.json",
-      |            "sha256": "d57039d646bfa03551bdee382b3a186beeeb5da21ef14f4025d15b4656975937",
-      |            "length": 626
+      |            "path": "datasets/r3.9bc7a776790d1794.json",
+      |            "sha256": "9bc7a776790d1794bc8032f29c2814f72762076fec157a3231b66db6aa401669",
+      |            "length": 1049
       |          },
       |          "mapping": {
       |            "path": "mappings/r3.8e0b0f8f226a2cbb.json",

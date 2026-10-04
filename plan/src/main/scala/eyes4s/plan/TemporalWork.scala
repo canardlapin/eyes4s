@@ -72,10 +72,13 @@ final class PreparedTemporalStudy[K, U <: Unit2D, P, S, D] private[plan] (
 
 private[plan] sealed trait TemporalPhase[K, U <: Unit2D, S, D]
 private[plan] object TemporalPhase:
+  /** Resolving trial `trial`'s epoch, window and occupancy, by index in input order. */
   final case class Preparing[K, U <: Unit2D, S, D](
       trial: Int,
       occupancy: Vector[(K, Either[TemporalStudyError, WindowOccupancy[U]])]
   ) extends TemporalPhase[K, U, S, D]
+
+  /** Running the cell's study cursor over the occupancy already prepared. */
   final case class Studying[K, U <: Unit2D, S, D](
       occupancy: Vector[(K, Either[TemporalStudyError, WindowOccupancy[U]])],
       cursor: StudyCursor[K, U, S, D]
@@ -168,6 +171,9 @@ final class TemporalCursor[K, U <: Unit2D, P, S, D] private[plan] (
   private def copy(phase: TemporalPhase[K, U, S, D]): TemporalCursor[K, U, P, S, D] =
     new TemporalCursor(work, budget, repetition, window, phase, completed)
 
+/** Drives a temporal cursor to a completed result in bounded steps, cell by cell in plan
+  * order: repetitions outer, windows inner.
+  */
 object TemporalWork:
 
   /** Drive a temporal cursor to completion with fixed quanta. */

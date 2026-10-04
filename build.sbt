@@ -68,6 +68,14 @@ ThisBuild / githubWorkflowPermissions           := Some(
 lazy val trustWorkflowContents =
   taskKey[Map[String, String]]("Render every generated eyes4s workflow.")
 
+// A project's module name as sbt-github-dependency-submission computes it
+// (GithubDependencyGraphPlugin.getModuleName), paired with publish / skip.
+lazy val submissionModule = Def.task {
+  val crossVersion =
+    CrossVersion((artifactName / scalaVersion).value, (artifactName / scalaBinaryVersion).value)
+  crossVersion(projectID.value).name -> (publish / skip).value
+}
+
 def bundledCleanWorkflow: String = {
   val stream = Option(GenerativePlugin.getClass.getResourceAsStream("/clean.yml"))
     .getOrElse(sys.error("sbt-github-actions clean.yml resource is unavailable"))
@@ -236,13 +244,24 @@ trustWorkflowContents := {
     sbtCommand
   )
 
+  // The submission graph is the published artifacts' graph. Every unpublished
+  // project (the root aggregates, the guide, and the Studio projects, whose
+  // Intaglio and scaladock pins exist only after studio.yml publishes them) is
+  // ignored by the module name sbt-github-dependency-submission matches on.
+  val unpublishedModules = submissionModule
+    .all(ScopeFilter(inAnyProject))
+    .value
+    .collect { case (name, true) => name }
+    .distinct
+    .sorted
+
   val dependencySubmission = WorkflowJob(
     "dependency-submission",
     "Submit Dependencies",
     githubWorkflowJobSetup.value.toList ::: List(
       WorkflowStep.DependencySubmission(
         workingDirectory = None,
-        modulesIgnore = Some(List("rootjs_3", "rootjvm_3", "rootnative_3")),
+        modulesIgnore = Some(unpublishedModules.toList),
         configsIgnore = Some(List("test", "scala-tool", "scala-doc-tool", "test-internal")),
         token = None
       )
@@ -364,6 +383,8 @@ githubWorkflowCheck := {
   requireText("security.yml", "contents: write")
   requireText("security.yml", "scalacenter/sbt-dependency-submission@v2")
   forbidText("security.yml", "tlCiRelease")
+  List("eyes4s-studio-viz_3", "eyes4s-studio-viz_sjs1_3", "eyes4s-studio-desktop_3")
+    .foreach(m => requireText("security.yml", s" $m"))
 
   requireText("release.yml", "tags: [v*]")
   requireText("release.yml", "startsWith(github.ref, 'refs/tags/v')")
@@ -385,6 +406,8 @@ githubWorkflowCheck := {
   requireText("studio.yml", "studioAll studioStyleCheck")
   requireText("studio.yml", "paths: [studio/**")
   requireText("studio.yml", "macos-15")
+  // Only the macOS job opts out of headless FX tests, for the real Mac glass.
+  requireText("studio.yml", "-Deyes4s.studio.fx.visible=true")
   requireText("studio.yml", "EYES4S_STUDIO_SMALL_DISPLAY: skip")
   forbidText("checks.yml", "studio")
 }
@@ -404,8 +427,11 @@ ThisBuild / githubWorkflowBuild += WorkflowStep.Sbt(
   preamble = false
 )
 
+// The library half of checkBoundaries: resolving a studio project needs the scaladock
+// and Intaglio pins, which only studio.yml publishes, so the studio resolved-graph
+// rules (studioBoundaries) run there.
 ThisBuild / githubWorkflowBuild += WorkflowStep.Sbt(
-  List("checkBoundaries"),
+  List("checkLibraryBoundaries"),
   name = Some("Check module and kernel boundaries")
 )
 
@@ -592,11 +618,24 @@ ThisBuild / checkKernelPurity := {
     log.info(s"kernel purity OK (${sources.size} source(s) scanned, no ocular vocabulary)")
 }
 
+// A forked test JVM reaches sbt through ForkMain: sbt listens on a wildcard
+// socket (`new ServerSocket(0)`, dual stack) and the fork connects to
+// `InetAddress.getByName(null)`, which resolves to 127.0.0.1 by default. macOS
+// lets another process hold a 127.0.0.1-specific listener on the same port, so
+// the fork can connect to that process instead and wait forever in
+// `readStreamHeader` (bead bd-01M3HHR5QV9W9SS9AMM1RR1SM0). Preferring IPv6
+// makes the fork connect to ::1, which only sbt's wildcard socket serves.
+// Local builds only: CI runners (Linux refuses the colliding bind) keep their
+// existing options.
+lazy val forkHandshakeOptions: Seq[String] =
+  if (sys.env.contains("CI")) Nil else Seq("-Djava.net.preferIPv6Addresses=true")
+
 lazy val commonSettings = Seq(
   libraryDependencies ++= Seq(
     "org.scalameta" %%% "munit"            % munitV           % Test,
     "org.scalameta" %%% "munit-scalacheck" % munitScalacheckV % Test
-  )
+  ),
+  Test / javaOptions ++= forkHandshakeOptions
 )
 
 // ---------------------------------------------------------------------------
@@ -763,7 +802,8 @@ lazy val laws = crossProject(JVMPlatform, JSPlatform)
     name := "eyes4s-laws",
     Test / unmanagedSources ++= Seq(
       file("codec/src/test/scala/eyes4s/codec/PointSamplingFixture.scala").getAbsoluteFile,
-      file("codec/src/test/scala/eyes4s/codec/RepetitionPlanFixture.scala").getAbsoluteFile
+      file("codec/src/test/scala/eyes4s/codec/RepetitionPlanFixture.scala").getAbsoluteFile,
+      file("codec/src/test/scala/eyes4s/codec/FormFixtures.scala").getAbsoluteFile
     ),
     libraryDependencies ++= Seq(
       "org.scalameta"  %%% "munit"            % munitV,
@@ -1063,6 +1103,7 @@ lazy val studioCore = crossProject(JVMPlatform, JSPlatform)
     libraryDependencies ++= Seq(
       "io.circe"      %%% "circe-core"        % circeV,
       "io.circe"      %%% "circe-parser"      % circeV,
+      "io.circe"      %%% "circe-jawn"        % circeV,
       "org.typelevel" %%% "munit-cats-effect" % munitCatsEffectV % Test
     ),
     // S3.0: studio-core may not read files (it links for Scala.js), so the mock
@@ -1074,6 +1115,23 @@ lazy val studioCore = crossProject(JVMPlatform, JSPlatform)
         streams.value.cacheDirectory / "studio-fixture"
       )
     }.taskValue,
+    // S9.2b: the eyes4s release line of the studio build, for a figure's
+    // stamp. The base version only (no commit or timestamp), so the source is
+    // written once, not on every load. Generated, since studio-core reads no
+    // resources (it links for Scala.js).
+    Compile / sourceGenerators += Def.task {
+      val file = (Compile / sourceManaged).value / "eyes4s" / "studio" / "StudioBuild.scala"
+      val text =
+        s"""package eyes4s.studio.core.engine
+           |
+           |/** The studio build (generated from the sbt build). */
+           |object StudioBuild:
+           |  /** The eyes4s release line studio is built from. */
+           |  val eyes4sBaseVersion: String = "${tlBaseVersion.value}"
+           |""".stripMargin
+      if (!file.exists || IO.read(file) != text) IO.write(file, text)
+      Seq(file)
+    }.taskValue,
     // The generator's planted off-screen scanpaths, which a JVM test holds
     // against eyes4s-io's own admission (fixture off-screen fix).
     Test / sourceGenerators += Def.task {
@@ -1083,6 +1141,16 @@ lazy val studioCore = crossProject(JVMPlatform, JSPlatform)
     }.taskValue
   )
   .jvmConfigure(_.dependsOn(io.jvm % Test))
+  // S5.4: the golden tables' text, for the JVM suite that admits them with
+  // eyes4s-io under the story's recorded mappings.
+  .jvmSettings(
+    Test / sourceGenerators += Def.task {
+      StudioFixture.goldenCsv(
+        (ThisBuild / baseDirectory).value,
+        (Test / sourceManaged).value / "eyes4s" / "studio" / "GoldenCsv.scala"
+      )
+    }.taskValue
+  )
 
 /** UI-neutral presentation: app model, intents, pure update, view-models. */
 lazy val studioApp = crossProject(JVMPlatform, JSPlatform)
@@ -1138,11 +1206,13 @@ lazy val studioDesktop = project
   .in(file("studio/desktop"))
   .enablePlugins(NoPublishPlugin)
   .dependsOn(studioViz.jvm)
+  // S9.5: export bundles write result tables through eyes4s-io's CSV transport.
+  .dependsOn(io.jvm)
   // S2.3: the file-system ProjectStore runs studio-core's conformance suite.
   .dependsOn(studioCore.jvm % "test->test")
   // S1.4: the shell FX suites boot at the S1.0 story models (StoryModels).
   .dependsOn(studioApp.jvm % "test->test")
-  .dependsOn(studioLocalRefs(intaglioLocal, "javafxJVM"): _*)
+  .dependsOn(studioLocalRefs(intaglioLocal, "javafxJVM", "pdfJVM", "java2dJVM"): _*)
   .dependsOn(studioLocalRefs(scaladockLocal, "core", "fx"): _*)
   .settings(commonSettings)
   .settings(
@@ -1151,8 +1221,12 @@ lazy val studioDesktop = project
     libraryDependencies ++= Seq("javafx-base", "javafx-graphics", "javafx-controls").map(
       "org.openjfx" % _ % javaFxV classifier javaFxClassifier
     ),
+    // Monocle's headless glass for the FX tests (studioFxTestOptions). It declares
+    // JavaFX `provided`, so no second OpenJFX reaches the guard below.
+    libraryDependencies += "org.testfx" % "openjfx-monocle" % monocleV % Test,
     libraryDependencies ++=
-      (if (intaglioLocal.isDefined) Nil else Seq(intaglioPinned("javafx"))) ++
+      (if (intaglioLocal.isDefined) Nil
+       else Seq("javafx", "pdf", "java2d").map(intaglioPinned)) ++
         (if (scaladockLocal.isDefined) Nil
          else Seq(scaladockPinned("core"), scaladockPinned("fx"))),
     // One JavaFX for the shell and both providers. Intaglio and scaladock
@@ -1185,25 +1259,53 @@ lazy val studioDesktop = project
   .settings(studioTokenSettings)
 
 // Snapshots go to <build>/target/studio-snapshots/<suite>/<test>/<theme>-<scale>x.png.
-// java.awt.headless keeps AWT (used only for PNG encoding) off the display. On CI,
-// as in scaladock, JavaFX renders through the software pipeline; Linux CI wraps
-// sbt in xvfb-run. Greyscale text antialiasing keeps software snapshots stable.
-def studioFxTestOptions(buildRoot: File): Seq[String] =
+// java.awt.headless keeps AWT (used only for PNG encoding) off the display.
+//
+// FX tests run headless by default: Monocle's Headless glass, on a virtual
+// 1920x1200 screen at output scale 1, opens no OS window and takes no OS focus. A
+// developer who wants to watch passes -Deyes4s.studio.fx.visible=true to sbt (or
+// sets EYES4S_STUDIO_FX_VISIBLE=true) for the platform's own glass; the macOS CI
+// job does, to exercise the real Mac glass. Headless runs, and CI as in
+// scaladock, render through the software pipeline with greyscale text
+// antialiasing, which keeps snapshots stable. Linux CI still wraps sbt in xvfb-run,
+// which a headless run does not use.
+val monocleV = "21.0.2" // the newest org.testfx build; runs on OpenJFX 24.0.1
+
+def studioFxVisible: Boolean =
+  sys.props
+    .get("eyes4s.studio.fx.visible")
+    .orElse(sys.env.get("EYES4S_STUDIO_FX_VISIBLE"))
+    .exists(_.equalsIgnoreCase("true"))
+
+def studioFxTestOptions(buildRoot: File): Seq[String] = {
+  val software = Seq("-Dprism.order=sw", "-Dprism.lcdtext=false")
+  val headless = Seq(
+    "-Deyes4s.studio.fx.headless=true",
+    "-Dglass.platform=Monocle",
+    "-Dmonocle.platform=Headless",
+    "-Dheadless.geometry=1920x1200-32"
+  )
   Seq(
     s"-Deyes4s.studio.snapshots=${(buildRoot / "target" / "studio-snapshots").getAbsolutePath}",
     "-Djava.awt.headless=true"
-  ) ++ (if (sys.env.contains("CI")) Seq("-Dprism.order=sw", "-Dprism.lcdtext=false") else Nil)
+  ) ++ (if (studioFxVisible) Nil else headless) ++
+    (if (!studioFxVisible || sys.env.contains("CI")) software else Nil)
+}
 
 lazy val studioCrossModules = Seq("studioCore", "studioApp", "studioViz")
 lazy val studioProjects     =
   studioCrossModules.flatMap(m => allPlatforms.map(p => s"$m$p")) :+ "studioDesktop"
 
-// Everything checkBoundaries runs for studio: the build-level rules, then the
-// resolved-graph rule on each portable studio project.
+// The resolved-graph rule on each studio project. Each resolves the scaladock and
+// Intaglio pins, so these run in studio.yml after the pins are published, and in the
+// local checkBoundaries. The build-level studio rules (checkStudioBoundaries,
+// checkStudioColours) read the project graph and sources only; they stay in
+// checkLibraryBoundaries.
 lazy val studioBoundaryChecks =
-  "checkStudioBoundaries" +: "checkStudioColours" +:
-    studioCrossModules.flatMap(m => allPlatforms.map(p => s"$m$p/checkModuleBoundaries")) :+
+  studioCrossModules.flatMap(m => allPlatforms.map(p => s"$m$p/checkModuleBoundaries")) :+
     "studioDesktop/checkModuleBoundaries"
+
+addCommandAlias("studioBoundaries", studioBoundaryChecks.mkString(";", ";", ""))
 
 addCommandAlias(
   "studioAll",
@@ -1297,6 +1399,10 @@ lazy val studioLinuxJob = WorkflowJob(
       ),
       name = Some("Build and test studio (xvfb, software pipeline)")
     ),
+    WorkflowStep.Run(
+      List("sbt -J-Xmx4g -Djavafx.platform=linux studioBoundaries"),
+      name = Some("Check studio resolved-graph boundaries")
+    ),
     WorkflowStep.Use(
       UseRef.Public("actions", "upload-artifact", "v4"),
       name = Some("Upload studio snapshots"),
@@ -1330,7 +1436,9 @@ lazy val studioMacosJob = WorkflowJob(
   "Studio (macOS, functional JavaFX)",
   studioJobSetup ::: List(
     WorkflowStep.Run(
-      List("sbt -J-Xmx4g -Djavafx.platform=mac-aarch64 studioDesktop/test"),
+      List(
+        "sbt -J-Xmx4g -Djavafx.platform=mac-aarch64 -Deyes4s.studio.fx.visible=true studioDesktop/test"
+      ),
       name = Some("Run functional JavaFX tests (no goldens)"),
       // The runner's display is 1024x768, which clamps a 1440x900 stage: tests
       // that need the full stage skip here and run in the Linux job.
@@ -1482,7 +1590,9 @@ lazy val docs = project
     publish / skip := true,
     mdocIn         := file("site-docs"),
     Compile / unmanagedResourceDirectories += file("site-docs/data").getAbsoluteFile,
-    tlSitePublishBranch := None
+    tlSitePublishBranch := None,
+    // site-docs/css: narrow-screen rules for inline code, code blocks and tables.
+    tlSiteHelium ~= (_.site.internalCSS(laika.ast.Path.Root / "css"))
   )
 
 lazy val allModules = Seq(
@@ -1513,16 +1623,22 @@ addCommandAlias(
 )
 
 // checkModuleBoundaries is per-module (it inspects each module's own resolved
-// graph); checkKernelPurity and checkStudioBoundaries are build-level.
-// `checkBoundaries` runs all of them.
-addCommandAlias(
-  "checkBoundaries",
-  (Seq("checkKernelPurity") ++
+// graph); checkKernelPurity, checkStudioBoundaries and checkStudioColours are
+// build-level and resolve nothing. `checkLibraryBoundaries` needs no studio pin and
+// runs in checks.yml; `studioBoundaries` runs in studio.yml; `checkBoundaries` runs
+// all of them.
+lazy val libraryBoundaryChecks =
+  Seq("checkKernelPurity") ++
     allModules
       .filterNot(m => m == "fs2Module" || m == "io")
       .flatMap(m => allPlatforms.map(p => s"$m$p/checkModuleBoundaries")) ++
-    studioBoundaryChecks)
-    .mkString(";", ";", "")
+    Seq("checkStudioBoundaries", "checkStudioColours")
+
+addCommandAlias("checkLibraryBoundaries", libraryBoundaryChecks.mkString(";", ";", ""))
+
+addCommandAlias(
+  "checkBoundaries",
+  (libraryBoundaryChecks ++ studioBoundaryChecks).mkString(";", ";", "")
 )
 
 lazy val apiAuditInputs =

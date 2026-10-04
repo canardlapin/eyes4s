@@ -24,7 +24,7 @@ import eyes4s.studio.core.bundle.InputKind
 import eyes4s.studio.core.command.Command
 import eyes4s.studio.core.document.{Source, SourceRole, StudioDocument}
 import eyes4s.studio.desktop.runtime.ProjectPort
-import eyes4s.studio.core.importing.{ImportPreset, SniffedSource, SourceReadError}
+import eyes4s.studio.core.importing.{ImportPreset, KeyGap, SniffedSource, SourceReadError}
 import eyes4s.studio.desktop.platform.FilePresetStore
 import javafx.application.Platform
 import javafx.scene.Scene
@@ -48,6 +48,28 @@ trait ImportPlatform:
     */
   def importInput(source: Source, path: Path, done: Either[String, Unit] => Unit): Unit
 
+/** Where a file the wizard read can be read again (S5.3): a file on disk
+  * (chosen in a new import), or the project's stored input (the
+  * column-mapping pane's re-map reads through `ProjectPort.readInput`).
+  */
+enum ByteSource:
+  case File(path: Path)
+  case Project(read: (Either[String, IArray[Byte]] => Unit) => Unit)
+
+  /** Read the bytes; `done` is called once, on any thread. */
+  def read(done: Either[String, IArray[Byte]] => Unit): Unit = this match
+    case File(path) =>
+      val bytes =
+        try Right(IArray.unsafeFromArray(Files.readAllBytes(path)))
+        catch case NonFatal(e) => Left(s"$path: ${Option(e.getMessage).getOrElse(e.toString)}")
+      done(bytes)
+    case Project(read) => read(done)
+
+object ByteSource:
+  /** The project's stored input for `source`. */
+  def project(port: ProjectPort, source: Source): ByteSource =
+    Project(done => port.readInput(source, done))
+
 /** Runs the wizard's Elm loop on the desktop (ticket S5.2): each intent goes
   * through [[ImportWizard.update]], the view renders the new view-model, and
   * the effects are performed. Document commands go to the app through `app`
@@ -64,9 +86,17 @@ final class ImportWizardHost(
   private var state: ImportWizard = initial
 
   /** Where each file read came from, by digest: the bytes themselves are
-    * not kept for the wizard's lifetime, only read again on commit.
+    * not kept for the wizard's lifetime, only read again on commit (a new
+    * import's files) or for a streaming key check.
     */
-  private var readFrom: Map[ByteDigest, Path] = Map.empty
+  private var readFrom: Map[ByteDigest, ByteSource] = Map.empty
+
+  /** Register where the file with `digest` can be read again: the pane's
+    * re-map reads its files from the project, and registers that reader
+    * before it dispatches the read.
+    */
+  def remember(digest: ByteDigest, source: ByteSource): Unit =
+    readFrom += digest -> source
 
   val view: ImportWizardView = ImportWizardView(dispatch)
   render()
@@ -74,6 +104,15 @@ final class ImportWizardHost(
   def model: ImportWizard = state
 
   def render(): Unit = view.render(ImportWizardVM.of(state, document()))
+
+  /** Start over on `wizard` (the column-mapping pane, when its dataset
+    * revision changes or its edits are reverted): the files read so far are
+    * forgotten.
+    */
+  def reset(wizard: ImportWizard): Unit =
+    state = wizard
+    readFrom = Map.empty
+    render()
 
   def dispatch(intent: WizardIntent): Unit =
     val (next, effects) = ImportWizard.update(state, intent, document())
@@ -96,7 +135,7 @@ final class ImportWizardHost(
             val bytes = IArray.unsafeFromArray(Files.readAllBytes(path))
             SniffedSource
               .read(role, importName, bytes)
-              .map(s => (WizardIntent.SourceRead(s), Some(s.bytes -> path)))
+              .map(s => (WizardIntent.SourceRead(s), Some(s.bytes -> ByteSource.File(path))))
               .left
               .map(e => WizardIntent.ReadFailed(importName, e))
           catch
@@ -134,8 +173,11 @@ final class ImportWizardHost(
     */
   private def perform(effects: Vector[WizardEffect]): Unit =
     val inputs = effects.collect {
-      case WizardEffect.Dispatch(Command.ImportSources(_, sources, _, _, _, _)) =>
-        sources.entries.flatMap(s => readFrom.get(s.bytes).map(s -> _))
+      case WizardEffect.Dispatch(Command.ImportSources(_, sources, _, _, _, _, _, _)) =>
+        // Only files from disk are stored; the project's own inputs are there.
+        sources.entries.flatMap(s =>
+          readFrom.get(s.bytes).collect { case ByteSource.File(path) => s -> path }
+        )
     }.flatten
     if inputs.isEmpty then effects.foreach(performOne)
     else
@@ -161,8 +203,66 @@ final class ImportWizardHost(
     case WizardEffect.Dispatch(command) => app(Intent.Dispatch(command))
     case WizardEffect.StorePreset(p)    =>
       platform.storePreset(p).left.foreach(reason => dispatch(WizardIntent.StoreFailed(reason)))
-    case WizardEffect.OpenFile(role) => platform.chooseFile(role).foreach(read(role, _): Unit)
-    case WizardEffect.Close          => close()
+    case WizardEffect.OpenFile(role)  => platform.chooseFile(role).foreach(read(role, _): Unit)
+    case check: WizardEffect.CheckKey => checkKey(check)
+    case WizardEffect.Close           => close()
+
+  /** The last streaming key check started; completes once it is dispatched. */
+  @volatile private var lastCheck: CompletableFuture[Unit] =
+    CompletableFuture.completedFuture(())
+
+  /** Completes when the latest streaming key check has been dispatched. */
+  def keyChecked: CompletableFuture[Unit] = lastCheck
+
+  /** Check a trial key in one streaming pass over its file, off the JavaFX
+    * thread (S5.3): the file is read again from where it was read, and only
+    * the key's grouping is kept.
+    */
+  private def checkKey(check: WizardEffect.CheckKey): Unit =
+    def refused(reason: String) = WizardIntent.KeyChecked(
+      check.role,
+      check.source,
+      check.columns,
+      check.unit,
+      Left(KeyGap.Unreadable(check.file, reason))
+    )
+    val done = CompletableFuture[Unit]()
+    lastCheck = done
+    // The check runs on its own worker: a project answers on its queue,
+    // which the pass must not hold.
+    def answer(read: Either[String, IArray[Byte]]): Unit =
+      val worker = Thread(
+        () =>
+          val intent =
+            try
+              read.fold(
+                refused,
+                bytes =>
+                  if ByteDigest.sha256(bytes) != check.source then
+                    refused(s"${check.file} changed after it was read; read it again")
+                  else
+                    SniffedSource
+                      .decodeUtf8(check.file, bytes)
+                      .fold(e => refused(e.message), KeyChecks.run(check, _))
+              )
+            catch case NonFatal(e) => refused(Option(e.getMessage).getOrElse(e.toString))
+          Platform.runLater { () =>
+            try dispatch(intent)
+            finally done.complete(()): Unit
+          }
+        ,
+        s"eyes4s-key-check-${check.file}"
+      )
+      worker.setDaemon(true)
+      worker.start()
+    readFrom.get(check.source) match
+      case None =>
+        dispatch(refused("it was not read in this session"))
+        done.complete(()): Unit
+      case Some(source) =>
+        val reader = Thread(() => source.read(answer), s"eyes4s-key-read-${check.file}")
+        reader.setDaemon(true)
+        reader.start()
 
 object ImportWizardHost:
 

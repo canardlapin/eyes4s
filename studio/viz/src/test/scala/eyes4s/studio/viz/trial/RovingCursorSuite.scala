@@ -17,6 +17,7 @@
 package eyes4s.studio.viz.trial
 
 import eyes4s.studio.app.Intent
+import eyes4s.studio.app.text.TrialText
 import eyes4s.studio.app.tokens.{StageVariant, Theme}
 import eyes4s.studio.core.assets.Display
 import eyes4s.studio.core.selection.{
@@ -30,6 +31,7 @@ import eyes4s.studio.core.selection.{
   StudioRef,
   ViewId
 }
+import eyes4s.plan.{MapPlacement, OffWindowPolicy}
 import eyes4s.studio.viz.plot.{PlotSurface, PlotTransform}
 import eyes4s.studio.viz.trial.TrialSamples.*
 import intaglio.interaction.NamedPicking
@@ -84,7 +86,7 @@ class RovingCursorSuite extends ScalaCheckSuite:
   private def fixationsAt(points: Seq[(Double, Double)]): Vector[TrialFixation] =
     points.zipWithIndex.map { case ((x, y), i) =>
       right(
-        TrialFixation.of(ret07, right(FixationIndex.of(i + 1)), x, y, 200, WindowSide.Inside)
+        TrialFixation.of(ret07, right(FixationIndex.of(i + 1)), x, y, 200, MapPlacement.InMap)
       )
     }.toVector
 
@@ -127,7 +129,7 @@ class RovingCursorSuite extends ScalaCheckSuite:
     do
       val t                         = targets(marks = style, scale = scale)
       def hollowMark(m: MarkTarget) =
-        m.mark.window == WindowSide.Outside || style == MarkStyle.Role(TrialRole.Control)
+        m.mark.placement != MapPlacement.InMap || style == MarkStyle.Role(TrialRole.Control)
       def reaches(o: MarkTarget, p: DevicePoint) =
         math.hypot(o.anchor.x - p.x, o.anchor.y - p.y) <= (o.mark.reachPx + 0.5) * scale
       // The marks that may take `p` from `target`: any mark drawn later whose
@@ -171,7 +173,7 @@ class RovingCursorSuite extends ScalaCheckSuite:
     // centre is inside both rings and on neither outline.
     val fs = Vector((900.0, 500.0), (905.0, 500.0)).zipWithIndex.map { case ((x, y), i) =>
       right(
-        TrialFixation.of(ret07, right(FixationIndex.of(i + 1)), x, y, 900, WindowSide.Inside)
+        TrialFixation.of(ret07, right(FixationIndex.of(i + 1)), x, y, 900, MapPlacement.InMap)
       )
     }
     for scale <- List(1.0, 2.0) do
@@ -192,7 +194,7 @@ class RovingCursorSuite extends ScalaCheckSuite:
   test("a hit on a control mark's casing resolves to that mark, not to a casing target") {
     for scale <- List(1.0, 2.0) do
       val t = targets(marks = MarkStyle.Role(TrialRole.Control), scale = scale)
-      t.targets.filter(_.mark.window == WindowSide.Inside).foreach { target =>
+      t.targets.filter(_.mark.placement == MapPlacement.InMap).foreach { target =>
         // 1.5 px outside the ring's centre line: on the halo casing, beyond the
         // 2 px outline itself.
         val onCasing = DevicePoint(
@@ -374,7 +376,7 @@ class RovingCursorSuite extends ScalaCheckSuite:
         Intent.Select(
           SelectionInput(
             InputStamp(ContextRevision(0), view, 1L, InputCause.Keyboard),
-            SelectionMode.Toggle,
+            SelectionMode.Add,
             Vector(first)
           )
         ),
@@ -414,7 +416,7 @@ class RovingCursorSuite extends ScalaCheckSuite:
     }
   }
 
-  test("a click picks, focuses and selects; a modifier click toggles; hover is local") {
+  test("a click picks, focuses and selects; a modifier click adds; hover is local") {
     val t       = targets()
     val target  = t.targets(3)
     val initial = TrialInputState.initial(view, SelectionState.empty)
@@ -428,7 +430,8 @@ class RovingCursorSuite extends ScalaCheckSuite:
       right(moved.state.handle(TrialInputEvent.PointerClicked(target.anchor, true), t, 1.0))
     assertEquals(clicked.state.focus, Some(target.ref))
     clicked.intents match
-      case Vector(Intent.Select(SelectionInput(stamp, SelectionMode.Toggle, Vector(ref)))) =>
+      // Nothing is projected yet, so the modifier click adds the mark.
+      case Vector(Intent.Select(SelectionInput(stamp, SelectionMode.Add, Vector(ref)))) =>
         assertEquals(ref, target.ref)
         assertEquals(stamp.cause, InputCause.Pointer)
       case other => fail(s"unexpected $other")
@@ -536,7 +539,7 @@ class RovingCursorSuite extends ScalaCheckSuite:
       key(RovingKey.Move(RovingMove.First)),
       key(RovingKey.Move(RovingMove.Next))
     )
-    assertEquals(s.accessibleText(ret07, t), "Fixation 2 of P17 · ret_07")
+    assertEquals(s.accessibleText(ret07, t), "Fixation 2 of P17 · ret_07 · in map")
     val selected = s.project(
       right(
         SelectionState.empty.submit(
@@ -550,13 +553,51 @@ class RovingCursorSuite extends ScalaCheckSuite:
     )
     assertEquals(
       selected.state.accessibleText(ret07, t),
-      "Fixation 2 of P17 · ret_07, selected"
+      "Fixation 2 of P17 · ret_07 · in map, selected"
     )
     assert(
       TrialInputState
         .initial(view, SelectionState.empty)
         .accessibleText(ret07, t)
         .startsWith("Fixations of P17 · ret_07. Arrow keys")
+    )
+  }
+
+  test("the focused mark's accessible text states its core placement") {
+    val t       = targets()
+    val outside = t.targets.find(_.mark.placement != MapPlacement.InMap).getOrElse(fail("none"))
+    assertEquals(outside.ref.index.value, 9)
+    val moves = key(RovingKey.Move(RovingMove.First)) +:
+      Vector.fill(outside.ref.index.value - 1)(key(RovingKey.Move(RovingMove.Next)))
+    val (s, _) = run(TrialInputState.initial(view, SelectionState.empty), t, moves*)
+    assertEquals(s.focus, Some(outside.ref))
+    assertEquals(
+      s.accessibleText(ret07, t),
+      "Fixation 9 of P17 · ret_07 · outside window, excluded from map"
+    )
+  }
+
+  test("focused-mark text names each core placement") {
+    val ref: StudioRef.Fixation = StudioRef.Fixation(ret07, right(FixationIndex.of(1)))
+    assertEquals(
+      TrialText.mark(ref, MapPlacement.InMap, false),
+      "Fixation 1 of P17 · ret_07 · in map"
+    )
+    assertEquals(
+      TrialText.mark(ref, MapPlacement.DroppedInitial, false),
+      "Fixation 1 of P17 · ret_07 · dropped by initial-fixation policy"
+    )
+    assertEquals(
+      TrialText.mark(ref, MapPlacement.OutsideScreen, false),
+      "Fixation 1 of P17 · ret_07 · outside screen"
+    )
+    assertEquals(
+      TrialText.mark(ref, MapPlacement.OutsideWindow(OffWindowPolicy.Exclude), false),
+      "Fixation 1 of P17 · ret_07 · outside window, excluded from map"
+    )
+    assertEquals(
+      TrialText.mark(ref, MapPlacement.OutsideWindow(OffWindowPolicy.FailTrial), false),
+      "Fixation 1 of P17 · ret_07 · outside window, trial fails"
     )
   }
 

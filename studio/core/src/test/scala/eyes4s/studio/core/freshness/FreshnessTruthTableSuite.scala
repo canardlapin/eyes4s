@@ -55,7 +55,8 @@ class FreshnessTruthTableSuite extends munit.ScalaCheckSuite:
         )
     )
 
-  private val admitted = AdmissionDecision.Admitted(CoreBinding.unbound, CoreBinding.unbound)
+  private val admitted =
+    AdmissionDecision.Admitted(None, CoreBinding.unbound, CoreBinding.unbound)
 
   private def diagnostic(level: DiagnosticLevel, code: String) =
     StudioDiagnostic(code, level, DiagnosticOrigin.Host, Vector.empty, code)

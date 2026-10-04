@@ -18,6 +18,12 @@ package eyes4s.studio.core.backend
 
 import io.circe.syntax.*
 import io.circe.{Decoder, Encoder, Json}
+import eyes4s.studio.core.execution.RunStamp
+import eyes4s.studio.core.preview.*
+import eyes4s.plan.{MapPlacement, OffWindowPolicy}
+import eyes4s.codec.ByteDigest
+import eyes4s.studio.core.document.{Source, SourcePath, SourceRole}
+import eyes4s.studio.core.selection.{FixationIndex, RecordNumber, StudioRef}
 
 /** One named protocol value: its JSON is pinned in [[ProtocolPins]]. */
 final case class Sample[A](name: String, value: A)(using
@@ -65,8 +71,31 @@ object ProtocolSamples:
     DiagnosticLevel.Error,
     DiagnosticOrigin.EyesCore,
     Vector(DiagnosticLocus.Trial(query)),
-    "empty map"
+    "empty map",
+    // Protocol 1.8: the trials it names, its finding class and remedy.
+    Vector(query, TrialKey("P17", Phase.Encoding, "enc_03", 1)),
+    Some("DataDependent"),
+    Some("ReviewAnalysisWindow")
   )
+
+  val previewBudget: PreviewBudget = right(PreviewBudget.of(24))
+  val previewReady: PreviewReady   = right(
+    PreviewReady.of(
+      PreviewId(1L),
+      PreviewStamp.fake(AnalysisRevision(5), DatasetRevision(3)),
+      right(PreviewCandidates.of(480, 480, 24, 230400L, 480, 14, None)),
+      right(PreviewCounts.of(8969L, 44845L, 457, 9, 0)),
+      Vector(diagnostic)
+    )
+  )
+
+  /** `r` with another id, stamp or counts, as a backend or a tamperer would send it. */
+  def remade(r: PreviewReady)(
+      id: PreviewId = r.id,
+      stamp: RunStamp = r.stamp,
+      counts: PreviewCounts = r.counts
+  ): PreviewReady =
+    right(PreviewReady.of(id, stamp, r.candidates, counts, r.diagnostics))
 
   val address: ResultAddress = ResultAddress.PairRow(2, PairDesign.Control, query, matched)
 
@@ -140,13 +169,50 @@ object ProtocolSamples:
     BackendError.UnknownRevision(AnalysisRevision(9), Vector(AnalysisRevision(4))),
     BackendError.UnknownRun(RunId(9), Vector(RunId(7))),
     BackendError.UnknownJob(JobId(9), Vector.empty),
+    BackendError.UnknownPreview(PreviewId(9L), Vector(PreviewId(1L))),
+    BackendError.PreviewNotReady(
+      PreviewId(1L),
+      right(ParticipantCount.of(3)),
+      right(ParticipantCount.of(24))
+    ),
+    BackendError.StalePreview(
+      PreviewId(1L),
+      previewReady.stamp,
+      previewReady.stamp.copy(dataset = DatasetRevision(4))
+    ),
+    BackendError.TamperedPreview(
+      remade(previewReady)(counts = right(PreviewCounts.of(8969L, 44845L, 457, 9, 1))),
+      previewReady
+    ),
     BackendError.Unavailable(DiagnosticLocus.Dataset(DatasetRevision(2))),
     BackendError.NoResult(RunId(5), RunState.Stale),
     BackendError.UnknownReference(RunId(7), address),
     BackendError.AlreadyRunning(AnalysisRevision(5), job),
     BackendError.UnsupportedVersion(ProtocolVersion(2, 0), ProtocolVersion(1, 0)),
     BackendError.Malformed("{\"id\":3,\"body\":{\"Runz\":{}}}", "no such request"),
-    BackendError.DuplicateSubscription(RequestId(41))
+    BackendError.DuplicateSubscription(RequestId(41)),
+    BackendError.InventoryRefused(
+      DatasetRevision(4),
+      Vector(
+        InventoryIssue.Conflict(
+          TrialLabel("P01", "Encoding", "enc_01"),
+          Vector(2, 9),
+          Vector("response")
+        ),
+        InventoryIssue.Width(5, 8, 7),
+        InventoryIssue.Field(6, "occurrence", "x", "a positive integer occurrence"),
+        InventoryIssue.Other(
+          "DuplicateAttribute",
+          "Attribute names [a] are declared more than once."
+        )
+      )
+    ),
+    BackendError.UnknownTrial(DatasetRevision(3), TrialKey("P99", Phase.Encoding, "enc_01", 1)),
+    BackendError.TrialViewRefused(TrialViewError.TrialFails(query, Vector(4, 5))),
+    BackendError.SourceRecordsRefused(
+      AnalysisRevision(4),
+      SourceRecordsError.RangeInvalid(0, 501, SourceRecordPage.Limit)
+    )
   )
 
   val runStates: Vector[RunState] = Vector(
@@ -168,11 +234,10 @@ object ProtocolSamples:
   val admission: AdmissionSummary = AdmissionSummary(
     DatasetRevision(3),
     DatasetState.Admitted,
-    960,
+    InventoryJoin.Joined(960, 6),
     937,
     Vector(QuarantineCount("quarantine.overlap", 6)),
     5,
-    6,
     11520,
     WindowTotals(543, 0, 11311, 409, 0, 937, 0, Some(11520), 159142000L, 0L, 3282108000L),
     259,
@@ -217,11 +282,155 @@ object ProtocolSamples:
     Inspection.Unscored(ResultAddress.Estimation(0, query), queryStatuses(3))
   )
 
+  private def fixation(
+      position: Int,
+      record: Int,
+      x: Double,
+      y: Double,
+      onset: Double,
+      duration: Double,
+      placement: MapPlacement
+  ): AdmittedFixation =
+    val index = FixationIndex.of(position).toOption.get
+    AdmittedFixation
+      .of(StudioRef.Fixation(query, index), record, x, y, onset, duration, placement)
+      .toOption
+      .get
+
+  /** Protocol 1.6: one fixation of each placement. */
+  val trialFixations: TrialFixations = TrialFixations
+    .of(
+      AnalysisRevision(4),
+      DatasetRevision(3),
+      query,
+      Vector(
+        fixation(1, 7209, 960.5, 540.25, 0.5, 212.5, MapPlacement.InMap),
+        fixation(
+          2,
+          7210,
+          1500.5,
+          540.75,
+          230.5,
+          180.25,
+          MapPlacement.OutsideWindow(OffWindowPolicy.Exclude)
+        ),
+        fixation(3, 7211, -4.5, 20.25, 420.5, 96.5, MapPlacement.OutsideScreen),
+        fixation(4, 7212, 600.5, 400.5, 530.5, 140.5, MapPlacement.DroppedInitial),
+        fixation(
+          5,
+          7213,
+          610.5,
+          410.5,
+          680.5,
+          160.5,
+          MapPlacement.OutsideWindow(OffWindowPolicy.FailTrial)
+        )
+      )
+    )
+    .toOption
+    .get
+
+  /** Protocol 1.6: a 3 × 2 preview, top row first, one cell without a value. */
+  val trialPreview: TrialPreview = TrialPreview
+    .of(
+      AnalysisRevision(4),
+      query,
+      2.5,
+      ScreenRegion.of(query, 448.5, 156.5, 1472.5, 924.5).toOption.get,
+      3,
+      2,
+      RowOrder.TopFirst,
+      Vector(Some(0.1), Some(0.25), None, Some(0.3), Some(0.2), Some(0.15)),
+      Vector(0.2, 0.12)
+    )
+    .toOption
+    .get
+
+  /** Protocol 1.7: a placed record of an admitted scanpath, a record outside
+    * the image no scanpath holds, and a record whose cells are not numbers.
+    */
+  val sourceRecordPage: SourceRecordPage =
+    def point(n: Int, f: String, x: Double, y: Double) = PlanePoint.of(n, f, x, y).toOption.get
+    def ref(n: Int, fixation: Option[Int]): StudioRef.SourceRecord = StudioRef.SourceRecord(
+      query,
+      fixation.map(FixationIndex.of(_).toOption.get),
+      SourceRole.Fixations,
+      RecordNumber.of(n).toOption.get
+    )
+    SourceRecordPage
+      .of(
+        AnalysisRevision(4),
+        DatasetRevision(3),
+        Source(
+          SourceRole.Fixations,
+          SourcePath.of("fixations.csv").toOption.get,
+          ByteDigest.parse("ab" * 32).toOption.get,
+          None
+        ),
+        35.5,
+        ScaleSource.Recipe,
+        11520,
+        7214,
+        3,
+        Vector(
+          SourceRecordRow
+            .of(
+              ref(7214, Some(6)),
+              Some(6),
+              Some(2160.5),
+              Some(412.5),
+              Some(206),
+              Some(point(7214, "screen", 1148.5, 456.5)),
+              Some(ImagePosition(point(7214, "image", 700.5, 300.5), true)),
+              Some(point(7214, "degrees", 5.375, 2.385)),
+              Some(MapPlacement.InMap),
+              "P17,Retrieval,ret_07,1,6,1148.5,456.5,2160.5,412.5,206"
+            )
+            .toOption
+            .get,
+          SourceRecordRow
+            .of(
+              ref(7215, None),
+              Some(7),
+              Some(2650.5),
+              Some(200.5),
+              Some(0),
+              Some(point(7215, "screen", 120.5, 80.5)),
+              Some(ImagePosition(point(7215, "image", -327.5, -75.5), false)),
+              Some(point(7215, "degrees", -24.25, 13.75)),
+              None,
+              "P17,Retrieval,ret_07,1,7,120.5,80.5,2650.5,200.5,0"
+            )
+            .toOption
+            .get,
+          SourceRecordRow
+            .of(
+              ref(7216, None),
+              None,
+              None,
+              None,
+              None,
+              None,
+              None,
+              None,
+              None,
+              "P17,Retrieval,ret_07,1,x,,,,,"
+            )
+            .toOption
+            .get
+        )
+      )
+      .toOption
+      .get
+
   val requests: Vector[BackendRequest] = Vector(
     BackendRequest.Admission(DatasetRevision(3)),
     BackendRequest.Ledger(DatasetRevision(3), page),
     BackendRequest.Preview(AnalysisRevision(5)),
     BackendRequest.PreviewRows(AnalysisRevision(5), page),
+    BackendRequest.PreviewCounting(AnalysisRevision(5), previewBudget),
+    BackendRequest.ContinuePreview(PreviewId(1L), previewBudget),
+    BackendRequest.SubmitPreview(previewReady),
     BackendRequest.Runs,
     BackendRequest.Submit(AnalysisRevision(5)),
     BackendRequest.Jobs,
@@ -233,7 +442,10 @@ object ProtocolSamples:
     BackendRequest.Queries(run, page),
     BackendRequest.Inspect(run, address),
     BackendRequest.ProvenanceOf(run, address),
-    BackendRequest.Unsubscribe(RequestId(41))
+    BackendRequest.Unsubscribe(RequestId(41)),
+    BackendRequest.TrialFixationsOf(AnalysisRevision(4), query),
+    BackendRequest.TrialPreviewOf(AnalysisRevision(4), query),
+    BackendRequest.SourceRecordsOf(AnalysisRevision(4), 7214, 60)
   )
 
   val responses: Vector[BackendResponse] = Vector(
@@ -300,6 +512,7 @@ object ProtocolSamples:
         )
       )
     ),
+    BackendResponse.PreviewAccepted,
     BackendResponse.Runs(
       Vector(RunSummary(RunId(7), AnalysisRevision(4), DatasetRevision(3), RunState.Current))
     ),
@@ -330,7 +543,10 @@ object ProtocolSamples:
         )
       )
     ),
-    BackendResponse.Unsubscribed(RequestId(41), true)
+    BackendResponse.Unsubscribed(RequestId(41), true),
+    BackendResponse.TrialFixationsOf(trialFixations),
+    BackendResponse.TrialPreviewOf(trialPreview),
+    BackendResponse.SourceRecordsOf(sourceRecordPage)
   )
 
   val events: Vector[JobEvent] =
@@ -359,10 +575,22 @@ object ProtocolSamples:
           case JobEvent.Advanced(_) => "Advanced"
           case JobEvent.Finished(o) => s"Finished.${o.productPrefix}"
       ) ++
+      named(
+        "preview-event",
+        Vector[PreviewEvent](
+          PreviewEvent.Initial(previewReady.id, previewReady.stamp, previewReady.candidates),
+          PreviewEvent.Counting(previewReady.id, right(PreviewProgress.of(1, 24))),
+          PreviewEvent.Ready(previewReady)
+        )
+      )(prefix) ++
       Vector(
         Sample("frame.Response", ServerFrame.Response(responses(0))),
         Sample("frame.Event", ServerFrame.Event(events(0))),
-        Sample("envelope.request", Envelope(RequestId(41), requests(8))),
+        Sample("frame.Preview", ServerFrame.Preview(PreviewEvent.Ready(previewReady))),
+        Sample(
+          "envelope.request",
+          Envelope(RequestId(41), BackendRequest.Subscribe(job): BackendRequest)
+        ),
         Sample("envelope.frame", Envelope(RequestId(41), ServerFrame.Event(events(1)))),
         Sample("state.Queued", JobState.Queued: JobState),
         Sample("state.Running", JobState.Running(progress): JobState),

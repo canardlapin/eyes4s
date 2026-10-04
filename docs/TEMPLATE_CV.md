@@ -79,7 +79,9 @@ other learned density transforms. The separately measured `template_regression`
 and `template_multireg` LM paths are covered by
 [`Template.decompose`](SURFACE_DECOMPOSITION.md), including normalized predictors,
 baseline/source slopes, explicit intercept policy and Signed fitted/residual maps.
-Robust, NNLS and logistic variants remain outside this bounded baseline slice.
+Cellwise NNLS, simplex mixtures and partial Spearman association are separate
+[surface decompositions](SURFACE_DECOMPOSITION.md); robust and logistic variants remain
+outside this bounded baseline slice.
 
 Regenerate the offline oracle with:
 

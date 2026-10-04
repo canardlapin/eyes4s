@@ -16,7 +16,16 @@
 
 package eyes4s.studio.core.selection
 
-import eyes4s.studio.core.backend.{PairDesign, ResultAddress, Response, RunId, TrialKey}
+import eyes4s.studio.core.backend.{
+  AnalysisRevision,
+  DatasetRevision,
+  PairDesign,
+  Phase,
+  ResultAddress,
+  Response,
+  RunId,
+  TrialKey
+}
 import eyes4s.studio.core.document.{FigureId, PanelLetter, ReportingId, SourceRole}
 import io.circe.{Codec, Decoder, Encoder}
 
@@ -44,6 +53,9 @@ object ScaleIndex:
     Either.cond(value >= 0, new ScaleIndex(value), RefError.NegativeScale(value))
 
   given Codec[ScaleIndex] = RefCodecs.validated(of, _.value)
+
+  /** The first declared scale; every scale set has one. */
+  val first: ScaleIndex = new ScaleIndex(0)
 
 /** A fixation's position within its trial, from 1 ("fixation 6"). */
 final case class FixationIndex private (value: Int) derives CanEqual
@@ -142,6 +154,33 @@ enum StudioRef derives CanEqual, Codec.AsObject:
 
   case FigurePanel(figure: FigureId, panel: PanelLetter)
 
+  /** A dataset revision's count of fixation records in admitted trials that
+    * fall outside a frame (eyes4s `WindowSummary`; ticket S5.5).
+    */
+  case WindowTally(dataset: DatasetRevision, region: TallyRegion)
+
+  /** One count of an analysis revision's resolved design, as the backend's
+    * preview reports it (ticket S7.5).
+    */
+  case DesignTally(revision: AnalysisRevision, tally: DesignCount)
+
+  /** A dataset revision's count of inventory trials with one admission
+    * disposition (eyes4s `TrialDisposition`; ticket S5.6): the trials the
+    * admission ledger lists under it.
+    */
+  case InventoryCount(dataset: DatasetRevision, count: InventoryKind)
+
+  /** A group of a dataset revision's trials as the trials navigator lists
+    * them (ticket S6.1): one participant's phase, or the trials matched on
+    * one item. Its figures count the backend ledger's entries in it.
+    */
+  case TrialGroup(dataset: DatasetRevision, group: TrialGrouping)
+
+  /** One count of a run's query contrasts (eyes4s `QueryContrasts`; ticket
+    * S8.1): the queries the run requested, or those with one outcome.
+    */
+  case QueryTally(run: RunId, tally: QueryCount)
+
   def kind: RefKind = this match
     case Participant(_)                                       => RefKind.Entity
     case Trial(_) | Fixation(_, _) | SourceRecord(_, _, _, _) => RefKind.Observation
@@ -151,7 +190,9 @@ enum StudioRef derives CanEqual, Codec.AsObject:
           RefKind.Observation
         case ResultAddress.Reduction(_, _, _) | ResultAddress.ContrastRow(_, _) =>
           RefKind.Aggregate
-    case ParticipantSummary(_, _, _, _, _) | GroupCell(_, _, _, _) | FigurePanel(_, _) =>
+    case ParticipantSummary(_, _, _, _, _) | GroupCell(_, _, _, _) | FigurePanel(_, _) |
+        WindowTally(_, _) | DesignTally(_, _) | InventoryCount(_, _) | TrialGroup(_, _) |
+        QueryTally(_, _) =>
       RefKind.Aggregate
 
   def isAggregate: Boolean = kind == RefKind.Aggregate
@@ -166,7 +207,10 @@ enum StudioRef derives CanEqual, Codec.AsObject:
     *  - participant ⊃ trial ⊃ fixation ⊃ fixation record, and trial ⊃
     *    inventory record;
     *  - query contrast ⊃ its reductions ⊃ their pairs (same run and scale).
-    *  - group cell ⊃ participant summary (same run, spec and scale).
+    *  - group cell ⊃ participant summary (same run, spec and scale);
+    *  - quarantined trials ⊃ the trials of each quarantine cause and the
+    *    no-fixations trials (same dataset);
+    *  - participant ⊃ the trials of one of its phases.
     *
     * Which group a query belongs to depends on the data; a view that knows it
     * supplies it through [[Lineage]].
@@ -189,6 +233,79 @@ enum StudioRef derives CanEqual, Codec.AsObject:
     case ParticipantSummary(_, _, _, None, _) => None
     case GroupCell(_, _, _, _)                => None
     case FigurePanel(_, _)                    => None
+    case WindowTally(_, _)                    => None
+    case DesignTally(_, _)                    => None
+    case QueryTally(run, tally)               =>
+      Option.when(tally != QueryCount.Requested)(QueryTally(run, QueryCount.Requested))
+    case InventoryCount(dataset, count) =>
+      count match
+        case InventoryKind.Cause(_) | InventoryKind.NoFixations =>
+          Some(InventoryCount(dataset, InventoryKind.Quarantined))
+        case _ => None
+    case TrialGroup(_, group) =>
+      group match
+        case TrialGrouping.PhaseOf(participant, _) => Some(Participant(participant))
+        case TrialGrouping.MatchedOn(_)            => None
+
+/** Which count of a run's query contrasts a [[StudioRef.QueryTally]] names:
+  * every requested query, or those with one outcome (each is within the
+  * requested).
+  */
+enum QueryCount derives CanEqual, Codec.AsObject:
+  case Requested, Contributing, Failed, NoMatch, QueryNotAdmitted
+
+/** Which trials a [[StudioRef.TrialGroup]] holds: one participant's trials
+  * of one phase, or every trial matched on one item.
+  */
+enum TrialGrouping derives CanEqual, Codec.AsObject:
+  case PhaseOf(participant: String, phase: Phase)
+  case MatchedOn(item: String)
+
+/** Which frame a [[StudioRef.WindowTally]] counts records outside of: the
+  * analysis window (the image frame, on the screen) or the screen itself.
+  */
+enum TallyRegion derives CanEqual, Codec.AsObject:
+  case OutsideWindow, OutsideScreen
+
+/** Which count of a resolved design a [[StudioRef.DesignTally]] names: the
+  * focal trials by status, the trials the candidate pairs cross, or the pairs
+  * per scale before and after paging.
+  */
+enum DesignCount derives CanEqual, Codec.AsObject:
+  case RequestedQueries, EligibleQueries, UnmatchedQueries, QueriesNotAdmitted, ByDesignQueries
+  case FocalTrials, ReferenceTrials, CandidatePairsPerScale, EligiblePairsPerScale
+
+  /** The pairs a run of the revision compares, over every scale (S7.6's run
+    * card).
+    */
+  case EligiblePairs
+
+  /** The scales the revision's recipe declares: a run compares every pair
+    * at each (S7.6's run card).
+    */
+  case Scales
+
+  /** The participants the preview counts, one page of pairs each. */
+  case Participants
+
+/** Which inventory trials a [[StudioRef.InventoryCount]] counts, by their
+  * admission disposition. `Quarantined` holds every trial admission held
+  * back: those quarantined with a cause and the no-fixations trials, whose
+  * records exist but none is admissible. `Absent` trials are in the
+  * inventory with no records at all; only an inventory can count them.
+  */
+enum InventoryKind derives CanEqual, Codec.AsObject:
+  /** Every trial of the inventory. */
+  case Inventory
+  case Admitted
+  case Quarantined
+
+  /** The trials quarantined with the eyes4s cause `code`
+    * ("quarantine.overlap").
+    */
+  case Cause(code: String)
+  case NoFixations
+  case Absent
 
 object StudioRef:
   /** A run result from a backend address, refusing a negative scale. */

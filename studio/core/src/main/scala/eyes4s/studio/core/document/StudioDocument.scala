@@ -21,7 +21,7 @@ import eyes4s.codec.{CanonicalDigest, CodecError, SchemaLadder, VersionedCodec}
 import eyes4s.plan.DefinitionId
 import eyes4s.studio.core.backend.{AnalysisRevision, DatasetRevision, JobId, RunId}
 import io.circe.syntax.*
-import io.circe.{Decoder, Encoder, Json}
+import io.circe.{Decoder, Encoder, Json, JsonObject}
 
 /** Studio's schema identities, in its own `studio.` namespace, built with
   * the public `DefinitionId.of` (they are not eyes4s built-ins and not in the
@@ -29,12 +29,13 @@ import io.circe.{Decoder, Encoder, Json}
   * schemas here.
   */
 object StudioSchemaIds:
-  val DocumentName: String = "studio.document"
-  val ScienceName: String  = "studio.science"
-  val JournalName: String  = "studio.journal"
-  val DatasetName: String  = "studio.dataset-content"
-  val ProjectName: String  = "studio.project"
-  val AssetsName: String   = "studio.asset-registry"
+  val DocumentName: String   = "studio.document"
+  val ScienceName: String    = "studio.science"
+  val JournalName: String    = "studio.journal"
+  val DatasetName: String    = "studio.dataset-content"
+  val ProjectName: String    = "studio.project"
+  val AssetsName: String     = "studio.asset-registry"
+  val RunArchiveName: String = "studio.run-archive"
 
   final case class Ids(
       document: DefinitionId,
@@ -42,10 +43,11 @@ object StudioSchemaIds:
       journal: DefinitionId,
       datasetContent: DefinitionId,
       project: DefinitionId,
-      assets: DefinitionId
+      assets: DefinitionId,
+      runArchive: DefinitionId
   ) derives CanEqual:
     def all: Vector[DefinitionId] =
-      Vector(document, science, journal, datasetContent, project, assets)
+      Vector(document, science, journal, datasetContent, project, assets, runArchive)
 
   private def id(name: String, version: Int): Either[DocumentError, DefinitionId] =
     DefinitionId.of(name, version).left.map(_ => DocumentError.BadSchemaId(name, version))
@@ -54,7 +56,8 @@ object StudioSchemaIds:
     * the document's scientific identity; a line of the command journal
     * (S2.2); and the first version of the `.eyes` bundle manifest
     * `project.json` (S2.3), whose later versions its `SchemaLadder` adds;
-    * and a dataset revision's asset registry (S2.10).
+    * a dataset revision's asset registry (S2.10); and a run archive's
+    * index in the run store (S2.6).
     */
   val ids: Either[DocumentError, Ids] =
     for
@@ -64,7 +67,8 @@ object StudioSchemaIds:
       dataset  <- id(DatasetName, 1)
       project  <- id(ProjectName, 1)
       assets   <- id(AssetsName, 1)
-    yield Ids(document, science, journal, dataset, project, assets)
+      archive  <- id(RunArchiveName, 1)
+    yield Ids(document, science, journal, dataset, project, assets, archive)
 
   /** The ids as a codec failure, for building codecs. */
   private[studio] def forCodec: Either[CodecError, Ids] =
@@ -146,6 +150,10 @@ final case class StudioDocument private (
   def analysis(id: AnalysisRevision): Option[AnalysisRevisionSpec] = analyses.find(_.id == id)
   def run(id: RunId): Option[RunRef]                               = runs.find(_.id == id)
 
+  /** The number the next created figure gets: one after the last. */
+  def nextFigureId: Either[DocumentError, FigureId] =
+    FigureId.of(figures.lastOption.fold(1)(_.id.number + 1))
+
   /** The backend job of a running run, while this session knows it. */
   def job(run: RunId): Option[JobId] = jobs.find(_.run == run).map(_.job)
 
@@ -197,6 +205,7 @@ object StudioDocument:
         DocumentError.UnorderedIds("reporting spec", reportingId.map(_.value))
       )
       _ <- datasets.traverse_(DatasetRevisionSpec.checkAttributes)
+      _ <- datasets.traverse_(DatasetRevisionSpec.checkInventory)
       _ <- datasets.traverse_ { d =>
         d.parent.traverse_ { p =>
           if p.number >= d.id.number then Left(DocumentError.ParentNotEarlier(d.id, p))
@@ -310,17 +319,71 @@ object StudioDocument:
       )(of)
       .emap(_.left.map(_.message))
 
+  /** Whether a version-2 document can hold `document`: version 2 records no
+    * admission policy (S5.6).
+    */
+  private def expressedByV2(document: StudioDocument): Boolean =
+    document.datasets.forall(_.decision.admittedUnder.isEmpty)
+
+  /** Whether a version-1 document can hold `document`: version 1 records
+    * neither a trial inventory mapping (S5.4) nor an admission policy.
+    */
+  private def expressedByV1(document: StudioDocument): Boolean =
+    expressedByV2(document) && document.datasets.forall(_.inventory.isEmpty)
+
+  private def mapDatasets(payload: Json)(f: JsonObject => JsonObject): Json =
+    payload.hcursor
+      .downField("datasets")
+      .withFocus(_.mapArray(_.map(_.mapObject(f))))
+      .top
+      .getOrElse(payload)
+
+  /** `payload` without any admitted revision's policy: what a version-2
+    * reader saw, since it did not know the member.
+    */
+  private def withoutPolicy(payload: Json): Json =
+    mapDatasets(payload)(d =>
+      d("decision").fold(d)(decision =>
+        d.add("decision", decision.mapObject(_.mapValues(_.mapObject(_.remove("policy")))))
+      )
+    )
+
+  /** `payload` without any dataset revision's inventory mapping or policy:
+    * what a version-1 reader saw, since it did not know the members.
+    */
+  private def withoutInventory(payload: Json): Json =
+    mapDatasets(withoutPolicy(payload))(_.remove("inventory"))
+
+  private def read(json: Json): Either[CodecError, StudioDocument] =
+    json.as[StudioDocument].left.map(f => CodecError.Field("document", json, f.getMessage))
+
   /** Every version of the document schema; a later version is added with
     * `SchemaLadder.next` and its upcast, and `ladder.lift` rewrites a stored
     * document as the latest version (CR3).
+    *
+    * Version 2 (S5.4) adds a dataset revision's trial inventory mapping
+    * (`inventory`, written only when a revision has one). A document with no
+    * mapping is still written as version 1, byte for byte; one with a
+    * mapping is version 2, which a version-1 reader refuses
+    * (`CodecError.UnsupportedSchema`) instead of dropping the mapping. The
+    * upcast is the identity: a version-1 document has no mapping.
+    *
+    * Version 3 (S5.6) adds the eyes4s `AdmissionDecision` an admitted
+    * revision was admitted under (`decision.Admitted.policy`, written only
+    * when recorded), in the same way: a document that records no policy is
+    * still written as version 1 or 2, and the upcast is the identity, since
+    * an earlier document records none.
     */
   val ladder: Either[CodecError, SchemaLadder[StudioDocument]] =
     StudioSchemaIds.forCodec.map { ids =>
-      SchemaLadder.of[StudioDocument]("studio document", ids.document)(d =>
-        Right(CanonicalJson(d.asJson))
-      )(json =>
-        json.as[StudioDocument].left.map(f => CodecError.Field("document", json, f.getMessage))
-      )
+      SchemaLadder
+        .of[StudioDocument]("studio document", ids.document)(d =>
+          Right(CanonicalJson(withoutInventory(d.asJson)))
+        )(json => read(withoutInventory(json)))
+        .next(expressedByV1, identity)(d => Right(CanonicalJson(withoutPolicy(d.asJson))))(
+          json => read(withoutPolicy(json))
+        )
+        .next(expressedByV2, identity)(d => Right(CanonicalJson(d.asJson)))(read)
     }
 
   /** The versioned, canonical document codec. */

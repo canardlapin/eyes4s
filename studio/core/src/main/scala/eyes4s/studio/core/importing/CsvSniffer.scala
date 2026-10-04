@@ -92,7 +92,9 @@ final case class PreviewColumn(name: ColumnName, samples: Vector[String]) derive
   * the first records' values, how many records follow the header, how many
   * have a width other than the header's, and the first of those
   * ([[CsvSniffer.RaggedKept]] at most, so a preview does not grow with the
-  * file).
+  * file). `keys` holds the low-cardinality columns, dictionary-encoded in
+  * the same scan (S5.3): at most two bytes a record for each column with at
+  * most [[KeyTable.Cap]] distinct values; no other column is kept.
   */
 final case class CsvPreview(
     file: String,
@@ -100,7 +102,8 @@ final case class CsvPreview(
     columns: Vector[PreviewColumn],
     records: Int,
     raggedTotal: Int,
-    ragged: Vector[RaggedRecord]
+    ragged: Vector[RaggedRecord],
+    keys: KeyTable = KeyTable.empty
 ) derives CanEqual:
   def header: Vector[ColumnName] = columns.map(_.name)
 
@@ -170,7 +173,7 @@ object CsvSniffer:
       (delimiter, headRecords) = chosen
       header                   = headRecords.head
       names <- columnNames(file, header)
-      scan  <- scan(file, text, delimiter, header.size)
+      scan  <- scan(file, text, delimiter, names)
     yield
       val sampled = headRecords.slice(1, 1 + samples)
       // A short record shows a blank cell, so every sample stays aligned
@@ -178,7 +181,15 @@ object CsvSniffer:
       val columns = names.zipWithIndex.map((name, i) =>
         PreviewColumn(name, sampled.map(_.lift(i).getOrElse("")))
       )
-      CsvPreview(file, delimiter, columns, scan.records, scan.raggedTotal, scan.ragged)
+      CsvPreview(
+        file,
+        delimiter,
+        columns,
+        scan.records,
+        scan.raggedTotal,
+        scan.ragged,
+        scan.keys
+      )
 
   private def columnNames(
       file: String,
@@ -208,15 +219,24 @@ object CsvSniffer:
         .toLeft(())
     yield names
 
-  private final case class Scan(records: Int, raggedTotal: Int, ragged: Vector[RaggedRecord])
+  private final case class Scan(
+      records: Int,
+      raggedTotal: Int,
+      ragged: Vector[RaggedRecord],
+      keys: KeyTable
+  )
 
-  /** One pass over every record after the header: the count and the ragged. */
+  /** One pass over every record after the header: the count, the ragged and
+    * the low-cardinality columns.
+    */
   private def scan(
       file: String,
       text: CharSequence,
       delimiter: Delimiter,
-      width: Int
+      names: Vector[ColumnName]
   ): Either[SniffError, Scan] =
+    val width  = names.size
+    val keys   = KeyTableBuilder(names, KeyTable.Cap)
     val reader = RecordReader(file, text, delimiter)
     val ragged = Vector.newBuilder[RaggedRecord]
     var kept   = 0
@@ -226,6 +246,7 @@ object CsvSniffer:
     reader
       .fold(Right(())) { fields =>
         count += 1
+        keys.add(fields)
         if fields.size != width then
           total += 1
           if kept < RaggedKept then
@@ -233,7 +254,7 @@ object CsvSniffer:
             kept += 1
         true
       }
-      .map(_ => Scan(count, total, ragged.result()))
+      .map(_ => Scan(count, total, ragged.result(), keys.result()))
 
   /** The header and up to [[HeadRecords]] records under `delimiter`. */
   private def head(

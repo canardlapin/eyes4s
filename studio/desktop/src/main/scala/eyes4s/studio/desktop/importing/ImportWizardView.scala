@@ -109,6 +109,10 @@ final class ImportWizardView(dispatch: WizardIntent => Unit):
   )
   fixations.page.getChildren.add(presets)
 
+  // --- trial key (S5.3): under the column mapping, as the board draws it ----------
+  val key: TrialKeyView = TrialKeyView(fire)
+  fixations.page.getChildren.add(key.node)
+
   // --- geometry ----------------------------------------------------------------------
   val geometryFields: Map[GeometryField, TextField] =
     GeometryField.values.toVector.map { f =>
@@ -178,6 +182,12 @@ final class ImportWizardView(dispatch: WizardIntent => Unit):
         b.setAccessibleText(t.label)
         b.setSelected(t.selected)
       }
+      // A re-map offers some of the pages only (S5.4).
+      WizardTab.values.foreach { t =>
+        val shown = vm.showTabs && vm.tabs.exists(_.tab == t)
+        tabs(t).setVisible(shown)
+        tabs(t).setManaged(shown)
+      }
       kind.setText(vm.kind)
       WizardTab.values.foreach { t =>
         val p = page(t)
@@ -186,6 +196,7 @@ final class ImportWizardView(dispatch: WizardIntent => Unit):
       }
       fixations.render(vm.fixations)
       trials.render(vm.trials)
+      key.render(vm.key)
       fixations.setNote(vm.attributesNote)
       trials.setNote(s"${vm.trialsNote} ${vm.attributesNote}")
 
@@ -205,10 +216,12 @@ final class ImportWizardView(dispatch: WizardIntent => Unit):
       presetSelect.setDisable(vm.presets.names.isEmpty || vm.fixations.rows.isEmpty)
       presetSelect.setAccessibleText(vm.presets.label)
       presetApply.setText(vm.presets.apply)
+      presetApply.setAccessibleText(vm.presets.apply)
       presetApply.setDisable(presetSelect.isDisabled)
       if presetName.getText != vm.presets.name then presetName.setText(vm.presets.name)
       presetName.setAccessibleText(vm.presets.nameLabel)
       presetSave.setText(vm.presets.save)
+      presetSave.setAccessibleText(vm.presets.save)
       presetSave.setDisable(!vm.presets.canSave)
 
       geometryNote.setText(vm.geometryNote)
@@ -233,7 +246,9 @@ final class ImportWizardView(dispatch: WizardIntent => Unit):
       problem.setText(vm.problem.getOrElse(""))
       status.setText(vm.status.getOrElse(""))
       cancel.setText(vm.cancel)
+      cancel.setAccessibleText(vm.cancel)
       commit.setText(vm.commit)
+      commit.setAccessibleText(vm.commit)
       commit.setDisable(!vm.canCommit)
       last = Some(vm)
     finally rendering = false
@@ -306,6 +321,8 @@ final class MappingTable(role: SourceRole, fire: WizardIntent => Unit):
   scroll.setFitToWidth(true)
   scroll.setHbarPolicy(ScrollPane.ScrollBarPolicy.NEVER)
   scroll.getStyleClass.add("edge-to-edge")
+  // Its rows' role menus are the stops, not the viewport.
+  scroll.setFocusTraversable(false)
   VBox.setVgrow(scroll, Priority.ALWAYS)
 
   val page: VBox = VBox()
@@ -343,6 +360,8 @@ final class MappingTable(role: SourceRole, fire: WizardIntent => Unit):
     summary.setText(vm.summary.getOrElse(""))
     choose.setText(vm.choose)
     choose.setAccessibleText(vm.choose)
+    choose.setVisible(vm.canChoose)
+    choose.setManaged(vm.canChoose)
     headers.zip(vm.headers).foreach((l, h) => l.setText(h))
     empty.setText(vm.empty.getOrElse(""))
     empty.setVisible(vm.empty.isDefined)

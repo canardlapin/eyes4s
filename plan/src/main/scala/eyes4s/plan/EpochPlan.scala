@@ -24,12 +24,23 @@ enum Occurrence derives CanEqual:
   case RequireUnique, First, Last
   case Nth(index: NonNegativeLong)
 
+/** What to do when the window is not a whole number of bins. `RequireExactDivision`
+  * refuses with `EpochError.NonDivisible`; `IncludeShortFinal` keeps a final bin
+  * shorter than the width; `ExcludeAndReport` drops the remainder and returns it as
+  * `excludedTail`, so no observed time is silently discarded.
+  */
 enum FinalBin derives CanEqual:
   case RequireExactDivision, IncludeShortFinal, ExcludeAndReport
 
 /** Selection is data; equal-time marks retain Timeline's stable input order. */
 final case class MarkSelector[K](kind: K, occurrence: Occurrence)
 
+/** One trial's resolved epoch on its observed clock. `interval` is the whole
+  * window around `anchor`; `bins` are contiguous half-open intervals of the plan's
+  * width in time order, the last possibly shorter under `FinalBin.IncludeShortFinal`;
+  * `excludedTail` is the remainder `FinalBin.ExcludeAndReport` left out, if any.
+  * Built only by `EpochPlan.resolve`.
+  */
 final class EpochBins private[plan] (
     val anchor: Instant,
     val interval: Interval,
@@ -37,6 +48,12 @@ final class EpochBins private[plan] (
     val excludedTail: Option[Interval]
 )
 
+/** Why an epoch could not be resolved for trial `T`, naming the trial and the
+  * selector or window: a clock disagreement, an anchor occurrence the marks cannot
+  * satisfy, endpoints or a duration outside signed 64-bit microseconds, a window
+  * that is not a whole number of bins under `RequireExactDivision`, or more bins
+  * than the caller's allocation budget.
+  */
 enum EpochError[T, K] derives CanEqual:
   case Clock(trial: T, selector: MarkSelector[K], underlying: TimeError)
   case AnchorMatches(trial: T, selector: MarkSelector[K], count: Int)

@@ -335,6 +335,9 @@ object DensityView:
   )(using UnitLabel[U]): Either[InspectionError[K], DensityView[U]] =
     DensityGeometry.of(mass.grid, description, reference).map(new DensityView(mass, _))
 
+/** One occurrence's estimation: the density with its checked geometry, or the diagnostic
+  * that replaced it. A failure is kept as data rather than dropped from the listing.
+  */
 enum EstimationOutcome[+K, U <: Unit2D]:
   case Estimated(density: DensityView[U])
   case Failed(diagnostic: Diagnostic[K])
@@ -408,9 +411,12 @@ final case class ContrastEntry[K, D](
     outcome: Either[Diagnostic[K], ScoreView[D]]
 )
 
+/** A scale's matched-minus-control contrast: refused as a whole, or listed per key. */
 enum ScaleContrast[K, D]:
   /** The scale's contrast was refused as a whole. */
   case Failed(diagnostic: Diagnostic[K])
+
+  /** Per-key contrast rows, each carrying its own outcome. */
   case Rows(rows: Listing[K, ContrastEntry[K, D]])
 
 /** One scale of a study result. */
@@ -618,6 +624,7 @@ final case class OccupancyView(
     fixations: Vector[FixationWindowTime]
 ) derives CanEqual
 
+/** One trial's occupancy within a temporal cell, or the diagnostic that replaced it. */
 final case class OccupancyEntry[K](
     ref: ResultRef[K],
     key: K,
@@ -678,6 +685,11 @@ final class RecordingInspection private[plan] (
     val events: Listing[Nothing, EventEntry]
 )
 
+/** Entry points that project completed study, temporal and recording results into keyed,
+  * pageable views. Nothing is recomputed: views read the result, the input sources and, where
+  * given, the admission ledger, and a reference that does not belong to the result is an
+  * [[InspectionError]] rather than an exception.
+  */
 object ResultInspection:
   /** Inspect a study result over the sources of the input it was computed on. */
   def study[K, U <: Unit2D, S, D](

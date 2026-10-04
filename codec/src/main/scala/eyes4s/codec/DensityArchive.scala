@@ -27,6 +27,10 @@ import io.circe.Json
 enum DensityStorage derives CanEqual:
   case Inline, Packed, Recomputable
 
+/** Revision 2 of the study-result schema: the revision whose density archive may reference
+  * separately stored payloads. A manifest admits `ResultPayloadOf` relations only for a
+  * result of this schema, and resolution materialises it only from verified payloads.
+  */
 object DensityArchiveDefinitions:
   val studyResultV2: DefinitionId = DefinitionId.builtIn("eyes4s.study-result", 2)
 

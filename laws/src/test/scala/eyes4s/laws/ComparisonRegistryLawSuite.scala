@@ -37,6 +37,7 @@ import org.typelevel.discipline.Laws
   * | metric      | squared total variation as the L1 metric (triangle fails)  |
   * | derivedFrom | one minus twice total variation as the L1 similarity       |
   * | withinScale | Pearson declared on the cosine scale [0, 1]                |
+  * | similarityScale | total variation returned as a DistanceLike similarity |
   * | registered  | foreign identity, widened range, dropped property, bounded |
   * |             | execution claimed for a whole-operation method             |
   * }}}
@@ -150,6 +151,36 @@ class ComparisonRegistryLawSuite extends munit.DisciplineSuite:
         Vector(MeasureLaws.withinScale[Mass[Norm], Similarity](misdeclared, massGen, _.value))
       )
     )
+  }
+
+  test("a DistanceLike similarity is rejected even when its other interface laws hold") {
+    val method = ComparisonMethodMutants.distanceLike
+    assertEquals(method.info.scale, MeasureScale.DistanceLike)
+    assertEquals(
+      method.similarity[Norm].compare(distinct._1, distinct._1).map(_.value),
+      Right(0.0)
+    )
+    assertEquals(
+      method.similarity[Norm].compare(distinct._1, distinct._2).map(_.value),
+      Right(1.0)
+    )
+    val results = ComparisonMethodLaws
+      .interface(method, massGen, distinct)
+      .flatMap(rules =>
+        rules.all.properties.toVector.map { (name, property) =>
+          (rules.name, name, Test.check(parameters, property))
+        }
+      )
+    val rejected = results.filterNot(_._3.passed)
+    assertEquals(rejected.map(_._1), Vector("similarityScale.DistanceLikeMutant"))
+    rejected.foreach { (_, name, result) =>
+      assert(
+        result.status match
+          case Test.Failed(_, _) => true
+          case _                 => false,
+        s"$name must be falsified, not throw or exhaust: ${result.status}"
+      )
+    }
   }
 
   test("the registration law rejects a descriptor that disagrees with its measure") {

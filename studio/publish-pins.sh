@@ -11,9 +11,9 @@
 # own sbt build with the fixed version. Only committed history is used: a
 # working tree's uncommitted changes never reach the published artifact.
 #
-# A pin whose version is already in the local Ivy repository is skipped
-# unless --force is given. STUDIO_PINS_WORKDIR overrides the scratch directory
-# (default target/studio-pins).
+# A pin already in the local Ivy repository with the same modules is skipped
+# unless --force is given; adding a module republishes it. STUDIO_PINS_WORKDIR
+# overrides the scratch directory (default target/studio-pins).
 set -euo pipefail
 
 root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
@@ -63,7 +63,8 @@ for name in "${names[@]}"; do
   # Written only after every module of the pin has published, so an
   # interrupted run is repeated rather than skipped.
   marker="$ivy_local/$organization/.eyes4s-studio-pin-$version"
-  if ((!force)) && [[ -f "$marker" ]]; then
+  if ((!force)) && [[ -f "$marker" ]] &&
+    [[ "$(cat "$marker")" == "$(printf '%s\n' "${modules[@]}")" ]]; then
     echo "publish-pins: $name $version already in $ivy_local; skipping (use --force to rebuild)"
     continue
   fi

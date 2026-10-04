@@ -26,7 +26,7 @@ import eyes4s.plan.{
   StudyDesign,
   StudySegment
 }
-import io.circe.{Codec, Decoder, Encoder}
+import io.circe.{Codec, Decoder, DecodingFailure, Encoder, Json}
 
 /** The vocabulary of the [[StudyBackend]] protocol (DESIGN_SPEC section 13,
   * ticket S3.0).
@@ -36,10 +36,37 @@ import io.circe.{Codec, Decoder, Encoder}
   * the real backend (S3.7) will wrap, and names that value's conversion
   * (`of`) where eyes4s already has it.
   */
-private[backend] object ProtocolCodecs:
+private[core] object ProtocolCodecs:
   /** A single-field wrapper encoded as its field. */
   def wrapper[A, B: Encoder: Decoder](wrap: B => A, unwrap: A => B): Codec[A] =
     Codec.from(Decoder[B].map(wrap), Encoder[B].contramap(unwrap))
+
+  /** Protocol 1.4 keeps safe integers as numbers and larger integers as canonical
+    * decimal strings. Unsafe numeric input is refused on both platforms: a JS
+    * parser may already have rounded it before the decoder sees it.
+    */
+  given portableLong: Codec[Long] =
+    val safe    = 9007199254740991L
+    val decoder = Decoder.instance[Long] { cursor =>
+      val value = cursor.value.asString match
+        case Some(raw) => raw.toLongOption.filter(_.toString == raw)
+        case None      =>
+          cursor.value.asNumber.flatMap(_.toLong).filter(n => n >= -safe && n <= safe)
+      value.toRight(
+        DecodingFailure(
+          s"Expected a safe integer number or a canonical decimal Long string, found ${cursor.value.noSpaces}",
+          cursor.history
+        )
+      )
+    }
+    Codec.from(
+      decoder,
+      Encoder.instance(n =>
+        if n >= -safe && n <= safe then Json.fromLong(n) else Json.fromString(n.toString)
+      )
+    )
+
+import ProtocolCodecs.portableLong
 
 /** A dataset revision, displayed `r3`. */
 final case class DatasetRevision(number: Int) derives CanEqual:
@@ -409,15 +436,24 @@ object DiagnosticLocus:
 
 /** A renderer-neutral diagnostic: eyes4s `Diagnostic` with a typed subject.
   * `code` is the stable identity (`family.case`); `message` is a default
-  * English rendering, never an identity. Operands stay in eyes4s until S3.7
-  * needs them on the wire.
+  * English rendering, never an identity. Since protocol 1.8 (S3.5) it also
+  * carries what an application acts on: `affected`, every trial the
+  * diagnostic names (eyes4s `affectedTrials`: its subject, then its operands
+  * and causes, each once), and for a preflight finding its eyes4s
+  * `FindingClass` and `Remedy`, by case name. Other operands stay in eyes4s.
+  * The defaults serve diagnostics built in-process (a studio check, a fake);
+  * on the wire every field is required, since client and backend speak the
+  * same minor version.
   */
 final case class StudioDiagnostic(
     code: String,
     level: DiagnosticLevel,
     origin: DiagnosticOrigin,
     subject: Vector[DiagnosticLocus],
-    message: String
+    message: String,
+    affected: Vector[TrialKey] = Vector.empty,
+    category: Option[String] = None,
+    remedy: Option[String] = None
 ) derives CanEqual,
       Codec.AsObject
 
@@ -434,7 +470,10 @@ object StudioDiagnostic:
         case DiagnosticSource.Host     => DiagnosticOrigin.Host
       ,
       diagnostic.subject.map(DiagnosticLocus.of(_, key)),
-      diagnostic.message
+      diagnostic.message,
+      diagnostic.affectedTrials.map(key),
+      diagnostic.category.map(_.toString),
+      diagnostic.remedy.map(_.toString)
     )
 
 // ---------------------------------------------------------------------------

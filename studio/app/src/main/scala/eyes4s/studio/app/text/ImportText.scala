@@ -48,10 +48,14 @@ enum ImportTextId derives CanEqual:
   case NoIssues, IssuesSummaryOne, IssuesSummaryMany, RaggedIssue
   case CommitImport, CommitImportAs, CommitApply, CommitReadmit, Cancel
   case NoChange, NeedFixations, ReadFailed, AttributesNote, StoreFailed, TrialsNote
-  case NotDatasetSource, RaggedMore, TrialWarning
+  case NotDatasetSource, RaggedMore
 
   // --- Platform dialogs ------------------------------------------------------------
   case DialogFixations, DialogTrials, DialogFilter
+
+  // --- The column-mapping pane (re-map of the selected revision) ------------------
+  case Revert, PaneNoDataset, PaneReading, PaneNoProject, PaneEditsDropped
+  case PanePresetsUnreadable
 
 /** The wizard's strings in the boards' wording. */
 object ImportText:
@@ -139,14 +143,21 @@ object ImportText:
       case DialogFilter    => "Delimited text"
       case StoreFailed     => "Not saved: {0}"
       case TrialsNote      =>
-        "Trial metadata is mapped in S5.4: these roles are checked here but not yet applied, " +
-          "and their issues are warnings that do not block the import."
+        "trials.csv is the trial inventory: eyes4s joins fixation records to its trials by " +
+          "participant, phase and trial, and counts a listed trial with no records as absent. " +
+          "Repeated rows with equal values are one trial; differing values are an error."
       case NotDatasetSource =>
-        "{0} is not {1}'s fixation file; a re-map reads the revision's own file."
+        "{0} is not one of {1}'s files; a re-map reads the revision's own files."
       case RaggedMore     => "{0}: {1} more records have a width other than the header's."
-      case TrialWarning   => "Warning (trial metadata, mapped in S5.4): {0}"
       case AttributesNote =>
         "Columns without a role pass through as attributes, kept as written."
+      case Revert           => "Revert"
+      case PaneNoDataset    => "No dataset revision yet. Import sources to map their columns."
+      case PaneReading      => "Reading {0}’s files from the project…"
+      case PaneNoProject    => "no project is open to read it from"
+      case PaneEditsDropped =>
+        "{0} changed, so the edits not yet applied to it were dropped."
+      case PanePresetsUnreadable => "Some saved import presets could not be read: {0}"
 
   /** `id`'s English template with its arguments filled. */
   def apply(id: ImportTextId, args: String*): String =

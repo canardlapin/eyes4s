@@ -16,9 +16,45 @@
 
 package eyes4s.studio.core.backend
 
-/** The pinned wire form of every [[ProtocolSamples]] sample, protocol 1.2. */
+/** The pinned wire form of every [[ProtocolSamples]] sample, protocol 1.8. */
 object ProtocolPins:
   val pins: Map[String, String] = Map(
+    "error.SourceRecordsRefused" ->
+      """{"SourceRecordsRefused":{"revision":4,"error":{"RangeInvalid":{"from":0,"count":501,"limit":500}}}}""",
+    "request.SourceRecordsOf" ->
+      """{"SourceRecordsOf":{"revision":4,"from":7214,"count":60}}""",
+    "response.SourceRecordsOf" ->
+      """{"SourceRecordsOf":{"page":{"revision":4,"dataset":3,"source":{"role":{"Fixations":{}},"path":"fixations.csv","bytes":"abababababababababababababababababababababababababababababababab","semantic":null},"pixelsPerDegree":35.5,"scaleSource":{"Recipe":{}},"total":11520,"from":7214,"count":3,"rows":[{"trial":{"participant":"P17","phase":"Retrieval","trial":"ret_07","occurrence":1},"record":7214,"fixation":6,"ordinal":6,"onsetMs":2160.5,"durationMs":412.5,"samples":206,"screen":{"x":1148.5,"y":456.5},"image":{"x":700.5,"y":300.5,"insideImage":true},"degrees":{"x":5.375,"y":2.385},"placement":{"InMap":{}},"line":"P17,Retrieval,ret_07,1,6,1148.5,456.5,2160.5,412.5,206"},{"trial":{"participant":"P17","phase":"Retrieval","trial":"ret_07","occurrence":1},"record":7215,"fixation":null,"ordinal":7,"onsetMs":2650.5,"durationMs":200.5,"samples":0,"screen":{"x":120.5,"y":80.5},"image":{"x":-327.5,"y":-75.5,"insideImage":false},"degrees":{"x":-24.25,"y":13.75},"placement":null,"line":"P17,Retrieval,ret_07,1,7,120.5,80.5,2650.5,200.5,0"},{"trial":{"participant":"P17","phase":"Retrieval","trial":"ret_07","occurrence":1},"record":7216,"fixation":null,"ordinal":null,"onsetMs":null,"durationMs":null,"samples":null,"screen":null,"image":null,"degrees":null,"placement":null,"line":"P17,Retrieval,ret_07,1,x,,,,,"}]}}}""",
+    "error.InventoryRefused" ->
+      """{"InventoryRefused":{"dataset":4,"issues":[{"Conflict":{"trial":{"participant":"P01","phase":"Encoding","trial":"enc_01"},"records":[2,9],"columns":["response"]}},{"Width":{"record":5,"expected":8,"actual":7}},{"Field":{"record":6,"column":"occurrence","value":"x","requirement":"a positive integer occurrence"}},{"Other":{"kind":"DuplicateAttribute","text":"Attribute names [a] are declared more than once."}}]}}""",
+    "error.UnknownTrial" ->
+      """{"UnknownTrial":{"dataset":3,"trial":{"participant":"P99","phase":"Encoding","trial":"enc_01","occurrence":1}}}""",
+    "error.TrialViewRefused" ->
+      """{"TrialViewRefused":{"error":{"TrialFails":{"trial":{"participant":"P17","phase":"Retrieval","trial":"ret_07","occurrence":1},"positions":[4,5]}}}}""",
+    "response.PreviewAccepted" ->
+      """{"PreviewAccepted":{}}""",
+    "error.UnknownPreview" ->
+      """{"UnknownPreview":{"preview":9,"known":[1]}}""",
+    "error.PreviewNotReady" ->
+      """{"PreviewNotReady":{"preview":1,"completedParticipants":3,"totalParticipants":24}}""",
+    "error.StalePreview" ->
+      """{"StalePreview":{"preview":1,"captured":{"revision":5,"dataset":3,"plan":{"Unbound":{}},"input":{"Unbound":{}}},"current":{"revision":5,"dataset":4,"plan":{"Unbound":{}},"input":{"Unbound":{}}}}}""",
+    "error.TamperedPreview" ->
+      """{"TamperedPreview":{"supplied":{"id":1,"stamp":{"revision":5,"dataset":3,"plan":{"Unbound":{}},"input":{"Unbound":{}}},"candidates":{"focalTrials":480,"referenceTrials":480,"participants":24,"candidatePairsPerScale":230400,"requestedQueries":480,"queriesNotAdmitted":14,"byDesignQueries":null},"counts":{"eligiblePairsPerScale":8969,"eligiblePairs":44845,"eligibleQueries":457,"unmatchedQueries":9,"ambiguousMatches":1},"diagnostics":[{"code":"study-failure.off-window","level":{"Error":{}},"origin":{"EyesCore":{}},"subject":[{"Trial":{"key":{"participant":"P17","phase":"Retrieval","trial":"ret_07","occurrence":1}}}],"message":"empty map","affected":[{"participant":"P17","phase":"Retrieval","trial":"ret_07","occurrence":1},{"participant":"P17","phase":"Encoding","trial":"enc_03","occurrence":1}],"category":"DataDependent","remedy":"ReviewAnalysisWindow"}]},"retained":{"id":1,"stamp":{"revision":5,"dataset":3,"plan":{"Unbound":{}},"input":{"Unbound":{}}},"candidates":{"focalTrials":480,"referenceTrials":480,"participants":24,"candidatePairsPerScale":230400,"requestedQueries":480,"queriesNotAdmitted":14,"byDesignQueries":null},"counts":{"eligiblePairsPerScale":8969,"eligiblePairs":44845,"eligibleQueries":457,"unmatchedQueries":9,"ambiguousMatches":0},"diagnostics":[{"code":"study-failure.off-window","level":{"Error":{}},"origin":{"EyesCore":{}},"subject":[{"Trial":{"key":{"participant":"P17","phase":"Retrieval","trial":"ret_07","occurrence":1}}}],"message":"empty map","affected":[{"participant":"P17","phase":"Retrieval","trial":"ret_07","occurrence":1},{"participant":"P17","phase":"Encoding","trial":"enc_03","occurrence":1}],"category":"DataDependent","remedy":"ReviewAnalysisWindow"}]}}}""",
+    "request.PreviewCounting" ->
+      """{"PreviewCounting":{"revision":5,"budget":24}}""",
+    "request.ContinuePreview" ->
+      """{"ContinuePreview":{"preview":1,"budget":24}}""",
+    "request.SubmitPreview" ->
+      """{"SubmitPreview":{"ready":{"id":1,"stamp":{"revision":5,"dataset":3,"plan":{"Unbound":{}},"input":{"Unbound":{}}},"candidates":{"focalTrials":480,"referenceTrials":480,"participants":24,"candidatePairsPerScale":230400,"requestedQueries":480,"queriesNotAdmitted":14,"byDesignQueries":null},"counts":{"eligiblePairsPerScale":8969,"eligiblePairs":44845,"eligibleQueries":457,"unmatchedQueries":9,"ambiguousMatches":0},"diagnostics":[{"code":"study-failure.off-window","level":{"Error":{}},"origin":{"EyesCore":{}},"subject":[{"Trial":{"key":{"participant":"P17","phase":"Retrieval","trial":"ret_07","occurrence":1}}}],"message":"empty map","affected":[{"participant":"P17","phase":"Retrieval","trial":"ret_07","occurrence":1},{"participant":"P17","phase":"Encoding","trial":"enc_03","occurrence":1}],"category":"DataDependent","remedy":"ReviewAnalysisWindow"}]}}}""",
+    "preview-event.Initial" ->
+      """{"Initial":{"id":1,"stamp":{"revision":5,"dataset":3,"plan":{"Unbound":{}},"input":{"Unbound":{}}},"candidates":{"focalTrials":480,"referenceTrials":480,"participants":24,"candidatePairsPerScale":230400,"requestedQueries":480,"queriesNotAdmitted":14,"byDesignQueries":null}}}""",
+    "preview-event.Counting" ->
+      """{"Counting":{"id":1,"progress":{"completedParticipants":1,"totalParticipants":24}}}""",
+    "preview-event.Ready" ->
+      """{"Ready":{"ready":{"id":1,"stamp":{"revision":5,"dataset":3,"plan":{"Unbound":{}},"input":{"Unbound":{}}},"candidates":{"focalTrials":480,"referenceTrials":480,"participants":24,"candidatePairsPerScale":230400,"requestedQueries":480,"queriesNotAdmitted":14,"byDesignQueries":null},"counts":{"eligiblePairsPerScale":8969,"eligiblePairs":44845,"eligibleQueries":457,"unmatchedQueries":9,"ambiguousMatches":0},"diagnostics":[{"code":"study-failure.off-window","level":{"Error":{}},"origin":{"EyesCore":{}},"subject":[{"Trial":{"key":{"participant":"P17","phase":"Retrieval","trial":"ret_07","occurrence":1}}}],"message":"empty map","affected":[{"participant":"P17","phase":"Retrieval","trial":"ret_07","occurrence":1},{"participant":"P17","phase":"Encoding","trial":"enc_03","occurrence":1}],"category":"DataDependent","remedy":"ReviewAnalysisWindow"}]}}}""",
+    "frame.Preview" ->
+      """{"Preview":{"event":{"Ready":{"ready":{"id":1,"stamp":{"revision":5,"dataset":3,"plan":{"Unbound":{}},"input":{"Unbound":{}}},"candidates":{"focalTrials":480,"referenceTrials":480,"participants":24,"candidatePairsPerScale":230400,"requestedQueries":480,"queriesNotAdmitted":14,"byDesignQueries":null},"counts":{"eligiblePairsPerScale":8969,"eligiblePairs":44845,"eligibleQueries":457,"unmatchedQueries":9,"ambiguousMatches":0},"diagnostics":[{"code":"study-failure.off-window","level":{"Error":{}},"origin":{"EyesCore":{}},"subject":[{"Trial":{"key":{"participant":"P17","phase":"Retrieval","trial":"ret_07","occurrence":1}}}],"message":"empty map","affected":[{"participant":"P17","phase":"Retrieval","trial":"ret_07","occurrence":1},{"participant":"P17","phase":"Encoding","trial":"enc_03","occurrence":1}],"category":"DataDependent","remedy":"ReviewAnalysisWindow"}]}}}}}""",
     "error.DuplicateSubscription" ->
       """{"DuplicateSubscription":{"request":41}}""",
     "error.Malformed" ->
@@ -27,6 +63,14 @@ object ProtocolPins:
       """{"Unsubscribe":{"subscription":41}}""",
     "response.Unsubscribed" ->
       """{"Unsubscribed":{"subscription":41,"active":true}}""",
+    "request.TrialFixationsOf" ->
+      """{"TrialFixationsOf":{"revision":4,"trial":{"participant":"P17","phase":"Retrieval","trial":"ret_07","occurrence":1}}}""",
+    "request.TrialPreviewOf" ->
+      """{"TrialPreviewOf":{"revision":4,"trial":{"participant":"P17","phase":"Retrieval","trial":"ret_07","occurrence":1}}}""",
+    "response.TrialFixationsOf" ->
+      """{"TrialFixationsOf":{"fixations":{"revision":4,"dataset":3,"trial":{"participant":"P17","phase":"Retrieval","trial":"ret_07","occurrence":1},"fixations":[{"trial":{"participant":"P17","phase":"Retrieval","trial":"ret_07","occurrence":1},"position":1,"record":7209,"x":960.5,"y":540.25,"onsetMs":0.5,"durationMs":212.5,"placement":{"InMap":{}}},{"trial":{"participant":"P17","phase":"Retrieval","trial":"ret_07","occurrence":1},"position":2,"record":7210,"x":1500.5,"y":540.75,"onsetMs":230.5,"durationMs":180.25,"placement":{"OutsideWindow":{"policy":{"Exclude":{}}}}},{"trial":{"participant":"P17","phase":"Retrieval","trial":"ret_07","occurrence":1},"position":3,"record":7211,"x":-4.5,"y":20.25,"onsetMs":420.5,"durationMs":96.5,"placement":{"OutsideScreen":{}}},{"trial":{"participant":"P17","phase":"Retrieval","trial":"ret_07","occurrence":1},"position":4,"record":7212,"x":600.5,"y":400.5,"onsetMs":530.5,"durationMs":140.5,"placement":{"DroppedInitial":{}}},{"trial":{"participant":"P17","phase":"Retrieval","trial":"ret_07","occurrence":1},"position":5,"record":7213,"x":610.5,"y":410.5,"onsetMs":680.5,"durationMs":160.5,"placement":{"OutsideWindow":{"policy":{"FailTrial":{}}}}}]}}}""",
+    "response.TrialPreviewOf" ->
+      """{"TrialPreviewOf":{"preview":{"revision":4,"trial":{"participant":"P17","phase":"Retrieval","trial":"ret_07","occurrence":1},"sigmaDegrees":2.5,"region":{"left":448.5,"top":156.5,"right":1472.5,"bottom":924.5},"columns":3,"rows":2,"order":{"TopFirst":{}},"cells":[0.1,0.25,null,0.3,0.2,0.15],"levels":[0.2,0.12]}}}""",
     "cause.CorrectionConflict" ->
       """{"code":"quarantine.correction-conflict","message":"correction rules 0 and 1 both apply to the trial","first":0,"second":1}""",
     "cause.DuplicateOrdinals" ->
@@ -62,9 +106,9 @@ object ProtocolPins:
     "disposition.NoFixations" ->
       """{"NoFixations":{}}""",
     "envelope.frame" ->
-      """{"version":{"major":1,"minor":2},"id":41,"body":{"Event":{"event":{"Finished":{"outcome":{"Completed":{"job":1,"run":8,"last":{"job":1,"run":8,"step":2,"segment":{"Comparing":{"scale":2,"design":{"Control":{}}}},"meter":{"kind":{"Comparing":{}},"unit":{"Pairs":{}},"done":3005,"total":{"Exact":{"units":8512}}},"totals":{"completedMaps":2811,"totalMaps":{"Exact":{"units":4685}},"completedPairs":21400,"totalPairs":{"Exact":{"units":44845}}}}}}}}}}}""",
+      """{"version":{"major":1,"minor":8},"id":41,"body":{"Event":{"event":{"Finished":{"outcome":{"Completed":{"job":1,"run":8,"last":{"job":1,"run":8,"step":2,"segment":{"Comparing":{"scale":2,"design":{"Control":{}}}},"meter":{"kind":{"Comparing":{}},"unit":{"Pairs":{}},"done":3005,"total":{"Exact":{"units":8512}}},"totals":{"completedMaps":2811,"totalMaps":{"Exact":{"units":4685}},"completedPairs":21400,"totalPairs":{"Exact":{"units":44845}}}}}}}}}}}""",
     "envelope.request" ->
-      """{"version":{"major":1,"minor":2},"id":41,"body":{"Subscribe":{"id":1}}}""",
+      """{"version":{"major":1,"minor":8},"id":41,"body":{"Subscribe":{"id":1}}}""",
     "error.AlreadyRunning" ->
       """{"AlreadyRunning":{"revision":5,"job":1}}""",
     "error.NoResult" ->
@@ -90,7 +134,7 @@ object ProtocolPins:
     "event.Finished.Completed" ->
       """{"Finished":{"outcome":{"Completed":{"job":1,"run":8,"last":{"job":1,"run":8,"step":2,"segment":{"Comparing":{"scale":2,"design":{"Control":{}}}},"meter":{"kind":{"Comparing":{}},"unit":{"Pairs":{}},"done":3005,"total":{"Exact":{"units":8512}}},"totals":{"completedMaps":2811,"totalMaps":{"Exact":{"units":4685}},"completedPairs":21400,"totalPairs":{"Exact":{"units":44845}}}}}}}}""",
     "event.Finished.Failed" ->
-      """{"Finished":{"outcome":{"Failed":{"job":1,"run":8,"diagnostics":[{"code":"study-failure.off-window","level":{"Error":{}},"origin":{"EyesCore":{}},"subject":[{"Trial":{"key":{"participant":"P17","phase":"Retrieval","trial":"ret_07","occurrence":1}}}],"message":"empty map"}],"last":null}}}}""",
+      """{"Finished":{"outcome":{"Failed":{"job":1,"run":8,"diagnostics":[{"code":"study-failure.off-window","level":{"Error":{}},"origin":{"EyesCore":{}},"subject":[{"Trial":{"key":{"participant":"P17","phase":"Retrieval","trial":"ret_07","occurrence":1}}}],"message":"empty map","affected":[{"participant":"P17","phase":"Retrieval","trial":"ret_07","occurrence":1},{"participant":"P17","phase":"Encoding","trial":"enc_03","occurrence":1}],"category":"DataDependent","remedy":"ReviewAnalysisWindow"}],"last":null}}}}""",
     "frame.Event" ->
       """{"Event":{"event":{"Advanced":{"progress":{"job":1,"run":8,"step":2,"segment":{"Comparing":{"scale":2,"design":{"Control":{}}}},"meter":{"kind":{"Comparing":{}},"unit":{"Pairs":{}},"done":3005,"total":{"Exact":{"units":8512}}},"totals":{"completedMaps":2811,"totalMaps":{"Exact":{"units":4685}},"completedPairs":21400,"totalPairs":{"Exact":{"units":44845}}}}}}}}""",
     "frame.Response" ->
@@ -168,9 +212,9 @@ object ProtocolPins:
     "query-status.Contributing" ->
       """{"Contributing":{"m":[0.41],"b":[0.22],"d":[0.19]}}""",
     "query-status.Failed" ->
-      """{"Failed":{"diagnostic":{"code":"study-failure.off-window","level":{"Error":{}},"origin":{"EyesCore":{}},"subject":[{"Trial":{"key":{"participant":"P17","phase":"Retrieval","trial":"ret_07","occurrence":1}}}],"message":"empty map"}}}""",
+      """{"Failed":{"diagnostic":{"code":"study-failure.off-window","level":{"Error":{}},"origin":{"EyesCore":{}},"subject":[{"Trial":{"key":{"participant":"P17","phase":"Retrieval","trial":"ret_07","occurrence":1}}}],"message":"empty map","affected":[{"participant":"P17","phase":"Retrieval","trial":"ret_07","occurrence":1},{"participant":"P17","phase":"Encoding","trial":"enc_03","occurrence":1}],"category":"DataDependent","remedy":"ReviewAnalysisWindow"}}}""",
     "query-status.NoMatch" ->
-      """{"NoMatch":{"diagnostic":{"code":"study-finding.unmatched-focal","level":{"Error":{}},"origin":{"EyesCore":{}},"subject":[{"Trial":{"key":{"participant":"P17","phase":"Retrieval","trial":"ret_07","occurrence":1}}}],"message":"empty map"}}}""",
+      """{"NoMatch":{"diagnostic":{"code":"study-finding.unmatched-focal","level":{"Error":{}},"origin":{"EyesCore":{}},"subject":[{"Trial":{"key":{"participant":"P17","phase":"Retrieval","trial":"ret_07","occurrence":1}}}],"message":"empty map","affected":[{"participant":"P17","phase":"Retrieval","trial":"ret_07","occurrence":1},{"participant":"P17","phase":"Encoding","trial":"enc_03","occurrence":1}],"category":"DataDependent","remedy":"ReviewAnalysisWindow"}}}""",
     "query-status.NotAdmitted" ->
       """{"NotAdmitted":{"disposition":{"Absent":{}}}}""",
     "request.Admission" ->
@@ -204,7 +248,7 @@ object ProtocolPins:
     "request.Subscribe" ->
       """{"Subscribe":{"id":1}}""",
     "response.Admission" ->
-      """{"Admission":{"summary":{"dataset":3,"state":{"Admitted":{}},"inventoryTrials":960,"admitted":937,"quarantined":[{"code":"quarantine.overlap","trials":6}],"noFixations":5,"absent":6,"fixationRecords":11520,"window":{"outsideWindow":543,"outsideScreen":0,"total":11311,"trialsOutsideWindow":409,"trialsOutsideScreen":0,"trials":937,"untallied":0,"sourceRecords":11520,"outsideWindowMicros":159142000,"outsideScreenMicros":0,"totalMicros":3282108000},"items":259,"imagesFound":257,"missingImages":[{"item":"forest-044","participants":["P01","P24"],"encodingTrials":2}],"history":"onset declared ms"}}}""",
+      """{"Admission":{"summary":{"dataset":3,"state":{"Admitted":{}},"inventory":{"Joined":{"trials":960,"absent":6}},"admitted":937,"quarantined":[{"code":"quarantine.overlap","trials":6}],"noFixations":5,"fixationRecords":11520,"window":{"outsideWindow":543,"outsideScreen":0,"total":11311,"trialsOutsideWindow":409,"trialsOutsideScreen":0,"trials":937,"untallied":0,"sourceRecords":11520,"outsideWindowMicros":159142000,"outsideScreenMicros":0,"totalMicros":3282108000},"items":259,"imagesFound":257,"missingImages":[{"item":"forest-044","participants":["P01","P24"],"encodingTrials":2}],"history":"onset declared ms"}}}""",
     "response.Inspected" ->
       """{"Inspected":{"inspection":{"Contrast":{"address":{"ContrastRow":{"scale":2,"key":{"participant":"P17","phase":"Retrieval","trial":"ret_07","occurrence":1}}},"m":0.73,"b":0.35,"d":0.38}}}}""",
     "response.Job" ->
@@ -218,7 +262,7 @@ object ProtocolPins:
     "response.Preview" ->
       """{"Preview":{"summary":{"revision":5,"dataset":3,"scales":["8°"],"focalTrials":480,"referenceTrials":480,"requestedQueries":480,"eligibleQueries":457,"candidatePairsPerScale":230400,"pairRowsPerScale":8969,"pairRows":44845}}}""",
     "response.PreviewRows" ->
-      """{"PreviewRows":{"page":{"revision":5,"page":{"offset":10,"total":480,"next":30},"rows":[{"query":{"participant":"P17","phase":"Retrieval","trial":"ret_07","occurrence":1},"item":"beach-042","response":"Remembered","matched":{"participant":"P17","phase":"Encoding","trial":"enc_03","occurrence":1},"controls":19,"eligibility":{"Eligible":{}}},{"query":{"participant":"P17","phase":"Retrieval","trial":"ret_07","occurrence":1},"item":"b","response":"Forgotten","matched":{"participant":"P17","phase":"Encoding","trial":"enc_03","occurrence":1},"controls":null,"eligibility":{"QueryNotAdmitted":{"disposition":{"NoFixations":{}}}}},{"query":{"participant":"P17","phase":"Retrieval","trial":"ret_07","occurrence":1},"item":"b","response":"Forgotten","matched":{"participant":"P17","phase":"Encoding","trial":"enc_03","occurrence":1},"controls":null,"eligibility":{"NoMatch":{"diagnostic":{"code":"study-failure.off-window","level":{"Error":{}},"origin":{"EyesCore":{}},"subject":[{"Trial":{"key":{"participant":"P17","phase":"Retrieval","trial":"ret_07","occurrence":1}}}],"message":"empty map"}}}}]}}}""",
+      """{"PreviewRows":{"page":{"revision":5,"page":{"offset":10,"total":480,"next":30},"rows":[{"query":{"participant":"P17","phase":"Retrieval","trial":"ret_07","occurrence":1},"item":"beach-042","response":"Remembered","matched":{"participant":"P17","phase":"Encoding","trial":"enc_03","occurrence":1},"controls":19,"eligibility":{"Eligible":{}}},{"query":{"participant":"P17","phase":"Retrieval","trial":"ret_07","occurrence":1},"item":"b","response":"Forgotten","matched":{"participant":"P17","phase":"Encoding","trial":"enc_03","occurrence":1},"controls":null,"eligibility":{"QueryNotAdmitted":{"disposition":{"NoFixations":{}}}}},{"query":{"participant":"P17","phase":"Retrieval","trial":"ret_07","occurrence":1},"item":"b","response":"Forgotten","matched":{"participant":"P17","phase":"Encoding","trial":"enc_03","occurrence":1},"controls":null,"eligibility":{"NoMatch":{"diagnostic":{"code":"study-failure.off-window","level":{"Error":{}},"origin":{"EyesCore":{}},"subject":[{"Trial":{"key":{"participant":"P17","phase":"Retrieval","trial":"ret_07","occurrence":1}}}],"message":"empty map","affected":[{"participant":"P17","phase":"Retrieval","trial":"ret_07","occurrence":1},{"participant":"P17","phase":"Encoding","trial":"enc_03","occurrence":1}],"category":"DataDependent","remedy":"ReviewAnalysisWindow"}}}}]}}}""",
     "response.ProvenanceOf" ->
       """{"ProvenanceOf":{"provenance":{"address":{"PairRow":{"scale":2,"design":{"Control":{}},"focal":{"participant":"P17","phase":"Retrieval","trial":"ret_07","occurrence":1},"reference":{"participant":"P17","phase":"Encoding","trial":"enc_03","occurrence":1}}},"trail":[{"Run":{"run":7}},{"Analysis":{"revision":4}},{"Dataset":{"dataset":3}},{"Scale":{"index":2,"label":"2°"}},{"Design":{"design":{"Control":{}}}},{"Trial":{"key":{"participant":"P17","phase":"Retrieval","trial":"ret_07","occurrence":1},"item":"beach-042"}}]}}}""",
     "response.Queries" ->

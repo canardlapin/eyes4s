@@ -8,6 +8,44 @@ button: Draft rev 5 · 1 change · ready; review in Analysis
 button: Review in Analysis
 button: Discard draft
 list: Figures
+button: New figure
+button: Figure 1, current, run 7 · rev 4 · data r3
+button: Figure 2, Stale, run 5 · rev 3 · data r2
 plot: Figure
+button: 89 mm · one-column
+button: 183 mm · two-column, selected
+button: Greyscale check, off
+button: Zoom out (−)
+button: Zoom in (+)
+button: Panel A, Encoding gaze
+button: Panel B, Retrieval gaze
+button: Panel C, Density maps
+button: Panel D, Participant D by response, selected
+region: Participant plot of Participant D at 2°: each participant's mean D in 2 groups, lines join a participant's means, a tick marks each group's grand mean. One focus stop; arrow keys move to the nearest mark, Page Up and Page Down step in order, Enter selects, Escape clears the selection.
+button: Panel E, Scale profile by response
+region: Scale profile of Scale profile of run 7: each group's grand mean D at 4 scales, bold, over each participant's mean D, faint. One focus stop; arrow keys move to the nearest mark, Page Up and Page Down step in order, Enter selects, Escape clears the selection.
 region: methods.md
+button: Show diff
+button: Regenerate
+text-area: Methods text
 region: Panel
+button: Open in Compare
+button: Rebind figure…
+button: Text size 6 pt
+button: Text size 7 pt, selected
+button: Text size 8 pt
+button: Participant lines Show, selected
+button: Participant lines Hide
+button: Narrower − (panel width 89 mm)
+button: Wider + (panel width 89 mm)
+button: Figure format SVG, selected
+button: Figure format PDF
+button: Figure format PNG
+button: project snapshot includes images, on
+button: Export figure…
+button: figure-1.svg, in the bundle
+button: results.csv · 480 queries × 4 σ, in the bundle
+button: participants.csv · 24 × 2 groups, in the bundle
+button: methods.md, in the bundle
+button: project snapshot · includes images, not in the bundle
+button: Export bundle…

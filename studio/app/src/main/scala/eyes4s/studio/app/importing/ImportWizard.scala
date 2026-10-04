@@ -17,15 +17,21 @@
 package eyes4s.studio.app.importing
 
 import cats.data.NonEmptyVector
+import cats.syntax.all.*
+import eyes4s.codec.ByteDigest
 import eyes4s.studio.app.Intent
 import eyes4s.studio.core.backend.DatasetRevision
 import eyes4s.studio.core.command.Command
 import eyes4s.studio.core.document.{
   AdmissionDecision,
+  ColumnMapping,
   ColumnName,
+  ColumnRole,
   DatasetRevisionSpec,
   DocumentError,
   Geometry,
+  InventoryMapping,
+  SourcePath,
   Sources,
   SourceRole,
   StudioDocument,
@@ -68,11 +74,23 @@ enum WizardProblem derives CanEqual:
   case UnknownDataset(dataset: DatasetRevision)
   case NoChange(dataset: DatasetRevision)
 
-  /** A re-map read a file other than `dataset`'s own fixation source. */
+  /** A re-map read a file other than `dataset`'s own source of that role. */
   case NotDatasetSource(dataset: DatasetRevision, path: String)
 
   /** The platform could not store a preset or an imported file. */
   case StoreFailed(reason: String)
+
+  /** The trial key fails a Studio check (S5.3). */
+  case TrialKey(block: KeyBlock)
+
+  /** `dataset` was stored without columns for `missing`, roles import now
+    * requires (a mapping saved before S5.3 has no phase): it loads, and needs
+    * a re-map before it is committed or admitted.
+    */
+  case NeedsRemap(dataset: DatasetRevision, missing: Vector[ColumnRole])
+
+  /** No column of `file` can hold the occurrence the key was asked to add. */
+  case NoOccurrenceColumn(file: String)
 
 /** A fact that is not a document command: a note the wizard shows once. */
 enum WizardNote derives CanEqual:
@@ -90,6 +108,22 @@ enum WizardIntent derives CanEqual:
   case RequestFile(role: SourceRole)
   case Choose(role: SourceRole, column: ColumnName, choice: ColumnChoice)
   case DeclareTime(unit: Option[TimeUnit])
+
+  /** Add the occurrence to the trial key, or leave it out (S5.3): the
+    * occurrence column's role in each file's mapping.
+    */
+  case IncludeOccurrence(include: Boolean)
+
+  /** The platform's streaming check of a key (answering
+    * [[WizardEffect.CheckKey]]); ignored unless the inputs are still current.
+    */
+  case KeyChecked(
+      role: SourceRole,
+      source: ByteDigest,
+      columns: KeyColumns,
+      unit: TrialUnit,
+      result: Either[KeyGap, KeyReport]
+  )
   case EditGeometry(field: GeometryField, value: String)
   case TypePresetName(text: String)
   case SavePreset
@@ -113,6 +147,21 @@ enum WizardEffect derives CanEqual:
 
   /** Show the platform's file dialog for a file of `role`. */
   case OpenFile(role: SourceRole)
+
+  /** Check a trial key in one streaming pass over the file read as `path`
+    * (whose bytes digest to `source`), off the UI thread, and dispatch
+    * [[WizardIntent.KeyChecked]]: the key reads a column the sniffer did not
+    * keep (S5.3; [[KeyChecks.run]] runs it).
+    */
+  case CheckKey(
+      role: SourceRole,
+      path: SourcePath,
+      source: ByteDigest,
+      file: String,
+      delimiter: Delimiter,
+      columns: KeyColumns,
+      unit: TrialUnit
+  )
   case Close
 
 object WizardEffect:
@@ -135,17 +184,31 @@ final case class ImportWizard private (
     presetName: String,
     tab: WizardTab,
     problem: Option[WizardProblem],
-    note: Option[WizardNote]
+    note: Option[WizardNote],
+    keys: KeyChecks = KeyChecks.none
 ) derives CanEqual:
 
-  /** Every issue that blocks the commit: the fixation mapping's. */
-  def issues: Vector[MappingError] = fixations.fold(Vector.empty)(_._2.issues)
-
-  /** The trial inventory's mapping issues. They do not block the commit:
-    * the document does not record the trial mapping yet (S5.4 joins and
-    * records it), so they are shown as warnings.
+  /** Every issue that blocks the commit: the fixation mapping's, then the
+    * trial inventory's (S5.4: the document records the inventory mapping,
+    * and eyes4s joins fixation records to the trials it declares).
     */
-  def warnings: Vector[MappingError] = trials.fold(Vector.empty)(_._2.issues)
+  def issues: Vector[MappingError] =
+    fixations.fold(Vector.empty)(_._2.issues) ++ trialIssues
+
+  /** The trial inventory's mapping issues. */
+  def trialIssues: Vector[MappingError] = trials.fold(Vector.empty)(_._2.issues)
+
+  /** The same wizard offering `saved` as its presets; nothing else changes
+    * (the problem it shows included).
+    */
+  def withPresets(saved: ImportPresets): ImportWizard = copy(presets = saved)
+
+  /** Whether the user has changed the mapping, units, trial roles or
+    * geometry since `baseline`.
+    */
+  def editedSince(baseline: ImportWizard): Boolean =
+    fixations != baseline.fixations || trials != baseline.trials ||
+      geometry != baseline.geometry
 
 object ImportWizard:
 
@@ -188,13 +251,29 @@ object ImportWizard:
           presets,
           "",
           WizardTab.FixationMapping,
-          None,
+          // A revision stored before S5.3 may lack a role import now
+          // requires (the phase): it needs a re-map to be committed.
+          Option
+            .when(spec.mapping.missingForImport.nonEmpty)(
+              WizardProblem.NeedsRemap(dataset, spec.mapping.missingForImport)
+            ),
           None
         )
       )
 
-  /** The pure update. A refused action changes nothing but the problem. */
+  /** The pure update. A refused action changes nothing but the problem.
+    * The trial key checks follow the files and their mappings (S5.3).
+    */
   def update(
+      w: ImportWizard,
+      intent: WizardIntent,
+      document: StudioDocument
+  ): (ImportWizard, Vector[WizardEffect]) =
+    val (next, effects) = step(w, intent, document)
+    val (keys, checks)  = KeyChecks.refresh(next)
+    (next.copy(keys = keys), effects ++ checks)
+
+  private def step(
       w: ImportWizard,
       intent: WizardIntent,
       document: StudioDocument
@@ -209,12 +288,9 @@ object ImportWizard:
               case Left(p)      => refuse(p)
               case Right(draft) => (cleared.copy(fixations = Some((source, draft))), none)
           case SourceRole.Trials =>
-            (
-              cleared.copy(trials =
-                Some((source, TrialMetadataDraft.proposed(source.preview)))
-              ),
-              none
-            )
+            trialDraft(w, source, document) match
+              case Left(p)      => refuse(p)
+              case Right(draft) => (cleared.copy(trials = Some((source, draft))), none)
       case WizardIntent.ReadFailed(path, error) => refuse(WizardProblem.ReadFailed(path, error))
       case WizardIntent.ChooseTab(tab)          => (cleared.copy(tab = tab), none)
       case WizardIntent.RequestFile(role) => (cleared, Vector(WizardEffect.OpenFile(role)))
@@ -245,6 +321,30 @@ object ImportWizard:
           case None               => refuse(WizardProblem.NoFixations)
           case Some((src, draft)) =>
             (cleared.copy(fixations = Some((src, draft.declare(unit)))), none)
+
+      case WizardIntent.IncludeOccurrence(include) =>
+        w.fixations match
+          case None               => refuse(WizardProblem.NoFixations)
+          case Some((src, draft)) =>
+            occurrenceChoice(draft.columns.map((c, ch) => c.name -> ch), include) match
+              case None if include => refuse(WizardProblem.NoOccurrenceColumn(draft.file))
+              case None            => (cleared, none)
+              case Some((column, choice)) =>
+                // The inventory's key follows when it has a column to follow with.
+                val trials = w.trials.map((tsrc, tdraft) =>
+                  occurrenceChoice(tdraft.columns.map((c, ch) => c.name -> ch), include)
+                    .flatMap((c, ch) => tdraft.choose(c, ch).toOption)
+                    .fold((tsrc, tdraft))(d => (tsrc, d))
+                )
+                draft
+                  .choose(column, choice)
+                  .fold(
+                    e => refuse(WizardProblem.Mapping(e)),
+                    d => (cleared.copy(fixations = Some((src, d)), trials = trials), none)
+                  )
+
+      case WizardIntent.KeyChecked(role, source, columns, unit, result) =>
+        (w.copy(keys = KeyChecks.answer(w.keys, role, source, columns, unit, result)), none)
 
       case WizardIntent.EditGeometry(field, value) =>
         (cleared.copy(geometry = w.geometry.set(field, value)), none)
@@ -296,6 +396,17 @@ object ImportWizard:
       case WizardIntent.Cancel                 => (cleared, Vector(WizardEffect.Close))
       case WizardIntent.Commit                 => commit(cleared, document)
 
+  /** The column whose role adds the occurrence to a key (`include`) or
+    * leaves it out, and its new choice; None when there is nothing to change.
+    */
+  private def occurrenceChoice(
+      columns: Vector[(ColumnName, ColumnChoice)],
+      include: Boolean
+  ): Option[(ColumnName, ColumnChoice)] =
+    if include then
+      KeyColumns.occurrenceCandidate(columns).map(_ -> ColumnChoice.Role(ColumnRole.Occurrence))
+    else KeyColumns.of(columns).occurrence.map(_ -> ColumnChoice.Attribute)
+
   /** A fixation file's first draft: a re-mapped dataset's own mapping, else
     * the suggested roles.
     */
@@ -319,6 +430,31 @@ object ImportWizard:
                 .left
                 .map(WizardProblem.DatasetMapping(id, _))
 
+  /** A trials file's first draft: a re-mapped dataset's own inventory
+    * mapping, else the suggested roles (a revision saved before S5.4 has
+    * none, and is mapped afresh).
+    */
+  private def trialDraft(
+      w: ImportWizard,
+      source: SniffedSource,
+      document: StudioDocument
+  ): Either[WizardProblem, TrialMetadataDraft] =
+    w.target match
+      case WizardTarget.NewImport => Right(TrialMetadataDraft.proposed(source.preview))
+      case WizardTarget.Remap(id) =>
+        document.dataset(id) match
+          case None       => Left(WizardProblem.UnknownDataset(id))
+          case Some(spec) =>
+            if !spec.sources.trials.exists(_.bytes == source.bytes) then
+              Left(WizardProblem.NotDatasetSource(id, source.path.value))
+            else
+              spec.inventory.fold(Right(TrialMetadataDraft.proposed(source.preview)))(m =>
+                TrialMetadataDraft
+                  .ofDataset(source.preview, id, m)
+                  .left
+                  .map(WizardProblem.DatasetMapping(id, _))
+              )
+
   /** The document commands that apply the wizard, every one a "Dataset ·
     * re-admit" change, or why there are none. On success the wizard closes.
     */
@@ -329,8 +465,17 @@ object ImportWizard:
     for
       (src, draft) <- w.fixations.toRight(WizardProblem.NoFixations)
       blocking = w.issues
-      _        <- NonEmptyVector.fromVector(blocking).map(WizardProblem.Blocked(_)).toLeft(())
-      resolved <- draft.resolve.left.map(WizardProblem.Blocked(_))
+      _         <- NonEmptyVector.fromVector(blocking).map(WizardProblem.Blocked(_)).toLeft(())
+      _         <- TrialKeyVM.keyBlocks(w).headOption.map(WizardProblem.TrialKey(_)).toLeft(())
+      resolved  <- draft.resolve.left.map(WizardProblem.Blocked(_))
+      inventory <- w.trials
+        .traverse(_._2.resolve)
+        .left
+        .map(WizardProblem.Blocked(_))
+      _ <- ColumnMapping
+        .admissible(resolved.mapping)
+        .left
+        .map(e => WizardProblem.Mapping(MappingError.Refused(draft.file, e)))
       geometry <- w.geometry.parse.left.map(WizardProblem.BadGeometry(_))
       commands <- w.target match
         case WizardTarget.NewImport =>
@@ -349,25 +494,31 @@ object ImportWizard:
                   resolved.mapping,
                   resolved.units,
                   geometry,
-                  resolved.attributes
+                  resolved.attributes,
+                  // The parent's admission choice, or the default for a first import.
+                  None,
+                  inventory
                 )
               )
             )
         case WizardTarget.Remap(id) =>
           document.dataset(id).toRight(WizardProblem.UnknownDataset(id)).flatMap { spec =>
-            remapCommands(spec, resolved, geometry)
+            // A re-map that did not read the trials file keeps its mapping.
+            remapCommands(spec, resolved, geometry, inventory.orElse(spec.inventory))
           }
     yield commands
 
   private def remapCommands(
       spec: DatasetRevisionSpec,
       resolved: ResolvedMapping,
-      geometry: Geometry
+      geometry: Geometry,
+      inventory: Option[InventoryMapping]
   ): Either[WizardProblem, Vector[Command]] =
     val id      = spec.id
     val changed =
       spec.mapping != resolved.mapping || spec.units != resolved.units ||
-        spec.geometry != geometry || spec.attributes != resolved.attributes
+        spec.geometry != geometry || spec.attributes != resolved.attributes ||
+        spec.inventory != inventory
     if !changed then Left(WizardProblem.NoChange(id))
     else
       spec.decision match
@@ -380,11 +531,12 @@ object ImportWizard:
                 resolved.mapping,
                 resolved.units,
                 geometry,
-                resolved.attributes
+                resolved.attributes,
+                inventory
               )
             )
           )
-        case AdmissionDecision.Verifying(_) | AdmissionDecision.Admitted(_, _) =>
+        case AdmissionDecision.Verifying(_) | AdmissionDecision.Admitted(_, _, _) =>
           Right(
             Vector(
               Command.ImportSources(
@@ -393,7 +545,10 @@ object ImportWizard:
                 resolved.mapping,
                 resolved.units,
                 geometry,
-                resolved.attributes
+                resolved.attributes,
+                // The re-mapped revision keeps its admission choice.
+                None,
+                inventory
               )
             )
           )
@@ -408,5 +563,6 @@ object ImportWizard:
         val tab = p match
           case WizardProblem.BadGeometry(_) => WizardTab.Geometry
           case WizardProblem.Blocked(_)     => WizardTab.DataIssues
+          case WizardProblem.TrialKey(_)    => WizardTab.FixationMapping
           case _                            => w.tab
         (w.copy(problem = Some(p), tab = tab), none)

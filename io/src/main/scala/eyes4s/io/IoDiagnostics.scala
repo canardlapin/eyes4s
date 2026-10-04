@@ -20,8 +20,8 @@ import eyes4s.plan.*
 
 /** The code table of io's error families: fixation and result CSV import and
   * export, delimited sample schemas, the psychology workflow, EyeLink ASC
-  * import and conversion evidence, and the EyeLink oracle, conformance and
-  * corpus manifests. Codes are unique across this table, [[DiagnosticCatalog]]
+  * import and conversion evidence, and the retired EyeLink evidence families
+  * ([[retired]]). Codes are unique across this table, [[DiagnosticCatalog]]
   * and `CodecDiagnosticCatalog`, and codes are only ever appended.
   */
 object IoDiagnosticCatalog:
@@ -165,7 +165,8 @@ object IoDiagnosticCatalog:
     "AssignmentFailed",
     "TidyResultFailed",
     "ExportFailed",
-    "ExportRoundTripMismatch"
+    "ExportRoundTripMismatch",
+    "AnalysisInputMismatch"
   )
   val sha256: DiagnosticFamily = error("sha256")(
     "WrongLength",
@@ -257,7 +258,6 @@ object IoDiagnosticCatalog:
     "EmptyManifest"
   )
 
-  /** Every family, in the order documented. */
   // ---------------------------------------------------------------- appended by UI-G
   val csvLayout: DiagnosticFamily  = error("csv-layout")("Csv", "Layout")
   val sourceText: DiagnosticFamily = error("source-text")(
@@ -270,7 +270,19 @@ object IoDiagnosticCatalog:
     "Provenance"
   )
 
-  val families: Vector[DiagnosticFamily] = Vector(
+  /** Families whose error type is no longer part of eyes4s-io: the EyeLink
+    * evidence apparatus (performance validation, oracle, conformance, corpus)
+    * moved to io's test scope (CR9). Their codes stay issued, in their original
+    * place in [[issuedFamilies]], so a retired code is never reused with another
+    * meaning; no published error projects to one.
+    */
+  val retired: Vector[DiagnosticFamily] =
+    Vector(ascPerformanceValidation, eyeLinkOracle, eyeLinkConformance, eyeLinkCorpus)
+
+  /** Every family ever issued, in issue order: families are only appended, and
+    * a retired family keeps its place.
+    */
+  val issuedFamilies: Vector[DiagnosticFamily] = Vector(
     fixationImport,
     fixationRow,
     tidyCsv,
@@ -297,8 +309,15 @@ object IoDiagnosticCatalog:
     ledgerVerification
   )
 
-  /** Every stable code, in catalog order. */
+  /** Every live family, in the order documented. */
+  val families: Vector[DiagnosticFamily] =
+    issuedFamilies.filterNot(family => retired.exists(_ eq family))
+
+  /** Every live code, in catalog order. */
   val codes: Vector[DiagnosticCode] = families.flatMap(_.codes)
+
+  /** Every code ever issued, live or retired, in issue order. */
+  val issued: Vector[DiagnosticCode] = issuedFamilies.flatMap(_.codes)
 
 /** io's [[Diagnose]] instances. Import `IoDiagnostics.given` for
   * `Diagnostic.of` over io's families. Each field becomes a typed operand
@@ -371,24 +390,8 @@ object IoDiagnostics:
       C.ascNativeTimeline,
       timelineLine
     )(_.message)
-  given ascPerformanceValidation: Diagnose[AscPerformanceValidationError, Nothing] =
-    Diagnose.derived[AscPerformanceValidationError, Nothing](C.ascPerformanceValidation)(
-      _.message
-    )
   given eyeLinkSessionConfig: Diagnose[EyeLinkAscSessionConfigError, Nothing] =
     Diagnose.derived[EyeLinkAscSessionConfigError, Nothing](C.eyeLinkSessionConfig)(_.message)
-  given eyeLinkOracle: Diagnose[EyeLinkOracleError, Nothing] =
-    Diagnose.derived[EyeLinkOracleError, Nothing](
-      C.eyeLinkOracle,
-      oracleLine
-    )(_.message)
-  given eyeLinkConformance: Diagnose[EyeLinkConformanceError, Nothing] =
-    Diagnose.derived[EyeLinkConformanceError, Nothing](C.eyeLinkConformance)(_.message)
-  given eyeLinkCorpus: Diagnose[EyeLinkCorpusError, Nothing] =
-    Diagnose.derived[EyeLinkCorpusError, Nothing](
-      C.eyeLinkCorpus,
-      corpusLine
-    )(_.message)
 
   private def line(source: String, number: Long): Vector[Locus[Nothing]] =
     Vector(Locus.Line(source, number))
@@ -409,36 +412,6 @@ object IoDiagnostics:
       case FractionalMicrosecond(source, number, _, _)   => line(source, number)
       case InstantOutsideLongRange(source, number, _, _) => line(source, number)
       case InvalidTimeline(_, _)                         => Vector.empty
-
-  private def oracleLine(error: EyeLinkOracleError): Vector[Locus[Nothing]] =
-    import EyeLinkOracleError.*
-    error match
-      case InvalidHeader(source, number, _, _)    => line(source, number)
-      case WrongFieldCount(source, number, _, _)  => line(source, number)
-      case InvalidEscape(source, number, _, _, _) => line(source, number)
-      case InvalidValue(source, number, _, _, _)  => line(source, number)
-      case InvalidDigest(source, number, _, _)    => line(source, number)
-      case InvalidPreamble(_, _) | InvalidDescriptor(_, _, _, _) | InvalidFact(_, _, _, _, _) |
-          EmptyManifest(_) | NonContiguousRecords(_, _, _) | NonContiguousFields(_, _, _, _) |
-          InconsistentRecordMetadata(_, _, _, _) | DuplicateFieldPath(_, _, _) |
-          OrderingConflict(_, _, _) | MissingOrderingDisclosure(_, _) =>
-        Vector.empty
-
-  private def corpusLine(error: EyeLinkCorpusError): Vector[Locus[Nothing]] =
-    import EyeLinkCorpusError.*
-    error match
-      case InvalidHeader(source, number, _, _)         => line(source, number)
-      case WrongFieldCount(source, number, _, _)       => line(source, number)
-      case InvalidEscape(source, number, _, _, _)      => line(source, number)
-      case InvalidValue(source, number, _, _, _)       => line(source, number)
-      case InvalidDigest(source, number, _, _)         => line(source, number)
-      case PartialConverterEvidence(source, number)    => line(source, number)
-      case InvalidConverterEvidence(source, number, _) => line(source, number)
-      case InvalidFixture(source, number, _, _)        => line(source, number)
-      case UnsafeLocalPath(source, number, _, _)       => line(source, number)
-      case DuplicateFixtureId(source, _, numbers)      => numbers.flatMap(line(source, _))
-      case InvalidPreamble(_, _) | DuplicateLocalPath(_, _, _) | EmptyManifest(_) =>
-        Vector.empty
 
   /** The logical CSV record (the header is record 1) a tidy CSV error names. */
   private def csvRecord(error: TidyCsvError): Vector[Locus[Nothing]] =

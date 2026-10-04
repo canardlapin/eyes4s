@@ -16,8 +16,12 @@
 
 package eyes4s.studio.desktop.runtime
 
+import eyes4s.codec.CanonicalDigest
+import eyes4s.studio.app.admission.AdmissionAnswer
 import eyes4s.studio.app.{AppEffect, ClockTime, DockCommand, Intent, PlatformDialog}
-import eyes4s.studio.core.document.Perspective
+import eyes4s.studio.core.backend.DatasetRevision
+import eyes4s.studio.core.document.{DatasetRevisionSpec, Perspective}
+import eyes4s.studio.desktop.admission.LedgerInputs
 import eyes4s.studio.core.execution.{ExecutionEffect, ExecutionError}
 
 import scala.collection.mutable
@@ -51,7 +55,9 @@ enum EffectProblem derives CanEqual:
   * reset and tab cycling go to the perspective host. The journal and saves
   * go to the window's [[ProjectPort]], when it has one (S1.8): a finished
   * save comes back as [[Intent.Saved]] at the platform clock's time, a
-  * failed one as [[Intent.SaveFailed]]. Effects whose service does not exist
+  * failed one as [[Intent.SaveFailed]]. A verification asks the backend for
+  * the revision's admission, and its answer goes to `verified` on the UI
+  * thread (the admission ledger, S5.6). Effects whose service does not exist
   * yet are recorded in [[problems]]. `ui` runs a callback on the UI thread.
   */
 final class DesktopEffects(
@@ -61,7 +67,9 @@ final class DesktopEffects(
     dock: DockCommand => Unit,
     ui: (() => Unit) => Unit,
     project: Option[ProjectPort] = None,
-    clock: () => Option[ClockTime] = DesktopEffects.wallClock
+    clock: () => Option[ClockTime] = DesktopEffects.wallClock,
+    verified: (DatasetRevision, CanonicalDigest[DatasetRevisionSpec], AdmissionAnswer) => Unit =
+      (_, _, _) => ()
 ) extends EffectPerformer:
 
   private val found = mutable.ArrayBuffer.empty[EffectProblem]
@@ -82,8 +90,16 @@ final class DesktopEffects(
     case AppEffect.Execution(e) =>
       session.run(ExecutionEffect.perform(session.service)(e)) {
         case Right(Right(()))   => ()
-        case Right(Left(error)) => ui(() => report(EffectProblem.Refused(e, error)))
-        case Left(defect)       =>
+        case Right(Left(error)) =>
+          ui { () =>
+            report(EffectProblem.Refused(e, error))
+            // A refused prepared design falls back to a plain submission.
+            e match
+              case ExecutionEffect.SubmitPreview(ready) =>
+                dispatch(Intent.PreparedRefused(ready, error))
+              case _ => ()
+          }
+        case Left(defect) =>
           ui(() => report(EffectProblem.Failed(e, String.valueOf(defect.getMessage))))
       }
     case AppEffect.OpenDialog(d)     => dialogs.open(d, dispatch)
@@ -102,7 +118,10 @@ final class DesktopEffects(
       }
     case e: AppEffect.Journal =>
       project.fold(report(EffectProblem.NotWired(e, "S2.9")))(_.journal(e.entry))
-    case e: AppEffect.RequestAdmission => report(EffectProblem.NotWired(e, "S5.6"))
+    case AppEffect.RequestAdmission(dataset, content) =>
+      session.run(session.backend.admission(dataset)) { result =>
+        ui(() => verified(dataset, content, LedgerInputs.answer(result)))
+      }
 
 object DesktopEffects:
   /** The local wall-clock time now, as the status bar shows it. */

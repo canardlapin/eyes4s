@@ -1,0 +1,181 @@
+/*
+ * Copyright 2026 canardlapin
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+/* The geometry panel (ticket S5.5; docs/studio/design/Data.dc.html,
+ * geometry). Colours are token names only; sizes come from studio-type.css
+ * classes; weights are face families (DESIGN_SPEC 14). */
+
+.geometry-panel {
+  -fx-background-color: -es-surface;
+  -fx-focus-color: -es-accent;
+  -fx-faint-focus-color: transparent;
+}
+
+.geometry-panel .scroll-pane,
+.geometry-panel .scroll-pane > .viewport {
+  -fx-background-color: -es-surface;
+  -fx-background-insets: 0;
+  -fx-padding: 0;
+}
+
+/* ---- the 28 px header ------------------------------------------------------- */
+
+.geometry-header {
+  -fx-min-height: 28px;
+  -fx-pref-height: 28px;
+  -fx-max-height: 28px;
+  -fx-alignment: center-left;
+  -fx-padding: 0 8 0 12;
+  -fx-background-color: -es-hairline, -es-surface-2;
+  -fx-background-insets: 0, 0 0 1 0;
+}
+
+.geometry-title {
+  -fx-text-fill: -es-ink;
+}
+
+.geometry-kind {
+  -fx-padding: 1 6 1 6;
+  -fx-background-color: -es-hairline, -es-surface-2;
+  -fx-background-insets: 0, 1;
+  -fx-background-radius: 3, 2;
+  -fx-text-fill: -es-ink-2;
+  -fx-font-family: "IBM Plex Sans SmBld";
+}
+
+/* ---- sections ------------------------------------------------------------------ */
+
+.geometry-section {
+  -fx-padding: 10 14 10 14;
+  -fx-background-color: -es-hairline, -es-surface;
+  -fx-background-insets: 0, 1 0 0 0;
+}
+
+.geometry-stack {
+  -fx-spacing: 6;
+}
+
+.geometry-row {
+  -fx-spacing: 8;
+  -fx-alignment: center-left;
+}
+
+.geometry-kv, .geometry-fields, .geometry-example {
+  -fx-hgap: 10;
+  -fx-vgap: 3;
+}
+
+.geometry-example {
+  -fx-padding: 6 8 6 8;
+  -fx-background-color: -es-hairline, -es-surface-2;
+  -fx-background-insets: 0, 1;
+  -fx-background-radius: 4, 3;
+}
+
+.geometry-thumbs {
+  -fx-hgap: 10;
+  -fx-vgap: 10;
+}
+
+.geometry-label, .geometry-section-title {
+  -fx-text-fill: -es-ink-3;
+}
+
+.geometry-section-title, .geometry-strong {
+  -fx-text-fill: -es-ink;
+  -fx-font-family: "IBM Plex Sans SmBld";
+}
+
+.geometry-value, .geometry-count {
+  -fx-text-fill: -es-ink;
+}
+
+.geometry-note, .geometry-caption {
+  -fx-text-fill: -es-ink-2;
+}
+
+.geometry-warn {
+  -fx-text-fill: -es-warn-text;
+}
+
+.geometry-problem {
+  -fx-padding: 6 14 6 14;
+  -fx-text-fill: -es-fail;
+}
+
+.geometry-field {
+  -fx-min-height: 22px;
+  -fx-pref-height: 22px;
+  -fx-max-height: 22px;
+  -fx-padding: 0 6 0 6;
+  -fx-background-color: -es-hairline, -es-surface;
+  -fx-background-insets: 0, 1;
+  -fx-background-radius: 4, 3;
+  -fx-text-fill: -es-ink;
+  -fx-prompt-text-fill: -es-ink-3;
+}
+
+.geometry-button {
+  -fx-min-height: 22px;
+  -fx-pref-height: 22px;
+  -fx-max-height: 22px;
+  -fx-padding: 0 8 0 8;
+  -fx-background-color: -es-hairline, -es-surface;
+  -fx-background-insets: 0, 1;
+  -fx-background-radius: 4, 3;
+  -fx-text-fill: -es-ink;
+  -fx-font-family: "IBM Plex Sans Medm";
+}
+
+.geometry-button.primary {
+  -fx-background-color: -es-accent;
+  -fx-background-insets: 0;
+  -fx-text-fill: -es-on-accent;
+}
+
+.geometry-field:focused, .geometry-button:focused {
+  -fx-background-color: -es-accent, -es-surface;
+  -fx-background-insets: 0, 2;
+}
+
+.geometry-button.primary:focused {
+  -fx-background-color: -es-ink, -es-accent;
+  -fx-background-insets: 0, 2;
+}
+
+.geometry-form {
+  -fx-padding: 8;
+  -fx-background-color: -es-hairline, -es-surface-2;
+  -fx-background-insets: 0, 1;
+  -fx-background-radius: 4, 3;
+}
+
+/* ---- pictures ------------------------------------------------------------------------ */
+
+.geometry-picture {
+  -fx-background-color: -es-stage;
+}
+
+/* The thumbnail chosen for marking, and the focused one: a 2 px accent ring. */
+.geometry-picture.marked {
+  -fx-border-color: -es-accent;
+  -fx-border-width: 2;
+}
+
+.geometry-picture:focused {
+  -fx-border-color: -es-accent;
+  -fx-border-width: 2;
+}

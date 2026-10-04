@@ -20,6 +20,7 @@ import cats.syntax.all.*
 import eyes4s.codec.{ByteDigest, CanonicalDigest, CodecError, VersionedCodec}
 import eyes4s.kernel.Correction
 import eyes4s.plan.{
+  AdmissionDecision as CoreAdmissionDecision,
   AdmissionPolicy,
   ArtifactRef,
   AttributeColumn,
@@ -202,8 +203,20 @@ enum ColumnRole derives CanEqual, Codec.AsObject:
     case other       => other.productPrefix.toLowerCase
 
 object ColumnRole:
-  /** Import requires these (DESIGN_SPEC section 9: ordinal and sample count). */
+  /** Import and admission require these (DESIGN_SPEC section 9): the trial
+    * key eyes4s reads (participant, phase and trial,
+    * `FixationKeyReader.trial`), the ordinal and sample count, the position
+    * and the times. [[ColumnMapping.admissible]] checks them.
+    */
   val required: Vector[ColumnRole] =
+    Vector(Participant, Phase, Trial, Ordinal, SampleCount, X, Y, Onset, Duration)
+
+  /** Every stored mapping has these: the roles S5.2 required, before the
+    * phase was (S5.3). [[ColumnMapping.of]], and so decoding, checks only
+    * these, so a project saved without a phase column still loads; it needs
+    * a re-map before it is committed or admitted.
+    */
+  val stored: Vector[ColumnRole] =
     Vector(Participant, Trial, Ordinal, SampleCount, X, Y, Onset, Duration)
 
 /** A column name as it appears in the source header. */
@@ -219,11 +232,19 @@ final case class ColumnBinding(role: ColumnRole, column: ColumnName)
     derives CanEqual,
       Codec.AsObject
 
-/** Which column plays each role: every required role once, no column in two
-  * roles, in role order.
+/** Which column plays each role: every stored role once, no column in two
+  * roles, in role order. A mapping lacking a role import requires
+  * ([[ColumnRole.required]]) loads, but only [[ColumnMapping.admissible]]
+  * mappings are committed or admitted.
   */
 final case class ColumnMapping private (bindings: Vector[ColumnBinding]) derives CanEqual:
   def column(role: ColumnRole): Option[ColumnName] = bindings.find(_.role == role).map(_.column)
+
+  /** The roles import requires that no column plays (a mapping stored
+    * before S5.3 may lack the phase); empty when it can be committed.
+    */
+  def missingForImport: Vector[ColumnRole] =
+    ColumnRole.required.filterNot(r => bindings.exists(_.role == r))
 
 object ColumnMapping:
   def of(bindings: Vector[ColumnBinding]): Either[DocumentError, ColumnMapping] =
@@ -235,9 +256,17 @@ object ColumnMapping:
       _ <- bindings.groupBy(_.column).toVector.sortBy(_._1.value).traverse_ { (column, bs) =>
         Either.cond(bs.size <= 1, (), DocumentError.SharedColumn(column.value, bs.map(_.role)))
       }
-      missing = ColumnRole.required.filterNot(r => bindings.exists(_.role == r))
+      missing = ColumnRole.stored.filterNot(r => bindings.exists(_.role == r))
       _ <- Either.cond(missing.isEmpty, (), DocumentError.MissingColumnRoles(missing))
     yield new ColumnMapping(bindings.sortBy(_.role.ordinal))
+
+  /** The commit and admission check (S5.3): every role import requires has a
+    * column, or the error names the missing ones. The import wizard's commit,
+    * `ImportSources`, `ReviseDataset` and `VerifyDataset` call it.
+    */
+  def admissible(mapping: ColumnMapping): Either[DocumentError, ColumnMapping] =
+    val missing = mapping.missingForImport
+    Either.cond(missing.isEmpty, mapping, DocumentError.MissingColumnRoles(missing))
 
   given Codec[ColumnMapping] = DocumentCodecs.validated(of, _.bindings)
 
@@ -503,23 +532,63 @@ object AdmissionChoice:
   * (story moment t1) and records the content digest
   * ([[DatasetRevisionSpec.contentDigest]]) of exactly what was sent; an
   * admission is accepted only for that content. `Admitted` binds the eyes4s
-  * admission ledger and trial inventory it produced.
+  * admission ledger and trial inventory it produced, and records the eyes4s
+  * `AdmissionDecision` it was admitted under (S5.6): `RequireComplete`, or
+  * `ReviewExclusions`, which admits the admissible trials and records the
+  * exclusions with their causes in the ledger. `policy` is `None` only for a
+  * revision admitted before S5.6 recorded it (`studio.document` version 2 or
+  * earlier, or a journal line written before S5.6).
   */
 enum AdmissionDecision derives CanEqual:
   case Pending
   case Verifying(content: CanonicalDigest[DatasetRevisionSpec])
   case Admitted(
+      policy: Option[CoreAdmissionDecision],
       ledger: CoreBinding[AdmissionLedgerArtifact],
       inventory: CoreBinding[TrialInventoryArtifact]
   )
 
   def isAdmitted: Boolean = this match
     case Pending | Verifying(_) => false
-    case Admitted(_, _)         => true
+    case Admitted(_, _, _)      => true
+
+  /** The policy an admitted revision recorded, if it recorded one. */
+  def admittedUnder: Option[CoreAdmissionDecision] = this match
+    case Admitted(p, _, _)      => p
+    case Pending | Verifying(_) => None
 
 object AdmissionDecision:
   import DigestJson.given
-  given Codec.AsObject[AdmissionDecision] = Codec.AsObject.derived
+
+  /** eyes4s's `AdmissionDecision` as the studio writes its enums:
+    * `{"RequireComplete":{}}` or `{"ReviewExclusions":{}}`.
+    */
+  given coreDecision: Codec[CoreAdmissionDecision] = Codec.from(
+    Decoder.instance { c =>
+      c.value.asObject.map(_.keys.toVector) match
+        case Some(Vector(name)) =>
+          CoreAdmissionDecision.values
+            .find(_.toString == name)
+            .toRight(DecodingFailure(s"unknown admission decision $name", c.history))
+        case other =>
+          Left(DecodingFailure(s"expected one admission decision, got $other", c.history))
+    },
+    Encoder.instance(d => Json.obj(d.toString -> Json.obj()))
+  )
+
+  private val derived: Codec.AsObject[AdmissionDecision] = Codec.AsObject.derived
+
+  /** An admission without a recorded policy is written without the member,
+    * so a revision admitted before S5.6 keeps its version-2 wire form.
+    */
+  given Codec.AsObject[AdmissionDecision] = Codec.AsObject.from(
+    derived,
+    Encoder.AsObject.instance(d =>
+      derived
+        .encodeObject(d)
+        .mapValues(v => if d.admittedUnder.isEmpty then v.mapObject(_.remove("policy")) else v)
+    )
+  )
 
 // ---------------------------------------------------------------------------
 // Dataset revision
@@ -528,11 +597,15 @@ object AdmissionDecision:
 /** One dataset revision (DESIGN_SPEC section 8, "Dataset · re-admit"): the
   * sources, their column mapping and declared units, the display geometry,
   * the admission choices, the admission decision, and the fixation source's
-  * attribute columns (S5.2). `parent` is the revision it re-imports, if any.
-  * Its id is the protocol's [[DatasetRevision]].
+  * attribute columns (S5.2), and the trial inventory's mapping (S5.4).
+  * `parent` is the revision it re-imports, if any. Its id is the protocol's
+  * [[DatasetRevision]].
   *
-  * `attributes` is written only when there are some, so a revision without
-  * attributes keeps the version-1 wire form (and its pins and digests).
+  * `attributes` is written only when there are some, and `inventory` only
+  * when the revision maps one, so a revision without them keeps the
+  * version-1 wire form (and its pins and digests). A revision stored before
+  * S5.4 with a trials source and no inventory mapping loads; it needs a
+  * re-map before it is committed ([[DatasetRevisionSpec.inventoryMapped]]).
   */
 final case class DatasetRevisionSpec(
     id: DatasetRevision,
@@ -543,7 +616,8 @@ final case class DatasetRevisionSpec(
     geometry: Geometry,
     admission: AdmissionChoice,
     decision: AdmissionDecision,
-    attributes: DeclaredAttributes = DeclaredAttributes.empty
+    attributes: DeclaredAttributes = DeclaredAttributes.empty,
+    inventory: Option[InventoryMapping] = None
 ) derives CanEqual
 
 object DatasetRevisionSpec:
@@ -559,9 +633,31 @@ object DatasetRevisionSpec:
     ),
     Encoder.AsObject.instance(s =>
       val o = derived.encodeObject(s)
-      if s.attributes.isEmpty then o.remove("attributes") else o
+      val a = if s.attributes.isEmpty then o.remove("attributes") else o
+      if s.inventory.isEmpty then a.remove("inventory") else a
     )
   )
+
+  /** An inventory mapping needs a trials source to map (S5.4). */
+  def checkInventory(spec: DatasetRevisionSpec): Either[DocumentError, Unit] =
+    Either.cond(
+      spec.inventory.isEmpty || spec.sources.trials.isDefined,
+      (),
+      DocumentError.InventoryWithoutTrials(spec.id)
+    )
+
+  /** The commit check (S5.4): a trials source has its columns mapped, so
+    * that eyes4s can join it. Import, re-map and verification call it.
+    */
+  def inventoryMapped(
+      id: DatasetRevision,
+      sources: Sources,
+      inventory: Option[InventoryMapping]
+  ): Either[DocumentError, Unit] =
+    sources.trials match
+      case Some(trials) if inventory.isEmpty =>
+        Left(DocumentError.InventoryUnmapped(id, trials.path.value))
+      case _ => Right(())
 
   /** An attribute column is not also a role's column. */
   def checkAttributes(spec: DatasetRevisionSpec): Either[DocumentError, Unit] =

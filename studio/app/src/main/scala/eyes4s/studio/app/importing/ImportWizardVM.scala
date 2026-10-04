@@ -16,7 +16,7 @@
 
 package eyes4s.studio.app.importing
 
-import eyes4s.studio.app.text.{Format, ImportText, ImportTextId}
+import eyes4s.studio.app.text.{Format, ImportText, ImportTextId, KeyText, KeyTextId}
 import eyes4s.studio.core.backend.DatasetRevision
 import eyes4s.studio.core.command.ChangeKind
 import eyes4s.studio.core.document.{
@@ -65,7 +65,8 @@ final case class GeometryFieldVM(field: GeometryField, label: String, value: Str
     derives CanEqual
 
 /** One mapping table (fixations or trials): its header row, file summary
-  * and rows, or the empty-state text and the choose button.
+  * and rows, or the empty-state text and the choose button. A re-map reads
+  * the revision's own files, so it offers no choose button (`canChoose`).
   */
 final case class MappingTableVM(
     role: SourceRole,
@@ -73,6 +74,7 @@ final case class MappingTableVM(
     summary: Option[String],
     empty: Option[String],
     choose: String,
+    canChoose: Boolean,
     rows: Vector[MappingRowVM],
     choices: Vector[ChoiceVM]
 ) derives CanEqual
@@ -101,6 +103,7 @@ final case class PresetsVM(
 final case class ImportWizardVM(
     title: String,
     kind: String,
+    showTabs: Boolean,
     tabs: Vector[WizardTabVM],
     tab: WizardTab,
     fixations: MappingTableVM,
@@ -117,7 +120,8 @@ final case class ImportWizardVM(
     canCommit: Boolean,
     cancel: String,
     status: Option[String],
-    problem: Option[String]
+    problem: Option[String],
+    key: TrialKeyVM
 ) derives CanEqual
 
 object ImportWizardVM:
@@ -178,6 +182,8 @@ object ImportWizardVM:
     case ColumnChoice.Role(_)                      => (t(ImportTextId.UnitNone), false)
 
   def problemText(p: WizardProblem): String = p match
+    // An unreadable file's error already says which file could not be read.
+    case WizardProblem.ReadFailed(_, e: SourceReadError.Unreadable) => e.message
     case WizardProblem.ReadFailed(path, e)       => t(ImportTextId.ReadFailed, path, e.message)
     case WizardProblem.Preset(e)                 => e.message
     case WizardProblem.PresetMapping(_, es)      => es.toVector.map(_.message).mkString(" ")
@@ -193,6 +199,11 @@ object ImportWizardVM:
     case WizardProblem.StoreFailed(reason)       => t(ImportTextId.StoreFailed, reason)
     case WizardProblem.NotDatasetSource(d, path) =>
       t(ImportTextId.NotDatasetSource, path, d.label)
+    case WizardProblem.TrialKey(block)        => block.message
+    case WizardProblem.NeedsRemap(d, missing) =>
+      KeyText(KeyTextId.NeedsRemap, d.label, missing.map(_.label).mkString(", "))
+    case WizardProblem.NoOccurrenceColumn(file) =>
+      KeyText(KeyTextId.NoOccurrenceColumn, file)
 
   def noteText(n: WizardNote): String = n match
     case WizardNote.PresetSaved(name)         => t(ImportTextId.PresetSaved, name.value)
@@ -260,9 +271,12 @@ object ImportWizardVM:
 
   def of(w: ImportWizard, document: StudioDocument): ImportWizardVM =
     val fixationIssues = w.fixations.fold(Vector.empty)(_._2.issues)
-    val trialIssues    = w.trials.fold(Vector.empty)(_._2.issues)
+    val trialIssues    = w.trialIssues
     val all            = w.issues
-    val ragged         = (w.fixations.map(_._1) ++ w.trials.map(_._1)).toVector.flatMap(s =>
+    // The trial key's Studio checks block too (S5.3); its other findings warn.
+    val keyIssues   = TrialKeyVM.issues(w)
+    val keyBlocking = keyIssues.count(_.blocking)
+    val ragged      = (w.fixations.map(_._1) ++ w.trials.map(_._1)).toVector.flatMap(s =>
       s.preview.ragged.map(r =>
         IssueVM(
           t(
@@ -289,16 +303,20 @@ object ImportWizardVM:
         )
         .toVector
     )
-    val warnings = w.warnings.map(e =>
-      IssueVM(t(ImportTextId.TrialWarning, e.message), e.pointsAt.map(_.value), false)
-    )
-    val time = w.fixations.flatMap(_._2.time)
-    val tabs = WizardTab.values.toVector.map { tab =>
+    val time      = w.fixations.flatMap(_._2.time)
+    val newImport = w.target == WizardTarget.NewImport
+    // A re-map is hosted in the column-mapping pane: it shows the mapping
+    // page and, when the revision has a trials file, its trial metadata
+    // (S5.4); geometry and the issues belong to the sibling panes.
+    val offered =
+      if newImport then WizardTab.values.toVector
+      else WizardTab.FixationMapping +: w.trials.map(_ => WizardTab.TrialMetadata).toVector
+    val tabs = offered.map { tab =>
       val count = tab match
-        case WizardTab.FixationMapping => fixationIssues.size
+        case WizardTab.FixationMapping => fixationIssues.size + keyBlocking
         case WizardTab.TrialMetadata   => trialIssues.size
         case WizardTab.Geometry        => w.geometry.parse.fold(_ => 1, _ => 0)
-        case WizardTab.DataIssues      => all.size
+        case WizardTab.DataIssues      => all.size + keyBlocking
       val label =
         if count == 0 then tabLabel(tab)
         else t(ImportTextId.TabIssues, tabLabel(tab), Format.count(count.toLong))
@@ -307,8 +325,12 @@ object ImportWizardVM:
     ImportWizardVM(
       title = t(ImportTextId.Title),
       kind = ChangeKind.DatasetReadmit.label,
+      // A re-map is hosted in the column-mapping pane, whose dock tab already
+      // names it: it shows the mapping page only, with no tab strip (the
+      // other pages belong to the sibling panes).
+      showTabs = offered.size > 1,
       tabs = tabs,
-      tab = w.tab,
+      tab = if offered.contains(w.tab) then w.tab else WizardTab.FixationMapping,
       fixations = MappingTableVM(
         SourceRole.Fixations,
         Vector(
@@ -318,8 +340,10 @@ object ImportWizardVM:
           t(ImportTextId.HeaderUnits)
         ),
         w.fixations.map(f => summaryOf(f._1.preview)),
-        Option.when(w.fixations.isEmpty)(t(ImportTextId.NoFixationFile)),
+        // A re-map has no file to choose: the pane says what it is reading.
+        Option.when(w.fixations.isEmpty && newImport)(t(ImportTextId.NoFixationFile)),
         t(ImportTextId.ChooseFile),
+        newImport,
         w.fixations.fold(Vector.empty)((_, d) =>
           rows(SourceRole.Fixations, d.columns, d.time, fixationIssues)
         ),
@@ -336,6 +360,7 @@ object ImportWizardVM:
         w.trials.map(f => summaryOf(f._1.preview)),
         Option.when(w.trials.isEmpty)(t(ImportTextId.NoTrialsFile)),
         t(ImportTextId.ChooseTrials),
+        newImport,
         w.trials.fold(Vector.empty)((_, d) =>
           rows(SourceRole.Trials, d.columns, None, trialIssues)
         ),
@@ -355,9 +380,9 @@ object ImportWizardVM:
       geometry = GeometryField.values.toVector.map(f =>
         GeometryFieldVM(f, geometryLabel(f), w.geometry.field(f))
       ),
-      issuesSummary = issuesSummary(all.size),
+      issuesSummary = issuesSummary(all.size + keyBlocking),
       issues = all.map(e => IssueVM(e.message, e.pointsAt.map(_.value), true)) ++
-        warnings ++ ragged,
+        keyIssues.filter(_.blocking) ++ keyIssues.filterNot(_.blocking) ++ ragged,
       presets = PresetsVM(
         t(ImportTextId.PresetLabel),
         w.presets.names.map(_.value),
@@ -372,7 +397,9 @@ object ImportWizardVM:
       // Enabled once there is a file: a refused commit says why and opens
       // the tab that holds the issue.
       canCommit = w.fixations.isDefined,
-      cancel = t(ImportTextId.Cancel),
+      // A re-map is hosted in its pane, where cancelling reverts the edits.
+      cancel = t(if newImport then ImportTextId.Cancel else ImportTextId.Revert),
       status = w.note.map(noteText),
-      problem = w.problem.map(problemText)
+      problem = w.problem.map(problemText),
+      key = TrialKeyVM.of(w)
     )

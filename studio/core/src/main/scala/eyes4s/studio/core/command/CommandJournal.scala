@@ -188,7 +188,15 @@ object CommandJournal:
       own    <- digest(base)
       _      <- Either.cond(from.sameAs(own), (), JournalError.BaseMismatch(from, own))
       replay <- (2 to lines.size).toVector
-        .foldLeftM(Replay(History.start(base), Vector.empty, Vector.empty, None)) { (acc, n) =>
+        // Replay reconstructs history under the stored-role rule (S5.3).
+        .foldLeftM(
+          Replay(
+            History.start(base).under(MappingRule.Replay),
+            Vector.empty,
+            Vector.empty,
+            None
+          )
+        ) { (acc, n) =>
           read(n) match
             case Left(_) if n == lines.size =>
               Right(acc.copy(torn = Some(TornLine(n, lines(n - 1)))))
@@ -219,7 +227,7 @@ object CommandJournal:
                 )
               yield acc.copy(checkpoints = acc.checkpoints :+ seq)
         }
-    yield replay
+    yield replay.copy(history = replay.history.under(MappingRule.Commit))
 
   private def digest(document: StudioDocument) =
     StudioDocument.codec.flatMap(_.digest(document)).leftMap(JournalError.Unwritable(_))

@@ -17,6 +17,13 @@
 package eyes4s.studio.core.backend
 
 import eyes4s.plan.{SegmentTotal, StudyDesign, StudySegment}
+import eyes4s.studio.core.preview.{
+  PreviewCandidates,
+  PreviewCounts,
+  PreviewError,
+  PreviewId,
+  QueryCount
+}
 import io.circe.Json
 import io.circe.syntax.*
 
@@ -30,11 +37,11 @@ class ProtocolCodecSuite extends munit.FunSuite:
 
   test("every message kind and case is sampled") {
     assertEquals(requests.map(_.ordinal), requests.indices.toVector)
-    assertEquals(requests.size, 16)
+    assertEquals(requests.size, 22)
     assertEquals(responses.map(_.ordinal), responses.indices.toVector)
-    assertEquals(responses.size, 14)
+    assertEquals(responses.size, 18)
     assertEquals(errors.map(_.ordinal), errors.indices.toVector)
-    assertEquals(errors.size, 11)
+    assertEquals(errors.size, 19)
     assertEquals(causes.map(_.ordinal), causes.indices.toVector)
     assertEquals(causes.size, 14)
     assertEquals(loci.map(_.ordinal), loci.indices.toVector)
@@ -58,6 +65,12 @@ class ProtocolCodecSuite extends munit.FunSuite:
     drift.foreach((n, j) => println(s"PIN\t$n\t$j"))
     assertEquals(drift.map(_._1), Vector.empty)
     assertEquals(ProtocolPins.pins.keySet, actual.keySet)
+  }
+
+  test("preview handles keep unsafe Long values as decimal text") {
+    val id = PreviewId(9007199254740992L)
+    assertEquals(id.asJson.noSpaces, "\"9007199254740992\"")
+    assertEquals(id.asJson.as[PreviewId], Right(id))
   }
 
   test("an unknown quarantine code decodes as Other and re-encodes unchanged") {
@@ -108,13 +121,46 @@ class ProtocolCodecSuite extends munit.FunSuite:
   test("refusals have distinct stable codes, typed subjects and rendered messages") {
     assertEquals(errors.map(_.code).distinct.size, errors.size)
     errors.foreach(e => assert(e.code.startsWith("studio-backend."), e.code))
-    assert(errors(2).message.contains("run 9") && errors(2).message.contains("run 7"))
+    val unknownRun = errors
+      .collectFirst { case e: BackendError.UnknownRun => e }
+      .getOrElse(fail("unknown run sample missing"))
+    val unavailable = errors
+      .collectFirst { case e: BackendError.Unavailable => e }
+      .getOrElse(fail("unavailable sample missing"))
+    val unknownReference = errors
+      .collectFirst { case e: BackendError.UnknownReference => e }
+      .getOrElse(fail("unknown reference sample missing"))
+    assert(unknownRun.message.contains("run 9") && unknownRun.message.contains("run 7"))
     assertEquals(
-      errors(4).diagnostic.subject,
+      unavailable.diagnostic.subject,
       Vector(DiagnosticLocus.Dataset(DatasetRevision(2)))
     )
-    assertEquals(errors(4).message, "The backend holds no data for dataset r2.")
-    assert(!errors(6).message.contains("PairRow"), errors(6).message)
+    assertEquals(unavailable.message, "The backend holds no data for dataset r2.")
+    assert(!unknownReference.message.contains("PairRow"), unknownReference.message)
+    // Protocol 1.6: a trial outside the revision's dataset names both.
+    val unknownTrial = errors
+      .collectFirst { case e: BackendError.UnknownTrial => e }
+      .getOrElse(fail("unknown trial sample missing"))
+    assertEquals(unknownTrial.code, "studio-backend.unknown-trial")
+    assertEquals(unknownTrial.message, "P99 · enc_01 is not a trial of dataset r3.")
+    assertEquals(
+      unknownTrial.diagnostic.subject,
+      Vector(
+        DiagnosticLocus.Dataset(DatasetRevision(3)),
+        DiagnosticLocus.Trial(TrialKey("P99", Phase.Encoding, "enc_01", 1))
+      )
+    )
+  }
+
+  test(
+    "1.8: a diagnostic without its affected trials, class and remedy is refused on the wire"
+  ) {
+    val full  = ProtocolSamples.diagnostic.asJson
+    val older = full.mapObject(_.remove("affected").remove("category").remove("remedy"))
+    assert(full.as[StudioDiagnostic].isRight)
+    older.as[StudioDiagnostic] match
+      case Left(e)  => assert(e.history.toString.contains("affected"), e)
+      case Right(d) => fail(s"a pre-1.8 diagnostic decoded: $d")
   }
 
   test("protocol values are shaped like the eyes4s values they wrap") {
@@ -146,6 +192,19 @@ class ProtocolCodecSuite extends munit.FunSuite:
       (DiagnosticLevel.Error, DiagnosticOrigin.EyesCore)
     )
     assertEquals(studio.message, planDiagnostic.message)
+    assertEquals((studio.affected, studio.category, studio.remedy), (Vector.empty, None, None))
+    // 1.8: a finding's affected trials, class and remedy are eyes4s's.
+    val p11  = TrialKey("P11", Phase.Retrieval, "ret_05", 1)
+    val refs = Vector(1, 2).map(o => TrialKey("P11", Phase.Encoding, "enc_04", o))
+    val cardinality: eyes4s.plan.StudyFinding[TrialKey, eyes4s.kernel.Unit2D.Px] =
+      eyes4s.plan.StudyFinding
+        .MatchedCardinality(p11, refs, eyes4s.plan.MatchedReferences.RequireOne)
+    val finding = eyes4s.plan.Diagnostic.of(cardinality)
+    val wired   = StudioDiagnostic.of(finding, identity[TrialKey])
+    assertEquals(wired.affected, p11 +: refs)
+    assertEquals(wired.remedy, Some("ChooseMatchedReference"))
+    assertEquals(wired.category, finding.category.map(_.toString))
+    assert(wired.category.isDefined, wired)
     assertEquals(
       DiagnosticLocus.of(eyes4s.plan.Locus.Pair("q", "r"), keys),
       DiagnosticLocus.Pair(query, matched)
@@ -211,7 +270,7 @@ class ProtocolCodecSuite extends munit.FunSuite:
       .as[Protocol11Total]
 
   test("protocol 1.2 Counting requires coordinated peers, not a relabelled 1.1 frame") {
-    assertEquals(ProtocolVersion.Current, ProtocolVersion(1, 2))
+    assertEquals(ProtocolVersion.Current, ProtocolVersion(1, 8))
     val previous = Envelope(RequestId(41), ServerFrame.Event(JobEvent.Advanced(progress)))
     assertEquals(legacyMeterTotal(previous.asJson), Right(Protocol11Total.Exact(8512L)))
     val counting = progress.asJson
@@ -226,4 +285,46 @@ class ProtocolCodecSuite extends munit.FunSuite:
     assert(legacyMeterTotal(wire).isLeft)
     val relabelled = wire.deepMerge(Json.obj("version" -> ProtocolVersion(1, 1).asJson))
     assert(legacyMeterTotal(relabelled).isLeft)
+  }
+
+  test(
+    "protocol 1.5: preview query counts are required, non-negative, and by design is optional"
+  ) {
+    val candidates = ProtocolSamples.previewReady.candidates
+    val wire       = candidates.asJson
+    assertEquals(wire.as[PreviewCandidates], Right(candidates))
+    // A recipe without a by-design category says so: null, not zero.
+    assertEquals(wire.hcursor.downField("byDesignQueries").focus, Some(Json.Null))
+    // A 1.4 preview (no query counts) is not read as 1.5.
+    val legacy = wire.mapObject(
+      _.remove("requestedQueries").remove("queriesNotAdmitted").remove("byDesignQueries")
+    )
+    assert(legacy.as[PreviewCandidates].isLeft)
+    val counts = ProtocolSamples.previewReady.counts.asJson
+    assert(counts.mapObject(_.remove("eligibleQueries")).as[PreviewCounts].isLeft)
+    assert(counts.mapObject(_.add("eligibleQueries", (-1).asJson)).as[PreviewCounts].isLeft)
+    assert(
+      wire.mapObject(_.add("byDesignQueries", (-1).asJson)).as[PreviewCandidates].isLeft
+    )
+    assertEquals(
+      QueryCount.of(-1).map(_.value),
+      Left(PreviewError.Negative("query count", -1L))
+    )
+    assertEquals(QueryCount.of(14).map(_.asJson), Right(14.asJson))
+  }
+
+  test("protocol 1.3: an admission summary without an inventory says absent is not counted") {
+    val summary = ProtocolSamples.admission.copy(inventory = InventoryJoin.Undeclared)
+    val wire    = (summary: AdmissionSummary).asJson
+    assertEquals(
+      wire.hcursor.downField("inventory").focus,
+      Some(Json.obj("Undeclared" -> Json.obj()))
+    )
+    assertEquals(wire.as[AdmissionSummary], Right(summary))
+    assertEquals((summary.inventoryTrials, summary.absent), (None, None))
+    // A 1.2 summary (inventoryTrials and absent as numbers) is not read as 1.3.
+    val legacy = wire.mapObject(
+      _.remove("inventory").add("inventoryTrials", 960.asJson).add("absent", 6.asJson)
+    )
+    assert(legacy.as[AdmissionSummary].isLeft)
   }

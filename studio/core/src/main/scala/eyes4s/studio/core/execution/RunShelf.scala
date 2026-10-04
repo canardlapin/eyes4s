@@ -19,6 +19,7 @@ package eyes4s.studio.core.execution
 import cats.Functor
 import cats.syntax.functor.*
 import eyes4s.studio.core.backend.{JobId, RunId}
+import eyes4s.studio.core.preview.PreviewReady
 import io.circe.Codec
 
 /** The user's run actions. The S2.2 reducer handles them: `Run` and `Cancel`
@@ -38,19 +39,33 @@ enum RunIntent derives CanEqual, Codec.AsObject:
 /** Work a pure update asks the runtime to do, as data. */
 enum ExecutionEffect derives CanEqual, Codec.AsObject:
   case Submit(stamp: RunStamp)
+
+  /** Submit the exact prepared design a ready preview names (E2E-05): the
+    * backend runs the snapshot it retained for the receipt, or refuses a
+    * stale or changed one.
+    */
+  case SubmitPreview(ready: PreviewReady)
   case Cancel(job: JobId)
 
   /** The document's requested stamp changed without a submission. */
   case Require(stamp: RunStamp)
 
 object ExecutionEffect:
+  /** The stamp a submission asks results for, if the effect submits. */
+  def submitted(effect: ExecutionEffect): Option[RunStamp] = effect match
+    case Submit(stamp)        => Some(stamp)
+    case SubmitPreview(ready) => Some(ready.stamp)
+    case Cancel(_)            => None
+    case Require(_)           => None
+
   /** Perform one effect on `service`. */
   def perform[F[_]: Functor](service: ExecutionService[F])(
       effect: ExecutionEffect
   ): F[Either[ExecutionError, Unit]] = effect match
-    case Submit(stamp)  => service.submit(stamp).map(_.void)
-    case Cancel(job)    => service.cancel(job).map(_.void)
-    case Require(stamp) => service.require(stamp).map(Right(_))
+    case Submit(stamp)        => service.submit(stamp).map(_.void)
+    case SubmitPreview(ready) => service.submitPreview(ready).map(_.void)
+    case Cancel(job)          => service.cancel(job).map(_.void)
+    case Require(stamp)       => service.require(stamp).map(Right(_))
 
 /** The shown run and the ready notice beside it ("Run 8 ready — Show"), as a
   * pure value. A completion only ever fills `pending`; `shown` changes only
@@ -71,6 +86,7 @@ final case class RunShelf private (
   def receive(event: ExecutionEvent): RunShelf = event match
     case ExecutionEvent.Ready(notice)
         if required.contains(notice.stamp) &&
+          shown.forall(_.number < notice.run.number) &&
           pending.forall(_.run.number < notice.run.number) =>
       copy(pending = Some(notice))
     case _ => this

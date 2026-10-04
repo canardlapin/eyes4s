@@ -44,12 +44,16 @@ enum StimulusError derives CanEqual:
   /** The bytes are not an image JavaFX can decode. */
   case Undecodable(file: AssetFile, reason: String)
 
+  /** The loader would not take the read; `reason` says why. */
+  case NotLoaded(file: AssetFile, reason: String)
+
   def message: String = this match
     case NotStored(f, where)     => s"${f.value} is not stored in $where."
     case DigestMismatch(f, e, a) =>
       s"${f.value} has sha256 ${a.hex.take(12)}…, not the registered ${e.hex.take(12)}…."
     case Unreadable(f, reason)  => s"${f.value} could not be read: $reason."
     case Undecodable(f, reason) => s"${f.value} is not a decodable image: $reason."
+    case NotLoaded(f, reason)   => s"${f.value} was not read: $reason."
 
 /** Where a trial view reads a stored stimulus's bytes (a platform service,
   * DESIGN_SPEC section 13). A source is read off the FX thread.
@@ -120,8 +124,16 @@ object Stimuli:
             )
     catch case NonFatal(e) => Left(StimulusError.Undecodable(file, e.toString))
 
+  /** `asset`'s decoded raster, or the typed reason it has none. */
+  def read(source: StimulusSource, asset: AssetRef): Either[StimulusError, RasterImage] =
+    verified(source, asset).flatMap(decode(asset.file, _))
+
   /** What the trial scene shows for `asset`: its raster, or why it has none. */
-  def load(source: StimulusSource, asset: AssetRef): StimulusRaster =
-    verified(source, asset).flatMap(decode(asset.file, _)) match
-      case Right(image) => StimulusRaster.Loaded(image)
-      case Left(error)  => StimulusRaster.Unreadable(error.message)
+  def load(source: StimulusSource, asset: AssetRef): StimulusRaster = raster(
+    read(source, asset)
+  )
+
+  /** The scene's raster for a read: loaded, or unreadable with the message. */
+  def raster(read: Either[StimulusError, RasterImage]): StimulusRaster = read match
+    case Right(image) => StimulusRaster.Loaded(image)
+    case Left(error)  => StimulusRaster.Unreadable(error.message)

@@ -16,6 +16,7 @@
 
 package eyes4s.studio.app.layout
 
+import eyes4s.studio.app.text.{RecordText, RecordTextId}
 import cats.data.NonEmptyVector
 import eyes4s.studio.app.nav.Place
 import eyes4s.studio.app.text.MessageId
@@ -60,6 +61,27 @@ object StudioLayouts:
 
   private val sources = pane("data.sources", "Sources", Navigator)
 
+  /** The pane that hosts the import wizard on the selected dataset revision. */
+  val columnMapping: PaneId = new PaneId("data.column-mapping")
+
+  /** The pane that hosts the admission ledger of the selected revision. */
+  val admission: PaneId = new PaneId("data.admission")
+
+  /** The Figures perspective's methods.md text and its diff (S9.4). */
+  val methods: PaneId     = new PaneId("figures.methods")
+  val methodsDiff: PaneId = new PaneId("figures.methods-diff")
+
+  /** The panes that host Compare's Queries and Items navigators (S8.1). */
+  val compareQueries: PaneId = new PaneId("compare.queries")
+  val compareItems: PaneId   = new PaneId("compare.items")
+
+  /** The panes that host Compare's query and reference trial panels (S8.2). */
+  val queryTrial: PaneId     = new PaneId("compare.query-trial")
+  val referenceTrial: PaneId = new PaneId("compare.reference-trial")
+
+  /** The pane that hosts Compare's scale ladder and contrast readout (S8.3). */
+  val contrast: PaneId = new PaneId("compare.contrast")
+
   /** DataEmpty.dc.html: no dataset yet. */
   val dataFirstRun: PerspectiveLayout = layout(
     "data.first-run",
@@ -81,11 +103,11 @@ object StudioLayouts:
       split(
         Axis.Vertical,
         group(
-          pane("data.column-mapping", "Column mapping", Form),
+          PaneDecl(columnMapping, PaneTitle.Fixed("Column mapping"), Form),
           pane("data.trial-metadata", "Trial metadata", Table)
         ) -> 0.55,
         group(
-          pane("data.admission", "Admission", Form),
+          PaneDecl(admission, PaneTitle.Fixed("Admission"), Form),
           pane("data.outside-frame", "Records outside frame", Table)
         ) -> 0.45
       ),
@@ -96,25 +118,46 @@ object StudioLayouts:
 
   // --- Explore ------------------------------------------------------------------
 
+  /** The panes that host the trials navigator (S6.1): its tree, and its items. */
+  val trials: PaneId = new PaneId("explore.trials")
+  val items: PaneId  = new PaneId("explore.items")
+
+  /** The pane that hosts Explore's trial view (S6.2). */
+  val trialView: PaneId = new PaneId("explore.trial-view")
+
+  /** The pane that hosts Explore's source records table (S6.4). */
+  val sourceRecords: PaneId = new PaneId("explore.source-records")
+
+  /** The pane that hosts Explore's fixation inspector (S6.5). */
+  val exploreInspector: PaneId = new PaneId("explore.inspector")
+
+  /** The panes that host Explore's timeline and its table (S6.3). */
+  val timeline: PaneId      = new PaneId("explore.timeline")
+  val timelineTable: PaneId = new PaneId("explore.timeline.table")
+
   /** Explore.dc.html. */
   val explore: PerspectiveLayout = layout(
     "explore",
     Perspective.Explore,
     columns(
       navigator(
-        pane("explore.trials", "Trials", Navigator),
-        pane("explore.items", "Items", Navigator)
+        PaneDecl(trials, PaneTitle.Fixed("Trials"), Navigator),
+        PaneDecl(items, PaneTitle.Fixed("Items"), Navigator)
       ),
       split(
         Axis.Vertical,
         group(
-          dynamic("explore.trial-view", "Trial view", Plot),
+          PaneDecl(trialView, PaneTitle.Dynamic("Trial view"), Plot),
           table("explore.trial-view"),
           pane("explore.small-multiples", "Small multiples", Plot)
-        )                                                                            -> 0.55,
-        group(pane("explore.timeline", "Timeline", Plot), table("explore.timeline")) -> 0.2,
+        ) -> 0.55,
         group(
-          pane("explore.source-records", "Source records", Table),
+          PaneDecl(timeline, PaneTitle.Fixed("Timeline"), Plot),
+          PaneDecl(timelineTable, PaneTitle.Fixed("Table"), Table)
+        ) -> 0.2,
+        group(
+          pane("explore.source-records", "Source records", Table)
+            .copy(described = Some(RecordText(RecordTextId.TableName))),
           dynamic("explore.trial-inventory", "Trial inventory", Table)
         ) -> 0.25
       ),
@@ -127,6 +170,12 @@ object StudioLayouts:
 
   /** Where the failed jobs chip leads (S1.4). */
   val diagnostics: PaneId = new PaneId("analysis.diagnostics")
+
+  /** The resolved-design table (S7.5). */
+  val resolvedDesign: PaneId = new PaneId("analysis.resolved-design")
+
+  /** The pane that hosts the preflight findings and the run card (S7.6). */
+  val preflight: PaneId = new PaneId("analysis.preflight")
 
   /** Analysis.dc.html. */
   val analysis: PerspectiveLayout = layout(
@@ -142,7 +191,8 @@ object StudioLayouts:
           pane("analysis.description", "Description", Text)
         ) -> 0.6,
         group(
-          pane("analysis.resolved-design", "Resolved design", Plot),
+          // A region (the board's section) holding the table's own focus stop.
+          PaneDecl(resolvedDesign, PaneTitle.Fixed("Resolved design"), Form),
           table("analysis.resolved-design")
         ) -> 0.4
       ),
@@ -230,8 +280,8 @@ object StudioLayouts:
         Axis.Vertical,
         group(dynamic("figures.page", "Figure", Plot), table("figures.page")) -> 0.7,
         group(
-          pane("figures.methods", "methods.md", Text),
-          pane("figures.methods-diff", "Diff vs generated", Text)
+          pane(methods.value, "methods.md", Text),
+          pane(methodsDiff.value, "Diff vs generated", Text)
         ) -> 0.3
       ),
       group(dynamic("figures.panel", "Panel", Inspector))

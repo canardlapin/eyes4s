@@ -73,7 +73,8 @@ object JourneyCases:
             items.zipWithIndex.map((image, i) => image -> (i + 1)).toMap
           )
         ),
-      (participant, image, phase) => SubjectItemKey(participant, items.indexOf(image) + 1, phase),
+      (participant, image, phase) =>
+        SubjectItemKey(participant, items.indexOf(image) + 1, phase),
       key => s"${key.subject}/${items(key.item - 1)}/${key.phase}",
       2.0,
       Vector("method.multiplier")

@@ -16,6 +16,11 @@
 
 package eyes4s.studio.viz.trial
 
+import eyes4s.core.*
+import eyes4s.design.*
+import eyes4s.kernel.*
+import eyes4s.kernel.Unit2D.Px
+import eyes4s.plan.*
 import eyes4s.studio.app.tokens.{StageVariant, Theme, Tokens}
 import eyes4s.studio.core.assets.Display
 import eyes4s.studio.core.selection.{FixationIndex, StudioRef}
@@ -120,7 +125,16 @@ class TrialSceneSuite extends ScalaCheckSuite:
       xs <- Gen.listOfN(n, Gen.choose(0.0, 1919.0))
       ys <- Gen.listOfN(n, Gen.choose(0.0, 1079.0))
       ds <- Gen.listOfN(n, Gen.choose(2, 1600))
-      os <- Gen.listOfN(n, Gen.oneOf(WindowSide.Inside, WindowSide.Outside))
+      os <- Gen.listOfN(
+        n,
+        Gen.oneOf(
+          MapPlacement.InMap,
+          MapPlacement.OutsideWindow(OffWindowPolicy.Exclude),
+          MapPlacement.OutsideWindow(OffWindowPolicy.FailTrial),
+          MapPlacement.OutsideScreen,
+          MapPlacement.DroppedInitial
+        )
+      )
     yield xs.lazyZip(ys).lazyZip(ds).lazyZip(os).toVector.zipWithIndex.map {
       case ((x, y, d, o), i) =>
         right(TrialFixation.of(ret07, right(FixationIndex.of(i + 1)), x, y, d, o))
@@ -346,24 +360,128 @@ class TrialSceneSuite extends ScalaCheckSuite:
     assert(!primitives(quiet.elements).exists(p => named(p).contains(TrialScene.OrderName)))
   }
 
-  test("outside-window fixations are flagged: dashed and unfilled") {
+  test("the core placement states have distinct scene treatments") {
     List(MarkStyle.Neutral, MarkStyle.Role(TrialRole.Query)).foreach { style =>
       val scene       = right(TrialScene(input(Display.BlankWithFixationCross, marks = style)))
       val (_, device) = lower(scene, right(PlotSurface(800, 600, 1.0)))
       val gps         = markPrimitives(primitives(device.elements)).collect {
         case (n, DevicePrimitive.PointBatch(_, _, _, gps, _)) => n -> gps.valueAt(0)
       }
-      val outside = scene.marks.filter(_.window == WindowSide.Outside)
+      val outside =
+        scene.marks.filter(_.placement == MapPlacement.OutsideWindow(OffWindowPolicy.Exclude))
       assertEquals(outside.map(_.order), Vector(8))
       outside.foreach { m =>
         assertEquals(gps(m.name.value).fill, None)
-        assert(gps(m.name.value).lineType.dash.isDefined, s"$style: outside mark is not dashed")
+        assert(
+          gps(m.name.value).lineType.dash.isDefined,
+          s"$style: excluded mark is not dashed"
+        )
       }
-      scene.marks.filter(_.window == WindowSide.Inside).foreach { m =>
+      scene.marks.filter(_.placement == MapPlacement.InMap).foreach { m =>
         assert(gps(m.name.value).fill.isDefined)
         assertEquals(gps(m.name.value).lineType.dash, None)
       }
     }
+  }
+
+  test("core provenance distinguishes off-window policies from outside-screen fixation") {
+    val screen = right(Frame.screen("screen", 1920, 1080))
+    val window = right(
+      Subframe.of(screen, FrameId("image"), right(Bounds.of[Px](448, 156, 1472, 924)))
+    )
+    val retrieval = StudyKey("P17", "beach-042", "recall")
+    val encoding  = StudyKey("P17", "beach-042", "encode")
+    def path(key: StudyKey, points: (Double, Double)*): Scanpath[Px] =
+      val clock = ClockId(s"${key.participant}/${key.phase}")
+      val fixes = points.zipWithIndex.map { case ((x, y), i) =>
+        right(
+          Event.Fixation.withoutDispersion(
+            right(
+              Interval.of(clock, Instant.micros(i * 1000L), Instant.micros(i * 1000L + 412L))
+            ),
+            Pt[Px](x, y),
+            1
+          )
+        )
+      }
+      right(Scanpath.of(screen, clock, IArray.from(fixes)))
+    val studyInput = StudyInput(
+      Trials(
+        Vector(
+          Trial(
+            retrieval,
+            (),
+            path(retrieval, (960, 540), (2000, 500), (100, 100), (1148, 456))
+          ),
+          Trial(encoding, (), path(encoding, (900, 500)))
+        )
+      )
+    )
+    def placements(policy: OffWindowPolicy): Vector[MapPlacement] =
+      val geometry = right(
+        StudyGeometry.windowed(window, right(Grid.over(window.frame, 64, 48)), policy)
+      )
+      val plan = right(
+        StudyPlan.configure(
+          studyInput.reference,
+          StudyKey.layout(DefinitionId.studyLayout),
+          geometry,
+          "recall",
+          "encode",
+          Weight.Duration,
+          Vector(StudyScale.Native(StudyEstimate.Binned())),
+          None,
+          FailurePolicy.RequireAll,
+          StudyMethod.cosine[Px](DefinitionId.cosine),
+          (),
+          initialFixations = InitialFixationPolicy.dropFirst[Px]
+        )
+      )
+      val provenance = right(CoordinateProvenance.of(plan, studyInput, None))
+      (0 until 4).toVector.map(i =>
+        right(provenance.fixation(retrieval, right(ScanpathPosition.of(i)))).trail.placement
+      )
+    val excluded = placements(OffWindowPolicy.Exclude)
+    val failing  = placements(OffWindowPolicy.FailTrial)
+    assertEquals(
+      excluded,
+      Vector(
+        MapPlacement.DroppedInitial,
+        MapPlacement.OutsideScreen,
+        MapPlacement.OutsideWindow(OffWindowPolicy.Exclude),
+        MapPlacement.InMap
+      )
+    )
+    assertEquals(failing(1), MapPlacement.OutsideScreen)
+    assertEquals(failing(2), MapPlacement.OutsideWindow(OffWindowPolicy.FailTrial))
+    val states    = excluded.take(3) :+ failing(2) :+ excluded.last
+    val fixations = states.zipWithIndex.map { case (placement, i) =>
+      right(
+        TrialFixation.of(
+          ret07,
+          right(FixationIndex.of(i + 1)),
+          700.0 + i,
+          400.0,
+          200,
+          placement
+        )
+      )
+    }
+    assertEquals(fixations.map(_.placement), states)
+    assertEquals(
+      fixations.filter(_.contributesToMap).map(_.placement),
+      Vector(MapPlacement.InMap)
+    )
+    val scene       = right(TrialScene(input(Display.Blank, fixations, MarkStyle.Neutral)))
+    val (_, device) = lower(scene, right(PlotSurface(800, 600, 1.0)))
+    val gps         = markPrimitives(primitives(device.elements)).collect {
+      case (n, DevicePrimitive.PointBatch(_, _, _, params, _)) => n -> params.valueAt(0)
+    }
+    val drawn = scene.marks.map(mark => mark.placement -> gps(mark.name.value))
+    assertEquals(drawn.map(_._1), states)
+    assert(drawn.take(4).forall(_._2.fill.isEmpty))
+    assert(drawn.takeRight(1).forall(_._2.fill.nonEmpty))
+    assertEquals(drawn.map(_._2.lineType).distinct.size, states.size)
   }
 
   test("role marks: query filled circle, matched diamond, control hollow and cased") {
@@ -397,7 +515,7 @@ class TrialSceneSuite extends ScalaCheckSuite:
       val rings = control.collect { case DevicePrimitive.Polyline(points, true, gp, _) =>
         (points, gp)
       }
-      assertEquals(rings.size, scene.marks.count(_.window == WindowSide.Inside))
+      assertEquals(rings.size, scene.marks.count(_.placement == MapPlacement.InMap))
       rings.foreach { (points, gp) =>
         assertEquals(points.size, TrialScene.RingSegments)
         assertEquals(gp.fill, None)
@@ -410,7 +528,7 @@ class TrialSceneSuite extends ScalaCheckSuite:
         )
       }
       // The ring is the mark's size: its vertices lie at the mark's radius.
-      scene.marks.filter(_.window == WindowSide.Inside).zip(rings).foreach { (m, ring) =>
+      scene.marks.filter(_.placement == MapPlacement.InMap).zip(rings).foreach { (m, ring) =>
         val c = centre(DevicePrimitive.Polyline(ring._1, true, ring._2, None))
         ring._1.foreach { v =>
           assertEqualsDouble(math.hypot(v.x - c.x, v.y - c.y), m.radiusPx * scale, 1e-6)
@@ -456,7 +574,7 @@ class TrialSceneSuite extends ScalaCheckSuite:
     val i1 = right(FixationIndex.of(1))
     // Double.toString differs between the JVM and Scala.js: compare the value,
     // then the platform-independent part of its message.
-    val nonFinite = TrialFixation.of(ret07, i1, Double.NaN, 2.5, 100, WindowSide.Inside)
+    val nonFinite = TrialFixation.of(ret07, i1, Double.NaN, 2.5, 100, MapPlacement.InMap)
     nonFinite match
       case Left(TrialSceneError.NonFinitePosition(trial, 1, x, 2.5)) =>
         assertEquals(trial, ret07)
@@ -465,13 +583,13 @@ class TrialSceneSuite extends ScalaCheckSuite:
     val named = "Trial P17 · ret_07: fixation 1 is at (NaN, 2.5)"
     assert(nonFinite.left.exists(_.message.startsWith(named)), nonFinite.toString)
     assertEquals(
-      TrialFixation.of(ret07, i1, 1.0, 2.0, 0, WindowSide.Inside),
+      TrialFixation.of(ret07, i1, 1.0, 2.0, 0, MapPlacement.InMap),
       Left(TrialSceneError.DurationNotPositive(ret07, 1, 0))
     )
     val twice = ret07Fixations
       .take(2)
       .map(f =>
-        right(TrialFixation.of(ret07, i1, f.screenX, f.screenY, f.durationMs, f.window))
+        right(TrialFixation.of(ret07, i1, f.screenX, f.screenY, f.durationMs, f.placement))
       )
     assertEquals(
       TrialScene(input(Display.Blank, fixations = twice)).map(_.caption),
@@ -495,10 +613,10 @@ class TrialSceneSuite extends ScalaCheckSuite:
     // eyes4s keeps an off-screen fixation in its scanpath (OutsideScreen); it
     // is outside the analysis window too, so the trial view draws it dashed.
     val rows = Vector(
-      (900.0, 500.0, 200, WindowSide.Inside),
-      (-60.0, 1150.0, 180, WindowSide.Outside),
-      (2000.0, -30.0, 160, WindowSide.Outside),
-      (1000.0, 600.0, 220, WindowSide.Inside)
+      (900.0, 500.0, 200, MapPlacement.InMap),
+      (-60.0, 1150.0, 180, MapPlacement.OutsideScreen),
+      (2000.0, -30.0, 160, MapPlacement.OutsideScreen),
+      (1000.0, 600.0, 220, MapPlacement.InMap)
     )
     val fs = rows.zipWithIndex.map { case ((x, y, d, w), i) =>
       right(TrialFixation.of(ret07, right(FixationIndex.of(i + 1)), x, y, d, w))
@@ -529,7 +647,7 @@ class TrialSceneSuite extends ScalaCheckSuite:
       val gps = drawn.collect { case (n, DevicePrimitive.PointBatch(_, _, _, gps, _)) =>
         n -> gps.valueAt(0)
       }
-      scene.marks.filter(_.window == WindowSide.Outside).foreach { m =>
+      scene.marks.filter(_.placement == MapPlacement.OutsideScreen).foreach { m =>
         assertEquals(gps(m.name.value).fill, None)
         assert(gps(m.name.value).lineType.dash.isDefined, s"$extent: ${m.order} is not dashed")
       }

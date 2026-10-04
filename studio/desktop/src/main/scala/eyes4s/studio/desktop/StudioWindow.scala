@@ -18,11 +18,28 @@ package eyes4s.studio.desktop
 
 import cats.effect.unsafe.IORuntime
 import eyes4s.studio.app.{AppModel, Intent, PlatformDialog}
-import eyes4s.studio.app.layout.StudioLayouts
+import eyes4s.studio.app.layout.{PaneId, StudioLayouts}
+import eyes4s.studio.app.vm.FocusStop
 import eyes4s.studio.app.text.{MessageId, Messages}
 import eyes4s.studio.app.tokens.Theme
 import eyes4s.studio.app.{ClockTime, ProjectName}
 import eyes4s.studio.core.fixture.StoryMoment
+import eyes4s.studio.desktop.admission.{AdmissionLedgerHost, LedgerInputs}
+import eyes4s.studio.desktop.compare.{CompareSummaryHost, PanelSources, SummaryInputs}
+import eyes4s.studio.desktop.explore.{
+  ExploreTimelineHost,
+  ExploreTrialViewHost,
+  NavigatorDisplays,
+  NavigatorInputs,
+  TrialViewInputs,
+  TrialsNavigatorHost,
+  FixationInspectorHost,
+  RecordSources,
+  SourceRecordsHost,
+  UsedByInputs
+}
+import eyes4s.studio.desktop.trial.StimulusSource
+import eyes4s.studio.desktop.figures.{FigureInputs, FiguresHost}
 import eyes4s.studio.desktop.dock.{DockGesture, PerspectiveHost}
 import eyes4s.studio.desktop.runtime.{
   DesktopEffects,
@@ -31,7 +48,8 @@ import eyes4s.studio.desktop.runtime.{
   StudioRuntime,
   StudioSession
 }
-import eyes4s.studio.desktop.importing.ImportWizardHost
+import eyes4s.studio.desktop.analysis.{PreflightHost, DesignInputs, ResolvedDesignHost}
+import eyes4s.studio.desktop.importing.{ColumnMappingPaneHost, ImportWizardHost}
 import eyes4s.studio.desktop.platform.FilePresetStore
 import eyes4s.studio.desktop.shell.AppShell
 import javafx.application.Platform
@@ -56,13 +74,62 @@ final class StudioWindow private (
     val host: PerspectiveHost,
     val shell: AppShell,
     val effects: DesktopEffects,
-    val project: Option[ProjectPort]
+    val project: Option[ProjectPort],
+    val columnMapping: ColumnMappingPaneHost,
+    val admission: AdmissionLedgerHost,
+    val summary: CompareSummaryHost,
+    summaryListener: AppModel => Unit,
+    val navigator: TrialsNavigatorHost,
+    navigatorListener: AppModel => Unit,
+    val explore: ExploreTrialViewHost,
+    exploreListener: AppModel => Unit,
+    val timeline: ExploreTimelineHost,
+    timelineListener: AppModel => Unit,
+    val resolvedDesign: ResolvedDesignHost,
+    designListener: AppModel => Unit,
+    val sourceRecords: SourceRecordsHost,
+    recordsListener: AppModel => Unit,
+    val inspector: FixationInspectorHost,
+    inspectorListener: AppModel => Unit,
+    val preflight: PreflightHost,
+    preflightListener: AppModel => Unit,
+    val figures: FiguresHost,
+    figuresListener: AppModel => Unit
 ):
   /** The window content, with the studio stylesheets. */
   def root: javafx.scene.Parent = shell.root
 
   /** The title the native window shows now. */
   def title: String = eyes4s.studio.app.vm.Menus.windowTitle(runtime.model)
+
+  /** The controls a pane shows inside its own focus stop, in Tab order. */
+  def paneStops(pane: PaneId): Vector[FocusStop] =
+    if pane == StudioLayouts.columnMapping then columnMapping.focusStops
+    else if pane == StudioLayouts.admission then admission.focusStops
+    else if pane == StudioLayouts.compareQueries || pane == StudioLayouts.compareItems then
+      eyes4s.studio.app.compare.QueriesNavigator.focusStops(summary.navigatorVM)
+    else if pane == StudioLayouts.queryTrial then
+      eyes4s.studio.app.compare.TrialPanels.queryStops(summary.panelsVM)
+    else if pane == StudioLayouts.referenceTrial then
+      eyes4s.studio.app.compare.TrialPanels.referenceStops(summary.panelsVM)
+    else if pane == StudioLayouts.contrast then summary.contrastStops
+    else if pane == StudioLayouts.trials then navigator.trialsStops
+    else if pane == StudioLayouts.items then navigator.itemsStops
+    else if pane == StudioLayouts.trialView then explore.focusStops
+    else if pane == StudioLayouts.timeline then timeline.focusStops
+    else if pane == StudioLayouts.resolvedDesign then resolvedDesign.focusStops
+    else if pane == StudioLayouts.sourceRecords then sourceRecords.focusStops
+    else if pane == StudioLayouts.exploreInspector then inspector.focusStops
+    else if pane == StudioLayouts.preflight then preflight.focusStops
+    else
+      pane.value match
+        case "figures.figures"      => figures.navigatorStops
+        case "figures.page"         => figures.pageStops
+        case "figures.page.table"   => figures.tableStops
+        case "figures.panel"        => figures.inspectorStops
+        case "figures.methods"      => figures.methodsStops
+        case "figures.methods-diff" => figures.methodsDiffStops
+        case _                      => Vector.empty
 
   /** Store each perspective's arrangement in the document (view-only). */
   def captureLayouts(): Unit = runtime.dispatch(Intent.LayoutsCaptured(host.capture()))
@@ -71,6 +138,21 @@ final class StudioWindow private (
   def bind(stage: javafx.stage.Stage): Unit = runtime.listen(_ => stage.setTitle(title))
 
   def close(): Unit =
+    runtime.unlisten(summaryListener)
+    runtime.unlisten(navigatorListener)
+    runtime.unlisten(exploreListener)
+    runtime.unlisten(timelineListener)
+    explore.dispose()
+    timeline.dispose()
+    runtime.unlisten(designListener)
+    runtime.unlisten(recordsListener)
+    sourceRecords.dispose()
+    runtime.unlisten(inspectorListener)
+    inspector.dispose()
+    runtime.unlisten(preflightListener)
+    runtime.unlisten(figuresListener)
+    summary.dispose()
+    figures.dispose()
     project.foreach(_.close())
     session.close()
 
@@ -110,7 +192,8 @@ object StudioWindow:
   def fxDialogs(
       model: () => AppModel,
       messages: Messages,
-      project: Option[ProjectPort] = None
+      project: Option[ProjectPort] = None,
+      presets: FilePresetStore = FilePresetStore.userDefault
   ): PlatformDialogs =
     (dialog: PlatformDialog, dispatch: Intent => Unit) =>
       dialog match
@@ -134,7 +217,7 @@ object StudioWindow:
           ImportWizardHost.openWindow(
             () => model().document,
             dispatch,
-            FilePresetStore.userDefault,
+            presets,
             sheets,
             project
           ): Unit
@@ -149,17 +232,37 @@ object StudioWindow:
   def open(
       initial: AppModel,
       moment: StoryMoment,
+      displays: NavigatorDisplays,
+      stimuli: StimulusSource,
       theme: Theme = Theme.Light,
       dialogs: Option[PlatformDialogs] = None,
       messages: Messages = Messages.english,
       project: Option[ProjectPort] = None,
       clock: () => Option[ClockTime] = DesktopEffects.wallClock,
-      nativeMenu: Boolean = AppShell.systemMenuBar
+      nativeMenu: Boolean = AppShell.systemMenuBar,
+      presets: FilePresetStore = FilePresetStore.userDefault,
+      // The window's backend serves the source records unless one is given.
+      records: Option[eyes4s.studio.app.explore.SourceRecordsSource] = None,
+      panels: PanelSources = PanelSources.notServed
   )(using IORuntime): Either[WindowError, StudioWindow] =
     for
       sheets <- StudioStyles.stylesheets(theme).left.map(WindowError.Styles(_))
       dock   <- dockTheme.left.map(WindowError.Styles(_))
-      window <- build(initial, moment, dock, dialogs, messages, project, clock, nativeMenu)
+      window <- build(
+        initial,
+        moment,
+        displays,
+        stimuli,
+        dock,
+        dialogs,
+        messages,
+        project,
+        clock,
+        nativeMenu,
+        presets,
+        records,
+        panels
+      )
     yield
       window.root.getStylesheets.setAll(sheets*)
       window
@@ -167,12 +270,17 @@ object StudioWindow:
   private def build(
       initial: AppModel,
       moment: StoryMoment,
+      displays: NavigatorDisplays,
+      stimuli: StimulusSource,
       dockTheme: DockTheme,
       dialogs: Option[PlatformDialogs],
       messages: Messages,
       project: Option[ProjectPort],
       clock: () => Option[ClockTime],
-      nativeMenu: Boolean
+      nativeMenu: Boolean,
+      presets: FilePresetStore,
+      records: Option[eyes4s.studio.app.explore.SourceRecordsSource],
+      panels: PanelSources
   )(using IORuntime): Either[WindowError, StudioWindow] =
     // Late-bound: the runtime, the host and the effects refer to each other.
     var runtime: Option[StudioRuntime] = None
@@ -192,9 +300,13 @@ object StudioWindow:
         }
     )
     dockOf = () => host.dock.state.maximized.isDefined
-    val effects = DesktopEffects(
+    // Late-bound too: a verification's answer goes to the admission ledger.
+    var ledger: Option[AdmissionLedgerHost] = None
+    val effects                             = DesktopEffects(
       session,
-      dialogs.getOrElse(fxDialogs(() => runtime.fold(initial)(_.model), messages, project)),
+      dialogs.getOrElse(
+        fxDialogs(() => runtime.fold(initial)(_.model), messages, project, presets)
+      ),
       p =>
         host.reset(p)
         runtime.foreach(r => host.sync(r.model))
@@ -202,7 +314,8 @@ object StudioWindow:
       host.perform,
       f => Platform.runLater(() => f()),
       project,
-      clock
+      clock,
+      (dataset, content, answer) => ledger.foreach(_.verified(dataset, content, answer))
     )
     val adopted = session.adopt(initial.document)
     adopted.collect { case Left(e) => e }.foreach(e => System.err.println(e.message))
@@ -219,4 +332,158 @@ object StudioWindow:
         )
       )
     r.listen(shell.render)
-    Right(StudioWindow(session, r, host, shell, effects, project))
+    // The column-mapping pane (Data): the import wizard on the selected
+    // revision. Saved presets are read once, off the JavaFX thread.
+    val mapping = ColumnMappingPaneHost(
+      () => r.model,
+      dispatch,
+      ImportWizardHost.fxPlatform(
+        () => Option(shell.root.getScene).map(_.getWindow).orNull,
+        presets,
+        project
+      ),
+      project
+    )
+    val presetReader = Thread(
+      () =>
+        val (saved, errors) = presets.load
+        Platform.runLater(() => mapping.presetsLoaded(saved, errors))
+      ,
+      "eyes4s-presets-read"
+    )
+    presetReader.setDaemon(true)
+    presetReader.start()
+    host.host(StudioLayouts.columnMapping, mapping.node)
+    r.listen(mapping.sync)
+    // The admission ledger (Data): the selected revision's counts, and Admit.
+    val admission = AdmissionLedgerHost(() => r.model, dispatch, LedgerInputs.of(session))
+    ledger = Some(admission)
+    host.host(StudioLayouts.admission, admission.node)
+    r.listen(admission.sync)
+    // Compare's summary layout (Results board): the shown run's summary.
+    val summary =
+      CompareSummaryHost(() => r.model, dispatch, SummaryInputs.of(session), panels)
+    Vector(
+      "compare.participant-plot"       -> summary.participantPlot.plotNode,
+      "compare.participant-plot.table" -> summary.participantPlot.tableNode,
+      "compare.scale-profile"          -> summary.scaleProfile.plotNode,
+      "compare.scale-profile.table"    -> summary.scaleProfile.tableNode,
+      "compare.participant-table"      -> summary.participantNode,
+      "compare.query-table"            -> summary.queryTable,
+      "compare.queries"                -> summary.queries.node,
+      "compare.query-trial"            -> summary.panels.queryNode,
+      "compare.reference-trial"        -> summary.panels.referenceNode,
+      "compare.contrast"               -> summary.contrastNode,
+      "compare.query-trial.table"      -> summary.queryTrialTable,
+      "compare.reference-trial.table"  -> summary.referenceTrialTable,
+      "compare.items"                  -> summary.items.node
+    ).foreach((id, node) => PaneId.of(id).foreach(host.host(_, node)))
+    val summaryListener: AppModel => Unit = summary.sync
+    r.listen(summaryListener)
+    // The trials navigator (Explore): the latest admitted revision's trials.
+    val navigator =
+      TrialsNavigatorHost(() => r.model, dispatch, NavigatorInputs.of(session, displays))
+    host.host(StudioLayouts.trials, navigator.trials.node)
+    host.host(StudioLayouts.items, navigator.items.node)
+    val navigatorListener: AppModel => Unit = navigator.sync
+    r.listen(navigatorListener)
+    // Explore's trial view: the explored trial under the shown run's revision.
+    val explore =
+      ExploreTrialViewHost(() => r.model, TrialViewInputs.of(session, displays), stimuli)
+    host.host(StudioLayouts.trialView, explore.node)
+    val exploreListener: AppModel => Unit = explore.sync
+    r.listen(exploreListener)
+    // Explore's timeline: the trial view's fixations, the playhead and the brush.
+    val timeline = ExploreTimelineHost(() => r.model, dispatch, () => explore.state)
+    host.host(StudioLayouts.timeline, timeline.node)
+    host.host(StudioLayouts.timelineTable, timeline.tableNode)
+    explore.onChange(() => timeline.refresh())
+    val timelineListener: AppModel => Unit = timeline.sync
+    r.listen(timelineListener)
+    // The resolved-design table (Analysis): the backend's preview of the
+    // target revision, prepared once the perspective is shown.
+    val design = ResolvedDesignHost(dispatch, DesignInputs.of(session))
+    host.host(StudioLayouts.resolvedDesign, design.node)
+    val designListener: AppModel => Unit = design.sync
+    r.listen(designListener)
+    design.sync(r.model)
+    // Explore's source records: the shown revision's fixation table (S6.4).
+    val served        = records.getOrElse(RecordSources.of(session))
+    val sourceRecords =
+      SourceRecordsHost(() => r.model, dispatch, served, TrialViewInputs.of(session, displays))
+    host.host(StudioLayouts.sourceRecords, sourceRecords.node)
+    val recordsListener: AppModel => Unit = sourceRecords.sync
+    r.listen(recordsListener)
+    sourceRecords.sync(r.model)
+    // Explore's fixation inspector: the selected fixation (S6.5).
+    val inspector = FixationInspectorHost(
+      dispatch,
+      TrialViewInputs.of(session, displays),
+      served,
+      UsedByInputs.of(session)
+    )
+    host.host(StudioLayouts.exploreInspector, inspector.node)
+    val inspectorListener: AppModel => Unit = inspector.sync
+    r.listen(inspectorListener)
+    inspector.sync(r.model)
+
+    // The preflight pane and run card (Analysis): the design's findings.
+    val preflight = PreflightHost(() => r.model, dispatch)
+    host.host(StudioLayouts.preflight, preflight.node)
+    design.follow(preflight.follow)
+    val preflightListener: AppModel => Unit = preflight.sync
+    r.listen(preflightListener)
+    preflight.follow(design.state)
+    // The Figures perspective: navigator, page, Table tab and binding.
+    val figures = FiguresHost(
+      () => r.model,
+      dispatch,
+      FigureInputs.of(
+        session,
+        displays,
+        () => Option(shell.root.getScene).map(_.getWindow),
+        project,
+        stimuli
+      )
+    )
+    Vector(
+      "figures.figures"      -> figures.navigatorNode,
+      "figures.page"         -> figures.pageNode,
+      "figures.page.table"   -> figures.tableNode,
+      "figures.panel"        -> figures.inspectorNode,
+      "figures.methods"      -> figures.methodsNode,
+      "figures.methods-diff" -> figures.methodsDiffNode
+    ).foreach((id, node) => PaneId.of(id).foreach(host.host(_, node)))
+    val figuresListener: AppModel => Unit = figures.sync
+    r.listen(figuresListener)
+    figures.sync(r.model)
+    Right(
+      StudioWindow(
+        session,
+        r,
+        host,
+        shell,
+        effects,
+        project,
+        mapping,
+        admission,
+        summary,
+        summaryListener,
+        navigator,
+        navigatorListener,
+        explore,
+        exploreListener,
+        timeline,
+        timelineListener,
+        design,
+        designListener,
+        sourceRecords,
+        recordsListener,
+        inspector,
+        inspectorListener,
+        preflight,
+        preflightListener,
+        figures,
+        figuresListener
+      )
+    )

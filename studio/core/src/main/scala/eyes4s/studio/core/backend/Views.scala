@@ -16,6 +16,8 @@
 
 package eyes4s.studio.core.backend
 
+import ProtocolCodecs.portableLong
+
 import eyes4s.plan.{QuarantineCause as CoreCause, TrialDisposition as CoreDisposition}
 import io.circe.syntax.*
 import io.circe.{Codec, Decoder, Encoder, HCursor, JsonObject}
@@ -226,17 +228,22 @@ final case class WindowTotals(
       Codec.AsObject
 
 /** What admission of one dataset revision decided, in counts. `quarantined`
-  * counts `Quarantined(cause)` trials by cause code; `noFixations` and
-  * `absent` are dispositions of their own.
+  * counts `Quarantined(cause)` trials by cause code; `noFixations` is a
+  * disposition of its own, and so is absent, which only an inventory can
+  * count ([[InventoryJoin]], S5.4).
+  *
+  * `history` is deprecated: free text the backend wrote for the dataset's
+  * changes, which studio no longer reads. The Data history line is the
+  * typed dataset diff (S5.8, `eyes4s.studio.core.diff.DatasetDiff`). The
+  * field stays on the wire until its retirement is scheduled.
   */
 final case class AdmissionSummary(
     dataset: DatasetRevision,
     state: DatasetState,
-    inventoryTrials: Int,
+    inventory: InventoryJoin,
     admitted: Int,
     quarantined: Vector[QuarantineCount],
     noFixations: Int,
-    absent: Int,
     fixationRecords: Int,
     window: WindowTotals,
     items: Int,
@@ -246,6 +253,12 @@ final case class AdmissionSummary(
 ) derives CanEqual,
       Codec.AsObject:
   def quarantinedTrials: Int = quarantined.map(_.trials).sum
+
+  /** The inventory's trials, when the dataset declares one. */
+  def inventoryTrials: Option[Int] = inventory.trialCount
+
+  /** Inventory trials without fixation records, when there is an inventory. */
+  def absent: Option[Int] = inventory.absentCount
 
 final case class LedgerEntry(
     trial: TrialKey,

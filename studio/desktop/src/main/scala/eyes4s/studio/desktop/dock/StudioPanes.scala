@@ -20,7 +20,7 @@ import eyes4s.studio.app.layout.{LayoutSpec, PaneDecl}
 import eyes4s.studio.app.vm.{A11y, A11yRole}
 import javafx.scene.AccessibleRole
 import javafx.scene.control.Label
-import javafx.scene.layout.VBox
+import javafx.scene.layout.{Priority, VBox}
 import scaladock.{PaneCodec, PaneContent, PaneId, PaneType}
 import scaladock.fx.{PaneContext, PaneFactories, PaneView}
 
@@ -39,6 +39,8 @@ final class StudioPanes(spec: LayoutSpec):
     spec.all.flatMap(_.panes).map(p => p.id.value -> p).toMap
 
   private val live    = mutable.LinkedHashMap.empty[PaneId, javafx.scene.Node]
+  private val views   = mutable.Map.empty[PaneId, StudioPanes.Placeholder]
+  private val hosted  = mutable.Map.empty[PaneId, javafx.scene.Node]
   private val created = mutable.ArrayBuffer.empty[PaneId]
   private val gone    = mutable.ArrayBuffer.empty[PaneId]
 
@@ -51,20 +53,33 @@ final class StudioPanes(spec: LayoutSpec):
   /** Every pane view disposed so far. */
   def disposals: Vector[PaneId] = gone.toVector
 
+  /** Show `content` in `pane`'s view in place of its placeholder title: now,
+    * if the dock has built the view, else when it does. The pane stays one
+    * focus stop with its role and name; its content's controls follow it.
+    */
+  def host(pane: PaneId, content: javafx.scene.Node): Unit =
+    hosted.update(pane, content)
+    views.get(pane).foreach(_.show(content))
+
   val factories: PaneFactories =
     PaneFactories.empty.register(StudioPanes.placeholder) { state =>
       val id    = summon[PaneContext[ujson.Value]].paneId
       val decl  = declared.get(id.value)
       val title = decl.fold(id.value)(_.title.text)
       val role  = decl.fold(A11yRole.Region)(d => A11y.role(d.kind))
-      val view  = StudioPanes.Placeholder(id, title, role, state)
+      val name  = decl.fold(title)(_.accessibleName)
+      val view  = StudioPanes.Placeholder(id, title, name, role, state)
+      hosted.get(id).foreach(view.show)
       created += id
+      views.update(id, view)
       live.update(id, view.node)
       new PaneView[ujson.Value]:
         def node: javafx.scene.Node  = view.node
         def snapshot(): ujson.Value  = view.state
         override def dispose(): Unit =
           gone += id
+          // A pane rebuilt under the same id keeps its new view.
+          if views.get(id).exists(_ eq view) then views.remove(id): Unit
           live.remove(id): Unit
     }
 
@@ -89,13 +104,19 @@ object StudioPanes:
     case A11yRole.ToggleButton => AccessibleRole.TOGGLE_BUTTON
     case A11yRole.MenuButton   => AccessibleRole.MENU_BUTTON
     case A11yRole.Region       => AccessibleRole.PARENT
+    case A11yRole.ComboBox     => AccessibleRole.COMBO_BOX
+    case A11yRole.TextField    => AccessibleRole.TEXT_FIELD
+    case A11yRole.TextArea     => AccessibleRole.TEXT_AREA
+    case A11yRole.RadioButton  => AccessibleRole.RADIO_BUTTON
+    case A11yRole.Link         => AccessibleRole.HYPERLINK
 
   /** A titled, empty panel: one focus stop (DESIGN_SPEC section 10), named
     * by its title, with its kind's role.
     */
-  private final class Placeholder(
+  private[dock] final class Placeholder(
       id: PaneId,
       title: String,
+      name: String,
       role: A11yRole,
       val state: ujson.Value
   ):
@@ -105,7 +126,13 @@ object StudioPanes:
       val box = VBox(heading)
       box.getStyleClass.add("pane-placeholder")
       box.setId(s"pane-${id.value}")
-      box.setAccessibleText(title)
+      box.setAccessibleText(name)
       box.setAccessibleRole(accessibleRole(role))
       box.setFocusTraversable(true)
       box
+
+    /** Replace the title with a pane's real content, filling the pane. */
+    def show(content: javafx.scene.Node): Unit =
+      VBox.setVgrow(content, Priority.ALWAYS)
+      node.getStyleClass.add("pane-hosted")
+      node.getChildren.setAll(content): Unit
