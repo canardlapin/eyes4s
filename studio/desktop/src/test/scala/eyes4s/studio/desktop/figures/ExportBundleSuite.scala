@@ -189,6 +189,7 @@ class ExportBundleSuite extends munit.FunSuite:
         files(s)("README.txt"),
         """Figure 1 export bundle
           |run 7 · analysis rev 4 · data r3 · reporting “By retrieval response” · studio build eyes4s 0.1
+          |reporting spec by-retrieval-response sha256:3a0ed363d486975f28f3eb990c0deb87c415924ebe4a301e638dae73221de5dd
           |
           |Files:
           |- figure-1.svg

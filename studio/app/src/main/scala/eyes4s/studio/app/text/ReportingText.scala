@@ -26,9 +26,10 @@ enum ReportingTextId derives CanEqual:
   case FilterTitle, AllContributing, AllContributingUnknown, Outside, OutsideOff, OutsideOn
   case KeepFilter
   case Minimum, MinimumWouldDrop, MinimumDrops, MinimumNone, MinimumUnknown, Cell, CellGroup
+  case MinimumAfterEvaluation
   case WeightTitle, WeightUnit, EqualParticipants, PooledQueries
   case EstimandTitle, EstimandDuration, EstimandCount, Confound
-  case SavedTitle, SaveAs, SaveAsName, Save, Cancel, DefaultCopyName
+  case SavedTitle, SaveAs, SaveAsName, Save, Cancel, DefaultCopyName, BlankName
   case SavedCurrent, SavedOther, UsedBy, NotUsed
 
 object ReportingText:
@@ -58,13 +59,15 @@ object ReportingText:
     case OutsideOn  => "applied · the count is not yet served by this backend"
     case KeepFilter => "Keep {0}: {1}"
 
-    case Minimum          => "Minimum queries per group: {0}"
-    case MinimumWouldDrop => "off · would drop {0} cells ({1})"
-    case MinimumDrops     => "on · drops {0} cells ({1})"
-    case MinimumNone      => "no participant has fewer than {0} queries in a group"
-    case MinimumUnknown   => "no served summary of the run is grouped this way yet"
-    case Cell             => "{0} n {1}"
-    case CellGroup        => "{0} {1}"
+    case Minimum                => "Minimum queries per group: {0}"
+    case MinimumWouldDrop       => "off · would drop {0} cells ({1})"
+    case MinimumDrops           => "on · drops {0} cells ({1})"
+    case MinimumNone            => "no participant has fewer than {0} queries in a group"
+    case MinimumUnknown         => "no served summary of the run is grouped this way yet"
+    case MinimumAfterEvaluation =>
+      "Cells dropped by the minimum appear after evaluation (the filters change n)"
+    case Cell      => "{0} n {1}"
+    case CellGroup => "{0} {1}"
 
     case WeightTitle       => "Summary unit and weighting"
     case WeightUnit        => "Query trial → participant mean → grand mean"
@@ -88,6 +91,7 @@ object ReportingText:
     case Save            => "Save"
     case Cancel          => "Cancel"
     case DefaultCopyName => "{0} (copy)"
+    case BlankName       => "Name of the new reporting spec: enter a name."
     case SavedCurrent    => "{0} · current view · {1}"
     case SavedOther      => "{0} · {1}"
     case UsedBy          => "used by {0}"

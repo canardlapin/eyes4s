@@ -36,6 +36,7 @@ object StudioSchemaIds:
   val ProjectName: String    = "studio.project"
   val AssetsName: String     = "studio.asset-registry"
   val RunArchiveName: String = "studio.run-archive"
+  val ReportingName: String  = "studio.reporting-spec"
 
   final case class Ids(
       document: DefinitionId,
@@ -44,10 +45,11 @@ object StudioSchemaIds:
       datasetContent: DefinitionId,
       project: DefinitionId,
       assets: DefinitionId,
-      runArchive: DefinitionId
+      runArchive: DefinitionId,
+      reporting: DefinitionId
   ) derives CanEqual:
     def all: Vector[DefinitionId] =
-      Vector(document, science, journal, datasetContent, project, assets, runArchive)
+      Vector(document, science, journal, datasetContent, project, assets, runArchive, reporting)
 
   private def id(name: String, version: Int): Either[DocumentError, DefinitionId] =
     DefinitionId.of(name, version).left.map(_ => DocumentError.BadSchemaId(name, version))
@@ -57,7 +59,8 @@ object StudioSchemaIds:
     * (S2.2); and the first version of the `.eyes` bundle manifest
     * `project.json` (S2.3), whose later versions its `SchemaLadder` adds;
     * a dataset revision's asset registry (S2.10); and a run archive's
-    * index in the run store (S2.6).
+    * index in the run store (S2.6); and a reporting spec, whose digest an
+    * export cites (S8.7).
     */
   val ids: Either[DocumentError, Ids] =
     for
@@ -68,7 +71,8 @@ object StudioSchemaIds:
       project  <- id(ProjectName, 1)
       assets   <- id(AssetsName, 1)
       archive  <- id(RunArchiveName, 1)
-    yield Ids(document, science, journal, dataset, project, assets, archive)
+      report   <- id(ReportingName, 1)
+    yield Ids(document, science, journal, dataset, project, assets, archive, report)
 
   /** The ids as a codec failure, for building codecs. */
   private[studio] def forCodec: Either[CodecError, Ids] =
