@@ -40,7 +40,7 @@ class PreflightSuite extends munit.FunSuite:
   private val model: AppModel = StoryModels.t2Analysis
   private val stamp: RunStamp = AppModel.stampOf(model.document, rev5, r3)
   private val id              = PreviewId(1L)
-  private val candidates      = ok(PreviewCandidates.of(480, 480, 24, 230400L, 480, 14, None))
+  private val candidates      = ok(PreviewCandidates.of(466, 471, 24, 219486L, 480, 14, None))
   private val counts          = ok(PreviewCounts.of(8969L, 44845L, 457, 9, 0))
 
   private val warning = StudioDiagnostic(

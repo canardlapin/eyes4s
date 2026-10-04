@@ -39,7 +39,9 @@ import java.security.MessageDigest
   * The rendered `SCORES.json` is deterministic: keys sorted, rows in key
   * order, and every score rounded half-even to [[Decimals]] places, far
   * coarser than the last-place differences `math.exp` may show between
-  * JVMs and processors. Only `generatedWith` records the environment, and a
+  * JVMs and processors, so a byte change on another JVM is very unlikely,
+  * though not impossible (x86_64 is unverified). Only `generatedWith`
+  * records the environment, and a
   * check renders the regenerated scores with the checked-in `generatedWith`,
   * so regeneration is compared byte for byte on any JVM.
   *
@@ -181,11 +183,16 @@ object StudioScores:
     )
     // The public `ReportSources.study` digests the result through its full
     // JSON encoding, which for this study does not fit in 10 GB (S0.7b
-    // finding). The harness reads the result in process instead, through the
-    // package's trusted source, bound to the plan and input digests; the
-    // result field carries the input digest and is never checked here.
-    val planDigest  = get("plan digest")(StudyCodecs.trialCosine[Px].codec.digest(plan))
-    val inputDigest = get("input digest")(StudyInputCodecs.trial[Px].input.digest(input))
+    // finding, bead bd-01M441B59K01XN3EVVCRMQVHDV). The harness reads the
+    // result in process instead, through the package's trusted source, bound
+    // to the plan and input digests. The result is not digested: its field
+    // holds the digest of a fixed "unbound" marker, never another artifact's
+    // digest, and nothing here checks it.
+    val planDigest      = get("plan digest")(StudyCodecs.trialCosine[Px].codec.digest(plan))
+    val inputDigest     = get("input digest")(StudyInputCodecs.trial[Px].input.digest(input))
+    private val Unbound = sha256(
+      "eyes4s.studio-golden: result digest not computed".getBytes(StandardCharsets.UTF_8)
+    )
     private def binding(d: eyes4s.codec.CanonicalDigest[?], field: String) =
       get(s"$field digest")(BindingDigest.parse(field, d.sha256.hex))
     val covariates = get("covariates")(
@@ -200,7 +207,7 @@ object StudioScores:
         ReportBinding(
           binding(planDigest, "plan"),
           binding(inputDigest, "input"),
-          binding(inputDigest, "result"),
+          get("unbound result")(BindingDigest.parse("result", Unbound)),
           Some(binding(inputDigest, "covariates"))
         )
       )
@@ -261,8 +268,10 @@ object StudioScores:
   private def trialLabel(k: K): String = k.trial
 
   /** The JSON body: everything but `generatedWith`. */
-  def body(tables: Tables): Json =
-    val s   = Study(tables.source)
+  def body(tables: Tables): Json = body(tables, Study(tables.source))
+
+  /** The JSON body of `s`, the study of `tables`. */
+  def body(tables: Tables, s: Study): Json =
     val inv = s.inventory
     import s.{cardinality, preview}
 
@@ -461,30 +470,20 @@ object StudioScores:
         "fixations.csv" -> Json.fromString(sha256(tables.fixations)),
         "trials.csv"    -> Json.fromString(sha256(tables.trials))
       ),
+      // The recipe as the plan describes itself (the plan digest binds it),
+      // with the scales in degrees and the report's reduction.
       "recipe" -> Json.obj(
-        "phases" -> Json.obj(
-          "focal"     -> Json.fromString("Retrieval"),
-          "reference" -> Json.fromString("Encoding")
+        "description" -> Json.fromValues(
+          s.plan.description.map((field, params) =>
+            Json.obj(
+              "field"  -> Json.fromString(field),
+              "values" -> Json.fromValues(params.map(p => Json.fromString(p.render)))
+            )
+          )
         ),
-        "layout" -> Json.fromString(
-          s"${TrialKeyDefinitions.trialLayout.name}@${TrialKeyDefinitions.trialLayout.version}"
-        ),
-        "method" -> Json.fromString(
-          s"${DefinitionId.cosine.name}@${DefinitionId.cosine.version}"
-        ),
-        "weight" -> Json.fromString("duration"),
-        "screen" -> Json.fromString("1920x1080 px"),
-        "window" -> Json.fromString(
-          "1024x768 px at (448, 156), centred; off-window fixations excluded"
-        ),
-        "grid"          -> Json.fromString("64x48 cells on the window"),
-        "pxPerDegree"   -> Json.fromInt(35),
-        "scales"        -> Json.fromValues(Sigmas.map(number)),
-        "kernel"        -> Json.fromString("Gaussian, truncated at the window edge"),
-        "failurePolicy" -> Json.fromString("requireAll"),
-        "pairing"       -> Json.fromString("requireOne, sameSelection, reportNoMatch"),
-        "reduce"        -> Json.fromString("participant means, equal weight, minimum 1 query"),
-        "decimals"      -> Json.fromInt(Decimals)
+        "scales"   -> Json.fromValues(Sigmas.map(number)),
+        "reduce"   -> Json.fromString(ReducePolicy.default.toString),
+        "decimals" -> Json.fromInt(Decimals)
       ),
       "plan"        -> Json.fromString(s.reports.binding.plan.hex),
       "input"       -> Json.fromString(s.reports.binding.input.hex),

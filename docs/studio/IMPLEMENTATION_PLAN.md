@@ -669,7 +669,7 @@ Wrap eyes4s-fs2 StudyExecution: Job(id, revision, stage Estimating/Comparing/Red
 
 *Board:* Analysis.dc.html (resolved design)
 
-Before paging: Cartesian candidatePairCount (230,400 per scale). During: 'counting eligible pairs… k of 24 participants'. After PairPage.Done: exact eligible (8,969 per scale), unmatched, ambiguous. Explicit budgets (counts only).
+Before paging: Cartesian candidatePairCount over admitted trials (219,486 per scale). During: 'counting eligible pairs… k of 24 participants'. After PairPage.Done: exact eligible (8,969 per scale), unmatched, ambiguous. Explicit budgets (counts only).
 
 **Acceptance criteria**
 

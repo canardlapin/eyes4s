@@ -17829,27 +17829,209 @@
   ],
   "recipe" : {
     "decimals" : 6,
-    "failurePolicy" : "requireAll",
-    "grid" : "64x48 cells on the window",
-    "kernel" : "Gaussian, truncated at the window edge",
-    "layout" : "eyes4s.participant-phase-trial-occurrence@1",
-    "method" : "eyes4s.cosine@1",
-    "pairing" : "requireOne, sameSelection, reportNoMatch",
-    "phases" : {
-      "focal" : "Retrieval",
-      "reference" : "Encoding"
-    },
-    "pxPerDegree" : 35,
-    "reduce" : "participant means, equal weight, minimum 1 query",
+    "description" : [
+      {
+        "field" : "input",
+        "values" : [
+          "e536495935d07b4f"
+        ]
+      },
+      {
+        "field" : "layout",
+        "values" : [
+          "eyes4s.participant-phase-trial-occurrence",
+          "1"
+        ]
+      },
+      {
+        "field" : "method",
+        "values" : [
+          "eyes4s.cosine",
+          "1"
+        ]
+      },
+      {
+        "field" : "phases",
+        "values" : [
+          "Retrieval",
+          "Encoding"
+        ]
+      },
+      {
+        "field" : "weight",
+        "values" : [
+          "Duration"
+        ]
+      },
+      {
+        "field" : "failurePolicy",
+        "values" : [
+          "require-all"
+        ]
+      },
+      {
+        "field" : "frame",
+        "values" : [
+          "studio-image",
+          "px",
+          "0",
+          "0",
+          "1024",
+          "768",
+          "Down"
+        ]
+      },
+      {
+        "field" : "grid",
+        "values" : [
+          "studio-image@64x48",
+          "64",
+          "48"
+        ]
+      },
+      {
+        "field" : "estimate.0",
+        "values" : [
+          "estimator",
+          "gaussian",
+          "sigma",
+          "17.5",
+          "edges",
+          "Truncate"
+        ]
+      },
+      {
+        "field" : "estimate.1",
+        "values" : [
+          "estimator",
+          "gaussian",
+          "sigma",
+          "35",
+          "edges",
+          "Truncate"
+        ]
+      },
+      {
+        "field" : "estimate.2",
+        "values" : [
+          "estimator",
+          "gaussian",
+          "sigma",
+          "70",
+          "edges",
+          "Truncate"
+        ]
+      },
+      {
+        "field" : "estimate.3",
+        "values" : [
+          "estimator",
+          "gaussian",
+          "sigma",
+          "140",
+          "edges",
+          "Truncate"
+        ]
+      },
+      {
+        "field" : "admission",
+        "values" : [
+          "studio-screen",
+          "px",
+          "0",
+          "0",
+          "1920",
+          "1080",
+          "Down"
+        ]
+      },
+      {
+        "field" : "window",
+        "values" : [
+          "studio-image",
+          "448",
+          "156",
+          "1472",
+          "924"
+        ]
+      },
+      {
+        "field" : "offWindow",
+        "values" : [
+          "Exclude"
+        ]
+      },
+      {
+        "field" : "angularScale",
+        "values" : [
+          "studio-screen",
+          "35"
+        ]
+      },
+      {
+        "field" : "scale.0",
+        "values" : [
+          "degrees",
+          "estimator",
+          "gaussian",
+          "sigma",
+          "0.5",
+          "edges",
+          "Truncate"
+        ]
+      },
+      {
+        "field" : "scale.1",
+        "values" : [
+          "degrees",
+          "estimator",
+          "gaussian",
+          "sigma",
+          "1",
+          "edges",
+          "Truncate"
+        ]
+      },
+      {
+        "field" : "scale.2",
+        "values" : [
+          "degrees",
+          "estimator",
+          "gaussian",
+          "sigma",
+          "2",
+          "edges",
+          "Truncate"
+        ]
+      },
+      {
+        "field" : "scale.3",
+        "values" : [
+          "degrees",
+          "estimator",
+          "gaussian",
+          "sigma",
+          "4",
+          "edges",
+          "Truncate"
+        ]
+      },
+      {
+        "field" : "pairing",
+        "values" : [
+          "requireOne",
+          "sameSelection",
+          "reportNoMatch"
+        ]
+      }
+    ],
+    "reduce" : "ParticipantMeans(MinimumQueries(1))",
     "scales" : [
       0.500000,
       1.000000,
       2.000000,
       4.000000
-    ],
-    "screen" : "1920x1080 px",
-    "weight" : "duration",
-    "window" : "1024x768 px at (448, 156), centred; off-window fixations excluded"
+    ]
   },
   "summaries" : {
     "0.5" : {

@@ -26,15 +26,22 @@ import java.nio.file.Files
   * `fixtures/studio-golden`, `SCORES.json` regenerates byte for byte, and
   * the focus query P17 ret_07 × enc_03 is scored at all four scales.
   *
-  * Where the library's count differs from FIXTURE.md the suite pins the
-  * library's value and names FIXTURE.md's beside it; neither side is edited
-  * to agree.
+  * FIXTURE.md's scalar counts, its per-participant table and its group and
+  * window figures are all checked; neither side is edited to agree. Out of
+  * scope: images found 257 and missing 2 (asset files, not eyes4s).
   */
 class StudioFixtureRealSuite extends munit.FunSuite:
   override val munitTimeout = scala.concurrent.duration.Duration(10, "min")
 
   private lazy val tables = StudioScores.tables
-  private lazy val body   = StudioScores.body(tables)
+  private lazy val study  = StudioScores.Study(tables.source)
+  private lazy val body   = StudioScores.body(tables, study)
+
+  private lazy val fixtureMd: String =
+    Files.readString(
+      StudioScores.directory.getParent.getParent.resolve("docs/studio/fixture/FIXTURE.md"),
+      StandardCharsets.UTF_8
+    )
 
   private lazy val stored: Json =
     parser
@@ -161,6 +168,8 @@ class StudioFixtureRealSuite extends munit.FunSuite:
       assert(c.downField("generatedWith").downField(k).as[String].isRight, k)
     }
     val sigmas = c.downField("recipe").downField("scales").as[Vector[Double]]
+    // The recipe is the plan's own description, not prose.
+    assert(c.downField("recipe").downField("description").as[Vector[Json]].exists(_.nonEmpty))
     assertEquals(sigmas, Right(StudioScores.Sigmas))
     assertEquals(
       c.downField("summaries").keys.map(_.toVector),
@@ -172,6 +181,122 @@ class StudioFixtureRealSuite extends munit.FunSuite:
         c.downField("summaries").downField(s).downField("participants").keys.map(_.size),
         Some(24),
         s
+      )
+    }
+  }
+
+  /** FIXTURE.md's participant table: P, requested, contributing, failed, no
+    * match, not admitted and the Remembered and Forgotten n at σ 2°.
+    */
+  private lazy val table: Vector[(String, Vector[Int])] =
+    val row =
+      raw"\| (P\d\d) \| (\d+) \| (\d+) \| (\d+) \| (\d+) \| (\d+) \| [^|]+ \| [^|]+ \| [^|]+ \| [^|(]+\((\d+)\) \| [^|(]+\((\d+)\) \|".r
+    fixtureMd.linesIterator.collect { case row(p, counts*) =>
+      p -> counts.map(_.toInt).toVector
+    }.toVector
+
+  test("FIXTURE.md's participant table reproduces through eyes4s") {
+    assertEquals(table.size, 24)
+    val qs          = queries(body)
+    val notAdmitted = body.hcursor
+      .downField("notAdmitted")
+      .focus
+      .flatMap(_.asArray)
+      .getOrElse(fail("no notAdmitted"))
+    val participants =
+      body.hcursor.downField("summaries").downField("2").downField("participants")
+    table.foreach { case (p, expected) =>
+      val mine                  = qs.filter(q => str(q, "participant") == p)
+      def count(prefix: String) = mine.count(q => str(q, "status").startsWith(prefix))
+      val absent                = notAdmitted.count(q => str(q, "participant") == p)
+      def n(group: String)      =
+        participants
+          .downField(p)
+          .downField("byResponse")
+          .downField(group)
+          .downField("queries")
+          .as[Int]
+          .getOrElse(fail(s"no $group n for $p"))
+      val actual = Vector(
+        mine.size + absent,
+        count("contributing"),
+        count("failed"),
+        count("no-match"),
+        absent,
+        n("Remembered"),
+        n("Forgotten")
+      )
+      assertEquals(actual, expected, p)
+    }
+  }
+
+  test("group, paired and per-group n agree with FIXTURE.md") {
+    val two = body.hcursor.downField("summaries").downField("2")
+    Vector("Remembered", "Forgotten").foreach { g =>
+      assertEquals(
+        two.downField("byResponse").downField(g).downField("participants").as[Int],
+        Right(24),
+        g
+      )
+    }
+    assertEquals(
+      two.downField("rememberedMinusForgotten").downField("paired").as[Int],
+      Right(24)
+    )
+    val ns = table.flatMap((_, row) => Vector(row(5), row(6)))
+    assertEquals((ns.min, ns.max), (2, 17))
+    // FIXTURE.md: "Per-group n range across participants (Remembered/Forgotten): [2, 17]."
+    assert(
+      fixtureMd.contains(
+        "Per-group n range across participants (Remembered/Forgotten): [2, 17]."
+      )
+    )
+  }
+
+  test("window figures and enc_03's role agree with FIXTURE.md") {
+    val qs                            = queries(body)
+    def outside(p: String, t: String) =
+      qs.find(q => str(q, "participant") == p && str(q, "trial") == t)
+        .flatMap(_.hcursor.downField("outsideWindow").focus)
+        .getOrElse(fail(s"no $p $t"))
+    def tally(fixations: Int, of: Int) =
+      Json.obj("fixations" -> Json.fromInt(fixations), "of" -> Json.fromInt(of))
+    // "ret_07 1 of 12 fixations"; "P05's 3 failed queries: 11 of 11 fixations outside".
+    assertEquals(outside("P17", "ret_07"), tally(1, 12))
+    Vector("ret_04", "ret_11", "ret_16").foreach(t =>
+      assertEquals(outside("P05", t), tally(11, 11), t)
+    )
+    // "enc_03 1 of 13 fixations", from the plan's own window tally.
+    val enc03 = study.preview.windowTallies.collectFirst {
+      case (k, Right(t)) if k.participant == "P17" && k.trial == "enc_03" =>
+        (t.outsideWindow, t.total)
+    }
+    assertEquals(enc03, Some((1, 13)))
+    // "enc_03 (beach-042) is used by ret_07 as the matched reference and by the 18
+    // other admitted P17 queries as a control."
+    val asControl = study.pairs(study.preview.controls).collect {
+      case (q, r) if r.participant == "P17" && r.trial == "enc_03" => q
+    }
+    assertEquals(asControl.size, 18)
+    assert(asControl.forall(q => q.participant == "P17" && q.trial != "ret_07"))
+    assert(fixtureMd.contains("by the 18 other admitted P17 queries as a control"))
+  }
+
+  test("at every scale the grand M minus B is the grand D, all over the same queries") {
+    Vector("0.5", "1", "2", "4").foreach { s =>
+      val grand = body.hcursor.downField("summaries").downField(s).downField("grand")
+      def cell(r: String, f: String) = grand.downField(r).downField(f)
+      val (m, b, d)                  = (
+        cell("M", "estimate").as[Double],
+        cell("B", "estimate").as[Double],
+        cell("D", "estimate").as[Double]
+      )
+      (m, b, d) match
+        case (Right(m), Right(b), Right(d)) =>
+          assert(math.abs(m - b - d) <= 1.5e-6, s"$s: $m - $b vs $d")
+        case other => fail(s"$s: $other")
+      Vector("M", "B", "D").foreach(r =>
+        assertEquals(cell(r, "queries").as[Int], Right(454), s"$s $r")
       )
     }
   }

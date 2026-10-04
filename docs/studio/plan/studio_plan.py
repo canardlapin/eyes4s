@@ -542,7 +542,7 @@ t(
     "Preview paging service for the resolved design",
     0,
     "Analysis.dc.html (resolved design)",
-    "Before paging: Cartesian candidatePairCount (230,400 per scale). During: 'counting eligible pairs… k of 24 participants'. After PairPage.Done: exact eligible (8,969 per scale), unmatched, ambiguous. Explicit budgets (counts only).",
+    "Before paging: Cartesian candidatePairCount over admitted trials (219,486 per scale). During: 'counting eligible pairs… k of 24 participants'. After PairPage.Done: exact eligible (8,969 per scale), unmatched, ambiguous. Explicit budgets (counts only).",
     [
         "Counts equal FIXTURE.md after paging.",
         "The preview used for execution is the same prepared design (identity check via input digest + plan revision; stale preview rejected by checkCurrent).",
