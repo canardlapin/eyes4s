@@ -95,7 +95,9 @@ abstract class ShellFxSuite extends StudioFxSuite:
       records: Option[eyes4s.studio.app.explore.SourceRecordsSource] = None,
       // Compare's trial panels: none unless a suite brings its own.
       panels: eyes4s.studio.desktop.compare.PanelSources =
-        eyes4s.studio.desktop.compare.PanelSources.notServed
+        eyes4s.studio.desktop.compare.PanelSources.notServed,
+      // Where an export bundle goes: nowhere unless a suite brings a folder.
+      chooseFolder: eyes4s.studio.desktop.figures.FigureInputs.ChooseFolder = (_, _) => None
   ): StudioWindow =
     val w = runOnFx(
       StudioWindow
@@ -111,7 +113,8 @@ abstract class ShellFxSuite extends StudioFxSuite:
           nativeMenu = nativeMenu,
           presets = presets,
           records = records,
-          panels = panels
+          panels = panels,
+          chooseFolder = chooseFolder
         )
         .fold(e => fail(e.message), identity)
     )

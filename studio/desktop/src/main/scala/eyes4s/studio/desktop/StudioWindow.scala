@@ -243,7 +243,9 @@ object StudioWindow:
       presets: FilePresetStore = FilePresetStore.userDefault,
       // The window's backend serves the source records unless one is given.
       records: Option[eyes4s.studio.app.explore.SourceRecordsSource] = None,
-      panels: PanelSources = PanelSources.notServed
+      panels: PanelSources = PanelSources.notServed,
+      // Where an export bundle goes: the platform's chooser unless given.
+      chooseFolder: FigureInputs.ChooseFolder = FigureInputs.directoryChooser
   )(using IORuntime): Either[WindowError, StudioWindow] =
     for
       sheets <- StudioStyles.stylesheets(theme).left.map(WindowError.Styles(_))
@@ -261,7 +263,8 @@ object StudioWindow:
         nativeMenu,
         presets,
         records,
-        panels
+        panels,
+        chooseFolder
       )
     yield
       window.root.getStylesheets.setAll(sheets*)
@@ -280,7 +283,8 @@ object StudioWindow:
       nativeMenu: Boolean,
       presets: FilePresetStore,
       records: Option[eyes4s.studio.app.explore.SourceRecordsSource],
-      panels: PanelSources
+      panels: PanelSources,
+      chooseFolder: FigureInputs.ChooseFolder
   )(using IORuntime): Either[WindowError, StudioWindow] =
     // Late-bound: the runtime, the host and the effects refer to each other.
     var runtime: Option[StudioRuntime] = None
@@ -443,7 +447,8 @@ object StudioWindow:
         displays,
         () => Option(shell.root.getScene).map(_.getWindow),
         project,
-        stimuli
+        stimuli,
+        chooseFolder
       )
     )
     Vector(
