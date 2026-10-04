@@ -62,7 +62,10 @@ instance. It reads the enums from a compiler inventory whose fingerprint matches
 current sources, tests and build (`tools/api-audit/candidate.py`): during an audit, the
 audit's own candidate; otherwise the one `run.py --prepare` wrote (about four minutes,
 compile and inventory only), or the committed inventory when its provenance still
-matches. A stale or missing inventory fails the suite with the command to run.
+matches. A stale or missing inventory fails the suite with the command to run. The
+fingerprint covers every root `*.sbt`, uncommitted worktree-local ones included, so a
+provenance recorded in one worktree does not validate in another checkout of the same tree;
+there, `--prepare` again.
 
 What runs where (all generated from `build.sbt`):
 

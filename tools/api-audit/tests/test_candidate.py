@@ -199,6 +199,25 @@ class CandidateTests(unittest.TestCase):
         provenance = next((self.out / 'candidates').glob('*/provenance.json'))
         self.assertFalse(json.loads(provenance.read_text())['active'])
 
+    def test_record_replaces_a_stale_prepared_candidate(self):
+        # A candidate prepared before the sources changed would otherwise shadow the
+        # inventory the audit records, and every later ordinary run would fail stale.
+        self.prepare()
+        self.source = 'source-B'
+        self.assertTrue((self.out / 'prepared/provenance.json').exists())
+        agent = self.base / 'target/jacoco-agent.txt'
+        agent.parent.mkdir()
+        agent.write_text('agent.jar')
+        with patch.object(run, 'sbt'), patch.object(run, 'MODULES', ('io',)), \
+             patch.object(run.subprocess, 'run'), \
+             patch.object(run.subprocess, 'check_output', return_value='sha'):
+            run.main(['--record'])
+        self.assertFalse((self.out / 'prepared').exists())
+        # A prepare-only run keeps the directory it writes.
+        with patch.object(run, 'sbt'):
+            run.main(['--prepare'])
+        self.assertTrue((self.out / 'prepared/provenance.json').exists())
+
     def test_test_failure_stops_record_and_retires_candidate(self):
         agent = self.base / 'target/jacoco-agent.txt'
         agent.parent.mkdir()
