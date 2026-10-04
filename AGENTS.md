@@ -53,13 +53,21 @@ Before opening a PR, run what CI runs:
 
 ```sh
 sbt headerCheckAll scalafmtCheckAll scalafmtSbtCheck githubWorkflowCheck
+python3 tools/api-audit/run.py --prepare
 sbt testAll checkBoundaries
 ```
+
+`DiagnosticCoverageJvmSuite` checks that every public error enum has a `Diagnose`
+instance. It reads the enums from a compiler inventory whose fingerprint matches the
+current sources, tests and build (`tools/api-audit/candidate.py`): during an audit, the
+audit's own candidate; otherwise the one `run.py --prepare` wrote (about four minutes,
+compile and inventory only), or the committed inventory when its provenance still
+matches. A stale or missing inventory fails the suite with the command to run.
 
 What runs where (all generated from `build.sbt`):
 
 - `checks.yml`, every push and PR: format/header/workflow checks, compile and test per
-  matrix project (`rootJVM`, `rootJS`), MiMa, docs, `checkLibraryBoundaries`, the site build,
+  matrix project (`rootJVM`, `rootJS`; `rootJVM` first prepares the compiler inventory), MiMa, docs, `checkLibraryBoundaries`, the site build,
   and `python3 tools/check-docs.py --platform jvm|js --skip-consumer` in the matching project.
   `checkLibraryBoundaries` is `checkBoundaries` without the studio projects' resolved-graph
   rules, which need the scaladock and Intaglio pins.
@@ -96,16 +104,17 @@ The full gate takes 60–90 minutes, so run it once per branch.
 
 - **While iterating**, run the affected suites with `testOnly` and the `-Werror` compile
   (`GITHUB_ACTIONS=true sbt 'project rootJVM' Test/compile 'project rootJS' Test/compile`).
-- **Before ordinary diagnostic coverage tests**, run `python3 tools/api-audit/run.py --prepare`
-  after changing fingerprinted source, test or build inputs. This compiler-only preparation
-  produces a validated local inventory; it does not run the full audit or record qualification.
-  Coverage requires that fresh preparation or fresh committed inventory provenance. Stale or
-  missing evidence fails with the prepare command; leftover audit files are never a fallback.
+- **Before running `DiagnosticCoverageJvmSuite` or `testAll`**, run
+  `python3 tools/api-audit/run.py --prepare` after changing sources, tests or the build. This
+  compiler-only preparation writes a fingerprinted local inventory; it does not run the audit
+  or record anything. A stale or missing inventory fails the suite with that command.
 - **Merge `main` once**, after review, then run the full gate on the merged tree:
   everything under "Before opening a PR", plus `python3 tools/api-audit/run.py --record`
   and `python3 tools/study-consumer/verify.py`. The audit generates its compiler inventory
-  before running tests; `--record` also records inventory provenance after successful checks.
-  Commit the generated inventory, evidence and provenance together.
+  before running its tests, so a branch that adds a public error enum with its `Diagnose`
+  instance and samples records in one pass, in either order with `testAll`; one that misses
+  the instance fails both. `--record` also writes `inventory-provenance.json` after successful
+  checks; commit the generated inventory, evidence and provenance together.
   Report the SHA and `HEAD^{tree}` that the gate covers. `python3 tools/landing-gate/gate.py`
   runs these steps in this order on a committed tree (`--from STEP` resumes after a fix).
 - **Land by tree identity.** The merge into `main` must have the tree that was gated. When

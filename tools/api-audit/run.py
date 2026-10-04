@@ -33,8 +33,10 @@ def main(argv=None):
     run_id = None if args.prepare else uuid.uuid4().hex
     try:
         if not args.prepare:
-            # A new full generation cannot use stale invocation or test evidence.
+            # A new full generation cannot use stale invocation or test evidence, and a
+            # recorded audit replaces any locally prepared candidate.
             shutil.rmtree(OUT / 'execution', ignore_errors=True)
+            shutil.rmtree(OUT / 'prepared', ignore_errors=True)
             for module in MODULES:
                 for axis in ('jvm', 'js'):
                     shutil.rmtree(ROOT / module / f'.{axis}/target/test-reports', ignore_errors=True)
