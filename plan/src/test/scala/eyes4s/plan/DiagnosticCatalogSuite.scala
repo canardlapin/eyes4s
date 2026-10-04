@@ -28,8 +28,8 @@ class DiagnosticCatalogSuite extends munit.FunSuite:
   private val all = DiagnosticSamples.all
 
   /** Every issued code, one per line, pinned by count and portable digest. */
-  private val PinnedCount  = 726
-  private val PinnedDigest = "601023f9698f136f"
+  private val PinnedCount  = 735
+  private val PinnedDigest = "0a2126a876135366"
 
   /** The issued table before CR5: codes are only ever issued, never changed
     * or reused, and a retired code keeps its place, so taking away the codes
@@ -72,9 +72,10 @@ class DiagnosticCatalogSuite extends munit.FunSuite:
   private val UiDCodes: Set[String] =
     (DiagnosticCatalog.stageMeter.codes ++ DiagnosticCatalog.studyRun.codes).map(_.render).toSet
 
-  /** UI-G adds record identities and coordinate provenance before these unlanded families. */
+  /** UI-G adds record identities, coordinate provenance and navigation. */
   private val UiGCodes: Set[String] =
-    (DiagnosticCatalog.recordIdentity.codes ++ DiagnosticCatalog.coordinateProvenance.codes)
+    (DiagnosticCatalog.recordIdentity.codes ++ DiagnosticCatalog.coordinateProvenance.codes ++
+      DiagnosticCatalog.navigation.codes)
       .map(_.render)
       .toSet
 

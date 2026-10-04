@@ -50,6 +50,11 @@ enum RecordPlace derives CanEqual:
   /** Not admitted: the record has no admitted fixation to place. */
   case NotAdmitted
 
+  /** In the window of a trial the study fails: `outside` of its `total`
+    * fixations lie outside the window.
+    */
+  case InsideTrialFails(outside: Int, total: Int)
+
 /** A position in a named frame, as the backend served it. */
 final case class FramePosition(x: Double, y: Double) derives CanEqual
 
@@ -421,12 +426,14 @@ object SourceRecords:
       at(r.image, v => Format.decimal(v, 0)),
       at(r.degrees, v => Format.signed(v, 1) + "°"),
       r.samples.fold(RecordText(RecordTextId.None))(n => Format.count(n.toLong)),
-      RecordText(r.place match
-        case RecordPlace.Inside         => RecordTextId.Inside
-        case RecordPlace.Outside        => RecordTextId.Outside
-        case RecordPlace.OffScreen      => RecordTextId.OffScreen
-        case RecordPlace.DroppedInitial => RecordTextId.DroppedInitial
-        case RecordPlace.NotAdmitted    => RecordTextId.NotAdmitted)
+      r.place match
+        case RecordPlace.Inside         => RecordText(RecordTextId.Inside)
+        case RecordPlace.Outside        => RecordText(RecordTextId.Outside)
+        case RecordPlace.OffScreen      => RecordText(RecordTextId.OffScreen)
+        case RecordPlace.DroppedInitial => RecordText(RecordTextId.DroppedInitial)
+        case RecordPlace.NotAdmitted    => RecordText(RecordTextId.NotAdmitted)
+        case RecordPlace.InsideTrialFails(outside, total) =>
+          RecordText(RecordTextId.InsideTrialFails, outside.toString, total.toString)
     )
 
   /** A page as protocol 1.7 serves it (`sourceRecords`), in the table's
@@ -449,7 +456,9 @@ object SourceRecords:
         r.degrees.map(at),
         r.samples,
         r.placement.fold(RecordPlace.NotAdmitted) {
-          case MapPlacement.InMap            => RecordPlace.Inside
+          case MapPlacement.InWindow       => RecordPlace.Inside
+          case MapPlacement.TrialFailed(t) =>
+            RecordPlace.InsideTrialFails(t.outsideWindow, t.total)
           case MapPlacement.DroppedInitial   => RecordPlace.DroppedInitial
           case MapPlacement.OutsideWindow(_) => RecordPlace.Outside
           case MapPlacement.OutsideScreen    => RecordPlace.OffScreen

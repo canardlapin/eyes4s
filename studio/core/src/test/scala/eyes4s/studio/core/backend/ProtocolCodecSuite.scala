@@ -269,8 +269,37 @@ class ProtocolCodecSuite extends munit.FunSuite:
       .downField("total")
       .as[Protocol11Total]
 
+  test(
+    "1.9: a trial-failed placement carries its window tally, and a broken tally is refused"
+  ) {
+    val failed = trialFixations.fixations.map(_.placement).collect {
+      case p @ eyes4s.plan.MapPlacement.TrialFailed(_) => p
+    }
+    assertEquals(failed.size, 1)
+    val wire = TrialViewCodecs.placement(failed.head)
+    assertEquals(wire.as(using TrialViewCodecs.placementDecoder), Right(failed.head))
+    // A total above the safe JSON integer range travels as a decimal string.
+    assertEquals(
+      wire.hcursor.downField("TrialFailed").downField("tally").get[String]("totalMicros"),
+      Right("9007199254740993")
+    )
+    // In the window keeps its earlier wire name.
+    assertEquals(
+      TrialViewCodecs.placement(eyes4s.plan.MapPlacement.InWindow),
+      Json.obj("InMap" -> Json.obj())
+    )
+    val broken = wire.hcursor
+      .downField("TrialFailed")
+      .downField("tally")
+      .downField("outsideWindow")
+      .withFocus(_ => Json.fromInt(99))
+      .top
+      .getOrElse(fail("wire"))
+    assert(broken.as(using TrialViewCodecs.placementDecoder).isLeft, broken.noSpaces)
+  }
+
   test("protocol 1.2 Counting requires coordinated peers, not a relabelled 1.1 frame") {
-    assertEquals(ProtocolVersion.Current, ProtocolVersion(1, 9))
+    assertEquals(ProtocolVersion.Current, ProtocolVersion(1, 10))
     val previous = Envelope(RequestId(41), ServerFrame.Event(JobEvent.Advanced(progress)))
     assertEquals(legacyMeterTotal(previous.asJson), Right(Protocol11Total.Exact(8512L)))
     val counting = progress.asJson

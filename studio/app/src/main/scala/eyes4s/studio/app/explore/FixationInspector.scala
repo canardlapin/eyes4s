@@ -320,7 +320,9 @@ object FixationInspector:
         val count = fs.fold("")(_.fixations.size.toString)
         val pair  = (p: FramePosition, f: Double => String) => t(Pair, f(p.x), f(p.y))
         val place = a.map(_.placement match
-          case MapPlacement.InMap          => t(Inside)
+          case MapPlacement.InWindow       => t(Inside)
+          case MapPlacement.TrialFailed(w) =>
+            t(InsideTrialFails, w.outsideWindow.toString, w.total.toString)
           case MapPlacement.DroppedInitial => t(DroppedInitial)
           case MapPlacement.OutsideScreen  => t(OffScreen)
           case MapPlacement.OutsideWindow(eyes4s.plan.OffWindowPolicy.Exclude) =>

@@ -115,7 +115,7 @@ known), and a `CoordinateTrail`:
 | `correction` | the admission policy's rule that moved the trial's positions (its index and the `Correction`), if any |
 | `admitted` | the position the study input holds, in the admission frame (the screen) |
 | `window` | the same position in the analysis window's frame (image units), for a windowed plan; positions outside the window keep their window coordinates |
-| `placement` | `DroppedInitial`, `OutsideScreen`, `OutsideWindow(policy)` or `InMap`, decided in that order, as the plan's tallies count them |
+| `placement` | `DroppedInitial`, `OutsideScreen`, `OutsideWindow(policy)`, `TrialFailed(tally)` or `InWindow`, decided in that order, as the plan's tallies count them; `TrialFailed` is a fixation in the window of a trial the study fails as a whole (under `OffWindowPolicy.FailTrial`, one of its fixations lies outside the window), so no map is built from it. `InWindow` is a geometric fact, not a promise of a map: a trial whose estimation fails shows that at the map level, in the result's estimation outcome. `CentrePlacement` is the one screen and window classification that the tallies, the trail and the map's own restriction all use |
 | `angular` | degrees under the plan's `AngularReference`: from the centre (`origin`) of the `measured` frame (the window, or the screen for a whole-frame plan), at the declared `unitsPerDegree`, into the `degrees` frame named `<measured>/degrees`, whose `x` runs right and `y` up |
 
 `provenance.records` lists the ledger's source records in record order. Its `total` is the
@@ -125,7 +125,41 @@ next one starts at. `FixationSourceText.of(text, ledger.source)` (`eyes4s-io`) r
 text, refusing one whose decoded records do not have the ledger's source digest; its `first` and
 `page` add each record's verbatim text and `LineSpan`, and for an admitted record parse the
 position columns as the importer does and check that correcting the parse gives the admitted
-position bit for bit (`SourceTextError.RecordedMismatch` names the record otherwise).
+position bit for bit. A record that fails that check, or whose position field is not a finite
+number, keeps its text and lines and carries its `refusal` (`SourceTextError.RecordedMismatch`
+or `Field`, naming the record); the rest of the page is given. A participant-scoped correction
+is resolved through a participant projection twice, at admission and in provenance; build a
+custom key's reader with `LayoutKeys.reader(layout, columns)(read, clock)` so both use the
+layout's.
+
+### From a report to a source record
+
+An application walks the chain *summary > participant > query contrast > pair > map > fixation >
+record* one typed step at a time, and back up; a step that cannot be taken is refused with a
+typed error naming its operands, never guessed.
+
+| Step | Down | Up |
+|---|---|---|
+| summary > participant | `ReportNavigation.cells(report)`, `participants(report, cell)` (`eyes4s-results`) | `participant.cell` |
+| participant > query contrast | `ReportNavigation.queries(report, participant, layout)`, refused (`QueryCount`) unless the layout finds the participant's queries the cell lists | `ReportNavigation.participantOf(report, cell, contrast, layout)`, refused (`UnlistedParticipant`) for a participant the cell does not list |
+| query contrast > pair | `ResultNavigation.pairs(inspection, contrast, design, offset, size)`: an `OffsetPage` whose `total` is known before any pair is built | `ResultNavigation.queryOf(pair)` |
+| pair > map | `ResultNavigation.maps(inspection, pair)`: the query's and the reference's `Estimation` | the pair the path came from |
+| map > fixation | `ResultNavigation.fixations(inspection, provenance, map)`: `FixationRef`s, each a `ScanpathPosition` (from 0) with its display `number` (from 1) | the map of the fixation's trial |
+| fixation > record | `ResultNavigation.record(provenance, fixation)`: a `DataRecord`, or `NoRecord` with the `MissingSource` that says why | `ResultNavigation.fixationOf(provenance, record)` |
+
+Report references are `ReportRef.Cell` (a scale, group, role and component) and
+`ReportRef.Participant` (a cell and a participant name), built through `ReportRef.cell` and
+`ReportRef.participant`; refusals are `ReportNavigationError` (`report-navigation`) and
+`NavigationError` (`navigation`). A scale's `usedBy(key)` lists the pairs a trial takes part in,
+as the query, as the matched reference and as a control reference, and `usedByCounts(key)` counts
+them from the stored rows without building a pair; `pairsOfQuery(design, key)` reaches every pair
+from its query trial.
+
+Inspection listings are built lazily: a listing checks its references (no reference addresses two
+entries) and each reduction's membership counts when it is built, and knows its `total` then, but
+builds an entry from its stored row only when a page or lookup asks for it. Pages start at a
+reference (`page(ref, size)`) or an offset (`page(ListingOffset, size)`, counted from 0); a page
+from the end or beyond is empty.
 
 ## Join a trial inventory
 

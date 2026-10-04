@@ -1185,46 +1185,49 @@ private[eyes4s] object Projections:
 
   // ---------------------------------------------------------------- inspection
 
+  /** A result reference as a structured operand: its kind, then its fields. */
+  private[plan] def resultRef[K](ref: ResultRef[K]): Operand[K] =
+    val kind = token(ref.productPrefix)
+    ref match
+      case ResultRef.Estimation(scale, key) =>
+        fields("kind" -> kind, "scale" -> int(scale), "key" -> Operand.Key(key))
+      case ResultRef.PairRow(scale, design, focal, other) =>
+        fields(
+          "kind"      -> kind,
+          "scale"     -> int(scale),
+          "design"    -> token(design.toString),
+          "focal"     -> Operand.Key(focal),
+          "reference" -> Operand.Key(other)
+        )
+      case ResultRef.Reduction(scale, design, key) =>
+        fields(
+          "kind"   -> kind,
+          "scale"  -> int(scale),
+          "design" -> token(design.toString),
+          "key"    -> Operand.Key(key)
+        )
+      case ResultRef.ContrastRow(scale, key) =>
+        fields("kind" -> kind, "scale" -> int(scale), "key" -> Operand.Key(key))
+      case ResultRef.Occupancy(repetition, window, key) =>
+        fields(
+          "kind"       -> kind,
+          "repetition" -> name(repetition),
+          "window"     -> name(window),
+          "key"        -> Operand.Key(key)
+        )
+      case ResultRef.Event(from, until) =>
+        fields("kind" -> kind, "from" -> int(from), "until" -> int(until))
+      case ResultRef.InCell(repetition, window, inner) =>
+        fields(
+          "kind"       -> kind,
+          "repetition" -> name(repetition),
+          "window"     -> name(window),
+          "ref"        -> resultRef(inner)
+        )
+
   def inspection[K](e: InspectionError[K]): Diagnostic[K] =
     import InspectionError.*
-    def reference(ref: ResultRef[K]): Operand[K] =
-      val kind = token(ref.productPrefix)
-      ref match
-        case ResultRef.Estimation(scale, key) =>
-          fields("kind" -> kind, "scale" -> int(scale), "key" -> Operand.Key(key))
-        case ResultRef.PairRow(scale, design, focal, other) =>
-          fields(
-            "kind"      -> kind,
-            "scale"     -> int(scale),
-            "design"    -> token(design.toString),
-            "focal"     -> Operand.Key(focal),
-            "reference" -> Operand.Key(other)
-          )
-        case ResultRef.Reduction(scale, design, key) =>
-          fields(
-            "kind"   -> kind,
-            "scale"  -> int(scale),
-            "design" -> token(design.toString),
-            "key"    -> Operand.Key(key)
-          )
-        case ResultRef.ContrastRow(scale, key) =>
-          fields("kind" -> kind, "scale" -> int(scale), "key" -> Operand.Key(key))
-        case ResultRef.Occupancy(repetition, window, key) =>
-          fields(
-            "kind"       -> kind,
-            "repetition" -> name(repetition),
-            "window"     -> name(window),
-            "key"        -> Operand.Key(key)
-          )
-        case ResultRef.Event(from, until) =>
-          fields("kind" -> kind, "from" -> int(from), "until" -> int(until))
-        case ResultRef.InCell(repetition, window, inner) =>
-          fields(
-            "kind"       -> kind,
-            "repetition" -> name(repetition),
-            "window"     -> name(window),
-            "ref"        -> reference(inner)
-          )
+    def reference(ref: ResultRef[K]): Operand[K] = resultRef(ref)
     e match
       case UnknownScale(index, scales) =>
         diagnostic(C.inspection, e, e.message, Vector(Locus.Scale(index)))(

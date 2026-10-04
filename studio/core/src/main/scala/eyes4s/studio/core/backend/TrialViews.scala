@@ -17,7 +17,8 @@
 package eyes4s.studio.core.backend
 
 import cats.syntax.all.*
-import eyes4s.plan.{MapPlacement, OffWindowPolicy}
+import eyes4s.kernel.Span
+import eyes4s.plan.{MapPlacement, OffWindowPolicy, WindowTally}
 import eyes4s.studio.core.selection.{FixationIndex, StudioRef}
 import io.circe.syntax.*
 import io.circe.{Codec, Decoder, DecodingFailure, Encoder, HCursor, Json, JsonObject}
@@ -341,17 +342,54 @@ object TrialPreview:
 
 /** eyes4s `MapPlacement` and `OffWindowPolicy` on the wire, as the studio
   * writes its enums: `{"InMap":{}}`, `{"OutsideWindow":{"policy":{"Exclude":{}}}}`.
+  * `MapPlacement.InWindow` keeps its earlier wire name `InMap`. Protocol 1.9
+  * adds `{"TrialFailed":{"tally":{...}}}`: in the window, in a trial the study
+  * fails, with the tally of the trial's kept fixations it fails for.
   */
 object TrialViewCodecs:
+  import ProtocolCodecs.portableLong
   private def tag(name: String, body: JsonObject = JsonObject.empty): Json =
     Json.obj(name -> Json.fromJsonObject(body))
 
   def policy(p: OffWindowPolicy): Json = tag(p.toString)
 
+  def tally(t: WindowTally): Json = Json.obj(
+    "outsideScreen"       -> Json.fromInt(t.outsideScreen),
+    "outsideWindow"       -> Json.fromInt(t.outsideWindow),
+    "total"               -> Json.fromInt(t.total),
+    "outsideScreenMicros" -> t.outsideScreenDuration.toMicros.asJson,
+    "outsideWindowMicros" -> t.outsideWindowDuration.toMicros.asJson,
+    "totalMicros"         -> t.totalDuration.toMicros.asJson
+  )
+
+  val tallyDecoder: Decoder[WindowTally] = Decoder.instance(c =>
+    for
+      screen       <- c.get[Int]("outsideScreen")
+      window       <- c.get[Int]("outsideWindow")
+      total        <- c.get[Int]("total")
+      screenMicros <- c.get[Long]("outsideScreenMicros")
+      windowMicros <- c.get[Long]("outsideWindowMicros")
+      totalMicros  <- c.get[Long]("totalMicros")
+      tally        <- WindowTally
+        .of(
+          screen,
+          window,
+          total,
+          Span.micros(screenMicros),
+          Span.micros(windowMicros),
+          Span.micros(totalMicros)
+        )
+        .leftMap(e => DecodingFailure(e.message, c.history))
+    yield tally
+  )
+
   def placement(p: MapPlacement): Json = p match
     case MapPlacement.OutsideWindow(policy) =>
       tag("OutsideWindow", JsonObject("policy" -> this.policy(policy)))
-    case other => tag(other.toString)
+    case MapPlacement.InWindow       => tag("InMap")
+    case MapPlacement.TrialFailed(t) => tag("TrialFailed", JsonObject("tally" -> tally(t)))
+    case MapPlacement.OutsideScreen  => tag("OutsideScreen")
+    case MapPlacement.DroppedInitial => tag("DroppedInitial")
 
   private def single(c: HCursor): Decoder.Result[(String, HCursor)] =
     c.keys.map(_.toVector) match
@@ -372,7 +410,9 @@ object TrialViewCodecs:
 
   val placementDecoder: Decoder[MapPlacement] = Decoder.instance(c =>
     single(c).flatMap {
-      case ("InMap", _)            => Right(MapPlacement.InMap)
+      case ("InMap", _)          => Right(MapPlacement.InWindow)
+      case ("TrialFailed", body) =>
+        body.downField("tally").as(using tallyDecoder).map(MapPlacement.TrialFailed(_))
       case ("OutsideScreen", _)    => Right(MapPlacement.OutsideScreen)
       case ("DroppedInitial", _)   => Right(MapPlacement.DroppedInitial)
       case ("OutsideWindow", body) =>

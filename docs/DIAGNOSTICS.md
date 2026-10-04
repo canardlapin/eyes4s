@@ -1515,6 +1515,20 @@ fails after rewriting, so review the change and run it again.
 | `methods-fact.invalid-code` | `InvalidCode` | `value` |
 | `methods-fact.inconsistent` | `Inconsistent` | `total`, `value`, `parts`, `sum` |
 
+### `navigation` — `NavigationError`
+
+| Code | Case | Operands |
+|---|---|---|
+| `navigation.negative-offset` | `NegativeOffset` | `value` |
+| `navigation.wrong-level` | `WrongLevel` | `ref`, `expected` |
+| `navigation.inspection` | `Inspection` | `underlying` |
+| `navigation.no-reduction` | `NoReduction` | `contrast`, `design` |
+| `navigation.input-mismatch` | `InputMismatch` | `inspection`, `provenance` |
+| `navigation.provenance` | `Provenance` | `underlying` |
+| `navigation.no-record` | `NoRecord` | `key`, `position`, `reason` |
+| `navigation.unknown-record` | `UnknownRecord` | `record` |
+| `navigation.not-admitted` | `NotAdmitted` | `record` |
+
 ### `codec` — `CodecError`
 
 | Code | Case | Operands |
@@ -1759,6 +1773,21 @@ fails after rewriting, so review the change and run it again.
 | `result-table.cell` | `Cell` | `row`, `column`, `value`, `reason` |
 | `result-table.width` | `Width` | `row`, `expected`, `actual` |
 | `result-table.context` | `Context` | `operand`, `reason` |
+
+### `report-navigation` — `ReportNavigationError`
+
+| Code | Case | Operands |
+|---|---|---|
+| `report-navigation.negative-scale` | `NegativeScale` | `scale` |
+| `report-navigation.blank-component` | `BlankComponent` | `component` |
+| `report-navigation.blank-participant` | `BlankParticipant` | `participant` |
+| `report-navigation.scale-mismatch` | `ScaleMismatch` | `ref`, `report` |
+| `report-navigation.unknown-cell` | `UnknownCell` | `group`, `role`, `component` |
+| `report-navigation.not-in-cell` | `NotInCell` | `participant`, `group`, `role`, `component` |
+| `report-navigation.wrong-level` | `WrongLevel` | `ref`, `expected` |
+| `report-navigation.not-a-member` | `NotAMember` | `key`, `group`, `role`, `component` |
+| `report-navigation.query-count` | `QueryCount` | `participant`, `listed`, `found`, `group`, `role`, `component` |
+| `report-navigation.unlisted-participant` | `UnlistedParticipant` | `key`, `participant`, `group`, `role`, `component` |
 
 ### `detector-validation` — `DetectorValidationError`
 

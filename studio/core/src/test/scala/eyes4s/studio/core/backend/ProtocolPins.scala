@@ -16,7 +16,7 @@
 
 package eyes4s.studio.core.backend
 
-/** The pinned wire form of every [[ProtocolSamples]] sample, protocol 1.9. */
+/** The pinned wire form of every [[ProtocolSamples]] sample, protocol 1.10. */
 object ProtocolPins:
   val pins: Map[String, String] = Map(
     "response.PairRowsOf" ->
@@ -74,7 +74,7 @@ object ProtocolPins:
     "request.TrialPreviewOf" ->
       """{"TrialPreviewOf":{"revision":4,"trial":{"participant":"P17","phase":"Retrieval","trial":"ret_07","occurrence":1}}}""",
     "response.TrialFixationsOf" ->
-      """{"TrialFixationsOf":{"fixations":{"revision":4,"dataset":3,"trial":{"participant":"P17","phase":"Retrieval","trial":"ret_07","occurrence":1},"fixations":[{"trial":{"participant":"P17","phase":"Retrieval","trial":"ret_07","occurrence":1},"position":1,"record":7209,"x":960.5,"y":540.25,"onsetMs":0.5,"durationMs":212.5,"placement":{"InMap":{}}},{"trial":{"participant":"P17","phase":"Retrieval","trial":"ret_07","occurrence":1},"position":2,"record":7210,"x":1500.5,"y":540.75,"onsetMs":230.5,"durationMs":180.25,"placement":{"OutsideWindow":{"policy":{"Exclude":{}}}}},{"trial":{"participant":"P17","phase":"Retrieval","trial":"ret_07","occurrence":1},"position":3,"record":7211,"x":-4.5,"y":20.25,"onsetMs":420.5,"durationMs":96.5,"placement":{"OutsideScreen":{}}},{"trial":{"participant":"P17","phase":"Retrieval","trial":"ret_07","occurrence":1},"position":4,"record":7212,"x":600.5,"y":400.5,"onsetMs":530.5,"durationMs":140.5,"placement":{"DroppedInitial":{}}},{"trial":{"participant":"P17","phase":"Retrieval","trial":"ret_07","occurrence":1},"position":5,"record":7213,"x":610.5,"y":410.5,"onsetMs":680.5,"durationMs":160.5,"placement":{"OutsideWindow":{"policy":{"FailTrial":{}}}}}]}}}""",
+      """{"TrialFixationsOf":{"fixations":{"revision":4,"dataset":3,"trial":{"participant":"P17","phase":"Retrieval","trial":"ret_07","occurrence":1},"fixations":[{"trial":{"participant":"P17","phase":"Retrieval","trial":"ret_07","occurrence":1},"position":1,"record":7209,"x":960.5,"y":540.25,"onsetMs":0.5,"durationMs":212.5,"placement":{"InMap":{}}},{"trial":{"participant":"P17","phase":"Retrieval","trial":"ret_07","occurrence":1},"position":2,"record":7210,"x":1500.5,"y":540.75,"onsetMs":230.5,"durationMs":180.25,"placement":{"OutsideWindow":{"policy":{"Exclude":{}}}}},{"trial":{"participant":"P17","phase":"Retrieval","trial":"ret_07","occurrence":1},"position":3,"record":7211,"x":-4.5,"y":20.25,"onsetMs":420.5,"durationMs":96.5,"placement":{"OutsideScreen":{}}},{"trial":{"participant":"P17","phase":"Retrieval","trial":"ret_07","occurrence":1},"position":4,"record":7212,"x":600.5,"y":400.5,"onsetMs":530.5,"durationMs":140.5,"placement":{"DroppedInitial":{}}},{"trial":{"participant":"P17","phase":"Retrieval","trial":"ret_07","occurrence":1},"position":5,"record":7213,"x":610.5,"y":410.5,"onsetMs":680.5,"durationMs":160.5,"placement":{"OutsideWindow":{"policy":{"FailTrial":{}}}}},{"trial":{"participant":"P17","phase":"Retrieval","trial":"ret_07","occurrence":1},"position":6,"record":7214,"x":900.5,"y":500.5,"onsetMs":860.5,"durationMs":120.5,"placement":{"TrialFailed":{"tally":{"outsideScreen":1,"outsideWindow":2,"total":6,"outsideScreenMicros":96500,"outsideWindowMicros":341000,"totalMicros":"9007199254740993"}}}}]}}}""",
     "response.TrialPreviewOf" ->
       """{"TrialPreviewOf":{"preview":{"revision":4,"trial":{"participant":"P17","phase":"Retrieval","trial":"ret_07","occurrence":1},"sigmaDegrees":2.5,"region":{"left":448.5,"top":156.5,"right":1472.5,"bottom":924.5},"columns":3,"rows":2,"order":{"TopFirst":{}},"cells":[0.1,0.25,null,0.3,0.2,0.15],"levels":[0.2,0.12]}}}""",
     "cause.CorrectionConflict" ->
@@ -112,9 +112,9 @@ object ProtocolPins:
     "disposition.NoFixations" ->
       """{"NoFixations":{}}""",
     "envelope.frame" ->
-      """{"version":{"major":1,"minor":9},"id":41,"body":{"Event":{"event":{"Finished":{"outcome":{"Completed":{"job":1,"run":8,"last":{"job":1,"run":8,"step":2,"segment":{"Comparing":{"scale":2,"design":{"Control":{}}}},"meter":{"kind":{"Comparing":{}},"unit":{"Pairs":{}},"done":3005,"total":{"Exact":{"units":8512}}},"totals":{"completedMaps":2811,"totalMaps":{"Exact":{"units":4685}},"completedPairs":21400,"totalPairs":{"Exact":{"units":44845}}}}}}}}}}}""",
+      """{"version":{"major":1,"minor":10},"id":41,"body":{"Event":{"event":{"Finished":{"outcome":{"Completed":{"job":1,"run":8,"last":{"job":1,"run":8,"step":2,"segment":{"Comparing":{"scale":2,"design":{"Control":{}}}},"meter":{"kind":{"Comparing":{}},"unit":{"Pairs":{}},"done":3005,"total":{"Exact":{"units":8512}}},"totals":{"completedMaps":2811,"totalMaps":{"Exact":{"units":4685}},"completedPairs":21400,"totalPairs":{"Exact":{"units":44845}}}}}}}}}}}""",
     "envelope.request" ->
-      """{"version":{"major":1,"minor":9},"id":41,"body":{"Subscribe":{"id":1}}}""",
+      """{"version":{"major":1,"minor":10},"id":41,"body":{"Subscribe":{"id":1}}}""",
     "error.AlreadyRunning" ->
       """{"AlreadyRunning":{"revision":5,"job":1}}""",
     "error.NoResult" ->

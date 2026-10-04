@@ -43,10 +43,14 @@ final case class RecordedPosition[U <: Unit2D] private[eyes4s] (
   */
 final case class CorrectionApplied(rule: Int, correction: Correction) derives CanEqual
 
-/** Where a fixation falls against a study's map. Each fixation falls in
-  * exactly one place, decided in this order: the initial-fixation policy
-  * drops it; its centre is outside the admission frame (the screen); it is
-  * on the screen but outside the analysis window; or it is in the map.
+/** Where a fixation falls against a study's map geometry. Each fixation
+  * falls in exactly one place, decided in this order: the initial-fixation
+  * policy drops it; its centre is outside the admission frame (the screen);
+  * it is on the screen but outside the analysis window ([[CentrePlacement]]
+  * decides both); the window policy fails its trial as a whole; or it is in
+  * the window. `InWindow` is a geometric fact, not a promise of a map: a
+  * trial whose estimation fails (`StudyFailure.Estimation` or `Occupancy`)
+  * shows that failure at the map level, in the result's estimation outcome.
   */
 enum MapPlacement derives CanEqual:
   case DroppedInitial
@@ -54,7 +58,15 @@ enum MapPlacement derives CanEqual:
 
   /** On the screen, outside the window; the policy says what the study does. */
   case OutsideWindow(policy: OffWindowPolicy)
-  case InMap
+
+  /** In the window, but the trial fails with `StudyFailure.OffWindow` for the
+    * tally of its kept fixations (under `OffWindowPolicy.FailTrial`, a
+    * fixation of it lies outside the window), so no map is built from it.
+    */
+  case TrialFailed(tally: WindowTally)
+
+  /** In the window, in a trial the window policy keeps. */
+  case InWindow
 
 /** How a study measures degrees of visual angle: from the centre (`origin`)
   * of the `measured` frame (the analysis window, or the admission frame of a
@@ -208,8 +220,19 @@ final class CoordinateProvenance[K, U <: Unit2D] private (
     val angular: Option[AngularReference[U]],
     toDegrees: Option[Warp[U, Unit2D.Deg]]
 ):
+  // Each trial's placement inputs, computed once for every trial on first use.
+  private lazy val placements: Map[K, Either[GeometryError, TrialPlacement]] =
+    paths.collect { case (key, Vector(path)) => key -> plan.trial(path) }
+
   /** The plan's admission frame, which admitted positions are in. */
   def admission: Frame[U] = plan.admission
+
+  /** The scanpath positions of a trial's fixations, in order. */
+  def positions(key: K): Either[ProvenanceError[K], Vector[ScanpathPosition]] =
+    paths.get(key) match
+      case None               => Left(ProvenanceError.UnknownTrial(key))
+      case Some(Vector(path)) => Right((0 until path.n).toVector.map(new ScanpathPosition(_)))
+      case Some(found)        => Left(ProvenanceError.AmbiguousTrial(key, found.size))
 
   /** The provenance of the fixation at a scanpath position of a trial. */
   def fixation(
@@ -238,6 +261,10 @@ final class CoordinateProvenance[K, U <: Unit2D] private (
         .toRight(ProvenanceError.FixationOutOfRange(key, position, path.n))
       _ <- Agreement
         .frames(plan.admission, path.frame)
+        .left
+        .map(ProvenanceError.TrialFrame(key, _))
+      placement <- placements
+        .getOrElse(key, plan.trial(path))
         .left
         .map(ProvenanceError.TrialFrame(key, _))
       correction <- plan
@@ -278,7 +305,7 @@ final class CoordinateProvenance[K, U <: Unit2D] private (
         correction.map((rule, c) => CorrectionApplied(rule, c)),
         FramedPosition(path.frame.id, centre),
         window,
-        plan.placement(path, position.value, centre),
+        plan.placement(placement, position.value, centre),
         angular
       )
     )
@@ -336,6 +363,7 @@ object CoordinateProvenance:
   * window, the initial-fixation rule and the correction rules.
   */
 private final class StudyPlanGeometry[K, U <: Unit2D](
+    geometry: StudyGeometry[U],
     val admission: Frame[U],
     val window: Option[Subframe[U]],
     offWindow: OffWindowPolicy,
@@ -346,12 +374,33 @@ private final class StudyPlanGeometry[K, U <: Unit2D](
   def correction(key: K): Either[(Int, Int), Option[(Int, Correction)]] =
     policy.fold(Right(None))(_.correctionFor(key, participant))
 
-  def placement(path: Scanpath[U], index: Int, centre: Pt[U]): MapPlacement =
-    if index < rule.select(path).tally.dropped then MapPlacement.DroppedInitial
-    else if !admission.contains(centre) then MapPlacement.OutsideScreen
-    else if window.exists(w => !w.locate(centre).isInside) then
-      MapPlacement.OutsideWindow(offWindow)
-    else MapPlacement.InMap
+  /** What a trial's placements depend on: how many leading fixations the
+    * initial-fixation policy drops, and the tally of the rest when the window
+    * policy fails the trial. Computed once per trial.
+    */
+  def trial(path: Scanpath[U]): Either[GeometryError, TrialPlacement] =
+    val selected = rule.select(path)
+    selected.kept
+      .fold[Either[GeometryError, Option[WindowTally]]](Right(None))(kept =>
+        StudyWindowing.tally(geometry, kept).map(Some(_))
+      )
+      .map(t =>
+        TrialPlacement(selected.tally.dropped, t.filter(StudyWindowing.fails(geometry, _)))
+      )
+
+  def placement(trial: TrialPlacement, index: Int, centre: Pt[U]): MapPlacement =
+    if index < trial.dropped then MapPlacement.DroppedInitial
+    else
+      CentrePlacement.of(admission, window, centre) match
+        case CentrePlacement.OutsideScreen => MapPlacement.OutsideScreen
+        case CentrePlacement.OutsideWindow => MapPlacement.OutsideWindow(offWindow)
+        case CentrePlacement.Inside        =>
+          trial.failing.fold(MapPlacement.InWindow)(MapPlacement.TrialFailed(_))
+
+/** A trial's leading dropped fixations, and the tally the window policy fails
+  * it for, if it does.
+  */
+private final case class TrialPlacement(dropped: Int, failing: Option[WindowTally])
 
 private object StudyPlanGeometry:
   def apply[K, U <: Unit2D](
@@ -362,6 +411,7 @@ private object StudyPlanGeometry:
       case StudyGeometry.Windowed(w, _, policy) => (Some(w), policy)
       case StudyGeometry.WholeFrame(_)          => (None, OffWindowPolicy.Exclude)
     new StudyPlanGeometry(
+      plan.geometry,
       plan.geometry.admission,
       window,
       offWindow,

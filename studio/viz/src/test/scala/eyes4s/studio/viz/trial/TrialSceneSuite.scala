@@ -128,7 +128,7 @@ class TrialSceneSuite extends ScalaCheckSuite:
       os <- Gen.listOfN(
         n,
         Gen.oneOf(
-          MapPlacement.InMap,
+          MapPlacement.InWindow,
           MapPlacement.OutsideWindow(OffWindowPolicy.Exclude),
           MapPlacement.OutsideWindow(OffWindowPolicy.FailTrial),
           MapPlacement.OutsideScreen,
@@ -377,7 +377,7 @@ class TrialSceneSuite extends ScalaCheckSuite:
           s"$style: excluded mark is not dashed"
         )
       }
-      scene.marks.filter(_.placement == MapPlacement.InMap).foreach { m =>
+      scene.marks.filter(_.placement == MapPlacement.InWindow).foreach { m =>
         assert(gps(m.name.value).fill.isDefined)
         assertEquals(gps(m.name.value).lineType.dash, None)
       }
@@ -449,7 +449,7 @@ class TrialSceneSuite extends ScalaCheckSuite:
         MapPlacement.DroppedInitial,
         MapPlacement.OutsideScreen,
         MapPlacement.OutsideWindow(OffWindowPolicy.Exclude),
-        MapPlacement.InMap
+        MapPlacement.InWindow
       )
     )
     assertEquals(failing(1), MapPlacement.OutsideScreen)
@@ -470,7 +470,7 @@ class TrialSceneSuite extends ScalaCheckSuite:
     assertEquals(fixations.map(_.placement), states)
     assertEquals(
       fixations.filter(_.contributesToMap).map(_.placement),
-      Vector(MapPlacement.InMap)
+      Vector(MapPlacement.InWindow)
     )
     val scene       = right(TrialScene(input(Display.Blank, fixations, MarkStyle.Neutral)))
     val (_, device) = lower(scene, right(PlotSurface(800, 600, 1.0)))
@@ -482,6 +482,31 @@ class TrialSceneSuite extends ScalaCheckSuite:
     assert(drawn.take(4).forall(_._2.fill.isEmpty))
     assert(drawn.takeRight(1).forall(_._2.fill.nonEmpty))
     assertEquals(drawn.map(_._2.lineType).distinct.size, states.size)
+    // eyes4s marks the failing trial's in-window fixation TrialFailed: it is
+    // drawn as the trial's outside fixation is, and adds nothing to the map.
+    val trialFailed = failing(3)
+    assert(trialFailed.isInstanceOf[MapPlacement.TrialFailed], trialFailed)
+    val both = Vector(failing(2), trialFailed).zipWithIndex.map { case (placement, i) =>
+      right(
+        TrialFixation.of(
+          ret07,
+          right(FixationIndex.of(i + 1)),
+          700.0 + i,
+          400.0,
+          200,
+          placement
+        )
+      )
+    }
+    assert(both.forall(!_.contributesToMap))
+    val failScene       = right(TrialScene(input(Display.Blank, both, MarkStyle.Neutral)))
+    val (_, failDevice) = lower(failScene, right(PlotSurface(800, 600, 1.0)))
+    val failParams      = markPrimitives(primitives(failDevice.elements)).collect {
+      case (n, DevicePrimitive.PointBatch(_, _, _, params, _)) => n -> params.valueAt(0)
+    }
+    val drawnFail = failScene.marks.map(mark => failParams(mark.name.value))
+    assertEquals(drawnFail.map(_.lineType).distinct.size, 1)
+    assertEquals(drawnFail.map(_.fill).distinct.size, 1)
   }
 
   test("role marks: query filled circle, matched diamond, control hollow and cased") {
@@ -515,7 +540,7 @@ class TrialSceneSuite extends ScalaCheckSuite:
       val rings = control.collect { case DevicePrimitive.Polyline(points, true, gp, _) =>
         (points, gp)
       }
-      assertEquals(rings.size, scene.marks.count(_.placement == MapPlacement.InMap))
+      assertEquals(rings.size, scene.marks.count(_.placement == MapPlacement.InWindow))
       rings.foreach { (points, gp) =>
         assertEquals(points.size, TrialScene.RingSegments)
         assertEquals(gp.fill, None)
@@ -528,7 +553,7 @@ class TrialSceneSuite extends ScalaCheckSuite:
         )
       }
       // The ring is the mark's size: its vertices lie at the mark's radius.
-      scene.marks.filter(_.placement == MapPlacement.InMap).zip(rings).foreach { (m, ring) =>
+      scene.marks.filter(_.placement == MapPlacement.InWindow).zip(rings).foreach { (m, ring) =>
         val c = centre(DevicePrimitive.Polyline(ring._1, true, ring._2, None))
         ring._1.foreach { v =>
           assertEqualsDouble(math.hypot(v.x - c.x, v.y - c.y), m.radiusPx * scale, 1e-6)
@@ -574,7 +599,7 @@ class TrialSceneSuite extends ScalaCheckSuite:
     val i1 = right(FixationIndex.of(1))
     // Double.toString differs between the JVM and Scala.js: compare the value,
     // then the platform-independent part of its message.
-    val nonFinite = TrialFixation.of(ret07, i1, Double.NaN, 2.5, 100, MapPlacement.InMap)
+    val nonFinite = TrialFixation.of(ret07, i1, Double.NaN, 2.5, 100, MapPlacement.InWindow)
     nonFinite match
       case Left(TrialSceneError.NonFinitePosition(trial, 1, x, 2.5)) =>
         assertEquals(trial, ret07)
@@ -583,7 +608,7 @@ class TrialSceneSuite extends ScalaCheckSuite:
     val named = "Trial P17 · ret_07: fixation 1 is at (NaN, 2.5)"
     assert(nonFinite.left.exists(_.message.startsWith(named)), nonFinite.toString)
     assertEquals(
-      TrialFixation.of(ret07, i1, 1.0, 2.0, 0, MapPlacement.InMap),
+      TrialFixation.of(ret07, i1, 1.0, 2.0, 0, MapPlacement.InWindow),
       Left(TrialSceneError.DurationNotPositive(ret07, 1, 0))
     )
     val twice = ret07Fixations
@@ -613,10 +638,10 @@ class TrialSceneSuite extends ScalaCheckSuite:
     // eyes4s keeps an off-screen fixation in its scanpath (OutsideScreen); it
     // is outside the analysis window too, so the trial view draws it dashed.
     val rows = Vector(
-      (900.0, 500.0, 200, MapPlacement.InMap),
+      (900.0, 500.0, 200, MapPlacement.InWindow),
       (-60.0, 1150.0, 180, MapPlacement.OutsideScreen),
       (2000.0, -30.0, 160, MapPlacement.OutsideScreen),
-      (1000.0, 600.0, 220, MapPlacement.InMap)
+      (1000.0, 600.0, 220, MapPlacement.InWindow)
     )
     val fs = rows.zipWithIndex.map { case ((x, y, d, w), i) =>
       right(TrialFixation.of(ret07, right(FixationIndex.of(i + 1)), x, y, d, w))

@@ -119,7 +119,7 @@ object GoldenTrials:
             x,
             y,
             r(8).toInt,
-            if inside then MapPlacement.InMap
+            if inside then MapPlacement.InWindow
             else MapPlacement.OutsideWindow(OffWindowPolicy.Exclude)
           )
           .fold(e => sys.error(e.message), identity)

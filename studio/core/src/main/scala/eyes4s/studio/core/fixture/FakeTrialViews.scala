@@ -18,7 +18,7 @@ package eyes4s.studio.core.fixture
 
 import cats.syntax.all.*
 import eyes4s.kernel.*
-import eyes4s.plan.{MapPlacement, OffWindowPolicy}
+import eyes4s.plan.{MapPlacement, OffWindowPolicy, WindowTally}
 import eyes4s.studio.core.backend.*
 import eyes4s.studio.core.document.{
   Geometry,
@@ -154,7 +154,38 @@ object FakeTrialViews:
     val centre = Pt[Unit2D.Px](x, y)
     if !screen.bounds.contains(centre) then MapPlacement.OutsideScreen
     else if !window.locate(centre).isInside then MapPlacement.OutsideWindow(offWindow)
-    else MapPlacement.InMap
+    else MapPlacement.InWindow
+
+  /** As eyes4s marks a trial the study fails: under `FailTrial`, a trial with
+    * any fixation outside the window fails, and its fixations in the window
+    * are `TrialFailed` with the tally of the trial's fixations.
+    */
+  private[fixture] def trialPlacements(
+      placed: Vector[(MapPlacement, Double)]
+  ): Either[String, Vector[MapPlacement]] =
+    val fails = placed.exists(_._1 == MapPlacement.OutsideWindow(OffWindowPolicy.FailTrial))
+    if !fails then Right(placed.map(_._1))
+    else
+      def micros(ms: Double)                   = Span.micros(math.round(ms * 1000.0))
+      def duration(p: MapPlacement => Boolean) =
+        placed.filter(f => p(f._1)).map(f => micros(f._2)).foldLeft(Span.zero)(_ + _)
+      WindowTally
+        .of(
+          placed.count(_._1 == MapPlacement.OutsideScreen),
+          placed.count(_._1.isInstanceOf[MapPlacement.OutsideWindow]),
+          placed.size,
+          duration(_ == MapPlacement.OutsideScreen),
+          duration(_.isInstanceOf[MapPlacement.OutsideWindow]),
+          duration(_ => true)
+        )
+        .bimap(
+          _.message,
+          tally =>
+            placed.map(_._1).map {
+              case MapPlacement.InWindow => MapPlacement.TrialFailed(tally)
+              case other                 => other
+            }
+        )
 
   /** The trial's fixations in the fixture; an inventory trial without an
     * admitted scanpath has none to serve.
@@ -171,11 +202,27 @@ object FakeTrialViews:
       dataset: DatasetRevision,
       trial: TrialKey
   ): Either[BackendError, TrialFixations] =
+    study(moment, revision).flatMap((recipe, geometry) =>
+      under(recipe, geometry, revision, dataset, trial)
+    )
+
+  /** `trial`'s admitted fixations under a stated study: `recipe` (its window
+    * and off-window policy) on `geometry`.
+    */
+  private[fixture] def under(
+      recipe: Recipe,
+      geometry: Geometry,
+      revision: AnalysisRevision,
+      dataset: DatasetRevision,
+      trial: TrialKey
+  ): Either[BackendError, TrialFixations] =
     for
-      (recipe, geometry) <- study(moment, revision)
-      (screen, window)   <- frames(trial, recipe, geometry)
-      records            <- golden(trial)
-      fixations          <- records.zipWithIndex.traverse { (g, i) =>
+      (screen, window) <- frames(trial, recipe, geometry)
+      records          <- golden(trial)
+      placements       <- trialPlacements(
+        records.map(g => placement(screen, window, policy(recipe), g.x, g.y) -> g.durationMs)
+      ).leftMap(e => refused(TrialViewError.Study(trial, "window tally", e)))
+      fixations <- records.zipWithIndex.traverse { (g, i) =>
         FixationIndex
           .of(i + 1)
           .leftMap(e => refused(TrialViewError.Study(trial, "fixation position", e.message)))
@@ -188,7 +235,7 @@ object FakeTrialViews:
                 g.y,
                 g.onsetMs,
                 g.durationMs,
-                placement(screen, window, policy(recipe), g.x, g.y)
+                placements(i)
               )
               .leftMap(refused)
           )
@@ -215,7 +262,7 @@ object FakeTrialViews:
           f.ref.index.value
       }
       _ <- Either.cond(failing.isEmpty, (), refused(TrialViewError.TrialFails(trial, failing)))
-      inMap = view.fixations.filter(_.placement == MapPlacement.InMap)
+      inMap = view.fixations.filter(_.placement == MapPlacement.InWindow)
       _ <- Either.cond(inMap.nonEmpty, (), study("preview")("no fixation lies in the map"))
       (screen, window) <- frames(trial, recipe, geometry)
       perDegree = recipe.angularScale.getOrElse(geometry.pixelsPerDegree).value

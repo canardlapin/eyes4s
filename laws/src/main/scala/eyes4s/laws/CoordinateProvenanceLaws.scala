@@ -93,14 +93,23 @@ object CoordinateProvenanceLaws extends Laws:
           )
           val window  = get(windows(trial.key))
           val initial = get(initials(trial.key))
+          // The study fails a trial when nothing would be mapped, or when the
+          // plan fails trials with any fixation outside the window.
+          val failTrial = c.plan.geometry match
+            case StudyGeometry.Windowed(_, _, OffWindowPolicy.FailTrial) => true
+            case _                                                       => false
+          val fails = window.allOutside || (failTrial && window.outsideWindow > 0)
           placements.count(_ == MapPlacement.DroppedInitial) == initial.dropped &&
           placements.count(_ == MapPlacement.OutsideScreen) == window.outsideScreen &&
           placements.count {
             case MapPlacement.OutsideWindow(_) => true
             case _                             => false
           } == window.outsideWindow &&
-          placements.count(_ == MapPlacement.InMap) == window.inside &&
-          placements.take(initial.dropped).forall(_ == MapPlacement.DroppedInitial)
+          placements.count(_ == MapPlacement.InWindow) == (if fails then 0
+                                                           else window.inside) &&
+          placements.count(_ == MapPlacement.TrialFailed(window)) ==
+            (if fails then window.inside else 0) &&
+            placements.take(initial.dropped).forall(_ == MapPlacement.DroppedInitial)
         }) :| "a placement count differs from the plan's tally"
       },
       "the window position is the window's entry of the admitted position" -> forAll(cases) {
@@ -115,7 +124,10 @@ object CoordinateProvenanceLaws extends Laws:
                   case HalfOpenPlacement.Inside(local) => local
                   case HalfOpenPlacement.Outside(_)    => get(w.enter(centre).toRight("enter"))
                 trail.window == Some(FramedPosition(w.frame.id, expected)) &&
-                (trail.placement == MapPlacement.InMap) ==
+                (trail.placement match
+                  case MapPlacement.InWindow | MapPlacement.TrialFailed(_) => true
+                  case _                                                   => false
+                ) ==
                   (i >= get(c.plan.initialFixationTallies(c.input).toMap.apply(key)).dropped &&
                     w.locate(centre).isInside)
               case StudyGeometry.WholeFrame(_) => trail.window.isEmpty
@@ -179,6 +191,21 @@ object CoordinateProvenanceLaws extends Laws:
         Prop(records == c.ledger.records.map(_.record)) :| s"paged $records" &&
         Prop(all.flatMap(_.entries.map(_.entry)) == c.ledger.records)
       },
+      "a page asked from inside a gap starts at the next listed record" -> forAll(cases) { c =>
+        val listing  = c.provenance.records
+        val size     = get(PageSize.of(2))
+        val listed   = c.ledger.records.map(_.record)
+        val unlisted = (2 to listed.last + 1).filterNot(listed.contains)
+        Prop(unlisted.forall { number =>
+          val from = get(get(CsvRecord.of(number)).dataRecord)
+          listed.find(_ > number) match
+            case Some(next) =>
+              get(listing.page(from, size)).entries.headOption.map(_.record.csv.value) ==
+                Some(next)
+            case None =>
+              listing.page(from, size) == Left(ProvenanceError.PageStart(from, listed.size))
+        }) :| s"unlisted $unlisted of $listed"
+      },
       "a page asked from a listed record starts there" -> forAll(cases) { c =>
         val listing = c.provenance.records
         val size    = get(PageSize.of(3))
@@ -230,12 +257,13 @@ object CoordinateProvenanceLaws extends Laws:
   /** Plans, inputs and ledgers as the laws' documentation describes. */
   val cases: Gen[Case] =
     for
-      window   <- WindowLaws.genWindow
-      windowed <- Gen.oneOf(true, false)
-      screen = window.parent
-      b      = screen.bounds
-      w      = window.region
-      point  =
+      window    <- WindowLaws.genWindow
+      windowed  <- Gen.oneOf(true, false)
+      failTrial <- Gen.oneOf(true, false)
+      screen     = window.parent
+      b          = screen.bounds
+      w          = window.region
+      straddling =
         for
           x <- Gen.oneOf(
             coordinate(w.xMin, w.xMax, b.xMin - 50, b.xMax + 50),
@@ -246,7 +274,30 @@ object CoordinateProvenanceLaws extends Laws:
             coordinate(b.yMin, b.yMax, b.yMin - 50, b.yMax + 50)
           )
         yield Pt[Px](x, y)
-      keys = Vector(
+      inside = Gen
+        .zip(
+          Gen.choose(w.xMin, java.lang.Math.nextDown(w.xMax)),
+          Gen.choose(w.yMin, java.lang.Math.nextDown(w.yMax))
+        )
+        .map((x, y) => Pt[Px](x, y))
+      // On the screen but left or right of the window, when there is room.
+      beside = Vector(
+        Option.when(w.xMin > b.xMin)(Gen.choose(b.xMin, java.lang.Math.nextDown(w.xMin))),
+        Option.when(w.xMax < b.xMax)(Gen.choose(w.xMax, java.lang.Math.nextDown(b.xMax)))
+      ).flatten
+      outsideWindow =
+        if beside.isEmpty then straddling
+        else
+          Gen
+            .zip(
+              Gen.oneOf(beside).flatMap(identity),
+              Gen.choose(b.yMin, java.lang.Math.nextDown(b.yMax))
+            )
+            .map((x, y) => Pt[Px](x, y))
+      // Trials mix fixations in, beside and around the window, so a trial
+      // with exactly one fixation outside it is common.
+      point = Gen.frequency(3 -> inside, 2 -> outsideWindow, 3 -> straddling)
+      keys  = Vector(
         StudyKey("p1", "a", "recall"),
         StudyKey("p1", "a", "encode"),
         StudyKey("p2", "b", "recall")
@@ -256,6 +307,7 @@ object CoordinateProvenanceLaws extends Laws:
       drop     <- Gen.oneOf(true, false)
       rejected <- Gen.listOfN(keys.size + 1, Gen.choose(0, 2))
       rule     <- Gen.option(Gen.oneOf(Correction.FlipX, Correction.FlipY))
+      gaps     <- Gen.listOfN(40, Gen.frequency(4 -> Gen.const(0), 1 -> Gen.choose(1, 3)))
     yield
       val trials   = keys.zip(points).map((k, ps) => Trial(k, (), path(k, screen, ps.toVector)))
       val input    = StudyInput(Trials(trials))
@@ -263,7 +315,11 @@ object CoordinateProvenanceLaws extends Laws:
         if windowed then
           get(
             StudyGeometry
-              .windowed(window, get(Grid.over(window.frame, 4, 3)), OffWindowPolicy.Exclude)
+              .windowed(
+                window,
+                get(Grid.over(window.frame, 4, 3)),
+                if failTrial then OffWindowPolicy.FailTrial else OffWindowPolicy.Exclude
+              )
           )
         else StudyGeometry.WholeFrame(get(Grid.over(screen, 4, 3)))
       val plan: Plan = get(
@@ -284,15 +340,17 @@ object CoordinateProvenanceLaws extends Laws:
             else InitialFixationPolicy.keepAll[Px]
         )
       )
-      // Records in trial order, a run of rejected records before each trial.
+      // Records in trial order, a run of rejected records before each trial;
+      // record numbers sometimes skip, as a hand-built ledger may.
       val raw     = Vector("x")
       val grouped = trials.zipWithIndex.flatMap { (t, i) =>
         Vector.fill(rejected(i))(Left(()): Either[Unit, (StudyKey, Int)]) ++
           (0 until t.value.n).map(o => Right(t.key -> o))
       } ++ Vector.fill(rejected.last)(Left(()): Either[Unit, (StudyKey, Int)])
-      val records = grouped.zipWithIndex.map { (entry, i) =>
+      val numbers = grouped.indices.map(i => i + 2 + gaps.take(i + 1).sum)
+      val records = grouped.zip(numbers).map { (entry, number) =>
         SourceRecord[StudyKey](
-          i + 2,
+          number,
           entry.fold(
             _ => Disposition.Rejected(raw, None, AdmissionReason.Width(4, 1)),
             (k, o) => Disposition.Admitted(k, o)

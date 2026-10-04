@@ -107,7 +107,7 @@ class CoordinateProvenanceSuite extends munit.FunSuite:
     assertEquals(focus.trail.correction, None)
     assertEquals(focus.trail.admitted, FramedPosition(FrameId("screen"), Pt[Px](1148, 456)))
     assertEquals(focus.trail.window, Some(FramedPosition(FrameId("image"), Pt[Px](700, 300))))
-    assertEquals(focus.trail.placement, MapPlacement.InMap)
+    assertEquals(focus.trail.placement, MapPlacement.InWindow)
     val degrees = get(focus.trail.angular.toRight("no degrees"))
     assertEqualsDouble(degrees.position.x, (700.0 - 512.0) / 35.0, 1e-12)
     assertEqualsDouble(degrees.position.y, (384.0 - 300.0) / 35.0, 1e-12)
@@ -135,13 +135,38 @@ class CoordinateProvenanceSuite extends munit.FunSuite:
         MapPlacement.DroppedInitial,
         MapPlacement.OutsideScreen,
         MapPlacement.OutsideWindow(OffWindowPolicy.Exclude),
-        MapPlacement.InMap
+        MapPlacement.InWindow
       )
     )
     // Positions outside the image still have image coordinates and degrees.
     assertEquals(trail(2).window, Some(FramedPosition(FrameId("image"), Pt[Px](-348, -56))))
     assertEquals(trail(1).window, Some(FramedPosition(FrameId("image"), Pt[Px](1552, 344))))
     assert(trail(1).angular.exists(_.position.x > 0))
+  }
+
+  test("under FailTrial, a trial with a fixation outside the window maps none of its own") {
+    val failing = get(
+      StudyGeometry.windowed(
+        window,
+        get(Grid.over(window.frame, 64, 48)),
+        OffWindowPolicy.FailTrial
+      )
+    )
+    val strict = plan(failing)
+    val tally  = get(get(strict.windowTallies(input).toMap.get(retrieval).toRight("no tally")))
+    val trails = get(CoordinateProvenance.of(strict, input, None))
+    val placements =
+      (0 to 3).map(i => get(trails.fixation(retrieval, at(i))).trail.placement).toVector
+    assertEquals(
+      placements,
+      Vector(
+        MapPlacement.DroppedInitial,
+        MapPlacement.OutsideScreen,
+        MapPlacement.OutsideWindow(OffWindowPolicy.FailTrial),
+        MapPlacement.TrialFailed(tally)
+      )
+    )
+    assertEquals((tally.outsideWindow, tally.inside), (1, 1))
   }
 
   test("a whole-frame plan measures degrees from the screen's centre and has no window") {
@@ -154,8 +179,8 @@ class CoordinateProvenanceSuite extends munit.FunSuite:
     )
     val focus = get(whole.fixation(retrieval, at(3))).trail
     assertEquals(focus.window, None)
-    assertEquals(focus.placement, MapPlacement.InMap)
-    assertEquals(get(whole.fixation(retrieval, at(2))).trail.placement, MapPlacement.InMap)
+    assertEquals(focus.placement, MapPlacement.InWindow)
+    assertEquals(get(whole.fixation(retrieval, at(2))).trail.placement, MapPlacement.InWindow)
     val reference = get(whole.angular.toRight("no degrees"))
     assertEquals((reference.measured, reference.origin), (FrameId("screen"), Pt[Px](960, 540)))
     assertEqualsDouble(get(focus.angular.toRight("none")).position.x, 188.0 / 35.0, 1e-12)

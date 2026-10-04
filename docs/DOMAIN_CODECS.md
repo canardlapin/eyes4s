@@ -130,6 +130,13 @@ schema identity of their own: the application document that holds them is versio
 document `codec/src/test/resources/values/record-identity-v1.json` is checked byte for byte on
 the JVM and through a portable mirror on Scala.js.
 
+`ReportRefCodecs` writes a report reference in the same way, as one member naming its level:
+`{"cell": {"scale": 0, "group": [{"term": ..., "level": ...}], "role": "difference",
+"component": "value"}}` or `{"participant": {"cell": {...}, "name": "P17"}}`. Decoding rebuilds it
+through `ReportRef.cell` and `ReportRef.participant`, and refuses a missing or extra member, an
+unknown role, and a scale not spelled as an integer. Its pinned document is
+`codec/src/test/resources/values/report-ref-v1.json`.
+
 ## Schema compatibility
 
 Every stored document is an envelope, `{"schema": {"name", "version"}, "value"}`. The version is
