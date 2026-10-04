@@ -34,7 +34,7 @@ import eyes4s.studio.core.selection.{
   ViewId
 }
 
-import scala.concurrent.ExecutionContext
+import scala.concurrent.{ExecutionContext, Future}
 
 /** Explore's source records table headlessly (ticket S6.4): pages are read
   * around the viewport and at most KeptPages are held while scrolling all
@@ -73,11 +73,10 @@ class SourceRecordsSuite extends munit.FunSuite:
       ),
       Some(right(FixationIndex.of(index))),
       trial,
-      index,
-      2160.0,
-      412.0,
-      "1148.0",
-      "456.0",
+      Some(index),
+      Some(2160.0),
+      Some(412.0),
+      Some(FramePosition(1148.0, 456.0)),
       Some(FramePosition(700.0, 300.0)),
       Some(FramePosition(5.4, 2.4)),
       Some(206),
@@ -369,4 +368,104 @@ class SourceRecordsSuite extends munit.FunSuite:
       SourceRecords.rowVM(shifted, 0),
       SourceRowVM.Failed("Page 0 of the source records starts at row 5, not row 0")
     )
+  }
+
+  test(
+    "the window's adapter: protocol 1.7's records in the table's terms, every place mapped"
+  ) {
+    HeadlessSession.open(StoryMoment.T2).flatMap { h =>
+      h.sourceRecords(rev4, 7001, 500)
+        .map { a =>
+          val wirePage = a.fold(e => fail(e.message), identity)
+          val page     = SourceRecords.served(wirePage)
+          assertEquals((page.from, page.total, page.rows.size), (7000, 11520, 500))
+          assertEquals(page.scale.map(_.pixelsPerDegree), Some(wirePage.pixelsPerDegree))
+          val r = page.rows(213)
+          assertEquals(
+            SourceRecords.cellsOf(r),
+            Vector(
+              "7,214",
+              "enc_03",
+              "6",
+              "2,160",
+              "412",
+              "1148.0,456.0",
+              "700,300",
+              "+5.4°,+2.4°",
+              "206",
+              "inside"
+            )
+          )
+          assertEquals(r.raw, "P17,Encoding,enc_03,1,6,1148.0,456.0,2160,412,206")
+        }
+        .transformWith(x => h.close.transform(_ => x))
+    }
+  }
+
+  test("every record's served placement becomes its place, over the whole file") {
+    import eyes4s.plan.MapPlacement
+    def expected(p: Option[MapPlacement]): RecordPlace = p match
+      case None                                => RecordPlace.NotAdmitted
+      case Some(MapPlacement.InMap)            => RecordPlace.Inside
+      case Some(MapPlacement.DroppedInitial)   => RecordPlace.DroppedInitial
+      case Some(MapPlacement.OutsideWindow(_)) => RecordPlace.Outside
+      case Some(MapPlacement.OutsideScreen)    => RecordPlace.OffScreen
+    HeadlessSession.open(StoryMoment.T2).flatMap { h =>
+      val pages = (1 to 11520 by 500).toVector.map(from => h.sourceRecords(rev4, from, 500))
+      Future
+        .sequence(pages)
+        .map { all =>
+          val rows = all.flatMap { a =>
+            val w = a.fold(e => fail(e.message), identity)
+            w.rows.zip(SourceRecords.served(w).rows)
+          }
+          assertEquals(rows.size, 11520)
+          rows.foreach((w, a) => assertEquals(a.place, expected(w.placement), w.line))
+          // The fixture places none dropped or off screen: record 7,214
+          // served under each placement covers those.
+          val w   = all(14).fold(e => fail(e.message), identity)
+          val one = w.rows.find(_.record == 7214).get
+          Vector(
+            MapPlacement.DroppedInitial,
+            MapPlacement.OutsideScreen,
+            MapPlacement.InMap,
+            MapPlacement.OutsideWindow(eyes4s.plan.OffWindowPolicy.Exclude),
+            MapPlacement.OutsideWindow(eyes4s.plan.OffWindowPolicy.FailTrial)
+          ).foreach { p =>
+            val row = right(
+              eyes4s.studio.core.backend.SourceRecordRow.of(
+                one.ref,
+                one.ordinal,
+                one.onsetMs,
+                one.durationMs,
+                one.samples,
+                one.screen,
+                one.image,
+                one.degrees,
+                Some(p),
+                one.line
+              )
+            )
+            val page = right(
+              eyes4s.studio.core.backend.SourceRecordPage
+                .of(
+                  w.revision,
+                  w.dataset,
+                  w.source,
+                  35.0,
+                  w.scaleSource,
+                  11520,
+                  7214,
+                  1,
+                  Vector(row)
+                )
+            )
+            assertEquals(
+              SourceRecords.served(page).rows.map(_.place),
+              Vector(expected(Some(p)))
+            )
+          }
+        }
+        .transformWith(x => h.close.transform(_ => x))
+    }
   }

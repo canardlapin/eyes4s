@@ -34,6 +34,19 @@ import javafx.scene.layout.{HBox, Priority, Region, VBox}
 /** The window's source records sources. */
 object RecordSources:
 
+  /** The window's backend (protocol 1.7 `sourceRecords`): rows `from` to
+    * `from + size - 1` (from 0) are records `from + 1` onwards, at most a
+    * wire page's worth, in the table's terms ([[SourceRecords.served]]).
+    */
+  def of(session: eyes4s.studio.desktop.runtime.StudioSession): SourceRecordsSource =
+    (revision, from, size, done) =>
+      val count = math.min(size, eyes4s.studio.core.backend.SourceRecordPage.Limit)
+      session.run(session.backend.sourceRecords(revision, from + 1, count)) {
+        case Left(e)          => done(Left(Option(e.getMessage).getOrElse(e.toString)))
+        case Right(Left(err)) => done(Right(BackendAnswer.Refused(err.message)))
+        case Right(Right(p))  => done(Right(BackendAnswer.Answered(SourceRecords.served(p))))
+      }
+
   /** A window with no source records: every page is refused, saying so. */
   val notServed: SourceRecordsSource = (_, _, _, done) =>
     done(Right(BackendAnswer.Refused(RecordText(RecordTextId.NotServed))))
@@ -260,6 +273,8 @@ final class SourceRecordsHost(
         def get(i: Int): Integer = Integer.valueOf(i)
         def size: Int            = total
       list.setItems(FXCollections.observableList(indices))
+      // A cursor set before the rows existed is revealed now they do.
+      revealPending()
     val line = SourceRecords.rawLine(state)
     raw.setText(line.getOrElse(""))
     raw.setVisible(line.isDefined)
@@ -269,8 +284,10 @@ final class SourceRecordsHost(
     list.refresh()
     reportViewport()
 
-  // The cursor row still to be brought into view: kept until the flow has
-  // laid out and shows it, since a scroll before layout does not hold.
+  // The cursor row still to be brought into view: kept until the list has
+  // the row and the flow has laid out cells, since a scroll before then does
+  // not hold (the cursor can arrive before the first page says how many rows
+  // there are).
   private var reveal: Option[Int] = None
 
   private def scrollTo(i: Int): Unit =
@@ -279,15 +296,13 @@ final class SourceRecordsHost(
 
   private def revealPending(): Unit =
     watchFlow()
-    reveal.foreach { i =>
-      flow match
-        case Some(f) if f.getHeight > 0 =>
+    reveal.filter(_ < list.getItems.size).foreach { i =>
+      (flow.filter(_.getHeight > 0), shownRange) match
+        case (Some(_), Some((first, last))) =>
           // A row above the view goes to the top, one below it to the bottom
           // (scrolling the row before it to the top would leave it cut off).
-          shownRange.foreach { (first, last) =>
-            if i < first then list.scrollTo(i)
-            else if i > last then list.scrollTo(math.max(0, i - (last - first) + 1))
-          }
+          if i < first then list.scrollTo(i)
+          else if i > last then list.scrollTo(math.max(0, i - (last - first) + 1))
           reveal = None
         case _ => list.scrollTo(i)
     }

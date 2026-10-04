@@ -22,10 +22,10 @@ import eyes4s.studio.app.nav.{Location, Place}
 import eyes4s.studio.app.{AppModel, Intent, StoryModels}
 import eyes4s.studio.core.backend.{AdmittedFixation, AnalysisRevision, RunId, TrialFixations}
 import eyes4s.studio.core.command.Command
-import eyes4s.studio.core.document.{Perspective, SourceRole}
+import eyes4s.studio.core.document.Perspective
 import eyes4s.studio.core.fixture.{GoldenAssets, MockStudy, StoryMoment, StoryMoments}
 import eyes4s.studio.core.headless.HeadlessSession
-import eyes4s.studio.core.selection.{FixationIndex, RecordNumber, ScaleIndex, StudioRef}
+import eyes4s.studio.core.selection.{FixationIndex, ScaleIndex, StudioRef}
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -47,32 +47,12 @@ class FixationInspectorSuite extends munit.FunSuite:
   private val six                       = right(FixationIndex.of(6))
   private val sixth: StudioRef.Fixation = StudioRef.Fixation(enc03, six)
 
-  // The record a source would serve for record 7,214: fixations.csv's line,
-  // its image-frame position and its degrees at the board's 35 px/°.
-  private val record7214 = SourceRecordRow(
-    right(RecordNumber.of(7214)),
-    StudioRef.SourceRecord(
-      enc03,
-      Some(six),
-      SourceRole.Fixations,
-      right(RecordNumber.of(7214))
-    ),
-    Some(six),
-    enc03,
-    6,
-    2160.0,
-    412.0,
-    "1148.0",
-    "456.0",
-    Some(FramePosition(700.0, 300.0)),
-    Some(FramePosition((700.0 - 512.0) / 35.0, (384.0 - 300.0) / 35.0)),
-    Some(206),
-    RecordPlace.Inside,
-    "P17,Encoding,enc_03,1,6,1148.0,456.0,2160,412,206"
-  )
+  // fixations.csv's record 7,214, verbatim.
+  private val line7214 = "P17,Encoding,enc_03,1,6,1148.0,456.0,2160,412,206"
 
   /** The inspector at t2, every read answered: fixations, used-by and
-    * displays from the fake backend, the record from `record7214`.
+    * displays and the record (protocol 1.7, mapped as the window maps it)
+    * from the fake backend.
     */
   private def settled: Future[FixationInspector] =
     val m        = StoryModels.t2Explore
@@ -98,16 +78,18 @@ class FixationInspectorSuite extends munit.FunSuite:
                 }
               case InspectorEffect.ReadRecord(r, record, ask) =>
                 assertEquals(record, 7214)
-                val page = SourceRecordPage(record - 1, 11520, Vector(record7214))
-                Future.successful(
-                  FixationInspector
-                    .update(
-                      st,
-                      InspectorIntent
-                        .RecordRead(r, record, ask, Right(BackendAnswer.Answered(page)))
+                // The window's adapter: protocol 1.7's page, mapped.
+                h.sourceRecords(r, record, 1).map { a =>
+                  val answer = Right(
+                    a.fold(
+                      err => BackendAnswer.Refused(err.message),
+                      p => BackendAnswer.Answered(SourceRecords.served(p))
                     )
+                  )
+                  FixationInspector
+                    .update(st, InspectorIntent.RecordRead(r, record, ask, answer))
                     ._1
-                )
+                }
               case InspectorEffect.ReadUsedBy(map, ask) =>
                 FixationInspector.readUsedBy[Future](h.navigator)(map).map { a =>
                   val answer = Right(
@@ -177,8 +159,12 @@ class FixationInspectorSuite extends munit.FunSuite:
           ("Fixations", "13 · 1 outside")
         )
       )
-      // The board's FrameNote names the declared px/°.
-      assert(vm.frameNote.exists(_.contains("px/°")), vm.frameNote)
+      // The scale the served degrees are at, as the page states it.
+      assertEquals(
+        vm.frameNote,
+        Some("Degrees from image centre, x right, y up; 35 px/°, the recipe's scale.")
+      )
+      assertEquals(FixationInspector.vm(s).raw, None)
     }
   }
 
@@ -313,7 +299,7 @@ class FixationInspectorSuite extends munit.FunSuite:
     settled.map { s =>
       assertEquals(FixationInspector.vm(s).raw, None)
       val raw = FixationInspector.update(s, InspectorIntent.ShowRaw(true))._1
-      assertEquals(FixationInspector.vm(raw).raw, Some(record7214.raw))
+      assertEquals(FixationInspector.vm(raw).raw, Some(line7214))
       val late = FixationInspector
         .update(
           s,

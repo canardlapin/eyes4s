@@ -26,6 +26,7 @@ import eyes4s.studio.core.backend.{
   AdmittedFixation,
   AnalysisRevision,
   RunId,
+  ScaleSource,
   TrialFixations,
   TrialKey
 }
@@ -341,15 +342,31 @@ object FixationInspector:
             t(ImagePx),
             r.flatMap(_.image).fold(none)(pair(_, Format.decimal(_, 0)))
           ),
-          InspectorLine(t(ScreenRaw), r.fold(none)(x => t(Pair, x.rawX, x.rawY))),
+          InspectorLine(
+            t(ScreenRaw),
+            r.flatMap(_.screen).fold(none)(pair(_, Format.decimal(_, 1)))
+          ),
           InspectorLine(
             t(Degrees),
             r.flatMap(_.degrees).fold(none)(pair(_, v => Format.signed(v, 1) + "°"))
           ),
           InspectorLine(t(Window), place.getOrElse(none))
         )
-        val frameNote =
-          s.dataset.map(d => t(FrameNote, Format.decimal(d.geometry.pixelsPerDegree.value, 0)))
+        // The scale the served degrees are at, as the page states it.
+        val frameNote = r.flatMap(_ =>
+          s.record.toOption
+            .collect { case BackendAnswer.Answered(p) => p.scale }
+            .flatten
+            .map(x =>
+              t(
+                FrameNote,
+                Format.decimal(x.pixelsPerDegree, 0),
+                x.source match
+                  case ScaleSource.Recipe  => t(ScaleOfRecipe)
+                  case ScaleSource.Dataset => t(ScaleOfDataset)
+              )
+            )
+        )
         val sourceFile = s.dataset.flatMap(_.sources.fixations)
         val source     = Vector(
           InspectorLine(t(File), sourceFile.fold(none)(_.path.value)),

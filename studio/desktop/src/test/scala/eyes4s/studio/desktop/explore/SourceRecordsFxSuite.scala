@@ -50,7 +50,7 @@ class SourceRecordsFxSuite extends ShellFxSuite:
 
   fxStage.test("the selected record 7,214 is under the cursor with the backend's values") {
     fx =>
-      val w = boot(fx, StoryModels.t2Explore, StoryMoment.T2, records = GoldenRecords.source)
+      val w = boot(fx, StoryModels.t2Explore, StoryMoment.T2)
       ready(fx, w)
       val s = runOnFx(w.sourceRecords.current)
       assertEquals(s.total, Some(11520))
@@ -82,7 +82,7 @@ class SourceRecordsFxSuite extends ShellFxSuite:
 
   fxStage.test("scrolling all 11,520 records makes at most 60 row cells; no frame over 32 ms") {
     fx =>
-      val w = boot(fx, StoryModels.t2Explore, StoryMoment.T2, records = GoldenRecords.source)
+      val w = boot(fx, StoryModels.t2Explore, StoryMoment.T2)
       ready(fx, w)
       val list  = runOnFx(w.sourceRecords.rows)
       val gaps  = mutable.ArrayBuffer.empty[Long]
@@ -132,7 +132,7 @@ class SourceRecordsFxSuite extends ShellFxSuite:
   fxStage.test(
     "'Show raw record' shows the verbatim CSV line; Down and Enter select the next fixation"
   ) { fx =>
-    val w = boot(fx, StoryModels.t2Explore, StoryMoment.T2, records = GoldenRecords.source)
+    val w = boot(fx, StoryModels.t2Explore, StoryMoment.T2)
     ready(fx, w)
     assertEquals(runOnFx(w.sourceRecords.rawText), None)
     runOnFx(w.sourceRecords.toggleRaw())
@@ -164,7 +164,7 @@ class SourceRecordsFxSuite extends ShellFxSuite:
   fxStage.test(
     "Enter on 'Show raw record' is the toggle's; End and Home reveal the edge rows"
   ) { fx =>
-    val w = boot(fx, StoryModels.t2Explore, StoryMoment.T2, records = GoldenRecords.source)
+    val w = boot(fx, StoryModels.t2Explore, StoryMoment.T2)
     ready(fx, w)
     val toggle = runOnFx(
       w.sourceRecords.node
@@ -203,7 +203,8 @@ class SourceRecordsFxSuite extends ShellFxSuite:
   }
 
   fxStage.test("with no source served, the table says so") { fx =>
-    val w = boot(fx, StoryModels.t2Explore, StoryMoment.T2)
+    val w =
+      boot(fx, StoryModels.t2Explore, StoryMoment.T2, records = Some(RecordSources.notServed))
     eventually(fx, "the status is shown") {
       SourceRecords.status(w.sourceRecords.current).nonEmpty &&
       !SourceRecords.status(w.sourceRecords.current).contains("Reading the source records…")

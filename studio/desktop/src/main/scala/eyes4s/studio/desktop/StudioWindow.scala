@@ -217,7 +217,8 @@ object StudioWindow:
       clock: () => Option[ClockTime] = DesktopEffects.wallClock,
       nativeMenu: Boolean = AppShell.systemMenuBar,
       presets: FilePresetStore = FilePresetStore.userDefault,
-      records: eyes4s.studio.app.explore.SourceRecordsSource = RecordSources.notServed
+      // The window's backend serves the source records unless one is given.
+      records: Option[eyes4s.studio.app.explore.SourceRecordsSource] = None
   )(using IORuntime): Either[WindowError, StudioWindow] =
     for
       sheets <- StudioStyles.stylesheets(theme).left.map(WindowError.Styles(_))
@@ -252,7 +253,7 @@ object StudioWindow:
       clock: () => Option[ClockTime],
       nativeMenu: Boolean,
       presets: FilePresetStore,
-      records: eyes4s.studio.app.explore.SourceRecordsSource
+      records: Option[eyes4s.studio.app.explore.SourceRecordsSource]
   )(using IORuntime): Either[WindowError, StudioWindow] =
     // Late-bound: the runtime, the host and the effects refer to each other.
     var runtime: Option[StudioRuntime] = None
@@ -372,8 +373,9 @@ object StudioWindow:
     r.listen(designListener)
     design.sync(r.model)
     // Explore's source records: the shown revision's fixation table (S6.4).
+    val served        = records.getOrElse(RecordSources.of(session))
     val sourceRecords =
-      SourceRecordsHost(() => r.model, dispatch, records, TrialViewInputs.of(session, displays))
+      SourceRecordsHost(() => r.model, dispatch, served, TrialViewInputs.of(session, displays))
     host.host(StudioLayouts.sourceRecords, sourceRecords.node)
     val recordsListener: AppModel => Unit = sourceRecords.sync
     r.listen(recordsListener)
@@ -382,7 +384,7 @@ object StudioWindow:
     val inspector = FixationInspectorHost(
       dispatch,
       TrialViewInputs.of(session, displays),
-      records,
+      served,
       UsedByInputs.of(session)
     )
     host.host(StudioLayouts.exploreInspector, inspector.node)

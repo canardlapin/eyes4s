@@ -28,7 +28,7 @@ enum RecordTextId derives CanEqual:
   case Pair, None
 
   /** Where the record falls. */
-  case Inside, Outside, OffScreen, NotAdmitted
+  case Inside, Outside, OffScreen, DroppedInitial, NotAdmitted
 
   /** A row's accessible name, the table's (Explore.dc.html's grid label),
     * and the raw record toggle.
@@ -43,24 +43,25 @@ object RecordText:
   def english(id: RecordTextId): String =
     import RecordTextId.*
     id match
-      case Record      => "Record"
-      case Trial       => "Trial"
-      case Ordinal     => "Ordinal"
-      case Onset       => "Onset ms"
-      case Duration    => "Dur ms"
-      case Screen      => "Screen x,y"
-      case Image       => "Image x,y"
-      case Degrees     => "Degrees x,y"
-      case Samples     => "Samples"
-      case Window      => "Window"
-      case Pair        => "{0},{1}"
-      case None        => "—"
-      case Inside      => "inside"
-      case Outside     => "outside"
-      case OffScreen   => "off screen"
-      case NotAdmitted => "not admitted"
-      case RowName     => "Record {0}, {1}, fixation {2}"
-      case TableName   =>
+      case Record         => "Record"
+      case Trial          => "Trial"
+      case Ordinal        => "Ordinal"
+      case Onset          => "Onset ms"
+      case Duration       => "Dur ms"
+      case Screen         => "Screen x,y"
+      case Image          => "Image x,y"
+      case Degrees        => "Degrees x,y"
+      case Samples        => "Samples"
+      case Window         => "Window"
+      case Pair           => "{0},{1}"
+      case None           => "—"
+      case Inside         => "inside"
+      case Outside        => "outside"
+      case OffScreen      => "off screen"
+      case NotAdmitted    => "not admitted"
+      case DroppedInitial => "dropped (initial)"
+      case RowName        => "Record {0}, {1}, fixation {2}"
+      case TableName      =>
         "Source records from fixations.csv. One focus stop; arrow keys move the row cursor."
       case ShowRaw    => "Show raw record"
       case NoRun      => "No run is shown; source records follow the shown run's dataset"

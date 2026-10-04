@@ -90,9 +90,9 @@ abstract class ShellFxSuite extends StudioFxSuite:
       // The golden fixture's stimuli.
       stimuli: StimulusSource =
         StimulusSource.directory(eyes4s.studio.desktop.trial.GoldenTrials.stimuli),
-      // Explore's source records: none unless a suite brings its own.
-      records: eyes4s.studio.app.explore.SourceRecordsSource =
-        eyes4s.studio.desktop.explore.RecordSources.notServed
+      // Explore's source records: the window's backend's unless a suite
+      // brings its own.
+      records: Option[eyes4s.studio.app.explore.SourceRecordsSource] = None
   ): StudioWindow =
     val w = runOnFx(
       StudioWindow

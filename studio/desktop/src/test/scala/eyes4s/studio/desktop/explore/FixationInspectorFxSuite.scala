@@ -46,7 +46,7 @@ class FixationInspectorFxSuite extends ShellFxSuite:
   fxStage.test(
     "the fixture fixation: record 7,214, 2,160 ms, 412 ms, (1148, 456), (700, 300), (+5.4°, +2.4°)"
   ) { fx =>
-    val w = boot(fx, StoryModels.t2Explore, StoryMoment.T2, records = GoldenRecords.source)
+    val w = boot(fx, StoryModels.t2Explore, StoryMoment.T2)
     ready(fx, w)
     assertEquals(runOnFx(w.inspector.titleText), "Fixation 6 of 13")
     val lines = runOnFx(w.inspector.lines).toMap
@@ -72,7 +72,7 @@ class FixationInspectorFxSuite extends ShellFxSuite:
   fxStage.test(
     "'Used by' links: ret_07 (matched) opens its pair in Compare; 18 pairs as a control"
   ) { fx =>
-    val w = boot(fx, StoryModels.t2Explore, StoryMoment.T2, records = GoldenRecords.source)
+    val w = boot(fx, StoryModels.t2Explore, StoryMoment.T2)
     ready(fx, w)
     assertEquals(
       runOnFx(w.inspector.linkLabels),
@@ -89,7 +89,7 @@ class FixationInspectorFxSuite extends ShellFxSuite:
   }
 
   fxStage.test("'Show raw record' shows the fixation's verbatim record") { fx =>
-    val w = boot(fx, StoryModels.t2Explore, StoryMoment.T2, records = GoldenRecords.source)
+    val w = boot(fx, StoryModels.t2Explore, StoryMoment.T2)
     ready(fx, w)
     assertEquals(runOnFx(w.inspector.rawText), None)
     runOnFx(w.inspector.toggleRaw())

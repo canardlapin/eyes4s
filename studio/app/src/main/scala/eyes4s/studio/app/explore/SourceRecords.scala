@@ -20,7 +20,9 @@ import eyes4s.studio.app.geometry.Loading
 import eyes4s.studio.app.plot.ViewSelection
 import eyes4s.studio.app.text.{Format, RecordText, RecordTextId}
 import eyes4s.studio.app.{AppModel, Intent}
-import eyes4s.studio.core.backend.{AnalysisRevision, TrialFixations, TrialKey}
+import eyes4s.plan.MapPlacement
+import eyes4s.studio.core.backend.{AnalysisRevision, ScaleSource, TrialFixations, TrialKey}
+import eyes4s.studio.core.backend as wire
 import eyes4s.studio.core.document.SourceRole
 import eyes4s.studio.core.selection.{
   FixationIndex,
@@ -42,6 +44,9 @@ enum RecordPlace derives CanEqual:
   /** Off the screen. */
   case OffScreen
 
+  /** In the window, dropped by the initial-fixation policy. */
+  case DroppedInitial
+
   /** Not admitted: the record has no admitted fixation to place. */
   case NotAdmitted
 
@@ -49,22 +54,22 @@ enum RecordPlace derives CanEqual:
 final case class FramePosition(x: Double, y: Double) derives CanEqual
 
 /** One record of a fixation table as the backend serves it (ticket S6.4):
-  * its data record (from 1, the header excluded) and ref, its trial and
-  * ordinal, onset and duration, the position fields verbatim, the image-frame
-  * and angular positions when the study has them (degrees from the window's
-  * centre, x right, y up), its sample count, where it falls, and the
-  * record's verbatim text. Nothing here is computed by the studio.
+  * its data record (from 1, the header excluded) and ref, its trial, and the
+  * cells the file states as numbers (`None` where a cell is not one): its
+  * ordinal, onset, duration, screen position and sample count; the
+  * image-frame and angular positions when the study has them (degrees from
+  * the image's centre, x right, y up), where it falls, and the record's
+  * verbatim text. Nothing here is computed by the studio.
   */
 final case class SourceRecordRow(
     record: RecordNumber,
     ref: StudioRef,
     fixation: Option[FixationIndex],
     trial: TrialKey,
-    ordinal: Int,
-    onsetMs: Double,
-    durationMs: Double,
-    rawX: String,
-    rawY: String,
+    ordinal: Option[Int],
+    onsetMs: Option[Double],
+    durationMs: Option[Double],
+    screen: Option[FramePosition],
     image: Option[FramePosition],
     degrees: Option[FramePosition],
     samples: Option[Int],
@@ -75,11 +80,21 @@ final case class SourceRecordRow(
   /** The fixation this record supplied, if it was admitted. */
   def fixationRef: Option[StudioRef] = fixation.map(StudioRef.Fixation(trial, _))
 
-/** A page of a fixation table's records: the first record's row index, the
-  * table's record count, and the rows.
+/** The pixels per degree a page's degrees are at, and where it comes from
+  * (the recipe, or the dataset's geometry).
   */
-final case class SourceRecordPage(from: Int, total: Int, rows: Vector[SourceRecordRow])
-    derives CanEqual
+final case class RecordScale(pixelsPerDegree: Double, source: ScaleSource) derives CanEqual
+
+/** A page of a fixation table's records: the first record's row index, the
+  * table's record count, the rows, and the scale of their degrees when the
+  * source serves one.
+  */
+final case class SourceRecordPage(
+    from: Int,
+    total: Int,
+    rows: Vector[SourceRecordRow],
+    scale: Option[RecordScale] = None
+) derives CanEqual
 
 /** Where the source records table reads its pages (ticket S6.4): a port, so
   * the table does not depend on how a backend serves records. `done` may be
@@ -393,23 +408,60 @@ object SourceRecords:
 
   /** A row's cells, every number as the backend served it. */
   def cellsOf(r: SourceRecordRow): Vector[String] =
+    val none                                              = RecordText(RecordTextId.None)
     def at(p: Option[FramePosition], f: Double => String) =
-      p.fold(RecordText(RecordTextId.None))(q => RecordText(RecordTextId.Pair, f(q.x), f(q.y)))
+      p.fold(none)(q => RecordText(RecordTextId.Pair, f(q.x), f(q.y)))
     Vector(
       Format.count(r.record.value.toLong),
       r.trial.trial,
-      r.ordinal.toString,
-      Format.count(math.round(r.onsetMs)),
-      Format.count(math.round(r.durationMs)),
-      RecordText(RecordTextId.Pair, r.rawX, r.rawY),
+      r.ordinal.fold(none)(_.toString),
+      r.onsetMs.fold(none)(v => Format.count(math.round(v))),
+      r.durationMs.fold(none)(v => Format.count(math.round(v))),
+      at(r.screen, v => Format.decimal(v, 1)),
       at(r.image, v => Format.decimal(v, 0)),
       at(r.degrees, v => Format.signed(v, 1) + "°"),
       r.samples.fold(RecordText(RecordTextId.None))(n => Format.count(n.toLong)),
       RecordText(r.place match
-        case RecordPlace.Inside      => RecordTextId.Inside
-        case RecordPlace.Outside     => RecordTextId.Outside
-        case RecordPlace.OffScreen   => RecordTextId.OffScreen
-        case RecordPlace.NotAdmitted => RecordTextId.NotAdmitted)
+        case RecordPlace.Inside         => RecordTextId.Inside
+        case RecordPlace.Outside        => RecordTextId.Outside
+        case RecordPlace.OffScreen      => RecordTextId.OffScreen
+        case RecordPlace.DroppedInitial => RecordTextId.DroppedInitial
+        case RecordPlace.NotAdmitted    => RecordTextId.NotAdmitted)
+    )
+
+  /** A page as protocol 1.7 serves it (`sourceRecords`), in the table's
+    * terms: its rows from row index `from - 1`, each with its served cells,
+    * positions and placement, and the page's scale. Pure; it only maps.
+    */
+  def served(page: wire.SourceRecordPage): SourceRecordPage =
+    def at(p: wire.PlanePoint) = FramePosition(p.x, p.y)
+    val rows                   = page.rows.map { r =>
+      SourceRecordRow(
+        r.ref.record,
+        r.ref,
+        r.ref.fixation,
+        r.trial,
+        r.ordinal,
+        r.onsetMs,
+        r.durationMs,
+        r.screen.map(at),
+        r.image.map(i => at(i.at)),
+        r.degrees.map(at),
+        r.samples,
+        r.placement.fold(RecordPlace.NotAdmitted) {
+          case MapPlacement.InMap            => RecordPlace.Inside
+          case MapPlacement.DroppedInitial   => RecordPlace.DroppedInitial
+          case MapPlacement.OutsideWindow(_) => RecordPlace.Outside
+          case MapPlacement.OutsideScreen    => RecordPlace.OffScreen
+        },
+        r.line
+      )
+    }
+    SourceRecordPage(
+      page.from - 1,
+      page.total,
+      rows,
+      Some(RecordScale(page.pixelsPerDegree, page.scaleSource))
     )
 
   /** The verbatim record under the cursor, when 'Show raw record' is on. */
