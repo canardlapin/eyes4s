@@ -29,12 +29,13 @@ import io.circe.{Decoder, Encoder, Json}
   * schemas here.
   */
 object StudioSchemaIds:
-  val DocumentName: String = "studio.document"
-  val ScienceName: String  = "studio.science"
-  val JournalName: String  = "studio.journal"
-  val DatasetName: String  = "studio.dataset-content"
-  val ProjectName: String  = "studio.project"
-  val AssetsName: String   = "studio.asset-registry"
+  val DocumentName: String   = "studio.document"
+  val ScienceName: String    = "studio.science"
+  val JournalName: String    = "studio.journal"
+  val DatasetName: String    = "studio.dataset-content"
+  val ProjectName: String    = "studio.project"
+  val AssetsName: String     = "studio.asset-registry"
+  val RunArchiveName: String = "studio.run-archive"
 
   final case class Ids(
       document: DefinitionId,
@@ -42,10 +43,11 @@ object StudioSchemaIds:
       journal: DefinitionId,
       datasetContent: DefinitionId,
       project: DefinitionId,
-      assets: DefinitionId
+      assets: DefinitionId,
+      runArchive: DefinitionId
   ) derives CanEqual:
     def all: Vector[DefinitionId] =
-      Vector(document, science, journal, datasetContent, project, assets)
+      Vector(document, science, journal, datasetContent, project, assets, runArchive)
 
   private def id(name: String, version: Int): Either[DocumentError, DefinitionId] =
     DefinitionId.of(name, version).left.map(_ => DocumentError.BadSchemaId(name, version))
@@ -54,7 +56,8 @@ object StudioSchemaIds:
     * the document's scientific identity; a line of the command journal
     * (S2.2); and the first version of the `.eyes` bundle manifest
     * `project.json` (S2.3), whose later versions its `SchemaLadder` adds;
-    * and a dataset revision's asset registry (S2.10).
+    * a dataset revision's asset registry (S2.10); and a run archive's
+    * index in the run store (S2.6).
     */
   val ids: Either[DocumentError, Ids] =
     for
@@ -64,7 +67,8 @@ object StudioSchemaIds:
       dataset  <- id(DatasetName, 1)
       project  <- id(ProjectName, 1)
       assets   <- id(AssetsName, 1)
-    yield Ids(document, science, journal, dataset, project, assets)
+      archive  <- id(RunArchiveName, 1)
+    yield Ids(document, science, journal, dataset, project, assets, archive)
 
   /** The ids as a codec failure, for building codecs. */
   private[studio] def forCodec: Either[CodecError, Ids] =
