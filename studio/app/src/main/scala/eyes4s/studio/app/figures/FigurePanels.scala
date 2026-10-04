@@ -18,6 +18,7 @@ package eyes4s.studio.app.figures
 
 import eyes4s.studio.app.plot.{
   ColumnFormat,
+  ParticipantLines,
   ColumnId,
   ParticipantColumns,
   ParticipantMeans,
@@ -103,8 +104,12 @@ enum PlotKind derives CanEqual:
   case Participant, Profile
 
 /** Panels D and E: the plot that draws them, its value source and notes. */
-final case class PlotPanelVM(kind: PlotKind, source: PlotSource, notes: Vector[String])
-    derives CanEqual
+final case class PlotPanelVM(
+    kind: PlotKind,
+    source: PlotSource,
+    notes: Vector[String],
+    lines: ParticipantLines = ParticipantLines.Shown
+) derives CanEqual
 
 /** Panels A and B: the trial, what its screen displayed, and the gaze. */
 final case class GazePanelVM(heading: String, displayed: String, gaze: String) derives CanEqual
@@ -228,7 +233,8 @@ object FigurePanels:
   def participantD(
       summary: ResultSummary,
       reporting: ReportingId,
-      scale: ScaleIndex
+      scale: ScaleIndex,
+      lines: ParticipantLines
   ): Either[String, PlotPanelVM] =
     for
       means   <- ParticipantMeans.of(summary, reporting, scale).left.map(_.message)
@@ -239,8 +245,10 @@ object FigurePanels:
       source,
       Vector(
         nEach(summary),
-        s"per participant, ${summary.groupNMinimum}–${summary.groupNMaximum} queries per group"
-      )
+        "bars: grand mean of participant means, equal weight",
+        FigureCaption.participantD(summary, lines)
+      ),
+      lines
     )
 
   /** Panel E: the grand means of D at each declared scale. */

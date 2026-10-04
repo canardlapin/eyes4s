@@ -78,9 +78,11 @@ class FigureComposerFxSuite extends ShellFxSuite:
       )
       assertEquals(marks.count(_.isInstanceOf[StudioRef.GroupCell]), 2)
       val said = texts(panelNode(w, "D"))
-      Vector("n = 24 each · paired n = 24", "per participant, 2–17 queries per group").foreach(
-        t => assert(said.contains(t), s"'$t' not in panel D: $said")
-      )
+      Vector(
+        "n = 24 each · paired n = 24",
+        "Each pair of dots is one participant; per participant, 2–17 queries per group. " +
+          "Descriptive only: no intervals or tests."
+      ).foreach(t => assert(said.contains(t), s"'$t' not in panel D: $said"))
   }
 
   fxStage.test("panel C never places a single control score where it could be read as B") {

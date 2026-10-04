@@ -38,7 +38,11 @@ import javafx.geometry.Pos
 import javafx.scene.Node
 import eyes4s.studio.app.vm.{A11yRole, FocusStop}
 import javafx.scene.AccessibleRole
+import eyes4s.studio.app.plot.ParticipantLines
+import eyes4s.studio.app.tokens.FontFace
+import javafx.beans.property.ReadOnlyObjectWrapper
 import javafx.scene.control.{Button, Label, ScrollPane}
+import javafx.scene.text.Font
 import javafx.scene.layout.{FlowPane, HBox, Priority, Region, VBox}
 
 /** Where the Figures perspective reads what its panels show. `done` may be
@@ -130,7 +134,9 @@ final class FiguresHost(
   private var disposed: Boolean     = false
 
   // The plot of each plotted panel, kept while its figure is shown.
-  private var twins: Map[(FigureId, PanelLetter), (PlotTwin, Option[PlotSource])] = Map.empty
+  private var twins
+      : Map[(FigureId, PanelLetter), (PlotTwin, Option[PlotSource], ParticipantLines)] =
+    Map.empty
 
   private def view(id: String): ViewId =
     ViewId.of(id).fold(e => throw IllegalStateException(e.message), identity)
@@ -351,7 +357,16 @@ final class FiguresHost(
         paper.setHgap(PageLayout.GutterMm * px)
         paper.setVgap(PageLayout.GutterMm * px)
         retire(p.panels.map(q => (p.figure, q.letter)).toSet)
-        paper.getChildren.setAll(p.panels.map(q => panelNode(p.figure, q, px))*): Unit
+        val text    = FigureType.px(p.textPt, px)
+        val caption = paperLabel(p.caption, text)
+        val stamp   = paperLabel(p.stamp, text)
+        stamp.getStyleClass.add("figures-stamp")
+        val foot = VBox(2.0, caption, stamp)
+        foot.getStyleClass.add("figures-foot")
+        foot.setPrefWidth(p.width.mm * px)
+        paper.getChildren.setAll(
+          (p.panels.map(q => panelNode(p.figure, q, px, text)) :+ foot)*
+        ): Unit
         p.table match
           case None =>
             tableNote.setText("Select a panel to see its values.")
@@ -363,28 +378,27 @@ final class FiguresHost(
             tableNote.setText("")
             if !table.source.contains(source) then table.show(source)
 
-  private def panelNode(figure: FigureId, p: PanelVM, px: Double): Node =
+  private def panelNode(figure: FigureId, p: PanelVM, px: Double, text: Double): Node =
     // The panel's letter is its button: Tab reaches it, and Enter selects it.
     val letter = button(p.letter.value)
-    letter.getStyleClass.addAll("figures-letter", "t13")
+    letter.getStyleClass.add("figures-letter")
+    paperFont(letter, FigureType.LetterFace, FigureType.px(FigureType.LetterPt, px))
     letter.setAccessibleText(FiguresHost.panelName(p))
     letter.setOnAction(_ => dispatch(ComposerIntent.SelectPanel(figure, p.letter)))
-    val name       = Label(p.title); name.getStyleClass.addAll("figures-panel-title", "t11")
+    val name       = paperLabel(p.title, text); name.getStyleClass.add("figures-panel-title")
     val w          = p.widthMm * px
     val body: Node = p.body match
       case PanelBody.Plot(plot) =>
-        val twin = twinFor(figure, p, plot.kind, plot.source)
+        val twin = twinFor(figure, p, plot.kind, plot.source, plot.lines)
         twin.plotNode.setPrefSize(w, w * 0.62)
-        val notes = plot.notes.map { n =>
-          val l = Label(n); l.getStyleClass.add("t11"); l
-        }
+        val notes = plot.notes.map(paperLabel(_, text))
         VBox(2.0, (twin.plotNode +: notes)*)
       case PanelBody.Maps(maps) =>
         val tiles = HBox(
           4.0,
           maps.tiles.map { t =>
-            val head  = Label(t.title); head.getStyleClass.add("t11")
-            val score = Label(t.label); score.getStyleClass.addAll("figures-score", "t11")
+            val head  = paperLabel(t.title, text)
+            val score = paperLabel(t.label, text); score.getStyleClass.add("figures-score")
             val tile  = VBox(2.0, head, score)
             tile.getStyleClass.add("figures-tile")
             tile.setPrefWidth((w - 8) / 3)
@@ -392,23 +406,18 @@ final class FiguresHost(
             tile
           }*
         )
-        val caption = Label(maps.caption); caption.setWrapText(true);
-        caption.getStyleClass.add("t11")
-        val note = Label(maps.maps); note.setWrapText(true);
-        note.getStyleClass.addAll("figures-note", "t11")
+        val caption = paperLabel(maps.caption, text)
+        val note    = paperLabel(maps.maps, text); note.getStyleClass.add("figures-note")
         VBox(4.0, tiles, caption, note)
       case PanelBody.Gaze(g) =>
-        val heading = Label(g.heading); heading.getStyleClass.add("t11")
-        val shown = Label(g.displayed); shown.setWrapText(true); shown.getStyleClass.add("t11")
-        val gaze  = Label(g.gaze); gaze.setWrapText(true);
-        gaze.getStyleClass.addAll("figures-note", "t11")
+        val heading = paperLabel(g.heading, text)
+        val shown   = paperLabel(g.displayed, text)
+        val gaze    = paperLabel(g.gaze, text); gaze.getStyleClass.add("figures-note")
         VBox(2.0, heading, shown, gaze)
       case PanelBody.Waiting(why) =>
-        val l = Label(why); l.setWrapText(true); l.getStyleClass.addAll("figures-note", "t11");
-        l
+        val l = paperLabel(why, text); l.getStyleClass.add("figures-note"); l
       case PanelBody.Unavailable(why) =>
-        val l = Label(why); l.setWrapText(true);
-        l.getStyleClass.addAll("figures-problem", "t11"); l
+        val l = paperLabel(why, text); l.getStyleClass.add("figures-problem"); l
     val box = VBox(4.0, HBox(6.0, letter, name), body)
     box.getStyleClass.add("figures-panel")
     if p.selected then box.getStyleClass.add("figures-panel-selected"): Unit
@@ -420,10 +429,11 @@ final class FiguresHost(
     box.setOnMouseClicked(_ => dispatch(ComposerIntent.SelectPanel(figure, p.letter)))
     box
 
-  private def builderOf(kind: PlotKind): PlotBuilder = kind match
+  private def builderOf(kind: PlotKind, lines: ParticipantLines): PlotBuilder = kind match
     case PlotKind.Participant =>
       ParticipantPlot(
-        ParticipantColumns.standard.fold(e => throw IllegalStateException(e.message), identity)
+        ParticipantColumns.standard.fold(e => throw IllegalStateException(e.message), identity),
+        lines
       )
     case PlotKind.Profile =>
       ScaleProfilePlot(
@@ -434,25 +444,29 @@ final class FiguresHost(
       figure: FigureId,
       p: PanelVM,
       kind: PlotKind,
-      source: PlotSource
+      source: PlotSource,
+      lines: ParticipantLines
   ): PlotTwin =
     val key  = (figure, p.letter)
     val twin = twins.get(key).map(_._1).getOrElse {
       val made = PlotTwin
         .attach(
-          builderOf(kind),
+          builderOf(kind, lines),
           view(s"figures.panel.${figure.number}.${p.letter.value}"),
           view(s"figures.panel.${figure.number}.${p.letter.value}.table"),
           model().selection,
           app
         )
         .fold(e => throw IllegalStateException(e.message), identity)
-      twins = twins.updated(key, (made, None))
+      twins = twins.updated(key, (made, None, lines))
       made
     }
+    if !twins.get(key).exists(_._3 == lines) then
+      twin.rebuild(builderOf(kind, lines))
+      twins = twins.updated(key, (twin, twins.get(key).flatMap(_._2), lines))
     if !twins.get(key).flatMap(_._2).contains(source) then
       twin.show(source, Theme.Light)
-      twins = twins.updated(key, (twin, Some(source)))
+      twins = twins.updated(key, (twin, Some(source), lines))
     twin
 
   /** Disposes the plots of panels no longer shown. */
@@ -486,8 +500,57 @@ final class FiguresHost(
         row("Unit", b.unit),
         HBox(6.0, open, rebind),
         note
-      )
+      ) ++ v.page.toVector.flatMap(p => appearance(p.appearance))
     }*): Unit
+
+  /** The inspector's Appearance (view only) and Export sections. */
+  private def appearance(a: AppearanceVM): Vector[Node] =
+    def chooser[A](label: String, options: Vector[(A, String, Boolean)])(
+        set: A => ComposerIntent
+    ) =
+      val key     = Label(label); key.getStyleClass.addAll("figures-key", "t11")
+      val buttons = options.map { (value, text, chosen) =>
+        val b = button(text)
+        b.setAccessibleText(FiguresHost.chosenName(label, text, chosen))
+        if chosen then b.getStyleClass.add("figures-chosen"): Unit
+        b.setOnAction(_ => dispatch(set(value)))
+        b
+      }
+      HBox(6.0, (key +: buttons)*)
+    val head  = Label("Appearance"); head.getStyleClass.add("t12")
+    val only  = Label("View only"); only.getStyleClass.add("t11")
+    val width = a.panelWidth.toVector.map { (letter, mm, text) =>
+      val key      = Label("Panel width"); key.getStyleClass.addAll("figures-key", "t11")
+      val narrower = button("−"); narrower.setAccessibleText(FiguresHost.narrower(text))
+      val wider    = button("+"); wider.setAccessibleText(FiguresHost.wider(text))
+      val value    = Label(text); value.getStyleClass.add("t11")
+      narrower.setOnAction(_ => dispatch(ComposerIntent.SetPanelWidth(letter, mm - 1)))
+      wider.setOnAction(_ => dispatch(ComposerIntent.SetPanelWidth(letter, mm + 1)))
+      HBox(6.0, key, narrower, value, wider)
+    }
+    val exporting              = Label("Export"); exporting.getStyleClass.add("t12")
+    val (imagesText, imagesOn) = a.includeImages
+    val images                 = button(imagesText)
+    images.setAccessibleText(FiguresHost.includeName(imagesText, imagesOn))
+    if imagesOn then images.getStyleClass.add("figures-chosen"): Unit
+    images.setOnAction(_ => dispatch(ComposerIntent.IncludeImages(!imagesOn)))
+    Vector(
+      HBox(6.0, head, only),
+      chooser("Text size", a.textSizes)(ComposerIntent.SetTextSize(_)),
+      chooser("Participant lines", a.lines)(ComposerIntent.SetParticipantLines(_))
+    ) ++ width ++ Vector(exporting, images)
+
+  /** A label on the paper, in the figure's body face at `px`. */
+  private def paperLabel(text: String, px: Double): Label =
+    val l = Label(text)
+    l.setWrapText(true)
+    paperFont(l, FigureType.BodyFace, px)
+    l
+
+  // The paper is set in the figure's typography, not the studio's type scale:
+  // a bound font is one the scene's stylesheets do not restyle.
+  private def paperFont(node: javafx.scene.control.Labeled, face: FontFace, px: Double): Unit =
+    node.fontProperty.bind(ReadOnlyObjectWrapper(Font.font(face.javaFxFamily, px)))
 
   /** Disposes the views; the host ignores the model from then on. Idempotent. */
   def dispose(): Unit =
@@ -544,20 +607,39 @@ final class FiguresHost(
   def tableStops: Vector[FocusStop] =
     Vector(FocusStop(A11yRole.Region, Option(table.getAccessibleText).getOrElse("")))
 
-  /** The inspector's controls: Open in Compare and Rebind figure…. */
+  /** The inspector's controls: Open in Compare, Rebind figure…, then the
+    * appearance and export controls.
+    */
   def inspectorStops: Vector[FocusStop] =
-    val v = vm
-    v.figures.binding.toVector.flatMap(b =>
-      Vector(
-        FocusStop(A11yRole.Button, v.page.map(_.openInCompare).getOrElse("Open in Compare")),
-        FocusStop(A11yRole.Button, b.rebind)
-      )
+    val v               = vm
+    def b(name: String) = FocusStop(A11yRole.Button, name)
+    v.figures.binding.toVector.flatMap(binding =>
+      Vector(b(v.page.map(_.openInCompare).getOrElse("Open in Compare")), b(binding.rebind)) ++
+        v.page.toVector.flatMap { p =>
+          val a = p.appearance
+          a.textSizes.map((_, t, c) => b(FiguresHost.chosenName("Text size", t, c))) ++
+            a.lines.map((_, t, c) => b(FiguresHost.chosenName("Participant lines", t, c))) ++
+            a.panelWidth.toVector.flatMap((_, _, t) =>
+              Vector(b(FiguresHost.narrower(t)), b(FiguresHost.wider(t)))
+            ) :+
+            b(FiguresHost.includeName(a.includeImages._1, a.includeImages._2))
+        }
     )
 
   private def spacer(): Region =
     val r = Region(); HBox.setHgrow(r, Priority.ALWAYS); r
 
 object FiguresHost:
+  /** An appearance option's accessible name: "Text size 7 pt, selected". */
+  def chosenName(control: String, option: String, chosen: Boolean): String =
+    s"$control $option" + (if chosen then ", selected" else "")
+
+  def narrower(width: String): String = s"Narrower − (panel width $width)"
+  def wider(width: String): String    = s"Wider + (panel width $width)"
+
+  /** The export option's accessible name, with its state. */
+  def includeName(text: String, on: Boolean): String = s"$text, ${if on then "on" else "off"}"
+
   /** A navigator row's accessible name. */
   def rowName(r: FigureRowVM): String = s"${r.title}, ${r.status}, ${r.binding}"
 

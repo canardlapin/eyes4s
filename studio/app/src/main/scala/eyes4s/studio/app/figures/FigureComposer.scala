@@ -19,7 +19,7 @@ package eyes4s.studio.app.figures
 import eyes4s.studio.app.compare.SummaryAnswer
 import eyes4s.studio.app.explore.DisplaySource
 import eyes4s.studio.app.nav.{Location, Place}
-import eyes4s.studio.app.plot.PlotSource
+import eyes4s.studio.app.plot.{ParticipantLines, PlotSource}
 import eyes4s.studio.app.text.Format
 import eyes4s.studio.app.{AppModel, Intent}
 import eyes4s.studio.core.backend.{DatasetRevision, RunId, TrialKey}
@@ -84,6 +84,14 @@ enum ComposerIntent derives CanEqual:
 
   /** "Open in Compare": the figure's run, at the selected panel. */
   case OpenInCompare
+
+  /** Appearance · view only (S9.2b), of the shown figure. */
+  case SetTextSize(size: FigureTextSize)
+  case SetParticipantLines(lines: ParticipantLines)
+
+  /** Set a panel's width, within [[FigureAppearance.MinPanelMm]] and the page. */
+  case SetPanelWidth(panel: PanelLetter, mm: Int)
+  case IncludeImages(include: Boolean)
   case SummaryRead(run: RunId, answer: SummaryAnswer)
   case ReferencesRead(
       run: RunId,
@@ -125,6 +133,14 @@ final case class PanelVM(
     ref: StudioRef
 ) derives CanEqual
 
+/** The inspector's Appearance and Export controls (S9.2b). */
+final case class AppearanceVM(
+    textSizes: Vector[(FigureTextSize, String, Boolean)],
+    lines: Vector[(ParticipantLines, String, Boolean)],
+    panelWidth: Option[(PanelLetter, Int, String)],
+    includeImages: (String, Boolean)
+) derives CanEqual
+
 /** The page of the shown figure. */
 final case class PageVM(
     figure: FigureId,
@@ -136,7 +152,11 @@ final case class PageVM(
     panels: Vector[PanelVM],
     tab: ComposerTab,
     table: Option[Either[String, PlotSource]],
-    openInCompare: String
+    openInCompare: String,
+    caption: String,
+    stamp: String,
+    textPt: Int,
+    appearance: AppearanceVM
 ) derives CanEqual
 
 /** Everything the Figures perspective shows. */
@@ -165,8 +185,11 @@ final case class FigureComposer private (
     references: Map[(RunId, ScaleIndex, TrialKey), Either[String, ReferenceScores]],
     displays: Map[DatasetRevision, Either[String, DisplaySource]],
     asked: Set[ComposerRead],
-    problem: Option[String]
-) derives CanEqual
+    problem: Option[String],
+    appearance: Map[FigureId, FigureAppearance]
+) derives CanEqual:
+  def appearanceOf(figure: FigureId): FigureAppearance =
+    appearance.getOrElse(figure, FigureAppearance.default)
 
 object FigureComposer:
   val empty: FigureComposer = FigureComposer(
@@ -178,7 +201,8 @@ object FigureComposer:
     Map.empty,
     Map.empty,
     Set.empty,
-    None
+    None,
+    Map.empty
   )
 
   private val none: Vector[ComposerEffect] = Vector.empty
@@ -293,7 +317,21 @@ object FigureComposer:
       case SummaryRead(r, a)          => (c.copy(summaries = c.summaries.updated(r, a)), none)
       case ReferencesRead(r, s, q, a) =>
         (c.copy(references = c.references.updated((r, s, q), a)), none)
-      case DisplaysRead(d, a) => (c.copy(displays = c.displays.updated(d, a)), none)
+      case DisplaysRead(d, a)         => (c.copy(displays = c.displays.updated(d, a)), none)
+      case SetTextSize(size)          => (restyle(c, model)(_.copy(text = size)), none)
+      case SetParticipantLines(lines) => (restyle(c, model)(_.copy(lines = lines)), none)
+      case IncludeImages(include) => (restyle(c, model)(_.copy(includeImages = include)), none)
+      case SetPanelWidth(panel, mm) =>
+        val bounded = mm.max(FigureAppearance.MinPanelMm).min(c.width.mm)
+        (restyle(c, model)(a => a.copy(widths = a.widths.updated(panel, bounded))), none)
+
+  /** The shown figure's appearance, changed by `f`. */
+  private def restyle(c: FigureComposer, model: AppModel)(
+      f: FigureAppearance => FigureAppearance
+  ): FigureComposer =
+    shownFigure(model).fold(c)(fig =>
+      c.copy(appearance = c.appearance.updated(fig, f(c.appearanceOf(fig))))
+    )
 
   private def newFigure(
       c: FigureComposer,
@@ -389,17 +427,26 @@ object FigureComposer:
     )
 
   private def pageOf(c: FigureComposer, model: AppModel, s: FigureSource): PageVM =
-    val selected = shownPanel(model)
-    val panels   = s.figure.panels.map { p =>
+    val selected                     = shownPanel(model)
+    val look                         = c.appearanceOf(s.figure.id)
+    def widthOf(letter: PanelLetter) =
+      look.widths.getOrElse(letter, PageLayout.panelMm(c.width))
+    val panels = s.figure.panels.map { p =>
       PanelVM(
         p.letter,
         p.title,
         selected.contains(p.letter),
-        PageLayout.panelMm(c.width),
+        widthOf(p.letter),
         body(c, s, PanelTemplate.of(p)),
         StudioRef.FigurePanel(s.figure.id, p.letter)
       )
     }
+    val appearance = AppearanceVM(
+      FigureTextSize.values.toVector.map(t => (t, t.label, t == look.text)),
+      ParticipantLines.values.toVector.map(l => (l, l.label, l == look.lines)),
+      selected.map(l => (l, widthOf(l), s"${widthOf(l)} mm")),
+      ("project snapshot includes images", look.includeImages)
+    )
     PageVM(
       s.figure.id,
       s.figure.id.label,
@@ -410,7 +457,11 @@ object FigureComposer:
       panels,
       c.tab,
       selected.flatMap(l => s.figure.panels.find(_.letter == l)).map(p => table(c, s, p)),
-      "Open in Compare"
+      "Open in Compare",
+      FigureCaption.figure(s),
+      FigureCaption.stamp(s),
+      look.text.pt,
+      appearance
     )
 
   private def summaryOf(c: FigureComposer, run: RunId) =
@@ -433,7 +484,7 @@ object FigureComposer:
               identity,
               r =>
                 FigurePanels
-                  .participantD(r, s.reporting.id, i)
+                  .participantD(r, s.reporting.id, i, c.appearanceOf(s.figure.id).lines)
                   .fold(PanelBody.Unavailable(_), PanelBody.Plot(_))
             )
       case PanelTemplate.ScaleProfile =>

@@ -1099,6 +1099,20 @@ lazy val studioCore = crossProject(JVMPlatform, JSPlatform)
         streams.value.cacheDirectory / "studio-fixture"
       )
     }.taskValue,
+    // S9.2b: the eyes4s build studio links, for a figure's provenance stamp.
+    // Generated, since studio-core reads no resources (it links for Scala.js).
+    Compile / sourceGenerators += Def.task {
+      val file = (Compile / sourceManaged).value / "eyes4s" / "studio" / "Eyes4sVersion.scala"
+      val text =
+        s"""package eyes4s.studio.core.engine
+           |
+           |/** The eyes4s build studio links (generated from the sbt build). */
+           |object Eyes4sVersion:
+           |  val value: String = "${version.value}"
+           |""".stripMargin
+      if (!file.exists || IO.read(file) != text) IO.write(file, text)
+      Seq(file)
+    }.taskValue,
     // The generator's planted off-screen scanpaths, which a JVM test holds
     // against eyes4s-io's own admission (fixture off-screen fix).
     Test / sourceGenerators += Def.task {

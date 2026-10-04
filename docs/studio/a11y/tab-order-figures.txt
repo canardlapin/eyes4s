@@ -27,3 +27,11 @@ region: methods.md
 region: Panel
 button: Open in Compare
 button: Rebind figure…
+button: Text size 6 pt
+button: Text size 7 pt, selected
+button: Text size 8 pt
+button: Participant lines Show, selected
+button: Participant lines Hide
+button: Narrower − (panel width 89 mm)
+button: Wider + (panel width 89 mm)
+button: project snapshot includes images, on

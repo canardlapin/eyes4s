@@ -256,7 +256,12 @@ class FigureComposerSuite extends munit.ScalaCheckSuite:
       )
       assertEquals(
         d.notes,
-        Vector("n = 24 each · paired n = 24", "per participant, 2–17 queries per group")
+        Vector(
+          "n = 24 each · paired n = 24",
+          "bars: grand mean of participant means, equal weight",
+          "Each pair of dots is one participant; per participant, 2–17 queries per group. " +
+            "Descriptive only: no intervals or tests."
+        )
       )
       val e = panel(vm, "E").body match
         case PanelBody.Plot(plot) => plot
