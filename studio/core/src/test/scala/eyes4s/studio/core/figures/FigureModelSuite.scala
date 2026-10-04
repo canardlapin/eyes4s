@@ -233,3 +233,52 @@ class FigureModelSuite extends CatsEffectSuite:
       StatusDiff.Compared(right(StatusChanges.between(r3, Vector.empty, r2, Vector.empty)))
     assert(proposal.withStatus(other).isLeft)
   }
+
+  test("Rebind… offers the latest of several current completed runs") {
+    // t2 with a second completed run of rev 4 on r3: runs 7 and 9 are current.
+    val run9 = RunId(9)
+    val two  = right(
+      StudioDocument.of(
+        t2.datasets,
+        t2.analyses,
+        t2.draft,
+        t2.runs :+ RunRef(
+          run9,
+          AnalysisRevision(4),
+          r3,
+          RunLifecycle.Completed,
+          CoreBinding.unbound
+        ),
+        t2.reporting,
+        t2.figures,
+        t2.presentation,
+        t2.jobs
+      )
+    )
+    val current = freshness(two).runs.collect {
+      case f if f.standing == eyes4s.studio.core.freshness.RunStanding.Current => f.run.id
+    }
+    assertEquals(current, Vector(run7, run9))
+    assertEquals(RebindProposal.target(freshness(two)).map(_.id), Some(run9))
+  }
+
+  test("the reducer refuses a rebind whose panel scale the run does not compute") {
+    val sigma8 = right(Sigma.of(8.0))
+    val panel  = PanelSpec(
+      right(PanelLetter.of("A")),
+      "σ 8° map",
+      PanelScale.At(sigma8),
+      PanelSelection.AllQueries
+    )
+    val withF3 = right(
+      History
+        .start(run8Shown)
+        .apply(Command.CreateFigure(run8, run8Shown.reporting.head.id, Vector(panel)))
+    ).history
+    val refused =
+      withF3.apply(Command.BindFigure(right(FigureId.of(3)), run7, run8Shown.reporting.head.id))
+    assert(
+      refused.left.exists(_.message.contains("σ 8°")),
+      refused.left.map(_.message)
+    )
+  }

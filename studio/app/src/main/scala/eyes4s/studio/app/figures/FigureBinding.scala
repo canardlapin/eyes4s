@@ -17,10 +17,10 @@
 package eyes4s.studio.app.figures
 
 import eyes4s.studio.app.{AppModel, Intent}
-import eyes4s.studio.core.backend.DatasetRevision
+import eyes4s.studio.core.backend.{DatasetRevision, RunId}
 import eyes4s.studio.core.diff.{DatasetDiff, StatusDiff}
 import eyes4s.studio.core.document.FigureId
-import eyes4s.studio.core.figures.{FigureSource, FigureText, RebindProposal}
+import eyes4s.studio.core.figures.{FigureError, FigureSource, FigureText, RebindProposal}
 import eyes4s.studio.core.freshness.{RunStanding, StaleReason}
 
 /** A user action or platform fact the figure binding's views dispatch. */
@@ -28,7 +28,8 @@ enum FigureIntent derives CanEqual:
   case Select(figure: FigureId)
 
   /** "Keep as rev N": the figure stays bound to its run; its stale notice
-    * is put away for this session. Keeping is not a command (`Command`,
+    * is put away for this session, for that run only (a later stale
+    * binding of the figure is shown again). Keeping is not a command (`Command`,
     * S2.2): freshness stays derived, so the figure is still marked stale.
     */
   case Keep(figure: FigureId)
@@ -109,7 +110,7 @@ final case class FiguresVM(
   */
 final case class FigureBinding private (
     selected: Option[FigureId],
-    kept: Vector[FigureId],
+    kept: Vector[(FigureId, RunId)],
     rebind: Option[RebindProposal],
     statuses: Map[(DatasetRevision, DatasetRevision), StatusDiff],
     problem: Option[String]
@@ -159,7 +160,16 @@ object FigureBinding:
       case Select(figure) =>
         ask(binding.copy(selected = Some(figure), problem = None), moved(model, figure))
       case Keep(figure) =>
-        (binding.copy(kept = (binding.kept :+ figure).distinct, problem = None), none)
+        FigureSource.of(model.document, figure) match
+          case Left(e)  => (binding.copy(problem = Some(e.message)), none)
+          case Right(s) =>
+            (
+              binding.copy(
+                kept = (binding.kept :+ (figure -> s.run.id)).distinct,
+                problem = None
+              ),
+              none
+            )
       case Rebind(figure) =>
         RebindProposal.target(model.freshness) match
           case None =>
@@ -178,47 +188,95 @@ object FigureBinding:
                 )
       case CancelRebind  => (binding.copy(rebind = None), none)
       case ConfirmRebind =>
-        binding.rebind.flatMap(p => p.command.map(p -> _)) match
-          case None            => (binding, none)
-          case Some((p, bind)) =>
-            (
-              binding.copy(rebind = None, kept = binding.kept.filterNot(_ == p.figure)),
-              Vector(FigureEffect.App(Intent.Dispatch(bind)))
-            )
+        binding.rebind match
+          case None        => (binding, none)
+          case Some(shown) =>
+            // The proposal was built against an earlier model: rebuild it
+            // against this one, and dispatch only what the dialog showed.
+            val status = shown.data.fold(StatusDiff.NotRead)(_.status)
+            RebindProposal.of(model.document, shown.figure, shown.to.run.id, status) match
+              case Left(e) =>
+                (binding.copy(rebind = None, problem = Some(e.message)), none)
+              case Right(now) if now != shown =>
+                (
+                  binding.copy(
+                    rebind = Some(now),
+                    problem = Some(FigureBindingText.changed(shown))
+                  ),
+                  none
+                )
+              case Right(now) =>
+                now.command.fold((binding, none))(bind =>
+                  (
+                    binding.copy(rebind = None, problem = None),
+                    Vector(FigureEffect.App(Intent.Dispatch(bind)))
+                  )
+                )
       case StatusRead(from, to, status) =>
-        val rebind = binding.rebind.map(p =>
-          if p.data.exists(d => d.from == from && d.to == to) then
-            p.withStatus(status).getOrElse(p)
-          else p
-        )
-        (
-          binding.copy(
-            statuses = binding.statuses.updated((from, to), status),
-            rebind = rebind
-          ),
-          none
-        )
+        status match
+          case StatusDiff.Compared(c) if (c.from, c.to) != (from, to) =>
+            (
+              binding.copy(problem =
+                Some(FigureBindingText.misdirected(from, to, c.from, c.to))
+              ),
+              none
+            )
+          case _ =>
+            val updated = binding.rebind match
+              case Some(p) if p.data.exists(d => d.from == from && d.to == to) =>
+                p.withStatus(status).map(Some(_))
+              case other => Right(other)
+            updated match
+              case Left(e)       => (binding.copy(problem = Some(e.message)), none)
+              case Right(rebind) =>
+                (
+                  binding.copy(
+                    statuses = binding.statuses.updated((from, to), status),
+                    rebind = rebind
+                  ),
+                  none
+                )
 
-  /** The view of the Figures navigator, stale notice, binding and dialog. */
-  def view(binding: FigureBinding, model: AppModel): FiguresVM =
-    val document = model.document
-    val sources  = document.figures.flatMap(f => FigureSource.of(document, f.id).toOption)
-    def standing(figure: FigureId) = model.freshness.figure(figure).map(_.standing)
-    val rows                       = sources.map { s =>
-      val id    = s.figure.id
-      val stale = standing(id).exists(_.isInstanceOf[RunStanding.Stale])
+  /** A navigator row: the figure's binding and standing, or, when its
+    * binding does not resolve, the row says why (it is never dropped).
+    */
+  def row(
+      binding: FigureBinding,
+      id: FigureId,
+      source: Either[FigureError, FigureSource],
+      standing: Option[RunStanding]
+  ): FigureRowVM = source match
+    case Left(e) =>
       FigureRowVM(
         id,
         id.label,
-        FigureBindingText.status(standing(id), binding.kept.contains(id)),
-        stale,
+        "unresolved",
+        false,
+        e.message,
+        "",
+        binding.selected.contains(id)
+      )
+    case Right(s) =>
+      FigureRowVM(
+        id,
+        id.label,
+        FigureBindingText.status(standing, binding.kept.contains(id -> s.run.id)),
+        standing.exists(_.isInstanceOf[RunStanding.Stale]),
         FigureText.binding(s.bound),
         s"Reporting: ${s.reporting.name}",
         binding.selected.contains(id)
       )
-    }
+
+  /** The view of the Figures navigator, stale notice, binding and dialog. */
+  def view(binding: FigureBinding, model: AppModel): FiguresVM =
+    val document = model.document
+    val resolved = document.figures.map(f => f.id -> FigureSource.of(document, f.id))
+    val sources  = resolved.flatMap(_._2.toOption)
+    def standing(figure: FigureId) = model.freshness.figure(figure).map(_.standing)
+    def kept(s: FigureSource)      = binding.kept.contains(s.figure.id -> s.run.id)
+    val rows     = resolved.map((id, source) => row(binding, id, source, standing(id)))
     val selected = binding.selected.flatMap(f => sources.find(_.figure.id == f))
-    val notice   = selected.filterNot(s => binding.kept.contains(s.figure.id)).flatMap { s =>
+    val notice   = selected.filterNot(kept).flatMap { s =>
       standing(s.figure.id).collect { case RunStanding.Stale(reasons) =>
         val data = moved(model, s.figure.id).flatMap { (from, to) =>
           (document.dataset(from), document.dataset(to)) match
@@ -264,6 +322,20 @@ object FigureBinding:
 /** The figure binding's English text beyond [[FigureText]]. */
 object FigureBindingText:
   def count(n: Int): String = if n == 1 then "1 figure" else s"$n figures"
+
+  /** The rebind dialog was out of date when confirmed. */
+  def changed(p: RebindProposal): String =
+    s"${p.figure.label} or its runs changed since the rebind was proposed; review it again."
+
+  /** A status answer whose comparison is of other revisions than asked. */
+  def misdirected(
+      from: DatasetRevision,
+      to: DatasetRevision,
+      foundFrom: DatasetRevision,
+      foundTo: DatasetRevision
+  ): String =
+    s"The trial status comparison asked for ${from.label} → ${to.label} " +
+      s"answered ${foundFrom.label} → ${foundTo.label}; it was not used."
 
   def noTarget(figure: FigureId): String =
     s"${figure.label} cannot be rebound: no completed run is current."
