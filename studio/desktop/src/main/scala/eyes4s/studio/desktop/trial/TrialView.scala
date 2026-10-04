@@ -66,7 +66,10 @@ final case class MapRequest(
   * Until then the scene shows the labelled loading state; a failure shows the
   * hatched unreadable state. A missing asset (`AssetLink.Missing`) is never
   * read: the registry already says it has no bytes, and the scene hatches it.
-  * Decoded rasters are kept per asset for the life of the view.
+  * Decoded rasters are kept per asset, at most [[TrialView.RasterLimit]] of
+  * them: the least recently shown one that the trial does not draw goes first.
+  * A failed read keeps its typed [[StimulusError]] ([[stimulusFailures]]),
+  * and [[retry]] reads the failed assets again.
   *
   * The host keeps the scene's aspect ([[TrialScene.fit]]), centred; the rest
   * of the view is the stage colour. The view handles no input itself:
@@ -97,16 +100,38 @@ final class TrialView(source: StimulusSource, loader: Executor, maps: MapRasterS
 
   private var current: Option[TrialSceneInput]       = None
   private var rasters: Map[AssetRef, StimulusRaster] = Map.empty
-  private var requested: Set[AssetRef]               = Set.empty
-  private var aspect: Option[Double]                 = None
-  private var disposed: Boolean                      = false
-  private var mapRequest: Option[MapRequest]         = None
-  private var mapLayer: Option[TrialMap]             = None
-  private val refusalWrapper                         =
+  private var recency: Vector[AssetRef]              = Vector.empty
+  private val failuresWrapper                        =
+    ReadOnlyObjectWrapper[Map[AssetRef, StimulusError]](this, "stimulusFailures", Map.empty)
+  private var requested: Set[AssetRef]       = Set.empty
+  private var aspect: Option[Double]         = None
+  private var disposed: Boolean              = false
+  private var mapRequest: Option[MapRequest] = None
+  private var mapLayer: Option[TrialMap]     = None
+  private val refusalWrapper                 =
     ReadOnlyObjectWrapper[Option[RasterRefusal]](this, "mapRefused", None)
 
   /** What the view shows. */
   def status: ReadOnlyObjectProperty[TrialViewStatus] = statusWrapper.getReadOnlyProperty
+
+  /** Why each asset that could not be read was not, typed; observable. */
+  def stimulusFailures: ReadOnlyObjectProperty[Map[AssetRef, StimulusError]] =
+    failuresWrapper.getReadOnlyProperty
+
+  /** The decoded rasters held, least recently shown first. */
+  def heldRasters: Vector[AssetRef] = recency
+
+  /** Reads every failed asset again; the trial shows them loading meanwhile. */
+  def retry(): Unit =
+    onFxThread("retry")
+    if !disposed then
+      val failed = failuresWrapper.get.keySet
+      failuresWrapper.set(Map.empty)
+      rasters --= failed
+      recency = recency.filterNot(failed)
+      requested --= failed
+      current.foreach(i => needed(i).foreach(request))
+      render()
 
   /** The canvas host, for the input adapter (S4.2) and tests. */
   def plotHost: CanvasPlotHost = host
@@ -128,13 +153,7 @@ final class TrialView(source: StimulusSource, loader: Executor, maps: MapRasterS
       setStyle(
         s"-fx-background-color: ${Tokens.staged(input.stage, StageToken.Stage).javaFxCss};"
       )
-      input.display.asset.foreach {
-        case AssetLink.Present(asset) => request(asset)
-        case AssetLink.Missing(_)     => ()
-      }
-      input.remembered match
-        case RememberedImage.Shown(asset) => request(asset)
-        case _                            => ()
+      needed(input).foreach(request)
       render()
 
   /** Draws `map` over the trial, or no map. The raster comes from the map
@@ -193,6 +212,8 @@ final class TrialView(source: StimulusSource, loader: Executor, maps: MapRasterS
       disposed = true
       current = None
       rasters = Map.empty
+      recency = Vector.empty
+      failuresWrapper.set(Map.empty)
       mapRequest = None
       mapLayer = None
       refusalWrapper.set(None)
@@ -200,29 +221,50 @@ final class TrialView(source: StimulusSource, loader: Executor, maps: MapRasterS
       getChildren.clear()
       statusWrapper.set(TrialViewStatus.Disposed)
 
+  // The stored assets `input` draws: its display's and a shown underlay's.
+  private def needed(input: TrialSceneInput): Vector[AssetRef] =
+    input.display.asset.collect { case AssetLink.Present(a) => a }.toVector ++
+      (input.remembered match
+        case RememberedImage.Shown(a) => Vector(a)
+        case _                        => Vector.empty)
+
   private def request(asset: AssetRef): Unit =
     if !requested(asset) then
       requested += asset
       try
         loader.execute { () =>
-          val raster = Stimuli.load(source, asset)
-          Platform.runLater(() => deliver(asset, raster))
+          val read = Stimuli.read(source, asset)
+          Platform.runLater(() => deliver(asset, read))
         }
       catch
         case e: RejectedExecutionException =>
-          deliver(asset, StimulusRaster.Unreadable(s"the loader refused the task: $e"))
+          deliver(asset, Left(StimulusError.NotLoaded(asset.file, e.toString)))
 
-  private def deliver(asset: AssetRef, raster: StimulusRaster): Unit =
-    if !disposed then
-      rasters += asset -> raster
-      if current.exists(i =>
-          i.display.asset.contains(AssetLink.Present(asset)) ||
-            i.remembered == RememberedImage.Shown(asset)
-        )
-      then render()
+  private def deliver(
+      asset: AssetRef,
+      read: Either[StimulusError, intaglio.RasterImage]
+  ): Unit =
+    if !disposed && requested(asset) then
+      read.left.foreach(e => failuresWrapper.set(failuresWrapper.get.updated(asset, e)))
+      rasters += asset -> Stimuli.raster(read)
+      touch(asset)
+      if current.exists(needed(_).contains(asset)) then render()
+
+  // Marks `asset` most recently shown and lets go of the oldest rasters over
+  // the limit that the trial does not draw; a let-go asset is read again
+  // when it is next needed.
+  private def touch(asset: AssetRef): Unit =
+    recency = recency.filterNot(_ == asset) :+ asset
+    val keep  = current.fold(Set.empty[AssetRef])(needed(_).toSet)
+    val over  = recency.size - TrialView.RasterLimit
+    val drops = recency.filterNot(keep).take(math.max(0, over))
+    rasters --= drops
+    requested --= drops
+    recency = recency.filterNot(drops.contains)
 
   private def render(): Unit =
     current.foreach { input =>
+      needed(input).filter(rasters.contains).foreach(touch)
       TrialScene(input.copy(rasters = rasters, map = mapLayer)) match
         case Right(scene) =>
           if !aspect.contains(scene.aspect) then
@@ -258,6 +300,9 @@ final class TrialView(source: StimulusSource, loader: Executor, maps: MapRasterS
       )
 
 object TrialView:
+
+  /** The most decoded stimulus rasters a view holds at once. */
+  val RasterLimit: Int = 6
 
   /** The map raster store every view draws maps from. */
   lazy val sharedMaps: MapRasterStore = MapRasterStore()

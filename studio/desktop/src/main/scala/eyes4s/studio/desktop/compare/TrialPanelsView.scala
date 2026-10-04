@@ -27,7 +27,9 @@ import eyes4s.studio.viz.trial.{
   MarkStyle,
   RememberedImage,
   TrialFixation,
+  TrialExtent,
   TrialRole,
+  TrialScene,
   TrialSceneInput
 }
 import javafx.geometry.Pos
@@ -44,6 +46,7 @@ import javafx.scene.layout.{HBox, Priority, Region, StackPane, VBox}
 final class TrialPanelsView(
     app: Intent => Unit,
     underlay: Boolean => Unit,
+    retried: () => Unit,
     stimuli: StimulusSource
 ):
 
@@ -110,7 +113,10 @@ final class TrialPanelsView(
         case None =>
           pill.setText("")
           title.setText(empty.getOrElse(""))
+          count.setText("")
           readout.setText("")
+          readout.setAccessibleText(null)
+          node.setAccessibleText(empty.orNull)
       pill.setVisible(vm.isDefined)
       pill.setManaged(vm.isDefined)
 
@@ -131,6 +137,27 @@ final class TrialPanelsView(
   private val back = Button()
   back.getStyleClass.add("tog")
   reference.tools.getChildren.add(back)
+
+  // Asks again for what failed: the panels' answers and the views' stimuli.
+  private val retry = Button(PanelText(PanelTextId.Retry))
+  retry.getStyleClass.add("tog")
+  retry.setAccessibleText(PanelText(PanelTextId.Retry))
+  retry.setOnAction { _ =>
+    retried()
+    query.view.retry()
+    reference.view.retry()
+  }
+  query.tools.getChildren.add(retry)
+  private var failed = false
+  Vector(query, reference).foreach(
+    _.view.stimulusFailures.addListener((_, _, _) => offerRetry())
+  )
+
+  private def offerRetry(): Unit =
+    val show = failed ||
+      Vector(query, reference).exists(!_.view.stimulusFailures.get.isEmpty)
+    retry.setVisible(show)
+    retry.setManaged(show)
 
   /** The query panel's content. */
   def queryNode: VBox = query.node
@@ -164,6 +191,13 @@ final class TrialPanelsView(
   def shown: Vector[(String, String, String)] =
     Vector(query, reference).map(p => (p.pill.getText, p.title.getText, p.readout.getText))
 
+  /** Retry, if it is offered; and pressing it, as the user does. */
+  def retryOffered: Boolean = retry.isVisible
+  def pressRetry(): Unit    = retry.fire()
+
+  /** The query panel's note on the remembered image, if it shows one. */
+  def rememberedNote: String = query.note.getText
+
   /** The way back to the matched reference, if it is offered. */
   def backOffered: Option[String] = Option.when(back.isVisible)(back.getText)
 
@@ -179,11 +213,20 @@ final class TrialPanelsView(
     val remembered = vm.remembered.fold(RememberedImage.Absent)(r =>
       if r.shown then RememberedImage.Shown(r.asset) else RememberedImage.Hidden(r.asset)
     )
-    vm.query.foreach(p => query.draw(TrialPanelsView.input(p, theme, remembered)))
-    vm.reference.foreach(p =>
-      reference.draw(TrialPanelsView.input(p, theme, RememberedImage.Absent))
+    val q = vm.query.map(TrialPanelsView.input(_, theme, remembered))
+    val r = vm.reference.map(TrialPanelsView.input(_, theme, RememberedImage.Absent))
+    // Both stages share one covering extent, so the two trials are drawn at
+    // one scale (the S4.3a review's rule for side-by-side trials).
+    val shared = TrialScene.sharedExtent((q ++ r).flatMap(_.toOption).toVector)
+    def covered(in: Either[String, TrialSceneInput]) = in.map(i =>
+      shared.fold(i)(e => i.copy(options = i.options.copy(extent = TrialExtent.Covering(e))))
     )
-    if vm.query.isEmpty then query.draw(Left(vm.empty.getOrElse("")))
+    // A panel with nothing to show clears its stage, so no earlier trial stays.
+    query.draw(q.fold(Left(vm.empty.getOrElse("")))(covered))
+    reference.draw(r.fold(Left(""))(covered))
+    query.note.setText(vm.rememberedNote.getOrElse(""))
+    failed = vm.retry.isDefined
+    offerRetry()
     underlayToggle.setSelected(vm.underlay)
     underlayToggle.setVisible(vm.query.isDefined)
     underlayToggle.setManaged(vm.query.isDefined)

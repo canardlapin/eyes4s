@@ -18,7 +18,15 @@ package eyes4s.studio.app.compare
 
 import eyes4s.studio.app.nav.Place
 import eyes4s.studio.app.vm.{A11yRole, FocusStop}
-import eyes4s.studio.app.text.{Format, PanelText, PanelTextId, SummaryText, SummaryTextId}
+import eyes4s.studio.app.text.{
+  Format,
+  PanelText,
+  PanelTextId,
+  SummaryText,
+  SummaryTextId,
+  TrialText,
+  TrialTextId
+}
 import eyes4s.studio.app.{AppModel, Intent}
 import eyes4s.plan.{MapPlacement, OffWindowPolicy}
 import eyes4s.studio.app.plot.{
@@ -82,17 +90,31 @@ enum PairAnswer derives CanEqual:
   case Refused(error: BackendError)
   case Failed(reason: String)
 
+/** The run Compare shows and what the panels read of it: its analysis
+  * revision and its query rows. A focus on any other run is no focus.
+  */
+final case class ShownRun(run: RunId, revision: AnalysisRevision, rows: Vector[QueryRow])
+    derives CanEqual
+
+/** A trial's content under one analysis revision: the identity of what the
+  * panels read, so a revision's content never stands in for another's.
+  */
+final case class ContentKey(revision: AnalysisRevision, trial: TrialKey) derives CanEqual
+
 enum PanelsIntent derives CanEqual:
   case PairRead(pair: StudioRef, answer: PairAnswer)
-  case ContentRead(trial: TrialKey, answer: Either[ContentError, TrialContent])
+  case ContentRead(key: ContentKey, answer: Either[ContentError, TrialContent])
   case Underlay(on: Boolean)
+
+  /** Ask again for what failed: the pair's score and unreadable content. */
+  case Retry
 
 enum PanelsEffect derives CanEqual:
   /** Inspect `pair`, the reference panel's pair, at `address`. */
   case InspectPair(run: RunId, address: ResultAddress, pair: StudioRef)
 
-  /** Read `trial`'s content under the run's analysis `revision`. */
-  case ReadContent(revision: AnalysisRevision, trial: TrialKey)
+  /** Read a trial's content under an analysis revision. */
+  case ReadContent(key: ContentKey)
 
 /** What a panel's stage shows: the trial's content, or why not yet or not. */
 enum PanelContent derives CanEqual:
@@ -111,7 +133,7 @@ final case class TrialPanels(
     focus: Option[PanelFocus],
     inspected: Option[(StudioRef, Option[PairAnswer])],
     underlay: Boolean,
-    contents: Map[TrialKey, Option[Either[ContentError, TrialContent]]]
+    contents: Map[ContentKey, Option[Either[ContentError, TrialContent]]]
 ) derives CanEqual
 
 /** One panel's readout: what it reports, its value, and the ref it traces to. */
@@ -140,18 +162,28 @@ final case class ReferenceExtras(back: Option[(String, Intent)], matched: String
   */
 final case class Remembered(asset: AssetRef, shown: Boolean) derives CanEqual
 
+/** The panels' view-model. `rememberedNote` says the remembered image is
+  * not shown when the underlay is on but the query has no stored remembered
+  * image to underlay (S4.3b); `retry` is offered while something failed.
+  */
 final case class TrialPanelsVM(
     empty: Option[String],
     query: Option[TrialPanelVM],
     reference: Option[TrialPanelVM],
     extras: Option[ReferenceExtras],
     underlay: Boolean,
-    remembered: Option[Remembered]
+    remembered: Option[Remembered],
+    rememberedNote: Option[String],
+    retry: Option[String]
 ) derives CanEqual
 
 object TrialPanels:
 
   val empty: TrialPanels = TrialPanels(None, None, false, Map.empty)
+
+  /** Where Compare's trail points, if it is in the `shown` run. */
+  def focusIn(m: AppModel, shown: Option[ShownRun]): Option[PanelFocus] =
+    focusOf(m).filter(f => shown.exists(_.run == f.run))
 
   /** Where Compare's trail points: its last query contrast or pair. */
   def focusOf(m: AppModel): Option[PanelFocus] =
@@ -170,16 +202,17 @@ object TrialPanels:
       rows.find(_.query == focus.query).map(r => (PairDesign.Matched, r.matched))
     )
 
-  /** Follows the model and the run's query rows: a new reference pair is
-    * inspected once.
+  /** Follows the model and the shown run: a new reference pair is inspected
+    * once, and each trial the panels need is read once per revision. A trail
+    * in another run than the one shown is no focus.
     */
   def sync(
       s: TrialPanels,
       m: AppModel,
-      rows: Vector[QueryRow],
-      revision: Option[AnalysisRevision]
+      shown: Option[ShownRun]
   ): (TrialPanels, Vector[PanelsEffect]) =
-    val focus = focusOf(m)
+    val focus = focusIn(m, shown)
+    val rows  = shown.fold(Vector.empty[QueryRow])(_.rows)
     val pair  = focus.flatMap(f => referenceOf(f, rows).map((d, r) => (f, d, r)))
     // The pair the reference panel shows is inspected once; its answer is
     // `None` while it is asked.
@@ -199,96 +232,137 @@ object TrialPanels:
             )
           )
       case None => (None, Vector.empty)
-    // The trials the panels need: the query, its reference and its matched
-    // reference, whose image is the query's remembered image. Content of any
-    // other trial is let go; a needed trial is read once.
-    val needed = focus.toVector
-      .flatMap(f =>
-        Vector(
-          Some(f.query),
-          pair.map(_._3),
-          rows.find(_.query == f.query).map(_.matched)
-        ).flatten
-      )
-      .distinct
-    val kept  = s.contents.filter((k, _) => needed.contains(k))
-    val reads = revision.toVector.flatMap(rev =>
-      needed.filterNot(kept.contains).map(PanelsEffect.ReadContent(rev, _))
-    )
-    val contents = kept ++ reads.collect { case PanelsEffect.ReadContent(_, k) => k -> None }
+    // The trials the panels need, under the shown run's revision: the query,
+    // its reference and its matched reference, whose image is the query's
+    // remembered image. Any other content is let go.
+    val needed = (for
+      f   <- focus
+      run <- shown
+    yield Vector(
+      Some(f.query),
+      pair.map(_._3),
+      rows.find(_.query == f.query).map(_.matched)
+    ).flatten.distinct.map(ContentKey(run.revision, _))).getOrElse(Vector.empty)
+    val kept     = s.contents.filter((k, _) => needed.contains(k))
+    val missing  = needed.filterNot(kept.contains)
+    val reads    = missing.map(PanelsEffect.ReadContent(_))
+    val contents = kept ++ missing.map(_ -> None)
     (TrialPanels(focus, inspected, s.underlay, contents), inspect ++ reads)
 
   /** A backend answer or a user action. An answer is kept only while the
-    * panels still wait on it; any other is stale.
+    * panels still wait on it; any other is stale. Retry forgets what failed,
+    * so the next sync asks for it again.
     */
   def update(s: TrialPanels, intent: PanelsIntent): TrialPanels = intent match
     case PanelsIntent.PairRead(pair, answer) =>
       if s.inspected.contains((pair, None)) then s.copy(inspected = Some((pair, Some(answer))))
       else s
-    case PanelsIntent.ContentRead(trial, answer) =>
-      if s.contents.get(trial).contains(None) then
-        s.copy(contents = s.contents.updated(trial, Some(answer)))
+    case PanelsIntent.ContentRead(key, answer) =>
+      if s.contents.get(key).contains(None) then
+        s.copy(contents = s.contents.updated(key, Some(answer)))
       else s
     case PanelsIntent.Underlay(on) => s.copy(underlay = on)
+    case PanelsIntent.Retry        =>
+      s.copy(
+        inspected = s.inspected.filterNot((_, a) => a.exists(failed)),
+        contents = s.contents.filterNot((_, a) => a.exists(unreadable))
+      )
+
+  private def failed(a: PairAnswer): Boolean = a match
+    case PairAnswer.Answered(_) => false
+    case _                      => true
+
+  private def unreadable(a: Either[ContentError, TrialContent]): Boolean = a match
+    case Left(ContentError.Unreadable(_, _)) => true
+    case _                                   => false
 
   /** The panels' view-model. `rows` are the run's query rows and `scales`
     * the run's scale labels; titles take items from the rows and, for a
     * control, from the inspected pair.
     */
-  def vm(s: TrialPanels, rows: Vector[QueryRow], scales: Vector[String]): TrialPanelsVM =
-    s.focus match
-      case None =>
-        TrialPanelsVM(Some(PanelText(PanelTextId.NoQuery)), None, None, None, s.underlay, None)
-      case Some(f) =>
-        val row   = rows.find(_.query == f.query)
-        val sigma = scales.lift(f.scale.value).getOrElse(f.scale.value.toString)
-        val query = TrialPanelVM(
-          PanelRole.Query,
-          title(f.query, row.map(_.item)),
-          f.query,
-          PanelReadout(
-            PanelText(
-              PanelTextId.ContrastReadout,
-              sigma,
-              row.fold(PanelText(PanelTextId.Reading))(said(f.scale))
-            ),
-            f.contrast
-          ),
-          contentOf(s, f.query),
-          countOf(s, f.query)
+  def vm(s: TrialPanels, shown: Option[ShownRun], scales: Vector[String]): TrialPanelsVM =
+    (s.focus.filter(f => shown.exists(_.run == f.run)), shown) match
+      case (Some(f), Some(run)) => focused(s, f, run, scales)
+      case _                    =>
+        TrialPanelsVM(
+          Some(PanelText(PanelTextId.NoQuery)),
+          None,
+          None,
+          None,
+          s.underlay,
+          None,
+          None,
+          None
         )
-        val reference = referenceOf(f, rows).map { (design, key) =>
-          val ref    = f.pair(design, key)
-          val answer = s.inspected.collect { case (`ref`, Some(a)) => a }
-          val item   = design match
-            case PairDesign.Matched => row.map(_.item)
-            case PairDesign.Control =>
-              answer.collect { case PairAnswer.Answered(Inspection.Pair(_, item, _)) => item }
-          TrialPanelVM(
-            PanelRole.of(design),
-            title(key, item),
-            key,
-            PanelReadout(PanelText(PanelTextId.PairReadout, sigma, scoreOf(answer)), ref),
-            contentOf(s, key),
-            countOf(s, key)
-          )
-        }
-        val extras = row.map { r =>
-          val matched = f.pair(PairDesign.Matched, r.matched)
-          ReferenceExtras(
-            Option.when(reference.exists(_.role == PanelRole.Control))(
-              (PanelText(PanelTextId.BackToMatched), Intent.Explain(Place.At(matched)))
-            ),
-            PanelText(PanelTextId.MatchedIs, title(r.matched, Some(r.item)))
-          )
-        }
-        val remembered = row
-          .flatMap(r => s.contents.get(r.matched).flatten)
-          .collect { case Right(c) => c.display.display }
-          .collect { case Display.Image(AssetLink.Present(asset)) =>
-            Remembered(asset, s.underlay)
-          }
-        TrialPanelsVM(None, Some(query), reference, extras, s.underlay, remembered)
+
+  private def focused(
+      s: TrialPanels,
+      f: PanelFocus,
+      shown: ShownRun,
+      scales: Vector[String]
+  ): TrialPanelsVM =
+    val rows                    = shown.rows
+    def contentKey(k: TrialKey) = ContentKey(shown.revision, k)
+    val row                     = rows.find(_.query == f.query)
+    val sigma                   = scales.lift(f.scale.value).getOrElse(f.scale.value.toString)
+    val query                   = TrialPanelVM(
+      PanelRole.Query,
+      title(f.query, row.map(_.item)),
+      f.query,
+      PanelReadout(
+        PanelText(
+          PanelTextId.ContrastReadout,
+          sigma,
+          row.fold(PanelText(PanelTextId.Reading))(said(f.scale))
+        ),
+        f.contrast
+      ),
+      contentOf(s, contentKey(f.query)),
+      countOf(s, contentKey(f.query))
+    )
+    val reference = referenceOf(f, rows).map { (design, key) =>
+      val ref    = f.pair(design, key)
+      val answer = s.inspected.collect { case (`ref`, Some(a)) => a }
+      val item   = design match
+        case PairDesign.Matched => row.map(_.item)
+        case PairDesign.Control =>
+          answer.collect { case PairAnswer.Answered(Inspection.Pair(_, item, _)) => item }
+      TrialPanelVM(
+        PanelRole.of(design),
+        title(key, item),
+        key,
+        PanelReadout(PanelText(PanelTextId.PairReadout, sigma, scoreOf(answer)), ref),
+        contentOf(s, contentKey(key)),
+        countOf(s, contentKey(key))
+      )
+    }
+    val extras = row.map { r =>
+      val matched = f.pair(PairDesign.Matched, r.matched)
+      ReferenceExtras(
+        Option.when(reference.exists(_.role == PanelRole.Control))(
+          (PanelText(PanelTextId.BackToMatched), Intent.Explain(Place.At(matched)))
+        ),
+        PanelText(PanelTextId.MatchedIs, title(r.matched, Some(r.item)))
+      )
+    }
+    val remembered = row
+      .flatMap(r => s.contents.get(contentKey(r.matched)).flatten)
+      .collect { case Right(c) => c.display.display }
+      .collect { case Display.Image(AssetLink.Present(asset)) =>
+        Remembered(asset, s.underlay)
+      }
+    val failure = s.inspected.flatMap(_._2).exists(failed) ||
+      s.contents.values.flatten.exists(unreadable)
+    TrialPanelsVM(
+      None,
+      Some(query),
+      reference,
+      extras,
+      s.underlay,
+      remembered,
+      Option.when(s.underlay && remembered.isEmpty)(TrialText(TrialTextId.RememberedHidden)),
+      Option.when(failure)(PanelText(PanelTextId.Retry))
+    )
 
   /** The controls inside the query panel's own focus stop: its underlay
     * toggle, while it shows a query.
@@ -343,13 +417,13 @@ object TrialPanels:
       )
     yield source
 
-  private def contentOf(s: TrialPanels, key: TrialKey): PanelContent =
+  private def contentOf(s: TrialPanels, key: ContentKey): PanelContent =
     s.contents.get(key).flatten match
       case None            => PanelContent.Reading
       case Some(Right(c))  => PanelContent.Shown(c)
       case Some(Left(err)) => PanelContent.Unavailable(err.message)
 
-  private def countOf(s: TrialPanels, key: TrialKey): String =
+  private def countOf(s: TrialPanels, key: ContentKey): String =
     s.contents
       .get(key)
       .flatten
@@ -378,6 +452,12 @@ object TrialPanels:
     case Some(PairAnswer.Answered(Inspection.Unscored(_, status))) =>
       PanelText(PanelTextId.Unscored, statusWord(status))
     case Some(PairAnswer.Answered(other)) =>
-      PanelText(PanelTextId.Unscored, other.productPrefix)
+      PanelText(
+        PanelTextId.NotAPairScore,
+        other match
+          case Inspection.Contrast(_, _, _, _) => PanelText(PanelTextId.KindContrast)
+          case Inspection.Reduction(_, _, _)   => PanelText(PanelTextId.KindReduction)
+          case _                               => PanelText(PanelTextId.KindOther)
+      )
     case Some(PairAnswer.Refused(e))  => PanelText(PanelTextId.Unscored, e.message)
     case Some(PairAnswer.Failed(why)) => PanelText(PanelTextId.Unscored, why)
