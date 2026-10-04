@@ -37,11 +37,11 @@ class ProtocolCodecSuite extends munit.FunSuite:
 
   test("every message kind and case is sampled") {
     assertEquals(requests.map(_.ordinal), requests.indices.toVector)
-    assertEquals(requests.size, 19)
+    assertEquals(requests.size, 22)
     assertEquals(responses.map(_.ordinal), responses.indices.toVector)
-    assertEquals(responses.size, 15)
+    assertEquals(responses.size, 18)
     assertEquals(errors.map(_.ordinal), errors.indices.toVector)
-    assertEquals(errors.size, 16)
+    assertEquals(errors.size, 19)
     assertEquals(causes.map(_.ordinal), causes.indices.toVector)
     assertEquals(causes.size, 14)
     assertEquals(loci.map(_.ordinal), loci.indices.toVector)
@@ -137,6 +137,19 @@ class ProtocolCodecSuite extends munit.FunSuite:
     )
     assertEquals(unavailable.message, "The backend holds no data for dataset r2.")
     assert(!unknownReference.message.contains("PairRow"), unknownReference.message)
+    // Protocol 1.6: a trial outside the revision's dataset names both.
+    val unknownTrial = errors
+      .collectFirst { case e: BackendError.UnknownTrial => e }
+      .getOrElse(fail("unknown trial sample missing"))
+    assertEquals(unknownTrial.code, "studio-backend.unknown-trial")
+    assertEquals(unknownTrial.message, "P99 · enc_01 is not a trial of dataset r3.")
+    assertEquals(
+      unknownTrial.diagnostic.subject,
+      Vector(
+        DiagnosticLocus.Dataset(DatasetRevision(3)),
+        DiagnosticLocus.Trial(TrialKey("P99", Phase.Encoding, "enc_01", 1))
+      )
+    )
   }
 
   test("protocol values are shaped like the eyes4s values they wrap") {

@@ -40,7 +40,8 @@ object StudioFixture {
     val cached = FileFunction.cached(cache, FilesInfo.hash, FilesInfo.exists) { _ =>
       Set(
         embedJson(json, out / "FixtureJson.scala"),
-        goldenInventory(golden, out / "GoldenInventory.scala")
+        goldenInventory(golden, out / "GoldenInventory.scala"),
+        embedFixationsCsv(golden / "fixations.csv", out / "GoldenFixationsCsv.scala")
       )
     }
     // The stimulus folder's listing is an input too: a removed image changes it.
@@ -88,6 +89,34 @@ object StudioFixture {
           |private[core] object FixtureJson:
           |  val text: String = Vector(
           |    ${chunked(IO.read(source, IO.utf8))}
+          |  ).mkString
+          |""".stripMargin,
+      IO.utf8
+    )
+    out
+  }
+
+  /** `private[core] object GoldenFixationsCsv` with the exact text of
+    * fixtures/studio-golden/fixations.csv (S6.4: the source records table
+    * shows each record's verbatim line).
+    */
+  def embedFixationsCsv(source: File, out: File): File = {
+    // The fake reads one record per line and one cell per comma: a CR or a
+    // quote in the file would break both, so refuse it here.
+    val text = IO.read(source, IO.utf8)
+    if (text.contains('\r') || text.contains('"'))
+      sys.error(
+        s"StudioFixture: ${source.getName} holds a CR or a quote; the fake's source " +
+          "records read LF-ended lines of unquoted cells"
+      )
+    IO.write(
+      out,
+      s"""|${header}package eyes4s.studio.core.fixture
+          |
+          |/** The exact text of fixtures/studio-golden/fixations.csv. */
+          |private[core] object GoldenFixationsCsv:
+          |  val text: String = Vector(
+          |    ${chunked(text)}
           |  ).mkString
           |""".stripMargin,
       IO.utf8
@@ -268,6 +297,16 @@ object StudioFixture {
         .map(r => if (r.offScreen) s"${r.number}$OutsideScreenMark" else r.number.toString)
         .mkString(",")).mkString("\t")
 
+  /** S6.2: one admitted trial's fixations, in ordinal order, each
+    * `record@x@y@onset@duration`.
+    */
+  private def fixationLine(k: Key, records: Vector[Rec]): String =
+    (Seq(k._1, k._2, k._3, k._4) :+
+      records
+        .sortBy(_.ordinal.getOrElse(0))
+        .map(r => s"${r.number}@${r.x}@${r.y}@${r.onset}@${r.duration}")
+        .mkString(",")).mkString("\t")
+
   /** `GoldenInventory`: every golden trial with its disposition, and the
     * window totals of the admitted trials.
     */
@@ -302,6 +341,11 @@ object StudioFixture {
     // excluded), in ordinal order, off-screen records included and marked.
     val scanpaths = statuses.collect { case (k, Seq("admitted")) =>
       scanpathLine(k, byTrial(k))
+    }
+    // S6.2: each admitted trial's fixations in scanpath (ordinal) order, as
+    // fixations.csv states them: record, x, y, onset and duration.
+    val fixationLines = statuses.collect { case (k, Seq("admitted")) =>
+      fixationLine(k, byTrial(k))
     }
 
     // S2.10: each trial's display as trials.csv states it (participant, phase,
@@ -364,6 +408,16 @@ object StudioFixture {
           |    */
           |  val scanpaths: String = Vector(
           |    ${chunked(scanpaths.mkString("\n"))}
+          |  ).mkString
+          |
+          |  /** One tab-separated line per admitted trial, in inventory order:
+          |    * participant, phase, trial, occurrence, then its fixations in
+          |    * scanpath (ordinal) order, `,`-separated, each
+          |    * `record@x@y@onset_ms@duration_ms` as fixations.csv states them
+          |    * (S6.2). A fixation's index in the line is its scanpath position.
+          |    */
+          |  val fixations: String = Vector(
+          |    ${chunked(fixationLines.mkString("\n"))}
           |  ).mkString
           |
           |  /** One tab-separated line per trial, in inventory order: participant,

@@ -129,12 +129,12 @@ class ProtocolLongSuite extends munit.FunSuite:
     Vector("9007199254740991.1", "1.0000000000000001", "1e-400").foreach { raw =>
       val meter =
         s"""{"kind":{"Comparing":{}},"unit":{"Pairs":{}},"done":$raw,"total":{"Unknown":{}}}"""
-      val wire = s"""{"version":{"major":1,"minor":5},"id":1,"body":$meter}"""
+      val wire = s"""{"version":{"major":1,"minor":7},"id":1,"body":$meter}"""
       assert(WireFormat.parse[StageMeter](wire).isLeft, wire)
       assertEquals(WireFormat.requestId(s"""{"id":$raw}"""), None)
     }
     val safe =
-      s"""{"version":{"major":1,"minor":5},"id":1,"body":${ProtocolSamples.progress.meter.asJson.noSpaces}}"""
+      s"""{"version":{"major":1,"minor":7},"id":1,"body":${ProtocolSamples.progress.meter.asJson.noSpaces}}"""
     assertEquals(
       WireFormat.parse[StageMeter](safe).map(_.body),
       Right(ProtocolSamples.progress.meter)

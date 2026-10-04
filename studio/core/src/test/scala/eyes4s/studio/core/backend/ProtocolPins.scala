@@ -19,8 +19,18 @@ package eyes4s.studio.core.backend
 /** The pinned wire form of every [[ProtocolSamples]] sample, protocol 1.8. */
 object ProtocolPins:
   val pins: Map[String, String] = Map(
+    "error.SourceRecordsRefused" ->
+      """{"SourceRecordsRefused":{"revision":4,"error":{"RangeInvalid":{"from":0,"count":501,"limit":500}}}}""",
+    "request.SourceRecordsOf" ->
+      """{"SourceRecordsOf":{"revision":4,"from":7214,"count":60}}""",
+    "response.SourceRecordsOf" ->
+      """{"SourceRecordsOf":{"page":{"revision":4,"dataset":3,"source":{"role":{"Fixations":{}},"path":"fixations.csv","bytes":"abababababababababababababababababababababababababababababababab","semantic":null},"pixelsPerDegree":35.5,"scaleSource":{"Recipe":{}},"total":11520,"from":7214,"count":3,"rows":[{"trial":{"participant":"P17","phase":"Retrieval","trial":"ret_07","occurrence":1},"record":7214,"fixation":6,"ordinal":6,"onsetMs":2160.5,"durationMs":412.5,"samples":206,"screen":{"x":1148.5,"y":456.5},"image":{"x":700.5,"y":300.5,"insideImage":true},"degrees":{"x":5.375,"y":2.385},"placement":{"InMap":{}},"line":"P17,Retrieval,ret_07,1,6,1148.5,456.5,2160.5,412.5,206"},{"trial":{"participant":"P17","phase":"Retrieval","trial":"ret_07","occurrence":1},"record":7215,"fixation":null,"ordinal":7,"onsetMs":2650.5,"durationMs":200.5,"samples":0,"screen":{"x":120.5,"y":80.5},"image":{"x":-327.5,"y":-75.5,"insideImage":false},"degrees":{"x":-24.25,"y":13.75},"placement":null,"line":"P17,Retrieval,ret_07,1,7,120.5,80.5,2650.5,200.5,0"},{"trial":{"participant":"P17","phase":"Retrieval","trial":"ret_07","occurrence":1},"record":7216,"fixation":null,"ordinal":null,"onsetMs":null,"durationMs":null,"samples":null,"screen":null,"image":null,"degrees":null,"placement":null,"line":"P17,Retrieval,ret_07,1,x,,,,,"}]}}}""",
     "error.InventoryRefused" ->
       """{"InventoryRefused":{"dataset":4,"issues":[{"Conflict":{"trial":{"participant":"P01","phase":"Encoding","trial":"enc_01"},"records":[2,9],"columns":["response"]}},{"Width":{"record":5,"expected":8,"actual":7}},{"Field":{"record":6,"column":"occurrence","value":"x","requirement":"a positive integer occurrence"}},{"Other":{"kind":"DuplicateAttribute","text":"Attribute names [a] are declared more than once."}}]}}""",
+    "error.UnknownTrial" ->
+      """{"UnknownTrial":{"dataset":3,"trial":{"participant":"P99","phase":"Encoding","trial":"enc_01","occurrence":1}}}""",
+    "error.TrialViewRefused" ->
+      """{"TrialViewRefused":{"error":{"TrialFails":{"trial":{"participant":"P17","phase":"Retrieval","trial":"ret_07","occurrence":1},"positions":[4,5]}}}}""",
     "response.PreviewAccepted" ->
       """{"PreviewAccepted":{}}""",
     "error.UnknownPreview" ->
@@ -53,6 +63,14 @@ object ProtocolPins:
       """{"Unsubscribe":{"subscription":41}}""",
     "response.Unsubscribed" ->
       """{"Unsubscribed":{"subscription":41,"active":true}}""",
+    "request.TrialFixationsOf" ->
+      """{"TrialFixationsOf":{"revision":4,"trial":{"participant":"P17","phase":"Retrieval","trial":"ret_07","occurrence":1}}}""",
+    "request.TrialPreviewOf" ->
+      """{"TrialPreviewOf":{"revision":4,"trial":{"participant":"P17","phase":"Retrieval","trial":"ret_07","occurrence":1}}}""",
+    "response.TrialFixationsOf" ->
+      """{"TrialFixationsOf":{"fixations":{"revision":4,"dataset":3,"trial":{"participant":"P17","phase":"Retrieval","trial":"ret_07","occurrence":1},"fixations":[{"trial":{"participant":"P17","phase":"Retrieval","trial":"ret_07","occurrence":1},"position":1,"record":7209,"x":960.5,"y":540.25,"onsetMs":0.5,"durationMs":212.5,"placement":{"InMap":{}}},{"trial":{"participant":"P17","phase":"Retrieval","trial":"ret_07","occurrence":1},"position":2,"record":7210,"x":1500.5,"y":540.75,"onsetMs":230.5,"durationMs":180.25,"placement":{"OutsideWindow":{"policy":{"Exclude":{}}}}},{"trial":{"participant":"P17","phase":"Retrieval","trial":"ret_07","occurrence":1},"position":3,"record":7211,"x":-4.5,"y":20.25,"onsetMs":420.5,"durationMs":96.5,"placement":{"OutsideScreen":{}}},{"trial":{"participant":"P17","phase":"Retrieval","trial":"ret_07","occurrence":1},"position":4,"record":7212,"x":600.5,"y":400.5,"onsetMs":530.5,"durationMs":140.5,"placement":{"DroppedInitial":{}}},{"trial":{"participant":"P17","phase":"Retrieval","trial":"ret_07","occurrence":1},"position":5,"record":7213,"x":610.5,"y":410.5,"onsetMs":680.5,"durationMs":160.5,"placement":{"OutsideWindow":{"policy":{"FailTrial":{}}}}}]}}}""",
+    "response.TrialPreviewOf" ->
+      """{"TrialPreviewOf":{"preview":{"revision":4,"trial":{"participant":"P17","phase":"Retrieval","trial":"ret_07","occurrence":1},"sigmaDegrees":2.5,"region":{"left":448.5,"top":156.5,"right":1472.5,"bottom":924.5},"columns":3,"rows":2,"order":{"TopFirst":{}},"cells":[0.1,0.25,null,0.3,0.2,0.15],"levels":[0.2,0.12]}}}""",
     "cause.CorrectionConflict" ->
       """{"code":"quarantine.correction-conflict","message":"correction rules 0 and 1 both apply to the trial","first":0,"second":1}""",
     "cause.DuplicateOrdinals" ->

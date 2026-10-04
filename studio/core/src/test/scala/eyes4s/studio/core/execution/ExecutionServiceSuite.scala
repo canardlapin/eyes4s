@@ -450,6 +450,9 @@ private final class Silent(fake: FakeStudyBackend[IO]) extends StudyBackend[IO]:
     runs,
     submit,
     submitPreview,
+    trialFixations,
+    trialPreview,
+    sourceRecords,
     continuePreview
   }
 
@@ -481,6 +484,9 @@ private final class Gated(
     runs,
     subscribe,
     submitPreview,
+    trialFixations,
+    trialPreview,
+    sourceRecords,
     continuePreview
   }
 

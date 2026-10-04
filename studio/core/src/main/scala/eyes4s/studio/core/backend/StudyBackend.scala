@@ -67,23 +67,41 @@ enum BackendError derives CanEqual, Codec.AsObject:
     */
   case InventoryRefused(dataset: DatasetRevision, issues: Vector[InventoryIssue])
 
+  /** `trial` is not a trial of `dataset`'s inventory (protocol 1.6, S6.2). */
+  case UnknownTrial(dataset: DatasetRevision, trial: TrialKey)
+
+  /** A trial view the backend cannot give (protocol 1.6, S6.2): a value
+    * that would not be valid, a trial its study fails, or a step eyes4s
+    * refused. `error` names the trial and what failed.
+    */
+  case TrialViewRefused(error: TrialViewError)
+
+  /** A page of `revision`'s source records the backend cannot give
+    * (protocol 1.7, S6.4): a range outside the file, a value that would not
+    * be valid, or a step eyes4s refused.
+    */
+  case SourceRecordsRefused(revision: AnalysisRevision, error: SourceRecordsError)
+
   def code: String = this match
-    case UnknownDataset(_, _)     => "studio-backend.unknown-dataset"
-    case UnknownRevision(_, _)    => "studio-backend.unknown-revision"
-    case UnknownRun(_, _)         => "studio-backend.unknown-run"
-    case UnknownJob(_, _)         => "studio-backend.unknown-job"
-    case UnknownPreview(_, _)     => "studio-backend.unknown-preview"
-    case PreviewNotReady(_, _, _) => "studio-backend.preview-not-ready"
-    case StalePreview(_, _, _)    => "studio-backend.stale-preview"
-    case TamperedPreview(_, _)    => "studio-backend.tampered-preview"
-    case Unavailable(_)           => "studio-backend.unavailable"
-    case NoResult(_, _)           => "studio-backend.no-result"
-    case UnknownReference(_, _)   => "studio-backend.unknown-reference"
-    case AlreadyRunning(_, _)     => "studio-backend.already-running"
-    case UnsupportedVersion(_, _) => "studio-backend.unsupported-version"
-    case Malformed(_, _)          => "studio-backend.malformed-request"
-    case DuplicateSubscription(_) => "studio-backend.duplicate-subscription"
-    case InventoryRefused(_, _)   => "studio-backend.inventory-refused"
+    case UnknownDataset(_, _)       => "studio-backend.unknown-dataset"
+    case UnknownRevision(_, _)      => "studio-backend.unknown-revision"
+    case UnknownRun(_, _)           => "studio-backend.unknown-run"
+    case UnknownJob(_, _)           => "studio-backend.unknown-job"
+    case UnknownPreview(_, _)       => "studio-backend.unknown-preview"
+    case UnknownTrial(_, _)         => "studio-backend.unknown-trial"
+    case TrialViewRefused(_)        => "studio-backend.trial-view-refused"
+    case SourceRecordsRefused(_, _) => "studio-backend.source-records-refused"
+    case PreviewNotReady(_, _, _)   => "studio-backend.preview-not-ready"
+    case StalePreview(_, _, _)      => "studio-backend.stale-preview"
+    case TamperedPreview(_, _)      => "studio-backend.tampered-preview"
+    case Unavailable(_)             => "studio-backend.unavailable"
+    case NoResult(_, _)             => "studio-backend.no-result"
+    case UnknownReference(_, _)     => "studio-backend.unknown-reference"
+    case AlreadyRunning(_, _)       => "studio-backend.already-running"
+    case UnsupportedVersion(_, _)   => "studio-backend.unsupported-version"
+    case Malformed(_, _)            => "studio-backend.malformed-request"
+    case DuplicateSubscription(_)   => "studio-backend.duplicate-subscription"
+    case InventoryRefused(_, _)     => "studio-backend.inventory-refused"
 
   def message: String = this match
     case UnknownDataset(d, known) =>
@@ -114,6 +132,9 @@ enum BackendError derives CanEqual, Codec.AsObject:
       s"Request ${request.value} is already a live subscription on this connection."
     case InventoryRefused(d, issues) =>
       s"The trial inventory of ${d.label} is refused: ${issues.map(_.message).mkString(" ")}"
+    case UnknownTrial(d, t)         => s"${t.label} is not a trial of dataset ${d.label}."
+    case TrialViewRefused(e)        => e.message
+    case SourceRecordsRefused(r, e) => s"${r.label}: ${e.message}"
 
   def diagnostic: StudioDiagnostic =
     val subject = this match
@@ -133,6 +154,9 @@ enum BackendError derives CanEqual, Codec.AsObject:
       case Malformed(_, _)          => Vector.empty
       case DuplicateSubscription(_) => Vector.empty
       case InventoryRefused(d, is)  => DiagnosticLocus.Dataset(d) +: is.flatMap(_.loci)
+      case UnknownTrial(d, t)  => Vector(DiagnosticLocus.Dataset(d), DiagnosticLocus.Trial(t))
+      case TrialViewRefused(e) => Vector(DiagnosticLocus.Trial(e.trial))
+      case SourceRecordsRefused(r, _) => Vector(DiagnosticLocus.Revision(r))
     StudioDiagnostic(code, DiagnosticLevel.Error, DiagnosticOrigin.Host, subject, message)
 
 /** Everything Eyes Studio asks of eyes4s (DESIGN_SPEC section 13, S3.0): the
@@ -213,6 +237,35 @@ trait StudyBackend[F[_]]:
 
   def provenance(run: RunId, address: ResultAddress): F[Either[BackendError, Provenance]]
 
+  /** The admitted fixations of `trial` under `revision`, in scanpath order,
+    * each placed against the map by the revision's study (protocol 1.6,
+    * S6.2). A trial without an admitted scanpath is `Unavailable`.
+    */
+  def trialFixations(
+      revision: AnalysisRevision,
+      trial: TrialKey
+  ): F[Either[BackendError, TrialFixations]]
+
+  /** eyes4s's preview density of `trial` under `revision` at σ 2°, with the
+    * backend's isoline levels: a preview, not a result of any run (protocol
+    * 1.6, S6.2).
+    */
+  def trialPreview(
+      revision: AnalysisRevision,
+      trial: TrialKey
+  ): F[Either[BackendError, TrialPreview]]
+
+  /** Records `from` to `from + count - 1` (at most [[SourceRecordPage.Limit]])
+    * of the fixation file of `revision`'s dataset, in file order, each as the
+    * file states it, in image pixels and degrees, and placed by the
+    * revision's study (protocol 1.7, S6.4).
+    */
+  def sourceRecords(
+      revision: AnalysisRevision,
+      from: Int,
+      count: Int
+  ): F[Either[BackendError, SourceRecordPage]]
+
 /** A request of the [[StudyBackend]] protocol, one case per method. */
 enum BackendRequest derives CanEqual, Codec.AsObject:
   case Admission(dataset: DatasetRevision)
@@ -242,6 +295,15 @@ enum BackendRequest derives CanEqual, Codec.AsObject:
     */
   case Unsubscribe(subscription: RequestId)
 
+  /** Protocol 1.6. */
+  case TrialFixationsOf(revision: AnalysisRevision, trial: TrialKey)
+
+  /** Protocol 1.6. */
+  case TrialPreviewOf(revision: AnalysisRevision, trial: TrialKey)
+
+  /** Protocol 1.7. */
+  case SourceRecordsOf(revision: AnalysisRevision, from: Int, count: Int)
+
 /** A response of the [[StudyBackend]] protocol. */
 enum BackendResponse derives CanEqual, Codec.AsObject:
   case Refused(error: BackendError)
@@ -266,6 +328,15 @@ enum BackendResponse derives CanEqual, Codec.AsObject:
     */
   case Unsubscribed(subscription: RequestId, active: Boolean)
 
+  /** Protocol 1.6. */
+  case TrialFixationsOf(fixations: TrialFixations)
+
+  /** Protocol 1.6. */
+  case TrialPreviewOf(preview: TrialPreview)
+
+  /** Protocol 1.7. */
+  case SourceRecordsOf(page: SourceRecordPage)
+
 /** A frame from backend to client: the one response to a request, or one
   * event of a subscription.
   */
@@ -287,10 +358,11 @@ object ProtocolVersion:
     * replaced the admission summary's inventory counts with [[InventoryJoin]]
     * and added `InventoryRefused` (S5.4). 1.4 uses decimal strings for Long
     * values outside the safe JSON integer range. 1.5 adds the resolved
-    * design's query counts to preview candidates and counts (S7.5). 1.6 and
-    * 1.7 are the trial and source-record views (S6.2, S6.4/S6.5). 1.8 adds a
-    * diagnostic's affected trials, finding class and remedy (S3.5). Deploy
-    * client and backend together.
+    * design's query counts to preview candidates and counts (S7.5). 1.6
+    * adds a trial's admitted fixations and its preview map (S6.2). 1.7 adds
+    * a revision's fixation-file records as pages (`sourceRecords`, S6.4).
+    * 1.8 adds a diagnostic's affected trials, finding class and remedy
+    * (S3.5). Deploy client and backend together.
     */
   val Current: ProtocolVersion = ProtocolVersion(1, 8)
 
@@ -351,17 +423,22 @@ object StudyBackend:
         previewFrames(backend.previewCounting(r, b))
       case Q.ContinuePreview(p, b) =>
         previewFrames(backend.continuePreview(p, b))
-      case Q.SubmitPreview(r)   => answer(backend.submitPreview(r))(A.Job(_))
-      case Q.Runs               => always(backend.runs.map(A.Runs(_)))
-      case Q.Submit(r)          => answer(backend.submit(r))(A.Job(_))
-      case Q.Jobs               => always(backend.jobs.map(A.Jobs(_)))
-      case Q.Job(j)             => answer(backend.job(j))(A.Job(_))
-      case Q.Cancel(j)          => answer(backend.cancel(j))(A.Job(_))
-      case Q.Outcome(j)         => answer(backend.outcome(j))(A.Outcome(j, _))
-      case Q.Result(r)          => answer(backend.result(r))(A.Result(_))
-      case Q.Queries(r, p)      => answer(backend.queries(r, p))(A.Queries(_))
-      case Q.Inspect(r, a)      => answer(backend.inspect(r, a))(A.Inspected(_))
-      case Q.ProvenanceOf(r, a) => answer(backend.provenance(r, a))(A.ProvenanceOf(_))
+      case Q.SubmitPreview(r)       => answer(backend.submitPreview(r))(A.Job(_))
+      case Q.Runs                   => always(backend.runs.map(A.Runs(_)))
+      case Q.Submit(r)              => answer(backend.submit(r))(A.Job(_))
+      case Q.Jobs                   => always(backend.jobs.map(A.Jobs(_)))
+      case Q.Job(j)                 => answer(backend.job(j))(A.Job(_))
+      case Q.Cancel(j)              => answer(backend.cancel(j))(A.Job(_))
+      case Q.Outcome(j)             => answer(backend.outcome(j))(A.Outcome(j, _))
+      case Q.Result(r)              => answer(backend.result(r))(A.Result(_))
+      case Q.Queries(r, p)          => answer(backend.queries(r, p))(A.Queries(_))
+      case Q.Inspect(r, a)          => answer(backend.inspect(r, a))(A.Inspected(_))
+      case Q.ProvenanceOf(r, a)     => answer(backend.provenance(r, a))(A.ProvenanceOf(_))
+      case Q.TrialFixationsOf(r, t) =>
+        answer(backend.trialFixations(r, t))(A.TrialFixationsOf(_))
+      case Q.TrialPreviewOf(r, t)     => answer(backend.trialPreview(r, t))(A.TrialPreviewOf(_))
+      case Q.SourceRecordsOf(r, f, n) =>
+        answer(backend.sourceRecords(r, f, n))(A.SourceRecordsOf(_))
       // In process a subscription is ended by dropping its stream; only a
       // connection (SidecarServer) holds subscriptions to end.
       case Q.Unsubscribe(id) => Stream.emit(ServerFrame.Response(A.Unsubscribed(id, false)))

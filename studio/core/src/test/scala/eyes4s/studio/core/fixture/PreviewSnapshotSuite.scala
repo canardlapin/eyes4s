@@ -52,7 +52,9 @@ class PreviewSnapshotSuite extends munit.CatsEffectSuite:
           Map.empty
         )
       )
-      .map(state => (new FakeStudyBackend[IO](right(MockStudy.load), state), state))
+      .map(state =>
+        (new FakeStudyBackend[IO](right(MockStudy.load), StoryMoment.T2, state), state)
+      )
 
   test("submission keeps snapshot identity and execution consumes its captured script") {
     for

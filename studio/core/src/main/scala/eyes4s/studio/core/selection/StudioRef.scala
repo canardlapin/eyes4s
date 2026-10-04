@@ -54,6 +54,9 @@ object ScaleIndex:
 
   given Codec[ScaleIndex] = RefCodecs.validated(of, _.value)
 
+  /** The first declared scale; every scale set has one. */
+  val first: ScaleIndex = new ScaleIndex(0)
+
 /** A fixation's position within its trial, from 1 ("fixation 6"). */
 final case class FixationIndex private (value: Int) derives CanEqual
 
