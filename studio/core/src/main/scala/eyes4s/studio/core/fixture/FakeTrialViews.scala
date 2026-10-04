@@ -202,11 +202,24 @@ object FakeTrialViews:
       dataset: DatasetRevision,
       trial: TrialKey
   ): Either[BackendError, TrialFixations] =
+    study(moment, revision).flatMap((recipe, geometry) =>
+      under(recipe, geometry, revision, dataset, trial)
+    )
+
+  /** `trial`'s admitted fixations under a stated study: `recipe` (its window
+    * and off-window policy) on `geometry`.
+    */
+  private[fixture] def under(
+      recipe: Recipe,
+      geometry: Geometry,
+      revision: AnalysisRevision,
+      dataset: DatasetRevision,
+      trial: TrialKey
+  ): Either[BackendError, TrialFixations] =
     for
-      (recipe, geometry) <- study(moment, revision)
-      (screen, window)   <- frames(trial, recipe, geometry)
-      records            <- golden(trial)
-      placements         <- trialPlacements(
+      (screen, window) <- frames(trial, recipe, geometry)
+      records          <- golden(trial)
+      placements       <- trialPlacements(
         records.map(g => placement(screen, window, policy(recipe), g.x, g.y) -> g.durationMs)
       ).leftMap(e => refused(TrialViewError.Study(trial, "window tally", e)))
       fixations <- records.zipWithIndex.traverse { (g, i) =>

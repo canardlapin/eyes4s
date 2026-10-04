@@ -19,6 +19,7 @@ package eyes4s.studio.core.fixture
 import cats.effect.IO
 import eyes4s.plan.{MapPlacement, OffWindowPolicy}
 import eyes4s.studio.core.backend.*
+import eyes4s.studio.core.document.OffWindowChoice
 import eyes4s.studio.core.selection.{FixationIndex, StudioRef}
 import io.circe.syntax.*
 import munit.CatsEffectSuite
@@ -83,6 +84,49 @@ class TrialViewsSuite extends CatsEffectSuite:
        else p) -> d
     )
     assertEquals(FakeTrialViews.trialPlacements(kept), Right(kept.map(_._1)))
+  }
+
+  test("under FailTrial, enc_03 fails: its trial view and its source records say so, tallied") {
+    // Revision 4's study with its off-window policy turned to FailTrial;
+    // fixation 10 (record 7,218) lies left of the image, outside the window.
+    val (recipe, geometry) =
+      FakeTrialViews.study(StoryMoment.T2, rev4).fold(e => fail(e.message), identity)
+    val failing = recipe.copy(offWindow = Some(OffWindowChoice.FailTrial))
+    val view    = FakeTrialViews
+      .under(failing, geometry, rev4, r3, enc03)
+      .fold(e => fail(e.message), identity)
+    val outside = view.fixations(9)
+    assertEquals(outside.placement, MapPlacement.OutsideWindow(OffWindowPolicy.FailTrial))
+    val tallies = view.fixations.patch(9, Nil, 1).map(_.placement).map {
+      case MapPlacement.TrialFailed(t) => t
+      case other                       => fail(s"expected TrialFailed, got $other")
+    }
+    assertEquals(tallies.distinct.size, 1)
+    val tally = tallies.head
+    assertEquals((tally.outsideScreen, tally.outsideWindow, tally.total), (0, 1, 13))
+    def micros(ms: Double) = math.round(ms * 1000.0)
+    assertEquals(tally.outsideWindowDuration.toMicros, micros(outside.durationMs))
+    assertEquals(
+      tally.totalDuration.toMicros,
+      view.fixations.map(f => micros(f.durationMs)).sum
+    )
+    // The same placements on the trial's source records, in one page.
+    val source = StorySeed
+      .document(StoryMoment.T2)
+      .toOption
+      .flatMap(_.dataset(r3))
+      .flatMap(_.sources.fixations)
+      .getOrElse(fail("no fixation source"))
+    val page = FakeSourceRecords
+      .serve(rev4, r3, failing, geometry, source, view.fixations.head.record, 13)
+      .fold(e => fail(e.message), identity)
+    assertEquals(page.rows.map(_.record), view.fixations.map(_.record))
+    assertEquals(page.rows.map(_.placement), view.fixations.map(f => Some(f.placement)))
+    // Revision 4 itself excludes the fixation and fails nothing.
+    val kept = FakeTrialViews
+      .under(recipe, geometry, rev4, r3, enc03)
+      .fold(e => fail(e.message), identity)
+    assert(kept.fixations.forall(!_.placement.isInstanceOf[MapPlacement.TrialFailed]))
   }
 
   test("P17 enc_03: 13 fixations in scanpath order; fixation 6 is record 7,214") {

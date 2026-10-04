@@ -158,23 +158,34 @@ object FakeSourceRecords:
         .leftMap(e => study("window")(e.message))
       fixations <- fixationOf.leftMap(study("fixation source"))
       byTrial   <- GoldenFixations.byTrial.leftMap(study("fixation source"))
-      policy = FakeTrialViews.policy(recipe)
-      // A failing trial's in-window fixations are TrialFailed, as in its trial view.
-      failed = (trial: TrialKey, index: FixationIndex) =>
-        byTrial
-          .get(trial)
-          .flatMap(fs =>
-            FakeTrialViews
-              .trialPlacements(
+      policy  = FakeTrialViews.policy(recipe)
+      numbers = (from until math.min(total + 1, from + count)).toVector
+      // A failing trial's in-window fixations are TrialFailed, as in its trial
+      // view: each trial on the page is placed once, as a whole.
+      trialPlaced <- numbers
+        .flatMap(n => fixations.get(n).map(_._1))
+        .distinct
+        .traverse(trial =>
+          byTrial
+            .get(trial)
+            .toVector
+            .flatTraverse(fs =>
+              FakeTrialViews.trialPlacements(
                 fs.map(g =>
                   FakeTrialViews.placement(screen, window, policy, g.x, g.y) -> g.durationMs
                 )
               )
-              .toOption
-          )
+            )
+            .map(trial -> _)
+        )
+        .map(_.toMap)
+        .leftMap(study("window tally"))
+      failed = (trial: TrialKey, index: FixationIndex) =>
+        trialPlaced
+          .get(trial)
           .flatMap(_.lift(index.value - 1))
           .collect { case f @ MapPlacement.TrialFailed(_) => f }
-      rows <- (from until math.min(total + 1, from + count)).toVector.traverse { n =>
+      rows <- numbers.traverse { n =>
         val cells                = lines(n).split(",", -1).toVector
         def cell(name: String)   = columns.get(name).flatMap(cells.lift).map(_.trim)
         def int(name: String)    = cell(name).flatMap(_.toIntOption)
