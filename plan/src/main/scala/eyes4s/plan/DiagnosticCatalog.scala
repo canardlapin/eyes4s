@@ -951,7 +951,8 @@ object DiagnosticCatalog:
     "EmptyRange",
     "BlankLabel",
     "NotFewer",
-    "Duplicate"
+    "Duplicate",
+    "OtherCause"
   )
 
   /** Families whose error type no longer exists. Their codes stay issued, in

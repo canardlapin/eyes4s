@@ -167,13 +167,18 @@ admitted, quarantined by cause, absent, records outside the window and the
 screen), the design (requested, eligible, unmatched and not-admitted queries,
 controls per query) and the reporting (the reporting specification, group size
 range, paired n, participant-group cells below the minimum). Each is a
-`Token.Fact` with its `FactSlot` and a typed `FactSource` (a ledger count, a
-design count, report cells or a contrast key, the reporting specification, a
-plan field or a host fact), so a host links every number to what it counts. A
-`Fact` takes the kind of `FactValue` its slot states (`Fact.of` refuses
-another, a negative count, an empty range or a blank label, with the
-`methods-fact` diagnostics), and `MethodsFacts` holds one fact per slot. A fact
-not given is not stated; `methods(plan)` states the plan alone. Causes carry
+`Token.Fact` carrying the `Fact` itself: its `FactSlot` and its one typed
+`FactSource` (a ledger count, a design count, report cells or a contrast key,
+the reporting specification, a plan field or a host fact), so a host links
+every number to what it counts. A slot's `slotId` (`eligibleQueries`,
+`quarantineCause.overlap`) is its stable identity for linking and diffing;
+`FactSlot.fromSlotId` reads one back. A `Fact` takes the kind of `FactValue`
+its slot states (`Fact.of` refuses another, a negative count, an empty range,
+a blank label or an other cause under a named cause's slug, with the
+`methods-fact` diagnostics), and `MethodsFacts` holds one fact per slot id.
+Every fact given is stated, even without its companions (an inventory count
+with no admitted count); a fact not given is not stated, and `methods(plan)`
+states the plan alone. Causes carry
 the boards' labels (`AdmissionCause`: overlap, no-fixations,
 duplicate-ordinals, rejected-records, absent (no fixation records)). The text
 also states the method-determined words: what M, B and D are, that D measures

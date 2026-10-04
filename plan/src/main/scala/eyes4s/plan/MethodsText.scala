@@ -47,18 +47,20 @@ enum TokenRole derives CanEqual:
   case Policy
 
 /** One piece of a methods sentence: fixed English words, a value drawn from a
-  * form field with its role, or a fact from beyond the plan with its slot and
-  * source ([[MethodsFacts]]).
+  * form field with its role, or a fact from beyond the plan
+  * ([[MethodsFacts]]). A fact token carries the fact itself, so its slot and
+  * its one source are the fact's own; a fact may be shown in several tokens
+  * (a range and its exceptions).
   */
 enum Token derives CanEqual:
   case Words(words: String)
   case Value(field: FieldId, role: TokenRole, shown: String)
-  case Fact(slot: FactSlot, source: FactSource, shown: String)
+  case Fact(fact: eyes4s.plan.Fact, shown: String)
 
   def text: String = this match
     case Words(w)       => w
     case Value(_, _, s) => s
-    case Fact(_, _, s)  => s
+    case Fact(_, s)     => s
 
 /** What a methods sentence is about: one recipe field, or the facts of the
   * admission, the design, the contrast or the reporting.
@@ -220,8 +222,9 @@ object StudyText:
   /** The methods text of Studio S9.4: one clause per recipe field the plan
     * declares, the method-determined clauses on the contrast, and, in reading
     * order, a clause for the admission, design and reporting facts given
-    * (CR6d). A fact not given is not stated; with no facts the text states
-    * the plan alone.
+    * (CR6d). Every fact given is stated, each in tokens carrying that fact
+    * and so its one source; a fact not given is not stated, and with no facts
+    * the text states the plan alone.
     */
   def methods[K, U <: Unit2D, P, S, D](
       plan: StudyPlan[K, U, P, S, D],
@@ -291,7 +294,7 @@ object StudyText:
             w("Maps covered the whole admission frame "),
             Value(window, TokenRole.Policy, region(other.admission.bounds)),
             w(".")
-          )
+          ) ++ known.outsideWindow
         )
     val declared = plan.angularScale.toVector.map(s =>
       Clause(
@@ -408,7 +411,7 @@ private final class FactText(facts: MethodsFacts):
     case FactValue.Breakdown(cells) => FactText.count(cells.size.toLong)
     case FactValue.Label(text)      => text
 
-  private def token(fact: eyes4s.plan.Fact): Token = Fact(fact.slot, fact.source, shown(fact))
+  private def token(fact: eyes4s.plan.Fact): Token = Fact(fact, shown(fact))
   private def at(slot: FactSlot): Option[Token]    = facts.get(slot).map(token)
 
   /** `parts` joined into one list: "a, b and c". */
@@ -452,31 +455,44 @@ private final class FactText(facts: MethodsFacts):
       val name = c.slot match
         case FactSlot.QuarantineCause(cause) => cause.label
         case _                               => ""
-      Vector(Fact(c.slot, c.source, s"$name ${shown(c)}"))
+      Vector(Fact(c, s"$name ${shown(c)}"))
     }
-    val counts = Vector(
-      at(FactSlot.Admitted).map(a =>
-        Vector(a) ++ at(FactSlot.InventoryTrials).toVector.flatMap(i =>
+    val causeList = Option
+      .when(quarantinedCauses.nonEmpty)(
+        Vector(w(" (")) ++ quarantinedCauses.zipWithIndex.flatMap((c, i) =>
+          (if i == 0 then Vector.empty else Vector(w(", "))) ++ c
+        ) ++ Vector(w(")"))
+      )
+      .toVector
+      .flatten
+    val admitted  = at(FactSlot.Admitted)
+    val inventory = at(FactSlot.InventoryTrials)
+    val counts    = Vector(
+      admitted.map(a =>
+        Vector(a) ++ inventory.toVector.flatMap(i =>
           Vector(w(" of "), i, w(" inventory trials"))
         ) ++ Vector(w(" were admitted"))
       ),
-      at(FactSlot.Quarantined).map(q =>
-        Vector(q, w(" quarantined")) ++ Option
-          .when(quarantinedCauses.nonEmpty)(
-            Vector(w(" (")) ++ quarantinedCauses.zipWithIndex.flatMap((c, i) =>
-              (if i == 0 then Vector.empty else Vector(w(", "))) ++ c
-            ) ++ Vector(w(")"))
-          )
-          .toVector
-          .flatten
-      ),
+      at(FactSlot.Quarantined) match
+        case Some(q) => Some(Vector(q, w(" quarantined")) ++ causeList)
+        case None    =>
+          Option.when(causeList.nonEmpty)(Vector(w("some were quarantined")) ++ causeList)
+      ,
       at(FactSlot.Absent).map(a => Vector(a, w(" absent (no fixation records)")))
     ).flatten
-    Option.when(opening.nonEmpty || counts.nonEmpty) {
-      val body =
-        if opening.isEmpty then Vector(w("Of the inventory trials, ")) ++ joined(counts)
-        else if counts.isEmpty then opening
-        else opening ++ Vector(w(": ")) ++ joined(counts)
+    // Without an admitted count, the inventory leads the list: "of 960 inventory trials, …".
+    val lead = if admitted.isDefined then None else inventory
+    Option.when(opening.nonEmpty || counts.nonEmpty || lead.nonEmpty) {
+      val body = (opening.nonEmpty, counts.nonEmpty, lead) match
+        case (_, true, Some(i)) =>
+          val of = Vector(i, w(" inventory trials, ")) ++ joined(counts)
+          if opening.isEmpty then w("Of ") +: of else opening ++ (w(": of ") +: of)
+        case (false, true, None) => Vector(w("Of the inventory trials, ")) ++ joined(counts)
+        case (true, true, None)  => opening ++ Vector(w(": ")) ++ joined(counts)
+        case (_, false, Some(i)) =>
+          if opening.isEmpty then Vector(w("The inventory held "), i, w(" trials"))
+          else opening ++ Vector(w(" from "), i, w(" inventory trials"))
+        case (_, false, None) => opening
       Clause(ClauseTopic.Admission, body :+ w("."))
     }
 
@@ -486,13 +502,19 @@ private final class FactText(facts: MethodsFacts):
     */
   def design: Vector[Clause] =
     val eligibility =
+      val left = Vector(
+        at(FactSlot.UnmatchedQueries).map(u => Vector(u, w(" had no matched reference"))),
+        at(FactSlot.NotAdmittedQueries).map(n => Vector(n, w(" were not admitted")))
+      ).flatten
       (at(FactSlot.RequestedQueries), at(FactSlot.EligibleQueries)) match
-        case (None, None)          => None
+        case (None, None) =>
+          Option.when(left.nonEmpty)(
+            Clause(
+              ClauseTopic.Design,
+              Vector(w("Of the requested queries, ")) ++ joined(left) :+ w(".")
+            )
+          )
         case (requested, eligible) =>
-          val left = Vector(
-            at(FactSlot.UnmatchedQueries).map(u => Vector(u, w(" had no matched reference"))),
-            at(FactSlot.NotAdmittedQueries).map(n => Vector(n, w(" were not admitted")))
-          ).flatten
           val head = (requested, eligible) match
             case (Some(r), Some(e)) =>
               Vector(w("Of "), r, w(" requested queries, "), e, w(" were eligible"))
@@ -519,8 +541,7 @@ private final class FactText(facts: MethodsFacts):
               Vector(w(" (")) ++ fewer.zipWithIndex.flatMap { (x, i) =>
                 (if i == 0 then Vector.empty else Vector(w("; "))) :+
                   Fact(
-                    f.slot,
-                    f.source,
+                    f,
                     s"${FactText.count(x.queries.toLong)} queries had " +
                       s"${FactText.count(x.controls.toLong)}: ${x.cause.label}"
                   )
@@ -532,15 +553,18 @@ private final class FactText(facts: MethodsFacts):
     }
     eligibility.toVector ++ controls.toVector
 
-  /** " 543 records in 409 trials fell outside it." */
+  /** " 543 records in 409 trials fell outside it.", after the sentence
+    * naming the mapped region.
+    */
   def outsideWindow: Vector[Token] =
-    at(FactSlot.RecordsOutsideWindow).toVector.flatMap(r =>
-      Vector(w(" "), r, w(" records")) ++
-        at(FactSlot.TrialsOutsideWindow).toVector.flatMap(t =>
-          Vector(w(" in "), t, w(" trials"))
-        ) ++
-        Vector(w(" fell outside it."))
-    )
+    val trials = at(FactSlot.TrialsOutsideWindow).toVector
+    at(FactSlot.RecordsOutsideWindow) match
+      case Some(r) =>
+        Vector(w(" "), r, w(" records")) ++
+          trials.flatMap(t => Vector(w(" in "), t, w(" trials"))) ++
+          Vector(w(" fell outside it."))
+      case None =>
+        trials.flatMap(t => Vector(w(" Records in "), t, w(" trials fell outside it.")))
 
   def outsideScreen: Vector[Clause] =
     at(FactSlot.RecordsOutsideScreen).toVector.map(r =>
@@ -563,7 +587,7 @@ private final class FactText(facts: MethodsFacts):
     val main = Option.when(head.nonEmpty)(
       Clause(
         ClauseTopic.Reporting,
-        head.head ++ head.tail.zipWithIndex.flatMap((p, i) =>
+        FactText.capitalised(head.head) ++ head.tail.zipWithIndex.flatMap((p, i) =>
           (if i == 0 then Vector(w("; ")) else Vector(w(" and "))) ++ p
         ) :+ w(".")
       )
@@ -579,7 +603,7 @@ private final class FactText(facts: MethodsFacts):
             .when(cells.nonEmpty)(
               Vector(w(" (")) ++ cells.zipWithIndex.flatMap { (c, i) =>
                 (if i == 0 then Vector.empty else Vector(w(", "))) :+
-                  Fact(f.slot, f.source, s"${c.participant} · ${c.group} · ${c.queries}")
+                  Fact(f, s"${c.participant} · ${c.group} · ${c.queries}")
               } ++ Vector(w(")"))
             )
             .toVector
@@ -589,6 +613,11 @@ private final class FactText(facts: MethodsFacts):
     main.toVector ++ below.toVector
 
 private object FactText:
+  /** The tokens with their first word capitalised, to open a sentence. */
+  def capitalised(tokens: Vector[Token]): Vector[Token] = tokens match
+    case Token.Words(w) +: rest => Token.Words(w.capitalize) +: rest
+    case other                  => other
+
   /** "11,520": digits grouped in threes. */
   def count(n: Long): String =
     val digits  = math.abs(n).toString

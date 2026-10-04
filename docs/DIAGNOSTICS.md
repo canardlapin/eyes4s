@@ -1508,6 +1508,7 @@ fails after rewriting, so review the change and run it again.
 | `methods-fact.blank-label` | `BlankLabel` | `slot` |
 | `methods-fact.not-fewer` | `NotFewer` | `slot`, `controls`, `maximum` |
 | `methods-fact.duplicate` | `Duplicate` | `slot` |
+| `methods-fact.other-cause` | `OtherCause` | `slot`, `slug` |
 
 ### `codec` — `CodecError`
 

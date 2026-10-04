@@ -27,6 +27,15 @@ enum AdmissionCause derives CanEqual:
   /** Any other quarantine cause, by its slug (`wrong-clock`). */
   case Other(slug: String)
 
+  /** The cause's id in a slot id: `overlap`, `wrong-clock`. */
+  def id: String = this match
+    case Overlap           => "overlap"
+    case NoFixations       => "no-fixations"
+    case DuplicateOrdinals => "duplicate-ordinals"
+    case RejectedRecords   => "rejected-records"
+    case Absent            => "absent"
+    case Other(slug)       => slug
+
   def label: String = this match
     case Overlap           => "overlap"
     case NoFixations       => "no-fixations"
@@ -36,6 +45,10 @@ enum AdmissionCause derives CanEqual:
     case Other(slug)       => slug
 
 object AdmissionCause:
+  /** The causes with their own case. */
+  val named: Vector[AdmissionCause] =
+    Vector(Overlap, NoFixations, DuplicateOrdinals, RejectedRecords, Absent)
+
   def of(cause: QuarantineCause): AdmissionCause = cause match
     case QuarantineCause.Overlap(_, _, _)  => Overlap
     case QuarantineCause.NoFixations       => NoFixations
@@ -112,14 +125,69 @@ enum FactSlot derives CanEqual:
   case ControlsPerQuery
   case ReportingSpec, GroupSizeRange, PairedN, BelowMinimumQueries
 
-  /** The slot's stable name: `eligibleQueries`, `quarantineCause.overlap`. */
-  def name: String = this match
-    case QuarantineCause(cause) =>
-      val kind = cause match
-        case AdmissionCause.Other(slug) => slug
-        case other                      => DiagnosticFamily.slug(other.toString)
-      s"quarantineCause.$kind"
-    case other => other.toString.head.toLower +: other.toString.tail
+  /** The slot's stable identity, for a host to link and diff facts by:
+    * `eligibleQueries`, `quarantineCause.overlap`. Distinct slots of valid
+    * facts have distinct ids ([[Fact.of]] refuses an `Other` cause under a
+    * named cause's slug), and [[FactSlot.fromSlotId]] reads one back.
+    */
+  def slotId: String = this match
+    case DatasetRevision        => "datasetRevision"
+    case FixationRecords        => "fixationRecords"
+    case InventoryTrials        => "inventoryTrials"
+    case Admitted               => "admitted"
+    case Quarantined            => "quarantined"
+    case QuarantineCause(cause) => s"quarantineCause.${cause.id}"
+    case Absent                 => "absent"
+    case RecordsOutsideWindow   => "recordsOutsideWindow"
+    case TrialsOutsideWindow    => "trialsOutsideWindow"
+    case RecordsOutsideScreen   => "recordsOutsideScreen"
+    case RequestedQueries       => "requestedQueries"
+    case EligibleQueries        => "eligibleQueries"
+    case NotAdmittedQueries     => "notAdmittedQueries"
+    case UnmatchedQueries       => "unmatchedQueries"
+    case ControlsPerQuery       => "controlsPerQuery"
+    case ReportingSpec          => "reportingSpec"
+    case GroupSizeRange         => "groupSizeRange"
+    case PairedN                => "pairedN"
+    case BelowMinimumQueries    => "belowMinimumQueries"
+
+object FactSlot:
+  /** Every slot but the per-cause ones. */
+  val fixed: Vector[FactSlot] = Vector(
+    DatasetRevision,
+    FixationRecords,
+    InventoryTrials,
+    Admitted,
+    Quarantined,
+    Absent,
+    RecordsOutsideWindow,
+    TrialsOutsideWindow,
+    RecordsOutsideScreen,
+    RequestedQueries,
+    EligibleQueries,
+    NotAdmittedQueries,
+    UnmatchedQueries,
+    ControlsPerQuery,
+    ReportingSpec,
+    GroupSizeRange,
+    PairedN,
+    BelowMinimumQueries
+  )
+
+  private val CausePrefix = "quarantineCause."
+
+  /** The slot a [[FactSlot.slotId]] names; a cause slug that no named cause
+    * has is an `Other` cause.
+    */
+  def fromSlotId(id: String): Option[FactSlot] =
+    fixed.find(_.slotId == id).orElse {
+      Option.when(id.startsWith(CausePrefix) && id.length > CausePrefix.length) {
+        val slug = id.drop(CausePrefix.length)
+        QuarantineCause(
+          AdmissionCause.named.find(_.id == slug).getOrElse(AdmissionCause.Other(slug))
+        )
+      }
+    }
 
 /** One participant-and-group cell left out under the minimum, with the
   * queries it had.
@@ -165,6 +233,11 @@ enum FactError derives CanEqual:
   case NotFewer(slot: String, controls: Int, maximum: Long)
   case Duplicate(slot: String)
 
+  /** An `Other` cause whose slug is blank, holds whitespace or is a named
+    * cause's.
+    */
+  case OtherCause(slot: String, slug: String)
+
   def message: String = this match
     case WrongValue(slot, value, expected) => s"The $slot fact is $value; it takes $expected."
     case NegativeCount(slot, n)            => s"The $slot fact counts $n, which is negative."
@@ -172,7 +245,10 @@ enum FactError derives CanEqual:
     case BlankLabel(slot)                  => s"The $slot fact is blank."
     case NotFewer(slot, controls, maximum) =>
       s"The $slot fact lists queries with $controls controls as fewer than the most, $maximum."
-    case Duplicate(slot) => s"The $slot fact is given twice."
+    case Duplicate(slot)        => s"The $slot fact is given twice."
+    case OtherCause(slot, slug) =>
+      s"The $slot fact names the other cause '$slug', which is blank, holds whitespace " +
+        "or is a named cause's."
 
 /** One fact for a methods text: what it states, where it comes from, and its
   * value.
@@ -186,7 +262,7 @@ object Fact:
     */
   def of(slot: FactSlot, source: FactSource, value: FactValue): Either[FactError, Fact] =
     import FactSlot.*
-    val name                      = slot.name
+    val name                      = slot.slotId
     def count(n: Long)            = Either.cond(n >= 0, (), FactError.NegativeCount(name, n))
     def range(r: FactValue.Range) =
       count(r.min) *> count(r.max) *>
@@ -215,7 +291,16 @@ object Fact:
           ) =>
         count(n)
       case _ => Left(FactError.WrongValue(name, value.toString, expectedKind(slot)))
-    kind.map(_ => new Fact(slot, source, value))
+    val cause = slot match
+      case QuarantineCause(AdmissionCause.Other(slug)) =>
+        Either.cond(
+          slug.nonEmpty && !slug.exists(_.isWhitespace) &&
+            !AdmissionCause.named.exists(_.id == slug),
+          (),
+          FactError.OtherCause(name, slug)
+        )
+      case _ => Right(())
+    (cause *> kind).map(_ => new Fact(slot, source, value))
 
   private def expectedKind(slot: FactSlot): String = slot match
     case FactSlot.DatasetRevision | FactSlot.ReportingSpec => "a label"
@@ -224,7 +309,10 @@ object Fact:
     case FactSlot.BelowMinimumQueries                      => "a breakdown"
     case _                                                 => "a count"
 
-/** The facts a methods text cites beyond its plan, one per slot. */
+/** The facts a methods text cites beyond its plan, one per slot.
+  * [[StudyText.methods]] states every one of them, each in tokens that carry
+  * the fact itself and so its one source.
+  */
 final case class MethodsFacts private (facts: Vector[Fact]) derives CanEqual:
   def get(slot: FactSlot): Option[Fact] = facts.find(_.slot == slot)
 
@@ -233,6 +321,6 @@ object MethodsFacts:
 
   def of(facts: Vector[Fact]): Either[FactError, MethodsFacts] =
     facts
-      .groupBy(_.slot)
-      .collectFirst { case (slot, all) if all.size > 1 => FactError.Duplicate(slot.name) }
+      .groupBy(_.slot.slotId)
+      .collectFirst { case (id, all) if all.size > 1 => FactError.Duplicate(id) }
       .toLeft(new MethodsFacts(facts))

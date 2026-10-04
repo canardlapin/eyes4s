@@ -508,8 +508,8 @@ class StudyFormSuite extends munit.FunSuite:
       text.text
     )
     // Every number is a fact or a recipe value, with its source.
-    val sources = text.tokens.collect { case Token.Fact(slot, source, shown) =>
-      (slot, source, shown)
+    val sources = text.tokens.collect { case Token.Fact(f, shown) =>
+      (f.slot, f.source, shown)
     }
     assert(
       sources.contains((FactSlot.EligibleQueries, design(DesignCount.EligibleQueries), "457"))
@@ -536,8 +536,8 @@ class StudyFormSuite extends munit.FunSuite:
     val plain = StudyText.methods(fixturePlan)
     assertEquals(StudyText.methods(fixturePlan, MethodsFacts.empty), plain)
     assert(plain.tokens.forall {
-      case Token.Fact(_, _, _) => false
-      case _                   => true
+      case Token.Fact(_, _) => false
+      case _                => true
     })
     val eligibleOnly = get(
       MethodsFacts.of(
@@ -585,13 +585,131 @@ class StudyFormSuite extends munit.FunSuite:
     val one = fact(FactSlot.PairedN, src, count(24))
     assertEquals(MethodsFacts.of(Vector(one, one)), Left(FactError.Duplicate("pairedN")))
     assertEquals(
-      FactSlot.QuarantineCause(AdmissionCause.DuplicateOrdinals).name,
+      FactSlot.QuarantineCause(AdmissionCause.DuplicateOrdinals).slotId,
       "quarantineCause.duplicate-ordinals"
     )
     assertEquals(
       Diagnostic.of(FactError.Duplicate("pairedN")).code.render,
       "methods-fact.duplicate"
     )
+  }
+
+  private val unwindowedPlan =
+    get(plan(fixture.updated(id("window"), Absent).updated(id("offWindow"), Absent)))
+
+  /** The facts each methods-text token carries. */
+  private def stated(text: Phrase): Vector[Fact] =
+    text.tokens.collect { case Token.Fact(f, _) => f }
+
+  test("CR6d: every fact given is stated, alone or with any other facts, on either geometry") {
+    val all     = fixtureFacts.facts
+    val subsets =
+      Vector(all) ++ all.map(Vector(_)) ++ all.indices.map(i => all.patch(i, Nil, 1))
+    for
+      (geometry, p) <- Vector("windowed" -> fixturePlan, "unwindowed" -> unwindowedPlan)
+      facts         <- subsets
+    do
+      val text = StudyText.methods(p, get(MethodsFacts.of(facts)))
+      val ids  = facts.map(_.slot.slotId)
+      // Each token's fact is one of the facts given, so its one source is that fact's.
+      assertEquals(stated(text).toSet, facts.toSet, s"$geometry $ids")
+      assert(
+        text.clauses.forall(c =>
+          c.text.headOption.exists(_.isUpper) || c.text.headOption.exists(_.isDigit)
+        ),
+        s"$geometry $ids: ${text.clauses.map(_.text)}"
+      )
+  }
+
+  test("CR6d: facts whose companions are absent still read as sentences") {
+    def only(slots: FactSlot*) =
+      get(MethodsFacts.of(fixtureFacts.facts.filter(f => slots.contains(f.slot))))
+    def topic(t: ClauseTopic, p: StudyPlan[?, Px, ?, ?, ?], facts: MethodsFacts) =
+      StudyText.methods(p, facts).clauses.filter(_.topic == t).map(_.text)
+    assertEquals(
+      topic(
+        ClauseTopic.Admission,
+        fixturePlan,
+        only(
+          FactSlot.InventoryTrials,
+          FactSlot.QuarantineCause(AdmissionCause.Overlap),
+          FactSlot.QuarantineCause(AdmissionCause.NoFixations)
+        )
+      ),
+      Vector("Of 960 inventory trials, some were quarantined (overlap 6, no-fixations 5).")
+    )
+    assertEquals(
+      topic(ClauseTopic.Admission, fixturePlan, only(FactSlot.InventoryTrials)),
+      Vector("The inventory held 960 trials.")
+    )
+    assertEquals(
+      topic(
+        ClauseTopic.Admission,
+        fixturePlan,
+        only(FactSlot.FixationRecords, FactSlot.InventoryTrials)
+      ),
+      Vector("Fixations (11,520 records) were admitted by trial from 960 inventory trials.")
+    )
+    assertEquals(
+      topic(
+        ClauseTopic.Design,
+        fixturePlan,
+        only(FactSlot.UnmatchedQueries, FactSlot.NotAdmittedQueries)
+      ),
+      Vector("Of the requested queries, 9 had no matched reference and 14 were not admitted.")
+    )
+    val trials = StudyText.methods(fixturePlan, only(FactSlot.TrialsOutsideWindow)).text
+    assert(trials.contains("were left out of the map. Records in 409 trials fell outside it."))
+    val whole = StudyText.methods(unwindowedPlan, only(FactSlot.RecordsOutsideWindow)).text
+    assert(whole.contains("Maps covered the whole admission frame"), whole)
+    assert(whole.contains(". 543 records fell outside it."), whole)
+  }
+
+  test("CR6d: slot ids are stable, distinct and read back") {
+    val causes = (AdmissionCause.named :+ AdmissionCause.Other("wrong-clock"))
+      .map(FactSlot.QuarantineCause(_))
+    val slots = FactSlot.fixed ++ causes
+    assertEquals(
+      slots.map(_.slotId),
+      Vector(
+        "datasetRevision",
+        "fixationRecords",
+        "inventoryTrials",
+        "admitted",
+        "quarantined",
+        "absent",
+        "recordsOutsideWindow",
+        "trialsOutsideWindow",
+        "recordsOutsideScreen",
+        "requestedQueries",
+        "eligibleQueries",
+        "notAdmittedQueries",
+        "unmatchedQueries",
+        "controlsPerQuery",
+        "reportingSpec",
+        "groupSizeRange",
+        "pairedN",
+        "belowMinimumQueries",
+        "quarantineCause.overlap",
+        "quarantineCause.no-fixations",
+        "quarantineCause.duplicate-ordinals",
+        "quarantineCause.rejected-records",
+        "quarantineCause.absent",
+        "quarantineCause.wrong-clock"
+      )
+    )
+    assertEquals(slots.map(s => FactSlot.fromSlotId(s.slotId)), slots.map(Some(_)))
+    assertEquals(FactSlot.fromSlotId("quarantineCause."), None)
+    assertEquals(FactSlot.fromSlotId("eligible"), None)
+    // An other cause may not take a named cause's slug, so ids stay distinct.
+    val src = FactSource.Host("x")
+    Vector("overlap", "absent", "", "wrong clock").foreach { slug =>
+      val slot = FactSlot.QuarantineCause(AdmissionCause.Other(slug))
+      assertEquals(
+        Fact.of(slot, src, count(1)),
+        Left(FactError.OtherCause(s"quarantineCause.$slug", slug))
+      )
+    }
   }
 
   test("CR6d: admission causes carry the boards' labels") {
