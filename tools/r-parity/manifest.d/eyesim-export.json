@@ -16,7 +16,7 @@
     },
     "export-public-example": {
       "path": "io/src/test/scala/eyes4s/examples/BaselineExportGuide.scala",
-      "sha256": "86b67680de3897c84d4f82b9949e196f2e4c4e61a4ecf3b075bc7564220ed4b6",
+      "sha256": "9949c5a3fae863771b0e77f1884fd2e29e6a9247d264a0b4041b33f8da3363c9",
       "license": "Apache-2.0; synthetic public export examples authored for eyes4s",
       "role": "Frozen canonical export schemas, emitted artifact receipt or independent reader"
     },
