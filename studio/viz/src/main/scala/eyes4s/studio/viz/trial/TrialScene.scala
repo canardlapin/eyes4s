@@ -453,6 +453,15 @@ object TrialScene:
           .foldLeft(frame)((r, f) => r.including(f.screenX, f.screenY))
           .grown(GazeMarginPx)
 
+  /** One extent for trials shown side by side (S8.2's query and reference
+    * panels): the smallest region covering each one's [[TrialExtent.Gaze]]
+    * extent, so both are drawn at one scale. None for no inputs.
+    */
+  def sharedExtent(inputs: Vector[TrialSceneInput]): Option[ScreenRect] =
+    inputs
+      .map(i => extentOf(i.copy(options = i.options.copy(extent = TrialExtent.Gaze))))
+      .reduceOption((a, b) => a.including(b.left, b.top).including(b.right, b.bottom))
+
   /** What the frame shows: a stored image only when it is loaded, a missing
     * asset hatched, never a blank in place of an image.
     */

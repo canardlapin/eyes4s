@@ -47,6 +47,15 @@ enum PanelTextId derives CanEqual:
   /** A stage while its trial is read. */
   case ReadingTrial
 
+  /** Asks again for what failed. */
+  case Retry
+
+  /** The backend answered the pair with another kind of result. */
+  case NotAPairScore, KindContrast, KindReduction, KindOther
+
+  /** A window with no stimulus source. */
+  case NoStimulusSource
+
   /** A trial's fixation table: caption, headers, and each placement. */
   case TableCaption, FixationHeader, XHeader, YHeader, OnsetHeader, DurationHeader
   case PlacementHeader, InMap, DroppedInitial, OutsideScreen, OutsideExcluded, OutsideFails
@@ -57,33 +66,39 @@ object PanelText:
   def english(id: PanelTextId): String =
     import PanelTextId.*
     id match
-      case Query           => "Query"
-      case Matched         => "Matched"
-      case Control         => "Control"
-      case Title           => "{0} · {1} · {2}"
-      case TitleNoItem     => "{0} · {1}"
-      case ContrastReadout => "Query contrast D · σ {0}: {1}"
-      case PairReadout     => "Inspected pair score · σ {0}: {1}"
-      case Reading         => "reading…"
-      case Unscored        => "{0}"
-      case BackToMatched   => "Back to matched reference"
-      case MatchedIs       => "Matched reference: {0}"
-      case Underlay        => "Underlay remembered image"
-      case NoQuery         => "Choose a query in the Queries navigator"
-      case Fixations       => "{0} fix"
-      case ReadingTrial    => "Reading the trial…"
-      case TableCaption    => "Fixations of {0}"
-      case FixationHeader  => "Fixation"
-      case XHeader         => "x (px)"
-      case YHeader         => "y (px)"
-      case OnsetHeader     => "Onset (ms)"
-      case DurationHeader  => "Duration (ms)"
-      case PlacementHeader => "Map placement"
-      case InMap           => "in map"
-      case DroppedInitial  => "dropped by initial-fixation policy"
-      case OutsideScreen   => "outside screen"
-      case OutsideExcluded => "outside window, excluded from map"
-      case OutsideFails    => "outside window, trial fails"
+      case Query            => "Query"
+      case Matched          => "Matched"
+      case Control          => "Control"
+      case Title            => "{0} · {1} · {2}"
+      case TitleNoItem      => "{0} · {1}"
+      case ContrastReadout  => "Query contrast D · σ {0}: {1}"
+      case PairReadout      => "Inspected pair score · σ {0}: {1}"
+      case Reading          => "reading…"
+      case Unscored         => "{0}"
+      case BackToMatched    => "Back to matched reference"
+      case MatchedIs        => "Matched reference: {0}"
+      case Underlay         => "Underlay remembered image"
+      case NoQuery          => "Choose a query in the Queries navigator"
+      case Fixations        => "{0} fix"
+      case ReadingTrial     => "Reading the trial…"
+      case Retry            => "Retry"
+      case NotAPairScore    => "not a pair score (the backend answered a {0})"
+      case KindContrast     => "contrast row"
+      case KindReduction    => "reduction"
+      case KindOther        => "result of another kind"
+      case NoStimulusSource => "this window has no stimulus source"
+      case TableCaption     => "Fixations of {0}"
+      case FixationHeader   => "Fixation"
+      case XHeader          => "x (px)"
+      case YHeader          => "y (px)"
+      case OnsetHeader      => "Onset (ms)"
+      case DurationHeader   => "Duration (ms)"
+      case PlacementHeader  => "Map placement"
+      case InMap            => "in map"
+      case DroppedInitial   => "dropped by initial-fixation policy"
+      case OutsideScreen    => "outside screen"
+      case OutsideExcluded  => "outside window, excluded from map"
+      case OutsideFails     => "outside window, trial fails"
 
   /** `id`'s English template with `args` filled in. */
   def apply(id: PanelTextId, args: String*): String =

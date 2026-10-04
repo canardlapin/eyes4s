@@ -17,6 +17,7 @@
 package eyes4s.studio.desktop.compare
 
 import eyes4s.studio.app.compare.TrialContentSource
+import eyes4s.studio.app.text.{PanelText, PanelTextId}
 import eyes4s.studio.core.assets.AssetRef
 import eyes4s.studio.desktop.trial.{StimulusError, StimulusSource}
 
@@ -31,5 +32,6 @@ object PanelSources:
   /** No content and no stimuli: the panels say so and draw nothing. */
   val notServed: PanelSources = PanelSources(
     TrialContentSource.notServed,
-    (asset: AssetRef) => Left(StimulusError.NotStored(asset.file, "no stimulus source"))
+    (asset: AssetRef) =>
+      Left(StimulusError.NotStored(asset.file, PanelText(PanelTextId.NoStimulusSource)))
   )

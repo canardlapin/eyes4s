@@ -226,7 +226,19 @@ final class CompareSummaryHost(
 
   /** Compare's query and reference trial panels (S8.2), on the run's rows. */
   val panels: TrialPanelsView =
-    TrialPanelsView(app, on => panelIntent(PanelsIntent.Underlay(on)), sources.stimuli)
+    TrialPanelsView(
+      app,
+      on => panelIntent(PanelsIntent.Underlay(on)),
+      () => panelIntent(PanelsIntent.Retry),
+      sources.stimuli
+    )
+
+  /** The run Compare shows, with its revision and rows, once both are read. */
+  private def shownRun: Option[ShownRun] =
+    for
+      run <- state.run
+      sum <- state.answered
+    yield ShownRun(run, sum.revision, rows)
 
   /** The trial panels' Table tabs: each shown trial's fixations. */
   val queryTrialTable: TableTwinView =
@@ -242,6 +254,8 @@ final class CompareSummaryHost(
 
   private def panelIntent(intent: PanelsIntent): Unit = if !disposed then
     panelState = TrialPanels.update(panelState, intent)
+    // Retry forgets what failed; the sync asks for it again.
+    if intent == PanelsIntent.Retry then syncPanels(model())
     render(model())
 
   private val ladderColumns: LadderColumns =
@@ -310,8 +324,7 @@ final class CompareSummaryHost(
     )
 
   private def syncPanels(m: AppModel): Unit =
-    val (next, effects) =
-      TrialPanels.sync(panelState, m, rows, state.answered.map(_.revision))
+    val (next, effects) = TrialPanels.sync(panelState, m, shownRun)
     panelState = next
     if scaleLabels.nonEmpty then
       val (c, loads) = ContrastPane.sync(contrast, next.focus)
@@ -336,16 +349,16 @@ final class CompareSummaryHost(
           address,
           a => Platform.runLater(() => panelIntent(PanelsIntent.PairRead(pair, a)))
         )
-      case PanelsEffect.ReadContent(revision, trial) =>
+      case PanelsEffect.ReadContent(key) =>
         sources.content.content(
-          revision,
-          trial,
-          a => Platform.runLater(() => panelIntent(PanelsIntent.ContentRead(trial, a)))
+          key.revision,
+          key.trial,
+          a => Platform.runLater(() => panelIntent(PanelsIntent.ContentRead(key, a)))
         )
     }
 
   /** The panels' view-model now. */
-  def panelsVM: TrialPanelsVM = TrialPanels.vm(panelState, rows, scaleLabels)
+  def panelsVM: TrialPanelsVM = TrialPanels.vm(panelState, shownRun, scaleLabels)
 
   /** The navigators' view-model now. */
   def navigatorVM: QueriesNavigatorVM = navigatorVMOf(model())

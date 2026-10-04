@@ -26,7 +26,7 @@ import eyes4s.studio.desktop.harness.{FxStage, StudioTheme}
 import eyes4s.studio.desktop.plot.PlotHostStatus
 import eyes4s.studio.desktop.shell.ShellFxSuite
 import eyes4s.studio.desktop.trial.{GoldenTrials, StimulusSource, TrialView, TrialViewStatus}
-import eyes4s.studio.viz.trial.{MarkStyle, TrialRole, TrialScene}
+import eyes4s.studio.viz.trial.{MarkStyle, TrialExtent, TrialRole, TrialScene}
 
 import scala.concurrent.duration.Duration
 
@@ -172,4 +172,86 @@ class TrialPanelsFxSuite extends ShellFxSuite:
       )
     )
     assertEquals(runOnFx(scene(w.summary.panels.queryView)), None)
+  }
+
+  private def painted(v: TrialView): Boolean =
+    scene(v).nonEmpty && (v.plotHost.status.get match
+      case PlotHostStatus.Drawn(_) => true
+      case _                       => false)
+
+  fxStage.test("both stages share one covering extent; leaving the query clears both panels") {
+    fx =>
+      val w = boot(fx, StoryModels.t2Compare, StoryMoment.T2, panels = golden)
+      eventually(fx, "both stages are drawn") {
+        painted(w.summary.panels.queryView) && painted(w.summary.panels.referenceView)
+      }
+      val (qi, ri) =
+        runOnFx(
+          (w.summary.panels.queryView.input.get, w.summary.panels.referenceView.input.get)
+        )
+      val shared = TrialScene
+        .sharedExtent(
+          Vector(qi, ri).map(i => i.copy(options = i.options.copy(extent = TrialExtent.Gaze)))
+        )
+        .getOrElse(fail("no shared extent"))
+      assertEquals(qi.options.extent, TrialExtent.Covering(shared))
+      assertEquals(ri.options.extent, TrialExtent.Covering(shared))
+      // It covers each trial's own gaze extent.
+      Vector(qi, ri).foreach { i =>
+        val own =
+          TrialScene.extentOf(i.copy(options = i.options.copy(extent = TrialExtent.Gaze)))
+        assert(
+          shared.left <= own.left && shared.top <= own.top && shared.right >= own.right &&
+            shared.bottom >= own.bottom,
+          (own, shared)
+        )
+      }
+      // The trail leaves the query: no panel keeps the earlier trial.
+      runOnFx(
+        w.runtime.dispatch(
+          Intent.Explain(Place.Summary(StoryModels.reporting))
+        )
+      )
+      eventually(fx, "both panels are cleared") {
+        w.summary.panels.queryView.input.isEmpty && w.summary.panels.referenceView.input.isEmpty
+      }
+      val Vector(q, r) = runOnFx(w.summary.panels.shown): @unchecked
+      assertEquals(q, ("", "Choose a query in the Queries navigator", ""))
+      assertEquals(r, ("", "", ""))
+      assertEquals(runOnFx(w.summary.panels.counts), ("", ""))
+      assertEquals(runOnFx(w.summary.panels.referenceNode.getAccessibleText), null)
+      assertEquals(runOnFx(w.summary.panels.queryView.status.get), TrialViewStatus.Empty)
+      assertEquals(runOnFx(w.summary.panels.referenceView.status.get), TrialViewStatus.Empty)
+  }
+
+  fxStage.test(
+    "Retry reads unreadable content again; no remembered image says it is not shown"
+  ) { fx =>
+    val first = java.util.concurrent.atomic.AtomicBoolean(true)
+    // ret_07 is unreadable the first time; enc_03 is never served.
+    val content: eyes4s.studio.app.compare.TrialContentSource = (rev, key, done) =>
+      if key.trial == "enc_03" then
+        done(Left(eyes4s.studio.app.compare.ContentError.NotServed(key)))
+      else if key.trial == "ret_07" && first.getAndSet(false) then
+        done(Left(eyes4s.studio.app.compare.ContentError.Unreadable(key, "busy")))
+      else GoldenTrials.contentSource.content(rev, key, done)
+    val w = boot(
+      fx,
+      StoryModels.t2Compare,
+      StoryMoment.T2,
+      panels = PanelSources(content, StimulusSource.directory(GoldenTrials.stimuli))
+    )
+    eventually(fx, "Retry is offered")(w.summary.panels.retryOffered)
+    assertEquals(
+      runOnFx(w.summary.panels.stageNotes._1),
+      "The content of P17 · ret_07 could not be read: busy"
+    )
+    runOnFx(w.summary.panels.pressRetry())
+    eventually(fx, "the query stage is drawn")(painted(w.summary.panels.queryView))
+    // enc_03 is not served, so the underlay has no image: the note says so.
+    assertEquals(runOnFx(w.summary.panels.rememberedNote), "")
+    runOnFx(w.summary.panels.toggleUnderlay())
+    eventually(fx, "the note says the remembered image is not shown") {
+      w.summary.panels.rememberedNote == "Remembered image not shown"
+    }
   }
