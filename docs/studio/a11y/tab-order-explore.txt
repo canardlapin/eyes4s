@@ -12,6 +12,9 @@ list: Trials
 text-field: Filter trials
 list: Trials of r3
 plot: Trial view
+toggle-button: Points, on
+toggle-button: Order, on
+toggle-button: Map, on
 plot: Timeline
 table: Source records
 region: Inspector

@@ -1,0 +1,146 @@
+/*
+ * Copyright 2026 canardlapin
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+/* Explore's trial view (ticket S6.2; docs/studio/design/Explore.dc.html,
+ * centre). Colours are token names only; sizes come from studio-type.css
+ * classes; weights are face families (DESIGN_SPEC 14). */
+
+.explore-panel {
+  -fx-background-color: -es-surface;
+  -fx-focus-color: -es-accent;
+  -fx-faint-focus-color: transparent;
+}
+
+.explore-bar {
+  -fx-padding: 4 8 4 8;
+  -fx-spacing: 4;
+  -fx-background-color: -es-hairline, -es-surface;
+  -fx-background-insets: 0, 0 0 1 0;
+}
+
+.explore-title {
+  -fx-text-fill: -es-ink;
+  -fx-font-family: "IBM Plex Sans SmBld";
+  -fx-padding: 0 8 0 0;
+}
+
+.explore-toggle {
+  -fx-pref-height: 22px;
+  -fx-padding: 0 8 0 8;
+  -fx-background-color: -es-hairline, -es-surface;
+  -fx-background-insets: 0, 1;
+  -fx-background-radius: 4, 3;
+  -fx-text-fill: -es-ink-2;
+}
+
+.explore-toggle:selected {
+  -fx-background-color: -es-hairline, -es-accent-soft;
+  -fx-text-fill: -es-ink;
+}
+
+.explore-toggle:focused {
+  -fx-background-color: -es-accent, -es-surface;
+}
+
+.explore-toggle:selected:focused {
+  -fx-background-color: -es-accent, -es-accent-soft;
+}
+
+/* The preview label's dashed frame says the map is not a result. */
+.explore-preview {
+  -fx-padding: 2 8 2 8;
+  -fx-border-color: -es-ink-2;
+  -fx-border-style: segments(4, 3);
+  -fx-border-width: 1;
+  -fx-border-radius: 11;
+  -fx-text-fill: -es-ink;
+}
+
+.explore-hint,
+.explore-note,
+.explore-legend-label,
+.explore-legend-title {
+  -fx-text-fill: -es-ink-2;
+}
+
+.explore-status {
+  -fx-padding: 4 8 4 8;
+  -fx-spacing: 8;
+}
+
+.explore-button {
+  -fx-pref-height: 22px;
+  -fx-padding: 0 10 0 10;
+  -fx-background-color: -es-hairline, -es-surface;
+  -fx-background-insets: 0, 1;
+  -fx-background-radius: 4, 3;
+  -fx-text-fill: -es-ink;
+}
+
+.explore-button:focused {
+  -fx-background-color: -es-accent, -es-surface;
+}
+
+.explore-legend-row {
+  -fx-padding: 6 10 6 10;
+  -fx-spacing: 10;
+  -fx-alignment: center-left;
+  -fx-background-color: -es-hairline, -es-surface;
+  -fx-background-insets: 0, 1 0 0 0;
+}
+
+.explore-legend-title {
+  -fx-font-family: "IBM Plex Sans SmBld";
+}
+
+.explore-legend {
+  -fx-hgap: 12;
+  -fx-vgap: 2;
+}
+
+.explore-legend-item {
+  -fx-spacing: 4;
+}
+
+/* ---- legend swatches ----------------------------------------------------------- */
+
+.explore-swatch .swatch-shape {
+  -fx-stroke-width: 1.2;
+}
+
+.swatch-fixation .swatch-shape {
+  -fx-fill: -es-neutral-mark;
+  -fx-stroke: transparent;
+}
+
+.swatch-outside-window .swatch-shape,
+.swatch-outside-screen .swatch-shape,
+.swatch-dropped .swatch-shape {
+  -fx-fill: transparent;
+  -fx-stroke: -es-warn-text;
+  -fx-stroke-dash-array: 2 1.5;
+}
+
+.swatch-order .swatch-shape {
+  -fx-stroke: -es-ink-2;
+  -fx-stroke-dash-array: 3 2;
+}
+
+.swatch-preview .swatch-shape {
+  -fx-fill: -es-ramp-2;
+  -fx-stroke: -es-ink-2;
+  -fx-stroke-dash-array: 2 1.5;
+}

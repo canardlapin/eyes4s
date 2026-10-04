@@ -121,6 +121,53 @@ class TrialMapSceneSuite extends munit.FunSuite:
     assertEquals(raster.argb.toVector, MapRaster.render(g, style).argb.toVector)
   }
 
+  /** A native coordinate's value. */
+  private def nativeValue(e: intaglio.LengthExpr): Double = e match
+    case intaglio.LengthExpr.Const(l) => l.value
+    case other                        => fail(s"not a native constant: $other")
+
+  test("a map covering a region of the screen is drawn there, not over the image") {
+    // A preview over a window that is not the image: here the whole screen.
+    val g                  = grid()
+    val raster             = MapRaster.render(g, style)
+    def image(m: TrialMap) =
+      named(right(TrialScene(withMap(Some(m)))), TrialScene.MapName) match
+        case Some(i: Grob.Image) => i
+        case other               => fail(s"no map image: $other")
+    val onImage = image(TrialMap(g, raster))
+    val frame   = display(ret07, Display.Blank).placement
+    assertEquals(
+      onImage.at,
+      right(
+        intaglio.Point.native(frame.left + frame.width / 2.0, frame.top + frame.height / 2.0)
+      )
+    )
+    val whole  = right(ScreenRect.of(0.0, 0.0, 1920.0, 1080.0))
+    val onRect = image(TrialMap(g, raster, covers = MapCoverage.Region(whole)))
+    assertEquals(onRect.at, right(intaglio.Point.native(960.0, 540.0)))
+    assertEquals(
+      onRect.size,
+      intaglio.Size.fromExtents(
+        right(intaglio.ExtentExpr.native(1920.0)),
+        right(intaglio.ExtentExpr.native(1080.0))
+      )
+    )
+    assertNotEquals(onRect.size, onImage.size)
+    // The isolines follow the map: every segment lies in the region it covers.
+    val inner = right(ScreenRect.of(100.0, 50.0, 612.0, 434.0))
+    val lines = named(
+      right(TrialScene(withMap(Some(TrialMap(g, raster, covers = MapCoverage.Region(inner)))))),
+      TrialScene.IsolinesName
+    ) match
+      case Some(s: Grob.Segments) => s
+      case other                  => fail(s"no isolines: $other")
+    val xs = lines.segments.flatMap((a, b) => Vector(a.x, b.x)).map(nativeValue)
+    val ys = lines.segments.flatMap((a, b) => Vector(a.y, b.y)).map(nativeValue)
+    assert(xs.nonEmpty)
+    assert(xs.forall(x => x >= 100.0 && x <= 612.0), xs.take(5))
+    assert(ys.forall(y => y >= 50.0 && y <= 434.0), ys.take(5))
+  }
+
   test("a bottom-first grid draws the same picture: map and isolines") {
     def scene(order: RowOrder) =
       val g = grid(order = order)
