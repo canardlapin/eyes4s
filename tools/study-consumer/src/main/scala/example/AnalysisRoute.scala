@@ -108,7 +108,10 @@ object AnalysisRoute:
       stimulus: String,
       phase: String,
       items: Map[String, Int]
-  ): Either[RouteError, AnalysisRoute[SubjectItemKey, Multiplier, ScaledScore, SignedDifference]] =
+  ): Either[
+    RouteError,
+    AnalysisRoute[SubjectItemKey, Multiplier, ScaledScore, SignedDifference]
+  ] =
     def id(name: String) = DefinitionId.of(name, 1).left.map(RouteError.Definition.apply)
     for
       layoutId    <- id("my.lab.trial-layout")
