@@ -1,0 +1,31 @@
+{
+  "cell" : {
+    "cell" : {
+      "scale" : 0,
+      "group" : [
+        {
+          "term" : "covariate:response",
+          "level" : "Remembered"
+        }
+      ],
+      "role" : "difference",
+      "component" : "value"
+    }
+  },
+  "participant" : {
+    "participant" : {
+      "cell" : {
+        "scale" : 0,
+        "group" : [
+          {
+            "term" : "covariate:response",
+            "level" : "Remembered"
+          }
+        ],
+        "role" : "difference",
+        "component" : "value"
+      },
+      "name" : "P17"
+    }
+  }
+}

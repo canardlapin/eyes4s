@@ -947,5 +947,6 @@ object DiagnosticSamples:
     ),
     generated[StudyRecipeError]("StudyRecipeError"),
     generated[StudyAdvisory]("StudyAdvisory"),
-    generated[FactError]("FactError")
+    generated[FactError]("FactError"),
+    generated[NavigationError[StudyKey]]("NavigationError")
   )

@@ -156,7 +156,7 @@ class FixationSourceTextSuite extends munit.FunSuite:
     )
     assertEquals(trail.admitted, FramedPosition(screen.id, Pt[Px](1148, 456)))
     assertEquals(trail.window, Some(FramedPosition(FrameId("image"), Pt[Px](700, 300))))
-    assertEquals(trail.placement, MapPlacement.InMap)
+    assertEquals(trail.placement, MapPlacement.InWindow)
     val degrees = get(trail.angular.toRight("no degrees")).position
     assertEquals(f"${degrees.x}%+.1f, ${degrees.y}%+.1f", "+5.4, +2.4")
   }
@@ -169,7 +169,7 @@ class FixationSourceTextSuite extends munit.FunSuite:
         Some(MapPlacement.DroppedInitial),
         Some(MapPlacement.OutsideScreen),
         Some(MapPlacement.OutsideWindow(OffWindowPolicy.Exclude)),
-        Some(MapPlacement.InMap),
+        Some(MapPlacement.InWindow),
         Some(MapPlacement.DroppedInitial),
         Some(MapPlacement.DroppedInitial),
         None, // the quarantined trial's record
@@ -204,7 +204,7 @@ class FixationSourceTextSuite extends munit.FunSuite:
     )
   }
 
-  test("a listing whose input disagrees with the text is refused, naming the record") {
+  test("a record whose recorded position disagrees is refused alone, naming it") {
     // The same records admitted without the correction: the ledger says the
     // rule applies, but the input holds the uncorrected positions.
     val plain = get(
@@ -220,22 +220,51 @@ class FixationSourceTextSuite extends munit.FunSuite:
     val uncorrected = StudyInput(plain.accepted)
     val mismatched  =
       get(CoordinateProvenance.of(plan(uncorrected), uncorrected, Some(ledger))).records
-    val refused = source.page(mismatched, "x_px", "y_px", data(6), size)
-    assertEquals(
-      refused.map(_ => ()),
-      Left(
-        SourceTextError.RecordedMismatch(
-          data(6),
-          0.30000000000000004,
-          10.5,
-          0.30000000000000004 - 0.1,
-          10.75,
-          0.30000000000000004,
-          10.5
-        )
+    val page    = get(source.page(mismatched, "x_px", "y_px", data(5), size))
+    val refusal = SourceTextError.RecordedMismatch[StudyKey](
+      data(6),
+      0.30000000000000004,
+      10.5,
+      0.30000000000000004 - 0.1,
+      10.75,
+      0.30000000000000004,
+      10.5
+    )
+    assertEquals(page.entries.map(_.refusal), Vector(None, Some(refusal), None))
+    // The refused record keeps its text and lines, but no recorded position.
+    val refused = page.entries(1)
+    assertEquals(refused.text, get(source.layout.verbatim(data(6))))
+    assertEquals(refused.view.fixation.flatMap(_.trail.recorded), None)
+    assert(refusal.message.contains("Data record 6 records"), refusal.message)
+    // A record the text agrees with is checked as usual.
+    assert(page.entries(0).view.fixation.exists(_.trail.recorded.isDefined))
+  }
+
+  test("a key reader built from the layout resolves participants through the layout") {
+    val layout = StudyKey.layout(DefinitionId.studyLayout)
+    val reader = get(
+      LayoutKeys.reader(layout, Vector("participant", "image", "phase"))(
+        fields => Right(StudyKey(fields("participant"), fields("image"), fields("phase"))),
+        key =>
+          eyes4s.kernel.ClockId(
+            s"fixation-trial:${key.participant}/${key.stimulus}/${key.phase}"
+          )
       )
     )
-    assert(refused.left.exists(_.message.contains("Data record 6 records")), refused.toString)
+    val viaLayout = get(
+      FixationCsv.admit(text, columns, reader, screen, TimestampUnit.Milliseconds, policy)
+    )
+    assertEquals(viaLayout.accepted.rows.map(_.key), imported.accepted.rows.map(_.key))
+    assertEquals(
+      viaLayout.accepted.rows.map(_.value.fixations.map(_.centre).toVector),
+      imported.accepted.rows.map(_.value.fixations.map(_.centre).toVector)
+    )
+    assertEquals(
+      LayoutKeys
+        .reader(layout, Vector.empty)(_ => Left("unused"), _ => eyes4s.kernel.ClockId("c"))
+        .map(_ => ()),
+      Left(FixationImportError.Columns(Vector.empty))
+    )
   }
 
   test("refusals: another text, no ledger, a missing column, a page beyond the records") {

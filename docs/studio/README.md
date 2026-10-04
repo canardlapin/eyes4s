@@ -59,6 +59,22 @@ To change the plan, edit `studio_plan.py`, rerun `render`, and update the matchi
 
 ## Backend protocol versions
 
+Protocol 1.10 (UI-G G3) adds the `TrialFailed` map placement, additive on 1.9: a
+fixation in the window of a trial the study fails (its off-window policy is
+`FailTrial`) carries the trial's eyes4s `WindowTally` (`outsideScreen`,
+`outsideWindow`, `total` and their durations in microseconds, as protocol 1.4 writes
+large counts), re-validated on decoding. `InWindow` keeps its wire name `InMap`.
+The trial-fixations pin gains a `TrialFailed` fixation; the envelope pins are at
+1.10.
+
+Protocol 1.9 (S9.5) adds a run's pair rows, additive on 1.8: `pairRows(run, scale,
+page)` answers `PairRowPage`, every directed pair of the run at one scale index (eyes4s
+`PairScores`), in focal order with each query's matched pair before its controls, each
+with its reference's item and a typed `PairScoreState` (`Scored`, `Failed` with its
+diagnostic, or `NotServed`). A scale the run does not compute is refused with the new
+`UnknownScale`. The export bundle's comparisons.csv reads it. The 1.8 pins are unchanged
+apart from the envelope version, now 1.9.
+
 Protocol 1.8 (S3.5) widens `StudioDiagnostic`, additive on 1.7: `affected` lists every
 trial the diagnostic names, eyes4s's `affectedTrials` (its subject, then its operands
 and causes, each once), so a remedy opens exactly those trials; `category` and
@@ -139,12 +155,18 @@ when the dataset declares no trial inventory, so absent trials are not counted) 
 adds `BackendError.InventoryRefused`, whose issues name the inventory records, trial
 and columns eyes4s refused. A 1.2 summary does not decode as 1.3.
 
-Deploy the Studio client and backend together. The transport checks major versions
-only and decodes the typed envelope body before checking the version; it does not
-negotiate minor capabilities. Mixed-minor deployments are unsupported. Protocol
+**Deploy the Studio client and backend together.** They speak exactly one protocol
+version: every minor has changed what an older body decoder can read, so a minor is no
+promise of compatibility, and nothing negotiates capabilities. Both ends read a frame's
+`version` before its body and refuse any other version, major or minor, naming both:
+the sidecar answers a request of another version with `UnsupportedVersion(requested,
+supported)` under the request's id, and the client fails a frame of another version
+with `TransportError.Incompatible(found, supported)`. Neither is ever reported as
+malformed, even when the other version's body would not decode
+(bd-01M3JH3492J21SKMYYNZM93118). Protocol
 1.2 added `ProgressTotal.Counting`, which a 1.0/1.1 decoder cannot read; 1.3 adds
 the inventory join; 1.4 adds the exact large-count policy; 1.5 adds the
-resolved-design counts; 1.6 adds the trial fixations and preview views; 1.7 adds the source records view; 1.8 adds the diagnostic's affected trials, class and remedy. `ProtocolCodecSuite`
+resolved-design counts; 1.6 adds the trial fixations and preview views; 1.7 adds the source records view; 1.8 adds the diagnostic's affected trials, class and remedy; 1.9 adds the pair rows view and the exact-version refusal; 1.10 adds the `TrialFailed` placement. `ProtocolCodecSuite`
 retains the frozen legacy-total probe, while `ProtocolLongSuite` verifies that
 safe-number 1.2 envelopes remain readable. This does not establish mixed-version peer compatibility.
 

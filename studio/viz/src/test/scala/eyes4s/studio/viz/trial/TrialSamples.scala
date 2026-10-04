@@ -81,7 +81,7 @@ object TrialSamples:
           x,
           y,
           d,
-          if inside then MapPlacement.InMap
+          if inside then MapPlacement.InWindow
           else MapPlacement.OutsideWindow(OffWindowPolicy.Exclude)
         )
       )

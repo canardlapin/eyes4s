@@ -81,12 +81,16 @@ object SourceTextError:
     case _                                          => Vector.empty
 
 /** One source record with its verbatim text and lines. An admitted record's
-  * fixation carries its recorded position (`trail.recorded`).
+  * fixation carries its recorded position (`trail.recorded`), unless its
+  * position fields cannot be read or do not correct to the admitted position:
+  * then `refusal` says so, naming the record, and the rest of the page is
+  * still given.
   */
 final case class SourceRecordText[K, U <: Unit2D](
     view: SourceRecordView[K, U],
     text: String,
-    lines: LineSpan
+    lines: LineSpan,
+    refusal: Option[SourceTextError[K]]
 ) derives CanEqual
 
 /** One page of source records with their text: the entries, the ledger's
@@ -185,15 +189,17 @@ final class FixationSourceText private (
     def identity[A](e: Either[RecordIdentityError, A]): Either[SourceTextError[K], A] =
       e.left.map(error => SourceTextError.Provenance(ProvenanceError.Identity(error)))
     for
-      text     <- identity(layout.verbatim(record))
-      lines    <- identity(layout.lines.span(record))
-      fixation <- view.fixation.fold(Right(None))(f =>
-        identity(fields(record)).flatMap(values =>
-          recorded(admission, record, x, y, values.lift(xi), values.lift(yi), f.trail)
-            .map(r => Some(f.copy(trail = f.trail.withRecorded(r))))
-        )
-      )
-    yield SourceRecordText(view.copy(fixation = fixation), text, lines)
+      text   <- identity(layout.verbatim(record))
+      lines  <- identity(layout.lines.span(record))
+      values <- identity(fields(record))
+    yield view.fixation match
+      case None    => SourceRecordText(view, text, lines, None)
+      case Some(f) =>
+        recorded(admission, record, x, y, values.lift(xi), values.lift(yi), f.trail) match
+          case Right(r) =>
+            val checked = f.copy(trail = f.trail.withRecorded(r))
+            SourceRecordText(view.copy(fixation = Some(checked)), text, lines, None)
+          case Left(refusal) => SourceRecordText(view, text, lines, Some(refusal))
 
   private def recorded[K, U <: Unit2D](
       admission: Frame[U],
@@ -204,12 +210,16 @@ final class FixationSourceText private (
       yText: Option[String],
       trail: CoordinateTrail[U]
   ): Either[SourceTextError[K], RecordedPosition[U]] =
-    // The importer's parse of a position field (FixationCsv): a finite double.
+    // The importer's own parse of a position field.
     def parse(column: String, text: Option[String]) =
       text
-        .flatMap(_.toDoubleOption)
-        .filter(_.isFinite)
-        .toRight(SourceTextError.Field(record, column, text.getOrElse("")))
+        .toRight(SourceTextError.Field(record, column, ""))
+        .flatMap(t =>
+          FixationCsv
+            .finite(Map(column -> t), column)
+            .left
+            .map(_ => SourceTextError.Field(record, column, t))
+        )
     for
       px <- parse(x, xText)
       py <- parse(y, yText)

@@ -52,7 +52,7 @@ enum TrialTextId derives CanEqual:
 
   /** The core placement state announced for a focused fixation. */
   case MarkInMap, MarkDroppedInitial, MarkOutsideScreen, MarkOutsideWindowExcluded,
-    MarkOutsideWindowFailsTrial
+    MarkOutsideWindowFailsTrial, MarkInWindowTrialFails
 
   /** The remembered image of a retrieval trial: shown as an underlay, with
     * its disclosure, or not shown (S4.3b).
@@ -96,8 +96,10 @@ object TrialText:
       case MarkOutsideScreen           => "{0} · outside screen"
       case MarkOutsideWindowExcluded   => "{0} · outside window, excluded from map"
       case MarkOutsideWindowFailsTrial => "{0} · outside window, trial fails"
-      case RememberedShown             => "Reference image — not displayed during this trial"
-      case RememberedHidden            => "Remembered image not shown"
+      case MarkInWindowTrialFails      =>
+        "{0} · in window, trial fails: {1} of {2} fixations outside window"
+      case RememberedShown  => "Reference image — not displayed during this trial"
+      case RememberedHidden => "Remembered image not shown"
 
   /** `id`'s English template with `args` filled in. */
   def apply(id: TrialTextId, args: String*): String =
@@ -107,7 +109,14 @@ object TrialText:
   def mark(ref: StudioRef.Fixation, placement: MapPlacement, selected: Boolean): String =
     val focus  = apply(TrialTextId.MarkFocus, ref.index.value.toString, ref.trial.label)
     val placed = placement match
-      case MapPlacement.InMap          => apply(TrialTextId.MarkInMap, focus)
+      case MapPlacement.InWindow       => apply(TrialTextId.MarkInMap, focus)
+      case MapPlacement.TrialFailed(t) =>
+        apply(
+          TrialTextId.MarkInWindowTrialFails,
+          focus,
+          t.outsideWindow.toString,
+          t.total.toString
+        )
       case MapPlacement.DroppedInitial => apply(TrialTextId.MarkDroppedInitial, focus)
       case MapPlacement.OutsideScreen  => apply(TrialTextId.MarkOutsideScreen, focus)
       case MapPlacement.OutsideWindow(OffWindowPolicy.Exclude) =>

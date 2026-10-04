@@ -76,13 +76,13 @@ class ScanpathRecordsSuite extends munit.FunSuite:
   }
 
   test("the fixture screen marker preserves core placement without deriving window policy") {
-    assertEquals(OnScreen.withCorePlacement(MapPlacement.InMap), MapPlacement.InMap)
+    assertEquals(OnScreen.withCorePlacement(MapPlacement.InWindow), MapPlacement.InWindow)
     assertEquals(
       OnScreen.withCorePlacement(MapPlacement.OutsideWindow(OffWindowPolicy.FailTrial)),
       MapPlacement.OutsideWindow(OffWindowPolicy.FailTrial)
     )
     assertEquals(
-      OutsideScreen.withCorePlacement(MapPlacement.InMap),
+      OutsideScreen.withCorePlacement(MapPlacement.InWindow),
       MapPlacement.OutsideScreen
     )
     assertEquals(

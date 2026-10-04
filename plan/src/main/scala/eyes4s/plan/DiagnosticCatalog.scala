@@ -967,6 +967,20 @@ object DiagnosticCatalog:
     "Inconsistent"
   )
 
+  // ---------------------------------------------------------------- appended by UI-G G3
+  /** Steps of the provenance chain from a query contrast to a source record. */
+  val navigation: DiagnosticFamily = error("navigation")(
+    "NegativeOffset",
+    "WrongLevel",
+    "Inspection",
+    "NoReduction",
+    "InputMismatch",
+    "Provenance",
+    "NoRecord",
+    "UnknownRecord",
+    "NotAdmitted"
+  )
+
   /** Families whose error type no longer exists. Their codes stay issued, in
     * their original place in [[issuedFamilies]], so a retired code is never
     * reused with another meaning; no live error projects to one.
@@ -1087,7 +1101,8 @@ object DiagnosticCatalog:
     studyRun,
     studyRecipe,
     studyAdvisory,
-    methodsFact
+    methodsFact,
+    navigation
   )
 
   /** Every live family, grouped as documented. */

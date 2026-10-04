@@ -282,6 +282,21 @@ enum MissingSource[+K] derives CanEqual:
   /** The ledger rejected every record of this key, so it has no fixations. */
   case NotAdmitted(key: K, records: Vector[Int])
 
+  /** The reason in words, naming its operands. */
+  def message: String = this match
+    case NoLedger          => "the input is linked to no admission ledger"
+    case UnknownTrial(key) => s"the ledger names no record of trial $key"
+    case FixationOutOfRange(key, index, fixations) =>
+      s"trial $key has $fixations fixations, so none at index $index"
+    case NotSourceSupported(key) => s"trial $key's scanpath carries no recording sample support"
+    case AmbiguousTrial(key, n)  => s"the input repeats trial $key $n times"
+    case UnknownDigest(digest)   => s"no input trial has key digest $digest"
+    case CollidingDigest(digest, ks) => s"trials ${ks.mkString(", ")} share key digest $digest"
+    case UnknownInputTrial(index, trials) =>
+      s"the input has $trials trials, none at position $index"
+    case NotAdmitted(key, records) =>
+      s"the ledger rejected every record of trial $key (records ${records.mkString(", ")})"
+
   /** Trial keys this reason names. */
   def trialKeys: Vector[K] = this match
     case UnknownTrial(key)             => Vector(key)

@@ -164,6 +164,13 @@ final class HeadlessSession private (
   ): Future[Either[BackendError, SourceRecordPage]] =
     run(fake.sourceRecords(revision, from, count))
 
+  def pairRows(
+      run: RunId,
+      scale: Int,
+      page: PageRequest
+  ): Future[Either[BackendError, PairRowPage]] =
+    this.run(fake.pairRows(run, scale, page))
+
   /** Every entry of `dataset`'s ledger, in inventory order. */
   def wholeLedger(
       dataset: DatasetRevision

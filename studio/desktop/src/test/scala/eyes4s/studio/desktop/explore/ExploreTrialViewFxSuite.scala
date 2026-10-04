@@ -118,7 +118,7 @@ class ExploreTrialViewFxSuite extends ShellFxSuite:
     assertEquals(s.marks.size, 13)
     assertEquals(
       s.marks
-        .filterNot(_.placement == MapPlacement.InMap)
+        .filterNot(_.placement == MapPlacement.InWindow)
         .map(m => (m.ref.index.value, m.placement)),
       Vector((10, MapPlacement.OutsideWindow(OffWindowPolicy.Exclude)))
     )
