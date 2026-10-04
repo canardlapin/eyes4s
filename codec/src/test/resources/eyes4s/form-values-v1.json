@@ -1,0 +1,105 @@
+{
+  "schema" : {
+    "name" : "eyes4s.form-values",
+    "version" : 1
+  },
+  "value" : {
+    "fields" : [
+      {
+        "id" : "flip",
+        "value" : {
+          "kind" : "flag",
+          "value" : true
+        }
+      },
+      {
+        "id" : "gap",
+        "value" : {
+          "kind" : "number",
+          "text" : "9007199254740993"
+        }
+      },
+      {
+        "id" : "initial",
+        "value" : {
+          "kind" : "variant",
+          "token" : "dropFirst",
+          "fields" : [
+            {
+              "id" : "count",
+              "value" : {
+                "kind" : "number",
+                "text" : "1"
+              }
+            }
+          ]
+        }
+      },
+      {
+        "id" : "label",
+        "value" : {
+          "kind" : "text",
+          "value" : "été · P17"
+        }
+      },
+      {
+        "id" : "ratio",
+        "value" : {
+          "kind" : "number",
+          "text" : ""
+        }
+      },
+      {
+        "id" : "scales",
+        "value" : {
+          "kind" : "items",
+          "values" : [
+            {
+              "kind" : "number",
+              "text" : "0.5"
+            },
+            {
+              "kind" : "number",
+              "text" : "2e0"
+            }
+          ]
+        }
+      },
+      {
+        "id" : "sigma",
+        "value" : {
+          "kind" : "number",
+          "text" : "1.5"
+        }
+      },
+      {
+        "id" : "weight",
+        "value" : {
+          "kind" : "choice",
+          "token" : "duration"
+        }
+      },
+      {
+        "id" : "window",
+        "value" : {
+          "kind" : "group",
+          "fields" : [
+            {
+              "id" : "xMin",
+              "value" : {
+                "kind" : "number",
+                "text" : "0"
+              }
+            },
+            {
+              "id" : "xMax",
+              "value" : {
+                "kind" : "absent"
+              }
+            }
+          ]
+        }
+      }
+    ]
+  }
+}

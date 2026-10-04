@@ -769,6 +769,7 @@ private[plan] object CauseDiagnostics:
       case UntranslatableLegacy(f, units, domain) => d(name(f), token(units), token(domain))
       case FormViewMismatch(f, form)              => d(fieldId(f), fieldId(form))
       case RulePartKind(f, part)                  => d(fieldId(f), fieldId(part))
+      case NonNumericQuantity(f, quantity)        => d(fieldId(f), token(quantity))
 
   /** A form field's refusal whose domain error type is not known statically,
     * as a host holds one from `ParameterSet.validate`. A shipped descriptor's

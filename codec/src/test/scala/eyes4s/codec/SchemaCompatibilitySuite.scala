@@ -61,6 +61,8 @@ class SchemaCompatibilitySuite extends munit.FunSuite:
       codec.decode(document).flatMap(codec.encode)
 
   private val pinned: Vector[Pinned[?]] = Vector(
+    Pinned("form-view-v1", FormMirrors.view, FormCodecs.view),
+    Pinned("form-values-v1", FormMirrors.values, FormCodecs.values),
     Pinned("source-ref-v1", SourceIdentityMirrors.sourceRef, SourceIdentityCodec.source),
     Pinned(
       "inventory-source-ref-v1",
@@ -208,6 +210,8 @@ class SchemaCompatibilitySuite extends munit.FunSuite:
         "eyes4s.admission-ledger@4",
         "eyes4s.binocular-recording@1",
         "eyes4s.covariate-schema@1",
+        "eyes4s.form-values@1",
+        "eyes4s.form-view@1",
         "eyes4s.import-spec@1",
         "eyes4s.inventory-import-spec@1",
         "eyes4s.manifest@1",
