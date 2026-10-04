@@ -139,9 +139,12 @@ case runs the complete save, fresh-registration reopen and rerun workflow on bot
 6. Save a completed run with `RepetitionResultCodec(schema, plans, keys)`: its `RepetitionRun`
    archive holds a `RunStamp` (plan and input digests both the plan's canonical digest, since the
    plan carries its maps), the plan document and both analyses (pair rows, pairing report,
-   provenance and evaluation), re-encodes byte for byte, and refuses another plan's stamp or
-   analyses another plan or input computed (`RepetitionPlanResult.reconstruct`,
-   `RepetitionPlanError.ResultMismatch`). In a manifest the plan and run are an `analysis-plan`
+   provenance and evaluation), re-encodes byte for byte, and refuses another plan's stamp
+   (`CodecError.Stamp`) or analyses this plan did not compute (`CodecError.RepetitionResult`):
+   `RepetitionPlanResult.reconstruct` checks each analysis's input hash (`ResultInput`), its
+   evaluation (`ResultEvaluation`), and its pairs and pairing report against the plan's own
+   matched or control pairing (`ResultPairs`), so swapped matched and control analyses are
+   refused. In a manifest the plan and run are an `analysis-plan`
    and an `analysis-result` related by `AnalysisResultOf(run, plan,
    AnalysisInputs.EmbeddedInPlan)`: the registration declares that the plan embeds its input, and
    the run's input is checked against the plan's input hash. Register `results.registration` with the resolver's `AnalysisRegistry`.

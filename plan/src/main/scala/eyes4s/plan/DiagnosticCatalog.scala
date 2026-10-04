@@ -821,7 +821,9 @@ object DiagnosticCatalog:
     "Grid",
     "Specification",
     // appended by CR4 S3: a stored result another plan computed
-    "ResultMismatch"
+    "ResultInput",
+    "ResultEvaluation",
+    "ResultPairs"
   )
   val diagnosticCode: DiagnosticFamily = error("diagnostic-code")(
     "InvalidFamily",

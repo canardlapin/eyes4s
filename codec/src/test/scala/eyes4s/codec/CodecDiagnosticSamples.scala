@@ -133,7 +133,16 @@ object CodecDiagnosticSamples:
       ),
       CodecError.Report(eyes4s.results.ReportError.DuplicateQuery(k1)),
       CodecError.ReportSpec(eyes4s.results.SpecError.NegativeScale(-2)),
-      CodecError.Covariates(eyes4s.results.CovariateError.BlankUnit(" "))
+      CodecError.Covariates(eyes4s.results.CovariateError.BlankUnit(" ")),
+      CodecError.Stamp(
+        RunStampError.ChangedInput(
+          get(CanonicalDigest.parse[Int](a.hex)),
+          get(CanonicalDigest.parse[Int](b.hex))
+        )
+      ),
+      CodecError.RepetitionResult(
+        RepetitionPlanError.ResultPairs(RepetitionStage.Control, 24, 23, Some(5))
+      )
     ),
     family[ResolveError]("ResolveError")(
       ResolveError.MissingManifest(a),

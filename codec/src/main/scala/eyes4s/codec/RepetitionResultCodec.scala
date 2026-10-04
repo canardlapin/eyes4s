@@ -154,7 +154,7 @@ final class RepetitionResultCodec[K, U <: Unit2D: UnitLabel](
     _       <- claim
       .check(current, Vector.empty)
       .left
-      .map(e => CodecError.Field("runStamp", json, e.message))
+      .map(CodecError.Stamp(_))
     matched <- Wire
       .field[Json](json, "matched")
       .flatMap(readAnalysis)
@@ -168,7 +168,7 @@ final class RepetitionResultCodec[K, U <: Unit2D: UnitLabel](
     result <- RepetitionPlanResult
       .reconstruct(plan, matched, controls)
       .left
-      .map(e => CodecError.Field("repetition", json, e.message))
+      .map(CodecError.RepetitionResult(_))
   yield RepetitionRun(plan, result)
 
   /** The plan as a stored analysis plan; it embeds its maps, whose identity

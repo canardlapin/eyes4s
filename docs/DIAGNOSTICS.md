@@ -1333,7 +1333,9 @@ fails after rewriting, so review the change and run it again.
 | `repetition-plan.overlapping-relations` | `OverlappingRelations` | `matched`, `controls` |
 | `repetition-plan.grid` | `Grid` | `row`, `underlying` |
 | `repetition-plan.specification` | `Specification` | `underlying` |
-| `repetition-plan.result-mismatch` | `ResultMismatch` | `role`, `field` |
+| `repetition-plan.result-input` | `ResultInput` | `role`, `expected`, `found` |
+| `repetition-plan.result-evaluation` | `ResultEvaluation` | `role`, `expected`, `found` |
+| `repetition-plan.result-pairs` | `ResultPairs` | `role`, `expected`, `found`, `firstDifference` |
 
 ### `diagnostic-code` — `DiagnosticCodeError`
 
@@ -1543,6 +1545,8 @@ fails after rewriting, so review the change and run it again.
 | `codec.report` | `Report` | `underlying` |
 | `codec.report-spec` | `ReportSpec` | `underlying` |
 | `codec.covariates` | `Covariates` | `underlying` |
+| `codec.stamp` | `Stamp` | `underlying` |
+| `codec.repetition-result` | `RepetitionResult` | `underlying` |
 
 ### `resolve` — `ResolveError`
 

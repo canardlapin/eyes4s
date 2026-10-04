@@ -422,26 +422,147 @@ class RepetitionPlanSuite extends munit.FunSuite:
       .withFocus(_ => Json.fromString(get(codec.digest(plan(sel = Selection.All))).sha256.hex))
       .top
       .getOrElse(fail("json"))
-    assert(
-      results.codec.decode(forged).left.exists(_.message.contains("Run input")),
-      results.codec.decode(forged)
-    )
+    results.codec.decode(forged) match
+      case Left(CodecError.Stamp(RunStampError.ChangedInput(reported, current))) =>
+        assertEquals(
+          reported.sha256.hex,
+          get(codec.digest(plan(sel = Selection.All))).sha256.hex
+        )
+        assertEquals(current.sha256.hex, get(codec.digest(p)).sha256.hex)
+      case other => fail(s"expected a typed input-stamp refusal, got $other")
+    // A refusal names the digests, not the whole archive.
+    assert(results.codec.decode(forged).left.forall(_.message.length < 400))
+    val forgedPlan = document.hcursor
+      .downField("value")
+      .downField("runStamp")
+      .downField("plan")
+      .withFocus(_ => Json.fromString(get(codec.digest(plan(sel = Selection.All))).sha256.hex))
+      .top
+      .getOrElse(fail("json"))
+    results.codec.decode(forgedPlan) match
+      case Left(e @ CodecError.Stamp(RunStampError.ChangedPlan(_, _, changes))) =>
+        assertEquals(changes, Vector.empty)
+        assert(e.message.contains("no described field changed"), e.message)
+      case other => fail(s"expected a typed plan-stamp refusal, got $other")
     // Another plan's analyses under this plan: refused by the result's reconstruction.
     val other   = plan(sel = Selection.All)
     val swapped = get(results.codec.encode(RepetitionRun(other, plan().run)))
     assert(
-      results.codec.decode(swapped).left.exists(_.message.contains("its evaluation differs")),
+      results.codec.decode(swapped).left.exists {
+        case CodecError.RepetitionResult(
+              RepetitionPlanError.ResultEvaluation(RepetitionStage.Matched, expected, found)
+            ) =>
+          expected != found
+        case _ => false
+      },
       results.codec.decode(swapped)
     )
-    // Another input's analyses: the input hash is checked first.
+    // Another input's analyses: the input hash is checked first, naming both.
     val fewer = plan(trials = Trials(rows.init))
     assertEquals(
       RepetitionPlanResult
         .reconstruct(fewer, plan().run.matched, plan().run.controls)
         .left
         .toOption,
-      Some(RepetitionPlanError.ResultMismatch("matched", "input"))
+      Some(
+        RepetitionPlanError.ResultInput(
+          RepetitionStage.Matched,
+          fewer.inputHash,
+          plan().inputHash
+        )
+      )
     )
+  }
+
+  test("a stored control analysis is checked as the matched one is") {
+    val p     = plan()
+    val fewer = plan(trials = Trials(rows.init))
+    // Controls of another input, with this plan's matched analysis.
+    assertEquals(
+      RepetitionPlanResult.reconstruct(p, p.run.matched, fewer.run.controls).left.toOption,
+      Some(
+        RepetitionPlanError.ResultInput(RepetitionStage.Control, p.inputHash, fewer.inputHash)
+      )
+    )
+    // Controls evaluated by another plan of the same input.
+    val other = plan(sel = Selection.All)
+    assert(
+      RepetitionPlanResult.reconstruct(p, p.run.matched, other.run.controls).left.exists {
+        case RepetitionPlanError.ResultEvaluation(RepetitionStage.Control, _, _) => true
+        case _                                                                   => false
+      } || other.run.controls == p.run.controls,
+      RepetitionPlanResult.reconstruct(p, p.run.matched, other.run.controls)
+    )
+    // The matched analysis standing in for the controls.
+    assert(
+      RepetitionPlanResult.reconstruct(p, p.run.matched, p.run.matched).left.exists {
+        case RepetitionPlanError.ResultPairs(RepetitionStage.Control, _, _, Some(_)) => true
+        case _                                                                       => false
+      },
+      RepetitionPlanResult.reconstruct(p, p.run.matched, p.run.matched)
+    )
+  }
+
+  test("an archive whose control pairing report was rewritten consistently is refused") {
+    // The same pairs, but the report claims one more eligible pair, and the
+    // provenance is rewritten to agree, so only the plan's own pairing differs.
+    val p                      = plan()
+    val document               = get(results.codec.encode(RepetitionRun(p, p.run)))
+    val eligible               = p.run.controls.diagnostics.eligiblePairCount
+    def bump(json: Json): Json =
+      json.mapString(v => if v == eligible.toString then (eligible + 1).toString else v)
+    val controls = document.hcursor.downField("value").downField("controls")
+    val forged   = controls
+      .downField("diagnostics")
+      .downField("eligiblePairCount")
+      .withFocus(bump)
+      .up
+      .up
+      .downField("provenance")
+      .downField("steps")
+      .downArray
+      .downField("params")
+      .withFocus(_.mapArray(_.map { param =>
+        if param.hcursor.get[String]("name").contains("eligible") then
+          param.mapObject(_.mapValues(bump))
+        else param
+      }))
+      .top
+      .getOrElse(fail("json"))
+    assertNotEquals(forged, document)
+    results.codec.decode(forged) match
+      case Left(
+            CodecError.RepetitionResult(
+              RepetitionPlanError.ResultPairs(RepetitionStage.Control, e, f, None)
+            )
+          ) =>
+        assertEquals((e, f), (p.run.controls.rows.size, p.run.controls.rows.size))
+      case other => fail(s"expected a typed pairing-report refusal, got $other")
+  }
+
+  test("an archive whose matched and control analyses are swapped is refused") {
+    Vector(plan(), plan(sel = Selection.All)).foreach { p =>
+      val document = get(results.codec.encode(RepetitionRun(p, p.run)))
+      val value    = document.hcursor.downField("value")
+      val matched  = value.downField("matched").focus.getOrElse(fail("matched"))
+      val controls = value.downField("controls").focus.getOrElse(fail("controls"))
+      val swapped  = value
+        .withFocus(
+          _.mapObject(_.add("matched", controls).add("controls", matched))
+        )
+        .top
+        .getOrElse(fail("json"))
+      val expected = p.run.matched.rows.size
+      results.codec.decode(swapped) match
+        case Left(
+              CodecError.RepetitionResult(
+                RepetitionPlanError.ResultPairs(RepetitionStage.Matched, e, f, Some(_))
+              )
+            ) =>
+          assertEquals(e, expected)
+          assertEquals(f, p.run.controls.rows.size)
+        case other => fail(s"expected a typed pair refusal, got $other")
+    }
   }
 
   test("a repetition run resolves from a manifest under the generic analysis roles") {
@@ -503,6 +624,15 @@ class RepetitionPlanSuite extends munit.FunSuite:
           Vector.fill(expected.controls.rows.size)(RepetitionStage.Control -> 1)
       )
       assertEquals(p.work.stage, RepetitionStage.Matched)
+      // Both totals are known before the first step.
+      assertEquals(
+        p.work.totalPairs(RepetitionStage.Matched),
+        expected.matched.rows.size.toLong
+      )
+      assertEquals(
+        p.work.totalPairs(RepetitionStage.Control),
+        expected.controls.rows.size.toLong
+      )
     }
   }
 
