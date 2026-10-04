@@ -233,7 +233,7 @@ class ProtocolCodecSuite extends munit.FunSuite:
       .as[Protocol11Total]
 
   test("protocol 1.2 Counting requires coordinated peers, not a relabelled 1.1 frame") {
-    assertEquals(ProtocolVersion.Current, ProtocolVersion(1, 5))
+    assertEquals(ProtocolVersion.Current, ProtocolVersion(1, 8))
     val previous = Envelope(RequestId(41), ServerFrame.Event(JobEvent.Advanced(progress)))
     assertEquals(legacyMeterTotal(previous.asJson), Right(Protocol11Total.Exact(8512L)))
     val counting = progress.asJson

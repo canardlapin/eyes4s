@@ -67,7 +67,11 @@ object ProtocolSamples:
     DiagnosticLevel.Error,
     DiagnosticOrigin.EyesCore,
     Vector(DiagnosticLocus.Trial(query)),
-    "empty map"
+    "empty map",
+    // Protocol 1.8: the trials it names, its finding class and remedy.
+    Vector(query, TrialKey("P17", Phase.Encoding, "enc_03", 1)),
+    Some("DataDependent"),
+    Some("ReviewAnalysisWindow")
   )
 
   val previewBudget: PreviewBudget = right(PreviewBudget.of(24))

@@ -287,10 +287,12 @@ object ProtocolVersion:
     * replaced the admission summary's inventory counts with [[InventoryJoin]]
     * and added `InventoryRefused` (S5.4). 1.4 uses decimal strings for Long
     * values outside the safe JSON integer range. 1.5 adds the resolved
-    * design's query counts to preview candidates and counts (S7.5). Deploy
+    * design's query counts to preview candidates and counts (S7.5). 1.6 and
+    * 1.7 are the trial and source-record views (S6.2, S6.4/S6.5). 1.8 adds a
+    * diagnostic's affected trials, finding class and remedy (S3.5). Deploy
     * client and backend together.
     */
-  val Current: ProtocolVersion = ProtocolVersion(1, 5)
+  val Current: ProtocolVersion = ProtocolVersion(1, 8)
 
 /** A client's correlation id; every frame answering a request carries it. */
 final case class RequestId(value: Long) derives CanEqual
