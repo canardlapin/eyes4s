@@ -55,7 +55,9 @@ class ReportJourneySuite extends munit.FunSuite:
     }
     Trial(key, (), get(Scanpath.of(frame, clock, IArray.from(fixes))))
 
-  /** Three participants recall items `a` and `b` they encoded earlier. */
+  /** Three participants recall items `a` and `b` they encoded earlier; `p1` also
+    * recalls a third item `c`, so participants contribute unequal numbers of trials.
+    */
   private def input(lastRecall: Vector[(Double, Double)] = Vector(0.5 -> 1.5, 1.5 -> 1.5)) =
     StudyInput(
       Trials(
@@ -64,6 +66,8 @@ class ReportJourneySuite extends munit.FunSuite:
           trial("p1", "a", "encode", Vector(0.5 -> 0.5, 0.5 -> 1.5)),
           trial("p1", "b", "recall", Vector(1.5 -> 1.5, 1.5 -> 0.5)),
           trial("p1", "b", "encode", Vector(1.5 -> 1.5, 0.5 -> 0.5)),
+          trial("p1", "c", "recall", Vector(1.5 -> 0.5, 1.5 -> 0.5)),
+          trial("p1", "c", "encode", Vector(1.5 -> 0.5, 0.5 -> 1.5)),
           trial("p2", "a", "recall", Vector(0.5 -> 0.5, 0.5 -> 0.5)),
           trial("p2", "a", "encode", Vector(0.5 -> 0.5, 1.5 -> 0.5)),
           trial("p2", "b", "recall", Vector(1.5 -> 0.5, 1.5 -> 1.5)),
@@ -142,7 +146,7 @@ class ReportJourneySuite extends munit.FunSuite:
     val report = get(Report.evaluate(spec("by item", grouped = true), c.source))
     for role <- Vector(Role.Difference, Role.Matched) do
       val values = stored(c, role)
-      assertEquals(values.size, 6)
+      assertEquals(values.size, 7)
       for level <- Vector("a", "b") do
         val cell = report.cells
           .find(c => c.role == role && c.group.levels.map(_._2) == Vector(level))
@@ -158,7 +162,7 @@ class ReportJourneySuite extends munit.FunSuite:
       assert(Exact.approxEquals(estimate(contrast.estimate), mean(paired)), s"$role contrast")
       assertEquals(contrast.paired.map(_.participant), Vector("p1", "p2", "p3"))
       assertEquals(contrast.unpaired, Vector.empty)
-    assert(report.accountingOf(Role.Difference).exists(a => a.eligible == 6 && a.kept == 6))
+    assert(report.accountingOf(Role.Difference).exists(a => a.eligible == 7 && a.kept == 7))
   }
 
   test("an ungrouped report weighs participants equally, not trials") {
@@ -167,8 +171,12 @@ class ReportJourneySuite extends munit.FunSuite:
     val values        = stored(c, Role.Difference)
     val byParticipant =
       values.groupBy(_._1.participant).values.map(trials => mean(trials.values))
+    val byTrial = mean(values.values)
+    // p1 has three trials and the others two, so the two weightings must differ here.
+    assert(math.abs(mean(byParticipant) - byTrial) > 1e-6, s"${mean(byParticipant)} $byTrial")
     val cell = report.cell(GroupKey.all, Role.Difference, "value").getOrElse(fail("no cell"))
     assert(Exact.approxEquals(estimate(cell.estimate), mean(byParticipant)))
+    assert(!Exact.approxEquals(estimate(cell.estimate), byTrial))
     assertEquals(cell.perParticipant.map(_.participant), Vector("p1", "p2", "p3"))
   }
 
