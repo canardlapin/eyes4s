@@ -390,6 +390,32 @@ class RepetitionPlanSuite extends munit.FunSuite:
           case _                                    => false),
       form.parse(unknown)
     )
+    // The form shows its fields in order, and validates one field alone as parsing does.
+    assertEquals(
+      form.views.map(_.id),
+      Vector(
+        form.method,
+        form.matched,
+        form.controls,
+        form.controlSelection,
+        form.failurePolicy
+      )
+        .map(_.view.id)
+    )
+    assertEquals(form.views, form.fields.map(_.view))
+    val good = form.values(plan(sel = Selection.All))
+    form.fields.foreach(f =>
+      assertEquals(form.validate(f.view.id, good.get(f.view.id)), Right(()), f.view.id)
+    )
+    assertEquals(
+      form.validate(form.method.view.id, RawValue.Choice("Cubic")).swap.toOption,
+      form.parse(unknown).swap.toOption.map(_.head)
+    )
+    val nowhere = get(FieldId.of("noSuchField"))
+    assertEquals(
+      form.validate(nowhere, RawValue.Absent),
+      Left(FieldError.UnknownField(nowhere))
+    )
   }
 
   private val results =
@@ -598,7 +624,7 @@ class RepetitionPlanSuite extends munit.FunSuite:
       ArtifactResolver.resolve(graph.address, graph.source, decoders).left.map(_.toVector)
     )
     val loaded =
-      resolved.analysisResults.map(_._2).collect { case r: results.LoadedRun => r.run }
+      resolved.analysisResults.map(_._2).flatMap(LoadedAnalysisResult.typed(results.codec)(_))
     assertEquals(loaded.map(_.result.controls), Vector(p.run.controls))
     assertEquals(resolved.analysisPlans.map(_._2.description), Vector(p.description))
   }
