@@ -27,10 +27,6 @@ class PublicIoSuite extends munit.FunSuite:
       AscFramingDiagnostic
         .LineTooLong("source-X", 7, 13, 17, 19, "excerpt-X")
         .message -> Vector("source-X", "7", "13", "17", "19"),
-      AscPerformanceValidationError.NonPositive("chunk-X", -17).message -> Vector(
-        "chunk-X",
-        "-17"
-      ),
       AscSampleMaterializationError
         .PixelValueOutsideDoubleRange(AscRecordedEye.Left, "1e999", "2e999", "frame-X")
         .message -> Vector("1e999", "2e999", "frame-X"),
@@ -47,14 +43,7 @@ class PublicIoSuite extends munit.FunSuite:
         "3",
         "7"
       ),
-      EyeLinkAscSessionConfigError.BlankClock(" ").message -> Vector("clock=' '"),
-      EyeLinkConformanceError
-        .InvalidOperand("artifact-X", "field-X", "actual-X", "expected-X")
-        .message -> Vector("artifact-X", "field-X", "actual-X", "expected-X"),
-      EyeLinkOracleError.InvalidPreamble("source-X", "preamble-X").message -> Vector(
-        "source-X",
-        "preamble-X"
-      ),
+      EyeLinkAscSessionConfigError.BlankClock(" ").message    -> Vector("clock=' '"),
       FixationImportError.Columns(Vector("column-X")).message -> Vector("column-X"),
       FixationRowError.Number("column-X", "invalid-X", "numeric-X").message -> Vector(
         "column-X",

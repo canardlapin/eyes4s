@@ -35,7 +35,12 @@ Codes are only ever issued. When an error type is removed its family is retired:
 `DiagnosticCatalog.issued`, so no code is reused with another meaning, while
 `DiagnosticCatalog.families` and the table below list only the live ones. The
 retired families are `scanpath-component` (the six-slot scanpath result) and
-`learned-template` and `template-fit`, which became the `template` family.
+`learned-template` and `template-fit`, which became the `template` family. io
+does the same with `IoDiagnosticCatalog.retired`: `asc-performance-validation`,
+`eyelink-oracle`, `eyelink-conformance` and `eyelink-corpus` belong to the
+EyeLink evidence apparatus, which is io test code rather than published API
+([EyeLink ASC](formats/eyelink-asc.md#current-portable-conformance-evidence)),
+so their codes stay issued but no published error projects to them.
 
 The codec cannot state the key type of a study it decodes, so trial keys
 inside a codec, resolution or relation error (and an io export error that
@@ -1972,73 +1977,12 @@ fails after rewriting, so review the change and run it again.
 | `asc-native-timeline.instant-outside-long-range` | `InstantOutsideLongRange` | `source`, `line`, `field`, `milliseconds` |
 | `asc-native-timeline.invalid-timeline` | `InvalidTimeline` | `clock`, `underlying` |
 
-### `asc-performance-validation` — `AscPerformanceValidationError`
-
-| Code | Case | Operands |
-|---|---|---|
-| `asc-performance-validation.blank` | `Blank` | `operand`, `value` |
-| `asc-performance-validation.non-positive` | `NonPositive` | `operand`, `value` |
-| `asc-performance-validation.negative` | `Negative` | `operand`, `value` |
-| `asc-performance-validation.allocation-measurement-unavailable` | `AllocationMeasurementUnavailable` | `operand`, `reason` |
-
 ### `eyelink-session-config` — `EyeLinkAscSessionConfigError`
 
 | Code | Case | Operands |
 |---|---|---|
 | `eyelink-session-config.blank-frame` | `BlankFrame` | `value` |
 | `eyelink-session-config.blank-clock` | `BlankClock` | `value` |
-
-### `eyelink-oracle` — `EyeLinkOracleError`
-
-| Code | Case | Operands |
-|---|---|---|
-| `eyelink-oracle.invalid-preamble` | `InvalidPreamble` | `source`, `actual` |
-| `eyelink-oracle.invalid-header` | `InvalidHeader` | `source`, `line`, `expected`, `actual` |
-| `eyelink-oracle.wrong-field-count` | `WrongFieldCount` | `source`, `line`, `expected`, `actual` |
-| `eyelink-oracle.invalid-escape` | `InvalidEscape` | `source`, `line`, `field`, `index`, `value` |
-| `eyelink-oracle.invalid-value` | `InvalidValue` | `source`, `line`, `field`, `value`, `expected` |
-| `eyelink-oracle.invalid-digest` | `InvalidDigest` | `source`, `line`, `field`, `detail` |
-| `eyelink-oracle.invalid-descriptor` | `InvalidDescriptor` | `oracleId`, `field`, `value`, `expected` |
-| `eyelink-oracle.invalid-fact` | `InvalidFact` | `recordOrdinal`, `fieldOrdinal`, `field`, `value`, `expected` |
-| `eyelink-oracle.empty-manifest` | `EmptyManifest` | `oracleId` |
-| `eyelink-oracle.non-contiguous-records` | `NonContiguousRecords` | `oracleId`, `expected`, `actual` |
-| `eyelink-oracle.non-contiguous-fields` | `NonContiguousFields` | `oracleId`, `recordOrdinal`, `expected`, `actual` |
-| `eyelink-oracle.inconsistent-record-metadata` | `InconsistentRecordMetadata` | `oracleId`, `recordOrdinal`, `field`, `values` |
-| `eyelink-oracle.duplicate-field-path` | `DuplicateFieldPath` | `oracleId`, `recordOrdinal`, `paths` |
-| `eyelink-oracle.ordering-conflict` | `OrderingConflict` | `oracleId`, `expected`, `actual` |
-| `eyelink-oracle.missing-ordering-disclosure` | `MissingOrderingDisclosure` | `oracleId`, `recordOrdinals` |
-
-### `eyelink-conformance` — `EyeLinkConformanceError`
-
-| Code | Case | Operands |
-|---|---|---|
-| `eyelink-conformance.invalid-operand` | `InvalidOperand` | `artifact`, `field`, `actual`, `expected` |
-| `eyelink-conformance.invalid-absent-value` | `InvalidAbsentValue` | `presence`, `actual`, `expected` |
-| `eyelink-conformance.invalid-field-path` | `InvalidFieldPath` | `actual`, `expected` |
-| `eyelink-conformance.duplicate-field` | `DuplicateField` | `operand`, `fieldPath`, `count` |
-| `eyelink-conformance.empty-manifest` | `EmptyManifest` | `operand` |
-| `eyelink-conformance.invalid-tolerance` | `InvalidTolerance` | `tolerance`, `field`, `actual`, `expected` |
-| `eyelink-conformance.invalid-summary-row` | `InvalidSummaryRow` | `fixture`, `field`, `actual`, `expected` |
-| `eyelink-conformance.duplicate-summary-fixture` | `DuplicateSummaryFixture` | `fixture`, `count` |
-| `eyelink-conformance.empty-summary` | `EmptySummary` |  |
-
-### `eyelink-corpus` — `EyeLinkCorpusError`
-
-| Code | Case | Operands |
-|---|---|---|
-| `eyelink-corpus.invalid-preamble` | `InvalidPreamble` | `source`, `actual` |
-| `eyelink-corpus.invalid-header` | `InvalidHeader` | `source`, `line`, `expected`, `actual` |
-| `eyelink-corpus.wrong-field-count` | `WrongFieldCount` | `source`, `line`, `expected`, `actual` |
-| `eyelink-corpus.invalid-escape` | `InvalidEscape` | `source`, `line`, `field`, `index`, `value` |
-| `eyelink-corpus.invalid-value` | `InvalidValue` | `source`, `line`, `field`, `value`, `expected` |
-| `eyelink-corpus.invalid-digest` | `InvalidDigest` | `source`, `line`, `field`, `detail` |
-| `eyelink-corpus.partial-converter-evidence` | `PartialConverterEvidence` | `source`, `line` |
-| `eyelink-corpus.invalid-converter-evidence` | `InvalidConverterEvidence` | `source`, `line`, `detail` |
-| `eyelink-corpus.invalid-fixture` | `InvalidFixture` | `source`, `line`, `fixtureId`, `detail` |
-| `eyelink-corpus.unsafe-local-path` | `UnsafeLocalPath` | `source`, `line`, `fixtureId`, `path` |
-| `eyelink-corpus.duplicate-fixture-id` | `DuplicateFixtureId` | `source`, `fixtureId`, `lines` |
-| `eyelink-corpus.duplicate-local-path` | `DuplicateLocalPath` | `source`, `path`, `fixtureIds` |
-| `eyelink-corpus.empty-manifest` | `EmptyManifest` | `source` |
 
 ### `csv-layout` — `CsvLayoutError`
 

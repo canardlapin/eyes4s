@@ -16,6 +16,7 @@
 
 package eyes4s.io
 
+import eyes4s.plan.Diagnose
 import cats.data.NonEmptyVector
 
 /** Identity of one side of a scientific comparison. */
@@ -621,3 +622,11 @@ enum EyeLinkConformanceError derives CanEqual:
       "EyeLink conformance summary has no fixture rows; expected at least one."
 
 end EyeLinkConformanceError
+
+// Test-scope evidence apparatus (CR9): its codes stay in IoDiagnosticCatalog,
+// which only ever appends, and its Diagnose instance lives with the enum.
+object EyeLinkConformanceError:
+  given Diagnose[EyeLinkConformanceError, Nothing] =
+    Diagnose.derived[EyeLinkConformanceError, Nothing](IoDiagnosticCatalog.eyeLinkConformance)(
+      _.message
+    )

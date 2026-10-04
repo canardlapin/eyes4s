@@ -11806,16 +11806,6 @@
       "instance": "eyes4s/io/AscParsedNativeRecord$Message",
       "suite": "ioJVM/eyes4s.io.EyeLinkAscImportSuite"
     },
-    "class eyes4s.io.AscPerformanceMode": {
-      "classification": "data-sum",
-      "instance": "eyes4s/io/AscPerformanceMode$$anon$1",
-      "suite": "ioJVM/eyes4s.io.EyeLinkAscPerformanceJvmSuite"
-    },
-    "class eyes4s.io.AscPerformanceValidationError": {
-      "classification": "data-sum",
-      "instance": "eyes4s/io/AscPerformanceValidationError$NonPositive",
-      "suite": "ioJVM/consumer.PublicIoSuite"
-    },
     "class eyes4s.io.AscPixelPosition": {
       "classification": "data-sum",
       "instance": "eyes4s/io/AscPixelPosition$$anon$9",
@@ -11875,11 +11865,6 @@
       "classification": "data-sum",
       "instance": "eyes4s/io/AscUnspecifiedPupilPolicy$$anon$1",
       "suite": "ioJVM/docconsumer.DocumentationExamplesSuite"
-    },
-    "class eyes4s.io.AscWorkflowMemoryEnvelope": {
-      "classification": "data-sum",
-      "instance": "eyes4s/io/AscWorkflowMemoryEnvelope$Materialized",
-      "suite": "ioJVM/eyes4s.io.EyeLinkAscPerformanceJvmSuite"
     },
     "class eyes4s.io.AscZeroPupilPolicy": {
       "classification": "data-sum",
@@ -11966,66 +11951,6 @@
       "instance": "eyes4s/io/EyeLinkAscSessionDiagnostic$ConversionFailure",
       "suite": "ioJVM/docconsumer.DocumentationExamplesSuite"
     },
-    "class eyes4s.io.EyeLinkConformanceError": {
-      "classification": "data-sum",
-      "instance": "eyes4s/io/EyeLinkConformanceError$InvalidOperand",
-      "suite": "ioJVM/consumer.PublicIoSuite"
-    },
-    "class eyes4s.io.EyeLinkConformanceStatus": {
-      "classification": "data-sum",
-      "instance": "eyes4s/io/EyeLinkConformanceStatus$$anon$3",
-      "suite": "ioJVM/eyes4s.io.EyeLinkConformanceSuite"
-    },
-    "class eyes4s.io.EyeLinkCorpusAvailability": {
-      "classification": "data-sum",
-      "instance": "eyes4s/io/EyeLinkCorpusAvailability$$anon$4",
-      "suite": "ioJVM/eyes4s.io.EyeLinkCorpusJvmSuite"
-    },
-    "class eyes4s.io.EyeLinkCorpusCoordinates": {
-      "classification": "data-sum",
-      "instance": "eyes4s/io/EyeLinkCorpusCoordinates$$anon$28",
-      "suite": "ioJVM/eyes4s.io.EyeLinkCorpusJvmSuite"
-    },
-    "class eyes4s.io.EyeLinkCorpusCoverageStatus": {
-      "classification": "data-sum",
-      "instance": "eyes4s/io/EyeLinkCorpusCoverageStatus$$anon$31",
-      "suite": "ioJVM/eyes4s.io.EyeLinkCorpusJvmSuite"
-    },
-    "class eyes4s.io.EyeLinkCorpusError": {
-      "classification": "data-sum",
-      "instance": "eyes4s/io/EyeLinkCorpusError$DuplicateFixtureId",
-      "suite": "ioJVM/eyes4s.io.DiagnosticsDocJvmSuite"
-    },
-    "class eyes4s.io.EyeLinkCorpusEyeLayout": {
-      "classification": "data-sum",
-      "instance": "eyes4s/io/EyeLinkCorpusEyeLayout$$anon$21",
-      "suite": "ioJVM/eyes4s.io.EyeLinkCorpusJvmSuite"
-    },
-    "class eyes4s.io.EyeLinkCorpusHardware": {
-      "classification": "data-sum",
-      "instance": "eyes4s/io/EyeLinkCorpusHardware$$anon$15",
-      "suite": "ioJVM/eyes4s.io.EyeLinkCorpusJvmSuite"
-    },
-    "class eyes4s.io.EyeLinkCorpusKind": {
-      "classification": "data-sum",
-      "instance": "eyes4s/io/EyeLinkCorpusKind$$anon$1",
-      "suite": "ioJVM/eyes4s.io.EyeLinkCorpusJvmSuite"
-    },
-    "class eyes4s.io.EyeLinkCorpusLicense": {
-      "classification": "data-sum",
-      "instance": "eyes4s/io/EyeLinkCorpusLicense$$anon$10",
-      "suite": "ioJVM/eyes4s.io.EyeLinkCorpusJvmSuite"
-    },
-    "class eyes4s.io.EyeLinkCorpusPrivacy": {
-      "classification": "data-sum",
-      "instance": "eyes4s/io/EyeLinkCorpusPrivacy$$anon$11",
-      "suite": "ioJVM/eyes4s.io.EyeLinkCorpusJvmSuite"
-    },
-    "class eyes4s.io.EyeLinkCorpusTracking": {
-      "classification": "data-sum",
-      "instance": "eyes4s/io/EyeLinkCorpusTracking$$anon$25",
-      "suite": "ioJVM/eyes4s.io.EyeLinkCorpusJvmSuite"
-    },
     "class eyes4s.io.EyeLinkDisposition": {
       "classification": "data-sum",
       "instance": "eyes4s/io/EyeLinkDisposition$$anon$1",
@@ -12035,46 +11960,6 @@
       "classification": "data-sum",
       "instance": "eyes4s/io/EyeLinkEvidence$$anon$2",
       "suite": "ioJVM/consumer.PublicIoSuite"
-    },
-    "class eyes4s.io.EyeLinkFieldTolerance": {
-      "classification": "data-sum",
-      "instance": "eyes4s/io/EyeLinkFieldTolerance$$anon$2",
-      "suite": "ioJVM/eyes4s.io.EyeLinkOracleJvmSuite"
-    },
-    "class eyes4s.io.EyeLinkMetamorphicSupport": {
-      "classification": "data-sum",
-      "instance": "eyes4s/io/EyeLinkMetamorphicSupport$Unsupported",
-      "suite": "ioJVM/eyes4s.io.EyeLinkConformanceSuite"
-    },
-    "class eyes4s.io.EyeLinkMetamorphicTransformation": {
-      "classification": "data-sum",
-      "instance": "eyes4s/io/EyeLinkMetamorphicTransformation$$anon$10",
-      "suite": "ioJVM/eyes4s.io.EyeLinkConformanceSuite"
-    },
-    "class eyes4s.io.EyeLinkOracleError": {
-      "classification": "data-sum",
-      "instance": "eyes4s/io/EyeLinkOracleError$InvalidPreamble",
-      "suite": "ioJVM/consumer.PublicIoSuite"
-    },
-    "class eyes4s.io.EyeLinkOracleInput": {
-      "classification": "data-sum",
-      "instance": "eyes4s/io/EyeLinkOracleInput$$anon$4",
-      "suite": "ioJVM/eyes4s.io.EyeLinkOracleJvmSuite"
-    },
-    "class eyes4s.io.EyeLinkOracleKind": {
-      "classification": "data-sum",
-      "instance": "eyes4s/io/EyeLinkOracleKind$$anon$1",
-      "suite": "ioJVM/eyes4s.io.EyeLinkOracleJvmSuite"
-    },
-    "class eyes4s.io.EyeLinkOracleOrdering": {
-      "classification": "data-sum",
-      "instance": "eyes4s/io/EyeLinkOracleOrdering$$anon$6",
-      "suite": "ioJVM/eyes4s.io.EyeLinkOracleJvmSuite"
-    },
-    "class eyes4s.io.EyeLinkOraclePresence": {
-      "classification": "data-sum",
-      "instance": "eyes4s/io/EyeLinkOraclePresence$$anon$10",
-      "suite": "ioJVM/eyes4s.io.EyeLinkOracleJvmSuite"
     },
     "class eyes4s.io.FixationImportError": {
       "classification": "data-sum",
@@ -14409,7 +14294,6 @@
     "method eyes4s.io.ArtifactLoading$.resolve(3,eyes4s.codec.ByteDigest,scala.Function1,eyes4s.codec.ArtifactDecoders,cats.MonadError):java.lang.Object": "ioJVM/eyes4s.io.ArtifactLoadingSuite",
     "method eyes4s.io.AscBlockOutcome.message():": "ioJVM/eyes4s.io.EyeLinkAscCorruptionSuite",
     "method eyes4s.io.AscBlockRequirement.message():": "ioJVM/eyes4s.io.EyeLinkAscBlocksSuite",
-    "method eyes4s.io.AscByteBudget$.of(java.lang.String,scala.Long):scala.util.Either": "ioJVM/eyes4s.io.EyeLinkAscPerformanceJvmSuite",
     "method eyes4s.io.AscDataLayout.isRemote():": "ioJVM/eyes4s.io.EyeLinkAscBlocksSuite",
     "method eyes4s.io.AscFields.remainderAfter(scala.Int):scala.Option": "ioJVM/eyes4s.io.EyeLinkAscImportSuite",
     "method eyes4s.io.AscFields.size():": "ioJVM/docconsumer.DocumentationExamplesSuite",
@@ -14429,8 +14313,6 @@
     "method eyes4s.io.AscNativeParseResult.hasErrors():": "ioJVM/eyes4s.io.EyeLinkAscNativeSuite",
     "method eyes4s.io.AscNativeTimelineError.message():": "ioJVM/eyes4s.io.DiagnosticsDocJvmSuite",
     "method eyes4s.io.AscPayload.ascii():": "ioJVM/eyes4s.io.EyeLinkAscImportSuite",
-    "method eyes4s.io.AscPerformanceResult$.of(java.lang.String,java.lang.String,eyes4s.io.Sha256,scala.Boolean,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,scala.Int,scala.Long,eyes4s.io.AscEyeLayout,scala.Boolean,eyes4s.io.AscPerformanceMode,scala.Long,scala.Long,scala.Long,scala.Long,scala.Long,scala.Long,scala.Long,scala.Long,scala.Long,scala.Long,scala.Long,scala.Long):scala.util.Either": "ioJVM/eyes4s.io.EyeLinkAscPerformanceJvmSuite",
-    "method eyes4s.io.AscPerformanceValidationError.message():": "ioJVM/consumer.PublicIoSuite",
     "method eyes4s.io.AscPositiveDecimal.toString():": "ioJVM/eyes4s.io.EyeLinkAscBlocksSuite",
     "method eyes4s.io.AscReadChunkSize$.of(scala.Int):scala.util.Either": "ioJVM/docconsumer.DocumentationExamplesSuite",
     "method eyes4s.io.AscSampleDiagnostic.message():": "ioJVM/eyes4s.io.EyeLinkAscCorruptionSuite",
@@ -14441,10 +14323,8 @@
     "method eyes4s.io.AscSourceLineError.message():": "ioJVM/consumer.PublicIoSuite",
     "method eyes4s.io.AscStreamConfigurationError.message():": "ioJVM/consumer.PublicIoSuite",
     "method eyes4s.io.AscStreamSettings$.of(java.lang.String,scala.Int,scala.Int,eyes4s.io.AscEncodingPolicy):scala.util.Either": "ioJVM/docconsumer.DocumentationExamplesSuite",
-    "method eyes4s.io.AscStreamingMemoryEnvelope$.from(eyes4s.io.AscStreamSettings):scala.util.Either": "ioJVM/eyes4s.io.EyeLinkAscPerformanceJvmSuite",
     "method eyes4s.io.AscToken.bytes():": "ioJVM/eyes4s.io.EyeLinkAscRecordsSuite",
     "method eyes4s.io.AscTrackerTime$.instant(eyes4s.io.AscSourceLine,java.lang.String,scala.math.BigDecimal):scala.util.Either": "ioJVM/docconsumer.DocumentationExamplesSuite",
-    "method eyes4s.io.AscWorkflowMemoryEnvelope$.forInput(eyes4s.io.AscPerformanceMode,eyes4s.io.AscStreamSettings,eyes4s.io.AscByteBudget):scala.util.Either": "ioJVM/eyes4s.io.EyeLinkAscPerformanceJvmSuite",
     "method eyes4s.io.ContrastCsv$.document(5,eyes4s.plan.StudyPlan,eyes4s.plan.StudyResult,eyes4s.codec.StudyCodec,eyes4s.io.ScoreColumns,eyes4s.kernel.UnitLabel):scala.util.Either": "ioJVM/docconsumer.DocumentationExamplesSuite",
     "method eyes4s.io.ContrastExportError.message():": "ioJVM/consumer.PublicIoSuite",
     "method eyes4s.io.ConversionEvidenceWarning.message():": "ioJVM/eyes4s.io.EyeLinkAscStreamingJvmSuite",
@@ -14512,40 +14392,6 @@
     "method eyes4s.io.EyeLinkCapability.isReleaseRequirement():": "ioJVM/consumer.PublicIoSuite",
     "method eyes4s.io.EyeLinkCapability.isValidated():": "ioJVM/consumer.PublicIoSuite",
     "method eyes4s.io.EyeLinkCapability.toString():": "ioJVM/consumer.PublicIoSuite",
-    "method eyes4s.io.EyeLinkConformance$.compare(eyes4s.io.EyeLinkConformanceManifest,eyes4s.io.EyeLinkConformanceManifest,scala.collection.immutable.Map):scala.util.Either": "ioJVM/eyes4s.io.EyeLinkOracleJvmSuite",
-    "method eyes4s.io.EyeLinkConformanceError.message():": "ioJVM/consumer.PublicIoSuite",
-    "method eyes4s.io.EyeLinkConformanceFact$.create(java.lang.String,eyes4s.io.EyeLinkConformanceValue):scala.util.Either": "ioJVM/eyes4s.io.EyeLinkOracleJvmSuite",
-    "method eyes4s.io.EyeLinkConformanceManifest$.create(eyes4s.io.EyeLinkConformanceOperand,scala.collection.immutable.Vector):scala.util.Either": "ioJVM/eyes4s.io.EyeLinkOracleJvmSuite",
-    "method eyes4s.io.EyeLinkConformanceManifest$.fromCanonical(java.lang.String,java.lang.String,eyes4s.io.EyeLinkAscCanonicalManifest,scala.Function1):scala.util.Either": "ioJVM/eyes4s.io.EyeLinkConformanceSuite",
-    "method eyes4s.io.EyeLinkConformanceMismatch.message():": "ioJVM/eyes4s.io.EyeLinkConformanceSuite",
-    "method eyes4s.io.EyeLinkConformanceOperand$.create(java.lang.String,java.lang.String,eyes4s.io.Sha256):scala.util.Either": "ioJVM/eyes4s.io.EyeLinkOracleJvmSuite",
-    "method eyes4s.io.EyeLinkConformanceOperand.toString():": "ioJVM/eyes4s.io.EyeLinkConformanceSuite",
-    "method eyes4s.io.EyeLinkConformanceValue$.missing(java.lang.String):scala.util.Either": "ioJVM/eyes4s.io.EyeLinkConformanceSuite",
-    "method eyes4s.io.EyeLinkConformanceValue$.omitted(java.lang.String):scala.util.Either": "ioJVM/eyes4s.io.EyeLinkConformanceSuite",
-    "method eyes4s.io.EyeLinkConformanceValue$.value(java.lang.String):eyes4s.io.EyeLinkConformanceValue": "ioJVM/eyes4s.io.EyeLinkOracleJvmSuite",
-    "method eyes4s.io.EyeLinkCorpusDimensionPair.toString():": "ioJVM/eyes4s.io.EyeLinkCorpusSuite",
-    "method eyes4s.io.EyeLinkCorpusError.message():": "ioJVM/eyes4s.io.DiagnosticsDocJvmSuite",
-    "method eyes4s.io.EyeLinkCorpusFixture$.create(java.lang.String,scala.Int,java.lang.String,eyes4s.io.EyeLinkCorpusKind,eyes4s.io.EyeLinkCorpusAvailability,eyes4s.io.EyeLinkCorpusLicense,eyes4s.io.EyeLinkCorpusPrivacy,java.lang.String,scala.Option,eyes4s.io.EyeLinkCorpusHardware,scala.Option,scala.collection.immutable.Vector,eyes4s.io.EyeLinkCorpusEyeLayout,eyes4s.io.EyeLinkCorpusTracking,scala.collection.immutable.Vector,scala.Option,scala.Option,scala.collection.immutable.Vector):scala.util.Either": "ioJVM/eyes4s.io.EyeLinkCorpusJvmSuite",
-    "method eyes4s.io.EyeLinkCorpusFixture.capabilityIds():": "ioJVM/eyes4s.io.EyeLinkCorpusJvmSuite",
-    "method eyes4s.io.EyeLinkCorpusFixture.containsAcquiredRealData():": "ioJVM/eyes4s.io.EyeLinkCorpusJvmSuite",
-    "method eyes4s.io.EyeLinkCorpusFixture.isPubliclyLoadable():": "ioJVM/eyes4s.io.EyeLinkCorpusJvmSuite",
-    "method eyes4s.io.EyeLinkCorpusFixture.toString():": "ioJVM/eyes4s.io.EyeLinkCorpusSuite",
-    "method eyes4s.io.EyeLinkCorpusManifest$.parseTsv(java.lang.String,java.lang.String):scala.util.Either": "ioJVM/eyes4s.io.EyeLinkCorpusJvmSuite",
-    "method eyes4s.io.EyeLinkCorpusManifest.renderTsv():": "ioJVM/eyes4s.io.EyeLinkCorpusJvmSuite",
-    "method eyes4s.io.EyeLinkFieldTolerance$.decimal(java.lang.String,scala.math.BigDecimal,scala.math.BigDecimal,java.lang.String,java.lang.String):scala.util.Either": "ioJVM/eyes4s.io.EyeLinkConformanceSuite",
-    "method eyes4s.io.EyeLinkFieldTolerance.token():": "ioJVM/eyes4s.io.EyeLinkConformanceSuite",
-    "method eyes4s.io.EyeLinkMetamorphicSupport$.assess(eyes4s.io.EyeLinkMetamorphicTransformation,java.lang.String,eyes4s.io.AscCoordinateMode):eyes4s.io.EyeLinkMetamorphicSupport": "ioJVM/eyes4s.io.EyeLinkConformanceSuite",
-    "method eyes4s.io.EyeLinkMetamorphicSupport.message():": "ioJVM/eyes4s.io.EyeLinkConformanceSuite",
-    "method eyes4s.io.EyeLinkOracleDescriptor$.create(java.lang.String,java.lang.String,eyes4s.io.EyeLinkOracleKind,eyes4s.io.EyeLinkOracleInput,eyes4s.io.EyeLinkOracleOrdering,java.lang.String,java.lang.String,eyes4s.io.Sha256,eyes4s.io.Sha256,eyes4s.io.Sha256,java.lang.String,scala.Option):scala.util.Either": "ioJVM/eyes4s.io.EyeLinkOracleJvmSuite",
-    "method eyes4s.io.EyeLinkOracleDescriptor.toString():": "ioJVM/eyes4s.io.EyeLinkOracleSuite",
-    "method eyes4s.io.EyeLinkOracleError.message():": "ioJVM/consumer.PublicIoSuite",
-    "method eyes4s.io.EyeLinkOracleFact$.create(scala.Int,scala.Int,java.lang.String,scala.Option,scala.Option,java.lang.String,eyes4s.io.EyeLinkOraclePresence,java.lang.String,java.lang.String):scala.util.Either": "ioJVM/eyes4s.io.EyeLinkOracleJvmSuite",
-    "method eyes4s.io.EyeLinkOracleFact.toString():": "ioJVM/eyes4s.io.EyeLinkOracleSuite",
-    "method eyes4s.io.EyeLinkOracleManifest$.create(eyes4s.io.EyeLinkOracleDescriptor,scala.collection.immutable.Vector):scala.util.Either": "ioJVM/eyes4s.io.EyeLinkOracleJvmSuite",
-    "method eyes4s.io.EyeLinkOracleManifest$.parseTsv(java.lang.String,java.lang.String):scala.util.Either": "ioJVM/eyes4s.io.EyeLinkOracleJvmSuite",
-    "method eyes4s.io.EyeLinkOracleManifest.renderTsv():": "ioJVM/eyes4s.io.EyeLinkOracleJvmSuite",
-    "method eyes4s.io.EyeLinkPortableConformanceRow$.create(java.lang.String,eyes4s.io.Sha256,java.lang.String,eyes4s.io.EyeLinkConformanceStatus,scala.Option,java.lang.String,eyes4s.io.EyeLinkConformanceStatus,scala.Option,scala.Int,java.lang.String):scala.util.Either": "ioJVM/eyes4s.io.EyeLinkConformanceSuite",
-    "method eyes4s.io.EyeLinkPortableConformanceSummary$.create(scala.collection.immutable.Vector):scala.util.Either": "ioJVM/eyes4s.io.EyeLinkConformanceSuite",
     "method eyes4s.io.EyeLinkSupport$.find(java.lang.String):scala.Option": "ioJVM/eyes4s.io.EyeLinkCorpusJvmSuite",
     "method eyes4s.io.FixationColumns$.of(java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String,java.lang.String):scala.util.Either": "ioJVM/eyes4s.io.RepetitionGuideSuite",
     "method eyes4s.io.FixationColumns.names():": "ioJVM/eyes4s.io.InventoryAdmissionSuite",
@@ -16360,9 +16206,6 @@
     "value eyes4s.io.ArrowDiagnostics$.arrowExportError": "ioJVM/eyes4s.io.DiagnosticsDocJvmSuite",
     "value eyes4s.io.ArtifactFiles$.maximumManifestBytes": "ioJVM/eyes4s.io.ArtifactFilesSuite",
     "value eyes4s.io.AscLineLimit$.Default": "ioJVM/eyes4s.io.EyeLinkCorpusJvmSuite",
-    "value eyes4s.io.AscPerformanceResult.allocationBytesPerInputBytePermille": "ioJVM/eyes4s.io.EyeLinkAscPerformanceJvmSuite",
-    "value eyes4s.io.AscPerformanceResult.passed": "ioJVM/eyes4s.io.EyeLinkAscPerformanceJvmSuite",
-    "value eyes4s.io.AscPerformanceResult.throughputBytesPerSecond": "ioJVM/eyes4s.io.EyeLinkAscPerformanceJvmSuite",
     "value eyes4s.io.AscReadChunkSize$.Default": "ioJVM/consumer.PublicIoSuite",
     "value eyes4s.io.AscSourceLine.diagnosticExcerpt": "ioJVM/eyes4s.io.EyeLinkAscCorruptionSuite",
     "value eyes4s.io.AscToken.ascii": "ioJVM/docconsumer.DocumentationExamplesSuite",
@@ -16379,27 +16222,6 @@
     "value eyes4s.io.EyeLinkAscCanonicalManifest.schemaVersion": "ioJVM/eyes4s.io.EyeLinkAscStreamingJvmSuite",
     "value eyes4s.io.EyeLinkAscNative$.machine": "ioJVM/docconsumer.DocumentationExamplesSuite",
     "value eyes4s.io.EyeLinkAscSamples$.machine": "ioJVM/docconsumer.DocumentationExamplesSuite",
-    "value eyes4s.io.EyeLinkConformanceManifest.byPath": "ioJVM/eyes4s.io.EyeLinkOracleJvmSuite",
-    "value eyes4s.io.EyeLinkConformanceManifest.canonical": "ioJVM/eyes4s.io.EyeLinkConformanceSuite",
-    "value eyes4s.io.EyeLinkConformanceManifest.scientificDigest": "ioJVM/eyes4s.io.EyeLinkConformanceSuite",
-    "value eyes4s.io.EyeLinkCorpusCoverage.missingRequiredCapabilities": "ioJVM/eyes4s.io.EyeLinkCorpusJvmSuite",
-    "value eyes4s.io.EyeLinkCorpusCoverage.unrepresentedDimensionPairs": "ioJVM/eyes4s.io.EyeLinkCorpusJvmSuite",
-    "value eyes4s.io.EyeLinkCorpusCoverage.unvalidatedDimensionPairs": "ioJVM/eyes4s.io.EyeLinkCorpusJvmSuite",
-    "value eyes4s.io.EyeLinkCorpusCoverage.unvalidatedRequiredCapabilities": "ioJVM/eyes4s.io.EyeLinkCorpusJvmSuite",
-    "value eyes4s.io.EyeLinkCorpusManifest$.columns": "ioJVM/eyes4s.io.EyeLinkCorpusJvmSuite",
-    "value eyes4s.io.EyeLinkCorpusManifest$.schemaVersion": "ioJVM/eyes4s.io.EyeLinkCorpusJvmSuite",
-    "value eyes4s.io.EyeLinkCorpusManifest.containsPrivateBytes": "ioJVM/eyes4s.io.EyeLinkCorpusJvmSuite",
-    "value eyes4s.io.EyeLinkCorpusManifest.coverage": "ioJVM/eyes4s.io.EyeLinkCorpusJvmSuite",
-    "value eyes4s.io.EyeLinkCorpusManifest.publiclyLoadable": "ioJVM/eyes4s.io.EyeLinkCorpusJvmSuite",
-    "value eyes4s.io.EyeLinkOracleManifest$.columns": "ioJVM/eyes4s.io.EyeLinkOracleJvmSuite",
-    "value eyes4s.io.EyeLinkOracleManifest$.schemaVersion": "ioJVM/eyes4s.io.EyeLinkOracleJvmSuite",
-    "value eyes4s.io.EyeLinkOracleManifest.records": "ioJVM/eyes4s.io.EyeLinkOracleJvmSuite",
-    "value eyes4s.io.EyeLinkOracleManifest.scientificDigest": "ioJVM/eyes4s.io.EyeLinkOracleJvmSuite",
-    "value eyes4s.io.EyeLinkPortableConformanceSummary.ascOracleCoverageComplete": "ioJVM/eyes4s.io.EyeLinkConformanceSuite",
-    "value eyes4s.io.EyeLinkPortableConformanceSummary.availableComparisonsPassed": "ioJVM/eyes4s.io.EyeLinkConformanceSuite",
-    "value eyes4s.io.EyeLinkPortableConformanceSummary.digest": "ioJVM/eyes4s.io.EyeLinkConformanceSuite",
-    "value eyes4s.io.EyeLinkPortableConformanceSummary.renderTsv": "ioJVM/eyes4s.io.EyeLinkConformanceSuite",
-    "value eyes4s.io.EyeLinkPortableConformanceSummary.vendorEdfCertified": "ioJVM/eyes4s.io.EyeLinkConformanceSuite",
     "value eyes4s.io.EyeLinkSupport$.capabilities": "ioJVM/consumer.PublicIoSuite",
     "value eyes4s.io.EyeLinkSupport$.contractVersion": "ioJVM/eyes4s.io.EyeLinkCorpusJvmSuite",
     "value eyes4s.io.EyeLinkSupport$.explicitlyRejected": "ioJVM/consumer.PublicIoSuite",
@@ -16423,9 +16245,12 @@
     "value eyes4s.io.IoDiagnosticCatalog$.families": "ioJVM/eyes4s.io.DiagnosticsDocJvmSuite",
     "value eyes4s.io.IoDiagnosticCatalog$.fixationImport": "ioJVM/eyes4s.io.DiagnosticsDocJvmSuite",
     "value eyes4s.io.IoDiagnosticCatalog$.fixationRow": "ioJVM/eyes4s.io.DiagnosticsDocJvmSuite",
+    "value eyes4s.io.IoDiagnosticCatalog$.issued": "ioJVM/eyes4s.io.IoDiagnosticCatalogSuite",
+    "value eyes4s.io.IoDiagnosticCatalog$.issuedFamilies": "ioJVM/eyes4s.io.DiagnosticsDocJvmSuite",
     "value eyes4s.io.IoDiagnosticCatalog$.ledgerVerification": "ioJVM/eyes4s.io.DiagnosticsDocJvmSuite",
     "value eyes4s.io.IoDiagnosticCatalog$.psychologyWorkflow": "ioJVM/eyes4s.io.DiagnosticsDocJvmSuite",
     "value eyes4s.io.IoDiagnosticCatalog$.resultExport": "ioJVM/eyes4s.io.DiagnosticsDocJvmSuite",
+    "value eyes4s.io.IoDiagnosticCatalog$.retired": "ioJVM/eyes4s.io.DiagnosticsDocJvmSuite",
     "value eyes4s.io.IoDiagnosticCatalog$.sha256": "ioJVM/eyes4s.io.DiagnosticsDocJvmSuite",
     "value eyes4s.io.IoDiagnosticCatalog$.sourceAdmission": "ioJVM/eyes4s.io.DiagnosticsDocJvmSuite",
     "value eyes4s.io.IoDiagnosticCatalog$.sourceText": "ioJVM/eyes4s.io.DiagnosticsDocJvmSuite",
@@ -16433,16 +16258,12 @@
     "value eyes4s.io.IoDiagnosticCatalog$.tidyCsv": "ioJVM/eyes4s.io.DiagnosticsDocJvmSuite",
     "value eyes4s.io.IoDiagnosticCatalog$.tidyResult": "ioJVM/eyes4s.io.DiagnosticsDocJvmSuite",
     "value eyes4s.io.IoDiagnostics$.ascNativeTimeline": "ioJVM/eyes4s.io.DiagnosticsDocJvmSuite",
-    "value eyes4s.io.IoDiagnostics$.ascPerformanceValidation": "ioJVM/eyes4s.io.DiagnosticsDocJvmSuite",
     "value eyes4s.io.IoDiagnostics$.ascSampleMaterialization": "ioJVM/eyes4s.io.DiagnosticsDocJvmSuite",
     "value eyes4s.io.IoDiagnostics$.ascSourceLine": "ioJVM/eyes4s.io.DiagnosticsDocJvmSuite",
     "value eyes4s.io.IoDiagnostics$.ascStreamConfiguration": "ioJVM/eyes4s.io.DiagnosticsDocJvmSuite",
     "value eyes4s.io.IoDiagnostics$.contrastExport": "ioJVM/eyes4s.io.DiagnosticsDocJvmSuite",
     "value eyes4s.io.IoDiagnostics$.delimitedSchema": "ioJVM/eyes4s.io.DiagnosticsDocJvmSuite",
     "value eyes4s.io.IoDiagnostics$.edf2AscProvenance": "ioJVM/eyes4s.io.DiagnosticsDocJvmSuite",
-    "value eyes4s.io.IoDiagnostics$.eyeLinkConformance": "ioJVM/eyes4s.io.DiagnosticsDocJvmSuite",
-    "value eyes4s.io.IoDiagnostics$.eyeLinkCorpus": "ioJVM/eyes4s.io.DiagnosticsDocJvmSuite",
-    "value eyes4s.io.IoDiagnostics$.eyeLinkOracle": "ioJVM/eyes4s.io.DiagnosticsDocJvmSuite",
     "value eyes4s.io.IoDiagnostics$.eyeLinkSessionConfig": "ioJVM/eyes4s.io.DiagnosticsDocJvmSuite",
     "value eyes4s.io.IoDiagnostics$.fixationImport": "ioJVM/eyes4s.io.DiagnosticsDocJvmSuite",
     "value eyes4s.io.IoDiagnostics$.fixationRow": "ioJVM/eyes4s.io.DiagnosticsDocJvmSuite",
@@ -18508,6 +18329,7 @@
       "every projection keeps every field, and every reachable error type is cataloged",
       "every sampled case that names a source and a line has that line as its subject",
       "generated samples give same-typed fields distinct values, so a swap is detected",
+      "retired io families keep their codes issued and project from no published error",
       "the io and laws code tables are pinned and so identical on the JVM and Scala.js"
     ],
     "ioJS/eyes4s.io.LedgerReverificationSuite": [
@@ -22124,6 +21946,7 @@
       "every projection keeps every field, and every reachable error type is cataloged",
       "every sampled case that names a source and a line has that line as its subject",
       "generated samples give same-typed fields distinct values, so a swap is detected",
+      "retired io families keep their codes issued and project from no published error",
       "the io and laws code tables are pinned and so identical on the JVM and Scala.js"
     ],
     "ioJVM/eyes4s.io.LedgerReverificationSuite": [

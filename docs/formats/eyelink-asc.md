@@ -211,6 +211,14 @@ coverage, oracle identity, and aggregate result remain public.
 
 ## Current portable conformance evidence
 
+The courts that produce this evidence are test code of eyes4s-io, not part of its published API:
+the oracle registry (`EyeLinkOracle*`), the corpus manifest (`EyeLinkCorpus*`), the conformance
+comparator (`EyeLinkConformance*`), and the performance court's budgets and results
+(`AscByteBudget`, `AscStreamingMemoryEnvelope`, `AscWorkflowMemoryEnvelope`,
+`AscPerformanceResult`). The published artifact carries their machine-readable summaries under
+`META-INF/eyes4s/eyelink/`. Their diagnostic codes remain in `IoDiagnosticCatalog`, which only
+appends.
+
 `META-INF/eyes4s/eyelink/portable-conformance.tsv` is the machine-readable summary of the
 platform-independent court. Six generated fixture families have pinned semantic digests and run on
 both the JVM and Scala.js. The metamorphic court covers LF versus CRLF, legal structural whitespace,
@@ -241,7 +249,8 @@ one parser step is therefore bounded by:
 maximum line bytes + maximum read-chunk bytes
 ```
 
-`AscStreamingMemoryEnvelope` exposes that contract. It is not described as a JVM heap estimate:
+The performance court's `AscStreamingMemoryEnvelope` states that contract. It is not a JVM heap
+estimate:
 objects, tokens, and transient copies have runtime overhead. The performance court measures sampled
 heap usage and HotSpot all-thread allocated bytes separately inside a forked JVM with `-Xmx256m`.
 A streaming result discards each emission after the downstream fold consumes it. A materialized result is explicitly

@@ -95,16 +95,27 @@ object IoDiagnosticSamples:
     generated[AscSourceLineError]("AscSourceLineError"),
     generated[AscStreamConfigurationError]("AscStreamConfigurationError"),
     generated[AscNativeTimelineError]("AscNativeTimelineError"),
-    generated[AscPerformanceValidationError]("AscPerformanceValidationError"),
     generated[EyeLinkAscSessionConfigError]("EyeLinkAscSessionConfigError"),
-    generated[EyeLinkOracleError]("EyeLinkOracleError"),
-    generated[EyeLinkConformanceError]("EyeLinkConformanceError"),
-    generated[EyeLinkCorpusError]("EyeLinkCorpusError"),
     generated[CsvLayoutError]("CsvLayoutError"),
     generated[SourceTextError[StudyKey]]("SourceTextError"),
     generated[SourceAdmissionError]("SourceAdmissionError"),
     generated[LedgerVerificationError]("LedgerVerificationError")
   )
+
+  /** The retired families of io's test-scope EyeLink evidence apparatus
+    * (CR9), in [[IoDiagnosticCatalog.retired]] order: their codes stay issued,
+    * but their enums are not part of the published eyes4s-io artifact, so they
+    * are sampled here, apart from [[io]] and [[all]].
+    */
+  val retired: Vector[FamilySamples] = Vector(
+    generated[AscPerformanceValidationError]("AscPerformanceValidationError"),
+    generated[EyeLinkOracleError]("EyeLinkOracleError"),
+    generated[EyeLinkConformanceError]("EyeLinkConformanceError"),
+    generated[EyeLinkCorpusError]("EyeLinkCorpusError")
+  )
+
+  /** The retired families' enum names. */
+  val evidence: Set[String] = retired.map(_.enumName).toSet
 
   val laws: Vector[FamilySamples] = Vector(
     generated[DetectorValidationError]("DetectorValidationError"),
