@@ -1190,6 +1190,8 @@ lazy val studioDesktop = project
   .in(file("studio/desktop"))
   .enablePlugins(NoPublishPlugin)
   .dependsOn(studioViz.jvm)
+  // S9.5: export bundles write result tables through eyes4s-io's CSV transport.
+  .dependsOn(io.jvm)
   // S2.3: the file-system ProjectStore runs studio-core's conformance suite.
   .dependsOn(studioCore.jvm % "test->test")
   // S1.4: the shell FX suites boot at the S1.0 story models (StoryModels).

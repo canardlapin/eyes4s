@@ -43,3 +43,9 @@ button: Figure format PDF
 button: Figure format PNG
 button: project snapshot includes images, on
 button: Export figure…
+button: figure-1.svg, in the bundle
+button: results.csv · 480 queries × 4 σ, in the bundle
+button: participants.csv · 24 × 2 groups, in the bundle
+button: methods.md, in the bundle
+button: project snapshot · includes images, not in the bundle
+button: Export bundle…

@@ -337,7 +337,12 @@ object StudioWindow:
     val figures = FiguresHost(
       () => r.model,
       dispatch,
-      FigureInputs.of(session, displays, () => Option(shell.root.getScene).map(_.getWindow))
+      FigureInputs.of(
+        session,
+        displays,
+        () => Option(shell.root.getScene).map(_.getWindow),
+        project
+      )
     )
     Vector(
       "figures.figures"      -> figures.navigatorNode,

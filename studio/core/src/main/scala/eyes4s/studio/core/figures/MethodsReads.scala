@@ -72,6 +72,16 @@ object MethodsReads:
       run: RunId,
       dataset: DatasetRevision
   ): F[Either[MethodsReadError, MethodsFacts]] =
+    (for
+      summary <- EitherT(admission(dataset)).leftMap(MethodsReadError.Admission(dataset, _))
+      all     <- EitherT(queryRows(queries, run))
+    yield of(run, summary, all)).value
+
+  /** Every query row of `run`, page by page, in the backend's order. */
+  def queryRows[F[_]: Monad](
+      queries: (RunId, PageRequest) => F[Either[BackendError, QueryPage]],
+      run: RunId
+  ): F[Either[MethodsReadError, Vector[QueryRow]]] =
     def rows(
         offset: Int,
         got: Vector[QueryRow]
@@ -89,10 +99,7 @@ object MethodsReads:
             rows(_, got ++ page.rows)
           )
       yield all
-    (for
-      summary <- EitherT(admission(dataset)).leftMap(MethodsReadError.Admission(dataset, _))
-      all     <- rows(0, Vector.empty)
-    yield of(run, summary, all)).value
+    rows(0, Vector.empty).value
 
   /** The facts from rows already read. Controls are tallied over the queries
     * the run scored or tried to (contributing and failed).

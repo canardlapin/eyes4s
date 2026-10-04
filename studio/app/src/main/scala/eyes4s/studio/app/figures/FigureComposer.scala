@@ -115,6 +115,11 @@ enum ComposerIntent derives CanEqual:
   /** The methods.md pane (S9.4). */
   case Methods(intent: MethodsIntent)
 
+  /** The export bundle (S9.5): choose its files, export it, its answer. */
+  case ToggleBundle(item: BundleItem)
+  case ExportBundle
+  case BundleExported(answer: Either[String, String])
+
 /** What the composer asks of the app and the platform. */
 enum ComposerEffect derives CanEqual:
   case App(intent: Intent)
@@ -136,6 +141,9 @@ enum ComposerEffect derives CanEqual:
 
   /** Read the admission and query facts the methods text cites (S9.4). */
   case RequestMethods(run: RunId, dataset: DatasetRevision)
+
+  /** Write the export bundle (S9.5). */
+  case WriteBundle(request: BundleRequest)
 
 /** One read the composer asked for, so it is asked once. */
 enum ComposerRead derives CanEqual:
@@ -202,6 +210,7 @@ final case class ComposerVM(
     widths: Vector[(PageWidth, String, Boolean)],
     page: Option[PageVM],
     methods: Option[MethodsVM],
+    bundle: Option[BundleVM],
     problem: Option[String]
 ) derives CanEqual
 
@@ -227,7 +236,9 @@ final case class FigureComposer private (
     greyscale: Boolean,
     format: ExportFormat,
     exported: Option[String],
-    methods: FigureMethods
+    methods: FigureMethods,
+    bundle: Set[BundleItem],
+    bundled: Option[String]
 ) derives CanEqual:
   def appearanceOf(figure: FigureId): FigureAppearance =
     appearance.getOrElse(figure, FigureAppearance.default)
@@ -251,7 +262,9 @@ object FigureComposer:
     false,
     ExportFormat.Svg,
     None,
-    FigureMethods.empty
+    FigureMethods.empty,
+    BundleItem.Default,
+    None
   )
 
   private val none: Vector[ComposerEffect] = Vector.empty
@@ -422,6 +435,30 @@ object FigureComposer:
           ),
           none
         )
+      case ToggleBundle(item) =>
+        val next = if c.bundle.contains(item) then c.bundle - item else c.bundle + item
+        (c.copy(bundle = next, bundled = None), none)
+      case BundleExported(answer) =>
+        (c.copy(bundled = Some(FigureBundle.exported(answer))), none)
+      case ExportBundle =>
+        val v = view(c, model)
+        (for
+          s      <- shownFigure(model).flatMap(FigureSource.of(model.document, _).toOption)
+          page   <- v.page
+          bundle <- v.bundle
+          written = bundle.written
+          if written.nonEmpty
+        yield ComposerEffect.WriteBundle(
+          BundleRequest(
+            s,
+            page,
+            c.format,
+            v.methods.flatMap(_.text.toOption),
+            written,
+            c.appearanceOf(s.figure.id).includeImages,
+            FigureBundle.folder(page)
+          )
+        )).fold((c, none))(e => (c.copy(bundled = None), Vector(e)))
       case Export =>
         view(c, model).page.fold((c, none)) { p =>
           (
@@ -528,12 +565,26 @@ object FigureComposer:
     val methods = source
       .flatMap(_.toOption)
       .map(s => FigureMethods.view(c.methods, s, c.summaries.get(s.run.id)))
+    val bundle = for
+      s <- source.flatMap(_.toOption)
+      p <- page.flatMap(_.toOption)
+    yield FigureBundle.view(
+      c.bundle,
+      s,
+      p,
+      c.format,
+      c.summaries.get(s.run.id),
+      methods,
+      c.appearanceOf(s.figure.id).includeImages,
+      c.bundled
+    )
     ComposerVM(
       FigureBinding.view(c.binding, model),
       "New figure",
       PageWidth.values.toVector.map(w => (w, w.label, w == c.width)),
       page.flatMap(_.toOption),
       methods,
+      bundle,
       c.problem.orElse(page.flatMap(_.left.toOption))
     )
 

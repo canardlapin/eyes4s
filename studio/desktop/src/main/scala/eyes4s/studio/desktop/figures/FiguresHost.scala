@@ -30,7 +30,7 @@ import eyes4s.studio.core.figures.{MethodsFacts, MethodsReads, ReferenceReads, R
 import eyes4s.studio.core.selection.{ScaleIndex, ViewId}
 import eyes4s.studio.desktop.explore.NavigatorDisplays
 import eyes4s.studio.desktop.plot.{PlotTwin, TableTwinView}
-import eyes4s.studio.desktop.runtime.StudioSession
+import eyes4s.studio.desktop.runtime.{ProjectPort, StudioSession}
 import eyes4s.studio.desktop.tokens.TokenFiles
 import eyes4s.studio.viz.figure.PlotGeometry
 import eyes4s.studio.viz.plot.{ParticipantPlot, PlotBuilder, ScaleProfilePlot}
@@ -46,7 +46,7 @@ import javafx.scene.control.{Button, Label, ScrollPane, TextArea}
 import javafx.scene.effect.ColorAdjust
 import javafx.scene.input.{KeyCode, KeyEvent}
 import javafx.scene.text.Font
-import javafx.stage.{FileChooser, Window}
+import javafx.stage.{DirectoryChooser, FileChooser, Window}
 
 import java.nio.file.Files
 import scala.util.control.NonFatal
@@ -77,6 +77,11 @@ trait FigureInputs:
       done: Either[String, MethodsFacts] => Unit
   ): Unit
 
+  /** Write an export bundle into a folder the author chooses (S9.5); the
+    * answer is where it went, or why it was not written.
+    */
+  def bundle(request: BundleRequest, done: Either[String, String] => Unit): Unit
+
   /** Save an exported figure, suggesting `name`; the answer is where it went,
     * or why it was not saved (S9.3).
     */
@@ -93,7 +98,8 @@ object FigureInputs:
   def of(
       session: StudioSession,
       source: NavigatorDisplays,
-      owner: () => Option[Window]
+      owner: () => Option[Window],
+      project: Option[ProjectPort] = None
   ): FigureInputs =
     new FigureInputs:
       def summary(run: RunId, done: SummaryAnswer => Unit): Unit =
@@ -174,6 +180,58 @@ object FigureInputs:
               Files.write(file.toPath, Array.from(bytes)): Unit
               done(Right(file.toString))
             catch case NonFatal(e) => done(Left(reason(e)))
+
+      def bundle(request: BundleRequest, done: Either[String, String] => Unit): Unit =
+        val chooser = DirectoryChooser()
+        chooser.setTitle(s"Export ${request.folder}")
+        Option(chooser.showDialog(owner().orNull)) match
+          case None         => done(Left("no folder was chosen"))
+          case Some(parent) =>
+            val target = parent.toPath.resolve(request.folder)
+            val run    = request.source.run.id
+            val read   = for
+              summary <- session.backend.result(run)
+              rows    <- MethodsReads.queryRows(session.backend.queries, run)
+            yield (summary.left.map(_.message), rows.left.map(_.message))
+            session.run(read) {
+              case Left(e)                              => done(Left(reason(e)))
+              case Right((Left(why), _))                => done(Left(why))
+              case Right((_, Left(why)))                => done(Left(why))
+              case Right((Right(summary), Right(rows))) =>
+                BundleFiles.assemble(request, summary, rows).flatMap(write(target, _)) match
+                  case Left(why) => done(Left(why))
+                  case Right(()) =>
+                    if !request.items.contains(BundleItem.Snapshot) then
+                      done(Right(target.toString))
+                    else
+                      project match
+                        case None =>
+                          done(Left("project snapshot: this project is not saved in a bundle"))
+                        case Some(port) =>
+                          port.snapshot(
+                            target.resolve("project"),
+                            request.includeImages,
+                            r =>
+                              done(
+                                r.left
+                                  .map(w => s"project snapshot: $w")
+                                  .map(_ => target.toString)
+                              )
+                          )
+            }
+
+  /** Write `files` into the new folder `target`, which must not exist. */
+  private def write(
+      target: java.nio.file.Path,
+      files: Vector[(String, IArray[Byte])]
+  ): Either[String, Unit] =
+    if Files.exists(target) then Left(s"$target already exists; choose another folder")
+    else
+      try
+        Files.createDirectories(target)
+        files.foreach((name, bytes) => Files.write(target.resolve(name), Array.from(bytes)))
+        Right(())
+      catch case NonFatal(e) => Left(reason(e))
 
   private def reason(e: Throwable): String = Option(e.getMessage).getOrElse(e.toString)
 
@@ -408,6 +466,8 @@ final class FiguresHost(
           query,
           a => later(ComposerIntent.ReferencesRead(run, scale, query, a))
         )
+      case ComposerEffect.WriteBundle(request) =>
+        inputs.bundle(request, a => later(ComposerIntent.BundleExported(a)))
       case ComposerEffect.RequestMethods(run, dataset) =>
         inputs.methods(
           run,
@@ -685,8 +745,30 @@ final class FiguresHost(
         row("Unit", b.unit),
         HBox(6.0, open, rebind),
         note
-      ) ++ v.page.toVector.flatMap(p => appearance(p.appearance, p.exporting))
+      ) ++ v.page.toVector.flatMap(p => appearance(p.appearance, p.exporting)) ++
+        v.bundle.toVector.flatMap(bundleSection)
     }*): Unit
+
+  /** The inspector's Bundle section (S9.5): a toggle per file, then Export bundle…. */
+  private def bundleSection(b: BundleVM): Vector[Node] =
+    val head = Label("Bundle"); head.getStyleClass.add("t12")
+    val rows = b.rows.map { r =>
+      val t = button(FiguresHost.bundleText(r))
+      t.setAccessibleText(FiguresHost.bundleName(r))
+      if r.chosen && r.unavailable.isEmpty then t.getStyleClass.add("figures-chosen"): Unit
+      t.setDisable(r.unavailable.isDefined)
+      t.setOnAction(_ => dispatch(ComposerIntent.ToggleBundle(r.item)))
+      val why = r.unavailable.toVector.map { w =>
+        val l = Label(w); l.setWrapText(true); l.getStyleClass.addAll("figures-note", "t11"); l
+      }
+      VBox(2.0, (t +: why)*)
+    }
+    val write = button(b.action)
+    write.setDisable(b.written.isEmpty)
+    write.setOnAction(_ => dispatch(ComposerIntent.ExportBundle))
+    (head +: rows) ++ Vector(write) ++ b.status.toVector.map { s =>
+      val l = Label(s); l.setWrapText(true); l.getStyleClass.add("t11"); l
+    }
 
   /** The inspector's Appearance (view only) and Export sections. */
   private def appearance(a: AppearanceVM, e: ExportVM): Vector[Node] =
@@ -882,13 +964,26 @@ final class FiguresHost(
               b(FiguresHost.includeName(a.includeImages._1, a.includeImages._2)),
               b(p.exporting.action)
             )
-        }
+        } ++
+        // Bundle: each file that can be written, then Export bundle….
+        v.bundle.toVector.flatMap(bundle =>
+          bundle.rows.filter(_.unavailable.isEmpty).map(r => b(FiguresHost.bundleName(r))) ++
+            Option.when(bundle.written.nonEmpty)(b(bundle.action))
+        )
     )
 
   private def spacer(): Region =
     val r = Region(); HBox.setHgrow(r, Priority.ALWAYS); r
 
 object FiguresHost:
+  /** A bundle row as drawn: "results.csv · 480 queries × 4 σ". */
+  def bundleText(r: BundleRowVM): String =
+    if r.detail.isEmpty then r.file else s"${r.file} · ${r.detail}"
+
+  /** A bundle row's accessible name, with whether it is in the bundle. */
+  def bundleName(r: BundleRowVM): String =
+    s"${bundleText(r)}, ${if r.chosen then "in the bundle" else "not in the bundle"}"
+
   /** The methods editor's accessible name. */
   val MethodsText: String = "Methods text"
 
