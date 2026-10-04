@@ -26,6 +26,7 @@ import eyes4s.studio.app.{ClockTime, ProjectName}
 import eyes4s.studio.core.fixture.StoryMoment
 import eyes4s.studio.desktop.admission.{AdmissionLedgerHost, LedgerInputs}
 import eyes4s.studio.desktop.compare.{CompareSummaryHost, SummaryInputs}
+import eyes4s.studio.desktop.explore.{NavigatorDisplays, NavigatorInputs, TrialsNavigatorHost}
 import eyes4s.studio.desktop.dock.{DockGesture, PerspectiveHost}
 import eyes4s.studio.desktop.runtime.{
   DesktopEffects,
@@ -63,7 +64,9 @@ final class StudioWindow private (
     val columnMapping: ColumnMappingPaneHost,
     val admission: AdmissionLedgerHost,
     val summary: CompareSummaryHost,
-    summaryListener: AppModel => Unit
+    summaryListener: AppModel => Unit,
+    val navigator: TrialsNavigatorHost,
+    navigatorListener: AppModel => Unit
 ):
   /** The window content, with the studio stylesheets. */
   def root: javafx.scene.Parent = shell.root
@@ -75,6 +78,8 @@ final class StudioWindow private (
   def paneStops(pane: PaneId): Vector[FocusStop] =
     if pane == StudioLayouts.columnMapping then columnMapping.focusStops
     else if pane == StudioLayouts.admission then admission.focusStops
+    else if pane == StudioLayouts.trials then navigator.trialsStops
+    else if pane == StudioLayouts.items then navigator.itemsStops
     else Vector.empty
 
   /** Store each perspective's arrangement in the document (view-only). */
@@ -85,6 +90,7 @@ final class StudioWindow private (
 
   def close(): Unit =
     runtime.unlisten(summaryListener)
+    runtime.unlisten(navigatorListener)
     summary.dispose()
     project.foreach(_.close())
     session.close()
@@ -165,6 +171,7 @@ object StudioWindow:
   def open(
       initial: AppModel,
       moment: StoryMoment,
+      displays: NavigatorDisplays,
       theme: Theme = Theme.Light,
       dialogs: Option[PlatformDialogs] = None,
       messages: Messages = Messages.english,
@@ -179,6 +186,7 @@ object StudioWindow:
       window <- build(
         initial,
         moment,
+        displays,
         dock,
         dialogs,
         messages,
@@ -194,6 +202,7 @@ object StudioWindow:
   private def build(
       initial: AppModel,
       moment: StoryMoment,
+      displays: NavigatorDisplays,
       dockTheme: DockTheme,
       dialogs: Option[PlatformDialogs],
       messages: Messages,
@@ -292,6 +301,13 @@ object StudioWindow:
     ).foreach((id, node) => PaneId.of(id).foreach(host.host(_, node)))
     val summaryListener: AppModel => Unit = summary.sync
     r.listen(summaryListener)
+    // The trials navigator (Explore): the latest admitted revision's trials.
+    val navigator =
+      TrialsNavigatorHost(() => r.model, dispatch, NavigatorInputs.of(session, displays))
+    host.host(StudioLayouts.trials, navigator.trials.node)
+    host.host(StudioLayouts.items, navigator.items.node)
+    val navigatorListener: AppModel => Unit = navigator.sync
+    r.listen(navigatorListener)
     Right(
       StudioWindow(
         session,
@@ -303,6 +319,8 @@ object StudioWindow:
         mapping,
         admission,
         summary,
-        summaryListener
+        summaryListener,
+        navigator,
+        navigatorListener
       )
     )

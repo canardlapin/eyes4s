@@ -76,7 +76,7 @@ object Place:
       case At(ref)                                           =>
         ref match
           case StudioRef.Trial(_) | StudioRef.Fixation(_, _) |
-              StudioRef.SourceRecord(_, _, _, _) =>
+              StudioRef.SourceRecord(_, _, _, _) | StudioRef.TrialGroup(_, _) =>
             Perspective.Explore
           case StudioRef.Participant(_) =>
             if fromSummary then Perspective.Compare else Perspective.Explore
