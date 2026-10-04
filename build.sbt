@@ -1586,7 +1586,9 @@ lazy val docs = project
     publish / skip := true,
     mdocIn         := file("site-docs"),
     Compile / unmanagedResourceDirectories += file("site-docs/data").getAbsoluteFile,
-    tlSitePublishBranch := None
+    tlSitePublishBranch := None,
+    // site-docs/css: narrow-screen rules for inline code, code blocks and tables.
+    tlSiteHelium ~= (_.site.internalCSS(laika.ast.Path.Root / "css"))
   )
 
 lazy val allModules = Seq(
