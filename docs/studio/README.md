@@ -59,6 +59,14 @@ To change the plan, edit `studio_plan.py`, rerun `render`, and update the matchi
 
 ## Backend protocol versions
 
+Protocol 1.9 (S9.5) adds a run's pair rows, additive on 1.8: `pairRows(run, scale,
+page)` answers `PairRowPage`, every directed pair of the run at one scale index (eyes4s
+`PairScores`), in focal order with each query's matched pair before its controls, each
+with its reference's item and a typed `PairScoreState` (`Scored`, `Failed` with its
+diagnostic, or `NotServed`). A scale the run does not compute is refused with the new
+`UnknownScale`. The export bundle's comparisons.csv reads it. The 1.8 pins are unchanged
+apart from the envelope version, now 1.9.
+
 Protocol 1.8 (S3.5) widens `StudioDiagnostic`, additive on 1.7: `affected` lists every
 trial the diagnostic names, eyes4s's `affectedTrials` (its subject, then its operands
 and causes, each once), so a remedy opens exactly those trials; `category` and
@@ -144,7 +152,7 @@ only and decodes the typed envelope body before checking the version; it does no
 negotiate minor capabilities. Mixed-minor deployments are unsupported. Protocol
 1.2 added `ProgressTotal.Counting`, which a 1.0/1.1 decoder cannot read; 1.3 adds
 the inventory join; 1.4 adds the exact large-count policy; 1.5 adds the
-resolved-design counts; 1.6 adds the trial fixations and preview views; 1.7 adds the source records view; 1.8 adds the diagnostic's affected trials, class and remedy. `ProtocolCodecSuite`
+resolved-design counts; 1.6 adds the trial fixations and preview views; 1.7 adds the source records view; 1.8 adds the diagnostic's affected trials, class and remedy; 1.9 adds the pair rows view. `ProtocolCodecSuite`
 retains the frozen legacy-total probe, while `ProtocolLongSuite` verifies that
 safe-number 1.2 envelopes remain readable. This does not establish mixed-version peer compatibility.
 

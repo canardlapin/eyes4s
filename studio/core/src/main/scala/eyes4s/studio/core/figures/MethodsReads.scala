@@ -52,14 +52,17 @@ enum MethodsReadError derives CanEqual:
   case Admission(dataset: DatasetRevision, error: BackendError)
   case Queries(run: RunId, offset: Int, error: BackendError)
   case Paging(run: RunId, offset: Int, error: PageError)
+  case Pairs(run: RunId, scale: Int, offset: Int, error: BackendError)
 
   def message: String = this match
     case Admission(dataset, error) =>
       s"The admission of dataset ${dataset.label}: ${error.message}"
     case Queries(run, offset, error) =>
       s"The queries of ${run.label} at offset $offset: ${error.message}"
+    case Pairs(run, scale, offset, error) =>
+      s"The pair rows of ${run.label} at scale $scale, offset $offset: ${error.message}"
     case Paging(run, offset, error) =>
-      s"The queries of ${run.label} at offset $offset: ${error.message}"
+      s"A page of ${run.label} at offset $offset: ${error.message}"
 
 object MethodsReads:
 
@@ -116,3 +119,32 @@ object MethodsReads:
       .toVector
       .sortBy((code, n) => (-n, code))
     MethodsFacts(run, admission, rows.size, Tally.of(compared.flatMap(_.controls)), failures)
+
+  /** Every pair row of `run` at each of `scales` scale indices, a page per
+    * scale in scale order (protocol 1.9).
+    */
+  def pairRows[F[_]: Monad](
+      pairs: (RunId, Int, PageRequest) => F[Either[BackendError, PairRowPage]],
+      run: RunId,
+      scales: Int
+  ): F[Either[MethodsReadError, Vector[PairRowPage]]] =
+    def at(
+        scale: Int,
+        offset: Int,
+        got: Vector[PairRowEntry]
+    ): EitherT[F, MethodsReadError, PairRowPage] =
+      for
+        request <- EitherT.fromEither[F](
+          PageRequest
+            .of(offset, PageRequest.MaximumSize)
+            .leftMap(MethodsReadError.Paging(run, offset, _))
+        )
+        page <- EitherT(pairs(run, scale, request))
+          .leftMap(MethodsReadError.Pairs(run, scale, offset, _))
+        all <- page.page.next
+          .filter(_ > offset)
+          .fold(EitherT.rightT[F, MethodsReadError](page.copy(rows = got ++ page.rows)))(
+            at(scale, _, got ++ page.rows)
+          )
+      yield all.copy(page = PageInfo(0, all.page.total, None))
+    (0 until scales).toVector.traverse(at(_, 0, Vector.empty)).value

@@ -16,9 +16,15 @@
 
 package eyes4s.studio.core.backend
 
-/** The pinned wire form of every [[ProtocolSamples]] sample, protocol 1.8. */
+/** The pinned wire form of every [[ProtocolSamples]] sample, protocol 1.9. */
 object ProtocolPins:
   val pins: Map[String, String] = Map(
+    "response.PairRowsOf" ->
+      """{"PairRowsOf":{"page":{"run":8,"scale":2,"page":{"offset":0,"total":8969,"next":3},"rows":[{"query":{"participant":"P17","phase":"Retrieval","trial":"ret_07","occurrence":1},"design":{"Matched":{}},"reference":{"participant":"P17","phase":"Encoding","trial":"enc_03","occurrence":1},"referenceItem":"beach-042","score":{"Scored":{"score":0.73}}},{"query":{"participant":"P17","phase":"Retrieval","trial":"ret_07","occurrence":1},"design":{"Control":{}},"reference":{"participant":"P17","phase":"Encoding","trial":"enc_11","occurrence":1},"referenceItem":"street-112","score":{"NotServed":{}}},{"query":{"participant":"P17","phase":"Retrieval","trial":"ret_07","occurrence":1},"design":{"Control":{}},"reference":{"participant":"P17","phase":"Encoding","trial":"enc_11","occurrence":1},"referenceItem":"street-112","score":{"Failed":{"diagnostic":{"code":"study-failure.off-window","level":{"Error":{}},"origin":{"EyesCore":{}},"subject":[{"Trial":{"key":{"participant":"P17","phase":"Retrieval","trial":"ret_07","occurrence":1}}}],"message":"empty map","affected":[{"participant":"P17","phase":"Retrieval","trial":"ret_07","occurrence":1},{"participant":"P17","phase":"Encoding","trial":"enc_03","occurrence":1}],"category":"DataDependent","remedy":"ReviewAnalysisWindow"}}}}]}}}""",
+    "request.PairRowsOf" ->
+      """{"PairRowsOf":{"run":8,"scale":2,"page":{"offset":10,"size":20}}}""",
+    "error.UnknownScale" ->
+      """{"UnknownScale":{"run":8,"scale":4,"scales":["0.5°","1°","2°","4°"]}}""",
     "error.SourceRecordsRefused" ->
       """{"SourceRecordsRefused":{"revision":4,"error":{"RangeInvalid":{"from":0,"count":501,"limit":500}}}}""",
     "request.SourceRecordsOf" ->
@@ -106,9 +112,9 @@ object ProtocolPins:
     "disposition.NoFixations" ->
       """{"NoFixations":{}}""",
     "envelope.frame" ->
-      """{"version":{"major":1,"minor":8},"id":41,"body":{"Event":{"event":{"Finished":{"outcome":{"Completed":{"job":1,"run":8,"last":{"job":1,"run":8,"step":2,"segment":{"Comparing":{"scale":2,"design":{"Control":{}}}},"meter":{"kind":{"Comparing":{}},"unit":{"Pairs":{}},"done":3005,"total":{"Exact":{"units":8512}}},"totals":{"completedMaps":2811,"totalMaps":{"Exact":{"units":4685}},"completedPairs":21400,"totalPairs":{"Exact":{"units":44845}}}}}}}}}}}""",
+      """{"version":{"major":1,"minor":9},"id":41,"body":{"Event":{"event":{"Finished":{"outcome":{"Completed":{"job":1,"run":8,"last":{"job":1,"run":8,"step":2,"segment":{"Comparing":{"scale":2,"design":{"Control":{}}}},"meter":{"kind":{"Comparing":{}},"unit":{"Pairs":{}},"done":3005,"total":{"Exact":{"units":8512}}},"totals":{"completedMaps":2811,"totalMaps":{"Exact":{"units":4685}},"completedPairs":21400,"totalPairs":{"Exact":{"units":44845}}}}}}}}}}}""",
     "envelope.request" ->
-      """{"version":{"major":1,"minor":8},"id":41,"body":{"Subscribe":{"id":1}}}""",
+      """{"version":{"major":1,"minor":9},"id":41,"body":{"Subscribe":{"id":1}}}""",
     "error.AlreadyRunning" ->
       """{"AlreadyRunning":{"revision":5,"job":1}}""",
     "error.NoResult" ->

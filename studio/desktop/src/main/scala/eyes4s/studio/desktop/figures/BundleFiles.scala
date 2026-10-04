@@ -19,7 +19,7 @@ package eyes4s.studio.desktop.figures
 import cats.syntax.all.*
 import eyes4s.io.csv
 import eyes4s.studio.app.figures.{BundleItem, BundleRequest, FigureBundle}
-import eyes4s.studio.core.backend.{QueryRow, ResultSummary}
+import eyes4s.studio.core.backend.{PairRowPage, QueryRow, ResultSummary}
 import eyes4s.studio.core.assets.AssetRef
 import eyes4s.studio.core.figures.BundleTables
 import eyes4s.studio.viz.trial.StimulusRaster
@@ -41,6 +41,7 @@ object BundleFiles:
       request: BundleRequest,
       summary: ResultSummary,
       rows: Vector[QueryRow],
+      pairs: Vector[PairRowPage],
       rasters: Map[AssetRef, StimulusRaster] = Map.empty
   ): Either[String, Vector[(String, IArray[Byte])]] =
     def utf8(text: String) = IArray.unsafeFromArray(text.getBytes(UTF_8))
@@ -63,8 +64,11 @@ object BundleFiles:
             request.methods
               .map(m => utf8(m + "\n"))
               .toRight("the methods text is not generated")
-          case BundleItem.Comparisons => Left(FigureBundle.NoPairRows)
-          case BundleItem.Snapshot    => Left("the project snapshot is a directory")
+          case BundleItem.Comparisons =>
+            BundleTables
+              .comparisons(request.source, summary, pairs)
+              .bimap(_.message, t => utf8(t.csv.encode))
+          case BundleItem.Snapshot => Left("the project snapshot is a directory")
         bytes.bimap(why => s"$name: $why", name -> _)
       }
       .map(_ :+ readme)

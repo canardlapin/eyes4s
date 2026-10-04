@@ -212,7 +212,8 @@ object ProtocolSamples:
     BackendError.SourceRecordsRefused(
       AnalysisRevision(4),
       SourceRecordsError.RangeInvalid(0, 501, SourceRecordPage.Limit)
-    )
+    ),
+    BackendError.UnknownScale(run, 4, Vector("0.5°", "1°", "2°", "4°"))
   )
 
   val runStates: Vector[RunState] = Vector(
@@ -423,6 +424,39 @@ object ProtocolSamples:
       .toOption
       .get
 
+  /** Protocol 1.9: a page with each score state. */
+  val pairRowPage: PairRowPage =
+    val encoding = TrialKey("P17", Phase.Encoding, "enc_03", 1)
+    val control  = TrialKey("P17", Phase.Encoding, "enc_11", 1)
+    PairRowPage(
+      run,
+      2,
+      PageInfo(0, 8969, Some(3)),
+      Vector(
+        PairRowEntry(
+          query,
+          PairDesign.Matched,
+          encoding,
+          "beach-042",
+          PairScoreState.Scored(0.73)
+        ),
+        PairRowEntry(
+          query,
+          PairDesign.Control,
+          control,
+          "street-112",
+          PairScoreState.NotServed
+        ),
+        PairRowEntry(
+          query,
+          PairDesign.Control,
+          control,
+          "street-112",
+          PairScoreState.Failed(diagnostic)
+        )
+      )
+    )
+
   val requests: Vector[BackendRequest] = Vector(
     BackendRequest.Admission(DatasetRevision(3)),
     BackendRequest.Ledger(DatasetRevision(3), page),
@@ -445,7 +479,8 @@ object ProtocolSamples:
     BackendRequest.Unsubscribe(RequestId(41)),
     BackendRequest.TrialFixationsOf(AnalysisRevision(4), query),
     BackendRequest.TrialPreviewOf(AnalysisRevision(4), query),
-    BackendRequest.SourceRecordsOf(AnalysisRevision(4), 7214, 60)
+    BackendRequest.SourceRecordsOf(AnalysisRevision(4), 7214, 60),
+    BackendRequest.PairRowsOf(run, 2, page)
   )
 
   val responses: Vector[BackendResponse] = Vector(
@@ -546,7 +581,8 @@ object ProtocolSamples:
     BackendResponse.Unsubscribed(RequestId(41), true),
     BackendResponse.TrialFixationsOf(trialFixations),
     BackendResponse.TrialPreviewOf(trialPreview),
-    BackendResponse.SourceRecordsOf(sourceRecordPage)
+    BackendResponse.SourceRecordsOf(sourceRecordPage),
+    BackendResponse.PairRowsOf(pairRowPage)
   )
 
   val events: Vector[JobEvent] =

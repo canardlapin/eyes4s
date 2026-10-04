@@ -258,6 +258,26 @@ abstract class BackendConformanceSuite extends CatsEffectSuite:
       assert(runs.exists(r => r.run == s.current && r.state == RunState.Current), runs)
   }
 
+  test("a run's pair rows page through every pair at a scale; an unknown scale is refused") {
+    for
+      s       <- subject
+      summary <- ok(s.backend.result(s.current))
+      first   <- ok(s.backend.pairRows(s.current, 0, page(0, 50)))
+      last    <- ok(s.backend.pairRows(s.current, 0, page(first.page.total - 3, 50)))
+      wrong   <- s.backend.pairRows(s.current, summary.scales.size, page(0, 5))
+    yield
+      assertEquals(first.page.total.toLong, summary.pairRowsPerScale)
+      assertEquals(first.rows.size, 50)
+      assertEquals(first.page.next, Some(50))
+      assertEquals((last.rows.size, last.page.next), (3, None))
+      // Each query's matched pair comes first, then its controls.
+      assertEquals(first.rows.head.design, PairDesign.Matched)
+      assertEquals(
+        wrong,
+        Left(BackendError.UnknownScale(s.current, summary.scales.size, summary.scales))
+      )
+  }
+
   test("the enveloped JSON transport answers exactly as the backend does in process") {
     def wire(request: Envelope[BackendRequest]): IO[Vector[Envelope[ServerFrame]]] =
       for
@@ -287,6 +307,7 @@ abstract class BackendConformanceSuite extends CatsEffectSuite:
         BackendRequest.ProvenanceOf(s.current, ResultAddress.ContrastRow(1, row.query)),
         BackendRequest.Result(RunId(9999)),
         BackendRequest.Subscribe(JobId(9999)),
+        BackendRequest.PairRowsOf(s.current, 0, page(0, 5)),
         BackendRequest.TrialFixationsOf(rev, row.query),
         BackendRequest.TrialPreviewOf(rev, row.query),
         BackendRequest.SourceRecordsOf(rev, 1, 5)

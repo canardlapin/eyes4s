@@ -354,6 +354,13 @@ object RemoteStudyBackend:
     ): F[Either[BackendError, SourceRecordPage]] =
       ask(Q.SourceRecordsOf(revision, from, count)) { case A.SourceRecordsOf(p) => p }
 
+    def pairRows(
+        run: RunId,
+        scale: Int,
+        page: PageRequest
+    ): F[Either[BackendError, PairRowPage]] =
+      ask(Q.PairRowsOf(run, scale, page)) { case A.PairRowsOf(p) => p }
+
     def previewRows(
         revision: AnalysisRevision,
         page: PageRequest
