@@ -114,3 +114,41 @@
   -fx-border-color: -es-accent;
   -fx-border-width: 0 0 0 2;
 }
+
+/* ---- Compare's Queries and Items navigators (S8.1; Main.dc.html, left) ---------- */
+
+.queries-group {
+  -fx-alignment: center-left;
+  -fx-background-color: transparent;
+  -fx-font-family: "IBM Plex Sans SmBld";
+}
+
+.queries-row {
+  -fx-padding: 2 10 2 20;
+}
+
+.queries-selected {
+  -fx-background-color: -es-ink, -es-surface-2;
+  -fx-background-insets: 0, 2;
+}
+
+.queries-status {
+  -fx-text-fill: -es-ink-3;
+}
+
+.queries-failed {
+  -fx-text-fill: -es-fail;
+}
+
+.queries-zero {
+  -fx-background-color: -es-ink-3;
+}
+
+.queries-bar {
+  -fx-background-color: -es-ink;
+}
+
+.queries-cursor {
+  -fx-border-color: -es-accent;
+  -fx-border-width: 2;
+}

@@ -10,6 +10,7 @@ button: Draft rev 5 · 1 change · ready; review in Analysis
 button: Review in Analysis
 button: Discard draft
 list: Queries
+text-field: Filter participant or item
 plot: Query trial
 plot: Reference trial
 plot: Contrast

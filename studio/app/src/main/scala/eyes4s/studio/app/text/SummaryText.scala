@@ -50,6 +50,13 @@ enum SummaryTextId derives CanEqual:
   /** While the summary is read, or why it could not be. */
   case Reading, NoRun, Unreadable
 
+  /** The Queries navigator (S8.1): a participant's header, the D column's
+    * header, a query's status, and the count strip.
+    */
+  case ParticipantHeader, DColumn, Filter
+  case StripRequested, StripContributing, StripFailed, StripNoMatchNotAdmitted, StripByDesign
+  case StripPair, NotApplicable, ItemHeader
+
 /** Compare's summary strings in the boards' wording. */
 object SummaryText:
 
@@ -57,41 +64,52 @@ object SummaryText:
   def english(id: SummaryTextId): String =
     import SummaryTextId.*
     id match
-      case ParticipantCaption => "Participant summary at σ {0}, run {1}"
-      case QueryCaption       => "Queries of run {0} at σ {1}"
-      case Participant        => "Participant"
-      case Requested          => "Requested"
-      case Contributing       => "Contributing"
-      case Failed             => "Failed"
-      case NoMatch            => "No match"
-      case NotAdmitted        => "Not admitted"
-      case MeanM              => "Mean M"
-      case MeanB              => "Mean B"
-      case MeanD              => "Mean D"
-      case GroupHeader        => "{0} D (n)"
-      case GroupCell          => "{0} ({1})"
-      case Query              => "Query"
-      case Item               => "Item"
-      case Response           => "Response"
-      case Status             => "Status"
-      case M                  => "M"
-      case B                  => "B"
-      case D                  => "D"
-      case StatusFailed       => "failed"
-      case StatusNoMatch      => "no match"
-      case StatusNotAdmitted  => "not admitted"
-      case StatusContributing => "contributing"
-      case PairedN            => "Paired n = {0} participants"
-      case Weighting          => "Means: equal participant weight"
-      case Unit               => "Unit below each dot: query trial"
-      case GroupRange         => "Per-group n: {0}–{1} queries per participant"
-      case Scale              => "σ {0}"
-      case ScaleUnavailable   => "Participant means are served at σ {0} only"
-      case Explain            => "Explain {0} →"
-      case Keeps              => "keeps: {0}"
-      case Reading            => "Reading run {0}…"
-      case NoRun              => "No run yet — Open Analysis ⌘3"
-      case Unreadable         => "Run {0} could not be read: {1}"
+      case ParticipantCaption      => "Participant summary at σ {0}, run {1}"
+      case QueryCaption            => "Queries of run {0} at σ {1}"
+      case Participant             => "Participant"
+      case Requested               => "Requested"
+      case Contributing            => "Contributing"
+      case Failed                  => "Failed"
+      case NoMatch                 => "No match"
+      case NotAdmitted             => "Not admitted"
+      case MeanM                   => "Mean M"
+      case MeanB                   => "Mean B"
+      case MeanD                   => "Mean D"
+      case GroupHeader             => "{0} D (n)"
+      case GroupCell               => "{0} ({1})"
+      case Query                   => "Query"
+      case Item                    => "Item"
+      case Response                => "Response"
+      case Status                  => "Status"
+      case M                       => "M"
+      case B                       => "B"
+      case D                       => "D"
+      case StatusFailed            => "failed"
+      case StatusNoMatch           => "no match"
+      case StatusNotAdmitted       => "not admitted"
+      case StatusContributing      => "contributing"
+      case PairedN                 => "Paired n = {0} participants"
+      case Weighting               => "Means: equal participant weight"
+      case Unit                    => "Unit below each dot: query trial"
+      case GroupRange              => "Per-group n: {0}–{1} queries per participant"
+      case Scale                   => "σ {0}"
+      case ScaleUnavailable        => "Participant means are served at σ {0} only"
+      case Explain                 => "Explain {0} →"
+      case Keeps                   => "keeps: {0}"
+      case Reading                 => "Reading run {0}…"
+      case NoRun                   => "No run yet — Open Analysis ⌘3"
+      case Unreadable              => "Run {0} could not be read: {1}"
+      case ParticipantHeader       => "{0} of {1} · {2}"
+      case DColumn                 => "D · {0}"
+      case Filter                  => "Filter participant or item"
+      case StripRequested          => "Query contrasts requested"
+      case StripContributing       => "Contributing"
+      case StripFailed             => "Failed (empty map)"
+      case StripNoMatchNotAdmitted => "No match · query not admitted"
+      case StripByDesign           => "By design (n/a for this preset)"
+      case StripPair               => "{0} · {1}"
+      case NotApplicable           => "n/a"
+      case ItemHeader              => "{0} · {1} queries"
 
   /** `id`'s English template with `args` filled in. */
   def apply(id: SummaryTextId, args: String*): String =

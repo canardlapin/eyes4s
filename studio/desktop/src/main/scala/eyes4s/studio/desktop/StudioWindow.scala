@@ -75,6 +75,8 @@ final class StudioWindow private (
   def paneStops(pane: PaneId): Vector[FocusStop] =
     if pane == StudioLayouts.columnMapping then columnMapping.focusStops
     else if pane == StudioLayouts.admission then admission.focusStops
+    else if pane == StudioLayouts.queries || pane == StudioLayouts.items then
+      eyes4s.studio.app.compare.QueriesNavigator.focusStops(summary.navigatorVM)
     else Vector.empty
 
   /** Store each perspective's arrangement in the document (view-only). */
@@ -288,7 +290,9 @@ object StudioWindow:
       "compare.scale-profile"          -> summary.scaleProfile.plotNode,
       "compare.scale-profile.table"    -> summary.scaleProfile.tableNode,
       "compare.participant-table"      -> summary.participantNode,
-      "compare.query-table"            -> summary.queryTable
+      "compare.query-table"            -> summary.queryTable,
+      "compare.queries"                -> summary.queries.node,
+      "compare.items"                  -> summary.items.node
     ).foreach((id, node) => PaneId.of(id).foreach(host.host(_, node)))
     val summaryListener: AppModel => Unit = summary.sync
     r.listen(summaryListener)

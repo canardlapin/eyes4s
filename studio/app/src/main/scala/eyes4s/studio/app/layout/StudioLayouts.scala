@@ -66,6 +66,10 @@ object StudioLayouts:
   /** The pane that hosts the admission ledger of the selected revision. */
   val admission: PaneId = new PaneId("data.admission")
 
+  /** The panes that host Compare's Queries and Items navigators (S8.1). */
+  val queries: PaneId = new PaneId("compare.queries")
+  val items: PaneId   = new PaneId("compare.items")
+
   /** DataEmpty.dc.html: no dataset yet. */
   val dataFirstRun: PerspectiveLayout = layout(
     "data.first-run",

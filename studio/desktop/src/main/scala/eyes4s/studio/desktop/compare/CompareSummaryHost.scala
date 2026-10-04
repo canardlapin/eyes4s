@@ -90,6 +90,7 @@ final class CompareSummaryHost(
     ViewId.of(id).fold(e => throw IllegalStateException(e.message), identity)
 
   private val selection = model().selection
+  private var navigator = QueriesNavigator.initial
 
   /** The participant plot and its table. */
   val participantPlot: PlotTwin = PlotTwin
@@ -151,6 +152,48 @@ final class CompareSummaryHost(
   val participantNode: VBox = VBox(4.0, toolbar, status, notes, explainRow, participantTable)
   participantNode.getStyleClass.add("compare-summary")
 
+  /** Compare's Queries and Items navigators (S8.1), on the same run's answers. */
+  val queries: QueriesNavigatorView =
+    QueriesNavigatorView(
+      NavigatorKind.Queries,
+      toggle,
+      keyed(NavigatorKind.Queries),
+      filterQueries,
+      app
+    )
+  val items: QueriesNavigatorView =
+    QueriesNavigatorView(
+      NavigatorKind.Items,
+      toggle,
+      keyed(NavigatorKind.Items),
+      filterQueries,
+      app
+    )
+
+  private def toggle(key: String, open: Boolean): Unit =
+    navigator = QueriesNavigator.toggle(navigator, key, open)
+    render(model())
+
+  private def keyed(kind: NavigatorKind)(key: NavigatorKey): Unit =
+    val (next, intent) = QueriesNavigator.key(navigator, navigatorVM, kind, key)
+    navigator = next
+    render(model())
+    intent.foreach(app)
+
+  private def filterQueries(text: String): Unit =
+    navigator = QueriesNavigator.filter(navigator, text)
+    render(model())
+
+  /** The navigators' view-model now. */
+  def navigatorVM: QueriesNavigatorVM = navigatorVMOf(model())
+
+  // A query is selected when the bus holds it or the Compare trail ends at it.
+  private def navigatorVMOf(m: AppModel): QueriesNavigatorVM =
+    val trail = m.navigation.trail(eyes4s.studio.core.document.Perspective.Compare).collect {
+      case eyes4s.studio.app.nav.Place.At(ref) => ref
+    }
+    QueriesNavigator.vm(navigator, state, m.selection.selected ++ trail)
+
   /** The state now. */
   def summary: CompareSummary = state
 
@@ -195,6 +238,8 @@ final class CompareSummaryHost(
 
   private def render(m: AppModel): Unit =
     if !disposed then
+      queries.render(navigatorVMOf(m))
+      items.render(navigatorVMOf(m))
       val v     = CompareSummaryVM.of(state, m)
       val theme = m.document.presentation.theme match
         case eyes4s.studio.core.document.Theme.Light => Theme.Light
