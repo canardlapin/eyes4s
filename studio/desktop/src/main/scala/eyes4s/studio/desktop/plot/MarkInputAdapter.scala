@@ -178,6 +178,11 @@ final class MarkInputAdapter[R <: StudioRef, E, T <: RovingTargets[R, E]] privat
         host.repaintOverlay(under = true)
         describe()
 
+  /** Selects exactly `refs`, as a brush across the view does. */
+  def brush(refs: Vector[StudioRef]): Unit =
+    onFxThread("brush")
+    commit(current.brushed(refs))
+
   /** Puts the cursor on `ref` without selecting it, if the scene draws it. */
   def moveFocus(ref: Option[StudioRef]): Unit =
     onFxThread("moveFocus")
@@ -261,7 +266,10 @@ final class MarkInputAdapter[R <: StudioRef, E, T <: RovingTargets[R, E]] privat
     else if kind == MouseEvent.MOUSE_EXITED then handle(MarkInputEvent.PointerExited)
     else if kind == MouseEvent.MOUSE_PRESSED && e.getButton == MouseButton.PRIMARY then
       host.requestFocus()
-    else if kind == MouseEvent.MOUSE_CLICKED && e.getButton == MouseButton.PRIMARY then
+    // A click ends a press that did not move; a drag is a brush's, not a pick.
+    else if kind == MouseEvent.MOUSE_CLICKED && e.getButton == MouseButton.PRIMARY &&
+      e.isStillSincePress
+    then
       val toggle = e.isShiftDown || e.isShortcutDown
       atPointer(e).foreach(p => handle(MarkInputEvent.PointerClicked(p, toggle)))
 

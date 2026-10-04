@@ -174,12 +174,17 @@ class PlotTableParitySuite extends ScalaCheckSuite:
     val profiles = ProfileSamples.genProfile.map(p =>
       (ProfileSamples.source(p), ScaleProfilePlot(ProfileSamples.columns))
     )
+    // The timeline (S4.5e) on its own sources.
+    val timelines = TimelineSamples.genTimeline.map(t =>
+      (TimelineSamples.source(t), TimelinePlot(TimelineSamples.columns))
+    )
     for
       (source, builder) <- Gen.frequency(
         4 -> generic,
         1 -> ladder,
         1 -> participants,
-        1 -> profiles
+        1 -> profiles,
+        1 -> timelines
       )
       theme <- Gen.oneOf(Theme.values.toSeq)
     yield (source, builder, right(builder.build(source, theme)))
