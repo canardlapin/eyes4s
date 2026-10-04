@@ -17,6 +17,7 @@
 package eyes4s.studio.app
 
 import eyes4s.codec.CanonicalDigest
+import eyes4s.studio.app.analysis.PresetPicker
 import eyes4s.studio.app.jobs.JobBoard
 import eyes4s.studio.app.keys.{CommandId, CommandRegistry, KeyChord}
 import eyes4s.studio.app.layout.{LayoutId, PaneId, PerspectiveLayout, StudioLayouts}
@@ -47,6 +48,7 @@ import eyes4s.studio.core.document.{
   LayoutBlob,
   Perspective,
   PresentationState,
+  Preset,
   Recipe,
   RunLifecycle,
   StudioDocument
@@ -316,6 +318,9 @@ enum Intent derives CanEqual:
 
   // --- The document (S2.2) ----------------------------------------------------------
   case Dispatch(command: Command)
+
+  /** Choose a recipe preset (S7.1): its declared fields only, as a draft. */
+  case ChoosePreset(preset: Preset)
   case Undo(stack: HistoryStack)
   case Redo(stack: HistoryStack)
 
@@ -591,6 +596,16 @@ object AppModel:
 
     case Intent.Dispatch(command) =>
       applyHistory(m, JournalEntry.Apply(command), m.history.apply(command))
+    case Intent.ChoosePreset(preset) =>
+      // One command per declared field; a refusal stops the rest.
+      PresetPicker.commands(m.document, preset).foldLeft((m, none, true)) {
+        case ((current, effects, true), command) =>
+          val accepted     = current.history.apply(command).isRight
+          val (next, more) = update(current, Intent.Dispatch(command))
+          (next, effects ++ more, accepted)
+        case (stopped, _) => stopped
+      } match
+        case (next, effects, _) => (next, effects)
     case Intent.Undo(stack) => applyHistory(m, undoEntry(stack), m.history.undoOn(stack))
     case Intent.Redo(stack) => applyHistory(m, redoEntry(stack), m.history.redoOn(stack))
 

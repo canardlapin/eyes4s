@@ -22,7 +22,7 @@ import eyes4s.studio.app.nav.{DataSection, Location, Place}
 import eyes4s.studio.core.backend.*
 import eyes4s.studio.core.execution.*
 import eyes4s.studio.core.command.{CommandGen, HistoryStack}
-import eyes4s.studio.core.document.{DocumentGen, Perspective, SourceRole}
+import eyes4s.studio.core.document.{DocumentGen, Perspective, Preset, SourceRole}
 import eyes4s.studio.core.selection.*
 import org.scalacheck.Gen
 
@@ -223,6 +223,7 @@ object AppGen:
       .map(Intent.ShowRun(_)),
     1 -> run(m).map(Intent.DismissReady(_)),
     3 -> simple,
+    1 -> Gen.oneOf(Preset.values.toSeq).map(Intent.ChoosePreset(_)),
     2 -> Gen.oneOf(CommandRegistry.all).map(c => Intent.Invoke(c.id)),
     2 -> chord.map(Intent.KeyPressed(_)),
     1 -> Gen.oneOf(panes).map(Intent.FocusPane(_)),

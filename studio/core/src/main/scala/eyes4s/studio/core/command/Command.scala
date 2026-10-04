@@ -164,7 +164,9 @@ enum Command derives CanEqual, Codec.AsObject:
   case DiscardDraft
 
   /** Save the draft as an analysis revision and start a run of it on its
-    * dataset (effect [[Effect.RequestRun]]). A history barrier.
+    * dataset (effect [[Effect.RequestRun]]). A history barrier. Without
+    * `studio`, the revision keeps its base's name and description and takes
+    * the preset its recipe holds (`RecipePresets.resolve`).
     */
   case SaveAndRun(studio: Option[StudioFields])
 

@@ -19,6 +19,7 @@ package eyes4s.studio.core.command
 import cats.syntax.all.*
 import eyes4s.studio.core.backend.{AnalysisRevision, DatasetRevision, RunId}
 import eyes4s.studio.core.document.*
+import eyes4s.studio.core.preset.RecipePresets
 
 /** A command's result: the next document, the effects to perform, and how
   * the command enters the history.
@@ -289,12 +290,15 @@ object Reducer:
         target = draft.dataset.getOrElse(base.dataset)
         data <- d.dataset(target).toRight(UnknownDataset(target))
         _    <- Either.cond(data.decision.isAdmitted, (), DatasetNotAdmitted(target))
+        recipe   = draft.recipe(base.recipe)
         revision = AnalysisRevisionSpec(
           draft.id,
           target,
           CoreBinding.unbound,
-          draft.recipe(base.recipe),
-          studio.getOrElse(base.studio)
+          recipe,
+          studio.getOrElse(
+            base.studio.copy(preset = RecipePresets.resolve(base.studio.preset, recipe))
+          )
         )
         run     = RunId(d.runs.lastOption.fold(1)(_.id.number + 1))
         started = RunRef(run, draft.id, target, RunLifecycle.Running, CoreBinding.unbound)

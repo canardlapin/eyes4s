@@ -125,6 +125,8 @@ object DocumentPins:
       """{"perspective":{"Figures":{}},"theme":{"Dark":{}},"stage":{"Mid":{}},"mapOpacity":0.4,"underlay":true,"shownRun":7,"layouts":[{"perspective":{"Data":{}},"layout":"{\"root\":\"data\"}"},{"perspective":{"Figures":{}},"layout":"{\"root\":\"figures\"}"}]}""",
     "preset.Custom" ->
       """{"Custom":{}}""",
+    "preset.PerceptionImagery" ->
+      """{"PerceptionImagery":{}}""",
     "preset.Recognition" ->
       """{"Recognition":{}}""",
     "recipe.rev4" ->

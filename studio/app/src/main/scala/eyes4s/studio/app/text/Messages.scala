@@ -41,7 +41,7 @@ enum MessageId derives CanEqual:
   case CrumbNewProject, CrumbDataset, CrumbDatasetDraft, CrumbAnalyses, CrumbDraftRevision
   case CrumbRevision, CrumbSummary, CrumbFigures, CrumbPanel, CrumbQuery, CrumbPair
   case CrumbPairWithDesign, CrumbMap, CrumbReduction, CrumbFixation, CrumbRecord
-  case LineageEncodingRetrieval, LineageRecognition, LineageCustom
+  case LineageEncodingRetrieval, LineageRecognition, LineageCustom, LineagePerceptionImagery
   case SectionSources, SectionColumnMapping, SectionTrialMetadata, SectionAdmission
   case SectionGeometry
   case DesignMatched, DesignControl
@@ -149,6 +149,7 @@ object Catalogue:
       case LineageEncodingRetrieval => "Reinstatement · Enc→Ret"
       case LineageRecognition       => "Recognition"
       case LineageCustom            => "Custom analysis"
+      case LineagePerceptionImagery => "Reinstatement · Perc→Img"
       case SectionSources           => "Sources"
       case SectionColumnMapping     => "Column mapping"
       case SectionTrialMetadata     => "Trial metadata"
