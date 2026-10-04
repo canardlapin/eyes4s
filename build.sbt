@@ -404,8 +404,11 @@ ThisBuild / githubWorkflowBuild += WorkflowStep.Sbt(
   preamble = false
 )
 
+// The library half of checkBoundaries: resolving a studio project needs the scaladock
+// and Intaglio pins, which only studio.yml publishes, so the studio resolved-graph
+// rules (studioBoundaries) run there.
 ThisBuild / githubWorkflowBuild += WorkflowStep.Sbt(
-  List("checkBoundaries"),
+  List("checkLibraryBoundaries"),
   name = Some("Check module and kernel boundaries")
 )
 
@@ -1208,12 +1211,16 @@ lazy val studioCrossModules = Seq("studioCore", "studioApp", "studioViz")
 lazy val studioProjects     =
   studioCrossModules.flatMap(m => allPlatforms.map(p => s"$m$p")) :+ "studioDesktop"
 
-// Everything checkBoundaries runs for studio: the build-level rules, then the
-// resolved-graph rule on each portable studio project.
+// The resolved-graph rule on each studio project. Each resolves the scaladock and
+// Intaglio pins, so these run in studio.yml after the pins are published, and in the
+// local checkBoundaries. The build-level studio rules (checkStudioBoundaries,
+// checkStudioColours) read the project graph and sources only; they stay in
+// checkLibraryBoundaries.
 lazy val studioBoundaryChecks =
-  "checkStudioBoundaries" +: "checkStudioColours" +:
-    studioCrossModules.flatMap(m => allPlatforms.map(p => s"$m$p/checkModuleBoundaries")) :+
+  studioCrossModules.flatMap(m => allPlatforms.map(p => s"$m$p/checkModuleBoundaries")) :+
     "studioDesktop/checkModuleBoundaries"
+
+addCommandAlias("studioBoundaries", studioBoundaryChecks.mkString(";", ";", ""))
 
 addCommandAlias(
   "studioAll",
@@ -1306,6 +1313,10 @@ lazy val studioLinuxJob = WorkflowJob(
         "xvfb-run -a -s '-screen 0 1920x1200x24' sbt -J-Xmx8g -Djavafx.platform=linux studioAll studioStyleCheck"
       ),
       name = Some("Build and test studio (xvfb, software pipeline)")
+    ),
+    WorkflowStep.Run(
+      List("sbt -J-Xmx4g -Djavafx.platform=linux studioBoundaries"),
+      name = Some("Check studio resolved-graph boundaries")
     ),
     WorkflowStep.Use(
       UseRef.Public("actions", "upload-artifact", "v4"),
@@ -1523,16 +1534,22 @@ addCommandAlias(
 )
 
 // checkModuleBoundaries is per-module (it inspects each module's own resolved
-// graph); checkKernelPurity and checkStudioBoundaries are build-level.
-// `checkBoundaries` runs all of them.
-addCommandAlias(
-  "checkBoundaries",
-  (Seq("checkKernelPurity") ++
+// graph); checkKernelPurity, checkStudioBoundaries and checkStudioColours are
+// build-level and resolve nothing. `checkLibraryBoundaries` needs no studio pin and
+// runs in checks.yml; `studioBoundaries` runs in studio.yml; `checkBoundaries` runs
+// all of them.
+lazy val libraryBoundaryChecks =
+  Seq("checkKernelPurity") ++
     allModules
       .filterNot(m => m == "fs2Module" || m == "io")
       .flatMap(m => allPlatforms.map(p => s"$m$p/checkModuleBoundaries")) ++
-    studioBoundaryChecks)
-    .mkString(";", ";", "")
+    Seq("checkStudioBoundaries", "checkStudioColours")
+
+addCommandAlias("checkLibraryBoundaries", libraryBoundaryChecks.mkString(";", ";", ""))
+
+addCommandAlias(
+  "checkBoundaries",
+  (libraryBoundaryChecks ++ studioBoundaryChecks).mkString(";", ";", "")
 )
 
 lazy val apiAuditInputs =
