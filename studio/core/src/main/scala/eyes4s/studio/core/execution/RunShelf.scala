@@ -71,6 +71,7 @@ final case class RunShelf private (
   def receive(event: ExecutionEvent): RunShelf = event match
     case ExecutionEvent.Ready(notice)
         if required.contains(notice.stamp) &&
+          shown.forall(_.number < notice.run.number) &&
           pending.forall(_.run.number < notice.run.number) =>
       copy(pending = Some(notice))
     case _ => this

@@ -59,12 +59,19 @@ enum UncheckedAspect derives CanEqual:
   case OccupancyEstimation, PairComparison, FailurePolicyReduction, WindowOccupancy,
     SampleSynchronization, GapInterpolation, EventDetection, AreaAssignment
 
+/** A report's verdict: `Ready` when it has no blocker, else `Unavailable`. */
 enum Availability derives CanEqual:
   case Ready, Unavailable
 
+/** Which side of a pairing a finding concerns: the focal (query) trials or the
+  * reference trials.
+  */
 enum PairingSide derives CanEqual:
   case Focal, Reference
 
+/** The corner of an area's bounding rectangle, minimum or maximum, that a finding
+  * concerns.
+  */
 enum AreaCorner derives CanEqual:
   case Minimum, Maximum
 
@@ -439,6 +446,11 @@ sealed abstract class PreflightReport[F <: PreflightFinding[?]]:
     if blockers.isEmpty then Availability.Ready else Availability.Unavailable
   final def ready: Boolean = availability == Availability.Ready
 
+/** A fixation study's preflight: the plan description, the input it expects and
+  * the input it saw, its findings and the aspects only execution decides.
+  * `prepare` refuses a changed plan, an input other than the one preflight saw (when
+  * it saw one), or any blocker.
+  */
 final class StudyReport[K, U <: Unit2D] private[plan] (
     val description: Vector[(String, Vector[Provenance.Param])],
     val expected: ArtifactRef[StudyInput[K, U]],
@@ -476,6 +488,11 @@ final class StudyReport[K, U <: Unit2D] private[plan] (
       work <- plan.prepare(input, budget).left.map(PreflightError.Refused.apply)
     yield work
 
+/** An event recording's preflight, as [[StudyReport]] for a single pixel
+  * `Recording`; its findings name no trial. `confirm` refuses
+  * a changed plan, a recording other than the one preflight saw (when it saw one), or
+  * any blocker.
+  */
 final class RecordingReport private[plan] (
     val description: Vector[(String, Vector[Provenance.Param])],
     val expected: ArtifactRef[Recording[Px]],
@@ -501,6 +518,10 @@ final class RecordingReport private[plan] (
       blockers
     )
 
+/** A temporal study's preflight, as [[StudyReport]] over a `TemporalStudyInput`.
+  * `confirm` refuses a changed plan, an input other than the one preflight saw (when it
+  * saw one), or any blocker.
+  */
 final class TemporalReport[K, U <: Unit2D] private[plan] (
     val description: Vector[(String, Vector[Provenance.Param])],
     val expected: ArtifactRef[TemporalStudyInput[K, U]],

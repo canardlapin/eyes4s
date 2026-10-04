@@ -408,6 +408,9 @@ private[codec] object Wire:
     given [A](using inner: Member[A]): Member[Option[A]] = value =>
       if value.isNull then Right(None) else inner.read(value).map(Some(_))
 
+  /** The fallback to circe's decoder for member types without a single-spelling rule
+    * above; lower priority so those rules always win.
+    */
   trait LowPriorityMember:
     given [A](using decoder: Decoder[A]): Member[A] = value =>
       decoder.decodeJson(value).left.map(_.message)

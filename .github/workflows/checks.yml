@@ -114,7 +114,7 @@ jobs:
         run: sbt lawsJVM/test lawsJS/test
 
       - name: Check module and kernel boundaries
-        run: sbt 'project ${{ matrix.project }}' '++ ${{ matrix.scala }}' checkBoundaries
+        run: sbt 'project ${{ matrix.project }}' '++ ${{ matrix.scala }}' checkLibraryBoundaries
 
       - name: Compile examples and build the public guide
         if: matrix.project == 'rootJVM' && matrix.java == 'temurin@17'

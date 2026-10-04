@@ -452,8 +452,13 @@ private[codec] object StudyCodec:
   * plan the application built, with no encode and re-decode.
   */
 sealed trait LoadedStudy[K, U <: Unit2D]:
+  /** The method parameter type of the decoded plan. */
   type Parameters
+
+  /** The pair score type the method produces. */
   type Score
+
+  /** The type of a difference between two scores of that method. */
   type Difference
 
   /** The typed plan, as decoded. */
@@ -476,10 +481,17 @@ sealed trait LoadedStudy[K, U <: Unit2D]:
   def run(input: StudyInput[K, U]): Either[PlanError, StudyResult[K, U, Score, Difference]] =
     plan.run(input)
 
+/** One study plan codec as a registry sees it, keyed by method identity. Sealed: only a
+  * study codec's `registration` builds one.
+  */
 sealed trait StudyRegistration[K, U <: Unit2D]:
   def id: DefinitionId
   def decode(json: Json): Either[CodecError, LoadedStudy[K, U]]
 
+/** Study plan codecs by method identity; lookup reads the payload's `method` and refuses
+  * a missing (`CodecError.MissingMethod`) or duplicate (`CodecError.DuplicateMethod`)
+  * registration.
+  */
 final class StudyRegistry[K, U <: Unit2D] private (
     val entries: Vector[StudyRegistration[K, U]]
 ):

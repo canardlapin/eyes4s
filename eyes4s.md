@@ -1306,11 +1306,13 @@ Diagnostics are descriptive — rank, conditioning, convergence, residual norms,
 cell-wise standard errors would falsely treat spatially autocorrelated cells as independent.
 Partial association is a different result type, not a coefficient.
 
-Status: the OLS slice is implemented as `Template.decompose` over
-`PredictorSet[U]`, using native shared `LeastSquares` Householder QR. It returns Signed maps,
-keyed coefficients and descriptive diagnostics; see [surface decomposition](docs/SURFACE_DECOMPOSITION.md).
-NNLS, simplex fitting and partial association remain deferred under
-`bd-01M2T3ZCY7HJNFQ5G0Z6MQND0A`.
+Status: OLS is `Template.decompose` over `PredictorSet[U]`, using native shared `LeastSquares`
+Householder QR. Intercept-free NNLS (`Template.decomposeNonNegative`, an `Intensity` fit) and
+simplex mixtures (`Template.decomposeMixture`, a `Mass` fit with an optional uniform background
+component) are active-set solvers over the same QR. `PartialAssociation.of` is the separate partial
+Pearson/Spearman result. All return keyed values and descriptive diagnostics; see
+[surface decomposition](docs/SURFACE_DECOMPOSITION.md). NNLS and partial Spearman agree with pinned
+eyesim `nnls` and `rank` calls; eyesim's labelling of partial correlations as betas is a recorded divergence.
 
 The convenient surface keeps distinct scientific verbs: matched similarity, repetition similarity,
 surface decomposition, and temporal reinstatement. They are thin functions over the algebra above,

@@ -30,6 +30,9 @@ final class PackedRecording private[codec] (
     val payloads: Vector[VerifiedPayload]
 )
 
+/** Schema, support codes and limits of the packed recording form, in which sample columns
+  * are separate digest-addressed payloads rather than inline JSON.
+  */
 object PackedRecordingCodecs:
   val schema: DefinitionId = DefinitionId.packedRecording
 

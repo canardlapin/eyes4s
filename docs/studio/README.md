@@ -59,20 +59,54 @@ To change the plan, edit `studio_plan.py`, rerun `render`, and update the matchi
 
 ## Backend protocol versions
 
+Protocol 1.4 preserves every `Long` in backend messages across JVM and Scala.js
+JSON text transport. Values in the inclusive range −9,007,199,254,740,991 to
+9,007,199,254,740,991 remain JSON numbers; larger magnitudes use canonical decimal
+strings. Decoders accept canonical signed decimal strings in the Long range and
+safe integer numbers, and refuse unsafe numeric input before it can be accepted
+as a rounded count. `WireFormat` uses Circe's Jawn parser on both platforms so
+fractional numeric text cannot round into an integer before validation. Domain
+constructors still reject negative progress.
+
+This policy covers progress meters, totals and step counts, preview/result pair
+counts, window durations, source-line numbers and request correlation IDs. Existing
+small-number body pins are unchanged; the envelope version is now 1.4.
+`ProtocolLongSuite` exercises actual JSON text at the safe-integer boundary and
+Long extremes on both platforms.
+
 Protocol 1.3 (S5.4) replaces the admission summary's `inventoryTrials` and `absent`
 numbers with `inventory: InventoryJoin` (`Joined(trials, absent)`, or `Undeclared`
 when the dataset declares no trial inventory, so absent trials are not counted) and
 adds `BackendError.InventoryRefused`, whose issues name the inventory records, trial
 and columns eyes4s refused. A 1.2 summary does not decode as 1.3.
 
-Protocol 1.2 adds `ProgressTotal.Counting` to progress events. Deploy the Studio
-client and backend together. The transport checks major versions only and decodes
-the typed envelope body before checking the version; it does not negotiate minor
-version capabilities. A protocol 1.0 or 1.1 decoder cannot read the new `Counting` case,
-even if the envelope is labelled 1.1. Mixed-minor deployments are unsupported.
+Deploy the Studio client and backend together. The transport checks major versions
+only and decodes the typed envelope body before checking the version; it does not
+negotiate minor capabilities. Mixed-minor deployments are unsupported. Protocol
+1.2 added `ProgressTotal.Counting`, which a 1.0/1.1 decoder cannot read; 1.3 adds
+the inventory join; 1.4 adds the exact large-count policy. `ProtocolCodecSuite`
+retains the frozen legacy-total probe, while `ProtocolLongSuite` verifies that
+safe-number 1.2 envelopes remain readable. This does not establish mixed-version peer compatibility.
 
-`ProtocolCodecSuite` pins the 1.2 envelopes, verifies a current Counting event,
-and exercises the frozen 1.0/1.1 total decoder at the event's meter boundary. It
-retains a readable legacy `Exact` control and rejects `Counting` under either
-version label. This records the coordinated-upgrade requirement; it does not
-claim old-client decoding compatibility or negotiated refusal.
+## Bounded preview paging
+
+`StudyBackend.previewCounting(revision, budget)` creates a retained preview and
+returns a stream of refusals or preview events. `Initial` supplies the backend's
+handle, stamp and candidate counts; `Counting` reports completed participant
+pages; `Ready` supplies exact counts and diagnostics. `continuePreview` resumes
+that handle and returns its receipt again if counting has already finished.
+`PreviewBudget` permits 1–4096 participant pages per request. Stopping a stream
+closes its exchange; completed work remains counted, including transport read-ahead.
+
+`ExecutionService.submitPreview` forwards the ready receipt to the backend.
+The fake refuses unknown, unfinished, changed or stale receipts and retains the
+same prepared snapshot for execution. Its job consumes the captured script.
+Tests inject a different script at the fixture boundary to distinguish this
+from reconstructing a job by revision.
+
+The fake replays `FIXTURE.md` counts and explicitly uses `CoreBinding.Unbound`.
+Its participant pages are fixture steps. They do not qualify a real
+`CountCursor` budget, an input digest, or scientific pair counts. S3.7 must retain
+the actual `PreparedStudy` and its owned counts, check current input and plan
+identity, and execute that prepared study; S0.7b qualifies fixture counts through
+real eyes4s. S7.5 owns the resolved-design table that presents these events.

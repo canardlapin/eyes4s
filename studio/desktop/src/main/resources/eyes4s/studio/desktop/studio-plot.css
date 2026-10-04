@@ -37,6 +37,17 @@
   -fx-wrap-text: true;
 }
 
+/* What the hovered (or selected) mark says, on a line at the pane's top right. */
+.plot-readout {
+  -fx-text-fill: -es-ink;
+  -fx-background-color: -es-hairline, -es-surface;
+  -fx-background-insets: 0, 1;
+  -fx-background-radius: 4, 3;
+  -fx-padding: 3 8 3 8;
+  -fx-translate-x: -6;
+  -fx-translate-y: 6;
+}
+
 /* ---- the table: one focus stop with a row cursor ------------------------------- */
 
 .table-twin {

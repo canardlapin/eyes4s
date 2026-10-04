@@ -127,7 +127,10 @@ The wire format is `WireFormat`:
 6. Versions: the server refuses a request of another major version with
    `Refused(UnsupportedVersion)`. The client treats a frame of another major version as a transport
    defect (`TransportError.Incompatible`). Protocol 1.1 added the S0.9 request and refusal
-   variants; 1.2 adds `ProgressTotal.Counting`. Client and backend must be upgraded together:
+   variants; 1.2 added `ProgressTotal.Counting`, and 1.3 encodes Long values outside the safe
+   JSON integer range as canonical decimal strings. `WireFormat` parses numbers exactly on both
+   platforms; a port must also prevent fractional numeric text from rounding into an integer
+   before validating a count. Client and backend must be upgraded together:
    mixed-minor deployments are unsupported. The transport decodes a typed body before checking
    the major version and does not negotiate minor capabilities. An older decoder cannot read a
    new variant; changing the envelope's version label does not change that. See the

@@ -91,10 +91,19 @@ enum MembershipPolicy derives CanEqual:
 private sealed trait PreparedMembershipPolicy[U <: Unit2D]
 
 private object PreparedMembershipPolicy:
-  final case class Multiple[U <: Unit2D](frame: Frame[U])  extends PreparedMembershipPolicy[U]
+  /** Every containing area, in set order. */
+  final case class Multiple[U <: Unit2D](frame: Frame[U]) extends PreparedMembershipPolicy[U]
+
+  /** The first containing area in set order, which is its priority. */
   final case class Exclusive[U <: Unit2D](frame: Frame[U]) extends PreparedMembershipPolicy[U]
+
+  /** Fails the whole assignment at the first sample inside two or more areas. */
   final case class RejectOverlap[U <: Unit2D](frame: Frame[U])
       extends PreparedMembershipPolicy[U]
+
+  /** The containing area of least rasterised area on `grid`, built once from the
+    * policy's resolution; ties keep the earlier area in set order.
+    */
   final case class Smallest[U <: Unit2D](grid: Grid[U]) extends PreparedMembershipPolicy[U]
 
 /** Why represented sample time was excluded from AOI membership. */
@@ -103,12 +112,24 @@ enum ExclusionReason derives CanEqual:
   case SignalLoss
   case OffSurface
 
+/** Where one represented sample falls: in one or more areas, on the frame but in no
+  * area, or excluded with a reason. Background and exclusion are kept as values rather
+  * than dropped, so that every represented microsecond is accounted for in
+  * [[AoiAssignmentReport]].
+  */
 sealed trait SampleMembership derives CanEqual
 
 object SampleMembership:
+  /** The containing areas, non-empty and in set order; more than one only under
+    * `MembershipPolicy.Multiple`. Only assignment constructs it.
+    */
   final case class Areas private[aoi] (ids: Vector[AoiId]) extends SampleMembership
-  case object Background                                   extends SampleMembership
-  final case class Excluded(reason: ExclusionReason)       extends SampleMembership
+
+  /** A tracked sample inside the frame but outside every area. */
+  case object Background extends SampleMembership
+
+  /** A blink, signal loss, or gaze off the frame's surface. */
+  final case class Excluded(reason: ExclusionReason) extends SampleMembership
 
 /** A non-empty collection of static AOIs sharing one complete frame identity. */
 final class AoiSet[U <: Unit2D] private (
@@ -354,6 +375,17 @@ object AoiAssignment:
       Span.micros(duplicatedMicros)
     )
 
+/** Descriptive measures of one area over one assignment.
+  *
+  * `dwell` sums the represented durations of samples whose membership includes the area,
+  * so under `MembershipPolicy.Multiple` the dwells of overlapping areas can sum to more
+  * than the analysable time (the excess is `AoiAssignmentReport.duplicatedAoiTime`).
+  * `dwellProportion` divides by the analysable time (areas plus background, excluding
+  * exclusions and policy censoring) and is `None` when that time is zero.
+  * `firstEntryLatency` runs from the recording's first sample to the first sample in the
+  * area, `None` if it is never entered. `runCount` counts maximal runs of consecutive
+  * samples in the area.
+  */
 final case class AoiMetric(
     id: AoiId,
     label: String,
@@ -363,8 +395,17 @@ final case class AoiMetric(
     runCount: Int
 ) derives CanEqual
 
+/** How many times membership moved from `from` to a different area `to` between adjacent
+  * represented samples. A background or excluded sample breaks the chain, so it is never
+  * a transition; under `MembershipPolicy.Multiple` a changed membership set contributes
+  * each distinct (from, to) pair. Transitions produced by `AoiAssignment.measure` have
+  * `from != to` and `count > 0`; construction does not check either.
+  */
 final case class AoiTransition(from: AoiId, to: AoiId, count: Int) derives CanEqual
 
+/** Per-area metrics in set order, non-zero transitions in set order of their endpoints,
+  * the time ledger they were computed from, and the membership policy that produced them.
+  */
 final case class AoiMeasurements(
     areas: Vector[AoiMetric],
     transitions: Vector[AoiTransition],
@@ -372,6 +413,9 @@ final case class AoiMeasurements(
     policy: MembershipPolicy
 ) derives CanEqual
 
+/** Failures constructing AOIs and sets or assigning samples. Every case except `EmptySet`
+  * names the id, index, frame or resolution it concerns.
+  */
 enum AoiError derives CanEqual:
   case BlankId(value: String)
   case BlankLabel(id: AoiId, value: String)

@@ -18,6 +18,7 @@ package eyes4s.studio.core.backend
 
 import io.circe.syntax.*
 import io.circe.{Decoder, Encoder, Json}
+import eyes4s.studio.core.preview.*
 
 /** One named protocol value: its JSON is pinned in [[ProtocolPins]]. */
 final case class Sample[A](name: String, value: A)(using
@@ -66,6 +67,15 @@ object ProtocolSamples:
     DiagnosticOrigin.EyesCore,
     Vector(DiagnosticLocus.Trial(query)),
     "empty map"
+  )
+
+  val previewBudget: PreviewBudget = right(PreviewBudget.of(24))
+  val previewReady: PreviewReady   = PreviewReady(
+    PreviewId(1L),
+    PreviewStamp.fake(AnalysisRevision(5), DatasetRevision(3)),
+    right(PreviewCandidates.of(480, 480, 24, 230400L)),
+    right(PreviewCounts.of(8969L, 44845L, 9, 0)),
+    Vector(diagnostic)
   )
 
   val address: ResultAddress = ResultAddress.PairRow(2, PairDesign.Control, query, matched)
@@ -140,6 +150,21 @@ object ProtocolSamples:
     BackendError.UnknownRevision(AnalysisRevision(9), Vector(AnalysisRevision(4))),
     BackendError.UnknownRun(RunId(9), Vector(RunId(7))),
     BackendError.UnknownJob(JobId(9), Vector.empty),
+    BackendError.UnknownPreview(PreviewId(9L), Vector(PreviewId(1L))),
+    BackendError.PreviewNotReady(
+      PreviewId(1L),
+      right(ParticipantCount.of(3)),
+      right(ParticipantCount.of(24))
+    ),
+    BackendError.StalePreview(
+      PreviewId(1L),
+      previewReady.stamp,
+      previewReady.stamp.copy(dataset = DatasetRevision(4))
+    ),
+    BackendError.TamperedPreview(
+      previewReady.copy(counts = right(PreviewCounts.of(8969L, 44845L, 9, 1))),
+      previewReady
+    ),
     BackendError.Unavailable(DiagnosticLocus.Dataset(DatasetRevision(2))),
     BackendError.NoResult(RunId(5), RunState.Stale),
     BackendError.UnknownReference(RunId(7), address),
@@ -237,6 +262,9 @@ object ProtocolSamples:
     BackendRequest.Ledger(DatasetRevision(3), page),
     BackendRequest.Preview(AnalysisRevision(5)),
     BackendRequest.PreviewRows(AnalysisRevision(5), page),
+    BackendRequest.PreviewCounting(AnalysisRevision(5), previewBudget),
+    BackendRequest.ContinuePreview(PreviewId(1L), previewBudget),
+    BackendRequest.SubmitPreview(previewReady),
     BackendRequest.Runs,
     BackendRequest.Submit(AnalysisRevision(5)),
     BackendRequest.Jobs,
@@ -315,6 +343,7 @@ object ProtocolSamples:
         )
       )
     ),
+    BackendResponse.PreviewAccepted,
     BackendResponse.Runs(
       Vector(RunSummary(RunId(7), AnalysisRevision(4), DatasetRevision(3), RunState.Current))
     ),
@@ -374,10 +403,22 @@ object ProtocolSamples:
           case JobEvent.Advanced(_) => "Advanced"
           case JobEvent.Finished(o) => s"Finished.${o.productPrefix}"
       ) ++
+      named(
+        "preview-event",
+        Vector[PreviewEvent](
+          PreviewEvent.Initial(previewReady.id, previewReady.stamp, previewReady.candidates),
+          PreviewEvent.Counting(previewReady.id, right(PreviewProgress.of(1, 24))),
+          PreviewEvent.Ready(previewReady)
+        )
+      )(prefix) ++
       Vector(
         Sample("frame.Response", ServerFrame.Response(responses(0))),
         Sample("frame.Event", ServerFrame.Event(events(0))),
-        Sample("envelope.request", Envelope(RequestId(41), requests(8))),
+        Sample("frame.Preview", ServerFrame.Preview(PreviewEvent.Ready(previewReady))),
+        Sample(
+          "envelope.request",
+          Envelope(RequestId(41), BackendRequest.Subscribe(job): BackendRequest)
+        ),
         Sample("envelope.frame", Envelope(RequestId(41), ServerFrame.Event(events(1)))),
         Sample("state.Queued", JobState.Queued: JobState),
         Sample("state.Running", JobState.Running(progress): JobState),

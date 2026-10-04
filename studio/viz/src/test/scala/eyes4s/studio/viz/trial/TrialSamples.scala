@@ -17,6 +17,7 @@
 package eyes4s.studio.viz.trial
 
 import eyes4s.codec.ByteDigest
+import eyes4s.plan.{MapPlacement, OffWindowPolicy}
 import eyes4s.studio.core.assets.*
 import eyes4s.studio.core.backend.{Phase, TrialKey}
 import eyes4s.studio.core.document.{ImagePlacement, ScreenSize}
@@ -80,7 +81,8 @@ object TrialSamples:
           x,
           y,
           d,
-          if inside then WindowSide.Inside else WindowSide.Outside
+          if inside then MapPlacement.InMap
+          else MapPlacement.OutsideWindow(OffWindowPolicy.Exclude)
         )
       )
     }

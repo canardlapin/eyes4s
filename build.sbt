@@ -68,6 +68,14 @@ ThisBuild / githubWorkflowPermissions           := Some(
 lazy val trustWorkflowContents =
   taskKey[Map[String, String]]("Render every generated eyes4s workflow.")
 
+// A project's module name as sbt-github-dependency-submission computes it
+// (GithubDependencyGraphPlugin.getModuleName), paired with publish / skip.
+lazy val submissionModule = Def.task {
+  val crossVersion =
+    CrossVersion((artifactName / scalaVersion).value, (artifactName / scalaBinaryVersion).value)
+  crossVersion(projectID.value).name -> (publish / skip).value
+}
+
 def bundledCleanWorkflow: String = {
   val stream = Option(GenerativePlugin.getClass.getResourceAsStream("/clean.yml"))
     .getOrElse(sys.error("sbt-github-actions clean.yml resource is unavailable"))
@@ -236,13 +244,24 @@ trustWorkflowContents := {
     sbtCommand
   )
 
+  // The submission graph is the published artifacts' graph. Every unpublished
+  // project (the root aggregates, the guide, and the Studio projects, whose
+  // Intaglio and scaladock pins exist only after studio.yml publishes them) is
+  // ignored by the module name sbt-github-dependency-submission matches on.
+  val unpublishedModules = submissionModule
+    .all(ScopeFilter(inAnyProject))
+    .value
+    .collect { case (name, true) => name }
+    .distinct
+    .sorted
+
   val dependencySubmission = WorkflowJob(
     "dependency-submission",
     "Submit Dependencies",
     githubWorkflowJobSetup.value.toList ::: List(
       WorkflowStep.DependencySubmission(
         workingDirectory = None,
-        modulesIgnore = Some(List("rootjs_3", "rootjvm_3", "rootnative_3")),
+        modulesIgnore = Some(unpublishedModules.toList),
         configsIgnore = Some(List("test", "scala-tool", "scala-doc-tool", "test-internal")),
         token = None
       )
@@ -364,6 +383,8 @@ githubWorkflowCheck := {
   requireText("security.yml", "contents: write")
   requireText("security.yml", "scalacenter/sbt-dependency-submission@v2")
   forbidText("security.yml", "tlCiRelease")
+  List("eyes4s-studio-viz_3", "eyes4s-studio-viz_sjs1_3", "eyes4s-studio-desktop_3")
+    .foreach(m => requireText("security.yml", s" $m"))
 
   requireText("release.yml", "tags: [v*]")
   requireText("release.yml", "startsWith(github.ref, 'refs/tags/v')")
@@ -404,8 +425,11 @@ ThisBuild / githubWorkflowBuild += WorkflowStep.Sbt(
   preamble = false
 )
 
+// The library half of checkBoundaries: resolving a studio project needs the scaladock
+// and Intaglio pins, which only studio.yml publishes, so the studio resolved-graph
+// rules (studioBoundaries) run there.
 ThisBuild / githubWorkflowBuild += WorkflowStep.Sbt(
-  List("checkBoundaries"),
+  List("checkLibraryBoundaries"),
   name = Some("Check module and kernel boundaries")
 )
 
@@ -1063,6 +1087,7 @@ lazy val studioCore = crossProject(JVMPlatform, JSPlatform)
     libraryDependencies ++= Seq(
       "io.circe"      %%% "circe-core"        % circeV,
       "io.circe"      %%% "circe-parser"      % circeV,
+      "io.circe"      %%% "circe-jawn"        % circeV,
       "org.typelevel" %%% "munit-cats-effect" % munitCatsEffectV % Test
     ),
     // S3.0: studio-core may not read files (it links for Scala.js), so the mock
@@ -1208,12 +1233,16 @@ lazy val studioCrossModules = Seq("studioCore", "studioApp", "studioViz")
 lazy val studioProjects     =
   studioCrossModules.flatMap(m => allPlatforms.map(p => s"$m$p")) :+ "studioDesktop"
 
-// Everything checkBoundaries runs for studio: the build-level rules, then the
-// resolved-graph rule on each portable studio project.
+// The resolved-graph rule on each studio project. Each resolves the scaladock and
+// Intaglio pins, so these run in studio.yml after the pins are published, and in the
+// local checkBoundaries. The build-level studio rules (checkStudioBoundaries,
+// checkStudioColours) read the project graph and sources only; they stay in
+// checkLibraryBoundaries.
 lazy val studioBoundaryChecks =
-  "checkStudioBoundaries" +: "checkStudioColours" +:
-    studioCrossModules.flatMap(m => allPlatforms.map(p => s"$m$p/checkModuleBoundaries")) :+
+  studioCrossModules.flatMap(m => allPlatforms.map(p => s"$m$p/checkModuleBoundaries")) :+
     "studioDesktop/checkModuleBoundaries"
+
+addCommandAlias("studioBoundaries", studioBoundaryChecks.mkString(";", ";", ""))
 
 addCommandAlias(
   "studioAll",
@@ -1306,6 +1335,10 @@ lazy val studioLinuxJob = WorkflowJob(
         "xvfb-run -a -s '-screen 0 1920x1200x24' sbt -J-Xmx8g -Djavafx.platform=linux studioAll studioStyleCheck"
       ),
       name = Some("Build and test studio (xvfb, software pipeline)")
+    ),
+    WorkflowStep.Run(
+      List("sbt -J-Xmx4g -Djavafx.platform=linux studioBoundaries"),
+      name = Some("Check studio resolved-graph boundaries")
     ),
     WorkflowStep.Use(
       UseRef.Public("actions", "upload-artifact", "v4"),
@@ -1523,16 +1556,22 @@ addCommandAlias(
 )
 
 // checkModuleBoundaries is per-module (it inspects each module's own resolved
-// graph); checkKernelPurity and checkStudioBoundaries are build-level.
-// `checkBoundaries` runs all of them.
-addCommandAlias(
-  "checkBoundaries",
-  (Seq("checkKernelPurity") ++
+// graph); checkKernelPurity, checkStudioBoundaries and checkStudioColours are
+// build-level and resolve nothing. `checkLibraryBoundaries` needs no studio pin and
+// runs in checks.yml; `studioBoundaries` runs in studio.yml; `checkBoundaries` runs
+// all of them.
+lazy val libraryBoundaryChecks =
+  Seq("checkKernelPurity") ++
     allModules
       .filterNot(m => m == "fs2Module" || m == "io")
       .flatMap(m => allPlatforms.map(p => s"$m$p/checkModuleBoundaries")) ++
-    studioBoundaryChecks)
-    .mkString(";", ";", "")
+    Seq("checkStudioBoundaries", "checkStudioColours")
+
+addCommandAlias("checkLibraryBoundaries", libraryBoundaryChecks.mkString(";", ";", ""))
+
+addCommandAlias(
+  "checkBoundaries",
+  (libraryBoundaryChecks ++ studioBoundaryChecks).mkString(";", ";", "")
 )
 
 lazy val apiAuditInputs =

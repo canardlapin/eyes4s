@@ -166,9 +166,27 @@ class PlotTableParitySuite extends ScalaCheckSuite:
       ladder  <- LadderSamples.genLadder
       builder <- LadderSamples.genBuilder(ladder)
     yield (LadderSamples.source(ladder), builder)
+    // The participant plot (S4.5c) on its own sources.
+    val participants = ParticipantSamples.genMeans.map(m =>
+      (ParticipantSamples.source(m), ParticipantPlot(ParticipantSamples.columns))
+    )
+    // The scale profile (S4.5d) on its own sources.
+    val profiles = ProfileSamples.genProfile.map(p =>
+      (ProfileSamples.source(p), ScaleProfilePlot(ProfileSamples.columns))
+    )
+    // The timeline (S4.5e) on its own sources.
+    val timelines = TimelineSamples.genTimeline.map(t =>
+      (TimelineSamples.source(t), TimelinePlot(TimelineSamples.columns))
+    )
     for
-      (source, builder) <- Gen.frequency(4 -> generic, 1 -> ladder)
-      theme             <- Gen.oneOf(Theme.values.toSeq)
+      (source, builder) <- Gen.frequency(
+        4 -> generic,
+        1 -> ladder,
+        1 -> participants,
+        1 -> profiles,
+        1 -> timelines
+      )
+      theme <- Gen.oneOf(Theme.values.toSeq)
     yield (source, builder, right(builder.build(source, theme)))
 
   private val genPlot: Gen[(PlotSource, BuiltPlot)] = genBuilt.map((s, _, p) => (s, p))
@@ -212,6 +230,16 @@ class PlotTableParitySuite extends ScalaCheckSuite:
       "an aggregate with a summary" -> plots.exists(_.marks.exists(_.summary.isDefined)),
       "a scale ladder's histogram"  -> plots.exists(p =>
         p.plot.id.value.contains("scale-ladder") && p.marks.exists(_.summary.isDefined)
+      ),
+      "a participant plot's missing mean" -> plots.exists(p =>
+        p.plot.id.value.contains("participant-plot") &&
+          p.marks.exists(_.rows.exists(_.marking.isInstanceOf[RowMarking.Positionless]))
+      ),
+      "a scale profile's broken line" -> plots.exists(p =>
+        p.plot.id.value.contains("scale-profile") &&
+          p.marks.exists(m =>
+            m.rows.size > 1 && m.rows.exists(_.marking.isInstanceOf[RowMarking.Positionless])
+          )
       ),
       "a missing value" -> plots.exists(
         _.unplotted.exists(_.reason.isInstanceOf[NoPosition.MissingValue])
@@ -408,12 +436,22 @@ class PlotTableParitySuite extends ScalaCheckSuite:
         t.accessibleText(onMark.project(byPlot).state),
         PlotText.selected(readout, true)
       )
+      // A mark of one row says what its cursor row says; a represented
+      // singleton (a one-control histogram bin, S4.5b) adds its summary.
       if mark.rows.size == 1 then
-        assertEquals(
-          t.accessibleText(onMark.project(byPlot).state),
-          onRow.project(byPlot).state.vm(source).accessibleText
-        )
-        assertEquals(t.accessibleText(onMark), onRow.vm(source).accessibleText)
+        val sep                   = PlotText(PlotTextId.RowSeparator)
+        def said(rowText: String) = mark.summary.fold(rowText)(rowText + sep + _)
+        val selectedRow           = onRow.project(byPlot).state.vm(source).accessibleText
+        val unselectedRow         = onRow.vm(source).accessibleText
+        mark.summary match
+          case None =>
+            assertEquals(t.accessibleText(onMark.project(byPlot).state), selectedRow)
+          case Some(_) =>
+            assertEquals(
+              t.accessibleText(onMark.project(byPlot).state),
+              PlotText.selected(said(unselectedRow), true)
+            )
+        assertEquals(t.accessibleText(onMark), said(unselectedRow))
     }
   }
 

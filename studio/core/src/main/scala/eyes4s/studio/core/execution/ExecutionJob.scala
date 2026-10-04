@@ -17,6 +17,7 @@
 package eyes4s.studio.core.execution
 
 import eyes4s.studio.core.backend.*
+import eyes4s.studio.core.backend.ProtocolCodecs.portableLong
 import io.circe.Codec
 
 // ---------------------------------------------------------------------------

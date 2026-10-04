@@ -20,10 +20,20 @@ import eyes4s.compare.*
 import eyes4s.design.*
 import eyes4s.kernel.*
 
+/** One equality or inequality on a key projection: participant, stimulus or occasion.
+  *
+  * Cases come in same/different pairs (consecutive ordinals), and a conjunction may not
+  * name both members of a pair; [[RepetitionRelations.of]] relies on that layout. A finite
+  * vocabulary, rather than a closure, is what lets a saved plan record its relations as data.
+  */
 enum RepetitionRule derives CanEqual:
   case SameParticipant, DifferentParticipant, SameStimulus, DifferentStimulus, SameOccasion,
     DifferentOccasion
 
+/** Why a repetition layout, relation set or plan was refused. Each case names its operands:
+  * the colliding projection or layout identities, the role (`matched` or `controls`) and its
+  * rules, the trial row whose grid disagrees, or the underlying specification error.
+  */
 enum RepetitionPlanError derives CanEqual:
   case ProjectionIds(values: Vector[DefinitionId])
   case DuplicateLayout(id: DefinitionId)
@@ -157,6 +167,10 @@ object RepetitionLayout:
         )
       )
 
+/** The typed layouts a restored plan may resolve, keyed by unique [[DefinitionId]].
+  * Registration refuses a duplicate identity (`DuplicateLayout`), and resolution of an
+  * unregistered one is `MissingLayout`, so a saved identity never binds to the wrong projections.
+  */
 final class RepetitionRegistry[K] private (val layouts: Vector[RepetitionLayout[K]]):
   def register(
       layout: RepetitionLayout[K]
@@ -292,6 +306,10 @@ object RepetitionPlan:
           }
       }
 
+/** The directed matched and control analyses of one [[RepetitionPlan]] run, the failure
+  * policy their per-trial means use, and the content hash of the plan that produced them.
+  * `contrasts` reduces both by left key under that policy before subtracting.
+  */
 final class RepetitionPlanResult[K] private[plan] (
     val matched: DirectedPairwiseAnalysis[K, K, CompareError, Similarity],
     val controls: DirectedPairwiseAnalysis[K, K, CompareError, Similarity],

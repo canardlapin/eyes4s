@@ -111,8 +111,16 @@ sealed trait InitialFixationPolicy[U <: Unit2D] derives CanEqual:
     case _         => false
 
 object InitialFixationPolicy:
-  final case class KeepAll[U <: Unit2D]()   extends InitialFixationPolicy[U]
+  /** Retain every fixation. */
+  final case class KeepAll[U <: Unit2D]() extends InitialFixationPolicy[U]
+
+  /** Drop the first fixation of every trial, wherever it lies. */
   final case class DropFirst[U <: Unit2D]() extends InitialFixationPolicy[U]
+
+  /** Drop the leading run of fixations centred within `radiusDegrees` (closed)
+    * of `cross`; built only by `dropLeadingInClosedDisc`, which requires a positive
+    * finite radius and a finite cross.
+    */
   final case class DropLeadingInClosedDisc[U <: Unit2D] private[plan] (
       cross: Pt[U],
       radiusDegrees: Double

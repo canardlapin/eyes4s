@@ -220,6 +220,11 @@ object RecordingInput:
       )
     )
 
+/** Why a recording input was refused, naming the source or clocks concerned: an
+  * unnamed source, synchronization onto the source's own clock or without observed
+  * marks, a plan that declares what the evidence contradicts, or binocular channels
+  * that must first be projected to one eye. Underlying errors are kept whole.
+  */
 enum RecordingInputError derives CanEqual:
   case EmptySource(source: RecordingRef)
   case SynchronizationTargetIsSource(clock: ClockId)

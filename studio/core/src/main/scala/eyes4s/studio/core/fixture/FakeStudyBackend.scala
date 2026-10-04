@@ -20,7 +20,9 @@ import cats.Eq
 import cats.effect.Concurrent
 import cats.syntax.all.*
 import eyes4s.studio.core.backend.*
+import eyes4s.studio.core.execution.RunStamp
 import eyes4s.studio.core.navigation.StudyNavigator
+import eyes4s.studio.core.preview.*
 import fs2.Stream
 import fs2.concurrent.SignallingRef
 
@@ -68,6 +70,7 @@ enum FakeControlError derives CanEqual:
       declared: DatasetRevision,
       requested: DatasetRevision
   )
+  case MissingSnapshot(job: JobId)
 
   def message: String = this match
     case UnknownJob(job, known) =>
@@ -82,6 +85,7 @@ enum FakeControlError derives CanEqual:
     case Progress(underlying)                            => underlying.message
     case RevisionConflict(revision, declared, requested) =>
       s"${revision.label} stands on data ${declared.label}, not ${requested.label}."
+    case MissingSnapshot(job) => s"Job ${job.number} has no retained prepared snapshot."
 
 /** How the fake answers for a dataset's trial inventory (S5.4, S5.6): the
   * fixture's joined inventory, none declared, or eyes4s's refusal of it.
@@ -112,7 +116,7 @@ final case class ScriptedSegment(segment: Segment, total: ProgressTotal) derives
   * fixture. Only a completed run of rev 4 on data r3 (run 7 in the story) has
   * scores; the fixture has no numbers for data r2 or for a completed rev 5.
   */
-final class FakeStudyBackend[F[_]] private (
+final class FakeStudyBackend[F[_]] private[fixture] (
     val study: MockStudy,
     state: SignallingRef[F, FakeStudyBackend.State]
 )(using F: Concurrent[F])
@@ -164,6 +168,9 @@ final class FakeStudyBackend[F[_]] private (
         ScriptedSegment(Segment.Contrasting(s), ProgressTotal.AtMost(eligible))
       )
     }
+
+  private def prepared(r: AnalysisRevision, d: DatasetRevision): FakePreparedSnapshot =
+    FakePreparedSnapshot(study, PreviewStamp.fake(r, d), scalesOf(r), script(r))
 
   private def full(s: ScriptedSegment): Long = s.total.bound.getOrElse(0L)
 
@@ -319,6 +326,166 @@ final class FakeStudyBackend[F[_]] private (
       PreviewPage(r, PageInfo.of(page, study.queries.size, rows.size), rows)
     })
 
+  /** The fixture's preview counts, refused if the fixture states a negative
+    * count. [[FakeStudyBackend.create]] refuses such a fixture as a defect.
+    */
+  private[fixture] val previewFacts: Either[PreviewError, FakePreviewFacts] =
+    def counts(r: AnalysisRevision) =
+      PreviewCounts.of(
+        summary.pairRowsPerScale,
+        pairRowsOf(r),
+        summary.contrasts.noMatch,
+        ambiguousMatches = 0
+      )
+    for
+      candidates <- PreviewCandidates.of(
+        study.queries.size,
+        study.inventory.count(_.trial.phase == Phase.Encoding),
+        study.queries.map(_.key.participant).distinct.size,
+        summary.candidatePairsPerScale
+      )
+      allScales <- counts(scoredRevision)
+      rev5      <- counts(AnalysisRevision(5))
+    yield FakePreviewFacts(candidates, allScales, rev5)
+
+  private def previewDiagnostics: Vector[StudioDiagnostic] =
+    study.queries.collect { case q if q.status == NoMatchStatus => unmatched(q) }
+
+  /** Evaluating a fresh stream captures a snapshot before counting begins.
+    * Count progress is one participant per page; stopping consumption preserves
+    * pages already completed, without promising zero transport read-ahead.
+    */
+  def previewCounting(
+      r: AnalysisRevision,
+      budget: PreviewBudget
+  ): Stream[F, Either[BackendError, PreviewEvent]] =
+    Stream.eval(revision(r)).flatMap {
+      case Left(error) => Stream.emit(Left(error))
+      case Right(d)    =>
+        Stream
+          // create refuses a fixture with invalid preview counts, so this
+          // fails only for a fake built around it, as a fixture defect.
+          .eval(
+            previewFacts.fold(
+              e =>
+                F.raiseError(
+                  new IllegalStateException(s"FakeStudyBackend preview: ${e.message}")
+                ),
+              F.pure
+            )
+          )
+          .flatMap(facts =>
+            Stream.eval(state.modify { s =>
+              val id = PreviewId(s.previews.keys.map(_.value).maxOption.getOrElse(0L) + 1L)
+              val snapshot = prepared(r, d)
+              val retained = RetainedPreview(
+                snapshot,
+                PreviewReady(
+                  id,
+                  snapshot.stamp,
+                  facts.candidates,
+                  facts.counts(r),
+                  previewDiagnostics
+                ),
+                PreviewProgress.start(facts.candidates)
+              )
+              (
+                s.copy(previews = s.previews.updated(id, retained)),
+                retained
+              )
+            })
+          )
+          .flatMap(retained => page(retained, budget, initial = true).map(Right(_)))
+    }
+
+  def continuePreview(
+      id: PreviewId,
+      budget: PreviewBudget
+  ): Stream[F, Either[BackendError, PreviewEvent]] =
+    Stream.eval(state.get).flatMap { s =>
+      s.previews.get(id) match
+        case None =>
+          Stream.emit(
+            Left(BackendError.UnknownPreview(id, s.previews.keys.toVector.sortBy(_.value)))
+          )
+        case Some(retained) if retained.progress.isComplete =>
+          Stream.emit(Right(PreviewEvent.Ready(retained.ready)))
+        case Some(retained) => page(retained, budget, initial = false).map(Right(_))
+    }
+
+  private def page(
+      retained: RetainedPreview,
+      budget: PreviewBudget,
+      initial: Boolean
+  ): Stream[F, PreviewEvent] =
+    // `Initial` appears only on creation; resumed pages contain progress or Ready.
+    val opening = if initial then
+      Stream.emit(
+        PreviewEvent.Initial(retained.ready.id, retained.ready.stamp, retained.ready.candidates)
+      )
+    else Stream.empty
+    opening ++ Stream
+      .emits(Vector.fill(budget.participants)(()))
+      .evalMap { _ =>
+        state.modify { s =>
+          s.previews.get(retained.ready.id) match
+            case Some(current) =>
+              current.progress.advance match
+                case Some(done) =>
+                  val counting = PreviewEvent.Counting(current.ready.id, done)
+                  val ready    = Option.when(done.isComplete)(PreviewEvent.Ready(current.ready))
+                  (
+                    s.copy(previews =
+                      s.previews.updated(current.ready.id, current.copy(progress = done))
+                    ),
+                    Vector(counting) ++ ready.toVector
+                  )
+                case None => (s, Vector(PreviewEvent.Ready(current.ready)))
+            case None => (s, Vector.empty)
+        }
+      }
+      .flatMap(Stream.emits)
+      .takeThrough {
+        case PreviewEvent.Ready(_) => false
+        case _                     => true
+      }
+
+  def submitPreview(ready: PreviewReady): F[Either[BackendError, JobStatus]] =
+    state.modify { s =>
+      s.previews.get(ready.id) match
+        case None =>
+          (
+            s,
+            Left(
+              BackendError.UnknownPreview(ready.id, s.previews.keys.toVector.sortBy(_.value))
+            )
+          )
+        case Some(retained) if !retained.progress.isComplete =>
+          (
+            s,
+            Left(
+              BackendError.PreviewNotReady(
+                ready.id,
+                retained.progress.completed,
+                retained.progress.total
+              )
+            )
+          )
+        case Some(retained) if retained.ready != ready =>
+          (s, Left(BackendError.TamperedPreview(ready, retained.ready)))
+        case Some(retained) =>
+          s.revisions.get(retained.ready.stamp.revision) match
+            case Some(dataset) if dataset == retained.ready.stamp.dataset =>
+              submitSnapshot(s, retained.snapshot)
+            case _ =>
+              val current = PreviewStamp.fake(
+                retained.ready.stamp.revision,
+                s.revisions
+                  .getOrElse(retained.ready.stamp.revision, retained.ready.stamp.dataset)
+              )
+              (s, Left(BackendError.StalePreview(ready.id, retained.ready.stamp, current)))
+    }
+
   // -------------------------------------------------------------------------
   // Runs and jobs
   // -------------------------------------------------------------------------
@@ -336,20 +503,34 @@ final class FakeStudyBackend[F[_]] private (
     revision(r).flatMap {
       case Left(e)  => F.pure(Left(e))
       case Right(d) =>
-        state.modify { s =>
-          s.jobs.find(j => !isFinished(j.state)) match
-            case Some(active) => (s, Left(BackendError.AlreadyRunning(r, active.job)))
-            case None         =>
-              val job    = JobId(s.jobs.size + 1)
-              val run    = RunId(s.runs.map(_.run.number).maxOption.getOrElse(0) + 1)
-              val status = JobStatus(job, run, r, d, JobState.Queued)
-              val next   = s.copy(
-                runs = s.runs :+ RunSummary(run, r, d, RunState.Running(job)),
-                jobs = s.jobs :+ status
-              )
-              (next, Right(status))
-        }
+        state.modify(s => submitSnapshot(s, prepared(r, d)))
     }
+
+  private def submitSnapshot(
+      s: State,
+      snapshot: FakePreparedSnapshot
+  ): (State, Either[BackendError, JobStatus]) =
+    s.jobs.find(j => !isFinished(j.state)) match
+      case Some(active) =>
+        (s, Left(BackendError.AlreadyRunning(snapshot.stamp.revision, active.job)))
+      case None =>
+        val job    = JobId(s.jobs.size + 1)
+        val run    = RunId(s.runs.map(_.run.number).maxOption.getOrElse(0) + 1)
+        val status =
+          JobStatus(job, run, snapshot.stamp.revision, snapshot.stamp.dataset, JobState.Queued)
+        (
+          s.copy(
+            runs = s.runs :+ RunSummary(
+              run,
+              snapshot.stamp.revision,
+              snapshot.stamp.dataset,
+              RunState.Running(job)
+            ),
+            jobs = s.jobs :+ status,
+            jobSnapshots = s.jobSnapshots.updated(job, snapshot)
+          ),
+          Right(status)
+        )
 
   def subscribe(id: JobId): F[Either[BackendError, Stream[F, JobEvent]]] =
     state.get.map { s =>
@@ -425,8 +606,8 @@ final class FakeStudyBackend[F[_]] private (
     state.modify { s =>
       val result =
         for
-          j <- active(s, id)
-          plan = script(j.revision)
+          j             <- active(s, id)
+          plan          <- s.snapshot(id).map(_.script)
           (index, done) <- target(j, plan)
           prior = progressOf(j.state)
           _ <- prior.fold(Right(())) { p =>
@@ -465,7 +646,7 @@ final class FakeStudyBackend[F[_]] private (
   def advanceToPairs(id: JobId, pairs: Long): F[Either[FakeControlError, JobProgress]] =
     moveTo(
       id,
-      (j, plan) =>
+      (_, plan) =>
         val starts = plan.scanLeft(0L)((acc, s) =>
           acc + (if s.segment.unit == CountUnit.Pairs then full(s) else 0L)
         )
@@ -477,7 +658,7 @@ final class FakeStudyBackend[F[_]] private (
           .map(i => (i, pairs - starts(i)))
           .toRight(
             FakeControlError
-              .PairsOutOfRange(id, pairs, ProgressTotal.Exact(totalPairs(j.revision)))
+              .PairsOutOfRange(id, pairs, ProgressTotal.Exact(sumOf(plan, CountUnit.Pairs)))
           )
     )
 
@@ -488,8 +669,8 @@ final class FakeStudyBackend[F[_]] private (
     state.modify { s =>
       val result =
         for
-          j <- active(s, id)
-          plan = script(j.revision)
+          j    <- active(s, id)
+          plan <- s.snapshot(id).map(_.script)
           last <- progressAt(
             j,
             plan,
@@ -702,14 +883,44 @@ object FakeStudyBackend:
   private val FailedStatus     = "failed"
   private val NoFixationsSlug  = "no-fixations"
 
+  /** Kept only by the fake backend; no protocol value exposes a snapshot. */
+  private[fixture] final case class FakePreparedSnapshot(
+      study: MockStudy,
+      stamp: RunStamp,
+      scales: Vector[String],
+      script: Vector[ScriptedSegment]
+  )
+
+  /** Kept only by the fake backend; no protocol value exposes a snapshot. */
+  private[fixture] final case class RetainedPreview(
+      snapshot: FakePreparedSnapshot,
+      ready: PreviewReady,
+      progress: PreviewProgress
+  )
+
+  /** The fixture's validated preview counts: candidates and the counts of an
+    * analysis before and after rev 5 adds a scale.
+    */
+  private[fixture] final case class FakePreviewFacts(
+      candidates: PreviewCandidates,
+      allScales: PreviewCounts,
+      rev5: PreviewCounts
+  ):
+    def counts(r: AnalysisRevision): PreviewCounts = if r.number >= 5 then rev5 else allScales
+
   private[fixture] final case class State(
       datasets: Map[DatasetRevision, DatasetState],
       revisions: Map[AnalysisRevision, DatasetRevision],
       runs: Vector[RunSummary],
       jobs: Vector[JobStatus],
+      previews: Map[PreviewId, RetainedPreview],
+      jobSnapshots: Map[JobId, FakePreparedSnapshot],
       inventories: Map[DatasetRevision, InventoryScenario] = Map.empty
   ):
     def job(id: JobId): Option[JobStatus] = jobs.find(_.job == id)
+
+    def snapshot(id: JobId): Either[FakeControlError, FakePreparedSnapshot] =
+      jobSnapshots.get(id).toRight(FakeControlError.MissingSnapshot(id))
 
     def update(j: JobStatus): State =
       copy(jobs = jobs.map(o => if o.job == j.job then j else o))
@@ -743,7 +954,9 @@ object FakeStudyBackend:
         Map(r2   -> DatasetState.Admitted, r3 -> DatasetState.Draft),
         Map(rev3 -> r2),
         Vector(RunSummary(RunId(5), rev3, r2, RunState.Current)),
-        Vector.empty
+        Vector.empty,
+        Map.empty,
+        Map.empty
       )
     case StoryMoment.T2 | StoryMoment.T3 =>
       State(
@@ -754,7 +967,9 @@ object FakeStudyBackend:
           RunSummary(RunId(6), rev4, r3, RunState.Cancelled(Some(StageKind.Comparing))),
           RunSummary(RunId(7), rev4, r3, RunState.Current)
         ),
-        Vector.empty
+        Vector.empty,
+        Map.empty,
+        Map.empty
       )
 
   /** The fake at one story moment. The effect fails only if the embedded
@@ -767,6 +982,7 @@ object FakeStudyBackend:
       study <- MockStudy.load.fold(defect, F.pure)
       state <- SignallingRef.of[F, State](initial(moment))
       backend = new FakeStudyBackend[F](study, state)
+      _ <- backend.previewFacts.fold(e => defect(e.message), _ => F.unit)
       _ <- moment match
         case StoryMoment.T3 =>
           backend.submit(rev5).flatMap {
