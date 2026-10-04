@@ -456,7 +456,10 @@ object FigureComposer:
             v.methods.flatMap(_.text.toOption),
             written,
             c.appearanceOf(s.figure.id).includeImages,
-            FigureBundle.folder(page)
+            FigureBundle.folder(page),
+            bundle.rows.collect {
+              case r if r.chosen && r.unavailable.isDefined => r.file -> r.unavailable.get
+            }
           )
         )).fold((c, none))(e => (c.copy(bundled = None), Vector(e)))
       case Export =>

@@ -19,7 +19,8 @@ package eyes4s.studio.core.session
 import cats.effect.{IO, Resource}
 import eyes4s.studio.core.bundle.*
 import eyes4s.studio.core.document.DocumentSamples.t1
-import eyes4s.studio.core.document.SourceRole
+import eyes4s.studio.core.command.{Command, JournalEntry}
+import eyes4s.studio.core.document.{SourceRole, Theme}
 
 import java.nio.charset.StandardCharsets.UTF_8
 
@@ -95,4 +96,40 @@ class SessionShareSuite extends SessionConformance:
         case Left(SessionError.Bundle(_, BundleError.TargetNotEmpty(true, _))) => ()
         case other => fail(s"expected the copy to be refused, got $other")
       assert(lock.isRight, lock)
+  }
+
+  test("the copy is the project as last saved: an unsaved edit is not in it") {
+    for
+      session <- saved
+      _       <- ok(session.perform(JournalEntry.Apply(Command.SetTheme(Theme.Dark))))
+      edited  <- session.document
+      copy    <- InMemoryProjectStore.create[IO]
+      _       <- ok(session.share(copy, SharingOptions.complete))
+      _       <- ok(session.close)
+      opened  <- ok(ProjectSession.open(copy, bob))
+      doc     <- opened.session.document
+      _       <- ok(opened.session.close)
+    yield
+      assertNotEquals(edited, withoutJobs(document))
+      assertEquals(doc, withoutJobs(document))
+  }
+
+  test("withheld stimulus images are listed in the copy without their bytes") {
+    val image = bytes("not really a png")
+    for
+      session <- saved
+      _       <- ok(session.importInput(InputKind.StimulusImage, "beach-042.png", image))
+      _       <- ok(session.save)
+      copy    <- InMemoryProjectStore.create[IO]
+      _       <- ok(
+        session.share(copy, SharingOptions(Inclusion.Included, Inclusion.Withheld))
+      )
+      _      <- ok(session.close)
+      opened <- ProjectBundle.open(copy)
+    yield
+      val inputs = opened.fold(e => fail(e.message), _.manifest.inputs)
+      val listed = inputs.filter(_.kind == InputKind.StimulusImage)
+      assertEquals(listed.size, 1)
+      assert(listed.forall(!_.stored), listed)
+      assert(inputs.filter(_.kind != InputKind.StimulusImage).forall(_.stored), inputs)
   }

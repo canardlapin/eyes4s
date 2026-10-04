@@ -18,6 +18,7 @@ package eyes4s.studio.core.session
 
 import cats.data.EitherT
 import cats.effect.std.Mutex
+import cats.effect.syntax.all.*
 import cats.effect.{Concurrent, Ref}
 import cats.syntax.all.*
 import eyes4s.codec.ByteDigest
@@ -165,10 +166,11 @@ final class ProjectSession[F[_]: Concurrent] private (
       to.acquire(owner).flatMap {
         case Left(e)     => Concurrent[F].pure(Left(SessionError.Store("lock the copy", e)))
         case Right(lock) =>
+          // The copy's lock is released whatever the copy does, raised errors included.
           ProjectBundle
             .share(store, to, lock, sharing)
             .map(_.left.map(SessionError.Bundle("copy the project", _)))
-            .flatTap(_ => to.release(lock))
+            .guarantee(to.release(lock).void)
       }
     )
 

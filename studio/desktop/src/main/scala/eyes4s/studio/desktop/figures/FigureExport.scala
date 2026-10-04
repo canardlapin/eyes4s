@@ -51,8 +51,8 @@ object FigureFonts:
   * embedded and subset by PDFBox (intaglio-pdf), the page its journal size.
   */
 object FigurePdf:
-  /** Fine enough that the page's size in points is its size in millimetres
-    * to well under a hundredth of a millimetre.
+  /** The page is its size in millimetres rounded up to whole pixels at this
+    * density, so it is at most one pixel, 25.4 / 720 ≈ 0.035 mm, larger.
     */
   val PixelsPerInch: Double = 720.0
 
@@ -95,17 +95,23 @@ object FigurePng:
       catch case NonFatal(e) => Left(s"The font ${f.family} could not be read: ${e.getMessage}")
     }.map(_.flatten.toSet))
 
+  /** Why a page whose text names `used` cannot be drawn with the faces AWT
+    * answers to (`registered`): the first family it lacks, which Java2D
+    * would otherwise draw in a fallback face without a word.
+    */
+  def unregistered(used: Vector[String], registered: Set[String]): Option[String] =
+    used
+      .find(f => !registered.contains(f))
+      .map(f => s"The figure uses the font $f, which Java2D does not have.")
+
   def render(page: PageVM): Either[String, Array[Byte]] =
     for
       names <- registered
       built <- FigurePage.build(page).left.map(_.message)
       plan  <- built.plan(PixelsPerInch).left.map(_.message)
-      // A family AWT does not know would be drawn in a fallback face, silently.
-      used <- FigureSvg.families(built).left.map(_.message)
-      _    <- used.find(f => !names.contains(f)) match
-        case Some(f) => Left(s"The figure uses the font $f, which Java2D does not have.")
-        case None    => Right(())
-      png <- Java2DRenderer
+      used  <- FigureSvg.families(built).left.map(_.message)
+      _     <- unregistered(used, names).toLeft(())
+      png   <- Java2DRenderer
         .renderPng(
           plan,
           Java2DExportOptions(background = Java2DBackground.Solid(Rgba.White))

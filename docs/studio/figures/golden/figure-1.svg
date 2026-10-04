@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="692" height="678" viewBox="0 0 692 678"><defs><style/></defs>
   <title>Figure 1</title>
-  <rect stroke="none" fill="#ffffff" stroke-width="1" stroke-linecap="butt" stroke-linejoin="miter" x="0" y="0.8651" width="691.6535" height="677.1349" />
+  <rect stroke="none" fill="#ffffff" stroke-width="1" stroke-linecap="butt" stroke-linejoin="miter" x="0" y="0" width="692" height="678" />
   <text fill="#1c1e21" stroke="none" font-family="IBM Plex Sans SmBld" font-size="10.6667" x="0" y="0.8651" text-anchor="start" dominant-baseline="text-before-edge">A</text>
   <text fill="#1c1e21" stroke="none" font-family="IBM Plex Sans" font-size="9.3333" x="21.3333" y="0.8651" text-anchor="start" dominant-baseline="text-before-edge">Encoding gaze</text>
   <text fill="#464b52" stroke="none" font-family="IBM Plex Sans" font-size="9.3333" x="0" y="14.1984" text-anchor="start" dominant-baseline="text-before-edge">Encoding · enc_03 · beach-042</text>

@@ -30,6 +30,7 @@ import eyes4s.studio.core.headless.HeadlessSession
 import eyes4s.studio.core.selection.{ScaleIndex, StudioRef}
 
 import java.nio.charset.StandardCharsets.UTF_8
+import java.nio.file.{Files, Path}
 import scala.concurrent.{ExecutionContext, Future}
 
 /** The export bundle (ticket S9.5; Figures.dc.html, Bundle) of story moment
@@ -152,7 +153,7 @@ class ExportBundleSuite extends munit.FunSuite:
       )
       assertEquals(
         files(s).keySet,
-        Set("figure-1.svg", "results.csv", "participants.csv", "methods.md")
+        Set("figure-1.svg", "results.csv", "participants.csv", "methods.md", "README.txt")
       )
     }
   }
@@ -170,7 +171,7 @@ class ExportBundleSuite extends munit.FunSuite:
       assert(!r.includeImages)
       assertEquals(
         files(s, Some(c)).keySet,
-        Set("figure-1.svg", "participants.csv", "methods.md")
+        Set("figure-1.svg", "participants.csv", "methods.md", "README.txt")
       )
       val done = FigureComposer.update(c, t2, ComposerIntent.BundleExported(Right("/tmp/b")))._1
       assertEquals(
@@ -178,6 +179,74 @@ class ExportBundleSuite extends munit.FunSuite:
         Some("Bundle exported to /tmp/b.")
       )
     }
+  }
+
+  test(
+    "README.txt lists the files, the binding, and comparisons.csv as not included, with why"
+  ) {
+    served.map { s =>
+      assertNoDiff(
+        files(s)("README.txt"),
+        """Figure 1 export bundle
+          |run 7 · analysis rev 4 · data r3 · reporting “By retrieval response” · studio build eyes4s 0.1
+          |
+          |Files:
+          |- figure-1.svg
+          |- results.csv
+          |- participants.csv
+          |- methods.md
+          |
+          |Not included:
+          |- comparisons.csv: comparisons.csv needs the backend's pair-rows view, which it does not serve yet.
+          |""".stripMargin
+      )
+    }
+  }
+
+  // --- Writing: whole or not at all --------------------------------------------------
+
+  private def tempDir(): Path = Files.createTempDirectory("eyes4s-bundle-")
+
+  private def written(
+      target: Path,
+      snapshot: Option[BundleWriter.Snapshot]
+  ): Either[String, String] =
+    var answer: Option[Either[String, String]] = None
+    BundleWriter.write(
+      target,
+      Vector("a.txt" -> IArray.from("a".getBytes(UTF_8))),
+      snapshot,
+      a => answer = Some(a)
+    )
+    answer.getOrElse(fail("no answer"))
+
+  test("a bundle appears whole, with its snapshot; nothing partial is left behind") {
+    val parent = tempDir()
+    val target = parent.resolve("figure-1-bundle")
+    val result = written(
+      target,
+      Some((to, answer) =>
+        Files.createDirectories(to)
+        Files.writeString(to.resolve("project.json"), "{}")
+        answer(Right(()))
+      )
+    )
+    assertEquals(result, Right(target.toString))
+    assert(Files.exists(target.resolve("a.txt")))
+    assert(Files.exists(target.resolve("project/project.json")))
+    assertEquals(Files.list(parent).count(), 1L)
+  }
+
+  test("a failed snapshot leaves no bundle and no partial folder") {
+    val parent = tempDir()
+    val target = parent.resolve("figure-1-bundle")
+    val result = written(target, Some((_, answer) => answer(Left("the disk is full"))))
+    assertEquals(result, Left("project snapshot: the disk is full"))
+    assert(!Files.exists(target))
+    assertEquals(Files.list(parent).count(), 0L)
+    // An existing folder is never written into.
+    Files.createDirectories(target)
+    assert(written(target, None).left.exists(_.contains("already exists")))
   }
 
   // --- results.csv ----------------------------------------------------------------
