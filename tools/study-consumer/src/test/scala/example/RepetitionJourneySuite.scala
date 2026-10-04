@@ -228,8 +228,16 @@ class RepetitionJourneySuite extends munit.FunSuite:
     println(
       "EYES4S_REPETITION_JOURNEY=" + Json
         .obj(
-          "runtime"     -> Json.fromString(runtime),
-          "plan"        -> json,
+          "runtime" -> Json.fromString(runtime),
+          "plan"    -> json,
+          "edges"   -> Json.fromString(
+            eyes4s.io.Sha256
+              .ofUtf8(
+                (a.matched.rows.map(r => s"m ${r.left} ${r.right}") ++
+                  a.controls.rows.map(r => s"c ${r.left} ${r.right}")).mkString("\n")
+              )
+              .hex
+          ),
           "matched"     -> Json.fromInt(a.matched.rows.size),
           "controls"    -> Json.fromInt(a.controls.rows.size),
           "differences" -> Json.arr(differences.map(Json.fromDoubleOrNull)*)
