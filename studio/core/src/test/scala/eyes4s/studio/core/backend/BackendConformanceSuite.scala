@@ -317,6 +317,7 @@ abstract class BackendConformanceSuite extends CatsEffectSuite:
       )
       wired  <- requests.traverse(wire)
       future <- wire(Envelope(ProtocolVersion(2, 0), RequestId(99), BackendRequest.Runs))
+      older  <- wire(Envelope(ProtocolVersion(1, 2), RequestId(98), BackendRequest.Runs))
     yield
       assertEquals(wired, direct)
       assert(direct.forall(_.size == 1), direct)
@@ -348,6 +349,17 @@ abstract class BackendConformanceSuite extends CatsEffectSuite:
           case _                                                                => false
         },
         2
+      )
+      // Versions are exact: an older minor is refused as a major is.
+      assertEquals(
+        older.map(_.body),
+        Vector(
+          ServerFrame.Response(
+            BackendResponse.Refused(
+              BackendError.UnsupportedVersion(ProtocolVersion(1, 2), ProtocolVersion.Current)
+            )
+          )
+        )
       )
       assertEquals(
         future.map(_.body),

@@ -76,7 +76,7 @@ enum TransportError derives CanEqual:
   /** A frame answering another request than the one sent. */
   case WrongRequest(expected: RequestId, found: RequestId)
 
-  /** A frame from a peer speaking another major version. */
+  /** A frame from a peer speaking another protocol version, major or minor. */
   case Incompatible(found: ProtocolVersion, supported: ProtocolVersion)
 
   /** A request that ended without its one response. */
@@ -131,6 +131,23 @@ object WireFormat:
       .decode[Envelope[A]](line)
       .leftMap(e => TransportError.Malformed(excerpt(line), e.getMessage))
 
+  /** The version a line states, whatever its body. */
+  def version(line: String): Option[ProtocolVersion] =
+    parser
+      .parse(line)
+      .toOption
+      .flatMap(_.hcursor.downField("version").as[ProtocolVersion].toOption)
+
+  /** A line of the current version, its version read before its body: a
+    * peer of another version is [[TransportError.Incompatible]], named,
+    * whether or not its body would decode.
+    */
+  def parseCurrent[A: Decoder](line: String): Either[TransportError, Envelope[A]] =
+    version(line) match
+      case Some(v) if !v.isCurrent =>
+        Left(TransportError.Incompatible(v, ProtocolVersion.Current))
+      case _ => parse[A](line)
+
   /** The request id of a line that is JSON with an `id`, whatever its body. */
   def requestId(line: String): Option[RequestId] =
     parser
@@ -166,7 +183,9 @@ object WireFormat:
       limit: Int = MaxLineLength
   ): Pipe[F, Byte, Envelope[A]] =
     _.through(lines(limit))
-      .flatMap(l => parse[A](l).fold(e => Stream.raiseError(TransportFailure(e)), Stream.emit))
+      .flatMap(l =>
+        parseCurrent[A](l).fold(e => Stream.raiseError(TransportFailure(e)), Stream.emit)
+      )
 
 /** The server end of the IPC sidecar: a JVM process serving a backend to a
   * shell in another runtime (Electron, Tauri, a browser).
@@ -237,9 +256,27 @@ object SidecarServer:
         }
 
       def route(line: String): F[Stream[F, Envelope[ServerFrame]]] =
-        WireFormat.parse[BackendRequest](line) match
-          case Right(request) if request.version.major != ProtocolVersion.Current.major =>
-            Concurrent[F].pure(StudyBackend.handle(backend)(request))
+        WireFormat.parseCurrent[BackendRequest](line) match
+          case Left(TransportError.Incompatible(found, supported)) =>
+            WireFormat.requestId(line) match
+              case Some(id) =>
+                Concurrent[F].pure(
+                  Stream.emit(
+                    frame(
+                      id,
+                      BackendResponse.Refused(BackendError.UnsupportedVersion(found, supported))
+                    )
+                  )
+                )
+              case None =>
+                Concurrent[F].raiseError(
+                  TransportFailure(
+                    TransportError.Unidentifiable(
+                      WireFormat.excerpt(line),
+                      s"protocol ${found.render}, not ${supported.render}"
+                    )
+                  )
+                )
           case Right(request @ Envelope(_, _, BackendRequest.Subscribe(_))) =>
             subscription(request)
           case Right(Envelope(_, id, BackendRequest.Unsubscribe(target))) =>
@@ -292,7 +329,7 @@ object RemoteStudyBackend:
       Stream.eval(ids.getAndUpdate(_ + 1).map(RequestId(_))).flatMap { id =>
         transport.exchange(Envelope(id, request)).evalMap { e =>
           if e.id != id then failure(TransportError.WrongRequest(id, e.id))
-          else if e.version.major != ProtocolVersion.Current.major then
+          else if !e.version.isCurrent then
             failure(TransportError.Incompatible(e.version, ProtocolVersion.Current))
           else Concurrent[F].pure(e.body)
         }

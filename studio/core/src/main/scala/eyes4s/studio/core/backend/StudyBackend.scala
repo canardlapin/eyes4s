@@ -364,12 +364,20 @@ enum ServerFrame derives CanEqual, Codec.AsObject:
   case Event(event: JobEvent)
   case Preview(event: PreviewEvent)
 
-/** The protocol's version. The transport checks the major version only.
-  * Client and backend must be upgraded together when a minor version adds a
-  * wire variant: an older body decoder cannot read that new variant.
+/** The protocol's version. Client and backend are deployed together and speak
+  * exactly one version: every minor so far has changed what an older body
+  * decoder can read (1.2's `Counting`, 1.3's inventory join, 1.8's required
+  * diagnostic fields), so a minor is no promise of compatibility. Both ends
+  * read a frame's version before its body and refuse any other version,
+  * naming both ([[BackendError.UnsupportedVersion]] from the server,
+  * [[TransportError.Incompatible]] at the client), never as malformed (bead
+  * bd-01M3JH3492J21SKMYYNZM93118).
   */
 final case class ProtocolVersion(major: Int, minor: Int) derives CanEqual, Codec.AsObject:
   def render: String = s"$major.$minor"
+
+  /** Whether a peer speaking this version can be served: only the current one. */
+  def isCurrent: Boolean = this == ProtocolVersion.Current
 
 object ProtocolVersion:
   /** 1.1 added `Unsubscribe`, `Unsubscribed`, `Malformed` and
@@ -414,7 +422,7 @@ object StudyBackend:
       backend: StudyBackend[F]
   )(request: Envelope[BackendRequest]): Stream[F, Envelope[ServerFrame]] =
     val frames =
-      if request.version.major != ProtocolVersion.Current.major then
+      if !request.version.isCurrent then
         Stream.emit(
           ServerFrame.Response(
             BackendResponse.Refused(

@@ -147,9 +147,15 @@ when the dataset declares no trial inventory, so absent trials are not counted) 
 adds `BackendError.InventoryRefused`, whose issues name the inventory records, trial
 and columns eyes4s refused. A 1.2 summary does not decode as 1.3.
 
-Deploy the Studio client and backend together. The transport checks major versions
-only and decodes the typed envelope body before checking the version; it does not
-negotiate minor capabilities. Mixed-minor deployments are unsupported. Protocol
+**Deploy the Studio client and backend together.** They speak exactly one protocol
+version: every minor has changed what an older body decoder can read, so a minor is no
+promise of compatibility, and nothing negotiates capabilities. Both ends read a frame's
+`version` before its body and refuse any other version, major or minor, naming both:
+the sidecar answers a request of another version with `UnsupportedVersion(requested,
+supported)` under the request's id, and the client fails a frame of another version
+with `TransportError.Incompatible(found, supported)`. Neither is ever reported as
+malformed, even when the other version's body would not decode
+(bd-01M3JH3492J21SKMYYNZM93118). Protocol
 1.2 added `ProgressTotal.Counting`, which a 1.0/1.1 decoder cannot read; 1.3 adds
 the inventory join; 1.4 adds the exact large-count policy; 1.5 adds the
 resolved-design counts; 1.6 adds the trial fixations and preview views; 1.7 adds the source records view; 1.8 adds the diagnostic's affected trials, class and remedy; 1.9 adds the pair rows view. `ProtocolCodecSuite`
