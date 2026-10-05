@@ -98,3 +98,36 @@ Mote's authoritative state is the versioned `.mote/FORMAT.json` and append-only
 checks. Cloning the pushed repository and installing Mote carries tickets and decision
 notes to another computer. `.mote/local/` is machine-local identity/cache state.
 Mote tickets are repository data; they are not GitHub Issues.
+
+## Local landing evidence
+
+Library and studio source were frozen at `d3beca9c5b2c6a1f843dc56a4fb0b04fe3575ef8`
+(tree `cc443b09ea5381ebc97ecdbf86d4e8b728906a11`). The header, format, generated
+workflow and JVM/Scala.js `-Werror` checks passed. The recorded API audit covers
+3,650 runtime entries and 540 abstractions, with zero uncovered entries. `testAll`
+passed 6,396 tests; `checkBoundaries` passed. Generated inventory, evidence and
+provenance were committed together; their fingerprint still matches the library
+sources, tests and build after the consumer corrections.
+
+Studio core, app and visualization tests passed on both platforms. The final
+visualization runs passed 228 tests per platform, and the complete headless desktop
+run passed 559 tests. JavaScript linking, studio style and studio boundaries passed.
+The combined studio evidence has 3,590 passes and two existing ignored app tests.
+Integration repairs include exact report-reply correlation, served-reference Explain
+routes, truthful weighting labels, actual density raster/contour export, pending-table
+focus behavior, rejection of overtaken dock-focus events, and served-control readiness
+before the accessibility Tab-order audit.
+
+The standard packaged-consumer gate passed at
+`ffa670fcca6931159c6ecd3b6c84286f18c286b5`
+(tree `a3c87d908b6e29718108bc4725d04708cec15d44`): 206 JVM and 195 Scala.js tests,
+26 packaged artifacts, packaged-source identity checks, independent fixture oracles,
+fresh-process reloads and archive reruns. Consumer assertions now retain the S0.7b
+owner decision excluding controls for unmatched queries. Publication runs each
+module separately and uses `TieredStopAtLevel=1` for its JVM: default JDK 25.0.1
+optimization failed inside Scaladoc's signature builder even with sequential tasks,
+while unchanged Plan documentation regenerated successfully under C1. Consumer
+execution retains its normal JVM settings; documentation and tests remain enabled.
+
+These are local qualification results. They do not establish hosted CI, full-round
+performance superiority, or closure of the native/backend limitations above.
