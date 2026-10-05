@@ -982,6 +982,19 @@ final class FakeStudyBackend[F[_]] private[fixture] (
         Right(PairRowPage(run, scale, PageInfo.of(page, all.size, rows.size), rows))
     })
 
+  def mapGrid(run: RunId, scale: Int, trial: TrialKey): F[Either[BackendError, DensityGrid]] =
+    scored(run).map(_.flatMap { r =>
+      val address = ResultAddress.Estimation(scale, trial)
+      for
+        _ <- Either.cond(
+          summary.scales.indices.contains(scale) && ledgerOf.contains(trial),
+          (),
+          BackendError.UnknownReference(run, address)
+        )
+        grid <- FakeTrialViews.mapGrid(moment, r.run, r.revision, r.dataset, scale, trial)
+      yield grid
+    })
+
   def provenance(run: RunId, address: ResultAddress): F[Either[BackendError, Provenance]] =
     scored(run).map(_.flatMap { r =>
       locate(run, address).flatMap { _ =>

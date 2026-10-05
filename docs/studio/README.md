@@ -63,6 +63,18 @@ To change the plan, edit `studio_plan.py`, rerun `render`, and update the matchi
 
 ## Backend protocol versions
 
+Protocol 1.14 (Figures panel C density grids) adds `MapGridOf(run, scale,
+trial)`: the run's density estimate for one trial and declared scale, including
+its served cells, region, row order, optional angular cell size, and
+highest-density levels. Panel C reads the query, matched reference, and
+highest-scoring control grids and draws them under one shared colour scale; it
+does not derive densities, totals, or isolines. A missing map is
+`NoDensity(run, address, cause)`, where `cause` is a complete
+`StudioDiagnostic` on the wire so its named operands remain available. The
+fixture backend estimates its explicit fixture through eyes4s `DensityView`;
+a real backend must serve its retained result. The protocol minor and its pins
+are additive and must be reconciled with other concurrent protocol additions.
+
 Protocol 1.12 (S5.5 placement preview) adds `PlacementOf(spec)`, additive on 1.11: every record of the revision's
 fixation source placed by eyes4s under its geometry and recorded correction rules (the
 spec is sent whole, so an unsaved draft is previewed too), each trial's window tally in

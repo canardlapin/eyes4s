@@ -108,6 +108,12 @@ enum BackendError derives CanEqual, Codec.AsObject:
     */
   case PlacementRefused(dataset: DatasetRevision, reason: String)
 
+  /** The run has no density grid at `address` (protocol 1.14, `MapGridOf`).
+    * `cause` remains structured on the wire so callers retain the operands
+    * eyes4s named when it declined the estimate.
+    */
+  case NoDensity(run: RunId, address: ResultAddress, cause: StudioDiagnostic)
+
   def code: String = this match
     case UnknownDataset(_, _)       => "studio-backend.unknown-dataset"
     case UnknownRevision(_, _)      => "studio-backend.unknown-revision"
@@ -132,6 +138,7 @@ enum BackendError derives CanEqual, Codec.AsObject:
     case InventoryRefused(_, _)     => "studio-backend.inventory-refused"
     case ContentMismatch(_, _, _)   => "studio-backend.content-mismatch"
     case ContentNotHeld(_, _)       => "studio-backend.content-not-held"
+    case NoDensity(_, _, _)         => "studio-backend.no-density"
 
   def message: String = this match
     case ContentNotHeld(d, requested) =>
@@ -172,6 +179,7 @@ enum BackendError derives CanEqual, Codec.AsObject:
     case TrialViewRefused(e)         => e.message
     case SourceRecordsRefused(r, e)  => s"${r.label}: ${e.message}"
     case PlacementRefused(d, reason) => s"The records of ${d.label} cannot be placed: $reason"
+    case NoDensity(r, a, cause) => s"${r.label} has no density for the ${a.render}: ${cause.message}"
 
   def diagnostic: StudioDiagnostic =
     val subject = this match
@@ -198,6 +206,8 @@ enum BackendError derives CanEqual, Codec.AsObject:
       case ContentMismatch(d, _, _) => Vector(DiagnosticLocus.Dataset(d))
       case ContentNotHeld(d, _)     => Vector(DiagnosticLocus.Dataset(d))
       case PlacementRefused(d, _)   => Vector(DiagnosticLocus.Dataset(d))
+      case NoDensity(r, a, cause)   =>
+        (Vector(DiagnosticLocus.Run(r), DiagnosticLocus.Address(a)) ++ cause.subject).distinct
     StudioDiagnostic(code, DiagnosticLevel.Error, DiagnosticOrigin.Host, subject, message)
 
 /** Everything Eyes Studio asks of eyes4s (DESIGN_SPEC section 13, S3.0): the
@@ -304,6 +314,11 @@ trait StudyBackend[F[_]]:
     */
   def pairRows(run: RunId, scale: Int, page: PageRequest): F[Either[BackendError, PairRowPage]]
 
+  /** eyes4s's density grid of `trial` at `scale` of `run`. The grid is a
+    * stored/served result, never a Studio-derived total or preview.
+    */
+  def mapGrid(run: RunId, scale: Int, trial: TrialKey): F[Either[BackendError, DensityGrid]]
+
   /** The admitted fixations of `trial` under `revision`, in scanpath order,
     * each placed against the map by the revision's study (protocol 1.6,
     * S6.2). A trial without an admitted scanpath is `Unavailable`.
@@ -380,6 +395,9 @@ enum BackendRequest derives CanEqual, Codec.AsObject:
   /** Protocol 1.12. */
   case PlacementOf(spec: DatasetRevisionSpec)
 
+  /** Protocol 1.14. */
+  case MapGridOf(run: RunId, scale: Int, trial: TrialKey)
+
 /** A response of the [[StudyBackend]] protocol. */
 enum BackendResponse derives CanEqual, Codec.AsObject:
   case Refused(error: BackendError)
@@ -418,6 +436,9 @@ enum BackendResponse derives CanEqual, Codec.AsObject:
 
   /** Protocol 1.12. */
   case PlacementOf(preview: PlacementPreview)
+
+  /** Protocol 1.14. */
+  case MapGridOf(grid: DensityGrid)
 
 /** A frame from backend to client: the one response to a request, or one
   * event of a subscription.
@@ -459,9 +480,10 @@ object ProtocolVersion:
     * UI-G G3); `InWindow` keeps its wire name `InMap`. 1.11 adds `Verify`,
     * the admission request that carries the verified content digest, and
     * `ContentMismatch` (S5.6). 1.12 adds `PlacementOf`, a dataset revision's
-    * placement preview (S5.5). Deploy client and backend together.
+    * placement preview (S5.5). 1.14 adds `MapGridOf`, a run's density grid
+    * at one scale. Deploy client and backend together.
     */
-  val Current: ProtocolVersion = ProtocolVersion(1, 12)
+  val Current: ProtocolVersion = ProtocolVersion(1, 14)
 
 /** A client's correlation id; every frame answering a request carries it. */
 final case class RequestId(value: Long) derives CanEqual
@@ -539,6 +561,7 @@ object StudyBackend:
         answer(backend.sourceRecords(r, f, n))(A.SourceRecordsOf(_))
       case Q.PairRowsOf(r, s, p) => answer(backend.pairRows(r, s, p))(A.PairRowsOf(_))
       case Q.PlacementOf(spec)   => answer(backend.placement(spec))(A.PlacementOf(_))
+      case Q.MapGridOf(r, s, t)  => answer(backend.mapGrid(r, s, t))(A.MapGridOf(_))
       // In process a subscription is ended by dropping its stream; only a
       // connection (SidecarServer) holds subscriptions to end.
       case Q.Unsubscribe(id) => Stream.emit(ServerFrame.Response(A.Unsubscribed(id, false)))

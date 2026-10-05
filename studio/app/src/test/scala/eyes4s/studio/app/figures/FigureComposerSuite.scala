@@ -304,6 +304,30 @@ class FigureComposerSuite extends munit.ScalaCheckSuite:
       assert(vm.caption.contains("no control pair score served of 19 controls"), vm.caption)
   }
 
+  test("panel C asks once for the result grids named by its served references") {
+    served.map { answers =>
+      val scores      = answers._2
+      val (synced, _) = FigureComposer.sync(FigureComposer.empty, t2)
+      val (read, asked) = FigureComposer.update(
+        synced,
+        t2,
+        ComposerIntent.ReferencesRead(run7, scale2, p17ret07, Right(scores))
+      )
+      val trials = FigurePanels.mapTrials(p17ret07, scores)
+      assertEquals(
+        asked,
+        trials.map(ComposerEffect.RequestMap(run7, scale2, _))
+      )
+      assertEquals(FigureComposer.sync(read, t2)._2, Vector.empty)
+      val maps = panel(FigureComposer.view(read, t2), "C").body match
+        case PanelBody.Maps(value) => value
+        case other                  => fail(other.toString)
+      assertEquals(maps.tiles.map(_.trial), trials)
+      assert(maps.tiles.forall(_.map == TileMap.Waiting), maps.tiles)
+      assertEquals(maps.maps, "Reading the density maps of run 7.")
+    }
+  }
+
   // --- Panel D: all 24 participants and the per-group n range ---------------------
 
   test("panel D draws all 24 participants in each group and the per-group n range") {
@@ -368,8 +392,7 @@ class FigureComposerSuite extends munit.ScalaCheckSuite:
         case PanelBody.Maps(maps) =>
           assertEquals(
             maps.maps,
-            "No density maps yet: they are drawn when the backend serves density grids (UI-E). " +
-              "The tiles show their scores."
+              "Reading the density maps of run 7."
           )
         case other => fail(other.toString)
       assertEquals(

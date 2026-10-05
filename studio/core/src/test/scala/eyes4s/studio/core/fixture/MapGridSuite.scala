@@ -129,7 +129,13 @@ class MapGridSuite extends CatsEffectSuite:
       val none = BackendError.NoDensity(
         run7,
         ResultAddress.Estimation(Focus, ret09),
-        "the trial has no admitted scanpath"
+        StudioDiagnostic(
+          FakeTrialViews.NoDensityCode,
+          DiagnosticLevel.Error,
+          DiagnosticOrigin.Host,
+          Vector(DiagnosticLocus.Trial(ret09)),
+          "the trial has no admitted scanpath"
+        )
       )
       assertEquals(noPath, Left(none))
       assertEquals(
@@ -142,7 +148,8 @@ class MapGridSuite extends CatsEffectSuite:
         none.diagnostic.subject,
         Vector(
           DiagnosticLocus.Run(run7),
-          DiagnosticLocus.Address(ResultAddress.Estimation(Focus, ret09))
+          DiagnosticLocus.Address(ResultAddress.Estimation(Focus, ret09)),
+          DiagnosticLocus.Trial(ret09)
         )
       )
   }

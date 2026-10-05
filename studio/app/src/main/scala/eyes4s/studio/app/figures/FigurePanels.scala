@@ -30,9 +30,10 @@ import eyes4s.studio.app.plot.{
   ScaleProfile
 }
 import eyes4s.studio.app.text.Format
+import eyes4s.studio.app.maps.{ColourLimits, LimitsScope, MapGrid, MapId, MapPalette, MapStyle}
 import eyes4s.studio.app.explore.{ExploreTrialViewVM, MarkVM}
 import eyes4s.studio.core.assets.{AssetRegistry, DisplayKind, TrialDisplay}
-import eyes4s.studio.core.backend.{Phase, ResultSummary, RunId, TrialFixations, TrialKey}
+import eyes4s.studio.core.backend.{DensityGrid, Phase, ResultSummary, RunId, ScreenRegion, TrialFixations, TrialKey}
 import eyes4s.studio.core.document.*
 import eyes4s.studio.core.figures.{PairScore, ReferenceScores}
 import eyes4s.studio.core.selection.{ScaleIndex, StudioRef}
@@ -94,8 +95,20 @@ object HighestControl:
       .headOption
       .map(HighestControl(_, controls.size, members))
 
-/** A drawn tile of panel C: its title and its score label. */
-final case class MapTileVM(title: String, label: String, ref: StudioRef) derives CanEqual
+/** A panel C tile's served density map or the state explaining why it is absent. */
+enum TileMap derives CanEqual:
+  case Drawn(grid: MapGrid, style: MapStyle, region: ScreenRegion)
+  case Waiting
+  case Unavailable(reason: String)
+
+/** A drawn tile of panel C: its title, score label, reference and served map. */
+final case class MapTileVM(
+    title: String,
+    label: String,
+    ref: StudioRef,
+    trial: TrialKey,
+    map: TileMap
+) derives CanEqual
 
 /** Panel C: three tiles and the caption that says what each number is. The
   * one control tile is the highest control, labelled with its rank; B is
@@ -163,10 +176,34 @@ enum PanelBody derives CanEqual:
   */
 object FigurePanels:
 
-  /** Panel C's maps until the density grids are served (UI-E). */
-  val MapsPending: String =
-    "No density maps yet: they are drawn when the backend serves density grids (UI-E). " +
-      "The tiles show their scores."
+  def mapsReading(run: RunId): String = s"Reading the density maps of ${run.label}."
+  val MapsUnavailable: String = "No density map was served; the tiles show their scores."
+
+  def mapTrials(query: TrialKey, scores: ReferenceScores): Vector[TrialKey] =
+    Vector(query, scores.matched.reference) ++
+      HighestControl.of(scores.controls, scores.controlMembers).map(_.pair.reference)
+
+  private def massOf(weighting: WeightChoice): String = weighting match
+    case WeightChoice.Duration => "fixation duration mass"
+    case WeightChoice.Uniform  => "fixation count mass"
+
+  private def coverages(levels: Vector[Double]): String =
+    val said = levels.map(Format.percent)
+    if said.size <= 1 then said.mkString else said.init.mkString(", ") + " and " + said.last
+
+  private def tileMap(
+      run: RunId,
+      scale: ScaleIndex,
+      trial: TrialKey,
+      served: Option[Either[String, DensityGrid]]
+  ): Either[TileMap, (MapGrid, DensityGrid)] = served match
+    case None            => Left(TileMap.Waiting)
+    case Some(Left(why)) => Left(TileMap.Unavailable(why))
+    case Some(Right(grid)) =>
+      MapGrid.of(
+        MapId(run, trial, scale), grid.columns, grid.rows, grid.order,
+        grid.cells.map(Some(_)), grid.levels.map(_.threshold)
+      ).fold(e => Left(TileMap.Unavailable(e.message)), g => Right(g -> grid))
 
   /** Panels A and B's gaze until the trial-fixations view is served (S6.2). */
   def gazeReading(trial: TrialKey): String = s"Reading the fixations of ${trial.label}…"
@@ -192,29 +229,48 @@ object FigurePanels:
       scale: ScaleIndex,
       sigma: Sigma,
       query: TrialKey,
-      scores: ReferenceScores
+      scores: ReferenceScores,
+      served: TrialKey => Option[Either[String, DensityGrid]] = _ => None,
+      weighting: WeightChoice = WeightChoice.Duration
   ): DensityMapsVM =
     val highest = HighestControl.of(scores.controls, scores.controlMembers)
     val pair    = (design: eyes4s.studio.core.backend.PairDesign, ref: TrialKey) =>
       StudioRef.Pair(run, scale, design, query, ref)
-    val tiles = Vector(
+    val heads = Vector(
       MapTileVM(
         s"Query ${query.trial}",
         s"${query.participant} · ${sigma.render}",
-        StudioRef.QueryContrast(run, scale, query)
+        StudioRef.QueryContrast(run, scale, query), query, TileMap.Waiting
       ),
       MapTileVM(
         s"Matched ${scores.matched.reference.trial}",
         two(scores.matched.score),
-        pair(eyes4s.studio.core.backend.PairDesign.Matched, scores.matched.reference)
+        pair(eyes4s.studio.core.backend.PairDesign.Matched, scores.matched.reference),
+        scores.matched.reference, TileMap.Waiting
       )
     ) ++ highest.map(h =>
       MapTileVM(
         s"${h.rank.capitalize} · ${h.pair.item}",
         two(h.pair.score),
-        pair(eyes4s.studio.core.backend.PairDesign.Control, h.pair.reference)
+        pair(eyes4s.studio.core.backend.PairDesign.Control, h.pair.reference),
+        h.pair.reference, TileMap.Waiting
       )
     )
+    val maps = heads.map(t => tileMap(run, scale, t.trial, served(t.trial)))
+    val drawn = maps.collect { case Right((g, _)) => g }
+    val styles = ColourLimits.forPanels(MapPalette.Mass, LimitsScope.Shared, drawn)
+    val (tiles, _) = heads.zip(maps).foldLeft((Vector.empty[MapTileVM], styles)) {
+      case ((done, next), (tile, Right((g, grid)))) =>
+        (done :+ tile.copy(map = TileMap.Drawn(g, next.head, grid.region)), next.tail)
+      case ((done, next), (tile, Left(state))) => (done :+ tile.copy(map = state), next)
+    }
+    val levels = maps.collect { case Right((_, grid)) => grid.levels.map(_.coverage) }.flatten.distinct
+    val legend =
+      if drawn.isEmpty then if maps.contains(Left(TileMap.Waiting)) then mapsReading(run) else MapsUnavailable
+      else {
+        val lines = if levels.isEmpty then "" else s"; lines: ${coverages(levels)} mass"
+        s"Magenta: ${massOf(weighting)} per cell, shared limits$lines."
+      }
     val control = highest.fold(
       s"no control pair score served of ${scores.controlMembers} controls"
     )(h => s"${h.rank} ${h.pair.item} ${two(h.pair.score)}")
@@ -222,8 +278,7 @@ object FigurePanels:
       tiles,
       s"Matched ${two(scores.matched.score)} · $control · control mean B ${two(scores.b)} · " +
         s"D ${Format.signed(scores.d, 2)}",
-      // Follow-up bd-01M42K7ZYDRR90JXZYNDD2HVXP: the maps from the served grids.
-      FigurePanels.MapsPending
+      legend
     )
 
   /** Panel C's table: the contrast, the matched pair, every control pair. */

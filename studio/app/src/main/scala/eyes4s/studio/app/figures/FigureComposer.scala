@@ -26,6 +26,7 @@ import eyes4s.studio.app.{AppModel, Intent}
 import eyes4s.studio.core.backend.{
   AnalysisRevision,
   DatasetRevision,
+  DensityGrid,
   RunId,
   TrialFixations,
   TrialKey
@@ -123,6 +124,14 @@ enum ComposerIntent derives CanEqual:
   )
   case DisplaysRead(dataset: DatasetRevision, answer: Either[String, DisplaySource])
 
+  /** A run's density grid for panel C. */
+  case MapRead(
+      run: RunId,
+      scale: ScaleIndex,
+      trial: TrialKey,
+      answer: Either[String, DensityGrid]
+  )
+
   /** A gaze panel's fixations (S6.2 trialFixations). */
   case FixationsRead(
       revision: AnalysisRevision,
@@ -157,6 +166,9 @@ enum ComposerEffect derives CanEqual:
   /** Read a gaze panel's fixations under the bound analysis revision. */
   case RequestFixations(revision: AnalysisRevision, trial: TrialKey)
 
+  /** Read one density grid that panel C names. */
+  case RequestMap(run: RunId, scale: ScaleIndex, trial: TrialKey)
+
   /** Export `page` as `format` under the suggested file name `name`. */
   case ExportFigure(format: ExportFormat, page: PageVM, name: String)
 
@@ -172,6 +184,7 @@ enum ComposerRead derives CanEqual:
   case References(run: RunId, scale: ScaleIndex, query: TrialKey)
   case Displays(dataset: DatasetRevision)
   case Fixations(revision: AnalysisRevision, trial: TrialKey)
+  case Grid(run: RunId, scale: ScaleIndex, trial: TrialKey)
   case Methods(run: RunId)
 
 /** One panel on the page. */
@@ -253,6 +266,7 @@ final case class FigureComposer private (
     summaries: Map[RunId, SummaryAnswer],
     references: Map[(RunId, ScaleIndex, TrialKey), Either[String, ReferenceScores]],
     displays: Map[DatasetRevision, Either[String, DisplaySource]],
+    maps: Map[(RunId, ScaleIndex, TrialKey), Either[String, DensityGrid]],
     asked: Set[ComposerRead],
     problem: Option[String],
     appearance: Map[FigureId, FigureAppearance],
@@ -277,6 +291,7 @@ object FigureComposer:
     PageWidth.TwoColumn,
     Zoom.Default,
     ComposerTab.Figure,
+    Map.empty,
     Map.empty,
     Map.empty,
     Map.empty,
@@ -338,13 +353,15 @@ object FigureComposer:
           s.figure.panels.flatMap { p =>
             PanelTemplate.of(p) match
               case PanelTemplate.DensityMaps(sigma, query) =>
-                FigurePanels
-                  .scaleIndex(scales, sigma)
-                  .map(i =>
-                    ComposerRead.References(run, i, query) ->
-                      ComposerEffect.RequestReferences(run, i, query)
-                  )
-                  .toVector
+                FigurePanels.scaleIndex(scales, sigma).toVector.flatMap { i =>
+                  val maps = c.references.get((run, i, query)) match
+                    case Some(Right(scores)) => FigurePanels.mapTrials(query, scores).map(t =>
+                        ComposerRead.Grid(run, i, t) -> ComposerEffect.RequestMap(run, i, t)
+                      )
+                    case _ => Vector.empty
+                  (ComposerRead.References(run, i, query) ->
+                    ComposerEffect.RequestReferences(run, i, query)) +: maps
+                }
               case PanelTemplate.Gaze(trial) =>
                 val revision = s.bound.analysis.id
                 Vector(
@@ -367,11 +384,17 @@ object FigureComposer:
     val (binding, bound) =
       if figure.isEmpty || c.binding.selected == figure then (c.binding, Vector.empty)
       else FigureBinding.update(c.binding, model, FigureIntent.Select(figure.get))
+    val (asked, next) = asking(c.copy(binding = binding), model)
+    (asked, bound.map(lift) ++ next)
+
+  /** Ask every currently-needed read once. A references answer may reveal the
+    * three trials panel C must read, so this is also used after that answer. */
+  private def asking(
+      c: FigureComposer,
+      model: AppModel
+  ): (FigureComposer, Vector[ComposerEffect]) =
     val next = reads(c, model)
-    (
-      c.copy(binding = binding, asked = c.asked ++ next.map(_._1)),
-      bound.map(lift) ++ next.map(_._2)
-    )
+    (c.copy(asked = c.asked ++ next.map(_._1)), next.map(_._2))
 
   private def lift(e: FigureEffect): ComposerEffect = e match
     case FigureEffect.App(i) => ComposerEffect.App(i)
@@ -425,9 +448,15 @@ object FigureComposer:
           none
         )
       case ReferencesRead(r, s, q, a) =>
-        (
+        asking(
           c.copy(references = c.references.updated((r, s, q), a))
             .retrying(ComposerRead.References(r, s, q), a.isLeft),
+          model
+        )
+      case MapRead(r, s, t, a) =>
+        (
+          c.copy(maps = c.maps.updated((r, s, t), a))
+            .retrying(ComposerRead.Grid(r, s, t), a.isLeft),
           none
         )
       case FixationsRead(r, t, a) =>
@@ -731,7 +760,17 @@ object FigureComposer:
               case None                => PanelBody.Waiting(ComposerText.reading(run))
               case Some(Left(e))       => PanelBody.Unavailable(e)
               case Some(Right(scores)) =>
-                PanelBody.Maps(FigurePanels.densityMaps(run, i, sigma, query, scores))
+                PanelBody.Maps(
+                  FigurePanels.densityMaps(
+                    run,
+                    i,
+                    sigma,
+                    query,
+                    scores,
+                    t => c.maps.get((run, i, t)),
+                    s.bound.analysis.recipe.weighting
+                  )
+                )
       case PanelTemplate.Gaze(trial) =>
         c.displays.get(s.bound.dataset.id) match
           case None         => PanelBody.Waiting(ComposerText.displays(s.bound.dataset.id))

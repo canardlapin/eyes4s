@@ -216,7 +216,18 @@ object ProtocolSamples:
     BackendError.UnknownScale(run, 4, Vector("0.5°", "1°", "2°", "4°")),
     BackendError.ContentMismatch(DatasetRevision(3), content("ab"), content("cd")),
     BackendError.ContentNotHeld(DatasetRevision(9), content("ab")),
-    BackendError.PlacementRefused(DatasetRevision(3), "it has no fixation source")
+    BackendError.PlacementRefused(DatasetRevision(3), "it has no fixation source"),
+    BackendError.NoDensity(
+      RunId(7),
+      ResultAddress.Estimation(2, query),
+      StudioDiagnostic(
+        "study-failure.off-window",
+        DiagnosticLevel.Error,
+        DiagnosticOrigin.EyesCore,
+        Vector(DiagnosticLocus.Trial(query)),
+        "no fixation lies in the map"
+      )
+    )
   )
 
   /** A dataset revision's content digest: `pair` repeated to 64 digits. */
