@@ -8832,6 +8832,7 @@
           "ioJVM/eyes4s.io.DiagnosticCoverageJvmSuite",
           "ioJVM/eyes4s.io.DiagnosticsDocJvmSuite",
           "ioJVM/eyes4s.io.IoDiagnosticCatalogSuite",
+          "lawsJVM/eyes4s.laws.FormLawSuite",
           "planJVM/eyes4s.plan.DiagnosticCatalogSuite",
           "planJVM/eyes4s.plan.FormDescriptorSuite",
           "resultsJVM/eyes4s.results.ResultsDiagnosticCatalogSuite"
@@ -18937,6 +18938,7 @@
       "malformed and empty sources remain diagnostic values rather than throws",
       "missing and duplicate headers reject all rows while retaining them",
       "numeric field diagnostics accumulate instead of stopping at the first failure",
+      "physical column order and extra fields preserve samples, markers, and native rows",
       "quoted delimiters, doubled quotes, CRLF, and markers parse deterministically",
       "schema constructors reject ambiguous meanings and columns",
       "supplied TSV headers and decimal seconds use the declared unit and rounding",
@@ -18976,6 +18978,7 @@
     "ioJS/eyes4s.io.EyeLinkAscImportSuite": [
       "byte import derives exact exploratory origin and reconciles every source row",
       "explicit origin mismatch is retained as a named error",
+      "frozen binocular ASC form retains both eyes, gap rows, and metadata messages",
       "task-level path reaches a source-supported scanpath without losing provenance"
     ],
     "ioJS/eyes4s.io.EyeLinkAscMutationSuite": [
@@ -22660,6 +22663,7 @@
       "malformed and empty sources remain diagnostic values rather than throws",
       "missing and duplicate headers reject all rows while retaining them",
       "numeric field diagnostics accumulate instead of stopping at the first failure",
+      "physical column order and extra fields preserve samples, markers, and native rows",
       "quoted delimiters, doubled quotes, CRLF, and markers parse deterministically",
       "schema constructors reject ambiguous meanings and columns",
       "supplied TSV headers and decimal seconds use the declared unit and rounding",
@@ -22711,6 +22715,7 @@
     "ioJVM/eyes4s.io.EyeLinkAscImportSuite": [
       "byte import derives exact exploratory origin and reconciles every source row",
       "explicit origin mismatch is retained as a named error",
+      "frozen binocular ASC form retains both eyes, gap rows, and metadata messages",
       "task-level path reaches a source-supported scanpath without losing provenance"
     ],
     "ioJVM/eyes4s.io.EyeLinkAscMutationSuite": [
