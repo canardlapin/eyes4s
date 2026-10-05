@@ -20,7 +20,7 @@ import ch.qos.logback.classic.LoggerContext
 import ch.qos.logback.core.rolling.RollingFileAppender
 import org.slf4j.LoggerFactory
 
-import java.nio.file.{Files, Path}
+import java.nio.file.{Files, NoSuchFileException, Path}
 import scala.jdk.CollectionConverters.*
 
 /** The studio log's file and its bounds (ticket S1.12): it rolls at a size,
@@ -45,7 +45,17 @@ class StudioLogSuite extends munit.FunSuite:
     this.context.reset()
 
   private def files(dir: Path): Vector[Path] =
-    Files.list(dir).iterator.asScala.filter(Files.isRegularFile(_)).toVector
+    val stream = Files.list(dir)
+    try stream.iterator.asScala.filter(Files.isRegularFile(_)).toVector
+    finally stream.close()
+
+  private def sizes(dir: Path): Vector[Long] =
+    files(dir).flatMap { file =>
+      try Some(Files.size(file))
+      // Logback can prune a rolled file after directory enumeration. Its removal
+      // only moves the observed total toward the cap.
+      catch case _: NoSuchFileException => None
+    }
 
   private def await(what: String)(ok: => Boolean): Unit =
     val deadline = System.nanoTime + 10_000_000_000L
@@ -74,7 +84,7 @@ class StudioLogSuite extends munit.FunSuite:
     // files are removed in the background until the total is within the cap
     // (Logback's remover may remove every rolled file, so none is required).
     assert(Files.size(log.file) < 4 * 1024, Files.size(log.file).toString)
-    await("the total cap")(files(dir).map(Files.size).sum <= (8 + 2 + 1) * 1024)
+    await("the total cap")(sizes(dir).sum <= (8 + 2 + 1) * 1024)
     assert(
       files(dir).forall(_.getFileName.toString.startsWith("eyes-studio.")),
       files(dir).toString

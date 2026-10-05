@@ -154,6 +154,11 @@ final class PlotTwin private (
       toleranceLogicalPx
     )
 
+  // An empty canvas offers no keyboard operation. Keep it out of the Tab
+  // order until a plot (or a refusal explaining why it cannot be drawn) is
+  // shown, as its sibling table does.
+  plotHost.setFocusTraversable(false)
+
   // The plot's intents go to the app; its own hover also to the readout.
   private def plotIntent(intent: Intent): Unit =
     dispatch(intent)
@@ -224,12 +229,14 @@ final class PlotTwin private (
           refusal.setVisible(false)
           refusal.setText("")
           statusWrapper.set(PlotTwinStatus.Shown(plot))
+          plotHost.setFocusTraversable(true)
           plotHost.show(plot.plot)
         case Left(error) =>
           plotHost.clear()
           refusal.setText(error.message)
           refusal.setVisible(true)
           statusWrapper.set(PlotTwinStatus.Refused(source, error))
+          plotHost.setFocusTraversable(true)
       input.refresh()
       describeMark()
 
@@ -254,6 +261,7 @@ final class PlotTwin private (
       table.clear()
       refusal.setVisible(false)
       statusWrapper.set(PlotTwinStatus.Empty)
+      plotHost.setFocusTraversable(false)
       input.refresh()
       describeMark()
 

@@ -610,6 +610,33 @@ class PlotKitFxSuite extends StudioFxSuite:
 
   // --- Refusal and lifecycle ------------------------------------------------------------
 
+  fxStage.test("empty plots leave Tab order; shown and refused plots remain reachable") { fx =>
+    val w = Wired(fx)
+    runOnFx {
+      assert(!w.host.isFocusTraversable)
+      w.twin.show(source, Theme.Light)
+      assert(w.host.isFocusTraversable)
+      w.twin.clear()
+      assert(!w.host.isFocusTraversable)
+
+      val label   = right(ColumnId.of("participant"))
+      val refused = right(
+        PlotTwin.attach(
+          DotPlot(label, d.id, "bad"),
+          plotView,
+          tableView,
+          w.runtime.model.selection,
+          _ => ()
+        )
+      )
+      refused.show(source, Theme.Light)
+      assert(refused.status.get.isInstanceOf[PlotTwinStatus.Refused])
+      assert(refused.plotHost.isFocusTraversable)
+      refused.dispose()
+    }
+    dispose(w)
+  }
+
   fxStage.test("a refused plot says why, and its table still lists every row") { fx =>
     val w     = Wired(fx)
     val label = right(ColumnId.of("participant"))

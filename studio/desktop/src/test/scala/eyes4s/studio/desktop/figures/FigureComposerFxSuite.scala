@@ -278,11 +278,22 @@ class FigureComposerFxSuite extends ShellFxSuite:
           case b: javafx.scene.control.Button if b.getAccessibleText == name => b
         }
       ).getOrElse(fail(s"no '$name'"))
-      runOnFx(button.requestFocus())
+      runOnFx {
+        button.requestFocus()
+        assert(fx.scene.getFocusOwner eq button, "Panel C did not take keyboard focus")
+        w.figures.dispatch(eyes4s.studio.app.figures.ComposerIntent.ZoomIn)
+      }
+      eventually(fx, "focus returns to Panel C after its rebuild") {
+        runOnFx {
+          val owner = Option(fx.scene.getFocusOwner)
+          owner.exists(_.getAccessibleText == name) && !owner.exists(_ eq button)
+        }
+      }
       fx.awaitLayout()
-      runOnFx(w.figures.dispatch(eyes4s.studio.app.figures.ComposerIntent.ZoomIn))
-      fx.awaitLayout()
-      val owner = runOnFx(Option(fx.scene.getFocusOwner))
-      assertEquals(runOnFx(owner.map(_.getAccessibleText)), Some(name))
-      assert(!owner.exists(_ eq button), "the focus is on the rebuilt button, not the old one")
+      runOnFx {
+        val owner = Option(fx.scene.getFocusOwner)
+        assertEquals(owner.map(_.getAccessibleText), Some(name))
+        assert(owner.exists(_ ne button), "the removed Panel C kept focus")
+        assert(owner.exists(_.getScene eq fx.scene), "the replacement Panel C is detached")
+      }
   }
