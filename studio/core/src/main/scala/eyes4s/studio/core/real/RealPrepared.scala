@@ -30,6 +30,7 @@ import eyes4s.studio.core.document.Recipe
 final class RealPrepared private (
     val revision: AnalysisRevision,
     val dataset: DatasetRevision,
+    val recipe: Recipe,
     val plan: RealPlan.Plan,
     val method: ComparisonMethod,
     val admitted: AdmittedDataset,
@@ -68,6 +69,7 @@ object RealPrepared:
       new RealPrepared(
         revision,
         dataset,
+        recipe,
         plan,
         method,
         admitted,

@@ -488,7 +488,8 @@ final class RealStudyBackend[F[_]] private (
       revision: AnalysisRevision,
       from: Int,
       count: Int
-  ): F[Either[BackendError, SourceRecordPage]] = notYet(revision)
+  ): F[Either[BackendError, SourceRecordPage]] =
+    views(revision).map(_.flatMap(_.sourceRecords(from, count)))
 
 object RealStudyBackend:
 

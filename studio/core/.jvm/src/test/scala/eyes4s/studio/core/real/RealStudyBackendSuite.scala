@@ -696,15 +696,15 @@ class RealStudyBackendSuite extends CatsEffectSuite:
 
   test("every admitted trial's fixations are eyes4s's placements, equal to the fake's") {
     for
-      real    <- RealStudyBackend.create[IO](trialLayout, RealBackendConformanceSuite.golden)
-      fake    <- FakeStudyBackend.create[IO](StoryMoment.T2)
-      ledger  <- every(real, StoryMoments.r3)
+      real   <- RealStudyBackend.create[IO](trialLayout, RealBackendConformanceSuite.golden)
+      fake   <- FakeStudyBackend.create[IO](StoryMoment.T2)
+      ledger <- every(real, StoryMoments.r3)
       trials = ledger.filter(_.disposition == TrialDisposition.Admitted).map(_.trial)
       mine   <- trials.traverse(t => real.trialFixations(StoryMoments.rev4, t))
       theirs <- trials.traverse(t => fake.trialFixations(StoryMoments.rev4, t))
       absent = ledger.find(_.disposition != TrialDisposition.Admitted).map(_.trial)
-      none   <- absent.traverse(t => real.trialFixations(StoryMoments.rev4, t))
-      stray  <- real.trialFixations(StoryMoments.rev4, TrialKey("P99", Phase.Encoding, "x", 1))
+      none  <- absent.traverse(t => real.trialFixations(StoryMoments.rev4, t))
+      stray <- real.trialFixations(StoryMoments.rev4, TrialKey("P99", Phase.Encoding, "x", 1))
     yield
       assertEquals(trials.size, 937)
       val served = mine.collect { case Right(f) => f.fixations.size }
@@ -716,6 +716,98 @@ class RealStudyBackendSuite extends CatsEffectSuite:
         differ.isEmpty,
         s"${differ.size} trials differ; first: ${differ.headOption.map(i => (mine(i), theirs(i)))}"
       )
-      assertEquals(none.map(_.left.map(_.code)), absent.map(_ => Left("studio-backend.unavailable")))
+      assertEquals(
+        none.map(_.left.map(_.code)),
+        absent.map(_ => Left("studio-backend.unavailable"))
+      )
       assertEquals(stray.left.map(_.code), Left("studio-backend.unknown-trial"))
+  }
+
+  test("every source record page is eyes4s-io's text and placement, equal to the fake's") {
+    val limit                      = SourceRecordPage.Limit
+    def pages(b: StudyBackend[IO]) =
+      (0 until 24).toVector.traverse(i =>
+        b.sourceRecords(StoryMoments.rev4, 1 + i * limit, limit)
+      )
+    for
+      real    <- RealStudyBackend.create[IO](trialLayout, RealBackendConformanceSuite.golden)
+      fake    <- FakeStudyBackend.create[IO](StoryMoment.T2)
+      mine    <- pages(real)
+      theirs  <- pages(fake)
+      range   <- real.sourceRecords(StoryMoments.rev4, 0, 10)
+      past    <- real.sourceRecords(StoryMoments.rev4, 11521, 1)
+      tooMany <- real.sourceRecords(StoryMoments.rev4, 1, limit + 1)
+    yield
+      val rows = mine.collect { case Right(p) => p.rows.size }
+      assertEquals(rows.sum, 11520, mine.collectFirst { case Left(e) => e })
+      assert(mine.flatMap(_.toOption).flatMap(_.rows).exists(_.placement.isDefined))
+      val differ = mine.indices.filter(i => mine(i) != theirs(i))
+      assert(
+        differ.isEmpty,
+        s"${differ.size} pages differ; first: ${differ.headOption.map { i =>
+            val (a, b) = (mine(i).toOption.get.rows, theirs(i).toOption.get.rows)
+            a.zip(b).find((x, y) => x != y)
+          }}"
+      )
+      def refusal(r: Either[BackendError, SourceRecordPage]) = r.left.toOption.collect {
+        case BackendError.SourceRecordsRefused(_, e) => e
+      }
+      assertEquals(refusal(range), Some(SourceRecordsError.RangeInvalid(0, 10, limit)))
+      assertEquals(refusal(past), Some(SourceRecordsError.PastEnd(11521, 11520)))
+      assertEquals(refusal(tooMany), Some(SourceRecordsError.RangeInvalid(1, limit + 1, limit)))
+  }
+
+  test(
+    "placements under FailTrial and DropFirst are eyes4s's: dropped first, failed trials, outside window"
+  ) {
+    import eyes4s.plan.{MapPlacement, OffWindowPolicy}
+    import eyes4s.studio.core.document.{InitialFixationChoice, OffWindowChoice}
+    val t      = trialLayout
+    val strict = get(
+      StudioDocument.of(
+        t.datasets,
+        t.analyses.map(a =>
+          a.copy(recipe =
+            a.recipe.copy(
+              offWindow = Some(OffWindowChoice.FailTrial),
+              initialFixations = InitialFixationChoice.DropFirst
+            )
+          )
+        ),
+        t.draft,
+        t.runs,
+        t.reporting,
+        t.figures,
+        t.presentation,
+        t.jobs
+      )
+    )
+    for
+      real   <- RealStudyBackend.create[IO](strict, RealBackendConformanceSuite.golden)
+      ledger <- every(real, StoryMoments.r3)
+      trials = ledger.filter(_.disposition == TrialDisposition.Admitted).map(_.trial)
+      views <- trials.traverse(tr => real.trialFixations(StoryMoments.rev4, tr).map(get))
+    yield
+      val placements = views.flatMap(_.fixations.map(_.placement))
+      // Every scanpath's first fixation is dropped; none other is.
+      views.foreach { v =>
+        assertEquals(
+          v.fixations.headOption.map(_.placement),
+          Some(MapPlacement.DroppedInitial),
+          v.trial
+        )
+        assert(!v.fixations.drop(1).exists(_.placement == MapPlacement.DroppedInitial), v.trial)
+      }
+      assert(
+        placements.exists(_ == MapPlacement.OutsideWindow(OffWindowPolicy.FailTrial)),
+        placements.distinct
+      )
+      assert(placements.exists(_.isInstanceOf[MapPlacement.TrialFailed]), placements.distinct)
+      assert(placements.contains(MapPlacement.InWindow), placements.distinct)
+      // A failed trial's in-window fixations are all TrialFailed, none InWindow.
+      views
+        .filter(_.fixations.exists(_.placement.isInstanceOf[MapPlacement.TrialFailed]))
+        .foreach { v =>
+          assert(!v.fixations.exists(_.placement == MapPlacement.InWindow), v.trial)
+        }
   }

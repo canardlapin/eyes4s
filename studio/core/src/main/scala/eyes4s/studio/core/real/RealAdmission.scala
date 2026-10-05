@@ -46,7 +46,9 @@ final case class AdmittedDataset(
     ledger: Vector[LedgerEntry],
     screen: Frame[Unit2D.Px],
     input: eyes4s.plan.StudyInput[CoreKey, Unit2D.Px],
-    evidence: AdmissionLedger[CoreKey]
+    evidence: AdmissionLedger[CoreKey],
+    spec: DatasetRevisionSpec,
+    fixations: String
 )
 
 /** The admission of a [[DatasetRevisionSpec]] through eyes4s-io (S3.7 slice 1).
@@ -117,7 +119,9 @@ object RealAdmission:
         entries,
         screen,
         eyes4s.plan.StudyInput(imported.fixations.accepted),
-        ledger
+        ledger,
+        spec,
+        fixations
       )
 
   private def geometry(what: String, e: GeometryError): BackendError =
@@ -131,16 +135,20 @@ object RealAdmission:
     case TimeUnit.Seconds      => TimestampUnit.Seconds
 
   /** The fixation table's declared columns, from the revision's mapping. */
+  /** The fixation file's column the revision's mapping gives `role`. */
+  def column(spec: DatasetRevisionSpec, role: ColumnRole): Either[BackendError, String] =
+    spec.mapping
+      .column(role)
+      .map(_.value)
+      .toRight(BackendError.Unavailable(DiagnosticLocus.Field(s"${role.label} column")))
+
   private def fixationTable(
       spec: DatasetRevisionSpec,
       unit: TimestampUnit
   ): Either[BackendError, FixationTable] =
     val m                                                    = spec.mapping
-    def name(role: ColumnRole): Either[BackendError, String] =
-      m.column(role)
-        .map(_.value)
-        .toRight(BackendError.Unavailable(DiagnosticLocus.Field(s"${role.label} column")))
-    def table(e: FixationImportError) =
+    def name(role: ColumnRole): Either[BackendError, String] = column(spec, role)
+    def table(e: FixationImportError)                        =
       BackendError.Unavailable(DiagnosticLocus.Field(s"fixation columns: ${e.message}"))
     for
       participant <- name(ColumnRole.Participant)

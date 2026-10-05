@@ -17,16 +17,28 @@
 package eyes4s.studio.core.real
 
 import cats.syntax.all.*
+import eyes4s.io.{FixationSourceText, SourceRecordText}
 import eyes4s.kernel.Unit2D
-import eyes4s.plan.{CoordinateProvenance, ScanpathPosition, TrialKey as CoreKey}
+import eyes4s.plan.{
+  CoordinateProvenance,
+  DataRecord,
+  PageSize,
+  ScanpathPosition,
+  TrialKey as CoreKey
+}
 import eyes4s.studio.core.backend.*
-import eyes4s.studio.core.selection.{FixationIndex, StudioRef}
+import eyes4s.studio.core.document.{ColumnRole, SourceRole, TimeUnit}
+import eyes4s.studio.core.geometry.RecordPositions
+import eyes4s.studio.core.selection.{FixationIndex, RecordNumber, StudioRef}
 
 /** A revision's trial views (S3.7 slice 7, protocol 1.6): each admitted
   * fixation as eyes4s's `CoordinateProvenance` gives it, over the revision's
-  * plan, admitted input and admission ledger. Studio converts units only:
-  * microseconds to milliseconds, scanpath positions from 0 to positions
-  * from 1.
+  * plan, admitted input and admission ledger, and (protocol 1.7) each source
+  * record as eyes4s-io's `FixationSourceText` pages the ledger's records with
+  * their verbatim text. Studio converts units only: microseconds and the
+  * file's time unit to milliseconds, scanpath positions from 0 to positions
+  * from 1. A record's cells are read as numbers where they are one; its
+  * image position and degrees are the kernel's ([[RecordPositions]]).
   */
 final class RealTrialViews private (
     work: RealPrepared,
@@ -84,6 +96,132 @@ final class RealTrialViews private (
         )
         .leftMap(BackendError.TrialViewRefused(_))
     yield made
+
+  // ------------------------------------------------------------------ source records
+
+  private val spec = work.admitted.spec
+
+  private def records(e: SourceRecordsError) =
+    BackendError.SourceRecordsRefused(work.revision, e)
+  private def study(step: String)(reason: String) =
+    records(SourceRecordsError.Study(step, reason))
+
+  /** The fixation file's text, checked by eyes4s-io against the ledger's source. */
+  private lazy val text: Either[BackendError, FixationSourceText] =
+    FixationSourceText
+      .of(work.admitted.fixations, work.admitted.evidence.source)
+      .leftMap(e => study("source text")(e.message))
+
+  /** Records `from` to `from + count - 1` of the dataset's fixation file. */
+  def sourceRecords(from: Int, count: Int): Either[BackendError, SourceRecordPage] =
+    val listing                = provenance.records
+    def name(role: ColumnRole) = RealAdmission.column(spec, role)
+    for
+      _ <- Either.cond(
+        from >= 1 && count >= 1 && count <= SourceRecordPage.Limit,
+        (),
+        records(SourceRecordsError.RangeInvalid(from, count, SourceRecordPage.Limit))
+      )
+      _ <- Either.cond(
+        from <= listing.total,
+        (),
+        records(SourceRecordsError.PastEnd(from, listing.total))
+      )
+      source <- spec.sources.fixations.toRight(
+        BackendError.Unavailable(DiagnosticLocus.Field("fixations source"))
+      )
+      file  <- text
+      x     <- name(ColumnRole.X)
+      y     <- name(ColumnRole.Y)
+      start <- DataRecord.of(from).leftMap(e => study("record")(e.toString))
+      size  <- PageSize.of(count).leftMap(e => study("page")(e.message))
+      page  <- file
+        .page(listing, x, y, start, size)
+        .leftMap(e => study("source records")(e.message))
+      (display, scale) <- RecordPositions
+        .frames(work.dataset, work.recipe, spec.geometry)
+        .leftMap(study("display frames"))
+      columns <- (
+        name(ColumnRole.Participant),
+        name(ColumnRole.Phase),
+        name(ColumnRole.Trial),
+        name(ColumnRole.Ordinal),
+        name(ColumnRole.Onset),
+        name(ColumnRole.Duration),
+        name(ColumnRole.SampleCount)
+      ).tupled
+      rows <- page.entries.traverse(row(file, display, x, y, columns, _))
+      done <- SourceRecordPage
+        .of(
+          work.revision,
+          work.dataset,
+          source,
+          display.pixelsPerDegree,
+          scale,
+          listing.total,
+          from,
+          count,
+          rows
+        )
+        .leftMap(records)
+    yield done
+
+  /** One record's row: its cells as the file states them, its fixation and
+    * placement as eyes4s gives them.
+    */
+  private def row(
+      file: FixationSourceText,
+      display: eyes4s.studio.core.geometry.DisplayFrames,
+      xName: String,
+      yName: String,
+      columns: (String, String, String, String, String, String, String),
+      entry: SourceRecordText[CoreKey, Unit2D.Px]
+  ): Either[BackendError, SourceRecordRow] =
+    val (participant, phase, trialName, ordinal, onset, duration, samples) = columns
+    val n     = entry.view.record.value
+    val index = file.header.zipWithIndex.toMap
+    for
+      _      <- entry.refusal.map(e => study("source text")(e.message)).toLeft(())
+      fields <- file.fields(entry.view.record).leftMap(e => study("record")(e.toString))
+      cell       = (name: String) => index.get(name).flatMap(fields.lift).map(_.trim)
+      double     = (name: String) => cell(name).flatMap(_.toDoubleOption).filter(_.isFinite)
+      int        = (name: String) => cell(name).flatMap(_.toIntOption)
+      ms         = (name: String) => double(name).map(_ * millis)
+      occurrence = RealAdmission.column(spec, ColumnRole.Occurrence).toOption.fold(Some(1))(int)
+      trial <- (cell(participant), cell(phase), cell(trialName), occurrence)
+        .mapN((p, ph, t, o) => TrialKey(p, Phase(ph), t, o))
+        .toRight(study("record")(s"record $n names no trial"))
+      record   <- RecordNumber.of(n).leftMap(e => study("record")(e.message))
+      fixation <- entry.view.fixation.traverse(f =>
+        FixationIndex.of(f.position.value + 1).leftMap(e => study("fixation")(e.message))
+      )
+      screen <- (double(xName), double(yName)).tupled.traverse((px, py) =>
+        PlanePoint.of(n, "screen", px, py).leftMap(records)
+      )
+      placed <- screen
+        .flatTraverse(p => RecordPositions.position(display, n, p.x, p.y))
+        .leftMap(records)
+      made <- SourceRecordRow
+        .of(
+          StudioRef.SourceRecord(trial, fixation, SourceRole.Fixations, record),
+          int(ordinal),
+          ms(onset),
+          ms(duration),
+          int(samples),
+          screen,
+          placed.map(_._1),
+          placed.map(_._2),
+          entry.view.fixation.map(_.trail.placement),
+          entry.text
+        )
+        .leftMap(records)
+    yield made
+
+  /** Milliseconds per unit of the file's declared time unit. */
+  private val millis: Double = spec.units.time match
+    case Some(TimeUnit.Microseconds) => 0.001
+    case Some(TimeUnit.Seconds)      => 1000.0
+    case _                           => 1.0
 
 object RealTrialViews:
   def of(work: RealPrepared): Either[BackendError, RealTrialViews] =
