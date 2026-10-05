@@ -57,6 +57,9 @@ enum RecipeParameterError derives CanEqual:
     * for the admission frame `admission`.
     */
   case UndeclaredWindowFrame(admission: FrameId)
+
+  /** A pair design's own constructor refused the value, such as a control cap. */
+  case Pairing(error: PairingError)
   def message: String = this match
     case Geometry(e)          => e.message
     case Time(e)              => e.message
@@ -73,6 +76,7 @@ enum RecipeParameterError derives CanEqual:
       s"Form field '$f' has no alternative '$t'; its alternatives are ${options.mkString(", ")}."
     case UndeclaredWindowFrame(a) =>
       s"A window of admission frame '${a.name}' needs a declared window frame identity."
+    case Pairing(e) => e.message
 
 /** Concrete typed construction routes. No universal scientific defaults are imposed.
   *
@@ -651,6 +655,32 @@ object RecipeDescriptors:
         )
       )
     yield result
+
+  def repetition[K, U <: Unit2D](
+      plan: RepetitionPlan[K, U]
+  ): Either[DescriptorError, RecipeInspection] =
+    inspect(
+      plan.description,
+      Vector(
+        reference("repetition.input", "Content hash of the supplied maps, their keys and grid"),
+        reference("layout", "Versioned layout and participant/stimulus/occasion projections"),
+        reference("grid", "Nominal grid the supplied maps lie on: its ID, columns and rows"),
+        info(RepetitionViews.method),
+        info(RepetitionViews.matched),
+        info(RepetitionViews.controls),
+        info(RepetitionViews.controlSelection),
+        RecipeParameters.failurePolicy.info,
+        reference(
+          "pairing",
+          "Directed pairs within the trials, excluding each trial with itself"
+        )
+      ),
+      Vector(
+        "Maps are supplied, not estimated: every map lies on the declared grid",
+        "Matched pairs are exhaustive; controls are every eligible pair or a keyed bottom-k sample",
+        "Per-focal means of matched and control scores follow the failure policy before D = M - B"
+      )
+    )
 
   def temporal[K, U <: Unit2D: UnitLabel, P, S, D](
       plan: TemporalStudyPlan[K, U, P, S, D]

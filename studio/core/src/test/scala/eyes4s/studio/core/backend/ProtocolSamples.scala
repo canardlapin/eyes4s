@@ -212,7 +212,8 @@ object ProtocolSamples:
     BackendError.SourceRecordsRefused(
       AnalysisRevision(4),
       SourceRecordsError.RangeInvalid(0, 501, SourceRecordPage.Limit)
-    )
+    ),
+    BackendError.UnknownScale(run, 4, Vector("0.5°", "1°", "2°", "4°"))
   )
 
   val runStates: Vector[RunState] = Vector(
@@ -304,7 +305,7 @@ object ProtocolSamples:
       DatasetRevision(3),
       query,
       Vector(
-        fixation(1, 7209, 960.5, 540.25, 0.5, 212.5, MapPlacement.InMap),
+        fixation(1, 7209, 960.5, 540.25, 0.5, 212.5, MapPlacement.InWindow),
         fixation(
           2,
           7210,
@@ -324,6 +325,28 @@ object ProtocolSamples:
           680.5,
           160.5,
           MapPlacement.OutsideWindow(OffWindowPolicy.FailTrial)
+        ),
+        // Protocol 1.9: in the window of a trial the study fails, with its tally.
+        fixation(
+          6,
+          7214,
+          900.5,
+          500.5,
+          860.5,
+          120.5,
+          MapPlacement.TrialFailed(
+            eyes4s.plan.WindowTally
+              .of(
+                1,
+                2,
+                6,
+                eyes4s.kernel.Span.micros(96500L),
+                eyes4s.kernel.Span.micros(341000L),
+                eyes4s.kernel.Span.micros(9007199254740993L)
+              )
+              .toOption
+              .get
+          )
         )
       )
     )
@@ -383,7 +406,7 @@ object ProtocolSamples:
               Some(point(7214, "screen", 1148.5, 456.5)),
               Some(ImagePosition(point(7214, "image", 700.5, 300.5), true)),
               Some(point(7214, "degrees", 5.375, 2.385)),
-              Some(MapPlacement.InMap),
+              Some(MapPlacement.InWindow),
               "P17,Retrieval,ret_07,1,6,1148.5,456.5,2160.5,412.5,206"
             )
             .toOption
@@ -423,6 +446,39 @@ object ProtocolSamples:
       .toOption
       .get
 
+  /** Protocol 1.9: a page with each score state. */
+  val pairRowPage: PairRowPage =
+    val encoding = TrialKey("P17", Phase.Encoding, "enc_03", 1)
+    val control  = TrialKey("P17", Phase.Encoding, "enc_11", 1)
+    PairRowPage(
+      run,
+      2,
+      PageInfo(0, 8969, Some(3)),
+      Vector(
+        PairRowEntry(
+          query,
+          PairDesign.Matched,
+          encoding,
+          "beach-042",
+          PairScoreState.Scored(0.73)
+        ),
+        PairRowEntry(
+          query,
+          PairDesign.Control,
+          control,
+          "street-112",
+          PairScoreState.NotServed
+        ),
+        PairRowEntry(
+          query,
+          PairDesign.Control,
+          control,
+          "street-112",
+          PairScoreState.Failed(diagnostic)
+        )
+      )
+    )
+
   val requests: Vector[BackendRequest] = Vector(
     BackendRequest.Admission(DatasetRevision(3)),
     BackendRequest.Ledger(DatasetRevision(3), page),
@@ -445,7 +501,8 @@ object ProtocolSamples:
     BackendRequest.Unsubscribe(RequestId(41)),
     BackendRequest.TrialFixationsOf(AnalysisRevision(4), query),
     BackendRequest.TrialPreviewOf(AnalysisRevision(4), query),
-    BackendRequest.SourceRecordsOf(AnalysisRevision(4), 7214, 60)
+    BackendRequest.SourceRecordsOf(AnalysisRevision(4), 7214, 60),
+    BackendRequest.PairRowsOf(run, 2, page)
   )
 
   val responses: Vector[BackendResponse] = Vector(
@@ -546,7 +603,8 @@ object ProtocolSamples:
     BackendResponse.Unsubscribed(RequestId(41), true),
     BackendResponse.TrialFixationsOf(trialFixations),
     BackendResponse.TrialPreviewOf(trialPreview),
-    BackendResponse.SourceRecordsOf(sourceRecordPage)
+    BackendResponse.SourceRecordsOf(sourceRecordPage),
+    BackendResponse.PairRowsOf(pairRowPage)
   )
 
   val events: Vector[JobEvent] =

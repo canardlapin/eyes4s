@@ -52,14 +52,34 @@ enum MethodsReadError derives CanEqual:
   case Admission(dataset: DatasetRevision, error: BackendError)
   case Queries(run: RunId, offset: Int, error: BackendError)
   case Paging(run: RunId, offset: Int, error: PageError)
+  case Pairs(run: RunId, scale: Int, offset: Int, error: BackendError)
+
+  /** The backend answered a request for `run` at `scale` with another page. */
+  case OtherPairPage(run: RunId, scale: Int, foundRun: RunId, foundScale: Int)
+
+  /** A page's `next` did not advance past its offset. */
+  case PairsStalled(run: RunId, scale: Int, offset: Int, next: Int)
+
+  /** The pages held `rows` rows of the `total` they announced. */
+  case PairsShort(run: RunId, scale: Int, rows: Int, total: Int)
 
   def message: String = this match
     case Admission(dataset, error) =>
       s"The admission of dataset ${dataset.label}: ${error.message}"
     case Queries(run, offset, error) =>
       s"The queries of ${run.label} at offset $offset: ${error.message}"
+    case Pairs(run, scale, offset, error) =>
+      s"The pair rows of ${run.label} at scale $scale, offset $offset: ${error.message}"
+    case OtherPairPage(run, scale, foundRun, foundScale) =>
+      s"The pair rows of ${run.label} at scale $scale were answered with ${foundRun.label} " +
+        s"at scale $foundScale."
+    case PairsStalled(run, scale, offset, next) =>
+      s"The pair rows of ${run.label} at scale $scale stop advancing: the page at $offset " +
+        s"names $next as next."
+    case PairsShort(run, scale, rows, total) =>
+      s"The pair rows of ${run.label} at scale $scale hold $rows of the $total announced."
     case Paging(run, offset, error) =>
-      s"The queries of ${run.label} at offset $offset: ${error.message}"
+      s"A page of ${run.label} at offset $offset: ${error.message}"
 
 object MethodsReads:
 
@@ -116,3 +136,49 @@ object MethodsReads:
       .toVector
       .sortBy((code, n) => (-n, code))
     MethodsFacts(run, admission, rows.size, Tally.of(compared.flatMap(_.controls)), failures)
+
+  /** Every page of `run`'s pair rows at each of `scales` scale indices, in
+    * scale and page order, as the backend served them (protocol 1.9). A read
+    * that would drop rows is refused: a page of another run or scale, a
+    * `next` that does not advance, or rows that do not add up to the page's
+    * `total`.
+    */
+  def pairRows[F[_]: Monad](
+      pairs: (RunId, Int, PageRequest) => F[Either[BackendError, PairRowPage]],
+      run: RunId,
+      scales: Int
+  ): F[Either[MethodsReadError, Vector[PairRowPage]]] =
+    def at(
+        scale: Int,
+        offset: Int,
+        got: Vector[PairRowPage]
+    ): EitherT[F, MethodsReadError, Vector[PairRowPage]] =
+      for
+        request <- EitherT.fromEither[F](
+          PageRequest
+            .of(offset, PageRequest.MaximumSize)
+            .leftMap(MethodsReadError.Paging(run, offset, _))
+        )
+        page <- EitherT(pairs(run, scale, request))
+          .leftMap(MethodsReadError.Pairs(run, scale, offset, _))
+        _ <- EitherT.cond[F](
+          page.run == run && page.scale == scale,
+          (),
+          MethodsReadError.OtherPairPage(run, scale, page.run, page.scale)
+        )
+        all = got :+ page
+        rest <- page.page.next match
+          case None                        => EitherT.rightT[F, MethodsReadError](all)
+          case Some(next) if next > offset => at(scale, next, all)
+          case Some(next)                  =>
+            EitherT.leftT[F, Vector[PairRowPage]](
+              MethodsReadError.PairsStalled(run, scale, offset, next)
+            )
+        rows = rest.map(_.rows.size).sum
+        _ <- EitherT.cond[F](
+          got.nonEmpty || rows == page.page.total,
+          (),
+          MethodsReadError.PairsShort(run, scale, rows, page.page.total)
+        )
+      yield rest
+    (0 until scales).toVector.flatTraverse(at(_, 0, Vector.empty)).value

@@ -126,7 +126,34 @@ case runs the complete save, fresh-registration reopen and rerun workflow on bot
 4. Construct with `RepetitionPlan.of`. Every map must agree with the declared nominal grid.
    Empty input and duplicate full keys remain admitted source data so the ordinary pairing
    diagnostics can report them. `run` returns matched/control edge analyses; `contrasts`
-   derives per-focal means and differences under the declared failure policy.
+   derives per-focal means and differences under the declared failure policy. `work` is the
+   same run as a `RepetitionCursor`: it makes both pairings, then compares the matched pairs
+   and the control pairs at most `quanta.pairs` per step (`RepetitionStage.Matched`, then
+   `Control`), and `Stepwise.complete(plan.work, quanta)` equals `run` at any quanta. The
+   pairing itself is not bounded; only the comparisons are. `description` states the plan as
+   data (input and layout identities, grid, method, matched and control rules, control
+   selection, failure policy, pair orientation), `diff` compares two plans by field, and
+   `inspect` explains every field. `RepetitionForm` edits the method, the rules, the control
+   selection and the failure policy; `RepetitionRecipe.plan(template)` rebuilds a plan over the
+   template's layout, grid and maps, and checks the matched and control rules together.
+6. Save a completed run with `RepetitionResultCodec(schema, plans, keys)`: its `RepetitionRun`
+   archive holds a `RunStamp` (plan and input digests both the plan's canonical digest, since the
+   plan carries its maps), the plan document and both analyses (pair rows, pairing report,
+   provenance and evaluation), re-encodes byte for byte, and refuses another plan's stamp
+   (`CodecError.Stamp`) or analyses this plan did not compute (`CodecError.RepetitionResult`):
+   `RepetitionPlanResult.reconstruct` checks each analysis's input hash (`ResultInput`), its
+   evaluation (`ResultEvaluation`), and its pairs and pairing report against the plan's own
+   matched or control pairing (`ResultPairs`), so swapped matched and control analyses are
+   refused. In a manifest the plan and run are an `analysis-plan`
+   and an `analysis-result` related by `AnalysisResultOf(run, plan,
+   AnalysisInputs.EmbeddedInPlan)`: the registration declares that the plan embeds its input, and
+   the run's input is checked against the plan's input hash. Register `results.registration` with the resolver's `AnalysisRegistry`.
+7. Repetition is a recipe family (`RecipeFamily.Repetition`): `plan.preflight(Some(plan.inputRef))`
+   is an `AnalysisReport`, blocked without the plan's maps or with others, leaving the comparisons
+   and their reduction to execution; `RepetitionExecution` runs `plan.work` through the shared
+   runner; and `ResultExports.repetition(plan, result, codec, keys)` tabulates a completed run's
+   matched and control edges. The family conformance suite holds it to every obligation the other
+   families meet.
 5. Create `RepetitionPlanCodec.of` with a distinct recipe schema, typed key codec and
    `RepetitionRegistry`. Save its versioned JSON. A fresh registry with the declared layout
    reconstructs the same keys, eligible/selected directed endpoints, seed, cap, input and plan

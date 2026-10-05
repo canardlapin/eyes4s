@@ -127,13 +127,7 @@ final class FakeNavigator[F[_]] private[fixture] (
     * recorded `controls`.
     */
   private def controlsOf(q: MockQuery): Option[Vector[TrialKey]] =
-    val pool = study.inventory.collect {
-      case e
-          if e.trial.participant == q.participant && e.trial.phase == Phase.Encoding &&
-            e.disposition == TrialDisposition.Admitted && e.item != q.item =>
-        e.trial
-    }
-    Option.when(q.controls.contains(pool.size))(pool)
+    study.controls(q).map(_.map(_._1))
 
   /** Every contributing query with its matched reference and controls. */
   private lazy val designs: Vector[(MockQuery, Option[Vector[TrialKey]])] =

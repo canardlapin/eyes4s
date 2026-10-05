@@ -267,7 +267,8 @@ class PreflightSuite extends munit.FunSuite:
       Vector(
         RecipeFamily.FixationStudy,
         RecipeFamily.EventRecording,
-        RecipeFamily.TemporalStudy
+        RecipeFamily.TemporalStudy,
+        RecipeFamily.Repetition
       )
     )
   }

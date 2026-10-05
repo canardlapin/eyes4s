@@ -22,7 +22,11 @@ import eyes4s.studio.app.{AppModel, Intent}
 import eyes4s.studio.core.backend.{DatasetRevision, LedgerEntry, LedgerPages}
 import eyes4s.studio.core.document.{DatasetRevisionSpec, Perspective}
 import eyes4s.studio.core.fixture.GoldenAssets
-import eyes4s.studio.desktop.runtime.StudioSession
+import eyes4s.studio.core.assets.{AssetFile, AssetRef, AssetRegistry}
+import eyes4s.studio.core.bundle.InputKind
+import eyes4s.studio.desktop.runtime.{ProjectPort, StudioSession}
+
+import scala.util.chaining.*
 import javafx.application.Platform
 
 /** Where the trials navigator reads a dataset revision's trials and their
@@ -32,11 +36,12 @@ trait NavigatorInputs:
   def entries(dataset: DatasetRevision, done: Either[String, Vector[LedgerEntry]] => Unit): Unit
   def displays(dataset: DatasetRevisionSpec, done: Either[String, DisplaySource] => Unit): Unit
 
-/** Where a window's trial displays come from: injected, since only a story
-  * session has a registry to serve before S5.7.
+/** Where a window's trial displays come from (injected): the golden
+  * registry for a story session, or the project's own stored inventory and
+  * stimulus images (S5.7). `done` may be called on any thread.
   */
 trait NavigatorDisplays:
-  def displays(dataset: DatasetRevisionSpec): Either[String, DisplaySource]
+  def read(dataset: DatasetRevisionSpec, done: Either[String, DisplaySource] => Unit): Unit
 
 /** Which backend a window's session runs on. */
 enum SessionBackend derives CanEqual:
@@ -48,24 +53,58 @@ enum SessionBackend derives CanEqual:
 
 object NavigatorDisplays:
   /** The display source of a session on `backend`: the golden registry for a
-    * story session, none for a real one until S5.7.
+    * story session; for a real one, the open project's own (S5.7), or none
+    * without a project.
     */
-  def of(backend: SessionBackend): NavigatorDisplays = backend match
-    case SessionBackend.Story => golden
-    case SessionBackend.Real  => notServed
+  def of(backend: SessionBackend, project: Option[ProjectPort]): NavigatorDisplays =
+    backend match
+      case SessionBackend.Story => golden
+      case SessionBackend.Real  => project.fold(notServed)(stored)
 
-  /** Production until S5.7 serves a project's stored registry: no display
-    * kinds, so the trials are listed without them and nothing is invented.
+  /** No display kinds: the trials are listed without them and nothing is
+    * invented.
     */
-  val notServed: NavigatorDisplays = _ => Right(DisplaySource.NotServed)
+  val notServed: NavigatorDisplays = (_, done) => done(Right(DisplaySource.NotServed))
 
   /** The story and fake sessions: fixtures/studio-golden's registry, served
     * only for a revision whose trial inventory is the golden trials.csv,
     * byte for byte; any other revision's display kinds are not served.
     */
-  val golden: NavigatorDisplays = dataset =>
-    if !GoldenAssets.describes(dataset) then Right(DisplaySource.NotServed)
-    else GoldenAssets.registry(dataset).map(DisplaySource.Served(_))
+  val golden: NavigatorDisplays = (dataset, done) =>
+    done(
+      if !GoldenAssets.describes(dataset) then Right(DisplaySource.NotServed)
+      else GoldenAssets.registry(dataset).map(DisplaySource.Served(_))
+    )
+
+  /** A project's own displays (S5.7): the registry its stored trials.csv
+    * states through the revision's display columns, with the stimulus
+    * images it stores. A revision that maps no display columns, or has no
+    * trial inventory, has none to serve; bytes that are not the source's
+    * are refused ([[AssetRegistry.fromInventory]]).
+    */
+  def stored(project: ProjectPort): NavigatorDisplays = (dataset, done) =>
+    (dataset.sources.trials, dataset.inventory.flatMap(_.displays)) match
+      case (Some(trials), Some(_)) =>
+        project.storedInputs {
+          case Left(reason)  => done(Left(reason))
+          case Right(inputs) =>
+            val stimuli = inputs
+              .filter(_.kind == InputKind.StimulusImage)
+              .flatMap(e =>
+                e.name.flatMap(n => AssetFile.of(n).toOption).map(AssetRef(_, e.sha256))
+              )
+            project.readInput(
+              trials,
+              _.flatMap(bytes =>
+                AssetRegistry
+                  .fromInventory(dataset, bytes, stimuli, Vector.empty)
+                  .left
+                  .map(_.message)
+                  .map(DisplaySource.Served(_))
+              ).pipe(done)
+            )
+        }
+      case _ => done(Right(DisplaySource.NotServed))
 
 object NavigatorInputs:
   /** The window's backend for the trials, and `source` for the displays. */
@@ -83,7 +122,7 @@ object NavigatorInputs:
       def displays(
           dataset: DatasetRevisionSpec,
           done: Either[String, DisplaySource] => Unit
-      ): Unit = done(source.displays(dataset))
+      ): Unit = source.read(dataset, done)
 
 /** Explore's trials navigator on the desktop (Explore.dc.html, left; see
   * [[TrialsNavigator]]): the Trials pane and the Items pane over one state.

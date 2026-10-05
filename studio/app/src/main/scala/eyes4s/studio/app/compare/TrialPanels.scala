@@ -385,12 +385,14 @@ object TrialPanels:
     import PanelTextId.*
     def column(id: String, header: PanelTextId, format: ColumnFormat) =
       ColumnId.of(id).map(PlotColumn(_, PanelText(header), format))
-    def placed(p: MapPlacement): String = PanelText(p match
-      case MapPlacement.InMap                                    => InMap
-      case MapPlacement.DroppedInitial                           => DroppedInitial
-      case MapPlacement.OutsideScreen                            => OutsideScreen
-      case MapPlacement.OutsideWindow(OffWindowPolicy.Exclude)   => OutsideExcluded
-      case MapPlacement.OutsideWindow(OffWindowPolicy.FailTrial) => OutsideFails)
+    def placed(p: MapPlacement): String = p match
+      case MapPlacement.InWindow                                 => PanelText(InMap)
+      case MapPlacement.DroppedInitial                           => PanelText(DroppedInitial)
+      case MapPlacement.OutsideScreen                            => PanelText(OutsideScreen)
+      case MapPlacement.OutsideWindow(OffWindowPolicy.Exclude)   => PanelText(OutsideExcluded)
+      case MapPlacement.OutsideWindow(OffWindowPolicy.FailTrial) => PanelText(OutsideFails)
+      case MapPlacement.TrialFailed(t)                           =>
+        PanelText(InWindowTrialFails, t.outsideWindow.toString, t.total.toString)
     for
       index    <- column("fixation", FixationHeader, ColumnFormat.Count)
       x        <- column("x", XHeader, ColumnFormat.Decimal(1))

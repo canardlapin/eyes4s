@@ -373,11 +373,14 @@ githubWorkflowCheck := {
     "name: Check module and kernel boundaries"
   ).foreach(requireText("checks.yml", _))
   requireText("checks.yml", "python3 tools/check-docs.py --platform jvm --skip-consumer")
+  requireText("checks.yml", "python3 tools/api-audit/run.py --prepare")
   requireText("checks.yml", "python3 tools/check-docs.py --platform js --skip-consumer")
   forbidText("checks.yml", "tlCiRelease")
   forbidText("checks.yml", "sbt-dependency-submission")
-  // Slow evidence belongs to evidence.yml, never to the per-push matrix.
-  forbidText("checks.yml", "tools/api-audit/run.py")
+  // Slow evidence belongs to evidence.yml, never to the per-push matrix: the per-push
+  // matrix may only prepare the compiler inventory, never run or record the audit.
+  if ("tools/api-audit/run\\.py(?! --prepare)".r.findFirstIn(rendered("checks.yml")).isDefined)
+    sys.error("checks.yml runs the API audit; only `run.py --prepare` belongs there")
   forbidText("checks.yml", "--run-consumer")
 
   requireText("security.yml", "contents: write")
@@ -411,6 +414,15 @@ githubWorkflowCheck := {
   requireText("studio.yml", "EYES4S_STUDIO_SMALL_DISPLAY: skip")
   forbidText("checks.yml", "studio")
 }
+
+// DiagnosticCoverageJvmSuite reads a compiler inventory whose fingerprint matches the
+// sources under test (tools/api-audit/candidate.py), so the JVM test step needs one
+// prepared first; preparation compiles and inventories, it runs no tests.
+ThisBuild / githubWorkflowBuildPreamble += WorkflowStep.Run(
+  List("python3 tools/api-audit/run.py --prepare"),
+  name = Some("Prepare the compiler API inventory for diagnostic coverage"),
+  cond = Some("matrix.project == 'rootJVM'")
+)
 
 // Both boundary invariants run in CI, not just on a developer's machine.
 // A rule that is only checked locally is a rule that is checked when it is
@@ -803,7 +815,8 @@ lazy val laws = crossProject(JVMPlatform, JSPlatform)
     Test / unmanagedSources ++= Seq(
       file("codec/src/test/scala/eyes4s/codec/PointSamplingFixture.scala").getAbsoluteFile,
       file("codec/src/test/scala/eyes4s/codec/RepetitionPlanFixture.scala").getAbsoluteFile,
-      file("codec/src/test/scala/eyes4s/codec/FormFixtures.scala").getAbsoluteFile
+      file("codec/src/test/scala/eyes4s/codec/FormFixtures.scala").getAbsoluteFile,
+      file("codec/src/test/scala/eyes4s/codec/AnalysisFixtures.scala").getAbsoluteFile
     ),
     libraryDependencies ++= Seq(
       "org.scalameta"  %%% "munit"            % munitV,
@@ -941,6 +954,11 @@ lazy val io = crossProject(JVMPlatform, JSPlatform)
 // in CI. The library keeps release 11.
 val javaFxV           = "24.0.1"
 val studioDesktopJdkV = 22
+
+// S1.12: studio-desktop logs through SLF4J to a Logback file appender it
+// configures at startup. Desktop only: no library or cross-built studio module.
+val slf4jV   = "2.0.17"
+val logbackV = "1.5.18"
 
 // Source pins (S0.3). scaladock and Intaglio are source-only pre-release. Each
 // is pinned by a full Git SHA in studio/pins.properties and resolved as
@@ -1116,18 +1134,34 @@ lazy val studioCore = crossProject(JVMPlatform, JSPlatform)
       )
     }.taskValue,
     // S9.2b: the eyes4s release line of the studio build, for a figure's
-    // stamp. The base version only (no commit or timestamp), so the source is
-    // written once, not on every load. Generated, since studio-core reads no
-    // resources (it links for Scala.js).
+    // stamp; S1.14: the commit and the OpenJFX the build compiles against, for
+    // the About box. No timestamp, so the source changes only with the commit.
+    // Generated, since studio-core reads no resources (it links for Scala.js).
     Compile / sourceGenerators += Def.task {
-      val file = (Compile / sourceManaged).value / "eyes4s" / "studio" / "StudioBuild.scala"
-      val text =
+      val file   = (Compile / sourceManaged).value / "eyes4s" / "studio" / "StudioBuild.scala"
+      val commit = com.github.sbt.git.SbtGit.git.gitHeadCommit.value
+        .fold("None")(c => s"""Some("$c")""")
+      val dirty   = com.github.sbt.git.SbtGit.git.gitUncommittedChanges.value
+      val licence = licenses.value.headOption.fold("unknown")(_._1)
+      val text    =
         s"""package eyes4s.studio.core.engine
            |
            |/** The studio build (generated from the sbt build). */
            |object StudioBuild:
            |  /** The eyes4s release line studio is built from. */
            |  val eyes4sBaseVersion: String = "${tlBaseVersion.value}"
+           |
+           |  /** The commit the build was made from, when it is a Git checkout. */
+           |  val commit: Option[String] = $commit
+           |
+           |  /** Whether the checkout had uncommitted changes when it was built. */
+           |  val dirty: Boolean = $dirty
+           |
+           |  /** The licence of studio and eyes4s (an SPDX identifier). */
+           |  val licence: String = "$licence"
+           |
+           |  /** The OpenJFX the desktop shell is compiled against. */
+           |  val javaFxVersion: String = "$javaFxV"
            |""".stripMargin
       if (!file.exists || IO.read(file) != text) IO.write(file, text)
       Seq(file)
@@ -1224,6 +1258,30 @@ lazy val studioDesktop = project
     // Monocle's headless glass for the FX tests (studioFxTestOptions). It declares
     // JavaFX `provided`, so no second OpenJFX reaches the guard below.
     libraryDependencies += "org.testfx" % "openjfx-monocle" % monocleV % Test,
+    libraryDependencies ++= Seq(
+      "org.slf4j"      % "slf4j-api"       % slf4jV,
+      "ch.qos.logback" % "logback-classic" % logbackV
+    ),
+    // S1.12: the version and commit an error report names, generated at build
+    // time (StudioBuild); a build outside Git reports no commit.
+    Compile / sourceGenerators += Def.task {
+      val file =
+        (Compile / sourceManaged).value / "eyes4s" / "studio" / "desktop" / "StudioBuild.scala"
+      val commit   = git.gitHeadCommit.value.fold("None")(c => "Some(\"" + c + "\")")
+      val modified = git.gitUncommittedChanges.value
+      IO.write(
+        file,
+        s"""|package eyes4s.studio.desktop
+            |
+            |/** Generated by build.sbt (S1.12): the build an error report names. */
+            |object StudioBuild:
+            |  val version: String         = "${version.value}"
+            |  val commit: Option[String]  = $commit
+            |  val modified: Boolean       = $modified
+            |""".stripMargin
+      )
+      Seq(file)
+    }.taskValue,
     libraryDependencies ++=
       (if (intaglioLocal.isDefined) Nil
        else Seq("javafx", "pdf", "java2d").map(intaglioPinned)) ++
@@ -1257,6 +1315,96 @@ lazy val studioDesktop = project
     Test / javaOptions ++= studioFxTestOptions((ThisBuild / baseDirectory).value)
   )
   .settings(studioTokenSettings)
+  .settings(studioNoticeSettings)
+
+// S1.14: the third-party notices, generated from the resolved runtime graph and
+// the reviewed licence table studio/desktop/licences.tsv (project/StudioNotices.scala).
+// The generated components.tsv and THIRD-PARTY-COMPONENTS.txt are resources of
+// the desktop jar, beside the committed licence texts; checkStudioNotices fails
+// when a resolved module has no licence rule or a licence id has no text.
+// Studio's own eyes4s modules are first party (Apache-2.0, this repository's
+// LICENSE), so they are not third-party components.
+lazy val studioNoticeModules = Def.task {
+  val own = organization.value
+  update.value
+    .configuration(Runtime)
+    .toVector
+    .flatMap(_.modules)
+    .filterNot(_.evicted)
+    .filterNot(m => m.module.organization == own && m.module.name.startsWith("eyes4s-"))
+    .map(m => StudioNotices.Module(m.module.organization, m.module.name, m.module.revision))
+    .distinct
+}
+
+lazy val studioNoticeRules = Def.task {
+  StudioNotices
+    .parse(IO.read((ThisBuild / baseDirectory).value / "studio" / "desktop" / "licences.tsv"))
+    .fold(sys.error(_), identity)
+}
+
+lazy val checkStudioNotices =
+  taskKey[Unit]("Fail when a resolved studio-desktop module has no licence entry or text.")
+
+lazy val studioNoticeSettings = Seq(
+  Compile / resourceGenerators += Def.task {
+    val (components, missing) =
+      StudioNotices.components(studioNoticeModules.value, studioNoticeRules.value)
+    // The notices ship in the jar: never with a library left out.
+    if (missing.nonEmpty)
+      sys.error(
+        "Third-party notices (S1.14): resolved modules without a rule in " +
+          "studio/desktop/licences.tsv: " +
+          missing.map(m => s"${m.coordinates}:${m.version}").mkString(", ")
+      )
+    StudioNotices.write(
+      (Compile / resourceManaged).value / "eyes4s" / "studio" / "desktop" / "notices",
+      components
+    )
+  }.taskValue,
+  checkStudioNotices := {
+    val log      = streams.value.log
+    val selfTest = StudioNotices.selfTest
+    if (selfTest.nonEmpty)
+      sys.error(s"StudioNotices self-test failed:\n${selfTest.map("  - " + _).mkString("\n")}")
+    val texts = (baseDirectory.value / "src" / "main" / "resources" / "eyes4s" / "studio" /
+      "desktop" / "notices" / "licences").listFiles
+      .map(_.getName)
+      .filter(_.endsWith(".txt"))
+      .map(_.stripSuffix(".txt"))
+      .toSet
+    // Library LICENSE/NOTICE copies, named <artifact>-<version>-LICENSE.txt.
+    val copies = (baseDirectory.value / "src" / "main" / "resources" / "eyes4s" / "studio" /
+      "desktop" / "notices").listFiles
+      .map(_.getName)
+      .filter(n => n.endsWith("-LICENSE.txt") || n.endsWith("-NOTICE.txt"))
+      .toSeq
+    val modules  = studioNoticeModules.value
+    val findings = StudioNotices.check(modules, studioNoticeRules.value, texts, copies)
+    findings.unused.foreach(r =>
+      log.info(
+        s"licences.tsv: ${r.group}:${r.pattern} matches no resolved module (kept for later)"
+      )
+    )
+    if (
+      findings.unlicensed.nonEmpty || findings.missingTexts.nonEmpty ||
+      findings.staleCopies.nonEmpty
+    )
+      sys.error(
+        s"""|Third-party notices are incomplete (S1.14).
+            |Resolved modules without a rule in studio/desktop/licences.tsv:
+            |${findings.unlicensed
+             .map(m => s"  - ${m.coordinates}:${m.version}")
+             .mkString("\n")}
+            |Licence ids without a text in notices/licences/:
+            |${findings.missingTexts.map("  - " + _).mkString("\n")}
+            |Library LICENSE/NOTICE copies not at the resolved version:
+            |${findings.staleCopies.map("  - " + _).mkString("\n")}""".stripMargin
+      )
+    log.info(
+      s"studio notices OK: ${modules.size} resolved modules, each with a licence and its text"
+    )
+  }
+)
 
 // Snapshots go to <build>/target/studio-snapshots/<suite>/<test>/<theme>-<scale>x.png.
 // java.awt.headless keeps AWT (used only for PNG encoding) off the display.
@@ -1316,7 +1464,7 @@ addCommandAlias(
 // checkStudioTypeScale (S1.2) is defined with the token settings below.
 addCommandAlias(
   "studioStyleCheck",
-  ("checkStudioTypeScale" +: studioProjects
+  (Seq("checkStudioTypeScale", "studioDesktop/checkStudioNotices") ++ studioProjects
     .flatMap(p => Seq(s"$p/headerCheckAll", s"$p/scalafmtCheckAll")))
     .mkString(";", ";", "")
 )

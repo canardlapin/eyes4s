@@ -279,7 +279,7 @@ class FixationInspectorSuite extends munit.FunSuite:
           AdmittedFixation.of(a.ref, a.record, a.screenX, a.screenY, a.onsetMs, a.durationMs, p)
         )
       val inside =
-        t.fixations.indices.filter(i => t.fixations(i).placement == MapPlacement.InMap)
+        t.fixations.indices.filter(i => t.fixations(i).placement == MapPlacement.InWindow)
       val mixed = t.fixations
         .updated(inside(0), placed(inside(0), MapPlacement.DroppedInitial))
         .updated(inside(1), placed(inside(1), MapPlacement.OutsideScreen))

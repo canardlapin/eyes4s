@@ -74,6 +74,63 @@ private[eyes4s] object Sha256Core:
       index += 1
     IArray.unsafeFromArray(output)
 
+  /** The digest of bytes given in order, one at a time or in runs, without
+    * holding them: one 64-byte block is buffered. `finish` pads and returns
+    * the digest of everything given, exactly `digest` of their concatenation;
+    * the hasher is then reset, so it is never read half-padded.
+    */
+  final class Hasher:
+    private val block  = Array.ofDim[Byte](64)
+    private val hash   = Array.tabulate(Initial.length)(Initial(_))
+    private val words  = Array.ofDim[Int](64)
+    private var filled = 0
+    private var length = 0L
+
+    def update(value: Byte): Unit =
+      block(filled) = value
+      filled += 1
+      length += 1
+      if filled == 64 then
+        compress(block, hash, words)
+        filled = 0
+
+    def update(values: IArray[Byte]): Unit =
+      var i = 0
+      while i < values.length do
+        update(values(i))
+        i += 1
+
+    def finish(): IArray[Byte] =
+      val bitLength = length * 8L
+      block(filled) = 0x80.toByte
+      filled += 1
+      if filled > 56 then
+        while filled < 64 do
+          block(filled) = 0
+          filled += 1
+        compress(block, hash, words)
+        filled = 0
+      while filled < 56 do
+        block(filled) = 0
+        filled += 1
+      var i = 0
+      while i < 8 do
+        block(63 - i) = ((bitLength >>> (i * 8)) & 0xff).toByte
+        i += 1
+      compress(block, hash, words)
+      val output = Array.ofDim[Byte](32)
+      var index  = 0
+      while index < hash.length do
+        output(index * 4) = (hash(index) >>> 24).toByte
+        output(index * 4 + 1) = (hash(index) >>> 16).toByte
+        output(index * 4 + 2) = (hash(index) >>> 8).toByte
+        output(index * 4 + 3) = hash(index).toByte
+        hash(index) = Initial(index)
+        index += 1
+      filled = 0
+      length = 0L
+      IArray.unsafeFromArray(output)
+
   private def compress(block: Array[Byte], hash: Array[Int], words: Array[Int]): Unit =
     var index = 0
     while index < 16 do

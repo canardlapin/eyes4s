@@ -84,7 +84,7 @@ class SourceRecordsSuite extends CatsEffectSuite:
       val deg = row.degrees.get
       assertEqualsDouble(deg.x, 188.0 / 35.0, DegreeTolerance)
       assertEqualsDouble(deg.y, 84.0 / 35.0, DegreeTolerance)
-      assertEquals(row.placement, Some(MapPlacement.InMap))
+      assertEquals(row.placement, Some(MapPlacement.InWindow))
       assertEquals(row.line, "P17,Encoding,enc_03,1,6,1148.0,456.0,2160,412,206")
     }
   }

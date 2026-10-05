@@ -64,6 +64,43 @@ class AnalysisSuite extends munit.FunSuite:
     assert(result.provenance.render.contains("failed=2"))
   }
 
+  test("paged evaluation of a completed pairing equals evaluatePairs at every quantum") {
+    def evaluator(left: Double, right: Double): Either[String, Double] =
+      if right > 1.5 then Left(s"$left/$right") else Right(left + right)
+    val expected = evaluatePairs(directedPairs, inputs, info)(evaluator)
+    Vector(1, 3, 4, 1024).foreach { n =>
+      val quantum = PairQuantum.of(n).fold(e => fail(e.toString), identity)
+      val start   = PairedEvaluation.start(directedPairs, inputs, info)(evaluator)
+      assertEquals(start.totalPairs, 4)
+      assertEquals(PairedEvaluation.complete(start, quantum), expected, n)
+      // Each step evaluates at most the quantum, and the last step finishes.
+      // and the evaluation counts what it has completed.
+      @annotation.tailrec
+      def units(
+          e: PairedEvaluation[Key, Key, String, Double],
+          seen: Vector[(Int, Int)]
+      ): Vector[(Int, Int)] =
+        e.advance(quantum) match
+          case PairedPage.More(u, next) => units(next, seen :+ (u -> next.completedPairs))
+          case PairedPage.Done(u, _)    => seen :+ (u -> e.totalPairs)
+      assertEquals(start.completedPairs, 0)
+      val steps = units(start, Vector.empty)
+      assertEquals(steps.map(_._1).sum, 4, n)
+      assert(steps.forall((u, _) => u >= 1 && u <= n), steps)
+      // After each step, the completed count is the units taken so far.
+      assertEquals(steps.map(_._2), steps.map(_._1).scanLeft(0)(_ + _).tail, n)
+    }
+    val none = pair(
+      Trials(Vector.empty[Trial[Key, Meta, Double]]),
+      Trials(Vector(trial("r1", 1.0))),
+      Pairing.between[Key, Key].all
+    )
+    PairedEvaluation.start(none, inputs, info)(evaluator).advance(PairQuantum.default) match
+      case PairedPage.Done(0, analysis) =>
+        assertEquals(analysis, evaluatePairs(none, inputs, info)(evaluator))
+      case other => fail(s"$other")
+  }
+
   test("meanByLeft and meanByRight name different orientations") {
     val evaluated =
       evaluatePairs(directedPairs, inputs, info)((left, right) => Right(left + right))

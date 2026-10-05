@@ -35,7 +35,7 @@ import org.typelevel.discipline.Laws
   * surface) is effectful and lives in the `eyes4s-fs2` tests.
   *
   * A family supplies its [[Family]] evidence and a generator of cursors; the
-  * shipped study, recording and temporal families are checked in the module's
+  * shipped study, recording, temporal and repetition families are checked in the module's
   * own suite, which also shows each law killing a deliberate mutant. A
   * downstream family that implements `Stepwise` runs the same rule set.
   *

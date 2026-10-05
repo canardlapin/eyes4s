@@ -87,7 +87,20 @@ final case class MockStudy(
     summary: MockSummary,
     inventory: Vector[LedgerEntry],
     scanpaths: Map[TrialKey, Vector[ScanpathRecord]]
-) derives CanEqual
+) derives CanEqual:
+
+  /** A query's control references: every admitted encoding trial of another
+    * item from its participant, in inventory order, with each one's item;
+    * none when the pool disagrees with the query's served control count.
+    */
+  def controls(q: MockQuery): Option[Vector[(TrialKey, String)]] =
+    val pool = inventory.collect {
+      case e
+          if e.trial.participant == q.participant && e.trial.phase == Phase.Encoding &&
+            e.disposition == TrialDisposition.Admitted && e.item != q.item =>
+        (e.trial, e.item)
+    }
+    Option.when(q.controls.contains(pool.size))(pool)
 
 object MockStudy:
 

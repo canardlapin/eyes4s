@@ -1322,6 +1322,7 @@ fails after rewriting, so review the change and run it again.
 | `recipe-parameter.missing-part` | `MissingPart` | `field`, `part` |
 | `recipe-parameter.unknown-token` | `UnknownToken` | `field`, `token`, `options` |
 | `recipe-parameter.undeclared-window-frame` | `UndeclaredWindowFrame` | `admission` |
+| `recipe-parameter.pairing` | `Pairing` | `error` |
 
 ### `repetition-plan` — `RepetitionPlanError`
 
@@ -1334,6 +1335,9 @@ fails after rewriting, so review the change and run it again.
 | `repetition-plan.overlapping-relations` | `OverlappingRelations` | `matched`, `controls` |
 | `repetition-plan.grid` | `Grid` | `row`, `underlying` |
 | `repetition-plan.specification` | `Specification` | `underlying` |
+| `repetition-plan.result-input` | `ResultInput` | `role`, `expected`, `found` |
+| `repetition-plan.result-evaluation` | `ResultEvaluation` | `role`, `expected`, `found` |
+| `repetition-plan.result-pairs` | `ResultPairs` | `role`, `expected`, `found`, `firstDifference` |
 
 ### `diagnostic-code` — `DiagnosticCodeError`
 
@@ -1500,6 +1504,36 @@ fails after rewriting, so review the change and run it again.
 | `study-advisory.sigma-below-cells` | `SigmaBelowCells` | `scale`, `cells`, `minimumCells` |
 | `study-advisory.sigma-near-uniform` | `SigmaNearUniform` | `scale`, `fraction`, `limit` |
 
+### `methods-fact` — `FactError`
+
+| Code | Case | Operands |
+|---|---|---|
+| `methods-fact.wrong-value` | `WrongValue` | `slot`, `value`, `expected` |
+| `methods-fact.negative-count` | `NegativeCount` | `slot`, `value` |
+| `methods-fact.empty-range` | `EmptyRange` | `slot`, `min`, `max` |
+| `methods-fact.blank-label` | `BlankLabel` | `slot` |
+| `methods-fact.invalid-share` | `InvalidShare` | `slot`, `fraction` |
+| `methods-fact.no-counts` | `NoCounts` | `slot` |
+| `methods-fact.repeated-controls` | `RepeatedControls` | `slot`, `controls` |
+| `methods-fact.not-fewer` | `NotFewer` | `slot`, `controls` |
+| `methods-fact.duplicate` | `Duplicate` | `slot` |
+| `methods-fact.invalid-code` | `InvalidCode` | `value` |
+| `methods-fact.inconsistent` | `Inconsistent` | `total`, `value`, `parts`, `sum` |
+
+### `navigation` — `NavigationError`
+
+| Code | Case | Operands |
+|---|---|---|
+| `navigation.negative-offset` | `NegativeOffset` | `value` |
+| `navigation.wrong-level` | `WrongLevel` | `ref`, `expected` |
+| `navigation.inspection` | `Inspection` | `underlying` |
+| `navigation.no-reduction` | `NoReduction` | `contrast`, `design` |
+| `navigation.input-mismatch` | `InputMismatch` | `inspection`, `provenance` |
+| `navigation.provenance` | `Provenance` | `underlying` |
+| `navigation.no-record` | `NoRecord` | `key`, `position`, `reason` |
+| `navigation.unknown-record` | `UnknownRecord` | `record` |
+| `navigation.not-admitted` | `NotAdmitted` | `record` |
+
 ### `codec` — `CodecError`
 
 | Code | Case | Operands |
@@ -1543,6 +1577,8 @@ fails after rewriting, so review the change and run it again.
 | `codec.report` | `Report` | `underlying` |
 | `codec.report-spec` | `ReportSpec` | `underlying` |
 | `codec.covariates` | `Covariates` | `underlying` |
+| `codec.stamp` | `Stamp` | `underlying` |
+| `codec.repetition-result` | `RepetitionResult` | `underlying` |
 
 ### `resolve` — `ResolveError`
 
@@ -1601,6 +1637,9 @@ fails after rewriting, so review the change and run it again.
 | `relation.source-binding` | `SourceBinding` | `field`, `expected`, `found` |
 | `relation.run-plan` | `RunPlan` | `reported`, `current`, `changes` |
 | `relation.run-input` | `RunInput` | `reported`, `current` |
+| `relation.analysis-family` | `AnalysisFamily` | `result`, `plan`, `expected` |
+| `relation.undeclared-embedding` | `UndeclaredEmbedding` | `plan` |
+| `relation.empty-embedding` | `EmptyEmbedding` | `plan` |
 
 ### `manifest` — `ManifestError`
 
@@ -1618,6 +1657,7 @@ fails after rewriting, so review the change and run it again.
 | `manifest.payload-owner` | `PayloadOwner` | `relation`, `schema` |
 | `manifest.duplicate-relation` | `DuplicateRelation` | `relation` |
 | `manifest.relation-count` | `RelationCount` | `name`, `kind`, `count`, `expected` |
+| `manifest.analysis-input` | `AnalysisInput` | `relation`, `name`, `role` |
 
 ### `payload` — `PayloadError`
 
@@ -1740,6 +1780,21 @@ fails after rewriting, so review the change and run it again.
 | `result-table.cell` | `Cell` | `row`, `column`, `value`, `reason` |
 | `result-table.width` | `Width` | `row`, `expected`, `actual` |
 | `result-table.context` | `Context` | `operand`, `reason` |
+
+### `report-navigation` — `ReportNavigationError`
+
+| Code | Case | Operands |
+|---|---|---|
+| `report-navigation.negative-scale` | `NegativeScale` | `scale` |
+| `report-navigation.blank-component` | `BlankComponent` | `component` |
+| `report-navigation.blank-participant` | `BlankParticipant` | `participant` |
+| `report-navigation.scale-mismatch` | `ScaleMismatch` | `ref`, `report` |
+| `report-navigation.unknown-cell` | `UnknownCell` | `group`, `role`, `component` |
+| `report-navigation.not-in-cell` | `NotInCell` | `participant`, `group`, `role`, `component` |
+| `report-navigation.wrong-level` | `WrongLevel` | `ref`, `expected` |
+| `report-navigation.not-a-member` | `NotAMember` | `key`, `group`, `role`, `component` |
+| `report-navigation.query-count` | `QueryCount` | `participant`, `listed`, `found`, `group`, `role`, `component` |
+| `report-navigation.unlisted-participant` | `UnlistedParticipant` | `key`, `participant`, `group`, `role`, `component` |
 
 ### `detector-validation` — `DetectorValidationError`
 

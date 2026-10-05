@@ -101,6 +101,13 @@ object TrialInputAdapter:
     def spoken(state: TrialInputState, targets: TrialTargets): Option[String] =
       view.input.map(in => state.accessibleText(in.display.trial, targets))
     def roleDescription: String = TrialText(TrialTextId.PlotRole)
+    // Named before its marks are resolved, as it reads with no mark focused.
+    override def idle: Option[String] =
+      Some(
+        view.input.fold(TrialText(TrialTextId.PlotRole))(in =>
+          TrialText(TrialTextId.PlotKeys, in.display.trial.label)
+        )
+      )
 
   /** Attaches input to `view` as `viewId`, showing `selection`; selection and
     * hover intents go to `dispatch`. On the FX application thread.

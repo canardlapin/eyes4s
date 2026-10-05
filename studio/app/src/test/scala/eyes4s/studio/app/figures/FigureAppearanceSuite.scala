@@ -122,7 +122,49 @@ class FigureAppearanceSuite extends munit.FunSuite:
     assertEquals(
       page(c, t2).stamp,
       "Analysis rev 4 · run 7 (archive unbound) · data r3 · reporting “By retrieval " +
-        s"response” (by-retrieval-response) · studio build eyes4s ${StudioBuild.eyes4sBaseVersion}"
+        "response” (sha256:3a0e…5dd) · studio build eyes4s " +
+        StudioBuild.eyes4sBaseVersion
+    )
+    // The spec is edited in place, so its digest says which version a figure
+    // was exported with (decision on bead S8.7): an edit changes it.
+    val spec   = t2.document.reporting.head
+    val pooled = eyes4s.studio.core.document.ReportingSpec
+      .of(
+        spec.id,
+        spec.name,
+        spec.groupBy,
+        spec.filters,
+        spec.minimumPerGroup,
+        eyes4s.studio.core.document.ReportingWeight.PooledQueries
+      )
+      .fold(e => fail(e.message), identity)
+    assertNotEquals(
+      FigureCaption.specDigest(pooled, short = false),
+      FigureCaption.specDigest(spec, short = false)
+    )
+    assert(FigureCaption.specDigest(spec, short = false).matches("sha256:[0-9a-f]{64}"))
+    // Every field the spec reports with is in the digest: filters and the
+    // minimum change it too.
+    import eyes4s.studio.core.document.{MinimumPerGroup, ReportingFilter, ReportingSpec, Share}
+    def edited(
+        filters: Vector[ReportingFilter] = spec.filters,
+        minimum: Option[MinimumPerGroup] = spec.minimumPerGroup
+    ) = ReportingSpec
+      .of(spec.id, spec.name, spec.groupBy, filters, minimum, spec.weighting)
+      .fold(e => fail(e.message), identity)
+    val filtered = edited(filters =
+      Vector(
+        ReportingFilter.OutsideWindowAtMost(Share.of(0.25).fold(e => fail(e.message), identity))
+      )
+    )
+    val minimum = edited(minimum = MinimumPerGroup.of(3).toOption)
+    val digests =
+      Vector(spec, filtered, minimum).map(FigureCaption.specDigest(_, short = false))
+    assertEquals(digests.distinct.size, 3)
+    // The same spec digests alike.
+    assertEquals(
+      FigureCaption.specDigest(edited(), short = false),
+      FigureCaption.specDigest(spec, short = false)
     )
     // The release line only: no commit or timestamp to regenerate on every load.
     assertEquals(StudioBuild.eyes4sBaseVersion, "0.1")

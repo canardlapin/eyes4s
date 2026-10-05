@@ -25,7 +25,15 @@ import eyes4s.studio.app.tokens.Theme
 import eyes4s.studio.app.{ClockTime, ProjectName}
 import eyes4s.studio.core.fixture.StoryMoment
 import eyes4s.studio.desktop.admission.{AdmissionLedgerHost, LedgerInputs}
-import eyes4s.studio.desktop.compare.{CompareSummaryHost, PanelSources, SummaryInputs}
+import eyes4s.studio.desktop.compare.{
+  CompareInspectorHost,
+  CompareSummaryHost,
+  LedgerSource,
+  PanelSources,
+  ReportingEditorHost,
+  SummaryInputs
+}
+import eyes4s.studio.desktop.data.{AssetFiles, SourcesPaneHost}
 import eyes4s.studio.desktop.explore.{
   ExploreTimelineHost,
   ExploreTrialViewHost,
@@ -79,8 +87,12 @@ final class StudioWindow private (
     val admission: AdmissionLedgerHost,
     val summary: CompareSummaryHost,
     summaryListener: AppModel => Unit,
+    val compareInspector: CompareInspectorHost,
+    val reporting: ReportingEditorHost,
     val navigator: TrialsNavigatorHost,
     navigatorListener: AppModel => Unit,
+    val sources: SourcesPaneHost,
+    sourcesListener: AppModel => Unit,
     val explore: ExploreTrialViewHost,
     exploreListener: AppModel => Unit,
     val timeline: ExploreTimelineHost,
@@ -94,7 +106,9 @@ final class StudioWindow private (
     val preflight: PreflightHost,
     preflightListener: AppModel => Unit,
     val figures: FiguresHost,
-    figuresListener: AppModel => Unit
+    figuresListener: AppModel => Unit,
+    val themes: ThemeHost,
+    themeListener: AppModel => Unit
 ):
   /** The window content, with the studio stylesheets. */
   def root: javafx.scene.Parent = shell.root
@@ -106,6 +120,7 @@ final class StudioWindow private (
   def paneStops(pane: PaneId): Vector[FocusStop] =
     if pane == StudioLayouts.columnMapping then columnMapping.focusStops
     else if pane == StudioLayouts.admission then admission.focusStops
+    else if pane == StudioLayouts.sources then sources.focusStops
     else if pane == StudioLayouts.compareQueries || pane == StudioLayouts.compareItems then
       eyes4s.studio.app.compare.QueriesNavigator.focusStops(summary.navigatorVM)
     else if pane == StudioLayouts.queryTrial then
@@ -113,6 +128,8 @@ final class StudioWindow private (
     else if pane == StudioLayouts.referenceTrial then
       eyes4s.studio.app.compare.TrialPanels.referenceStops(summary.panelsVM)
     else if pane == StudioLayouts.contrast then summary.contrastStops
+    else if pane == StudioLayouts.compareInspector then compareInspector.focusStops
+    else if pane == StudioLayouts.compareReporting then reporting.focusStops
     else if pane == StudioLayouts.trials then navigator.trialsStops
     else if pane == StudioLayouts.items then navigator.itemsStops
     else if pane == StudioLayouts.trialView then explore.focusStops
@@ -140,6 +157,8 @@ final class StudioWindow private (
   def close(): Unit =
     runtime.unlisten(summaryListener)
     runtime.unlisten(navigatorListener)
+    runtime.unlisten(sourcesListener)
+    sources.dispose()
     runtime.unlisten(exploreListener)
     runtime.unlisten(timelineListener)
     explore.dispose()
@@ -152,21 +171,15 @@ final class StudioWindow private (
     runtime.unlisten(preflightListener)
     runtime.unlisten(figuresListener)
     summary.dispose()
+    compareInspector.dispose()
+    reporting.dispose()
     figures.dispose()
+    runtime.unlisten(themeListener)
+    themes.dispose()
     project.foreach(_.close())
     session.close()
 
 object StudioWindow:
-
-  /** The studio's dock theme: `studio-dock.css`, which maps scaladock's
-    * variables onto the studio tokens.
-    */
-  val dockThemeResource: String = s"${tokens.TokenFiles.resourceDirectory}/studio-dock.css"
-
-  def dockTheme: Either[MissingStylesheet, DockTheme] =
-    Option(getClass.getClassLoader.getResource(dockThemeResource))
-      .toRight(MissingStylesheet(dockThemeResource))
-      .map(url => DockTheme.Custom(url.toExternalForm))
 
   /** The answer to Rename…: the typed name, or why it was refused. */
   def renameAnswer(text: String): Intent =
@@ -193,7 +206,8 @@ object StudioWindow:
       model: () => AppModel,
       messages: Messages,
       project: Option[ProjectPort] = None,
-      presets: FilePresetStore = FilePresetStore.userDefault
+      presets: FilePresetStore = FilePresetStore.userDefault,
+      themed: javafx.scene.Scene => Unit = _ => ()
   ): PlatformDialogs =
     (dialog: PlatformDialog, dispatch: Intent => Unit) =>
       dialog match
@@ -210,17 +224,36 @@ object StudioWindow:
           a.show()
         case PlatformDialog.ImportSources =>
           // The import wizard (S5.2): its commands come back as intents.
-          val theme = model().document.presentation.theme match
+          val theme = model().theme match
             case eyes4s.studio.core.document.Theme.Light => Theme.Light
             case eyes4s.studio.core.document.Theme.Dark  => Theme.Dark
-          val sheets = StudioStyles.stylesheets(theme).getOrElse(Nil)
-          ImportWizardHost.openWindow(
+          val sheets     = StudioStyles.stylesheets(theme).getOrElse(Nil)
+          val (stage, _) = ImportWizardHost.openWindow(
             () => model().document,
             dispatch,
             presets,
             sheets,
             project
-          ): Unit
+          )
+          // The wizard follows later theme changes too (S1.10).
+          themed(stage.getScene)
+        case PlatformDialog.About =>
+          // The About box (S1.14), in its own window with the studio's styles.
+          val theme = model().theme match
+            case eyes4s.studio.core.document.Theme.Light => Theme.Light
+            case eyes4s.studio.core.document.Theme.Dark  => Theme.Dark
+          val stage = javafx.stage.Stage()
+          val view  = eyes4s.studio.desktop.shell.AboutView(
+            eyes4s.studio.app.about.AboutBox.vm(eyes4s.studio.desktop.shell.DesktopAbout.facts),
+            () => stage.close()
+          )
+          val scene = javafx.scene.Scene(view.node, 560, 560)
+          scene.getStylesheets.setAll(StudioStyles.stylesheets(theme).getOrElse(Nil)*)
+          stage.setTitle(messages(MessageId.CommandAbout))
+          stage.setScene(scene)
+          // The About box follows later theme changes too (S1.10).
+          themed(scene)
+          stage.show()
         case PlatformDialog.OpenProject =>
           System.err.println(s"$dialog is not available until S2.9.")
 
@@ -234,7 +267,6 @@ object StudioWindow:
       moment: StoryMoment,
       displays: NavigatorDisplays,
       stimuli: StimulusSource,
-      theme: Theme = Theme.Light,
       dialogs: Option[PlatformDialogs] = None,
       messages: Messages = Messages.english,
       project: Option[ProjectPort] = None,
@@ -243,11 +275,16 @@ object StudioWindow:
       presets: FilePresetStore = FilePresetStore.userDefault,
       // The window's backend serves the source records unless one is given.
       records: Option[eyes4s.studio.app.explore.SourceRecordsSource] = None,
-      panels: PanelSources = PanelSources.notServed
+      assetFiles: Option[AssetFiles] = None,
+      panels: PanelSources = PanelSources.notServed,
+      // S1.12: a job's defect, by the kind of effect that failed.
+      defect: (String, Throwable) => Unit = (_, _) => ()
   )(using IORuntime): Either[WindowError, StudioWindow] =
+    // The window starts in the document's theme and follows it (S1.10).
+    val theme = initial.theme
     for
-      sheets <- StudioStyles.stylesheets(theme).left.map(WindowError.Styles(_))
-      dock   <- dockTheme.left.map(WindowError.Styles(_))
+      _      <- ThemeHost.sheets(theme).left.map(WindowError.Styles(_))
+      dock   <- ThemeHost.dockTheme(theme).left.map(WindowError.Styles(_))
       window <- build(
         initial,
         moment,
@@ -261,11 +298,11 @@ object StudioWindow:
         nativeMenu,
         presets,
         records,
-        panels
+        assetFiles,
+        panels,
+        defect
       )
-    yield
-      window.root.getStylesheets.setAll(sheets*)
-      window
+    yield window
 
   private def build(
       initial: AppModel,
@@ -280,7 +317,9 @@ object StudioWindow:
       nativeMenu: Boolean,
       presets: FilePresetStore,
       records: Option[eyes4s.studio.app.explore.SourceRecordsSource],
-      panels: PanelSources
+      assetFiles: Option[AssetFiles],
+      panels: PanelSources,
+      defect: (String, Throwable) => Unit
   )(using IORuntime): Either[WindowError, StudioWindow] =
     // Late-bound: the runtime, the host and the effects refer to each other.
     var runtime: Option[StudioRuntime] = None
@@ -300,12 +339,20 @@ object StudioWindow:
         }
     )
     dockOf = () => host.dock.state.maximized.isDefined
+    // Late-bound too: a dialog's window follows the window's theme.
+    var themed: Option[ThemeHost] = None
     // Late-bound too: a verification's answer goes to the admission ledger.
     var ledger: Option[AdmissionLedgerHost] = None
     val effects                             = DesktopEffects(
       session,
       dialogs.getOrElse(
-        fxDialogs(() => runtime.fold(initial)(_.model), messages, project, presets)
+        fxDialogs(
+          () => runtime.fold(initial)(_.model),
+          messages,
+          project,
+          presets,
+          scene => themed.foreach(_.register(scene))
+        )
       ),
       p =>
         host.reset(p)
@@ -315,7 +362,8 @@ object StudioWindow:
       f => Platform.runLater(() => f()),
       project,
       clock,
-      (dataset, content, answer) => ledger.foreach(_.verified(dataset, content, answer))
+      (dataset, content, answer) => ledger.foreach(_.verified(dataset, content, answer)),
+      defect
     )
     val adopted = session.adopt(initial.document)
     adopted.collect { case Left(e) => e }.foreach(e => System.err.println(e.message))
@@ -332,6 +380,14 @@ object StudioWindow:
         )
       )
     r.listen(shell.render)
+    // The window's theme: the document's, applied to the window, its dock and
+    // its floating windows; the platform's scheme reported for System (S1.10).
+    val themes = ThemeHost(shell.root, host.dock, dispatch)
+    themed = Some(themes)
+    val themeListener: AppModel => Unit = themes.sync
+    r.listen(themeListener)
+    themes.sync(r.model)
+    themes.start()
     // The column-mapping pane (Data): the import wizard on the selected
     // revision. Saved presets are read once, off the JavaFX thread.
     val mapping = ColumnMappingPaneHost(
@@ -378,7 +434,23 @@ object StudioWindow:
       "compare.reference-trial.table"  -> summary.referenceTrialTable,
       "compare.items"                  -> summary.items.node
     ).foreach((id, node) => PaneId.of(id).foreach(host.host(_, node)))
-    val summaryListener: AppModel => Unit = summary.sync
+    // Compare's inspector (S8.4): why this reference, beside the panels.
+    val compareInspector = CompareInspectorHost(
+      () => r.model,
+      dispatch,
+      LedgerSource.of(session),
+      () => summary.inspectorInputs
+    )
+    host.host(StudioLayouts.compareInspector, compareInspector.node)
+    summary.onRendered(() => compareInspector.refresh())
+    // Compare's reporting editor (S8.7), beside the summary.
+    val reporting = ReportingEditorHost(() => r.model, dispatch, () => summary.summary)
+    host.host(StudioLayouts.compareReporting, reporting.node)
+    summary.onRendered(() => reporting.render())
+    val summaryListener: AppModel => Unit = m =>
+      summary.sync(m)
+      compareInspector.sync(m)
+      reporting.render()
     r.listen(summaryListener)
     // The trials navigator (Explore): the latest admitted revision's trials.
     val navigator =
@@ -387,9 +459,28 @@ object StudioWindow:
     host.host(StudioLayouts.items, navigator.items.node)
     val navigatorListener: AppModel => Unit = navigator.sync
     r.listen(navigatorListener)
+    // The Sources pane (Data): the selected revision's sources, displays and repairs.
+    val sources = SourcesPaneHost(
+      () => r.model,
+      dispatch,
+      displays,
+      assetFiles.getOrElse(
+        AssetFiles.chooser(() => Option(shell.root.getScene).map(_.getWindow).orNull)
+      ),
+      project
+    )
+    host.host(StudioLayouts.sources, sources.node)
+    val sourcesListener: AppModel => Unit = sources.sync
+    r.listen(sourcesListener)
+    sources.sync(r.model)
     // Explore's trial view: the explored trial under the shown run's revision.
     val explore =
-      ExploreTrialViewHost(() => r.model, TrialViewInputs.of(session, displays), stimuli)
+      ExploreTrialViewHost(
+        () => r.model,
+        TrialViewInputs.of(session, displays),
+        stimuli,
+        dispatch
+      )
     host.host(StudioLayouts.trialView, explore.node)
     val exploreListener: AppModel => Unit = explore.sync
     r.listen(exploreListener)
@@ -469,8 +560,12 @@ object StudioWindow:
         admission,
         summary,
         summaryListener,
+        compareInspector,
+        reporting,
         navigator,
         navigatorListener,
+        sources,
+        sourcesListener,
         explore,
         exploreListener,
         timeline,
@@ -484,6 +579,8 @@ object StudioWindow:
         preflight,
         preflightListener,
         figures,
-        figuresListener
+        figuresListener,
+        themes,
+        themeListener
       )
     )

@@ -18,6 +18,7 @@ package eyes4s.studio.app
 
 import eyes4s.codec.CanonicalDigest
 import eyes4s.studio.app.analysis.PresetPicker
+import eyes4s.studio.app.appearance.{Appearance, AppearanceState}
 import eyes4s.studio.app.jobs.JobBoard
 import eyes4s.studio.app.keys.{CommandId, CommandRegistry, KeyChord}
 import eyes4s.studio.app.layout.{LayoutId, PaneId, PerspectiveLayout, StudioLayouts}
@@ -51,7 +52,8 @@ import eyes4s.studio.core.document.{
   Preset,
   Recipe,
   RunLifecycle,
-  StudioDocument
+  StudioDocument,
+  Theme
 }
 import eyes4s.studio.core.freshness.{Freshness, SessionFacts}
 import eyes4s.studio.core.preview.PreviewReady
@@ -224,6 +226,9 @@ enum PlatformDialog derives CanEqual:
   /** The project's location, size and format version (S1.4). */
   case ProjectInfo
 
+  /** The About box: the build and its components (S1.14). */
+  case About
+
 /** What the application must do after an update: data, performed by the
   * shell and services, never by [[AppModel.update]] (DESIGN_SPEC section 13).
   */
@@ -311,6 +316,12 @@ enum Intent derives CanEqual:
     * The perspective follows the target (Place.home).
     */
   case Explain(target: Place)
+
+  /** The trail follows the selection to `target` (S6.6): as [[Explain]],
+    * but it replaces the current trail without a Back step, and only within
+    * the current perspective (a follow never switches perspective).
+    */
+  case Follow(target: Place)
 
   // --- Selection and hover (S3.3) ------------------------------------------------
   case Select(input: SelectionInput)
@@ -420,8 +431,19 @@ enum Intent derives CanEqual:
   case RevealProject
   case ShowProjectInfo
 
+  /** Help › About Eyes Studio (S1.14). */
+  case ShowAbout
+
   /** View › Reset perspective: the current perspective's layouts. */
   case ResetPerspective
+
+  /** View › Appearance (S1.10): Light and Dark set the document's theme;
+    * System follows the platform's.
+    */
+  case SetAppearance(appearance: Appearance)
+
+  /** The platform's theme, as it reports it (at start and on each change). */
+  case SystemTheme(theme: Theme)
 
   /** The shell's current arrangement of each perspective, `None` where it
     * is the default. Only those that differ from the document's are saved
@@ -453,10 +475,16 @@ final case class AppModel private (
     pending: Option[Confirmation],
     notice: Option[Notice],
     save: SaveState,
-    prepared: Option[PreparedDesign]
+    prepared: Option[PreparedDesign],
+    appearance: AppearanceState
 ) derives CanEqual:
 
   def document: StudioDocument = history.document
+
+  /** The theme the studio shows (S1.10): the platform's while View ›
+    * Appearance › System is chosen, else the document's.
+    */
+  def theme: Theme             = appearance.effective(document.presentation.theme)
   def perspective: Perspective = document.presentation.perspective
   def location: Location       = navigation.at(perspective)
 
@@ -539,7 +567,8 @@ object AppModel:
       None,
       None,
       SaveState.never,
-      None
+      None,
+      AppearanceState.initial
     )
 
   /** The Analysis trail of the current draft, or of the latest revision. */
@@ -560,6 +589,12 @@ object AppModel:
   /** The Elm-style update: pure and total. A refused command, undo or
     * selection changes nothing but the notice and emits no effect.
     */
+  // The document's theme set to `theme` (a view-only SetTheme), unless it
+  // already is: switching theme changes nothing else.
+  private def followTheme(m: AppModel, theme: Theme): (AppModel, Vector[AppEffect]) =
+    if m.document.presentation.theme == theme then (m, Vector.empty)
+    else update(m, Intent.Dispatch(Command.SetTheme(theme)))
+
   def update(m: AppModel, intent: Intent): (AppModel, Vector[AppEffect]) = intent match
     case Intent.SwitchPerspective(p) => navigate(m, m.navigation.at(p))
     case Intent.Navigate(to)         => navigate(m, to)
@@ -580,6 +615,10 @@ object AppModel:
     case Intent.Explain(target) =>
       val trail = Provenance.explain(m.location.trail, target)
       navigate(m, Location(Place.home(trail).getOrElse(m.perspective), trail))
+    case Intent.Follow(target) =>
+      val trail = Provenance.explain(m.location.trail, target)
+      if Place.home(trail).getOrElse(m.perspective) != m.perspective then (m, none)
+      else (m.copy(navigation = m.navigation.replace(Location(m.perspective, trail))), none)
 
     case Intent.Select(input) =>
       m.selection
@@ -715,6 +754,18 @@ object AppModel:
     case Intent.RevealProject =>
       (m, m.project.fold(none)(_ => Vector(AppEffect.RevealProject)))
     case Intent.ShowProjectInfo => (m, Vector(AppEffect.OpenDialog(PlatformDialog.ProjectInfo)))
+    case Intent.ShowAbout       => (m, Vector(AppEffect.OpenDialog(PlatformDialog.About)))
+    // Light and Dark are the user's choice, recorded in the document (a
+    // view-only SetTheme); System records nothing: the platform's theme is
+    // shown while it is chosen, and a platform change is no edit.
+    case Intent.SetAppearance(Appearance.System) =>
+      (m.copy(appearance = m.appearance.copy(followSystem = true)), none)
+    case Intent.SetAppearance(a) =>
+      val next = m.copy(appearance = m.appearance.copy(followSystem = false))
+      followTheme(next, next.appearance.themeFor(a))
+    case Intent.SystemTheme(t) =>
+      (m.copy(appearance = m.appearance.copy(system = t)), none)
+
     case Intent.ResetPerspective =>
       // The default arrangement: its default focus, nothing maximized.
       val p       = m.perspective

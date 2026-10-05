@@ -34,7 +34,7 @@ object TokenCss:
   /** The JavaFX style class that selects a stage variant, e.g. `stage-mid`. */
   def stageStyleClass(stage: StageVariant): String = s"stage-${stage.cssName}"
 
-  private[tokens] val licenseHeader: String =
+  private[studio] val licenseHeader: String =
     """|/*
        | * Copyright 2026 canardlapin
        | *

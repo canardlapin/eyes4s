@@ -77,6 +77,15 @@ final class StudioRuntime(
     listeners += f
     f(current)
 
+  /** Call `f` with each intent applied and the model it gave, from now on
+    * (never for the model already held): for what must follow the user's
+    * actions rather than every model (S2.8's appearance preference).
+    */
+  def observe(f: (Intent, AppModel) => Unit): Unit =
+    observers += f
+
+  private val observers = mutable.ArrayBuffer.empty[(Intent, AppModel) => Unit]
+
   /** Stop calling `f` (the very function given to [[listen]]). */
   def unlisten(f: AppModel => Unit): Unit =
     listeners -= f: Unit
@@ -107,5 +116,6 @@ final class StudioRuntime(
           val (model, effects) = AppModel.update(current, next)
           current = model
           listeners.foreach(notify(_, model, next))
+          observers.foreach(o => notify(m => o(next, m), model, next))
           effects.foreach(performer.perform(_, dispatch))
       finally running = false

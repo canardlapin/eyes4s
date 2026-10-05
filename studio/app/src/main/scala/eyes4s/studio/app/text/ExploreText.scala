@@ -25,6 +25,9 @@ enum ExploreTextId derives CanEqual:
   case Title, TitleNoItem, Points, Order, Map, ToggleOn, ToggleOff, MapPreview
   case MapNotServed, CanvasHint
 
+  // --- Prev and Next (S6.6) ---------------------------------------------------------
+  case PrevFixation, NextFixation, PrevGlyph, NextGlyph
+
   // --- What the view cannot show ------------------------------------------------------
   case NoTrial, NoRevision, Reading, ReadFailed, DisplaysFailed, DisplaysNotServed, Retry
   case SkippedMark, PreviewUndrawable
@@ -35,6 +38,7 @@ enum ExploreTextId derives CanEqual:
 
   // --- The legend ------------------------------------------------------------------------
   case LegendTitle, Fixation, OutsideWindowExcluded, OutsideWindowFails, OutsideScreen
+  case InsideWindowTrialFails
   case DroppedInitial, OrderLines, PreviewMap, MissingAsset
 
 /** Explore's trial view strings in the board's wording. */
@@ -53,6 +57,10 @@ object ExploreText:
     case MapPreview   => "Map: preview · σ {0}° · not a result"
     case MapNotServed => "Map preview not available: {0}"
     case CanvasHint   => "Canvas focused · arrows move · Enter selects · Esc clears"
+    case PrevFixation => "Previous fixation"
+    case NextFixation => "Next fixation"
+    case PrevGlyph    => "‹"
+    case NextGlyph    => "›"
 
     case NoTrial    => "Choose a trial in the Trials navigator to explore it."
     case NoRevision =>
@@ -79,15 +87,16 @@ object ExploreText:
     case BrushDisclaimer => "Brushing highlights; it does not crop the analysis"
     case TimelineNotRead => "The timeline of {0} cannot be drawn: {1}"
 
-    case LegendTitle           => "Legend"
-    case Fixation              => "Fixation · marker area ∝ duration"
-    case OutsideWindowExcluded => "Outside the analysis window · excluded from the map"
-    case OutsideWindowFails    => "Outside the analysis window · the trial fails"
-    case OutsideScreen         => "Outside the screen"
-    case DroppedInitial        => "Dropped by the initial-fixation policy"
-    case OrderLines            => "Order between fixation centres, not measured saccades"
-    case PreviewMap            => "Preview density · σ {0}° · not a result"
-    case MissingAsset          => "Missing asset"
+    case LegendTitle            => "Legend"
+    case Fixation               => "Fixation · marker area ∝ duration"
+    case OutsideWindowExcluded  => "Outside the analysis window · excluded from the map"
+    case OutsideWindowFails     => "Outside the analysis window · the trial fails"
+    case InsideWindowTrialFails => "Inside the analysis window · the trial fails"
+    case OutsideScreen          => "Outside the screen"
+    case DroppedInitial         => "Dropped by the initial-fixation policy"
+    case OrderLines             => "Order between fixation centres, not measured saccades"
+    case PreviewMap             => "Preview density · σ {0}° · not a result"
+    case MissingAsset           => "Missing asset"
 
   /** `id`'s English template with its arguments filled. */
   def apply(id: ExploreTextId, args: String*): String =

@@ -43,8 +43,8 @@ import scala.concurrent.duration.*
   * named laws are falsified (`Test.Failed`; an exception or an exhausted
   * generator does not count as a kill).
   *
-  * Fixtures: five study, two recording and two temporal families that
-  * complete; two temporal families that fail lawfully (a comparison budget
+  * Fixtures: five study, two recording, two temporal and three repetition
+  * families that complete; two temporal families that fail lawfully (a comparison budget
   * refused after four preparation steps, and on the very first advance),
   * whose reference is the literal expected error; and the R-pinned
   * matched/control fixture checked against an independent oracle.
@@ -672,7 +672,96 @@ class ExecutionLawsSuite extends munit.DisciplineSuite:
     )
   )
 
+  // -------------------------------------------------------------------------
+  // Repetition: matched pairs, then controls, each stage its own segment with
+  // the exact pair total the execution runner reports. Three plans: bottom-k
+  // controls, all controls, and an uneven input whose stages differ in size.
+  // -------------------------------------------------------------------------
+
+  private object Repetition:
+    final case class Key(person: Int, stimulus: String, repeat: Int) derives CanEqual
+    given KeyDigest[Key] = KeyDigest.derived[Key]
+    given Ordering[Key]  = Ordering.by(k => (k.person, k.stimulus, k.repeat))
+
+    private def id(name: String) = get(DefinitionId.of(name, 1))
+    private val layout           = get(
+      RepetitionLayout.of[Key, Int, String, Int](
+        id("example.repetition-layout"),
+        id("example.person"),
+        Projection.named("person")(_.person),
+        id("example.stimulus"),
+        Projection.named("stimulus")(_.stimulus),
+        id("example.occasion"),
+        Projection.named("repeat")(_.repeat)
+      )
+    )
+    private val grid = get(Grid.over(get(Frame.screen("repetition-laws", 5, 3)), 5, 3))
+    private val rows =
+      for person <- Vector(1, 2); stimulus <- Vector("a", "b"); repeat <- Vector(0, 1, 2) yield
+        val values = IArray.tabulate(15)(i =>
+          if i == (person + repeat + (if stimulus == "a" then 0 else 5)) % 15 then 2.0 else 1.0
+        )
+        Trial(
+          Key(person, stimulus, repeat),
+          (),
+          get(
+            Surface
+              .intensity(grid, values, Provenance.raw(ContentHash.of(values)))
+              .flatMap(_.normalised)
+          )
+        )
+    private def plan(selection: Selection, trials: Vector[Trial[Key, Unit, Mass[Px]]] = rows) =
+      get(
+        RepetitionPlan.of(
+          layout,
+          RepetitionRelations.withinParticipant,
+          MapSimilarityMethod.Cosine,
+          selection,
+          FailurePolicy.RequireAll,
+          grid,
+          Trials(trials)
+        )
+      )
+    val plans: Vector[(String, RepetitionPlan[Key, Px])] = Vector(
+      "bottom-k" -> plan(Selection.BottomK(get(PairLimit.of(2)), Seed(11L), SampleId("laws"))),
+      "all"      -> plan(Selection.All),
+      "uneven"   -> plan(
+        Selection.All,
+        rows.filterNot(t => t.key.person == 2 && t.key.stimulus == "b")
+      )
+    )
+
+    type Result = RepetitionPlanResult[Key]
+    def same(m: Result, n: Result): Boolean =
+      m.matched == n.matched && m.controls == n.controls && m.policy == n.policy &&
+        m.planHash == n.planHash
+
+    def family(p: RepetitionPlan[Key, Px]) = new ExecutionLaws.Family[
+      RepetitionCursor[Key],
+      RepetitionStage,
+      RepetitionStage,
+      Nothing,
+      Result
+    ](
+      identity,
+      (stage, cursor) => SegmentTotal.Exact(cursor.totalPairs(stage)),
+      _ => Right(p.run),
+      same,
+      (_, _) => true,
+      1_000
+    )
+
+  Repetition.plans.foreach { (name, p) =>
+    checkAll(
+      s"repetition.$name",
+      ExecutionLaws.conformance(Repetition.family(p), Gen.const(p.work), quanta)
+    )
+  }
+
   test("the plans' own runs are the shipped instances driven at the default quanta") {
+    Repetition.plans.foreach { (name, p) =>
+      assert(Repetition.same(get(Stepwise.complete(p.work, WorkQuanta.default)), p.run), name)
+    }
     prepared.foreach { (name, work) =>
       assert(
         sameStudy(get(Stepwise.complete(get(work.work()), WorkQuanta.default)), get(work.run)),

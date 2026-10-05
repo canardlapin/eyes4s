@@ -82,6 +82,9 @@ enum BackendError derives CanEqual, Codec.AsObject:
     */
   case SourceRecordsRefused(revision: AnalysisRevision, error: SourceRecordsError)
 
+  /** `run` has no scale index `scale`; it computes `scales` (protocol 1.9). */
+  case UnknownScale(run: RunId, scale: Int, scales: Vector[String])
+
   def code: String = this match
     case UnknownDataset(_, _)       => "studio-backend.unknown-dataset"
     case UnknownRevision(_, _)      => "studio-backend.unknown-revision"
@@ -91,6 +94,7 @@ enum BackendError derives CanEqual, Codec.AsObject:
     case UnknownTrial(_, _)         => "studio-backend.unknown-trial"
     case TrialViewRefused(_)        => "studio-backend.trial-view-refused"
     case SourceRecordsRefused(_, _) => "studio-backend.source-records-refused"
+    case UnknownScale(_, _, _)      => "studio-backend.unknown-scale"
     case PreviewNotReady(_, _, _)   => "studio-backend.preview-not-ready"
     case StalePreview(_, _, _)      => "studio-backend.stale-preview"
     case TamperedPreview(_, _)      => "studio-backend.tampered-preview"
@@ -133,6 +137,8 @@ enum BackendError derives CanEqual, Codec.AsObject:
     case InventoryRefused(d, issues) =>
       s"The trial inventory of ${d.label} is refused: ${issues.map(_.message).mkString(" ")}"
     case UnknownTrial(d, t)         => s"${t.label} is not a trial of dataset ${d.label}."
+    case UnknownScale(r, i, scales) =>
+      s"${r.label} has no scale $i; it computes ${scales.size} (${scales.mkString(", ")})."
     case TrialViewRefused(e)        => e.message
     case SourceRecordsRefused(r, e) => s"${r.label}: ${e.message}"
 
@@ -157,6 +163,7 @@ enum BackendError derives CanEqual, Codec.AsObject:
       case UnknownTrial(d, t)  => Vector(DiagnosticLocus.Dataset(d), DiagnosticLocus.Trial(t))
       case TrialViewRefused(e) => Vector(DiagnosticLocus.Trial(e.trial))
       case SourceRecordsRefused(r, _) => Vector(DiagnosticLocus.Revision(r))
+      case UnknownScale(r, i, _) => Vector(DiagnosticLocus.Run(r), DiagnosticLocus.Scale(i))
     StudioDiagnostic(code, DiagnosticLevel.Error, DiagnosticOrigin.Host, subject, message)
 
 /** Everything Eyes Studio asks of eyes4s (DESIGN_SPEC section 13, S3.0): the
@@ -237,6 +244,12 @@ trait StudyBackend[F[_]]:
 
   def provenance(run: RunId, address: ResultAddress): F[Either[BackendError, Provenance]]
 
+  /** Every pair row of `run` at scale index `scale`, a page at a time, in
+    * focal order with each query's matched pair first (eyes4s `PairScores`,
+    * protocol 1.9; the export bundle's comparisons.csv, S9.5).
+    */
+  def pairRows(run: RunId, scale: Int, page: PageRequest): F[Either[BackendError, PairRowPage]]
+
   /** The admitted fixations of `trial` under `revision`, in scanpath order,
     * each placed against the map by the revision's study (protocol 1.6,
     * S6.2). A trial without an admitted scanpath is `Unavailable`.
@@ -304,6 +317,9 @@ enum BackendRequest derives CanEqual, Codec.AsObject:
   /** Protocol 1.7. */
   case SourceRecordsOf(revision: AnalysisRevision, from: Int, count: Int)
 
+  /** Protocol 1.9. */
+  case PairRowsOf(run: RunId, scale: Int, page: PageRequest)
+
 /** A response of the [[StudyBackend]] protocol. */
 enum BackendResponse derives CanEqual, Codec.AsObject:
   case Refused(error: BackendError)
@@ -337,6 +353,9 @@ enum BackendResponse derives CanEqual, Codec.AsObject:
   /** Protocol 1.7. */
   case SourceRecordsOf(page: SourceRecordPage)
 
+  /** Protocol 1.9. */
+  case PairRowsOf(page: PairRowPage)
+
 /** A frame from backend to client: the one response to a request, or one
   * event of a subscription.
   */
@@ -345,12 +364,20 @@ enum ServerFrame derives CanEqual, Codec.AsObject:
   case Event(event: JobEvent)
   case Preview(event: PreviewEvent)
 
-/** The protocol's version. The transport checks the major version only.
-  * Client and backend must be upgraded together when a minor version adds a
-  * wire variant: an older body decoder cannot read that new variant.
+/** The protocol's version. Client and backend are deployed together and speak
+  * exactly one version: every minor so far has changed what an older body
+  * decoder can read (1.2's `Counting`, 1.3's inventory join, 1.8's required
+  * diagnostic fields), so a minor is no promise of compatibility. Both ends
+  * read a frame's version before its body and refuse any other version,
+  * naming both ([[BackendError.UnsupportedVersion]] from the server,
+  * [[TransportError.Incompatible]] at the client), never as malformed (bead
+  * bd-01M3JH3492J21SKMYYNZM93118).
   */
 final case class ProtocolVersion(major: Int, minor: Int) derives CanEqual, Codec.AsObject:
   def render: String = s"$major.$minor"
+
+  /** Whether a peer speaking this version can be served: only the current one. */
+  def isCurrent: Boolean = this == ProtocolVersion.Current
 
 object ProtocolVersion:
   /** 1.1 added `Unsubscribe`, `Unsubscribed`, `Malformed` and
@@ -362,9 +389,14 @@ object ProtocolVersion:
     * adds a trial's admitted fixations and its preview map (S6.2). 1.7 adds
     * a revision's fixation-file records as pages (`sourceRecords`, S6.4).
     * 1.8 adds a diagnostic's affected trials, finding class and remedy
-    * (S3.5). Deploy client and backend together.
+    * (S3.5). 1.9 adds a run's pair rows as pages (`pairRows`, S9.5) and
+    * `UnknownScale`, and refuses any other version before reading a frame's
+    * body. 1.10 adds the `TrialFailed` map placement, with its window
+    * tally: a fixation in the window of a trial the study fails (eyes4s
+    * UI-G G3); `InWindow` keeps its wire name `InMap`. Deploy client and
+    * backend together.
     */
-  val Current: ProtocolVersion = ProtocolVersion(1, 8)
+  val Current: ProtocolVersion = ProtocolVersion(1, 10)
 
 /** A client's correlation id; every frame answering a request carries it. */
 final case class RequestId(value: Long) derives CanEqual
@@ -394,7 +426,7 @@ object StudyBackend:
       backend: StudyBackend[F]
   )(request: Envelope[BackendRequest]): Stream[F, Envelope[ServerFrame]] =
     val frames =
-      if request.version.major != ProtocolVersion.Current.major then
+      if !request.version.isCurrent then
         Stream.emit(
           ServerFrame.Response(
             BackendResponse.Refused(
@@ -439,6 +471,7 @@ object StudyBackend:
       case Q.TrialPreviewOf(r, t)     => answer(backend.trialPreview(r, t))(A.TrialPreviewOf(_))
       case Q.SourceRecordsOf(r, f, n) =>
         answer(backend.sourceRecords(r, f, n))(A.SourceRecordsOf(_))
+      case Q.PairRowsOf(r, s, p) => answer(backend.pairRows(r, s, p))(A.PairRowsOf(_))
       // In process a subscription is ended by dropping its stream; only a
       // connection (SidecarServer) holds subscriptions to end.
       case Q.Unsubscribe(id) => Stream.emit(ServerFrame.Response(A.Unsubscribed(id, false)))

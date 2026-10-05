@@ -16,6 +16,7 @@
 
 package eyes4s.studio.desktop.figures
 
+import cats.data.EitherT
 import cats.effect.IO
 import eyes4s.studio.app.compare.SummaryAnswer
 import eyes4s.studio.app.explore.DisplaySource
@@ -27,6 +28,7 @@ import eyes4s.studio.core.backend.{
   AnalysisRevision,
   DatasetRevision,
   LedgerPages,
+  PairRowPage,
   RunId,
   TrialFixations,
   TrialKey
@@ -162,7 +164,7 @@ object FigureInputs:
       def displays(
           dataset: DatasetRevisionSpec,
           done: Either[String, DisplaySource] => Unit
-      ): Unit = done(source.displays(dataset))
+      ): Unit = source.read(dataset, done)
       def methods(
           run: RunId,
           dataset: DatasetRevision,
@@ -222,19 +224,28 @@ object FigureInputs:
           case Some(parent) =>
             val target = parent.toPath.resolve(request.folder)
             val run    = request.source.run.id
-            val read   = for
-              summary <- session.backend.result(run)
-              rows    <- MethodsReads.queryRows(session.backend.queries, run)
-            yield (summary.left.map(_.message), rows.left.map(_.message))
+            // The pair rows are read only when comparisons.csv is chosen.
+            val comparisons = request.items.contains(BundleItem.Comparisons)
+            val read        = (for
+              summary <- EitherT(session.backend.result(run)).leftMap(_.message)
+              rows    <- EitherT(MethodsReads.queryRows(session.backend.queries, run))
+                .leftMap(_.message)
+              pairs <-
+                if !comparisons then EitherT.rightT[IO, String](Vector.empty[PairRowPage])
+                else
+                  EitherT(
+                    MethodsReads.pairRows(session.backend.pairRows, run, summary.scales.size)
+                  ).leftMap(_.message)
+            yield (summary, rows, pairs)).value
             session.run(read) {
               case Left(e)                              => done(Left(reason(e)))
-              case Right((Left(why), _))                => done(Left(why))
-              case Right((_, Left(why)))                => done(Left(why))
-              case Right((Right(summary), Right(rows))) =>
+              case Right(Left(why))                     => done(Left(why))
+              case Right(Right((summary, rows, pairs))) =>
                 BundleFiles.assemble(
                   request,
                   summary,
                   rows,
+                  pairs,
                   FigureExport.rasters(request.page, images)
                 ) match
                   case Left(why)   => done(Left(why))

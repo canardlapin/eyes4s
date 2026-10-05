@@ -37,11 +37,11 @@ class ProtocolCodecSuite extends munit.FunSuite:
 
   test("every message kind and case is sampled") {
     assertEquals(requests.map(_.ordinal), requests.indices.toVector)
-    assertEquals(requests.size, 22)
+    assertEquals(requests.size, 23)
     assertEquals(responses.map(_.ordinal), responses.indices.toVector)
-    assertEquals(responses.size, 18)
+    assertEquals(responses.size, 19)
     assertEquals(errors.map(_.ordinal), errors.indices.toVector)
-    assertEquals(errors.size, 19)
+    assertEquals(errors.size, 20)
     assertEquals(causes.map(_.ordinal), causes.indices.toVector)
     assertEquals(causes.size, 14)
     assertEquals(loci.map(_.ordinal), loci.indices.toVector)
@@ -269,8 +269,37 @@ class ProtocolCodecSuite extends munit.FunSuite:
       .downField("total")
       .as[Protocol11Total]
 
+  test(
+    "1.9: a trial-failed placement carries its window tally, and a broken tally is refused"
+  ) {
+    val failed = trialFixations.fixations.map(_.placement).collect {
+      case p @ eyes4s.plan.MapPlacement.TrialFailed(_) => p
+    }
+    assertEquals(failed.size, 1)
+    val wire = TrialViewCodecs.placement(failed.head)
+    assertEquals(wire.as(using TrialViewCodecs.placementDecoder), Right(failed.head))
+    // A total above the safe JSON integer range travels as a decimal string.
+    assertEquals(
+      wire.hcursor.downField("TrialFailed").downField("tally").get[String]("totalMicros"),
+      Right("9007199254740993")
+    )
+    // In the window keeps its earlier wire name.
+    assertEquals(
+      TrialViewCodecs.placement(eyes4s.plan.MapPlacement.InWindow),
+      Json.obj("InMap" -> Json.obj())
+    )
+    val broken = wire.hcursor
+      .downField("TrialFailed")
+      .downField("tally")
+      .downField("outsideWindow")
+      .withFocus(_ => Json.fromInt(99))
+      .top
+      .getOrElse(fail("wire"))
+    assert(broken.as(using TrialViewCodecs.placementDecoder).isLeft, broken.noSpaces)
+  }
+
   test("protocol 1.2 Counting requires coordinated peers, not a relabelled 1.1 frame") {
-    assertEquals(ProtocolVersion.Current, ProtocolVersion(1, 8))
+    assertEquals(ProtocolVersion.Current, ProtocolVersion(1, 10))
     val previous = Envelope(RequestId(41), ServerFrame.Event(JobEvent.Advanced(progress)))
     assertEquals(legacyMeterTotal(previous.asJson), Right(Protocol11Total.Exact(8512L)))
     val counting = progress.asJson

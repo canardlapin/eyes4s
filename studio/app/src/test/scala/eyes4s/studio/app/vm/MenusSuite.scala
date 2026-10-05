@@ -198,7 +198,10 @@ class MenusSuite extends munit.FunSuite:
     for m <- Vector(t2, StoryModels.t3Summary, StoryModels.firstRun) do
       val bar   = Menus.bar(m)
       val items = bar.flatMap(_.items)
-      assertEquals(bar.map(_.title), Vector("File", "Edit", "View", "Go", "Run", "Window"))
+      assertEquals(
+        bar.map(_.title),
+        Vector("File", "Edit", "View", "Go", "Run", "Window", "Help")
+      )
       assertEquals(items.map(_.command), CommandRegistry.menus.flatMap(_._2.map(_.id)))
       items.foreach { i =>
         val c = CommandRegistry.find(i.command).get

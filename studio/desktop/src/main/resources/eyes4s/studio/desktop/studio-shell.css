@@ -18,6 +18,33 @@
  * docs/studio/design/Main.dc.html). Colours are token names only; sizes come
  * from studio-type.css classes; weights are face families (DESIGN_SPEC 14). */
 
+/* ---- JavaFX's own control colours (modena) on the tokens (S1.10) ------ */
+/* A stock control (a list, a text field, a scroll bar, a table) follows the
+ * theme like the studio's chrome: each of modena's looked-up colours names a
+ * token, never a colour, so the light and dark token sheets decide. */
+
+.root {
+  -fx-base: -es-surface-2;
+  -fx-background: -es-surface;
+  -fx-control-inner-background: -es-surface;
+  -fx-control-inner-background-alt: -es-surface-2;
+  -fx-accent: -es-accent;
+  -fx-default-button: -es-accent-soft;
+  -fx-box-border: -es-hairline;
+  -fx-text-base-color: -es-ink;
+  -fx-text-background-color: -es-ink;
+  -fx-text-inner-color: -es-ink;
+  -fx-dark-text-color: -es-ink;
+  -fx-mid-text-color: -es-ink-2;
+  -fx-light-text-color: -es-surface;
+  -fx-prompt-text-fill: -es-ink-3;
+  -fx-selection-bar: -es-accent-soft;
+  -fx-selection-bar-non-focused: -es-surface-3;
+  -fx-selection-bar-text: -es-ink;
+  -fx-cell-hover-color: -es-surface-3;
+  -fx-mark-color: -es-ink-2;
+}
+
 .studio-shell {
   -fx-background-color: -es-ground;
   /* Accent's first job: keyboard focus (DESIGN_SPEC section 4, S1.11). */
@@ -439,4 +466,10 @@
   -fx-pref-height: 18px;
   -fx-max-height: 18px;
   -fx-padding: 0 6 0 6;
+}
+
+/* ---- The About box (S1.14) ---------------------------------------------------------- */
+
+.about-box {
+  -fx-background-color: -es-surface;
 }

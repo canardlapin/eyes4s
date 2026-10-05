@@ -64,10 +64,6 @@ final case class BundleRequest(
 object FigureBundle:
   val Action: String = "Export bundle…"
 
-  // Follow-up (S9.5): comparisons.csv needs a paged pair-rows view of the run.
-  val NoPairRows: String =
-    "comparisons.csv needs the backend's pair-rows view, which it does not serve yet."
-
   def folder(page: PageVM): String = s"figure-${page.figure.number}-bundle"
 
   def file(item: BundleItem, page: PageVM, format: ExportFormat): String = item match
@@ -97,7 +93,7 @@ object FigureBundle:
           (s"${Format.count(r.contrasts.requested)} queries × ${r.scales.size} σ", None)
         )
       case BundleItem.Comparisons =>
-        (result.fold("")(r => s"${Format.count(r.pairRows)} pair rows"), Some(NoPairRows))
+        result.fold(("", Some(reading)))(r => (s"${Format.count(r.pairRows)} pair rows", None))
       case BundleItem.Participants =>
         result.fold(("", Some(reading)))(r =>
           (s"${r.participants.size} × ${r.groups.size} groups", None)
@@ -130,6 +126,8 @@ object FigureBundle:
       s"${s.run.id.label} · analysis ${s.bound.analysis.id.label} · data " +
         s"${s.bound.dataset.id.label} · reporting “${s.reporting.name}” · studio build eyes4s " +
         StudioBuild.eyes4sBaseVersion,
+      s"reporting spec ${s.reporting.id.value} " +
+        FigureCaption.specDigest(s.reporting, short = false),
       "",
       "Files:"
     ) ++ files ++ (if left.isEmpty then Vector.empty else Vector("", "Not included:") ++ left))

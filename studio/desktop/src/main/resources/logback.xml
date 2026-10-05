@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Eyes Studio's logging before StudioLog.open routes it to the log file
+  (ticket S1.12), and in tests that never open it: warnings and errors only,
+  to standard error.
+-->
+<configuration>
+  <statusListener class="ch.qos.logback.core.status.NopStatusListener"/>
+  <appender name="studio-stderr" class="ch.qos.logback.core.ConsoleAppender">
+    <target>System.err</target>
+    <encoder>
+      <pattern>%d{ISO8601} %-5level [%thread] %logger - %msg%n</pattern>
+    </encoder>
+  </appender>
+  <root level="WARN">
+    <appender-ref ref="studio-stderr"/>
+  </root>
+</configuration>

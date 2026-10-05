@@ -233,6 +233,16 @@ final class CompareSummaryHost(
       sources.stimuli
     )
 
+  /** What Compare's inspector reads of these views (S8.4). */
+  def inspectorInputs: InspectorInputs =
+    InspectorInputs(panelState, shownRun, state.answered, state.reporting)
+
+  // Called after each render, so panes beside these views follow their answers.
+  private var rendered: Vector[() => Unit] = Vector.empty
+
+  /** Calls `f` after every render of these views. */
+  def onRendered(f: () => Unit): Unit = rendered = rendered :+ f
+
   /** The run Compare shows, with its revision and rows, once both are read. */
   private def shownRun: Option[ShownRun] =
     for
@@ -430,7 +440,7 @@ final class CompareSummaryHost(
       queries.render(navigators)
       items.render(navigators)
       val v     = CompareSummaryVM.of(state, m)
-      val theme = m.document.presentation.theme match
+      val theme = m.theme match
         case eyes4s.studio.core.document.Theme.Light => Theme.Light
         case eyes4s.studio.core.document.Theme.Dark  => Theme.Dark
       // The run's status, then why any part could not be drawn.
@@ -481,7 +491,7 @@ final class CompareSummaryHost(
         ladder.rebuild(ScaleLadderPlot(ladderColumns, cv.focusScale))
       show("ladder", cv.ladder.map(Right(_)), theme)(ladder.show(_, theme), ladder.clear())
       val pv = panelsVM
-      panels.render(pv, theme)
+      panels.render(pv, theme, eyes4s.studio.app.explore.ExploreTrialViewVM.appearance(m)._2)
       def table(p: Option[TrialPanelVM]) = p.map(_.content).collect {
         case PanelContent.Shown(c) => TrialPanels.fixationTable(c).left.map(_.message)
       }
@@ -493,6 +503,7 @@ final class CompareSummaryHost(
         referenceTrialTable.show,
         referenceTrialTable.clear()
       )
+      rendered.foreach(_())
 
   // Draws a part when its source or the theme changes. A part with no source
   // (the run is still being read) or one that could not be built is cleared,

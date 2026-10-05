@@ -18,14 +18,20 @@ package eyes4s.studio.core.assets
 
 import cats.syntax.all.*
 import eyes4s.codec.{ByteDigest, CanonicalDigest, CodecError, VersionedCodec}
-import eyes4s.studio.core.backend.{DatasetRevision, TrialKey}
+import eyes4s.studio.core.backend.{DatasetRevision, Phase, TrialKey}
 import eyes4s.studio.core.document.{
+  AssetRelink,
   CanonicalJson,
+  ColumnName,
+  ColumnRole,
   DatasetRevisionSpec,
+  DisplayColumns,
   ImagePlacement,
+  InventoryMapping,
   ScreenSize,
   StudioSchemaIds
 }
+import eyes4s.studio.core.importing.CsvSniffer
 import io.circe.syntax.*
 import io.circe.{Codec, Decoder, DecodingFailure, Encoder, HCursor, Json}
 
@@ -62,9 +68,33 @@ enum AssetError derives CanEqual:
 
   /** Repair named a file no trial is missing. */
   case NotMissing(file: AssetFile, missing: Vector[AssetFile])
+
+  /** A repair of `dataset` names a file no display of it names. */
+  case NotNamed(dataset: DatasetRevision, file: AssetFile)
   case NoTrialInventory(dataset: DatasetRevision)
   case WrongDataset(registry: DatasetRevision, dataset: DatasetRevision)
   case WrongInventory(dataset: DatasetRevision, registry: ByteDigest, source: ByteDigest)
+
+  /** The trial inventory bytes read for `dataset` are not the bytes its
+    * source recorded (S5.7): a stored file changed, or another file was read.
+    */
+  case InventoryBytes(dataset: DatasetRevision, read: ByteDigest, recorded: ByteDigest)
+
+  /** `dataset` maps no trial inventory, or maps no display columns in it. */
+  case NoInventoryMapping(dataset: DatasetRevision)
+  case NoDisplayColumns(dataset: DatasetRevision)
+
+  /** `dataset`'s trial inventory cannot be read as a table. */
+  case UnreadableInventory(dataset: DatasetRevision, reason: String)
+
+  /** A mapped column is not in the inventory's header. */
+  case InventoryColumnMissing(dataset: DatasetRevision, column: String)
+
+  /** Record `record` (from 1) has `width` cells; the header has `expected`. */
+  case InventoryRagged(dataset: DatasetRevision, record: Int, width: Int, expected: Int)
+
+  /** Record `record`'s occurrence is `value`, not a whole number. */
+  case BadOccurrence(dataset: DatasetRevision, record: Int, value: String)
 
   def message: String = this match
     case BadFileName(value, reason)     => s"Asset file name '$value' is refused: $reason."
@@ -84,7 +114,9 @@ enum AssetError derives CanEqual:
         digests.map(_.hex.take(12)).mkString(", ") + "."
     case PresentAndMissing(file, present, missing) =>
       s"Asset ${file.value} is present for ${present.label} and missing for ${missing.label}."
-    case DuplicateAsset(file)     => s"Stored asset ${file.value} is listed more than once."
+    case DuplicateAsset(file)    => s"Stored asset ${file.value} is listed more than once."
+    case NotNamed(dataset, file) =>
+      s"Dataset ${dataset.label}'s repair of ${file.value} names a file no trial displays."
     case NotMissing(file, absent) =>
       s"No trial is missing ${file.value}; missing: " +
         (if absent.isEmpty then "none" else absent.map(_.value).mkString(", ")) + "."
@@ -95,6 +127,23 @@ enum AssetError derives CanEqual:
     case WrongInventory(dataset, registry, source) =>
       s"The asset registry was built from trial inventory ${registry.hex.take(12)}, but " +
         s"dataset ${dataset.label}'s is ${source.hex.take(12)}."
+    case InventoryBytes(dataset, read, recorded) =>
+      s"The trial inventory read for dataset ${dataset.label} has SHA-256 " +
+        s"${read.hex.take(12)}; its source recorded ${recorded.hex.take(12)}."
+    case NoInventoryMapping(dataset) =>
+      s"Dataset ${dataset.label} maps no trial inventory, so it states no displays."
+    case NoDisplayColumns(dataset) =>
+      s"Dataset ${dataset.label}'s trial inventory maps no display kind column."
+    case UnreadableInventory(dataset, reason) =>
+      s"Dataset ${dataset.label}'s trial inventory cannot be read: $reason"
+    case InventoryColumnMissing(dataset, column) =>
+      s"Dataset ${dataset.label}'s trial inventory has no column '$column'."
+    case InventoryRagged(dataset, record, width, expected) =>
+      s"Record $record of dataset ${dataset.label}'s trial inventory has $width cells; " +
+        s"its header has $expected."
+    case BadOccurrence(dataset, record, value) =>
+      s"Record $record of dataset ${dataset.label}'s trial inventory has occurrence " +
+        s"'$value', which is not a whole number."
 
 // ---------------------------------------------------------------------------
 // Values
@@ -386,6 +435,39 @@ final case class AssetRegistry private (
 
   def count(kind: DisplayKind): Int = trials.count(_.kind == kind)
 
+  /** The registry with the document's repairs of its dataset revision (S5.7):
+    * every display naming a relinked file shows the repaired bytes, under
+    * the inventory's name, whether the file was missing here or is already
+    * stored (a repair with the original file under its own name is stored
+    * by that name, so a fresh read finds it present: applying the repair
+    * again changes nothing). A repair of a file no display names is refused.
+    */
+  def withRelinks(relinks: Vector[AssetRelink]): Either[AssetError, AssetRegistry] =
+    relinks
+      .filter(_.dataset == dataset)
+      .foldLeft[Either[AssetError, AssetRegistry]](Right(this))((acc, r) =>
+        acc.flatMap(_.relinked(r.file, AssetRef(r.file, r.asset.sha256)))
+      )
+
+  /** Every display naming `file` shows `asset`, present or missing before. */
+  private def relinked(file: AssetFile, asset: AssetRef): Either[AssetError, AssetRegistry] =
+    if !trials.exists(_.asset.exists(_.fileName == file)) then
+      Left(AssetError.NotNamed(dataset, file))
+    else
+      def link(a: AssetLink) = if a.fileName == file then AssetLink.Present(asset) else a
+      AssetRegistry.of(
+        dataset,
+        inventory,
+        screen,
+        trials.map(d =>
+          d.copy(display = d.display match
+            case Display.Image(a)   => Display.Image(link(a))
+            case Display.Cue(a)     => Display.Cue(a.map(link))
+            case Display.Unknown(a) => Display.Unknown(a.map(link))
+            case other              => other)
+        )
+      )
+
   /** Resolve every display missing `file` to the stored `asset` (Repair). */
   def repair(file: AssetFile, asset: AssetRef): Either[AssetError, AssetRegistry] =
     val absent = missing.map(_.file)
@@ -477,6 +559,89 @@ object AssetRegistry:
       }
       registry <- of(dataset.id, inventory, dataset.geometry.screen, displays)
     yield registry
+
+  /** The registry of `dataset` from its own stored trial inventory
+    * (`inventory`, the exact bytes the project stores for its trials source),
+    * the stimulus files the project stores (`stored`), and the document's
+    * repairs (`relinks`, S2.5): read only when `inventory`'s SHA-256 is the
+    * one the source recorded, through the inventory mapping's trial key,
+    * item and display columns. A repaired file is present under the
+    * inventory's name with the repaired bytes' digest.
+    */
+  def fromInventory(
+      dataset: DatasetRevisionSpec,
+      inventory: IArray[Byte],
+      stored: Vector[AssetRef],
+      relinks: Vector[AssetRelink]
+  ): Either[AssetError, AssetRegistry] =
+    val id = dataset.id
+    for
+      source <- dataset.sources.trials.toRight(AssetError.NoTrialInventory(id))
+      read = ByteDigest.sha256(inventory)
+      _ <- Either.cond(
+        read == source.bytes,
+        (),
+        AssetError.InventoryBytes(id, read, source.bytes)
+      )
+      mapping <- dataset.inventory.toRight(AssetError.NoInventoryMapping(id))
+      columns <- mapping.displays.toRight(AssetError.NoDisplayColumns(id))
+      file = source.path.value
+      text = new String(Array.from(inventory), java.nio.charset.StandardCharsets.UTF_8)
+      table <- CsvSniffer
+        .chooseDelimiter(file, text)
+        .flatMap((delimiter, _) => CsvSniffer.records(file, text, delimiter))
+        .left
+        .map(e => AssetError.UnreadableInventory(id, e.message))
+      rows <- displayRows(id, mapping, columns, table)
+      repaired = relinks.filter(_.dataset == id).map(r => r.asset.copy(file = r.file))
+      registry <- fromRows(
+        dataset,
+        rows,
+        stored.filterNot(a => repaired.exists(_.file == a.file)) ++ repaired
+      )
+    yield registry
+
+  /** Each record's display columns, through `mapping`'s trial key and item. */
+  private def displayRows(
+      id: DatasetRevision,
+      mapping: InventoryMapping,
+      columns: DisplayColumns,
+      table: Vector[Vector[String]]
+  ): Either[AssetError, Vector[DisplayRow]] =
+    val header            = table.headOption.getOrElse(Vector.empty)
+    def at(c: ColumnName) =
+      Option(header.indexOf(c.value))
+        .filter(_ >= 0)
+        .toRight(AssetError.InventoryColumnMissing(id, c.value))
+    def role(r: ColumnRole) = mapping.column(r).traverse(at)
+    for
+      participant <- role(ColumnRole.Participant)
+      phase       <- role(ColumnRole.Phase)
+      trial       <- role(ColumnRole.Trial)
+      occurrence  <- role(ColumnRole.Occurrence)
+      item        <- role(ColumnRole.Item)
+      kind        <- at(columns.kind)
+      image       <- columns.file.traverse(at)
+      rows        <- table.drop(1).zipWithIndex.traverse { (cells, i) =>
+        val record                = i + 1
+        def cell(at: Option[Int]) = at.flatMap(cells.lift).getOrElse("")
+        for
+          _ <- Either.cond(
+            cells.size == header.size,
+            (),
+            AssetError.InventoryRagged(id, record, cells.size, header.size)
+          )
+          occ <- occurrence.fold(Right(1))(o =>
+            cells(o).trim.toIntOption.toRight(AssetError.BadOccurrence(id, record, cells(o)))
+          )
+        yield DisplayRow(
+          TrialKey(cell(participant), Phase(cell(phase)), cell(trial), occ),
+          cell(item),
+          cells(kind),
+          cell(image)
+        )
+      }
+    yield rows
 
   /** That `registry` belongs to `dataset`: the same revision and the same
     * trial inventory bytes.

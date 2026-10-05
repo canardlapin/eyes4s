@@ -40,6 +40,9 @@ Verified by hand on macOS: pending. The hand check covers:
 | View | Compare | `⌘4` | `perspective.compare` |
 | View | Figures | `⌘5` | `perspective.figures` |
 | View | Reset perspective | — | `view.reset-perspective` |
+| View | Appearance › Light | — | `view.appearance-light` |
+| View | Appearance › Dark | — | `view.appearance-dark` |
+| View | Appearance › System | — | `view.appearance-system` |
 | Go | Back | `⌘[` | `navigate.back` |
 | Go | Forward | `⌘]` | `navigate.forward` |
 | Run | Cancel run | — | `run.cancel` |
@@ -51,3 +54,4 @@ Verified by hand on macOS: pending. The hand check covers:
 | Window | Next tab | `⌃⇥` | `tab.next` |
 | Window | Previous tab | `⌃⇧⇥` | `tab.previous` |
 | Window | Maximize the focused group | `⌘⇧↩` | `pane.maximize` |
+| Help | About Eyes Studio | — | `help.about` |

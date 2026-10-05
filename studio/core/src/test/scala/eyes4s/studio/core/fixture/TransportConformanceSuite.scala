@@ -142,6 +142,15 @@ class InProcessTransportSuite extends TransportConformanceSuite:
     )
   }
 
+  test("a frame of another minor version is a transport defect, named") {
+    val older = ProtocolVersion(1, 2)
+    for
+      fake   <- fresh
+      remote <- RemoteStudyBackend[IO](rewriting(fake)(_.copy(version = older)))
+      error  <- failure(remote.jobs)
+    yield assertEquals(error, TransportError.Incompatible(older, ProtocolVersion.Current))
+  }
+
   test("a frame of another major version is a transport defect, named") {
     val future = ProtocolVersion(2, 0)
     for
@@ -191,6 +200,106 @@ class InProcessTransportSuite extends TransportConformanceSuite:
 class LoopbackTransportSuite extends TransportConformanceSuite:
   def transport(backend: StudyBackend[IO]): BackendTransport[IO] =
     BackendTransport.loopback(SidecarServer.serve(backend))
+
+  // --- Exact versions (bd-01M3JH3492J21SKMYYNZM93118) ----------------------------------
+
+  /** One raw line through the sidecar, its answers decoded. */
+  private def served(line: String): IO[Vector[Envelope[ServerFrame]]] =
+    fresh.flatMap(fake =>
+      Stream
+        .emit(line + "\n")
+        .through(fs2.text.utf8.encode)
+        .through(SidecarServer.serve(fake))
+        .through(WireFormat.decode[IO, ServerFrame]())
+        .compile
+        .toVector
+    )
+
+  private val v12 = ProtocolVersion(1, 2)
+
+  test("a 1.2 client's request is refused as UnsupportedVersion, naming both versions") {
+    // A 1.2 Admission request decodes at 1.9, and a 1.2 body may not: both are
+    // refused by version, under the request's id, never as malformed.
+    val decodable =
+      """{"version":{"major":1,"minor":2},"id":7,"body":{"Admission":{"dataset":3}}}"""
+    val undecodable =
+      """{"version":{"major":1,"minor":2},"id":8,"body":{"Retired":{"inventoryTrials":960}}}"""
+    for
+      a <- served(decodable)
+      b <- served(undecodable)
+    yield
+      val refusal = (id: Long) =>
+        Vector(
+          Envelope(
+            RequestId(id),
+            ServerFrame.Response(
+              BackendResponse.Refused(
+                BackendError.UnsupportedVersion(v12, ProtocolVersion.Current)
+              )
+            )
+          )
+        )
+      assertEquals(a, refusal(7))
+      assertEquals(b, refusal(8))
+  }
+
+  test("a 1.2 backend's frame fails the client as Incompatible, naming both, not Malformed") {
+    // A 1.2 admission summary: inventoryTrials/absent, which 1.3 replaced.
+    val old =
+      """{"version":{"major":1,"minor":2},"id":0,"body":{"Response":{"response":""" +
+        """{"Admission":{"summary":{"dataset":3,"inventoryTrials":960,"absent":6}}}}}}"""
+    val client = Stream
+      .emit(old + "\n")
+      .through(fs2.text.utf8.encode)
+      .through(WireFormat.decode[IO, ServerFrame]())
+      .compile
+      .toVector
+    client.attempt.map {
+      case Left(TransportFailure(e)) =>
+        assertEquals(e, TransportError.Incompatible(v12, ProtocolVersion.Current))
+      case other => fail(s"expected Incompatible, got $other")
+    }
+  }
+
+  test("a line of another version with no readable id ends the connection, named") {
+    val line = """{"version":{"major":1,"minor":2},"body":{"Runs":{}}}"""
+    served(line).attempt.map {
+      case Left(TransportFailure(TransportError.Unidentifiable(excerpt, reason))) =>
+        assertEquals(excerpt, line)
+        assert(reason.contains("1.2"), reason)
+      case other => fail(s"expected Unidentifiable, got $other")
+    }
+  }
+
+  test("a line with no version but a readable id is refused as malformed under that id") {
+    val line = """{"id":9,"body":{"Runs":{}}}"""
+    served(line).map(frames =>
+      frames.map(_.body) match
+        case Vector(
+              ServerFrame.Response(BackendResponse.Refused(BackendError.Malformed(e, _)))
+            ) =>
+          assertEquals(e, line)
+          assertEquals(frames.map(_.id), Vector(RequestId(9)))
+        case other => fail(s"expected Malformed, got $other")
+    )
+  }
+
+  test("a newer minor is refused alike: versions are exact, not ordered") {
+    val newer = ProtocolVersion.Current.copy(minor = ProtocolVersion.Current.minor + 1)
+    val line  =
+      s"""{"version":{"major":${newer.major},"minor":${newer.minor}},"id":3,"body":{"Runs":{}}}"""
+    for frames <- served(line)
+    yield assertEquals(
+      frames.map(_.body),
+      Vector(
+        ServerFrame.Response(
+          BackendResponse.Refused(
+            BackendError.UnsupportedVersion(newer, ProtocolVersion.Current)
+          )
+        )
+      )
+    )
+  }
 
   test("one connection serves many requests, each frame under its request's id") {
     for
@@ -275,7 +384,11 @@ class LoopbackTransportSuite extends TransportConformanceSuite:
     }
 
   test("a malformed line with a readable id is refused under that id; the connection goes on") {
-    val bad  = "{\"version\":{\"major\":1,\"minor\":1},\"id\":5,\"body\":{\"Runz\":{}}}\n"
+    // The current version, so the body is what is wrong (another version is
+    // refused by version first).
+    val v   = ProtocolVersion.Current
+    val bad =
+      s"""{"version":{"major":${v.major},"minor":${v.minor}},"id":5,"body":{"Runz":{}}}""" + "\n"
     val runs = WireFormat.line(Envelope(RequestId(6), BackendRequest.Runs: BackendRequest))
     serveLines(Vector(bad, runs)).map {
       case Right(frames) =>

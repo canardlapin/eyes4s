@@ -103,16 +103,31 @@ object FigureCaption:
       "group. Descriptive only: no intervals or tests."
 
   /** The provenance stamp: "Analysis rev 4 · run 7 (archive unbound) · data r3
-    * · reporting “By retrieval response” (by-retrieval-response) · studio
-    * build eyes4s 0.1".
+    * · reporting “By retrieval response” (sha256:1a2b…9f0) · studio build
+    * eyes4s 0.1".
     *
     * A run records no producer version yet, so the version is the studio
     * build's eyes4s release line, labelled as such; the run's archive binding
-    * identifies the result itself. A reporting spec has no revision: its id
-    * identifies it.
+    * identifies the result itself. A reporting spec has no revision and is
+    * edited in place, so the CR3 digest of its content identifies the version
+    * a figure was exported with (decision on bead S8.7); the bundle's README
+    * gives its id and the full digest.
     */
   def stamp(s: FigureSource): String =
     s"Analysis ${s.bound.analysis.id.label} · ${s.run.id.label} (archive " +
       s"${s.run.archive.render}) · data ${s.bound.dataset.id.label} · reporting " +
-      s"“${s.reporting.name}” (${s.reporting.id.value}) · studio build eyes4s " +
-      StudioBuild.eyes4sBaseVersion
+      s"“${s.reporting.name}” (${specDigest(s.reporting, short = true)})" +
+      " · studio build eyes4s " + StudioBuild.eyes4sBaseVersion
+
+  /** `spec`'s digest as "sha256:<hex>", or "sha256:1a2b…9f0" when `short`;
+    * "digest unavailable: why" if it cannot be computed.
+    */
+  def specDigest(spec: eyes4s.studio.core.document.ReportingSpec, short: Boolean): String =
+    eyes4s.studio.core.document.ReportingSpec
+      .digest(spec)
+      .fold(
+        e => s"digest unavailable: ${e.message}",
+        d =>
+          val hex = d.sha256.hex
+          if short then s"sha256:${hex.take(4)}…${hex.takeRight(3)}" else s"sha256:$hex"
+      )

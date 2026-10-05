@@ -74,7 +74,10 @@ enum RunStampError[Plan, Input]:
 
   def message: String = this match
     case ChangedPlan(reported, current, changes) =>
-      s"Run plan ${reported.display} differs from current ${current.display}; changed fields: ${changes.map(_.field).mkString(", ")}."
+      val fields =
+        if changes.isEmpty then "no described field changed"
+        else s"changed fields: ${changes.map(_.field).mkString(", ")}"
+      s"Run plan ${reported.display} differs from current ${current.display}; $fields."
     case ChangedInput(reported, current) =>
       s"Run input ${reported.display} differs from current ${current.display}."
 

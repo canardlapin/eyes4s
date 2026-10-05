@@ -891,6 +891,56 @@ final class FakeStudyBackend[F[_]] private[fixture] (
       }
     })
 
+  /** Protocol 1.9: every compared query's pairs at `scale`, matched first.
+    * A contributing query's matched score is its M (its matched reduction's
+    * only member); its control scores are the fixture's, which it holds for
+    * P17 ret_07 at 2° only, and otherwise not served. A failed query's pairs
+    * carry its diagnostic. The rows per scale are the summary's
+    * `pairRowsPerScale`.
+    */
+  def pairRows(
+      run: RunId,
+      scale: Int,
+      page: PageRequest
+  ): F[Either[BackendError, PairRowPage]] =
+    scored(run).map(_.flatMap { _ =>
+      if !summary.scales.indices.contains(scale) then
+        Left(BackendError.UnknownScale(run, scale, summary.scales))
+      else
+        val all = study.queries.flatMap { q =>
+          val controls = study.controls(q).getOrElse(Vector.empty)
+          status(q) match
+            case QueryStatus.Contributing(m, _, _) =>
+              val focus = summary.scales.lift(scale).contains(FocusScale)
+              PairRowEntry(
+                q.key,
+                PairDesign.Matched,
+                q.matchedKey,
+                q.item,
+                m.lift(scale).fold(PairScoreState.NotServed)(PairScoreState.Scored(_))
+              ) +: controls.map { (key, item) =>
+                val score = q.controlScores2deg
+                  .find(c => focus && MockStudy.key(q.participant, c.trial) == key)
+                  .fold(PairScoreState.NotServed)(c => PairScoreState.Scored(c.score))
+                PairRowEntry(q.key, PairDesign.Control, key, item, score)
+              }
+            case QueryStatus.Failed(d) =>
+              PairRowEntry(
+                q.key,
+                PairDesign.Matched,
+                q.matchedKey,
+                q.item,
+                PairScoreState.Failed(d)
+              ) +:
+                controls.map((key, item) =>
+                  PairRowEntry(q.key, PairDesign.Control, key, item, PairScoreState.Failed(d))
+                )
+            case _ => Vector.empty
+        }
+        val rows = slice(all, page)
+        Right(PairRowPage(run, scale, PageInfo.of(page, all.size, rows.size), rows))
+    })
+
   def provenance(run: RunId, address: ResultAddress): F[Either[BackendError, Provenance]] =
     scored(run).map(_.flatMap { r =>
       locate(run, address).flatMap { _ =>

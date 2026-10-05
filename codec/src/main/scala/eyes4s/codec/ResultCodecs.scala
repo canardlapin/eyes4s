@@ -142,8 +142,12 @@ final class StudyResultCodec[K, U <: Unit2D, P, S, D](
 )(using unit: UnitLabel[U]):
   private given Ordering[K] = layout.ordering
 
+  /** Encodes and digests the archive from one description (`describe`): its
+    * digest is the digest of the encoded archive, computed one estimation,
+    * pair row, reduction row or contrast row at a time.
+    */
   val codec: VersionedCodec[StudyResult[K, U, S, D]] =
-    VersionedCodec.checked(schema)(write)(read)
+    VersionedCodec.described(schema)(describe)(read)
 
   private type Failure  = StudyFailure[K]
   private type Source   = DirectedPairwiseAnalysis[K, K, Failure, S]
@@ -173,7 +177,7 @@ final class StudyResultCodec[K, U <: Unit2D, P, S, D](
           )
         )
 
-  private def write(result: StudyResult[K, U, S, D]): Either[CodecError, Json] = for
+  private def describe(result: StudyResult[K, U, S, D]): Either[CodecError, CanonicalDoc] = for
     _     <- described(result.description, "layout", layout.id)
     _     <- described(result.description, "method", method.id)
     table <- result.scales.zipWithIndex.foldLeft[Either[CodecError, DocumentIdentities]](
@@ -185,23 +189,26 @@ final class StudyResultCodec[K, U <: Unit2D, P, S, D](
         case (table, _) => table
       }
     }
-    scales <- result.scales.zipWithIndex.traverse { case (scale, index) =>
-      writeScale(scale).left.map(Wire.at(s"scales[$index]"))
-    }
-  yield Json.obj(
-    "layout"           -> Wire.id(layout.id),
-    "keySchema"        -> Wire.id(keys.schema),
-    "method"           -> Wire.id(method.id),
-    "scoreSchema"      -> Wire.id(scores.schema),
-    "differenceSchema" -> Wire.id(differences.schema),
-    "unit"             -> Json.fromString(unit.symbol),
-    "input"            -> Json.fromString(result.input.digest),
-    "description"      -> Json.arr(result.description.map { case (field, values) =>
-      Json.obj("field" -> Json.fromString(field), "values" -> ResultWire.values(values))
-    }*),
-    "identities" -> table.json,
-    "scales"     -> Json.arr(scales*)
-  )
+  yield
+    import CanonicalDoc.Leaf
+    CanonicalDoc.obj(
+      "layout"           -> Leaf(Wire.id(layout.id)),
+      "keySchema"        -> Leaf(Wire.id(keys.schema)),
+      "method"           -> Leaf(Wire.id(method.id)),
+      "scoreSchema"      -> Leaf(Wire.id(scores.schema)),
+      "differenceSchema" -> Leaf(Wire.id(differences.schema)),
+      "unit"             -> Leaf(Json.fromString(unit.symbol)),
+      "input"            -> Leaf(Json.fromString(result.input.digest)),
+      "description"      -> Leaf(Json.arr(result.description.map { case (field, values) =>
+        Json.obj("field" -> Json.fromString(field), "values" -> ResultWire.values(values))
+      }*)),
+      "identities" -> Leaf(table.json),
+      "scales"     -> CanonicalDoc.items(result.scales) { (scale, index) =>
+        describeScale(scale).left
+          .map(Wire.at(s"scales[$index]"))
+          .map(_.mapError(Wire.at(s"scales[$index]")))
+      }
+    )
 
   private def read(json: Json): Either[CodecError, StudyResult[K, U, S, D]] =
     readIn(json, Vector.empty)
@@ -256,8 +263,11 @@ final class StudyResultCodec[K, U <: Unit2D, P, S, D](
       .map(e => CodecError.Result(e))
   yield result
 
-  private def writeScale(scale: StudyScaleResult[K, U, S, D]): Either[CodecError, Json] = for
-    estimation <- scale.estimation.zipWithIndex.traverse { case ((key, outcome), index) =>
+  private def describeScale(
+      scale: StudyScaleResult[K, U, S, D]
+  ): Either[CodecError, CanonicalDoc] =
+    import CanonicalDoc.Leaf
+    val estimation = CanonicalDoc.items(scale.estimation) { case ((key, outcome), index) =>
       (for
         k <- keys.encode(key)
         o <- outcome match
@@ -274,27 +284,35 @@ final class StudyResultCodec[K, U <: Unit2D, P, S, D](
             ResultWire
               .studyFailure(keys)(failure)
               .map(f => ResultWire.tagged("failure", "failure" -> f))
-      yield Json.obj("key" -> k, "outcome" -> o)).left.map(Wire.at(s"estimation[$index]"))
+      yield Leaf(Json.obj("key" -> k, "outcome" -> o))).left
+        .map(Wire.at(s"estimation[$index]"))
     }
-    excluded <- scale.excludedPhases.traverse(keys.encode).left.map(Wire.at("excludedPhases"))
-    matched  <- writeAnalysis(scale.analyses.matchedSource, scale.analyses.matched).left
-      .map(Wire.at("analyses.matched"))
-    control <- writeAnalysis(scale.analyses.controlSource, scale.analyses.control).left
-      .map(Wire.at("analyses.control"))
-    contrast <- (scale.contrast match
-      case Right(value) => writeContrast(value)
-      case Left(error)  =>
-        ResultWire
-          .contrastError[K, U](keys)(error)
-          .map(e => ResultWire.tagged("error", "error" -> e))
-    ).left.map(Wire.at("contrast"))
-  yield Json.obj(
-    "estimate"       -> StudyWire.estimate(scale.estimate),
-    "estimation"     -> Json.arr(estimation*),
-    "excludedPhases" -> Json.arr(excluded*),
-    "analyses"       -> Json.obj("matched" -> matched, "control" -> control),
-    "contrast"       -> contrast
-  )
+    // The small members are written when the scale is described; the
+    // estimation and every row array are made one item at a time.
+    for
+      excluded <- scale.excludedPhases.traverse(keys.encode).left.map(Wire.at("excludedPhases"))
+      matched  <- describeAnalysis(scale.analyses.matchedSource, scale.analyses.matched).left
+        .map(Wire.at("analyses.matched"))
+      control <- describeAnalysis(scale.analyses.controlSource, scale.analyses.control).left
+        .map(Wire.at("analyses.control"))
+      contrast <- scale.contrast match
+        case Right(value) => Right(describeContrast(value).mapError(Wire.at("contrast")))
+        case Left(error)  =>
+          ResultWire
+            .contrastError[K, U](keys)(error)
+            .map(e => Leaf(ResultWire.tagged("error", "error" -> e)))
+            .left
+            .map(Wire.at("contrast"))
+    yield CanonicalDoc.obj(
+      "estimate"       -> Leaf(StudyWire.estimate(scale.estimate)),
+      "estimation"     -> estimation,
+      "excludedPhases" -> Leaf(Json.arr(excluded*)),
+      "analyses"       -> CanonicalDoc.obj(
+        "matched" -> matched.mapError(Wire.at("analyses.matched")),
+        "control" -> control.mapError(Wire.at("analyses.control"))
+      ),
+      "contrast" -> contrast
+    )
 
   private def readScale(
       table: DocumentIdentities,
@@ -367,9 +385,10 @@ final class StudyResultCodec[K, U <: Unit2D, P, S, D](
         case other => Left(ResultWire.unknown(outcome, "estimation outcome", other))
     yield key -> value
 
-  private def writeContrast(contrast: Contrast[K, S, D]): Either[CodecError, Json] =
-    contrast.rows.zipWithIndex
-      .traverse { case (row, index) =>
+  private def describeContrast(contrast: Contrast[K, S, D]): CanonicalDoc =
+    CanonicalDoc.obj(
+      "kind" -> CanonicalDoc.Leaf(Json.fromString("contrast")),
+      "rows" -> CanonicalDoc.items(contrast.rows) { (row, index) =>
         (for
           key        <- keys.encode(row.key)
           difference <- row.difference match
@@ -381,14 +400,16 @@ final class StudyResultCodec[K, U <: Unit2D, P, S, D](
               ResultWire
                 .contrastRowError(keys)(error)
                 .map(e => ResultWire.tagged("error", "error" -> e))
-        yield Json.obj(
-          "key"        -> key,
-          "matched"    -> Json.fromBoolean(row.matched.isDefined),
-          "control"    -> Json.fromBoolean(row.control.isDefined),
-          "difference" -> difference
+        yield CanonicalDoc.Leaf(
+          Json.obj(
+            "key"        -> key,
+            "matched"    -> Json.fromBoolean(row.matched.isDefined),
+            "control"    -> Json.fromBoolean(row.control.isDefined),
+            "difference" -> difference
+          )
         )).left.map(Wire.at(s"rows[$index]"))
       }
-      .map(rows => ResultWire.tagged("contrast", "rows" -> Json.arr(rows*)))
+    )
 
   private def readContrast(
       analyses: StudyAnalyses[K, S],
@@ -466,12 +487,12 @@ final class StudyResultCodec[K, U <: Unit2D, P, S, D](
       .map(e => CodecError.Reconstruction(e))
   yield row
 
-  private def writeAnalysis(
+  private def describeAnalysis(
       source: Source,
       analysis: Analysis[K, S]
-  ): Either[CodecError, Json] = for
-    written <- writeSource(source).left.map(Wire.at("source"))
-    entries <- analysis.entries.zipWithIndex.traverse { case (row, index) =>
+  ): Either[CodecError, CanonicalDoc] = for
+    written <- describeSource(source).left.map(Wire.at("source"))
+    entries = CanonicalDoc.items(analysis.entries) { (row, index) =>
       (for
         key    <- keys.encode(row.key)
         result <- row.result match
@@ -481,23 +502,25 @@ final class StudyResultCodec[K, U <: Unit2D, P, S, D](
             ResultWire
               .reductionError(keys)(error)
               .map(e => ResultWire.tagged("error", "error" -> e))
-      yield Json.obj(
-        "key"          -> key,
-        "result"       -> result,
-        "successful"   -> Json.fromInt(row.successful),
-        "failed"       -> Json.fromInt(row.failed),
-        "contributing" -> Json.fromInt(row.contributing)
+      yield CanonicalDoc.Leaf(
+        Json.obj(
+          "key"          -> key,
+          "result"       -> result,
+          "successful"   -> Json.fromInt(row.successful),
+          "failed"       -> Json.fromInt(row.failed),
+          "contributing" -> Json.fromInt(row.contributing)
+        )
       )).left.map(Wire.at(s"entries[$index]"))
     }
     diagnostics <- ResultWire
       .reductionReport(keys)(analysis.diagnostics)
       .left
       .map(Wire.at("diagnostics"))
-  yield Json.obj(
-    "source"      -> written,
-    "entries"     -> Json.arr(entries*),
-    "diagnostics" -> diagnostics,
-    "provenance"  -> ResultWire.provenance(analysis.provenance)
+  yield CanonicalDoc.obj(
+    "source"      -> written.mapError(Wire.at("source")),
+    "entries"     -> entries,
+    "diagnostics" -> CanonicalDoc.Leaf(diagnostics),
+    "provenance"  -> CanonicalDoc.Leaf(ResultWire.provenance(analysis.provenance))
   )
 
   private def readAnalysis(json: Json): Either[CodecError, (Source, Analysis[K, S])] = for
@@ -541,8 +564,8 @@ final class StudyResultCodec[K, U <: Unit2D, P, S, D](
       .map(e => CodecError.Reconstruction(e))
   yield (source, analysis)
 
-  private def writeSource(source: Source): Either[CodecError, Json] = for
-    rows <- source.rows.zipWithIndex.traverse { case (row, index) =>
+  private def describeSource(source: Source): Either[CodecError, CanonicalDoc] =
+    val rows = CanonicalDoc.items(source.rows) { (row, index) =>
       (for
         left   <- keys.encode(row.left)
         right  <- keys.encode(row.right)
@@ -553,23 +576,26 @@ final class StudyResultCodec[K, U <: Unit2D, P, S, D](
             ResultWire
               .studyFailure(keys)(failure)
               .map(f => ResultWire.tagged("failure", "failure" -> f))
-      yield Json.obj("left" -> left, "right" -> right, "result" -> result)).left
+      yield CanonicalDoc.Leaf(
+        Json.obj("left" -> left, "right" -> right, "result" -> result)
+      )).left
         .map(Wire.at(s"rows[$index]"))
     }
-    diagnostics <- ResultWire
-      .pairingReport(keys)(source.diagnostics)
-      .left
-      .map(Wire.at("diagnostics"))
-    evaluation <- ResultWire
-      .evaluationInfo[U](source.evaluation)
-      .left
-      .map(Wire.at("evaluation"))
-  yield Json.obj(
-    "rows"        -> Json.arr(rows*),
-    "diagnostics" -> diagnostics,
-    "provenance"  -> ResultWire.provenance(source.provenance),
-    "evaluation"  -> evaluation
-  )
+    for
+      diagnostics <- ResultWire
+        .pairingReport(keys)(source.diagnostics)
+        .left
+        .map(Wire.at("diagnostics"))
+      evaluation <- ResultWire
+        .evaluationInfo[U](source.evaluation)
+        .left
+        .map(Wire.at("evaluation"))
+    yield CanonicalDoc.obj(
+      "rows"        -> rows,
+      "diagnostics" -> CanonicalDoc.Leaf(diagnostics),
+      "provenance"  -> CanonicalDoc.Leaf(ResultWire.provenance(source.provenance)),
+      "evaluation"  -> CanonicalDoc.Leaf(evaluation)
+    )
 
   private def readSource(json: Json): Either[CodecError, Source] = for
     entries <- Wire.field[Vector[Json]](json, "rows")

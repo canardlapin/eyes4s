@@ -207,14 +207,15 @@ final class TrialPanelsView(
   /** Clicks the way back, as the user does. */
   def pressBack(): Unit = back.fire()
 
-  def render(vm: TrialPanelsVM, theme: Theme): Unit =
+  /** Binds `vm`, the stages drawn on the `stage` surround. */
+  def render(vm: TrialPanelsVM, theme: Theme, stage: StageVariant = StageVariant.Dark): Unit =
     query.show(vm.query, vm.empty)
     reference.show(vm.reference, None)
     val remembered = vm.remembered.fold(RememberedImage.Absent)(r =>
       if r.shown then RememberedImage.Shown(r.asset) else RememberedImage.Hidden(r.asset)
     )
-    val q = vm.query.map(TrialPanelsView.input(_, theme, remembered))
-    val r = vm.reference.map(TrialPanelsView.input(_, theme, RememberedImage.Absent))
+    val q = vm.query.map(TrialPanelsView.input(_, theme, remembered, stage))
+    val r = vm.reference.map(TrialPanelsView.input(_, theme, RememberedImage.Absent, stage))
     // Both stages share one covering extent, so the two trials are drawn at
     // one scale (the S4.3a review's rule for side-by-side trials).
     val shared = TrialScene.sharedExtent((q ++ r).flatMap(_.toOption).toVector)
@@ -255,7 +256,8 @@ object TrialPanelsView:
   def input(
       p: TrialPanelVM,
       theme: Theme,
-      remembered: RememberedImage
+      remembered: RememberedImage,
+      stage: StageVariant = StageVariant.Dark
   ): Either[String, TrialSceneInput] =
     p.content match
       case PanelContent.Reading          => Left(PanelText(PanelTextId.ReadingTrial))
@@ -268,7 +270,7 @@ object TrialPanelsView:
             fs,
             MarkStyle.Role(roleOf(p.role)),
             theme,
-            StageVariant.Dark,
+            stage,
             remembered = remembered
           )
         )

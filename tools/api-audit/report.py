@@ -10,22 +10,7 @@ execution = json.loads((OUT / 'execution.json').read_text())
 classes = {c['name']:c for c in execution['classes']}
 hits = {(x['owner'],x['name'],x['descriptor']):x['suites'] for x in execution['invocations']}
 methods = {(c['name'],name):[m for m in c['methods'] if m['name']==name] for c in classes.values() for name in {m['name'] for m in c['methods']}}
-# Explicit structural classifications retain their symbols in the reviewed inventory.
-def category(x):
-    kind=x['category']; flags=x['flags']; owner=x['ownerFlags']
-    if kind!='runtime-entry':return kind
-    if '$default$' in x['name']:return 'compiler-default-argument'
-    if x['signature'].endswith(':scala.CanEqual'):return 'compile-time-equality-witness'
-    if x['kind']=='value':
-        if 'Flags.Module' in flags:return 'module-reference'
-        if 'Flags.ParamAccessor' in flags:return 'structural-accessor'
-        if 'Flags.Enum' in flags:return 'enum-case-value'
-        if x['valueType'].startswith('scala.CanEqual['):return 'compile-time-equality-witness'
-    if x['name']=='<init>':
-        if 'Flags.Module' in owner:return 'module-initializer'
-        if 'Flags.Case' in owner or 'Flags.Synthetic' in owner:return 'structural-constructor'
-        if 'Flags.Abstract' in owner or 'Flags.Trait' in owner:return 'abstract-constructor'
-    return kind
+from inventory import category
 
 def encode(name):
     codes={'~':'$tilde','=':'$eq','<':'$less','>':'$greater','!':'$bang','#':'$hash','%':'$percent','^':'$up','&':'$amp','|':'$bar','*':'$times','/':'$div','+':'$plus','-':'$minus',':':'$colon','\\':'$bslash','?':'$qmark','@':'$at'}

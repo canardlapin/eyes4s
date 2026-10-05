@@ -406,10 +406,22 @@ class SourceRecordsSuite extends munit.FunSuite:
     import eyes4s.plan.MapPlacement
     def expected(p: Option[MapPlacement]): RecordPlace = p match
       case None                                => RecordPlace.NotAdmitted
-      case Some(MapPlacement.InMap)            => RecordPlace.Inside
+      case Some(MapPlacement.InWindow)         => RecordPlace.Inside
       case Some(MapPlacement.DroppedInitial)   => RecordPlace.DroppedInitial
       case Some(MapPlacement.OutsideWindow(_)) => RecordPlace.Outside
       case Some(MapPlacement.OutsideScreen)    => RecordPlace.OffScreen
+      case Some(MapPlacement.TrialFailed(t))   =>
+        RecordPlace.InsideTrialFails(t.outsideWindow, t.total)
+    val tally = eyes4s.plan.WindowTally
+      .of(
+        1,
+        2,
+        9,
+        eyes4s.kernel.Span.micros(100L),
+        eyes4s.kernel.Span.micros(300L),
+        eyes4s.kernel.Span.micros(2000L)
+      )
+      .fold(e => fail(e.message), identity)
     HeadlessSession.open(StoryMoment.T2).flatMap { h =>
       val pages = (1 to 11520 by 500).toVector.map(from => h.sourceRecords(rev4, from, 500))
       Future
@@ -428,9 +440,10 @@ class SourceRecordsSuite extends munit.FunSuite:
           Vector(
             MapPlacement.DroppedInitial,
             MapPlacement.OutsideScreen,
-            MapPlacement.InMap,
+            MapPlacement.InWindow,
             MapPlacement.OutsideWindow(eyes4s.plan.OffWindowPolicy.Exclude),
-            MapPlacement.OutsideWindow(eyes4s.plan.OffWindowPolicy.FailTrial)
+            MapPlacement.OutsideWindow(eyes4s.plan.OffWindowPolicy.FailTrial),
+            MapPlacement.TrialFailed(tally)
           ).foreach { p =>
             val row = right(
               eyes4s.studio.core.backend.SourceRecordRow.of(

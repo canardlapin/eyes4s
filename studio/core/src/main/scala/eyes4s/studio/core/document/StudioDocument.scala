@@ -21,7 +21,7 @@ import eyes4s.codec.{CanonicalDigest, CodecError, SchemaLadder, VersionedCodec}
 import eyes4s.plan.DefinitionId
 import eyes4s.studio.core.backend.{AnalysisRevision, DatasetRevision, JobId, RunId}
 import io.circe.syntax.*
-import io.circe.{Decoder, Encoder, Json, JsonObject}
+import io.circe.{Decoder, DecodingFailure, Encoder, Json, JsonObject}
 
 /** Studio's schema identities, in its own `studio.` namespace, built with
   * the public `DefinitionId.of` (they are not eyes4s built-ins and not in the
@@ -36,6 +36,7 @@ object StudioSchemaIds:
   val ProjectName: String    = "studio.project"
   val AssetsName: String     = "studio.asset-registry"
   val RunArchiveName: String = "studio.run-archive"
+  val ReportingName: String  = "studio.reporting-spec"
 
   final case class Ids(
       document: DefinitionId,
@@ -44,10 +45,11 @@ object StudioSchemaIds:
       datasetContent: DefinitionId,
       project: DefinitionId,
       assets: DefinitionId,
-      runArchive: DefinitionId
+      runArchive: DefinitionId,
+      reporting: DefinitionId
   ) derives CanEqual:
     def all: Vector[DefinitionId] =
-      Vector(document, science, journal, datasetContent, project, assets, runArchive)
+      Vector(document, science, journal, datasetContent, project, assets, runArchive, reporting)
 
   private def id(name: String, version: Int): Either[DocumentError, DefinitionId] =
     DefinitionId.of(name, version).left.map(_ => DocumentError.BadSchemaId(name, version))
@@ -57,7 +59,8 @@ object StudioSchemaIds:
     * (S2.2); and the first version of the `.eyes` bundle manifest
     * `project.json` (S2.3), whose later versions its `SchemaLadder` adds;
     * a dataset revision's asset registry (S2.10); and a run archive's
-    * index in the run store (S2.6).
+    * index in the run store (S2.6); and a reporting spec, whose digest an
+    * export cites (S8.7).
     */
   val ids: Either[DocumentError, Ids] =
     for
@@ -68,7 +71,8 @@ object StudioSchemaIds:
       project  <- id(ProjectName, 1)
       assets   <- id(AssetsName, 1)
       archive  <- id(RunArchiveName, 1)
-    yield Ids(document, science, journal, dataset, project, assets, archive)
+      report   <- id(ReportingName, 1)
+    yield Ids(document, science, journal, dataset, project, assets, archive, report)
 
   /** The ids as a codec failure, for building codecs. */
   private[studio] def forCodec: Either[CodecError, Ids] =
@@ -125,8 +129,9 @@ object ScienceContent:
     }
 
 /** An Eyes Studio project document (ticket S2.1): its science
-  * ([[ScienceContent]]) and, strictly apart, its [[PresentationState]] and
-  * the ephemeral [[JobHandle]]s of its running runs.
+  * ([[ScienceContent]]) and, strictly apart, its [[PresentationState]], the
+  * ephemeral [[JobHandle]]s of its running runs, and its repaired display
+  * assets ([[AssetRelinks]], S5.7), which no science reads.
   *
   * Built only through [[StudioDocument.of]], which checks every
   * cross-reference: ids ascend, every revision, run and reporting spec a value
@@ -137,7 +142,8 @@ object ScienceContent:
 final case class StudioDocument private (
     science: ScienceContent,
     presentation: PresentationState,
-    jobs: Vector[JobHandle]
+    jobs: Vector[JobHandle],
+    relinks: AssetRelinks
 ) derives CanEqual:
   def datasets: Vector[DatasetRevisionSpec]  = science.datasets
   def analyses: Vector[AnalysisRevisionSpec] = science.analyses
@@ -177,6 +183,15 @@ final case class StudioDocument private (
   /** The same science with other job handles. */
   def withJobs(next: Vector[JobHandle]): Either[DocumentError, StudioDocument] =
     StudioDocument.checkJobs(science.runs, next).as(copy(jobs = next))
+
+  /** The same science with other repaired assets: each names a dataset
+    * revision of the document.
+    */
+  def withRelinks(next: AssetRelinks): Either[DocumentError, StudioDocument] =
+    next.entries
+      .find(r => dataset(r.dataset).isEmpty)
+      .map(r => DocumentError.RelinkUnknownDataset(r.dataset, r.file.value))
+      .toLeft(copy(relinks = next))
 
 object StudioDocument:
   def of(
@@ -268,7 +283,8 @@ object StudioDocument:
     yield new StudioDocument(
       ScienceContent(datasets, analyses, draft, runs, reporting, figures),
       presentation,
-      jobs.sortBy(_.run.number)
+      jobs.sortBy(_.run.number),
+      AssetRelinks.empty
     )
 
   private[document] def checkPresentation(
@@ -299,31 +315,48 @@ object StudioDocument:
       }
     yield ()
 
+  /** `relinks` is written only when the document has repaired an asset, so
+    * a document without one is written as before S5.7, byte for byte.
+    */
   given Encoder.AsObject[StudioDocument] = Encoder.AsObject.instance { d =>
-    d.science.asJsonObject
+    val o = d.science.asJsonObject
       .add("presentation", d.presentation.asJson)
       .add("jobs", d.jobs.asJson)
+    if d.relinks.isEmpty then o else o.add("relinks", d.relinks.asJson)
   }
 
-  given Decoder[StudioDocument] =
-    Decoder
-      .forProduct8(
-        "datasets",
-        "analyses",
-        "draft",
-        "runs",
-        "reporting",
-        "figures",
-        "presentation",
-        "jobs"
-      )(of)
-      .emap(_.left.map(_.message))
+  given Decoder[StudioDocument] = Decoder.instance { c =>
+    for
+      document <- Decoder
+        .forProduct8(
+          "datasets",
+          "analyses",
+          "draft",
+          "runs",
+          "reporting",
+          "figures",
+          "presentation",
+          "jobs"
+        )(of)
+        .emap(_.left.map(_.message))
+        .apply(c)
+      relinks <- c.getOrElse[AssetRelinks]("relinks")(AssetRelinks.empty)
+      full <- document.withRelinks(relinks).left.map(e => DecodingFailure(e.message, c.history))
+    yield full
+  }
+
+  /** Whether a version-3 document can hold `document`: version 3 records
+    * neither display columns nor repaired assets (S5.7).
+    */
+  private def expressedByV3(document: StudioDocument): Boolean =
+    document.relinks.isEmpty &&
+      document.datasets.forall(_.inventory.forall(_.displays.isEmpty))
 
   /** Whether a version-2 document can hold `document`: version 2 records no
     * admission policy (S5.6).
     */
   private def expressedByV2(document: StudioDocument): Boolean =
-    document.datasets.forall(_.decision.admittedUnder.isEmpty)
+    expressedByV3(document) && document.datasets.forall(_.decision.admittedUnder.isEmpty)
 
   /** Whether a version-1 document can hold `document`: version 1 records
     * neither a trial inventory mapping (S5.4) nor an admission policy.
@@ -346,6 +379,14 @@ object StudioDocument:
       d("decision").fold(d)(decision =>
         d.add("decision", decision.mapObject(_.mapValues(_.mapObject(_.remove("policy")))))
       )
+    )
+
+  /** `payload` without repaired assets or display columns: what a version-3
+    * reader saw, since it did not know the members.
+    */
+  private def withoutAssets(payload: Json): Json =
+    mapDatasets(payload.mapObject(_.remove("relinks")))(d =>
+      d("inventory").fold(d)(i => d.add("inventory", i.mapObject(_.remove("displays"))))
     )
 
   /** `payload` without any dataset revision's inventory mapping or policy:
@@ -373,6 +414,10 @@ object StudioDocument:
     * when recorded), in the same way: a document that records no policy is
     * still written as version 1 or 2, and the upcast is the identity, since
     * an earlier document records none.
+    *
+    * Version 4 (S5.7) adds a trial inventory's display columns
+    * (`inventory.displays`) and the document's repaired display assets
+    * (`relinks`), each written only when present, in the same way.
     */
   val ladder: Either[CodecError, SchemaLadder[StudioDocument]] =
     StudioSchemaIds.forCodec.map { ids =>
@@ -383,7 +428,10 @@ object StudioDocument:
         .next(expressedByV1, identity)(d => Right(CanonicalJson(withoutPolicy(d.asJson))))(
           json => read(withoutPolicy(json))
         )
-        .next(expressedByV2, identity)(d => Right(CanonicalJson(d.asJson)))(read)
+        .next(expressedByV2, identity)(d => Right(CanonicalJson(withoutAssets(d.asJson))))(
+          json => read(withoutAssets(json))
+        )
+        .next(expressedByV3, identity)(d => Right(CanonicalJson(d.asJson)))(read)
     }
 
   /** The versioned, canonical document codec. */

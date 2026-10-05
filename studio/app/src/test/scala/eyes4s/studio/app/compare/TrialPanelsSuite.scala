@@ -76,7 +76,7 @@ class TrialPanelsSuite extends munit.FunSuite:
               500.0,
               100 * i,
               200,
-              MapPlacement.InMap
+              MapPlacement.InWindow
             )
           )
         )

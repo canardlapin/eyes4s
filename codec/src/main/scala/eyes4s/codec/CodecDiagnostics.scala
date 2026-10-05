@@ -65,7 +65,10 @@ object CodecDiagnosticCatalog:
     "NonCanonical",
     "Report",
     "ReportSpec",
-    "Covariates"
+    "Covariates",
+    // appended by CR4 S3: repetition result archives
+    "Stamp",
+    "RepetitionResult"
   )
   val resolve: DiagnosticFamily = error("resolve")(
     "MissingManifest",
@@ -114,7 +117,12 @@ object CodecDiagnosticCatalog:
     "ReportComponents",
     "SourceBinding",
     "RunPlan",
-    "RunInput"
+    "RunInput",
+    // CR4 S2: a generic analysis relation across families, or an undeclared embedded input.
+    "AnalysisFamily",
+    "UndeclaredEmbedding",
+    // CR4 S2 review: a declared embedded input the plan does not expose.
+    "EmptyEmbedding"
   )
   val manifest: DiagnosticFamily = error("manifest")(
     "InvalidName",
@@ -128,7 +136,9 @@ object CodecDiagnosticCatalog:
     "RoleMismatch",
     "PayloadOwner",
     "DuplicateRelation",
-    "RelationCount"
+    "RelationCount",
+    // CR4 S2: an analysis result's input that is not an input entry.
+    "AnalysisInput"
   )
   val payload: DiagnosticFamily = error("payload")(
     "EmptyShape",
@@ -200,9 +210,12 @@ private[eyes4s] object CodecDiagnosticSupport:
     fields("sha256" -> digest(value.sha256), "layout" -> layout(value.layout))
   def relation(value: ManifestRelation): Operand[Nothing] =
     Operand.Fields(
-      ("kind" -> token(value.kind)) +: value.endpoints.map((field, name, _) =>
-        field -> entry(name)
-      )
+      (("kind" -> token(value.kind)) +: value.endpoints
+        .map((field, name, _) => field -> entry(name))) ++ Option
+        .when(value.analysisInputs.nonEmpty)(
+          "inputs" -> Operand.Items(value.analysisInputs.map(entry))
+        )
+        .toVector
     )
   def changes(values: Vector[PlanChange]): Operand[Nothing] =
     Operand.Items(
@@ -333,6 +346,9 @@ private[codec] object CodecProjections:
         wrap(eyes4s.results.ResultsDiagnostics.reportSpec(underlying))
       case Covariates(underlying) =>
         wrap(eyes4s.results.ResultsDiagnostics.covariate[Any](underlying))
+      case Stamp(underlying) =>
+        wrap(CodecDiagnostics.runStampError(underlying))
+      case RepetitionResult(underlying) => wrap(Diagnose.repetitionPlan(underlying))
 
   def resolve(e: ResolveError): Diagnostic[Any] =
     import ResolveError.*
@@ -430,6 +446,16 @@ private[codec] object CodecProjections:
         )
       case RunInput(reported, current) =>
         diagnostic[Any](C.relation, e, e.message)(digest(reported), digest(current))
+      case AnalysisFamily(result, plan, expected) =>
+        diagnostic[Any](C.relation, e, e.message)(
+          definition(result),
+          definition(plan),
+          definition(expected)
+        )
+      case UndeclaredEmbedding(plan) =>
+        diagnostic[Any](C.relation, e, e.message)(definition(plan))
+      case EmptyEmbedding(plan) =>
+        diagnostic[Any](C.relation, e, e.message)(definition(plan))
       case Admission(error) =>
         val inner = Projections.admission(error)
         diagnostic(C.relation, e, e.message, inner.subject)(cause(inner))
@@ -543,6 +569,12 @@ private[codec] object CodecProjections:
           token(kind),
           int(count),
           text(expected)
+        )
+      case AnalysisInput(value, name, found) =>
+        diagnostic(C.manifest, e, e.message, Vector(at(value), at(name)))(
+          relation(value),
+          entry(name),
+          role(found)
         )
 
   def payload(e: PayloadError): Diagnostic[Nothing] =

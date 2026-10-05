@@ -22,7 +22,7 @@ import eyes4s.studio.app.explore.DisplaySource
 import eyes4s.studio.app.figures.*
 import eyes4s.studio.app.plot.PlotValue
 import eyes4s.studio.app.{AppModel, StoryModels}
-import eyes4s.studio.core.backend.{QueryRow, QueryStatus, ResultSummary}
+import eyes4s.studio.core.backend.{PairRowPage, QueryRow, QueryStatus, ResultSummary}
 import eyes4s.studio.core.document.PanelLetter
 import eyes4s.studio.core.figures.{BundleTables, MethodsReads, ReferenceReads, ReferenceScores}
 import eyes4s.studio.core.fixture.{GoldenAssets, MockStudy, StoryMoment, StoryMoments}
@@ -53,7 +53,8 @@ class ExportBundleSuite extends munit.FunSuite:
       summary: ResultSummary,
       rows: Vector[QueryRow],
       scores: ReferenceScores,
-      composer: FigureComposer
+      composer: FigureComposer,
+      pairs: Vector[PairRowPage]
   )
 
   /** Figure 1 with every read answered, and the run's query rows. */
@@ -70,6 +71,7 @@ class ExportBundleSuite extends munit.FunSuite:
       )
       facts <- MethodsReads.read[Future](session.admission, session.queries, run7, r3)
       rows  <- MethodsReads.queryRows[Future](session.queries, run7)
+      pairs <- MethodsReads.pairRows[Future](session.pairRows, run7, ok(summary).scales.size)
       _     <- session.close
     yield
       val registry = t2.document.dataset(r3).map(GoldenAssets.registry).getOrElse(Left("no r3"))
@@ -81,7 +83,7 @@ class ExportBundleSuite extends munit.FunSuite:
       ).foldLeft(FigureComposer.sync(FigureComposer.empty, t2)._1)((c, i) =>
         FigureComposer.update(c, t2, i)._1
       )
-      Served(ok(summary), ok(rows), ok(scores), c)
+      Served(ok(summary), ok(rows), ok(scores), c, ok(pairs))
 
   private def request(c: FigureComposer): BundleRequest =
     FigureComposer.update(c, t2, ComposerIntent.ExportBundle)._2 match
@@ -90,7 +92,7 @@ class ExportBundleSuite extends munit.FunSuite:
 
   private def files(s: Served, c: Option[FigureComposer] = None): Map[String, String] =
     val r = request(c.getOrElse(s.composer))
-    ok(BundleFiles.assemble(r, s.summary, s.rows))
+    ok(BundleFiles.assemble(r, s.summary, s.rows, s.pairs))
       .map((n, b) => n -> String(Array.from(b), UTF_8))
       .toMap
 
@@ -126,7 +128,7 @@ class ExportBundleSuite extends munit.FunSuite:
 
   // --- The bundle's files ---------------------------------------------------------
 
-  test("the bundle holds the chosen files the board lists; comparisons.csv says why not") {
+  test("the bundle holds the chosen files the board lists") {
     served.map { s =>
       val vm = FigureComposer.view(s.composer, t2).bundle.getOrElse(fail("no bundle"))
       assertEquals(
@@ -134,7 +136,7 @@ class ExportBundleSuite extends munit.FunSuite:
         Vector(
           ("figure-1.svg", "", true, false),
           ("results.csv", "480 queries × 4 σ", true, false),
-          ("comparisons.csv", "35,876 pair rows", true, true),
+          ("comparisons.csv", "35,876 pair rows", true, false),
           ("participants.csv", "24 × 2 groups", true, false),
           ("methods.md", "", true, false),
           ("project snapshot", "includes images", false, false)
@@ -147,13 +149,21 @@ class ExportBundleSuite extends munit.FunSuite:
         Vector(
           BundleItem.Figure,
           BundleItem.Results,
+          BundleItem.Comparisons,
           BundleItem.Participants,
           BundleItem.Methods
         )
       )
       assertEquals(
         files(s).keySet,
-        Set("figure-1.svg", "results.csv", "participants.csv", "methods.md", "README.txt")
+        Set(
+          "figure-1.svg",
+          "results.csv",
+          "comparisons.csv",
+          "participants.csv",
+          "methods.md",
+          "README.txt"
+        )
       )
     }
   }
@@ -171,7 +181,7 @@ class ExportBundleSuite extends munit.FunSuite:
       assert(!r.includeImages)
       assertEquals(
         files(s, Some(c)).keySet,
-        Set("figure-1.svg", "participants.csv", "methods.md", "README.txt")
+        Set("figure-1.svg", "comparisons.csv", "participants.csv", "methods.md", "README.txt")
       )
       val done = FigureComposer.update(c, t2, ComposerIntent.BundleExported(Right("/tmp/b")))._1
       assertEquals(
@@ -181,25 +191,109 @@ class ExportBundleSuite extends munit.FunSuite:
     }
   }
 
-  test(
-    "README.txt lists the files, the binding, and comparisons.csv as not included, with why"
-  ) {
+  test("README.txt lists the files and the binding; nothing chosen is left out") {
     served.map { s =>
       assertNoDiff(
         files(s)("README.txt"),
         """Figure 1 export bundle
           |run 7 · analysis rev 4 · data r3 · reporting “By retrieval response” · studio build eyes4s 0.1
+          |reporting spec by-retrieval-response sha256:3a0ed363d486975f28f3eb990c0deb87c415924ebe4a301e638dae73221de5dd
           |
           |Files:
           |- figure-1.svg
           |- results.csv
+          |- comparisons.csv
           |- participants.csv
           |- methods.md
-          |
-          |Not included:
-          |- comparisons.csv: comparisons.csv needs the backend's pair-rows view, which it does not serve yet.
           |""".stripMargin
       )
+    }
+  }
+
+  /** results.csv's table digest for the fixture, recorded when its label
+    * domain was settled (S9.5): pair absences must not change it.
+    */
+  private val ResultsDigest = "3ff1a6787c1f1019f20d6b05390b89fa7aa54d69bc595a82ac0cff3192612545"
+
+  test("results.csv keeps its digest; comparisons.csv has its own absence labels") {
+    served.map { s =>
+      val r       = request(s.composer)
+      val results =
+        BundleTables.results(r.source, s.summary, s.rows).fold(e => fail(e.message), identity)
+      assertEquals(results.identity.hex, ResultsDigest)
+      val pairs = BundleTables
+        .comparisons(r.source, s.summary, s.pairs)
+        .fold(e => fail(e.message), identity)
+      assertEquals(
+        pairs.columns.find(_.name == "score_absence").map(_.labels),
+        Some(BundleTables.PairAbsences)
+      )
+      assertEquals(
+        results.columns.find(_.name == "d_absence").map(_.labels),
+        Some(BundleTables.Absences)
+      )
+      assert(!BundleTables.Absences.contains("not-served"))
+    }
+  }
+
+  test("comparisons rows of a scale the run does not compute are refused, not labelled") {
+    served.map { s =>
+      val r     = request(s.composer)
+      val wrong = s.pairs.take(1).map(_.copy(scale = s.summary.scales.size))
+      assertEquals(
+        BundleTables.comparisons(r.source, s.summary, wrong).left.map(_.message),
+        Left(
+          s"The comparisons table has rows of scale ${s.summary.scales.size}; the run computes " +
+            s.summary.scales.mkString(", ") + "."
+        )
+      )
+    }
+  }
+
+  // --- comparisons.csv ---------------------------------------------------------------
+
+  test("comparisons.csv: every pair of the run at every scale, as the backend serves them") {
+    served.map { s =>
+      val rows = csv(files(s)("comparisons.csv"))
+      assertEquals(rows.size.toLong, s.summary.pairRows)
+      assertEquals(rows.size, 35876)
+      assert(rows.forall(_("table_sha256").length == 64))
+      assertEquals(
+        rows.groupMapReduce(_("scale"))(_ => 1)(_ + _).values.toSet,
+        Set(s.summary.pairRowsPerScale.toInt)
+      )
+      // The panel C query at 2°: its matched pair and every control pair the
+      // page shows, with the same scores.
+      val p17 = rows.filter(r =>
+        r("participant") == "P17" && r("trial") == "ret_07" && r("scale") == "2"
+      )
+      val matched = p17.find(_("design") == "matched").get
+      assertEquals(
+        (matched("reference_trial"), number(matched, "score")),
+        (s.scores.matched.reference.trial, Some(s.scores.matched.score))
+      )
+      s.scores.controls.foreach { c =>
+        val row = p17
+          .find(r => r("design") == "control" && r("reference_trial") == c.reference.trial)
+          .getOrElse(fail(s"no control ${c.reference.label}"))
+        assertEquals((row("reference_item"), number(row, "score")), (c.item, Some(c.score)))
+      }
+      assertEquals(p17.count(_("design") == "control"), s.scores.controlMembers)
+    }
+  }
+
+  test("a pair without a score is missing with its absence and reason; never a zero") {
+    served.map { s =>
+      val rows = csv(files(s)("comparisons.csv"))
+      rows.foreach { r =>
+        val valid = r("score__valid") == "true"
+        assertEquals(r("score").isEmpty, !valid, r)
+        assertEquals(r("score_absence").isEmpty, valid, r)
+      }
+      val failed = rows.filter(_("score_absence") == "failed")
+      assert(failed.nonEmpty)
+      assert(failed.forall(_("reason").startsWith("study-failure.")), failed.head)
+      assert(rows.exists(_("score_absence") == "not-served"))
     }
   }
 

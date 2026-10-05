@@ -133,7 +133,16 @@ object CodecDiagnosticSamples:
       ),
       CodecError.Report(eyes4s.results.ReportError.DuplicateQuery(k1)),
       CodecError.ReportSpec(eyes4s.results.SpecError.NegativeScale(-2)),
-      CodecError.Covariates(eyes4s.results.CovariateError.BlankUnit(" "))
+      CodecError.Covariates(eyes4s.results.CovariateError.BlankUnit(" ")),
+      CodecError.Stamp(
+        RunStampError.ChangedInput(
+          get(CanonicalDigest.parse[Int](a.hex)),
+          get(CanonicalDigest.parse[Int](b.hex))
+        )
+      ),
+      CodecError.RepetitionResult(
+        RepetitionPlanError.ResultPairs(RepetitionStage.Control, 24, 23, Some(5))
+      )
     ),
     family[ResolveError]("ResolveError")(
       ResolveError.MissingManifest(a),
@@ -195,7 +204,11 @@ object CodecDiagnosticSamples:
         b,
         Vector(PlanChange("choice", Vector.empty, Vector(Provenance.Param.Text("changed"))))
       ),
-      RelationMismatch.RunInput(a, b)
+      RelationMismatch.RunInput(a, b),
+      RelationMismatch
+        .AnalysisFamily(DefinitionId.study, DefinitionId.manifest, DefinitionId.similarity),
+      RelationMismatch.UndeclaredEmbedding(DefinitionId.temporalStudyInput),
+      RelationMismatch.EmptyEmbedding(DefinitionId.studyLayout)
     ),
     family[ManifestError]("ManifestError")(
       ManifestError.InvalidName(" padded"),
@@ -215,7 +228,17 @@ object CodecDiagnosticSamples:
         .RoleMismatch(planOf, input, ArtifactRole.StudyInput, ArtifactRole.Recording),
       ManifestError.PayloadOwner(planOf, DefinitionId.study),
       ManifestError.DuplicateRelation(resultOf),
-      ManifestError.RelationCount(plan, "plan-input", 2, "exactly one")
+      ManifestError.RelationCount(plan, "plan-input", 2, "exactly one"),
+      ManifestError.AnalysisInput(
+        ManifestRelation
+          .AnalysisResultOf(
+            result,
+            plan,
+            AnalysisInputs.Entries(cats.data.NonEmptyVector.one(input))
+          ),
+        input,
+        ArtifactRole.Report
+      )
     ),
     family[PayloadError]("PayloadError")(
       PayloadError.EmptyShape,

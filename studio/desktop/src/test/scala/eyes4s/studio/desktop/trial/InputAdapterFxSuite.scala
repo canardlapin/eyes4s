@@ -573,7 +573,7 @@ class InputAdapterFxSuite extends StudioFxSuite:
           452.0 + col * (1016.0 / (Columns - 1)),
           160.0 + row * (760.0 / (Rows - 1)),
           40,
-          MapPlacement.InMap
+          MapPlacement.InWindow
         )
       )
     }.toVector

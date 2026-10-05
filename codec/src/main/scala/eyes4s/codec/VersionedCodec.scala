@@ -80,6 +80,12 @@ enum CodecError derives CanEqual:
   case Report(underlying: eyes4s.results.ReportError[?])
   case ReportSpec(underlying: eyes4s.results.SpecError)
   case Covariates(underlying: eyes4s.results.CovariateError[?])
+  // CR4 S3: repetition result archives.
+  /** The archive's run stamp is not the stamp of the plan it carries. */
+  case Stamp(underlying: RunStampError[?, ?])
+
+  /** The archive's analyses are not the ones its repetition plan computes. */
+  case RepetitionResult(underlying: RepetitionPlanError)
 
   def message: String = this match
     case InvalidJson(_, reason)     => s"Invalid project JSON: $reason"
@@ -143,9 +149,11 @@ enum CodecError derives CanEqual:
     case NonCanonical(path, found, canonical, rule) =>
       s"$path is not in canonical form ($rule): found ${found.noSpaces}, " +
         s"written as ${canonical.noSpaces}."
-    case Report(e)     => e.message
-    case ReportSpec(e) => e.message
-    case Covariates(e) => e.message
+    case Report(e)           => e.message
+    case ReportSpec(e)       => e.message
+    case Covariates(e)       => e.message
+    case Stamp(e)            => e.message
+    case RepetitionResult(e) => e.message
 
 /** A typed, explicitly versioned codec. Unsupported old versions fail precisely.
   * The wire envelope separates schema identity from any method identity in its payload.
@@ -161,7 +169,8 @@ final class VersionedCodec[A] private (
     write: A => Either[CodecError, (DefinitionId, Json)],
     read: (DefinitionId, Json) => Either[CodecError, A],
     role: Option[String],
-    val ladder: Option[SchemaLadder[A]]
+    val ladder: Option[SchemaLadder[A]],
+    canonical: Option[A => Either[CodecError, CanonicalDoc]] = None
 ):
   def encode(value: A): Either[CodecError, Json] =
     write(value).map { case (id, payload) =>
@@ -184,7 +193,14 @@ final class VersionedCodec[A] private (
     * canonical document (see [[CanonicalDigest]]).
     */
   def digest(value: A): Either[CodecError, CanonicalDigest[A]] =
-    encode(value).flatMap(CanonicalDigest.document)
+    canonical match
+      case None           => encode(value).flatMap(CanonicalDigest.document)
+      case Some(describe) =>
+        describe(value).flatMap(payload =>
+          CanonicalDigest.streamed(
+            CanonicalDoc.obj("schema" -> CanonicalDoc.Leaf(Wire.id(schema)), "value" -> payload)
+          )
+        )
   def parse(input: String): Either[CodecError, A] =
     io.circe.parser
       .parse(input)
@@ -228,6 +244,25 @@ object VersionedCodec:
       (_, json) => read(json),
       None,
       None
+    )
+
+  /** A codec whose document is described by `describe` (see [[CanonicalDoc]]):
+    * it encodes the whole document, and digests it one array item at a time,
+    * so a value whose document does not fit in memory still has its digest.
+    */
+  private[codec] def described[A](schema: DefinitionId)(
+      describe: A => Either[CodecError, CanonicalDoc]
+  )(
+      read: Json => Either[CodecError, A]
+  ): VersionedCodec[A] =
+    new VersionedCodec(
+      schema,
+      Vector(schema),
+      value => describe(value).flatMap(_.json).map(schema -> _),
+      (_, json) => read(json),
+      None,
+      None,
+      Some(describe)
     )
 
   /** The codec of a [[SchemaLadder]]: `write` chooses each value's version

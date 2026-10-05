@@ -36,10 +36,15 @@ enum BundleTableError derives CanEqual:
   /** eyes4s refused the table. */
   case Table(table: String, error: ResultTableError)
 
+  /** Rows of a scale the run's summary does not compute. */
+  case UnknownScale(table: String, scale: Int, scales: Vector[String])
+
   def message: String = this match
     case OtherRun(table, expected, found) =>
       s"The $table table of ${expected.label} was given the rows of ${found.label}."
-    case Table(table, error) => s"The $table table: ${error.message}"
+    case Table(table, error)                => s"The $table table: ${error.message}"
+    case UnknownScale(table, scale, scales) =>
+      s"The $table table has rows of scale $scale; the run computes ${scales.mkString(", ")}."
 
 /** The result tables of a figure's export bundle (ticket S9.5;
   * Figures.dc.html, bundle), as eyes4s `ResultTable`s: keyed rows, the table
@@ -54,6 +59,11 @@ object BundleTables:
   val Absences: Vector[String] =
     Vector("failed", "no-match", "not-admitted", "not-scored", "empty-group")
 
+  /** Why a pair's score is missing (comparisons.csv's own domain, so the
+    * query tables' label domain, and their digests, do not change).
+    */
+  val PairAbsences: Vector[String] = Vector("failed", "not-served")
+
   /** A query's outcome. */
   val Statuses: Vector[String] = Vector("contributing", "failed", "no-match", "not-admitted")
 
@@ -67,7 +77,7 @@ object BundleTables:
     ResultColumn(name, ResultColumnType.Int64, false, "count", meaning)
   private def optionalCount(name: String, meaning: String) =
     ResultColumn(name, ResultColumnType.Int64, true, "count", meaning)
-  private def score(name: String, meaning: String) =
+  private def score(name: String, meaning: String, absences: Vector[String] = Absences) =
     Vector(
       ResultColumn(name, ResultColumnType.Float64, true, "score", meaning),
       ResultColumn(
@@ -76,7 +86,7 @@ object BundleTables:
         true,
         "label",
         s"why $name is missing",
-        Absences
+        absences
       )
     )
   private def scored(value: Option[Double], absence: String): Vector[ResultCell] =
@@ -231,3 +241,71 @@ object BundleTables:
         )
         .left
         .map(BundleTableError.Table("participants", _))
+
+  /** A pair's design as every table labels it. */
+  val Designs: Vector[String] = Vector("matched", "control")
+
+  private val pairColumns: Vector[ResultColumn] =
+    Vector(
+      count("scale", "estimation scale index, from 0"),
+      text("sigma", "estimation scale"),
+      text("participant", "participant id"),
+      text("phase", "query phase"),
+      text("trial", "query trial"),
+      count("occurrence", "query occurrence"),
+      label("design", "the reference's design: the matched reference or a control", Designs),
+      text("reference_phase", "reference phase"),
+      text("reference_trial", "reference trial"),
+      count("reference_occurrence", "reference occurrence"),
+      text("reference_item", "reference item")
+    ) ++ score("score", "the pair's similarity", PairAbsences) ++
+      Vector(note("reason", "why the pair has no score, as eyes4s reported it"))
+
+  /** comparisons.csv: every pair row of the run at every scale (eyes4s
+    * `PairScores`, read through protocol 1.9). `pairs` holds each scale's
+    * rows, in scale order. A failed pair's score is missing with its
+    * diagnostic; one the backend does not serve is missing as not-served.
+    */
+  def comparisons(
+      source: FigureSource,
+      summary: ResultSummary,
+      pairs: Vector[PairRowPage]
+  ): Either[BundleTableError, ResultTable] =
+    val run     = source.run.id
+    val unknown = pairs.find(p => !summary.scales.indices.contains(p.scale))
+    (pairs.find(_.run != run), unknown) match
+      case (Some(other), _) => Left(BundleTableError.OtherRun("comparisons", run, other.run))
+      case (_, Some(page))  =>
+        Left(BundleTableError.UnknownScale("comparisons", page.scale, summary.scales))
+      case _ =>
+        if summary.run != run then
+          Left(BundleTableError.OtherRun("comparisons", run, summary.run))
+        else
+          val cells = for
+            page <- pairs
+            row  <- page.rows
+          yield
+            val (value, absence, reason) = row.score match
+              case PairScoreState.Scored(v) => (Some(v), "", None)
+              case PairScoreState.Failed(d) =>
+                (None, "failed", Some(s"${d.code}: ${d.message}"))
+              case PairScoreState.NotServed => (None, "not-served", None)
+            Vector(
+              I(page.scale.toLong),
+              T(summary.scales(page.scale)),
+              T(row.query.participant),
+              T(row.query.phase.label),
+              T(row.query.trial),
+              I(row.query.occurrence.toLong),
+              T(row.design match
+                case PairDesign.Matched => "matched"
+                case PairDesign.Control => "control"),
+              T(row.reference.phase.label),
+              T(row.reference.trial),
+              I(row.reference.occurrence.toLong),
+              T(row.referenceItem)
+            ) ++ scored(value, absence) :+ reason.fold(M)(T(_))
+          ResultTable
+            .of(ResultFamily.PairScores, pairColumns, cells, context(source, summary.scales))
+            .left
+            .map(BundleTableError.Table("comparisons", _))

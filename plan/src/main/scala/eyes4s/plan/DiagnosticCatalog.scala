@@ -812,7 +812,9 @@ object DiagnosticCatalog:
     "InitialFixation",
     "MissingPart",
     "UnknownToken",
-    "UndeclaredWindowFrame"
+    "UndeclaredWindowFrame",
+    // appended by CR4 S3: a pair design refusal (a repetition control cap)
+    "Pairing"
   )
   val repetitionPlan: DiagnosticFamily = error("repetition-plan")(
     "ProjectionIds",
@@ -821,7 +823,11 @@ object DiagnosticCatalog:
     "Rules",
     "OverlappingRelations",
     "Grid",
-    "Specification"
+    "Specification",
+    // appended by CR4 S3: a stored result another plan computed
+    "ResultInput",
+    "ResultEvaluation",
+    "ResultPairs"
   )
   val diagnosticCode: DiagnosticFamily = error("diagnostic-code")(
     "InvalidFamily",
@@ -947,6 +953,36 @@ object DiagnosticCatalog:
       "SigmaNearUniform"
     )
 
+  // ---------------------------------------------------------------- appended by CR6d
+  /** A methods-text fact refused for its value or a duplicate slot. */
+  val methodsFact: DiagnosticFamily = error("methods-fact")(
+    "WrongValue",
+    "NegativeCount",
+    "EmptyRange",
+    "BlankLabel",
+    "InvalidShare",
+    "NoCounts",
+    "RepeatedControls",
+    "NotFewer",
+    "Duplicate",
+    "InvalidCode",
+    "Inconsistent"
+  )
+
+  // ---------------------------------------------------------------- appended by UI-G G3
+  /** Steps of the provenance chain from a query contrast to a source record. */
+  val navigation: DiagnosticFamily = error("navigation")(
+    "NegativeOffset",
+    "WrongLevel",
+    "Inspection",
+    "NoReduction",
+    "InputMismatch",
+    "Provenance",
+    "NoRecord",
+    "UnknownRecord",
+    "NotAdmitted"
+  )
+
   /** Families whose error type no longer exists. Their codes stay issued, in
     * their original place in [[issuedFamilies]], so a retired code is never
     * reused with another meaning; no live error projects to one.
@@ -1066,7 +1102,9 @@ object DiagnosticCatalog:
     stageMeter,
     studyRun,
     studyRecipe,
-    studyAdvisory
+    studyAdvisory,
+    methodsFact,
+    navigation
   )
 
   /** Every live family, grouped as documented. */

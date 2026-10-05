@@ -88,9 +88,23 @@ object ResultsDiagnosticCatalog:
     "Context"
   )
 
+  // ---------------------------------------------------------------- appended by UI-G
+  val reportNavigation: DiagnosticFamily = error("report-navigation")(
+    "NegativeScale",
+    "BlankComponent",
+    "BlankParticipant",
+    "ScaleMismatch",
+    "UnknownCell",
+    "NotInCell",
+    "WrongLevel",
+    "NotAMember",
+    "QueryCount",
+    "UnlistedParticipant"
+  )
+
   /** Every family, in the order documented. */
   val families: Vector[DiagnosticFamily] =
-    Vector(report, reportError, reportSpec, covariate, resultTable)
+    Vector(report, reportError, reportSpec, covariate, resultTable, reportNavigation)
 
   /** Every stable code, in catalog order. */
   val codes: Vector[DiagnosticCode] = families.flatMap(_.codes)
@@ -139,6 +153,26 @@ object ResultsDiagnostics:
 
   given resultTable: Diagnose[ResultTableError, Nothing] =
     Diagnose.derived[ResultTableError, Nothing](C.resultTable)(_.message)
+
+  given reportNavigation[K]: Diagnose[ReportNavigationError[K], K] =
+    given DiagnosticOperand[K, K] = DiagnosticOperand.key[K]
+    import NavigationError.resultRefOperand
+    Diagnose.derived[ReportNavigationError[K], K](C.reportNavigation, navigationSubject[K])(
+      _.message
+    )
+
+  private def navigationSubject[K](error: ReportNavigationError[K]): Vector[Locus[K]] =
+    error match
+      case ReportNavigationError.UnknownCell(g, _, _)  => Vector(group(g))
+      case ReportNavigationError.NotInCell(p, g, _, _) => Vector(group(g), Locus.Participant(p))
+      case ReportNavigationError.QueryCount(p, _, _, g, _, _) =>
+        Vector(group(g), Locus.Participant(p))
+      case ReportNavigationError.UnlistedParticipant(key, _, g, _, _) =>
+        Vector(group(g), Locus.Trial(key))
+      case ReportNavigationError.NotAMember(key, g, _, _) => Vector(group(g), Locus.Trial(key))
+      case ReportNavigationError.ScaleMismatch(ref, _)    => Vector(Locus.Scale(ref))
+      case ReportNavigationError.WrongLevel(ref, _)       => ref.loci
+      case _                                              => Vector.empty
 
   private def group(g: GroupKey): Locus[Nothing] = Locus.Group(g.levels)
 

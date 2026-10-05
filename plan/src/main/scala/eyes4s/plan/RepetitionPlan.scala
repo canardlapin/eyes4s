@@ -42,6 +42,27 @@ enum RepetitionPlanError derives CanEqual:
   case OverlappingRelations(matched: Vector[RepetitionRule], controls: Vector[RepetitionRule])
   case Grid(row: Int, underlying: SurfaceError)
   case Specification(underlying: EvaluationSpecError)
+
+  /** A stored `role` analysis was computed on input `found`, not this
+    * plan's input `expected`.
+    */
+  case ResultInput(role: RepetitionStage, expected: ContentHash, found: ContentHash)
+
+  /** A stored `role` analysis was evaluated as `found`, not as this plan
+    * evaluates it (`expected`: its method under its specification).
+    */
+  case ResultEvaluation(role: RepetitionStage, expected: EvaluationInfo, found: EvaluationInfo)
+
+  /** A stored `role` analysis holds `found` pairs where this plan's pairing
+    * selects `expected`; `firstDifference` is the first pair whose keys
+    * differ, or `None` when the pairs agree and the pairing report differs.
+    */
+  case ResultPairs(
+      role: RepetitionStage,
+      expected: Int,
+      found: Int,
+      firstDifference: Option[Int]
+  )
   def message: String = this match
     case ProjectionIds(v)    => s"Repetition projection identities must be distinct: $v."
     case DuplicateLayout(id) => s"Repetition layout $id is already registered."
@@ -50,8 +71,16 @@ enum RepetitionPlanError derives CanEqual:
       s"Repetition $role rules must be unique, nonempty and consistent: $v."
     case OverlappingRelations(a, b) =>
       s"Repetition matched=$a and controls=$b can overlap; name disjoint relations."
-    case Grid(i, e)       => s"Repetition row=$i: ${e.message}"
-    case Specification(e) => e.message
+    case Grid(i, e)                         => s"Repetition row=$i: ${e.message}"
+    case Specification(e)                   => e.message
+    case ResultInput(role, expected, found) =>
+      s"The stored $role analysis was computed on input ${found.render}, not ${expected.render}."
+    case ResultEvaluation(role, expected, found) =>
+      s"The stored $role analysis was evaluated as ${RepetitionPlanResult.render(found)}, " +
+        s"not ${RepetitionPlanResult.render(expected)}."
+    case ResultPairs(role, expected, found, first) =>
+      s"The stored $role analysis holds $found pairs where the plan selects $expected" +
+        first.fold("; its pairing report differs.")(i => s"; pair $i differs.")
 
 /** Which participants a named repetition relation may pair. Always explicit. */
 enum ParticipantScope derives CanEqual:
@@ -196,6 +225,51 @@ final class RepetitionPlan[K, U <: Unit2D] private (
     val planHash: ContentHash,
     val specification: EvaluationSpec
 ):
+  /** The plan as data: its input and layout identities, grid, method,
+    * relations, control selection, failure policy and pair orientation.
+    */
+  def description: Vector[(String, Vector[Provenance.Param])] =
+    import Provenance.Param.*
+    def rules(r: Vector[RepetitionRule]) = r.map(rule => Text(rule.toString))
+    Vector(
+      "repetition.input" -> Vector(Text(inputHash.render)),
+      "layout" -> Vector(layout.id, layout.participantId, layout.stimulusId, layout.occasionId)
+        .map(id => Text(s"${id.name}@${id.version}")),
+      "grid"     -> Vector(Text(grid.id.name), Num(grid.nx.toDouble), Num(grid.ny.toDouble)),
+      "method"   -> Vector(Text(method.token)),
+      "matched"  -> rules(relations.matched),
+      "controls" -> rules(relations.controls),
+      "controlSelection" -> RepetitionViews.selection(controls),
+      "failurePolicy"    -> Vector(policy match
+        case FailurePolicy.RequireAll        => Text("RequireAll")
+        case FailurePolicy.SuccessfulOnly(m) => Num(m.value.toDouble)),
+      "pairing" -> Vector(Text("directed-exclude-self"))
+    )
+
+  /** The plan's input: its supplied maps, by the content hash they carry. */
+  def inputRef: ArtifactRef[Trials[K, Unit, Mass[U]]] = ArtifactRef.of(inputHash)
+
+  /** Typed availability: blocked without the plan's maps or with others; the
+    * comparisons and their reduction are left to execution.
+    */
+  def preflight(
+      available: Option[ArtifactRef[Trials[K, Unit, Mass[U]]]]
+  ): AnalysisReport[K, Trials[K, Unit, Mass[U]]] =
+    AnalysisReport.of(
+      RecipeFamily.Repetition,
+      description,
+      inputRef,
+      available,
+      Vector.empty,
+      Vector(UncheckedAspect.PairComparison, UncheckedAspect.FailurePolicyReduction)
+    )
+
+  def diff(other: RepetitionPlan[K, U]): Vector[PlanChange] =
+    PlanChange.between(description, other.description)
+
+  /** Every described field with its meaning and view; see [[RecipeInspection]]. */
+  def inspect: Either[DescriptorError, RecipeInspection] = RecipeDescriptors.repetition(this)
+
   def run: RepetitionPlanResult[K] =
     given KeyDigest[K] = layout.digest
     given Ordering[K]  = layout.ordering
@@ -209,6 +283,35 @@ final class RepetitionPlan[K, U <: Unit2D] private (
       policy,
       planHash
     )
+
+  /** The same run as resumable work: both pairings are made here, and the
+    * cursor evaluates the matched pairs, then the control pairs, at most a pair
+    * quantum of comparisons per step. `Stepwise.complete` at any quanta equals
+    * [[run]].
+    */
+  def work: RepetitionCursor[K] =
+    val comparison = method.similarity[U]
+    val info       = EvaluationInfo.comparison(comparison, specification)
+    def evaluation(stage: RepetitionStage) =
+      PairedEvaluation.start(pairing(stage), inputHash, info)(comparison.compare)
+    new RepetitionCursor(
+      RepetitionPhase.Matched(
+        evaluation(RepetitionStage.Matched),
+        evaluation(RepetitionStage.Control)
+      ),
+      policy,
+      planHash
+    )(using layout.ordering)
+
+  /** The pairs `stage` compares: the matched relation exhaustively, or the
+    * control relation under the control selection.
+    */
+  private[plan] def pairing(stage: RepetitionStage) =
+    given KeyDigest[K] = layout.digest
+    stage match
+      case RepetitionStage.Matched =>
+        pair(trials, layout.design(relations.matched, Selection.All))
+      case RepetitionStage.Control => pair(trials, layout.design(relations.controls, controls))
 
 object RepetitionPlan:
   def of[K, U <: Unit2D: UnitLabel](
@@ -318,3 +421,149 @@ final class RepetitionPlanResult[K] private[plan] (
 )(using Ordering[K]):
   def contrasts: Either[ContrastError[K], Contrast[K, Similarity, SignedDifference]] =
     contrast(matched.meanByLeft(policy), controls.meanByLeft(policy))
+
+/** The stage a repetition cursor's next step works on. */
+enum RepetitionStage derives CanEqual:
+  /** Comparing the matched pairs. */
+  case Matched
+
+  /** Comparing the control pairs. */
+  case Control
+
+/** Where a repetition run stands: the matched pairs in progress with the
+  * control pairs waiting, or the matched analysis done and the control pairs
+  * in progress.
+  */
+private[plan] enum RepetitionPhase[K]:
+  case Matched(
+      matched: PairedEvaluation[K, K, CompareError, Similarity],
+      control: PairedEvaluation[K, K, CompareError, Similarity]
+  )
+  case Control(
+      matched: DirectedPairwiseAnalysis[K, K, CompareError, Similarity],
+      control: PairedEvaluation[K, K, CompareError, Similarity]
+  )
+
+/** An immutable position inside a [[RepetitionPlan]] run
+  * ([[RepetitionPlan.work]]): each `advance` evaluates at most `quanta.pairs`
+  * pairs of the current stage. It never fails.
+  *
+  * Only the comparisons are bounded. Both pairings are made when the cursor
+  * is created, because a bottom-k control selection has no exhaustive pair
+  * schedule to page through; bounding the pairing as well is left to CR8.
+  */
+final class RepetitionCursor[K] private[plan] (
+    private val phase: RepetitionPhase[K],
+    private val policy: FailurePolicy,
+    private val planHash: ContentHash
+)(using Ordering[K]):
+  def stage: RepetitionStage = phase match
+    case RepetitionPhase.Matched(_, _) => RepetitionStage.Matched
+    case RepetitionPhase.Control(_, _) => RepetitionStage.Control
+
+  /** The pairs `stage` compares in all: known from the start, since both
+    * pairings are made before the first step.
+    */
+  def totalPairs(stage: RepetitionStage): Long = (stage, phase) match
+    case (RepetitionStage.Matched, RepetitionPhase.Matched(m, _)) => m.totalPairs.toLong
+    case (RepetitionStage.Matched, RepetitionPhase.Control(m, _)) => m.rows.size.toLong
+    case (RepetitionStage.Control, RepetitionPhase.Matched(_, c)) => c.totalPairs.toLong
+    case (RepetitionStage.Control, RepetitionPhase.Control(_, c)) => c.totalPairs.toLong
+
+  def advance(
+      quanta: WorkQuanta
+  ): Either[Nothing, WorkStep[RepetitionStage, RepetitionCursor[K], RepetitionPlanResult[K]]] =
+    def next(p: RepetitionPhase[K]) = new RepetitionCursor(p, policy, planHash)
+    Right(phase match
+      case RepetitionPhase.Matched(matched, control) =>
+        matched.advance(quanta.pairs) match
+          case PairedPage.More(units, more) =>
+            WorkStep.More(
+              RepetitionStage.Matched,
+              units,
+              next(RepetitionPhase.Matched(more, control))
+            )
+          case PairedPage.Done(units, analysis) =>
+            WorkStep.More(
+              RepetitionStage.Matched,
+              units,
+              next(RepetitionPhase.Control(analysis, control))
+            )
+      case RepetitionPhase.Control(matched, control) =>
+        control.advance(quanta.pairs) match
+          case PairedPage.More(units, more) =>
+            WorkStep.More(
+              RepetitionStage.Control,
+              units,
+              next(RepetitionPhase.Control(matched, more))
+            )
+          case PairedPage.Done(units, analysis) =>
+            WorkStep.Done(units, new RepetitionPlanResult(matched, analysis, policy, planHash)))
+
+object RepetitionCursor:
+  given stepwise[K]: Stepwise[
+    RepetitionCursor[K],
+    RepetitionStage,
+    Nothing,
+    RepetitionPlanResult[K]
+  ] with
+    def stage(cursor: RepetitionCursor[K]): RepetitionStage      = cursor.stage
+    def advance(cursor: RepetitionCursor[K], quanta: WorkQuanta) = cursor.advance(quanta)
+
+object RepetitionPlanResult:
+  /** A stored result of `plan`, checked against what the plan computes, in
+    * this order for the matched, then the control analysis: its input hash
+    * (`ResultInput`), its evaluation, the plan's method under the plan's
+    * specification (`ResultEvaluation`), and its pairs and pairing report
+    * against the plan's own pairing (`ResultPairs`), so a matched and a
+    * control analysis cannot stand in for each other. The pairing is made
+    * here; no pair is compared.
+    */
+  def reconstruct[K, U <: Unit2D](
+      plan: RepetitionPlan[K, U],
+      matched: DirectedPairwiseAnalysis[K, K, CompareError, Similarity],
+      controls: DirectedPairwiseAnalysis[K, K, CompareError, Similarity]
+  ): Either[RepetitionPlanError, RepetitionPlanResult[K]] =
+    val info = EvaluationInfo.comparison(plan.method.similarity[U], plan.specification)
+    def check(
+        stage: RepetitionStage,
+        a: DirectedPairwiseAnalysis[K, K, CompareError, Similarity]
+    ): Option[RepetitionPlanError] =
+      lazy val paired   = plan.pairing(stage)
+      lazy val expected = paired.pairs.map((l, r) => (l.key, r.key))
+      lazy val found    = a.rows.map(r => (r.left, r.right))
+      if a.provenance.inputs != plan.inputHash then
+        Some(RepetitionPlanError.ResultInput(stage, plan.inputHash, a.provenance.inputs))
+      else if a.evaluation != info then
+        Some(RepetitionPlanError.ResultEvaluation(stage, info, a.evaluation))
+      else if found != expected then
+        Some(
+          RepetitionPlanError.ResultPairs(
+            stage,
+            expected.size,
+            found.size,
+            Some(expected.zip(found).indexWhere(_ != _) match
+              case -1 => math.min(expected.size, found.size)
+              case i  => i)
+          )
+        )
+      else if a.diagnostics != paired.diagnostics then
+        Some(RepetitionPlanError.ResultPairs(stage, expected.size, found.size, None))
+      else None
+    check(RepetitionStage.Matched, matched)
+      .orElse(check(RepetitionStage.Control, controls))
+      .toLeft(
+        new RepetitionPlanResult(matched, controls, plan.policy, plan.planHash)(using
+          plan.layout.ordering
+        )
+      )
+
+  /** An evaluation as a refusal names it: its name and scale, then its
+    * specification's method, revision, parameters, components, geometry and time.
+    */
+  private[plan] def render(info: EvaluationInfo): String =
+    (Vector(info.name, info.scale.toString) ++ info.specification.toVector.flatMap(s =>
+      Vector(s"${s.method}@${s.revision}") ++
+        s.parameters.map((k, v) => s"$k=${v.render}") ++
+        Vector(s.components.mkString("[", ",", "]"), s.geometry.toString, s.time.toString)
+    )).mkString(" ")
