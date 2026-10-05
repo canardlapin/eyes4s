@@ -767,7 +767,7 @@ object GoldenRoute:
       all(
         expect(
           "bundle files",
-          Set("results.csv", "participants.csv", "methods.md", "README.txt"),
+          Set("results.csv", "participants.csv", "comparisons.csv", "methods.md", "README.txt"),
           files.keySet
         ),
         // The methods text against FIXTURE.md, the parity checklist and eyes4s's

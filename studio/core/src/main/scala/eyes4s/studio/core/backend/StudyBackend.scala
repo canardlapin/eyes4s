@@ -253,7 +253,9 @@ enum BackendError derives CanEqual, Codec.AsObject:
       case PlacementRefused(d, _)   => Vector(DiagnosticLocus.Dataset(d))
       case NoDensity(r, a, cause)   =>
         (Vector(DiagnosticLocus.Run(r), DiagnosticLocus.Address(a)) ++ cause.subject).distinct
-    StudioDiagnostic(code, DiagnosticLevel.Error, DiagnosticOrigin.Host, subject, message)
+    this match
+      case NoDensity(_, _, cause) => cause.copy(code = code, subject = subject, message = message)
+      case _ => StudioDiagnostic(code, DiagnosticLevel.Error, DiagnosticOrigin.Host, subject, message)
 
 /** Everything Eyes Studio asks of eyes4s (DESIGN_SPEC section 13, S3.0): the
   * admission summary and ledger, preview paging, jobs with progress, results,

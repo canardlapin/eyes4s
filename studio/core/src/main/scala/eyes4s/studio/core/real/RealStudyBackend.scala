@@ -20,7 +20,7 @@ import cats.effect.kernel.{Concurrent, Deferred, Ref, Resource}
 import cats.effect.std.Supervisor
 import cats.kernel.Eq
 import cats.syntax.all.*
-import eyes4s.codec.ByteDigest
+import eyes4s.codec.{ByteDigest, CanonicalDigest}
 import eyes4s.fs2.{Execution, RunOutcome, StudyExecution}
 import eyes4s.studio.core.assets.AssetRegistry
 import eyes4s.studio.core.backend.*
@@ -83,6 +83,25 @@ final class RealStudyBackend[F[_]] private (
   import RealStudyBackend.*
 
   // ------------------------------------------------------------------ admission
+
+  def verify(dataset: DatasetRevision, content: CanonicalDigest[DatasetRevisionSpec]): F[Either[BackendError, AdmissionSummary]] =
+    datasets.get(dataset) match
+      case None => F.pure(Left(BackendError.UnknownDataset(dataset, knownDatasets)))
+      case Some(spec) => DatasetRevisionSpec.contentDigest(spec) match
+        case Left(error) => F.pure(Left(BackendError.Unavailable(DiagnosticLocus.Artifact(s"${dataset.label} content: ${error.message}"))))
+        case Right(held) if held != content => F.pure(Left(BackendError.ContentMismatch(dataset, content, held)))
+        case Right(_) => admission(dataset)
+
+  def placement(spec: DatasetRevisionSpec): F[Either[BackendError, PlacementPreview]] =
+    spec.sources.fixations match
+      case None => F.pure(Left(BackendError.PlacementRefused(spec.id, "it has no fixation source")))
+      case Some(source) => sources.bytes(spec, source).map {
+        case None => Left(BackendError.PlacementRefused(spec.id, s"${source.path.value}: the host holds no bytes"))
+        case Some(bytes) =>
+          val read = ByteDigest.sha256(bytes)
+          if read != source.bytes then Left(BackendError.SourceDigestMismatch(spec.id, source.path, source.bytes, read))
+          else eyes4s.studio.core.geometry.PlacementPreviewAdapter.place(spec, bytes)
+      }
 
   private def knownDatasets: Vector[DatasetRevision] = datasets.keys.toVector.sortBy(_.number)
 
@@ -504,6 +523,9 @@ final class RealStudyBackend[F[_]] private (
     * `ResultSummary`: its grouped and single-scale fields have no source.
     */
   def result(run: RunId): F[Either[BackendError, ResultSummary]] = noRun(run)
+
+  def mapGrid(run: RunId, scale: Int, trial: TrialKey): F[Either[BackendError, DensityGrid]] =
+    results(run).map(_.flatMap(_.mapGrid(scale, trial)))
 
   def pairRows(
       run: RunId,

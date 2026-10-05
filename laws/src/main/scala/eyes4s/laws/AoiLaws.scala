@@ -105,6 +105,24 @@ trait AoiLaws extends Laws:
         measured.areas.map(m => BigInt(m.dwell.toMicros)).sum ==
           BigInt(a.report.aoiUnionTime.toMicros) + BigInt(a.report.duplicatedAoiTime.toMicros)
       },
+      "first entry latency follows sampled membership" -> forAll(assignments) { a =>
+        val samples = a.recording.samples.toVector
+        a.measure.areas.forall { metric =>
+          val first = samples.indexWhere(sample => expectedIds(a, sample).contains(metric.id))
+          val expected = Option.when(first >= 0)(a.recording.first.t.until(samples(first).t))
+          metric.firstEntryLatency == expected
+        }
+      },
+      "run counts follow maximal consecutive sampled membership" -> forAll(assignments) { a =>
+        val samples = a.recording.samples.toVector
+        a.measure.areas.forall { metric =>
+          val present = samples.map(sample => expectedIds(a, sample).contains(metric.id))
+          val starts  = present.zipWithIndex.count { (inside, index) =>
+            inside && (index == 0 || !present(index - 1))
+          }
+          metric.runCount == starts
+        }
+      },
       "dwell proportions use analysable union plus background" -> forAll(assignments) { a =>
         val denominator = weighted(a).collect { case (Sample(_, Gaze.Tracked(_, _), _), dt) =>
           dt

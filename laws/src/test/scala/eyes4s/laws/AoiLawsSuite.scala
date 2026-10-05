@@ -55,7 +55,7 @@ class AoiLawsSuite extends munit.DisciplineSuite:
     Gaze.OffScreen(Pt(110, 10))
   )
 
-  private def recording(states: Vector[Gaze[Px]], step: Long): Recording[Px] =
+  private def recording(states: Vector[Gaze[Px]], step: Long, start: Long = 0L): Recording[Px] =
     get(
       Recording.of(
         frame,
@@ -64,7 +64,7 @@ class AoiLawsSuite extends munit.DisciplineSuite:
         Eye.Left,
         None,
         IArray.from(states.zipWithIndex.map { (gaze, i) =>
-          Sample(Instant.micros(i.toLong * step), gaze)
+          Sample(Instant.micros(start + i.toLong * step), gaze)
         })
       )
     )
@@ -115,6 +115,40 @@ class AoiLawsSuite extends munit.DisciplineSuite:
     "zero analysable time",
     AoiLaws.accounting(Gen.oneOf(noAnalysable, noSupport), proportionTolerance)
   )
+
+  test("a sampled entry with censored support still has latency and a run") {
+    val wide = noSupport.measure.areas.find(_.id == get(AoiId.of("wide"))).get
+    assertEquals(wide.dwell, Span.zero)
+    assertEquals(wide.dwellProportion, None)
+    assertEquals(wide.firstEntryLatency, Some(Span.zero))
+    assertEquals(wide.runCount, 1)
+  }
+
+  test("background and exclusions separate runs and latency starts at the recording") {
+    val assigned = get(
+      overlapping.assign(
+        recording(
+          Vector(
+            Gaze.Tracked(Pt(90, 90), None),
+            Gaze.Tracked(Pt(10, 10), None),
+            Gaze.Tracked(Pt(15, 10), None),
+            Gaze.Blink(),
+            Gaze.Tracked(Pt(10, 10), None),
+            Gaze.Lost(),
+            Gaze.Tracked(Pt(10, 10), None)
+          ),
+          100,
+          start = 1000
+        ),
+        MembershipPolicy.Multiple,
+        get(TemporalSupport.fixed(Span.micros(100)))
+      )
+    )
+    val wide = assigned.measure.areas.find(_.id == get(AoiId.of("wide"))).get
+    assertEquals(wide.firstEntryLatency, Some(Span.micros(100)))
+    assertEquals(wide.runCount, 3)
+    assertEquals(wide.dwell, Span.micros(400))
+  }
 
   test("analytic three-way overlap distinguishes replicated mass from visible union") {
     val a = get(
