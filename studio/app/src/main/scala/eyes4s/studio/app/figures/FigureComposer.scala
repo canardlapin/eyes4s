@@ -84,6 +84,11 @@ enum ComposerIntent derives CanEqual:
     * the two whole-run templates (participant D, scale profile).
     */
   case NewFigure
+
+  /** Add panel (bead bd-01M44PBFHM4CWTXJAKQYMVV7RY): a `kind` panel, last,
+    * in the shown figure ([[AddPanel]]), which the trail then shows.
+    */
+  case AddPanelOf(kind: NewPanel)
   case SetWidth(width: PageWidth)
   case ZoomIn
   case ZoomOut
@@ -217,7 +222,8 @@ final case class PageVM(
     textPt: Int,
     appearance: AppearanceVM,
     greyscale: Boolean,
-    exporting: ExportVM
+    exporting: ExportVM,
+    addPanel: AddPanelVM
 ) derives CanEqual
 
 /** Everything the Figures perspective shows. */
@@ -395,8 +401,9 @@ object FigureComposer:
           c.copy(problem = None),
           Vector(ComposerEffect.App(Intent.Navigate(figureTrail(f, Some(letter)))))
         )
-      case NewFigure   => newFigure(c, model)
-      case SetWidth(w) =>
+      case NewFigure        => newFigure(c, model)
+      case AddPanelOf(kind) => addPanel(c, model, kind)
+      case SetWidth(w)      =>
         // A narrower page holds no panel wider than itself.
         val clamped = c.appearance.view
           .mapValues(a => a.copy(widthsMm = a.widthsMm.view.mapValues(_.min(w.mm)).toMap))
@@ -553,6 +560,27 @@ object FigureComposer:
           )
         )
 
+  private def addPanel(
+      c: FigureComposer,
+      model: AppModel,
+      kind: NewPanel
+  ): (FigureComposer, Vector[ComposerEffect]) =
+    val made = for
+      id     <- shownFigure(model).toRight(ComposerText.NoFigure)
+      figure <- model.document.figures.find(_.id == id).toRight(ComposerText.NoFigure)
+      add    <- AddPanel.command(model, figure, shownPanel(model), kind)
+    yield add
+    made match
+      case Left(why)  => (c.copy(problem = Some(why)), none)
+      case Right(add) =>
+        (
+          c.copy(problem = None),
+          Vector(
+            ComposerEffect.App(Intent.Dispatch(add)),
+            ComposerEffect.App(Intent.Navigate(figureTrail(add.figure, Some(add.panel.letter))))
+          )
+        )
+
   private def openInCompare(
       c: FigureComposer,
       model: AppModel
@@ -660,7 +688,8 @@ object FigureComposer:
         ExportFormat.values.toVector.map(f => (f, f.label, f == c.format)),
         "Export figure…",
         c.exported
-      )
+      ),
+      AddPanel.view(model, s.figure, selected)
     )
 
   private def summaryOf(c: FigureComposer, run: RunId) =
@@ -759,6 +788,7 @@ object ComposerText:
 
   val NoRun: String       = "A new figure needs a completed, current run; there is none."
   val NoReporting: String = "A new figure needs a reporting spec; the project has none."
+  val NoFigure: String    = "Add panel needs a figure; the project has none."
 
   /** "Page 183 mm · two-column". */
   def page(width: PageWidth): String = s"Page ${width.label}"

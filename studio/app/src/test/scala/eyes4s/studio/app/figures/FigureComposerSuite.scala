@@ -22,7 +22,7 @@ import eyes4s.studio.app.explore.DisplaySource
 import eyes4s.studio.app.nav.{Location, Place}
 import eyes4s.studio.app.{AppModel, Intent, StoryModels}
 import eyes4s.studio.core.backend.*
-import eyes4s.studio.core.command.Command
+import eyes4s.studio.core.command.{Command, HistoryStack}
 import eyes4s.studio.core.document.*
 import eyes4s.studio.core.figures.{PairScore, ReferenceReads, ReferenceScores}
 import eyes4s.studio.core.fixture.{GoldenAssets, MockStudy, StoryMoment, StoryMoments}
@@ -501,6 +501,162 @@ class FigureComposerSuite extends munit.ScalaCheckSuite:
     assertEquals(
       (page.title, page.panels.map(_.title)),
       ("Figure 3", Vector("Participant D, σ 0.5°", "Scale profile"))
+    )
+  }
+
+  // --- Add panel (bead bd-01M44PBFHM4CWTXJAKQYMVV7RY) ---------------------------------
+
+  private def run(m: AppModel, effects: Vector[ComposerEffect]): AppModel =
+    effects.foldLeft(m) {
+      case (acc, ComposerEffect.App(i)) => AppModel.update(acc, i)._1
+      case (acc, _)                     => acc
+    }
+
+  private def add(m: AppModel, kind: NewPanel): (AppModel, Vector[ComposerEffect]) =
+    val (_, effects) =
+      FigureComposer.update(FigureComposer.empty, m, ComposerIntent.AddPanelOf(kind))
+    (run(m, effects), effects)
+
+  // t2 with Compare's trail on P17 ret_07's matched pair at σ 2°, and a new
+  // figure (A: participant D at σ 0.5°, B: scale profile) shown.
+  private def withPair: AppModel =
+    val compare = StoryModels.play(
+      t2,
+      _ => Intent.Navigate(Location(Perspective.Compare, StoryModels.queryTrail))
+    )
+    val (_, made) =
+      FigureComposer.update(FigureComposer.empty, compare, ComposerIntent.NewFigure)
+    run(compare, made)
+
+  private def figure(m: AppModel, id: Int): FigureSpec =
+    m.document.figures.find(_.id.number == id).getOrElse(fail(s"no figure $id"))
+
+  test("Add panel adds the board's templates from Compare's trail, each a command, last") {
+    val start = withPair
+    assertEquals(figure(start, 3).panels.map(_.letter.value), Vector("A", "B"))
+    // A one-scale panel takes the trail's scale (σ 2°) before the run's first (σ 0.5°).
+    assertEquals(
+      AddPanel.spec(start, figure(start, 3), None, NewPanel.ParticipantD).map(_.scale),
+      Right(PanelScale.At(sigma2))
+    )
+    val (encoded, effects) = add(start, NewPanel.EncodingGaze)
+    val c                  = PanelSpec(
+      letter("C"),
+      "Encoding gaze",
+      PanelScale.Unscaled,
+      PanelSelection.Trial(p17enc03)
+    )
+    val figure3 = ok(FigureId.of(3))
+    assertEquals(
+      effects,
+      Vector(
+        ComposerEffect.App(Intent.Dispatch(Command.AddPanel(figure3, 2, c))),
+        ComposerEffect.App(
+          Intent.Navigate(
+            Location(
+              Perspective.Figures,
+              Vector(
+                Place.Figures,
+                Place.Figure(figure3),
+                Place.At(StudioRef.FigurePanel(figure3, letter("C")))
+              )
+            )
+          )
+        )
+      )
+    )
+    val all = Vector(NewPanel.RetrievalGaze, NewPanel.DensityMaps, NewPanel.ParticipantD)
+      .foldLeft(encoded)((m, k) => add(m, k)._1)
+    assertEquals(
+      figure(all, 3).panels.drop(2),
+      Vector(
+        c,
+        PanelSpec(
+          letter("D"),
+          "Retrieval gaze",
+          PanelScale.Unscaled,
+          PanelSelection.Trial(p17ret07)
+        ),
+        PanelSpec(
+          letter("E"),
+          "Density maps",
+          PanelScale.At(sigma2),
+          PanelSelection.QueryWithReferences(p17ret07)
+        ),
+        // The trail's scale, and the spec's grouping in the title.
+        PanelSpec(
+          letter("F"),
+          "Participant D by response",
+          PanelScale.At(sigma2),
+          PanelSelection.AllQueries
+        )
+      )
+    )
+    // Each add is one undoable edit.
+    val undone = AppModel.update(all, Intent.Undo(HistoryStack.Science))._1
+    assertEquals(figure(undone, 3).panels.map(_.letter.value), Vector("A", "B", "C", "D", "E"))
+    // The view shows the new panel selected, and the control.
+    val page =
+      FigureComposer.view(FigureComposer.sync(FigureComposer.empty, all)._1, all).page.get
+    assertEquals(page.panels.filter(_.selected).map(_.letter.value), Vector("F"))
+    assertEquals(page.addPanel.label, "Add panel")
+    assert(page.addPanel.choices.forall(_.enabled), page.addPanel.choices)
+  }
+
+  test("without a Compare query the trial panels are disabled, with why; D falls back") {
+    // t2Figures: Figure 1's panel D selected (σ 2°), no Compare trail.
+    val m      = t2
+    val shown  = figure(m, 1)
+    val choice = AddPanel.view(m, shown, Some(letter("D"))).choices.map(c => (c.kind, c.why))
+    assertEquals(
+      choice,
+      Vector(
+        (NewPanel.EncodingGaze, Some(AddPanelText.NoPair)),
+        (NewPanel.RetrievalGaze, Some(AddPanelText.NoQuery)),
+        (NewPanel.DensityMaps, Some(AddPanelText.NoQuery)),
+        (NewPanel.ParticipantD, None),
+        (NewPanel.ScaleProfile, None)
+      )
+    )
+    // The selected panel's scale, else the run's first.
+    assertEquals(
+      AddPanel.spec(m, shown, Some(letter("D")), NewPanel.ParticipantD).map(_.scale),
+      Right(PanelScale.At(sigma2))
+    )
+    assertEquals(
+      AddPanel.spec(m, shown, Some(letter("A")), NewPanel.ParticipantD).map(_.scale),
+      Right(PanelScale.At(ok(Sigma.of(0.5))))
+    )
+    // A disabled choice dispatches nothing and says why.
+    val (c, effects) =
+      FigureComposer.update(
+        FigureComposer.empty,
+        m,
+        ComposerIntent.AddPanelOf(NewPanel.RetrievalGaze)
+      )
+    assertEquals(effects, Vector.empty)
+    assertEquals(FigureComposer.view(c, m).problem, Some(AddPanelText.NoQuery))
+  }
+
+  test("a figure with every letter A to Z takes no more panels") {
+    val m     = t2
+    val one   = figure(m, 1)
+    val panel = one.panels.head
+    val full  = ok(
+      FigureSpec.of(
+        one.id,
+        one.run,
+        one.reporting,
+        AddPanel.Letters.map(l => panel.copy(letter = letter(l)))
+      )
+    )
+    assertEquals(
+      AddPanel.spec(m, full, None, NewPanel.ScaleProfile),
+      Left(AddPanelText.full(one.id))
+    )
+    assertEquals(
+      AddPanel.spec(m, one, None, NewPanel.ScaleProfile).map(_.letter.value),
+      Right("F")
     )
   }
 
