@@ -140,6 +140,15 @@ class A11yTreeSuite extends ShellFxSuite:
         // design, so the stops are derived once it has answered.
         if runOnFx(w.runtime.model.perspective) == Perspective.Analysis then
           eventually(fx, "the design's check")(w.resolvedDesign.state.preview.receipt.isDefined)
+        // Derive the served Compare stops after the navigator and contrast
+        // have published their controls, which the Tab walk then visits.
+        if runOnFx(w.runtime.model.perspective) == Perspective.Compare then
+          eventually(fx, "Compare navigation and contrast are served") {
+            val nav = w.summary.navigatorVM
+            val cv  = w.summary.contrastVM
+            nav.empty.isEmpty && nav.groups.nonEmpty && cv.status.isEmpty &&
+            cv.ladder.nonEmpty && cv.inspected.exists(_.next.nonEmpty)
+          }
         // A form pane's controls follow its stop (the column-mapping pane).
         val derived =
           A11y.render(runOnFx(A11y.tabOrder(w.runtime.model, inside = w.paneStops)))
