@@ -19,7 +19,7 @@ package eyes4s.studio.app.compare
 import eyes4s.studio.app.nav.Place
 import eyes4s.studio.app.text.Format
 import eyes4s.studio.app.{AppModel, StoryModels}
-import eyes4s.studio.core.backend.{PageRequest, QueryRow, ResultSummary}
+import eyes4s.studio.core.backend.PageRequest
 import eyes4s.studio.core.fixture.{MockStudy, StoryMoment, StoryMoments}
 import eyes4s.studio.core.headless.HeadlessSession
 import eyes4s.studio.core.selection.{QueryCount, ScaleIndex, StudioRef}
@@ -45,21 +45,45 @@ class QueriesNavigatorSuite extends munit.FunSuite:
 
   private def ascii(s: String): String = s.replace(Format.Minus, "-")
 
-  private def read: Future[(ResultSummary, Vector[QueryRow])] =
-    HeadlessSession.open(StoryMoment.T2).flatMap { s =>
+  private def loaded(m: AppModel): Future[CompareSummary] =
+    HeadlessSession.open(StoryMoment.T2).flatMap { session =>
       val page = right(PageRequest.first(PageRequest.MaximumSize))
       (for
-        r <- s.result(run7)
-        q <- s.queries(run7, page)
-      yield (right(r), right(q).rows)).transformWith(x => s.close.transform(_ => x))
-    }
-
-  private def loaded(m: AppModel): Future[CompareSummary] =
-    read.map { (r, q) =>
-      val s0 = CompareSummary.sync(CompareSummary.empty, m)._1
-      val s1 =
-        CompareSummary.update(s0, SummaryIntent.SummaryRead(run7, SummaryAnswer.Answered(r)))._1
-      CompareSummary.update(s1, SummaryIntent.QueriesRead(run7, QueriesAnswer.Answered(q)))._1
+        r0 <- session.result(run7)
+        q0 <- session.queries(run7, page)
+        r                 = right(r0)
+        q                 = right(q0).rows
+        (s0, _)           = CompareSummary.sync(CompareSummary.empty, m)
+        (s1, reportReads) = CompareSummary.update(
+          s0,
+          SummaryIntent.SummaryRead(run7, SummaryAnswer.Answered(r))
+        )
+        reports <- Future.sequence(reportReads.collect {
+          case SummaryEffect.RequestReport(_, spec, scale, whole) =>
+            session
+              .report(run7, spec, scale.value)
+              .map(answer =>
+                (
+                  spec,
+                  scale,
+                  whole,
+                  answer.fold(ReportAnswer.Refused(_), ReportAnswer.Answered(_))
+                )
+              )
+        })
+      yield
+        val withReports = reports.foldLeft(s1) { case (state, (spec, scale, whole, answer)) =>
+          CompareSummary
+            .update(state, SummaryIntent.ReportRead(run7, spec, scale, whole, answer))
+            ._1
+        }
+        val atTwoDegrees = CompareSummary
+          .update(withReports, SummaryIntent.ChooseScale(right(ScaleIndex.of(2))))
+          ._1
+        CompareSummary
+          .update(atTwoDegrees, SummaryIntent.QueriesRead(run7, QueriesAnswer.Answered(q)))
+          ._1
+      ).transformWith(result => session.close.transform(_ => result))
     }
 
   test("the count strip is FIXTURE.md's: 480 = 454 + 3 + 9 + 14, by design n/a") {
@@ -365,7 +389,11 @@ class QueriesNavigatorSuite extends munit.FunSuite:
   test("answered without a σ of participant means: the navigator says why, not 'Reading'") {
     loaded(t2Compare).map { s =>
       val noSpec =
-        QueriesNavigator.vm(QueriesNavigator.initial, s.copy(reporting = None), Vector.empty)
+        QueriesNavigator.vm(
+          QueriesNavigator.initial,
+          s.copy(reporting = None, scale = None, spec = None, reports = Map.empty),
+          Vector.empty
+        )
       assertEquals(
         noSpec.empty,
         Some(
@@ -377,7 +405,11 @@ class QueriesNavigatorSuite extends munit.FunSuite:
       // A participant listed twice: eyes4s's means check refuses every σ.
       val r      = s.answered.get
       val twice  = r.copy(participants = r.participants :+ r.participants.head)
-      val broken = s.copy(summary = Some(SummaryAnswer.Answered(twice)))
+      val broken = s.copy(
+        summary = Some(SummaryAnswer.Answered(twice)),
+        scale = None,
+        reports = Map.empty
+      )
       assertEquals(broken.shown, None)
       val refused = QueriesNavigator.vm(QueriesNavigator.initial, broken, Vector.empty)
       assert(
