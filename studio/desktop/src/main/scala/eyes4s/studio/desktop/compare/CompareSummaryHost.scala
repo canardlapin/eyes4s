@@ -45,8 +45,17 @@ import javafx.scene.layout.{HBox, Priority, Region, VBox}
 trait SummaryInputs:
   def summary(run: RunId, done: SummaryAnswer => Unit): Unit
   def queries(run: RunId, done: QueriesAnswer => Unit): Unit
-  def report(_run: RunId, _reporting: ReportingSpec, _scale: ScaleIndex, done: ReportAnswer => Unit): Unit =
-    done(ReportAnswer.Failed("report input is not served"))
+  def report(
+      run: RunId,
+      reporting: ReportingSpec,
+      scale: ScaleIndex,
+      done: ReportAnswer => Unit
+  ): Unit =
+    done(
+      ReportAnswer.Failed(
+        s"Report ${reporting.id.value} for $run at scale ${scale.value} is not served."
+      )
+    )
 
   /** Inspects one result item: the trial panels' pair (S8.2). */
   def inspect(run: RunId, address: ResultAddress, done: PairAnswer => Unit): Unit
@@ -540,7 +549,8 @@ final class CompareSummaryHost(
           run,
           reporting,
           scale,
-          a => Platform.runLater(() => dispatch(SummaryIntent.ReportRead(run, scale, overall, a)))
+          a =>
+            Platform.runLater(() => dispatch(SummaryIntent.ReportRead(run, scale, overall, a)))
         )
     }
 

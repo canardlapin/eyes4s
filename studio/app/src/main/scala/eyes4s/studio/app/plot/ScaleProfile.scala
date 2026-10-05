@@ -18,7 +18,15 @@ package eyes4s.studio.app.plot
 
 import cats.syntax.all.*
 import eyes4s.studio.app.text.{ParticipantText, ProfileText, ProfileTextId}
-import eyes4s.studio.core.backend.{QueryRow, QueryStatus, ReportRole, ReportView, ResultSummary, Response, RunId}
+import eyes4s.studio.core.backend.{
+  QueryRow,
+  QueryStatus,
+  ReportRole,
+  ReportView,
+  ResultSummary,
+  Response,
+  RunId
+}
 import eyes4s.studio.core.document.{ReportingId, ScaleSet, Sigma}
 import eyes4s.studio.core.selection.{ScaleIndex, StudioRef}
 
@@ -116,29 +124,39 @@ object ScaleProfile:
       labels: Vector[String]
   ): Either[ProfileError, ScaleProfile] =
     grouped.headOption.toRight(ProfileError.Scale(RunId(0), 0)).flatMap { first =>
-      val run = first.run
+      val run      = first.run
       val declared = scales.values
       for
-        _ <- Either.cond(grouped.size == declared.size && overall.size == declared.size && labels.size == declared.size, (),
-          ProfileError.ScaleCount(run, declared.size, grouped.size))
+        _ <- Either.cond(
+          grouped.size == declared.size && overall.size == declared.size && labels.size == declared.size,
+          (),
+          ProfileError.ScaleCount(run, declared.size, grouped.size)
+        )
         at <- declared.zipWithIndex.traverse { case (sigma, i) =>
           ScaleIndex.of(i).leftMap(_ => ProfileError.Scale(run, i)).map((_, sigma))
         }
       yield
-        val levels = first.cells.collect {
-          case c if c.role == ReportRole.Difference => c.group
-        }.flatten.distinct
-        val people = overall.headOption.toVector.flatMap(_.participants.collect {
-          case p if p.role == ReportRole.Difference && p.group.isEmpty => p.participant
-        }).distinct
+        val levels = first.cells
+          .collect {
+            case c if c.role == ReportRole.Difference => c.group
+          }
+          .flatten
+          .distinct
+        val people = overall.headOption.toVector
+          .flatMap(_.participants.collect {
+            case p if p.role == ReportRole.Difference && p.group.isEmpty => p.participant
+          })
+          .distinct
         def groupedPoint(group: Response, index: ScaleIndex): Option[(Double, String)] =
-          grouped.lift(index.value).flatMap(_.cell(Some(group), ReportRole.Difference)).flatMap(c =>
-            c.estimate.map(_ -> ParticipantText.participants(c.participants))
-          )
+          grouped
+            .lift(index.value)
+            .flatMap(_.cell(Some(group), ReportRole.Difference))
+            .flatMap(c => c.estimate.map(_ -> ParticipantText.participants(c.participants)))
         def overallPoint(person: String, index: ScaleIndex): Option[(Double, String)] =
-          overall.lift(index.value).flatMap(_.participant(None, ReportRole.Difference, person)).flatMap(p =>
-            p.value.map(_ -> ParticipantText.queries(p.queries))
-          )
+          overall
+            .lift(index.value)
+            .flatMap(_.participant(None, ReportRole.Difference, person))
+            .flatMap(p => p.value.map(_ -> ParticipantText.queries(p.queries)))
         ScaleProfile(
           run,
           first.reporting,
@@ -148,9 +166,13 @@ object ScaleProfile:
               groupedPoint(group, at.head._1).fold(ParticipantText.participants(0))(_._2),
               at.map((index, sigma) =>
                 ProfilePoint(
-                  grouped(index.value).cell(Some(group), ReportRole.Difference).map(_.ref)
+                  grouped(index.value)
+                    .cell(Some(group), ReportRole.Difference)
+                    .map(_.ref)
                     .getOrElse(StudioRef.GroupCell(run, first.reporting, index, group)),
-                  index, labels(index.value), sigma,
+                  index,
+                  labels(index.value),
+                  sigma,
                   groupedPoint(group, index).map(_._1)
                 )
               )
@@ -162,9 +184,15 @@ object ScaleProfile:
               overallPoint(person, at.head._1).fold(ParticipantText.queries(0))(_._2),
               at.map((index, sigma) =>
                 ProfilePoint(
-                  overall(index.value).participant(None, ReportRole.Difference, person).map(_.ref)
-                    .getOrElse(StudioRef.ParticipantSummary(run, first.reporting, index, None, person)),
-                  index, labels(index.value), sigma,
+                  overall(index.value)
+                    .participant(None, ReportRole.Difference, person)
+                    .map(_.ref)
+                    .getOrElse(
+                      StudioRef.ParticipantSummary(run, first.reporting, index, None, person)
+                    ),
+                  index,
+                  labels(index.value),
+                  sigma,
                   overallPoint(person, index).map(_._1)
                 )
               )

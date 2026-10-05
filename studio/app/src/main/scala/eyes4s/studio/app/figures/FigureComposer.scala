@@ -355,9 +355,12 @@ object FigureComposer:
               case PanelTemplate.DensityMaps(sigma, query) =>
                 FigurePanels.scaleIndex(scales, sigma).toVector.flatMap { i =>
                   val maps = c.references.get((run, i, query)) match
-                    case Some(Right(scores)) => FigurePanels.mapTrials(query, scores).map(t =>
-                        ComposerRead.Grid(run, i, t) -> ComposerEffect.RequestMap(run, i, t)
-                      )
+                    case Some(Right(scores)) =>
+                      FigurePanels
+                        .mapTrials(query, scores)
+                        .map(t =>
+                          ComposerRead.Grid(run, i, t) -> ComposerEffect.RequestMap(run, i, t)
+                        )
                     case _ => Vector.empty
                   (ComposerRead.References(run, i, query) ->
                     ComposerEffect.RequestReferences(run, i, query)) +: maps
@@ -388,7 +391,8 @@ object FigureComposer:
     (asked, bound.map(lift) ++ next)
 
   /** Ask every currently-needed read once. A references answer may reveal the
-    * three trials panel C must read, so this is also used after that answer. */
+    * three trials panel C must read, so this is also used after that answer.
+    */
   private def asking(
       c: FigureComposer,
       model: AppModel

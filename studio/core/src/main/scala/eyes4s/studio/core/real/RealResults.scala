@@ -43,7 +43,8 @@ final class RealResults private (
     sigmas: Vector[Double],
     origin: RealStudyBackend.RunOrigin,
     inspection: StudyInspection[CoreKey, Unit2D.Px, Similarity, SignedDifference],
-    keys: Map[TrialKey, CoreKey]
+    keys: Map[TrialKey, CoreKey],
+    windowTallies: Map[CoreKey, eyes4s.plan.WindowTally]
 ):
   import RealResults.*
 
@@ -71,36 +72,69 @@ final class RealResults private (
     scale(index).map { s =>
       val all  = pairOrder.getOrElse(index, Vector.empty)
       val rows = all.slice(page.offset, page.offset + page.size).flatMap {
-        case ref @ ResultRef.PairRow(_, design, _, _) => s.pairs(design).get(ref).map(entry)
-        case _                                        => None
+        case ref @ ResultRef.PairRow(_, design, _, _) =>
+          s.pairs(design).get(ref).map(entry(_, windowTallies))
+        case _ => None
       }
       PairRowPage(run, index, PageInfo.of(page, all.size, rows.size), rows)
     }
 
   /** Serve the retained estimate through the library's checked rendering geometry. */
   def mapGrid(index: Int, trial: TrialKey): Either[BackendError, DensityGrid] =
-    val address = ResultAddress.Estimation(index, trial)
-    def none(message: String) = BackendError.NoDensity(run, address,
-      BackendError.UnknownReference(run, address).diagnostic.copy(message = message))
+    val address               = ResultAddress.Estimation(index, trial)
+    def none(message: String) = BackendError.NoDensity(
+      run,
+      address,
+      BackendError.UnknownReference(run, address).diagnostic.copy(message = message)
+    )
     for
-      s <- scale(index)
-      key <- keys.get(trial).toRight(BackendError.UnknownReference(run, address))
-      entry <- s.estimation.get(ResultRef.Estimation(index, key)).toRight(BackendError.UnknownReference(run, address))
+      s     <- scale(index)
+      key   <- keys.get(trial).toRight(BackendError.UnknownReference(run, address))
+      entry <- s.estimation
+        .get(ResultRef.Estimation(index, key))
+        .toRight(BackendError.UnknownReference(run, address))
       density <- entry.outcomes match
         case Vector(eyes4s.plan.EstimationOutcome.Estimated(value)) => Right(value)
-        case Vector(eyes4s.plan.EstimationOutcome.Failed(error)) => Left(BackendError.NoDensity(run, address, diagnostic(error)))
-        case found => Left(none(s"${address.render} has ${found.size} outcomes; no unique density can be served."))
+        case Vector(eyes4s.plan.EstimationOutcome.Failed(error))    =>
+          Left(BackendError.NoDensity(run, address, diagnostic(error)))
+        case found =>
+          Left(
+            none(
+              s"${address.render} has ${found.size} outcomes; no unique density can be served."
+            )
+          )
       levels <- density.levels(Vector(0.5, 0.9)).leftMap(e => none(e.message))
       geometry = density.geometry
-      region <- DensityGrid.region(run, index, trial, geometry.origin.x, geometry.origin.y,
-        geometry.origin.x + geometry.bounds.width, geometry.origin.y + geometry.bounds.height).leftMap(e => none(e.message))
+      region <- DensityGrid
+        .region(
+          run,
+          index,
+          trial,
+          geometry.origin.x,
+          geometry.origin.y,
+          geometry.origin.x + geometry.bounds.width,
+          geometry.origin.y + geometry.bounds.height
+        )
+        .leftMap(e => none(e.message))
       sigma <- sigmas.lift(index).toRight(BackendError.UnknownScale(run, index, scales))
       order = geometry.yAxis match
         case eyes4s.kernel.YAxis.Down => RowOrder.TopFirst
-        case eyes4s.kernel.YAxis.Up => RowOrder.BottomFirst
-      grid <- DensityGrid.of(run, index, trial, sigma, region, density.nx, density.ny, order,
-        geometry.cellDegrees.map(d => CellDegrees(d.width, d.height)), density.cells.toVector,
-        levels.map(l => DensityLevel(l.coverage, l.threshold))).leftMap(e => none(e.message))
+        case eyes4s.kernel.YAxis.Up   => RowOrder.BottomFirst
+      grid <- DensityGrid
+        .of(
+          run,
+          index,
+          trial,
+          sigma,
+          region,
+          density.nx,
+          density.ny,
+          order,
+          geometry.cellDegrees.map(d => CellDegrees(d.width, d.height)),
+          density.cells.toVector,
+          levels.map(l => DensityLevel(l.coverage, l.threshold))
+        )
+        .leftMap(e => none(e.message))
     yield grid
 
   /** The item an address names, as eyes4s holds it. */
@@ -240,7 +274,10 @@ object RealResults:
   def diagnostic(d: eyes4s.plan.Diagnostic[CoreKey]): StudioDiagnostic =
     StudioDiagnostic.of(d, key)
 
-  private def entry(p: eyes4s.plan.PairEntry[CoreKey, Similarity]): PairRowEntry =
+  private def entry(
+      p: eyes4s.plan.PairEntry[CoreKey, Similarity],
+      tallies: Map[CoreKey, eyes4s.plan.WindowTally]
+  ): PairRowEntry =
     PairRowEntry(
       key(p.focal),
       PairDesign.of(p.design),
@@ -249,7 +286,13 @@ object RealResults:
       p.outcome.fold(
         d => PairScoreState.Failed(diagnostic(d)),
         v => PairScoreState.Scored(v.value.value)
-      )
+      ),
+      tallies
+        .get(p.focal)
+        .map(t => TrialTally(eyes4s.studio.core.selection.StudioRef.Trial(key(p.focal)), t)),
+      tallies
+        .get(p.reference)
+        .map(t => TrialTally(eyes4s.studio.core.selection.StudioRef.Trial(key(p.reference)), t))
     )
 
   /** Inspect `held` through eyes4s, over the plan, input and admission ledger
@@ -257,20 +300,28 @@ object RealResults:
     */
   def of(run: RunId, held: RealStudyBackend.RealRun): Either[BackendError, RealResults] =
     val p = held.prepared
-    ResultInspection
-      .study(p.plan, held.result, p.admitted.input, Some(p.admitted.evidence))
-      .leftMap(e =>
-        BackendError.Unavailable(DiagnosticLocus.Artifact(s"${run.label}: ${e.message}"))
-      )
-      .map(inspection =>
-        new RealResults(
-          run,
-          p.revision,
-          p.dataset,
-          p.summary.scales,
-          p.recipe.scales.values.map(_.degrees),
-          held.origin,
-          inspection,
-          p.admitted.input.trials.rows.map(r => key(r.key) -> r.key).toMap
+    for
+      inspection <- ResultInspection
+        .study(p.plan, held.result, p.admitted.input, Some(p.admitted.evidence))
+        .leftMap(e =>
+          BackendError.Unavailable(DiagnosticLocus.Artifact(s"${run.label}: ${e.message}"))
         )
-      )
+      tallies <- p.plan.windowTallies(p.admitted.input).traverse { (core, tally) =>
+        tally.bimap(
+          e =>
+            BackendError
+              .TrialViewRefused(TrialViewError.Study(key(core), "window tally", e.message)),
+          value => core -> value
+        )
+      }
+    yield new RealResults(
+      run,
+      p.revision,
+      p.dataset,
+      p.summary.scales,
+      p.recipe.scales.values.map(_.degrees),
+      held.origin,
+      inspection,
+      p.admitted.input.trials.rows.map(r => key(r.key) -> r.key).toMap,
+      tallies.toMap
+    )

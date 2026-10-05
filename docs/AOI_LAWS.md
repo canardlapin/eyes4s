@@ -13,6 +13,10 @@ The suite checks the following contracts of the shipped static sample-time API:
 - Visible union, background, exclusions and policy-censored time partition
   represented temporal support.
 - Each area's dwell equals its independently selected sample support.
+- First entry is the first assigned sample's onset relative to the recording start;
+  a zero-support sample can still record an entry.
+- Runs count maximal consecutive membership, with background, blink and signal
+  loss separating runs.
 - Summed dwell equals visible union plus duplicated time. A sample in three areas
   contributes one duration to union and two extra durations to duplicated time.
 - Dwell proportions divide by visible union plus background. They are absent
@@ -44,6 +48,11 @@ reverted before the next one; they are source mutations, not edited expected val
 | Duplicate dwell | Add twice each sample's support in `AoiAssignment.measure` | Per-area dwell and proportion laws; analytic example |
 | Drop background | Return zero `backgroundTime` from `AoiAssignment.report` | Conservation, independent totals and proportion laws; analytic example |
 | Collapse higher overlap | Add only one extra duration whenever membership exceeds one, instead of `duration * (ids.length - 1)` | Independent overlap totals and dwell partition laws; analytic three-way example |
+
+The recovered entry and run laws were also tested by replacing production first-entry
+latencies with zero and run counts with zero. Both mutants failed the published laws
+on JVM and Scala.js; the production source was restored byte for byte. Analytic cases
+pin a zero-support entry and a recording with a nonzero start.
 
 ## Scope
 

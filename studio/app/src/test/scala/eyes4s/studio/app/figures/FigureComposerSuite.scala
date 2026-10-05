@@ -306,8 +306,8 @@ class FigureComposerSuite extends munit.ScalaCheckSuite:
 
   test("panel C asks once for the result grids named by its served references") {
     served.map { answers =>
-      val scores      = answers._2
-      val (synced, _) = FigureComposer.sync(FigureComposer.empty, t2)
+      val scores        = answers._2
+      val (synced, _)   = FigureComposer.sync(FigureComposer.empty, t2)
       val (read, asked) = FigureComposer.update(
         synced,
         t2,
@@ -321,7 +321,7 @@ class FigureComposerSuite extends munit.ScalaCheckSuite:
       assertEquals(FigureComposer.sync(read, t2)._2, Vector.empty)
       val maps = panel(FigureComposer.view(read, t2), "C").body match
         case PanelBody.Maps(value) => value
-        case other                  => fail(other.toString)
+        case other                 => fail(other.toString)
       assertEquals(maps.tiles.map(_.trial), trials)
       assert(maps.tiles.forall(_.map == TileMap.Waiting), maps.tiles)
       assertEquals(maps.maps, "Reading the density maps of run 7.")
@@ -392,7 +392,7 @@ class FigureComposerSuite extends munit.ScalaCheckSuite:
         case PanelBody.Maps(maps) =>
           assertEquals(
             maps.maps,
-              "Reading the density maps of run 7."
+            "Reading the density maps of run 7."
           )
         case other => fail(other.toString)
       assertEquals(

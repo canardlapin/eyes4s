@@ -310,8 +310,8 @@ enum StudioRef derives CanEqual, Codec.AsObject:
     // A trial's tally is part of the revision's outside-the-frame count.
     case TrialPlacementTally(dataset, _) =>
       Some(WindowTally(dataset, TallyRegion.OutsideWindow))
-    case DesignTally(_, _)                => None
-    case QueryTally(run, tally)           =>
+    case DesignTally(_, _)      => None
+    case QueryTally(run, tally) =>
       Option.when(tally != QueryCount.Requested)(QueryTally(run, QueryCount.Requested))
     case ReportTally(run, reporting, scale, role, count) =>
       Option.when(count != ReportCount.Eligible)(

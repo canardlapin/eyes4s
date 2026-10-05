@@ -144,7 +144,7 @@ object CompareSummaryVM:
     val reporting       = s.reporting
     val participantPlot = for
       scale <- shown
-      view <- displayed(scale)
+      view  <- displayed(scale)
     yield ParticipantMeans
       .of(view, r.scales.lift(scale.value).getOrElse(scale.value.toString))
       .left
@@ -162,8 +162,10 @@ object CompareSummaryVM:
         .map(_.recipe.scales)
         .toRight(s"run ${run.number} has no analysis revision in the document")
         .flatMap(scales =>
-          val grouped = scales.values.indices.toVector.flatMap(i => ScaleIndex.of(i).toOption.flatMap(displayed))
-          val overall = scales.values.indices.toVector.flatMap(i => ScaleIndex.of(i).toOption.flatMap(ungrouped))
+          val grouped = scales.values.indices.toVector
+            .flatMap(i => ScaleIndex.of(i).toOption.flatMap(displayed))
+          val overall = scales.values.indices.toVector
+            .flatMap(i => ScaleIndex.of(i).toOption.flatMap(ungrouped))
           ScaleProfile.of(grouped, overall, scales, r.scales).left.map(_.message)
         )
         .flatMap(p =>
@@ -171,8 +173,8 @@ object CompareSummaryVM:
         )
     }
     val participants = for
-      rep   <- reporting
-      scale <- shown
+      rep     <- reporting
+      scale   <- shown
       grouped <- displayed(scale)
       overall <- ungrouped(scale)
     yield participantTable(run, rep, scale, r, grouped, overall)
@@ -186,10 +188,14 @@ object CompareSummaryVM:
       val contrast = view.contrast(ReportRole.Difference)
       val range    = view.queryRange(ReportRole.Difference)
       Vector(
-      SummaryText(SummaryTextId.PairedN, contrast.fold("0")(_.pairedN.toString)),
-      SummaryText(SummaryTextId.Weighting),
-      SummaryText(SummaryTextId.Unit),
-      SummaryText(SummaryTextId.GroupRange, range.fold("0")(_.fewest.toString), range.fold("0")(_.most.toString))
+        SummaryText(SummaryTextId.PairedN, contrast.fold("0")(_.pairedN.toString)),
+        SummaryText(SummaryTextId.Weighting),
+        SummaryText(SummaryTextId.Unit),
+        SummaryText(
+          SummaryTextId.GroupRange,
+          range.fold("0")(_.fewest.toString),
+          range.fold("0")(_.most.toString)
+        )
       )
     }
     CompareSummaryVM(
@@ -238,25 +244,38 @@ object CompareSummaryVM:
       column(s"group-$k", SummaryText(GroupHeader, g.label), ColumnFormat.Label)
     )
     val columns = fixed.map((id, h, f) => column(id, SummaryText(h), f)) ++ groupColumns
-    val ids = overall.participants.collect {
+    val ids     = overall.participants.collect {
       case p if p.role == ReportRole.Difference && p.group.isEmpty => p.participant
     }.distinct
-    val rows    = ids.map { id =>
+    val rows = ids.map { id =>
       val legacy = r.participants.find(_.participant == id)
-      val counts = legacy.map(p => Vector(p.requested, p.contributing, p.failed, p.noMatch, p.notAdmitted))
+      val counts = legacy
+        .map(p => Vector(p.requested, p.contributing, p.failed, p.noMatch, p.notAdmitted))
         .getOrElse(Vector.fill(5)(0))
       def value(role: ReportRole) =
-        overall.participant(None, role, id).flatMap(_.value).fold(PlotValue.Missing)(PlotValue.Number(_))
+        overall
+          .participant(None, role, id)
+          .flatMap(_.value)
+          .fold(PlotValue.Missing)(PlotValue.Number(_))
       PlotRow(
-        overall.participant(None, ReportRole.Difference, id).map(_.ref)
+        overall
+          .participant(None, ReportRole.Difference, id)
+          .map(_.ref)
           .getOrElse(StudioRef.ParticipantSummary(run, rep, scale, None, id)),
         Vector(PlotValue.Text(id)) ++
           counts.map(n => PlotValue.Number(n.toDouble)) ++
-          Vector(value(ReportRole.Matched), value(ReportRole.Control), value(ReportRole.Difference)) ++
+          Vector(
+            value(ReportRole.Matched),
+            value(ReportRole.Control),
+            value(ReportRole.Difference)
+          ) ++
           groups.map { g =>
             grouped
               .participant(Some(g), ReportRole.Difference, id)
-              .flatMap(p => p.value.map(v => SummaryText(GroupCell, Format.signed(v, 2), p.queries.toString)))
+              .flatMap(p =>
+                p.value
+                  .map(v => SummaryText(GroupCell, Format.signed(v, 2), p.queries.toString))
+              )
               .fold(PlotValue.Missing)(PlotValue.Text(_))
           }
       )

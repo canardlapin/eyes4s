@@ -178,8 +178,8 @@ final class Labels(model: AppModel, messages: Messages):
         eyes4s.studio.app.text.SummaryTextId.ReportQueryRangeCrumb,
         SummaryText.roleName(role)
       )
-    case StudioRef.FigurePanel(_, letter)       => messages(CrumbPanel, letter.value)
-    case StudioRef.WindowTally(dataset, region) => tally(dataset, region)
+    case StudioRef.FigurePanel(_, letter)              => messages(CrumbPanel, letter.value)
+    case StudioRef.WindowTally(dataset, region)        => tally(dataset, region)
     case StudioRef.TrialPlacementTally(dataset, trial) =>
       s"${dataset.label} · ${trial.label} · ${GeometryText(GeometryTextId.PlacementTally)}"
     case StudioRef.DesignTally(revision, count) => DesignText.tally(revision, count)

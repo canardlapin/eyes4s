@@ -142,11 +142,11 @@ enum BackendError derives CanEqual, Codec.AsObject:
   case ReportRefused(run: RunId, refusal: ReportRefusal)
 
   def code: String = this match
-    case ReportRefused(_, _) => "studio-backend.report-refused"
-    case ContentMismatch(_, _, _) => "studio-backend.content-mismatch"
-    case ContentNotHeld(_, _) => "studio-backend.content-not-held"
-    case PlacementRefused(_, _) => "studio-backend.placement-refused"
-    case NoDensity(_, _, _) => "studio-backend.no-density"
+    case ReportRefused(_, _)              => "studio-backend.report-refused"
+    case ContentMismatch(_, _, _)         => "studio-backend.content-mismatch"
+    case ContentNotHeld(_, _)             => "studio-backend.content-not-held"
+    case PlacementRefused(_, _)           => "studio-backend.placement-refused"
+    case NoDensity(_, _, _)               => "studio-backend.no-density"
     case SourceDigestMismatch(_, _, _, _) => "studio-backend.source-digest-mismatch"
     case AdmissionRefused(_, _, _)        => "studio-backend.admission-refused"
     case ResultDigestMismatch(_, _, _)    => "studio-backend.result-digest-mismatch"
@@ -219,7 +219,8 @@ enum BackendError derives CanEqual, Codec.AsObject:
     case TrialViewRefused(e)         => e.message
     case SourceRecordsRefused(r, e)  => s"${r.label}: ${e.message}"
     case PlacementRefused(d, reason) => s"The records of ${d.label} cannot be placed: $reason"
-    case NoDensity(r, a, cause) => s"${r.label} has no density for the ${a.render}: ${cause.message}"
+    case NoDensity(r, a, cause)      =>
+      s"${r.label} has no density for the ${a.render}: ${cause.message}"
 
   def diagnostic: StudioDiagnostic =
     val subject = this match
@@ -262,8 +263,10 @@ enum BackendError derives CanEqual, Codec.AsObject:
         (Vector(DiagnosticLocus.Run(r), DiagnosticLocus.Address(a)) ++ cause.subject).distinct
       case ReportRefused(r, _) => Vector(DiagnosticLocus.Run(r))
     this match
-      case NoDensity(_, _, cause) => cause.copy(code = code, subject = subject, message = message)
-      case _ => StudioDiagnostic(code, DiagnosticLevel.Error, DiagnosticOrigin.Host, subject, message)
+      case NoDensity(_, _, cause) =>
+        cause.copy(code = code, subject = subject, message = message)
+      case _ =>
+        StudioDiagnostic(code, DiagnosticLevel.Error, DiagnosticOrigin.Host, subject, message)
 
 /** Everything Eyes Studio asks of eyes4s (DESIGN_SPEC section 13, S3.0): the
   * admission summary and ledger, preview paging, jobs with progress, results,
@@ -373,6 +376,7 @@ trait StudyBackend[F[_]]:
     * stored/served result, never a Studio-derived total or preview.
     */
   def mapGrid(run: RunId, scale: Int, trial: TrialKey): F[Either[BackendError, DensityGrid]]
+
   /** `reporting` evaluated over `run` at scale index `scale` by eyes4s-results
     * (`Report.evaluate`, UI-C): its cells, participants, dropped cells and
     * accounting, each with its ref (protocol 1.11). A reporting edit is
@@ -462,6 +466,7 @@ enum BackendRequest derives CanEqual, Codec.AsObject:
 
   /** Protocol 1.14. */
   case MapGridOf(run: RunId, scale: Int, trial: TrialKey)
+
   /** Protocol 1.11. */
   case ReportOf(run: RunId, reporting: ReportingSpec, scale: Int)
 
@@ -506,6 +511,7 @@ enum BackendResponse derives CanEqual, Codec.AsObject:
 
   /** Protocol 1.14. */
   case MapGridOf(grid: DensityGrid)
+
   /** Protocol 1.11. */
   case ReportOf(report: ReportView)
 
@@ -628,9 +634,9 @@ object StudyBackend:
       case Q.TrialPreviewOf(r, t)     => answer(backend.trialPreview(r, t))(A.TrialPreviewOf(_))
       case Q.SourceRecordsOf(r, f, n) =>
         answer(backend.sourceRecords(r, f, n))(A.SourceRecordsOf(_))
-      case Q.PairRowsOf(r, s, p) => answer(backend.pairRows(r, s, p))(A.PairRowsOf(_))
-      case Q.PlacementOf(spec)   => answer(backend.placement(spec))(A.PlacementOf(_))
-      case Q.MapGridOf(r, s, t)  => answer(backend.mapGrid(r, s, t))(A.MapGridOf(_))
+      case Q.PairRowsOf(r, s, p)  => answer(backend.pairRows(r, s, p))(A.PairRowsOf(_))
+      case Q.PlacementOf(spec)    => answer(backend.placement(spec))(A.PlacementOf(_))
+      case Q.MapGridOf(r, s, t)   => answer(backend.mapGrid(r, s, t))(A.MapGridOf(_))
       case Q.ReportOf(r, spec, s) => answer(backend.report(r, spec, s))(A.ReportOf(_))
       // In process a subscription is ended by dropping its stream; only a
       // connection (SidecarServer) holds subscriptions to end.

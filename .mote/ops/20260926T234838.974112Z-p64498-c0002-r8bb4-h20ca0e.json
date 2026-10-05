@@ -1,0 +1,1 @@
+{"actor":"codex-eyes4s","entity":"bd-01M3FA6GY2YX7098MRYVKSR9ZK","kind":"note","note_kind":"progress","op":"20260926T234838.974112Z-p64498-c0002-r8bb4-h20ca0e","text":"Integrate complete incremental CSV syntax decoding and counted semantic source digest; expose scanner retained total to coordinator, no bulk finalizer.","ts":"2026-09-26T23:48:38.974112Z","v":1}

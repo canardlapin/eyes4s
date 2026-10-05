@@ -108,6 +108,22 @@ class MapGridSuite extends CatsEffectSuite:
     yield scores.zip(RealMatchedM).foreach((c, m) => assertEqualsDouble(c, m, ScoreTolerance))
   }
 
+  test("a missing density preserves the cause's affected trials and remedy") {
+    val cause     = ProtocolSamples.diagnostic
+    val refusal   = BackendError.NoDensity(run7, ResultAddress.Estimation(Focus, ret07), cause)
+    val displayed = refusal.diagnostic
+    assertEquals(displayed.affected, cause.affected)
+    assertEquals(displayed.category, cause.category)
+    assertEquals(displayed.remedy, cause.remedy)
+    assertEquals(displayed.origin, cause.origin)
+    assert(displayed.subject.contains(DiagnosticLocus.Run(run7)))
+    assert(
+      displayed.subject.contains(
+        DiagnosticLocus.Address(ResultAddress.Estimation(Focus, ret07))
+      )
+    )
+  }
+
   test("refusals name the run and estimation: unknown run, scale, trial; no scanpath") {
     val stranger = MockStudy.key("P99", "enc_01")
     for

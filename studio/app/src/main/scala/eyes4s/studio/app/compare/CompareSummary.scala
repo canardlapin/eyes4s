@@ -74,7 +74,8 @@ object CompareSummary:
   val empty: CompareSummary = CompareSummary(None, None, None, None, None)
 
   /** An explicit eyes4s-derived ungrouped report for the overall table
-    * columns. Its identity differs so every returned ref names this spec. */
+    * columns. Its identity differs so every returned ref names this spec.
+    */
   private def overall(spec: ReportingSpec): Option[ReportingSpec] =
     ReportingSpec
       .of(
@@ -90,10 +91,10 @@ object CompareSummary:
   private def reportEffects(s: CompareSummary): Vector[SummaryEffect] =
     for
       result <- s.answered.toVector
-      spec <- s.spec.toVector
+      spec   <- s.spec.toVector
       (_, i) <- result.scales.zipWithIndex
-      scale <- ScaleIndex.of(i).toOption.toVector
-      whole <- Vector(false, true)
+      scale  <- ScaleIndex.of(i).toOption.toVector
+      whole  <- Vector(false, true)
       report <- (if whole then overall(spec).toVector else Vector(spec))
       if !s.reports.contains((scale, whole))
     yield SummaryEffect.RequestReport(s.run.get, report, scale, whole)
@@ -117,8 +118,8 @@ object CompareSummary:
 
   /** Follows the model: a newly shown run is read afresh. */
   def sync(s: CompareSummary, m: AppModel): (CompareSummary, Vector[SummaryEffect]) =
-    val run = shownRun(m)
-    val rep = reporting(m)
+    val run  = shownRun(m)
+    val rep  = reporting(m)
     val spec = rep.flatMap(id => m.document.reporting.find(_.id == id))
     if run == s.run && spec == s.spec then (s.copy(reporting = rep), Vector.empty)
     else if run == s.run then
@@ -163,12 +164,12 @@ object CompareSummary:
       * declares its means scale (bead bd-01M420VXE7NFGZHSM71SGY7KW6, the
       * means-scale identity). The σ selector, and with it the query table's
       * σ, is gated by it.
-    */
+      */
     def available: Vector[ScaleIndex] =
       for
-        r     <- s.answered.toVector
-        i     <- r.scales.indices.toVector
-        scale <- ScaleIndex.of(i).toOption.toVector
+        r      <- s.answered.toVector
+        i      <- r.scales.indices.toVector
+        scale  <- ScaleIndex.of(i).toOption.toVector
         answer <- s.reports.get((scale, false)).toVector
         report <- answer match
           case ReportAnswer.Answered(view) => Vector(view)

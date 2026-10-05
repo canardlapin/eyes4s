@@ -279,7 +279,8 @@ class ReportsSuite extends CatsEffectSuite:
       .filterNot(_.status.isInstanceOf[QueryStatus.NotAdmitted])
       .traverse[IO, (QueryRow, Option[Double])] { r =>
         b.trialFixations(AnalysisRevision(4), r.query).map { v =>
-          val f       = ok(v).fixations
+          val f =
+            ok(v).fixations.filterNot(_.placement == eyes4s.plan.MapPlacement.DroppedInitial)
           val total   = f.map(_.durationMs).sum
           val outside = f
             .filter(_.placement.isInstanceOf[eyes4s.plan.MapPlacement.OutsideWindow])

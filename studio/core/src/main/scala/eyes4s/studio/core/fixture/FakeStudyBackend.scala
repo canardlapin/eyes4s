@@ -1005,6 +1005,7 @@ final class FakeStudyBackend[F[_]] private[fixture] (
         grid <- FakeTrialViews.mapGrid(moment, r.run, r.revision, r.dataset, scale, trial)
       yield grid
     })
+
   /** The window tally of `trial` under the scored revision, with its ref. */
   private def windowOf(trial: TrialKey): Option[TrialTally] =
     FakeTrialViews

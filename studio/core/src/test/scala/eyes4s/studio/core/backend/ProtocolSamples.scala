@@ -758,6 +758,7 @@ object ProtocolSamples:
     BackendRequest.PairRowsOf(run, 2, page),
     BackendRequest.Verify(DatasetRevision(3), content("ab")),
     BackendRequest.PlacementOf(placementSpec),
+    BackendRequest.MapGridOf(run, 2, query),
     BackendRequest.ReportOf(run, reportingSpec, 2)
   )
 
@@ -863,6 +864,7 @@ object ProtocolSamples:
     BackendResponse.SourceRecordsOf(sourceRecordPage),
     BackendResponse.PairRowsOf(pairRowPage),
     BackendResponse.PlacementOf(placementPreview),
+    BackendResponse.MapGridOf(densityGrid),
     BackendResponse.ReportOf(reportView)
   )
 
@@ -922,6 +924,22 @@ object ProtocolSamples:
       grid
     )
   yield preview).toOption.get
+
+  lazy val densityGrid: DensityGrid = right(
+    DensityGrid.of(
+      run,
+      2,
+      query,
+      1.5,
+      right(DensityGrid.region(run, 2, query, 448.5, 156.5, 450.5, 158.5)),
+      2,
+      2,
+      RowOrder.TopFirst,
+      Some(CellDegrees(0.25, 0.25)),
+      Vector(0.1, 0.2, 0.3, 0.4),
+      Vector(DensityLevel(0.5, 0.3), DensityLevel(0.9, 0.1))
+    )
+  )
 
   val events: Vector[JobEvent] =
     JobEvent.Advanced(progress) +: outcomes.map(JobEvent.Finished(_))

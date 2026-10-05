@@ -142,7 +142,7 @@ final class PlotTwin private (
       case PlotTwinStatus.Refused(source, error) =>
         Some(PlotText(PlotTextId.Refused, source.caption, error.message))
       case PlotTwinStatus.Shown(plot) => Some(plot.idleText)
-      case _ => Some(PlotText(PlotTextId.NothingDrawn))
+      case _                          => Some(PlotText(PlotTextId.NothingDrawn))
 
   /** The plot's input: its roving cursor, hover and projected selection. */
   val input: MarkInputAdapter[StudioRef, PlotTargetError, PlotTargets] =

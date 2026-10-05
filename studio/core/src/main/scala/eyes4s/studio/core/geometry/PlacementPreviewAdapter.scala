@@ -39,7 +39,7 @@ object PlacementPreviewAdapter:
       records = placed.map { p =>
         val image = p.placement match
           case Placement.Inside(local) => local
-          case _                       => ledger.frames.image.enter(p.corrected).getOrElse(p.corrected)
+          case _ => ledger.frames.image.enter(p.corrected).getOrElse(p.corrected)
         PlacedRecord(
           p.source.record,
           p.source.trial,

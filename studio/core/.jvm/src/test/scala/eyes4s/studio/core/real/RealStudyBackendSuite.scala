@@ -962,6 +962,131 @@ class RealStudyBackendSuite extends CatsEffectSuite:
       assertEquals(jobs, Vector.empty)
   }
 
+  test("a content-verification request cannot admit another recorded spec") {
+    val spec     = get(t2.dataset(StoryMoments.r3).toRight("no r3"))
+    val expected = get(DatasetRevisionSpec.contentDigest(spec))
+    val other    = get(eyes4s.codec.CanonicalDigest.parse[DatasetRevisionSpec]("ab" * 32))
+    assertNotEquals(expected, other)
+    for
+      real     <- backend()
+      mismatch <- real.verify(spec.id, other)
+      verified <- real.verify(spec.id, expected)
+    yield
+      assertEquals(mismatch, Left(BackendError.ContentMismatch(spec.id, other, expected)))
+      assertEquals(verified.map(_.dataset), Right(spec.id))
+  }
+
+  test("placement refuses changed source bytes before placing a requested draft") {
+    val spec     = get(t2.dataset(StoryMoments.r3).toRight("no r3"))
+    val tampered = new DatasetSources[IO]:
+      def bytes(d: DatasetRevisionSpec, source: Source) =
+        RealBackendConformanceSuite.golden
+          .bytes(d, source)
+          .map(_.map(bytes => bytes.updated(bytes.length - 2, '9'.toByte)))
+      def assets(d: DatasetRevisionSpec) = RealBackendConformanceSuite.golden.assets(d)
+    backend(tampered).flatMap(_.placement(spec)).map { response =>
+      assertEquals(response.left.map(_.code), Left("studio-backend.source-digest-mismatch"))
+    }
+  }
+
+  test("density grids and report cells come from the retained native run") {
+    import eyes4s.studio.core.document.{ReportingId, ReportingSpec, ReportingWeight}
+    val spec = get(
+      ReportingSpec.of(
+        get(ReportingId.of("native-overall")),
+        "Native overall",
+        None,
+        Vector.empty,
+        None,
+        ReportingWeight.ParticipantMeans
+      )
+    )
+    RealStudyBackend.resource[IO](trialLayout, RealBackendConformanceSuite.golden).use { real =>
+      for
+        (_, _, _, completed) <- recompute(real, StoryMoments.run7)
+        held = get(completed)
+        core = held.prepared.admitted.input.trials.rows
+          .find(r =>
+            r.key.participant == "P17" && r.key.phase == "Retrieval" && r.key.trial == "ret_07"
+          )
+          .get
+          .key
+        mass = get(held.result.scales(2).estimation.find(_._1 == core).get._2)
+        grid   <- real.mapGrid(StoryMoments.run7, 2, RealResults.key(core)).map(get)
+        report <- real.report(StoryMoments.run7, spec, 2).map(get)
+        grouped = get(
+          eyes4s.studio.core.document.ReportingSpec.of(
+            get(eyes4s.studio.core.document.ReportingId.of("native-grouped")),
+            "Native grouped",
+            Some(get(eyes4s.studio.core.document.Covariate.of("response"))),
+            Vector.empty,
+            None,
+            eyes4s.studio.core.document.ReportingWeight.ParticipantMeans
+          )
+        )
+        groupRefusal <- real.report(StoryMoments.run7, grouped, 2)
+        jobs         <- real.jobs
+      yield
+        assertEquals(grid.cells, mass.values.toVector)
+        assertEquals((grid.columns, grid.rows), (mass.grid.nx, mass.grid.ny))
+        assertEquals(grid.sigmaDegrees, 2.0)
+        assertEquals(grid.order, RowOrder.TopFirst)
+        assertEquals(
+          (grid.region.left, grid.region.top, grid.region.right, grid.region.bottom),
+          (448.0, 156.0, 1472.0, 924.0)
+        )
+        for role <- ReportRole.values do
+          val actual = report.cell(None, role).get
+          // Native SCORES.json and the illustrative mock fixture have
+          // different scores. Weight the native recorded queries independently.
+          val recorded         = scores._1.filter(_.status == "contributing")
+          val participantMeans = recorded
+            .groupBy(_.key.participant)
+            .values
+            .map { rows =>
+              val values = rows.map { q =>
+                val (m, b, d) = q.scores(2)
+                role match
+                  case ReportRole.Matched    => m.get
+                  case ReportRole.Control    => b.get
+                  case ReportRole.Difference => d.get
+              }
+              values.sum / values.size
+            }
+            .toVector
+          near(actual.estimate.get, participantMeans.sum / participantMeans.size, role.toString)
+          assertEquals(
+            (actual.participants, actual.queries),
+            (participantMeans.size, recorded.size)
+          )
+          assertEquals(
+            actual.ref,
+            eyes4s.studio.core.selection.StudioRef
+              .ReportCell(
+                StoryMoments.run7,
+                spec.id,
+                get(eyes4s.studio.core.selection.ScaleIndex.of(2)),
+                eyes4s.studio.core.selection.ReportGroup.Whole,
+                role
+              )
+          )
+        assertEquals(report.contrasts, Vector.empty)
+        assertEquals(
+          groupRefusal,
+          Left(
+            BackendError.ReportRefused(
+              StoryMoments.run7,
+              eyes4s.studio.core.reports.ReportRefusal.Spec(
+                grouped.id.value,
+                "Grouping covariate response has no recorded ordered levels or contrast operands."
+              )
+            )
+          )
+        )
+        assertEquals(jobs.size, 1)
+    }
+  }
+
   test("releasing the backend cancels its running job promptly") {
     import scala.concurrent.duration.*
     RealStudyBackend

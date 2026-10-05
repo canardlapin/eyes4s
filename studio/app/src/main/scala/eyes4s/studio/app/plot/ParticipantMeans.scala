@@ -123,7 +123,10 @@ object ParticipantMeans:
       .map(ParticipantMeansError.DuplicateGroup(report.run, _))
       .toLeft(())
       .flatMap { _ =>
-        val ids = report.participants.filter(_.role == ReportRole.Difference).map(_.participant).distinct
+        val ids = report.participants
+          .filter(_.role == ReportRole.Difference)
+          .map(_.participant)
+          .distinct
         ids
           .diff(ids.distinct)
           .headOption
@@ -132,7 +135,7 @@ object ParticipantMeans:
           .flatMap { _ =>
             val means = groups.flatMap { c =>
               for
-                group <- c.group
+                group    <- c.group
                 estimate <- c.estimate
               yield GroupGrandMean(c.ref, group, estimate, c.participants)
             }

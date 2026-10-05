@@ -222,7 +222,10 @@ class PairRowsSuite extends CatsEffectSuite:
       view <- b.trialFixations(AnalysisRevision(4), rows.head.reference).map(ok)
     yield
       val t = rows.head.referenceWindow.get.tally
-      assertEquals(t.total, view.fixations.size)
+      assertEquals(
+        t.total,
+        view.fixations.count(_.placement != eyes4s.plan.MapPlacement.DroppedInitial)
+      )
       assertEquals(
         t.outsideWindow,
         view.fixations.count(_.placement.isInstanceOf[eyes4s.plan.MapPlacement.OutsideWindow])

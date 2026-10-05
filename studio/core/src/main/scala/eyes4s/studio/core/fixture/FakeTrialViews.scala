@@ -211,26 +211,30 @@ object FakeTrialViews:
       dataset: DatasetRevision,
       trial: TrialKey
   ): Option[WindowTally] =
-    fixations(moment, revision, dataset, trial).toOption.flatMap { v =>
-      val f                                      = v.fixations
-      def micros(p: AdmittedFixation => Boolean) =
-        Span.micros(f.filter(p).map(x => math.round(x.durationMs * 1000)).sum)
-      val outsideScreen = (x: AdmittedFixation) => x.placement == MapPlacement.OutsideScreen
-      val outsideWindow = (x: AdmittedFixation) =>
-        x.placement match
-          case MapPlacement.OutsideWindow(_) => true
-          case _                             => false
-      WindowTally
-        .of(
-          f.count(outsideScreen),
-          f.count(outsideWindow),
-          f.size,
-          micros(outsideScreen),
-          micros(outsideWindow),
-          micros(_ => true)
-        )
-        .toOption
-    }
+    fixations(moment, revision, dataset, trial).toOption.flatMap(v => tally(v.fixations))
+
+  /** Initial-policy selection precedes window accounting. Dropped rows remain
+    * in the served trial view, but do not enter the run's denominator.
+    */
+  private[fixture] def tally(fixations: Vector[AdmittedFixation]): Option[WindowTally] =
+    val f = fixations.filterNot(_.placement == MapPlacement.DroppedInitial)
+    def micros(p: AdmittedFixation => Boolean) =
+      Span.micros(f.filter(p).map(x => math.round(x.durationMs * 1000)).sum)
+    val outsideScreen = (x: AdmittedFixation) => x.placement == MapPlacement.OutsideScreen
+    val outsideWindow = (x: AdmittedFixation) =>
+      x.placement match
+        case MapPlacement.OutsideWindow(_) => true
+        case _                             => false
+    WindowTally
+      .of(
+        f.count(outsideScreen),
+        f.count(outsideWindow),
+        f.size,
+        micros(outsideScreen),
+        micros(outsideWindow),
+        micros(_ => true)
+      )
+      .toOption
 
   /** `trial`'s admitted fixations under `revision`, on `dataset`. */
   def fixations(
@@ -337,7 +341,7 @@ object FakeTrialViews:
         .density(measure, grid)
         .leftMap(e => study("density")(e.message))
       density <- DensityView.of(mass).leftMap(e => study("density")(e.message))
-      cells <- GridGeometry
+      cells   <- GridGeometry
         .of(grid, Some(window), Some(angular))
         .leftMap(e => study("grid geometry")(e.message))
     yield Estimate(density, cells, window.region)
@@ -350,7 +354,7 @@ object FakeTrialViews:
       trial: TrialKey
   ): Either[BackendError, TrialPreview] =
     for
-      e <- estimate(moment, revision, dataset, trial, PreviewSigmaDegrees)
+      e      <- estimate(moment, revision, dataset, trial, PreviewSigmaDegrees)
       levels <- e.view
         .levels(PreviewCoverages)
         .leftMap(err => refused(TrialViewError.Study(trial, "isolines", err.message)))
@@ -384,7 +388,7 @@ object FakeTrialViews:
       scale: Int,
       trial: TrialKey
   ): Either[BackendError, DensityGrid] =
-    val address = ResultAddress.Estimation(scale, trial)
+    val address              = ResultAddress.Estimation(scale, trial)
     def none(reason: String) = BackendError.NoDensity(
       run,
       address,
@@ -398,16 +402,26 @@ object FakeTrialViews:
     )
     for
       (recipe, _) <- study(moment, revision)
-      sigma <- recipe.scales.values.lift(scale).toRight(BackendError.UnknownReference(run, address))
+      sigma       <- recipe.scales.values
+        .lift(scale)
+        .toRight(BackendError.UnknownReference(run, address))
       e <- estimate(moment, revision, dataset, trial, sigma.degrees).leftMap {
-        case BackendError.TrialViewRefused(err) => none(err.message)
+        case BackendError.TrialViewRefused(err)                 => none(err.message)
         case BackendError.Unavailable(DiagnosticLocus.Trial(_)) =>
           none("the trial has no admitted scanpath")
         case other => other
       }
       levels <- e.view.levels(ResultCoverages).leftMap(err => none(err.message))
       region <- DensityGrid
-        .region(run, scale, trial, e.covered.xMin, e.covered.yMin, e.covered.xMax, e.covered.yMax)
+        .region(
+          run,
+          scale,
+          trial,
+          e.covered.xMin,
+          e.covered.yMin,
+          e.covered.xMax,
+          e.covered.yMax
+        )
         .leftMap(err => none(err.message))
       grid <- DensityGrid
         .of(

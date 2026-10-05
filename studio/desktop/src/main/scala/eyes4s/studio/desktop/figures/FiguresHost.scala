@@ -551,7 +551,12 @@ final class FiguresHost(
       case ComposerEffect.RequestDisplays(dataset) =>
         inputs.displays(dataset, a => later(ComposerIntent.DisplaysRead(dataset.id, a)))
       case ComposerEffect.RequestMap(run, scale, trial) =>
-        inputs.mapGrid(run, scale, trial, a => later(ComposerIntent.MapRead(run, scale, trial, a)))
+        inputs.mapGrid(
+          run,
+          scale,
+          trial,
+          a => later(ComposerIntent.MapRead(run, scale, trial, a))
+        )
       case ComposerEffect.Binding(FigureEffect.RequestStatus(from, to)) =>
         inputs.status(
           from,
@@ -862,13 +867,19 @@ final class FiguresHost(
     case TileMap.Unavailable(why) =>
       val l = paperLabel(why, text); l.getStyleClass.add("figures-problem"); l
     case TileMap.Drawn(grid, style, region) =>
-      val key = (figure, letter, index)
+      val key  = (figure, letter, index)
       val host = tiles.get(key) match
         case Some(old) if old.shows == (grid, style) => old.host
-        case old =>
+        case old                                     =>
           val made = old.fold(CanvasPlotHost())(_.host)
           MapTileScene
-            .of(s"figures.map.${figure.number}.${letter.value}.$index", grid, style, region, StageVariant.Dark)
+            .of(
+              s"figures.map.${figure.number}.${letter.value}.$index",
+              grid,
+              style,
+              region,
+              StageVariant.Dark
+            )
             .fold(e => throw IllegalStateException(e.message), made.show)
           tiles = tiles.updated(key, Tile(made, (grid, style)))
           made
@@ -1147,7 +1158,7 @@ final class FiguresHost(
     val r = Region(); HBox.setHgrow(r, Priority.ALWAYS); r
 
 object FiguresHost:
-  val MapReading: String = "Reading the map…"
+  val MapReading: String            = "Reading the map…"
   def mapName(t: MapTileVM): String = s"Density map, ${t.title}"
 
   /** A gaze panel drawing's accessible name. */
