@@ -90,10 +90,10 @@ def prepare(candidate):
     return candidate
 
 
-def run(cwd, log, *commands):
+def run(cwd, log, *commands, jvm_options=()):
     with log.open("w") as out:
         subprocess.run(
-            [*SBT, *commands], cwd=cwd, stdout=out, stderr=subprocess.STDOUT, check=True
+            [*SBT, *jvm_options, *commands], cwd=cwd, stdout=out, stderr=subprocess.STDOUT, check=True
         )
 
 
@@ -121,8 +121,7 @@ def main():
     shutil.copytree(HERE / "src", candidate / "src")
     shutil.copytree(HERE / ".jvm" / "src", candidate / ".jvm" / "src")
     if not args.skip_publish:
-        # Separate commands keep Scaladoc invocations sequential: its signature
-        # builder can fail when the root aggregate documents modules concurrently.
+        # Keep each module's documentation and publication in a separate command.
         publish = tuple(
             f'{"fs2Module" if module == "fs2" else module}{platform}/publishLocal'
             for module in MODULES
@@ -133,6 +132,10 @@ def main():
             candidate / "publish.log",
             f'set ThisBuild / version := "{VERSION}"',
             *publish,
+            # Scaladoc's signature builder failed under the default JDK 25 JIT;
+            # C1 regenerated the same Plan inputs successfully on both platforms.
+            # Scope this to publication: consumer execution keeps its normal JVM.
+            jvm_options=("-J-XX:TieredStopAtLevel=1",),
         )
     artifacts = {}
     for module in MODULES:
