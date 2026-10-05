@@ -32,6 +32,7 @@ import eyes4s.studio.core.figures.{MethodsReads, ReferenceReads}
 import eyes4s.studio.core.fixture.{GoldenAssets, StoryMoments}
 import eyes4s.studio.core.headless.HeadlessSession
 import eyes4s.studio.core.selection.StudioRef
+import eyes4s.studio.core.session.ProjectSession
 import eyes4s.studio.desktop.figures.BundleFiles
 import eyes4s.studio.desktop.platform.FileProjectStore
 
@@ -593,7 +594,28 @@ object GoldenRoute:
     @volatile var savedFolder: Map[String, Vector[Byte]] = Map.empty
 
     private val figureAndExport: Scenario[Future] = Scenario.of[Future](
-      sync("create Figure 3 on run 6, panels A–E as the board's Figure 1")(d =>
+      // New figure, as the navigator's button asks the composer: Figure 3 on
+      // the shown run, its two default panels.
+      sync("New figure: Figure 3 on run 6")(d =>
+        val (_, effects) =
+          FigureComposer.update(FigureComposer.empty, d.model, ComposerIntent.NewFigure)
+        effects
+          .collect { case ComposerEffect.App(i) => i }
+          .foldLeft(Right(d): Either[DriverError, StudioDriver])((acc, i) =>
+            acc.flatMap(_.perform("New figure", i))
+          )
+          .flatMap(next =>
+            expect(
+              "Figure 3",
+              Some((3, run6, StoryModels.reporting, Vector("A", "B"))),
+              next.model.document.figures.lastOption
+                .map(f => (f.id.number, f.run, f.reporting, f.panels.map(_.letter.value)))
+            ).as(next)
+          )
+      ),
+      // The board's Figure 1 panels (A–E) have no control yet: no control adds
+      // a panel (AddPanel), so the figure is made by command (a named bypass).
+      sync("create Figure 4 on run 6, panels A–E as the board's Figure 1")(d =>
         StoryMoments.figure1
           .leftMap(e => DriverError.Expectation("figure 1", "valid", e.message))
           .flatMap(f => d.command(Command.CreateFigure(run6, StoryModels.reporting, f.panels)))
@@ -625,15 +647,30 @@ object GoldenRoute:
           val (c0, e0) = FigureComposer.sync(FigureComposer.empty, model)
           for
             (c1, _) <- compose(c0, model, e0, Vector.empty)
-            (c2, e2) = FigureComposer.update(c1, model, ComposerIntent.ExportBundle)
+            // The project snapshot, off by default, is turned on.
+            (c1s, _) = FigureComposer.update(
+              c1,
+              model,
+              ComposerIntent.ToggleBundle(BundleItem.Snapshot)
+            )
+            (c2, e2) = FigureComposer.update(c1s, model, ComposerIntent.ExportBundle)
             (_, req) <- compose(c2, model, e2, Vector.empty)
-            summary  <- s.result(run6)
-            rows     <- MethodsReads.queryRows[Future](s.queries, run6)
+            project  <- req.headOption
+              .filter(_.items.contains(BundleItem.Snapshot))
+              .fold(
+                Future.successful(Right(Map.empty): Either[String, Map[String, Vector[Byte]]])
+              )(r => snapshot(d.model.document, r.includeImages))
+            summary <- s.result(run6)
+            rows    <- MethodsReads.queryRows[Future](s.queries, run6)
           yield
             for
               request <- req.headOption.toRight(
                 DriverError.Expectation("bundle", "a request", "none")
               )
+              snap <- project.leftMap(why =>
+                DriverError.Expectation("snapshot", "written", why)
+              )
+              _ <- expect("snapshot", true, snap.keySet.exists(_.startsWith("project/inputs/")))
               sum <- summary.leftMap(e =>
                 DriverError.Service("result", ServiceError.Backend(e))
               )
@@ -659,7 +696,7 @@ object GoldenRoute:
               _ <- figureChecks(text, page)
             yield
               exported = text
-              bundle = files.map((n, b) => n -> Vector.from(b)).toMap
+              bundle = files.map((n, b) => n -> Vector.from(b)).toMap ++ snap
               d.dispatch(
                 Intent.Navigate(
                   eyes4s.studio.app.nav.Location(
@@ -670,6 +707,48 @@ object GoldenRoute:
               )
       )
     )
+
+    /** The bundle's project snapshot, as the window's port writes it: the
+      * project, as saved with its stored inputs, shared into `project/`
+      * (ProjectSession.share), with the images when `images`.
+      */
+    private def snapshot(
+        document: StudioDocument,
+        images: Boolean
+    ): Future[Either[String, Map[String, Vector[Byte]]]] =
+      val base  = Files.createTempDirectory("golden-snapshot")
+      val owner = ok(LockOwner.of("golden journey"))
+      (for
+        store   <- FileProjectStore.at[IO](base.resolve("journey.eyes"))
+        lock    <- store.acquire(owner).map(_.leftMap(_.message))
+        entries <- lock.flatTraverse(l =>
+          (golden ++ stored)
+            .traverse((kind, name, bytes) =>
+              ProjectBundle.importInput(store, l, kind, name, bytes)
+            )
+            .map(_.sequence.leftMap(_.message))
+            .flatTap(_ => store.release(l))
+        )
+        session <- entries.flatTraverse(in =>
+          ProjectSession
+            .create(store, owner, document, SharingOptions.complete, in)
+            .map(_.leftMap(_.message))
+        )
+        copy   <- FileProjectStore.at[IO](base.resolve("project"))
+        shared <- session.flatTraverse(
+          _.share(
+            copy,
+            SharingOptions(
+              Inclusion.Included,
+              if images then Inclusion.Included else Inclusion.Withheld
+            )
+          ).map(_.leftMap(_.message))
+        )
+        _     <- session.toOption.traverse(_.close)
+        files <- IO(folder(base.resolve("project")))
+      yield shared.as(files.map((n, b) => s"project/$n" -> b)))
+        .guarantee(IO(remove(base)))
+        .unsafeToFuture()
 
     private def figureChecks(files: Map[String, String], page: Option[PageVM]) =
       val methods      = files.getOrElse("methods.md", "")
@@ -739,19 +818,26 @@ object GoldenRoute:
         .iterator
         .asScala
         .filter(Files.isRegularFile(_))
-        .filterNot(_.getFileName.toString.startsWith("."))
+        // Volatile: the store's lock files (FileProjectStore), named; the
+        // empty .lock stays after a release.
+        .filterNot(p =>
+          Set(FileProjectStore.LockName, FileProjectStore.OwnerName)(p.getFileName.toString)
+        )
         .map(p => root.relativize(p).toString -> Files.readAllBytes(p).toVector)
         .toMap
 
-    /** A source input's role, name and bytes. */
-    private type Input = (SourceRole, String, IArray[Byte])
+    /** An input's kind, name and bytes. */
+    private type Input = (InputKind, String, IArray[Byte])
+
+    /** The images Repair… stored in the project, in the order it stored them. */
+    @volatile var stored: Vector[Input] = Vector.empty
 
     /** The golden inputs, from fixtures/studio-golden. */
     private def golden: Vector[Input] =
       Vector(SourceRole.Fixations -> "fixations.csv", SourceRole.Trials -> "trials.csv").map {
         (role, name) =>
           (
-            role,
+            InputKind.Source(role),
             name,
             IArray.unsafeFromArray(
               Files.readAllBytes(doc.root.resolve(s"fixtures/studio-golden/$name"))
@@ -766,8 +852,8 @@ object GoldenRoute:
         lock  <- store.acquire(ok(LockOwner.of("golden journey"))).map(_.leftMap(_.message))
         saved <- lock.flatTraverse { l =>
           inputs
-            .traverse((role, name, bytes) =>
-              ProjectBundle.importInput(store, l, InputKind.Source(role), name, bytes)
+            .traverse((kind, name, bytes) =>
+              ProjectBundle.importInput(store, l, kind, name, bytes)
             )
             .map(_.sequence.leftMap(_.message))
             .flatMap(_.flatTraverse { entries =>
@@ -784,14 +870,17 @@ object GoldenRoute:
     private def storedInputs(store: ProjectStore[IO], o: OpenedProject) =
       o.manifest.inputs
         .traverse { entry =>
-          (entry.kind, entry.path) match
-            case (InputKind.Source(role), Some(path)) =>
+          entry.path match
+            case Some(path) =>
               store
                 .read(path)
                 .map(
-                  _.bimap(_.message, bytes => (role, entry.name.getOrElse(path.value), bytes))
+                  _.bimap(
+                    _.message,
+                    bytes => (entry.kind, entry.name.getOrElse(path.value), bytes)
+                  )
                 )
-            case other => IO.pure(Left(s"input ${entry.name} is not a stored source: $other"))
+            case None => IO.pure(Left(s"input ${entry.name} is not stored"))
         }
         .map(_.sequence)
 
@@ -802,7 +891,7 @@ object GoldenRoute:
         val first = base.resolve("first.eyes")
         val again = base.resolve("again.eyes")
         (for
-          saved  <- saveTo(first, d.model.document, golden)
+          saved  <- saveTo(first, d.model.document, golden ++ stored)
           store  <- FileProjectStore.at[IO](first)
           opened <- ProjectBundle.open(store).map(_.leftMap(_.message))
           // The second save takes its inputs from the opened folder.
@@ -896,6 +985,9 @@ object GoldenRoute:
                   case Some(file) =>
                     val restored =
                       ok(AssetFile.of(file.value.stripSuffix(".png") + "_restored.png"))
+                    // The platform stores the chosen file in the project, as
+                    // the window's Repair… does (SourcesPaneHost).
+                    stored = stored :+ ((InputKind.StimulusImage, restored.value, bytes))
                     val (located, more) =
                       SourcesPane.update(
                         asked,

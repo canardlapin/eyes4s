@@ -51,13 +51,26 @@ import scala.jdk.CollectionConverters.*
   * document science, the same export bundle byte for byte, and a project
   * folder whose document parts are the headless folder's.
   *
-  * Commands go through the window as the user gives them: the menu bar's
-  * items (Import sources…, Review draft, Show run), the panes' controls
-  * (Review exclusions, Admit as r3, Save & run, Export bundle…), and the
-  * model's intents where the user's gesture is a navigation (Explain, a
-  * crumb). The import dialog's answer and the column mapping are dispatched
-  * as the dialog and the mapping pane dispatch them (S5.2, S5.3); the run
-  * completes through the window's own fake backend.
+  * Commands go through the window's controls as the user gives them: the
+  * menu bar's items (Import sources…, Review draft, Show run), the panes'
+  * controls (Review exclusions, Admit as r3, Repair…, Save & run, New
+  * figure, the bundle's project snapshot, Export bundle…) and the menu's
+  * Discard draft with the confirmation bar's Discard draft. The run completes through the
+  * window's own fake backend.
+  *
+  * Named bypasses, each dispatched as the missing control would dispatch it:
+  *  - the import dialog's answer (`ImportSources`) and the mapping pane's
+  *    commit (`SetMapping`, `SetUnits`): the dialog is the platform's, and
+  *    the mapping pane's own suites drive its controls (S5.2, S5.3);
+  *  - navigations (`Navigate`, `Explain`) where the user's gesture is a
+  *    crumb, a row or a link;
+  *  - starting a draft (`StartDraft`, rev 4 on r3 and rev 5 with σ 8°): no
+  *    control starts a draft or edits a recipe yet (S7.3,
+  *    bd-01M3DPFSE5NN4B3SSHHYA76B5B);
+  *  - the board's Figure 1 panels A–E (`CreateFigure`, Figure 4): New figure
+  *    makes Figure 3 with its two default panels, and no control adds a
+  *    panel (`AddPanel`) yet (a bead is requested in the S10.1 report);
+  *  - the fake's `declare` of a draft's revision, until S3.7 binds plans.
   */
 class GoldenJourneyFxSuite extends ShellFxSuite:
   import StoryModels.{p17enc03, p17ret07, sigma2}
@@ -145,7 +158,7 @@ class GoldenJourneyFxSuite extends ShellFxSuite:
       found = nodes(w.root)
         .collect(pick)
         .find(c =>
-          c.getText != null && c.getText.startsWith(text) && c.isVisible && !c.isDisabled
+          c.getText != null && c.getText.startsWith(text) && visible(c) && !c.isDisabled
         )
       found.isDefined
     }
@@ -157,8 +170,45 @@ class GoldenJourneyFxSuite extends ShellFxSuite:
     fx.awaitLayout()
 
   private def shown(w: StudioWindow): Vector[String] = runOnFx(
-    nodes(w.root).collect { case l: Labeled if l.isVisible => Option(l.getText).getOrElse("") }
+    nodes(w.root).collect { case l: Labeled if visible(l) => Option(l.getText).getOrElse("") }
   )
+
+  /** `ours` is `theirs`, byte for byte; a text file's difference is shown as text. */
+  private def same(name: String, ours: Option[Vector[Byte]], theirs: Vector[Byte]): Unit =
+    val text = Set(".json", ".csv", ".md", ".txt", ".journal").exists(name.endsWith)
+    if text then
+      assertNoDiff(
+        ours.fold("<absent>")(b => String(b.toArray, "UTF-8")),
+        String(theirs.toArray, "UTF-8"),
+        name
+      )
+    assertEquals(ours, Some(theirs), name)
+
+  /** Shown: the node and everything enclosing it are visible. */
+  private def visible(n: Node): Boolean =
+    Iterator.iterate(n)(_.getParent).takeWhile(_ != null).forall(_.isVisible)
+
+  /** Answers on a thread of its own, as AssetFiles.chooser's reader does. */
+  private def answerOffFx(answer: => Unit): Unit =
+    val t = Thread(() => answer)
+    t.setDaemon(true)
+    t.start()
+
+  /** Every file under `root`, by its path relative to `root`, except the
+    * store's lock files (FileProjectStore's .lock, which stays empty after a
+    * release, and .lock.owner): volatile, as in the headless route.
+    */
+  private def folder(root: Path): Map[String, Vector[Byte]] =
+    val all = Files.walk(root)
+    try
+      all.iterator.asScala
+        .filter(Files.isRegularFile(_))
+        .filterNot(p =>
+          Set(FileProjectStore.LockName, FileProjectStore.OwnerName)(p.getFileName.toString)
+        )
+        .map(p => root.relativize(p).toString -> Files.readAllBytes(p).toVector)
+        .toMap
+    finally all.close()
 
   private def model(w: StudioWindow): AppModel = runOnFx(w.runtime.model)
 
@@ -184,19 +234,22 @@ class GoldenJourneyFxSuite extends ShellFxSuite:
         project = Some(port),
         chooseFolder = (_, _) => Some(exportDir),
         // Repair…'s file chooser answers as the headless route does: the
-        // missing file's restored stand-in, another stimulus's bytes.
+        // missing file's restored stand-in, another stimulus's bytes; off the
+        // JavaFX thread, as the platform's chooser reads the chosen file.
         assetFiles = (file, done) =>
-          done(
-            Right(
-              Some(
-                (
-                  ok(
-                    eyes4s.studio.core.assets.AssetFile
-                      .of(file.value.stripSuffix(".png") + "_restored.png")
-                  ),
-                  IArray.unsafeFromArray(
-                    Files.readAllBytes(
-                      FixtureDoc.root.resolve("fixtures/studio-golden/stimuli/beach-042.png")
+          answerOffFx(
+            done(
+              Right(
+                Some(
+                  (
+                    ok(
+                      eyes4s.studio.core.assets.AssetFile
+                        .of(file.value.stripSuffix(".png") + "_restored.png")
+                    ),
+                    IArray.unsafeFromArray(
+                      Files.readAllBytes(
+                        FixtureDoc.root.resolve("fixtures/studio-golden/stimuli/beach-042.png")
+                      )
                     )
                   )
                 )
@@ -325,7 +378,48 @@ class GoldenJourneyFxSuite extends ShellFxSuite:
       // The participant rows are fixture.json's: P17's mean D, as FIXTURE.md says.
       eventually(fx, "the summary")(shown(w).exists(_.contains("+0.38")))
 
-      // Figure 3 with the board's panels, and its bundle: Export bundle….
+      // Rev 5 adds σ 8° (StartDraft: a named bypass until S7.3); Review
+      // draft shows its 44,845 pair rows; then Discard draft, confirmed.
+      val rev4   = model(w).document.analysis(StoryMoments.rev4).get
+      val scales = ok(ScaleSet.of(rev4.recipe.scales.values :+ ok(Sigma.of(8.0))))
+      dispatch(
+        fx,
+        w,
+        Intent.Dispatch(
+          Command.StartDraft(
+            StoryMoments.rev4,
+            None,
+            Vector(RecipeChange.Scales(rev4.recipe.scales, scales))
+          )
+        )
+      )
+      assertEquals(model(w).document.draft.map(_.id), Some(StoryMoments.rev5))
+      w.session
+        .await(w.session.backend.declare(StoryMoments.rev5, r3))
+        .fold(e => fail(e.toString), identity)
+      choose(fx, w, CommandRegistry.reviewDraft.id)
+      eventually(fx, "rev 5's pair rows")(
+        shown(w).exists(_.contains("Save & run rev 5 · 44,845 pairs"))
+      )
+      // Edit › Discard draft (in Analysis the draft's actions are the menu's).
+      choose(fx, w, CommandRegistry.discardDraft.id)
+      val confirm = control(fx, w, "Discard draft") {
+        case b: Button if b.getStyleClass.contains("confirm-action") => b
+      }
+      runOnFx(confirm.fire())
+      eventually(fx, "no draft")(w.runtime.model.document.draft.isEmpty)
+
+      // New figure: Figure 3 on the shown run, its two default panels.
+      dispatch(fx, w, Intent.Navigate(Location(Perspective.Figures, Vector(Place.Figures))))
+      press(fx, w, "New figure")
+      eventually(fx, "Figure 3")(w.runtime.model.document.figures.exists(_.id.number == 3))
+      assertEquals(
+        model(w).document.figures.find(_.id.number == 3).map(f => (f.run, f.panels.size)),
+        Some((run6, 2))
+      )
+
+      // Figure 4 with the board's panels (CreateFigure: a named bypass until
+      // a control adds panels), and its bundle with the project snapshot.
       dispatch(
         fx,
         w,
@@ -334,6 +428,7 @@ class GoldenJourneyFxSuite extends ShellFxSuite:
         )
       )
       val figure = model(w).document.figures.last.id
+      assertEquals(figure.number, 4)
       dispatch(
         fx,
         w,
@@ -341,10 +436,34 @@ class GoldenJourneyFxSuite extends ShellFxSuite:
           Location(Perspective.Figures, Vector(Place.Figures, Place.Figure(figure)))
         )
       )
+      // The bundle's snapshot row (not the appearance's "includes images").
+      val row = control(fx, w, "project snapshot") {
+        case b: Button
+            if Option(b.getAccessibleText).exists(_.endsWith(", not in the bundle")) =>
+          b
+      }
+      runOnFx(row.fire())
+      fx.awaitLayout()
+      eventually(fx, "the snapshot is in the bundle")(
+        nodes(w.root).exists {
+          case b: Button =>
+            visible(b) && Option(b.getAccessibleText).exists(t =>
+              t.startsWith("project snapshot") && t.endsWith(", in the bundle")
+            )
+          case _ => false
+        }
+      )
+      // The snapshot is the project as last saved: let the figure be saved.
+      eventually(fx, "Figure 4 is saved")(!w.runtime.model.save.edited)
       press(fx, w, "Export bundle")
-      val folder = exportDir.resolve(s"figure-${figure.number}-bundle")
-      eventually(fx, "the bundle is written")(Files.isRegularFile(folder.resolve("README.txt")))
+      val bundleDir = exportDir.resolve(s"figure-${figure.number}-bundle")
+      eventually(fx, "the bundle is written")(
+        Files.isRegularFile(bundleDir.resolve("README.txt"))
+      )
       fx.snapshot(StudioTheme.Light)
+      // Back to Compare, as the headless route returns: View › Compare (⌘4).
+      choose(fx, w, CommandRegistry.compare.id)
+      assertEquals(model(w).perspective, Perspective.Compare)
 
       // Saved: the window's project folder holds the journey.
       eventually(fx, "the project is saved")(!w.runtime.model.save.edited)
@@ -355,37 +474,47 @@ class GoldenJourneyFxSuite extends ShellFxSuite:
       // --- The UI route against the headless route ------------------------
 
       val closed = route.closed.getOrElse(fail("the headless route did not close"))
-      def science(d: StudioDocument) =
-        ok(
-          ProjectBundle.encode(d, SharingOptions.complete, BundleSamples.inputsFor(d))
-        ).parts.toMap.view
-          .mapValues(Vector.from(_))
-          .toMap
-      assertEquals(science(ui).keySet, science(closed).keySet)
-      science(ui).foreach((path, bytes) => assertEquals(bytes, science(closed)(path), path))
 
-      // The export bundle, file for file and byte for byte.
-      val written = Files
-        .list(folder)
-        .iterator
-        .asScala
-        .map(p => p.getFileName.toString -> Files.readAllBytes(p).toVector)
-        .toMap
-      assertEquals(written.keySet, route.bundle.keySet)
-      assert(written.keySet.exists(_.endsWith(".svg")), written.keySet)
-      written.foreach((name, bytes) => assertEquals(bytes, route.bundle(name), name))
-
-      // The project folder: reopened, the same document; each document part
-      // it lists is the headless folder's file.
+      // The project folder, reopened: its inputs are the journey's real
+      // inputs (the golden sources and the two repaired images).
       val reopened = (for
         store  <- FileProjectStore.at[IO](projectDir)
         opened <- ProjectBundle.open(store)
       yield opened).unsafeRunSync().fold(e => fail(e.message), identity)
+      val inputs = reopened.manifest.inputs
+      assertEquals(inputs.count(_.kind == InputKind.StimulusImage), 2, inputs)
+      def science(d: StudioDocument) =
+        ok(ProjectBundle.encode(d, SharingOptions.complete, inputs)).parts.toMap.view
+          .mapValues(Vector.from(_))
+          .toMap
+      assertEquals(science(ui).keySet, science(closed).keySet)
+      science(ui).foreach((path, bytes) => assertEquals(bytes, science(closed)(path), path))
       assertEquals(science(reopened.document), science(closed))
-      reopened.manifest.parts.all.foreach { entry =>
-        val path = entry.path.value
-        val ours = Files.readAllBytes(projectDir.resolve(path)).toVector
-        assertEquals(Some(ours), route.savedFolder.get(path), path)
-      }
+
+      // The export bundle, every file under it (the project snapshot's
+      // project/ included), both ways, byte for byte.
+      val written = folder(bundleDir)
+      assert(written.keySet.exists(_.endsWith(".svg")), written.keySet)
+      assert(written.keySet.exists(_.startsWith("project/inputs/")), written.keySet)
+      assertEquals(written.keySet, route.bundle.keySet)
+      written.foreach((name, bytes) => same(name, Some(bytes), route.bundle(name)))
+      // The project folder, every file, both ways (the lock files excluded,
+      // as named in folder()). What the window's manifest lists (itself, its
+      // inputs and its parts) is exactly the headless folder, byte for byte.
+      // Every other file is the live session's history, named: the save
+      // journal, the previous manifest, and the parts of earlier saves (a
+      // part's path names its content), none of them listed.
+      val saved  = folder(projectDir)
+      val listed = Set(ProjectStore.ManifestName) ++
+        reopened.manifest.inputs.flatMap(_.path.map(_.value)) ++
+        reopened.manifest.parts.all.map(_.path.value)
+      assertEquals(listed, route.savedFolder.keySet)
+      route.savedFolder.foreach((name, bytes) => same(name, saved.get(name), bytes))
+      val sidecars          = Sidecar.values.map(_.fileName).toSet
+      def dir(name: String) = name.takeWhile(_ != '/')
+      val partDirs          = reopened.manifest.parts.all.map(e => dir(e.path.value)).toSet
+      (saved.keySet -- listed).foreach(name =>
+        assert(sidecars(name) || (partDirs(dir(name)) && name.endsWith(".json")), name)
+      )
     finally TempDirs.remove(base)
   }

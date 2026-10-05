@@ -20,7 +20,9 @@ import java.nio.charset.StandardCharsets.UTF_8
 import java.nio.file.Files
 
 /** What Repair… accepts as a display image (S5.7 review): one path segment,
-  * a bounded size, and bytes that decode as an image. Headless.
+  * a bounded size, and bytes that decode as an image; and the platform's
+  * chooser behind the seam (S10.1 review): its dialog's title and filter, and
+  * how it reads the chosen file. Headless.
   */
 class AssetFilesSuite extends munit.FunSuite:
 
@@ -62,4 +64,43 @@ class AssetFilesSuite extends munit.FunSuite:
       AssetFiles.check("odd.gif", png, decode = io),
       Left(AssetFileRefusal.NotAnImage("odd.gif"))
     )
+  }
+
+  test("the platform chooser: titled for the missing file, over images") {
+    eyes4s.studio.desktop.harness.StudioFxSuite.startToolkit()
+    val chooser = eyes4s.studio.desktop.harness.StudioFxSuite.runOnFx(
+      AssetFiles.dialog(eyes4s.studio.core.assets.AssetFile.of("forest-044.png").toOption.get)
+    )
+    assertEquals(chooser.getTitle, "Locate forest-044.png")
+    import scala.jdk.CollectionConverters.*
+    assertEquals(
+      chooser.getExtensionFilters.asScala.toVector.map(f =>
+        f.getDescription -> f.getExtensions.asScala.toVector
+      ),
+      Vector("Images" -> Vector("*.png", "*.jpg", "*.jpeg", "*.bmp", "*.gif"))
+    )
+  }
+
+  test(
+    "the platform chooser reads the chosen file under its name; over the bound or unreadable, refused"
+  ) {
+    val dir = Files.createTempDirectory("asset-files")
+    try
+      val chosen = dir.resolve("forest_044_restored.png")
+      Files.write(chosen, Array.from(png))
+      assertEquals(
+        AssetFiles.read(chosen.toFile).map(_.map((n, b) => (n.value, Vector.from(b)))),
+        Right(Some(("forest_044_restored.png", Vector.from(png))))
+      )
+      assertEquals(
+        AssetFiles.read(chosen.toFile, limit = 10),
+        Left(AssetFileRefusal.TooLarge("forest_044_restored.png", png.length.toLong, 10))
+      )
+      // A directory is no file to read.
+      val folder = Files.createDirectory(dir.resolve("folder.png"))
+      assert(AssetFiles.read(folder.toFile).left.exists {
+        case AssetFileRefusal.Unreadable("folder.png", _) => true
+        case _                                            => false
+      })
+    finally eyes4s.studio.desktop.platform.TempDirs.remove(dir)
   }

@@ -100,39 +100,42 @@ object AssetFiles:
     */
   def chooser(owner: () => Window): AssetFiles =
     (file, done) =>
-      val chooser = FileChooser()
-      chooser.setTitle(s"Locate ${file.value}")
-      chooser.getExtensionFilters.add(
-        FileChooser.ExtensionFilter("Images", "*.png", "*.jpg", "*.jpeg", "*.bmp", "*.gif")
-      )
-      Option(chooser.showOpenDialog(owner())) match
+      Option(dialog(file).showOpenDialog(owner())) match
         case None    => done(Right(None))
         case Some(f) =>
-          val reader = Thread(() =>
-            val name = f.getName
-            val read =
-              try
-                if f.length > MaxBytes then
-                  Left(AssetFileRefusal.TooLarge(name, f.length, MaxBytes))
-                else
-                  AssetFile
-                    .of(name)
-                    .left
-                    .map(e => AssetFileRefusal.BadName(name, e.message))
-                    .map(n => Some(n -> IArray.unsafeFromArray(Files.readAllBytes(f.toPath))))
-              catch
-                case e: java.io.IOException =>
-                  Left(
-                    AssetFileRefusal.Unreadable(
-                      name,
-                      Option(e.getMessage).getOrElse(e.toString)
-                    )
-                  )
-            done(read)
-          )
+          val reader = Thread(() => done(read(f)))
           reader.setDaemon(true)
           reader.setName(s"repair ${file.value}")
           reader.start()
+
+  /** The chooser for the missing `file`: titled for it, over images. */
+  def dialog(file: AssetFile): FileChooser =
+    val chooser = FileChooser()
+    chooser.setTitle(s"Locate ${file.value}")
+    chooser.getExtensionFilters.add(
+      FileChooser.ExtensionFilter("Images", "*.png", "*.jpg", "*.jpeg", "*.bmp", "*.gif")
+    )
+    chooser
+
+  /** The chosen file `f` under its name, read unless it is over `limit`; a
+    * file that cannot be read is refused, named.
+    */
+  def read(
+      f: java.io.File,
+      limit: Long = MaxBytes
+  ): Either[AssetFileRefusal, Option[(AssetFile, IArray[Byte])]] =
+    val name = f.getName
+    try
+      if f.length > limit then Left(AssetFileRefusal.TooLarge(name, f.length, limit))
+      else
+        AssetFile
+          .of(name)
+          .left
+          .map(e => AssetFileRefusal.BadName(name, e.message))
+          .map(n => Some(n -> IArray.unsafeFromArray(Files.readAllBytes(f.toPath))))
+    catch
+      case e: java.io.IOException =>
+        Left(AssetFileRefusal.Unreadable(name, Option(e.getMessage).getOrElse(e.toString)))
 
 /** The Data perspective's Sources pane on the desktop (ticket S5.7;
   * Data.dc.html, left): it binds a [[SourcesVM]] and performs the pane's
