@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package eyes4s.studio.viz.maps
 
 import eyes4s.studio.app.maps.*
