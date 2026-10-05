@@ -262,7 +262,10 @@ object StudioLayouts:
         group(
           pane("compare.contrast", "Contrast", Plot),
           pane("compare.pairs", "Pairs table", Table),
-          scaleProfile
+          scaleProfile,
+          // Not on the board: every plot has its Table twin (S10.5 F3, a
+          // deliberate deviation for accessibility, PARITY_CHECKLIST Main).
+          table("compare.scale-profile")
         ) -> 0.4
       ),
       group(pane("compare.inspector", "Inspector", Inspector))

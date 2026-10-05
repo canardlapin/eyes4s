@@ -95,7 +95,9 @@ class LayoutSpecSuite extends munit.FunSuite:
         "Contrast"                         -> "compare.contrast",
         "Pairs table"                      -> "compare.pairs",
         "Scale profile"                    -> "compare.scale-profile",
-        "Inspector"                        -> "compare.inspector"
+        // Not on the board: the scale profile's Table twin (S10.5 F3).
+        "Table"     -> "compare.scale-profile.table",
+        "Inspector" -> "compare.inspector"
       )
     ),
     (
@@ -205,7 +207,10 @@ class LayoutSpecSuite extends munit.FunSuite:
       assertEquals(decls.distinct.size, 1, id)
     }
     val shared = compareSummary.panes.map(_.id).intersect(compareQuery.panes.map(_.id))
-    assertEquals(shared.map(_.value), Vector("compare.scale-profile"))
+    assertEquals(
+      shared.map(_.value),
+      Vector("compare.scale-profile", "compare.scale-profile.table")
+    )
   }
 
   test("Compare: summary layout at the Summary crumb, query layout below it") {

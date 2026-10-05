@@ -14,7 +14,7 @@ visible, 3.2.4 consistent identification, 4.1.2 name and role).
 
 | Part | State | Evidence |
 |---|---|---|
-| Every plot has a Table twin | Checked, two named exceptions | `TableTwinSuite` (studio-app) |
+| Every plot has a Table twin | Checked, one named exception (S6.7), F3 fixed | `TableTwinSuite` (studio-app) |
 | Rendered text contrast, light and dark | Checked, 4 findings fixed | `A11yRenderSuite`, `ImportWizardFxSuite` |
 | Focus drawn at every Tab stop | Checked, 2 findings fixed | `A11yRenderSuite`, `ImportWizardFxSuite` |
 | Names and roles of every Tab stop | Checked (S1.11), extended to the wizard and a popout | `A11yTreeSuite`, `A11yRenderSuite`, `ImportWizardFxSuite` |
@@ -102,7 +102,7 @@ Not covered by the automated checks:
 |---|---|---|---|---|
 | F1 | Medium | Explore | The small-multiples plot pane has no Table twin. | Exception: S6.7, which builds the pane, owns its twin. `TableTwinSuite` names it and fails when the twin exists without the exception being dropped. |
 | F2 | Medium | Compare, query | The scale ladder (`compare.contrast`) and its Pairs table (`compare.pairs`) are twins, but the tab menu did not know it, so neither offered the other. | Fixed: `StudioLayouts.twin` names the pair, and the tab menu reads it. |
-| F3 | Low | Compare, query | The scale profile has no Table twin in the query layout. Its twin is in the Summary layout only, as on the board (Main.dc.html). | Open, needs the lead: add the twin to the query layout (a board change), or keep the named exception in `TableTwinSuite`. |
+| F3 | Low | Compare, query | The scale profile has no Table twin in the query layout. Its twin is in the Summary layout only, as on the board (Main.dc.html). | Fixed, by the lead's decision: the query layout has the twin, a deliberate board deviation for accessibility (PARITY_CHECKLIST, Main; `LayoutSpecSuite` pins it). |
 | F4 | High | Compare, query | The queries navigator's filter prompt used modena's prompt colour: 1.72:1 in light, 1.04:1 in dark. | Fixed: the field is Explore's `nav-filter`, with its prompt in ink-3. |
 | F5 | High | Figures, dark | The caption and stamp under the panels took the theme's ink: 1.20:1 on the white paper. | Fixed: paper ink and paper ink-2 in either theme. |
 | F6 | Medium | Figures | The figure list's rows drew no focus. | Fixed: an accent ring inside the row's edge. |

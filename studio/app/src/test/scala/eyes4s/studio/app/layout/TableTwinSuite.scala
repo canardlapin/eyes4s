@@ -30,9 +30,7 @@ class TableTwinSuite extends munit.FunSuite:
   /** Plots without a twin in a layout, and why. */
   private val exceptions: Map[(String, String), String] = Map(
     ("explore", "explore.small-multiples") ->
-      "S6.7 (Explore small multiples) is not built: the pane is a placeholder; its Table twin comes with it",
-    ("compare.query", "compare.scale-profile") ->
-      "the board (Main.dc.html) shows the scale profile's table in Summary only; open for the lead (S10.5 F3)"
+      "S6.7 (Explore small multiples) is not built: the pane is a placeholder; its Table twin comes with it"
   )
 
   private def excepted(layout: PerspectiveLayout, decl: PaneDecl): Boolean =

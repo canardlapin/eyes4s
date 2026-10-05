@@ -178,20 +178,23 @@ class A11yRenderSuite extends ShellFxSuite:
 
   Vector("light", "dark").foreach { theme =>
     fxStage.test(s"a popped-out dock window, $theme: named, legible, its focus drawn") { fx =>
-      val w     = boot(fx, StoryModels.t2Compare, StoryMoment.T2)
-      val stage = runOnFx(fx.scene.getWindow)
-      val pane  = runOnFx(w.host.dock.state.groups.find(_.tabs.nonEmpty).get)
+      val w       = boot(fx, StoryModels.t2Compare, StoryMoment.T2)
+      def showing = runOnFx(javafx.stage.Window.getWindows.asScala.filter(_.isShowing).toSet)
+      val before  = showing
+      val pane    = runOnFx(w.host.dock.state.groups.find(_.tabs.nonEmpty).get)
       runOnFx(w.host.dock.popOut(pane.id))
       fx.awaitLayout()
-      if theme == "dark" then dark(fx, w)
-      val popout = runOnFx(
-        javafx.stage.Window.getWindows.asScala.find(win => !(win eq stage) && win.isShowing)
-      ).getOrElse(fail("no popped-out window"))
-      val root = runOnFx(popout.getScene.getRoot)
-      assert(runOnFx(A11yChecks.texts(root).nonEmpty), "the popout shows no text")
-      assert(runOnFx(A11yChecks.focusable(root).nonEmpty), "the popout has no Tab stop")
-      assertEquals(runOnFx(A11yChecks.unlabelled(root)), Vector.empty[String])
-      assertEquals(runOnFx(A11yChecks.lowContrast(root)), Vector.empty[String])
-      assertEquals(runOnFx(A11yChecks.unmarked(root)), Vector.empty[String])
+      // The window this pop-out made, closed afterwards: a later suite in
+      // this JVM must not find it.
+      val popout = (showing -- before).headOption.getOrElse(fail("no popped-out window"))
+      try
+        if theme == "dark" then dark(fx, w)
+        val root = runOnFx(popout.getScene.getRoot)
+        assert(runOnFx(A11yChecks.texts(root).nonEmpty), "the popout shows no text")
+        assert(runOnFx(A11yChecks.focusable(root).nonEmpty), "the popout has no Tab stop")
+        assertEquals(runOnFx(A11yChecks.unlabelled(root)), Vector.empty[String])
+        assertEquals(runOnFx(A11yChecks.lowContrast(root)), Vector.empty[String])
+        assertEquals(runOnFx(A11yChecks.unmarked(root)), Vector.empty[String])
+      finally runOnFx(popout.hide())
     }
   }
