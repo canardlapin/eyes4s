@@ -73,7 +73,8 @@ final class RealStudyBackend[F[_]] private (
     admitted: Ref[F, Map[DatasetRevision, AdmittedDataset]],
     prepared: Ref[F, Map[AnalysisRevision, RealPrepared]],
     state: SignallingRef[F, RealStudyBackend.Jobs[F]],
-    documentRuns: Map[RunId, RunRef]
+    documentRuns: Map[RunId, RunRef],
+    inspected: Ref[F, Map[RunId, RealResults]]
 )(using F: Concurrent[F])
     extends StudyBackend[F]:
   import RealStudyBackend.*
@@ -417,12 +418,42 @@ final class RealStudyBackend[F[_]] private (
               }
     }
 
+  /** The run's result as eyes4s inspects it, built once per run. */
+  private def results(run: RunId): F[Either[BackendError, RealResults]] =
+    held(run).flatMap {
+      case Left(e)     => F.pure(Left(e))
+      case Right(done) =>
+        inspected.get.flatMap(_.get(run) match
+          case Some(r) => F.pure(Right(r))
+          case None    =>
+            F.pure(RealResults.of(run, done)).flatTap {
+              case Right(r) => inspected.update(_.updated(run, r))
+              case Left(_)  => F.unit
+            })
+    }
+
+  /** Until the summary's scalars move to `report(run, spec, scale)`
+    * (bd-01M44P3SF52WPXQXFXSMXC5R8B), the real backend serves no
+    * `ResultSummary`: its grouped and single-scale fields have no source.
+    */
   def result(run: RunId): F[Either[BackendError, ResultSummary]] = noRun(run)
+
+  def pairRows(
+      run: RunId,
+      scale: Int,
+      page: PageRequest
+  ): F[Either[BackendError, PairRowPage]] =
+    results(run).map(_.flatMap(_.pairRows(scale, page)))
 
   def queries(run: RunId, page: PageRequest): F[Either[BackendError, QueryPage]] = noRun(run)
 
+  /** An item eyes4s holds, as eyes4s holds it. A no-match query's contrast
+    * row is eyes4s's failed row (missing operands) until protocol 1.11
+    * reports it as NoMatch with eyes4s's unmatched reason; a query that was
+    * not admitted has no item and is an unknown reference.
+    */
   def inspect(run: RunId, address: ResultAddress): F[Either[BackendError, Inspection]] =
-    noRun(run)
+    results(run).map(_.flatMap(_.inspect(address)))
 
   def provenance(run: RunId, address: ResultAddress): F[Either[BackendError, Provenance]] =
     noRun(run)
@@ -456,8 +487,9 @@ object RealStudyBackend:
     (
       Ref.of[F, Map[DatasetRevision, AdmittedDataset]](Map.empty),
       Ref.of[F, Map[AnalysisRevision, RealPrepared]](Map.empty),
-      SignallingRef[F].of(Jobs.of[F](document))
-    ).mapN { (admitted, prepared, state) =>
+      SignallingRef[F].of(Jobs.of[F](document)),
+      Ref.of[F, Map[RunId, RealResults]](Map.empty)
+    ).mapN { (admitted, prepared, state, inspected) =>
       val saved = document.analyses.map(a => a.id -> (a.dataset, a.recipe))
       // A draft's recipe is its changes applied to its base's recipe.
       val draft = document.draft.flatMap(d =>
@@ -472,7 +504,8 @@ object RealStudyBackend:
         admitted,
         prepared,
         state,
-        document.runs.map(r => r.id -> r).toMap
+        document.runs.map(r => r.id -> r).toMap,
+        inspected
       )
     }
 

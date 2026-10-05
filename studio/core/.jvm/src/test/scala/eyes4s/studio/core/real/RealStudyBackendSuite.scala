@@ -17,6 +17,7 @@
 package eyes4s.studio.core.real
 
 import cats.effect.IO
+import cats.syntax.all.*
 import eyes4s.codec.ByteDigest
 import eyes4s.studio.core.assets.AssetRegistry
 import eyes4s.studio.core.backend.*
@@ -37,6 +38,10 @@ import munit.CatsEffectSuite
   * refusal is a typed value naming its subject.
   */
 class RealStudyBackendSuite extends CatsEffectSuite:
+  // Several tests run the golden study to completion, some more than once.
+  override def munitIOTimeout: scala.concurrent.duration.Duration =
+    scala.concurrent.duration.Duration(5, "min")
+
   private def get[E, A](e: Either[E, A]): A = e.fold(x => fail(x.toString), identity)
 
   private val t2: StudioDocument = get(StoryMoments.t2)
@@ -549,4 +554,140 @@ class RealStudyBackendSuite extends CatsEffectSuite:
       // The refusal is kept: no second recomputation.
       assertEquals(again, Left(refused))
       assertEquals(jobs.size, 1)
+  }
+
+  // ------------------------------------------------------------------ results against SCORES.json
+
+  /** SCORES.json's queries: key, status, matched trials and M/B/D per scale. */
+  private final case class Scored(
+      key: TrialKey,
+      status: String,
+      matched: Vector[String],
+      scores: Vector[(Option[Double], Option[Double], Option[Double])]
+  )
+
+  private lazy val scores: (Vector[Scored], Long) =
+    val json   = get(io.circe.parser.parse(eyes4s.studio.core.fixture.GoldenScores.text))
+    val c      = json.hcursor
+    val sigmas = Vector("0.5", "1", "2", "4")
+    val qs     = get(c.get[Vector[io.circe.Json]]("queries")).map { q =>
+      val h              = q.hcursor
+      def mbd(s: String) =
+        val sc = h.downField("scales").downField(s)
+        (
+          get(sc.get[Option[Double]]("M")),
+          get(sc.get[Option[Double]]("B")),
+          get(sc.get[Option[Double]]("D"))
+        )
+      Scored(
+        TrialKey(
+          get(h.get[String]("participant")),
+          Phase.Retrieval,
+          get(h.get[String]("trial")),
+          get(h.get[Int]("occurrence"))
+        ),
+        get(h.get[String]("status")),
+        get(h.get[Vector[String]]("matched")),
+        sigmas.map(mbd)
+      )
+    }
+    (qs, get(c.downField("counts").get[Long]("pairRowsPerScale")))
+
+  /** Every pair row of `run` at `scale`, following `next`. */
+  private def allPairRows(
+      real: RealStudyBackend[IO],
+      run: RunId,
+      scale: Int
+  ): IO[Vector[PairRowEntry]] =
+    def go(offset: Int, acc: Vector[PairRowEntry]): IO[Vector[PairRowEntry]] =
+      real.pairRows(run, scale, get(PageRequest.of(offset, 4096))).map(get).flatMap { page =>
+        page.page.next match
+          case Some(n) => go(n, acc ++ page.rows)
+          case None    => IO.pure(acc ++ page.rows)
+      }
+    go(0, Vector.empty)
+
+  /** SCORES.json rounds half-even to 6 places. */
+  private def near(obtained: Double, stored: Double, what: String): Unit =
+    assert(math.abs(obtained - stored) <= 5e-7 + 1e-12, s"$what: $obtained vs $stored")
+
+  test("run 7's inspected contrasts and matched pair rows are SCORES.json's, at every scale") {
+    val (queries, perScale) = scores
+    for
+      real <- RealStudyBackend.create[IO](trialLayout, RealBackendConformanceSuite.golden)
+      (_, _, out, _) <- recompute(real, StoryMoments.run7)
+      inspected      <- queries.traverse(q =>
+        (0 until 4).toVector.traverse(i =>
+          real.inspect(StoryMoments.run7, ResultAddress.ContrastRow(i, q.key))
+        )
+      )
+      pages  <- (0 until 4).toVector.traverse(i => allPairRows(real, StoryMoments.run7, i))
+      beyond <- real.pairRows(StoryMoments.run7, 4, get(PageRequest.of(0, 1)))
+      // The reductions and the matched pair of every contributing query at 2°.
+      contributing = queries.filter(_.status == "contributing")
+      reduced <- contributing.traverse { q =>
+        val enc = TrialKey(q.key.participant, Phase.Encoding, q.matched.head, 1)
+        (
+          real.inspect(
+            StoryMoments.run7,
+            ResultAddress.Reduction(2, PairDesign.Matched, q.key)
+          ),
+          real.inspect(
+            StoryMoments.run7,
+            ResultAddress.Reduction(2, PairDesign.Control, q.key)
+          ),
+          real.inspect(
+            StoryMoments.run7,
+            ResultAddress.PairRow(2, PairDesign.Matched, q.key, enc)
+          )
+        ).tupled
+      }
+    yield
+      assert(out.exists(_.isInstanceOf[JobOutcome.Completed]), out)
+      assertEquals(pages.map(_.size.toLong), Vector.fill(4)(perScale))
+      assertEquals(beyond.left.map(_.code), Left("studio-backend.unknown-scale"))
+      queries.zip(inspected).foreach { (q, results) =>
+        results.zipWithIndex.foreach { (r, i) =>
+          val at = s"${q.key.label} at scale $i"
+          (q.status, r) match
+            case ("contributing", Right(Inspection.Contrast(_, m, b, d))) =>
+              val (sm, sb, sd) = q.scores(i)
+              near(m, sm.get, s"$at M"); near(b, sb.get, s"$at B"); near(d, sd.get, s"$at D")
+            case (s, Right(Inspection.Unscored(_, QueryStatus.Failed(diag))))
+                if s.startsWith("failed:") =>
+              assertEquals(diag.code, s.stripPrefix("failed:"), at)
+            case ("no-match", Right(Inspection.Unscored(_, QueryStatus.Failed(diag)))) =>
+              // eyes4s holds the row with no control operand. Protocol 1.11
+              // reports it as NoMatch with eyes4s's unmatched reason instead.
+              assertEquals(diag.code, "contrast-row.missing-operands", at)
+            case other => fail(s"$at: SCORES ${q.status}, backend $other")
+        }
+      }
+      contributing.zip(reduced).foreach { case (q, (m, b, pair)) =>
+        val (sm, sb, _) = q.scores(2)
+        (m, b, pair) match
+          case (
+                Right(Inspection.Reduction(_, mv, 1)),
+                Right(Inspection.Reduction(_, bv, controls)),
+                Right(Inspection.Pair(_, _, pv))
+              ) =>
+            near(mv, sm.get, s"${q.key.label} matched reduction")
+            near(bv, sb.get, s"${q.key.label} control reduction")
+            near(pv, sm.get, s"${q.key.label} matched pair")
+            assert(controls > 0, s"${q.key.label}: $controls controls")
+          case other => fail(s"${q.key.label}: $other")
+      }
+      // Each contributing query's matched pair is its stored M, query by query,
+      // matched pair first.
+      pages.zipWithIndex.foreach { (rows, i) =>
+        val firsts = rows.groupBy(_.query).view.mapValues(_.head).toMap
+        queries.filter(_.status == "contributing").foreach { q =>
+          val row = firsts.getOrElse(q.key, fail(s"${q.key.label}: no pair rows at $i"))
+          assertEquals((row.design, row.reference.trial), (PairDesign.Matched, q.matched.head))
+          row.score match
+            case PairScoreState.Scored(v) =>
+              near(v, q.scores(i)._1.get, s"${q.key.label} pair at $i")
+            case other => fail(s"${q.key.label} at $i: $other")
+        }
+      }
   }

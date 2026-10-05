@@ -1196,6 +1196,14 @@ lazy val studioCore = crossProject(JVMPlatform, JSPlatform)
         (ThisBuild / baseDirectory).value,
         (Test / sourceManaged).value / "eyes4s" / "studio" / "GoldenCsv.scala"
       )
+    }.taskValue,
+    // S3.7 slice 5: the scores eyes4s computed for the golden study
+    // (SCORES.json, S0.7b), for the real backend's result checks.
+    Test / sourceGenerators += Def.task {
+      StudioFixture.goldenScores(
+        (ThisBuild / baseDirectory).value,
+        (Test / sourceManaged).value / "eyes4s" / "studio" / "GoldenScores.scala"
+      )
     }.taskValue
   )
 
