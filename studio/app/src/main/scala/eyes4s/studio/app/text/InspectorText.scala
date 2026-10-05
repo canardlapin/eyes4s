@@ -26,6 +26,9 @@ enum InspectorTextId derives CanEqual:
   case Inside, OutsideExcluded, OutsideFails, OffScreen, DroppedInitial, InsideTrialFails
   case FrameNote, ScaleOfRecipe, ScaleOfDataset
   case SourceTitle, File, Record, RecordOf, Digest, DigestShort, Ledger, Admitted, ShowRaw
+
+  /** Show raw record's accessible name: which of Explore's two it is (S10.5). */
+  case ShowRawName
   case UsedByTitle, UsedByNoScale, UsedByNoRun, MatchedOne, MatchedMany, AsControl, AsQuery,
     UsedByNone
   case TrialTitle, Key, KeyValue, DisplayLabel, DisplayImage, DisplayBlank, DisplayCross
@@ -66,6 +69,7 @@ object InspectorText:
       case Ledger         => "Ledger"
       case Admitted       => "Admitted · dataset {0}"
       case ShowRaw        => "Show raw record"
+      case ShowRawName    => "Show raw record in the inspector"
       case UsedByTitle    => "Used by (run {0}, {1})"
       case UsedByNoScale  => "Used by (run {0}): its scales are not in the project"
       case UsedByNoRun    => "Used by (no run shown)"
@@ -88,6 +92,7 @@ object InspectorText:
       case FixationsValue => "{0} · {1} outside"
       case NoFixation     => "Select a fixation to inspect it"
       case Reading        => "Reading…"
+
 
   def apply(id: InspectorTextId, args: String*): String =
     Messages.fill(english(id), args.toVector)

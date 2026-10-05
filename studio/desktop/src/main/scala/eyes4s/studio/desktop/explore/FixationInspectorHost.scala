@@ -90,7 +90,7 @@ final class FixationInspectorHost(
   raw.setWrapText(true)
   private val showRaw = ToggleButton(InspectorText(InspectorTextId.ShowRaw))
   showRaw.getStyleClass.add("btn")
-  showRaw.setAccessibleText(InspectorText(InspectorTextId.ShowRaw))
+  showRaw.setAccessibleText(InspectorText(InspectorTextId.ShowRawName))
   showRaw.setOnAction(_ => dispatch(InspectorIntent.ShowRaw(showRaw.isSelected)))
   private val usedTitle = label("t13")
   private val links     = VBox(2.0)
@@ -159,7 +159,7 @@ final class FixationInspectorHost(
   def focusStops: Vector[FocusStop] =
     if state.focus.isEmpty then Vector.empty
     else
-      FocusStop(A11yRole.ToggleButton, InspectorText(InspectorTextId.ShowRaw)) +:
+      FocusStop(A11yRole.ToggleButton, InspectorText(InspectorTextId.ShowRawName)) +:
         vm.usedBy.map(l => FocusStop(A11yRole.Link, l.label))
 
   def sync(m: AppModel): Unit = if !disposed then

@@ -83,6 +83,7 @@ by token name, never by hex value.
 - [ ] Readout: D +0.38 in 28/500, M 0.73, B 0.35 (19 controls), and the confound sentence verbatim.
 - [ ] "Why this reference?" panel, including the outside-window counts. Reporting reads "By retrieval response" with "Min queries per group: Off · n 2–17". Appearance offers the stage, colour-limit and opacity (0.6) controls.
 - [ ] Dark theme: the query / matched L* spread is at least 20, and every role pill reaches 4.5:1.
+- Deviation (S10.5 F3, accessibility): the contrast group also has the scale profile's Table tab after "Scale profile", which the board does not show. Every plot has its Table twin (DESIGN_SPEC §10).
 
 ## Results (moment t3)
 - [ ] Jobs chip is running. The banner says the results will not replace this view until Show.
@@ -95,11 +96,11 @@ by token name, never by hex value.
 
 ## Figures (moment t2)
 - [ ] Figure-level binding, locked: run 7 plus "By retrieval response". Panels choose only scale and selection.
-- [ ] Panel C reads "highest of 19 · B 0.35". Panel D uses a Δ-cosine axis with a zero rule. Panel E uses a log x axis. Figure text is Plex Sans at 7 pt.
+- [ ] Panel C reads "Matched 0.73 · highest of 19 controls street-112 0.61 · control mean B 0.35 · D +0.38". Panel D uses a Δ-cosine axis with a zero rule. Panel E uses a log x axis. Figure text is Plex Sans at 7 pt.
 - [ ] Stale Figure 2 reads "r3 changed the admission status of 4 trials", with Rebind… / Keep.
 - [ ] methods.md states:
   - [ ] 457 eligible queries.
-  - [ ] 543 of 11,520 records outside the window (4.7%).
+  - [ ] 543 of the 11,311 fixation records of admitted trials (4.8% of their fixation duration).
   - [ ] The off-screen policy and the occurrence rule.
   - [ ] The confound sentence.
 - [ ] Export bundle list.

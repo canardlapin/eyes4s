@@ -42,7 +42,7 @@ object ProfileText:
       case Caption => "Scale profile of run {0}"
       case Title   => "Scale profile"
       case Summary =>
-        "Scale profile of {0}: each group's grand mean D at {1} scales, bold, over each " +
+        "{0}: each group's grand mean D at {1} scales, bold, over each " +
           "participant's mean D, faint"
       case SeriesHeader => "Mean of"
       case ScaleHeader  => "Scale"

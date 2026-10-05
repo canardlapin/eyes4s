@@ -34,6 +34,16 @@
   -fx-background-color: -es-accent-soft;
 }
 
+/* A row is a Tab stop: the ring is drawn inside its edge (S10.5). */
+.figures-row:focused {
+  -fx-background-color: -es-accent, -es-surface;
+  -fx-background-insets: 0, 2;
+}
+
+.figures-row-selected:focused {
+  -fx-background-color: -es-accent, -es-accent-soft;
+}
+
 .figures-chip {
   -fx-text-fill: -es-ink-2;
 }
@@ -87,6 +97,16 @@
 
 .figures-panel .label {
   -fx-text-fill: -es-paper-ink;
+}
+
+/* The caption and stamp under the panels are on the paper: paper ink in
+ * either theme (S10.5: the dark theme's ink was 1.2:1 on the paper). */
+.figures-foot .label {
+  -fx-text-fill: -es-paper-ink;
+}
+
+.figures-foot .figures-stamp {
+  -fx-text-fill: -es-paper-ink-2;
 }
 
 .figures-panel .figures-note {

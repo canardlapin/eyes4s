@@ -80,7 +80,7 @@ final class SourceRecordsHost(
   raw.setWrapText(true)
   private val showRaw = ToggleButton(RecordText(RecordTextId.ShowRaw))
   showRaw.getStyleClass.add("tog")
-  showRaw.setAccessibleText(RecordText(RecordTextId.ShowRaw))
+  showRaw.setAccessibleText(RecordText(RecordTextId.ShowRawName))
   showRaw.setFocusTraversable(true)
   showRaw.setOnAction(_ => dispatch(SourceRecordsIntent.ShowRaw(showRaw.isSelected)))
 
@@ -229,7 +229,7 @@ final class SourceRecordsHost(
 
   /** The controls inside the pane's own stop: 'Show raw record'. */
   def focusStops: Vector[FocusStop] =
-    Vector(FocusStop(A11yRole.ToggleButton, RecordText(RecordTextId.ShowRaw)))
+    Vector(FocusStop(A11yRole.ToggleButton, RecordText(RecordTextId.ShowRawName)))
 
   def sync(m: AppModel): Unit = if !disposed then
     val before          = state.cursor
