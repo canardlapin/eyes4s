@@ -22,6 +22,7 @@ import eyes4s.core.Weight
 import eyes4s.design.{FailurePolicy, MinimumSuccessful as CoreMinimum, SignedDifference}
 import eyes4s.kernel.*
 import eyes4s.plan.{
+  ComparisonMethod,
   ComparisonMethods,
   DefinitionId,
   ControlReferences,
@@ -69,7 +70,7 @@ object RealPlan:
       recipe: Recipe,
       screen: Frame[Unit2D.Px],
       input: StudyInput[CoreKey, Unit2D.Px]
-  ): Either[BackendError, Plan] =
+  ): Either[BackendError, (Plan, ComparisonMethod)] =
     val refused = BackendError.Unavailable(DiagnosticLocus.Revision(revision))
     def ok[E, A](e: Either[E, A]): Either[BackendError, A] = e.leftMap(_ => refused)
     for
@@ -125,7 +126,7 @@ object RealPlan:
           ()
         )
       )
-    yield plan
+    yield (plan, method)
 
   private def weight(choice: WeightChoice): Weight = choice match
     case WeightChoice.Uniform  => Weight.Uniform

@@ -45,7 +45,8 @@ final case class AdmittedDataset(
     summary: AdmissionSummary,
     ledger: Vector[LedgerEntry],
     screen: Frame[Unit2D.Px],
-    input: eyes4s.plan.StudyInput[CoreKey, Unit2D.Px]
+    input: eyes4s.plan.StudyInput[CoreKey, Unit2D.Px],
+    evidence: AdmissionLedger[CoreKey]
 )
 
 /** The admission of a [[DatasetRevisionSpec]] through eyes4s-io (S3.7 slice 1).
@@ -115,7 +116,8 @@ object RealAdmission:
         summary(spec, imported, ledger, window, assets),
         entries,
         screen,
-        eyes4s.plan.StudyInput(imported.fixations.accepted)
+        eyes4s.plan.StudyInput(imported.fixations.accepted),
+        ledger
       )
 
   private def geometry(what: String, e: GeometryError): BackendError =

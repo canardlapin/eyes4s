@@ -419,3 +419,134 @@ class RealStudyBackendSuite extends CatsEffectSuite:
     assertEquals(state, RunState.Failed)
     assertEquals(result, None)
   }
+
+  // ------------------------------------------------------------------ recomputation (slice 5)
+
+  /** trialLayout with run 7's archive bound to `digest`. */
+  private def bound(digest: String): StudioDocument =
+    val archive = eyes4s.studio.core.document.CoreBinding.Bound(
+      get(
+        eyes4s.codec.CanonicalDigest
+          .parse[eyes4s.studio.core.document.ResultArchiveArtifact](digest)
+      )
+    )
+    val t = trialLayout
+    get(
+      StudioDocument.of(
+        t.datasets,
+        t.analyses,
+        t.draft,
+        t.runs.map(r => if r.id == StoryMoments.run7 then r.copy(archive = archive) else r),
+        t.reporting,
+        t.figures,
+        t.presentation,
+        t.jobs
+      )
+    )
+
+  /** Ask for `run`'s result, then wait for the job that recomputes it. */
+  private def recompute(real: RealStudyBackend[IO], run: RunId) =
+    for
+      first <- real.held(run)
+      jobs  <- real.jobs
+      job = jobs.find(_.run == run).getOrElse(fail(s"no job for $run: $jobs"))
+      _     <- ok(real.subscribe(job.job)).flatMap(_.compile.drain)
+      out   <- ok(real.outcome(job.job))
+      after <- real.held(run)
+    yield (first, job, out, after)
+
+  test(
+    "a document run is recomputed as a visible job, kept, and marked with the eyes4s release"
+  ) {
+    for
+      real   <- RealStudyBackend.create[IO](trialLayout, RealBackendConformanceSuite.golden)
+      before <- real.runs
+      (first, job, out, after) <- recompute(real, StoryMoments.run7)
+      again                    <- real.held(StoryMoments.run7)
+      jobs                     <- real.jobs
+      runs                     <- real.runs
+    yield
+      assertEquals(
+        first,
+        Left(BackendError.Unavailable(DiagnosticLocus.Run(StoryMoments.run7)))
+      )
+      assertEquals(
+        (job.run, job.revision, job.dataset),
+        (StoryMoments.run7, StoryMoments.rev4, StoryMoments.r3)
+      )
+      assert(out.exists(_.isInstanceOf[JobOutcome.Completed]), out)
+      val held = after.getOrElse(fail(s"no result: $after"))
+      assertEquals(
+        held.origin,
+        RealStudyBackend.RunOrigin.Recomputed(
+          eyes4s.studio.core.engine.StudioBuild.eyes4sBaseVersion
+        )
+      )
+      assertEquals(held.prepared.revision, StoryMoments.rev4)
+      // Kept: no second job, and the run's state is untouched.
+      assert(again.isRight, again)
+      assertEquals(jobs.map(_.job), Vector(job.job))
+      assertEquals(runs, before)
+  }
+
+  test("a run without a result is NoResult, and a run whose revision cannot run says why") {
+    for
+      real      <- RealStudyBackend.create[IO](trialLayout, RealBackendConformanceSuite.golden)
+      cancelled <- real.held(StoryMoments.run6)
+      r2        <- real.held(StoryMoments.run5)
+      unknown   <- real.held(RunId(99))
+      jobs      <- real.jobs
+    yield
+      assertEquals(
+        cancelled,
+        Left(
+          BackendError.NoResult(
+            StoryMoments.run6,
+            RunState.Cancelled(Some(StageKind.Comparing))
+          )
+        )
+      )
+      // run 5 is on r2, which declares no time units.
+      assertEquals(r2, Left(BackendError.Unavailable(DiagnosticLocus.Field("time units"))))
+      assertEquals(unknown.left.map(_.code), Left("studio-backend.unknown-run"))
+      assertEquals(jobs, Vector.empty)
+  }
+
+  test(
+    "a recomputed result is checked against the run's recorded digest: equal is served, different refused naming both"
+  ) {
+    val wrong = "ab" * 32
+    for
+      plain <- RealStudyBackend.create[IO](trialLayout, RealBackendConformanceSuite.golden)
+      (_, _, _, served) <- recompute(plain, StoryMoments.run7)
+      held   = served.getOrElse(fail(s"no result: $served"))
+      digest = get(held.prepared.digest(held.result))
+      matching <- RealStudyBackend.create[IO](bound(digest), RealBackendConformanceSuite.golden)
+      (_, _, _, same) <- recompute(matching, StoryMoments.run7)
+      tampered <- RealStudyBackend.create[IO](bound(wrong), RealBackendConformanceSuite.golden)
+      (_, job, out, bad) <- recompute(tampered, StoryMoments.run7)
+      again              <- tampered.held(StoryMoments.run7)
+      jobs               <- tampered.jobs
+    yield
+      assert(same.isRight, same)
+      val refused = BackendError.Unavailable(
+        DiagnosticLocus.Artifact(
+          s"run 7 result: recorded sha256 $wrong, recomputed sha256 $digest"
+        )
+      )
+      assertEquals(bad, Left(refused))
+      assertEquals(
+        out,
+        Some(
+          JobOutcome.Failed(
+            job.job,
+            StoryMoments.run7,
+            Vector(refused.diagnostic),
+            out.flatMap(_.progress)
+          )
+        )
+      )
+      // The refusal is kept: no second recomputation.
+      assertEquals(again, Left(refused))
+      assertEquals(jobs.size, 1)
+  }

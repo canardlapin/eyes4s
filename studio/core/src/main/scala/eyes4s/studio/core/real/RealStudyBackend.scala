@@ -20,16 +20,19 @@ import cats.effect.kernel.{Concurrent, Deferred, Ref}
 import cats.kernel.Eq
 import cats.syntax.all.*
 import eyes4s.codec.ByteDigest
-import eyes4s.fs2.{Execution, StudyExecution}
+import eyes4s.fs2.{Execution, RunOutcome, StudyExecution}
 import eyes4s.studio.core.assets.AssetRegistry
 import eyes4s.studio.core.backend.*
 import eyes4s.studio.core.document.{
   DatasetRevisionSpec,
   Recipe,
+  CoreBinding,
   RunLifecycle,
+  RunRef,
   Source,
   StudioDocument
 }
+import eyes4s.studio.core.engine.StudioBuild
 import eyes4s.studio.core.preview.*
 import fs2.Stream
 import fs2.concurrent.SignallingRef
@@ -69,7 +72,8 @@ final class RealStudyBackend[F[_]] private (
     sources: DatasetSources[F],
     admitted: Ref[F, Map[DatasetRevision, AdmittedDataset]],
     prepared: Ref[F, Map[AnalysisRevision, RealPrepared]],
-    state: SignallingRef[F, RealStudyBackend.Jobs[F]]
+    state: SignallingRef[F, RealStudyBackend.Jobs[F]],
+    documentRuns: Map[RunId, RunRef]
 )(using F: Concurrent[F])
     extends StudyBackend[F]:
   import RealStudyBackend.*
@@ -261,13 +265,13 @@ final class RealStudyBackend[F[_]] private (
   def submit(revision: AnalysisRevision): F[Either[BackendError, JobStatus]] =
     prepare(revision).flatMap {
       case Left(e)     => F.pure(Left(e))
-      case Right(work) => start(work)
+      case Right(work) => start(work, Purpose.NewRun)
     }
 
-  /** Reserve the job and its run, then start eyes4s's runner on its own
-    * fiber. One job runs at a time.
+  /** Reserve the job (and, for a new run, its run), then start eyes4s's
+    * runner on its own fiber. One job runs at a time.
     */
-  private def start(work: RealPrepared): F[Either[BackendError, JobStatus]] =
+  private def start(work: RealPrepared, purpose: Purpose): F[Either[BackendError, JobStatus]] =
     Deferred[F, F[Unit]].flatMap { handle =>
       state
         .modify { s =>
@@ -275,31 +279,28 @@ final class RealStudyBackend[F[_]] private (
             case Some(active) =>
               (s, Left(BackendError.AlreadyRunning(work.revision, active.job)))
             case None =>
-              val status = JobStatus(
-                JobId(s.jobs.size + 1),
-                RunId(s.nextRun),
-                work.revision,
-                work.dataset,
-                JobState.Queued
-              )
-              val run = RunSummary(
-                status.run,
-                work.revision,
-                work.dataset,
-                RunState.Running(status.job)
-              )
+              val job               = JobId(s.jobs.size + 1)
+              val (run, runs, next) = purpose match
+                case Purpose.NewRun =>
+                  val id = RunId(s.nextRun)
+                  val r  = RunSummary(id, work.revision, work.dataset, RunState.Running(job))
+                  (id, s.runs :+ r, s.nextRun + 1)
+                // A recomputation serves an existing run, whose state it leaves alone.
+                case Purpose.Recompute(ref) => (ref.id, s.runs, s.nextRun)
+              val status = JobStatus(job, run, work.revision, work.dataset, JobState.Queued)
               (
                 s.copy(
                   jobs = s.jobs :+ status,
-                  runs = s.runs :+ run,
-                  nextRun = s.nextRun + 1,
-                  handles = s.handles.updated(status.job, handle)
+                  runs = runs,
+                  nextRun = next,
+                  handles = s.handles.updated(job, handle),
+                  purposes = s.purposes.updated(job, purpose)
                 ),
                 Right(status)
               )
         }
         .flatTap {
-          case Right(status) => launch(work, status, handle)
+          case Right(status) => launch(work, status, handle, purpose)
           case Left(_)       => F.unit
         }
     }
@@ -310,7 +311,8 @@ final class RealStudyBackend[F[_]] private (
   private def launch(
       work: RealPrepared,
       status: JobStatus,
-      handle: Deferred[F, F[Unit]]
+      handle: Deferred[F, F[Unit]],
+      purpose: Purpose
   ): F[Unit] =
     val (job, run) = (status.job, status.run)
     val submission = StudyExecution.submissionWithId((job, run), work.work)
@@ -331,6 +333,12 @@ final class RealStudyBackend[F[_]] private (
           .compile
           .drain
         val settle = running.outcome.attempt.flatMap { outcome =>
+          // A recomputed result is checked against the run's recorded
+          // archive digest, when it has one, outside the state's lock.
+          val mismatch = (purpose, outcome) match
+            case (Purpose.Recompute(ref), Right(RunOutcome.Completed(_, _, result))) =>
+              verify(ref, work, result)
+            case _ => None
           state.update { s =>
             s.live(job).fold(s) { carried =>
               val read = s.defects.get(job) match
@@ -339,12 +347,74 @@ final class RealStudyBackend[F[_]] private (
                   outcome.leftMap(e => RealExecution.Defect(s"eyes4s raised ${e.getMessage}"))
               val (end, runState, result) =
                 RealExecution.settle(job, run, read, carried, work.counts)
-              s.settle(job, run, end, runState, result)
+              (purpose, mismatch) match
+                case (Purpose.NewRun, _) =>
+                  val held = result.map(RealRun(work, _, RunOrigin.Computed))
+                  s.settle(job, run, end, Some(runState), held)
+                case (Purpose.Recompute(_), Some(refused)) =>
+                  val failed =
+                    JobOutcome.Failed(job, run, Vector(refused.diagnostic), end.progress)
+                  s.settle(job, run, failed, None, None).refuse(run, refused)
+                case (Purpose.Recompute(_), None) =>
+                  val origin = RunOrigin.Recomputed(StudioBuild.eyes4sBaseVersion)
+                  s.settle(job, run, end, None, result.map(RealRun(work, _, origin)))
             }
           }
         } >> release
         handle.complete(running.cancel) >> F.start(observe) >> F.start(settle).void
       }
+    }
+
+  // ------------------------------------------------------------------ results
+
+  /** Until protocol 1.11's typed digest mismatch, a recomputed result whose
+    * digest is not the one the run recorded is `Unavailable` naming the run
+    * and both digests.
+    */
+  private def verify(
+      ref: RunRef,
+      work: RealPrepared,
+      result: RealExecution.Result
+  ): Option[BackendError] =
+    ref.archive match
+      case CoreBinding.Unbound()     => None
+      case CoreBinding.Bound(digest) =>
+        val recorded = digest.sha256.hex
+        val made     = work.digest(result)
+        Option.when(made != Right(recorded))(
+          BackendError.Unavailable(
+            DiagnosticLocus.Artifact(
+              s"${ref.id.label} result: recorded sha256 $recorded, recomputed " +
+                made.fold(e => s"no digest (${e.message})", d => s"sha256 $d")
+            )
+          )
+        )
+
+  /** The eyes4s result of `run`. A completed run of the document that this
+    * backend did not compute is recomputed on first request (S3.7 slice 5,
+    * option (a)): its revision's prepared study runs as an ordinary job, whose
+    * progress the job surface shows, and until it completes the run is
+    * `Unavailable`. The result is kept, marked recomputed with the eyes4s
+    * release that produced it.
+    */
+  private[real] def held(run: RunId): F[Either[BackendError, RealRun]] =
+    state.get.flatMap { s =>
+      (s.results.get(run), s.refused.get(run), s.runs.find(_.run == run)) match
+        case (Some(done), _, _)    => F.pure(Right(done))
+        case (_, Some(refused), _) => F.pure(Left(refused))
+        case (_, _, None) => F.pure(Left(BackendError.UnknownRun(run, s.runs.map(_.run))))
+        case (_, _, Some(summary)) =>
+          val pending = Left(BackendError.Unavailable(DiagnosticLocus.Run(run)))
+          documentRuns.get(run).filter(_.state == RunLifecycle.Completed) match
+            case None => F.pure(Left(BackendError.NoResult(run, summary.state)))
+            case Some(_) if s.jobs.exists(j => j.run == run && finished(j.state).isEmpty) =>
+              F.pure(pending)
+            case Some(ref) =>
+              prepare(ref.analysis).flatMap {
+                case Left(e) => F.pure(Left(e))
+                // Another job running defers the recomputation to a later request.
+                case Right(work) => start(work, Purpose.Recompute(ref)).as(pending)
+              }
     }
 
   def result(run: RunId): F[Either[BackendError, ResultSummary]] = noRun(run)
@@ -401,7 +471,8 @@ object RealStudyBackend:
         sources,
         admitted,
         prepared,
-        state
+        state,
+        document.runs.map(r => r.id -> r).toMap
       )
     }
 
@@ -418,9 +489,11 @@ object RealStudyBackend:
       jobs: Vector[JobStatus],
       nextRun: Int,
       handles: Map[JobId, Deferred[F, F[Unit]]],
+      purposes: Map[JobId, Purpose],
       carried: Map[JobId, RealExecution.Carried],
       defects: Map[JobId, RealExecution.Defect],
-      results: Map[RunId, RealExecution.Result]
+      results: Map[RunId, RealRun],
+      refused: Map[RunId, BackendError]
   ):
     def job(id: JobId): Option[JobStatus] = jobs.find(_.job == id)
 
@@ -436,21 +509,26 @@ object RealStudyBackend:
         carried = carried.updated(id, counts)
       )
 
+    /** Settle a job; `state` is the run's new state, `None` to leave it. */
     def settle(
         id: JobId,
         run: RunId,
         outcome: JobOutcome,
-        state: RunState,
-        result: Option[RealExecution.Result]
+        state: Option[RunState],
+        result: Option[RealRun]
     ): Jobs[F] =
       copy(
         jobs =
           jobs.map(j => if j.job == id then j.copy(state = JobState.Finished(outcome)) else j),
-        runs = runs.map(r => if r.run == run then r.copy(state = state) else r),
+        runs = runs.map(r => if r.run == run then state.fold(r)(n => r.copy(state = n)) else r),
         carried = carried - id,
         defects = defects - id,
         results = result.fold(results)(results.updated(run, _))
       )
+
+    /** A run whose result is refused for good (a recorded digest mismatch). */
+    def refuse(run: RunId, error: BackendError): Jobs[F] =
+      copy(refused = refused.updated(run, error))
 
   object Jobs:
     /** The document's runs as this backend reports them. The shown run is
@@ -480,5 +558,29 @@ object RealStudyBackend:
         Map.empty,
         Map.empty,
         Map.empty,
+        Map.empty,
+        Map.empty,
         Map.empty
       )
+
+  /** Why a job runs: a new run, or an existing run of the document
+    * recomputed for its result.
+    */
+  enum Purpose derives CanEqual:
+    case NewRun
+    case Recompute(run: RunRef)
+
+  /** Where a held result came from. A recomputed result names the eyes4s
+    * release that produced it, so it never passes for the original
+    * computation (provenance shows it, slice 6).
+    */
+  enum RunOrigin derives CanEqual:
+    case Computed
+    case Recomputed(eyes4sVersion: String)
+
+  /** A run's eyes4s result with the prepared study that produced it. */
+  final case class RealRun(
+      prepared: RealPrepared,
+      result: RealExecution.Result,
+      origin: RunOrigin
+  )

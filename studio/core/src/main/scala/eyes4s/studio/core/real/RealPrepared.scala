@@ -17,7 +17,8 @@
 package eyes4s.studio.core.real
 
 import cats.syntax.all.*
-import eyes4s.plan.{StudyCounts, StudyPreview, TrialKey as CoreKey}
+import eyes4s.codec.{CodecError, StudyCodecs, StudyInputCodecs, StudyResultCodecs}
+import eyes4s.plan.{ComparisonMethod, StudyCounts, StudyPreview, TrialKey as CoreKey}
 import eyes4s.kernel.Unit2D
 import eyes4s.studio.core.backend.*
 import eyes4s.studio.core.document.Recipe
@@ -30,11 +31,21 @@ final class RealPrepared private (
     val revision: AnalysisRevision,
     val dataset: DatasetRevision,
     val plan: RealPlan.Plan,
+    val method: ComparisonMethod,
+    val admitted: AdmittedDataset,
     val work: RealPlan.Work,
     val preview: StudyPreview[CoreKey, Unit2D.Px],
     val counts: StudyCounts[CoreKey],
     val summary: PreviewSummary
-)
+):
+  /** eyes4s's codecs for this study: the trial-keyed route of its method. */
+  def plans   = StudyCodecs.trialSimilarity[Unit2D.Px](method)
+  def inputs  = StudyInputCodecs.trial[Unit2D.Px]
+  def results = StudyResultCodecs.trialRegistered[Unit2D.Px](method)
+
+  /** The canonical digest of a result of this study, as eyes4s encodes it. */
+  def digest(result: RealExecution.Result): Either[CodecError, String] =
+    results.codec.digest(result).map(_.sha256.hex)
 
 object RealPrepared:
 
@@ -47,7 +58,8 @@ object RealPrepared:
   ): Either[BackendError, RealPrepared] =
     val refused = BackendError.Unavailable(DiagnosticLocus.Revision(revision))
     for
-      plan    <- RealPlan.plan(revision, recipe, admitted.screen, admitted.input)
+      planned <- RealPlan.plan(revision, recipe, admitted.screen, admitted.input)
+      (plan, method) = planned
       work    <- plan.prepare(admitted.input).leftMap(_ => refused)
       counts  <- work.counts.leftMap(_ => refused)
       preview <- work.preview(counts).leftMap(_ => refused)
@@ -57,6 +69,8 @@ object RealPrepared:
         revision,
         dataset,
         plan,
+        method,
+        admitted,
         work,
         preview,
         counts,
