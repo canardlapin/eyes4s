@@ -67,7 +67,9 @@ enum InputKind derives CanEqual, Codec.AsObject:
   * A withheld input (see [[SharingOptions]]) keeps its kind, digest and
   * length but has no name and no path: its original file name, which may
   * identify a participant, is omitted rather than hashed, because a hash of
-  * a guessable name can be reversed by trying the guesses.
+  * a guessable name can be reversed by trying the guesses. Two withheld
+  * inputs with the same bytes are therefore two equal entries, one for
+  * each input.
   */
 final case class InputEntry private (
     kind: InputKind,
@@ -280,7 +282,11 @@ object ProjectManifest:
         .find(e => e.stored != sharing.includes(e.kind))
         .map(BundleError.InputNaming(_, sharing))
         .toLeft(())
-      _ <- inputs.diff(inputs.distinct).headOption.map(BundleError.DuplicateInput(_)).toLeft(())
+      // A stored input is listed once. Withheld inputs carry no name, so two
+      // inputs with the same bytes (a duplicated stimulus file) are two equal
+      // entries: each stands for one input (bead bd-01M44PBFX4Y94X9DSS56T6Q62Z).
+      stored = inputs.filter(_.stored)
+      _ <- stored.diff(stored.distinct).headOption.map(BundleError.DuplicateInput(_)).toLeft(())
     yield new ProjectManifest(
       document,
       science,

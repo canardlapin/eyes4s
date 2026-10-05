@@ -522,6 +522,54 @@ class ProjectBundleSuite extends CatsEffectSuite:
       assert(after.contains(InputStatus.Missing(entries(3))), after)
   }
 
+  test("two stimulus images with identical bytes share without images: two withheld entries") {
+    val noImages = SharingOptions(Inclusion.Included, Inclusion.Withheld)
+    for
+      store   <- InMemoryProjectStore.create[IO]
+      lock    <- ok(store.acquire(me))
+      entries <- Vector(
+        (InputKind.Source(SourceRole.Fixations), "fixations.csv", fixations),
+        (InputKind.Source(SourceRole.Trials), "trials.csv", trials),
+        (InputKind.StimulusImage, "scene_01.png", image),
+        (InputKind.StimulusImage, "scene_01_copy.png", image)
+      ).traverse((k, n, b) => ok(ProjectBundle.importInput(store, lock, k, n, b)))
+      encoded = right(ProjectBundle.encode(shared, SharingOptions.complete, entries))
+      _      <- ok(ProjectBundle.save(store, lock, None, encoded))
+      target <- InMemoryProjectStore.create[IO]
+      lock2  <- ok(target.acquire(me))
+      _      <- ok(ProjectBundle.share(store, target, lock2, noImages))
+      opened <- ok(ProjectBundle.open(target))
+      status <- ProjectBundle.checkInputs(target, opened.manifest)
+      text   <- ok(target.readManifest).map(b => String(Array.from(b), "UTF-8"))
+    yield
+      val withheld = entries(2).withheld
+      assertEquals(entries(3).withheld, withheld)
+      assertEquals(opened.document, shared)
+      assertEquals(opened.manifest.inputs.count(_ == withheld), 2)
+      assertEquals(status.count(_ == InputStatus.Withheld(withheld)), 2)
+      assert(!text.contains("scene_01"), text)
+  }
+
+  test("a stored input listed twice is still refused") {
+    def stored(kind: InputKind, name: String, bytes: IArray[Byte]) =
+      right(InputEntry.of(kind, name, ByteDigest.sha256(bytes), bytes.length.toLong))
+    val sources = Vector(
+      stored(InputKind.Source(SourceRole.Fixations), "fixations.csv", fixations),
+      stored(InputKind.Source(SourceRole.Trials), "trials.csv", trials)
+    )
+    val picture = stored(InputKind.StimulusImage, "scene_01.png", image)
+    assert(ProjectBundle.encode(shared, SharingOptions.complete, sources :+ picture).isRight)
+    val twice =
+      ProjectBundle.encode(shared, SharingOptions.complete, sources :+ picture :+ picture)
+    assert(
+      twice.left.exists {
+        case BundleError.DuplicateInput(_) | BundleError.DuplicatePath(_) => true
+        case _                                                            => false
+      },
+      twice.map(_ => ()).toString
+    )
+  }
+
   test(
     "sharing withholds stimulus images explicitly: same science, image listed unnamed, not copied"
   ) {
