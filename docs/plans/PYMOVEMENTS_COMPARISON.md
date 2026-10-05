@@ -1,6 +1,6 @@
 # Eyes4s / pymovements comparison contract
 
-Protocol version 1, source review dated 2026-09-27.
+Protocol version 1, source inventory refreshed on 2026-10-05; comparator review dated 2026-09-27.
 Epic: `bd-01M3HYEG72WCCNE6P84PWKBGCV`.
 Inventory slice: `bd-01M3HYF5BJ3CXAXG70BS13ZG2W` (PM1.1).
 
@@ -31,7 +31,7 @@ install or execute it. The [stable documentation](https://pymovements.readthedoc
 helps navigation but is not an immutable evidence pin.
 
 The eyes4s source snapshot is
-`fa6fa0ec48c236b6e70e49bfc6809c7bcc802102`. The source hashes are checked against
+`cba9edd54e48275e4db9aec8d8f09e93636e46c5`. The source hashes are checked against
 the local checkout. They must be refreshed by reviewing changed entry points,
 not by blindly rehashing to make a check pass. No absence claim here is a proof
 that no private or experimental implementation exists elsewhere.
@@ -177,15 +177,15 @@ and the exact remaining gap for each row live in the manifest.
 | `reading` — Word-level reading measures | PM1, PM5 | partial | pending / pending / pending | `bd-01M3J2FCPZX828NSHW4Q8TZVV2` |
 | `aoi` — AOI assignment, dwell and transitions | PM1, PM5 | present | pending / pending / pending | `bd-01M02N4DQ4M2PGVY2Y6DK48JT3`<br>`bd-01M3HYF5KM139C8NXG35NXRYEP` |
 | `study` — Typed analyses, contrasts and provenance | PM2, PM5 | present | pending / pending / pending | `bd-01M3HYF5KM139C8NXG35NXRYEP` |
-| `distributions` — Density, bandwidth and multiscale measures | PM1, PM3, PM5 | present | pending / pending / pending | `bd-01M214CX2CTADNR6Q9D032Y1FB`<br>`bd-01M3HYF5VMV818PJMJDKMJBK8P` |
-| `comparison` — Scanpath and distribution comparison | PM1, PM3, PM5 | present | pending / pending / pending | `bd-01M214CX2CTADNR6Q9D032Y1FB`<br>`bd-01M3HYF5VMV818PJMJDKMJBK8P` |
+| `distributions` — Density, bandwidth and multiscale measures | PM1, PM3, PM5 | present | pending / pending / pending | `bd-01M3HYF5VMV818PJMJDKMJBK8P`<br>`bd-01M3HYF41AZGMBR922GN3H6VY4` |
+| `comparison` — Scanpath and distribution comparison | PM1, PM3, PM5 | present | pending / pending / pending | `bd-01M3HYF5VMV818PJMJDKMJBK8P`<br>`bd-01M3HYF41AZGMBR922GN3H6VY4` |
 | `first-analysis` — Install-to-first-result research journey | PM2 | partial | pending / pending / pending | `bd-01M3HYF5KM139C8NXG35NXRYEP` |
 | `persistence` — Saved analysis and replay | PM2, PM1 | present | pending / pending / pending | `bd-01M3HYF5KM139C8NXG35NXRYEP`<br>`bd-01M3DPFHY9YW5BPSJQ8VBBXHVN` |
 | `studio` — Real Studio analysis and persistence | PM1, PM2 | partial | pending / pending / pending | `bd-01M3DPFHY9YW5BPSJQ8VBBXHVN`<br>`bd-01M3DPG3KTRQNN6HKWRHYQTT0C` |
-| `scanpath-heatmap` — Scanpath and heatmap figures | PM4 | partial | pending / pending / pending | `bd-01M3HYF6KTBTJDGSG8R300DVJC`<br>`bd-01M3DPFX34V6NESFCA1EXX2EQ4` |
+| `scanpath-heatmap` — Scanpath and heatmap figures | PM4 | partial | pending / pending / pending | `bd-01M3HYF6KTBTJDGSG8R300DVJC`<br>`bd-01M3HYF4TV51MQA36X1QFYG9WA` |
 | `trace-events` — Trace and event-overlay figures | PM4 | absent | pending / pending / pending | `bd-01M3J2FJTQFV6RF1ZVJZVW34DM` |
 | `reading-qc-main-sequence` — Reading, QC and main-sequence figures | PM4 | absent | pending / pending / pending | `bd-01M3HYF6KTBTJDGSG8R300DVJC`<br>`bd-01M3J2FJTQFV6RF1ZVJZVW34DM` |
-| `publication` — Publication export and interactive task quality | PM4, PM2 | partial | pending / pending / pending | `bd-01M3DPFX34V6NESFCA1EXX2EQ4`<br>`bd-01M3HYF6KTBTJDGSG8R300DVJC` |
+| `publication` — Publication export and interactive task quality | PM4, PM2 | partial | pending / pending / pending | `bd-01M3HYF6KTBTJDGSG8R300DVJC`<br>`bd-01M3HYF4TV51MQA36X1QFYG9WA` |
 | `performance` — Paired CPU and memory performance | PM3 | partial | pending / pending / pending | `bd-01M3HYF5VMV818PJMJDKMJBK8P`<br>`bd-01M3HYF63RDKD2VSQ9PFAXEKAN` |
 | `responsiveness` — Studio latency and bounded memory | PM3, PM4 | partial | pending / pending / pending | `bd-01M3DPG25V0DGFR2BPANBDWMQF`<br>`bd-01M3HYF5VMV818PJMJDKMJBK8P` |
 | `empirical` — Independent scientific qualification | PM5 | partial | pending / pending / pending | `bd-01M3HYF6VRDVEJ9C7H1PRYAJ3E`<br>`bd-01M02N4CCS9425KPD4S0A0S9HX` |

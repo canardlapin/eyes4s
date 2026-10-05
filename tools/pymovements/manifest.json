@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
   "epic": "bd-01M3HYEG72WCCNE6P84PWKBGCV",
-  "snapshot_date": "2026-09-27",
-  "eyes4s_commit": "fa6fa0ec48c236b6e70e49bfc6809c7bcc802102",
+  "snapshot_date": "2026-10-05",
+  "eyes4s_commit": "cba9edd54e48275e4db9aec8d8f09e93636e46c5",
   "protocol": "docs/plans/PYMOVEMENTS_COMPARISON.md",
   "comparator": {
     "package": "pymovements",
@@ -78,7 +78,7 @@
       "repository": "eyes4s",
       "kind": "api",
       "path": "io/src/main/scala/eyes4s/io/Delimited.scala",
-      "sha256": "59519265fa11aa5dc152fad34df97cd11ef7b40fa929fda9b83c3590302108b2",
+      "sha256": "c68cdaa986d5b3f2620c7fa40bbc7495191625c73445326233bb59dd723a2532",
       "anchors": [
         "object Delimited:",
         "object DelimitedSchema:",
@@ -98,7 +98,7 @@
       "repository": "eyes4s",
       "kind": "api",
       "path": "io/src/main/scala/eyes4s/io/PsychologyWorkflow.scala",
-      "sha256": "52e0be6ec3905e8ec39431635b35db6b1a8b2166de619bdeaace652e67d54cf7",
+      "sha256": "95fe80d5fc5f8e67096068b2c7ad41dd0d9076ef508c0dda6b4f32fb932f47bd",
       "anchors": [
         "object PsychologyWorkflow:",
         "def run("
@@ -108,7 +108,7 @@
       "repository": "eyes4s",
       "kind": "api",
       "path": "io/src/main/scala/eyes4s/io/BaselineExports.scala",
-      "sha256": "db748fad2b8f7ee96178d42b1237158574b2b4e1d5eb980540fd08c23054040e",
+      "sha256": "f1a2a7e2f45190b66f9de0d9a83a871ee2503d9beb004f0ddce0f88d4e5c18ce",
       "anchors": [
         "object ResultExports:"
       ]
@@ -148,7 +148,7 @@
       "repository": "eyes4s",
       "kind": "api",
       "path": "aoi/src/main/scala/eyes4s/aoi/Aoi.scala",
-      "sha256": "b93c2070884fce8aa511191d5616b68737f2b63ba1e443493077fea6a7f73f42",
+      "sha256": "b4fc2d2196e1b3568731601e82af28110337cde4cb64779eab8a7b11360fb930",
       "anchors": [
         "object AoiSet:",
         "def assign("
@@ -158,7 +158,7 @@
       "repository": "eyes4s",
       "kind": "api",
       "path": "plan/src/main/scala/eyes4s/plan/StudyPlan.scala",
-      "sha256": "267a8f05a7e7ad0dc0a70b6fa6f1fd97fa9d61e70dfcee35a888b6248083e202",
+      "sha256": "1a2995f6721addd08aa0ac719a089a0cabbc0ca87ce80c84df829f494ffb5644",
       "anchors": [
         "object StudyPlan:"
       ]
@@ -167,7 +167,7 @@
       "repository": "eyes4s",
       "kind": "api",
       "path": "plan/src/main/scala/eyes4s/plan/RecordingPlan.scala",
-      "sha256": "1f099e0781745594cae8edd81f93288f7cadac4576224fbd0bbe8cdd3b93feb0",
+      "sha256": "52cb53270981d2f0a5bbdf1c3d1afe36ded69d2baa053e5c4d51ebb87c41d82f",
       "anchors": [
         "object RecordingPlan:"
       ]
@@ -204,7 +204,7 @@
       "repository": "eyes4s",
       "kind": "api",
       "path": "codec/src/main/scala/eyes4s/codec/StudyCodec.scala",
-      "sha256": "fc422dea25b8634b54e83d3cf94eb69ffe6c26412054be9dc6f5c5395d80f48f",
+      "sha256": "4ee75a251b2c196a23534b6c06428451a5d6366bded75eb7f3fca9883a514664",
       "anchors": [
         "final class StudyCodec["
       ]
@@ -222,7 +222,7 @@
       "repository": "eyes4s",
       "kind": "test",
       "path": "io/src/test/scala/eyes4s/io/DelimitedSuite.scala",
-      "sha256": "4151c386053ad984e56593c934650ea30c02d63633016a674abcb677829cd5a7",
+      "sha256": "33661f4077a23095328b852e33fedf7ef41e07a049bbd3dfc91ffcf458e85f7e",
       "anchors": [
         "class DelimitedSuite"
       ]
@@ -231,7 +231,7 @@
       "repository": "eyes4s",
       "kind": "test",
       "path": "io/src/test/scala/eyes4s/io/PsychologyWorkflowSuite.scala",
-      "sha256": "1e8f5874fa252ff8b82db1bc443690a1cc994bea9b689bc84c16bc5324a4abce",
+      "sha256": "21083bc94e35fa9ecd75d94115d228110ba1dbff26a953f97bbe6c9b7c2e055a",
       "anchors": [
         "class PsychologyWorkflowSuite"
       ]
@@ -312,7 +312,7 @@
       "repository": "eyes4s",
       "kind": "api",
       "path": "studio/viz/src/main/scala/eyes4s/studio/viz/trial/TrialScene.scala",
-      "sha256": "feda617c9cd245dc70d3e894f7c0572e81ebb8c4ec9fcff283ddde0a316b2444",
+      "sha256": "78d8185162bc02e34fef858b774622d01d4a742c8e8d7104c81a6e0b197d8c5e",
       "anchors": [
         "object TrialScene:"
       ]
@@ -321,7 +321,7 @@
       "repository": "eyes4s",
       "kind": "test",
       "path": "studio/viz/src/test/scala/eyes4s/studio/viz/trial/TrialSceneSuite.scala",
-      "sha256": "25b3d4fd2f5b460d7af05e6778740fd573262563fc06822bcb68c0a5e1593fae",
+      "sha256": "ba3418fb9c54930adc4e4e47b56a2aed5eb58ed085c736b72f5a43ac64f98ab9",
       "anchors": [
         "class TrialSceneSuite"
       ]
@@ -368,7 +368,7 @@
       "repository": "eyes4s",
       "kind": "test",
       "path": "tools/study-consumer/verify.py",
-      "sha256": "e0d6ac3ab0e665a2f8bcffb973d3f333767ba158090f8de8e29eeaad4576eeae",
+      "sha256": "49c4a71e9a2101a33c34901c0e4a22f1a96a50940419c97ee7d0d7b58ddac4c3",
       "anchors": [
         "def main("
       ]
@@ -377,7 +377,7 @@
       "repository": "eyes4s",
       "kind": "historical",
       "path": "docs/EYESIM_CAPABILITIES.md",
-      "sha256": "6de89b0ff7b584421771286ee3c1fd680ab24d5c5e577af664b66489cd42b4b3",
+      "sha256": "cfec28eb0fc7319961c74243f9ccec92ce77fb17b8a321e67c2e734970cddf7c",
       "anchors": [
         "eyesim"
       ]
@@ -1439,8 +1439,8 @@
       "gate": "open",
       "gap": "Qualify consumer density workflow and independent science/performance evidence.",
       "owners": [
-        "bd-01M214CX2CTADNR6Q9D032Y1FB",
-        "bd-01M3HYF5VMV818PJMJDKMJBK8P"
+        "bd-01M3HYF5VMV818PJMJDKMJBK8P",
+        "bd-01M3HYF41AZGMBR922GN3H6VY4"
       ]
     },
     {
@@ -1492,8 +1492,8 @@
       "gate": "open",
       "gap": "Complete existing baseline comparison qualification and absolute performance budgets.",
       "owners": [
-        "bd-01M214CX2CTADNR6Q9D032Y1FB",
-        "bd-01M3HYF5VMV818PJMJDKMJBK8P"
+        "bd-01M3HYF5VMV818PJMJDKMJBK8P",
+        "bd-01M3HYF41AZGMBR922GN3H6VY4"
       ]
     },
     {
@@ -1708,7 +1708,7 @@
       "gap": "Generate actual paired renders and complete standalone/export integration; score independently.",
       "owners": [
         "bd-01M3HYF6KTBTJDGSG8R300DVJC",
-        "bd-01M3DPFX34V6NESFCA1EXX2EQ4"
+        "bd-01M3HYF4TV51MQA36X1QFYG9WA"
       ]
     },
     {
@@ -1858,8 +1858,8 @@
       "gate": "open",
       "gap": "Complete existing export owner and frozen independent review rubric.",
       "owners": [
-        "bd-01M3DPFX34V6NESFCA1EXX2EQ4",
-        "bd-01M3HYF6KTBTJDGSG8R300DVJC"
+        "bd-01M3HYF6KTBTJDGSG8R300DVJC",
+        "bd-01M3HYF4TV51MQA36X1QFYG9WA"
       ]
     },
     {
