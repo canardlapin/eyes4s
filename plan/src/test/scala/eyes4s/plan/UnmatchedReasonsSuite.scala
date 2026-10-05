@@ -213,6 +213,40 @@ class UnmatchedReasonsSuite extends munit.FunSuite:
     assertEquals(selected.reason(again.key), None)
   }
 
+  test("under Select(At(n)) only occurrence n is searched: a dropped n is not admitted") {
+    // Studied twice: occurrence 1 admitted, occurrence 2 absent; the probe
+    // selects occurrence 2.
+    val first   = Declared("study", "s6", "kite", TrialDisposition.Admitted, Vector(12), 1)
+    val second  = Declared("study", "s7", "kite", TrialDisposition.Absent, Vector.empty, 2)
+    val probe   = Declared("recognition", "r8", "kite", TrialDisposition.Admitted, Vector(13))
+    val ledger4 = inventory(declared ++ Vector(first, second, probe))
+    val input4  = StudyInput(
+      Trials(input.trials.rows ++ Vector(first, probe).map(d => Trial(d.key, (), path(d.key))))
+    )
+    val at2 = StudyPairing(
+      MatchedReferences.Select(OccurrenceChoice.At(get(TrialOccurrence.of(2)))),
+      ControlReferences.SameSelection,
+      UnmatchedFocalPolicy.ReportNoMatch
+    )
+    val reasons = get(get(plan(input4, at2).prepare(input4)).unmatchedReasons(ledger4))
+    assertEquals(
+      reasons.reason(probe.key),
+      Some(
+        UnmatchedKind.ReferenceNotAdmitted(
+          Vector(DeclaredReference(second.id, TrialDisposition.Absent))
+        )
+      )
+    )
+    // Selecting the first occurrence, the admitted one matches.
+    val at1 = at2.copy(matched =
+      MatchedReferences.Select(OccurrenceChoice.At(get(TrialOccurrence.of(1))))
+    )
+    assertEquals(
+      get(get(plan(input4, at1).prepare(input4)).unmatchedReasons(ledger4)).reason(probe.key),
+      None
+    )
+  }
+
   test("every unmatched focal trial has exactly one reason, and the counts partition them") {
     val work    = get(plan(input, StudyPairing.default).prepare(input))
     val reasons = get(work.unmatchedReasons(ledger))

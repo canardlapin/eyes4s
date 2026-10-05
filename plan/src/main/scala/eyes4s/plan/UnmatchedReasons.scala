@@ -25,7 +25,8 @@ final case class DeclaredReference(trial: TrialIdentity, disposition: TrialDispo
 /** Why a focal trial has no matched reference, judged against the trial
   * inventory: the design as declared, before admission (owner decision on
   * bead S0.7b; review of S7.1). The pairing key is the plan's: participant
-  * and item, and the occurrence under [[MatchedReferences.SameOccurrence]].
+  * and item, and the occurrence under [[MatchedReferences.SameOccurrence]]
+  * (the focal trial's own) and under `Select(At(n))` (occurrence n).
   */
 enum UnmatchedKind derives CanEqual:
   /** No inventory was given, so the reason is not judged. */
@@ -86,6 +87,12 @@ object UnmatchedReasons:
   ): UnmatchedReasons[K] =
     val sameOccurrence =
       pairing.matched == MatchedReferences.SameOccurrence && layout.occurrence.isDefined
+    // Select(At(n)) uses only occurrence n of each item; First and Last
+    // choose among the admitted trials, so any declared occurrence counts.
+    val selected = pairing.matched match
+      case MatchedReferences.Select(OccurrenceChoice.At(n)) if layout.occurrence.isDefined =>
+        Some(n.value)
+      case _ => None
     // The inventory's reference-phase trials by participant and item.
     val declared = inventory.trials
       .filter(_.identity.phase == referencePhase)
@@ -96,6 +103,7 @@ object UnmatchedReasons:
       val references = declared
         .getOrElse((layout.participant(key), layout.stimulus(key)), Vector.empty)
         .filter(t => !sameOccurrence || occurrence.contains(t.identity.occurrence.value))
+        .filter(t => selected.forall(_ == t.identity.occurrence.value))
       val admitted = references.filter(_.disposition == TrialDisposition.Admitted)
       key -> (
         if references.isEmpty then UnmatchedKind.NoReferenceInDesign

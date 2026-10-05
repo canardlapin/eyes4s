@@ -284,7 +284,8 @@ Why a focal trial has no match is judged against the trial inventory, the design
 before admission. `PreparedStudy.unmatchedReasons(inventory)`, and `StudyPlan.preflight` given
 `inventory = Some(ledger)`, give each unmatched focal trial an `UnmatchedKind`:
 `NoReferenceInDesign` when the inventory declares no reference-phase trial with its participant and
-item (and occurrence under `SameOccurrence`), as for a recognition lure or a novel probe;
+item (and occurrence: its own under `SameOccurrence`, n under `Select(At(n))`), as for a recognition
+lure or a novel probe;
 `ReferenceNotAdmitted` with the declared trials and their dispositions when admission dropped them;
 or `ReferenceNotPairable` when one was admitted but the pairing could not use it. Without an
 inventory the kind is `Undetermined`. `UnmatchedReasons.byDesign` is the by-design count.
