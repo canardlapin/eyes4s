@@ -345,11 +345,42 @@ object StudioDocument:
     yield full
   }
 
+  /** The presets a version-4 document knows: every one before
+    * `PerceptionImagery` (S7.1), which only version 5 can name.
+    */
+  private def presetBeforeV5(preset: Preset): Boolean = preset != Preset.PerceptionImagery
+
+  /** Whether a version-4 document can hold `document`: no analysis names a
+    * preset added in version 5.
+    */
+  private def expressedByV4(document: StudioDocument): Boolean =
+    document.analyses.forall(a => presetBeforeV5(a.studio.preset))
+
+  /** A version-1 to -4 writer and reader: an enum value cannot be dropped as
+    * a member can, so a document naming a version-5 preset is refused both
+    * ways rather than written or read under a version that cannot name it.
+    */
+  private def beforeV5(
+      write: StudioDocument => Json
+  ): StudioDocument => Either[CodecError, Json] =
+    d =>
+      if expressedByV4(d) then Right(write(d))
+      else Left(CodecError.Unsupported("studio document", "a preset needs version 5"))
+
+  private def readBeforeV5(
+      read: Json => Either[CodecError, StudioDocument]
+  ): Json => Either[CodecError, StudioDocument] =
+    json =>
+      read(json).filterOrElse(
+        expressedByV4,
+        CodecError.Unsupported("studio document", "a preset needs version 5")
+      )
+
   /** Whether a version-3 document can hold `document`: version 3 records
     * neither display columns nor repaired assets (S5.7).
     */
   private def expressedByV3(document: StudioDocument): Boolean =
-    document.relinks.isEmpty &&
+    expressedByV4(document) && document.relinks.isEmpty &&
       document.datasets.forall(_.inventory.forall(_.displays.isEmpty))
 
   /** Whether a version-2 document can hold `document`: version 2 records no
@@ -418,20 +449,29 @@ object StudioDocument:
     * Version 4 (S5.7) adds a trial inventory's display columns
     * (`inventory.displays`) and the document's repaired display assets
     * (`relinks`), each written only when present, in the same way.
+    *
+    * Version 5 (S7.1) adds the `PerceptionImagery` preset. A document whose
+    * analyses name none is still written as version 4 or earlier, byte for
+    * byte, and the upcast is the identity. One that names it is version 5,
+    * which an earlier reader refuses; earlier writers and readers refuse it
+    * too, since a preset cannot be dropped.
     */
   val ladder: Either[CodecError, SchemaLadder[StudioDocument]] =
     StudioSchemaIds.forCodec.map { ids =>
       SchemaLadder
-        .of[StudioDocument]("studio document", ids.document)(d =>
-          Right(CanonicalJson(withoutInventory(d.asJson)))
-        )(json => read(withoutInventory(json)))
-        .next(expressedByV1, identity)(d => Right(CanonicalJson(withoutPolicy(d.asJson))))(
-          json => read(withoutPolicy(json))
+        .of[StudioDocument]("studio document", ids.document)(
+          beforeV5(d => CanonicalJson(withoutInventory(d.asJson)))
+        )(readBeforeV5(json => read(withoutInventory(json))))
+        .next(expressedByV1, identity)(beforeV5(d => CanonicalJson(withoutPolicy(d.asJson))))(
+          readBeforeV5(json => read(withoutPolicy(json)))
         )
-        .next(expressedByV2, identity)(d => Right(CanonicalJson(withoutAssets(d.asJson))))(
-          json => read(withoutAssets(json))
+        .next(expressedByV2, identity)(beforeV5(d => CanonicalJson(withoutAssets(d.asJson))))(
+          readBeforeV5(json => read(withoutAssets(json)))
         )
-        .next(expressedByV3, identity)(d => Right(CanonicalJson(d.asJson)))(read)
+        .next(expressedByV3, identity)(beforeV5(d => CanonicalJson(d.asJson)))(
+          readBeforeV5(read)
+        )
+        .next(expressedByV4, identity)(d => Right(CanonicalJson(d.asJson)))(read)
     }
 
   /** The versioned, canonical document codec. */
