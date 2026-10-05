@@ -887,8 +887,9 @@ final class StudyPlan[K, U <: Unit2D, P, S, D] private (
   /** Typed availability report; see [[Preflight.study]]. */
   def preflight(
       available: Option[StudyInput[K, U]],
-      budget: PairScheduleBudget = PairScheduleBudget.default
-  ): StudyReport[K, U] = Preflight.study(this, available, budget)
+      budget: PairScheduleBudget = PairScheduleBudget.default,
+      inventory: Option[InventoryLedger] = None
+  ): StudyReport[K, U] = Preflight.study(this, available, budget, inventory)
 
   /** Fields in the version-1 order; a later field appears only when the plan
     * departs from the version-1 meaning, so an unchanged plan keeps its

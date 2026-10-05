@@ -61,7 +61,7 @@ class PreviewPagingSuite extends CatsEffectSuite:
       val ready = rest
         .collectFirst { case PreviewEvent.Ready(value) => value }
         .getOrElse(fail("not ready"))
-      assertEquals(ready.candidates.candidatePairsPerScale, 230400L)
+      assertEquals(ready.candidates.candidatePairsPerScale, 219486L)
       assertEquals(ready.counts, right(PreviewCounts.of(8969L, 44845L, 457, 9, 0)))
       assertEquals(
         rest.collect { case PreviewEvent.Counting(_, p) => p }.last,
@@ -311,8 +311,8 @@ class PreviewPagingSuite extends CatsEffectSuite:
 
   test("a ready receipt's query counts partition the requested queries") {
     val stamp      = ProtocolSamples.previewReady.stamp
-    val candidates = right(PreviewCandidates.of(480, 480, 24, 230400L, 480, 14, None))
-    val lures      = right(PreviewCandidates.of(480, 480, 24, 230400L, 480, 14, Some(3)))
+    val candidates = right(PreviewCandidates.of(466, 471, 24, 219486L, 480, 14, None))
+    val lures      = right(PreviewCandidates.of(466, 471, 24, 219486L, 480, 14, Some(3)))
     val counts     = right(PreviewCounts.of(8969L, 44845L, 457, 9, 0))
     assert(PreviewReady.of(PreviewId(1L), stamp, candidates, counts, Vector.empty).isRight)
     assertEquals(

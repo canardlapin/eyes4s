@@ -672,7 +672,7 @@ object DiagnosticSamples:
       StudyFinding.Refused(PlanError.EmptyScales(0)),
       StudyFinding.FrameMismatch(k1, frameError),
       StudyFinding.DuplicateTrial(k1, PairingSide.Focal, Vector(0, 2)),
-      StudyFinding.UnmatchedFocal(k1),
+      StudyFinding.UnmatchedFocal(k1, UnmatchedKind.Undetermined),
       StudyFinding.UncontrolledFocal(k1),
       StudyFinding.OffWindowFixations(k1, tally, OffWindowPolicy.FailTrial),
       StudyFinding.NoFixationInWindow(k1, tally),
@@ -710,7 +710,7 @@ object DiagnosticSamples:
       TemporalFinding.MissingArtifact(temporalRef),
       TemporalFinding.ArtifactMismatch(temporalRef, temporalRef2),
       TemporalFinding.Refused(TemporalStudyError.WindowNames(Vector.empty)),
-      TemporalFinding.Study(StudyFinding.UnmatchedFocal(k1)),
+      TemporalFinding.Study(StudyFinding.UnmatchedFocal(k1, UnmatchedKind.Undetermined)),
       TemporalFinding.RepetitionPlan("rep", PlanError.EmptyScales(0)),
       TemporalFinding.Repetition("rep", StudyFinding.UncontrolledFocal(k1)),
       TemporalFinding.MissingEpoch(k1),
@@ -884,7 +884,9 @@ object DiagnosticSamples:
       AnalysisFinding.ArtifactMismatch(studyRef, studyRef2),
       AnalysisFinding.refused[PlanError, StudyKey](PlanError.MissingAngularScale(1)),
       AnalysisFinding.DataDependent(
-        Diagnostic.of(StudyFinding.UnmatchedFocal[StudyKey, Px](k2)),
+        Diagnostic.of(
+          StudyFinding.UnmatchedFocal[StudyKey, Px](k2, UnmatchedKind.Undetermined)
+        ),
         NonEmptyVector.one(k1)
       )
     ),

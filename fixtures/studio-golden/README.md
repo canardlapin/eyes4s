@@ -8,7 +8,10 @@ recomputes the counts below from these files.
 The design (participants, items, encoding order, quarantined and absent trials,
 retrieval responses) is the mock study of `docs/studio/fixture/make_fixture.py`,
 summarised in `docs/studio/fixture/FIXTURE.md`. The scores are not the mock's:
-real scores are computed by eyes4s from these files (ticket S0.7b).
+real scores are computed by eyes4s from these files (ticket S0.7b) and frozen in
+`SCORES.json`, which this script does not write. `sbt "ioJVM/Test/runMain
+eyes4s.io.StudioScoresMain"` regenerates it; `StudioFixtureRealSuite` checks that
+it regenerates byte for byte and that every FIXTURE.md count reproduces.
 
 ## Counts
 

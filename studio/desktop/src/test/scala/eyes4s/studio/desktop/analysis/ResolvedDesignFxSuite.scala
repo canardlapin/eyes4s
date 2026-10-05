@@ -74,7 +74,7 @@ class ResolvedDesignFxSuite extends ShellFxSuite:
     assertEquals(
       runOnFx(view.noteLabels.map(_.getText)),
       Vector(
-        "Candidate pairs before paging 230,400 per scale (480 queries × 480 references, " +
+        "Candidate pairs before paging 219,486 per scale (466 queries × 471 references, " +
           "Cartesian · eyes4s candidatePairCount).",
         "Exact eligible after paging 8,969 per scale.",
         "Preview and run use this same prepared design.",

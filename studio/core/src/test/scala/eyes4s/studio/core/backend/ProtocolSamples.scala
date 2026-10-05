@@ -83,7 +83,7 @@ object ProtocolSamples:
     PreviewReady.of(
       PreviewId(1L),
       PreviewStamp.fake(AnalysisRevision(5), DatasetRevision(3)),
-      right(PreviewCandidates.of(480, 480, 24, 230400L, 480, 14, None)),
+      right(PreviewCandidates.of(466, 471, 24, 219486L, 480, 14, None)),
       right(PreviewCounts.of(8969L, 44845L, 457, 9, 0)),
       Vector(diagnostic)
     )
@@ -528,11 +528,11 @@ object ProtocolSamples:
         AnalysisRevision(5),
         DatasetRevision(3),
         Vector("8°"),
-        480,
-        480,
+        466,
+        471,
         480,
         457,
-        230400L,
+        219486L,
         8969L,
         44845L
       )

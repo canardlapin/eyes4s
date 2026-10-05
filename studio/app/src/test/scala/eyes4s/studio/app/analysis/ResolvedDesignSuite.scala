@@ -41,7 +41,7 @@ class ResolvedDesignSuite extends munit.FunSuite:
   private val stamp: RunStamp = AppModel.stampOf(model.document, rev5, r3)
   private val id              = PreviewId(1L)
 
-  private val candidates = ok(PreviewCandidates.of(480, 480, 24, 230400L, 480, 14, None))
+  private val candidates = ok(PreviewCandidates.of(466, 471, 24, 219486L, 480, 14, None))
   private val counts     = ok(PreviewCounts.of(8969L, 44845L, 457, 9, 0))
   private val ready      = ok(PreviewReady.of(id, stamp, candidates, counts, Vector.empty))
 
@@ -179,7 +179,7 @@ class ResolvedDesignSuite extends munit.FunSuite:
     assertEquals(
       vm.notes.map(_.text),
       Vector(
-        "Candidate pairs before paging 230,400 per scale (480 queries × 480 references, " +
+        "Candidate pairs before paging 219,486 per scale (466 queries × 471 references, " +
           "Cartesian · eyes4s candidatePairCount).",
         "While paging, counts read counting eligible pairs… 18 of 24 participants and the " +
           "run stays disabled.",
@@ -223,7 +223,7 @@ class ResolvedDesignSuite extends munit.FunSuite:
       vm.notes.map(n => (n.text, n.refs)),
       Vector(
         (
-          "Candidate pairs before paging 230,400 per scale (480 queries × 480 references, " +
+          "Candidate pairs before paging 219,486 per scale (466 queries × 471 references, " +
             "Cartesian · eyes4s candidatePairCount).",
           Vector(
             StudioRef.DesignTally(rev5, DesignCount.CandidatePairsPerScale),
@@ -243,7 +243,7 @@ class ResolvedDesignSuite extends munit.FunSuite:
 
   test("a by-design category the recipe declares is a chip with its count") {
     val g      = synced._1.generation
-    val lures  = ok(PreviewCandidates.of(480, 480, 24, 230400L, 480, 14, Some(0)))
+    val lures  = ok(PreviewCandidates.of(466, 471, 24, 219486L, 480, 14, Some(0)))
     val (p, _) =
       step(synced._1, DesignIntent.Previewed(g, PreviewEvent.Initial(id, stamp, lures)))
     val byDesign = chip(ResolvedDesignVM.of(p), DesignFilter.ByDesign)
@@ -351,7 +351,7 @@ class ResolvedDesignSuite extends munit.FunSuite:
     // No by-design category: the chip is refused and every row stays shown.
     assertEquals(shown(DesignFilter.ByDesign), rows.map(_.query))
     val g        = synced._1.generation
-    val lures    = ok(PreviewCandidates.of(480, 480, 24, 230400L, 480, 14, Some(0)))
+    val lures    = ok(PreviewCandidates.of(466, 471, 24, 219486L, 480, 14, Some(0)))
     val byDesign = step(
       synced._1,
       DesignIntent.Previewed(g, PreviewEvent.Initial(id, stamp, lures)),
@@ -515,7 +515,7 @@ class ResolvedDesignSuite extends munit.FunSuite:
     val (p, e) = step(counted, DesignIntent.ChooseFilter(DesignFilter.ByDesign))
     assertEquals((p, e), (counted, Vector.empty))
     val g              = synced._1.generation
-    val lures          = ok(PreviewCandidates.of(480, 480, 24, 230400L, 480, 14, Some(0)))
+    val lures          = ok(PreviewCandidates.of(466, 471, 24, 219486L, 480, 14, Some(0)))
     val (withLures, _) =
       step(synced._1, DesignIntent.Previewed(g, PreviewEvent.Initial(id, stamp, lures)))
     assertEquals(

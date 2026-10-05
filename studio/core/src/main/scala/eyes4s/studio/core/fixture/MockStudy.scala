@@ -67,6 +67,11 @@ final case class MockSummary(
     outsideWindowTrials: Int,
     eligibleQueries: Int,
     candidatePairsPerScale: Long,
+    /** Admitted retrieval and encoding trials: the candidate population
+      * (eyes4s candidatePairCount = focalTrials × referenceTrials).
+      */
+    focalTrials: Int,
+    referenceTrials: Int,
     datasetHistory: Map[String, String],
     runs: Vector[(String, String)],
     participants: Vector[ParticipantSummary]
@@ -272,6 +277,10 @@ object MockStudy:
         c.get[Long]("candidate_pairs_cartesian_per_scale"),
         c.get[Int]("eligible_queries")
       ).tupled
+      population <- (
+        c.get[Int]("candidate_focal_admitted"),
+        c.get[Int]("candidate_reference_admitted")
+      ).tupled
       rest <- (
         c.get[Double]("grand_D_all"),
         c.get[Vector[Double]]("grand_D_by_scale"),
@@ -309,6 +318,8 @@ object MockStudy:
         outTrials,
         eligible,
         cartesian,
+        population._1,
+        population._2,
         history,
         runs,
         participants

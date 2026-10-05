@@ -37,7 +37,8 @@ final class CountCursor[K] private[plan] (
     private val input: ArtifactRef[?],
     private val description: Vector[(String, Vector[Provenance.Param])],
     private val owner: StudyCountIdentity,
-    private val keysPerDesign: Long
+    private val keysPerDesign: Long,
+    private val controlKeys: Long
 ):
   def stage: StudyDesign = phase match
     case CountPhase.Control(_, _, _) => StudyDesign.Control
@@ -62,7 +63,8 @@ final class CountCursor[K] private[plan] (
     input,
     description,
     owner,
-    keysPerDesign
+    keysPerDesign,
+    controlKeys
   )
 
   def advance(
@@ -111,14 +113,16 @@ final class CountCursor[K] private[plan] (
                     matched,
                     counts,
                     result,
-                    matched.focalWithPairs + matched.unmatchedFocal,
+                    // A query without a match is not eligible (bead S0.7b).
+                    matched.focalWithPairs,
                     maps.toLong,
                     scales,
                     input,
                     description,
                     owner,
                     keysPerDesign,
-                    refusal
+                    refusal,
+                    controlKeys
                   )
                 )
               case _ =>
@@ -200,7 +204,8 @@ object CountCursor:
           work.inputReference,
           work.description,
           work.countIdentity,
-          work.keysPerDesign
+          work.keysPerDesign,
+          work.controlKeys
         )
       )
 

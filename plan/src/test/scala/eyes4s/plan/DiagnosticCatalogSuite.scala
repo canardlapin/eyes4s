@@ -244,7 +244,10 @@ class DiagnosticCatalogSuite extends munit.FunSuite:
     assertEquals(nested.subject, Vector(Locus.Scale(2), Locus.Trial(k1)))
     assertEquals(nested.causes.map(_.code.render), Vector("study-result.failure-key"))
     val finding = Diagnostic.of(
-      TemporalFinding.Repetition[StudyKey, Unit2D.Px]("rep", StudyFinding.UnmatchedFocal(k1))
+      TemporalFinding.Repetition[StudyKey, Unit2D.Px](
+        "rep",
+        StudyFinding.UnmatchedFocal(k1, UnmatchedKind.Undetermined)
+      )
     )
     assertEquals(finding.subject, Vector(Locus.Repetition("rep"), Locus.Trial(k1)))
     assertEquals(finding.severity, DiagnosticSeverity.Warning)

@@ -134,7 +134,11 @@ class OccurrencePairingSuite extends munit.FunSuite:
         StudyFinding.AmbiguousReferences(Vector(b1, b2), policy)
       )
     )
-    assert(report.warnings.contains(StudyFinding.UnmatchedFocal[TrialKey, Px](r5)))
+    assert(
+      report.warnings.contains(
+        StudyFinding.UnmatchedFocal[TrialKey, Px](r5, UnmatchedKind.Undetermined)
+      )
+    )
     assertEquals(report.blockers.head.remedy, Remedy.ChooseMatchedReference)
     val work    = get(p.prepare(input))
     val refusal = work.run.left.toOption

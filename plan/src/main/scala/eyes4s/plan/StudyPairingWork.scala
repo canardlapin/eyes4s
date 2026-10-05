@@ -28,32 +28,64 @@ import scala.annotation.tailrec
   * the control pool unless the plan asks for every occurrence.
   */
 private[plan] object StudyPairingWork:
+
+  /** The matched and control relations of a pairing, and whether a focal key
+    * has a matched reference. A focal key without one (a query with no
+    * match) is not eligible: the control design leaves it out, so it has no
+    * control pairs and no control score (owner decision recorded on bead
+    * S0.7b). The relations themselves, and so every plan description and
+    * provenance, are unchanged.
+    */
+  final case class Relations[K](
+      matched: Relation[K, K],
+      controls: Relation[K, K],
+      matchable: K => Boolean
+  )
+
   def relations[K](
       layout: StudyLayout[K],
       pairing: StudyPairing,
       references: Vector[K]
-  ): (Relation[K, K], Relation[K, K]) =
+  ): Relations[K] =
     val sameParticipant = Relation.sameOn(layout.participant)
     val matchedBase     = sameParticipant.and(Relation.sameOn(layout.stimulus))
     val controlBase     = sameParticipant.and(Relation.differentOn(layout.stimulus))
-    val narrowing: Option[Relation[K, K]] = (pairing.matched, layout.occurrence) match
-      case (MatchedReferences.SameOccurrence, Some(occurrence)) =>
+    // The references a selection keeps, and whether matches agree on occurrence.
+    val (chosen, sameOccurrence) = (pairing.matched, layout.occurrence) match
+      case (MatchedReferences.SameOccurrence, Some(_)) => (None, true)
+      case (MatchedReferences.Select(_), Some(_))      =>
+        (Some(chosenReferences(layout, pairing, references).toSet), false)
+      case _ => (None, false)
+    val narrowing: Option[Relation[K, K]] = (pairing.matched, layout.occurrence, chosen) match
+      case (MatchedReferences.SameOccurrence, Some(occurrence), _) =>
         Some(Relation.sameOn(occurrence))
-      case (MatchedReferences.Select(choice), Some(_)) =>
-        val chosen = chosenReferences(layout, pairing, references).toSet
+      case (MatchedReferences.Select(choice), Some(_), Some(kept)) =>
         Some(
           Relation.SameOn(
             Projection.named[K, Boolean]("selectable")(_ => true),
-            Projection.named[K, Boolean](s"occurrence is ${choice.render}")(chosen.contains)
+            Projection.named[K, Boolean](s"occurrence is ${choice.render}")(kept.contains)
           )
         )
       case _ => None
+    // Exactly the matched schedule, read as a lookup: a focal key matches
+    // when some reference the schedule can pair (once-occurring, and kept by
+    // a selection) shares its participant and item (and occurrence under
+    // SameOccurrence).
+    def matchKey(k: K): (String, String, Option[Int]) =
+      (
+        layout.participant(k),
+        layout.stimulus(k),
+        if sameOccurrence then layout.occurrence.map(o => o(k).value) else None
+      )
+    val matchKeys        = chosenReferences(layout, pairing, references).map(matchKey).toSet
+    val matchable        = (k: K) => matchKeys.contains(matchKey(k))
     val controlNarrowing = pairing.controls match
       case ControlReferences.SameSelection  => narrowing
       case ControlReferences.AllOccurrences => None
-    (
+    Relations(
       narrowing.fold(matchedBase)(matchedBase.and),
-      controlNarrowing.fold(controlBase)(controlBase.and)
+      controlNarrowing.fold(controlBase)(controlBase.and),
+      matchable
     )
 
   /** The references a choice keeps: per participant and item, those of the

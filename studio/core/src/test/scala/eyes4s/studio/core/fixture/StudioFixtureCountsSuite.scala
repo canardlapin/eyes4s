@@ -165,7 +165,7 @@ class StudioFixtureCountsSuite extends munit.FunSuite:
     assertEquals(summary.pairRowsPerScale, 8969L)
     assertEquals(summary.pairRowsAllScales, 35876L)
     assertEquals(summary.pairRowsRev5, 44845L)
-    assertEquals(summary.candidatePairsPerScale, 230400L)
+    assertEquals(summary.candidatePairsPerScale, 219486L)
     // Pair rows are one matched pair plus the controls of every eligible query.
     val eligible = study.queries.filter(q => q.status == "ok" || q.status == "failed")
     assertEquals(

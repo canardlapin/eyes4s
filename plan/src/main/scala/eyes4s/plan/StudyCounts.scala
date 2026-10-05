@@ -44,12 +44,17 @@ final class StudyCounts[K] private[plan] (
     private[plan] val description: Vector[(String, Vector[Provenance.Param])],
     private[plan] val owner: StudyCountIdentity,
     val keysPerDesign: Long,
-    private[plan] val pairingRefusal: Option[PlanError]
+    private[plan] val pairingRefusal: Option[PlanError],
+    /** Keys the control reduction has per scale: the focal keys with a
+      * matched reference (bead S0.7b); [[keysPerDesign]] is every focal key,
+      * which the matched reduction and the contrast have.
+      */
+    private[plan] val controlKeys: Long
 ):
   val pairRowsPerScale: Long   = matched.eligiblePairs + controls.eligiblePairs
   val totalPairs: Long         = pairRowsPerScale * scales
   val totalMaps: Long          = mapsPerScale * scales
-  val totalReductionKeys: Long = keysPerDesign * 2L * scales
+  val totalReductionKeys: Long = (keysPerDesign + controlKeys) * scales
   val totalContrastRows: Long  = keysPerDesign * scales
 
 /** Nominal evidence that completed counts came from this exact preparation. */

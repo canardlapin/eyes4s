@@ -13074,7 +13074,9 @@
   },
   "pair_rows_rev5": 44845,
   "eligible_queries": 457,
-  "candidate_pairs_cartesian_per_scale": 230400,
+  "candidate_focal_admitted": 466,
+  "candidate_reference_admitted": 471,
+  "candidate_pairs_cartesian_per_scale": 219486,
   "paired_group_n_range": [
    2,
    17
