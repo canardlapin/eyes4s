@@ -691,3 +691,31 @@ class RealStudyBackendSuite extends CatsEffectSuite:
         }
       }
   }
+
+  // ------------------------------------------------------------------ trial views (slice 7)
+
+  test("every admitted trial's fixations are eyes4s's placements, equal to the fake's") {
+    for
+      real    <- RealStudyBackend.create[IO](trialLayout, RealBackendConformanceSuite.golden)
+      fake    <- FakeStudyBackend.create[IO](StoryMoment.T2)
+      ledger  <- every(real, StoryMoments.r3)
+      trials = ledger.filter(_.disposition == TrialDisposition.Admitted).map(_.trial)
+      mine   <- trials.traverse(t => real.trialFixations(StoryMoments.rev4, t))
+      theirs <- trials.traverse(t => fake.trialFixations(StoryMoments.rev4, t))
+      absent = ledger.find(_.disposition != TrialDisposition.Admitted).map(_.trial)
+      none   <- absent.traverse(t => real.trialFixations(StoryMoments.rev4, t))
+      stray  <- real.trialFixations(StoryMoments.rev4, TrialKey("P99", Phase.Encoding, "x", 1))
+    yield
+      assertEquals(trials.size, 937)
+      val served = mine.collect { case Right(f) => f.fixations.size }
+      assertEquals(served.size, 937, mine.collectFirst { case Left(e) => e })
+      // 11,520 records less the outside-screen and rejected ones eyes4s keeps out.
+      assert(served.sum > 10000, served.sum)
+      val differ = trials.indices.filter(i => mine(i) != theirs(i))
+      assert(
+        differ.isEmpty,
+        s"${differ.size} trials differ; first: ${differ.headOption.map(i => (mine(i), theirs(i)))}"
+      )
+      assertEquals(none.map(_.left.map(_.code)), absent.map(_ => Left("studio-backend.unavailable")))
+      assertEquals(stray.left.map(_.code), Left("studio-backend.unknown-trial"))
+  }

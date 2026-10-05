@@ -74,7 +74,8 @@ final class RealStudyBackend[F[_]] private (
     prepared: Ref[F, Map[AnalysisRevision, RealPrepared]],
     state: SignallingRef[F, RealStudyBackend.Jobs[F]],
     documentRuns: Map[RunId, RunRef],
-    inspected: Ref[F, Map[RunId, RealResults]]
+    inspected: Ref[F, Map[RunId, RealResults]],
+    trialViews: Ref[F, Map[AnalysisRevision, RealTrialViews]]
 )(using F: Concurrent[F])
     extends StudyBackend[F]:
   import RealStudyBackend.*
@@ -458,10 +459,25 @@ final class RealStudyBackend[F[_]] private (
   def provenance(run: RunId, address: ResultAddress): F[Either[BackendError, Provenance]] =
     noRun(run)
 
+  /** The revision's trial views, built once per revision. */
+  private def views(r: AnalysisRevision): F[Either[BackendError, RealTrialViews]] =
+    prepare(r).flatMap {
+      case Left(e)     => F.pure(Left(e))
+      case Right(work) =>
+        trialViews.get.flatMap(_.get(r) match
+          case Some(v) => F.pure(Right(v))
+          case None    =>
+            F.pure(RealTrialViews.of(work)).flatTap {
+              case Right(v) => trialViews.update(_.updated(r, v))
+              case Left(_)  => F.unit
+            })
+    }
+
   def trialFixations(
       revision: AnalysisRevision,
       trial: TrialKey
-  ): F[Either[BackendError, TrialFixations]] = notYet(revision)
+  ): F[Either[BackendError, TrialFixations]] =
+    views(revision).map(_.flatMap(_.fixations(trial)))
 
   def trialPreview(
       revision: AnalysisRevision,
@@ -488,8 +504,9 @@ object RealStudyBackend:
       Ref.of[F, Map[DatasetRevision, AdmittedDataset]](Map.empty),
       Ref.of[F, Map[AnalysisRevision, RealPrepared]](Map.empty),
       SignallingRef[F].of(Jobs.of[F](document)),
-      Ref.of[F, Map[RunId, RealResults]](Map.empty)
-    ).mapN { (admitted, prepared, state, inspected) =>
+      Ref.of[F, Map[RunId, RealResults]](Map.empty),
+      Ref.of[F, Map[AnalysisRevision, RealTrialViews]](Map.empty)
+    ).mapN { (admitted, prepared, state, inspected, trialViews) =>
       val saved = document.analyses.map(a => a.id -> (a.dataset, a.recipe))
       // A draft's recipe is its changes applied to its base's recipe.
       val draft = document.draft.flatMap(d =>
@@ -505,7 +522,8 @@ object RealStudyBackend:
         prepared,
         state,
         document.runs.map(r => r.id -> r).toMap,
-        inspected
+        inspected,
+        trialViews
       )
     }
 
