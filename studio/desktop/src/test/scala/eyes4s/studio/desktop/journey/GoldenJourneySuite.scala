@@ -40,7 +40,7 @@ import scala.concurrent.ExecutionContext
   * 257 and the two missing), the window tallies (543 in 409 trials, none off
   * screen), the focus fixation and the enc_03/ret_07 window shares, P05's
   * three all-outside trials; the design by eyes4s's pairing (480 requested, 14
-  * not admitted, 9 without a match, 457 eligible, 230,400 candidates, 8,969
+  * not admitted, 9 without a match, 457 eligible, 219,486 candidates, 8,969
   * pairs per scale with 19 or 18 controls, so 35,876 and rev 5's 44,845); and
   * the methods text's 11,311 admitted records and duration share. The scores
   * and everything only the run decides are pending (below).

@@ -67,10 +67,9 @@ object RealAdmission:
 
   /** Admit `spec`'s sources: `fixations` and `trials` are their exact text.
     *
-    * Until protocol 1.11 adds a typed admission refusal, every refusal other
-    * than the inventory's is `Unavailable` with a locus naming what is
-    * missing (a field) or what eyes4s refused (the source and eyes4s's
-    * message), never a bare dataset.
+    * Inventory refusals retain every issue. Other source refusals are
+    * `AdmissionRefused`, naming the dataset and source beside eyes4s's
+    * message. Missing declarations name their field.
     */
   def admit(
       spec: DatasetRevisionSpec,

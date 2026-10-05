@@ -48,7 +48,7 @@ final case class FocusFixation(
 
 /** The resolved design as eyes4s's pairing makes it: the retrieval queries
   * requested, those not admitted, those with no admitted matched reference,
-  * the eligible ones; the Cartesian candidate pairs per scale (480 × 480,
+  * the eligible ones; the Cartesian candidate pairs per scale (466 × 471,
   * `candidatePairCount`); and the eligible pairs per scale, matched and
   * control (same participant, encoding, other item, admitted).
   */
@@ -194,8 +194,8 @@ object GoldenLibrary:
     )
     val candidates = get("candidates")(
       DirectedPairSchedule.exhaustive(
-        queries.map(key),
-        encodings.map(key),
+        admitted(queries).map(key),
+        admitted(encodings).map(key),
         Relation.all[String, String]
       )
     )

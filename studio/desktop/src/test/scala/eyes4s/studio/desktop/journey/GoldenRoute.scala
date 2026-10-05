@@ -194,8 +194,8 @@ object GoldenRoute:
             ),
             stated(
               "candidates",
-              "Cartesian candidate pairs before paging, per scale: 230,400",
-              230400L,
+              "Cartesian candidate pairs before paging, per scale: 219,486",
+              219486L,
               p.candidatePairsPerScale
             ),
             stated(
@@ -662,6 +662,13 @@ object GoldenRoute:
               )(r => snapshot(d.model.document, r.includeImages))
             summary <- s.result(run6)
             rows    <- MethodsReads.queryRows[Future](s.queries, run6)
+            pairs   <- summary.fold(
+              e => Future.successful(Left(e.message)),
+              sum =>
+                MethodsReads
+                  .pairRows[Future](s.pairRows, run6, sum.scales.size)
+                  .map(_.left.map(_.message))
+            )
           yield
             for
               request <- req.headOption.toRight(
@@ -674,12 +681,14 @@ object GoldenRoute:
               sum <- summary.leftMap(e =>
                 DriverError.Service("result", ServiceError.Backend(e))
               )
-              all_  <- rows.leftMap(e => DriverError.Expectation("rows", "read", e.message))
-              files <- BundleFiles
+              all_     <- rows.leftMap(e => DriverError.Expectation("rows", "read", e.message))
+              allPairs <- pairs.leftMap(why => DriverError.Expectation("pairs", "read", why))
+              files    <- BundleFiles
                 .assemble(
                   request,
                   sum,
                   all_,
+                  allPairs,
                   // The window's stimuli (ShellFxSuite's), so both routes draw
                   // the gaze panels over the same images.
                   eyes4s.studio.desktop.figures.FigureExport.rasters(

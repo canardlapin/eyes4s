@@ -256,10 +256,20 @@ class RealStudyBackendSuite extends CatsEffectSuite:
   }
 
   test("an unsupported layout is refused while unknown operations remain typed refusals") {
-    val layout = eyes4s.studio.core.document.DefinitionRef.fromCore(eyes4s.plan.DefinitionId.trials)
-    val unsupported = get(StudioDocument.of(t2.datasets,
-      t2.analyses.map(a => a.copy(recipe = a.recipe.copy(layout = layout))), t2.draft,
-      t2.runs, t2.reporting, t2.figures, t2.presentation, t2.jobs))
+    val layout =
+      eyes4s.studio.core.document.DefinitionRef.fromCore(eyes4s.plan.DefinitionId.trials)
+    val unsupported = get(
+      StudioDocument.of(
+        t2.datasets,
+        t2.analyses.map(a => a.copy(recipe = a.recipe.copy(layout = layout))),
+        t2.draft,
+        t2.runs,
+        t2.reporting,
+        t2.figures,
+        t2.presentation,
+        t2.jobs
+      )
+    )
     for
       real  <- RealStudyBackend.create[IO](unsupported, RealBackendConformanceSuite.golden)
       known <- real.preview(StoryMoments.rev4)
