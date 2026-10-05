@@ -21,12 +21,14 @@ import cats.effect.IO
 import eyes4s.studio.app.compare.SummaryAnswer
 import eyes4s.studio.app.explore.DisplaySource
 import eyes4s.studio.app.figures.*
+import eyes4s.studio.app.maps.{MapGrid, MapStyle}
 import eyes4s.studio.app.plot.{ParticipantColumns, PlotSource, ProfileColumns}
-import eyes4s.studio.app.tokens.Theme
+import eyes4s.studio.app.tokens.{StageVariant, Theme}
 import eyes4s.studio.app.{AppModel, Intent}
 import eyes4s.studio.core.backend.{
   AnalysisRevision,
   DatasetRevision,
+  DensityGrid,
   LedgerPages,
   PairRowPage,
   RunId,
@@ -38,10 +40,11 @@ import eyes4s.studio.core.document.{DatasetRevisionSpec, FigureId, PanelLetter}
 import eyes4s.studio.core.figures.{MethodsFacts, MethodsReads, ReferenceReads, ReferenceScores}
 import eyes4s.studio.core.selection.{ScaleIndex, ViewId}
 import eyes4s.studio.desktop.explore.NavigatorDisplays
-import eyes4s.studio.desktop.plot.{PlotTwin, TableTwinView}
+import eyes4s.studio.desktop.plot.{CanvasPlotHost, PlotTwin, TableTwinView}
 import eyes4s.studio.desktop.runtime.{ProjectPort, StudioSession}
 import eyes4s.studio.desktop.tokens.TokenFiles
 import eyes4s.studio.viz.figure.{FigureGaze, PlotGeometry}
+import eyes4s.studio.viz.maps.MapTileScene
 import eyes4s.studio.desktop.trial.{StimulusError, StimulusSource, TrialView}
 import eyes4s.studio.viz.plot.{ParticipantPlot, PlotBuilder, ScaleProfilePlot}
 import javafx.application.Platform
@@ -86,6 +89,13 @@ trait FigureInputs:
       done: Either[String, ReferenceScores] => Unit
   ): Unit
   def displays(dataset: DatasetRevisionSpec, done: Either[String, DisplaySource] => Unit): Unit
+
+  def mapGrid(
+      run: RunId,
+      scale: ScaleIndex,
+      trial: TrialKey,
+      done: Either[String, DensityGrid] => Unit
+  ): Unit
 
   /** The trial statuses of `from` and `to`, compared (S5.8). */
   def status(from: DatasetRevision, to: DatasetRevision, done: StatusDiff => Unit): Unit
@@ -177,6 +187,17 @@ object FigureInputs:
           dataset: DatasetRevisionSpec,
           done: Either[String, DisplaySource] => Unit
       ): Unit = source.read(dataset, done)
+      def mapGrid(
+          run: RunId,
+          scale: ScaleIndex,
+          trial: TrialKey,
+          done: Either[String, DensityGrid] => Unit
+      ): Unit =
+        session.run(session.backend.mapGrid(run, scale.value, trial)) {
+          case Left(e)          => done(Left(reason(e)))
+          case Right(Left(err)) => done(Left(err.message))
+          case Right(Right(g))  => done(Right(g))
+        }
       def methods(
           run: RunId,
           dataset: DatasetRevision,
@@ -297,6 +318,8 @@ final class FiguresHost(
       lines: ParticipantLines
   )
   private var twins: Map[(FigureId, PanelLetter), Drawn] = Map.empty
+  private final case class Tile(host: CanvasPlotHost, shows: (MapGrid, MapStyle))
+  private var tiles: Map[(FigureId, PanelLetter, Int), Tile] = Map.empty
 
   private def view(id: String): ViewId =
     ViewId.of(id).fold(e => throw IllegalStateException(e.message), identity)
@@ -527,6 +550,8 @@ final class FiguresHost(
         )
       case ComposerEffect.RequestDisplays(dataset) =>
         inputs.displays(dataset, a => later(ComposerIntent.DisplaysRead(dataset.id, a)))
+      case ComposerEffect.RequestMap(run, scale, trial) =>
+        inputs.mapGrid(run, scale, trial, a => later(ComposerIntent.MapRead(run, scale, trial, a)))
       case ComposerEffect.Binding(FigureEffect.RequestStatus(from, to)) =>
         inputs.status(
           from,
@@ -700,14 +725,19 @@ final class FiguresHost(
         val notes = plot.notes.map(paperLabel(_, text))
         VBox(2.0, (twin.plotNode +: notes)*)
       case PanelBody.Maps(maps) =>
+        val tileW = (w - 8) / 3
+        val drawn = maps.tiles.zipWithIndex.collect {
+          case (MapTileVM(_, _, _, _, TileMap.Drawn(_, _, _)), i) => i
+        }.toSet
+        retireTiles(k => k._1 != figure || k._2 != p.letter || drawn.contains(k._3))
         val tiles = HBox(
           4.0,
-          maps.tiles.map { t =>
+          maps.tiles.zipWithIndex.map { (t, i) =>
             val head  = paperLabel(t.title, text)
             val score = paperLabel(t.label, text); score.getStyleClass.add("figures-score")
-            val tile  = VBox(2.0, head, score)
+            val tile  = VBox(2.0, mapNode(figure, p.letter, i, t, tileW, text), head, score)
             tile.getStyleClass.add("figures-tile")
-            tile.setPrefWidth((w - 8) / 3)
+            tile.setPrefWidth(tileW)
             tile.setAccessibleText(s"${t.title}, ${t.label}")
             tile
           }*
@@ -812,6 +842,40 @@ final class FiguresHost(
     val (keptGaze, goneGaze) = gazes.partition((k, _) => keep.contains(k))
     goneGaze.values.foreach(_.dispose())
     gazes = keptGaze
+    retireTiles(k => keep.contains((k._1, k._2)))
+
+  private def retireTiles(keep: ((FigureId, PanelLetter, Int)) => Boolean): Unit =
+    val (kept, gone) = tiles.partition((k, _) => keep(k))
+    gone.values.foreach(_.host.dispose())
+    tiles = kept
+
+  private def mapNode(
+      figure: FigureId,
+      letter: PanelLetter,
+      index: Int,
+      tile: MapTileVM,
+      width: Double,
+      text: Double
+  ): Node = tile.map match
+    case TileMap.Waiting =>
+      val l = paperLabel(FiguresHost.MapReading, text); l.getStyleClass.add("figures-note"); l
+    case TileMap.Unavailable(why) =>
+      val l = paperLabel(why, text); l.getStyleClass.add("figures-problem"); l
+    case TileMap.Drawn(grid, style, region) =>
+      val key = (figure, letter, index)
+      val host = tiles.get(key) match
+        case Some(old) if old.shows == (grid, style) => old.host
+        case old =>
+          val made = old.fold(CanvasPlotHost())(_.host)
+          MapTileScene
+            .of(s"figures.map.${figure.number}.${letter.value}.$index", grid, style, region, StageVariant.Dark)
+            .fold(e => throw IllegalStateException(e.message), made.show)
+          tiles = tiles.updated(key, Tile(made, (grid, style)))
+          made
+      host.setPrefSize(width, width * region.height / region.width)
+      host.setMinSize(width, width * region.height / region.width)
+      host.setAccessibleText(FiguresHost.mapName(tile))
+      host
 
   private def renderInspector(v: ComposerVM): Unit =
     binding.getChildren.setAll(v.figures.binding.toVector.flatMap { b =>
@@ -1083,6 +1147,9 @@ final class FiguresHost(
     val r = Region(); HBox.setHgrow(r, Priority.ALWAYS); r
 
 object FiguresHost:
+  val MapReading: String = "Reading the map…"
+  def mapName(t: MapTileVM): String = s"Density map, ${t.title}"
+
   /** A gaze panel drawing's accessible name. */
   def gazeName(p: PanelVM, d: GazeTrialVM): String =
     s"Panel ${p.letter.value} trial ${d.trial.label}: ${d.marks.size} fixations"

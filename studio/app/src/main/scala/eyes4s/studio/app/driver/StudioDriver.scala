@@ -234,18 +234,19 @@ object StudioDriver:
             d.record(DriverRecord.Refused(effect, ServiceError.Execution(error)))
           case Right(()) => done
         }
-      case AppEffect.RequestAdmission(dataset, _) =>
-        services.admission(dataset).map {
+      case AppEffect.RequestAdmission(dataset, content) =>
+        services.verify(dataset, content).map {
           case Left(error) =>
             d.record(DriverRecord.Refused(effect, ServiceError.Backend(error)))
           case Right(summary) => done.record(DriverRecord.Admission(summary))
         }
       case AppEffect.OpenDialog(dialog) =>
         Applicative[F].pure(done.record(DriverRecord.Dialog(dialog)))
-      // Saving belongs to S2.4, and the rest act on a shell's own window and
-      // dock; headless, each is only recorded.
+      // Saving belongs to S2.4, checking stored inputs to a project store
+      // (S2.5), and the rest act on a shell's own window and dock; headless,
+      // each is only recorded.
       case AppEffect.Persist(_) | AppEffect.Journal(_) | AppEffect.RevealProject |
-          AppEffect.ResetLayouts(_) | AppEffect.Dock(_) =>
+          AppEffect.ResetLayouts(_) | AppEffect.Dock(_) | AppEffect.CheckInputs(_) =>
         Applicative[F].pure(done)
 
 /** One scripted step: a name and what it does to the driver. */

@@ -122,9 +122,23 @@ final class DesktopEffects(
             defect(e.productPrefix, failure)
           }
       }
-    case AppEffect.OpenDialog(d)     => dialogs.open(d, dispatch)
-    case AppEffect.ResetLayouts(p)   => resetLayouts(p)
-    case AppEffect.Dock(command)     => dock(command)
+    case AppEffect.OpenDialog(d)   => dialogs.open(d, dispatch)
+    case AppEffect.ResetLayouts(p) => resetLayouts(p)
+    case AppEffect.Dock(command)   => dock(command)
+    // Without a project there is nothing to check, and so nothing is known
+    // to be as recorded: the check fails, and runs stay blocked (S2.5).
+    case AppEffect.CheckInputs(round) =>
+      project match
+        case None =>
+          dispatch(Intent.InputsCheckFailed(round, "this window has no project to check"))
+        case Some(port) =>
+          port.checkInputs { answer =>
+            ui { () =>
+              dispatch(
+                answer.fold(Intent.InputsCheckFailed(round, _), Intent.InputsChecked(round, _))
+              )
+            }
+          }
     case e @ AppEffect.RevealProject => report(EffectProblem.NotWired(e, "S2.9"))
     case e @ AppEffect.Persist(mark) =>
       project.fold(report(EffectProblem.NotWired(e, "S2.9"))) {
@@ -139,7 +153,8 @@ final class DesktopEffects(
     case e: AppEffect.Journal =>
       project.fold(report(EffectProblem.NotWired(e, "S2.9")))(_.journal(e.entry))
     case AppEffect.RequestAdmission(dataset, content) =>
-      session.run(session.backend.admission(dataset)) { result =>
+      // The backend verifies the content it is asked to admit (protocol 1.9).
+      session.run(session.backend.verify(dataset, content)) { result =>
         ui(() => verified(dataset, content, LedgerInputs.answer(result)))
       }
 

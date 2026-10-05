@@ -391,6 +391,8 @@ object StudioWindow:
     val booted = AppModel.update(initial, Intent.JobsChanged(session.jobs))._1
     val r      = StudioRuntime(booted, effects)
     runtime = Some(r)
+    // A project's stored inputs are checked before anything can run (S2.5).
+    project.foreach(_ => r.dispatch(Intent.CheckInputs))
     val shell      = AppShell(host, dispatch, messages, () => r.model, nativeMenu)
     val unreadable = host.restore(booted.document.presentation.layouts, booted)
     if unreadable.nonEmpty then

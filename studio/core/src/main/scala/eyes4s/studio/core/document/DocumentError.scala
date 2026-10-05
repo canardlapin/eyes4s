@@ -59,8 +59,23 @@ enum DocumentError derives CanEqual:
   /** `dataset` maps a trial inventory but has no trials source. */
   case InventoryWithoutTrials(dataset: DatasetRevision)
 
+  /** Rules `first` and `second` (0-based) of `dataset`'s corrections both
+    * cover some trial; eyes4s refuses a policy in which they do (S5.5).
+    */
+  case CorrectionsOverlap(dataset: DatasetRevision, first: Int, second: Int)
+
   /** `dataset` has a trials source whose columns are not mapped. */
   case InventoryUnmapped(dataset: DatasetRevision, path: String)
+
+  /** `dataset`'s fixations and trial inventory name a different trial key:
+    * `role` is mapped in `mappedIn` only (S5.4 follow-up).
+    */
+  case InventoryKeyDisagrees(
+      dataset: DatasetRevision,
+      role: ColumnRole,
+      mappedIn: String,
+      notIn: String
+  )
 
   /** An inventory's display column is also a role's or an attribute's. */
   case DisplayColumnMapped(column: String, mappedAs: String)
@@ -153,8 +168,14 @@ enum DocumentError derives CanEqual:
       s"Trial inventory column $column is both an attribute and the ${role.label} column."
     case InventoryWithoutTrials(dataset) =>
       s"Dataset ${dataset.label} maps a trial inventory but has no trial inventory source."
+    case CorrectionsOverlap(dataset, first, second) =>
+      s"Dataset ${dataset.label}: correction rules ${first + 1} and ${second + 1} both cover " +
+        "a trial; at most one rule may cover a trial."
     case InventoryUnmapped(dataset, path) =>
       s"Dataset ${dataset.label}: the columns of trial inventory $path are not mapped."
+    case InventoryKeyDisagrees(dataset, role, mappedIn, notIn) =>
+      s"Dataset ${dataset.label}: ${role.label} is mapped in $mappedIn but not in $notIn; " +
+        "both files must name the trial by the same key."
     case BadSchemaId(name, version) =>
       s"Studio schema identity $name@$version is not a valid definition identity."
     case RebaseToSame(draft, dataset) =>

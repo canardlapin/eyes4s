@@ -30,6 +30,12 @@ trait StudioServices[F[_]]:
   /** Verify a dataset revision: the backend's admission summary. */
   def admission(dataset: DatasetRevision): F[Either[BackendError, AdmissionSummary]]
 
+  /** The admission of `dataset` verified for `content` (protocol 1.9). */
+  def verify(
+      dataset: DatasetRevision,
+      content: eyes4s.codec.CanonicalDigest[eyes4s.studio.core.document.DatasetRevisionSpec]
+  ): F[Either[BackendError, AdmissionSummary]]
+
   /** Submit, cancel or require a run on the execution service. */
   def execute(effect: ExecutionEffect): F[Either[ExecutionError, Unit]]
 

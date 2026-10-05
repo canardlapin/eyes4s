@@ -166,16 +166,18 @@ final class Labels(model: AppModel, messages: Messages):
       messages(CrumbFixation, trial.trial, index.value.toString)
     case StudioRef.SourceRecord(_, _, role, r) =>
       messages(CrumbRecord, sourceFile(role), Format.count(r.value.toLong))
-    case StudioRef.ParticipantSummary(_, _, _, _, p) => p
-    case StudioRef.GroupCell(_, _, _, group)         => group.label
-    case StudioRef.FigurePanel(_, letter)            => messages(CrumbPanel, letter.value)
-    case StudioRef.WindowTally(dataset, region)      => tally(dataset, region)
-    case StudioRef.DesignTally(revision, count)      => DesignText.tally(revision, count)
-    case StudioRef.DisplayTally(dataset, count)      => SourcesText.tally(dataset, count)
-    case StudioRef.QueryTally(run, count)            => SummaryText.tally(run, count)
-    case StudioRef.InventoryCount(_, _)              => AdmissionLedgerVM.countLabel(ref)
-    case StudioRef.TrialGroup(_, group)              => TrialsNavigatorVM.groupLabel(group)
-    case StudioRef.Result(run, address)              =>
+    case StudioRef.ParticipantSummary(_, _, _, _, p)   => p
+    case StudioRef.GroupCell(_, _, _, group)           => group.label
+    case StudioRef.FigurePanel(_, letter)              => messages(CrumbPanel, letter.value)
+    case StudioRef.WindowTally(dataset, region)        => tally(dataset, region)
+    case StudioRef.TrialPlacementTally(dataset, trial) =>
+      s"${dataset.label} · ${trial.label} · ${GeometryText(GeometryTextId.PlacementTally)}"
+    case StudioRef.DesignTally(revision, count) => DesignText.tally(revision, count)
+    case StudioRef.DisplayTally(dataset, count) => SourcesText.tally(dataset, count)
+    case StudioRef.QueryTally(run, count)       => SummaryText.tally(run, count)
+    case StudioRef.InventoryCount(_, _)         => AdmissionLedgerVM.countLabel(ref)
+    case StudioRef.TrialGroup(_, group)         => TrialsNavigatorVM.groupLabel(group)
+    case StudioRef.Result(run, address)         =>
       val scale = address.scale
       address.value match
         case ResultAddress.ContrastRow(_, key)             => trialWithItem(key)
@@ -233,8 +235,10 @@ final class Labels(model: AppModel, messages: Messages):
         )
       case StudioRef.GroupCell(run, reporting, scale, group) =>
         messages(PathGroupCell, group.label, this.reporting(reporting), sigma(run, scale))
-      case StudioRef.FigurePanel(figure, letter)  => panel(figure, letter)
-      case StudioRef.WindowTally(dataset, region) => tally(dataset, region)
+      case StudioRef.FigurePanel(figure, letter)         => panel(figure, letter)
+      case StudioRef.WindowTally(dataset, region)        => tally(dataset, region)
+      case StudioRef.TrialPlacementTally(dataset, trial) =>
+        s"${dataset.label} · ${trial.label} · ${GeometryText(GeometryTextId.PlacementTally)}"
       case StudioRef.DesignTally(revision, count) => DesignText.tally(revision, count)
       case StudioRef.DisplayTally(dataset, count) => SourcesText.tally(dataset, count)
       case StudioRef.QueryTally(run, count)       => SummaryText.tally(run, count)

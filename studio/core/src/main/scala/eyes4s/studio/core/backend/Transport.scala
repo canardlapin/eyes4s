@@ -19,6 +19,8 @@ package eyes4s.studio.core.backend
 import cats.Functor
 import cats.effect.{Concurrent, Deferred, Ref}
 import cats.syntax.all.*
+import eyes4s.codec.CanonicalDigest
+import eyes4s.studio.core.document.DatasetRevisionSpec
 import eyes4s.studio.core.preview.PreviewEvent
 import fs2.{Pipe, Pull, RaiseThrowable, Stream, text}
 import io.circe.syntax.*
@@ -366,6 +368,18 @@ object RemoteStudyBackend:
 
     def admission(dataset: DatasetRevision): F[Either[BackendError, AdmissionSummary]] =
       ask(Q.Admission(dataset)) { case A.Admission(s) => s }
+
+    def verify(
+        dataset: DatasetRevision,
+        content: CanonicalDigest[DatasetRevisionSpec]
+    ): F[Either[BackendError, AdmissionSummary]] =
+      ask(Q.Verify(dataset, content)) { case A.Admission(s) => s }
+
+    def placement(spec: DatasetRevisionSpec): F[Either[BackendError, PlacementPreview]] =
+      ask(Q.PlacementOf(spec)) { case A.PlacementOf(p) => p }
+
+    def mapGrid(run: RunId, scale: Int, trial: TrialKey): F[Either[BackendError, DensityGrid]] =
+      ask(Q.MapGridOf(run, scale, trial)) { case A.MapGridOf(g) => g }
 
     def ledger(
         dataset: DatasetRevision,

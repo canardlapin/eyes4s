@@ -18,7 +18,7 @@ package eyes4s.studio.core.fixture
 
 import cats.syntax.all.*
 import eyes4s.kernel.*
-import eyes4s.plan.{MapPlacement, OffWindowPolicy, WindowTally}
+import eyes4s.plan.{DensityView, MapPlacement, OffWindowPolicy, WindowTally}
 import eyes4s.studio.core.backend.*
 import eyes4s.studio.core.document.{
   Geometry,
@@ -96,6 +96,12 @@ object FakeTrialViews:
 
   /** The highest-density coverages the preview's isolines enclose. */
   val PreviewCoverages: Vector[Double] = Vector(0.5, 0.8)
+
+  /** The highest-density coverages figures show for a result map. */
+  val ResultCoverages: Vector[Double] = Vector(0.5, 0.9)
+
+  /** The fake's explicit host diagnostic code for a missing served map. */
+  val NoDensityCode: String = "studio-fake.no-density"
 
   private def refused(e: TrialViewError): BackendError = BackendError.TrialViewRefused(e)
 
@@ -243,16 +249,22 @@ object FakeTrialViews:
       view <- TrialFixations.of(revision, dataset, trial, fixations).leftMap(refused)
     yield view
 
-  /** eyes4s's σ 2° density of `trial`'s in-map fixations under `revision`,
-    * over the recipe's grid on the window it covers, with its isoline levels.
-    * A trial the study fails has none.
+  private final case class Estimate(
+      view: DensityView[Unit2D.Px],
+      geometry: GridGeometry[Unit2D.Px],
+      covered: Bounds[Unit2D.Px]
+  )
+
+  /** The fixture's eyes4s density estimate. This is the only density
+    * calculation here; preview and result grids merely expose its values.
     */
-  def preview(
+  private def estimate(
       moment: StoryMoment,
       revision: AnalysisRevision,
       dataset: DatasetRevision,
-      trial: TrialKey
-  ): Either[BackendError, TrialPreview] =
+      trial: TrialKey,
+      sigmaDegrees: Double
+  ): Either[BackendError, Estimate] =
     def study(step: String)(reason: String) = refused(TrialViewError.Study(trial, step, reason))
     for
       (recipe, geometry) <- FakeTrialViews.study(moment, revision)
@@ -263,7 +275,7 @@ object FakeTrialViews:
       }
       _ <- Either.cond(failing.isEmpty, (), refused(TrialViewError.TrialFails(trial, failing)))
       inMap = view.fixations.filter(_.placement == MapPlacement.InWindow)
-      _ <- Either.cond(inMap.nonEmpty, (), study("preview")("no fixation lies in the map"))
+      _ <- Either.cond(inMap.nonEmpty, (), study("density")("no fixation lies in the map"))
       (screen, window) <- frames(trial, recipe, geometry)
       perDegree = recipe.angularScale.getOrElse(geometry.pixelsPerDegree).value
       // Each in-map fixation in the window's own frame, with its weight.
@@ -277,11 +289,14 @@ object FakeTrialViews:
           case HalfOpenPlacement.Outside(_) => None
       )
       grid <- Grid
-        .of(GridId("preview"), window.frame, recipe.grid.columns, recipe.grid.rows)
+        .of(GridId("map"), window.frame, recipe.grid.columns, recipe.grid.rows)
         .leftMap(e => study("grid")(e.message))
-      sigma <- LinearAngularScale
+      angular <- LinearAngularScale
         .of(screen, perDegree)
-        .flatMap(scale => Sigma.deg(PreviewSigmaDegrees).flatMap(scale.sigma))
+        .leftMap(e => study("angular scale")(e.message))
+      sigma <- Sigma
+        .deg(sigmaDegrees)
+        .flatMap(angular.sigma)
         .leftMap(e => study("bandwidth")(e.message))
       measure <- PointMeasure
         .of(window.frame, IArray.from(located.map(_._1)), IArray.from(located.map(_._2)))
@@ -290,10 +305,26 @@ object FakeTrialViews:
         .gaussian(sigma, EdgePolicy.Truncate)
         .density(measure, grid)
         .leftMap(e => study("density")(e.message))
-      levels <- MassLevels.of(mass, PreviewCoverages).leftMap(e => study("isolines")(e.message))
-      covered = window.region
+      density <- DensityView.of(mass).leftMap(e => study("density")(e.message))
+      cells <- GridGeometry
+        .of(grid, Some(window), Some(angular))
+        .leftMap(e => study("grid geometry")(e.message))
+    yield Estimate(density, cells, window.region)
+
+  /** eyes4s's σ 2° density preview, with its preview-specific isolines. */
+  def preview(
+      moment: StoryMoment,
+      revision: AnalysisRevision,
+      dataset: DatasetRevision,
+      trial: TrialKey
+  ): Either[BackendError, TrialPreview] =
+    for
+      e <- estimate(moment, revision, dataset, trial, PreviewSigmaDegrees)
+      levels <- e.view
+        .levels(PreviewCoverages)
+        .leftMap(err => refused(TrialViewError.Study(trial, "isolines", err.message)))
       region <- ScreenRegion
-        .of(trial, covered.xMin, covered.yMin, covered.xMax, covered.yMax)
+        .of(trial, e.covered.xMin, e.covered.yMin, e.covered.xMax, e.covered.yMax)
         .leftMap(refused)
       preview <- TrialPreview
         .of(
@@ -301,12 +332,65 @@ object FakeTrialViews:
           trial,
           PreviewSigmaDegrees,
           region,
-          recipe.grid.columns,
-          recipe.grid.rows,
+          e.view.nx,
+          e.view.ny,
           // The window's frame runs y down from its top edge, so row 0 is the top.
           RowOrder.TopFirst,
-          mass.values.toVector.map(Some(_)),
+          e.view.cells.toVector.map(Some(_)),
           levels.map(_.threshold)
         )
         .leftMap(refused)
     yield preview
+
+  /** The run's served density grid. The fake exposes an eyes4s estimate over
+    * the declared scale; a real backend must serve its retained run result.
+    */
+  def mapGrid(
+      moment: StoryMoment,
+      run: RunId,
+      revision: AnalysisRevision,
+      dataset: DatasetRevision,
+      scale: Int,
+      trial: TrialKey
+  ): Either[BackendError, DensityGrid] =
+    val address = ResultAddress.Estimation(scale, trial)
+    def none(reason: String) = BackendError.NoDensity(
+      run,
+      address,
+      StudioDiagnostic(
+        NoDensityCode,
+        DiagnosticLevel.Error,
+        DiagnosticOrigin.Host,
+        Vector(DiagnosticLocus.Trial(trial)),
+        reason
+      )
+    )
+    for
+      (recipe, _) <- study(moment, revision)
+      sigma <- recipe.scales.values.lift(scale).toRight(BackendError.UnknownReference(run, address))
+      e <- estimate(moment, revision, dataset, trial, sigma.degrees).leftMap {
+        case BackendError.TrialViewRefused(err) => none(err.message)
+        case BackendError.Unavailable(DiagnosticLocus.Trial(_)) =>
+          none("the trial has no admitted scanpath")
+        case other => other
+      }
+      levels <- e.view.levels(ResultCoverages).leftMap(err => none(err.message))
+      region <- DensityGrid
+        .region(run, scale, trial, e.covered.xMin, e.covered.yMin, e.covered.xMax, e.covered.yMax)
+        .leftMap(err => none(err.message))
+      grid <- DensityGrid
+        .of(
+          run,
+          scale,
+          trial,
+          sigma.degrees,
+          region,
+          e.view.nx,
+          e.view.ny,
+          RowOrder.TopFirst,
+          e.geometry.cellDegrees.map(d => CellDegrees(d.width, d.height)),
+          e.view.cells.toVector,
+          levels.map(l => DensityLevel(l.coverage, l.threshold))
+        )
+        .leftMap(err => none(err.message))
+    yield grid

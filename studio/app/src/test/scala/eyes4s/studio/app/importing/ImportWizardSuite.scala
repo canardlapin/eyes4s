@@ -64,6 +64,11 @@ class ImportWizardSuite extends munit.FunSuite:
     source(SourceRole.Fixations, "inputs/fixations.csv", text)
       .copy(bytes = document.dataset(dataset).flatMap(_.sources.fixations).get.bytes)
 
+  /** The trials records above, read as `dataset`'s own trials file. */
+  def ownTrials(document: StudioDocument, dataset: DatasetRevision): SniffedSource =
+    source(SourceRole.Trials, "inputs/trials.csv", trials)
+      .copy(bytes = document.dataset(dataset).flatMap(_.sources.trials).get.bytes)
+
   def run(
       w: ImportWizard,
       document: StudioDocument,
@@ -587,5 +592,142 @@ class ImportWizardSuite extends munit.FunSuite:
         .of(w, t2)
         .issues
         .exists(_.text.contains("fixations.csv has a header but no records"))
+    )
+  }
+
+  /** t1 with r3 changed by `f`, as a project stored before a check existed. */
+  private def storedAs(f: DatasetRevisionSpec => DatasetRevisionSpec): StudioDocument =
+    ok(
+      StudioDocument.of(
+        t1.datasets.map(d => if d.id == DatasetRevision(3) then f(d) else d),
+        t1.analyses,
+        t1.draft,
+        t1.runs,
+        t1.reporting,
+        t1.figures,
+        t1.presentation,
+        t1.jobs
+      )
+    )
+
+  test(
+    "a re-map says why the trial inventory keeps a revision from admission (S5.4 follow-up)"
+  ) {
+    val r3 = DatasetRevision(3)
+    // A trials.csv stored unmapped.
+    val unmapped = storedAs(_.copy(inventory = None))
+    val w0       = ok(ImportWizard.remap(unmapped, r3, ImportPresets.empty))
+    assertEquals(
+      w0.problem,
+      Some(
+        WizardProblem.InventoryNeedsRemap(
+          r3,
+          "trials.csv",
+          DocumentError.InventoryUnmapped(r3, "inputs/trials.csv")
+        )
+      )
+    )
+    assertEquals(
+      ImportWizardVM.of(w0, unmapped).problem,
+      Some(
+        "r3's trial inventory trials.csv keeps it from admission: Dataset r3: the columns of " +
+          "trial inventory inputs/trials.csv are not mapped. Map its columns, or remove it from " +
+          "the revision."
+      )
+    )
+    // A trials.csv keyed otherwise than the fixations.
+    val keyed = storedAs(d =>
+      d.copy(mapping =
+        ok(ColumnMapping.of(d.mapping.bindings.filterNot(_.role == ColumnRole.Occurrence)))
+      )
+    )
+    assert(
+      ok(ImportWizard.remap(keyed, r3, ImportPresets.empty)).problem.exists {
+        case WizardProblem.InventoryNeedsRemap(
+              `r3`,
+              "trials.csv",
+              e: DocumentError.InventoryKeyDisagrees
+            ) =>
+          e.role == ColumnRole.Occurrence
+        case _ => false
+      }
+    )
+    // A revision whose inventory is fine opens with no problem.
+    assertEquals(ok(ImportWizard.remap(t1, r3, ImportPresets.empty)).problem, None)
+  }
+
+  test("a re-map can remove the trial inventory: a new pending revision without trials.csv") {
+    val r3       = DatasetRevision(3)
+    val unmapped = storedAs(_.copy(inventory = None))
+    val w0       = ok(ImportWizard.remap(unmapped, r3, ImportPresets.empty))
+    val vm0      = ImportWizardVM.of(w0, unmapped)
+    assertEquals(
+      vm0.trialsSource,
+      Some(("Remove trials.csv from this revision", WizardIntent.DropTrials(true)))
+    )
+    // Its trial page is offered, even before the file is read, to reach the choice.
+    assert(vm0.tabs.exists(_.tab == WizardTab.TrialMetadata), vm0.tabs)
+    val (dropped, _) = run(
+      w0,
+      unmapped,
+      WizardIntent.SourceRead(own(unmapped, r3, golden)),
+      WizardIntent.DropTrials(true),
+      // A late read of the trials file is set aside, not taken in.
+      WizardIntent.SourceRead(ownTrials(unmapped, r3))
+    )
+    assertEquals((dropped.dropTrials, dropped.trials), (true, None))
+    val vm = ImportWizardVM.of(dropped, unmapped)
+    assertEquals(vm.trialsSource, Some(("Keep trials.csv", WizardIntent.DropTrials(false))))
+    assert(
+      vm.trialsNote.startsWith("trials.csv is not part of the new revision"),
+      vm.trialsNote
+    )
+    val (_, fx) = run(dropped, unmapped, WizardIntent.Commit)
+    val spec    = unmapped.dataset(r3).get
+    commands(fx) match
+      case Vector(
+            Command.ImportSources(Some(`r3`), sources, mapping, units, g, attrs, None, None)
+          ) =>
+        assertEquals(
+          sources.entries,
+          spec.sources.entries.filterNot(_.role == SourceRole.Trials)
+        )
+        assertEquals(
+          (mapping, units, g, attrs),
+          (spec.mapping, spec.units, spec.geometry, spec.attributes)
+        )
+      case other => fail(s"expected a re-import without trials, got $other")
+    // Applied, the new revision is pending and its inventory no longer keeps it from admission.
+    val applied = AppModel.run(AppModel.open(unmapped, None), WizardEffect.appIntents(fx))._1
+    val r4      = applied.document.datasets.last
+    assertEquals((r4.parent, r4.sources.trials, r4.inventory), (Some(r3), None, None))
+    assertEquals(r4.decision, AdmissionDecision.Pending)
+    val verified = AppModel.update(applied, Intent.Dispatch(Command.VerifyDataset(r4.id)))._1
+    assert(
+      verified.document.dataset(r4.id).exists(_.decision != AdmissionDecision.Pending),
+      verified.notice
+    )
+    // Keeping it again restores the re-map that keeps trials.csv, with the
+    // file's draft (read while it was dropped) and its rows.
+    val kept = run(dropped, unmapped, WizardIntent.DropTrials(false))._1
+    assertEquals(kept.dropTrials, false)
+    assertEquals(kept.trials.map(_._1.preview.file), Some("trials.csv"))
+    assert(ImportWizardVM.of(kept, unmapped).trials.rows.nonEmpty)
+    // A draft read before Drop comes back on Keep exactly as it was.
+    val read = run(
+      w0,
+      unmapped,
+      WizardIntent.SourceRead(own(unmapped, r3, golden)),
+      WizardIntent.SourceRead(ownTrials(unmapped, r3))
+    )._1
+    val roundTrip =
+      run(read, unmapped, WizardIntent.DropTrials(true), WizardIntent.DropTrials(false))._1
+    assertEquals(roundTrip.trials, read.trials)
+    assert(read.trials.isDefined)
+    // A new import has no revision's inventory to remove.
+    val fresh = ImportWizard.newImport(empty, ImportPresets.empty)
+    assertEquals(
+      run(fresh, empty, WizardIntent.DropTrials(true))._1.problem,
+      Some(WizardProblem.NoTrials)
     )
   }

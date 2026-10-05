@@ -23,7 +23,7 @@ import eyes4s.studio.core.backend.{AnalysisRevision, DatasetRevision, JobId, Run
 import eyes4s.studio.core.document.*
 import eyes4s.studio.core.document.AdmissionDecision.coreDecision
 import eyes4s.studio.core.document.DigestJson.given
-import io.circe.Codec
+import io.circe.{Codec, Encoder}
 
 /** The four kinds of change (DESIGN_SPEC section 8), tagged the same
   * everywhere. Only `ViewOnly` commands leave the science untouched.
@@ -53,7 +53,7 @@ enum ChangeKind derives CanEqual, Codec.AsObject:
   * captured value back at its id); a script may use them, and they are
   * validated like every other command.
   */
-enum Command derives CanEqual, Codec.AsObject:
+enum Command derives CanEqual:
 
   // --- Dataset · re-admit --------------------------------------------------
 
@@ -114,8 +114,17 @@ enum Command derives CanEqual, Codec.AsObject:
   case SetGeometry(dataset: DatasetRevision, geometry: Geometry)
   case SetOffScreenPolicy(dataset: DatasetRevision, policy: OffScreenChoice)
 
-  /** Insert a correction rule at `index` (0 to the rule count). */
+  /** Insert a correction rule at `index` (0 to the rule count). A rule that
+    * would cover a trial another rule covers is refused
+    * (`DocumentError.CorrectionsOverlap`, S5.5).
+    */
   case AddCorrection(dataset: DatasetRevision, index: Int, rule: CorrectionRule)
+
+  /** Remove the rule at `index`. Its undo is AddCorrection, refused like any
+    * other: in a document stored with overlapping rules (before S5.5 refused
+    * them), undoing the removal of one of them is refused with
+    * `CorrectionsOverlap`, a typed refusal; such a revision is not admitted.
+    */
   case RemoveCorrection(dataset: DatasetRevision, index: Int)
 
   /** Send a pending revision to the backend for verification (story moment
@@ -126,7 +135,13 @@ enum Command derives CanEqual, Codec.AsObject:
     */
   case VerifyDataset(dataset: DatasetRevision)
 
-  /** Return a verifying revision to `Pending`, so it can be edited again. */
+  /** Return a verifying revision to `Pending`, so it can be edited again.
+    * Its undo is ResumeVerification, refused like a new verification: in a
+    * document stored `Verifying` with checks it would now fail (before S5.4
+    * refused such revisions; for example its two files naming a trial by
+    * different keys), undoing the withdrawal is refused with that typed
+    * refusal; such a revision is not admitted.
+    */
   case WithdrawVerification(dataset: DatasetRevision)
 
   /** Put a withdrawn verification of `content` back exactly, without a new
@@ -290,6 +305,29 @@ enum Command derives CanEqual, Codec.AsObject:
           SaveLayout) =>
       ChangeKind.ViewOnly
     case RelinkAsset(_, _, _) => ChangeKind.AssetsNoRerun
+
+object Command:
+  private val derived: Codec.AsObject[Command] = Codec.AsObject.derived
+
+  /** An absent inventory mapping is omitted, as the dataset revision itself
+    * stores it (S5.4 follow-up): a journal line never says `"inventory":null`.
+    * A line that does (written before) still reads, as `None`.
+    */
+  given Codec.AsObject[Command] = Codec.AsObject.from(
+    derived,
+    Encoder.AsObject.instance(c =>
+      derived
+        .encodeObject(c)
+        .mapValues(
+          _.mapObject(fields =>
+            c match
+              case _: (ImportSources | ReviseDataset) if fields("inventory").exists(_.isNull) =>
+                fields.remove("inventory")
+              case _ => fields
+          )
+        )
+    )
+  )
 
 /** What the application must do after a command: data, performed by the
   * shell or a service, never by the reducer (DESIGN_SPEC section 13).

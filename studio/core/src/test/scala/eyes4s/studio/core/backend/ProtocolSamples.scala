@@ -232,8 +232,30 @@ object ProtocolSamples:
       AnalysisRevision(4),
       DatasetRevision(2),
       DatasetRevision(3)
+    ),
+    BackendError.ContentMismatch(DatasetRevision(3), content("ab"), content("cd")),
+    BackendError.ContentNotHeld(DatasetRevision(9), content("ab")),
+    BackendError.PlacementRefused(DatasetRevision(3), "it has no fixation source"),
+    BackendError.NoDensity(
+      RunId(7),
+      ResultAddress.Estimation(2, query),
+      StudioDiagnostic(
+        "study-failure.off-window",
+        DiagnosticLevel.Error,
+        DiagnosticOrigin.EyesCore,
+        Vector(DiagnosticLocus.Trial(query)),
+        "no fixation lies in the map"
+      )
     )
   )
+
+  /** A dataset revision's content digest: `pair` repeated to 64 digits. */
+  def content(
+      pair: String
+  ): eyes4s.codec.CanonicalDigest[eyes4s.studio.core.document.DatasetRevisionSpec] =
+    eyes4s.codec.CanonicalDigest
+      .parse[eyes4s.studio.core.document.DatasetRevisionSpec](pair * 32)
+      .fold(e => throw AssertionError(e.message), identity)
 
   val runStates: Vector[RunState] = Vector(
     RunState.Current,
@@ -521,7 +543,9 @@ object ProtocolSamples:
     BackendRequest.TrialFixationsOf(AnalysisRevision(4), query),
     BackendRequest.TrialPreviewOf(AnalysisRevision(4), query),
     BackendRequest.SourceRecordsOf(AnalysisRevision(4), 7214, 60),
-    BackendRequest.PairRowsOf(run, 2, page)
+    BackendRequest.PairRowsOf(run, 2, page),
+    BackendRequest.Verify(DatasetRevision(3), content("ab")),
+    BackendRequest.PlacementOf(placementSpec)
   )
 
   val responses: Vector[BackendResponse] = Vector(
@@ -624,8 +648,66 @@ object ProtocolSamples:
     BackendResponse.TrialFixationsOf(trialFixations),
     BackendResponse.TrialPreviewOf(trialPreview),
     BackendResponse.SourceRecordsOf(sourceRecordPage),
-    BackendResponse.PairRowsOf(pairRowPage)
+    BackendResponse.PairRowsOf(pairRowPage),
+    BackendResponse.PlacementOf(placementPreview)
   )
+
+  /** t1's r3 declared at 35.5 px/°: an integral double prints as `35.0` on
+    * the JVM and `35` on Scala.js, so the pinned spec carries a fraction.
+    */
+  lazy val placementSpec: eyes4s.studio.core.document.DatasetRevisionSpec =
+    import eyes4s.studio.core.document.{DeclaredPixelsPerDegree, Geometry}
+    val r3  = eyes4s.studio.core.document.DocumentSamples.t1.dataset(DatasetRevision(3)).get
+    val ppd =
+      DeclaredPixelsPerDegree.of(35.5).fold(e => throw AssertionError(e.message), identity)
+    r3.copy(geometry =
+      Geometry
+        .of(r3.geometry.screen, r3.geometry.image, ppd)
+        .fold(e => throw AssertionError(e.message), identity)
+    )
+
+  /** Two records of one trial, one inside the image frame and one off the
+    * screen. Its numbers are fractional: an integral double prints as
+    * `1148.0` on the JVM and `1148` on Scala.js.
+    */
+  lazy val placementPreview: PlacementPreview = (for
+    tally   <- TrialPlacement.of(query, 2, 0, 1)
+    grid    <- PlacementDensityGrid.of(2, 1, Vector(1.5, 0.5), 2)
+    preview <- PlacementPreview.of(
+      DatasetRevision(3),
+      Vector(
+        PlacedRecord(
+          7214,
+          query,
+          1148.25,
+          456.75,
+          None,
+          1148.25,
+          456.75,
+          700.25,
+          300.75,
+          RecordPlacement.Inside,
+          Some((5.375, 2.375))
+        ),
+        PlacedRecord(
+          7215,
+          query,
+          -40.5,
+          500.25,
+          Some(0),
+          1960.5,
+          500.25,
+          1512.5,
+          344.25,
+          RecordPlacement.OutsideScreen,
+          None
+        )
+      ),
+      Vector(UnplacedSourceRecord(7216, "x is not a number")),
+      Vector(tally),
+      grid
+    )
+  yield preview).toOption.get
 
   val events: Vector[JobEvent] =
     JobEvent.Advanced(progress) +: outcomes.map(JobEvent.Finished(_))

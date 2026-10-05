@@ -268,3 +268,24 @@ class AdmissionLedgerFxSuite extends ShellFxSuite:
       )
       assertEquals(runOnFx(w.admission.state.counts).isInstanceOf[Loading.Ready[?]], true)
   }
+
+  fxStage.test(
+    "Admit sends the verified content: a backend that holds other content refuses (1.9)"
+  ) { fx =>
+    import cats.effect.unsafe.implicits.global
+    val w     = ready(fx)
+    val v     = w.admission.view
+    val other = eyes4s.codec.CanonicalDigest
+      .parse[eyes4s.studio.core.document.DatasetRevisionSpec]("ab" * 32)
+      .fold(e => fail(e.message), identity)
+    // The backend holds other content for r3 than the window asks to admit.
+    w.session.backend.holdContent(r3, other).unsafeRunSync()
+    fire(fx, v.choices(CoreAdmissionDecision.ReviewExclusions))
+    fire(fx, v.admit)
+    eventually(fx, "the refusal")(w.admission.state.problem.exists(_.contains(other.display)))
+    // Nothing is admitted on an answer for content eyes4s did not see.
+    assertEquals(
+      runOnFx(w.runtime.model.document.dataset(r3).exists(_.decision.isAdmitted)),
+      false
+    )
+  }

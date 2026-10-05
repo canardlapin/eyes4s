@@ -55,6 +55,16 @@ class ReviseDatasetSuite extends munit.FunSuite:
   )
   private val seconds = DeclaredUnits(Some(TimeUnit.Seconds))
 
+  /** r3's inventory without the occurrence, as its fixations now map none:
+    * both files name the trial by the same key (S5.4 follow-up).
+    */
+  private def withoutOccurrence(inv: Option[InventoryMapping]): Option[InventoryMapping] =
+    inv.map(i =>
+      right(
+        InventoryMapping.of(i.bindings.filterNot(_.role == ColumnRole.Occurrence), i.attributes)
+      )
+    )
+
   test("one ReviseDataset changes all four; one undo restores the prior spec exactly") {
     val step = ok(
       History
@@ -106,7 +116,14 @@ class ReviseDatasetSuite extends munit.FunSuite:
       History
         .start(t2)
         .apply(
-          ReviseDataset(r3, remapped, seconds, r3spec.geometry, attributes, r3spec.inventory)
+          ReviseDataset(
+            r3,
+            remapped,
+            seconds,
+            r3spec.geometry,
+            attributes,
+            r3spec.inventory
+          )
         )
         .isLeft
     )
@@ -213,4 +230,132 @@ class ReviseDatasetSuite extends munit.FunSuite:
     assertEquals(ok(chosen.history.undo).history.document, t2)
     val inherited = ok(History.start(t2).apply(reimport(None))).history.document.datasets.last
     assertEquals(inherited.admission, r3spec.admission)
+  }
+
+  test("the fixations and the inventory must name a trial by the same key (S5.4 follow-up)") {
+    // As with the phase (S5.3), a pending revision may be re-mapped into one
+    // whose keys disagree, so an undo always restores it; it is kept from
+    // admission: verifying it is refused, naming the role and both files.
+    val revised = History
+      .start(t1)
+      .apply(
+        ReviseDataset(r3, remapped, seconds, pending.geometry, attributes, pending.inventory)
+      )
+      .fold(e => fail(e.message), _.history.document)
+    assertEquals(
+      History.start(revised).apply(VerifyDataset(r3)).left.map(_.message),
+      Left(
+        "VerifyDataset on dataset r3 is refused: Dataset r3: occurrence is mapped in " +
+          "trials.csv but not in fixations.csv; both files must name the trial by the same key."
+      )
+    )
+    // A new revision may be imported with keys that disagree (one file is
+    // mapped before the other, as in the golden journey); it cannot be verified.
+    val t2        = DocumentSamples.t2
+    val r3spec    = t2.dataset(r3).get
+    val importOne = ImportSources(
+      Some(r3),
+      r3spec.sources,
+      r3spec.mapping,
+      r3spec.units,
+      r3spec.geometry,
+      r3spec.attributes,
+      None,
+      withoutOccurrence(r3spec.inventory)
+    )
+    val imported = ok(History.start(t2).apply(importOne)).history.document
+    val r4       = imported.datasets.last.id
+    assertEquals(
+      History.start(imported).apply(VerifyDataset(r4)).left.map(_.message),
+      Left(
+        "VerifyDataset on dataset r4 is refused: Dataset r4: occurrence is mapped in " +
+          "fixations.csv but not in trials.csv; both files must name the trial by the same key."
+      )
+    )
+  }
+
+  test("Admit and ResumeVerification backstop the trial key and inventory checks (S5.4)") {
+    // r3 re-mapped so its keys disagree, then sent for verification as a
+    // replayed journal does (Replay does not check).
+    val disagreeing = History
+      .start(t1)
+      .apply(
+        ReviseDataset(r3, remapped, seconds, pending.geometry, attributes, pending.inventory)
+      )
+      .fold(e => fail(e.message), _.history.document)
+    val verifying = Reducer
+      .run(disagreeing, VerifyDataset(r3), MappingRule.Replay)
+      .fold(e => fail(e.message), _.document)
+    val content = verifying.dataset(r3).map(_.decision) match
+      case Some(AdmissionDecision.Verifying(c)) => c
+      case other                                => fail(s"expected Verifying, got $other")
+    def admitOf(c: eyes4s.codec.CanonicalDigest[DatasetRevisionSpec]) = Admit(
+      r3,
+      c,
+      Some(eyes4s.plan.AdmissionDecision.RequireComplete),
+      CoreBinding.unbound,
+      CoreBinding.unbound
+    )
+    val admit = admitOf(content)
+    val keys  = "both files must name the trial by the same key"
+    assert(
+      Reducer.step(verifying, admit).left.exists(_.message.contains(keys)),
+      Reducer.step(verifying, admit)
+    )
+    // A direct ResumeVerification is VerifyDataset's checks too.
+    val digest = DatasetRevisionSpec
+      .contentDigest(disagreeing.dataset(r3).get)
+      .fold(e => fail(e.message), identity)
+    assert(
+      Reducer
+        .step(disagreeing, ResumeVerification(r3, digest))
+        .left
+        .exists(_.message.contains(keys))
+    )
+    // An unmapped trials file is refused the same way.
+    val unmapped = StudioDocument
+      .of(
+        t1.datasets.map(d => if d.id == r3 then d.copy(inventory = None) else d),
+        t1.analyses,
+        t1.draft,
+        t1.runs,
+        t1.reporting,
+        t1.figures,
+        t1.presentation,
+        t1.jobs
+      )
+      .fold(e => fail(e.toString), identity)
+    val unmappedVerifying = Reducer
+      .run(unmapped, VerifyDataset(r3), MappingRule.Replay)
+      .fold(e => fail(e.message), _.document)
+    val unmappedContent = unmappedVerifying.dataset(r3).map(_.decision) match
+      case Some(AdmissionDecision.Verifying(c)) => c
+      case other                                => fail(s"expected Verifying, got $other")
+    assert(
+      Reducer
+        .step(unmappedVerifying, admitOf(unmappedContent))
+        .left
+        .exists(_.message.contains("are not mapped"))
+    )
+    assert(
+      Reducer
+        .step(unmapped, ResumeVerification(r3, unmappedContent))
+        .left
+        .exists(_.message.contains("are not mapped"))
+    )
+    // The documented limit of WithdrawVerification: a document stored
+    // Verifying with disagreeing keys withdraws, but its undo (ResumeVerification)
+    // is refused, typed; the revision is never admitted.
+    val withdrawn = History
+      .start(verifying)
+      .apply(WithdrawVerification(r3))
+      .fold(e => fail(e.message), _.history)
+    assert(
+      withdrawn.undo.left.exists(_.message.contains(keys)),
+      withdrawn.undo.map(_.history.document.dataset(r3).map(_.decision))
+    )
+    // Agreeing keys verify, resume and admit as before.
+    val t1content =
+      DatasetRevisionSpec.contentDigest(pending).fold(e => fail(e.message), identity)
+    assert(Reducer.step(t1, ResumeVerification(r3, t1content)).isRight)
   }

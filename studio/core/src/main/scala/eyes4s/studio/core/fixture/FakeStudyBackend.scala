@@ -19,7 +19,9 @@ package eyes4s.studio.core.fixture
 import cats.Eq
 import cats.effect.Concurrent
 import cats.syntax.all.*
+import eyes4s.codec.CanonicalDigest
 import eyes4s.studio.core.backend.*
+import eyes4s.studio.core.document.DatasetRevisionSpec
 import eyes4s.studio.core.execution.RunStamp
 import eyes4s.studio.core.navigation.StudyNavigator
 import eyes4s.studio.core.preview.*
@@ -209,6 +211,27 @@ final class FakeStudyBackend[F[_]] private[fixture] (
       }
     }
 
+  /** The admission of `d`, verified for `content`: refused when this backend
+    * holds other content for `d`. It holds each story revision's own content
+    * from the start, and what [[holdContent]] gives it since (a test standing
+    * for a project saved with a re-mapped revision); the real backend reads
+    * its own stored revisions (S3.7). Content it holds nothing for is refused
+    * too: nothing is verified by default.
+    */
+  def verify(
+      d: DatasetRevision,
+      content: CanonicalDigest[DatasetRevisionSpec]
+  ): F[Either[BackendError, AdmissionSummary]] =
+    state.get.flatMap(s =>
+      s.contents.get(d) match
+        // An unknown dataset is refused as admission refuses it.
+        case None if !s.datasets.contains(d) => admission(d)
+        case None => Concurrent[F].pure(Left(BackendError.ContentNotHeld(d, content)))
+        case Some(held) if held != content =>
+          Concurrent[F].pure(Left(BackendError.ContentMismatch(d, content, held)))
+        case Some(_) => admission(d)
+    )
+
   def admission(d: DatasetRevision): F[Either[BackendError, AdmissionSummary]] =
     inventoried(d).map(_.map { (st, scenario) =>
       val bySlug = summary.quarantineBySlug.toMap
@@ -289,6 +312,9 @@ final class FakeStudyBackend[F[_]] private[fixture] (
     revision(r).map(
       _.flatMap(d => known(d, trial).flatMap(FakeTrialViews.preview(moment, r, _, trial)))
     )
+
+  def placement(spec: DatasetRevisionSpec): F[Either[BackendError, PlacementPreview]] =
+    Concurrent[F].pure(FakePlacement.of(spec))
 
   def sourceRecords(
       r: AnalysisRevision,
@@ -755,6 +781,21 @@ final class FakeStudyBackend[F[_]] private[fixture] (
   def serveInventory(dataset: DatasetRevision, scenario: InventoryScenario): F[Unit] =
     state.update(s => s.copy(inventories = s.inventories.updated(dataset, scenario)))
 
+  /** Hold `content` for `dataset` from now on, as a backend that stored the
+    * revision would: [[verify]] then refuses any other content (S5.6).
+    */
+  def holdContent(
+      dataset: DatasetRevision,
+      content: CanonicalDigest[DatasetRevisionSpec]
+  ): F[Unit] =
+    state.update(s => s.copy(contents = s.contents.updated(dataset, content)))
+
+  /** Hold no content for `dataset` from now on, as a backend whose stored
+    * revision is gone: [[verify]] then refuses with ContentNotHeld.
+    */
+  def forgetContent(dataset: DatasetRevision): F[Unit] =
+    state.update(s => s.copy(contents = s.contents - dataset))
+
   /** Finish a job with diagnostics; its run becomes `Failed`. */
   def fail(
       id: JobId,
@@ -941,6 +982,19 @@ final class FakeStudyBackend[F[_]] private[fixture] (
         Right(PairRowPage(run, scale, PageInfo.of(page, all.size, rows.size), rows))
     })
 
+  def mapGrid(run: RunId, scale: Int, trial: TrialKey): F[Either[BackendError, DensityGrid]] =
+    scored(run).map(_.flatMap { r =>
+      val address = ResultAddress.Estimation(scale, trial)
+      for
+        _ <- Either.cond(
+          summary.scales.indices.contains(scale) && ledgerOf.contains(trial),
+          (),
+          BackendError.UnknownReference(run, address)
+        )
+        grid <- FakeTrialViews.mapGrid(moment, r.run, r.revision, r.dataset, scale, trial)
+      yield grid
+    })
+
   def provenance(run: RunId, address: ResultAddress): F[Either[BackendError, Provenance]] =
     scored(run).map(_.flatMap { r =>
       locate(run, address).flatMap { _ =>
@@ -1013,7 +1067,8 @@ object FakeStudyBackend:
       jobs: Vector[JobStatus],
       previews: Map[PreviewId, RetainedPreview],
       jobSnapshots: Map[JobId, FakePreparedSnapshot],
-      inventories: Map[DatasetRevision, InventoryScenario] = Map.empty
+      inventories: Map[DatasetRevision, InventoryScenario] = Map.empty,
+      contents: Map[DatasetRevision, CanonicalDigest[DatasetRevisionSpec]] = Map.empty
   ):
     def job(id: JobId): Option[JobStatus] = jobs.find(_.job == id)
 
@@ -1076,9 +1131,20 @@ object FakeStudyBackend:
   def create[F[_]](moment: StoryMoment)(using F: Concurrent[F]): F[FakeStudyBackend[F]] =
     def defect[A](message: String): F[A] =
       F.raiseError(new IllegalStateException(s"FakeStudyBackend at $moment: $message"))
+    // It holds each story revision's own content (S5.6): a verification of
+    // other content is refused, as a backend that stored the revisions would.
+    val held = StorySeed
+      .document(moment)
+      .flatMap(
+        _.datasets.traverse(s =>
+          DatasetRevisionSpec.contentDigest(s).left.map(_.message).map(s.id -> _)
+        )
+      )
+      .map(_.toMap)
     for
-      study <- MockStudy.load.fold(defect, F.pure)
-      state <- SignallingRef.of[F, State](initial(moment))
+      study    <- MockStudy.load.fold(defect, F.pure)
+      contents <- held.fold(defect, F.pure)
+      state    <- SignallingRef.of[F, State](initial(moment).copy(contents = contents))
       backend = new FakeStudyBackend[F](study, moment, state)
       _ <- backend.previewFacts.fold(e => defect(e.message), _ => F.unit)
       _ <- moment match

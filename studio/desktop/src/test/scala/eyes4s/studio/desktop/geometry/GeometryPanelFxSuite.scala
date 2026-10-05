@@ -75,13 +75,16 @@ class GeometryPanelFxSuite extends StudioFxSuite:
   private lazy val goldenBytes: IArray[Byte] =
     IArray.from(Files.readAllBytes(GoldenTrials.golden.resolve("fixations.csv")))
 
-  /** The golden fixture's bytes for every source; the fake backend's counts. */
+  /** The fake backend's placement previews and counts. */
   final class Inputs(moment: StoryMoment) extends GeometryInputs:
-    private val backend = FakeStudyBackend.create[IO](moment).unsafeRunSync()
-    @volatile var reads = 0
-    def read(source: Source, done: Either[String, IArray[Byte]] => Unit): Unit =
-      reads += 1
-      Thread(() => done(Right(goldenBytes))).start()
+    private val backend      = FakeStudyBackend.create[IO](moment).unsafeRunSync()
+    @volatile var placements = 0
+    def placement(
+        spec: DatasetRevisionSpec,
+        done: Either[String, PlacementPreview] => Unit
+    ): Unit =
+      placements += 1
+      backend.placement(spec).map(r => done(r.left.map(_.message))).unsafeRunAndForget()
     def admission(d: DatasetRevision, done: Either[String, AdmissionSummary] => Unit): Unit =
       backend.admission(d).map(r => done(r.left.map(_.message))).unsafeRunAndForget()
 
@@ -121,7 +124,7 @@ class GeometryPanelFxSuite extends StudioFxSuite:
 
   def loaded(fx: FxStage, rig: Rig): Unit =
     await(fx, "records and counts") {
-      rig.host.state.positions.toOption.isDefined && rig.host.state.counts.toOption.isDefined
+      rig.host.state.placement.toOption.isDefined && rig.host.state.counts.toOption.isDefined
     }
 
   /** The next redraw after `seen` receipts. */
@@ -246,8 +249,8 @@ class GeometryPanelFxSuite extends StudioFxSuite:
     assertEquals(GeometryPanel.selected(rig.model).map(_.id), Some(r4))
     assertEquals((first.key.dataset, first.key.geometry.image.top), (r4, 150))
     assert(first.millis <= RedrawBound, s"redraw took ${first.millis} ms")
-    // The draft shares r3's source: nothing is read again.
-    assertEquals(rig.inputs.reads, 1)
+    // The draft's geometry differs from r3's, so the backend places it again.
+    assertEquals(rig.inputs.placements, 2)
 
     // A second edit edits the pending draft in place.
     runOnFx {
@@ -325,7 +328,7 @@ class GeometryPanelFxSuite extends StudioFxSuite:
     loaded(fx, rig)
     redraw(fx, rig, 0)
     val v      = rig.host.view
-    val before = runOnFx(rig.host.state.positions.toOption.get)
+    val before = runOnFx(rig.host.state.placement.toOption.get)
     val p05    = TrialKey("P05", Phase.Retrieval, "ret_04", 1)
     val at = runOnFx(v.thumbnails.indexWhere(t => drawn(t.caption).startsWith("P05 · ret_04")))
     assert(at >= 0)
@@ -351,12 +354,17 @@ class GeometryPanelFxSuite extends StudioFxSuite:
     assertEquals(spec.decision, AdmissionDecision.Pending)
     assertEquals(spec.sources, StoryModels.t1.dataset(r3).get.sources)
     assertEquals(spec.sources.fixations.map(_.bytes), Some(ByteDigest.sha256(goldenBytes)))
-    // The positions the pane holds are the source's, unchanged; the drawn marks moved.
-    assertEquals(runOnFx(rig.host.state.positions.toOption.get), before)
+    // The records as recorded are the source's, unchanged; the drawn marks moved.
+    // The redraw above was of the new placement (its key carries the rule).
+    val after = runOnFx(rig.host.state.placement.toOption.get)
+    assertEquals(
+      after.records.map(r => (r.record, r.rawX, r.rawY)),
+      before.records.map(r => (r.record, r.rawX, r.rawY))
+    )
     assertEquals(receipt.key.admission.corrections, Vector(rule))
     val thumb = runOnFx(rig.host.shownPictures.get.thumbnails.find(_.trial == p05).get)
     val raw   = before.byTrial(p05)
-    assertEquals(thumb.marks.map(m => (m.x, m.y)), raw.map(p => (1920.0 - p.x, p.y)))
+    assertEquals(thumb.marks.map(m => (m.x, m.y)), raw.map(p => (1920.0 - p.rawX, p.rawY)))
     assert(thumb.marks.forall(_.corrected))
     assert(texts(fx).contains("1 · flip horizontally · P05 · ret_04"), texts(fx))
     assert(receipt.millis <= RedrawBound, s"redraw took ${receipt.millis} ms")

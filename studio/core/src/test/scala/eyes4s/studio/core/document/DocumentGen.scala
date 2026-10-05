@@ -191,7 +191,12 @@ object DocumentGen:
     for
       o  <- Gen.oneOf(OffScreenChoice.values.toSeq)
       cs <- Gen.listOfN(2, Gen.zip(target, correction)).flatMap(Gen.someOf(_))
-    yield AdmissionChoice(o, cs.toVector.map(CorrectionRule.apply))
+      // Rules that overlap are never recorded (the reducer refuses them,
+      // S5.5): a generated revision keeps at most one rule per trial.
+      choice = AdmissionChoice(o, cs.toVector.map(CorrectionRule.apply))
+    yield
+      if AdmissionChoice.overlap(choice).isEmpty then choice
+      else choice.copy(corrections = choice.corrections.take(1))
   val decision: Gen[AdmissionDecision] = Gen.oneOf(
     Gen.const(AdmissionDecision.Pending),
     canonical[DatasetRevisionSpec].map(AdmissionDecision.Verifying(_)),
@@ -214,18 +219,28 @@ object DocumentGen:
       a      <- admission
       d      <- decision
       at     <- attributesFor(m)
-    yield DatasetRevisionSpec(
-      DatasetRevision(id),
-      parent.map(DatasetRevision(_)),
-      s,
-      m,
-      u,
-      g,
-      a,
-      d,
-      at,
-      storedInventory(s)
-    )
+    yield
+      val spec = DatasetRevisionSpec(
+        DatasetRevision(id),
+        parent.map(DatasetRevision(_)),
+        s,
+        m,
+        u,
+        g,
+        a,
+        d,
+        at,
+        storedInventory(s)
+      )
+      // Only a revision that passes VerifyDataset's checks is verifying (the
+      // app cannot make another, and ResumeVerification re-runs them).
+      val verifiable = ColumnMapping.admissible(m).isRight &&
+        DatasetRevisionSpec.inventoryMapped(spec.id, s, spec.inventory).isRight &&
+        DatasetRevisionSpec.keysAgree(spec.id, s, m, spec.inventory).isRight
+      d match
+        case AdmissionDecision.Verifying(_) if !verifiable =>
+          spec.copy(decision = AdmissionDecision.Pending)
+        case _ => spec
 
   // --- Analyses -------------------------------------------------------------
 

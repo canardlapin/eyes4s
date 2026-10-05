@@ -159,5 +159,5 @@ class ProtocolLongSuite extends munit.FunSuite:
       ServerFrame.Event(JobEvent.Advanced(ProtocolSamples.progress))
     )
     assertEquals(WireFormat.parse[ServerFrame](envelope.asJson.noSpaces), Right(envelope))
-    assertEquals(ProtocolVersion.Current, ProtocolVersion(1, 10))
+    assertEquals(ProtocolVersion.Current, ProtocolVersion(1, 12))
   }

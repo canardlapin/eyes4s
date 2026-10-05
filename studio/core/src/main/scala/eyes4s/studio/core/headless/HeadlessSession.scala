@@ -77,6 +77,20 @@ final class HeadlessSession private (
   def admission(dataset: DatasetRevision): Future[Either[BackendError, AdmissionSummary]] =
     run(fake.admission(dataset))
 
+  /** Make the fake hold `content` for `dataset`, as a backend that stored
+    * the revision would (S5.6): a verification of other content is refused.
+    */
+  def holdContent(
+      dataset: DatasetRevision,
+      content: eyes4s.codec.CanonicalDigest[eyes4s.studio.core.document.DatasetRevisionSpec]
+  ): Future[Unit] = run(fake.holdContent(dataset, content))
+
+  def verify(
+      dataset: DatasetRevision,
+      content: eyes4s.codec.CanonicalDigest[eyes4s.studio.core.document.DatasetRevisionSpec]
+  ): Future[Either[BackendError, AdmissionSummary]] =
+    run(fake.verify(dataset, content))
+
   /** A submission first declares its revision to the fake, as the saved
     * analysis the document now holds; a conflicting declaration surfaces as
     * the service's own `StampMismatch`.
@@ -133,6 +147,13 @@ final class HeadlessSession private (
 
   def inspect(run: RunId, address: ResultAddress): Future[Either[BackendError, Inspection]] =
     this.run(fake.inspect(run, address))
+
+  def mapGrid(
+      run: RunId,
+      scale: Int,
+      trial: TrialKey
+  ): Future[Either[BackendError, DensityGrid]] =
+    this.run(fake.mapGrid(run, scale, trial))
 
   def ledger(
       dataset: DatasetRevision,

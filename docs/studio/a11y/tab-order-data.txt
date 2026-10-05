@@ -7,6 +7,7 @@ list: Sources
 button: Repair…
 button: Show 4 trials
 region: Column mapping
+toggle-button: Column mapping
 text-field: Preset name
 button: Revert
 region: Admission
