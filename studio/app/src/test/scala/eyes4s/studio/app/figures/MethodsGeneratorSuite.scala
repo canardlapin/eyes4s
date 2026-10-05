@@ -73,7 +73,7 @@ class MethodsGeneratorSuite extends munit.FunSuite:
       "cosine similarity was computed to the one matched encoding trial (M) and to every " +
       "admitted encoding trial of another item from the same participant (19 per query; 18 " +
       "for 171 queries); their mean is B, and D = M − B. A contrast required all of its " +
-      "pairs: 454 contributed, 3 failed (off-window), 9 had no admitted matched trial and 14 " +
+      "pairs: 454 contributed, 3 failed (off-window), 9 had no matched trial and 14 " +
       "queries were not admitted. D was averaged within participant, then across " +
       "participants with equal weight, separately by retrieval response (n = 24 each; paired " +
       "n = 24). Per participant, groups held 2–17 queries; no minimum per group was applied " +

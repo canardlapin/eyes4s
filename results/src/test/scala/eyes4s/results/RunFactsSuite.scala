@@ -287,7 +287,7 @@ class RunFactsSuite extends munit.FunSuite:
     assertEquals(
       design,
       Vector(
-        "5 queries were eligible; 5 contributed, 0 failed and 0 had no admitted matched trial.",
+        "5 queries were eligible; 5 contributed, 0 failed and 0 had no matched trial.",
         "Of the compared queries, 3 had 2 controls and 2 had 1 control."
       )
     )

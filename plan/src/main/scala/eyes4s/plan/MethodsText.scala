@@ -629,7 +629,7 @@ private final class FactText(facts: MethodsFacts):
       )
 
   /** "Of 480 requested queries, 457 were eligible; 454 contributed, 3 failed
-    * (off-window 3), 9 had no admitted matched trial and 14 were not admitted.
+    * (off-window 3), 9 had no matched trial and 14 were not admitted.
     * Of the compared queries, 286 had 19 controls and 171 had 18 (overlap)."
     */
   def design: Vector[Clause] =
@@ -640,7 +640,7 @@ private final class FactText(facts: MethodsFacts):
         case Some(f) => Some(Vector(f, w(" failed")) ++ failures)
         case None    => Option.when(failures.nonEmpty)(Vector(w("some failed")) ++ failures)
       ,
-      at(FactSlot.UnmatchedQueries).map(u => Vector(u, w(" had no admitted matched trial"))),
+      at(FactSlot.UnmatchedQueries).map(u => Vector(u, w(" had no matched trial"))),
       at(FactSlot.NotAdmittedQueries).map(n =>
         Vector(
           n,

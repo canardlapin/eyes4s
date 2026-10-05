@@ -721,6 +721,13 @@ object Reducer:
     * preset is held by the saved recipe; else the base's, its preset resolved
     * again only when the draft changes a field a preset declares, so an
     * unedited legacy revision keeps its preset and its science digest.
+    *
+    * So a revision saved before presets declared the layout (S7.1), with the
+    * layout `participant-stimulus-phase` and preset `EncodingRetrieval`, and
+    * rerun with only an undeclared field changed (the grid, a scale), keeps
+    * `EncodingRetrieval` although its recipe no longer holds that preset; the
+    * picker, which resolves the recipe, shows it as Custom. Changing a
+    * declared field, or choosing a preset, records the resolved one.
     */
   private def studioFields(
       draft: Draft,

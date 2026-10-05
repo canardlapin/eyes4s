@@ -369,6 +369,34 @@ class StudioDocumentCodecSuite extends munit.ScalaCheckSuite:
     assertEquals(ladder.earliest(DocumentSamples.t1).version, 3)
   }
 
+  test("a document whose only PerceptionImagery revision is an earlier one is version 5") {
+    // Every revision counts, not only the latest.
+    val base = DocumentSamples.t2
+    assert(base.analyses.size >= 2, base.analyses.size)
+    val earlier = StudioDocument
+      .of(
+        base.datasets,
+        base.analyses.head.copy(studio =
+          base.analyses.head.studio.copy(preset = Preset.PerceptionImagery)
+        ) +: base.analyses.tail,
+        base.draft,
+        base.runs,
+        base.reporting,
+        base.figures,
+        base.presentation,
+        base.jobs
+      )
+      .toOption
+      .get
+    assertNotEquals(earlier.latestAnalysis.map(_.studio.preset), Some(Preset.PerceptionImagery))
+    assertEquals(ladder.earliest(earlier).version, 5)
+    val encoded = StudioDocument.encode(earlier)
+    assertEquals(version(encoded), Right(Right(5)))
+    assertEquals(encoded.flatMap(StudioDocument.decode), Right(earlier))
+    val older = ladder.upTo(ladder.versions(3)).toOption.get
+    assert(older.writeAt(ladder.versions(3), earlier).isLeft)
+  }
+
   test("a version-4 reader refuses a version-5 document; no earlier rung names the preset") {
     val older   = ladder.upTo(ladder.versions(3)).toOption.get
     val encoded = StudioDocument.encode(imagery).toOption.get

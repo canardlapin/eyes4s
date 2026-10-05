@@ -497,7 +497,7 @@ object MethodsText:
       ) ++ why ++ Vector[Part](
         ", ",
         n(S.NoMatch, c.noMatch),
-        " had no admitted matched trial and ",
+        " had no matched trial and ",
         n(S.NotAdmitted, c.queryNotAdmitted),
         " queries were not admitted."
       ))*

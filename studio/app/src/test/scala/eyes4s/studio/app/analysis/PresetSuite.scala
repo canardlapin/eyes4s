@@ -390,9 +390,14 @@ class PresetSuite extends munit.ScalaCheckSuite:
   test("the studio words eyes4s's unmatched kinds and decides none of them") {
     def trial(phase: String, label: String) =
       get(TrialIdentity.of("P03", phase, label, TrialOccurrence.first))
+    // The reference phase is the recipe's, never a fixed word.
     assertEquals(
-      UnmatchedText(UnmatchedKind.NoReferenceInDesign),
+      UnmatchedText(UnmatchedKind.NoReferenceInDesign, "Study"),
       "No corresponding study trial (by design)"
+    )
+    assertEquals(
+      UnmatchedText(UnmatchedKind.NoReferenceInDesign, "Perception"),
+      "No corresponding perception trial (by design)"
     )
     assertEquals(
       UnmatchedText(
@@ -403,13 +408,17 @@ class PresetSuite extends munit.ScalaCheckSuite:
               CoreDisposition.Quarantined(QuarantineCause.Overlap(3, "[0,10)", "[5,15)"))
             )
           )
-        )
+        ),
+        "Encoding"
       ),
       "No match · enc_11 quarantined (Overlap)"
     )
     assertEquals(
-      UnmatchedText(UnmatchedKind.ReferenceNotPairable(Vector(trial("Encoding", "enc_02")))),
+      UnmatchedText(
+        UnmatchedKind.ReferenceNotPairable(Vector(trial("Encoding", "enc_02"))),
+        "Encoding"
+      ),
       "No match · enc_02 cannot be paired"
     )
-    assertEquals(UnmatchedText(UnmatchedKind.Undetermined), "No match")
+    assertEquals(UnmatchedText(UnmatchedKind.Undetermined, "Encoding"), "No match")
   }

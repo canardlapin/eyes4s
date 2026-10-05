@@ -96,7 +96,10 @@ object PresetPicker:
       val title  = PresetText(Title, p.phases.reference.label, p.phases.focal.label)
       val detail = line match
         case DetailRecognition =>
-          PresetText(line, UnmatchedText(UnmatchedKind.NoReferenceInDesign))
+          PresetText(
+            line,
+            UnmatchedText(UnmatchedKind.NoReferenceInDesign, p.phases.reference.label)
+          )
         case _ => PresetText(line, p.phases.focal.label, p.phases.reference.label)
       val changes = target.map((_, recipe) => p.changes(recipe))
       val diff    = changes.fold(PresetText(NoAnalysis)) { cs =>

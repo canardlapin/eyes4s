@@ -20,12 +20,14 @@ import eyes4s.plan.{TrialDisposition, UnmatchedKind}
 
 /** The words for eyes4s's `UnmatchedKind` (ticket S7.1): why a query has no
   * matched reference. eyes4s decides the kind against the trial inventory;
-  * the studio only words it, and never decides it.
+  * the studio only words it, and never decides it. `reference` is the
+  * recipe's reference phase as it is labelled ("Study", "Encoding").
   */
 object UnmatchedText:
 
-  def apply(kind: UnmatchedKind): String = kind match
-    case UnmatchedKind.NoReferenceInDesign => "No corresponding study trial (by design)"
+  def apply(kind: UnmatchedKind, reference: String): String = kind match
+    case UnmatchedKind.NoReferenceInDesign =>
+      s"No corresponding ${reference.toLowerCase} trial (by design)"
     case UnmatchedKind.ReferenceNotAdmitted(references) =>
       "No match · " + references
         .map(r => s"${r.trial.trial} ${disposition(r.disposition)}")

@@ -559,7 +559,7 @@ class StudyFormSuite extends munit.FunSuite:
       byTopic(ClauseTopic.Design),
       Vector(
         "Of 480 requested queries, 457 were eligible; 454 contributed, 3 failed (off-window 3), " +
-          "9 had no admitted matched trial and 14 were not admitted.",
+          "9 had no matched trial and 14 were not admitted.",
         "Of the compared queries, 286 had 19 controls and 171 had 18 controls (one lost to " +
           "overlap)."
       )
@@ -750,8 +750,8 @@ class StudyFormSuite extends munit.FunSuite:
         )
       ),
       Vector(
-        "Of the requested queries, some failed (off-window 3), 9 had no admitted matched " +
-          "trial and 14 were not admitted."
+        "Of the requested queries, some failed (off-window 3), 9 had no matched trial and " +
+          "14 were not admitted."
       )
     )
     val trials = StudyText.methods(fixturePlan, only(FactSlot.TrialsOutsideWindow)).text
