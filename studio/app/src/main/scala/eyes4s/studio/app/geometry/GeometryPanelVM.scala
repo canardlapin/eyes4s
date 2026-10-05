@@ -40,7 +40,7 @@ final case class ExampleRowVM(label: String, value: String) derives CanEqual
   */
 final case class ThumbnailVM(
     trial: TrialKey,
-    ref: StudioRef,
+    ref: Option[StudioRef],
     label: String,
     accessible: String,
     marked: Boolean
@@ -191,9 +191,18 @@ object GeometryPanelVM:
     )
     // The pictures on the canvases, until their redraw replaces them (also
     // while a changed revision's placement is asked again): the labels always
-    // describe what is drawn. None before the records are placed.
-    val shownPictures = pictures.filter(p =>
+    // describe what is drawn. None before the records are placed, and none
+    // once the placement is refused: a refusal blanks them.
+    val drawnFor = pictures.filter(p =>
       panel.placementKey.exists(PlacementKey.sameRecords(_, p.key.placement))
+    )
+    val shownPictures = panel.placement match
+      case Loading.Failed(_) => None
+      case _                 => drawnFor
+    // Pictures of the same records under other rules or geometry: said to be
+    // the previous placement's, and citing no tally of the edited revision.
+    val stale = shownPictures.exists(p =>
+      !panel.placementKey.exists(PlacementKey.same(_, p.key.placement))
     )
     val example     = shownPictures.flatMap(_.example)
     val exampleRows = example.toVector.flatMap { e =>
@@ -251,8 +260,9 @@ object GeometryPanelVM:
           )
           ThumbnailVM(
             p.trial,
-            // The thumbnail's counts are the backend's window tally of the trial.
-            StudioRef.TrialPlacementTally(dataset, p.trial),
+            // The thumbnail's counts are the backend's window tally of the
+            // trial, unless they are the previous placement's.
+            Option.when(!stale)(StudioRef.TrialPlacementTally(dataset, p.trial)),
             label,
             if marked then t(ThumbMarked, accessible) else accessible,
             marked
@@ -260,6 +270,7 @@ object GeometryPanelVM:
       }
     val source        = spec.flatMap(_.sources.fixations).map(_.path.value).getOrElse("")
     val positionsNote = panel.placement match
+      case _ if stale                                => Some(t(PositionsStale, source))
       case Loading.Waiting                           => Some(t(PositionsWaiting, source))
       case Loading.Failed(why)                       => Some(t(PositionsFailed, why))
       case Loading.Ready(ps) if ps.unplaced.nonEmpty =>

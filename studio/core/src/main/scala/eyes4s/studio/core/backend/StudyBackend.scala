@@ -23,7 +23,6 @@ import ProtocolCodecs.portableLong
 
 import cats.Functor
 import cats.syntax.functor.*
-import eyes4s.studio.core.document.DatasetRevisionSpec
 import eyes4s.studio.core.execution.RunStamp
 import eyes4s.studio.core.preview.*
 import fs2.Stream
@@ -170,8 +169,8 @@ enum BackendError derives CanEqual, Codec.AsObject:
     case UnknownTrial(d, t)         => s"${t.label} is not a trial of dataset ${d.label}."
     case UnknownScale(r, i, scales) =>
       s"${r.label} has no scale $i; it computes ${scales.size} (${scales.mkString(", ")})."
-    case TrialViewRefused(e)        => e.message
-    case SourceRecordsRefused(r, e) => s"${r.label}: ${e.message}"
+    case TrialViewRefused(e)         => e.message
+    case SourceRecordsRefused(r, e)  => s"${r.label}: ${e.message}"
     case PlacementRefused(d, reason) => s"The records of ${d.label} cannot be placed: $reason"
 
   def diagnostic: StudioDiagnostic =
@@ -539,7 +538,7 @@ object StudyBackend:
       case Q.SourceRecordsOf(r, f, n) =>
         answer(backend.sourceRecords(r, f, n))(A.SourceRecordsOf(_))
       case Q.PairRowsOf(r, s, p) => answer(backend.pairRows(r, s, p))(A.PairRowsOf(_))
-      case Q.PlacementOf(spec) => answer(backend.placement(spec))(A.PlacementOf(_))
+      case Q.PlacementOf(spec)   => answer(backend.placement(spec))(A.PlacementOf(_))
       // In process a subscription is ended by dropping its stream; only a
       // connection (SidecarServer) holds subscriptions to end.
       case Q.Unsubscribe(id) => Stream.emit(ServerFrame.Response(A.Unsubscribed(id, false)))

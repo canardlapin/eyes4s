@@ -39,7 +39,7 @@ enum GeometryTextId derives CanEqual:
   // --- Placement check ---------------------------------------------------------------------
   case CheckPlacement, CheckPlacementNote, ThumbInside, ThumbOutside, ThumbOffScreen
   case ThumbAccessible, ThumbMarked, AllTrials, AllTrialsCaption, AllTrialsCorrected
-  case DensityAccessible, PositionsWaiting, PositionsFailed, PositionsUnplaced
+  case DensityAccessible, PositionsWaiting, PositionsStale, PositionsFailed, PositionsUnplaced
 
   // --- Corrections ---------------------------------------------------------------------------
   case MarkOrientation, MarkNeedsTrial, OrientationTitle, FixX, FixY, ScopeTrial
@@ -117,7 +117,9 @@ object GeometryText:
         "or shifted participant shows up as mass away from the image frame."
     case DensityAccessible =>
       "Density of all {0} fixation records overlaid, screen coordinates"
-    case PositionsWaiting  => "Reading {0}…"
+    case PositionsWaiting => "Placing the records of {0}…"
+    case PositionsStale   =>
+      "Drawn for the previous rules or geometry; {0} is being placed again under the new ones."
     case PositionsFailed   => "Fixation positions are not available: {0}"
     case PositionsUnplaced => "{0} records have no finite position and are not drawn."
 

@@ -639,40 +639,44 @@ object ProtocolSamples:
     * screen. Its numbers are fractional: an integral double prints as
     * `1148.0` on the JVM and `1148` on Scala.js.
     */
-  lazy val placementPreview: PlacementPreview = PlacementPreview(
-    DatasetRevision(3),
-    Vector(
-      PlacedRecord(
-        7214,
-        query,
-        1148.25,
-        456.75,
-        None,
-        1148.25,
-        456.75,
-        700.25,
-        300.75,
-        RecordPlacement.Inside,
-        Some((5.375, 2.375))
+  lazy val placementPreview: PlacementPreview = (for
+    tally   <- TrialPlacement.of(query, 2, 0, 1)
+    grid    <- PlacementDensityGrid.of(2, 1, Vector(1.5, 0.5), 2)
+    preview <- PlacementPreview.of(
+      DatasetRevision(3),
+      Vector(
+        PlacedRecord(
+          7214,
+          query,
+          1148.25,
+          456.75,
+          None,
+          1148.25,
+          456.75,
+          700.25,
+          300.75,
+          RecordPlacement.Inside,
+          Some((5.375, 2.375))
+        ),
+        PlacedRecord(
+          7215,
+          query,
+          -40.5,
+          500.25,
+          Some(0),
+          1960.5,
+          500.25,
+          1512.5,
+          344.25,
+          RecordPlacement.OutsideScreen,
+          None
+        )
       ),
-      PlacedRecord(
-        7215,
-        query,
-        -40.5,
-        500.25,
-        Some(0),
-        1960.5,
-        500.25,
-        1512.5,
-        344.25,
-        RecordPlacement.OutsideScreen,
-        None
-      )
-    ),
-    Vector(UnplacedSourceRecord(7216, "x is not a number")),
-    Vector(TrialPlacement(query, 2, 0, 1)),
-    PlacementDensityGrid(2, 1, Vector(1.5, 0.5), 2)
-  )
+      Vector(UnplacedSourceRecord(7216, "x is not a number")),
+      Vector(tally),
+      grid
+    )
+  yield preview).toOption.get
 
   val events: Vector[JobEvent] =
     JobEvent.Advanced(progress) +: outcomes.map(JobEvent.Finished(_))

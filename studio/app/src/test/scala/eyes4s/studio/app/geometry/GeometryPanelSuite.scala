@@ -463,7 +463,7 @@ class GeometryPanelSuite extends munit.FunSuite:
     assertEquals(
       vm.thumbnails.map(_.ref).head,
       // The thumbnail's counts trace to the backend's tally of the trial.
-      StudioRef.TrialPlacementTally(r3, TrialKey("P01", Phase.Encoding, "enc_01", 1))
+      Some(StudioRef.TrialPlacementTally(r3, TrialKey("P01", Phase.Encoding, "enc_01", 1)))
     )
     assertEquals(vm.densityCaption.take(9), "6 records")
     assertEquals(pics.density.records, 6)
@@ -581,12 +581,24 @@ class GeometryPanelSuite extends munit.FunSuite:
       Vector(Vector(flip))
     )
     assertEquals(waiting.placement, Loading.Waiting)
-    // The last pictures stay shown (same records) until the new placement arrives.
+    // The last pictures stay shown (same records) until the new placement
+    // arrives, said to be the previous placement's; their counts cite no tally
+    // of r3, which the rule edited in place.
+    val stale = GeometryPanelVM.of(waiting, ruled, Some(pics))
+    assertEquals(stale.thumbnails.size, pics.thumbnails.size)
+    assertEquals(stale.thumbnails.map(_.ref).distinct, Vector(None))
     assertEquals(
-      GeometryPanelVM.of(waiting, ruled, Some(pics)).thumbnails.size,
-      pics.thumbnails.size
+      stale.positionsNote,
+      Some(
+        "Drawn for the previous rules or geometry; inputs/fixations.csv is being placed again " +
+          "under the new ones."
+      )
     )
-    // A refused placement is said.
+    // Before any change, the same pictures cite the tallies and say nothing.
+    val fresh = GeometryPanelVM.of(panel, small, Some(pics))
+    assert(fresh.thumbnails.forall(_.ref.nonEmpty), fresh.thumbnails)
+    assertEquals(fresh.positionsNote, None)
+    // A refused placement blanks the pictures and says why.
     val refused = GeometryPanel
       .update(
         waiting,
@@ -596,4 +608,46 @@ class GeometryPanelSuite extends munit.FunSuite:
       )
       ._1
     assertEquals(refused.placement, Loading.Failed("the backend holds another file"))
+    // A preview of another revision is not this one's placement.
+    val stranger = GeometryPanel
+      .update(
+        waiting,
+        ruled,
+        GeometryIntent.PlacementRead(
+          waiting.placementKey.get,
+          panel.placement.toOption
+            .map(p =>
+              eyes4s.studio.core.backend.PlacementPreview
+                .of(r2, p.records, p.unplaced, p.trials, p.density)
+                .fold(e => fail(e.message), identity)
+            )
+            .toRight("no preview")
+        )
+      )
+      ._1
+    assertEquals(
+      stranger.placement,
+      Loading.Failed("the backend placed the records of another revision than r3")
+    )
+    val blank = GeometryPanelVM.of(refused, ruled, Some(pics))
+    assertEquals(
+      (blank.thumbnails, blank.example, blank.exampleRef),
+      (Vector.empty, Vector.empty, None)
+    )
+    assertEquals(
+      blank.positionsNote,
+      Some("Fixation positions are not available: the backend holds another file")
+    )
+    // A geometry edit also changes where eyes4s places them: asked again.
+    val edited = GeometryPanel
+      .update(panel, small, GeometryIntent.EditField(GeometryField.ImageLeft, "450"))
+      ._1
+    val moved =
+      perform(small, GeometryPanel.update(edited, small, GeometryIntent.CommitFields)._2)
+    val (moving, more) = GeometryPanel.sync(panel, moved)
+    assertEquals(
+      more.collect { case GeometryEffect.RequestPlacement(_, s) => s.geometry.image.left },
+      Vector(450)
+    )
+    assertEquals(moving.placement, Loading.Waiting)
   }

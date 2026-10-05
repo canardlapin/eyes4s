@@ -334,7 +334,13 @@ object GeometryPanel:
       case PlacementRead(key, result) =>
         if !panel.placementKey.contains(key) then (panel, none)
         else
-          val loaded = result.fold(Loading.Failed(_), Loading.Ready(_))
+          // A preview of another revision is not this one's placement.
+          val loaded = result
+            .filterOrElse(
+              _.dataset == key.dataset,
+              s"the backend placed the records of another revision than ${key.dataset.label}"
+            )
+            .fold(Loading.Failed(_), Loading.Ready(_))
           (panel.copy(placement = loaded), none)
       case CountsRead(dataset, result) =>
         panel.shown match

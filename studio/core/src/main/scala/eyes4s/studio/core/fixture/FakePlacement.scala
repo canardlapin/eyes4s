@@ -16,6 +16,7 @@
 
 package eyes4s.studio.core.fixture
 
+import cats.syntax.all.*
 import eyes4s.codec.ByteDigest
 import eyes4s.studio.core.backend.*
 import eyes4s.studio.core.document.DatasetRevisionSpec
@@ -68,8 +69,7 @@ object FakePlacement:
       ledger    <- CorrectionLedger.of(spec).left.map(p => refused(p.message))
       placed    <- ledger.placeAll(positions.positions).left.map(p => refused(p.message))
       density   <- PlacementDensity.of(ledger.frames, placed).left.map(p => refused(p.message))
-    yield
-      val records = placed.map { p =>
+      records = placed.map { p =>
         val image = p.placement match
           case Placement.Inside(local) => local
           case _ => ledger.frames.image.enter(p.corrected).getOrElse(p.corrected)
@@ -91,24 +91,31 @@ object FakePlacement:
           ledger.frames.toDegrees(image).map(d => (d.x, d.y))
         )
       }
-      val byTrial = records.groupBy(_.trial)
-      PlacementPreview(
-        spec.id,
-        records,
-        positions.unplaced.map(u => UnplacedSourceRecord(u.record, u.reason)),
-        positions.trials.map { t =>
-          val rs = byTrial.getOrElse(t, Vector.empty)
-          TrialPlacement(
-            t,
-            rs.size,
-            rs.count(_.placement == RecordPlacement.OutsideWindow),
-            rs.count(_.placement == RecordPlacement.OutsideScreen)
+      byTrial = records.groupBy(_.trial)
+      preview <- (
+        for
+          tallies <- positions.trials.traverse { t =>
+            val rs = byTrial.getOrElse(t, Vector.empty)
+            TrialPlacement.of(
+              t,
+              rs.size,
+              rs.count(_.placement == RecordPlacement.OutsideWindow),
+              rs.count(_.placement == RecordPlacement.OutsideScreen)
+            )
+          }
+          grid <- PlacementDensityGrid.of(
+            density.columns,
+            density.rows,
+            density.counts.toVector,
+            density.placed
           )
-        },
-        PlacementDensityGrid(
-          density.columns,
-          density.rows,
-          density.counts.toVector,
-          density.placed
-        )
-      )
+          preview <- PlacementPreview.of(
+            spec.id,
+            records,
+            positions.unplaced.map(u => UnplacedSourceRecord(u.record, u.reason)),
+            tallies,
+            grid
+          )
+        yield preview
+      ).left.map(e => refused(e.message))
+    yield preview

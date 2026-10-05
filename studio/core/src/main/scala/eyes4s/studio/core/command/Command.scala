@@ -135,7 +135,13 @@ enum Command derives CanEqual:
     */
   case VerifyDataset(dataset: DatasetRevision)
 
-  /** Return a verifying revision to `Pending`, so it can be edited again. */
+  /** Return a verifying revision to `Pending`, so it can be edited again.
+    * Its undo is ResumeVerification, refused like a new verification: in a
+    * document stored `Verifying` with checks it would now fail (before S5.4
+    * refused such revisions; for example its two files naming a trial by
+    * different keys), undoing the withdrawal is refused with that typed
+    * refusal; such a revision is not admitted.
+    */
   case WithdrawVerification(dataset: DatasetRevision)
 
   /** Put a withdrawn verification of `content` back exactly, without a new

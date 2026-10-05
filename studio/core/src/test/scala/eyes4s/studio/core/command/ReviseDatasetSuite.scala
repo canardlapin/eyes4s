@@ -343,6 +343,17 @@ class ReviseDatasetSuite extends munit.FunSuite:
         .left
         .exists(_.message.contains("are not mapped"))
     )
+    // The documented limit of WithdrawVerification: a document stored
+    // Verifying with disagreeing keys withdraws, but its undo (ResumeVerification)
+    // is refused, typed; the revision is never admitted.
+    val withdrawn = History
+      .start(verifying)
+      .apply(WithdrawVerification(r3))
+      .fold(e => fail(e.message), _.history)
+    assert(
+      withdrawn.undo.left.exists(_.message.contains(keys)),
+      withdrawn.undo.map(_.history.document.dataset(r3).map(_.decision))
+    )
     // Agreeing keys verify, resume and admit as before.
     val t1content =
       DatasetRevisionSpec.contentDigest(pending).fold(e => fail(e.message), identity)
