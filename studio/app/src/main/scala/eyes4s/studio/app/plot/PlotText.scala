@@ -47,6 +47,13 @@ enum PlotTextId derives CanEqual:
   /** A plot whose builder refused its source, and why. */
   case Refused
 
+  /** A scene's text summary (S4.6): its marks and rows, and rows not drawn. */
+  case SummaryMarks, SummaryAllDrawn, SummaryNotDrawn, SummaryReason, SummaryFirst
+  case SummaryFirstMore, OffScaleKind
+
+  /** A trial scene's text summary (S4.6). */
+  case TrialSummary
+
 /** A plot's strings in the boards' wording. */
 object PlotText:
 
@@ -65,14 +72,22 @@ object PlotText:
       case TableKeys =>
         "{0}. One focus stop; arrow keys move the row cursor, Enter selects, Escape clears " +
           "the selection."
-      case TableEmpty   => "{0}. No rows."
-      case TableTab     => "Table"
-      case Unplotted    => "{0} not drawn: {1}"
-      case MissingValue => "no {0}"
-      case OffScale     => "{0} {1} is off the scale"
-      case MarkRows     => "{0} rows: {1}"
-      case RowSeparator => "; "
-      case Refused      => "{0}: plot not drawn. {1}"
+      case TableEmpty       => "{0}. No rows."
+      case TableTab         => "Table"
+      case Unplotted        => "{0} not drawn: {1}"
+      case MissingValue     => "no {0}"
+      case OffScale         => "{0} {1} is off the scale"
+      case MarkRows         => "{0} rows: {1}"
+      case RowSeparator     => "; "
+      case Refused          => "{0}: plot not drawn. {1}"
+      case SummaryMarks     => "{0}: {1} marks for {2} rows."
+      case SummaryAllDrawn  => "Every row is drawn."
+      case SummaryNotDrawn  => "{0} rows not drawn: {1}; {2}."
+      case SummaryReason    => "{0} ({1})"
+      case SummaryFirst     => "{0}"
+      case SummaryFirstMore => "{0} and {1} more"
+      case OffScaleKind     => "{0} off the scale"
+      case TrialSummary     => "{0}: {1} fixation marks, each a fixation of the trial."
 
   /** `id`'s English template with `args` filled in. */
   def apply(id: PlotTextId, args: String*): String =

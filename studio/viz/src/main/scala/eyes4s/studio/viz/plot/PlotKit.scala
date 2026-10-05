@@ -27,7 +27,15 @@ import eyes4s.studio.app.plot.{
 import eyes4s.studio.app.tokens.Theme
 import eyes4s.studio.core.selection.StudioRef
 import intaglio.interaction.NamedPickingPlan
-import intaglio.{DevicePoint, GraphicsError, GraphicsName, IntaglioError, value}
+import intaglio.{
+  DevicePoint,
+  GraphicsError,
+  GraphicsName,
+  IntaglioError,
+  PlotSemantics,
+  SceneSemantics,
+  value
+}
 
 /** Why a plot could not be built from its source. Every case names the plot
   * kind and the column, row or mark it refused.
@@ -437,6 +445,57 @@ final case class BuiltPlot private (
   def unplottedText(u: Unplotted): Option[String] =
     source.rowText(u.row).map(PlotText(PlotTextId.Unplotted, _, reasonText(u.reason)))
 
+  /** What every mark of the plot accounts for (S4.6), bounded whatever the
+    * source's size: how many marks for how many rows; how many rows are not
+    * drawn, their reasons grouped and counted ("no Cosine (18), D off the
+    * scale (3)"), and the first [[BuiltPlot.SummaryNamed]] of them by label,
+    * then how many more. The Table tab lists every row.
+    */
+  def textSummary: String =
+    val drawn = PlotText(
+      PlotTextId.SummaryMarks,
+      title,
+      marks.size.toString,
+      (source.rows.size - unplotted.size).toString
+    )
+    if unplotted.isEmpty then s"$drawn ${PlotText(PlotTextId.SummaryAllDrawn)}"
+    else
+      val reasons = unplotted
+        .map(u => reasonKind(u.reason))
+        .groupMapReduce(identity)(_ => 1)(_ + _)
+        .toVector
+        .sortBy((why, n) => (-n, why))
+        .map((why, n) => PlotText(PlotTextId.SummaryReason, why, n.toString))
+        .mkString(", ")
+      val labels = unplotted
+        .take(BuiltPlot.SummaryNamed)
+        .flatMap(u => source.text(u.row, 0))
+        .mkString(", ")
+      val more  = unplotted.size - BuiltPlot.SummaryNamed
+      val named =
+        if more > 0 then PlotText(PlotTextId.SummaryFirstMore, labels, more.toString)
+        else PlotText(PlotTextId.SummaryFirst, labels)
+      s"$drawn ${PlotText(PlotTextId.SummaryNotDrawn, unplotted.size.toString, reasons, named)}"
+
+  /** A reason without its row's value, so rows group by why ("no Cosine"). */
+  private def reasonKind(reason: NoPosition): String =
+    val id     = NoPosition.columnOf(reason)
+    val header = source.indexOf(id).flatMap(source.columns.lift).fold(id.value)(_.header)
+    reason match
+      case NoPosition.MissingValue(_) => PlotText(PlotTextId.MissingValue, header)
+      case NoPosition.OffScale(_, _)  => PlotText(PlotTextId.OffScaleKind, header)
+
+  /** The plot's semantics (S4.6): its title, its description as alt text,
+    * and [[textSummary]]; the scene carries them.
+    */
+  def semantics: PlotSemantics =
+    SceneSummaries.semantics(plot.id, title, description, textSummary)
+
+  /** The mark drawn as grob `name`, and the rows it shows: the scientific
+    * identity a pick of that grob returns (S4.6).
+    */
+  def refsNamed(name: GraphicsName): Option[Vector[StudioRef]] = markNamed(name).map(_.refs)
+
   /** Why a row has no position, in the source's headers and formats. */
   def reasonText(reason: NoPosition): String =
     val id     = NoPosition.columnOf(reason)
@@ -450,6 +509,9 @@ final case class BuiltPlot private (
         PlotText(PlotTextId.OffScale, header, written)
 
 object BuiltPlot:
+
+  /** How many undrawn rows a text summary names before "and N more". */
+  val SummaryNamed: Int = 3
 
   /** A built plot, refusing marks that misstate their rows, an axis column
     * the source lacks or a category listed twice, a row accounted for other
@@ -533,7 +595,18 @@ object BuiltPlot:
         .find((m, i) => m.order != i)
         .map((m, i) => PlotBuildError.MarkOrder(kind, i, m.order))
         .toLeft(())
-    yield new BuiltPlot(source, plot, title, description, encoding, marks, unplotted)
+    yield
+      val built = new BuiltPlot(source, plot, title, description, encoding, marks, unplotted)
+      // The scene carries the plot's semantics (S4.6).
+      new BuiltPlot(
+        source,
+        plot.withSemantics(SceneSemantics.single(built.semantics)),
+        title,
+        description,
+        encoding,
+        marks,
+        unplotted
+      )
 
 /** A kind of plot: builds its scene from a value source (tickets S4.5a and
   * S4.5x).

@@ -233,6 +233,26 @@ class CanvasPlotHostFxSuite extends StudioFxSuite:
     runOnFx(host.dispose())
   }
 
+  fxStage.test("the host's accessible help is the scene's text summary, and none without one") {
+    fx =>
+      val (host, _) = hostIn(fx)
+      val plain     = reference(Theme.Light)
+      val summed    = plain.withSemantics(
+        intaglio.SceneSemantics.single(
+          eyes4s.studio.viz.plot.SceneSummaries.semantics(plain.id, "Title", "Alt", "Summary")
+        )
+      )
+      runOnFx(host.show(summed))
+      assertEquals(runOnFx(host.getAccessibleHelp), "Summary")
+      // A diagram with no semantics carries none, and leaves no stale help.
+      runOnFx(host.show(plain))
+      assertEquals(runOnFx(Option(host.getAccessibleHelp)), None)
+      runOnFx(host.show(summed))
+      runOnFx(host.clear())
+      assertEquals(runOnFx(Option(host.getAccessibleHelp)), None)
+      runOnFx(host.dispose())
+  }
+
   fxStage.test("a texture-scale change replaces the canvases and redraws without compiling") {
     fx =>
       var k    = 1.0 // read and written on the FX thread only

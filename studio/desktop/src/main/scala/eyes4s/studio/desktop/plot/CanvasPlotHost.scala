@@ -237,6 +237,10 @@ final class CanvasPlotHost private[plot] (
           case (Some(x), _) => Right(Some(x.doubleValue))
           case (None, _)    => Right(None)
 
+  /** The text summary `scene` carries (S4.6), if it carries one. */
+  def summaryOf(scene: PlotScene): Option[String] =
+    scene.scene.semantics.plots.headOption.flatMap(_.description)
+
   /** Shows `scene`, replacing the current one. */
   def show(scene: PlotScene): Unit =
     onFxThread("show")
@@ -244,6 +248,9 @@ final class CanvasPlotHost private[plot] (
       // A new scene value may carry new rasters: start with empty caches.
       if !plotScene.exists(_ eq scene) then drawing = None
       plotScene = Some(scene)
+      // The scene's text summary (S4.6) is the host's accessible help: what
+      // every mark accounts for, beside the summary its text names.
+      setAccessibleHelp(summaryOf(scene).orNull)
       schedule()
 
   /** Draws `next` over the scene from now on; `None` removes the overlay. */
@@ -322,6 +329,7 @@ final class CanvasPlotHost private[plot] (
     if !disposed then
       plotScene = None
       drawing = None
+      setAccessibleHelp(null)
       schedule()
 
   /** Lays out for `scale` instead of the window's output scale; `None` restores it. */

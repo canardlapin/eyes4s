@@ -16,7 +16,7 @@
 
 package eyes4s.studio.viz.plot
 
-import intaglio.{IntaglioError, Interval, Scene, Viewport, YDirection}
+import intaglio.{IntaglioError, Interval, Scene, SceneSemantics, Viewport, YDirection}
 
 /** Why a plot scene, surface or transform could not be built. Every case names
   * the values it rejected.
@@ -119,7 +119,13 @@ object DataPanel:
   * resolution-independent: a host lays it out again for each surface without
   * changing its data geometry.
   */
-final case class PlotScene private (id: SceneId, scene: Scene, panel: DataPanel)
+final case class PlotScene private (id: SceneId, scene: Scene, panel: DataPanel):
+
+  /** The same scene carrying `semantics` (S4.6): its title, alt text and
+    * summary, which an SVG export and a host's accessible text read.
+    */
+  def withSemantics(semantics: SceneSemantics): PlotScene =
+    copy(scene = scene.withSemantics(semantics))
 
 object PlotScene:
   def apply(id: SceneId, scene: Scene, panel: DataPanel): Either[PlotSceneError, PlotScene] =

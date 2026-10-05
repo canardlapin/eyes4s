@@ -17,6 +17,7 @@
 package eyes4s.studio.viz.trial
 
 import eyes4s.studio.app.maps.{GridPoint, Isolines, MapGrid, MapId, MapOpacity, MapRaster}
+import eyes4s.studio.app.plot.{PlotText, PlotTextId}
 import eyes4s.studio.app.text.{TrialText, TrialTextId}
 import eyes4s.studio.app.tokens.{
   FontFace,
@@ -39,7 +40,8 @@ import eyes4s.studio.viz.plot.{
   IntaglioColours,
   PlotScene,
   PlotSceneError,
-  SceneId
+  SceneId,
+  SceneSummaries
 }
 import intaglio.{
   Anchor,
@@ -68,6 +70,7 @@ import intaglio.{
   Rgba32,
   Rgba,
   Scene,
+  SceneSemantics,
   Size,
   StrokeCasing,
   StrokeUnit,
@@ -537,7 +540,17 @@ object TrialScene:
       panel <- DataPanel(id, viewport).left.map(TrialSceneError.Plot(trial, _))
       plot  <- PlotScene(id, Scene(grobs), panel).left.map(TrialSceneError.Plot(trial, _))
     yield new TrialScene(
-      plot,
+      // The scene carries its semantics (S4.6): the caption is its alt text.
+      plot.withSemantics(
+        SceneSemantics.single(
+          SceneSummaries.semantics(
+            id,
+            trial.label,
+            caption,
+            PlotText(PlotTextId.TrialSummary, caption, marks.size.toString)
+          )
+        )
+      ),
       extent,
       art,
       caption,
