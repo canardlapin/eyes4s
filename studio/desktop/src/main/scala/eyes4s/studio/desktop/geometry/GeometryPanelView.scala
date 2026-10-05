@@ -144,7 +144,7 @@ final class GeometryPanelView(dispatch: GeometryIntent => Unit):
     val r = RadioButton()
     r.getStyleClass.add("t12")
     r.setToggleGroup(fixGroup)
-    r.setOnAction(_ => fire(GeometryIntent.ChooseFix(f)))
+    eyes4s.studio.desktop.shell.Fx.onChosen(r)(fire(GeometryIntent.ChooseFix(f)))
     f -> r
   }.toMap
   private val scopeGroup                         = ToggleGroup()
@@ -152,7 +152,7 @@ final class GeometryPanelView(dispatch: GeometryIntent => Unit):
     val r = RadioButton()
     r.getStyleClass.add("t12")
     r.setToggleGroup(scopeGroup)
-    r.setOnAction(_ => fire(GeometryIntent.ChooseScope(s)))
+    eyes4s.studio.desktop.shell.Fx.onChosen(r)(fire(GeometryIntent.ChooseScope(s)))
     s -> r
   }.toMap
   val record: Button = button("geometry-button", "t12")
@@ -186,7 +186,7 @@ final class GeometryPanelView(dispatch: GeometryIntent => Unit):
     val r = RadioButton()
     r.getStyleClass.add("t12")
     r.setToggleGroup(policyGroup)
-    r.setOnAction(_ => fire(GeometryIntent.ChooseOffScreen(c)))
+    eyes4s.studio.desktop.shell.Fx.onChosen(r)(fire(GeometryIntent.ChooseOffScreen(c)))
     c -> r
   }.toMap
   val policyNote: Label = label("geometry-note", "t11")

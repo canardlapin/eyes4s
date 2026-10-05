@@ -204,6 +204,21 @@ class AdmissionLedgerFxSuite extends ShellFxSuite:
     assertEquals(m.location.trail.lastOption, Some(Place.At(StudioRef.Trial(first.trial))))
   }
 
+  fxStage.test(
+    "the decision's radios choose from the keyboard: ↓ and ↑ in the group (S10.5 K3)"
+  ) { fx =>
+    val w        = ready(fx)
+    val v        = w.admission.view
+    val complete = v.choices(CoreAdmissionDecision.RequireComplete)
+    runOnFx(complete.requestFocus())
+    assertEquals(runOnFx(w.admission.state.decision), CoreAdmissionDecision.RequireComplete)
+    fx.robot.press(javafx.scene.input.KeyCode.DOWN)
+    assertEquals(runOnFx(w.admission.state.decision), CoreAdmissionDecision.ReviewExclusions)
+    assertEquals(runOnFx(v.admit.isDisabled), false)
+    fx.robot.press(javafx.scene.input.KeyCode.UP)
+    assertEquals(runOnFx(w.admission.state.decision), CoreAdmissionDecision.RequireComplete)
+  }
+
   fxStage.test("Admit as r3 under Review exclusions admits it; run 5 (r2) becomes stale") {
     fx =>
       val w = ready(fx)

@@ -33,6 +33,7 @@ import eyes4s.studio.core.document.{
   PanelSelection,
   Perspective
 }
+import eyes4s.studio.app.nav.Place
 import eyes4s.studio.core.fixture.StoryMoment
 import eyes4s.studio.core.selection.StudioRef
 import eyes4s.studio.desktop.StudioWindow
@@ -221,6 +222,33 @@ class FigureComposerFxSuite extends ShellFxSuite:
       eventually(fx, "panel F on the page and selected")(
         w.figures.vm.page.exists(_.panels.exists(p => p.letter == letter("F") && p.selected))
       )
+  }
+
+  fxStage.test("a figure row is a button: Enter and Space select it (S10.5 K6)") { fx =>
+    val w = boot(fx, StoryModels.t2Figures, StoryMoment.T2)
+    loaded(fx, w)
+    def row(n: Int): Node = runOnFx {
+      def all(n: Node): Vector[Node] = n +: (n match
+        case p: javafx.scene.Parent => p.getChildrenUnmodifiable.asScala.toVector.flatMap(all)
+        case _                      => Vector.empty)
+      all(w.figures.navigatorNode)
+        .find(x =>
+          x.getStyleClass.contains("figures-row") &&
+            Option(x.getAccessibleText).exists(_.startsWith(s"Figure $n,"))
+        )
+        .getOrElse(fail(s"no row for Figure $n"))
+    }
+    def shown = runOnFx(w.runtime.model.location.trail.collectFirst { case Place.Figure(f) =>
+      f.number
+    })
+    for (n, key) <- Vector(
+        2 -> javafx.scene.input.KeyCode.SPACE,
+        1 -> javafx.scene.input.KeyCode.ENTER
+      )
+    do
+      runOnFx(row(n).requestFocus())
+      fx.robot.press(key)
+      eventually(fx, s"Figure $n shown by $key")(shown.contains(n))
   }
 
   fxStage.test("a panel whose template changes is drawn by its new plot; focus stays put") {

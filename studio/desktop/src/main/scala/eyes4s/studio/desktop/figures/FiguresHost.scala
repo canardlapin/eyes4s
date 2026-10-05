@@ -589,6 +589,14 @@ final class FiguresHost(
       row.setOnMouseClicked(_ =>
         dispatch(ComposerIntent.Binding(FigureIntent.Select(r.figure)))
       )
+      // A row is a button: Enter and Space select it, as a click does (S10.5 K6).
+      row.setOnKeyPressed { e =>
+        if e.getCode == javafx.scene.input.KeyCode.ENTER ||
+          e.getCode == javafx.scene.input.KeyCode.SPACE
+        then
+          dispatch(ComposerIntent.Binding(FigureIntent.Select(r.figure)))
+          e.consume()
+      }
       row
     }*): Unit
     val selected = v.figures.rows.find(_.selected).map(_.figure)

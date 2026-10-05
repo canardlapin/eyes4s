@@ -181,6 +181,23 @@ final class StudioWindow private (
 
 object StudioWindow:
 
+  /** The import wizard's intents to the app (S5.2), followed as the
+    * column-mapping pane's commit is (ColumnMappingPane.follow): when a
+    * command creates a dataset revision, Data goes to it (S10.5 K2; before,
+    * the window stayed on the revision it was showing and no control
+    * reached the new one).
+    */
+  def followImports(model: () => AppModel, dispatch: Intent => Unit): Intent => Unit =
+    intent =>
+      val before = model().document
+      dispatch(intent)
+      intent match
+        case Intent.Dispatch(_: eyes4s.studio.core.command.Command.ImportSources) =>
+          eyes4s.studio.app.importing.ColumnMappingPane
+            .follow(before, model())
+            .foreach(dispatch)
+        case _ => ()
+
   /** The answer to Rename…: the typed name, or why it was refused. */
   def renameAnswer(text: String): Intent =
     ProjectName.of(text).fold(Intent.RenameRefused(_), Intent.RenameProject(_))
@@ -230,7 +247,7 @@ object StudioWindow:
           val sheets     = StudioStyles.stylesheets(theme).getOrElse(Nil)
           val (stage, _) = ImportWizardHost.openWindow(
             () => model().document,
-            dispatch,
+            followImports(model, dispatch),
             presets,
             sheets,
             project

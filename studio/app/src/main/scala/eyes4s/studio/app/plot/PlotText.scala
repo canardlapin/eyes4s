@@ -32,6 +32,9 @@ enum PlotTextId derives CanEqual:
   /** The accessible role and usage of a plot's single focus stop. */
   case PlotRole, PlotKeys
 
+  /** A plot stop's name while it draws nothing (S10.5 K4). */
+  case NothingDrawn
+
   /** The accessible usage of a table's single focus stop, and of an empty one. */
   case TableKeys, TableEmpty
 
@@ -66,6 +69,7 @@ object PlotText:
       case Selected       => "{0}, selected"
       case PartlySelected => "{0}, {1} of {2} selected"
       case PlotRole       => "plot"
+      case NothingDrawn   => "Plot, nothing drawn yet"
       case PlotKeys       =>
         "{0}. One focus stop; arrow keys move to the nearest mark, Page Up and Page Down " +
           "step in order, Enter selects, Escape clears the selection."

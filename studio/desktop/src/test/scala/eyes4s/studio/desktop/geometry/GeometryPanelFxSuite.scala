@@ -265,6 +265,22 @@ class GeometryPanelFxSuite extends StudioFxSuite:
     assert(second.millis <= RedrawBound, s"redraw took ${second.millis} ms")
   }
 
+  fxStage.test("the off-screen policy chooses from the keyboard: ↓ in its group (S10.5 K3)") {
+    fx =>
+      assumeFullStage(fx)
+      val rig = mount(fx, t2, StoryMoment.T2)
+      loaded(fx, rig)
+      redraw(fx, rig, 0)
+      val v = rig.host.view
+      runOnFx(v.policies(OffScreenChoice.ExcludeRecord).requestFocus())
+      fx.robot.press(javafx.scene.input.KeyCode.DOWN)
+      redraw(fx, rig, 1)
+      assertEquals(
+        rig.model.document.dataset(r4).map(_.admission.offScreen),
+        Some(OffScreenChoice.QuarantineTrial)
+      )
+  }
+
   fxStage.test(
     "switching the off-screen policy creates a draft; outside screen and outside window apart"
   ) { fx =>

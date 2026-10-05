@@ -119,7 +119,7 @@ final class AdmissionLedgerView(dispatch: LedgerIntent => Unit):
     r.setMnemonicParsing(false)
     r.getStyleClass.addAll("ledger-choice", "t12")
     r.setToggleGroup(group)
-    r.setOnAction(_ => fire(LedgerIntent.ChooseDecision(d)))
+    eyes4s.studio.desktop.shell.Fx.onChosen(r)(fire(LedgerIntent.ChooseDecision(d)))
     d -> r
   }.toMap
   val choiceNotes: Map[CoreAdmissionDecision, Label] = decisionValues.map { d =>

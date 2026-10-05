@@ -36,6 +36,13 @@ private[desktop] object Fx:
     l.getStyleClass.addAll(classes*)
     l
 
+  /** Runs `chosen` whenever `r` becomes selected: by a click, Space, or the
+    * arrow keys moving through its toggle group, which select without an
+    * action event (S10.5 K3). A view guards its own renders, as for actions.
+    */
+  def onChosen(r: javafx.scene.control.RadioButton)(chosen: => Unit): Unit =
+    r.selectedProperty.addListener((_, was, now) => if now && !was then chosen)
+
   /** A bar of fixed height: min, preferred and max. */
   def fixHeight(region: Region, px: Double): Unit =
     region.setMinHeight(px)

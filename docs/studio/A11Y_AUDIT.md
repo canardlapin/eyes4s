@@ -20,7 +20,7 @@ visible, 3.2.4 consistent identification, 4.1.2 name and role).
 | Names and roles of every Tab stop | Checked (S1.11), extended to the wizard and a popout | `A11yTreeSuite`, `A11yRenderSuite`, `ImportWizardFxSuite` |
 | Unambiguous names | Checked, 1 finding fixed, 1 deferred | `A11yRenderSuite` |
 | Focus order | Reviewed against the boards, 1 finding fixed | `docs/studio/a11y/tab-order-*.txt` |
-| Keyboard-only E2E-01 | Pending: slice b | `KeyboardJourneySuite` (to come) |
+| Keyboard-only E2E-01 | Passes, byte-identical to the headless route; 4 findings fixed, 2 to beads | `KeyboardJourneySuite` |
 | VoiceOver on macOS | Pending: slice c, the script is below | a person at a Mac |
 
 ## Method
@@ -121,18 +121,56 @@ Focus order: each perspective's Tab cycle follows its board's reading order:
 The review found no ordering defect. F8 and F9, both naming defects, came out
 of it.
 
-## Slice b: keyboard-only E2E-01 (pending)
+## Slice b: keyboard-only E2E-01
 
-`KeyboardJourneySuite` will drive E2E-01 in the window on Monocle using only
-key events:
-- ⌘1–5, F6/⇧F6, ⌃⇥, Tab/⇧Tab;
-- arrows, Home, End, Enter, Space and Esc on plots, tables and navigators;
-- menu accelerators.
+`KeyboardJourneySuite` runs E2E-01 in the window on Monocle using only key
+events: ⌘1–5, Tab, the arrow keys, Space and Enter. It ends where
+`GoldenJourneyFxSuite` ends. Both are held to the headless route by
+`GoldenWindow.heldToHeadless`: the same document science, the same export
+bundle bytes (`project/` included), and the same saved project folder.
 
-It ends where `GoldenJourneyFxSuite` ends, and is held to `GoldenRoute`: the same
-document science, the same bundle bytes, and the same saved folder. A step with no
-keyboard path is a finding. Small fixes land in the slice; larger ones become
-beads, and the step is marked pending under a named stub.
+At each stage of the journey it also checks names. Every Tab stop must have
+a name, and no two may share one. These are states that the resting-board
+audit (A11yTreeSuite) never sees, for example Explore before a run.
+
+The window runs its own key path, as on Linux and Windows. The steps that
+are not key events are named in the suite:
+- **Platform answers.** These are:
+  - the import wizard's commit (the wizard is its own window, and
+    ImportWizardFxSuite audits its pages);
+  - the file choosers behind Repair… and Export bundle…;
+  - the fake backend's `declare` and `complete`.
+- **File › Import sources….** It has neither a chord nor an in-window
+  control, so it is fired as its menu item, the way the macOS system menu
+  bar fires it from the keyboard (Ctrl-F2). The suite pins that this is the
+  only such command.
+- **Commands without a control.** `StartDraft` has none until S7.3, and
+  there is no control to add the board's figure panels A–E
+  (`CreateFigure`). The pointer route bypasses these too.
+
+How each step is reached from the keyboard:
+
+| Step | Keys |
+|---|---|
+| Map the columns | Tab to each role picker or the time unit, then ↓/↑; Tab to Apply to r3, then Space |
+| Admit r3 | ↓ in the decision's radio group (Review exclusions); Tab to Admit as r3, then Space |
+| Repair… | Tab, then Space, twice |
+| Explore P17 enc_03 | ⌘2; type in the trial filter; ↓ to the row, then Enter |
+| Rev 4 and run 6 | ⌘3, then the draft chip; Save & run rev 4; the jobs chip's Show |
+| Compare P17 ret_07 | ⌘4; the participant table's row cursor, then Enter; Explain P17; the queries navigator's cursor (↓, → to open, ↓), then Enter |
+| Rev 5, discarded | The draft chip; ⌘4; Discard draft, then the confirmation's Discard draft |
+| Figures and export | ⌘5; New figure; the Figure 4 row; the snapshot row; Export bundle…; ⌘4 |
+
+### Slice b findings
+
+| Id | Severity | Where | Finding | Resolution |
+|---|---|---|---|---|
+| K1 | High (off macOS) | Shell | Off macOS the window shows no menu bar, and only the keymap carries the commands. 15 commands have no chord: Import sources…, Rename…, Reveal, Project info, Undo/Redo view change, Reset perspective, Appearance ×3, Cancel run, Show the finished run, Review draft, Discard draft. Each is reachable only where some in-window control offers it. Import sources… and Appearance have none. | Bead: give them chords, or show the menu bar off macOS. On macOS the system menu bar is reachable from the keyboard. |
+| K2 | High | Data | After an import, Data stayed on the revision it was showing, and no control (keyboard or pointer) reached the new revision. | Fixed: the import wizard's commit is followed like the mapping pane's (`StudioWindow.followImports`). `ImportFollowSuite` covers it. |
+| K3 | High | Data, Geometry | The arrow keys move the selection through a radio group without an action event. The admission decision and the three geometry choices listened only for actions, so a choice made by keyboard was lost at the next render. | Fixed: `Fx.onChosen` dispatches on selection. Keyboard tests in AdmissionLedgerFxSuite and GeometryPanelFxSuite. |
+| K4 | Medium | Explore before a run | A plot with nothing drawn, such as the timeline before a run, was a Tab stop with no accessible name. | Fixed: the stop reads "Plot, nothing drawn yet". Pinned by the journey's name checks. |
+| K5 | Medium | Analysis | Intermittent: right after ⌘3, while the design check was answering, Tab bounced between Recipe and Resolved design about 30 times and never left. A likely mechanism is `PerspectiveHost.sync` refocusing the model's pane before the dock's focus report is applied, but it is not reproduced on demand. | Bead, with the walk as evidence. The journey Tabs after the check answers. |
+| K6 | High | Figures | The figure list's rows are buttons and Tab stops, but only a click selected one; Enter and Space did nothing. | Fixed: Enter and Space select the row. FigureComposerFxSuite covers it. |
 
 ## Slice c: VoiceOver script (for a person at a Mac)
 
