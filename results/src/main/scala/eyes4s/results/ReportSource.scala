@@ -29,9 +29,11 @@ import eyes4s.plan.*
   * covariates and the method's score components.
   *
   * A source reads the stored rows of a result; it never reruns a pair score.
-  * The eligible queries of a scale are its focal trials: every key of its
-  * matched and control reductions and of its contrast, and every focal trial
-  * the matched pairing left unmatched.
+  * The eligible queries of a scale are its focal trials that have a match:
+  * every key of its matched and control reductions and of its contrast,
+  * except the focal trials the matched pairing left unmatched. Those are not
+  * eligible (bead S0.7b) and are listed as the table's `unmatched` keys, so
+  * a report's eligible count is `StudyCounts.eligibleQueries`.
   */
 final class ReportSource[K] private (
     val binding: ReportBinding,
@@ -112,13 +114,13 @@ object ReportSource:
       schema: CovariateSchema,
       scores: ScoreSchema[S, D]
   )(using Ordering[K]): Either[ReportError[K], QueryTable[K]] =
-    val matched  = scale.analyses.matched.entries.map(r => r.key -> r).toMap
-    val control  = scale.analyses.control.entries.map(r => r.key -> r).toMap
-    val contrast = scale.contrast.map(_.rows.map(r => r.key -> r).toMap)
-    val focal    = (scale.analyses.matched.entries.map(_.key) ++
+    val matched   = scale.analyses.matched.entries.map(r => r.key -> r).toMap
+    val control   = scale.analyses.control.entries.map(r => r.key -> r).toMap
+    val contrast  = scale.contrast.map(_.rows.map(r => r.key -> r).toMap)
+    val unmatched = scale.analyses.matchedSource.diagnostics.unmatchedLeft.distinct.sorted
+    val focal     = (scale.analyses.matched.entries.map(_.key) ++
       scale.analyses.control.entries.map(_.key) ++
-      scale.analyses.matchedSource.diagnostics.unmatchedLeft ++
-      contrast.toOption.toVector.flatMap(_.keys)).distinct.sorted
+      contrast.toOption.toVector.flatMap(_.keys)).distinct.filterNot(unmatched.toSet).sorted
 
     def failed[E](error: E)(using diagnose: Diagnose[E, K]): RoleOutcome =
       val d = diagnose(error)
@@ -178,4 +180,4 @@ object ReportSource:
             .map(queries :+ _)
         }
     }
-    built.flatMap(QueryTable.of(index, scores.ids, schema, _))
+    built.flatMap(QueryTable.of(index, scores.ids, schema, _, unmatched))

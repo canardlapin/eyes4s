@@ -18507,13 +18507,13 @@
       "byResponse" : {
         "Forgotten" : {
           "estimate" : 0.179405,
-          "failed" : 3,
+          "failed" : 1,
           "participants" : 24,
           "queries" : 128
         },
         "Remembered" : {
           "estimate" : 0.308583,
-          "failed" : 9,
+          "failed" : 2,
           "participants" : 24,
           "queries" : 326
         }
@@ -18521,19 +18521,19 @@
       "grand" : {
         "B" : {
           "estimate" : 0.049132,
-          "failed" : 12,
+          "failed" : 3,
           "participants" : 24,
           "queries" : 454
         },
         "D" : {
           "estimate" : 0.271359,
-          "failed" : 12,
+          "failed" : 3,
           "participants" : 24,
           "queries" : 454
         },
         "M" : {
           "estimate" : 0.320491,
-          "failed" : 12,
+          "failed" : 3,
           "participants" : 24,
           "queries" : 454
         }
@@ -18934,13 +18934,13 @@
       "byResponse" : {
         "Forgotten" : {
           "estimate" : 0.280227,
-          "failed" : 3,
+          "failed" : 1,
           "participants" : 24,
           "queries" : 128
         },
         "Remembered" : {
           "estimate" : 0.473574,
-          "failed" : 9,
+          "failed" : 2,
           "participants" : 24,
           "queries" : 326
         }
@@ -18948,19 +18948,19 @@
       "grand" : {
         "B" : {
           "estimate" : 0.137914,
-          "failed" : 12,
+          "failed" : 3,
           "participants" : 24,
           "queries" : 454
         },
         "D" : {
           "estimate" : 0.418287,
-          "failed" : 12,
+          "failed" : 3,
           "participants" : 24,
           "queries" : 454
         },
         "M" : {
           "estimate" : 0.556200,
-          "failed" : 12,
+          "failed" : 3,
           "participants" : 24,
           "queries" : 454
         }
@@ -19361,13 +19361,13 @@
       "byResponse" : {
         "Forgotten" : {
           "estimate" : 0.243664,
-          "failed" : 3,
+          "failed" : 1,
           "participants" : 24,
           "queries" : 128
         },
         "Remembered" : {
           "estimate" : 0.427842,
-          "failed" : 9,
+          "failed" : 2,
           "participants" : 24,
           "queries" : 326
         }
@@ -19375,19 +19375,19 @@
       "grand" : {
         "B" : {
           "estimate" : 0.358495,
-          "failed" : 12,
+          "failed" : 3,
           "participants" : 24,
           "queries" : 454
         },
         "D" : {
           "estimate" : 0.375907,
-          "failed" : 12,
+          "failed" : 3,
           "participants" : 24,
           "queries" : 454
         },
         "M" : {
           "estimate" : 0.734402,
-          "failed" : 12,
+          "failed" : 3,
           "participants" : 24,
           "queries" : 454
         }
@@ -19788,13 +19788,13 @@
       "byResponse" : {
         "Forgotten" : {
           "estimate" : 0.114215,
-          "failed" : 3,
+          "failed" : 1,
           "participants" : 24,
           "queries" : 128
         },
         "Remembered" : {
           "estimate" : 0.216946,
-          "failed" : 9,
+          "failed" : 2,
           "participants" : 24,
           "queries" : 326
         }
@@ -19802,19 +19802,19 @@
       "grand" : {
         "B" : {
           "estimate" : 0.706247,
-          "failed" : 12,
+          "failed" : 3,
           "participants" : 24,
           "queries" : 454
         },
         "D" : {
           "estimate" : 0.187366,
-          "failed" : 12,
+          "failed" : 3,
           "participants" : 24,
           "queries" : 454
         },
         "M" : {
           "estimate" : 0.893614,
-          "failed" : 12,
+          "failed" : 3,
           "participants" : 24,
           "queries" : 454
         }

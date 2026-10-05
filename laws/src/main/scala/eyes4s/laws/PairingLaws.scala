@@ -166,6 +166,32 @@ trait PairingLaws extends Laws:
           )
         Prop(summary(a) == summary(b))
       },
+      "every matched and control score is the cosine of its own two trials, in any input order" -> forAll(
+        genCase,
+        Gen.long
+      ) { (generated, seed) =>
+        // Each row gets its own map, so a score computed from another
+        // trial's map (a pair index read against the wrong focal vector)
+        // differs from the oracle's.
+        val (c, weights) = distinctMaps(generated, seed)
+        plan(c).run(c.input) match
+          case Left(_)       => Prop(true)
+          case Right(result) =>
+            val analyses    = result.scales.head.analyses
+            val matchedLeft = analyses.matchedSource.rows.map(_.left).toSet
+            val scores      =
+              (analyses.matchedSource.rows ++ analyses.controlSource.rows).map { row =>
+                row.result match
+                  case Left(failure) => Prop(false) :| failure.message
+                  case Right(score)  =>
+                    val want = cosine(weights(row.left), weights(row.right))
+                    Prop(PairScoreTolerance.approxEquals(score.value, want)) :|
+                      s"${row.left} ~ ${row.right}: ${score.value}, expected $want"
+              }
+            Prop.all(scores*) && Prop(
+              analyses.controlSource.rows.forall(row => matchedLeft(row.left))
+            ) :| "a control row's focal trial has a matched row"
+      },
       "controls keep every occurrence only when asked to" -> forAll(genCase) { c =>
         val all = prepared(
           c.copy(pairing = c.pairing.copy(controls = ControlReferences.AllOccurrences))
@@ -238,6 +264,44 @@ object PairingLaws extends PairingLaws:
       .toOption
       .get
     Scanpath.of(frame, clock, IArray(fix)).toOption.get
+
+  /** A cosine of two-cell maps, a handful of products and one square root. */
+  val PairScoreTolerance: Tolerance = Tolerance.exactish
+
+  /** The case's rows in a seeded order, each with its own map: duration on
+    * the top-left cell, then on the bottom-right cell a duration that grows
+    * with the row's original position. Returns the cell weights by key.
+    */
+  def distinctMaps(c: Case, seed: Long): (Case, Map[TrialKey, (Double, Double)]) =
+    val rows            = new scala.util.Random(seed).shuffle(c.input.trials.rows.zipWithIndex)
+    def weights(i: Int) = (100.0, 50.0 + 37.0 * i)
+    val trials          = rows.map { (t, i) =>
+      val (first, second) = weights(i)
+      Trial(t.key, (), twoCells(t.key, first.toLong, second.toLong))
+    }
+    (c.copy(input = StudyInput(Trials(trials))), rows.map((t, i) => t.key -> weights(i)).toMap)
+
+  /** Cosine similarity of two maps over the two weighted cells, computed
+    * from the weights rather than by the library.
+    */
+  def cosine(a: (Double, Double), b: (Double, Double)): Double =
+    (a._1 * b._1 + a._2 * b._2) /
+      (math.sqrt(a._1 * a._1 + a._2 * a._2) * math.sqrt(b._1 * b._1 + b._2 * b._2))
+
+  private def twoCells(key: TrialKey, first: Long, second: Long): Scanpath[Px] =
+    val clock = ClockId(s"${key.participant}/${key.phase}/${key.trial}/${key.occurrence.value}")
+    def fix(from: Long, until: Long, x: Double, y: Double) = Event.Fixation
+      .withoutDispersion(
+        Interval.of(clock, Instant.micros(from), Instant.micros(until)).toOption.get,
+        Pt[Px](x, y),
+        1
+      )
+      .toOption
+      .get
+    Scanpath
+      .of(frame, clock, IArray(fix(0, first, 0.5, 0.5), fix(first, first + second, 1.5, 1.5)))
+      .toOption
+      .get
 
   private def key(
       participant: String,

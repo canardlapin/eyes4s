@@ -281,21 +281,25 @@ object StudioScores:
     val retrieval = inv.trials.filter(_.identity.phase == "Retrieval")
     val focal     = preview.focalKeys
     // The status of each query is eyes4s's: no match from its unmatched
-    // reasons, contributing or failed from its stored contrast row.
+    // reasons, which the report table lists apart from its eligible queries,
+    // and contributing or failed from its stored contrast row.
     val noMatch   = s.unmatched.reasons.map(_._1).toSet
     val tallies   = preview.windowTallies.collect { case (k, Right(t)) => k -> t }.toMap
     val summary   = preview.windowSummary
     val contrast0 = s.queries(0)
-    val status: Map[K, String] = contrast0.queries.map { q =>
-      q.key -> (
-        if noMatch(q.key) then "no-match"
-        else
+    if contrast0.unmatched.toSet != noMatch then
+      throw new IllegalStateException(
+        s"report table lists ${contrast0.unmatched.size} unmatched; reasons give ${noMatch.size}"
+      )
+    val status: Map[K, String] = contrast0.unmatched.map(_ -> "no-match").toMap ++
+      contrast0.queries.map { q =>
+        q.key -> (
           q.outcome(Role.Difference) match
             case RoleOutcome.Scored(_)       => "contributing"
             case RoleOutcome.Failed(code, _) => s"failed:${code.render}"
             case RoleOutcome.NotStored       => "not-stored"
-      )
-    }.toMap
+        )
+      }
     val statusCounts =
       status.values.map(_.takeWhile(_ != ':')).groupMapReduce(identity)(_ => 1)(_ + _)
     val quarantined = inv.quarantined
@@ -350,14 +354,18 @@ object StudioScores:
 
     val tables0 = Sigmas.indices.map(s.queries).toVector
     val byKey   = tables0.map(_.queries.map(q => q.key -> q).toMap)
+    // A query without a match is not in the table; it has no score at any
+    // scale, and its response is read from the covariate table directly.
+    def response(k: K): Value[CovariateValue] =
+      byKey(0).get(k).fold(s.covariates.value(k, s.response))(_.covariate(s.response))
+    val noScore = Value.Missing(Absence.NotRecorded)
     val queries = focal.sorted(using s.plan.layout.ordering).map { k =>
-      val q0 = byKey(0)(k)
       Json.obj(
         "participant" -> Json.fromString(k.participant),
         "trial"       -> Json.fromString(trialLabel(k)),
         "occurrence"  -> Json.fromInt(k.occurrence.value),
         "item"        -> Json.fromString(k.item),
-        "response"    -> (q0.covariate(s.response) match
+        "response"    -> (response(k) match
           case Value.Present(CovariateValue.Level(l)) => Json.fromString(l)
           case Value.Present(other)                   => Json.fromString(other.toString)
           case Value.Missing(_)                       => Json.Null),
@@ -376,11 +384,12 @@ object StudioScores:
               .obj("fixations" -> Json.fromInt(t.outsideWindow), "of" -> Json.fromInt(t.total))
           ),
         "scales" -> Json.fromFields(Sigmas.indices.map { i =>
-          val q = byKey(i)(k)
+          val q             = byKey(i).get(k)
+          def role(r: Role) = value(q.fold(noScore)(_.outcome(r).value(0)))
           sigmaKey(Sigmas(i)) -> Json.obj(
-            "M" -> value(q.outcome(Role.Matched).value(0)),
-            "B" -> value(q.outcome(Role.Control).value(0)),
-            "D" -> value(q.outcome(Role.Difference).value(0))
+            "M" -> role(Role.Matched),
+            "B" -> role(Role.Control),
+            "D" -> role(Role.Difference)
           )
         })
       )

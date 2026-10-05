@@ -28,8 +28,8 @@ class DiagnosticCatalogSuite extends munit.FunSuite:
   private val all = DiagnosticSamples.all
 
   /** Every issued code, one per line, pinned by count and portable digest. */
-  private val PinnedCount  = 715
-  private val PinnedDigest = "5fd79c603b73ba8c"
+  private val PinnedCount  = 716
+  private val PinnedDigest = "8ab01d3b04642040"
 
   /** The issued table before CR5: codes are only ever issued, never changed
     * or reused, and a retired code keeps its place, so taking away the codes
@@ -92,6 +92,11 @@ class DiagnosticCatalogSuite extends munit.FunSuite:
   private val Cr6bCodes: Set[String] =
     (DiagnosticCatalog.studyRecipe.codes ++ DiagnosticCatalog.studyAdvisory.codes ++
       DiagnosticCatalog.recipeParameter.codes.drop(7)).map(_.render).toSet
+
+  /** The stale-result case bead S0.7b appended: control rows for a query
+    * without a match.
+    */
+  private val S07bCodes: Set[String] = Set("study-result.unmatched-control")
 
   /** The active-set least-squares cases bd-01M2T3ZCY7HJNFQ5G0Z6MQND0A appended. */
   private val ActiveSetCodes: Set[String] =
@@ -199,7 +204,7 @@ class DiagnosticCatalogSuite extends munit.FunSuite:
         Cr5Codes(code) || Cr2Codes(code) || Cr4Codes(code) || SourceCodes(code) || UiECodes(
           code
         ) || UiGCodes(code) || UiDCodes(code) || Cr6Codes(code) || Cr6bCodes(code) ||
-          ActiveSetCodes(code)
+          ActiveSetCodes(code) || S07bCodes(code)
       )
     assertEquals(stable.size, StableCount)
     assertEquals(ContentHash.ofString(stable.mkString("\n")).render, StableDigest)

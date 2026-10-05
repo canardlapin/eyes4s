@@ -168,7 +168,7 @@ class StudyCountsSuite extends munit.FunSuite:
       assert(scale.analyses.matched.entries.forall(r => r.key == ks(0) || r.result.isLeft))
       val contrast = get(scale.contrast).rows.map(r => r.key -> r.difference.isRight).toMap
       assertEquals(contrast.get(ks(0)), Some(true))
-      assert(!contrast.getOrElse(ks(1), false))
+      assertEquals(contrast.get(ks(1)), Some(false))
       assertEquals(scale.analyses.matchedSource.diagnostics.unmatchedLeft, Vector(ks(1)))
     }
     assertEquals(
@@ -211,6 +211,52 @@ class StudyCountsSuite extends munit.FunSuite:
     val beside    = scores(keyed(withUnmatched = true), offscreen)
     assert(alone.values.forall(_.isRight), alone.toString)
     assertEquals(beside, alone)
+  }
+
+  test("a stored result with controls for a query without a match is refused as stale") {
+    // Run A: p x is unmatched, so the control design leaves it out.
+    val unmatchedKeys = Vector(
+      StudyKey("p", "a", "recall"),
+      StudyKey("p", "x", "recall"),
+      StudyKey("p", "a", "encode"),
+      StudyKey("p", "b", "encode")
+    )
+    // Run B: an encoding of x makes it matched, so it has controls (a, b):
+    // its control rows stand in for an archive written before bead S0.7b.
+    val matchedKeys = unmatchedKeys :+ StudyKey("p", "x", "encode")
+    val (_, a)      = prepare(unmatchedKeys, scales = 1)
+    val (_, b)      = prepare(matchedKeys, scales = 1)
+    val sa          = get(a.run).scales.head
+    val sb          = get(b.run).scales.head
+    assert(sb.analyses.control.entries.exists(_.key == unmatchedKeys(1)))
+    val old = get(
+      StudyAnalyses.of(
+        sa.analyses.matchedSource,
+        sa.analyses.matched,
+        sb.analyses.controlSource,
+        sb.analyses.control
+      )
+    )
+    // Its contrast is over its own reductions, as an old archive's was, and
+    // every key it names was estimated, so only the stale-control rule can
+    // refuse it.
+    val oldContrast = eyes4s.design.contrast(old.matched, old.control)
+    assert(oldContrast.isRight)
+    assertEquals(
+      StudyScaleResult
+        .reconstruct(sb.estimate, sb.estimation, sb.excludedPhases, old, oldContrast),
+      Left(StudyResultError.UnmatchedControl(unmatchedKeys(1)))
+    )
+    // The result as now written reconstructs.
+    assert(
+      StudyScaleResult
+        .reconstruct(sa.estimate, sa.estimation, sa.excludedPhases, sa.analyses, sa.contrast)
+        .isRight
+    )
+    assertEquals(
+      Diagnostic.of(StudyResultError.UnmatchedControl[StudyKey](unmatchedKeys(1))).code.render,
+      "study-result.unmatched-control"
+    )
   }
 
   test("a query whose only reference is repeated has no match, so no controls") {

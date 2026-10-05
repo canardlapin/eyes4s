@@ -209,6 +209,8 @@ private[eyes4s] object Projections:
         )
       case OrphanKey(key) =>
         diagnostic(C.studyResult, e, e.message, at(Locus.Trial(key)))(Operand.Key(key))
+      case UnmatchedControl(key) =>
+        diagnostic(C.studyResult, e, e.message, at(Locus.Trial(key)))(Operand.Key(key))
       case OrphanPair(left, right) =>
         diagnostic(C.studyResult, e, e.message, at(Locus.Pair(left, right)))(
           Operand.Key(left),

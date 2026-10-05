@@ -277,7 +277,8 @@ participant (`ControlReferences.SameSelection`); `ControlReferences.AllOccurrenc
 occurrence as a control. A focal trial without a matched reference is reported as no match
 (`UnmatchedFocalPolicy.ReportNoMatch`) or refuses the study (`Refuse`). It is not eligible: it
 has no control pairs, so neither design scores it, and `StudyCounts.eligibleQueries` counts only
-focal trials with a match.
+focal trials with a match. A result stored before this rule, with control rows for such a trial,
+is refused when it is read back (`StudyResultError.UnmatchedControl`); rerun the study.
 
 Why a focal trial has no match is judged against the trial inventory, the design as declared
 before admission. `PreparedStudy.unmatchedReasons(inventory)`, and `StudyPlan.preflight` given

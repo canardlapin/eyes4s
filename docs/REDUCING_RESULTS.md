@@ -20,8 +20,8 @@ components, and computes the plan's window tallies over `input`. The constructor
 `Report.reduce`) are package-private: they exist for the codec and the published law suites, so
 a report cannot be bound to documents it did not read. The report types themselves, and the
 binding they carry, are all in `eyes4s-results`. For a scale it builds a `QueryTable`: one
-`Query` per focal trial (every key of the scale's matched and control reductions and its
-contrast, and every focal trial the matched pairing left unmatched), with
+`Query` per eligible query (every key of the scale's matched and control reductions and its
+contrast, except a focal trial the matched pairing left unmatched), with
 
 - its layout fields (participant, item, phase, occurrence), read through the study layout;
 - its covariates, joined by key from a `CovariateTable` (never by row position);
@@ -30,6 +30,11 @@ contrast, and every focal trial the matched pairing left unmatched), with
 - each role's stored outcome: `Matched` and `Control` from the reductions, `Difference` from the
   contrast row, as the score components the method describes, a stored failure (its diagnostic
   code), or no stored row.
+
+A focal trial without a matched reference is not eligible: it has no matched score and no
+controls, so a report neither keeps nor fails it, and a report's `Accounting.eligible` is the
+study's `StudyCounts.eligibleQueries`. The table lists those trials as `unmatched`, keyed, never
+as queries.
 
 `Report.evaluate(spec, source)` reduces the scale's query table; it refuses a specification
 that reads covariates over a source bound to no covariate source (`UnboundCovariates`).
