@@ -78,6 +78,38 @@ class EyeLinkAscImportSuite extends munit.FunSuite:
     assert(result.trusted.isLeft)
   }
 
+  test("frozen binocular ASC form retains both eyes, gap rows, and metadata messages") {
+    val source =
+      """|** Synthetic eyes4s performance fixture v2
+         |START 0 LEFT RIGHT SAMPLES
+         |PUPIL AREA
+         |SAMPLES GAZE LEFT\tRIGHT RATE 1000.00
+         |MSG 0 RECCFG CR 1000 2 2 2 2 LR
+         |MSG 0 GAZE_COORDS 0 0 1919 1079
+         |MSG 0 DISPLAY_COORDS 0 0 1919 1079
+         |0\t10.00\t20.00\t1000.00\t30.00\t40.00\t1000.00
+         |1\t.\t.\t0.00\t.\t.\t0.00
+         |END 1 SAMPLES EVENTS RES 30.00 30.00
+         |""".stripMargin.replace("\\t", "\t")
+    val bytes  = IArray.from(source.getBytes(java.nio.charset.StandardCharsets.UTF_8))
+    val result = EyeLinkAscImport.fromBytes(bytes, settings, config)
+    assert(result.report.isReconciled)
+    assertEquals(result.report.sampleRecords, 2)
+    assertEquals(result.report.parsedSamples, 2)
+    assertEquals(result.report.materializedSamples, 2)
+    val session = result.trusted.fold(errors => fail(errors.head.message), identity)
+    assertEquals(session.observedMessages.marks.length, 3)
+    session.recordingBlocks.head.recording match
+      case EyeLinkAscRecordingArtifact.Binocular(recording) =>
+        assertEquals(recording.size, 2)
+        assertEquals(recording.pupilUnit, Some(PupilUnit.Area))
+        assert(recording.leftGaze(0).isInstanceOf[Gaze.Tracked[?]])
+        assert(recording.rightGaze(0).isInstanceOf[Gaze.Tracked[?]])
+        assert(recording.leftGaze(1).isInstanceOf[Gaze.Lost[?]])
+        assert(recording.rightGaze(1).isInstanceOf[Gaze.Lost[?]])
+      case other => fail(s"expected binocular recording, found=$other")
+  }
+
   test("task-level path reaches a source-supported scanpath without losing provenance") {
     val session = EyeLinkAscImport
       .fromBytes(sourceBytes, settings, config)
