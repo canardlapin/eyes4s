@@ -228,7 +228,7 @@ class SemanticBindingSuite extends ScalaCheckSuite:
       os <- Gen.listOfN(
         n,
         Gen.oneOf(
-          MapPlacement.InMap,
+          MapPlacement.InWindow,
           MapPlacement.OutsideWindow(OffWindowPolicy.Exclude),
           MapPlacement.OutsideScreen,
           MapPlacement.DroppedInitial
