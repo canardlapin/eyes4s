@@ -125,20 +125,21 @@ object RealExecution:
           )
         case RunOutcome.Failed(_, error, last) =>
           lastOf(last).map(p =>
-            (JobOutcome.Failed(job, run, diagnostics(run, error), p), RunState.Failed, None)
+            (JobOutcome.Failed(job, run, diagnostics(error), p), RunState.Failed, None)
           )
       }
       .fold(failed, identity)
 
-  /** eyes4s's diagnostic of a refused run. A meter or completion error is
-    * eyes4s's own defect and has no diagnostic code of its own.
+  /** eyes4s's diagnostic of a refused run (family `study-run`: a plan
+    * refusal, an invalid meter or an unexpected completion), with eyes4s's
+    * operands.
     */
-  def diagnostics(run: RunId, error: StudyRunError): Vector[StudioDiagnostic] = error match
-    case StudyRunError.Plan(e) =>
-      Vector(StudioDiagnostic.of(Diagnostic.of(e), (k: Nothing) => k))
-    case other => Vector(defect(run, Defect(other.message)))
+  def diagnostics(error: StudyRunError): Vector[StudioDiagnostic] =
+    Vector(StudioDiagnostic.of(Diagnostic.of(error), (k: Nothing) => k))
 
-  /** A run that produced nothing the backend can hold. */
+  /** A host defect: an exception the run raised, or telemetry this mapping
+    * cannot read. The run produced nothing the backend can hold.
+    */
   def defect(run: RunId, d: Defect): StudioDiagnostic =
     BackendError.Unavailable(DiagnosticLocus.Run(run)).diagnostic.copy(message = d.message)
 

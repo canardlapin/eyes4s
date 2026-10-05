@@ -359,12 +359,43 @@ class RealStudyBackendSuite extends CatsEffectSuite:
       )
   }
 
-  test("a run whose end eyes4s cannot report settles Failed, naming the run, with no result") {
+  /** rev4 prepared over the golden data, for the pure execution mapping. */
+  private lazy val rev4Prepared: RealPrepared =
     val r3       = get(trialLayout.dataset(StoryMoments.r3).toRight("no r3"))
     val registry = get(eyes4s.studio.core.fixture.GoldenAssets.registry(r3))
     val admitted = get(RealAdmission.admit(r3, GoldenCsv.fixations, GoldenCsv.trials, registry))
     val recipe   = get(trialLayout.analysis(StoryMoments.rev4).toRight("no rev4")).recipe
-    val prepared = get(RealPrepared.of(StoryMoments.rev4, StoryMoments.r3, recipe, admitted))
+    get(RealPrepared.of(StoryMoments.rev4, StoryMoments.r3, recipe, admitted))
+
+  test("a run eyes4s refuses settles Failed with eyes4s's study-run diagnostic") {
+    import eyes4s.plan.{
+      CountUnit as CoreUnit,
+      StageKind as CoreKind,
+      StageMeterError,
+      StudyRunError
+    }
+    val error =
+      StudyRunError.Meter(StageMeterError.Regressed(CoreKind.Comparing, CoreUnit.Pairs, 9, 4))
+    val (out, state, result) = RealExecution.settle(
+      JobId(1),
+      RunId(8),
+      Right(eyes4s.fs2.RunOutcome.Failed((JobId(1), RunId(8)), error, None)),
+      RealExecution.Carried.none,
+      rev4Prepared.counts
+    )
+    val expected = eyes4s.plan.Diagnostic.of(error)
+    out match
+      case JobOutcome.Failed(JobId(1), RunId(8), Vector(d), None) =>
+        assertEquals(d.code, expected.code.render)
+        assert(d.code.startsWith("study-run"), d.code)
+        assertEquals(d.origin, DiagnosticOrigin.EyesCore)
+        assertEquals(d.message, expected.message)
+      case other => fail(s"expected one eyes4s diagnostic, got $other")
+    assertEquals((state, result), (RunState.Failed, None))
+  }
+
+  test("a run whose end eyes4s cannot report settles Failed, naming the run, with no result") {
+    val prepared             = rev4Prepared
     val (out, state, result) = RealExecution.settle(
       JobId(1),
       RunId(8),
