@@ -811,3 +811,50 @@ class RealStudyBackendSuite extends CatsEffectSuite:
           assert(!v.fixations.exists(_.placement == MapPlacement.InWindow), v.trial)
         }
   }
+
+  test("provenance runs from the run to the items eyes4s holds, and refuses one it does not") {
+    for
+      real <- RealStudyBackend.create[IO](trialLayout, RealBackendConformanceSuite.golden)
+      _    <- recompute(real, StoryMoments.run7)
+      row  <- real
+        .pairRows(StoryMoments.run7, 2, get(PageRequest.of(0, 1)))
+        .map(get(_).rows.head)
+      pair = ResultAddress.PairRow(2, row.design, row.query, row.reference)
+      trail   <- real.provenance(StoryMoments.run7, pair).map(get(_).trail)
+      map     <- real.provenance(StoryMoments.run7, ResultAddress.Estimation(2, row.reference))
+      reduced <- real.provenance(
+        StoryMoments.run7,
+        ResultAddress.Reduction(2, PairDesign.Control, row.query)
+      )
+      swapped <- real.provenance(
+        StoryMoments.run7,
+        ResultAddress.PairRow(2, row.design, row.reference, row.query)
+      )
+      beyond <- real.provenance(StoryMoments.run7, ResultAddress.ContrastRow(9, row.query))
+    yield
+      assertEquals(
+        trail,
+        Vector(
+          ProvenanceStep.Run(StoryMoments.run7),
+          ProvenanceStep.Analysis(StoryMoments.rev4),
+          ProvenanceStep.Dataset(StoryMoments.r3),
+          ProvenanceStep.Scale(2, "2°"),
+          ProvenanceStep.Design(PairDesign.Matched),
+          ProvenanceStep.Trial(
+            row.query,
+            trail.collect { case ProvenanceStep.Trial(k, i) if k == row.query => i }.head
+          ),
+          ProvenanceStep.Trial(row.reference, row.referenceItem)
+        )
+      )
+      assertEquals(
+        map.map(_.trail.last),
+        Right(ProvenanceStep.Trial(row.reference, row.referenceItem))
+      )
+      assertEquals(
+        reduced.map(_.trail.takeRight(2).head),
+        Right(ProvenanceStep.Design(PairDesign.Control))
+      )
+      assertEquals(swapped.left.map(_.code), Left("studio-backend.unknown-reference"))
+      assertEquals(beyond.left.map(_.code), Left("studio-backend.unknown-scale"))
+  }

@@ -457,7 +457,7 @@ final class RealStudyBackend[F[_]] private (
     results(run).map(_.flatMap(_.inspect(address)))
 
   def provenance(run: RunId, address: ResultAddress): F[Either[BackendError, Provenance]] =
-    noRun(run)
+    results(run).map(_.flatMap(_.provenance(address)))
 
   /** The revision's trial views, built once per revision. */
   private def views(r: AnalysisRevision): F[Either[BackendError, RealTrialViews]] =

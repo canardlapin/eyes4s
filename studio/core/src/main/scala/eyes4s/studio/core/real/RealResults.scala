@@ -37,6 +37,8 @@ import eyes4s.studio.core.backend.*
   */
 final class RealResults private (
     val run: RunId,
+    val revision: AnalysisRevision,
+    val dataset: DatasetRevision,
     val scales: Vector[String],
     inspection: StudyInspection[CoreKey, Unit2D.Px, Similarity, SignedDifference],
     keys: Map[TrialKey, CoreKey]
@@ -139,6 +141,52 @@ final class RealResults private (
                 )
     }
 
+  /** The trail from the run to the item an address names, once eyes4s
+    * holds that item: the run, its revision and dataset, the scale, the
+    * design, and the trials with their items.
+    */
+  def provenance(address: ResultAddress): Either[BackendError, Provenance] =
+    def unknown              = BackendError.UnknownReference(run, address)
+    def core(k: TrialKey)    = keys.get(k).toRight(unknown)
+    def held(found: Boolean) = Either.cond(found, (), unknown)
+    def trial(k: CoreKey)    = ProvenanceStep.Trial(key(k), k.item)
+    scale(address.scale).flatMap { s =>
+      val tail = address match
+        case ResultAddress.Estimation(i, k) =>
+          core(k).flatMap(c =>
+            held(s.estimation.contains(ResultRef.Estimation(i, c))).as(Vector(trial(c)))
+          )
+        case ResultAddress.ContrastRow(i, k) =>
+          core(k).flatMap(c =>
+            held(s.contrast match
+              case ScaleContrast.Rows(rows) => rows.contains(ResultRef.ContrastRow(i, c))
+              case ScaleContrast.Failed(_)  => false).as(Vector(trial(c)))
+          )
+        case ResultAddress.Reduction(i, design, k) =>
+          val d = studyDesign(design)
+          core(k).flatMap(c =>
+            held(s.reductions(d).contains(ResultRef.Reduction(i, d, c)))
+              .as(Vector(ProvenanceStep.Design(design), trial(c)))
+          )
+        case ResultAddress.PairRow(i, design, focal, reference) =>
+          val d = studyDesign(design)
+          (core(focal), core(reference)).tupled.flatMap((f, r) =>
+            held(s.pairs(d).contains(ResultRef.PairRow(i, d, f, r)))
+              .as(Vector(ProvenanceStep.Design(design), trial(f), trial(r)))
+          )
+      tail.map(t =>
+        Provenance(
+          address,
+          Vector(
+            ProvenanceStep.Run(run),
+            ProvenanceStep.Analysis(revision),
+            ProvenanceStep.Dataset(dataset),
+            ProvenanceStep.Scale(address.scale, scales(address.scale))
+          ) ++ t
+        )
+      )
+    }
+
 object RealResults:
   /** A studio key of an eyes4s trial key (the item is carried separately). */
   def key(k: CoreKey): TrialKey =
@@ -176,6 +224,8 @@ object RealResults:
       .map(inspection =>
         new RealResults(
           run,
+          p.revision,
+          p.dataset,
           p.summary.scales,
           inspection,
           p.admitted.input.trials.rows.map(r => key(r.key) -> r.key).toMap
