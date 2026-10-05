@@ -63,6 +63,28 @@ To change the plan, edit `studio_plan.py`, rerun `render`, and update the matchi
 
 ## Backend protocol versions
 
+Protocol 1.12 (bd-01M44FKT4NFZ0F5KQTKT96DC8E; its number is fixed at landing) adds
+each pair row's window tallies, additive on 1.11: `PairRowEntry` carries
+`queryWindow` and `referenceWindow`, each a `TrialTally` (the trial's eyes4s
+`WindowTally`, written as `TrialFailed` writes it, with the trial's `StudioRef`), or
+none when the backend holds no admitted scanpath for the trial. The pairs table
+shows the reference's (and the query's) fixations and duration outside the window.
+
+Protocol 1.11 (bd-01M43VP5YV6WB4VVQEW2CJTB9V) evaluates a reporting spec over a run,
+additive on 1.10: `report(run, spec, scale)` answers `ReportView`, the spec as sent (an
+edit, whatever the document has saved) reduced by eyes4s-results (`Report.evaluate`,
+UI-C) over the run's stored rows at one scale: each group's M, B and D cells (missing
+with a typed `ReportAbsence`, never zero) with their participants, queries and failures;
+each participant's D; the participants a minimum per group drops; and the accounting
+(eligible, kept, filtered out, undecided, no stored value, below the minimum). A spec
+with an outside-window filter is also evaluated by eyes4s with that filter alone, and its
+own accounting gives the queries the filter leaves out (failed ones included) and those
+it cannot decide (an undefined share); the studio subtracts nothing. Each value has its
+`StudioRef`: the new `ReportCell` (a group, or the whole ungrouped report, and a role),
+`ParticipantSummary` and the new `ReportTally`. A spec eyes4s cannot evaluate, or stored
+rows it cannot read, is refused with the new `ReportRefused`. The fake serves it the same
+way, over the fixture's stored rows bound by `ReportSources.tables` (eyes4s-codec).
+
 Protocol 1.10 (UI-G G3) adds the `TrialFailed` map placement, additive on 1.9: a
 fixation in the window of a trial the study fails (its off-window policy is
 `FailTrial`) carries the trial's eyes4s `WindowTally` (`outsideScreen`,
@@ -170,7 +192,7 @@ malformed, even when the other version's body would not decode
 (bd-01M3JH3492J21SKMYYNZM93118). Protocol
 1.2 added `ProgressTotal.Counting`, which a 1.0/1.1 decoder cannot read; 1.3 adds
 the inventory join; 1.4 adds the exact large-count policy; 1.5 adds the
-resolved-design counts; 1.6 adds the trial fixations and preview views; 1.7 adds the source records view; 1.8 adds the diagnostic's affected trials, class and remedy; 1.9 adds the pair rows view and the exact-version refusal; 1.10 adds the `TrialFailed` placement. `ProtocolCodecSuite`
+resolved-design counts; 1.6 adds the trial fixations and preview views; 1.7 adds the source records view; 1.8 adds the diagnostic's affected trials, class and remedy; 1.9 adds the pair rows view and the exact-version refusal; 1.10 adds the `TrialFailed` placement; 1.11 adds reports; 1.12 adds the pair rows' window tallies. `ProtocolCodecSuite`
 retains the frozen legacy-total probe, while `ProtocolLongSuite` verifies that
 safe-number 1.2 envelopes remain readable. This does not establish mixed-version peer compatibility.
 

@@ -32,6 +32,9 @@ enum ProfileTextId derives CanEqual:
   /** The axes' titles. */
   case DAxis, SigmaAxis
 
+  /** A query's series: its n is one query (S8.5). */
+  case QueryN
+
 /** The scale profile's strings in the boards' wording. */
 object ProfileText:
 
@@ -51,6 +54,7 @@ object ProfileText:
       case NHeader      => "n"
       case DAxis        => "D (Δ cosine)"
       case SigmaAxis    => "Gaussian σ (log spacing)"
+      case QueryN       => "1 query"
 
   /** `id`'s English template with `args` filled in. */
   def apply(id: ProfileTextId, args: String*): String =

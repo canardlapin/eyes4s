@@ -32,7 +32,7 @@ import eyes4s.studio.app.text.{Format, Messages, SummaryText, SummaryTextId}
 import eyes4s.studio.app.vm.{Labels, Shell}
 import eyes4s.studio.app.{AppModel, Intent}
 import eyes4s.studio.app.nav.Place
-import eyes4s.studio.core.backend.{QueryRow, QueryStatus, ResultSummary, RunId}
+import eyes4s.studio.core.backend.{QueryRow, QueryStatus, ReportRole, ResultSummary, RunId}
 import eyes4s.studio.core.document.ReportingId
 import eyes4s.studio.core.selection.{ScaleIndex, StudioRef}
 
@@ -135,12 +135,18 @@ object CompareSummaryVM:
           )
         )
     }
+    def displayed(scale: ScaleIndex) = s.reports.get((scale, false)).collect {
+      case ReportAnswer.Answered(view) => view
+    }
+    def ungrouped(scale: ScaleIndex) = s.reports.get((scale, true)).collect {
+      case ReportAnswer.Answered(view) => view
+    }
     val reporting       = s.reporting
     val participantPlot = for
-      rep   <- reporting
       scale <- shown
+      view <- displayed(scale)
     yield ParticipantMeans
-      .of(r, rep, scale)
+      .of(view, r.scales.lift(scale.value).getOrElse(scale.value.toString))
       .left
       .map(_.message)
       .flatMap(means =>
@@ -149,13 +155,17 @@ object CompareSummaryVM:
           .left
           .map(_.message)
       )
-    val profile = reporting.map { rep =>
+    val profile = reporting.map { _ =>
       m.document
         .run(run)
         .flatMap(rr => m.document.analysis(rr.analysis))
         .map(_.recipe.scales)
         .toRight(s"run ${run.number} has no analysis revision in the document")
-        .flatMap(ScaleProfile.of(r, rep, _).left.map(_.message))
+        .flatMap(scales =>
+          val grouped = scales.values.indices.toVector.flatMap(i => ScaleIndex.of(i).toOption.flatMap(displayed))
+          val overall = scales.values.indices.toVector.flatMap(i => ScaleIndex.of(i).toOption.flatMap(ungrouped))
+          ScaleProfile.of(grouped, overall, scales, r.scales).left.map(_.message)
+        )
         .flatMap(p =>
           ProfileColumns.standard.flatMap(ScaleProfile.source(p, _)).left.map(_.message)
         )
@@ -163,19 +173,25 @@ object CompareSummaryVM:
     val participants = for
       rep   <- reporting
       scale <- shown
-    yield participantTable(run, rep, scale, r)
+      grouped <- displayed(scale)
+      overall <- ungrouped(scale)
+    yield participantTable(run, rep, scale, r, grouped, overall)
     val queries = for
       scale <- shown
       q     <- s.queries
     yield q match
       case QueriesAnswer.Answered(rows) => queryTable(run, scale, r, rows)
       case QueriesAnswer.Failed(why)    => Left(why)
-    val notes = Vector(
-      SummaryText(SummaryTextId.PairedN, r.pairedN.toString),
+    val notes = shown.flatMap(displayed).toVector.flatMap { view =>
+      val contrast = view.contrast(ReportRole.Difference)
+      val range    = view.queryRange(ReportRole.Difference)
+      Vector(
+      SummaryText(SummaryTextId.PairedN, contrast.fold("0")(_.pairedN.toString)),
       SummaryText(SummaryTextId.Weighting),
       SummaryText(SummaryTextId.Unit),
-      SummaryText(SummaryTextId.GroupRange, r.groupNMinimum.toString, r.groupNMaximum.toString)
-    )
+      SummaryText(SummaryTextId.GroupRange, range.fold("0")(_.fewest.toString), range.fold("0")(_.most.toString))
+      )
+    }
     CompareSummaryVM(
       None,
       participantPlot,
@@ -196,7 +212,9 @@ object CompareSummaryVM:
       run: RunId,
       rep: ReportingId,
       scale: ScaleIndex,
-      r: ResultSummary
+      r: ResultSummary,
+      grouped: eyes4s.studio.core.backend.ReportView,
+      overall: eyes4s.studio.core.backend.ReportView
   ): Either[String, PlotSource] =
     import SummaryTextId.*
     def column(id: String, header: String, format: ColumnFormat) =
@@ -213,23 +231,33 @@ object CompareSummaryVM:
       ("mean-b", MeanB, ColumnFormat.Decimal(2)),
       ("mean-d", MeanD, ColumnFormat.Signed(2))
     )
-    val groupColumns = r.groups.zipWithIndex.map((g, k) =>
-      column(s"group-$k", SummaryText(GroupHeader, g.label.label), ColumnFormat.Label)
+    val groups = grouped.cells.collect {
+      case c if c.role == ReportRole.Difference && c.group.nonEmpty => c.group.get
+    }.distinct
+    val groupColumns = groups.zipWithIndex.map((g, k) =>
+      column(s"group-$k", SummaryText(GroupHeader, g.label), ColumnFormat.Label)
     )
     val columns = fixed.map((id, h, f) => column(id, SummaryText(h), f)) ++ groupColumns
-    val rows    = r.participants.map { p =>
-      val counts = Vector(p.requested, p.contributing, p.failed, p.noMatch, p.notAdmitted)
+    val ids = overall.participants.collect {
+      case p if p.role == ReportRole.Difference && p.group.isEmpty => p.participant
+    }.distinct
+    val rows    = ids.map { id =>
+      val legacy = r.participants.find(_.participant == id)
+      val counts = legacy.map(p => Vector(p.requested, p.contributing, p.failed, p.noMatch, p.notAdmitted))
+        .getOrElse(Vector.fill(5)(0))
+      def value(role: ReportRole) =
+        overall.participant(None, role, id).flatMap(_.value).fold(PlotValue.Missing)(PlotValue.Number(_))
       PlotRow(
-        StudioRef.ParticipantSummary(run, rep, scale, None, p.participant),
-        Vector(PlotValue.Text(p.participant)) ++
+        overall.participant(None, ReportRole.Difference, id).map(_.ref)
+          .getOrElse(StudioRef.ParticipantSummary(run, rep, scale, None, id)),
+        Vector(PlotValue.Text(id)) ++
           counts.map(n => PlotValue.Number(n.toDouble)) ++
-          Vector(p.all.m, p.all.b, p.all.d).map(PlotValue.Number(_)) ++
-          r.groups.map { g =>
-            p.groups
-              .find(gm => gm.label == g.label && gm.n > 0)
-              .fold(PlotValue.Missing)(gm =>
-                PlotValue.Text(SummaryText(GroupCell, Format.signed(gm.d, 2), gm.n.toString))
-              )
+          Vector(value(ReportRole.Matched), value(ReportRole.Control), value(ReportRole.Difference)) ++
+          groups.map { g =>
+            grouped
+              .participant(Some(g), ReportRole.Difference, id)
+              .flatMap(p => p.value.map(v => SummaryText(GroupCell, Format.signed(v, 2), p.queries.toString)))
+              .fold(PlotValue.Missing)(PlotValue.Text(_))
           }
       )
     }

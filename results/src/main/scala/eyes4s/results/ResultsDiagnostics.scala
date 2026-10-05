@@ -54,7 +54,11 @@ object ResultsDiagnosticCatalog:
     "InconsistentAccounting",
     "InconsistentCell",
     "Components",
-    "UnboundCovariates"
+    "UnboundCovariates",
+    // bd-01M43VP5YV6WB4VVQEW2CJTB9V review: host query tables out of order, or
+    // declaring other covariates than their covariate table.
+    "TableOrder",
+    "TableCovariates"
   )
   val reportSpec: DiagnosticFamily = error("report-spec")(
     "BlankId",
@@ -192,4 +196,5 @@ object ResultsDiagnostics:
     case ReportError.BlankParticipant(key)     => Vector(Locus.Trial(key))
     case ReportError.InvalidQuery(key, _)      => Vector(Locus.Trial(key))
     case ReportError.UnknownScale(scale, _)    => Vector(Locus.Scale(scale))
+    case ReportError.TableOrder(_, scale)      => Vector(Locus.Scale(scale))
     case _                                     => Vector.empty

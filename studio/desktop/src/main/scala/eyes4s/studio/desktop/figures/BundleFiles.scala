@@ -21,7 +21,8 @@ import eyes4s.io.csv
 import eyes4s.studio.app.figures.{BundleItem, BundleRequest, FigureBundle}
 import eyes4s.studio.core.backend.{PairRowPage, QueryRow, ResultSummary}
 import eyes4s.studio.core.assets.AssetRef
-import eyes4s.studio.core.figures.BundleTables
+import eyes4s.results.ResultTable
+import eyes4s.studio.core.figures.{BundleTableError, BundleTables}
 import eyes4s.studio.viz.trial.StimulusRaster
 
 import java.nio.charset.StandardCharsets.UTF_8
@@ -45,33 +46,36 @@ object BundleFiles:
       rasters: Map[AssetRef, StimulusRaster] = Map.empty
   ): Either[String, Vector[(String, IArray[Byte])]] =
     def utf8(text: String) = IArray.unsafeFromArray(text.getBytes(UTF_8))
-    val readme             = "README.txt" -> utf8(FigureBundle.readme(request))
+    def table(t: Either[BundleTableError, ResultTable]) =
+      t.bimap(_.message, t => (utf8(t.csv.encode), Some(t)))
     request.items
       .filterNot(_ == BundleItem.Snapshot)
       .traverse { item =>
         val name = FigureBundle.file(item, request.page, request.format)
-        val bytes: Either[String, IArray[Byte]] = item match
-          case BundleItem.Figure  => FigureExport.render(request.format, request.page, rasters)
-          case BundleItem.Results =>
-            BundleTables
-              .results(request.source, summary, rows)
-              .bimap(_.message, t => utf8(t.csv.encode))
+        val written: Either[String, (IArray[Byte], Option[ResultTable])] = item match
+          case BundleItem.Figure =>
+            FigureExport.render(request.format, request.page, rasters).map(_ -> None)
+          case BundleItem.Results => table(BundleTables.results(request.source, summary, rows))
           case BundleItem.Participants =>
-            BundleTables
-              .participants(request.source, summary)
-              .bimap(_.message, t => utf8(t.csv.encode))
+            table(BundleTables.participants(request.source, summary))
           case BundleItem.Methods =>
             request.methods
-              .map(m => utf8(m + "\n"))
+              .map(m => utf8(m + "\n") -> None)
               .toRight("the methods text is not generated")
           case BundleItem.Comparisons =>
-            BundleTables
-              .comparisons(request.source, summary, pairs)
-              .bimap(_.message, t => utf8(t.csv.encode))
+            table(BundleTables.comparisons(request.source, summary, pairs))
           case BundleItem.Snapshot => Left("the project snapshot is a directory")
-        bytes.bimap(why => s"$name: $why", name -> _)
+        written.bimap(why => s"$name: $why", (bytes, t) => (name, bytes, t))
       }
-      .map(_ :+ readme)
+      .map { files =>
+        // The README documents each table from the very table written.
+        val tables = files.collect { case (name, _, Some(t)) => BundleTables.describe(name, t) }
+        val docs   =
+          if tables.isEmpty then Vector.empty
+          else Vector("", "Tables:") ++ BundleTables.Convention ++ tables.flatMap("" +: _)
+        val readme = FigureBundle.readme(request) + docs.map(_ + "\n").mkString
+        files.map((n, b, _) => n -> b) :+ ("README.txt" -> utf8(readme))
+      }
 
 /** Writes a bundle so that it appears whole or not at all (ticket S9.5):
   * into a hidden partial folder beside `target`, with the project snapshot

@@ -176,3 +176,116 @@ class TableTwinSuite extends munit.FunSuite:
       case Vector(Intent.Select(input)) =>
         (right(SelectionState.empty.submit(input)), step.state)
       case other => fail(s"unexpected $other")
+
+  // --- Content-sized columns ------------------------------------------------------------
+
+  private def labelled(n: Int, label: Int => String, header: String = "Participant") =
+    right(
+      PlotSource(
+        "Rows",
+        Vector(
+          PlotColumn(right(ColumnId.of("label")), header, ColumnFormat.Label),
+          PlotColumn(right(ColumnId.of("d")), "D", ColumnFormat.Signed(2))
+        ),
+        Vector.tabulate(n)(i =>
+          PlotRow(
+            StudioRef.Participant(s"P$i"),
+            Vector(PlotValue.Text(label(i)), PlotValue.Number(i / 10.0))
+          )
+        )
+      )
+    )
+
+  test("columns share the width by their widest text, header or cell, within bounds") {
+    // "Participant" (11) against "Mean D"'s widest "+0.40" (6): 11 : 6.
+    val shares = TableColumns.shares(source)
+    assertEqualsDouble(shares.sum, 1.0, 1e-12)
+    assertEqualsDouble(shares(0), 11.0 / 17.0, 1e-12)
+    // A cell wider than its header widens its column; the widest counts as 32.
+    val wide = TableColumns.shares(labelled(3, i => "x" * (10 + 30 * i)))
+    assertEqualsDouble(wide(0), 32.0 / (32.0 + 5.0), 1e-12)
+    // A narrow column counts as 4.
+    val narrow = TableColumns.shares(labelled(2, _ => "a", header = "L"))
+    assertEqualsDouble(narrow(0), 4.0 / (4.0 + 5.0), 1e-12)
+    assertEquals(TableColumns.shares(labelled(0, _ => "")).size, 2)
+  }
+
+  test("a long source is sized from a bounded sample that keeps its first and last rows") {
+    val n      = 10000
+    val picked = TableColumns.sampled(labelled(n, _ => "a"))
+    assertEquals(picked.size, TableColumns.Sample)
+    assertEquals((picked.head, picked.last), (0, n - 1))
+    assertEquals(picked, picked.distinct.sorted)
+    // A wide row the sample skips does not size the column; the last row does.
+    val skipped = (0 until n).find(i => !picked.contains(i)).get
+    val missed  = labelled(n, i => if i == skipped then "x" * 30 else "a")
+    // "D" is at widest "+999.90" (7), at the last row.
+    assertEqualsDouble(TableColumns.shares(missed)(0), 11.0 / 18.0, 1e-12)
+    val last = labelled(n, i => if i == n - 1 then "x" * 30 else "a")
+    assertEqualsDouble(TableColumns.shares(last)(0), 30.0 / 37.0, 1e-12)
+    assertEquals(TableColumns.sampled(labelled(5, _ => "a")), Vector.range(0, 5))
+  }
+
+  // --- Pinned · selected (bead bd-01M44PD9XEHG6QWPCJATAJZ15W) ----------------------------
+
+  private val pinning = TableTwinState.initial(view, SelectionState.empty, pinsSelected = true)
+
+  // The bus's selection after toggling `rows` in, each as a table click.
+  private def selected(src: PlotSource, rows: Seq[Int]): SelectionState =
+    rows.foldLeft(SelectionState.empty) { (acc, r) =>
+      TableTwinState.initial(view, acc).click(src.rows(r).ref, toggle = true, src).intents match
+        case Vector(Intent.Select(input)) => right(acc.submit(input))
+        case other                        => fail(s"unexpected $other")
+    }
+
+  private def selecting(s: TableTwinState, rows: Int*): TableTwinState =
+    s.project(selected(source, rows)).state
+
+  private def shownRefs(s: TableTwinState): Vector[StudioRef] = s.vm(source).rows.map(_.ref)
+
+  test("a pinning table shows a selected row once, at the top, annotated; others in order") {
+    val p2 = selecting(pinning, 2)
+    assertEquals(shownRefs(p2), Vector(ref(2), ref(0), ref(1), ref(3)))
+    val rows = p2.vm(source).rows
+    assertEquals(rows.map(_.pinned), Vector(true, false, false, false))
+    assertEquals(rows.head.annotation, Some("pinned · selected"))
+    assert(rows.head.accessibleText.endsWith(", pinned · selected"), rows.head.accessibleText)
+    assertEquals(rows(1).annotation, None)
+    // Two selected rows are pinned in source order.
+    assertEquals(shownRefs(selecting(pinning, 3, 1)), Vector(ref(1), ref(3), ref(0), ref(2)))
+    // Deselecting returns the row to its place.
+    assertEquals(shownRefs(p2.project(SelectionState.empty).state), source.rows.map(_.ref))
+    // A table that does not pin keeps source order.
+    assertEquals(shownRefs(selecting(initial, 2)), source.rows.map(_.ref))
+    assertEquals(selecting(initial, 2).vm(source).rows.map(_.pinned), Vector.fill(4)(false))
+  }
+
+  test("the cursor moves in shown order, and the pinned row is row 0") {
+    val p2 = selecting(pinning, 2)
+    assertEquals(key(p2, RovingMove.Down).cursor, Some(ref(2)))
+    assertEquals(key(p2, RovingMove.Down, RovingMove.Down).cursor, Some(ref(0)))
+    assertEquals(key(p2, RovingMove.Last, RovingMove.Up).cursor, Some(ref(1)))
+    val onPinned = key(p2, RovingMove.Down)
+    assertEquals(onPinned.vm(source).cursorRow, Some(0))
+    assertEquals(key(p2, RovingMove.Last).vm(source).cursorRow, Some(3))
+    assertEquals(p2.shownIndex(source, ref(0)), Some(1))
+    assertEquals(p2.sourceIndex(source, 0), Some(2))
+  }
+
+  test("shown and source positions are inverse for any selection") {
+    val random = scala.util.Random(17L)
+    (1 to 200).foreach { _ =>
+      val n      = random.nextInt(40)
+      val picked = Vector.fill(random.nextInt(8))(random.nextInt(40)).filter(_ < n).distinct
+      val src    = labelled(n, i => s"P$i")
+      val st     = TableTwinState.initial(view, selected(src, picked), pinsSelected = true)
+      val shown  = Vector.range(0, n).flatMap(st.sourceIndex(src, _))
+      assertEquals(shown.sorted, Vector.range(0, n))
+      assertEquals(shown.take(picked.size), picked.sorted)
+      assertEquals(shown.drop(picked.size), Vector.range(0, n).filterNot(picked.contains))
+      shown.zipWithIndex.foreach((r, i) =>
+        assertEquals(st.shownIndex(src, src.rows(r).ref), Some(i))
+      )
+      assertEquals(st.sourceIndex(src, n), None)
+    }
+  }

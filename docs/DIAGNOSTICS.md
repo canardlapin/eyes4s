@@ -1739,6 +1739,8 @@ fails after rewriting, so review the change and run it again.
 | `report-error.inconsistent-cell` | `InconsistentCell` | `group`, `role`, `component`, `reason` |
 | `report-error.components` | `Components` | `underlying` |
 | `report-error.unbound-covariates` | `UnboundCovariates` | `covariates` |
+| `report-error.table-order` | `TableOrder` | `position`, `scale` |
+| `report-error.table-covariates` | `TableCovariates` | `tables`, `source` |
 
 ### `report-spec` — `SpecError`
 

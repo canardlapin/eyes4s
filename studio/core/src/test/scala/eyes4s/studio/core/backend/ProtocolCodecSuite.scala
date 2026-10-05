@@ -37,11 +37,11 @@ class ProtocolCodecSuite extends munit.FunSuite:
 
   test("every message kind and case is sampled") {
     assertEquals(requests.map(_.ordinal), requests.indices.toVector)
-    assertEquals(requests.size, 23)
+    assertEquals(requests.size, 24)
     assertEquals(responses.map(_.ordinal), responses.indices.toVector)
-    assertEquals(responses.size, 19)
+    assertEquals(responses.size, 20)
     assertEquals(errors.map(_.ordinal), errors.indices.toVector)
-    assertEquals(errors.size, 20)
+    assertEquals(errors.size, 21)
     assertEquals(causes.map(_.ordinal), causes.indices.toVector)
     assertEquals(causes.size, 14)
     assertEquals(loci.map(_.ordinal), loci.indices.toVector)
@@ -299,7 +299,7 @@ class ProtocolCodecSuite extends munit.FunSuite:
   }
 
   test("protocol 1.2 Counting requires coordinated peers, not a relabelled 1.1 frame") {
-    assertEquals(ProtocolVersion.Current, ProtocolVersion(1, 10))
+    assertEquals(ProtocolVersion.Current, ProtocolVersion(1, 12))
     val previous = Envelope(RequestId(41), ServerFrame.Event(JobEvent.Advanced(progress)))
     assertEquals(legacyMeterTotal(previous.asJson), Right(Protocol11Total.Exact(8512L)))
     val counting = progress.asJson

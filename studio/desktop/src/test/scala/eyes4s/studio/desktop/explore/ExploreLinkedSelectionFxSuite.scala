@@ -24,7 +24,7 @@ import eyes4s.studio.core.fixture.StoryMoment
 import eyes4s.studio.core.selection.{FixationIndex, RecordNumber, StudioRef}
 import eyes4s.studio.desktop.StudioWindow
 import eyes4s.studio.desktop.harness.FxStage
-import eyes4s.studio.desktop.plot.{CanvasPlotHost, TableTwinView}
+import eyes4s.studio.desktop.plot.CanvasPlotHost
 import eyes4s.studio.desktop.shell.ShellFxSuite
 import intaglio.DevicePoint
 import javafx.event.Event
@@ -112,12 +112,12 @@ class ExploreLinkedSelectionFxSuite extends ShellFxSuite:
         w.inspector.titleText.startsWith(s"Fixation $i of 13") &&
         w.sourceRecords.current.cursor.contains(7207 + i)
     }
-    // The marks' input and the timeline's table show it.
+    // The marks' input and the timeline table's rows hold it (its Table tab
+    // is not shown, so the rows are read from its state).
     assertEquals(runOnFx(w.explore.input.state.selected), Vector[StudioRef](fixation(i)))
     assertEquals(
       runOnFx(
-        w.timeline.twin.table.rowNodes
-          .map(_.getPseudoClassStates.contains(TableTwinView.Selected))
+        w.timeline.twin.table.modelRowSelected
       ),
       (1 to 13).toVector.map(_ == i)
     )

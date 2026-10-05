@@ -309,3 +309,40 @@ object BundleTables:
             .of(ResultFamily.PairScores, pairColumns, cells, context(source, summary.scales))
             .left
             .map(BundleTableError.Table("comparisons", _))
+
+  /** How every bundle table is written, said once in the README. */
+  val Convention: Vector[String] = Vector(
+    "Every table is RFC 4180 CSV with a header row. Its first column, table_sha256, is the",
+    "table's digest: the same for the same table, whatever wrote it. A column that may be",
+    "missing is followed by <column>__valid: true when the cell holds a value, false when it is",
+    "missing. A missing cell is empty, never a zero; where the table says why, the reason is in",
+    "<column>_absence, one of the labels listed for it."
+  )
+
+  private def kind(c: ResultColumn): String = c.kind match
+    case ResultColumnType.Utf8     => "text"
+    case ResultColumnType.JsonUtf8 => "JSON text"
+    case ResultColumnType.Int64    => "integer"
+    case ResultColumnType.Float64  => "number"
+    case ResultColumnType.Boolean  => "true or false"
+
+  /** `table`'s columns as written to `file`, each from its declaration
+    * (name, type, unit, meaning, labels), so the README cannot drift from
+    * the CSV: one line per column, its `__valid` column after a nullable one.
+    */
+  def describe(file: String, table: ResultTable): Vector[String] =
+    val columns = table.columns.flatMap { c =>
+      val labels = if c.labels.isEmpty then "" else s"; one of ${c.labels.mkString(", ")}"
+      // A text column's unit says nothing more than its type.
+      val unit = if c.unit == "text" then "" else s", ${c.unit}"
+      val line =
+        s"- ${c.name} (${kind(c)}$unit${if c.nullable then ", may be missing" else ""}" +
+          s"$labels): ${c.meaning}"
+      if c.nullable then
+        Vector(line, s"- ${c.name}__valid (true or false): whether ${c.name} holds a value")
+      else Vector(line)
+    }
+    Vector(
+      s"$file (eyes4s ${table.family} table, ${table.rows.size} rows):",
+      "- table_sha256 (text): the table's digest"
+    ) ++ columns

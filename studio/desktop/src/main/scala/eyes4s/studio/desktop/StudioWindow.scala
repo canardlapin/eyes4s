@@ -430,6 +430,7 @@ object StudioWindow:
       "compare.query-trial"            -> summary.panels.queryNode,
       "compare.reference-trial"        -> summary.panels.referenceNode,
       "compare.contrast"               -> summary.contrastNode,
+      "compare.pairs"                  -> summary.pairsNode,
       "compare.query-trial.table"      -> summary.queryTrialTable,
       "compare.reference-trial.table"  -> summary.referenceTrialTable,
       "compare.items"                  -> summary.items.node

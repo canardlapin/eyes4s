@@ -141,7 +141,7 @@ final class PlotTwin private (
     override def idle: Option[String] = statusWrapper.get match
       case PlotTwinStatus.Refused(source, error) =>
         Some(PlotText(PlotTextId.Refused, source.caption, error.message))
-      case PlotTwinStatus.Shown(plot) => Some(plot.description)
+      case PlotTwinStatus.Shown(plot) => Some(plot.idleText)
       case _                          => None
 
   /** The plot's input: its roving cursor, hover and projected selection. */

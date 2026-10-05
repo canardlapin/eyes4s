@@ -19,6 +19,7 @@ package eyes4s.studio.core.backend
 import cats.Functor
 import cats.effect.{Concurrent, Deferred, Ref}
 import cats.syntax.all.*
+import eyes4s.studio.core.document.ReportingSpec
 import eyes4s.studio.core.preview.PreviewEvent
 import fs2.{Pipe, Pull, RaiseThrowable, Stream, text}
 import io.circe.syntax.*
@@ -401,6 +402,13 @@ object RemoteStudyBackend:
         page: PageRequest
     ): F[Either[BackendError, PairRowPage]] =
       ask(Q.PairRowsOf(run, scale, page)) { case A.PairRowsOf(p) => p }
+
+    def report(
+        run: RunId,
+        reporting: ReportingSpec,
+        scale: Int
+    ): F[Either[BackendError, ReportView]] =
+      ask(Q.ReportOf(run, reporting, scale)) { case A.ReportOf(r) => r }
 
     def previewRows(
         revision: AnalysisRevision,

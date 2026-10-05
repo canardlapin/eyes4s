@@ -20,8 +20,10 @@ import ProtocolCodecs.portableLong
 
 import cats.Functor
 import cats.syntax.functor.*
+import eyes4s.studio.core.document.ReportingSpec
 import eyes4s.studio.core.execution.RunStamp
 import eyes4s.studio.core.preview.*
+import eyes4s.studio.core.reports.ReportRefusal
 import fs2.Stream
 import io.circe.{Codec, Decoder, Encoder}
 
@@ -85,6 +87,9 @@ enum BackendError derives CanEqual, Codec.AsObject:
   /** `run` has no scale index `scale`; it computes `scales` (protocol 1.9). */
   case UnknownScale(run: RunId, scale: Int, scales: Vector[String])
 
+  /** A reporting spec eyes4s could not evaluate over `run` (protocol 1.11). */
+  case ReportRefused(run: RunId, refusal: ReportRefusal)
+
   def code: String = this match
     case UnknownDataset(_, _)       => "studio-backend.unknown-dataset"
     case UnknownRevision(_, _)      => "studio-backend.unknown-revision"
@@ -95,6 +100,7 @@ enum BackendError derives CanEqual, Codec.AsObject:
     case TrialViewRefused(_)        => "studio-backend.trial-view-refused"
     case SourceRecordsRefused(_, _) => "studio-backend.source-records-refused"
     case UnknownScale(_, _, _)      => "studio-backend.unknown-scale"
+    case ReportRefused(_, _)        => "studio-backend.report-refused"
     case PreviewNotReady(_, _, _)   => "studio-backend.preview-not-ready"
     case StalePreview(_, _, _)      => "studio-backend.stale-preview"
     case TamperedPreview(_, _)      => "studio-backend.tampered-preview"
@@ -137,6 +143,7 @@ enum BackendError derives CanEqual, Codec.AsObject:
     case InventoryRefused(d, issues) =>
       s"The trial inventory of ${d.label} is refused: ${issues.map(_.message).mkString(" ")}"
     case UnknownTrial(d, t)         => s"${t.label} is not a trial of dataset ${d.label}."
+    case ReportRefused(r, refusal)  => s"${r.label}: ${refusal.message}"
     case UnknownScale(r, i, scales) =>
       s"${r.label} has no scale $i; it computes ${scales.size} (${scales.mkString(", ")})."
     case TrialViewRefused(e)        => e.message
@@ -164,6 +171,7 @@ enum BackendError derives CanEqual, Codec.AsObject:
       case TrialViewRefused(e) => Vector(DiagnosticLocus.Trial(e.trial))
       case SourceRecordsRefused(r, _) => Vector(DiagnosticLocus.Revision(r))
       case UnknownScale(r, i, _) => Vector(DiagnosticLocus.Run(r), DiagnosticLocus.Scale(i))
+      case ReportRefused(r, _)   => Vector(DiagnosticLocus.Run(r))
     StudioDiagnostic(code, DiagnosticLevel.Error, DiagnosticOrigin.Host, subject, message)
 
 /** Everything Eyes Studio asks of eyes4s (DESIGN_SPEC section 13, S3.0): the
@@ -250,6 +258,17 @@ trait StudyBackend[F[_]]:
     */
   def pairRows(run: RunId, scale: Int, page: PageRequest): F[Either[BackendError, PairRowPage]]
 
+  /** `reporting` evaluated over `run` at scale index `scale` by eyes4s-results
+    * (`Report.evaluate`, UI-C): its cells, participants, dropped cells and
+    * accounting, each with its ref (protocol 1.11). A reporting edit is
+    * evaluated as edited, whatever the document's saved spec.
+    */
+  def report(
+      run: RunId,
+      reporting: ReportingSpec,
+      scale: Int
+  ): F[Either[BackendError, ReportView]]
+
   /** The admitted fixations of `trial` under `revision`, in scanpath order,
     * each placed against the map by the revision's study (protocol 1.6,
     * S6.2). A trial without an admitted scanpath is `Unavailable`.
@@ -320,6 +339,9 @@ enum BackendRequest derives CanEqual, Codec.AsObject:
   /** Protocol 1.9. */
   case PairRowsOf(run: RunId, scale: Int, page: PageRequest)
 
+  /** Protocol 1.11. */
+  case ReportOf(run: RunId, reporting: ReportingSpec, scale: Int)
+
 /** A response of the [[StudyBackend]] protocol. */
 enum BackendResponse derives CanEqual, Codec.AsObject:
   case Refused(error: BackendError)
@@ -355,6 +377,9 @@ enum BackendResponse derives CanEqual, Codec.AsObject:
 
   /** Protocol 1.9. */
   case PairRowsOf(page: PairRowPage)
+
+  /** Protocol 1.11. */
+  case ReportOf(report: ReportView)
 
 /** A frame from backend to client: the one response to a request, or one
   * event of a subscription.
@@ -393,10 +418,13 @@ object ProtocolVersion:
     * `UnknownScale`, and refuses any other version before reading a frame's
     * body. 1.10 adds the `TrialFailed` map placement, with its window
     * tally: a fixation in the window of a trial the study fails (eyes4s
-    * UI-G G3); `InWindow` keeps its wire name `InMap`. Deploy client and
+    * UI-G G3); `InWindow` keeps its wire name `InMap`. 1.11 adds a
+    * reporting spec evaluated over a run (`report`, UI-C) and
+    * `ReportRefused`. 1.12 adds each pair row's query and reference window
+    * tallies (`TrialTally`, S8.5; renumbered at landing). Deploy client and
     * backend together.
     */
-  val Current: ProtocolVersion = ProtocolVersion(1, 10)
+  val Current: ProtocolVersion = ProtocolVersion(1, 12)
 
 /** A client's correlation id; every frame answering a request carries it. */
 final case class RequestId(value: Long) derives CanEqual
@@ -471,7 +499,8 @@ object StudyBackend:
       case Q.TrialPreviewOf(r, t)     => answer(backend.trialPreview(r, t))(A.TrialPreviewOf(_))
       case Q.SourceRecordsOf(r, f, n) =>
         answer(backend.sourceRecords(r, f, n))(A.SourceRecordsOf(_))
-      case Q.PairRowsOf(r, s, p) => answer(backend.pairRows(r, s, p))(A.PairRowsOf(_))
+      case Q.PairRowsOf(r, s, p)  => answer(backend.pairRows(r, s, p))(A.PairRowsOf(_))
+      case Q.ReportOf(r, spec, s) => answer(backend.report(r, spec, s))(A.ReportOf(_))
       // In process a subscription is ended by dropping its stream; only a
       // connection (SidecarServer) holds subscriptions to end.
       case Q.Unsubscribe(id) => Stream.emit(ServerFrame.Response(A.Unsubscribed(id, false)))

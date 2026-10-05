@@ -36,7 +36,7 @@ import intaglio.DevicePoint
 import javafx.event.{Event, EventType}
 import javafx.geometry.Point2D
 import javafx.scene.SnapshotParameters
-import javafx.scene.control.{Label, ScrollPane}
+import javafx.scene.control.Label
 import javafx.scene.image.WritableImage
 import javafx.scene.input.{KeyCode, MouseButton, MouseEvent, PickResult}
 import javafx.scene.layout.{HBox, Priority}
@@ -246,7 +246,7 @@ class PlotKitFxSuite extends StudioFxSuite:
 
   private def clickRow(fx: FxStage, w: Wired, row: Int): Unit =
     firing = true
-    try fx.robot.click(runOnFx(w.table.rowNodes(row)))
+    try fx.robot.click(runOnFx(w.table.rowNode(row).getOrElse(fail(s"no row $row"))))
     finally firing = false
 
   private def selectByOther(w: Wired, ref: StudioRef, sequence: Long): Unit =
@@ -281,13 +281,14 @@ class PlotKitFxSuite extends StudioFxSuite:
       math.abs(((argb >> 8) & 0xff) - c.green) <= tol && math.abs((argb & 0xff) - c.blue) <= tol
     }
 
+  // The table is on screen here: its rows are read from the nodes it draws.
   private def rowTexts(w: Wired): Vector[Vector[String]] =
-    runOnFx(w.table.rowNodes.map(_.getChildren.asScala.toVector.collect { case l: Label =>
-      l.getText
-    }))
+    assert(runOnFx(w.table.onScreen), "the table draws no rows")
+    runOnFx(w.table.rowTexts)
 
   private def rowSelected(w: Wired): Vector[Boolean] =
-    runOnFx(w.table.rowNodes.map(_.getPseudoClassStates.contains(TableTwinView.Selected)))
+    assert(runOnFx(w.table.onScreen), "the table draws no rows")
+    runOnFx(w.table.rowSelected)
 
   private def rowOf(ref: StudioRef): Int = source.rowOf(ref).getOrElse(fail(s"no row $ref"))
 
@@ -558,25 +559,17 @@ class PlotKitFxSuite extends StudioFxSuite:
       val t = showAndDraw(w, 1.0, shown = long)
       runOnFx(w.table.applyCss())
       runOnFx(w.table.layout())
-      val scroll = runOnFx(w.table.getChildren.asScala.collectFirst { case s: ScrollPane =>
-        s
-      }.get)
-      assert(
-        runOnFx(
-          scroll.getContent.getBoundsInLocal.getHeight > scroll.getViewportBounds.getHeight
-        ),
-        "the long table does not scroll"
-      )
+      assert(!runOnFx(w.table.inView(long.rows.size - 1)), "the long table does not scroll")
       val last = t.targets.last
       runOnFx(w.host.requestFocus())
       fx.robot.press(KeyCode.END)
       assertEquals(runOnFx(w.twin.input.state.focus), Some(last.ref))
       // Clicking the first row focuses the table by pointer: the cursor goes
       // to the clicked row, not to the plot's last mark, and nothing scrolls.
-      assertEquals(runOnFx(scroll.getVvalue), 0.0)
+      assertEquals(runOnFx(w.table.topRow), Some(0))
       clickRow(fx, w, 0)
       assertEquals(runOnFx(w.table.state.cursor), Some(long.rows.head.ref))
-      assertEquals(runOnFx(scroll.getVvalue), 0.0)
+      assertEquals(runOnFx(w.table.topRow), Some(0))
       assertEquals(w.selected, Vector(long.rows.head.ref))
       assertEquals(runOnFx(w.twin.input.state.focus), Some(last.ref))
       // Clicking a mark focuses the plot by pointer: the mark, not the cursor

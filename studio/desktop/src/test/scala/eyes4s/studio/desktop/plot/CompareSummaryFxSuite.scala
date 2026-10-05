@@ -86,10 +86,10 @@ class CompareSummaryFxSuite extends ShellFxSuite:
 
   private def ascii(s: String): String = s.replace(Format.Minus, "-")
 
+  // The summary's tables sit in tabs not shown here: their rows are read
+  // from the tables' state (TableTwinViewFxSuite covers the drawn rows).
   private def rows(t: TableTwinView): Vector[Vector[String]] =
-    runOnFx(t.rowNodes.map(_.getChildren.asScala.toVector.collect { case l: Label =>
-      ascii(l.getText)
-    }))
+    runOnFx(t.modelRowTexts.map(_.map(ascii)))
 
   private def labels(w: StudioWindow): Vector[String] =
     runOnFx(
@@ -105,7 +105,7 @@ class CompareSummaryFxSuite extends ShellFxSuite:
       val vm = w.summary.vm
       vm.participants.exists(_.isRight) && vm.queries.exists(_.isRight) &&
       w.summary.participantPlot.status.get.isInstanceOf[PlotTwinStatus.Shown] &&
-      w.summary.queryTable.rowNodes.nonEmpty
+      w.summary.queryTable.rowCount > 0
     }
 
   fxStage.test("every number of the participant table and plot is FIXTURE.md's") { fx =>
@@ -245,6 +245,11 @@ class CompareSummaryFxSuite extends ShellFxSuite:
           scales: Vector[String],
           done: eyes4s.studio.app.compare.LadderAnswer => Unit
       ): Unit = ()
+      def pairs(
+          run: RunId,
+          scale: eyes4s.studio.core.selection.ScaleIndex,
+          done: eyes4s.studio.app.compare.PairsAnswer => Unit
+      ): Unit = ()
     val none = new EffectPerformer:
       def perform(effect: AppEffect, dispatch: Intent => Unit): Unit = ()
     val runtime = StudioRuntime(StoryModels.t3Summary, none)
@@ -280,7 +285,7 @@ class CompareSummaryFxSuite extends ShellFxSuite:
     }
     eventually(fx, "run 7 is drawn") {
       host.participantPlot.status.get.isInstanceOf[PlotTwinStatus.Shown] &&
-      host.participantTable.rowNodes.size == 24 && host.queryTable.rowNodes.nonEmpty
+      host.participantTable.rowCount == 24 && host.queryTable.rowCount > 0
     }
     // A theme change redraws the plots in the new theme, from the same sources.
     def sceneOf(t: PlotTwin) = runOnFx(t.plot.map(_.plot.id.value))
@@ -303,8 +308,8 @@ class CompareSummaryFxSuite extends ShellFxSuite:
     def cleared(): Unit = runOnFx {
       assertEquals(host.participantPlot.status.get, PlotTwinStatus.Empty)
       assertEquals(host.scaleProfile.status.get, PlotTwinStatus.Empty)
-      assertEquals(host.participantTable.rowNodes.size, 0)
-      assertEquals(host.queryTable.rowNodes.size, 0)
+      assertEquals(host.participantTable.rowCount, 0)
+      assertEquals(host.queryTable.rowCount, 0)
     }
     cleared()
     assertEquals(runOnFx(host.vm.status), Some("Reading run 5…"))

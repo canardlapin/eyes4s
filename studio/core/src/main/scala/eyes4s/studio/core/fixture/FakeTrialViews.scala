@@ -195,6 +195,37 @@ object FakeTrialViews:
       .leftMap(e => refused(TrialViewError.Study(trial, "fixation source", e)))
       .flatMap(_.get(trial).toRight(BackendError.Unavailable(DiagnosticLocus.Trial(trial))))
 
+  /** eyes4s's window tally of `trial`'s admitted fixations under `revision`
+    * (`WindowTally`): counts and durations outside the window and the screen,
+    * of all it kept. None when the trial has no admitted scanpath.
+    */
+  def tally(
+      moment: StoryMoment,
+      revision: AnalysisRevision,
+      dataset: DatasetRevision,
+      trial: TrialKey
+  ): Option[WindowTally] =
+    fixations(moment, revision, dataset, trial).toOption.flatMap { v =>
+      val f                                      = v.fixations
+      def micros(p: AdmittedFixation => Boolean) =
+        Span.micros(f.filter(p).map(x => math.round(x.durationMs * 1000)).sum)
+      val outsideScreen = (x: AdmittedFixation) => x.placement == MapPlacement.OutsideScreen
+      val outsideWindow = (x: AdmittedFixation) =>
+        x.placement match
+          case MapPlacement.OutsideWindow(_) => true
+          case _                             => false
+      WindowTally
+        .of(
+          f.count(outsideScreen),
+          f.count(outsideWindow),
+          f.size,
+          micros(outsideScreen),
+          micros(outsideWindow),
+          micros(_ => true)
+        )
+        .toOption
+    }
+
   /** `trial`'s admitted fixations under `revision`, on `dataset`. */
   def fixations(
       moment: StoryMoment,

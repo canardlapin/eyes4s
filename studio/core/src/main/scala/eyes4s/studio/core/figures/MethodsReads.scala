@@ -148,8 +148,17 @@ object MethodsReads:
       run: RunId,
       scales: Int
   ): F[Either[MethodsReadError, Vector[PairRowPage]]] =
+    (0 until scales).toVector.flatTraverse(s => EitherT(pairRowsAt(pairs, run, s))).value
+
+  /** Every page of `run`'s pair rows at scale index `scale`, refused as
+    * [[pairRows]] refuses (Compare's pairs table, S8.5).
+    */
+  def pairRowsAt[F[_]: Monad](
+      pairs: (RunId, Int, PageRequest) => F[Either[BackendError, PairRowPage]],
+      run: RunId,
+      scale: Int
+  ): F[Either[MethodsReadError, Vector[PairRowPage]]] =
     def at(
-        scale: Int,
         offset: Int,
         got: Vector[PairRowPage]
     ): EitherT[F, MethodsReadError, Vector[PairRowPage]] =
@@ -169,7 +178,7 @@ object MethodsReads:
         all = got :+ page
         rest <- page.page.next match
           case None                        => EitherT.rightT[F, MethodsReadError](all)
-          case Some(next) if next > offset => at(scale, next, all)
+          case Some(next) if next > offset => at(next, all)
           case Some(next)                  =>
             EitherT.leftT[F, Vector[PairRowPage]](
               MethodsReadError.PairsStalled(run, scale, offset, next)
@@ -181,4 +190,4 @@ object MethodsReads:
           MethodsReadError.PairsShort(run, scale, rows, page.page.total)
         )
       yield rest
-    (0 until scales).toVector.flatTraverse(at(_, 0, Vector.empty)).value
+    at(0, Vector.empty).value

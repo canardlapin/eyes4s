@@ -167,14 +167,26 @@ final class Labels(model: AppModel, messages: Messages):
       messages(CrumbRecord, sourceFile(role), Format.count(r.value.toLong))
     case StudioRef.ParticipantSummary(_, _, _, _, p) => p
     case StudioRef.GroupCell(_, _, _, group)         => group.label
-    case StudioRef.FigurePanel(_, letter)            => messages(CrumbPanel, letter.value)
-    case StudioRef.WindowTally(dataset, region)      => tally(dataset, region)
-    case StudioRef.DesignTally(revision, count)      => DesignText.tally(revision, count)
-    case StudioRef.DisplayTally(dataset, count)      => SourcesText.tally(dataset, count)
-    case StudioRef.QueryTally(run, count)            => SummaryText.tally(run, count)
-    case StudioRef.InventoryCount(_, _)              => AdmissionLedgerVM.countLabel(ref)
-    case StudioRef.TrialGroup(_, group)              => TrialsNavigatorVM.groupLabel(group)
-    case StudioRef.Result(run, address)              =>
+    case StudioRef.ReportCell(_, _, _, group, role)  =>
+      s"${SummaryText.reportGroup(group)} · ${SummaryText.roleName(role)}"
+    case StudioRef.ReportParticipant(_, _, _, _, _, p)                => p
+    case StudioRef.ReportContrast(_, _, _, role, minuend, subtrahend) =>
+      s"${minuend.label} − ${subtrahend.label} · ${SummaryText.roleName(role)}"
+    case StudioRef.ReportQueryRange(_, reporting, scale, role) =>
+      SummaryText(
+        eyes4s.studio.app.text.SummaryTextId.ReportQueryRangeCrumb,
+        SummaryText.roleName(role)
+      )
+    case StudioRef.FigurePanel(_, letter)       => messages(CrumbPanel, letter.value)
+    case StudioRef.WindowTally(dataset, region) => tally(dataset, region)
+    case StudioRef.DesignTally(revision, count) => DesignText.tally(revision, count)
+    case StudioRef.DisplayTally(dataset, count) => SourcesText.tally(dataset, count)
+    case StudioRef.QueryTally(run, count)       => SummaryText.tally(run, count)
+    case StudioRef.ReportTally(run, reporting, _, role, count) =>
+      SummaryText.reportTally(run, reporting.value, role, count)
+    case StudioRef.InventoryCount(_, _) => AdmissionLedgerVM.countLabel(ref)
+    case StudioRef.TrialGroup(_, group) => TrialsNavigatorVM.groupLabel(group)
+    case StudioRef.Result(run, address) =>
       val scale = address.scale
       address.value match
         case ResultAddress.ContrastRow(_, key)             => trialWithItem(key)
@@ -232,12 +244,29 @@ final class Labels(model: AppModel, messages: Messages):
         )
       case StudioRef.GroupCell(run, reporting, scale, group) =>
         messages(PathGroupCell, group.label, this.reporting(reporting), sigma(run, scale))
+      case StudioRef.ReportCell(run, reporting, scale, group, role) =>
+        SummaryText.reportCell(group, role, this.reporting(reporting), sigma(run, scale))
+      case StudioRef.ReportParticipant(run, reporting, scale, group, role, p) =>
+        SummaryText
+          .reportParticipant(p, group, role, this.reporting(reporting), sigma(run, scale))
+      case StudioRef.ReportContrast(run, reporting, scale, role, minuend, subtrahend) =>
+        SummaryText.reportContrast(
+          minuend.label,
+          subtrahend.label,
+          role,
+          this.reporting(reporting),
+          sigma(run, scale)
+        )
+      case StudioRef.ReportQueryRange(run, reporting, scale, role) =>
+        SummaryText.reportQueryRange(role, this.reporting(reporting), sigma(run, scale))
       case StudioRef.FigurePanel(figure, letter)  => panel(figure, letter)
       case StudioRef.WindowTally(dataset, region) => tally(dataset, region)
       case StudioRef.DesignTally(revision, count) => DesignText.tally(revision, count)
       case StudioRef.DisplayTally(dataset, count) => SourcesText.tally(dataset, count)
       case StudioRef.QueryTally(run, count)       => SummaryText.tally(run, count)
-      case StudioRef.InventoryCount(dataset, _)   =>
+      case StudioRef.ReportTally(run, reporting, _, role, count) =>
+        SummaryText.reportTally(run, this.reporting(reporting), role, count)
+      case StudioRef.InventoryCount(dataset, _) =>
         LedgerText(LedgerTextId.PathCount, dataset.label, AdmissionLedgerVM.countTitle(ref))
       case StudioRef.TrialGroup(dataset, group) =>
         LedgerText(LedgerTextId.PathCount, dataset.label, TrialsNavigatorVM.groupLabel(group))

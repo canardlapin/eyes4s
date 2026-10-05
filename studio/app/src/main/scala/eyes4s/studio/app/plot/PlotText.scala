@@ -44,6 +44,16 @@ enum PlotTextId derives CanEqual:
   /** Rows the plot could not place or draw, and why. */
   case Unplotted, MissingValue, OffScale
 
+  /** A plot's idle words when some of its rows are not drawn: how many
+    * (one, or more).
+    */
+  case Undrawn, UndrawnOne
+
+  /** A row pinned at the top because it is selected: its annotation, and
+    * its words.
+    */
+  case PinnedSelected, PinnedRow
+
   /** A plot whose builder refused its source, and why. */
   case Refused
 
@@ -65,14 +75,18 @@ object PlotText:
       case TableKeys =>
         "{0}. One focus stop; arrow keys move the row cursor, Enter selects, Escape clears " +
           "the selection."
-      case TableEmpty   => "{0}. No rows."
-      case TableTab     => "Table"
-      case Unplotted    => "{0} not drawn: {1}"
-      case MissingValue => "no {0}"
-      case OffScale     => "{0} {1} is off the scale"
-      case MarkRows     => "{0} rows: {1}"
-      case RowSeparator => "; "
-      case Refused      => "{0}: plot not drawn. {1}"
+      case TableEmpty     => "{0}. No rows."
+      case TableTab       => "Table"
+      case Unplotted      => "{0} not drawn: {1}"
+      case MissingValue   => "no {0}"
+      case OffScale       => "{0} {1} is off the scale"
+      case MarkRows       => "{0} rows: {1}"
+      case RowSeparator   => "; "
+      case Refused        => "{0}: plot not drawn. {1}"
+      case Undrawn        => "{0} {1} of {2} rows are not drawn; the Table tab lists every row."
+      case PinnedSelected => "pinned · selected"
+      case PinnedRow      => "{0}, pinned · selected"
+      case UndrawnOne     => "{0} 1 of {1} rows is not drawn; the Table tab lists every row."
 
   /** `id`'s English template with `args` filled in. */
   def apply(id: PlotTextId, args: String*): String =

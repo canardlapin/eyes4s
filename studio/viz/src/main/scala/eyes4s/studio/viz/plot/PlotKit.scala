@@ -431,6 +431,21 @@ final case class BuiltPlot private (
             )
           )
 
+  /** What the plot says with no mark focused: its description, and how
+    * many of its rows it does not draw, when any (the Table tab lists them).
+    */
+  def idleText: String =
+    if unplotted.isEmpty then description
+    else if unplotted.size == 1 then
+      PlotText(PlotTextId.UndrawnOne, description, source.rows.size.toString)
+    else
+      PlotText(
+        PlotTextId.Undrawn,
+        description,
+        unplotted.size.toString,
+        source.rows.size.toString
+      )
+
   /** The words for a row the plot does not draw, if it is one of this
     * plot's rows.
     */
@@ -664,7 +679,7 @@ final class PlotTargets private (
   /** The plot's accessible text under `state`: the focused mark says exactly
     * what its table rows say ([[BuiltPlot.readout]]), marked as selected when
     * all its rows are and with how many when some are; with no mark focused,
-    * the plot's description.
+    * the plot's [[BuiltPlot.idleText]].
     */
   def accessibleText(state: MarkInputState[StudioRef]): String =
     state.spoken(
@@ -672,14 +687,14 @@ final class PlotTargets private (
       (ref, share) =>
         target(ref)
           .flatMap(t => plot.readout(t.mark))
-          .fold(plot.description) { said =>
+          .fold(plot.idleText) { said =>
             share match
               case SelectionShare.Unselected   => said
               case SelectionShare.All          => PlotText.selected(said, true)
               case SelectionShare.Partly(k, n) =>
                 PlotText(PlotTextId.PartlySelected, said, k.toString, n.toString)
           },
-      plot.description
+      plot.idleText
     )
 
 object PlotTargets:

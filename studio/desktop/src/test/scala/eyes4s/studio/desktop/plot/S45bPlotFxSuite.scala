@@ -35,14 +35,12 @@ import io.circe.Json
 import javafx.event.Event
 import javafx.geometry.Point2D
 import javafx.scene.SnapshotParameters
-import javafx.scene.control.Label
 import javafx.scene.image.WritableImage
 import javafx.scene.input.{MouseButton, MouseEvent, PickResult}
 import javafx.scene.layout.{HBox, Priority}
 import javafx.scene.transform.Transform
 
 import scala.concurrent.duration.Duration
-import scala.jdk.CollectionConverters.*
 
 /** The scale ladder in the plot host (ticket S4.5b), on real JavaFX: the
   * fake backend's ladder of the fixture's focus query shows, on its focus
@@ -212,12 +210,12 @@ class S45bPlotFxSuite extends StudioFxSuite:
     }
 
   private def rowTexts(w: Wired): Vector[Vector[String]] =
-    runOnFx(w.twin.table.rowNodes.map(_.getChildren.asScala.toVector.collect { case l: Label =>
-      l.getText
-    }))
+    assert(runOnFx(w.twin.table.onScreen), "the table draws no rows")
+    runOnFx(w.twin.table.rowTexts)
 
   private def rowSelected(w: Wired): Vector[Boolean] =
-    runOnFx(w.twin.table.rowNodes.map(_.getPseudoClassStates.contains(TableTwinView.Selected)))
+    assert(runOnFx(w.twin.table.onScreen), "the table draws no rows")
+    runOnFx(w.twin.table.rowSelected)
 
   // --- The fixture's focus row --------------------------------------------------------
 

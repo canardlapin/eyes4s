@@ -16,7 +16,9 @@
 
 package eyes4s.studio.core.backend
 
-import io.circe.Codec
+import eyes4s.plan.WindowTally
+import eyes4s.studio.core.selection.StudioRef
+import io.circe.{Codec, Decoder, Encoder}
 
 /** A pair row's score as the run holds it (protocol 1.9). */
 enum PairScoreState derives CanEqual, Codec.AsObject:
@@ -31,16 +33,40 @@ enum PairScoreState derives CanEqual, Codec.AsObject:
     */
   case NotServed
 
+/** A trial's window tally as the run's study counts it (eyes4s
+  * `WindowTally`): its fixations and their duration outside the window and
+  * the screen, of all it kept, with the ref of the trial it counts
+  * (protocol 1.12).
+  */
+final case class TrialTally(trial: StudioRef, tally: WindowTally) derives CanEqual
+
+object TrialTally:
+  given Encoder.AsObject[TrialTally] = Encoder.AsObject.instance(t =>
+    io.circe.JsonObject(
+      "trial" -> Encoder[StudioRef].apply(t.trial),
+      "tally" -> TrialViewCodecs.tally(t.tally)
+    )
+  )
+  given Decoder[TrialTally] = Decoder.instance(c =>
+    for
+      trial <- c.get[StudioRef]("trial")
+      tally <- c.downField("tally").as(using TrialViewCodecs.tallyDecoder)
+    yield TrialTally(trial, tally)
+  )
+
 /** One directed pair of a run at one scale (eyes4s `PairScores`): the query,
   * which reference design it belongs to, the reference trial and its item,
-  * and its score.
+  * and its score; and each trial's window tally (protocol 1.12), absent
+  * when the backend holds none for the trial.
   */
 final case class PairRowEntry(
     query: TrialKey,
     design: PairDesign,
     reference: TrialKey,
     referenceItem: String,
-    score: PairScoreState
+    score: PairScoreState,
+    queryWindow: Option[TrialTally],
+    referenceWindow: Option[TrialTally]
 ) derives CanEqual,
       Codec.AsObject
 
