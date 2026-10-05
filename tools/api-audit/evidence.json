@@ -928,6 +928,7 @@
           "ioJVM/eyes4s.io.RepetitionGuideSuite",
           "ioJVM/eyes4s.io.StampedStudyExecutionSuite",
           "ioJVM/eyes4s.io.StudioAcceptanceSuite",
+          "ioJVM/eyes4s.io.StudioFixtureRealSuite",
           "ioJVM/eyes4s.io.StudioGoldenJvmSuite",
           "ioJVM/eyes4s.io.StudyGuideOracleSuite",
           "ioJVM/eyes4s.io.TemporalContrastSuite",
@@ -945,12 +946,14 @@
           "lawsJVM/eyes4s.laws.StudyRevisionLawsSuite",
           "lawsJVM/eyes4s.laws.TemplateRecipeFixtureJvmSuite",
           "lawsJVM/eyes4s.laws.TemporalResultCodecLawSuite",
+          "lawsJVM/eyes4s.laws.WindowLawsSuite",
           "planJVM/eyes4s.plan.CountedStudyCursorSuite",
           "planJVM/eyes4s.plan.InitialFixationSuite",
           "planJVM/eyes4s.plan.OccurrencePairingSuite",
           "planJVM/eyes4s.plan.PreflightSuite",
           "planJVM/eyes4s.plan.ResultInspectionSuite",
           "planJVM/eyes4s.plan.ResultNavigationSuite",
+          "planJVM/eyes4s.plan.StudyCountsSuite",
           "planJVM/eyes4s.plan.StudyCursorSuite",
           "planJVM/eyes4s.plan.StudyPreviewSuite",
           "planJVM/eyes4s.plan.StudyProgressCountsSuite",
@@ -1288,6 +1291,7 @@
           "ioJVM/eyes4s.io.RepetitionGuideSuite",
           "ioJVM/eyes4s.io.StampedStudyExecutionSuite",
           "ioJVM/eyes4s.io.StudioAcceptanceSuite",
+          "ioJVM/eyes4s.io.StudioFixtureRealSuite",
           "ioJVM/eyes4s.io.StudioGoldenJvmSuite",
           "ioJVM/eyes4s.io.StudyGuideOracleSuite",
           "ioJVM/eyes4s.io.TemporalContrastSuite",
@@ -1325,6 +1329,7 @@
           "planJVM/eyes4s.plan.StudyWindowSuite",
           "planJVM/eyes4s.plan.StudyWorkSuite",
           "planJVM/eyes4s.plan.TemporalCursorSuite",
+          "planJVM/eyes4s.plan.UnmatchedReasonsSuite",
           "resultsJVM/eyes4s.results.ReportNavigationSuite",
           "resultsJVM/eyes4s.results.ReportSuite",
           "resultsJVM/eyes4s.results.RunFactsSuite"
@@ -1394,6 +1399,7 @@
           "ioJVM/eyes4s.io.RepetitionGuideSuite",
           "ioJVM/eyes4s.io.StampedStudyExecutionSuite",
           "ioJVM/eyes4s.io.StudioAcceptanceSuite",
+          "ioJVM/eyes4s.io.StudioFixtureRealSuite",
           "ioJVM/eyes4s.io.StudioGoldenJvmSuite",
           "ioJVM/eyes4s.io.StudyGuideOracleSuite",
           "ioJVM/eyes4s.io.TemporalContrastSuite",
@@ -1431,6 +1437,7 @@
           "planJVM/eyes4s.plan.StudyWindowSuite",
           "planJVM/eyes4s.plan.StudyWorkSuite",
           "planJVM/eyes4s.plan.TemporalCursorSuite",
+          "planJVM/eyes4s.plan.UnmatchedReasonsSuite",
           "resultsJVM/eyes4s.results.ReportNavigationSuite",
           "resultsJVM/eyes4s.results.ReportSuite",
           "resultsJVM/eyes4s.results.RunFactsSuite"
@@ -1535,6 +1542,7 @@
           "ioJVM/eyes4s.io.RepetitionGuideSuite",
           "ioJVM/eyes4s.io.StampedStudyExecutionSuite",
           "ioJVM/eyes4s.io.StudioAcceptanceSuite",
+          "ioJVM/eyes4s.io.StudioFixtureRealSuite",
           "ioJVM/eyes4s.io.StudioGoldenJvmSuite",
           "ioJVM/eyes4s.io.StudyGuideOracleSuite",
           "ioJVM/eyes4s.io.TemporalContrastSuite",
@@ -1575,6 +1583,7 @@
           "planJVM/eyes4s.plan.StudyWindowSuite",
           "planJVM/eyes4s.plan.StudyWorkSuite",
           "planJVM/eyes4s.plan.TemporalCursorSuite",
+          "planJVM/eyes4s.plan.UnmatchedReasonsSuite",
           "resultsJVM/eyes4s.results.ReportNavigationSuite",
           "resultsJVM/eyes4s.results.ReportSuite",
           "resultsJVM/eyes4s.results.RunFactsSuite"
@@ -1644,6 +1653,7 @@
           "ioJVM/eyes4s.io.RepetitionGuideSuite",
           "ioJVM/eyes4s.io.StampedStudyExecutionSuite",
           "ioJVM/eyes4s.io.StudioAcceptanceSuite",
+          "ioJVM/eyes4s.io.StudioFixtureRealSuite",
           "ioJVM/eyes4s.io.StudioGoldenJvmSuite",
           "ioJVM/eyes4s.io.StudyGuideOracleSuite",
           "ioJVM/eyes4s.io.TemporalContrastSuite",
@@ -1682,6 +1692,7 @@
           "planJVM/eyes4s.plan.StudyWindowSuite",
           "planJVM/eyes4s.plan.StudyWorkSuite",
           "planJVM/eyes4s.plan.TemporalCursorSuite",
+          "planJVM/eyes4s.plan.UnmatchedReasonsSuite",
           "resultsJVM/eyes4s.results.ReportNavigationSuite",
           "resultsJVM/eyes4s.results.ReportSuite",
           "resultsJVM/eyes4s.results.RunFactsSuite"
@@ -1751,6 +1762,7 @@
           "ioJVM/eyes4s.io.RepetitionGuideSuite",
           "ioJVM/eyes4s.io.StampedStudyExecutionSuite",
           "ioJVM/eyes4s.io.StudioAcceptanceSuite",
+          "ioJVM/eyes4s.io.StudioFixtureRealSuite",
           "ioJVM/eyes4s.io.StudioGoldenJvmSuite",
           "ioJVM/eyes4s.io.StudyGuideOracleSuite",
           "ioJVM/eyes4s.io.TemporalContrastSuite",
@@ -1788,6 +1800,7 @@
           "planJVM/eyes4s.plan.StudyWindowSuite",
           "planJVM/eyes4s.plan.StudyWorkSuite",
           "planJVM/eyes4s.plan.TemporalCursorSuite",
+          "planJVM/eyes4s.plan.UnmatchedReasonsSuite",
           "resultsJVM/eyes4s.results.ReportNavigationSuite",
           "resultsJVM/eyes4s.results.ReportSuite",
           "resultsJVM/eyes4s.results.RunFactsSuite"
@@ -1856,6 +1869,7 @@
           "ioJVM/eyes4s.io.RepetitionGuideSuite",
           "ioJVM/eyes4s.io.StampedStudyExecutionSuite",
           "ioJVM/eyes4s.io.StudioAcceptanceSuite",
+          "ioJVM/eyes4s.io.StudioFixtureRealSuite",
           "ioJVM/eyes4s.io.StudioGoldenJvmSuite",
           "ioJVM/eyes4s.io.StudyGuideOracleSuite",
           "ioJVM/eyes4s.io.TemporalContrastSuite",
@@ -1893,6 +1907,7 @@
           "planJVM/eyes4s.plan.StudyWindowSuite",
           "planJVM/eyes4s.plan.StudyWorkSuite",
           "planJVM/eyes4s.plan.TemporalCursorSuite",
+          "planJVM/eyes4s.plan.UnmatchedReasonsSuite",
           "resultsJVM/eyes4s.results.ReportNavigationSuite",
           "resultsJVM/eyes4s.results.ReportSuite",
           "resultsJVM/eyes4s.results.RunFactsSuite"
@@ -1969,6 +1984,7 @@
           "ioJVM/eyes4s.io.RepetitionGuideSuite",
           "ioJVM/eyes4s.io.StampedStudyExecutionSuite",
           "ioJVM/eyes4s.io.StudioAcceptanceSuite",
+          "ioJVM/eyes4s.io.StudioFixtureRealSuite",
           "ioJVM/eyes4s.io.StudioGoldenJvmSuite",
           "ioJVM/eyes4s.io.StudyGuideOracleSuite",
           "ioJVM/eyes4s.io.TemporalContrastSuite",
@@ -2006,6 +2022,7 @@
           "planJVM/eyes4s.plan.StudyWindowSuite",
           "planJVM/eyes4s.plan.StudyWorkSuite",
           "planJVM/eyes4s.plan.TemporalCursorSuite",
+          "planJVM/eyes4s.plan.UnmatchedReasonsSuite",
           "resultsJVM/eyes4s.results.ReportNavigationSuite",
           "resultsJVM/eyes4s.results.ReportSuite",
           "resultsJVM/eyes4s.results.RunFactsSuite"
@@ -2135,6 +2152,7 @@
           "ioJVM/eyes4s.io.RepetitionGuideSuite",
           "ioJVM/eyes4s.io.StampedStudyExecutionSuite",
           "ioJVM/eyes4s.io.StudioAcceptanceSuite",
+          "ioJVM/eyes4s.io.StudioFixtureRealSuite",
           "ioJVM/eyes4s.io.StudioGoldenJvmSuite",
           "ioJVM/eyes4s.io.StudyGuideOracleSuite",
           "ioJVM/eyes4s.io.TemporalContrastSuite",
@@ -2152,12 +2170,14 @@
           "lawsJVM/eyes4s.laws.StudyRevisionLawsSuite",
           "lawsJVM/eyes4s.laws.TemplateRecipeFixtureJvmSuite",
           "lawsJVM/eyes4s.laws.TemporalResultCodecLawSuite",
+          "lawsJVM/eyes4s.laws.WindowLawsSuite",
           "planJVM/eyes4s.plan.CountedStudyCursorSuite",
           "planJVM/eyes4s.plan.InitialFixationSuite",
           "planJVM/eyes4s.plan.OccurrencePairingSuite",
           "planJVM/eyes4s.plan.PreflightSuite",
           "planJVM/eyes4s.plan.ResultInspectionSuite",
           "planJVM/eyes4s.plan.ResultNavigationSuite",
+          "planJVM/eyes4s.plan.StudyCountsSuite",
           "planJVM/eyes4s.plan.StudyCursorSuite",
           "planJVM/eyes4s.plan.StudyPreviewSuite",
           "planJVM/eyes4s.plan.StudyProgressCountsSuite",
@@ -2227,6 +2247,7 @@
           "ioJVM/eyes4s.io.RepetitionGuideSuite",
           "ioJVM/eyes4s.io.StampedStudyExecutionSuite",
           "ioJVM/eyes4s.io.StudioAcceptanceSuite",
+          "ioJVM/eyes4s.io.StudioFixtureRealSuite",
           "ioJVM/eyes4s.io.StudioGoldenJvmSuite",
           "ioJVM/eyes4s.io.StudyGuideOracleSuite",
           "ioJVM/eyes4s.io.TemporalContrastSuite",
@@ -2238,12 +2259,14 @@
           "lawsJVM/eyes4s.laws.StudyResultCodecLawSuite",
           "lawsJVM/eyes4s.laws.StudyRevisionLawsSuite",
           "lawsJVM/eyes4s.laws.TemporalResultCodecLawSuite",
+          "lawsJVM/eyes4s.laws.WindowLawsSuite",
           "planJVM/eyes4s.plan.CountedStudyCursorSuite",
           "planJVM/eyes4s.plan.InitialFixationSuite",
           "planJVM/eyes4s.plan.OccurrencePairingSuite",
           "planJVM/eyes4s.plan.PreflightSuite",
           "planJVM/eyes4s.plan.ResultInspectionSuite",
           "planJVM/eyes4s.plan.ResultNavigationSuite",
+          "planJVM/eyes4s.plan.StudyCountsSuite",
           "planJVM/eyes4s.plan.StudyCursorSuite",
           "planJVM/eyes4s.plan.StudyPreviewSuite",
           "planJVM/eyes4s.plan.StudyProgressCountsSuite",
@@ -2321,6 +2344,7 @@
           "ioJVM/eyes4s.io.RepetitionGuideSuite",
           "ioJVM/eyes4s.io.StampedStudyExecutionSuite",
           "ioJVM/eyes4s.io.StudioAcceptanceSuite",
+          "ioJVM/eyes4s.io.StudioFixtureRealSuite",
           "ioJVM/eyes4s.io.StudioGoldenJvmSuite",
           "ioJVM/eyes4s.io.StudyGuideOracleSuite",
           "ioJVM/eyes4s.io.TemporalContrastSuite",
@@ -2359,6 +2383,7 @@
           "planJVM/eyes4s.plan.StudyWindowSuite",
           "planJVM/eyes4s.plan.StudyWorkSuite",
           "planJVM/eyes4s.plan.TemporalCursorSuite",
+          "planJVM/eyes4s.plan.UnmatchedReasonsSuite",
           "resultsJVM/eyes4s.results.ReportNavigationSuite",
           "resultsJVM/eyes4s.results.ReportSuite",
           "resultsJVM/eyes4s.results.RunFactsSuite"
@@ -2429,6 +2454,7 @@
           "ioJVM/eyes4s.io.RepetitionGuideSuite",
           "ioJVM/eyes4s.io.StampedStudyExecutionSuite",
           "ioJVM/eyes4s.io.StudioAcceptanceSuite",
+          "ioJVM/eyes4s.io.StudioFixtureRealSuite",
           "ioJVM/eyes4s.io.StudioGoldenJvmSuite",
           "ioJVM/eyes4s.io.StudyGuideOracleSuite",
           "ioJVM/eyes4s.io.TemporalContrastSuite",
@@ -2466,6 +2492,7 @@
           "planJVM/eyes4s.plan.StudyWindowSuite",
           "planJVM/eyes4s.plan.StudyWorkSuite",
           "planJVM/eyes4s.plan.TemporalCursorSuite",
+          "planJVM/eyes4s.plan.UnmatchedReasonsSuite",
           "resultsJVM/eyes4s.results.ReportNavigationSuite",
           "resultsJVM/eyes4s.results.ReportSuite",
           "resultsJVM/eyes4s.results.RunFactsSuite"
@@ -2536,6 +2563,7 @@
           "ioJVM/eyes4s.io.RepetitionGuideSuite",
           "ioJVM/eyes4s.io.StampedStudyExecutionSuite",
           "ioJVM/eyes4s.io.StudioAcceptanceSuite",
+          "ioJVM/eyes4s.io.StudioFixtureRealSuite",
           "ioJVM/eyes4s.io.StudioGoldenJvmSuite",
           "ioJVM/eyes4s.io.StudyGuideOracleSuite",
           "ioJVM/eyes4s.io.TemporalContrastSuite",
@@ -2573,6 +2601,7 @@
           "planJVM/eyes4s.plan.StudyWindowSuite",
           "planJVM/eyes4s.plan.StudyWorkSuite",
           "planJVM/eyes4s.plan.TemporalCursorSuite",
+          "planJVM/eyes4s.plan.UnmatchedReasonsSuite",
           "resultsJVM/eyes4s.results.ReportNavigationSuite",
           "resultsJVM/eyes4s.results.ReportSuite",
           "resultsJVM/eyes4s.results.RunFactsSuite"
@@ -2643,6 +2672,7 @@
           "ioJVM/eyes4s.io.RepetitionGuideSuite",
           "ioJVM/eyes4s.io.StampedStudyExecutionSuite",
           "ioJVM/eyes4s.io.StudioAcceptanceSuite",
+          "ioJVM/eyes4s.io.StudioFixtureRealSuite",
           "ioJVM/eyes4s.io.StudioGoldenJvmSuite",
           "ioJVM/eyes4s.io.StudyGuideOracleSuite",
           "ioJVM/eyes4s.io.TemporalContrastSuite",
@@ -2680,6 +2710,7 @@
           "planJVM/eyes4s.plan.StudyWindowSuite",
           "planJVM/eyes4s.plan.StudyWorkSuite",
           "planJVM/eyes4s.plan.TemporalCursorSuite",
+          "planJVM/eyes4s.plan.UnmatchedReasonsSuite",
           "resultsJVM/eyes4s.results.ReportNavigationSuite",
           "resultsJVM/eyes4s.results.ReportSuite",
           "resultsJVM/eyes4s.results.RunFactsSuite"
@@ -2748,6 +2779,7 @@
           "ioJVM/eyes4s.io.RepetitionGuideSuite",
           "ioJVM/eyes4s.io.StampedStudyExecutionSuite",
           "ioJVM/eyes4s.io.StudioAcceptanceSuite",
+          "ioJVM/eyes4s.io.StudioFixtureRealSuite",
           "ioJVM/eyes4s.io.StudioGoldenJvmSuite",
           "ioJVM/eyes4s.io.StudyGuideOracleSuite",
           "ioJVM/eyes4s.io.TemporalContrastSuite",
@@ -2784,6 +2816,7 @@
           "planJVM/eyes4s.plan.StudyWindowSuite",
           "planJVM/eyes4s.plan.StudyWorkSuite",
           "planJVM/eyes4s.plan.TemporalCursorSuite",
+          "planJVM/eyes4s.plan.UnmatchedReasonsSuite",
           "resultsJVM/eyes4s.results.ReportNavigationSuite",
           "resultsJVM/eyes4s.results.ReportSuite",
           "resultsJVM/eyes4s.results.RunFactsSuite"
@@ -2925,6 +2958,7 @@
           "ioJVM/eyes4s.io.RepetitionGuideSuite",
           "ioJVM/eyes4s.io.StampedStudyExecutionSuite",
           "ioJVM/eyes4s.io.StudioAcceptanceSuite",
+          "ioJVM/eyes4s.io.StudioFixtureRealSuite",
           "ioJVM/eyes4s.io.StudioGoldenJvmSuite",
           "ioJVM/eyes4s.io.StudyGuideOracleSuite",
           "ioJVM/eyes4s.io.TemporalContrastSuite",
@@ -2962,6 +2996,7 @@
           "planJVM/eyes4s.plan.StudyWindowSuite",
           "planJVM/eyes4s.plan.StudyWorkSuite",
           "planJVM/eyes4s.plan.TemporalCursorSuite",
+          "planJVM/eyes4s.plan.UnmatchedReasonsSuite",
           "resultsJVM/eyes4s.results.ReportNavigationSuite",
           "resultsJVM/eyes4s.results.ReportSuite",
           "resultsJVM/eyes4s.results.RunFactsSuite"
@@ -3030,6 +3065,7 @@
           "ioJVM/eyes4s.io.RepetitionGuideSuite",
           "ioJVM/eyes4s.io.StampedStudyExecutionSuite",
           "ioJVM/eyes4s.io.StudioAcceptanceSuite",
+          "ioJVM/eyes4s.io.StudioFixtureRealSuite",
           "ioJVM/eyes4s.io.StudioGoldenJvmSuite",
           "ioJVM/eyes4s.io.StudyGuideOracleSuite",
           "ioJVM/eyes4s.io.TemporalContrastSuite",
@@ -3067,6 +3103,7 @@
           "planJVM/eyes4s.plan.StudyWindowSuite",
           "planJVM/eyes4s.plan.StudyWorkSuite",
           "planJVM/eyes4s.plan.TemporalCursorSuite",
+          "planJVM/eyes4s.plan.UnmatchedReasonsSuite",
           "resultsJVM/eyes4s.results.ReportNavigationSuite",
           "resultsJVM/eyes4s.results.ReportSuite",
           "resultsJVM/eyes4s.results.RunFactsSuite"
@@ -3135,6 +3172,7 @@
           "ioJVM/eyes4s.io.RepetitionGuideSuite",
           "ioJVM/eyes4s.io.StampedStudyExecutionSuite",
           "ioJVM/eyes4s.io.StudioAcceptanceSuite",
+          "ioJVM/eyes4s.io.StudioFixtureRealSuite",
           "ioJVM/eyes4s.io.StudioGoldenJvmSuite",
           "ioJVM/eyes4s.io.StudyGuideOracleSuite",
           "ioJVM/eyes4s.io.TemporalContrastSuite",
@@ -3172,6 +3210,7 @@
           "planJVM/eyes4s.plan.StudyWindowSuite",
           "planJVM/eyes4s.plan.StudyWorkSuite",
           "planJVM/eyes4s.plan.TemporalCursorSuite",
+          "planJVM/eyes4s.plan.UnmatchedReasonsSuite",
           "resultsJVM/eyes4s.results.ReportNavigationSuite",
           "resultsJVM/eyes4s.results.ReportSuite",
           "resultsJVM/eyes4s.results.RunFactsSuite"
@@ -3241,6 +3280,7 @@
           "ioJVM/eyes4s.io.RepetitionGuideSuite",
           "ioJVM/eyes4s.io.StampedStudyExecutionSuite",
           "ioJVM/eyes4s.io.StudioAcceptanceSuite",
+          "ioJVM/eyes4s.io.StudioFixtureRealSuite",
           "ioJVM/eyes4s.io.StudioGoldenJvmSuite",
           "ioJVM/eyes4s.io.StudyGuideOracleSuite",
           "ioJVM/eyes4s.io.TemporalContrastSuite",
@@ -3279,6 +3319,7 @@
           "planJVM/eyes4s.plan.StudyWindowSuite",
           "planJVM/eyes4s.plan.StudyWorkSuite",
           "planJVM/eyes4s.plan.TemporalCursorSuite",
+          "planJVM/eyes4s.plan.UnmatchedReasonsSuite",
           "resultsJVM/eyes4s.results.ReportNavigationSuite",
           "resultsJVM/eyes4s.results.ReportSuite",
           "resultsJVM/eyes4s.results.RunFactsSuite"
@@ -3347,6 +3388,7 @@
           "ioJVM/eyes4s.io.RepetitionGuideSuite",
           "ioJVM/eyes4s.io.StampedStudyExecutionSuite",
           "ioJVM/eyes4s.io.StudioAcceptanceSuite",
+          "ioJVM/eyes4s.io.StudioFixtureRealSuite",
           "ioJVM/eyes4s.io.StudioGoldenJvmSuite",
           "ioJVM/eyes4s.io.StudyGuideOracleSuite",
           "ioJVM/eyes4s.io.TemporalContrastSuite",
@@ -3384,6 +3426,7 @@
           "planJVM/eyes4s.plan.StudyWindowSuite",
           "planJVM/eyes4s.plan.StudyWorkSuite",
           "planJVM/eyes4s.plan.TemporalCursorSuite",
+          "planJVM/eyes4s.plan.UnmatchedReasonsSuite",
           "resultsJVM/eyes4s.results.ReportNavigationSuite",
           "resultsJVM/eyes4s.results.ReportSuite",
           "resultsJVM/eyes4s.results.RunFactsSuite"
@@ -3452,6 +3495,7 @@
           "ioJVM/eyes4s.io.RepetitionGuideSuite",
           "ioJVM/eyes4s.io.StampedStudyExecutionSuite",
           "ioJVM/eyes4s.io.StudioAcceptanceSuite",
+          "ioJVM/eyes4s.io.StudioFixtureRealSuite",
           "ioJVM/eyes4s.io.StudioGoldenJvmSuite",
           "ioJVM/eyes4s.io.StudyGuideOracleSuite",
           "ioJVM/eyes4s.io.TemporalContrastSuite",
@@ -3489,6 +3533,7 @@
           "planJVM/eyes4s.plan.StudyWindowSuite",
           "planJVM/eyes4s.plan.StudyWorkSuite",
           "planJVM/eyes4s.plan.TemporalCursorSuite",
+          "planJVM/eyes4s.plan.UnmatchedReasonsSuite",
           "resultsJVM/eyes4s.results.ReportNavigationSuite",
           "resultsJVM/eyes4s.results.ReportSuite",
           "resultsJVM/eyes4s.results.RunFactsSuite"
@@ -3557,6 +3602,7 @@
           "ioJVM/eyes4s.io.RepetitionGuideSuite",
           "ioJVM/eyes4s.io.StampedStudyExecutionSuite",
           "ioJVM/eyes4s.io.StudioAcceptanceSuite",
+          "ioJVM/eyes4s.io.StudioFixtureRealSuite",
           "ioJVM/eyes4s.io.StudioGoldenJvmSuite",
           "ioJVM/eyes4s.io.StudyGuideOracleSuite",
           "ioJVM/eyes4s.io.TemporalContrastSuite",
@@ -3594,6 +3640,7 @@
           "planJVM/eyes4s.plan.StudyWindowSuite",
           "planJVM/eyes4s.plan.StudyWorkSuite",
           "planJVM/eyes4s.plan.TemporalCursorSuite",
+          "planJVM/eyes4s.plan.UnmatchedReasonsSuite",
           "resultsJVM/eyes4s.results.ReportNavigationSuite",
           "resultsJVM/eyes4s.results.ReportSuite",
           "resultsJVM/eyes4s.results.RunFactsSuite"
@@ -3732,8 +3779,10 @@
           "ioJVM/eyes4s.io.CsvLayoutSuite",
           "ioJVM/eyes4s.io.EyeLinkAscImportSuite",
           "ioJVM/eyes4s.io.FamilyConformanceSuite",
+          "ioJVM/eyes4s.io.FixationRowInterpretationSuite",
           "ioJVM/eyes4s.io.FixationSourceTextSuite",
           "ioJVM/eyes4s.io.FixationStudySuite",
+          "ioJVM/eyes4s.io.FixationTrialDecisionSuite",
           "ioJVM/eyes4s.io.FreshProcessReconstructionJvmSuite",
           "ioJVM/eyes4s.io.InspectionSourceSuite",
           "ioJVM/eyes4s.io.InventoryAdmissionLawSuite",
@@ -3746,6 +3795,7 @@
           "ioJVM/eyes4s.io.SourceAdmissionSuite",
           "ioJVM/eyes4s.io.StampedStudyExecutionSuite",
           "ioJVM/eyes4s.io.StudioAcceptanceSuite",
+          "ioJVM/eyes4s.io.StudioFixtureRealSuite",
           "ioJVM/eyes4s.io.StudioGoldenJvmSuite",
           "ioJVM/eyes4s.io.StudyGuideOracleSuite",
           "ioJVM/eyes4s.io.TemporalContrastSuite",
@@ -3786,6 +3836,7 @@
           "planJVM/eyes4s.plan.StudyWindowSuite",
           "planJVM/eyes4s.plan.StudyWorkSuite",
           "planJVM/eyes4s.plan.TemporalCursorSuite",
+          "planJVM/eyes4s.plan.UnmatchedReasonsSuite",
           "planJVM/eyes4s.pointconsumer.PointSamplingSuite",
           "resultsJVM/eyes4s.results.ReportNavigationSuite",
           "resultsJVM/eyes4s.results.ReportSuite",
@@ -3873,6 +3924,7 @@
           "ioJVM/eyes4s.io.IoDiagnosticCatalogSuite",
           "lawsJVM/eyes4s.laws.TemporalSupportLawsSuite",
           "planJVM/eyes4s.plan.DiagnosticCatalogSuite",
+          "planJVM/eyes4s.plan.UnmatchedReasonsSuite",
           "resultsJVM/eyes4s.results.ResultsDiagnosticCatalogSuite"
         ]
       },
@@ -3976,6 +4028,7 @@
           "ioJVM/eyes4s.io.RepetitionGuideSuite",
           "ioJVM/eyes4s.io.StampedStudyExecutionSuite",
           "ioJVM/eyes4s.io.StudioAcceptanceSuite",
+          "ioJVM/eyes4s.io.StudioFixtureRealSuite",
           "ioJVM/eyes4s.io.StudioGoldenJvmSuite",
           "ioJVM/eyes4s.io.StudyGuideOracleSuite",
           "ioJVM/eyes4s.io.TemporalContrastSuite",
@@ -4012,6 +4065,7 @@
           "planJVM/eyes4s.plan.StudyWindowSuite",
           "planJVM/eyes4s.plan.StudyWorkSuite",
           "planJVM/eyes4s.plan.TemporalCursorSuite",
+          "planJVM/eyes4s.plan.UnmatchedReasonsSuite",
           "resultsJVM/eyes4s.results.ReportNavigationSuite",
           "resultsJVM/eyes4s.results.ReportSuite",
           "resultsJVM/eyes4s.results.RunFactsSuite"
@@ -4084,6 +4138,7 @@
           "ioJVM/eyes4s.io.RepetitionGuideSuite",
           "ioJVM/eyes4s.io.StampedStudyExecutionSuite",
           "ioJVM/eyes4s.io.StudioAcceptanceSuite",
+          "ioJVM/eyes4s.io.StudioFixtureRealSuite",
           "ioJVM/eyes4s.io.StudioGoldenJvmSuite",
           "ioJVM/eyes4s.io.StudyGuideOracleSuite",
           "ioJVM/eyes4s.io.TemporalContrastSuite",
@@ -4095,12 +4150,14 @@
           "lawsJVM/eyes4s.laws.StudyResultCodecLawSuite",
           "lawsJVM/eyes4s.laws.StudyRevisionLawsSuite",
           "lawsJVM/eyes4s.laws.TemporalResultCodecLawSuite",
+          "lawsJVM/eyes4s.laws.WindowLawsSuite",
           "planJVM/eyes4s.plan.CountedStudyCursorSuite",
           "planJVM/eyes4s.plan.InitialFixationSuite",
           "planJVM/eyes4s.plan.OccurrencePairingSuite",
           "planJVM/eyes4s.plan.PreflightSuite",
           "planJVM/eyes4s.plan.ResultInspectionSuite",
           "planJVM/eyes4s.plan.ResultNavigationSuite",
+          "planJVM/eyes4s.plan.StudyCountsSuite",
           "planJVM/eyes4s.plan.StudyCursorSuite",
           "planJVM/eyes4s.plan.StudyPreviewSuite",
           "planJVM/eyes4s.plan.StudyProgressCountsSuite",
@@ -4182,8 +4239,10 @@
           "ioJVM/eyes4s.io.BaselineExportsSuite",
           "ioJVM/eyes4s.io.CsvLayoutSuite",
           "ioJVM/eyes4s.io.FamilyConformanceSuite",
+          "ioJVM/eyes4s.io.FixationRowInterpretationSuite",
           "ioJVM/eyes4s.io.FixationSourceTextSuite",
           "ioJVM/eyes4s.io.FixationStudySuite",
+          "ioJVM/eyes4s.io.FixationTrialDecisionSuite",
           "ioJVM/eyes4s.io.InspectionSourceSuite",
           "ioJVM/eyes4s.io.InventoryAdmissionLawSuite",
           "ioJVM/eyes4s.io.InventoryAdmissionSuite",
@@ -4194,6 +4253,7 @@
           "ioJVM/eyes4s.io.SourceAdmissionSuite",
           "ioJVM/eyes4s.io.StampedStudyExecutionSuite",
           "ioJVM/eyes4s.io.StudioAcceptanceSuite",
+          "ioJVM/eyes4s.io.StudioFixtureRealSuite",
           "ioJVM/eyes4s.io.StudioGoldenJvmSuite",
           "ioJVM/eyes4s.io.StudyGuideOracleSuite",
           "ioJVM/eyes4s.io.TemporalContrastSuite",
@@ -4227,6 +4287,7 @@
           "planJVM/eyes4s.plan.StudyWindowSuite",
           "planJVM/eyes4s.plan.StudyWorkSuite",
           "planJVM/eyes4s.plan.TemporalCursorSuite",
+          "planJVM/eyes4s.plan.UnmatchedReasonsSuite",
           "planJVM/eyes4s.pointconsumer.PointSamplingSuite",
           "resultsJVM/eyes4s.results.ReportNavigationSuite",
           "resultsJVM/eyes4s.results.ReportSuite",
@@ -4301,8 +4362,10 @@
           "ioJVM/eyes4s.io.BaselineExportsSuite",
           "ioJVM/eyes4s.io.CsvLayoutSuite",
           "ioJVM/eyes4s.io.FamilyConformanceSuite",
+          "ioJVM/eyes4s.io.FixationRowInterpretationSuite",
           "ioJVM/eyes4s.io.FixationSourceTextSuite",
           "ioJVM/eyes4s.io.FixationStudySuite",
+          "ioJVM/eyes4s.io.FixationTrialDecisionSuite",
           "ioJVM/eyes4s.io.InspectionSourceSuite",
           "ioJVM/eyes4s.io.InventoryAdmissionLawSuite",
           "ioJVM/eyes4s.io.InventoryAdmissionSuite",
@@ -4313,6 +4376,7 @@
           "ioJVM/eyes4s.io.SourceAdmissionSuite",
           "ioJVM/eyes4s.io.StampedStudyExecutionSuite",
           "ioJVM/eyes4s.io.StudioAcceptanceSuite",
+          "ioJVM/eyes4s.io.StudioFixtureRealSuite",
           "ioJVM/eyes4s.io.StudioGoldenJvmSuite",
           "ioJVM/eyes4s.io.StudyGuideOracleSuite",
           "ioJVM/eyes4s.io.TemporalContrastSuite",
@@ -4346,6 +4410,7 @@
           "planJVM/eyes4s.plan.StudyWindowSuite",
           "planJVM/eyes4s.plan.StudyWorkSuite",
           "planJVM/eyes4s.plan.TemporalCursorSuite",
+          "planJVM/eyes4s.plan.UnmatchedReasonsSuite",
           "planJVM/eyes4s.pointconsumer.PointSamplingSuite",
           "resultsJVM/eyes4s.results.ReportNavigationSuite",
           "resultsJVM/eyes4s.results.ReportSuite",
@@ -4422,8 +4487,10 @@
           "ioJVM/eyes4s.io.BaselineExportsSuite",
           "ioJVM/eyes4s.io.CsvLayoutSuite",
           "ioJVM/eyes4s.io.FamilyConformanceSuite",
+          "ioJVM/eyes4s.io.FixationRowInterpretationSuite",
           "ioJVM/eyes4s.io.FixationSourceTextSuite",
           "ioJVM/eyes4s.io.FixationStudySuite",
+          "ioJVM/eyes4s.io.FixationTrialDecisionSuite",
           "ioJVM/eyes4s.io.InspectionSourceSuite",
           "ioJVM/eyes4s.io.InventoryAdmissionLawSuite",
           "ioJVM/eyes4s.io.InventoryAdmissionSuite",
@@ -4434,6 +4501,7 @@
           "ioJVM/eyes4s.io.SourceAdmissionSuite",
           "ioJVM/eyes4s.io.StampedStudyExecutionSuite",
           "ioJVM/eyes4s.io.StudioAcceptanceSuite",
+          "ioJVM/eyes4s.io.StudioFixtureRealSuite",
           "ioJVM/eyes4s.io.StudioGoldenJvmSuite",
           "ioJVM/eyes4s.io.StudyGuideOracleSuite",
           "ioJVM/eyes4s.io.TemporalContrastSuite",
@@ -4467,6 +4535,7 @@
           "planJVM/eyes4s.plan.StudyWindowSuite",
           "planJVM/eyes4s.plan.StudyWorkSuite",
           "planJVM/eyes4s.plan.TemporalCursorSuite",
+          "planJVM/eyes4s.plan.UnmatchedReasonsSuite",
           "planJVM/eyes4s.pointconsumer.PointSamplingSuite",
           "resultsJVM/eyes4s.results.ReportNavigationSuite",
           "resultsJVM/eyes4s.results.ReportSuite",
@@ -4511,6 +4580,7 @@
           "ioJVM/eyes4s.io.ManifestReverificationSuite",
           "ioJVM/eyes4s.io.SourceAdmissionSuite",
           "ioJVM/eyes4s.io.StudioAcceptanceSuite",
+          "ioJVM/eyes4s.io.StudioFixtureRealSuite",
           "ioJVM/eyes4s.io.StudioGoldenJvmSuite",
           "lawsJVM/eyes4s.laws.AdditionalRecipeCodecLawSuite",
           "lawsJVM/eyes4s.laws.ExecutionLawsSuite",
@@ -4520,7 +4590,8 @@
           "planJVM/eyes4s.plan.CountedStudyCursorSuite",
           "planJVM/eyes4s.plan.OccurrencePairingSuite",
           "planJVM/eyes4s.plan.StudyCountsSuite",
-          "planJVM/eyes4s.plan.StudyPreviewSuite"
+          "planJVM/eyes4s.plan.StudyPreviewSuite",
+          "planJVM/eyes4s.plan.UnmatchedReasonsSuite"
         ]
       },
       {
@@ -4610,8 +4681,10 @@
           "ioJVM/eyes4s.io.BaselineExportsSuite",
           "ioJVM/eyes4s.io.CsvLayoutSuite",
           "ioJVM/eyes4s.io.FamilyConformanceSuite",
+          "ioJVM/eyes4s.io.FixationRowInterpretationSuite",
           "ioJVM/eyes4s.io.FixationSourceTextSuite",
           "ioJVM/eyes4s.io.FixationStudySuite",
+          "ioJVM/eyes4s.io.FixationTrialDecisionSuite",
           "ioJVM/eyes4s.io.InspectionSourceSuite",
           "ioJVM/eyes4s.io.InventoryAdmissionLawSuite",
           "ioJVM/eyes4s.io.InventoryAdmissionSuite",
@@ -4623,6 +4696,7 @@
           "ioJVM/eyes4s.io.SourceAdmissionSuite",
           "ioJVM/eyes4s.io.StampedStudyExecutionSuite",
           "ioJVM/eyes4s.io.StudioAcceptanceSuite",
+          "ioJVM/eyes4s.io.StudioFixtureRealSuite",
           "ioJVM/eyes4s.io.StudioGoldenJvmSuite",
           "ioJVM/eyes4s.io.StudyGuideOracleSuite",
           "ioJVM/eyes4s.io.TemplateFitSuite",
@@ -4659,6 +4733,7 @@
           "planJVM/eyes4s.plan.StudyWindowSuite",
           "planJVM/eyes4s.plan.StudyWorkSuite",
           "planJVM/eyes4s.plan.TemporalCursorSuite",
+          "planJVM/eyes4s.plan.UnmatchedReasonsSuite",
           "planJVM/eyes4s.pointconsumer.PointSamplingSuite",
           "resultsJVM/eyes4s.results.ReportNavigationSuite",
           "resultsJVM/eyes4s.results.ReportSuite",
@@ -4806,6 +4881,7 @@
           "ioJVM/eyes4s.io.RepetitionGuideSuite",
           "ioJVM/eyes4s.io.StampedStudyExecutionSuite",
           "ioJVM/eyes4s.io.StudioAcceptanceSuite",
+          "ioJVM/eyes4s.io.StudioFixtureRealSuite",
           "ioJVM/eyes4s.io.StudioGoldenJvmSuite",
           "ioJVM/eyes4s.io.StudyGuideOracleSuite",
           "ioJVM/eyes4s.io.TemporalContrastSuite",
@@ -4820,12 +4896,14 @@
           "lawsJVM/eyes4s.laws.StudyResultCodecLawSuite",
           "lawsJVM/eyes4s.laws.StudyRevisionLawsSuite",
           "lawsJVM/eyes4s.laws.TemporalResultCodecLawSuite",
+          "lawsJVM/eyes4s.laws.WindowLawsSuite",
           "planJVM/eyes4s.plan.CountedStudyCursorSuite",
           "planJVM/eyes4s.plan.InitialFixationSuite",
           "planJVM/eyes4s.plan.OccurrencePairingSuite",
           "planJVM/eyes4s.plan.PreflightSuite",
           "planJVM/eyes4s.plan.ResultInspectionSuite",
           "planJVM/eyes4s.plan.ResultNavigationSuite",
+          "planJVM/eyes4s.plan.StudyCountsSuite",
           "planJVM/eyes4s.plan.StudyCursorSuite",
           "planJVM/eyes4s.plan.StudyPreviewSuite",
           "planJVM/eyes4s.plan.StudyProgressCountsSuite",
@@ -4930,6 +5008,7 @@
           "ioJVM/eyes4s.io.RepetitionGuideSuite",
           "ioJVM/eyes4s.io.StampedStudyExecutionSuite",
           "ioJVM/eyes4s.io.StudioAcceptanceSuite",
+          "ioJVM/eyes4s.io.StudioFixtureRealSuite",
           "ioJVM/eyes4s.io.StudioGoldenJvmSuite",
           "ioJVM/eyes4s.io.StudyGuideOracleSuite",
           "ioJVM/eyes4s.io.TemporalContrastSuite",
@@ -4958,6 +5037,7 @@
           "planJVM/eyes4s.plan.StudyWindowSuite",
           "planJVM/eyes4s.plan.StudyWorkSuite",
           "planJVM/eyes4s.plan.TemporalCursorSuite",
+          "planJVM/eyes4s.plan.UnmatchedReasonsSuite",
           "planJVM/eyes4s.pointconsumer.PointSamplingSuite",
           "resultsJVM/eyes4s.results.ReportNavigationSuite",
           "resultsJVM/eyes4s.results.ReportSuite",
@@ -5328,6 +5408,7 @@
           "ioJVM/eyes4s.io.RepetitionGuideSuite",
           "ioJVM/eyes4s.io.StampedStudyExecutionSuite",
           "ioJVM/eyes4s.io.StudioAcceptanceSuite",
+          "ioJVM/eyes4s.io.StudioFixtureRealSuite",
           "ioJVM/eyes4s.io.StudioGoldenJvmSuite",
           "ioJVM/eyes4s.io.StudyGuideOracleSuite",
           "ioJVM/eyes4s.io.TemporalContrastSuite",
@@ -5342,12 +5423,14 @@
           "lawsJVM/eyes4s.laws.StudyResultCodecLawSuite",
           "lawsJVM/eyes4s.laws.StudyRevisionLawsSuite",
           "lawsJVM/eyes4s.laws.TemporalResultCodecLawSuite",
+          "lawsJVM/eyes4s.laws.WindowLawsSuite",
           "planJVM/eyes4s.plan.CountedStudyCursorSuite",
           "planJVM/eyes4s.plan.InitialFixationSuite",
           "planJVM/eyes4s.plan.OccurrencePairingSuite",
           "planJVM/eyes4s.plan.PreflightSuite",
           "planJVM/eyes4s.plan.ResultInspectionSuite",
           "planJVM/eyes4s.plan.ResultNavigationSuite",
+          "planJVM/eyes4s.plan.StudyCountsSuite",
           "planJVM/eyes4s.plan.StudyCursorSuite",
           "planJVM/eyes4s.plan.StudyPreviewSuite",
           "planJVM/eyes4s.plan.StudyProgressCountsSuite",
@@ -5422,6 +5505,7 @@
           "ioJVM/eyes4s.io.RepetitionGuideSuite",
           "ioJVM/eyes4s.io.StampedStudyExecutionSuite",
           "ioJVM/eyes4s.io.StudioAcceptanceSuite",
+          "ioJVM/eyes4s.io.StudioFixtureRealSuite",
           "ioJVM/eyes4s.io.StudioGoldenJvmSuite",
           "ioJVM/eyes4s.io.StudyGuideOracleSuite",
           "ioJVM/eyes4s.io.TemporalContrastSuite",
@@ -5436,12 +5520,14 @@
           "lawsJVM/eyes4s.laws.StudyResultCodecLawSuite",
           "lawsJVM/eyes4s.laws.StudyRevisionLawsSuite",
           "lawsJVM/eyes4s.laws.TemporalResultCodecLawSuite",
+          "lawsJVM/eyes4s.laws.WindowLawsSuite",
           "planJVM/eyes4s.plan.CountedStudyCursorSuite",
           "planJVM/eyes4s.plan.InitialFixationSuite",
           "planJVM/eyes4s.plan.OccurrencePairingSuite",
           "planJVM/eyes4s.plan.PreflightSuite",
           "planJVM/eyes4s.plan.ResultInspectionSuite",
           "planJVM/eyes4s.plan.ResultNavigationSuite",
+          "planJVM/eyes4s.plan.StudyCountsSuite",
           "planJVM/eyes4s.plan.StudyCursorSuite",
           "planJVM/eyes4s.plan.StudyPreviewSuite",
           "planJVM/eyes4s.plan.StudyProgressCountsSuite",
@@ -5510,6 +5596,7 @@
           "ioJVM/eyes4s.io.RepetitionGuideSuite",
           "ioJVM/eyes4s.io.StampedStudyExecutionSuite",
           "ioJVM/eyes4s.io.StudioAcceptanceSuite",
+          "ioJVM/eyes4s.io.StudioFixtureRealSuite",
           "ioJVM/eyes4s.io.StudioGoldenJvmSuite",
           "ioJVM/eyes4s.io.StudyGuideOracleSuite",
           "ioJVM/eyes4s.io.TemporalContrastSuite",
@@ -5524,12 +5611,14 @@
           "lawsJVM/eyes4s.laws.StudyResultCodecLawSuite",
           "lawsJVM/eyes4s.laws.StudyRevisionLawsSuite",
           "lawsJVM/eyes4s.laws.TemporalResultCodecLawSuite",
+          "lawsJVM/eyes4s.laws.WindowLawsSuite",
           "planJVM/eyes4s.plan.CountedStudyCursorSuite",
           "planJVM/eyes4s.plan.InitialFixationSuite",
           "planJVM/eyes4s.plan.OccurrencePairingSuite",
           "planJVM/eyes4s.plan.PreflightSuite",
           "planJVM/eyes4s.plan.ResultInspectionSuite",
           "planJVM/eyes4s.plan.ResultNavigationSuite",
+          "planJVM/eyes4s.plan.StudyCountsSuite",
           "planJVM/eyes4s.plan.StudyCursorSuite",
           "planJVM/eyes4s.plan.StudyPreviewSuite",
           "planJVM/eyes4s.plan.StudyProgressCountsSuite",
@@ -5608,6 +5697,7 @@
           "ioJVM/eyes4s.io.RepetitionGuideSuite",
           "ioJVM/eyes4s.io.StampedStudyExecutionSuite",
           "ioJVM/eyes4s.io.StudioAcceptanceSuite",
+          "ioJVM/eyes4s.io.StudioFixtureRealSuite",
           "ioJVM/eyes4s.io.StudioGoldenJvmSuite",
           "ioJVM/eyes4s.io.StudyGuideOracleSuite",
           "ioJVM/eyes4s.io.TemporalContrastSuite",
@@ -5622,12 +5712,14 @@
           "lawsJVM/eyes4s.laws.StudyResultCodecLawSuite",
           "lawsJVM/eyes4s.laws.StudyRevisionLawsSuite",
           "lawsJVM/eyes4s.laws.TemporalResultCodecLawSuite",
+          "lawsJVM/eyes4s.laws.WindowLawsSuite",
           "planJVM/eyes4s.plan.CountedStudyCursorSuite",
           "planJVM/eyes4s.plan.InitialFixationSuite",
           "planJVM/eyes4s.plan.OccurrencePairingSuite",
           "planJVM/eyes4s.plan.PreflightSuite",
           "planJVM/eyes4s.plan.ResultInspectionSuite",
           "planJVM/eyes4s.plan.ResultNavigationSuite",
+          "planJVM/eyes4s.plan.StudyCountsSuite",
           "planJVM/eyes4s.plan.StudyCursorSuite",
           "planJVM/eyes4s.plan.StudyPreviewSuite",
           "planJVM/eyes4s.plan.StudyProgressCountsSuite",
@@ -5720,6 +5812,7 @@
           "ioJVM/eyes4s.io.RepetitionGuideSuite",
           "ioJVM/eyes4s.io.StampedStudyExecutionSuite",
           "ioJVM/eyes4s.io.StudioAcceptanceSuite",
+          "ioJVM/eyes4s.io.StudioFixtureRealSuite",
           "ioJVM/eyes4s.io.StudioGoldenJvmSuite",
           "ioJVM/eyes4s.io.StudyGuideOracleSuite",
           "ioJVM/eyes4s.io.TemporalContrastSuite",
@@ -5748,6 +5841,7 @@
           "planJVM/eyes4s.plan.StudyWindowSuite",
           "planJVM/eyes4s.plan.StudyWorkSuite",
           "planJVM/eyes4s.plan.TemporalCursorSuite",
+          "planJVM/eyes4s.plan.UnmatchedReasonsSuite",
           "planJVM/eyes4s.pointconsumer.PointSamplingSuite",
           "resultsJVM/eyes4s.results.ReportNavigationSuite",
           "resultsJVM/eyes4s.results.ReportSuite",
@@ -5803,6 +5897,7 @@
           "ioJVM/eyes4s.io.RepetitionGuideSuite",
           "ioJVM/eyes4s.io.StampedStudyExecutionSuite",
           "ioJVM/eyes4s.io.StudioAcceptanceSuite",
+          "ioJVM/eyes4s.io.StudioFixtureRealSuite",
           "ioJVM/eyes4s.io.StudioGoldenJvmSuite",
           "ioJVM/eyes4s.io.StudyGuideOracleSuite",
           "ioJVM/eyes4s.io.TemporalContrastSuite",
@@ -5831,6 +5926,7 @@
           "planJVM/eyes4s.plan.StudyWindowSuite",
           "planJVM/eyes4s.plan.StudyWorkSuite",
           "planJVM/eyes4s.plan.TemporalCursorSuite",
+          "planJVM/eyes4s.plan.UnmatchedReasonsSuite",
           "planJVM/eyes4s.pointconsumer.PointSamplingSuite",
           "resultsJVM/eyes4s.results.ReportNavigationSuite",
           "resultsJVM/eyes4s.results.ReportSuite",
@@ -5890,6 +5986,7 @@
           "ioJVM/eyes4s.io.RepetitionGuideSuite",
           "ioJVM/eyes4s.io.StampedStudyExecutionSuite",
           "ioJVM/eyes4s.io.StudioAcceptanceSuite",
+          "ioJVM/eyes4s.io.StudioFixtureRealSuite",
           "ioJVM/eyes4s.io.StudioGoldenJvmSuite",
           "ioJVM/eyes4s.io.StudyGuideOracleSuite",
           "ioJVM/eyes4s.io.TemporalContrastSuite",
@@ -5918,6 +6015,7 @@
           "planJVM/eyes4s.plan.StudyWindowSuite",
           "planJVM/eyes4s.plan.StudyWorkSuite",
           "planJVM/eyes4s.plan.TemporalCursorSuite",
+          "planJVM/eyes4s.plan.UnmatchedReasonsSuite",
           "planJVM/eyes4s.pointconsumer.PointSamplingSuite",
           "resultsJVM/eyes4s.results.ReportNavigationSuite",
           "resultsJVM/eyes4s.results.ReportSuite",
@@ -5996,6 +6094,7 @@
           "ioJVM/eyes4s.io.RepetitionGuideSuite",
           "ioJVM/eyes4s.io.StampedStudyExecutionSuite",
           "ioJVM/eyes4s.io.StudioAcceptanceSuite",
+          "ioJVM/eyes4s.io.StudioFixtureRealSuite",
           "ioJVM/eyes4s.io.StudioGoldenJvmSuite",
           "ioJVM/eyes4s.io.StudyGuideOracleSuite",
           "ioJVM/eyes4s.io.TemporalContrastSuite",
@@ -6024,6 +6123,7 @@
           "planJVM/eyes4s.plan.StudyWindowSuite",
           "planJVM/eyes4s.plan.StudyWorkSuite",
           "planJVM/eyes4s.plan.TemporalCursorSuite",
+          "planJVM/eyes4s.plan.UnmatchedReasonsSuite",
           "planJVM/eyes4s.pointconsumer.PointSamplingSuite",
           "resultsJVM/eyes4s.results.ReportNavigationSuite",
           "resultsJVM/eyes4s.results.ReportSuite",
@@ -6079,6 +6179,7 @@
           "ioJVM/eyes4s.io.RepetitionGuideSuite",
           "ioJVM/eyes4s.io.StampedStudyExecutionSuite",
           "ioJVM/eyes4s.io.StudioAcceptanceSuite",
+          "ioJVM/eyes4s.io.StudioFixtureRealSuite",
           "ioJVM/eyes4s.io.StudioGoldenJvmSuite",
           "ioJVM/eyes4s.io.StudyGuideOracleSuite",
           "ioJVM/eyes4s.io.TemporalContrastSuite",
@@ -6107,6 +6208,7 @@
           "planJVM/eyes4s.plan.StudyWindowSuite",
           "planJVM/eyes4s.plan.StudyWorkSuite",
           "planJVM/eyes4s.plan.TemporalCursorSuite",
+          "planJVM/eyes4s.plan.UnmatchedReasonsSuite",
           "planJVM/eyes4s.pointconsumer.PointSamplingSuite",
           "resultsJVM/eyes4s.results.ReportNavigationSuite",
           "resultsJVM/eyes4s.results.ReportSuite",
@@ -6166,6 +6268,7 @@
           "ioJVM/eyes4s.io.RepetitionGuideSuite",
           "ioJVM/eyes4s.io.StampedStudyExecutionSuite",
           "ioJVM/eyes4s.io.StudioAcceptanceSuite",
+          "ioJVM/eyes4s.io.StudioFixtureRealSuite",
           "ioJVM/eyes4s.io.StudioGoldenJvmSuite",
           "ioJVM/eyes4s.io.StudyGuideOracleSuite",
           "ioJVM/eyes4s.io.TemporalContrastSuite",
@@ -6194,6 +6297,7 @@
           "planJVM/eyes4s.plan.StudyWindowSuite",
           "planJVM/eyes4s.plan.StudyWorkSuite",
           "planJVM/eyes4s.plan.TemporalCursorSuite",
+          "planJVM/eyes4s.plan.UnmatchedReasonsSuite",
           "planJVM/eyes4s.pointconsumer.PointSamplingSuite",
           "resultsJVM/eyes4s.results.ReportNavigationSuite",
           "resultsJVM/eyes4s.results.ReportSuite",
@@ -6279,6 +6383,7 @@
           "ioJVM/eyes4s.io.RepetitionGuideSuite",
           "ioJVM/eyes4s.io.StampedStudyExecutionSuite",
           "ioJVM/eyes4s.io.StudioAcceptanceSuite",
+          "ioJVM/eyes4s.io.StudioFixtureRealSuite",
           "ioJVM/eyes4s.io.StudioGoldenJvmSuite",
           "ioJVM/eyes4s.io.StudyGuideOracleSuite",
           "ioJVM/eyes4s.io.TemporalContrastSuite",
@@ -6291,12 +6396,14 @@
           "lawsJVM/eyes4s.laws.StudyResultCodecLawSuite",
           "lawsJVM/eyes4s.laws.StudyRevisionLawsSuite",
           "lawsJVM/eyes4s.laws.TemporalResultCodecLawSuite",
+          "lawsJVM/eyes4s.laws.WindowLawsSuite",
           "planJVM/eyes4s.plan.CountedStudyCursorSuite",
           "planJVM/eyes4s.plan.InitialFixationSuite",
           "planJVM/eyes4s.plan.OccurrencePairingSuite",
           "planJVM/eyes4s.plan.PreflightSuite",
           "planJVM/eyes4s.plan.ResultInspectionSuite",
           "planJVM/eyes4s.plan.ResultNavigationSuite",
+          "planJVM/eyes4s.plan.StudyCountsSuite",
           "planJVM/eyes4s.plan.StudyCursorSuite",
           "planJVM/eyes4s.plan.StudyPreviewSuite",
           "planJVM/eyes4s.plan.StudyProgressCountsSuite",
@@ -7389,6 +7496,7 @@
           "ioJVM/eyes4s.io.RepetitionGuideSuite",
           "ioJVM/eyes4s.io.StampedStudyExecutionSuite",
           "ioJVM/eyes4s.io.StudioAcceptanceSuite",
+          "ioJVM/eyes4s.io.StudioFixtureRealSuite",
           "ioJVM/eyes4s.io.StudioGoldenJvmSuite",
           "ioJVM/eyes4s.io.StudyGuideOracleSuite",
           "ioJVM/eyes4s.io.TemporalContrastSuite",
@@ -7407,12 +7515,14 @@
           "lawsJVM/eyes4s.laws.StudyResultCodecLawSuite",
           "lawsJVM/eyes4s.laws.StudyRevisionLawsSuite",
           "lawsJVM/eyes4s.laws.TemporalResultCodecLawSuite",
+          "lawsJVM/eyes4s.laws.WindowLawsSuite",
           "planJVM/eyes4s.plan.CountedStudyCursorSuite",
           "planJVM/eyes4s.plan.InitialFixationSuite",
           "planJVM/eyes4s.plan.OccurrencePairingSuite",
           "planJVM/eyes4s.plan.PreflightSuite",
           "planJVM/eyes4s.plan.ResultInspectionSuite",
           "planJVM/eyes4s.plan.ResultNavigationSuite",
+          "planJVM/eyes4s.plan.StudyCountsSuite",
           "planJVM/eyes4s.plan.StudyCursorSuite",
           "planJVM/eyes4s.plan.StudyPreviewSuite",
           "planJVM/eyes4s.plan.StudyProgressCountsSuite",
@@ -7490,6 +7600,7 @@
           "ioJVM/eyes4s.io.RepetitionGuideSuite",
           "ioJVM/eyes4s.io.StampedStudyExecutionSuite",
           "ioJVM/eyes4s.io.StudioAcceptanceSuite",
+          "ioJVM/eyes4s.io.StudioFixtureRealSuite",
           "ioJVM/eyes4s.io.StudioGoldenJvmSuite",
           "ioJVM/eyes4s.io.StudyGuideOracleSuite",
           "ioJVM/eyes4s.io.TemporalContrastSuite",
@@ -7514,6 +7625,7 @@
           "lawsJVM/eyes4s.laws.TemplateRecipeLawSuite",
           "lawsJVM/eyes4s.laws.TemporalResultCodecLawSuite",
           "lawsJVM/eyes4s.laws.TrustRegressionSuite",
+          "lawsJVM/eyes4s.laws.WindowLawsSuite",
           "planJVM/eyes4s.plan.CountedStudyCursorSuite",
           "planJVM/eyes4s.plan.DensityGeometrySuite",
           "planJVM/eyes4s.plan.InitialFixationSuite",
@@ -7521,6 +7633,7 @@
           "planJVM/eyes4s.plan.PreflightSuite",
           "planJVM/eyes4s.plan.ResultInspectionSuite",
           "planJVM/eyes4s.plan.ResultNavigationSuite",
+          "planJVM/eyes4s.plan.StudyCountsSuite",
           "planJVM/eyes4s.plan.StudyCursorSuite",
           "planJVM/eyes4s.plan.StudyPreviewSuite",
           "planJVM/eyes4s.plan.StudyProgressCountsSuite",
@@ -7594,6 +7707,7 @@
           "ioJVM/eyes4s.io.RepetitionGuideSuite",
           "ioJVM/eyes4s.io.StampedStudyExecutionSuite",
           "ioJVM/eyes4s.io.StudioAcceptanceSuite",
+          "ioJVM/eyes4s.io.StudioFixtureRealSuite",
           "ioJVM/eyes4s.io.StudioGoldenJvmSuite",
           "ioJVM/eyes4s.io.StudyGuideOracleSuite",
           "ioJVM/eyes4s.io.TemporalContrastSuite",
@@ -7612,12 +7726,14 @@
           "lawsJVM/eyes4s.laws.StudyResultCodecLawSuite",
           "lawsJVM/eyes4s.laws.StudyRevisionLawsSuite",
           "lawsJVM/eyes4s.laws.TemporalResultCodecLawSuite",
+          "lawsJVM/eyes4s.laws.WindowLawsSuite",
           "planJVM/eyes4s.plan.CountedStudyCursorSuite",
           "planJVM/eyes4s.plan.InitialFixationSuite",
           "planJVM/eyes4s.plan.OccurrencePairingSuite",
           "planJVM/eyes4s.plan.PreflightSuite",
           "planJVM/eyes4s.plan.ResultInspectionSuite",
           "planJVM/eyes4s.plan.ResultNavigationSuite",
+          "planJVM/eyes4s.plan.StudyCountsSuite",
           "planJVM/eyes4s.plan.StudyCursorSuite",
           "planJVM/eyes4s.plan.StudyPreviewSuite",
           "planJVM/eyes4s.plan.StudyProgressCountsSuite",
@@ -7693,6 +7809,7 @@
           "lawsJVM/eyes4s.laws.TemporalResultCodecLawSuite",
           "planJVM/eyes4s.plan.DensityGeometrySuite",
           "planJVM/eyes4s.plan.ResultInspectionSuite",
+          "planJVM/eyes4s.plan.StudyCountsSuite",
           "planJVM/eyes4s.plan.StudyCursorSuite",
           "planJVM/eyes4s.plan.TemporalCursorSuite",
           "surfaceJVM/eyes4s.surface.SmootherSuite"
@@ -7784,6 +7901,7 @@
           "ioJVM/eyes4s.io.RepetitionGuideSuite",
           "ioJVM/eyes4s.io.StampedStudyExecutionSuite",
           "ioJVM/eyes4s.io.StudioAcceptanceSuite",
+          "ioJVM/eyes4s.io.StudioFixtureRealSuite",
           "ioJVM/eyes4s.io.StudioGoldenJvmSuite",
           "ioJVM/eyes4s.io.StudyGuideOracleSuite",
           "ioJVM/eyes4s.io.TemporalContrastSuite",
@@ -7803,12 +7921,14 @@
           "lawsJVM/eyes4s.laws.StudyResultCodecLawSuite",
           "lawsJVM/eyes4s.laws.StudyRevisionLawsSuite",
           "lawsJVM/eyes4s.laws.TemporalResultCodecLawSuite",
+          "lawsJVM/eyes4s.laws.WindowLawsSuite",
           "planJVM/eyes4s.plan.CountedStudyCursorSuite",
           "planJVM/eyes4s.plan.InitialFixationSuite",
           "planJVM/eyes4s.plan.OccurrencePairingSuite",
           "planJVM/eyes4s.plan.PreflightSuite",
           "planJVM/eyes4s.plan.ResultInspectionSuite",
           "planJVM/eyes4s.plan.ResultNavigationSuite",
+          "planJVM/eyes4s.plan.StudyCountsSuite",
           "planJVM/eyes4s.plan.StudyCursorSuite",
           "planJVM/eyes4s.plan.StudyPreviewSuite",
           "planJVM/eyes4s.plan.StudyProgressCountsSuite",
@@ -7885,6 +8005,7 @@
           "ioJVM/eyes4s.io.RepetitionGuideSuite",
           "ioJVM/eyes4s.io.StampedStudyExecutionSuite",
           "ioJVM/eyes4s.io.StudioAcceptanceSuite",
+          "ioJVM/eyes4s.io.StudioFixtureRealSuite",
           "ioJVM/eyes4s.io.StudioGoldenJvmSuite",
           "ioJVM/eyes4s.io.StudyGuideOracleSuite",
           "ioJVM/eyes4s.io.TemporalContrastSuite",
@@ -7912,6 +8033,7 @@
           "lawsJVM/eyes4s.laws.TemplateRecipeLawSuite",
           "lawsJVM/eyes4s.laws.TemporalResultCodecLawSuite",
           "lawsJVM/eyes4s.laws.TrustRegressionSuite",
+          "lawsJVM/eyes4s.laws.WindowLawsSuite",
           "planJVM/eyes4s.plan.CountedStudyCursorSuite",
           "planJVM/eyes4s.plan.DensityGeometrySuite",
           "planJVM/eyes4s.plan.InitialFixationSuite",
@@ -7919,6 +8041,7 @@
           "planJVM/eyes4s.plan.PreflightSuite",
           "planJVM/eyes4s.plan.ResultInspectionSuite",
           "planJVM/eyes4s.plan.ResultNavigationSuite",
+          "planJVM/eyes4s.plan.StudyCountsSuite",
           "planJVM/eyes4s.plan.StudyCursorSuite",
           "planJVM/eyes4s.plan.StudyPreviewSuite",
           "planJVM/eyes4s.plan.StudyProgressCountsSuite",
@@ -8021,6 +8144,7 @@
           "ioJVM/eyes4s.io.RepetitionGuideSuite",
           "ioJVM/eyes4s.io.StampedStudyExecutionSuite",
           "ioJVM/eyes4s.io.StudioAcceptanceSuite",
+          "ioJVM/eyes4s.io.StudioFixtureRealSuite",
           "ioJVM/eyes4s.io.StudioGoldenJvmSuite",
           "ioJVM/eyes4s.io.StudyGuideOracleSuite",
           "ioJVM/eyes4s.io.TemporalContrastSuite",
@@ -8061,6 +8185,7 @@
           "planJVM/eyes4s.plan.StudyWindowSuite",
           "planJVM/eyes4s.plan.StudyWorkSuite",
           "planJVM/eyes4s.plan.TemporalCursorSuite",
+          "planJVM/eyes4s.plan.UnmatchedReasonsSuite",
           "resultsJVM/eyes4s.results.ReportNavigationSuite",
           "resultsJVM/eyes4s.results.ReportSuite",
           "resultsJVM/eyes4s.results.ResultsDiagnosticCatalogSuite",
@@ -8091,10 +8216,12 @@
           "planJVM/eyes4s.plan.MethodDescriptorSuite",
           "planJVM/eyes4s.plan.OccurrencePairingSuite",
           "planJVM/eyes4s.plan.PreflightSuite",
+          "planJVM/eyes4s.plan.StudyCountsSuite",
           "planJVM/eyes4s.plan.StudyCursorSuite",
           "planJVM/eyes4s.plan.StudyFormKeysSuite",
           "planJVM/eyes4s.plan.StudyFormSuite",
           "planJVM/eyes4s.plan.StudyWindowSuite",
+          "planJVM/eyes4s.plan.UnmatchedReasonsSuite",
           "resultsJVM/eyes4s.results.RunFactsSuite"
         ]
       }
@@ -8177,6 +8304,7 @@
           "ioJVM/eyes4s.io.FamilyConformanceSuite",
           "ioJVM/eyes4s.io.FixationSourceTextSuite",
           "ioJVM/eyes4s.io.FixationStudySuite",
+          "ioJVM/eyes4s.io.FixationTrialDecisionSuite",
           "ioJVM/eyes4s.io.FreshProcessReconstructionJvmSuite",
           "ioJVM/eyes4s.io.InspectionSourceSuite",
           "ioJVM/eyes4s.io.InventoryAdmissionSuite",
@@ -8188,6 +8316,7 @@
           "ioJVM/eyes4s.io.SourceAdmissionSuite",
           "ioJVM/eyes4s.io.StampedStudyExecutionSuite",
           "ioJVM/eyes4s.io.StudioAcceptanceSuite",
+          "ioJVM/eyes4s.io.StudioFixtureRealSuite",
           "ioJVM/eyes4s.io.StudioGoldenJvmSuite",
           "ioJVM/eyes4s.io.StudyGuideOracleSuite",
           "ioJVM/eyes4s.io.TemporalContrastSuite",
@@ -8242,6 +8371,7 @@
           "planJVM/eyes4s.plan.StudyWindowSuite",
           "planJVM/eyes4s.plan.StudyWorkSuite",
           "planJVM/eyes4s.plan.TemporalCursorSuite",
+          "planJVM/eyes4s.plan.UnmatchedReasonsSuite",
           "planJVM/eyes4s.pointconsumer.PointSamplingSuite",
           "resultsJVM/eyes4s.results.ReportNavigationSuite",
           "resultsJVM/eyes4s.results.ReportSuite",
@@ -8566,17 +8696,19 @@
           "ioJVM/eyes4s.io.DiagnosticsDocJvmSuite",
           "ioJVM/eyes4s.io.FamilyConformanceSuite",
           "ioJVM/eyes4s.io.IoDiagnosticCatalogSuite",
+          "ioJVM/eyes4s.io.StudioFixtureRealSuite",
           "planJVM/consumer.PublicPlanSuite",
           "planJVM/eyes4s.plan.AnalysisReportSuite",
           "planJVM/eyes4s.plan.DiagnosticCatalogSuite",
           "planJVM/eyes4s.plan.InitialFixationSuite",
           "planJVM/eyes4s.plan.PreflightSuite",
           "planJVM/eyes4s.plan.ResultInspectionSuite",
+          "planJVM/eyes4s.plan.StudyCountsSuite",
           "planJVM/eyes4s.plan.StudyFormKeysSuite",
           "planJVM/eyes4s.plan.StudyFormSuite",
           "planJVM/eyes4s.plan.StudyWindowSuite",
-          "resultsJVM/eyes4s.results.ResultsDiagnosticCatalogSuite",
-          "resultsJVM/eyes4s.results.RunFactsSuite"
+          "planJVM/eyes4s.plan.UnmatchedReasonsSuite",
+          "resultsJVM/eyes4s.results.ResultsDiagnosticCatalogSuite"
         ]
       },
       {
@@ -8591,6 +8723,7 @@
           "planJVM/eyes4s.plan.DiagnosticCatalogSuite",
           "planJVM/eyes4s.plan.StudyFormKeysSuite",
           "planJVM/eyes4s.plan.StudyFormSuite",
+          "planJVM/eyes4s.plan.UnmatchedReasonsSuite",
           "resultsJVM/eyes4s.results.ReportNavigationSuite",
           "resultsJVM/eyes4s.results.ResultsDiagnosticCatalogSuite"
         ]
@@ -8607,6 +8740,7 @@
           "ioJVM/eyes4s.io.DiagnosticsDocJvmSuite",
           "ioJVM/eyes4s.io.IoDiagnosticCatalogSuite",
           "planJVM/eyes4s.plan.DiagnosticCatalogSuite",
+          "planJVM/eyes4s.plan.UnmatchedReasonsSuite",
           "resultsJVM/eyes4s.results.ResultsDiagnosticCatalogSuite"
         ]
       },
@@ -8622,6 +8756,7 @@
           "planJVM/eyes4s.plan.DiagnosticCatalogSuite",
           "planJVM/eyes4s.plan.StudyFormKeysSuite",
           "planJVM/eyes4s.plan.StudyFormSuite",
+          "planJVM/eyes4s.plan.UnmatchedReasonsSuite",
           "resultsJVM/eyes4s.results.ReportNavigationSuite",
           "resultsJVM/eyes4s.results.ResultsDiagnosticCatalogSuite"
         ]
@@ -8650,6 +8785,7 @@
           "planJVM/eyes4s.plan.FormDescriptorSuite",
           "planJVM/eyes4s.plan.RecipeFormAccessorsSuite",
           "planJVM/eyes4s.plan.StudyFormSuite",
+          "planJVM/eyes4s.plan.UnmatchedReasonsSuite",
           "resultsJVM/eyes4s.results.ResultsDiagnosticCatalogSuite"
         ]
       },
@@ -8673,6 +8809,7 @@
           "planJVM/eyes4s.plan.DiagnosticCatalogSuite",
           "planJVM/eyes4s.plan.FormDescriptorSuite",
           "planJVM/eyes4s.plan.StudyFormSuite",
+          "planJVM/eyes4s.plan.UnmatchedReasonsSuite",
           "resultsJVM/eyes4s.results.ResultsDiagnosticCatalogSuite"
         ]
       }
@@ -8690,6 +8827,7 @@
           "planJVM/eyes4s.plan.DiagnosticCatalogSuite",
           "planJVM/eyes4s.plan.FormDescriptorSuite",
           "planJVM/eyes4s.plan.StudyFormSuite",
+          "planJVM/eyes4s.plan.UnmatchedReasonsSuite",
           "resultsJVM/eyes4s.results.ResultsDiagnosticCatalogSuite"
         ]
       },
@@ -8705,6 +8843,7 @@
           "planJVM/eyes4s.plan.DiagnosticCatalogSuite",
           "planJVM/eyes4s.plan.FormDescriptorSuite",
           "planJVM/eyes4s.plan.StudyFormSuite",
+          "planJVM/eyes4s.plan.UnmatchedReasonsSuite",
           "resultsJVM/eyes4s.results.ResultsDiagnosticCatalogSuite"
         ]
       },
@@ -8722,6 +8861,7 @@
           "lawsJVM/eyes4s.laws.SchemaRegistryJvmSuite",
           "planJVM/eyes4s.plan.DiagnosticCatalogSuite",
           "planJVM/eyes4s.plan.FormDescriptorSuite",
+          "planJVM/eyes4s.plan.UnmatchedReasonsSuite",
           "resultsJVM/eyes4s.results.ResultsDiagnosticCatalogSuite"
         ]
       },
@@ -8738,6 +8878,7 @@
           "lawsJVM/eyes4s.laws.FormLawSuite",
           "planJVM/eyes4s.plan.DiagnosticCatalogSuite",
           "planJVM/eyes4s.plan.FormDescriptorSuite",
+          "planJVM/eyes4s.plan.UnmatchedReasonsSuite",
           "resultsJVM/eyes4s.results.ResultsDiagnosticCatalogSuite"
         ]
       },
@@ -8755,6 +8896,7 @@
           "planJVM/eyes4s.plan.DiagnosticCatalogSuite",
           "planJVM/eyes4s.plan.FormDescriptorSuite",
           "planJVM/eyes4s.plan.StudyFormSuite",
+          "planJVM/eyes4s.plan.UnmatchedReasonsSuite",
           "resultsJVM/eyes4s.results.ResultsDiagnosticCatalogSuite"
         ]
       },
@@ -8773,6 +8915,7 @@
           "planJVM/eyes4s.plan.DiagnosticCatalogSuite",
           "planJVM/eyes4s.plan.FormDescriptorSuite",
           "planJVM/eyes4s.plan.StudyFormSuite",
+          "planJVM/eyes4s.plan.UnmatchedReasonsSuite",
           "resultsJVM/eyes4s.results.ResultsDiagnosticCatalogSuite"
         ]
       },
@@ -8789,6 +8932,7 @@
           "planJVM/eyes4s.plan.FormDescriptorSuite",
           "planJVM/eyes4s.plan.StudyFormKeysSuite",
           "planJVM/eyes4s.plan.StudyFormSuite",
+          "planJVM/eyes4s.plan.UnmatchedReasonsSuite",
           "resultsJVM/eyes4s.results.ResultsDiagnosticCatalogSuite"
         ]
       },
@@ -8801,8 +8945,10 @@
           "ioJVM/eyes4s.io.DiagnosticCoverageJvmSuite",
           "ioJVM/eyes4s.io.DiagnosticsDocJvmSuite",
           "ioJVM/eyes4s.io.IoDiagnosticCatalogSuite",
+          "lawsJVM/eyes4s.laws.FormLawSuite",
           "planJVM/eyes4s.plan.DiagnosticCatalogSuite",
           "planJVM/eyes4s.plan.FormDescriptorSuite",
+          "planJVM/eyes4s.plan.UnmatchedReasonsSuite",
           "resultsJVM/eyes4s.results.ResultsDiagnosticCatalogSuite"
         ]
       },
@@ -8820,6 +8966,7 @@
           "planJVM/eyes4s.plan.FormDescriptorSuite",
           "planJVM/eyes4s.plan.RecipeFormAccessorsSuite",
           "planJVM/eyes4s.plan.StudyFormSuite",
+          "planJVM/eyes4s.plan.UnmatchedReasonsSuite",
           "resultsJVM/eyes4s.results.ResultsDiagnosticCatalogSuite"
         ]
       },
@@ -8835,6 +8982,7 @@
           "lawsJVM/eyes4s.laws.FormLawSuite",
           "planJVM/eyes4s.plan.DiagnosticCatalogSuite",
           "planJVM/eyes4s.plan.FormDescriptorSuite",
+          "planJVM/eyes4s.plan.UnmatchedReasonsSuite",
           "resultsJVM/eyes4s.results.ResultsDiagnosticCatalogSuite"
         ]
       },
@@ -8849,6 +8997,7 @@
           "ioJVM/eyes4s.io.IoDiagnosticCatalogSuite",
           "planJVM/eyes4s.plan.DiagnosticCatalogSuite",
           "planJVM/eyes4s.plan.FormDescriptorSuite",
+          "planJVM/eyes4s.plan.UnmatchedReasonsSuite",
           "resultsJVM/eyes4s.results.ResultsDiagnosticCatalogSuite"
         ]
       }
@@ -8942,9 +9091,11 @@
           "planJVM/eyes4s.plan.RecipeFormAccessorsSuite",
           "planJVM/eyes4s.plan.RecordingCursorSuite",
           "planJVM/eyes4s.plan.ResultInspectionSuite",
+          "planJVM/eyes4s.plan.StudyCountsSuite",
           "planJVM/eyes4s.plan.StudyCursorSuite",
           "planJVM/eyes4s.plan.StudyFormSuite",
-          "planJVM/eyes4s.plan.StudyWindowSuite"
+          "planJVM/eyes4s.plan.StudyWindowSuite",
+          "planJVM/eyes4s.plan.UnmatchedReasonsSuite"
         ]
       },
       {
@@ -9002,10 +9153,12 @@
           "planJVM/eyes4s.plan.RecipeFormAccessorsSuite",
           "planJVM/eyes4s.plan.RecordingCursorSuite",
           "planJVM/eyes4s.plan.ResultInspectionSuite",
+          "planJVM/eyes4s.plan.StudyCountsSuite",
           "planJVM/eyes4s.plan.StudyCursorSuite",
           "planJVM/eyes4s.plan.StudyFormKeysSuite",
           "planJVM/eyes4s.plan.StudyFormSuite",
-          "planJVM/eyes4s.plan.StudyWindowSuite"
+          "planJVM/eyes4s.plan.StudyWindowSuite",
+          "planJVM/eyes4s.plan.UnmatchedReasonsSuite"
         ]
       },
       {
@@ -9066,10 +9219,12 @@
           "planJVM/eyes4s.plan.RecipeFormAccessorsSuite",
           "planJVM/eyes4s.plan.RecordingCursorSuite",
           "planJVM/eyes4s.plan.ResultInspectionSuite",
+          "planJVM/eyes4s.plan.StudyCountsSuite",
           "planJVM/eyes4s.plan.StudyCursorSuite",
           "planJVM/eyes4s.plan.StudyFormKeysSuite",
           "planJVM/eyes4s.plan.StudyFormSuite",
-          "planJVM/eyes4s.plan.StudyWindowSuite"
+          "planJVM/eyes4s.plan.StudyWindowSuite",
+          "planJVM/eyes4s.plan.UnmatchedReasonsSuite"
         ]
       },
       {
@@ -9312,9 +9467,11 @@
           "planJVM/eyes4s.plan.RecipeFormAccessorsSuite",
           "planJVM/eyes4s.plan.RecordingCursorSuite",
           "planJVM/eyes4s.plan.ResultInspectionSuite",
+          "planJVM/eyes4s.plan.StudyCountsSuite",
           "planJVM/eyes4s.plan.StudyCursorSuite",
           "planJVM/eyes4s.plan.StudyFormSuite",
-          "planJVM/eyes4s.plan.StudyWindowSuite"
+          "planJVM/eyes4s.plan.StudyWindowSuite",
+          "planJVM/eyes4s.plan.UnmatchedReasonsSuite"
         ]
       },
       {
@@ -9358,9 +9515,11 @@
           "planJVM/eyes4s.plan.RecipeFormAccessorsSuite",
           "planJVM/eyes4s.plan.RecordingCursorSuite",
           "planJVM/eyes4s.plan.ResultInspectionSuite",
+          "planJVM/eyes4s.plan.StudyCountsSuite",
           "planJVM/eyes4s.plan.StudyCursorSuite",
           "planJVM/eyes4s.plan.StudyFormSuite",
-          "planJVM/eyes4s.plan.StudyWindowSuite"
+          "planJVM/eyes4s.plan.StudyWindowSuite",
+          "planJVM/eyes4s.plan.UnmatchedReasonsSuite"
         ]
       },
       {
@@ -9404,10 +9563,12 @@
           "planJVM/eyes4s.plan.RecipeFormAccessorsSuite",
           "planJVM/eyes4s.plan.RecordingCursorSuite",
           "planJVM/eyes4s.plan.ResultInspectionSuite",
+          "planJVM/eyes4s.plan.StudyCountsSuite",
           "planJVM/eyes4s.plan.StudyCursorSuite",
           "planJVM/eyes4s.plan.StudyFormKeysSuite",
           "planJVM/eyes4s.plan.StudyFormSuite",
-          "planJVM/eyes4s.plan.StudyWindowSuite"
+          "planJVM/eyes4s.plan.StudyWindowSuite",
+          "planJVM/eyes4s.plan.UnmatchedReasonsSuite"
         ]
       }
     ],
@@ -9517,6 +9678,7 @@
           "planJVM/eyes4s.plan.DiagnosticCatalogSuite",
           "planJVM/eyes4s.plan.FormDescriptorSuite",
           "planJVM/eyes4s.plan.StudyFormSuite",
+          "planJVM/eyes4s.plan.UnmatchedReasonsSuite",
           "resultsJVM/eyes4s.results.ResultsDiagnosticCatalogSuite",
           "resultsJVM/eyes4s.results.RunFactsSuite"
         ]
@@ -9570,6 +9732,7 @@
           "ioJVM/eyes4s.io.IoDiagnosticCatalogSuite",
           "planJVM/eyes4s.plan.AnalysisReportSuite",
           "planJVM/eyes4s.plan.DiagnosticCatalogSuite",
+          "planJVM/eyes4s.plan.UnmatchedReasonsSuite",
           "resultsJVM/eyes4s.results.ResultsDiagnosticCatalogSuite"
         ]
       },
@@ -9585,6 +9748,7 @@
           "ioJVM/eyes4s.io.IoDiagnosticCatalogSuite",
           "planJVM/eyes4s.plan.DiagnosticCatalogSuite",
           "planJVM/eyes4s.plan.PreflightSuite",
+          "planJVM/eyes4s.plan.UnmatchedReasonsSuite",
           "resultsJVM/eyes4s.results.ResultsDiagnosticCatalogSuite"
         ]
       },
@@ -9602,6 +9766,7 @@
           "planJVM/eyes4s.plan.DiagnosticCatalogSuite",
           "planJVM/eyes4s.plan.InitialFixationSuite",
           "planJVM/eyes4s.plan.PreflightSuite",
+          "planJVM/eyes4s.plan.UnmatchedReasonsSuite",
           "resultsJVM/eyes4s.results.ResultsDiagnosticCatalogSuite"
         ]
       },
@@ -9617,6 +9782,7 @@
           "ioJVM/eyes4s.io.IoDiagnosticCatalogSuite",
           "planJVM/eyes4s.plan.DiagnosticCatalogSuite",
           "planJVM/eyes4s.plan.PreflightSuite",
+          "planJVM/eyes4s.plan.UnmatchedReasonsSuite",
           "resultsJVM/eyes4s.results.ResultsDiagnosticCatalogSuite"
         ]
       }
@@ -9668,6 +9834,7 @@
           "ioJVM/eyes4s.io.IoDiagnosticCatalogSuite",
           "planJVM/eyes4s.plan.AnalysisReportSuite",
           "planJVM/eyes4s.plan.DiagnosticCatalogSuite",
+          "planJVM/eyes4s.plan.UnmatchedReasonsSuite",
           "resultsJVM/eyes4s.results.ResultsDiagnosticCatalogSuite"
         ]
       },
@@ -9683,6 +9850,7 @@
           "ioJVM/eyes4s.io.IoDiagnosticCatalogSuite",
           "planJVM/eyes4s.plan.DiagnosticCatalogSuite",
           "planJVM/eyes4s.plan.PreflightSuite",
+          "planJVM/eyes4s.plan.UnmatchedReasonsSuite",
           "resultsJVM/eyes4s.results.ResultsDiagnosticCatalogSuite"
         ]
       },
@@ -9701,6 +9869,7 @@
           "planJVM/eyes4s.plan.InitialFixationSuite",
           "planJVM/eyes4s.plan.PreflightSuite",
           "planJVM/eyes4s.plan.StudyWindowSuite",
+          "planJVM/eyes4s.plan.UnmatchedReasonsSuite",
           "resultsJVM/eyes4s.results.ResultsDiagnosticCatalogSuite"
         ]
       },
@@ -9716,6 +9885,7 @@
           "ioJVM/eyes4s.io.IoDiagnosticCatalogSuite",
           "planJVM/eyes4s.plan.DiagnosticCatalogSuite",
           "planJVM/eyes4s.plan.PreflightSuite",
+          "planJVM/eyes4s.plan.UnmatchedReasonsSuite",
           "resultsJVM/eyes4s.results.ResultsDiagnosticCatalogSuite"
         ]
       }
@@ -9733,6 +9903,7 @@
           "ioJVM/eyes4s.io.IoDiagnosticCatalogSuite",
           "planJVM/eyes4s.plan.AnalysisReportSuite",
           "planJVM/eyes4s.plan.DiagnosticCatalogSuite",
+          "planJVM/eyes4s.plan.UnmatchedReasonsSuite",
           "resultsJVM/eyes4s.results.ResultsDiagnosticCatalogSuite"
         ]
       },
@@ -9749,6 +9920,7 @@
           "planJVM/eyes4s.plan.AnalysisReportSuite",
           "planJVM/eyes4s.plan.DiagnosticCatalogSuite",
           "planJVM/eyes4s.plan.PreflightSuite",
+          "planJVM/eyes4s.plan.UnmatchedReasonsSuite",
           "resultsJVM/eyes4s.results.ResultsDiagnosticCatalogSuite"
         ]
       },
@@ -9768,6 +9940,7 @@
           "planJVM/eyes4s.plan.OccurrencePairingSuite",
           "planJVM/eyes4s.plan.PreflightSuite",
           "planJVM/eyes4s.plan.StudyWindowSuite",
+          "planJVM/eyes4s.plan.UnmatchedReasonsSuite",
           "resultsJVM/eyes4s.results.ResultsDiagnosticCatalogSuite"
         ]
       },
@@ -9784,6 +9957,7 @@
           "planJVM/eyes4s.plan.AnalysisReportSuite",
           "planJVM/eyes4s.plan.DiagnosticCatalogSuite",
           "planJVM/eyes4s.plan.PreflightSuite",
+          "planJVM/eyes4s.plan.UnmatchedReasonsSuite",
           "resultsJVM/eyes4s.results.ResultsDiagnosticCatalogSuite"
         ]
       }
@@ -9801,6 +9975,7 @@
           "ioJVM/eyes4s.io.IoDiagnosticCatalogSuite",
           "planJVM/eyes4s.plan.AnalysisReportSuite",
           "planJVM/eyes4s.plan.DiagnosticCatalogSuite",
+          "planJVM/eyes4s.plan.UnmatchedReasonsSuite",
           "resultsJVM/eyes4s.results.ResultsDiagnosticCatalogSuite"
         ]
       },
@@ -9816,6 +9991,7 @@
           "ioJVM/eyes4s.io.IoDiagnosticCatalogSuite",
           "planJVM/eyes4s.plan.DiagnosticCatalogSuite",
           "planJVM/eyes4s.plan.PreflightSuite",
+          "planJVM/eyes4s.plan.UnmatchedReasonsSuite",
           "resultsJVM/eyes4s.results.ResultsDiagnosticCatalogSuite"
         ]
       },
@@ -9839,6 +10015,7 @@
           "planJVM/eyes4s.plan.PreflightSuite",
           "planJVM/eyes4s.plan.StudyCursorSuite",
           "planJVM/eyes4s.plan.StudyWindowSuite",
+          "planJVM/eyes4s.plan.UnmatchedReasonsSuite",
           "resultsJVM/eyes4s.results.ResultsDiagnosticCatalogSuite"
         ]
       },
@@ -9854,6 +10031,7 @@
           "ioJVM/eyes4s.io.IoDiagnosticCatalogSuite",
           "planJVM/eyes4s.plan.DiagnosticCatalogSuite",
           "planJVM/eyes4s.plan.PreflightSuite",
+          "planJVM/eyes4s.plan.UnmatchedReasonsSuite",
           "resultsJVM/eyes4s.results.ResultsDiagnosticCatalogSuite"
         ]
       }
@@ -9954,8 +10132,10 @@
           "planJVM/eyes4s.plan.InitialFixationSuite",
           "planJVM/eyes4s.plan.OccurrencePairingSuite",
           "planJVM/eyes4s.plan.PreflightSuite",
+          "planJVM/eyes4s.plan.StudyCountsSuite",
           "planJVM/eyes4s.plan.StudyCursorSuite",
-          "planJVM/eyes4s.plan.StudyWindowSuite"
+          "planJVM/eyes4s.plan.StudyWindowSuite",
+          "planJVM/eyes4s.plan.UnmatchedReasonsSuite"
         ]
       },
       {
@@ -10009,6 +10189,7 @@
           "ioJVM/eyes4s.io.IoDiagnosticCatalogSuite",
           "planJVM/eyes4s.plan.AnalysisReportSuite",
           "planJVM/eyes4s.plan.DiagnosticCatalogSuite",
+          "planJVM/eyes4s.plan.UnmatchedReasonsSuite",
           "resultsJVM/eyes4s.results.ResultsDiagnosticCatalogSuite"
         ]
       },
@@ -10057,10 +10238,12 @@
         "owner": "eyes4s/plan/CountCursor$given_Stepwise_CountCursor_StudyDesign_PlanError_StudyCounts",
         "suites": [
           "fs2ModuleJVM/eyes4s.fs2.CountExecutionSuite",
+          "ioJVM/eyes4s.io.StudioFixtureRealSuite",
           "lawsJVM/eyes4s.laws.StudyCountsLawSuite",
           "planJVM/eyes4s.plan.CountedStudyCursorSuite",
           "planJVM/eyes4s.plan.StudyCountsSuite",
-          "planJVM/eyes4s.plan.StudyProgressCountsSuite"
+          "planJVM/eyes4s.plan.StudyProgressCountsSuite",
+          "resultsJVM/eyes4s.results.ReportSuite"
         ]
       },
       {
@@ -10732,6 +10915,7 @@
           "planJVM/eyes4s.plan.StudyWindowSuite",
           "planJVM/eyes4s.plan.StudyWorkSuite",
           "planJVM/eyes4s.plan.TemporalCursorSuite",
+          "planJVM/eyes4s.plan.UnmatchedReasonsSuite",
           "resultsJVM/eyes4s.results.ReportNavigationSuite",
           "resultsJVM/eyes4s.results.ReportSuite",
           "resultsJVM/eyes4s.results.RunFactsSuite"
@@ -10747,6 +10931,7 @@
           "codecJVM/eyes4s.codec.StudyV3JvmSuite",
           "ioJVM/eyes4s.io.FixationSourceTextSuite",
           "ioJVM/eyes4s.io.StudioAcceptanceSuite",
+          "ioJVM/eyes4s.io.StudioFixtureRealSuite",
           "ioJVM/eyes4s.io.StudioGoldenJvmSuite",
           "lawsJVM/eyes4s.laws.CoordinateProvenanceLawsSuite",
           "lawsJVM/eyes4s.laws.FormLawSuite",
@@ -10846,6 +11031,7 @@
           "planJVM/eyes4s.plan.StudyWindowSuite",
           "planJVM/eyes4s.plan.StudyWorkSuite",
           "planJVM/eyes4s.plan.TemporalCursorSuite",
+          "planJVM/eyes4s.plan.UnmatchedReasonsSuite",
           "resultsJVM/eyes4s.results.ReportNavigationSuite",
           "resultsJVM/eyes4s.results.ReportSuite",
           "resultsJVM/eyes4s.results.RunFactsSuite"
@@ -10861,6 +11047,7 @@
           "codecJVM/eyes4s.codec.StudyV3JvmSuite",
           "ioJVM/eyes4s.io.FixationSourceTextSuite",
           "ioJVM/eyes4s.io.StudioAcceptanceSuite",
+          "ioJVM/eyes4s.io.StudioFixtureRealSuite",
           "ioJVM/eyes4s.io.StudioGoldenJvmSuite",
           "lawsJVM/eyes4s.laws.CoordinateProvenanceLawsSuite",
           "lawsJVM/eyes4s.laws.FormLawSuite",
@@ -11013,9 +11200,11 @@
           "codecJVM/eyes4s.codec.ReportFixturesJvmSuite",
           "codecJVM/eyes4s.codec.ReportImpostorSuite",
           "codecJVM/eyes4s.codec.ReportManifestSuite",
+          "codecJVM/eyes4s.codec.ReportSourcesTablesSuite",
           "codecJVM/eyes4s.codec.SchemaCompatibilitySuite",
           "codecJVM/eyes4s.codec.StampedManifestSuite",
           "ioJVM/eyes4s.io.ResultTableLayerSuite",
+          "ioJVM/eyes4s.io.StudioFixtureRealSuite",
           "lawsJVM/eyes4s.laws.NavigationLawsSuite",
           "lawsJVM/eyes4s.laws.ReportLawSuite",
           "resultsJVM/eyes4s.results.ReportFactsSuite",
@@ -11078,6 +11267,7 @@
           "ioJVM/eyes4s.io.FamilyConformanceSuite",
           "ioJVM/eyes4s.io.FixationStudySuite",
           "ioJVM/eyes4s.io.StudioAcceptanceSuite",
+          "ioJVM/eyes4s.io.StudioFixtureRealSuite",
           "ioJVM/eyes4s.io.StudioGoldenJvmSuite",
           "ioJVM/eyes4s.io.StudyGuideOracleSuite",
           "ioJVM/eyes4s.io.TemporalContrastSuite",
@@ -11086,6 +11276,7 @@
           "lawsJVM/eyes4s.laws.StudyResultCodecLawSuite",
           "lawsJVM/eyes4s.laws.TemporalResultCodecLawSuite",
           "planJVM/eyes4s.plan.PreflightSuite",
+          "planJVM/eyes4s.plan.StudyCountsSuite",
           "planJVM/eyes4s.plan.StudyCursorSuite",
           "planJVM/eyes4s.plan.StudyProgressCountsSuite",
           "planJVM/eyes4s.plan.StudyWindowSuite",
@@ -11131,6 +11322,7 @@
           "ioJVM/eyes4s.io.FamilyConformanceSuite",
           "ioJVM/eyes4s.io.FixationStudySuite",
           "ioJVM/eyes4s.io.StudioAcceptanceSuite",
+          "ioJVM/eyes4s.io.StudioFixtureRealSuite",
           "ioJVM/eyes4s.io.StudioGoldenJvmSuite",
           "ioJVM/eyes4s.io.StudyGuideOracleSuite",
           "ioJVM/eyes4s.io.TemporalContrastSuite",
@@ -11139,6 +11331,7 @@
           "lawsJVM/eyes4s.laws.StudyResultCodecLawSuite",
           "lawsJVM/eyes4s.laws.TemporalResultCodecLawSuite",
           "planJVM/eyes4s.plan.PreflightSuite",
+          "planJVM/eyes4s.plan.StudyCountsSuite",
           "planJVM/eyes4s.plan.StudyCursorSuite",
           "planJVM/eyes4s.plan.StudyProgressCountsSuite",
           "planJVM/eyes4s.plan.StudyWindowSuite",
@@ -12685,12 +12878,12 @@
     "class eyes4s.io.TimestampRounding": {
       "classification": "data-sum",
       "instance": "eyes4s/io/TimestampRounding$$anon$9",
-      "suite": "ioJVM/eyes4s.io.RepetitionGuideSuite"
+      "suite": "ioJVM/eyes4s.io.FixationRowInterpretationSuite"
     },
     "class eyes4s.io.TimestampUnit": {
       "classification": "data-sum",
       "instance": "eyes4s/io/TimestampUnit$$anon$6",
-      "suite": "ioJVM/eyes4s.io.DiagnosticsDocJvmSuite"
+      "suite": "ioJVM/eyes4s.io.FixationRowInterpretationSuite"
     },
     "class eyes4s.kernel.Correction": {
       "classification": "behavior-or-sealed-data",
@@ -13025,7 +13218,7 @@
     "class eyes4s.plan.AnalysisFinding": {
       "classification": "data-sum",
       "instance": "eyes4s/plan/AnalysisFinding$ArtifactMismatch",
-      "suite": "planJVM/eyes4s.plan.AnalysisReportSuite"
+      "suite": "planJVM/eyes4s.plan.UnmatchedReasonsSuite"
     },
     "class eyes4s.plan.AnalysisKind": {
       "classification": "data-sum",
@@ -13035,7 +13228,7 @@
     "class eyes4s.plan.AreaCorner": {
       "classification": "data-sum",
       "instance": "eyes4s/plan/AreaCorner$$anon$8",
-      "suite": "planJVM/eyes4s.plan.DiagnosticCatalogSuite"
+      "suite": "planJVM/eyes4s.plan.UnmatchedReasonsSuite"
     },
     "class eyes4s.plan.AttributeKind": {
       "classification": "data-sum",
@@ -13055,7 +13248,7 @@
     "class eyes4s.plan.BudgetError": {
       "classification": "data-sum",
       "instance": "eyes4s/plan/BudgetError$CandidateVisits",
-      "suite": "planJVM/eyes4s.plan.PreflightSuite"
+      "suite": "planJVM/eyes4s.plan.UnmatchedReasonsSuite"
     },
     "class eyes4s.plan.CentrePlacement": {
       "classification": "data-sum",
@@ -13110,7 +13303,7 @@
     "class eyes4s.plan.DiagnosticCodeError": {
       "classification": "data-sum",
       "instance": "eyes4s/plan/DiagnosticCodeError$InvalidFamily",
-      "suite": "planJVM/eyes4s.plan.DiagnosticCatalogSuite"
+      "suite": "planJVM/eyes4s.plan.UnmatchedReasonsSuite"
     },
     "class eyes4s.plan.DiagnosticSeverity": {
       "classification": "data-sum",
@@ -13155,12 +13348,12 @@
     "class eyes4s.plan.Expected": {
       "classification": "data-sum",
       "instance": "eyes4s/plan/Expected$Number",
-      "suite": "planJVM/eyes4s.plan.FormDescriptorSuite"
+      "suite": "planJVM/eyes4s.plan.UnmatchedReasonsSuite"
     },
     "class eyes4s.plan.FactError": {
       "classification": "data-sum",
       "instance": "eyes4s/plan/FactError$BlankLabel",
-      "suite": "planJVM/eyes4s.plan.DiagnosticCatalogSuite"
+      "suite": "planJVM/eyes4s.plan.UnmatchedReasonsSuite"
     },
     "class eyes4s.plan.FactPart": {
       "classification": "data-sum",
@@ -13200,7 +13393,7 @@
     "class eyes4s.plan.FindingClass": {
       "classification": "data-sum",
       "instance": "eyes4s/plan/FindingClass$$anon$3",
-      "suite": "planJVM/eyes4s.plan.AnalysisReportSuite"
+      "suite": "planJVM/eyes4s.plan.UnmatchedReasonsSuite"
     },
     "class eyes4s.plan.FormField": {
       "classification": "behavior-or-sealed-data",
@@ -13220,7 +13413,7 @@
     "class eyes4s.plan.ImportSpecError": {
       "classification": "data-sum",
       "instance": "eyes4s/plan/ImportSpecError$BlankFrame",
-      "suite": "planJVM/eyes4s.plan.SourceIdentitySuite"
+      "suite": "planJVM/eyes4s.plan.UnmatchedReasonsSuite"
     },
     "class eyes4s.plan.InitialFixationError": {
       "classification": "data-sum",
@@ -13245,7 +13438,7 @@
     "class eyes4s.plan.InventoryError": {
       "classification": "data-sum",
       "instance": "eyes4s/plan/InventoryError$AbsentMismatch",
-      "suite": "planJVM/eyes4s.plan.InventoryLedgerSuite"
+      "suite": "planJVM/eyes4s.plan.UnmatchedReasonsSuite"
     },
     "class eyes4s.plan.Labelled": {
       "classification": "behavior-or-sealed-data",
@@ -13320,7 +13513,7 @@
     "class eyes4s.plan.OccurrenceChoice": {
       "classification": "data-sum",
       "instance": "eyes4s/plan/OccurrenceChoice$$anon$1",
-      "suite": "planJVM/eyes4s.plan.OccurrencePairingSuite"
+      "suite": "planJVM/eyes4s.plan.UnmatchedReasonsSuite"
     },
     "class eyes4s.plan.OffScreenPolicy": {
       "classification": "data-sum",
@@ -13340,7 +13533,7 @@
     "class eyes4s.plan.PairingSide": {
       "classification": "data-sum",
       "instance": "eyes4s/plan/PairingSide$$anon$7",
-      "suite": "planJVM/eyes4s.plan.PreflightSuite"
+      "suite": "planJVM/eyes4s.plan.UnmatchedReasonsSuite"
     },
     "class eyes4s.plan.ParameterDomain": {
       "classification": "data-sum",
@@ -13385,7 +13578,7 @@
     "class eyes4s.plan.PreflightError": {
       "classification": "data-sum",
       "instance": "eyes4s/plan/PreflightError$ChangedInput",
-      "suite": "planJVM/eyes4s.plan.AnalysisReportSuite"
+      "suite": "planJVM/eyes4s.plan.UnmatchedReasonsSuite"
     },
     "class eyes4s.plan.PreflightFinding": {
       "classification": "behavior-or-sealed-data",
@@ -13449,13 +13642,13 @@
     },
     "class eyes4s.plan.RecordingFinding": {
       "classification": "data-sum",
-      "instance": "eyes4s/plan/RecordingFinding$Refused",
-      "suite": "planJVM/eyes4s.plan.AnalysisReportSuite"
+      "instance": "eyes4s/plan/RecordingFinding$AngularFrame",
+      "suite": "planJVM/eyes4s.plan.UnmatchedReasonsSuite"
     },
     "class eyes4s.plan.RecordingInputError": {
       "classification": "data-sum",
       "instance": "eyes4s/plan/RecordingInputError$BinocularChannels",
-      "suite": "planJVM/eyes4s.plan.DiagnosticCatalogSuite"
+      "suite": "planJVM/eyes4s.plan.UnmatchedReasonsSuite"
     },
     "class eyes4s.plan.RecordingPlanError": {
       "classification": "data-sum",
@@ -13465,7 +13658,7 @@
     "class eyes4s.plan.RecordingResultError": {
       "classification": "data-sum",
       "instance": "eyes4s/plan/RecordingResultError$Plan",
-      "suite": "planJVM/eyes4s.plan.DiagnosticCatalogSuite"
+      "suite": "planJVM/eyes4s.plan.UnmatchedReasonsSuite"
     },
     "class eyes4s.plan.RecordingSegment": {
       "classification": "data-sum",
@@ -13480,12 +13673,12 @@
     "class eyes4s.plan.Remedial": {
       "classification": "behavior-or-sealed-data",
       "instance": "eyes4s/plan/Remedial$$anon$13",
-      "suite": "planJVM/eyes4s.plan.AnalysisReportSuite"
+      "suite": "planJVM/eyes4s.plan.UnmatchedReasonsSuite"
     },
     "class eyes4s.plan.Remedy": {
       "classification": "data-sum",
       "instance": "eyes4s/plan/Remedy$$anon$4",
-      "suite": "planJVM/eyes4s.plan.AnalysisReportSuite"
+      "suite": "planJVM/eyes4s.plan.UnmatchedReasonsSuite"
     },
     "class eyes4s.plan.RepetitionPlanError": {
       "classification": "data-sum",
@@ -13510,7 +13703,7 @@
     "class eyes4s.plan.SampleCountRule": {
       "classification": "data-sum",
       "instance": "eyes4s/plan/SampleCountRule$PositiveColumn",
-      "suite": "planJVM/eyes4s.plan.SourceIdentitySuite"
+      "suite": "planJVM/eyes4s.plan.UnmatchedReasonsSuite"
     },
     "class eyes4s.plan.ScaleContrast": {
       "classification": "data-sum",
@@ -13550,12 +13743,12 @@
     "class eyes4s.plan.SourceFormat": {
       "classification": "data-sum",
       "instance": "eyes4s/plan/SourceFormat$$anon$1",
-      "suite": "planJVM/eyes4s.plan.SourceIdentitySuite"
+      "suite": "planJVM/eyes4s.plan.UnmatchedReasonsSuite"
     },
     "class eyes4s.plan.SourceIdentityError": {
       "classification": "data-sum",
       "instance": "eyes4s/plan/SourceIdentityError$InvalidDigest",
-      "suite": "planJVM/eyes4s.plan.SourceIdentitySuite"
+      "suite": "planJVM/eyes4s.plan.UnmatchedReasonsSuite"
     },
     "class eyes4s.plan.SourceInterpretation": {
       "classification": "behavior-or-sealed-data",
@@ -13565,17 +13758,17 @@
     "class eyes4s.plan.SourceKeyColumns": {
       "classification": "data-sum",
       "instance": "eyes4s/plan/SourceKeyColumns$Study",
-      "suite": "planJVM/eyes4s.plan.SourceIdentitySuite"
+      "suite": "planJVM/eyes4s.plan.UnmatchedReasonsSuite"
     },
     "class eyes4s.plan.SourceLink": {
       "classification": "data-sum",
       "instance": "eyes4s/plan/SourceLink$Missing",
-      "suite": "planJVM/eyes4s.plan.InitialFixationSuite"
+      "suite": "planJVM/eyes4s.plan.UnmatchedReasonsSuite"
     },
     "class eyes4s.plan.SourceOptionsSchema": {
       "classification": "data-sum",
       "instance": "eyes4s/plan/SourceOptionsSchema$$anon$2",
-      "suite": "planJVM/eyes4s.plan.SourceIdentitySuite"
+      "suite": "planJVM/eyes4s.plan.UnmatchedReasonsSuite"
     },
     "class eyes4s.plan.SourceRounding": {
       "classification": "data-sum",
@@ -13650,12 +13843,12 @@
     "class eyes4s.plan.StudyResultError": {
       "classification": "data-sum",
       "instance": "eyes4s/plan/StudyResultError$ContrastAnalyses",
-      "suite": "planJVM/eyes4s.plan.DiagnosticCatalogSuite"
+      "suite": "planJVM/eyes4s.plan.UnmatchedReasonsSuite"
     },
     "class eyes4s.plan.StudyRevisionError": {
       "classification": "data-sum",
-      "instance": "eyes4s/plan/StudyRevisionError$Stale",
-      "suite": "planJVM/eyes4s.plan.InitialFixationSuite"
+      "instance": "eyes4s/plan/StudyRevisionError$DuplicateField",
+      "suite": "planJVM/eyes4s.plan.UnmatchedReasonsSuite"
     },
     "class eyes4s.plan.StudyRunError": {
       "classification": "data-sum",
@@ -13694,13 +13887,13 @@
     },
     "class eyes4s.plan.TemporalFinding": {
       "classification": "data-sum",
-      "instance": "eyes4s/plan/TemporalFinding$Refused",
-      "suite": "planJVM/eyes4s.plan.AnalysisReportSuite"
+      "instance": "eyes4s/plan/TemporalFinding$ArtifactMismatch",
+      "suite": "planJVM/eyes4s.plan.UnmatchedReasonsSuite"
     },
     "class eyes4s.plan.TemporalResultError": {
       "classification": "data-sum",
       "instance": "eyes4s/plan/TemporalResultError$Anchor",
-      "suite": "planJVM/eyes4s.plan.DiagnosticCatalogSuite"
+      "suite": "planJVM/eyes4s.plan.UnmatchedReasonsSuite"
     },
     "class eyes4s.plan.TemporalSegment": {
       "classification": "data-sum",
@@ -13735,7 +13928,7 @@
     "class eyes4s.plan.TrialDisposition": {
       "classification": "data-sum",
       "instance": "eyes4s/plan/TrialDisposition$$anon$6",
-      "suite": "planJVM/eyes4s.plan.InventoryLedgerSuite"
+      "suite": "planJVM/eyes4s.plan.UnmatchedReasonsSuite"
     },
     "class eyes4s.plan.TrialLoss": {
       "classification": "data-sum",
@@ -13751,6 +13944,11 @@
       "classification": "data-sum",
       "instance": "eyes4s/plan/UnmatchedFocalPolicy$$anon$4",
       "suite": "codecJVM/eyes4s.pointcodecconsumer.PointSamplingCodecSuite"
+    },
+    "class eyes4s.plan.UnmatchedKind": {
+      "classification": "data-sum",
+      "instance": "eyes4s/plan/UnmatchedKind$$anon$1",
+      "suite": "planJVM/eyes4s.plan.UnmatchedReasonsSuite"
     },
     "class eyes4s.plan.WorkStep": {
       "classification": "data-sum",
@@ -14209,6 +14407,7 @@
     "method eyes4s.codec.ReportCodecs$.digest(1,eyes4s.codec.CanonicalDigest,java.lang.String):scala.util.Either": "codecJVM/eyes4s.codec.ReportImpostorSuite",
     "method eyes4s.codec.ReportCodecs$.report(1,eyes4s.codec.VersionedCodec):eyes4s.codec.VersionedCodec": "codecJVM/eyes4s.codec.ReportFixturesJvmSuite",
     "method eyes4s.codec.ReportSources$.study(5,eyes4s.codec.StudyCodec,eyes4s.codec.StudyInputCodec,eyes4s.codec.StudyResultCodec,eyes4s.plan.StudyPlan,eyes4s.plan.StudyInput,eyes4s.plan.StudyResult,scala.Option,eyes4s.results.CovariateSchema):scala.util.Either": "codecJVM/eyes4s.codec.ReportImpostorSuite",
+    "method eyes4s.codec.ReportSources$.tables(1,io.circe.Encoder,scala.collection.immutable.Vector,scala.Option,scala.math.Ordering):scala.util.Either": "codecJVM/eyes4s.codec.ReportSourcesTablesSuite",
     "method eyes4s.codec.ResolveError.entryName():": "codecJVM/eyes4s.codec.SchemaCompatibilitySuite",
     "method eyes4s.codec.ResolveError.message():": "codecJVM/eyes4s.codec.InspectionManifestJvmSuite",
     "method eyes4s.codec.ResolvedManifest.analysisPlan(eyes4s.codec.ArtifactName):scala.Option": "codecJVM/eyes4s.codec.AnalysisArchiveSuite",
@@ -15143,15 +15342,15 @@
     "method eyes4s.io.FixationCsv$.admitInventory(1,java.lang.String,eyes4s.io.FixationTable,eyes4s.io.TrialInventory,eyes4s.kernel.Frame,eyes4s.plan.AdmissionPolicy,eyes4s.io.TimestampRounding,eyes4s.kernel.UnitLabel):scala.util.Either": "ioJVM/eyes4s.io.SourceAdmissionSuite",
     "method eyes4s.io.FixationCsv$.read(2,java.lang.String,eyes4s.io.FixationColumns,eyes4s.io.FixationKeyReader,eyes4s.kernel.Frame,eyes4s.io.TimestampUnit,eyes4s.io.TimestampRounding,eyes4s.kernel.UnitLabel):scala.util.Either": "ioJVM/eyes4s.io.RepetitionGuideSuite",
     "method eyes4s.io.FixationEvidence$.ledger(1,java.lang.String,java.lang.String,eyes4s.io.InventoryImport,eyes4s.plan.AdmissionDecision):scala.util.Either": "ioJVM/eyes4s.io.SourceAdmissionSuite",
-    "method eyes4s.io.FixationEvidence$.ledger(2,java.lang.String,eyes4s.io.FixationImport,eyes4s.plan.AdmissionDecision):scala.util.Either": "ioJVM/eyes4s.io.SourceAdmissionSuite",
-    "method eyes4s.io.FixationEvidence$.reason(eyes4s.io.FixationRowError):eyes4s.plan.AdmissionReason": "ioJVM/eyes4s.io.SourceAdmissionSuite",
-    "method eyes4s.io.FixationEvidence$.source(2,java.lang.String,eyes4s.io.FixationImport):eyes4s.plan.SourceRef": "ioJVM/eyes4s.io.SourceAdmissionSuite",
+    "method eyes4s.io.FixationEvidence$.ledger(2,java.lang.String,eyes4s.io.FixationImport,eyes4s.plan.AdmissionDecision):scala.util.Either": "ioJVM/eyes4s.io.FixationTrialDecisionSuite",
+    "method eyes4s.io.FixationEvidence$.reason(eyes4s.io.FixationRowError):eyes4s.plan.AdmissionReason": "ioJVM/eyes4s.io.FixationTrialDecisionSuite",
+    "method eyes4s.io.FixationEvidence$.source(2,java.lang.String,eyes4s.io.FixationImport):eyes4s.plan.SourceRef": "ioJVM/eyes4s.io.FixationTrialDecisionSuite",
     "method eyes4s.io.FixationImport.requireComplete():": "ioJVM/eyes4s.io.RepetitionGuideSuite",
     "method eyes4s.io.FixationImportError.message():": "ioJVM/consumer.PublicIoSuite",
     "method eyes4s.io.FixationKeyReader$.of(1,scala.collection.immutable.Vector,scala.Function1,scala.Function1,eyes4s.design.KeyDigest,scala.math.Ordering):scala.util.Either": "ioJVM/eyes4s.io.AdmissionPolicySuite",
-    "method eyes4s.io.FixationKeyReader$.study(java.lang.String,java.lang.String,java.lang.String):scala.util.Either": "ioJVM/eyes4s.io.RepetitionGuideSuite",
+    "method eyes4s.io.FixationKeyReader$.study(java.lang.String,java.lang.String,java.lang.String):scala.util.Either": "ioJVM/eyes4s.io.FixationRowInterpretationSuite",
     "method eyes4s.io.FixationKeyReader$.trial(java.lang.String,java.lang.String,java.lang.String,java.lang.String,scala.Option):scala.util.Either": "ioJVM/eyes4s.io.AdmissionPolicySuite",
-    "method eyes4s.io.FixationKeyReader$.withParticipant(1,scala.collection.immutable.Vector,scala.Function1,scala.Function1,scala.Function1,eyes4s.design.KeyDigest,scala.math.Ordering):scala.util.Either": "ioJVM/eyes4s.io.RepetitionGuideSuite",
+    "method eyes4s.io.FixationKeyReader$.withParticipant(1,scala.collection.immutable.Vector,scala.Function1,scala.Function1,scala.Function1,eyes4s.design.KeyDigest,scala.math.Ordering):scala.util.Either": "ioJVM/eyes4s.io.FixationRowInterpretationSuite",
     "method eyes4s.io.FixationRowError.message():": "ioJVM/consumer.PublicIoSuite",
     "method eyes4s.io.FixationSourceText$.of(java.lang.String,eyes4s.plan.SourceRef):scala.util.Either": "ioJVM/eyes4s.io.FixationSourceTextSuite",
     "method eyes4s.io.FixationSourceText.fields(eyes4s.plan.DataRecord):scala.util.Either": "ioJVM/eyes4s.io.FixationSourceTextSuite",
@@ -15207,7 +15406,7 @@
     "method eyes4s.io.Sha256.toString():": "ioJVM/consumer.PublicIoSuite",
     "method eyes4s.io.Sha256Error.message():": "ioJVM/eyes4s.io.DiagnosticsDocJvmSuite",
     "method eyes4s.io.SourceAdmission$.inventorySource(java.lang.String,java.lang.String,eyes4s.plan.InventoryImportSpec):scala.util.Either": "ioJVM/eyes4s.io.SourceAdmissionSuite",
-    "method eyes4s.io.SourceAdmission$.read(2,java.lang.String,java.lang.String,eyes4s.plan.ImportSpec,scala.Option):scala.util.Either": "ioJVM/eyes4s.io.SourceAdmissionSuite",
+    "method eyes4s.io.SourceAdmission$.read(2,java.lang.String,java.lang.String,eyes4s.plan.ImportSpec,scala.Option):scala.util.Either": "ioJVM/eyes4s.io.FixationTrialDecisionSuite",
     "method eyes4s.io.SourceAdmission$.source(2,java.lang.String,java.lang.String,eyes4s.plan.ImportSpec):scala.util.Either": "ioJVM/eyes4s.io.SourceAdmissionSuite",
     "method eyes4s.io.SourceAdmission.admitted():": "ioJVM/eyes4s.io.SourceAdmissionSuite",
     "method eyes4s.io.SourceAdmissionError.message():": "ioJVM/eyes4s.io.DiagnosticsDocJvmSuite",
@@ -15772,8 +15971,11 @@
     "method eyes4s.laws.MeasureLaws.withinScale(2,eyes4s.compare.Compare,org.scalacheck.Gen,scala.Function1,eyes4s.laws.Tolerance):org.typelevel.discipline.Laws.RuleSet": "lawsJVM/eyes4s.laws.ComparisonRegistryLawSuite",
     "method eyes4s.laws.NavigationLaws$.chain(org.scalacheck.Gen):org.typelevel.discipline.Laws.RuleSet": "lawsJVM/eyes4s.laws.NavigationLawsSuite",
     "method eyes4s.laws.NavigationLaws$.listings(org.scalacheck.Gen):org.typelevel.discipline.Laws.RuleSet": "lawsJVM/eyes4s.laws.NavigationLawsSuite",
+    "method eyes4s.laws.PairingLaws$.cosine(scala.Tuple2,scala.Tuple2):scala.Double": "lawsJVM/eyes4s.laws.WindowLawsSuite",
+    "method eyes4s.laws.PairingLaws$.distinctMaps(eyes4s.laws.PairingLaws$.Case,scala.Long):scala.Tuple2": "lawsJVM/eyes4s.laws.WindowLawsSuite",
     "method eyes4s.laws.PairingLaws$.eligible(eyes4s.laws.PairingLaws$.Case,eyes4s.plan.TrialKey):scala.collection.immutable.Vector": "lawsJVM/eyes4s.laws.WindowLawsSuite",
     "method eyes4s.laws.PairingLaws$.expected(eyes4s.laws.PairingLaws$.Case,scala.Boolean):scala.collection.immutable.Set": "lawsJVM/eyes4s.laws.WindowLawsSuite",
+    "method eyes4s.laws.PairingLaws$.matchable(eyes4s.laws.PairingLaws$.Case,eyes4s.plan.TrialKey):scala.Boolean": "lawsJVM/eyes4s.laws.WindowLawsSuite",
     "method eyes4s.laws.PairingLaws$.pairs(1,eyes4s.design.DirectedPairSchedule):scala.collection.immutable.Vector": "lawsJVM/eyes4s.laws.WindowLawsSuite",
     "method eyes4s.laws.PairingLaws$.plan(eyes4s.laws.PairingLaws$.Case):eyes4s.plan.StudyPlan": "lawsJVM/eyes4s.laws.WindowLawsSuite",
     "method eyes4s.laws.PairingLaws$.prepared(eyes4s.laws.PairingLaws$.Case):eyes4s.plan.PreparedStudy": "lawsJVM/eyes4s.laws.WindowLawsSuite",
@@ -15858,7 +16060,7 @@
     "method eyes4s.laws.WindowLaws.correction(eyes4s.laws.Tolerance):org.typelevel.discipline.Laws.RuleSet": "lawsJVM/eyes4s.laws.WindowLawsSuite",
     "method eyes4s.laws.WindowLaws.subframe(eyes4s.laws.Tolerance):org.typelevel.discipline.Laws.RuleSet": "lawsJVM/eyes4s.laws.WindowLawsSuite",
     "method eyes4s.laws.WindowLaws.tally():": "lawsJVM/eyes4s.laws.WindowLawsSuite",
-    "method eyes4s.plan.AdmissionError.message():": "planJVM/eyes4s.plan.ResultInspectionSuite",
+    "method eyes4s.plan.AdmissionError.message():": "planJVM/eyes4s.plan.UnmatchedReasonsSuite",
     "method eyes4s.plan.AdmissionLedger$.decide(1,eyes4s.plan.SourceRef,scala.collection.immutable.Vector,scala.collection.immutable.Vector,eyes4s.plan.AdmissionDecision):scala.util.Either": "planJVM/eyes4s.plan.AdmissionLedgerSuite",
     "method eyes4s.plan.AdmissionLedger$.decide(1,eyes4s.plan.SourceRef,scala.collection.immutable.Vector,scala.collection.immutable.Vector,eyes4s.plan.AdmissionDecision,eyes4s.plan.AdmissionPolicy,scala.collection.immutable.Vector):scala.util.Either": "planJVM/eyes4s.plan.AdmissionLedgerSuite",
     "method eyes4s.plan.AdmissionLedger$.decide(1,eyes4s.plan.SourceRef,scala.collection.immutable.Vector,scala.collection.immutable.Vector,eyes4s.plan.AdmissionDecision,eyes4s.plan.AdmissionPolicy,scala.collection.immutable.Vector,eyes4s.plan.InventoryLedger,scala.Function1,scala.Function1):scala.util.Either": "planJVM/eyes4s.plan.InventoryLedgerSuite",
@@ -15877,13 +16079,13 @@
     "method eyes4s.plan.AdmissionPolicy$.version1(1):eyes4s.plan.AdmissionPolicy": "planJVM/eyes4s.plan.AdmissionLedgerSuite",
     "method eyes4s.plan.AdmissionPolicy.correctionFor(java.lang.Object,scala.Function1):scala.util.Either": "planJVM/eyes4s.plan.ResultNavigationSuite",
     "method eyes4s.plan.AdmissionPolicy.isVersion1():": "planJVM/eyes4s.plan.InventoryLedgerSuite",
-    "method eyes4s.plan.AdmissionReason.message():": "planJVM/eyes4s.plan.ResultInspectionSuite",
-    "method eyes4s.plan.AnalysisFinding$.refused(2,java.lang.Object,eyes4s.plan.Diagnose,eyes4s.plan.Remedial):eyes4s.plan.AnalysisFinding": "planJVM/eyes4s.plan.AnalysisReportSuite",
-    "method eyes4s.plan.AnalysisFinding.category():": "planJVM/eyes4s.plan.AnalysisReportSuite",
+    "method eyes4s.plan.AdmissionReason.message():": "planJVM/eyes4s.plan.UnmatchedReasonsSuite",
+    "method eyes4s.plan.AnalysisFinding$.refused(2,java.lang.Object,eyes4s.plan.Diagnose,eyes4s.plan.Remedial):eyes4s.plan.AnalysisFinding": "planJVM/eyes4s.plan.UnmatchedReasonsSuite",
+    "method eyes4s.plan.AnalysisFinding.category():": "planJVM/eyes4s.plan.UnmatchedReasonsSuite",
     "method eyes4s.plan.AnalysisFinding.keys():": "planJVM/eyes4s.plan.AnalysisReportSuite",
-    "method eyes4s.plan.AnalysisFinding.message():": "planJVM/eyes4s.plan.AnalysisReportSuite",
-    "method eyes4s.plan.AnalysisFinding.remedy():": "planJVM/eyes4s.plan.AnalysisReportSuite",
-    "method eyes4s.plan.AnalysisFinding.severity():": "planJVM/eyes4s.plan.AnalysisReportSuite",
+    "method eyes4s.plan.AnalysisFinding.message():": "planJVM/eyes4s.plan.UnmatchedReasonsSuite",
+    "method eyes4s.plan.AnalysisFinding.remedy():": "planJVM/eyes4s.plan.UnmatchedReasonsSuite",
+    "method eyes4s.plan.AnalysisFinding.severity():": "planJVM/eyes4s.plan.UnmatchedReasonsSuite",
     "method eyes4s.plan.AnalysisKind$.of(eyes4s.plan.RecipeFamily):eyes4s.plan.AnalysisKind": "ioJVM/eyes4s.io.FamilyConformanceSuite",
     "method eyes4s.plan.AnalysisKind.family():": "ioJVM/eyes4s.io.FamilyConformanceSuite",
     "method eyes4s.plan.AnalysisReport.affectedTrials():": "planJVM/eyes4s.plan.AnalysisReportSuite",
@@ -15891,15 +16093,15 @@
     "method eyes4s.plan.AnalysisReport.diagnostics():": "planJVM/eyes4s.plan.AnalysisReportSuite",
     "method eyes4s.plan.ArtifactRef$.of(1,scala.Long):eyes4s.plan.ArtifactRef": "codecJVM/eyes4s.pointcodecconsumer.PointSamplingCodecSuite",
     "method eyes4s.plan.ArtifactRef$.parse(1,java.lang.String):scala.util.Either": "codecJVM/eyes4s.pointcodecconsumer.PointSamplingCodecSuite",
-    "method eyes4s.plan.AttributeColumn$.check(java.lang.String,scala.collection.immutable.Vector,eyes4s.plan.Attributes):scala.util.Either": "planJVM/eyes4s.plan.InventoryLedgerSuite",
+    "method eyes4s.plan.AttributeColumn$.check(java.lang.String,scala.collection.immutable.Vector,eyes4s.plan.Attributes):scala.util.Either": "planJVM/eyes4s.plan.UnmatchedReasonsSuite",
     "method eyes4s.plan.AttributeColumn.admits(eyes4s.plan.AttributeValue):scala.Boolean": "planJVM/eyes4s.plan.InventoryLedgerSuite",
     "method eyes4s.plan.AttributeColumn.parse(java.lang.String):scala.util.Either": "planJVM/eyes4s.plan.InventoryLedgerSuite",
     "method eyes4s.plan.Attributes$.of(scala.collection.immutable.Vector):scala.util.Either": "planJVM/eyes4s.plan.InventoryLedgerSuite",
     "method eyes4s.plan.Attributes.get(java.lang.String):scala.Option": "ioJVM/eyes4s.io.SourceAdmissionSuite",
     "method eyes4s.plan.Attributes.isEmpty():": "planJVM/eyes4s.plan.InventoryLedgerSuite",
-    "method eyes4s.plan.Attributes.names():": "planJVM/eyes4s.plan.InventoryLedgerSuite",
-    "method eyes4s.plan.BudgetError.message():": "planJVM/eyes4s.plan.DiagnosticCatalogSuite",
-    "method eyes4s.plan.BudgetError.plan():": "planJVM/eyes4s.plan.PreflightSuite",
+    "method eyes4s.plan.Attributes.names():": "planJVM/eyes4s.plan.UnmatchedReasonsSuite",
+    "method eyes4s.plan.BudgetError.message():": "planJVM/eyes4s.plan.UnmatchedReasonsSuite",
+    "method eyes4s.plan.BudgetError.plan():": "planJVM/eyes4s.plan.UnmatchedReasonsSuite",
     "method eyes4s.plan.CentrePlacement$.of(1,eyes4s.kernel.Frame,scala.Option,eyes4s.kernel.Pt):eyes4s.plan.CentrePlacement": "ioJVM/docconsumer.DocumentationExamplesSuite",
     "method eyes4s.plan.Clause$.apply(eyes4s.plan.FieldId,scala.collection.immutable.Vector):eyes4s.plan.Clause": "planJVM/eyes4s.plan.StudyFormSuite",
     "method eyes4s.plan.Clause.field():": "planJVM/eyes4s.plan.StudyFormSuite",
@@ -15955,44 +16157,44 @@
     "method eyes4s.plan.DensityView.ny():": "planJVM/eyes4s.plan.DensityGeometrySuite",
     "method eyes4s.plan.DensityView.provenance():": "planJVM/eyes4s.plan.DensityGeometrySuite",
     "method eyes4s.plan.DensityView.toString():": "planJVM/eyes4s.plan.ResultInspectionSuite",
-    "method eyes4s.plan.DescriptorError.message():": "planJVM/eyes4s.plan.AnalysisReportSuite",
-    "method eyes4s.plan.Diagnose$.analysisFinding(1):eyes4s.plan.Diagnose": "planJVM/eyes4s.plan.AnalysisReportSuite",
-    "method eyes4s.plan.Diagnose$.contrast(1):eyes4s.plan.Diagnose": "planJVM/eyes4s.plan.DiagnosticCatalogSuite",
-    "method eyes4s.plan.Diagnose$.contrastRow(1):eyes4s.plan.Diagnose": "planJVM/eyes4s.plan.DiagnosticCatalogSuite",
-    "method eyes4s.plan.Diagnose$.epoch(2):eyes4s.plan.Diagnose": "planJVM/eyes4s.plan.DiagnosticCatalogSuite",
-    "method eyes4s.plan.Diagnose$.formField(2,eyes4s.plan.Diagnose):eyes4s.plan.Diagnose": "planJVM/eyes4s.plan.DiagnosticCatalogSuite",
-    "method eyes4s.plan.Diagnose$.inspection(1):eyes4s.plan.Diagnose": "planJVM/eyes4s.plan.ResultInspectionSuite",
-    "method eyes4s.plan.Diagnose$.ledgerRefusal(1):eyes4s.plan.Diagnose": "planJVM/eyes4s.plan.ResultInspectionSuite",
-    "method eyes4s.plan.Diagnose$.preflight(1):eyes4s.plan.Diagnose": "planJVM/eyes4s.plan.AnalysisReportSuite",
-    "method eyes4s.plan.Diagnose$.reconstruction(1):eyes4s.plan.Diagnose": "planJVM/eyes4s.plan.DiagnosticCatalogSuite",
-    "method eyes4s.plan.Diagnose$.reduction(1):eyes4s.plan.Diagnose": "planJVM/eyes4s.plan.ResultInspectionSuite",
-    "method eyes4s.plan.Diagnose$.studyFailure(1):eyes4s.plan.Diagnose": "planJVM/eyes4s.plan.InitialFixationSuite",
-    "method eyes4s.plan.Diagnose$.studyFinding(2):eyes4s.plan.Diagnose": "planJVM/eyes4s.plan.AnalysisReportSuite",
-    "method eyes4s.plan.Diagnose$.studyResult(1):eyes4s.plan.Diagnose": "planJVM/eyes4s.plan.DiagnosticCatalogSuite",
-    "method eyes4s.plan.Diagnose$.temporalFinding(2):eyes4s.plan.Diagnose": "planJVM/eyes4s.plan.PreflightSuite",
-    "method eyes4s.plan.Diagnose$.temporalResult(1):eyes4s.plan.Diagnose": "planJVM/eyes4s.plan.DiagnosticCatalogSuite",
+    "method eyes4s.plan.DescriptorError.message():": "planJVM/eyes4s.plan.UnmatchedReasonsSuite",
+    "method eyes4s.plan.Diagnose$.analysisFinding(1):eyes4s.plan.Diagnose": "planJVM/eyes4s.plan.UnmatchedReasonsSuite",
+    "method eyes4s.plan.Diagnose$.contrast(1):eyes4s.plan.Diagnose": "planJVM/eyes4s.plan.UnmatchedReasonsSuite",
+    "method eyes4s.plan.Diagnose$.contrastRow(1):eyes4s.plan.Diagnose": "planJVM/eyes4s.plan.UnmatchedReasonsSuite",
+    "method eyes4s.plan.Diagnose$.epoch(2):eyes4s.plan.Diagnose": "planJVM/eyes4s.plan.UnmatchedReasonsSuite",
+    "method eyes4s.plan.Diagnose$.formField(2,eyes4s.plan.Diagnose):eyes4s.plan.Diagnose": "planJVM/eyes4s.plan.UnmatchedReasonsSuite",
+    "method eyes4s.plan.Diagnose$.inspection(1):eyes4s.plan.Diagnose": "planJVM/eyes4s.plan.UnmatchedReasonsSuite",
+    "method eyes4s.plan.Diagnose$.ledgerRefusal(1):eyes4s.plan.Diagnose": "planJVM/eyes4s.plan.UnmatchedReasonsSuite",
+    "method eyes4s.plan.Diagnose$.preflight(1):eyes4s.plan.Diagnose": "planJVM/eyes4s.plan.UnmatchedReasonsSuite",
+    "method eyes4s.plan.Diagnose$.reconstruction(1):eyes4s.plan.Diagnose": "planJVM/eyes4s.plan.UnmatchedReasonsSuite",
+    "method eyes4s.plan.Diagnose$.reduction(1):eyes4s.plan.Diagnose": "planJVM/eyes4s.plan.UnmatchedReasonsSuite",
+    "method eyes4s.plan.Diagnose$.studyFailure(1):eyes4s.plan.Diagnose": "planJVM/eyes4s.plan.UnmatchedReasonsSuite",
+    "method eyes4s.plan.Diagnose$.studyFinding(2):eyes4s.plan.Diagnose": "planJVM/eyes4s.plan.UnmatchedReasonsSuite",
+    "method eyes4s.plan.Diagnose$.studyResult(1):eyes4s.plan.Diagnose": "planJVM/eyes4s.plan.UnmatchedReasonsSuite",
+    "method eyes4s.plan.Diagnose$.temporalFinding(2):eyes4s.plan.Diagnose": "planJVM/eyes4s.plan.UnmatchedReasonsSuite",
+    "method eyes4s.plan.Diagnose$.temporalResult(1):eyes4s.plan.Diagnose": "planJVM/eyes4s.plan.UnmatchedReasonsSuite",
     "method eyes4s.plan.Diagnostic$.host(1,eyes4s.plan.DiagnosticCode,eyes4s.plan.DiagnosticSeverity,scala.collection.immutable.Vector,scala.collection.immutable.Vector,java.lang.String):eyes4s.plan.Diagnostic": "planJVM/eyes4s.plan.DiagnosticCatalogSuite",
     "method eyes4s.plan.Diagnostic$.of(2,java.lang.Object,eyes4s.plan.Diagnose):eyes4s.plan.Diagnostic": "planJVM/consumer.PublicPlanSuite",
     "method eyes4s.plan.Diagnostic.affectedTrials():": "planJVM/eyes4s.plan.AnalysisReportSuite",
     "method eyes4s.plan.Diagnostic.causes():": "planJVM/eyes4s.plan.StudyFormKeysSuite",
     "method eyes4s.plan.Diagnostic.keys():": "planJVM/eyes4s.plan.AnalysisReportSuite",
-    "method eyes4s.plan.Diagnostic.linked(1,scala.collection.immutable.Vector):eyes4s.plan.Diagnostic": "planJVM/eyes4s.plan.ResultInspectionSuite",
+    "method eyes4s.plan.Diagnostic.linked(1,scala.collection.immutable.Vector):eyes4s.plan.Diagnostic": "planJVM/eyes4s.plan.UnmatchedReasonsSuite",
     "method eyes4s.plan.Diagnostic.mapKeys(1,scala.Function1):eyes4s.plan.Diagnostic": "planJVM/eyes4s.plan.DiagnosticCatalogSuite",
-    "method eyes4s.plan.Diagnostic.operand(java.lang.String):scala.Option": "planJVM/eyes4s.plan.AnalysisReportSuite",
+    "method eyes4s.plan.Diagnostic.operand(java.lang.String):scala.Option": "planJVM/eyes4s.plan.UnmatchedReasonsSuite",
     "method eyes4s.plan.Diagnostic.withSeverity(eyes4s.plan.DiagnosticSeverity):eyes4s.plan.Diagnostic": "planJVM/consumer.PublicPlanSuite",
     "method eyes4s.plan.Diagnostic.within(1,scala.collection.immutable.Seq):eyes4s.plan.Diagnostic": "planJVM/consumer.PublicPlanSuite",
     "method eyes4s.plan.DiagnosticCode$.host(java.lang.String,java.lang.String):scala.util.Either": "planJVM/eyes4s.plan.DiagnosticCatalogSuite",
     "method eyes4s.plan.DiagnosticCode.render():": "planJVM/eyes4s.plan.StudyFormKeysSuite",
-    "method eyes4s.plan.DiagnosticCode.toString():": "planJVM/eyes4s.plan.AnalysisReportSuite",
-    "method eyes4s.plan.DiagnosticCodeError.message():": "planJVM/eyes4s.plan.DiagnosticCatalogSuite",
+    "method eyes4s.plan.DiagnosticCode.toString():": "planJVM/eyes4s.plan.UnmatchedReasonsSuite",
+    "method eyes4s.plan.DiagnosticCodeError.message():": "planJVM/eyes4s.plan.UnmatchedReasonsSuite",
     "method eyes4s.plan.DiagnosticFamily$.slug(java.lang.String):java.lang.String": "planJVM/consumer.PublicPlanSuite",
     "method eyes4s.plan.DiagnosticFamily.code(scala.Int):eyes4s.plan.DiagnosticCode": "planJVM/consumer.PublicPlanSuite",
     "method eyes4s.plan.DiagnosticFamily.label(scala.Int):scala.Option": "planJVM/consumer.PublicPlanSuite",
     "method eyes4s.plan.DiagnosticFamily.toString():": "planJVM/consumer.PublicPlanSuite",
     "method eyes4s.plan.Endpoint.admits(scala.Double,eyes4s.plan.Side):scala.Boolean": "planJVM/eyes4s.plan.FormDescriptorSuite",
     "method eyes4s.plan.Endpoint.admitsBy(scala.Function1,eyes4s.plan.Side):scala.Boolean": "codecJVM/eyes4s.repetitionconsumer.RepetitionPlanSuite",
-    "method eyes4s.plan.Endpoint.isClosed():": "planJVM/eyes4s.plan.DiagnosticCatalogSuite",
-    "method eyes4s.plan.Endpoint.render(eyes4s.plan.Side):java.lang.String": "planJVM/eyes4s.plan.FormDescriptorSuite",
+    "method eyes4s.plan.Endpoint.isClosed():": "planJVM/eyes4s.plan.UnmatchedReasonsSuite",
+    "method eyes4s.plan.Endpoint.render(eyes4s.plan.Side):java.lang.String": "planJVM/eyes4s.plan.UnmatchedReasonsSuite",
     "method eyes4s.plan.EpochError.message():": "planJVM/consumer.PublicPlanSuite",
     "method eyes4s.plan.EpochPlan$.of(1,eyes4s.plan.MarkSelector,eyes4s.kernel.Window,scala.Long,eyes4s.plan.FinalBin):scala.util.Either": "planJVM/eyes4s.plan.EpochPlanSuite",
     "method eyes4s.plan.EpochPlan.resolve(1,java.lang.Object,eyes4s.kernel.ObservedTimeline,eyes4s.kernel.ClockId,scala.Long,cats.kernel.Eq):scala.util.Either": "planJVM/eyes4s.plan.EpochPlanSuite",
@@ -16012,13 +16214,13 @@
     "method eyes4s.plan.FactCode$.of(java.lang.String):scala.util.Either": "planJVM/eyes4s.plan.StudyFormSuite",
     "method eyes4s.plan.FactCode.label():": "planJVM/eyes4s.plan.StudyFormSuite",
     "method eyes4s.plan.FactCode.toString():": "planJVM/eyes4s.plan.StudyFormSuite",
-    "method eyes4s.plan.FactError.message():": "planJVM/eyes4s.plan.DiagnosticCatalogSuite",
+    "method eyes4s.plan.FactError.message():": "planJVM/eyes4s.plan.UnmatchedReasonsSuite",
     "method eyes4s.plan.FactSlot$.fromSlotId(java.lang.String):scala.Option": "planJVM/eyes4s.plan.StudyFormSuite",
     "method eyes4s.plan.FactSlot.slotId():": "planJVM/eyes4s.plan.StudyFormSuite",
-    "method eyes4s.plan.FieldError.message():": "planJVM/eyes4s.plan.FormDescriptorSuite",
+    "method eyes4s.plan.FieldError.message():": "planJVM/eyes4s.plan.UnmatchedReasonsSuite",
     "method eyes4s.plan.FieldId$.of(java.lang.String):scala.util.Either": "planJVM/consumer.PublicPlanSuite",
     "method eyes4s.plan.FieldId.prefixed(java.lang.String):eyes4s.plan.FieldId": "planJVM/eyes4s.plan.PreflightSuite",
-    "method eyes4s.plan.FieldId.toString():": "planJVM/eyes4s.plan.FormDescriptorSuite",
+    "method eyes4s.plan.FieldId.toString():": "planJVM/eyes4s.plan.UnmatchedReasonsSuite",
     "method eyes4s.plan.FieldKind.measures():": "planJVM/eyes4s.plan.MethodDescriptorSuite",
     "method eyes4s.plan.FieldView$.of(eyes4s.plan.FieldId,scala.Int,java.lang.String,eyes4s.plan.FieldKind,scala.Option):scala.util.Either": "planJVM/consumer.PublicPlanSuite",
     "method eyes4s.plan.FieldView.check(eyes4s.plan.RawValue):scala.util.Either": "codecJVM/eyes4s.repetitionconsumer.RepetitionPlanSuite",
@@ -16043,8 +16245,8 @@
     "method eyes4s.plan.IdentityChanges.values():": "lawsJVM/eyes4s.laws.SourceIdentityLawsSuite",
     "method eyes4s.plan.ImportSpec$.of(2,eyes4s.plan.SourceKeyColumns,eyes4s.plan.SourceFixationColumns,eyes4s.kernel.Frame,eyes4s.plan.SourceTimeUnit,eyes4s.plan.AdmissionPolicy,eyes4s.plan.AdmissionDecision,eyes4s.plan.SourceRounding,scala.Option,eyes4s.design.KeyDigest,eyes4s.kernel.UnitLabel):scala.util.Either": "planJVM/eyes4s.plan.SourceIdentitySuite",
     "method eyes4s.plan.ImportSpec.source(java.lang.String,scala.collection.immutable.Vector,scala.collection.immutable.Vector):eyes4s.plan.SourceRef": "planJVM/eyes4s.plan.SourceIdentitySuite",
-    "method eyes4s.plan.ImportSpecError.message():": "planJVM/eyes4s.plan.SourceIdentitySuite",
-    "method eyes4s.plan.InitialFixationError.message():": "planJVM/eyes4s.plan.InitialFixationSuite",
+    "method eyes4s.plan.ImportSpecError.message():": "planJVM/eyes4s.plan.UnmatchedReasonsSuite",
+    "method eyes4s.plan.InitialFixationError.message():": "planJVM/eyes4s.plan.UnmatchedReasonsSuite",
     "method eyes4s.plan.InitialFixationPolicy$.dropFirst(1):eyes4s.plan.InitialFixationPolicy": "planJVM/eyes4s.plan.TemporalCursorSuite",
     "method eyes4s.plan.InitialFixationPolicy$.dropLeadingInClosedDisc(1,eyes4s.kernel.Pt,scala.Double):scala.util.Either": "planJVM/eyes4s.plan.InitialFixationSuite",
     "method eyes4s.plan.InitialFixationPolicy$.keepAll(1):eyes4s.plan.InitialFixationPolicy": "ioJVM/docconsumer.DocumentationExamplesSuite",
@@ -16056,27 +16258,27 @@
     "method eyes4s.plan.InitialFixationRule.dropCount(eyes4s.core.Scanpath):scala.Int": "ioJVM/docconsumer.DocumentationExamplesSuite",
     "method eyes4s.plan.InitialFixationRule.select(eyes4s.core.Scanpath):eyes4s.plan.InitialFixationOutcome": "ioJVM/docconsumer.DocumentationExamplesSuite",
     "method eyes4s.plan.InitialFixationSummary$.of(1,scala.collection.immutable.Vector):eyes4s.plan.InitialFixationSummary": "planJVM/eyes4s.plan.InitialFixationSuite",
-    "method eyes4s.plan.InitialFixationTally$.of(scala.Int,scala.Int,scala.Long,scala.Long):scala.util.Either": "planJVM/eyes4s.plan.InitialFixationSuite",
+    "method eyes4s.plan.InitialFixationTally$.of(scala.Int,scala.Int,scala.Long,scala.Long):scala.util.Either": "planJVM/eyes4s.plan.UnmatchedReasonsSuite",
     "method eyes4s.plan.InitialFixationTally.anyDropped():": "planJVM/eyes4s.plan.InitialFixationSuite",
     "method eyes4s.plan.InitialFixationTally.kept():": "planJVM/eyes4s.plan.StudyCursorSuite",
     "method eyes4s.plan.InitialFixationTally.keptDuration():": "planJVM/eyes4s.plan.InitialFixationSuite",
-    "method eyes4s.plan.InitialFixationTally.render():": "planJVM/eyes4s.plan.InitialFixationSuite",
+    "method eyes4s.plan.InitialFixationTally.render():": "planJVM/eyes4s.plan.UnmatchedReasonsSuite",
     "method eyes4s.plan.InspectionError.message():": "planJVM/eyes4s.plan.ResultNavigationSuite",
-    "method eyes4s.plan.InventoryError.message():": "planJVM/eyes4s.plan.DiagnosticCatalogSuite",
+    "method eyes4s.plan.InventoryError.message():": "planJVM/eyes4s.plan.UnmatchedReasonsSuite",
     "method eyes4s.plan.InventoryImportSpec$.of(java.lang.String,java.lang.String,java.lang.String,scala.Option,scala.Option,scala.collection.immutable.Vector):scala.util.Either": "lawsJVM/eyes4s.laws.SchemaRegistryJvmSuite",
     "method eyes4s.plan.InventoryImportSpec.digest():": "ioJVM/eyes4s.io.SourceAdmissionSuite",
     "method eyes4s.plan.InventoryImportSpec.names():": "lawsJVM/eyes4s.laws.SchemaRegistryJvmSuite",
     "method eyes4s.plan.InventoryImportSpec.source(java.lang.String,scala.collection.immutable.Vector,scala.collection.immutable.Vector):eyes4s.plan.SourceRef": "ioJVM/eyes4s.io.SourceAdmissionSuite",
-    "method eyes4s.plan.InventoryLedger$.of(eyes4s.plan.SourceRef,scala.collection.immutable.Vector,scala.collection.immutable.Vector,scala.collection.immutable.Vector,scala.collection.immutable.Vector,scala.collection.immutable.Vector,scala.collection.immutable.Vector,eyes4s.plan.SampleCountRule):scala.util.Either": "planJVM/eyes4s.plan.InventoryLedgerSuite",
+    "method eyes4s.plan.InventoryLedger$.of(eyes4s.plan.SourceRef,scala.collection.immutable.Vector,scala.collection.immutable.Vector,scala.collection.immutable.Vector,scala.collection.immutable.Vector,scala.collection.immutable.Vector,scala.collection.immutable.Vector,eyes4s.plan.SampleCountRule):scala.util.Either": "planJVM/eyes4s.plan.UnmatchedReasonsSuite",
     "method eyes4s.plan.InventoryLedger.absent():": "ioJVM/eyes4s.io.StudioAcceptanceSuite",
     "method eyes4s.plan.InventoryLedger.admitted():": "planJVM/eyes4s.plan.InventoryLedgerSuite",
     "method eyes4s.plan.InventoryLedger.attributes(eyes4s.plan.TrialKey):scala.Option": "ioJVM/eyes4s.io.StudioAcceptanceSuite",
     "method eyes4s.plan.InventoryLedger.quarantined():": "ioJVM/eyes4s.io.StudioAcceptanceSuite",
     "method eyes4s.plan.InventoryLedger.trial(eyes4s.plan.TrialIdentity):scala.Option": "ioJVM/eyes4s.io.StudioAcceptanceSuite",
-    "method eyes4s.plan.InventoryTrial$.of(eyes4s.plan.TrialIdentity,scala.collection.immutable.Vector,scala.Option,eyes4s.plan.Attributes,scala.collection.immutable.Vector,scala.collection.immutable.Vector,eyes4s.plan.TrialDisposition):scala.util.Either": "planJVM/eyes4s.plan.InventoryLedgerSuite",
-    "method eyes4s.plan.InventoryTrial.item():": "planJVM/eyes4s.plan.InventoryLedgerSuite",
-    "method eyes4s.plan.InventoryTrial.itemConflict():": "planJVM/eyes4s.plan.InventoryLedgerSuite",
-    "method eyes4s.plan.InventoryTrial.keyItem():": "planJVM/eyes4s.plan.InventoryLedgerSuite",
+    "method eyes4s.plan.InventoryTrial$.of(eyes4s.plan.TrialIdentity,scala.collection.immutable.Vector,scala.Option,eyes4s.plan.Attributes,scala.collection.immutable.Vector,scala.collection.immutable.Vector,eyes4s.plan.TrialDisposition):scala.util.Either": "planJVM/eyes4s.plan.UnmatchedReasonsSuite",
+    "method eyes4s.plan.InventoryTrial.item():": "planJVM/eyes4s.plan.UnmatchedReasonsSuite",
+    "method eyes4s.plan.InventoryTrial.itemConflict():": "planJVM/eyes4s.plan.UnmatchedReasonsSuite",
+    "method eyes4s.plan.InventoryTrial.keyItem():": "planJVM/eyes4s.plan.UnmatchedReasonsSuite",
     "method eyes4s.plan.Labelled$.apply(1,eyes4s.plan.Labelled):eyes4s.plan.Labelled": "planJVM/eyes4s.plan.RecipeFormAccessorsSuite",
     "method eyes4s.plan.LedgerRefusal$.of(2,eyes4s.plan.StudyInput,eyes4s.plan.AdmissionLedger,eyes4s.plan.AdmissionError):eyes4s.plan.LedgerRefusal": "planJVM/eyes4s.plan.ResultInspectionSuite",
     "method eyes4s.plan.LineSpan$.of(eyes4s.plan.SourceLine,eyes4s.plan.SourceLine):scala.util.Either": "planJVM/eyes4s.plan.RecordIdentitySuite",
@@ -16109,7 +16311,7 @@
     "method eyes4s.plan.MissingSource.message():": "planJVM/eyes4s.plan.ResultNavigationSuite",
     "method eyes4s.plan.MissingSource.trialKeys():": "planJVM/eyes4s.plan.DiagnosticCatalogSuite",
     "method eyes4s.plan.NamedParameterDefault$.of(1,java.lang.String,java.lang.Object,java.lang.String):scala.util.Either": "planJVM/eyes4s.plan.MethodDescriptorSuite",
-    "method eyes4s.plan.NavigationError$.diagnose(1):eyes4s.plan.Diagnose": "planJVM/eyes4s.plan.DiagnosticCatalogSuite",
+    "method eyes4s.plan.NavigationError$.diagnose(1):eyes4s.plan.Diagnose": "planJVM/eyes4s.plan.UnmatchedReasonsSuite",
     "method eyes4s.plan.NavigationError.message():": "planJVM/eyes4s.plan.ResultNavigationSuite",
     "method eyes4s.plan.Numeral$.forShape(eyes4s.plan.NumberShape):eyes4s.plan.Numeral": "codecJVM/eyes4s.repetitionconsumer.RepetitionPlanSuite",
     "method eyes4s.plan.Numeral$.int32$.compare(scala.Int,scala.Double):scala.Int": "codecJVM/eyes4s.repetitionconsumer.RepetitionPlanSuite",
@@ -16135,19 +16337,19 @@
     "method eyes4s.plan.Numeral$.real$.read(java.lang.String):scala.Option": "planJVM/eyes4s.plan.StudyFormKeysSuite",
     "method eyes4s.plan.Numeral$.real$.step(scala.Double,scala.Boolean):scala.Option": "lawsJVM/eyes4s.laws.SchemaRegistryJvmSuite",
     "method eyes4s.plan.Numeral$.real$.toDouble(scala.Double):scala.Double": "planJVM/eyes4s.plan.StudyFormKeysSuite",
-    "method eyes4s.plan.Numeral$.real$.write(scala.Double):java.lang.String": "planJVM/eyes4s.plan.FormDescriptorSuite",
+    "method eyes4s.plan.Numeral$.real$.write(scala.Double):java.lang.String": "planJVM/eyes4s.plan.UnmatchedReasonsSuite",
     "method eyes4s.plan.NumericBounds$.atLeast(scala.Double):scala.util.Either": "lawsJVM/eyes4s.laws.FormLawSuite",
     "method eyes4s.plan.NumericBounds$.of(scala.Option,scala.Option):scala.util.Either": "planJVM/eyes4s.plan.FormDescriptorSuite",
     "method eyes4s.plan.NumericBounds.contains(scala.Double):scala.Boolean": "planJVM/eyes4s.plan.FormDescriptorSuite",
     "method eyes4s.plan.NumericBounds.endpoints():": "codecJVM/eyes4s.repetitionconsumer.RepetitionPlanSuite",
-    "method eyes4s.plan.NumericBounds.render():": "planJVM/eyes4s.plan.FormDescriptorSuite",
+    "method eyes4s.plan.NumericBounds.render():": "planJVM/eyes4s.plan.UnmatchedReasonsSuite",
     "method eyes4s.plan.NumericBounds.violation(scala.Double):scala.Option": "planJVM/eyes4s.plan.FormDescriptorSuite",
     "method eyes4s.plan.NumericBounds.violationBy(scala.Function1):scala.Option": "codecJVM/eyes4s.repetitionconsumer.RepetitionPlanSuite",
     "method eyes4s.plan.NumericField$.of(3,eyes4s.plan.FieldId,scala.Int,java.lang.String,eyes4s.plan.Quantity,eyes4s.plan.NumericBounds,scala.Option,scala.Function1,scala.Function1,scala.Function1,eyes4s.plan.Numeral):scala.util.Either": "planJVM/eyes4s.plan.FormDescriptorSuite",
     "method eyes4s.plan.NumericField.parse(eyes4s.plan.RawValue):scala.util.Either": "planJVM/eyes4s.plan.RecipeFormAccessorsSuite",
     "method eyes4s.plan.NumericField.raw(java.lang.Object):eyes4s.plan.RawValue": "planJVM/eyes4s.plan.FormDescriptorSuite",
     "method eyes4s.plan.ObservedSynchronization.fit(eyes4s.kernel.ClockId):scala.util.Either": "lawsJVM/eyes4s.laws.SchemaRegistryJvmSuite",
-    "method eyes4s.plan.OccurrenceChoice.render():": "planJVM/eyes4s.plan.OccurrencePairingSuite",
+    "method eyes4s.plan.OccurrenceChoice.render():": "planJVM/eyes4s.plan.UnmatchedReasonsSuite",
     "method eyes4s.plan.Operand.mapKeys(1,scala.Function1):eyes4s.plan.Operand": "planJVM/eyes4s.plan.DiagnosticCatalogSuite",
     "method eyes4s.plan.Operand.trialKeys():": "planJVM/eyes4s.plan.AnalysisReportSuite",
     "method eyes4s.plan.PageSize$.of(scala.Int):scala.util.Either": "planJVM/eyes4s.plan.CoordinateProvenanceSuite",
@@ -16185,7 +16387,7 @@
     "method eyes4s.plan.Phrase.text():": "planJVM/eyes4s.plan.StudyFormSuite",
     "method eyes4s.plan.Phrase.tokens():": "planJVM/eyes4s.plan.StudyFormSuite",
     "method eyes4s.plan.PlanChange$.between(scala.collection.immutable.Vector,scala.collection.immutable.Vector):scala.collection.immutable.Vector": "codecJVM/eyes4s.repetitionconsumer.RepetitionPlanSuite",
-    "method eyes4s.plan.PlanError.message():": "planJVM/eyes4s.plan.AnalysisReportSuite",
+    "method eyes4s.plan.PlanError.message():": "planJVM/eyes4s.plan.UnmatchedReasonsSuite",
     "method eyes4s.plan.PointBinResult.difference():": "codecJVM/eyes4s.pointcodecconsumer.PointSamplingCodecSuite",
     "method eyes4s.plan.PointBins$.of(eyes4s.kernel.ClockId,scala.collection.immutable.Vector,eyes4s.plan.PointBinEndpoint):scala.util.Either": "planJVM/eyes4s.pointconsumer.PointSamplingSuite",
     "method eyes4s.plan.PointBins.index(scala.Long):scala.Option": "planJVM/eyes4s.pointconsumer.PointSamplingSuite",
@@ -16199,10 +16401,10 @@
     "method eyes4s.plan.PointSamplingSpec.binIndices():": "planJVM/eyes4s.pointconsumer.PointSamplingSuite",
     "method eyes4s.plan.PointSamplingSpec.unbinned():": "planJVM/eyes4s.pointconsumer.PointSamplingSuite",
     "method eyes4s.plan.Preflight$.recording(1,eyes4s.plan.RecordingPlan,scala.Option):eyes4s.plan.RecordingReport": "planJVM/eyes4s.plan.PreflightSuite",
-    "method eyes4s.plan.Preflight$.study(5,eyes4s.plan.StudyPlan,scala.Option,eyes4s.design.PairScheduleBudget):eyes4s.plan.StudyReport": "planJVM/eyes4s.plan.StudyCursorSuite",
+    "method eyes4s.plan.Preflight$.study(5,eyes4s.plan.StudyPlan,scala.Option,eyes4s.design.PairScheduleBudget,scala.Option):eyes4s.plan.StudyReport": "planJVM/eyes4s.plan.StudyCursorSuite",
     "method eyes4s.plan.Preflight$.temporal(5,eyes4s.plan.TemporalStudyPlan,scala.Option,eyes4s.design.PairScheduleBudget):eyes4s.plan.TemporalReport": "planJVM/eyes4s.plan.PreflightSuite",
     "method eyes4s.plan.PreflightError.affectedTrials():": "planJVM/eyes4s.plan.DiagnosticCatalogSuite",
-    "method eyes4s.plan.PreflightError.message():": "planJVM/eyes4s.plan.AnalysisReportSuite",
+    "method eyes4s.plan.PreflightError.message():": "planJVM/eyes4s.plan.UnmatchedReasonsSuite",
     "method eyes4s.plan.PreflightReport.availability():": "planJVM/eyes4s.plan.AnalysisReportSuite",
     "method eyes4s.plan.PreflightReport.blockers():": "planJVM/eyes4s.plan.StudyCursorSuite",
     "method eyes4s.plan.PreflightReport.ready():": "planJVM/eyes4s.plan.AnalysisReportSuite",
@@ -16215,6 +16417,7 @@
     "method eyes4s.plan.PreparedStudy.preview():": "planJVM/eyes4s.plan.StudyProgressCountsSuite",
     "method eyes4s.plan.PreparedStudy.preview(eyes4s.plan.StudyCounts):scala.util.Either": "planJVM/eyes4s.plan.StudyProgressCountsSuite",
     "method eyes4s.plan.PreparedStudy.run():": "ioJVM/docconsumer.DocumentationExamplesSuite",
+    "method eyes4s.plan.PreparedStudy.unmatchedReasons(eyes4s.plan.InventoryLedger):scala.util.Either": "planJVM/eyes4s.plan.UnmatchedReasonsSuite",
     "method eyes4s.plan.PreparedStudy.windowSummary():": "planJVM/eyes4s.plan.StudyWindowSuite",
     "method eyes4s.plan.PreparedStudy.work(eyes4s.compare.ComparisonBudget):scala.util.Either": "planJVM/eyes4s.plan.StudyProgressCountsSuite",
     "method eyes4s.plan.PreparedTemporalStudy.boundary():": "ioJVM/docconsumer.DocumentationExamplesSuite",
@@ -16222,14 +16425,14 @@
     "method eyes4s.plan.PreparedTemporalStudy.trials():": "ioJVM/docconsumer.DocumentationExamplesSuite",
     "method eyes4s.plan.PreparedTemporalStudy.windows():": "ioJVM/docconsumer.DocumentationExamplesSuite",
     "method eyes4s.plan.PreparedTemporalStudy.work(eyes4s.compare.ComparisonBudget):scala.util.Either": "ioJVM/docconsumer.DocumentationExamplesSuite",
-    "method eyes4s.plan.ProvenanceError$.diagnose(1):eyes4s.plan.Diagnose": "planJVM/eyes4s.plan.DiagnosticCatalogSuite",
+    "method eyes4s.plan.ProvenanceError$.diagnose(1):eyes4s.plan.Diagnose": "planJVM/eyes4s.plan.UnmatchedReasonsSuite",
     "method eyes4s.plan.ProvenanceError.message():": "planJVM/eyes4s.plan.CoordinateProvenanceSuite",
     "method eyes4s.plan.Quantity.isNumeric():": "codecJVM/eyes4s.repetitionconsumer.RepetitionPlanSuite",
-    "method eyes4s.plan.Quantity.symbol():": "planJVM/eyes4s.plan.FormDescriptorSuite",
+    "method eyes4s.plan.Quantity.symbol():": "planJVM/eyes4s.plan.UnmatchedReasonsSuite",
     "method eyes4s.plan.QuarantineCause$.isVersion1(eyes4s.plan.QuarantineCause):scala.Boolean": "planJVM/eyes4s.plan.InventoryLedgerSuite",
     "method eyes4s.plan.QuarantineCause$.of(eyes4s.core.ScanpathError):eyes4s.plan.QuarantineCause": "planJVM/eyes4s.plan.AdmissionLedgerSuite",
     "method eyes4s.plan.QuarantineCause$.version(eyes4s.plan.QuarantineCause):scala.Int": "planJVM/eyes4s.plan.AdmissionLedgerSuite",
-    "method eyes4s.plan.QuarantineCause.message():": "planJVM/eyes4s.plan.ResultInspectionSuite",
+    "method eyes4s.plan.QuarantineCause.message():": "planJVM/eyes4s.plan.UnmatchedReasonsSuite",
     "method eyes4s.plan.RecipeDescriptors$.recording(1,eyes4s.plan.RecordingPlan):scala.util.Either": "planJVM/eyes4s.plan.PreflightSuite",
     "method eyes4s.plan.RecipeDescriptors$.repetition(2,eyes4s.plan.RepetitionPlan):scala.util.Either": "codecJVM/eyes4s.repetitionconsumer.RepetitionPlanSuite",
     "method eyes4s.plan.RecipeDescriptors$.study(5,eyes4s.plan.StudyPlan,eyes4s.kernel.UnitLabel):scala.util.Either": "planJVM/eyes4s.plan.StudyCursorSuite",
@@ -16280,11 +16483,11 @@
     "method eyes4s.plan.RecordingCursor.advance(eyes4s.design.WorkQuanta):scala.util.Either": "planJVM/eyes4s.plan.RecordingCursorSuite",
     "method eyes4s.plan.RecordingCursor.samples():": "lawsJVM/eyes4s.laws.ExecutionLawsSuite",
     "method eyes4s.plan.RecordingCursor.stage():": "planJVM/eyes4s.plan.RecordingCursorSuite",
-    "method eyes4s.plan.RecordingFinding.category():": "planJVM/eyes4s.plan.PreflightSuite",
+    "method eyes4s.plan.RecordingFinding.category():": "planJVM/eyes4s.plan.UnmatchedReasonsSuite",
     "method eyes4s.plan.RecordingFinding.keys():": "planJVM/eyes4s.plan.DiagnosticCatalogSuite",
-    "method eyes4s.plan.RecordingFinding.message():": "planJVM/eyes4s.plan.PreflightSuite",
-    "method eyes4s.plan.RecordingFinding.remedy():": "planJVM/eyes4s.plan.AnalysisReportSuite",
-    "method eyes4s.plan.RecordingFinding.severity():": "planJVM/eyes4s.plan.PreflightSuite",
+    "method eyes4s.plan.RecordingFinding.message():": "planJVM/eyes4s.plan.UnmatchedReasonsSuite",
+    "method eyes4s.plan.RecordingFinding.remedy():": "planJVM/eyes4s.plan.UnmatchedReasonsSuite",
+    "method eyes4s.plan.RecordingFinding.severity():": "planJVM/eyes4s.plan.UnmatchedReasonsSuite",
     "method eyes4s.plan.RecordingForm.<init>():eyes4s.plan.RecordingForm": "planJVM/eyes4s.plan.RecipeFormAccessorsSuite",
     "method eyes4s.plan.RecordingForm.parse(eyes4s.plan.FormValues):scala.util.Either": "lawsJVM/eyes4s.laws.FormLawSuite",
     "method eyes4s.plan.RecordingForm.validate(eyes4s.plan.FieldId,eyes4s.plan.RawValue):scala.util.Either": "planJVM/eyes4s.plan.RecipeFormAccessorsSuite",
@@ -16297,7 +16500,7 @@
     "method eyes4s.plan.RecordingInput.monocular():": "codecJVM/eyes4s.codec.ResultArchivesV1JvmSuite",
     "method eyes4s.plan.RecordingInput.reference():": "lawsJVM/eyes4s.laws.ManifestLawSuite",
     "method eyes4s.plan.RecordingInput.synchronize():": "codecJVM/eyes4s.codec.InputPayloadV1Suite",
-    "method eyes4s.plan.RecordingInputError.message():": "planJVM/eyes4s.plan.DiagnosticCatalogSuite",
+    "method eyes4s.plan.RecordingInputError.message():": "planJVM/eyes4s.plan.UnmatchedReasonsSuite",
     "method eyes4s.plan.RecordingMethod$.engbertKliegl(eyes4s.plan.DefinitionId):eyes4s.plan.RecordingMethod": "lawsJVM/eyes4s.laws.LegacyDescriptorSuite",
     "method eyes4s.plan.RecordingMethod$.idt(eyes4s.plan.DefinitionId):eyes4s.plan.RecordingMethod": "lawsJVM/eyes4s.laws.LegacyDescriptorSuite",
     "method eyes4s.plan.RecordingMethod$.ivt(eyes4s.plan.DefinitionId):eyes4s.plan.RecordingMethod": "planJVM/eyes4s.plan.RecordingCursorSuite",
@@ -16315,11 +16518,11 @@
     "method eyes4s.plan.RecordingPlan.prerequisites(scala.Option):scala.collection.immutable.Vector": "planJVM/eyes4s.plan.RecordingCursorSuite",
     "method eyes4s.plan.RecordingPlan.run(eyes4s.core.Recording):scala.util.Either": "planJVM/eyes4s.plan.RecordingCursorSuite",
     "method eyes4s.plan.RecordingPlan.work(eyes4s.core.Recording):scala.util.Either": "planJVM/eyes4s.plan.RecordingCursorSuite",
-    "method eyes4s.plan.RecordingPlanError.message():": "planJVM/eyes4s.plan.AnalysisReportSuite",
+    "method eyes4s.plan.RecordingPlanError.message():": "planJVM/eyes4s.plan.UnmatchedReasonsSuite",
     "method eyes4s.plan.RecordingRecipe.plan(1,eyes4s.plan.RecordingPlan):scala.util.Either": "lawsJVM/eyes4s.laws.FormLawSuite",
     "method eyes4s.plan.RecordingReport.confirm(1,eyes4s.plan.RecordingPlan,eyes4s.core.Recording):scala.util.Either": "planJVM/eyes4s.plan.PreflightSuite",
     "method eyes4s.plan.RecordingReport.diagnostics():": "planJVM/eyes4s.plan.PreflightSuite",
-    "method eyes4s.plan.RecordingResultError.message():": "planJVM/eyes4s.plan.DiagnosticCatalogSuite",
+    "method eyes4s.plan.RecordingResultError.message():": "planJVM/eyes4s.plan.UnmatchedReasonsSuite",
     "method eyes4s.plan.RecordingSegment$.of(eyes4s.plan.RecordingStage):eyes4s.plan.RecordingSegment": "lawsJVM/eyes4s.laws.ExecutionLawsSuite",
     "method eyes4s.plan.RecordingSegment$.total(scala.Int,eyes4s.plan.RecordingSegment):eyes4s.plan.SegmentTotal": "lawsJVM/eyes4s.laws.ExecutionLawsSuite",
     "method eyes4s.plan.RecordingWork$.complete(1,eyes4s.plan.RecordingCursor,eyes4s.design.WorkQuanta):scala.util.Either": "planJVM/eyes4s.plan.RecordingCursorSuite",
@@ -16372,7 +16575,7 @@
     "method eyes4s.plan.ResultNavigation$.pairs(4,eyes4s.plan.StudyInspection,eyes4s.plan.ResultRef,eyes4s.plan.StudyDesign,eyes4s.plan.ListingOffset,eyes4s.plan.PageSize):scala.util.Either": "planJVM/eyes4s.plan.ResultNavigationSuite",
     "method eyes4s.plan.ResultNavigation$.queryOf(1,eyes4s.plan.ResultRef):scala.util.Either": "planJVM/eyes4s.plan.ResultNavigationSuite",
     "method eyes4s.plan.ResultNavigation$.record(2,eyes4s.plan.CoordinateProvenance,eyes4s.plan.FixationRef):scala.util.Either": "planJVM/eyes4s.plan.ResultNavigationSuite",
-    "method eyes4s.plan.ResultRef.loci():": "planJVM/eyes4s.plan.InitialFixationSuite",
+    "method eyes4s.plan.ResultRef.loci():": "planJVM/eyes4s.plan.UnmatchedReasonsSuite",
     "method eyes4s.plan.SampleCountRule.countColumn():": "planJVM/eyes4s.plan.SourceIdentitySuite",
     "method eyes4s.plan.ScaleInspection.pairing(eyes4s.plan.StudyDesign):eyes4s.design.PairingReport": "planJVM/eyes4s.plan.ResultInspectionSuite",
     "method eyes4s.plan.ScaleInspection.pairs(eyes4s.plan.StudyDesign):eyes4s.plan.Listing": "planJVM/eyes4s.plan.ResultNavigationSuite",
@@ -16400,7 +16603,7 @@
     "method eyes4s.plan.SourceIdentity$.of(eyes4s.plan.ArtifactRef,eyes4s.plan.SourceInterpretation$.Declared):eyes4s.plan.SourceIdentity": "planJVM/eyes4s.plan.SourceIdentitySuite",
     "method eyes4s.plan.SourceIdentity$.parse(java.lang.String):scala.util.Either": "planJVM/eyes4s.plan.SourceIdentitySuite",
     "method eyes4s.plan.SourceIdentity.digest():": "lawsJVM/eyes4s.laws.SchemaRegistryJvmSuite",
-    "method eyes4s.plan.SourceIdentityError.message():": "planJVM/eyes4s.plan.SourceIdentitySuite",
+    "method eyes4s.plan.SourceIdentityError.message():": "planJVM/eyes4s.plan.UnmatchedReasonsSuite",
     "method eyes4s.plan.SourceInterpretation$.Declared$.unapply(eyes4s.plan.SourceInterpretation$.Declared):scala.Tuple3": "planJVM/eyes4s.plan.SourceIdentitySuite",
     "method eyes4s.plan.SourceInterpretation$.Declared.equals(java.lang.Object):scala.Boolean": "planJVM/eyes4s.plan.SourceIdentitySuite",
     "method eyes4s.plan.SourceInterpretation$.Declared.hashCode():": "planJVM/eyes4s.plan.SourceIdentitySuite",
@@ -16424,7 +16627,7 @@
     "method eyes4s.plan.SourceRef.identity():": "planJVM/eyes4s.plan.SourceIdentitySuite",
     "method eyes4s.plan.StageMeter$.of(eyes4s.plan.StageKind,eyes4s.plan.CountUnit,scala.Long,eyes4s.plan.SegmentTotal):scala.util.Either": "planJVM/eyes4s.plan.CountedStudyCursorSuite",
     "method eyes4s.plan.StageMeter.advanceTo(scala.Long,eyes4s.plan.SegmentTotal):scala.util.Either": "planJVM/eyes4s.plan.StageMeterSuite",
-    "method eyes4s.plan.StageMeterError.message():": "planJVM/eyes4s.plan.DiagnosticCatalogSuite",
+    "method eyes4s.plan.StageMeterError.message():": "planJVM/eyes4s.plan.UnmatchedReasonsSuite",
     "method eyes4s.plan.Stepwise$.apply(4,eyes4s.plan.Stepwise):eyes4s.plan.Stepwise": "planJVM/consumer.PublicPlanSuite",
     "method eyes4s.plan.Stepwise$.complete(4,java.lang.Object,eyes4s.design.WorkQuanta,eyes4s.plan.Stepwise):scala.util.Either": "ioJVM/docconsumer.DocumentationExamplesSuite",
     "method eyes4s.plan.Stepwise$.recording(1):eyes4s.plan.Stepwise$.recording": "planJVM/eyes4s.plan.RecordingCursorSuite",
@@ -16442,8 +16645,8 @@
     "method eyes4s.plan.StudyAdvice$.advisories(5,eyes4s.plan.StudyPlan,eyes4s.kernel.UnitLabel):scala.collection.immutable.Vector": "planJVM/eyes4s.plan.StudyFormSuite",
     "method eyes4s.plan.StudyAdvice$.facts(5,eyes4s.plan.StudyPlan,eyes4s.kernel.UnitLabel):eyes4s.plan.StudyFacts": "planJVM/eyes4s.plan.StudyFormSuite",
     "method eyes4s.plan.StudyAdvisory.field():": "planJVM/eyes4s.plan.RecipeFormAccessorsSuite",
-    "method eyes4s.plan.StudyAdvisory.message():": "planJVM/eyes4s.plan.DiagnosticCatalogSuite",
-    "method eyes4s.plan.StudyAnalyses$.of(2,eyes4s.design.DirectedPairwiseAnalysis,eyes4s.design.Analysis,eyes4s.design.DirectedPairwiseAnalysis,eyes4s.design.Analysis):scala.util.Either": "lawsJVM/eyes4s.laws.StudyResultCodecLawSuite",
+    "method eyes4s.plan.StudyAdvisory.message():": "planJVM/eyes4s.plan.UnmatchedReasonsSuite",
+    "method eyes4s.plan.StudyAnalyses$.of(2,eyes4s.design.DirectedPairwiseAnalysis,eyes4s.design.Analysis,eyes4s.design.DirectedPairwiseAnalysis,eyes4s.design.Analysis):scala.util.Either": "planJVM/eyes4s.plan.StudyCountsSuite",
     "method eyes4s.plan.StudyAnalyses.reduced(eyes4s.plan.StudyDesign):eyes4s.design.Analysis": "planJVM/eyes4s.plan.ResultNavigationSuite",
     "method eyes4s.plan.StudyAnalyses.source(eyes4s.plan.StudyDesign):eyes4s.design.DirectedPairwiseAnalysis": "planJVM/eyes4s.plan.ResultNavigationSuite",
     "method eyes4s.plan.StudyChange$.AngularScale.field():": "lawsJVM/eyes4s.laws.StudyRevisionLawsSuite",
@@ -16523,14 +16726,14 @@
     "method eyes4s.plan.StudyDiff$.revise(5,eyes4s.plan.StudyPlan,scala.collection.immutable.Vector,eyes4s.kernel.UnitLabel):scala.util.Either": "planJVM/eyes4s.plan.TemporalCursorSuite",
     "method eyes4s.plan.StudyEstimate.name():": "planJVM/eyes4s.plan.StudyFormSuite",
     "method eyes4s.plan.StudyEstimate.parameters():": "ioJVM/docconsumer.DocumentationExamplesSuite",
-    "method eyes4s.plan.StudyEstimate.provenanceSteps():": "lawsJVM/eyes4s.laws.StudyResultCodecLawSuite",
+    "method eyes4s.plan.StudyEstimate.provenanceSteps():": "planJVM/eyes4s.plan.StudyCountsSuite",
     "method eyes4s.plan.StudyFailure$.keys(1,eyes4s.plan.StudyFailure):scala.collection.immutable.Vector": "lawsJVM/eyes4s.laws.StudyResultCodecLawSuite",
-    "method eyes4s.plan.StudyFailure.message():": "planJVM/eyes4s.plan.InitialFixationSuite",
-    "method eyes4s.plan.StudyField.label():": "planJVM/eyes4s.plan.InitialFixationSuite",
-    "method eyes4s.plan.StudyFinding.category():": "planJVM/eyes4s.plan.AnalysisReportSuite",
+    "method eyes4s.plan.StudyFailure.message():": "planJVM/eyes4s.plan.UnmatchedReasonsSuite",
+    "method eyes4s.plan.StudyField.label():": "planJVM/eyes4s.plan.UnmatchedReasonsSuite",
+    "method eyes4s.plan.StudyFinding.category():": "planJVM/eyes4s.plan.UnmatchedReasonsSuite",
     "method eyes4s.plan.StudyFinding.keys():": "planJVM/eyes4s.plan.InitialFixationSuite",
-    "method eyes4s.plan.StudyFinding.message():": "planJVM/eyes4s.plan.AnalysisReportSuite",
-    "method eyes4s.plan.StudyFinding.remedy():": "planJVM/eyes4s.plan.AnalysisReportSuite",
+    "method eyes4s.plan.StudyFinding.message():": "planJVM/eyes4s.plan.UnmatchedReasonsSuite",
+    "method eyes4s.plan.StudyFinding.remedy():": "planJVM/eyes4s.plan.UnmatchedReasonsSuite",
     "method eyes4s.plan.StudyFinding.severity():": "planJVM/eyes4s.plan.StudyCursorSuite",
     "method eyes4s.plan.StudyForm$.formField(eyes4s.plan.StudyField):scala.Option": "planJVM/eyes4s.plan.StudyFormKeysSuite",
     "method eyes4s.plan.StudyForm.<init>(1,eyes4s.plan.StudyFormContext,eyes4s.kernel.UnitLabel):eyes4s.plan.StudyForm": "planJVM/eyes4s.plan.StudyFormKeysSuite",
@@ -16559,7 +16762,7 @@
     "method eyes4s.plan.StudyMethod.<init>(4,eyes4s.plan.DefinitionId,java.lang.String,scala.Function1,eyes4s.plan.MethodExecution,scala.Option,eyes4s.design.ScoreMean,eyes4s.design.Contrastable):eyes4s.plan.StudyMethod": "lawsJVM/consumer.PublicLawsSuite",
     "method eyes4s.plan.StudyMethod.<init>(4,eyes4s.plan.DefinitionId,java.lang.String,scala.Function1,scala.Function1,scala.Option,eyes4s.design.ScoreMean,eyes4s.design.Contrastable):eyes4s.plan.StudyMethod": "planJVM/eyes4s.plan.StudyWorkSuite",
     "method eyes4s.plan.StudyMethod.capability():": "ioJVM/docconsumer.DocumentationExamplesSuite",
-    "method eyes4s.plan.StudyPairing$package$.TrialOccurrence$.of(scala.Int):scala.util.Either": "planJVM/eyes4s.plan.TrialConflictGroupingSuite",
+    "method eyes4s.plan.StudyPairing$package$.TrialOccurrence$.of(scala.Int):scala.util.Either": "planJVM/eyes4s.plan.UnmatchedReasonsSuite",
     "method eyes4s.plan.StudyPairing$package$.TrialOccurrence$.value(scala.Int):scala.Int": "planJVM/eyes4s.plan.CountedStudyCursorSuite",
     "method eyes4s.plan.StudyPairing.canRefuse():": "ioJVM/docconsumer.DocumentationExamplesSuite",
     "method eyes4s.plan.StudyPairing.description():": "planJVM/eyes4s.plan.CountedStudyCursorSuite",
@@ -16580,7 +16783,7 @@
     "method eyes4s.plan.StudyPlan.inspect():": "planJVM/eyes4s.plan.StudyCursorSuite",
     "method eyes4s.plan.StudyPlan.isVersion1():": "ioJVM/docconsumer.DocumentationExamplesSuite",
     "method eyes4s.plan.StudyPlan.keepsAllFixations():": "ioJVM/docconsumer.DocumentationExamplesSuite",
-    "method eyes4s.plan.StudyPlan.preflight(scala.Option,eyes4s.design.PairScheduleBudget):eyes4s.plan.StudyReport": "planJVM/eyes4s.plan.StudyCursorSuite",
+    "method eyes4s.plan.StudyPlan.preflight(scala.Option,eyes4s.design.PairScheduleBudget,scala.Option):eyes4s.plan.StudyReport": "planJVM/eyes4s.plan.StudyCursorSuite",
     "method eyes4s.plan.StudyPlan.prepare(eyes4s.plan.StudyInput,eyes4s.design.PairScheduleBudget):scala.util.Either": "ioJVM/docconsumer.DocumentationExamplesSuite",
     "method eyes4s.plan.StudyPlan.prerequisites(scala.Option):scala.collection.immutable.Vector": "ioJVM/docconsumer.DocumentationExamplesSuite",
     "method eyes4s.plan.StudyPlan.revise(scala.collection.immutable.Vector):scala.util.Either": "planJVM/eyes4s.plan.TemporalCursorSuite",
@@ -16599,13 +16802,13 @@
     "method eyes4s.plan.StudyReport.prepare(3,eyes4s.plan.StudyPlan,eyes4s.plan.StudyInput,eyes4s.design.PairScheduleBudget):scala.util.Either": "planJVM/eyes4s.plan.PreflightSuite",
     "method eyes4s.plan.StudyResult$.reconstruct(4,eyes4s.plan.ArtifactRef,eyes4s.plan.StudyLayout,scala.collection.immutable.Vector,scala.collection.immutable.Vector):scala.util.Either": "codecJVM/eyes4s.codec.ResultCodecSuite",
     "method eyes4s.plan.StudyResult$.reconstruct(4,eyes4s.plan.ArtifactRef,eyes4s.plan.StudyLayout,scala.collection.immutable.Vector,scala.collection.immutable.Vector,scala.collection.immutable.Vector):scala.util.Either": "lawsJVM/eyes4s.laws.StudyResultCodecLawSuite",
-    "method eyes4s.plan.StudyResultError.message():": "planJVM/eyes4s.plan.DiagnosticCatalogSuite",
-    "method eyes4s.plan.StudyRevisionError.message():": "planJVM/eyes4s.plan.InitialFixationSuite",
-    "method eyes4s.plan.StudyRunError.message():": "planJVM/eyes4s.plan.DiagnosticCatalogSuite",
+    "method eyes4s.plan.StudyResultError.message():": "planJVM/eyes4s.plan.UnmatchedReasonsSuite",
+    "method eyes4s.plan.StudyRevisionError.message():": "planJVM/eyes4s.plan.UnmatchedReasonsSuite",
+    "method eyes4s.plan.StudyRunError.message():": "planJVM/eyes4s.plan.UnmatchedReasonsSuite",
     "method eyes4s.plan.StudyRunSegment$.of(eyes4s.plan.StudyRunStage):eyes4s.plan.StudyRunSegment": "ioJVM/eyes4s.io.StampedStudyExecutionSuite",
     "method eyes4s.plan.StudyScale.angularParameters():": "planJVM/eyes4s.plan.StudyWindowSuite",
     "method eyes4s.plan.StudyScale.resolve(scala.Option,scala.Int):scala.util.Either": "ioJVM/docconsumer.DocumentationExamplesSuite",
-    "method eyes4s.plan.StudyScaleResult$.reconstruct(4,eyes4s.plan.StudyEstimate,scala.collection.immutable.Vector,scala.collection.immutable.Vector,eyes4s.plan.StudyAnalyses,scala.util.Either):scala.util.Either": "lawsJVM/eyes4s.laws.StudyResultCodecLawSuite",
+    "method eyes4s.plan.StudyScaleResult$.reconstruct(4,eyes4s.plan.StudyEstimate,scala.collection.immutable.Vector,scala.collection.immutable.Vector,eyes4s.plan.StudyAnalyses,scala.util.Either):scala.util.Either": "planJVM/eyes4s.plan.StudyCountsSuite",
     "method eyes4s.plan.StudySegment$.of(eyes4s.plan.StudyStage):eyes4s.plan.StudySegment": "lawsJVM/eyes4s.laws.ExecutionLawsSuite",
     "method eyes4s.plan.StudySegment$.total(4,eyes4s.plan.PreparedStudy,eyes4s.plan.StudySegment):eyes4s.plan.SegmentTotal": "lawsJVM/eyes4s.laws.ExecutionLawsSuite",
     "method eyes4s.plan.StudySegment$.total(4,eyes4s.plan.PreparedStudy,eyes4s.plan.StudySegment,eyes4s.plan.StudyCursor):eyes4s.plan.SegmentTotal": "lawsJVM/eyes4s.laws.ExecutionLawsSuite",
@@ -16630,11 +16833,11 @@
     "method eyes4s.plan.TemporalCursor.advance(eyes4s.design.WorkQuanta):scala.util.Either": "ioJVM/docconsumer.DocumentationExamplesSuite",
     "method eyes4s.plan.TemporalCursor.reductionUnits():": "lawsJVM/eyes4s.laws.ExecutionLawsSuite",
     "method eyes4s.plan.TemporalCursor.stage():": "ioJVM/docconsumer.DocumentationExamplesSuite",
-    "method eyes4s.plan.TemporalFinding.category():": "planJVM/eyes4s.plan.PreflightSuite",
+    "method eyes4s.plan.TemporalFinding.category():": "planJVM/eyes4s.plan.UnmatchedReasonsSuite",
     "method eyes4s.plan.TemporalFinding.keys():": "planJVM/eyes4s.plan.PreflightSuite",
-    "method eyes4s.plan.TemporalFinding.message():": "planJVM/eyes4s.plan.PreflightSuite",
-    "method eyes4s.plan.TemporalFinding.remedy():": "planJVM/eyes4s.plan.AnalysisReportSuite",
-    "method eyes4s.plan.TemporalFinding.severity():": "planJVM/eyes4s.plan.PreflightSuite",
+    "method eyes4s.plan.TemporalFinding.message():": "planJVM/eyes4s.plan.UnmatchedReasonsSuite",
+    "method eyes4s.plan.TemporalFinding.remedy():": "planJVM/eyes4s.plan.UnmatchedReasonsSuite",
+    "method eyes4s.plan.TemporalFinding.severity():": "planJVM/eyes4s.plan.UnmatchedReasonsSuite",
     "method eyes4s.plan.TemporalForm.<init>():eyes4s.plan.TemporalForm": "planJVM/eyes4s.plan.RecipeFormAccessorsSuite",
     "method eyes4s.plan.TemporalForm.parse(eyes4s.plan.FormValues):scala.util.Either": "lawsJVM/eyes4s.laws.FormLawSuite",
     "method eyes4s.plan.TemporalForm.validate(eyes4s.plan.FieldId,eyes4s.plan.RawValue):scala.util.Either": "planJVM/eyes4s.plan.RecipeFormAccessorsSuite",
@@ -16647,11 +16850,11 @@
     "method eyes4s.plan.TemporalReport.affectedTrials():": "planJVM/eyes4s.plan.PreflightSuite",
     "method eyes4s.plan.TemporalReport.confirm(3,eyes4s.plan.TemporalStudyPlan,eyes4s.plan.TemporalStudyInput):scala.util.Either": "planJVM/eyes4s.plan.PreflightSuite",
     "method eyes4s.plan.TemporalReport.diagnostics():": "planJVM/eyes4s.plan.PreflightSuite",
-    "method eyes4s.plan.TemporalResultError.message():": "planJVM/eyes4s.plan.DiagnosticCatalogSuite",
+    "method eyes4s.plan.TemporalResultError.message():": "planJVM/eyes4s.plan.UnmatchedReasonsSuite",
     "method eyes4s.plan.TemporalSegment$.of(eyes4s.plan.TemporalStage):eyes4s.plan.TemporalSegment": "lawsJVM/eyes4s.laws.ExecutionLawsSuite",
     "method eyes4s.plan.TemporalSegment$.total(5,eyes4s.plan.PreparedTemporalStudy,eyes4s.plan.TemporalSegment):eyes4s.plan.SegmentTotal": "lawsJVM/eyes4s.laws.ExecutionLawsSuite",
     "method eyes4s.plan.TemporalSegment$.total(5,eyes4s.plan.PreparedTemporalStudy,eyes4s.plan.TemporalSegment,eyes4s.plan.TemporalCursor):eyes4s.plan.SegmentTotal": "lawsJVM/eyes4s.laws.ExecutionLawsSuite",
-    "method eyes4s.plan.TemporalStudyError.message():": "planJVM/eyes4s.plan.AnalysisReportSuite",
+    "method eyes4s.plan.TemporalStudyError.message():": "planJVM/eyes4s.plan.UnmatchedReasonsSuite",
     "method eyes4s.plan.TemporalStudyInput$.of(2,eyes4s.plan.StudyInput,scala.collection.immutable.Vector,eyes4s.design.KeyDigest,scala.math.Ordering):scala.util.Either": "ioJVM/docconsumer.DocumentationExamplesSuite",
     "method eyes4s.plan.TemporalStudyInput.reference():": "ioJVM/docconsumer.DocumentationExamplesSuite",
     "method eyes4s.plan.TemporalStudyPlan$.of(5,eyes4s.plan.StudyPlan,eyes4s.plan.ArtifactRef,scala.collection.immutable.Vector,scala.collection.immutable.Vector,eyes4s.core.FixationBoundary,eyes4s.kernel.UnitLabel):scala.util.Either": "ioJVM/docconsumer.DocumentationExamplesSuite",
@@ -16676,12 +16879,12 @@
     "method eyes4s.plan.TrialConflictRow$.from(1,eyes4s.plan.TrialKey,java.lang.Object):eyes4s.plan.TrialConflictRow": "planJVM/eyes4s.plan.TrialConflictGroupingSuite",
     "method eyes4s.plan.TrialConflictRow$.of(eyes4s.plan.TrialIdentity,java.lang.String,eyes4s.plan.CsvRecord):scala.util.Either": "planJVM/eyes4s.plan.TrialConflictGroupingSuite",
     "method eyes4s.plan.TrialConflictRow.identity():": "planJVM/eyes4s.plan.TrialConflictGroupingSuite",
-    "method eyes4s.plan.TrialDisposition.label():": "planJVM/eyes4s.plan.InventoryLedgerSuite",
+    "method eyes4s.plan.TrialDisposition.label():": "planJVM/eyes4s.plan.UnmatchedReasonsSuite",
     "method eyes4s.plan.TrialIdentity$.of(eyes4s.plan.TrialKey):eyes4s.plan.TrialIdentity": "planJVM/eyes4s.plan.TrialConflictGroupingSuite",
-    "method eyes4s.plan.TrialIdentity$.of(java.lang.String,java.lang.String,java.lang.String,scala.Int):scala.util.Either": "planJVM/eyes4s.plan.TrialConflictGroupingSuite",
+    "method eyes4s.plan.TrialIdentity$.of(java.lang.String,java.lang.String,java.lang.String,scala.Int):scala.util.Either": "planJVM/eyes4s.plan.UnmatchedReasonsSuite",
     "method eyes4s.plan.TrialIdentity$.projection(1,eyes4s.plan.StudyLayout):scala.Option": "lawsJVM/consumer.PublicLawsSuite",
-    "method eyes4s.plan.TrialIdentity.render():": "planJVM/eyes4s.plan.InventoryLedgerSuite",
-    "method eyes4s.plan.TrialIdentity.withItem(java.lang.String):scala.util.Either": "planJVM/eyes4s.plan.TrialConflictGroupingSuite",
+    "method eyes4s.plan.TrialIdentity.render():": "planJVM/eyes4s.plan.UnmatchedReasonsSuite",
+    "method eyes4s.plan.TrialIdentity.withItem(java.lang.String):scala.util.Either": "planJVM/eyes4s.plan.UnmatchedReasonsSuite",
     "method eyes4s.plan.TrialKey$.layout(eyes4s.plan.DefinitionId):eyes4s.plan.StudyLayout": "planJVM/eyes4s.plan.CountedStudyCursorSuite",
     "method eyes4s.plan.TrialKey$.of(java.lang.String,java.lang.String,java.lang.String,scala.Int,java.lang.String):scala.util.Either": "planJVM/eyes4s.plan.CountedStudyCursorSuite",
     "method eyes4s.plan.TrialLoss$.of(eyes4s.plan.TrialDisposition):scala.Option": "planJVM/eyes4s.plan.StudyFormSuite",
@@ -16689,10 +16892,17 @@
     "method eyes4s.plan.TrialSources.records():": "planJVM/eyes4s.plan.ResultInspectionSuite",
     "method eyes4s.plan.UnlistedTrial$.of(eyes4s.plan.TrialIdentity,scala.collection.immutable.Vector,scala.collection.immutable.Vector):scala.util.Either": "planJVM/eyes4s.plan.InventoryLedgerSuite",
     "method eyes4s.plan.UnmatchedFocalPolicy.name():": "codecJVM/eyes4s.pointcodecconsumer.PointSamplingCodecSuite",
+    "method eyes4s.plan.UnmatchedKind.code():": "planJVM/eyes4s.plan.UnmatchedReasonsSuite",
+    "method eyes4s.plan.UnmatchedReasons$.of(1,eyes4s.plan.StudyLayout,eyes4s.plan.StudyPairing,java.lang.String,scala.collection.immutable.Vector,eyes4s.plan.InventoryLedger):eyes4s.plan.UnmatchedReasons": "planJVM/eyes4s.plan.UnmatchedReasonsSuite",
+    "method eyes4s.plan.UnmatchedReasons$.undetermined(1,scala.collection.immutable.Vector):eyes4s.plan.UnmatchedReasons": "planJVM/eyes4s.plan.StudyCursorSuite",
+    "method eyes4s.plan.UnmatchedReasons.byDesign():": "planJVM/eyes4s.plan.UnmatchedReasonsSuite",
+    "method eyes4s.plan.UnmatchedReasons.notAdmitted():": "planJVM/eyes4s.plan.UnmatchedReasonsSuite",
+    "method eyes4s.plan.UnmatchedReasons.notPairable():": "planJVM/eyes4s.plan.UnmatchedReasonsSuite",
+    "method eyes4s.plan.UnmatchedReasons.reason(java.lang.Object):scala.Option": "planJVM/eyes4s.plan.UnmatchedReasonsSuite",
     "method eyes4s.plan.UsedBy.counts():": "planJVM/eyes4s.plan.ResultNavigationSuite",
     "method eyes4s.plan.WindowSummary$.of(1,scala.collection.immutable.Vector):eyes4s.plan.WindowSummary": "planJVM/eyes4s.plan.StudyWindowSuite",
     "method eyes4s.plan.WindowSummary$.of(1,scala.collection.immutable.Vector,eyes4s.plan.AdmissionLedger):eyes4s.plan.WindowSummary": "ioJVM/eyes4s.io.StudioAcceptanceSuite",
-    "method eyes4s.plan.WindowTally$.of(scala.Int,scala.Int,scala.Int,scala.Long,scala.Long,scala.Long):scala.util.Either": "planJVM/eyes4s.plan.DiagnosticCatalogSuite",
+    "method eyes4s.plan.WindowTally$.of(scala.Int,scala.Int,scala.Int,scala.Long,scala.Long,scala.Long):scala.util.Either": "planJVM/eyes4s.plan.UnmatchedReasonsSuite",
     "method eyes4s.plan.WindowTally$.screen(1,eyes4s.kernel.Frame,eyes4s.core.Scanpath):scala.util.Either": "ioJVM/docconsumer.DocumentationExamplesSuite",
     "method eyes4s.plan.WindowTally$.window(1,eyes4s.kernel.Subframe,eyes4s.core.Scanpath):scala.util.Either": "planJVM/eyes4s.plan.CoordinateProvenanceSuite",
     "method eyes4s.plan.WindowTally.allOutside():": "ioJVM/docconsumer.DocumentationExamplesSuite",
@@ -16756,7 +16966,8 @@
     "method eyes4s.results.Query.ref(eyes4s.results.Role,scala.Int):eyes4s.plan.ResultRef": "resultsJVM/eyes4s.results.ReportNavigationSuite",
     "method eyes4s.results.Query.rekey(1,java.lang.Object):eyes4s.results.Query": "lawsJVM/eyes4s.laws.SchemaRegistryJvmSuite",
     "method eyes4s.results.Query.relabel(java.lang.String):eyes4s.results.Query": "lawsJVM/eyes4s.laws.ReportLawSuite",
-    "method eyes4s.results.QueryTable$.of(1,scala.Int,scala.collection.immutable.Vector,eyes4s.results.CovariateSchema,scala.collection.immutable.Vector):scala.util.Either": "resultsJVM/eyes4s.results.ReportNavigationSuite",
+    "method eyes4s.results.QueryTable$.of(1,scala.Int,scala.collection.immutable.Vector,eyes4s.results.CovariateSchema,scala.collection.immutable.Vector):scala.util.Either": "resultsJVM/eyes4s.results.ReportFactsSuite",
+    "method eyes4s.results.QueryTable$.of(1,scala.Int,scala.collection.immutable.Vector,eyes4s.results.CovariateSchema,scala.collection.immutable.Vector,scala.collection.immutable.Vector):scala.util.Either": "resultsJVM/eyes4s.results.ReportNavigationSuite",
     "method eyes4s.results.Report$.evaluate(1,eyes4s.results.ReportSpec,eyes4s.results.ReportSource):scala.util.Either": "resultsJVM/eyes4s.results.ReportNavigationSuite",
     "method eyes4s.results.Report$.evaluate(1,eyes4s.results.ReportSpec,eyes4s.results.ReportSource,eyes4s.results.ReportBinding):scala.util.Either": "resultsJVM/eyes4s.results.ReportSuite",
     "method eyes4s.results.Report.accountingOf(eyes4s.results.Role):scala.Option": "resultsJVM/eyes4s.results.ReportSuite",
@@ -17192,6 +17403,7 @@
     "value eyes4s.laws.LawsDiagnostics$.validationArtifact": "ioJVM/eyes4s.io.DiagnosticsDocJvmSuite",
     "value eyes4s.laws.NavigationLaws$.cases": "lawsJVM/eyes4s.laws.NavigationLawsSuite",
     "value eyes4s.laws.PairingLaws$.Focal": "lawsJVM/eyes4s.laws.WindowLawsSuite",
+    "value eyes4s.laws.PairingLaws$.PairScoreTolerance": "lawsJVM/eyes4s.laws.WindowLawsSuite",
     "value eyes4s.laws.PairingLaws$.Reference": "lawsJVM/eyes4s.laws.WindowLawsSuite",
     "value eyes4s.laws.PairingLaws$.genCase": "lawsJVM/eyes4s.laws.WindowLawsSuite",
     "value eyes4s.laws.PairingLaws$.genChoice": "lawsJVM/eyes4s.laws.WindowLawsSuite",
@@ -17241,7 +17453,7 @@
     "value eyes4s.laws.WindowLaws$.genTallied": "lawsJVM/eyes4s.laws.WindowLawsSuite",
     "value eyes4s.laws.WindowLaws$.genWindow": "lawsJVM/eyes4s.laws.CoordinateProvenanceLawsSuite",
     "value eyes4s.plan.AnalysisKind$.withoutFamily": "ioJVM/eyes4s.io.FamilyConformanceSuite",
-    "value eyes4s.plan.Attributes$.empty": "planJVM/eyes4s.plan.InventoryLedgerSuite",
+    "value eyes4s.plan.Attributes$.empty": "planJVM/eyes4s.plan.UnmatchedReasonsSuite",
     "value eyes4s.plan.ComparisonMethod.component": "planJVM/eyes4s.plan.ResultNavigationSuite",
     "value eyes4s.plan.ComparisonMethod.properties": "lawsJVM/consumer.PublicLawsSuite",
     "value eyes4s.plan.ComparisonMethodDefinitions$.distanceCorrelation": "lawsJVM/consumer.PublicLawsSuite",
@@ -17287,87 +17499,87 @@
     "value eyes4s.plan.DefinitionId$.timeline": "lawsJVM/eyes4s.laws.SchemaRegistryJvmSuite",
     "value eyes4s.plan.DefinitionId$.trials": "lawsJVM/consumer.PublicLawsSuite",
     "value eyes4s.plan.DefinitionId$.unit": "lawsJVM/consumer.PublicLawsSuite",
-    "value eyes4s.plan.Diagnose$.admission": "planJVM/eyes4s.plan.DiagnosticCatalogSuite",
-    "value eyes4s.plan.Diagnose$.admissionReason": "planJVM/eyes4s.plan.DiagnosticCatalogSuite",
-    "value eyes4s.plan.Diagnose$.algorithmMetadata": "planJVM/eyes4s.plan.DiagnosticCatalogSuite",
-    "value eyes4s.plan.Diagnose$.aoi": "planJVM/eyes4s.plan.DiagnosticCatalogSuite",
-    "value eyes4s.plan.Diagnose$.budget": "planJVM/eyes4s.plan.DiagnosticCatalogSuite",
-    "value eyes4s.plan.Diagnose$.compare": "planJVM/eyes4s.plan.DiagnosticCatalogSuite",
-    "value eyes4s.plan.Diagnose$.comparisonConfiguration": "planJVM/eyes4s.plan.DiagnosticCatalogSuite",
-    "value eyes4s.plan.Diagnose$.comparisonValue": "planJVM/eyes4s.plan.DiagnosticCatalogSuite",
-    "value eyes4s.plan.Diagnose$.comparisonWork": "planJVM/eyes4s.plan.DiagnosticCatalogSuite",
-    "value eyes4s.plan.Diagnose$.configuration": "planJVM/eyes4s.plan.DiagnosticCatalogSuite",
-    "value eyes4s.plan.Diagnose$.contrastCompatibility": "planJVM/eyes4s.plan.DiagnosticCatalogSuite",
-    "value eyes4s.plan.Diagnose$.core": "planJVM/eyes4s.plan.DiagnosticCatalogSuite",
-    "value eyes4s.plan.Diagnose$.crqa": "planJVM/eyes4s.plan.DiagnosticCatalogSuite",
-    "value eyes4s.plan.Diagnose$.crqaParameter": "planJVM/eyes4s.plan.DiagnosticCatalogSuite",
-    "value eyes4s.plan.Diagnose$.decomposition": "planJVM/eyes4s.plan.DiagnosticCatalogSuite",
-    "value eyes4s.plan.Diagnose$.densityLookup": "planJVM/eyes4s.plan.DiagnosticCatalogSuite",
-    "value eyes4s.plan.Diagnose$.densityPointFailure": "planJVM/eyes4s.plan.DiagnosticCatalogSuite",
-    "value eyes4s.plan.Diagnose$.descriptor": "planJVM/eyes4s.plan.AnalysisReportSuite",
-    "value eyes4s.plan.Diagnose$.detectionFailure": "planJVM/eyes4s.plan.DiagnosticCatalogSuite",
-    "value eyes4s.plan.Diagnose$.detectionResult": "planJVM/eyes4s.plan.DiagnosticCatalogSuite",
-    "value eyes4s.plan.Diagnose$.detectionSupport": "planJVM/eyes4s.plan.DiagnosticCatalogSuite",
-    "value eyes4s.plan.Diagnose$.detectorDefinition": "planJVM/eyes4s.plan.DiagnosticCatalogSuite",
-    "value eyes4s.plan.Diagnose$.diagnosticCode": "planJVM/eyes4s.plan.DiagnosticCatalogSuite",
-    "value eyes4s.plan.Diagnose$.difference": "planJVM/eyes4s.plan.DiagnosticCatalogSuite",
-    "value eyes4s.plan.Diagnose$.ekEstimation": "planJVM/eyes4s.plan.DiagnosticCatalogSuite",
-    "value eyes4s.plan.Diagnose$.estimate": "planJVM/eyes4s.plan.DiagnosticCatalogSuite",
-    "value eyes4s.plan.Diagnose$.evaluationSpec": "planJVM/eyes4s.plan.DiagnosticCatalogSuite",
-    "value eyes4s.plan.Diagnose$.evaluationWork": "planJVM/eyes4s.plan.DiagnosticCatalogSuite",
-    "value eyes4s.plan.Diagnose$.event": "planJVM/eyes4s.plan.DiagnosticCatalogSuite",
-    "value eyes4s.plan.Diagnose$.fixationComparison": "planJVM/eyes4s.plan.DiagnosticCatalogSuite",
-    "value eyes4s.plan.Diagnose$.fixationEntropy": "planJVM/eyes4s.plan.DiagnosticCatalogSuite",
+    "value eyes4s.plan.Diagnose$.admission": "planJVM/eyes4s.plan.UnmatchedReasonsSuite",
+    "value eyes4s.plan.Diagnose$.admissionReason": "planJVM/eyes4s.plan.UnmatchedReasonsSuite",
+    "value eyes4s.plan.Diagnose$.algorithmMetadata": "planJVM/eyes4s.plan.UnmatchedReasonsSuite",
+    "value eyes4s.plan.Diagnose$.aoi": "planJVM/eyes4s.plan.UnmatchedReasonsSuite",
+    "value eyes4s.plan.Diagnose$.budget": "planJVM/eyes4s.plan.UnmatchedReasonsSuite",
+    "value eyes4s.plan.Diagnose$.compare": "planJVM/eyes4s.plan.UnmatchedReasonsSuite",
+    "value eyes4s.plan.Diagnose$.comparisonConfiguration": "planJVM/eyes4s.plan.UnmatchedReasonsSuite",
+    "value eyes4s.plan.Diagnose$.comparisonValue": "planJVM/eyes4s.plan.UnmatchedReasonsSuite",
+    "value eyes4s.plan.Diagnose$.comparisonWork": "planJVM/eyes4s.plan.UnmatchedReasonsSuite",
+    "value eyes4s.plan.Diagnose$.configuration": "planJVM/eyes4s.plan.UnmatchedReasonsSuite",
+    "value eyes4s.plan.Diagnose$.contrastCompatibility": "planJVM/eyes4s.plan.UnmatchedReasonsSuite",
+    "value eyes4s.plan.Diagnose$.core": "planJVM/eyes4s.plan.UnmatchedReasonsSuite",
+    "value eyes4s.plan.Diagnose$.crqa": "planJVM/eyes4s.plan.UnmatchedReasonsSuite",
+    "value eyes4s.plan.Diagnose$.crqaParameter": "planJVM/eyes4s.plan.UnmatchedReasonsSuite",
+    "value eyes4s.plan.Diagnose$.decomposition": "planJVM/eyes4s.plan.UnmatchedReasonsSuite",
+    "value eyes4s.plan.Diagnose$.densityLookup": "planJVM/eyes4s.plan.UnmatchedReasonsSuite",
+    "value eyes4s.plan.Diagnose$.densityPointFailure": "planJVM/eyes4s.plan.UnmatchedReasonsSuite",
+    "value eyes4s.plan.Diagnose$.descriptor": "planJVM/eyes4s.plan.UnmatchedReasonsSuite",
+    "value eyes4s.plan.Diagnose$.detectionFailure": "planJVM/eyes4s.plan.UnmatchedReasonsSuite",
+    "value eyes4s.plan.Diagnose$.detectionResult": "planJVM/eyes4s.plan.UnmatchedReasonsSuite",
+    "value eyes4s.plan.Diagnose$.detectionSupport": "planJVM/eyes4s.plan.UnmatchedReasonsSuite",
+    "value eyes4s.plan.Diagnose$.detectorDefinition": "planJVM/eyes4s.plan.UnmatchedReasonsSuite",
+    "value eyes4s.plan.Diagnose$.diagnosticCode": "planJVM/eyes4s.plan.UnmatchedReasonsSuite",
+    "value eyes4s.plan.Diagnose$.difference": "planJVM/eyes4s.plan.UnmatchedReasonsSuite",
+    "value eyes4s.plan.Diagnose$.ekEstimation": "planJVM/eyes4s.plan.UnmatchedReasonsSuite",
+    "value eyes4s.plan.Diagnose$.estimate": "planJVM/eyes4s.plan.UnmatchedReasonsSuite",
+    "value eyes4s.plan.Diagnose$.evaluationSpec": "planJVM/eyes4s.plan.UnmatchedReasonsSuite",
+    "value eyes4s.plan.Diagnose$.evaluationWork": "planJVM/eyes4s.plan.UnmatchedReasonsSuite",
+    "value eyes4s.plan.Diagnose$.event": "planJVM/eyes4s.plan.UnmatchedReasonsSuite",
+    "value eyes4s.plan.Diagnose$.fixationComparison": "planJVM/eyes4s.plan.UnmatchedReasonsSuite",
+    "value eyes4s.plan.Diagnose$.fixationEntropy": "planJVM/eyes4s.plan.UnmatchedReasonsSuite",
     "value eyes4s.plan.Diagnose$.geometry": "planJVM/eyes4s.plan.StudyFormKeysSuite",
-    "value eyes4s.plan.Diagnose$.importSpec": "planJVM/eyes4s.plan.DiagnosticCatalogSuite",
-    "value eyes4s.plan.Diagnose$.inventory": "planJVM/eyes4s.plan.DiagnosticCatalogSuite",
-    "value eyes4s.plan.Diagnose$.iqrBandwidth": "planJVM/eyes4s.plan.DiagnosticCatalogSuite",
-    "value eyes4s.plan.Diagnose$.kinematics": "planJVM/eyes4s.plan.DiagnosticCatalogSuite",
-    "value eyes4s.plan.Diagnose$.leastSquares": "planJVM/eyes4s.plan.DiagnosticCatalogSuite",
-    "value eyes4s.plan.Diagnose$.mapComparison": "planJVM/eyes4s.plan.DiagnosticCatalogSuite",
-    "value eyes4s.plan.Diagnose$.mapScaleFailure": "planJVM/eyes4s.plan.DiagnosticCatalogSuite",
-    "value eyes4s.plan.Diagnose$.massLevel": "planJVM/eyes4s.plan.DiagnosticCatalogSuite",
-    "value eyes4s.plan.Diagnose$.merge": "planJVM/eyes4s.plan.DiagnosticCatalogSuite",
-    "value eyes4s.plan.Diagnose$.methodsFact": "planJVM/eyes4s.plan.DiagnosticCatalogSuite",
-    "value eyes4s.plan.Diagnose$.moving": "planJVM/eyes4s.plan.DiagnosticCatalogSuite",
-    "value eyes4s.plan.Diagnose$.occupancy": "planJVM/eyes4s.plan.DiagnosticCatalogSuite",
-    "value eyes4s.plan.Diagnose$.overlapFailure": "planJVM/eyes4s.plan.DiagnosticCatalogSuite",
-    "value eyes4s.plan.Diagnose$.pairSchedule": "planJVM/eyes4s.plan.DiagnosticCatalogSuite",
-    "value eyes4s.plan.Diagnose$.pairing": "planJVM/eyes4s.plan.DiagnosticCatalogSuite",
+    "value eyes4s.plan.Diagnose$.importSpec": "planJVM/eyes4s.plan.UnmatchedReasonsSuite",
+    "value eyes4s.plan.Diagnose$.inventory": "planJVM/eyes4s.plan.UnmatchedReasonsSuite",
+    "value eyes4s.plan.Diagnose$.iqrBandwidth": "planJVM/eyes4s.plan.UnmatchedReasonsSuite",
+    "value eyes4s.plan.Diagnose$.kinematics": "planJVM/eyes4s.plan.UnmatchedReasonsSuite",
+    "value eyes4s.plan.Diagnose$.leastSquares": "planJVM/eyes4s.plan.UnmatchedReasonsSuite",
+    "value eyes4s.plan.Diagnose$.mapComparison": "planJVM/eyes4s.plan.UnmatchedReasonsSuite",
+    "value eyes4s.plan.Diagnose$.mapScaleFailure": "planJVM/eyes4s.plan.UnmatchedReasonsSuite",
+    "value eyes4s.plan.Diagnose$.massLevel": "planJVM/eyes4s.plan.UnmatchedReasonsSuite",
+    "value eyes4s.plan.Diagnose$.merge": "planJVM/eyes4s.plan.UnmatchedReasonsSuite",
+    "value eyes4s.plan.Diagnose$.methodsFact": "planJVM/eyes4s.plan.UnmatchedReasonsSuite",
+    "value eyes4s.plan.Diagnose$.moving": "planJVM/eyes4s.plan.UnmatchedReasonsSuite",
+    "value eyes4s.plan.Diagnose$.occupancy": "planJVM/eyes4s.plan.UnmatchedReasonsSuite",
+    "value eyes4s.plan.Diagnose$.overlapFailure": "planJVM/eyes4s.plan.UnmatchedReasonsSuite",
+    "value eyes4s.plan.Diagnose$.pairSchedule": "planJVM/eyes4s.plan.UnmatchedReasonsSuite",
+    "value eyes4s.plan.Diagnose$.pairing": "planJVM/eyes4s.plan.UnmatchedReasonsSuite",
     "value eyes4s.plan.Diagnose$.plan": "planJVM/eyes4s.plan.StudyFormKeysSuite",
-    "value eyes4s.plan.Diagnose$.pointSampling": "planJVM/eyes4s.plan.DiagnosticCatalogSuite",
-    "value eyes4s.plan.Diagnose$.quarantine": "planJVM/eyes4s.plan.DiagnosticCatalogSuite",
-    "value eyes4s.plan.Diagnose$.recipeParameter": "planJVM/eyes4s.plan.DiagnosticCatalogSuite",
-    "value eyes4s.plan.Diagnose$.recording": "planJVM/eyes4s.plan.DiagnosticCatalogSuite",
-    "value eyes4s.plan.Diagnose$.recordingFinding": "planJVM/eyes4s.plan.PreflightSuite",
-    "value eyes4s.plan.Diagnose$.recordingInput": "planJVM/eyes4s.plan.DiagnosticCatalogSuite",
-    "value eyes4s.plan.Diagnose$.recordingPlan": "planJVM/eyes4s.plan.AnalysisReportSuite",
-    "value eyes4s.plan.Diagnose$.recordingResult": "planJVM/eyes4s.plan.DiagnosticCatalogSuite",
-    "value eyes4s.plan.Diagnose$.reductionPolicy": "planJVM/eyes4s.plan.DiagnosticCatalogSuite",
-    "value eyes4s.plan.Diagnose$.repetitionMean": "planJVM/eyes4s.plan.DiagnosticCatalogSuite",
-    "value eyes4s.plan.Diagnose$.repetitionPlan": "planJVM/eyes4s.plan.DiagnosticCatalogSuite",
-    "value eyes4s.plan.Diagnose$.replication": "planJVM/eyes4s.plan.DiagnosticCatalogSuite",
+    "value eyes4s.plan.Diagnose$.pointSampling": "planJVM/eyes4s.plan.UnmatchedReasonsSuite",
+    "value eyes4s.plan.Diagnose$.quarantine": "planJVM/eyes4s.plan.UnmatchedReasonsSuite",
+    "value eyes4s.plan.Diagnose$.recipeParameter": "planJVM/eyes4s.plan.UnmatchedReasonsSuite",
+    "value eyes4s.plan.Diagnose$.recording": "planJVM/eyes4s.plan.UnmatchedReasonsSuite",
+    "value eyes4s.plan.Diagnose$.recordingFinding": "planJVM/eyes4s.plan.UnmatchedReasonsSuite",
+    "value eyes4s.plan.Diagnose$.recordingInput": "planJVM/eyes4s.plan.UnmatchedReasonsSuite",
+    "value eyes4s.plan.Diagnose$.recordingPlan": "planJVM/eyes4s.plan.UnmatchedReasonsSuite",
+    "value eyes4s.plan.Diagnose$.recordingResult": "planJVM/eyes4s.plan.UnmatchedReasonsSuite",
+    "value eyes4s.plan.Diagnose$.reductionPolicy": "planJVM/eyes4s.plan.UnmatchedReasonsSuite",
+    "value eyes4s.plan.Diagnose$.repetitionMean": "planJVM/eyes4s.plan.UnmatchedReasonsSuite",
+    "value eyes4s.plan.Diagnose$.repetitionPlan": "planJVM/eyes4s.plan.UnmatchedReasonsSuite",
+    "value eyes4s.plan.Diagnose$.replication": "planJVM/eyes4s.plan.UnmatchedReasonsSuite",
     "value eyes4s.plan.Diagnose$.reportedFormField": "planJVM/eyes4s.plan.StudyFormSuite",
-    "value eyes4s.plan.Diagnose$.rng": "planJVM/eyes4s.plan.DiagnosticCatalogSuite",
-    "value eyes4s.plan.Diagnose$.scanpath": "planJVM/eyes4s.plan.DiagnosticCatalogSuite",
-    "value eyes4s.plan.Diagnose$.scoreMean": "planJVM/eyes4s.plan.DiagnosticCatalogSuite",
-    "value eyes4s.plan.Diagnose$.session": "planJVM/eyes4s.plan.DiagnosticCatalogSuite",
-    "value eyes4s.plan.Diagnose$.smootherCard": "planJVM/eyes4s.plan.DiagnosticCatalogSuite",
-    "value eyes4s.plan.Diagnose$.sourceIdentity": "planJVM/eyes4s.plan.DiagnosticCatalogSuite",
-    "value eyes4s.plan.Diagnose$.stageMeter": "planJVM/eyes4s.plan.DiagnosticCatalogSuite",
-    "value eyes4s.plan.Diagnose$.studyAdvisory": "planJVM/eyes4s.plan.DiagnosticCatalogSuite",
+    "value eyes4s.plan.Diagnose$.rng": "planJVM/eyes4s.plan.UnmatchedReasonsSuite",
+    "value eyes4s.plan.Diagnose$.scanpath": "planJVM/eyes4s.plan.UnmatchedReasonsSuite",
+    "value eyes4s.plan.Diagnose$.scoreMean": "planJVM/eyes4s.plan.UnmatchedReasonsSuite",
+    "value eyes4s.plan.Diagnose$.session": "planJVM/eyes4s.plan.UnmatchedReasonsSuite",
+    "value eyes4s.plan.Diagnose$.smootherCard": "planJVM/eyes4s.plan.UnmatchedReasonsSuite",
+    "value eyes4s.plan.Diagnose$.sourceIdentity": "planJVM/eyes4s.plan.UnmatchedReasonsSuite",
+    "value eyes4s.plan.Diagnose$.stageMeter": "planJVM/eyes4s.plan.UnmatchedReasonsSuite",
+    "value eyes4s.plan.Diagnose$.studyAdvisory": "planJVM/eyes4s.plan.UnmatchedReasonsSuite",
     "value eyes4s.plan.Diagnose$.studyRecipe": "planJVM/eyes4s.plan.StudyFormKeysSuite",
-    "value eyes4s.plan.Diagnose$.studyRun": "planJVM/eyes4s.plan.DiagnosticCatalogSuite",
-    "value eyes4s.plan.Diagnose$.surface": "planJVM/eyes4s.plan.DiagnosticCatalogSuite",
-    "value eyes4s.plan.Diagnose$.syncEvidence": "planJVM/eyes4s.plan.DiagnosticCatalogSuite",
-    "value eyes4s.plan.Diagnose$.template": "planJVM/eyes4s.plan.DiagnosticCatalogSuite",
-    "value eyes4s.plan.Diagnose$.temporal": "planJVM/eyes4s.plan.AnalysisReportSuite",
-    "value eyes4s.plan.Diagnose$.temporalSupport": "planJVM/eyes4s.plan.DiagnosticCatalogSuite",
+    "value eyes4s.plan.Diagnose$.studyRun": "planJVM/eyes4s.plan.UnmatchedReasonsSuite",
+    "value eyes4s.plan.Diagnose$.surface": "planJVM/eyes4s.plan.UnmatchedReasonsSuite",
+    "value eyes4s.plan.Diagnose$.syncEvidence": "planJVM/eyes4s.plan.UnmatchedReasonsSuite",
+    "value eyes4s.plan.Diagnose$.template": "planJVM/eyes4s.plan.UnmatchedReasonsSuite",
+    "value eyes4s.plan.Diagnose$.temporal": "planJVM/eyes4s.plan.UnmatchedReasonsSuite",
+    "value eyes4s.plan.Diagnose$.temporalSupport": "planJVM/eyes4s.plan.UnmatchedReasonsSuite",
     "value eyes4s.plan.Diagnose$.time": "planJVM/consumer.PublicPlanSuite",
-    "value eyes4s.plan.Diagnose$.timeQuantity": "planJVM/eyes4s.plan.DiagnosticCatalogSuite",
-    "value eyes4s.plan.Diagnose$.timeline": "planJVM/eyes4s.plan.DiagnosticCatalogSuite",
-    "value eyes4s.plan.Diagnose$.windowOccupancy": "planJVM/eyes4s.plan.DiagnosticCatalogSuite",
-    "value eyes4s.plan.Diagnose$.workQuanta": "planJVM/eyes4s.plan.DiagnosticCatalogSuite",
+    "value eyes4s.plan.Diagnose$.timeQuantity": "planJVM/eyes4s.plan.UnmatchedReasonsSuite",
+    "value eyes4s.plan.Diagnose$.timeline": "planJVM/eyes4s.plan.UnmatchedReasonsSuite",
+    "value eyes4s.plan.Diagnose$.windowOccupancy": "planJVM/eyes4s.plan.UnmatchedReasonsSuite",
+    "value eyes4s.plan.Diagnose$.workQuanta": "planJVM/eyes4s.plan.UnmatchedReasonsSuite",
     "value eyes4s.plan.DiagnosticCatalog$.admission": "planJVM/consumer.PublicPlanSuite",
     "value eyes4s.plan.DiagnosticCatalog$.admissionReason": "planJVM/consumer.PublicPlanSuite",
     "value eyes4s.plan.DiagnosticCatalog$.algorithmMetadata": "planJVM/consumer.PublicPlanSuite",
@@ -17477,7 +17689,7 @@
     "value eyes4s.plan.FactSlot$.fixed": "planJVM/eyes4s.plan.StudyFormSuite",
     "value eyes4s.plan.FormValues$.empty": "planJVM/eyes4s.plan.RecipeFormAccessorsSuite",
     "value eyes4s.plan.ImportSpec.digest": "planJVM/eyes4s.plan.SourceIdentitySuite",
-    "value eyes4s.plan.InitialFixationError$.diagnose": "planJVM/eyes4s.plan.DiagnosticCatalogSuite",
+    "value eyes4s.plan.InitialFixationError$.diagnose": "planJVM/eyes4s.plan.UnmatchedReasonsSuite",
     "value eyes4s.plan.Labelled$.given_Labelled_ControlReferences": "planJVM/eyes4s.plan.StudyFormKeysSuite",
     "value eyes4s.plan.Labelled$.given_Labelled_EdgePolicy": "codecJVM/eyes4s.repetitionconsumer.RepetitionPlanSuite",
     "value eyes4s.plan.Labelled$.given_Labelled_FixationBoundary": "codecJVM/eyes4s.repetitionconsumer.RepetitionPlanSuite",
@@ -17546,7 +17758,7 @@
     "value eyes4s.plan.RecipeParameters$.syncMark": "planJVM/eyes4s.plan.MethodDescriptorSuite",
     "value eyes4s.plan.RecipeParameters$.syncModel": "planJVM/eyes4s.plan.PreflightSuite",
     "value eyes4s.plan.RecipeParameters$.weight": "planJVM/eyes4s.plan.StudyCursorSuite",
-    "value eyes4s.plan.RecordIdentityError$.diagnose": "planJVM/eyes4s.plan.DiagnosticCatalogSuite",
+    "value eyes4s.plan.RecordIdentityError$.diagnose": "planJVM/eyes4s.plan.UnmatchedReasonsSuite",
     "value eyes4s.plan.RecordingForm.areas": "planJVM/eyes4s.plan.RecipeFormAccessorsSuite",
     "value eyes4s.plan.RecordingForm.fields": "planJVM/eyes4s.plan.RecipeFormAccessorsSuite",
     "value eyes4s.plan.RecordingForm.interpolationGap": "planJVM/eyes4s.plan.RecipeFormAccessorsSuite",
@@ -17557,7 +17769,7 @@
     "value eyes4s.plan.RecordingMethodDescriptor.execution": "codecJVM/eyes4s.codec.RecordingMethodsSuite",
     "value eyes4s.plan.RecordingReport.family": "planJVM/eyes4s.plan.PreflightSuite",
     "value eyes4s.plan.Remedial$.finding": "planJVM/eyes4s.plan.AnalysisReportSuite",
-    "value eyes4s.plan.Remedial$.plan": "planJVM/eyes4s.plan.AnalysisReportSuite",
+    "value eyes4s.plan.Remedial$.plan": "planJVM/eyes4s.plan.UnmatchedReasonsSuite",
     "value eyes4s.plan.Remedial$.recording": "planJVM/eyes4s.plan.AnalysisReportSuite",
     "value eyes4s.plan.Remedial$.temporal": "planJVM/eyes4s.plan.AnalysisReportSuite",
     "value eyes4s.plan.RepetitionForm.controlSelection": "codecJVM/eyes4s.repetitionconsumer.RepetitionPlanSuite",
@@ -17615,10 +17827,10 @@
     "value eyes4s.plan.StudyPairing$.version1": "ioJVM/docconsumer.DocumentationExamplesSuite",
     "value eyes4s.plan.StudyPairing$package$.TrialOccurrence$.first": "planJVM/eyes4s.plan.CountedStudyCursorSuite",
     "value eyes4s.plan.StudyPairing$package$.TrialOccurrence$.given_KeyDigest_TrialOccurrence": "planJVM/eyes4s.plan.CountedStudyCursorSuite",
-    "value eyes4s.plan.StudyPreview.matchedCardinality": "planJVM/eyes4s.plan.StudyCountsSuite",
+    "value eyes4s.plan.StudyPreview.matchedCardinality": "planJVM/eyes4s.plan.OccurrencePairingSuite",
     "value eyes4s.plan.StudyPreview.reductionOrientation": "planJVM/eyes4s.plan.StudyPreviewSuite",
     "value eyes4s.plan.StudyReport.family": "planJVM/eyes4s.plan.PreflightSuite",
-    "value eyes4s.plan.StudyRevisionError$.diagnose": "planJVM/eyes4s.plan.DiagnosticCatalogSuite",
+    "value eyes4s.plan.StudyRevisionError$.diagnose": "planJVM/eyes4s.plan.UnmatchedReasonsSuite",
     "value eyes4s.plan.TemporalForm.boundary": "planJVM/eyes4s.plan.RecipeFormAccessorsSuite",
     "value eyes4s.plan.TemporalForm.fields": "planJVM/eyes4s.plan.RecipeFormAccessorsSuite",
     "value eyes4s.plan.TemporalForm.repetitions": "planJVM/eyes4s.plan.RecipeFormAccessorsSuite",
@@ -17969,6 +18181,16 @@
       "another level, a missing or extra member, a bad role, scale or name is refused",
       "every role and an empty group round-trip exactly",
       "the pinned document holds a cell and a participant of it"
+    ],
+    "codecJS/eyes4s.codec.ReportSourcesTablesSuite": [
+      "a report evaluates over the source, bound to it",
+      "an unparsed covariate cell is bound: it changes the report's findings",
+      "any value the source reads changes its binding, in the part that reads it",
+      "covariate rows the source does not read are not bound",
+      "equal tables bind alike, whenever they are built",
+      "query tables whose unparsed cells disagree with their covariate table are refused",
+      "tables out of scale order, or covariates that disagree, are refused, named",
+      "the binding of fixed tables is pinned, the same on the JVM and Scala.js"
     ],
     "codecJS/eyes4s.codec.ResultArchivesV1Suite": [
       "a declared fixation dispersion value is refused where it would be ignored",
@@ -19162,6 +19384,10 @@
       "every recipe family has exactly one witness, in declaration order",
       "the named gaps are exactly the pinned ones"
     ],
+    "ioJS/eyes4s.io.FixationRowInterpretationSuite": [
+      "resumed row interpretation retains absolute source locations and scientific units",
+      "row refusal retains raw fields and absolute location with key-before-width precedence"
+    ],
     "ioJS/eyes4s.io.FixationSourceTextSuite": [
       "a corrected record's parse corrects to its admitted position, bit for bit",
       "a key reader built from the layout resolves participants through the layout",
@@ -19190,6 +19416,12 @@
       "the ledger keeps the source's own ordinal values, which need not be contiguous",
       "timestamp admission handles exact long values, ties and extreme decimal exponents",
       "unknown key rows and wrong row widths remain observable"
+    ],
+    "ioJS/eyes4s.io.FixationTrialDecisionSuite": [
+      "an otherwise acceptable group still reaches the scanpath overlap check",
+      "duplicate work is not evaluated after a higher-priority refusal",
+      "inventory override retains its own rows and renamed key ahead of all other defects",
+      "synchronous admission keeps rejection before correction conflict before duplicate ordinal"
     ],
     "ioJS/eyes4s.io.InspectionSourceSuite": [
       "a result row drills down to the logical CSV record that supplied it",
@@ -19236,6 +19468,15 @@
       "item 4: a ledger without an inventory cannot name NotInInventory",
       "item 6: derived sample counts and their rate are recorded in the ledger",
       "item 8: numbers follow a strict decimal grammar"
+    ],
+    "ioJS/eyes4s.io.InventoryRowDecisionSuite": [
+      "duplicate records collapse by parsed values while original source rows remain intact",
+      "each shared conflict field compares parsed values, including numeric spelling and blankness",
+      "field decisions preserve the previous distinct-value group rule and declaration order",
+      "shared row decision retains every defect in declared order and uses absolute record numbers",
+      "valid records preserve identity and text lexemes while parsing typed attributes",
+      "whole inventory reports all row errors before conflicts in first-record order",
+      "wrong width precedes all field interpretation errors"
     ],
     "ioJS/eyes4s.io.IoDiagnosticCatalogSuite": [
       "CSV layout diagnostics retain their typed cause and its record subject",
@@ -19370,6 +19611,10 @@
       "n-ary clocks behave the same way",
       "one frame identity cannot certify incompatible metadata",
       "the n-ary form reports the mismatch against the first element"
+    ],
+    "kernelJS/eyes4s.kernel.ContentHashAppendSuite": [
+      "every three-part partition resumes the exact hash, including split surrogates",
+      "whole and incremental text hashing retain independent pre-change digest vectors"
     ],
     "kernelJS/eyes4s.kernel.EntropyConformanceSuite": [
       "a shifted lattice: eyesim stops in stopifnot, eyes4s returns GridMismatch",
@@ -19629,16 +19874,22 @@
       "static point sampling archive: versionedCodec.round trip preserves the value"
     ],
     "lawsJS/eyes4s.laws.AoiLawsSuite": [
+      "a sampled entry with censored support still has latency and a run",
       "analytic three-way overlap distinguishes replicated mass from visible union",
+      "background and exclusions separate runs and latency starts at the recording",
       "static AOIs: aoi.accounting.dwell proportions use analysable union plus background",
+      "static AOIs: aoi.accounting.first entry latency follows sampled membership",
       "static AOIs: aoi.accounting.one membership per source sample",
       "static AOIs: aoi.accounting.per-area dwell and policy partition agree",
       "static AOIs: aoi.accounting.represented support is conserved",
+      "static AOIs: aoi.accounting.run counts follow maximal consecutive sampled membership",
       "static AOIs: aoi.accounting.union background exclusions and overlap have independent totals",
       "zero analysable time: aoi.accounting.dwell proportions use analysable union plus background",
+      "zero analysable time: aoi.accounting.first entry latency follows sampled membership",
       "zero analysable time: aoi.accounting.one membership per source sample",
       "zero analysable time: aoi.accounting.per-area dwell and policy partition agree",
       "zero analysable time: aoi.accounting.represented support is conserved",
+      "zero analysable time: aoi.accounting.run counts follow maximal consecutive sampled membership",
       "zero analysable time: aoi.accounting.union background exclusions and overlap have independent totals"
     ],
     "lawsJS/eyes4s.laws.ArtifactCodecLawSuite": [
@@ -20762,9 +21013,10 @@
       "MatchedReferences: matchedReferences.SameOccurrence schedules exactly the references of the focal trial's own occurrence",
       "MatchedReferences: matchedReferences.Select schedules exactly the chosen occurrence of each item, for matches and controls",
       "MatchedReferences: matchedReferences.a study that runs has at most one matched reference per focal trial, unless it averages",
-      "MatchedReferences: matchedReferences.a study that runs under a one-reference rule draws exactly one control from every other item",
+      "MatchedReferences: matchedReferences.a study that runs under a one-reference rule draws one control from every other item, and none without a match",
       "MatchedReferences: matchedReferences.a trial label that names two items or occurrences is a conflict, and refuses",
       "MatchedReferences: matchedReferences.controls keep every occurrence only when asked to",
+      "MatchedReferences: matchedReferences.every matched and control score is the cosine of its own two trials, in any input order",
       "MatchedReferences: matchedReferences.pairs, cardinality and refusal do not depend on input order",
       "MatchedReferences: matchedReferences.preflight blocks exactly when execution refuses",
       "MatchedReferences: matchedReferences.the refusal names every focal trial with several references",
@@ -20999,6 +21251,10 @@
       "record units are expressible and construction cannot bypass validation"
     ],
     "planJS/eyes4s.plan.StudyCountsSuite": [
+      "a query whose only reference is repeated has no match, so no controls",
+      "a query without a match before one with a match leaves its control scores unchanged",
+      "a query without a match gets no control pairs and no score in either design",
+      "a stored result with controls for a query without a match is refused as stale",
       "duplicate keys are ambiguous, not unmatched or eligible",
       "empty schedules finish with exact zero",
       "exact oracle includes matched, controls, unmatched, and totals across scales",
@@ -21093,6 +21349,15 @@
       "permuted and chunked input produces the same canonical groups",
       "the incremental fold preserves record order and chooses the canonical representative"
     ],
+    "planJS/eyes4s.plan.UnmatchedReasonsSuite": [
+      "an admitted reference the pairing cannot use is not pairable, not by design",
+      "every kind projects under the catalog's conventions, a quarantine cause as its cause",
+      "every unmatched focal trial has exactly one reason, and the counts partition them",
+      "lures and novel probes have no reference by design; dropped study trials are named",
+      "preflight carries the reasons when given the inventory, and says undetermined without it",
+      "under SameOccurrence the occurrence is part of the key the inventory is searched by",
+      "under Select(At(n)) only occurrence n is searched: a dropped n is not admitted"
+    ],
     "planJS/eyes4s.pointconsumer.PointSamplingSuite": [
       "checked plan components cannot be fabricated by an external consumer",
       "clock and frame disagreements are operand-bearing failures, including no containing cell",
@@ -21134,6 +21399,7 @@
       "a contrast of a level no query shows is reported missing, never dropped",
       "a failed query is counted, a group with no query is missing, and missing is never zero",
       "a query without a group attribute is kept but ungrouped, and accounted for",
+      "a query without a match is not eligible: the books agree with the study's counts",
       "a source refuses a result another plan computed, and an unknown scale or component",
       "a stale binding is refused, naming the field",
       "a stored report is rebuilt only when its accounting and cells agree",
@@ -21650,6 +21916,16 @@
     "codecJVM/eyes4s.codec.ReportRefFixturesJvmSuite": [
       "the pinned report-reference document has its independently known digest",
       "the pinned report-reference document is the writer's output and the mirror"
+    ],
+    "codecJVM/eyes4s.codec.ReportSourcesTablesSuite": [
+      "a report evaluates over the source, bound to it",
+      "an unparsed covariate cell is bound: it changes the report's findings",
+      "any value the source reads changes its binding, in the part that reads it",
+      "covariate rows the source does not read are not bound",
+      "equal tables bind alike, whenever they are built",
+      "query tables whose unparsed cells disagree with their covariate table are refused",
+      "tables out of scale order, or covariates that disagree, are refused, named",
+      "the binding of fixed tables is pinned, the same on the JVM and Scala.js"
     ],
     "codecJVM/eyes4s.codec.ResultArchivesV1JvmSuite": [
       "both archives are exactly the writer's output, with independently known digests",
@@ -22935,6 +23211,10 @@
       "every recipe family has exactly one witness, in declaration order",
       "the named gaps are exactly the pinned ones"
     ],
+    "ioJVM/eyes4s.io.FixationRowInterpretationSuite": [
+      "resumed row interpretation retains absolute source locations and scientific units",
+      "row refusal retains raw fields and absolute location with key-before-width precedence"
+    ],
     "ioJVM/eyes4s.io.FixationSourceTextSuite": [
       "a corrected record's parse corrects to its admitted position, bit for bit",
       "a key reader built from the layout resolves participants through the layout",
@@ -22963,6 +23243,12 @@
       "the ledger keeps the source's own ordinal values, which need not be contiguous",
       "timestamp admission handles exact long values, ties and extreme decimal exponents",
       "unknown key rows and wrong row widths remain observable"
+    ],
+    "ioJVM/eyes4s.io.FixationTrialDecisionSuite": [
+      "an otherwise acceptable group still reaches the scanpath overlap check",
+      "duplicate work is not evaluated after a higher-priority refusal",
+      "inventory override retains its own rows and renamed key ahead of all other defects",
+      "synchronous admission keeps rejection before correction conflict before duplicate ordinal"
     ],
     "ioJVM/eyes4s.io.FreshProcessReconstructionJvmSuite": [
       "a corrupted artifact is refused by its digest in a fresh JVM, and only its study",
@@ -23026,6 +23312,15 @@
       "item 4: a ledger without an inventory cannot name NotInInventory",
       "item 6: derived sample counts and their rate are recorded in the ledger",
       "item 8: numbers follow a strict decimal grammar"
+    ],
+    "ioJVM/eyes4s.io.InventoryRowDecisionSuite": [
+      "duplicate records collapse by parsed values while original source rows remain intact",
+      "each shared conflict field compares parsed values, including numeric spelling and blankness",
+      "field decisions preserve the previous distinct-value group rule and declaration order",
+      "shared row decision retains every defect in declared order and uses absolute record numbers",
+      "valid records preserve identity and text lexemes while parsing typed attributes",
+      "whole inventory reports all row errors before conflicts in first-record order",
+      "wrong width precedes all field interpretation errors"
     ],
     "ioJVM/eyes4s.io.IoDiagnosticCatalogSuite": [
       "CSV layout diagnostics retain their typed cause and its record subject",
@@ -23105,6 +23400,16 @@
       "queries: 480 = 454 contributing + 3 failed + 9 without a match + 14 not admitted",
       "window: 543 records fall outside the image, in 409 trials, none off the screen"
     ],
+    "ioJVM/eyes4s.io.StudioFixtureRealSuite": [
+      "FIXTURE.md's participant table reproduces through eyes4s",
+      "SCORES.json regenerates byte for byte",
+      "at every scale the grand M minus B is the grand D, all over the same queries",
+      "every FIXTURE.md count reproduces through eyes4s",
+      "group, paired and per-group n agree with FIXTURE.md",
+      "the focus query P17 ret_07 x enc_03 is scored at all four scales",
+      "the stored file names its inputs, recipe and the JVM it was generated on",
+      "window figures and enc_03's role agree with FIXTURE.md"
+    ],
     "ioJVM/eyes4s.io.StudioGoldenJvmSuite": [
       "controls: 19 per query, 18 where an encoding trial was not admitted; 8,969 pairs",
       "inventory attributes are typed values of the admitted trial",
@@ -23171,6 +23476,10 @@
       "n-ary clocks behave the same way",
       "one frame identity cannot certify incompatible metadata",
       "the n-ary form reports the mismatch against the first element"
+    ],
+    "kernelJVM/eyes4s.kernel.ContentHashAppendSuite": [
+      "every three-part partition resumes the exact hash, including split surrogates",
+      "whole and incremental text hashing retain independent pre-change digest vectors"
     ],
     "kernelJVM/eyes4s.kernel.EntropyConformanceSuite": [
       "a shifted lattice: eyesim stops in stopifnot, eyes4s returns GridMismatch",
@@ -23430,16 +23739,22 @@
       "static point sampling archive: versionedCodec.round trip preserves the value"
     ],
     "lawsJVM/eyes4s.laws.AoiLawsSuite": [
+      "a sampled entry with censored support still has latency and a run",
       "analytic three-way overlap distinguishes replicated mass from visible union",
+      "background and exclusions separate runs and latency starts at the recording",
       "static AOIs: aoi.accounting.dwell proportions use analysable union plus background",
+      "static AOIs: aoi.accounting.first entry latency follows sampled membership",
       "static AOIs: aoi.accounting.one membership per source sample",
       "static AOIs: aoi.accounting.per-area dwell and policy partition agree",
       "static AOIs: aoi.accounting.represented support is conserved",
+      "static AOIs: aoi.accounting.run counts follow maximal consecutive sampled membership",
       "static AOIs: aoi.accounting.union background exclusions and overlap have independent totals",
       "zero analysable time: aoi.accounting.dwell proportions use analysable union plus background",
+      "zero analysable time: aoi.accounting.first entry latency follows sampled membership",
       "zero analysable time: aoi.accounting.one membership per source sample",
       "zero analysable time: aoi.accounting.per-area dwell and policy partition agree",
       "zero analysable time: aoi.accounting.represented support is conserved",
+      "zero analysable time: aoi.accounting.run counts follow maximal consecutive sampled membership",
       "zero analysable time: aoi.accounting.union background exclusions and overlap have independent totals"
     ],
     "lawsJVM/eyes4s.laws.ArtifactCodecLawSuite": [
@@ -24595,9 +24910,10 @@
       "MatchedReferences: matchedReferences.SameOccurrence schedules exactly the references of the focal trial's own occurrence",
       "MatchedReferences: matchedReferences.Select schedules exactly the chosen occurrence of each item, for matches and controls",
       "MatchedReferences: matchedReferences.a study that runs has at most one matched reference per focal trial, unless it averages",
-      "MatchedReferences: matchedReferences.a study that runs under a one-reference rule draws exactly one control from every other item",
+      "MatchedReferences: matchedReferences.a study that runs under a one-reference rule draws one control from every other item, and none without a match",
       "MatchedReferences: matchedReferences.a trial label that names two items or occurrences is a conflict, and refuses",
       "MatchedReferences: matchedReferences.controls keep every occurrence only when asked to",
+      "MatchedReferences: matchedReferences.every matched and control score is the cosine of its own two trials, in any input order",
       "MatchedReferences: matchedReferences.pairs, cardinality and refusal do not depend on input order",
       "MatchedReferences: matchedReferences.preflight blocks exactly when execution refuses",
       "MatchedReferences: matchedReferences.the refusal names every focal trial with several references",
@@ -24832,6 +25148,10 @@
       "record units are expressible and construction cannot bypass validation"
     ],
     "planJVM/eyes4s.plan.StudyCountsSuite": [
+      "a query whose only reference is repeated has no match, so no controls",
+      "a query without a match before one with a match leaves its control scores unchanged",
+      "a query without a match gets no control pairs and no score in either design",
+      "a stored result with controls for a query without a match is refused as stale",
       "duplicate keys are ambiguous, not unmatched or eligible",
       "empty schedules finish with exact zero",
       "exact oracle includes matched, controls, unmatched, and totals across scales",
@@ -24926,6 +25246,15 @@
       "permuted and chunked input produces the same canonical groups",
       "the incremental fold preserves record order and chooses the canonical representative"
     ],
+    "planJVM/eyes4s.plan.UnmatchedReasonsSuite": [
+      "an admitted reference the pairing cannot use is not pairable, not by design",
+      "every kind projects under the catalog's conventions, a quarantine cause as its cause",
+      "every unmatched focal trial has exactly one reason, and the counts partition them",
+      "lures and novel probes have no reference by design; dropped study trials are named",
+      "preflight carries the reasons when given the inventory, and says undetermined without it",
+      "under SameOccurrence the occurrence is part of the key the inventory is searched by",
+      "under Select(At(n)) only occurrence n is searched: a dropped n is not admitted"
+    ],
     "planJVM/eyes4s.pointconsumer.PointSamplingSuite": [
       "checked plan components cannot be fabricated by an external consumer",
       "clock and frame disagreements are operand-bearing failures, including no containing cell",
@@ -24967,6 +25296,7 @@
       "a contrast of a level no query shows is reported missing, never dropped",
       "a failed query is counted, a group with no query is missing, and missing is never zero",
       "a query without a group attribute is kept but ungrouped, and accounted for",
+      "a query without a match is not eligible: the books agree with the study's counts",
       "a source refuses a result another plan computed, and an unknown scale or component",
       "a stale binding is refused, naming the field",
       "a stored report is rebuilt only when its accounting and cells agree",

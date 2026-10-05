@@ -732,7 +732,10 @@ class FixationJourneySuite extends munit.CatsEffectSuite:
       val replanned = j.plan(kept, Vector(StudyEstimate.Binned()))
       val report    = replanned.preflight(Some(kept), pairs)
       val focal     = j.key("s1", "b", "recall")
-      assertEquals(report.findings, Vector(StudyFinding.UnmatchedFocal(focal)))
+      assertEquals(
+        report.findings,
+        Vector(StudyFinding.UnmatchedFocal(focal, UnmatchedKind.Undetermined))
+      )
       assertEquals(report.availability, Availability.Ready)
       assertEquals(
         report.warnings.map(w => w.severity -> w.category),
