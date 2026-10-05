@@ -16,7 +16,8 @@
 
 package eyes4s.studio.core.real
 
-import cats.effect.kernel.{Concurrent, Deferred, Ref}
+import cats.effect.kernel.{Concurrent, Deferred, Ref, Resource}
+import cats.effect.std.Supervisor
 import cats.kernel.Eq
 import cats.syntax.all.*
 import eyes4s.codec.ByteDigest
@@ -75,7 +76,8 @@ final class RealStudyBackend[F[_]] private (
     state: SignallingRef[F, RealStudyBackend.Jobs[F]],
     documentRuns: Map[RunId, RunRef],
     inspected: Ref[F, Map[RunId, RealResults]],
-    trialViews: Ref[F, Map[AnalysisRevision, RealTrialViews]]
+    trialViews: Ref[F, Map[AnalysisRevision, RealTrialViews]],
+    supervisor: Supervisor[F]
 )(using F: Concurrent[F])
     extends StudyBackend[F]:
   import RealStudyBackend.*
@@ -320,6 +322,9 @@ final class RealStudyBackend[F[_]] private (
     val submission = StudyExecution.submissionWithId((job, run), work.work)
     F.uncancelable { _ =>
       Execution[F].start(submission).allocated.flatMap { case (running, release) =>
+        // Telemetry this mapping cannot read, or a throw while folding it,
+        // is a defect: it is recorded and the run cancelled, so the settle
+        // fiber ends the job.
         val observe = running.progress
           .evalMap(p =>
             state.update(s =>
@@ -334,38 +339,92 @@ final class RealStudyBackend[F[_]] private (
           )
           .compile
           .drain
-        val settle = running.outcome.attempt.flatMap { outcome =>
-          // A recomputed result is checked against the run's recorded
-          // archive digest, when it has one, outside the state's lock.
-          val mismatch = (purpose, outcome) match
-            case (Purpose.Recompute(ref), Right(RunOutcome.Completed(_, _, result))) =>
-              verify(ref, work, result)
-            case _ => None
-          state.update { s =>
-            s.live(job).fold(s) { carried =>
-              val read = s.defects.get(job) match
-                case Some(d) => Left(d)
-                case None    =>
-                  outcome.leftMap(e => RealExecution.Defect(s"eyes4s raised ${e.getMessage}"))
-              val (end, runState, result) =
-                RealExecution.settle(job, run, read, carried, work.counts)
-              (purpose, mismatch) match
-                case (Purpose.NewRun, _) =>
-                  val held = result.map(RealRun(work, _, RunOrigin.Computed))
-                  s.settle(job, run, end, Some(runState), held)
-                case (Purpose.Recompute(_), Some(refused)) =>
-                  val failed =
-                    JobOutcome.Failed(job, run, Vector(refused.diagnostic), end.progress)
-                  s.settle(job, run, failed, None, None).refuse(run, refused)
-                case (Purpose.Recompute(_), None) =>
-                  val origin = RunOrigin.Recomputed(StudioBuild.eyes4sBaseVersion)
-                  s.settle(job, run, end, None, result.map(RealRun(work, _, origin)))
-            }
-          }
-        } >> release
-        handle.complete(running.cancel) >> F.start(observe) >> F.start(settle).void
+          .handleErrorWith(e =>
+            state.update(s =>
+              s.copy(defects = s.defects.updated(job, RealExecution.Defect(s"telemetry: $e")))
+            ) >> running.cancel
+          )
+        // The job always settles: a throw from eyes4s's outcome, from the
+        // digest check or from settling itself settles it as a defect, which
+        // frees the backend for the next submission. Releasing the run
+        // (also on the supervisor's shutdown) cancels it.
+        val settle = F.guarantee(
+          running.outcome.attempt
+            .flatMap(outcome =>
+              F.catchNonFatal(decide(work, job, run, purpose, outcome)).flatMap(state.update)
+            )
+            .handleErrorWith(e =>
+              state.update(s =>
+                s.live(job).fold(s) { _ =>
+                  val end = JobOutcome.Failed(
+                    job,
+                    run,
+                    Vector(RealExecution.defect(run, RealExecution.Defect(s"settling: $e"))),
+                    None
+                  )
+                  s.settle(
+                    job,
+                    run,
+                    end,
+                    Option.when(purpose == Purpose.NewRun)(RunState.Failed),
+                    None
+                  )
+                }
+              )
+            ),
+          release
+        )
+        handle.complete(running.cancel) >> supervisor.supervise(observe) >>
+          supervisor.supervise(settle).void
       }
     }
+
+  /** The state after a job's eyes4s outcome: a new run's result is kept as
+    * computed; a recomputed one is checked against the run's recorded digest
+    * and kept marked with the eyes4s release, and a recomputation that fails
+    * is refused for good, since its inputs cannot change in this backend.
+    */
+  private def decide(
+      work: RealPrepared,
+      job: JobId,
+      run: RunId,
+      purpose: Purpose,
+      outcome: Either[Throwable, RealExecution.Outcome]
+  ): Jobs[F] => Jobs[F] =
+    val mismatch = (purpose, outcome) match
+      case (Purpose.Recompute(ref), Right(RunOutcome.Completed(_, _, result))) =>
+        verify(ref, work, result)
+      case _ => None
+    s =>
+      s.live(job).fold(s) { carried =>
+        val read = s.defects.get(job) match
+          case Some(d) => Left(d)
+          case None    => outcome.leftMap(e => RealExecution.Defect(s"eyes4s raised $e"))
+        val (end, runState, result) = RealExecution.settle(job, run, read, carried, work.counts)
+        (purpose, mismatch, end) match
+          case (Purpose.NewRun, _, _) =>
+            s.settle(
+              job,
+              run,
+              end,
+              Some(runState),
+              result.map(RealRun(work, _, RunOrigin.Computed))
+            )
+          case (Purpose.Recompute(_), Some(refused), _) =>
+            val failed = JobOutcome.Failed(job, run, Vector(refused.diagnostic), end.progress)
+            s.settle(job, run, failed, None, None).refuse(run, refused)
+          case (Purpose.Recompute(_), None, JobOutcome.Failed(_, _, diagnostics, _)) =>
+            val refused = BackendError.Unavailable(
+              DiagnosticLocus.Artifact(
+                s"${run.label} recomputation failed: " +
+                  diagnostics.map(d => s"${d.code}: ${d.message}").mkString("; ")
+              )
+            )
+            s.settle(job, run, end, None, None).refuse(run, refused)
+          case (Purpose.Recompute(_), None, _) =>
+            val origin = RunOrigin.Recomputed(StudioBuild.eyes4sBaseVersion)
+            s.settle(job, run, end, None, result.map(RealRun(work, _, origin)))
+      }
 
   // ------------------------------------------------------------------ results
 
@@ -392,6 +451,18 @@ final class RealStudyBackend[F[_]] private (
           )
         )
 
+  /** Until the S3.7 protocol minor's typed form, a run whose recorded
+    * dataset revision is not its analysis revision's is `Unavailable` naming
+    * both revisions.
+    */
+  private def datasetMismatch(ref: RunRef, work: RealPrepared): BackendError =
+    BackendError.Unavailable(
+      DiagnosticLocus.Artifact(
+        s"${ref.id.label} was computed on data ${ref.dataset.label}; " +
+          s"${work.revision.label} is on data ${work.dataset.label}"
+      )
+    )
+
   /** The eyes4s result of `run`. A completed run of the document that this
     * backend did not compute is recomputed on first request (S3.7 slice 5,
     * option (a)): its revision's prepared study runs as an ordinary job, whose
@@ -414,6 +485,10 @@ final class RealStudyBackend[F[_]] private (
             case Some(ref) =>
               prepare(ref.analysis).flatMap {
                 case Left(e) => F.pure(Left(e))
+                // The run records the dataset revision it was computed on;
+                // its analysis must still be on that revision.
+                case Right(work) if work.dataset != ref.dataset =>
+                  F.pure(Left(datasetMismatch(ref, work)))
                 // Another job running defers the recomputation to a later request.
                 case Right(work) => start(work, Purpose.Recompute(ref)).as(pending)
               }
@@ -495,38 +570,51 @@ object RealStudyBackend:
 
   /** The real backend over `document`'s dataset revisions and analysis
     * revisions (its saved revisions and its draft), with `sources` for their
-    * files.
+    * files. Its jobs run on fibers the resource owns: releasing it cancels
+    * every running job.
     */
-  def create[F[_]: Concurrent](
+  def resource[F[_]: Concurrent](
+      document: StudioDocument,
+      sources: DatasetSources[F]
+  ): Resource[F, RealStudyBackend[F]] =
+    Supervisor[F](await = false).evalMap(supervisor =>
+      (
+        Ref.of[F, Map[DatasetRevision, AdmittedDataset]](Map.empty),
+        Ref.of[F, Map[AnalysisRevision, RealPrepared]](Map.empty),
+        SignallingRef[F].of(Jobs.of[F](document)),
+        Ref.of[F, Map[RunId, RealResults]](Map.empty),
+        Ref.of[F, Map[AnalysisRevision, RealTrialViews]](Map.empty)
+      ).mapN { (admitted, prepared, state, inspected, trialViews) =>
+        val saved = document.analyses.map(a => a.id -> (a.dataset, a.recipe))
+        // A draft's recipe is its changes applied to its base's recipe.
+        val draft = document.draft.flatMap(d =>
+          document
+            .analysis(d.base)
+            .map(base => d.id -> (d.dataset.getOrElse(base.dataset), d.recipe(base.recipe)))
+        )
+        new RealStudyBackend(
+          document.datasets.map(d => d.id -> d).toMap,
+          (saved ++ draft).toMap,
+          sources,
+          admitted,
+          prepared,
+          state,
+          document.runs.map(r => r.id -> r).toMap,
+          inspected,
+          trialViews,
+          supervisor
+        )
+      }
+    )
+
+  /** A backend whose fibers are never released: for tests, which end with
+    * their JVM. A host uses [[resource]].
+    */
+  private[real] def create[F[_]: Concurrent](
       document: StudioDocument,
       sources: DatasetSources[F]
   ): F[RealStudyBackend[F]] =
-    (
-      Ref.of[F, Map[DatasetRevision, AdmittedDataset]](Map.empty),
-      Ref.of[F, Map[AnalysisRevision, RealPrepared]](Map.empty),
-      SignallingRef[F].of(Jobs.of[F](document)),
-      Ref.of[F, Map[RunId, RealResults]](Map.empty),
-      Ref.of[F, Map[AnalysisRevision, RealTrialViews]](Map.empty)
-    ).mapN { (admitted, prepared, state, inspected, trialViews) =>
-      val saved = document.analyses.map(a => a.id -> (a.dataset, a.recipe))
-      // A draft's recipe is its changes applied to its base's recipe.
-      val draft = document.draft.flatMap(d =>
-        document
-          .analysis(d.base)
-          .map(base => d.id -> (d.dataset.getOrElse(base.dataset), d.recipe(base.recipe)))
-      )
-      new RealStudyBackend(
-        document.datasets.map(d => d.id -> d).toMap,
-        (saved ++ draft).toMap,
-        sources,
-        admitted,
-        prepared,
-        state,
-        document.runs.map(r => r.id -> r).toMap,
-        inspected,
-        trialViews
-      )
-    }
+    resource(document, sources).allocated.map(_._1)
 
   private def finished(s: JobState): Option[JobOutcome] = s match
     case JobState.Finished(o) => Some(o)

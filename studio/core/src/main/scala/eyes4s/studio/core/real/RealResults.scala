@@ -112,8 +112,16 @@ final class RealResults private (
             k    <- core(key)
             rows <- s.contrast match
               case ScaleContrast.Rows(rows) => Right(rows)
-              case ScaleContrast.Failed(d)  =>
-                Left(BackendError.Unavailable(DiagnosticLocus.Address(address)))
+              // The scale's contrast was refused whole: eyes4s's diagnostic.
+              case ScaleContrast.Failed(d) =>
+                val diag = diagnostic(d)
+                Left(
+                  BackendError.Unavailable(
+                    DiagnosticLocus.Artifact(
+                      s"${address.render}: ${diag.code}: ${diag.message}"
+                    )
+                  )
+                )
             row <- rows.get(ResultRef.ContrastRow(i, k)).toRight(unknown)
           yield
             val operands = for

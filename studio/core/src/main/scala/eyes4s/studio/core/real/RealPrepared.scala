@@ -57,13 +57,17 @@ object RealPrepared:
       recipe: Recipe,
       admitted: AdmittedDataset
   ): Either[BackendError, RealPrepared] =
-    val refused = BackendError.Unavailable(DiagnosticLocus.Revision(revision))
+    // Until the S3.7 protocol minor's typed plan refusal: eyes4s's diagnostic.
+    def refused(step: String)(e: eyes4s.plan.PlanError) =
+      BackendError.Unavailable(
+        DiagnosticLocus.Artifact(s"${revision.label} $step: ${RealPlan.reason(e)}")
+      )
     for
       planned <- RealPlan.plan(revision, recipe, admitted.screen, admitted.input)
       (plan, method) = planned
-      work    <- plan.prepare(admitted.input).leftMap(_ => refused)
-      counts  <- work.counts.leftMap(_ => refused)
-      preview <- work.preview(counts).leftMap(_ => refused)
+      work    <- plan.prepare(admitted.input).leftMap(refused("preparation"))
+      counts  <- work.counts.leftMap(refused("counts"))
+      preview <- work.preview(counts).leftMap(refused("preview"))
     yield
       val focal = recipe.phases.focal
       new RealPrepared(

@@ -277,14 +277,8 @@ class RealStudyBackendSuite extends CatsEffectSuite:
         .compile
         .toVector
     yield
-      assertEquals(
-        known,
-        Left(BackendError.Unavailable(DiagnosticLocus.Revision(StoryMoments.rev4)))
-      )
-      assertEquals(
-        draft,
-        Left(BackendError.Unavailable(DiagnosticLocus.Revision(StoryMoments.rev5)))
-      )
+      assertLayoutRefused(known, StoryMoments.rev4)
+      assertLayoutRefused(draft, StoryMoments.rev5)
       assertEquals(unknown.left.map(_.code), Left("studio-backend.unknown-revision"))
       // The document's runs, in the states the fake reports at t2.
       assertEquals(runs, fake)
@@ -294,6 +288,13 @@ class RealStudyBackendSuite extends CatsEffectSuite:
   }
 
   private val trialLayout: StudioDocument = get(RealBackendConformanceSuite.trialLayout)
+
+  /** The story preset's layout refused, naming the revision and the field. */
+  private def assertLayoutRefused[A](r: Either[BackendError, A], revision: AnalysisRevision) =
+    r match
+      case Left(BackendError.Unavailable(DiagnosticLocus.Artifact(why))) =>
+        assert(why.startsWith(s"${revision.label} layout: "), why)
+      case other => fail(s"expected the layout refused, got $other")
 
   test("the preview counts are eyes4s's prepared study over the admitted trials") {
     for
@@ -314,10 +315,7 @@ class RealStudyBackendSuite extends CatsEffectSuite:
       assertEquals(rev5.pairRowsPerScale, rev4.pairRowsPerScale)
       assertEquals(rev5.pairRows, rev5.pairRowsPerScale * 5)
       // The story's own layout does not fit an inventory dataset's keys.
-      assertEquals(
-        story,
-        Left(BackendError.Unavailable(DiagnosticLocus.Revision(StoryMoments.rev4)))
-      )
+      assertLayoutRefused(story, StoryMoments.rev4)
   }
 
   private def ok[A](fa: IO[Either[BackendError, A]]): IO[A] = fa.map(get)
@@ -563,6 +561,7 @@ class RealStudyBackendSuite extends CatsEffectSuite:
       key: TrialKey,
       status: String,
       matched: Vector[String],
+      controls: Option[Int],
       scores: Vector[(Option[Double], Option[Double], Option[Double])]
   )
 
@@ -588,6 +587,7 @@ class RealStudyBackendSuite extends CatsEffectSuite:
         ),
         get(h.get[String]("status")),
         get(h.get[Vector[String]]("matched")),
+        get(h.get[Option[Int]]("controls")),
         sigmas.map(mbd)
       )
     }
@@ -607,9 +607,13 @@ class RealStudyBackendSuite extends CatsEffectSuite:
       }
     go(0, Vector.empty)
 
-  /** SCORES.json rounds half-even to 6 places. */
+  /** SCORES.json rounds half-even to 6 places: half a unit in the last
+    * place, plus the double's own rounding of the stored decimal.
+    */
+  private val ScoresTolerance: Double = 5e-7 + 1e-12
+
   private def near(obtained: Double, stored: Double, what: String): Unit =
-    assert(math.abs(obtained - stored) <= 5e-7 + 1e-12, s"$what: $obtained vs $stored")
+    assert(math.abs(obtained - stored) <= ScoresTolerance, s"$what: $obtained vs $stored")
 
   test("run 7's inspected contrasts and matched pair rows are SCORES.json's, at every scale") {
     val (queries, perScale) = scores
@@ -642,6 +646,20 @@ class RealStudyBackendSuite extends CatsEffectSuite:
           )
         ).tupled
       }
+      // The first control pair of every contributing query at 2°.
+      firstControls = contributing.flatMap(q =>
+        pages(2).find(r => r.query == q.key && r.design == PairDesign.Control)
+      )
+      controlInspected <- firstControls.traverse(r =>
+        real
+          .inspect(
+            StoryMoments.run7,
+            ResultAddress.PairRow(2, PairDesign.Control, r.query, r.reference)
+          )
+          .map(r -> _)
+      )
+      ledger <- every(real, StoryMoments.r3)
+      items = ledger.map(e => e.trial -> e.item).toMap
     yield
       assert(out.exists(_.isInstanceOf[JobOutcome.Completed]), out)
       assertEquals(pages.map(_.size.toLong), Vector.fill(4)(perScale))
@@ -674,8 +692,43 @@ class RealStudyBackendSuite extends CatsEffectSuite:
             near(mv, sm.get, s"${q.key.label} matched reduction")
             near(bv, sb.get, s"${q.key.label} control reduction")
             near(pv, sm.get, s"${q.key.label} matched pair")
-            assert(controls > 0, s"${q.key.label}: $controls controls")
+            assertEquals(Some(controls), q.controls, s"${q.key.label} controls")
           case other => fail(s"${q.key.label}: $other")
+      }
+      // Each query's pair rows are contiguous, queries in focal (SCORES) order.
+      val order = queries.map(_.key)
+      pages.zipWithIndex.foreach { (rows, i) =>
+        val runs = rows
+          .map(_.query)
+          .foldLeft(Vector.empty[TrialKey])((acc, k) =>
+            if acc.lastOption.contains(k) then acc else acc :+ k
+          )
+        assertEquals(runs, runs.distinct, s"scale $i: a query's rows are not contiguous")
+        assertEquals(runs, order.filter(runs.toSet), s"scale $i: queries out of focal order")
+      }
+      // Every contributing query's control count, and a control pair as
+      // eyes4s holds it: the reference's item and the row's score.
+      val at2 = pages(2).groupBy(_.query)
+      contributing.foreach { q =>
+        val controls = at2(q.key).filter(_.design == PairDesign.Control)
+        assertEquals(Some(controls.size), q.controls, s"${q.key.label} control rows")
+      }
+      assertEquals(controlInspected.size, contributing.size)
+      controlInspected.foreach { (row, inspected) =>
+        val score = row.score match
+          case PairScoreState.Scored(v) => v
+          case other                    => fail(s"$row: $other")
+        assertEquals(
+          inspected,
+          Right(
+            Inspection.Pair(
+              ResultAddress.PairRow(2, PairDesign.Control, row.query, row.reference),
+              items(row.reference),
+              score
+            )
+          )
+        )
+        assertNotEquals(items(row.reference), items(row.query), row)
       }
       // Each contributing query's matched pair is its stored M, query by query,
       // matched pair first.
@@ -857,4 +910,102 @@ class RealStudyBackendSuite extends CatsEffectSuite:
       )
       assertEquals(swapped.left.map(_.code), Left("studio-backend.unknown-reference"))
       assertEquals(beyond.left.map(_.code), Left("studio-backend.unknown-scale"))
+  }
+
+  // ------------------------------------------------------------------ review-s37b
+
+  test(
+    "a run recorded on another dataset revision than its analysis's is refused, naming both"
+  ) {
+    val t     = trialLayout
+    val moved = get(
+      StudioDocument.of(
+        t.datasets,
+        t.analyses,
+        t.draft,
+        t.runs.map(r =>
+          if r.id == StoryMoments.run7 then r.copy(dataset = StoryMoments.r2) else r
+        ),
+        t.reporting,
+        t.figures,
+        t.presentation,
+        t.jobs
+      )
+    )
+    for
+      real <- RealStudyBackend.create[IO](moved, RealBackendConformanceSuite.golden)
+      held <- real.held(StoryMoments.run7)
+      jobs <- real.jobs
+    yield
+      assertEquals(
+        held,
+        Left(
+          BackendError.Unavailable(
+            DiagnosticLocus.Artifact("run 7 was computed on data r2; rev 4 is on data r3")
+          )
+        )
+      )
+      assertEquals(jobs, Vector.empty)
+  }
+
+  test(
+    "PENDING S3.7 minor: a recomputed digest mismatch is the typed ResultDigestMismatch".ignore
+  ) {
+    RealStudyBackend
+      .create[IO](bound("ab" * 32), RealBackendConformanceSuite.golden)
+      .flatMap(real =>
+        recompute(real, StoryMoments.run7).map { (_, _, _, held) =>
+          assertEquals(held.left.map(_.code), Left("studio-backend.result-digest-mismatch"))
+        }
+      )
+  }
+
+  test(
+    "PENDING S3.7 minor: a run on another dataset revision is the typed RunDatasetMismatch".ignore
+  ) {
+    RealStudyBackend
+      .create[IO](trialLayout, RealBackendConformanceSuite.golden)
+      .flatMap(
+        _.held(StoryMoments.run7).map(r =>
+          assertEquals(r.left.map(_.code), Left("studio-backend.run-dataset-mismatch"))
+        )
+      )
+  }
+
+  test(
+    "PENDING S3.7 minor: a recomputed run's provenance says so, with the eyes4s release".ignore
+  ) {
+    RealStudyBackend
+      .create[IO](trialLayout, RealBackendConformanceSuite.golden)
+      .flatMap(real =>
+        recompute(real, StoryMoments.run7) >>
+          real
+            .provenance(
+              StoryMoments.run7,
+              ResultAddress.ContrastRow(2, TrialKey("P17", Phase.Retrieval, "ret_07", 1))
+            )
+            .map(p =>
+              assert(
+                p.toOption.exists(_.trail.lift(1).exists(_.toString.contains("Recomputed"))),
+                p
+              )
+            )
+      )
+  }
+
+  test("releasing the backend cancels its running job promptly") {
+    import scala.concurrent.duration.*
+    RealStudyBackend
+      .resource[IO](trialLayout, RealBackendConformanceSuite.golden)
+      .use(real =>
+        real
+          .submit(StoryMoments.rev4)
+          .map(get)
+          .flatTap(_ =>
+            // Wait until the job reports progress, so a run is in flight.
+            real.subscribe(JobId(1)).map(get).flatMap(_.take(1).compile.drain)
+          )
+      )
+      .timeout(20.seconds)
+      .map(status => assertEquals(status.job, JobId(1)))
   }

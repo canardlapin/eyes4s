@@ -25,6 +25,8 @@ import eyes4s.plan.{
   ComparisonMethod,
   ComparisonMethods,
   DefinitionId,
+  Diagnostic,
+  PlanError,
   ControlReferences,
   GridCells,
   InitialFixationPolicy,
@@ -71,40 +73,73 @@ object RealPlan:
       screen: Frame[Unit2D.Px],
       input: StudyInput[CoreKey, Unit2D.Px]
   ): Either[BackendError, (Plan, ComparisonMethod)] =
-    val refused = BackendError.Unavailable(DiagnosticLocus.Revision(revision))
-    def ok[E, A](e: Either[E, A]): Either[BackendError, A] = e.leftMap(_ => refused)
+    // Until the S3.7 protocol minor's typed plan refusal, a refusal is
+    // `Unavailable` naming the revision, the recipe field and why: eyes4s's
+    // own message (with its diagnostic code for a plan error), or the
+    // recipe value the real backend cannot state to eyes4s.
+    def refused(field: String, why: String) =
+      BackendError.Unavailable(DiagnosticLocus.Artifact(s"${revision.label} $field: $why"))
     for
       // An inventory dataset admits eyes4s TrialKeys: only their layout fits.
       _ <- Either.cond(
         recipe.layout == DefinitionRef.fromCore(TrialKeyDefinitions.trialLayout),
         (),
-        refused
+        refused(
+          "layout",
+          s"${recipe.layout} does not fit an inventory dataset's keys " +
+            s"(${DefinitionRef.fromCore(TrialKeyDefinitions.trialLayout)})"
+        )
       )
-      method <- ok(
-        DefinitionId
-          .of(recipe.method.definition.name, recipe.method.definition.version)
-          .flatMap(id => ComparisonMethods.resolve(id).toRight(id))
-      )
+      id <- DefinitionId
+        .of(recipe.method.definition.name, recipe.method.definition.version)
+        .leftMap(e => refused("method", e.message))
+      method <- ComparisonMethods
+        .resolve(id)
+        .toRight(refused("method", s"$id is not a registered comparison method"))
       // Every registered map method takes no parameters.
-      _      <- Either.cond(recipe.method.parameters.isEmpty, (), refused)
-      phases <- ok(StudyPhases.of(recipe.phases.focal.label, recipe.phases.reference.label))
-      grid   <- ok(GridCells.of(recipe.grid.columns, recipe.grid.rows))
+      _ <- Either.cond(
+        recipe.method.parameters.isEmpty,
+        (),
+        refused(
+          "method",
+          s"$id takes no parameters; the recipe states ${recipe.method.parameters}"
+        )
+      )
+      phases <- StudyPhases
+        .of(recipe.phases.focal.label, recipe.phases.reference.label)
+        .leftMap(e => refused("phases", e.message))
+      grid <- GridCells
+        .of(recipe.grid.columns, recipe.grid.rows)
+        .leftMap(e => refused("grid", e.message))
       window <- recipe.window.traverse(w =>
-        ok(
-          Bounds
-            .of[Unit2D.Px](w.xMin, w.yMin, w.xMax, w.yMax)
-            .flatMap(Subframe.of(screen, WindowFrame, _))
+        Bounds
+          .of[Unit2D.Px](w.xMin, w.yMin, w.xMax, w.yMax)
+          .flatMap(Subframe.of(screen, WindowFrame, _))
+          .leftMap(e => refused("window", e.message))
+      )
+      angular <- recipe.angularScale.traverse(p =>
+        LinearAngularScale.of(screen, p.value).leftMap(e => refused("angular scale", e.message))
+      )
+      scales <- recipe.scales.values.traverse(s =>
+        eyes4s.kernel.Sigma
+          .deg(s.degrees)
+          .leftMap(e => refused("scales", e.message))
+          .map(sigma =>
+            StudyScale.Angular[Unit2D.Px](StudyEstimate.Gaussian(sigma, EdgePolicy.Truncate))
+          )
+      )
+      failures <- failure(recipe.failurePolicy).toRight(
+        refused("failure policy", s"${recipe.failurePolicy} is not an eyes4s failure policy")
+      )
+      pairing <- pairingOf(recipe).toRight(
+        refused("pairing", s"${recipe.matched} names no eyes4s occurrence")
+      )
+      initial <- initialFixations(recipe).toRight(
+        refused(
+          "initial fixations",
+          s"${recipe.initialFixations.render} needs the cross position, which the recipe does not state"
         )
       )
-      angular <- recipe.angularScale.traverse(p => ok(LinearAngularScale.of(screen, p.value)))
-      scales  <- recipe.scales.values.traverse(s =>
-        ok(eyes4s.kernel.Sigma.deg(s.degrees)).map(sigma =>
-          StudyScale.Angular[Unit2D.Px](StudyEstimate.Gaussian(sigma, EdgePolicy.Truncate))
-        )
-      )
-      failures <- failure(recipe.failurePolicy).toRight(refused)
-      pairing  <- pairingOf(recipe).toRight(refused)
-      initial  <- initialFixations(recipe).toRight(refused)
       studyRec = StudyRecipe(
         StudyFormContext(screen, window.as(WindowFrame), GridName),
         phases,
@@ -118,15 +153,20 @@ object RealPlan:
         pairing,
         initial
       )
-      plan <- ok(
-        studyRec.plan(
+      plan <- studyRec
+        .plan(
           input.reference,
           CoreKey.layout(TrialKeyDefinitions.trialLayout),
           method.study[Unit2D.Px],
           ()
         )
-      )
+        .leftMap(e => refused("plan", RealPlan.reason(Diagnostic.of(e))))
     yield (plan, method)
+
+  /** eyes4s's diagnostic of a refusal: its code and message. */
+  def reason(d: Diagnostic[?]): String = s"${d.code.render}: ${d.message}"
+
+  def reason(e: PlanError): String = reason(Diagnostic.of(e))
 
   private def weight(choice: WeightChoice): Weight = choice match
     case WeightChoice.Uniform  => Weight.Uniform

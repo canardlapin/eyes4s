@@ -42,6 +42,11 @@ import io.circe.{Codec, Decoder, DecodingFailure, Encoder, Json}
 sealed trait StudyPlanArtifact
 sealed trait AdmissionLedgerArtifact
 sealed trait TrialInventoryArtifact
+
+/** A run's result archive, bound by the canonical digest of its eyes4s
+  * `StudyResult` (`StudyResultCodec.codec`, `VersionedCodec.digest`): the
+  * digest a recomputed result must reproduce (S3.7, lead decision).
+  */
 sealed trait ResultArchiveArtifact
 
 /** The collision-resistant identity (CR3 [[CanonicalDigest]]) of an eyes4s

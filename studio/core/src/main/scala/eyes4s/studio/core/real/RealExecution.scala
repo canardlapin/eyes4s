@@ -112,13 +112,29 @@ object RealExecution:
     outcome
       .flatMap {
         case RunOutcome.Completed(_, last, result) =>
-          // A completed run did every map and pair its exact totals state.
-          val done = carried.copy(maps = counts.totalMaps, pairs = counts.totalPairs)
-          report(job, run, last, done, counts).flatMap {
-            case Some((p, _)) =>
-              Right((JobOutcome.Completed(job, run, p), RunState.Completed, Some(result)))
-            case None => Left(Defect("eyes4s completed the run while counting"))
-          }
+          // The completed run's maps and pairs are the rows eyes4s's result
+          // holds; they must be the totals its counts stated.
+          val done = Carried(
+            result.scales.map(_.estimation.size.toLong).sum,
+            result.scales
+              .map(s =>
+                s.analyses.matchedSource.rows.size.toLong + s.analyses.controlSource.rows.size
+              )
+              .sum
+          )
+          if done.maps != counts.totalMaps || done.pairs != counts.totalPairs then
+            Left(
+              Defect(
+                s"eyes4s completed ${done.maps} maps and ${done.pairs} pairs; " +
+                  s"its counts stated ${counts.totalMaps} and ${counts.totalPairs}"
+              )
+            )
+          else
+            report(job, run, last, done, counts).flatMap {
+              case Some((p, _)) =>
+                Right((JobOutcome.Completed(job, run, p), RunState.Completed, Some(result)))
+              case None => Left(Defect("eyes4s completed the run while counting"))
+            }
         case RunOutcome.Cancelled(_, last) =>
           lastOf(last).map(p =>
             (JobOutcome.Cancelled(job, run, p), RunState.Cancelled(p.map(_.segment.kind)), None)
