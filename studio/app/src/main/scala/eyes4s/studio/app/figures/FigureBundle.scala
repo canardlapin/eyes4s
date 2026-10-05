@@ -104,7 +104,11 @@ object FigureBundle:
           case Some(Left(why)) => ("", Some(why))
           case None            => ("", Some(MethodsCopy.NoFigure))
       case BundleItem.Snapshot =>
-        (if includeImages then "includes images" else "without images", None)
+        (
+          if includeImages then "includes images"
+          else "without image bytes; stimulus file names remain in the trial inventory",
+          None
+        )
     BundleVM(
       BundleItem.values.toVector.map { item =>
         val (d, unavailable) = detail(item)
@@ -130,7 +134,15 @@ object FigureBundle:
         FigureCaption.specDigest(s.reporting, short = false),
       "",
       "Files:"
-    ) ++ files ++ (if left.isEmpty then Vector.empty else Vector("", "Not included:") ++ left))
+    ) ++ files ++
+      (if request.items.contains(BundleItem.Snapshot) && !request.includeImages then
+         Vector(
+           "",
+           "The project snapshot withholds stimulus image bytes. The trial inventory is included",
+           "with its image_file column, so stimulus file names remain visible."
+         )
+       else Vector.empty) ++
+      (if left.isEmpty then Vector.empty else Vector("", "Not included:") ++ left))
       .mkString("", "\n", "\n")
 
   def exported(where: Either[String, String]): String =

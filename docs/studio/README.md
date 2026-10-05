@@ -5,6 +5,10 @@ Eyes Studio is the JavaFX desktop workbench built on eyes4s. It lives in the `st
 eyes4s may depend on it. Architecture: DESIGN_SPEC §13.
 This folder is the reference that the implementation has to reach.
 
+An exported project snapshot without images withholds stimulus image bytes. The trial inventory
+still travels, including its `image_file` column, so stimulus file names remain visible. The bundle
+control and its README state this distinction before and after export.
+
 | Path | What it is |
 |---|---|
 | `DESIGN_SPEC.md` | The design contract. §12 lists the round-3 amendments and overrides anything earlier in the file. |

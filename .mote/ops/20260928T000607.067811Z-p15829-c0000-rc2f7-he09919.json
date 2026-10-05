@@ -1,0 +1,1 @@
+{"actor":"codex-eyes4s","entity":"bd-01M3JNA06GJJCJ5JSC96JJ6T9S","kind":"reserve_open","mode":"exclusive","op":"20260928T000607.067811Z-p15829-c0000-rc2f7-he09919","paths":["tools/pymovements/run_csv_ivt.py","tools/pymovements/test_csv_ivt.py"],"reservation_id":"rv-01M3JNAJEVQ0E0FJRP2XC7234R","ts":"2026-09-28T00:06:07.067811Z","ttl_s":3600,"v":2}

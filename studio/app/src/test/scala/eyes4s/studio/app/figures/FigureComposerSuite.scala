@@ -603,6 +603,34 @@ class FigureComposerSuite extends munit.ScalaCheckSuite:
     assert(page.addPanel.choices.forall(_.enabled), page.addPanel.choices)
   }
 
+  test("Add panel ignores Compare selections from a different run") {
+    val m     = withPair
+    val other = figure(m, 2)
+    assertEquals(other.run, run5)
+    val choices = AddPanel.view(m, other, None).choices
+    assert(
+      choices
+        .filter(c =>
+          Set(NewPanel.EncodingGaze, NewPanel.RetrievalGaze, NewPanel.DensityMaps)
+            .contains(c.kind)
+        )
+        .forall(c => !c.enabled)
+    )
+    assertEquals(
+      AddPanel.spec(m, other, None, NewPanel.RetrievalGaze),
+      Left(AddPanelText.NoQuery)
+    )
+    val expected = for
+      run      <- m.document.run(run5)
+      analysis <- m.document.analysis(run.analysis)
+      sigma    <- analysis.recipe.scales.values.headOption
+    yield PanelScale.At(sigma)
+    assertEquals(
+      AddPanel.spec(m, other, None, NewPanel.ParticipantD).map(_.scale),
+      expected.toRight(AddPanelText.noRunScale(other))
+    )
+  }
+
   test("without a Compare query the trial panels are disabled, with why; D falls back") {
     // t2Figures: Figure 1's panel D selected (σ 2°), no Compare trail.
     val m      = t2

@@ -11,6 +11,7 @@ import json
 import os
 from pathlib import Path
 import re
+import signal
 import statistics
 import subprocess
 import sys
@@ -130,23 +131,44 @@ def check_interference(output_dir: Path, scale: str, mode: str,
         )
 
 
+def validate_rounds(rounds: int, protocol_rounds: int) -> None:
+    if not 1 <= rounds <= protocol_rounds:
+        raise ValueError("round count outside protocol")
+    if rounds >= protocol_rounds:
+        raise ValueError(
+            "full protocol collection requires source-bound build provenance; "
+            "use fewer rounds for exploratory collection"
+        )
+
+
+def stop_process_group(child: subprocess.Popen[bytes]) -> tuple[bytes, bytes]:
+    try:
+        os.killpg(child.pid, signal.SIGKILL)
+    except ProcessLookupError:
+        pass
+    return child.communicate()
+
+
 def run_child(command: list[str], output_dir: Path, label: str,
               env: dict[str, str], timeout: int) -> dict:
     start = time.monotonic_ns()
+    child = subprocess.Popen(
+        ["/usr/bin/time", "-l", *command], cwd=ROOT, env=env,
+        stdout=subprocess.PIPE, stderr=subprocess.PIPE, start_new_session=True,
+    )
     try:
-        child = subprocess.run(
-            ["/usr/bin/time", "-l", *command], cwd=ROOT, env=env,
-            capture_output=True, timeout=timeout,
-        )
+        stdout, stderr = child.communicate(timeout=timeout)
         elapsed = time.monotonic_ns() - start
-        stdout, stderr = child.stdout, child.stderr
         code = child.returncode
         status = "ok" if code == 0 else ("oom" if code in (-9, 137) else "error")
         failure = None if code == 0 else f"exit code {code}"
-    except subprocess.TimeoutExpired as error:
+    except subprocess.TimeoutExpired:
+        stdout, stderr = stop_process_group(child)
         elapsed = time.monotonic_ns() - start
-        stdout, stderr = error.stdout or b"", error.stderr or b""
         code, status, failure = None, "timeout", f"exceeded {timeout}s"
+    except BaseException:
+        stop_process_group(child)
+        raise
     (output_dir / f"{label}.stdout").write_bytes(stdout)
     (output_dir / f"{label}.stderr").write_bytes(stderr)
     rss = RSS.search(stderr)
@@ -275,8 +297,10 @@ def main() -> None:
     parser.add_argument("--classpath", type=Path, default=Path("/private/tmp/eyes4s-pm3-2-20260927/classpath.txt"))
     args = parser.parse_args()
     config = performance.read(ROOT / performance.CONFIG)
-    if not 1 <= args.rounds <= config["measurement"]["rounds"]:
-        parser.error("round count outside protocol")
+    try:
+        validate_rounds(args.rounds, config["measurement"]["rounds"])
+    except ValueError as error:
+        parser.error(str(error))
     if git("status", "--porcelain"):
         parser.error("commit adapters before collecting revision-bound measurements")
     if not JAVA.exists() or not args.python.exists():

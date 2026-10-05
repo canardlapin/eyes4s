@@ -109,7 +109,7 @@ object AddPanel:
       selected: Option[PanelLetter],
       kind: NewPanel
   ): Either[String, PanelSpec] =
-    val focus = TrialPanels.focusOf(model)
+    val focus = TrialPanels.focusOf(model).filter(_.run == figure.run)
     for
       letter <- nextLetter(figure)
       panel  <- kind match

@@ -57,11 +57,15 @@ diagnostic processes report ThreadMXBean allocation, retained heap after a
 post-measurement settling GC, and collector count/pause. Python native
 allocation/heap counters are explicitly unavailable. Every child is bound
 to the frozen input and workload digests, the clean source commit/tree,
-compiled artifact digest, adapter digest, lock digest, and process identity.
+compiled artifact digest, adapter digest, lock digest, and process identity. The
+artifact digest does not yet prove that the classpath was built from that source
+revision, so the collector currently refuses full-round collection. Only
+exploratory runs are available until source-bound build evidence is implemented.
 Every pair must match schema, units, row count and canonical hash. A failed
 child, timeout, absent RSS, changed output, or incomplete matrix stops the
-collector with raw evidence retained. The frozen receipt validator runs only
-after all 20 rounds per scale/mode/side have succeeded.
+collector with raw evidence retained. Timed-out or interrupted children are
+terminated with their owned process group. The frozen receipt contract requires
+all 20 rounds per scale/mode/side to succeed before validation.
 
 Inputs and a pinned Python 3.14.7 environment can be prepared with:
 
@@ -82,10 +86,9 @@ Compile `ioJVM/Test/compile` with the protocol's JDK 25, capture
 colons into a classpath file. Run from a clean committed branch, with the
 three frozen CSV files in the parent of the output directory. An exploratory
 one-round run uses `--rounds 1`; it writes `exploratory.json` and cannot
-qualify. A full run requires the operator to establish thermal settling and
-passes `--thermal-settled`; the collector also checks AC power, normal power
-mode and the current competing process snapshot before creating a complete
-receipt, then repeats the competing-process check before each full-run pair.
+qualify. Future full collection also requires the operator to establish thermal
+settling, AC power, normal power mode and no competing compute. The collector
+retains competing-process snapshots before each pair and after each side.
 It writes raw logs and `samples.jsonl` as it goes. Output directories
 must be new so previous evidence cannot be overwritten.
 
@@ -93,11 +96,8 @@ must be new so previous evidence cannot be overwritten.
 /private/tmp/eyes4s-pm3-2-20260927/venv/bin/python \
   tools/pymovements/run_csv_ivt.py \
   --classpath /private/tmp/eyes4s-pm3-2-20260927/classpath.txt \
-  --output-dir /private/tmp/eyes4s-pm3-2-20260927/full-001 \
-  --thermal-settled
-/private/tmp/eyes4s-pm3-2-20260927/venv/bin/python \
-  tools/pymovements/performance.py \
-  --receipt /private/tmp/eyes4s-pm3-2-20260927/full-001/receipt.json
+  --output-dir /private/tmp/eyes4s-pm3-2-20260927/exploratory-001 \
+  --rounds 1
 ```
 
 The 1,000,000-row exploratory JVM flight recording is retained at

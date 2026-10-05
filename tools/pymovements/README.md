@@ -63,6 +63,11 @@ test-run claims. This slice adds a standalone check, not a generated CI workflow
 
 ## Performance protocol (PM3.1)
 
+The CSV-to-I-VT collector currently permits exploratory runs only. Qualified collection needs
+source-bound build provenance for the compiled eyes4s classpath; a classpath hash and the current
+Git revision alone do not establish that relationship. Full-round collection is refused until
+that evidence is implemented. No timings in this landing establish a performance advantage.
+
 [`PYMOVEMENTS_PERFORMANCE.md`](../../docs/plans/PYMOVEMENTS_PERFORMANCE.md) and
 `performance.json` freeze the workload matrix, input identities, machine/runtime
 pins and numeric budgets before measurement. `receipt.schema.json` describes raw
