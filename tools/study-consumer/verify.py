@@ -19,6 +19,10 @@ HERE = Path(__file__).resolve().parent
 REPO = HERE.parents[1]
 VERSION = "0.0.0-workflow-slices"
 SBT = ["sbt", "-J-Xmx3g", "-J-XX:ActiveProcessorCount=6"]
+MODULES = (
+    "kernel", "core", "detect", "surface", "aoi", "compare", "design",
+    "plan", "results", "codec", "laws", "fs2", "io",
+)
 # Independent oracles and pinned inputs the consumer's evidence is checked against.
 FIXTURES = (
     "tools/r-parity/fixtures/exact.json",
@@ -117,28 +121,21 @@ def main():
     shutil.copytree(HERE / "src", candidate / "src")
     shutil.copytree(HERE / ".jvm" / "src", candidate / ".jvm" / "src")
     if not args.skip_publish:
+        # Separate commands keep Scaladoc invocations sequential: its signature
+        # builder can fail when the root aggregate documents modules concurrently.
+        publish = tuple(
+            f'{"fs2Module" if module == "fs2" else module}{platform}/publishLocal'
+            for module in MODULES
+            for platform in ("JVM", "JS")
+        )
         run(
             REPO,
             candidate / "publish.log",
             f'set ThisBuild / version := "{VERSION}"',
-            "publishLocal",
+            *publish,
         )
     artifacts = {}
-    for module in (
-        "kernel",
-        "core",
-        "detect",
-        "surface",
-        "aoi",
-        "compare",
-        "design",
-        "plan",
-        "results",
-        "codec",
-        "laws",
-        "fs2",
-        "io",
-    ):
+    for module in MODULES:
         for suffix in ("_3", "_sjs1_3"):
             name = f"eyes4s-{module}{suffix}"
             cache = Path.home() / ".ivy2/local/io.github.canardlapin" / name / VERSION
