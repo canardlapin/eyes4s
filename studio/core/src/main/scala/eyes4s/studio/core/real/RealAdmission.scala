@@ -248,7 +248,7 @@ object RealAdmission:
       case FixationImportError.Inventory(errors) =>
         BackendError.InventoryRefused(d, errors.toVector.map(InventoryIssue.of))
       case other =>
-        BackendError.Unavailable(DiagnosticLocus.Artifact(s"$source: ${other.message}"))
+        BackendError.AdmissionRefused(d, source, other.message)
 
   // ------------------------------------------------------------------ protocol values
 

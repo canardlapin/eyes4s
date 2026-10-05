@@ -40,6 +40,7 @@ final class RealResults private (
     val revision: AnalysisRevision,
     val dataset: DatasetRevision,
     val scales: Vector[String],
+    origin: RealStudyBackend.RunOrigin,
     inspection: StudyInspection[CoreKey, Unit2D.Px, Similarity, SignedDifference],
     keys: Map[TrialKey, CoreKey]
 ):
@@ -182,11 +183,16 @@ final class RealResults private (
             held(s.pairs(d).contains(ResultRef.PairRow(i, d, f, r)))
               .as(Vector(ProvenanceStep.Design(design), trial(f), trial(r)))
           )
+      val recomputed = origin match
+        case RealStudyBackend.RunOrigin.Computed            => Vector.empty
+        case RealStudyBackend.RunOrigin.Recomputed(version) =>
+          Vector(ProvenanceStep.Recomputed(version))
       tail.map(t =>
         Provenance(
           address,
           Vector(
-            ProvenanceStep.Run(run),
+            ProvenanceStep.Run(run)
+          ) ++ recomputed ++ Vector(
             ProvenanceStep.Analysis(revision),
             ProvenanceStep.Dataset(dataset),
             ProvenanceStep.Scale(address.scale, scales(address.scale))
@@ -235,6 +241,7 @@ object RealResults:
           p.revision,
           p.dataset,
           p.summary.scales,
+          held.origin,
           inspection,
           p.admitted.input.trials.rows.map(r => key(r.key) -> r.key).toMap
         )

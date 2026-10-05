@@ -93,6 +93,5 @@ object InspectorText:
       case NoFixation     => "Select a fixation to inspect it"
       case Reading        => "Reading…"
 
-
   def apply(id: InspectorTextId, args: String*): String =
     Messages.fill(english(id), args.toVector)

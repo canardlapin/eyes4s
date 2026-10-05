@@ -41,7 +41,7 @@ class ProtocolCodecSuite extends munit.FunSuite:
     assertEquals(responses.map(_.ordinal), responses.indices.toVector)
     assertEquals(responses.size, 19)
     assertEquals(errors.map(_.ordinal), errors.indices.toVector)
-    assertEquals(errors.size, 20)
+    assertEquals(errors.size, 24)
     assertEquals(causes.map(_.ordinal), causes.indices.toVector)
     assertEquals(causes.size, 14)
     assertEquals(loci.map(_.ordinal), loci.indices.toVector)
@@ -65,6 +65,27 @@ class ProtocolCodecSuite extends munit.FunSuite:
     drift.foreach((n, j) => println(s"PIN\t$n\t$j"))
     assertEquals(drift.map(_._1), Vector.empty)
     assertEquals(ProtocolPins.pins.keySet, actual.keySet)
+  }
+
+  test("source digest mismatches refuse malformed digest bytes on decode") {
+    val error = BackendError.SourceDigestMismatch(
+      DatasetRevision(3),
+      errors.collectFirst { case BackendError.SourceDigestMismatch(_, source, _, _) =>
+        source
+      }.get,
+      errors.collectFirst { case BackendError.SourceDigestMismatch(_, _, digest, _) =>
+        digest
+      }.get,
+      errors.collectFirst { case BackendError.SourceDigestMismatch(_, _, _, digest) =>
+        digest
+      }.get
+    )
+    val changed = error.asJson.hcursor
+      .downField("SourceDigestMismatch")
+      .withFocus(_.deepMerge(Json.obj("read" -> Json.fromString("bad digest"))))
+      .top
+      .get
+    assert(changed.as[BackendError].isLeft)
   }
 
   test("preview handles keep unsafe Long values as decimal text") {

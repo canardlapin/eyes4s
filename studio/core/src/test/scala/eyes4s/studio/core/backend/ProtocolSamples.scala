@@ -213,7 +213,26 @@ object ProtocolSamples:
       AnalysisRevision(4),
       SourceRecordsError.RangeInvalid(0, 501, SourceRecordPage.Limit)
     ),
-    BackendError.UnknownScale(run, 4, Vector("0.5°", "1°", "2°", "4°"))
+    BackendError.UnknownScale(run, 4, Vector("0.5°", "1°", "2°", "4°")),
+    BackendError.SourceDigestMismatch(
+      DatasetRevision(3),
+      right(SourcePath.of("fixations.csv")),
+      right(ByteDigest.parse("ab" * 32)),
+      right(ByteDigest.parse("cd" * 32))
+    ),
+    BackendError
+      .AdmissionRefused(DatasetRevision(3), "fixations.csv", "Missing ordinal column."),
+    BackendError.ResultDigestMismatch(
+      run,
+      right(ByteDigest.parse("ab" * 32)),
+      right(ByteDigest.parse("cd" * 32))
+    ),
+    BackendError.RunDatasetMismatch(
+      run,
+      AnalysisRevision(4),
+      DatasetRevision(2),
+      DatasetRevision(3)
+    )
   )
 
   val runStates: Vector[RunState] = Vector(
@@ -592,6 +611,7 @@ object ProtocolSamples:
         address,
         Vector(
           ProvenanceStep.Run(RunId(7)),
+          ProvenanceStep.Recomputed("0.1.0"),
           ProvenanceStep.Analysis(AnalysisRevision(4)),
           ProvenanceStep.Dataset(DatasetRevision(3)),
           ProvenanceStep.Scale(2, "2°"),

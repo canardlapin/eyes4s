@@ -463,6 +463,7 @@ enum Inspection derives CanEqual, Codec.AsObject:
 /** One step from a run to the object an address names, coarsest first. */
 enum ProvenanceStep derives CanEqual, Codec.AsObject:
   case Run(run: RunId)
+  case Recomputed(eyes4sVersion: String)
   case Analysis(revision: AnalysisRevision)
   case Dataset(dataset: DatasetRevision)
   case Scale(index: Int, label: String)

@@ -16,7 +16,9 @@
 
 package eyes4s.studio.core.backend
 
-import ProtocolCodecs.portableLong
+import ProtocolCodecs.{byteDigest, portableLong}
+import eyes4s.codec.ByteDigest
+import eyes4s.studio.core.document.SourcePath
 
 import cats.Functor
 import cats.syntax.functor.*
@@ -85,29 +87,60 @@ enum BackendError derives CanEqual, Codec.AsObject:
   /** `run` has no scale index `scale`; it computes `scales` (protocol 1.9). */
   case UnknownScale(run: RunId, scale: Int, scales: Vector[String])
 
+  /** Exact source bytes differed from the revision that names them. */
+  case SourceDigestMismatch(
+      dataset: DatasetRevision,
+      source: SourcePath,
+      recorded: ByteDigest,
+      read: ByteDigest
+  )
+
+  /** eyes4s refused a source outside the inventory error family. */
+  case AdmissionRefused(dataset: DatasetRevision, source: String, reason: String)
+
+  /** A recomputation differed from the run’s recorded canonical result. */
+  case ResultDigestMismatch(run: RunId, recorded: ByteDigest, recomputed: ByteDigest)
+  case RunDatasetMismatch(
+      run: RunId,
+      revision: AnalysisRevision,
+      recorded: DatasetRevision,
+      current: DatasetRevision
+  )
+
   def code: String = this match
-    case UnknownDataset(_, _)       => "studio-backend.unknown-dataset"
-    case UnknownRevision(_, _)      => "studio-backend.unknown-revision"
-    case UnknownRun(_, _)           => "studio-backend.unknown-run"
-    case UnknownJob(_, _)           => "studio-backend.unknown-job"
-    case UnknownPreview(_, _)       => "studio-backend.unknown-preview"
-    case UnknownTrial(_, _)         => "studio-backend.unknown-trial"
-    case TrialViewRefused(_)        => "studio-backend.trial-view-refused"
-    case SourceRecordsRefused(_, _) => "studio-backend.source-records-refused"
-    case UnknownScale(_, _, _)      => "studio-backend.unknown-scale"
-    case PreviewNotReady(_, _, _)   => "studio-backend.preview-not-ready"
-    case StalePreview(_, _, _)      => "studio-backend.stale-preview"
-    case TamperedPreview(_, _)      => "studio-backend.tampered-preview"
-    case Unavailable(_)             => "studio-backend.unavailable"
-    case NoResult(_, _)             => "studio-backend.no-result"
-    case UnknownReference(_, _)     => "studio-backend.unknown-reference"
-    case AlreadyRunning(_, _)       => "studio-backend.already-running"
-    case UnsupportedVersion(_, _)   => "studio-backend.unsupported-version"
-    case Malformed(_, _)            => "studio-backend.malformed-request"
-    case DuplicateSubscription(_)   => "studio-backend.duplicate-subscription"
-    case InventoryRefused(_, _)     => "studio-backend.inventory-refused"
+    case SourceDigestMismatch(_, _, _, _) => "studio-backend.source-digest-mismatch"
+    case AdmissionRefused(_, _, _)        => "studio-backend.admission-refused"
+    case ResultDigestMismatch(_, _, _)    => "studio-backend.result-digest-mismatch"
+    case RunDatasetMismatch(_, _, _, _)   => "studio-backend.run-dataset-mismatch"
+    case UnknownDataset(_, _)             => "studio-backend.unknown-dataset"
+    case UnknownRevision(_, _)            => "studio-backend.unknown-revision"
+    case UnknownRun(_, _)                 => "studio-backend.unknown-run"
+    case UnknownJob(_, _)                 => "studio-backend.unknown-job"
+    case UnknownPreview(_, _)             => "studio-backend.unknown-preview"
+    case UnknownTrial(_, _)               => "studio-backend.unknown-trial"
+    case TrialViewRefused(_)              => "studio-backend.trial-view-refused"
+    case SourceRecordsRefused(_, _)       => "studio-backend.source-records-refused"
+    case UnknownScale(_, _, _)            => "studio-backend.unknown-scale"
+    case PreviewNotReady(_, _, _)         => "studio-backend.preview-not-ready"
+    case StalePreview(_, _, _)            => "studio-backend.stale-preview"
+    case TamperedPreview(_, _)            => "studio-backend.tampered-preview"
+    case Unavailable(_)                   => "studio-backend.unavailable"
+    case NoResult(_, _)                   => "studio-backend.no-result"
+    case UnknownReference(_, _)           => "studio-backend.unknown-reference"
+    case AlreadyRunning(_, _)             => "studio-backend.already-running"
+    case UnsupportedVersion(_, _)         => "studio-backend.unsupported-version"
+    case Malformed(_, _)                  => "studio-backend.malformed-request"
+    case DuplicateSubscription(_)         => "studio-backend.duplicate-subscription"
+    case InventoryRefused(_, _)           => "studio-backend.inventory-refused"
 
   def message: String = this match
+    case SourceDigestMismatch(d, s, recorded, read) =>
+      s"${d.label} source ${s.value}: recorded sha256 ${recorded.hex}, read sha256 ${read.hex}."
+    case AdmissionRefused(d, source, reason)     => s"${d.label} source $source: $reason"
+    case ResultDigestMismatch(r, recorded, made) =>
+      s"${r.label} result: recorded sha256 ${recorded.hex}, recomputed sha256 ${made.hex}."
+    case RunDatasetMismatch(r, revision, recorded, current) =>
+      s"${r.label} was computed on data ${recorded.label}; ${revision.label} is on data ${current.label}."
     case UnknownDataset(d, known) =>
       s"No dataset ${d.label}; the backend has ${known.map(_.label).mkString(", ")}."
     case UnknownRevision(r, known) =>
@@ -144,6 +177,18 @@ enum BackendError derives CanEqual, Codec.AsObject:
 
   def diagnostic: StudioDiagnostic =
     val subject = this match
+      case SourceDigestMismatch(d, s, _, _) =>
+        Vector(DiagnosticLocus.Dataset(d), DiagnosticLocus.Artifact(s.value))
+      case AdmissionRefused(d, source, _) =>
+        Vector(DiagnosticLocus.Dataset(d), DiagnosticLocus.Artifact(source))
+      case ResultDigestMismatch(r, _, _)                      => Vector(DiagnosticLocus.Run(r))
+      case RunDatasetMismatch(r, revision, recorded, current) =>
+        Vector(
+          DiagnosticLocus.Run(r),
+          DiagnosticLocus.Revision(revision),
+          DiagnosticLocus.Dataset(recorded),
+          DiagnosticLocus.Dataset(current)
+        )
       case UnknownDataset(d, _)        => Vector(DiagnosticLocus.Dataset(d))
       case UnknownRevision(r, _)       => Vector(DiagnosticLocus.Revision(r))
       case UnknownRun(r, _)            => Vector(DiagnosticLocus.Run(r))

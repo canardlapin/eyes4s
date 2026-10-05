@@ -298,7 +298,6 @@ object StudioWindow:
       defect: (String, Throwable) => Unit = (_, _) => (),
       // Where an export bundle goes: the platform's chooser unless given.
       chooseFolder: FigureInputs.ChooseFolder = FigureInputs.directoryChooser
-
   )(using IORuntime): Either[WindowError, StudioWindow] =
     // The window starts in the document's theme and follows it (S1.10).
     val theme = initial.theme
@@ -322,7 +321,6 @@ object StudioWindow:
         panels,
         defect,
         chooseFolder
-
       )
     yield window
 
@@ -343,7 +341,6 @@ object StudioWindow:
       panels: PanelSources,
       defect: (String, Throwable) => Unit,
       chooseFolder: FigureInputs.ChooseFolder
-
   )(using IORuntime): Either[WindowError, StudioWindow] =
     // Late-bound: the runtime, the host and the effects refer to each other.
     var runtime: Option[StudioRuntime] = None

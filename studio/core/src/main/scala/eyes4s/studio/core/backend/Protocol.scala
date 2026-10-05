@@ -16,6 +16,7 @@
 
 package eyes4s.studio.core.backend
 
+import eyes4s.codec.ByteDigest
 import eyes4s.plan.{
   Diagnostic,
   DiagnosticSeverity,
@@ -37,6 +38,11 @@ import io.circe.{Codec, Decoder, DecodingFailure, Encoder, Json}
   * (`of`) where eyes4s already has it.
   */
 private[core] object ProtocolCodecs:
+  given byteDigest: Codec[ByteDigest] = Codec.from(
+    Decoder[String].emap(s => ByteDigest.parse(s).left.map(_.message)),
+    Encoder[String].contramap(_.hex)
+  )
+
   /** A single-field wrapper encoded as its field. */
   def wrapper[A, B: Encoder: Decoder](wrap: B => A, unwrap: A => B): Codec[A] =
     Codec.from(Decoder[B].map(wrap), Encoder[B].contramap(unwrap))

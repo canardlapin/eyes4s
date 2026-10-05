@@ -183,8 +183,8 @@ class RealStudyBackendSuite extends CatsEffectSuite:
       def assets(d: DatasetRevisionSpec) = RealBackendConformanceSuite.golden.assets(d)
     val recorded = get(t2.dataset(StoryMoments.r3).toRight("no r3")).sources.fixations.get
     backend(tampered).flatMap(_.admission(StoryMoments.r3)).map { r =>
-      assertEquals(r.left.map(_.code), Left("studio-backend.unavailable"))
-      // Until protocol 1.11: the reason names the file and both digests.
+      assertEquals(r.left.map(_.code), Left("studio-backend.source-digest-mismatch"))
+      // The typed refusal names the file and both digests.
       val message = r.left.map(_.message).swap.getOrElse(fail("admitted"))
       assert(message.contains(recorded.path.value), message)
       assert(message.contains(s"recorded sha256 ${recorded.bytes.hex}"), message)
@@ -192,24 +192,20 @@ class RealStudyBackendSuite extends CatsEffectSuite:
     }
   }
 
-  // Pending protocol 1.11 (docs/studio/plan/S3.7-slices.md): not served yet,
-  // listed so the typed forms are not forgotten.
-  test("PENDING 1.11: a digest mismatch is the typed SourceDigestMismatch".ignore) {
-    val tampered = new DatasetSources[IO]:
-      def bytes(d: DatasetRevisionSpec, s: Source) =
-        RealBackendConformanceSuite.golden
-          .bytes(d, s)
-          .map(_.map(b => b.updated(b.length - 2, '9'.toByte)))
-      def assets(d: DatasetRevisionSpec) = RealBackendConformanceSuite.golden.assets(d)
-    backend(tampered).flatMap(_.admission(StoryMoments.r3)).map { r =>
-      assertEquals(r.left.map(_.code), Left("studio-backend.source-digest-mismatch"))
-    }
-  }
-
-  test("PENDING 1.11: a non-inventory refusal is the typed AdmissionRefused".ignore) {
-    backend().flatMap(_.admission(StoryMoments.r2)).map { r =>
-      assertEquals(r.left.map(_.code), Left("studio-backend.admission-refused"))
-    }
+  test("a non-inventory source refusal is typed and names its dataset and source") {
+    val r3      = get(t2.dataset(StoryMoments.r3).toRight("no r3"))
+    val refused = RealAdmission.admit(
+      r3,
+      "wrong\nx\n",
+      GoldenCsv.trials,
+      get(eyes4s.studio.core.fixture.GoldenAssets.registry(r3))
+    )
+    refused match
+      case Left(BackendError.AdmissionRefused(dataset, source, reason)) =>
+        assertEquals(dataset, StoryMoments.r3)
+        assertEquals(source, r3.sources.fixations.get.path.value)
+        assert(reason.nonEmpty)
+      case other => fail(s"expected a typed source refusal, got $other")
   }
 
   test("an inventory eyes4s refuses is InventoryRefused, naming the trial and the column") {
@@ -259,9 +255,13 @@ class RealStudyBackendSuite extends CatsEffectSuite:
     }
   }
 
-  test("operations of later slices are typed refusals, never invented data") {
+  test("an unsupported layout is refused while unknown operations remain typed refusals") {
+    val layout = eyes4s.studio.core.document.DefinitionRef.fromCore(eyes4s.plan.DefinitionId.trials)
+    val unsupported = get(StudioDocument.of(t2.datasets,
+      t2.analyses.map(a => a.copy(recipe = a.recipe.copy(layout = layout))), t2.draft,
+      t2.runs, t2.reporting, t2.figures, t2.presentation, t2.jobs))
     for
-      real  <- backend()
+      real  <- RealStudyBackend.create[IO](unsupported, RealBackendConformanceSuite.golden)
       known <- real.preview(StoryMoments.rev4)
       draft <- real.trialFixations(
         StoryMoments.rev5,
@@ -314,8 +314,8 @@ class RealStudyBackendSuite extends CatsEffectSuite:
       assertEquals(rev4.pairRows, rev4.pairRowsPerScale * 4)
       assertEquals(rev5.pairRowsPerScale, rev4.pairRowsPerScale)
       assertEquals(rev5.pairRows, rev5.pairRowsPerScale * 5)
-      // The story's own layout does not fit an inventory dataset's keys.
-      assertLayoutRefused(story, StoryMoments.rev4)
+      // The recovered preset now declares the inventory trial-key layout.
+      assertEquals(story, Right(rev4))
   }
 
   private def ok[A](fa: IO[Either[BackendError, A]]): IO[A] = fa.map(get)
@@ -532,10 +532,10 @@ class RealStudyBackendSuite extends CatsEffectSuite:
       jobs               <- tampered.jobs
     yield
       assert(same.isRight, same)
-      val refused = BackendError.Unavailable(
-        DiagnosticLocus.Artifact(
-          s"run 7 result: recorded sha256 $wrong, recomputed sha256 $digest"
-        )
+      val refused = BackendError.ResultDigestMismatch(
+        StoryMoments.run7,
+        get(ByteDigest.parse(wrong)),
+        get(ByteDigest.parse(digest))
       )
       assertEquals(bad, Left(refused))
       assertEquals(
@@ -889,6 +889,7 @@ class RealStudyBackendSuite extends CatsEffectSuite:
         trail,
         Vector(
           ProvenanceStep.Run(StoryMoments.run7),
+          ProvenanceStep.Recomputed(eyes4s.studio.core.engine.StudioBuild.eyes4sBaseVersion),
           ProvenanceStep.Analysis(StoryMoments.rev4),
           ProvenanceStep.Dataset(StoryMoments.r3),
           ProvenanceStep.Scale(2, "2°"),
@@ -940,57 +941,15 @@ class RealStudyBackendSuite extends CatsEffectSuite:
       assertEquals(
         held,
         Left(
-          BackendError.Unavailable(
-            DiagnosticLocus.Artifact("run 7 was computed on data r2; rev 4 is on data r3")
+          BackendError.RunDatasetMismatch(
+            StoryMoments.run7,
+            StoryMoments.rev4,
+            StoryMoments.r2,
+            StoryMoments.r3
           )
         )
       )
       assertEquals(jobs, Vector.empty)
-  }
-
-  test(
-    "PENDING S3.7 minor: a recomputed digest mismatch is the typed ResultDigestMismatch".ignore
-  ) {
-    RealStudyBackend
-      .create[IO](bound("ab" * 32), RealBackendConformanceSuite.golden)
-      .flatMap(real =>
-        recompute(real, StoryMoments.run7).map { (_, _, _, held) =>
-          assertEquals(held.left.map(_.code), Left("studio-backend.result-digest-mismatch"))
-        }
-      )
-  }
-
-  test(
-    "PENDING S3.7 minor: a run on another dataset revision is the typed RunDatasetMismatch".ignore
-  ) {
-    RealStudyBackend
-      .create[IO](trialLayout, RealBackendConformanceSuite.golden)
-      .flatMap(
-        _.held(StoryMoments.run7).map(r =>
-          assertEquals(r.left.map(_.code), Left("studio-backend.run-dataset-mismatch"))
-        )
-      )
-  }
-
-  test(
-    "PENDING S3.7 minor: a recomputed run's provenance says so, with the eyes4s release".ignore
-  ) {
-    RealStudyBackend
-      .create[IO](trialLayout, RealBackendConformanceSuite.golden)
-      .flatMap(real =>
-        recompute(real, StoryMoments.run7) >>
-          real
-            .provenance(
-              StoryMoments.run7,
-              ResultAddress.ContrastRow(2, TrialKey("P17", Phase.Retrieval, "ret_07", 1))
-            )
-            .map(p =>
-              assert(
-                p.toOption.exists(_.trail.lift(1).exists(_.toString.contains("Recomputed"))),
-                p
-              )
-            )
-      )
   }
 
   test("releasing the backend cancels its running job promptly") {

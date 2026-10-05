@@ -101,10 +101,7 @@ final class RealStudyBackend[F[_]] private (
               case Left(_)     => F.unit
             })
 
-  /** Until protocol 1.11 adds the typed `SourceDigestMismatch`, a source the
-    * host cannot give, or whose bytes are not the ones the revision
-    * recorded, is `Unavailable` naming the file and both digests.
-    */
+  /** Verify the exact source bytes before admission. */
   private def admit(spec: DatasetRevisionSpec): F[Either[BackendError, AdmittedDataset]] =
     def unavailable(what: String) = BackendError.Unavailable(DiagnosticLocus.Artifact(what))
     def text(role: String, source: Option[Source]): F[Either[BackendError, String]] =
@@ -120,9 +117,7 @@ final class RealStudyBackend[F[_]] private (
                 Right(new String(IArray.genericWrapArray(b).toArray, StandardCharsets.UTF_8))
               else
                 Left(
-                  unavailable(
-                    s"${s.path.value}: recorded sha256 ${s.bytes.hex}, read sha256 ${read.hex}"
-                  )
+                  BackendError.SourceDigestMismatch(spec.id, s.path, s.bytes, read)
                 )
           }
     (
@@ -428,10 +423,7 @@ final class RealStudyBackend[F[_]] private (
 
   // ------------------------------------------------------------------ results
 
-  /** Until protocol 1.11's typed digest mismatch, a recomputed result whose
-    * digest is not the one the run recorded is `Unavailable` naming the run
-    * and both digests.
-    */
+  /** Verify the recomputation against the recorded canonical digest. */
   private def verify(
       ref: RunRef,
       work: RealPrepared,
@@ -440,28 +432,27 @@ final class RealStudyBackend[F[_]] private (
     ref.archive match
       case CoreBinding.Unbound()     => None
       case CoreBinding.Bound(digest) =>
-        val recorded = digest.sha256.hex
-        val made     = work.digest(result)
-        Option.when(made != Right(recorded))(
-          BackendError.Unavailable(
-            DiagnosticLocus.Artifact(
-              s"${ref.id.label} result: recorded sha256 $recorded, recomputed " +
-                made.fold(e => s"no digest (${e.message})", d => s"sha256 $d")
+        work.digest(result) match
+          case Right(made) if made == digest.sha256.hex => None
+          case Right(made)                              =>
+            ByteDigest.parse(made) match
+              case Right(value) =>
+                Some(BackendError.ResultDigestMismatch(ref.id, digest.sha256, value))
+              case Left(error) =>
+                Some(
+                  BackendError.Unavailable(
+                    DiagnosticLocus.Artifact(s"${ref.id.label} result: ${error.message}")
+                  )
+                )
+          case Left(error) =>
+            Some(
+              BackendError.Unavailable(
+                DiagnosticLocus.Artifact(s"${ref.id.label} result: ${error.message}")
+              )
             )
-          )
-        )
 
-  /** Until the S3.7 protocol minor's typed form, a run whose recorded
-    * dataset revision is not its analysis revision's is `Unavailable` naming
-    * both revisions.
-    */
   private def datasetMismatch(ref: RunRef, work: RealPrepared): BackendError =
-    BackendError.Unavailable(
-      DiagnosticLocus.Artifact(
-        s"${ref.id.label} was computed on data ${ref.dataset.label}; " +
-          s"${work.revision.label} is on data ${work.dataset.label}"
-      )
-    )
+    BackendError.RunDatasetMismatch(ref.id, work.revision, ref.dataset, work.dataset)
 
   /** The eyes4s result of `run`. A completed run of the document that this
     * backend did not compute is recomputed on first request (S3.7 slice 5,
