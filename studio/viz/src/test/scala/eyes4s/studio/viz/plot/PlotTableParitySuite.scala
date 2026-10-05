@@ -335,6 +335,31 @@ class PlotTableParitySuite extends ScalaCheckSuite:
     }
   }
 
+  property("with no mark focused the plot says how many of its rows it does not draw") {
+    Prop.forAll(genPlot) { (source, plot) =>
+      val idle = MarkInputState.initial[StudioRef](plotView, SelectionState.empty)
+      val said = targetsOn(plot, 1.0).accessibleText(idle)
+      assertEquals(said, plot.idleText)
+      if plot.unplotted.isEmpty then assertEquals(said, plot.description)
+      else if plot.unplotted.size == 1 then
+        assertEquals(
+          said,
+          PlotText(PlotTextId.UndrawnOne, plot.description, source.rows.size.toString)
+        )
+        assert(said.contains(s"1 of ${source.rows.size} rows is not drawn"), said)
+      else
+        assertEquals(
+          said,
+          PlotText(
+            PlotTextId.Undrawn,
+            plot.description,
+            plot.unplotted.size.toString,
+            source.rows.size.toString
+          )
+        )
+    }
+  }
+
   property("drawn marks map back to their anchors and pick their own mark, at 1x and 2x") {
     Prop.forAll(genPlot) { (_, plot) =>
       List(1.0, 2.0).foreach { scale =>

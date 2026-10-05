@@ -193,20 +193,61 @@ class ExportBundleSuite extends munit.FunSuite:
 
   test("README.txt lists the files and the binding; nothing chosen is left out") {
     served.map { s =>
-      assertNoDiff(
-        files(s)("README.txt"),
-        """Figure 1 export bundle
-          |run 7 · analysis rev 4 · data r3 · reporting “By retrieval response” · studio build eyes4s 0.1
-          |reporting spec by-retrieval-response sha256:3a0ed363d486975f28f3eb990c0deb87c415924ebe4a301e638dae73221de5dd
-          |
-          |Files:
-          |- figure-1.svg
-          |- results.csv
-          |- comparisons.csv
-          |- participants.csv
-          |- methods.md
+      val readme = files(s)("README.txt")
+      assert(
+        readme.startsWith(
+          """Figure 1 export bundle
+            |run 7 · analysis rev 4 · data r3 · reporting “By retrieval response” · studio build eyes4s 0.1
+            |reporting spec by-retrieval-response sha256:3a0ed363d486975f28f3eb990c0deb87c415924ebe4a301e638dae73221de5dd
+            |
+            |Files:
+            |- figure-1.svg
+            |- results.csv
+            |- comparisons.csv
+            |- participants.csv
+            |- methods.md
+            |
+            |Tables:
           |""".stripMargin
+        ),
+        readme
       )
+      assert(!readme.contains("Not included"), readme)
+    }
+  }
+
+  test("README.txt documents every column of every table written, from its schema") {
+    served.map { s =>
+      val all    = files(s)
+      val readme = all("README.txt")
+      assert(readme.contains("<column>__valid: true when the cell holds a value"), readme)
+      for name <- Vector("results.csv", "comparisons.csv", "participants.csv") do
+        val header = all(name).linesIterator.next().split(",").toVector
+        // The documented columns, in order, are exactly the CSV's header.
+        val section = readme
+          .split("\n\n")
+          .find(_.startsWith(s"$name ("))
+          .getOrElse(fail(s"no section for $name in\n$readme"))
+        val documented =
+          section.linesIterator.drop(1).map(_.drop(2).takeWhile(_ != ' ')).toVector
+        assertEquals(documented, header, name)
+      // A label column names its labels; units and meanings come from the schema.
+      assert(
+        readme.contains(
+          "- m_absence (text, label, may be missing; one of failed, no-match, not-admitted, " +
+            "not-scored, empty-group): why m is missing"
+        ),
+        readme
+      )
+      assert(
+        readme.contains(
+          "- score_absence (text, label, may be missing; one of failed, not-served): " +
+            "why score is missing"
+        ),
+        readme
+      )
+      assert(readme.contains("- d__valid (true or false): whether d holds a value"), readme)
+      assert(readme.contains("- participant (text): participant id"), readme)
     }
   }
 

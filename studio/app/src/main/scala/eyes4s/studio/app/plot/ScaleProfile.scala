@@ -18,7 +18,7 @@ package eyes4s.studio.app.plot
 
 import cats.syntax.all.*
 import eyes4s.studio.app.text.{ParticipantText, ProfileText, ProfileTextId}
-import eyes4s.studio.core.backend.{ResultSummary, Response, RunId}
+import eyes4s.studio.core.backend.{QueryRow, QueryStatus, ReportRole, ReportView, ResultSummary, Response, RunId}
 import eyes4s.studio.core.document.{ReportingId, ScaleSet, Sigma}
 import eyes4s.studio.core.selection.{ScaleIndex, StudioRef}
 
@@ -105,6 +105,74 @@ object ProfileColumns:
 
 object ScaleProfile:
 
+  /** Builds the profile from the report evaluations at each declared scale.
+    * `grouped` supplies the visible level series and `overall` supplies each
+    * participant's ungrouped D series. Both were evaluated by eyes4s.
+    */
+  def of(
+      grouped: Vector[ReportView],
+      overall: Vector[ReportView],
+      scales: ScaleSet,
+      labels: Vector[String]
+  ): Either[ProfileError, ScaleProfile] =
+    grouped.headOption.toRight(ProfileError.Scale(RunId(0), 0)).flatMap { first =>
+      val run = first.run
+      val declared = scales.values
+      for
+        _ <- Either.cond(grouped.size == declared.size && overall.size == declared.size && labels.size == declared.size, (),
+          ProfileError.ScaleCount(run, declared.size, grouped.size))
+        at <- declared.zipWithIndex.traverse { case (sigma, i) =>
+          ScaleIndex.of(i).leftMap(_ => ProfileError.Scale(run, i)).map((_, sigma))
+        }
+      yield
+        val levels = first.cells.collect {
+          case c if c.role == ReportRole.Difference => c.group
+        }.flatten.distinct
+        val people = overall.headOption.toVector.flatMap(_.participants.collect {
+          case p if p.role == ReportRole.Difference && p.group.isEmpty => p.participant
+        }).distinct
+        def groupedPoint(group: Response, index: ScaleIndex): Option[(Double, String)] =
+          grouped.lift(index.value).flatMap(_.cell(Some(group), ReportRole.Difference)).flatMap(c =>
+            c.estimate.map(_ -> ParticipantText.participants(c.participants))
+          )
+        def overallPoint(person: String, index: ScaleIndex): Option[(Double, String)] =
+          overall.lift(index.value).flatMap(_.participant(None, ReportRole.Difference, person)).flatMap(p =>
+            p.value.map(_ -> ParticipantText.queries(p.queries))
+          )
+        ScaleProfile(
+          run,
+          first.reporting,
+          levels.map(group =>
+            ProfileSeries(
+              group.label,
+              groupedPoint(group, at.head._1).fold(ParticipantText.participants(0))(_._2),
+              at.map((index, sigma) =>
+                ProfilePoint(
+                  grouped(index.value).cell(Some(group), ReportRole.Difference).map(_.ref)
+                    .getOrElse(StudioRef.GroupCell(run, first.reporting, index, group)),
+                  index, labels(index.value), sigma,
+                  groupedPoint(group, index).map(_._1)
+                )
+              )
+            )
+          ),
+          people.map(person =>
+            ProfileSeries(
+              person,
+              overallPoint(person, at.head._1).fold(ParticipantText.queries(0))(_._2),
+              at.map((index, sigma) =>
+                ProfilePoint(
+                  overall(index.value).participant(None, ReportRole.Difference, person).map(_.ref)
+                    .getOrElse(StudioRef.ParticipantSummary(run, first.reporting, index, None, person)),
+                  index, labels(index.value), sigma,
+                  overallPoint(person, index).map(_._1)
+                )
+              )
+            )
+          )
+        )
+    }
+
   /** The profile of `summary` under `reporting`, at the run's declared
     * `scales` (its analysis revision's scale set, in order), which must be
     * the summary's scales one for one. A group's point is its
@@ -181,6 +249,68 @@ object ScaleProfile:
           )
         )
       )
+
+  /** One query's scale profile (ticket S8.5; Main.dc.html, the contrast
+    * group's "Scale profile" tab): its D at each of the run's `scales`, as
+    * the run's query row served it, each point its
+    * [[StudioRef.QueryContrast]]. `labels` are the run's scale labels, one
+    * for each declared scale. A query that does not contribute has no D at
+    * any scale: every point is missing, never zero.
+    */
+  def ofQuery(
+      run: RunId,
+      reporting: ReportingId,
+      row: QueryRow,
+      labels: Vector[String],
+      scales: ScaleSet
+  ): Either[ProfileError, ScaleProfile] =
+    val declared = scales.values
+    for
+      _ <- Either.cond(
+        declared.size == labels.size,
+        (),
+        ProfileError.ScaleCount(run, declared.size, labels.size)
+      )
+      at <- declared.zip(labels).zipWithIndex.traverse { case ((sigma, label), i) =>
+        for
+          _ <- Either.cond(
+            degreesOf(label).contains(sigma.degrees),
+            (),
+            ProfileError.ScaleLabel(run, i, label, sigma)
+          )
+          index <- ScaleIndex.of(i).leftMap(_ => ProfileError.Scale(run, i))
+        yield (index, label, sigma)
+      }
+    yield
+      val ds = row.status match
+        case QueryStatus.Contributing(_, _, d) => d
+        case _                                 => Vector.empty
+      ScaleProfile(
+        run,
+        reporting,
+        Vector(
+          ProfileSeries(
+            s"${row.query.label} · ${row.item}",
+            ProfileText(ProfileTextId.QueryN),
+            at.map((index, label, sigma) =>
+              ProfilePoint(
+                StudioRef.QueryContrast(run, index, row.query),
+                index,
+                label,
+                sigma,
+                ds.lift(index.value)
+              )
+            )
+          )
+        ),
+        Vector.empty
+      )
+
+  /** A served scale label's degrees ("2°", "0.5°"), compared with a declared
+    * σ by value rather than as text.
+    */
+  private def degreesOf(label: String): Option[Double] =
+    label.trim.stripSuffix("°").trim.toDoubleOption
 
   /** The profile as a value source: every group's points, then every
     * participant's, each series in scale order, each point a row with its

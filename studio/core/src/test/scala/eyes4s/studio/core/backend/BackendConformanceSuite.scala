@@ -40,6 +40,15 @@ abstract class BackendConformanceSuite extends CatsEffectSuite:
   private def ok[A](fa: IO[Either[BackendError, A]]): IO[A] =
     fa.flatMap(e => IO.fromEither(e.leftMap(err => new AssertionError(err.message))))
 
+  /** A grouped reporting spec over the response attribute (protocol 1.10). */
+  private val reporting: eyes4s.studio.core.document.ReportingSpec =
+    import eyes4s.studio.core.document.*
+    (for
+      id <- ReportingId.of("by-retrieval-response")
+      c  <- Covariate.of("response")
+      s  <- ReportingSpec.grouped(id, "By retrieval response", Some(c))
+    yield s).fold(e => throw new AssertionError(e.message), identity)
+
   private def page(offset: Int, size: Int): PageRequest =
     PageRequest.of(offset, size).fold(e => throw new AssertionError(e.message), identity)
 
@@ -308,6 +317,7 @@ abstract class BackendConformanceSuite extends CatsEffectSuite:
         BackendRequest.Result(RunId(9999)),
         BackendRequest.Subscribe(JobId(9999)),
         BackendRequest.PairRowsOf(s.current, 0, page(0, 5)),
+        BackendRequest.ReportOf(s.current, reporting, 1),
         BackendRequest.TrialFixationsOf(rev, row.query),
         BackendRequest.TrialPreviewOf(rev, row.query),
         BackendRequest.SourceRecordsOf(rev, 1, 5)

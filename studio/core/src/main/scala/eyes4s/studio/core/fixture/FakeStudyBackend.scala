@@ -22,9 +22,11 @@ import cats.syntax.all.*
 import eyes4s.codec.CanonicalDigest
 import eyes4s.studio.core.backend.*
 import eyes4s.studio.core.document.DatasetRevisionSpec
+import eyes4s.studio.core.document.ReportingSpec
 import eyes4s.studio.core.execution.RunStamp
 import eyes4s.studio.core.navigation.StudyNavigator
 import eyes4s.studio.core.preview.*
+import eyes4s.studio.core.selection.StudioRef
 import fs2.Stream
 import fs2.concurrent.SignallingRef
 
@@ -948,12 +950,14 @@ final class FakeStudyBackend[F[_]] private[fixture] (
       if !summary.scales.indices.contains(scale) then
         Left(BackendError.UnknownScale(run, scale, summary.scales))
       else
+        def entry(q: TrialKey, d: PairDesign, ref: TrialKey, item: String, s: PairScoreState) =
+          PairRowEntry(q, d, ref, item, s, None, None)
         val all = study.queries.flatMap { q =>
           val controls = study.controls(q).getOrElse(Vector.empty)
           status(q) match
             case QueryStatus.Contributing(m, _, _) =>
               val focus = summary.scales.lift(scale).contains(FocusScale)
-              PairRowEntry(
+              entry(
                 q.key,
                 PairDesign.Matched,
                 q.matchedKey,
@@ -963,10 +967,10 @@ final class FakeStudyBackend[F[_]] private[fixture] (
                 val score = q.controlScores2deg
                   .find(c => focus && MockStudy.key(q.participant, c.trial) == key)
                   .fold(PairScoreState.NotServed)(c => PairScoreState.Scored(c.score))
-                PairRowEntry(q.key, PairDesign.Control, key, item, score)
+                entry(q.key, PairDesign.Control, key, item, score)
               }
             case QueryStatus.Failed(d) =>
-              PairRowEntry(
+              entry(
                 q.key,
                 PairDesign.Matched,
                 q.matchedKey,
@@ -974,11 +978,18 @@ final class FakeStudyBackend[F[_]] private[fixture] (
                 PairScoreState.Failed(d)
               ) +:
                 controls.map((key, item) =>
-                  PairRowEntry(q.key, PairDesign.Control, key, item, PairScoreState.Failed(d))
+                  entry(q.key, PairDesign.Control, key, item, PairScoreState.Failed(d))
                 )
             case _ => Vector.empty
         }
-        val rows = slice(all, page)
+        // Each trial's window tally, read once per trial of the page.
+        val sliced  = slice(all, page)
+        val tallies = (sliced.map(_.query) ++ sliced.map(_.reference)).distinct
+          .map(k => k -> windowOf(k))
+          .toMap
+        val rows = sliced.map(r =>
+          r.copy(queryWindow = tallies(r.query), referenceWindow = tallies(r.reference))
+        )
         Right(PairRowPage(run, scale, PageInfo.of(page, all.size, rows.size), rows))
     })
 
@@ -994,6 +1005,32 @@ final class FakeStudyBackend[F[_]] private[fixture] (
         grid <- FakeTrialViews.mapGrid(moment, r.run, r.revision, r.dataset, scale, trial)
       yield grid
     })
+  /** The window tally of `trial` under the scored revision, with its ref. */
+  private def windowOf(trial: TrialKey): Option[TrialTally] =
+    FakeTrialViews
+      .tally(moment, scoredRevision, servedDataset, trial)
+      .map(TrialTally(StudioRef.Trial(trial), _))
+
+  /** Protocol 1.11: `reporting` evaluated by eyes4s-results over the run's
+    * stored rows ([[FakeReports]]). Only the scored run has rows.
+    */
+  def report(
+      run: RunId,
+      reporting: ReportingSpec,
+      scale: Int
+  ): F[Either[BackendError, ReportView]] =
+    scored(run).map(
+      _.flatMap(_ =>
+        FakeReports.report(
+          moment,
+          run,
+          reporting,
+          scale,
+          study.queries.map(q => q -> status(q)),
+          summary.scales
+        )
+      )
+    )
 
   def provenance(run: RunId, address: ResultAddress): F[Either[BackendError, Provenance]] =
     scored(run).map(_.flatMap { r =>

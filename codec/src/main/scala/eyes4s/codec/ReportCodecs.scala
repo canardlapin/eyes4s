@@ -435,7 +435,7 @@ object ReportCodecs:
       case other => Left(CodecError.Field("kind", json, s"unknown reason '$other'"))
     }
 
-  private def absence(a: Absence): Json = a match
+  private[codec] def absence(a: Absence): Json = a match
     case Absence.NotRecorded           => Json.obj("kind" -> Json.fromString("not-recorded"))
     case Absence.Unparsed              => Json.obj("kind" -> Json.fromString("unparsed"))
     case Absence.Failed(code, message) =>

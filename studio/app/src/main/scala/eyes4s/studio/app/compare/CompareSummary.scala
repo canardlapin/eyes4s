@@ -16,11 +16,10 @@
 
 package eyes4s.studio.app.compare
 
-import eyes4s.studio.app.plot.ParticipantMeans
 import eyes4s.studio.app.{AppModel, Intent}
 import eyes4s.studio.app.nav.Place
-import eyes4s.studio.core.backend.{BackendError, QueryRow, ResultSummary, RunId}
-import eyes4s.studio.core.document.{Perspective, ReportingId}
+import eyes4s.studio.core.backend.{BackendError, QueryRow, ReportView, ResultSummary, RunId}
+import eyes4s.studio.core.document.{Perspective, ReportingId, ReportingSpec}
 import eyes4s.studio.core.selection.ScaleIndex
 
 /** What the backend answered for a run's summary. */
@@ -34,10 +33,17 @@ enum QueriesAnswer derives CanEqual:
   case Answered(rows: Vector[QueryRow])
   case Failed(reason: String)
 
+/** What eyes4s answered for the displayed reporting spec at one scale. */
+enum ReportAnswer derives CanEqual:
+  case Answered(report: ReportView)
+  case Refused(error: BackendError)
+  case Failed(reason: String)
+
 /** An input to the summary layout: a backend answer or a user action. */
 enum SummaryIntent derives CanEqual:
   case SummaryRead(run: RunId, answer: SummaryAnswer)
   case QueriesRead(run: RunId, answer: QueriesAnswer)
+  case ReportRead(run: RunId, scale: ScaleIndex, overall: Boolean, answer: ReportAnswer)
   case ChooseScale(scale: ScaleIndex)
 
 /** What the summary layout asks of the app and the backend. */
@@ -45,6 +51,7 @@ enum SummaryEffect derives CanEqual:
   case App(intent: Intent)
   case RequestSummary(run: RunId)
   case RequestQueries(run: RunId)
+  case RequestReport(run: RunId, reporting: ReportingSpec, scale: ScaleIndex, overall: Boolean)
 
 /** Compare's summary layout (ticket S8.6; Results.dc.html): the shown run's
   * summary and queries as the backend serves them, and the σ the
@@ -57,12 +64,39 @@ final case class CompareSummary(
     reporting: Option[ReportingId],
     summary: Option[SummaryAnswer],
     queries: Option[QueriesAnswer],
-    scale: Option[ScaleIndex]
+    scale: Option[ScaleIndex],
+    spec: Option[ReportingSpec] = None,
+    reports: Map[(ScaleIndex, Boolean), ReportAnswer] = Map.empty
 ) derives CanEqual
 
 object CompareSummary:
 
   val empty: CompareSummary = CompareSummary(None, None, None, None, None)
+
+  /** An explicit eyes4s-derived ungrouped report for the overall table
+    * columns. Its identity differs so every returned ref names this spec. */
+  private def overall(spec: ReportingSpec): Option[ReportingSpec] =
+    ReportingSpec
+      .of(
+        ReportingId.of(spec.id.value + "-overall").toOption.getOrElse(spec.id),
+        spec.name + " (overall)",
+        None,
+        spec.filters,
+        spec.minimumPerGroup,
+        spec.weighting
+      )
+      .toOption
+
+  private def reportEffects(s: CompareSummary): Vector[SummaryEffect] =
+    for
+      result <- s.answered.toVector
+      spec <- s.spec.toVector
+      (_, i) <- result.scales.zipWithIndex
+      scale <- ScaleIndex.of(i).toOption.toVector
+      whole <- Vector(false, true)
+      report <- (if whole then overall(spec).toVector else Vector(spec))
+      if !s.reports.contains((scale, whole))
+    yield SummaryEffect.RequestReport(s.run.get, report, scale, whole)
 
   /** The run Compare shows. */
   def shownRun(m: AppModel): Option[RunId] = m.document.presentation.shownRun
@@ -85,10 +119,14 @@ object CompareSummary:
   def sync(s: CompareSummary, m: AppModel): (CompareSummary, Vector[SummaryEffect]) =
     val run = shownRun(m)
     val rep = reporting(m)
-    if run == s.run then (s.copy(reporting = rep), Vector.empty)
+    val spec = rep.flatMap(id => m.document.reporting.find(_.id == id))
+    if run == s.run && spec == s.spec then (s.copy(reporting = rep), Vector.empty)
+    else if run == s.run then
+      val next = s.copy(reporting = rep, spec = spec, reports = Map.empty)
+      (next, reportEffects(next))
     else
       (
-        CompareSummary(run, rep, None, None, None),
+        CompareSummary(run, rep, None, None, None, spec),
         run.toVector.flatMap(r =>
           Vector(SummaryEffect.RequestSummary(r), SummaryEffect.RequestQueries(r))
         )
@@ -104,9 +142,12 @@ object CompareSummary:
   ): (CompareSummary, Vector[SummaryEffect]) =
     intent match
       case SummaryIntent.SummaryRead(run, a) if s.run.contains(run) =>
-        (s.copy(summary = Some(a)), Vector.empty)
+        val next = s.copy(summary = Some(a))
+        (next, reportEffects(next))
       case SummaryIntent.QueriesRead(run, a) if s.run.contains(run) =>
         (s.copy(queries = Some(a)), Vector.empty)
+      case SummaryIntent.ReportRead(run, scale, whole, a) if s.run.contains(run) =>
+        (s.copy(reports = s.reports.updated((scale, whole), a)), Vector.empty)
       case SummaryIntent.ChooseScale(scale) if s.available.contains(scale) =>
         (s.copy(scale = Some(scale)), Vector.empty)
       case _ => (s, Vector.empty)
@@ -122,14 +163,17 @@ object CompareSummary:
       * declares its means scale (bead bd-01M420VXE7NFGZHSM71SGY7KW6, the
       * means-scale identity). The σ selector, and with it the query table's
       * σ, is gated by it.
-      */
+    */
     def available: Vector[ScaleIndex] =
       for
         r     <- s.answered.toVector
-        rep   <- s.reporting.toVector
         i     <- r.scales.indices.toVector
         scale <- ScaleIndex.of(i).toOption.toVector
-        if ParticipantMeans.of(r, rep, scale).isRight
+        answer <- s.reports.get((scale, false)).toVector
+        report <- answer match
+          case ReportAnswer.Answered(view) => Vector(view)
+          case _                           => Vector.empty
+        if report.scale == scale.value
       yield scale
 
     /** The σ shown: the one chosen, else the first the means are at. */

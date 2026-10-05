@@ -37,11 +37,11 @@ class ProtocolCodecSuite extends munit.FunSuite:
 
   test("every message kind and case is sampled") {
     assertEquals(requests.map(_.ordinal), requests.indices.toVector)
-    assertEquals(requests.size, 25)
+    assertEquals(requests.size, 27)
     assertEquals(responses.map(_.ordinal), responses.indices.toVector)
-    assertEquals(responses.size, 20)
+    assertEquals(responses.size, 22)
     assertEquals(errors.map(_.ordinal), errors.indices.toVector)
-    assertEquals(errors.size, 28)
+    assertEquals(errors.size, 29)
     assertEquals(causes.map(_.ordinal), causes.indices.toVector)
     assertEquals(causes.size, 14)
     assertEquals(loci.map(_.ordinal), loci.indices.toVector)

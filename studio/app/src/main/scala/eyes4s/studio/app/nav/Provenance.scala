@@ -100,7 +100,13 @@ object Provenance:
     case Place.Group(reporting, _) => Some(Place.Summary(reporting))
     case Place.At(ref)             =>
       ref match
-        case StudioRef.GroupCell(_, reporting, _, _) => Some(Place.Summary(reporting))
+        case StudioRef.GroupCell(_, reporting, _, _)     => Some(Place.Summary(reporting))
+        case StudioRef.ReportCell(_, reporting, _, _, _) => Some(Place.Summary(reporting))
+        case StudioRef.ReportParticipant(run, reporting, scale, group, role, _) =>
+          Some(Place.At(StudioRef.ReportCell(run, reporting, scale, group, role)))
+        case StudioRef.ReportContrast(_, reporting, _, _, _, _) =>
+          Some(Place.Summary(reporting))
+        case StudioRef.ReportQueryRange(_, reporting, _, _) => Some(Place.Summary(reporting))
         case StudioRef.ParticipantSummary(_, reporting, _, group, _) =>
           Some(group.fold(Place.Summary(reporting))(Place.Group(reporting, _)))
         case StudioRef.QueryContrast(run, scale, query) =>
@@ -150,6 +156,8 @@ object Provenance:
         case StudioRef.TrialPlacementTally(_, _) => ref.parent.map(Place.At(_))
         // An outcome's tally lies under the requested queries' tally.
         case StudioRef.QueryTally(_, _) => ref.parent.map(Place.At(_))
+        // A report count lies under its role's eligible queries.
+        case StudioRef.ReportTally(_, _, _, _, _) => ref.parent.map(Place.At(_))
         // A cause under the quarantined count that holds it.
         case StudioRef.InventoryCount(_, _) => ref.parent.map(Place.At(_))
         // A participant's phase lies under the participant.

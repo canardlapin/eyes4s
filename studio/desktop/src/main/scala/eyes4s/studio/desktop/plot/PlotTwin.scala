@@ -141,8 +141,7 @@ final class PlotTwin private (
     override def idle: Option[String] = statusWrapper.get match
       case PlotTwinStatus.Refused(source, error) =>
         Some(PlotText(PlotTextId.Refused, source.caption, error.message))
-      case PlotTwinStatus.Shown(plot) => Some(plot.description)
-      // A focus stop always has a name, even with nothing drawn (S10.5 K4).
+      case PlotTwinStatus.Shown(plot) => Some(plot.idleText)
       case _ => Some(PlotText(PlotTextId.NothingDrawn))
 
   /** The plot's input: its roving cursor, hover and projected selection. */

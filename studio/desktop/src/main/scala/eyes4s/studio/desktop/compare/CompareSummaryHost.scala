@@ -23,12 +23,14 @@ import eyes4s.studio.app.plot.{
   ParticipantColumns,
   PlotSource,
   ProfileColumns,
-  ScaleLadder
+  ScaleLadder,
+  ScaleProfile
 }
 import eyes4s.studio.app.tokens.Theme
 import eyes4s.studio.app.{AppModel, Intent}
 import eyes4s.studio.core.backend.{PageRequest, QueryRow, ResultAddress, RunId, TrialKey}
-import eyes4s.studio.core.selection.ViewId
+import eyes4s.studio.core.document.ReportingSpec
+import eyes4s.studio.core.selection.{ScaleIndex, ViewId}
 import eyes4s.studio.desktop.plot.{PlotTwin, TableTwinView}
 import eyes4s.studio.desktop.runtime.StudioSession
 import eyes4s.studio.viz.plot.{ParticipantPlot, ScaleLadderPlot, ScaleProfilePlot}
@@ -43,9 +45,14 @@ import javafx.scene.layout.{HBox, Priority, Region, VBox}
 trait SummaryInputs:
   def summary(run: RunId, done: SummaryAnswer => Unit): Unit
   def queries(run: RunId, done: QueriesAnswer => Unit): Unit
+  def report(_run: RunId, _reporting: ReportingSpec, _scale: ScaleIndex, done: ReportAnswer => Unit): Unit =
+    done(ReportAnswer.Failed("report input is not served"))
 
   /** Inspects one result item: the trial panels' pair (S8.2). */
   def inspect(run: RunId, address: ResultAddress, done: PairAnswer => Unit): Unit
+
+  /** Reads every pair row of a run at one scale (S8.5, protocol 1.9). */
+  def pairs(run: RunId, scale: ScaleIndex, done: PairsAnswer => Unit): Unit
 
   /** Reads a query's scale ladder at the run's scales (S8.3). */
   def ladder(
@@ -66,6 +73,17 @@ object SummaryInputs:
           case Right(Left(err)) => done(SummaryAnswer.Refused(err))
           case Right(Right(s))  => done(SummaryAnswer.Answered(s))
         }
+      override def report(
+          run: RunId,
+          reporting: ReportingSpec,
+          scale: ScaleIndex,
+          done: ReportAnswer => Unit
+      ): Unit =
+        session.run(session.backend.report(run, reporting, scale.value)) {
+          case Left(e)          => done(ReportAnswer.Failed(reason(e)))
+          case Right(Left(err)) => done(ReportAnswer.Refused(err))
+          case Right(Right(v))  => done(ReportAnswer.Answered(v))
+        }
       def inspect(run: RunId, address: ResultAddress, done: PairAnswer => Unit): Unit =
         session.run(session.backend.inspect(run, address)) {
           case Left(e)          => done(PairAnswer.Failed(reason(e)))
@@ -85,6 +103,15 @@ object SummaryInputs:
           case Left(e)            => done(LadderAnswer.Failed(reason(e)))
           case Right(Left(err))   => done(LadderAnswer.Failed(err.message))
           case Right(Right(full)) => done(LadderAnswer.Answered(full))
+        }
+      def pairs(run: RunId, scale: ScaleIndex, done: PairsAnswer => Unit): Unit =
+        session.run(
+          eyes4s.studio.core.figures.MethodsReads
+            .pairRowsAt[IO](session.backend.pairRows, run, scale.value)
+        ) {
+          case Left(e)             => done(PairsAnswer.Broken(reason(e)))
+          case Right(Left(err))    => done(PairsAnswer.Failed(err))
+          case Right(Right(pages)) => done(PairsAnswer.Answered(pages.flatMap(_.rows)))
         }
       def queries(run: RunId, done: QueriesAnswer => Unit): Unit =
         def from(offset: Int, got: Vector[QueryRow]): IO[Either[String, Vector[QueryRow]]] =
@@ -131,6 +158,7 @@ final class CompareSummaryHost(
   private var navigator  = QueriesNavigator.initial
   private var panelState = TrialPanels.empty
   private var contrast   = ContrastPane.empty
+  private var pairsState = PairsTable.empty
 
   /** The participant plot and its table. */
   val participantPlot: PlotTwin = PlotTwin
@@ -159,8 +187,10 @@ final class CompareSummaryHost(
     .fold(e => throw IllegalStateException(e.message), identity)
 
   /** The participant table and the query table. */
+  // The Results board pins the selected participant's row at the top
+  // ("pinned · selected"; bead bd-01M44PD9XEHG6QWPCJATAJZ15W).
   val participantTable: TableTwinView =
-    TableTwinView.attach(view("compare.participant-table"), selection, app)
+    TableTwinView.attach(view("compare.participant-table"), selection, app, pinsSelected = true)
   val queryTable: TableTwinView =
     TableTwinView.attach(view("compare.query-table"), selection, app)
 
@@ -298,6 +328,56 @@ final class CompareSummaryHost(
           case _ => ()
       case _ => ()
 
+  /** The pairs table (S8.5): every pair row of the run at the trail's
+    * scale, virtualised, with Retry after a failed read.
+    */
+  val pairsTable: TableTwinView =
+    TableTwinView.attach(view("compare.pairs"), selection, app)
+  private val pairsStatus = Label()
+  pairsStatus.getStyleClass.addAll("summary-status", "t12")
+  pairsStatus.setWrapText(true)
+  private val pairsRetry = Button()
+  pairsRetry.getStyleClass.add("btn")
+  pairsRetry.setOnAction(_ =>
+    val (next, reads) = PairsTable.retry(pairsState)
+    pairsState = next
+    readPairs(reads)
+    render(model())
+  )
+  VBox.setVgrow(pairsTable, Priority.ALWAYS)
+
+  /** The pairs table pane: its status, Retry, and the table. */
+  val pairsNode: VBox = VBox(4.0, pairsStatus, pairsRetry, pairsTable)
+
+  /** The pairs table's view-model now; the source it builds is kept, so the
+    * next render that changes neither the answer nor the rows reuses it.
+    */
+  def pairsVM: PairsVM =
+    val focus         = panelState.focus
+    val (kept, built) = PairsTable.view(
+      pairsState,
+      focus,
+      focus.flatMap(f => TrialPanels.referenceOf(f, rows)),
+      rows,
+      scaleLabels
+    )
+    pairsState = kept
+    built
+
+  private def readPairs(reads: Vector[PairsEffect]): Unit =
+    reads.foreach { case PairsEffect.ReadPairs(run, scale) =>
+      inputs.pairs(
+        run,
+        scale,
+        a =>
+          Platform.runLater { () =>
+            if !disposed then
+              pairsState = PairsTable.read(pairsState, run, scale, a)
+              render(model())
+          }
+      )
+    }
+
   /** The contrast readout beside the ladder. */
   val readout: ContrastReadoutView = ContrastReadoutView(app, () => retryLadder())
 
@@ -362,6 +442,9 @@ final class CompareSummaryHost(
       val (c, loads) = ContrastPane.sync(contrast, next.focus)
       contrast = c
       loadLadders(loads)
+      val (p, reads) = PairsTable.sync(pairsState, next.focus)
+      pairsState = p
+      readPairs(reads)
     effects.foreach {
       case PanelsEffect.InspectPair(run, address, pair) =>
         inputs.inspect(
@@ -376,6 +459,25 @@ final class CompareSummaryHost(
           a => Platform.runLater(() => panelIntent(PanelsIntent.ContentRead(key, a)))
         )
     }
+
+  /** The focused query's scale profile, while Compare shows the query layout. */
+  private def queryProfile(m: AppModel): Option[Either[String, PlotSource]] =
+    for
+      f <- panelState.focus
+      if m.layout == eyes4s.studio.app.layout.StudioLayouts.compareQuery
+      row <- rows.find(_.query == f.query)
+      rep <- state.reporting
+      rev <- m.document.run(f.run).flatMap(r => m.document.analysis(r.analysis))
+    yield ScaleProfile
+      .ofQuery(f.run, rep, row, scaleLabels, rev.recipe.scales)
+      .left
+      .map(_.message)
+      .flatMap(
+        ScaleProfile.source(_, profileColumns).left.map(_.message)
+      )
+
+  private val profileColumns: ProfileColumns =
+    ProfileColumns.standard.fold(e => throw IllegalStateException(e.message), identity)
 
   /** The panels' view-model now. */
   def panelsVM: TrialPanelsVM = TrialPanels.vm(panelState, shownRun, scaleLabels)
@@ -402,6 +504,7 @@ final class CompareSummaryHost(
     participantPlot.project(m.selection)
     scaleProfile.project(m.selection)
     ladder.project(m.selection)
+    pairsTable.project(m.selection)
     participantTable.project(m.selection)
     queryTable.project(m.selection)
     queryTrialTable.project(m.selection)
@@ -431,6 +534,13 @@ final class CompareSummaryHost(
         inputs.queries(
           run,
           a => Platform.runLater(() => dispatch(SummaryIntent.QueriesRead(run, a)))
+        )
+      case SummaryEffect.RequestReport(run, reporting, scale, overall) =>
+        inputs.report(
+          run,
+          reporting,
+          scale,
+          a => Platform.runLater(() => dispatch(SummaryIntent.ReportRead(run, scale, overall, a)))
         )
     }
 
@@ -478,7 +588,24 @@ final class CompareSummaryHost(
         participantPlot.show(_, theme),
         participantPlot.clear()
       )
-      show("scale-profile", v.profile, theme)(scaleProfile.show(_, theme), scaleProfile.clear())
+      // The shared scale profile pane: the summary's groups, or in the
+      // query layout the focused query's own D at every scale (S8.5).
+      show("scale-profile", queryProfile(m).orElse(v.profile), theme)(
+        scaleProfile.show(_, theme),
+        scaleProfile.clear()
+      )
+      val pairs = pairsVM
+      pairsStatus.setText(pairs.status.getOrElse(""))
+      pairsStatus.setVisible(pairs.status.isDefined);
+      pairsStatus.setManaged(pairs.status.isDefined)
+      pairsRetry.setText(pairs.retry.getOrElse(""))
+      pairsRetry.setAccessibleText(pairs.retry.orNull)
+      pairsRetry.setVisible(pairs.retry.isDefined); pairsRetry.setManaged(pairs.retry.isDefined)
+      pairs.source match
+        case Some(src) =>
+          pairsTable.show(src)
+          pairsTable.moveCursor(pairs.focused)
+        case None => pairsTable.clear()
       show("participant-table", v.participants, theme)(
         participantTable.show,
         participantTable.clear()
@@ -531,3 +658,4 @@ final class CompareSummaryHost(
       queryTrialTable.dispose()
       referenceTrialTable.dispose()
       panels.dispose()
+      pairsTable.dispose()

@@ -22,8 +22,27 @@ import eyes4s.studio.core.execution.RunStamp
 import eyes4s.studio.core.preview.*
 import eyes4s.plan.{MapPlacement, OffWindowPolicy}
 import eyes4s.codec.ByteDigest
-import eyes4s.studio.core.document.{Source, SourcePath, SourceRole}
-import eyes4s.studio.core.selection.{FixationIndex, RecordNumber, StudioRef}
+import eyes4s.studio.core.document.{
+  Covariate as ReportingCovariate,
+  MinimumPerGroup,
+  ReportingFilter,
+  ReportingId,
+  ReportingSpec,
+  ReportingWeight,
+  Share,
+  Source,
+  SourcePath,
+  SourceRole
+}
+import eyes4s.studio.core.reports.ReportRefusal
+import eyes4s.studio.core.selection.{
+  FixationIndex,
+  RecordNumber,
+  ReportCount,
+  ReportGroup,
+  ScaleIndex,
+  StudioRef
+}
 
 /** One named protocol value: its JSON is pinned in [[ProtocolPins]]. */
 final case class Sample[A](name: String, value: A)(using
@@ -246,6 +265,14 @@ object ProtocolSamples:
         Vector(DiagnosticLocus.Trial(query)),
         "no fixation lies in the map"
       )
+    ),
+    BackendError.ReportRefused(
+      run,
+      ReportRefusal.UndeclaredCovariate(
+        "by-retrieval-response",
+        "confidence",
+        Vector("response")
+      )
     )
   )
 
@@ -367,7 +394,7 @@ object ProtocolSamples:
           160.5,
           MapPlacement.OutsideWindow(OffWindowPolicy.FailTrial)
         ),
-        // Protocol 1.9: in the window of a trial the study fails, with its tally.
+        // Protocol 1.10: in the window of a trial the study fails, with its tally.
         fixation(
           6,
           7214,
@@ -487,7 +514,186 @@ object ProtocolSamples:
       .toOption
       .get
 
-  /** Protocol 1.9: a page with each score state. */
+  /** Protocol 1.10: a reporting spec with a minimum, and a report of it. */
+  val reportingSpec: ReportingSpec =
+    val response = ReportingCovariate.of("response").toOption.get
+    ReportingSpec
+      .of(
+        ReportingId.of("by-retrieval-response").toOption.get,
+        "By retrieval response",
+        Some(response),
+        Vector(ReportingFilter.OutsideWindowAtMost(Share.of(0.25).toOption.get)),
+        Some(MinimumPerGroup.of(3).toOption.get),
+        ReportingWeight.ParticipantMeans
+      )
+      .toOption
+      .get
+
+  val reportView: ReportView =
+    val scale = ScaleIndex.of(2).toOption.get
+    val id    = reportingSpec.id
+    val group = Some(Response.Forgotten)
+    val level = ReportGroup.Level(Response.Forgotten)
+    ReportView(
+      run,
+      id,
+      2,
+      Vector(
+        ReportCellView(
+          group,
+          ReportRole.Difference,
+          Some(0.15),
+          None,
+          22,
+          124,
+          3,
+          StudioRef.ReportCell(
+            run,
+            id,
+            scale,
+            ReportGroup.Level(Response.Forgotten),
+            ReportRole.Difference
+          )
+        ),
+        ReportCellView(
+          group,
+          ReportRole.Matched,
+          None,
+          Some(ReportAbsence.EmptyGroup),
+          0,
+          0,
+          0,
+          StudioRef.ReportCell(
+            run,
+            id,
+            scale,
+            ReportGroup.Level(Response.Forgotten),
+            ReportRole.Matched
+          )
+        ),
+        // An ungrouped report's cell is the whole report's.
+        ReportCellView(
+          None,
+          ReportRole.Control,
+          None,
+          Some(ReportAbsence.Undefined(ReportUndefined.NotFinite("mean", 2))),
+          2,
+          2,
+          0,
+          StudioRef.ReportCell(run, id, scale, ReportGroup.Whole, ReportRole.Control)
+        )
+      ),
+      Vector(
+        ReportParticipantView(
+          group,
+          ReportRole.Difference,
+          "P01",
+          6,
+          Some(0.12),
+          None,
+          StudioRef.ReportParticipant(run, id, scale, level, ReportRole.Difference, "P01")
+        ),
+        ReportParticipantView(
+          group,
+          ReportRole.Matched,
+          "P05",
+          1,
+          None,
+          Some(ReportAbsence.Failed("study-failure.off-window", "11 of 11 fixations outside")),
+          StudioRef.ReportParticipant(run, id, scale, level, ReportRole.Matched, "P05")
+        )
+      ),
+      Vector(
+        ReportContrastView(
+          ReportRole.Difference,
+          Response.Remembered,
+          Response.Forgotten,
+          Some(0.04),
+          None,
+          22,
+          Vector(ReportUnpairedView("P09", Response.Remembered, Response.Forgotten)),
+          StudioRef.ReportContrast(
+            run,
+            id,
+            scale,
+            ReportRole.Difference,
+            Response.Remembered,
+            Response.Forgotten
+          )
+        )
+      ),
+      Vector(
+        DroppedCell(
+          group,
+          "P17",
+          2,
+          3,
+          StudioRef.ReportParticipant(run, id, scale, level, ReportRole.Difference, "P17")
+        )
+      ),
+      Vector(
+        ReportQueryRange(
+          ReportRole.Difference,
+          2,
+          17,
+          StudioRef.ReportQueryRange(run, id, scale, ReportRole.Difference)
+        )
+      ),
+      Vector(
+        ReportTallyView(
+          ReportRole.Difference,
+          ReportCount.OutsideWindowFiltered,
+          9,
+          StudioRef.ReportTally(
+            run,
+            id,
+            scale,
+            ReportRole.Difference,
+            ReportCount.OutsideWindowFiltered
+          )
+        ),
+        ReportTallyView(
+          ReportRole.Difference,
+          ReportCount.OutsideWindowUnknown,
+          0,
+          StudioRef.ReportTally(
+            run,
+            id,
+            scale,
+            ReportRole.Difference,
+            ReportCount.OutsideWindowUnknown
+          )
+        )
+      )
+    )
+
+  /** Protocol 1.12: a query's and a reference's window tallies (1 of 12
+    * fixations, 4% of duration; 1 of 13, 3%).
+    */
+  val queryTally: eyes4s.plan.WindowTally = eyes4s.plan.WindowTally
+    .of(
+      0,
+      1,
+      12,
+      eyes4s.kernel.Span.micros(0),
+      eyes4s.kernel.Span.micros(120000),
+      eyes4s.kernel.Span.micros(3000000)
+    )
+    .toOption
+    .get
+  val referenceTally: eyes4s.plan.WindowTally = eyes4s.plan.WindowTally
+    .of(
+      0,
+      1,
+      13,
+      eyes4s.kernel.Span.micros(0),
+      eyes4s.kernel.Span.micros(90000),
+      eyes4s.kernel.Span.micros(3000000)
+    )
+    .toOption
+    .get
+
+  /** Protocol 1.9: a page with each score state; 1.12 adds the tallies. */
   val pairRowPage: PairRowPage =
     val encoding = TrialKey("P17", Phase.Encoding, "enc_03", 1)
     val control  = TrialKey("P17", Phase.Encoding, "enc_11", 1)
@@ -501,21 +707,27 @@ object ProtocolSamples:
           PairDesign.Matched,
           encoding,
           "beach-042",
-          PairScoreState.Scored(0.73)
+          PairScoreState.Scored(0.73),
+          Some(TrialTally(StudioRef.Trial(query), queryTally)),
+          Some(TrialTally(StudioRef.Trial(encoding), referenceTally))
         ),
         PairRowEntry(
           query,
           PairDesign.Control,
           control,
           "street-112",
-          PairScoreState.NotServed
+          PairScoreState.NotServed,
+          Some(TrialTally(StudioRef.Trial(query), queryTally)),
+          None
         ),
         PairRowEntry(
           query,
           PairDesign.Control,
           control,
           "street-112",
-          PairScoreState.Failed(diagnostic)
+          PairScoreState.Failed(diagnostic),
+          None,
+          None
         )
       )
     )
@@ -545,7 +757,8 @@ object ProtocolSamples:
     BackendRequest.SourceRecordsOf(AnalysisRevision(4), 7214, 60),
     BackendRequest.PairRowsOf(run, 2, page),
     BackendRequest.Verify(DatasetRevision(3), content("ab")),
-    BackendRequest.PlacementOf(placementSpec)
+    BackendRequest.PlacementOf(placementSpec),
+    BackendRequest.ReportOf(run, reportingSpec, 2)
   )
 
   val responses: Vector[BackendResponse] = Vector(
@@ -649,7 +862,8 @@ object ProtocolSamples:
     BackendResponse.TrialPreviewOf(trialPreview),
     BackendResponse.SourceRecordsOf(sourceRecordPage),
     BackendResponse.PairRowsOf(pairRowPage),
-    BackendResponse.PlacementOf(placementPreview)
+    BackendResponse.PlacementOf(placementPreview),
+    BackendResponse.ReportOf(reportView)
   )
 
   /** t1's r3 declared at 35.5 px/°: an integral double prints as `35.0` on

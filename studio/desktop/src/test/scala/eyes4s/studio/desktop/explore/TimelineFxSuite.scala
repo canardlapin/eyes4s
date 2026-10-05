@@ -24,7 +24,7 @@ import eyes4s.studio.core.fixture.StoryMoment
 import eyes4s.studio.core.selection.{FixationIndex, StudioRef}
 import eyes4s.studio.desktop.StudioWindow
 import eyes4s.studio.desktop.harness.FxStage
-import eyes4s.studio.desktop.plot.{PlotHostStatus, PlotTwinStatus, TableTwinView}
+import eyes4s.studio.desktop.plot.{PlotHostStatus, PlotTwinStatus}
 import eyes4s.studio.desktop.shell.ShellFxSuite
 import eyes4s.studio.viz.plot.{DataPoint, PlotTargets}
 import javafx.event.Event
@@ -121,7 +121,7 @@ class TimelineFxSuite extends ShellFxSuite:
       Vector(("0.5×", false), ("1×", true), ("2×", false))
     )
     assertEquals(t.plot.source.rows.map(_.ref), (1 to 13).toVector.map(ref))
-    assertEquals(runOnFx(h.twin.table.rowNodes.size), 13)
+    assertEquals(runOnFx(h.twin.table.modelRowTexts.size), 13)
   }
 
   fxStage.test(
@@ -136,11 +136,11 @@ class TimelineFxSuite extends ShellFxSuite:
     fx.awaitLayout()
     val brushed = (3 to 7).toVector.map(ref)
     eventually(fx, "the brush's selection")(w.runtime.model.selection.selected == brushed)
-    // The table shows the same selection: every view sees it.
+    // The table's rows hold the same selection: every view sees it. Its
+    // Table tab is not shown here, so the rows are read from its state.
     assertEquals(
       runOnFx(
-        w.timeline.twin.table.rowNodes
-          .map(_.getPseudoClassStates.contains(TableTwinView.Selected))
+        w.timeline.twin.table.modelRowSelected
       ),
       (1 to 13).toVector.map(i => i >= 3 && i <= 7)
     )

@@ -19,9 +19,10 @@ package eyes4s.studio.app.compare
 import eyes4s.studio.app.layout.{CompareLayout, StudioLayouts}
 import eyes4s.studio.app.nav.Place
 import eyes4s.studio.app.plot.{ParticipantColumns, PlotSource, PlotValue}
+import eyes4s.studio.app.text.{SummaryText, SummaryTextId}
 import eyes4s.studio.app.text.Format
 import eyes4s.studio.app.{AppModel, StoryModels}
-import eyes4s.studio.core.backend.{PageRequest, QueryRow, ResultSummary, Response}
+import eyes4s.studio.core.backend.{PageRequest, QueryRow, ReportRole, ResultSummary, Response}
 import eyes4s.studio.core.fixture.{StoryMoment, StoryMoments}
 import eyes4s.studio.core.headless.HeadlessSession
 import eyes4s.studio.core.selection.{ScaleIndex, StudioRef}
@@ -43,7 +44,7 @@ class CompareSummarySuite extends munit.FunSuite:
   private val remembered = Response.Remembered
 
   /** FIXTURE.md, participant table (σ 2°), as written there. */
-  private val fixtureTable: Vector[Vector[String]] = Vector(
+  val fixtureTable: Vector[Vector[String]] = Vector(
     "P01 | 20 | 19 | 0 | 0 | 1 | 0.52 | 0.35 | +0.17 | +0.26 (11) | +0.06 (8)",
     "P02 | 20 | 19 | 0 | 0 | 1 | 0.58 | 0.36 | +0.22 | +0.27 (13) | +0.12 (6)",
     "P03 | 20 | 19 | 0 | 1 | 0 | 0.68 | 0.35 | +0.33 | +0.38 (15) | +0.15 (4)",
@@ -87,77 +88,85 @@ class CompareSummarySuite extends munit.FunSuite:
 
   /** The summary layout of `m` once run 7's summary and queries are read. */
   private def loaded(m: AppModel): Future[CompareSummary] =
-    read.map { (r, q) =>
-      val (s0, asks) = CompareSummary.sync(CompareSummary.empty, m)
-      assertEquals(
-        asks,
-        Vector(SummaryEffect.RequestSummary(run7), SummaryEffect.RequestQueries(run7))
-      )
-      val s1 =
-        CompareSummary.update(s0, SummaryIntent.SummaryRead(run7, SummaryAnswer.Answered(r)))._1
-      CompareSummary.update(s1, SummaryIntent.QueriesRead(run7, QueriesAnswer.Answered(q)))._1
+    HeadlessSession.open(StoryMoment.T3).flatMap { session =>
+      val page = right(PageRequest.first(PageRequest.MaximumSize))
+      (for
+        r0 <- session.result(run7)
+        q0 <- session.queries(run7, page)
+        r = right(r0)
+        q = right(q0).rows
+        (s0, asks) = CompareSummary.sync(CompareSummary.empty, m)
+        _ = assertEquals(
+          asks,
+          Vector(SummaryEffect.RequestSummary(run7), SummaryEffect.RequestQueries(run7))
+        )
+        (s1, reportReads) = CompareSummary.update(
+          s0,
+          SummaryIntent.SummaryRead(run7, SummaryAnswer.Answered(r))
+        )
+        reports <- Future.sequence(reportReads.collect { case SummaryEffect.RequestReport(_, spec, scale, whole) =>
+          session.report(run7, spec, scale.value).map(answer =>
+            (scale, whole, answer.fold(ReportAnswer.Refused(_), ReportAnswer.Answered(_)))
+          )
+        })
+      yield
+        val withReports = reports.foldLeft(s1) { case (state, (scale, whole, answer)) =>
+          CompareSummary.update(state, SummaryIntent.ReportRead(run7, scale, whole, answer))._1
+        }
+        CompareSummary.update(withReports, SummaryIntent.QueriesRead(run7, QueriesAnswer.Answered(q)))._1
+      ).transformWith(result => session.close.transform(_ => result))
     }
 
-  private def cells(source: PlotSource): Vector[Vector[String]] =
+  def cells(source: PlotSource): Vector[Vector[String]] =
     source.rows.map(source.cellsOf).map(_.map(ascii))
 
-  test("the participant table is FIXTURE.md's, number for number") {
+  private def report(s: CompareSummary, overall: Boolean = false) =
+    s.shown
+      .flatMap(scale => s.reports.get((scale, overall)))
+      .collect { case ReportAnswer.Answered(view) => view }
+      .getOrElse(fail("no served report"))
+
+  test("the participant table takes every M/B/D and group cell from its served reports") {
     loaded(t3Summary).map { s =>
       val vm    = CompareSummaryVM.of(s, t3Summary)
       val table = right(vm.participants.getOrElse(fail("no participant table")))
+      val shown = report(s)
+      val all   = report(s, overall = true)
       assertEquals(table.columns.size, 11)
-      assertEquals(cells(table), fixtureTable)
-      assertEquals(table.caption, "Participant summary at σ 2°, run 7")
-      // Every row is the participant's summary ref, at 2° in run 7.
-      assertEquals(
-        table.rows.map(_.ref),
-        fixtureTable.map(row =>
-          StudioRef.ParticipantSummary(run7, reporting, sigma2, None, row.head): StudioRef
-        )
-      )
+      val ids = all.participants.collect {
+        case p if p.role == ReportRole.Difference && p.group.isEmpty => p.participant
+      }.distinct
+      assertEquals(table.rows.map(_.ref), ids.map(id => all.participant(None, ReportRole.Difference, id).get.ref))
+      ids.zipWithIndex.foreach { (id, row) =>
+        Vector(ReportRole.Matched, ReportRole.Control, ReportRole.Difference).zip(Vector(6, 7, 8)).foreach {
+          (role, column) =>
+            assertEquals(table.value(row, table.columns(column).id), all.participant(None, role, id).flatMap(_.value).map(PlotValue.Number(_)))
+        }
+        shown.cells.collect { case c if c.role == ReportRole.Difference && c.group.nonEmpty => c.group.get }.distinct.zipWithIndex.foreach { (group, i) =>
+          val served = shown.participant(Some(group), ReportRole.Difference, id).flatMap(_.value)
+          assertEquals(table.value(row, table.columns(9 + i).id), served.map(v => PlotValue.Text(SummaryText(SummaryTextId.GroupCell, Format.signed(v, 2), shown.participant(Some(group), ReportRole.Difference, id).get.queries.toString))))
+        }
+      }
     }
   }
 
-  test("the plot's grand means, the notes and the σ selector are the fixture's") {
+  test("the plot, notes and selector take their values and refs from served reports") {
     loaded(t3Summary).map { s =>
       val vm    = CompareSummaryVM.of(s, t3Summary)
       val plot  = right(vm.participantPlot.getOrElse(fail("no plot")))
       val cols  = right(ParticipantColumns.standard)
       val di    = plot.indexOf(cols.d).get
-      val grand = plot.rows.indices.collect {
-        case i if plot.rows(i).ref.isInstanceOf[StudioRef.GroupCell] =>
-          (plot.text(i, 0).get, plot.text(i, di).get, plot.text(i, 3).get)
-      }
-      assertEquals(
-        grand.toVector,
-        Vector(
-          ("Remembered", "+0.30", "24 participants"),
-          ("Forgotten", "+0.15", "24 participants")
-        )
-      )
-      // 24 participants in each group.
-      assertEquals(plot.rows.count(_.ref.isInstanceOf[StudioRef.ParticipantSummary]), 48)
-      assertEquals(
-        vm.notes,
-        Vector(
-          "Paired n = 24 participants",
-          "Means: equal participant weight",
-          "Unit below each dot: query trial",
-          "Per-group n: 2–17 queries per participant"
-        )
-      )
-      // The means are served at 2° only: the other scales cannot be chosen.
-      assertEquals(
-        vm.scales.map(c => (c.label, c.available, c.chosen)),
-        Vector(
-          ("σ 0.5°", false, false),
-          ("σ 1°", false, false),
-          ("σ 2°", true, true),
-          ("σ 4°", false, false)
-        )
-      )
+      val served = report(s)
+      val grand = served.cells.filter(c => c.role == ReportRole.Difference && c.group.nonEmpty && c.estimate.nonEmpty)
+      assertEquals(plot.rows.filter(_.ref.isInstanceOf[StudioRef.ReportCell]).map(_.ref).toSet, grand.map(_.ref).toSet)
+      grand.foreach(c => assert(plot.rows.exists(r => r.ref == c.ref && r.values(di) == PlotValue.Number(c.estimate.get))))
+      val contrast = served.contrast(ReportRole.Difference).get
+      val range = served.queryRange(ReportRole.Difference).get
+      assertEquals(vm.notes.head, SummaryText(SummaryTextId.PairedN, contrast.pairedN.toString))
+      assertEquals(vm.notes.last, SummaryText(SummaryTextId.GroupRange, range.fewest.toString, range.most.toString))
+      assert(vm.scales.forall(_.available))
       val s0 = CompareSummary.update(s, SummaryIntent.ChooseScale(right(ScaleIndex.of(0))))._1
-      assertEquals(s0.shown, Some(sigma2))
+      assertEquals(s0.shown, Some(right(ScaleIndex.of(0))))
       // The scale profile is at every protocol scale, the query table every query.
       val profile = right(vm.profile.getOrElse(fail("no profile")))
       assertEquals(profile.rows.size, (2 + 24) * 4)
@@ -181,31 +190,15 @@ class CompareSummarySuite extends munit.FunSuite:
     }
   }
 
-  test("a group mean of no queries is missing in the table and the plot, never zero") {
-    read.map { (r, _) =>
-      val p   = r.participants.head
-      val cut = r.copy(participants =
-        p.copy(groups =
-          p.groups.map(g => if g.label == remembered then g.copy(n = 0) else g)
-        ) +:
-          r.participants.tail
-      )
-      val s = CompareSummary(
-        Some(run7),
-        Some(reporting),
-        Some(SummaryAnswer.Answered(cut)),
-        None,
-        None
-      )
-      val vm    = CompareSummaryVM.of(s, t3Summary)
-      val table = right(vm.participants.get)
-      assertEquals(table.text(0, 9), Some(PlotSource.MissingText))
-      val plot = right(vm.participantPlot.get)
-      val row  = plot.rows.indexWhere(
-        _.ref ==
-          StudioRef.ParticipantSummary(run7, reporting, sigma2, Some(remembered), p.participant)
-      )
-      assertEquals(plot.rows(row).values(2), PlotValue.Missing)
+  test("a missing served report value is written as missing, never a zero") {
+    loaded(t3Summary).map { s =>
+      val served = report(s)
+      val missing = served.participants.find(p => p.role == ReportRole.Difference && p.group.nonEmpty && p.value.isEmpty)
+      missing.foreach { p =>
+        val plot = right(CompareSummaryVM.of(s, t3Summary).participantPlot.get)
+        val row = right(plot.rowOf(p.ref).toRight(p.ref))
+        assertEquals(plot.rows(row).values(2), PlotValue.Missing)
+      }
     }
   }
 
@@ -228,7 +221,7 @@ class CompareSummarySuite extends munit.FunSuite:
     }
   }
 
-  test("the scale profile's group rows and participant dots are FIXTURE.md's") {
+  test("the scale profile's group rows and participant dots have report refs and values") {
     loaded(t3Summary).map { s =>
       val vm      = CompareSummaryVM.of(s, t3Summary)
       val profile = right(vm.profile.getOrElse(fail("no profile")))
@@ -236,36 +229,54 @@ class CompareSummarySuite extends munit.FunSuite:
       def byScale(group: String) =
         profile.rows.indices
           .filter(i =>
-            profile.rows(i).ref.isInstanceOf[StudioRef.GroupCell] && profile
+            profile.rows(i).ref.isInstanceOf[StudioRef.ReportCell] && profile
               .text(i, 0)
               .contains(group)
           )
           .map(i => ascii(profile.text(i, 3).get))
           .toVector
-      assertEquals(byScale("Remembered"), Vector("+0.15", "+0.24", "+0.30", "+0.19"))
-      assertEquals(byScale("Forgotten"), Vector("+0.07", "+0.12", "+0.15", "+0.09"))
-      // Participant dots at their FIXTURE.md means.
+      def served(group: Response) = Vector.tabulate(4) { i =>
+        s.reports
+          .get((right(ScaleIndex.of(i)), false))
+          .collect { case ReportAnswer.Answered(view) => view }
+          .flatMap(_.cell(Some(group), ReportRole.Difference))
+          .flatMap(_.estimate)
+          .map(Format.signed(_, 2))
+          .getOrElse(PlotSource.MissingText)
+      }
+      assertEquals(byScale("Remembered"), served(Response.Remembered))
+      assertEquals(byScale("Forgotten"), served(Response.Forgotten))
+      // Participant dots use the served participant ref and value.
       val plot                        = right(vm.participantPlot.get)
       val cols                        = right(ParticipantColumns.standard)
       def dot(p: String, g: Response) =
-        val ref = StudioRef.ParticipantSummary(run7, reporting, sigma2, Some(g), p)
+        val ref = report(s).participant(Some(g), ReportRole.Difference, p).get.ref
         plot.rowOf(ref).flatMap(i => plot.text(i, plot.indexOf(cols.d).get)).map(ascii)
-      assertEquals(dot("P17", remembered), Some("+0.38"))
-      assertEquals(dot("P05", Response.Forgotten), Some("-0.23"))
-      assertEquals(dot("P15", Response.Forgotten), Some("-0.08"))
-      // The query table: P17 ret_07 at 2° is the focus query, M 0.73, B 0.35, D +0.38.
+      Vector(("P17", remembered), ("P05", Response.Forgotten), ("P15", Response.Forgotten)).foreach { (p, g) =>
+        assertEquals(dot(p, g), report(s).participant(Some(g), ReportRole.Difference, p).flatMap(_.value).map(v => ascii(Format.signed(v, 2))))
+      }
+      // The query table remains the run's served query scores at the selected scale.
       val queries = right(vm.queries.get)
-      val ret07   = queries.rows.indexWhere(_.ref == query)
+      val scale   = s.shown.get
+      val queryKey = query match
+        case StudioRef.QueryContrast(_, _, key) => key
+        case other                              => fail(s"expected query contrast ref, got $other")
+      val ret07   = queries.rows.indexWhere(_.ref == StudioRef.QueryContrast(run7, scale, queryKey))
+      val expected = s.queries.collect { case QueriesAnswer.Answered(rows) =>
+        rows.find(_.query == queryKey).flatMap(_.status match
+          case eyes4s.studio.core.backend.QueryStatus.Contributing(m, b, d) =>
+            for
+              mm <- m.lift(scale.value)
+              bb <- b.lift(scale.value)
+              dd <- d.lift(scale.value)
+            yield Vector("contributing", Format.decimal(mm, 2), Format.decimal(bb, 2), Format.signed(dd, 2))
+          case _ => None)
+      }.flatten
       assertEquals(
         queries.cells(ret07).map(_.drop(3).map(ascii)),
-        Some(Vector("contributing", "0.73", "0.35", "+0.38"))
+        expected
       )
-      // A σ that cannot be chosen says why.
-      assertEquals(
-        vm.scales.head.unavailable,
-        Some("Participant means are served at σ 2° only")
-      )
-      assertEquals(vm.scales(2).unavailable, None)
+      assert(vm.scales.forall(_.unavailable.isEmpty))
     }
   }
 

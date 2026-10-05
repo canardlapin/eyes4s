@@ -1,0 +1,1 @@
+table: Query P17 · ret_07, Query item beach-042, Role matched, Reference P17 · enc_03, Reference item beach-042, σ 2°, Cosine 0.73, Score scored, selected

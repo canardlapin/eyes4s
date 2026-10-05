@@ -36,14 +36,12 @@ import javafx.event.Event
 import javafx.event.EventType
 import javafx.geometry.Point2D
 import javafx.scene.SnapshotParameters
-import javafx.scene.control.Label
 import javafx.scene.image.WritableImage
 import javafx.scene.input.{MouseButton, MouseEvent, PickResult}
 import javafx.scene.layout.{HBox, Priority}
 import javafx.scene.transform.Transform
 
 import scala.concurrent.duration.Duration
-import scala.jdk.CollectionConverters.*
 
 /** The scale profile in the plot host (ticket S4.5d), on real JavaFX: the
   * fake backend's run 7 at its declared scales shows, in the plot and its
@@ -234,9 +232,8 @@ class S45dPlotFxSuite extends StudioFxSuite:
     }
 
   private def rowTexts(w: Wired): Vector[Vector[String]] =
-    runOnFx(w.twin.table.rowNodes.map(_.getChildren.asScala.toVector.collect { case l: Label =>
-      l.getText
-    }))
+    assert(runOnFx(w.twin.table.onScreen), "the table draws no rows")
+    runOnFx(w.twin.table.rowTexts)
 
   // Where a mark's row is placed, in data coordinates: its anchor without its nudge.
   private def placed(t: PlotTargets, ref: StudioRef) =

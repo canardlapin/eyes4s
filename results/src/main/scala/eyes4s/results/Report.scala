@@ -271,6 +271,16 @@ enum ReportError[+K] derives CanEqual:
     */
   case UnboundCovariates(covariates: Vector[String])
 
+  /** Query tables a host supplies are listed one per scale, in scale order:
+    * the table at `position` is of scale `scale`.
+    */
+  case TableOrder(position: Int, scale: Int)
+
+  /** The covariates the query tables declare, `tables`, are not the
+    * covariates their covariate table declares, `source`.
+    */
+  case TableCovariates(tables: Vector[String], source: Vector[String])
+
   def message: String = this match
     case UnknownScale(scale, scales) =>
       s"The report reads scale $scale, but the result has $scales scales."
@@ -308,6 +318,12 @@ enum ReportError[+K] derives CanEqual:
     case UnboundCovariates(covariates) =>
       s"The report reads covariates $covariates, but its source is bound to no covariate " +
         "source; evaluate it over the admission ledger that carries the trials table."
+    case TableOrder(position, scale) =>
+      s"Query table $position is of scale $scale; the tables must be listed one per scale, " +
+        s"in scale order, so table $position must be of scale $position."
+    case TableCovariates(tables, source) =>
+      s"The query tables declare covariates ${tables.mkString("[", ", ", "]")}, but their " +
+        s"covariate table declares ${source.mkString("[", ", ", "]")}."
 
 /** A report: the cells, level contrasts and accounting a [[ReportSpec]]
   * reduces a scale's stored rows to, with its findings and the binding of

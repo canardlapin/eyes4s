@@ -19,6 +19,7 @@ package eyes4s.studio.core.fixture
 import cats.effect.IO
 import cats.syntax.all.*
 import eyes4s.studio.core.backend.*
+import eyes4s.studio.core.selection.StudioRef
 import eyes4s.studio.core.figures.{MethodsReadError, MethodsReads}
 import munit.CatsEffectSuite
 
@@ -183,4 +184,47 @@ class PairRowsSuite extends CatsEffectSuite:
       assertEquals(stalled, Left(MethodsReadError.PairsStalled(run7, 0, 0, 0)))
       assertEquals(other, Left(MethodsReadError.OtherPairPage(run7, 0, run7, 1)))
       assertEquals(run, Left(MethodsReadError.OtherPairPage(run7, 0, StoryMoments.run5, 0)))
+  }
+
+  // --- Window tallies (protocol 1.12, bd-01M44FKT4NFZ0F5KQTKT96DC8E) ------------------
+
+  test("each pair carries its query's and reference's window tally, with the trial's ref") {
+    for
+      b    <- fake
+      rows <- all(b, 2)
+    yield
+      val p17  = MockStudy.key("P17", "ret_07")
+      val enc  = MockStudy.key("P17", "enc_03")
+      val pair = rows.find(r => r.query == p17 && r.design == PairDesign.Matched).get
+      assertEquals(pair.reference, enc)
+      val q = pair.queryWindow.getOrElse(fail("no query tally"))
+      val r = pair.referenceWindow.getOrElse(fail("no reference tally"))
+      assertEquals((q.trial, r.trial), (StudioRef.Trial(p17), StudioRef.Trial(enc)))
+      // FIXTURE.md: ret_07 has 1 of 12 fixations outside (4% of duration),
+      // enc_03 1 of 13 (3%).
+      assertEquals((q.tally.outsideWindow, q.tally.total), (1, 12))
+      assertEquals((r.tally.outsideWindow, r.tally.total), (1, 13))
+      assertEquals(q.tally.outsideWindowShare.map(s => math.round(s * 100)), Some(4L))
+      assertEquals(r.tally.outsideWindowShare.map(s => math.round(s * 100)), Some(3L))
+      // Every compared pair's trials have admitted scanpaths, so a tally.
+      assert(rows.forall(r => r.queryWindow.isDefined && r.referenceWindow.isDefined))
+      // One tally per trial: a trial's tally is the same in every row it is in.
+      assertEquals(
+        rows.groupBy(_.reference).values.map(_.map(_.referenceWindow).distinct.size).toSet,
+        Set(1)
+      )
+  }
+
+  test("a pair's tallies count the fixations the trial view serves") {
+    for
+      b    <- fake
+      rows <- all(b, 0)
+      view <- b.trialFixations(AnalysisRevision(4), rows.head.reference).map(ok)
+    yield
+      val t = rows.head.referenceWindow.get.tally
+      assertEquals(t.total, view.fixations.size)
+      assertEquals(
+        t.outsideWindow,
+        view.fixations.count(_.placement.isInstanceOf[eyes4s.plan.MapPlacement.OutsideWindow])
+      )
   }

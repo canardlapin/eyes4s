@@ -60,8 +60,8 @@
   -fx-border-color: -es-accent;
 }
 
-.table-twin .scroll-pane,
-.table-twin .scroll-pane > .viewport {
+.table-twin .list-view,
+.table-twin .list-view > .virtual-flow > .clipped-container > .sheet {
   -fx-background-color: -es-surface;
   -fx-background-insets: 0;
   -fx-padding: 0;
@@ -85,6 +85,7 @@
 
 /* 24 px rows with a surface-3 rule below. */
 .table-twin-row {
+  -fx-padding: 0;
   -fx-min-height: 24px;
   -fx-pref-height: 24px;
   -fx-max-height: 24px;
@@ -107,6 +108,16 @@
 .table-twin-row:selected {
   -fx-background-color: -es-ink, -es-surface-2;
   -fx-background-insets: 0, 2 0 2 0;
+}
+
+/* A selected row pinned at the top: its annotation (Results board). */
+.table-twin-note {
+  -fx-text-fill: -es-ink-3;
+  -fx-font-family: "IBM Plex Sans";
+}
+
+.table-twin-row:pinned .table-twin-cell {
+  -fx-font-family: "IBM Plex Sans SmBld";
 }
 
 /* The row cursor, while the table has focus: a 2 px accent rule on the left. */

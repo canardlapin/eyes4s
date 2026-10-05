@@ -342,7 +342,7 @@ object TrialPreview:
 
 /** eyes4s `MapPlacement` and `OffWindowPolicy` on the wire, as the studio
   * writes its enums: `{"InMap":{}}`, `{"OutsideWindow":{"policy":{"Exclude":{}}}}`.
-  * `MapPlacement.InWindow` keeps its earlier wire name `InMap`. Protocol 1.9
+  * `MapPlacement.InWindow` keeps its earlier wire name `InMap`. Protocol 1.10
   * adds `{"TrialFailed":{"tally":{...}}}`: in the window, in a trial the study
   * fails, with the tally of the trial's kept fixations it fails for.
   */

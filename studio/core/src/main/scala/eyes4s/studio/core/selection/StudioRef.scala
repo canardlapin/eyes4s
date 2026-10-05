@@ -20,6 +20,7 @@ import eyes4s.studio.core.backend.{
   AnalysisRevision,
   DatasetRevision,
   PairDesign,
+  ReportRole,
   Phase,
   ResultAddress,
   Response,
@@ -153,6 +154,44 @@ enum StudioRef derives CanEqual, Codec.AsObject:
   /** One group's cell of a reporting spec's summary. */
   case GroupCell(run: RunId, reporting: ReportingId, scale: ScaleIndex, group: Response)
 
+  /** One cell of a report a reporting spec evaluates to (eyes4s `Cell`;
+    * protocol 1.11): a group's value for one role.
+    */
+  case ReportCell(
+      run: RunId,
+      reporting: ReportingId,
+      scale: ScaleIndex,
+      group: ReportGroup,
+      role: ReportRole
+  )
+
+  /** One participant's value in a report cell (eyes4s `ParticipantValue`). */
+  case ReportParticipant(
+      run: RunId,
+      reporting: ReportingId,
+      scale: ScaleIndex,
+      group: ReportGroup,
+      role: ReportRole,
+      participant: String
+  )
+
+  /** A report's level contrast for one role (eyes4s `LevelContrastStat`):
+    * `minuend` minus `subtrahend`.
+    */
+  case ReportContrast(
+      run: RunId,
+      reporting: ReportingId,
+      scale: ScaleIndex,
+      role: ReportRole,
+      minuend: Response,
+      subtrahend: Response
+  )
+
+  /** A report's range of queries per participant per group for one role
+    * (eyes4s `ReportFacts`' `GroupSizeRange`).
+    */
+  case ReportQueryRange(run: RunId, reporting: ReportingId, scale: ScaleIndex, role: ReportRole)
+
   case FigurePanel(figure: FigureId, panel: PanelLetter)
 
   /** A dataset revision's count of fixation records in admitted trials that
@@ -193,6 +232,19 @@ enum StudioRef derives CanEqual, Codec.AsObject:
     */
   case QueryTally(run: RunId, tally: QueryCount)
 
+  /** One count of a reporting spec's accounting at a scale, for one role
+    * (eyes4s `Accounting`; protocol 1.11): where the role's eligible queries
+    * went, or those the outside-window filter alone left out or could not
+    * decide.
+    */
+  case ReportTally(
+      run: RunId,
+      reporting: ReportingId,
+      scale: ScaleIndex,
+      role: ReportRole,
+      count: ReportCount
+  )
+
   def kind: RefKind = this match
     case Participant(_)                                       => RefKind.Entity
     case Trial(_) | Fixation(_, _) | SourceRecord(_, _, _, _) => RefKind.Observation
@@ -202,9 +254,11 @@ enum StudioRef derives CanEqual, Codec.AsObject:
           RefKind.Observation
         case ResultAddress.Reduction(_, _, _) | ResultAddress.ContrastRow(_, _) =>
           RefKind.Aggregate
-    case ParticipantSummary(_, _, _, _, _) | GroupCell(_, _, _, _) | FigurePanel(_, _) |
-        WindowTally(_, _) | DesignTally(_, _) | InventoryCount(_, _) | TrialGroup(_, _) |
-        DisplayTally(_, _) | QueryTally(_, _) | TrialPlacementTally(_, _) =>
+    case ParticipantSummary(_, _, _, _, _) | GroupCell(_, _, _, _) | ReportCell(_, _, _, _, _) |
+        ReportParticipant(_, _, _, _, _, _) | ReportContrast(_, _, _, _, _, _) |
+        ReportQueryRange(_, _, _, _) | FigurePanel(_, _) | WindowTally(_, _) |
+        DesignTally(_, _) | InventoryCount(_, _) | TrialGroup(_, _) | DisplayTally(_, _) |
+        TrialPlacementTally(_, _) | QueryTally(_, _) | ReportTally(_, _, _, _, _) =>
       RefKind.Aggregate
 
   def isAggregate: Boolean = kind == RefKind.Aggregate
@@ -220,6 +274,8 @@ enum StudioRef derives CanEqual, Codec.AsObject:
     *    inventory record;
     *  - query contrast ⊃ its reductions ⊃ their pairs (same run and scale).
     *  - group cell ⊃ participant summary (same run, spec and scale);
+    *  - report cell ⊃ its participants' values (same run, spec, scale,
+    *    group and role);
     *  - quarantined trials ⊃ the trials of each quarantine cause and the
     *    no-fixations trials (same dataset);
     *  - participant ⊃ the trials of one of its phases.
@@ -242,16 +298,25 @@ enum StudioRef derives CanEqual, Codec.AsObject:
       within.map(a => Result(run, CheckedAddress.trusted(a)))
     case ParticipantSummary(run, reporting, scale, Some(group), _) =>
       Some(GroupCell(run, reporting, scale, group))
-    case ParticipantSummary(_, _, _, None, _) => None
-    case GroupCell(_, _, _, _)                => None
-    case FigurePanel(_, _)                    => None
-    case WindowTally(_, _)                    => None
+    case ParticipantSummary(_, _, _, None, _)                     => None
+    case GroupCell(_, _, _, _)                                    => None
+    case ReportCell(_, _, _, _, _)                                => None
+    case ReportParticipant(run, reporting, scale, group, role, _) =>
+      Some(ReportCell(run, reporting, scale, group, role))
+    case ReportContrast(_, _, _, _, _, _) => None
+    case ReportQueryRange(_, _, _, _)     => None
+    case FigurePanel(_, _)                => None
+    case WindowTally(_, _)                => None
     // A trial's tally is part of the revision's outside-the-frame count.
     case TrialPlacementTally(dataset, _) =>
       Some(WindowTally(dataset, TallyRegion.OutsideWindow))
-    case DesignTally(_, _)      => None
-    case QueryTally(run, tally) =>
+    case DesignTally(_, _)                => None
+    case QueryTally(run, tally)           =>
       Option.when(tally != QueryCount.Requested)(QueryTally(run, QueryCount.Requested))
+    case ReportTally(run, reporting, scale, role, count) =>
+      Option.when(count != ReportCount.Eligible)(
+        ReportTally(run, reporting, scale, role, ReportCount.Eligible)
+      )
     case InventoryCount(dataset, count) =>
       count match
         case InventoryKind.Cause(_) | InventoryKind.NoFixations =>
@@ -279,6 +344,25 @@ enum DisplayCount derives CanEqual, Codec.AsObject:
 
   /** The trials the registry lists, each with its display. */
   case Trials
+
+/** Which count of a reporting spec's accounting a [[StudioRef.ReportTally]]
+  * names (eyes4s `Accounting`): the role's eligible queries, those kept,
+  * those its filter left out, those it could not decide (a missing value),
+  * those with no stored value, those kept without the group attribute, the
+  * participant-and-group pairs below the minimum, and, as eyes4s accounts
+  * a specification carrying only the outside-window filter, those that
+  * filter alone left out and those it could not decide (an undefined share).
+  */
+enum ReportCount derives CanEqual, Codec.AsObject:
+  case Eligible, Kept, FilteredOut, UnknownPredicate, Failed, MissingGroupAttribute
+  case BelowMinimum, OutsideWindowFiltered, OutsideWindowUnknown
+
+/** The group of a report cell: the whole report when the spec does not
+  * group, or one response level.
+  */
+enum ReportGroup derives CanEqual, Codec.AsObject:
+  case Whole
+  case Level(response: Response)
 
 /** Which count of a run's query contrasts a [[StudioRef.QueryTally]] names:
   * every requested query, or those with one outcome (each is within the

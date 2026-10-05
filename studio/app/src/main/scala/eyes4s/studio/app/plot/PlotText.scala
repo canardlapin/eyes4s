@@ -47,6 +47,16 @@ enum PlotTextId derives CanEqual:
   /** Rows the plot could not place or draw, and why. */
   case Unplotted, MissingValue, OffScale
 
+  /** A plot's idle words when some of its rows are not drawn: how many
+    * (one, or more).
+    */
+  case Undrawn, UndrawnOne
+
+  /** A row pinned at the top because it is selected: its annotation, and
+    * its words.
+    */
+  case PinnedSelected, PinnedRow
+
   /** A plot whose builder refused its source, and why. */
   case Refused
 
@@ -92,6 +102,10 @@ object PlotText:
       case SummaryFirstMore => "{0} and {1} more"
       case OffScaleKind     => "{0} off the scale"
       case TrialSummary     => "{0}: {1} fixation marks, each a fixation of the trial."
+      case Undrawn        => "{0} {1} of {2} rows are not drawn; the Table tab lists every row."
+      case PinnedSelected => "pinned · selected"
+      case PinnedRow      => "{0}, pinned · selected"
+      case UndrawnOne     => "{0} 1 of {1} rows is not drawn; the Table tab lists every row."
 
   /** `id`'s English template with `args` filled in. */
   def apply(id: PlotTextId, args: String*): String =

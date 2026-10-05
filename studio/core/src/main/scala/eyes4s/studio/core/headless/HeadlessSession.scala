@@ -196,6 +196,13 @@ final class HeadlessSession private (
   ): Future[Either[BackendError, PairRowPage]] =
     this.run(fake.pairRows(run, scale, page))
 
+  def report(
+      run: RunId,
+      reporting: eyes4s.studio.core.document.ReportingSpec,
+      scale: Int
+  ): Future[Either[BackendError, ReportView]] =
+    this.run(fake.report(run, reporting, scale))
+
   /** Every entry of `dataset`'s ledger, in inventory order. */
   def wholeLedger(
       dataset: DatasetRevision

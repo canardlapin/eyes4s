@@ -25,8 +25,10 @@ import eyes4s.studio.core.document.DigestJson.given
 
 import cats.Functor
 import cats.syntax.functor.*
+import eyes4s.studio.core.document.ReportingSpec
 import eyes4s.studio.core.execution.RunStamp
 import eyes4s.studio.core.preview.*
+import eyes4s.studio.core.reports.ReportRefusal
 import fs2.Stream
 import io.circe.{Codec, Decoder, Encoder}
 
@@ -136,7 +138,11 @@ enum BackendError derives CanEqual, Codec.AsObject:
     */
   case NoDensity(run: RunId, address: ResultAddress, cause: StudioDiagnostic)
 
+  /** A reporting spec eyes4s could not evaluate over `run` (protocol 1.11). */
+  case ReportRefused(run: RunId, refusal: ReportRefusal)
+
   def code: String = this match
+    case ReportRefused(_, _) => "studio-backend.report-refused"
     case ContentMismatch(_, _, _) => "studio-backend.content-mismatch"
     case ContentNotHeld(_, _) => "studio-backend.content-not-held"
     case PlacementRefused(_, _) => "studio-backend.placement-refused"
@@ -207,6 +213,7 @@ enum BackendError derives CanEqual, Codec.AsObject:
     case InventoryRefused(d, issues) =>
       s"The trial inventory of ${d.label} is refused: ${issues.map(_.message).mkString(" ")}"
     case UnknownTrial(d, t)         => s"${t.label} is not a trial of dataset ${d.label}."
+    case ReportRefused(r, refusal)  => s"${r.label}: ${refusal.message}"
     case UnknownScale(r, i, scales) =>
       s"${r.label} has no scale $i; it computes ${scales.size} (${scales.mkString(", ")})."
     case TrialViewRefused(e)         => e.message
@@ -253,6 +260,7 @@ enum BackendError derives CanEqual, Codec.AsObject:
       case PlacementRefused(d, _)   => Vector(DiagnosticLocus.Dataset(d))
       case NoDensity(r, a, cause)   =>
         (Vector(DiagnosticLocus.Run(r), DiagnosticLocus.Address(a)) ++ cause.subject).distinct
+      case ReportRefused(r, _) => Vector(DiagnosticLocus.Run(r))
     this match
       case NoDensity(_, _, cause) => cause.copy(code = code, subject = subject, message = message)
       case _ => StudioDiagnostic(code, DiagnosticLevel.Error, DiagnosticOrigin.Host, subject, message)
@@ -365,6 +373,16 @@ trait StudyBackend[F[_]]:
     * stored/served result, never a Studio-derived total or preview.
     */
   def mapGrid(run: RunId, scale: Int, trial: TrialKey): F[Either[BackendError, DensityGrid]]
+  /** `reporting` evaluated over `run` at scale index `scale` by eyes4s-results
+    * (`Report.evaluate`, UI-C): its cells, participants, dropped cells and
+    * accounting, each with its ref (protocol 1.11). A reporting edit is
+    * evaluated as edited, whatever the document's saved spec.
+    */
+  def report(
+      run: RunId,
+      reporting: ReportingSpec,
+      scale: Int
+  ): F[Either[BackendError, ReportView]]
 
   /** The admitted fixations of `trial` under `revision`, in scanpath order,
     * each placed against the map by the revision's study (protocol 1.6,
@@ -444,6 +462,8 @@ enum BackendRequest derives CanEqual, Codec.AsObject:
 
   /** Protocol 1.14. */
   case MapGridOf(run: RunId, scale: Int, trial: TrialKey)
+  /** Protocol 1.11. */
+  case ReportOf(run: RunId, reporting: ReportingSpec, scale: Int)
 
 /** A response of the [[StudyBackend]] protocol. */
 enum BackendResponse derives CanEqual, Codec.AsObject:
@@ -486,6 +506,8 @@ enum BackendResponse derives CanEqual, Codec.AsObject:
 
   /** Protocol 1.14. */
   case MapGridOf(grid: DensityGrid)
+  /** Protocol 1.11. */
+  case ReportOf(report: ReportView)
 
 /** A frame from backend to client: the one response to a request, or one
   * event of a subscription.
@@ -528,9 +550,9 @@ object ProtocolVersion:
     * the admission request that carries the verified content digest, and
     * `ContentMismatch` (S5.6). 1.12 adds `PlacementOf`, a dataset revision's
     * placement preview (S5.5). 1.14 adds `MapGridOf`, a run's density grid
-    * at one scale. Deploy client and backend together.
+    * at one scale. 1.15 also adds bound reports, pair-row window tallies and typed identity refusals. Deploy client and backend together.
     */
-  val Current: ProtocolVersion = ProtocolVersion(1, 14)
+  val Current: ProtocolVersion = ProtocolVersion(1, 15)
 
 /** A client's correlation id; every frame answering a request carries it. */
 final case class RequestId(value: Long) derives CanEqual
@@ -609,6 +631,7 @@ object StudyBackend:
       case Q.PairRowsOf(r, s, p) => answer(backend.pairRows(r, s, p))(A.PairRowsOf(_))
       case Q.PlacementOf(spec)   => answer(backend.placement(spec))(A.PlacementOf(_))
       case Q.MapGridOf(r, s, t)  => answer(backend.mapGrid(r, s, t))(A.MapGridOf(_))
+      case Q.ReportOf(r, spec, s) => answer(backend.report(r, spec, s))(A.ReportOf(_))
       // In process a subscription is ended by dropping its stream; only a
       // connection (SidecarServer) holds subscriptions to end.
       case Q.Unsubscribe(id) => Stream.emit(ServerFrame.Response(A.Unsubscribed(id, false)))

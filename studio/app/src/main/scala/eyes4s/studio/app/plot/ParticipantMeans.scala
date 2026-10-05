@@ -18,7 +18,7 @@ package eyes4s.studio.app.plot
 
 import cats.syntax.all.*
 import eyes4s.studio.app.text.{ParticipantText, ParticipantTextId}
-import eyes4s.studio.core.backend.{ResultSummary, Response, RunId}
+import eyes4s.studio.core.backend.{ReportRole, ReportView, ResultSummary, Response, RunId}
 import eyes4s.studio.core.document.ReportingId
 import eyes4s.studio.core.selection.{ScaleIndex, StudioRef}
 
@@ -106,6 +106,47 @@ object ParticipantColumns:
     yield ParticipantColumns(group, meanOf, d, n)
 
 object ParticipantMeans:
+
+  /** The displayed reporting spec as eyes4s evaluated it at this exact scale.
+    * The view already owns every group estimate and participant value; this
+    * adapter only arranges those served values for the plot.
+    */
+  def of(
+      report: ReportView,
+      scaleLabel: String
+  ): Either[ParticipantMeansError, ParticipantMeans] =
+    val groups = report.cells.filter(c => c.role == ReportRole.Difference && c.group.nonEmpty)
+    val labels = groups.flatMap(_.group)
+    labels
+      .diff(labels.distinct)
+      .headOption
+      .map(ParticipantMeansError.DuplicateGroup(report.run, _))
+      .toLeft(())
+      .flatMap { _ =>
+        val ids = report.participants.filter(_.role == ReportRole.Difference).map(_.participant).distinct
+        ids
+          .diff(ids.distinct)
+          .headOption
+          .map(ParticipantMeansError.DuplicateParticipant(report.run, _))
+          .toLeft(())
+          .flatMap { _ =>
+            val means = groups.flatMap { c =>
+              for
+                group <- c.group
+                estimate <- c.estimate
+              yield GroupGrandMean(c.ref, group, estimate, c.participants)
+            }
+            val cells = report.participants.collect {
+              case p if p.role == ReportRole.Difference && p.group.nonEmpty =>
+                ParticipantCell(p.ref, p.group.get, p.participant, p.value, Some(p.queries))
+            }
+            ScaleIndex
+              .of(report.scale)
+              .left
+              .map(_ => ParticipantMeansError.Scale(report.run, ScaleIndex.first, Vector.empty))
+              .map(ParticipantMeans(report.run, report.reporting, _, scaleLabel, means, cells))
+          }
+      }
 
   /** The participant means of `summary` under `reporting`, at `scale`, the
     * scale the summary's means are at. Groups are in the summary's order and
