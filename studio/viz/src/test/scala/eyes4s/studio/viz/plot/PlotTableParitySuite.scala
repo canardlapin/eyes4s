@@ -363,7 +363,8 @@ class PlotTableParitySuite extends ScalaCheckSuite:
   property("drawn marks map back to their anchors and pick their own mark, at 1x and 2x") {
     Prop.forAll(genPlot) { (_, plot) =>
       List(1.0, 2.0).foreach { scale =>
-        val t = targetsOn(plot, scale)
+        val t       = targetsOn(plot, scale)
+        val picking = right(NamedPicking.compile(plot.plot.scene, t.transform.renderContext))
         assertEquals(t.targets.map(_.mark), plot.marks)
         t.targets.foreach { target =>
           assertEquals(target.refs, target.mark.refs)
@@ -378,15 +379,24 @@ class PlotTableParitySuite extends ScalaCheckSuite:
           )
           assertEqualsDouble(back.x, target.mark.at.x, RoundTripTolerance)
           assertEqualsDouble(back.y, target.mark.at.y, RoundTripTolerance)
-          // The mark itself, or one drawn over it that covers its centre.
+          val named = right(picking.hits(target.anchor, 0.5 * scale)).iterator
+            .flatMap(h => t.targets.find(_.mark.name == h.name))
+            .nextOption()
+          // A named hit is exact painted geometry. The radial rule applies
+          // only to the unfilled interior fallback.
           right(t.pick(target.anchor, 0.5 * scale)) match
             case Some(hit) =>
-              assert(
-                hit.ref == target.ref || (hit.order > target.order &&
-                  math.hypot(hit.anchor.x - target.anchor.x, hit.anchor.y - target.anchor.y) <=
-                  hit.reachPx * scale + RoundTripTolerance),
-                s"${scale}x: ${target.ref} picked ${hit.ref}"
-              )
+              named match
+                case Some(exact) => assertEquals(hit.mark, exact.mark)
+                case None        =>
+                  val fallback = t.targets.reverseIterator.find { other =>
+                    math.hypot(
+                      other.anchor.x - target.anchor.x,
+                      other.anchor.y - target.anchor.y
+                    ) <=
+                      other.reachPx * scale
+                  }
+                  assertEquals(Some(hit), fallback)
             case None => fail(s"${scale}x: nothing picked at ${target.ref}")
         }
       }

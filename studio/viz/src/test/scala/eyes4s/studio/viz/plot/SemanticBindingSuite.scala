@@ -131,28 +131,80 @@ class SemanticBindingSuite extends ScalaCheckSuite:
   }
 
   property("picking a mark returns its scientific identity") {
-    Prop.forAll(genBuilt, Gen.oneOf(1.0, 2.0)) { (plot, scale) =>
+    Prop.forAll(genBuilt) { plot =>
+      List(1.0, 2.0).foreach { scale =>
+        val transform =
+          right(PlotTransform.resolve(plot.plot, right(PlotSurface(640, 400, scale))))
+        val picking = right(NamedPicking.compile(plot.plot.scene, transform.renderContext))
+        val targets = right(PlotTargets.resolve(plot, transform, picking))
+        plot.marks.foreach { m =>
+          // Every drawn mark is a target, and a pick at its anchor hits a mark:
+          // this one, or one drawn over the same point (marks may overlap).
+          val t   = targets.target(m.ref).getOrElse(fail(s"mark ${m.ref} is no target"))
+          val hit = right(targets.pick(t.anchor, 0.5 * scale))
+            .getOrElse(fail(s"a pick at the anchor of ${m.ref} hits nothing"))
+          // A mark can be a line: its roving anchor is its first placed point,
+          // while its painted geometry spans every placed point. Named picking
+          // is therefore the exact authority for an overlapping mark; the
+          // circular roving reach is only the fallback when no named geometry
+          // was hit.
+          val named = right(picking.hits(t.anchor, 0.5 * scale)).iterator
+            .flatMap(h => targets.targets.find(_.mark.name == h.name))
+            .nextOption()
+          named match
+            case Some(exact) => assertEquals(hit.mark, exact.mark)
+            case None        =>
+              val fallback = targets.targets.reverseIterator.find { other =>
+                math.hypot(other.anchor.x - t.anchor.x, other.anchor.y - t.anchor.y) <=
+                  other.reachPx * scale
+              }
+              assertEquals(Some(hit), fallback)
+          // The pick is scientific identity: the refs of the mark it names.
+          assertEquals(plot.markOf(hit.ref).map(_.refs), Some(hit.mark.refs))
+        }
+      }
+    }
+  }
+
+  test(
+    "a later profile line wins a named pick at its middle vertex, despite its remote roving anchor"
+  ) {
+    // Reduced fixed counterexample from hosted seed KF-5ODW0Oql7V6UtJPuIz4AYg0y5L9UT29PCS0rUhuM=.
+    val profile = ProfileSamples.profile(
+      Vector(0.5, 2.0, 8.0),
+      Vector(
+        ("Remembered", 24, Vector(Some(0.46), Some(0.28), Some(0.39))),
+        ("Forgotten", 24, Vector(Some(0.45), Some(-0.50), Some(0.91)))
+      ),
+      Vector(
+        ("P01", 10, Vector(Some(-0.34), Some(0.83), Some(0.75))),
+        ("P02", 10, Vector(None, Some(0.5782826402376102), Some(-0.41))),
+        ("P03", 10, Vector(Some(-0.29), Some(0.35), None)),
+        ("P04", 10, Vector(Some(-0.9881085085399421), Some(0.5776091106507737), Some(0.67)))
+      )
+    )
+    val plot = right(
+      ScaleProfilePlot(ProfileSamples.columns)
+        .build(ProfileSamples.source(profile), Theme.Light)
+    )
+    List(1.0, 2.0).foreach { scale =>
       val transform =
         right(PlotTransform.resolve(plot.plot, right(PlotSurface(640, 400, scale))))
       val picking = right(NamedPicking.compile(plot.plot.scene, transform.renderContext))
       val targets = right(PlotTargets.resolve(plot, transform, picking))
-      plot.marks.foreach { m =>
-        // Every drawn mark is a target, and a pick at its anchor hits a mark:
-        // this one, or one drawn over the same point (marks may overlap).
-        val t   = targets.target(m.ref).getOrElse(fail(s"mark ${m.ref} is no target"))
-        val hit = right(targets.pick(t.anchor, 0.5 * scale))
-          .getOrElse(fail(s"a pick at the anchor of ${m.ref} hits nothing"))
-        if hit.mark != m then
-          val other = targets.target(hit.ref).getOrElse(fail(s"${hit.ref} is no target"))
-          val dx    = other.anchor.x - t.anchor.x
-          val dy    = other.anchor.y - t.anchor.y
-          assert(
-            math.sqrt(dx * dx + dy * dy) <= (hit.mark.reachPx + 0.5) * scale + 1e-6,
-            s"a pick at ${m.ref} hit ${hit.ref}, which is not under that point"
-          )
-        // The pick is scientific identity: the refs of the mark it names.
-        assertEquals(plot.markOf(hit.ref).map(_.refs), Some(hit.mark.refs))
-      }
+      val p02 = targets.target(profile.participants(1).points.head.ref).getOrElse(fail("P02"))
+      val p04 = targets.target(profile.participants(3).points.head.ref).getOrElse(fail("P04"))
+      val distance = math.hypot(p04.anchor.x - p02.anchor.x, p04.anchor.y - p02.anchor.y)
+
+      // P04's middle vertex is under P02's anchor within the device-pixel query,
+      // although P04's first-point roving anchor is not.
+      assert(distance > (p04.reachPx + 0.5) * scale + 1e-6, distance)
+      assertEquals(
+        right(picking.hits(p02.anchor, 0.5 * scale)).headOption.map(_.name),
+        Some(p04.mark.name)
+      )
+      assertEquals(right(targets.pick(p02.anchor, 0.5 * scale)).map(_.ref), Some(p04.ref))
+      assertEquals(plot.markOf(p04.ref).map(_.refs), Some(p04.mark.refs))
     }
   }
 
