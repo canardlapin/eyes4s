@@ -762,7 +762,14 @@ class FixationJourneySuite extends munit.CatsEffectSuite:
           val why    = row.outcome match
             case Left(diagnostic) => diagnostic
             case Right(value)     => fail(s"expected a failed contrast row: $value")
-          assertEquals(why.code.render, "contrast-row.reduction-failures")
+          // The owner decision on bead S0.7b excludes controls for a query
+          // without a match. Its failed matched reduction still traces back.
+          assertEquals(
+            get(result.scales.head.contrast).rows.find(_.key == focal).map(_.difference),
+            Some(Left(ContrastRowError.MissingOperands(focal, Vector(ContrastOperand.Control))))
+          )
+          assertEquals(row.control, None)
+          assertEquals(why.code.render, "contrast-row.missing-operands")
           assertEquals(why.sources, j.trialLinks(reviewed.source, "s1", "b", "recall"))
           val reduction = get(view.reduction(get(row.matched.toRight("no matched operand"))))
           assertEquals(reduction.selected, 0)
@@ -770,7 +777,8 @@ class FixationJourneySuite extends munit.CatsEffectSuite:
             reduction.outcome.left.map(_.code.render),
             Left("reduction.no-selected-scores")
           )
-          // Each focal trial of s1 has one control left; s2's keep two.
+          // Matched focal trials of s1 have one control left; s2's keep two.
+          // The unmatched s1/b focal trial has no control reduction.
           def counts(design: StudyDesign) =
             result.scales.head.analyses
               .reduced(design)
@@ -780,7 +788,6 @@ class FixationJourneySuite extends munit.CatsEffectSuite:
             counts(StudyDesign.Control),
             Vector(
               "s1/a/recall" -> (1, 0, 1),
-              "s1/b/recall" -> (2, 0, 2),
               "s1/c/recall" -> (1, 0, 1),
               "s2/a/recall" -> (2, 0, 2),
               "s2/b/recall" -> (2, 0, 2),
