@@ -87,6 +87,7 @@ enum BackendError derives CanEqual, Codec.AsObject:
 
   /** `run` has no scale index `scale`; it computes `scales` (protocol 1.9). */
   case UnknownScale(run: RunId, scale: Int, scales: Vector[String])
+
   /** The backend holds other content for `dataset` than the client asked to
     * verify (protocol 1.11, S5.6): both digests are named.
     */
@@ -185,9 +186,9 @@ enum BackendError derives CanEqual, Codec.AsObject:
       case UnknownTrial(d, t)  => Vector(DiagnosticLocus.Dataset(d), DiagnosticLocus.Trial(t))
       case TrialViewRefused(e) => Vector(DiagnosticLocus.Trial(e.trial))
       case SourceRecordsRefused(r, _) => Vector(DiagnosticLocus.Revision(r))
-      case UnknownScale(r, i, _) => Vector(DiagnosticLocus.Run(r), DiagnosticLocus.Scale(i))
-      case ContentMismatch(d, _, _)   => Vector(DiagnosticLocus.Dataset(d))
-      case ContentNotHeld(d, _)       => Vector(DiagnosticLocus.Dataset(d))
+      case UnknownScale(r, i, _)    => Vector(DiagnosticLocus.Run(r), DiagnosticLocus.Scale(i))
+      case ContentMismatch(d, _, _) => Vector(DiagnosticLocus.Dataset(d))
+      case ContentNotHeld(d, _)     => Vector(DiagnosticLocus.Dataset(d))
     StudioDiagnostic(code, DiagnosticLevel.Error, DiagnosticOrigin.Host, subject, message)
 
 /** Everything Eyes Studio asks of eyes4s (DESIGN_SPEC section 13, S3.0): the
