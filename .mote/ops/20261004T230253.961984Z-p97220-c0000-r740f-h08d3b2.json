@@ -1,0 +1,1 @@
+{"actor":"claude-eyes4s-p0","entity":"bd-01M44GQGSKHVAECJ1V7GP89ZYH","kind":"note","note_kind":"design","op":"20261004T230253.961984Z-p97220-c0000-r740f-h08d3b2","text":"From the S4.6 review: semanticId can map different SceneIds to the same id ('a b' and 'a/b'). Make it injective before composing figure-level semantics.","ts":"2026-10-04T23:02:53.961984Z","v":1}
