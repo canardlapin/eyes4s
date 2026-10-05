@@ -52,7 +52,7 @@ import javafx.scene.AccessibleRole
 import eyes4s.studio.app.plot.ParticipantLines
 import eyes4s.studio.app.tokens.FontFace
 import javafx.beans.property.ReadOnlyObjectWrapper
-import javafx.scene.control.{Button, Label, ScrollPane, TextArea}
+import javafx.scene.control.{Button, Label, MenuButton, MenuItem, ScrollPane, TextArea}
 import javafx.scene.effect.ColorAdjust
 import javafx.scene.input.{KeyCode, KeyEvent}
 import javafx.scene.text.Font
@@ -340,13 +340,21 @@ final class FiguresHost(
   private val width = Label()
   width.getStyleClass.add("t11")
 
+  /** Add panel (bead bd-01M44PBFHM4CWTXJAKQYMVV7RY): one item per panel
+    * template; a choice the trail cannot fill is disabled and says why.
+    */
+  val addPanel: MenuButton = MenuButton(AddPanel.Label)
+  addPanel.getStyleClass.add("figures-add-panel")
+  addPanel.setAccessibleText(AddPanel.Label)
+
   /** The page's panels, laid out in its columns. */
   val paper: FlowPane = FlowPane()
   paper.getStyleClass.add("figures-paper")
 
   /** The page pane: the toolbar, then the paper. */
   val pageNode: VBox =
-    val bar = HBox(8.0, title, width, widths, spacer(), greyscale, zoomOut, zoom, zoomIn)
+    val bar =
+      HBox(8.0, title, width, widths, spacer(), greyscale, zoomOut, zoom, zoomIn, addPanel)
     bar.setAlignment(Pos.CENTER_LEFT)
     bar.getStyleClass.add("figures-toolbar")
     val scroll = ScrollPane(paper)
@@ -614,6 +622,8 @@ final class FiguresHost(
         title.setText("")
         width.setText("")
         zoom.setText("")
+        addPanel.getItems.clear()
+        addPanel.setDisable(true)
         paper.getChildren.clear()
         retire(Set.empty)
         tableNote.setText("")
@@ -628,6 +638,7 @@ final class FiguresHost(
         title.setText(p.title)
         width.setText(p.widthLabel)
         zoom.setText(p.zoom)
+        renderAddPanel(p.addPanel)
         val px = p.pxPerMm
         paper.setPrefWrapLength(p.width.mm * px)
         paper.setMaxWidth(p.width.mm * px)
@@ -939,6 +950,19 @@ final class FiguresHost(
       l
     }*): Unit
 
+  private def renderAddPanel(v: AddPanelVM): Unit =
+    addPanel.setText(v.label)
+    addPanel.setAccessibleText(v.label)
+    addPanel.setDisable(false)
+    if addPanel.getItems.asScala.toVector.map(_.getText) != v.choices.map(_.text) then
+      addPanel.getItems.setAll(v.choices.map { c =>
+        val item = MenuItem(c.text)
+        item.setDisable(!c.enabled)
+        item.setOnAction(_ => dispatch(ComposerIntent.AddPanelOf(c.kind)))
+        item
+      }*): Unit
+    else addPanel.getItems.asScala.zip(v.choices).foreach((i, c) => i.setDisable(!c.enabled))
+
   private def button(text: String): Button =
     val b = Button(text)
     b.setAccessibleText(text)
@@ -971,7 +995,8 @@ final class FiguresHost(
         Vector(
           FocusStop(A11yRole.Button, FiguresHost.greyscaleName(p.greyscale)),
           FocusStop(A11yRole.Button, "Zoom out (−)"),
-          FocusStop(A11yRole.Button, "Zoom in (+)")
+          FocusStop(A11yRole.Button, "Zoom in (+)"),
+          FocusStop(A11yRole.MenuButton, p.addPanel.label)
         ) ++
         p.panels.flatMap { q =>
           FocusStop(A11yRole.Button, FiguresHost.panelName(q)) +:

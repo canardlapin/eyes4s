@@ -17,6 +17,7 @@ button: 183 mm · two-column, selected
 button: Greyscale check, off
 button: Zoom out (−)
 button: Zoom in (+)
+menu-button: Add panel
 button: Panel A, Encoding gaze
 button: Panel B, Retrieval gaze
 button: Panel C, Density maps

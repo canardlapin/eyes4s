@@ -17,15 +17,29 @@
 package eyes4s.studio.desktop.figures
 
 import eyes4s.studio.app.StoryModels
-import eyes4s.studio.app.figures.{ComposerIntent, FigureIntent, PageWidth, PanelBody}
-import eyes4s.studio.core.document.{FigureId, PanelLetter}
+import eyes4s.studio.app.figures.{
+  AddPanelText,
+  ComposerIntent,
+  FigureIntent,
+  PageWidth,
+  PanelBody
+}
+import eyes4s.studio.app.nav.Location
+import eyes4s.studio.app.Intent
+import eyes4s.studio.core.document.{
+  FigureId,
+  PanelLetter,
+  PanelScale,
+  PanelSelection,
+  Perspective
+}
 import eyes4s.studio.core.fixture.StoryMoment
 import eyes4s.studio.core.selection.StudioRef
 import eyes4s.studio.desktop.StudioWindow
 import eyes4s.studio.desktop.harness.FxStage
 import eyes4s.studio.desktop.plot.PlotTwinStatus
 import eyes4s.studio.desktop.shell.ShellFxSuite
-import javafx.scene.Node
+import javafx.scene.{AccessibleRole, Node}
 import javafx.scene.control.Label
 import javafx.scene.layout.VBox
 
@@ -158,6 +172,55 @@ class FigureComposerFxSuite extends ShellFxSuite:
       runOnFx(w.figures.dispatch(ComposerIntent.NewFigure))
       eventually(fx, "Figure 3 is shown")(texts(w.figures.pageNode).contains("Figure 3"))
       assert(texts(w.figures.navigatorNode).contains("3 figures"))
+  }
+
+  fxStage.test("Add panel: one item per template, disabled with why; an item adds the panel") {
+    fx =>
+      val w = boot(fx, StoryModels.t2Figures, StoryMoment.T2)
+      loaded(fx, w)
+      def items = runOnFx(
+        w.figures.addPanel.getItems.asScala.toVector.map(i => (i.getText, i.isDisable))
+      )
+      // No Compare trail: the trial panels say what they need.
+      assertEquals(
+        items,
+        Vector(
+          (s"Encoding gaze · ${AddPanelText.NoPair}", true),
+          (s"Retrieval gaze · ${AddPanelText.NoQuery}", true),
+          (s"Density maps · ${AddPanelText.NoQuery}", true),
+          ("Participant D", false),
+          ("Scale profile", false)
+        )
+      )
+      assertEquals(runOnFx(w.figures.addPanel.getAccessibleRole), AccessibleRole.MENU_BUTTON)
+      // Compare's trail on P17 ret_07's pair, then back to Figure 1.
+      val back = runOnFx(w.runtime.model.location)
+      runOnFx(
+        w.runtime.dispatch(
+          Intent.Navigate(Location(Perspective.Compare, StoryModels.queryTrail))
+        )
+      )
+      runOnFx(w.runtime.dispatch(Intent.Navigate(back)))
+      eventually(fx, "every item enabled")(items.forall(!_._2))
+      // The item is bound to the intent: Retrieval gaze adds panel F.
+      runOnFx(w.figures.addPanel.getItems.get(1).fire())
+      eventually(fx, "panel F")(
+        w.runtime.model.document.figures
+          .find(_.id == figure1)
+          .exists(_.panels.lastOption.exists(_.letter == letter("F")))
+      )
+      val f = runOnFx(w.runtime.model.document.figures.find(_.id == figure1).get.panels.last)
+      assertEquals(
+        (f.title, f.scale, f.selection),
+        (
+          "Retrieval gaze",
+          PanelScale.Unscaled,
+          PanelSelection.Trial(eyes4s.studio.core.fixture.MockStudy.key("P17", "ret_07"))
+        )
+      )
+      eventually(fx, "panel F on the page and selected")(
+        w.figures.vm.page.exists(_.panels.exists(p => p.letter == letter("F") && p.selected))
+      )
   }
 
   fxStage.test("a panel whose template changes is drawn by its new plot; focus stays put") {
