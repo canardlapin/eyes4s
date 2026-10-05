@@ -164,7 +164,11 @@ object ColumnMappingPane:
             case b if b.part == KeyPart.Occurrence && b.toggle.isDefined =>
               FocusStop(A11yRole.ToggleButton, b.accessible)
           }
-      case WizardTab.TrialMetadata => table(vm.trials, Vector.empty)
+      case WizardTab.TrialMetadata =>
+        table(
+          vm.trials,
+          vm.trialsSource.map((label, _) => FocusStop(A11yRole.Button, label)).toVector
+        )
       case WizardTab.Geometry   => vm.geometry.map(g => FocusStop(A11yRole.TextField, g.label))
       case WizardTab.DataIssues => Vector.empty
     // The tabs are one toggle group: Tab stops on the selected one. A

@@ -79,6 +79,12 @@ enum BundleError derives CanEqual:
   case InputUnavailable(entry: InputEntry, error: StoreError)
   case InputChanged(entry: InputEntry, found: ByteDigest)
 
+  /** Bytes offered to restore a stored input have another digest (S2.5). */
+  case RestoreMismatch(entry: InputEntry, found: ByteDigest)
+
+  /** A withheld input has no address to restore. */
+  case NotStored(entry: InputEntry)
+
   def message: String = this match
     case BadPath(path, problem)       => s"Bundle path '$path' is refused: ${problem.describe}."
     case BlankLockOwner               => "A lock owner needs a description."
@@ -117,6 +123,10 @@ enum BundleError derives CanEqual:
     case InputUnavailable(entry, error) => s"Input ${entry.sha256.hex}: ${error.message}"
     case InputChanged(entry, found)     =>
       s"Input ${entry.sha256.hex} now has SHA-256 ${found.hex}."
+    case RestoreMismatch(entry, found) =>
+      s"The bytes offered to restore input ${entry.sha256.hex}" +
+        entry.name.fold("")(n => s" ($n)") + s" have SHA-256 ${found.hex}."
+    case NotStored(entry) => s"Input ${entry.sha256.hex} is withheld; it has no stored copy."
 
 /** A document written as bundle files: the manifest, its exact bytes and
   * every part's bytes. `sessionOnly` returns, as data, the job handles that
@@ -163,6 +173,8 @@ enum InputStatus derives CanEqual:
   case Missing(entry: InputEntry)
   case Changed(entry: InputEntry, found: ByteDigest)
   case Unreadable(entry: InputEntry, error: StoreError)
+
+  def entry: InputEntry
 
 /** The `.eyes` project bundle (ticket S2.3): a directory holding a
   * `project.json` manifest ([[ProjectManifest]]) and the areas of
@@ -491,8 +503,35 @@ object ProjectBundle:
   def checkInputs[F[_]: Monad](
       store: ProjectStore[F],
       manifest: ProjectManifest
+  ): F[Vector[InputStatus]] = checkEntries(store, manifest.inputs)
+
+  /** Put `entry`'s exact bytes back at its address (S2.5: a stored input
+    * that went missing or changed is re-copied). Bytes with another digest
+    * are refused; the address already holding them is left as it is.
+    */
+  def restoreInput[F[_]: Monad](
+      store: ProjectStore[F],
+      lock: WriterLock,
+      entry: InputEntry,
+      bytes: IArray[Byte]
+  ): F[Either[BundleError, Unit]] =
+    val found = ByteDigest.sha256(bytes)
+    entry.path match
+      case None                             => Monad[F].pure(Left(BundleError.NotStored(entry)))
+      case Some(_) if found != entry.sha256 =>
+        Monad[F].pure(Left(BundleError.RestoreMismatch(entry, found)))
+      case Some(path) =>
+        store.read(path).flatMap {
+          case Right(held) if ByteDigest.sha256(held) == found => Monad[F].pure(Right(()))
+          case _ => store.write(lock, path, bytes).map(_.left.map(BundleError.Store(_)))
+        }
+
+  /** The state of each of `entries` in `store`. */
+  def checkEntries[F[_]: Monad](
+      store: ProjectStore[F],
+      entries: Vector[InputEntry]
   ): F[Vector[InputStatus]] =
-    manifest.inputs.traverse { entry =>
+    entries.traverse { entry =>
       entry.path match
         case None       => Monad[F].pure(InputStatus.Withheld(entry))
         case Some(path) =>

@@ -235,3 +235,113 @@ class CorrectionLedgerSuite extends munit.FunSuite:
     // Record 3 at (1148, 456): 30 px cells, column 38, row 15.
     assertEquals(density.counts(15 * 64 + 38), 1.0)
   }
+
+  test("the reducer refuses a rule that overlaps one recorded: eyes4s's correctionFor (S5.5)") {
+    val p05 = CorrectionTarget.Participant(right(ParticipantId.of("P05")))
+    val p17 = CorrectionTarget.Participant(right(ParticipantId.of("P17")))
+    val all = rule(CorrectionTarget.AllTrials, CoordinateCorrection.FlipY)
+    // Overlapping pairs, each refused by the reducer, naming both rules.
+    val overlapping = Vector(
+      Vector(flipTrial)                             -> all,
+      Vector(rule(p05, CoordinateCorrection.FlipX)) -> flipTrial,
+      Vector(rule(p05, CoordinateCorrection.FlipX)) -> rule(p05, CoordinateCorrection.FlipY),
+      Vector(all)                                   -> rule(p17, CoordinateCorrection.FlipX)
+    )
+    overlapping.foreach { (recorded, added) =>
+      val start = History.start(t1).apply(Command.AddCorrection(r3, 0, recorded.head)) match
+        case Right(step) => step.history
+        case Left(e)     => fail(e.message)
+      assertEquals(
+        start.apply(Command.AddCorrection(r3, 1, added)).left.map(_.message),
+        Left(
+          "AddCorrection on dataset r3 is refused: Dataset r3: correction rules 1 and 2 both " +
+            "cover a trial; at most one rule may cover a trial."
+        ),
+        (recorded, added)
+      )
+    }
+    // Rules that cover no common trial are recorded.
+    val apart = History
+      .start(t1)
+      .apply(Command.AddCorrection(r3, 0, rule(p05, CoordinateCorrection.FlipX)))
+      .flatMap(
+        _.history.apply(Command.AddCorrection(r3, 1, rule(p17, CoordinateCorrection.FlipY)))
+      )
+      .flatMap(
+        _.history.apply(
+          Command.AddCorrection(
+            r3,
+            2,
+            rule(
+              CorrectionTarget.Trial(TrialKey("P09", Phase.Encoding, "enc_01", 1)),
+              CoordinateCorrection.FlipX
+            )
+          )
+        )
+      )
+    assert(apart.isRight, apart)
+    // A re-import that carries overlapping rules is refused too.
+    val t2       = eyes4s.studio.core.document.DocumentSamples.t2
+    val r3spec   = t2.dataset(r3).get
+    val reimport = Command.ImportSources(
+      Some(r3),
+      r3spec.sources,
+      r3spec.mapping,
+      r3spec.units,
+      r3spec.geometry,
+      r3spec.attributes,
+      Some(r3spec.admission.copy(corrections = Vector(all, flipTrial))),
+      r3spec.inventory
+    )
+    assert(History.start(t2).apply(reimport).left.exists(_.message.contains("rules 1 and 2")))
+  }
+
+  test("a revision stored with overlapping rules is not verified, resumed or admitted (S5.5)") {
+    import eyes4s.studio.core.command.{MappingRule, Reducer}
+    val all = rule(CorrectionTarget.AllTrials, CoordinateCorrection.FlipY)
+    // Stored before the reducer refused it: r3 with two overlapping rules.
+    val stored = StudioDocument
+      .of(
+        t1.datasets.map(d =>
+          if d.id == r3 then
+            d.copy(admission = d.admission.copy(corrections = Vector(flipTrial, all)))
+          else d
+        ),
+        t1.analyses,
+        t1.draft,
+        t1.runs,
+        t1.reporting,
+        t1.figures,
+        t1.presentation,
+        t1.jobs
+      )
+      .fold(e => fail(e.toString), identity)
+    val overlap = "rules 1 and 2 both cover a trial"
+    assert(
+      History
+        .start(stored)
+        .apply(Command.VerifyDataset(r3))
+        .left
+        .exists(_.message.contains(overlap))
+    )
+    val verifying = Reducer
+      .run(stored, Command.VerifyDataset(r3), MappingRule.Replay)
+      .fold(e => fail(e.message), _.document)
+    val content = verifying.dataset(r3).map(_.decision) match
+      case Some(AdmissionDecision.Verifying(c)) => c
+      case other                                => fail(s"expected Verifying, got $other")
+    val admit = Command.Admit(
+      r3,
+      content,
+      Some(eyes4s.plan.AdmissionDecision.ReviewExclusions),
+      CoreBinding.unbound,
+      CoreBinding.unbound
+    )
+    assert(Reducer.step(verifying, admit).left.exists(_.message.contains(overlap)))
+    assert(
+      Reducer
+        .step(stored, Command.ResumeVerification(r3, content))
+        .left
+        .exists(_.message.contains(overlap))
+    )
+  }

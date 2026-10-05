@@ -67,6 +67,14 @@ final class ImportWizardView(dispatch: WizardIntent => Unit):
   val fixations: MappingTable = MappingTable(SourceRole.Fixations, fire)
   val trials: MappingTable    = MappingTable(SourceRole.Trials, fire)
 
+  /** A re-map's "Remove trials.csv from this revision" or "Keep trials.csv"
+    * (S5.4 follow-up), in the trial metadata page's toolbar.
+    */
+  val trialsSource: Button                       = button("import-button", "t12")
+  private var trialsChoice: Option[WizardIntent] = None
+  trialsSource.setOnAction(_ => trialsChoice.foreach(fire))
+  trials.toolbar.getChildren.add(trialsSource)
+
   /** The declared time unit (fixations only). */
   val time: ComboBox[TimeUnitOptionVM] = ComboBox()
   time.getStyleClass.addAll("time-select", "mono", "t11")
@@ -199,6 +207,11 @@ final class ImportWizardView(dispatch: WizardIntent => Unit):
       key.render(vm.key)
       fixations.setNote(vm.attributesNote)
       trials.setNote(s"${vm.trialsNote} ${vm.attributesNote}")
+      trialsChoice = vm.trialsSource.map(_._2)
+      trialsSource.setText(vm.trialsSource.fold("")(_._1))
+      trialsSource.setAccessibleText(vm.trialsSource.fold("")(_._1))
+      trialsSource.setVisible(vm.trialsSource.isDefined)
+      trialsSource.setManaged(vm.trialsSource.isDefined)
 
       timeLabel.setText(vm.time.label)
       timeNote.setText(vm.time.note)

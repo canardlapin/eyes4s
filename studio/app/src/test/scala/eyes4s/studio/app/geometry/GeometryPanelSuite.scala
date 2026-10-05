@@ -23,7 +23,6 @@ import eyes4s.studio.core.backend.*
 import eyes4s.studio.core.command.{Command, HistoryStack}
 import eyes4s.studio.core.document.*
 import eyes4s.studio.core.fixture.{MockStudy, StoryMoments}
-import eyes4s.studio.core.geometry.SourcePositions
 import eyes4s.studio.core.importing.GeometryField
 import eyes4s.studio.core.selection.{RecordNumber, StudioRef, TallyRegion}
 
@@ -99,7 +98,7 @@ class GeometryPanelSuite extends munit.FunSuite:
     assertEquals(panel.fields.field(GeometryField.ImageLeft), "448")
     assertEquals(
       effects.map(_.productPrefix),
-      Vector("ReadPositions", "RequestCounts")
+      Vector("RequestPlacement", "RequestCounts")
     )
     assertEquals(effects.last, GeometryEffect.RequestCounts(r3))
     // r2 shares r3's source file but not its mapping: its records are read again.
@@ -107,7 +106,7 @@ class GeometryPanelSuite extends munit.FunSuite:
       play(t1, _ => Intent.Navigate(Location(Perspective.Data, Vector(Place.Dataset(r2)))))
     val (moved, again) = GeometryPanel.sync(panel, onR2)
     assertEquals(moved.shown.map(_.id), Some(r2))
-    assertEquals(again.map(_.productPrefix), Vector("ReadPositions", "RequestCounts"))
+    assertEquals(again.map(_.productPrefix), Vector("RequestPlacement", "RequestCounts"))
   }
 
   test(
@@ -133,6 +132,16 @@ class GeometryPanelSuite extends munit.FunSuite:
       )
     )
     assertEquals(GeometryPanelVM.of(panel, t1, None).outsideWindow.ref, None)
+  }
+
+  test("a count opens the eyes4s tally it shows, as the admission ledger's counts do") {
+    val (panel, _)      = synced(t1)
+    val ref             = StudioRef.WindowTally(r3, TallyRegion.OutsideWindow)
+    val (same, effects) = GeometryPanel.update(panel, t1, GeometryIntent.OpenCount(ref))
+    assertEquals(same, panel)
+    assertEquals(effects, Vector(GeometryEffect.App(Intent.Explain(Place.At(ref)))))
+    val opened = perform(t1, effects)
+    assertEquals(opened.location.trail.lastOption, Some(Place.At(ref)))
   }
 
   test("switching the off-screen policy edits the pending draft r3 in one undoable step") {
@@ -424,16 +433,19 @@ class GeometryPanelSuite extends munit.FunSuite:
 
   private def loaded(model: AppModel): GeometryPanel =
     val (panel, effects) = synced(model)
-    val key  = effects.collectFirst { case GeometryEffect.ReadPositions(k, _) => k }.get
-    val spec = panel.shown.get
-    val read = SourcePositions.read(spec, bytes).left.map(_.message)
-    GeometryPanel.update(panel, model, GeometryIntent.PositionsRead(key, read))._1
+    val (key, spec)      =
+      effects.collectFirst { case GeometryEffect.RequestPlacement(k, s) => (k, s) }.get
+    // The backend's answer, as one holding these records gives it.
+    val read = eyes4s.studio.core.fixture.FakePlacement.place(spec, bytes).left.map(_.message)
+    GeometryPanel.update(panel, model, GeometryIntent.PlacementRead(key, read))._1
 
   private def picture(panel: GeometryPanel, model: AppModel): GeometryPictures =
     val key = GeometryPictures.keyOf(panel, model).get
-    GeometryPictures
-      .of(key, model.document.dataset(key.dataset).get, panel.positions.toOption.get)
-      .fold(p => fail(p.message), identity)
+    GeometryPictures.of(
+      key,
+      model.document.dataset(key.dataset).get,
+      panel.placement.toOption.get
+    )
 
   test("thumbnails: the first trial, then the trials with most records outside the frame") {
     val panel = loaded(small)
@@ -450,7 +462,8 @@ class GeometryPanelSuite extends munit.FunSuite:
     )
     assertEquals(
       vm.thumbnails.map(_.ref).head,
-      StudioRef.Trial(TrialKey("P01", Phase.Encoding, "enc_01", 1))
+      // The thumbnail's counts trace to the backend's tally of the trial.
+      Some(StudioRef.TrialPlacementTally(r3, TrialKey("P01", Phase.Encoding, "enc_01", 1)))
     )
     assertEquals(vm.densityCaption.take(9), "6 records")
     assertEquals(pics.density.records, 6)
@@ -512,7 +525,129 @@ class GeometryPanelSuite extends munit.FunSuite:
       )
     )
     assertEquals(
-      panel.positions.toOption.get.position(3).map(p => (p.x, p.y)),
+      panel.placement.toOption.get.record(3).map(p => (p.rawX, p.rawY)),
       Some((260.0, 120.0))
     )
+  }
+
+  test("without its trial in the records read, an overlap is still refused, by the rules") {
+    val p05 = CorrectionRule(
+      CorrectionTarget.Participant(ok(ParticipantId.of("P05"))),
+      CoordinateCorrection.FlipY
+    )
+    val model =
+      perform(
+        t1,
+        Vector(GeometryEffect.App(Intent.Dispatch(Command.AddCorrection(r3, 0, p05))))
+      )
+    // The records are not read: no trial of the source is known.
+    val (panel, _) = synced(model)
+    val form       = Vector(
+      GeometryIntent.MarkTrial(p05ret04),
+      GeometryIntent.OpenOrientation,
+      GeometryIntent.ChooseScope(OrientationScope.ThisParticipant)
+    ).foldLeft(panel)((p, i) => GeometryPanel.update(p, model, i)._1)
+    val (after, effects) = GeometryPanel.update(form, model, GeometryIntent.RecordOrientation)
+    assertEquals(effects, Vector.empty)
+    assert(after.problem.exists(_.contains("rules 1 and 2 both cover a trial")), after.problem)
+  }
+
+  test(
+    "a geometry or rule change asks the backend to place the records again; the pictures stay meanwhile"
+  ) {
+    val panel = loaded(small)
+    val pics  = picture(panel, small)
+    // The off-screen policy decides admission, not placement: nothing is asked.
+    val policy = perform(
+      small,
+      Vector(
+        GeometryEffect.App(
+          Intent.Dispatch(Command.SetOffScreenPolicy(r3, OffScreenChoice.QuarantineTrial))
+        )
+      )
+    )
+    val (samePlacement, none) = GeometryPanel.sync(panel, policy)
+    assertEquals(none.collect { case e: GeometryEffect.RequestPlacement => e }, Vector.empty)
+    assertEquals(samePlacement.placement, panel.placement)
+    // A recorded rule changes where eyes4s places them: asked again, with the rule.
+    val flip  = CorrectionRule(CorrectionTarget.Trial(p05ret04), CoordinateCorrection.FlipX)
+    val ruled = perform(
+      small,
+      Vector(GeometryEffect.App(Intent.Dispatch(Command.AddCorrection(r3, 0, flip))))
+    )
+    val (waiting, asks) = GeometryPanel.sync(panel, ruled)
+    assertEquals(
+      asks.collect { case GeometryEffect.RequestPlacement(_, s) => s.admission.corrections },
+      Vector(Vector(flip))
+    )
+    assertEquals(waiting.placement, Loading.Waiting)
+    // The last pictures stay shown (same records) until the new placement
+    // arrives, said to be the previous placement's; their counts cite no tally
+    // of r3, which the rule edited in place.
+    val stale = GeometryPanelVM.of(waiting, ruled, Some(pics))
+    assertEquals(stale.thumbnails.size, pics.thumbnails.size)
+    assertEquals(stale.thumbnails.map(_.ref).distinct, Vector(None))
+    assertEquals(
+      stale.positionsNote,
+      Some(
+        "Drawn for the previous rules or geometry; inputs/fixations.csv is being placed again " +
+          "under the new ones."
+      )
+    )
+    // Before any change, the same pictures cite the tallies and say nothing.
+    val fresh = GeometryPanelVM.of(panel, small, Some(pics))
+    assert(fresh.thumbnails.forall(_.ref.nonEmpty), fresh.thumbnails)
+    assertEquals(fresh.positionsNote, None)
+    // A refused placement blanks the pictures and says why.
+    val refused = GeometryPanel
+      .update(
+        waiting,
+        ruled,
+        GeometryIntent
+          .PlacementRead(waiting.placementKey.get, Left("the backend holds another file"))
+      )
+      ._1
+    assertEquals(refused.placement, Loading.Failed("the backend holds another file"))
+    // A preview of another revision is not this one's placement.
+    val stranger = GeometryPanel
+      .update(
+        waiting,
+        ruled,
+        GeometryIntent.PlacementRead(
+          waiting.placementKey.get,
+          panel.placement.toOption
+            .map(p =>
+              eyes4s.studio.core.backend.PlacementPreview
+                .of(r2, p.records, p.unplaced, p.trials, p.density)
+                .fold(e => fail(e.message), identity)
+            )
+            .toRight("no preview")
+        )
+      )
+      ._1
+    assertEquals(
+      stranger.placement,
+      Loading.Failed("the backend placed the records of another revision than r3")
+    )
+    val blank = GeometryPanelVM.of(refused, ruled, Some(pics))
+    assertEquals(
+      (blank.thumbnails, blank.example, blank.exampleRef),
+      (Vector.empty, Vector.empty, None)
+    )
+    assertEquals(
+      blank.positionsNote,
+      Some("Fixation positions are not available: the backend holds another file")
+    )
+    // A geometry edit also changes where eyes4s places them: asked again.
+    val edited = GeometryPanel
+      .update(panel, small, GeometryIntent.EditField(GeometryField.ImageLeft, "450"))
+      ._1
+    val moved =
+      perform(small, GeometryPanel.update(edited, small, GeometryIntent.CommitFields)._2)
+    val (moving, more) = GeometryPanel.sync(panel, moved)
+    assertEquals(
+      more.collect { case GeometryEffect.RequestPlacement(_, s) => s.geometry.image.left },
+      Vector(450)
+    )
+    assertEquals(moving.placement, Loading.Waiting)
   }

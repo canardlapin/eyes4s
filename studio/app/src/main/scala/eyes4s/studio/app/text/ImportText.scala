@@ -49,6 +49,7 @@ enum ImportTextId derives CanEqual:
   case CommitImport, CommitImportAs, CommitApply, CommitReadmit, Cancel
   case NoChange, NeedFixations, ReadFailed, AttributesNote, StoreFailed, TrialsNote
   case NotDatasetSource, RaggedMore
+  case InventoryNeedsRemap, DropTrials, KeepTrials, TrialsDropped
 
   // --- Platform dialogs ------------------------------------------------------------
   case DialogFixations, DialogTrials, DialogFilter
@@ -146,6 +147,14 @@ object ImportText:
         "trials.csv is the trial inventory: eyes4s joins fixation records to its trials by " +
           "participant, phase and trial, and counts a listed trial with no records as absent. " +
           "Repeated rows with equal values are one trial; differing values are an error."
+      case InventoryNeedsRemap =>
+        "{0}'s trial inventory {1} keeps it from admission: {2} Map its columns, or remove it " +
+          "from the revision."
+      case DropTrials    => "Remove {0} from this revision"
+      case KeepTrials    => "Keep {0}"
+      case TrialsDropped =>
+        "{0} is not part of the new revision: no trial inventory is joined, and no trial is " +
+          "counted absent. Applying makes a new pending revision."
       case NotDatasetSource =>
         "{0} is not one of {1}'s files; a re-map reads the revision's own files."
       case RaggedMore     => "{0}: {1} more records have a width other than the header's."

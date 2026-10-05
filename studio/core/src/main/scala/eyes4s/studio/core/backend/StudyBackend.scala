@@ -16,6 +16,9 @@
 
 package eyes4s.studio.core.backend
 
+import eyes4s.codec.CanonicalDigest
+import eyes4s.studio.core.document.DatasetRevisionSpec
+import eyes4s.studio.core.document.DigestJson.given
 import ProtocolCodecs.portableLong
 
 import cats.Functor
@@ -85,6 +88,26 @@ enum BackendError derives CanEqual, Codec.AsObject:
   /** `run` has no scale index `scale`; it computes `scales` (protocol 1.9). */
   case UnknownScale(run: RunId, scale: Int, scales: Vector[String])
 
+  /** The backend holds other content for `dataset` than the client asked to
+    * verify (protocol 1.11, S5.6): both digests are named.
+    */
+  case ContentMismatch(
+      dataset: DatasetRevision,
+      requested: CanonicalDigest[DatasetRevisionSpec],
+      held: CanonicalDigest[DatasetRevisionSpec]
+  )
+
+  /** The backend holds no content for `dataset` to verify `requested`
+    * against (protocol 1.11, S5.6): nothing is verified by default.
+    */
+  case ContentNotHeld(dataset: DatasetRevision, requested: CanonicalDigest[DatasetRevisionSpec])
+
+  /** `dataset`'s records cannot be placed (protocol 1.12, S5.5): its
+    * fixation source is not one the backend holds, or a step eyes4s refused;
+    * `reason` names what failed.
+    */
+  case PlacementRefused(dataset: DatasetRevision, reason: String)
+
   def code: String = this match
     case UnknownDataset(_, _)       => "studio-backend.unknown-dataset"
     case UnknownRevision(_, _)      => "studio-backend.unknown-revision"
@@ -95,6 +118,7 @@ enum BackendError derives CanEqual, Codec.AsObject:
     case TrialViewRefused(_)        => "studio-backend.trial-view-refused"
     case SourceRecordsRefused(_, _) => "studio-backend.source-records-refused"
     case UnknownScale(_, _, _)      => "studio-backend.unknown-scale"
+    case PlacementRefused(_, _)     => "studio-backend.placement-refused"
     case PreviewNotReady(_, _, _)   => "studio-backend.preview-not-ready"
     case StalePreview(_, _, _)      => "studio-backend.stale-preview"
     case TamperedPreview(_, _)      => "studio-backend.tampered-preview"
@@ -106,8 +130,14 @@ enum BackendError derives CanEqual, Codec.AsObject:
     case Malformed(_, _)            => "studio-backend.malformed-request"
     case DuplicateSubscription(_)   => "studio-backend.duplicate-subscription"
     case InventoryRefused(_, _)     => "studio-backend.inventory-refused"
+    case ContentMismatch(_, _, _)   => "studio-backend.content-mismatch"
+    case ContentNotHeld(_, _)       => "studio-backend.content-not-held"
 
   def message: String = this match
+    case ContentNotHeld(d, requested) =>
+      s"Dataset ${d.label} has no stored content to verify ${requested.display} against."
+    case ContentMismatch(d, requested, held) =>
+      s"Dataset ${d.label} holds content ${held.display}; the request verifies ${requested.display}."
     case UnknownDataset(d, known) =>
       s"No dataset ${d.label}; the backend has ${known.map(_.label).mkString(", ")}."
     case UnknownRevision(r, known) =>
@@ -139,8 +169,9 @@ enum BackendError derives CanEqual, Codec.AsObject:
     case UnknownTrial(d, t)         => s"${t.label} is not a trial of dataset ${d.label}."
     case UnknownScale(r, i, scales) =>
       s"${r.label} has no scale $i; it computes ${scales.size} (${scales.mkString(", ")})."
-    case TrialViewRefused(e)        => e.message
-    case SourceRecordsRefused(r, e) => s"${r.label}: ${e.message}"
+    case TrialViewRefused(e)         => e.message
+    case SourceRecordsRefused(r, e)  => s"${r.label}: ${e.message}"
+    case PlacementRefused(d, reason) => s"The records of ${d.label} cannot be placed: $reason"
 
   def diagnostic: StudioDiagnostic =
     val subject = this match
@@ -163,7 +194,10 @@ enum BackendError derives CanEqual, Codec.AsObject:
       case UnknownTrial(d, t)  => Vector(DiagnosticLocus.Dataset(d), DiagnosticLocus.Trial(t))
       case TrialViewRefused(e) => Vector(DiagnosticLocus.Trial(e.trial))
       case SourceRecordsRefused(r, _) => Vector(DiagnosticLocus.Revision(r))
-      case UnknownScale(r, i, _) => Vector(DiagnosticLocus.Run(r), DiagnosticLocus.Scale(i))
+      case UnknownScale(r, i, _)    => Vector(DiagnosticLocus.Run(r), DiagnosticLocus.Scale(i))
+      case ContentMismatch(d, _, _) => Vector(DiagnosticLocus.Dataset(d))
+      case ContentNotHeld(d, _)     => Vector(DiagnosticLocus.Dataset(d))
+      case PlacementRefused(d, _)   => Vector(DiagnosticLocus.Dataset(d))
     StudioDiagnostic(code, DiagnosticLevel.Error, DiagnosticOrigin.Host, subject, message)
 
 /** Everything Eyes Studio asks of eyes4s (DESIGN_SPEC section 13, S3.0): the
@@ -182,6 +216,26 @@ enum BackendError derives CanEqual, Codec.AsObject:
 trait StudyBackend[F[_]]:
 
   def admission(dataset: DatasetRevision): F[Either[BackendError, AdmissionSummary]]
+
+  /** `dataset`'s admission summary, verified for `content` (protocol 1.11,
+    * S5.6): the CR3 digest of the revision the client asks eyes4s to admit
+    * ([[eyes4s.studio.core.document.DatasetRevisionSpec.contentDigest]]). A
+    * backend refuses content it does not hold: other content for `dataset`
+    * with [[BackendError.ContentMismatch]], none with
+    * [[BackendError.ContentNotHeld]], so an answer is never for content the
+    * client did not ask about. [[admission]] stays the counts-only read.
+    */
+  def verify(
+      dataset: DatasetRevision,
+      content: CanonicalDigest[DatasetRevisionSpec]
+  ): F[Either[BackendError, AdmissionSummary]]
+
+  /** Every record of `spec`'s fixation source placed by eyes4s under its
+    * geometry and recorded corrections, each trial's window tally and the
+    * density (protocol `PlacementOf`, S5.5). `spec` is sent whole, so a
+    * draft revision the backend has not stored is previewed too.
+    */
+  def placement(spec: DatasetRevisionSpec): F[Either[BackendError, PlacementPreview]]
 
   /** Every inventory trial's disposition, in inventory order. */
   def ledger(dataset: DatasetRevision, page: PageRequest): F[Either[BackendError, LedgerPage]]
@@ -320,6 +374,12 @@ enum BackendRequest derives CanEqual, Codec.AsObject:
   /** Protocol 1.9. */
   case PairRowsOf(run: RunId, scale: Int, page: PageRequest)
 
+  /** Protocol 1.11; answered by [[BackendResponse.Admission]]. */
+  case Verify(dataset: DatasetRevision, content: CanonicalDigest[DatasetRevisionSpec])
+
+  /** Protocol 1.12. */
+  case PlacementOf(spec: DatasetRevisionSpec)
+
 /** A response of the [[StudyBackend]] protocol. */
 enum BackendResponse derives CanEqual, Codec.AsObject:
   case Refused(error: BackendError)
@@ -355,6 +415,9 @@ enum BackendResponse derives CanEqual, Codec.AsObject:
 
   /** Protocol 1.9. */
   case PairRowsOf(page: PairRowPage)
+
+  /** Protocol 1.12. */
+  case PlacementOf(preview: PlacementPreview)
 
 /** A frame from backend to client: the one response to a request, or one
   * event of a subscription.
@@ -393,10 +456,12 @@ object ProtocolVersion:
     * `UnknownScale`, and refuses any other version before reading a frame's
     * body. 1.10 adds the `TrialFailed` map placement, with its window
     * tally: a fixation in the window of a trial the study fails (eyes4s
-    * UI-G G3); `InWindow` keeps its wire name `InMap`. Deploy client and
-    * backend together.
+    * UI-G G3); `InWindow` keeps its wire name `InMap`. 1.11 adds `Verify`,
+    * the admission request that carries the verified content digest, and
+    * `ContentMismatch` (S5.6). 1.12 adds `PlacementOf`, a dataset revision's
+    * placement preview (S5.5). Deploy client and backend together.
     */
-  val Current: ProtocolVersion = ProtocolVersion(1, 10)
+  val Current: ProtocolVersion = ProtocolVersion(1, 12)
 
 /** A client's correlation id; every frame answering a request carries it. */
 final case class RequestId(value: Long) derives CanEqual
@@ -448,6 +513,7 @@ object StudyBackend:
     def always(result: F[BackendResponse]) = Stream.eval(result.map(ServerFrame.Response(_)))
     request match
       case Q.Admission(d)          => answer(backend.admission(d))(A.Admission(_))
+      case Q.Verify(d, c)          => answer(backend.verify(d, c))(A.Admission(_))
       case Q.Ledger(d, p)          => answer(backend.ledger(d, p))(A.Ledger(_))
       case Q.Preview(r)            => answer(backend.preview(r))(A.Preview(_))
       case Q.PreviewRows(r, p)     => answer(backend.previewRows(r, p))(A.PreviewRows(_))
@@ -472,6 +538,7 @@ object StudyBackend:
       case Q.SourceRecordsOf(r, f, n) =>
         answer(backend.sourceRecords(r, f, n))(A.SourceRecordsOf(_))
       case Q.PairRowsOf(r, s, p) => answer(backend.pairRows(r, s, p))(A.PairRowsOf(_))
+      case Q.PlacementOf(spec)   => answer(backend.placement(spec))(A.PlacementOf(_))
       // In process a subscription is ended by dropping its stream; only a
       // connection (SidecarServer) holds subscriptions to end.
       case Q.Unsubscribe(id) => Stream.emit(ServerFrame.Response(A.Unsubscribed(id, false)))

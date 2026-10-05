@@ -77,6 +77,20 @@ abstract class TransportConformanceSuite extends BackendConformanceSuite:
       assert(direct.forall(_.size == 1), direct)
   }
 
+  test("a content mismatch is refused across the transport, naming both digests (1.9)") {
+    import eyes4s.studio.core.backend.ProtocolSamples.content
+    val r3 = DatasetRevision(3)
+    for
+      fake   <- fresh
+      _      <- fake.holdContent(r3, content("cd"))
+      remote <- RemoteStudyBackend[IO](transport(fake))
+      other  <- remote.verify(r3, content("ab"))
+      same   <- remote.verify(r3, content("cd"))
+    yield
+      assertEquals(other, Left(BackendError.ContentMismatch(r3, content("ab"), content("cd"))))
+      assert(same.isRight, same)
+  }
+
   test("the remote backend answers each method as the backend itself") {
     def both[A](call: StudyBackend[IO] => IO[A]): IO[(A, A)] =
       for
@@ -87,6 +101,10 @@ abstract class TransportConformanceSuite extends BackendConformanceSuite:
     val calls = Vector[StudyBackend[IO] => IO[Any]](
       _.admission(DatasetRevision(3)),
       _.admission(DatasetRevision(9999)),
+      _.verify(DatasetRevision(3), eyes4s.studio.core.backend.ProtocolSamples.content("ab")),
+      _.placement(
+        eyes4s.studio.core.document.DocumentSamples.t1.dataset(DatasetRevision(3)).get
+      ),
       _.preview(AnalysisRevision(5)),
       _.runs,
       _.jobs,

@@ -27,6 +27,18 @@ object ProtocolPins:
       """{"UnknownScale":{"run":8,"scale":4,"scales":["0.5°","1°","2°","4°"]}}""",
     "error.SourceRecordsRefused" ->
       """{"SourceRecordsRefused":{"revision":4,"error":{"RangeInvalid":{"from":0,"count":501,"limit":500}}}}""",
+    "error.ContentMismatch" ->
+      """{"ContentMismatch":{"dataset":3,"requested":"abababababababababababababababababababababababababababababababab","held":"cdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcd"}}""",
+    "request.Verify" ->
+      """{"Verify":{"dataset":3,"content":"abababababababababababababababababababababababababababababababab"}}""",
+    "error.ContentNotHeld" ->
+      """{"ContentNotHeld":{"dataset":9,"requested":"abababababababababababababababababababababababababababababababab"}}""",
+    "error.PlacementRefused" ->
+      """{"PlacementRefused":{"dataset":3,"reason":"it has no fixation source"}}""",
+    "request.PlacementOf" ->
+      """{"PlacementOf":{"spec":{"id":3,"parent":2,"sources":[{"role":{"Fixations":{}},"path":"inputs/fixations.csv","bytes":"19342ecedb6e089a190b4784a248907b27fedbef03ca3e6d4bc251702fbbc2f2","semantic":null},{"role":{"Trials":{}},"path":"inputs/trials.csv","bytes":"0668bccf6c672b706c0a138268f632fb5a768170578a01c58ee752176f0f8b99","semantic":null}],"mapping":[{"role":{"Participant":{}},"column":"participant"},{"role":{"Phase":{}},"column":"phase"},{"role":{"Trial":{}},"column":"trial"},{"role":{"Occurrence":{}},"column":"occurrence"},{"role":{"Ordinal":{}},"column":"ordinal"},{"role":{"SampleCount":{}},"column":"sample_count"},{"role":{"X":{}},"column":"x"},{"role":{"Y":{}},"column":"y"},{"role":{"Onset":{}},"column":"onset_ms"},{"role":{"Duration":{}},"column":"duration_ms"}],"units":{"time":{"Milliseconds":{}}},"geometry":{"screen":{"width":1920,"height":1080},"image":{"left":448,"top":156,"width":1024,"height":768},"pixelsPerDegree":35.5},"admission":{"offScreen":{"ExcludeRecord":{}},"corrections":[]},"decision":{"Pending":{}},"inventory":{"bindings":[{"role":{"Participant":{}},"column":"participant"},{"role":{"Phase":{}},"column":"phase"},{"role":{"Trial":{}},"column":"trial"},{"role":{"Occurrence":{}},"column":"occurrence"},{"role":{"Item":{}},"column":"item"},{"role":{"Response":{}},"column":"response"}],"attributes":[{"column":"display_kind","kind":{"Text":{}}},{"column":"image_file","kind":{"Text":{}}}]}}}}""",
+    "response.PlacementOf" ->
+      """{"PlacementOf":{"preview":{"dataset":3,"records":[{"record":7214,"trial":{"participant":"P17","phase":"Retrieval","trial":"ret_07","occurrence":1},"rawX":1148.25,"rawY":456.75,"rule":null,"correctedX":1148.25,"correctedY":456.75,"imageX":700.25,"imageY":300.75,"placement":{"Inside":{}},"degrees":[5.375,2.375]},{"record":7215,"trial":{"participant":"P17","phase":"Retrieval","trial":"ret_07","occurrence":1},"rawX":-40.5,"rawY":500.25,"rule":0,"correctedX":1960.5,"correctedY":500.25,"imageX":1512.5,"imageY":344.25,"placement":{"OutsideScreen":{}},"degrees":null}],"unplaced":[{"record":7216,"reason":"x is not a number"}],"trials":[{"trial":{"participant":"P17","phase":"Retrieval","trial":"ret_07","occurrence":1},"records":2,"outsideWindow":0,"outsideScreen":1}],"density":{"columns":2,"rows":1,"counts":[1.5,0.5],"placed":2}}}}""",
     "request.SourceRecordsOf" ->
       """{"SourceRecordsOf":{"revision":4,"from":7214,"count":60}}""",
     "response.SourceRecordsOf" ->
@@ -112,9 +124,9 @@ object ProtocolPins:
     "disposition.NoFixations" ->
       """{"NoFixations":{}}""",
     "envelope.frame" ->
-      """{"version":{"major":1,"minor":10},"id":41,"body":{"Event":{"event":{"Finished":{"outcome":{"Completed":{"job":1,"run":8,"last":{"job":1,"run":8,"step":2,"segment":{"Comparing":{"scale":2,"design":{"Control":{}}}},"meter":{"kind":{"Comparing":{}},"unit":{"Pairs":{}},"done":3005,"total":{"Exact":{"units":8512}}},"totals":{"completedMaps":2811,"totalMaps":{"Exact":{"units":4685}},"completedPairs":21400,"totalPairs":{"Exact":{"units":44845}}}}}}}}}}}""",
+      """{"version":{"major":1,"minor":12},"id":41,"body":{"Event":{"event":{"Finished":{"outcome":{"Completed":{"job":1,"run":8,"last":{"job":1,"run":8,"step":2,"segment":{"Comparing":{"scale":2,"design":{"Control":{}}}},"meter":{"kind":{"Comparing":{}},"unit":{"Pairs":{}},"done":3005,"total":{"Exact":{"units":8512}}},"totals":{"completedMaps":2811,"totalMaps":{"Exact":{"units":4685}},"completedPairs":21400,"totalPairs":{"Exact":{"units":44845}}}}}}}}}}}""",
     "envelope.request" ->
-      """{"version":{"major":1,"minor":10},"id":41,"body":{"Subscribe":{"id":1}}}""",
+      """{"version":{"major":1,"minor":12},"id":41,"body":{"Subscribe":{"id":1}}}""",
     "error.AlreadyRunning" ->
       """{"AlreadyRunning":{"revision":5,"job":1}}""",
     "error.NoResult" ->

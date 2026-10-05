@@ -160,6 +160,12 @@ enum StudioRef derives CanEqual, Codec.AsObject:
     */
   case WindowTally(dataset: DatasetRevision, region: TallyRegion)
 
+  /** One trial's window tally in a dataset revision's placement preview:
+    * its records and how many eyes4s places outside the image frame and the
+    * screen (ticket S5.5; the geometry thumbnails' counts).
+    */
+  case TrialPlacementTally(dataset: DatasetRevision, trial: TrialKey)
+
   /** One count of an analysis revision's resolved design, as the backend's
     * preview reports it (ticket S7.5).
     */
@@ -198,7 +204,7 @@ enum StudioRef derives CanEqual, Codec.AsObject:
           RefKind.Aggregate
     case ParticipantSummary(_, _, _, _, _) | GroupCell(_, _, _, _) | FigurePanel(_, _) |
         WindowTally(_, _) | DesignTally(_, _) | InventoryCount(_, _) | TrialGroup(_, _) |
-        DisplayTally(_, _) | QueryTally(_, _) =>
+        DisplayTally(_, _) | QueryTally(_, _) | TrialPlacementTally(_, _) =>
       RefKind.Aggregate
 
   def isAggregate: Boolean = kind == RefKind.Aggregate
@@ -240,8 +246,11 @@ enum StudioRef derives CanEqual, Codec.AsObject:
     case GroupCell(_, _, _, _)                => None
     case FigurePanel(_, _)                    => None
     case WindowTally(_, _)                    => None
-    case DesignTally(_, _)                    => None
-    case QueryTally(run, tally)               =>
+    // A trial's tally is part of the revision's outside-the-frame count.
+    case TrialPlacementTally(dataset, _) =>
+      Some(WindowTally(dataset, TallyRegion.OutsideWindow))
+    case DesignTally(_, _)      => None
+    case QueryTally(run, tally) =>
       Option.when(tally != QueryCount.Requested)(QueryTally(run, QueryCount.Requested))
     case InventoryCount(dataset, count) =>
       count match

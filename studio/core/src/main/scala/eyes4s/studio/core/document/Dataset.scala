@@ -22,6 +22,7 @@ import eyes4s.kernel.Correction
 import eyes4s.plan.{
   AdmissionDecision as CoreAdmissionDecision,
   AdmissionPolicy,
+  AppliedCorrection,
   ArtifactRef,
   AttributeColumn,
   AttributeKind,
@@ -512,6 +513,34 @@ object AdmissionChoice:
   /** New imports (eyes4s `AdmissionPolicy.default`). */
   val default: AdmissionChoice = AdmissionChoice(OffScreenChoice.ExcludeRecord, Vector.empty)
 
+  /** The first two rules of `choice` that both cover some trial, by position,
+    * as eyes4s's `AdmissionPolicy.correctionFor` finds them (S5.5 follow-up):
+    * eyes4s refuses a policy in which two rules cover one trial. Rules are
+    * compared by their targets, without the source: each rule's own trial
+    * (a trial rule's key, a participant rule's participant, any trial for
+    * all trials) is asked for its covering rules, so two rules overlap
+    * exactly when one trial could fall under both.
+    */
+  def overlap(choice: AdmissionChoice): Option[(Int, Int)] =
+    val scopes: Vector[CorrectionScope[TrialKey]] = choice.corrections.map(_.target match
+      case CorrectionTarget.AllTrials      => CorrectionScope.AllTrials()
+      case CorrectionTarget.Participant(p) => CorrectionScope.Participant(p.value)
+      case CorrectionTarget.Trial(key)     => CorrectionScope.Trial(key))
+    // The correction does not decide coverage; any one stands for each rule.
+    val policy = AdmissionPolicy(
+      choice.offScreen.core,
+      scopes.map(AppliedCorrection(_, Correction.FlipX))
+    )
+    val probes = choice.corrections.map(_.target match
+      case CorrectionTarget.AllTrials =>
+        TrialKey("", eyes4s.studio.core.backend.Phase.Encoding, "", 1)
+      case CorrectionTarget.Participant(p) =>
+        TrialKey(p.value, eyes4s.studio.core.backend.Phase.Encoding, "", 1)
+      case CorrectionTarget.Trial(key) => key)
+    probes.iterator
+      .map(policy.correctionFor(_, _.participant))
+      .collectFirst { case Left(pair) => pair }
+
   def fromCore[K](
       policy: AdmissionPolicy[K],
       key: K => TrialKey
@@ -657,6 +686,35 @@ object DatasetRevisionSpec:
     sources.trials match
       case Some(trials) if inventory.isEmpty =>
         Left(DocumentError.InventoryUnmapped(id, trials.path.value))
+      case _ => Right(())
+
+  /** The admission check (S5.4 follow-up): the fixations and the trial
+    * inventory name a trial by the same key, so eyes4s joins them on it.
+    * Participant, phase and trial are required in both; the occurrence must
+    * be mapped in both or in neither. Like an inadmissible mapping (S5.3), a
+    * revision may be imported or re-mapped while its keys disagree (one file
+    * is mapped before the other); verifying it is refused.
+    */
+  def keysAgree(
+      id: DatasetRevision,
+      sources: Sources,
+      mapping: ColumnMapping,
+      inventory: Option[InventoryMapping]
+  ): Either[DocumentError, Unit] =
+    (sources.trials, inventory) match
+      case (Some(trials), Some(inv)) =>
+        val fixations = sources.fixations.fold("the fixations")(_.path.value.split('/').last)
+        val file      = trials.path.value.split('/').last
+        Vector(ColumnRole.Occurrence)
+          .collectFirst(Function.unlift { role =>
+            (mapping.column(role).isDefined, inv.column(role).isDefined) match
+              case (true, false) =>
+                Some(DocumentError.InventoryKeyDisagrees(id, role, fixations, file))
+              case (false, true) =>
+                Some(DocumentError.InventoryKeyDisagrees(id, role, file, fixations))
+              case _ => None
+          })
+          .toLeft(())
       case _ => Right(())
 
   /** An attribute column is not also a role's column. */

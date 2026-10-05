@@ -25,8 +25,13 @@ import eyes4s.studio.core.document.{
   CorrectionRule,
   CorrectionTarget,
   DatasetRevisionSpec,
+  OffScreenChoice,
   Offset,
-  ParticipantId
+  ParticipantId,
+  Source,
+  SourcePath,
+  SourceRole,
+  Sources
 }
 import eyes4s.studio.core.fixture.{GoldenCsv, MockStudy, StoryMoments}
 
@@ -150,4 +155,108 @@ class GoldenPlacementJvmSuite extends munit.FunSuite:
         corrected.get(t).map(c => (c.outsideWindow, c.outsideScreen))
     }
     assert(moved > 0, "the P05 shift changed no trial's tally")
+  }
+
+  // --- off-screen records (S5.5 follow-up): the golden has none -------------------
+
+  /** Three trials; P02 enc_01 has a record left of the screen and P03 enc_01
+    * one below it; P01 enc_01 stays on the screen (one record outside the
+    * image frame, inside the screen).
+    */
+  private val offScreenCsv: String =
+    """participant,phase,trial,occurrence,ordinal,x,y,onset_ms,duration_ms,sample_count
+      |P01,Encoding,enc_01,1,1,700,420,0,200,100
+      |P01,Encoding,enc_01,1,2,100,420,210,200,100
+      |P02,Encoding,enc_01,1,1,700,420,0,200,100
+      |P02,Encoding,enc_01,1,2,-40.5,500,210,200,100
+      |P03,Encoding,enc_01,1,1,1900,1200,0,200,100
+      |P03,Encoding,enc_01,1,2,900,500,210,200,100
+      |""".stripMargin
+
+  private def offScreenSpec(choice: OffScreenChoice): DatasetRevisionSpec =
+    val raw    = offScreenCsv.getBytes(UTF_8)
+    val source = Source(
+      SourceRole.Fixations,
+      get(SourcePath.of("inputs/fixations.csv")),
+      eyes4s.codec.ByteDigest.sha256(IArray.from(raw)),
+      None
+    )
+    r3.copy(
+      sources = get(Sources.of(Vector(source))),
+      inventory = None,
+      admission = r3.admission.copy(offScreen = choice)
+    )
+
+  /** The panel's off-screen records, and eyes4s's: under ExcludeRecord the
+    * records it admits outside the frame, under QuarantineTrial the records
+    * it rejects for their position, with the trials it leaves out.
+    */
+  private def offScreen(
+      choice: OffScreenChoice
+  ): (Vector[Int], Vector[Int], Set[TrialKey], Set[TrialKey]) =
+    val spec    = offScreenSpec(choice)
+    val ours    = get(CorrectionLedger.of(spec))
+    val read    = get(SourcePositions.read(spec, IArray.from(offScreenCsv.getBytes(UTF_8))))
+    val placed  = get(ours.placeAll(read.positions))
+    val columns = get(
+      FixationColumns.of("ordinal", "x", "y", "onset_ms", "duration_ms", "sample_count")
+    )
+    val keys = get(
+      FixationKeyReader.withParticipant[String](keyColumns)(
+        fields => Right(keyColumns.map(fields).mkString("\t")),
+        key => ClockId(s"fixation-trial:$key"),
+        _.takeWhile(_ != '\t')
+      )
+    )
+    val imported = get(
+      FixationCsv.admit(
+        offScreenCsv,
+        columns,
+        keys,
+        ours.frames.screen,
+        TimestampUnit.Milliseconds,
+        AdmissionPolicy[String](ours.policy.offScreen, Vector.empty)
+      )
+    )
+    // eyes4s numbers a row by its line in the file, the header being line 1;
+    // the panel numbers data records from 1. Record n is line n + 1.
+    val theirs = (choice match
+      case OffScreenChoice.ExcludeRecord   => imported.outsideFrame.map(_.record)
+      case OffScreenChoice.QuarantineTrial =>
+        imported.rejected.collect {
+          case r if r.error.isInstanceOf[FixationRowError.Position] => r.rowNumber
+        }
+    ).map(_ - 1)
+    def trial(key: String) = key.split("\t").toList match
+      case List(p, phase, t, o) => TrialKey(p, Phase(phase), t, o.toInt)
+      case _                    => fail(s"bad key $key")
+    (
+      placed.filter(outsideScreen).map(_.source.record),
+      theirs,
+      read.trials.toSet -- imported.accepted.rows.map(r => trial(r.key)).toSet,
+      placed.filter(outsideScreen).map(_.source.trial).toSet
+    )
+
+  test(
+    "off-screen records: the panel and eyes4s agree under ExcludeRecord and QuarantineTrial"
+  ) {
+    // Records 4 (P02, x < 0) and 5 (P03, y > 1080) are off the screen; 2 is off the image only.
+    val (ours, theirs, left, offTrials) = offScreen(OffScreenChoice.ExcludeRecord)
+    assertEquals(ours, Vector(4, 5))
+    assertEquals(theirs, ours)
+    // Excluding a record leaves its trial in.
+    assertEquals(left, Set.empty[TrialKey])
+    val (qOurs, qTheirs, qLeft, qTrials) = offScreen(OffScreenChoice.QuarantineTrial)
+    assertEquals(qOurs, Vector(4, 5))
+    assertEquals(qTheirs, qOurs)
+    // Quarantining leaves out exactly the trials with an off-screen record.
+    assertEquals(qLeft, qTrials)
+    assertEquals(
+      qTrials,
+      Set(
+        TrialKey("P02", Phase.Encoding, "enc_01", 1),
+        TrialKey("P03", Phase.Encoding, "enc_01", 1)
+      )
+    )
+    assertEquals(offTrials, qTrials)
   }

@@ -16,6 +16,8 @@
 
 package eyes4s.studio.app.analysis
 
+import eyes4s.studio.app.text.SourcesText
+import eyes4s.studio.core.assets.SourceBlock
 import eyes4s.studio.app.nav.Place
 import eyes4s.studio.app.{AppModel, Intent, PreparedDesign}
 import eyes4s.studio.core.backend.{
@@ -160,7 +162,8 @@ final case class ResolvedDesign(
     rowState: DesignRows,
     filter: DesignFilter,
     cursor: Option[TrialKey],
-    started: Boolean
+    started: Boolean,
+    blocked: Option[SourceBlock]
 ) derives CanEqual:
 
   /** The rows the filter passes, in source order. */
@@ -181,7 +184,8 @@ object ResolvedDesign:
       DesignRows.Complete,
       DesignFilter.All,
       None,
-      started = false
+      started = false,
+      blocked = None
     )
 
   /** Participants counted per backend request: small enough that counting
@@ -229,7 +233,10 @@ object ResolvedDesign:
     // been shown; from then on the pane follows its target.
     val started = panel.started || model.perspective == Perspective.Analysis
     val now     = target(model)
-    if !started || now == panel.target then (panel, none)
+    // A revision whose sources are not known to be held as recorded is not
+    // previewed (S2.5); it is prepared once they are.
+    val blocked = now.flatMap(t => model.sources.block(t.dataset))
+    if !started || (now == panel.target && blocked == panel.blocked) then (panel, none)
     else
       val generation = panel.generation + 1
       // The design prepared for the old target is no longer the one shown.
@@ -239,6 +246,20 @@ object ResolvedDesign:
       now match
         case None =>
           (empty.copy(generation = generation, filter = panel.filter, started = true), withdraw)
+        case Some(t) if blocked.isDefined =>
+          val reason = blocked.fold("")(SourcesText.blocked(t.dataset, _))
+          (
+            empty.copy(
+              target = Some(t),
+              generation = generation,
+              preview = DesignPreview.Refused(reason),
+              rowState = DesignRows.Failed(reason),
+              filter = panel.filter,
+              started = true,
+              blocked = blocked
+            ),
+            withdraw
+          )
         case Some(t) =>
           val start = PreviewBudget.of(ParticipantsPerPage) match
             case Left(e)       => (DesignPreview.Refused(e.message), none)
@@ -260,7 +281,8 @@ object ResolvedDesign:
               read._1,
               panel.filter,
               None,
-              started = true
+              started = true,
+              blocked = None
             ),
             withdraw ++ start._2 ++ read._2
           )

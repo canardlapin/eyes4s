@@ -123,3 +123,8 @@
 .sources-button:focused {
   -fx-background-color: -es-accent, -es-surface;
 }
+
+/* A source the project no longer holds as recorded (ticket S2.5). */
+.sources-problem {
+  -fx-text-fill: -es-warn-text;
+}

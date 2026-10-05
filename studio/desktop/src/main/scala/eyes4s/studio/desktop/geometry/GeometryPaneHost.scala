@@ -19,10 +19,9 @@ package eyes4s.studio.desktop.geometry
 import eyes4s.studio.app.geometry.*
 import eyes4s.studio.app.tokens.{StageVariant, Theme}
 import eyes4s.studio.app.{AppModel, Intent}
-import eyes4s.studio.core.backend.{AdmissionSummary, DatasetRevision}
-import eyes4s.studio.core.document.{DatasetRevisionSpec, Perspective, Source, StageAppearance}
-import eyes4s.studio.core.geometry.SourcePositions
-import eyes4s.studio.desktop.runtime.{ProjectPort, StudioSession}
+import eyes4s.studio.core.backend.{AdmissionSummary, DatasetRevision, PlacementPreview}
+import eyes4s.studio.core.document.{DatasetRevisionSpec, Perspective, StageAppearance}
+import eyes4s.studio.desktop.runtime.StudioSession
 import eyes4s.studio.viz.geometry.GeometryScene
 import eyes4s.studio.viz.plot.PlotScene
 import javafx.application.Platform
@@ -34,18 +33,23 @@ import scala.util.control.NonFatal
   * its admission counts. `done` may be called on any thread.
   */
 trait GeometryInputs:
-  def read(source: Source, done: Either[String, IArray[Byte]] => Unit): Unit
+  /** The backend's placement preview of `spec` (S5.5); `done` on any thread. */
+  def placement(spec: DatasetRevisionSpec, done: Either[String, PlacementPreview] => Unit): Unit
   def admission(dataset: DatasetRevision, done: Either[String, AdmissionSummary] => Unit): Unit
 
 object GeometryInputs:
-  /** The window's project (its stored inputs) and backend. */
-  def of(session: StudioSession, project: Option[ProjectPort]): GeometryInputs =
+  /** The window's backend. */
+  def of(session: StudioSession): GeometryInputs =
     new GeometryInputs:
-      def read(source: Source, done: Either[String, IArray[Byte]] => Unit): Unit =
-        project match
-          case Some(port) => port.readInput(source, done)
-          case None       =>
-            done(Left(s"no project is open to read ${source.path.value} from"))
+      def placement(
+          spec: DatasetRevisionSpec,
+          done: Either[String, PlacementPreview] => Unit
+      ): Unit =
+        session.run(session.backend.placement(spec)) {
+          case Left(e)          => done(Left(Option(e.getMessage).getOrElse(e.toString)))
+          case Right(Left(err)) => done(Left(err.message))
+          case Right(Right(p))  => done(Right(p))
+        }
       def admission(
           dataset: DatasetRevision,
           done: Either[String, AdmissionSummary] => Unit
@@ -120,31 +124,18 @@ final class GeometryPaneHost(
     val before  = model().document
     val changes = effects.collect { case GeometryEffect.App(i) => i }
     effects.foreach {
-      case GeometryEffect.App(i)                => app(i)
-      case GeometryEffect.ReadPositions(key, s) => read(key, s)
-      case GeometryEffect.RequestCounts(d)      => counts(d)
+      case GeometryEffect.App(i)                   => app(i)
+      case GeometryEffect.RequestPlacement(key, s) => place(key, s)
+      case GeometryEffect.RequestCounts(d)         => counts(d)
     }
     if changes.nonEmpty then GeometryPanel.follow(before, model().document).foreach(app)
 
-  private def read(key: PositionsKey, spec: DatasetRevisionSpec): Unit =
-    spec.sources.fixations match
-      case None         => ()
-      case Some(source) =>
-        def answer(result: Either[String, SourcePositions]): Unit =
-          Platform.runLater(() => dispatch(GeometryIntent.PositionsRead(key, result)))
-        inputs.read(
-          source,
-          bytes =>
-            // Parse on a worker: the port may answer on the JavaFX thread.
-            try
-              worker.execute { () =>
-                answer(
-                  try bytes.flatMap(b => SourcePositions.read(spec, b).left.map(_.message))
-                  catch case NonFatal(e) => Left(Option(e.getMessage).getOrElse(e.toString))
-                )
-              }
-            catch case e: RejectedExecutionException => answer(Left(e.toString))
-        )
+  /** The backend places the records; nothing is placed here. */
+  private def place(key: PlacementKey, spec: DatasetRevisionSpec): Unit =
+    inputs.placement(
+      spec,
+      result => Platform.runLater(() => dispatch(GeometryIntent.PlacementRead(key, result)))
+    )
 
   private def counts(dataset: DatasetRevision): Unit =
     inputs.admission(
@@ -162,12 +153,14 @@ final class GeometryPaneHost(
       generation += 1
       changedAt = System.nanoTime()
       key match
-        case None    => view.clearScenes()
-        case Some(k) => draw(generation, k, m)
+        // While a changed revision is placed again, its last pictures stay.
+        case None if panel.placement == Loading.Waiting => ()
+        case None                                       => view.clearScenes()
+        case Some(k)                                    => draw(generation, k, m)
 
   private def draw(current: Long, key: PicturesKey, m: AppModel): Unit =
     val spec      = m.document.dataset(key.dataset)
-    val positions = panel.positions.toOption
+    val positions = panel.placement.toOption
     val theme     = m.theme match
       case eyes4s.studio.core.document.Theme.Light => Theme.Light
       case eyes4s.studio.core.document.Theme.Dark  => Theme.Dark
@@ -228,13 +221,13 @@ object GeometryPaneHost:
       generation: Long,
       key: PicturesKey,
       spec: DatasetRevisionSpec,
-      positions: SourcePositions,
+      preview: PlacementPreview,
       theme: Theme,
       stage: StageVariant
   ): Either[String, (GeometryPictures, Vector[PlotScene], PlotScene)] =
     try
       for
-        drawn  <- GeometryPictures.of(key, spec, positions).left.map(_.message)
+        drawn  <- Right(GeometryPictures.of(key, spec, preview))
         thumbs <- drawn.thumbnails.zipWithIndex
           .foldLeft[Either[String, Vector[PlotScene]]](Right(Vector.empty)) {
             case (acc, (t, i)) =>

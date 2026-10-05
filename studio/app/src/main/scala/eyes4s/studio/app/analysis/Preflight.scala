@@ -17,7 +17,14 @@
 package eyes4s.studio.app.analysis
 
 import eyes4s.studio.app.diagnostics.{DiagnosticsPresenter, DiagnosticsVM}
-import eyes4s.studio.app.text.{DiagnosticText, Format, PreflightText, PreflightTextId}
+import eyes4s.studio.app.text.{
+  DiagnosticText,
+  Format,
+  PreflightText,
+  PreflightTextId,
+  SourcesText,
+  SourcesTextId
+}
 import eyes4s.studio.app.{AppModel, Intent}
 import eyes4s.studio.core.command.Command
 import eyes4s.studio.core.document.RecipeChange
@@ -112,6 +119,9 @@ object Preflight:
     val reason   = (target, design.preview) match
       case (None, _)                => Some(PreflightText(NothingToCheck))
       case (Some(t), _) if !isDraft => Some(PreflightText(NoDraft, t.revision.label))
+      // A changed or missing source blocks the run until repaired or replaced (S2.5).
+      case (Some(_), _) if m.runBlock.isDefined =>
+        m.runBlock.map((dataset, block) => SourcesText.blocked(dataset, block))
       case (Some(_), DesignPreview.Refused(why)) => Some(PreflightText(Refused, label, why))
       case (Some(_), DesignPreview.Counting(_, _, _, Some(p))) =>
         Some(
@@ -136,17 +146,29 @@ object Preflight:
         DiagnosticText.warnings(f.warnings)
       )
     )
+    // A Save & run waiting for its check can be called off from the card (S2.5).
+    val waiting = m.checks.runAfter.isDefined
     PreflightVM(
       status,
       PreflightText(StudyReport, label),
       findings,
       PreflightText(NotChecked),
-      RunCardVM(
-        pairs.toVector ++ change.toVector,
-        PreflightText(RunButton, label, total),
-        reason.isEmpty,
-        reason,
-        Option.when(reason.isEmpty)(Intent.Dispatch(Command.SaveAndRun(None))),
-        verdict
-      )
+      if waiting then
+        RunCardVM(
+          pairs.toVector ++ change.toVector,
+          SourcesText(SourcesTextId.CancelWaiting),
+          true,
+          Some(SourcesText(SourcesTextId.RunWaiting)),
+          Some(Intent.CancelWaitingRun),
+          verdict
+        )
+      else
+        RunCardVM(
+          pairs.toVector ++ change.toVector,
+          PreflightText(RunButton, label, total),
+          reason.isEmpty,
+          reason,
+          Option.when(reason.isEmpty)(Intent.Dispatch(Command.SaveAndRun(None))),
+          verdict
+        )
     )

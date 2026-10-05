@@ -121,7 +121,8 @@ final case class ImportWizardVM(
     cancel: String,
     status: Option[String],
     problem: Option[String],
-    key: TrialKeyVM
+    key: TrialKeyVM,
+    trialsSource: Option[(String, WizardIntent)]
 ) derives CanEqual
 
 object ImportWizardVM:
@@ -204,6 +205,15 @@ object ImportWizardVM:
       KeyText(KeyTextId.NeedsRemap, d.label, missing.map(_.label).mkString(", "))
     case WizardProblem.NoOccurrenceColumn(file) =>
       KeyText(KeyTextId.NoOccurrenceColumn, file)
+    case WizardProblem.InventoryNeedsRemap(d, file, e) =>
+      t(ImportTextId.InventoryNeedsRemap, d.label, file, e.message)
+
+  /** In a re-map, the file name of the revision's trial inventory. */
+  private def trialsFile(w: ImportWizard, document: StudioDocument): Option[String] =
+    w.target match
+      case WizardTarget.Remap(id) =>
+        document.dataset(id).flatMap(_.sources.trials).map(_.path.value.split('/').last)
+      case _ => None
 
   def noteText(n: WizardNote): String = n match
     case WizardNote.PresetSaved(name)         => t(ImportTextId.PresetSaved, name.value)
@@ -310,7 +320,12 @@ object ImportWizardVM:
     // (S5.4); geometry and the issues belong to the sibling panes.
     val offered =
       if newImport then WizardTab.values.toVector
-      else WizardTab.FixationMapping +: w.trials.map(_ => WizardTab.TrialMetadata).toVector
+      else
+        WizardTab.FixationMapping +: Option
+          .when(w.trials.isDefined || trialsFile(w, document).isDefined)(
+            WizardTab.TrialMetadata
+          )
+          .toVector
     val tabs = offered.map { tab =>
       val count = tab match
         case WizardTab.FixationMapping => fixationIssues.size + keyBlocking
@@ -375,7 +390,11 @@ object ImportWizardVM:
         t(ImportTextId.TimeNote)
       ),
       attributesNote = t(ImportTextId.AttributesNote),
-      trialsNote = t(ImportTextId.TrialsNote),
+      trialsNote = trialsFile(w, document)
+        .filter(_ => w.dropTrials)
+        .fold(
+          t(ImportTextId.TrialsNote)
+        )(t(ImportTextId.TrialsDropped, _)),
       geometryNote = t(ImportTextId.GeometryNote),
       geometry = GeometryField.values.toVector.map(f =>
         GeometryFieldVM(f, geometryLabel(f), w.geometry.field(f))
@@ -401,5 +420,10 @@ object ImportWizardVM:
       cancel = t(if newImport then ImportTextId.Cancel else ImportTextId.Revert),
       status = w.note.map(noteText),
       problem = w.problem.map(problemText),
-      key = TrialKeyVM.of(w)
+      key = TrialKeyVM.of(w),
+      // A re-map may leave the revision's trial inventory out (S5.4 follow-up).
+      trialsSource = trialsFile(w, document).map(file =>
+        if w.dropTrials then (t(ImportTextId.KeepTrials, file), WizardIntent.DropTrials(false))
+        else (t(ImportTextId.DropTrials, file), WizardIntent.DropTrials(true))
+      )
     )

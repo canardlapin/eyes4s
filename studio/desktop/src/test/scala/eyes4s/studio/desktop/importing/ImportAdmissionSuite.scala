@@ -50,13 +50,19 @@ class ImportAdmissionSuite extends munit.FunSuite:
   test("an unknown-role column passes through verification and admission as an attribute") {
     val bytes =
       IArray.unsafeFromArray(Files.readAllBytes(GoldenTrials.golden.resolve("fixations.csv")))
-    val source = ok(SniffedSource.read(SourceRole.Fixations, "inputs/fixations.csv", bytes))
-    val column = ok(ColumnName.of("occurrence"))
-    // The wizard re-maps r3: occurrence loses its role and passes through.
+    val source     = ok(SniffedSource.read(SourceRole.Fixations, "inputs/fixations.csv", bytes))
+    val column     = ok(ColumnName.of("occurrence"))
+    val trialBytes =
+      IArray.unsafeFromArray(Files.readAllBytes(GoldenTrials.golden.resolve("trials.csv")))
+    val trials = ok(SniffedSource.read(SourceRole.Trials, "inputs/trials.csv", trialBytes))
+    // The wizard re-maps r3: occurrence loses its role in both files, which
+    // must name the trial by the same key (S5.4 follow-up), and passes through.
     val wizard       = ok(ImportWizard.remap(t1, r3, ImportPresets.empty))
     val (_, effects) = Vector(
       WizardIntent.SourceRead(source),
+      WizardIntent.SourceRead(trials),
       WizardIntent.Choose(SourceRole.Fixations, column, ColumnChoice.Attribute),
+      WizardIntent.Choose(SourceRole.Trials, column, ColumnChoice.Attribute),
       WizardIntent.Commit
     ).foldLeft((wizard, Vector.empty[WizardEffect])) { case ((w, fx), i) =>
       val (next, more) = ImportWizard.update(w, i, t1)
@@ -76,6 +82,12 @@ class ImportAdmissionSuite extends munit.FunSuite:
               .map(e => Exception(e.message))
               .toTry
           )
+          requested = verifying.model.document.dataset(r3).map(_.decision) match
+            case Some(AdmissionDecision.Verifying(c)) => c
+            case other                                => fail(s"r3 is not verifying: $other")
+          // The backend holds the re-mapped r3 as the saved project stores it
+          // (protocol 1.9: it verifies only content it holds).
+          _       <- session.holdContent(r3, requested)
           settled <- StudioDriver.settle(verifying, session)
         yield
           assertEquals(

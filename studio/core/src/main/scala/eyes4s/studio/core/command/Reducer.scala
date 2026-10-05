@@ -91,6 +91,7 @@ object Reducer:
           attributes,
           inventory
         )
+        _    <- correctionsApart(rule, d, c, id, spec.admission)
         next <- rebuild(d, c)(datasets = d.datasets :+ spec)
       yield reversible(next, DiscardDataset(id))
 
@@ -179,7 +180,7 @@ object Reducer:
         policy
       )(SetOffScreenPolicy(id, _))
 
-    case AddCorrection(id, index, rule) =>
+    case AddCorrection(id, index, correction) =>
       for
         spec <- editable(d, id)
         rules = spec.admission.corrections
@@ -188,11 +189,9 @@ object Reducer:
           (),
           CorrectionIndex(id, index, rules.size)
         )
-        next <- replaceDataset(d, c)(
-          spec.copy(admission =
-            spec.admission.copy(corrections = rules.patch(index, Vector(rule), 0))
-          )
-        )
+        added = spec.admission.copy(corrections = rules.patch(index, Vector(correction), 0))
+        _    <- correctionsApart(rule, d, c, id, added)
+        next <- replaceDataset(d, c)(spec.copy(admission = added))
       yield reversible(next, RemoveCorrection(id, index))
 
     case RemoveCorrection(id, index) =>
@@ -209,9 +208,12 @@ object Reducer:
 
     case VerifyDataset(id) =>
       for
-        spec    <- editable(d, id)
-        _       <- admissible(rule, d, c, spec.mapping)
-        _       <- inventoryMapped(rule, d, c, id, spec.sources, spec.inventory)
+        spec <- editable(d, id)
+        _    <- admissible(rule, d, c, spec.mapping)
+        _    <- inventoryMapped(rule, d, c, id, spec.sources, spec.inventory)
+        _    <- keysAgree(rule, d, c, id, spec.sources, spec.mapping, spec.inventory)
+        // A revision stored with overlapping rules is not admitted either.
+        _       <- correctionsApart(rule, d, c, id, spec.admission)
         content <- contentOf(spec)
         next <- replaceDataset(d, c)(spec.copy(decision = AdmissionDecision.Verifying(content)))
       yield Outcome(
@@ -230,8 +232,14 @@ object Reducer:
       yield reversible(next, ResumeVerification(id, content))
 
     case ResumeVerification(id, content) =>
+      // Resuming is verifying again: VerifyDataset's checks, so a direct
+      // command cannot bring a revision Verify refuses to admission.
       for
         spec <- editable(d, id)
+        _    <- admissible(rule, d, c, spec.mapping)
+        _    <- inventoryMapped(rule, d, c, id, spec.sources, spec.inventory)
+        _    <- keysAgree(rule, d, c, id, spec.sources, spec.mapping, spec.inventory)
+        _    <- correctionsApart(rule, d, c, id, spec.admission)
         next <- replaceDataset(d, c)(spec.copy(decision = AdmissionDecision.Verifying(content)))
       yield reversible(next, WithdrawVerification(id))
 
@@ -242,8 +250,12 @@ object Reducer:
           case AdmissionDecision.Verifying(content) => Right(content)
           case _                                    => Left(NotVerified(id))
         _ <- Either.cond(verified == recorded, (), VerificationMismatch(id, recorded, verified))
-        // A backstop: VerifyDataset already refuses an inadmissible mapping.
+        // A backstop: VerifyDataset already refuses these, but a replayed or
+        // stored Verifying revision did not pass them.
         _       <- admissible(rule, d, c, spec.mapping)
+        _       <- inventoryMapped(rule, d, c, id, spec.sources, spec.inventory)
+        _       <- keysAgree(rule, d, c, id, spec.sources, spec.mapping, spec.inventory)
+        _       <- correctionsApart(rule, d, c, id, spec.admission)
         current <- contentOf(spec)
         _       <- Either.cond(
           current == recorded,
@@ -546,6 +558,42 @@ object Reducer:
     case MappingRule.Commit =>
       DatasetRevisionSpec
         .inventoryMapped(id, sources, inventory)
+        .left
+        .map(Refused(c.name, targetOf(d, c), _))
+
+  /** At most one correction rule covers a trial (eyes4s's own check, S5.5):
+    * refused whatever the rule, since an overlapping policy is never admitted.
+    */
+  private def correctionsApart(
+      rule: MappingRule,
+      d: StudioDocument,
+      c: Command,
+      id: DatasetRevision,
+      choice: AdmissionChoice
+  ): Either[CommandError, Unit] = rule match
+    case MappingRule.Replay => Right(())
+    case MappingRule.Commit =>
+      AdmissionChoice
+        .overlap(choice)
+        .map((a, b) =>
+          Refused(c.name, targetOf(d, c), DocumentError.CorrectionsOverlap(id, a, b))
+        )
+        .toLeft(())
+
+  /** The fixations and the inventory name a trial by the same key, at commit. */
+  private def keysAgree(
+      rule: MappingRule,
+      d: StudioDocument,
+      c: Command,
+      id: DatasetRevision,
+      sources: Sources,
+      mapping: ColumnMapping,
+      inventory: Option[InventoryMapping]
+  ): Either[CommandError, Unit] = rule match
+    case MappingRule.Replay => Right(())
+    case MappingRule.Commit =>
+      DatasetRevisionSpec
+        .keysAgree(id, sources, mapping, inventory)
         .left
         .map(Refused(c.name, targetOf(d, c), _))
 
