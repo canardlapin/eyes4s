@@ -48,7 +48,7 @@ import eyes4s.studio.desktop.explore.{
 }
 import eyes4s.studio.desktop.trial.StimulusSource
 import eyes4s.studio.desktop.figures.{FigureInputs, FiguresHost}
-import eyes4s.studio.desktop.dock.{DockGesture, PerspectiveHost}
+import eyes4s.studio.desktop.dock.{DockGesture, DockLayouts, PerspectiveHost}
 import eyes4s.studio.desktop.runtime.{
   DesktopEffects,
   PlatformDialogs,
@@ -204,13 +204,20 @@ object StudioWindow:
 
   /** The model's intent for a gesture the dock made itself, if the model does
     * not already agree. A gesture is judged when it is delivered, against
-    * whether the dock is maximized *then*: a restore that a later maximize
-    * has overtaken is not replayed.
+    * its current focus and maximize state: a focus move or restore that a
+    * later gesture has overtaken is not replayed.
     */
-  def follow(model: AppModel, gesture: DockGesture, dockMaximized: Boolean): Option[Intent] =
+  def follow(
+      model: AppModel,
+      gesture: DockGesture,
+      dockMaximized: Boolean,
+      dockFocused: Option[scaladock.PaneId]
+  ): Option[Intent] =
     gesture match
       case DockGesture.Focused(p) =>
-        Option.when(model.focusedPane != p)(Intent.FocusPane(p))
+        Option.when(dockFocused.contains(DockLayouts.paneId(p)) && model.focusedPane != p)(
+          Intent.FocusPane(p)
+        )
       case DockGesture.Maximized(p) =>
         Option.when(dockMaximized && (!model.isMaximized || model.focusedPane != p))(
           Intent.SetMaximized(Some(p))
@@ -350,16 +357,20 @@ object StudioWindow:
     val session = StudioSession.start(moment, e => later(Intent.Execution(e)))
     // A gesture is reported after the dock's own update has finished, and
     // judged against the model and the dock it then meets.
-    var dockOf: () => Boolean = () => false
-    val host                  = PerspectiveHost(
+    var dockOf: () => Boolean                       = () => false
+    var dockFocusOf: () => Option[scaladock.PaneId] = () => None
+    val host                                        = PerspectiveHost(
       StudioLayouts.spec,
       dockTheme,
       gesture =>
         Platform.runLater { () =>
-          runtime.foreach(r => follow(r.model, gesture, dockOf()).foreach(r.dispatch))
+          runtime.foreach(r =>
+            follow(r.model, gesture, dockOf(), dockFocusOf()).foreach(r.dispatch)
+          )
         }
     )
     dockOf = () => host.dock.state.maximized.isDefined
+    dockFocusOf = () => host.dock.state.focused
     // Late-bound too: a dialog's window follows the window's theme.
     var themed: Option[ThemeHost] = None
     // Late-bound too: a verification's answer goes to the admission ledger.
