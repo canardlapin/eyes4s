@@ -68,6 +68,50 @@ class ParticipantPlotSuite extends FunSuite:
       }
       .getOrElse(fail(s"no grob ${m.name.value}"))
 
+  test("served report references retain participant and grand marks") {
+    import eyes4s.studio.core.backend.ReportRole
+    import eyes4s.studio.core.selection.ReportGroup
+    val served = board.copy(
+      groups = board.groups.map(g =>
+        g.copy(ref =
+          StudioRef.ReportCell(
+            run,
+            reporting,
+            scale,
+            ReportGroup.Level(g.group),
+            ReportRole.Difference
+          )
+        )
+      ),
+      cells = board.cells.map(c =>
+        c.copy(ref =
+          StudioRef.ReportParticipant(
+            run,
+            reporting,
+            scale,
+            ReportGroup.Level(c.group),
+            ReportRole.Difference,
+            c.participant
+          )
+        )
+      )
+    )
+    val plot = built(served)
+    assertEquals(plot.marks.size, 50)
+    assertEquals(
+      plot.marks.map(_.ref).toSet,
+      (served.groups.map(_.ref) ++ served.cells.map(_.ref)).toSet
+    )
+    val legacy = built(board)
+    assertEquals(plot.marks.flatMap(plot.readout), legacy.marks.flatMap(legacy.readout))
+    assertEquals(
+      ParticipantPlot.roleOf(
+        StudioRef.ReportCell(run, reporting, scale, ReportGroup.Whole, ReportRole.Matched)
+      ),
+      None
+    )
+  }
+
   test("the board's 24 participants are placed at their means in their group's column") {
     val plot = built(board)
     assertEquals(

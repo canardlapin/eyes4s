@@ -577,6 +577,11 @@ object GoldenRoute:
                 .flatMap(a =>
                   next(ComposerIntent.FixationsRead(revision, trial, a.leftMap(_.message)))
                 )
+            case ComposerEffect.RequestMap(run, scale, trial) =>
+              s.mapGrid(run, scale.value, trial)
+                .flatMap(a =>
+                  next(ComposerIntent.MapRead(run, scale, trial, a.leftMap(_.message)))
+                )
             case ComposerEffect.WriteBundle(request) =>
               Future.successful((c, captured :+ request))
             case _ => Future.successful((c, captured))

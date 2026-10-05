@@ -41,7 +41,7 @@ enum SummaryTextId derives CanEqual:
   case StatusFailed, StatusNoMatch, StatusNotAdmitted, StatusContributing
 
   /** The notes beside the participant plot (Results board). */
-  case PairedN, Weighting, Unit, GroupRange
+  case PairedN, WeightingParticipantMeans, WeightingPooledQueries, Unit, GroupRange
 
   /** The σ selector and why a scale cannot be chosen. */
   case Scale, ScaleUnavailable
@@ -103,7 +103,8 @@ object SummaryText:
       case StatusNotAdmitted          => "not admitted"
       case StatusContributing         => "contributing"
       case PairedN                    => "Paired n = {0} participants"
-      case Weighting                  => "Means: equal participant weight"
+      case WeightingParticipantMeans  => "Means: equal participant weight"
+      case WeightingPooledQueries     => "Means: equal query weight"
       case Unit                       => "Unit below each dot: query trial"
       case GroupRange                 => "Per-group n: {0}–{1} queries per participant"
       case Scale                      => "σ {0}"

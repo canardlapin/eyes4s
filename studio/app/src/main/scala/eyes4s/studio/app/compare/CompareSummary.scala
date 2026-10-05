@@ -43,7 +43,17 @@ enum ReportAnswer derives CanEqual:
 enum SummaryIntent derives CanEqual:
   case SummaryRead(run: RunId, answer: SummaryAnswer)
   case QueriesRead(run: RunId, answer: QueriesAnswer)
-  case ReportRead(run: RunId, scale: ScaleIndex, overall: Boolean, answer: ReportAnswer)
+
+  /** A reply carries the exact requested spec, so a late reply for an
+    * earlier edit of the same reporting id cannot replace the current view.
+    */
+  case ReportRead(
+      run: RunId,
+      reporting: ReportingSpec,
+      scale: ScaleIndex,
+      overall: Boolean,
+      answer: ReportAnswer
+  )
   case ChooseScale(scale: ScaleIndex)
 
 /** What the summary layout asks of the app and the backend. */
@@ -88,6 +98,9 @@ object CompareSummary:
       )
       .toOption
 
+  private def requested(spec: ReportingSpec, whole: Boolean): Option[ReportingSpec] =
+    if whole then overall(spec) else Some(spec)
+
   private def reportEffects(s: CompareSummary): Vector[SummaryEffect] =
     for
       result <- s.answered.toVector
@@ -95,7 +108,7 @@ object CompareSummary:
       (_, i) <- result.scales.zipWithIndex
       scale  <- ScaleIndex.of(i).toOption.toVector
       whole  <- Vector(false, true)
-      report <- (if whole then overall(spec).toVector else Vector(spec))
+      report <- requested(spec, whole).toVector
       if !s.reports.contains((scale, whole))
     yield SummaryEffect.RequestReport(s.run.get, report, scale, whole)
 
@@ -147,7 +160,8 @@ object CompareSummary:
         (next, reportEffects(next))
       case SummaryIntent.QueriesRead(run, a) if s.run.contains(run) =>
         (s.copy(queries = Some(a)), Vector.empty)
-      case SummaryIntent.ReportRead(run, scale, whole, a) if s.run.contains(run) =>
+      case SummaryIntent.ReportRead(run, reporting, scale, whole, a)
+          if s.run.contains(run) && s.spec.flatMap(requested(_, whole)).contains(reporting) =>
         (s.copy(reports = s.reports.updated((scale, whole), a)), Vector.empty)
       case SummaryIntent.ChooseScale(scale) if s.available.contains(scale) =>
         (s.copy(scale = Some(scale)), Vector.empty)

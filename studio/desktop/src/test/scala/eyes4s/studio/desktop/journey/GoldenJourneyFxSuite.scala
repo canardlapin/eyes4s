@@ -29,7 +29,7 @@ import eyes4s.studio.desktop.StudioWindow
 import eyes4s.studio.desktop.harness.{FxStage, StudioTheme}
 import eyes4s.studio.desktop.platform.TempDirs
 import javafx.scene.Node
-import javafx.scene.control.{Button, Labeled, Menu, MenuItem, RadioButton}
+import javafx.scene.control.{Button, Labeled, Menu, MenuItem, RadioButton, ToggleButton}
 
 import java.nio.file.Files
 import scala.concurrent.duration.*
@@ -269,7 +269,14 @@ class GoldenJourneyFxSuite extends GoldenWindow:
         )
       )
       assertEquals(model(w).perspective, Perspective.Compare)
-      // The participant rows are fixture.json's: P17's mean D, as FIXTURE.md says.
+      // Report rows are served at every scale. Select the journey's 2° explicitly.
+      eventually(fx, "the 2° summary report")(
+        w.summary.vm.scales.exists(c => c.scale == sigma2 && c.available)
+      )
+      val twoDegrees = control(fx, w, "σ 2°") {
+        case b: ToggleButton if b.getText == "σ 2°" => b
+      }
+      runOnFx(twoDegrees.fire())
       eventually(fx, "the summary")(shown(w).exists(_.contains("+0.38")))
 
       // Rev 5 adds σ 8° (StartDraft: a named bypass until S7.3); Review

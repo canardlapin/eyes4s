@@ -60,6 +60,15 @@ are recorded in the landing evidence; source recovery alone is not qualification
 | `p0-unmatched` | Recovered preset and unmatched-policy line plus dirty fixes; explicit expected-unmatched selector remains an open separate ticket. |
 | `worktree-agent-ae3b7633183de2c2a` | Archive: obsolete replacement API. Sound first-entry and membership-run properties recovered additively into shipped AoiLaws.accounting and mutation-tested. |
 
+## Historical archives
+
+The ledger foundation is preserved at `archive/20261005/ledger-replay-foundation`
+(original `34e506ecc9143f619f21e59134d491a5f76c9f2f`). This includes the
+`codex-ledger-bounded` ancestry. The old AOI replacement is preserved at
+`archive/20261005/aoi-law-design` (original `8c317c292ff647ee9688d4bd67ce514cb0622673`).
+Archive marker commits retain the original tree and parent exactly and skip CI;
+they do not claim a qualified build or successful landing.
+
 ## Dirty work
 
 The seven source worktrees `p0-figc`, `p0-ledger-s21`, `p0-pairrows`, `p0-s105b`,

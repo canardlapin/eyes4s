@@ -60,9 +60,9 @@ import intaglio.{
   * group's grand mean as a 52 px tick, over a zero rule.
   *
   * Its source is [[eyes4s.studio.app.plot.ParticipantMeans.source]]: a
-  * participant's mean in a group is a [[StudioRef.ParticipantSummary]] row,
-  * a group's grand mean a [[StudioRef.GroupCell]] row, and the builder
-  * tells them apart by ref. Rows are placed by [[Axis.Category]] of the
+  * participant's mean in a group is a [[StudioRef.ReportParticipant]] row,
+  * a group's grand mean a [[StudioRef.ReportCell]] row. Legacy summary refs
+  * remain accepted for downstream builders. The builder tells roles apart by ref. Rows are placed by [[Axis.Category]] of the
   * group labels (in source order, first at the left) by [[Axis.Numeric]] of
   * D. The first group is drawn solid (filled ink dots, an ink tick) and the
   * others dashed (hollow ink-3 dots, a dashed ink-3 tick).
@@ -525,15 +525,26 @@ object ParticipantPlot:
   def roleOf(ref: StudioRef): Option[Role] = ref match
     case StudioRef.ParticipantSummary(_, _, _, _, p) => Some(Role.Participant(p))
     case StudioRef.GroupCell(_, _, _, _)             => Some(Role.Grand)
-    case _                                           => None
+    case StudioRef.ReportParticipant(
+          _,
+          _,
+          _,
+          _,
+          eyes4s.studio.core.backend.ReportRole.Difference,
+          p
+        ) =>
+      Some(Role.Participant(p))
+    case StudioRef.ReportCell(_, _, _, _, eyes4s.studio.core.backend.ReportRole.Difference) =>
+      Some(Role.Grand)
+    case _ => None
 
   private def participantOf(role: Role): Option[String] = role match
     case Role.Participant(p) => Some(p)
     case Role.Grand          => None
 
   private def groupIdentity(ref: StudioRef): Option[StudioRef] = ref match
-    case StudioRef.GroupCell(_, _, _, _) => Some(ref)
-    case other                           => other.parent
+    case StudioRef.GroupCell(_, _, _, _) | StudioRef.ReportCell(_, _, _, _, _) => Some(ref)
+    case other                                                                 => other.parent
 
   /** The group labels of `source`'s rows, each once, in row order: the
     * plot's columns, left to right.

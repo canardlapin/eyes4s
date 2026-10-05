@@ -23,6 +23,7 @@ import eyes4s.studio.app.text.{SummaryText, SummaryTextId}
 import eyes4s.studio.app.text.Format
 import eyes4s.studio.app.{AppModel, StoryModels}
 import eyes4s.studio.core.backend.{PageRequest, QueryRow, ReportRole, ResultSummary, Response}
+import eyes4s.studio.core.document.{ReportingSpec, ReportingWeight}
 import eyes4s.studio.core.fixture.{StoryMoment, StoryMoments}
 import eyes4s.studio.core.headless.HeadlessSession
 import eyes4s.studio.core.selection.{ScaleIndex, StudioRef}
@@ -109,12 +110,19 @@ class CompareSummarySuite extends munit.FunSuite:
             session
               .report(run7, spec, scale.value)
               .map(answer =>
-                (scale, whole, answer.fold(ReportAnswer.Refused(_), ReportAnswer.Answered(_)))
+                (
+                  spec,
+                  scale,
+                  whole,
+                  answer.fold(ReportAnswer.Refused(_), ReportAnswer.Answered(_))
+                )
               )
         })
       yield
-        val withReports = reports.foldLeft(s1) { case (state, (scale, whole, answer)) =>
-          CompareSummary.update(state, SummaryIntent.ReportRead(run7, scale, whole, answer))._1
+        val withReports = reports.foldLeft(s1) { case (state, (spec, scale, whole, answer)) =>
+          CompareSummary
+            .update(state, SummaryIntent.ReportRead(run7, spec, scale, whole, answer))
+            ._1
         }
         CompareSummary
           .update(withReports, SummaryIntent.QueriesRead(run7, QueriesAnswer.Answered(q)))
@@ -130,6 +138,18 @@ class CompareSummarySuite extends munit.FunSuite:
       .flatMap(scale => s.reports.get((scale, overall)))
       .collect { case ReportAnswer.Answered(view) => view }
       .getOrElse(fail("no served report"))
+
+  private def pooled(spec: ReportingSpec): ReportingSpec =
+    right(
+      ReportingSpec.of(
+        spec.id,
+        spec.name,
+        spec.groupBy,
+        spec.filters,
+        spec.minimumPerGroup,
+        ReportingWeight.PooledQueries
+      )
+    )
 
   test("the participant table takes every M/B/D and group cell from its served reports") {
     loaded(t3Summary).map { s =>
@@ -225,6 +245,23 @@ class CompareSummarySuite extends munit.FunSuite:
     }
   }
 
+  test("the note names the displayed spec's pooled-query weighting") {
+    val original =
+      t3Summary.document.reporting.find(_.id == reporting).getOrElse(fail("no spec"))
+    val revised = AppModel
+      .update(
+        t3Summary,
+        eyes4s.studio.app.Intent
+          .Dispatch(eyes4s.studio.core.command.Command.PutReporting(pooled(original)))
+      )
+      ._1
+    loaded(revised).map { s =>
+      assert(
+        CompareSummaryVM.of(s, revised).notes.contains("Means: equal query weight")
+      )
+    }
+  }
+
   test("a P05 query that failed has no value, never zero, in the query table") {
     loaded(t3Summary).map { s =>
       val queries = right(CompareSummaryVM.of(s, t3Summary).queries.get)
@@ -268,6 +305,87 @@ class CompareSummarySuite extends munit.FunSuite:
         Vector(Place.Summary(reporting), Place.Group(reporting, remembered), Place.At(p17))
       )
       assertEquals(StudioLayouts.compareLayout(trail), CompareLayout.Query)
+    }
+  }
+
+  test(
+    "Explain accepts the served ReportParticipant table row and preserves its whole-report role"
+  ) {
+    loaded(t3Summary).flatMap { initial =>
+      val source = right(CompareSummaryVM.of(initial, t3Summary).participants.get)
+      val row    = source.rows
+        .find(_.ref match
+          case StudioRef.ReportParticipant(_, _, _, _, ReportRole.Difference, "P17") => true
+          case _                                                                     => false)
+        .getOrElse(fail("no P17 report participant row"))
+      val selected = AppModel
+        .run(
+          t3Summary,
+          Vector(select(t3Summary, "compare.participant-table", row.ref))
+        )
+        ._1
+      loaded(selected).map { s =>
+        val explain = CompareSummaryVM.of(s, selected).explain.getOrElse(fail("no Explain"))
+        assertEquals(explain.label, "Explain P17 →")
+        assertEquals(explain.keeps, "keeps: by retrieval response › All queries › P17")
+        assertEquals(
+          explain.intents,
+          Vector(
+            eyes4s.studio.app.Intent.Navigate(
+              eyes4s.studio.app.nav.Location(
+                eyes4s.studio.core.document.Perspective.Compare,
+                Vector(Place.Summary(reporting), Place.At(row.ref))
+              )
+            )
+          )
+        )
+        val trail = AppModel.run(selected, explain.intents)._1.location.trail
+        assertEquals(trail.head, Place.Summary(reporting))
+        assertEquals(trail.last, Place.At(row.ref))
+      }
+    }
+  }
+
+  test("Explain retains a served grouped ReportParticipant ref and its group breadcrumb") {
+    loaded(t3Summary).flatMap { initial =>
+      val source = right(CompareSummaryVM.of(initial, t3Summary).participantPlot.get)
+      val row    = source.rows
+        .find(_.ref match
+          case StudioRef.ReportParticipant(
+                _,
+                _,
+                _,
+                eyes4s.studio.core.selection.ReportGroup.Level(`remembered`),
+                ReportRole.Difference,
+                "P17"
+              ) =>
+            true
+          case _ => false)
+        .getOrElse(fail("no grouped P17 report participant"))
+      val selected = AppModel
+        .run(t3Summary, Vector(select(t3Summary, "compare.participant-plot", row.ref)))
+        ._1
+      loaded(selected).map { s =>
+        val explain = CompareSummaryVM.of(s, selected).explain.getOrElse(fail("no Explain"))
+        assertEquals(explain.keeps, "keeps: by retrieval response › Remembered › P17")
+        val expected = Vector(
+          Place.Summary(reporting),
+          Place.Group(reporting, remembered),
+          Place.At(row.ref)
+        )
+        assertEquals(
+          explain.intents,
+          Vector(
+            eyes4s.studio.app.Intent.Navigate(
+              eyes4s.studio.app.nav.Location(
+                eyes4s.studio.core.document.Perspective.Compare,
+                expected
+              )
+            )
+          )
+        )
+        assertEquals(AppModel.run(selected, explain.intents)._1.location.trail, expected)
+      }
     }
   }
 
@@ -422,5 +540,88 @@ class CompareSummarySuite extends munit.FunSuite:
       val late =
         CompareSummary.update(s5, SummaryIntent.SummaryRead(run7, SummaryAnswer.Answered(r)))._1
       assertEquals(late.summary, None)
+    }
+  }
+
+  test("a same-run reply for the replaced reporting spec cannot overwrite current reports") {
+    val original =
+      t3Summary.document.reporting.find(_.id == reporting).getOrElse(fail("no spec"))
+    val revised      = pooled(original)
+    val revisedModel = AppModel
+      .update(
+        t3Summary,
+        eyes4s.studio.app.Intent
+          .Dispatch(eyes4s.studio.core.command.Command.PutReporting(revised))
+      )
+      ._1
+    HeadlessSession.open(StoryMoment.T3).flatMap { session =>
+      val result = for
+        summary0 <- session.result(run7)
+        summary     = right(summary0)
+        (s0, _)     = CompareSummary.sync(CompareSummary.empty, t3Summary)
+        (a, readsA) = CompareSummary.update(
+          s0,
+          SummaryIntent.SummaryRead(run7, SummaryAnswer.Answered(summary))
+        )
+        aReport = readsA
+          .collectFirst { case SummaryEffect.RequestReport(_, spec, `sigma2`, false) =>
+            spec
+          }
+          .getOrElse(fail("no first displayed report"))
+        aOverall = readsA
+          .collectFirst { case SummaryEffect.RequestReport(_, spec, `sigma2`, true) =>
+            spec
+          }
+          .getOrElse(fail("no first overall report"))
+        (b, readsB) = CompareSummary.sync(a, revisedModel)
+        bReport     = readsB
+          .collectFirst { case SummaryEffect.RequestReport(_, spec, `sigma2`, false) =>
+            spec
+          }
+          .getOrElse(fail("no revised displayed report"))
+        bOverall = readsB
+          .collectFirst { case SummaryEffect.RequestReport(_, spec, `sigma2`, true) =>
+            spec
+          }
+          .getOrElse(fail("no revised overall report"))
+        aView0        <- session.report(run7, aReport, sigma2.value)
+        bView0        <- session.report(run7, bReport, sigma2.value)
+        bOverallView0 <- session.report(run7, bOverall, sigma2.value)
+      yield
+        val bView        = ReportAnswer.Answered(right(bView0))
+        val bOverallView = ReportAnswer.Answered(right(bOverallView0))
+        val current      = CompareSummary
+          .update(b, SummaryIntent.ReportRead(run7, bReport, sigma2, overall = false, bView))
+          ._1
+        val withOverall = CompareSummary
+          .update(
+            current,
+            SummaryIntent.ReportRead(run7, bOverall, sigma2, overall = true, bOverallView)
+          )
+          ._1
+        assertEquals(withOverall.reports.get((sigma2, false)), Some(bView))
+        assertEquals(withOverall.reports.get((sigma2, true)), Some(bOverallView))
+        val lateSuccess = CompareSummary
+          .update(
+            withOverall,
+            SummaryIntent.ReportRead(
+              run7,
+              aReport,
+              sigma2,
+              overall = false,
+              ReportAnswer.Answered(right(aView0))
+            )
+          )
+          ._1
+        val lateFailure = CompareSummary
+          .update(
+            withOverall,
+            SummaryIntent
+              .ReportRead(run7, aOverall, sigma2, overall = true, ReportAnswer.Failed("late"))
+          )
+          ._1
+        assertEquals(lateSuccess.reports, withOverall.reports)
+        assertEquals(lateFailure.reports, withOverall.reports)
+      result.transformWith(value => session.close.transform(_ => value))
     }
   }

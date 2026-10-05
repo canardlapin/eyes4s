@@ -33,8 +33,8 @@ import eyes4s.studio.app.vm.{Labels, Shell}
 import eyes4s.studio.app.{AppModel, Intent}
 import eyes4s.studio.app.nav.Place
 import eyes4s.studio.core.backend.{QueryRow, QueryStatus, ReportRole, ResultSummary, RunId}
-import eyes4s.studio.core.document.ReportingId
-import eyes4s.studio.core.selection.{ScaleIndex, StudioRef}
+import eyes4s.studio.core.document.{Perspective, ReportingId, ReportingWeight}
+import eyes4s.studio.core.selection.{ReportGroup, ScaleIndex, StudioRef}
 
 /** One σ of the selector: whether the participant means are served at it
   * and whether it is the one shown.
@@ -185,11 +185,15 @@ object CompareSummaryVM:
       case QueriesAnswer.Answered(rows) => queryTable(run, scale, r, rows)
       case QueriesAnswer.Failed(why)    => Left(why)
     val notes = shown.flatMap(displayed).toVector.flatMap { view =>
-      val contrast = view.contrast(ReportRole.Difference)
-      val range    = view.queryRange(ReportRole.Difference)
+      val contrast  = view.contrast(ReportRole.Difference)
+      val range     = view.queryRange(ReportRole.Difference)
+      val weighting = s.spec.map(_.weighting).fold(SummaryTextId.WeightingParticipantMeans) {
+        case ReportingWeight.ParticipantMeans => SummaryTextId.WeightingParticipantMeans
+        case ReportingWeight.PooledQueries    => SummaryTextId.WeightingPooledQueries
+      }
       Vector(
         SummaryText(SummaryTextId.PairedN, contrast.fold("0")(_.pairedN.toString)),
-        SummaryText(SummaryTextId.Weighting),
+        SummaryText(weighting),
         SummaryText(SummaryTextId.Unit),
         SummaryText(
           SummaryTextId.GroupRange,
@@ -207,7 +211,7 @@ object CompareSummaryVM:
       notes,
       scales,
       freshness,
-      explain(m, run, reporting, messages)
+      explain(s, m, run, reporting, messages)
     )
 
   /** The participant table (Results board; FIXTURE.md's table): one row per
@@ -349,21 +353,72 @@ object CompareSummaryVM:
     * ref names; the query layout then shows its queries.
     */
   private def explain(
+      s: CompareSummary,
       m: AppModel,
       run: RunId,
       reporting: Option[ReportingId],
       messages: Messages
   ): Option[ExplainVM] =
     val labels = Labels(m, messages)
+    def served(
+        scale: ScaleIndex,
+        whole: Boolean,
+        ref: StudioRef.ReportParticipant
+    ): Boolean =
+      s.reports
+        .get((scale, whole))
+        .collect { case ReportAnswer.Answered(view) => view.participants.exists(_.ref == ref) }
+        .contains(true)
+    def view(
+        ref: StudioRef,
+        rep: ReportingId,
+        group: Option[eyes4s.studio.core.backend.Response],
+        p: String
+    ) =
+      val keeps = (Vector(labels.reporting(rep)) ++ group.map(_.label) :+ p).mkString(" › ")
+      ExplainVM(
+        SummaryText(SummaryTextId.Explain, p),
+        SummaryText(SummaryTextId.Keeps, keeps),
+        Vector(Intent.Explain(Place.At(ref)))
+      )
     m.selection.selected.collectFirst {
       case ref @ StudioRef.ParticipantSummary(`run`, rep, _, group, p)
           if reporting.contains(rep) =>
-        val keeps = (Vector(labels.reporting(rep)) ++ group.map(_.label) :+ p).mkString(" › ")
+        view(ref, rep, group, p)
+      case ref @ StudioRef.ReportParticipant(`run`, rep, scale, ReportGroup.Level(group), _, p)
+          if reporting.contains(rep) && served(scale, whole = false, ref) =>
+        val keeps = Vector(labels.reporting(rep), group.label, p).mkString(" › ")
         ExplainVM(
           SummaryText(SummaryTextId.Explain, p),
           SummaryText(SummaryTextId.Keeps, keeps),
-          // The trail fills in the spec and the group from the ref itself
-          // (Provenance.explain), so one step walks Summary › group › participant.
-          Vector(Intent.Explain(Place.At(ref)))
+          Vector(
+            Intent.Navigate(
+              eyes4s.studio.app.nav.Location(
+                Perspective.Compare,
+                Vector(Place.Summary(rep), Place.Group(rep, group), Place.At(ref))
+              )
+            )
+          )
+        )
+      case ref @ StudioRef.ReportParticipant(`run`, derived, scale, ReportGroup.Whole, _, p)
+          if reporting.exists(rep => rep != derived && served(scale, whole = true, ref)) =>
+        // The table is served from the generated ungrouped spec. Its id has
+        // no saved navigation root. Keep its exact reference and explicitly
+        // place it below the displayed spec rather than fabricating a grouped
+        // report value under that spec.
+        val rep   = reporting.get
+        val keeps = Vector(labels.reporting(rep), SummaryText.reportGroup(ReportGroup.Whole), p)
+          .mkString(" › ")
+        ExplainVM(
+          SummaryText(SummaryTextId.Explain, p),
+          SummaryText(SummaryTextId.Keeps, keeps),
+          Vector(
+            Intent.Navigate(
+              eyes4s.studio.app.nav.Location(
+                Perspective.Compare,
+                Vector(Place.Summary(rep), Place.At(ref))
+              )
+            )
+          )
         )
     }

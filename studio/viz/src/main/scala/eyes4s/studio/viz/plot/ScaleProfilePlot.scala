@@ -59,8 +59,9 @@ import intaglio.{
   * bold line, over a zero rule.
   *
   * Its source is [[eyes4s.studio.app.plot.ScaleProfile.source]]: a group's
-  * grand mean at a scale is a [[StudioRef.GroupCell]] row and a
-  * participant's mean a [[StudioRef.ParticipantSummary]] row; the builder
+  * grand mean at a scale is a [[StudioRef.ReportCell]] row and a
+  * participant's mean a [[StudioRef.ReportParticipant]] row; legacy refs
+  * remain accepted. The builder
   * tells series apart by ref. Rows are placed by [[Axis.Numeric]] of σ on
   * [[AxisScale.Log10]] by [[Axis.Numeric]] of D, so scales that double are
   * evenly spaced.
@@ -460,6 +461,26 @@ object ScaleProfilePlot:
     case StudioRef.GroupCell(_, _, _, g)             => Some(Series.Group(g.label))
     case StudioRef.ParticipantSummary(_, _, _, g, p) =>
       Some(Series.Participant(p, g.map(_.label)))
+    case StudioRef.ReportCell(
+          _,
+          _,
+          _,
+          eyes4s.studio.core.selection.ReportGroup.Level(g),
+          eyes4s.studio.core.backend.ReportRole.Difference
+        ) =>
+      Some(Series.Group(g.label))
+    case StudioRef.ReportParticipant(
+          _,
+          _,
+          _,
+          g,
+          eyes4s.studio.core.backend.ReportRole.Difference,
+          p
+        ) =>
+      val group = g match
+        case eyes4s.studio.core.selection.ReportGroup.Level(value) => Some(value.label)
+        case eyes4s.studio.core.selection.ReportGroup.Whole        => None
+      Some(Series.Participant(p, group))
     case _ => None
 
   /** The scale labels of `source`'s rows, each once, in row order. */

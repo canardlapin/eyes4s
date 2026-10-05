@@ -49,6 +49,41 @@ class ScaleProfilePlotSuite extends FunSuite:
   private def mark(plot: BuiltPlot, ref: StudioRef): PlotMark =
     right(plot.markOf(ref).toRight(s"no mark for $ref"))
 
+  test("served report refs keep grouped and overall profile series") {
+    import eyes4s.studio.core.backend.ReportRole
+    import eyes4s.studio.core.selection.ReportGroup
+    def served(point: ProfilePoint): ProfilePoint = point.ref match
+      case StudioRef.GroupCell(r, id, scale, group) =>
+        point.copy(ref =
+          StudioRef.ReportCell(r, id, scale, ReportGroup.Level(group), ReportRole.Difference)
+        )
+      case StudioRef.ParticipantSummary(r, id, scale, group, person) =>
+        point.copy(ref =
+          StudioRef.ReportParticipant(
+            r,
+            id,
+            scale,
+            group.fold(ReportGroup.Whole)(ReportGroup.Level(_)),
+            ReportRole.Difference,
+            person
+          )
+        )
+      case other => fail(s"Unexpected fixture ref: $other")
+    val report = board.copy(
+      groups = board.groups.map(g => g.copy(points = g.points.map(served))),
+      participants = board.participants.map(p => p.copy(points = p.points.map(served)))
+    )
+    val actual = built(report)
+    val legacy = built(board)
+    assertEquals(actual.marks.size, legacy.marks.size)
+    assertEquals(actual.marks.map(_.at), legacy.marks.map(_.at))
+    assertEquals(actual.marks.flatMap(actual.readout), legacy.marks.flatMap(legacy.readout))
+    assertEquals(
+      (actual.marks.flatMap(_.refs) ++ actual.unplotted.map(_.ref)).toSet,
+      (report.groups ++ report.participants).flatMap(_.points.map(_.ref)).toSet
+    )
+  }
+
   test("σ is placed on a log axis: scales that double are evenly spaced") {
     val plot = built(board)
     assertEquals(

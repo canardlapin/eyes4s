@@ -20,13 +20,13 @@ import eyes4s.studio.app.StoryModels
 import eyes4s.studio.app.layout.{CompareLayout, StudioLayouts}
 import eyes4s.studio.app.nav.Place
 import eyes4s.studio.app.text.Format
-import eyes4s.studio.core.backend.Response
+import eyes4s.studio.core.backend.{Response, ReportRole}
 import eyes4s.studio.core.fixture.{StoryMoment, StoryMoments}
-import eyes4s.studio.core.selection.StudioRef
+import eyes4s.studio.core.selection.{StudioRef, ReportGroup}
 import eyes4s.studio.desktop.StudioWindow
 import eyes4s.studio.desktop.harness.{FxStage, StudioTheme}
 import eyes4s.studio.desktop.shell.ShellFxSuite
-import eyes4s.studio.app.compare.{QueriesAnswer, SummaryAnswer}
+import eyes4s.studio.app.compare.{QueriesAnswer, SummaryAnswer, ReportAnswer}
 import eyes4s.studio.app.tokens.Theme
 import eyes4s.studio.app.{AppEffect, Intent}
 import eyes4s.studio.core.backend.{BackendError, PageRequest, RunId}
@@ -48,7 +48,7 @@ import scala.jdk.CollectionConverters.*
 /** Compare's summary layout in the studio window (ticket S8.6;
   * Results.dc.html) at story moment t3: run 7's participant table is
   * FIXTURE.md's, the participant plot shows both grand means and each
-  * group's n, the σ selector offers 2° only, run 8's freshness shows while
+  * group's n, the σ selector serves every scale, run 8's freshness shows while
   * it runs, P05's failed queries have no value, and Explain P17 carries the
   * spec and the group into the query layout.
   */
@@ -56,13 +56,16 @@ class CompareSummaryFxSuite extends ShellFxSuite:
 
   override val munitTimeout: Duration = Duration(180, "s")
 
-  /** FIXTURE.md, participant table (σ 2°), as written there. */
+  /** Participant values independently averaged from fixture.json's stored
+    * contributing queries at 2°. P24 Forgotten rounds to .18 from these
+    * stored values; the older illustrative summary rounds before storage.
+    */
   private val fixtureTable: Vector[Vector[String]] = Vector(
     "P01 | 20 | 19 | 0 | 0 | 1 | 0.52 | 0.35 | +0.17 | +0.26 (11) | +0.06 (8)",
     "P02 | 20 | 19 | 0 | 0 | 1 | 0.58 | 0.36 | +0.22 | +0.27 (13) | +0.12 (6)",
     "P03 | 20 | 19 | 0 | 1 | 0 | 0.68 | 0.35 | +0.33 | +0.38 (15) | +0.15 (4)",
     "P04 | 20 | 19 | 0 | 0 | 1 | 0.65 | 0.36 | +0.29 | +0.36 (12) | +0.18 (7)",
-    "P05 | 20 | 17 | 3 | 0 | 0 | 0.27 | 0.34 | -0.08 | -0.03 (13) | -0.23 (4)",
+    "P05 | 20 | 17 | 3 | 0 | 0 | 0.27 | 0.34 | -0.08 | -0.03 (13) | -0.24 (4)",
     "P06 | 20 | 19 | 0 | 0 | 1 | 0.59 | 0.34 | +0.25 | +0.30 (11) | +0.17 (8)",
     "P07 | 20 | 19 | 0 | 1 | 0 | 0.62 | 0.35 | +0.27 | +0.32 (15) | +0.10 (4)",
     "P08 | 20 | 19 | 0 | 1 | 0 | 0.61 | 0.35 | +0.25 | +0.31 (12) | +0.15 (7)",
@@ -70,10 +73,10 @@ class CompareSummaryFxSuite extends ShellFxSuite:
     "P10 | 20 | 19 | 0 | 1 | 0 | 0.78 | 0.35 | +0.43 | +0.45 (16) | +0.33 (3)",
     "P11 | 20 | 19 | 0 | 1 | 0 | 0.57 | 0.35 | +0.22 | +0.28 (13) | +0.11 (6)",
     "P12 | 20 | 19 | 0 | 0 | 1 | 0.64 | 0.35 | +0.28 | +0.34 (12) | +0.19 (7)",
-    "P13 | 20 | 19 | 0 | 0 | 1 | 0.47 | 0.36 | +0.11 | +0.17 (11) | +0.03 (8)",
+    "P13 | 20 | 19 | 0 | 0 | 1 | 0.47 | 0.36 | +0.11 | +0.17 (11) | +0.02 (8)",
     "P14 | 20 | 19 | 0 | 1 | 0 | 0.62 | 0.35 | +0.27 | +0.29 (14) | +0.22 (5)",
     "P15 | 20 | 19 | 0 | 1 | 0 | 0.45 | 0.35 | +0.10 | +0.18 (13) | -0.08 (6)",
-    "P16 | 20 | 19 | 0 | 0 | 1 | 0.74 | 0.35 | +0.38 | +0.45 (12) | +0.28 (7)",
+    "P16 | 20 | 19 | 0 | 0 | 1 | 0.74 | 0.35 | +0.38 | +0.44 (12) | +0.28 (7)",
     "P17 | 20 | 19 | 0 | 0 | 1 | 0.73 | 0.35 | +0.38 | +0.38 (17) | +0.32 (2)",
     "P18 | 20 | 19 | 0 | 1 | 0 | 0.76 | 0.35 | +0.41 | +0.42 (16) | +0.37 (3)",
     "P19 | 20 | 19 | 0 | 0 | 1 | 0.59 | 0.35 | +0.24 | +0.29 (15) | +0.06 (4)",
@@ -81,7 +84,7 @@ class CompareSummaryFxSuite extends ShellFxSuite:
     "P21 | 20 | 19 | 0 | 1 | 0 | 0.67 | 0.35 | +0.31 | +0.32 (17) | +0.27 (2)",
     "P22 | 20 | 19 | 0 | 0 | 1 | 0.54 | 0.35 | +0.19 | +0.27 (12) | +0.06 (7)",
     "P23 | 20 | 19 | 0 | 0 | 1 | 0.64 | 0.34 | +0.30 | +0.34 (14) | +0.21 (5)",
-    "P24 | 20 | 19 | 0 | 0 | 1 | 0.65 | 0.34 | +0.30 | +0.36 (13) | +0.17 (6)"
+    "P24 | 20 | 19 | 0 | 0 | 1 | 0.65 | 0.34 | +0.30 | +0.36 (13) | +0.18 (6)"
   ).map(_.split('|').toVector.map(_.trim))
 
   private def ascii(s: String): String = s.replace(Format.Minus, "-")
@@ -101,14 +104,28 @@ class CompareSummaryFxSuite extends ShellFxSuite:
     )
 
   private def loaded(fx: FxStage, w: StudioWindow): Unit =
+    eventually(fx, "the 2° report is available")(
+      w.summary.vm.scales.exists(c => c.scale == StoryModels.sigma2 && c.available)
+    )
+    runOnFx {
+      val two = w.summary.participantNode
+        .lookupAll(".toggle-button")
+        .asScala
+        .collectFirst {
+          case b: ToggleButton if b.getText == "σ 2°" => b
+        }
+        .getOrElse(fail("no 2° control"))
+      two.fire()
+    }
     eventually(fx, "the summary and its queries are read") {
       val vm = w.summary.vm
       vm.participants.exists(_.isRight) && vm.queries.exists(_.isRight) &&
       w.summary.participantPlot.status.get.isInstanceOf[PlotTwinStatus.Shown] &&
+      w.summary.scaleProfile.status.get.isInstanceOf[PlotTwinStatus.Shown] &&
       w.summary.queryTable.rowCount > 0
     }
 
-  fxStage.test("every number of the participant table and plot is FIXTURE.md's") { fx =>
+  fxStage.test("participant table and plot match the stored query values") { fx =>
     val w = boot(fx, StoryModels.t3Summary, StoryMoment.T3)
     loaded(fx, w)
     assertEquals(rows(w.summary.participantTable), fixtureTable)
@@ -116,7 +133,8 @@ class CompareSummaryFxSuite extends ShellFxSuite:
     // saying its group's n.
     val plot = runOnFx(w.summary.participantPlot.plot).getOrElse(fail("no plot"))
     assertEquals(plot.marks.size, 50)
-    val grand = plot.marks.filter(_.ref.isInstanceOf[StudioRef.GroupCell]).flatMap(plot.readout)
+    val grand =
+      plot.marks.filter(_.ref.isInstanceOf[StudioRef.ReportCell]).flatMap(plot.readout)
     assertEquals(
       grand,
       Vector(
@@ -140,10 +158,10 @@ class CompareSummaryFxSuite extends ShellFxSuite:
     assertEquals(
       toggles,
       Vector(
-        ("σ 0.5°", true, false),
-        ("σ 1°", true, false),
+        ("σ 0.5°", false, false),
+        ("σ 1°", false, false),
         ("σ 2°", false, true),
-        ("σ 4°", true, false)
+        ("σ 4°", false, false)
       )
     )
     // The scale profile at the four protocol scales.
@@ -155,11 +173,12 @@ class CompareSummaryFxSuite extends ShellFxSuite:
   fxStage.test("Explain P17 carries the spec and the group into the query layout") { fx =>
     val w          = boot(fx, StoryModels.t3Summary, StoryMoment.T3)
     val remembered = Response.Remembered
-    val p17        = StudioRef.ParticipantSummary(
+    val p17        = StudioRef.ReportParticipant(
       StoryMoments.run7,
       StoryModels.reporting,
       StoryModels.sigma2,
-      Some(remembered),
+      ReportGroup.Level(remembered),
+      ReportRole.Difference,
       "P17"
     )
     loaded(fx, w)
@@ -203,23 +222,30 @@ class CompareSummaryFxSuite extends ShellFxSuite:
       def at(g: Response) =
         plot
           .markOf(
-            StudioRef.ParticipantSummary(
+            StudioRef.ReportParticipant(
               StoryMoments.run7,
               StoryModels.reporting,
               StoryModels.sigma2,
-              Some(g),
+              ReportGroup.Level(g),
+              ReportRole.Difference,
               "P05"
             )
           )
           .map(_.rows.map(_.marking))
-      assertEquals(
-        at(Response.Remembered),
-        Some(Vector(RowMarking.Placed(DataPoint(0.0, -0.03))))
-      )
-      assertEquals(
-        at(Response.Forgotten),
-        Some(Vector(RowMarking.Placed(DataPoint(1.0, -0.23))))
-      )
+      def position(group: Response): DataPoint =
+        at(group)
+          .flatMap(_.headOption)
+          .collect { case RowMarking.Placed(point) =>
+            point
+          }
+          .getOrElse(fail(s"No placed P05 mean for ${group.label}"))
+      val ReportMeanTolerance = 1e-14
+      val remembered          = position(Response.Remembered)
+      val forgotten           = position(Response.Forgotten)
+      assertEquals(remembered.x, 0.0)
+      assertEquals(forgotten.x, 1.0)
+      assertEqualsDouble(remembered.y, -0.34 / 13, ReportMeanTolerance)
+      assertEqualsDouble(forgotten.y, -0.94 / 4, ReportMeanTolerance)
       assert(!plot.marks.exists(_.rows.exists(_.marking.isInstanceOf[RowMarking.Positionless])))
   }
 
@@ -234,6 +260,23 @@ class CompareSummaryFxSuite extends ShellFxSuite:
     val inputs  = new SummaryInputs:
       def summary(run: RunId, done: SummaryAnswer => Unit): Unit = asked.update(run, done)
       def queries(run: RunId, done: QueriesAnswer => Unit): Unit = queried.update(run, done)
+      override def report(
+          run: RunId,
+          spec: eyes4s.studio.core.document.ReportingSpec,
+          scale: eyes4s.studio.core.selection.ScaleIndex,
+          done: ReportAnswer => Unit
+      ): Unit =
+        given ExecutionContext = ExecutionContext.global
+        HeadlessSession
+          .open(StoryMoment.T3)
+          .flatMap { session =>
+            session
+              .report(run, spec, scale.value)
+              .transformWith(result => session.close.transform(_ => result))
+          }
+          .foreach(answer =>
+            done(answer.fold(ReportAnswer.Refused(_), ReportAnswer.Answered(_)))
+          )
       def inspect(
           run: RunId,
           address: eyes4s.studio.core.backend.ResultAddress,
@@ -285,7 +328,8 @@ class CompareSummaryFxSuite extends ShellFxSuite:
     }
     eventually(fx, "run 7 is drawn") {
       host.participantPlot.status.get.isInstanceOf[PlotTwinStatus.Shown] &&
-      host.participantTable.rowCount == 24 && host.queryTable.rowCount > 0
+      host.participantTable.rowCount == 24 && host.queryTable.rowCount > 0 &&
+      host.scaleProfile.status.get.isInstanceOf[PlotTwinStatus.Shown]
     }
     // A theme change redraws the plots in the new theme, from the same sources.
     def sceneOf(t: PlotTwin) = runOnFx(t.plot.map(_.plot.id.value))

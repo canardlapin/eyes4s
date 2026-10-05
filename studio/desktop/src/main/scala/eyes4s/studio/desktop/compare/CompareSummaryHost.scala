@@ -36,6 +36,7 @@ import eyes4s.studio.desktop.runtime.StudioSession
 import eyes4s.studio.viz.plot.{ParticipantPlot, ScaleLadderPlot, ScaleProfilePlot}
 import javafx.application.Platform
 import javafx.geometry.Pos
+import javafx.scene.input.{KeyCode, KeyEvent}
 import javafx.scene.control.{Button, Label, ToggleButton, ToggleGroup, Tooltip}
 import javafx.scene.layout.{HBox, Priority, Region, VBox}
 
@@ -550,7 +551,9 @@ final class CompareSummaryHost(
           reporting,
           scale,
           a =>
-            Platform.runLater(() => dispatch(SummaryIntent.ReportRead(run, scale, overall, a)))
+            Platform.runLater(() =>
+              dispatch(SummaryIntent.ReportRead(run, reporting, scale, overall, a))
+            )
         )
     }
 
@@ -574,6 +577,9 @@ final class CompareSummaryHost(
       notes.getChildren.setAll(v.notes.map { n =>
         val l = Label(n); l.getStyleClass.add("t11"); l
       }*)
+      val focusedScale = (0 until scales.getChildren.size).iterator
+        .map(scales.getChildren.get)
+        .collectFirst { case b: ToggleButton if b.isFocused => b.getText }
       val group = ToggleGroup()
       scales.getChildren.setAll(v.scales.map { c =>
         val b = ToggleButton(c.label)
@@ -585,8 +591,37 @@ final class CompareSummaryHost(
         b.setSelected(c.chosen)
         b.setDisable(!c.available)
         b.setOnAction(_ => dispatch(SummaryIntent.ChooseScale(c.scale)))
+        b.addEventFilter(
+          KeyEvent.KEY_PRESSED,
+          event =>
+            val step = event.getCode match
+              case KeyCode.LEFT  => -1
+              case KeyCode.RIGHT => 1
+              case _             => 0
+            if step != 0 && !event.isAltDown && !event.isControlDown && !event.isMetaDown && !event.isShiftDown
+            then
+              val choices = v.scales.filter(_.available)
+              val at      = choices.indexWhere(_.scale == c.scale)
+              if at >= 0 then
+                val next = choices(Math.floorMod(at + step, choices.size))
+                event.consume()
+                dispatch(SummaryIntent.ChooseScale(next.scale))
+                (0 until scales.getChildren.size).iterator
+                  .map(scales.getChildren.get)
+                  .collectFirst {
+                    case nextButton: ToggleButton if nextButton.getText == next.label =>
+                      nextButton
+                  }
+                  .foreach(_.requestFocus())
+        )
         b
       }*)
+      focusedScale.foreach { label =>
+        (0 until scales.getChildren.size).iterator
+          .map(scales.getChildren.get)
+          .collectFirst { case b: ToggleButton if b.getText == label => b }
+          .foreach(_.requestFocus())
+      }
       v.explain match
         case Some(e) =>
           explain.setText(e.label); keeps.setText(e.keeps)

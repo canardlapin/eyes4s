@@ -327,14 +327,23 @@ class KeyboardJourneySuite extends GoldenWindow:
       // --- Compare P17 ret_07, then the summary ------------------------------
 
       chord(fx, CommandRegistry.compare)
-      // The participant table's row cursor to P17, Enter, then Explain P17.
-      tabToNamed(fx, "Participant summary")
-      n = 0
-      while !model(w).selection.selected.exists(_.toString.contains("P17")) do
-        if n >= 60 then fail("the participant table never selected P17")
-        fx.robot.press(KeyCode.DOWN)
-        fx.robot.press(KeyCode.ENTER)
-        n += 1
+      // Select 2° from the reports, then move the cursor before activating.
+      eventually(fx, "the 2° report is available")(
+        w.summary.vm.scales.exists(c => c.scale == sigma2 && c.available)
+      )
+      tabToNamed(fx, "σ ")
+      fx.robot.press(KeyCode.RIGHT)
+      fx.robot.press(KeyCode.RIGHT)
+      eventually(fx, "2° is selected from the keyboard")(
+        w.summary.vm.scales.exists(c => c.scale == sigma2 && c.chosen)
+      )
+      eventually(fx, "participant report rows")(w.summary.participantTable.rowCount == 24)
+      val participants = tabToNamed(fx, "Participant summary")
+      cursorTo(fx, participants, "P17")(_.contains("P17"))
+      fx.robot.press(KeyCode.ENTER)
+      eventually(fx, "P17 is selected")(
+        w.runtime.model.selection.selected.exists(_.toString.contains("P17"))
+      )
       tabToNamed(fx, "Explain P17")
       space(fx)
       // The queries navigator's row cursor: P17, → to open it, ret_07, Enter.
