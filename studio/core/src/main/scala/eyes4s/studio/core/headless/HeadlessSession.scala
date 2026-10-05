@@ -148,6 +148,13 @@ final class HeadlessSession private (
   def inspect(run: RunId, address: ResultAddress): Future[Either[BackendError, Inspection]] =
     this.run(fake.inspect(run, address))
 
+  def mapGrid(
+      run: RunId,
+      scale: Int,
+      trial: TrialKey
+  ): Future[Either[BackendError, DensityGrid]] =
+    this.run(fake.mapGrid(run, scale, trial))
+
   def ledger(
       dataset: DatasetRevision,
       page: PageRequest

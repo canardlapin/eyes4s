@@ -378,6 +378,9 @@ object RemoteStudyBackend:
     def placement(spec: DatasetRevisionSpec): F[Either[BackendError, PlacementPreview]] =
       ask(Q.PlacementOf(spec)) { case A.PlacementOf(p) => p }
 
+    def mapGrid(run: RunId, scale: Int, trial: TrialKey): F[Either[BackendError, DensityGrid]] =
+      ask(Q.MapGridOf(run, scale, trial)) { case A.MapGridOf(g) => g }
+
     def ledger(
         dataset: DatasetRevision,
         page: PageRequest
