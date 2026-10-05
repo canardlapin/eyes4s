@@ -16,7 +16,16 @@
 
 package eyes4s.studio.core.command
 
-import eyes4s.studio.core.document.{DocumentSamples, StudioDocument}
+import eyes4s.codec.CodecError
+import eyes4s.studio.core.document.{
+  DocumentSamples,
+  Preset,
+  RevisionName,
+  StudioDocument,
+  StudioFields,
+  StudioSchemaIds
+}
+import io.circe.Json
 import io.circe.syntax.*
 import org.scalacheck.Prop.forAll
 import org.scalacheck.Test
@@ -191,8 +200,82 @@ class CommandJournalSuite extends munit.ScalaCheckSuite:
   }
 
   test("the journal is built on the studio.journal schema id") {
+    // Version 1 (S2.2) is the ladder's first rung; version 2 (S7.1) its next.
+    assertEquals(
+      CommandJournal.ladder.map(_.versions.head),
+      StudioSchemaIds.ids
+        .map(_.journal)
+        .left
+        .map(e => CodecError.Unsupported("schema", e.message))
+    )
     assertEquals(
       CommandJournal.codec.map(c => (c.schema.name, c.schema.version)),
-      Right(("studio.journal", 1))
+      Right(("studio.journal", 2))
     )
+  }
+
+  // --- Version 2: the PerceptionImagery preset (S7.1) ---------------------------------
+
+  private val ladder = CommandJournal.ladder.toOption.get
+
+  private def imageryRun(preset: Preset) =
+    JournalLine.Entry(
+      lines.size,
+      JournalEntry.Apply(
+        Command.SaveAndRun(
+          Some(StudioFields(preset, RevisionName.of("imagery").toOption.get, ""))
+        )
+      )
+    )
+
+  private def version(text: String) =
+    io.circe.parser
+      .parse(text)
+      .flatMap(_.hcursor.downField("schema").downField("version").as[Int])
+
+  test("a line naming the PerceptionImagery preset is version 2 and round-trips") {
+    val line    = imageryRun(Preset.PerceptionImagery)
+    val encoded = CommandJournal.encode(line).toOption.get
+    assertEquals(version(encoded), Right(2))
+    assertEquals(CommandJournal.codec.flatMap(_.parse(encoded)), Right(line))
+    assertEquals(ladder.earliest(line).version, 2)
+    // Any other line keeps version 1, byte for byte as before.
+    val custom = imageryRun(Preset.Custom)
+    assertEquals(ladder.earliest(custom).version, 1)
+    assertEquals(CommandJournal.encode(custom).map(version), Right(Right(1)))
+  }
+
+  test("a version-1 reader refuses a version-2 line, and never takes it for a torn write") {
+    val older       = ladder.upTo(ladder.versions.head).toOption.get
+    val encoded     = CommandJournal.encode(imageryRun(Preset.PerceptionImagery)).toOption.get
+    val unsupported = CodecError.UnsupportedSchema(
+      "studio journal",
+      ladder.versions(1),
+      Vector(ladder.versions.head)
+    )
+    assertEquals(older.codec.parse(encoded), Left(unsupported))
+    // As the final line of a journal it is refused, not skipped as torn.
+    val text = (lines :+ encoded).mkString("\n")
+    assertEquals(
+      CommandJournal.replay(Right(older.codec), t2, text),
+      Left(JournalError.Unreadable(lines.size + 1, unsupported))
+    )
+    // A preset cannot be dropped: the version-1 writer refuses the line, and
+    // a version-1 envelope that names it is refused.
+    val refusal = CodecError.Unsupported("studio journal", "a preset needs version 2")
+    assertEquals(
+      older.writeAt(ladder.versions.head, imageryRun(Preset.PerceptionImagery)),
+      Left(refusal)
+    )
+    val asV1 = io.circe.parser
+      .parse(encoded)
+      .toOption
+      .get
+      .hcursor
+      .downField("schema")
+      .downField("version")
+      .withFocus(_ => Json.fromInt(1))
+      .top
+      .get
+    assertEquals(CommandJournal.codec.flatMap(_.decode(asV1)), Left(refusal))
   }

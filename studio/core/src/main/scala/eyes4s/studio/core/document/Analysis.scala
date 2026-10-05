@@ -630,7 +630,9 @@ object Draft:
 // Analysis revision
 // ---------------------------------------------------------------------------
 
-/** The studio preset an analysis started from. */
+/** The studio preset whose conventions an analysis's recipe holds
+  * (`eyes4s.studio.core.preset.RecipePresets`); `Custom` holds none.
+  */
 enum Preset derives CanEqual, Codec.AsObject:
   /** Encoding → retrieval reinstatement: matched-minus-control similarity. */
   case EncodingRetrieval
@@ -639,6 +641,9 @@ enum Preset derives CanEqual, Codec.AsObject:
   case Recognition
 
   case Custom
+
+  /** Perception → imagery: imagery on a blank screen against perception. */
+  case PerceptionImagery
 
 /** A non-blank name. */
 final case class RevisionName private (value: String) derives CanEqual

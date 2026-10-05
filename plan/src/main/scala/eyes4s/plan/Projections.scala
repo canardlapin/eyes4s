@@ -209,6 +209,8 @@ private[eyes4s] object Projections:
         )
       case OrphanKey(key) =>
         diagnostic(C.studyResult, e, e.message, at(Locus.Trial(key)))(Operand.Key(key))
+      case UnmatchedControl(key) =>
+        diagnostic(C.studyResult, e, e.message, at(Locus.Trial(key)))(Operand.Key(key))
       case OrphanPair(left, right) =>
         diagnostic(C.studyResult, e, e.message, at(Locus.Pair(left, right)))(
           Operand.Key(left),
@@ -707,8 +709,11 @@ private[eyes4s] object Projections:
           token(side.toString),
           ints(positions)
         )
-      case UnmatchedFocal(key) =>
-        diagnostic(C.studyFinding, f, f.message, trial(key))(Operand.Key(key))
+      case UnmatchedFocal(key, reason) =>
+        diagnostic(C.studyFinding, f, f.message, trial(key))(
+          Operand.Key(key),
+          unmatchedKind(reason)
+        )
       case UncontrolledFocal(key) =>
         diagnostic(C.studyFinding, f, f.message, trial(key))(Operand.Key(key))
       case OffWindowFixations(key, tally, policy) =>
@@ -750,6 +755,43 @@ private[eyes4s] object Projections:
           )
         )
     finding(projected, f.severity, f.category, f.remedy)
+
+  /** An unmatched-focal kind, as library vocabulary: a case without fields
+    * is its token; a case with fields is its kind, then the inventory trials
+    * it names (and what admission did with each).
+    */
+  private def unmatchedKind(kind: UnmatchedKind): Operand[Nothing] = kind match
+    case UnmatchedKind.ReferenceNotAdmitted(rs) =>
+      fields(
+        "kind"       -> token(kind.productPrefix),
+        "references" -> Operand.Items(
+          rs.map(r =>
+            fields(
+              "trial"       -> trialIdentity(r.trial),
+              "disposition" -> disposition(r.disposition)
+            )
+          )
+        )
+      )
+    case UnmatchedKind.ReferenceNotPairable(rs) =>
+      fields(
+        "kind"       -> token(kind.productPrefix),
+        "references" -> Operand.Items(rs.map(trialIdentity))
+      )
+    case other => token(other.toString)
+
+  private def trialIdentity(id: TrialIdentity): Operand[Nothing] =
+    fields(
+      "participant" -> Operand.Name(id.participant),
+      "phase"       -> Operand.Name(id.phase),
+      "trial"       -> Operand.Name(id.trial),
+      "occurrence"  -> Operand.Integer(BigInt(id.occurrence.value))
+    )
+
+  private def disposition(d: TrialDisposition): Operand[Nothing] = d match
+    case TrialDisposition.Quarantined(cause) =>
+      fields("kind" -> token("Quarantined"), "cause" -> Operand.Cause(quarantine(cause)))
+    case other => token(other.toString)
 
   def recordingFinding(f: RecordingFinding): Diagnostic[Nothing] =
     import RecordingFinding.*

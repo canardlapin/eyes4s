@@ -106,6 +106,9 @@ enum CommandError derives CanEqual:
     */
   case StaleChange(field: RecipeField, expected: String, held: String)
 
+  /** Save & run was given a preset the saved recipe does not hold (S7.1). */
+  case PresetNotHeld(preset: Preset, revision: AnalysisRevision)
+
   case PlanAlreadyBound(revision: AnalysisRevision, bound: CanonicalDigest[StudyPlanArtifact])
   case InputMismatch(
       revision: AnalysisRevision,
@@ -160,6 +163,9 @@ enum CommandError derives CanEqual:
     case DraftExists(draft)        => s"Draft ${draft.label} already exists."
     case StaleChange(field, expected, held) =>
       s"The change to the ${field.label} starts from $expected, but the draft has $held."
+    case PresetNotHeld(preset, revision) =>
+      s"Analysis ${revision.label} cannot be saved as the $preset preset: its recipe does not " +
+        "hold that preset's fields."
     case PlanAlreadyBound(revision, bound) =>
       s"Analysis ${revision.label} is already bound to plan ${bound.display}."
     case InputMismatch(revision, recorded, prepared) =>

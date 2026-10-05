@@ -70,7 +70,7 @@ by token name, never by hex value.
 - [ ] Scales 0.5 / 1 / 2 / 4 (+8° in the draft), cell 0.46°, and the 0.5° and 8° warnings.
 - [ ] "Queries without a matched reference: Report as no match".
 - [ ] Resolved design:
-  - [ ] 230,400 Cartesian candidates before paging, then 8,969 after.
+  - [ ] 219,486 Cartesian candidates before paging (466 admitted retrieval × 471 admitted encoding), then 8,969 after.
   - [ ] 480 = 454 + 3 + 9 + 14.
   - [ ] Input digest plus plan revision.
 - [ ] Preflight keeps eyes4s findings separate from Studio checks ("0 queries with >1 matched reference · checked"). "Save & run rev 5 · 44,845 pairs" is enabled.

@@ -39,9 +39,9 @@ object RunFacts:
   /** The query totals of `table`, given which of its queries the matched
     * pairing left `unmatched`:
     *
-    *   - `UnmatchedQueries`: an unmatched query, or one without a stored
-    *     contrast row; an unmatched query may still have a contrast row (from
-    *     its control reduction, or a failed contrast), and is still unmatched;
+    *   - `UnmatchedQueries`: the table's `unmatched` focal trials (not
+    *     eligible, so never among its queries, bead S0.7b), and any query
+    *     `unmatched` names or without a stored contrast row;
     *   - `ContributingQueries`: any other query with a scored difference;
     *   - `FailedQueries`, and `FailureCause(code)` for each failure code: any
     *     other query with a stored failure;
@@ -73,7 +73,7 @@ object RunFacts:
       left <- total(
         FactSlot.UnmatchedQueries,
         QueryTotal.Unmatched,
-        (table.queries.size - compared.size).toLong
+        (table.unmatched.size + table.queries.size - compared.size).toLong
       )
     yield head ++ causes :+ left
 

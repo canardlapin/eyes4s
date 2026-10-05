@@ -135,9 +135,15 @@ object CommandSamples:
     "StartDraft"   -> StartDraft(rev4, None, draft.changes),
     "RestoreDraft" -> RestoreDraft(draft),
     "ChangeRecipe" -> ChangeRecipe(RecipeChange.Grid(rev4Rec.grid, right(GridSize.of(32, 24)))),
-    "RebaseDraft"  -> RebaseDraft(r2),
-    "DiscardDraft" -> DiscardDraft,
-    "SaveAndRun"   -> SaveAndRun(None),
+    "ChangeRecipes" -> ChangeRecipes(
+      Vector(
+        RecipeChange.Grid(rev4Rec.grid, right(GridSize.of(32, 24))),
+        RecipeChange.Weighting(rev4Rec.weighting, WeightChoice.Uniform)
+      )
+    ),
+    "RebaseDraft"       -> RebaseDraft(r2),
+    "DiscardDraft"      -> DiscardDraft,
+    "SaveAndRun"        -> SaveAndRun(None),
     "SaveAndRun.studio" -> SaveAndRun(
       Some(StudioFields(Preset.Custom, right(RevisionName.of("σ 8° added")), "rerun"))
     ),

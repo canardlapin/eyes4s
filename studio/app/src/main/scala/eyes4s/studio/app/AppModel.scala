@@ -17,6 +17,7 @@
 package eyes4s.studio.app
 
 import eyes4s.codec.CanonicalDigest
+import eyes4s.studio.app.analysis.PresetPicker
 import eyes4s.studio.app.appearance.{Appearance, AppearanceState}
 import eyes4s.studio.app.jobs.JobBoard
 import eyes4s.studio.app.keys.{CommandId, CommandRegistry, KeyChord}
@@ -48,6 +49,7 @@ import eyes4s.studio.core.document.{
   LayoutBlob,
   Perspective,
   PresentationState,
+  Preset,
   Recipe,
   RunLifecycle,
   StudioDocument,
@@ -327,6 +329,9 @@ enum Intent derives CanEqual:
 
   // --- The document (S2.2) ----------------------------------------------------------
   case Dispatch(command: Command)
+
+  /** Choose a recipe preset (S7.1): its declared fields only, as a draft. */
+  case ChoosePreset(preset: Preset)
   case Undo(stack: HistoryStack)
   case Redo(stack: HistoryStack)
 
@@ -630,6 +635,10 @@ object AppModel:
 
     case Intent.Dispatch(command) =>
       applyHistory(m, JournalEntry.Apply(command), m.history.apply(command))
+    case Intent.ChoosePreset(preset) =>
+      PresetPicker
+        .command(m.document, preset)
+        .fold((m, none))(c => update(m, Intent.Dispatch(c)))
     case Intent.Undo(stack) => applyHistory(m, undoEntry(stack), m.history.undoOn(stack))
     case Intent.Redo(stack) => applyHistory(m, redoEntry(stack), m.history.redoOn(stack))
 

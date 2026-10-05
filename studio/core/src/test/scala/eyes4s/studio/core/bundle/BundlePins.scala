@@ -27,8 +27,8 @@ object BundlePins:
     "mappings/r2.5d9b410cd0b48432.json",
     "datasets/r3.9bc7a776790d1794.json",
     "mappings/r3.8e0b0f8f226a2cbb.json",
-    "analyses/rev3.29b70541a44c0723.json",
-    "analyses/rev4.cdb907e8a8200e54.json",
+    "analyses/rev3.2acd63a0cfb4ed2f.json",
+    "analyses/rev4.ce2a3d06a6748bd9.json",
     "analyses/draft-rev5.d9972409483c456b.json",
     "runs/5/run.5b78b0f656b5e858.json",
     "runs/6/run.8609de86b7f93424.json",
@@ -39,7 +39,7 @@ object BundlePins:
   )
 
   val t2ManifestSha256: String =
-    "1eb72ef5b0a1c5b0796c971356b626eb8c4a247793188f97c9daa858bbcb6250"
+    "fff7dbbd28ebec8091e9c18b56205b5d8d2d1b33c8829fbd25b2258ad45adc1e"
 
   /** The t2 bundle's manifest as the pre-release version 1 wrote it: no
     * sharing options (everything travelled) and no science digest. Written
@@ -93,14 +93,14 @@ object BundlePins:
       |      ],
       |      "analyses": [
       |        {
-      |          "path": "analyses/rev3.29b70541a44c0723.json",
-      |          "sha256": "29b70541a44c0723e35a5460dc883db94993691bb7a0ca0bc47fd786771a5ebb",
-      |          "length": 714
+      |          "path": "analyses/rev3.2acd63a0cfb4ed2f.json",
+      |          "sha256": "2acd63a0cfb4ed2fedfae02a935b5abf638bb13fc656d24d55c0109454d03ab2",
+      |          "length": 722
       |        },
       |        {
-      |          "path": "analyses/rev4.cdb907e8a8200e54.json",
-      |          "sha256": "cdb907e8a8200e542930e9a3c86bf3d541fe030be6a6de3e14803424b610b175",
-      |          "length": 714
+      |          "path": "analyses/rev4.ce2a3d06a6748bd9.json",
+      |          "sha256": "ce2a3d06a6748bd94f8d39cced647a531205795714026f8b37691540257c5717",
+      |          "length": 722
       |        }
       |      ],
       |      "draft": {

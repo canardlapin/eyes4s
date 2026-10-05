@@ -93,7 +93,8 @@ final class Labels(model: AppModel, messages: Messages):
   def lineage(preset: Preset): String = messages(preset match
     case Preset.EncodingRetrieval => LineageEncodingRetrieval
     case Preset.Recognition       => LineageRecognition
-    case Preset.Custom            => LineageCustom)
+    case Preset.Custom            => LineageCustom
+    case Preset.PerceptionImagery => LineagePerceptionImagery)
 
   def section(s: DataSection): String = messages(s match
     case DataSection.Sources       => SectionSources

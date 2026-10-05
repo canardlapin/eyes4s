@@ -116,7 +116,11 @@ class AssetRepairSuite extends munit.FunSuite:
     assertEquals(
       older.codec.decode(encoded),
       Left(
-        CodecError.UnsupportedSchema("studio document", ladder.latest, ladder.versions.take(3))
+        CodecError.UnsupportedSchema(
+          "studio document",
+          ladder.versions(3),
+          ladder.versions.take(3)
+        )
       )
     )
   }

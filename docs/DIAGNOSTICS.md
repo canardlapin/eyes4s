@@ -405,6 +405,7 @@ fails after rewriting, so review the change and run it again.
 | `study-result.reconstruction` | `Reconstruction` | `underlying` |
 | `study-result.scale` | `Scale` | `index`, `underlying` |
 | `study-result.specification-time` | `SpecificationTime` | `design`, `expected`, `found` |
+| `study-result.unmatched-control` | `UnmatchedControl` | `key` |
 
 ### `temporal` — `TemporalStudyError`
 
@@ -875,7 +876,7 @@ fails after rewriting, so review the change and run it again.
 | `study-finding.refused` | `Refused` | `underlying` |
 | `study-finding.frame-mismatch` | `FrameMismatch` | `key`, `underlying` |
 | `study-finding.duplicate-trial` | `DuplicateTrial` | `key`, `side`, `positions` |
-| `study-finding.unmatched-focal` | `UnmatchedFocal` | `key` |
+| `study-finding.unmatched-focal` | `UnmatchedFocal` | `key`, `reason` |
 | `study-finding.uncontrolled-focal` | `UncontrolledFocal` | `key` |
 | `study-finding.off-window-fixations` | `OffWindowFixations` | `key`, `tally`, `policy` |
 | `study-finding.no-fixation-in-window` | `NoFixationInWindow` | `key`, `tally` |

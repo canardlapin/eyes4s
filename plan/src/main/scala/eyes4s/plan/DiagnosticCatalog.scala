@@ -101,7 +101,9 @@ object DiagnosticCatalog:
     "Phase",
     "Reconstruction",
     "Scale",
-    "SpecificationTime"
+    "SpecificationTime",
+    // Appended by bead S0.7b: a stored control row for a query without a match.
+    "UnmatchedControl"
   )
   val temporal: DiagnosticFamily = error("temporal")(
     "Input",

@@ -267,7 +267,9 @@ class ResultInspectionSuite extends munit.FunSuite:
       records(pair.reference, inspection)
     }
     assertEquals(drilled, Vector(7, 9, 12, 13))
-    assertEquals(scale.pairing(StudyDesign.Control).unmatchedLeft, Vector(lone))
+    // `lone` has no match, so the control design leaves it out (bead S0.7b).
+    assertEquals(scale.pairing(StudyDesign.Matched).unmatchedLeft, Vector(lone))
+    assertEquals(scale.pairing(StudyDesign.Control).unmatchedLeft, Vector.empty)
     assertEquals(scale.excludedPhases, Vector(other))
   }
 

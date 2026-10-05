@@ -152,6 +152,7 @@ object DocumentSamples:
     Sample("draft.rev5", draft),
     Sample("preset.Recognition", Preset.Recognition),
     Sample("preset.Custom", Preset.Custom),
+    Sample("preset.PerceptionImagery", Preset.PerceptionImagery),
     Sample("analysis.rev4", rev4),
     Sample("run.Running", t3.runs(3)),
     Sample("job-handle", t3.jobs(0)),

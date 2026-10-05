@@ -18,7 +18,7 @@ package eyes4s.studio.core.fixture
 
 import cats.syntax.all.*
 import eyes4s.codec.ByteDigest
-import eyes4s.plan.AdmissionDecision as CoreAdmissionDecision
+import eyes4s.plan.{AdmissionDecision as CoreAdmissionDecision, TrialKeyDefinitions}
 import eyes4s.studio.core.backend.{
   AnalysisRevision,
   DatasetRevision,
@@ -176,7 +176,7 @@ object StoryMoments:
       )
     )
 
-  /** The recipe of every story revision: the participant-stimulus-phase
+  /** The recipe of every story revision: the trial-keyed (trialLayout)
     * layout, cosine similarity, duration weighting, the image frame as the
     * analysis window (off-window fixations excluded), grid 64×48 and declared
     * 35 px/°. The input is unbound on the fake backend.
@@ -186,7 +186,7 @@ object StoryMoments:
       sigmas <- scales.traverse(Sigma.of)
       set    <- ScaleSet.of(sigmas)
       grid   <- GridSize.of(64, 48)
-      layout <- DefinitionRef.of("eyes4s.participant-stimulus-phase", 1)
+      layout = DefinitionRef.fromCore(TrialKeyDefinitions.trialLayout)
       cosine <- DefinitionRef.of("eyes4s.cosine", 1)
       window <- AnalysisWindow.of(448.0, 156.0, 1472.0, 924.0)
       ppd    <- DeclaredPixelsPerDegree.of(35.0)

@@ -28,8 +28,8 @@ class DiagnosticCatalogSuite extends munit.FunSuite:
   private val all = DiagnosticSamples.all
 
   /** Every issued code, one per line, pinned by count and portable digest. */
-  private val PinnedCount  = 739
-  private val PinnedDigest = "d5c9aebff368d880"
+  private val PinnedCount  = 740
+  private val PinnedDigest = "695f03cb86aa2b4c"
 
   /** The issued table before CR5: codes are only ever issued, never changed
     * or reused, and a retired code keeps its place, so taking away the codes
@@ -93,6 +93,11 @@ class DiagnosticCatalogSuite extends munit.FunSuite:
   private val Cr6bCodes: Set[String] =
     (DiagnosticCatalog.studyRecipe.codes ++ DiagnosticCatalog.studyAdvisory.codes ++
       DiagnosticCatalog.recipeParameter.codes.drop(7)).map(_.render).toSet
+
+  /** The stale-result case bead S0.7b appended: control rows for a query
+    * without a match.
+    */
+  private val S07bCodes: Set[String] = Set("study-result.unmatched-control")
 
   /** The family CR6d added: methods-text facts. */
   private val Cr6dCodes: Set[String] =
@@ -204,7 +209,7 @@ class DiagnosticCatalogSuite extends munit.FunSuite:
         Cr5Codes(code) || Cr2Codes(code) || Cr4Codes(code) || SourceCodes(code) || UiECodes(
           code
         ) || UiGCodes(code) || UiDCodes(code) || Cr6Codes(code) || Cr6bCodes(code) ||
-          ActiveSetCodes(code) || Cr6dCodes(code)
+          ActiveSetCodes(code) || Cr6dCodes(code) || S07bCodes(code)
       )
     assertEquals(stable.size, StableCount)
     assertEquals(ContentHash.ofString(stable.mkString("\n")).render, StableDigest)
@@ -244,7 +249,10 @@ class DiagnosticCatalogSuite extends munit.FunSuite:
     assertEquals(nested.subject, Vector(Locus.Scale(2), Locus.Trial(k1)))
     assertEquals(nested.causes.map(_.code.render), Vector("study-result.failure-key"))
     val finding = Diagnostic.of(
-      TemporalFinding.Repetition[StudyKey, Unit2D.Px]("rep", StudyFinding.UnmatchedFocal(k1))
+      TemporalFinding.Repetition[StudyKey, Unit2D.Px](
+        "rep",
+        StudyFinding.UnmatchedFocal(k1, UnmatchedKind.Undetermined)
+      )
     )
     assertEquals(finding.subject, Vector(Locus.Repetition("rep"), Locus.Trial(k1)))
     assertEquals(finding.severity, DiagnosticSeverity.Warning)

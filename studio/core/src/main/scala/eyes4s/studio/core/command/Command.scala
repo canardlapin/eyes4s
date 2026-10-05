@@ -172,6 +172,14 @@ enum Command derives CanEqual, Codec.AsObject:
     */
   case ChangeRecipe(change: RecipeChange)
 
+  /** Change several recipe fields of the draft as one edit (a preset
+    * choice, S7.1), creating a draft of the latest revision if there is none.
+    * Each change's `before` must be what the draft's recipe holds, the fields
+    * are distinct, and the whole edit is refused if any part is. A single
+    * undo reverses all of them.
+    */
+  case ChangeRecipes(changes: Vector[RecipeChange])
+
   /** Configure the draft on `dataset` (its base's dataset clears the
     * rebase), creating a draft of the latest revision if there is none.
     */
@@ -180,7 +188,12 @@ enum Command derives CanEqual, Codec.AsObject:
   case DiscardDraft
 
   /** Save the draft as an analysis revision and start a run of it on its
-    * dataset (effect [[Effect.RequestRun]]). A history barrier.
+    * dataset (effect [[Effect.RequestRun]]). A history barrier. Without
+    * `studio`, the revision keeps its base's name and description and its
+    * preset, unless the draft changes a field a preset declares; then it takes
+    * the preset its recipe holds (`RecipePresets.resolve`), `Custom` if none.
+    * Given `studio`, its preset must be one the saved recipe holds (or
+    * `Custom`).
     */
   case SaveAndRun(studio: Option[StudioFields])
 
@@ -265,8 +278,8 @@ enum Command derives CanEqual, Codec.AsObject:
           AddCorrection | RemoveCorrection | VerifyDataset | WithdrawVerification |
           ResumeVerification | Admit) =>
       ChangeKind.DatasetReadmit
-    case _: (StartDraft | RestoreDraft | ChangeRecipe | RebaseDraft | SaveAndRun |
-          RecordRunOutcome | CancelRun | BindPlan) =>
+    case _: (StartDraft | RestoreDraft | ChangeRecipe | ChangeRecipes | RebaseDraft |
+          SaveAndRun | RecordRunOutcome | CancelRun | BindPlan) =>
       ChangeKind.AnalysisRerun
     case DiscardDraft => ChangeKind.AnalysisRerun
     case _: (PutReporting | RemoveReporting | CreateFigure | RestoreFigure | DeleteFigure |

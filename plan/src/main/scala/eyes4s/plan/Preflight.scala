@@ -125,7 +125,12 @@ enum StudyFinding[K, U <: Unit2D] extends PreflightFinding[K] derives CanEqual:
   case Refused(underlying: PlanError)
   case FrameMismatch(key: K, underlying: GeometryError)
   case DuplicateTrial(key: K, side: PairingSide, positions: Vector[Int])
-  case UnmatchedFocal(key: K)
+
+  /** A focal trial without a matched reference, with why: judged against
+    * the trial inventory when the preflight is given one, else
+    * [[UnmatchedKind.Undetermined]].
+    */
+  case UnmatchedFocal(key: K, reason: UnmatchedKind)
   case UncontrolledFocal(key: K)
 
   /** Some of the trial's fixations lie outside the analysis window or the
@@ -164,7 +169,7 @@ enum StudyFinding[K, U <: Unit2D] extends PreflightFinding[K] derives CanEqual:
   def keys: Vector[K] = this match
     case FrameMismatch(k, _)          => Vector(k)
     case DuplicateTrial(k, _, _)      => Vector(k)
-    case UnmatchedFocal(k)            => Vector(k)
+    case UnmatchedFocal(k, _)         => Vector(k)
     case UncontrolledFocal(k)         => Vector(k)
     case OffWindowFixations(k, _, _)  => Vector(k)
     case NoFixationInWindow(k, _)     => Vector(k)
@@ -187,7 +192,7 @@ enum StudyFinding[K, U <: Unit2D] extends PreflightFinding[K] derives CanEqual:
     case MatchedCardinality(_, _, matched) =>
       if matched == MatchedReferences.MeanOfAll then Severity.Warning else Severity.Blocker
     case UndescribedMethod(_) | InconsistentDescriptor(_, _) | FrameMismatch(_, _) |
-        DuplicateTrial(_, _, _) | UnmatchedFocal(_) | UncontrolledFocal(_) |
+        DuplicateTrial(_, _, _) | UnmatchedFocal(_, _) | UncontrolledFocal(_) |
         OffWindowFixations(_, _, _) | NoFixationInWindow(_, _) | NoFixationKept(_, _) =>
       Severity.Warning
 
@@ -196,7 +201,7 @@ enum StudyFinding[K, U <: Unit2D] extends PreflightFinding[K] derives CanEqual:
       FindingClass.InvalidSetting
     case MissingArtifact(_) | ArtifactMismatch(_, _) => FindingClass.UnavailableInput
     case FrameMismatch(_, _)                         => FindingClass.IncompatibleInput
-    case DuplicateTrial(_, _, _) | UnmatchedFocal(_) | UncontrolledFocal(_) |
+    case DuplicateTrial(_, _, _) | UnmatchedFocal(_, _) | UncontrolledFocal(_) |
         OffWindowFixations(_, _, _) | NoFixationInWindow(_, _) | MatchedCardinality(_, _, _) |
         AmbiguousReferences(_, _) | UnmatchedFocalRefused(_) | MatchItemConflict(_) |
         NoFixationKept(_, _) =>
@@ -211,7 +216,7 @@ enum StudyFinding[K, U <: Unit2D] extends PreflightFinding[K] derives CanEqual:
     case Refused(e)                   => Preflight.remedyFor(e)
     case FrameMismatch(_, _)          => Remedy.AlignFrame
     case DuplicateTrial(_, _, _)      => Remedy.ResolveDuplicateTrials
-    case UnmatchedFocal(_)            => Remedy.SupplyMatchedReference
+    case UnmatchedFocal(_, _)         => Remedy.SupplyMatchedReference
     case UncontrolledFocal(_)         => Remedy.SupplyControlReference
     case OffWindowFixations(_, _, _)  => Remedy.ReviewAnalysisWindow
     case NoFixationInWindow(_, _)     => Remedy.ReviewAnalysisWindow
@@ -233,8 +238,17 @@ enum StudyFinding[K, U <: Unit2D] extends PreflightFinding[K] derives CanEqual:
     case FrameMismatch(k, e)    => s"Trial $k will fail at every scale: ${e.message}"
     case DuplicateTrial(k, side, positions) =>
       s"Trial key $k occurs at $side positions $positions and is excluded from pairing."
-    case UnmatchedFocal(k) =>
-      s"Focal trial $k has no same-stimulus reference within participant."
+    case UnmatchedFocal(k, reason) =>
+      s"Focal trial $k has no same-stimulus reference within participant" + (reason match
+        case UnmatchedKind.Undetermined        => "."
+        case UnmatchedKind.NoReferenceInDesign =>
+          "; the trial inventory declares none (by design)."
+        case UnmatchedKind.ReferenceNotAdmitted(rs) =>
+          "; the inventory declares " +
+            rs.map(r => s"${r.trial.render} (${r.disposition.label})").mkString(", ") +
+            ", none admitted."
+        case UnmatchedKind.ReferenceNotPairable(rs) =>
+          s"; ${rs.map(_.render).mkString(", ")} was admitted but cannot be paired.")
     case UncontrolledFocal(k) =>
       s"Focal trial $k has no different-stimulus control within participant."
     case OffWindowFixations(k, t, policy) =>
@@ -583,7 +597,8 @@ object Preflight:
   def study[K, U <: Unit2D, P, S, D](
       plan: StudyPlan[K, U, P, S, D],
       available: Option[StudyInput[K, U]],
-      budget: PairScheduleBudget = PairScheduleBudget.default
+      budget: PairScheduleBudget = PairScheduleBudget.default,
+      inventory: Option[InventoryLedger] = None
   ): StudyReport[K, U] =
     given Ordering[K] = plan.layout.ordering
     val prerequisites = plan.prerequisites(available).map(studyRefusal(plan, available))
@@ -595,7 +610,7 @@ object Preflight:
             e => Vector(e),
             work =>
               frames(work) ++ emptied(work) ++ windows(work) ++
-                schedule(work).fold(e => Vector(e), identity)
+                schedule(work, inventory).fold(e => Vector(e), identity)
           )
         }
     new StudyReport(
@@ -845,7 +860,8 @@ object Preflight:
     }
 
   private def schedule[K, U <: Unit2D, P, S, D](
-      work: PreparedStudy[K, U, P, S, D]
+      work: PreparedStudy[K, U, P, S, D],
+      inventory: Option[InventoryLedger] = None
   ): Either[StudyFinding[K, U], Vector[StudyFinding[K, U]]] =
     for
       matched <- complete(work.matched).left.map(e =>
@@ -859,8 +875,9 @@ object Preflight:
         case other                 => StudyFinding.Refused(other)
       }
     yield
-      val refuse = work.pairing.unmatched == UnmatchedFocalPolicy.Refuse
-      val policy = work.pairing.matched
+      val refuse  = work.pairing.unmatched == UnmatchedFocalPolicy.Refuse
+      val policy  = work.pairing.matched
+      val reasons = work.unmatchedReasons(matched.unmatchedLeft, inventory)
       work.matched.ambiguities.map {
         case PairingAmbiguity.DuplicateLeft(key, positions) =>
           StudyFinding.DuplicateTrial(key, PairingSide.Focal, positions)
@@ -869,7 +886,11 @@ object Preflight:
       } ++ cardinality.itemConflicts.map(StudyFinding.MatchItemConflict(_)) ++
         matched.unmatchedLeft.map(k =>
           if refuse then StudyFinding.UnmatchedFocalRefused(k)
-          else StudyFinding.UnmatchedFocal(k)
+          else
+            StudyFinding.UnmatchedFocal(
+              k,
+              reasons.reason(k).getOrElse(UnmatchedKind.Undetermined)
+            )
         ) ++
         cardinality.multiple.map((k, rs) => StudyFinding.MatchedCardinality(k, rs, policy)) ++
         cardinality.blockingReferences.map(StudyFinding.AmbiguousReferences(_, policy)) ++

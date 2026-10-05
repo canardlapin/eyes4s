@@ -534,6 +534,12 @@ enum StudyResultError[K] derives CanEqual:
   case Scale(index: Int, underlying: StudyResultError[K])
   case SpecificationTime(design: StudyDesign, expected: EvaluationTime, found: EvaluationTime)
 
+  /** The control design holds `key`, a focal trial the matched design left
+    * unmatched: a result written before a query without a match lost its
+    * controls (bead S0.7b), whose control mean would now differ. Rerun it.
+    */
+  case UnmatchedControl(key: K)
+
   def message: String = this match
     case Description(field, found) =>
       s"Description field $field is missing or malformed: $found."
@@ -577,6 +583,9 @@ enum StudyResultError[K] derives CanEqual:
     case Scale(index, underlying)                   => s"Scale $index: ${underlying.message}"
     case SpecificationTime(design, expected, found) =>
       s"The $design specification orders time as $found; the plan's execution context gives $expected."
+    case UnmatchedControl(key) =>
+      s"Trial $key has no matched reference but has control rows: the result predates the rule " +
+        "that a query without a match gets no controls (bead S0.7b); rerun the study."
 
 object StudyScaleResult:
   /** Checked reconstruction of one scale: every density carries the provenance
@@ -626,7 +635,15 @@ object StudyScaleResult:
     } ++ contrast.toOption.toVector.flatMap(_.rows.collect {
       case row if !known(row.key) => StudyResultError.OrphanKey(row.key)
     })
+    // A query without a match has no controls (bead S0.7b): a stored control
+    // row or reduction for one is a result from before that rule.
+    val unmatched = analyses.source(StudyDesign.Matched).diagnostics.unmatchedLeft.toSet
+    val stale     = (analyses.source(StudyDesign.Control).rows.map(_.left) ++
+      analyses.reduced(StudyDesign.Control).entries.map(_.key)).collectFirst {
+      case key if unmatched(key) => StudyResultError.UnmatchedControl(key)
+    }
     rows
+      .orElse(stale)
       .orElse(contrastIdentity)
       .orElse(excludedPhases.collectFirst {
         case key if !known(key) => StudyResultError.OrphanKey(key)
@@ -887,8 +904,9 @@ final class StudyPlan[K, U <: Unit2D, P, S, D] private (
   /** Typed availability report; see [[Preflight.study]]. */
   def preflight(
       available: Option[StudyInput[K, U]],
-      budget: PairScheduleBudget = PairScheduleBudget.default
-  ): StudyReport[K, U] = Preflight.study(this, available, budget)
+      budget: PairScheduleBudget = PairScheduleBudget.default,
+      inventory: Option[InventoryLedger] = None
+  ): StudyReport[K, U] = Preflight.study(this, available, budget, inventory)
 
   /** Fields in the version-1 order; a later field appears only when the plan
     * departs from the version-1 meaning, so an unchanged plan keeps its

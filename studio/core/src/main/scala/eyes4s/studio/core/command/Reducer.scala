@@ -19,6 +19,7 @@ package eyes4s.studio.core.command
 import cats.syntax.all.*
 import eyes4s.studio.core.backend.{AnalysisRevision, DatasetRevision, RunId}
 import eyes4s.studio.core.document.*
+import eyes4s.studio.core.preset.RecipePresets
 
 /** A command's result: the next document, the effects to perform, and how
   * the command enters the history.
@@ -294,6 +295,30 @@ object Reducer:
         next  <- rebuild(d, c)(draft = draft)
       yield reversible(next, draftInverse(prior, draft, ChangeRecipe(change.inverse)))
 
+    case ChangeRecipes(changes) =>
+      for
+        (base, id, prior) <- drafting(d, c)
+        current = prior.fold(base.recipe)(_.recipe(base.recipe))
+        _ <- Either.cond(changes.nonEmpty, (), NoChange(c.name, targetOf(d, c)))
+        _ <- changes
+          .groupBy(_.field)
+          .collectFirst {
+            case (field, cs) if cs.size > 1 =>
+              Refused(c.name, targetOf(d, c), DocumentError.RepeatedField(id, field))
+          }
+          .toLeft(())
+        _ <- changes.traverse_ { change =>
+          change
+            .mismatch(current)
+            .map(StaleChange(change.field, change.renderedValues._1, _))
+            .toLeft(())
+        }
+        _ <- Either.cond(changes.exists(!_.isIdentity), (), NoChange(c.name, targetOf(d, c)))
+        target = changes.foldLeft(current)((r, change) => change.applyTo(r))
+        draft <- redraft(d, c, id, base, prior.flatMap(_.dataset), target)
+        next  <- rebuild(d, c)(draft = draft)
+      yield reversible(next, draftInverse(prior, draft, ChangeRecipes(changes.map(_.inverse))))
+
     case RebaseDraft(target) =>
       for
         (base, id, prior) <- drafting(d, c)
@@ -311,12 +336,14 @@ object Reducer:
         target = draft.dataset.getOrElse(base.dataset)
         data <- d.dataset(target).toRight(UnknownDataset(target))
         _    <- Either.cond(data.decision.isAdmitted, (), DatasetNotAdmitted(target))
+        recipe = draft.recipe(base.recipe)
+        fields <- studioFields(draft, base, recipe, studio)
         revision = AnalysisRevisionSpec(
           draft.id,
           target,
           CoreBinding.unbound,
-          draft.recipe(base.recipe),
-          studio.getOrElse(base.studio)
+          recipe,
+          fields
         )
         run     = RunId(d.runs.lastOption.fold(1)(_.id.number + 1))
         started = RunRef(run, draft.id, target, RunLifecycle.Running, CoreBinding.unbound)
@@ -600,7 +627,8 @@ object Reducer:
     case ResumeVerification(id, _)       => Target.OnDataset(id)
     case Admit(id, _, _, _, _)           => Target.OnDataset(id)
     case RestoreDraft(draft)             => Target.OnDraft(Some(draft.id))
-    case _: (StartDraft | ChangeRecipe | RebaseDraft | SaveAndRun) | DiscardDraft =>
+    case _: (StartDraft | ChangeRecipe | ChangeRecipes | RebaseDraft | SaveAndRun) |
+        DiscardDraft =>
       Target.OnDraft(
         d.draft.map(_.id).orElse(d.latestAnalysis.map(a => AnalysisRevision(a.id.number + 1)))
       )
@@ -688,6 +716,32 @@ object Reducer:
     val changes = RecipeChange.between(base.recipe, target)
     if changes.isEmpty && dataset.isEmpty then Right(None)
     else Draft.against(id, base, dataset, changes).bimap(refused(d, c), Some(_))
+
+  /** The studio fields Save & run records (S7.1): the caller's, if their
+    * preset is held by the saved recipe; else the base's, its preset resolved
+    * again only when the draft changes a field a preset declares, so an
+    * unedited legacy revision keeps its preset and its science digest.
+    */
+  private def studioFields(
+      draft: Draft,
+      base: AnalysisRevisionSpec,
+      recipe: Recipe,
+      studio: Option[StudioFields]
+  ): Either[CommandError, StudioFields] =
+    studio match
+      case Some(fields) =>
+        Either.cond(
+          RecipePresets.of(fields.preset).forall(_.holds(recipe)),
+          fields,
+          PresetNotHeld(fields.preset, draft.id)
+        )
+      case None =>
+        val touched = draft.changes.exists(ch => RecipePresets.declaredFields(ch.field))
+        Right(
+          if touched then
+            base.studio.copy(preset = RecipePresets.resolve(base.studio.preset, recipe))
+          else base.studio
+        )
 
   /** A draft edit's inverse: discard a draft it created, restore one it
     * removed, and otherwise the edit in the other direction.

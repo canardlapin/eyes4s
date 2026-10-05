@@ -85,7 +85,8 @@ class StudyCountsSuite extends munit.FunSuite:
     assertEquals(c.matched.unmatchedFocal, 1L)
     assertEquals(c.matched.unmatchedReferences, 2L)
     assertEquals(c.controls.unmatchedReferences, 1L)
-    assertEquals(c.eligibleQueries, 3L)
+    // The query without a match (q z) is not eligible (bead S0.7b).
+    assertEquals(c.eligibleQueries, 2L)
     assertEquals(c.pairRowsPerScale, 6L)
     assertEquals(c.totalPairs, 12L)
     assertEquals(c.totalMaps, 14L)
@@ -118,7 +119,7 @@ class StudyCountsSuite extends munit.FunSuite:
     assertEquals(c.controls.ambiguousKeys, 1L)
     assertEquals(c.matched.eligiblePairs, 1L)
     assertEquals(c.controls.eligiblePairs, 2L)
-    assertEquals(c.eligibleQueries, 2L)
+    assertEquals(c.eligibleQueries, 1L)
   }
 
   test("empty schedules finish with exact zero") {
@@ -132,9 +133,143 @@ class StudyCountsSuite extends munit.FunSuite:
     val (plan, work) = prepare(keys, offscreen = true)
     assert(work.windowChecks.exists(_.isLeft))
     val c = get(Stepwise.complete(get(CountCursor.of(plan, work)), WorkQuanta.default))
-    assertEquals(c.eligibleQueries, 3L)
+    assertEquals(c.eligibleQueries, 2L)
     assertEquals(c.matched.eligiblePairs, 2L)
     assertEquals(c.controls.eligiblePairs, 4L)
+  }
+
+  test("a query without a match gets no control pairs and no score in either design") {
+    // p x has encodings of other items but none of x: no match, so no controls.
+    val ks = Vector(
+      StudyKey("p", "a", "recall"),
+      StudyKey("p", "x", "recall"),
+      StudyKey("p", "a", "encode"),
+      StudyKey("p", "b", "encode")
+    )
+    val (plan, work) = prepare(ks, scales = 2)
+    val c            = get(work.counts)
+    assertEquals(c.matched.eligiblePairs, 1L)
+    assertEquals(c.controls.eligiblePairs, 1L)
+    assertEquals(c.controls.focalWithPairs, 1L)
+    // The control design leaves it out: it is not even an unmatched control key.
+    assertEquals(c.controls.unmatchedFocal, 0L)
+    assertEquals(c.eligibleQueries, 1L)
+    assertEquals(c.pairRowsPerScale, 2L)
+    // Both focal keys have a row in the matched reduction and the contrast;
+    // only a is in the control reduction: (2 + 1) keys and 2 rows per scale.
+    assertEquals((c.keysPerDesign, c.controlKeys), (2L, 1L))
+    assertEquals((c.totalReductionKeys, c.totalContrastRows), (6L, 4L))
+    assertEquals(c.cardinality.unmatched, Vector(ks(1)))
+    val result = get(work.run)
+    result.scales.foreach { scale =>
+      assertEquals(scale.analyses.control.entries.map(_.key), Vector(ks(0)))
+      assert(scale.analyses.control.entries.forall(_.result.isRight))
+      // No score for the query without a match, in either design.
+      assert(scale.analyses.matched.entries.forall(r => r.key == ks(0) || r.result.isLeft))
+      val contrast = get(scale.contrast).rows.map(r => r.key -> r.difference.isRight).toMap
+      assertEquals(contrast.get(ks(0)), Some(true))
+      assertEquals(contrast.get(ks(1)), Some(false))
+      assertEquals(scale.analyses.matchedSource.diagnostics.unmatchedLeft, Vector(ks(1)))
+    }
+    assertEquals(
+      plan.preflight(Some(work.input)).findings,
+      Vector(StudyFinding.UnmatchedFocal[StudyKey, Px](ks(1), UnmatchedKind.Undetermined))
+    )
+  }
+
+  test("a query without a match before one with a match leaves its control scores unchanged") {
+    // Controls are scored on the control design's own focal trials: an
+    // unmatched query earlier in the input must not shift which maps they use.
+    def keyed(withUnmatched: Boolean) =
+      Option.when(withUnmatched)(StudyKey("p", "x", "recall")).toVector ++ Vector(
+        StudyKey("p", "a", "recall"),
+        StudyKey("p", "a", "encode"),
+        StudyKey("p", "b", "encode")
+      )
+    def scores(keys: Vector[StudyKey], offscreen: Set[StudyKey]) =
+      val input = StudyInput(Trials(keys.map(k => trial(k, offscreen(k)))))
+      val plan  = get(
+        StudyPlan.of(
+          input.reference,
+          StudyKey.layout(DefinitionId.studyLayout),
+          grid,
+          "recall",
+          "encode",
+          Weight.Duration,
+          Vector(StudyEstimate.Binned()),
+          FailurePolicy.RequireAll,
+          StudyMethod.cosine[Px](DefinitionId.cosine),
+          ()
+        )
+      )
+      val result = get(get(plan.prepare(input)).run)
+      result.scales.head.analyses.control.entries.map(r => r.key -> r.result).toMap
+    // x's map fails (its fixation is off the frame), so reading it for a's
+    // control pair would turn a's control score into a failure.
+    val offscreen = Set(StudyKey("p", "x", "recall"))
+    val alone     = scores(keyed(withUnmatched = false), offscreen)
+    val beside    = scores(keyed(withUnmatched = true), offscreen)
+    assert(alone.values.forall(_.isRight), alone.toString)
+    assertEquals(beside, alone)
+  }
+
+  test("a stored result with controls for a query without a match is refused as stale") {
+    // Run A: p x is unmatched, so the control design leaves it out.
+    val unmatchedKeys = Vector(
+      StudyKey("p", "a", "recall"),
+      StudyKey("p", "x", "recall"),
+      StudyKey("p", "a", "encode"),
+      StudyKey("p", "b", "encode")
+    )
+    // Run B: an encoding of x makes it matched, so it has controls (a, b):
+    // its control rows stand in for an archive written before bead S0.7b.
+    val matchedKeys = unmatchedKeys :+ StudyKey("p", "x", "encode")
+    val (_, a)      = prepare(unmatchedKeys, scales = 1)
+    val (_, b)      = prepare(matchedKeys, scales = 1)
+    val sa          = get(a.run).scales.head
+    val sb          = get(b.run).scales.head
+    assert(sb.analyses.control.entries.exists(_.key == unmatchedKeys(1)))
+    val old = get(
+      StudyAnalyses.of(
+        sa.analyses.matchedSource,
+        sa.analyses.matched,
+        sb.analyses.controlSource,
+        sb.analyses.control
+      )
+    )
+    // Its contrast is over its own reductions, as an old archive's was, and
+    // every key it names was estimated, so only the stale-control rule can
+    // refuse it.
+    val oldContrast = eyes4s.design.contrast(old.matched, old.control)
+    assert(oldContrast.isRight)
+    assertEquals(
+      StudyScaleResult
+        .reconstruct(sb.estimate, sb.estimation, sb.excludedPhases, old, oldContrast),
+      Left(StudyResultError.UnmatchedControl(unmatchedKeys(1)))
+    )
+    // The result as now written reconstructs.
+    assert(
+      StudyScaleResult
+        .reconstruct(sa.estimate, sa.estimation, sa.excludedPhases, sa.analyses, sa.contrast)
+        .isRight
+    )
+    assertEquals(
+      Diagnostic.of(StudyResultError.UnmatchedControl[StudyKey](unmatchedKeys(1))).code.render,
+      "study-result.unmatched-control"
+    )
+  }
+
+  test("a query whose only reference is repeated has no match, so no controls") {
+    val ks = Vector(
+      StudyKey("p", "a", "recall"),
+      StudyKey("p", "a", "encode"),
+      StudyKey("p", "a", "encode"),
+      StudyKey("p", "b", "encode")
+    )
+    val (_, work) = prepare(ks, scales = 1)
+    val c         = get(work.counts)
+    assertEquals((c.matched.eligiblePairs, c.controls.eligiblePairs), (0L, 0L))
+    assertEquals(c.eligibleQueries, 0L)
   }
 
   test("matched cardinality remains available when only the control budget is exceeded") {

@@ -17,7 +17,7 @@
 package eyes4s.studio.core.command
 
 import cats.syntax.all.*
-import eyes4s.codec.{CanonicalDigest, CodecError, VersionedCodec}
+import eyes4s.codec.{CanonicalDigest, CodecError, SchemaLadder, VersionedCodec}
 import eyes4s.studio.core.document.DigestJson.given
 import eyes4s.studio.core.document.{
   CanonicalJson,
@@ -25,8 +25,8 @@ import eyes4s.studio.core.document.{
   StudioDocument,
   StudioSchemaIds
 }
-import io.circe.Codec
 import io.circe.syntax.*
+import io.circe.{Codec, Json}
 
 /** One step of an editing session, as the journal records it. */
 enum JournalEntry derives CanEqual, Codec.AsObject:
@@ -123,15 +123,46 @@ final case class Replay(
   */
 object CommandJournal:
 
-  val codec: Either[CodecError, VersionedCodec[JournalLine]] =
+  /** Whether `json` names an enum case added in journal version 2: the
+    * `PerceptionImagery` preset (S7.1), which a line carries wherever it
+    * holds studio fields (`SaveAndRun`) or an analysis. A case is encoded as
+    * an object key, which no user text can be, so a key search finds every
+    * carrier.
+    */
+  private def namesV2(json: Json): Boolean =
+    json.arrayOrObject(
+      false,
+      _.exists(namesV2),
+      o => o.contains("PerceptionImagery") || o.values.exists(namesV2)
+    )
+
+  private def read(json: Json): Either[CodecError, JournalLine] =
+    json.as[JournalLine].left.map(f => CodecError.Field("journal", json, f.getMessage))
+
+  private val refusal = CodecError.Unsupported("studio journal", "a preset needs version 2")
+
+  /** Every version of the journal line schema (CR3).
+    *
+    * Version 2 (S7.1) adds the `PerceptionImagery` preset. A line that names
+    * it is version 2, which a version-1 reader refuses
+    * (`CodecError.UnsupportedSchema`); every other line is still written as
+    * version 1, byte for byte, and the upcast is the identity. A preset
+    * cannot be dropped as a member can, so the version-1 writer and reader
+    * refuse a line that names it.
+    */
+  val ladder: Either[CodecError, SchemaLadder[JournalLine]] =
     StudioSchemaIds.ids
       .leftMap(e => CodecError.Unsupported("schema", e.message))
       .map { ids =>
-        VersionedCodec.checked[JournalLine](ids.journal)(l => Right(CanonicalJson(l.asJson))) {
-          json =>
-            json.as[JournalLine].left.map(f => CodecError.Field("journal", json, f.getMessage))
-        }
+        SchemaLadder
+          .of[JournalLine]("studio journal", ids.journal) { l =>
+            val json = CanonicalJson(l.asJson)
+            Either.cond(!namesV2(json), json, refusal)
+          }(json => if namesV2(json) then Left(refusal) else read(json))
+          .next(l => !namesV2(l.asJson), identity)(l => Right(CanonicalJson(l.asJson)))(read)
       }
+
+  val codec: Either[CodecError, VersionedCodec[JournalLine]] = ladder.map(_.codec)
 
   def encode(line: JournalLine): Either[JournalError, String] =
     codec.flatMap(_.encode(line)).bimap(JournalError.Unwritable(_), _.noSpaces)
@@ -174,11 +205,26 @@ object CommandJournal:
     yield (head +: rest._2).map(_ + "\n").mkString
 
   def replay(base: StudioDocument, text: String): Either[JournalError, Replay] =
+    replay(codec, base, text)
+
+  /** Replay through `codec`; a reader of an earlier version is a ladder's
+    * `upTo` codec.
+    */
+  private[core] def replay(
+      codec: Either[CodecError, VersionedCodec[JournalLine]],
+      base: StudioDocument,
+      text: String
+  ): Either[JournalError, Replay] =
     val lines = text.split("\n", -1).toVector match
       case init :+ "" => init
       case all        => all
     def read(n: Int) =
       codec.flatMap(_.parse(lines(n - 1))).left.map(JournalError.Unreadable(n, _))
+    // A line of a later schema version is not a torn write: it is refused,
+    // never skipped.
+    def torn(e: JournalError) = e match
+      case JournalError.Unreadable(_, _: CodecError.UnsupportedSchema) => false
+      case _                                                           => true
     for
       _     <- Either.cond(lines.nonEmpty, (), JournalError.Empty)
       first <- read(1)
@@ -198,7 +244,7 @@ object CommandJournal:
           )
         ) { (acc, n) =>
           read(n) match
-            case Left(_) if n == lines.size =>
+            case Left(e) if n == lines.size && torn(e) =>
               Right(acc.copy(torn = Some(TornLine(n, lines(n - 1)))))
             case Left(e)                          => Left(e)
             case Right(JournalLine.Start(_))      => Left(JournalError.RepeatedStart(n))
