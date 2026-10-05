@@ -1100,10 +1100,23 @@ ThisBuild / checkStudioBoundaries := {
          )} take no source binding.""".stripMargin
     )
 
+  val ioObjects = StudioLint.scanIoObjectTree(buildRoot)
+  if (ioObjects.nonEmpty)
+    sys.error(
+      s"""|Studio boundary violation: portable studio sources name a file-backed eyes4s-io object.
+          |
+          |${ioObjects.map("  - " + _.render).mkString("\n")}
+          |
+          |${StudioLint.forbiddenIoObjects.mkString(", ")} read or write files. The real
+          |backend gets bytes through its host port (DatasetSources); only studio-desktop
+          |touches files (DESIGN_SPEC section 13).""".stripMargin
+    )
+
   log.info(
     s"studio boundaries OK (lint self-test passed; ${graph.size} project(s) have no " +
       "library-to-studio edge; no JVM-only package in portable studio sources; " +
-      "no effect library in studio-app or studio-viz sources; no unbound report constructor)"
+      "no effect library in studio-app or studio-viz sources; no unbound report constructor; " +
+      "no file-backed eyes4s-io object in portable studio sources)"
   )
 }
 
@@ -1112,7 +1125,8 @@ lazy val studioCore = crossProject(JVMPlatform, JSPlatform)
   .crossType(CrossType.Pure)
   .in(file("studio/core"))
   .enablePlugins(NoPublishPlugin)
-  .dependsOn(plan, codec, fs2Module)
+  // S3.7: the real backend admits datasets through eyes4s-io (cross-built).
+  .dependsOn(plan, codec, fs2Module, io)
   .settings(commonSettings, portableStudioSettings)
   .settings(
     name := "eyes4s-studio-core",
@@ -1174,7 +1188,6 @@ lazy val studioCore = crossProject(JVMPlatform, JSPlatform)
       )
     }.taskValue
   )
-  .jvmConfigure(_.dependsOn(io.jvm % Test))
   // S5.4: the golden tables' text, for the JVM suite that admits them with
   // eyes4s-io under the story's recorded mappings.
   .jvmSettings(
@@ -1182,6 +1195,14 @@ lazy val studioCore = crossProject(JVMPlatform, JSPlatform)
       StudioFixture.goldenCsv(
         (ThisBuild / baseDirectory).value,
         (Test / sourceManaged).value / "eyes4s" / "studio" / "GoldenCsv.scala"
+      )
+    }.taskValue,
+    // S3.7 slice 5: the scores eyes4s computed for the golden study
+    // (SCORES.json, S0.7b), for the real backend's result checks.
+    Test / sourceGenerators += Def.task {
+      StudioFixture.goldenScores(
+        (ThisBuild / baseDirectory).value,
+        (Test / sourceManaged).value / "eyes4s" / "studio" / "GoldenScores.scala"
       )
     }.taskValue
   )

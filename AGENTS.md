@@ -36,7 +36,10 @@ dependency graph. `checkBoundaries` enforces that no library module depends on a
 studio project, that studio-core/app/viz resolve no JavaFX artifact and their sources
 name no `javafx`, `scaladock.fx`, `java.io`, `java.nio.file` or `java.nio.channels`
 package (`java.nio` buffers and charsets are allowed), and that studio-app/viz
-sources name no `cats.effect` or `fs2` package. Imports are read structurally
+sources name no `cats.effect` or `fs2` package, and that portable studio sources name no
+file-backed eyes4s-io object (`ArtifactFiles`, `ArrowResultExport`, `EyeLinkAscStreaming`,
+`EyeLinkAscImport`): studio-core depends on eyes4s-io for its pure importers, and the real
+backend gets bytes only through its host port. Imports are read structurally
 (selectors, renames, wildcards) and interpolated expressions are scanned
 (`project/StudioLint.scala`).
 

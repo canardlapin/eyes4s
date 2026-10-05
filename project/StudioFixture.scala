@@ -495,6 +495,24 @@ object StudioFixture {
     * under the story's recorded mappings without reading files. Written only
     * when its text changes.
     */
+  /** `object GoldenScores` with the exact text of
+    * fixtures/studio-golden/SCORES.json (S0.7b), against which the real
+    * backend's results are checked (S3.7 slice 5).
+    */
+  def goldenScores(root: File, out: File): Seq[File] = {
+    val text =
+      s"""|${header}package eyes4s.studio.core.fixture
+          |
+          |/** The exact text of fixtures/studio-golden/SCORES.json. */
+          |object GoldenScores:
+          |  val text: String = Vector(
+          |    ${chunked(IO.read(root / "fixtures" / "studio-golden" / "SCORES.json", IO.utf8))}
+          |  ).mkString
+          |""".stripMargin
+    if (!out.exists || IO.read(out, IO.utf8) != text) IO.write(out, text, IO.utf8)
+    Seq(out)
+  }
+
   def goldenCsv(root: File, out: File): Seq[File] = {
     val golden = root / "fixtures" / "studio-golden"
     val text   =

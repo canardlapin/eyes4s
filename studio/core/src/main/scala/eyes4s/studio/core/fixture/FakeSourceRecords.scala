@@ -21,7 +21,7 @@ import eyes4s.kernel.*
 import eyes4s.plan.MapPlacement
 import eyes4s.studio.core.backend.*
 import eyes4s.studio.core.document.{Geometry, Recipe, Source, SourceRole}
-import eyes4s.studio.core.geometry.DisplayFrames
+import eyes4s.studio.core.geometry.{DisplayFrames, RecordPositions}
 import eyes4s.studio.core.selection.{FixationIndex, RecordNumber, StudioRef}
 
 /** The fake's source records (protocol 1.7, S6.4): fixtures/studio-golden's
@@ -66,43 +66,22 @@ object FakeSourceRecords:
   private def refused(r: AnalysisRevision, e: SourceRecordsError): BackendError =
     BackendError.SourceRecordsRefused(r, e)
 
-  /** The study's frames: the dataset's display geometry as eyes4s frames
-    * ([[DisplayFrames]]), at the plan's declared pixels per degree when the
-    * recipe states one, else the dataset's, and where that scale comes from.
-    */
+  /** The study's frames ([[RecordPositions.frames]]). */
   private[fixture] def frames(
       dataset: DatasetRevision,
       recipe: Recipe,
       geometry: Geometry
   ): Either[String, (DisplayFrames, ScaleSource)] =
-    val (perDegree, source) = recipe.angularScale.fold(
-      (geometry.pixelsPerDegree, ScaleSource.Dataset)
-    )(s => (s, ScaleSource.Recipe))
-    for
-      scaled <- Geometry.of(geometry.screen, geometry.image, perDegree).leftMap(_.message)
-      frames <- DisplayFrames.of(dataset, scaled).leftMap(_.message)
-    yield (frames, source)
+    RecordPositions.frames(dataset, recipe, geometry)
 
-  /** A screen centre's image position (and whether the image's half-open
-    * frame holds it) and its degrees from the image centre, as eyes4s gives
-    * them.
-    */
+  /** A record's image position and degrees ([[RecordPositions.position]]). */
   private[fixture] def position(
       frames: DisplayFrames,
       record: Int,
       x: Double,
       y: Double
   ): Either[SourceRecordsError, Option[(ImagePosition, PlanePoint)]] =
-    val centre = Pt[Unit2D.Px](x, y)
-    frames.image
-      .enter(centre)
-      .flatMap(local => frames.toDegrees(local).map(local -> _))
-      .traverse((local, d) =>
-        for
-          at  <- PlanePoint.of(record, "image", local.x, local.y)
-          deg <- PlanePoint.of(record, "degrees", d.x, d.y)
-        yield (ImagePosition(at, frames.image.locate(centre).isInside), deg)
-      )
+    RecordPositions.position(frames, record, x, y)
 
   /** Records `from` to `from + count - 1` of the revision's fixation file. */
   def page(
