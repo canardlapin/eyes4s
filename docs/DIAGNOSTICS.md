@@ -405,6 +405,7 @@ fails after rewriting, so review the change and run it again.
 | `study-result.reconstruction` | `Reconstruction` | `underlying` |
 | `study-result.scale` | `Scale` | `index`, `underlying` |
 | `study-result.specification-time` | `SpecificationTime` | `design`, `expected`, `found` |
+| `study-result.unmatched-control` | `UnmatchedControl` | `key` |
 
 ### `temporal` — `TemporalStudyError`
 

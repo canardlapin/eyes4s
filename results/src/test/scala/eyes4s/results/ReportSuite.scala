@@ -536,6 +536,66 @@ class ReportSuite extends munit.FunSuite:
     )
   }
 
+  test("a query without a match is not eligible: the books agree with the study's counts") {
+    // p2 c is recalled but was never encoded, so the matched pairing finds
+    // it no reference (bead S0.7b).
+    val unmatched = k("p2", "c")
+    val bigger = StudyInput(Trials(input.trials.rows :+ trial(unmatched, Vector(0.5 -> 0.5))))
+    val study  = get(
+      StudyPlan.cosine(
+        bigger.reference,
+        grid,
+        "recall",
+        "encode",
+        Weight.Duration,
+        Vector(StudyEstimate.Binned()),
+        FailurePolicy.RequireAll
+      )
+    )
+    val run    = get(study.run(bigger))
+    val counts = get(
+      Stepwise.complete(
+        get(CountCursor.of(study, get(study.prepare(bigger)))),
+        WorkQuanta.default
+      )
+    )
+    assertEquals(counts.eligibleQueries, 5L)
+    assertEquals(counts.cardinality.unmatched, Vector(unmatched))
+    val from =
+      get(ReportSource.study(study, bigger, run, None, binding.copy(covariates = None)))
+    val table = get(from.queries(0))
+    assertEquals(table.unmatched, Vector(unmatched))
+    assert(!table.queries.exists(_.key == unmatched))
+    val every = get(ReportSelection.of(Role.values.toVector, table.components))
+    val r     = get(
+      Report.evaluate(
+        get(
+          ReportSpec.of(
+            id,
+            0,
+            every,
+            None,
+            Vector.empty,
+            ReducePolicy.default,
+            None,
+            Spread.StandardDeviation
+          )
+        ),
+        from
+      )
+    )
+    assertEquals(r.accounting.map(_.role), Role.values.toVector)
+    r.accounting.foreach { a =>
+      assertEquals(a.eligible.toLong, counts.eligibleQueries, s"${a.role}")
+      assertEquals(a.failed, 0, s"${a.role}")
+    }
+    // The unmatched key is data, never shared with a query.
+    assertEquals(
+      QueryTable.of(0, table.components, table.covariates, table.queries, Vector(k("p1", "a"))),
+      Left(ReportError.DuplicateQuery(k("p1", "a")))
+    )
+  }
+
   test("a source refuses a result another plan computed, and an unknown scale or component") {
     val other = get(
       StudyPlan.cosine(

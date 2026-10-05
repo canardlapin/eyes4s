@@ -243,7 +243,8 @@ object DiagnosticSamples:
         StudyDesign.Control,
         EvaluationTime.RelativeMicroseconds,
         EvaluationTime.OrderFree
-      )
+      ),
+      StudyResultError.UnmatchedControl(k1)
     ),
     family[TemporalStudyError]("TemporalStudyError")(
       TemporalStudyError.Input(PlanError.MissingArtifact(digest)),

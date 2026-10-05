@@ -303,5 +303,13 @@ class StudioFixtureRealSuite extends munit.FunSuite:
       Vector("M", "B", "D").foreach(r =>
         assertEquals(cell(r, "queries").as[Int], Right(454), s"$s $r")
       )
+      // A report books the study's eligible queries, and no others: a query
+      // without a match is neither kept nor failed (bead S0.7b).
+      val eligible = counts(body).get("eligibleQueries").map(int)
+      Vector("M", "B", "D").foreach { r =>
+        val booked = for q <- cell(r, "queries").as[Long]; f <- cell(r, "failed").as[Long]
+        yield q + f
+        assertEquals(booked.toOption, eligible, s"$s $r")
+      }
     }
   }

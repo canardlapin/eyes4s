@@ -118,25 +118,41 @@ object Query:
         )
       )
 
-/** The focal queries of one scale, with the score components they carry and
-  * the covariates they were joined with: what [[Report.reduce]] reads. Keys
-  * are distinct and every scored role has one value per component.
+/** The eligible queries of one scale, with the score components they carry
+  * and the covariates they were joined with: what [[Report.reduce]] reads.
+  * Keys are distinct and every scored role has one value per component.
+  *
+  * `unmatched` holds the focal trials the matched pairing found no reference
+  * for. They are not eligible (bead S0.7b): they have no matched score and no
+  * controls, so a report neither keeps nor fails them. They are kept here as
+  * data rather than dropped, and never share a key with a query.
   */
 final class QueryTable[K] private (
     val scale: Int,
     val components: Vector[String],
     val covariates: CovariateSchema,
-    val queries: Vector[Query[K]]
+    val queries: Vector[Query[K]],
+    val unmatched: Vector[K]
 )
 
 object QueryTable:
+  /** A table with no unmatched focal trial. */
   def of[K](
       scale: Int,
       components: Vector[String],
       covariates: CovariateSchema,
       queries: Vector[Query[K]]
   ): Either[ReportError[K], QueryTable[K]] =
-    val keys = queries.map(_.key)
+    of(scale, components, covariates, queries, Vector.empty)
+
+  def of[K](
+      scale: Int,
+      components: Vector[String],
+      covariates: CovariateSchema,
+      queries: Vector[Query[K]],
+      unmatched: Vector[K]
+  ): Either[ReportError[K], QueryTable[K]] =
+    val keys = queries.map(_.key) ++ unmatched
     keys.diff(keys.distinct).headOption match
       case Some(key) => Left(ReportError.DuplicateQuery(key))
       case None      =>
@@ -150,4 +166,4 @@ object QueryTable:
             )
           )
           .headOption
-          .toLeft(new QueryTable(scale, components, covariates, queries))
+          .toLeft(new QueryTable(scale, components, covariates, queries, unmatched))
