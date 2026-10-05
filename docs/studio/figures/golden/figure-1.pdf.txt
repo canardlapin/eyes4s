@@ -21,8 +21,8 @@ controls · street-112
 0.61
 Matched 0.73 · highest of 19 controls street-112 0.61 · control mean
 B 0.35 · D +0.38
-No density maps yet: they are drawn when the backend serves density
-grids (UI-E). The tiles show their scores.
+Magenta: fixation duration mass per cell, shared limits; lines: 50%
+and 90% mass.
 D Participant D by response
 +0.30
 +0.15

@@ -26,6 +26,8 @@ import eyes4s.studio.desktop.StudioWindow
 import eyes4s.studio.desktop.harness.{FxStage, StudioTheme}
 import eyes4s.studio.desktop.shell.ShellFxSuite
 import javafx.scene.input.KeyCode
+import javafx.scene.control.ToggleButton
+import scala.jdk.CollectionConverters.*
 
 import scala.concurrent.duration.Duration
 
@@ -40,6 +42,19 @@ class QueriesNavigatorFxSuite extends ShellFxSuite:
   override val munitTimeout: Duration = Duration(180, "s")
 
   private def loaded(fx: FxStage, w: StudioWindow): Unit =
+    eventually(fx, "the 2° report is served")(
+      w.summary.vm.scales.exists(c => c.scale == StoryModels.sigma2 && c.available)
+    )
+    runOnFx {
+      w.summary.participantNode
+        .lookupAll(".toggle-button")
+        .asScala
+        .collectFirst {
+          case b: ToggleButton if b.getText == "σ 2°" => b
+        }
+        .getOrElse(fail("no 2° control"))
+        .fire()
+    }
     eventually(fx, "the run's queries are read") {
       w.summary.queries.stripLines.nonEmpty && w.summary.queries.rows.nonEmpty
     }

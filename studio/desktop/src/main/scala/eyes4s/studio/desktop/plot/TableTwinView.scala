@@ -70,7 +70,7 @@ final class TableTwinView private (initial: TableTwinState, dispatch: Intent => 
   getStyleClass.add("table-twin")
   Option(getClass.getClassLoader.getResource(stylesheetResource))
     .foreach(url => getStylesheets.add(url.toExternalForm))
-  setFocusTraversable(true)
+  setFocusTraversable(false)
   setAccessibleRole(AccessibleRole.TABLE_VIEW)
   setAccessibleRoleDescription(PlotText(PlotTextId.TableTab))
 
@@ -502,6 +502,9 @@ final class TableTwinView private (initial: TableTwinState, dispatch: Intent => 
       textNotices += 1
       setAccessibleText(text.orNull)
       notifyAccessibleAttributeChanged(AccessibleAttribute.TEXT)
+    // A pending or cleared table has no served name or content. It becomes
+    // a focus stop after its source supplies an accessible caption.
+    setFocusTraversable(text.nonEmpty)
 
   // --- Input -------------------------------------------------------------------------
 

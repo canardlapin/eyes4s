@@ -19,14 +19,16 @@ package eyes4s.studio.viz.figure
 import eyes4s.studio.app.figures.*
 import eyes4s.studio.app.plot.{ParticipantColumns, PlotSourceError, ProfileColumns}
 import cats.syntax.all.*
-import eyes4s.studio.app.tokens.{FontFace, PaletteToken, Theme, Tokens}
+import eyes4s.studio.app.tokens.{FontFace, PaletteToken, StageVariant, Theme, Tokens}
 import eyes4s.studio.core.assets.AssetRef
+import eyes4s.studio.viz.maps.MapTileScene
 import eyes4s.studio.viz.trial.{StimulusRaster, TrialScene, TrialSceneError}
 import eyes4s.studio.viz.plot.{
   IntaglioColours,
   ParticipantPlot,
   PlotBuildError,
   PlotBuilder,
+  PlotSceneError,
   ScaleProfilePlot
 }
 import intaglio.{
@@ -62,13 +64,18 @@ enum FigurePageError derives CanEqual:
   /** Panel `panel`'s trial could not be drawn. */
   case Trial(panel: String, error: TrialSceneError)
 
+  /** Panel `panel`'s density tile for `trial` could not be drawn. */
+  case Map(panel: String, trial: String, error: PlotSceneError)
+
   /** Intaglio refused a value while `during`. */
   case Graphics(during: String, error: GraphicsError)
 
   def message: String = this match
-    case Columns(e)          => e.message
-    case Plot(panel, e)      => s"Panel $panel could not be drawn: ${e.message}"
-    case Trial(panel, e)     => s"Panel $panel's trial could not be drawn: ${e.message}"
+    case Columns(e)           => e.message
+    case Plot(panel, e)       => s"Panel $panel could not be drawn: ${e.message}"
+    case Trial(panel, e)      => s"Panel $panel's trial could not be drawn: ${e.message}"
+    case Map(panel, trial, e) =>
+      s"Panel $panel's density tile for $trial could not be drawn: ${e.message}"
     case Graphics(during, e) => s"Intaglio refused $during: ${e.message}"
 
 /** A figure page laid out for a target (ticket S9.3): one Intaglio scene of
@@ -153,11 +160,25 @@ object FigurePage:
   ): Vector[Vector[String]] =
     vm.tiles.map(t => wrap(t.title, tileWidth(vm, panelMm) - 2 * TilePaddingMm, pt) :+ t.label)
 
-  /** As tall as the tile with the most lines. */
+  private def tileMapWidth(vm: DensityMapsVM, panelMm: Double): Double =
+    tileWidth(vm, panelMm) - 2 * TilePaddingMm
+
+  private def tileMapHeight(tile: MapTileVM, mapWidthMm: Double): Double = tile.map match
+    case TileMap.Drawn(_, _, region) => mapWidthMm * region.height / region.width
+    case _                           => 0.0
+
+  /** The tallest served map fixes the row's height; each map retains its own
+    * recorded region aspect inside that row.
+    */
+  private def tileMapHeight(vm: DensityMapsVM, panelMm: Double): Double =
+    val mapWidth = tileMapWidth(vm, panelMm)
+    vm.tiles.map(tileMapHeight(_, mapWidth)).maxOption.getOrElse(0.0)
+
+  /** As tall as the tile with the most text, plus its served map row. */
   private def tileHeight(vm: DensityMapsVM, panelMm: Double, pt: Double): Double =
     tileLines(vm, panelMm, pt).map(_.size).maxOption.getOrElse(0) * lineMm(
       pt
-    ) + 2 * TilePaddingMm
+    ) + tileMapHeight(vm, panelMm) + 2 * TilePaddingMm
 
   private def panelHeight(panel: PanelVM, pt: Double): Double =
     lineMm(FigureType.LetterPt) + bodyHeight(panel, pt)
@@ -293,10 +314,14 @@ object FigurePage:
       val tileW = tileWidth(vm, w)
       val h     = tileHeight(vm, w, pt)
       val texts = tileLines(vm, w, pt)
+      val mapW  = tileMapWidth(vm, w)
       vm.tiles.zipWithIndex.foldLeft[Either[FigurePageError, Vector[Grob]]](
         Right(Vector.empty)
       ) { case (acc, (tile, i)) =>
-        val x = p.x + i * (tileW + TilePaddingMm)
+        val x      = p.x + i * (tileW + TilePaddingMm)
+        val title  = texts(i).dropRight(1)
+        val label  = texts(i).lastOption.toVector
+        val mapTop = top + TilePaddingMm + title.size * lineMm(pt)
         for
           gs   <- acc
           rule <- g("a tile's rule")(
@@ -315,13 +340,41 @@ object FigurePage:
               gp = rule
             )
           )
-          text <- lines(
-            texts(i),
+          heading <- lines(
+            title,
             x + TilePaddingMm,
             top + TilePaddingMm,
             PaletteToken.PaperInk
           )
-        yield (gs :+ box) ++ text
+          map <- tile.map match
+            case TileMap.Drawn(grid, style, region) =>
+              val mapH = tileMapHeight(tile, mapW)
+              for
+                built <- MapTileScene
+                  .of(
+                    s"figure-panel-${p.panel.letter.value}-tile-$i",
+                    grid,
+                    style,
+                    region,
+                    StageVariant.Light
+                  )
+                  .left
+                  .map(FigurePageError.Map(p.panel.letter.value, tile.trial.label, _))
+                port <- g("the density tile's viewport")(
+                  Viewport.checked(
+                    origin = at(x + TilePaddingMm, mapTop + mapH),
+                    size = Size.fromExtents(extent(mapW), extent(mapH))
+                  )
+                )
+              yield Vector(Grob.group(built.scene.grobs, viewport = Some(port)))
+            case _ => Right(Vector.empty)
+          score <- lines(
+            label,
+            x + TilePaddingMm,
+            mapTop + tileMapHeight(tile, mapW),
+            PaletteToken.PaperInk
+          )
+        yield (gs :+ box) ++ heading ++ map ++ score
       }
     def panel(p: Placed): Either[FigurePageError, Vector[Grob]] =
       val w    = p.panel.widthMm.toDouble

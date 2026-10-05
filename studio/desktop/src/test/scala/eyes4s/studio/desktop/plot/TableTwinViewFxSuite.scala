@@ -103,6 +103,22 @@ class TableTwinViewFxSuite extends StudioFxSuite:
     fx.show(root)
     (table, intents)
 
+  fxStage.test("pending and cleared tables are not unnamed focus stops") { _ =>
+    runOnFx {
+      val table = TableTwinView.attach(view, SelectionState.empty, _ => ())
+      assert(!table.isFocusTraversable)
+      table.show(source(0))
+      assert(table.isFocusTraversable)
+      assert(Option(table.getAccessibleText).exists(_.trim.nonEmpty))
+      table.clear()
+      assert(!table.isFocusTraversable)
+      table.show(source(1))
+      assert(table.isFocusTraversable)
+      assert(Option(table.getAccessibleText).exists(_.trim.nonEmpty))
+      table.dispose()
+    }
+  }
+
   fxStage.test("a long source builds only the rows in view, and answers as a table") { fx =>
     val src        = source(5000)
     val (table, _) = shown(fx, src)

@@ -20,6 +20,7 @@ import cats.instances.future.*
 import eyes4s.studio.app.compare.SummaryAnswer
 import eyes4s.studio.app.explore.DisplaySource
 import eyes4s.studio.app.figures.*
+import eyes4s.studio.app.maps.Isolines
 import eyes4s.studio.app.{AppModel, StoryModels}
 import eyes4s.studio.core.figures.ReferenceReads
 import eyes4s.studio.core.fixture.{GoldenAssets, MockStudy, StoryMoment, StoryMoments}
@@ -29,6 +30,7 @@ import eyes4s.studio.desktop.trial.StimulusSource
 import eyes4s.studio.viz.figure.FigureSvg
 
 import org.apache.pdfbox.Loader
+import org.apache.pdfbox.pdmodel.graphics.image.PDImageXObject
 import org.apache.pdfbox.text.PDFTextStripper
 
 import java.io.ByteArrayInputStream
@@ -76,17 +78,25 @@ class FigureExportSuite extends munit.FunSuite:
         scale2,
         p17ret07
       )
+      grids <- Future.traverse(FigurePanels.mapTrials(p17ret07, ok(scores)))(trial =>
+        session.mapGrid(run7, scale2.value, trial).map(trial -> _)
+      )
       enc <- session.trialFixations(StoryMoments.rev4, p17enc03)
       ret <- session.trialFixations(StoryMoments.rev4, p17ret07)
       _   <- session.close
     yield
       val registry = t2.document.dataset(r3).map(GoldenAssets.registry).getOrElse(Left("no r3"))
-      val loaded   = Vector(
-        ComposerIntent.SummaryRead(run7, SummaryAnswer.Answered(ok(summary))),
-        ComposerIntent.ReferencesRead(run7, scale2, p17ret07, Right(ok(scores))),
-        ComposerIntent.DisplaysRead(r3, registry.map(DisplaySource.Served(_))),
-        ComposerIntent.FixationsRead(StoryMoments.rev4, p17enc03, enc.left.map(_.message)),
-        ComposerIntent.FixationsRead(StoryMoments.rev4, p17ret07, ret.left.map(_.message))
+      val loaded   = (
+        Vector(
+          ComposerIntent.SummaryRead(run7, SummaryAnswer.Answered(ok(summary))),
+          ComposerIntent.ReferencesRead(run7, scale2, p17ret07, Right(ok(scores)))
+        ) ++ grids.map { case (trial, grid) =>
+          ComposerIntent.MapRead(run7, scale2, trial, Right(ok(grid)))
+        } ++ Vector(
+          ComposerIntent.DisplaysRead(r3, registry.map(DisplaySource.Served(_))),
+          ComposerIntent.FixationsRead(StoryMoments.rev4, p17enc03, enc.left.map(_.message)),
+          ComposerIntent.FixationsRead(StoryMoments.rev4, p17ret07, ret.left.map(_.message))
+        )
       ).foldLeft(FigureComposer.sync(FigureComposer.empty, t2)._1)((x, i) =>
         FigureComposer.update(x, t2, i)._1
       )
@@ -112,7 +122,26 @@ class FigureExportSuite extends munit.FunSuite:
 
   test("the exported SVG matches its golden (fonts aside)") {
     page().map { p =>
-      val svg    = withoutFonts(svgOf(p))
+      val maps = p.panels.find(_.letter.value == "C").map(_.body) match
+        case Some(PanelBody.Maps(value)) => value
+        case other                       => fail(other.toString)
+      assert(maps.tiles.nonEmpty, maps)
+      assert(
+        maps.tiles.forall(_.map.isInstanceOf[TileMap.Drawn]),
+        maps.tiles.map(_.map)
+      )
+      assert(maps.maps.contains("shared limits"), maps.maps)
+      val svg            = withoutFonts(svgOf(p))
+      val rasters        = """data-name="map-tile-map""".r.findAllMatchIn(svg).size
+      val contours       = """data-name="map-tile-isolines""".r.findAllMatchIn(svg).size
+      val servedContours = maps.tiles
+        .map(_.map)
+        .collect { case TileMap.Drawn(grid, _, _) =>
+          Isolines.of(grid).flatMap(_.segments).size
+        }
+        .sum
+      assertEquals(rasters, maps.tiles.size)
+      assertEquals(contours, servedContours)
       val golden = buildRoot.resolve("docs/studio/figures/golden/figure-1.svg")
       if sys.env.contains("EYES4S_UPDATE_GOLDENS") then
         Files.createDirectories(golden.getParent)
@@ -223,7 +252,8 @@ class FigureExportSuite extends munit.FunSuite:
 
   test("the exported PDF matches its golden: page size, embedded fonts and text") {
     page().map { p =>
-      val text   = pdfText(bytesOf(ExportFormat.Pdf, p))
+      val bytes  = bytesOf(ExportFormat.Pdf, p)
+      val text   = pdfText(bytes)
       val golden = buildRoot.resolve("docs/studio/figures/golden/figure-1.pdf.txt")
       if sys.env.contains("EYES4S_UPDATE_GOLDENS") then
         Files.writeString(golden, text, UTF_8): Unit
@@ -233,6 +263,15 @@ class FigureExportSuite extends munit.FunSuite:
       )
       assertNoDiff(text, Files.readString(golden, UTF_8))
       assert(text.startsWith("pages 1\npage 183.0"), text)
+      val doc = Loader.loadPDF(bytes)
+      try
+        val images = doc.getPage(0).getResources.getXObjectNames.asScala.toVector.collect {
+          case name
+              if doc.getPage(0).getResources.getXObject(name).isInstanceOf[PDImageXObject] =>
+            name
+        }
+        assertEquals(images.size, 4, images)
+      finally doc.close()
       // E2E-10: the disclosure survives the PDF too.
       assert(text.replace("\n", " ").contains("The remembered image was not shown."), text)
     }
