@@ -246,7 +246,9 @@ object StudioWindow:
       // The window's backend serves the source records unless one is given.
       records: Option[eyes4s.studio.app.explore.SourceRecordsSource] = None,
       assetFiles: Option[AssetFiles] = None,
-      panels: PanelSources = PanelSources.notServed
+      panels: PanelSources = PanelSources.notServed,
+      // Where an export bundle goes: the platform's chooser unless given.
+      chooseFolder: FigureInputs.ChooseFolder = FigureInputs.directoryChooser
   )(using IORuntime): Either[WindowError, StudioWindow] =
     // The window starts in the document's theme and follows it (S1.10).
     val theme = initial.theme
@@ -267,7 +269,8 @@ object StudioWindow:
         presets,
         records,
         assetFiles,
-        panels
+        panels,
+        chooseFolder
       )
     yield window
 
@@ -285,7 +288,8 @@ object StudioWindow:
       presets: FilePresetStore,
       records: Option[eyes4s.studio.app.explore.SourceRecordsSource],
       assetFiles: Option[AssetFiles],
-      panels: PanelSources
+      panels: PanelSources,
+      chooseFolder: FigureInputs.ChooseFolder
   )(using IORuntime): Either[WindowError, StudioWindow] =
     // Late-bound: the runtime, the host and the effects refer to each other.
     var runtime: Option[StudioRuntime] = None
@@ -483,7 +487,8 @@ object StudioWindow:
         displays,
         () => Option(shell.root.getScene).map(_.getWindow),
         project,
-        stimuli
+        stimuli,
+        chooseFolder
       )
     )
     Vector(

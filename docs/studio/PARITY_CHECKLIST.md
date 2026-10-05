@@ -96,11 +96,11 @@ by token name, never by hex value.
 
 ## Figures (moment t2)
 - [ ] Figure-level binding, locked: run 7 plus "By retrieval response". Panels choose only scale and selection.
-- [ ] Panel C reads "highest of 19 · B 0.35". Panel D uses a Δ-cosine axis with a zero rule. Panel E uses a log x axis. Figure text is Plex Sans at 7 pt.
+- [ ] Panel C reads "Matched 0.73 · highest of 19 controls street-112 0.61 · control mean B 0.35 · D +0.38". Panel D uses a Δ-cosine axis with a zero rule. Panel E uses a log x axis. Figure text is Plex Sans at 7 pt.
 - [ ] Stale Figure 2 reads "r3 changed the admission status of 4 trials", with Rebind… / Keep.
 - [ ] methods.md states:
   - [ ] 457 eligible queries.
-  - [ ] 543 of 11,520 records outside the window (4.7%).
+  - [ ] 543 of the 11,311 fixation records of admitted trials (4.8% of their fixation duration).
   - [ ] The off-screen policy and the occurrence rule.
   - [ ] The confound sentence.
 - [ ] Export bundle list.

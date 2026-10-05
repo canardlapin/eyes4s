@@ -140,6 +140,10 @@ final class HeadlessSession private (
   ): Future[Either[BackendError, LedgerPage]] =
     run(fake.ledger(dataset, page))
 
+  /** The resolved design of `revision`: its candidate and eligible counts. */
+  def preview(revision: AnalysisRevision): Future[Either[BackendError, PreviewSummary]] =
+    run(fake.preview(revision))
+
   /** `trial`'s admitted fixations under `revision` (protocol 1.6). */
   def trialFixations(
       revision: AnalysisRevision,

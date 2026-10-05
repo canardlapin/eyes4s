@@ -116,13 +116,25 @@ object FigureInputs:
   val NoStimuli: StimulusSource =
     asset => Left(StimulusError.NotStored(asset.file, "this window"))
 
+  /** Where an export bundle goes: the folder the author chooses, titled
+    * `title`, or none (the platform's directory chooser; a test passes its
+    * own folder).
+    */
+  type ChooseFolder = (String, Option[Window]) => Option[java.nio.file.Path]
+
+  val directoryChooser: ChooseFolder = (title, owner) =>
+    val chooser = DirectoryChooser()
+    chooser.setTitle(title)
+    Option(chooser.showDialog(owner.orNull)).map(_.toPath)
+
   /** The window's backend and navigator, and `displays` for what trials showed. */
   def of(
       session: StudioSession,
       source: NavigatorDisplays,
       owner: () => Option[Window],
       project: Option[ProjectPort] = None,
-      images: StimulusSource = FigureInputs.NoStimuli
+      images: StimulusSource = FigureInputs.NoStimuli,
+      chooseFolder: ChooseFolder = directoryChooser
   ): FigureInputs =
     new FigureInputs:
       def stimuli: StimulusSource = images
@@ -215,12 +227,10 @@ object FigureInputs:
             catch case NonFatal(e) => done(Left(reason(e)))
 
       def bundle(request: BundleRequest, done: Either[String, String] => Unit): Unit =
-        val chooser = DirectoryChooser()
-        chooser.setTitle(s"Export ${request.folder}")
-        Option(chooser.showDialog(owner().orNull)) match
+        chooseFolder(s"Export ${request.folder}", owner()) match
           case None         => done(Left("no folder was chosen"))
           case Some(parent) =>
-            val target = parent.toPath.resolve(request.folder)
+            val target = parent.resolve(request.folder)
             val run    = request.source.run.id
             val read   = for
               summary <- session.backend.result(run)
