@@ -17,7 +17,6 @@
 package example
 
 import cats.effect.IO
-import cats.syntax.all.*
 import eyes4s.io.*
 import io.circe.Json
 import java.nio.file.Files
