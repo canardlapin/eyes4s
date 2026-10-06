@@ -468,31 +468,75 @@ object GoldenJourney:
         expect("perspective", Perspective.Compare, d.model.perspective)
       ),
       Step(
-        "the summary = fixture.json",
+        "the summary facts and explicit reports agree with fixture.json",
         d =>
-          service("result")(session.result(run6)).map(_.flatMap { r =>
+          val grouped = ok(StoryMoments.byResponse)
+          val overall = ok(
+            ReportingSpec.of(
+              ok(ReportingId.of(reporting.value + "-overall")),
+              "Overall",
+              None,
+              Vector.empty,
+              None,
+              ReportingWeight.ParticipantMeans
+            )
+          )
+          val reads =
             for
-              _ <- expect("grand D", fixture.grandD, r.grandD)
-              _ <- expect("grand D", 0.26, r.grandD)
-              _ <- expect("by scale", fixture.grandDByScale, r.grandDByScale)
-              _ <- expect("groups", fixture.groups, r.groups)
-              _ <- expect(
-                "Remembered",
-                Some((24, 0.3)),
-                r.groups.find(_.label == remembered).map(g => (g.n, g.d))
+              result <- service("result")(session.result(run6))
+              groups <- service("grouped reports")(
+                Future
+                  .sequence((0 until 4).toVector.map(i => session.report(run6, grouped, i)))
+                  .map(_.sequence)
               )
-              _ <- expect(
-                "Forgotten",
-                Some((24, 0.15)),
-                r.groups.find(_.label == Response.Forgotten).map(g => (g.n, g.d))
+              whole <- service("overall reports")(
+                Future
+                  .sequence((0 until 4).toVector.map(i => session.report(run6, overall, i)))
+                  .map(_.sequence)
               )
-              _ <- expect("paired n", 24, r.pairedN)
-              _ <- expect("pair rows", 35876L, r.pairRows)
-              _ <- expect("contrasts", QueryContrasts(480, 14, 9, 3, 454), r.contrasts)
-              _ <- expect("eligible", 457, r.eligibleQueries)
-              _ <- expect("participants", fixture.participants, r.participants)
-            yield d
-          })
+            yield
+              for
+                r  <- result
+                gs <- groups
+                ws <- whole
+                _  <- expect("pair rows", 35876L, r.pairRows)
+                _  <- expect("contrasts", QueryContrasts(480, 14, 9, 3, 454), r.contrasts)
+                _  <- expect("eligible", 457, r.eligibleQueries)
+                _  <- expect(
+                  "participants",
+                  fixture.participants.map(p =>
+                    ParticipantCounts(
+                      p.participant,
+                      p.requested,
+                      p.contributing,
+                      p.failed,
+                      p.noMatch,
+                      p.notAdmitted
+                    )
+                  ),
+                  r.participants
+                )
+                _ <- expect(
+                  "grand D by scale",
+                  fixture.grandDByScale,
+                  ws.map(_.cell(None, ReportRole.Difference).get.estimate.get)
+                    .map(v => math.rint(v * 100) / 100)
+                )
+                _ <- fixture.groups.traverse_ { expected =>
+                  expect(
+                    expected.label.label + " by scale",
+                    expected.dByScale,
+                    gs.map(_.cell(Some(expected.label), ReportRole.Difference).get.estimate.get)
+                      .map(v => math.rint(v * 100) / 100)
+                  )
+                }
+                _ <- expect(
+                  "legacy grouping declares no level subtraction",
+                  Vector.empty,
+                  gs(2).contrasts
+                )
+              yield d
+          reads
       ),
       Step.intent[Future]("Explain P17", Intent.Explain(Place.At(remembered17))),
       check("Explain P17 lands on the P17 group")(d =>

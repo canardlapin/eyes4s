@@ -141,6 +141,17 @@ object CommandJournal:
 
   private val refusal = CodecError.Unsupported("studio journal", "a preset needs version 2")
 
+  private def expressedByV2(line: JournalLine): Boolean = line match
+    case JournalLine.Entry(_, JournalEntry.Apply(Command.PutReporting(spec))) =>
+      spec.contrast.isEmpty
+    case _ => true
+
+  private val contrastRefusal =
+    CodecError.Unsupported("studio journal", "explicit contrast operands need version 3")
+
+  private def beforeV3(line: JournalLine): Either[CodecError, JournalLine] =
+    Either.cond(expressedByV2(line), line, contrastRefusal)
+
   /** Every version of the journal line schema (CR3).
     *
     * Version 2 (S7.1) adds the `PerceptionImagery` preset. A line that names
@@ -149,6 +160,9 @@ object CommandJournal:
     * version 1, byte for byte, and the upcast is the identity. A preset
     * cannot be dropped as a member can, so the version-1 writer and reader
     * refuse a line that names it.
+    *
+    * Version 3 records explicitly ordered contrast operands in `PutReporting`.
+    * Previous versions refuse those lines, and old lines lift unchanged.
     */
   val ladder: Either[CodecError, SchemaLadder[JournalLine]] =
     StudioSchemaIds.ids
@@ -157,9 +171,12 @@ object CommandJournal:
         SchemaLadder
           .of[JournalLine]("studio journal", ids.journal) { l =>
             val json = CanonicalJson(l.asJson)
-            Either.cond(!namesV2(json), json, refusal)
-          }(json => if namesV2(json) then Left(refusal) else read(json))
-          .next(l => !namesV2(l.asJson), identity)(l => Right(CanonicalJson(l.asJson)))(read)
+            beforeV3(l).flatMap(_ => Either.cond(!namesV2(json), json, refusal))
+          }(json => if namesV2(json) then Left(refusal) else read(json).flatMap(beforeV3))
+          .next(l => expressedByV2(l) && !namesV2(l.asJson), identity)(l =>
+            beforeV3(l).map(v => CanonicalJson(v.asJson))
+          )(json => read(json).flatMap(beforeV3))
+          .next(expressedByV2, identity)(l => Right(CanonicalJson(l.asJson)))(read)
       }
 
   val codec: Either[CodecError, VersionedCodec[JournalLine]] = ladder.map(_.codec)

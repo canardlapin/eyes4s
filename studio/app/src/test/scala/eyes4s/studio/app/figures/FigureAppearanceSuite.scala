@@ -20,12 +20,14 @@ import eyes4s.studio.app.compare.SummaryAnswer
 import eyes4s.studio.app.nav.{Location, Place}
 import eyes4s.studio.app.plot.ParticipantLines
 import eyes4s.studio.app.{AppModel, Intent, StoryModels}
-import eyes4s.studio.core.backend.ResultSummary
+import eyes4s.studio.core.backend.{ReportRole, ReportView, ResultSummary}
 import eyes4s.studio.core.command.Command
 import eyes4s.studio.core.document.*
 import eyes4s.studio.core.engine.StudioBuild
 import eyes4s.studio.core.fixture.{StoryMoment, StoryMoments}
 import eyes4s.studio.core.headless.HeadlessSession
+import eyes4s.studio.core.figures.FigureSource
+import eyes4s.studio.core.selection.ScaleIndex
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -56,17 +58,30 @@ class FigureAppearanceSuite extends munit.FunSuite:
   private def page(c: FigureComposer, m: AppModel): PageVM =
     FigureComposer.view(c, m).page.getOrElse(fail("no page"))
 
-  private def summary: Future[ResultSummary] =
+  private def summary: Future[(ResultSummary, ReportView)] =
     for
       session <- HeadlessSession.open(StoryMoment.T2)
       s       <- session.result(run7)
-      _       <- session.close
-    yield ok(s)
+      report  <- session.report(
+        run7,
+        ok(FigureSource.of(t2.document, ok(FigureId.of(1)))).reporting,
+        2
+      )
+      _ <- session.close
+    yield (ok(s), ok(report))
 
-  private def withSummary(m: AppModel, s: ResultSummary): FigureComposer =
+  private def withSummary(m: AppModel, s: ResultSummary, report: ReportView): FigureComposer =
     val synced = FigureComposer.sync(FigureComposer.empty, m)._1
-    FigureComposer
+    val result = FigureComposer
       .update(synced, m, ComposerIntent.SummaryRead(run7, SummaryAnswer.Answered(s)))
+      ._1
+    val spec = ok(FigureSource.of(m.document, ok(FigureId.of(1)))).reporting
+    FigureComposer
+      .update(
+        result,
+        m,
+        ComposerIntent.ReportRead(run7, spec, ok(ScaleIndex.of(report.scale)), Right(report))
+      )
       ._1
 
   private def panelD(c: FigureComposer, m: AppModel): PlotPanelVM =
@@ -102,16 +117,22 @@ class FigureAppearanceSuite extends munit.FunSuite:
   }
 
   test("panel D's caption carries the per-group n range the summary serves") {
-    summary.map { s =>
-      val d = panelD(withSummary(t2, s), t2)
+    summary.map { (s, report) =>
+      val d = panelD(withSummary(t2, s, report), t2)
       assertEquals(
         d.notes.last,
         "Each pair of dots is one participant; per participant, 2–17 queries per group. " +
           "Descriptive only: no intervals or tests."
       )
       // Other served numbers, other caption: nothing in it is typed.
-      val other = s.copy(groupNMinimum = 3, groupNMaximum = 11)
-      assert(panelD(withSummary(t2, other), t2).notes.last.contains("3–11 queries per group"))
+      val other = report.copy(queryRanges =
+        report.queryRanges.map(r =>
+          if r.role == ReportRole.Difference then r.copy(fewest = 3, most = 11) else r
+        )
+      )
+      assert(
+        panelD(withSummary(t2, s, other), t2).notes.last.contains("3–11 queries per group")
+      )
     }
   }
 
@@ -177,8 +198,8 @@ class FigureAppearanceSuite extends munit.FunSuite:
   // --- Appearance (view only) and export ---------------------------------------------
 
   test("text size, participant lines, panel width and images are the figure's, view only") {
-    summary.map { s =>
-      val c0   = withSummary(t2, s)
+    summary.map { (s, report) =>
+      val c0   = withSummary(t2, s, report)
       val step = (c: FigureComposer, i: ComposerIntent) => FigureComposer.update(c, t2, i)._1
       assertEquals(page(c0, t2).textPt, 7)
       assertEquals(

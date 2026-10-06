@@ -27,10 +27,15 @@ import eyes4s.studio.core.backend.{
   ResultAddress,
   Response,
   RunId,
+  ReportRole,
+  AnalysisRevision,
+  DatasetRevision,
   TrialKey
 }
 import eyes4s.studio.core.document.ReportingId
-import eyes4s.studio.core.selection.{ScaleIndex, StudioRef}
+import eyes4s.codec.{ByteDigest, CanonicalDigest}
+import eyes4s.studio.core.execution.StudyInputArtifact
+import eyes4s.studio.core.selection.{RecordNumber, ReportGroup, ScaleIndex, StudioRef}
 
 /** A report step of the provenance chain (UI-G's planned `ReportRef` in
   * eyes4s-results, mirrored until G3 lands; S3.7 swaps the fake down
@@ -51,22 +56,45 @@ object ReportRef:
       run: RunId,
       reporting: ReportingId,
       scale: ScaleIndex,
-      group: Option[Response]
+      group: Option[Response],
+      role: ReportRole = ReportRole.Difference
   ) extends ReportRef:
-    def ref: Option[StudioRef] = group.map(StudioRef.GroupCell(run, reporting, scale, _))
+    def ref: Option[StudioRef] =
+      if role == ReportRole.Difference then
+        group.map(StudioRef.GroupCell(run, reporting, scale, _))
+      else
+        Some(
+          StudioRef.ReportCell(
+            run,
+            reporting,
+            scale,
+            group.fold(ReportGroup.Whole)(ReportGroup.Level(_)),
+            role
+          )
+        )
 
   /** One participant's mean within a cell. */
   final case class Participant(cell: Cell, participant: String) extends ReportRef:
     def ref: Option[StudioRef] = Some(summary)
 
     def summary: StudioRef =
-      StudioRef.ParticipantSummary(
-        cell.run,
-        cell.reporting,
-        cell.scale,
-        cell.group,
-        participant
-      )
+      if cell.role == ReportRole.Difference then
+        StudioRef.ParticipantSummary(
+          cell.run,
+          cell.reporting,
+          cell.scale,
+          cell.group,
+          participant
+        )
+      else
+        StudioRef.ReportParticipant(
+          cell.run,
+          cell.reporting,
+          cell.scale,
+          cell.group.fold(ReportGroup.Whole)(ReportGroup.Level(_)),
+          cell.role,
+          participant
+        )
 
   /** The report step a studio ref names, if it names one. */
   def of(ref: StudioRef): Option[ReportRef] = ref match
@@ -74,7 +102,24 @@ object ReportRef:
       Some(Cell(run, reporting, scale, Some(group)))
     case StudioRef.ParticipantSummary(run, reporting, scale, group, participant) =>
       Some(Participant(Cell(run, reporting, scale, group), participant))
+    case StudioRef.ReportCell(run, reporting, scale, group, role) =>
+      Some(Cell(run, reporting, scale, reportGroup(group), role))
+    case StudioRef.ReportParticipant(run, reporting, scale, group, role, participant) =>
+      Some(Participant(Cell(run, reporting, scale, reportGroup(group), role), participant))
     case _ => None
+
+  private def reportGroup(group: ReportGroup): Option[Response] = group match
+    case ReportGroup.Whole        => None
+    case ReportGroup.Level(value) => Some(value)
+
+/** A source identity for a fixation whose display ref omits revision context. */
+final case class FixationSourceContext(
+    revision: AnalysisRevision,
+    dataset: DatasetRevision,
+    source: ByteDigest,
+    input: CanonicalDigest[StudyInputArtifact],
+    record: RecordNumber
+) derives CanEqual
 
 /** Why a fixation has no source record: eyes4s `MissingSource` over
   * [[TrialKey]], the cases a studio view can meet. Fixation positions count
@@ -147,6 +192,12 @@ enum NavigationError derives CanEqual:
   /** The fixation's source record is missing, for `reason`. */
   case Source(subject: StudioRef, reason: MissingSource)
 
+  /** No source-bearing response has bound this unqualified fixation ref. */
+  case UnboundFixation(fixation: StudioRef)
+
+  /** Served contexts disagree on exact input/source/record identity. */
+  case AmbiguousFixation(fixation: StudioRef, contexts: Vector[FixationSourceContext])
+
   def message: String = this match
     case Backend(error)          => error.message
     case WrongLevel(ref, level)  => s"$ref is not a ${level.productPrefix.toLowerCase} step."
@@ -158,8 +209,14 @@ enum NavigationError derives CanEqual:
     case NoContrast(query, status) => s"$query has no contrast row (${status.productPrefix})."
     case NoPairs(contrast, design) =>
       s"The ${design.render} pairs of $contrast are not held by this backend."
-    case NotInPair(map, pair)    => s"$map is not a map of $pair."
-    case Source(subject, reason) => s"No source record for $subject: ${reason.message}"
+    case NotInPair(map, pair)      => s"$map is not a map of $pair."
+    case Source(subject, reason)   => s"No source record for $subject: ${reason.message}"
+    case UnboundFixation(fixation) => s"Fixation $fixation has no verified source context."
+    case AmbiguousFixation(fixation, contexts) =>
+      val identities = contexts.map(c =>
+        s"${c.revision.label}/${c.dataset.label}: source sha256:${c.source.hex}, ${c.input.display}, record ${c.record.value}"
+      )
+      s"Fixation $fixation has conflicting source contexts: ${identities.mkString("; ")}."
 
 /** One offset page of a step's listing (UI-G amendment A3): its entries,
   * where it starts, the listing's total (known before any page is
@@ -292,11 +349,13 @@ object StudyNavigator:
 
   /** The level of a studio ref in the chain, if it is a chain step. */
   def level(ref: StudioRef): Option[ChainLevel] = ref match
-    case StudioRef.GroupCell(_, _, _, _)             => Some(ChainLevel.Group)
-    case StudioRef.ParticipantSummary(_, _, _, _, _) => Some(ChainLevel.Participant)
-    case StudioRef.Fixation(_, _)                    => Some(ChainLevel.Fixation)
-    case StudioRef.SourceRecord(_, _, _, _)          => Some(ChainLevel.Record)
-    case StudioRef.Result(_, address)                =>
+    case StudioRef.GroupCell(_, _, _, _)               => Some(ChainLevel.Group)
+    case StudioRef.ReportCell(_, _, _, _, _)           => Some(ChainLevel.Group)
+    case StudioRef.ReportParticipant(_, _, _, _, _, _) => Some(ChainLevel.Participant)
+    case StudioRef.ParticipantSummary(_, _, _, _, _)   => Some(ChainLevel.Participant)
+    case StudioRef.Fixation(_, _)                      => Some(ChainLevel.Fixation)
+    case StudioRef.SourceRecord(_, _, _, _)            => Some(ChainLevel.Record)
+    case StudioRef.Result(_, address)                  =>
       address.value match
         case ResultAddress.ContrastRow(_, _)   => Some(ChainLevel.Query)
         case ResultAddress.PairRow(_, _, _, _) => Some(ChainLevel.Pair)

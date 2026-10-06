@@ -78,7 +78,7 @@ object SummaryInputs:
   def of(session: StudioSession): SummaryInputs =
     new SummaryInputs:
       def summary(run: RunId, done: SummaryAnswer => Unit): Unit =
-        session.run(session.backend.result(run)) {
+        session.run(session.reads.result(run)) {
           case Left(e)          => done(SummaryAnswer.Failed(reason(e)))
           case Right(Left(err)) => done(SummaryAnswer.Refused(err))
           case Right(Right(s))  => done(SummaryAnswer.Answered(s))
@@ -89,13 +89,13 @@ object SummaryInputs:
           scale: ScaleIndex,
           done: ReportAnswer => Unit
       ): Unit =
-        session.run(session.backend.report(run, reporting, scale.value)) {
+        session.run(session.reads.report(run, reporting, scale.value)) {
           case Left(e)          => done(ReportAnswer.Failed(reason(e)))
           case Right(Left(err)) => done(ReportAnswer.Refused(err))
           case Right(Right(v))  => done(ReportAnswer.Answered(v))
         }
       def inspect(run: RunId, address: ResultAddress, done: PairAnswer => Unit): Unit =
-        session.run(session.backend.inspect(run, address)) {
+        session.run(session.reads.inspect(run, address)) {
           case Left(e)          => done(PairAnswer.Failed(reason(e)))
           case Right(Left(err)) => done(PairAnswer.Refused(err))
           case Right(Right(i))  => done(PairAnswer.Answered(i))
@@ -106,9 +106,8 @@ object SummaryInputs:
           scales: Vector[String],
           done: LadderAnswer => Unit
       ): Unit =
-        val backend = session.backend
         session.run(
-          ScaleLadder.load[IO](backend.inspect, backend.navigator)(run, query, scales)
+          ScaleLadder.load[IO](session.reads.inspect, session.navigator)(run, query, scales)
         ) {
           case Left(e)            => done(LadderAnswer.Failed(reason(e)))
           case Right(Left(err))   => done(LadderAnswer.Failed(err.message))
@@ -117,7 +116,7 @@ object SummaryInputs:
       def pairs(run: RunId, scale: ScaleIndex, done: PairsAnswer => Unit): Unit =
         session.run(
           eyes4s.studio.core.figures.MethodsReads
-            .pairRowsAt[IO](session.backend.pairRows, run, scale.value)
+            .pairRowsAt[IO](session.reads.pairRows, run, scale.value)
         ) {
           case Left(e)             => done(PairsAnswer.Broken(reason(e)))
           case Right(Left(err))    => done(PairsAnswer.Failed(err))
@@ -128,7 +127,7 @@ object SummaryInputs:
           PageRequest.of(offset, PageRequest.MaximumSize) match
             case Left(e)        => IO.pure(Left(e.message))
             case Right(request) =>
-              session.backend.queries(run, request).flatMap {
+              session.reads.queries(run, request).flatMap {
                 case Left(err)   => IO.pure(Left(err.message))
                 case Right(page) =>
                   val rows = got ++ page.rows
@@ -275,7 +274,10 @@ final class CompareSummaryHost(
 
   /** What Compare's inspector reads of these views (S8.4). */
   def inspectorInputs: InspectorInputs =
-    InspectorInputs(panelState, shownRun, state.answered, state.reporting)
+    val report = state.scale.flatMap(scale => state.reports.get((scale, false))).collect {
+      case ReportAnswer.Answered(view) => view
+    }
+    InspectorInputs(panelState, shownRun, state.answered, state.reporting, report)
 
   // Called after each render, so panes beside these views follow their answers.
   private var rendered: Vector[() => Unit] = Vector.empty

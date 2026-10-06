@@ -27,8 +27,8 @@ import java.util.concurrent.{LinkedBlockingQueue, TimeUnit}
 
 /** The desktop path of a refused prepared design (S7.5, E2E-05): the
   * execution service refuses a receipt the backend no longer retains, the
-  * refusal is recorded, and the app is told, so it can submit the run by its
-  * stamp instead of leaving it orphaned. No JavaFX: the UI thread is the
+  * refusal is recorded with its exact requested run, and the app settles it
+  * without bypassing that refusal. No JavaFX: the UI thread is the
   * caller's.
   */
 class PreparedRefusalSuite extends munit.FunSuite:
@@ -63,13 +63,14 @@ class PreparedRefusalSuite extends munit.FunSuite:
       intent match
         case Intent.PreparedRefused(
               r,
-              ExecutionError.Backend(BackendError.UnknownPreview(id, _))
+              ExecutionError.Backend(BackendError.UnknownPreview(id, _)),
+              None
             ) =>
           assertEquals((r, id), (evicted, PreviewId(99L)))
         case other => fail(s"expected PreparedRefused, got $other ($error)")
       assert(effects.problems.exists {
-        case EffectProblem.Refused(ExecutionEffect.SubmitPreview(r), _) => r == evicted
-        case _                                                          => false
+        case EffectProblem.Refused(ExecutionEffect.SubmitPreview(r, _), _) => r == evicted
+        case _                                                             => false
       })
       // A plain submission's refusal is only recorded, as before.
       effects.perform(AppEffect.Execution(ExecutionEffect.Submit(receipt.stamp)), told.put)

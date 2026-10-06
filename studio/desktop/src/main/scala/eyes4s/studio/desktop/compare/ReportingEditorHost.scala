@@ -56,16 +56,23 @@ final class ReportingEditorHost(
     l.setWrapText(true)
     l
 
-  private val title    = label("t13")
-  private val kind     = label("kind")
-  private val status   = label("t12", "inspector-status")
-  private val reuses   = label("t11", "inspector-note")
-  private val groupBy  = label("lbl")
-  private val groups   = VBox(4.0)
-  private val values   = label("t11", "inspector-key")
-  private val filters  = label("lbl")
-  private val all      = label("t12")
-  private val outside  = CheckBox()
+  private val title              = label("t13")
+  private val kind               = label("kind")
+  private val status             = label("t12", "inspector-status")
+  private val reuses             = label("t11", "inspector-note")
+  private val groupBy            = label("lbl")
+  private val groups             = VBox(4.0)
+  private val values             = label("t11", "inspector-key")
+  private val contrastTitle      = label("lbl")
+  private val contrastMinuend    = TextField()
+  private val contrastSubtrahend = TextField()
+  private val contrastApply      = Button()
+  private val contrastClear      = Button()
+  private var contrastBound
+      : Option[(Option[eyes4s.studio.core.document.ReportingId], String, String)] = None
+  private val filters                                                             = label("lbl")
+  private val all                                                                 = label("t12")
+  private val outside                                                             = CheckBox()
   private val outNote  = label("t11", "inspector-key")
   private val keeps    = VBox(2.0)
   private val minimum  = CheckBox()
@@ -92,9 +99,16 @@ final class ReportingEditorHost(
     Vector.empty
   Vector(outside, minimum, equal, pooled).foreach(_.getStyleClass.add("t12"))
   Vector(outside, minimum, equal, pooled).foreach(_.setWrapText(true))
-  Vector(saveAs, save, cancel).foreach(_.getStyleClass.add("btn"))
+  Vector(saveAs, save, cancel, contrastApply, contrastClear).foreach(_.getStyleClass.add("btn"))
   equal.setToggleGroup(weights)
   pooled.setToggleGroup(weights)
+
+  contrastApply.setOnAction(_ =>
+    act(ReportingIntent.ContrastOperands(contrastMinuend.getText, contrastSubtrahend.getText))
+  )
+  contrastMinuend.setOnAction(_ => contrastApply.fire())
+  contrastSubtrahend.setOnAction(_ => contrastApply.fire())
+  contrastClear.setOnAction(_ => act(ReportingIntent.SetContrast(None)))
 
   outside.setOnAction(_ => act(ReportingIntent.OutsideFilter(outside.isSelected)))
   minimum.setOnAction(_ => act(ReportingIntent.Minimum(minimum.isSelected)))
@@ -133,6 +147,14 @@ final class ReportingEditorHost(
       headRow,
       reuses,
       VBox(4.0, groupBy, groups, values),
+      VBox(
+        4.0,
+        contrastTitle,
+        contrastMinuend,
+        Label("−"),
+        contrastSubtrahend,
+        HBox(4.0, contrastApply, contrastClear)
+      ),
       VBox(5.0, filters, all, outside, outNote, keeps, minimum, minNote),
       VBox(5.0, weight, unit, equal, pooled)
     ),
@@ -152,8 +174,11 @@ final class ReportingEditorHost(
 
   /** The view-model now. */
   def vm: ReportingEditorVM =
-    val s = summary()
-    ReportingEditor.vm(state, model().document, s.reporting, s.run, s.answered, s.shown)
+    val s      = summary()
+    val report = s.shown.flatMap(scale => s.reports.get((scale, false))).collect {
+      case ReportAnswer.Answered(view) => view
+    }
+    ReportingEditor.vm(state, model().document, s.reporting, s.run, s.answered, s.shown, report)
 
   /** The controls inside the pane's own stop, in Tab order. */
   def focusStops: Vector[FocusStop] = ReportingEditor.focusStops(vm)
@@ -190,6 +215,14 @@ final class ReportingEditorHost(
   def clickMinimum(): Unit = minimum.fire()
   def clickOutside(): Unit = outside.fire()
 
+  /** Enter and apply both operands through the same controls a user uses. */
+  def applyContrast(minuend: String, subtrahend: String): Unit =
+    contrastMinuend.setText(minuend)
+    contrastSubtrahend.setText(subtrahend)
+    contrastApply.fire()
+
+  def clearContrast(): Unit = contrastClear.fire()
+
   /** Draws the view-model now. */
   def render(): Unit = if !disposed then
     val v = vm
@@ -221,6 +254,20 @@ final class ReportingEditorHost(
       groupButtons.zip(v.groups).foreach((b, c) => b.setSelected(c.chosen))
       values.setText(v.groupValues)
       values.setVisible(v.groupValues.nonEmpty); values.setManaged(v.groupValues.nonEmpty)
+      contrastTitle.setText(v.contrast.title)
+      contrastMinuend.setPromptText(v.contrast.minuendLabel)
+      contrastMinuend.setAccessibleText(v.contrast.minuendLabel)
+      contrastSubtrahend.setPromptText(v.contrast.subtrahendLabel)
+      contrastSubtrahend.setAccessibleText(v.contrast.subtrahendLabel)
+      contrastApply.setText(v.contrast.apply); contrastApply.setAccessibleText(v.contrast.apply)
+      contrastClear.setText(v.contrast.clear); contrastClear.setAccessibleText(v.contrast.clear)
+      Vector(contrastMinuend, contrastSubtrahend, contrastApply, contrastClear)
+        .foreach(_.setDisable(!v.contrast.enabled))
+      val contrastNow = (summary().reporting, v.contrast.minuend, v.contrast.subtrahend)
+      if !contrastBound.contains(contrastNow) then
+        contrastBound = Some(contrastNow)
+        contrastMinuend.setText(v.contrast.minuend)
+        contrastSubtrahend.setText(v.contrast.subtrahend)
       filters.setText(v.filterTitle)
       all.setText(v.contributing.text)
       outside.setText(v.outside.label); outside.setAccessibleText(v.outside.label)

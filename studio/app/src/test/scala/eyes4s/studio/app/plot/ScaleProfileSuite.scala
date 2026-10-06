@@ -16,171 +16,88 @@
 
 package eyes4s.studio.app.plot
 
-import eyes4s.studio.core.backend.{ResultSummary, Response, RunId}
-import eyes4s.studio.core.document.{ReportingId, ScaleSet, Sigma}
-import eyes4s.studio.core.fixture.{MockStudy, StoryMoment, StoryMoments}
-import eyes4s.studio.core.headless.HeadlessSession
-import eyes4s.studio.core.selection.{ScaleIndex, StudioRef}
-import io.circe.Json
+import eyes4s.studio.core.backend.Response
+import eyes4s.studio.core.document.{ScaleSet, Sigma}
+import scala.concurrent.ExecutionContext
 
-import scala.concurrent.{ExecutionContext, Future}
-
-/** The scale profile's values (ticket S4.5d): read from the fake backend's
-  * run summary at the run's declared scales and written as the plot's and
-  * table's one value source. Every group's and participant's D by scale is
-  * checked against fixture.json itself, read here independently of the
-  * backend's decoding.
-  */
+/** A profile binds report values by explicit run, spec and scale identity. */
 class ScaleProfileSuite extends munit.FunSuite:
+  private given ExecutionContext           = ExecutionContext.global
+  private def ok[E, A](e: Either[E, A]): A = e.fold(x => fail(x.toString), identity)
+  private val columns                      = ok(ProfileColumns.standard)
 
-  private given ExecutionContext = ExecutionContext.global
-
-  private val run = RunId(7)
-
-  private def right[E, A](either: Either[E, A]): A =
-    either.fold(e => fail(s"unexpected Left: $e"), identity)
-
-  private val reporting = right(ReportingId.of("by-retrieval-response"))
-  private val columns   = right(ProfileColumns.standard)
-
-  /** Run 7's declared scales: its analysis revision's recipe. */
-  private lazy val declared: ScaleSet =
-    val doc = right(StoryMoments.t2)
-    right(
-      doc
-        .run(run)
-        .flatMap(r => doc.analysis(r.analysis))
-        .map(_.recipe.scales)
-        .toRight("no run 7")
-    )
-
-  private def summary: Future[ResultSummary] =
-    HeadlessSession
-      .open(StoryMoment.T2)
-      .flatMap(s => s.result(run).transformWith(r => s.close.transform(_ => r)))
-      .map(right)
-
-  private lazy val fixture: Json =
-    val json = right(io.circe.parser.parse(MockStudy.fixtureText))
-    json.hcursor.downField("summary").focus.getOrElse(json)
-
-  private def scale(i: Int) = right(ScaleIndex.of(i))
-
-  test("each group's and participant's D at each declared scale is fixture.json's") {
-    summary.map { s =>
-      val profile = right(ScaleProfile.of(s, reporting, declared))
-      assertEquals(declared.values.map(_.degrees), Vector(0.5, 1.0, 2.0, 4.0))
+  test("every native profile point preserves its scale's report value and exact reference") {
+    PlotReports.read.map { (summary, grouped, overall) =>
+      val profile = ok(ScaleProfile.of(grouped, overall, PlotReports.scales, summary.scales))
       assertEquals(profile.groups.map(_.name), Vector("Remembered", "Forgotten"))
-      profile.groups.foreach { g =>
-        assertEquals(
-          g.points.flatMap(_.d),
-          right(fixture.hcursor.get[Vector[Double]](s"grand_D_by_scale_${g.name}"))
-        )
-        assertEquals(g.n, "24 participants")
-        assertEquals(
-          g.points.map(_.ref),
-          Vector.tabulate(4)(i =>
-            StudioRef.GroupCell(run, reporting, scale(i), Response(g.name))
-          )
-        )
-        assertEquals(g.points.map(_.label), Vector("0.5°", "1°", "2°", "4°"))
-      }
-      val participants = right(fixture.hcursor.downField("participants").as[Vector[Json]])
       assertEquals(profile.participants.size, 24)
-      participants.foreach { p =>
-        val id     = right(p.hcursor.get[String]("id"))
-        val series = profile.participants.find(_.name == id).getOrElse(fail(id))
-        assertEquals(
-          series.points.flatMap(_.d),
-          right(p.hcursor.downField("all").get[Vector[Double]]("D_by_scale")),
-          id
-        )
-        assertEquals(series.n, s"${right(p.hcursor.get[Int]("contributing"))} queries")
-        assertEquals(
-          series.points.map(_.ref),
-          Vector.tabulate(4)(i =>
-            StudioRef.ParticipantSummary(run, reporting, scale(i), None, id)
-          )
-        )
-      }
+      for series <- profile.groups; point <- series.points do
+        val cell = grouped(point.scale.value)
+          .cell(Some(Response(series.name)), eyes4s.studio.core.backend.ReportRole.Difference)
+          .get
+        assertEquals(point.d, cell.estimate)
+        assertEquals(point.ref, cell.ref)
+      for series <- profile.participants; point <- series.points do
+        val cell = overall(point.scale.value)
+          .participant(None, eyes4s.studio.core.backend.ReportRole.Difference, series.name)
+          .get
+        assertEquals(point.d, cell.value)
+        assertEquals(point.ref, cell.ref)
+      val reordered = ok(
+        ScaleProfile.of(grouped.reverse, overall.reverse, PlotReports.scales, summary.scales)
+      )
+      assertEquals(reordered.groups, profile.groups)
+      assertEquals(reordered.participants, profile.participants)
+      assertEquals(ok(ScaleProfile.source(profile, columns)).rows.size, 104)
     }
   }
 
-  test("the source lists the groups' points, then the participants', in scale order") {
-    summary.map { s =>
-      val profile = right(ScaleProfile.of(s, reporting, declared))
-      val source  = right(ScaleProfile.source(profile, columns))
-      assertEquals(source.rows.size, (2 + 24) * 4)
-      assertEquals(
-        source.rows.map(_.ref),
-        (profile.groups ++ profile.participants).flatMap(_.points.map(_.ref))
-      )
-      val p17 = profile.participants.find(_.name == "P17").getOrElse(fail("P17"))
-      assertEquals(
-        p17.points.map(p => source.cells(right(source.rowOf(p.ref).toRight(p.ref))).get),
-        Vector(
-          Vector("P17", "0.5°", "0.50", "+0.19", "19 queries"),
-          Vector("P17", "1°", "1.00", "+0.29", "19 queries"),
-          Vector("P17", "2°", "2.00", "+0.38", "19 queries"),
-          Vector("P17", "4°", "4.00", "+0.23", "19 queries")
+  private val scales  = ok(ScaleSet.of(Vector(1.0, 2.0).map(d => ok(Sigma.of(d)))))
+  private val labels  = Vector("1°", "2°")
+  private def grouped = Vector.tabulate(2)(i => PlotReports.synthetic(scale = i))
+  private def whole   = Vector.tabulate(2)(i =>
+    PlotReports.synthetic(scale = i, group = None, id = PlotReports.overallId)
+  )
+
+  test(
+    "missing estimates remain missing with the served reference, while zero remains a value"
+  ) {
+    val reports =
+      grouped.updated(1, grouped(1).copy(cells = grouped(1).cells.map(_.copy(estimate = None))))
+    val profile = ok(ScaleProfile.of(reports, whole, scales, labels))
+    assertEquals(profile.groups.head.points.map(_.d), Vector(Some(0.2), None))
+    assertEquals(profile.groups.head.points(1).ref, reports(1).cells.head.ref)
+    assertEquals(profile.participants.head.points.map(_.d), Vector.fill(2)(Some(0.0)))
+    assertEquals(profile.participants(1).points.map(_.d), Vector.fill(2)(None))
+  }
+
+  test(
+    "foreign run/spec, duplicate scales and missing cells are refused before any profile is made"
+  ) {
+    val foreign = grouped.updated(1, grouped(1).copy(run = eyes4s.studio.core.backend.RunId(8)))
+    assert(ScaleProfile.of(foreign, whole, scales, labels).isLeft)
+    val spec = grouped.updated(1, grouped(1).copy(reporting = PlotReports.overallId))
+    assert(ScaleProfile.of(spec, whole, scales, labels).isLeft)
+    assert(ScaleProfile.of(Vector.fill(2)(grouped.head), whole, scales, labels).isLeft)
+    val missing = grouped.updated(1, grouped(1).copy(cells = Vector.empty))
+    assertEquals(
+      ScaleProfile.of(missing, whole, scales, labels),
+      Left(
+        ProfileError.MissingSeries(
+          PlotReports.run,
+          PlotReports.reporting,
+          1,
+          Some(Response.Remembered),
+          None
         )
       )
-    }
-  }
-
-  test("a participant without contributing queries, or a scale not served, is missing") {
-    summary.map { s =>
-      val p   = s.participants.head
-      val cut = s.copy(
-        participants = Vector(
-          p.copy(contributing = 0),
-          p.copy(participant = "PX", all = p.all.copy(dByScale = p.all.dByScale.take(2)))
-        ),
-        groups = s.groups.map(g => g.copy(dByScale = g.dByScale.take(3)))
+    )
+    val noParticipant =
+      whole.updated(1, whole(1).copy(participants = whole(1).participants.drop(1)))
+    assertEquals(
+      ScaleProfile.of(grouped, noParticipant, scales, labels),
+      Left(
+        ProfileError.MissingSeries(PlotReports.run, PlotReports.overallId, 1, None, Some("A"))
       )
-      val profile = right(ScaleProfile.of(cut, reporting, declared))
-      assertEquals(profile.participants.head.points.map(_.d), Vector.fill(4)(None))
-      assertEquals(
-        profile.participants(1).points.map(_.d.isDefined),
-        Vector(true, true, false, false)
-      )
-      assertEquals(
-        profile.groups.head.points.map(_.d.isDefined),
-        Vector(true, true, true, false)
-      )
-      val source = right(ScaleProfile.source(profile, columns))
-      val row    = right(source.rowOf(profile.participants.head.points.head.ref).toRight("row"))
-      assertEquals(source.value(row, columns.d), Some(PlotValue.Missing))
-    }
-  }
-
-  test("scales that are not the summary's, and repeated groups or participants, are refused") {
-    summary.map { s =>
-      val three = right(ScaleSet.of(declared.values.take(3)).left.map(_.message))
-      assertEquals(
-        ScaleProfile.of(s, reporting, three),
-        Left(ProfileError.ScaleCount(run, 3, 4))
-      )
-      val swapped = right(
-        ScaleSet
-          .of(Vector(0.5, 1.0, 4.0, 2.0).map(d => right(Sigma.of(d).left.map(_.message))))
-          .left
-          .map(_.message)
-      )
-      ScaleProfile.of(s, reporting, swapped) match
-        case Left(e @ ProfileError.ScaleLabel(_, 2, "2°", sigma)) =>
-          assertEquals(sigma.degrees, 4.0)
-          assert(e.message.contains("2°"), e.message)
-        case other => fail(s"$other")
-      val g = s.groups.head
-      assertEquals(
-        ScaleProfile.of(s.copy(groups = s.groups :+ g), reporting, declared),
-        Left(ProfileError.DuplicateGroup(run, g.label))
-      )
-      val p = s.participants.head
-      assertEquals(
-        ScaleProfile.of(s.copy(participants = s.participants :+ p), reporting, declared),
-        Left(ProfileError.DuplicateParticipant(run, p.participant))
-      )
-    }
+    )
   }

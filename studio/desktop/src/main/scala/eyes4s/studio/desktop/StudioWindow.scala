@@ -304,7 +304,8 @@ object StudioWindow:
       // S1.12: a job's defect, by the kind of effect that failed.
       defect: (String, Throwable) => Unit = (_, _) => (),
       // Where an export bundle goes: the platform's chooser unless given.
-      chooseFolder: FigureInputs.ChooseFolder = FigureInputs.directoryChooser
+      chooseFolder: FigureInputs.ChooseFolder = FigureInputs.directoryChooser,
+      nativeSources: Option[eyes4s.studio.core.real.DatasetSources[cats.effect.IO]] = None
   )(using IORuntime): Either[WindowError, StudioWindow] =
     // The window starts in the document's theme and follows it (S1.10).
     val theme = initial.theme
@@ -327,7 +328,8 @@ object StudioWindow:
         assetFiles,
         panels,
         defect,
-        chooseFolder
+        chooseFolder,
+        nativeSources
       )
     yield window
 
@@ -347,14 +349,22 @@ object StudioWindow:
       assetFiles: Option[AssetFiles],
       panels: PanelSources,
       defect: (String, Throwable) => Unit,
-      chooseFolder: FigureInputs.ChooseFolder
+      chooseFolder: FigureInputs.ChooseFolder,
+      nativeSources: Option[eyes4s.studio.core.real.DatasetSources[cats.effect.IO]]
   )(using IORuntime): Either[WindowError, StudioWindow] =
     // Late-bound: the runtime, the host and the effects refer to each other.
     var runtime: Option[StudioRuntime] = None
     def dispatch(i: Intent): Unit      = runtime.foreach(_.dispatch(i))
     def later(i: Intent): Unit         = Platform.runLater(() => dispatch(i))
 
-    val session = StudioSession.start(moment, e => later(Intent.Execution(e)))
+    val session = nativeSources.fold(
+      StudioSession.start(moment, e => later(Intent.Execution(e)))
+    )(sources =>
+      StudioSession.start(initial.document, sources, e => later(Intent.Execution(e)))
+    )
+    val authoritativeDocument =
+      new java.util.concurrent.atomic.AtomicReference(initial.document)
+    session.bindDocument(() => authoritativeDocument.get())
     // A gesture is reported after the dock's own update has finished, and
     // judged against the model and the dock it then meets.
     var dockOf: () => Boolean                       = () => false
@@ -402,6 +412,9 @@ object StudioWindow:
     val booted = AppModel.update(initial, Intent.JobsChanged(session.jobs))._1
     val r      = StudioRuntime(booted, effects)
     runtime = Some(r)
+    // Publish immutable snapshots before any reader/listener asks the backend;
+    // effect workers never inspect the JavaFX-confined runtime model.
+    r.listen(model => authoritativeDocument.set(model.document))
     // A project's stored inputs are checked before anything can run (S2.5).
     project.foreach(_ => r.dispatch(Intent.CheckInputs))
     val shell      = AppShell(host, dispatch, messages, () => r.model, nativeMenu)

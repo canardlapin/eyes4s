@@ -17,6 +17,7 @@
 package eyes4s.studio.app.figures
 
 import eyes4s.studio.app.compare.SummaryAnswer
+import eyes4s.studio.core.backend.ReportView
 import eyes4s.studio.core.backend.RunId
 import eyes4s.studio.core.document.FigureId
 import eyes4s.studio.core.figures.{FigureSource, MethodsFacts}
@@ -68,7 +69,8 @@ object FigureMethods:
   def generated(
       m: FigureMethods,
       source: FigureSource,
-      summary: Option[SummaryAnswer]
+      summary: Option[SummaryAnswer],
+      report: Option[Either[String, ReportView]]
   ): Either[String, GeneratedMethods] =
     val run = source.run.id
     for
@@ -78,7 +80,8 @@ object FigureMethods:
         case Some(SummaryAnswer.Refused(e))  => Left(e.message)
         case Some(SummaryAnswer.Failed(why)) => Left(why)
       facts     <- m.facts.getOrElse(run, Left(MethodsCopy.reading(run)))
-      generated <- MethodsText.generate(source, result, facts).left.map(_.message)
+      evaluated <- report.getOrElse(Left(MethodsCopy.reading(run)))
+      generated <- MethodsText.generate(source, result, facts, evaluated).left.map(_.message)
     yield generated
 
   /** Which pane to bring forward after an intent. */
@@ -93,10 +96,11 @@ object FigureMethods:
       m: FigureMethods,
       source: Option[FigureSource],
       summary: Option[SummaryAnswer],
+      report: Option[Either[String, ReportView]],
       intent: MethodsIntent
   ): (FigureMethods, Option[Show]) =
     import MethodsIntent.*
-    def current = source.toRight(MethodsCopy.NoFigure).flatMap(generated(m, _, summary))
+    def current = source.toRight(MethodsCopy.NoFigure).flatMap(generated(m, _, summary, report))
     def draft   = source.flatMap(s => m.drafts.get(s.figure.id))
     def set(d: Option[MethodsDraft]) = source.fold(m)(s =>
       m.copy(drafts = d.fold(m.drafts - s.figure.id)(m.drafts.updated(s.figure.id, _)))
@@ -141,8 +145,13 @@ object FigureMethods:
           case Some(_) => (set(None).copy(status = Some(MethodsCopy.Replaced)), Some(Show.Text))
           case None    => (m, None)
 
-  def view(m: FigureMethods, source: FigureSource, summary: Option[SummaryAnswer]): MethodsVM =
-    val now             = generated(m, source, summary)
+  def view(
+      m: FigureMethods,
+      source: FigureSource,
+      summary: Option[SummaryAnswer],
+      report: Option[Either[String, ReportView]]
+  ): MethodsVM =
+    val now             = generated(m, source, summary, report)
     val draft           = m.drafts.get(source.figure.id)
     val text            = draft.map(d => Right(d.edited)).getOrElse(now.map(_.text))
     val (caption, diff) = draft match

@@ -1,4 +1,8 @@
 radio-button: Group by: response
+text-field: First level (minuend)
+text-field: Subtract level (subtrahend)
+button: Apply contrast
+button: Clear contrast
 check-box: Exclude queries with >25% of fixation duration outside the analysis window
 check-box: Minimum queries per group: 3
 radio-button: Summary unit and weighting: Equal weight per participant

@@ -46,6 +46,7 @@ enum BackendError derives CanEqual, Codec.AsObject:
       completedParticipants: ParticipantCount,
       totalParticipants: ParticipantCount
   )
+  case PreviewWorkNotReady(preview: PreviewId, design: PairDesign, visitedScheduleWork: Long)
   case StalePreview(preview: PreviewId, captured: RunStamp, current: RunStamp)
   case TamperedPreview(supplied: PreviewReady, retained: PreviewReady)
 
@@ -54,6 +55,17 @@ enum BackendError derives CanEqual, Codec.AsObject:
 
   /** The run exists but has no result to serve. */
   case NoResult(run: RunId, state: RunState)
+
+  /** This exact ordinary job is recomputing the requested saved result. */
+  case ResultPending(run: RunId, job: JobId)
+
+  /** Recomputing this result waits until the named active job settles. */
+  case ResultDeferred(run: RunId, activeJob: JobId)
+
+  case ResultRecomputationCancelled(run: RunId, job: JobId)
+  case ResultRecomputationFailed(run: RunId, job: JobId, diagnostics: Vector[StudioDiagnostic])
+  case ResultReadClosed(run: RunId, job: Option[JobId])
+  case RegistryRefused(locus: DiagnosticLocus, reason: String)
 
   case UnknownReference(run: RunId, address: ResultAddress)
   case AlreadyRunning(revision: AnalysisRevision, job: JobId)
@@ -142,35 +154,42 @@ enum BackendError derives CanEqual, Codec.AsObject:
   case ReportRefused(run: RunId, refusal: ReportRefusal)
 
   def code: String = this match
-    case ReportRefused(_, _)              => "studio-backend.report-refused"
-    case ContentMismatch(_, _, _)         => "studio-backend.content-mismatch"
-    case ContentNotHeld(_, _)             => "studio-backend.content-not-held"
-    case PlacementRefused(_, _)           => "studio-backend.placement-refused"
-    case NoDensity(_, _, _)               => "studio-backend.no-density"
-    case SourceDigestMismatch(_, _, _, _) => "studio-backend.source-digest-mismatch"
-    case AdmissionRefused(_, _, _)        => "studio-backend.admission-refused"
-    case ResultDigestMismatch(_, _, _)    => "studio-backend.result-digest-mismatch"
-    case RunDatasetMismatch(_, _, _, _)   => "studio-backend.run-dataset-mismatch"
-    case UnknownDataset(_, _)             => "studio-backend.unknown-dataset"
-    case UnknownRevision(_, _)            => "studio-backend.unknown-revision"
-    case UnknownRun(_, _)                 => "studio-backend.unknown-run"
-    case UnknownJob(_, _)                 => "studio-backend.unknown-job"
-    case UnknownPreview(_, _)             => "studio-backend.unknown-preview"
-    case UnknownTrial(_, _)               => "studio-backend.unknown-trial"
-    case TrialViewRefused(_)              => "studio-backend.trial-view-refused"
-    case SourceRecordsRefused(_, _)       => "studio-backend.source-records-refused"
-    case UnknownScale(_, _, _)            => "studio-backend.unknown-scale"
-    case PreviewNotReady(_, _, _)         => "studio-backend.preview-not-ready"
-    case StalePreview(_, _, _)            => "studio-backend.stale-preview"
-    case TamperedPreview(_, _)            => "studio-backend.tampered-preview"
-    case Unavailable(_)                   => "studio-backend.unavailable"
-    case NoResult(_, _)                   => "studio-backend.no-result"
-    case UnknownReference(_, _)           => "studio-backend.unknown-reference"
-    case AlreadyRunning(_, _)             => "studio-backend.already-running"
-    case UnsupportedVersion(_, _)         => "studio-backend.unsupported-version"
-    case Malformed(_, _)                  => "studio-backend.malformed-request"
-    case DuplicateSubscription(_)         => "studio-backend.duplicate-subscription"
-    case InventoryRefused(_, _)           => "studio-backend.inventory-refused"
+    case ReportRefused(_, _)                => "studio-backend.report-refused"
+    case ContentMismatch(_, _, _)           => "studio-backend.content-mismatch"
+    case ContentNotHeld(_, _)               => "studio-backend.content-not-held"
+    case PlacementRefused(_, _)             => "studio-backend.placement-refused"
+    case NoDensity(_, _, _)                 => "studio-backend.no-density"
+    case SourceDigestMismatch(_, _, _, _)   => "studio-backend.source-digest-mismatch"
+    case AdmissionRefused(_, _, _)          => "studio-backend.admission-refused"
+    case ResultDigestMismatch(_, _, _)      => "studio-backend.result-digest-mismatch"
+    case RunDatasetMismatch(_, _, _, _)     => "studio-backend.run-dataset-mismatch"
+    case UnknownDataset(_, _)               => "studio-backend.unknown-dataset"
+    case UnknownRevision(_, _)              => "studio-backend.unknown-revision"
+    case UnknownRun(_, _)                   => "studio-backend.unknown-run"
+    case UnknownJob(_, _)                   => "studio-backend.unknown-job"
+    case UnknownPreview(_, _)               => "studio-backend.unknown-preview"
+    case UnknownTrial(_, _)                 => "studio-backend.unknown-trial"
+    case TrialViewRefused(_)                => "studio-backend.trial-view-refused"
+    case SourceRecordsRefused(_, _)         => "studio-backend.source-records-refused"
+    case UnknownScale(_, _, _)              => "studio-backend.unknown-scale"
+    case PreviewNotReady(_, _, _)           => "studio-backend.preview-not-ready"
+    case PreviewWorkNotReady(_, _, _)       => "studio-backend.preview-work-not-ready"
+    case StalePreview(_, _, _)              => "studio-backend.stale-preview"
+    case TamperedPreview(_, _)              => "studio-backend.tampered-preview"
+    case Unavailable(_)                     => "studio-backend.unavailable"
+    case NoResult(_, _)                     => "studio-backend.no-result"
+    case ResultPending(_, _)                => "studio-backend.result-pending"
+    case ResultDeferred(_, _)               => "studio-backend.result-deferred"
+    case ResultRecomputationCancelled(_, _) => "studio-backend.result-recomputation-cancelled"
+    case ResultRecomputationFailed(_, _, _) => "studio-backend.result-recomputation-failed"
+    case ResultReadClosed(_, _)             => "studio-backend.result-read-closed"
+    case RegistryRefused(_, _)              => "studio-backend.registry-refused"
+    case UnknownReference(_, _)             => "studio-backend.unknown-reference"
+    case AlreadyRunning(_, _)               => "studio-backend.already-running"
+    case UnsupportedVersion(_, _)           => "studio-backend.unsupported-version"
+    case Malformed(_, _)                    => "studio-backend.malformed-request"
+    case DuplicateSubscription(_)           => "studio-backend.duplicate-subscription"
+    case InventoryRefused(_, _)             => "studio-backend.inventory-refused"
 
   def message: String = this match
     case ContentNotHeld(d, requested) =>
@@ -196,14 +215,26 @@ enum BackendError derives CanEqual, Codec.AsObject:
       s"No preview ${p.value}; the backend has ${known.map(_.value).mkString(", ")}."
     case PreviewNotReady(p, done, total) =>
       s"Preview ${p.value} has counted ${done.value} of ${total.value} participants."
+    case PreviewWorkNotReady(p, design, visited) =>
+      s"Preview ${p.value} is still counting $design after $visited schedule work units."
     case StalePreview(p, captured, current) =>
       s"Preview ${p.value} captured ${captured.label}, but the current input is ${current.label}."
     case TamperedPreview(supplied, retained) =>
       s"Preview receipt ${supplied.id.value} does not match retained preview ${retained.id.value}."
     case Unavailable(subject)   => s"The backend holds no data for ${subject.render}."
     case NoResult(r, state)     => s"${r.label} has no result (it is ${state.label})."
-    case UnknownReference(r, a) => s"${r.label} has no result item: ${a.render}."
-    case AlreadyRunning(r, j)   =>
+    case ResultPending(r, job)  => s"${r.label} is being recomputed by job ${job.number}."
+    case ResultDeferred(r, job) =>
+      s"${r.label} cannot be recomputed until active job ${job.number} settles."
+    case ResultRecomputationCancelled(r, job) =>
+      s"Recomputation of ${r.label} by job ${job.number} was cancelled."
+    case ResultRecomputationFailed(r, job, diagnostics) =>
+      s"Recomputation of ${r.label} by job ${job.number} failed: ${diagnostics.map(_.message).mkString("; ")}."
+    case ResultReadClosed(r, job) =>
+      s"The local read of ${r.label}${job.fold("")(j => s" waiting for job ${j.number}")} was closed."
+    case RegistryRefused(locus, reason) => s"Cannot synchronize ${locus.render}: $reason"
+    case UnknownReference(r, a)         => s"${r.label} has no result item: ${a.render}."
+    case AlreadyRunning(r, j)           =>
       s"Cannot submit ${r.label}: job ${j.number} is still running."
     case UnsupportedVersion(requested, supported) =>
       s"Protocol ${requested.render} is not supported; this backend speaks ${supported.render}."
@@ -236,16 +267,28 @@ enum BackendError derives CanEqual, Codec.AsObject:
           DiagnosticLocus.Dataset(recorded),
           DiagnosticLocus.Dataset(current)
         )
-      case UnknownDataset(d, _)        => Vector(DiagnosticLocus.Dataset(d))
-      case UnknownRevision(r, _)       => Vector(DiagnosticLocus.Revision(r))
-      case UnknownRun(r, _)            => Vector(DiagnosticLocus.Run(r))
-      case UnknownJob(j, _)            => Vector(DiagnosticLocus.Job(j))
-      case UnknownPreview(_, _)        => Vector.empty
-      case PreviewNotReady(_, _, _)    => Vector.empty
-      case StalePreview(_, _, current) => Vector(DiagnosticLocus.Revision(current.revision))
-      case TamperedPreview(_, _)       => Vector.empty
-      case Unavailable(s)              => Vector(s)
-      case NoResult(r, _)              => Vector(DiagnosticLocus.Run(r))
+      case UnknownDataset(d, _)         => Vector(DiagnosticLocus.Dataset(d))
+      case UnknownRevision(r, _)        => Vector(DiagnosticLocus.Revision(r))
+      case UnknownRun(r, _)             => Vector(DiagnosticLocus.Run(r))
+      case UnknownJob(j, _)             => Vector(DiagnosticLocus.Job(j))
+      case UnknownPreview(_, _)         => Vector.empty
+      case PreviewNotReady(_, _, _)     => Vector.empty
+      case PreviewWorkNotReady(_, _, _) => Vector.empty
+      case StalePreview(_, _, current)  => Vector(DiagnosticLocus.Revision(current.revision))
+      case TamperedPreview(_, _)        => Vector.empty
+      case Unavailable(s)               => Vector(s)
+      case NoResult(r, _)               => Vector(DiagnosticLocus.Run(r))
+      case ResultPending(r, job)  => Vector(DiagnosticLocus.Run(r), DiagnosticLocus.Job(job))
+      case ResultDeferred(r, job) => Vector(DiagnosticLocus.Run(r), DiagnosticLocus.Job(job))
+      case ResultRecomputationCancelled(r, job) =>
+        Vector(DiagnosticLocus.Run(r), DiagnosticLocus.Job(job))
+      case ResultRecomputationFailed(r, job, diagnostics) =>
+        (Vector(DiagnosticLocus.Run(r), DiagnosticLocus.Job(job)) ++ diagnostics.flatMap(
+          _.subject
+        )).distinct
+      case ResultReadClosed(r, job) =>
+        Vector(DiagnosticLocus.Run(r)) ++ job.map(DiagnosticLocus.Job(_))
+      case RegistryRefused(locus, _) => Vector(locus)
       case UnknownReference(r, a) => Vector(DiagnosticLocus.Run(r), DiagnosticLocus.Address(a))
       case AlreadyRunning(r, j)   => Vector(DiagnosticLocus.Revision(r), DiagnosticLocus.Job(j))
       case UnsupportedVersion(_, _) => Vector.empty
@@ -556,9 +599,13 @@ object ProtocolVersion:
     * the admission request that carries the verified content digest, and
     * `ContentMismatch` (S5.6). 1.12 adds `PlacementOf`, a dataset revision's
     * placement preview (S5.5). 1.14 adds `MapGridOf`, a run's density grid
-    * at one scale. 1.15 also adds bound reports, pair-row window tallies and typed identity refusals. Deploy client and backend together.
+    * at one scale. 1.15 adds bound reports, pair-row window tallies and typed
+    * identity refusals. 1.16 makes matched references optional, removes
+    * numerical means from ResultSummary, persists explicit report contrasts,
+    * and adds native preview work progress and recipe-bound readiness.
+    * Deploy client and backend together.
     */
-  val Current: ProtocolVersion = ProtocolVersion(1, 15)
+  val Current: ProtocolVersion = ProtocolVersion(1, 16)
 
 /** A client's correlation id; every frame answering a request carries it. */
 final case class RequestId(value: Long) derives CanEqual

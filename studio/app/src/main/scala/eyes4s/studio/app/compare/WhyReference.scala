@@ -130,7 +130,8 @@ final case class InspectorInputs(
     panels: TrialPanels,
     shown: Option[ShownRun],
     summary: Option[ResultSummary],
-    reporting: Option[ReportingId]
+    reporting: Option[ReportingId],
+    report: Option[eyes4s.studio.core.backend.ReportView] = None
 ) derives CanEqual
 
 /** Compare's "Why this reference?" inspector (ticket S8.4; Main.dc.html,
@@ -260,27 +261,32 @@ object WhyReference:
       row: QueryRow,
       recipe: Recipe
   ): WhyVM =
-    val focal               = recipe.phases.focal
-    val refPhase            = recipe.phases.reference
-    val p                   = f.query.participant
-    val (design, reference) =
-      TrialPanels.referenceOf(f, Vector(row)).getOrElse((PairDesign.Matched, row.matched))
-    val entries = s.ledger.collect { case LedgerAnswer.Answered(es) => es }
+    val focal     = recipe.phases.focal
+    val refPhase  = recipe.phases.reference
+    val p         = f.query.participant
+    val selected  = TrialPanels.referenceOf(f, Vector(row))
+    val design    = selected.fold(PairDesign.Matched)(_._1)
+    val reference = selected.map(_._2)
+    val entries   = s.ledger.collect { case LedgerAnswer.Answered(es) => es }
     val group = s.dataset.map(d => StudioRef.TrialGroup(d, TrialGrouping.PhaseOf(p, refPhase)))
     val inspected = panels.inspected.collect {
       case (ref, Some(PairAnswer.Answered(eyes4s.studio.core.backend.Inspection.Pair(_, i, _))))
-          if ref == f.pair(design, reference) =>
+          if reference.exists(key => ref == f.pair(design, key)) =>
         i
     }
     val refItem = design match
       case PairDesign.Matched => Some(row.item)
       case PairDesign.Control =>
-        inspected.orElse(entries.flatMap(_.find(_.trial == reference)).map(_.item))
+        inspected.orElse(
+          reference.flatMap(key => entries.flatMap(_.find(_.trial == key)).map(_.item))
+        )
     val participant = InspectorFact(
       WhyText(Participant),
-      if reference.participant == p then WhyText(SameParticipant, reference.participant)
-      else WhyText(OtherParticipant, reference.participant),
-      Some(StudioRef.Participant(reference.participant))
+      reference.fold(p)(key =>
+        if key.participant == p then WhyText(SameParticipant, key.participant)
+        else WhyText(OtherParticipant, key.participant)
+      ),
+      Some(StudioRef.Participant(reference.fold(p)(_.participant)))
     )
     // A participant × phase tally of the ledger, not a per-query count.
     val notAdmitted = InspectorFact(
@@ -294,40 +300,42 @@ object WhyReference:
       Some(StudioRef.Trial(f.query))
     )
     // The reference trial's own facts: only for a query that has one.
-    def referenceFacts(controls: String): Vector[InspectorFact] =
-      val of = occurrences(reference, refItem, entries)
-      Vector(
-        participant,
-        InspectorFact(
-          WhyText(PhaseOccurrence),
-          of.fold(
-            WhyText(OccurrenceOnly, reference.phase.label, reference.occurrence.toString)
-          )(n =>
-            WhyText(
-              OccurrenceOf,
-              reference.phase.label,
-              reference.occurrence.toString,
-              n.toString
-            )
+    def referenceFacts(controls: String): Vector[InspectorFact] = reference.toVector.flatMap {
+      reference =>
+        val of = occurrences(reference, refItem, entries)
+        Vector(
+          participant,
+          InspectorFact(
+            WhyText(PhaseOccurrence),
+            of.fold(
+              WhyText(OccurrenceOnly, reference.phase.label, reference.occurrence.toString)
+            )(n =>
+              WhyText(
+                OccurrenceOf,
+                reference.phase.label,
+                reference.occurrence.toString,
+                n.toString
+              )
+            ),
+            // "of N" counts the ledger's trials of the item: the participant's
+            // phase group; the occurrence alone is the trial's.
+            of.fold(Some(StudioRef.Trial(reference)))(_ => group)
           ),
-          // "of N" counts the ledger's trials of the item: the participant's
-          // phase group; the occurrence alone is the trial's.
-          of.fold(Some(StudioRef.Trial(reference)))(_ => group)
-        ),
-        InspectorFact(
-          WhyText(Item),
-          refItem.getOrElse(WhyText(ControlsUnknown)),
-          Some(StudioRef.Trial(reference))
-        ),
-        InspectorFact(WhyText(Controls), controls, Some(f.contrast)),
-        notAdmitted,
-        InspectorFact(
-          WhyText(OutsideReference),
-          outside(panels, reference),
-          Some(StudioRef.Trial(reference))
-        ),
-        queryOutside
-      )
+          InspectorFact(
+            WhyText(Item),
+            refItem.getOrElse(WhyText(ControlsUnknown)),
+            Some(StudioRef.Trial(reference))
+          ),
+          InspectorFact(WhyText(Controls), controls, Some(f.contrast)),
+          notAdmitted,
+          InspectorFact(
+            WhyText(OutsideReference),
+            outside(panels, reference),
+            Some(StudioRef.Trial(reference))
+          ),
+          queryOutside
+        )
+    }
     val controlsServed = (n: Int) => WhyText(ControlsValue, n.toString)
     row.status match
       case QueryStatus.NotAdmitted(d) =>
@@ -352,9 +360,12 @@ object WhyReference:
           }
         )
         WhyVM(sentence, Vector(participant, served, notAdmitted, queryOutside))
-      case QueryStatus.Failed(diagnostic) =>
+      case status @ (QueryStatus.Failed(_) | QueryStatus.FailedAtScales(_)) =>
+        val message = status
+          .diagnosticAt(f.scale.value)
+          .fold("Failure details are unavailable at this scale.")(_.message)
         WhyVM(
-          WhyText(QueryFailed, diagnostic.message),
+          WhyText(QueryFailed, message),
           referenceFacts(
             row.controls.fold(WhyText(ControlsUnknown))(n =>
               WhyText(ControlsUnscored, n.toString)
@@ -567,18 +578,26 @@ object WhyReference:
 
   private def reporting(doc: StudioDocument, in: InspectorInputs): InspectorSection =
     val title = (WhyText(ReportingTitle), WhyText(ReportingKind))
-    in.reporting.flatMap(id => doc.reporting.find(_.id == id)) match
+    in.reporting.flatMap(id => CompareSummary.reportingSpec(doc, id)) match
       case None =>
         InspectorSection(
           title._1,
           title._2,
           Vector(InspectorFact("", WhyText(NoReporting), None))
         )
-      case Some(spec) => InspectorSection(title._1, title._2, reportingFacts(spec, in.summary))
+      case Some(spec) =>
+        InspectorSection(
+          title._1,
+          title._2,
+          reportingFacts(
+            spec,
+            in.report.filter(v => v.reporting == spec.id && in.summary.forall(_.run == v.run))
+          )
+        )
 
   private def reportingFacts(
       spec: ReportingSpec,
-      summary: Option[ResultSummary]
+      report: Option[eyes4s.studio.core.backend.ReportView]
   ): Vector[InspectorFact] =
     val minimum = spec.minimumPerGroup.fold(WhyText(MinimumOff))(n =>
       WhyText(MinimumOn, n.queries.toString)
@@ -604,10 +623,12 @@ object WhyReference:
       InspectorFact(WhyText(Filters), filters, None),
       InspectorFact(
         WhyText(MinimumPerGroup),
-        summary.fold(minimum)(r =>
-          WhyText(GroupRange, minimum, r.groupNMinimum.toString, r.groupNMaximum.toString)
-        ),
-        None
+        report
+          .flatMap(_.queryRange(eyes4s.studio.core.backend.ReportRole.Difference))
+          .fold(minimum)(r => WhyText(GroupRange, minimum, r.fewest.toString, r.most.toString)),
+        report
+          .flatMap(_.queryRange(eyes4s.studio.core.backend.ReportRole.Difference))
+          .map(_.ref)
       ),
       InspectorFact(
         WhyText(Summary),

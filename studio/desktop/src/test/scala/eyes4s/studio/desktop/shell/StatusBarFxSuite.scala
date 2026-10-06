@@ -152,7 +152,7 @@ class StatusBarFxSuite extends ShellFxSuite:
       "status: Selected: P17 · by retrieval response · σ 2° | Enter on a participant opens its queries · F6 next pane | Run 8 · Comparing 21,400 / 44,845 Cancel | Saved 10:24"
     )
     mirror()
-    w.session.await(w.session.backend.advanceToPairs(StoryMoments.run8Job, 30_000L))
+    w.session.await(w.session.fixture.get.advanceToPairs(StoryMoments.run8Job, 30_000L))
     eventually(fx, "30,000 pairs")(drawn(bar.jobCount) == "30,000 / 44,845")
     mirror()
     assertEquals(
@@ -169,7 +169,7 @@ class StatusBarFxSuite extends ShellFxSuite:
       "30,000 / 44,845 pairs"
     )
     fx.snapshot(StudioTheme.Light)
-    w.session.await(w.session.backend.fail(StoryMoments.run8Job, Vector(lost, lost)))
+    w.session.await(w.session.fixture.get.fail(StoryMoments.run8Job, Vector(lost, lost)))
     eventually(fx, "the failed slot")(drawn(bar.jobText) == "Run 8 failed · 2 diagnostics")
     assertEquals(runOnFx(chip.text), "Run 8 failed · 2 diagnostics")
     assert(runOnFx(!bar.jobAction.isManaged && !bar.jobCount.isManaged))
@@ -186,7 +186,7 @@ class StatusBarFxSuite extends ShellFxSuite:
       runOnFx(fx.scene.getFocusOwner eq bar.jobAction),
       s"Cancel never took focus: ${runOnFx(fx.scene.getFocusOwner)}"
     )
-    w.session.await(w.session.backend.advanceToPairs(StoryMoments.run8Job, 25_000L))
+    w.session.await(w.session.fixture.get.advanceToPairs(StoryMoments.run8Job, 25_000L))
     eventually(fx, "25,000 pairs")(drawn(bar.jobCount) == "25,000 / 44,845")
     assert(
       runOnFx(fx.scene.getFocusOwner eq bar.jobAction),

@@ -16,11 +16,16 @@
 
 package eyes4s.studio.desktop.runtime
 
-import cats.effect.IO
+import cats.effect.{IO, Resource}
 import cats.effect.unsafe.IORuntime
 import cats.syntax.all.*
 import eyes4s.studio.app.AppModel
 import eyes4s.studio.core.document.StudioDocument
+import eyes4s.studio.core.backend.{BackendError, StudyBackend}
+import eyes4s.studio.core.headless.{NativeReads, SynchronizedBackend}
+import java.util.concurrent.atomic.AtomicReference
+import eyes4s.studio.core.navigation.StudyNavigator
+import eyes4s.studio.core.real.{DatasetSources, RealStudyBackend}
 import eyes4s.studio.core.execution.{
   ExecutionError,
   ExecutionEvent,
@@ -29,18 +34,32 @@ import eyes4s.studio.core.execution.{
 }
 import eyes4s.studio.core.fixture.{FakeStudyBackend, StoryMoment}
 
-/** The studio-core services one window runs on (tickets S1.4, S1.5a): the
-  * study backend and the execution service over it. Until S3.7 the backend
-  * is the [[FakeStudyBackend]] at a story moment.
+/** The backend, navigator and execution service one window owns. Host
+  * source bytes/assets enter through DatasetSources; backend resources and
+  * subscriptions are released when the window's session closes.
   *
   * Events of the execution service are handed to `deliver` on the service's
   * own fibre, in publication order; the caller moves them to the UI thread.
   */
 final class StudioSession private (
-    val backend: FakeStudyBackend[IO],
+    val rawBackend: StudyBackend[IO],
+    val backend: StudyBackend[IO],
+    documentSource: AtomicReference[Option[() => StudioDocument]],
+    val reads: NativeReads[IO],
+    synchronizeDocument: StudioDocument => IO[Either[BackendError, Unit]],
+    val fixture: Option[FakeStudyBackend[IO]],
     val service: ExecutionService[IO],
     release: IO[Unit]
 )(using runtime: IORuntime):
+
+  val navigator: StudyNavigator[IO] = reads.navigator
+
+  /** The getter reads a safely published immutable snapshot, never JavaFX state. */
+  def bindDocument(source: () => StudioDocument): Unit = documentSource.set(Some(source))
+
+  /** Register the authoritative document before performing its backend effects. */
+  def synchronize(document: StudioDocument): IO[Either[BackendError, Unit]] =
+    synchronizeDocument(document)
 
   /** Run `io` on the service's runtime and hand its result to `done`, on
     * the runtime's thread.
@@ -67,23 +86,82 @@ final class StudioSession private (
 
   def jobs: Vector[ExecutionJob] = await(service.jobs)
 
-  /** Stop watching jobs and stop delivering events. Backend jobs keep running. */
+  /** Release event subscriptions and the owned backend resource. */
   def close(): Unit = await(release)
 
 object StudioSession:
 
-  /** Start the fake backend at `moment`, the execution service over it, and
-    * the subscription that delivers its events.
-    */
+  /** The fixture session remains available for explicit story/demo tests. */
   def start(moment: StoryMoment, deliver: ExecutionEvent => Unit)(using
       runtime: IORuntime
   ): StudioSession =
-    val resources =
-      for
-        backend <- cats.effect.Resource.eval(FakeStudyBackend.create[IO](moment))
-        service <- ExecutionService.resource[IO](backend)
-        events  <- service.subscribe
-        _       <- events.evalMap(e => IO(deliver(e))).compile.drain.background
-      yield (backend, service)
-    val ((backend, service), release) = resources.allocated.unsafeRunSync()
-    new StudioSession(backend, service, release)
+    acquire(
+      Resource
+        .eval(FakeStudyBackend.create[IO](moment))
+        .map(backend =>
+          (
+            backend: StudyBackend[IO],
+            backend.navigator,
+            Some(backend),
+            (_: StudioDocument) => IO.pure(Right(()))
+          )
+        ),
+      deliver
+    )
+
+  /** Native services over the document's exact dataset and analysis revisions. */
+  def start(
+      document: StudioDocument,
+      sources: DatasetSources[IO],
+      deliver: ExecutionEvent => Unit
+  )(using runtime: IORuntime): StudioSession =
+    acquire(
+      RealStudyBackend
+        .resource[IO](document, sources)
+        .map(backend =>
+          (backend: StudyBackend[IO], backend.navigator, None, backend.synchronize)
+        ),
+      deliver
+    )
+
+  private def acquire(
+      backendResource: Resource[
+        IO,
+        (
+            StudyBackend[IO],
+            StudyNavigator[IO],
+            Option[FakeStudyBackend[IO]],
+            StudioDocument => IO[Either[BackendError, Unit]]
+        )
+      ],
+      deliver: ExecutionEvent => Unit
+  )(using runtime: IORuntime): StudioSession =
+    val documentSource = new AtomicReference[Option[() => StudioDocument]](None)
+    val resources      = for
+      (raw, navigator, fixture, synchronize) <- backendResource
+      sync = () =>
+        IO.defer(
+          documentSource
+            .get()
+            .fold(IO.pure[Either[BackendError, Unit]](Right(())))(source =>
+              synchronize(source())
+            )
+        )
+      backend = new SynchronizedBackend[IO](raw, sync)
+      reads   <- NativeReads.resource[IO](backend, navigator, sync)
+      service <- ExecutionService.resource[IO](backend)
+      events  <- service.subscribe
+      _       <- events.evalMap(event => IO(deliver(event))).compile.drain.background
+    yield (raw, backend, reads, synchronize, fixture, service)
+    val ((raw, backend, reads, synchronize, fixture, service), release) =
+      resources.allocated.unsafeRunSync()
+    new StudioSession(
+      raw,
+      backend,
+      documentSource,
+      reads,
+      synchronize,
+      fixture,
+      service,
+      release
+    )

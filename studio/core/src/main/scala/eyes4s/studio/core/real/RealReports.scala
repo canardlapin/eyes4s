@@ -18,52 +18,53 @@ package eyes4s.studio.core.real
 
 import cats.syntax.all.*
 import eyes4s.codec.ReportSources
-import eyes4s.plan.AttributeValue
-import eyes4s.results.{Covariate, CovariateName, CovariateSchema, CovariateType, Levels}
+import eyes4s.plan.{AttributeValue, TrialKey as CoreKey}
+import eyes4s.results.{
+  Covariate,
+  CovariateName,
+  CovariateSchema,
+  CovariateType,
+  Levels,
+  Report,
+  ReportSource
+}
 import eyes4s.studio.core.backend.*
 import eyes4s.studio.core.document.{ReportingFilter, ReportingSpec}
 import eyes4s.studio.core.reports.{ReportEvaluation, ReportRefusal}
 
 /** Reports over a retained eyes4s result, bound to its plan, input and ledger.
-  * Categorical filter values come from declared inventory columns. Grouped
-  * reports remain refused until contrast operands or ordered levels are
-  * recorded: observation order cannot establish a scientific direction.
+  * Categorical values come from declared inventory columns. Grouping serves
+  * cells; within-participant subtraction uses only explicitly saved operands.
+  * Observation order cannot establish a scientific direction.
   * The library reads, filters and weights every query.
   */
 object RealReports:
-  def evaluate(
+  private def bound(
       run: RunId,
       reporting: ReportingSpec,
       scale: Int,
       held: RealStudyBackend.RealRun
-  ): Either[BackendError, ReportView] =
+  ): Either[BackendError, (ReportSource[CoreKey], Map[String, Vector[String]])] =
     val p                            = held.prepared
     def refused(e: ReportRefusal)    = BackendError.ReportRefused(run, e)
     def sourceError(message: String) = ReportRefusal.Source(reporting.id.value, message)
-    val requested = reporting.filters.collect { case ReportingFilter.Keep(attribute, _) =>
-      attribute.label
-    }.distinct
+    val requested                    = reporting.filters
+      .collect { case ReportingFilter.Keep(attribute, _) =>
+        attribute.label
+      }
+      .concat(reporting.groupBy.toVector.map(_.label))
+      .distinct
     for
       _ <- Either.cond(
         scale >= 0 && scale < held.result.scales.size,
         (),
         BackendError.UnknownScale(run, scale, p.summary.scales)
       )
-      _ <- reporting.groupBy.fold[Either[BackendError, Unit]](Right(())) { attribute =>
-        Left(
-          refused(
-            ReportRefusal.Spec(
-              reporting.id.value,
-              s"Grouping covariate ${attribute.label} has no recorded ordered levels or contrast operands."
-            )
-          )
-        )
-      }
       declarations <- requested
         .traverse { name =>
           for
             inventory <- p.admitted.evidence.inventory.toRight(
-              sourceError(s"Categorical filter $name needs the admitted trial inventory.")
+              sourceError(s"Categorical covariate $name needs the admitted trial inventory.")
             )
             _ <- Either.cond(
               inventory.attributeColumns.exists(_.name == name),
@@ -100,5 +101,47 @@ object RealReports:
       levels = declarations.collect { case Covariate(name, CovariateType.Categorical(found)) =>
         name.value -> found.values
       }.toMap
-      view <- ReportEvaluation.evaluate(run, reporting, scale, levels, source).leftMap(refused)
-    yield view
+    yield (source, levels)
+
+  /** Native report membership for navigation, sharing the exact retained
+    * source and checked specification used by the served view.
+    */
+  def native(
+      run: RunId,
+      reporting: ReportingSpec,
+      scale: Int,
+      held: RealStudyBackend.RealRun
+  ): Either[BackendError, Report[CoreKey]] =
+    for
+      (source, levels) <- bound(run, reporting, scale, held)
+      spec             <- ReportEvaluation
+        .spec(reporting, scale, levels)
+        .leftMap(BackendError.ReportRefused(run, _))
+      report <- Report
+        .evaluate(spec, source)
+        .leftMap(e =>
+          BackendError
+            .ReportRefused(run, ReportRefusal.Evaluation(reporting.id.value, e.message))
+        )
+    yield report
+
+  /** Serve a view and retain the exact report behind its membership in one evaluation. */
+  def evaluateWithNative(
+      run: RunId,
+      reporting: ReportingSpec,
+      scale: Int,
+      held: RealStudyBackend.RealRun
+  ): Either[BackendError, (ReportView, Report[CoreKey])] =
+    bound(run, reporting, scale, held).flatMap { (source, levels) =>
+      ReportEvaluation
+        .evaluateWithNative(run, reporting, scale, levels, source)
+        .leftMap(BackendError.ReportRefused(run, _))
+    }
+
+  def evaluate(
+      run: RunId,
+      reporting: ReportingSpec,
+      scale: Int,
+      held: RealStudyBackend.RealRun
+  ): Either[BackendError, ReportView] =
+    evaluateWithNative(run, reporting, scale, held).map(_._1)

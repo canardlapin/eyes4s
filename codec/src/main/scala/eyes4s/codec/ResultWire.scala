@@ -941,6 +941,15 @@ private[codec] object ResultWire:
           tagged("initialFixations", "key" -> key, "error" -> initialFixationError(e))
         )
 
+    case StudyFailure.TrialCardinality(k, n) =>
+      keys
+        .encode(k)
+        .map(key => tagged("trialCardinality", "key" -> key, "occurrences" -> Json.fromInt(n)))
+    case StudyFailure.PreparedPlan(k, e) =>
+      keys
+        .encode(k)
+        .map(key => tagged("preparedPlan", "key" -> key, "error" -> TemporalWire.planError(e)))
+
   def readStudyFailure[K](keys: VersionedCodec[K])(
       json: Json
   ): Either[CodecError, StudyFailure[K]] =
@@ -983,6 +992,16 @@ private[codec] object ResultWire:
           k <- key
           e <- error.flatMap(readInitialFixationError)
         yield StudyFailure.InitialFixations(k, e)
+      case "trialCardinality" =>
+        for
+          k <- key
+          n <- Wire.field[Int](json, "occurrences")
+        yield StudyFailure.TrialCardinality(k, n)
+      case "preparedPlan" =>
+        for
+          k <- key
+          e <- error.flatMap(TemporalWire.readPlanError)
+        yield StudyFailure.PreparedPlan(k, e)
       case other => Left(unknown(json, "study failure", other))
     }
 

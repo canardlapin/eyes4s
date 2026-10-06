@@ -82,14 +82,28 @@ final class FakeNavigator[F[_]] private[fixture] (
       .value
 
   private def inCell(cell: ReportRef.Cell): Step[Vector[ParticipantSummary]] =
-    scoredAt(cell.run, cell.scale.value).flatMap { _ =>
-      pure(cell.group match
-        case Some(g) if !groups.contains(g) => Left(NavigationError.UnknownGroup(cell, groups))
-        case group                          =>
-          Right(summary.participants.filter { p =>
-            group.forall(g => p.groups.exists(m => m.label == g && m.n > 0))
-          }))
-    }
+    if cell.role != ReportRole.Difference then
+      pure(
+        Left(
+          NavigationError.Backend(
+            BackendError.Unavailable(
+              DiagnosticLocus.Artifact(
+                s"Fixture report ${cell.reporting.value} cannot navigate ${cell.role} cells."
+              )
+            )
+          )
+        )
+      )
+    else
+      scoredAt(cell.run, cell.scale.value).flatMap { _ =>
+        pure(cell.group match
+          case Some(g) if !groups.contains(g) =>
+            Left(NavigationError.UnknownGroup(cell, groups))
+          case group =>
+            Right(summary.participants.filter { p =>
+              group.forall(g => p.groups.exists(m => m.label == g && m.n > 0))
+            }))
+      }
 
   def participants(
       cell: ReportRef.Cell,

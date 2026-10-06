@@ -138,6 +138,7 @@ abstract class BackendConformanceSuite extends CatsEffectSuite:
       s      <- subject
       result <- ok(s.backend.result(s.current))
       rows   <- all(100)(p => ok(s.backend.queries(s.current, p)).map(q => (q.page, q.rows)))
+      report <- ok(s.backend.report(s.current, reporting, 0))
     yield
       val c = result.contrasts
       assertEquals(c, QueryContrasts(480, 14, 9, 3, 454))
@@ -148,12 +149,12 @@ abstract class BackendConformanceSuite extends CatsEffectSuite:
         requested = rows.size,
         queryNotAdmitted = rows.count(_.status.isInstanceOf[QueryStatus.NotAdmitted]),
         noMatch = rows.count(_.status.isInstanceOf[QueryStatus.NoMatch]),
-        failed = rows.count(_.status.isInstanceOf[QueryStatus.Failed]),
+        failed = rows.count(_.status.isFailed),
         contributing = rows.count(_.status.isInstanceOf[QueryStatus.Contributing])
       )
       assertEquals(tally, c)
       // Groups are labelled by the values the inventory attribute takes.
-      assertEquals(result.groups.map(_.label).toSet, rows.map(_.response).toSet)
+      assertEquals(report.cells.flatMap(_.group).toSet, rows.map(_.response).toSet)
       result.participants.foreach { p =>
         val mine = rows.filter(_.query.participant == p.participant)
         assertEquals(mine.size, p.requested, p.participant)
@@ -162,7 +163,14 @@ abstract class BackendConformanceSuite extends CatsEffectSuite:
           p.contributing,
           p.participant
         )
-        assertEquals(p.groups.map(_.label), result.groups.map(_.label), p.participant)
+        assertEquals(
+          report.participants
+            .filter(_.participant == p.participant)
+            .flatMap(_.group)
+            .toSet,
+          report.cells.flatMap(_.group).toSet,
+          p.participant
+        )
       }
   }
 
@@ -176,6 +184,14 @@ abstract class BackendConformanceSuite extends CatsEffectSuite:
           row.status match
             case QueryStatus.Contributing(m, b, d) =>
               assertEquals(inspection, Inspection.Contrast(address, m(0), b(0), d(0)))
+            case failed if failed.isFailed =>
+              assertEquals(
+                inspection,
+                Inspection.Unscored(
+                  address,
+                  QueryStatus.Failed(failed.diagnosticAt(address.scale).get)
+                )
+              )
             case other => assertEquals(inspection, Inspection.Unscored(address, other))
         }
       }
@@ -186,7 +202,7 @@ abstract class BackendConformanceSuite extends CatsEffectSuite:
     for
       s   <- subject
       row <- ok(s.backend.queries(s.current, page(0, 1))).map(_.rows.head)
-      address = ResultAddress.PairRow(0, PairDesign.Matched, row.query, row.matched)
+      address = ResultAddress.PairRow(0, PairDesign.Matched, row.query, row.matched.get)
       trail <- ok(s.backend.provenance(s.current, address)).map(_.trail)
     yield
       assertEquals(trail.take(1), Vector(ProvenanceStep.Run(s.current)))
@@ -194,7 +210,7 @@ abstract class BackendConformanceSuite extends CatsEffectSuite:
       assert(trail.contains(ProvenanceStep.Design(PairDesign.Matched)), trail)
       assertEquals(
         trail.collect { case ProvenanceStep.Trial(k, _) => k },
-        Vector(row.query, row.matched)
+        Vector(row.query, row.matched.get)
       )
   }
 
@@ -288,9 +304,8 @@ abstract class BackendConformanceSuite extends CatsEffectSuite:
   }
 
   test("the enveloped JSON transport answers exactly as the backend does in process") {
-    def wire(request: Envelope[BackendRequest]): IO[Vector[Envelope[ServerFrame]]] =
+    def wire(s: Subject, request: Envelope[BackendRequest]): IO[Vector[Envelope[ServerFrame]]] =
       for
-        s  <- subject
         in <- IO.fromEither(
           io.circe.parser.decode[Envelope[BackendRequest]](request.asJson.noSpaces)
         )
@@ -322,12 +337,17 @@ abstract class BackendConformanceSuite extends CatsEffectSuite:
         BackendRequest.TrialPreviewOf(rev, row.query),
         BackendRequest.SourceRecordsOf(rev, 1, 5)
       ).zipWithIndex.map((r, i) => Envelope(RequestId(i.toLong), r))
-      direct <- requests.traverse(r =>
-        subject.flatMap(t => StudyBackend.handle(t.backend)(r).compile.toVector)
+      direct      <- requests.traverse(r => StudyBackend.handle(s.backend)(r).compile.toVector)
+      transported <- subject
+      wired       <- requests.traverse(r => wire(transported, r))
+      future      <- wire(
+        transported,
+        Envelope(ProtocolVersion(2, 0), RequestId(99), BackendRequest.Runs)
       )
-      wired  <- requests.traverse(wire)
-      future <- wire(Envelope(ProtocolVersion(2, 0), RequestId(99), BackendRequest.Runs))
-      older  <- wire(Envelope(ProtocolVersion(1, 2), RequestId(98), BackendRequest.Runs))
+      older <- wire(
+        transported,
+        Envelope(ProtocolVersion(1, 2), RequestId(98), BackendRequest.Runs)
+      )
     yield
       assertEquals(wired, direct)
       assert(direct.forall(_.size == 1), direct)

@@ -160,13 +160,16 @@ object ResolvedDesignVM:
 
     val counting = panel.preview match
       case DesignPreview.Counting(_, _, c, progress) =>
-        val done = progress.fold(0)(_.completedParticipants)
+        val native = panel.workProgress
+        val done   = progress.fold(0)(_.completedParticipants)
         // The total is the candidates' participant count; the done count is
         // progress, as a job's meter is.
         Some(
           DesignNoteVM(
-            t(CountingChip, Format.count(done.toLong), Format.count(c.participants.toLong)),
-            tally(DesignCount.Participants).toVector,
+            native.fold(
+              t(CountingChip, Format.count(done.toLong), Format.count(c.participants.toLong))
+            )(p => t(CountingWorkChip, p.design.render)),
+            if native.isDefined then Vector.empty else tally(DesignCount.Participants).toVector,
             mono = false
           )
         )
@@ -257,7 +260,7 @@ object ResolvedDesignVM:
       participant = r.query.participant,
       trial = r.query.trial,
       item = r.item,
-      matched = Option.when(eligible)(r.matched.trial),
+      matched = r.matched.filter(_ => eligible).map(_.trial),
       controls = if eligible then r.controls.map(c => Format.count(c.toLong)) else None,
       status = status,
       tone = tone,

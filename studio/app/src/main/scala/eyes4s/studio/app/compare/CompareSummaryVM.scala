@@ -16,6 +16,8 @@
 
 package eyes4s.studio.app.compare
 
+import cats.syntax.all.*
+
 import eyes4s.studio.app.plot.{
   ColumnFormat,
   ColumnId,
@@ -192,15 +194,11 @@ object CompareSummaryVM:
         case ReportingWeight.PooledQueries    => SummaryTextId.WeightingPooledQueries
       }
       Vector(
-        SummaryText(SummaryTextId.PairedN, contrast.fold("0")(_.pairedN.toString)),
         SummaryText(weighting),
-        SummaryText(SummaryTextId.Unit),
-        SummaryText(
-          SummaryTextId.GroupRange,
-          range.fold("0")(_.fewest.toString),
-          range.fold("0")(_.most.toString)
-        )
-      )
+        SummaryText(SummaryTextId.Unit)
+      ) ++ contrast.toVector.map(c => SummaryText(SummaryTextId.PairedN, c.pairedN.toString)) ++
+        range.toVector
+          .map(r => SummaryText(SummaryTextId.GroupRange, r.fewest.toString, r.most.toString))
     }
     CompareSummaryVM(
       None,
@@ -251,23 +249,31 @@ object CompareSummaryVM:
     val ids     = overall.participants.collect {
       case p if p.role == ReportRole.Difference && p.group.isEmpty => p.participant
     }.distinct
-    val rows = ids.map { id =>
-      val legacy = r.participants.find(_.participant == id)
-      val counts = legacy
-        .map(p => Vector(p.requested, p.contributing, p.failed, p.noMatch, p.notAdmitted))
-        .getOrElse(Vector.fill(5)(0))
+    val rows = ids.traverse { id =>
       def value(role: ReportRole) =
         overall
           .participant(None, role, id)
           .flatMap(_.value)
           .fold(PlotValue.Missing)(PlotValue.Number(_))
-      PlotRow(
-        overall
+      for
+        accounting <- r.participants
+          .find(_.participant == id)
+          .toRight(s"${run.label} has no query accounting for participant $id.")
+        participant <- overall
           .participant(None, ReportRole.Difference, id)
-          .map(_.ref)
-          .getOrElse(StudioRef.ParticipantSummary(run, rep, scale, None, id)),
+          .toRight(
+            s"${run.label}, reporting ${overall.reporting.value}, scale ${scale.value} has no served participant $id."
+          )
+      yield PlotRow(
+        participant.ref,
         Vector(PlotValue.Text(id)) ++
-          counts.map(n => PlotValue.Number(n.toDouble)) ++
+          Vector(
+            accounting.requested,
+            accounting.contributing,
+            accounting.failed,
+            accounting.noMatch,
+            accounting.notAdmitted
+          ).map(n => PlotValue.Number(n.toDouble)) ++
           Vector(
             value(ReportRole.Matched),
             value(ReportRole.Control),
@@ -284,17 +290,37 @@ object CompareSummaryVM:
           }
       )
     }
-    columns
-      .foldLeft[Either[String, Vector[PlotColumn]]](Right(Vector.empty))((acc, c) =>
-        acc.flatMap(cs => c.left.map(_.message).map(cs :+ _))
+    val context = for
+      _ <- Either.cond(
+        grouped.reporting == rep,
+        (),
+        s"${run.label} requested reporting ${rep.value} but received ${grouped.reporting.value}."
       )
-      .flatMap(cs =>
-        PlotSource(
-          SummaryText(ParticipantCaption, label, run.number.toString),
-          cs,
-          rows
-        ).left.map(_.message)
+      _ <- Vector(grouped, overall).traverse_(view =>
+        Either.cond(
+          view.run == run && view.scale == scale.value,
+          (),
+          s"${run.label}, scale ${scale.value} received ${view.run.label}, scale ${view.scale}."
+        )
       )
+      _ <- Either.cond(
+        r.run == run,
+        (),
+        s"${run.label} received accounting for ${r.run.label}."
+      )
+    yield ()
+    context.flatMap(_ =>
+      columns
+        .foldLeft[Either[String, Vector[PlotColumn]]](Right(Vector.empty))((acc, c) =>
+          acc.flatMap(cs => c.left.map(_.message).map(cs :+ _))
+        )
+        .flatMap(cs =>
+          rows.flatMap(rs =>
+            PlotSource(SummaryText(ParticipantCaption, label, run.number.toString), cs, rs).left
+              .map(_.message)
+          )
+        )
+    )
 
   /** The query table: every query of the run, its item, response and status,
     * and its M, B and D at the shown σ when it contributes.
@@ -323,7 +349,7 @@ object CompareSummaryVM:
       val (status, scores) = q.status match
         case QueryStatus.Contributing(m, b, d) =>
           (SummaryText(StatusContributing), Vector(at(m), at(b), at(d)))
-        case QueryStatus.Failed(_) =>
+        case QueryStatus.Failed(_) | QueryStatus.FailedAtScales(_) =>
           (SummaryText(StatusFailed), Vector.fill(3)(PlotValue.Missing))
         case QueryStatus.NoMatch(_) =>
           (SummaryText(StatusNoMatch), Vector.fill(3)(PlotValue.Missing))

@@ -17,6 +17,8 @@
 package eyes4s.studio.app.figures
 
 import eyes4s.studio.app.compare.SummaryAnswer
+import eyes4s.studio.core.backend.{ReportRole, ReportView}
+import eyes4s.studio.core.selection.ScaleIndex
 import eyes4s.studio.app.text.Format
 import eyes4s.studio.core.engine.StudioBuild
 import eyes4s.studio.core.figures.FigureSource
@@ -58,7 +60,8 @@ final case class BundleRequest(
     items: Vector[BundleItem],
     includeImages: Boolean,
     folder: String,
-    omitted: Vector[(String, String)] = Vector.empty
+    omitted: Vector[(String, String)] = Vector.empty,
+    participantScale: Option[ScaleIndex] = None
 ) derives CanEqual
 
 object FigureBundle:
@@ -80,6 +83,7 @@ object FigureBundle:
       page: PageVM,
       format: ExportFormat,
       summary: Option[SummaryAnswer],
+      report: Option[Either[String, ReportView]],
       methods: Option[MethodsVM],
       includeImages: Boolean,
       status: Option[String]
@@ -95,9 +99,15 @@ object FigureBundle:
       case BundleItem.Comparisons =>
         result.fold(("", Some(reading)))(r => (s"${Format.count(r.pairRows)} pair rows", None))
       case BundleItem.Participants =>
-        result.fold(("", Some(reading)))(r =>
-          (s"${r.participants.size} × ${r.groups.size} groups", None)
-        )
+        (result, report) match
+          case (Some(r), Some(Right(view))) if r.scales.isDefinedAt(view.scale) =>
+            val groups =
+              view.cells.filter(_.role == ReportRole.Difference).map(_.group).distinct
+            (s"${r.participants.size} × ${groups.size} groups at ${r.scales(view.scale)}", None)
+          case (_, Some(Left(why)))   => ("", Some(why))
+          case (_, Some(Right(view))) =>
+            ("", Some(s"The summary of ${view.run.label} has no scale ${view.scale}."))
+          case _ => ("", Some(reading))
       case BundleItem.Methods =>
         methods.map(_.text) match
           case Some(Right(_))  => ("", None)
@@ -131,7 +141,16 @@ object FigureBundle:
         s"${s.bound.dataset.id.label} · reporting “${s.reporting.name}” · studio build eyes4s " +
         StudioBuild.eyes4sBaseVersion,
       s"reporting spec ${s.reporting.id.value} " +
-        FigureCaption.specDigest(s.reporting, short = false),
+        FigureCaption.specDigest(s.reporting, short = false)
+    ) ++ request.participantScale.toVector.flatMap { scale =>
+      s.bound.analysis.recipe.scales.values
+        .lift(scale.value)
+        .toVector
+        .map(sigma =>
+          s"participants.csv and reporting counts: ${sigma.render} (scale index ${scale.value}); " +
+            "the first participant panel's scale, or the first declared scale for a figure without one."
+        )
+    } ++ Vector(
       "",
       "Files:"
     ) ++ files ++

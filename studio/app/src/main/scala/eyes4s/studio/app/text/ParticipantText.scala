@@ -30,7 +30,7 @@ enum ParticipantTextId derives CanEqual:
   case GroupHeader, MeanOfHeader, DHeader, NHeader
 
   /** The "mean of" cell of a group's grand mean. */
-  case AllParticipants
+  case AllParticipants, AllQueries
 
   /** The D axis's title, the label of the band of missing values, and the
     * per-group n under each group's column.
@@ -59,6 +59,7 @@ object ParticipantText:
       case DHeader         => "D"
       case NHeader         => "n"
       case AllParticipants => "all participants"
+      case AllQueries      => "All queries"
       case DAxis           => "D (Δ cosine), participant mean"
       case NoValue         => "no value"
       case GroupN          => "n = {0}"

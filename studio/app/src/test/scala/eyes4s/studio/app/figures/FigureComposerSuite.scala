@@ -17,14 +17,14 @@
 package eyes4s.studio.app.figures
 
 import cats.instances.future.*
-import eyes4s.studio.app.compare.SummaryAnswer
+import eyes4s.studio.app.compare.{CompareSummary, SummaryAnswer}
 import eyes4s.studio.app.explore.DisplaySource
 import eyes4s.studio.app.nav.{Location, Place}
 import eyes4s.studio.app.{AppModel, Intent, StoryModels}
 import eyes4s.studio.core.backend.*
 import eyes4s.studio.core.command.{Command, HistoryStack}
 import eyes4s.studio.core.document.*
-import eyes4s.studio.core.figures.{PairScore, ReferenceReads, ReferenceScores}
+import eyes4s.studio.core.figures.{FigureSource, PairScore, ReferenceReads, ReferenceScores}
 import eyes4s.studio.core.fixture.{GoldenAssets, MockStudy, StoryMoment, StoryMoments}
 import eyes4s.studio.core.headless.HeadlessSession
 import eyes4s.studio.core.selection.{ScaleIndex, StudioRef}
@@ -72,7 +72,9 @@ class FigureComposerSuite extends munit.ScalaCheckSuite:
   /** The fake backend's answers for t2's Figure 1: run 7's summary and
     * P17 ret_07's reference scores at σ 2°.
     */
-  private def served: Future[(ResultSummary, ReferenceScores)] =
+  private def served: Future[
+    (ResultSummary, ReferenceScores, Vector[(ReportingSpec, ScaleIndex, ReportView)])
+  ] =
     for
       session <- HeadlessSession.open(StoryMoment.T2)
       summary <- session.result(run7)
@@ -83,25 +85,35 @@ class FigureComposerSuite extends munit.ScalaCheckSuite:
         scale2,
         p17ret07
       )
+      spec = ok(FigureSource.of(t2.document, figure1)).reporting
+      reports <- Future.traverse((for
+        report <- Vector(spec) ++ CompareSummary.overall(spec).toVector
+        i      <- ok(summary).scales.indices.toVector
+        scale = ok(ScaleIndex.of(i))
+      yield (report, scale))) { (report, scale) =>
+        session.report(run7, report, scale.value).map(r => (report, scale, ok(r)))
+      }
       _ <- session.close
-    yield (ok(summary), ok(scores))
+    yield (ok(summary), ok(scores), reports)
 
   /** The composer synced to `model` with the fake's answers read. */
   private def loaded(
       model: AppModel,
-      answers: (ResultSummary, ReferenceScores)
+      answers: (ResultSummary, ReferenceScores, Vector[(ReportingSpec, ScaleIndex, ReportView)])
   ): FigureComposer =
-    val (summary, scores) = answers
-    val synced            = FigureComposer.sync(FigureComposer.empty, model)._1
-    val registry          = model.document.dataset(r3).map(GoldenAssets.registry).map {
+    val (summary, scores, reports) = answers
+    val synced                     = FigureComposer.sync(FigureComposer.empty, model)._1
+    val registry                   = model.document.dataset(r3).map(GoldenAssets.registry).map {
       case Right(r)  => Right(DisplaySource.Served(r))
       case Left(why) => Left(why)
     }
-    Vector(
+    (reports.map((spec, scale, view) =>
+      ComposerIntent.ReportRead(run7, spec, scale, Right(view))
+    ) ++ Vector(
       ComposerIntent.SummaryRead(run7, SummaryAnswer.Answered(summary)),
       ComposerIntent.ReferencesRead(run7, scale2, p17ret07, Right(scores)),
       ComposerIntent.DisplaysRead(r3, registry.getOrElse(Left("no r3")))
-    ).foldLeft(synced)((c, i) => FigureComposer.update(c, model, i)._1)
+    )).foldLeft(synced)((c, i) => FigureComposer.update(c, model, i)._1)
 
   private def panel(vm: ComposerVM, l: String): PanelVM =
     vm.page.flatMap(_.panels.find(_.letter == letter(l))).getOrElse(fail(s"no panel $l"))
@@ -186,7 +198,7 @@ class FigureComposerSuite extends munit.ScalaCheckSuite:
   ) {
     val (synced, effects) = FigureComposer.sync(FigureComposer.empty, t2)
     assertEquals(
-      effects,
+      effects.filterNot(_.isInstanceOf[ComposerEffect.RequestReport]),
       Vector(
         ComposerEffect.RequestSummary(run7),
         ComposerEffect.RequestMethods(run7, r3),
@@ -196,6 +208,7 @@ class FigureComposerSuite extends munit.ScalaCheckSuite:
         ComposerEffect.RequestReferences(run7, scale2, p17ret07)
       )
     )
+    assertEquals(effects.count(_.isInstanceOf[ComposerEffect.RequestReport]), 8)
     assertEquals(FigureComposer.sync(synced, t2)._2, Vector.empty)
     // Figure 2 binds run 5: its reads are of run 5, whatever run is shown.
     val two = at(t2, figure2, None)
@@ -346,7 +359,7 @@ class FigureComposerSuite extends munit.ScalaCheckSuite:
       assertEquals(
         d.notes,
         Vector(
-          "n = 24 each · paired n = 24",
+          "n = 24 each",
           "bars: grand mean of participant means, equal weight",
           "Each pair of dots is one participant; per participant, 2–17 queries per group. " +
             "Descriptive only: no intervals or tests."
@@ -355,14 +368,21 @@ class FigureComposerSuite extends munit.ScalaCheckSuite:
       val e = panel(vm, "E").body match
         case PanelBody.Plot(plot) => plot
         case other                => fail(other.toString)
-      assertEquals(e.notes.head, "n = 24 each · paired n = 24")
+      assertEquals(e.notes, Vector("Each scale computed separately."))
     }
   }
 
   /** A participant row of the participant plot's source: its group and participant. */
   private object PlotRowParticipant:
     def unapply(row: eyes4s.studio.app.plot.PlotRow): Option[(String, String)] = row.ref match
-      case StudioRef.ParticipantSummary(_, _, _, Some(group), participant) =>
+      case StudioRef.ReportParticipant(
+            _,
+            _,
+            _,
+            eyes4s.studio.core.selection.ReportGroup.Level(group),
+            ReportRole.Difference,
+            participant
+          ) =>
         Some((group.label, participant))
       case _ => None
 
@@ -747,6 +767,84 @@ class FigureComposerSuite extends munit.ScalaCheckSuite:
   }
 
   // --- Review follow-ups -------------------------------------------------------------
+
+  test(
+    "bundle reporting uses the first participant panel's declared scale, otherwise the first estimation scale"
+  ) {
+    val source      = ok(FigureSource.of(t2.document, figure1))
+    val participant = source.figure.panels
+      .find(p => PanelTemplate.of(p).isInstanceOf[PanelTemplate.ParticipantD])
+      .getOrElse(fail("no participant panel"))
+    def withPanels(panels: Vector[PanelSpec]) = source.copy(figure =
+      ok(FigureSpec.of(source.figure.id, source.figure.run, source.figure.reporting, panels))
+    )
+    val another =
+      participant.copy(letter = letter("Z"), scale = PanelScale.At(ok(Sigma.of(1.0))))
+    assertEquals(
+      FigureComposer.reportingScale(withPanels(Vector(participant, another))),
+      Right(scale2)
+    )
+    val noParticipant = source.figure.panels.filterNot(p =>
+      PanelTemplate.of(p).isInstanceOf[PanelTemplate.ParticipantD]
+    )
+    assertEquals(
+      FigureComposer.reportingScale(withPanels(noParticipant)),
+      Right(ScaleIndex.first)
+    )
+    val uncomputed = participant.copy(scale = PanelScale.At(ok(Sigma.of(3.0))))
+    assert(FigureComposer.reportingScale(withPanels(Vector(uncomputed))).isLeft)
+  }
+
+  test(
+    "a reporting edit with the same id requests new reports and cannot reuse the old means"
+  ) {
+    served.map { answers =>
+      val old     = loaded(t2, answers)
+      val spec    = ok(FigureSource.of(t2.document, figure1)).reporting
+      val changed = ok(
+        ReportingSpec.of(
+          spec.id,
+          spec.name,
+          spec.groupBy,
+          spec.filters,
+          spec.minimumPerGroup,
+          ReportingWeight.PooledQueries,
+          spec.contrast
+        )
+      )
+      val model = AppModel.update(t2, Intent.Dispatch(Command.PutReporting(changed)))._1
+      val (waiting, requests) = FigureComposer.sync(old, model)
+      assert(requests.contains(ComposerEffect.RequestReport(run7, changed, scale2)))
+      assert(
+        panel(FigureComposer.view(waiting, model), "D").body.isInstanceOf[PanelBody.Waiting]
+      )
+    }
+  }
+
+  test("a report of another scale is refused even when its values are identical") {
+    served.map { answers =>
+      val old   = loaded(t2, answers)
+      val spec  = ok(FigureSource.of(t2.document, figure1)).reporting
+      val view  = old.reports((run7, spec, scale2)).fold(fail(_), identity)
+      val wrong = FigureComposer
+        .update(
+          old,
+          t2,
+          ComposerIntent.ReportRead(run7, spec, scale2, Right(view.copy(scale = 0)))
+        )
+        ._1
+      panel(FigureComposer.view(wrong, t2), "D").body match
+        case PanelBody.Unavailable(why) =>
+          assert(why.contains("scale 2") && why.contains("scale 0"), why)
+        case other => fail(other.toString)
+      assert(
+        FigureComposer
+          .sync(wrong, t2)
+          ._2
+          .contains(ComposerEffect.RequestReport(run7, spec, scale2))
+      )
+    }
+  }
 
   test("a panel selected in a figure no longer shown is not the shown figure's panel") {
     // Figure 2 is shown with its panel A selected; deleting it falls back to Figure 1.

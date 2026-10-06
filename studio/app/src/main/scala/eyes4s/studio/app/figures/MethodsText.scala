@@ -43,7 +43,7 @@ enum MethodsSlot derives CanEqual:
   case FailureCause(code: String)
   case ReportingWeight, GroupBy, Filter, GroupN, PairedN, GroupRange
   case MinimumPerGroup, SmallestGroups
-  case Analysis, Run, Build
+  case Analysis, Run, Build, ReportScale
 
 /** One piece of a methods sentence: fixed words, or a value with its source. */
 enum MethodsToken derives CanEqual:
@@ -77,12 +77,18 @@ enum MethodsError derives CanEqual:
 
   /** The admission summary is of another dataset revision. */
   case OtherDataset(expected: DatasetRevision, found: DatasetRevision)
+  case OtherReporting(expected: ReportingId, found: ReportingId)
+  case ReportScale(run: RunId, scale: Int, available: Vector[String])
 
   def message: String = this match
     case OtherRun(expected, found, what) =>
       s"The methods of ${expected.label} were given the $what of ${found.label}."
     case OtherDataset(expected, found) =>
       s"The methods of dataset ${expected.label} were given the admission of ${found.label}."
+    case OtherReporting(expected, found) =>
+      s"The methods of reporting ${expected.value} were given reporting ${found.value}."
+    case ReportScale(run, scale, available) =>
+      s"The methods of ${run.label} were given report scale $scale among ${available.mkString(", ")}."
 
 /** Generates a figure's methods text (ticket S9.4; Figures.dc.html,
   * methods.md) from its bound run: the dataset revision and its admission,
@@ -134,11 +140,17 @@ object MethodsText:
   def generate(
       source: FigureSource,
       result: ResultSummary,
-      facts: MethodsFacts
+      facts: MethodsFacts,
+      report: ReportView
   ): Either[MethodsError, GeneratedMethods] =
     val run     = source.run.id
     val dataset = source.bound.dataset
     if result.run != run then Left(MethodsError.OtherRun(run, result.run, "result summary"))
+    else if report.run != run then Left(MethodsError.OtherRun(run, report.run, "report"))
+    else if report.reporting != source.reporting.id then
+      Left(MethodsError.OtherReporting(source.reporting.id, report.reporting))
+    else if !result.scales.indices.contains(report.scale) then
+      Left(MethodsError.ReportScale(run, report.scale, result.scales))
     else if facts.run != run then Left(MethodsError.OtherRun(run, facts.run, "query facts"))
     else if facts.admission.dataset != dataset.id then
       Left(MethodsError.OtherDataset(dataset.id, facts.admission.dataset))
@@ -153,7 +165,7 @@ object MethodsText:
             angular(source) ++
             Vector(initial(source.bound.analysis.recipe), maps(source)) ++
             Vector(comparison(source, result, facts), outcomes(source, result, facts)) ++
-            reporting(source, result) ++
+            reporting(source, report, result.scales(report.scale)) ++
             Vector(
               sentence("D measures spatial correspondence, not sequential replay."),
               sentence(
@@ -503,7 +515,11 @@ object MethodsText:
       ))*
     )
 
-  private def reporting(source: FigureSource, result: ResultSummary): Vector[MethodsSentence] =
+  private def reporting(
+      source: FigureSource,
+      result: ReportView,
+      scaleLabel: String
+  ): Vector[MethodsSentence] =
     val spec  = source.reporting
     val focal = source.bound.analysis.recipe.phases.focal.label.toLowerCase
     val means = spec.weighting match
@@ -514,19 +530,26 @@ object MethodsText:
         )
       case ReportingWeight.PooledQueries =>
         Fact(S.ReportingWeight, "averaged over pooled queries")
-    val groups = result.groups
+    val groups = result.cells.filter(_.role == ReportRole.Difference)
     val sizes  =
       if groups.isEmpty then Vector.empty
-      else if groups.map(_.n).distinct.size == 1 then
-        Vector[Part]("n = ", n(S.GroupN, groups.head.n), " each")
+      else if groups.map(_.participants).distinct.size == 1 then
+        Vector[Part]("n = ", n(S.GroupN, groups.head.participants), " each")
       else
         Vector[Part]("n = ") ++ groups
-          .map(g => Fact(S.GroupN, s"${Format.count(g.n)} ${g.label.label}"))
+          .map(g =>
+            Fact(
+              S.GroupN,
+              s"${Format.count(g.participants)} ${g.group.fold("all queries")(_.label)}"
+            )
+          )
           .flatMap(f => Vector[Part](", ", f))
           .tail
     val paired =
-      if groups.size > 1 then Vector[Part]("; paired n = ", n(S.PairedN, result.pairedN))
-      else Vector.empty
+      result
+        .contrast(ReportRole.Difference)
+        .toVector
+        .flatMap(c => Vector[Part]("; paired n = ", n(S.PairedN, c.pairedN)))
     val split = spec.groupBy.toVector.flatMap(c =>
       Vector[Part](", separately by ", Fact(S.GroupBy, s"$focal ${c.label}"))
     )
@@ -555,57 +578,66 @@ object MethodsText:
       .toVector
     val perGroup = Option
       .when(spec.groupBy.isDefined && groups.nonEmpty)(groupSizes(spec, result))
+      .flatten
       .toVector
-    Vector(averaged) ++ filters ++ perGroup
+    Vector(averaged) ++ filters ++ perGroup ++ Vector(
+      sentence(
+        "Reporting counts above are evaluated at σ ",
+        Fact(S.ReportScale, scaleLabel),
+        "."
+      )
+    )
 
   /** The per-participant group sizes, the minimum the spec applies, and who
     * holds the smallest groups.
     */
-  private def groupSizes(spec: ReportingSpec, result: ResultSummary): MethodsSentence =
-    val range =
-      Fact(
-        S.GroupRange,
-        s"${Format.count(result.groupNMinimum)}–${Format.count(result.groupNMaximum)}"
-      )
-    val smallest = for
-      p <- result.participants
-      g <- p.groups
-      if g.n == result.groupNMinimum
-    yield (p.participant, g.label.label)
-    val who = smallest.map(_._2).distinct match
-      case Vector()      => Vector.empty
-      case Vector(label) =>
-        Vector[Part](
-          " (",
-          Fact(S.SmallestGroups, list(smallest.map(_._1))),
-          if smallest.size == 1 then " has " else " each have ",
-          n(S.GroupRange, result.groupNMinimum),
-          " ",
-          Fact(S.SmallestGroups, label),
-          if result.groupNMinimum == 1 then " query)" else " queries)"
+  private def groupSizes(spec: ReportingSpec, result: ReportView): Option[MethodsSentence] =
+    result.queryRange(ReportRole.Difference).map { counts =>
+      val range =
+        Fact(
+          S.GroupRange,
+          s"${Format.count(counts.fewest)}–${Format.count(counts.most)}"
         )
-      case _ =>
-        Vector[Part](
-          " (",
-          Fact(S.SmallestGroups, list(smallest.map((p, l) => s"$p $l"))),
-          ": ",
-          n(S.GroupRange, result.groupNMinimum),
-          if result.groupNMinimum == 1 then " query each)" else " queries each)"
-        )
-    spec.minimumPerGroup match
-      case None =>
-        sentence(
-          (Vector[Part](
+      val smallest = for
+        p <- result.participants
+        if p.role == ReportRole.Difference && p.queries == counts.fewest
+        g <- p.group.toVector
+      yield (p.participant, g.label)
+      val who = smallest.map(_._2).distinct match
+        case Vector()      => Vector.empty
+        case Vector(label) =>
+          Vector[Part](
+            " (",
+            Fact(S.SmallestGroups, list(smallest.map(_._1))),
+            if smallest.size == 1 then " has " else " each have ",
+            n(S.GroupRange, counts.fewest),
+            " ",
+            Fact(S.SmallestGroups, label),
+            if counts.fewest == 1 then " query)" else " queries)"
+          )
+        case _ =>
+          Vector[Part](
+            " (",
+            Fact(S.SmallestGroups, list(smallest.map((p, l) => s"$p $l"))),
+            ": ",
+            n(S.GroupRange, counts.fewest),
+            if counts.fewest == 1 then " query each)" else " queries each)"
+          )
+      spec.minimumPerGroup match
+        case None =>
+          sentence(
+            (Vector[Part](
+              "Per participant, groups held ",
+              range,
+              " queries; no minimum per group was applied in this reporting spec"
+            ) ++ who :+ ".")*
+          )
+        case Some(m) =>
+          sentence(
             "Per participant, groups held ",
             range,
-            " queries; no minimum per group was applied in this reporting spec"
-          ) ++ who :+ ".")*
-        )
-      case Some(m) =>
-        sentence(
-          "Per participant, groups held ",
-          range,
-          " queries; groups with fewer than ",
-          n(S.MinimumPerGroup, m.queries),
-          " queries were left out of this reporting spec."
-        )
+            " queries; groups with fewer than ",
+            n(S.MinimumPerGroup, m.queries),
+            " queries were left out of this reporting spec."
+          )
+    }

@@ -190,7 +190,7 @@ class ContextStripFxSuite extends ShellFxSuite:
       fx.snapshot(StudioTheme.Light)
       // Progress moves the chip, and only the chip: the crumbs are the same nodes.
       val before = crumbs(w)
-      w.session.await(w.session.backend.advanceToPairs(StoryMoments.run8Job, 33_634L))
+      w.session.await(w.session.fixture.get.advanceToPairs(StoryMoments.run8Job, 33_634L))
       eventually(fx, "the chip at 75%")(
         chips(w).lastOption.exists(l => drawn(l) == "Rev 5 · run 8 running · 75%")
       )
@@ -208,7 +208,7 @@ class ContextStripFxSuite extends ShellFxSuite:
   fxStage.test("failed: run 8 fails; the badge stays current and a failed chip says so") { fx =>
     assumeFullStage(fx)
     val w = boot(fx, StoryModels.t3Summary, StoryMoment.T3)
-    w.session.await(w.session.backend.fail(StoryMoments.run8Job, Vector(lost, lost)))
+    w.session.await(w.session.fixture.get.fail(StoryMoments.run8Job, Vector(lost, lost)))
     eventually(fx, "the failed chip")(
       chips(w).size == 2 && drawn(chips(w).last).contains("failed")
     )

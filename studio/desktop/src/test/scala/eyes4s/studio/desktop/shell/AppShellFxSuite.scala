@@ -291,7 +291,7 @@ class AppShellFxSuite extends ShellFxSuite:
     fx =>
       val w    = boot(fx, StoryModels.t3Summary, StoryMoment.T3)
       val jobs = w.shell.appBar.jobs
-      w.session.await(w.session.backend.fail(StoryMoments.run8Job, Vector(lost, lost)))
+      w.session.await(w.session.fixture.get.fail(StoryMoments.run8Job, Vector(lost, lost)))
       eventually(fx, "the failed chip")(jobs.text == "Run 8 failed · 2 diagnostics")
       assertEquals(runOnFx(jobs.drawnParts.mkString(" · ")), "Run 8 failed · 2 diagnostics")
       assert(runOnFx(!jobs.progress.isVisible && !jobs.cancel.isVisible))

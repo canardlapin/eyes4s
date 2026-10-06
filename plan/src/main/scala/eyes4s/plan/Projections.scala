@@ -156,6 +156,19 @@ private[eyes4s] object Projections:
         )
       case InitialFixations(key, underlying) =>
         trial(key, RevisionDiagnostics.initialFixation(underlying))
+      case TrialCardinality(key, occurrences) =>
+        diagnostic(C.studyFailure, e, e.message, Vector(Locus.Trial(key)))(
+          Operand.Key(key),
+          int(occurrences)
+        )
+      case PreparedPlan(key, underlying) =>
+        val inner = plan(underlying)
+        diagnostic(
+          C.studyFailure,
+          e,
+          e.message,
+          inherit(Vector(Locus.Trial(key)), inner)
+        )(Operand.Key(key), cause(inner))
 
   def result[K](e: StudyResultError[K]): Diagnostic[K] =
     import StudyResultError.*

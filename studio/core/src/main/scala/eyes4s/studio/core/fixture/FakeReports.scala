@@ -90,15 +90,30 @@ private[fixture] object FakeReports:
         .leftMap(e => refuse(e.message))
       outcomes <- focal.traverse { (q, status) =>
         status match
-          case QueryStatus.Failed(diag) => failed(reporting, q.key, diag).map(f => q -> Left(f))
+          case QueryStatus.Failed(diag) =>
+            failed(reporting, q.key, diag)
+              .map(f => q -> Left(Vector.fill(scales)(f)))
+          case QueryStatus.FailedAtScales(diagnostics) =>
+            Either
+              .cond(
+                diagnostics.size == scales,
+                diagnostics,
+                refuse(
+                  s"Query ${q.key.label} has ${diagnostics.size} failure diagnostics for $scales scales."
+                )
+              )
+              .flatMap(_.traverse(failed(reporting, q.key, _)))
+              .map(failures => q -> Left(failures))
           case QueryStatus.Contributing(m, b, d) => Right(q -> Right((m, b, d)))
-          case _                                 => Right(q -> Left(RoleOutcome.NotStored))
+          case _ => Right(q -> Left(Vector.fill(scales)(RoleOutcome.NotStored)))
       }
       tables <- (0 until scales).toVector.traverse { s =>
         outcomes
           .traverse { (q, stored) =>
             val (m, b, d) = stored match
-              case Left(outcome)    => (outcome, outcome, outcome)
+              case Left(outcomes) =>
+                val outcome = outcomes(s)
+                (outcome, outcome, outcome)
               case Right((m, b, d)) =>
                 def at(v: Vector[Double]) =
                   v.lift(s).fold(RoleOutcome.NotStored)(x => RoleOutcome.Scored(Vector(x)))

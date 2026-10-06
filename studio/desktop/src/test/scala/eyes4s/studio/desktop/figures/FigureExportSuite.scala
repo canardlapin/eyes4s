@@ -81,16 +81,23 @@ class FigureExportSuite extends munit.FunSuite:
       grids <- Future.traverse(FigurePanels.mapTrials(p17ret07, ok(scores)))(trial =>
         session.mapGrid(run7, scale2.value, trial).map(trial -> _)
       )
-      enc <- session.trialFixations(StoryMoments.rev4, p17enc03)
-      ret <- session.trialFixations(StoryMoments.rev4, p17ret07)
-      _   <- session.close
+      enc     <- session.trialFixations(StoryMoments.rev4, p17enc03)
+      ret     <- session.trialFixations(StoryMoments.rev4, p17ret07)
+      reports <- Future.traverse(FigureComposer.sync(FigureComposer.empty, t2)._2.collect {
+        case ComposerEffect.RequestReport(run, spec, scale) => (run, spec, scale)
+      }) { (run, spec, scale) =>
+        session
+          .report(run, spec, scale.value)
+          .map(r => ComposerIntent.ReportRead(run, spec, scale, r.left.map(_.message)))
+      }
+      _ <- session.close
     yield
       val registry = t2.document.dataset(r3).map(GoldenAssets.registry).getOrElse(Left("no r3"))
       val loaded   = (
         Vector(
           ComposerIntent.SummaryRead(run7, SummaryAnswer.Answered(ok(summary))),
           ComposerIntent.ReferencesRead(run7, scale2, p17ret07, Right(ok(scores)))
-        ) ++ grids.map { case (trial, grid) =>
+        ) ++ reports ++ grids.map { case (trial, grid) =>
           ComposerIntent.MapRead(run7, scale2, trial, Right(ok(grid)))
         } ++ Vector(
           ComposerIntent.DisplaysRead(r3, registry.map(DisplaySource.Served(_))),

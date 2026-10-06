@@ -37,7 +37,8 @@ enum DesignTextId derives CanEqual:
   case RowAccessible
 
   // --- Counting state and footer -------------------------------------------------------------
-  case ModeExact, ModeCounting, ModePreparing, ModeRefused, CountingChip, CountingNote
+  case ModeExact, ModeCounting, ModePreparing, ModeRefused, CountingChip, CountingWorkChip,
+    CountingNote
   case CandidatesNote, ExactNote, StampNote, SameDesign, RowsWaiting, RowsFailed
   case PreviewFailed
 
@@ -86,13 +87,14 @@ object DesignText:
     case DispositionQuarantined => "quarantined ({0})"
     case RowAccessible          => "{0} · {1} · {2}"
 
-    case ModeExact      => "paged · exact"
-    case ModeCounting   => "paging"
-    case ModePreparing  => "preparing"
-    case ModeRefused    => "not prepared"
-    case CountingChip   => "counting eligible pairs… {0} of {1} participants"
-    case CountingNote   => "While paging, counts read {0} and the run stays disabled."
-    case CandidatesNote =>
+    case ModeExact        => "paged · exact"
+    case ModeCounting     => "paging"
+    case ModePreparing    => "preparing"
+    case ModeRefused      => "not prepared"
+    case CountingChip     => "counting eligible pairs… {0} of {1} participants"
+    case CountingWorkChip => "checking eligible {0} references…"
+    case CountingNote     => "While paging, counts read {0} and the run stays disabled."
+    case CandidatesNote   =>
       "Candidate pairs before paging {0} per scale ({1} queries × {2} references, " +
         "Cartesian · eyes4s candidatePairCount)."
     case ExactNote     => "Exact eligible after paging {0} per scale."

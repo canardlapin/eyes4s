@@ -25,3 +25,7 @@ class StudioMainSuite extends munit.FunSuite:
     assertEquals(StudioMain.title, "Eyes Studio")
     assert(classOf[Application].isAssignableFrom(classOf[StudioApplication]))
   }
+
+  test("the bundled desktop analysis selects the native backend") {
+    assertEquals(StudioMain.backend, eyes4s.studio.desktop.explore.SessionBackend.Real)
+  }

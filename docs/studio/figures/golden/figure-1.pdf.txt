@@ -1,5 +1,5 @@
 pages 1
-page 183.02 × 234.99 mm
+page 183.02 × 231.88 mm
 fonts IBMPlexMono, IBMPlexMono-Medm, IBMPlexSans, IBMPlexSans-SmBld
 
 A Encoding gaze
@@ -32,7 +32,7 @@ Forgotten
 n = 24 participants
 0
 D (Δ cosine), participant mean
-n = 24 each · paired n = 24
+n = 24 each
 bars: grand mean of participant means, equal weight
 Each pair of dots is one participant; per participant, 2–17 queries
 per group. Descriptive only: no intervals or tests.
@@ -49,7 +49,6 @@ E Scale profile by response
 0
 D (Δ cosine)
 Gaussian σ (log spacing)
-n = 24 each · paired n = 24
 Each scale computed separately.
 Figure 1. Matched-minus-control spatial similarity of retrieval gaze (dataset r3, analysis rev 4, run 7). Spatial correspondence, not
 sequential replay.

@@ -17,7 +17,6 @@
 package eyes4s.studio.app.compare
 
 import eyes4s.studio.app.{AppModel, Intent}
-import eyes4s.studio.app.plot.ParticipantMeans
 import eyes4s.studio.core.document.Perspective
 import eyes4s.studio.app.nav.Place
 import eyes4s.studio.app.vm.{A11yRole, FocusStop}
@@ -191,16 +190,14 @@ object QueriesNavigator:
         // Both answers are in, but no σ has served participant means: say why.
         val n   = run.number.toString
         val why = s.reporting match
-          case None      => SummaryText(SummaryTextId.NoReportingSpec, n)
-          case Some(rep) =>
-            val reason = ScaleIndex
-              .of(0)
-              .left
-              .map(_.message)
-              .flatMap(ParticipantMeans.of(r, rep, _).left.map(_.message))
-              .left
-              .toOption
-              .getOrElse(SummaryText(SummaryTextId.NoScales))
+          case None    => SummaryText(SummaryTextId.NoReportingSpec, n)
+          case Some(_) =>
+            val reason = s.reports.values
+              .collectFirst {
+                case ReportAnswer.Refused(error) => error.message
+                case ReportAnswer.Failed(reason) => reason
+              }
+              .getOrElse("The reporting specification has not been evaluated at a scale yet.")
             SummaryText(SummaryTextId.NoMeansScale, n, reason)
         QueriesNavigatorVM(
           nav.filter,
@@ -226,12 +223,21 @@ object QueriesNavigator:
                 SummaryTextId.ParticipantHeader,
                 ps.contributing.toString,
                 ps.requested.toString,
-                ps.all.dByScale
-                  .lift(scale.value)
+                s.reports
+                  .get((scale, true))
+                  .collect { case ReportAnswer.Answered(view) => view }
+                  .flatMap(
+                    _.participant(None, eyes4s.studio.core.backend.ReportRole.Difference, p)
+                  )
+                  .flatMap(_.value)
                   .fold(SummaryText(SummaryTextId.NotApplicable))(Format.signed(_, 2))
               )
             )
-          val ref = s.reporting.map(StudioRef.ParticipantSummary(run, _, scale, None, p))
+          val ref = s.reports
+            .get((scale, true))
+            .collect { case ReportAnswer.Answered(view) => view }
+            .flatMap(_.participant(None, eyes4s.studio.core.backend.ReportRole.Difference, p))
+            .map(_.ref)
           group(nav, NavigatorKind.Queries, s"participant:$p", p, summary, ref, es)
         }
         val byItem = shown.zip(entries).groupBy(_._1.item)
@@ -436,6 +442,7 @@ object QueriesNavigator:
 
   private def statusWord(status: QueryStatus): String = status match
     case QueryStatus.Contributing(_, _, _) => SummaryText(SummaryTextId.NotApplicable)
-    case QueryStatus.Failed(_)             => SummaryText(SummaryTextId.StatusFailed)
-    case QueryStatus.NoMatch(_)            => SummaryText(SummaryTextId.StatusNoMatch)
-    case QueryStatus.NotAdmitted(_)        => SummaryText(SummaryTextId.StatusNotAdmitted)
+    case QueryStatus.Failed(_) | QueryStatus.FailedAtScales(_) =>
+      SummaryText(SummaryTextId.StatusFailed)
+    case QueryStatus.NoMatch(_)     => SummaryText(SummaryTextId.StatusNoMatch)
+    case QueryStatus.NotAdmitted(_) => SummaryText(SummaryTextId.StatusNotAdmitted)

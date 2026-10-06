@@ -53,11 +53,12 @@ class StudioSchemaIdsSuite extends munit.FunSuite:
   test("the document and science codecs are built on those ids") {
     val ids = StudioSchemaIds.ids.toOption.get
     // The document ladder starts at its id; version 2 (S5.4), version 3
-    // (S5.6), version 4 (S5.7) and version 5 (S7.1) are its next rungs.
+    // (S5.6), version 4 (S5.7), version 5 (S7.1), and version 6
+    // (explicit reporting contrast operands) are its next rungs.
     assertEquals(StudioDocument.ladder.map(_.versions.head), Right(ids.document))
     assertEquals(
       StudioDocument.codec.map(c => (c.schema.name, c.schema.version)),
-      Right((ids.document.name, ids.document.version + 4))
+      Right((ids.document.name, ids.document.version + 5))
     )
-    assertEquals(ScienceContent.codec.map(_.schema), Right(ids.science))
+    assertEquals(ScienceContent.ladder.map(_.versions.head), Right(ids.science))
   }

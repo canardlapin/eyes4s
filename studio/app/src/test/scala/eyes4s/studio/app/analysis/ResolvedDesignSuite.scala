@@ -21,7 +21,7 @@ import eyes4s.studio.app.vm.A11yRole
 import eyes4s.studio.app.{AppEffect, AppModel, Intent, PreparedDesign, StoryModels}
 import eyes4s.studio.core.backend.*
 import eyes4s.studio.core.command.Command
-import eyes4s.studio.core.document.{CoreBinding, GridSize, RecipeChange}
+import eyes4s.studio.core.document.{CoreBinding, GridSize, RecipeChange, RunLifecycle}
 import eyes4s.studio.core.execution.{ExecutionEffect, RunStamp}
 import eyes4s.studio.core.fixture.{MockStudy, StoryMoments}
 import eyes4s.studio.core.preview.*
@@ -121,7 +121,7 @@ class ResolvedDesignSuite extends munit.FunSuite:
   private def chip(vm: ResolvedDesignVM, f: DesignFilter): ChipVM =
     vm.chips.find(_.filter == f).getOrElse(fail(s"no chip $f"))
 
-  test("t2's draft rev 5 on r3 is prepared, and its rows are read") {
+  test("t2's draft starts bounded preparation before any row reads") {
     val (panel, effects) = synced
     val target           = panel.target.getOrElse(fail("no target"))
     assertEquals((target.revision, target.dataset, target.stamp), (rev5, r3, stamp))
@@ -129,8 +129,7 @@ class ResolvedDesignSuite extends munit.FunSuite:
     assertEquals(
       effects,
       Vector(
-        DesignEffect.StartPreview(panel.generation, rev5, ok(PreviewBudget.of(6))),
-        DesignEffect.ReadRows(panel.generation, rev5, ok(PageRequest.first(120)))
+        DesignEffect.StartPreview(panel.generation, rev5, ok(PreviewBudget.of(6)))
       )
     )
     assertEquals(ResolvedDesign.sync(panel, model), (panel, Vector.empty))
@@ -203,7 +202,10 @@ class ResolvedDesignSuite extends munit.FunSuite:
     val recipe = model.document.draftRecipe.getOrElse(fail("no draft"))
     assertEquals(
       e,
-      Vector(DesignEffect.App(Intent.DesignPrepared(PreparedDesign(ready, recipe))))
+      Vector(
+        DesignEffect.App(Intent.DesignPrepared(PreparedDesign(ready, recipe))),
+        DesignEffect.ReadRows(g, rev5, ok(PageRequest.first(120)))
+      )
     )
     assertEquals(step(p, DesignIntent.PageEnded(g))._2, Vector.empty)
     val vm = ResolvedDesignVM.of(p)
@@ -433,7 +435,9 @@ class ResolvedDesignSuite extends munit.FunSuite:
       AppModel.update(model, Intent.DesignPrepared(PreparedDesign(ready, recipe)))._1
     val (ran, effects) = AppModel.update(prepared, Intent.Dispatch(Command.SaveAndRun(None)))
     assert(
-      effects.contains(AppEffect.Execution(ExecutionEffect.SubmitPreview(ready))),
+      effects.contains(
+        AppEffect.Execution(ExecutionEffect.SubmitPreview(ready, Some(RunId(8))))
+      ),
       effects
     )
     assert(!effects.exists {
@@ -451,7 +455,90 @@ class ResolvedDesignSuite extends munit.FunSuite:
     assertEquals(ran.prepared, None)
   }
 
-  test("E2E-05: a refused prepared design falls back to submitting the run's stamp") {
+  test("native artifacts are accepted only with the exact current recipe snapshot") {
+    val recipe = model.document.draftRecipe.getOrElse(fail("no draft"))
+    val native = stamp.copy(
+      plan = CoreBinding.Bound(
+        ok(
+          eyes4s.codec.CanonicalDigest
+            .parse[eyes4s.studio.core.document.StudyPlanArtifact]("1" * 64)
+        )
+      ),
+      input = CoreBinding.Bound(
+        ok(
+          eyes4s.codec.CanonicalDigest
+            .parse[eyes4s.studio.core.execution.StudyInputArtifact]("2" * 64)
+        )
+      )
+    )
+    val receipt =
+      ok(PreviewReady.of(id, native, candidates, counts, Vector.empty, Some(recipe)))
+    val g                   = synced._1.generation
+    val (accepted, effects) = step(
+      synced._1,
+      DesignIntent.Previewed(g, PreviewEvent.Initial(id, native, candidates)),
+      DesignIntent.Previewed(g, PreviewEvent.Ready(receipt))
+    )
+    assertEquals(accepted.preview.receipt, Some(receipt))
+    assertEquals(
+      effects,
+      Vector(
+        DesignEffect.App(Intent.DesignPrepared(PreparedDesign(receipt, recipe))),
+        DesignEffect.ReadRows(g, rev5, ok(PageRequest.first(120)))
+      )
+    )
+    val waiting = step(
+      synced._1,
+      DesignIntent.Previewed(g, PreviewEvent.Initial(id, native, candidates))
+    )._1
+    val missing = ok(PreviewReady.of(id, native, candidates, counts, Vector.empty))
+    assert(
+      step(waiting, DesignIntent.Previewed(g, PreviewEvent.Ready(missing)))._1.preview
+        .isInstanceOf[DesignPreview.Refused]
+    )
+    val changed = recipe.copy(grid = ok(GridSize.of(32, 24)))
+    val stale = ok(PreviewReady.of(id, native, candidates, counts, Vector.empty, Some(changed)))
+    assert(
+      step(waiting, DesignIntent.Previewed(g, PreviewEvent.Ready(stale)))._1.preview
+        .isInstanceOf[DesignPreview.Refused]
+    )
+    val unsolicited =
+      ok(PreviewReady.of(PreviewId(2), native, candidates, counts, Vector.empty, Some(recipe)))
+    assert(
+      step(waiting, DesignIntent.Previewed(g, PreviewEvent.Ready(unsolicited)))._1.preview
+        .isInstanceOf[DesignPreview.Refused]
+    )
+    assertEquals(
+      step(accepted, DesignIntent.Previewed(g, PreviewEvent.Ready(receipt))),
+      (accepted, Vector.empty)
+    )
+    val prepared =
+      AppModel.update(model, Intent.DesignPrepared(PreparedDesign(receipt, recipe)))._1
+    val (ran, runEffects) = AppModel.update(prepared, Intent.Dispatch(Command.SaveAndRun(None)))
+    assert(
+      runEffects.contains(
+        AppEffect.Execution(ExecutionEffect.SubmitPreview(receipt, Some(RunId(8))))
+      )
+    )
+    assertEquals(ran.jobs.shelf.required, Some(native))
+  }
+
+  test("native preview progress names actual work without inventing participant completion") {
+    val g          = synced._1.generation
+    val work       = PreviewEvent.CountingWork(id, PairDesign.Control, 1024, 3072L)
+    val (panel, _) = step(
+      synced._1,
+      DesignIntent.Previewed(g, PreviewEvent.Initial(id, stamp, candidates)),
+      DesignIntent.Previewed(g, work)
+    )
+    assertEquals(panel.workProgress.map(p => p: PreviewEvent), Some(work))
+    assertEquals(panel.preview, DesignPreview.Counting(id, stamp, candidates, None))
+    assertEquals(ResolvedDesignVM.of(panel).counting.map(_.refs), Some(Vector.empty))
+  }
+
+  test(
+    "E2E-05: a refused prepared design settles the requested run without bypassing the refusal"
+  ) {
     val recipe   = model.document.draftRecipe.getOrElse(fail("no draft"))
     val prepared =
       AppModel.update(model, Intent.DesignPrepared(PreparedDesign(ready, recipe)))._1
@@ -460,13 +547,15 @@ class ResolvedDesignSuite extends munit.FunSuite:
     assert(running.nonEmpty)
     val error = eyes4s.studio.core.execution.ExecutionError
       .Backend(BackendError.UnknownPreview(ready.id, Vector.empty))
-    val (fell, effects) = AppModel.update(ran, Intent.PreparedRefused(ready, error))
-    assertEquals(effects, Vector(AppEffect.Execution(ExecutionEffect.Submit(ready.stamp))))
+    val (fell, effects) =
+      AppModel.update(ran, Intent.PreparedRefused(ready, error, running.headOption))
+    assert(!effects.exists(_.isInstanceOf[AppEffect.Execution]))
     assertEquals(fell.prepared, None)
     assertEquals(fell.notice.map(_.message), Some(error.message))
-    // The run Save & run recorded is still the running one: not orphaned.
-    assertEquals(fell.document.running.map(_.id), running)
-    assertEquals(fell.jobs.shelf.required, Some(ready.stamp))
+    assertEquals(fell.document.running.map(_.id), Vector.empty)
+    running.foreach(id =>
+      assertEquals(fell.document.run(id).map(_.state), Some(RunLifecycle.Failed))
+    )
   }
 
   test("E2E-05: a draft edited after its preview runs its own stamp, not the stale design") {
@@ -492,6 +581,52 @@ class ResolvedDesignSuite extends munit.FunSuite:
     val (_, plain) = AppModel.update(model, Intent.Dispatch(Command.SaveAndRun(None)))
     assert(plain.contains(AppEffect.Execution(ExecutionEffect.Submit(stamp))), plain)
     assertEquals(stamp.plan, CoreBinding.unbound)
+  }
+
+  test("a delayed preview refusal names its exact document run and preserves a newer receipt") {
+    val recipe   = model.document.draftRecipe.getOrElse(fail("no draft"))
+    val prepared =
+      AppModel.update(model, Intent.DesignPrepared(PreparedDesign(ready, recipe)))._1
+    val ran      = AppModel.update(prepared, Intent.Dispatch(Command.SaveAndRun(None)))._1
+    val d        = ran.document
+    val laterRun = eyes4s.studio.core.document.RunRef(
+      RunId(99),
+      rev5,
+      r3,
+      RunLifecycle.Running,
+      CoreBinding.unbound
+    )
+    val document = ok(
+      eyes4s.studio.core.document.StudioDocument.of(
+        d.datasets,
+        d.analyses,
+        d.draft,
+        d.runs :+ laterRun,
+        d.reporting,
+        d.figures,
+        d.presentation,
+        d.jobs
+      )
+    )
+    val newerReady = ok(PreviewReady.of(PreviewId(2), stamp, candidates, counts, Vector.empty))
+    val newer      = AppModel
+      .update(
+        AppModel.open(document, ran.project),
+        Intent.DesignPrepared(PreparedDesign(newerReady, recipe))
+      )
+      ._1
+    val error = eyes4s.studio.core.execution.ExecutionError
+      .Backend(BackendError.UnknownPreview(ready.id, Vector.empty))
+    val (settled, effects) =
+      AppModel.update(newer, Intent.PreparedRefused(ready, error, Some(RunId(8))))
+    assertEquals(settled.document.run(RunId(8)).map(_.state), Some(RunLifecycle.Failed))
+    assertEquals(settled.document.run(RunId(99)).map(_.state), Some(RunLifecycle.Running))
+    assertEquals(settled.prepared, newer.prepared)
+    assert(!effects.exists(_.isInstanceOf[AppEffect.Execution]))
+    val (unbound, unknownEffects) = AppModel.update(newer, Intent.PreparedRefused(ready, error))
+    assertEquals(unbound.document.runs, newer.document.runs)
+    assertEquals(unbound.prepared, newer.prepared)
+    assertEquals(unknownEffects, Vector.empty)
   }
 
   test("nothing is asked of the backend until the Analysis perspective is shown") {

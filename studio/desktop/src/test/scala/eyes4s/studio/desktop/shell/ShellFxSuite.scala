@@ -97,7 +97,8 @@ abstract class ShellFxSuite extends StudioFxSuite:
       panels: eyes4s.studio.desktop.compare.PanelSources =
         eyes4s.studio.desktop.compare.PanelSources.notServed,
       // Where an export bundle goes: nowhere unless a suite brings a folder.
-      chooseFolder: eyes4s.studio.desktop.figures.FigureInputs.ChooseFolder = (_, _) => None
+      chooseFolder: eyes4s.studio.desktop.figures.FigureInputs.ChooseFolder = (_, _) => None,
+      nativeSources: Option[eyes4s.studio.core.real.DatasetSources[cats.effect.IO]] = None
   ): StudioWindow =
     val w = runOnFx(
       StudioWindow
@@ -114,7 +115,8 @@ abstract class ShellFxSuite extends StudioFxSuite:
           records = records,
           assetFiles = Some(assetFiles),
           panels = panels,
-          chooseFolder = chooseFolder
+          chooseFolder = chooseFolder,
+          nativeSources = nativeSources
         )
         .fold(e => fail(e.message), identity)
     )

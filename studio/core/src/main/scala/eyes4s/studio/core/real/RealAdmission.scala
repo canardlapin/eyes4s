@@ -22,6 +22,10 @@ import eyes4s.kernel.*
 import eyes4s.plan.{
   AdmissionDecision as CoreDecision,
   AdmissionLedger,
+  AppliedCorrection,
+  CorrectionScope,
+  TrialIdentity,
+  TrialOccurrence,
   AttributeColumn,
   AttributeKind,
   AttributeValue,
@@ -35,7 +39,14 @@ import eyes4s.plan.{
 }
 import eyes4s.studio.core.assets.AssetRegistry
 import eyes4s.studio.core.backend.*
-import eyes4s.studio.core.document.{ColumnRole, DatasetRevisionSpec, InventoryMapping, TimeUnit}
+import eyes4s.studio.core.document.{
+  ColumnRole,
+  CoordinateCorrection,
+  CorrectionTarget,
+  DatasetRevisionSpec,
+  InventoryMapping,
+  TimeUnit
+}
 
 /** One dataset revision as eyes4s admitted it, converted for the protocol:
   * the admission summary and every inventory trial's ledger entry, in
@@ -82,20 +93,18 @@ object RealAdmission:
       value.toRight(BackendError.Unavailable(DiagnosticLocus.Field(field)))
     val source = spec.sources.fixations.fold("fixations")(_.path.value)
     for
-      _ <- missing("coordinate corrections (not yet served)")(
-        Option.when(spec.admission.corrections.isEmpty)(())
-      )
       inventory <- missing("trial inventory")(spec.inventory)
       unit      <- missing("time units")(spec.units.time.map(timeUnit))
       table     <- fixationTable(spec, unit)
       columns   <- inventoryColumns(inventory)
       read      <- TrialInventory.read(trials, columns).leftMap(refusal(d, source, _))
+      policy    <- admissionPolicy(spec, read)
       screen    <- Frame
         .screen("screen", spec.geometry.screen.width, spec.geometry.screen.height)
         .leftMap(e => geometry("screen", e))
       window   <- imageWindow(spec, screen)
       imported <- FixationCsv
-        .admitInventory(fixations, table, read, screen, admissionPolicy(spec))
+        .admitInventory(fixations, table, read, screen, policy)
         .leftMap(refusal(d, source, _))
       ledger <- FixationEvidence
         .ledger(
@@ -212,12 +221,88 @@ object RealAdmission:
         .leftMap(refused)
     yield columns
 
-  /** The revision's off-screen policy. Coordinate corrections are not yet
-    * served by the real backend (a later S3.7 slice): [[admit]] refuses a
-    * revision that records one before it reaches eyes4s.
+  /** Correction scopes are resolved against the declared inventory's exact
+    * identity and item. No source record supplies an invented match item.
     */
-  private def admissionPolicy(spec: DatasetRevisionSpec): eyes4s.plan.AdmissionPolicy[CoreKey] =
-    eyes4s.plan.AdmissionPolicy(spec.admission.offScreen.core, Vector.empty)
+  private def admissionPolicy(
+      spec: DatasetRevisionSpec,
+      inventory: TrialInventory
+  ): Either[BackendError, eyes4s.plan.AdmissionPolicy[CoreKey]] =
+    correctionPolicy(
+      spec,
+      key =>
+        for
+          identity <- trialIdentity(spec, key)
+          declared <- inventory
+            .trial(identity)
+            .toRight(
+              BackendError.Unavailable(
+                DiagnosticLocus.Artifact(
+                  s"${spec.id.label} correction target ${identity.render} is not declared in the trial inventory."
+                )
+              )
+            )
+          item <- declared.item.toRight(
+            BackendError.Unavailable(
+              DiagnosticLocus.Artifact(
+                s"${spec.id.label} correction target ${identity.render} has no declared inventory item."
+              )
+            )
+          )
+          key <- declared.identity
+            .withItem(item)
+            .leftMap(e =>
+              BackendError.Unavailable(
+                DiagnosticLocus.Artifact(s"${spec.id.label} correction target: ${e.message}")
+              )
+            )
+        yield key
+    )
+
+  private[real] def trialIdentity(
+      spec: DatasetRevisionSpec,
+      key: TrialKey
+  ): Either[BackendError, TrialIdentity] =
+    TrialOccurrence
+      .of(key.occurrence)
+      .flatMap(n => TrialIdentity.of(key.participant, key.phase.label, key.trial, n))
+      .leftMap(e =>
+        BackendError.Unavailable(
+          DiagnosticLocus
+            .Artifact(s"${spec.id.label} correction target ${key.label}: ${e.message}")
+        )
+      )
+
+  /** Convert the document's typed choices; rule resolution and application
+    * remain AdmissionPolicy.correctionFor and FixationCsv's interpreter.
+    */
+  private[real] def correctionPolicy[K](
+      spec: DatasetRevisionSpec,
+      trial: TrialKey => Either[BackendError, K]
+  ): Either[BackendError, eyes4s.plan.AdmissionPolicy[K]] =
+    spec.admission.corrections
+      .traverse { rule =>
+        for
+          scope <- rule.target match
+            case CorrectionTarget.AllTrials      => Right(CorrectionScope.AllTrials[K]())
+            case CorrectionTarget.Participant(p) =>
+              Right(CorrectionScope.Participant[K](p.value))
+            case CorrectionTarget.Trial(key) => trial(key).map(CorrectionScope.Trial(_))
+          corrected <- rule.correction match
+            case CoordinateCorrection.FlipX             => Right(Correction.FlipX)
+            case CoordinateCorrection.FlipY             => Right(Correction.FlipY)
+            case CoordinateCorrection.Translate(offset) =>
+              Correction
+                .translate(offset.dx, offset.dy)
+                .leftMap(e =>
+                  BackendError.Unavailable(
+                    DiagnosticLocus
+                      .Artifact(s"${spec.id.label} correction ${rule.correction}: ${e.message}")
+                  )
+                )
+        yield AppliedCorrection(scope, corrected)
+      }
+      .map(rules => eyes4s.plan.AdmissionPolicy(spec.admission.offScreen.core, rules))
 
   /** The analysis window: the stimulus image's placement on the screen. */
   private def imageWindow(

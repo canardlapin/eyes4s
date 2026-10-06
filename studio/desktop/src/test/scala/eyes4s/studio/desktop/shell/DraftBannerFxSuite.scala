@@ -162,7 +162,7 @@ class DraftBannerFxSuite extends ShellFxSuite:
       fx.snapshot(StudioTheme.Light)
       // The job's state, not a string, drives the words: finishing run 8
       // makes Show live and the banner says the run is ready.
-      w.session.await(w.session.backend.complete(StoryMoments.run8Job))
+      w.session.await(w.session.fixture.get.complete(StoryMoments.run8Job))
       eventually(fx, "Show run 8 enabled")(
         buttons(w).exists(b => drawn(b) == "Show run 8" && !b.isDisabled)
       )

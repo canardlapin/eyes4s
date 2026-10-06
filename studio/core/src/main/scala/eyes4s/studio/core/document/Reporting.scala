@@ -24,7 +24,7 @@ import eyes4s.studio.core.backend.{
   StageKind,
   TrialKey
 }
-import eyes4s.codec.{CanonicalDigest, CodecError, VersionedCodec}
+import eyes4s.codec.{CanonicalDigest, CodecError, SchemaLadder, VersionedCodec}
 import io.circe.syntax.*
 import io.circe.{Codec, Decoder, Encoder}
 
@@ -172,11 +172,36 @@ enum ReportingWeight derives CanEqual, Codec.AsObject:
   /** Every query trial weighted equally. */
   case PooledQueries
 
-/** The studio mirror of UI-C's `ReportSpec`, kept minimal while UI-C is
-  * pending: how results are grouped, filtered and weighted, with no rerun.
+/** An explicitly ordered within-participant subtraction between two group
+  * levels. Both operands are nonblank and distinct; the run's inventory
+  * validates that they are levels of the grouping covariate when reporting.
+  */
+final case class ReportingContrast private (minuend: String, subtrahend: String)
+    derives CanEqual
+
+object ReportingContrast:
+  def of(minuend: String, subtrahend: String): Either[DocumentError, ReportingContrast] =
+    for
+      _ <- Checks.nonBlank("contrast minuend", minuend)
+      _ <- Checks.nonBlank("contrast subtrahend", subtrahend)
+      _ <- Either.cond(
+        minuend != subtrahend,
+        (),
+        DocumentError.ContrastOperands(minuend, subtrahend)
+      )
+    yield new ReportingContrast(minuend, subtrahend)
+
+  given Encoder.AsObject[ReportingContrast] =
+    Encoder.forProduct2("minuend", "subtrahend")(c => (c.minuend, c.subtrahend))
+  given Decoder[ReportingContrast] =
+    Decoder.forProduct2("minuend", "subtrahend")(of).emap(_.left.map(_.message))
+
+/** The studio mirror of UI-C's `ReportSpec`: how results are grouped,
+  * filtered, weighted and explicitly contrasted, with no rerun.
   * `minimumPerGroup` is off (`None`) by default. `filters` is a set: kept
   * deduplicated and in [[ReportingFilter.sortKey]] order, so the same filters
-  * in any order are the same spec and hash alike.
+  * in any order are the same spec and hash alike. A grouping without
+  * `contrast` has no level subtraction; direction is never inferred.
   */
 final case class ReportingSpec private (
     id: ReportingId,
@@ -184,7 +209,8 @@ final case class ReportingSpec private (
     groupBy: Option[Covariate],
     filters: Vector[ReportingFilter],
     minimumPerGroup: Option[MinimumPerGroup],
-    weighting: ReportingWeight
+    weighting: ReportingWeight,
+    contrast: Option[ReportingContrast]
 ) derives CanEqual
 
 object ReportingSpec:
@@ -194,10 +220,22 @@ object ReportingSpec:
       groupBy: Option[Covariate],
       filters: Vector[ReportingFilter],
       minimumPerGroup: Option[MinimumPerGroup],
-      weighting: ReportingWeight
+      weighting: ReportingWeight,
+      contrast: Option[ReportingContrast] = None
   ): Either[DocumentError, ReportingSpec] =
     Checks
       .nonBlank("reporting name", name)
+      .flatMap { checkedName =>
+        Either.cond(
+          groupBy.nonEmpty || contrast.isEmpty,
+          checkedName,
+          DocumentError.ContrastWithoutGrouping(
+            id.value,
+            contrast.map(_.minuend),
+            contrast.map(_.subtrahend)
+          )
+        )
+      }
       .map(
         new ReportingSpec(
           id,
@@ -205,7 +243,8 @@ object ReportingSpec:
           groupBy,
           filters.distinct.sortBy(_.sortKey),
           minimumPerGroup,
-          weighting
+          weighting,
+          contrast
         )
       )
 
@@ -217,14 +256,34 @@ object ReportingSpec:
   ): Either[DocumentError, ReportingSpec] =
     of(id, name, groupBy, Vector.empty, None, ReportingWeight.ParticipantMeans)
 
-  given Encoder.AsObject[ReportingSpec] =
-    Encoder.forProduct6("id", "name", "groupBy", "filters", "minimumPerGroup", "weighting")(s =>
-      (s.id, s.name, s.groupBy, s.filters, s.minimumPerGroup, s.weighting)
+  /** An absent contrast is omitted, preserving the bytes and identity of
+    * older specs. Grouping alone never declares subtraction direction.
+    */
+  given Encoder.AsObject[ReportingSpec] = Encoder.AsObject.instance { s =>
+    val fields = io.circe.JsonObject(
+      "id"              -> s.id.asJson,
+      "name"            -> s.name.asJson,
+      "groupBy"         -> s.groupBy.asJson,
+      "filters"         -> s.filters.asJson,
+      "minimumPerGroup" -> s.minimumPerGroup.asJson,
+      "weighting"       -> s.weighting.asJson
     )
-  given Decoder[ReportingSpec] =
-    Decoder
-      .forProduct6("id", "name", "groupBy", "filters", "minimumPerGroup", "weighting")(of)
-      .emap(_.left.map(_.message))
+    s.contrast.fold(fields)(c => fields.add("contrast", c.asJson))
+  }
+  given Decoder[ReportingSpec] = Decoder.instance { c =>
+    for
+      id        <- c.get[ReportingId]("id")
+      name      <- c.get[String]("name")
+      groupBy   <- c.get[Option[Covariate]]("groupBy")
+      filters   <- c.get[Vector[ReportingFilter]]("filters")
+      minimum   <- c.get[Option[MinimumPerGroup]]("minimumPerGroup")
+      weighting <- c.get[ReportingWeight]("weighting")
+      contrast  <- c.get[Option[ReportingContrast]]("contrast")
+      spec      <- of(id, name, groupBy, filters, minimum, weighting, contrast).left.map(e =>
+        io.circe.DecodingFailure(e.message, c.history)
+      )
+    yield spec
+  }
 
   /** The CR3 digest of `spec`: its identity in an export's provenance. A
     * spec has no revision and is edited in place, so the digest, not the
@@ -233,16 +292,28 @@ object ReportingSpec:
   def digest(spec: ReportingSpec): Either[CodecError, CanonicalDigest[ReportingSpec]] =
     specCodec.flatMap(_.digest(spec))
 
-  private val specCodec: Either[CodecError, VersionedCodec[ReportingSpec]] =
+  /** Version 2 records explicit contrast operands. Earlier specs lift
+    * unchanged, with no contrast; a version-1 envelope cannot smuggle one.
+    */
+  val ladder: Either[CodecError, SchemaLadder[ReportingSpec]] =
     StudioSchemaIds.forCodec.map { ids =>
-      VersionedCodec.checked[ReportingSpec](ids.reporting)(s => Right(CanonicalJson(s.asJson)))(
-        json =>
-          json
-            .as[ReportingSpec]
-            .left
-            .map(f => CodecError.Field("reporting", json, f.getMessage))
-      )
+      def write(s: ReportingSpec): Either[CodecError, io.circe.Json] =
+        Right(CanonicalJson(s.asJson))
+      def read(json: io.circe.Json): Either[CodecError, ReportingSpec] =
+        json.as[ReportingSpec].left.map(f => CodecError.Field("reporting", json, f.getMessage))
+      def before(s: ReportingSpec): Either[CodecError, ReportingSpec] =
+        Either.cond(s.contrast.isEmpty, s, contrastVersionError)
+      SchemaLadder
+        .of[ReportingSpec]("studio reporting spec", ids.reporting)(s =>
+          before(s).flatMap(write)
+        )(json => read(json).flatMap(before))
+        .next(_.contrast.isEmpty, identity)(write)(read)
     }
+
+  private val specCodec: Either[CodecError, VersionedCodec[ReportingSpec]] = ladder.map(_.codec)
+
+  private[document] val contrastVersionError: CodecError =
+    CodecError.Unsupported("studio reporting spec", "explicit contrast operands need version 2")
 
 // ---------------------------------------------------------------------------
 // Figures

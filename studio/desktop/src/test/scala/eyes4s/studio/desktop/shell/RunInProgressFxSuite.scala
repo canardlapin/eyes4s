@@ -51,7 +51,7 @@ class RunInProgressFxSuite extends ShellFxSuite:
       ): Unit
     }
 
-    w.session.await(w.session.backend.complete(StoryMoments.run8Job))
+    w.session.await(w.session.fixture.get.complete(StoryMoments.run8Job))
     eventually(fx, "run 8 ready notice") {
       w.runtime.model.jobs.ready.exists(_.run == StoryMoments.run8)
     }

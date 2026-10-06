@@ -313,12 +313,14 @@ object AppEffect:
   ): AppEffect = effect match
     // A run of the design the resolved-design pane prepared submits that
     // prepared design itself (E2E-05); any other run submits its stamp.
-    case Effect.RequestRun(_, analysis, dataset) =>
+    case Effect.RequestRun(run, analysis, dataset) =>
       val stamp = AppModel.stampOf(document, analysis, dataset)
       Execution(
         prepared
           .filter(_.prepares(document, stamp))
-          .fold(ExecutionEffect.Submit(stamp))(p => ExecutionEffect.SubmitPreview(p.ready))
+          .fold(ExecutionEffect.Submit(stamp))(p =>
+            ExecutionEffect.SubmitPreview(p.ready, Some(run))
+          )
       )
     case Effect.RequestAdmission(dataset, content) => RequestAdmission(dataset, content)
     case Effect.CancelJob(_, job)                  => Execution(ExecutionEffect.Cancel(job))
@@ -331,7 +333,10 @@ object AppEffect:
 final case class PreparedDesign(ready: PreviewReady, recipe: Recipe) derives CanEqual:
   /** Whether a run of `stamp` in `document` runs this design. */
   def prepares(document: StudioDocument, stamp: RunStamp): Boolean =
-    ready.stamp == stamp && document.analysis(stamp.revision).exists(_.recipe == recipe)
+    val identity = ready.stamp == stamp ||
+      (ready.recipe.contains(recipe) && ready.stamp.agreesWithDeclarations(stamp))
+    identity && ready.recipe.forall(_ == recipe) &&
+    document.analysis(stamp.revision).exists(_.recipe == recipe)
 
 /** A user action or a service fact the shell dispatches (DESIGN_SPEC
   * section 13). Hover and selection are intents, never document commands.
@@ -456,10 +461,14 @@ enum Intent derives CanEqual:
   case DesignWithdrawn
 
   /** The execution service refused to submit a prepared design (the backend
-    * no longer retains it, or it is stale). The run Save & run recorded is
-    * then submitted by its stamp, as any other run, so it is not orphaned.
+    * no longer retains it, or it is stale). The exact run Save & run recorded
+    * is marked failed; submitting again requires a current prepared design.
     */
-  case PreparedRefused(ready: PreviewReady, error: ExecutionError)
+  case PreparedRefused(
+      ready: PreviewReady,
+      error: ExecutionError,
+      requestedRun: Option[RunId] = None
+  )
 
   /** The project session finished an atomic save at `at` of every edit up
     * to `upTo` (the mark of the `Persist` it performed, S2.4a).
@@ -842,14 +851,27 @@ object AppModel:
       answered(m, round, InputCheck.Checked(statuses))
     case Intent.InputsCheckFailed(round, reason) =>
       answered(m, round, InputCheck.CheckFailed(reason))
-    case Intent.ItemsLoaded(items)            => (m.copy(items = items), none)
-    case Intent.DesignPrepared(r)             => (m.copy(prepared = Some(r)), none)
-    case Intent.DesignWithdrawn               => (m.copy(prepared = None), none)
-    case Intent.PreparedRefused(ready, error) =>
-      (
-        m.copy(prepared = None, notice = Some(Notice.ExecutionRefused(error))),
-        Vector(AppEffect.Execution(ExecutionEffect.Submit(ready.stamp)))
+    case Intent.ItemsLoaded(items) => (m.copy(items = items), none)
+    case Intent.DesignPrepared(r)  => (m.copy(prepared = Some(r)), none)
+    case Intent.DesignWithdrawn    => (m.copy(prepared = None), none)
+    case Intent.PreparedRefused(ready, error, requestedRun) =>
+      val refused = m.copy(
+        prepared =
+          m.prepared.filterNot(p => p.ready.id == ready.id && p.ready.stamp == ready.stamp),
+        notice = Some(Notice.ExecutionRefused(error))
       )
+      requestedRun
+        .flatMap(refused.document.run)
+        .filter(r =>
+          r.state == RunLifecycle.Running && r.analysis == ready.stamp.revision && r.dataset == ready.stamp.dataset
+        ) match
+        case None      => (refused, none)
+        case Some(run) =>
+          val command =
+            Command.RecordRunOutcome(run.id, RunLifecycle.Failed, CoreBinding.unbound)
+          val (settled, effects) =
+            applyHistory(refused, JournalEntry.Apply(command), refused.history.apply(command))
+          (settled.copy(notice = Some(Notice.ExecutionRefused(error))), effects)
     case Intent.Saved(at, upTo)    => (m.copy(save = m.save.saved(at, upTo)), none)
     case Intent.SaveFailed(reason) => (m.copy(notice = Some(Notice.SaveFailed(reason))), none)
 
@@ -956,8 +978,8 @@ object AppModel:
       val jobs = (submits ++ require.flatMap(_ => required)).foldLeft(m.jobs)(_.require(_))
       // A prepared design is submitted once: a later run prepares again.
       val submitted = effects.exists {
-        case AppEffect.Execution(ExecutionEffect.SubmitPreview(_)) => true
-        case _                                                     => false
+        case AppEffect.Execution(ExecutionEffect.SubmitPreview(_, _)) => true
+        case _                                                        => false
       }
       val next = m.copy(
         history = step.history,

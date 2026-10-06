@@ -44,6 +44,24 @@ class CompareSummarySuite extends munit.FunSuite:
   private val run7       = StoryMoments.run7
   private val remembered = Response.Remembered
 
+  test(
+    "an overall report cell resolves its exact derived spec without changing saved reporting"
+  ) {
+    val model   = StoryModels.t2Compare
+    val saved   = model.document.reporting.headOption.getOrElse(fail("no saved report"))
+    val overall = CompareSummary.overall(saved).getOrElse(fail("no overall spec"))
+    assertEquals(CompareSummary.reportingSpec(model.document, overall.id), Some(overall))
+    val selected = AppModel
+      .update(
+        model,
+        eyes4s.studio.app.Intent.Explain(eyes4s.studio.app.nav.Place.Summary(overall.id))
+      )
+      ._1
+    assertEquals(CompareSummary.reporting(selected), Some(overall.id))
+    assertEquals(CompareSummary.sync(CompareSummary.empty, selected)._1.spec, Some(overall))
+    assertEquals(selected.document.reporting, model.document.reporting)
+  }
+
   /** FIXTURE.md, participant table (σ 2°), as written there. */
   val fixtureTable: Vector[Vector[String]] = Vector(
     "P01 | 20 | 19 | 0 | 0 | 1 | 0.52 | 0.35 | +0.17 | +0.26 (11) | +0.06 (8)",
@@ -147,7 +165,8 @@ class CompareSummarySuite extends munit.FunSuite:
         spec.groupBy,
         spec.filters,
         spec.minimumPerGroup,
-        ReportingWeight.PooledQueries
+        ReportingWeight.PooledQueries,
+        spec.contrast
       )
     )
 
@@ -225,9 +244,9 @@ class CompareSummarySuite extends munit.FunSuite:
           )
         )
       )
-      val contrast = served.contrast(ReportRole.Difference).get
-      val range    = served.queryRange(ReportRole.Difference).get
-      assertEquals(vm.notes.head, SummaryText(SummaryTextId.PairedN, contrast.pairedN.toString))
+      val range = served.queryRange(ReportRole.Difference).get
+      assertEquals(served.contrasts, Vector.empty)
+      assert(!vm.notes.exists(_.startsWith("Paired")))
       assertEquals(
         vm.notes.last,
         SummaryText(SummaryTextId.GroupRange, range.fewest.toString, range.most.toString)

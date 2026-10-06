@@ -279,7 +279,7 @@ class AdmissionLedgerFxSuite extends ShellFxSuite:
       .parse[eyes4s.studio.core.document.DatasetRevisionSpec]("ab" * 32)
       .fold(e => fail(e.message), identity)
     // The backend holds other content for r3 than the window asks to admit.
-    w.session.backend.holdContent(r3, other).unsafeRunSync()
+    w.session.fixture.get.holdContent(r3, other).unsafeRunSync()
     fire(fx, v.choices(CoreAdmissionDecision.ReviewExclusions))
     fire(fx, v.admit)
     eventually(fx, "the refusal")(w.admission.state.problem.exists(_.contains(other.display)))

@@ -23,7 +23,6 @@ import eyes4s.studio.core.backend.{
   QueryStatus,
   ReportRole,
   ReportView,
-  ResultSummary,
   Response,
   RunId
 }
@@ -48,6 +47,36 @@ enum ProfileError derives CanEqual:
   /** The summary lists `participant` more than once. */
   case DuplicateParticipant(run: RunId, participant: String)
 
+  /** No report payload was supplied for the declared scales. */
+  case MissingReports(degrees: Vector[Double])
+
+  /** The report indices differ from the declared scale indices. */
+  case ReportScales(
+      run: RunId,
+      reporting: ReportingId,
+      expected: Vector[Int],
+      found: Vector[Int]
+  )
+
+  /** A report's explicit context disagrees with its series. */
+  case ReportContext(
+      run: RunId,
+      reporting: ReportingId,
+      scale: Int,
+      foundRun: RunId,
+      foundReporting: ReportingId,
+      foundScale: Int
+  )
+
+  /** The served report has no cell for a series; no reference is invented. */
+  case MissingSeries(
+      run: RunId,
+      reporting: ReportingId,
+      scale: Int,
+      group: Option[Response],
+      participant: Option[String]
+  )
+
   /** A scale index could not be formed. */
   case Scale(run: RunId, index: Int)
 
@@ -60,6 +89,14 @@ enum ProfileError derives CanEqual:
       s"Scale profile of run ${r.number}: group ${g.label} is listed twice."
     case DuplicateParticipant(r, p) =>
       s"Scale profile of run ${r.number}: participant $p is listed twice."
+    case MissingReports(degrees) =>
+      s"Scale profile has no reports for declared scales $degrees degrees."
+    case ReportScales(r, rep, expected, found) =>
+      s"Scale profile of ${r.label}, ${rep.value} requires report scales $expected but received $found."
+    case ReportContext(r, rep, scale, foundRun, foundRep, foundScale) =>
+      s"Scale profile of ${r.label}, ${rep.value}, scale $scale received ${foundRun.label}, ${foundRep.value}, scale $foundScale."
+    case MissingSeries(r, rep, scale, group, participant) =>
+      s"Scale profile of ${r.label}, ${rep.value}, scale $scale has no served cell for group $group, participant $participant."
     case Scale(r, i) => s"Scale profile of run ${r.number}: scale $i is not a scale index."
 
 /** One point of a profile: the series' mean D at one scale, missing when the
@@ -123,160 +160,108 @@ object ScaleProfile:
       scales: ScaleSet,
       labels: Vector[String]
   ): Either[ProfileError, ScaleProfile] =
-    grouped.headOption.toRight(ProfileError.Scale(RunId(0), 0)).flatMap { first =>
-      val run      = first.run
-      val declared = scales.values
-      for
-        _ <- Either.cond(
-          grouped.size == declared.size && overall.size == declared.size && labels.size == declared.size,
-          (),
-          ProfileError.ScaleCount(run, declared.size, grouped.size)
-        )
-        at <- declared.zipWithIndex.traverse { case (sigma, i) =>
-          ScaleIndex.of(i).leftMap(_ => ProfileError.Scale(run, i)).map((_, sigma))
-        }
-      yield
-        val levels = first.cells
-          .collect {
-            case c if c.role == ReportRole.Difference => c.group
-          }
-          .flatten
-          .distinct
-        val people = overall.headOption.toVector
-          .flatMap(_.participants.collect {
-            case p if p.role == ReportRole.Difference && p.group.isEmpty => p.participant
-          })
-          .distinct
-        def groupedPoint(group: Response, index: ScaleIndex): Option[(Double, String)] =
-          grouped
-            .lift(index.value)
-            .flatMap(_.cell(Some(group), ReportRole.Difference))
-            .flatMap(c => c.estimate.map(_ -> ParticipantText.participants(c.participants)))
-        def overallPoint(person: String, index: ScaleIndex): Option[(Double, String)] =
-          overall
-            .lift(index.value)
-            .flatMap(_.participant(None, ReportRole.Difference, person))
-            .flatMap(p => p.value.map(_ -> ParticipantText.queries(p.queries)))
-        ScaleProfile(
-          run,
-          first.reporting,
-          levels.map(group =>
-            ProfileSeries(
-              group.label,
-              groupedPoint(group, at.head._1).fold(ParticipantText.participants(0))(_._2),
-              at.map((index, sigma) =>
-                ProfilePoint(
-                  grouped(index.value)
-                    .cell(Some(group), ReportRole.Difference)
-                    .map(_.ref)
-                    .getOrElse(StudioRef.GroupCell(run, first.reporting, index, group)),
-                  index,
-                  labels(index.value),
-                  sigma,
-                  groupedPoint(group, index).map(_._1)
-                )
+    grouped.headOption
+      .toRight(ProfileError.MissingReports(scales.values.map(_.degrees)))
+      .flatMap { first =>
+        val run       = first.run
+        val declared  = scales.values
+        val overallId = overall.headOption.map(_.reporting).getOrElse(first.reporting)
+        def checked(views: Vector[ReportView], id: ReportingId) =
+          views
+            .traverse { view =>
+              Either.cond(
+                view.run == run && view.reporting == id &&
+                  declared.indices.contains(view.scale),
+                view,
+                ProfileError
+                  .ReportContext(run, id, view.scale, view.run, view.reporting, view.scale)
               )
-            )
-          ),
-          people.map(person =>
-            ProfileSeries(
-              person,
-              overallPoint(person, at.head._1).fold(ParticipantText.queries(0))(_._2),
-              at.map((index, sigma) =>
-                ProfilePoint(
-                  overall(index.value)
-                    .participant(None, ReportRole.Difference, person)
-                    .map(_.ref)
-                    .getOrElse(
-                      StudioRef.ParticipantSummary(run, first.reporting, index, None, person)
-                    ),
-                  index,
-                  labels(index.value),
-                  sigma,
-                  overallPoint(person, index).map(_._1)
-                )
+            }
+            .flatMap { found =>
+              val indexed = found.map(v => v.scale -> v).toMap
+              Either.cond(
+                indexed.size == declared.size && found.size == declared.size,
+                indexed,
+                ProfileError
+                  .ReportScales(run, id, declared.indices.toVector, found.map(_.scale))
               )
-            )
-          )
-        )
-    }
-
-  /** The profile of `summary` under `reporting`, at the run's declared
-    * `scales` (its analysis revision's scale set, in order), which must be
-    * the summary's scales one for one. A group's point is its
-    * [[StudioRef.GroupCell]] at that scale; a participant's is its
-    * [[StudioRef.ParticipantSummary]] over all its queries (no group). A
-    * participant with no contributing query has no means. Nothing is
-    * computed here.
-    */
-  def of(
-      summary: ResultSummary,
-      reporting: ReportingId,
-      scales: ScaleSet
-  ): Either[ProfileError, ScaleProfile] =
-    val run      = summary.run
-    val declared = scales.values
-    val labels   = summary.groups.map(_.label)
-    val ids      = summary.participants.map(_.participant)
-    for
-      _ <- Either.cond(
-        declared.size == summary.scales.size,
-        (),
-        ProfileError.ScaleCount(run, declared.size, summary.scales.size)
-      )
-      at <- declared.zip(summary.scales).zipWithIndex.traverse { case ((sigma, label), i) =>
+            }
         for
           _ <- Either.cond(
-            sigma.render == s"σ $label",
+            labels.size == declared.size,
             (),
-            ProfileError.ScaleLabel(run, i, label, sigma)
+            ProfileError.ScaleCount(run, declared.size, labels.size)
           )
-          index <- ScaleIndex.of(i).leftMap(_ => ProfileError.Scale(run, i))
-        yield (index, label, sigma)
-      }
-      _ <- labels
-        .diff(labels.distinct)
-        .headOption
-        .map(ProfileError.DuplicateGroup(run, _))
-        .toLeft(())
-      _ <- ids
-        .diff(ids.distinct)
-        .headOption
-        .map(ProfileError.DuplicateParticipant(run, _))
-        .toLeft(())
-    yield
-      def points(ref: ScaleIndex => StudioRef, ds: Vector[Double], served: Boolean) =
-        at.map((index, label, sigma) =>
-          ProfilePoint(
-            ref(index),
-            index,
-            label,
-            sigma,
-            ds.lift(index.value).filter(_ => served)
-          )
-        )
-      ScaleProfile(
-        run,
-        reporting,
-        summary.groups.map(g =>
-          ProfileSeries(
-            g.label.label,
-            ParticipantText.participants(g.n),
-            points(StudioRef.GroupCell(run, reporting, _, g.label), g.dByScale, true)
-          )
-        ),
-        summary.participants.map(p =>
-          ProfileSeries(
-            p.participant,
-            ParticipantText.queries(p.contributing),
-            points(
-              StudioRef.ParticipantSummary(run, reporting, _, None, p.participant),
-              p.all.dByScale,
-              p.contributing > 0
+          groupedAt <- checked(grouped, first.reporting)
+          overallAt <- checked(overall, overallId)
+          at        <- declared.zipWithIndex.traverse { case (sigma, i) =>
+            ScaleIndex.of(i).leftMap(_ => ProfileError.Scale(run, i)).map((_, sigma))
+          }
+          levels = groupedAt(0).cells.collect {
+            case c if c.role == ReportRole.Difference => c.group
+          }
+          _ <- levels
+            .diff(levels.distinct)
+            .headOption
+            .map(g =>
+              ProfileError.DuplicateGroup(
+                run,
+                g.getOrElse(
+                  Response(ParticipantText(eyes4s.studio.app.text.ParticipantTextId.AllQueries))
+                )
+              )
             )
-          )
-        )
-      )
+            .toLeft(())
+          people = overallAt(0).participants.collect {
+            case p if p.role == ReportRole.Difference && p.group.isEmpty => p.participant
+          }
+          _ <- people
+            .diff(people.distinct)
+            .headOption
+            .map(ProfileError.DuplicateParticipant(run, _))
+            .toLeft(())
+          groups <- levels.traverse { group =>
+            at.traverse { (index, sigma) =>
+              groupedAt(index.value)
+                .cell(group, ReportRole.Difference)
+                .toRight(
+                  ProfileError.MissingSeries(run, first.reporting, index.value, group, None)
+                )
+                .map(c =>
+                  ProfilePoint(
+                    c.ref,
+                    index,
+                    labels(index.value),
+                    sigma,
+                    c.estimate
+                  ) -> c.participants
+                )
+            }.map(points =>
+              ProfileSeries(
+                group.fold(
+                  ParticipantText(eyes4s.studio.app.text.ParticipantTextId.AllQueries)
+                )(_.label),
+                ParticipantText.participants(points.head._2),
+                points.map(_._1)
+              )
+            )
+          }
+          participants <- people.traverse { person =>
+            at.traverse { (index, sigma) =>
+              overallAt(index.value)
+                .participant(None, ReportRole.Difference, person)
+                .toRight(
+                  ProfileError.MissingSeries(run, overallId, index.value, None, Some(person))
+                )
+                .map(p =>
+                  ProfilePoint(p.ref, index, labels(index.value), sigma, p.value) -> p.queries
+                )
+            }.map(points =>
+              ProfileSeries(person, ParticipantText.queries(points.head._2), points.map(_._1))
+            )
+          }
+        yield ScaleProfile(run, first.reporting, groups, participants)
+      }
 
   /** One query's scale profile (ticket S8.5; Main.dc.html, the contrast
     * group's "Scale profile" tab): its D at each of the run's `scales`, as

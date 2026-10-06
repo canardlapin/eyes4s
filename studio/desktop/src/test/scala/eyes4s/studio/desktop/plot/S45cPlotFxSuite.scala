@@ -77,17 +77,12 @@ class S45cPlotFxSuite extends StudioFxSuite:
   private lazy val fixtureMeans: ParticipantMeans =
     FakeStudyBackend
       .create[IO](StoryMoment.T2)
-      .flatMap(_.result(run))
+      .flatMap(_.report(run, right(eyes4s.studio.core.fixture.StoryMoments.byResponse), 2))
       .unsafeRunSync()
-      .flatMap { summary =>
-        val index = summary.scales.indexOf(FakeStudyBackend.FocusScale)
-        ScaleIndex
-          .of(index)
-          .left
-          .map(_.message)
-          .flatMap(ParticipantMeans.of(summary, reporting, _).left.map(_.message))
-      }
-      .fold(e => fail(e.toString), identity)
+      .left
+      .map(_.message)
+      .flatMap(ParticipantMeans.of(_, "2°").left.map(_.message))
+      .fold(e => fail(e), identity)
 
   // fixture.json's summary, read without the backend.
   private lazy val fixtureSummary: Json =

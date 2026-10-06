@@ -17,7 +17,7 @@
 package eyes4s.studio.core.preview
 
 import eyes4s.studio.core.backend.*
-import eyes4s.studio.core.document.{CoreBinding, StudyPlanArtifact}
+import eyes4s.studio.core.document.{CoreBinding, Recipe, StudyPlanArtifact}
 import eyes4s.studio.core.execution.{RunStamp, StudyInputArtifact}
 import io.circe.{Codec, Decoder, Encoder}
 import ProtocolCodecs.portableLong
@@ -30,26 +30,26 @@ object PreviewId:
   given Codec[PreviewId] =
     Codec.from(portableLong.map(PreviewId(_)), portableLong.contramap(_.value))
 
-/** A positive number of participant pages a caller permits one request to do.
-  * The fake advances exactly one participant for each page.
+/** A positive number of bounded cursor pages permitted by one request.
+  * The fake's fixture page completes one participant; the real backend
+  * advances one library counting step with its fixed work quantum.
   */
-final case class PreviewBudget private (participants: Int) derives CanEqual
+final case class PreviewBudget private (pages: Int) derives CanEqual
 object PreviewBudget:
-  /** A single request stays bounded independently of a particular study. */
-  val MaximumParticipants: Int                                         = 4096
-  def of(participants: Int): Either[PreviewBudgetError, PreviewBudget] =
+  val MaximumPages: Int                                         = 4096
+  def of(pages: Int): Either[PreviewBudgetError, PreviewBudget] =
     Either.cond(
-      participants > 0 && participants <= MaximumParticipants,
-      new PreviewBudget(participants),
-      PreviewBudgetError.OutOfRange(participants, MaximumParticipants)
+      pages > 0 && pages <= MaximumPages,
+      new PreviewBudget(pages),
+      PreviewBudgetError.OutOfRange(pages, MaximumPages)
     )
-  given Encoder[PreviewBudget] = Encoder.encodeInt.contramap(_.participants)
+  given Encoder[PreviewBudget] = Encoder.encodeInt.contramap(_.pages)
   given Decoder[PreviewBudget] = Decoder.decodeInt.emap(of(_).left.map(_.message))
 
 enum PreviewBudgetError derives CanEqual:
-  case OutOfRange(participants: Int, maximum: Int)
+  case OutOfRange(pages: Int, maximum: Int)
   def message: String = this match
-    case OutOfRange(p, m) => s"Preview budget $p is outside 1 to $m participants."
+    case OutOfRange(p, m) => s"Preview budget $p is outside 1 to $m bounded pages."
 
 /** Why a preview count was refused. Every case names the field and the value
   * it refused.
@@ -308,6 +308,10 @@ object PreviewCounts:
 /** Receipt of a ready backend-owned preview. A caller may carry this receipt,
   * but cannot manufacture a snapshot from it.
   *
+  * Native receipts carry the exact recipe used to prepare the bound artifacts,
+  * so a client can detect edits under the same draft revision id. Fixture
+  * receipts have no native recipe snapshot and retain their unbound stamps.
+  *
   * Its query counts partition the requested focal trials: requested =
   * eligible + unmatched + not admitted (+ by design, when the recipe has that
   * category), so no count exceeds the requested ones.
@@ -317,7 +321,8 @@ final case class PreviewReady private (
     stamp: RunStamp,
     candidates: PreviewCandidates,
     counts: PreviewCounts,
-    diagnostics: Vector[StudioDiagnostic]
+    diagnostics: Vector[StudioDiagnostic],
+    recipe: Option[Recipe]
 ) derives CanEqual
 
 object PreviewReady:
@@ -326,10 +331,11 @@ object PreviewReady:
       stamp: RunStamp,
       candidates: PreviewCandidates,
       counts: PreviewCounts,
-      diagnostics: Vector[StudioDiagnostic]
+      diagnostics: Vector[StudioDiagnostic],
+      recipe: Option[Recipe] = None
   ): Either[PreviewError, PreviewReady] =
     partition(candidates, counts).map(_ =>
-      new PreviewReady(id, stamp, candidates, counts, diagnostics)
+      new PreviewReady(id, stamp, candidates, counts, diagnostics, recipe)
     )
 
   /** Whether `counts` partition the queries `candidates` requests. */
@@ -350,33 +356,44 @@ object PreviewReady:
     )
 
   given Encoder.AsObject[PreviewReady] =
-    Encoder.forProduct5("id", "stamp", "candidates", "counts", "diagnostics")(r =>
-      (r.id, r.stamp, r.candidates, r.counts, r.diagnostics)
+    Encoder.forProduct6("id", "stamp", "candidates", "counts", "diagnostics", "recipe")(r =>
+      (r.id, r.stamp, r.candidates, r.counts, r.diagnostics, r.recipe)
     )
 
   given Decoder[PreviewReady] = PreviewCount.decoder(
-    Decoder.forProduct5[
+    Decoder.forProduct6[
       Either[PreviewError, PreviewReady],
       PreviewId,
       RunStamp,
       PreviewCandidates,
       PreviewCounts,
-      Vector[StudioDiagnostic]
-    ]("id", "stamp", "candidates", "counts", "diagnostics")(of)
+      Vector[StudioDiagnostic],
+      Option[Recipe]
+    ]("id", "stamp", "candidates", "counts", "diagnostics", "recipe")(of)
   )
 
-/** Frames of a bounded preview page. Creation starts with Initial; continuations
-  * emit only progress or the ready receipt. Each page contains at most its
-  * requested number of Counting frames; Ready appears after all participants
-  * have been counted, and a completed continuation returns Ready again.
+/** Frames of a bounded preview request. Creation starts with Initial;
+  * continuations emit progress or the ready receipt. Each request contains at
+  * most its budget of Counting or CountingWork frames. Ready appears when the
+  * retained count traversal completes; a completed continuation returns it again.
   */
 enum PreviewEvent derives CanEqual, Codec.AsObject:
   case Initial(id: PreviewId, stamp: RunStamp, candidates: PreviewCandidates)
   case Counting(id: PreviewId, progress: PreviewProgress)
+
+  /** One native cursor page. Schedule work includes pair enumeration and
+    * schedule diagnostics; workUnits also counts cardinality diagnostics.
+    */
+  case CountingWork(
+      id: PreviewId,
+      design: PairDesign,
+      workUnits: Int,
+      visitedScheduleWork: Long
+  )
   case Ready(ready: PreviewReady)
 
-/** The retained stamp fake backends can honestly serve. Real bindings arrive
-  * with S3.7; fake values stay visibly unbound.
+/** The retained stamp fake backends can honestly serve; fixture values stay
+  * visibly unbound while the real backend uses native canonical codec digests.
   */
 private[core] object PreviewStamp:
   def fake(revision: AnalysisRevision, dataset: DatasetRevision): RunStamp =

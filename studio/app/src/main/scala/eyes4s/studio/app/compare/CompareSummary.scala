@@ -83,10 +83,10 @@ object CompareSummary:
 
   val empty: CompareSummary = CompareSummary(None, None, None, None, None)
 
-  /** An explicit eyes4s-derived ungrouped report for the overall table
-    * columns. Its identity differs so every returned ref names this spec.
+  /** An explicit ungrouped evaluation of the same filters and weighting.
+    * Its separate identity keeps overall cells navigable to their own spec.
     */
-  private def overall(spec: ReportingSpec): Option[ReportingSpec] =
+  def overall(spec: ReportingSpec): Option[ReportingSpec] =
     ReportingSpec
       .of(
         ReportingId.of(spec.id.value + "-overall").toOption.getOrElse(spec.id),
@@ -115,6 +115,19 @@ object CompareSummary:
   /** The run Compare shows. */
   def shownRun(m: AppModel): Option[RunId] = m.document.presentation.shownRun
 
+  /** Resolve a saved report or its explicitly derived overall evaluation.
+    * This keeps an overall participant cell's provenance in its own spec.
+    */
+  def reportingSpec(
+      document: eyes4s.studio.core.document.StudioDocument,
+      id: ReportingId
+  ): Option[ReportingSpec] =
+    document.reporting
+      .find(_.id == id)
+      .orElse(
+        document.reporting.iterator.flatMap(overall).find(_.id == id)
+      )
+
   /** The reporting spec Compare's trail is in, else the document's first.
     * A trail naming a spec the document no longer holds (Save as… undone)
     * falls back too, so Compare never shows a missing spec.
@@ -126,14 +139,14 @@ object CompareSummary:
         case Place.Summary(r)  => r
         case Place.Group(r, _) => r
       }
-      .filter(r => m.document.reporting.exists(_.id == r))
+      .filter(r => reportingSpec(m.document, r).isDefined)
       .orElse(m.document.reporting.headOption.map(_.id))
 
   /** Follows the model: a newly shown run is read afresh. */
   def sync(s: CompareSummary, m: AppModel): (CompareSummary, Vector[SummaryEffect]) =
     val run  = shownRun(m)
     val rep  = reporting(m)
-    val spec = rep.flatMap(id => m.document.reporting.find(_.id == id))
+    val spec = rep.flatMap(id => reportingSpec(m.document, id))
     if run == s.run && spec == s.spec then (s.copy(reporting = rep), Vector.empty)
     else if run == s.run then
       val next = s.copy(reporting = rep, spec = spec, reports = Map.empty)
@@ -173,11 +186,8 @@ object CompareSummary:
       r
     }
 
-    /** The scales the summary's participant means are at: the heuristic
-      * grand-mean check of [[ParticipantMeans.of]], until ResultSummary
-      * declares its means scale (bead bd-01M420VXE7NFGZHSM71SGY7KW6, the
-      * means-scale identity). The σ selector, and with it the query table's
-      * σ, is gated by it.
+    /** Scales whose exact requested reporting specification has answered.
+      * Run facts never infer a numerical report's scale from its values.
       */
     def available: Vector[ScaleIndex] =
       for

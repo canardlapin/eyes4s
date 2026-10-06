@@ -169,7 +169,7 @@ class PairsTableSuite extends munit.FunSuite:
         }
         assertEquals(failed.size, 3)
         failed.foreach { (q, m, d) =>
-          val ref = StudioRef.Pair(run7, sigma2, PairDesign.Matched, q, m)
+          val ref = StudioRef.Pair(run7, sigma2, PairDesign.Matched, q, m.get)
           assertEquals(cosine(src, ref), None)
           assertEquals(scoreText(src, ref), Some(s"failed: ${d.message}"))
           assertEquals(src.rowOf(ref).flatMap(src.cells(_)).map(_(6)), Some("—"))

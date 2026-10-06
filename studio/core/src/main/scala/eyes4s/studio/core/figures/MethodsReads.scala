@@ -127,11 +127,19 @@ object MethodsReads:
   def of(run: RunId, admission: AdmissionSummary, rows: Vector[QueryRow]): MethodsFacts =
     val compared = rows.filter(r =>
       r.status match
-        case QueryStatus.Contributing(_, _, _) | QueryStatus.Failed(_) => true
-        case _                                                         => false
+        case QueryStatus.Contributing(_, _, _) => true
+        case failure if failure.isFailed       => true
+        case _                                 => false
     )
+    // Frequency is per query and code; retain every distinct scale's code
+    // without counting the same query repeatedly for one shared code.
     val failures = rows
-      .collect { case QueryRow(_, _, _, _, _, QueryStatus.Failed(d)) => d.code }
+      .flatMap(row =>
+        row.status match
+          case QueryStatus.Failed(d)                   => Vector(d.code)
+          case QueryStatus.FailedAtScales(diagnostics) => diagnostics.map(_.code).distinct
+          case _                                       => Vector.empty
+      )
       .groupMapReduce(identity)(_ => 1)(_ + _)
       .toVector
       .sortBy((code, n) => (-n, code))

@@ -36,7 +36,8 @@ import eyes4s.studio.core.assets.{AssetRegistry, DisplayKind, TrialDisplay}
 import eyes4s.studio.core.backend.{
   DensityGrid,
   Phase,
-  ResultSummary,
+  ReportView,
+  ReportRole,
   RunId,
   ScreenRegion,
   TrialFixations,
@@ -355,49 +356,57 @@ object FigurePanels:
     * group and per-participant n the summary serves.
     */
   def participantD(
-      summary: ResultSummary,
-      reporting: ReportingId,
-      scale: ScaleIndex,
+      report: ReportView,
+      scaleLabel: String,
+      weighting: ReportingWeight,
       lines: ParticipantLines
   ): Either[String, PlotPanelVM] =
     for
-      means   <- ParticipantMeans.of(summary, reporting, scale).left.map(_.message)
+      means   <- ParticipantMeans.of(report, scaleLabel).left.map(_.message)
       columns <- ParticipantColumns.standard.left.map(_.message)
       source  <- ParticipantMeans.source(means, columns).left.map(_.message)
     yield PlotPanelVM(
       PlotKind.Participant,
       source,
       Vector(
-        nEach(summary),
-        "bars: grand mean of participant means, equal weight",
-        FigureCaption.participantD(summary, lines)
+        nEach(report),
+        weighting match
+          case ReportingWeight.ParticipantMeans =>
+            "bars: grand mean of participant means, equal weight"
+          case ReportingWeight.PooledQueries => "bars: grand mean over pooled queries",
+        FigureCaption.participantD(report, lines)
       ),
       lines
     )
 
   /** Panel E: the grand means of D at each declared scale. */
   def scaleProfile(
-      summary: ResultSummary,
-      reporting: ReportingId,
-      scales: ScaleSet
+      grouped: Vector[ReportView],
+      overall: Vector[ReportView],
+      scales: ScaleSet,
+      labels: Vector[String]
   ): Either[String, PlotPanelVM] =
     for
-      profile <- ScaleProfile.of(summary, reporting, scales).left.map(_.message)
+      profile <- ScaleProfile.of(grouped, overall, scales, labels).left.map(_.message)
       columns <- ProfileColumns.standard.left.map(_.message)
       source  <- ScaleProfile.source(profile, columns).left.map(_.message)
     yield PlotPanelVM(
       PlotKind.Profile,
       source,
-      Vector(nEach(summary), "Each scale computed separately.")
+      Vector("Each scale computed separately.")
     )
 
   /** "n = 24 each · paired n = 24", or each group's n when they differ. */
-  def nEach(summary: ResultSummary): String =
-    val ns   = summary.groups.map(_.n).distinct
-    val each =
+  def nEach(report: ReportView): String =
+    val groups = report.cells.filter(_.role == ReportRole.Difference)
+    val ns     = groups.map(_.participants).distinct
+    val each   =
       if ns.size == 1 then s"n = ${ns.head} each"
-      else summary.groups.map(g => s"${g.label.label} n = ${g.n}").mkString(", ")
-    s"$each · paired n = ${summary.pairedN}"
+      else
+        groups
+          .map(g => s"${g.group.fold("all queries")(_.label)} n = ${g.participants}")
+          .mkString(", ")
+    report.contrast(ReportRole.Difference).fold(each)(c => s"$each · paired n = ${c.pairedN}")
 
   /** Panels A and B: the heading ("Retrieval · ret_07"), and what the screen
     * displayed, from the revision's asset registry when it is served.

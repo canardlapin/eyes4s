@@ -63,7 +63,7 @@ class PairRowsSuite extends CatsEffectSuite:
       val matched = rows.head.filter(_.design == PairDesign.Matched)
       assertEquals(
         matched.map(r => (r.query, r.reference)),
-        compared.map(q => (q.query, q.matched))
+        compared.map(q => (q.query, q.matched.get))
       )
       // Controls per query are the query rows' served counts.
       assertEquals(

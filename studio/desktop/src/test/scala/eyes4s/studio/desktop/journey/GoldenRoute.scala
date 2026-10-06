@@ -403,71 +403,129 @@ object GoldenRoute:
     // -------------------------------------------------------------------------
 
     private val summary: S = Step(
-      "the participant table and group summaries = FIXTURE.md",
+      "the participant table and group reports = FIXTURE.md",
       d =>
-        service("result")(s.result(run6)).map(_.flatMap { r =>
-          def groupD(p: ParticipantSummary, label: Response) =
-            p.groups.find(_.label == label).map(g => (round(g.d), g.n))
-          val served = r.participants.map { p =>
-            FixtureRow(
-              p.participant,
-              p.requested,
-              p.contributing,
-              p.failed,
-              p.noMatch,
-              p.notAdmitted,
-              round(p.all.m),
-              round(p.all.b),
-              round(p.all.d),
-              groupD(p, Response.Remembered).getOrElse((BigDecimal(-99), -1)),
-              groupD(p, Response.Forgotten).getOrElse((BigDecimal(-99), -1))
+        val groupedSpec = ok(StoryMoments.byResponse)
+        val overallSpec = ok(
+          ReportingSpec.of(
+            ok(ReportingId.of(reporting.value + "-overall")),
+            "Overall",
+            None,
+            Vector.empty,
+            None,
+            ReportingWeight.ParticipantMeans
+          )
+        )
+        for
+          result  <- service("result")(s.result(run6))
+          grouped <- service("grouped reports")(
+            Future
+              .sequence((0 until 4).toVector.map(i => s.report(run6, groupedSpec, i)))
+              .map(_.sequence)
+          )
+          overall <- service("overall reports")(
+            Future
+              .sequence((0 until 4).toVector.map(i => s.report(run6, overallSpec, i)))
+              .map(_.sequence)
+          )
+        yield
+          for
+            r      <- result
+            gs     <- grouped
+            ws     <- overall
+            served <- r.participants.traverse { p =>
+              def mean(view: ReportView, group: Option[Response], role: ReportRole) =
+                view
+                  .participant(group, role, p.participant)
+                  .flatMap(_.value)
+                  .toRight(
+                    DriverError.Expectation(
+                      "participant report",
+                      "a served mean",
+                      s"${p.participant} $group $role at scale ${view.scale}"
+                    )
+                  )
+              def groupMean(group: Response) = for
+                value   <- mean(gs(2), Some(group), ReportRole.Difference)
+                queries <- gs(2)
+                  .participant(Some(group), ReportRole.Difference, p.participant)
+                  .map(_.queries)
+                  .toRight(
+                    DriverError
+                      .Expectation("participant count", "a served count", p.participant)
+                  )
+              yield (round(value), queries)
+              for
+                m          <- mean(ws(2), None, ReportRole.Matched)
+                b          <- mean(ws(2), None, ReportRole.Control)
+                value      <- mean(ws(2), None, ReportRole.Difference)
+                remembered <- groupMean(Response.Remembered)
+                forgotten  <- groupMean(Response.Forgotten)
+              yield FixtureRow(
+                p.participant,
+                p.requested,
+                p.contributing,
+                p.failed,
+                p.noMatch,
+                p.notAdmitted,
+                round(m),
+                round(b),
+                round(value),
+                remembered,
+                forgotten
+              )
+            }
+            _ <- all(
+              expect("participant rows", 24, doc.participants.size),
+              expect("participant table", doc.participants, served),
+              expect(
+                "grand D by scale",
+                doc.list("By scale:"),
+                ws.map(_.cell(None, ReportRole.Difference).get.estimate.get).map(round(_))
+              ),
+              expect(
+                "Remembered by scale",
+                doc.list("Remembered ["),
+                gs.map(
+                  _.cell(Some(Response.Remembered), ReportRole.Difference).get.estimate.get
+                ).map(round(_))
+              ),
+              expect(
+                "Forgotten by scale",
+                doc.list("Forgotten ["),
+                gs.map(_.cell(Some(Response.Forgotten), ReportRole.Difference).get.estimate.get)
+                  .map(round(_))
+              ),
+              expect(
+                "legacy grouping declares no level subtraction",
+                Vector.empty,
+                gs(2).contrasts
+              ),
+              stated(
+                "group n range",
+                "Per-group n range across participants (Remembered/Forgotten): [2, 17].",
+                Some((2, 17)),
+                gs(2).queryRange(ReportRole.Difference).map(v => (v.fewest, v.most))
+              ),
+              stated(
+                "contributing",
+                "\"no_match\": 9, \"failed\": 3, \"contributing\": 454}",
+                QueryContrasts(480, 14, 9, 3, 454),
+                r.contrasts
+              ),
+              expect(
+                "eyes4s: queries",
+                (library.design.requested, library.design.notAdmitted, library.design.noMatch),
+                (r.contrasts.requested, r.contrasts.queryNotAdmitted, r.contrasts.noMatch)
+              ),
+              stated(
+                "P05 failed",
+                "P05's 3 failed queries: 11 of 11 fixations outside.",
+                Vector(("P05", "ret_04", 11), ("P05", "ret_11", 11), ("P05", "ret_16", 11)),
+                library.allOutside
+              )
             )
-          }
-          def byScale(label: Response) =
-            r.groups.find(_.label == label).map(_.dByScale.map(round(_)))
-          all(
-            expect("participant rows", 24, doc.participants.size),
-            expect("participant table", doc.participants, served),
-            expect("grand D by scale", doc.list("By scale:"), r.grandDByScale.map(round(_))),
-            expect(
-              "Remembered by scale",
-              Some(doc.list("Remembered [")),
-              byScale(Response.Remembered)
-            ),
-            expect(
-              "Forgotten by scale",
-              Some(doc.list("Forgotten [")),
-              byScale(Response.Forgotten)
-            ),
-            stated(
-              "group n range",
-              "Per-group n range across participants (Remembered/Forgotten): [2, 17].",
-              (2, 17),
-              (r.groupNMinimum, r.groupNMaximum)
-            ),
-            stated(
-              "contributing",
-              "\"no_match\": 9, \"failed\": 3, \"contributing\": 454}",
-              QueryContrasts(480, 14, 9, 3, 454),
-              r.contrasts
-            ),
-            // eyes4s's pairing says which queries are requested, not admitted
-            // and without a match; the contributing / failed split needs the
-            // run (pending: direct-library scores).
-            expect(
-              "eyes4s: queries",
-              (library.design.requested, library.design.notAdmitted, library.design.noMatch),
-              (r.contrasts.requested, r.contrasts.queryNotAdmitted, r.contrasts.noMatch)
-            ),
-            // P05's failed queries: every fixation outside the window, by eyes4s.
-            stated(
-              "P05 failed",
-              "P05's 3 failed queries: 11 of 11 fixations outside.",
-              Vector(("P05", "ret_04", 11), ("P05", "ret_11", 11), ("P05", "ret_16", 11)),
-              library.allOutside
-            )
-          ).as(d)
-        })
+          yield d
     )
 
     // The draft that adds σ 8°: rev 5's pair rows, then discarded.

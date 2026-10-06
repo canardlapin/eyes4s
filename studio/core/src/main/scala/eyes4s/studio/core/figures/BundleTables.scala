@@ -26,7 +26,7 @@ import eyes4s.results.{
   TableJson
 }
 import eyes4s.studio.core.backend.*
-import eyes4s.studio.core.document.ReportingWeight
+import eyes4s.studio.core.document.{ReportingId, ReportingWeight}
 
 /** Why a bundle table could not be made. Every case names its operands. */
 enum BundleTableError derives CanEqual:
@@ -38,13 +38,20 @@ enum BundleTableError derives CanEqual:
 
   /** Rows of a scale the run's summary does not compute. */
   case UnknownScale(table: String, scale: Int, scales: Vector[String])
+  case FailureScales(run: RunId, query: TrialKey, expected: Int, found: Int)
+
+  case OtherReporting(table: String, expected: ReportingId, found: ReportingId)
 
   def message: String = this match
+    case FailureScales(run, query, expected, found) =>
+      s"${run.label} query ${query.label} has $found failure diagnostics for $expected declared scales."
     case OtherRun(table, expected, found) =>
       s"The $table table of ${expected.label} was given the rows of ${found.label}."
     case Table(table, error)                => s"The $table table: ${error.message}"
     case UnknownScale(table, scale, scales) =>
       s"The $table table has rows of scale $scale; the run computes ${scales.mkString(", ")}."
+    case OtherReporting(table, expected, found) =>
+      s"The $table table of reporting ${expected.value} was given reporting ${found.value}."
 
 /** The result tables of a figure's export bundle (ticket S9.5;
   * Figures.dc.html, bundle), as eyes4s `ResultTable`s: keyed rows, the table
@@ -62,7 +69,16 @@ object BundleTables:
   /** Why a pair's score is missing (comparisons.csv's own domain, so the
     * query tables' label domain, and their digests, do not change).
     */
-  val PairAbsences: Vector[String] = Vector("failed", "not-served")
+  val PairAbsences: Vector[String]        = Vector("failed", "not-served")
+  val ParticipantAbsences: Vector[String] = Vector(
+    "empty-group",
+    "below-minimum",
+    "unpaired",
+    "not-recorded",
+    "unparsed",
+    "failed",
+    "undefined"
+  )
 
   /** A query's outcome. */
   val Statuses: Vector[String] = Vector("contributing", "failed", "no-match", "not-admitted")
@@ -115,7 +131,7 @@ object BundleTables:
       count("occurrence", "query occurrence"),
       text("item", "query item"),
       text("response", "query response"),
-      text("matched_trial", "the matched reference trial"),
+      note("matched_trial", "the matched reference trial, when one was selected"),
       optionalCount("controls", "control references the query was compared with"),
       count("scale", "estimation scale index, from 0"),
       text("sigma", "estimation scale"),
@@ -124,11 +140,13 @@ object BundleTables:
     ) ++ score("m", "matched similarity") ++ score("b", "control mean similarity") ++
       score("d", "M minus B")
 
-  private def status(s: QueryStatus): (String, Option[String]) = s match
-    case QueryStatus.Contributing(_, _, _) => ("contributing", None)
-    case QueryStatus.Failed(d)             => ("failed", Some(s"${d.code}: ${d.message}"))
-    case QueryStatus.NoMatch(d)            => ("no-match", Some(s"${d.code}: ${d.message}"))
-    case QueryStatus.NotAdmitted(t)        =>
+  private def status(s: QueryStatus, scale: Int): (String, Option[String]) = s match
+    case QueryStatus.Contributing(_, _, _)       => ("contributing", None)
+    case QueryStatus.Failed(d)                   => ("failed", Some(s"${d.code}: ${d.message}"))
+    case QueryStatus.FailedAtScales(diagnostics) =>
+      ("failed", diagnostics.lift(scale).map(d => s"${d.code}: ${d.message}"))
+    case QueryStatus.NoMatch(d)     => ("no-match", Some(s"${d.code}: ${d.message}"))
+    case QueryStatus.NotAdmitted(t) =>
       (
         "not-admitted",
         Some(t match
@@ -147,43 +165,50 @@ object BundleTables:
     val run = source.run.id
     if summary.run != run then Left(BundleTableError.OtherRun("results", run, summary.run))
     else
-      val cells = for
-        row            <- rows
-        (sigma, scale) <- summary.scales.zipWithIndex
-        (status, reason) = this.status(row.status)
-      yield
-        val (m, b, d) = row.status match
-          case QueryStatus.Contributing(m, b, d) =>
-            (m.lift(scale), b.lift(scale), d.lift(scale))
-          case _ => (None, None, None)
-        val absence = if status == "contributing" then "not-scored" else status
-        Vector(
-          T(row.query.participant),
-          T(row.query.phase.label),
-          T(row.query.trial),
-          I(row.query.occurrence.toLong),
-          T(row.item),
-          T(row.response.label),
-          T(row.matched.trial),
-          row.controls.fold(M)(c => I(c.toLong)),
-          I(scale.toLong),
-          T(sigma),
-          T(status),
-          reason.fold(M)(T(_))
-        ) ++ scored(m, absence) ++ scored(b, absence) ++ scored(d, absence)
-      ResultTable
-        .of(ResultFamily.StudyContrasts, queryColumns, cells, context(source, summary.scales))
-        .left
-        .map(BundleTableError.Table("results", _))
+      val invalid = rows.collectFirst {
+        case row @ QueryRow(_, _, _, _, _, QueryStatus.FailedAtScales(diagnostics))
+            if diagnostics.size != summary.scales.size =>
+          BundleTableError.FailureScales(run, row.query, summary.scales.size, diagnostics.size)
+      }
+      invalid.toLeft(()).flatMap { _ =>
+        val cells = for
+          row            <- rows
+          (sigma, scale) <- summary.scales.zipWithIndex
+          (status, reason) = this.status(row.status, scale)
+        yield
+          val (m, b, d) = row.status match
+            case QueryStatus.Contributing(m, b, d) =>
+              (m.lift(scale), b.lift(scale), d.lift(scale))
+            case _ => (None, None, None)
+          val absence = if status == "contributing" then "not-scored" else status
+          Vector(
+            T(row.query.participant),
+            T(row.query.phase.label),
+            T(row.query.trial),
+            I(row.query.occurrence.toLong),
+            T(row.item),
+            T(row.response.label),
+            row.matched.fold(M)(k => T(k.trial)),
+            row.controls.fold(M)(c => I(c.toLong)),
+            I(scale.toLong),
+            T(sigma),
+            T(status),
+            reason.fold(M)(T(_))
+          ) ++ scored(m, absence) ++ scored(b, absence) ++ scored(d, absence)
+        ResultTable
+          .of(ResultFamily.StudyContrasts, queryColumns, cells, context(source, summary.scales))
+          .left
+          .map(BundleTableError.Table("results", _))
+      }
 
   private def participantColumns(attribute: String): Vector[ResultColumn] =
     Vector(
       text("participant", "participant id"),
       text("group", s"reporting group ($attribute)"),
       count("n", "queries the participant's group mean averages")
-    ) ++ score("m", "participant mean of matched similarity") ++
-      score("b", "participant mean of control mean similarity") ++
-      score("d", "participant mean of D") ++ Vector(
+    ) ++ score("m", "participant mean of matched similarity", ParticipantAbsences) ++
+      score("b", "participant mean of control mean similarity", ParticipantAbsences) ++
+      score("d", "participant mean of D", ParticipantAbsences) ++ Vector(
         count("requested", "queries the participant was asked"),
         count("contributing", "queries with scores"),
         count("failed", "queries that failed"),
@@ -191,37 +216,51 @@ object BundleTables:
         count("not_admitted", "queries whose trial was not admitted")
       )
 
-  /** The scale the summary's participant and group means are at: the one
-    * scale at which every group's grand mean equals its D at that scale, or
-    * "undeclared" when none or several do (the summary does not declare it).
-    */
-  def meansScale(summary: ResultSummary): String =
-    summary.scales.indices.filter(i =>
-      summary.groups.nonEmpty && summary.groups.forall(g => g.dByScale.lift(i).contains(g.d))
-    ) match
-      case Seq(i) => summary.scales(i)
-      case _      => "undeclared"
-
   /** participants.csv: one row per participant and reporting group; a group
     * a participant has no queries in is a row with n 0 and missing means.
     */
   def participants(
       source: FigureSource,
-      summary: ResultSummary
+      summary: ResultSummary,
+      report: ReportView
   ): Either[BundleTableError, ResultTable] =
     val run = source.run.id
     if summary.run != run then Left(BundleTableError.OtherRun("participants", run, summary.run))
+    else if report.run != run then
+      Left(BundleTableError.OtherRun("participants", run, report.run))
+    else if report.reporting != source.reporting.id then
+      Left(
+        BundleTableError.OtherReporting("participants", source.reporting.id, report.reporting)
+      )
+    else if !summary.scales.indices.contains(report.scale) then
+      Left(BundleTableError.UnknownScale("participants", report.scale, summary.scales))
     else
-      val attribute = summary.groups.headOption.fold("all queries")(_.attribute)
-      val labels    = summary.groups.map(_.label)
+      val attribute = source.reporting.groupBy.fold("all queries")(_.label)
+      val labels    = report.cells.filter(_.role == ReportRole.Difference).map(_.group).distinct
       val cells     = for
         p     <- summary.participants
         group <- labels
       yield
-        val means = p.groups.find(_.label == group).filter(_.n > 0)
-        Vector(T(p.participant), T(group.label), I(means.fold(0L)(_.n.toLong))) ++
-          scored(means.map(_.m), "empty-group") ++ scored(means.map(_.b), "empty-group") ++
-          scored(means.map(_.d), "empty-group") ++
+        def value(role: ReportRole) = report.participant(group, role, p.participant)
+        def cell(role: ReportRole): Vector[ResultCell] =
+          val served = value(role)
+          val why    = served.flatMap(_.absence).fold("empty-group") {
+            case ReportAbsence.EmptyGroup         => "empty-group"
+            case ReportAbsence.BelowMinimum(_, _) => "below-minimum"
+            case ReportAbsence.Unpaired           => "unpaired"
+            case ReportAbsence.NotRecorded        => "not-recorded"
+            case ReportAbsence.Unparsed           => "unparsed"
+            case ReportAbsence.Failed(_, _)       => "failed"
+            case ReportAbsence.Undefined(_)       => "undefined"
+          }
+          scored(served.flatMap(_.value), why)
+        val means = value(ReportRole.Difference)
+        Vector(
+          T(p.participant),
+          T(group.fold("all queries")(_.label)),
+          I(means.fold(0L)(_.queries.toLong))
+        ) ++
+          cell(ReportRole.Matched) ++ cell(ReportRole.Control) ++ cell(ReportRole.Difference) ++
           Vector(
             I(p.requested.toLong),
             I(p.contributing.toLong),
@@ -236,7 +275,12 @@ object BundleTables:
           cells,
           context(source, summary.scales) match
             case TableJson.Obj(fields) =>
-              TableJson.Obj(fields :+ ("means_scale" -> TableJson.text(meansScale(summary))))
+              TableJson.Obj(
+                fields ++ Vector(
+                  "means_scale"       -> TableJson.text(summary.scales(report.scale)),
+                  "means_scale_index" -> TableJson.integer(report.scale.toLong)
+                )
+              )
             case other => other
         )
         .left

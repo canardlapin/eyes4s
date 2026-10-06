@@ -112,9 +112,10 @@ object ProtocolSamples:
   def remade(r: PreviewReady)(
       id: PreviewId = r.id,
       stamp: RunStamp = r.stamp,
-      counts: PreviewCounts = r.counts
+      counts: PreviewCounts = r.counts,
+      recipe: Option[eyes4s.studio.core.document.Recipe] = r.recipe
   ): PreviewReady =
-    right(PreviewReady.of(id, stamp, r.candidates, counts, r.diagnostics))
+    right(PreviewReady.of(id, stamp, r.candidates, counts, r.diagnostics, recipe))
 
   val address: ResultAddress = ResultAddress.PairRow(2, PairDesign.Control, query, matched)
 
@@ -194,6 +195,7 @@ object ProtocolSamples:
       right(ParticipantCount.of(3)),
       right(ParticipantCount.of(24))
     ),
+    BackendError.PreviewWorkNotReady(PreviewId(1L), PairDesign.Control, 219486L),
     BackendError.StalePreview(
       PreviewId(1L),
       previewReady.stamp,
@@ -205,6 +207,13 @@ object ProtocolSamples:
     ),
     BackendError.Unavailable(DiagnosticLocus.Dataset(DatasetRevision(2))),
     BackendError.NoResult(RunId(5), RunState.Stale),
+    BackendError.ResultPending(run, job),
+    BackendError.ResultDeferred(run, JobId(2)),
+    BackendError.ResultRecomputationCancelled(run, job),
+    BackendError.ResultRecomputationFailed(run, job, Vector(diagnostic)),
+    BackendError.ResultReadClosed(run, Some(job)),
+    BackendError
+      .RegistryRefused(DiagnosticLocus.Revision(AnalysisRevision(4)), "Saved recipe changed."),
     BackendError.UnknownReference(RunId(7), address),
     BackendError.AlreadyRunning(AnalysisRevision(5), job),
     BackendError.UnsupportedVersion(ProtocolVersion(2, 0), ProtocolVersion(1, 0)),
@@ -297,7 +306,10 @@ object ProtocolSamples:
     QueryStatus.Contributing(Vector(0.41), Vector(0.22), Vector(0.19)),
     QueryStatus.Failed(diagnostic),
     QueryStatus.NoMatch(diagnostic.copy(code = "study-finding.unmatched-focal")),
-    QueryStatus.NotAdmitted(TrialDisposition.Absent)
+    QueryStatus.NotAdmitted(TrialDisposition.Absent),
+    QueryStatus.FailedAtScales(
+      Vector(diagnostic, diagnostic.copy(message = "failed at the second scale"))
+    )
   )
 
   val admission: AdmissionSummary = AdmissionSummary(
@@ -324,24 +336,7 @@ object ProtocolSamples:
     35876L,
     457,
     QueryContrasts(480, 14, 9, 3, 454),
-    0.26,
-    Vector(0.26),
-    Vector(GroupSummary("response", Response.Remembered, 24, 0.3, Vector(0.3))),
-    24,
-    2,
-    17,
-    Vector(
-      ParticipantSummary(
-        "P17",
-        20,
-        19,
-        0,
-        0,
-        1,
-        ScoreMeans(0.73, 0.35, 0.38, Vector(0.38)),
-        Vector(GroupMeans(Response.Forgotten, 2, 0.64, 0.32, 0.32))
-      )
-    )
+    Vector(ParticipantCounts("P17", 20, 19, 0, 0, 1))
   )
 
   val inspections: Vector[Inspection] = Vector(
@@ -524,7 +519,13 @@ object ProtocolSamples:
         Some(response),
         Vector(ReportingFilter.OutsideWindowAtMost(Share.of(0.25).toOption.get)),
         Some(MinimumPerGroup.of(3).toOption.get),
-        ReportingWeight.ParticipantMeans
+        ReportingWeight.ParticipantMeans,
+        Some(
+          eyes4s.studio.core.document.ReportingContrast
+            .of("Remembered", "Forgotten")
+            .toOption
+            .get
+        )
       )
       .toOption
       .get
@@ -972,6 +973,7 @@ object ProtocolSamples:
         Vector[PreviewEvent](
           PreviewEvent.Initial(previewReady.id, previewReady.stamp, previewReady.candidates),
           PreviewEvent.Counting(previewReady.id, right(PreviewProgress.of(1, 24))),
+          PreviewEvent.CountingWork(previewReady.id, PairDesign.Matched, 24, 96L),
           PreviewEvent.Ready(previewReady)
         )
       )(prefix) ++

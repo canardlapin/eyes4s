@@ -163,7 +163,8 @@ final case class ResolvedDesign(
     filter: DesignFilter,
     cursor: Option[TrialKey],
     started: Boolean,
-    blocked: Option[SourceBlock]
+    blocked: Option[SourceBlock],
+    workProgress: Option[PreviewEvent.CountingWork] = None
 ) derives CanEqual:
 
   /** The rows the filter passes, in source order. */
@@ -188,8 +189,7 @@ object ResolvedDesign:
       blocked = None
     )
 
-  /** Participants counted per backend request: small enough that counting
-    * reads as progress, bounded by [[PreviewBudget.MaximumParticipants]].
+  /** Bounded cursor pages per backend request, bounded by [[PreviewBudget.MaximumPages]].
     */
   val ParticipantsPerPage: Int = 6
 
@@ -268,23 +268,19 @@ object ResolvedDesign:
                 DesignPreview.Preparing,
                 Vector(DesignEffect.StartPreview(generation, t.revision, budget))
               )
-          val read = PageRequest.first(RowsPerPage) match
-            case Left(e)     => (DesignRows.Failed(e.message), none)
-            case Right(page) =>
-              (DesignRows.Waiting, Vector(DesignEffect.ReadRows(generation, t.revision, page)))
           (
             ResolvedDesign(
               Some(t),
               generation,
               start._1,
               Vector.empty,
-              read._1,
+              DesignRows.Waiting,
               panel.filter,
               None,
               started = true,
               blocked = None
             ),
-            withdraw ++ start._2 ++ read._2
+            withdraw ++ start._2
           )
 
   /** The Elm-style update: pure; effects are data. */
@@ -353,7 +349,7 @@ object ResolvedDesign:
       event: PreviewEvent
   ): (ResolvedDesign, Vector[DesignEffect]) =
     def refuse(stamp: RunStamp): Option[String] =
-      panel.target.filter(_.stamp != stamp).map { t =>
+      panel.target.filter(t => !stamp.agreesWithDeclarations(t.stamp)).map { t =>
         s"the backend prepared ${stamp.label}, not ${t.stamp.label}"
       }
     event match
@@ -361,21 +357,58 @@ object ResolvedDesign:
         refuse(stamp) match
           case Some(reason) => (panel.copy(preview = DesignPreview.Refused(reason)), none)
           case None         =>
-            (panel.copy(preview = DesignPreview.Counting(id, stamp, candidates, None)), none)
+            (
+              panel.copy(
+                preview = DesignPreview.Counting(id, stamp, candidates, None),
+                workProgress = None
+              ),
+              none
+            )
       case PreviewEvent.Counting(id, progress) =>
         panel.preview match
           case c @ DesignPreview.Counting(current, _, _, _) if current == id =>
-            (panel.copy(preview = c.copy(progress = Some(progress))), none)
+            (panel.copy(preview = c.copy(progress = Some(progress)), workProgress = None), none)
+          case _ => (panel, none)
+      case progress: PreviewEvent.CountingWork =>
+        panel.preview match
+          case DesignPreview.Counting(current, _, _, _) if current == progress.id =>
+            (panel.copy(workProgress = Some(progress)), none)
           case _ => (panel, none)
       case PreviewEvent.Ready(ready) =>
-        refuse(ready.stamp) match
+        val recipeMismatch = panel.target
+          .filter { t =>
+            ready.recipe.exists(_ != t.recipe) ||
+            (ready.stamp != t.stamp && ready.recipe.isEmpty)
+          }
+          .map(_ => "the backend preview does not carry the current recipe snapshot")
+        val ownership = panel.preview match
+          case DesignPreview.Counting(id, initial, _, _)
+              if id == ready.id && initial == ready.stamp =>
+            None
+          case DesignPreview.Ready(previous) if previous == ready => None
+          case _ => Some("the ready receipt does not belong to the active counting preview")
+        refuse(ready.stamp).orElse(recipeMismatch).orElse(ownership) match
           case Some(reason) => (panel.copy(preview = DesignPreview.Refused(reason)), none)
-          case None         =>
+          case None if panel.preview.receipt.contains(ready) => (panel, none)
+          case None                                          =>
+            val (rowState, read) = PageRequest.first(RowsPerPage) match
+              case Left(error) => (DesignRows.Failed(error.message), none)
+              case Right(page) =>
+                (
+                  DesignRows.Waiting,
+                  panel.target.toVector.map(t =>
+                    DesignEffect.ReadRows(panel.generation, t.revision, page)
+                  )
+                )
             (
-              panel.copy(preview = DesignPreview.Ready(ready)),
+              panel.copy(
+                preview = DesignPreview.Ready(ready),
+                workProgress = None,
+                rowState = rowState
+              ),
               panel.target.toVector.map(t =>
                 DesignEffect.App(Intent.DesignPrepared(PreparedDesign(ready, t.recipe)))
-              )
+              ) ++ read
             )
 
   private def rowsRead(

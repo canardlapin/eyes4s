@@ -483,21 +483,10 @@ object FixationCsv:
         case SampleCountRule.PositiveColumn(column) =>
           integer(fields, column, positive = true).map(Left(_))
         case SampleCountRule.DerivedFromDuration(rate) => Right(Right(rate))
-      x <- finite(fields, spec.x)
-      y <- finite(fields, spec.y)
-      rule = policy.correctionFor(k, owner)
-      centre <- rule match
-        case Right(Some((_, correction))) =>
-          correction
-            .correct(frame, Pt[U](x, y))
-            .toRight(FixationRowError.Position(x, y, frame.id))
-        case _ => Right(Pt[U](x, y))
-      _ <- Either.cond(
-        rule.isLeft || frame.contains(centre) ||
-          policy.offScreen == OffScreenPolicy.ExcludeRecord,
-        (),
-        FixationRowError.Position(centre.x, centre.y, frame.id)
-      )
+      position <- FixationPositionStep.read(fields, spec.x, spec.y, k, frame, policy, owner)
+      _        <- position.checkAdmission(frame, policy.offScreen)
+      centre = position.corrected
+      rule   = position.rule
       onset    <- micros(fields(spec.onset), spec.onset, timeUnit, rounding)
       duration <- micros(fields(spec.duration), spec.duration, timeUnit, rounding)
       end = BigInt(onset) + BigInt(duration)
@@ -529,7 +518,7 @@ object FixationCsv:
       k,
       ordinal,
       fixation,
-      Option.when(!frame.contains(centre))(
+      Option.when(!position.insideFrame)(
         OutsideFrame(number, centre.x, centre.y, frame.id)
       ),
       rule.left.toOption,

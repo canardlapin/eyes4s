@@ -210,7 +210,7 @@ class CommandJournalSuite extends munit.ScalaCheckSuite:
     )
     assertEquals(
       CommandJournal.codec.map(c => (c.schema.name, c.schema.version)),
-      Right(("studio.journal", 2))
+      Right(("studio.journal", 3))
     )
   }
 

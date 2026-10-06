@@ -23,10 +23,11 @@ package eyes4s.studio.app.text
 enum ReportingTextId derives CanEqual:
   case Kind, NoSpec, Reuses, ReusesUnknown
   case GroupBy, NoGrouping, GroupOption, GroupValues
+  case ContrastTitle, ContrastMinuend, ContrastSubtrahend, ContrastApply, ContrastClear
   case FilterTitle, AllContributing, AllContributingUnknown, Outside, OutsideOff, OutsideOn
   case KeepFilter
   case Minimum, MinimumWouldDrop, MinimumDrops, MinimumNone, MinimumUnknown, Cell, CellGroup
-  case MinimumAfterEvaluation
+  case MinimumAfterEvaluation, MinimumOff
   case WeightTitle, WeightUnit, EqualParticipants, PooledQueries
   case EstimandTitle, EstimandDuration, EstimandCount, Confound
   case SavedTitle, SaveAs, SaveAsName, Save, Cancel, DefaultCopyName, BlankName
@@ -45,10 +46,15 @@ object ReportingText:
     case ReusesUnknown =>
       "Reuses {0}'s pair scores. Grouping, filtering and weighting never change a pair " +
         "score or a control set."
-    case GroupBy     => "Group by"
-    case NoGrouping  => "None"
-    case GroupOption => "{0}"
-    case GroupValues => "{0}"
+    case GroupBy            => "Group by"
+    case NoGrouping         => "None"
+    case GroupOption        => "{0}"
+    case GroupValues        => "{0}"
+    case ContrastTitle      => "Within-participant level contrast"
+    case ContrastMinuend    => "First level (minuend)"
+    case ContrastSubtrahend => "Subtract level (subtrahend)"
+    case ContrastApply      => "Apply contrast"
+    case ContrastClear      => "Clear contrast"
 
     case FilterTitle            => "Filter queries"
     case AllContributing        => "All contributing {0} queries ({1})"
@@ -65,7 +71,9 @@ object ReportingText:
     case MinimumNone            => "no participant has fewer than {0} queries in a group"
     case MinimumUnknown         => "no served summary of the run is grouped this way yet"
     case MinimumAfterEvaluation =>
-      "Cells dropped by the minimum appear after evaluation (the filters change n)"
+      "Cells dropped by the minimum appear after report evaluation"
+    case MinimumOff =>
+      "off · the report will name excluded participant-group cells when applied"
     case Cell      => "{0} n {1}"
     case CellGroup => "{0} {1}"
 

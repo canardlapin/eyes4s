@@ -16,7 +16,8 @@
 
 package eyes4s.studio.app.figures
 
-import eyes4s.studio.app.compare.SummaryAnswer
+import cats.syntax.all.*
+import eyes4s.studio.app.compare.{CompareSummary, SummaryAnswer}
 import eyes4s.studio.app.explore.DisplaySource
 import eyes4s.studio.app.layout.StudioLayouts
 import eyes4s.studio.app.nav.{Location, Place}
@@ -28,6 +29,7 @@ import eyes4s.studio.core.backend.{
   DatasetRevision,
   DensityGrid,
   RunId,
+  ReportView,
   TrialFixations,
   TrialKey
 }
@@ -116,6 +118,12 @@ enum ComposerIntent derives CanEqual:
   case Export
   case Exported(answer: Either[String, String])
   case SummaryRead(run: RunId, answer: SummaryAnswer)
+  case ReportRead(
+      run: RunId,
+      spec: ReportingSpec,
+      scale: ScaleIndex,
+      answer: Either[String, ReportView]
+  )
   case ReferencesRead(
       run: RunId,
       scale: ScaleIndex,
@@ -156,6 +164,7 @@ enum ComposerEffect derives CanEqual:
 
   /** The run's result summary (panels D and E). */
   case RequestSummary(run: RunId)
+  case RequestReport(run: RunId, spec: ReportingSpec, scale: ScaleIndex)
 
   /** A query's contrast, matched pair and control pairs (panel C). */
   case RequestReferences(run: RunId, scale: ScaleIndex, query: TrialKey)
@@ -181,6 +190,7 @@ enum ComposerEffect derives CanEqual:
 /** One read the composer asked for, so it is asked once. */
 enum ComposerRead derives CanEqual:
   case Summary(run: RunId)
+  case Report(run: RunId, spec: ReportingSpec, scale: ScaleIndex)
   case References(run: RunId, scale: ScaleIndex, query: TrialKey)
   case Displays(dataset: DatasetRevision)
   case Fixations(revision: AnalysisRevision, trial: TrialKey)
@@ -276,7 +286,8 @@ final case class FigureComposer private (
     methods: FigureMethods,
     bundle: Set[BundleItem],
     bundled: Option[String],
-    fixations: Map[(AnalysisRevision, TrialKey), Either[String, TrialFixations]]
+    fixations: Map[(AnalysisRevision, TrialKey), Either[String, TrialFixations]],
+    reports: Map[(RunId, ReportingSpec, ScaleIndex), Either[String, ReportView]] = Map.empty
 ) derives CanEqual:
   def appearanceOf(figure: FigureId): FigureAppearance =
     appearance.getOrElse(figure, FigureAppearance.default)
@@ -286,6 +297,27 @@ final case class FigureComposer private (
     if failed then copy(asked = asked - read) else this
 
 object FigureComposer:
+  /** Methods counts and participants.csv follow the first participant panel's declared scale,
+    * or the first estimation scale when the figure has no participant panel.
+    */
+  def reportingScale(source: FigureSource): Either[String, ScaleIndex] =
+    source.figure.panels.map(PanelTemplate.of).collectFirst {
+      case PanelTemplate.ParticipantD(sigma) => sigma
+    } match
+      case None        => Right(ScaleIndex.first)
+      case Some(sigma) =>
+        FigurePanels
+          .scaleIndex(source.bound.analysis.recipe.scales, sigma)
+          .toRight(ComposerText.notComputed(source.run.id, sigma))
+
+  private def reportingAnswer(
+      c: FigureComposer,
+      source: FigureSource
+  ): Option[Either[String, ReportView]] =
+    reportingScale(source) match
+      case Left(why)    => Some(Left(why))
+      case Right(scale) => c.reports.get((source.run.id, source.reporting, scale))
+
   val empty: FigureComposer = FigureComposer(
     FigureBinding.empty,
     PageWidth.TwoColumn,
@@ -350,6 +382,14 @@ object FigureComposer:
           ComposerRead.Summary(run) -> ComposerEffect.RequestSummary(run),
           ComposerRead.Methods(run) -> ComposerEffect.RequestMethods(run, s.bound.dataset.id)
         ) ++
+          (for
+            i     <- scales.values.indices.toVector
+            scale <- ScaleIndex.of(i).toOption.toVector
+            spec  <- (Vector(s.reporting) ++ CompareSummary
+              .overall(s.reporting)
+              .toVector).distinct
+          yield ComposerRead
+            .Report(run, spec, scale) -> ComposerEffect.RequestReport(run, spec, scale)) ++
           s.figure.panels.flatMap { p =>
             PanelTemplate.of(p) match
               case PanelTemplate.DensityMaps(sigma, query) =>
@@ -451,6 +491,20 @@ object FigureComposer:
             .retrying(ComposerRead.Summary(r), failed),
           none
         )
+      case ReportRead(r, spec, scale, a) =>
+        val checked = a.flatMap(view =>
+          Either.cond(
+            view.run == r && view.reporting == spec.id && view.scale == scale.value,
+            view,
+            s"The report for ${r.label}, ${spec.id.value}, scale ${scale.value} answered " +
+              s"${view.run.label}, ${view.reporting.value}, scale ${view.scale}."
+          )
+        )
+        (
+          c.copy(reports = c.reports.updated((r, spec, scale), checked))
+            .retrying(ComposerRead.Report(r, spec, scale), checked.isLeft),
+          none
+        )
       case ReferencesRead(r, s, q, a) =>
         asking(
           c.copy(references = c.references.updated((r, s, q), a))
@@ -481,6 +535,7 @@ object FigureComposer:
           c.methods,
           source,
           source.flatMap(s => c.summaries.get(s.run.id)),
+          source.flatMap(s => reportingAnswer(c, s)),
           i
         )
         val next = i match
@@ -527,7 +582,8 @@ object FigureComposer:
             FigureBundle.folder(page),
             bundle.rows.collect {
               case r if r.chosen && r.unavailable.isDefined => r.file -> r.unavailable.get
-            }
+            },
+            reportingScale(s).toOption
           )
         )).fold((c, none))(e => (c.copy(bundled = None), Vector(e)))
       case Export =>
@@ -656,7 +712,9 @@ object FigureComposer:
     }
     val methods = source
       .flatMap(_.toOption)
-      .map(s => FigureMethods.view(c.methods, s, c.summaries.get(s.run.id)))
+      .map(s =>
+        FigureMethods.view(c.methods, s, c.summaries.get(s.run.id), reportingAnswer(c, s))
+      )
     val bundle = for
       s <- source.flatMap(_.toOption)
       p <- page.flatMap(_.toOption)
@@ -666,6 +724,7 @@ object FigureComposer:
       p,
       c.format,
       c.summaries.get(s.run.id),
+      reportingAnswer(c, s),
       methods,
       c.appearanceOf(s.figure.id).includeImages,
       c.bundled
@@ -728,9 +787,25 @@ object FigureComposer:
   private def summaryOf(c: FigureComposer, run: RunId) =
     c.summaries.get(run) match
       case None                            => Left(PanelBody.Waiting(ComposerText.reading(run)))
-      case Some(SummaryAnswer.Answered(r)) => Right(r)
-      case Some(SummaryAnswer.Refused(e))  => Left(PanelBody.Unavailable(e.message))
+      case Some(SummaryAnswer.Answered(r)) =>
+        Either.cond(
+          r.run == run,
+          r,
+          PanelBody.Unavailable(s"The summary of ${run.label} answered ${r.run.label}.")
+        )
+      case Some(SummaryAnswer.Refused(e))     => Left(PanelBody.Unavailable(e.message))
       case Some(SummaryAnswer.Failed(reason)) => Left(PanelBody.Unavailable(reason))
+
+  private def reportOf(
+      c: FigureComposer,
+      run: RunId,
+      spec: ReportingSpec,
+      scale: ScaleIndex
+  ): Either[PanelBody, ReportView] =
+    c.reports.get((run, spec, scale)) match
+      case None              => Left(PanelBody.Waiting(ComposerText.reading(run)))
+      case Some(Left(why))   => Left(PanelBody.Unavailable(why))
+      case Some(Right(view)) => Right(view)
 
   /** A panel's body from its template and what the backend answered. */
   def body(c: FigureComposer, s: FigureSource, template: PanelTemplate): PanelBody =
@@ -741,19 +816,51 @@ object FigureComposer:
         FigurePanels.scaleIndex(scales, sigma) match
           case None    => PanelBody.Unavailable(ComposerText.notComputed(run, sigma))
           case Some(i) =>
-            summaryOf(c, run).fold(
+            (for
+              r     <- summaryOf(c, run)
+              view  <- reportOf(c, run, s.reporting, i)
+              label <- r.scales
+                .lift(i.value)
+                .toRight(
+                  PanelBody.Unavailable(s"The summary of ${run.label} has no scale ${i.value}.")
+                )
+            yield (label, view)).fold(
               identity,
-              r =>
+              (label, view) =>
                 FigurePanels
-                  .participantD(r, s.reporting.id, i, c.appearanceOf(s.figure.id).lines)
+                  .participantD(
+                    view,
+                    label,
+                    s.reporting.weighting,
+                    c.appearanceOf(s.figure.id).lines
+                  )
                   .fold(PanelBody.Unavailable(_), PanelBody.Plot(_))
             )
       case PanelTemplate.ScaleProfile =>
-        summaryOf(c, run).fold(
+        (for
+          r       <- summaryOf(c, run)
+          overall <- CompareSummary
+            .overall(s.reporting)
+            .toRight(PanelBody.Unavailable("The overall reporting spec could not be formed."))
+          grouped <- scales.values.indices.toVector.traverse(i =>
+            ScaleIndex
+              .of(i)
+              .left
+              .map(e => PanelBody.Unavailable(e.message): PanelBody)
+              .flatMap(reportOf(c, run, s.reporting, _))
+          )
+          whole <- scales.values.indices.toVector.traverse(i =>
+            ScaleIndex
+              .of(i)
+              .left
+              .map(e => PanelBody.Unavailable(e.message): PanelBody)
+              .flatMap(reportOf(c, run, overall, _))
+          )
+        yield (r, grouped, whole)).fold(
           identity,
-          r =>
+          (r, grouped, whole) =>
             FigurePanels
-              .scaleProfile(r, s.reporting.id, scales)
+              .scaleProfile(grouped, whole, scales, r.scales)
               .fold(PanelBody.Unavailable(_), PanelBody.Plot(_))
         )
       case PanelTemplate.DensityMaps(sigma, query) =>

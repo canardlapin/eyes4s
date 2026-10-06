@@ -28,8 +28,13 @@ class DiagnosticCatalogSuite extends munit.FunSuite:
   private val all = DiagnosticSamples.all
 
   /** Every issued code, one per line, pinned by count and portable digest. */
-  private val PinnedCount  = 740
-  private val PinnedDigest = "695f03cb86aa2b4c"
+  private val PinnedCount  = 742
+  private val PinnedDigest = "469d9a3c400f0e42"
+
+  private val TrialEstimateCodes = Set(
+    "study-failure.trial-cardinality",
+    "study-failure.prepared-plan"
+  )
 
   /** The issued table before CR5: codes are only ever issued, never changed
     * or reused, and a retired code keeps its place, so taking away the codes
@@ -209,7 +214,7 @@ class DiagnosticCatalogSuite extends munit.FunSuite:
         Cr5Codes(code) || Cr2Codes(code) || Cr4Codes(code) || SourceCodes(code) || UiECodes(
           code
         ) || UiGCodes(code) || UiDCodes(code) || Cr6Codes(code) || Cr6bCodes(code) ||
-          ActiveSetCodes(code) || Cr6dCodes(code) || S07bCodes(code)
+          ActiveSetCodes(code) || Cr6dCodes(code) || S07bCodes(code) || TrialEstimateCodes(code)
       )
     assertEquals(stable.size, StableCount)
     assertEquals(ContentHash.ofString(stable.mkString("\n")).render, StableDigest)
@@ -221,7 +226,7 @@ class DiagnosticCatalogSuite extends munit.FunSuite:
     )
     assertEquals(
       DiagnosticCatalog.studyFailure.codes.map(_.render).last,
-      "study-failure.initial-fixations"
+      "study-failure.prepared-plan"
     )
     assertEquals(
       DiagnosticFamily.slug("SynchronizationTargetIsSource"),

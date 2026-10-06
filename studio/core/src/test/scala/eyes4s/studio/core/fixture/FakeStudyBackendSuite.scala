@@ -250,7 +250,10 @@ class FakeStudyBackendSuite extends CatsEffectSuite:
           val k   = key(id, get[String](c, "trial"))
           val row = byKey(k)
           assertEquals(row.item, get[String](c, "item"))
-          assertEquals(row.matched, key(id, get[String](c, "match")))
+          val expectedMatch = row.status match
+            case QueryStatus.NoMatch(_) | QueryStatus.NotAdmitted(_) => None
+            case _ => Some(key(id, get[String](c, "match")))
+          assertEquals(row.matched, expectedMatch)
           assertEquals(row.response.label, get[String](c, "response"))
           assertEquals(row.controls, get[Option[Int]](c, "controls"))
           def reason = get[String](c, "reason")
@@ -266,7 +269,7 @@ class FakeStudyBackendSuite extends CatsEffectSuite:
                 .traverse_ { s =>
                   val contrast = ResultAddress.ContrastRow(s, k)
                   val control  = ResultAddress.Reduction(s, PairDesign.Control, k)
-                  val matched  = ResultAddress.PairRow(s, PairDesign.Matched, k, row.matched)
+                  val matched = ResultAddress.PairRow(s, PairDesign.Matched, k, row.matched.get)
                   (
                     ok(fake.inspect(run7, contrast)),
                     ok(fake.inspect(run7, control)),
@@ -299,62 +302,46 @@ class FakeStudyBackendSuite extends CatsEffectSuite:
       assertEquals(rows.size, 480)
   }
 
-  test("participant summaries and grand means are fixture.json's, grouped by response") {
+  test("the result summary carries only fixture query accounting and run facts") {
     val s = raw.hcursor.downField("summary")
     for
       fake   <- FakeStudyBackend.create[IO](StoryMoment.T2)
       result <- ok(fake.result(run7))
     yield
-      assertEquals(result.grandD, get[Double](s, "grand_D_all"))
-      assertEquals(result.grandDByScale, get[Vector[Double]](s, "grand_D_by_scale"))
       assertEquals(result.scales, get[Vector[String]](s, "scales"))
       assertEquals((result.pairRowsPerScale, result.pairRows), (8969L, 35876L))
-      assertEquals(
-        result.groups,
-        Vector("Remembered", "Forgotten").map(l =>
-          GroupSummary(
-            "response",
-            Response(l),
-            get[Int](s, s"n_$l"),
-            get[Double](s, s"grand_D_$l"),
-            get[Vector[Double]](s, s"grand_D_by_scale_$l")
-          )
-        )
-      )
-      assertEquals((result.pairedN, result.groupNMinimum, result.groupNMaximum), (24, 2, 17))
-      val raws = get[Vector[Json]](s, "participants")
-      assertEquals(result.participants.size, raws.size)
-      result.participants.zip(raws).foreach { (p, j) =>
-        val c                   = j.hcursor
-        val all                 = c.downField("all")
-        def group(name: String) =
-          val g = c.downField(name)
-          GroupMeans(
-            Response(name),
-            get[Int](g, "n"),
-            get[Double](g, "M"),
-            get[Double](g, "B"),
-            get[Double](g, "D")
-          )
+      val participants = get[Vector[Json]](s, "participants")
+      assertEquals(result.participants.size, participants.size)
+      result.participants.zip(participants).foreach { (p, json) =>
+        val c = json.hcursor
         assertEquals(
           p,
-          ParticipantSummary(
+          ParticipantCounts(
             get[String](c, "id"),
             get[Int](c, "requested"),
             get[Int](c, "contributing"),
             get[Int](c, "failed"),
             get[Int](c, "no_match"),
-            get[Int](c, "not_admitted"),
-            ScoreMeans(
-              get[Double](all, "M"),
-              get[Double](all, "B"),
-              get[Double](all, "D"),
-              get[Vector[Double]](all, "D_by_scale")
-            ),
-            Vector(group("Remembered"), group("Forgotten"))
+            get[Int](c, "not_admitted")
           )
         )
       }
+      val encoded = io.circe.Encoder[ResultSummary].apply(result).asObject.get
+      assertEquals(
+        encoded.keys.toSet,
+        Set(
+          "run",
+          "revision",
+          "dataset",
+          "scales",
+          "pairRowsPerScale",
+          "pairRows",
+          "eligibleQueries",
+          "contrasts",
+          "participants"
+        )
+      )
+      assert(result.participants.map(_.participant).distinct.size == result.participants.size)
   }
 
   test("the focus query: P17 ret_07 · beach-042 against enc_03 and 19 controls at 2°") {
@@ -376,7 +363,7 @@ class FakeStudyBackendSuite extends CatsEffectSuite:
     yield
       assertEquals(
         (row.item, row.response, row.matched),
-        ("beach-042", Response.Remembered, matched)
+        ("beach-042", Response.Remembered, Some(matched))
       )
       assertEquals(row.controls, Some(19))
       assertEquals(
@@ -490,7 +477,6 @@ class FakeStudyBackendSuite extends CatsEffectSuite:
       assertEquals(status.run, RunId(6))
       assertEquals(before, Left(BackendError.NoResult(RunId(6), RunState.Running(status.job))))
       assertEquals((after.run, after.revision, after.dataset), (RunId(6), rev4, r3))
-      assertEquals(after.grandD, 0.26)
       assertEquals(after.pairRows, 35876L)
   }
 

@@ -122,6 +122,25 @@ class ArchiveWireSuite extends munit.FunSuite:
     )
   }
 
+  test("single-trial estimate refusals round-trip with the requested key and operands") {
+    val keys     = StudyCodecs.key(DefinitionId.studyKey)
+    val key      = DiagnosticSamples.k1
+    val failures = Vector(
+      StudyFailure.TrialCardinality(key, 0),
+      StudyFailure.TrialCardinality(key, 2),
+      StudyFailure.PreparedPlan(
+        key,
+        PlanError.ChangedPreparedPlan(DefinitionId.cosine, DefinitionId.studyLayout)
+      )
+    )
+    failures.foreach { failure =>
+      assertEquals(
+        ResultWire.studyFailure(keys)(failure).flatMap(ResultWire.readStudyFailure(keys)),
+        Right(failure)
+      )
+    }
+  }
+
   test("regions of every kind round-trip") {
     val rect    = get(Region.rect[Deg](Pt(-1.5, -2.0), Pt(3.0, 4.25)))
     val ellipse = get(Region.ellipse[Deg](Pt(0.5, 0.5), 2.0, 1.0))

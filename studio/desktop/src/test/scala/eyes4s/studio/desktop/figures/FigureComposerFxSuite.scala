@@ -85,16 +85,24 @@ class FigureComposerFxSuite extends ShellFxSuite:
         runOnFx(w.figures.plot(figure1, letter("D")).flatMap(_.plot)).getOrElse(fail("no plot"))
       val marks        = plot.marks.map(_.ref)
       val participants = marks.collect {
-        case StudioRef.ParticipantSummary(_, _, _, Some(g), p) => (g.label, p)
+        case StudioRef.ReportParticipant(
+              _,
+              _,
+              _,
+              eyes4s.studio.core.selection.ReportGroup.Level(g),
+              eyes4s.studio.core.backend.ReportRole.Difference,
+              p
+            ) =>
+          (g.label, p)
       }
       assertEquals(
         participants.groupMap(_._1)(_._2).view.mapValues(_.distinct.size).toMap,
         Map("Remembered" -> 24, "Forgotten" -> 24)
       )
-      assertEquals(marks.count(_.isInstanceOf[StudioRef.GroupCell]), 2)
+      assertEquals(marks.count(_.isInstanceOf[StudioRef.ReportCell]), 2)
       val said = texts(panelNode(w, "D"))
       Vector(
-        "n = 24 each · paired n = 24",
+        "n = 24 each",
         "Each pair of dots is one participant; per participant, 2–17 queries per group. " +
           "Descriptive only: no intervals or tests."
       ).foreach(t => assert(said.contains(t), s"'$t' not in panel D: $said"))

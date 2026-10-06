@@ -44,7 +44,8 @@ final class RealResults private (
     origin: RealStudyBackend.RunOrigin,
     inspection: StudyInspection[CoreKey, Unit2D.Px, Similarity, SignedDifference],
     keys: Map[TrialKey, CoreKey],
-    windowTallies: Map[CoreKey, eyes4s.plan.WindowTally]
+    windowTallies: Map[CoreKey, eyes4s.plan.WindowTally],
+    prepared: RealPrepared
 ):
   import RealResults.*
 
@@ -52,6 +53,170 @@ final class RealResults private (
       index: Int
   ): Either[BackendError, ScaleInspection[CoreKey, Unit2D.Px, Similarity, SignedDifference]] =
     inspection.scales.lift(index).toRight(BackendError.UnknownScale(run, index, scales))
+
+  private def queryRefusal(trial: TrialKey, reason: String): BackendError =
+    BackendError.Unavailable(
+      DiagnosticLocus.Artifact(s"${run.label} query ${trial.label}: $reason")
+    )
+
+  /** Inventory order, with missing and unadmitted queries retained as rows.
+    * References and control cardinality come from native inspected pair rows;
+    * scores are the native contrast and its retained reduction operands.
+    */
+  private[real] lazy val queryRows: Either[BackendError, Vector[QueryRow]] =
+    for
+      inventory <- prepared.admitted.evidence.inventory.toRight(
+        BackendError.Unavailable(DiagnosticLocus.Field(s"${run.label} trial inventory"))
+      )
+      reasons = eyes4s.plan.UnmatchedReasons.of(
+        prepared.plan.layout,
+        prepared.plan.pairing,
+        prepared.plan.referencePhase,
+        prepared.counts.cardinality.unmatched,
+        inventory
+      )
+      rows <- prepared.admitted.ledger
+        .filter(_.trial.phase == prepared.recipe.phases.focal)
+        .traverse { entry =>
+          val trial = entry.trial
+          for
+            response <- entry.response.toRight(
+              queryRefusal(trial, "the inventory declares no response")
+            )
+            row <- entry.disposition match
+              case TrialDisposition.Admitted =>
+                for
+                  core <- keys.get(trial).toRight(queryRefusal(trial, "no admitted key"))
+                  row  <- reasons.reason(core) match
+                    case Some(reason) =>
+                      val d = diagnostic(
+                        eyes4s.plan.Diagnostic.of(
+                          eyes4s.plan.StudyFinding
+                            .UnmatchedFocal[CoreKey, Unit2D.Px](core, reason)
+                        )
+                      )
+                      Right(
+                        QueryRow(
+                          trial,
+                          entry.item,
+                          response,
+                          None,
+                          None,
+                          QueryStatus.NoMatch(d)
+                        )
+                      )
+                    case None =>
+                      for
+                        first <- scale(0)
+                        matched = first
+                          .pairsOfQuery(StudyDesign.Matched, core)
+                          .collect { case ResultRef.PairRow(_, _, _, reference) =>
+                            key(reference)
+                          }
+                          .distinct
+                        reference <- matched match
+                          case Vector(reference) => Right(reference)
+                          case refs              =>
+                            Left(
+                              queryRefusal(
+                                trial,
+                                s"the query trail needs one matched reference, but the native result has ${refs.size}"
+                              )
+                            )
+                        outcomes <- inspection.scales
+                          .traverse(s => inspect(ResultAddress.ContrastRow(s.index, trial)))
+                        successes = outcomes.collect { case Inspection.Contrast(_, m, b, d) =>
+                          (m, b, d)
+                        }
+                        failures = outcomes.collect {
+                          case Inspection.Unscored(_, QueryStatus.Failed(d)) => d
+                        }
+                        status <-
+                          if successes.size == outcomes.size then
+                            Right(
+                              QueryStatus.Contributing(
+                                successes.map(_._1),
+                                successes.map(_._2),
+                                successes.map(_._3)
+                              )
+                            )
+                          else if failures.nonEmpty && failures.size == outcomes.size then
+                            Right(QueryStatus.FailedAtScales(failures))
+                          else
+                            Left(
+                              queryRefusal(
+                                trial,
+                                "the current query-row protocol cannot represent different scored/failed states by scale; inspect each scale separately"
+                              )
+                            )
+                        controls = first
+                          .reductions(StudyDesign.Control)
+                          .get(ResultRef.Reduction(0, StudyDesign.Control, core))
+                          .map(_.selected)
+                      yield QueryRow(
+                        trial,
+                        entry.item,
+                        response,
+                        Some(reference),
+                        controls,
+                        status
+                      )
+                yield row
+              case disposition =>
+                Right(
+                  QueryRow(
+                    trial,
+                    entry.item,
+                    response,
+                    None,
+                    None,
+                    QueryStatus.NotAdmitted(disposition)
+                  )
+                )
+          yield row
+        }
+    yield rows
+
+  def queries(page: PageRequest): Either[BackendError, QueryPage] =
+    queryRows.map { all =>
+      val rows = all.slice(page.offset, page.offset + page.size)
+      QueryPage(run, PageInfo.of(page, all.size, rows.size), rows)
+    }
+
+  /** Counts of the native query listing, with no reporting or scale-bound means. */
+  def summary: Either[BackendError, ResultSummary] = queryRows.map { rows =>
+    def counts(source: Vector[QueryRow]): QueryContrasts =
+      QueryContrasts(
+        source.size,
+        source.count(_.status.isInstanceOf[QueryStatus.NotAdmitted]),
+        source.count(_.status.isInstanceOf[QueryStatus.NoMatch]),
+        source.count(_.status.isFailed),
+        source.count(_.status.isInstanceOf[QueryStatus.Contributing])
+      )
+    val participants =
+      rows.groupBy(_.query.participant).toVector.sortBy(_._1).map { (participant, entries) =>
+        val c = counts(entries)
+        ParticipantCounts(
+          participant,
+          c.requested,
+          c.contributing,
+          c.failed,
+          c.noMatch,
+          c.queryNotAdmitted
+        )
+      }
+    ResultSummary(
+      run,
+      revision,
+      dataset,
+      scales,
+      prepared.counts.pairRowsPerScale,
+      prepared.counts.totalPairs,
+      prepared.counts.eligibleQueries.toInt,
+      counts(rows),
+      participants
+    )
+  }
 
   /** Every pair row at `index`, query by query in focal order, each query's
     * matched pairs before its controls (protocol 1.9).
@@ -139,6 +304,52 @@ final class RealResults private (
 
   /** The item an address names, as eyes4s holds it. */
   def inspect(address: ResultAddress): Either[BackendError, Inspection] =
+    scale(address.scale).flatMap { _ =>
+      address match
+        case ResultAddress.ContrastRow(_, trial) =>
+          unscoredQuery(trial).flatMap {
+            case Some(status) => Right(Inspection.Unscored(address, status))
+            case None         => inspectNative(address)
+          }
+        case _ => inspectNative(address)
+    }
+
+  /** Inventory admission and native pairing refusals remain inspectable even
+    * when no admitted contrast row exists. This does not read queryRows,
+    * whose lazy construction itself calls inspect for scored/failed scales.
+    */
+  private def unscoredQuery(trial: TrialKey): Either[BackendError, Option[QueryStatus]] =
+    prepared.admitted.ledger.find(_.trial == trial) match
+      case Some(entry) if entry.disposition != TrialDisposition.Admitted =>
+        Right(Some(QueryStatus.NotAdmitted(entry.disposition)))
+      case _ =>
+        keys.get(trial) match
+          case Some(key) if prepared.counts.cardinality.unmatched.contains(key) =>
+            for
+              inventory <- prepared.admitted.evidence.inventory
+                .toRight(queryRefusal(trial, "no retained inventory"))
+              reason <- eyes4s.plan.UnmatchedReasons
+                .of(
+                  prepared.plan.layout,
+                  prepared.plan.pairing,
+                  prepared.plan.referencePhase,
+                  prepared.counts.cardinality.unmatched,
+                  inventory
+                )
+                .reason(key)
+                .toRight(queryRefusal(trial, "no retained unmatched reason"))
+            yield Some(
+              QueryStatus.NoMatch(
+                diagnostic(
+                  eyes4s.plan.Diagnostic.of(
+                    eyes4s.plan.StudyFinding.UnmatchedFocal[CoreKey, Unit2D.Px](key, reason)
+                  )
+                )
+              )
+            )
+          case _ => Right(None)
+
+  private def inspectNative(address: ResultAddress): Either[BackendError, Inspection] =
     def unknown           = BackendError.UnknownReference(run, address)
     def core(k: TrialKey) = keys.get(k).toRight(unknown)
     scale(address.scale).flatMap { s =>
@@ -323,5 +534,6 @@ object RealResults:
       held.origin,
       inspection,
       p.admitted.input.trials.rows.map(r => key(r.key) -> r.key).toMap,
-      tallies.toMap
+      tallies.toMap,
+      p
     )

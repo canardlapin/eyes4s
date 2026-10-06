@@ -109,10 +109,10 @@ final class DesktopEffects(
         case Right(Left(error)) =>
           ui { () =>
             report(EffectProblem.Refused(e, error))
-            // A refused prepared design falls back to a plain submission.
+            // Preserve the exact document run that this refused request named.
             e match
-              case ExecutionEffect.SubmitPreview(ready) =>
-                dispatch(Intent.PreparedRefused(ready, error))
+              case ExecutionEffect.SubmitPreview(ready, requestedRun) =>
+                dispatch(Intent.PreparedRefused(ready, error, requestedRun))
               case _ => ()
           }
         case Left(failure) =>

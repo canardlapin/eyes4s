@@ -17,8 +17,9 @@
 package eyes4s.studio.app.plot
 
 import cats.syntax.all.*
+
 import eyes4s.studio.app.text.{ParticipantText, ParticipantTextId}
-import eyes4s.studio.core.backend.{ReportRole, ReportView, ResultSummary, Response, RunId}
+import eyes4s.studio.core.backend.{ReportAbsence, ReportRole, ReportView, Response, RunId}
 import eyes4s.studio.core.document.ReportingId
 import eyes4s.studio.core.selection.{ScaleIndex, StudioRef}
 
@@ -41,10 +42,10 @@ enum ParticipantMeansError derives CanEqual:
     */
   case UnknownGroup(run: RunId, participant: String, group: Response, groups: Vector[Response])
 
-  /** The summary's grand mean `d` of `group` is not its grand mean `atScale`
-    * at `scale`: the summary's means are at another scale.
+  /** This plot requires a finite group tick; absent report cells stay
+    * visible in the report/table and are refused here rather than omitted.
     */
-  case OtherScale(run: RunId, group: Response, scale: ScaleIndex, d: Double, atScale: Double)
+  case UnscoredGroup(run: RunId, group: Response, absence: Option[ReportAbsence])
 
   def message: String = this match
     case Scale(r, s, scales) =>
@@ -53,12 +54,11 @@ enum ParticipantMeansError derives CanEqual:
       s"Participant means of run ${r.number}: group ${g.label} is listed twice."
     case DuplicateParticipant(r, p) =>
       s"Participant means of run ${r.number}: participant $p is listed twice."
+    case UnscoredGroup(r, g, absence) =>
+      s"Participant plot of ${r.label}: group ${g.label} has no estimate ($absence)."
     case UnknownGroup(r, p, g, gs) =>
       s"Participant means of run ${r.number}: $p has means in ${g.label}, which is not " +
         s"once among the groups ${gs.map(_.label).mkString(", ")}."
-    case OtherScale(r, g, s, d, at) =>
-      s"Participant means of run ${r.number}: the grand mean of ${g.label} is $d, but $at " +
-        s"at scale ${s.value}."
 
 /** One participant's mean D in one group, as the summary serves it: `d` is
   * missing when the participant has no queries in the group (the backend
@@ -115,115 +115,50 @@ object ParticipantMeans:
       report: ReportView,
       scaleLabel: String
   ): Either[ParticipantMeansError, ParticipantMeans] =
-    val groups = report.cells.filter(c => c.role == ReportRole.Difference && c.group.nonEmpty)
-    val labels = groups.flatMap(_.group)
-    labels
-      .diff(labels.distinct)
+    val groups = report.cells.filter(_.role == ReportRole.Difference)
+    def display(group: Option[Response]): Response =
+      group.getOrElse(Response(ParticipantText(ParticipantTextId.AllQueries)))
+    val labels       = groups.map(c => display(c.group))
+    val participants = report.participants.filter(_.role == ReportRole.Difference)
+    val repeated     = participants
+      .map(p => (p.group, p.participant))
+      .diff(participants.map(p => (p.group, p.participant)).distinct)
       .headOption
-      .map(ParticipantMeansError.DuplicateGroup(report.run, _))
-      .toLeft(())
-      .flatMap { _ =>
-        val ids = report.participants
-          .filter(_.role == ReportRole.Difference)
-          .map(_.participant)
-          .distinct
-        ids
-          .diff(ids.distinct)
-          .headOption
-          .map(ParticipantMeansError.DuplicateParticipant(report.run, _))
-          .toLeft(())
-          .flatMap { _ =>
-            val means = groups.flatMap { c =>
-              for
-                group    <- c.group
-                estimate <- c.estimate
-              yield GroupGrandMean(c.ref, group, estimate, c.participants)
-            }
-            val cells = report.participants.collect {
-              case p if p.role == ReportRole.Difference && p.group.nonEmpty =>
-                ParticipantCell(p.ref, p.group.get, p.participant, p.value, Some(p.queries))
-            }
-            ScaleIndex
-              .of(report.scale)
-              .left
-              .map(_ => ParticipantMeansError.Scale(report.run, ScaleIndex.first, Vector.empty))
-              .map(ParticipantMeans(report.run, report.reporting, _, scaleLabel, means, cells))
-          }
-      }
-
-  /** The participant means of `summary` under `reporting`, at `scale`, the
-    * scale the summary's means are at. Groups are in the summary's order and
-    * so are participants; every participant has a cell in every group.
-    * Nothing is computed here.
-    *
-    * `ResultSummary` does not yet declare which scale its participant and
-    * group means are at (a participant's group means have no by-scale
-    * values). Until it does, the scale is checked by a temporary heuristic:
-    * every group's served grand mean must be exactly its served grand mean
-    * at `scale`, the same number served twice, so no tolerance applies
-    * ([[ParticipantMeansError.OtherScale]]). The check cannot tell apart two
-    * scales at which a group's means are equal, and refuses the right scale
-    * if a backend serves the two numbers from different summations; it is
-    * to be replaced by the summary's declared means scale.
-    */
-  def of(
-      summary: ResultSummary,
-      reporting: ReportingId,
-      scale: ScaleIndex
-  ): Either[ParticipantMeansError, ParticipantMeans] =
-    val run    = summary.run
-    val labels = summary.groups.map(_.label)
+    val unknown = participants.find(p => !groups.exists(_.group == p.group))
     for
-      scaleLabel <- summary.scales
-        .lift(scale.value)
-        .toRight(ParticipantMeansError.Scale(run, scale, summary.scales))
       _ <- labels
         .diff(labels.distinct)
         .headOption
-        .map(ParticipantMeansError.DuplicateGroup(run, _))
+        .map(ParticipantMeansError.DuplicateGroup(report.run, _))
         .toLeft(())
-      ids = summary.participants.map(_.participant)
-      _ <- ids
-        .diff(ids.distinct)
-        .headOption
-        .map(ParticipantMeansError.DuplicateParticipant(run, _))
+      _ <- repeated
+        .map((_, p) => ParticipantMeansError.DuplicateParticipant(report.run, p))
         .toLeft(())
-      _ <- summary.participants
-        .flatMap(p => p.groups.map(_.label).diff(labels).map(p.participant -> _))
-        .headOption
-        .map((p, g) => ParticipantMeansError.UnknownGroup(run, p, g, labels))
+      _ <- unknown
+        .map(p =>
+          ParticipantMeansError
+            .UnknownGroup(report.run, p.participant, display(p.group), labels)
+        )
         .toLeft(())
-      groups <- summary.groups.traverse { g =>
-        g.dByScale
-          .lift(scale.value)
-          .toRight(ParticipantMeansError.Scale(run, scale, summary.scales))
-          .flatMap { at =>
-            Either.cond(
-              at == g.d,
-              GroupGrandMean(
-                StudioRef.GroupCell(run, reporting, scale, g.label),
-                g.label,
-                g.d,
-                g.n
-              ),
-              ParticipantMeansError.OtherScale(run, g.label, scale, g.d, at)
-            )
-          }
-      }
-    yield
-      val cells = labels.flatMap { label =>
-        summary.participants.map { p =>
-          val means = p.groups.find(_.label == label)
-          ParticipantCell(
-            StudioRef.ParticipantSummary(run, reporting, scale, Some(label), p.participant),
-            label,
-            p.participant,
-            means.filter(_.n > 0).map(_.d),
-            means.map(_.n)
-          )
-        }
-      }
-      ParticipantMeans(run, reporting, scale, scaleLabel, groups, cells)
+      scale <- ScaleIndex
+        .of(report.scale)
+        .left
+        .map(_ => ParticipantMeansError.Scale(report.run, ScaleIndex.first, Vector.empty))
+      means <- groups.traverse(c =>
+        c.estimate
+          .toRight(ParticipantMeansError.UnscoredGroup(report.run, display(c.group), c.absence))
+          .map(d => GroupGrandMean(c.ref, display(c.group), d, c.participants))
+      )
+    yield ParticipantMeans(
+      report.run,
+      report.reporting,
+      scale,
+      scaleLabel,
+      means,
+      participants.map(p =>
+        ParticipantCell(p.ref, display(p.group), p.participant, p.value, Some(p.queries))
+      )
+    )
 
   /** The means as a value source: for each group, in order, every
     * participant's mean and then the group's grand mean, each a row with its

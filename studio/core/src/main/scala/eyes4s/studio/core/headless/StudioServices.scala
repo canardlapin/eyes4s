@@ -23,7 +23,8 @@ import eyes4s.studio.core.navigation.StudyNavigator
 /** What a headless shell asks of studio's services when it performs the
   * app's effects (ticket S3.6), in studio-core's own terms: studio-app's
   * driver maps each `AppEffect` onto these, and names no effect library.
-  * [[HeadlessSession]] implements it over `FakeStudyBackend`.
+  * [[HeadlessSession]] supplies fixtures; [[NativeHeadlessSession]] supplies
+  * the resource-backed native backend and navigator.
   */
 trait StudioServices[F[_]]:
 

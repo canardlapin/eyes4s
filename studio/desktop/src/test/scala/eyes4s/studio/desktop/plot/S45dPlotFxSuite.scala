@@ -79,13 +79,29 @@ class S45dPlotFxSuite extends StudioFxSuite:
     val scales = right(
       doc.run(run).flatMap(r => doc.analysis(r.analysis)).map(_.recipe.scales).toRight("no run")
     )
-    FakeStudyBackend
-      .create[IO](StoryMoment.T2)
-      .flatMap(_.result(run))
+    val groupedSpec = right(StoryMoments.byResponse)
+    val overallSpec = right(
+      eyes4s.studio.core.document.ReportingSpec.of(
+        right(ReportingId.of(reporting.value + "-overall")),
+        "Overall",
+        None,
+        Vector.empty,
+        None,
+        eyes4s.studio.core.document.ReportingWeight.ParticipantMeans
+      )
+    )
+    import cats.syntax.all.*
+    (for
+      backend <- FakeStudyBackend.create[IO](StoryMoment.T2)
+      summary <- backend.result(run).map(right)
+      grouped <- summary.scales.indices.toVector.traverse(i =>
+        backend.report(run, groupedSpec, i).map(right)
+      )
+      overall <- summary.scales.indices.toVector.traverse(i =>
+        backend.report(run, overallSpec, i).map(right)
+      )
+    yield ScaleProfile.of(grouped, overall, scales, summary.scales).left.map(_.message))
       .unsafeRunSync()
-      .left
-      .map(_.message)
-      .flatMap(ScaleProfile.of(_, reporting, scales).left.map(_.message))
       .fold(e => fail(e), identity)
 
   // fixture.json's summary, read without the backend.

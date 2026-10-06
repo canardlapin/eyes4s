@@ -235,7 +235,7 @@ class GoldenJourneyFxSuite extends GoldenWindow:
       // The fake learns a draft's revision from a fake control until S3.7
       // binds plans (as Save & run declares it in the headless journey).
       w.session
-        .await(w.session.backend.declare(StoryMoments.rev4, r3))
+        .await(w.session.fixture.get.declare(StoryMoments.rev4, r3))
         .fold(e => fail(e.toString), identity)
       choose(fx, w, CommandRegistry.reviewDraft.id)
       assertEquals(model(w).perspective, Perspective.Analysis)
@@ -244,7 +244,7 @@ class GoldenJourneyFxSuite extends GoldenWindow:
       runOnFx(w.preflight.pressRun())
       eventually(fx, "run 6's job")(w.runtime.model.jobs.jobs.exists(_.run == run6))
       val job = model(w).jobs.jobs.find(_.run == run6).get.id
-      w.session.await(w.session.backend.complete(job)).fold(e => fail(e.toString), identity)
+      w.session.await(w.session.fixture.get.complete(job)).fold(e => fail(e.toString), identity)
       eventually(fx, "run 6 ready")(w.runtime.model.jobs.ready.exists(_.run == run6))
       choose(fx, w, CommandRegistry.showRun.id)
       eventually(fx, "run 6 shown")(
@@ -296,7 +296,7 @@ class GoldenJourneyFxSuite extends GoldenWindow:
       )
       assertEquals(model(w).document.draft.map(_.id), Some(StoryMoments.rev5))
       w.session
-        .await(w.session.backend.declare(StoryMoments.rev5, r3))
+        .await(w.session.fixture.get.declare(StoryMoments.rev5, r3))
         .fold(e => fail(e.toString), identity)
       choose(fx, w, CommandRegistry.reviewDraft.id)
       eventually(fx, "rev 5's pair rows")(

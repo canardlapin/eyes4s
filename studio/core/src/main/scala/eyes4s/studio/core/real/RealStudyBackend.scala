@@ -17,7 +17,7 @@
 package eyes4s.studio.core.real
 
 import cats.effect.kernel.{Concurrent, Deferred, Ref, Resource}
-import cats.effect.std.Supervisor
+import cats.effect.std.{Mutex, Supervisor}
 import cats.kernel.Eq
 import cats.syntax.all.*
 import eyes4s.codec.{ByteDigest, CanonicalDigest}
@@ -26,7 +26,6 @@ import eyes4s.studio.core.assets.AssetRegistry
 import eyes4s.studio.core.backend.*
 import eyes4s.studio.core.document.{
   DatasetRevisionSpec,
-  Recipe,
   CoreBinding,
   RunLifecycle,
   RunRef,
@@ -53,12 +52,10 @@ trait DatasetSources[F[_]]:
 
 /** The [[StudyBackend]] over eyes4s (ticket S3.7, docs/studio/plan/S3.7-slices.md).
   *
-  * Slice 1 serves admission and the admission ledger: every count is
-  * eyes4s's ([[RealAdmission]]). Every other operation answers a typed
-  * refusal until its slice lands: an unknown dataset, revision, run or job
-  * is refused as on the fake, and a known revision whose operation is not
-  * yet served is `Unavailable` for that revision. The real backend never
-  * serves a number it did not get from eyes4s.
+  * Admission, previews, execution, retained results, reports and trial views
+  * project eyes4s values into the Studio protocol. Unsupported representation
+  * choices are explicit refusals; an unknown dataset, revision, run or job
+  * is refused as on the fixture backend.
   *
   * A dataset revision is admitted once, on first request, and its result is
   * kept: a dataset revision is immutable, so its admission cannot change.
@@ -68,19 +65,100 @@ trait DatasetSources[F[_]]:
   * progress and outcome eyes4s's.
   */
 final class RealStudyBackend[F[_]] private (
-    datasets: Map[DatasetRevision, DatasetRevisionSpec],
-    revisions: Map[AnalysisRevision, (DatasetRevision, Recipe)],
+    private[real] val registry: Ref[F, RealRegistry],
     sources: DatasetSources[F],
     admitted: Ref[F, Map[DatasetRevision, AdmittedDataset]],
     prepared: Ref[F, Map[AnalysisRevision, RealPrepared]],
+    previews: RealPreview[F],
     state: SignallingRef[F, RealStudyBackend.Jobs[F]],
-    documentRuns: Map[RunId, RunRef],
     inspected: Ref[F, Map[RunId, RealResults]],
     trialViews: Ref[F, Map[AnalysisRevision, RealTrialViews]],
-    supervisor: Supervisor[F]
+    initialReporting: Map[
+      eyes4s.studio.core.document.ReportingId,
+      eyes4s.studio.core.document.ReportingSpec
+    ],
+    navigationState: Ref[F, RealNavigator.State],
+    supervisor: Supervisor[F],
+    synchronization: Mutex[F]
 )(using F: Concurrent[F])
     extends StudyBackend[F]:
   import RealStudyBackend.*
+
+  lazy val navigator: RealNavigator[F] =
+    new RealNavigator(initialReporting, held, prepare, navigationState)
+
+  /** Synchronize the authoritative document before host effects and reads.
+    * Existing results/jobs/cursors keep their original scientific snapshots.
+    */
+  def synchronize(document: StudioDocument): F[Either[BackendError, Unit]] =
+    synchronization.lock.surround {
+      registry.get.flatMap { previous =>
+        previous.synchronize(document) match
+          case Left(error)   => F.pure(Left(error))
+          case Right(change) =>
+            val enriched = change.next.planBindings.toVector.collect {
+              case (revision, CoreBinding.Bound(_))
+                  if previous.planBindings
+                    .get(revision) != change.next.planBindings.get(revision) =>
+                revision
+            }
+            val archives = change.next.documentRuns.values.toVector.filter(ref =>
+              ref.archive match
+                case CoreBinding.Bound(_) =>
+                  previous.documentRuns.get(ref.id).forall(_.archive != ref.archive)
+                case _ => false
+            )
+            val checkedArchives = state.get.map { current =>
+              archives.traverse_ { ref =>
+                current.results
+                  .get(ref.id)
+                  .toRight(
+                    BackendError.RegistryRefused(
+                      DiagnosticLocus.Run(ref.id),
+                      "A new archive binding requires this run's retained native result."
+                    )
+                  )
+                  .flatMap(done => verify(ref, done.prepared, done.result).toLeft(()))
+              }
+            }
+            enriched
+              .traverse(revision => configured(change.next, revision).map(_.void))
+              .map(_.sequence)
+              .flatMap {
+                case Left(error) => F.pure(Left(error))
+                case Right(_)    => checkedArchives
+              }
+              .flatMap {
+                case Left(error) => F.pure(Left(error))
+                case Right(_)    =>
+                  admitted.update(_ -- change.datasets) >>
+                    prepared.update(_ -- change.revisions) >>
+                    trialViews.update(_ -- change.revisions) >>
+                    previews.invalidate(change.revisions) >>
+                    navigator.synchronizeReporting(document.reporting) >>
+                    registry.set(change.next) >>
+                    state
+                      .update { current =>
+                        val declared = Jobs.of[F](document).runs
+                        val known    = current.runs.map(_.run).toSet
+                        val active   =
+                          current.jobs.filter(j => finished(j.state).isEmpty).map(_.run).toSet
+                        val updated = current.runs.map(r =>
+                          if active(r.run) then r
+                          else declared.find(_.run == r.run).getOrElse(r)
+                        )
+                        val occupied = document.runs
+                          .filterNot(r => change.next.reservations(r.id))
+                          .map(_.id.number)
+                        current.copy(
+                          runs = updated ++ declared.filterNot(r => known(r.run)),
+                          nextRun = math.max(current.nextRun, occupied.maxOption.fold(1)(_ + 1))
+                        )
+                      }
+                      .as(Right(()))
+              }
+      }
+    }
 
   // ------------------------------------------------------------------ admission
 
@@ -88,21 +166,23 @@ final class RealStudyBackend[F[_]] private (
       dataset: DatasetRevision,
       content: CanonicalDigest[DatasetRevisionSpec]
   ): F[Either[BackendError, AdmissionSummary]] =
-    datasets.get(dataset) match
-      case None       => F.pure(Left(BackendError.UnknownDataset(dataset, knownDatasets)))
-      case Some(spec) =>
-        DatasetRevisionSpec.contentDigest(spec) match
-          case Left(error) =>
-            F.pure(
-              Left(
-                BackendError.Unavailable(
-                  DiagnosticLocus.Artifact(s"${dataset.label} content: ${error.message}")
+    registry.get.flatMap { snapshot =>
+      snapshot.datasets.get(dataset) match
+        case None => F.pure(Left(BackendError.UnknownDataset(dataset, snapshot.knownDatasets)))
+        case Some(spec) =>
+          DatasetRevisionSpec.contentDigest(spec) match
+            case Left(error) =>
+              F.pure(
+                Left(
+                  BackendError.Unavailable(
+                    DiagnosticLocus.Artifact(s"${dataset.label} content: ${error.message}")
+                  )
                 )
               )
-            )
-          case Right(held) if held != content =>
-            F.pure(Left(BackendError.ContentMismatch(dataset, content, held)))
-          case Right(_) => admission(dataset)
+            case Right(held) if held != content =>
+              F.pure(Left(BackendError.ContentMismatch(dataset, content, held)))
+            case Right(_) => admission(dataset)
+    }
 
   def placement(spec: DatasetRevisionSpec): F[Either[BackendError, PlacementPreview]] =
     spec.sources.fixations match
@@ -119,25 +199,23 @@ final class RealStudyBackend[F[_]] private (
             val read = ByteDigest.sha256(bytes)
             if read != source.bytes then
               Left(BackendError.SourceDigestMismatch(spec.id, source.path, source.bytes, read))
-            else eyes4s.studio.core.geometry.PlacementPreviewAdapter.place(spec, bytes)
+            else RealPlacement.place(spec, bytes)
         }
 
-  private def knownDatasets: Vector[DatasetRevision] = datasets.keys.toVector.sortBy(_.number)
-
-  /** Only a successful admission is kept: a refusal (for example, bytes the
-    * host does not hold yet) is answered again on the next request.
-    */
+  /** Only a successful admission for this exact live declaration is cached. */
   private def admission0(d: DatasetRevision): F[Either[BackendError, AdmittedDataset]] =
-    datasets.get(d) match
-      case None       => F.pure(Left(BackendError.UnknownDataset(d, knownDatasets)))
-      case Some(spec) =>
-        admitted.get.flatMap(_.get(d) match
-          case Some(done) => F.pure(Right(done))
-          case None       =>
-            admit(spec).flatTap {
-              case Right(done) => admitted.update(_.updated(d, done))
-              case Left(_)     => F.unit
-            })
+    registry.get.flatMap { snapshot =>
+      snapshot.datasets.get(d) match
+        case None       => F.pure(Left(BackendError.UnknownDataset(d, snapshot.knownDatasets)))
+        case Some(spec) =>
+          admitted.get.flatMap(_.get(d).filter(_.spec == spec) match
+            case Some(done) => F.pure(Right(done))
+            case None       =>
+              admit(spec).flatTap {
+                case Right(done) => admitted.update(_.updated(d, done))
+                case Left(_)     => F.unit
+              })
+    }
 
   /** Verify the exact source bytes before admission. */
   private def admit(spec: DatasetRevisionSpec): F[Either[BackendError, AdmittedDataset]] =
@@ -182,70 +260,131 @@ final class RealStudyBackend[F[_]] private (
       LedgerPage(dataset, PageInfo.of(page, done.ledger.size, entries.size), entries)
     })
 
-  // ------------------------------------------------------------------ not yet served
-
-  private def knownRevisions: Vector[AnalysisRevision] =
-    revisions.keys.toVector.sortBy(_.number)
-
-  /** A known revision's operation that a later slice serves. */
-  private def notYet[A](r: AnalysisRevision): F[Either[BackendError, A]] =
-    F.pure(
-      Left(
-        if revisions.contains(r) then BackendError.Unavailable(DiagnosticLocus.Revision(r))
-        else BackendError.UnknownRevision(r, knownRevisions)
-      )
-    )
-
-  /** No run has a result yet: results are slice 5. */
-  private def noRun[A](run: RunId): F[Either[BackendError, A]] =
-    state.get.map(s =>
-      Left(
-        if s.runs.exists(_.run == run) then BackendError.Unavailable(DiagnosticLocus.Run(run))
-        else BackendError.UnknownRun(run, s.runs.map(_.run))
-      )
-    )
-
   // ------------------------------------------------------------------ the prepared study
 
-  /** The revision's study, configured from its recipe over its dataset's
-    * admitted input and prepared once; a revision is immutable.
+  /** Cached work must match the live recipe and admitted declaration. Old
+    * work is retained in its job/result/cursor snapshot, never rewritten.
     */
   private def prepare(r: AnalysisRevision): F[Either[BackendError, RealPrepared]] =
-    revisions.get(r) match
-      case None              => F.pure(Left(BackendError.UnknownRevision(r, knownRevisions)))
-      case Some((d, recipe)) =>
-        prepared.get.flatMap(_.get(r) match
-          case Some(done) => F.pure(Right(done))
-          case None       =>
-            admission0(d)
-              .map(_.flatMap(RealPrepared.of(r, d, recipe, _)))
-              .flatTap {
-                case Right(done) => prepared.update(_.updated(r, done))
-                case Left(_)     => F.unit
-              })
+    registry.get.flatMap { snapshot =>
+      snapshot.revisions.get(r) match
+        case None => F.pure(Left(BackendError.UnknownRevision(r, snapshot.knownRevisions)))
+        case Some((d, recipe)) =>
+          prepared.get.flatMap(
+            _.get(r).filter(done =>
+              done.dataset == d && done.recipe == recipe &&
+                snapshot.datasets.get(d).contains(done.admitted.spec)
+            ) match
+              case Some(done) => F.pure(Right(done))
+              case None       =>
+                admission0(d)
+                  .map(
+                    _.flatMap(admission =>
+                      RealPrepared
+                        .configure(r, d, recipe, admission)
+                        .flatMap(c => checkBinding(c, snapshot))
+                        .flatMap(c =>
+                          c.work.counts
+                            .leftMap(RealPrepared.refused(r, "counts"))
+                            .flatMap(RealPrepared.fromCounts(c, _))
+                        )
+                    )
+                  )
+                  .flatTap {
+                    case Right(done) => prepared.update(_.updated(r, done))
+                    case Left(_)     => F.unit
+                  }
+          )
+    }
 
   def preview(revision: AnalysisRevision): F[Either[BackendError, PreviewSummary]] =
-    prepare(revision).map(_.map(_.summary))
+    prepare(revision)
+      .flatTap {
+        case Right(work) => previews.remember(work)
+        case Left(_)     => F.unit
+      }
+      .map(_.map(_.summary))
+
+  private def configuration(
+      revision: AnalysisRevision
+  ): F[Either[BackendError, RealConfigured]] =
+    registry.get.flatMap(snapshot => configured(snapshot, revision))
+
+  private def configured(
+      snapshot: RealRegistry,
+      revision: AnalysisRevision
+  ): F[Either[BackendError, RealConfigured]] =
+    snapshot.revisions.get(revision) match
+      case None => F.pure(Left(BackendError.UnknownRevision(revision, snapshot.knownRevisions)))
+      case Some((dataset, recipe)) =>
+        snapshot.datasets.get(dataset) match
+          case None =>
+            F.pure(Left(BackendError.UnknownDataset(dataset, snapshot.knownDatasets)))
+          case Some(spec) =>
+            admitted.get
+              .flatMap(_.get(dataset).filter(_.spec == spec) match
+                case Some(ready) => F.pure(Right(ready))
+                case None        => admit(spec))
+              .map(
+                _.flatMap(admission =>
+                  RealPrepared
+                    .configure(revision, dataset, recipe, admission)
+                    .flatMap(c => checkBinding(c, snapshot))
+                )
+              )
+
+  /** A saved artifact binding must describe the plan its recipe constructs. */
+  private def checkBinding(
+      configured: RealConfigured,
+      snapshot: RealRegistry
+  ): Either[BackendError, RealConfigured] =
+    snapshot.planBindings.get(configured.revision) match
+      case Some(CoreBinding.Bound(recorded)) =>
+        RealPreview.stamp(configured).flatMap { stamp =>
+          stamp.plan match
+            case CoreBinding.Bound(prepared) if prepared.sha256 == recorded.sha256 =>
+              Right(configured)
+            case found =>
+              Left(
+                BackendError.RegistryRefused(
+                  DiagnosticLocus.Revision(configured.revision),
+                  s"Plan digest recorded ${recorded.sha256.hex}, prepared ${found.render}."
+                )
+              )
+        }
+      case _ => Right(configured)
 
   def previewRows(
       revision: AnalysisRevision,
       page: PageRequest
-  ): F[Either[BackendError, PreviewPage]] = notYet(revision)
+  ): F[Either[BackendError, PreviewPage]] =
+    registry.get.flatMap(snapshot =>
+      if snapshot.revisions.contains(revision) then previews.rows(revision, page)
+      else F.pure(Left(BackendError.UnknownRevision(revision, snapshot.knownRevisions)))
+    )
 
   def previewCounting(
       revision: AnalysisRevision,
       budget: PreviewBudget
   ): Stream[F, Either[BackendError, PreviewEvent]] =
-    Stream.eval(notYet[PreviewEvent](revision))
+    Stream.eval(configuration(revision)).flatMap {
+      case Left(error)       => Stream.emit(Left(error))
+      case Right(configured) => previews.begin(configured, budget)
+    }
 
   def continuePreview(
       preview: PreviewId,
       budget: PreviewBudget
-  ): Stream[F, Either[BackendError, PreviewEvent]] =
-    Stream.emit(Left(BackendError.UnknownPreview(preview, Vector.empty)))
+  ): Stream[F, Either[BackendError, PreviewEvent]] = previews.continue(preview, budget)
 
   def submitPreview(ready: PreviewReady): F[Either[BackendError, JobStatus]] =
-    F.pure(Left(BackendError.UnknownPreview(ready.id, Vector.empty)))
+    previews
+      .accept(ready)(revision => configuration(revision).map(_.flatMap(RealPreview.stamp)))
+      .flatMap {
+        case Left(error) => F.pure(Left(error))
+        case Right(work) =>
+          prepared.update(_.updated(work.revision, work)) >> start(work, Purpose.NewRun)
+      }
 
   // ------------------------------------------------------------------ jobs
 
@@ -309,37 +448,55 @@ final class RealStudyBackend[F[_]] private (
     * runner on its own fiber. One job runs at a time.
     */
   private def start(work: RealPrepared, purpose: Purpose): F[Either[BackendError, JobStatus]] =
-    Deferred[F, F[Unit]].flatMap { handle =>
-      state
-        .modify { s =>
-          s.jobs.find(j => finished(j.state).isEmpty) match
-            case Some(active) =>
-              (s, Left(BackendError.AlreadyRunning(work.revision, active.job)))
-            case None =>
-              val job               = JobId(s.jobs.size + 1)
-              val (run, runs, next) = purpose match
-                case Purpose.NewRun =>
-                  val id = RunId(s.nextRun)
-                  val r  = RunSummary(id, work.revision, work.dataset, RunState.Running(job))
-                  (id, s.runs :+ r, s.nextRun + 1)
-                // A recomputation serves an existing run, whose state it leaves alone.
-                case Purpose.Recompute(ref) => (ref.id, s.runs, s.nextRun)
-              val status = JobStatus(job, run, work.revision, work.dataset, JobState.Queued)
-              (
-                s.copy(
-                  jobs = s.jobs :+ status,
-                  runs = runs,
-                  nextRun = next,
-                  handles = s.handles.updated(job, handle),
-                  purposes = s.purposes.updated(job, purpose)
-                ),
-                Right(status)
-              )
-        }
-        .flatTap {
-          case Right(status) => launch(work, status, handle, purpose)
-          case Left(_)       => F.unit
-        }
+    registry.get.flatMap { snapshot =>
+      Deferred[F, F[Unit]].flatMap { handle =>
+        state
+          .modify { s =>
+            s.jobs.find(j => finished(j.state).isEmpty) match
+              case Some(active) =>
+                (s, Left(BackendError.AlreadyRunning(work.revision, active.job)))
+              case None =>
+                val reserved = purpose match
+                  case Purpose.NewRun =>
+                    snapshot.reserved(
+                      work.revision,
+                      work.dataset,
+                      s.jobs.map(_.run).toSet ++ s.results.keySet
+                    )
+                  case Purpose.Recompute(_) => Right(None)
+                reserved match
+                  case Left(error)      => (s, Left(error))
+                  case Right(requested) =>
+                    val job               = JobId(s.jobs.size + 1)
+                    val (run, runs, next) = purpose match
+                      case Purpose.NewRun =>
+                        val id = requested.getOrElse(RunId(s.nextRun))
+                        val r  =
+                          RunSummary(id, work.revision, work.dataset, RunState.Running(job))
+                        (
+                          id,
+                          s.runs.filterNot(_.run == id) :+ r,
+                          math.max(s.nextRun, id.number + 1)
+                        )
+                      case Purpose.Recompute(ref) => (ref.id, s.runs, s.nextRun)
+                    val status =
+                      JobStatus(job, run, work.revision, work.dataset, JobState.Queued)
+                    (
+                      s.copy(
+                        jobs = s.jobs :+ status,
+                        runs = runs,
+                        nextRun = next,
+                        handles = s.handles.updated(job, handle),
+                        purposes = s.purposes.updated(job, purpose)
+                      ),
+                      Right(status)
+                    )
+          }
+          .flatTap {
+            case Right(status) => launch(work, status, handle, purpose)
+            case Left(_)       => F.unit
+          }
+      }
     }
 
   /** The runner's progress is folded into the job by one observer fiber; its
@@ -496,32 +653,50 @@ final class RealStudyBackend[F[_]] private (
     * backend did not compute is recomputed on first request (S3.7 slice 5,
     * option (a)): its revision's prepared study runs as an ordinary job, whose
     * progress the job surface shows, and until it completes the run is
-    * `Unavailable`. The result is kept, marked recomputed with the eyes4s
+    * `ResultPending`, naming its ordinary job. A busy backend reports
+    * `ResultDeferred`, naming the job that occupies its one slot. The
+    * result is kept, marked recomputed with the eyes4s
     * release that produced it.
     */
   private[real] def held(run: RunId): F[Either[BackendError, RealRun]] =
-    state.get.flatMap { s =>
-      (s.results.get(run), s.refused.get(run), s.runs.find(_.run == run)) match
-        case (Some(done), _, _)    => F.pure(Right(done))
-        case (_, Some(refused), _) => F.pure(Left(refused))
-        case (_, _, None) => F.pure(Left(BackendError.UnknownRun(run, s.runs.map(_.run))))
-        case (_, _, Some(summary)) =>
-          val pending = Left(BackendError.Unavailable(DiagnosticLocus.Run(run)))
-          documentRuns.get(run).filter(_.state == RunLifecycle.Completed) match
-            case None => F.pure(Left(BackendError.NoResult(run, summary.state)))
-            case Some(_) if s.jobs.exists(j => j.run == run && finished(j.state).isEmpty) =>
-              F.pure(pending)
-            case Some(ref) =>
-              prepare(ref.analysis).flatMap {
-                case Left(e) => F.pure(Left(e))
-                // The run records the dataset revision it was computed on;
-                // its analysis must still be on that revision.
-                case Right(work) if work.dataset != ref.dataset =>
-                  F.pure(Left(datasetMismatch(ref, work)))
-                // Another job running defers the recomputation to a later request.
-                case Right(work) => start(work, Purpose.Recompute(ref)).as(pending)
-              }
-    }
+    registry.get.flatMap(snapshot =>
+      state.get.flatMap { s =>
+        (s.results.get(run), s.refused.get(run), s.runs.find(_.run == run)) match
+          case (Some(done), _, _)    => F.pure(Right(done))
+          case (_, Some(refused), _) => F.pure(Left(refused))
+          case (_, _, None) => F.pure(Left(BackendError.UnknownRun(run, s.runs.map(_.run))))
+          case (_, _, Some(summary)) =>
+            snapshot.documentRuns.get(run).filter(_.state == RunLifecycle.Completed) match
+              case None      => F.pure(Left(BackendError.NoResult(run, summary.state)))
+              case Some(ref) =>
+                s.jobs.find(j => j.run == run && finished(j.state).isEmpty) match
+                  case Some(active) => F.pure(Left(BackendError.ResultPending(run, active.job)))
+                  case None         =>
+                    prepare(ref.analysis).flatMap {
+                      case Left(e) => F.pure(Left(e))
+                      // The run records the dataset revision it was computed on;
+                      // its analysis must still be on that revision.
+                      case Right(work) if work.dataset != ref.dataset =>
+                        F.pure(Left(datasetMismatch(ref, work)))
+                      case Right(work) =>
+                        start(work, Purpose.Recompute(ref)).flatMap {
+                          case Right(status) =>
+                            F.pure(Left(BackendError.ResultPending(run, status.job)))
+                          case Left(BackendError.AlreadyRunning(_, job)) =>
+                            state.get.map { current =>
+                              // Concurrent readers may both prepare before either starts.
+                              // Cancellation of their shared job belongs to both readers.
+                              if current.jobs.exists(status =>
+                                  status.job == job && status.run == run
+                                )
+                              then Left(BackendError.ResultPending(run, job))
+                              else Left(BackendError.ResultDeferred(run, job))
+                            }
+                          case Left(error) => F.pure(Left(error))
+                        }
+                    }
+      }
+    )
 
   /** The run's result as eyes4s inspects it, built once per run. */
   private def results(run: RunId): F[Either[BackendError, RealResults]] =
@@ -537,18 +712,23 @@ final class RealStudyBackend[F[_]] private (
             })
     }
 
-  /** Until the summary's scalars move to `report(run, spec, scale)`
-    * (bd-01M44P3SF52WPXQXFXSMXC5R8B), the real backend serves no
-    * `ResultSummary`: its grouped and single-scale fields have no source.
-    */
-  def result(run: RunId): F[Either[BackendError, ResultSummary]] = noRun(run)
+  /** Ungrouped count facts; numerical report cells are served by `report`. */
+  def result(run: RunId): F[Either[BackendError, ResultSummary]] =
+    results(run).map(_.flatMap(_.summary))
 
   def report(
       run: RunId,
       reporting: eyes4s.studio.core.document.ReportingSpec,
       scale: Int
   ): F[Either[BackendError, ReportView]] =
-    held(run).map(_.flatMap(done => RealReports.evaluate(run, reporting, scale, done)))
+    navigator.requestedReport(run, reporting, scale) >>
+      held(run)
+        .map(_.flatMap(done => RealReports.evaluateWithNative(run, reporting, scale, done)))
+        .flatTap {
+          case Left(_)            => F.unit
+          case Right((_, native)) => navigator.evaluatedReport(run, reporting, scale, native)
+        }
+        .map(_.map(_._1))
 
   def mapGrid(run: RunId, scale: Int, trial: TrialKey): F[Either[BackendError, DensityGrid]] =
     results(run).map(_.flatMap(_.mapGrid(scale, trial)))
@@ -560,7 +740,8 @@ final class RealStudyBackend[F[_]] private (
   ): F[Either[BackendError, PairRowPage]] =
     results(run).map(_.flatMap(_.pairRows(scale, page)))
 
-  def queries(run: RunId, page: PageRequest): F[Either[BackendError, QueryPage]] = noRun(run)
+  def queries(run: RunId, page: PageRequest): F[Either[BackendError, QueryPage]] =
+    results(run).map(_.flatMap(_.queries(page)))
 
   /** An item eyes4s holds, as eyes4s holds it. A no-match query's contrast
     * row is eyes4s's failed row (missing operands) until protocol 1.11
@@ -578,7 +759,7 @@ final class RealStudyBackend[F[_]] private (
     prepare(r).flatMap {
       case Left(e)     => F.pure(Left(e))
       case Right(work) =>
-        trialViews.get.flatMap(_.get(r) match
+        trialViews.get.flatMap(_.get(r).filter(_.work eq work) match
           case Some(v) => F.pure(Right(v))
           case None    =>
             F.pure(RealTrialViews.of(work)).flatTap {
@@ -591,12 +772,22 @@ final class RealStudyBackend[F[_]] private (
       revision: AnalysisRevision,
       trial: TrialKey
   ): F[Either[BackendError, TrialFixations]] =
-    views(revision).map(_.flatMap(_.fixations(trial)))
+    views(revision).map(_.flatMap(_.fixations(trial))).flatMap {
+      case Left(error) => F.pure(Left(error))
+      case Right(view) =>
+        navigator.rememberTrial(revision, view.fixations.map(_.ref)).map {
+          case Right(_)                                                           => Right(view)
+          case Left(eyes4s.studio.core.navigation.NavigationError.Backend(error)) => Left(error)
+          case Left(error)                                                        =>
+            Left(BackendError.Unavailable(DiagnosticLocus.Artifact(error.message)))
+        }
+    }
 
   def trialPreview(
       revision: AnalysisRevision,
       trial: TrialKey
-  ): F[Either[BackendError, TrialPreview]] = notYet(revision)
+  ): F[Either[BackendError, TrialPreview]] =
+    views(revision).map(_.flatMap(_.preview(trial)))
 
   def sourceRecords(
       revision: AnalysisRevision,
@@ -622,27 +813,37 @@ object RealStudyBackend:
         Ref.of[F, Map[AnalysisRevision, RealPrepared]](Map.empty),
         SignallingRef[F].of(Jobs.of[F](document)),
         Ref.of[F, Map[RunId, RealResults]](Map.empty),
-        Ref.of[F, Map[AnalysisRevision, RealTrialViews]](Map.empty)
-      ).mapN { (admitted, prepared, state, inspected, trialViews) =>
-        val saved = document.analyses.map(a => a.id -> (a.dataset, a.recipe))
-        // A draft's recipe is its changes applied to its base's recipe.
-        val draft = document.draft.flatMap(d =>
-          document
-            .analysis(d.base)
-            .map(base => d.id -> (d.dataset.getOrElse(base.dataset), d.recipe(base.recipe)))
-        )
-        new RealStudyBackend(
-          document.datasets.map(d => d.id -> d).toMap,
-          (saved ++ draft).toMap,
-          sources,
-          admitted,
-          prepared,
-          state,
-          document.runs.map(r => r.id -> r).toMap,
-          inspected,
-          trialViews,
-          supervisor
-        )
+        Ref.of[F, Map[AnalysisRevision, RealTrialViews]](Map.empty),
+        RealPreview.create[F],
+        RealNavigator.empty[F],
+        Ref.of[F, RealRegistry](RealRegistry.of(document)),
+        Mutex[F]
+      ).mapN {
+        (
+            admitted,
+            prepared,
+            state,
+            inspected,
+            trialViews,
+            previews,
+            navigation,
+            registry,
+            synchronization
+        ) =>
+          new RealStudyBackend(
+            registry,
+            sources,
+            admitted,
+            prepared,
+            previews,
+            state,
+            inspected,
+            trialViews,
+            document.reporting.map(spec => spec.id -> spec).toMap,
+            navigation,
+            supervisor,
+            synchronization
+          )
       }
     )
 

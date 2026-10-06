@@ -65,6 +65,21 @@ naming both rules; a participant-scoped rule needs a key reader that names the p
 `requireComplete` refuses to produce a study input while any rejected rows remain. The `accepted`
 collection is separately available if an analyst deliberately reviews and handles the exclusions.
 
+For a geometry preview before admitting temporal fields, `FixationPositions.read(contents,
+trialColumns, xColumn, yColumn, frame, policy)` reads the declared `TrialIdentity` and finite
+position with the same RFC 4180 parser and correction interpreter as `FixationCsv`. Each source
+data record remains in `positions` or `unplaced`, with its original fields and record identity.
+Conflicting correction rules leave the affected records unplaced; off-screen positions remain
+visible and carry their position-specific `admissionFailure` under `QuarantineTrial`.
+
+`positions.place(window, angularScale, degreesFrame)` checks geometry identity through
+`Agreement`, classifies the half-open window, and returns raw, corrected, window-local and
+optional angular coordinates. Transform failures retain their records as unplaced data. Its
+native `tallies` include known trials with only unreadable records, with zero positioned counts;
+`measure` gives every corrected position unit weight for `PointMeasure.binned`. Off-screen
+points enter no grid cell and remain in the preview and its tallies. Temporal fields and the
+whole-trial admission decision still come from `FixationCsv.admit` or `admitInventory`.
+
 `FixationEvidence.ledger(label, imported, decision)` turns the import report into a pure
 `AdmissionLedger` with exactly one typed disposition per source record, the admission policy and
 the admitted records outside the frame. `imported.admitted` links

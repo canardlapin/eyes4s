@@ -18,11 +18,12 @@ package eyes4s.studio.app.compare
 
 import eyes4s.studio.app.vm.{A11yRole, FocusStop}
 import eyes4s.studio.app.{AppEffect, AppModel, Intent, StoryModels}
-import eyes4s.studio.core.backend.{PageRequest, PairDesign, ResultSummary, Response}
+import eyes4s.studio.core.backend.{PageRequest, PairDesign, ReportView, ResultSummary, Response}
 import eyes4s.studio.core.command.{ChangeKind, Command}
 import eyes4s.studio.core.document.{
   Covariate,
   MinimumPerGroup,
+  ReportingContrast,
   ReportingFilter,
   ReportingId,
   ReportingSpec,
@@ -66,12 +67,16 @@ class ReportingEditorSuite extends munit.FunSuite:
   private def vmOf(
       m: AppModel,
       sum: Option[ResultSummary],
-      ed: ReportingEditor = ReportingEditor.empty
+      ed: ReportingEditor = ReportingEditor.empty,
+      report: Option[ReportView] = None
   ) =
-    ReportingEditor.vm(ed, m.document, Some(reporting), Some(run7), sum, Some(sigma2))
+    ReportingEditor.vm(ed, m.document, Some(reporting), Some(run7), sum, Some(sigma2), report)
 
   private def spec(doc: StudioDocument, id: ReportingId = reporting): ReportingSpec =
     doc.reporting.find(_.id == id).getOrElse(fail(s"no spec ${id.value}"))
+
+  private def reportOf(s: HeadlessSession, model: AppModel = t2Compare): Future[ReportView] =
+    s.report(run7, spec(model.document), sigma2.value).map(right)
 
   /** `intent` as the host performs it: the editor's intents through the app. */
   private def perform(
@@ -91,8 +96,8 @@ class ReportingEditorSuite extends munit.FunSuite:
 
   test("t2: the board's spec against run 7's summary") {
     withSession(s =>
-      summaryOf(s).map { sum =>
-        val vm = vmOf(t2Compare, Some(sum))
+      summaryOf(s).zip(reportOf(s)).map { (sum, report) =>
+        val vm = vmOf(t2Compare, Some(sum), report = Some(report))
         assertEquals(vm.status, None)
         assertEquals(vm.title, "By retrieval response")
         assertEquals(vm.kind, "Reporting · no rerun")
@@ -129,21 +134,10 @@ class ReportingEditorSuite extends munit.FunSuite:
           (
             "Minimum queries per group: 3",
             false,
-            "off · would drop 2 Forgotten cells (P17 n 2, P21 n 2)"
+            "off · the report will name excluded participant-group cells when applied"
           )
         )
-        assertEquals(
-          vm.minimum.note.refs,
-          Vector("P17", "P21").map(p =>
-            StudioRef.ParticipantSummary(
-              run7,
-              reporting,
-              sigma2,
-              Some(Response("Forgotten")),
-              p
-            )
-          )
-        )
+        assertEquals(vm.minimum.note.refs, Vector.empty)
         assertEquals(
           vm.weights.map(c => (c.label, c.chosen)),
           Vector(
@@ -232,6 +226,60 @@ class ReportingEditorSuite extends munit.FunSuite:
     }
   }
 
+  test(
+    "contrast operands are explicit, validated and retained by unrelated edits and Save as"
+  ) {
+    val forward = right(ReportingContrast.of("Remembered", "Forgotten"))
+    val legacy  = vmOf(t2Compare, None)
+    assertEquals((legacy.contrast.minuend, legacy.contrast.subtrahend), ("", ""))
+    val (selected, _, commands, effects) =
+      perform(t2Compare, ReportingIntent.SetContrast(Some(forward)))
+    assertEquals(spec(selected.document).contrast, Some(forward))
+    assertEquals(commands.size, 1)
+    assertEquals(effects.collect { case e @ AppEffect.Execution(_) => e }, Vector.empty)
+    for edit <- edits.filterNot(_.isInstanceOf[ReportingIntent.GroupBy]) do
+      assertEquals(
+        spec(perform(selected, edit)._1.document).contrast,
+        Some(forward),
+        edit.toString
+      )
+    val (sameGroup, _, sameCommands, _) =
+      perform(selected, ReportingIntent.GroupBy(spec(selected.document).groupBy))
+    assertEquals(spec(sameGroup.document).contrast, Some(forward))
+    assertEquals(sameCommands, Vector.empty)
+    val saved = perform(
+      selected,
+      ReportingIntent.ConfirmSaveAs,
+      ReportingEditor(Some("With explicit contrast"), None)
+    )._1
+    assertEquals(
+      spec(saved.document, right(ReportingId.of("with-explicit-contrast"))).contrast,
+      Some(forward)
+    )
+    val (invalid, invalidState, refused, _) =
+      perform(selected, ReportingIntent.ContrastOperands("Remembered", "Remembered"))
+    assertEquals(invalid.document, selected.document)
+    assertEquals(refused, Vector.empty)
+    assert(invalidState.error.exists(_.contains("Remembered")))
+    val (reversed, _, _, _) =
+      perform(selected, ReportingIntent.ContrastOperands("Forgotten", "Remembered"))
+    assertEquals(
+      spec(reversed.document).contrast,
+      Some(right(ReportingContrast.of("Forgotten", "Remembered")))
+    )
+    val (ungrouped, _, _, _) = perform(selected, ReportingIntent.GroupBy(None))
+    assertEquals(spec(ungrouped.document).contrast, None)
+    assert(!vmOf(ungrouped, None).contrast.enabled)
+    val (regrouped, _, _, _) =
+      perform(ungrouped, ReportingIntent.GroupBy(Some(right(Covariate.of("response")))))
+    assertEquals(spec(regrouped.document).contrast, None)
+    val (cleared, _, _, _) = perform(selected, ReportingIntent.SetContrast(None))
+    assertEquals(spec(cleared.document).contrast, None)
+    val undone =
+      AppModel.update(selected, Intent.Undo(eyes4s.studio.core.command.HistoryStack.Science))._1
+    assertEquals(spec(undone.document).contrast, None)
+  }
+
   test("an edit is undoable and an unchanged edit dispatches nothing") {
     val (after, _, _, _) = perform(t2Compare, ReportingIntent.Minimum(true))
     assert(spec(after.document).minimumPerGroup.isDefined)
@@ -273,7 +321,7 @@ class ReportingEditorSuite extends munit.FunSuite:
         // a hit-only report still compares every query against them.
         val forgotten = rows.rows
           .filter(r => r.query.participant == "P17" && r.response == Response("Forgotten"))
-          .map(_.matched)
+          .flatMap(_.matched)
           .toSet
         assert(controls.exists(forgotten.contains), controls.toString)
         assertEquals(rows.rows.find(_.query == p17ret07).flatMap(_.controls), Some(19))
@@ -282,42 +330,42 @@ class ReportingEditorSuite extends munit.FunSuite:
 
   // --- the controls --------------------------------------------------------------------------------
 
-  test("the minimum (default off) names what it drops once on (E2E-23); off removes it") {
-    withSession(s =>
-      summaryOf(s).map { sum =>
-        assertEquals(spec(t2Compare.document).minimumPerGroup, None)
-        val (on, _, _, _) = perform(t2Compare, ReportingIntent.Minimum(true))
-        assertEquals(spec(on.document).minimumPerGroup.map(_.queries), Some(3))
-        val vm = vmOf(on, Some(sum))
+  test("the minimum reads native dropped cells when on; off removes it") {
+    withSession { session =>
+      val (on, _, _, _) = perform(t2Compare, ReportingIntent.Minimum(true))
+      assertEquals(spec(on.document).minimumPerGroup.map(_.queries), Some(3))
+      summaryOf(session).zip(reportOf(session, on)).map { (summary, report) =>
+        val vm = vmOf(on, Some(summary), report = Some(report))
         assertEquals(
           (vm.minimum.on, vm.minimum.note.text),
           (true, "on · drops 2 Forgotten cells (P17 n 2, P21 n 2)")
         )
+        assertEquals(vm.minimum.note.refs, report.dropped.map(_.ref))
         val (off, _, _, _) = perform(on, ReportingIntent.Minimum(false))
         assertEquals(spec(off.document).minimumPerGroup, None)
       }
-    )
+    }
   }
 
-  test("with a filter, the minimum's preview waits for evaluation instead of estimating") {
-    withSession(s =>
-      summaryOf(s).map { sum =>
+  test(
+    "an unevaluated minimum edit waits for native reporting and never estimates exclusions"
+  ) {
+    withSession { session =>
+      summaryOf(session).map { summary =>
         val hits = ReportingIntent.Keep(right(Covariate.of("response")), Vector("Remembered"))
         val (kept, _, _, _) = perform(t2Compare, hits)
         val (on, _, _, _)   = perform(kept, ReportingIntent.Minimum(true))
-        val after           =
-          "Cells dropped by the minimum appear after evaluation (the filters change n)"
-        assertEquals(vmOf(on, Some(sum)).minimum.note, ReportingLine(after, Vector.empty))
-        assertEquals(vmOf(kept, Some(sum)).minimum.note, ReportingLine(after, Vector.empty))
-        val (outside, _, _, _) = perform(t2Compare, ReportingIntent.OutsideFilter(true))
-        assertEquals(vmOf(outside, Some(sum)).minimum.note.text, after)
-        // Without filters the served cells are the spec's cells: the preview stands.
         assertEquals(
-          vmOf(t2Compare, Some(sum)).minimum.note.text,
-          "off · would drop 2 Forgotten cells (P17 n 2, P21 n 2)"
+          vmOf(on, Some(summary)).minimum.note,
+          ReportingLine(
+            "Cells dropped by the minimum appear after report evaluation",
+            Vector.empty
+          )
         )
+        assertEquals(vmOf(kept, Some(summary)).minimum.note.refs, Vector.empty)
+        assertEquals(vmOf(t2Compare, Some(summary)).minimum.note.refs, Vector.empty)
       }
-    )
+    }
   }
 
   test("Save as… then Undo shows a spec that exists; Redo brings the copy back") {
@@ -402,7 +450,7 @@ class ReportingEditorSuite extends munit.FunSuite:
         assertEquals(vm.groupValues, "")
         assertEquals(
           vm.minimum.note.text,
-          "no served summary of the run is grouped this way yet"
+          "off · the report will name excluded participant-group cells when applied"
         )
         val (pooled, _, _, _) =
           perform(none, ReportingIntent.Weight(ReportingWeight.PooledQueries))
@@ -476,6 +524,10 @@ class ReportingEditorSuite extends munit.FunSuite:
       ReportingEditor.focusStops(vm),
       Vector(
         FocusStop(A11yRole.RadioButton, "Group by: response"),
+        FocusStop(A11yRole.TextField, "First level (minuend)"),
+        FocusStop(A11yRole.TextField, "Subtract level (subtrahend)"),
+        FocusStop(A11yRole.Button, "Apply contrast"),
+        FocusStop(A11yRole.Button, "Clear contrast"),
         FocusStop(A11yRole.CheckBox, vm.outside.label),
         FocusStop(A11yRole.CheckBox, "Minimum queries per group: 3"),
         FocusStop(

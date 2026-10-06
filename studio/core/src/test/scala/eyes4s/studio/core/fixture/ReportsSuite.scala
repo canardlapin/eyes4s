@@ -53,7 +53,8 @@ class ReportsSuite extends CatsEffectSuite:
         groupBy.map(c => ok(Covariate.of(c))),
         filters,
         minimum.map(m => ok(MinimumPerGroup.of(m))),
-        weighting
+        weighting,
+        groupBy.map(_ => ok(ReportingContrast.of("Remembered", "Forgotten")))
       )
     )
 
@@ -63,9 +64,9 @@ class ReportsSuite extends CatsEffectSuite:
 
   test("the story's spec reproduces the summary's group means and participant n") {
     for
-      b       <- fake
-      summary <- b.result(run7).map(ok)
-      report  <- b.report(run7, spec(), scale2).map(ok)
+      b <- fake
+      summary = ok(MockStudy.load).summary
+      report <- b.report(run7, spec(), scale2).map(ok)
     yield
       for g <- summary.groups do
         val cell = report.cell(Some(g.label), ReportRole.Difference).get
@@ -103,9 +104,9 @@ class ReportsSuite extends CatsEffectSuite:
 
   test("every role's participant values are served, each with its own ref") {
     for
-      b       <- fake
-      summary <- b.result(run7).map(ok)
-      report  <- b.report(run7, spec(), scale2).map(ok)
+      b <- fake
+      summary = ok(MockStudy.load).summary
+      report <- b.report(run7, spec(), scale2).map(ok)
     yield
       val at = ok(ScaleIndex.of(scale2))
       for
@@ -142,8 +143,8 @@ class ReportsSuite extends CatsEffectSuite:
 
   test("the level contrast is eyes4s's: Remembered − Forgotten, its paired n, with a ref") {
     for
-      b         <- fake
-      summary   <- b.result(run7).map(ok)
+      b <- fake
+      summary = ok(MockStudy.load).summary
       report    <- b.report(run7, spec(), scale2).map(ok)
       ungrouped <- b.report(run7, spec(groupBy = None), scale2).map(ok)
     yield
@@ -179,12 +180,12 @@ class ReportsSuite extends CatsEffectSuite:
 
   test("the queries-per-participant range is eyes4s's, the summary's 2 to 17") {
     for
-      b       <- fake
-      summary <- b.result(run7).map(ok)
-      report  <- b.report(run7, spec(), scale2).map(ok)
+      b <- fake
+      summary = ok(MockStudy.load).summary
+      report <- b.report(run7, spec(), scale2).map(ok)
     yield
       val d = report.queryRange(ReportRole.Difference).get
-      assertEquals((d.fewest, d.most), (summary.groupNMinimum, summary.groupNMaximum))
+      assertEquals((d.fewest, d.most), (summary.groupNRange._1, summary.groupNRange._2))
       assertEquals((d.fewest, d.most), (2, 17))
       assertEquals(
         d.ref,
@@ -426,17 +427,51 @@ class ReportsSuite extends CatsEffectSuite:
     )
   }
 
+  test("stored failed-scale diagnostics retain their exact per-scale operands") {
+    val study  = ok(MockStudy.load)
+    val query  = study.queries.head
+    val first  = eyes4s.studio.core.backend.ProtocolSamples.diagnostic
+    val second = first.copy(message = "second scale has different operands")
+    val source = ok(
+      FakeReports.source(
+        "scaled",
+        StoryMoment.T2,
+        Vector(query -> QueryStatus.FailedAtScales(Vector(first, second))),
+        2
+      )
+    )
+    for (scale, diagnostic) <- Vector(first, second).zipWithIndex.map((d, i) => (i, d)) do
+      val table = ok(source.queries(scale))
+      assertEquals(
+        table.queries.head.matched,
+        eyes4s.results.RoleOutcome.Failed(
+          ok(eyes4s.plan.DiagnosticCode.host("study-failure", "off-window")),
+          diagnostic.message
+        )
+      )
+    assert(
+      FakeReports
+        .source(
+          "scaled",
+          StoryMoment.T2,
+          Vector(query -> QueryStatus.FailedAtScales(Vector(first))),
+          2
+        )
+        .isLeft
+    )
+  }
+
   test("a run with no queries is an empty source, not a defect") {
     assert(FakeReports.source("r", StoryMoment.T2, Vector.empty, 4).isRight)
   }
 
   test("an unknown scale, a run without rows and an undeclared covariate are refused") {
     for
-      b       <- fake
-      summary <- b.result(run7).map(ok)
-      scale   <- b.report(run7, spec(), summary.scales.size)
-      norun   <- b.report(StoryMoments.run5, spec(), scale2)
-      cov     <- b.report(run7, spec(groupBy = Some("confidence")), scale2)
+      b <- fake
+      summary = ok(MockStudy.load).summary
+      scale <- b.report(run7, spec(), summary.scales.size)
+      norun <- b.report(StoryMoments.run5, spec(), scale2)
+      cov   <- b.report(run7, spec(groupBy = Some("confidence")), scale2)
     yield
       assertEquals(
         scale,

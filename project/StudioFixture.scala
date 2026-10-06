@@ -298,13 +298,15 @@ object StudioFixture {
         .mkString(",")).mkString("\t")
 
   /** S6.2: one admitted trial's fixations, in ordinal order, each
-    * `record@x@y@onset@duration`.
+    * `record@x@y@onset@duration@samples`.
     */
   private def fixationLine(k: Key, records: Vector[Rec]): String =
     (Seq(k._1, k._2, k._3, k._4) :+
       records
         .sortBy(_.ordinal.getOrElse(0))
-        .map(r => s"${r.number}@${r.x}@${r.y}@${r.onset}@${r.duration}")
+        .map(r =>
+          s"${r.number}@${r.x}@${r.y}@${r.onset}@${r.duration}@${r.samples.getOrElse(sys.error(s"Admitted record ${r.number} has no sample count"))}"
+        )
         .mkString(",")).mkString("\t")
 
   /** `GoldenInventory`: every golden trial with its disposition, and the
@@ -343,7 +345,7 @@ object StudioFixture {
       scanpathLine(k, byTrial(k))
     }
     // S6.2: each admitted trial's fixations in scanpath (ordinal) order, as
-    // fixations.csv states them: record, x, y, onset and duration.
+    // fixations.csv states them: record, x, y, onset, duration and sample count.
     val fixationLines = statuses.collect { case (k, Seq("admitted")) =>
       fixationLine(k, byTrial(k))
     }
@@ -413,7 +415,7 @@ object StudioFixture {
           |  /** One tab-separated line per admitted trial, in inventory order:
           |    * participant, phase, trial, occurrence, then its fixations in
           |    * scanpath (ordinal) order, `,`-separated, each
-          |    * `record@x@y@onset_ms@duration_ms` as fixations.csv states them
+          |    * `record@x@y@onset_ms@duration_ms@sample_count` as fixations.csv states them
           |    * (S6.2). A fixation's index in the line is its scanpath position.
           |    */
           |  val fixations: String = Vector(

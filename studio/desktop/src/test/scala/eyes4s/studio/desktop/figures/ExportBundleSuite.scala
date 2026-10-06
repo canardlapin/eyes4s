@@ -17,17 +17,31 @@
 package eyes4s.studio.desktop.figures
 
 import cats.instances.future.*
+import eyes4s.io.circe
+import eyes4s.results.ResultCell
 import eyes4s.studio.app.compare.SummaryAnswer
 import eyes4s.studio.app.explore.DisplaySource
 import eyes4s.studio.app.figures.*
-import eyes4s.studio.app.plot.PlotValue
 import eyes4s.studio.app.{AppModel, StoryModels}
-import eyes4s.studio.core.backend.{PairRowPage, QueryRow, QueryStatus, ResultSummary}
+import eyes4s.studio.core.backend.{
+  PairRowPage,
+  QueryRow,
+  QueryStatus,
+  ReportRole,
+  ReportView,
+  ResultSummary
+}
 import eyes4s.studio.core.document.PanelLetter
-import eyes4s.studio.core.figures.{BundleTables, MethodsReads, ReferenceReads, ReferenceScores}
+import eyes4s.studio.core.figures.{
+  BundleTableError,
+  BundleTables,
+  MethodsReads,
+  ReferenceReads,
+  ReferenceScores
+}
 import eyes4s.studio.core.fixture.{GoldenAssets, MockStudy, StoryMoment, StoryMoments}
 import eyes4s.studio.core.headless.HeadlessSession
-import eyes4s.studio.core.selection.{ScaleIndex, StudioRef}
+import eyes4s.studio.core.selection.ScaleIndex
 
 import java.nio.charset.StandardCharsets.UTF_8
 import java.nio.file.{Files, Path}
@@ -54,7 +68,8 @@ class ExportBundleSuite extends munit.FunSuite:
       rows: Vector[QueryRow],
       scores: ReferenceScores,
       composer: FigureComposer,
-      pairs: Vector[PairRowPage]
+      pairs: Vector[PairRowPage],
+      report: ReportView
   )
 
   /** Figure 1 with every read answered, and the run's query rows. */
@@ -69,21 +84,38 @@ class ExportBundleSuite extends munit.FunSuite:
         scale2,
         p17ret07
       )
-      facts <- MethodsReads.read[Future](session.admission, session.queries, run7, r3)
-      rows  <- MethodsReads.queryRows[Future](session.queries, run7)
-      pairs <- MethodsReads.pairRows[Future](session.pairRows, run7, ok(summary).scales.size)
-      _     <- session.close
+      facts   <- MethodsReads.read[Future](session.admission, session.queries, run7, r3)
+      rows    <- MethodsReads.queryRows[Future](session.queries, run7)
+      pairs   <- MethodsReads.pairRows[Future](session.pairRows, run7, ok(summary).scales.size)
+      reports <- Future.traverse(FigureComposer.sync(FigureComposer.empty, t2)._2.collect {
+        case ComposerEffect.RequestReport(run, spec, scale) => (run, spec, scale)
+      }) { (run, spec, scale) =>
+        session
+          .report(run, spec, scale.value)
+          .map(r => ComposerIntent.ReportRead(run, spec, scale, r.left.map(_.message)))
+      }
+      _ <- session.close
     yield
       val registry = t2.document.dataset(r3).map(GoldenAssets.registry).getOrElse(Left("no r3"))
-      val c        = Vector(
+      val c        = (reports ++ Vector(
         ComposerIntent.SummaryRead(run7, SummaryAnswer.Answered(ok(summary))),
         ComposerIntent.ReferencesRead(run7, scale2, p17ret07, Right(ok(scores))),
         ComposerIntent.DisplaysRead(r3, registry.map(DisplaySource.Served(_))),
         ComposerIntent.Methods(MethodsIntent.FactsRead(run7, Right(ok(facts))))
-      ).foldLeft(FigureComposer.sync(FigureComposer.empty, t2)._1)((c, i) =>
+      )).foldLeft(FigureComposer.sync(FigureComposer.empty, t2)._1)((c, i) =>
         FigureComposer.update(c, t2, i)._1
       )
-      Served(ok(summary), ok(rows), ok(scores), c, ok(pairs))
+      val source = request(c).source
+      val report = c
+        .reports(
+          (
+            run7,
+            source.reporting,
+            request(c).participantScale.getOrElse(fail("no reporting scale"))
+          )
+        )
+        .fold(fail(_), identity)
+      Served(ok(summary), ok(rows), ok(scores), c, ok(pairs), report)
 
   private def request(c: FigureComposer): BundleRequest =
     FigureComposer.update(c, t2, ComposerIntent.ExportBundle)._2 match
@@ -92,7 +124,7 @@ class ExportBundleSuite extends munit.FunSuite:
 
   private def files(s: Served, c: Option[FigureComposer] = None): Map[String, String] =
     val r = request(c.getOrElse(s.composer))
-    ok(BundleFiles.assemble(r, s.summary, s.rows, s.pairs))
+    ok(BundleFiles.assemble(r, s.summary, s.rows, s.pairs, report = Some(s.report)))
       .map((n, b) => n -> String(Array.from(b), UTF_8))
       .toMap
 
@@ -137,13 +169,14 @@ class ExportBundleSuite extends munit.FunSuite:
           ("figure-1.svg", "", true, false),
           ("results.csv", "480 queries × 4 σ", true, false),
           ("comparisons.csv", "35,876 pair rows", true, false),
-          ("participants.csv", "24 × 2 groups", true, false),
+          ("participants.csv", "24 × 2 groups at 2°", true, false),
           ("methods.md", "", true, false),
           ("project snapshot", "includes images", false, false)
         )
       )
       val r = request(s.composer)
       assertEquals(r.folder, "figure-1-bundle")
+      assertEquals(r.participantScale, Some(scale2))
       assertEquals(
         r.items,
         Vector(
@@ -199,6 +232,7 @@ class ExportBundleSuite extends munit.FunSuite:
           """Figure 1 export bundle
             |run 7 · analysis rev 4 · data r3 · reporting “By retrieval response” · studio build eyes4s 0.1
             |reporting spec by-retrieval-response sha256:3a0ed363d486975f28f3eb990c0deb87c415924ebe4a301e638dae73221de5dd
+            |participants.csv and reporting counts: σ 2° (scale index 2); the first participant panel's scale, or the first declared scale for a figure without one.
             |
             |Files:
             |- figure-1.svg
@@ -254,9 +288,11 @@ class ExportBundleSuite extends munit.FunSuite:
   /** results.csv's table digest for the fixture, recorded when its label
     * domain was settled (S9.5): pair absences must not change it.
     */
-  private val ResultsDigest = "3ff1a6787c1f1019f20d6b05390b89fa7aa54d69bc595a82ac0cff3192612545"
+  private val ResultsDigest = "c032718a63e58d745850c70b35f038ab9ecfd9109ce4252c20e3d0834252149f"
 
-  test("results.csv keeps its digest; comparisons.csv has its own absence labels") {
+  test(
+    "results.csv pins explicit missing references; comparisons.csv has its own absence labels"
+  ) {
     served.map { s =>
       val r       = request(s.composer)
       val results =
@@ -407,6 +443,41 @@ class ExportBundleSuite extends munit.FunSuite:
     }
   }
 
+  test("results.csv retains each scale failure and refuses an incomplete vector") {
+    served.map { s =>
+      val failed      = s.rows.find(_.status.isFailed).getOrElse(fail("no failed query"))
+      val first       = failed.status.diagnosticAt(0).getOrElse(fail("no failure diagnostic"))
+      val diagnostics = s.summary.scales.indices
+        .map(scale =>
+          first.copy(code = s"failure.scale-$scale", message = s"failure at scale $scale")
+        )
+        .toVector
+      val row    = failed.copy(status = QueryStatus.FailedAtScales(diagnostics))
+      val source = request(s.composer).source
+      val table  = ok(BundleTables.results(source, s.summary, Vector(row)))
+      val reason = table.columns.indexWhere(_.name == "reason")
+      assertEquals(
+        table.rows.map(_(reason)),
+        diagnostics.map(d => ResultCell.Text(s"${d.code}: ${d.message}"))
+      )
+      assertEquals(
+        BundleTables.results(
+          source,
+          s.summary,
+          Vector(row.copy(status = QueryStatus.FailedAtScales(diagnostics.dropRight(1))))
+        ),
+        Left(
+          BundleTableError.FailureScales(
+            run7,
+            row.query,
+            diagnostics.size,
+            diagnostics.size - 1
+          )
+        )
+      )
+    }
+  }
+
   test("results.csv equals what the page shows: panel C's query at 2°") {
     served.map { s =>
       val row = csv(files(s)("results.csv"))
@@ -445,50 +516,53 @@ class ExportBundleSuite extends munit.FunSuite:
       // The fixture's no-match rows are the run's.
       val fromRows = s.rows.count(_.status.isInstanceOf[QueryStatus.NoMatch])
       assertEquals(rows.count(_("status") == "no-match"), fromRows * 4)
+      rows.filter(_("status") == "no-match").foreach { row =>
+        assertEquals(row("matched_trial__valid"), "false")
+        assertEquals(row("matched_trial"), "")
+      }
     }
   }
 
   // --- participants.csv ------------------------------------------------------------
 
-  test("participants.csv equals panel D's participant means, and the fixture's n") {
+  test("participants.csv uses the explicitly served report scale") {
     served.map { s =>
       val rows = csv(files(s)("participants.csv"))
       assertEquals(rows.size, 24 * 2)
-      val page = FigureComposer.view(s.composer, t2).page.getOrElse(fail("no page"))
-      val d    = page.panels.find(_.letter == ok(PanelLetter.of("D"))).map(_.body) match
-        case Some(PanelBody.Plot(vm)) => vm.source
-        case other                    => fail(other.toString)
-      val shown = d.rows.collect {
-        case r @ PlotRowOf(StudioRef.ParticipantSummary(_, _, _, Some(group), participant)) =>
-          (participant, group.label) -> r.values(2)
-      }.toMap
-      assertEquals(shown.size, 48)
       rows.foreach { r =>
-        val onScreen = shown((r("participant"), r("group"))) match
-          case PlotValue.Number(v) => Some(v)
-          case _                   => None
-        assertEquals(number(r, "d"), onScreen, r)
+        val expected = s.report.participant(
+          Some(eyes4s.studio.core.backend.Response(r("group"))),
+          ReportRole.Difference,
+          r("participant")
+        )
+        assertEquals(number(r, "d"), expected.flatMap(_.value), r)
       }
       val p17 = rows.find(r => r("participant") == "P17" && r("group") == "Forgotten").get
       assertEquals(p17("n"), "2")
       assertEquals(p17("requested"), "20")
-      assertEquals(BundleTables.meansScale(s.summary), "2°")
+      val table = ok(BundleTables.participants(request(s.composer).source, s.summary, s.report))
+      assert(table.context.circe.hcursor.get[String]("means_scale").contains("2°"))
+      // Equal values at another scale still carry that scale's declared identity.
+      val sameValues = ok(
+        BundleTables.participants(
+          request(s.composer).source,
+          s.summary,
+          s.report.copy(scale = 1)
+        )
+      )
+      assert(sameValues.context.circe.hcursor.get[String]("means_scale").contains("1°"))
     }
   }
 
   test("a group without queries is a row with n 0 and missing means, never zero") {
     served.map { s =>
       val source = request(s.composer).source
-      val empty  = s.summary.copy(participants =
-        s.summary.participants.map(p =>
-          if p.participant != "P17" then p
-          else
-            p.copy(groups =
-              p.groups.map(g => if g.label.label == "Forgotten" then g.copy(n = 0) else g)
-            )
+      val empty  = s.report.copy(participants =
+        s.report.participants.filterNot(p =>
+          p.participant == "P17" && p.group.exists(_.label == "Forgotten")
         )
       )
-      val table = ok(BundleTables.participants(source, empty))
+      val table = ok(BundleTables.participants(source, s.summary, empty))
       val rows  = csv(eyes4s.io.csv(table).encode)
       val p17   = rows.find(r => r("participant") == "P17" && r("group") == "Forgotten").get
       assertEquals(p17("n"), "0")
@@ -516,6 +590,3 @@ class ExportBundleSuite extends munit.FunSuite:
       assertEquals(files(s, Some(c))("methods.md"), edited + "\n")
     }
   }
-
-  private object PlotRowOf:
-    def unapply(r: eyes4s.studio.app.plot.PlotRow): Some[StudioRef] = Some(r.ref)

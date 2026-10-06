@@ -316,7 +316,11 @@ class QueriesNavigatorSuite extends munit.FunSuite:
       val p17 = vm.groups.find(_.key == "participant:P17").get
       assertEquals(
         p17.summaryRef,
-        Some(StudioRef.ParticipantSummary(run7, reporting, sigma2, None, "P17"))
+        s.reports
+          .get((sigma2, true))
+          .collect { case ReportAnswer.Answered(view) => view }
+          .flatMap(_.participant(None, eyes4s.studio.core.backend.ReportRole.Difference, "P17"))
+          .map(_.ref)
       )
       assert(vm.groups.forall(_.summaryRef.isDefined))
       // A tally reads as a path, and lies under the requested queries.
@@ -427,10 +431,21 @@ class QueriesNavigatorSuite extends munit.FunSuite:
       val at1 = s.copy(scale = Some(right(ScaleIndex.of(1))))
       val vm  = QueriesNavigator.vm(QueriesNavigator.initial, at1, Vector.empty)
       val p17 = vm.groups.find(_.key == "participant:P17").get
-      val ps  = s.answered.get.participants.find(_.participant == "P17").get
-      val d1  = Format.signed(ps.all.dByScale(1), 2)
+      val ps  = s.reports
+        .get((right(ScaleIndex.of(1)), true))
+        .collect { case ReportAnswer.Answered(view) => view }
+        .get
+        .participant(None, eyes4s.studio.core.backend.ReportRole.Difference, "P17")
+        .get
+      val d1 = Format.signed(ps.value.get, 2)
       assert(p17.summary.endsWith(d1), (p17.summary, d1))
-      assertNotEquals(d1, Format.signed(ps.all.d, 2))
+      val at2 = s.reports
+        .get((right(ScaleIndex.of(2)), true))
+        .collect { case ReportAnswer.Answered(view) => view }
+        .get
+        .participant(None, eyes4s.studio.core.backend.ReportRole.Difference, "P17")
+        .get
+      assertNotEquals(d1, Format.signed(at2.value.get, 2))
     }
   }
 

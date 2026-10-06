@@ -17,7 +17,7 @@
 package eyes4s.studio.desktop.compare
 
 import eyes4s.studio.app.StoryModels
-import eyes4s.studio.core.document.ReportingFilter
+import eyes4s.studio.core.document.{ReportingContrast, ReportingFilter}
 import eyes4s.studio.core.fixture.StoryMoment
 import eyes4s.studio.desktop.harness.StudioTheme
 import eyes4s.studio.desktop.shell.ShellFxSuite
@@ -49,7 +49,7 @@ class ReportingEditorFxSuite extends ShellFxSuite:
     assertEquals(runOnFx(r.shown("all")), "All contributing retrieval queries (454)")
     assertEquals(
       runOnFx(r.shown("minimum")),
-      "off · would drop 2 Forgotten cells (P17 n 2, P21 n 2)"
+      "off · the report will name excluded participant-group cells when applied"
     )
     assertEquals(runOnFx(r.toggles), (false, false, false))
     fx.snapshot(StudioTheme.Light)
@@ -59,7 +59,9 @@ class ReportingEditorFxSuite extends ShellFxSuite:
     val nodes  = runOnFx(r.groupNodes)
     val before = runOnFx(w.runtime.model)
     runOnFx(r.clickMinimum())
-    eventually(fx, "the minimum on")(r.toggles._2)
+    eventually(fx, "the evaluated minimum on")(
+      r.toggles._2 && r.shown("minimum").startsWith("on · drops")
+    )
     assertEquals(
       runOnFx(r.shown("minimum")),
       "on · drops 2 Forgotten cells (P17 n 2, P21 n 2)"
@@ -68,10 +70,9 @@ class ReportingEditorFxSuite extends ShellFxSuite:
     assert(runOnFx(r.groupNodes).zip(nodes).forall(_ eq _))
     runOnFx(r.clickOutside())
     eventually(fx, "the filter on")(r.toggles._1)
-    // With a filter on, the preview waits for evaluation.
-    assertEquals(
-      runOnFx(r.shown("minimum")),
-      "Cells dropped by the minimum appear after evaluation (the filters change n)"
+    // The next report names exclusions after the edited filter is evaluated.
+    eventually(fx, "filtered minimum evaluated")(
+      !r.shown("minimum").contains("appear after report evaluation")
     )
     val after = runOnFx(w.runtime.model)
     val spec  = after.document.reporting.find(_.id == StoryModels.reporting).get
@@ -84,6 +85,46 @@ class ReportingEditorFxSuite extends ShellFxSuite:
     assertEquals(after.document.runs, before.document.runs)
     assertEquals(after.document.presentation.shownRun, before.document.presentation.shownRun)
     assertEquals(after.jobs, before.jobs)
+  }
+
+  fxStage.test(
+    "ordered contrast controls persist only the entered direction and reuse the run"
+  ) { fx =>
+    val w = boot(fx, StoryModels.t3Summary, StoryMoment.T3)
+    val r = w.reporting
+    eventually(fx, "run 7's summary")(r.shown("reuses").contains("35,876"))
+    val before = runOnFx(w.runtime.model)
+    assertEquals(before.document.reporting.head.contrast, None)
+    runOnFx(r.applyContrast("Remembered", "Forgotten"))
+    eventually(fx, "explicit direction saved")(
+      w.runtime.model.document.reporting.head.contrast.nonEmpty
+    )
+    val after = runOnFx(w.runtime.model)
+    assertEquals(
+      after.document.reporting.head.contrast,
+      ReportingContrast.of("Remembered", "Forgotten").toOption
+    )
+    assertEquals(after.document.runs, before.document.runs)
+    assertEquals(after.jobs, before.jobs)
+    runOnFx(r.clickMinimum())
+    eventually(fx, "unrelated edit retains operands")(
+      w.runtime.model.document.reporting.head.minimumPerGroup.nonEmpty
+    )
+    assertEquals(
+      runOnFx(w.runtime.model.document.reporting.head.contrast),
+      after.document.reporting.head.contrast
+    )
+    runOnFx(r.applyContrast("Remembered", "Remembered"))
+    assertEquals(
+      runOnFx(w.runtime.model.document.reporting.head.contrast),
+      after.document.reporting.head.contrast
+    )
+    runOnFx(r.applyContrast("Forgotten", "Remembered"))
+    eventually(fx, "direction reversed")(
+      w.runtime.model.document.reporting.head.contrast.exists(_.minuend == "Forgotten")
+    )
+    runOnFx(r.clearContrast())
+    eventually(fx, "contrast removed")(w.runtime.model.document.reporting.head.contrast.isEmpty)
   }
 
   private val buildRoot: Path = Paths.get(
@@ -99,6 +140,7 @@ class ReportingEditorFxSuite extends ShellFxSuite:
     case AccessibleRole.RADIO_BUTTON => A11yRole.RadioButton.id
     case AccessibleRole.CHECK_BOX    => A11yRole.CheckBox.id
     case AccessibleRole.BUTTON       => A11yRole.Button.id
+    case AccessibleRole.TEXT_FIELD   => A11yRole.TextField.id
     case other                       => other.toString.toLowerCase
 
   fxStage.test(

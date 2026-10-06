@@ -20,7 +20,7 @@ import cats.instances.future.*
 import eyes4s.studio.app.compare.SummaryAnswer
 import eyes4s.studio.app.layout.StudioLayouts
 import eyes4s.studio.app.{AppModel, Intent, StoryModels}
-import eyes4s.studio.core.backend.{PageRequest, QueryStatus, ResultSummary}
+import eyes4s.studio.core.backend.{PageRequest, QueryStatus, ReportView, ResultSummary}
 import eyes4s.studio.core.document.FigureId
 import eyes4s.studio.core.figures.{FigureSource, MethodsFacts, MethodsReads}
 import eyes4s.studio.core.fixture.{StoryMoment, StoryMoments}
@@ -44,16 +44,21 @@ class MethodsGeneratorSuite extends munit.FunSuite:
   private def source       = ok(FigureSource.of(t2.document, figure1))
 
   /** Run 7's result summary and the facts its methods cite. */
-  private def read: Future[(ResultSummary, MethodsFacts)] =
+  private def read: Future[(ResultSummary, MethodsFacts, ReportView)] =
     for
       session <- HeadlessSession.open(StoryMoment.T2)
       summary <- session.result(run7)
       facts   <- MethodsReads.read[Future](session.admission, session.queries, run7, r3)
-      _       <- session.close
-    yield (ok(summary), ok(facts))
+      report  <- session.report(
+        run7,
+        source.reporting,
+        ok(FigureComposer.reportingScale(source)).value
+      )
+      _ <- session.close
+    yield (ok(summary), ok(facts), ok(report))
 
   private def generated: Future[GeneratedMethods] =
-    read.map((s, f) => ok(MethodsText.generate(source, s, f)))
+    read.map((s, f, r) => ok(MethodsText.generate(source, s, f, r)))
 
   /** The generated methods.md of Figure 1 at t2: the fixture's golden text. */
   private val Golden: String =
@@ -75,9 +80,8 @@ class MethodsGeneratorSuite extends munit.FunSuite:
       "for 171 queries); their mean is B, and D = M − B. A contrast required all of its " +
       "pairs: 454 contributed, 3 failed (off-window), 9 had no matched trial and 14 " +
       "queries were not admitted. D was averaged within participant, then across " +
-      "participants with equal weight, separately by retrieval response (n = 24 each; paired " +
-      "n = 24). Per participant, groups held 2–17 queries; no minimum per group was applied " +
-      "in this reporting spec (P17 and P21 each have 2 Forgotten queries). D measures spatial " +
+      "participants with equal weight, separately by retrieval response (n = 24 each). Per participant, groups held 2–17 queries; no minimum per group was applied " +
+      "in this reporting spec (P17 and P21 each have 2 Forgotten queries). Reporting counts above are evaluated at σ 2°. D measures spatial " +
       "correspondence, not sequential replay. D does not separate participant-specific " +
       "reinstatement from item-driven salience common to all viewers of that image, and may " +
       "retain residual centre bias. Analysis rev 4, run 7; eyes4s 0.1."
@@ -117,8 +121,8 @@ class MethodsGeneratorSuite extends munit.FunSuite:
   }
 
   test("a changed fact changes the text where it is cited, and nowhere else") {
-    read.map { (summary, facts) =>
-      val before = ok(MethodsText.generate(source, summary, facts)).text
+    read.map { (summary, facts, report) =>
+      val before = ok(MethodsText.generate(source, summary, facts, report)).text
       val after  = ok(
         MethodsText.generate(
           source,
@@ -129,7 +133,8 @@ class MethodsGeneratorSuite extends munit.FunSuite:
           facts.copy(
             admission = facts.admission.copy(admitted = 936),
             failures = Vector("study-failure.off-window" -> 3, "study-failure.empty-map" -> 1)
-          )
+          ),
+          report
         )
       ).text
       assertEquals(
@@ -146,13 +151,14 @@ class MethodsGeneratorSuite extends munit.FunSuite:
   }
 
   test("the outside share is eyes4s's share of fixation duration, unsaid when undefined") {
-    read.map { (summary, facts) =>
+    read.map { (summary, facts, report) =>
       def text(w: eyes4s.studio.core.backend.WindowTotals) =
         ok(
           MethodsText.generate(
             source,
             summary,
-            facts.copy(admission = facts.admission.copy(window = w))
+            facts.copy(admission = facts.admission.copy(window = w)),
+            report
           )
         ).text
       val w = facts.admission.window
@@ -170,8 +176,8 @@ class MethodsGeneratorSuite extends munit.FunSuite:
   }
 
   test("no-fixations is its own disposition, never counted as quarantined") {
-    read.map { (summary, facts) =>
-      val g      = ok(MethodsText.generate(source, summary, facts))
+    read.map { (summary, facts, report) =>
+      val g      = ok(MethodsText.generate(source, summary, facts, report))
       val facts1 = g.tokens.collect { case MethodsToken.Fact(slot, shown) => slot -> shown }
       assert(facts1.contains(MethodsSlot.Quarantined -> "12"), facts1)
       assert(facts1.contains(MethodsSlot.NoFixations -> "5"), facts1)
@@ -181,14 +187,20 @@ class MethodsGeneratorSuite extends munit.FunSuite:
   }
 
   test("facts of another run or dataset are refused, naming both") {
-    read.map { (summary, facts) =>
+    read.map { (summary, facts, report) =>
       val run5 = StoryMoments.run5
       assertEquals(
-        MethodsText.generate(source, summary.copy(run = run5), facts).left.map(_.message),
+        MethodsText
+          .generate(source, summary.copy(run = run5), facts, report)
+          .left
+          .map(_.message),
         Left("The methods of run 7 were given the result summary of run 5.")
       )
       assertEquals(
-        MethodsText.generate(source, summary, facts.copy(run = run5)).left.map(_.message),
+        MethodsText
+          .generate(source, summary, facts.copy(run = run5), report)
+          .left
+          .map(_.message),
         Left("The methods of run 7 were given the query facts of run 5.")
       )
       assertEquals(
@@ -196,7 +208,8 @@ class MethodsGeneratorSuite extends munit.FunSuite:
           .generate(
             source,
             summary,
-            facts.copy(admission = facts.admission.copy(dataset = StoryMoments.r2))
+            facts.copy(admission = facts.admission.copy(dataset = StoryMoments.r2)),
+            report
           )
           .left
           .map(_.message),
@@ -206,7 +219,7 @@ class MethodsGeneratorSuite extends munit.FunSuite:
   }
 
   test("the facts are read page by page and tallied") {
-    read.map { (_, facts) =>
+    read.map { (_, facts, _) =>
       assertEquals(facts.queries, 480)
       // Contributing and failed queries: 454 + 3.
       assertEquals(facts.controls.queries, 457)
@@ -232,6 +245,26 @@ class MethodsGeneratorSuite extends munit.FunSuite:
       val facts = MethodsReads.of(run7, ok(summary), unscored)
       assertEquals(facts.controls, MethodsReads.of(run7, ok(summary), rows).controls)
       assert(!facts.controls.entries.exists(_._1 == 5), facts.controls)
+  }
+
+  test("failure facts retain every scale code once per query") {
+    for
+      session   <- HeadlessSession.open(StoryMoment.T2)
+      page      <- session.queries(run7, ok(PageRequest.of(0, PageRequest.MaximumSize)))
+      admission <- session.admission(r3)
+      _         <- session.close
+    yield
+      val failed = ok(page).rows.find(_.status.isFailed).getOrElse(fail("no failed query"))
+      val first  = failed.status.diagnosticAt(0).getOrElse(fail("no failure diagnostic"))
+      val second =
+        first.copy(code = "study-failure.empty-map", message = "different scale failure")
+      val rows = Vector(
+        failed.copy(status = QueryStatus.FailedAtScales(Vector(first, second, first))),
+        failed.copy(status = QueryStatus.Failed(first))
+      )
+      val facts = MethodsReads.of(run7, ok(admission), rows)
+      assertEquals(facts.failures, Vector(first.code -> 2, second.code -> 1))
+      assertEquals(facts.controls.queries, 2)
   }
 
   test("a query listing in small pages reads every page") {
@@ -261,9 +294,52 @@ class MethodsGeneratorSuite extends munit.FunSuite:
 
   // --- Edit, regenerate, diff ----------------------------------------------------------
 
-  private def composer(facts: MethodsFacts, summary: ResultSummary): FigureComposer =
+  test("paired counts are cited only from an explicitly declared report contrast") {
+    for
+      values  <- read
+      session <- HeadlessSession.open(StoryMoment.T2)
+      spec     = source.reporting
+      contrast = ok(eyes4s.studio.core.document.ReportingContrast.of("Remembered", "Forgotten"))
+      explicit = ok(
+        eyes4s.studio.core.document.ReportingSpec.of(
+          spec.id,
+          spec.name,
+          spec.groupBy,
+          spec.filters,
+          spec.minimumPerGroup,
+          spec.weighting,
+          Some(contrast)
+        )
+      )
+      answer <- session.report(run7, explicit, ok(FigureComposer.reportingScale(source)).value)
+      _      <- session.close
+    yield
+      val (summary, facts, meanOnly) = values
+      assert(
+        !ok(MethodsText.generate(source, summary, facts, meanOnly)).text.contains("paired n")
+      )
+      val report = ok(answer)
+      val paired = report
+        .contrast(eyes4s.studio.core.backend.ReportRole.Difference)
+        .getOrElse(fail("no declared contrast"))
+      val text =
+        ok(MethodsText.generate(source.copy(reporting = explicit), summary, facts, report)).text
+      assert(text.contains(s"paired n = ${paired.pairedN}"), text)
+  }
+
+  private def composer(
+      facts: MethodsFacts,
+      summary: ResultSummary,
+      report: ReportView
+  ): FigureComposer =
     Vector(
       ComposerIntent.SummaryRead(run7, SummaryAnswer.Answered(summary)),
+      ComposerIntent.ReportRead(
+        run7,
+        source.reporting,
+        ok(FigureComposer.reportingScale(source)),
+        Right(report)
+      ),
       ComposerIntent.Methods(MethodsIntent.FactsRead(run7, Right(facts)))
     ).foldLeft(FigureComposer.sync(FigureComposer.empty, t2)._1)((c, i) =>
       FigureComposer.update(c, t2, i)._1
@@ -279,12 +355,12 @@ class MethodsGeneratorSuite extends munit.FunSuite:
   private val Edited = "D measures where gaze went, not the order it went there."
 
   test("the pane asks for the run's facts and shows the generated text") {
-    read.map { (summary, facts) =>
+    read.map { (summary, facts, report) =>
       val (_, asked) = FigureComposer.sync(FigureComposer.empty, t2)
       assert(asked.contains(ComposerEffect.RequestMethods(run7, r3)), asked)
       val waiting = methods(FigureComposer.sync(FigureComposer.empty, t2)._1)
       assertEquals(waiting.text, Left("Reading run 7's results for the methods…"))
-      val vm = methods(composer(facts, summary))
+      val vm = methods(composer(facts, summary, report))
       assertEquals(vm.text, Right(Golden))
       assertEquals(
         vm.heading,
@@ -295,8 +371,11 @@ class MethodsGeneratorSuite extends munit.FunSuite:
   }
 
   test("editing one sentence shows it in the diff against the generated text") {
-    read.map { (summary, facts) =>
-      val c = act(composer(facts, summary), MethodsIntent.Edit(Golden.replace(Replay, Edited)))
+    read.map { (summary, facts, report) =>
+      val c = act(
+        composer(facts, summary, report),
+        MethodsIntent.Edit(Golden.replace(Replay, Edited))
+      )
       // Show diff brings the "Diff vs generated" pane forward.
       assertEquals(
         FigureComposer.update(c, t2, ComposerIntent.Methods(MethodsIntent.ShowDiff))._2,
@@ -323,9 +402,12 @@ class MethodsGeneratorSuite extends munit.FunSuite:
   }
 
   test("regenerating over edits shows a diff and waits; it never discards them") {
-    read.map { (summary, facts) =>
+    read.map { (summary, facts, report) =>
       val edited =
-        act(composer(facts, summary), MethodsIntent.Edit(Golden.replace(Replay, Edited)))
+        act(
+          composer(facts, summary, report),
+          MethodsIntent.Edit(Golden.replace(Replay, Edited))
+        )
       // Nothing new to generate: the edits stay, and the author is told.
       val same = act(edited, MethodsIntent.Regenerate)
       assertEquals(methods(same).text, Right(Golden.replace(Replay, Edited)))
@@ -387,10 +469,10 @@ class MethodsGeneratorSuite extends munit.FunSuite:
   }
 
   test("an unedited text follows its facts and regenerates without asking") {
-    read.map { (summary, facts) =>
+    read.map { (summary, facts, report) =>
       val newer = facts.copy(failures = Vector("study-failure.empty-map" -> 3))
-      val c     = act(composer(facts, summary), MethodsIntent.FactsRead(run7, Right(newer)))
-      val vm    = methods(act(c, MethodsIntent.Regenerate))
+      val c = act(composer(facts, summary, report), MethodsIntent.FactsRead(run7, Right(newer)))
+      val vm = methods(act(c, MethodsIntent.Regenerate))
       assert(vm.text.exists(_.contains("3 failed (empty-map)")))
       assertEquals(vm.choice, None)
       assertEquals(

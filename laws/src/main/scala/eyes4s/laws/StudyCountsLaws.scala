@@ -55,6 +55,18 @@ object StudyCountsLaws extends Laws:
           result.eligibleQueries == c.queries && result.totalMaps == c.maps * c.scales
         }
       },
+      "per-query metadata agrees with independent pair accounting" -> forAll(cases) { c =>
+        run(c, 1).exists { result =>
+          val rows = result.queryPairs.values.toVector
+          rows.map(_.matchedPairs.toLong).sum == c.matched &&
+          rows.map(_.controlPairs.toLong).sum == c.controls &&
+          rows.count(_.matchedPairs > 0).toLong == c.queries &&
+          rows.forall(r =>
+            r.matchedPairs >= 0 && r.controlPairs >= 0 &&
+              r.singleMatchedReference.isDefined == (r.matchedPairs == 1)
+          )
+        }
+      },
       "counts are invariant to page size" -> forAll(cases, Gen.chooseNum(1, 20)) { (c, n) =>
         (run(c, 1), run(c, n)) match
           case (Right(a), Right(b)) =>
@@ -62,7 +74,13 @@ object StudyCountsLaws extends Laws:
             a.matched.unmatchedFocal == b.matched.unmatchedFocal &&
             a.controls.unmatchedReferences == b.controls.unmatchedReferences &&
             a.cardinality.multiple == b.cardinality.multiple &&
-            a.cardinality.unmatched == b.cardinality.unmatched
+            a.cardinality.unmatched == b.cardinality.unmatched &&
+            a.queryPairs.view
+              .mapValues(r => (r.matchedPairs, r.singleMatchedReference, r.controlPairs))
+              .toMap ==
+              b.queryPairs.view
+                .mapValues(r => (r.matchedPairs, r.singleMatchedReference, r.controlPairs))
+                .toMap
           case _ => false
       }
     )

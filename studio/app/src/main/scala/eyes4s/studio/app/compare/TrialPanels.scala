@@ -199,7 +199,7 @@ object TrialPanels:
     */
   def referenceOf(focus: PanelFocus, rows: Vector[QueryRow]): Option[(PairDesign, TrialKey)] =
     focus.reference.orElse(
-      rows.find(_.query == focus.query).map(r => (PairDesign.Matched, r.matched))
+      rows.find(_.query == focus.query).flatMap(_.matched.map(PairDesign.Matched -> _))
     )
 
   /** Follows the model and the shown run: a new reference pair is inspected
@@ -241,7 +241,7 @@ object TrialPanels:
     yield Vector(
       Some(f.query),
       pair.map(_._3),
-      rows.find(_.query == f.query).map(_.matched)
+      rows.find(_.query == f.query).flatMap(_.matched)
     ).flatten.distinct.map(ContentKey(run.revision, _))).getOrElse(Vector.empty)
     val kept     = s.contents.filter((k, _) => needed.contains(k))
     val missing  = needed.filterNot(kept.contains)
@@ -336,17 +336,20 @@ object TrialPanels:
         countOf(s, contentKey(key))
       )
     }
-    val extras = row.map { r =>
-      val matched = f.pair(PairDesign.Matched, r.matched)
-      ReferenceExtras(
-        Option.when(reference.exists(_.role == PanelRole.Control))(
-          (PanelText(PanelTextId.BackToMatched), Intent.Explain(Place.At(matched)))
-        ),
-        PanelText(PanelTextId.MatchedIs, title(r.matched, Some(r.item)))
-      )
+    val extras = row.flatMap { r =>
+      r.matched.map { key =>
+        val matched = f.pair(PairDesign.Matched, key)
+        ReferenceExtras(
+          Option.when(reference.exists(_.role == PanelRole.Control))(
+            (PanelText(PanelTextId.BackToMatched), Intent.Explain(Place.At(matched)))
+          ),
+          PanelText(PanelTextId.MatchedIs, title(key, Some(r.item)))
+        )
+      }
     }
     val remembered = row
-      .flatMap(r => s.contents.get(contentKey(r.matched)).flatten)
+      .flatMap(_.matched)
+      .flatMap(key => s.contents.get(contentKey(key)).flatten)
       .collect { case Right(c) => c.display.display }
       .collect { case Display.Image(AssetLink.Present(asset)) =>
         Remembered(asset, s.underlay)
@@ -444,9 +447,10 @@ object TrialPanels:
 
   private def statusWord(status: QueryStatus): String = status match
     case QueryStatus.Contributing(_, _, _) => SummaryText(SummaryTextId.StatusContributing)
-    case QueryStatus.Failed(_)             => SummaryText(SummaryTextId.StatusFailed)
-    case QueryStatus.NoMatch(_)            => SummaryText(SummaryTextId.StatusNoMatch)
-    case QueryStatus.NotAdmitted(_)        => SummaryText(SummaryTextId.StatusNotAdmitted)
+    case QueryStatus.Failed(_) | QueryStatus.FailedAtScales(_) =>
+      SummaryText(SummaryTextId.StatusFailed)
+    case QueryStatus.NoMatch(_)     => SummaryText(SummaryTextId.StatusNoMatch)
+    case QueryStatus.NotAdmitted(_) => SummaryText(SummaryTextId.StatusNotAdmitted)
 
   private def scoreOf(answer: Option[PairAnswer]): String = answer match
     case None => PanelText(PanelTextId.Reading)

@@ -157,13 +157,21 @@ object ReportEvaluation:
       }
       term <- reporting.groupBy.traverse(c => categorical(reporting, c.label, levels))
       grouping = term.map(Grouping.ByLevel(_))
-      // A grouping by two levels is contrasted within participants, the
-      // first declared level minus the second (Remembered − Forgotten).
-      contrast = term.flatMap {
-        case t @ LevelTerm.Categorical(_, declared) if declared.values.size == 2 =>
-          Some(LevelContrast(t, declared.values(0), declared.values(1)))
-        case _ => None
-      }
+      contrast =
+        for
+          t        <- term
+          operands <- reporting.contrast
+        yield LevelContrast(t, operands.minuend, operands.subtrahend)
+      _ <- reporting.minimumPerGroup.traverse_(minimum =>
+        Either.cond(
+          reporting.weighting != ReportingWeight.PooledQueries,
+          (),
+          refusal(
+            reporting,
+            s"Pooled-query weighting cannot apply the requested minimum of ${minimum.queries} queries per participant group."
+          )
+        )
+      )
       reduce <- reporting.weighting match
         case ReportingWeight.PooledQueries    => Right(ReducePolicy.PooledQueries)
         case ReportingWeight.ParticipantMeans =>
@@ -189,13 +197,13 @@ object ReportEvaluation:
     * leaves out and those it cannot decide (an undefined share). Nothing is
     * subtracted here.
     */
-  def evaluate[K](
+  def evaluateWithNative[K](
       run: RunId,
       reporting: ReportingSpec,
       scale: Int,
       levels: Map[String, Vector[String]],
       source: ReportSource[K]
-  ): Either[ReportRefusal, ReportView] =
+  ): Either[ReportRefusal, (ReportView, Report[K])] =
     def evaluated(filters: Filters) =
       spec(reporting, scale, levels, filters).flatMap(s =>
         Report
@@ -211,7 +219,17 @@ object ReportEvaluation:
         .of(scale)
         .leftMap(e => ReportRefusal.Evaluation(reporting.id.value, e.message))
       served <- view(run, reporting, index, report, window)
-    yield served
+    yield (served, report)
+
+  /** The view alone when a consumer does not retain native navigation values. */
+  def evaluate[K](
+      run: RunId,
+      reporting: ReportingSpec,
+      scale: Int,
+      levels: Map[String, Vector[String]],
+      source: ReportSource[K]
+  ): Either[ReportRefusal, ReportView] =
+    evaluateWithNative(run, reporting, scale, levels, source).map(_._1)
 
   /** eyes4s's absence as the protocol writes it. */
   def absence(a: Absence): ReportAbsence = a match

@@ -31,12 +31,13 @@ import eyes4s.studio.core.backend.{
   DensityGrid,
   LedgerPages,
   PairRowPage,
+  ReportView,
   RunId,
   TrialFixations,
   TrialKey
 }
 import eyes4s.studio.core.diff.{LedgerUnavailable, StatusChanges, StatusDiff}
-import eyes4s.studio.core.document.{DatasetRevisionSpec, FigureId, PanelLetter}
+import eyes4s.studio.core.document.{DatasetRevisionSpec, FigureId, PanelLetter, ReportingSpec}
 import eyes4s.studio.core.figures.{MethodsFacts, MethodsReads, ReferenceReads, ReferenceScores}
 import eyes4s.studio.core.selection.{ScaleIndex, ViewId}
 import eyes4s.studio.desktop.explore.NavigatorDisplays
@@ -82,6 +83,12 @@ trait FigureInputs:
   ): Unit
 
   def summary(run: RunId, done: SummaryAnswer => Unit): Unit
+  def report(
+      run: RunId,
+      spec: ReportingSpec,
+      scale: ScaleIndex,
+      done: Either[String, ReportView] => Unit
+  ): Unit
   def references(
       run: RunId,
       scale: ScaleIndex,
@@ -160,10 +167,20 @@ object FigureInputs:
           case Right(a) => done(a.left.map(_.message))
         }
       def summary(run: RunId, done: SummaryAnswer => Unit): Unit =
-        session.run(session.backend.result(run)) {
+        session.run(session.reads.result(run)) {
           case Left(e)          => done(SummaryAnswer.Failed(reason(e)))
           case Right(Left(err)) => done(SummaryAnswer.Refused(err))
           case Right(Right(s))  => done(SummaryAnswer.Answered(s))
+        }
+      def report(
+          run: RunId,
+          spec: ReportingSpec,
+          scale: ScaleIndex,
+          done: Either[String, ReportView] => Unit
+      ): Unit =
+        session.run(session.reads.report(run, spec, scale.value)) {
+          case Left(e)       => done(Left(reason(e)))
+          case Right(answer) => done(answer.left.map(_.message))
         }
       def references(
           run: RunId,
@@ -173,8 +190,8 @@ object FigureInputs:
       ): Unit =
         session.run(
           ReferenceReads.read[IO](
-            session.backend.inspect(run, _),
-            session.backend.navigator.pairs,
+            session.reads.inspect(run, _),
+            session.navigator.pairs,
             run,
             scale,
             query
@@ -193,7 +210,7 @@ object FigureInputs:
           trial: TrialKey,
           done: Either[String, DensityGrid] => Unit
       ): Unit =
-        session.run(session.backend.mapGrid(run, scale.value, trial)) {
+        session.run(session.reads.mapGrid(run, scale.value, trial)) {
           case Left(e)          => done(Left(reason(e)))
           case Right(Left(err)) => done(Left(err.message))
           case Right(Right(g))  => done(Right(g))
@@ -205,7 +222,7 @@ object FigureInputs:
       ): Unit =
         session.run(
           MethodsReads
-            .read[IO](session.backend.admission, session.backend.queries, run, dataset)
+            .read[IO](session.backend.admission, session.reads.queries, run, dataset)
         ) {
           case Left(e)  => done(Left(reason(e)))
           case Right(a) => done(a.left.map(_.message))
@@ -258,26 +275,41 @@ object FigureInputs:
             // The pair rows are read only when comparisons.csv is chosen.
             val comparisons = request.items.contains(BundleItem.Comparisons)
             val read        = (for
-              summary <- EitherT(session.backend.result(run)).leftMap(_.message)
-              rows    <- EitherT(MethodsReads.queryRows(session.backend.queries, run))
+              summary <- EitherT(session.reads.result(run)).leftMap(_.message)
+              report  <-
+                if !request.items.contains(BundleItem.Participants) then
+                  EitherT.rightT[IO, String](Option.empty[ReportView])
+                else
+                  for
+                    scale <- EitherT.fromEither[IO](
+                      request.participantScale
+                        .toRight("participants.csv has no declared reporting scale")
+                    )
+                    report <- EitherT(
+                      session.reads.report(run, request.source.reporting, scale.value)
+                    )
+                      .leftMap(_.message)
+                  yield Some(report)
+              rows <- EitherT(MethodsReads.queryRows(session.reads.queries, run))
                 .leftMap(_.message)
               pairs <-
                 if !comparisons then EitherT.rightT[IO, String](Vector.empty[PairRowPage])
                 else
                   EitherT(
-                    MethodsReads.pairRows(session.backend.pairRows, run, summary.scales.size)
+                    MethodsReads.pairRows(session.reads.pairRows, run, summary.scales.size)
                   ).leftMap(_.message)
-            yield (summary, rows, pairs)).value
+            yield (summary, rows, pairs, report)).value
             session.run(read) {
-              case Left(e)                              => done(Left(reason(e)))
-              case Right(Left(why))                     => done(Left(why))
-              case Right(Right((summary, rows, pairs))) =>
+              case Left(e)                                      => done(Left(reason(e)))
+              case Right(Left(why))                             => done(Left(why))
+              case Right(Right((summary, rows, pairs, report))) =>
                 BundleFiles.assemble(
                   request,
                   summary,
                   rows,
                   pairs,
-                  FigureExport.rasters(request.page, images)
+                  FigureExport.rasters(request.page, images),
+                  report
                 ) match
                   case Left(why)   => done(Left(why))
                   case Right(file) =>
@@ -527,6 +559,13 @@ final class FiguresHost(
       case ComposerEffect.App(i)              => app(i)
       case ComposerEffect.RequestSummary(run) =>
         inputs.summary(run, a => later(ComposerIntent.SummaryRead(run, a)))
+      case ComposerEffect.RequestReport(run, spec, scale) =>
+        inputs.report(
+          run,
+          spec,
+          scale,
+          a => later(ComposerIntent.ReportRead(run, spec, scale, a))
+        )
       case ComposerEffect.RequestReferences(run, scale, query) =>
         inputs.references(
           run,

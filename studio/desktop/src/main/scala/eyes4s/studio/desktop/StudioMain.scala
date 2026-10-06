@@ -32,8 +32,8 @@ import javafx.stage.Stage
 
 /** The JavaFX application: renders view-models and dispatches intents
   * (tickets S1.4, S1.5a). Until the project lifecycle (S2.9) and the real
-  * backend (S3.7) exist, it opens the memory-study project at story moment
-  * t2 on the fake backend. Behaviour belongs in studio-app, where it is
+  * lifecycle is completed, it opens the memory-study project at story moment
+  * t2 on the native backend. Behaviour belongs in studio-app, where it is
   * tested headlessly.
   */
 final class StudioApplication extends Application:
@@ -80,7 +80,8 @@ final class StudioApplication extends Application:
           StoryMoment.T2,
           StudioMain.displays,
           StudioMain.stimuli,
-          defect = reporter.jobFailed
+          defect = reporter.jobFailed,
+          nativeSources = Some(StudioMain.sources)
         )
         .left
         .map(_.message)
@@ -108,13 +109,17 @@ final class StudioApplication extends Application:
 /** Entry point for the desktop shell. Tests never launch it. */
 object StudioMain:
 
-  /** The application's session: the story at t2 on the fake backend. */
-  val backend: SessionBackend = SessionBackend.Story
+  /** The bundled example runs through the native fixation-study backend. */
+  val backend: SessionBackend = SessionBackend.Real
 
   /** The application's trial displays: the golden registry of the story
     * session, which answers only for the golden trials.csv.
     */
-  val displays: NavigatorDisplays = NavigatorDisplays.of(backend, None)
+  val displays: NavigatorDisplays = NavigatorDisplays.golden
+
+  def sources: eyes4s.studio.core.real.DatasetSources[cats.effect.IO] =
+    eyes4s.studio.desktop.runtime.DatasetSourceHosts
+      .golden(java.nio.file.Paths.get(sys.props("user.dir"), "fixtures", "studio-golden"))
 
   /** The story session's stimuli: fixtures/studio-golden's `stimuli/`, read
     * from the working directory (a checkout, as `sbt studioDesktop/run` has).

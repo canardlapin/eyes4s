@@ -193,7 +193,12 @@ object DiagnosticSamples:
       StudyFailure.Estimation(k1, EstimateError.NoMass),
       StudyFailure.Comparison(k1, k2, CompareError.ZeroNorm("cosine", 0, 1)),
       StudyFailure.OffWindow(k1, tally),
-      StudyFailure.InitialFixations(k1, InitialFixationError.NoFixationKept(2, 400L))
+      StudyFailure.InitialFixations(k1, InitialFixationError.NoFixationKept(2, 400L)),
+      StudyFailure.TrialCardinality(k1, 0),
+      StudyFailure.PreparedPlan(
+        k1,
+        PlanError.ChangedPreparedPlan(DefinitionId.cosine, DefinitionId.studyLayout)
+      )
     ),
     family[InitialFixationError]("InitialFixationError")(
       InitialFixationError.NonPositiveRadius(-1.0),

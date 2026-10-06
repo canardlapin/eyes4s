@@ -41,7 +41,7 @@ class ProtocolCodecSuite extends munit.FunSuite:
     assertEquals(responses.map(_.ordinal), responses.indices.toVector)
     assertEquals(responses.size, 22)
     assertEquals(errors.map(_.ordinal), errors.indices.toVector)
-    assertEquals(errors.size, 29)
+    assertEquals(errors.size, 36)
     assertEquals(causes.map(_.ordinal), causes.indices.toVector)
     assertEquals(causes.size, 14)
     assertEquals(loci.map(_.ordinal), loci.indices.toVector)
@@ -320,7 +320,7 @@ class ProtocolCodecSuite extends munit.FunSuite:
   }
 
   test("protocol 1.2 Counting requires coordinated peers, not a relabelled 1.1 frame") {
-    assertEquals(ProtocolVersion.Current, ProtocolVersion(1, 15))
+    assertEquals(ProtocolVersion.Current, ProtocolVersion(1, 16))
     val previous = Envelope(RequestId(41), ServerFrame.Event(JobEvent.Advanced(progress)))
     assertEquals(legacyMeterTotal(previous.asJson), Right(Protocol11Total.Exact(8512L)))
     val counting = progress.asJson

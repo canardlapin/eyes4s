@@ -501,7 +501,7 @@ final class FakeStudyBackend[F[_]] private[fixture] (
       )
     else Stream.empty
     opening ++ Stream
-      .emits(Vector.fill(budget.participants)(()))
+      .emits(Vector.fill(budget.pages)(()))
       .evalMap { _ =>
         state.modify { s =>
           s.previews.get(retained.ready.id) match
@@ -849,13 +849,16 @@ final class FakeStudyBackend[F[_]] private[fixture] (
         summary.pairRowsAllScales,
         summary.eligibleQueries,
         summary.contrasts,
-        summary.grandD,
-        summary.grandDByScale,
-        summary.groups,
-        summary.pairedN,
-        summary.groupNRange._1,
-        summary.groupNRange._2,
-        summary.participants
+        summary.participants.map(p =>
+          ParticipantCounts(
+            p.participant,
+            p.requested,
+            p.contributing,
+            p.failed,
+            p.noMatch,
+            p.notAdmitted
+          )
+        )
       )
     })
 
@@ -969,16 +972,26 @@ final class FakeStudyBackend[F[_]] private[fixture] (
                   .fold(PairScoreState.NotServed)(c => PairScoreState.Scored(c.score))
                 entry(q.key, PairDesign.Control, key, item, score)
               }
-            case QueryStatus.Failed(d) =>
+            case failure if failure.isFailed =>
               entry(
                 q.key,
                 PairDesign.Matched,
                 q.matchedKey,
                 q.item,
-                PairScoreState.Failed(d)
+                failure
+                  .diagnosticAt(scale)
+                  .fold[PairScoreState](PairScoreState.NotServed)(PairScoreState.Failed(_))
               ) +:
                 controls.map((key, item) =>
-                  entry(q.key, PairDesign.Control, key, item, PairScoreState.Failed(d))
+                  entry(
+                    q.key,
+                    PairDesign.Control,
+                    key,
+                    item,
+                    failure
+                      .diagnosticAt(scale)
+                      .fold[PairScoreState](PairScoreState.NotServed)(PairScoreState.Failed(_))
+                  )
                 )
             case _ => Vector.empty
         }

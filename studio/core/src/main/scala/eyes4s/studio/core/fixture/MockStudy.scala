@@ -18,7 +18,7 @@ package eyes4s.studio.core.fixture
 
 import cats.syntax.all.*
 import eyes4s.studio.core.backend.*
-import io.circe.{ACursor, Decoder, DecodingFailure, Json}
+import io.circe.{ACursor, Codec, Decoder, DecodingFailure, Json}
 
 /** One control reference of the focus query and its 2° score. */
 final case class ControlScore(trial: String, item: String, score: Double) derives CanEqual
@@ -41,7 +41,44 @@ final case class MockQuery(
   def key: TrialKey        = MockStudy.key(participant, trial)
   def matchedKey: TrialKey = MockStudy.key(participant, matchTrial)
 
-/** The summary block of fixture.json that the backend serves. */
+// Illustrative fixture metadata. These rounded means are not result protocol
+// values: native reports and fake reports both read their retained query rows.
+/** One reporting group's means of M (matched), B (control) and D = M − B. */
+final case class GroupMeans(label: Response, n: Int, m: Double, b: Double, d: Double)
+    derives CanEqual,
+      Codec.AsObject
+
+final case class ScoreMeans(m: Double, b: Double, d: Double, dByScale: Vector[Double])
+    derives CanEqual,
+      Codec.AsObject
+
+final case class ParticipantSummary(
+    participant: String,
+    requested: Int,
+    contributing: Int,
+    failed: Int,
+    noMatch: Int,
+    notAdmitted: Int,
+    all: ScoreMeans,
+    groups: Vector[GroupMeans]
+) derives CanEqual,
+      Codec.AsObject
+
+/** Grand means of one reporting group over participant means. `attribute`
+  * names the inventory attribute the groups split on.
+  */
+final case class GroupSummary(
+    attribute: String,
+    label: Response,
+    n: Int,
+    d: Double,
+    dByScale: Vector[Double]
+) derives CanEqual,
+      Codec.AsObject
+
+/** The illustrative summary metadata of fixture.json, including rounded
+  * display examples. ResultSummary serves only its scale-free run facts.
+  */
 final case class MockSummary(
     inventoryTrials: Int,
     admitted: Int,

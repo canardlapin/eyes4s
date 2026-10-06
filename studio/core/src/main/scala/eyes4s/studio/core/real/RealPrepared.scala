@@ -39,6 +39,9 @@ final class RealPrepared private (
     val counts: StudyCounts[CoreKey],
     val summary: PreviewSummary
 ):
+  /** The native pairing refusal retained with these exact counts, if any. */
+  val pairingRefusal: Option[eyes4s.plan.PlanError] = counts.cardinality.refusal(plan.layout)
+
   /** eyes4s's codecs for this study: the trial-keyed route of its method. */
   def plans   = StudyCodecs.trialSimilarity[Unit2D.Px](method)
   def inputs  = StudyInputCodecs.trial[Unit2D.Px]
@@ -50,54 +53,88 @@ final class RealPrepared private (
 
 object RealPrepared:
 
-  /** Configure and prepare `recipe` over `admitted`; every count is eyes4s's. */
+  /** Prepare without visiting pairs; bounded preview counting begins here. */
+  def configure(
+      revision: AnalysisRevision,
+      dataset: DatasetRevision,
+      recipe: Recipe,
+      admitted: AdmittedDataset
+  ): Either[BackendError, RealConfigured] =
+    for
+      planned <- RealPlan.plan(revision, recipe, admitted.screen, admitted.input)
+      (plan, method) = planned
+      work    <- plan.prepare(admitted.input).leftMap(refused(revision, "preparation"))
+      preview <- work.preview.leftMap(refused(revision, "preview"))
+    yield new RealConfigured(revision, dataset, recipe, plan, method, admitted, work, preview)
+
+  /** Synchronous compatibility route; bounded callers supply completed counts. */
   def of(
       revision: AnalysisRevision,
       dataset: DatasetRevision,
       recipe: Recipe,
       admitted: AdmittedDataset
   ): Either[BackendError, RealPrepared] =
-    // Until the S3.7 protocol minor's typed plan refusal: eyes4s's diagnostic.
-    def refused(step: String)(e: eyes4s.plan.PlanError) =
-      BackendError.Unavailable(
-        DiagnosticLocus.Artifact(s"${revision.label} $step: ${RealPlan.reason(e)}")
-      )
     for
-      planned <- RealPlan.plan(revision, recipe, admitted.screen, admitted.input)
-      (plan, method) = planned
-      work    <- plan.prepare(admitted.input).leftMap(refused("preparation"))
-      counts  <- work.counts.leftMap(refused("counts"))
-      preview <- work.preview(counts).leftMap(refused("preview"))
-    yield
-      val focal = recipe.phases.focal
-      new RealPrepared(
-        revision,
-        dataset,
-        recipe,
-        plan,
-        method,
-        admitted,
-        work,
-        preview,
-        counts,
-        PreviewSummary(
-          revision,
-          dataset,
-          recipe.scales.values.map(s => Degrees.label(s.degrees)),
-          focalTrials = preview.focalKeys.size,
-          referenceTrials = preview.referenceKeys.size,
-          // Every inventory trial of the focal phase is a requested query,
-          // admitted or not.
-          requestedQueries = admitted.ledger.count(_.trial.phase == focal),
-          eligibleQueries = counts.eligibleQueries.toInt,
-          candidatePairsPerScale = preview.matched.candidatePairCount,
-          pairRowsPerScale = counts.pairRowsPerScale,
-          pairRows = counts.totalPairs
+      configured <- configure(revision, dataset, recipe, admitted)
+      counts     <- configured.work.counts.leftMap(refused(revision, "counts"))
+      result     <- fromCounts(configured, counts)
+    yield result
+
+  private[real] def refused(revision: AnalysisRevision, step: String)(
+      e: eyes4s.plan.PlanError
+  ): BackendError =
+    BackendError.Unavailable(
+      DiagnosticLocus.Artifact(s"${revision.label} $step: ${RealPlan.reason(e)}")
+    )
+
+  private[real] def fromCounts(
+      configured: RealConfigured,
+      counts: StudyCounts[CoreKey]
+  ): Either[BackendError, RealPrepared] =
+    configured.work.preview(counts).leftMap(refused(configured.revision, "preview")).map {
+      preview =>
+        new RealPrepared(
+          configured.revision,
+          configured.dataset,
+          configured.recipe,
+          configured.plan,
+          configured.method,
+          configured.admitted,
+          configured.work,
+          preview,
+          counts,
+          PreviewSummary(
+            configured.revision,
+            configured.dataset,
+            configured.recipe.scales.values.map(s => Degrees.label(s.degrees)),
+            focalTrials = preview.focalKeys.size,
+            referenceTrials = preview.referenceKeys.size,
+            requestedQueries =
+              configured.admitted.ledger.count(_.trial.phase == configured.recipe.phases.focal),
+            eligibleQueries = counts.eligibleQueries.toInt,
+            candidatePairsPerScale = preview.matched.candidatePairCount,
+            pairRowsPerScale = counts.pairRowsPerScale,
+            pairRows = counts.totalPairs
+          )
         )
-      )
+    }
 
   /** A scale's label as the recipe states it: `0.5°`, `1°`. */
   private object Degrees:
     def label(value: Double): String =
       (if value == math.rint(value) && math.abs(value) < 1e15 then value.toLong.toString
        else value.toString) + "°"
+
+/** An immutable prepared plan/input whose exact schedule counts are not yet known. */
+final class RealConfigured private[real] (
+    val revision: AnalysisRevision,
+    val dataset: DatasetRevision,
+    val recipe: Recipe,
+    val plan: RealPlan.Plan,
+    val method: ComparisonMethod,
+    val admitted: AdmittedDataset,
+    val work: RealPlan.Work,
+    val preview: StudyPreview[CoreKey, Unit2D.Px]
+):
+  def plans  = StudyCodecs.trialSimilarity[Unit2D.Px](method)
+  def inputs = StudyInputCodecs.trial[Unit2D.Px]

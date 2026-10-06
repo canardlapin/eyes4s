@@ -149,13 +149,14 @@ class WhyReferenceSuite extends munit.FunSuite:
       s: HeadlessSession,
       m: AppModel,
       r: Read,
-      doc: Option[StudioDocument] = None
+      doc: Option[StudioDocument] = None,
+      report: Option[eyes4s.studio.core.backend.ReportView] = None
   ): Future[CompareInspectorVM] =
     panels(s, m, r.shown).map(p =>
       WhyReference.vm(
         inspector(r),
         doc.getOrElse(m.document),
-        InspectorInputs(p, Some(r.shown), Some(r.summary), Some(reporting))
+        InspectorInputs(p, Some(r.shown), Some(r.summary), Some(reporting), report)
       )
     )
 
@@ -324,12 +325,13 @@ class WhyReferenceSuite extends munit.FunSuite:
           .find(_.controls.contains(18))
           .getOrElse(fail("the fixture has a query with 18 controls"))
         val p        = row.query.participant
+        val matched  = row.matched.getOrElse(fail("a matched query must serve its reference"))
         val excluded = r.ledger.filter(e =>
-          e.trial.participant == p && e.trial.phase == row.matched.phase &&
+          e.trial.participant == p && e.trial.phase == matched.phase &&
             e.disposition != TrialDisposition.Admitted
         )
         assertEquals(excluded.size, 1)
-        val focus = PanelFocus(run7, sigma2, row.query, Some((PairDesign.Control, row.matched)))
+        val focus = PanelFocus(run7, sigma2, row.query, Some((PairDesign.Control, matched)))
         val vm    = WhyReference.vm(
           inspector(r),
           t2Compare.document,
@@ -436,8 +438,18 @@ class WhyReferenceSuite extends munit.FunSuite:
         // among the participant's trials; that is the ledger, not a pairing.)
         val named =
           vm.why.toVector.flatMap(_.facts).filterNot(_.label.startsWith("Not admitted"))
-        assert(!named.exists(_.value.contains(row.matched.trial)), named.toString)
-        assert(!vm.why.exists(_.explanation.contains(row.matched.trial)), vm.toString)
+        assertEquals(row.matched, None)
+        val notAdmittedReference = r.ledger
+          .find(_.trial == MockStudy.key("P03", "enc_11"))
+          .getOrElse(fail("the fixture declares the unmatched query's rejected reference"))
+        assert(
+          !named.exists(_.value.contains(notAdmittedReference.trial.trial)),
+          named.toString
+        )
+        assert(
+          !vm.why.exists(_.explanation.contains(notAdmittedReference.trial.trial)),
+          vm.toString
+        )
       }
     )
   }
@@ -500,6 +512,26 @@ class WhyReferenceSuite extends munit.FunSuite:
             row.controls.fold("—")(n => s"$n designed · none scored")
           )
         }
+      }
+    )
+  }
+
+  test("a native failed query explains the diagnostic at the selected scale") {
+    withSession(s =>
+      read(s).map { r =>
+        val row =
+          r.shown.rows.find(_.status.isFailed).getOrElse(fail("no failed fixture query"))
+        val original    = row.status.diagnosticAt(0).getOrElse(fail("no fixture diagnostic"))
+        val diagnostics =
+          Vector.tabulate(4)(i => original.copy(message = s"Failure at declared scale $i"))
+        val native = row.copy(status = QueryStatus.FailedAtScales(diagnostics))
+        val shown  = r.copy(shown =
+          r.shown.copy(rows = r.shown.rows.map(q => if q.query == row.query then native else q))
+        )
+        val text =
+          queryVM(shown, native).why.getOrElse(fail("no native explanation")).explanation
+        assert(text.contains(diagnostics(2).message), text)
+        assert(!text.contains(diagnostics(0).message), text)
       }
     )
   }
@@ -633,7 +665,12 @@ class WhyReferenceSuite extends munit.FunSuite:
 
   test("the reporting section is the trail's spec, with the run's per-group n range") {
     withSession(s =>
-      read(s).flatMap(r => vmAt(s, t2Compare, r)).map { vm =>
+      (for
+        r <- read(s)
+        spec = t2Compare.document.reporting.find(_.id == reporting).getOrElse(fail("no report"))
+        report <- s.report(run7, spec, sigma2.value).map(right)
+        vm     <- vmAt(s, t2Compare, r, report = Some(report))
+      yield (vm, report)).map { (vm, report) =>
         assertEquals(vm.reporting.title, "Reporting")
         assertEquals(vm.reporting.kind, "Reporting · no rerun")
         assertEquals(
@@ -646,8 +683,25 @@ class WhyReferenceSuite extends munit.FunSuite:
             "Summary"               -> "Participant means, equal weight"
           )
         )
+        assertEquals(
+          vm.reporting.facts.find(_.label == "Min queries per group").flatMap(_.ref),
+          report.queryRange(eyes4s.studio.core.backend.ReportRole.Difference).map(_.ref)
+        )
       }
     )
+  }
+
+  test("an unevaluated reporting spec has no guessed query range") {
+    val vm = WhyReference.vm(
+      WhyReference.empty,
+      t2Compare.document,
+      InspectorInputs(TrialPanels.empty, None, None, Some(reporting))
+    )
+    val minimum = vm.reporting.facts
+      .find(_.label == "Min queries per group")
+      .getOrElse(fail("no minimum fact"))
+    assertEquals(minimum.value, "Off")
+    assertEquals(minimum.ref, None)
   }
 
   // --- appearance ----------------------------------------------------------------------------------

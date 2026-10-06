@@ -341,6 +341,12 @@ enum StudyFailure[K] derives CanEqual:
     */
   case InitialFixations(key: K, underlying: InitialFixationError)
 
+  /** A single-trial operation needs exactly one occurrence of its full key. */
+  case TrialCardinality(key: K, occurrences: Int)
+
+  /** The prepared plan's parameter description changed after preparation. */
+  case PreparedPlan(key: K, underlying: PlanError)
+
   def message: String = this match
     case Frame(k, e)         => s"Trial $k: ${e.message}"
     case Temporal(k, e)      => s"Trial $k: ${e.message}"
@@ -360,6 +366,9 @@ enum StudyFailure[K] derives CanEqual:
         (if tally.allOutside then "; its map would be empty."
          else "; the plan fails trials with fixations outside the window.")
     case InitialFixations(k, e) => s"Trial $k: ${e.message}"
+    case TrialCardinality(k, n) =>
+      s"Trial $k has $n occurrences in the prepared input; single-trial estimation requires exactly one."
+    case PreparedPlan(k, e) => s"Trial $k: ${e.message}"
 
 object StudyFailure:
   /** The trial keys a failure names, in operand order. */
@@ -371,6 +380,8 @@ object StudyFailure:
     case StudyFailure.Comparison(l, r, _)    => Vector(l, r)
     case StudyFailure.OffWindow(k, _)        => Vector(k)
     case StudyFailure.InitialFixations(k, _) => Vector(k)
+    case StudyFailure.TrialCardinality(k, _) => Vector(k)
+    case StudyFailure.PreparedPlan(k, _)     => Vector(k)
 
 /** Typed evidence of how a method's comparison executes. A synchronous closure
   * runs whole per pair; only a [[BoundedCompare]] can be declared bounded, so

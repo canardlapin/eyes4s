@@ -20,12 +20,13 @@ import eyes4s.studio.app.Intent
 import eyes4s.studio.app.nav.{Location, Place}
 import eyes4s.studio.app.text.{Format, ReportingText, ReportingTextId}
 import eyes4s.studio.app.vm.{A11yRole, FocusStop}
-import eyes4s.studio.core.backend.{ResultSummary, RunId}
+import eyes4s.studio.core.backend.{ReportRole, ReportView, ResultSummary, RunId}
 import eyes4s.studio.core.command.Command
 import eyes4s.studio.core.document.{
   Covariate,
   MinimumPerGroup,
   Perspective,
+  ReportingContrast,
   ReportingFilter,
   ReportingId,
   ReportingSpec,
@@ -52,6 +53,12 @@ enum ReportingIntent derives CanEqual:
 
   case Minimum(on: Boolean)
   case Weight(weighting: ReportingWeight)
+
+  /** Explicit ordered subtraction, or no level contrast. */
+  case SetContrast(contrast: Option[ReportingContrast])
+
+  /** A form submission; parsed before it becomes a document command. */
+  case ContrastOperands(minuend: String, subtrahend: String)
 
   /** Show another saved spec. */
   case Choose(reporting: ReportingId)
@@ -87,6 +94,20 @@ final case class SavedSpecVM(
 final case class SaveAsVM(name: String, label: String, save: String, cancel: String)
     derives CanEqual
 
+/** The explicitly ordered contrast form. Blank fields do not invent a
+  * direction for a legacy grouping; Apply validates both entered operands.
+  */
+final case class ReportingContrastVM(
+    title: String,
+    enabled: Boolean,
+    minuendLabel: String,
+    subtrahendLabel: String,
+    minuend: String,
+    subtrahend: String,
+    apply: String,
+    clear: String
+) derives CanEqual
+
 /** Compare's reporting editor (Results.dc.html, reporting inspector). */
 final case class ReportingEditorVM(
     status: Option[String],
@@ -110,7 +131,8 @@ final case class ReportingEditorVM(
     saveAs: String,
     saving: Option[SaveAsVM],
     saved: Vector[SavedSpecVM],
-    error: Option[String]
+    error: Option[String],
+    contrast: ReportingContrastVM
 ) derives CanEqual
 
 /** Compare's reporting editor (ticket S8.7; Results.dc.html, reporting): how
@@ -167,7 +189,8 @@ object ReportingEditor:
         groupBy: Option[Option[Covariate]] = None,
         filters: Option[Vector[ReportingFilter]] = None,
         minimum: Option[Option[MinimumPerGroup]] = None,
-        weighting: Option[ReportingWeight] = None
+        weighting: Option[ReportingWeight] = None,
+        contrast: Option[Option[ReportingContrast]] = None
     ) =
       ReportingSpec.of(
         id.getOrElse(r.id),
@@ -175,10 +198,19 @@ object ReportingEditor:
         groupBy.getOrElse(r.groupBy),
         filters.getOrElse(r.filters),
         minimum.getOrElse(r.minimumPerGroup),
-        weighting.getOrElse(r.weighting)
+        weighting.getOrElse(r.weighting),
+        contrast.getOrElse(r.contrast)
       )
     intent match
-      case ReportingIntent.GroupBy(c)        => put(r => rebuilt(r, groupBy = Some(c)))
+      case ReportingIntent.GroupBy(c) =>
+        put(r => rebuilt(r, groupBy = Some(c), contrast = Option.when(c != r.groupBy)(None)))
+      case ReportingIntent.SetContrast(c) => put(r => rebuilt(r, contrast = Some(c)))
+      case ReportingIntent.ContrastOperands(minuend, subtrahend) =>
+        put(r =>
+          ReportingContrast
+            .of(minuend, subtrahend)
+            .flatMap(c => rebuilt(r, contrast = Some(Some(c))))
+        )
       case ReportingIntent.OutsideFilter(on) =>
         put { r =>
           val others = r.filters.filter {
@@ -278,6 +310,14 @@ object ReportingEditor:
           .orElse(cs.headOption)
           .map(c => FocusStop(A11yRole.RadioButton, s"$label: ${c.label}"))
       chosen(vm.groupLabel, vm.groups).toVector ++
+        (if vm.contrast.enabled then
+           Vector(
+             FocusStop(A11yRole.TextField, vm.contrast.minuendLabel),
+             FocusStop(A11yRole.TextField, vm.contrast.subtrahendLabel),
+             FocusStop(A11yRole.Button, vm.contrast.apply),
+             FocusStop(A11yRole.Button, vm.contrast.clear)
+           )
+         else Vector.empty) ++
         Vector(
           FocusStop(A11yRole.CheckBox, vm.outside.label),
           FocusStop(A11yRole.CheckBox, vm.minimum.label)
@@ -304,7 +344,8 @@ object ReportingEditor:
       reporting: Option[ReportingId],
       run: Option[RunId],
       summary: Option[ResultSummary],
-      scale: Option[ScaleIndex]
+      scale: Option[ScaleIndex],
+      report: Option[ReportView] = None
   ): ReportingEditorVM =
     val r        = spec(doc, reporting)
     val shownRun = run.orElse(summary.map(_.run))
@@ -320,21 +361,27 @@ object ReportingEditor:
           Vector(StudioRef.DesignTally(sm.revision, DesignCount.EligiblePairs))
         )
       )
-    // The covariates to group by: the spec's own, and the attribute the run's
-    // summary is grouped on, as served.
-    val served     = result.flatMap(_.groups.headOption.map(_.attribute))
-    val covariates =
-      (r.flatMap(_.groupBy).toVector ++ served.flatMap(a => Covariate.of(a).toOption).toVector)
-        .distinctBy(_.label)
-    val groupBy = r.flatMap(_.groupBy)
-    val groups  =
-      covariates.map(c =>
-        ReportingChoice(Option(c), ReportingText(GroupOption, c.label), groupBy.contains(c))
-      ) :+
-        ReportingChoice(Option.empty[Covariate], ReportingText(NoGrouping), groupBy.isEmpty)
-    val groupValues = result
-      .filter(sm => groupBy.exists(g => sm.groups.headOption.exists(_.attribute == g.label)))
-      .fold("")(sm => sm.groups.map(_.label.label).mkString(" · "))
+    // Only the saved grouping and native report's levels are shown. A
+    // summary carries no scientific grouping or scale-specific estimates.
+    val evaluated = report.filter(v =>
+      shownRun.contains(v.run) &&
+        reporting.contains(v.reporting) && scale.exists(_.value == v.scale)
+    )
+    val covariates = r.flatMap(_.groupBy).toVector
+    val groupBy    = r.flatMap(_.groupBy)
+    val groups     = covariates.map(c =>
+      ReportingChoice(Option(c), ReportingText(GroupOption, c.label), groupBy.contains(c))
+    ) :+ ReportingChoice(Option.empty[Covariate], ReportingText(NoGrouping), groupBy.isEmpty)
+    val groupValues = evaluated.toVector
+      .flatMap(
+        _.cells
+          .collect {
+            case c if c.role == ReportRole.Difference => c.group.map(_.label)
+          }
+          .flatten
+      )
+      .distinct
+      .mkString(" · ")
     val contributing = result.fold(
       ReportingLine(ReportingText(AllContributingUnknown, focal), Vector.empty)
     )(sm =>
@@ -365,15 +412,7 @@ object ReportingEditor:
     val minimum   = ReportingToggle(
       ReportingText(Minimum, minimumN.toString),
       minimumOn,
-      dropped(
-        result,
-        reporting,
-        groupBy,
-        scale,
-        minimumN,
-        minimumOn,
-        r.exists(_.filters.nonEmpty)
-      )
+      dropped(evaluated, minimumN, minimumOn)
     )
     val weighting = r.fold(ReportingWeight.ParticipantMeans)(_.weighting)
     val weights   = Vector(
@@ -433,54 +472,43 @@ object ReportingEditor:
         SaveAsVM(n, ReportingText(SaveAsName), ReportingText(Save), ReportingText(Cancel))
       ),
       saved,
-      s.error
+      s.error,
+      ReportingContrastVM(
+        ReportingText(ContrastTitle),
+        r.exists(_.groupBy.nonEmpty),
+        ReportingText(ContrastMinuend),
+        ReportingText(ContrastSubtrahend),
+        r.flatMap(_.contrast).fold("")(_.minuend),
+        r.flatMap(_.contrast).fold("")(_.subtrahend),
+        ReportingText(ContrastApply),
+        ReportingText(ContrastClear)
+      )
     )
 
-  /** The served participant-group cells with fewer than `n` queries: what
-    * the minimum would drop (or drops), each traced to its participant mean.
-    * Only for a spec without filters, whose cells are the served ones.
+  /** Exclusions are the library report's findings. An unevaluated edit,
+    * or a minimum that is off, never fabricates a numerical preview.
     */
-  private def dropped(
-      result: Option[ResultSummary],
-      reporting: Option[ReportingId],
-      groupBy: Option[Covariate],
-      scale: Option[ScaleIndex],
-      n: Int,
-      on: Boolean,
-      filtered: Boolean
-  ): ReportingLine =
-    val grouped = result.filter(sm =>
-      groupBy.exists(g => sm.groups.headOption.exists(_.attribute == g.label))
-    )
-    grouped match
-      // eyes4s applies the minimum to the queries the filters keep, whose
-      // counts no served summary holds: studio does not estimate them
-      // (bd-01M43VP5YV6WB4VVQEW2CJTB9V, report(run, spec)).
-      case _ if filtered => ReportingLine(ReportingText(MinimumAfterEvaluation), Vector.empty)
-      case None          => ReportingLine(ReportingText(MinimumUnknown), Vector.empty)
-      case Some(sm)      =>
-        val cells = for
-          p <- sm.participants
-          g <- p.groups
-          if g.n > 0 && g.n < n
-        yield (p.participant, g)
-        if cells.isEmpty then
+  private def dropped(report: Option[ReportView], n: Int, on: Boolean): ReportingLine =
+    if !on then ReportingLine(ReportingText(MinimumOff), Vector.empty)
+    else
+      report match
+        case None => ReportingLine(ReportingText(MinimumAfterEvaluation), Vector.empty)
+        case Some(view) if view.dropped.isEmpty =>
           ReportingLine(ReportingText(MinimumNone, n.toString), Vector.empty)
-        else
-          val counts = sm.groups
-            .map(_.label)
-            .flatMap(l =>
-              val k = cells.count(_._2.label == l)
-              Option.when(k > 0)(ReportingText(CellGroup, k.toString, l.label))
-            )
+        case Some(view) =>
+          val cells  = view.dropped
+          val counts = cells
+            .flatMap(_.group)
+            .distinct
+            .map { group =>
+              ReportingText(
+                CellGroup,
+                cells.count(_.group.contains(group)).toString,
+                group.label
+              )
+            }
             .mkString(", ")
-          val named = cells.map((p, g) => ReportingText(Cell, p, g.n.toString)).mkString(", ")
-          val refs  = for
-            rep    <- reporting.toVector
-            sc     <- scale.toVector
-            (p, g) <- cells
-          yield StudioRef.ParticipantSummary(sm.run, rep, sc, Some(g.label), p)
-          ReportingLine(
-            ReportingText(if on then MinimumDrops else MinimumWouldDrop, counts, named),
-            refs
-          )
+          val named = cells
+            .map(c => ReportingText(Cell, c.participant, c.queries.toString))
+            .mkString(", ")
+          ReportingLine(ReportingText(MinimumDrops, counts, named), cells.map(_.ref))

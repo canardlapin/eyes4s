@@ -41,7 +41,7 @@ import eyes4s.studio.core.selection.{FixationIndex, RecordNumber, StudioRef}
   * image position and degrees are the kernel's ([[RecordPositions]]).
   */
 final class RealTrialViews private (
-    work: RealPrepared,
+    private[real] val work: RealPrepared,
     provenance: CoordinateProvenance[CoreKey, Unit2D.Px],
     keys: Map[TrialKey, CoreKey]
 ):
@@ -60,6 +60,57 @@ final class RealTrialViews private (
         .of(work.revision, work.dataset, trial, fixations)
         .leftMap(BackendError.TrialViewRefused(_))
     yield done
+
+  /** The fixed 2-degree preview uses the prepared study's own estimator.
+    * It preserves the run's initial-fixation, window and weighting policies.
+    */
+  def preview(trial: TrialKey): Either[BackendError, TrialPreview] =
+    val sigmaDegrees = 2.0
+    for
+      key     <- inventory(trial)
+      angular <- work.plan.angularScale.toRight(
+        refused(trial, "angular scale", "the recipe declares no pixels per degree")
+      )
+      sigma <- eyes4s.kernel.Sigma
+        .deg(sigmaDegrees)
+        .flatMap(angular.sigma)
+        .leftMap(e => refused(trial, "bandwidth", e.message))
+      density <- work.work
+        .estimate(
+          key,
+          eyes4s.plan.StudyEstimate.Gaussian(sigma, eyes4s.surface.EdgePolicy.Truncate)
+        )
+        .leftMap(e => refused(trial, "density", e.message))
+      levels <- density
+        .levels(Vector(0.5, 0.8))
+        .leftMap(e => refused(trial, "isolines", e.message))
+      geometry = density.geometry
+      region <- ScreenRegion
+        .of(
+          trial,
+          geometry.origin.x,
+          geometry.origin.y,
+          geometry.origin.x + geometry.bounds.width,
+          geometry.origin.y + geometry.bounds.height
+        )
+        .leftMap(BackendError.TrialViewRefused(_))
+      order = geometry.yAxis match
+        case eyes4s.kernel.YAxis.Down => RowOrder.TopFirst
+        case eyes4s.kernel.YAxis.Up   => RowOrder.BottomFirst
+      preview <- TrialPreview
+        .of(
+          work.revision,
+          trial,
+          sigmaDegrees,
+          region,
+          density.nx,
+          density.ny,
+          order,
+          density.cells.toVector.map(Some(_)),
+          levels.map(_.threshold)
+        )
+        .leftMap(BackendError.TrialViewRefused(_))
+    yield preview
 
   private def inventory(trial: TrialKey): Either[BackendError, CoreKey] =
     keys.get(trial).toRight {

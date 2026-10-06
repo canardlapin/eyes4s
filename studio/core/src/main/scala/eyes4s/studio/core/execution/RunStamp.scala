@@ -42,6 +42,17 @@ final case class RunStamp(
       Codec.AsObject:
   def label: String = s"${revision.label} · data ${dataset.label}"
 
+  /** Check every declared identity, allowing a backend to bind an artifact
+    * that a document has not produced yet. The caller must also compare the
+    * exact recipe snapshot before accepting newly bound preview identities.
+    */
+  def agreesWithDeclarations(expected: RunStamp): Boolean =
+    def binding[A](actual: CoreBinding[A], declared: CoreBinding[A]): Boolean = declared match
+      case CoreBinding.Unbound() => true
+      case CoreBinding.Bound(_)  => actual == declared
+    revision == expected.revision && dataset == expected.dataset &&
+    binding(plan, expected.plan) && binding(input, expected.input)
+
 object RunStamp:
 
   /** The stamp of `revision` as `document` saves it: its dataset revision and

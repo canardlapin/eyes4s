@@ -19,7 +19,7 @@ package eyes4s.studio.desktop.figures
 import cats.syntax.all.*
 import eyes4s.io.csv
 import eyes4s.studio.app.figures.{BundleItem, BundleRequest, FigureBundle}
-import eyes4s.studio.core.backend.{PairRowPage, QueryRow, ResultSummary}
+import eyes4s.studio.core.backend.{PairRowPage, QueryRow, ReportView, ResultSummary}
 import eyes4s.studio.core.assets.AssetRef
 import eyes4s.results.ResultTable
 import eyes4s.studio.core.figures.{BundleTableError, BundleTables}
@@ -43,7 +43,8 @@ object BundleFiles:
       summary: ResultSummary,
       rows: Vector[QueryRow],
       pairs: Vector[PairRowPage],
-      rasters: Map[AssetRef, StimulusRaster] = Map.empty
+      rasters: Map[AssetRef, StimulusRaster] = Map.empty,
+      report: Option[ReportView] = None
   ): Either[String, Vector[(String, IArray[Byte])]] =
     def utf8(text: String) = IArray.unsafeFromArray(text.getBytes(UTF_8))
     def table(t: Either[BundleTableError, ResultTable]) =
@@ -57,7 +58,18 @@ object BundleFiles:
             FigureExport.render(request.format, request.page, rasters).map(_ -> None)
           case BundleItem.Results => table(BundleTables.results(request.source, summary, rows))
           case BundleItem.Participants =>
-            table(BundleTables.participants(request.source, summary))
+            for
+              scale <- request.participantScale.toRight(
+                "the participant reporting scale was not declared"
+              )
+              view <- report.toRight("the participant report has not been read")
+              _    <- Either.cond(
+                view.scale == scale.value,
+                (),
+                s"the participant report has scale ${view.scale}, expected ${scale.value}"
+              )
+              result <- table(BundleTables.participants(request.source, summary, view))
+            yield result
           case BundleItem.Methods =>
             request.methods
               .map(m => utf8(m + "\n") -> None)

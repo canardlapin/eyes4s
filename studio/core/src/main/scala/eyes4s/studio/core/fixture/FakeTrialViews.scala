@@ -28,7 +28,7 @@ import eyes4s.studio.core.document.{
   WeightChoice
 }
 import eyes4s.studio.core.selection.{FixationIndex, StudioRef}
-import eyes4s.surface.{EdgePolicy, Smoother}
+import eyes4s.surface.EdgePolicy
 
 /** One fixation of fixtures/studio-golden as fixations.csv states it: its
   * data record (from 1), its centre in screen pixels, onset and duration.
@@ -38,7 +38,8 @@ final case class GoldenFixation(
     x: Double,
     y: Double,
     onsetMs: Double,
-    durationMs: Double
+    durationMs: Double,
+    samples: Int
 ) derives CanEqual
 
 /** The admitted trials' fixations of fixtures/studio-golden, read at build
@@ -62,13 +63,14 @@ object GoldenFixations:
 
   private def fixation(line: String, token: String): Either[String, GoldenFixation] =
     token.split("@").toList match
-      case r :: x :: y :: onset :: duration :: Nil =>
+      case r :: x :: y :: onset :: duration :: samples :: Nil =>
         (
           r.toIntOption,
           x.toDoubleOption,
           y.toDoubleOption,
           onset.toDoubleOption,
-          duration.toDoubleOption
+          duration.toDoubleOption,
+          samples.toIntOption
         ).mapN(GoldenFixation.apply)
           .toRight(s"fixation line '$line': bad fixation '$token'")
       case _ => Left(s"fixation line '$line': bad fixation '$token'")
@@ -83,9 +85,9 @@ object GoldenFixations:
   * window, in the map); the fixture has no correction rules, so the admitted
   * centre is the recorded one, and only `KeepAll` initial fixations are
   * served, so none is dropped. `TrialViewsJvmSuite` holds every placement to
-  * eyes4s's own `CoordinateProvenance` on the fixture. The preview is
-  * eyes4s-surface's Gaussian smoother ([[Smoother]]) over the recipe's grid
-  * on the window, with highest-density isoline levels from [[MassLevels]];
+  * eyes4s's own `CoordinateProvenance` on the fixture. The preview uses
+  * a one-trial prepared eyes4s plan and its native estimator over the recipe's
+  * grid and window, with highest-density isoline levels from [[MassLevels]];
   * the fake writes no density arithmetic. A study the fake cannot state is
   * `Unavailable`; every other refusal is a typed [[TrialViewError]].
   */
@@ -303,26 +305,9 @@ object FakeTrialViews:
     def study(step: String)(reason: String) = refused(TrialViewError.Study(trial, step, reason))
     for
       (recipe, geometry) <- FakeTrialViews.study(moment, revision)
-      view               <- fixations(moment, revision, dataset, trial)
-      failing = view.fixations.collect {
-        case f if f.placement == MapPlacement.OutsideWindow(OffWindowPolicy.FailTrial) =>
-          f.ref.index.value
-      }
-      _ <- Either.cond(failing.isEmpty, (), refused(TrialViewError.TrialFails(trial, failing)))
-      inMap = view.fixations.filter(_.placement == MapPlacement.InWindow)
-      _ <- Either.cond(inMap.nonEmpty, (), study("density")("no fixation lies in the map"))
-      (screen, window) <- frames(trial, recipe, geometry)
+      _                  <- fixations(moment, revision, dataset, trial)
+      (screen, window)   <- frames(trial, recipe, geometry)
       perDegree = recipe.angularScale.getOrElse(geometry.pixelsPerDegree).value
-      // Each in-map fixation in the window's own frame, with its weight.
-      located = inMap.flatMap(f =>
-        window.locate(Pt[Unit2D.Px](f.screenX, f.screenY)) match
-          case HalfOpenPlacement.Inside(local) =>
-            val weight = recipe.weighting match
-              case WeightChoice.Duration => f.durationMs
-              case WeightChoice.Uniform  => 1.0
-            Some(local -> weight)
-          case HalfOpenPlacement.Outside(_) => None
-      )
       grid <- Grid
         .of(GridId("map"), window.frame, recipe.grid.columns, recipe.grid.rows)
         .leftMap(e => study("grid")(e.message))
@@ -333,18 +318,66 @@ object FakeTrialViews:
         .deg(sigmaDegrees)
         .flatMap(angular.sigma)
         .leftMap(e => study("bandwidth")(e.message))
-      measure <- PointMeasure
-        .of(window.frame, IArray.from(located.map(_._1)), IArray.from(located.map(_._2)))
-        .leftMap(e => study("fixation measure")(e.message))
-      mass <- Smoother
-        .gaussian(sigma, EdgePolicy.Truncate)
-        .density(measure, grid)
+      clock = ClockId(
+        s"fixture:${trial.participant}/${trial.phase.label}/${trial.trial}/${trial.occurrence}"
+      )
+      records <- golden(trial)
+      events  <- records.traverse { f =>
+        val onset    = Instant.micros(math.round(f.onsetMs * 1000.0))
+        val duration = Span.micros(math.round(f.durationMs * 1000.0))
+        for
+          span <- eyes4s.kernel.Interval
+            .of(clock, onset, onset + duration)
+            .leftMap(e => study("fixation support")(e.message))
+          event <- eyes4s.core.Event.Fixation
+            .withoutDispersion(span, Pt[Unit2D.Px](f.x, f.y), f.samples)
+            .leftMap(e => study("fixation")(e.message))
+        yield event
+      }
+      path <- eyes4s.core.Scanpath
+        .of(screen, clock, IArray.from(events))
+        .leftMap(e => study("scanpath")(e.message))
+      initial <- recipe.initialFixations match
+        case InitialFixationChoice.KeepAll =>
+          Right(eyes4s.plan.InitialFixationPolicy.keepAll[Unit2D.Px])
+        case InitialFixationChoice.DropFirst =>
+          Right(eyes4s.plan.InitialFixationPolicy.dropFirst[Unit2D.Px])
+        case InitialFixationChoice.DropLeadingNearCross(_) =>
+          Left(study("initial fixations")("the recipe declares no fixation-cross position"))
+      key   = eyes4s.plan.StudyKey(trial.participant, trial.trial, trial.phase.label)
+      input = eyes4s.plan.StudyInput(
+        eyes4s.design.Trials(Vector(eyes4s.design.Trial(key, (), path)))
+      )
+      geometry <- eyes4s.plan.StudyGeometry
+        .windowed(window, grid, policy(recipe))
+        .leftMap(e => study("window")(e.message))
+      plan <- eyes4s.plan.StudyPlan
+        .configure(
+          input.reference,
+          eyes4s.plan.StudyKey.layout(eyes4s.plan.DefinitionId.studyLayout),
+          geometry,
+          recipe.phases.focal.label,
+          recipe.phases.reference.label,
+          recipe.weighting match
+            case WeightChoice.Duration => eyes4s.core.Weight.Duration
+            case WeightChoice.Uniform  => eyes4s.core.Weight.Uniform
+          ,
+          Vector(
+            eyes4s.plan.StudyScale
+              .Native(eyes4s.plan.StudyEstimate.Gaussian(sigma, EdgePolicy.Truncate))
+          ),
+          Some(angular),
+          eyes4s.design.FailurePolicy.RequireAll,
+          eyes4s.plan.StudyMethod.cosine[Unit2D.Px](eyes4s.plan.DefinitionId.cosine),
+          (),
+          initialFixations = initial
+        )
+        .leftMap(e => study("plan")(e.message))
+      prepared <- plan.prepare(input).leftMap(e => study("preparation")(e.message))
+      density  <- prepared
+        .estimate(key, eyes4s.plan.StudyEstimate.Gaussian(sigma, EdgePolicy.Truncate))
         .leftMap(e => study("density")(e.message))
-      density <- DensityView.of(mass).leftMap(e => study("density")(e.message))
-      cells   <- GridGeometry
-        .of(grid, Some(window), Some(angular))
-        .leftMap(e => study("grid geometry")(e.message))
-    yield Estimate(density, cells, window.region)
+    yield Estimate(density, density.geometry, window.region)
 
   /** eyes4s's σ 2° density preview, with its preview-specific isolines. */
   def preview(

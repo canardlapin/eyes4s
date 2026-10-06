@@ -293,7 +293,7 @@ class RealStudyBackendSuite extends CatsEffectSuite:
       // The document's runs, in the states the fake reports at t2.
       assertEquals(runs, fake)
       assertEquals(jobs, Vector.empty)
-      assertEquals(run7, Left(BackendError.Unavailable(DiagnosticLocus.Run(StoryMoments.run7))))
+      assertLayoutRefused(run7, StoryMoments.rev4)
       assertEquals(events.map(_.left.map(_.code)), Vector(Left("studio-backend.unavailable")))
   }
 
@@ -481,7 +481,7 @@ class RealStudyBackendSuite extends CatsEffectSuite:
     yield
       assertEquals(
         first,
-        Left(BackendError.Unavailable(DiagnosticLocus.Run(StoryMoments.run7)))
+        Left(BackendError.ResultPending(StoryMoments.run7, job.job))
       )
       assertEquals(
         (job.run, job.revision, job.dataset),
@@ -625,6 +625,93 @@ class RealStudyBackendSuite extends CatsEffectSuite:
   private def near(obtained: Double, stored: Double, what: String): Unit =
     assert(math.abs(obtained - stored) <= ScoresTolerance, s"$what: $obtained vs $stored")
 
+  test("native result and paged query rows preserve every golden outcome and scale score") {
+    RealStudyBackend.resource[IO](trialLayout, RealBackendConformanceSuite.golden).use {
+      backend =>
+        for
+          submitted <- backend.submit(StoryMoments.rev4).map(get)
+          events    <- backend.subscribe(submitted.job).map(get).flatMap(_.compile.toVector)
+          result    <- backend.result(submitted.run).map(get)
+          pages     <- (0 until 480 by 73).toVector.traverse(offset =>
+            backend.queries(submitted.run, get(PageRequest.of(offset, 73))).map(get)
+          )
+          failedInspections <- pages.flatMap(_.rows).traverse { row =>
+            row.status match
+              case QueryStatus.FailedAtScales(diagnostics) =>
+                diagnostics.zipWithIndex.traverse { (diagnostic, scale) =>
+                  val address = ResultAddress.ContrastRow(scale, row.query)
+                  backend
+                    .inspect(submitted.run, address)
+                    .map(get)
+                    .map(inspection =>
+                      (inspection, Inspection.Unscored(address, QueryStatus.Failed(diagnostic)))
+                    )
+                }
+              case _ => IO.pure(Vector.empty[(Inspection, Inspection)])
+          }
+        yield
+          assert(events.exists(_.isInstanceOf[JobEvent.Finished]))
+          val rows = pages.flatMap(_.rows)
+          assertEquals(rows.size, 480)
+          assertEquals(
+            rows.filterNot(_.status.isInstanceOf[QueryStatus.NotAdmitted]).map(_.query).toSet,
+            scores._1.map(_.key).toSet
+          )
+          assertEquals(result.contrasts, QueryContrasts(480, 14, 9, 3, 454))
+          assertEquals(result.participants.size, 24)
+          assertEquals(result.pairRowsPerScale, scores._2)
+          assertEquals(result.pairRows, scores._2 * 4)
+          assertEquals(failedInspections.flatten.size, 12)
+          failedInspections.flatten.foreach { (actual, expected) =>
+            assertEquals(actual, expected)
+          }
+          val expected = scores._1.map(q => q.key -> q).toMap
+          rows.foreach { row =>
+            row.status match
+              case QueryStatus.Contributing(ms, bs, ds) =>
+                val pinned = expected(row.query)
+                assertEquals(pinned.status, "contributing")
+                assertEquals(row.matched.map(_.trial).toVector, pinned.matched)
+                assertEquals(row.controls, pinned.controls)
+                assertEquals((ms.size, bs.size, ds.size), (4, 4, 4))
+                pinned.scores.zipWithIndex.foreach { (scale, i) =>
+                  near(
+                    ms(i),
+                    scale._1.getOrElse(fail("missing golden M")),
+                    s"${row.query.label} M at $i"
+                  )
+                  near(
+                    bs(i),
+                    scale._2.getOrElse(fail("missing golden B")),
+                    s"${row.query.label} B at $i"
+                  )
+                  near(
+                    ds(i),
+                    scale._3.getOrElse(fail("missing golden D")),
+                    s"${row.query.label} D at $i"
+                  )
+                }
+              case QueryStatus.NoMatch(_) =>
+                val pinned = expected(row.query)
+                assertEquals(pinned.status, "no-match")
+                assertEquals(row.matched, None)
+              case QueryStatus.NotAdmitted(_) =>
+                assert(!expected.contains(row.query))
+                val disposition =
+                  rev4Prepared.admitted.ledger.find(_.trial == row.query).map(_.disposition)
+                assertEquals(Some(row.status), disposition.map(QueryStatus.NotAdmitted(_)))
+                assertEquals(row.matched, None)
+              case QueryStatus.Failed(_) =>
+                val pinned = expected(row.query)
+                assert(pinned.status.startsWith("failed:"), pinned.status)
+              case QueryStatus.FailedAtScales(diagnostics) =>
+                val pinned = expected(row.query)
+                assert(pinned.status.startsWith("failed:"), pinned.status)
+                assertEquals(diagnostics.size, 4)
+          }
+    }
+  }
+
   test("run 7's inspected contrasts and matched pair rows are SCORES.json's, at every scale") {
     val (queries, perScale) = scores
     for
@@ -684,10 +771,10 @@ class RealStudyBackendSuite extends CatsEffectSuite:
             case (s, Right(Inspection.Unscored(_, QueryStatus.Failed(diag))))
                 if s.startsWith("failed:") =>
               assertEquals(diag.code, s.stripPrefix("failed:"), at)
-            case ("no-match", Right(Inspection.Unscored(_, QueryStatus.Failed(diag)))) =>
-              // eyes4s holds the row with no control operand. Protocol 1.11
-              // reports it as NoMatch with eyes4s's unmatched reason instead.
-              assertEquals(diag.code, "contrast-row.missing-operands", at)
+            case ("no-match", Right(Inspection.Unscored(_, QueryStatus.NoMatch(diag)))) =>
+              assertEquals(diag.code, "study-finding.unmatched-focal", at)
+              assertEquals(diag.origin, DiagnosticOrigin.EyesCore, at)
+              assert(diag.subject.contains(DiagnosticLocus.Trial(q.key)), at)
             case other => fail(s"$at: SCORES ${q.status}, backend $other")
         }
       }
@@ -1024,8 +1111,8 @@ class RealStudyBackendSuite extends CatsEffectSuite:
             eyes4s.studio.core.document.ReportingWeight.ParticipantMeans
           )
         )
-        groupRefusal <- real.report(StoryMoments.run7, grouped, 2)
-        jobs         <- real.jobs
+        groupReport <- real.report(StoryMoments.run7, grouped, 2).map(get)
+        jobs        <- real.jobs
       yield
         assertEquals(grid.cells, mass.values.toVector)
         assertEquals((grid.columns, grid.rows), (mass.grid.nx, mass.grid.ny))
@@ -1071,19 +1158,160 @@ class RealStudyBackendSuite extends CatsEffectSuite:
               )
           )
         assertEquals(report.contrasts, Vector.empty)
-        assertEquals(
-          groupRefusal,
-          Left(
-            BackendError.ReportRefused(
-              StoryMoments.run7,
-              eyes4s.studio.core.reports.ReportRefusal.Spec(
-                grouped.id.value,
-                "Grouping covariate response has no recorded ordered levels or contrast operands."
+        assertEquals(groupReport.cells.size, 6)
+        assertEquals(groupReport.contrasts, Vector.empty)
+        assertEquals(jobs.size, 1)
+    }
+  }
+
+  test(
+    "grouping, explicit direction, filtering, minimums and weighting agree with native reports"
+  ) {
+    import eyes4s.results.{CovariateName, CovariateSchema, CovariateType, Levels}
+    import eyes4s.studio.core.document.*
+    import eyes4s.studio.core.reports.ReportEvaluation
+    val attribute = get(Covariate.of("response"))
+    val id        = get(ReportingId.of("native-grouped"))
+    val forward   = get(ReportingContrast.of("Remembered", "Forgotten"))
+    val reverse   = get(ReportingContrast.of("Forgotten", "Remembered"))
+    val keep      =
+      ReportingFilter.Keep(attribute, get(ValueSet.of(attribute, Vector("Remembered"))))
+    val window = ReportingFilter.OutsideWindowAtMost(get(Share.of(0.05)))
+    def specification(
+        operands: ReportingContrast = forward,
+        minimum: Option[Int] = None,
+        weighting: ReportingWeight = ReportingWeight.ParticipantMeans,
+        filters: Vector[ReportingFilter] = Vector.empty
+    ) = get(
+      ReportingSpec.of(
+        id,
+        "Native grouped",
+        Some(attribute),
+        filters,
+        minimum.map(m => get(MinimumPerGroup.of(m))),
+        weighting,
+        Some(operands)
+      )
+    )
+    val specs = Vector(
+      specification(),
+      specification(operands = reverse),
+      specification(minimum = Some(3)),
+      specification(weighting = ReportingWeight.PooledQueries),
+      specification(filters = Vector(keep)),
+      specification(filters = Vector(window, keep))
+    )
+    RealStudyBackend.resource[IO](trialLayout, RealBackendConformanceSuite.golden).use { real =>
+      for
+        (_, _, _, completed) <- recompute(real, StoryMoments.run7)
+        held   = get(completed)
+        p      = held.prepared
+        name   = get(CovariateName.of("response"))
+        levels = get(Levels.of(Vector("Forgotten", "Remembered")))
+        term   = eyes4s.results.LevelTerm.Categorical(name, levels)
+        schema = get(
+          CovariateSchema
+            .of(Vector(eyes4s.results.Covariate(name, CovariateType.Categorical(levels))))
+        )
+        source = get(
+          eyes4s.codec.ReportSources.study(p.plans, p.inputs, p.results)(
+            p.plan,
+            p.admitted.input,
+            held.result,
+            Some(p.admitted.evidence),
+            schema
+          )
+        )
+        views    <- specs.traverse(spec => real.report(StoryMoments.run7, spec, 2).map(get))
+        profiles <- (0 until 4).toVector
+          .traverse(scale => real.report(StoryMoments.run7, specs.head, scale).map(get))
+        jobs <- real.jobs
+      yield
+        for (spec, served) <- specs.zip(views) do
+          // Construct the native specification independently of the adapter.
+          val reduction = spec.weighting match
+            case ReportingWeight.ParticipantMeans =>
+              eyes4s.results.ReducePolicy.ParticipantMeans(
+                get(eyes4s.results.MinimumQueries.of(spec.minimumPerGroup.fold(1)(_.queries)))
+              )
+            case ReportingWeight.PooledQueries => eyes4s.results.ReducePolicy.PooledQueries
+          val predicates: Vector[eyes4s.results.Predicate] = spec.filters.map {
+            case ReportingFilter.Keep(_, values) =>
+              eyes4s.results.Predicate.In(term, values.values)
+            case ReportingFilter.OutsideWindowAtMost(share) =>
+              eyes4s.results.Predicate.Cmp(
+                eyes4s.results.NumericTerm
+                  .Window(eyes4s.results.WindowMeasure.OutsideWindowShare),
+                eyes4s.results.Comparison.LessOrEqual,
+                share.value
+              )
+          }
+          val native = get(
+            eyes4s.results.ReportSpec.of(
+              get(eyes4s.results.ReportId.of(id.value)),
+              2,
+              get(
+                eyes4s.results.ReportSelection
+                  .of(eyes4s.results.Role.values.toVector, Vector("value"))
+              ),
+              filter = predicates.reduceOption(eyes4s.results.Predicate.And(_, _)),
+              groupBy = Vector(eyes4s.results.Grouping.ByLevel(term)),
+              reduce = reduction,
+              contrast = spec.contrast
+                .map(c => eyes4s.results.LevelContrast(term, c.minuend, c.subtrahend))
+            )
+          )
+          val evaluated  = get(eyes4s.results.Report.evaluate(native, source))
+          val windowOnly = spec.filters.collectFirst {
+            case ReportingFilter.OutsideWindowAtMost(share) =>
+              val windowSpec = get(
+                eyes4s.results.ReportSpec.of(
+                  native.id,
+                  2,
+                  native.selection,
+                  filter = Some(
+                    eyes4s.results.Predicate.Cmp(
+                      eyes4s.results.NumericTerm
+                        .Window(eyes4s.results.WindowMeasure.OutsideWindowShare),
+                      eyes4s.results.Comparison.LessOrEqual,
+                      share.value
+                    )
+                  ),
+                  groupBy = native.groupBy,
+                  reduce = native.reduce,
+                  contrast = native.contrast
+                )
+              )
+              get(eyes4s.results.Report.evaluate(windowSpec, source))
+          }
+          assertEquals(
+            served,
+            get(
+              ReportEvaluation.view(
+                StoryMoments.run7,
+                spec,
+                get(eyes4s.studio.core.selection.ScaleIndex.of(2)),
+                evaluated,
+                windowOnly
               )
             )
           )
-        )
-        assertEquals(jobs.size, 1)
+        for role <- ReportRole.values do
+          val original = views.head.contrast(role).get
+          val reversed = views(1).contrast(role).get
+          assertEquals(
+            (original.minuend, original.subtrahend),
+            (Response.Remembered, Response.Forgotten)
+          )
+          assert(original.estimate.exists(_ != 0.0), s"$role needs asymmetric native evidence")
+          near(reversed.estimate.get, -original.estimate.get, s"$role reverse contrast")
+          assertEquals(reversed.pairedN, original.pairedN)
+          assertEquals(profiles.map(_.scale), Vector(0, 1, 2, 3))
+          assertNotEquals(
+            profiles.head.cell(Some(Response.Remembered), role).get.estimate,
+            profiles.last.cell(Some(Response.Remembered), role).get.estimate
+          )
+        assertEquals(jobs.size, 1, "report edits reuse retained scores")
     }
   }
 

@@ -112,21 +112,33 @@ object ScienceContent:
   /** The science's versioned codec; its digest is the scientific identity.
     * Reading validates exactly as a document does.
     */
-  val codec: Either[CodecError, VersionedCodec[ScienceContent]] =
+  val ladder: Either[CodecError, SchemaLadder[ScienceContent]] =
     StudioSchemaIds.forCodec.map { ids =>
-      VersionedCodec.checked[ScienceContent](ids.science)(s => Right(CanonicalJson(s.asJson))) {
-        json =>
-          json
-            .deepMerge(
-              Json.obj(
-                "presentation" -> PresentationState.default.asJson,
-                "jobs"         -> Json.arr()
-              )
+      def write(s: ScienceContent): Either[CodecError, Json]   = Right(CanonicalJson(s.asJson))
+      def read(json: Json): Either[CodecError, ScienceContent] =
+        json
+          .deepMerge(
+            Json.obj(
+              "presentation" -> PresentationState.default.asJson,
+              "jobs"         -> Json.arr()
             )
-            .as[StudioDocument]
-            .bimap(f => CodecError.Field("science", json, f.getMessage), _.science)
-      }
+          )
+          .as[StudioDocument]
+          .bimap(f => CodecError.Field("science", json, f.getMessage), _.science)
+      def before(s: ScienceContent): Either[CodecError, ScienceContent] =
+        Either.cond(
+          s.reporting.forall(_.contrast.isEmpty),
+          s,
+          CodecError.Unsupported("studio science", "explicit contrast operands need version 2")
+        )
+      SchemaLadder
+        .of[ScienceContent]("studio science", ids.science)(s => before(s).flatMap(write))(
+          json => read(json).flatMap(before)
+        )
+        .next(_.reporting.forall(_.contrast.isEmpty), identity)(write)(read)
     }
+
+  val codec: Either[CodecError, VersionedCodec[ScienceContent]] = ladder.map(_.codec)
 
 /** An Eyes Studio project document (ticket S2.1): its science
   * ([[ScienceContent]]) and, strictly apart, its [[PresentationState]], the
@@ -354,7 +366,17 @@ object StudioDocument:
     * preset added in version 5.
     */
   private def expressedByV4(document: StudioDocument): Boolean =
-    document.analyses.forall(a => presetBeforeV5(a.studio.preset))
+    expressedByV5(document) && document.analyses.forall(a => presetBeforeV5(a.studio.preset))
+
+  /** Version 6 first records explicit ordered reporting contrast operands. */
+  private def expressedByV5(document: StudioDocument): Boolean =
+    document.reporting.forall(_.contrast.isEmpty)
+
+  private val contrastVersionError: CodecError =
+    CodecError.Unsupported("studio document", "explicit contrast operands need version 6")
+
+  private def beforeV6(document: StudioDocument): Either[CodecError, StudioDocument] =
+    Either.cond(expressedByV5(document), document, contrastVersionError)
 
   /** A version-1 to -4 writer and reader: an enum value cannot be dropped as
     * a member can, so a document naming a version-5 preset is refused both
@@ -364,17 +386,21 @@ object StudioDocument:
       write: StudioDocument => Json
   ): StudioDocument => Either[CodecError, Json] =
     d =>
-      if expressedByV4(d) then Right(write(d))
-      else Left(CodecError.Unsupported("studio document", "a preset needs version 5"))
+      beforeV6(d).flatMap { value =>
+        if expressedByV4(value) then Right(write(value))
+        else Left(CodecError.Unsupported("studio document", "a preset needs version 5"))
+      }
 
   private def readBeforeV5(
       read: Json => Either[CodecError, StudioDocument]
   ): Json => Either[CodecError, StudioDocument] =
     json =>
-      read(json).filterOrElse(
-        expressedByV4,
-        CodecError.Unsupported("studio document", "a preset needs version 5")
-      )
+      read(json)
+        .flatMap(beforeV6)
+        .filterOrElse(
+          expressedByV4,
+          CodecError.Unsupported("studio document", "a preset needs version 5")
+        )
 
   /** Whether a version-3 document can hold `document`: version 3 records
     * neither display columns nor repaired assets (S5.7).
@@ -455,6 +481,11 @@ object StudioDocument:
     * byte, and the upcast is the identity. One that names it is version 5,
     * which an earlier reader refuses; earlier writers and readers refuse it
     * too, since a preset cannot be dropped.
+    *
+    * Version 6 records explicitly ordered reporting contrast operands. Earlier
+    * specs lift unchanged with no contrast; grouping still serves group means.
+    * Earlier readers and writers refuse explicit operands, so relabelling an
+    * envelope cannot change scientific direction.
     */
   val ladder: Either[CodecError, SchemaLadder[StudioDocument]] =
     StudioSchemaIds.forCodec.map { ids =>
@@ -471,7 +502,10 @@ object StudioDocument:
         .next(expressedByV3, identity)(beforeV5(d => CanonicalJson(d.asJson)))(
           readBeforeV5(read)
         )
-        .next(expressedByV4, identity)(d => Right(CanonicalJson(d.asJson)))(read)
+        .next(expressedByV4, identity)(d => beforeV6(d).map(v => CanonicalJson(v.asJson)))(
+          json => read(json).flatMap(beforeV6)
+        )
+        .next(expressedByV5, identity)(d => Right(CanonicalJson(d.asJson)))(read)
     }
 
   /** The versioned, canonical document codec. */

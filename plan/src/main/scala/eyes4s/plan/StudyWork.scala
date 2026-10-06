@@ -59,6 +59,9 @@ final class PreparedStudy[K, U <: Unit2D, P, S, D] private[plan] (
 ):
   private[plan] val countIdentity = new StudyCountIdentity
 
+  private lazy val trialIndices: Map[K, Vector[Int]] =
+    input.trials.rows.indices.toVector.groupBy(i => input.trials.rows(i).key)
+
   val inputReference: ArtifactRef[StudyInput[K, U]] = input.reference
   val layoutId: DefinitionId                        = plan.layout.id
   val methodId: DefinitionId                        = plan.method.id
@@ -230,6 +233,28 @@ final class PreparedStudy[K, U <: Unit2D, P, S, D] private[plan] (
 
   private def occupancy(key: K, path: Scanpath[U]): Either[StudyFailure[K], PointMeasure[U]] =
     path.occupancy(plan.weight).left.map(StudyFailure.Occupancy(key, _))
+
+  /** Estimate exactly one input trial at a caller-chosen scale, through the
+    * runner's frame, initial-fixation, window, weighting and density pipeline.
+    * The estimate uses the map frame's units; angular scales are converted by
+    * plan construction. Unknown and repeated keys are refused explicitly.
+    * This is a whole-trial operation, as it is in the study cursor.
+    */
+  def estimate(key: K, estimate: StudyEstimate[U]): Either[StudyFailure[K], DensityView[U]] =
+    for
+      _     <- checkUnchanged.left.map(StudyFailure.PreparedPlan(key, _))
+      index <- trialIndices.getOrElse(key, Vector.empty) match
+        case Vector(index) => Right(index)
+        case indices       => Left(StudyFailure.TrialCardinality(key, indices.size))
+      mass <- plan.estimateTrial(this, estimate, occupancy, index)._2
+      window = geometry match
+        case StudyGeometry.WholeFrame(_)     => None
+        case StudyGeometry.Windowed(w, _, _) => Some(w)
+      rendering <- GridGeometry
+        .of(grid, window, plan.angularScale)
+        .left
+        .map(StudyFailure.Frame(key, _))
+    yield new DensityView(mass, rendering)
 
   private[plan] def execute(
       occupancy: (K, Scanpath[U]) => Either[StudyFailure[K], PointMeasure[U]],

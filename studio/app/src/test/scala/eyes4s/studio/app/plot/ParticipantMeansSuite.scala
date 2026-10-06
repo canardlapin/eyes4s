@@ -16,233 +16,103 @@
 
 package eyes4s.studio.app.plot
 
-import eyes4s.studio.app.text.{Format, ParticipantText, ParticipantTextId}
-import eyes4s.studio.core.backend.{
-  GroupMeans,
-  GroupSummary,
-  ParticipantSummary,
-  ResultSummary,
-  Response,
-  RunId,
-  ScoreMeans
-}
-import eyes4s.studio.core.document.ReportingId
-import eyes4s.studio.core.fixture.{MockStudy, StoryMoment}
-import eyes4s.studio.core.headless.HeadlessSession
-import eyes4s.studio.core.selection.{ScaleIndex, StudioRef}
-import io.circe.Json
+import eyes4s.studio.core.backend.{ReportRole, Response}
+import eyes4s.studio.core.selection.StudioRef
+import scala.concurrent.ExecutionContext
 
-import scala.concurrent.{ExecutionContext, Future}
-
-/** The participant plot's values (ticket S4.5c): read from the fake
-  * backend's run summary and written as the plot's and table's one value
-  * source. Every participant's group means are checked against
-  * fixture.json itself, read here independently of the backend's decoding.
+/** Participant plotting reads scale-bound native reports and keeps every
+  * served reference, including whole-run and missing-value cells.
   */
 class ParticipantMeansSuite extends munit.FunSuite:
-
-  private given ExecutionContext = ExecutionContext.global
-
-  private val run = RunId(7)
-
-  private def right[E, A](either: Either[E, A]): A =
-    either.fold(e => fail(s"unexpected Left: $e"), identity)
-
-  private val reporting = right(ReportingId.of("by-retrieval-response"))
-  private val columns   = right(ParticipantColumns.standard)
-  private val at2       = right(ScaleIndex.of(2))
-
-  private def summary: Future[ResultSummary] =
-    HeadlessSession
-      .open(StoryMoment.T2)
-      .flatMap(s => s.result(run).transformWith(r => s.close.transform(_ => r)))
-      .map(right)
-
-  // fixture.json's summary, read without the backend.
-  private lazy val fixture: Json =
-    val json = right(io.circe.parser.parse(MockStudy.fixtureText))
-    json.hcursor.downField("summary").focus.getOrElse(json)
-
-  private def fixtureParticipants: Vector[Json] =
-    right(fixture.hcursor.downField("participants").as[Vector[Json]])
-
-  test("the fixture's 24 participants and both grand means are the summary's, at 2°") {
-    summary.map { s =>
-      val means = right(ParticipantMeans.of(s, reporting, at2))
-      assertEquals(means.scaleLabel, "2°")
-      assertEquals(means.groups.map(_.group), Vector(Response.Remembered, Response.Forgotten))
-      Vector("Remembered", "Forgotten").zip(means.groups).foreach { (label, g) =>
-        assertEquals(g.d, right(fixture.hcursor.get[Double](s"grand_D_$label")))
-        assertEquals(g.n, right(fixture.hcursor.get[Int](s"n_$label")))
-        assertEquals(g.ref, StudioRef.GroupCell(run, reporting, at2, Response(label)))
-      }
-      assertEquals(means.cells.size, 48)
-      for
-        p     <- fixtureParticipants
-        label <- Vector("Remembered", "Forgotten")
-      do
-        val id   = right(p.hcursor.get[String]("id"))
-        val cell = means.cells
-          .find(c => c.participant == id && c.group.label == label)
-          .getOrElse(fail(s"no cell for $id in $label"))
-        val g = p.hcursor.downField(label)
-        assertEquals(cell.d, Some(right(g.get[Double]("D"))), s"$id $label")
-        assertEquals(cell.n, Some(right(g.get[Int]("n"))), s"$id $label")
-        assertEquals(
-          cell.ref,
-          StudioRef.ParticipantSummary(run, reporting, at2, Some(Response(label)), id)
-        )
-      // The board's per-group n range, 2 to 17 queries per participant.
-      val ns = means.cells.flatMap(_.n)
-      assertEquals((ns.min, ns.max), (2, 17))
-    }
-  }
+  private given ExecutionContext           = ExecutionContext.global
+  private def ok[E, A](e: Either[E, A]): A = e.fold(x => fail(x.toString), identity)
+  private val columns                      = ok(ParticipantColumns.standard)
 
   test(
-    "the source lists each group's participants, then its grand mean, as the table writes them"
+    "native fixture participant cells and grand means preserve the exact report values and refs"
   ) {
-    summary.map { s =>
-      val means  = right(ParticipantMeans.of(s, reporting, at2))
-      val source = right(ParticipantMeans.source(means, columns))
-      assertEquals(source.caption, ParticipantText(ParticipantTextId.Caption, "2°"))
+    PlotReports.read.map { (summary, reports, _) =>
+      val report = reports(2)
+      val means  = ok(ParticipantMeans.of(report, summary.scales(2)))
+      assertEquals(means.scale.value, 2)
+      assertEquals(means.groups.map(_.group), Vector(Response.Remembered, Response.Forgotten))
+      assertEquals(
+        means.groups.map(_.d),
+        report.cells.filter(_.role == ReportRole.Difference).flatMap(_.estimate)
+      )
+      assertEquals(
+        means.groups.map(_.ref),
+        report.cells.filter(_.role == ReportRole.Difference).map(_.ref)
+      )
+      val participants = report.participants.filter(_.role == ReportRole.Difference)
+      assertEquals(means.cells.map(_.ref), participants.map(_.ref))
+      assertEquals(means.cells.map(_.d), participants.map(_.value))
+      assertEquals(means.cells.map(_.n), participants.map(p => Some(p.queries)))
+      assertEquals(means.cells.size, 48)
+      val source = ok(ParticipantMeans.source(means, columns))
       assertEquals(source.rows.size, 50)
       assertEquals(
         source.rows.map(_.ref),
         means.groups.flatMap(g => means.cells.filter(_.group == g.group).map(_.ref) :+ g.ref)
       )
-      def cells(ref: StudioRef) = source.cells(right(source.rowOf(ref).toRight(ref))).get
-      val p17                   = means.cells.filter(_.participant == "P17")
-      assertEquals(
-        p17.map(c => cells(c.ref)),
-        Vector(
-          Vector("Remembered", "P17", "+0.38", "17 queries"),
-          Vector("Forgotten", "P17", "+0.32", "2 queries")
-        )
-      )
-      assertEquals(
-        means.groups.map(g => cells(g.ref)),
-        Vector(
-          Vector("Remembered", "all participants", "+0.30", "24 participants"),
-          Vector("Forgotten", "all participants", "+0.15", "24 participants")
-        )
-      )
-      // P05's Forgotten mean is negative, written with U+2212.
-      val p05 = means.cells.find(c => c.participant == "P05" && c.group == Response.Forgotten)
-      assertEquals(p05.map(c => cells(c.ref)(2)), Some(Format.signed(-0.23, 2)))
     }
   }
 
-  // --- Missing means and refusals ------------------------------------------------------
+  test("an ungrouped report plots All queries and preserves whole-run references") {
+    val report = PlotReports.synthetic(group = None, id = PlotReports.overallId)
+    val means  = ok(ParticipantMeans.of(report, "2°"))
+    assertEquals(means.groups.map(_.group.label), Vector("All queries"))
+    assertEquals(means.groups.head.ref, report.cells.head.ref)
+    assertEquals(means.cells.map(_.ref), report.participants.map(_.ref))
+    assert(means.cells.forall(_.ref.isInstanceOf[StudioRef.ReportParticipant]))
+    val source = ok(ParticipantMeans.source(means, columns))
+    assertEquals(source.value(0, columns.d), Some(PlotValue.Number(0.0)))
+    assertEquals(source.value(1, columns.d), Some(PlotValue.Missing))
+  }
 
-  private val remembered = Response.Remembered
-  private val forgotten  = Response.Forgotten
-  private val scoreMeans = ScoreMeans(0.5, 0.3, 0.2, Vector(0.1, 0.2))
-
-  private def participant(id: String, groups: GroupMeans*): ParticipantSummary =
-    ParticipantSummary(id, 4, 4, 0, 0, 0, scoreMeans, groups.toVector)
-
-  private val twoGroups = Vector(
-    GroupSummary("response", remembered, 3, 0.2, Vector(0.1, 0.2)),
-    GroupSummary("response", forgotten, 2, 0.1, Vector(0.05, 0.1))
-  )
-
-  // The fixture's summary with two scales and these groups and participants.
-  private def synthetic(
-      participants: Vector[ParticipantSummary],
-      groups: Vector[GroupSummary] = twoGroups
-  ): Future[ResultSummary] =
-    summary.map(
-      _.copy(scales = Vector("1°", "2°"), groups = groups, participants = participants)
+  test(
+    "an absent group estimate is a typed plot refusal, with its original report/table cell intact"
+  ) {
+    val report = PlotReports.synthetic(estimate = None)
+    assertEquals(
+      ParticipantMeans.of(report, "2°"),
+      Left(
+        ParticipantMeansError.UnscoredGroup(
+          report.run,
+          Response.Remembered,
+          Some(eyes4s.studio.core.backend.ReportAbsence.EmptyGroup)
+        )
+      )
     )
+    assertEquals(report.cells.size, 1)
+    assertEquals(report.cells.head.estimate, None)
+  }
 
-  private val at1 = right(ScaleIndex.of(1))
-
-  test("a group without queries, or with means of none, is missing, never zero") {
-    synthetic(
-      Vector(
-        participant(
+  test("duplicate cells and participants, and an undeclared group, are refused") {
+    val report = PlotReports.synthetic()
+    assertEquals(
+      ParticipantMeans.of(report.copy(cells = report.cells ++ report.cells), "2°"),
+      Left(ParticipantMeansError.DuplicateGroup(report.run, Response.Remembered))
+    )
+    assertEquals(
+      ParticipantMeans.of(
+        report.copy(participants = report.participants ++ report.participants.take(1)),
+        "2°"
+      ),
+      Left(ParticipantMeansError.DuplicateParticipant(report.run, "A"))
+    )
+    val unknown = report.copy(participants =
+      report.participants.map(_.copy(group = Some(Response.Forgotten)))
+    )
+    assertEquals(
+      ParticipantMeans.of(unknown, "2°"),
+      Left(
+        ParticipantMeansError.UnknownGroup(
+          report.run,
           "A",
-          GroupMeans(remembered, 3, 0.6, 0.6, 0.0),
-          GroupMeans(forgotten, 1, 0.4, 0.3, 0.1)
-        ),
-        participant("B", GroupMeans(remembered, 2, 0.5, 0.3, 0.2)),
-        participant(
-          "C",
-          GroupMeans(remembered, 4, 0.5, 0.3, 0.2),
-          GroupMeans(forgotten, 0, 0.0, 0.0, 0.0)
+          Response.Forgotten,
+          Vector(Response.Remembered)
         )
       )
-    ).map { s =>
-      val means                        = right(ParticipantMeans.of(s, reporting, at1))
-      def cell(p: String, g: Response) =
-        means.cells.find(c => c.participant == p && c.group == g).getOrElse(fail(s"$p $g"))
-      // A zero mean is a value.
-      assertEquals((cell("A", remembered).d, cell("A", remembered).n), (Some(0.0), Some(3)))
-      // No means listed: no D and no n.
-      assertEquals((cell("B", forgotten).d, cell("B", forgotten).n), (None, None))
-      // Means of no queries: n 0 and no D.
-      assertEquals((cell("C", forgotten).d, cell("C", forgotten).n), (None, Some(0)))
-      val source                = right(ParticipantMeans.source(means, columns))
-      def d(c: ParticipantCell) =
-        source.value(right(source.rowOf(c.ref).toRight(c.ref)), columns.d)
-      assertEquals(d(cell("A", remembered)), Some(PlotValue.Number(0.0)))
-      assertEquals(d(cell("B", forgotten)), Some(PlotValue.Missing))
-      assertEquals(d(cell("C", forgotten)), Some(PlotValue.Missing))
-      val row = right(source.rowOf(cell("B", forgotten).ref).toRight("B"))
-      assertEquals(
-        source.cells(row).map(_.drop(2)),
-        Some(Vector(PlotSource.MissingText, PlotSource.MissingText))
-      )
-    }
-  }
-
-  test("a scale the run lacks, or not the summary's, is refused, naming it") {
-    synthetic(Vector(participant("A", GroupMeans(remembered, 3, 0.6, 0.4, 0.2)))).map { s =>
-      val at5 = right(ScaleIndex.of(5))
-      assertEquals(
-        ParticipantMeans.of(s, reporting, at5),
-        Left(ParticipantMeansError.Scale(run, at5, Vector("1°", "2°")))
-      )
-      val at0 = right(ScaleIndex.of(0))
-      val e   = ParticipantMeans.of(s, reporting, at0)
-      assertEquals(e, Left(ParticipantMeansError.OtherScale(run, remembered, at0, 0.2, 0.1)))
-      assert(e.left.toOption.get.message.contains("Remembered"), e)
-    }
-  }
-
-  test("duplicate groups or participants, and means in no group, are refused") {
-    val a = participant("A", GroupMeans(remembered, 3, 0.6, 0.4, 0.2))
-    for
-      dg <- synthetic(Vector(a), twoGroups :+ twoGroups.head)
-      dp <- synthetic(Vector(a, a))
-      ug <- synthetic(
-        Vector(participant("A", GroupMeans(Response("Unsure"), 1, 0.5, 0.4, 0.1)))
-      )
-      tw <- synthetic(
-        Vector(
-          participant(
-            "A",
-            GroupMeans(remembered, 1, 0.5, 0.4, 0.1),
-            GroupMeans(remembered, 1, 0.5, 0.4, 0.1)
-          )
-        )
-      )
-    yield
-      assertEquals(
-        ParticipantMeans.of(dg, reporting, at1),
-        Left(ParticipantMeansError.DuplicateGroup(run, remembered))
-      )
-      assertEquals(
-        ParticipantMeans.of(dp, reporting, at1),
-        Left(ParticipantMeansError.DuplicateParticipant(run, "A"))
-      )
-      val groups = Vector(remembered, forgotten)
-      assertEquals(
-        ParticipantMeans.of(ug, reporting, at1),
-        Left(ParticipantMeansError.UnknownGroup(run, "A", Response("Unsure"), groups))
-      )
-      assertEquals(
-        ParticipantMeans.of(tw, reporting, at1),
-        Left(ParticipantMeansError.UnknownGroup(run, "A", remembered, groups))
-      )
+    )
   }

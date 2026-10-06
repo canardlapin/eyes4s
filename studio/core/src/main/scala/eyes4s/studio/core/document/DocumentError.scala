@@ -41,6 +41,12 @@ enum DocumentError derives CanEqual:
   case EmptyScales
   case DuplicateScales(degrees: Vector[Double])
   case EmptyFilter(attribute: String)
+  case ContrastOperands(minuend: String, subtrahend: String)
+  case ContrastWithoutGrouping(
+      reporting: String,
+      minuend: Option[String],
+      subtrahend: Option[String]
+  )
   case BadPanelLetter(value: String)
   case NoPanels(figure: FigureId)
   case DuplicatePanels(figure: FigureId, letters: Vector[String])
@@ -144,9 +150,13 @@ enum DocumentError derives CanEqual:
     case OutOfRange(field, value, lo, hi) => s"$field is $value; it must lie in [$lo, $hi]."
     case PlacementOffScreen(p, screen)    =>
       s"Image placement ${p.render} does not lie inside the ${screen.render} screen."
-    case EmptyScales                     => "A recipe needs at least one scale."
-    case DuplicateScales(degrees)        => s"Scales repeat: ${degrees.mkString(", ")} degrees."
-    case EmptyFilter(attribute)          => s"The filter on $attribute keeps no value."
+    case EmptyScales              => "A recipe needs at least one scale."
+    case DuplicateScales(degrees) => s"Scales repeat: ${degrees.mkString(", ")} degrees."
+    case EmptyFilter(attribute)   => s"The filter on $attribute keeps no value."
+    case ContrastOperands(minuend, subtrahend) =>
+      s"Contrast operands '$minuend' and '$subtrahend' must be distinct."
+    case ContrastWithoutGrouping(reporting, minuend, subtrahend) =>
+      s"Reporting spec $reporting contrasts $minuend minus $subtrahend but has no grouping covariate."
     case BadPanelLetter(value)           => s"Panel letter '$value' is not one of A to Z."
     case NoPanels(figure)                => s"${figure.label} has no panels."
     case DuplicatePanels(figure, labels) =>

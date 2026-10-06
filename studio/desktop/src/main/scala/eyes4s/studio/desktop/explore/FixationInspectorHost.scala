@@ -39,7 +39,7 @@ trait UsedByInputs:
 object UsedByInputs:
   /** The window's backend navigator. */
   def of(session: StudioSession): UsedByInputs = (map, done) =>
-    val navigator: StudyNavigator[IO] = session.backend.navigator
+    val navigator: StudyNavigator[IO] = session.navigator
     session.run(FixationInspector.readUsedBy[IO](navigator)(map)) {
       case Left(e)          => done(Left(Option(e.getMessage).getOrElse(e.toString)))
       case Right(Left(err)) => done(Right(BackendAnswer.Refused(err.message)))

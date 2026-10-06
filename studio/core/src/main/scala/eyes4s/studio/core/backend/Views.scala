@@ -312,11 +312,30 @@ final case class PreviewRow(
     query: TrialKey,
     item: String,
     response: Response,
-    matched: TrialKey,
+    matched: Option[TrialKey],
     controls: Option[Int],
     eligibility: Eligibility
 ) derives CanEqual,
       Codec.AsObject
+
+object PreviewRow:
+  /** A present reference is meaningful only for a query the design admits. */
+  def apply(
+      query: TrialKey,
+      item: String,
+      response: Response,
+      matched: TrialKey,
+      controls: Option[Int],
+      eligibility: Eligibility
+  ): PreviewRow =
+    new PreviewRow(
+      query,
+      item,
+      response,
+      Option.when(eligibility == Eligibility.Eligible)(matched),
+      controls,
+      eligibility
+    )
 
 final case class PreviewPage(
     revision: AnalysisRevision,
@@ -359,24 +378,16 @@ final case class RunSummary(
 ) derives CanEqual,
       Codec.AsObject
 
-/** One reporting group's means of M (matched), B (control) and D = M − B. */
-final case class GroupMeans(label: Response, n: Int, m: Double, b: Double, d: Double)
-    derives CanEqual,
-      Codec.AsObject
-
-final case class ScoreMeans(m: Double, b: Double, d: Double, dByScale: Vector[Double])
-    derives CanEqual,
-      Codec.AsObject
-
-final case class ParticipantSummary(
+/** A participant's query accounting across the run, independent of reporting
+  * spec and scale. Numerical means belong to the requested `ReportView`.
+  */
+final case class ParticipantCounts(
     participant: String,
     requested: Int,
     contributing: Int,
     failed: Int,
     noMatch: Int,
-    notAdmitted: Int,
-    all: ScoreMeans,
-    groups: Vector[GroupMeans]
+    notAdmitted: Int
 ) derives CanEqual,
       Codec.AsObject
 
@@ -390,18 +401,9 @@ final case class QueryContrasts(
 ) derives CanEqual,
       Codec.AsObject
 
-/** Grand means of one reporting group over participant means. `attribute`
-  * names the inventory attribute the groups split on.
+/** Scale-free run facts. Reporting edits read numerical cells only through
+  * `report(run, spec, scale)`, whose references carry the exact context.
   */
-final case class GroupSummary(
-    attribute: String,
-    label: Response,
-    n: Int,
-    d: Double,
-    dByScale: Vector[Double]
-) derives CanEqual,
-      Codec.AsObject
-
 final case class ResultSummary(
     run: RunId,
     revision: AnalysisRevision,
@@ -411,13 +413,7 @@ final case class ResultSummary(
     pairRows: Long,
     eligibleQueries: Int,
     contrasts: QueryContrasts,
-    grandD: Double,
-    grandDByScale: Vector[Double],
-    groups: Vector[GroupSummary],
-    pairedN: Int,
-    groupNMinimum: Int,
-    groupNMaximum: Int,
-    participants: Vector[ParticipantSummary]
+    participants: Vector[ParticipantCounts]
 ) derives CanEqual,
       Codec.AsObject
 
@@ -428,15 +424,45 @@ enum QueryStatus derives CanEqual, Codec.AsObject:
   case NoMatch(diagnostic: StudioDiagnostic)
   case NotAdmitted(disposition: TrialDisposition)
 
+  /** Every scale failed; diagnostics retain the run's declared scale order. */
+  case FailedAtScales(diagnostics: Vector[StudioDiagnostic])
+
+  def isFailed: Boolean = this match
+    case Failed(_) | FailedAtScales(_) => true
+    case _                             => false
+
+  /** A uniform fixture failure applies at every scale; native failures
+    * retain the diagnostic belonging to the requested scale.
+    */
+  def diagnosticAt(scale: Int): Option[StudioDiagnostic] = this match
+    case Failed(diagnostic) if scale >= 0 => Some(diagnostic)
+    case FailedAtScales(diagnostics)      => diagnostics.lift(scale)
+    case _                                => None
+
 final case class QueryRow(
     query: TrialKey,
     item: String,
     response: Response,
-    matched: TrialKey,
+    matched: Option[TrialKey],
     controls: Option[Int],
     status: QueryStatus
 ) derives CanEqual,
       Codec.AsObject
+
+object QueryRow:
+  /** An unmatched or unadmitted query carries no guessed reference. */
+  def apply(
+      query: TrialKey,
+      item: String,
+      response: Response,
+      matched: TrialKey,
+      controls: Option[Int],
+      status: QueryStatus
+  ): QueryRow =
+    val reference = status match
+      case QueryStatus.NoMatch(_) | QueryStatus.NotAdmitted(_) => None
+      case _                                                   => Some(matched)
+    new QueryRow(query, item, response, reference, controls, status)
 
 final case class QueryPage(run: RunId, page: PageInfo, rows: Vector[QueryRow])
     derives CanEqual,

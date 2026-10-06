@@ -297,7 +297,7 @@ class KeyboardJourneySuite extends GoldenWindow:
       )
       // The fake learns a draft's revision until S3.7 binds plans.
       w.session
-        .await(w.session.backend.declare(StoryMoments.rev4, r3))
+        .await(w.session.fixture.get.declare(StoryMoments.rev4, r3))
         .fold(e => fail(e.toString), identity)
       chord(fx, CommandRegistry.analysis)
       // Tab once the shown design is checked: while Analysis is still
@@ -313,7 +313,7 @@ class KeyboardJourneySuite extends GoldenWindow:
       space(fx)
       eventually(fx, "run 6's job")(w.runtime.model.jobs.jobs.exists(_.run == run6))
       val job = model(w).jobs.jobs.find(_.run == run6).get.id
-      w.session.await(w.session.backend.complete(job)).fold(e => fail(e.toString), identity)
+      w.session.await(w.session.fixture.get.complete(job)).fold(e => fail(e.toString), identity)
       eventually(fx, "run 6 ready")(w.runtime.model.jobs.ready.exists(_.run == run6))
       audit(w, "run 6 ready")
       // The jobs chip's Show.
@@ -384,7 +384,7 @@ class KeyboardJourneySuite extends GoldenWindow:
         )
       )
       w.session
-        .await(w.session.backend.declare(StoryMoments.rev5, r3))
+        .await(w.session.fixture.get.declare(StoryMoments.rev5, r3))
         .fold(e => fail(e.toString), identity)
       // The context strip's draft chip, then rev 5's pair rows in Analysis.
       tabToNamed(fx, "Draft rev 5")

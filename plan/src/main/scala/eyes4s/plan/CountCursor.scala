@@ -38,7 +38,8 @@ final class CountCursor[K] private[plan] (
     private val description: Vector[(String, Vector[Provenance.Param])],
     private val owner: StudyCountIdentity,
     private val keysPerDesign: Long,
-    private val controlKeys: Long
+    private val controlKeys: Long,
+    private val queryPairs: Map[K, QueryPairCounts[K]]
 ):
   def stage: StudyDesign = phase match
     case CountPhase.Control(_, _, _) => StudyDesign.Control
@@ -49,7 +50,8 @@ final class CountCursor[K] private[plan] (
       phase: CountPhase[K] = phase,
       groups: CountMatchedGroups[K] = groups,
       focal: Set[K] = focal,
-      visited: Long = visited
+      visited: Long = visited,
+      queryPairs: Map[K, QueryPairCounts[K]] = queryPairs
   ): CountCursor[K] = new CountCursor(
     cursor,
     controls,
@@ -64,7 +66,8 @@ final class CountCursor[K] private[plan] (
     description,
     owner,
     keysPerDesign,
-    controlKeys
+    controlKeys,
+    queryPairs
   )
 
   def advance(
@@ -93,7 +96,8 @@ final class CountCursor[K] private[plan] (
                 cursor = following,
                 groups = appendMatched(page),
                 focal = focal ++ page.map(_.left),
-                visited = visited + units
+                visited = visited + units,
+                queryPairs = appendQueryPairs(page)
               )
             )
           case PairPage.Done(page, units, report) =>
@@ -122,7 +126,8 @@ final class CountCursor[K] private[plan] (
                     owner,
                     keysPerDesign,
                     refusal,
-                    controlKeys
+                    controlKeys,
+                    appendQueryPairs(page)
                   )
                 )
               case _ =>
@@ -132,7 +137,8 @@ final class CountCursor[K] private[plan] (
                   units,
                   next(
                     phase = CountPhase.Diagnostics(counts, result, cardinality.refusal(result)),
-                    visited = visited + units
+                    visited = visited + units,
+                    queryPairs = appendQueryPairs(page)
                   )
                 )
         }
@@ -140,6 +146,16 @@ final class CountCursor[K] private[plan] (
   private[plan] def pairingRefusal: Option[PlanError] = phase match
     case CountPhase.Control(_, _, refusal) => refusal
     case _                                 => None
+
+  private def appendQueryPairs(page: Vector[ScheduledPair[K, K]]): Map[K, QueryPairCounts[K]] =
+    page.foldLeft(queryPairs) { (counts, pair) =>
+      val previous = counts.getOrElse(pair.left, QueryPairCounts.empty[K])
+      val next     = phase match
+        case CountPhase.Matched()            => previous.addMatched(pair.right)
+        case CountPhase.Control(_, _, _)     => previous.addControl
+        case CountPhase.Diagnostics(_, _, _) => previous
+      counts.updated(pair.left, next)
+    }
 
   private def appendMatched(page: Vector[ScheduledPair[K, K]]): CountMatchedGroups[K] =
     phase match
@@ -205,7 +221,10 @@ object CountCursor:
           work.description,
           work.countIdentity,
           work.keysPerDesign,
-          work.controlKeys
+          work.controlKeys,
+          work.focalIndices.iterator
+            .map(i => work.input.trials.rows(i).key -> QueryPairCounts.empty[K])
+            .toMap
         )
       )
 

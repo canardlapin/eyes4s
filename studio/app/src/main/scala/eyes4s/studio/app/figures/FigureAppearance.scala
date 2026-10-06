@@ -18,7 +18,7 @@ package eyes4s.studio.app.figures
 
 import eyes4s.studio.app.plot.ParticipantLines
 import eyes4s.studio.app.tokens.FontFace
-import eyes4s.studio.core.backend.ResultSummary
+import eyes4s.studio.core.backend.{ReportRole, ReportView}
 import eyes4s.studio.core.document.{MethodSpec, PanelLetter}
 import eyes4s.studio.core.engine.StudioBuild
 import eyes4s.studio.core.figures.FigureSource
@@ -95,12 +95,14 @@ object FigureCaption:
   /** Panel D's caption: what a dot (and a line) is, and the per-group n
     * range the summary serves.
     */
-  def participantD(summary: ResultSummary, lines: ParticipantLines): String =
+  def participantD(report: ReportView, lines: ParticipantLines): String =
     val dots = lines match
       case ParticipantLines.Shown  => "Each pair of dots is one participant"
       case ParticipantLines.Hidden => "Each dot is one participant's mean"
-    s"$dots; per participant, ${summary.groupNMinimum}–${summary.groupNMaximum} queries per " +
-      "group. Descriptive only: no intervals or tests."
+    val range = report
+      .queryRange(ReportRole.Difference)
+      .fold("group query counts unavailable")(r => s"${r.fewest}–${r.most} queries per group")
+    s"$dots; per participant, $range. Descriptive only: no intervals or tests."
 
   /** The provenance stamp: "Analysis rev 4 · run 7 (archive unbound) · data r3
     * · reporting “By retrieval response” (sha256:1a2b…9f0) · studio build

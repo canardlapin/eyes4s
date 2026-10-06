@@ -63,7 +63,9 @@ object DiagnosticCatalog:
       "Estimation",
       "Comparison",
       "OffWindow",
-      "InitialFixations"
+      "InitialFixations",
+      "TrialCardinality",
+      "PreparedPlan"
     )
   val initialFixation: DiagnosticFamily = error("initial-fixation")(
     "NonPositiveRadius",

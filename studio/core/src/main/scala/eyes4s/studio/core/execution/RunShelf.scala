@@ -44,7 +44,7 @@ enum ExecutionEffect derives CanEqual, Codec.AsObject:
     * backend runs the snapshot it retained for the receipt, or refuses a
     * stale or changed one.
     */
-  case SubmitPreview(ready: PreviewReady)
+  case SubmitPreview(ready: PreviewReady, requestedRun: Option[RunId] = None)
   case Cancel(job: JobId)
 
   /** The document's requested stamp changed without a submission. */
@@ -53,19 +53,19 @@ enum ExecutionEffect derives CanEqual, Codec.AsObject:
 object ExecutionEffect:
   /** The stamp a submission asks results for, if the effect submits. */
   def submitted(effect: ExecutionEffect): Option[RunStamp] = effect match
-    case Submit(stamp)        => Some(stamp)
-    case SubmitPreview(ready) => Some(ready.stamp)
-    case Cancel(_)            => None
-    case Require(_)           => None
+    case Submit(stamp)           => Some(stamp)
+    case SubmitPreview(ready, _) => Some(ready.stamp)
+    case Cancel(_)               => None
+    case Require(_)              => None
 
   /** Perform one effect on `service`. */
   def perform[F[_]: Functor](service: ExecutionService[F])(
       effect: ExecutionEffect
   ): F[Either[ExecutionError, Unit]] = effect match
-    case Submit(stamp)        => service.submit(stamp).map(_.void)
-    case SubmitPreview(ready) => service.submitPreview(ready).map(_.void)
-    case Cancel(job)          => service.cancel(job).map(_.void)
-    case Require(stamp)       => service.require(stamp).map(Right(_))
+    case Submit(stamp)           => service.submit(stamp).map(_.void)
+    case SubmitPreview(ready, _) => service.submitPreview(ready).map(_.void)
+    case Cancel(job)             => service.cancel(job).map(_.void)
+    case Require(stamp)          => service.require(stamp).map(Right(_))
 
 /** The shown run and the ready notice beside it ("Run 8 ready — Show"), as a
   * pure value. A completion only ever fills `pending`; `shown` changes only

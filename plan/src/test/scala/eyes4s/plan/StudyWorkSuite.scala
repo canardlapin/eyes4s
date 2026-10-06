@@ -166,6 +166,85 @@ class StudyWorkSuite extends munit.FunSuite:
     assertEquals(get(plan(scales = scales).prepare(input)).candidateVisitsAcrossScales, 16L)
   }
 
+  test("single-trial estimates equal every runner density at every configured scale") {
+    val scales = Vector(
+      StudyEstimate.Binned[Px](),
+      StudyEstimate.Gaussian(get(Sigma.px(0.5)), EdgePolicy.Truncate),
+      StudyEstimate.Anisotropic(get(Sigma.px(0.3)), get(Sigma.px(0.7)), EdgePolicy.Truncate)
+    )
+    val work   = get(plan(scales = scales).prepare(input))
+    val result = get(work.run)
+    result.scales.foreach { scale =>
+      scale.estimation.foreach { case (key, mass) =>
+        assertEquals(
+          work.estimate(key, scale.estimate),
+          mass.flatMap(m => DensityView.of(m).left.map(StudyFailure.Frame(key, _)))
+        )
+      }
+    }
+    val chosen = get(work.estimate(a, StudyEstimate.Binned()))
+    assertEquals(chosen.cells.toVector, Vector(1.0, 0.0, 0.0, 0.0))
+  }
+
+  test(
+    "single-trial estimates refuse unknown and repeated full keys without selecting an occurrence"
+  ) {
+    val unknown = StudyKey("missing", "a", "recall")
+    assertEquals(
+      get(plan().prepare(input)).estimate(unknown, StudyEstimate.Binned()),
+      Left(StudyFailure.TrialCardinality(unknown, 0))
+    )
+    val repeated = StudyInput(Trials(Vector(trial(a, 0.5), trial(a, 1.5), trial(ar, 0.5))))
+    assertEquals(
+      get(plan(repeated).prepare(repeated)).estimate(a, StudyEstimate.Binned()),
+      Left(StudyFailure.TrialCardinality(a, 2))
+    )
+  }
+
+  test(
+    "single-trial estimates preserve frame failures, initial policy and window rendering geometry"
+  ) {
+    val other      = get(Frame.screen("estimate-other", 2, 2))
+    val mismatched = StudyInput(Trials(Vector(trial(a, 0.5, other), trial(ar, 0.5))))
+    val work       = get(plan(mismatched).prepare(mismatched))
+    assertEquals(
+      work.estimate(a, StudyEstimate.Binned()).left.toOption,
+      get(work.run).scales.head.estimation.head._2.left.toOption
+    )
+    val window = get(
+      Subframe.of(frame, FrameId("estimate-window"), get(Bounds.of[Px](0.5, 0.0, 1.5, 2.0)))
+    )
+    val windowGrid                                     = get(Grid.over(window.frame, 2, 2))
+    val angular                                        = get(LinearAngularScale.of(frame, 2.0))
+    def windowPlan(initial: InitialFixationPolicy[Px]) = get(
+      StudyPlan.configure(
+        input.reference,
+        StudyKey.layout(DefinitionId.studyLayout),
+        get(StudyGeometry.windowed(window, windowGrid, OffWindowPolicy.Exclude)),
+        "recall",
+        "encode",
+        Weight.Duration,
+        Vector(StudyScale.Native(StudyEstimate.Binned[Px]())),
+        Some(angular),
+        FailurePolicy.RequireAll,
+        StudyMethod.cosine[Px](DefinitionId.cosine),
+        (),
+        initialFixations = initial
+      )
+    )
+    val kept = get(windowPlan(InitialFixationPolicy.keepAll).prepare(input))
+    val view = get(kept.estimate(a, StudyEstimate.Binned()))
+    assertEquals(view.geometry.admissionFrame, frame)
+    assertEquals(view.geometry.origin, Pt[Px](0.5, 0.0))
+    assertEquals(view.geometry.cellDegrees, Some(get(Extent.of[Unit2D.Deg](0.25, 0.5))))
+    val dropped = get(windowPlan(InitialFixationPolicy.dropFirst).prepare(input))
+    assertEquals(
+      dropped.estimate(a, StudyEstimate.Binned()).left.toOption,
+      get(dropped.run).scales.head.estimation.head._2.left.toOption
+    )
+    assert(dropped.estimate(a, StudyEstimate.Binned()).isLeft)
+  }
+
   test("a changed custom parameter description invalidates already prepared work") {
     var versionedValue = 1.0
     val method         = new StudyMethod[Unit, Px, Similarity, SignedDifference](
@@ -177,6 +256,12 @@ class StudyWorkSuite extends munit.FunSuite:
     val p    = plan(method = method)
     val work = get(p.prepare(input))
     versionedValue = 2.0
+    assertEquals(
+      work.estimate(a, StudyEstimate.Binned()),
+      Left(
+        StudyFailure.PreparedPlan(a, PlanError.ChangedPreparedPlan(p.method.id, p.layout.id))
+      )
+    )
     assertEquals(
       work.run.left.toOption,
       Some(PlanError.ChangedPreparedPlan(p.method.id, p.layout.id))
