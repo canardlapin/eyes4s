@@ -17,6 +17,7 @@
 package eyes4s.studio.core.execution
 
 import eyes4s.studio.core.backend.*
+import eyes4s.studio.core.artifacts.NativeBindingFacts
 import eyes4s.studio.core.backend.ProtocolCodecs.portableLong
 import io.circe.Codec
 
@@ -137,6 +138,14 @@ enum ExecutionEvent derives CanEqual, Codec.AsObject:
 
   /** Published right after the `Changed` that made the job `Succeeded`. */
   case Ready(notice: RunReady)
+
+  /** Verified files were stored after successful computation. Payload bytes
+    * stay in the artifact transport, not the progress stream.
+    */
+  case ArtifactsStored(job: JobId, facts: NativeBindingFacts)
+
+  /** Artifact delivery failed; computation remains successfully completed. */
+  case ArtifactsRefused(job: JobId, run: RunId, diagnostic: StudioDiagnostic)
 
 // ---------------------------------------------------------------------------
 // Refusals and diagnostics

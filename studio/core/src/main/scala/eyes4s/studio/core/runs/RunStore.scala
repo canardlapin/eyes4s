@@ -236,9 +236,13 @@ final class RunStore[F[_]: Monad](store: ProjectStore[F]):
 
   /** `run`'s whole archive. */
   def load(run: RunRef): F[Either[RunStoreError, RunArchive]] =
-    (for
-      index    <- EitherT(this.index(run))
-      contents <- index.entries.traverse(e => read(index.run, e).map(e.name.value -> _))
+    EitherT(this.index(run)).flatMapF(load).value
+
+  /** Load the exact index already checked by the caller, so a size budget
+    * cannot be bypassed by rereading a changed index before loading entries.
+    */
+  def load(index: ArchiveIndex): F[Either[RunStoreError, RunArchive]] =
+    (for contents <- index.entries.traverse(e => read(index.run, e).map(e.name.value -> _))
     yield RunArchive.stored(index, contents.toMap)).value
 
   /** The archive a figure renders from: that of the run it binds, never the

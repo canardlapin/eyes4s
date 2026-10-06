@@ -19,6 +19,7 @@ package eyes4s.studio.core.command
 import eyes4s.codec.CanonicalDigest
 import eyes4s.plan.AdmissionDecision as CoreAdmissionDecision
 import eyes4s.studio.core.assets.{AssetFile, AssetRef}
+import eyes4s.studio.core.artifacts.NativeBindingFacts
 import eyes4s.studio.core.backend.{AnalysisRevision, DatasetRevision, JobId, RunId}
 import eyes4s.studio.core.document.*
 import eyes4s.studio.core.document.AdmissionDecision.coreDecision
@@ -239,6 +240,12 @@ enum Command derives CanEqual:
       input: SemanticIdentity
   )
 
+  /** Verified native bytes are already stored. Bind the completed run and
+    * its saved analysis together; canonical input identity stays in the
+    * archive's typed facts, separate from the recipe's parsed source identity.
+    */
+  case BindCompletedArtifacts(facts: NativeBindingFacts)
+
   // --- Reporting · no rerun ------------------------------------------------
 
   /** Create a reporting spec, or replace the one with the same id. */
@@ -296,7 +303,8 @@ enum Command derives CanEqual:
           ResumeVerification | Admit) =>
       ChangeKind.DatasetReadmit
     case _: (StartAnalysis | StartDraft | RestoreDraft | ChangeRecipe | ChangeRecipes |
-          RebaseDraft | SaveAndRun | RecordRunOutcome | CancelRun | BindPlan) =>
+          RebaseDraft | SaveAndRun | RecordRunOutcome | CancelRun | BindPlan |
+          BindCompletedArtifacts) =>
       ChangeKind.AnalysisRerun
     case DiscardDraft => ChangeKind.AnalysisRerun
     case _: (PutReporting | RemoveReporting | CreateFigure | RestoreFigure | DeleteFigure |

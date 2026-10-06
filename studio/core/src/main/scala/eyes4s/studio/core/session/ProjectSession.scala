@@ -22,9 +22,26 @@ import cats.effect.syntax.all.*
 import cats.effect.{Concurrent, Ref}
 import cats.syntax.all.*
 import eyes4s.codec.ByteDigest
+import eyes4s.studio.core.artifacts.{
+  NativeArtifactBudget,
+  NativeArtifactError,
+  NativeArtifactPackage,
+  NativeBindingFacts
+}
+import eyes4s.studio.core.backend.RunId
 import eyes4s.studio.core.bundle.*
-import eyes4s.studio.core.command.{CommandJournal, History, JournalEntry, JournalError, Step}
+import eyes4s.studio.core.command.{
+  Command,
+  CommandError,
+  CommandJournal,
+  History,
+  JournalEntry,
+  JournalError,
+  Reducer,
+  Step
+}
 import eyes4s.studio.core.document.{RunLifecycle, Source, StudioDocument}
+import eyes4s.studio.core.runs.RunStore
 
 import java.nio.charset.StandardCharsets.UTF_8
 
@@ -157,6 +174,171 @@ final class ProjectSession[F[_]: Concurrent] private (
   /** Save the edited document atomically (see the class comment). */
   def save: F[Either[SessionError, SaveReceipt]] =
     exclusive(s => EitherT.fromEither[F](writable(s)).flatMap(saveFrom(s, _)).value)
+
+  /** Store native bytes before publishing their checked binding fact. The
+    * terminal event can still be waiting for the UI's journal queue, so a
+    * running target is projected completed solely for prevalidation. No
+    * history, journal or manifest changes here (bead q-native-stored-completion).
+    */
+  def storeNativeArtifacts(
+      artifacts: NativeArtifactPackage
+  ): F[Either[NativeArtifactError, NativeBindingFacts]] =
+    mutex.lock.surround(Concurrent[F].uncancelable { _ =>
+      state.get.flatMap { s =>
+        val facts                                      = artifacts.facts
+        def failure(operation: String, reason: String) =
+          NativeArtifactError.persistence(facts.run, operation, reason)
+        val projected = s.history.document
+          .run(facts.run)
+          .toRight(failure("prevalidate storage", CommandError.UnknownRun(facts.run).message))
+          .flatMap { run =>
+            run.state match
+              case RunLifecycle.Completed => Right(s.history.document)
+              case RunLifecycle.Running   =>
+                val document = s.history.document
+                StudioDocument
+                  .of(
+                    document.datasets,
+                    document.analyses,
+                    document.draft,
+                    document.runs.map(r =>
+                      if r.id == run.id then r.copy(state = RunLifecycle.Completed) else r
+                    ),
+                    document.reporting,
+                    document.figures,
+                    document.presentation,
+                    document.jobs.filterNot(_.run == run.id)
+                  )
+                  .leftMap(e => failure("prevalidate storage", e.message))
+              case other =>
+                Left(
+                  failure(
+                    "prevalidate storage",
+                    CommandError.RunNotCompleted(run.id, other).message
+                  )
+                )
+          }
+        val validated = projected.flatMap(document =>
+          Reducer
+            .run(document, Command.BindCompletedArtifacts(facts))
+            .leftMap(e => failure("prevalidate storage", e.message))
+        )
+        (for
+          lock <- EitherT.fromEither[F](
+            writable(s).leftMap(e => failure("writer ownership", e.message))
+          )
+          _ <- EitherT.fromEither[F](validated)
+          archive = artifacts.archive
+          runs    = RunStore(store)
+          _ <- EitherT(runs.put(lock, archive)).leftMap(e =>
+            failure("store archive", e.message)
+          )
+          expected <- EitherT.fromEither[F](
+            validated.flatMap(outcome =>
+              outcome.document
+                .run(facts.run)
+                .toRight(failure("read stored archive", "The validated run disappeared."))
+            )
+          )
+          index <- EitherT(runs.index(expected)).leftMap(e =>
+            failure("read stored archive index", e.message)
+          )
+          _ <- EitherT.cond[F](
+            index == archive.index,
+            (),
+            failure("verify stored archive index", s"Expected ${archive.index}, read $index.")
+          )
+          loaded <- EitherT(runs.load(index)).leftMap(e =>
+            failure("read stored archive", e.message)
+          )
+          verified <- EitherT.fromEither[F](
+            NativeArtifactPackage.verify(
+              loaded.files.map((entry, bytes) => entry.name -> Vector.from(bytes)),
+              artifacts.budget
+            )
+          )
+          _ <- EitherT.cond[F](
+            verified.facts == facts,
+            (),
+            failure("verify stored facts", s"Expected $facts, read ${verified.facts}.")
+          )
+        yield verified.facts).value
+      }
+    })
+
+  /** Backend-independent cold readback: validate storage bytes and the
+    * native codec closure before comparing its facts with saved bindings.
+    */
+  def loadNativeArtifacts(
+      run: RunId,
+      budget: NativeArtifactBudget = NativeArtifactBudget.Default
+  ): F[Either[NativeArtifactError, NativeArtifactPackage]] =
+    mutex.lock.surround {
+      state.get.flatMap { s =>
+        def failure(operation: String, reason: String) =
+          NativeArtifactError.persistence(run, operation, reason)
+        (for
+          ref <- EitherT.fromEither[F](
+            s.history.document
+              .run(run)
+              .toRight(failure("load archive", CommandError.UnknownRun(run).message))
+          )
+          _ <- EitherT.cond[F](
+            ref.state == RunLifecycle.Completed,
+            (),
+            failure("load archive", CommandError.RunNotCompleted(run, ref.state).message)
+          )
+          runs = RunStore(store)
+          index <- EitherT(runs.index(ref)).leftMap(e =>
+            failure("read archive index", e.message)
+          )
+          _ <- EitherT.cond[F](
+            index.entries.size <= budget.maxEntries,
+            (),
+            NativeArtifactError.Budget(
+              run,
+              "archive entries",
+              BigInt(index.entries.size),
+              BigInt(budget.maxEntries)
+            )
+          )
+          bytes = index.entries.foldLeft(BigInt(0))((sum, entry) => sum + entry.length)
+          _ <- EitherT.cond[F](
+            bytes <= budget.maxTotalBytes,
+            (),
+            NativeArtifactError
+              .Budget(run, "archive bytes", bytes, BigInt(budget.maxTotalBytes))
+          )
+          loaded <- EitherT(runs.load(index)).leftMap(e =>
+            failure("load archive entries", e.message)
+          )
+          verified <- EitherT.fromEither[F](
+            NativeArtifactPackage.verify(
+              loaded.files.map((entry, bytes) => entry.name -> Vector.from(bytes)),
+              budget
+            )
+          )
+          _ <- EitherT.cond[F](
+            verified.facts.run == run,
+            (),
+            NativeArtifactError.WrongFacts(run, verified.facts)
+          )
+          expected <- EitherT.fromEither[F](
+            Reducer
+              .run(s.history.document, Command.BindCompletedArtifacts(verified.facts))
+              .leftMap(e => failure("check saved bindings", e.message))
+          )
+          _ <- EitherT.cond[F](
+            expected.document == s.history.document,
+            (),
+            failure(
+              "check saved bindings",
+              s"${run.label} has not published the stored native bindings."
+            )
+          )
+        yield verified).value
+      }
+    }
 
   /** Copy the project as last saved into the empty bundle `to` with
     * `sharing` (an export bundle's project snapshot, S9.5): the same science,

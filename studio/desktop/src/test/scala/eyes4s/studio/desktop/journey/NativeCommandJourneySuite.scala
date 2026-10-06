@@ -19,7 +19,9 @@ package eyes4s.studio.desktop.journey
 import cats.effect.{IO, Resource}
 import eyes4s.plan.{ResultInspection, ResultRef}
 import eyes4s.studio.core.backend.*
+import eyes4s.studio.core.artifacts.NativeBindingFacts
 import eyes4s.studio.core.bundle.*
+import eyes4s.studio.core.document.{CoreBinding, SemanticIdentity}
 import eyes4s.studio.core.fixture.GoldenScores
 import eyes4s.studio.core.headless.NativeHeadlessSession
 import eyes4s.studio.core.session.ProjectSession
@@ -57,18 +59,37 @@ class NativeCommandJourneySuite extends munit.CatsEffectSuite:
             )
           )
           .use { port =>
-            Resource
-              .make(
-                future(
-                  NativeHeadlessSession.open(reopened.document, DatasetSourceHosts.stored(port))
-                )
-              )(session => future(session.close))
-              .use { session =>
-                NativeCommandJourneyReadback.capture(
-                  reopened.document,
-                  NativeCommandJourneyReadback.Port.from(session)
-                )
+            for
+              stored <- port.session.loadNativeArtifacts(run).map(get)
+              _ = println(
+                s"Native archive qualification: ${stored.files.size} entries, " +
+                  s"${stored.files.foldLeft(BigInt(0))((n, file) => n + file._2.size)} bytes, " +
+                  s"${stored.manifest.entries.flatMap(_.layout).foldLeft(BigInt(0))((n, layout) => n + layout.count)} density cells"
+              )
+              _ = qualifyBindings(stored.facts, first, direct, directResult)
+              _ = assertEquals(stored.archive.index.run, run)
+              _ = assertEquals(
+                stored.archive.index.archive,
+                first.document.run(run).get.archive
+              )
+              _ = stored.archive.files.foreach { (entry, bytes) =>
+                assertEquals(entry.sha256, eyes4s.codec.ByteDigest.sha256(bytes))
+                assertEquals(entry.length, bytes.length.toLong)
               }
+              output <- Resource
+                .make(
+                  future(
+                    NativeHeadlessSession
+                      .open(reopened.document, DatasetSourceHosts.stored(port))
+                  )
+                )(session => future(session.close))
+                .use { session =>
+                  NativeCommandJourneyReadback.capture(
+                    reopened.document,
+                    NativeCommandJourneyReadback.Port.from(session)
+                  )
+                }
+            yield output
           }
         written <- IO.async_[Either[String, String]](done =>
           BundleWriter.write(
@@ -95,6 +116,32 @@ class NativeCommandJourneySuite extends munit.CatsEffectSuite:
         }
     }
   }
+
+  private def qualifyBindings(
+      facts: NativeBindingFacts,
+      output: NativeCommandJourneyReadback.Output,
+      direct: eyes4s.studio.core.real.RealPrepared,
+      result: eyes4s.studio.core.real.RealExecution.Result
+  ): Unit =
+    assertEquals(facts.run, run)
+    assertEquals(facts.revision, revision)
+    assertEquals(facts.dataset, dataset)
+    assertEquals(facts.planCanonical.sha256, get(direct.plans.codec.digest(direct.plan)).sha256)
+    assertEquals(
+      facts.inputCanonical.sha256,
+      get(direct.inputs.input.digest(direct.admitted.input)).sha256
+    )
+    assertEquals(facts.result.sha256, get(direct.results.codec.digest(result)).sha256)
+    assertEquals(
+      facts.source,
+      SemanticIdentity.fromCore(direct.admitted.evidence.source.records)
+    )
+    assertEquals(
+      output.document.analysis(revision).get.plan,
+      CoreBinding.Bound(facts.planCanonical)
+    )
+    assertEquals(output.document.analysis(revision).get.recipe.input, Some(facts.source))
+    assertEquals(output.document.run(run).get.archive, CoreBinding.Bound(facts.result))
 
   private def qualify(
       output: NativeCommandJourneyReadback.Output,

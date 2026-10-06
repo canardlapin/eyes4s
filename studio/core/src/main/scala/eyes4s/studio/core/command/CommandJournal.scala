@@ -141,16 +141,30 @@ object CommandJournal:
 
   private val refusal = CodecError.Unsupported("studio journal", "a preset needs version 2")
 
-  private def expressedByV3(line: JournalLine): Boolean = line match
+  private def expressedByV3(line: JournalLine): Boolean = expressedByV4(line) && (line match
     case JournalLine.Entry(_, JournalEntry.Apply(_: Command.StartAnalysis))    => false
     case JournalLine.Entry(_, JournalEntry.Apply(Command.RestoreDraft(draft))) =>
       !draft.isInitial
-    case _ => true
-  private def beforeV4(line: JournalLine): Either[CodecError, JournalLine] =
+    case _ => true)
+  private def expressedByV4(line: JournalLine): Boolean = line match
+    case JournalLine.Entry(_, JournalEntry.Apply(_: Command.BindCompletedArtifacts)) => false
+    case _                                                                           => true
+  private def beforeV5(line: JournalLine): Either[CodecError, JournalLine] =
     Either.cond(
-      expressedByV3(line),
+      expressedByV4(line),
       line,
-      CodecError.Unsupported("studio journal", "an initial draft needs version 4")
+      CodecError.Unsupported(
+        "studio journal",
+        "verified native artifact bindings need version 5"
+      )
+    )
+  private def beforeV4(line: JournalLine): Either[CodecError, JournalLine] =
+    beforeV5(line).flatMap(v =>
+      Either.cond(
+        expressedByV3(v),
+        v,
+        CodecError.Unsupported("studio journal", "an initial draft needs version 4")
+      )
     )
 
   private def expressedByV2(line: JournalLine): Boolean = expressedByV3(line) && (line match
@@ -176,7 +190,8 @@ object CommandJournal:
     * Version 3 records explicitly ordered contrast operands in `PutReporting`.
     * Previous versions refuse those lines, and old lines lift unchanged.
     */
-  // Version 4 alone expresses StartAnalysis and restoration of an initial origin.
+  // Version 4 expresses initial drafts; version 5 alone expresses verified
+  // post-storage binding facts (bead q-native-stored-completion).
   val ladder: Either[CodecError, SchemaLadder[JournalLine]] =
     StudioSchemaIds.ids
       .leftMap(e => CodecError.Unsupported("schema", e.message))
@@ -192,7 +207,10 @@ object CommandJournal:
           .next(l => expressedByV3(l) && expressedByV2(l), identity)(l =>
             beforeV4(l).map(v => CanonicalJson(v.asJson))
           )(json => read(json).flatMap(beforeV4))
-          .next(expressedByV3, identity)(l => Right(CanonicalJson(l.asJson)))(read)
+          .next(expressedByV3, identity)(l => beforeV5(l).map(v => CanonicalJson(v.asJson)))(
+            json => read(json).flatMap(beforeV5)
+          )
+          .next(expressedByV4, identity)(l => Right(CanonicalJson(l.asJson)))(read)
       }
 
   val codec: Either[CodecError, VersionedCodec[JournalLine]] = ladder.map(_.codec)

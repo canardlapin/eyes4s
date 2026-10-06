@@ -20,6 +20,7 @@ import cats.effect.std.{Mutex, Queue, Supervisor}
 import cats.effect.{Concurrent, Ref, Resource}
 import cats.syntax.all.*
 import eyes4s.studio.core.backend.*
+import eyes4s.studio.core.artifacts.{NativeArtifactError, NativeBindingFacts}
 import eyes4s.studio.core.preview.PreviewReady
 import fs2.Stream
 import fs2.concurrent.Topic
@@ -94,7 +95,12 @@ object ExecutionService:
   /** The service over `backend`. Releasing it stops watching every job; it
     * does not cancel backend jobs.
     */
-  def resource[F[_]](backend: StudyBackend[F], subscriberBuffer: Int = SubscriberBuffer)(using
+  def resource[F[_]](
+      backend: StudyBackend[F],
+      subscriberBuffer: Int = SubscriberBuffer,
+      artifacts: Option[ExecutionJob => F[Either[NativeArtifactError, NativeBindingFacts]]] =
+        None
+  )(using
       F: Concurrent[F]
   ): Resource[F, ExecutionService[F]] =
     for
@@ -104,9 +110,20 @@ object ExecutionService:
       _          <- F.background(
         Stream.fromQueueUnterminated(outbox).through(topic.publish).compile.drain
       )
-      state <- Resource.eval(Ref.of[F, ExecutionTracker](ExecutionTracker.empty))
-      mutex <- Resource.eval(Mutex[F])
-    yield new Live(backend, supervisor, topic, outbox, state, mutex, subscriberBuffer max 1)
+      state     <- Resource.eval(Ref.of[F, ExecutionTracker](ExecutionTracker.empty))
+      mutex     <- Resource.eval(Mutex[F])
+      delivered <- Resource.eval(Ref.of[F, Set[JobId]](Set.empty))
+    yield new Live(
+      backend,
+      supervisor,
+      topic,
+      outbox,
+      state,
+      mutex,
+      subscriberBuffer max 1,
+      artifacts,
+      delivered
+    )
 
   private final class Live[F[_]](
       backend: StudyBackend[F],
@@ -115,7 +132,9 @@ object ExecutionService:
       outbox: Queue[F, ExecutionEvent],
       state: Ref[F, ExecutionTracker],
       mutex: Mutex[F],
-      subscriberBuffer: Int
+      subscriberBuffer: Int,
+      artifacts: Option[ExecutionJob => F[Either[NativeArtifactError, NativeBindingFacts]]],
+      delivered: Ref[F, Set[JobId]]
   )(using F: Concurrent[F])
       extends ExecutionService[F]:
 
@@ -138,6 +157,61 @@ object ExecutionService:
     /** Record the intent to run `stamp`; its generation. */
     private def intend(stamp: RunStamp): F[Long] =
       mutex.lock.surround(state.modify(_.intend(stamp)))
+
+    /** Claim successful delivery once, including terminal adoption. Artifact
+      * work runs on its own owned fiber after terminal events were queued;
+      * it never holds the tracker lock or stalls the outbox publisher
+      * (bead q-native-stored-completion).
+      */
+    private def deliverArtifacts(job: ExecutionJob): F[Unit] =
+      artifacts.filter(_ => job.phase.isInstanceOf[JobPhase.Succeeded]).fold(F.unit) { store =>
+        delivered
+          .modify { seen =>
+            if seen(job.id) then (seen, false) else (seen + job.id, true)
+          }
+          .flatMap {
+            case false => F.unit
+            case true  =>
+              supervisor
+                .supervise(
+                  F.unit.flatMap(_ => store(job)).attempt.flatMap {
+                    case Right(Right(facts))
+                        if facts.run == job.run && facts.stamp
+                          .agreesWithDeclarations(job.stamp) =>
+                      outbox.offer(ExecutionEvent.ArtifactsStored(job.id, facts))
+                    case Right(Right(facts)) =>
+                      val error = if facts.run != job.run then
+                        NativeArtifactError.WrongFacts(job.run, facts)
+                      else
+                        NativeArtifactError.InvalidFacts(
+                          job.run,
+                          "completion stamp",
+                          s"Job ${job.id.number} expected ${job.stamp}, received ${facts.stamp}."
+                        )
+                      outbox.offer(
+                        ExecutionEvent.ArtifactsRefused(job.id, job.run, error.diagnostic)
+                      )
+                    case Right(Left(error)) =>
+                      outbox.offer(
+                        ExecutionEvent.ArtifactsRefused(job.id, job.run, error.diagnostic)
+                      )
+                    case Left(failure) =>
+                      val error = NativeArtifactError
+                        .Defect(job.run, "completion delivery", failure.getClass.getName)
+                      outbox.offer(
+                        ExecutionEvent.ArtifactsRefused(job.id, job.run, error.diagnostic)
+                      )
+                  }
+                )
+                .void
+          }
+      }
+
+    private def observe(id: JobId, event: JobEvent): F[Unit] =
+      step(_.observe(id, event)).flatMap {
+        case Right(job) => deliverArtifacts(job)
+        case Left(_)    => F.unit
+      }
 
     def submit(stamp: RunStamp): F[Either[ExecutionError, ExecutionJob]] =
       intend(stamp).flatMap { generation =>
@@ -183,7 +257,8 @@ object ExecutionService:
           case Right(j) if !j.phase.isTerminal => supervisor.supervise(watch(j.id)).void
           case Right(ExecutionJob(id, _, _, JobPhase.Superseded(_, _))) =>
             backend.cancel(id).void
-          case _ => F.unit
+          case Right(job) => deliverArtifacts(job)
+          case _          => F.unit
         }
 
     /** Fold the job's backend events until it settles. If the stream ends or
@@ -195,14 +270,14 @@ object ExecutionService:
       val follow = backend.subscribe(id).flatMap {
         case Left(e)       => lose(e.message)
         case Right(events) =>
-          events.evalMap(e => step(_.observe(id, e))).compile.drain
+          events.evalMap(e => observe(id, e)).compile.drain
       }
       follow.attempt.flatMap { ended =>
         state.get.map(_.job(id).exists(_.phase.isTerminal)).flatMap {
           case true  => F.unit
           case false =>
             backend.outcome(id).flatMap {
-              case Right(Some(o)) => step(_.observe(id, JobEvent.Finished(o))).void
+              case Right(Some(o)) => observe(id, JobEvent.Finished(o))
               case Right(None)    =>
                 lose(
                   ended

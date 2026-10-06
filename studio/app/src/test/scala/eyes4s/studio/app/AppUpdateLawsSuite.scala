@@ -108,7 +108,11 @@ class AppUpdateLawsSuite extends munit.ScalaCheckSuite:
               .requestedStamp(doc)
               .filter(s =>
                 submits.isEmpty && !t.before.jobs.shelf.required
-                  .exists(_.agreesWithDeclarations(s))
+                  .exists(existing =>
+                    existing.agreesWithDeclarations(s) ||
+                      (AppModel.requestedStamp(t.before.document).contains(s) &&
+                        existing.revision == s.revision && existing.dataset == s.dataset)
+                  )
               )
               .map(s => AppEffect.Execution(ExecutionEffect.Require(s)))
             assertEquals(t.effects, (AppEffect.Journal(entry) +: mapped) ++ require, t.intent)
@@ -173,7 +177,8 @@ class AppUpdateLawsSuite extends munit.ScalaCheckSuite:
     val params = org.scalacheck.Gen.Parameters.default
     val seed   = org.scalacheck.rng.Seed(20260926L)
     val traces =
-      (0 until 150).flatMap(i => session(20).pureApply(params, seed.reseed(i.toLong)))
+      (0 until 150).flatMap(i => session(20).pureApply(params, seed.reseed(i.toLong))) ++
+        requestingSession(20).pureApply(params, seed)
     def count(p: Trace => Boolean) = traces.count(p)
     def changed(t: Trace)          = t.after.history != t.before.history
     val reached                    = Map(

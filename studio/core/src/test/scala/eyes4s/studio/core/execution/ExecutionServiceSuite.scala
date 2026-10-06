@@ -63,6 +63,7 @@ class ExecutionServiceSuite extends CatsEffectSuite:
     case ExecutionEvent.Ready(_)   => true
     case ExecutionEvent.Changed(j) =>
       j.phase.isTerminal && !j.phase.isInstanceOf[JobPhase.Succeeded]
+    case _: ExecutionEvent.ArtifactsStored | _: ExecutionEvent.ArtifactsRefused => false
 
   /** Every event, with the monotonic time it was received, up to the end. */
   private def collect(events: Stream[IO, ExecutionEvent]): IO[Timed] =

@@ -120,6 +120,16 @@ enum CommandError derives CanEqual:
   case RunNotRunning(run: RunId, state: RunLifecycle)
   case OutcomeStillRunning(run: RunId)
   case NoJobHandle(run: RunId)
+  case RunNotCompleted(run: RunId, state: RunLifecycle)
+  case ArtifactScopeMismatch(
+      run: RunId,
+      recordedRevision: AnalysisRevision,
+      recordedDataset: DatasetRevision,
+      preparedRevision: AnalysisRevision,
+      preparedDataset: DatasetRevision
+  )
+  case ArtifactRecipeMismatch(revision: AnalysisRevision, recorded: Recipe, prepared: Recipe)
+  case ArtifactBindingMismatch(run: RunId, field: String, recorded: String, prepared: String)
 
   case UnknownReporting(reporting: ReportingId)
   case ReportingInUse(reporting: ReportingId, figures: Vector[FigureId])
@@ -176,6 +186,17 @@ enum CommandError derives CanEqual:
     case OutcomeStillRunning(run)  => s"The outcome recorded for ${run.label} is still running."
     case NoJobHandle(run)          =>
       s"${run.label} has no backend job in this session, so it cannot be cancelled."
+    case RunNotCompleted(run, state) =>
+      s"${run.label} cannot bind native artifacts: it is $state, not completed."
+    case ArtifactScopeMismatch(run, revision, dataset, preparedRevision, preparedDataset) =>
+      s"${run.label} records ${revision.label} on ${dataset.label}, but native artifacts name ${preparedRevision.label} on ${preparedDataset.label}."
+    case ArtifactRecipeMismatch(revision, recorded, prepared) =>
+      val changes = RecipeChange.between(recorded, prepared).map { change =>
+        s"${change.field.label}: ${change.renderedValues._1} -> ${change.renderedValues._2}"
+      }
+      s"${revision.label} native recipe disagrees with its saved recipe (${changes.mkString("; ")})."
+    case ArtifactBindingMismatch(run, field, recorded, prepared) =>
+      s"${run.label} records $field $recorded, but native artifacts bind $prepared."
     case UnknownReporting(id)        => s"Reporting spec ${id.value} is not in the document."
     case ReportingInUse(id, figures) =>
       s"Reporting spec ${id.value} is bound by ${figures.map(_.label).mkString(", ")}."

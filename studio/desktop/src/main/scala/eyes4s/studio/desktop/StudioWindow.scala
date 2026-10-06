@@ -365,7 +365,12 @@ object StudioWindow:
     val session = nativeSources.fold(
       StudioSession.start(moment, e => later(Intent.Execution(e)))
     )(sources =>
-      StudioSession.start(initial.document, sources, e => later(Intent.Execution(e)))
+      StudioSession.start(
+        initial.document,
+        sources,
+        e => later(Intent.Execution(e)),
+        artifactSink = project.map(_.nativeArtifactSink)
+      )
     )
     val authoritativeDocument =
       new java.util.concurrent.atomic.AtomicReference(initial.document)

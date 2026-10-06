@@ -26,7 +26,15 @@ import eyes4s.studio.app.nav.{Location, Navigation, Place, Provenance}
 import eyes4s.studio.app.text.{Format, MessageId, Messages, SourcesText}
 import eyes4s.studio.core.assets.{InputCheck, SourceBlock, SourceCheck}
 import eyes4s.studio.core.bundle.InputStatus
-import eyes4s.studio.core.backend.{AnalysisRevision, DatasetRevision, JobId, RunId, TrialKey}
+import eyes4s.studio.core.backend.{
+  AnalysisRevision,
+  DatasetRevision,
+  JobId,
+  RunId,
+  StudioDiagnostic,
+  TrialKey
+}
+import eyes4s.studio.core.artifacts.NativeArtifactError
 import eyes4s.studio.core.execution.{
   ExecutionEffect,
   ExecutionError,
@@ -161,6 +169,9 @@ enum Notice derives CanEqual:
     */
   case ExecutionRefused(error: ExecutionError)
 
+  /** Computation completed, but verified files or their binding were refused. */
+  case ArtifactsRefused(job: JobId, run: RunId, diagnostic: StudioDiagnostic)
+
   /** A confirmation no longer applies (the draft it named has gone). */
   case Outdated(confirmation: Confirmation)
 
@@ -187,9 +198,11 @@ enum Notice derives CanEqual:
 
   /** The notice's words; a command is named by its label ("Undo"). */
   def message(messages: Messages): String = this match
-    case Refused(_, error)   => error.message
-    case SelectionRefused(e) => e.message
-    case ExecutionRefused(e) => e.message
+    case Refused(_, error)                    => error.message
+    case SelectionRefused(e)                  => e.message
+    case ExecutionRefused(e)                  => e.message
+    case ArtifactsRefused(_, run, diagnostic) =>
+      s"${run.label.capitalize} completed, but its verified files could not be saved: ${diagnostic.message}"
     case Unavailable(c, why) =>
       val label = CommandRegistry
         .find(c)
@@ -846,6 +859,45 @@ object AppModel:
           none
         )
 
+    case Intent.Execution(ExecutionEvent.ArtifactsStored(job, facts)) =>
+      val observed = m.jobs.job(job)
+      val valid    = observed.exists(j =>
+        j.phase.isInstanceOf[JobPhase.Succeeded] &&
+          j.run == facts.run && facts.stamp.agreesWithDeclarations(j.stamp)
+      )
+      if valid then
+        val command = Command.BindCompletedArtifacts(facts)
+        m.history.apply(command) match
+          case Right(step) if step.history.document == m.document && step.effects.isEmpty =>
+            (m, none)
+          case success @ Right(_) =>
+            val (bound, effects) = applyHistory(m, JournalEntry.Apply(command), success)
+            // A verified fact describes the completed request; enriching
+            // its previously unbound declarations requests no new run and
+            // withdraws no existing Ready notice (bead q-native-stored-completion).
+            (
+              bound.copy(jobs = m.jobs),
+              effects.filter {
+                case AppEffect.Execution(_: ExecutionEffect.Require) => false
+                case _                                               => true
+              }
+            )
+          case failure => applyHistory(m, JournalEntry.Apply(command), failure)
+      else
+        val found =
+          observed.fold("not observed")(j => s"${j.run.label}, ${j.stamp.label}, ${j.phase}")
+        val error = NativeArtifactError.persistence(
+          facts.run,
+          "accept stored binding",
+          s"Job ${job.number} must be observed succeeded for ${facts.run.label}/${facts.stamp.label}; found $found."
+        )
+        (m.copy(notice = Some(Notice.ArtifactsRefused(job, facts.run, error.diagnostic))), none)
+    case Intent.Execution(ExecutionEvent.ArtifactsRefused(job, run, diagnostic)) =>
+      m.jobs.job(job) match
+        case Some(observed)
+            if observed.run == run && observed.phase.isInstanceOf[JobPhase.Succeeded] =>
+          (m.copy(notice = Some(Notice.ArtifactsRefused(job, run, diagnostic))), none)
+        case _ => (m, none)
     case Intent.Execution(event) =>
       val received = m.copy(jobs = m.jobs.receive(event))
       outcomeOf(received.document, event).fold((received, none)) { command =>
@@ -982,9 +1034,17 @@ object AppModel:
           ExecutionEffect.submitted
         )
       // Verified declarations can enrich the same native request without
-      // discarding its backend-owned canonical input identity.
+      // discarding its backend-owned canonical input identity. Later view
+      // and reporting edits retain that request when its declaration has
+      // not changed; only a new declaration needs a fresh agreement check.
       val required = requestedStamp(doc).map { declared =>
-        m.jobs.shelf.required.filter(_.agreesWithDeclarations(declared)).getOrElse(declared)
+        val unchanged = requestedStamp(m.document).contains(declared)
+        m.jobs.shelf.required
+          .filter { existing =>
+            existing.agreesWithDeclarations(declared) ||
+            (unchanged && existing.revision == declared.revision && existing.dataset == declared.dataset)
+          }
+          .getOrElse(declared)
       }
       val require = required
         .filter(s => submits.isEmpty && !m.jobs.shelf.required.contains(s))

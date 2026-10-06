@@ -23,13 +23,14 @@ import eyes4s.studio.app.analysis.{DesignEffect, DesignIntent, ResolvedDesign}
 import eyes4s.studio.app.driver.{StudioDriver, DriverRecord}
 import eyes4s.studio.core.backend.*
 import eyes4s.studio.core.command.Command
-import eyes4s.studio.core.document.Perspective
+import eyes4s.studio.core.document.{CoreBinding, Perspective}
 import eyes4s.studio.core.execution.{ExecutionEffect, ExecutionEvent}
 import eyes4s.studio.core.headless.{NativeHeadlessSession, StudioServices}
 import eyes4s.studio.core.preview.{PreviewEvent, PreviewReady}
 import eyes4s.studio.desktop.runtime.{DatasetSourceHosts, ProjectPort}
 import java.util.concurrent.atomic.AtomicReference
 import scala.concurrent.{ExecutionContext, Future, Promise}
+import scala.concurrent.duration.*
 
 /** The pure command driver with actual native service effects and bounded
   * resolved-design effects. Every published document is an immutable snapshot.
@@ -182,12 +183,53 @@ final class NativeCommandJourney private (
           settle()
         }
 
+  private def artifactsBound(run: RunId): Boolean =
+    model.document.run(run).exists { stored =>
+      stored.archive.isInstanceOf[CoreBinding.Bound[?]] &&
+      model.document
+        .analysis(stored.analysis)
+        .exists(analysis =>
+          analysis.plan.isInstanceOf[CoreBinding.Bound[?]] && analysis.recipe.input.nonEmpty
+        )
+    }
+
+  /** Wait for actual verified storage, then journal/save the delivered fact. */
+  def awaitArtifacts(run: RunId): Future[Unit] =
+    if artifactsBound(run) then Future.successful(())
+    else
+      session
+        .awaitEvent(
+          {
+            case ExecutionEvent.ArtifactsStored(_, facts)          => facts.run == run
+            case ExecutionEvent.ArtifactsRefused(_, refusedRun, _) => refusedRun == run
+            case _                                                 => false
+          },
+          NativeCommandJourney.ArtifactStoragePatience
+        )
+        .flatMap { answer =>
+          val found = get(answer)
+          executionEvents = executionEvents ++ found
+          publish(driver.feed(found))
+          settle().map { _ =>
+            assert(
+              artifactsBound(run),
+              s"Native artifact storage did not bind ${run.label}: ${model.notice}"
+            )
+          }
+        }
+
   def close(): Future[Unit] = session.close
 
 object NativeCommandJourney:
+  // Full packed-density closure verification includes storing and reading every byte.
+  private val ArtifactStoragePatience = 180.seconds
   def open(initial: AppModel, project: ProjectPort)(using
       ExecutionContext
   ): Future[NativeCommandJourney] =
     NativeHeadlessSession
-      .open(initial.document, DatasetSourceHosts.stored(project))
+      .open(
+        initial.document,
+        DatasetSourceHosts.stored(project),
+        Some(project.nativeArtifactSink)
+      )
       .map(new NativeCommandJourney(_, initial, project))

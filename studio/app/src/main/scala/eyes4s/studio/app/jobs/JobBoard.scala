@@ -75,6 +75,7 @@ final case class JobBoard private (jobs: Vector[ExecutionJob], shelf: RunShelf)
   def receive(event: ExecutionEvent): JobBoard = event match
     case ExecutionEvent.Changed(job) => copy(jobs = jobs.filterNot(_.id == job.id) :+ job)
     case ExecutionEvent.Ready(_)     => copy(shelf = shelf.receive(event))
+    case _: ExecutionEvent.ArtifactsStored | _: ExecutionEvent.ArtifactsRefused => this
 
   /** Replace the jobs with a snapshot of the service's. */
   def withJobs(snapshot: Vector[ExecutionJob]): JobBoard = JobBoard.from(snapshot, shelf)

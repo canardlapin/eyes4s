@@ -21,7 +21,7 @@ import eyes4s.studio.app.layout.{PaneId, StudioLayouts}
 import eyes4s.studio.app.nav.{DataSection, Location, Place}
 import eyes4s.studio.core.backend.*
 import eyes4s.studio.core.execution.*
-import eyes4s.studio.core.command.{CommandGen, HistoryStack}
+import eyes4s.studio.core.command.{Command, CommandGen, HistoryStack}
 import eyes4s.studio.core.document.{DocumentGen, Perspective, Preset, SourceRole}
 import eyes4s.studio.core.selection.*
 import org.scalacheck.Gen
@@ -251,4 +251,18 @@ object AppGen:
         walk(next, n - 1).map(Trace(m, i, next, effects) +: _)
       }
 
-  def session(n: Int): Gen[Vector[Trace]] = start.flatMap(walk(_, n))
+  /** A legal Save & run starts this population. Its presence in the laws
+    * does not depend on selecting one command from a growing command enum.
+    */
+  def requestingSession(n: Int): Gen[Vector[Trace]] =
+    if n == 0 then Gen.const(Vector.empty)
+    else
+      val before           = AppModel.open(t2, None)
+      val request          = Intent.Dispatch(Command.SaveAndRun(None))
+      val (after, effects) = AppModel.update(before, request)
+      walk(after, n - 1).map(Trace(before, request, after, effects) +: _)
+
+  def session(n: Int): Gen[Vector[Trace]] = Gen.frequency(
+    4 -> start.flatMap(walk(_, n)),
+    1 -> requestingSession(n)
+  )

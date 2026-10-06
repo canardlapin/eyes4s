@@ -78,6 +78,7 @@ object NativeCommandJourneyScenario:
             _ = assert(journey.counted.exists(_.isInstanceOf[PreviewEvent.CountingWork]))
             _ <- future(journey.command(Command.SaveAndRun(None)))
             _ <- future(journey.awaitRun(requestedRun))
+            _ <- future(journey.awaitArtifacts(requestedRun))
             _ = checkEqual(
               journey.model.document.run(requestedRun).map(_.state),
               Some(RunLifecycle.Completed)
@@ -117,7 +118,18 @@ object NativeCommandJourneyScenario:
             )
             _ = checkEqual(
               get(journey.model.document.latestAnalysis.toRight("no native analysis")).plan,
-              CoreBinding.unbound
+              ready.stamp.plan
+            )
+            _ = checkEqual(
+              get(
+                journey.model.document.latestAnalysis.toRight("no native analysis")
+              ).recipe.input,
+              Some(SemanticIdentity.fromCore(direct.admitted.evidence.source.records))
+            )
+            _ = checkEqual(
+              get(journey.model.document.run(requestedRun).toRight("no native run")).archive
+                .isInstanceOf[CoreBinding.Bound[?]],
+              true
             )
             _ = checkEqual(output.source.rows.head.ref, output.sourceRef)
             _ = assert(output.source.rows.head.screen.nonEmpty)

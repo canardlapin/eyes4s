@@ -22,6 +22,8 @@ import eyes4s.studio.core.backend.*
 import eyes4s.studio.core.document.*
 import eyes4s.studio.core.document.DocumentGen.right
 import eyes4s.studio.core.fixture.StoryMoments
+import eyes4s.studio.core.artifacts.NativeBindingFacts
+import eyes4s.studio.core.execution.{RunStamp, StudyInputArtifact}
 
 /** A named sample of every command case and journal entry, pinned in
   * [[CommandPins]]. Built from the story moments.
@@ -51,6 +53,26 @@ object CommandSamples:
   )
 
   private val rule = CorrectionRule(CorrectionTarget.AllTrials, CoordinateCorrection.FlipY)
+
+  val nativeFacts: NativeBindingFacts = NativeBindingFacts
+    .of(
+      run7,
+      RunStamp(
+        rev4,
+        r3,
+        CoreBinding.Bound(CanonicalDigest.parse[StudyPlanArtifact]("1" * 64).toOption.get),
+        CoreBinding.Bound(CanonicalDigest.parse[StudyInputArtifact]("2" * 64).toOption.get)
+      ),
+      t2.dataset(r3)
+        .get
+        .sources
+        .fixations
+        .flatMap(_.semantic)
+        .getOrElse(right(SemanticIdentity.of("00112233445566ff"))),
+      CanonicalDigest.parse[ResultArchiveArtifact]("3" * 64).toOption.get,
+      rev4Rec
+    )
+    .fold(error => throw new AssertionError(error.message), identity)
 
   val commands: Vector[(String, Command)] = Vector(
     "ImportSources" -> ImportSources(
@@ -169,13 +191,14 @@ object CommandSamples:
       CanonicalDigest.parse[StudyPlanArtifact]("0123456789abcdef" * 4).toOption.get,
       right(SemanticIdentity.of("00112233445566ff"))
     ),
-    "PutReporting"    -> PutReporting(spec),
-    "RemoveReporting" -> RemoveReporting(spec.id),
-    "CreateFigure"    -> CreateFigure(run7, spec.id, figure1.panels.take(1)),
-    "RestoreFigure"   -> RestoreFigure(figure1),
-    "DeleteFigure"    -> DeleteFigure(figure1.id),
-    "BindFigure"      -> BindFigure(figure1.id, run5, spec.id),
-    "SetPanelScale"   -> SetPanelScale(figure1.id, panelA, PanelScale.At(right(Sigma.of(2.0)))),
+    "BindCompletedArtifacts" -> BindCompletedArtifacts(nativeFacts),
+    "PutReporting"           -> PutReporting(spec),
+    "RemoveReporting"        -> RemoveReporting(spec.id),
+    "CreateFigure"           -> CreateFigure(run7, spec.id, figure1.panels.take(1)),
+    "RestoreFigure"          -> RestoreFigure(figure1),
+    "DeleteFigure"           -> DeleteFigure(figure1.id),
+    "BindFigure"             -> BindFigure(figure1.id, run5, spec.id),
+    "SetPanelScale" -> SetPanelScale(figure1.id, panelA, PanelScale.At(right(Sigma.of(2.0)))),
     "SetPanelSelection" -> SetPanelSelection(figure1.id, panelA, PanelSelection.AllQueries),
     "AddPanel"          -> AddPanel(
       figure1.id,

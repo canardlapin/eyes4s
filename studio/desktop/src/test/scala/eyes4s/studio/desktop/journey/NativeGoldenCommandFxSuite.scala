@@ -24,10 +24,11 @@ import eyes4s.studio.app.nav.{DataSection, Location, Place}
 import eyes4s.studio.app.geometry.Loading
 import eyes4s.studio.app.figures.BundleItem
 import eyes4s.studio.core.backend.{Inspection, QueryStatus, ResultAddress}
-import eyes4s.studio.core.bundle.ProjectBundle
+import eyes4s.studio.core.bundle.{LockOwner, ProjectBundle}
 import eyes4s.studio.core.command.Command
-import eyes4s.studio.core.document.{Perspective, Preset, RunLifecycle}
+import eyes4s.studio.core.document.{CoreBinding, Perspective, Preset, RunLifecycle}
 import eyes4s.studio.core.selection.{ScaleIndex, StudioRef}
+import eyes4s.studio.core.session.ProjectSession
 import eyes4s.studio.desktop.StudioWindow
 import eyes4s.studio.desktop.explore.NavigatorDisplays
 import eyes4s.studio.desktop.harness.FxStage
@@ -136,6 +137,16 @@ class NativeGoldenCommandFxSuite extends GoldenWindow:
       )
       assertEquals(runOnFx(w.runtime.model.document.presentation.shownRun), None)
       assert(w.session.await(w.session.backend.jobs).exists(_.run == run))
+      until(fx, "verified native artifacts stored and bound") {
+        val document = w.runtime.model.document
+        document.run(run).exists(_.archive.isInstanceOf[CoreBinding.Bound[?]]) &&
+        document
+          .analysis(revision)
+          .exists(analysis =>
+            analysis.plan == receipt.stamp.plan && analysis.recipe.input.nonEmpty
+          )
+      }
+      assertEquals(runOnFx(w.runtime.model.document.presentation.shownRun), None)
 
       dispatch(fx, w, Intent.Dispatch(Command.PutReporting(reporting)))
       dispatch(fx, w, Intent.ShowRun(run))
@@ -151,6 +162,15 @@ class NativeGoldenCommandFxSuite extends GoldenWindow:
       dispatch(fx, w, Intent.Navigate(Location(Perspective.Figures, Vector(Place.Figures))))
       until(fx, "all edits saved") { !w.runtime.model.save.edited }
       val document = runOnFx(w.runtime.model.document)
+      val stored   = get(port.session.loadNativeArtifacts(run).unsafeRunSync())
+      assertEquals(stored.facts.run, run)
+      assertEquals(stored.facts.stamp, receipt.stamp)
+      assertEquals(
+        document.analysis(revision).get.plan,
+        CoreBinding.Bound(stored.facts.planCanonical)
+      )
+      assertEquals(document.analysis(revision).get.recipe.input, Some(stored.facts.source))
+      assertEquals(document.run(run).get.archive, CoreBinding.Bound(stored.facts.result))
       val captured = NativeCommandJourneyReadback
         .capture(document, NativeCommandJourneyReadback.Port.from(w.session))
         .unsafeRunSync()
@@ -202,6 +222,22 @@ class NativeGoldenCommandFxSuite extends GoldenWindow:
       yield project).unsafeRunSync())
       assertEquals(reopened.document, document)
       assert(reopened.science.verified)
+      val reopenedStore   = FileProjectStore.at[IO](projectDir).unsafeRunSync()
+      val reopenedSession = get(
+        ProjectSession
+          .open(reopenedStore, get(LockOwner.of("native artifact cold verification")))
+          .unsafeRunSync()
+      ).session
+      try
+        val cold = get(reopenedSession.loadNativeArtifacts(run).unsafeRunSync())
+        assertEquals(cold.facts, stored.facts)
+        assertEquals(cold.archive.index, stored.archive.index)
+        cold.archive.files.zip(stored.archive.files).foreach {
+          case ((entry, bytes), (firstEntry, firstBytes)) =>
+            assertEquals(entry, firstEntry)
+            assertEquals(Vector.from(bytes), Vector.from(firstBytes), entry.name.value)
+        }
+      finally get(reopenedSession.close.unsafeRunSync())
     catch
       case NonFatal(error) =>
         primaryFailure = Some(error)

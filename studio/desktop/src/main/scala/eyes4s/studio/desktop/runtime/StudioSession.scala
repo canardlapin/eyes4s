@@ -26,11 +26,17 @@ import eyes4s.studio.core.headless.{NativeReads, SynchronizedBackend}
 import java.util.concurrent.atomic.AtomicReference
 import eyes4s.studio.core.navigation.StudyNavigator
 import eyes4s.studio.core.real.{DatasetSources, RealStudyBackend}
+import eyes4s.studio.core.artifacts.{
+  NativeArtifactError,
+  NativeArtifactSink,
+  NativeBindingFacts
+}
 import eyes4s.studio.core.execution.{
   ExecutionError,
   ExecutionEvent,
   ExecutionJob,
-  ExecutionService
+  ExecutionService,
+  NativeArtifactDelivery
 }
 import eyes4s.studio.core.fixture.{FakeStudyBackend, StoryMoment}
 
@@ -103,7 +109,8 @@ object StudioSession:
             backend: StudyBackend[IO],
             backend.navigator,
             Some(backend),
-            (_: StudioDocument) => IO.pure(Right(()))
+            (_: StudioDocument) => IO.pure(Right(())),
+            None
           )
         ),
       deliver
@@ -113,14 +120,18 @@ object StudioSession:
   def start(
       document: StudioDocument,
       sources: DatasetSources[IO],
-      deliver: ExecutionEvent => Unit
+      deliver: ExecutionEvent => Unit,
+      artifactSink: Option[NativeArtifactSink[IO]] = None
   )(using runtime: IORuntime): StudioSession =
     acquire(
       RealStudyBackend
         .resource[IO](document, sources)
-        .map(backend =>
-          (backend: StudyBackend[IO], backend.navigator, None, backend.synchronize)
-        ),
+        .map { backend =>
+          val completion = artifactSink.map(sink =>
+            (job: ExecutionJob) => NativeArtifactDelivery.store(backend, sink, job.run)
+          )
+          (backend: StudyBackend[IO], backend.navigator, None, backend.synchronize, completion)
+        },
       deliver
     )
 
@@ -131,14 +142,15 @@ object StudioSession:
             StudyBackend[IO],
             StudyNavigator[IO],
             Option[FakeStudyBackend[IO]],
-            StudioDocument => IO[Either[BackendError, Unit]]
+            StudioDocument => IO[Either[BackendError, Unit]],
+            Option[ExecutionJob => IO[Either[NativeArtifactError, NativeBindingFacts]]]
         )
       ],
       deliver: ExecutionEvent => Unit
   )(using runtime: IORuntime): StudioSession =
     val documentSource = new AtomicReference[Option[() => StudioDocument]](None)
     val resources      = for
-      (raw, navigator, fixture, synchronize) <- backendResource
+      (raw, navigator, fixture, synchronize, completion) <- backendResource
       sync = () =>
         IO.defer(
           documentSource
@@ -149,7 +161,7 @@ object StudioSession:
         )
       backend = new SynchronizedBackend[IO](raw, sync)
       reads   <- NativeReads.resource[IO](backend, navigator, sync)
-      service <- ExecutionService.resource[IO](backend)
+      service <- ExecutionService.resource[IO](backend, artifacts = completion)
       events  <- service.subscribe
       _       <- events.evalMap(event => IO(deliver(event))).compile.drain.background
     yield (raw, backend, reads, synchronize, fixture, service)

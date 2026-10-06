@@ -41,7 +41,14 @@ object CommandGen:
 
   /** Commands that never enter an undo stack. */
   val irreversible: Set[String] =
-    Set("Admit", "SaveAndRun", "RecordRunOutcome", "CancelRun", "BindPlan")
+    Set(
+      "Admit",
+      "SaveAndRun",
+      "RecordRunOutcome",
+      "CancelRun",
+      "BindPlan",
+      "BindCompletedArtifacts"
+    )
 
   private def pick[A](values: Vector[A]): Option[Gen[A]] =
     Option.when(values.nonEmpty)(Gen.oneOf(values))
@@ -162,7 +169,38 @@ object CommandGen:
         i <- a.recipe.input.fold(semantic)(i => Gen.frequency(3 -> Gen.const(i), 1 -> semantic))
       yield Command.BindPlan(a.id, p, i)
     }
-    outcomes ++ plans
+    val artifacts = pick(d.runs).toVector.map { runs =>
+      for
+        run <- runs
+        spec = d.analysis(run.analysis).get
+        plan <- spec.plan match
+          case CoreBinding.Bound(value) => Gen.const(value)
+          case _                        => canonical[StudyPlanArtifact]
+        input  <- canonical[eyes4s.studio.core.execution.StudyInputArtifact]
+        result <- run.archive match
+          case CoreBinding.Bound(value) => Gen.const(value)
+          case _                        => canonical[ResultArchiveArtifact]
+        source <- spec.recipe.input
+          .orElse(d.dataset(spec.dataset).flatMap(_.sources.fixations).flatMap(_.semantic))
+          .fold(semantic)(Gen.const(_))
+        facts = eyes4s.studio.core.artifacts.NativeBindingFacts
+          .of(
+            run.id,
+            eyes4s.studio.core.execution.RunStamp(
+              spec.id,
+              spec.dataset,
+              CoreBinding.Bound(plan),
+              CoreBinding.Bound(input)
+            ),
+            source,
+            result,
+            spec.recipe
+          )
+          .toOption
+          .get
+      yield Command.BindCompletedArtifacts(facts)
+    }
+    outcomes ++ plans ++ artifacts
 
   def analysis(d: StudioDocument): Vector[Gen[Command]] =
     val admitted = d.datasets.filter(_.decision.isAdmitted).map(_.id)

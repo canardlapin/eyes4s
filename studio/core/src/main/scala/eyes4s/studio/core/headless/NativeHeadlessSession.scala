@@ -22,12 +22,14 @@ import cats.effect.unsafe.IORuntime
 import cats.effect.{IO, Resource}
 import cats.syntax.all.*
 import eyes4s.studio.core.backend.*
+import eyes4s.studio.core.artifacts.NativeArtifactSink
 import eyes4s.studio.core.document.StudioDocument
 import eyes4s.studio.core.execution.{
   ExecutionEffect,
   ExecutionError,
   ExecutionEvent,
-  ExecutionService
+  ExecutionService,
+  NativeArtifactDelivery
 }
 import eyes4s.studio.core.navigation.StudyNavigator
 import eyes4s.studio.core.real.{DatasetSources, RealStudyBackend}
@@ -124,7 +126,8 @@ final class NativeHeadlessSession private (
 object NativeHeadlessSession:
   def open(
       document: StudioDocument,
-      sources: DatasetSources[IO]
+      sources: DatasetSources[IO],
+      artifactSink: Option[NativeArtifactSink[IO]] = None
   ): Future[NativeHeadlessSession] =
     given IORuntime    = cats.effect.unsafe.implicits.global
     val documentSource = new AtomicReference[() => StudioDocument](() => document)
@@ -132,8 +135,12 @@ object NativeHeadlessSession:
       raw <- RealStudyBackend.resource[IO](document, sources)
       sync    = () => IO.defer(raw.synchronize(documentSource.get()()))
       backend = new SynchronizedBackend[IO](raw, sync)
-      reads   <- NativeReads.resource[IO](backend, raw.navigator, sync)
-      service <- ExecutionService.resource[IO](backend)
+      reads <- NativeReads.resource[IO](backend, raw.navigator, sync)
+      completion = artifactSink.map(sink =>
+        (job: eyes4s.studio.core.execution.ExecutionJob) =>
+          NativeArtifactDelivery.store(raw, sink, job.run)
+      )
+      service <- ExecutionService.resource[IO](backend, artifacts = completion)
       events  <- service.subscribe
       queue   <- Resource.eval(Queue.unbounded[IO, ExecutionEvent])
       _       <- events.evalMap(queue.offer).compile.drain.background

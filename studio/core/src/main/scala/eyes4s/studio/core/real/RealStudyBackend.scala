@@ -82,7 +82,8 @@ final class RealStudyBackend[F[_]] private (
     supervisor: Supervisor[F],
     synchronization: Mutex[F]
 )(using F: Concurrent[F])
-    extends StudyBackend[F]:
+    extends StudyBackend[F]
+    with eyes4s.studio.core.artifacts.NativeArtifactProvider[F]:
   import RealStudyBackend.*
 
   lazy val navigator: RealNavigator[F] =
@@ -748,6 +749,33 @@ final class RealStudyBackend[F[_]] private (
               case Right(r) => inspected.update(_.updated(run, r))
               case Left(_)  => F.unit
             })
+    }
+
+  /** Local native-factory artifact capability: reads only retained completions. */
+  def nativeArtifacts(
+      run: RunId,
+      budget: eyes4s.studio.core.artifacts.NativeArtifactBudget
+  ): F[Either[
+    eyes4s.studio.core.artifacts.NativeArtifactError,
+    eyes4s.studio.core.artifacts.NativeArtifactPackage
+  ]] =
+    import eyes4s.studio.core.artifacts.NativeArtifactError
+    state.get.flatMap { current =>
+      current.results.get(run) match
+        case None =>
+          F.pure(
+            Left(
+              NativeArtifactError.NotRetained(
+                run,
+                current.results.keys.toVector.sortBy(_.number)
+              )
+            )
+          )
+        case Some(done) =>
+          F.catchNonFatal(NativeArtifacts.build(run, done, budget))
+            .handleError(e =>
+              Left(NativeArtifactError.Defect(run, "export", e.getClass.getName))
+            )
     }
 
   /** Ungrouped count facts; numerical report cells are served by `report`. */

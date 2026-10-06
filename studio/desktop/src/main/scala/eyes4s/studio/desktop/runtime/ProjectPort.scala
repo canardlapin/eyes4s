@@ -21,6 +21,12 @@ import cats.effect.unsafe.IORuntime
 import eyes4s.studio.core.bundle.{Inclusion, InputEntry, InputKind, InputStatus, SharingOptions}
 import eyes4s.studio.core.command.JournalEntry
 import eyes4s.studio.core.document.Source
+import eyes4s.studio.core.artifacts.{
+  NativeArtifactError,
+  NativeArtifactPackage,
+  NativeArtifactSink,
+  NativeBindingFacts
+}
 import eyes4s.studio.core.session.{ProjectSession, SaveReceipt}
 import eyes4s.studio.desktop.platform.FileProjectStore
 
@@ -35,6 +41,32 @@ trait ProjectPort:
   def journal(entry: JournalEntry): Unit
   def save(done: Either[String, SaveReceipt] => Unit): Unit
   def close(): Unit
+
+  /** Store verified native files before the app journals their binding. */
+  def storeNativeArtifacts(
+      packageValue: NativeArtifactPackage,
+      done: Either[NativeArtifactError, NativeBindingFacts] => Unit
+  ): Unit =
+    done(
+      Left(
+        NativeArtifactError.persistence(
+          packageValue.facts.run,
+          "store native artifacts",
+          "this project cannot store native run files"
+        )
+      )
+    )
+
+  /** Native factories use the same serial transport as journals and saves. */
+  final def nativeArtifactSink: NativeArtifactSink[IO] =
+    val port = this
+    new NativeArtifactSink[IO]:
+      def store(
+          packageValue: NativeArtifactPackage
+      ): IO[Either[NativeArtifactError, NativeBindingFacts]] =
+        IO.async_[Either[NativeArtifactError, NativeBindingFacts]](done =>
+          port.storeNativeArtifacts(packageValue, answer => done(Right(answer)))
+        )
 
   /** Copy an imported file's bytes into the project, listed at the next save
     * (S5.2): queued before the journal entry of the command that names it.
@@ -226,6 +258,28 @@ final class SessionPort private (
       answering(session.save.map(_.left.map(_.message)), done),
       "save",
       Some(reason => done(Left(reason)))
+    )
+
+  override def storeNativeArtifacts(
+      packageValue: NativeArtifactPackage,
+      done: Either[NativeArtifactError, NativeBindingFacts] => Unit
+  ): Unit =
+    val run       = packageValue.facts.run
+    val operation = "store native artifacts"
+    enqueue(
+      session.storeNativeArtifacts(packageValue).attempt.flatMap { answer =>
+        IO(
+          done(
+            answer.left
+              .map(failure =>
+                NativeArtifactError.Defect(run, operation, failure.getClass.getName)
+              )
+              .flatten
+          )
+        )
+      },
+      s"$operation of ${run.label}",
+      Some(reason => done(Left(NativeArtifactError.persistence(run, operation, reason))))
     )
 
   /** Finish the queued operations, then stop. The session stays open. */

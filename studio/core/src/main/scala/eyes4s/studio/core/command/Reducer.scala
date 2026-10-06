@@ -436,6 +436,94 @@ object Reducer:
         next <- rebuild(d, c)(analyses = d.analyses.map(a => if a.id == id then bound else a))
       yield Outcome(next, Vector(Effect.Persist), Recording.Unrecorded)
 
+    // Storage acknowledged these exact native bytes first (bead q-native-stored-completion).
+    case BindCompletedArtifacts(facts) =>
+      def binding[A](recorded: CoreBinding[A], prepared: CoreBinding[A], field: String) =
+        prepared match
+          case CoreBinding.Unbound() =>
+            Left(ArtifactBindingMismatch(facts.run, field, recorded.render, prepared.render))
+          case CoreBinding.Bound(_) =>
+            Either.cond(
+              recorded == prepared || recorded == CoreBinding.unbound[A],
+              (),
+              ArtifactBindingMismatch(facts.run, field, recorded.render, prepared.render)
+            )
+      for
+        run <- d.run(facts.run).toRight(UnknownRun(facts.run))
+        _   <- Either.cond(
+          run.state == RunLifecycle.Completed,
+          (),
+          RunNotCompleted(run.id, run.state)
+        )
+        _ <- Either.cond(
+          run.analysis == facts.revision && run.dataset == facts.dataset,
+          (),
+          ArtifactScopeMismatch(
+            run.id,
+            run.analysis,
+            run.dataset,
+            facts.revision,
+            facts.dataset
+          )
+        )
+        spec <- d.analysis(facts.revision).toRight(UnknownAnalysis(facts.revision))
+        _    <- Either.cond(
+          spec.dataset == facts.dataset,
+          (),
+          ArtifactScopeMismatch(run.id, spec.id, spec.dataset, facts.revision, facts.dataset)
+        )
+        _ <- Either.cond(
+          spec.recipe.copy(input = None) == facts.recipeSnapshot.copy(input = None),
+          (),
+          ArtifactRecipeMismatch(spec.id, spec.recipe, facts.recipeSnapshot)
+        )
+        _ <- spec.recipe.input.traverse_(recorded =>
+          Either.cond(
+            recorded == facts.source,
+            (),
+            InputMismatch(spec.id, recorded, facts.source)
+          )
+        )
+        _ <- facts.recipeSnapshot.input.traverse_(recorded =>
+          Either.cond(
+            recorded == facts.source,
+            (),
+            InputMismatch(spec.id, recorded, facts.source)
+          )
+        )
+        dataset <- d.dataset(facts.dataset).toRight(UnknownDataset(facts.dataset))
+        _       <- dataset.sources.fixations
+          .flatMap(_.semantic)
+          .traverse_(recorded =>
+            Either.cond(
+              recorded == facts.source,
+              (),
+              ArtifactBindingMismatch(
+                run.id,
+                s"${dataset.id.label} fixation source semantic",
+                recorded.value,
+                facts.source.value
+              )
+            )
+          )
+        _ <- binding(spec.plan, facts.stamp.plan, "plan")
+        result = CoreBinding.Bound(facts.result)
+        _ <- binding(run.archive, result, "result")
+        bound = spec.copy(
+          plan = facts.stamp.plan,
+          recipe = spec.recipe.copy(input = Some(facts.source))
+        )
+        completed = run.copy(archive = result)
+        next <- rebuild(d, c)(
+          analyses = d.analyses.map(a => if a.id == spec.id then bound else a),
+          runs = d.runs.map(r => if r.id == run.id then completed else r)
+        )
+      yield Outcome(
+        next,
+        if next == d then Vector.empty else Vector(Effect.Persist),
+        Recording.Unrecorded
+      )
+
     // --- Reporting · no rerun ------------------------------------------------
     case PutReporting(spec) =>
       d.reporting.find(_.id == spec.id) match
@@ -712,12 +800,13 @@ object Reducer:
       Target.OnDraft(
         d.draft.map(_.id).orElse(d.latestAnalysis.map(a => AnalysisRevision(a.id.number + 1)))
       )
-    case RecordRunOutcome(run, _, _) => Target.OnRun(run)
-    case CancelRun(run)              => Target.OnRun(run)
-    case BindPlan(revision, _, _)    => Target.OnAnalysis(revision)
-    case PutReporting(spec)          => Target.OnReporting(spec.id)
-    case RemoveReporting(id)         => Target.OnReporting(id)
-    case CreateFigure(_, _, _)       =>
+    case RecordRunOutcome(run, _, _)   => Target.OnRun(run)
+    case CancelRun(run)                => Target.OnRun(run)
+    case BindPlan(revision, _, _)      => Target.OnAnalysis(revision)
+    case BindCompletedArtifacts(facts) => Target.OnRun(facts.run)
+    case PutReporting(spec)            => Target.OnReporting(spec.id)
+    case RemoveReporting(id)           => Target.OnReporting(id)
+    case CreateFigure(_, _, _)         =>
       d.nextFigureId.fold(_ => Target.OnPresentation, Target.OnFigure(_))
     case RestoreFigure(spec)              => Target.OnFigure(spec.id)
     case DeleteFigure(id)                 => Target.OnFigure(id)
