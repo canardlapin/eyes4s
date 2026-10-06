@@ -29,7 +29,8 @@ import eyes4s.studio.core.backend.{
   QueryStatus,
   ReportRole,
   ReportView,
-  ResultSummary
+  ResultSummary,
+  TrialTally
 }
 import eyes4s.studio.core.document.PanelLetter
 import eyes4s.studio.core.figures.{
@@ -356,6 +357,89 @@ class ExportBundleSuite extends munit.FunSuite:
         assertEquals((row("reference_item"), number(row, "score")), (c.item, Some(c.score)))
       }
       assertEquals(p17.count(_("design") == "control"), s.scores.controlMembers)
+    }
+  }
+
+  test("comparisons exports each served window tally and documents its duration share") {
+    served.map { s =>
+      val rows    = csv(files(s)("comparisons.csv"))
+      val entries = s.pairs.flatMap(_.rows)
+      assertEquals(rows.size, entries.size)
+      rows.zip(entries).foreach { (row, entry) =>
+        Vector("query" -> entry.queryWindow, "reference" -> entry.referenceWindow).foreach {
+          (role, window) =>
+            assertEquals(
+              number(row, s"${role}_outside_window_count"),
+              window.map(_.tally.outsideWindow.toDouble)
+            )
+            assertEquals(
+              number(row, s"${role}_outside_window_of"),
+              window.map(_.tally.total.toDouble)
+            )
+            assertEquals(
+              number(row, s"${role}_outside_window_share"),
+              window.flatMap(_.tally.outsideWindowShare)
+            )
+        }
+      }
+      val readme = files(s)("README.txt")
+      assert(
+        readme.contains("query outside-window fixation duration / total fixation duration")
+      )
+      assert(readme.contains("reference_outside_window_count__valid"))
+    }
+  }
+
+  test("window exports distinguish count fractions, duration shares, zero and unavailable") {
+    served.map { s =>
+      import eyes4s.kernel.Span
+      import eyes4s.plan.WindowTally
+      val page                                                         = s.pairs.head
+      val entry                                                        = page.rows.head
+      def tally(n: Int, total: Int, duration: Long, allDuration: Long) =
+        ok(
+          WindowTally.of(
+            0,
+            n,
+            total,
+            Span.zero,
+            Span.micros(duration),
+            Span.micros(allDuration)
+          )
+        )
+      val query = TrialTally(
+        eyes4s.studio.core.selection.StudioRef.Trial(entry.query),
+        tally(1, 4, 60, 100)
+      )
+      val zero = TrialTally(
+        eyes4s.studio.core.selection.StudioRef.Trial(entry.reference),
+        tally(0, 4, 0, 100)
+      )
+      val empty = zero.copy(tally = tally(0, 0, 0, 0))
+      val rows  = Vector(
+        entry.copy(queryWindow = Some(query), referenceWindow = Some(zero)),
+        entry.copy(queryWindow = None, referenceWindow = Some(empty))
+      )
+      val table = ok(
+        BundleTables.comparisons(
+          request(s.composer).source,
+          s.summary,
+          Vector(page.copy(rows = rows))
+        )
+      )
+      def cells(index: Int) = table.columns.map(_.name).zip(table.rows(index)).toMap
+      val first             = cells(0)
+      assertEquals(first("query_outside_window_count"), ResultCell.Integer(1))
+      assertEquals(first("query_outside_window_of"), ResultCell.Integer(4))
+      assertEquals(first("query_outside_window_share"), ResultCell.Number(0.6))
+      assertEquals(first("reference_outside_window_share"), ResultCell.Number(0.0))
+      val second = cells(1)
+      assertEquals(second("query_outside_window_count"), ResultCell.Missing)
+      assertEquals(second("query_outside_window_of"), ResultCell.Missing)
+      assertEquals(second("query_outside_window_share"), ResultCell.Missing)
+      assertEquals(second("reference_outside_window_count"), ResultCell.Integer(0))
+      assertEquals(second("reference_outside_window_of"), ResultCell.Integer(0))
+      assertEquals(second("reference_outside_window_share"), ResultCell.Missing)
     }
   }
 
