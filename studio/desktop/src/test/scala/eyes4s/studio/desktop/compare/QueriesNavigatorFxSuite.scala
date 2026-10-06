@@ -17,7 +17,7 @@
 package eyes4s.studio.desktop.compare
 
 import eyes4s.studio.app.StoryModels
-import eyes4s.studio.app.compare.NavigatorKind
+import eyes4s.studio.app.compare.{CompareSummary, NavigatorKind, ReportAnswer}
 import eyes4s.studio.app.nav.Place
 import eyes4s.studio.core.backend.{Phase, TrialKey}
 import eyes4s.studio.core.fixture.{StoryMoment, StoryMoments}
@@ -54,6 +54,17 @@ class QueriesNavigatorFxSuite extends ShellFxSuite:
         }
         .getOrElse(fail("no 2° control"))
         .fire()
+    }
+    // Participant headers use the separate overall evaluation, not the
+    // grouped report that enables the scale control or the query rows.
+    eventually(fx, "the overall participant report at 2° is served") {
+      val summary = w.summary.summary
+      summary.reports.get((StoryModels.sigma2, true)).exists {
+        case ReportAnswer.Answered(view) =>
+          summary.run.contains(view.run) && view.scale == StoryModels.sigma2.value &&
+          summary.spec.flatMap(CompareSummary.overall).exists(_.id == view.reporting)
+        case _ => false
+      }
     }
     eventually(fx, "the run's queries are read") {
       w.summary.queries.stripLines.nonEmpty && w.summary.queries.rows.nonEmpty
