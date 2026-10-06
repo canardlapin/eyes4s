@@ -16,12 +16,16 @@
 
 package eyes4s.studio.desktop.figures
 
-import eyes4s.studio.app.StoryModels
+import eyes4s.studio.app.{Intent, StoryModels}
+import eyes4s.studio.app.appearance.Appearance
+import eyes4s.studio.app.tokens.Wcag
 import eyes4s.studio.core.fixture.StoryMoment
 import eyes4s.studio.desktop.StudioWindow
 import eyes4s.studio.desktop.harness.FxStage
-import eyes4s.studio.desktop.shell.ShellFxSuite
+import eyes4s.studio.desktop.shell.{A11yChecks, ShellFxSuite}
 import javafx.scene.control.{Button, Label}
+import javafx.scene.paint.Color
+import javafx.scene.text.Text
 
 import scala.concurrent.duration.Duration
 import scala.jdk.CollectionConverters.*
@@ -57,6 +61,42 @@ class FigureMethodsFxSuite extends ShellFxSuite:
         .getOrElse(fail(s"no button '$name'"))
         .fire()
     )
+
+  Vector(Appearance.Light, Appearance.Dark).foreach { appearance =>
+    fxStage.test(
+      s"methods pending palette and first enabled frame remain readable in $appearance"
+    ) { fx =>
+      val w = boot(fx, StoryModels.t2Figures, StoryMoment.T2)
+      generated(fx, w)
+      dispatch(fx, w, Intent.SetAppearance(appearance))
+      runOnFx {
+        val editor = w.figures.methodsEditor
+        // Hold the real control's pending palette, then enable it without
+        // a CSS pulse: native method generation can make this transition
+        // between layout and the next pulse. Both palettes must be legible.
+        editor.setDisable(true)
+        w.root.applyCss()
+        val texts = A11yChecks.all(editor).collect {
+          case text: Text if A11yChecks.shown(text) && text.getText.nonEmpty => text
+        }
+        assert(texts.nonEmpty, "the methods editor must actually draw its text")
+        texts.foreach { text =>
+          val pixels = A11yChecks
+            .pixels(text, text.getFill.asInstanceOf[Color], fx.scene)
+            .fold(fail(_), identity)
+          val contrast =
+            pixels.map((glyph, background) => A11yChecks.ratio(glyph, background)).min
+          assert(
+            contrast >= Wcag.TextMinimum,
+            s"$appearance pending methods contrast $contrast"
+          )
+        }
+        assertEquals(editor.getOpacity, 1.0)
+        editor.setDisable(false)
+        assertEquals(A11yChecks.lowContrast(editor), Vector.empty[String])
+      }
+    }
+  }
 
   fxStage.test("the methods text is generated from run 7 and set in the prose face") { fx =>
     val w    = boot(fx, StoryModels.t2Figures, StoryMoment.T2)

@@ -127,6 +127,17 @@
   -fx-padding: 6;
 }
 
+/* Pending prose remains legible; this palette can also be drawn just after
+ * asynchronous generation enables the editor and before the next CSS pulse. */
+.figures-methods {
+  -fx-prompt-text-fill: -es-ink-3;
+}
+
+.figures-methods:disabled {
+  -fx-opacity: 1;
+  -fx-text-fill: -es-ink-2;
+}
+
 .figures-diff-removed {
   -fx-background-color: -es-fail-soft;
 }
