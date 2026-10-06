@@ -170,7 +170,7 @@ class CandidateTests(unittest.TestCase):
             run.main(['--prepare'])
         self.assertEqual(candidate.select_inventory({}), candidate.paths()[0])
         self.assertEqual(report.read_text(), 'existing evidence')
-        self.assertFalse(any('/test' in c or 'Execution' in c or 'auditAgent' in c for c in calls))
+        self.assertFalse(any(c == 'test' or '/test' in c or 'Execution' in c or 'auditAgent' in c for c in calls))
         self.assertFalse((self.out / 'receipt.json').exists())
 
     def test_record_orders_candidate_before_tests_and_propagates_run_identity(self):
@@ -184,6 +184,8 @@ class CandidateTests(unittest.TestCase):
                     selected = candidate.select_inventory(kwargs['environment'])
                     self.assertIn('class eyes4s.plan.NewError', json.loads(selected.read_text()))
                     steps.append('test')
+                elif command == 'test':
+                    steps.append('tool-tests')
                 elif 'Inventory ' in command:
                     steps.append('inventory')
         def process(command, **kwargs):
@@ -195,7 +197,7 @@ class CandidateTests(unittest.TestCase):
              patch.object(run.subprocess, 'run', side_effect=process), \
              patch.object(run.subprocess, 'check_output', return_value='sha'):
             run.main(['--record'])
-        self.assertEqual(steps, ['inventory', 'inventory', 'test', 'test', 'record'])
+        self.assertEqual(steps, ['tool-tests', 'inventory', 'inventory', 'test', 'test', 'record'])
         provenance = next((self.out / 'candidates').glob('*/provenance.json'))
         self.assertFalse(json.loads(provenance.read_text())['active'])
 

@@ -41,7 +41,7 @@ def main(argv=None):
                 for axis in ('jvm', 'js'):
                     shutil.rmtree(ROOT / module / f'.{axis}/target/test-reports', ignore_errors=True)
         sbt(['compileAll', 'apiAuditInputs'], environment=environment)
-        sbt(['compile'] + ([] if args.prepare else ['auditAgent']), ROOT / 'tools/api-audit',
+        sbt(['compile'] + ([] if args.prepare else ['test', 'auditAgent']), ROOT / 'tools/api-audit',
             environment=environment)
         sbt([f'runMain eyes4s.audittool.Inventory {ROOT} {axis} {OUT}/classpath-{axis}.txt {OUT}/inventory-{axis}.json'
              for axis in ('jvm', 'js')], ROOT / 'tools/api-audit', environment=environment)

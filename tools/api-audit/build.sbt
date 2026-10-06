@@ -5,8 +5,10 @@ libraryDependencies ++= Seq(
   "org.ow2.asm" % "asm" % "9.9",
   "org.jacoco" % "org.jacoco.core" % "0.8.14",
   "org.jacoco" % "org.jacoco.agent" % "0.8.14" classifier "runtime",
-  "io.circe" %% "circe-parser" % "0.14.16"
+  "io.circe" %% "circe-parser" % "0.14.16",
+  "org.scalameta" %% "munit" % "1.3.4" % Test
 )
+Test / fork := true
 Compile / run / fork := true
 Compile / run / javaOptions += "-Xmx4g"
 
