@@ -17,7 +17,6 @@
 package eyes4s.studio.desktop.runtime
 
 import cats.effect.IO
-import cats.effect.std.Queue
 import cats.effect.unsafe.IORuntime
 import eyes4s.studio.core.bundle.{Inclusion, InputEntry, InputKind, InputStatus, SharingOptions}
 import eyes4s.studio.core.command.JournalEntry
@@ -26,6 +25,7 @@ import eyes4s.studio.core.session.{ProjectSession, SaveReceipt}
 import eyes4s.studio.desktop.platform.FileProjectStore
 
 import scala.annotation.unused
+import java.util.concurrent.{CompletableFuture, LinkedTransferQueue}
 
 /** The project a window saves into (tickets S1.8 and S2.4a/b): the app's
   * `Journal` and `Persist` effects, performed in the order the model emits
@@ -91,16 +91,18 @@ trait ProjectPort:
   */
 final class SessionPort private (
     val session: ProjectSession[IO],
-    queue: Queue[IO, IO[Unit]],
+    queue: LinkedTransferQueue[IO[Unit]],
     release: IO[Unit],
     report: String => Unit
 )(using runtime: IORuntime)
     extends ProjectPort:
 
-  private val closed = java.util.concurrent.atomic.AtomicBoolean(false)
+  private val closed  = java.util.concurrent.atomic.AtomicBoolean(false)
+  private val drained = CompletableFuture[Unit]()
 
-  /** Guards [[closed]] and the queue together: an operation is either queued
-    * before [[close]]'s drain marker, so it runs, or refused.
+  /** Guards acceptance and closure together. Publishing an operation here
+    * never schedules or waits for IO: source callbacks can enter from an IO
+    * worker while the FX thread submits a save.
     */
   private val gate = new Object
 
@@ -113,14 +115,17 @@ final class SessionPort private (
       what: String,
       refused: Option[String => Unit] = None
   ): Unit =
-    val queued = gate.synchronized {
-      if closed.get then false
-      else
-        queue.offer(op).unsafeRunSync()
-        true
+    val outcome = gate.synchronized {
+      if closed.get then None
+      else Some(queue.offer(op))
     }
-    if !queued then
-      refused.fold(report(s"$what after the project port closed"))(_("the project is closed"))
+    outcome match
+      case Some(true) => ()
+      case None       =>
+        refused.fold(report(s"$what after the project port closed"))(_("the project is closed"))
+      case Some(false) =>
+        val reason = s"$what: the project operation queue refused the operation"
+        refused.fold(report(reason))(_(reason))
 
   /** `op`'s result for `done`; a raised error answers too, as its message, so
     * a caller waiting on `done` is never left waiting.
@@ -225,17 +230,26 @@ final class SessionPort private (
 
   /** Finish the queued operations, then stop. The session stays open. */
   def close(): Unit =
-    val drained = gate.synchronized {
-      if !closed.compareAndSet(false, true) then None
+    val first = gate.synchronized {
+      if !closed.compareAndSet(false, true) then false
       else
-        val d = IO.deferred[Unit].unsafeRunSync()
-        queue.offer(d.complete(()).void).unsafeRunSync()
-        Some(d)
+        // LinkedTransferQueue is unbounded: offer never waits for capacity
+        // or a receiver. Constructing this IO does not run it under gate.
+        if !queue.offer(IO { drained.complete(()): Unit }) then
+          throw IllegalStateException("the unbounded project queue refused its drain marker")
+        true
     }
-    drained.foreach { d =>
-      d.get.unsafeRunSync()
-      release.unsafeRunSync()
-    }
+    if first then
+      // Caller interruption cannot abandon accepted operations or the
+      // consumer resource. A repeated close returns immediately, including
+      // a queued callback closing again while this caller waits for it.
+      drained.join()
+      val stopped = CompletableFuture[Unit]()
+      release.unsafeRunAsync {
+        case Right(_)      => stopped.complete(()): Unit
+        case Left(failure) => stopped.completeExceptionally(failure): Unit
+      }
+      stopped.join()
 
 object SessionPort:
 
@@ -244,8 +258,9 @@ object SessionPort:
   ): SessionPort =
     val resources =
       for
-        queue <- cats.effect.Resource.eval(Queue.unbounded[IO, IO[Unit]])
-        _     <- queue.take
+        queue <- cats.effect.Resource.eval(IO(LinkedTransferQueue[IO[Unit]]()))
+        _     <- IO
+          .interruptible(queue.take())
           .flatMap(_.handleError(e => report(String.valueOf(e))))
           .foreverM
           .background

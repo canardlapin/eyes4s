@@ -38,6 +38,7 @@ import javafx.scene.control.Button
 import java.nio.file.Files
 import scala.jdk.CollectionConverters.*
 import scala.concurrent.duration.*
+import scala.util.control.NonFatal
 
 /** First analysis from an empty native window through actual admission,
   * preset and Save & run controls. Import-dialog answers, navigation and
@@ -72,8 +73,9 @@ class NativeGoldenCommandFxSuite extends GoldenWindow:
     Files.createDirectories(exportDir)
     val (port, release) =
       NativeJourneyProject.open(projectDir, initial.document, inputs).allocated.unsafeRunSync()
-    var window: Option[StudioWindow] = None
-    var released                     = false
+    var window: Option[StudioWindow]      = None
+    var released                          = false
+    var primaryFailure: Option[Throwable] = None
     try
       val w = boot(
         fx,
@@ -200,8 +202,24 @@ class NativeGoldenCommandFxSuite extends GoldenWindow:
       yield project).unsafeRunSync())
       assertEquals(reopened.document, document)
       assert(reopened.science.verified)
+    catch
+      case NonFatal(error) =>
+        primaryFailure = Some(error)
+        throw error
     finally
-      window.foreach(w => { runOnFx(w.close()); opened -= w })
-      if !released then release.unsafeRunSync()
-      remove.unsafeRunSync()
+      val errors                         = Vector.newBuilder[Throwable]
+      def cleanup(action: => Unit): Unit =
+        try action
+        catch case NonFatal(error) => errors += error: Unit
+      cleanup(window.foreach(w => { runOnFx(w.close()); opened -= w }))
+      cleanup(if !released then release.unsafeRunSync())
+      cleanup(remove.unsafeRunSync())
+      val failures = errors.result()
+      primaryFailure match
+        case Some(error) => failures.foreach(error.addSuppressed)
+        case None        =>
+          failures.headOption.foreach { error =>
+            failures.tail.foreach(error.addSuppressed)
+            throw error
+          }
   }
