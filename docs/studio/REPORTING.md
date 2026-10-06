@@ -31,6 +31,16 @@ the native whole-group references under the display label "All queries". Scale
 profiles use the reports' explicit run, reporting id and scale indices, preserve
 their returned references and refuse missing series cells.
 
+The illustrative `fixture.json` summaries remain frozen display metadata from
+Python's `statistics.mean` and two-decimal `round`; grand summaries average already
+rounded participant values. Reports instead evaluate the stored query rows directly.
+Four participant/group means lie on decimal rounding boundaries (P05 Forgotten
+−0.235, P13 Forgotten 0.025, P16 Remembered 0.445 and P24 Forgotten 0.175), where
+floating accumulation and display rounding change the final hundredth. Tests retain
+the original FIXTURE.md metadata pins, independently average the stored query values
+with decimal arithmetic, and pin those four evaluated display cells separately.
+These illustrative values do not replace the native golden scientific results.
+
 ## Persistence and compatibility
 
 New vocabulary uses the earliest schema version that expresses it:

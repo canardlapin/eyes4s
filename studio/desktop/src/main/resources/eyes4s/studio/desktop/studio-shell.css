@@ -52,6 +52,12 @@
   -fx-faint-focus-color: transparent;
 }
 
+/* Operand hints are field text: override Modena's derived prompt colour
+ * on the controls themselves so both themes retain the readable token. */
+.reporting-editor .text-field {
+  -fx-prompt-text-fill: -es-ink-3;
+}
+
 /* ---- keyboard focus: a 2 px accent ring on every control (S1.11) -------- */
 
 .crumb:focused, .icon-button:focused, .bar-button:focused {

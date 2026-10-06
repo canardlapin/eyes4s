@@ -403,7 +403,7 @@ object GoldenRoute:
     // -------------------------------------------------------------------------
 
     private val summary: S = Step(
-      "the participant table and group reports = FIXTURE.md",
+      "the evaluated participant reports and frozen FIXTURE.md metadata",
       d =>
         val groupedSpec = ok(StoryMoments.byResponse)
         val overallSpec = ok(
@@ -475,9 +475,42 @@ object GoldenRoute:
                 forgotten
               )
             }
+            _ <- r.participants.traverse_ { p =>
+              Vector(ReportRole.Matched, ReportRole.Control, ReportRole.Difference).traverse_ {
+                role =>
+                  ws.indices.toVector.traverse_ { scale =>
+                    Vector(None, Some(Response.Remembered), Some(Response.Forgotten))
+                      .traverse_ { group =>
+                        val view = group.fold(ws(scale))(_ => gs(scale))
+                        expect(
+                          s"stored queries: ${p.participant}/$group/$role/$scale",
+                          Some(
+                            round(
+                              StoredQueryExpectations.mean(p.participant, role, scale, group),
+                              12
+                            )
+                          ),
+                          view
+                            .participant(group, role, p.participant)
+                            .flatMap(_.value)
+                            .map(round(_, 12))
+                        )
+                      }
+                  }
+              }
+            }
             _ <- all(
               expect("participant rows", 24, doc.participants.size),
-              expect("participant table", doc.participants, served),
+              expect(
+                "frozen participant metadata",
+                doc.participants,
+                StoredQueryExpectations.legacyParticipants
+              ),
+              expect(
+                "evaluated participant display",
+                StoredQueryExpectations.evaluatedParticipants,
+                served
+              ),
               expect(
                 "grand D by scale",
                 doc.list("By scale:"),
@@ -606,6 +639,11 @@ object GoldenRoute:
                       )
                     )
                   )
+                )
+            case ComposerEffect.RequestReport(run, spec, scale) =>
+              s.report(run, spec, scale.value)
+                .flatMap(answer =>
+                  next(ComposerIntent.ReportRead(run, spec, scale, answer.leftMap(_.message)))
                 )
             case ComposerEffect.RequestMethods(run, dataset) =>
               MethodsReads
@@ -746,7 +784,21 @@ object GoldenRoute:
               )
               all_     <- rows.leftMap(e => DriverError.Expectation("rows", "read", e.message))
               allPairs <- pairs.leftMap(why => DriverError.Expectation("pairs", "read", why))
-              files    <- BundleFiles
+              report   <- request.participantScale
+                .flatMap(scale =>
+                  c2.reports.get((request.source.run.id, request.source.reporting, scale))
+                )
+                .toRight(
+                  DriverError.Expectation(
+                    "participant report",
+                    "the exact requested scale",
+                    "not cached"
+                  )
+                )
+                .flatMap(
+                  _.leftMap(why => DriverError.Expectation("participant report", "served", why))
+                )
+              files <- BundleFiles
                 .assemble(
                   request,
                   sum,
@@ -758,7 +810,8 @@ object GoldenRoute:
                     request.page,
                     eyes4s.studio.desktop.trial.StimulusSource
                       .directory(eyes4s.studio.desktop.trial.GoldenTrials.stimuli)
-                  )
+                  ),
+                  report = Some(report)
                 )
                 .leftMap(why => DriverError.Expectation("bundle", "assembled", why))
               text = files.collect {

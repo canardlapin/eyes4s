@@ -145,11 +145,11 @@ class CompareSummaryFxSuite extends ShellFxSuite:
     // The notes, the newer run's freshness and the σ selector.
     val shown = labels(w)
     Vector(
-      "Paired n = 24 participants",
       "Means: equal participant weight",
       "Per-group n: 2–17 queries per participant",
       "Rev 5 · run 8 running · 48%"
     ).foreach(t => assert(shown.contains(t), s"'$t' not shown in $shown"))
+    assert(!shown.exists(_.startsWith("Paired n")), "the story spec declares no contrast")
     val toggles = runOnFx(
       w.summary.participantNode.lookupAll(".toggle-button").asScala.toVector.collect {
         case b: ToggleButton => (b.getText, b.isDisable, b.isSelected)

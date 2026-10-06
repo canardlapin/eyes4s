@@ -21,11 +21,12 @@ import cats.effect.unsafe.implicits.global
 import eyes4s.studio.app.plot.*
 import eyes4s.studio.app.tokens.{Colour, Theme, ThemedToken, Tokens}
 import eyes4s.studio.app.{AppEffect, AppModel, HoverAt, Intent}
-import eyes4s.studio.core.backend.RunId
+import eyes4s.studio.core.backend.{ReportRole, RunId}
 import eyes4s.studio.core.document.ReportingId
 import eyes4s.studio.core.fixture.{FakeStudyBackend, MockStudy, StoryMoment, StoryMoments}
 import eyes4s.studio.core.selection.{StudioRef, ViewId}
 import eyes4s.studio.desktop.StudioStyles
+import eyes4s.studio.desktop.journey.StoredQueryExpectations
 import eyes4s.studio.desktop.harness.{FxStage, StageSize, StudioFxSuite, StudioTheme}
 import eyes4s.studio.desktop.runtime.{EffectPerformer, StudioRuntime}
 import eyes4s.studio.desktop.typography.StudioFonts
@@ -276,12 +277,17 @@ class S45dPlotFxSuite extends StudioFxSuite:
 
       // Each group mean sits at log10 σ and fixture.json's D.
       profile.groups.foreach { g =>
-        val ds =
-          right(fixtureSummary.hcursor.get[Vector[Double]](s"grand_D_by_scale_${g.name}"))
+        val ds = (0 until 4).toVector.map(scale =>
+          StoredQueryExpectations.grand(
+            ReportRole.Difference,
+            scale,
+            Some(eyes4s.studio.core.backend.Response(g.name))
+          )
+        )
         g.points.zip(ds).foreach { (p, d) =>
           val at = placed(t, p.ref)
           assertEqualsDouble(at.x, math.log10(p.sigma.degrees), 1e-9)
-          assertEqualsDouble(at.y, d, 1e-6)
+          assertEqualsDouble(at.y, d, StoredQueryExpectations.Precision)
         }
       }
       // On the canvas, the protocol's doublings (0.5, 1, 2, 4°) are evenly spaced.
@@ -296,20 +302,20 @@ class S45dPlotFxSuite extends StudioFxSuite:
       participants.foreach { p =>
         val id     = right(p.hcursor.get[String]("id"))
         val series = profile.participants.find(_.name == id).getOrElse(fail(id))
-        val ds     = right(p.hcursor.downField("all").get[Vector[Double]]("D_by_scale"))
-        val plot   = runOnFx(w.twin.plot).getOrElse(fail("no plot"))
-        val mark   = plot.markOf(series.points.head.ref).getOrElse(fail(id))
-        assertEquals(mark.refs, series.points.map(_.ref))
-        assertEquals(
-          mark.rows.map(_.marking),
-          series.points
-            .zip(ds)
-            .map((pt, d) =>
-              RowMarking.Placed(
-                eyes4s.studio.viz.plot.DataPoint(math.log10(pt.sigma.degrees), d)
-              )
-            )
+        val ds     = (0 until 4).toVector.map(scale =>
+          StoredQueryExpectations.mean(id, ReportRole.Difference, scale)
         )
+        val plot = runOnFx(w.twin.plot).getOrElse(fail("no plot"))
+        val mark = plot.markOf(series.points.head.ref).getOrElse(fail(id))
+        assertEquals(mark.refs, series.points.map(_.ref))
+        assertEquals(mark.rows.size, ds.size)
+        mark.rows.zip(series.points).zip(ds).foreach { case ((row, pt), d) =>
+          row.marking match
+            case RowMarking.Placed(at) =>
+              assertEqualsDouble(at.x, math.log10(pt.sigma.degrees), 1e-9)
+              assertEqualsDouble(at.y, d, StoredQueryExpectations.Precision)
+            case other => fail(s"$id should be placed: $other")
+        }
       }
 
       // The solid group's mean is an ink dot.

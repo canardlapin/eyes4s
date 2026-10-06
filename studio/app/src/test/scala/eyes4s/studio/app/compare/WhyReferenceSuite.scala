@@ -691,6 +691,23 @@ class WhyReferenceSuite extends munit.FunSuite:
     )
   }
 
+  test("a report from another scale supplies no focused query range") {
+    withSession(s =>
+      (for
+        r <- read(s)
+        spec = t2Compare.document.reporting.find(_.id == reporting).getOrElse(fail("no report"))
+        report <- s.report(run7, spec, 0).map(right)
+        vm     <- vmAt(s, t2Compare, r, report = Some(report))
+      yield vm).map { vm =>
+        val minimum = vm.reporting.facts
+          .find(_.label == "Min queries per group")
+          .getOrElse(fail("no minimum fact"))
+        assertEquals(minimum.value, "Off")
+        assertEquals(minimum.ref, None)
+      }
+    )
+  }
+
   test("an unevaluated reporting spec has no guessed query range") {
     val vm = WhyReference.vm(
       WhyReference.empty,

@@ -68,8 +68,8 @@ class NavigatorDisplaysSuite extends munit.FunSuite:
     displays.read(dataset, a => answer = Some(a))
     answer.getOrElse(fail("no answer"))
 
-  test("the application's story session serves the golden registry, and only for it") {
-    assertEquals(StudioMain.backend, SessionBackend.Story)
+  test("the application's native example serves the golden registry, and only for it") {
+    assertEquals(StudioMain.backend, SessionBackend.Real)
     assertEquals(StudioMain.displays, NavigatorDisplays.golden)
     assert(
       read(StudioMain.displays, r3).exists {

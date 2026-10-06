@@ -113,6 +113,8 @@ object FixtureDoc:
       case Some(m) => m.group(1).split(',').map(number).toVector
       case None    => throw IllegalStateException(s"FIXTURE.md: no '$name [..]' after '$line'")
 
-  /** `value` as FIXTURE.md writes it: to `places` decimals, half up. */
+  /** Evaluated report display convention: to `places` decimals, half up.
+    * Frozen Python summary metadata has its own historical boundary values.
+    */
   def rounded(value: Double, places: Int = 2): BigDecimal =
     BigDecimal(value).setScale(places, BigDecimal.RoundingMode.HALF_UP)

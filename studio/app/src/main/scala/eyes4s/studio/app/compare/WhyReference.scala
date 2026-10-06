@@ -591,7 +591,10 @@ object WhyReference:
           title._2,
           reportingFacts(
             spec,
-            in.report.filter(v => v.reporting == spec.id && in.summary.forall(_.run == v.run))
+            in.report.filter(v =>
+              v.reporting == spec.id && in.summary.forall(_.run == v.run) &&
+                in.panels.focus.forall(_.scale.value == v.scale)
+            )
           )
         )
 

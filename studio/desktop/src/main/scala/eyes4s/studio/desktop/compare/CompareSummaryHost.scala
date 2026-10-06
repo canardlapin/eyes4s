@@ -274,7 +274,8 @@ final class CompareSummaryHost(
 
   /** What Compare's inspector reads of these views (S8.4). */
   def inspectorInputs: InspectorInputs =
-    val report = state.scale.flatMap(scale => state.reports.get((scale, false))).collect {
+    val scale  = panelState.focus.map(_.scale).orElse(state.shown)
+    val report = scale.flatMap(scale => state.reports.get((scale, false))).collect {
       case ReportAnswer.Answered(view) => view
     }
     InspectorInputs(panelState, shownRun, state.answered, state.reporting, report)

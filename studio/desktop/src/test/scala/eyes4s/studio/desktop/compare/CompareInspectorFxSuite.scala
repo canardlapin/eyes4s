@@ -47,7 +47,8 @@ class CompareInspectorFxSuite extends ShellFxSuite:
       val i = w.compareInspector
       eventually(fx, "the explanation and the ledger") {
         i.explanationText.startsWith("Matched reference:") &&
-        i.facts.exists(_ == ("Not admitted (P17 · Encoding)", "none of 20 trials"))
+        i.facts.exists(_ == ("Not admitted (P17 · Encoding)", "none of 20 trials")) &&
+        i.facts.exists(_ == ("Min queries per group", "Off · n per group 2–17"))
       }
       assertEquals(
         runOnFx(i.explanationText),

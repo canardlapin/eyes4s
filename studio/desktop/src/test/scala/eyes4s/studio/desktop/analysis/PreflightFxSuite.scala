@@ -23,7 +23,7 @@ import eyes4s.studio.app.analysis.DesignIntent
 import eyes4s.studio.core.backend.{Phase, StudioDiagnostic, TrialKey}
 import eyes4s.studio.core.document.Perspective
 import eyes4s.studio.core.fixture.StoryMoment
-import eyes4s.studio.core.preview.{PreviewEvent, PreviewReady}
+import eyes4s.studio.core.preview.{PreviewEvent, PreviewId, PreviewReady}
 import eyes4s.studio.core.selection.StudioRef
 import eyes4s.studio.desktop.StudioWindow
 import eyes4s.studio.desktop.harness.{FxStage, StudioTheme}
@@ -75,13 +75,17 @@ class PreflightFxSuite extends ShellFxSuite:
     val finding: StudyFinding[TrialKey, Unit2D.Px] =
       StudyFinding.MatchedCardinality(p11, refs, MatchedReferences.RequireOne)
     val blocker = StudioDiagnostic.of(Diagnostic.of(finding), identity)
-    // The backend's receipt, with the System board's blocker added.
+    // A fresh backend preview cycle carries the System board's blocker.
     runOnFx {
       val s       = w.resolvedDesign.state
       val r       = s.preview.receipt.get
+      val id      = PreviewId(r.id.value + 1)
       val blocked = PreviewReady
-        .of(r.id, r.stamp, r.candidates, r.counts, r.diagnostics :+ blocker)
+        .of(id, r.stamp, r.candidates, r.counts, r.diagnostics :+ blocker, r.recipe)
         .fold(e => fail(e.toString), identity)
+      w.resolvedDesign.dispatch(
+        DesignIntent.Previewed(s.generation, PreviewEvent.Initial(id, r.stamp, r.candidates))
+      )
       w.resolvedDesign.dispatch(
         DesignIntent.Previewed(s.generation, PreviewEvent.Ready(blocked))
       )

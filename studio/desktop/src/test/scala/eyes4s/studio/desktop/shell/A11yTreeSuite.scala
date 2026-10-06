@@ -18,6 +18,7 @@ package eyes4s.studio.desktop.shell
 
 import eyes4s.studio.core.document.Perspective
 import eyes4s.studio.app.{AppModel, StoryModels}
+import eyes4s.studio.app.figures.{BundleItem, PanelBody}
 import eyes4s.studio.app.tokens.{Theme, ThemedToken, Tokens}
 import eyes4s.studio.app.vm.{A11y, A11yRole}
 import eyes4s.studio.core.fixture.StoryMoment
@@ -148,6 +149,24 @@ class A11yTreeSuite extends ShellFxSuite:
             val cv  = w.summary.contrastVM
             nav.empty.isEmpty && nav.groups.nonEmpty && cv.status.isEmpty &&
             cv.ladder.nonEmpty && cv.inspected.exists(_.next.nonEmpty)
+          }
+        // Native report reads add the plots, generated methods and export
+        // controls. Derive the stops after those reads have been rendered,
+        // so they cannot arrive halfway through the keyboard traversal.
+        if runOnFx(w.runtime.model.perspective) == Perspective.Figures then
+          eventually(fx, "Figures reports, methods and bundle are served") {
+            val view = w.figures.vm
+            view.page.exists(p =>
+              p.panels.count(_.body.isInstanceOf[PanelBody.Plot]) == 2 && p.panels.forall {
+                _.body match
+                  case PanelBody.Waiting(_) | PanelBody.Unavailable(_) => false
+                  case _                                               => true
+              }
+            ) && view.methods.exists(_.text.isRight) && view.bundle.exists { bundle =>
+              Vector(BundleItem.Participants, BundleItem.Methods).forall(item =>
+                bundle.rows.exists(r => r.item == item && r.unavailable.isEmpty)
+              )
+            }
           }
         // A form pane's controls follow its stop (the column-mapping pane).
         val derived =

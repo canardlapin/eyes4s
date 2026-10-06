@@ -21,10 +21,11 @@ import cats.effect.unsafe.implicits.global
 import eyes4s.studio.app.plot.*
 import eyes4s.studio.app.tokens.{Colour, Theme, ThemedToken, Tokens}
 import eyes4s.studio.app.{AppEffect, AppModel, HoverAt, Intent}
-import eyes4s.studio.core.backend.{Response, RunId}
+import eyes4s.studio.core.backend.{ReportRole, Response, RunId}
 import eyes4s.studio.core.document.ReportingId
 import eyes4s.studio.core.fixture.{FakeStudyBackend, MockStudy, StoryMoment}
-import eyes4s.studio.core.selection.{ScaleIndex, StudioRef, ViewId}
+import eyes4s.studio.core.selection.{ReportGroup, ScaleIndex, StudioRef, ViewId}
+import eyes4s.studio.desktop.journey.{FixtureDoc, StoredQueryExpectations}
 import eyes4s.studio.desktop.StudioStyles
 import eyes4s.studio.desktop.harness.{FxStage, StageSize, StudioFxSuite, StudioTheme}
 import eyes4s.studio.desktop.runtime.{EffectPerformer, StudioRuntime}
@@ -261,26 +262,28 @@ class S45cPlotFxSuite extends StudioFxSuite:
         (label, level) <- Vector("Remembered", "Forgotten").zipWithIndex
         p              <- participants
       do
-        val id  = right(p.hcursor.get[String]("id"))
-        val d   = right(p.hcursor.downField(label).get[Double]("D"))
-        val ref = StudioRef.ParticipantSummary(
+        val id = right(p.hcursor.get[String]("id"))
+        val d  =
+          StoredQueryExpectations.mean(id, ReportRole.Difference, 2, Some(Response(label)))
+        val ref = StudioRef.ReportParticipant(
           run,
           reporting,
           means.scale,
-          Some(Response(label)),
+          ReportGroup.Level(Response(label)),
+          ReportRole.Difference,
           id
         )
         val at = placed(t, ref)
         assertEqualsDouble(at.x, level.toDouble, 1e-6)
-        assertEqualsDouble(at.y, d, 1e-6)
+        assertEqualsDouble(at.y, d, StoredQueryExpectations.Precision)
       val grands = means.groups.map(g => g.group.label -> g).toMap
       Vector("Remembered", "Forgotten").zipWithIndex.foreach { (label, level) =>
         val at = placed(t, grands(label).ref)
         assertEqualsDouble(at.x, level.toDouble, 1e-6)
         assertEqualsDouble(
           at.y,
-          right(fixtureSummary.hcursor.get[Double](s"grand_D_$label")),
-          1e-6
+          StoredQueryExpectations.grand(ReportRole.Difference, 2, Some(Response(label))),
+          StoredQueryExpectations.Precision
         )
       }
 
@@ -324,6 +327,25 @@ class S45cPlotFxSuite extends StudioFxSuite:
       assertEquals(w.readout, Some("Group Forgotten, Mean of P17, D +0.32, n 2 queries"))
       fx.snapshot(StudioTheme.Light)
       runOnFx(w.twin.dispose())
+  }
+
+  test("frozen metadata and the four evaluated rounding boundaries stay explicit") {
+    assertEquals(StoredQueryExpectations.legacyParticipants, FixtureDoc.participants)
+    StoredQueryExpectations.boundaries.foreach { (id, group, exact, shown) =>
+      assertEquals(
+        StoredQueryExpectations.decimalMean(id, ReportRole.Difference, 2, Some(group)),
+        exact
+      )
+      val cell = fixtureMeans.cells
+        .find(c => c.participant == id && c.group == group)
+        .getOrElse(fail(s"no $id/$group"))
+      assertEqualsDouble(
+        cell.d.getOrElse(fail("missing boundary mean")),
+        exact.toDouble,
+        StoredQueryExpectations.Precision
+      )
+      assertEquals(FixtureDoc.rounded(cell.d.get), shown)
+    }
   }
 
   // --- Missing is not zero ------------------------------------------------------------
