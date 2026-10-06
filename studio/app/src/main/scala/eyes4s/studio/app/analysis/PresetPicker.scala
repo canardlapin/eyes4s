@@ -99,6 +99,11 @@ object PresetPicker:
     import PresetTextId.*
     val target  = edited(document)
     val current = selected(document)
+    val first   = document.latestAdmitted.filter(_ =>
+      target.isEmpty && document.analyses.isEmpty && document.draft.isEmpty
+    )
+    val withoutRecipe =
+      first.fold(PresetText(NoAnalysis))(data => PresetText(StartInitial, data.id.label))
     val options = offered.map { (p, line) =>
       val title  = PresetText(Title, p.phases.reference.label, p.phases.focal.label)
       val detail = line match
@@ -109,7 +114,7 @@ object PresetPicker:
           )
         case _ => PresetText(line, p.phases.focal.label, p.phases.reference.label)
       val changes = target.map((_, recipe) => p.changes(recipe))
-      val diff    = changes.fold(PresetText(NoAnalysis)) { cs =>
+      val diff    = changes.fold(withoutRecipe) { cs =>
         if cs.isEmpty then PresetText(Unchanged)
         else PresetText(Changes, FreshnessText.describe(cs))
       }
@@ -124,6 +129,6 @@ object PresetPicker:
       )
     }
     val note =
-      if target.isEmpty then Some(PresetText(NoAnalysis))
+      if target.isEmpty then Some(withoutRecipe)
       else Option.when(current.contains(Preset.Custom))(PresetText(CustomNote))
     PresetPickerVM(PresetText(Heading), options, note)

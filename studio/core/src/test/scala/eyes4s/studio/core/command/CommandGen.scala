@@ -22,6 +22,7 @@ import eyes4s.studio.core.assets.{AssetFile, AssetRef}
 import eyes4s.studio.core.backend.*
 import eyes4s.studio.core.document.*
 import eyes4s.studio.core.document.DocumentGen.*
+import eyes4s.studio.core.preset.InitialRecipe
 import org.scalacheck.Gen
 
 import scala.compiletime.constValueTuple
@@ -165,8 +166,22 @@ object CommandGen:
 
   def analysis(d: StudioDocument): Vector[Gen[Command]] =
     val admitted = d.datasets.filter(_.decision.isAdmitted).map(_.id)
-    val current  = d.draftRecipe.orElse(d.latestAnalysis.map(_.recipe))
-    val changes  = current.toVector.map { now =>
+    val initial  =
+      if d.analyses.nonEmpty || d.draft.nonEmpty then Vector.empty
+      else
+        pick(d.datasets.filter(_.decision.isAdmitted)).toVector.map { datasets =>
+          for
+            data   <- datasets
+            preset <- Gen.oneOf(
+              Preset.EncodingRetrieval,
+              Preset.PerceptionImagery,
+              Preset.Recognition
+            )
+            seed = right(InitialRecipe.of(data, preset))
+          yield Command.StartAnalysis(data.id, seed._1, seed._2)
+        }
+    val current = d.draftRecipe.orElse(d.latestAnalysis.map(_.recipe))
+    val changes = current.toVector.map { now =>
       recipe
         .map(RecipeChange.between(now, _))
         .suchThat(_.nonEmpty)
@@ -199,7 +214,7 @@ object CommandGen:
       }
     }
     val rebases = pick(d.datasets.map(_.id)).toVector.map(_.map(Command.RebaseDraft(_)))
-    changes ++ composites ++ reverts ++ starts ++ restores ++ rebases ++ Vector(
+    initial ++ changes ++ composites ++ reverts ++ starts ++ restores ++ rebases ++ Vector(
       Gen.const(Command.DiscardDraft),
       Gen.option(studio).map(Command.SaveAndRun(_))
     )
@@ -376,12 +391,74 @@ object CommandGen:
         walk(result.fold(_ => h, _.history), n - 1, next).map(Trace(h, e, result) +: _)
       }
 
-  /** A generated document and a walk over it. */
+  /** Legal first-study documents: admitted data, no synthetic saved base,
+    * with or without a checked initial working recipe. These enter the same
+    * session walks, inverse laws and interleaving laws as existing studies.
+    */
+  private lazy val firstStudy: Gen[StudioDocument] =
+    for
+      n         <- Gen.choose(1, 3)
+      generated <- Gen.sequence[Vector[DatasetRevisionSpec], DatasetRevisionSpec](
+        (1 to n).map(i => DocumentGen.dataset(i, (1 until i).toVector))
+      )
+      datasets = generated.updated(
+        0,
+        generated.head.copy(decision =
+          AdmissionDecision.Admitted(
+            Some(CoreAdmissionDecision.ReviewExclusions),
+            CoreBinding.unbound,
+            CoreBinding.unbound
+          )
+        )
+      )
+      initial <- Gen.frequency(
+        2 -> Gen.const(None),
+        1 -> (for
+          data   <- Gen.oneOf(datasets.filter(_.decision.isAdmitted))
+          preset <- Gen
+            .oneOf(Preset.EncodingRetrieval, Preset.PerceptionImagery, Preset.Recognition)
+          seed = right(InitialRecipe.of(data, preset))
+        yield Some(right(Draft.initial(AnalysisRevision(1), data.id, seed._1, seed._2))))
+      )
+      view <- presentation(Vector.empty)
+    yield right(
+      StudioDocument.of(
+        datasets,
+        Vector.empty,
+        initial,
+        Vector.empty,
+        Vector.empty,
+        Vector.empty,
+        view,
+        Vector.empty
+      )
+    )
+
+  private def fromDocument(
+      start: Gen[StudioDocument],
+      n: Int,
+      next: History => Gen[JournalEntry]
+  ): Gen[(StudioDocument, Vector[Trace])] =
+    for
+      d <- start
+      t <- walk(History.start(d), n, next)
+    yield (d, t)
+
+  /** The original seeded population, retained for deterministic coverage. */
+  def legacySession(
+      n: Int,
+      next: History => Gen[JournalEntry] = entry
+  ): Gen[(StudioDocument, Vector[Trace])] = fromDocument(document, n, next)
+
+  /** Genuine first-study histories, including initial working origins. */
+  def firstStudySession(
+      n: Int,
+      next: History => Gen[JournalEntry] = entry
+  ): Gen[(StudioDocument, Vector[Trace])] = fromDocument(firstStudy, n, next)
+
+  /** Both populations exercise the same generated command laws. */
   def session(
       n: Int,
       next: History => Gen[JournalEntry] = entry
   ): Gen[(StudioDocument, Vector[Trace])] =
-    for
-      d <- document
-      t <- walk(History.start(d), n, next)
-    yield (d, t)
+    Gen.frequency(3 -> legacySession(n, next), 1 -> firstStudySession(n, next))

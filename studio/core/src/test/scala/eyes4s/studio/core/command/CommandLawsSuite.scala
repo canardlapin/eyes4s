@@ -188,7 +188,9 @@ class CommandLawsSuite extends munit.ScalaCheckSuite:
 
   test("every command case applies in some session, and undo covers every reversible one") {
     val traces = (0L until 1200L).flatMap(seed =>
-      session(16).pureApply(Gen.Parameters.default, Seed(seed))._2
+      Vector(legacySession(16), firstStudySession(16)).flatMap(
+        _.pureApply(Gen.Parameters.default, Seed(seed))._2
+      )
     )
     val applied = traces.collect { case Trace(_, JournalEntry.Apply(c), Right(_)) =>
       c.name
