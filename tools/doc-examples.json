@@ -58,6 +58,7 @@
     "site-docs/templates.md": "executed mdoc site",
     "docs/evidence/documentation-2026-09-19.md": "internal decision or historical evidence",
     "docs/evidence/documentation-2026-10-04.md": "internal decision or historical evidence",
+    "docs/evidence/jackson-remediation-2026-10-05.md": "internal decision or historical evidence",
     "docs/PUBLIC_API_COVERAGE.md": "internal decision or historical evidence",
     "docs/evidence/api-audit-2026-09-19.md": "internal decision or historical evidence",
     "docs/REDUCING_RESULTS.md": "public guide",
@@ -74,6 +75,12 @@
     "docs/formats/eyelink-asc.md": {
       "count": 3,
       "runner": "docconsumer.DocumentationExamplesSuite"
+    },
+    "docs/RESULT_EXPORTS.md": {
+      "count": 1,
+      "runner": "isolated consumer",
+      "suite": "example.ArrowArtifactJvmSuite",
+      "reason": "The sbt dependency selection matches tools/study-consumer/build.sbt; its JVM test exercises packaged Arrow IPC and schema JSON with the selected patched Jackson dependencies. This is build configuration, not a verbatim Scala application example."
     }
   },
   "linked_sources": {
