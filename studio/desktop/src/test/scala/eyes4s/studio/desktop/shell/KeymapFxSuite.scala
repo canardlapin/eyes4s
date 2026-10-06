@@ -16,7 +16,7 @@
 
 package eyes4s.studio.desktop.shell
 
-import eyes4s.studio.app.{AppModel, Intent, StoryModels}
+import eyes4s.studio.app.{AppModel, Intent, PlatformDialog, StoryModels}
 import eyes4s.studio.app.keys.{CommandRegistry, Key, KeyChord, Modifier}
 import eyes4s.studio.app.layout.{PaneId as StudioPaneId, StudioLayouts}
 import eyes4s.studio.core.document.Perspective
@@ -24,7 +24,7 @@ import eyes4s.studio.desktop.StudioWindow
 import eyes4s.studio.desktop.harness.{FxStage, Modifiers}
 import javafx.event.Event
 import javafx.scene.control.{ContextMenu, SeparatorMenuItem}
-import javafx.scene.input.{ContextMenuEvent, KeyCode}
+import javafx.scene.input.{ContextMenuEvent, KeyCode, KeyEvent}
 
 import java.nio.charset.StandardCharsets.UTF_8
 import java.nio.file.{Files, Path, Paths}
@@ -68,7 +68,7 @@ class KeymapFxSuite extends ShellFxSuite:
       val w     = boot(fx, StoryModels.t2Compare)
       val menus = runOnFx(w.shell.menus)
       assertEquals(
-        runOnFx(menus.map(_.getText)),
+        runOnFx(menus.map(_.getText.stripPrefix("_"))),
         Vector("File", "Edit", "View", "Go", "Run", "Window", "Help")
       )
       // A submenu (View › Appearance) lists its commands in place.
@@ -264,7 +264,10 @@ class KeymapFxSuite extends ShellFxSuite:
           node.exists(n => runOnFx(fx.scene.getFocusOwner eq n)),
           s"focus is not in ${pane.value}"
         )
+        val tabs = group.panes.toVector.map(_.id)
+        val next = tabs((tabs.indexOf(pane) + 1) % tabs.size)
         press(fx, KeyChord.control(Key.Tab))
+        assertEquals(model(w).focusedPane, next, s"Ctrl+Tab from ${pane.value}")
       }
       press(fx, KeyChord.plain(Key.F6))
     }
@@ -364,4 +367,97 @@ class KeymapFxSuite extends ShellFxSuite:
       Files.writeString(file, table, UTF_8): Unit
     assert(Files.exists(file), s"missing $file; run with EYES4S_UPDATE_GOLDENS=1 to write it")
     assertNoDiff(Files.readString(file, UTF_8), table)
+  }
+
+  fxStage.test("every command has a keyboard path through the native or in-window menu bar") {
+    fx =>
+      List("macOS" -> true, "Windows/Linux" -> false).foreach { (platform, native) =>
+        val w = boot(fx, StoryModels.t2Compare, nativeMenu = native)
+        def flat(item: javafx.scene.control.MenuItem): Vector[javafx.scene.control.MenuItem] =
+          item match
+            case menu: javafx.scene.control.Menu => menu.getItems.asScala.toVector.flatMap(flat)
+            case other                           => Vector(other)
+        val items = runOnFx(w.shell.menus.flatMap(_.getItems.asScala).flatMap(flat))
+        CommandRegistry.all.foreach { command =>
+          assertEquals(
+            items.count(_.getId == command.id.value),
+            1,
+            s"$platform: ${command.id.value}"
+          )
+        }
+        if !native then
+          assert(runOnFx(w.shell.menuBar.isVisible && w.shell.menuBar.isManaged))
+          assert(runOnFx(w.shell.menuBar.getBoundsInParent.getHeight > 0))
+          assert(runOnFx(w.shell.menus.forall(_.isMnemonicParsing)))
+        runOnFx(w.close())
+      }
+  }
+
+  /** Send a key into the open popup, as the OS routes it when a menu is open.
+    * The harness's normal robot deliberately targets the main scene.
+    */
+  private def popupKey(fx: FxStage, code: KeyCode): Unit =
+    runOnFx {
+      val popup = javafx.stage.Window.getWindows.asScala
+        .collectFirst {
+          case c: ContextMenu if c.isShowing => c
+        }
+        .getOrElse(fail("no menu popup"))
+      val target = popup.getSkin.getNode
+      Event.fireEvent(
+        target,
+        KeyEvent(
+          KeyEvent.KEY_PRESSED,
+          KeyEvent.CHAR_UNDEFINED,
+          code.getName,
+          code,
+          false,
+          false,
+          false,
+          false
+        )
+      )
+      Event.fireEvent(
+        target,
+        KeyEvent(
+          KeyEvent.KEY_RELEASED,
+          KeyEvent.CHAR_UNDEFINED,
+          code.getName,
+          code,
+          false,
+          false,
+          false,
+          false
+        )
+      )
+    }
+    fx.awaitLayout()
+
+  fxStage.test("off macOS: F10 and arrows invoke a command with no chord, once") { fx =>
+    val dialogs = Dialogs(None)
+    val w       = boot(fx, StoryModels.t2Compare, dialogs = dialogs, nativeMenu = false)
+    val focus   = runOnFx(fx.scene.getFocusOwner)
+    fx.robot.press(KeyCode.F10)
+    fx.robot.press(KeyCode.LEFT) // File wraps to Help.
+    fx.robot.press(KeyCode.DOWN)
+    assert(runOnFx(w.shell.menus.last.isShowing), "F10 did not enter menu navigation")
+    popupKey(fx, KeyCode.ENTER)
+    assertEquals(dialogs.asked.toVector, Vector(PlatformDialog.About))
+    assertEquals(runOnFx(fx.scene.getFocusOwner), focus)
+  }
+
+  fxStage.test(
+    "off macOS: bare Alt enters the bar; Alt+H opens Help without firing on Alt release"
+  ) { fx =>
+    val dialogs = Dialogs(None)
+    val w       = boot(fx, StoryModels.t2Compare, dialogs = dialogs, nativeMenu = false)
+    fx.robot.press(KeyCode.ALT)
+    fx.robot.press(KeyCode.DOWN)
+    assert(runOnFx(w.shell.menus.head.isShowing), "bare Alt did not enter menu navigation")
+    popupKey(fx, KeyCode.ESCAPE)
+    fx.robot.press(KeyCode.H, Modifiers(alt = true))
+    assert(runOnFx(w.shell.menus.last.isShowing), "Alt+H did not open Help")
+    popupKey(fx, KeyCode.DOWN)
+    popupKey(fx, KeyCode.ENTER)
+    assertEquals(dialogs.asked.toVector, Vector(PlatformDialog.About))
   }

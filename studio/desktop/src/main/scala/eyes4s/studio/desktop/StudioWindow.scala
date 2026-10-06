@@ -411,7 +411,15 @@ object StudioWindow:
         host.reset(p)
         runtime.foreach(r => host.sync(r.model))
       ,
-      host.perform,
+      command =>
+        host.perform(command)
+        // Keyboard/menu commands finish the dock transition here. Publish
+        // its focus before another model update can restore the old pane;
+        // queued gesture reports still reject obsolete focus afterward.
+        host.dock.state.focused
+          .flatMap(host.studioPane)
+          .foreach(p => dispatch(Intent.FocusPane(p)))
+      ,
       f => Platform.runLater(() => f()),
       project,
       clock,

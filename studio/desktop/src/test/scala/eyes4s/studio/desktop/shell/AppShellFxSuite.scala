@@ -139,9 +139,9 @@ class AppShellFxSuite extends ShellFxSuite:
     )
     assert(headers.nonEmpty)
     headers.foreach(h => assertEqualsDouble(h, 28, 1))
-    // The rows fill the 900 px window: nothing else takes height.
+    // The menu bar and shell rows fill the 900 px window.
     val dock = height(w.shell.dockArea)
-    assertEqualsDouble(44 + 32 + 30 + dock + 24, 900, 1)
+    assertEqualsDouble(height(w.shell.menuBar) + 44 + 32 + 30 + dock + 24, 900, 1)
     // The switcher pill: 32 px, radius 7, centred in the bar, clear of its
     // bottom hairline (Main.dc.html).
     val pill                  = w.shell.appBar.perspectives
@@ -339,7 +339,7 @@ class AppShellFxSuite extends ShellFxSuite:
     // View › Reset perspective: the default arrangement, nothing saved.
     val reset: MenuItem = runOnFx(
       b.shell.menus
-        .find(_.getText == "View")
+        .find(_.getText.stripPrefix("_") == "View")
         .flatMap(_.getItems.asScala.find(_.getId == "view.reset-perspective"))
         .getOrElse(fail("View has no Reset perspective"))
     )
