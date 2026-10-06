@@ -245,7 +245,8 @@ final class ExploreTimelineHost(
           twin.show(src, theme)
         case None => twin.clear()
     else if v.source.isDefined && drawn != Some((v.playheadMs, v.brush)) then
-      brush.restore(v.brush)
+      if drawn.exists(_._2 == v.brush) then brush.refresh()
+      else brush.restore(v.brush)
     drawn = Some((v.playheadMs, v.brush))
 
   private def button(intent: () => TimelineIntent): Button =

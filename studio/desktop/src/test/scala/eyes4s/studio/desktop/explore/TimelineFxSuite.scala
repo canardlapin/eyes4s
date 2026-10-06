@@ -19,6 +19,7 @@ package eyes4s.studio.desktop.explore
 import eyes4s.studio.app.StoryModels
 import eyes4s.studio.app.explore.{PlaybackSpeed, TimelineIntent}
 import eyes4s.studio.app.layout.StudioLayouts
+import eyes4s.studio.app.plot.HalfOpenSpan
 import eyes4s.studio.core.document.StudioDocument
 import eyes4s.studio.core.fixture.StoryMoment
 import eyes4s.studio.core.selection.{FixationIndex, StudioRef}
@@ -44,6 +45,14 @@ class TimelineFxSuite extends ShellFxSuite:
   override val munitTimeout: Duration = Duration(120, "s")
 
   private val enc03 = StoryModels.p17enc03
+
+  // JavaFX scene/local pointer conversion uses float coordinates. At this
+  // fixture's 5-second axis and pane width, its roundoff is below 0.001 ms.
+  private val PointerRoundoffMs                                                         = 0.001
+  private def assertSpan(span: Option[HalfOpenSpan], from: Double, until: Double): Unit =
+    val value = span.getOrElse(fail("no brush span"))
+    assertEqualsDouble(value.from, from, PointerRoundoffMs)
+    assertEqualsDouble(value.until, until, PointerRoundoffMs)
 
   private def right[E, A](e: Either[E, A]): A = e.fold(x => fail(x.toString), identity)
 
@@ -89,7 +98,7 @@ class TimelineFxSuite extends ShellFxSuite:
           false,
           false,
           false,
-          kind == MouseEvent.MOUSE_PRESSED,
+          kind == MouseEvent.MOUSE_PRESSED || kind == MouseEvent.MOUSE_DRAGGED,
           false,
           false,
           true,
@@ -149,6 +158,85 @@ class TimelineFxSuite extends ShellFxSuite:
     val after = runOnFx(w.runtime.model.document)
     assertEquals(after, before)
     assertEquals(right(StudioDocument.encode(after)), encoded)
+  }
+
+  fxStage.test("drag motion shades the live span before release without committing selection") {
+    fx =>
+      val (w, t)    = ready(fx)
+      val selection = runOnFx(w.runtime.model.selection)
+      val before    = runOnFx(w.timeline.twin.plotHost.snapshot(null, null))
+      val profile   = runOnFx(w.timeline.twin.plotHost.profile)
+      fireAt(w, t, 1200.0, true, MouseEvent.MOUSE_PRESSED)
+      fireAt(w, t, 2000.0, false, MouseEvent.MOUSE_DRAGGED)
+      fx.awaitLayout()
+      assertSpan(runOnFx(w.timeline.brush.span), 1200.0, 2000.0)
+      assertEquals(runOnFx(w.timeline.timeline.brush), None)
+      assertEquals(runOnFx(w.runtime.model.selection), selection)
+      assert(runOnFx(w.timeline.twin.plotHost.profile.baseDraws) > profile.baseDraws)
+      val after = runOnFx(w.timeline.twin.plotHost.snapshot(null, null))
+      assert(
+        (0 until before.getWidth.toInt).exists { x =>
+          (0 until before.getHeight.toInt).exists(y =>
+            before.getPixelReader.getArgb(x, y) != after.getPixelReader.getArgb(x, y)
+          )
+        },
+        "drag shading must change the drawn pixels before release"
+      )
+      // Reverse the drag, then release: only the final span selects rows.
+      fireAt(w, t, 800.0, false, MouseEvent.MOUSE_DRAGGED)
+      fx.awaitLayout()
+      assertSpan(runOnFx(w.timeline.brush.span), 800.0, 1200.0)
+      assertEquals(runOnFx(w.runtime.model.selection), selection)
+      fireAt(w, t, 2800.0, false, MouseEvent.MOUSE_RELEASED)
+      eventually(fx, "final brush")(w.timeline.timeline.brush.isDefined)
+      assertSpan(runOnFx(w.timeline.timeline.brush), 1200.0, 2800.0)
+      assertEquals(runOnFx(w.runtime.model.selection.selected), (3 to 7).toVector.map(ref))
+  }
+
+  fxStage.test("playhead updates retain a live drag until release") { fx =>
+    val (w, t) = ready(fx)
+    runOnFx(w.timeline.dispatch(TimelineIntent.Play))
+    fireAt(w, t, 1200.0, true, MouseEvent.MOUSE_PRESSED)
+    fireAt(w, t, 2000.0, false, MouseEvent.MOUSE_DRAGGED)
+    runOnFx(w.timeline.dispatch(TimelineIntent.Tick(100.0)))
+    assertSpan(runOnFx(w.timeline.brush.span), 1200.0, 2000.0)
+    assertEquals(runOnFx(w.timeline.timeline.brush), None)
+    runOnFx(w.timeline.dispatch(TimelineIntent.Pause))
+    fireAt(w, t, 2800.0, false, MouseEvent.MOUSE_RELEASED)
+    eventually(fx, "brush while playing")(w.timeline.timeline.brush.isDefined)
+    assertSpan(runOnFx(w.timeline.timeline.brush), 1200.0, 2800.0)
+  }
+
+  fxStage.test("Escape or restoring the view cancels a live drag before its release") { fx =>
+    val (w, t) = ready(fx)
+    fireAt(w, t, 1200.0, true, MouseEvent.MOUSE_PRESSED)
+    fireAt(w, t, 2000.0, false, MouseEvent.MOUSE_DRAGGED)
+    assert(runOnFx(w.timeline.brush.span.isDefined))
+    runOnFx {
+      Event.fireEvent(
+        w.timeline.twin.plotHost,
+        javafx.scene.input.KeyEvent(
+          javafx.scene.input.KeyEvent.KEY_PRESSED,
+          "",
+          "",
+          javafx.scene.input.KeyCode.ESCAPE,
+          false,
+          false,
+          false,
+          false
+        )
+      )
+    }
+    assertEquals(runOnFx(w.timeline.brush.span), None)
+    fireAt(w, t, 2800.0, false, MouseEvent.MOUSE_RELEASED)
+    assertEquals(runOnFx(w.timeline.timeline.brush), None)
+    assertEquals(runOnFx(w.runtime.model.selection.selected), Vector.empty)
+    fireAt(w, t, 1200.0, true, MouseEvent.MOUSE_PRESSED)
+    fireAt(w, t, 2000.0, false, MouseEvent.MOUSE_DRAGGED)
+    runOnFx(w.timeline.brush.restore(None))
+    fireAt(w, t, 2800.0, false, MouseEvent.MOUSE_RELEASED)
+    assertEquals(runOnFx(w.timeline.brush.span), None)
+    assertEquals(runOnFx(w.timeline.timeline.brush), None)
   }
 
   fxStage.test("play, step, speed and pause act on the playhead") { fx =>
