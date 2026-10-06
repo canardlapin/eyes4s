@@ -34,7 +34,7 @@ enum MessageId derives CanEqual:
   case JobFailed, JobFailedWith, JobCancelled, JobCancelledAt, JobReady
   case StageEstimating, StageComparing, StageReducing, StageContrasting
   case DiagnosticsOne, DiagnosticsMany
-  case Cancel
+  case Cancel, JobCancelAccessible
 
   // --- Context strip ---------------------------------------------------------
   case Back, Forward
@@ -129,6 +129,7 @@ object Catalogue:
       case DiagnosticsOne       => "{0} diagnostic"
       case DiagnosticsMany      => "{0} diagnostics"
       case Cancel               => "Cancel"
+      case JobCancelAccessible  => "Cancel Run {0} (job {1})"
 
       case Back                     => "Back ({0})"
       case Forward                  => "Forward ({0})"

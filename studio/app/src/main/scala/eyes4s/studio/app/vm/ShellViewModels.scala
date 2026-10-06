@@ -24,7 +24,13 @@ import eyes4s.studio.core.document.Perspective
 // computes nothing. Pane view-models arrive with their screens.
 
 /** A button: its words, whether it is enabled, and what it dispatches. */
-final case class ActionVM(label: String, enabled: Boolean, intent: Intent) derives CanEqual
+final case class ActionVM(
+    label: String,
+    enabled: Boolean,
+    intent: Intent,
+    accessibleName: Option[String] = None
+) derives CanEqual:
+  def accessible: String = accessibleName.getOrElse(label)
 
 /** The native window: its title and the macOS document-edited marker. */
 final case class WindowVM(title: String, edited: Boolean) derives CanEqual

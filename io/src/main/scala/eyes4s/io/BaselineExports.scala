@@ -657,6 +657,159 @@ object ResultExports:
       )
     yield Vector(coefficients, diagnostics, cells)
 
+  /** An intercept-free NNLS fit: coefficients are non-negative scale factors,
+    * fitted cells are intensities, and residuals are observed minus fitted.
+    */
+  def nnls[U <: Unit2D: UnitLabel](
+      fit: SurfaceNnlsFit[U]
+  ): Either[ResultExportError, Vector[ResultTable]] =
+    constrained(
+      fit.coefficients,
+      None,
+      fit.fitted,
+      fit.residual,
+      fit.diagnostics,
+      "surface-nnls-lawson-hanson",
+      "response mass / predictor mass",
+      (ResultFamily.NnlsCoefficients, ResultFamily.NnlsDiagnostics, ResultFamily.NnlsCells)
+    )
+
+  /** A simplex fit: predictor weights plus the optional uniform background
+    * sum to one; fitted cells are probability mass, not unconstrained intensity.
+    */
+  def mixture[U <: Unit2D: UnitLabel](
+      fit: SurfaceMixtureFit[U]
+  ): Either[ResultExportError, Vector[ResultTable]] =
+    constrained(
+      fit.weights,
+      fit.background,
+      fit.fitted,
+      fit.residual,
+      fit.diagnostics,
+      "surface-simplex-active-set",
+      "unitless",
+      (ResultFamily.MixtureWeights, ResultFamily.MixtureDiagnostics, ResultFamily.MixtureCells)
+    )
+
+  private def constrained[U <: Unit2D: UnitLabel](
+      weights: Vector[(PredictorId, Double)],
+      background: Option[Double],
+      fitted: Surface[U],
+      residual: Signed[U],
+      diagnostics: ConstrainedDiagnostics,
+      method: String,
+      weightUnit: String,
+      families: (ResultFamily, ResultFamily, ResultFamily)
+  ): Either[ResultExportError, Vector[ResultTable]] =
+    val grid    = fitted.grid
+    val context = Json.obj(
+      "method"        -> Json.fromString(method),
+      "provenance"    -> ExportMetadata.provenance(fitted.provenance),
+      "frame"         -> ExportMetadata.frame(grid.frame),
+      "grid_id"       -> Json.fromString(grid.id.name),
+      "nx"            -> Json.fromInt(grid.nx),
+      "ny"            -> Json.fromInt(grid.ny),
+      "residual_sign" -> Json.fromString("observed minus fitted"),
+      "r_squared"     -> Json.fromString(diagnostics.rSquaredReference match
+        case RSquaredReference.Centered   => "centered"
+        case RSquaredReference.Uncentered => "uncentered"),
+      "scaled_diagonal_ratio" -> Json.fromString(
+        "ratio of largest to smallest scaled R diagonal; not a condition number"
+      ),
+      "dual_violation" -> Json.fromString("largest relative KKT violation at termination")
+    )
+    for
+      coefficients <- ResultTable.of(
+        families._1,
+        Vector(text("predictor"), text("role"), number("value", weightUnit, false)),
+        weights.map((key, value) => Vector(T(key.value), T("predictor"), N(value))) ++
+          background.toVector.map(value =>
+            Vector(T("background"), T("uniform-background"), N(value))
+          ),
+        context
+      )
+      evidence <- ResultTable.of(
+        families._2,
+        Vector(
+          integer("rank"),
+          integer("cells"),
+          integer("active"),
+          integer("iterations"),
+          number("dual_violation", "unitless", false),
+          number("residual_sum_squares", "squared response mass", false),
+          number("r_squared", "unitless"),
+          text("r_squared_status"),
+          number("scaled_diagonal_ratio", "unitless", false)
+        ),
+        Vector(
+          Vector(
+            I(diagnostics.rank.toLong),
+            I(fitted.size.toLong),
+            I(diagnostics.active.toLong),
+            I(diagnostics.iterations.toLong),
+            N(diagnostics.dualViolation),
+            N(diagnostics.residualSumSquares),
+            diagnostics.rSquared.fold[ResultCell](M)(N.apply),
+            T(if diagnostics.rSquared.isDefined then "defined"
+            else "zero reference response variation"),
+            N(diagnostics.scaledDiagonalRatio)
+          )
+        ),
+        context
+      )
+      cells <- ResultTable.of(
+        families._3,
+        Vector(
+          integer("cell_index"),
+          integer("column_index"),
+          integer("row_index"),
+          number("fitted", "response mass/cell", false),
+          number("residual", "response mass/cell", false)
+        ),
+        Vector.tabulate(fitted.size)(i =>
+          Vector(
+            I(i.toLong),
+            I((i % grid.nx).toLong),
+            I((i / grid.nx).toLong),
+            N(fitted.values(i)),
+            N(residual.values(i))
+          )
+        ),
+        context
+      )
+    yield Vector(coefficients, evidence, cells)
+
+  /** A partial association is a correlation of residuals, never a beta
+    * coefficient. A constant residual gives a missing estimate, not zero.
+    */
+  def partialAssociation[U <: Unit2D](
+      association: PartialAssociation[U]
+  ): Either[ResultExportError, ResultTable] =
+    ResultTable.of(
+      ResultFamily.PartialAssociations,
+      Vector(
+        text("method"),
+        integer("cells"),
+        number("estimate", "unitless"),
+        text("estimate_status")
+      ),
+      Vector(
+        Vector(
+          T(association.method.toString),
+          I(association.cells.toLong),
+          association.estimate.fold[ResultCell](M)(N.apply),
+          T(if association.estimate.isDefined then "defined" else "zero residual variation")
+        )
+      ),
+      Json.obj(
+        "method"     -> Json.fromString("partial-association"),
+        "covariates" -> Json.arr(
+          association.covariates.map(key => Json.fromString(key.value))*
+        ),
+        "provenance" -> ExportMetadata.provenance(association.provenance)
+      )
+    )
+
   /** Existing public CSV builders remain authoritative for study and duration-window rows. */
   def study[K, U <: Unit2D: UnitLabel, P, S, D](
       plan: StudyPlan[K, U, P, S, D],

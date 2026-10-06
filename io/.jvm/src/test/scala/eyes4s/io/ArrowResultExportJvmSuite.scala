@@ -73,6 +73,70 @@ class ArrowResultExportJvmSuite extends munit.CatsEffectSuite:
       }(p => IO.blocking(Files.deleteIfExists(p)).void)
   }
   test(
+    "all constrained-fit and association tables preserve values, nulls and schemas in Arrow IPC"
+  ) {
+    ConstrainedExportFixtures.tables.traverse_ { table =>
+      IO.blocking(Files.createTempFile("eyes4s-constrained-", ".arrow"))
+        .bracket { path =>
+          ArrowResultExport.write[IO](table, path, batchRows = 2).flatMap { result =>
+            assertEquals(result, Right(()))
+            IO.blocking {
+              val allocator = new RootAllocator(64L * 1024 * 1024)
+              try
+                val reader = new ArrowStreamReader(Files.newInputStream(path), allocator)
+                try
+                  val root = reader.getVectorSchemaRoot
+                  assertEquals(
+                    root.getSchema.getCustomMetadata.get("eyes4s.result_metadata"),
+                    table.metadata.circe.noSpaces
+                  )
+                  assertEquals(
+                    root.getSchema.getFields.asScala.map(_.getName).toVector,
+                    Vector("table_sha256") ++ table.columns.map(_.name)
+                  )
+                  table.columns.foreach { column =>
+                    assertEquals(
+                      root.getSchema.findField(column.name).isNullable,
+                      column.nullable
+                    )
+                  }
+                  var seen = 0
+                  while reader.loadNextBatch() do
+                    for i <- 0 until root.getRowCount do
+                      assertEquals(
+                        root.getVector("table_sha256").getObject(i).toString,
+                        table.identity.hex
+                      )
+                      table.columns.zip(table.rows(seen)).foreach { (column, cell) =>
+                        val vector = root.getVector(column.name)
+                        cell match
+                          case ResultCell.Missing       => assert(vector.isNull(i), column.name)
+                          case ResultCell.Number(value) =>
+                            assertEquals(
+                              vector.getObject(i).asInstanceOf[java.lang.Number].doubleValue,
+                              value
+                            )
+                          case ResultCell.Integer(value) =>
+                            assertEquals(
+                              vector.getObject(i).asInstanceOf[java.lang.Number].longValue,
+                              value
+                            )
+                          case ResultCell.Text(value) =>
+                            assertEquals(vector.getObject(i).toString, value)
+                          case other => fail(s"unexpected $other")
+                      }
+                      seen += 1
+                  assertEquals(seen, table.rows.size)
+                finally reader.close()
+                assertEquals(allocator.getAllocatedMemory, 0L)
+              finally allocator.close()
+            }
+          }
+        }(p => IO.blocking(Files.deleteIfExists(p)).void)
+    }
+  }
+
+  test(
     "a failed output closes the writer, stream and all vectors while preserving borrowed allocator ownership"
   ) {
     val allocator = new RootAllocator(64L * 1024 * 1024)

@@ -130,7 +130,8 @@ object Shell:
       ActionVM(
         messages(Cancel),
         CommandRegistry.cancelRun.intent(m).contains(Intent.CancelJob(job.id)),
-        Intent.CancelJob(job.id)
+        Intent.CancelJob(job.id),
+        Some(messages(JobCancelAccessible, job.run.number.toString, job.id.number.toString))
       )
 
     private def failedTitle(job: ExecutionJob, diagnostics: Int): String =

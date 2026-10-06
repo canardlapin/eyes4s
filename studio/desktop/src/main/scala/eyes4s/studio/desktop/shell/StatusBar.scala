@@ -77,7 +77,7 @@ final class StatusBar(dispatch: Intent => Unit):
     vm.job.action match
       case Some(a) =>
         jobAction.setText(a.label)
-        jobAction.setAccessibleText(a.label)
+        jobAction.setAccessibleText(a.accessible)
         jobAction.setDisable(!a.enabled)
         jobAction.setOnAction(_ => dispatch(a.intent))
         show(jobAction, true)

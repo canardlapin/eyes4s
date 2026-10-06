@@ -99,7 +99,7 @@ object A11y:
   def pane(decl: PaneDecl): FocusStop = FocusStop(role(decl.kind), decl.accessibleName)
 
   private def button(a: ActionVM): Option[FocusStop] =
-    Option.when(a.enabled)(FocusStop(A11yRole.Button, a.label))
+    Option.when(a.enabled)(FocusStop(A11yRole.Button, a.accessible))
 
   /** Every stop Tab visits, top to bottom: app bar (the project chip, the
     * selected perspective, the jobs chip when it opens something, Cancel),

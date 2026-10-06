@@ -265,6 +265,11 @@ it with `Diagnose.reportedFormField`.
 
 ## Stored forms
 
+Construct a standalone view with `FormView.of(definition, fields)`, which refuses
+repeated field ids as `DescriptorError.DuplicateFields`. The plain final class has
+no public constructor, `copy` or product mirror. Descriptor `formView` accessors
+remain total because their parameter sets already establish distinct ids.
+
 A host stores a form's fields and the values a user typed with two codecs in
 `eyes4s-codec`, cross-built and pinned on the JVM and Scala.js:
 

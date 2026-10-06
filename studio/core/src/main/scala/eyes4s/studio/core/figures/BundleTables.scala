@@ -289,6 +289,36 @@ object BundleTables:
   /** A pair's design as every table labels it. */
   val Designs: Vector[String] = Vector("matched", "control")
 
+  private def windowColumns(role: String): Vector[ResultColumn] =
+    Vector(
+      optionalCount(
+        s"${role}_outside_window_count",
+        s"$role fixations outside the analysis window"
+      ),
+      optionalCount(
+        s"${role}_outside_window_of",
+        s"total $role fixations in the served trial tally"
+      ),
+      ResultColumn(
+        s"${role}_outside_window_share",
+        ResultColumnType.Float64,
+        true,
+        "unitless",
+        s"$role outside-window fixation duration / total fixation duration; " +
+          "missing when no tally is served or total fixation duration is zero"
+      )
+    )
+
+  private def windowCells(window: Option[TrialTally]): Vector[ResultCell] =
+    window.fold(Vector(M, M, M)) { served =>
+      val tally = served.tally
+      Vector(
+        I(tally.outsideWindow.toLong),
+        I(tally.total.toLong),
+        tally.outsideWindowShare.fold[ResultCell](M)(N.apply)
+      )
+    }
+
   private val pairColumns: Vector[ResultColumn] =
     Vector(
       count("scale", "estimation scale index, from 0"),
@@ -303,7 +333,8 @@ object BundleTables:
       count("reference_occurrence", "reference occurrence"),
       text("reference_item", "reference item")
     ) ++ score("score", "the pair's similarity", PairAbsences) ++
-      Vector(note("reason", "why the pair has no score, as eyes4s reported it"))
+      Vector(note("reason", "why the pair has no score, as eyes4s reported it")) ++
+      windowColumns("query") ++ windowColumns("reference")
 
   /** comparisons.csv: every pair row of the run at every scale (eyes4s
     * `PairScores`, read through protocol 1.9). `pairs` holds each scale's
@@ -348,7 +379,8 @@ object BundleTables:
               T(row.reference.trial),
               I(row.reference.occurrence.toLong),
               T(row.referenceItem)
-            ) ++ scored(value, absence) :+ reason.fold(M)(T(_))
+            ) ++ scored(value, absence) ++ Vector(reason.fold(M)(T(_))) ++
+              windowCells(row.queryWindow) ++ windowCells(row.referenceWindow)
           ResultTable
             .of(ResultFamily.PairScores, pairColumns, cells, context(source, summary.scales))
             .left

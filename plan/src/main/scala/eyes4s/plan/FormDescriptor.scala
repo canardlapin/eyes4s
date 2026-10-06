@@ -499,9 +499,39 @@ object FieldView:
       default: Option[DefaultValue] = None
   ): FieldView = new FieldView(FieldId.literal(id), 1, meaning, kind, default)
 
-/** The fields a method or recipe presents, under its definition. */
-final case class FormView(definition: DefinitionId, fields: Vector[FieldView]) derives CanEqual:
+/** The ordered fields a method or recipe presents, under its definition.
+  * Field ids are distinct, including when no fields are presented.
+  */
+final class FormView private (val definition: DefinitionId, val fields: Vector[FieldView])
+    derives CanEqual:
   def field(id: FieldId): Option[FieldView] = fields.find(_.id == id)
+
+  private def parts                       = (definition, fields)
+  override def equals(that: Any): Boolean = that match
+    case view: FormView => parts == view.parts
+    case _              => false
+  override def hashCode: Int    = parts.hashCode
+  override def toString: String = s"FormView$parts"
+
+object FormView:
+  /** Refuses repeated ids before a view can be inspected or encoded. */
+  def of(
+      definition: DefinitionId,
+      fields: Vector[FieldView]
+  ): Either[DescriptorError, FormView] =
+    val ids = fields.map(_.id.value)
+    Either.cond(
+      ids.distinct.size == ids.size,
+      new FormView(definition, fields),
+      DescriptorError.DuplicateFields(ids)
+    )
+
+  /** ParameterSet has already established distinct field ids. */
+  private[plan] def fromParameters[P](
+      definition: DefinitionId,
+      parameters: ParameterSet[P]
+  ): FormView =
+    new FormView(definition, parameters.views)
 
 /** The shape a parse stage expected. */
 enum Expected derives CanEqual:

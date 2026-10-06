@@ -192,7 +192,9 @@ class StatusBarFxSuite extends ShellFxSuite:
       runOnFx(fx.scene.getFocusOwner eq bar.jobAction),
       s"Cancel lost focus to ${runOnFx(fx.scene.getFocusOwner)}"
     )
-    assertEquals(runOnFx(bar.jobAction.getAccessibleText), "Cancel")
+    val name = s"Cancel Run 8 (job ${StoryMoments.run8Job.number})"
+    assertEquals(runOnFx(bar.jobAction.getAccessibleText), name)
+    assertEquals(runOnFx(w.shell.appBar.jobs.cancel.getAccessibleText), name)
     fx.robot.click(runOnFx(bar.jobAction))
     eventually(fx, "the cancelled job")(
       !w.shell.appBar.jobs.text.startsWith("Run 8 · Comparing")

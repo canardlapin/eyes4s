@@ -363,7 +363,7 @@ final class MethodDescriptor[P, S, D] private (
     val execution: ExecutionCapability
 ):
   /** The method's parameters as a host sees them. */
-  def formView: FormView = FormView(id, parameters.views)
+  def formView: FormView = FormView.fromParameters(id, parameters)
 
   def verify(
       p: P,
@@ -405,7 +405,7 @@ final class RecordingMethodDescriptor[P](
     val card: AlgorithmCard
 ):
   /** The detector's parameters as a host sees them. */
-  def formView: FormView = FormView(id, parameters.views)
+  def formView: FormView = FormView.fromParameters(id, parameters)
 
   val execution: ExecutionCapability = ExecutionCapability.SynchronousWholeOperation
 

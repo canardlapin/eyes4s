@@ -117,6 +117,20 @@ covers a constant map and a map that the covariates explain, which have no parti
 and would otherwise return a correlation of rounding noise. The result has no p-value,
 records its method and covariate keys, and carries provenance over every input.
 
+## Result exports
+
+`ResultExports.nnls(fit)` and `ResultExports.mixture(fit)` in `eyes4s-io` return
+coefficient/weight, diagnostic and cell tables. NNLS coefficients are scale factors;
+mixture weights include the uniform background under a separate role when fitted.
+The cell tables retain grid indices, fitted values and observed-minus-fitted residuals.
+Diagnostics include the active set, iteration count, KKT violation and the named
+R-squared convention. Frame, grid and provenance accompany the tables.
+
+`ResultExports.partialAssociation(result)` returns the method, cell count and estimate,
+with covariate identities and provenance. An undefined association is a missing cell,
+with an explicit status. These tables use the shared CSV transport and JVM Arrow IPC
+writer; they are result views rather than replayable recipes.
+
 ## Persistence scope
 
 OLS, NNLS and simplex decompositions and partial association are direct computations over maps

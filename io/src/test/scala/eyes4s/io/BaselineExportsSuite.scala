@@ -39,7 +39,10 @@ class BaselineExportsSuite extends munit.FunSuite:
     "compiled public workflows cover every frozen result family and emit portable typed CSV"
   ) {
     // The report families have their own workflow (the report test below).
-    assertEquals(tables.values.map(_.family).toSet, ResultFamily.values.toSet -- reportFamilies)
+    assertEquals(
+      tables.values.map(_.family).toSet ++ ConstrainedExportFixtures.tables.map(_.family),
+      ResultFamily.values.toSet -- reportFamilies
+    )
     tables.foreach { (name, t) =>
       val parsed = get(Rfc4180.decode(t.csv.encode))
       assertEquals(parsed.head, t.csv.header); assertEquals(parsed.tail, t.csv.rows)
