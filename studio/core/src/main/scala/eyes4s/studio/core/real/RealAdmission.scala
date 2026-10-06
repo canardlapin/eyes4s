@@ -24,6 +24,7 @@ import eyes4s.plan.{
   AdmissionLedger,
   AppliedCorrection,
   CorrectionScope,
+  Disposition as CoreRecordDisposition,
   TrialIdentity,
   TrialOccurrence,
   AttributeColumn,
@@ -32,6 +33,7 @@ import eyes4s.plan.{
   InventoryTrial,
   OutsideFrame as CoreOutsideFrame,
   SampleCountRule,
+  StudyInput,
   TrialDisposition as CoreDisposition,
   TrialKey as CoreKey,
   WindowSummary,
@@ -45,22 +47,9 @@ import eyes4s.studio.core.document.{
   CorrectionTarget,
   DatasetRevisionSpec,
   InventoryMapping,
+  SemanticIdentity,
   TimeUnit
 }
-
-/** One dataset revision as eyes4s admitted it, converted for the protocol:
-  * the admission summary and every inventory trial's ledger entry, in
-  * inventory order. Built once per dataset revision.
-  */
-final case class AdmittedDataset(
-    summary: AdmissionSummary,
-    ledger: Vector[LedgerEntry],
-    screen: Frame[Unit2D.Px],
-    input: eyes4s.plan.StudyInput[CoreKey, Unit2D.Px],
-    evidence: AdmissionLedger[CoreKey],
-    spec: DatasetRevisionSpec,
-    fixations: String
-)
 
 /** The admission of a [[DatasetRevisionSpec]] through eyes4s-io (S3.7 slice 1).
   *
@@ -75,6 +64,80 @@ final case class AdmittedDataset(
   * not eyes4s's.
   */
 object RealAdmission:
+
+  /** Read context from already-verified input and ledger. Current host image
+    * availability and verbatim source text are deliberately not reconstructed.
+    */
+  private[real] def archived(
+      spec: DatasetRevisionSpec,
+      input: StudyInput[CoreKey, Unit2D.Px],
+      evidence: AdmissionLedger[CoreKey]
+  ): Either[BackendError, RealDatasetContext] =
+    def refused(field: String, reason: String) =
+      BackendError.RegistryRefused(
+        DiagnosticLocus.Dataset(spec.id),
+        s"Archived $field: $reason"
+      )
+    for
+      declared <- Frame
+        .screen("screen", spec.geometry.screen.width, spec.geometry.screen.height)
+        .leftMap(e => refused("screen", e.message))
+      common <- Agreement
+        .allFrames(input.trials.rows.map(_.value.frame))
+        .leftMap(e => refused("input frames", e.message))
+      screen <- common.toRight(
+        refused("input frames", "No admitted trial supplies a native source frame.")
+      )
+      _         <- Agreement.frames(screen, declared).leftMap(e => refused("screen", e.message))
+      inventory <- evidence.inventory.toRight(
+        refused("inventory", "The stored admission ledger has no inventory.")
+      )
+      fixations <- spec.sources.fixations.toRight(
+        refused("fixations source", "The current declaration names no fixation source.")
+      )
+      _ <- Either.cond(
+        fixations.path.value == evidence.source.label,
+        (),
+        refused(
+          "fixations source path",
+          s"Declared ${fixations.path.value}, stored ${evidence.source.label}."
+        )
+      )
+      trials <- spec.sources.trials.toRight(
+        refused("inventory source", "The current declaration names no inventory source.")
+      )
+      _ <- Either.cond(
+        trials.path.value == inventory.source.label,
+        (),
+        refused(
+          "inventory source path",
+          s"Declared ${trials.path.value}, stored ${inventory.source.label}."
+        )
+      )
+      source = SemanticIdentity.fromCore(evidence.source.records)
+      _ <- spec.sources.fixations
+        .flatMap(_.semantic)
+        .traverse_(recorded =>
+          Either.cond(
+            recorded == source,
+            (),
+            refused("source identity", s"Declared ${recorded.value}, stored ${source.value}.")
+          )
+        )
+      owners = evidence.records.collect {
+        case eyes4s.plan.SourceRecord(record, CoreRecordDisposition.Admitted(key, _)) =>
+          record -> identityOf(key)
+      }.toMap
+      outside = evidence.outsideFrame
+        .flatMap(o =>
+          owners
+            .get(o.record)
+            .map(identity => identity -> OutsideFrame(o.record, o.x, o.y, o.frame.name))
+        )
+        .groupMap(_._1)(_._2)
+      response = spec.inventory.flatMap(_.column(ColumnRole.Response)).map(_.value)
+      entries <- inventory.trials.traverse(entry(_, response, outside))
+    yield new ArchivedDatasetContext(entries, screen, input, evidence, spec)
 
   /** Admit `spec`'s sources: `fixations` and `trials` are their exact text.
     *

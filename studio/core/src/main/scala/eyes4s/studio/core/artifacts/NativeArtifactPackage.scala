@@ -33,7 +33,8 @@ final class NativeArtifactPackage private (
     val manifestAddress: ByteDigest,
     val budget: NativeArtifactBudget,
     val files: Vector[(ArtifactName, Vector[Byte])],
-    val archive: RunArchive
+    val archive: RunArchive,
+    private[core] val checked: CheckedNativeSnapshot
 ):
   def bytes(name: ArtifactName): Option[Vector[Byte]] = files.collectFirst {
     case (`name`, data) => data
@@ -276,4 +277,12 @@ object NativeArtifactPackage:
           files.map((name, data) => name -> IArray.from(data))
         )
         .leftMap(e => NativeArtifactError.Package(facts.run, "archive", e.message))
-    yield new NativeArtifactPackage(facts, graph, address, budget, files, archive)
+    yield new NativeArtifactPackage(
+      facts,
+      graph,
+      address,
+      budget,
+      files,
+      archive,
+      new CheckedNativeSnapshot(nativePlan, expected._2, input, ledger, nativeResult)
+    )

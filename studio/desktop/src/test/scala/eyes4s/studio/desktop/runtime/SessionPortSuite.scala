@@ -24,6 +24,19 @@ import eyes4s.studio.core.bundle.*
 import eyes4s.studio.core.document.{DocumentSamples, Source, SourcePath, SourceRole, Theme}
 import eyes4s.studio.core.command.{Command, JournalEntry}
 import eyes4s.studio.core.session.ProjectSession
+import eyes4s.studio.core.artifacts.{
+  NativeArtifactBudget,
+  NativeArtifactError,
+  NativeArtifactPackage
+}
+import eyes4s.studio.core.backend.{AnalysisRevision, DatasetRevision, RunId}
+import eyes4s.studio.core.document.{
+  CoreBinding,
+  ResultArchiveArtifact,
+  RunLifecycle,
+  RunRef,
+  StudioDocument
+}
 
 import java.util.concurrent.{CompletableFuture, Executors, TimeUnit}
 import scala.collection.mutable
@@ -66,8 +79,10 @@ class SessionPortSuite extends munit.FunSuite:
 
   private val stores = mutable.ArrayBuffer.empty[RaisingReads]
 
-  private def session(raising: Boolean = true): ProjectSession[IO] =
-    val doc   = DocumentSamples.t1
+  private def session(
+      raising: Boolean = true,
+      doc: StudioDocument = DocumentSamples.t1
+  ): ProjectSession[IO] =
     val owner = LockOwner.of("SessionPortSuite").fold(e => fail(e.toString), identity)
     (for
       store   <- InMemoryProjectStore.create[IO]
@@ -118,6 +133,65 @@ class SessionPortSuite extends munit.FunSuite:
       port.journal(eyes4s.studio.core.command.JournalEntry.Undo)
       assertEquals(reported.toVector, Vector("journal Undo after the project port closed"))
     finally s.close.unsafeRunSync(): Unit
+  }
+
+  test(
+    "an unsupported archive port recognizes legacy only and refuses an unreadable bound archive"
+  ) {
+    val port = new ProjectPort:
+      def journal(entry: JournalEntry): Unit                                               = ()
+      def save(done: Either[String, eyes4s.studio.core.session.SaveReceipt] => Unit): Unit =
+        done(Left("not saved"))
+      def close(): Unit = ()
+    val legacy = RunRef(
+      RunId(7),
+      AnalysisRevision(4),
+      DatasetRevision(3),
+      RunLifecycle.Completed,
+      CoreBinding.unbound
+    )
+    assertEquals(port.nativeArtifactSource.load(legacy).unsafeRunSync(), Right(None))
+    val digest =
+      eyes4s.codec.CanonicalDigest.parse[ResultArchiveArtifact]("ab" * 32).toOption.get
+    val answer = port.nativeArtifactSource
+      .load(legacy.copy(archive = CoreBinding.Bound(digest)))
+      .unsafeRunSync()
+    assert(answer.left.toOption.exists(_.message.contains("cannot inspect native run files")))
+  }
+
+  test(
+    "queued archive reads distinguish absence, raised storage faults, and closed-port refusal"
+  ) {
+    val doc  = DocumentSamples.t2
+    val ref  = doc.run(RunId(7)).get
+    val s    = session(raising = false, doc = doc)
+    val port = SessionPort.start(s, _ => ())
+    def read(): Either[NativeArtifactError, Option[NativeArtifactPackage]] =
+      val done = CompletableFuture[Either[NativeArtifactError, Option[NativeArtifactPackage]]]()
+      port.loadNativeArtifacts(
+        ref,
+        NativeArtifactBudget.Default,
+        answer => done.complete(answer): Unit
+      )
+      done.get(5, TimeUnit.SECONDS)
+    try
+      assertEquals(read(), Right(None))
+      stores.last.raising = true
+      assertEquals(
+        read().left.toOption,
+        Some(
+          NativeArtifactError.Defect(
+            ref.id,
+            "load native artifacts",
+            classOf[RuntimeException].getName
+          )
+        )
+      )
+      port.close()
+      assert(read().left.toOption.exists(_.message.contains("the project is closed")))
+    finally
+      port.close()
+      s.close.unsafeRunSync(): Unit
   }
 
   test(

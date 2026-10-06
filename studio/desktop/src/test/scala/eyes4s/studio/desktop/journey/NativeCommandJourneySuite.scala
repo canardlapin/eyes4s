@@ -16,12 +16,14 @@
 
 package eyes4s.studio.desktop.journey
 
-import cats.effect.{IO, Resource}
+import cats.effect.{IO, Ref, Resource}
 import eyes4s.plan.{ResultInspection, ResultRef}
 import eyes4s.studio.core.backend.*
 import eyes4s.studio.core.artifacts.NativeBindingFacts
 import eyes4s.studio.core.bundle.*
-import eyes4s.studio.core.document.{CoreBinding, SemanticIdentity}
+import eyes4s.studio.core.document.{CoreBinding, DatasetRevisionSpec, SemanticIdentity, Source}
+import eyes4s.studio.core.assets.AssetRegistry
+import eyes4s.studio.core.real.DatasetSources
 import eyes4s.studio.core.fixture.GoldenScores
 import eyes4s.studio.core.headless.NativeHeadlessSession
 import eyes4s.studio.core.session.ProjectSession
@@ -76,18 +78,62 @@ class NativeCommandJourneySuite extends munit.CatsEffectSuite:
                 assertEquals(entry.sha256, eyes4s.codec.ByteDigest.sha256(bytes))
                 assertEquals(entry.length, bytes.length.toLong)
               }
+              sourceReads <- Ref.of[IO, Int](0)
+              host    = DatasetSourceHosts.stored(port)
+              counted = new DatasetSources[IO]:
+                def bytes(dataset: DatasetRevisionSpec, source: Source) =
+                  sourceReads.update(_ + 1).flatMap(_ => host.bytes(dataset, source))
+                def assets(dataset: DatasetRevisionSpec): IO[Option[AssetRegistry]] =
+                  sourceReads.update(_ + 1).flatMap(_ => host.assets(dataset))
               output <- Resource
                 .make(
                   future(
                     NativeHeadlessSession
-                      .open(reopened.document, DatasetSourceHosts.stored(port))
+                      .open(
+                        reopened.document,
+                        counted,
+                        artifactSource = Some(port.nativeArtifactSource)
+                      )
                   )
                 )(session => future(session.close))
                 .use { session =>
-                  NativeCommandJourneyReadback.capture(
-                    reopened.document,
-                    NativeCommandJourneyReadback.Port.from(session)
-                  )
+                  for
+                    summary <- future(session.result(run)).map(get)
+                    reads   <- sourceReads.get
+                    _ = assertEquals(summary, first.summary)
+                    _ = assertEquals(
+                      reads,
+                      0,
+                      "stored scientific reads must not admit raw sources"
+                    )
+                    captured <- NativeCommandJourneyReadback.capture(
+                      reopened.document,
+                      NativeCommandJourneyReadback.Port.from(session)
+                    )
+                    jobs <- session.rawBackend.jobs
+                    _ = assertEquals(jobs, Vector.empty[JobStatus])
+                    _ = assert(
+                      captured.provenance.trail.contains(
+                        ProvenanceStep.Restored(stored.manifestAddress)
+                      )
+                    )
+                  yield captured
+                }
+              _ <- Resource
+                .make(future(NativeHeadlessSession.open(reopened.document, host)))(session =>
+                  future(session.close)
+                )
+                .use { session =>
+                  for
+                    summary    <- future(session.result(run)).map(get)
+                    provenance <- future(
+                      session.provenance(run, ResultAddress.ContrastRow(scale, focus))
+                    ).map(get)
+                    _ = assertEquals(summary, first.summary)
+                    _ = assert(
+                      provenance.trail.exists(_.isInstanceOf[ProvenanceStep.Recomputed])
+                    )
+                  yield ()
                 }
             yield output
           }
@@ -106,7 +152,8 @@ class NativeCommandJourneySuite extends munit.CatsEffectSuite:
         assertEquals(second.report, first.report)
         assertEquals(second.source, first.source)
         assertEquals(second.exports, first.exports)
-        assert(second.provenance.trail.exists(_.isInstanceOf[ProvenanceStep.Recomputed]))
+        assert(second.provenance.trail.exists(_.isInstanceOf[ProvenanceStep.Restored]))
+        assert(!second.provenance.trail.exists(_.isInstanceOf[ProvenanceStep.Recomputed]))
         assert(written.isRight, written)
         second.exports.foreach { (name, bytes) =>
           assertEquals(

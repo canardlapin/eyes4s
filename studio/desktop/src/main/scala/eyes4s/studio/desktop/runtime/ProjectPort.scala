@@ -20,11 +20,13 @@ import cats.effect.IO
 import cats.effect.unsafe.IORuntime
 import eyes4s.studio.core.bundle.{Inclusion, InputEntry, InputKind, InputStatus, SharingOptions}
 import eyes4s.studio.core.command.JournalEntry
-import eyes4s.studio.core.document.Source
+import eyes4s.studio.core.document.{CoreBinding, RunRef, Source}
 import eyes4s.studio.core.artifacts.{
+  NativeArtifactBudget,
   NativeArtifactError,
   NativeArtifactPackage,
   NativeArtifactSink,
+  NativeArtifactSource,
   NativeBindingFacts
 }
 import eyes4s.studio.core.session.{ProjectSession, SaveReceipt}
@@ -66,6 +68,40 @@ trait ProjectPort:
       ): IO[Either[NativeArtifactError, NativeBindingFacts]] =
         IO.async_[Either[NativeArtifactError, NativeBindingFacts]](done =>
           port.storeNativeArtifacts(packageValue, answer => done(Right(answer)))
+        )
+
+  /** Absence is a value only when the host can establish it. An unsupported
+    * port can recognize an unbound legacy run, but cannot inspect a bound
+    * archive; native read failures must never silently become recomputation
+    * (bead q-native-archive-readback).
+    */
+  def loadNativeArtifacts(
+      ref: RunRef,
+      @unused budget: NativeArtifactBudget,
+      done: Either[NativeArtifactError, Option[NativeArtifactPackage]] => Unit
+  ): Unit = ref.archive match
+    case CoreBinding.Unbound() => done(Right(None))
+    case CoreBinding.Bound(_)  =>
+      done(
+        Left(
+          NativeArtifactError.persistence(
+            ref.id,
+            "load native artifacts",
+            "this project cannot inspect native run files"
+          )
+        )
+      )
+
+  /** Reads share the same FIFO acceptance and closure boundary as storage. */
+  final def nativeArtifactSource: NativeArtifactSource[IO] =
+    val port = this
+    new NativeArtifactSource[IO]:
+      def load(
+          ref: RunRef,
+          budget: NativeArtifactBudget
+      ): IO[Either[NativeArtifactError, Option[NativeArtifactPackage]]] =
+        IO.async_[Either[NativeArtifactError, Option[NativeArtifactPackage]]](done =>
+          port.loadNativeArtifacts(ref, budget, answer => done(Right(answer)))
         )
 
   /** Copy an imported file's bytes into the project, listed at the next save
@@ -280,6 +316,28 @@ final class SessionPort private (
       },
       s"$operation of ${run.label}",
       Some(reason => done(Left(NativeArtifactError.persistence(run, operation, reason))))
+    )
+
+  override def loadNativeArtifacts(
+      ref: RunRef,
+      budget: NativeArtifactBudget,
+      done: Either[NativeArtifactError, Option[NativeArtifactPackage]] => Unit
+  ): Unit =
+    val operation = "load native artifacts"
+    enqueue(
+      session.findNativeArtifacts(ref, budget).attempt.flatMap { answer =>
+        IO(
+          done(
+            answer.left
+              .map(failure =>
+                NativeArtifactError.Defect(ref.id, operation, failure.getClass.getName)
+              )
+              .flatten
+          )
+        )
+      },
+      s"$operation of ${ref.id.label}",
+      Some(reason => done(Left(NativeArtifactError.persistence(ref.id, operation, reason))))
     )
 
   /** Finish the queued operations, then stop. The session stays open. */

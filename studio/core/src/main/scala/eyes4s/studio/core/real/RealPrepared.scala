@@ -33,7 +33,7 @@ final class RealPrepared private (
     val recipe: Recipe,
     val plan: RealPlan.Plan,
     val method: ComparisonMethod,
-    val admitted: AdmittedDataset,
+    val admitted: RealDatasetContext,
     val work: RealPlan.Work,
     val preview: StudyPreview[CoreKey, Unit2D.Px],
     val counts: StudyCounts[CoreKey],
@@ -93,7 +93,7 @@ object RealPrepared:
   ): Either[BackendError, RealPrepared] =
     configured.work.preview(counts).leftMap(refused(configured.revision, "preview")).map {
       preview =>
-        new RealPrepared(
+        complete(
           configured.revision,
           configured.dataset,
           configured.recipe,
@@ -102,22 +102,60 @@ object RealPrepared:
           configured.admitted,
           configured.work,
           preview,
-          counts,
-          PreviewSummary(
-            configured.revision,
-            configured.dataset,
-            configured.recipe.scales.values.map(s => Degrees.label(s.degrees)),
-            focalTrials = preview.focalKeys.size,
-            referenceTrials = preview.referenceKeys.size,
-            requestedQueries =
-              configured.admitted.ledger.count(_.trial.phase == configured.recipe.phases.focal),
-            eligibleQueries = counts.eligibleQueries.toInt,
-            candidatePairsPerScale = preview.matched.candidatePairCount,
-            pairRowsPerScale = counts.pairRowsPerScale,
-            pairRows = counts.totalPairs
-          )
+          counts
         )
     }
+
+  /** Prepare only the stored input's schedules/read context, never its estimates
+    * or pair scores (bead q-native-archive-readback).
+    */
+  private[real] def archived(
+      revision: AnalysisRevision,
+      dataset: DatasetRevision,
+      recipe: Recipe,
+      plan: RealPlan.Plan,
+      method: ComparisonMethod,
+      context: RealDatasetContext
+  ): Either[BackendError, RealPrepared] =
+    for
+      work    <- plan.prepare(context.input).leftMap(refused(revision, "archived preparation"))
+      counts  <- work.counts.leftMap(refused(revision, "archived counts"))
+      preview <- work.preview(counts).leftMap(refused(revision, "archived preview"))
+    yield complete(revision, dataset, recipe, plan, method, context, work, preview, counts)
+
+  private def complete(
+      revision: AnalysisRevision,
+      dataset: DatasetRevision,
+      recipe: Recipe,
+      plan: RealPlan.Plan,
+      method: ComparisonMethod,
+      context: RealDatasetContext,
+      work: RealPlan.Work,
+      preview: StudyPreview[CoreKey, Unit2D.Px],
+      counts: StudyCounts[CoreKey]
+  ): RealPrepared = new RealPrepared(
+    revision,
+    dataset,
+    recipe,
+    plan,
+    method,
+    context,
+    work,
+    preview,
+    counts,
+    PreviewSummary(
+      revision,
+      dataset,
+      recipe.scales.values.map(s => Degrees.label(s.degrees)),
+      focalTrials = preview.focalKeys.size,
+      referenceTrials = preview.referenceKeys.size,
+      requestedQueries = context.ledger.count(_.trial.phase == recipe.phases.focal),
+      eligibleQueries = counts.eligibleQueries.toInt,
+      candidatePairsPerScale = preview.matched.candidatePairCount,
+      pairRowsPerScale = counts.pairRowsPerScale,
+      pairRows = counts.totalPairs
+    )
+  )
 
   /** A scale's label as the recipe states it: `0.5°`, `1°`. */
   private object Degrees:

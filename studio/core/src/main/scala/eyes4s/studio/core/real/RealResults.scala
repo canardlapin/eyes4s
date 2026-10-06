@@ -459,6 +459,8 @@ final class RealResults private (
         case RealStudyBackend.RunOrigin.Computed            => Vector.empty
         case RealStudyBackend.RunOrigin.Recomputed(version) =>
           Vector(ProvenanceStep.Recomputed(version))
+        case RealStudyBackend.RunOrigin.Restored(manifest) =>
+          Vector(ProvenanceStep.Restored(manifest))
       tail.map(t =>
         Provenance(
           address,

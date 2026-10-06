@@ -153,6 +153,10 @@ enum BackendError derives CanEqual, Codec.AsObject:
   /** A reporting spec eyes4s could not evaluate over `run` (protocol 1.11). */
   case ReportRefused(run: RunId, refusal: ReportRefusal)
 
+  /** A local archive read is active; it is not a scientific execution job. */
+  case ResultRestoring(run: RunId)
+  case ArchiveRestoreRefused(run: RunId, cause: StudioDiagnostic)
+
   def code: String = this match
     case ReportRefused(_, _)                => "studio-backend.report-refused"
     case ContentMismatch(_, _, _)           => "studio-backend.content-mismatch"
@@ -180,6 +184,8 @@ enum BackendError derives CanEqual, Codec.AsObject:
     case NoResult(_, _)                     => "studio-backend.no-result"
     case ResultPending(_, _)                => "studio-backend.result-pending"
     case ResultDeferred(_, _)               => "studio-backend.result-deferred"
+    case ResultRestoring(_)                 => "studio-backend.result-restoring"
+    case ArchiveRestoreRefused(_, _)        => "studio-backend.archive-restore-refused"
     case ResultRecomputationCancelled(_, _) => "studio-backend.result-recomputation-cancelled"
     case ResultRecomputationFailed(_, _, _) => "studio-backend.result-recomputation-failed"
     case ResultReadClosed(_, _)             => "studio-backend.result-read-closed"
@@ -226,6 +232,9 @@ enum BackendError derives CanEqual, Codec.AsObject:
     case ResultPending(r, job)  => s"${r.label} is being recomputed by job ${job.number}."
     case ResultDeferred(r, job) =>
       s"${r.label} cannot be recomputed until active job ${job.number} settles."
+    case ResultRestoring(r) => s"${r.label} is restoring its verified stored artifacts."
+    case ArchiveRestoreRefused(r, cause) =>
+      s"Cannot restore the stored artifacts of ${r.label}: ${cause.message}"
     case ResultRecomputationCancelled(r, job) =>
       s"Recomputation of ${r.label} by job ${job.number} was cancelled."
     case ResultRecomputationFailed(r, job, diagnostics) =>
@@ -280,6 +289,9 @@ enum BackendError derives CanEqual, Codec.AsObject:
       case NoResult(r, _)               => Vector(DiagnosticLocus.Run(r))
       case ResultPending(r, job)  => Vector(DiagnosticLocus.Run(r), DiagnosticLocus.Job(job))
       case ResultDeferred(r, job) => Vector(DiagnosticLocus.Run(r), DiagnosticLocus.Job(job))
+      case ResultRestoring(r)     => Vector(DiagnosticLocus.Run(r))
+      case ArchiveRestoreRefused(r, cause) =>
+        (Vector(DiagnosticLocus.Run(r)) ++ cause.subject).distinct
       case ResultRecomputationCancelled(r, job) =>
         Vector(DiagnosticLocus.Run(r), DiagnosticLocus.Job(job))
       case ResultRecomputationFailed(r, job, diagnostics) =>
@@ -306,6 +318,8 @@ enum BackendError derives CanEqual, Codec.AsObject:
         (Vector(DiagnosticLocus.Run(r), DiagnosticLocus.Address(a)) ++ cause.subject).distinct
       case ReportRefused(r, _) => Vector(DiagnosticLocus.Run(r))
     this match
+      case ArchiveRestoreRefused(_, cause) =>
+        cause.copy(code = code, subject = subject, message = message)
       case NoDensity(_, _, cause) =>
         cause.copy(code = code, subject = subject, message = message)
       case _ =>
@@ -602,10 +616,12 @@ object ProtocolVersion:
     * at one scale. 1.15 adds bound reports, pair-row window tallies and typed
     * identity refusals. 1.16 makes matched references optional, removes
     * numerical means from ResultSummary, persists explicit report contrasts,
-    * and adds native preview work progress and recipe-bound readiness.
+    * and adds native preview work progress and recipe-bound readiness. 1.17
+    * adds archive restoration pending/refusal values and verified stored
+    * manifest provenance (bead q-native-archive-readback).
     * Deploy client and backend together.
     */
-  val Current: ProtocolVersion = ProtocolVersion(1, 16)
+  val Current: ProtocolVersion = ProtocolVersion(1, 17)
 
 /** A client's correlation id; every frame answering a request carries it. */
 final case class RequestId(value: Long) derives CanEqual

@@ -23,9 +23,15 @@ import cats.syntax.all.*
 import eyes4s.codec.{ByteDigest, CanonicalDigest}
 import eyes4s.fs2.{Execution, RunOutcome, StudyExecution}
 import eyes4s.studio.core.assets.AssetRegistry
+import eyes4s.studio.core.artifacts.{
+  NativeArtifactSource,
+  NativeArtifactBudget,
+  NativeArtifactError
+}
 import eyes4s.studio.core.backend.*
 import eyes4s.studio.core.document.{
   DatasetRevisionSpec,
+  AnalysisRevisionSpec,
   CoreBinding,
   RunLifecycle,
   RunRef,
@@ -79,6 +85,8 @@ final class RealStudyBackend[F[_]] private (
       eyes4s.studio.core.document.ReportingSpec
     ],
     navigationState: Ref[F, RealNavigator.State],
+    archiveSource: Option[NativeArtifactSource[F]],
+    restoring: Ref[F, Map[RunId, Deferred[F, Either[BackendError, Boolean]]]],
     supervisor: Supervisor[F],
     synchronization: Mutex[F]
 )(using F: Concurrent[F])
@@ -696,8 +704,123 @@ final class RealStudyBackend[F[_]] private (
                 s.jobs.find(j => j.run == run && finished(j.state).isEmpty) match
                   case Some(active) => F.pure(Left(BackendError.ResultPending(run, active.job)))
                   case None         =>
-                    prepare(ref.analysis).flatMap(work => recompute(ref, work))
+                    restoreOrRecompute(ref)
       }
+    )
+
+  /** Coalesced host archive lookup (bead q-native-archive-readback). Only local read wrappers wait on its
+    * signal; no scientific execution job represents storage access.
+    */
+  private def restoreOrRecompute(ref: RunRef): F[Either[BackendError, RealRun]] =
+    archiveSource match
+      case None         => prepare(ref.analysis).flatMap(work => recompute(ref, work))
+      case Some(source) =>
+        Deferred[F, Either[BackendError, Boolean]].flatMap { candidate =>
+          F.uncancelable { poll =>
+            restoring
+              .modify { current =>
+                current.get(ref.id) match
+                  case Some(signal) => current                            -> (signal, false)
+                  case None         => current.updated(ref.id, candidate) -> (candidate, true)
+              }
+              .flatMap { (signal, owner) =>
+                val launch = if owner then
+                  supervisor
+                    .supervise(restore(ref, source, signal))
+                    .void
+                    .handleErrorWith(_ =>
+                      signal.complete(Left(BackendError.ResultReadClosed(ref.id, None))).void
+                    )
+                else F.unit
+                launch >> poll(signal.tryGet.flatMap {
+                  case None               => F.pure(Left(BackendError.ResultRestoring(ref.id)))
+                  case Some(Left(error))  => F.pure(Left(error))
+                  case Some(Right(true))  => held(ref.id)
+                  case Some(Right(false)) =>
+                    prepare(ref.analysis).flatMap(work => recompute(ref, work))
+                })
+              }
+          }
+        }
+
+  /** Wait only for an already requested archive lookup. Its scientific
+    * result or refusal is retained separately; absence wakes normal reads
+    * to the existing ordinary recomputation path.
+    */
+  def awaitRestore(run: RunId): F[Either[BackendError, Unit]] =
+    restoring.get.flatMap(_.get(run) match
+      case Some(signal) => signal.get.map(_.void)
+      case None         => F.pure(Left(BackendError.Unavailable(DiagnosticLocus.Run(run)))))
+
+  private def restore(
+      ref: RunRef,
+      source: NativeArtifactSource[F],
+      signal: Deferred[F, Either[BackendError, Boolean]]
+  ): F[Unit] =
+    def refused(error: NativeArtifactError): BackendError =
+      BackendError.ArchiveRestoreRefused(ref.id, error.diagnostic)
+    def publish(
+        value: Either[BackendError, Option[RealRun]],
+        expected: Option[(AnalysisRevisionSpec, DatasetRevisionSpec)] = None
+    ): F[Unit] =
+      synchronization.lock.surround {
+        registry.get.flatMap { current =>
+          val checked = value.flatMap { result =>
+            Either.cond(
+              current.documentRuns.get(ref.id).contains(ref) && expected.forall {
+                (revision, dataset) =>
+                  current.document.analysis(revision.id).contains(revision) &&
+                  current.datasets.get(dataset.id).contains(dataset)
+              },
+              result,
+              BackendError.RegistryRefused(
+                DiagnosticLocus.Run(ref.id),
+                "The saved run declaration changed while its archive was being restored."
+              )
+            )
+          }
+          val retainPrepared = checked match
+            case Right(Some(done)) => prepared.update(_.updated(ref.analysis, done.prepared))
+            case _                 => F.unit
+          retainPrepared >> state.update { state =>
+            checked match
+              case Right(Some(done)) =>
+                state.copy(results = state.results.updated(ref.id, done))
+              case Left(error) => state.refuse(ref.id, error)
+              case Right(None) => state
+          } >> signal.complete(checked.map(_.nonEmpty)).void
+        }
+      }
+    val read = source.load(ref, NativeArtifactBudget.Default).flatMap {
+      case Left(error)           => publish(Left(refused(error)))
+      case Right(None)           => publish(Right(None))
+      case Right(Some(artifact)) =>
+        registry.get.flatMap { current =>
+          val declarations = for
+            revision <- current.document
+              .analysis(ref.analysis)
+              .toRight(BackendError.UnknownRevision(ref.analysis, current.knownRevisions))
+            dataset <- current.datasets
+              .get(ref.dataset)
+              .toRight(BackendError.UnknownDataset(ref.dataset, current.knownDatasets))
+          yield (revision, dataset)
+          val restored = declarations.flatMap((revision, dataset) =>
+            NativeArtifactRestore.of(artifact, ref, revision, dataset).map(Some(_))
+          )
+          publish(restored, declarations.toOption)
+        }
+    }
+    F.guarantee(
+      read.handleErrorWith(error =>
+        publish(
+          Left(
+            refused(
+              NativeArtifactError.Defect(ref.id, "restore archive", error.getClass.getName)
+            )
+          )
+        )
+      ),
+      signal.complete(Left(BackendError.ResultReadClosed(ref.id, None))).void
     )
 
   /** Preparation can overlap another read's complete recomputation. Recheck
@@ -860,7 +983,40 @@ final class RealStudyBackend[F[_]] private (
       from: Int,
       count: Int
   ): F[Either[BackendError, SourceRecordPage]] =
-    views(revision).map(_.flatMap(_.sourceRecords(from, count)))
+    views(revision).flatMap {
+      case Left(error)                                           => F.pure(Left(error))
+      case Right(view) if view.work.admitted.sourceText.nonEmpty =>
+        F.pure(view.sourceRecords(from, count))
+      case Right(view) =>
+        val dataset = view.work.admitted.spec
+        dataset.sources.fixations match
+          case None =>
+            F.pure(Left(BackendError.Unavailable(DiagnosticLocus.Field("fixations source"))))
+          case Some(source) =>
+            sources.bytes(dataset, source).map {
+              case None =>
+                Left(
+                  BackendError.Unavailable(
+                    DiagnosticLocus.Artifact(
+                      s"${source.path.value}: the host holds no exact source bytes"
+                    )
+                  )
+                )
+              case Some(bytes) =>
+                val read = ByteDigest.sha256(bytes)
+                if read != source.bytes then
+                  Left(
+                    BackendError
+                      .SourceDigestMismatch(dataset.id, source.path, source.bytes, read)
+                  )
+                else
+                  view.sourceRecords(
+                    new String(IArray.genericWrapArray(bytes).toArray, StandardCharsets.UTF_8),
+                    from,
+                    count
+                  )
+            }
+    }
 
 object RealStudyBackend:
 
@@ -871,7 +1027,8 @@ object RealStudyBackend:
     */
   def resource[F[_]: Concurrent](
       document: StudioDocument,
-      sources: DatasetSources[F]
+      sources: DatasetSources[F],
+      archiveSource: Option[NativeArtifactSource[F]] = None
   ): Resource[F, RealStudyBackend[F]] =
     Supervisor[F](await = false).evalMap(supervisor =>
       (
@@ -883,6 +1040,7 @@ object RealStudyBackend:
         RealPreview.create[F],
         RealNavigator.empty[F],
         Ref.of[F, RealRegistry](RealRegistry.of(document)),
+        Ref.of[F, Map[RunId, Deferred[F, Either[BackendError, Boolean]]]](Map.empty),
         Mutex[F]
       ).mapN {
         (
@@ -894,6 +1052,7 @@ object RealStudyBackend:
             previews,
             navigation,
             registry,
+            restoring,
             synchronization
         ) =>
           new RealStudyBackend(
@@ -907,6 +1066,8 @@ object RealStudyBackend:
             trialViews,
             document.reporting.map(spec => spec.id -> spec).toMap,
             navigation,
+            archiveSource,
+            restoring,
             supervisor,
             synchronization
           )
@@ -1023,6 +1184,7 @@ object RealStudyBackend:
   enum RunOrigin derives CanEqual:
     case Computed
     case Recomputed(eyes4sVersion: String)
+    case Restored(manifest: ByteDigest)
 
   /** A run's eyes4s result with the prepared study that produced it. */
   final case class RealRun(

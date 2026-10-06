@@ -362,5 +362,13 @@ object ProtocolPins:
     "total.Exact" ->
       """{"Exact":{"units":1}}""",
     "total.Unknown" ->
-      """{"Unknown":{}}"""
+      """{"Unknown":{}}""",
+    "envelope.restored" ->
+      """{"version":{"major":1,"minor":17},"id":42,"body":{"Response":{"response":{"ProvenanceOf":{"provenance":{"address":{"PairRow":{"scale":2,"design":{"Control":{}},"focal":{"participant":"P17","phase":"Retrieval","trial":"ret_07","occurrence":1},"reference":{"participant":"P17","phase":"Encoding","trial":"enc_03","occurrence":1}}},"trail":[{"Run":{"run":8}},{"Restored":{"manifest":"abababababababababababababababababababababababababababababababab"}}]}}}}}}""",
+    "error.ArchiveRestoreRefused" ->
+      """{"ArchiveRestoreRefused":{"run":8,"cause":{"code":"study-failure.off-window","level":{"Error":{}},"origin":{"EyesCore":{}},"subject":[{"Trial":{"key":{"participant":"P17","phase":"Retrieval","trial":"ret_07","occurrence":1}}}],"message":"empty map","affected":[{"participant":"P17","phase":"Retrieval","trial":"ret_07","occurrence":1},{"participant":"P17","phase":"Encoding","trial":"enc_03","occurrence":1}],"category":"DataDependent","remedy":"ReviewAnalysisWindow"}}}""",
+    "error.ResultRestoring" ->
+      """{"ResultRestoring":{"run":8}}""",
+    "provenance.Restored" ->
+      """{"Restored":{"manifest":"abababababababababababababababababababababababababababababababab"}}"""
   )

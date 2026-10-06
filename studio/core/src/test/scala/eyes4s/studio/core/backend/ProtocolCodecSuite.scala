@@ -41,7 +41,7 @@ class ProtocolCodecSuite extends munit.FunSuite:
     assertEquals(responses.map(_.ordinal), responses.indices.toVector)
     assertEquals(responses.size, 22)
     assertEquals(errors.map(_.ordinal), errors.indices.toVector)
-    assertEquals(errors.size, 36)
+    assertEquals(errors.size, 38)
     assertEquals(causes.map(_.ordinal), causes.indices.toVector)
     assertEquals(causes.size, 14)
     assertEquals(loci.map(_.ordinal), loci.indices.toVector)
@@ -65,6 +65,37 @@ class ProtocolCodecSuite extends munit.FunSuite:
     drift.foreach((n, j) => println(s"PIN\t$n\t$j"))
     assertEquals(drift.map(_._1), Vector.empty)
     assertEquals(ProtocolPins.pins.keySet, actual.keySet)
+  }
+
+  test("1.17 restored provenance and refusals require exact peers before body decoding") {
+    val previous   = ProtocolVersion(1, 16)
+    val provenance = Provenance(
+      address,
+      Vector(ProvenanceStep.Restored(eyes4s.codec.ByteDigest.parse("ab" * 32).toOption.get))
+    )
+    val responses = Vector[BackendResponse](
+      BackendResponse.ProvenanceOf(provenance),
+      BackendResponse.Refused(BackendError.ResultRestoring(run)),
+      BackendResponse.Refused(BackendError.ArchiveRestoreRefused(run, diagnostic))
+    )
+    responses.foreach { response =>
+      val frame = Envelope(RequestId(17), ServerFrame.Response(response): ServerFrame)
+      val wire  = frame.asJson
+      assertEquals(WireFormat.parseCurrent[ServerFrame](wire.noSpaces), Right(frame))
+      val relabelled = wire.deepMerge(Json.obj("version" -> previous.asJson))
+      assertEquals(
+        WireFormat.parseCurrent[ServerFrame](relabelled.noSpaces),
+        Left(TransportError.Incompatible(previous, ProtocolVersion.Current))
+      )
+      val unreadable = relabelled.deepMerge(Json.obj("body" -> Json.fromString("not a frame")))
+      assertEquals(
+        WireFormat.parseCurrent[ServerFrame](unreadable.noSpaces),
+        Left(TransportError.Incompatible(previous, ProtocolVersion.Current))
+      )
+    }
+    val invalid =
+      Json.obj("Restored" -> Json.obj("manifest" -> Json.fromString("invalid digest")))
+    assert(invalid.as[ProvenanceStep].isLeft, invalid.noSpaces)
   }
 
   test("source digest mismatches refuse malformed digest bytes on decode") {
@@ -320,7 +351,7 @@ class ProtocolCodecSuite extends munit.FunSuite:
   }
 
   test("protocol 1.2 Counting requires coordinated peers, not a relabelled 1.1 frame") {
-    assertEquals(ProtocolVersion.Current, ProtocolVersion(1, 16))
+    assertEquals(ProtocolVersion.Current, ProtocolVersion(1, 17))
     val previous = Envelope(RequestId(41), ServerFrame.Event(JobEvent.Advanced(progress)))
     assertEquals(legacyMeterTotal(previous.asJson), Right(Protocol11Total.Exact(8512L)))
     val counting = progress.asJson

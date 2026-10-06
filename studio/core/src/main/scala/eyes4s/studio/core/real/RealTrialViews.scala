@@ -159,12 +159,38 @@ final class RealTrialViews private (
 
   /** The fixation file's text, checked by eyes4s-io against the ledger's source. */
   private lazy val text: Either[BackendError, FixationSourceText] =
+    work.admitted.sourceText
+      .toRight(
+        study("source text")(
+          s"${work.revision.label}/${work.dataset.label} has stored parsed records but no verbatim fixation source text."
+        )
+      )
+      .flatMap(checkedText)
+
+  private def checkedText(rawText: String): Either[BackendError, FixationSourceText] =
     FixationSourceText
-      .of(work.admitted.fixations, work.admitted.evidence.source)
+      .of(rawText, work.admitted.evidence.source)
       .leftMap(e => study("source text")(e.message))
 
   /** Records `from` to `from + count - 1` of the dataset's fixation file. */
   def sourceRecords(from: Int, count: Int): Either[BackendError, SourceRecordPage] =
+    sourceRecordsWith(from, count, text)
+
+  /** An archive lacks verbatim CSV. The host may supply its byte-verified
+    * original only for this request; the native ledger checks parsed identity.
+    */
+  def sourceRecords(
+      rawText: String,
+      from: Int,
+      count: Int
+  ): Either[BackendError, SourceRecordPage] =
+    sourceRecordsWith(from, count, checkedText(rawText))
+
+  private def sourceRecordsWith(
+      from: Int,
+      count: Int,
+      sourceText: => Either[BackendError, FixationSourceText]
+  ): Either[BackendError, SourceRecordPage] =
     val listing                = provenance.records
     def name(role: ColumnRole) = RealAdmission.column(spec, role)
     for
@@ -181,7 +207,7 @@ final class RealTrialViews private (
       source <- spec.sources.fixations.toRight(
         BackendError.Unavailable(DiagnosticLocus.Field("fixations source"))
       )
-      file  <- text
+      file  <- sourceText
       x     <- name(ColumnRole.X)
       y     <- name(ColumnRole.Y)
       start <- DataRecord.of(from).leftMap(e => study("record")(e.toString))

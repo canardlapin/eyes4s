@@ -18,15 +18,21 @@ package eyes4s.studio.core.real
 
 import cats.effect.{IO, Ref}
 import cats.syntax.all.*
-import eyes4s.codec.ByteDigest
+import eyes4s.codec.{ArtifactName, ByteDigest}
 import eyes4s.studio.core.assets.AssetRegistry
 import eyes4s.studio.core.artifacts.*
 import eyes4s.studio.core.backend.*
 import eyes4s.studio.core.bundle.*
-import eyes4s.studio.core.command.{Command, JournalEntry}
+import eyes4s.studio.core.command.{Command, JournalEntry, Reducer}
 import eyes4s.studio.core.document.*
 import eyes4s.studio.core.fixture.StoryMoments
-import eyes4s.studio.core.runs.{ArchivePaths, ArchiveRecord, RunArchive, RunStore}
+import eyes4s.studio.core.runs.{
+  ArchivePaths,
+  ArchiveRecord,
+  RunArchive,
+  RunStore,
+  RunStoreError
+}
 import eyes4s.studio.core.session.ProjectSession
 import java.nio.charset.StandardCharsets.UTF_8
 import munit.CatsEffectSuite
@@ -161,10 +167,19 @@ class NativeArtifactPersistenceSuite extends CatsEffectSuite:
   private final class ControlledStore(
       inner: ProjectStore[IO],
       failIndex: Ref[IO, Boolean],
-      reads: Ref[IO, Vector[BundlePath]]
+      reads: Ref[IO, Vector[BundlePath]],
+      corruptPath: Option[BundlePath] = None
   ) extends ProjectStore[IO]:
-    def read(path: BundlePath) = reads.update(_ :+ path).flatMap(_ => inner.read(path))
-    def list                   = inner.list
+    def read(path: BundlePath) = reads
+      .update(_ :+ path)
+      .flatMap(_ => inner.read(path))
+      .map(
+        _.map(bytes =>
+          if corruptPath.contains(path) then IArray.from(Vector.from(bytes) :+ 0.toByte)
+          else bytes
+        )
+      )
+    def list                                                           = inner.list
     def write(lock: WriterLock, path: BundlePath, bytes: IArray[Byte]) =
       failIndex.get.flatMap(fail =>
         if fail && ArchivePaths.isIndex(path) then
@@ -201,17 +216,22 @@ class NativeArtifactPersistenceSuite extends CatsEffectSuite:
           )
         )
       )
-      _        <- bind(session)
-      _        <- ok(session.save)
-      _        <- ok(session.close)
-      reopened <- ok(ProjectSession.open(store, owner))
-      restored <- reopened.session.loadNativeArtifacts(run).map(get)
-      _        <- ok(reopened.session.close)
+      _            <- bind(session)
+      _            <- ok(session.save)
+      _            <- ok(session.close)
+      reopened     <- ok(ProjectSession.open(store, owner))
+      restored     <- reopened.session.loadNativeArtifacts(run).map(get)
+      savedHistory <- reopened.session.history
+      optional     <- reopened.session
+        .findNativeArtifacts(savedHistory.document.run(run).get)
+        .map(get)
+      _ <- ok(reopened.session.close)
     yield
       assertEquals(facts, exported.facts)
       assertEquals(restored.facts, facts)
       assertEquals(restored.files.sortBy(_._1.value), exported.files.sortBy(_._1.value))
       assertEquals(restored.facts.inputCanonical, exported.facts.inputCanonical)
+      assertEquals(optional.map(_.facts), Some(facts))
   }
 
   test("unknown and failed targets refuse before writing any archive bytes") {
@@ -225,6 +245,25 @@ class NativeArtifactPersistenceSuite extends CatsEffectSuite:
     yield
       assert(refused.isLeft)
       assertEquals(after, before)
+  }
+
+  test("genuinely absent archives stay optional for both unbound and older bound runs") {
+    for
+      store       <- InMemoryProjectStore.create[IO]
+      session     <- create(store)
+      initial     <- session.history
+      absent      <- session.findNativeArtifacts(initial.document.run(run).get).map(get)
+      _           <- bind(session)
+      bound       <- session.history
+      stillAbsent <- session.findNativeArtifacts(bound.document.run(run).get).map(get)
+      stale       <- session.findNativeArtifacts(initial.document.run(run).get)
+      after       <- session.history
+      _           <- ok(session.close)
+    yield
+      assertEquals(absent, None)
+      assertEquals(stillAbsent, None)
+      assert(stale.isLeft)
+      assertEquals(after, bound)
   }
 
   test(
@@ -266,6 +305,7 @@ class NativeArtifactPersistenceSuite extends CatsEffectSuite:
       after          <- session.history
       manifestAfter  <- ok(store.readManifest)
       orphan         <- ok(RunStore(store).records)
+      refusedOrphan  <- session.findNativeArtifacts(before.document.run(run).get)
       _              <- failIndex.set(false)
       stored         <- session.storeNativeArtifacts(exported).map(get)
       again          <- session.storeNativeArtifacts(exported).map(get)
@@ -275,6 +315,7 @@ class NativeArtifactPersistenceSuite extends CatsEffectSuite:
       assertEquals(after, before)
       assertEquals(Vector.from(manifestAfter), Vector.from(manifestBefore))
       assert(orphan.exists(_.isInstanceOf[ArchiveRecord.Incomplete]))
+      assert(refusedOrphan.left.toOption.exists(_.message.contains("orphan archive paths")))
       assertEquals(stored, exported.facts)
       assertEquals(again, stored)
   }
@@ -322,4 +363,104 @@ class NativeArtifactPersistenceSuite extends CatsEffectSuite:
     yield
       assert(refused.left.toOption.exists(_.message.contains("already holds")))
       assertEquals(still.run(run).get.archive, CoreBinding.unbound[ResultArchiveArtifact])
+  }
+
+  private def seeded(
+      files: Vector[(ArtifactName, Vector[Byte])],
+      extraBodies: Vector[Vector[Byte]] = Vector.empty
+  ): IO[Either[NativeArtifactError, Option[NativeArtifactPackage]]] =
+    val bound = get(
+      Reducer.run(document(), Command.BindCompletedArtifacts(exported.facts))
+    ).document
+    for
+      store  <- InMemoryProjectStore.create[IO]
+      lock   <- ok(store.acquire(owner))
+      inputs <- sourceEntries(store, lock)
+      encoded = get(ProjectBundle.encode(bound, SharingOptions.complete, inputs))
+      _ <- ok(ProjectBundle.save(store, lock, None, encoded))
+      archive = get(
+        RunArchive.of(
+          bound.run(run).get,
+          files.map((name, bytes) => name -> IArray.from(bytes))
+        )
+      )
+      _ <- ok(RunStore(store).put(lock, archive))
+      _ <- extraBodies.traverse_ { body =>
+        val bytes = IArray.from(body)
+        ok(store.write(lock, get(ArchivePaths.content(run, ByteDigest.sha256(bytes))), bytes))
+      }
+      _       <- ok(store.release(lock))
+      opened  <- ok(ProjectSession.open(store, owner))
+      initial <- opened.session.history
+      found   <- opened.session.findNativeArtifacts(bound.run(run).get)
+      after   <- opened.session.history
+      _       <- ok(opened.session.close)
+      _ = assertEquals(after, initial)
+    yield found
+
+  test("finder recognizes a legacy index and refuses a present incomplete native closure") {
+
+    for
+      legacy     <- seeded(Vector(get(ArtifactName.of("legacy-summary")) -> Vector(1.toByte)))
+      incomplete <- seeded(exported.files.filterNot(_._1 == NativeArtifactPackage.InputName))
+    yield
+      assertEquals(legacy, Right(None))
+      assert(incomplete.isLeft)
+  }
+
+  test("a legacy archive can name its arbitrary entry manifest without becoming native") {
+    seeded(Vector(get(ArtifactName.of("manifest")) -> Vector(1.toByte))).map(found =>
+      assertEquals(found, Right(None))
+    )
+  }
+
+  test("an omitted native facts entry left as an actual undeclared blob refuses as orphan") {
+    val body = exported.bytes(NativeArtifactPackage.FactsName).get
+    val path = get(ArchivePaths.content(run, ByteDigest.sha256(IArray.from(body))))
+    seeded(exported.files.filterNot(_._1 == NativeArtifactPackage.FactsName), Vector(body)).map(
+      found =>
+        assert(
+          found.left.toOption.exists(error =>
+            error.message.contains("orphan archive paths") && error.message.contains(path.value)
+          ),
+          clues(found)
+        )
+    )
+  }
+
+  test("cold optional finder refuses corrupt native entry bytes and changes no history") {
+    for
+      inner     <- InMemoryProjectStore.create[IO]
+      session   <- create(inner)
+      _         <- session.storeNativeArtifacts(exported).map(get)
+      _         <- bind(session)
+      _         <- ok(session.save)
+      _         <- ok(session.close)
+      failIndex <- Ref.of[IO, Boolean](false)
+      reads     <- Ref.of[IO, Vector[BundlePath]](Vector.empty)
+      path = get(
+        ArchivePaths.content(
+          run,
+          exported.archive.index.entry(NativeArtifactPackage.ResultName).get.sha256
+        )
+      )
+      store = new ControlledStore(inner, failIndex, reads, Some(path))
+      opened  <- ok(ProjectSession.open(store, owner))
+      initial <- opened.session.history
+      found   <- opened.session.findNativeArtifacts(initial.document.run(run).get)
+      after   <- opened.session.history
+      _       <- ok(opened.session.close)
+    yield
+      val entry = exported.archive.index.entry(NativeArtifactPackage.ResultName).get
+      assertEquals(
+        found,
+        Left(
+          NativeArtifactError.persistence(
+            run,
+            "load archive entries",
+            RunStoreError.EntryLength(run, entry.name, entry.length, entry.length + 1).message
+          )
+        )
+      )
+      assertEquals(after, initial)
   }

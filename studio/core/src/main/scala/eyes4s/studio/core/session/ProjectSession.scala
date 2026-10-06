@@ -40,8 +40,8 @@ import eyes4s.studio.core.command.{
   Reducer,
   Step
 }
-import eyes4s.studio.core.document.{RunLifecycle, Source, StudioDocument}
-import eyes4s.studio.core.runs.RunStore
+import eyes4s.studio.core.document.{RunLifecycle, RunRef, Source, StudioDocument}
+import eyes4s.studio.core.runs.{ArchivePaths, RunStore, RunStoreError}
 
 import java.nio.charset.StandardCharsets.UTF_8
 
@@ -338,6 +338,94 @@ final class ProjectSession[F[_]: Concurrent] private (
           )
         yield verified).value
       }
+    }
+
+  /** Optional native readback (bead q-native-archive-readback). An absent
+    * archive and an index without native markers retain legacy behavior;
+    * present incomplete native storage is a refusal, never a fallback.
+    */
+  def findNativeArtifacts(
+      ref: RunRef,
+      budget: NativeArtifactBudget = NativeArtifactBudget.Default
+  ): F[Either[NativeArtifactError, Option[NativeArtifactPackage]]] =
+    def failure(operation: String, reason: String) =
+      NativeArtifactError.persistence(ref.id, operation, reason)
+    val lookup = mutex.lock.surround {
+      state.get.flatMap { current =>
+        if !current.history.document.run(ref.id).contains(ref) then
+          Concurrent[F].pure(
+            Left(
+              failure(
+                "find archive",
+                s"The requested ${ref.id.label} declaration differs from this session."
+              )
+            )
+          )
+        else
+          RunStore(store).index(ref).flatMap {
+            case Left(_: RunStoreError.NoArchive) =>
+              store.list.map(_.leftMap(e => failure("find archive paths", e.message)).flatMap {
+                paths =>
+                  Either.cond(
+                    !paths.exists(path => ArchivePaths.owner(path).contains(ref.id)),
+                    false,
+                    failure(
+                      "find archive",
+                      s"${ref.id.label} has orphan archive paths without a complete index."
+                    )
+                  )
+              })
+            case Left(error) =>
+              Concurrent[F].pure(Left(failure("find archive index", error.message)))
+            case Right(index) if index.names.contains(NativeArtifactPackage.FactsName) =>
+              Concurrent[F].pure(Right(true))
+            case Right(index) =>
+              val declared = (
+                ArchivePaths.index(ref.id),
+                index.entries.traverse(entry => ArchivePaths.content(ref.id, entry.sha256))
+              ).mapN((path, contents) => contents.toSet + path)
+                .leftMap(e => failure("find archive paths", e.message))
+              declared match
+                case Left(error)     => Concurrent[F].pure(Left(error))
+                case Right(expected) =>
+                  store.list.map(
+                    _.leftMap(e => failure("find archive paths", e.message)).flatMap { paths =>
+                      val orphans = paths.filter(path =>
+                        ArchivePaths.owner(path).contains(ref.id) && !expected(path)
+                      )
+                      Either.cond(
+                        orphans.isEmpty,
+                        false,
+                        failure(
+                          "find archive",
+                          s"${ref.id.label} has orphan archive paths not declared by its index: ${orphans.map(_.value).sorted.mkString(", ")}."
+                        )
+                      )
+                    }
+                  )
+          }
+      }
+    }
+    lookup.flatMap {
+      case Left(error)  => Concurrent[F].pure(Left(error))
+      case Right(false) => Concurrent[F].pure(Right(None))
+      case Right(true)  =>
+        loadNativeArtifacts(ref.id, budget).flatMap {
+          case Left(error)     => Concurrent[F].pure(Left(error))
+          case Right(verified) =>
+            mutex.lock.surround(
+              state.get.map(current =>
+                Either.cond(
+                  current.history.document.run(ref.id).contains(ref),
+                  Some(verified),
+                  failure(
+                    "find archive",
+                    s"The requested ${ref.id.label} declaration changed during readback."
+                  )
+                )
+              )
+            )
+        }
     }
 
   /** Copy the project as last saved into the empty bundle `to` with

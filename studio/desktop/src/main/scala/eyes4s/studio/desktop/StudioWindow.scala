@@ -369,7 +369,8 @@ object StudioWindow:
         initial.document,
         sources,
         e => later(Intent.Execution(e)),
-        artifactSink = project.map(_.nativeArtifactSink)
+        artifactSink = project.map(_.nativeArtifactSink),
+        artifactSource = project.map(_.nativeArtifactSource)
       )
     )
     val authoritativeDocument =

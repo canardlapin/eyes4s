@@ -282,7 +282,9 @@ object ProtocolSamples:
         "confidence",
         Vector("response")
       )
-    )
+    ),
+    BackendError.ResultRestoring(run),
+    BackendError.ArchiveRestoreRefused(run, diagnostic)
   )
 
   /** A dataset revision's content digest: `pair` repeated to 64 digits. */
@@ -983,9 +985,37 @@ object ProtocolSamples:
         Sample("frame.Preview", ServerFrame.Preview(PreviewEvent.Ready(previewReady))),
         Sample(
           "envelope.request",
-          Envelope(RequestId(41), BackendRequest.Subscribe(job): BackendRequest)
+          Envelope(
+            ProtocolVersion(1, 16),
+            RequestId(41),
+            BackendRequest.Subscribe(job): BackendRequest
+          )
         ),
-        Sample("envelope.frame", Envelope(RequestId(41), ServerFrame.Event(events(1)))),
+        Sample(
+          "envelope.frame",
+          Envelope(ProtocolVersion(1, 16), RequestId(41), ServerFrame.Event(events(1)))
+        ),
+        Sample(
+          "provenance.Restored",
+          ProvenanceStep.Restored(right(ByteDigest.parse("ab" * 32))): ProvenanceStep
+        ),
+        Sample(
+          "envelope.restored",
+          Envelope(
+            RequestId(42),
+            ServerFrame.Response(
+              BackendResponse.ProvenanceOf(
+                Provenance(
+                  address,
+                  Vector(
+                    ProvenanceStep.Run(run),
+                    ProvenanceStep.Restored(right(ByteDigest.parse("ab" * 32)))
+                  )
+                )
+              )
+            )
+          )
+        ),
         Sample("state.Queued", JobState.Queued: JobState),
         Sample("state.Running", JobState.Running(progress): JobState),
         Sample("state.Finished", JobState.Finished(outcomes(0)): JobState),

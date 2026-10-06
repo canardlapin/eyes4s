@@ -31,6 +31,7 @@ import eyes4s.studio.core.navigation.{
 }
 import eyes4s.studio.core.selection.{ScaleIndex, StudioRef}
 import fs2.concurrent.SignallingRef
+import fs2.Stream
 
 /** Local host reads may wait for actual recomputation. The backend and IPC
   * remain nonblocking, so job cancellation requests can always be served.
@@ -39,7 +40,8 @@ final class NativeReads[F[_]] private (
     backend: StudyBackend[F],
     rawNavigator: StudyNavigator[F],
     closed: SignallingRef[F, Boolean],
-    synchronize: () => F[Either[BackendError, Unit]]
+    synchronize: () => F[Either[BackendError, Unit]],
+    awaitRestore: Option[RunId => F[Either[BackendError, Unit]]]
 )(using F: Concurrent[F]):
 
   private def waitFor(run: RunId, job: JobId, own: Boolean): F[Either[BackendError, Unit]] =
@@ -91,6 +93,11 @@ final class NativeReads[F[_]] private (
       case true  => F.pure(Left(BackendError.ResultReadClosed(run, None)))
       case false =>
         request.flatMap {
+          case Left(BackendError.ResultRestoring(`run`)) =>
+            waitForRestore(run).flatMap {
+              case Left(error) => F.pure(Left(error))
+              case Right(_)    => read(run)(request)
+            }
           case Left(BackendError.ResultPending(`run`, job)) =>
             waitFor(run, job, own = true).flatMap {
               case Left(error) => F.pure(Left(error))
@@ -104,6 +111,19 @@ final class NativeReads[F[_]] private (
           case result => F.pure(result)
         }
     }
+
+  private def waitForRestore(run: RunId): F[Either[BackendError, Unit]] =
+    awaitRestore match
+      case None        => F.pure(Left(BackendError.ResultRestoring(run)))
+      case Some(await) =>
+        Stream
+          .eval(await(run))
+          .interruptWhen(closed)
+          .compile
+          .last
+          .map(
+            _.getOrElse(Left(BackendError.ResultReadClosed(run, None)))
+          )
 
   private def navigation[A](
       request: => F[Either[NavigationError, A]]
@@ -130,6 +150,11 @@ final class NativeReads[F[_]] private (
       request: => F[Either[NavigationError, A]]
   ): F[Either[NavigationError, A]] =
     request.flatMap {
+      case Left(NavigationError.Backend(BackendError.ResultRestoring(run))) =>
+        waitForRestore(run).flatMap {
+          case Left(error) => F.pure(Left(NavigationError.Backend(error)))
+          case Right(_)    => navigation(request)
+        }
       case Left(NavigationError.Backend(BackendError.ResultPending(run, job))) =>
         waitFor(run, job, own = true).flatMap {
           case Left(error) => F.pure(Left(NavigationError.Backend(error)))
@@ -225,8 +250,9 @@ object NativeReads:
   def resource[F[_]: Concurrent](
       backend: StudyBackend[F],
       navigator: StudyNavigator[F],
-      synchronize: () => F[Either[BackendError, Unit]]
+      synchronize: () => F[Either[BackendError, Unit]],
+      awaitRestore: Option[RunId => F[Either[BackendError, Unit]]] = None
   ): Resource[F, NativeReads[F]] =
     Resource
       .make(SignallingRef[F].of(false))(_.set(true))
-      .map(closed => new NativeReads(backend, navigator, closed, synchronize))
+      .map(closed => new NativeReads(backend, navigator, closed, synchronize, awaitRestore))

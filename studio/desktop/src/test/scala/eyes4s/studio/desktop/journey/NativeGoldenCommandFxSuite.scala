@@ -16,24 +16,31 @@
 
 package eyes4s.studio.desktop.journey
 
-import cats.effect.IO
+import cats.effect.{IO, Resource}
 import cats.effect.unsafe.implicits.global
 import eyes4s.plan.AdmissionDecision as NativeAdmissionDecision
 import eyes4s.studio.app.{AppModel, Intent}
 import eyes4s.studio.app.nav.{DataSection, Location, Place}
 import eyes4s.studio.app.geometry.Loading
 import eyes4s.studio.app.figures.BundleItem
-import eyes4s.studio.core.backend.{Inspection, QueryStatus, ResultAddress}
+import eyes4s.studio.core.backend.{
+  Inspection,
+  JobStatus,
+  ProvenanceStep,
+  QueryStatus,
+  ResultAddress
+}
 import eyes4s.studio.core.bundle.{LockOwner, ProjectBundle}
 import eyes4s.studio.core.command.Command
 import eyes4s.studio.core.document.{CoreBinding, Perspective, Preset, RunLifecycle}
 import eyes4s.studio.core.selection.{ScaleIndex, StudioRef}
 import eyes4s.studio.core.session.ProjectSession
+import eyes4s.studio.core.headless.NativeHeadlessSession
 import eyes4s.studio.desktop.StudioWindow
 import eyes4s.studio.desktop.explore.NavigatorDisplays
 import eyes4s.studio.desktop.harness.FxStage
 import eyes4s.studio.desktop.platform.{FileProjectStore, TempDirs}
-import eyes4s.studio.desktop.runtime.DatasetSourceHosts
+import eyes4s.studio.desktop.runtime.{DatasetSourceHosts, SessionPort}
 import javafx.scene.Node
 import javafx.scene.control.Button
 import java.nio.file.Files
@@ -237,6 +244,47 @@ class NativeGoldenCommandFxSuite extends GoldenWindow:
             assertEquals(entry, firstEntry)
             assertEquals(Vector.from(bytes), Vector.from(firstBytes), entry.name.value)
         }
+        Resource
+          .make(IO.blocking(SessionPort.start(reopenedSession)))(port =>
+            IO.blocking(port.close())
+          )
+          .use { port =>
+            Resource
+              .make(
+                IO.fromFuture(
+                  IO(
+                    NativeHeadlessSession.open(
+                      reopened.document,
+                      DatasetSourceHosts.stored(port),
+                      artifactSource = Some(port.nativeArtifactSource)
+                    )
+                  )
+                )
+              )(session => IO.fromFuture(IO(session.close)))
+              .use { session =>
+                for
+                  restored <- NativeCommandJourneyReadback.capture(
+                    reopened.document,
+                    NativeCommandJourneyReadback.Port.from(session)
+                  )
+                  jobs <- session.rawBackend.jobs
+                yield
+                  assertEquals(restored.canonicalScience, captured.canonicalScience)
+                  assertEquals(restored.rows, captured.rows)
+                  assertEquals(restored.report, captured.report)
+                  assertEquals(restored.source, captured.source)
+                  assertEquals(restored.exports, captured.exports)
+                  assertEquals(jobs, Vector.empty[JobStatus])
+                  assert(
+                    restored.provenance.trail
+                      .contains(ProvenanceStep.Restored(cold.manifestAddress))
+                  )
+                  assert(
+                    !restored.provenance.trail.exists(_.isInstanceOf[ProvenanceStep.Recomputed])
+                  )
+              }
+          }
+          .unsafeRunSync()
       finally get(reopenedSession.close.unsafeRunSync())
     catch
       case NonFatal(error) =>

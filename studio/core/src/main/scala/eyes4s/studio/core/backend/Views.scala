@@ -17,6 +17,8 @@
 package eyes4s.studio.core.backend
 
 import ProtocolCodecs.portableLong
+import eyes4s.codec.ByteDigest
+import ProtocolCodecs.byteDigest
 
 import eyes4s.plan.{QuarantineCause as CoreCause, TrialDisposition as CoreDisposition}
 import io.circe.syntax.*
@@ -495,6 +497,7 @@ enum ProvenanceStep derives CanEqual, Codec.AsObject:
   case Scale(index: Int, label: String)
   case Design(design: PairDesign)
   case Trial(key: TrialKey, item: String)
+  case Restored(manifest: ByteDigest)
 
 final case class Provenance(address: ResultAddress, trail: Vector[ProvenanceStep])
     derives CanEqual,

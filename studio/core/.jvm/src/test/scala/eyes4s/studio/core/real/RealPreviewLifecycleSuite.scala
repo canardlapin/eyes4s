@@ -152,9 +152,13 @@ class RealPreviewLifecycleSuite extends CatsEffectSuite:
         assertEquals(ready.counts.eligibleQueries.value, prepared.summary.eligibleQueries)
         assertEquals(ready.counts.eligiblePairs, prepared.counts.totalPairs)
         assertEquals(ready.recipe, Some(prepared.recipe))
+        val actual = prepared.admitted match
+          case admitted: AdmittedDataset => admitted
+          case _                         =>
+            fail("This preview fixture must retain actual host admission and source text.")
         val configured = get(
           RealPrepared
-            .configure(prepared.revision, prepared.dataset, prepared.recipe, prepared.admitted)
+            .configure(prepared.revision, prepared.dataset, prepared.recipe, actual)
         )
         assertEquals(ready.stamp, get(RealPreview.stamp(configured)))
         assertEquals(refused, Left(BackendError.TamperedPreview(forged, ready)))

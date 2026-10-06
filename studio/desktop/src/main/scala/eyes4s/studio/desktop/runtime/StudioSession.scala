@@ -21,7 +21,7 @@ import cats.effect.unsafe.IORuntime
 import cats.syntax.all.*
 import eyes4s.studio.app.AppModel
 import eyes4s.studio.core.document.StudioDocument
-import eyes4s.studio.core.backend.{BackendError, StudyBackend}
+import eyes4s.studio.core.backend.{BackendError, RunId, StudyBackend}
 import eyes4s.studio.core.headless.{NativeReads, SynchronizedBackend}
 import java.util.concurrent.atomic.AtomicReference
 import eyes4s.studio.core.navigation.StudyNavigator
@@ -29,6 +29,7 @@ import eyes4s.studio.core.real.{DatasetSources, RealStudyBackend}
 import eyes4s.studio.core.artifacts.{
   NativeArtifactError,
   NativeArtifactSink,
+  NativeArtifactSource,
   NativeBindingFacts
 }
 import eyes4s.studio.core.execution.{
@@ -110,6 +111,7 @@ object StudioSession:
             backend.navigator,
             Some(backend),
             (_: StudioDocument) => IO.pure(Right(())),
+            None,
             None
           )
         ),
@@ -121,16 +123,24 @@ object StudioSession:
       document: StudioDocument,
       sources: DatasetSources[IO],
       deliver: ExecutionEvent => Unit,
-      artifactSink: Option[NativeArtifactSink[IO]] = None
+      artifactSink: Option[NativeArtifactSink[IO]] = None,
+      artifactSource: Option[NativeArtifactSource[IO]] = None
   )(using runtime: IORuntime): StudioSession =
     acquire(
       RealStudyBackend
-        .resource[IO](document, sources)
+        .resource[IO](document, sources, artifactSource)
         .map { backend =>
           val completion = artifactSink.map(sink =>
             (job: ExecutionJob) => NativeArtifactDelivery.store(backend, sink, job.run)
           )
-          (backend: StudyBackend[IO], backend.navigator, None, backend.synchronize, completion)
+          (
+            backend: StudyBackend[IO],
+            backend.navigator,
+            None,
+            backend.synchronize,
+            completion,
+            Some(backend.awaitRestore)
+          )
         },
       deliver
     )
@@ -143,14 +153,15 @@ object StudioSession:
             StudyNavigator[IO],
             Option[FakeStudyBackend[IO]],
             StudioDocument => IO[Either[BackendError, Unit]],
-            Option[ExecutionJob => IO[Either[NativeArtifactError, NativeBindingFacts]]]
+            Option[ExecutionJob => IO[Either[NativeArtifactError, NativeBindingFacts]]],
+            Option[RunId => IO[Either[BackendError, Unit]]]
         )
       ],
       deliver: ExecutionEvent => Unit
   )(using runtime: IORuntime): StudioSession =
     val documentSource = new AtomicReference[Option[() => StudioDocument]](None)
     val resources      = for
-      (raw, navigator, fixture, synchronize, completion) <- backendResource
+      (raw, navigator, fixture, synchronize, completion, awaitRestore) <- backendResource
       sync = () =>
         IO.defer(
           documentSource
@@ -160,7 +171,7 @@ object StudioSession:
             )
         )
       backend = new SynchronizedBackend[IO](raw, sync)
-      reads   <- NativeReads.resource[IO](backend, navigator, sync)
+      reads   <- NativeReads.resource[IO](backend, navigator, sync, awaitRestore)
       service <- ExecutionService.resource[IO](backend, artifacts = completion)
       events  <- service.subscribe
       _       <- events.evalMap(event => IO(deliver(event))).compile.drain.background

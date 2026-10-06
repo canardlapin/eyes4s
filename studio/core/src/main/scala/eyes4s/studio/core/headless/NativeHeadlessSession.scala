@@ -22,7 +22,7 @@ import cats.effect.unsafe.IORuntime
 import cats.effect.{IO, Resource}
 import cats.syntax.all.*
 import eyes4s.studio.core.backend.*
-import eyes4s.studio.core.artifacts.NativeArtifactSink
+import eyes4s.studio.core.artifacts.{NativeArtifactSink, NativeArtifactSource}
 import eyes4s.studio.core.document.StudioDocument
 import eyes4s.studio.core.execution.{
   ExecutionEffect,
@@ -127,15 +127,16 @@ object NativeHeadlessSession:
   def open(
       document: StudioDocument,
       sources: DatasetSources[IO],
-      artifactSink: Option[NativeArtifactSink[IO]] = None
+      artifactSink: Option[NativeArtifactSink[IO]] = None,
+      artifactSource: Option[NativeArtifactSource[IO]] = None
   ): Future[NativeHeadlessSession] =
     given IORuntime    = cats.effect.unsafe.implicits.global
     val documentSource = new AtomicReference[() => StudioDocument](() => document)
     val resources      = for
-      raw <- RealStudyBackend.resource[IO](document, sources)
+      raw <- RealStudyBackend.resource[IO](document, sources, artifactSource)
       sync    = () => IO.defer(raw.synchronize(documentSource.get()()))
       backend = new SynchronizedBackend[IO](raw, sync)
-      reads <- NativeReads.resource[IO](backend, raw.navigator, sync)
+      reads <- NativeReads.resource[IO](backend, raw.navigator, sync, Some(raw.awaitRestore))
       completion = artifactSink.map(sink =>
         (job: eyes4s.studio.core.execution.ExecutionJob) =>
           NativeArtifactDelivery.store(raw, sink, job.run)
