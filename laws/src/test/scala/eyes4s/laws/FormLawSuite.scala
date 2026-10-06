@@ -216,11 +216,11 @@ class FormLawSuite extends munit.DisciplineSuite:
   private val shippedForms: Gen[(FormView, FormValues)] = Gen.oneOf(
     Gen.oneOf(cosinePlans, configuredPlans, initialFixationPlans).map { plan =>
       val f = new StudyForm(StudyFormContext.of(plan))
-      FormView(DefinitionId.study, f.views) -> f.values(plan)
+      get(FormView.of(DefinitionId.study, f.views)) -> f.values(plan)
     },
     temporalPlans.map { plan =>
       val f = new TemporalForm
-      FormView(DefinitionId.study, f.views) -> f.values(plan)
+      get(FormView.of(DefinitionId.study, f.views)) -> f.values(plan)
     },
     Gen
       .oneOf(
@@ -229,7 +229,7 @@ class FormLawSuite extends munit.DisciplineSuite:
       )
       .map { plan =>
         val f = new RecordingForm()
-        FormView(recordingSchema, f.views) -> f.values(plan)
+        get(FormView.of(recordingSchema, f.views)) -> f.values(plan)
       },
     Gen.zip(Gen.const(FormFixtures.view), anyValues),
     Gen.const(FormFixtures.view -> FormFixtures.values)

@@ -53,157 +53,160 @@ object FormFixtures:
   private val xMax =
     numeric("xMax", Quantity.Planar(PlanarUnit.Px), NumberShape.Real, NumericBounds.unbounded)
 
-  val view: FormView = FormView(
-    DefinitionId.study,
-    Vector(
-      sigma,
-      numeric(
-        "speed",
-        Quantity.Rate(PlanarUnit.Deg),
-        NumberShape.Real,
-        NumericBounds.nonNegative
-      ),
-      numeric(
-        "ppd",
-        Quantity.UnitsPerDegree(PlanarUnit.Px),
-        NumberShape.Real,
-        NumericBounds.positive
-      ),
-      numeric(
-        "distance",
-        Quantity.Length(LengthUnit.Millimetres),
-        NumberShape.Real,
-        NumericBounds.positive
-      ),
-      numeric("gap", Quantity.Duration, NumberShape.Int64, NumericBounds.nonNegative),
-      numeric(
-        "cells",
-        Quantity.Count(Counted.Cells),
-        NumberShape.Int32,
-        NumericBounds.atLeastOne
-      ),
-      numeric("ratio", Quantity.Dimensionless, NumberShape.Real, NumericBounds.unbounded),
-      numeric(
-        "patch",
-        Quantity.Planar(PlanarUnit.Mm),
-        NumberShape.Real,
-        NumericBounds.positive
-      ),
-      numeric(
-        "normed",
-        Quantity.Planar(PlanarUnit.Norm),
-        NumberShape.Real,
-        NumericBounds.positive
-      ),
-      numeric(
-        "screen",
-        Quantity.Length(LengthUnit.Centimetres),
-        NumberShape.Real,
-        NumericBounds.positive
-      ),
-      numeric(
-        "eye",
-        Quantity.Length(LengthUnit.Metres),
-        NumberShape.Real,
-        NumericBounds.positive
-      ),
-      numeric(
-        "samples",
-        Quantity.Count(Counted.Samples),
-        NumberShape.Int64,
-        NumericBounds.nonNegative
-      ),
-      numeric(
-        "scores",
-        Quantity.Count(Counted.Scores),
-        NumberShape.Int32,
-        NumericBounds.atLeastOne
-      ),
-      view(
-        "weight",
-        "how fixations are weighted",
-        FieldKind.Choice(
-          ChoiceSource.Fixed(
-            Vector(ChoiceOption("duration", "Duration"), ChoiceOption("count", "Count"))
+  val view: FormView = get(
+    FormView.of(
+      DefinitionId.study,
+      Vector(
+        sigma,
+        numeric(
+          "speed",
+          Quantity.Rate(PlanarUnit.Deg),
+          NumberShape.Real,
+          NumericBounds.nonNegative
+        ),
+        numeric(
+          "ppd",
+          Quantity.UnitsPerDegree(PlanarUnit.Px),
+          NumberShape.Real,
+          NumericBounds.positive
+        ),
+        numeric(
+          "distance",
+          Quantity.Length(LengthUnit.Millimetres),
+          NumberShape.Real,
+          NumericBounds.positive
+        ),
+        numeric("gap", Quantity.Duration, NumberShape.Int64, NumericBounds.nonNegative),
+        numeric(
+          "cells",
+          Quantity.Count(Counted.Cells),
+          NumberShape.Int32,
+          NumericBounds.atLeastOne
+        ),
+        numeric("ratio", Quantity.Dimensionless, NumberShape.Real, NumericBounds.unbounded),
+        numeric(
+          "patch",
+          Quantity.Planar(PlanarUnit.Mm),
+          NumberShape.Real,
+          NumericBounds.positive
+        ),
+        numeric(
+          "normed",
+          Quantity.Planar(PlanarUnit.Norm),
+          NumberShape.Real,
+          NumericBounds.positive
+        ),
+        numeric(
+          "screen",
+          Quantity.Length(LengthUnit.Centimetres),
+          NumberShape.Real,
+          NumericBounds.positive
+        ),
+        numeric(
+          "eye",
+          Quantity.Length(LengthUnit.Metres),
+          NumberShape.Real,
+          NumericBounds.positive
+        ),
+        numeric(
+          "samples",
+          Quantity.Count(Counted.Samples),
+          NumberShape.Int64,
+          NumericBounds.nonNegative
+        ),
+        numeric(
+          "scores",
+          Quantity.Count(Counted.Scores),
+          NumberShape.Int32,
+          NumericBounds.atLeastOne
+        ),
+        view(
+          "weight",
+          "how fixations are weighted",
+          FieldKind.Choice(
+            ChoiceSource.Fixed(
+              Vector(ChoiceOption("duration", "Duration"), ChoiceOption("count", "Count"))
+            )
           )
-        )
-      ),
-      view(
-        "focal",
-        "the focal phase",
-        FieldKind.Choice(ChoiceSource.FromInput(InputDomain.Phases))
-      ),
-      view("flip", "whether to flip", FieldKind.Toggle),
-      view("label", "a name", FieldKind.Text),
-      view("input", "the study input", FieldKind.Reference),
-      view(
-        "window",
-        "the analysis window",
-        FieldKind.Group(Vector(xMin, xMax), GroupRule.Ordered(Vector(xMin.id -> xMax.id)))
-      ),
-      view(
-        "phases",
-        "the compared phases",
-        FieldKind.Group(
-          Vector(
-            view("query", "the query phase", FieldKind.Text),
-            view("reference", "the reference phase", FieldKind.Text)
-          ),
-          GroupRule.Distinct(Vector(id("query"), id("reference")))
-        )
-      ),
-      view(
-        "named",
-        "a named group",
-        FieldKind.Group(Vector(view("part", "a part", FieldKind.Toggle)), GroupRule.Independent)
-      ),
-      view(
-        "angle",
-        "the units per degree",
-        FieldKind.Optional(
-          numeric(
-            "value",
-            Quantity.UnitsPerDegree(PlanarUnit.Px),
-            NumberShape.Real,
-            NumericBounds.positive
-          ),
-          "scales stay in frame units"
-        )
-      ),
-      view(
-        "scales",
-        "the bandwidths",
-        FieldKind.Repeated(
-          numeric(
-            "scale",
-            Quantity.Planar(PlanarUnit.Norm),
-            NumberShape.Real,
-            NumericBounds.positive
-          ),
-          1,
-          Some(8)
-        )
-      ),
-      view(
-        "marks",
-        "the marks",
-        FieldKind.Repeated(view("mark", "a mark", FieldKind.Text), 0, None)
-      ),
-      view(
-        "initial",
-        "the initial fixations",
-        FieldKind.Variant(
-          Vector(
-            VariantCase("keepAll", "Keep every fixation", Vector.empty),
-            VariantCase(
-              "dropFirst",
-              "Drop the first",
-              Vector(
-                numeric(
-                  "count",
-                  Quantity.Count(Counted.Occurrences),
-                  NumberShape.Int32,
-                  NumericBounds.atLeastOne
+        ),
+        view(
+          "focal",
+          "the focal phase",
+          FieldKind.Choice(ChoiceSource.FromInput(InputDomain.Phases))
+        ),
+        view("flip", "whether to flip", FieldKind.Toggle),
+        view("label", "a name", FieldKind.Text),
+        view("input", "the study input", FieldKind.Reference),
+        view(
+          "window",
+          "the analysis window",
+          FieldKind.Group(Vector(xMin, xMax), GroupRule.Ordered(Vector(xMin.id -> xMax.id)))
+        ),
+        view(
+          "phases",
+          "the compared phases",
+          FieldKind.Group(
+            Vector(
+              view("query", "the query phase", FieldKind.Text),
+              view("reference", "the reference phase", FieldKind.Text)
+            ),
+            GroupRule.Distinct(Vector(id("query"), id("reference")))
+          )
+        ),
+        view(
+          "named",
+          "a named group",
+          FieldKind
+            .Group(Vector(view("part", "a part", FieldKind.Toggle)), GroupRule.Independent)
+        ),
+        view(
+          "angle",
+          "the units per degree",
+          FieldKind.Optional(
+            numeric(
+              "value",
+              Quantity.UnitsPerDegree(PlanarUnit.Px),
+              NumberShape.Real,
+              NumericBounds.positive
+            ),
+            "scales stay in frame units"
+          )
+        ),
+        view(
+          "scales",
+          "the bandwidths",
+          FieldKind.Repeated(
+            numeric(
+              "scale",
+              Quantity.Planar(PlanarUnit.Norm),
+              NumberShape.Real,
+              NumericBounds.positive
+            ),
+            1,
+            Some(8)
+          )
+        ),
+        view(
+          "marks",
+          "the marks",
+          FieldKind.Repeated(view("mark", "a mark", FieldKind.Text), 0, None)
+        ),
+        view(
+          "initial",
+          "the initial fixations",
+          FieldKind.Variant(
+            Vector(
+              VariantCase("keepAll", "Keep every fixation", Vector.empty),
+              VariantCase(
+                "dropFirst",
+                "Drop the first",
+                Vector(
+                  numeric(
+                    "count",
+                    Quantity.Count(Counted.Occurrences),
+                    NumberShape.Int32,
+                    NumericBounds.atLeastOne
+                  )
                 )
               )
             )

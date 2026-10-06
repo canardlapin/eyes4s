@@ -32,6 +32,35 @@ class FormDescriptorSuite extends munit.FunSuite:
   private def id(s: String): FieldId        = get(FieldId.of(s))
   private val F                             = RecipeParameters.forms
 
+  test("FormView establishes distinct ids and retains field order and value equality") {
+    val a         = F.sigma[eyes4s.kernel.Unit2D.Deg].view
+    val b         = FieldView.literal("other", "another field", a.kind)
+    val duplicate = FormView.of(DefinitionId.study, Vector(a, b, a))
+    assertEquals(
+      duplicate,
+      Left(DescriptorError.DuplicateFields(Vector(a.id.value, b.id.value, a.id.value)))
+    )
+    val first  = get(FormView.of(DefinitionId.study, Vector(b, a)))
+    val second = get(FormView.of(DefinitionId.study, Vector(b, a)))
+    assertEquals(first.fields, Vector(b, a))
+    assertEquals(first.field(a.id), Some(a))
+    assertEquals(first.field(id("missing")), None)
+    assertEquals(first, second)
+    assertEquals(first.hashCode, second.hashCode)
+    assertEquals(get(FormView.of(DefinitionId.study, Vector.empty)).fields, Vector.empty)
+    assert(
+      typeCheckErrors(
+        "new eyes4s.plan.FormView(eyes4s.plan.DefinitionId.study, Vector.empty)"
+      ).nonEmpty
+    )
+    assert(
+      typeCheckErrors("summon[scala.deriving.Mirror.ProductOf[eyes4s.plan.FormView]]").nonEmpty
+    )
+    assert(
+      typeCheckErrors("(v: eyes4s.plan.FormView) => v.copy(fields = Vector.empty)").nonEmpty
+    )
+  }
+
   test("one number grammar on every platform: signs, fractions, exponents, whitespace") {
     val real = summon[Numeral[Double]]
     assertEquals(
@@ -213,7 +242,7 @@ class FormDescriptorSuite extends munit.FunSuite:
     // A method with no parameters presents an empty form under its identity.
     assertEquals(
       ComparisonMethods.cosine.descriptor.formView,
-      FormView(DefinitionId.cosine, Vector.empty)
+      get(FormView.of(DefinitionId.cosine, Vector.empty))
     )
   }
 

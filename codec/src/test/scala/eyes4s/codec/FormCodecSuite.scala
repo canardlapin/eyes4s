@@ -38,11 +38,13 @@ class FormCodecSuite extends munit.FunSuite:
 
   test("the shipped method forms round-trip, and the restored view checks as the original") {
     val views = Vector(
-      FormView(
-        DefinitionId.cosine,
-        Vector(RecipeParameters.forms.sigma[eyes4s.kernel.Unit2D.Deg].view)
+      get(
+        FormView.of(
+          DefinitionId.cosine,
+          Vector(RecipeParameters.forms.sigma[eyes4s.kernel.Unit2D.Deg].view)
+        )
       ),
-      FormView(DefinitionId.study, new TemporalForm().views)
+      get(FormView.of(DefinitionId.study, new TemporalForm().views))
     )
     views.foreach { v =>
       val back = get(FormCodecs.view.decode(get(FormCodecs.view.encode(v))))
@@ -158,11 +160,13 @@ class FormCodecSuite extends munit.FunSuite:
       Json.arr(Json.arr("xMin".asJson, "yMax".asJson))
     )
     assert(refusal(Vector(rule)).contains("yMax"), refusal(Vector(rule)))
-    // A repeated field id, on decoding and on encoding.
-    assert(refusal(Vector(sigma, sigma)).contains("appears 2 times"))
-    val twice =
-      FormView(FormFixtures.view.definition, Vector.fill(2)(FormFixtures.view.fields.head))
-    assert(FormCodecs.view.encode(twice).left.exists(_.message.contains("appears 2 times")))
+    // A repeated field id is refused by decoding and by domain construction.
+    assert(refusal(Vector(sigma, sigma)).contains("unique"))
+    assert(
+      FormView
+        .of(FormFixtures.view.definition, Vector.fill(2)(FormFixtures.view.fields.head))
+        .isLeft
+    )
   }
 
   test("a 64-bit raw number keeps its text exactly on both platforms") {

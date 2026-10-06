@@ -401,20 +401,18 @@ object FormCodecs:
     }
 
   /** `eyes4s.form-view@1`: the definition and its fields, in the view's order.
-    * Field ids are distinct; a view with a repeated id is refused on both
-    * sides.
+    * Field ids are distinct by construction; repeated ids are refused on decoding.
     */
   val view: VersionedCodec[FormView] =
-    VersionedCodec.checked[FormView](FormCodecDefinitions.formView) { v =>
-      val json = Json.obj(
+    VersionedCodec.of[FormView](FormCodecDefinitions.formView) { v =>
+      Json.obj(
         "definition" -> Wire.id(v.definition),
         "fields"     -> Json.arr(v.fields.map(field)*)
       )
-      duplicate(json, v.fields.map(_.id)).toLeft(json)
     }(json =>
       for
         definition <- Wire.definition(json, "definition")
         fields     <- readParts(json, "fields")
-        _          <- duplicate(json, fields.map(_.id)).toLeft(())
-      yield FormView(definition, fields)
+        view       <- FormView.of(definition, fields).left.map(refused("fields", json))
+      yield view
     )
