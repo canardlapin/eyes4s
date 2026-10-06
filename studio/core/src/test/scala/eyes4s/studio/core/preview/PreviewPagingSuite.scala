@@ -161,11 +161,11 @@ class PreviewPagingSuite extends CatsEffectSuite:
   test("preview budget is a positive bounded work request") {
     assertEquals(
       PreviewBudget.of(0).left.map(_.message),
-      Left("Preview budget 0 is outside 1 to 4096 participants.")
+      Left("Preview budget 0 is outside 1 to 4096 bounded pages.")
     )
     assertEquals(
       PreviewBudget.of(4097).left.map(_.message),
-      Left("Preview budget 4097 is outside 1 to 4096 participants.")
+      Left("Preview budget 4097 is outside 1 to 4096 bounded pages.")
     )
   }
 

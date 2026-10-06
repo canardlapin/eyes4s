@@ -93,6 +93,16 @@ class TrialViewsJvmSuite extends CatsEffectSuite:
       }
       val levels =
         MassLevels.of(expected, Vector(0.5, 0.8)).fold(e => fail(e.message), identity)
-      assertEquals(preview.levels, levels.map(_.threshold))
+      // The native occupancy path uses seconds; this independent CSV oracle
+      // uses milliseconds. Normalized masses agree to the same cell tolerance.
+      assertEquals(preview.levels.size, levels.size)
+      preview.levels.zip(levels).foreach { (actual, expected) =>
+        assertEqualsDouble(
+          actual,
+          expected.threshold,
+          CellTolerance,
+          s"coverage ${expected.coverage}"
+        )
+      }
     }
   }
