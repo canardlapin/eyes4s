@@ -358,6 +358,8 @@ fails after rewriting, so review the change and run it again.
 | `study-failure.comparison` | `Comparison` | `left`, `right`, `underlying` |
 | `study-failure.off-window` | `OffWindow` | `key`, `tally` |
 | `study-failure.initial-fixations` | `InitialFixations` | `key`, `underlying` |
+| `study-failure.trial-cardinality` | `TrialCardinality` | `key`, `occurrences` |
+| `study-failure.prepared-plan` | `PreparedPlan` | `key`, `underlying` |
 
 ### `initial-fixation` — `InitialFixationError`
 
