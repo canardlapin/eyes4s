@@ -19,13 +19,21 @@ package eyes4s.studio.desktop.figures
 import eyes4s.studio.app.{Intent, StoryModels}
 import eyes4s.studio.app.appearance.Appearance
 import eyes4s.studio.app.tokens.Wcag
+import eyes4s.studio.app.figures.MethodsCopy
+import eyes4s.studio.core.backend.{DatasetRevision, RunId}
+import eyes4s.studio.core.document.Theme
+import eyes4s.studio.core.figures.MethodsFacts
 import eyes4s.studio.core.fixture.StoryMoment
-import eyes4s.studio.desktop.StudioWindow
+import eyes4s.studio.desktop.{StudioWindow, ThemeHost}
+import eyes4s.studio.desktop.explore.NavigatorDisplays
 import eyes4s.studio.desktop.harness.FxStage
 import eyes4s.studio.desktop.shell.{A11yChecks, ShellFxSuite}
 import javafx.scene.control.{Button, Label}
 import javafx.scene.paint.Color
 import javafx.scene.text.Text
+import javafx.scene.layout.VBox
+import java.util.concurrent.{CompletableFuture, TimeUnit}
+import java.util.concurrent.atomic.AtomicReference
 
 import scala.concurrent.duration.Duration
 import scala.jdk.CollectionConverters.*
@@ -61,6 +69,130 @@ class FigureMethodsFxSuite extends ShellFxSuite:
         .getOrElse(fail(s"no button '$name'"))
         .fire()
     )
+
+  /** All data comes from the existing session; only delivery of its actual
+    * methods facts is gated, independently of the summary/report callbacks.
+    */
+  private final class GatedMethods(delegate: FigureInputs) extends FigureInputs:
+    export delegate.{
+      stimuli,
+      fixations,
+      summary,
+      report,
+      references,
+      displays,
+      mapGrid,
+      status,
+      bundle,
+      save
+    }
+    val facts            = CompletableFuture[Either[String, MethodsFacts]]()
+    private val callback = AtomicReference[Option[Either[String, MethodsFacts] => Unit]](None)
+    def methods(
+        run: RunId,
+        dataset: DatasetRevision,
+        done: Either[String, MethodsFacts] => Unit
+    ): Unit =
+      callback.set(Some(done))
+      delegate.methods(run, dataset, answer => facts.complete(answer): Unit)
+    def deliver(answer: Either[String, MethodsFacts]): Unit =
+      callback.get().getOrElse(fail("no actual methods request was registered"))(answer)
+
+  fxStage.test("no figure is explained once without a duplicate methods status") { fx =>
+    val w = boot(fx, StoryModels.firstRun, StoryMoment.T2)
+    runOnFx {
+      assertEquals(w.figures.vm.methods, None)
+      assert(w.figures.methodsEditor.isDisabled)
+      val explanations = A11yChecks.all(w.figures.methodsNode).collect {
+        case label: Label
+            if label.isVisible && label.isManaged && label.getText == MethodsCopy.NoFigure =>
+          label
+      }
+      assertEquals(explanations.size, 1)
+    }
+  }
+
+  fxStage.test(
+    "actual delayed methods facts block editing visibly, then late facts preserve authored text"
+  ) { fx =>
+    val w     = boot(fx, StoryModels.t2Figures, StoryMoment.T2)
+    val gated = GatedMethods(FigureInputs.of(w.session, NavigatorDisplays.golden, () => None))
+    val (host, root) = runOnFx {
+      val host = FiguresHost(() => w.runtime.model, w.runtime.dispatch, gated)
+      val root = VBox(host.methodsNode)
+      root.getStyleClass.add("studio-shell")
+      root.getStylesheets.setAll(
+        ThemeHost.sheets(Theme.Light).fold(e => fail(e.message), identity)*
+      )
+      host.sync(w.runtime.model)
+      (host, root)
+    }
+    try
+      fx.show(root)
+      val actual = gated.facts.get(10, TimeUnit.SECONDS)
+      assert(actual.isRight, actual)
+      val waiting = MethodsCopy.reading(eyes4s.studio.core.fixture.StoryMoments.run7)
+      runOnFx {
+        assertEquals(host.vm.methods.map(_.text), Some(Left(waiting)))
+        assert(host.methodsEditor.isDisabled)
+        assertEquals(host.methodsEditor.getText, "")
+        assertEquals(host.methodsEditor.getPromptText, waiting)
+        val label = A11yChecks
+          .all(host.methodsNode)
+          .collectFirst {
+            case label: Label if label.getText == waiting => label
+          }
+          .getOrElse(fail("no visible methods loading status"))
+        assert(label.isVisible && label.isManaged && A11yChecks.shown(label))
+        A11yChecks
+          .all(host.methodsNode)
+          .collectFirst {
+            case button: Button if button.getAccessibleText == "Regenerate" => button
+          }
+          .getOrElse(fail("no regenerate control"))
+          .fire()
+        assertEquals(host.vm.methods.flatMap(_.status), Some(waiting))
+      }
+      val refused = "Methods facts temporarily unavailable"
+      gated.deliver(Left(refused))
+      eventually(fx, "a refused methods callback is visibly explained") {
+        host.vm.methods.exists(_.text == Left(refused))
+      }
+      runOnFx {
+        assert(host.methodsEditor.isDisabled)
+        assert(A11yChecks.all(host.methodsNode).exists {
+          case label: Label => label.getText == refused && label.isVisible && label.isManaged
+          case _            => false
+        })
+      }
+      gated.deliver(actual)
+      eventually(fx, "genuine methods facts make the editor ready") {
+        host.vm.methods.exists(_.text.isRight) && !host.methodsEditor.isDisabled
+      }
+      val original = runOnFx(host.methodsEditor.getText)
+      assert(
+        original.startsWith("Fixations (fixations.csv, 11,520 records; dataset r3)"),
+        original
+      )
+      runOnFx {
+        assertEquals(host.vm.methods.flatMap(_.status), None)
+        assert(!A11yChecks.all(host.methodsNode).exists {
+          case label: Label => label.getText == waiting && label.isVisible
+          case _            => false
+        })
+        host.methodsEditor.requestFocus()
+        host.methodsEditor.positionCaret(0)
+      }
+      fx.awaitLayout()
+      fx.robot.typeText("Authored: ")
+      val authored = "Authored: " + original
+      assertEquals(runOnFx(host.methodsEditor.getText), authored)
+      gated.deliver(actual)
+      fx.awaitLayout()
+      assertEquals(runOnFx(host.methodsEditor.getText), authored)
+      assertEquals(runOnFx(host.vm.methods.flatMap(_.text.toOption)), Some(authored))
+    finally runOnFx(host.dispose())
+  }
 
   Vector(Appearance.Light, Appearance.Dark).foreach { appearance =>
     fxStage.test(

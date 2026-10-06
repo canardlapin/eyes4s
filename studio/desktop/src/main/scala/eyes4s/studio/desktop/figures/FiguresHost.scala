@@ -1053,7 +1053,7 @@ final class FiguresHost(
       b.setText(label.getOrElse(""))
       b.setAccessibleText(label.getOrElse(""))
       b.setDisable(label.isEmpty)
-    val status = m.flatMap(_.status)
+    val status = m.flatMap(methods => methods.status.orElse(methods.text.left.toOption))
     methodsStatus.setText(status.getOrElse(""))
     methodsStatus.setVisible(status.isDefined)
     methodsStatus.setManaged(status.isDefined)

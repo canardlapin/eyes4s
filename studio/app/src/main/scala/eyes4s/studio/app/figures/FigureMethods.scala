@@ -53,13 +53,20 @@ final case class MethodsVM(
     status: Option[String]
 ) derives CanEqual
 
+/** A failed generation attempt follows current availability; an author
+  * action's message remains until another action replaces it.
+  */
+private[figures] enum MethodsStatus derives CanEqual:
+  case GenerationUnavailable
+  case Message(text: String)
+
 /** The methods text of every figure: the facts read per run, the author's
   * drafts per figure, and the pane's last message.
   */
 final case class FigureMethods private (
     facts: Map[RunId, Either[String, MethodsFacts]],
     drafts: Map[FigureId, MethodsDraft],
-    status: Option[String]
+    private[figures] val status: Option[MethodsStatus]
 ) derives CanEqual
 
 object FigureMethods:
@@ -120,30 +127,43 @@ object FigureMethods:
         (next, None)
       case Regenerate =>
         (draft, current) match
-          case (_, Left(why))                    => (m.copy(status = Some(why)), None)
+          case (_, Left(_)) =>
+            (m.copy(status = Some(MethodsStatus.GenerationUnavailable)), None)
           case (Some(d), Right(g)) if d.isEdited =>
             if g.text == d.base then
               (
-                set(Some(d.copy(pending = None))).copy(status = Some(MethodsCopy.Unchanged)),
+                set(Some(d.copy(pending = None)))
+                  .copy(status = Some(MethodsStatus.Message(MethodsCopy.Unchanged))),
                 None
               )
             else
               (
                 set(Some(d.copy(pending = Some(g.text))))
-                  .copy(status = Some(MethodsCopy.Changed)),
+                  .copy(status = Some(MethodsStatus.Message(MethodsCopy.Changed))),
                 Some(Show.Diff)
               )
           case (_, Right(g)) =>
-            (set(None).copy(status = Some(MethodsCopy.regenerated(g))), None)
+            (
+              set(None).copy(status = Some(MethodsStatus.Message(MethodsCopy.regenerated(g)))),
+              None
+            )
       case KeepEdits =>
         draft.flatMap(d => d.pending.map(p => d.copy(base = p, pending = None))) match
           case Some(d) =>
-            (set(Some(d).filter(_.isEdited)).copy(status = Some(MethodsCopy.Kept)), None)
+            (
+              set(Some(d).filter(_.isEdited))
+                .copy(status = Some(MethodsStatus.Message(MethodsCopy.Kept))),
+              None
+            )
           case None => (m, None)
       case UseGenerated =>
         draft.flatMap(_.pending) match
-          case Some(_) => (set(None).copy(status = Some(MethodsCopy.Replaced)), Some(Show.Text))
-          case None    => (m, None)
+          case Some(_) =>
+            (
+              set(None).copy(status = Some(MethodsStatus.Message(MethodsCopy.Replaced))),
+              Some(Show.Text)
+            )
+          case None => (m, None)
 
   def view(
       m: FigureMethods,
@@ -170,7 +190,10 @@ object FigureMethods:
       "Show diff",
       "Regenerate",
       draft.flatMap(_.pending).map(_ => ("Keep my edits", "Use the generated text")),
-      m.status
+      m.status.flatMap {
+        case MethodsStatus.GenerationUnavailable => now.left.toOption
+        case MethodsStatus.Message(text)         => Some(text)
+      }
     )
 
 object MethodsCopy:

@@ -401,6 +401,79 @@ class MethodsGeneratorSuite extends munit.FunSuite:
     }
   }
 
+  test("methods stay unavailable until all facts arrive, in every callback order") {
+    read.map { (summary, facts, report) =>
+      val replies = Vector(
+        ComposerIntent.SummaryRead(run7, SummaryAnswer.Answered(summary)),
+        ComposerIntent.ReportRead(
+          run7,
+          source.reporting,
+          ok(FigureComposer.reportingScale(source)),
+          Right(report)
+        ),
+        ComposerIntent.Methods(MethodsIntent.FactsRead(run7, Right(facts)))
+      )
+      replies.permutations.foreach { order =>
+        var state = FigureComposer.sync(FigureComposer.empty, t2)._1
+        order.zipWithIndex.foreach { (reply, index) =>
+          assertEquals(methods(state).text, Left(MethodsCopy.reading(run7)))
+          state = FigureComposer.update(state, t2, reply)._1
+          if index < order.size - 1 then
+            assertEquals(methods(state).text, Left(MethodsCopy.reading(run7)))
+        }
+        assertEquals(methods(state).text, Right(Golden))
+        val authored = Golden.replace(Replay, Edited)
+        state = act(state, MethodsIntent.Edit(authored))
+        order.foreach { reply =>
+          state = FigureComposer.update(state, t2, reply)._1
+          assertEquals(methods(state).text, Right(authored))
+        }
+      }
+    }
+  }
+
+  test("late refused and recovered facts never replace an existing methods edit") {
+    read.map { (summary, facts, report) =>
+      val authored = Golden.replace(Replay, Edited)
+      val edited   = act(composer(facts, summary, report), MethodsIntent.Edit(authored))
+      val refused  = act(edited, MethodsIntent.FactsRead(run7, Left("Reading interrupted")))
+      assertEquals(methods(refused).text, Right(authored))
+      val continuedText = authored + " The authors checked these settings."
+      val continued     = act(refused, MethodsIntent.Edit(continuedText))
+      assertEquals(methods(continued).text, Right(continuedText))
+      val newer     = facts.copy(failures = Vector("study-failure.empty-map" -> 3))
+      val recovered = act(continued, MethodsIntent.FactsRead(run7, Right(newer)))
+      assertEquals(methods(recovered).text, Right(continuedText))
+      val regenerate = methods(act(recovered, MethodsIntent.Regenerate))
+      assertEquals(regenerate.text, Right(continuedText))
+      assert(regenerate.choice.isDefined)
+    }
+  }
+
+  test("a regenerate attempted while loading stops saying reading once all callbacks arrive") {
+    read.map { (summary, facts, report) =>
+      val replies = Vector(
+        ComposerIntent.SummaryRead(run7, SummaryAnswer.Answered(summary)),
+        ComposerIntent.ReportRead(
+          run7,
+          source.reporting,
+          ok(FigureComposer.reportingScale(source)),
+          Right(report)
+        ),
+        ComposerIntent.Methods(MethodsIntent.FactsRead(run7, Right(facts)))
+      )
+      replies.permutations.foreach { order =>
+        val initial = FigureComposer.sync(FigureComposer.empty, t2)._1
+        val waiting = act(initial, MethodsIntent.Regenerate)
+        assertEquals(methods(waiting).status, Some(MethodsCopy.reading(run7)))
+        val ready =
+          order.foldLeft(waiting)((state, reply) => FigureComposer.update(state, t2, reply)._1)
+        assertEquals(methods(ready).text, Right(Golden))
+        assertEquals(methods(ready).status, None)
+      }
+    }
+  }
+
   test("regenerating over edits shows a diff and waits; it never discards them") {
     read.map { (summary, facts, report) =>
       val edited =
