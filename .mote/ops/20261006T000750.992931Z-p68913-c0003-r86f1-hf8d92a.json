@@ -1,0 +1,1 @@
+{"actor":"codex-eyes4s-ci","entity":"bd-01M474QVT8DMRGQNTX8TK274XN","kind":"note","note_kind":"progress","op":"20261006T000750.992931Z-p68913-c0003-r86f1-hf8d92a","text":"Fix source-record reveal retries to observe actual layout pulses; retain End/Home visibility and scroll/resize behavior","ts":"2026-10-06T00:07:50.992931Z","v":1}
