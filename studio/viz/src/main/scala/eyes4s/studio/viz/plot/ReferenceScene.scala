@@ -34,6 +34,7 @@ import intaglio.{
   PointShape,
   Rgba,
   Scene,
+  SceneSemantics,
   Size,
   StrokeUnit,
   VJust,
@@ -94,7 +95,17 @@ object ReferenceScene:
       (grobs, viewport) = scene
       panel     <- DataPanel(id, viewport)
       plotScene <- PlotScene(id, Scene(grobs), panel)
-    yield plotScene
+    yield plotScene.withSemantics(
+      SceneSemantics.single(
+        SceneSummaries.semantics(
+          id,
+          "Reference plot",
+          "Eight reference marks: three controls, two matches and three queries on a gridded panel.",
+          "Control marks are outlined circles, matches are diamonds and queries are filled circles. " +
+            "The x range is 0 to 10; the y range is 0 to 5. Fixed example data, not study results."
+        )
+      )
+    )
 
   private def build(theme: Theme): Either[GraphicsError, (Vector[Grob], Viewport)] =
     def colour(token: ThemedToken): Rgba          = IntaglioColours.themed(theme, token)

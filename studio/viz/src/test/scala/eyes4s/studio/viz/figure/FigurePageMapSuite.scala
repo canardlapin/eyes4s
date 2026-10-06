@@ -167,3 +167,40 @@ class FigurePageMapSuite extends munit.FunSuite:
       scoreY <= native(box.center.y) && scoreY >= native(box.center.y) - extent(box.size.height)
     )
   }
+
+  test(
+    "the exported figure and every panel retain accessible text, including unavailable panels"
+  ) {
+    val waiting = page.panels.head.copy(
+      letter = right(PanelLetter.of("D")),
+      title = "Pending & unavailable",
+      body = PanelBody.Unavailable("A source <file> is missing")
+    )
+    val vm = page.copy(
+      title = "Density & context",
+      panels = page.panels :+ waiting,
+      caption = "Caption & provenance"
+    )
+    val built = right(FigurePage.build(vm))
+    assertEquals(built.scene.semantics.documentId.map(_.value), Some("studio-figure-1"))
+    assertEquals(built.scene.semantics.accessibleTitle, Some(vm.title))
+    val description =
+      built.scene.semantics.accessibleDescription.getOrElse(fail("missing description"))
+    Vector(
+      vm.caption,
+      vm.stamp,
+      "Panel C: Density maps",
+      "Query ret_07",
+      "shared limits",
+      "Panel D: Pending & unavailable",
+      "A source <file> is missing"
+    ).foreach(text => assert(description.contains(text), text))
+    val svg = right(intaglio.svg.SvgRenderer.render(right(built.plan(96)))).value
+    assert(svg.contains("<title id=\"studio-figure-1-title\">Density &amp; context</title>"))
+    assert(svg.contains("aria-describedby=\"studio-figure-1-description\""))
+    assert(svg.contains("<title>Panel C: Density maps</title>"))
+    assert(svg.contains("<title>Panel D: Pending &amp; unavailable</title>"))
+    assert(svg.contains("A source &lt;file&gt; is missing"))
+    val ids = "data-semantic-id=\"([^\"]+)\"".r.findAllMatchIn(svg).map(_.group(1)).toVector
+    assertEquals(ids, Vector("studio-figure-1-panel-C", "studio-figure-1-panel-D"))
+  }

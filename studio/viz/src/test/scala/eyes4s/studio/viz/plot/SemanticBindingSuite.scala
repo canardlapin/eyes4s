@@ -262,11 +262,48 @@ class SemanticBindingSuite extends ScalaCheckSuite:
     assertEquals(SceneSummaries.namedGrobs(twice), Vector(name, name))
   }
 
-  test("a semantic id keeps only Intaglio's portable characters") {
+  test(
+    "semantic ids escape punctuation, Unicode and the escape introducer without collisions"
+  ) {
+    val ids = Vector("a b", "a/b", "a-b", "a_0020b", "é", "_00e9", "😀", "_")
+      .map(s => SceneSummaries.semanticId(right(SceneId(s))).value)
+    assertEquals(ids.distinct.size, ids.size)
     assertEquals(
-      SceneSummaries.semanticId(right(SceneId("scale ladder · P17/ret_07 σ2°"))).value,
-      "studio-scale-ladder---P17-ret_07--2-"
+      ids.take(4),
+      Vector("studio-a_0020b", "studio-a_002fb", "studio-a-b", "studio-a_005f0020b")
     )
+    ids.foreach(id => assert(intaglio.SemanticId(id).isRight, id))
+  }
+
+  property("distinct scene ids retain distinct portable semantic ids") {
+    val ids = Gen
+      .nonEmptyListOf(Gen.oneOf('a', 'Z', '0', '-', '_', '.', ' ', '/', 'é', 'σ'))
+      .map(_.mkString)
+      .suchThat(_.trim.nonEmpty)
+      .map(s => right(SceneId(s)))
+    Prop.forAll(ids, ids) { (a, b) =>
+      val sa = SceneSummaries.semanticId(a)
+      val sb = SceneSummaries.semanticId(b)
+      assertEquals(sa == sb, a == b)
+      assert(intaglio.SemanticId(sa.value).isRight)
+    }
+  }
+
+  test("reference diagrams carry a title, description and summary into SVG") {
+    Theme.values.foreach { theme =>
+      val scene    = right(ReferenceScene(theme))
+      val semantic = scene.scene.semantics.plots.head
+      assertEquals(semantic.title, Some("Reference plot"))
+      assert(semantic.description.exists(_.contains("not study results")))
+      val svg = right(
+        intaglio.svg.SvgRenderer.render(
+          intaglio.RenderPlan(scene.scene, right(intaglio.RenderContext(640, 400)))
+        )
+      ).value
+      assert(svg.contains("<title id="))
+      assert(svg.contains("Eight reference marks"))
+      assert(svg.contains("aria-describedby="))
+    }
   }
 
   // --- the trial scene ------------------------------------------------------------------------

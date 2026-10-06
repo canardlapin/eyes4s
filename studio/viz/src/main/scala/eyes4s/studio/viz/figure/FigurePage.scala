@@ -37,6 +37,11 @@ import intaglio.{
   GraphicParams,
   GraphicsError,
   Grob,
+  GrobMeta,
+  DataKey,
+  PlotSemantics,
+  SceneSemantics,
+  SemanticId,
   HJust,
   Length,
   LengthExpr,
@@ -275,6 +280,25 @@ object FigurePage:
           paragraph(text, x, y, width, ink).map((more, next) => (gs ++ more, next))
         )
       }
+    // Annotations retain each child scene's description and scientific
+    // summary when its grobs are placed in the page's coordinate system.
+    def embedded(scene: Scene, grobs: Vector[Grob], port: Viewport): Grob =
+      val title       = scene.semantics.accessibleTitle
+      val description = scene.semantics.plots
+        .flatMap(s => (Vector(s.accessibleDescription) ++ s.description.toVector).distinct)
+        .mkString("\n")
+      Grob.annotated(
+        Grob.group(grobs, viewport = Some(port)),
+        GrobMeta(title = title, description = Option.when(description.nonEmpty)(description))
+      )
+    def bodyText(body: PanelBody): Vector[String] = body match
+      case PanelBody.Plot(vm) => vm.notes
+      case PanelBody.Maps(vm) =>
+        vm.tiles.flatMap(t => Vector(t.title, t.label)) ++ Vector(vm.caption, vm.maps)
+      case PanelBody.Gaze(vm)         => Vector(vm.heading, vm.displayed, vm.gaze)
+      case PanelBody.Waiting(why)     => Vector(why)
+      case PanelBody.Unavailable(why) => Vector(why)
+    val figureId = SemanticId.unsafe(s"studio-figure-${page.figure.number}")
     def plot(p: Placed, vm: PlotPanelVM, top: Double): Either[FigurePageError, Grob] =
       val w = p.panel.widthMm.toDouble
       val h = plotHeight(w)
@@ -288,7 +312,7 @@ object FigurePage:
           Viewport
             .checked(origin = at(p.x, top + h), size = Size.fromExtents(extent(w), extent(h)))
         )
-      yield Grob.group(built.plot.scene.grobs, viewport = Some(port))
+      yield embedded(built.plot.scene, built.plot.scene.grobs, port)
     def trial(p: Placed, vm: GazeTrialVM, top: Double): Either[FigurePageError, Grob] =
       val w = p.panel.widthMm.toDouble
       val h = w * FigureGaze.heightRatio(vm)
@@ -304,7 +328,7 @@ object FigurePage:
             size = Size.fromExtents(extent(w), extent(whole))
           )
         )
-      yield Grob.group(FigureGaze.panelOnly(built), viewport = Some(port))
+      yield embedded(built.plot.scene, FigureGaze.panelOnly(built), port)
     def tiles(
         p: Placed,
         vm: DensityMapsVM,
@@ -366,7 +390,7 @@ object FigurePage:
                     size = Size.fromExtents(extent(mapW), extent(mapH))
                   )
                 )
-              yield Vector(Grob.group(built.scene.grobs, viewport = Some(port)))
+              yield Vector(embedded(built.scene, built.scene.grobs, port))
             case _ => Right(Vector.empty)
           score <- lines(
             label,
@@ -440,7 +464,19 @@ object FigurePage:
             paragraph(why, p.x, body, w, PaletteToken.PaperInk2).map(_._1)
           case PanelBody.Unavailable(why) =>
             paragraph(why, p.x, body, w, PaletteToken.PaperInk2).map(_._1)
-      yield Vector(letter, title) ++ drawn
+      yield Vector(
+        Grob.annotated(
+          Grob.group(Vector(letter, title) ++ drawn),
+          GrobMeta(
+            title = Some(s"Panel ${p.panel.letter.value}: ${p.panel.title}"),
+            description = Some(bodyText(p.panel.body).mkString("\n")),
+            data = Vector(
+              DataKey.unsafe("semantic-id") ->
+                s"${figureId.value}-panel-${p.panel.letter.value}"
+            )
+          )
+        )
+      )
     for
       paperStyle <- g("the paper")(
         GraphicParams.checked(stroke = None, fill = Some(colour(PaletteToken.Paper)))
@@ -460,7 +496,24 @@ object FigurePage:
         widthMm,
         PaletteToken.PaperInk
       )
-    yield FigurePage(Scene((paper +: panels) ++ foot), widthMm, heightMm)
+    yield
+      val description = (Vector(page.caption) ++ page.panels.flatMap(p =>
+        Vector(s"Panel ${p.letter.value}: ${p.title}") ++ bodyText(p.body)
+      ) :+ page.stamp).filter(_.nonEmpty).mkString("\n")
+      val semantics = PlotSemantics(
+        figureId,
+        Some(page.title),
+        Some(description),
+        Some(description),
+        Vector.empty,
+        Vector.empty,
+        Vector.empty
+      )
+      FigurePage(
+        Scene((paper +: panels) ++ foot).withSemantics(SceneSemantics.single(semantics)),
+        widthMm,
+        heightMm
+      )
 
   private def builderOf(vm: PlotPanelVM): Either[FigurePageError, PlotBuilder] = vm.kind match
     case PlotKind.Participant =>

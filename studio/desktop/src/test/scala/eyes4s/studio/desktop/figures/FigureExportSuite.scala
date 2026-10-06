@@ -149,6 +149,16 @@ class FigureExportSuite extends munit.FunSuite:
         .sum
       assertEquals(rasters, maps.tiles.size)
       assertEquals(contours, servedContours)
+      assert(svg.contains("aria-describedby=\"studio-figure-1-description\""))
+      p.panels.foreach(panel =>
+        assert(
+          svg.contains(
+            s"<title>Panel ${panel.letter.value}: ${unescape(panel.title).replace("&", "&amp;")}</title>"
+          )
+        )
+      )
+      assert(svg.contains("fixation marks"), "trial scene summary was dropped")
+      assert(svg.contains("marks for"), "plot scene summary was dropped")
       val golden = buildRoot.resolve("docs/studio/figures/golden/figure-1.svg")
       if sys.env.contains("EYES4S_UPDATE_GOLDENS") then
         Files.createDirectories(golden.getParent)

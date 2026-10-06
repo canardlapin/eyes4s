@@ -107,3 +107,40 @@ class GeometrySceneSuite extends munit.FunSuite:
       case other        => fail(s"expected a rect, got $other")
     }
   }
+
+  test("placement diagrams describe counted records, including records outside the screen") {
+    val picture = ThumbnailPicture(
+      trial,
+      3,
+      1,
+      1,
+      Vector(
+        MarkPicture(700, 420, MarkPlace.Inside, corrected = false),
+        MarkPicture(260, 120, MarkPlace.OutsideWindow, corrected = true),
+        MarkPicture(2000, 420, MarkPlace.OutsideScreen, corrected = false)
+      )
+    )
+    val thumbnail =
+      get(GeometryScene.thumbnail("thumb", Theme.Light, StageVariant.Dark, frame, picture))
+    val density = get(
+      GeometryScene.density(
+        "density",
+        StageVariant.Dark,
+        frame,
+        DensityPicture(2, 2, Vector(0, 1, 2, 4), 3)
+      )
+    )
+    val scenes = Vector(thumbnail, density)
+    assertEquals(scenes.map(_.scene.semantics.plots.head.id).distinct.size, 2)
+    assert(thumbnail.scene.semantics.plots.head.description.exists(_.contains("2 marks drawn")))
+    assert(density.scene.semantics.plots.head.description.exists(_.contains("3 cells drawn")))
+    scenes.foreach { scene =>
+      val context = intaglio.RenderContext(640, 400).fold(e => fail(e.toString), identity)
+      val svg     = intaglio.svg.SvgRenderer
+        .render(intaglio.RenderPlan(scene.scene, context))
+        .fold(e => fail(e.toString), _.value)
+      assert(svg.contains("<title id="))
+      assert(svg.contains("<desc id="))
+      assert(svg.contains("3 records"))
+    }
+  }
