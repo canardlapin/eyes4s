@@ -18,34 +18,10 @@ package eyes4s.studio.viz.trial
 
 import eyes4s.studio.app.text.{TrialText, TrialTextId}
 import eyes4s.studio.core.backend.TrialKey
-import eyes4s.studio.core.selection.{SelectionState, StudioRef, ViewId}
-import eyes4s.studio.viz.plot.{MarkInputState, MarkInputStep, SelectionShare}
+import eyes4s.studio.core.selection.StudioRef
+import eyes4s.studio.viz.plot.{MarkInputState, SelectionShare}
 
-// A trial view's input (ticket S4.2) is the input of any view with marks
-// (eyes4s.studio.viz.plot.MarkInputState, S4.5a) over fixation refs; these
-// names keep the trial's vocabulary.
-export eyes4s.studio.app.plot.{RovingKey, RovingMove}
-export eyes4s.studio.viz.plot.{
-  MarkInputEvent as TrialInputEvent,
-  OverlayPalette,
-  OverlayRing,
-  OverlayRings,
-  RingKind
-}
-
-/** A trial view's input state: the roving cursor over its fixations. */
-type TrialInputState = MarkInputState[StudioRef.Fixation]
-
-/** What an input did to a trial view. */
-type TrialInputStep = MarkInputStep[StudioRef.Fixation]
-
-object TrialInputState:
-
-  /** A view with nothing focused or hovered, showing `selection`. */
-  def initial(view: ViewId, selection: SelectionState): TrialInputState =
-    MarkInputState.initial(view, selection)
-
-extension (state: TrialInputState)
+extension (state: MarkInputState[StudioRef.Fixation])
   /** The view's accessible text: the focused mark, from its semantic id, or
     * how to use the view when no mark is focused. The mark's text states its
     * map placement.

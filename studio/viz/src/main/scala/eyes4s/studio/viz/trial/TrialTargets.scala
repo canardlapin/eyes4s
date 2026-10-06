@@ -134,9 +134,6 @@ final class TrialTargets private (
 
 object TrialTargets:
 
-  /** Device positions this close (in device pixels) are one position. */
-  val Epsilon: Double = RovingCursor.Epsilon
-
   /** The targets of `scene`, drawn as `device` at `deviceScale`, with the
     * named picking plan compiled from the same scene and render context.
     */

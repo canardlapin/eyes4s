@@ -17,6 +17,7 @@
 package eyes4s.studio.viz.trial
 
 import eyes4s.studio.app.Intent
+import eyes4s.studio.app.plot.{RovingKey, RovingMove}
 import eyes4s.studio.app.text.TrialText
 import eyes4s.studio.app.tokens.{StageVariant, Theme}
 import eyes4s.studio.core.assets.Display
@@ -32,7 +33,15 @@ import eyes4s.studio.core.selection.{
   ViewId
 }
 import eyes4s.plan.{MapPlacement, OffWindowPolicy}
-import eyes4s.studio.viz.plot.{PlotSurface, PlotTransform}
+import eyes4s.studio.viz.plot.{
+  MarkInputEvent,
+  MarkInputState,
+  OverlayRings,
+  PlotSurface,
+  PlotTransform,
+  RingKind,
+  RovingCursor
+}
 import eyes4s.studio.viz.trial.TrialSamples.*
 import intaglio.interaction.NamedPicking
 import intaglio.{DevicePoint, RenderPlan, value}
@@ -245,8 +254,8 @@ class RovingCursorSuite extends ScalaCheckSuite:
   private def oracle(t: TrialTargets, from: MarkTarget, move: RovingMove): Option[MarkTarget] =
     val a     = from.anchor
     val stack = t.targets.filter(o =>
-      o.mark.order != from.mark.order && math.abs(o.anchor.x - a.x) <= TrialTargets.Epsilon &&
-        math.abs(o.anchor.y - a.y) <= TrialTargets.Epsilon
+      o.mark.order != from.mark.order && math.abs(o.anchor.x - a.x) <= RovingCursor.Epsilon &&
+        math.abs(o.anchor.y - a.y) <= RovingCursor.Epsilon
     )
     val forward = move == RovingMove.Right || move == RovingMove.Down
     val inStack =
@@ -257,10 +266,10 @@ class RovingCursorSuite extends ScalaCheckSuite:
         val dx = o.anchor.x - a.x
         val dy = o.anchor.y - a.y
         move match
-          case RovingMove.Right => dx > TrialTargets.Epsilon
-          case RovingMove.Left  => dx < -TrialTargets.Epsilon
-          case RovingMove.Down  => dy > TrialTargets.Epsilon
-          case _                => dy < -TrialTargets.Epsilon
+          case RovingMove.Right => dx > RovingCursor.Epsilon
+          case RovingMove.Left  => dx < -RovingCursor.Epsilon
+          case RovingMove.Down  => dy > RovingCursor.Epsilon
+          case _                => dy < -RovingCursor.Epsilon
       }
       val best = side.map(o => math.hypot(o.anchor.x - a.x, o.anchor.y - a.y)).minOption
       best.flatMap(d =>
@@ -352,13 +361,13 @@ class RovingCursorSuite extends ScalaCheckSuite:
   // The input state: intents, projection, overlay, accessible text
   // ---------------------------------------------------------------------------
 
-  private def key(k: RovingKey) = TrialInputEvent.Key(k)
+  private def key(k: RovingKey) = MarkInputEvent.Key(k)
 
   private def run(
-      state: TrialInputState,
+      state: MarkInputState[StudioRef.Fixation],
       t: TrialTargets,
-      events: TrialInputEvent*
-  ): (TrialInputState, Vector[Intent]) =
+      events: MarkInputEvent*
+  ): (MarkInputState[StudioRef.Fixation], Vector[Intent]) =
     events.foldLeft((state, Vector.empty[Intent])) { case ((s, out), e) =>
       val step = right(s.handle(e, t, 1.0))
       (step.state, out ++ step.intents)
@@ -366,7 +375,7 @@ class RovingCursorSuite extends ScalaCheckSuite:
 
   test("Enter selects the focused mark through a stamped intent; Escape clears") {
     val t        = targets()
-    val initial  = TrialInputState.initial(view, SelectionState.empty)
+    val initial  = MarkInputState.initial[StudioRef.Fixation](view, SelectionState.empty)
     val (s1, i1) =
       run(initial, t, key(RovingKey.Move(RovingMove.Next)), key(RovingKey.Activate(false)))
     val first = t.targets.head.ref
@@ -410,9 +419,10 @@ class RovingCursorSuite extends ScalaCheckSuite:
   test("keyboard alone selects any mark, and the bus accepts every input") {
     val t = targets(enc03Fixations)
     t.targets.foreach { target =>
-      var bus                    = SelectionState.empty
-      var state: TrialInputState = TrialInputState.initial(view, bus)
-      val presses                =
+      var bus                                       = SelectionState.empty
+      var state: MarkInputState[StudioRef.Fixation] =
+        MarkInputState.initial[StudioRef.Fixation](view, bus)
+      val presses =
         key(RovingKey.Move(RovingMove.First)) +:
           Vector.fill(target.mark.order)(key(RovingKey.Move(RovingMove.Next))) :+
           key(RovingKey.Activate(false))
@@ -433,15 +443,15 @@ class RovingCursorSuite extends ScalaCheckSuite:
   test("a click picks, focuses and selects; a modifier click adds; hover is local") {
     val t       = targets()
     val target  = t.targets(3)
-    val initial = TrialInputState.initial(view, SelectionState.empty)
-    val moved   = right(initial.handle(TrialInputEvent.PointerMoved(target.anchor), t, 1.0))
+    val initial = MarkInputState.initial[StudioRef.Fixation](view, SelectionState.empty)
+    val moved   = right(initial.handle(MarkInputEvent.PointerMoved(target.anchor), t, 1.0))
     assertEquals(moved.intents, Vector(Intent.HoverOver(view, Some(target.ref))))
     assertEquals(moved.state.hover, Some(target.ref))
     // The same hover again is no change and no intent.
-    val again = right(moved.state.handle(TrialInputEvent.PointerMoved(target.anchor), t, 1.0))
+    val again = right(moved.state.handle(MarkInputEvent.PointerMoved(target.anchor), t, 1.0))
     assertEquals((again.intents, again.redraw), (Vector.empty, false))
     val clicked =
-      right(moved.state.handle(TrialInputEvent.PointerClicked(target.anchor, true), t, 1.0))
+      right(moved.state.handle(MarkInputEvent.PointerClicked(target.anchor, true), t, 1.0))
     assertEquals(clicked.state.focus, Some(target.ref))
     clicked.intents match
       // Nothing is projected yet, so the modifier click adds the mark.
@@ -449,11 +459,11 @@ class RovingCursorSuite extends ScalaCheckSuite:
         assertEquals(ref, target.ref)
         assertEquals(stamp.cause, InputCause.Pointer)
       case other => fail(s"unexpected $other")
-    val left = right(clicked.state.handle(TrialInputEvent.PointerExited, t, 1.0))
+    val left = right(clicked.state.handle(MarkInputEvent.PointerExited, t, 1.0))
     assertEquals(left.intents, Vector(Intent.HoverOver(view, None)))
     // A click on no mark changes nothing.
     val miss = right(
-      initial.handle(TrialInputEvent.PointerClicked(DevicePoint(1.0, 1.0), false), t, 1.0)
+      initial.handle(MarkInputEvent.PointerClicked(DevicePoint(1.0, 1.0), false), t, 1.0)
     )
     assertEquals((miss.intents, miss.state), (Vector.empty, initial))
   }
@@ -471,7 +481,7 @@ class RovingCursorSuite extends ScalaCheckSuite:
         )
       )
     )
-    val initial = TrialInputState.initial(view, SelectionState.empty)
+    val initial = MarkInputState.initial[StudioRef.Fixation](view, SelectionState.empty)
     val step    = initial.project(bus)
     assertEquals((step.intents, step.redraw), (Vector.empty, true))
     assertEquals(
@@ -484,7 +494,7 @@ class RovingCursorSuite extends ScalaCheckSuite:
 
   test("a view re-attached under the same id continues after its last applied input") {
     val t        = targets()
-    val first    = TrialInputState.initial(view, SelectionState.empty)
+    val first    = MarkInputState.initial[StudioRef.Fixation](view, SelectionState.empty)
     val (_, out) =
       run(first, t, key(RovingKey.Move(RovingMove.First)), key(RovingKey.Activate(false)))
     val bus = out.foldLeft(SelectionState.empty) {
@@ -492,7 +502,7 @@ class RovingCursorSuite extends ScalaCheckSuite:
       case (b, _)                    => b
     }
     val (_, again) = run(
-      TrialInputState.initial(view, bus),
+      MarkInputState.initial[StudioRef.Fixation](view, bus),
       t,
       key(RovingKey.Move(RovingMove.Last)),
       key(RovingKey.Activate(false))
@@ -507,7 +517,7 @@ class RovingCursorSuite extends ScalaCheckSuite:
     val t      = targets(scale = 2.0)
     val target = t.targets(4)
     val (s, _) = run(
-      TrialInputState.initial(view, SelectionState.empty),
+      MarkInputState.initial[StudioRef.Fixation](view, SelectionState.empty),
       t,
       key(RovingKey.Move(RovingMove.First)),
       key(RovingKey.Move(RovingMove.Next)),
@@ -548,7 +558,7 @@ class RovingCursorSuite extends ScalaCheckSuite:
   test("the focused mark's accessible text comes from its semantic id") {
     val t      = targets()
     val (s, _) = run(
-      TrialInputState.initial(view, SelectionState.empty),
+      MarkInputState.initial[StudioRef.Fixation](view, SelectionState.empty),
       t,
       key(RovingKey.Move(RovingMove.First)),
       key(RovingKey.Move(RovingMove.Next))
@@ -570,8 +580,8 @@ class RovingCursorSuite extends ScalaCheckSuite:
       "Fixation 2 of P17 · ret_07 · in map, selected"
     )
     assert(
-      TrialInputState
-        .initial(view, SelectionState.empty)
+      MarkInputState
+        .initial[StudioRef.Fixation](view, SelectionState.empty)
         .accessibleText(ret07, t)
         .startsWith("Fixations of P17 · ret_07. Arrow keys")
     )
@@ -584,7 +594,8 @@ class RovingCursorSuite extends ScalaCheckSuite:
     assertEquals(outside.ref.index.value, 9)
     val moves = key(RovingKey.Move(RovingMove.First)) +:
       Vector.fill(outside.ref.index.value - 1)(key(RovingKey.Move(RovingMove.Next)))
-    val (s, _) = run(TrialInputState.initial(view, SelectionState.empty), t, moves*)
+    val (s, _) =
+      run(MarkInputState.initial[StudioRef.Fixation](view, SelectionState.empty), t, moves*)
     assertEquals(s.focus, Some(outside.ref))
     assertEquals(
       s.accessibleText(ret07, t),
@@ -633,9 +644,9 @@ class RovingCursorSuite extends ScalaCheckSuite:
   test("new targets drop a focus and hover the trial no longer draws") {
     val t      = targets()
     val (s, _) = run(
-      TrialInputState.initial(view, SelectionState.empty),
+      MarkInputState.initial[StudioRef.Fixation](view, SelectionState.empty),
       t,
-      TrialInputEvent.PointerMoved(t.targets.last.anchor),
+      MarkInputEvent.PointerMoved(t.targets.last.anchor),
       key(RovingKey.Move(RovingMove.Last))
     )
     assertEquals(s.focus, Some(t.targets.last.ref))

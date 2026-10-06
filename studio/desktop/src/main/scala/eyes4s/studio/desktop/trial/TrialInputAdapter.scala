@@ -20,8 +20,8 @@ import eyes4s.studio.app.Intent
 import eyes4s.studio.app.text.{TrialText, TrialTextId}
 import eyes4s.studio.core.selection.{SelectionState, StudioRef, ViewId}
 import eyes4s.studio.desktop.plot.{MarkInputAdapter, MarkLayer, PlotFrame}
-import eyes4s.studio.viz.plot.OverlayPalette
-import eyes4s.studio.viz.trial.{TrialInputState, TrialTargetError, TrialTargets, accessibleText}
+import eyes4s.studio.viz.plot.{MarkInputState, OverlayPalette}
+import eyes4s.studio.viz.trial.{TrialTargetError, TrialTargets, accessibleText}
 import intaglio.IntaglioError
 import javafx.application.Platform
 
@@ -53,7 +53,7 @@ final class TrialInputAdapter private (
 ):
 
   /** The input state: cursor, hover and the projected selection. */
-  def state: TrialInputState = core.state
+  def state: MarkInputState[StudioRef.Fixation] = core.state
 
   /** The targets of the frame on the canvas, if a trial is drawn. */
   def targets: Option[TrialTargets] = core.targets
@@ -98,7 +98,10 @@ object TrialInputAdapter:
         case _ => None
     def palette: Option[OverlayPalette] =
       view.input.map(in => OverlayPalette.of(in.theme, in.stage))
-    def spoken(state: TrialInputState, targets: TrialTargets): Option[String] =
+    def spoken(
+        state: MarkInputState[StudioRef.Fixation],
+        targets: TrialTargets
+    ): Option[String] =
       view.input.map(in => state.accessibleText(in.display.trial, targets))
     def roleDescription: String = TrialText(TrialTextId.PlotRole)
     // Named before its marks are resolved, as it reads with no mark focused.
@@ -132,7 +135,7 @@ object TrialInputAdapter:
           MarkInputAdapter(
             view.plotHost,
             TrialLayer(view),
-            TrialInputState.initial(viewId, selection),
+            MarkInputState.initial[StudioRef.Fixation](viewId, selection),
             dispatch,
             toleranceLogicalPx
           )

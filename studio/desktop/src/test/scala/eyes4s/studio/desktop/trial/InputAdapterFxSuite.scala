@@ -34,6 +34,8 @@ import eyes4s.studio.desktop.harness.{FxStage, StageSize, StudioFxSuite}
 import eyes4s.studio.desktop.plot.{CanvasPlotHost, PlotFrame, PlotHostProfile, PlotHostStatus}
 import eyes4s.studio.desktop.runtime.{EffectPerformer, StudioRuntime}
 import eyes4s.studio.desktop.typography.StudioFonts
+import eyes4s.studio.app.plot.RovingMove
+import eyes4s.studio.viz.plot.{OverlayRings, RingKind}
 import eyes4s.studio.viz.trial.*
 import intaglio.DevicePoint
 import javafx.event.{Event, EventType}
