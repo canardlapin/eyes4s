@@ -188,6 +188,23 @@ class ViewModelSnapshotSuite extends munit.FunSuite:
       "lost"
     )
 
+  test("Cancel names its target run and job in both shell locations and the tab order") {
+    for model <- Vector(StoryModels.t3Summary, withJob(JobPhase.Queued)) do
+      val shell  = Shell.project(model)
+      val chip   = shell.appBar.jobs.action.getOrElse(fail("no chip cancel"))
+      val mirror = shell.status.job.action.getOrElse(fail("no status cancel"))
+      val name   = s"Cancel Run 8 (job ${StoryMoments.run8Job.number})"
+      assertEquals(chip.label, "Cancel")
+      assertEquals(chip.accessible, name)
+      assertEquals(mirror.accessible, name)
+      assertEquals(chip.intent, Intent.CancelJob(StoryMoments.run8Job))
+      assertEquals(A11y.tabOrder(model).count(_.name == name), 2)
+    assertEquals(
+      ActionVM("Show", true, Intent.CancelJob(StoryMoments.run8Job)).accessible,
+      "Show"
+    )
+  }
+
   test("System board · jobs chip: failed, counting, queued, cancelling, ready") {
     val failed =
       Shell.appBar(withJob(JobPhase.Failed(Vector(diagnostic, diagnostic), None))).jobs

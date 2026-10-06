@@ -84,7 +84,7 @@ final class JobsChip(dispatch: Intent => Unit):
       vm.action match
         case Some(a) =>
           cancel.setText(a.label)
-          cancel.setAccessibleText(a.label)
+          cancel.setAccessibleText(a.accessible)
           cancel.setDisable(!a.enabled)
           cancel.setOnAction(_ => dispatch(a.intent))
           show(cancel, true)
