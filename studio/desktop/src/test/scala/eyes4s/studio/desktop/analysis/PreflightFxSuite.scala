@@ -19,15 +19,20 @@ package eyes4s.studio.desktop.analysis
 import eyes4s.kernel.Unit2D
 import eyes4s.plan.{Diagnostic, MatchedReferences, StudyFinding}
 import eyes4s.studio.app.StoryModels
-import eyes4s.studio.app.analysis.DesignIntent
+import eyes4s.studio.app.analysis.{DesignIntent, ResolvedDesign}
+import eyes4s.studio.app.tokens.Wcag
 import eyes4s.studio.core.backend.{Phase, StudioDiagnostic, TrialKey}
-import eyes4s.studio.core.document.Perspective
+import eyes4s.studio.core.document.{Perspective, Theme}
 import eyes4s.studio.core.fixture.StoryMoment
 import eyes4s.studio.core.preview.{PreviewEvent, PreviewId, PreviewReady}
 import eyes4s.studio.core.selection.StudioRef
-import eyes4s.studio.desktop.StudioWindow
+import eyes4s.studio.desktop.{StudioWindow, ThemeHost}
 import eyes4s.studio.desktop.harness.{FxStage, StudioTheme}
-import eyes4s.studio.desktop.shell.ShellFxSuite
+import eyes4s.studio.desktop.shell.{A11yChecks, ShellFxSuite}
+import javafx.scene.control.Button
+import javafx.scene.layout.VBox
+import javafx.scene.paint.Color
+import javafx.scene.text.Text
 
 import scala.concurrent.duration.Duration
 
@@ -45,6 +50,59 @@ class PreflightFxSuite extends ShellFxSuite:
     eventually(fx, "the counted preview") {
       w.resolvedDesign.state.preview.receipt.isDefined
     }
+
+  Vector(Theme.Light, Theme.Dark).foreach { theme =>
+    fxStage.test(s"pending preflight remains readable while disabled in $theme") { fx =>
+      val model        = StoryModels.t2Analysis
+      val (root, host) = runOnFx {
+        // No backend runs: Preparing is held for the whole rendered check,
+        // so a fast receipt cannot conceal the disabled control's palette.
+        val pending = ResolvedDesign.sync(ResolvedDesign.empty, model)._1
+        assertEquals(pending.preview.receipt, None)
+        val host = PreflightHost(() => model, _ => fail("pending preflight dispatched a run"))
+        host.follow(pending)
+        val root = VBox(host.node)
+        root.getStyleClass.add("studio-shell")
+        root.getStylesheets.setAll(
+          ThemeHost.sheets(theme).fold(e => fail(e.message), identity)*
+        )
+        (root, host)
+      }
+      fx.show(root)
+      // ScrollPane materializes its content children when the skin is
+      // created by the shown scene's CSS/layout pass.
+      val button = runOnFx(
+        A11yChecks
+          .all(root)
+          .collectFirst {
+            case button: Button if button.getStyleClass.contains("preflight-run") => button
+          }
+          .getOrElse(fail("no pending run control"))
+      )
+      assertEquals(runOnFx(host.runButton._2), false)
+      assert(runOnFx(host.runButton._3.nonEmpty))
+      runOnFx {
+        val texts = A11yChecks.all(button).collect {
+          case text: Text if A11yChecks.shown(text) && text.getText.nonEmpty => text
+        }
+        assert(texts.nonEmpty, "the pending action must actually draw its label")
+        // Explicitly include disabled text: A11yChecks.lowContrast normally
+        // audits enabled texts, whereas this palette can survive briefly
+        // after enabling and before the next CSS pulse.
+        texts.foreach { text =>
+          val pixels = A11yChecks
+            .pixels(text, text.getFill.asInstanceOf[Color], fx.scene)
+            .fold(fail(_), identity)
+          val contrast =
+            pixels.map((glyph, background) => A11yChecks.ratio(glyph, background)).min
+          assert(contrast >= Wcag.TextMinimum, s"$theme pending action contrast $contrast")
+        }
+        assertEquals(button.getOpacity, 1.0)
+        button.fire()
+      }
+      assertEquals(runOnFx(host.runButton._2), false)
+    }
+  }
 
   fxStage.test("the fixture draft rev 5: Save & run enabled for 44,845 pairs, and it runs") {
     fx =>

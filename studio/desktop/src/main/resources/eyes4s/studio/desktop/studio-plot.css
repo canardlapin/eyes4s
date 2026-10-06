@@ -317,3 +317,12 @@
   -fx-background-color: -es-ink, -es-accent;
   -fx-background-insets: 0, 2;
 }
+
+/* Pending/blocked actions keep their copy readable while CSS catches up
+ * with an enabled-state change; Modena's whole-control fade cannot do so. */
+.preflight-run:disabled {
+  -fx-opacity: 1;
+  -fx-background-color: -es-hairline, -es-surface-2;
+  -fx-background-insets: 0, 1;
+  -fx-text-fill: -es-ink-2;
+}

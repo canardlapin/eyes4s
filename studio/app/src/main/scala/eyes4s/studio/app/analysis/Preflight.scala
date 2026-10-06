@@ -136,7 +136,9 @@ object Preflight:
         Some(PreflightText(Blocked, DiagnosticText.blockers(blockers)))
       case (Some(_), DesignPreview.Ready(_)) => None
       case (Some(_), _)                      => Some(PreflightText(Checking, label))
-    val total   = counts.fold("")(c => Format.count(c.eligiblePairs))
+    val button = counts.fold(PreflightText(RunButtonUncounted, label))(c =>
+      PreflightText(RunButton, label, Format.count(c.eligiblePairs))
+    )
     val verdict = findings.fold("")(f =>
       PreflightText(
         Verdict,
@@ -165,7 +167,7 @@ object Preflight:
       else
         RunCardVM(
           pairs.toVector ++ change.toVector,
-          PreflightText(RunButton, label, total),
+          button,
           reason.isEmpty,
           reason,
           Option.when(reason.isEmpty)(Intent.Dispatch(Command.SaveAndRun(None))),

@@ -27,6 +27,7 @@ enum PreflightTextId derives CanEqual:
   case RunButton, Ready, BlockedShort, Blocked, Checking, CheckingProgress, NoDraft,
     NothingToCheck, Refused
   case Verdict
+  case RunButtonUncounted
 
 object PreflightText:
 
@@ -39,22 +40,23 @@ object PreflightText:
       case NotCheckedHeading => "Not checked"
       case NotChecked        =>
         "Stimulus image content · calibration quality · sample-level validity (fixation input only)"
-      case RunHeading       => "Run"
-      case RunKind          => "Analysis · rerun"
-      case PairRows         => "Pair rows"
-      case PairRowsValue    => "{0} × {1} scales = {2}"
-      case ChangeVs         => "Change vs {0}"
-      case NoChange         => "none"
-      case RunButton        => "Save & run {0} · {1} pairs"
-      case Ready            => "Ready"
-      case BlockedShort     => "Blocked"
-      case Blocked          => "Save & run disabled: {0}"
-      case Checking         => "Checking {0}…"
-      case CheckingProgress => "Checking {0}: {1} of {2} participants"
-      case NoDraft          => "Only a draft can be saved and run; {0} is saved"
-      case NothingToCheck   => "No analysis revision to check"
-      case Refused          => "The check of {0} could not be made: {1}"
-      case Verdict          => "{0} · {1} · {2} reported with the run"
+      case RunHeading         => "Run"
+      case RunKind            => "Analysis · rerun"
+      case PairRows           => "Pair rows"
+      case PairRowsValue      => "{0} × {1} scales = {2}"
+      case ChangeVs           => "Change vs {0}"
+      case NoChange           => "none"
+      case RunButton          => "Save & run {0} · {1} pairs"
+      case RunButtonUncounted => "Save & run {0}"
+      case Ready              => "Ready"
+      case BlockedShort       => "Blocked"
+      case Blocked            => "Save & run disabled: {0}"
+      case Checking           => "Checking {0}…"
+      case CheckingProgress   => "Checking {0}: {1} of {2} participants"
+      case NoDraft            => "Only a draft can be saved and run; {0} is saved"
+      case NothingToCheck     => "No analysis revision to check"
+      case Refused            => "The check of {0} could not be made: {1}"
+      case Verdict            => "{0} · {1} · {2} reported with the run"
 
   def apply(id: PreflightTextId, args: String*): String =
     Messages.fill(english(id), args.toVector)

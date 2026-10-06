@@ -129,13 +129,81 @@ class NativeReadsSuite extends CatsEffectSuite:
       _ <- RealStudyBackend.resource[IO](document, sources).use { backend =>
         for
           answers <- backend.result(StoryMoments.run7).both(backend.result(StoryMoments.run7))
-          first  = pending(answers._1)
-          second = pending(answers._2)
-          jobs <- backend.jobs
-          _    <- backend.cancel(first)
+          jobs    <- backend.jobs
+          _       <- jobs.headOption.fold(IO.unit)(status => backend.cancel(status.job).void)
         yield
-          assertEquals(second, first)
           assertEquals(jobs.size, 1)
+          val pendingJobs = Vector(answers._1, answers._2).flatMap {
+            case Left(BackendError.ResultPending(StoryMoments.run7, job)) => Vector(job)
+            case Right(summary)                                           =>
+              assertEquals(summary.run, StoryMoments.run7)
+              Vector.empty
+            case other =>
+              fail(s"expected the shared pending job or its completed result, got $other")
+          }
+          assert(pendingJobs.nonEmpty)
+          assertEquals(pendingJobs.distinct, Vector(jobs.head.job))
       }
     yield ()).timeout(30.seconds)
+  }
+
+  test(
+    "a reader still preparing after another recomputation finishes reuses the exact held result"
+  ) {
+    (for
+      arrivals     <- Ref.of[IO, Int](0)
+      firstEntered <- Deferred[IO, Unit]
+      releaseFirst <- Deferred[IO, Unit]
+      sources = new DatasetSources[IO]:
+        def bytes(dataset: DatasetRevisionSpec, source: Source): IO[Option[IArray[Byte]]] =
+          val barrier = if source.role != SourceRole.Fixations then IO.unit
+          else
+            arrivals.updateAndGet(_ + 1).flatMap {
+              case 1 => firstEntered.complete(()).void.flatMap(_ => releaseFirst.get)
+              case _ => IO.unit
+            }
+          barrier.flatMap(_ => RealBackendConformanceSuite.golden.bytes(dataset, source))
+        def assets(dataset: DatasetRevisionSpec): IO[Option[AssetRegistry]] =
+          RealBackendConformanceSuite.golden.assets(dataset)
+      _ <- RealStudyBackend.resource[IO](document, sources).use { backend =>
+        NativeReads.resource[IO](backend, backend.navigator).use { reads =>
+          backend.result(StoryMoments.run7).start.flatMap { preparing =>
+            val check = for
+              _   <- firstEntered.get
+              raw <- backend.result(StoryMoments.run7)
+              job = pending(raw)
+              completed  <- reads.result(StoryMoments.run7).map(get)
+              heldBefore <- backend.held(StoryMoments.run7).map(get)
+              outcome    <- backend.outcome(job).map(get)
+              _ = assert(outcome.exists(_.isInstanceOf[JobOutcome.Completed]))
+              _         <- releaseFirst.complete(())
+              late      <- preparing.joinWithNever
+              heldAfter <- backend.held(StoryMoments.run7).map(get)
+              jobs      <- backend.jobs
+              visits    <- arrivals.get
+            yield
+              assertEquals(
+                late,
+                Right(completed),
+                "the late preparer must return the already-computed result"
+              )
+              assert(
+                heldBefore eq heldAfter,
+                "retained scientific work/results must not be replaced"
+              )
+              assertEquals(
+                jobs.map(_.job),
+                Vector(job),
+                "a completed job is not permission to recompute again"
+              )
+              assertEquals(
+                visits,
+                2,
+                "both readers entered genuine source preparation before the first job ran"
+              )
+            check.guarantee(releaseFirst.complete(()).void.flatMap(_ => preparing.cancel))
+          }
+        }
+      }
+    yield ()).timeout(40.seconds)
   }

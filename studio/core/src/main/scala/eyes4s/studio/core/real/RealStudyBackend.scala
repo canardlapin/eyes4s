@@ -695,31 +695,46 @@ final class RealStudyBackend[F[_]] private (
                 s.jobs.find(j => j.run == run && finished(j.state).isEmpty) match
                   case Some(active) => F.pure(Left(BackendError.ResultPending(run, active.job)))
                   case None         =>
-                    prepare(ref.analysis).flatMap {
-                      case Left(e) => F.pure(Left(e))
-                      // The run records the dataset revision it was computed on;
-                      // its analysis must still be on that revision.
-                      case Right(work) if work.dataset != ref.dataset =>
-                        F.pure(Left(datasetMismatch(ref, work)))
-                      case Right(work) =>
-                        start(work, Purpose.Recompute(ref)).flatMap {
-                          case Right(status) =>
-                            F.pure(Left(BackendError.ResultPending(run, status.job)))
-                          case Left(BackendError.AlreadyRunning(_, job)) =>
-                            state.get.map { current =>
-                              // Concurrent readers may both prepare before either starts.
-                              // Cancellation of their shared job belongs to both readers.
-                              if current.jobs.exists(status =>
-                                  status.job == job && status.run == run
-                                )
-                              then Left(BackendError.ResultPending(run, job))
-                              else Left(BackendError.ResultDeferred(run, job))
-                            }
-                          case Left(error) => F.pure(Left(error))
-                        }
-                    }
+                    prepare(ref.analysis).flatMap(work => recompute(ref, work))
       }
     )
+
+  /** Preparation can overlap another read's complete recomputation. Recheck
+    * the retained result/refusal before reserving, under the same mutex as
+    * submissions and document publication. Job completion itself never waits
+    * for this mutex and publishes its finished status and result atomically.
+    */
+  private def recompute(
+      ref: RunRef,
+      preparedWork: Either[BackendError, RealPrepared]
+  ): F[Either[BackendError, RealRun]] =
+    synchronization.lock.surround {
+      state.get.flatMap { current =>
+        val run = ref.id
+        (
+          current.results.get(run),
+          current.refused.get(run),
+          current.jobs.find(j => j.run == run && finished(j.state).isEmpty)
+        ) match
+          case (Some(done), _, _)    => F.pure(Right(done))
+          case (_, Some(refused), _) => F.pure(Left(refused))
+          case (_, _, Some(active)) => F.pure(Left(BackendError.ResultPending(run, active.job)))
+          case _                    =>
+            preparedWork match
+              case Left(error) => F.pure(Left(error))
+              // The run records the dataset revision it was computed on;
+              // its analysis must still be on that revision.
+              case Right(work) if work.dataset != ref.dataset =>
+                F.pure(Left(datasetMismatch(ref, work)))
+              case Right(work) =>
+                start(work, Purpose.Recompute(ref)).map {
+                  case Right(status) => Left(BackendError.ResultPending(run, status.job))
+                  case Left(BackendError.AlreadyRunning(_, job)) =>
+                    Left(BackendError.ResultDeferred(run, job))
+                  case Left(error) => Left(error)
+                }
+      }
+    }
 
   /** The run's result as eyes4s inspects it, built once per run. */
   private def results(run: RunId): F[Either[BackendError, RealResults]] =
