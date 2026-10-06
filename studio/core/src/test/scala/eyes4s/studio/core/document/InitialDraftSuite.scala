@@ -118,9 +118,16 @@ class InitialDraftSuite extends munit.FunSuite:
         Right(4)
       )
       assertEquals(journal.codec.decode(get(journal.codec.encode(line))), Right(line))
-      journal.versions.dropRight(1).foreach { version =>
+      journal.versions.filter(_.version < 4).foreach { version =>
         assert(journal.writeAt(version, line).isLeft)
         assert(journal.readAt(version, line.asJson).isLeft)
+      }
+      journal.versions.filter(_.version >= 4).foreach { version =>
+        assertEquals(journal.readAt(version, line.asJson), Right(line))
+        assertEquals(
+          journal.writeAt(version, line).flatMap(payload => journal.readAt(version, payload)),
+          Right(line)
+        )
       }
     }
     val legacy = sample.draft.get.asJson
