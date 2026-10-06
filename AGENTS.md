@@ -104,6 +104,48 @@ test reports, a current `docs/tlSite`, and a consumer receipt from `--run-consum
 `.github/workflows/` is **generated** by sbt-typelevel. Do not hand-edit it; change
 `build.sbt` and run `sbt githubWorkflowGenerate`.
 
+### Checkout ownership and concurrent agents
+
+- **One agent owns one checkout.** Implementation and validation use an agent-owned
+  worktree or standalone clone. Keep the shared primary checkout on its current branch;
+  do not borrow it for branch switches, builds, stashing or cleanup. A clean `git status`
+  proves cleanliness, not exclusive ownership.
+- **Announce ownership and gates.** Use Fray when it is available to announce the checkout
+  path, branch, base SHA, motes and gate owner before work starts. Announce a long gate's
+  start, shared-resource waits, failures and completion. Otherwise use shared Mote
+  session/lease coordination with `MOTE_STORE` pointing to the primary `.mote/` store.
+  A worktree-local tracker snapshot does not reveal every other session. Messages help
+  scheduling; checkout isolation remains required if a message is delayed or missed.
+- **Keep build outputs exclusive.** Run one sbt/build process at a time per checkout,
+  including scripts that launch sbt. Separate worktrees have separate `target/` trees;
+  never point them at another checkout's outputs or reuse mutable outputs across agents.
+  Source-path-dependent compiler inventories and invocation probes belong to their run.
+- **Keep landing isolated.** Combine reviewed branches and run the complete gate in a
+  dedicated landing checkout. If sbt-git/JGit cannot discover a linked worktree, use a
+  standalone local clone (`git clone --no-hardlinks`) before starting the expensive gate.
+  Check out the approved commit and preserve the original upstream URL. Do not solve
+  discovery problems by moving the gate into the shared primary checkout.
+- **Freeze the gate's inputs.** Record the candidate SHA and tree. Hold sources, tests,
+  build settings and any extra root `*.sbt` files fixed until qualification completes.
+  Expected generated audit outputs are recorded together afterward. A temporary build
+  shim changes the audit fingerprint; evidence produced with it cannot qualify the
+  checkout after removing it without revalidation.
+- **Serialize shared machine resources.** Keep `FxRunLock` enabled and run one
+  `publishLocal`/artifact-consumer writer at a time against the shared Ivy repository.
+  Separate checkouts isolate source and compiler outputs, not these machine-wide
+  resources. Announce waits and never bypass a lock to make a gate finish sooner.
+- **Report progress from evidence.** Name the active phase and completed checks. For an
+  unexpectedly quiet gate, inspect its log, process and thread activity before calling
+  it stuck or restarting it. If sources or class files changed during a run, preserve
+  the evidence, isolate the checkout and rerun the invalidated qualification; do not
+  combine probes from different class versions.
+- **Land without moving another session.** After qualification, verify ancestry and
+  the exact tree before fast-forwarding `main`. If another session owns the primary
+  checkout, leave its branch and files alone. Advance an unchecked-out `main` ref with
+  an expected-old-SHA guard; if the ref has moved, reconcile it under the tree-identity
+  rule below. Close motes only after landing and distinguish tracker-only closure
+  commits from the qualified source/evidence tree.
+
 ### Landing a branch
 
 The full gate takes 60–90 minutes, so run it once per branch.
