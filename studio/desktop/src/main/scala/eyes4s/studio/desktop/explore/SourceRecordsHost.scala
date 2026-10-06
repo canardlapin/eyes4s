@@ -292,6 +292,37 @@ final class SourceRecordsHost(
   // Layout passes left to bring the pending row into view before giving up.
   private var revealTries = 0
 
+  // Apply the scroll before layout, and confirm it only after layout. Queued
+  // runLater callbacks can all run before one pulse and cannot count passes.
+  private val revealBeforeLayout: Runnable = () =>
+    if !disposed && reveal.nonEmpty then
+      watchFlow()
+      if flow.exists(_.getHeight > 0) then revealPending()
+  private val revealAfterLayout: Runnable = () =>
+    if !disposed && reveal.nonEmpty then
+      watchFlow()
+      reveal.filter(_ < list.getItems.size).foreach { i =>
+        if flow.exists(_.getHeight > 0) then
+          if visible(i) then reveal = None
+          else
+            revealTries -= 1
+            if revealTries > 0 then Platform.requestNextPulse()
+            else reveal = None
+      }
+
+  node.sceneProperty.addListener { (_, was, now) =>
+    Option(was).foreach { scene =>
+      scene.removePreLayoutPulseListener(revealBeforeLayout)
+      scene.removePostLayoutPulseListener(revealAfterLayout)
+    }
+    if !disposed then
+      Option(now).foreach { scene =>
+        scene.addPreLayoutPulseListener(revealBeforeLayout)
+        scene.addPostLayoutPulseListener(revealAfterLayout)
+        if reveal.nonEmpty then Platform.requestNextPulse()
+      }
+  }
+
   private def scrollTo(i: Int): Unit =
     reveal = Some(i)
     revealTries = 8
@@ -300,25 +331,14 @@ final class SourceRecordsHost(
   private def revealPending(): Unit =
     watchFlow()
     reveal.filter(_ < list.getItems.size).foreach { i =>
-      (flow.filter(_.getHeight > 0), shownRange) match
-        case (Some(_), Some((first, last))) if first <= i && i <= last =>
-          reveal = None
-        case (Some(f), Some(_)) =>
+      flow.filter(_.getHeight > 0) match
+        case Some(f) =>
           // The flow scrolls the least that shows the row whole: a row above
           // the view comes to its top, one below it to its bottom.
           f.scrollTo(i)
-          again()
-        case _ =>
-          list.scrollTo(i)
-          again()
+        case _ => list.scrollTo(i)
+      Platform.requestNextPulse()
     }
-
-  // A scroll holds only once the flow has laid out: look again on the next
-  // pulse, a bounded number of times, until the row is shown.
-  private def again(): Unit =
-    revealTries -= 1
-    if revealTries > 0 then Platform.runLater(() => if !disposed then revealPending())
-    else reveal = None
 
   /** The first and last rows the flow shows. */
   def shownRange: Option[(Int, Int)] =
@@ -337,4 +357,10 @@ final class SourceRecordsHost(
         case _                  => false
     }
 
-  def dispose(): Unit = disposed = true
+  def dispose(): Unit =
+    disposed = true
+    reveal = None
+    Option(node.getScene).foreach { scene =>
+      scene.removePreLayoutPulseListener(revealBeforeLayout)
+      scene.removePostLayoutPulseListener(revealAfterLayout)
+    }

@@ -17,13 +17,16 @@
 package eyes4s.studio.desktop.explore
 
 import eyes4s.studio.app.StoryModels
-import eyes4s.studio.app.explore.{SourceRecords, SourceRowVM}
+import eyes4s.studio.app.explore.{RecordMove, SourceRecords, SourceRecordsIntent, SourceRowVM}
 import eyes4s.studio.core.fixture.{MockStudy, StoryMoment}
 import eyes4s.studio.core.selection.{FixationIndex, StudioRef}
 import eyes4s.studio.desktop.StudioWindow
 import eyes4s.studio.desktop.harness.{FxStage, StudioTheme}
 import eyes4s.studio.desktop.shell.ShellFxSuite
 import javafx.animation.AnimationTimer
+import javafx.event.EventHandler
+import javafx.scene.control.ScrollToEvent
+import javafx.scene.control.skin.VirtualFlow
 import javafx.scene.input.KeyCode
 
 import scala.collection.mutable
@@ -218,4 +221,71 @@ class SourceRecordsFxSuite extends ShellFxSuite:
       runOnFx(SourceRecords.status(w.sourceRecords.current)),
       Some("Source records are not served in this window")
     )
+  }
+
+  fxStage.test("a cursor reveal survives a scroll changed by the next layout") { fx =>
+    val w = boot(fx, StoryModels.t2Explore, StoryMoment.T2)
+    ready(fx, w)
+    fx.awaitLayout()
+    var changed      = false
+    val duringLayout = new Runnable:
+      def run(): Unit =
+        fx.scene.removePreLayoutPulseListener(this)
+        changed = true
+        // A queued skin/layout update can replace the scroll requested before
+        // the pulse. The cursor must be confirmed after layout, not before it.
+        w.sourceRecords.rows.scrollTo(5000)
+    runOnFx {
+      fx.scene.addPreLayoutPulseListener(duringLayout)
+      w.sourceRecords.dispatch(SourceRecordsIntent.Move(RecordMove.Last))
+    }
+    try
+      fx.awaitLayout()
+      assert(runOnFx(changed), "the layout perturbation did not run")
+      assertEquals(runOnFx(w.sourceRecords.current.cursor), Some(11519))
+      eventually(fx, "the last row survives the layout change")(w.sourceRecords.visible(11519))
+      fx.awaitLayout()
+      assert(runOnFx(w.sourceRecords.visible(11519)))
+    finally runOnFx(fx.scene.removePreLayoutPulseListener(duringLayout))
+  }
+
+  fxStage.test("an unsized list waits without repeated scrolls, then reveals its cursor") {
+    fx =>
+      val w = boot(fx, StoryModels.t2Explore, StoryMoment.T2)
+      ready(fx, w)
+      fx.awaitLayout()
+      val list    = runOnFx(w.sourceRecords.rows)
+      val sizes   = runOnFx((list.getMinHeight, list.getPrefHeight, list.getMaxHeight))
+      var scrolls = 0
+      val countScrolls: EventHandler[ScrollToEvent[Integer]] = _ => scrolls += 1
+      runOnFx {
+        list.setMinHeight(0)
+        list.setPrefHeight(0)
+        list.setMaxHeight(0)
+        list.addEventFilter(ScrollToEvent.scrollToTopIndex(), countScrolls)
+      }
+      try
+        fx.awaitLayout()
+        runOnFx {
+          val flow = list.lookup(".virtual-flow").asInstanceOf[VirtualFlow[?]]
+          assert(flow.getHeight <= 0, s"the collapsed flow is still sized: ${flow.getHeight}")
+          w.sourceRecords.dispatch(SourceRecordsIntent.Move(RecordMove.Last))
+        }
+        (0 until 3).foreach(_ => fx.awaitLayout())
+        assertEquals(runOnFx(scrolls), 1, "unready layout must not repeat the scroll request")
+        runOnFx {
+          list.setMinHeight(sizes._1)
+          list.setPrefHeight(sizes._2)
+          list.setMaxHeight(sizes._3)
+        }
+        eventually(fx, "the pending cursor is revealed once sized")(
+          w.sourceRecords.visible(11519)
+        )
+      finally
+        runOnFx {
+          list.removeEventFilter(ScrollToEvent.scrollToTopIndex(), countScrolls)
+          list.setMinHeight(sizes._1)
+          list.setPrefHeight(sizes._2)
+          list.setMaxHeight(sizes._3)
+        }
   }
