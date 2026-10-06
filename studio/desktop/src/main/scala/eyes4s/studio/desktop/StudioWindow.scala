@@ -99,6 +99,8 @@ final class StudioWindow private (
     timelineListener: AppModel => Unit,
     val resolvedDesign: ResolvedDesignHost,
     designListener: AppModel => Unit,
+    val recipe: eyes4s.studio.desktop.analysis.RecipePaneHost,
+    recipeListener: AppModel => Unit,
     val sourceRecords: SourceRecordsHost,
     recordsListener: AppModel => Unit,
     val inspector: FixationInspectorHost,
@@ -135,6 +137,7 @@ final class StudioWindow private (
     else if pane == StudioLayouts.trialView then explore.focusStops
     else if pane == StudioLayouts.timeline then timeline.focusStops
     else if pane == StudioLayouts.resolvedDesign then resolvedDesign.focusStops
+    else if pane == StudioLayouts.recipe then recipe.focusStops
     else if pane == StudioLayouts.sourceRecords then sourceRecords.focusStops
     else if pane == StudioLayouts.exploreInspector then inspector.focusStops
     else if pane == StudioLayouts.preflight then preflight.focusStops
@@ -164,6 +167,8 @@ final class StudioWindow private (
     explore.dispose()
     timeline.dispose()
     runtime.unlisten(designListener)
+    runtime.unlisten(recipeListener)
+    recipe.dispose()
     runtime.unlisten(recordsListener)
     sourceRecords.dispose()
     runtime.unlisten(inspectorListener)
@@ -541,6 +546,11 @@ object StudioWindow:
     r.listen(timelineListener)
     // The resolved-design table (Analysis): the backend's preview of the
     // target revision, prepared once the perspective is shown.
+    val recipe = eyes4s.studio.desktop.analysis.RecipePaneHost(() => r.model, dispatch)
+    host.host(StudioLayouts.recipe, recipe.node)
+    val recipeListener: AppModel => Unit = recipe.sync
+    r.listen(recipeListener)
+    recipe.sync(r.model)
     val design = ResolvedDesignHost(dispatch, DesignInputs.of(session))
     host.host(StudioLayouts.resolvedDesign, design.node)
     val designListener: AppModel => Unit = design.sync
@@ -621,6 +631,8 @@ object StudioWindow:
         timelineListener,
         design,
         designListener,
+        recipe,
+        recipeListener,
         sourceRecords,
         recordsListener,
         inspector,

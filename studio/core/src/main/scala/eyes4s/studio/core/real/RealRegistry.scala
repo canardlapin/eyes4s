@@ -34,11 +34,7 @@ private[real] final class RealRegistry private (
     document.datasets.map(d => d.id -> d).toMap
   val revisions: Map[AnalysisRevision, (DatasetRevision, Recipe)] =
     val saved = document.analyses.map(a => a.id -> (a.dataset, a.recipe))
-    val draft = document.draft.flatMap(d =>
-      document
-        .analysis(d.base)
-        .map(base => d.id -> (d.dataset.getOrElse(base.dataset), d.recipe(base.recipe)))
-    )
+    val draft = document.draftContext.map(d => d.id -> (d.dataset, d.recipe))
     (saved ++ draft).toMap
   val planBindings: Map[AnalysisRevision, CoreBinding[StudyPlanArtifact]] =
     document.analyses.map(a => a.id -> a.plan).toMap
@@ -53,6 +49,9 @@ private[real] final class RealRegistry private (
   private def binding[A](old: CoreBinding[A], next: CoreBinding[A]): Boolean =
     old == next || (old.isInstanceOf[CoreBinding.Unbound[?]] && next
       .isInstanceOf[CoreBinding.Bound[?]])
+
+  private def recipeBinding(old: Recipe, next: Recipe): Boolean =
+    old.copy(input = next.input) == next && old.input.forall(next.input.contains)
 
   /** Only a newly declared Running record can reserve a new execution id;
     * records reopened from another session never become reservations.
@@ -104,7 +103,10 @@ private[real] final class RealRegistry private (
       _ <- next.analyses.traverse_ { candidate =>
         protectedRevisions.get(candidate.id).traverse_ { saved =>
           Either.cond(
-            saved.dataset == candidate.dataset && saved.recipe == candidate.recipe && binding(
+            saved.dataset == candidate.dataset && recipeBinding(
+              saved.recipe,
+              candidate.recipe
+            ) && binding(
               saved.plan,
               candidate.plan
             ),

@@ -26,6 +26,10 @@ object CommandPins:
     """{"ImportSources":{"parent":2,"sources":[{"role":{"Fixations":{}},"path":"inputs/fixations.csv","bytes":"19342ecedb6e089a190b4784a248907b27fedbef03ca3e6d4bc251702fbbc2f2","semantic":null},{"role":{"Trials":{}},"path":"inputs/trials.csv","bytes":"0668bccf6c672b706c0a138268f632fb5a768170578a01c58ee752176f0f8b99","semantic":null}],"mapping":[{"role":{"Participant":{}},"column":"participant"},{"role":{"Phase":{}},"column":"phase"},{"role":{"Trial":{}},"column":"trial"},{"role":{"Occurrence":{}},"column":"occurrence"},{"role":{"Ordinal":{}},"column":"ordinal"},{"role":{"SampleCount":{}},"column":"sample_count"},{"role":{"X":{}},"column":"x"},{"role":{"Y":{}},"column":"y"},{"role":{"Onset":{}},"column":"onset_ms"},{"role":{"Duration":{}},"column":"duration_ms"}],"units":{"time":{"Milliseconds":{}}},"geometry":{"screen":{"width":1920,"height":1080},"image":{"left":448,"top":156,"width":1024,"height":768},"pixelsPerDegree":35.0}}}"""
 
   val pins: Map[String, String] = Map(
+    "RestoreDraft.initial" ->
+      """{"RestoreDraft":{"draft":{"id":1,"origin":{"Initial":{"dataset":3,"seedRecipe":{"input":null,"layout":{"name":"eyes4s.participant-phase-trial-occurrence","version":1},"method":{"definition":{"name":"eyes4s.cosine","version":1},"parameters":[]},"phases":{"focal":"Retrieval","reference":"Encoding"},"weighting":{"Duration":{}},"failurePolicy":{"RequireAll":{}},"grid":{"columns":64,"rows":48},"window":{"xMin":448.0,"yMin":156.0,"xMax":1472.0,"yMax":924.0},"offWindow":{"Exclude":{}},"scales":[0.5,1.0,2.0,4.0],"angularScale":35.0,"matched":{"RequireOne":{}},"controls":{"SameSelection":{}},"unmatched":{"ReportNoMatch":{}},"initialFixations":{"KeepAll":{}}},"studio":{"preset":{"Custom":{}},"name":"Encoding → retrieval reinstatement","description":""}}},"dataset":null,"changes":[]}}}""",
+    "StartAnalysis" ->
+      """{"StartAnalysis":{"dataset":3,"recipe":{"input":null,"layout":{"name":"eyes4s.participant-phase-trial-occurrence","version":1},"method":{"definition":{"name":"eyes4s.cosine","version":1},"parameters":[]},"phases":{"focal":"Retrieval","reference":"Encoding"},"weighting":{"Duration":{}},"failurePolicy":{"RequireAll":{}},"grid":{"columns":64,"rows":48},"window":{"xMin":448.0,"yMin":156.0,"xMax":1472.0,"yMax":924.0},"offWindow":{"Exclude":{}},"scales":[0.5,1.0,2.0,4.0],"angularScale":35.0,"matched":{"RequireOne":{}},"controls":{"SameSelection":{}},"unmatched":{"ReportNoMatch":{}},"initialFixations":{"KeepAll":{}}},"studio":{"preset":{"EncodingRetrieval":{}},"name":"Encoding → retrieval reinstatement","description":""}}}""",
     "AddCorrection" ->
       """{"AddCorrection":{"dataset":3,"index":0,"rule":{"target":{"AllTrials":{}},"correction":{"FlipY":{}}}}}""",
     "AddPanel" ->
@@ -151,5 +155,8 @@ object CommandPins:
     "journal.7" ->
       """{"schema":{"name":"studio.journal","version":1},"value":{"Entry":{"entry":{"Apply":{"command":{"SaveAndRun":{"studio":null}}}},"seq":6}}}"""
   )
+
+  val initialAnalysisV4: String =
+    """{"schema":{"name":"studio.journal","version":4},"value":{"Entry":{"entry":{"Apply":{"command":{"StartAnalysis":{"dataset":3,"recipe":{"angularScale":35.0,"controls":{"SameSelection":{}},"failurePolicy":{"RequireAll":{}},"grid":{"columns":64,"rows":48},"initialFixations":{"KeepAll":{}},"input":null,"layout":{"name":"eyes4s.participant-phase-trial-occurrence","version":1},"matched":{"RequireOne":{}},"method":{"definition":{"name":"eyes4s.cosine","version":1},"parameters":[]},"offWindow":{"Exclude":{}},"phases":{"focal":"Retrieval","reference":"Encoding"},"scales":[0.5,1.0,2.0,4.0],"unmatched":{"ReportNoMatch":{}},"weighting":{"Duration":{}},"window":{"xMax":1472.0,"xMin":448.0,"yMax":924.0,"yMin":156.0}},"studio":{"description":"","name":"Encoding → retrieval reinstatement","preset":{"EncodingRetrieval":{}}}}}}},"seq":1}}}"""
 
   def journalKeys: Set[String] = pins.keySet.filter(_.startsWith("journal."))

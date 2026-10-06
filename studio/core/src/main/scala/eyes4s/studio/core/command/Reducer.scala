@@ -273,6 +273,30 @@ object Reducer:
       )
 
     // --- Analysis · rerun ----------------------------------------------------
+    case StartAnalysis(dataset, recipe, studio) =>
+      for
+        _ <- d.draft.map(existing => DraftExists(existing.id)).toLeft(())
+        _ <- Either.cond(
+          d.analyses.isEmpty,
+          (),
+          refused(d, c)(
+            DocumentError.InitialDraftWithAnalyses(AnalysisRevision(1), d.analyses.map(_.id))
+          )
+        )
+        data <- d.dataset(dataset).toRight(UnknownDataset(dataset))
+        _    <- Either.cond(data.decision.isAdmitted, (), DatasetNotAdmitted(dataset))
+        _    <- Either.cond(
+          RecipePresets.of(studio.preset).forall(_.holds(recipe)),
+          (),
+          PresetNotHeld(studio.preset, AnalysisRevision(1))
+        )
+        draft <- Draft
+          .initial(AnalysisRevision(1), dataset, recipe, studio)
+          .left
+          .map(refused(d, c))
+        next <- rebuild(d, c)(draft = Some(draft))
+      yield reversible(next, DiscardDraft)
+
     case StartDraft(base, dataset, changes) =>
       for
         _    <- d.draft.map(existing => DraftExists(existing.id)).toLeft(())
@@ -297,7 +321,7 @@ object Reducer:
     case ChangeRecipe(change) =>
       for
         (base, id, prior) <- drafting(d, c)
-        current = prior.fold(base.recipe)(_.recipe(base.recipe))
+        current = base.recipe
         _ <- change
           .mismatch(current)
           .map(StaleChange(change.field, change.renderedValues._1, _))
@@ -310,7 +334,7 @@ object Reducer:
     case ChangeRecipes(changes) =>
       for
         (base, id, prior) <- drafting(d, c)
-        current = prior.fold(base.recipe)(_.recipe(base.recipe))
+        current = base.recipe
         _ <- Either.cond(changes.nonEmpty, (), NoChange(c.name, targetOf(d, c)))
         _ <- changes
           .groupBy(_.field)
@@ -334,21 +358,28 @@ object Reducer:
     case RebaseDraft(target) =>
       for
         (base, id, prior) <- drafting(d, c)
-        current = prior.flatMap(_.dataset).getOrElse(base.dataset)
+        current = base.dataset
         _ <- Either.cond(target != current, (), NoChange(c.name, targetOf(d, c)))
-        recipe = prior.fold(base.recipe)(_.recipe(base.recipe))
-        draft <- redraft(d, c, id, base, Option.when(target != base.dataset)(target), recipe)
-        next  <- rebuild(d, c)(draft = draft)
+        recipe = base.recipe
+        draft <- redraft(
+          d,
+          c,
+          id,
+          base,
+          Option.when(target != base.seedDataset)(target),
+          recipe
+        )
+        next <- rebuild(d, c)(draft = draft)
       yield reversible(next, draftInverse(prior, draft, RebaseDraft(current)))
 
     case SaveAndRun(studio) =>
       for
         draft <- d.draft.toRight(NoDraft(c.name, targetOf(d, c)))
-        base  <- d.analysis(draft.base).toRight(UnknownAnalysis(draft.base))
-        target = draft.dataset.getOrElse(base.dataset)
+        base  <- d.draftContext.toRight(NoDraft(c.name, targetOf(d, c)))
+        target = base.dataset
         data <- d.dataset(target).toRight(UnknownDataset(target))
         _    <- Either.cond(data.decision.isAdmitted, (), DatasetNotAdmitted(target))
-        recipe = draft.recipe(base.recipe)
+        recipe = base.recipe
         fields <- studioFields(draft, base, recipe, studio)
         revision = AnalysisRevisionSpec(
           draft.id,
@@ -675,6 +706,7 @@ object Reducer:
     case ResumeVerification(id, _)       => Target.OnDataset(id)
     case Admit(id, _, _, _, _)           => Target.OnDataset(id)
     case RestoreDraft(draft)             => Target.OnDraft(Some(draft.id))
+    case _: StartAnalysis                => Target.OnDraft(Some(AnalysisRevision(1)))
     case _: (StartDraft | ChangeRecipe | ChangeRecipes | RebaseDraft | SaveAndRun) |
         DiscardDraft =>
       Target.OnDraft(
@@ -739,16 +771,14 @@ object Reducer:
   private def drafting(
       d: StudioDocument,
       c: Command
-  ): Either[CommandError, (AnalysisRevisionSpec, AnalysisRevision, Option[Draft])] =
-    d.draft match
-      case Some(draft) =>
-        d.analysis(draft.base)
-          .toRight(UnknownAnalysis(draft.base))
-          .map((_, draft.id, Some(draft)))
-      case None =>
-        d.latestAnalysis
-          .toRight(NoAnalysis(c.name))
-          .map(b => (b, AnalysisRevision(b.id.number + 1), None))
+  ): Either[CommandError, (DraftContext, AnalysisRevision, Option[Draft])] =
+    d.draftContext match
+      case Some(context) => Right((context, context.id, d.draft))
+      case None          =>
+        d.latestAnalysis.toRight(NoAnalysis(c.name)).map { base =>
+          val id = AnalysisRevision(base.id.number + 1)
+          (DraftContext.saved(id, base), id, None)
+        }
 
   /** The draft of `base` that describes `target` on `dataset`, or none when
     * that is exactly the base.
@@ -757,13 +787,24 @@ object Reducer:
       d: StudioDocument,
       c: Command,
       id: AnalysisRevision,
-      base: AnalysisRevisionSpec,
+      base: DraftContext,
       dataset: Option[DatasetRevision],
       target: Recipe
   ): Either[CommandError, Option[Draft]] =
-    val changes = RecipeChange.between(base.recipe, target)
-    if changes.isEmpty && dataset.isEmpty then Right(None)
-    else Draft.against(id, base, dataset, changes).bimap(refused(d, c), Some(_))
+    val changes = RecipeChange.between(base.seedRecipe, target)
+    base.origin match
+      case DraftOrigin.Existing(_) =>
+        if changes.isEmpty && dataset.isEmpty then Right(None)
+        else
+          base.savedBase
+            .toRight(NoAnalysis(c.name))
+            .flatMap(saved =>
+              Draft.against(id, saved, dataset, changes).bimap(refused(d, c), Some(_))
+            )
+      case DraftOrigin.Initial(seedDataset, seedRecipe, studio) =>
+        Draft
+          .initial(id, seedDataset, seedRecipe, studio, changes, dataset)
+          .bimap(refused(d, c), Some(_))
 
   /** The studio fields Save & run records (S7.1): the caller's, if their
     * preset is held by the saved recipe; else the base's, its preset resolved
@@ -779,7 +820,7 @@ object Reducer:
     */
   private def studioFields(
       draft: Draft,
-      base: AnalysisRevisionSpec,
+      base: DraftContext,
       recipe: Recipe,
       studio: Option[StudioFields]
   ): Either[CommandError, StudioFields] =

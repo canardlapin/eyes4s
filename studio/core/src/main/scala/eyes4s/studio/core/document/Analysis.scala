@@ -19,6 +19,7 @@ package eyes4s.studio.core.document
 import cats.syntax.all.*
 import eyes4s.core.Weight
 import eyes4s.design.FailurePolicy
+import eyes4s.studio.core.preset.RecipePresets
 import eyes4s.plan.{
   ControlReferences,
   DefinitionId,
@@ -301,7 +302,8 @@ private[document] object OptionalRender:
   * `StudyPlan` field a structural diff compares (`StudyField`), in its order.
   * The plan itself is bound by digest in [[AnalysisRevisionSpec.plan]].
   *
-  *  - `input`: the eyes4s `StudyInput` reference, `None` while unbound;
+  *  - `input`: the native semantic source-record identity (decoded header and raw
+  *    fields), `None` while unbound; distinct from the canonical `StudyInput` artifact;
   *  - `window`: `None` maps the whole admission frame; `offWindow` is `None`
   *    exactly for a whole-frame plan (eyes4s checks the pairing when it
   *    configures the plan);
@@ -534,31 +536,102 @@ object RecipeChange:
       InitialFixations(before.initialFixations, after.initialFixations)
     ).filterNot(_.isIdentity)
 
-/** The pending changes against one analysis revision: what Save & run would
-  * make revision `id` ("Draft rev 5 · 1 change"). Changes are typed, one per
-  * field, none an identity, in field order. `dataset` is the dataset revision
-  * Save & run would configure on when it differs from the base's (a rebase
-  * onto newly admitted data). A draft changes something: a field, the
-  * dataset, or both. The document checks each change's `before` against
-  * `base`'s recipe and that the rebase target is admitted ([[Draft.against]],
-  * `StudioDocument.of`).
+/** A first working recipe has an explicit seed, without a synthetic saved
+  * base revision; bead q-initial-analysis-draft records the persistence rationale.
+  */
+enum DraftOrigin derives CanEqual, Codec.AsObject:
+  case Existing(base: AnalysisRevision)
+  case Initial(dataset: DatasetRevision, seedRecipe: Recipe, studio: StudioFields)
+
+/** The checked effective working recipe, without a synthetic saved revision. */
+final case class DraftContext private[document] (
+    id: AnalysisRevision,
+    origin: DraftOrigin,
+    savedBase: Option[AnalysisRevisionSpec],
+    seedDataset: DatasetRevision,
+    seedRecipe: Recipe,
+    dataset: DatasetRevision,
+    recipe: Recipe,
+    studio: StudioFields
+) derives CanEqual
+
+object DraftContext:
+  def saved(id: AnalysisRevision, base: AnalysisRevisionSpec): DraftContext =
+    DraftContext(
+      id,
+      DraftOrigin.Existing(base.id),
+      Some(base),
+      base.dataset,
+      base.recipe,
+      base.dataset,
+      base.recipe,
+      base.studio
+    )
+
+/** The next working analysis: typed changes against a saved recipe or an
+  * explicit initial seed. Existing drafts require an edit or rebase; an
+  * initial draft remains present when every edit returns to its seed.
+  * `dataset` overrides the seed dataset only when rebased, and every change
+  * starts from its checked seed value.
   */
 final case class Draft private (
     id: AnalysisRevision,
-    base: AnalysisRevision,
+    origin: DraftOrigin,
     dataset: Option[DatasetRevision],
     changes: Vector[RecipeChange]
 ) derives CanEqual:
-  /** Field changes, plus one for a rebase. */
-  def changeCount: Int = changes.size + (if dataset.isDefined then 1 else 0)
-
-  /** The recipe the draft describes, applied to its base's recipe. */
+  def savedBase: Option[AnalysisRevision] = origin match
+    case DraftOrigin.Existing(base) => Some(base)
+    case _: DraftOrigin.Initial     => None
+  def base: Option[AnalysisRevision]     = savedBase
+  def isInitial: Boolean                 = savedBase.isEmpty
+  def changeCount: Int                   = changes.size + (if dataset.isDefined then 1 else 0)
   def recipe(baseRecipe: Recipe): Recipe = changes.foldLeft(baseRecipe)((r, c) => c.applyTo(r))
-
-  def render: String =
+  def render: String                     =
     (dataset.map(d => s"data → ${d.label}").toVector ++ changes.map(_.render)).mkString("; ")
+  def context(analyses: Vector[AnalysisRevisionSpec]): Option[DraftContext] = origin match
+    case DraftOrigin.Existing(base) =>
+      analyses.find(_.id == base).map { saved =>
+        DraftContext(
+          id,
+          origin,
+          Some(saved),
+          saved.dataset,
+          saved.recipe,
+          dataset.getOrElse(saved.dataset),
+          recipe(saved.recipe),
+          saved.studio
+        )
+      }
+    case DraftOrigin.Initial(seedDataset, seedRecipe, studio) =>
+      Some(
+        DraftContext(
+          id,
+          origin,
+          None,
+          seedDataset,
+          seedRecipe,
+          dataset.getOrElse(seedDataset),
+          recipe(seedRecipe),
+          studio
+        )
+      )
 
 object Draft:
+  private def changesChecked(id: AnalysisRevision, changes: Vector[RecipeChange]) =
+    for
+      _ <- changes.groupBy(_.field).toVector.sortBy(_._1.ordinal).traverse_ { (field, cs) =>
+        Either.cond(cs.size == 1, (), DocumentError.RepeatedField(id, field))
+      }
+      _ <- changes.traverse_ { c =>
+        Either.cond(
+          !c.isIdentity,
+          (),
+          DocumentError.IdentityChange(id, c.field, c.renderedValues._1)
+        )
+      }
+    yield changes.sortBy(_.field.ordinal)
+
   def of(
       id: AnalysisRevision,
       base: AnalysisRevision,
@@ -571,21 +644,32 @@ object Draft:
         (),
         DocumentError.NoChanges(id, base)
       )
-      _ <- changes.groupBy(_.field).toVector.sortBy(_._1.ordinal).traverse_ { (field, cs) =>
-        Either.cond(cs.size == 1, (), DocumentError.RepeatedField(id, field))
-      }
-      _ <- changes.traverse_ { c =>
-        Either.cond(
-          !c.isIdentity,
-          (),
-          DocumentError.IdentityChange(id, c.field, c.renderedValues._1)
-        )
-      }
-    yield new Draft(id, base, dataset, changes.sortBy(_.field.ordinal))
+      checked <- changesChecked(id, changes)
+    yield new Draft(id, DraftOrigin.Existing(base), dataset, checked)
 
-  /** A draft whose every change starts from `base`'s recipe, and whose
-    * rebase, if any, leaves `base`'s dataset.
-    */
+  def initial(
+      id: AnalysisRevision,
+      dataset: DatasetRevision,
+      recipe: Recipe,
+      studio: StudioFields,
+      changes: Vector[RecipeChange] = Vector.empty,
+      rebase: Option[DatasetRevision] = None
+  ): Either[DocumentError, Draft] =
+    for
+      _ <- Either.cond(
+        RecipePresets.of(studio.preset).forall(_.holds(recipe)),
+        (),
+        DocumentError.InitialPresetNotHeld(id, studio.preset)
+      )
+      checked <- changesChecked(id, changes)
+      _       <- checked.traverse_ { c =>
+        c.mismatch(recipe)
+          .map(held => DocumentError.DraftSeedBefore(id, c.field, held, c.renderedValues._1))
+          .toLeft(())
+      }
+      _ <- rebase.filter(_ == dataset).map(d => DocumentError.RebaseToSame(id, d)).toLeft(())
+    yield new Draft(id, DraftOrigin.Initial(dataset, recipe, studio), rebase, checked)
+
   def against(
       id: AnalysisRevision,
       base: AnalysisRevisionSpec,
@@ -593,8 +677,6 @@ object Draft:
       changes: Vector[RecipeChange]
   ): Either[DocumentError, Draft] =
     of(id, base.id, dataset, changes).flatTap(_.check(base))
-
-  /** The draft that turns `base`'s recipe into `target`, optionally rebased. */
   def between(
       id: AnalysisRevision,
       base: AnalysisRevisionSpec,
@@ -619,12 +701,56 @@ object Draft:
         }
       yield ()
 
-  given Encoder.AsObject[Draft] =
-    Encoder.forProduct4("id", "base", "dataset", "changes")(d =>
-      (d.id, d.base, d.dataset, d.changes)
-    )
-  given Decoder[Draft] =
-    Decoder.forProduct4("id", "base", "dataset", "changes")(of).emap(_.left.map(_.message))
+  // Existing drafts keep their original object members and bytes.
+  given Encoder.AsObject[Draft] = Encoder.AsObject.instance { d =>
+    import io.circe.syntax.*
+    d.origin match
+      case DraftOrigin.Existing(base) =>
+        io.circe.JsonObject(
+          "id"      -> d.id.asJson,
+          "base"    -> base.asJson,
+          "dataset" -> d.dataset.asJson,
+          "changes" -> d.changes.asJson
+        )
+      case _: DraftOrigin.Initial =>
+        io.circe.JsonObject(
+          "id"      -> d.id.asJson,
+          "origin"  -> d.origin.asJson,
+          "dataset" -> d.dataset.asJson,
+          "changes" -> d.changes.asJson
+        )
+  }
+  given Decoder[Draft] = Decoder.instance { c =>
+    for
+      id      <- c.get[AnalysisRevision]("id")
+      dataset <- c.get[Option[DatasetRevision]]("dataset")
+      changes <- c.get[Vector[RecipeChange]]("changes")
+      origin  <- c.get[Option[DraftOrigin]]("origin")
+      draft   <- (origin match
+        case Some(DraftOrigin.Initial(seedDataset, seed, studio)) =>
+          if c.downField("base").succeeded then
+            Left(
+              io.circe.DecodingFailure("An initial draft cannot name a saved base.", c.history)
+            )
+          else
+            initial(id, seedDataset, seed, studio, changes, dataset).left
+              .map(e => io.circe.DecodingFailure(e.message, c.history))
+        case Some(_: DraftOrigin.Existing) =>
+          Left(
+            io.circe.DecodingFailure(
+              "Saved drafts use the legacy base field; a tagged Existing origin is not supported.",
+              c.history
+            )
+          )
+        case None =>
+          c.get[AnalysisRevision]("base")
+            .flatMap(base =>
+              of(id, base, dataset, changes).left
+                .map(e => io.circe.DecodingFailure(e.message, c.history))
+            )
+      )
+    yield draft
+  }
 
 // ---------------------------------------------------------------------------
 // Analysis revision

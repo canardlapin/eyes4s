@@ -132,8 +132,19 @@ object CommandSamples:
       CoreBinding.unbound,
       CoreBinding.unbound
     ),
-    "StartDraft"   -> StartDraft(rev4, None, draft.changes),
-    "RestoreDraft" -> RestoreDraft(draft),
+    "StartAnalysis"        -> StartAnalysis(r3, rev4Rec, t2.analysis(rev4).get.studio),
+    "StartDraft"           -> StartDraft(rev4, None, draft.changes),
+    "RestoreDraft"         -> RestoreDraft(draft),
+    "RestoreDraft.initial" -> RestoreDraft(
+      right(
+        Draft.initial(
+          AnalysisRevision(1),
+          r3,
+          rev4Rec,
+          t2.analysis(rev4).get.studio.copy(preset = Preset.Custom)
+        )
+      )
+    ),
     "ChangeRecipe" -> ChangeRecipe(RecipeChange.Grid(rev4Rec.grid, right(GridSize.of(32, 24)))),
     "ChangeRecipes" -> ChangeRecipes(
       Vector(

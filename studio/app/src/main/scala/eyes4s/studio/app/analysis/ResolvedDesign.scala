@@ -209,11 +209,8 @@ object ResolvedDesign:
       .reverseIterator
       .collectFirst { case Place.Revision(r) => r }
     def draft(r: AnalysisRevision): Option[(DatasetRevision, Recipe)] =
-      for
-        dr     <- d.draft.filter(_.id == r)
-        base   <- d.analysis(dr.base)
-        recipe <- d.draftRecipe
-      yield (dr.dataset.getOrElse(base.dataset), recipe)
+      for context <- d.draftContext.filter(_.id == r)
+      yield (context.dataset, context.recipe)
     def saved(r: AnalysisRevision): Option[(DatasetRevision, Recipe)] =
       d.analysis(r).map(a => (a.dataset, a.recipe))
     def of(r: AnalysisRevision): Option[DesignTarget] =

@@ -7,6 +7,8 @@ button: Draft rev 5, current location
 button: Draft rev 5 · 1 change · ready; review in Analysis
 list: Analyses
 region: Recipe
+radio-button: Perception → Imagery preset, Query: Imagery on blank · Reference: Perception; changes phases Retrieval vs Encoding → Imagery vs Perception
+radio-button: Study → Recognition preset, Old probes only. Lures and novel: No corresponding study trial (by design); changes phases Retrieval vs Encoding → Recognition vs Study
 region: Resolved design
 toggle-button: All requested
 toggle-button: Eligible

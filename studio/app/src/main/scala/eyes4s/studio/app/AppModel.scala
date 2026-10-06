@@ -558,9 +558,8 @@ final case class AppModel private (
     */
   def runBlock: Option[(DatasetRevision, SourceBlock)] =
     for
-      draft <- document.draft
-      base  <- document.analysis(draft.base)
-      target = draft.dataset.getOrElse(base.dataset)
+      context <- document.draftContext
+      target = context.dataset
       block <- sources.block(target)
     yield (target, block)
 
@@ -652,9 +651,9 @@ object AppModel:
   /** The Analysis trail of the current draft, or of the latest revision. */
   def draftTrail(document: StudioDocument): Vector[Place] =
     val revision = document.draft.map(_.id).orElse(document.latestAnalysis.map(_.id))
-    val base     =
-      document.draft.flatMap(d => document.analysis(d.base)).orElse(document.latestAnalysis)
-    Vector(Place.Analyses) ++ base.map(b => Place.Lineage(b.studio.preset)) ++
+    val studio   =
+      document.draftContext.map(_.studio).orElse(document.latestAnalysis.map(_.studio))
+    Vector(Place.Analyses) ++ studio.map(fields => Place.Lineage(fields.preset)) ++
       revision.map(Place.Revision(_))
 
   /** Apply intents in order, collecting their effects. */
@@ -755,8 +754,21 @@ object AppModel:
 
     case Intent.CancelJob(job) =>
       m.jobs.job(job) match
-        case Some(j) => update(m, Intent.Dispatch(Command.CancelRun(j.run)))
-        case None    =>
+        case Some(j) =>
+          m.document.run(j.run) match
+            case Some(run)
+                if run.analysis != j.stamp.revision || run.dataset != j.stamp.dataset =>
+              val refused = ExecutionError.StampMismatch(
+                stampOf(m.document, run.analysis, run.dataset),
+                job,
+                j.stamp.revision,
+                j.stamp.dataset
+              )
+              (m.copy(notice = Some(Notice.ExecutionRefused(refused))), none)
+            case Some(run) if run.state == RunLifecycle.Running && !j.phase.isTerminal =>
+              (m, Vector(AppEffect.Execution(ExecutionEffect.Cancel(job))))
+            case _ => update(m, Intent.Dispatch(Command.CancelRun(j.run)))
+        case None =>
           val refused = ExecutionError.UnknownJob(job, m.jobs.jobs.map(_.id))
           (m.copy(notice = Some(Notice.ExecutionRefused(refused))), none)
     case Intent.ShowRun(run) =>
@@ -969,11 +981,13 @@ object AppModel:
         .flatMap(
           ExecutionEffect.submitted
         )
-      // A requirement that changed without a submission (a plan bound to the
-      // running revision) is told to the service as Require.
-      val required = requestedStamp(doc)
-      val require  = required
-        .filter(s => submits.isEmpty && !requestedStamp(m.document).contains(s))
+      // Verified declarations can enrich the same native request without
+      // discarding its backend-owned canonical input identity.
+      val required = requestedStamp(doc).map { declared =>
+        m.jobs.shelf.required.filter(_.agreesWithDeclarations(declared)).getOrElse(declared)
+      }
+      val require = required
+        .filter(s => submits.isEmpty && !m.jobs.shelf.required.contains(s))
         .map(s => AppEffect.Execution(ExecutionEffect.Require(s)))
       val jobs = (submits ++ require.flatMap(_ => required)).foldLeft(m.jobs)(_.require(_))
       // A prepared design is submitted once: a later run prepares again.
@@ -1006,11 +1020,11 @@ object AppModel:
       CoreBinding.unbound
     )
 
-  /** What the document currently wants results for: the stamp of its newest
-    * running run, if any.
+  /** What the document last requested results for: its newest declared run.
+    * Settling that request must not restore an older run's requirement.
     */
   def requestedStamp(document: StudioDocument): Option[RunStamp] =
-    document.running.lastOption.map(r => stampOf(document, r.analysis, r.dataset))
+    document.runs.lastOption.map(r => stampOf(document, r.analysis, r.dataset))
 
   /** When the shown run changes, the selection moves to a new context and
     * keeps only refs that do not belong to another run; hover likewise.
@@ -1047,10 +1061,15 @@ object AppModel:
 
   /** The run a ref belongs to, if it is a run result. */
   def runOf(ref: StudioRef): Option[RunId] = ref match
-    case StudioRef.Result(run, _)                      => Some(run)
-    case StudioRef.ParticipantSummary(run, _, _, _, _) => Some(run)
-    case StudioRef.GroupCell(run, _, _, _)             => Some(run)
-    case _                                             => None
+    case StudioRef.Result(run, _)                        => Some(run)
+    case StudioRef.ParticipantSummary(run, _, _, _, _)   => Some(run)
+    case StudioRef.GroupCell(run, _, _, _)               => Some(run)
+    case StudioRef.ReportCell(run, _, _, _, _)           => Some(run)
+    case StudioRef.ReportParticipant(run, _, _, _, _, _) => Some(run)
+    case StudioRef.ReportContrast(run, _, _, _, _, _)    => Some(run)
+    case StudioRef.ReportQueryRange(run, _, _, _)        => Some(run)
+    case StudioRef.QueryTally(run, _)                    => Some(run)
+    case _                                               => None
 
   /** Record the move in the history, then arrive. */
   /** The answer to check `round`: an answer older than one already taken is

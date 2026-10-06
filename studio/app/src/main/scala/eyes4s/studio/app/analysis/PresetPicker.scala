@@ -20,9 +20,9 @@ import eyes4s.studio.app.Intent
 import eyes4s.plan.UnmatchedKind
 import eyes4s.studio.app.text.{PresetText, PresetTextId, UnmatchedText}
 import eyes4s.studio.core.command.Command
-import eyes4s.studio.core.document.{AnalysisRevisionSpec, Preset, Recipe, StudioDocument}
+import eyes4s.studio.core.document.{DraftContext, Preset, Recipe, StudioDocument}
 import eyes4s.studio.core.freshness.FreshnessText
-import eyes4s.studio.core.preset.{RecipePreset, RecipePresets}
+import eyes4s.studio.core.preset.{InitialRecipe, RecipePreset, RecipePresets}
 
 /** One preset of the picker: its title and line in the board's words,
   * whether the recipe holds it, and the plan.diff choosing it would make.
@@ -63,10 +63,10 @@ object PresetPicker:
   )
 
   /** The revision the draft starts from (or would) and the recipe edited. */
-  def edited(document: StudioDocument): Option[(AnalysisRevisionSpec, Recipe)] =
-    document.draft match
-      case Some(d) => document.analysis(d.base).map(b => (b, d.recipe(b.recipe)))
-      case None    => document.latestAnalysis.map(a => (a, a.recipe))
+  def edited(document: StudioDocument): Option[(DraftContext, Recipe)] =
+    document.draftContext
+      .map(c => (c, c.recipe))
+      .orElse(document.latestAnalysis.map(a => (DraftContext.saved(a.id, a), a.recipe)))
 
   /** The preset the edited recipe holds, if there is a recipe. */
   def selected(document: StudioDocument): Option[Preset] =
@@ -85,6 +85,13 @@ object PresetPicker:
         Option.when(changes.nonEmpty)(
           if document.draft.isEmpty then Command.StartDraft(base.id, None, changes)
           else Command.ChangeRecipes(changes)
+        )
+      case (None, Some(_)) if document.analyses.isEmpty && document.draft.isEmpty =>
+        document.latestAdmitted.flatMap(dataset =>
+          InitialRecipe
+            .of(dataset, preset)
+            .toOption
+            .map((recipe, studio) => Command.StartAnalysis(dataset.id, recipe, studio))
         )
       case _ => None
 
@@ -112,7 +119,7 @@ object PresetPicker:
         detail = detail,
         selected = current.contains(p.preset),
         changes = diff,
-        choose = changes.filter(_.nonEmpty).map(_ => Intent.ChoosePreset(p.preset)),
+        choose = command(document, p.preset).map(_ => Intent.ChoosePreset(p.preset)),
         accessible = PresetText(OptionAccessible, title, detail, diff)
       )
     }

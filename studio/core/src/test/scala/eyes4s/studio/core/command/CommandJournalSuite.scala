@@ -58,6 +58,13 @@ class CommandJournalSuite extends munit.ScalaCheckSuite:
     assertEquals(CommandPins.pins.keySet -- CommandPins.journalKeys, actual.keySet)
   }
 
+  test("the first-analysis command has an exact version-4 journal envelope") {
+    val command = CommandSamples.commands.find(_._1 == "StartAnalysis").get._2
+    val encoded =
+      CommandJournal.encode(JournalLine.Entry(1, JournalEntry.Apply(command))).toOption.get
+    assert(same(CommandPins.initialAnalysisV4, encoded), encoded)
+  }
+
   test("the samples cover every command case, and each round-trips") {
     val sampled = CommandSamples.commands.map(_._2.name).toSet
     assertEquals(allCommands.filterNot(sampled), Vector.empty)
@@ -210,7 +217,7 @@ class CommandJournalSuite extends munit.ScalaCheckSuite:
     )
     assertEquals(
       CommandJournal.codec.map(c => (c.schema.name, c.schema.version)),
-      Right(("studio.journal", 3))
+      Right(("studio.journal", 4))
     )
   }
 

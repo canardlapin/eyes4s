@@ -105,9 +105,9 @@ object Preflight:
       )
     )
     val change = for
-      t     <- target
-      draft <- m.document.draft.filter(_.id == t.revision)
-      base  <- m.document.analysis(draft.base)
+      t       <- target
+      context <- m.document.draftContext.filter(_.id == t.revision)
+      base    <- context.savedBase
     yield
       val changes = RecipeChange.between(base.recipe, t.recipe)
       RunLine(

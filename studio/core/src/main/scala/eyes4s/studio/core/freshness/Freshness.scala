@@ -376,9 +376,9 @@ object Freshness:
   ): Option[Banner] =
     for
       shownSpec <- document.analysis(shown.analysis)
-      base      <- document.analysis(draft.base)
-      recipe = draft.recipe(base.recipe)
-      target = draft.dataset.getOrElse(base.dataset)
+      context   <- document.draftContext.filter(_.id == draft.id)
+      recipe = context.recipe
+      target = context.dataset
       diff   = RecipeChange.between(shownSpec.recipe, recipe)
       rebase = Option.when(target != shown.dataset)(target)
       if diff.nonEmpty || rebase.nonEmpty

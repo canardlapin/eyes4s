@@ -125,17 +125,32 @@ object ScienceContent:
           )
           .as[StudioDocument]
           .bimap(f => CodecError.Field("science", json, f.getMessage), _.science)
-      def before(s: ScienceContent): Either[CodecError, ScienceContent] =
+      def beforeInitial(s: ScienceContent): Either[CodecError, ScienceContent] =
         Either.cond(
-          s.reporting.forall(_.contrast.isEmpty),
+          !s.draft.exists(_.isInitial),
           s,
-          CodecError.Unsupported("studio science", "explicit contrast operands need version 2")
+          CodecError.Unsupported("studio science", "an initial draft needs version 3")
+        )
+      def before(s: ScienceContent): Either[CodecError, ScienceContent] =
+        beforeInitial(s).flatMap(_ =>
+          Either.cond(
+            s.reporting.forall(_.contrast.isEmpty),
+            s,
+            CodecError.Unsupported(
+              "studio science",
+              "explicit contrast operands need version 2"
+            )
+          )
         )
       SchemaLadder
         .of[ScienceContent]("studio science", ids.science)(s => before(s).flatMap(write))(
           json => read(json).flatMap(before)
         )
-        .next(_.reporting.forall(_.contrast.isEmpty), identity)(write)(read)
+        .next(
+          s => !s.draft.exists(_.isInitial) && s.reporting.forall(_.contrast.isEmpty),
+          identity
+        )(s => beforeInitial(s).flatMap(write))(json => read(json).flatMap(beforeInitial))
+        .next(s => !s.draft.exists(_.isInitial), identity)(write)(read)
     }
 
   val codec: Either[CodecError, VersionedCodec[ScienceContent]] = ladder.map(_.codec)
@@ -185,8 +200,8 @@ final case class StudioDocument private (
   def running: Vector[RunRef] = runs.filter(_.state == RunLifecycle.Running)
 
   /** The recipe the draft describes, if there is a draft. */
-  def draftRecipe: Option[Recipe] =
-    draft.flatMap(d => analysis(d.base).map(base => d.recipe(base.recipe)))
+  def draftContext: Option[DraftContext] = draft.flatMap(_.context(analyses))
+  def draftRecipe: Option[Recipe]        = draftContext.map(_.recipe)
 
   /** The same science with another presentation. */
   def withPresentation(next: PresentationState): Either[DocumentError, StudioDocument] =
@@ -244,25 +259,50 @@ object StudioDocument:
       }
       _ <- draft.traverse_ { d =>
         val referrer = s"draft ${d.id.label}"
-        for
-          base <- analyses
-            .find(_.id == d.base)
-            .toRight(DocumentError.UnknownAnalysis(referrer, d.base))
-          latest = analyses.lastOption.getOrElse(base)
-          _ <- Either.cond(
-            d.id.number > latest.id.number,
-            (),
-            DocumentError.DraftNotLatest(d.id, latest.id)
-          )
-          _ <- d.dataset.traverse_ { target =>
-            datasets.find(_.id == target) match
-              case None => Left(DocumentError.UnknownDataset(referrer, target))
-              case Some(t) if !t.decision.isAdmitted =>
-                Left(DocumentError.RebaseNotAdmitted(d.id, target))
-              case Some(_) => Right(())
-          }
-          _ <- d.check(base)
-        yield ()
+        val seed     = d.origin match
+          case DraftOrigin.Existing(baseId) =>
+            analyses
+              .find(_.id == baseId)
+              .toRight(DocumentError.UnknownAnalysis(referrer, baseId))
+              .flatMap { base =>
+                val latest = analyses.lastOption.getOrElse(base)
+                Either.cond(
+                  d.id.number > latest.id.number,
+                  (),
+                  DocumentError.DraftNotLatest(d.id, latest.id)
+                ) *>
+                  d.check(base)
+              }
+          case DraftOrigin.Initial(seedDataset, _, _) =>
+            for
+              _ <- Either.cond(
+                analyses.isEmpty,
+                (),
+                DocumentError.InitialDraftWithAnalyses(d.id, analysisIds)
+              )
+              _ <- Either.cond(
+                d.id == AnalysisRevision(1),
+                (),
+                DocumentError.InitialDraftId(d.id, AnalysisRevision(1))
+              )
+              _ <- datasets
+                .find(_.id == seedDataset)
+                .toRight(DocumentError.UnknownDataset(referrer, seedDataset))
+                .flatMap(data =>
+                  Either.cond(
+                    data.decision.isAdmitted,
+                    (),
+                    DocumentError.RebaseNotAdmitted(d.id, seedDataset)
+                  )
+                )
+            yield ()
+        seed *> d.dataset.traverse_ { target =>
+          datasets.find(_.id == target) match
+            case None => Left(DocumentError.UnknownDataset(referrer, target))
+            case Some(data) if !data.decision.isAdmitted =>
+              Left(DocumentError.RebaseNotAdmitted(d.id, target))
+            case Some(_) => Right(())
+        }
       }
       _ <- runs.traverse_ { r =>
         known(analysisIds, r.analysis)(DocumentError.UnknownAnalysis(r.id.label, r.analysis)) *>
@@ -369,14 +409,24 @@ object StudioDocument:
     expressedByV5(document) && document.analyses.forall(a => presetBeforeV5(a.studio.preset))
 
   /** Version 6 first records explicit ordered reporting contrast operands. */
+  private def expressedByV6(document: StudioDocument): Boolean =
+    !document.draft.exists(_.isInitial)
+  private def beforeV7(document: StudioDocument): Either[CodecError, StudioDocument] =
+    Either.cond(
+      expressedByV6(document),
+      document,
+      CodecError.Unsupported("studio document", "an initial draft needs version 7")
+    )
   private def expressedByV5(document: StudioDocument): Boolean =
-    document.reporting.forall(_.contrast.isEmpty)
+    expressedByV6(document) && document.reporting.forall(_.contrast.isEmpty)
 
   private val contrastVersionError: CodecError =
     CodecError.Unsupported("studio document", "explicit contrast operands need version 6")
 
   private def beforeV6(document: StudioDocument): Either[CodecError, StudioDocument] =
-    Either.cond(expressedByV5(document), document, contrastVersionError)
+    beforeV7(document).flatMap(value =>
+      Either.cond(expressedByV5(value), value, contrastVersionError)
+    )
 
   /** A version-1 to -4 writer and reader: an enum value cannot be dropped as
     * a member can, so a document naming a version-5 preset is refused both
@@ -487,6 +537,7 @@ object StudioDocument:
     * Earlier readers and writers refuse explicit operands, so relabelling an
     * envelope cannot change scientific direction.
     */
+  // Version 7 alone expresses a working recipe without a saved base.
   val ladder: Either[CodecError, SchemaLadder[StudioDocument]] =
     StudioSchemaIds.forCodec.map { ids =>
       SchemaLadder
@@ -505,7 +556,10 @@ object StudioDocument:
         .next(expressedByV4, identity)(d => beforeV6(d).map(v => CanonicalJson(v.asJson)))(
           json => read(json).flatMap(beforeV6)
         )
-        .next(expressedByV5, identity)(d => Right(CanonicalJson(d.asJson)))(read)
+        .next(expressedByV5, identity)(d => beforeV7(d).map(v => CanonicalJson(v.asJson)))(
+          json => read(json).flatMap(beforeV7)
+        )
+        .next(expressedByV6, identity)(d => Right(CanonicalJson(d.asJson)))(read)
     }
 
   /** The versioned, canonical document codec. */

@@ -141,16 +141,28 @@ object CommandJournal:
 
   private val refusal = CodecError.Unsupported("studio journal", "a preset needs version 2")
 
-  private def expressedByV2(line: JournalLine): Boolean = line match
+  private def expressedByV3(line: JournalLine): Boolean = line match
+    case JournalLine.Entry(_, JournalEntry.Apply(_: Command.StartAnalysis))    => false
+    case JournalLine.Entry(_, JournalEntry.Apply(Command.RestoreDraft(draft))) =>
+      !draft.isInitial
+    case _ => true
+  private def beforeV4(line: JournalLine): Either[CodecError, JournalLine] =
+    Either.cond(
+      expressedByV3(line),
+      line,
+      CodecError.Unsupported("studio journal", "an initial draft needs version 4")
+    )
+
+  private def expressedByV2(line: JournalLine): Boolean = expressedByV3(line) && (line match
     case JournalLine.Entry(_, JournalEntry.Apply(Command.PutReporting(spec))) =>
       spec.contrast.isEmpty
-    case _ => true
+    case _ => true)
 
   private val contrastRefusal =
     CodecError.Unsupported("studio journal", "explicit contrast operands need version 3")
 
   private def beforeV3(line: JournalLine): Either[CodecError, JournalLine] =
-    Either.cond(expressedByV2(line), line, contrastRefusal)
+    beforeV4(line).flatMap(v => Either.cond(expressedByV2(v), v, contrastRefusal))
 
   /** Every version of the journal line schema (CR3).
     *
@@ -164,6 +176,7 @@ object CommandJournal:
     * Version 3 records explicitly ordered contrast operands in `PutReporting`.
     * Previous versions refuse those lines, and old lines lift unchanged.
     */
+  // Version 4 alone expresses StartAnalysis and restoration of an initial origin.
   val ladder: Either[CodecError, SchemaLadder[JournalLine]] =
     StudioSchemaIds.ids
       .leftMap(e => CodecError.Unsupported("schema", e.message))
@@ -176,7 +189,10 @@ object CommandJournal:
           .next(l => expressedByV2(l) && !namesV2(l.asJson), identity)(l =>
             beforeV3(l).map(v => CanonicalJson(v.asJson))
           )(json => read(json).flatMap(beforeV3))
-          .next(expressedByV2, identity)(l => Right(CanonicalJson(l.asJson)))(read)
+          .next(l => expressedByV3(l) && expressedByV2(l), identity)(l =>
+            beforeV4(l).map(v => CanonicalJson(v.asJson))
+          )(json => read(json).flatMap(beforeV4))
+          .next(expressedByV3, identity)(l => Right(CanonicalJson(l.asJson)))(read)
       }
 
   val codec: Either[CodecError, VersionedCodec[JournalLine]] = ladder.map(_.codec)

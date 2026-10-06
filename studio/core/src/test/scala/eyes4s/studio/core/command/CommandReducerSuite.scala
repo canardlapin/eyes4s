@@ -335,7 +335,7 @@ class CommandReducerSuite extends munit.FunSuite:
     val step   = ok(t3Done.apply(ChangeRecipe(change)))
     assertEquals(
       step.history.document.draft.map(d => (d.id, d.base)),
-      Some((AnalysisRevision(6), rev5))
+      Some((AnalysisRevision(6), Some(rev5)))
     )
     assertEquals(step.history.science.done.head.inverse, DiscardDraft)
   }

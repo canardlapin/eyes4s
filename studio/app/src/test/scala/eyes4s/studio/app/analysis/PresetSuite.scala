@@ -186,7 +186,7 @@ class PresetSuite extends munit.ScalaCheckSuite:
   test("choosing a preset on a draft adds its declared fields to the draft's plan.diff") {
     val t2     = AppModel.open(StoryModels.t2, Some(StoryModels.project))
     val draft  = ok(t2.document.draft.toRight("no draft"))
-    val base   = ok(t2.document.analysis(draft.base).toRight("no base"))
+    val base   = ok(draft.savedBase.flatMap(t2.document.analysis).toRight("no base"))
     val (m, _) = AppModel.update(t2, Intent.ChoosePreset(Preset.PerceptionImagery))
     assertEquals(m.notice, None)
     val after = ok(m.document.draft.toRight("draft gone"))
@@ -421,4 +421,35 @@ class PresetSuite extends munit.ScalaCheckSuite:
       "No match · enc_02 cannot be paired"
     )
     assertEquals(UnmatchedText(UnmatchedKind.Undetermined, "Encoding"), "No match")
+  }
+
+  test("the picker offers a genuine first recipe only after a dataset is admitted") {
+    val sample = ok(eyes4s.studio.core.fixture.StoryMoments.t2)
+    val data   = sample.datasets.last
+      .copy(id = eyes4s.studio.core.backend.DatasetRevision(1), parent = None)
+    val document = ok(
+      StudioDocument.of(
+        Vector(data),
+        Vector.empty,
+        None,
+        Vector.empty,
+        Vector.empty,
+        Vector.empty,
+        PresentationState.default,
+        Vector.empty
+      )
+    )
+    val model   = AppModel.open(document, None)
+    val options = PresetPicker.vm(document).options
+    assert(options.forall(_.choose.isDefined))
+    val first = AppModel.update(model, Intent.ChoosePreset(Preset.EncodingRetrieval))._1
+    assertEquals(first.notice, None)
+    assertEquals(first.document.analyses, Vector.empty)
+    assertEquals(first.document.draft.flatMap(_.savedBase), None)
+    assertEquals(first.document.draftContext.map(_.dataset), Some(data.id))
+    assertEquals(PresetPicker.selected(first.document), Some(Preset.EncodingRetrieval))
+    assertEquals(
+      PresetPicker.command(ok(AppModel.newProject).document, Preset.EncodingRetrieval),
+      None
+    )
   }

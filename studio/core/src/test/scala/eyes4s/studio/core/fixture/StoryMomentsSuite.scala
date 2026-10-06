@@ -63,7 +63,7 @@ class StoryMomentsSuite extends munit.FunSuite:
       )
     )
     val draft = t2.draft
-    assertEquals(draft.map(d => (d.id, d.base, d.changeCount)), Some((rev5, rev4, 1)))
+    assertEquals(draft.map(d => (d.id, d.base, d.changeCount)), Some((rev5, Some(rev4), 1)))
     assertEquals(draft.map(_.render), Some("scales +σ 8°"))
     assertEquals(t2.draftRecipe.map(_.scales.values.map(_.degrees)), Some(scalesRev5))
     assertEquals(scales(t2, rev4), Some(scalesRev4))

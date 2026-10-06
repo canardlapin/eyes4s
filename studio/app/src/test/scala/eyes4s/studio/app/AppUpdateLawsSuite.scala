@@ -102,11 +102,13 @@ class AppUpdateLawsSuite extends munit.ScalaCheckSuite:
             val submits = mapped
               .collect { case AppEffect.Execution(e) => e }
               .flatMap(ExecutionEffect.submitted)
-            // A requirement changed without a submission is announced once.
+            // Compatible declarations preserve the exact native request;
+            // incompatible identities without a submission are announced once.
             val require = AppModel
               .requestedStamp(doc)
               .filter(s =>
-                submits.isEmpty && !AppModel.requestedStamp(t.before.document).contains(s)
+                submits.isEmpty && !t.before.jobs.shelf.required
+                  .exists(_.agreesWithDeclarations(s))
               )
               .map(s => AppEffect.Execution(ExecutionEffect.Require(s)))
             assertEquals(t.effects, (AppEffect.Journal(entry) +: mapped) ++ require, t.intent)

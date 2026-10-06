@@ -171,6 +171,8 @@ enum Command derives CanEqual:
   // --- Analysis · rerun ----------------------------------------------------
 
   /** A draft of `base` with the next analysis id. */
+  case StartAnalysis(dataset: DatasetRevision, recipe: Recipe, studio: StudioFields)
+
   case StartDraft(
       base: AnalysisRevision,
       dataset: Option[DatasetRevision],
@@ -293,8 +295,8 @@ enum Command derives CanEqual:
           AddCorrection | RemoveCorrection | VerifyDataset | WithdrawVerification |
           ResumeVerification | Admit) =>
       ChangeKind.DatasetReadmit
-    case _: (StartDraft | RestoreDraft | ChangeRecipe | ChangeRecipes | RebaseDraft |
-          SaveAndRun | RecordRunOutcome | CancelRun | BindPlan) =>
+    case _: (StartAnalysis | StartDraft | RestoreDraft | ChangeRecipe | ChangeRecipes |
+          RebaseDraft | SaveAndRun | RecordRunOutcome | CancelRun | BindPlan) =>
       ChangeKind.AnalysisRerun
     case DiscardDraft => ChangeKind.AnalysisRerun
     case _: (PutReporting | RemoveReporting | CreateFigure | RestoreFigure | DeleteFigure |

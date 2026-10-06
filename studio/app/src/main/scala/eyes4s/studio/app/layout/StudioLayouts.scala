@@ -179,6 +179,9 @@ object StudioLayouts:
   /** Where the failed jobs chip leads (S1.4). */
   val diagnostics: PaneId = new PaneId("analysis.diagnostics")
 
+  /** The preset and first-analysis controls. */
+  val recipe: PaneId = new PaneId("analysis.recipe")
+
   /** The resolved-design table (S7.5). */
   val resolvedDesign: PaneId = new PaneId("analysis.resolved-design")
 
@@ -194,7 +197,7 @@ object StudioLayouts:
       split(
         Axis.Vertical,
         group(
-          dynamic("analysis.recipe", "Recipe", Form),
+          dynamic(recipe.value, "Recipe", Form),
           dynamic("analysis.diff", "Diff", Text),
           pane("analysis.description", "Description", Text)
         ) -> 0.6,

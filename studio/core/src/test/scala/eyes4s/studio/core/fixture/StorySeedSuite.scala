@@ -97,7 +97,7 @@ class StorySeedSuite extends CatsEffectSuite:
         d.runs.map(r => (r.id, r.analysis, r.dataset)),
         Vector((run5, rev3, r2), (run6, rev4, r3), (run7, rev4, r3))
       )
-      assertEquals(d.draft.map(x => (x.id, x.base, x.changeCount)), Some((rev5, rev4, 1)))
+      assertEquals(d.draft.map(x => (x.id, x.base, x.changeCount)), Some((rev5, Some(rev4), 1)))
       assertEquals(s.session.draftCheck, DraftCheck.Checked(d.draft.get, Vector.empty))
       assertEquals(s.session.progress, Vector.empty)
       val f = s.freshness

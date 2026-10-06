@@ -30,6 +30,7 @@ import eyes4s.studio.core.document.{
   RunLifecycle,
   RunRef,
   Source,
+  SemanticIdentity,
   StudioDocument
 }
 import eyes4s.studio.core.engine.StudioBuild
@@ -96,10 +97,16 @@ final class RealStudyBackend[F[_]] private (
         previous.synchronize(document) match
           case Left(error)   => F.pure(Left(error))
           case Right(change) =>
-            val enriched = change.next.planBindings.toVector.collect {
-              case (revision, CoreBinding.Bound(_))
-                  if previous.planBindings
-                    .get(revision) != change.next.planBindings.get(revision) =>
+            val enriched = change.next.revisions.toVector.collect {
+              case (revision, (_, recipe))
+                  if (change.next.planBindings
+                    .get(revision)
+                    .exists(_.isInstanceOf[CoreBinding.Bound[?]]) &&
+                    previous.planBindings
+                      .get(revision) != change.next.planBindings.get(revision)) ||
+                    (recipe.input.nonEmpty && previous.revisions
+                      .get(revision)
+                      .flatMap(_._2.input) != recipe.input) =>
                 revision
             }
             val archives = change.next.documentRuns.values.toVector.filter(ref =>
@@ -333,26 +340,38 @@ final class RealStudyBackend[F[_]] private (
                 )
               )
 
-  /** A saved artifact binding must describe the plan its recipe constructs. */
+  /** Saved source and plan bindings must describe the native preparation. */
   private def checkBinding(
       configured: RealConfigured,
       snapshot: RealRegistry
   ): Either[BackendError, RealConfigured] =
-    snapshot.planBindings.get(configured.revision) match
-      case Some(CoreBinding.Bound(recorded)) =>
-        RealPreview.stamp(configured).flatMap { stamp =>
-          stamp.plan match
-            case CoreBinding.Bound(prepared) if prepared.sha256 == recorded.sha256 =>
-              Right(configured)
-            case found =>
-              Left(
-                BackendError.RegistryRefused(
-                  DiagnosticLocus.Revision(configured.revision),
-                  s"Plan digest recorded ${recorded.sha256.hex}, prepared ${found.render}."
+    val source = SemanticIdentity.fromCore(configured.admitted.evidence.source.records)
+    val input  = configured.recipe.input match
+      case Some(recorded) if recorded != source =>
+        Left(
+          BackendError.RegistryRefused(
+            DiagnosticLocus.Revision(configured.revision),
+            s"Source records recorded ${recorded.value}, prepared ${source.value} for ${configured.dataset.label}."
+          )
+        )
+      case _ => Right(())
+    input.flatMap { _ =>
+      snapshot.planBindings.get(configured.revision) match
+        case Some(CoreBinding.Bound(recorded)) =>
+          RealPreview.stamp(configured).flatMap { stamp =>
+            stamp.plan match
+              case CoreBinding.Bound(prepared) if prepared.sha256 == recorded.sha256 =>
+                Right(configured)
+              case found =>
+                Left(
+                  BackendError.RegistryRefused(
+                    DiagnosticLocus.Revision(configured.revision),
+                    s"Plan digest recorded ${recorded.sha256.hex}, prepared ${found.render}."
+                  )
                 )
-              )
-        }
-      case _ => Right(configured)
+          }
+        case _ => Right(configured)
+    }
 
   def previewRows(
       revision: AnalysisRevision,
@@ -378,13 +397,15 @@ final class RealStudyBackend[F[_]] private (
   ): Stream[F, Either[BackendError, PreviewEvent]] = previews.continue(preview, budget)
 
   def submitPreview(ready: PreviewReady): F[Either[BackendError, JobStatus]] =
-    previews
-      .accept(ready)(revision => configuration(revision).map(_.flatMap(RealPreview.stamp)))
-      .flatMap {
-        case Left(error) => F.pure(Left(error))
-        case Right(work) =>
-          prepared.update(_.updated(work.revision, work)) >> start(work, Purpose.NewRun)
-      }
+    synchronization.lock.surround {
+      previews
+        .accept(ready)(revision => configuration(revision).map(_.flatMap(RealPreview.stamp)))
+        .flatMap {
+          case Left(error) => F.pure(Left(error))
+          case Right(work) =>
+            prepared.update(_.updated(work.revision, work)) >> start(work, Purpose.NewRun)
+        }
+    }
 
   // ------------------------------------------------------------------ jobs
 
@@ -439,9 +460,11 @@ final class RealStudyBackend[F[_]] private (
     }
 
   def submit(revision: AnalysisRevision): F[Either[BackendError, JobStatus]] =
-    prepare(revision).flatMap {
-      case Left(e)     => F.pure(Left(e))
-      case Right(work) => start(work, Purpose.NewRun)
+    synchronization.lock.surround {
+      prepare(revision).flatMap {
+        case Left(e)     => F.pure(Left(e))
+        case Right(work) => start(work, Purpose.NewRun)
+      }
     }
 
   /** Reserve the job (and, for a new run, its run), then start eyes4s's

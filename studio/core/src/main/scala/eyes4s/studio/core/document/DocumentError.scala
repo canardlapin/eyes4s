@@ -106,6 +106,15 @@ enum DocumentError derives CanEqual:
       expected: String,
       found: String
   )
+  case DraftSeedBefore(
+      draft: AnalysisRevision,
+      field: RecipeField,
+      expected: String,
+      found: String
+  )
+  case InitialPresetNotHeld(draft: AnalysisRevision, preset: Preset)
+  case InitialDraftWithAnalyses(draft: AnalysisRevision, saved: Vector[AnalysisRevision])
+  case InitialDraftId(draft: AnalysisRevision, expected: AnalysisRevision)
   case DraftNotLatest(draft: AnalysisRevision, latest: AnalysisRevision)
   case RebaseToSame(draft: AnalysisRevision, dataset: DatasetRevision)
   case RebaseNotAdmitted(draft: AnalysisRevision, dataset: DatasetRevision)
@@ -127,7 +136,11 @@ enum DocumentError derives CanEqual:
       scales: Vector[Sigma]
   )
 
+  case PresetWithoutDefaults(preset: Preset, dataset: DatasetRevision)
+
   def message: String = this match
+    case PresetWithoutDefaults(preset, dataset) =>
+      s"Preset $preset declares no initial recipe for ${dataset.label}."
     case Blank(field)           => s"$field is blank."
     case BadPath(path, reason)  => s"Source path '$path' is refused: $reason."
     case BadDigest(f, v, r)     => s"$f '$v' is not a SHA-256 digest: $r"
@@ -204,6 +217,14 @@ enum DocumentError derives CanEqual:
     case DraftBefore(draft, base, field, expected, found) =>
       s"Draft ${draft.label} changes the ${field.label} from $found, but ${base.label} " +
         s"has $expected."
+    case DraftSeedBefore(draft, field, expected, found) =>
+      s"Initial ${draft.label} ${field.label} starts at $found, but its seed holds $expected."
+    case InitialPresetNotHeld(draft, preset) =>
+      s"Initial ${draft.label}'s seed recipe does not hold preset $preset."
+    case InitialDraftWithAnalyses(draft, saved) =>
+      s"Initial ${draft.label} cannot coexist with saved analyses ${saved.map(_.label).mkString(", ")}."
+    case InitialDraftId(draft, expected) =>
+      s"Initial ${draft.label} must use first identity ${expected.label}."
     case DraftNotLatest(draft, latest) =>
       s"Draft ${draft.label} must come after the latest analysis revision, ${latest.label}."
     case UnorderedIds(kind, ids) =>
