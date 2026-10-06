@@ -37,6 +37,15 @@ enum ResultFamily derives CanEqual:
   /** One row per within-participant level contrast ([[ReportTables.contrasts]]). */
   case ReportContrasts
 
+  /** Intercept-free non-negative scale factors, active-set diagnostics and intensity cells. */
+  case NnlsCoefficients, NnlsDiagnostics, NnlsCells
+
+  /** Simplex weights (including optional uniform background), diagnostics and probability cells. */
+  case MixtureWeights, MixtureDiagnostics, MixtureCells
+
+  /** Pearson or Spearman partial associations, with explicit undefined estimates. */
+  case PartialAssociations
+
 enum ResultColumnType derives CanEqual:
   case Utf8, JsonUtf8, Int64, Float64, Boolean
 
