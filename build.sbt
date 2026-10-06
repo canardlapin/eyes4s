@@ -27,6 +27,7 @@ val catsLawsV        = "2.13.0"
 val catsEffectV      = "3.7.0"   // eyes4s-fs2 / eyes4s-io only
 val fs2V             = "3.13.0"  // eyes4s-fs2 / eyes4s-io only
 val munitCatsEffectV = "2.1.0"   // eyes4s-fs2 tests only
+val jacksonV = "2.21.7" // Jackson 2.21 LTS security fixes; bead bd-01M473JQX6Q232YKCJTG478R68
 
 // ---------------------------------------------------------------------------
 // Build-wide settings
@@ -47,7 +48,17 @@ ThisBuild / crossScalaVersions := Seq(Scala3)
 // the JS stdlib, colliding at scala.caps. Keep both on the compiler baseline.
 // https://github.com/scala/scala3/issues/22890
 ThisBuild / dependencyOverrides += "org.scala-lang" % "scala3-library_3" % Scala3
-ThisBuild / tlJdkRelease                           := Some(11)
+// Arrow 19 imports Jackson 2.21.0; ScalaDoc also resolves older Jackson through
+// liqp/YAML. Align both tool and runtime configurations with the 2.21.7 BOM.
+// Overrides do not introduce Jackson into portable or pure module graphs.
+ThisBuild / dependencyOverrides ++= Seq(
+  "com.fasterxml.jackson.core"       % "jackson-core"            % jacksonV,
+  "com.fasterxml.jackson.core"       % "jackson-databind"        % jacksonV,
+  "com.fasterxml.jackson.core"       % "jackson-annotations"     % "2.21",
+  "com.fasterxml.jackson.datatype"   % "jackson-datatype-jsr310" % jacksonV,
+  "com.fasterxml.jackson.dataformat" % "jackson-dataformat-yaml" % jacksonV
+)
+ThisBuild / tlJdkRelease := Some(11)
 
 ThisBuild / githubWorkflowJavaVersions := Seq(
   JavaSpec.temurin("17"),
@@ -901,9 +912,14 @@ lazy val io = crossProject(JVMPlatform, JSPlatform)
     }.taskValue,
     // Optional JVM-only Arrow transport; portable tables have no Arrow dependency.
     libraryDependencies ++= Seq(
-      "org.apache.arrow" % "arrow-vector"        % "19.0.0"         % Optional,
-      "org.apache.arrow" % "arrow-memory-unsafe" % "19.0.0"         % Optional,
-      "org.typelevel"   %% "munit-cats-effect"   % munitCatsEffectV % Test
+      "org.apache.arrow" % "arrow-vector"        % "19.0.0" % Optional,
+      "org.apache.arrow" % "arrow-memory-unsafe" % "19.0.0" % Optional,
+      // Publish the patched optional dependency declarations as well: sbt
+      // dependencyOverrides alone do not appear in the published Maven POM.
+      "com.fasterxml.jackson.core"     % "jackson-core"            % jacksonV % Optional,
+      "com.fasterxml.jackson.core"     % "jackson-databind"        % jacksonV % Optional,
+      "com.fasterxml.jackson.datatype" % "jackson-datatype-jsr310" % jacksonV % Optional,
+      "org.typelevel" %% "munit-cats-effect" % munitCatsEffectV % Test
     ),
     Test / fork := true,
     Test / javaOptions ++= Seq(

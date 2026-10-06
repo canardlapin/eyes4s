@@ -94,6 +94,24 @@ choice), plus `--add-opens=java.base/java.nio=ALL-UNNAMED`. Shared/Scala.js and 
 no Arrow dependency. See the [Arrow IPC cookbook](https://arrow.apache.org/cookbook/java/io.html)
 and [memory ownership documentation](https://arrow.apache.org/java/main/memory.html).
 
+Arrow 19.0.0 requests Jackson 2.21.0. The JVM build and published optional declarations use
+Jackson core, databind and datatype-jsr310 **2.21.7**, with annotations **2.21**, following the
+[Jackson 2.21.7 BOM](https://repo.maven.apache.org/maven2/com/fasterxml/jackson/jackson-bom/2.21.7/jackson-bom-2.21.7.pom).
+Applications opting into Arrow must also select these patched Jackson dependencies: optional
+dependencies do not propagate through the published `eyes4s-io` artifact. For sbt:
+
+```scala
+libraryDependencies ++= Seq(
+  "org.apache.arrow" % "arrow-vector" % "19.0.0",
+  "org.apache.arrow" % "arrow-memory-unsafe" % "19.0.0",
+  "com.fasterxml.jackson.core" % "jackson-core" % "2.21.7",
+  "com.fasterxml.jackson.core" % "jackson-databind" % "2.21.7",
+  "com.fasterxml.jackson.datatype" % "jackson-datatype-jsr310" % "2.21.7"
+)
+```
+
+The isolated artifact consumer exercises this opt-in and reads the emitted IPC stream back.
+
 `write` returns `F[Either[ArrowExportError, Unit]]`, owns the file and its allocators/vectors/writer,
 and writes bounded batches. The defaults are 1,024 rows and a 64-MiB allocator budget. Invalid
 limits are rejected before opening a file. Write failure can leave a partial destination; callers

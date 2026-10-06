@@ -21,6 +21,17 @@ lazy val consumer = crossProject(JVMPlatform, JSPlatform)
     )
   )
   .jvmSettings(
+    // Optional Arrow transport is an explicit downstream opt-in. Its Jackson
+    // dependencies match eyes4s-io's published optional declarations.
+    libraryDependencies ++= Seq(
+      "org.apache.arrow"               % "arrow-vector"            % "19.0.0" % Test,
+      "org.apache.arrow"               % "arrow-memory-unsafe"     % "19.0.0" % Test,
+      "com.fasterxml.jackson.core"     % "jackson-core"            % "2.21.7" % Test,
+      "com.fasterxml.jackson.core"     % "jackson-databind"        % "2.21.7" % Test,
+      "com.fasterxml.jackson.datatype" % "jackson-datatype-jsr310" % "2.21.7" % Test
+    ),
+    Test / fork := true,
+    Test / javaOptions += "--add-opens=java.base/java.nio=ALL-UNNAMED",
     // The response-envelope smoke run times steps and cancellations; suites run
     // one at a time so that no other suite competes with it for processors.
     Test / parallelExecution := false,
