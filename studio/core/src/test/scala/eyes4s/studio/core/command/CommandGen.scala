@@ -183,6 +183,15 @@ object CommandGen:
         source <- spec.recipe.input
           .orElse(d.dataset(spec.dataset).flatMap(_.sources.fixations).flatMap(_.semantic))
           .fold(semantic)(Gen.const(_))
+        definition <- Gen.oneOf(
+          None,
+          Some(
+            eyes4s.studio.core.artifacts.NativeDatasetDefinition
+              .of(d.dataset(spec.dataset).get)
+              .toOption
+              .get
+          )
+        )
         facts = eyes4s.studio.core.artifacts.NativeBindingFacts
           .of(
             run.id,
@@ -194,7 +203,8 @@ object CommandGen:
             ),
             source,
             result,
-            spec.recipe
+            spec.recipe,
+            definition
           )
           .toOption
           .get

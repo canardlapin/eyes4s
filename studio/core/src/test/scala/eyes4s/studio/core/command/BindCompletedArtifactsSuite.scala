@@ -17,7 +17,7 @@
 package eyes4s.studio.core.command
 
 import eyes4s.codec.CanonicalDigest
-import eyes4s.studio.core.artifacts.NativeBindingFacts
+import eyes4s.studio.core.artifacts.{NativeBindingFacts, NativeDatasetDefinition}
 import eyes4s.studio.core.backend.{AnalysisRevision, DatasetRevision, RunId}
 import eyes4s.studio.core.document.*
 import org.scalacheck.Gen
@@ -263,4 +263,54 @@ class BindCompletedArtifactsSuite extends munit.ScalaCheckSuite:
           .isLeft
       )
     }
+  }
+
+  private lazy val definitionFacts = get(
+    NativeBindingFacts.of(
+      facts.run,
+      facts.stamp,
+      facts.source,
+      facts.result,
+      facts.recipeSnapshot,
+      Some(get(NativeDatasetDefinition.of(base.dataset(facts.dataset).get)))
+    )
+  )
+
+  test("complete definition binding refuses changed units atomically and replays at journal6") {
+    val entry   = JournalEntry.Apply(Command.BindCompletedArtifacts(definitionFacts))
+    val bound   = get(History.start(base).perform(entry))
+    val journal = get(CommandJournal.write(base, Vector(entry), checkpointEvery = 1))
+    assertEquals(
+      get(CommandJournal.replay(base, journal)).history.document,
+      bound.history.document
+    )
+    val changed = document(datasets = base.datasets.map { s =>
+      if s.id == facts.dataset then s.copy(units = DeclaredUnits(Some(TimeUnit.Microseconds)))
+      else s
+    })
+    val rejected = History.start(changed).perform(entry)
+    assert(rejected.left.toOption.exists(_.isInstanceOf[CommandError.ArtifactBindingMismatch]))
+    assertEquals(
+      changed.analysis(facts.revision).get.plan,
+      CoreBinding.unbound[StudyPlanArtifact]
+    )
+    assertEquals(changed.run(facts.run).get.archive, CoreBinding.unbound[ResultArchiveArtifact])
+  }
+
+  test(
+    "journal6 alone carries definitions; older readers and writers cannot silently drop them"
+  ) {
+    val line =
+      JournalLine.Entry(1, JournalEntry.Apply(Command.BindCompletedArtifacts(definitionFacts)))
+    val ladder  = get(CommandJournal.ladder)
+    val encoded = get(get(CommandJournal.codec).encode(line))
+    assertEquals(encoded.hcursor.downField("schema").get[Int]("version"), Right(6))
+    val previous = get(ladder.upTo(ladder.versions(4)))
+    assert(previous.codec.encode(line).isLeft)
+    assert(previous.codec.decode(encoded).isLeft)
+    assert(
+      ladder.readAt(ladder.versions(4), encoded.hcursor.downField("value").focus.get).isLeft
+    )
+    val text = get(CommandJournal.start(base)) + "\n" + encoded.noSpaces + "\n"
+    assert(CommandJournal.replay(Right(previous.codec), base, text).isLeft)
   }

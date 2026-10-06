@@ -141,6 +141,17 @@ object CommandJournal:
 
   private val refusal = CodecError.Unsupported("studio journal", "a preset needs version 2")
 
+  private def expressedByV5(line: JournalLine): Boolean = line match
+    case JournalLine.Entry(_, JournalEntry.Apply(Command.BindCompletedArtifacts(facts))) =>
+      facts.datasetDefinition.isEmpty
+    case _ => true
+  private def beforeV6(line: JournalLine): Either[CodecError, JournalLine] =
+    Either.cond(
+      expressedByV5(line),
+      line,
+      CodecError.Unsupported("studio journal", "dataset definition bindings need version 6")
+    )
+
   private def expressedByV3(line: JournalLine): Boolean = expressedByV4(line) && (line match
     case JournalLine.Entry(_, JournalEntry.Apply(_: Command.StartAnalysis))    => false
     case JournalLine.Entry(_, JournalEntry.Apply(Command.RestoreDraft(draft))) =>
@@ -210,7 +221,10 @@ object CommandJournal:
           .next(expressedByV3, identity)(l => beforeV5(l).map(v => CanonicalJson(v.asJson)))(
             json => read(json).flatMap(beforeV5)
           )
-          .next(expressedByV4, identity)(l => Right(CanonicalJson(l.asJson)))(read)
+          .next(expressedByV4, identity)(l => beforeV6(l).map(v => CanonicalJson(v.asJson)))(
+            json => read(json).flatMap(beforeV6)
+          )
+          .next(expressedByV5, identity)(l => Right(CanonicalJson(l.asJson)))(read)
       }
 
   val codec: Either[CodecError, VersionedCodec[JournalLine]] = ladder.map(_.codec)

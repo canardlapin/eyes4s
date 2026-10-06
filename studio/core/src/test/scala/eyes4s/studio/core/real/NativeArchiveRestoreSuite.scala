@@ -350,3 +350,41 @@ class NativeArchiveRestoreSuite extends CatsEffectSuite:
       yield ()
     check(fixes, true) >> check(fixes + "\n", false)
   }
+
+  test("cold same-ID unit alias is refused once without source reads or scientific jobs") {
+    val changed = get(
+      StudioDocument.of(
+        document.datasets.map(s => s.copy(units = DeclaredUnits(Some(TimeUnit.Microseconds)))),
+        document.analyses,
+        document.draft,
+        document.runs,
+        document.reporting,
+        document.figures,
+        document.presentation,
+        document.jobs
+      )
+    )
+    for
+      raw   <- Ref.of[IO, Int](0)
+      loads <- Ref.of[IO, Int](0)
+      source = new NativeArtifactSource[IO]:
+        def load(ref: RunRef, budget: NativeArtifactBudget) =
+          loads.update(_ + 1).as(Right(Some(exported)))
+      _ <- RealStudyBackend.resource[IO](changed, denied(raw), Some(source)).use { backend =>
+        reads(backend).use { local =>
+          for
+            first  <- local.result(run)
+            second <- local.result(run)
+            jobs   <- backend.jobs
+            calls  <- loads.get
+            host   <- raw.get
+          yield
+            assert(first.left.toOption.exists(_.message.contains("dataset definition")))
+            assertEquals(second, first)
+            assertEquals(jobs, Vector.empty)
+            assertEquals(calls, 1)
+            assertEquals(host, 0)
+        }
+      }
+    yield ()
+  }

@@ -506,6 +506,30 @@ object Reducer:
               )
             )
           )
+        _ <- facts.datasetDefinition.traverse_ { recorded =>
+          eyes4s.studio.core.artifacts.NativeDatasetDefinition
+            .of(dataset)
+            .leftMap(e =>
+              ArtifactBindingMismatch(
+                run.id,
+                s"${dataset.id.label} definition",
+                recorded.toString,
+                e.message
+              )
+            )
+            .flatMap(prepared =>
+              Either.cond(
+                recorded == prepared,
+                (),
+                ArtifactBindingMismatch(
+                  run.id,
+                  s"${dataset.id.label} definition",
+                  recorded.toString,
+                  prepared.toString
+                )
+              )
+            )
+        }
         _ <- binding(spec.plan, facts.stamp.plan, "plan")
         result = CoreBinding.Bound(facts.result)
         _ <- binding(run.archive, result, "result")

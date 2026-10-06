@@ -85,7 +85,8 @@ private[real] object NativeArtifacts:
       source <- SemanticIdentity
         .of(work.admitted.evidence.source.records.digest)
         .leftMap(e => NativeArtifactError.InvalidFacts(run, "semantic source", e.message))
-      facts <- NativeBindingFacts.of(
+      definition <- codec("dataset definition")(NativeDatasetDefinition.of(work.admitted.spec))
+      facts      <- NativeBindingFacts.of(
         run,
         RunStamp(
           work.revision,
@@ -95,7 +96,8 @@ private[real] object NativeArtifacts:
         ),
         source,
         resultCanonical,
-        work.recipe
+        work.recipe,
+        Some(definition)
       )
       p <- codec("plan artifact")(StoredArtifact.plan("plan", work.plans, work.plan))
       i <- codec("input artifact")(

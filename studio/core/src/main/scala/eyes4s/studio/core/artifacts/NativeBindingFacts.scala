@@ -16,13 +16,14 @@
 
 package eyes4s.studio.core.artifacts
 
-import eyes4s.codec.{CanonicalDigest, CodecError, VersionedCodec}
+import cats.syntax.all.*
+import eyes4s.codec.{CanonicalDigest, CodecError, SchemaLadder, VersionedCodec}
 import eyes4s.plan.DefinitionId
 import eyes4s.studio.core.backend.RunId
 import eyes4s.studio.core.document.*
 import eyes4s.studio.core.document.DigestJson.given
 import eyes4s.studio.core.execution.{RunStamp, StudyInputArtifact}
-import io.circe.{Decoder, Encoder}
+import io.circe.{Decoder, DecodingFailure, Encoder, Json}
 
 /** Canonical values and semantic source identity are distinct from stored byte SHA.
   * A job id is session-local and has no place in these persisted facts.
@@ -33,6 +34,7 @@ final case class NativeBindingFacts private (
     source: SemanticIdentity,
     result: CanonicalDigest[ResultArchiveArtifact],
     recipeSnapshot: Recipe,
+    datasetDefinition: Option[NativeDatasetDefinition],
     private val checkedPlan: CanonicalDigest[StudyPlanArtifact],
     private val checkedInput: CanonicalDigest[StudyInputArtifact]
 ) derives CanEqual:
@@ -47,7 +49,8 @@ object NativeBindingFacts:
       stamp: RunStamp,
       source: SemanticIdentity,
       result: CanonicalDigest[ResultArchiveArtifact],
-      recipeSnapshot: Recipe
+      recipeSnapshot: Recipe,
+      datasetDefinition: Option[NativeDatasetDefinition] = None
   ): Either[NativeArtifactError, NativeBindingFacts] =
     (stamp.plan, stamp.input) match
       case (CoreBinding.Bound(plan), CoreBinding.Bound(input)) =>
@@ -68,7 +71,18 @@ object NativeBindingFacts:
             )
           )
         else
-          Right(new NativeBindingFacts(run, stamp, source, result, recipeSnapshot, plan, input))
+          Right(
+            new NativeBindingFacts(
+              run,
+              stamp,
+              source,
+              result,
+              recipeSnapshot,
+              datasetDefinition,
+              plan,
+              input
+            )
+          )
       case _ =>
         Left(
           NativeArtifactError.InvalidFacts(
@@ -78,22 +92,80 @@ object NativeBindingFacts:
           )
         )
 
-  given Encoder.AsObject[NativeBindingFacts] =
+  private val legacyEncoder: Encoder.AsObject[NativeBindingFacts] =
     Encoder.forProduct5("run", "stamp", "source", "result", "recipeSnapshot")(f =>
       (f.run, f.stamp, f.source, f.result, f.recipeSnapshot)
     )
-  given Decoder[NativeBindingFacts] = Decoder
-    .forProduct5("run", "stamp", "source", "result", "recipeSnapshot")(of)
-    .emap(_.left.map(_.message))
-  val codec: Either[CodecError, VersionedCodec[NativeBindingFacts]] =
-    DefinitionId.of("studio.native-binding-facts", 1).left.map(CodecError.Definition(_)).map {
+  given Encoder.AsObject[NativeBindingFacts] = Encoder.AsObject.instance { f =>
+    val base = legacyEncoder.encodeObject(f)
+    f.datasetDefinition.fold(base)(d =>
+      base.add("datasetDefinition", summon[Encoder[NativeDatasetDefinition]].apply(d))
+    )
+  }
+  given Decoder[NativeBindingFacts] = Decoder.instance { c =>
+    for
+      run        <- c.get[RunId]("run")
+      stamp      <- c.get[RunStamp]("stamp")
+      source     <- c.get[SemanticIdentity]("source")
+      result     <- c.get[CanonicalDigest[ResultArchiveArtifact]]("result")
+      recipe     <- c.get[Recipe]("recipeSnapshot")
+      definition <- c.downField("datasetDefinition").focus match
+        case None                        => Right(None)
+        case Some(value) if value.isNull =>
+          Left(
+            DecodingFailure(
+              "Bare binding facts omit absent datasetDefinition; null is not a definition.",
+              c.history
+            )
+          )
+        case Some(value) => value.as[NativeDatasetDefinition].map(Some(_))
+      facts <- of(run, stamp, source, result, recipe, definition)
+        .leftMap(e => DecodingFailure(e.message, c.history))
+    yield facts
+  }
+
+  private def read(json: Json): Either[CodecError, NativeBindingFacts] =
+    json
+      .as[NativeBindingFacts]
+      .leftMap(e => CodecError.Field("native artifact facts", json, e.message))
+  private val requiresV2 = CodecError.Unsupported(
+    "native artifact facts",
+    "a complete dataset definition needs version 2"
+  )
+
+  /** V1 retains its original bytes and absence of dataset evidence. Lifting
+    * explicitly carries that absence; it cannot manufacture a definition.
+    */
+  val ladder: Either[CodecError, SchemaLadder[NativeBindingFacts]] =
+    DefinitionId.of("studio.native-binding-facts", 1).leftMap(CodecError.Definition(_)).map {
       schema =>
-        VersionedCodec.checked[NativeBindingFacts](schema)(f =>
-          Right(CanonicalJson(summon[Encoder[NativeBindingFacts]].apply(f)))
-        )(json =>
-          json
-            .as[NativeBindingFacts]
-            .left
-            .map(e => CodecError.Field("native artifact facts", json, e.message))
-        )
+        SchemaLadder
+          .of[NativeBindingFacts]("native artifact facts", schema)(f =>
+            Either
+              .cond(f.datasetDefinition.isEmpty, CanonicalJson(legacyEncoder(f)), requiresV2)
+          )(json =>
+            if json.hcursor.downField("datasetDefinition").succeeded then Left(requiresV2)
+            else read(json)
+          )
+          .next(
+            _.datasetDefinition.isEmpty,
+            _.mapObject(_.add("datasetDefinition", Json.Null))
+          )(f =>
+            Right(CanonicalJson(summon[Encoder[NativeBindingFacts]].apply(f).mapObject { o =>
+              if f.datasetDefinition.isEmpty then o.add("datasetDefinition", Json.Null) else o
+            }))
+          )(json =>
+            if json.hcursor.downField("datasetDefinition").focus.contains(Json.Null) then
+              read(json.mapObject(_.remove("datasetDefinition")))
+            else if json.hcursor.downField("datasetDefinition").succeeded then read(json)
+            else
+              Left(
+                CodecError.Field(
+                  "datasetDefinition",
+                  json,
+                  "Version 2 requires explicit dataset evidence or legacy null."
+                )
+              )
+          )
     }
+  val codec: Either[CodecError, VersionedCodec[NativeBindingFacts]] = ladder.map(_.codec)

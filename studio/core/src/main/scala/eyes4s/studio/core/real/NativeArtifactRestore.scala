@@ -16,7 +16,7 @@
 
 package eyes4s.studio.core.real
 
-import eyes4s.studio.core.artifacts.NativeArtifactPackage
+import eyes4s.studio.core.artifacts.{NativeArtifactPackage, NativeDatasetDefinition}
 import eyes4s.studio.core.backend.{BackendError, DiagnosticLocus}
 import eyes4s.studio.core.document.*
 
@@ -83,6 +83,18 @@ object NativeArtifactRestore:
         facts.source.value,
         revision.recipe.input.fold("unbound")(_.value),
         revision.recipe.input.contains(facts.source)
+      )
+      declared <- NativeDatasetDefinition
+        .of(dataset)
+        .left
+        .map(e => BackendError.RegistryRefused(DiagnosticLocus.Dataset(dataset.id), e.message))
+      _ <- require(
+        "dataset definition",
+        declared.toString,
+        facts.datasetDefinition.fold(
+          "legacy package without dataset definition; re-run from verified sources"
+        )(_.toString),
+        facts.datasetDefinition.contains(declared)
       )
       snapshot = artifacts.checked
       context  <- RealAdmission.archived(dataset, snapshot.input, snapshot.ledger)

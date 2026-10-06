@@ -189,3 +189,200 @@ class NativeArtifactRestoreSuite extends munit.FunSuite:
       NativeArtifactRestore.of(exported, ref, revision, spec.copy(sources = renamed)).isLeft
     )
   }
+
+  private val definitionChanges: Vector[(String, DatasetRevisionSpec => DatasetRevisionSpec)] =
+    Vector(
+      "time units"         -> (s => s.copy(units = DeclaredUnits(Some(TimeUnit.Microseconds)))),
+      "undeclared units"   -> (s => s.copy(units = DeclaredUnits(None))),
+      "coordinate columns" -> (s =>
+        s.copy(mapping = get(ColumnMapping.of(s.mapping.bindings.map { b =>
+          b.role match
+            case ColumnRole.X =>
+              b.copy(column = get(s.mapping.column(ColumnRole.Y).toRight("Y")))
+            case ColumnRole.Y =>
+              b.copy(column = get(s.mapping.column(ColumnRole.X).toRight("X")))
+            case _ => b
+        })))
+      ),
+      "onset column" -> (s =>
+        s.copy(mapping = get(ColumnMapping.of(s.mapping.bindings.map { b =>
+          if b.role == ColumnRole.Onset then
+            b.copy(column = get(ColumnName.of("alternate_onset")))
+          else b
+        })))
+      ),
+      "response column" -> (s =>
+        s.copy(inventory = s.inventory.map { i =>
+          get(
+            InventoryMapping
+              .of(
+                i.bindings.map { b =>
+                  if b.role == ColumnRole.Response then
+                    b.copy(column = get(ColumnName.of("alternate_response")))
+                  else b
+                },
+                i.attributes
+              )
+              .flatMap(InventoryMapping.withDisplays(_, i.displays))
+          )
+        })
+      ),
+      "image attribute" -> (s =>
+        s.copy(inventory = s.inventory.map { i =>
+          val attrs = get(
+            DeclaredAttributes.of(
+              i.attributes.bindings.filterNot(_.column.value == "image_file")
+            )
+          )
+          get(
+            InventoryMapping
+              .of(i.bindings, attrs)
+              .flatMap(InventoryMapping.withDisplays(_, i.displays))
+          )
+        })
+      ),
+      "display mapping" -> (s =>
+        s.copy(inventory = s.inventory.map { i =>
+          get(
+            InventoryMapping.withDisplays(
+              i,
+              Some(
+                DisplayColumns(
+                  get(ColumnName.of("alternate_display_kind")),
+                  Some(get(ColumnName.of("alternate_image_file")))
+                )
+              )
+            )
+          )
+        })
+      ),
+      "image placement" -> (s =>
+        s.copy(geometry =
+          get(
+            Geometry.of(
+              s.geometry.screen,
+              get(
+                ImagePlacement.of(
+                  s.geometry.image.left + 1,
+                  s.geometry.image.top,
+                  s.geometry.image.width,
+                  s.geometry.image.height
+                )
+              ),
+              s.geometry.pixelsPerDegree
+            )
+          )
+        )
+      ),
+      "pixels per degree" -> (s =>
+        s.copy(geometry =
+          get(
+            Geometry.of(
+              s.geometry.screen,
+              s.geometry.image,
+              get(DeclaredPixelsPerDegree.of(s.geometry.pixelsPerDegree.value + 1))
+            )
+          )
+        )
+      ),
+      "offscreen policy" -> (s =>
+        s.copy(admission = s.admission.copy(offScreen = OffScreenChoice.QuarantineTrial))
+      ),
+      "coordinate correction" -> (s =>
+        s.copy(admission =
+          s.admission.copy(corrections =
+            Vector(CorrectionRule(CorrectionTarget.AllTrials, CoordinateCorrection.FlipY))
+          )
+        )
+      ),
+      "admission policy" -> (s =>
+        s.copy(decision =
+          AdmissionDecision.Admitted(
+            Some(eyes4s.plan.AdmissionDecision.RequireComplete),
+            CoreBinding.unbound,
+            CoreBinding.unbound
+          )
+        )
+      ),
+      "fixation byte identity" -> (s =>
+        s.copy(sources = get(Sources.of(s.sources.entries.map { source =>
+          if source.role == SourceRole.Fixations then
+            source.copy(bytes = ByteDigest.sha256(IArray(1.toByte)))
+          else source
+        })))
+      ),
+      "inventory byte identity" -> (s =>
+        s.copy(sources = get(Sources.of(s.sources.entries.map { source =>
+          if source.role == SourceRole.Trials then
+            source.copy(bytes = ByteDigest.sha256(IArray(2.toByte)))
+          else source
+        })))
+      ),
+      "fixation attributes" -> (s =>
+        s.copy(attributes =
+          get(
+            DeclaredAttributes.of(
+              Vector(AttributeBinding(get(ColumnName.of("pupil")), AttributeKindChoice.Number))
+            )
+          )
+        )
+      ),
+      "revision parent" -> (s => s.copy(parent = None))
+    )
+
+  definitionChanges.foreach { (field, change) =>
+    test(
+      s"same-ID cold archive refuses changed dataset $field before interpreting stored data"
+    ) {
+      val spec    = prepared.admitted.spec
+      val changed = change(spec)
+      assertEquals(changed.id, spec.id)
+      assertNotEquals(
+        get(NativeDatasetDefinition.of(changed)),
+        get(NativeDatasetDefinition.of(spec))
+      )
+      val refusal = NativeArtifactRestore.of(exported, ref, revision, changed).left.toOption.get
+      assert(refusal.isInstanceOf[BackendError.RegistryRefused])
+      assert(refusal.message.contains("dataset definition"), refusal.message)
+    }
+  }
+
+  test(
+    "restored exports preserve the complete definition and scientific canonical identities"
+  ) {
+    val reexported = get(NativeArtifacts.build(run, restored, NativeArtifactBudget.Default))
+    assertEquals(reexported.facts.datasetDefinition, exported.facts.datasetDefinition)
+    assertEquals(reexported.facts.planCanonical, exported.facts.planCanonical)
+    assertEquals(reexported.facts.inputCanonical, exported.facts.inputCanonical)
+    assertEquals(reexported.facts.result, exported.facts.result)
+    assert(NativeArtifactRestore.of(reexported, ref, revision, prepared.admitted.spec).isRight)
+  }
+
+  test(
+    "legacy facts retain their bytes but refuse restoration without original dataset evidence"
+  ) {
+    val old = get(
+      NativeBindingFacts.of(
+        exported.facts.run,
+        exported.facts.stamp,
+        exported.facts.source,
+        exported.facts.result,
+        exported.facts.recipeSnapshot
+      )
+    )
+    val json  = get(get(NativeBindingFacts.codec).encode(old))
+    val files = exported.files.map { (name, data) =>
+      if name == NativeArtifactPackage.FactsName then
+        name    -> json.noSpaces.getBytes(UTF_8).toVector
+      else name -> data
+    }
+    val legacy = get(NativeArtifactPackage.verify(files))
+    assertEquals(legacy.facts.datasetDefinition, None)
+    assertEquals(get(get(NativeBindingFacts.codec).encode(legacy.facts)), json)
+    val refusal =
+      NativeArtifactRestore.of(legacy, ref, revision, prepared.admitted.spec).left.toOption.get
+    assert(
+      refusal.message.contains("legacy package without dataset definition"),
+      refusal.message
+    )
+  }

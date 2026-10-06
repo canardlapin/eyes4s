@@ -87,11 +87,13 @@ class NativeArtifactPersistenceSuite extends CatsEffectSuite:
   )
   private def document(
       lifecycle: RunLifecycle = RunLifecycle.Completed,
-      declaredSource: Option[SemanticIdentity] = None
+      declaredSource: Option[SemanticIdentity] = None,
+      units: Option[DeclaredUnits] = None
   ): StudioDocument =
     val original = prepared.admitted.spec
-    val spec     = original.copy(sources =
-      get(
+    val spec     = original.copy(
+      units = units.getOrElse(original.units),
+      sources = get(
         Sources.of(
           original.sources.entries.map(entry =>
             if entry.role == SourceRole.Fixations then entry.copy(semantic = declaredSource)
@@ -142,7 +144,8 @@ class NativeArtifactPersistenceSuite extends CatsEffectSuite:
   private def create(
       store: ProjectStore[IO],
       state: RunLifecycle = RunLifecycle.Completed,
-      declaredSource: Option[SemanticIdentity] = None
+      declaredSource: Option[SemanticIdentity] = None,
+      units: Option[DeclaredUnits] = None
   ): IO[ProjectSession[IO]] =
     for
       lock    <- ok(store.acquire(owner))
@@ -151,7 +154,7 @@ class NativeArtifactPersistenceSuite extends CatsEffectSuite:
         ProjectSession.create(
           store,
           owner,
-          document(state, declaredSource),
+          document(state, declaredSource, units),
           SharingOptions.complete,
           entries
         )
@@ -269,7 +272,30 @@ class NativeArtifactPersistenceSuite extends CatsEffectSuite:
   test(
     "contradictory declared fixation source refuses before storage, matching identity stores"
   ) {
-    val other = get(SemanticIdentity.of("ffeeddccbbaa9988"))
+    val other        = get(SemanticIdentity.of("ffeeddccbbaa9988"))
+    val matchingSpec = document(declaredSource = Some(exported.facts.source)).datasets.head
+    val assets       = get(
+      AssetRegistry.of(
+        matchingSpec.id,
+        matchingSpec.sources.trials.get.bytes,
+        matchingSpec.geometry.screen,
+        Vector.empty
+      )
+    )
+    val admitted     = get(RealAdmission.admit(matchingSpec, fixes, trials, assets))
+    val matchingWork =
+      get(RealPrepared.of(prepared.revision, matchingSpec.id, prepared.recipe, admitted))
+    val matchingExport = get(
+      NativeArtifacts.build(
+        run,
+        RealStudyBackend.RealRun(
+          matchingWork,
+          get(matchingWork.work.run),
+          RealStudyBackend.RunOrigin.Computed
+        ),
+        NativeArtifactBudget.Default
+      )
+    )
     for
       store         <- InMemoryProjectStore.create[IO]
       session       <- create(store, declaredSource = Some(other))
@@ -281,13 +307,13 @@ class NativeArtifactPersistenceSuite extends CatsEffectSuite:
       _             <- ok(session.close)
       matchingStore <- InMemoryProjectStore.create[IO]
       matching      <- create(matchingStore, declaredSource = Some(exported.facts.source))
-      accepted      <- matching.storeNativeArtifacts(exported).map(get)
+      accepted      <- matching.storeNativeArtifacts(matchingExport).map(get)
       _             <- ok(matching.close)
     yield
       assert(refused.left.toOption.exists(_.message.contains("fixation source semantic")))
       assertEquals(after, before)
       assertEquals(unchanged, initial)
-      assertEquals(accepted, exported.facts)
+      assertEquals(accepted, matchingExport.facts)
   }
 
   test(
@@ -463,4 +489,20 @@ class NativeArtifactPersistenceSuite extends CatsEffectSuite:
         )
       )
       assertEquals(after, initial)
+  }
+
+  test("dataset definition mismatch refuses before any storage or history mutation") {
+    for
+      store     <- InMemoryProjectStore.create[IO]
+      session   <- create(store, units = Some(DeclaredUnits(Some(TimeUnit.Microseconds))))
+      initial   <- session.history
+      before    <- ok(store.list)
+      rejected  <- session.storeNativeArtifacts(exported)
+      after     <- ok(store.list)
+      unchanged <- session.history
+      _         <- ok(session.close)
+    yield
+      assert(rejected.left.toOption.exists(_.message.contains("definition")))
+      assertEquals(after, before)
+      assertEquals(unchanged, initial)
   }
