@@ -19,10 +19,13 @@ package eyes4s.studio.desktop.shell
 import cats.effect.IO
 import cats.effect.unsafe.implicits.global
 import eyes4s.studio.app.{ClockTime, Intent, StoryModels}
+import eyes4s.studio.app.compare.{QueriesAnswer, SummaryAnswer}
+import eyes4s.studio.app.figures.PanelBody
 import eyes4s.studio.core.backend.{DiagnosticLevel, DiagnosticOrigin, StudioDiagnostic}
 import eyes4s.studio.core.bundle.{BundleSamples, LockOwner, SharingOptions}
 import eyes4s.studio.core.command.JournalEntry
 import eyes4s.studio.core.fixture.{StoryMoment, StoryMoments}
+import eyes4s.studio.core.selection.ScaleIndex
 import eyes4s.studio.core.session.{ProjectSession, SaveReceipt}
 import eyes4s.studio.desktop.StudioWindow
 import eyes4s.studio.desktop.harness.StudioTheme
@@ -95,6 +98,27 @@ class StatusBarFxSuite extends ShellFxSuite:
   fxStage.test("the selection path follows the selection bus within 100 ms") { fx =>
     assumeFullStage(fx)
     val w = boot(fx, StoryModels.t2Compare)
+    // Measure selection handling after startup reads have delivered their
+    // terminal replies, rather than counting their queued rendering work.
+    eventually(fx, "startup summary, queries, reports and figure data are read") {
+      val state       = w.summary.summary
+      val reportsRead = state.summary.exists {
+        case SummaryAnswer.Answered(summary) =>
+          summary.scales.indices.forall { index =>
+            ScaleIndex
+              .of(index)
+              .toOption
+              .exists(scale =>
+                state.reports.contains((scale, false)) && state.reports.contains((scale, true))
+              )
+          }
+        case _ => false
+      }
+      reportsRead && state.queries.exists(_.isInstanceOf[QueriesAnswer.Answered]) &&
+      w.figures.vm.methods.exists(_.text.isRight) &&
+      w.figures.vm.page.exists(_.panels.forall(p => !p.body.isInstanceOf[PanelBody.Waiting]))
+    }
+    fx.awaitLayout()
     assertEquals(path(w), "Selected: P17 › ret_07 × enc_03 (matched) · σ 2°")
     // A view submits a selection input, as the trial view will (S4.2).
     val input =
