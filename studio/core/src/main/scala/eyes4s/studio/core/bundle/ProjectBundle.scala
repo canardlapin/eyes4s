@@ -279,6 +279,9 @@ object ProjectBundle:
       figures   <- document.figures
         .zip(figureJson)
         .traverse((f, json) => part(BundleArea.Figures, s"figure${f.id.number}", json))
+      families <- value("analysisFamilies").traverse(json =>
+        part(BundleArea.Analyses, "families", json)
+      )
       science <- StudioDocument
         .scienceDigest(document)
         .left
@@ -294,13 +297,14 @@ object ProjectBundle:
           draft.map(_._1),
           runs.map(_._1),
           reporting.map(_._1),
-          figures.map(_._1)
+          figures.map(_._1),
+          families.map(_._1)
         ),
         value("presentation").getOrElse(Json.Null)
       )
       manifestBytes <- manifestBytes(manifest)
       files = (datasets.flatMap((d, m) => Vector(d, m)) ++ analyses ++ draft ++ runs ++
-        reporting ++ figures).map((entry, bytes) => entry.path -> bytes)
+        reporting ++ figures ++ families).map((entry, bytes) => entry.path -> bytes)
     yield EncodedBundle(manifest, manifestBytes, files, document.jobs)
 
   /** The exact bytes of `project.json`: the UTF-8 of its compact canonical
@@ -389,6 +393,7 @@ object ProjectBundle:
       runs      <- parts.runs.traverse(load)
       reporting <- parts.reporting.traverse(load)
       figures   <- parts.figures.traverse(load)
+      families  <- parts.analysisFamilies.traverse(load)
       value = Json
         .obj(
           "datasets"     -> Json.fromValues(datasets),
@@ -404,8 +409,11 @@ object ProjectBundle:
           if relinks.isEmpty then Json.obj()
           else Json.obj("relinks" -> Json.fromValues(relinks))
         )
+      fullValue = families.fold(value)(registry =>
+        value.deepMerge(Json.obj("analysisFamilies" -> registry))
+      )
       document <- StudioDocument.ladder
-        .flatMap(_.readAt(manifest.document, value))
+        .flatMap(_.readAt(manifest.document, fullValue))
         .left
         .map(BundleError.Codec("the document", _))
       found <- StudioDocument.scienceDigest(document).left.map(BundleError.Codec("science", _))

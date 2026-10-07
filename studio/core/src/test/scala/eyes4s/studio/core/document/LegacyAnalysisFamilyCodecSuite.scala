@@ -20,7 +20,7 @@ import eyes4s.studio.core.command.{CommandJournal, CommandPins}
 import io.circe.Json
 import io.circe.syntax.*
 
-/** Family identity foundation is not a new document capability. */
+/** Malformed family markers never acquire an implicit legacy meaning. */
 class LegacyAnalysisFamilyCodecSuite extends munit.FunSuite:
   private def get[E, A](value: Either[E, A]): A = value.fold(e => fail(e.toString), identity)
   private val document                          = DocumentSamples.t2

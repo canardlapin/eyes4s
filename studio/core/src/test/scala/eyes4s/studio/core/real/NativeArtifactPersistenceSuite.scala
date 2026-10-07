@@ -88,7 +88,8 @@ class NativeArtifactPersistenceSuite extends CatsEffectSuite:
   private def document(
       lifecycle: RunLifecycle = RunLifecycle.Completed,
       declaredSource: Option[SemanticIdentity] = None,
-      units: Option[DeclaredUnits] = None
+      units: Option[DeclaredUnits] = None,
+      explicitFamilies: Boolean = false
   ): StudioDocument =
     val original = prepared.admitted.spec
     val spec     = original.copy(
@@ -109,16 +110,28 @@ class NativeArtifactPersistenceSuite extends CatsEffectSuite:
       prepared.recipe,
       sample.analyses.last.studio.copy(preset = Preset.Custom)
     )
+    val analyses =
+      if explicitFamilies then Vector(analysis, analysis.copy(id = AnalysisRevision(2)))
+      else Vector(analysis)
+    val families = Option.when(explicitFamilies) {
+      get(AnalysisFamilyRegistry.of(
+        Vector(get(AnalysisFamily.of(FamilySamples.a, "A")), get(AnalysisFamily.of(FamilySamples.b, "B"))),
+        Vector(get(AnalysisFamilyOwner.of(analysis.id, FamilySamples.a)),
+          get(AnalysisFamilyOwner.of(AnalysisRevision(2), FamilySamples.b))),
+        analyses.map(_.id)
+      ))
+    }
     get(
       StudioDocument.of(
         Vector(spec),
-        Vector(analysis),
+        analyses,
         None,
         Vector(RunRef(run, analysis.id, spec.id, lifecycle, CoreBinding.unbound)),
         Vector.empty,
         Vector.empty,
         PresentationState.default,
-        Vector.empty
+        Vector.empty,
+        families
       )
     )
   private def sourceEntries(store: ProjectStore[IO], lock: WriterLock): IO[Vector[InputEntry]] =
@@ -145,7 +158,8 @@ class NativeArtifactPersistenceSuite extends CatsEffectSuite:
       store: ProjectStore[IO],
       state: RunLifecycle = RunLifecycle.Completed,
       declaredSource: Option[SemanticIdentity] = None,
-      units: Option[DeclaredUnits] = None
+      units: Option[DeclaredUnits] = None,
+      explicitFamilies: Boolean = false
   ): IO[ProjectSession[IO]] =
     for
       lock    <- ok(store.acquire(owner))
@@ -154,7 +168,7 @@ class NativeArtifactPersistenceSuite extends CatsEffectSuite:
         ProjectSession.create(
           store,
           owner,
-          document(state, declaredSource, units),
+          document(state, declaredSource, units, explicitFamilies),
           SharingOptions.complete,
           entries
         )
@@ -505,4 +519,30 @@ class NativeArtifactPersistenceSuite extends CatsEffectSuite:
       assert(rejected.left.toOption.exists(_.message.contains("definition")))
       assertEquals(after, before)
       assertEquals(unchanged, initial)
+  }
+
+  test("native prevalidation, terminal binding and cold restore retain independent owners") {
+    for
+      store <- InMemoryProjectStore.create[IO]
+      session <- create(store, RunLifecycle.Running, explicitFamilies = true)
+      initial <- session.history
+      _ <- session.storeNativeArtifacts(exported).map(get)
+      stored <- session.history
+      _ = assertEquals(stored, initial)
+      _ <- ok(session.perform(JournalEntry.Apply(
+        Command.RecordRunOutcome(run, RunLifecycle.Completed, CoreBinding.unbound)
+      )))
+      _ <- bind(session)
+      _ <- ok(session.save)
+      saved <- session.document
+      _ <- ok(session.close)
+      reopened <- ok(ProjectSession.open(store, owner))
+      restored <- reopened.session.document
+      _ <- reopened.session.loadNativeArtifacts(run).map(get)
+      _ <- ok(reopened.session.close)
+    yield
+      assertEquals(saved.analysisFamilies, initial.document.analysisFamilies)
+      assertEquals(restored.analysisFamilies, initial.document.analysisFamilies)
+      assertEquals(restored.familyOf(AnalysisRevision(1)), Some(FamilySamples.a))
+      assertEquals(restored.familyOf(AnalysisRevision(2)), Some(FamilySamples.b))
   }

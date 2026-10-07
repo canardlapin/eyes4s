@@ -261,6 +261,9 @@ object AnalysisFamilyRegistry:
   */
 object LegacyAnalysisFamily:
   def familyOf(document: StudioDocument, revision: AnalysisRevision): Option[AnalysisFamilyId] =
-    Option.when(
-      document.analysis(revision).isDefined || document.draft.exists(_.id == revision)
-    )(AnalysisFamilyId.Legacy)
+    document.analysisFamilies match
+      case Some(_) => document.familyOf(revision)
+      case None =>
+        Option.when(
+          document.analysis(revision).isDefined || document.draft.exists(_.id == revision)
+        )(AnalysisFamilyId.Legacy)

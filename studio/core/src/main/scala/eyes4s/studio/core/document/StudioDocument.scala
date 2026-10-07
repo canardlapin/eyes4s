@@ -94,20 +94,45 @@ object CanonicalJson:
   * revisions, the draft, runs, reporting specs and figures. Only a
   * [[StudioDocument]] builds one, so it is always cross-checked.
   */
-final case class ScienceContent private[document] (
-    datasets: Vector[DatasetRevisionSpec],
-    analyses: Vector[AnalysisRevisionSpec],
-    draft: Option[Draft],
-    runs: Vector[RunRef],
-    reporting: Vector[ReportingSpec],
-    figures: Vector[FigureSpec]
-) derives CanEqual
+final class ScienceContent private (
+    val datasets: Vector[DatasetRevisionSpec],
+    val analyses: Vector[AnalysisRevisionSpec],
+    val draft: Option[Draft],
+    val runs: Vector[RunRef],
+    val reporting: Vector[ReportingSpec],
+    val figures: Vector[FigureSpec],
+    val analysisFamilies: Option[AnalysisFamilyRegistry]
+) derives CanEqual:
+  private def fields = (datasets, analyses, draft, runs, reporting, figures, analysisFamilies)
+  override def equals(other: Any): Boolean = other match
+    case that: ScienceContent => fields == that.fields
+    case _ => false
+  override def hashCode(): Int = fields.hashCode
+  override def toString: String = s"ScienceContent$fields"
 
 object ScienceContent:
-  given Encoder.AsObject[ScienceContent] =
+  /** Called after StudioDocument.of has checked every cross-reference. */
+  private[document] def checked(
+      datasets: Vector[DatasetRevisionSpec],
+      analyses: Vector[AnalysisRevisionSpec],
+      draft: Option[Draft],
+      runs: Vector[RunRef],
+      reporting: Vector[ReportingSpec],
+      figures: Vector[FigureSpec],
+      analysisFamilies: Option[AnalysisFamilyRegistry]
+  ): ScienceContent = new ScienceContent(datasets, analyses, draft, runs, reporting, figures, analysisFamilies)
+
+  private val legacyEncoder: Encoder.AsObject[ScienceContent] =
     Encoder.forProduct6("datasets", "analyses", "draft", "runs", "reporting", "figures")(s =>
       (s.datasets, s.analyses, s.draft, s.runs, s.reporting, s.figures)
     )
+
+  given Encoder.AsObject[ScienceContent] = Encoder.AsObject.instance { science =>
+    val legacy = legacyEncoder.encodeObject(science)
+    science.analysisFamilies.fold(legacy)(registry =>
+      legacy.add("analysisFamilies", AnalysisFamilyRegistry.encode(registry))
+    )
+  }
 
   /** The science's versioned codec; its digest is the scientific identity.
     * Reading validates exactly as a document does.
@@ -125,12 +150,18 @@ object ScienceContent:
           )
           .as[StudioDocument]
           .bimap(f => CodecError.Field("science", json, f.getMessage), _.science)
-      def beforeMethods(s: ScienceContent): Either[CodecError, ScienceContent] =
+      def beforeFamilies(s: ScienceContent): Either[CodecError, ScienceContent] =
         Either.cond(
+          s.analysisFamilies.isEmpty,
+          s,
+          CodecError.Unsupported("studio science", "explicit analysis families need a later version")
+        )
+      def beforeMethods(s: ScienceContent): Either[CodecError, ScienceContent] =
+        beforeFamilies(s).flatMap(_ => Either.cond(
           s.figures.forall(_.methods.isEmpty),
           s,
           CodecError.Unsupported("studio science", "stored figure methods need version 4")
-        )
+        ))
       def beforeInitial(s: ScienceContent): Either[CodecError, ScienceContent] =
         beforeMethods(s).flatMap(v =>
           Either.cond(
@@ -164,7 +195,9 @@ object ScienceContent:
           s => s.figures.forall(_.methods.isEmpty) && !s.draft.exists(_.isInitial),
           identity
         )(s => beforeMethods(s).flatMap(write))(json => read(json).flatMap(beforeMethods))
-        .next(_.figures.forall(_.methods.isEmpty), identity)(write)(read)
+        .next(_.figures.forall(_.methods.isEmpty), identity)(s => beforeFamilies(s).flatMap(write))(
+          json => read(json).flatMap(beforeFamilies)
+        )
     }
 
   val codec: Either[CodecError, VersionedCodec[ScienceContent]] = ladder.map(_.codec)
@@ -180,18 +213,49 @@ object ScienceContent:
   * revision and rebases only onto an admitted dataset, a figure's panel scales
   * belong to its run's revision, and each job handle names one running run.
   */
-final case class StudioDocument private (
-    science: ScienceContent,
-    presentation: PresentationState,
-    jobs: Vector[JobHandle],
-    relinks: AssetRelinks
+final class StudioDocument private (
+    val science: ScienceContent,
+    val presentation: PresentationState,
+    val jobs: Vector[JobHandle],
+    val relinks: AssetRelinks
 ) derives CanEqual:
+  private def fields = (science, presentation, jobs, relinks)
+  override def equals(other: Any): Boolean = other match
+    case that: StudioDocument => fields == that.fields
+    case _ => false
+  override def hashCode(): Int = fields.hashCode
+  override def toString: String = s"StudioDocument$fields"
+
+  private def copy(
+      presentation: PresentationState = this.presentation,
+      jobs: Vector[JobHandle] = this.jobs,
+      relinks: AssetRelinks = this.relinks
+  ): StudioDocument = new StudioDocument(science, presentation, jobs, relinks)
+
   def datasets: Vector[DatasetRevisionSpec]  = science.datasets
   def analyses: Vector[AnalysisRevisionSpec] = science.analyses
   def draft: Option[Draft]                   = science.draft
   def runs: Vector[RunRef]                   = science.runs
   def reporting: Vector[ReportingSpec]       = science.reporting
   def figures: Vector[FigureSpec]            = science.figures
+  def analysisFamilies: Option[AnalysisFamilyRegistry] = science.analysisFamilies
+
+  /** Saved revisions have exactly one owner. An existing draft inherits its
+    * base's owner; its global revision id is never a second ownership authority.
+    * Legacy projects retain their implicit family (bead q-analysis-family-identity).
+    */
+  def familyOf(revision: AnalysisRevision): Option[AnalysisFamilyId] =
+    analysisFamilies match
+      case None => LegacyAnalysisFamily.familyOf(this, revision)
+      case Some(registry) =>
+        registry.familyOf(revision).orElse(
+          draft.filter(_.id == revision).flatMap(_.origin match
+            case DraftOrigin.Existing(base) => registry.familyOf(base)
+            case DraftOrigin.Initial(_, _, _) => None)
+        )
+
+  def sameFamily(first: AnalysisRevision, second: AnalysisRevision): Boolean =
+    familyOf(first).exists(family => familyOf(second).contains(family))
 
   def dataset(id: DatasetRevision): Option[DatasetRevisionSpec]    = datasets.find(_.id == id)
   def analysis(id: AnalysisRevision): Option[AnalysisRevisionSpec] = analyses.find(_.id == id)
@@ -243,7 +307,8 @@ object StudioDocument:
       reporting: Vector[ReportingSpec],
       figures: Vector[FigureSpec],
       presentation: PresentationState,
-      jobs: Vector[JobHandle]
+      jobs: Vector[JobHandle],
+      analysisFamilies: Option[AnalysisFamilyRegistry] = None
   ): Either[DocumentError, StudioDocument] =
     val datasetIds  = datasets.map(_.id)
     val analysisIds = analyses.map(_.id)
@@ -270,6 +335,19 @@ object StudioDocument:
       }
       _ <- analyses.traverse_ { a =>
         known(datasetIds, a.dataset)(DocumentError.UnknownDataset(a.id.label, a.dataset))
+      }
+      _ <- analysisFamilies.traverse_ { registry =>
+        registry.checkScope(analysisIds).leftMap(DocumentError.FamilyOwnership(_))
+      }
+      _ <- draft.filter(_.isInitial).traverse_ { initial =>
+        Either.cond(
+          analysisFamilies.isEmpty,
+          (),
+          DocumentError.InitialDraftWithFamilies(
+            initial.id,
+            analysisFamilies.toVector.flatMap(_.families.map(_.id))
+          )
+        )
       }
       _ <- draft.traverse_ { d =>
         val referrer = s"draft ${d.id.label}"
@@ -347,7 +425,7 @@ object StudioDocument:
       _ <- checkPresentation(runs, presentation)
       _ <- checkJobs(runs, jobs)
     yield new StudioDocument(
-      ScienceContent(datasets, analyses, draft, runs, reporting, figures),
+      ScienceContent.checked(datasets, analyses, draft, runs, reporting, figures, analysisFamilies),
       presentation,
       jobs.sortBy(_.run.number),
       AssetRelinks.empty
@@ -393,15 +471,15 @@ object StudioDocument:
 
   given Decoder[StudioDocument] = Decoder.instance { c =>
     for
-      // Family persistence and safe interpretation land together; bead q-analysis-family-identity.
-      _ <- Either.cond(
-        !c.downField("analysisFamilies").succeeded,
-        (),
-        DecodingFailure(
-          "Document field analysisFamilies requires supported family ownership and interpretation.",
-          c.history
-        )
-      )
+      analyses <- c.get[Vector[AnalysisRevisionSpec]]("analyses")
+      families <-
+        if c.downField("analysisFamilies").succeeded then
+          c.get[Json]("analysisFamilies").flatMap(json =>
+            AnalysisFamilyRegistry.decode(json, analyses.map(_.id))
+              .leftMap(error => DecodingFailure(error.message, c.history))
+              .map(Some(_))
+          )
+        else Right(None)
       document <- Decoder
         .forProduct8(
           "datasets",
@@ -412,7 +490,9 @@ object StudioDocument:
           "figures",
           "presentation",
           "jobs"
-        )(of)
+        )((datasets, analyses, draft, runs, reporting, figures, presentation, jobs) =>
+          of(datasets, analyses, draft, runs, reporting, figures, presentation, jobs, families)
+        )
         .emap(_.left.map(_.message))
         .apply(c)
       relinks <- c.getOrElse[AssetRelinks]("relinks")(AssetRelinks.empty)
@@ -434,12 +514,18 @@ object StudioDocument:
   /** Version 6 first records explicit ordered reporting contrast operands. */
   private def expressedByV7(document: StudioDocument): Boolean =
     document.figures.forall(_.methods.isEmpty)
-  private def beforeV8(document: StudioDocument): Either[CodecError, StudioDocument] =
+  private def beforeFamilies(document: StudioDocument): Either[CodecError, StudioDocument] =
     Either.cond(
+      document.analysisFamilies.isEmpty,
+      document,
+      CodecError.Unsupported("studio document", "explicit analysis families need a later version")
+    )
+  private def beforeV8(document: StudioDocument): Either[CodecError, StudioDocument] =
+    beforeFamilies(document).flatMap(_ => Either.cond(
       expressedByV7(document),
       document,
       CodecError.Unsupported("studio document", "stored figure methods need version 8")
-    )
+    ))
   private def expressedByV6(document: StudioDocument): Boolean =
     expressedByV7(document) && !document.draft.exists(_.isInitial)
   private def beforeV7(document: StudioDocument): Either[CodecError, StudioDocument] =
@@ -595,7 +681,9 @@ object StudioDocument:
         .next(expressedByV6, identity)(d => beforeV8(d).map(v => CanonicalJson(v.asJson)))(
           json => read(json).flatMap(beforeV8)
         )
-        .next(expressedByV7, identity)(d => Right(CanonicalJson(d.asJson)))(read)
+        .next(expressedByV7, identity)(d => beforeFamilies(d).map(v => CanonicalJson(v.asJson)))(
+          json => read(json).flatMap(beforeFamilies)
+        )
     }
 
   /** The versioned, canonical document codec. */
