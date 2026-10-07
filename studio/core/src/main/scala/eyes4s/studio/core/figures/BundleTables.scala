@@ -167,13 +167,18 @@ object BundleTables:
     else
       val invalid = rows.collectFirst {
         case row @ QueryRow(_, _, _, _, _, QueryStatus.FailedAtScales(diagnostics))
-            if diagnostics.size != summary.scales.size =>
-          BundleTableError.FailureScales(run, row.query, summary.scales.size, diagnostics.size)
+            if diagnostics.size != summary.scaleLabels.size =>
+          BundleTableError.FailureScales(
+            run,
+            row.query,
+            summary.scaleLabels.size,
+            diagnostics.size
+          )
       }
       invalid.toLeft(()).flatMap { _ =>
         val cells = for
           row            <- rows
-          (sigma, scale) <- summary.scales.zipWithIndex
+          (sigma, scale) <- summary.scaleLabels.zipWithIndex
           (status, reason) = this.status(row.status, scale)
         yield
           val (m, b, d) = row.status match
@@ -196,7 +201,12 @@ object BundleTables:
             reason.fold(M)(T(_))
           ) ++ scored(m, absence) ++ scored(b, absence) ++ scored(d, absence)
         ResultTable
-          .of(ResultFamily.StudyContrasts, queryColumns, cells, context(source, summary.scales))
+          .of(
+            ResultFamily.StudyContrasts,
+            queryColumns,
+            cells,
+            context(source, summary.scaleLabels)
+          )
           .left
           .map(BundleTableError.Table("results", _))
       }
@@ -232,8 +242,8 @@ object BundleTables:
       Left(
         BundleTableError.OtherReporting("participants", source.reporting.id, report.reporting)
       )
-    else if !summary.scales.indices.contains(report.scale) then
-      Left(BundleTableError.UnknownScale("participants", report.scale, summary.scales))
+    else if !summary.scaleLabels.indices.contains(report.scale) then
+      Left(BundleTableError.UnknownScale("participants", report.scale, summary.scaleLabels))
     else
       val attribute = source.reporting.groupBy.fold("all queries")(_.label)
       val labels    = report.cells.filter(_.role == ReportRole.Difference).map(_.group).distinct
@@ -273,11 +283,11 @@ object BundleTables:
           ResultFamily.ReportParticipants,
           participantColumns(attribute),
           cells,
-          context(source, summary.scales) match
+          context(source, summary.scaleLabels) match
             case TableJson.Obj(fields) =>
               TableJson.Obj(
                 fields ++ Vector(
-                  "means_scale"       -> TableJson.text(summary.scales(report.scale)),
+                  "means_scale"       -> TableJson.text(summary.scaleLabels(report.scale)),
                   "means_scale_index" -> TableJson.integer(report.scale.toLong)
                 )
               )
@@ -347,11 +357,11 @@ object BundleTables:
       pairs: Vector[PairRowPage]
   ): Either[BundleTableError, ResultTable] =
     val run     = source.run.id
-    val unknown = pairs.find(p => !summary.scales.indices.contains(p.scale))
+    val unknown = pairs.find(p => !summary.scaleLabels.indices.contains(p.scale))
     (pairs.find(_.run != run), unknown) match
       case (Some(other), _) => Left(BundleTableError.OtherRun("comparisons", run, other.run))
       case (_, Some(page))  =>
-        Left(BundleTableError.UnknownScale("comparisons", page.scale, summary.scales))
+        Left(BundleTableError.UnknownScale("comparisons", page.scale, summary.scaleLabels))
       case _ =>
         if summary.run != run then
           Left(BundleTableError.OtherRun("comparisons", run, summary.run))
@@ -367,7 +377,7 @@ object BundleTables:
               case PairScoreState.NotServed => (None, "not-served", None)
             Vector(
               I(page.scale.toLong),
-              T(summary.scales(page.scale)),
+              T(summary.scaleLabels(page.scale)),
               T(row.query.participant),
               T(row.query.phase.label),
               T(row.query.trial),
@@ -382,7 +392,12 @@ object BundleTables:
             ) ++ scored(value, absence) ++ Vector(reason.fold(M)(T(_))) ++
               windowCells(row.queryWindow) ++ windowCells(row.referenceWindow)
           ResultTable
-            .of(ResultFamily.PairScores, pairColumns, cells, context(source, summary.scales))
+            .of(
+              ResultFamily.PairScores,
+              pairColumns,
+              cells,
+              context(source, summary.scaleLabels)
+            )
             .left
             .map(BundleTableError.Table("comparisons", _))
 

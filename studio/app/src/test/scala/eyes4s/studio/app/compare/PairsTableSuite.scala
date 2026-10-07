@@ -274,7 +274,15 @@ class PairsTableSuite extends munit.FunSuite:
           doc.run(run7).flatMap(r => doc.analysis(r.analysis)).getOrElse(fail("rev 4"))
         val row     = qs.find(_.query == p17ret07).getOrElse(fail("ret_07"))
         val profile =
-          right(ScaleProfile.ofQuery(run7, reporting, row, scales, revision.recipe.scales))
+          right(
+            ScaleProfile.ofQuery(
+              run7,
+              reporting,
+              row,
+              revision.recipe.scales.values,
+              revision.recipe.scales
+            )
+          )
         val points = profile.groups.flatMap(_.points)
         // FIXTURE.md: D by scale [0.19, 0.29, 0.38, 0.23].
         assertEquals(
@@ -289,7 +297,13 @@ class PairsTableSuite extends munit.FunSuite:
         assertEquals(src.rows.size, 4)
         val notAdmitted = qs.find(_.status.isInstanceOf[QueryStatus.NotAdmitted]).get
         val none        = right(
-          ScaleProfile.ofQuery(run7, reporting, notAdmitted, scales, revision.recipe.scales)
+          ScaleProfile.ofQuery(
+            run7,
+            reporting,
+            notAdmitted,
+            revision.recipe.scales.values,
+            revision.recipe.scales
+          )
         )
         assertEquals(none.groups.flatMap(_.points).map(_.d), Vector.fill(4)(None))
       }

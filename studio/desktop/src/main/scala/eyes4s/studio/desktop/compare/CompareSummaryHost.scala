@@ -303,7 +303,7 @@ final class CompareSummaryHost(
     case Some(QueriesAnswer.Answered(rs)) => rs
     case _                                => Vector.empty
 
-  private def scaleLabels: Vector[String] = state.answered.fold(Vector.empty)(_.scales)
+  private def scaleLabels: Vector[String] = state.answered.fold(Vector.empty)(_.scaleLabels)
 
   private def panelIntent(intent: PanelsIntent): Unit = if !disposed then
     panelState = TrialPanels.update(panelState, intent)
@@ -482,7 +482,7 @@ final class CompareSummaryHost(
       rep <- state.reporting
       rev <- m.document.run(f.run).flatMap(r => m.document.analysis(r.analysis))
     yield ScaleProfile
-      .ofQuery(f.run, rep, row, scaleLabels, rev.recipe.scales)
+      .ofQuery(f.run, rep, row, state.answered.fold(Vector.empty)(_.scales), rev.recipe.scales)
       .left
       .map(_.message)
       .flatMap(

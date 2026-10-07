@@ -67,7 +67,7 @@ class ProtocolCodecSuite extends munit.FunSuite:
     assertEquals(ProtocolPins.pins.keySet, actual.keySet)
   }
 
-  test("1.17 restored provenance and refusals require exact peers before body decoding") {
+  test("1.19 restored provenance and refusals require exact peers before body decoding") {
     val previous   = ProtocolVersion(1, 16)
     val provenance = Provenance(
       address,
@@ -351,7 +351,7 @@ class ProtocolCodecSuite extends munit.FunSuite:
   }
 
   test("protocol 1.2 Counting requires coordinated peers, not a relabelled 1.1 frame") {
-    assertEquals(ProtocolVersion.Current, ProtocolVersion(1, 18))
+    assertEquals(ProtocolVersion.Current, ProtocolVersion(1, 19))
     val previous = Envelope(RequestId(41), ServerFrame.Event(JobEvent.Advanced(progress)))
     assertEquals(legacyMeterTotal(previous.asJson), Right(Protocol11Total.Exact(8512L)))
     val counting = progress.asJson
@@ -408,4 +408,72 @@ class ProtocolCodecSuite extends munit.FunSuite:
       _.remove("inventory").add("inventoryTrials", 960.asJson).add("absent", 6.asJson)
     )
     assert(legacy.as[AdmissionSummary].isLeft)
+  }
+
+  test("1.19 result scales are validated degree values and reject legacy labels") {
+    val wire = result.asJson
+    assertEquals(wire.hcursor.get[Vector[Double]]("scales"), Right(Vector(2.0)))
+    Vector(
+      Json.arr(Json.fromString("2°")),
+      Json.arr(Json.fromDoubleOrNull(0.0)),
+      Json.arr(Json.fromDoubleOrNull(-1.0))
+    ).foreach { scales =>
+      assert(wire.deepMerge(Json.obj("scales" -> scales)).as[ResultSummary].isLeft)
+    }
+    val current = Envelope(
+      RequestId(99),
+      ServerFrame.Response(BackendResponse.Result(result)): ServerFrame
+    ).asJson
+    val previous = current.deepMerge(Json.obj("version" -> ProtocolVersion(1, 17).asJson))
+    assert(WireFormat.parseCurrent[ServerFrame](previous.noSpaces).isLeft)
+  }
+
+  test("1.19 refuses both incompatible 1.18 candidates before decoding their bodies") {
+    val previous                 = ProtocolVersion(1, 18)
+    val resultFrame: ServerFrame = ServerFrame.Response(BackendResponse.Result(result))
+    val trialFrame: ServerFrame  =
+      ServerFrame.Response(BackendResponse.TrialFixationsOf(trialFixations))
+    // The extent branch still served scale labels; the scale branch omitted extent.
+    val extentBranchBody = resultFrame.asJson.hcursor
+      .downField("Response")
+      .downField("response")
+      .downField("Result")
+      .downField("summary")
+      .downField("scales")
+      .withFocus(_ => Vector("2°").asJson)
+      .top
+      .getOrElse(fail("missing result scales"))
+    val scaleBranchBody = trialFrame.asJson.hcursor
+      .downField("Response")
+      .downField("response")
+      .downField("TrialFixationsOf")
+      .downField("fixations")
+      .withFocus(_.mapObject(_.remove("extent")))
+      .top
+      .getOrElse(fail("missing trial fixations"))
+    Vector(resultFrame, trialFrame).foreach { body =>
+      val current = Envelope(RequestId(100), body)
+      assertEquals(
+        WireFormat.parseCurrent[ServerFrame](current.asJson.noSpaces),
+        Right(current)
+      )
+    }
+    Vector(extentBranchBody, scaleBranchBody, Json.fromString("unreadable body"))
+      .foreach { body =>
+        val old =
+          Json.obj("version" -> previous.asJson, "id" -> Json.fromInt(100), "body" -> body)
+        assertEquals(
+          WireFormat.parseCurrent[ServerFrame](old.noSpaces),
+          Left(TransportError.Incompatible(previous, ProtocolVersion.Current))
+        )
+      }
+    val request: BackendRequest = BackendRequest.Result(run)
+    val oldRequest              = Envelope(RequestId(100), request).asJson
+      .deepMerge(
+        Json.obj("version" -> previous.asJson, "body" -> Json.fromString("unreadable request"))
+      )
+    assertEquals(
+      WireFormat.parseCurrent[BackendRequest](oldRequest.noSpaces),
+      Left(TransportError.Incompatible(previous, ProtocolVersion.Current))
+    )
   }

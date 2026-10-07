@@ -677,7 +677,13 @@ class AdmissionLedgerSuite extends munit.FunSuite:
   test("a complete revision is admitted under Require complete, which it records") {
     served(StoryMoment.T1).map { answers =>
       val complete = AdmissionAnswer.Answered(
-        answered(answers._1).copy(quarantined = Vector.empty, noFixations = 0)
+        answered(answers._1).copy(
+          admitted = 954,
+          quarantined = Vector.empty,
+          noFixations = 0,
+          quarantinedTotal = 0,
+          equation = Some(AdmissionEquation(954, 0, 6, 960, true))
+        )
       )
       val ledger = loaded(t1, (complete, answers._2))
       assertEquals(ledger.decision, CoreAdmissionDecision.RequireComplete)
@@ -992,6 +998,32 @@ class AdmissionLedgerSuite extends munit.FunSuite:
           Vector.empty
       )
     )
+  }
+
+  test("served total and equation refusal are preserved rather than recalculated by the view") {
+    served(StoryMoment.T1).map { answers =>
+      val original = answers._1 match
+        case AdmissionAnswer.Answered(summary) => summary
+        case other                             => fail(other.toString)
+      val supplied = original.copy(
+        quarantinedTotal = 23,
+        equation = Some(AdmissionEquation(937, 17, 6, 960, false))
+      )
+      val vm =
+        AdmissionLedgerVM.of(loaded(t1, (AdmissionAnswer.Answered(supplied), answers._2)), t1)
+      assertEquals(
+        vm.rows
+          .find(_.ref == StudioRef.InventoryCount(r3, InventoryKind.Quarantined))
+          .map(_.value),
+        Some("23")
+      )
+      assert(vm.equation.exists(_ != "937 + 17 + 6 = 960."))
+      assert(
+        vm.decisions.forall(
+          _.refs.contains(StudioRef.InventoryCount(r3, InventoryKind.Quarantined))
+        )
+      )
+    }
   }
 
 /** Trial keys the ledger tests name. */

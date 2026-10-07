@@ -383,6 +383,12 @@ final case class InventoryLedger private (
       case _                                                              => false
   )
 
+  /** Every declared trial belongs to exactly one admission partition. Counts
+    * include NoFixations in quarantined; unlisted trials are outside the inventory.
+    */
+  def accountingBalances: Boolean =
+    admitted.size.toLong + quarantined.size.toLong + absent.size.toLong == trials.size.toLong
+
 object InventoryLedger:
   /** Declared attribute names are distinct; every trial's and record's
     * attributes are exactly the declared columns, in order, each of its

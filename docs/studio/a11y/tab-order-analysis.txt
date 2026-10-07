@@ -6,6 +6,10 @@ button: Reinstatement · Enc→Ret
 button: Draft rev 5, current location
 button: Draft rev 5 · 1 change · ready; review in Analysis
 list: Analyses
+toggle-button: Draft rev 5 · data r3 · not run
+toggle-button: rev 4 · run 7 · data r3 · current
+toggle-button: rev 4 · run 6 · data r3 · cancelled at Comparing
+toggle-button: rev 3 · run 5 · data r2 · stale
 region: Recipe
 radio-button: Perception → Imagery preset, Query: Imagery on blank · Reference: Perception; changes phases Retrieval vs Encoding → Imagery vs Perception
 radio-button: Study → Recognition preset, Old probes only. Lures and novel: No corresponding study trial (by design); changes phases Retrieval vs Encoding → Recognition vs Study

@@ -179,6 +179,11 @@ object RealAdmission:
         .leftMap(e =>
           BackendError.Unavailable(DiagnosticLocus.Artifact(s"$source: ${e.message}"))
         )
+      joined <- ledger.inventory.toRight(
+        BackendError.Unavailable(
+          DiagnosticLocus.Artifact(s"$source: admission has no inventory ledger")
+        )
+      )
       response = inventory.column(ColumnRole.Response).map(_.value)
       outside  = outsideFrameByTrial(imported)
       entries <- imported.trials.traverse(entry(_, response, outside))
@@ -186,7 +191,7 @@ object RealAdmission:
       // The admitted trials; an admission that requires a complete input
       // refused before reaching here (eyes4s ReviewExclusions semantics).
       AdmittedDataset(
-        summary(spec, imported, ledger, window, assets),
+        summary(spec, imported, ledger, joined, window, assets),
         entries,
         screen,
         eyes4s.plan.StudyInput(imported.fixations.accepted),
@@ -454,6 +459,7 @@ object RealAdmission:
       spec: DatasetRevisionSpec,
       imported: InventoryImport[Unit2D.Px],
       ledger: AdmissionLedger[CoreKey],
+      joined: eyes4s.plan.InventoryLedger,
       window: Subframe[Unit2D.Px],
       assets: AssetRegistry
   ): AdmissionSummary =
@@ -501,5 +507,15 @@ object RealAdmission:
       missing,
       // history is deprecated free text studio no longer reads (S5.8); the
       // real backend writes none.
-      ""
+      "",
+      joined.quarantined.size,
+      Some(
+        AdmissionEquation(
+          joined.admitted.size,
+          joined.quarantined.size,
+          joined.absent.size,
+          joined.trials.size,
+          joined.accountingBalances
+        )
+      )
     )

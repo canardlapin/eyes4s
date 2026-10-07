@@ -44,7 +44,8 @@ private[document] object Degrees:
 
 /** One smoothing scale: the kernel's standard deviation, in degrees. */
 final case class Sigma private (degrees: Double) derives CanEqual:
-  def render: String = s"σ ${Degrees.render(degrees)}°"
+  def label: String  = s"${Degrees.render(degrees)}°"
+  def render: String = s"σ $label"
 
 object Sigma:
   def of(degrees: Double): Either[DocumentError, Sigma] =

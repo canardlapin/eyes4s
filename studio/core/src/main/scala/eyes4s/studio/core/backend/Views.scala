@@ -17,12 +17,13 @@
 package eyes4s.studio.core.backend
 
 import ProtocolCodecs.portableLong
+import eyes4s.studio.core.document.Sigma
 import eyes4s.codec.ByteDigest
 import ProtocolCodecs.byteDigest
 
 import eyes4s.plan.{QuarantineCause as CoreCause, TrialDisposition as CoreDisposition}
 import io.circe.syntax.*
-import io.circe.{Codec, Decoder, Encoder, HCursor, JsonObject}
+import io.circe.{Codec, Decoder, Encoder, HCursor, Json, JsonObject}
 
 // ---------------------------------------------------------------------------
 // Admission and the ledger
@@ -229,6 +230,16 @@ final case class WindowTotals(
 ) derives CanEqual,
       Codec.AsObject
 
+/** The backend's inventory accounting, including its authoritative equation check. */
+final case class AdmissionEquation(
+    admitted: Int,
+    quarantined: Int,
+    absent: Int,
+    inventory: Int,
+    balances: Boolean
+) derives CanEqual,
+      Codec.AsObject
+
 /** What admission of one dataset revision decided, in counts. `quarantined`
   * counts `Quarantined(cause)` trials by cause code; `noFixations` is a
   * disposition of its own, and so is absent, which only an inventory can
@@ -251,7 +262,9 @@ final case class AdmissionSummary(
     items: Int,
     imagesFound: Int,
     missingImages: Vector[MissingImage],
-    history: String
+    history: String,
+    quarantinedTotal: Int,
+    equation: Option[AdmissionEquation]
 ) derives CanEqual,
       Codec.AsObject:
   def quarantinedTrials: Int = quarantined.map(_.trials).sum
@@ -410,14 +423,30 @@ final case class ResultSummary(
     run: RunId,
     revision: AnalysisRevision,
     dataset: DatasetRevision,
-    scales: Vector[String],
+    scales: Vector[Sigma],
     pairRowsPerScale: Long,
     pairRows: Long,
     eligibleQueries: Int,
     contrasts: QueryContrasts,
     participants: Vector[ParticipantCounts]
-) derives CanEqual,
-      Codec.AsObject
+) derives CanEqual:
+  /** Display/export text only; scale identity is carried by `scales`. */
+  def scaleLabels: Vector[String] = scales.map(_.label)
+
+object ResultSummary:
+  // Safe integral degrees keep raw wire pins identical on JVM and JS.
+  // Document codecs remain unchanged; this codec belongs to protocol 1.19.
+  private given Codec[Sigma] = Codec.from(
+    Decoder[Double].emap(d => Sigma.of(d).left.map(_.message)),
+    Encoder.instance(sigma =>
+      val degrees        = sigma.degrees
+      val maxSafeInteger = 9007199254740991.0
+      if degrees == math.rint(degrees) && degrees <= maxSafeInteger then
+        Json.fromLong(degrees.toLong)
+      else Json.fromDoubleOrNull(degrees)
+    )
+  )
+  given Codec.AsObject[ResultSummary] = Codec.AsObject.derived
 
 /** The outcome of one query in a run. Scores are indexed by scale. */
 enum QueryStatus derives CanEqual, Codec.AsObject:

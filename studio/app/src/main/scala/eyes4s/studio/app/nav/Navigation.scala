@@ -16,6 +16,8 @@
 
 package eyes4s.studio.app.nav
 
+import eyes4s.studio.core.backend.RunId
+
 import eyes4s.studio.core.backend.{AnalysisRevision, DatasetRevision, Response}
 import eyes4s.studio.core.document.{
   FigureId,
@@ -46,6 +48,7 @@ enum Place derives CanEqual:
   /** The analysis family a revision belongs to ("Reinstatement · Enc→Ret"). */
   case Lineage(preset: Preset)
   case Revision(revision: AnalysisRevision)
+  case Run(run: RunId)
   case Field(field: RecipeField)
   case Summary(reporting: ReportingId)
   case Group(reporting: ReportingId, group: Response)
@@ -69,11 +72,11 @@ object Place:
       case _                        => false
     }
     trail.lastOption.map {
-      case NewProject | Dataset(_) | Source(_) | DataView(_) => Perspective.Data
-      case Analyses | Lineage(_) | Revision(_) | Field(_)    => Perspective.Analysis
-      case Summary(_) | Group(_, _)                          => Perspective.Compare
-      case Figures | Figure(_)                               => Perspective.Figures
-      case At(ref)                                           =>
+      case NewProject | Dataset(_) | Source(_) | DataView(_)       => Perspective.Data
+      case Analyses | Lineage(_) | Revision(_) | Run(_) | Field(_) => Perspective.Analysis
+      case Summary(_) | Group(_, _)                                => Perspective.Compare
+      case Figures | Figure(_)                                     => Perspective.Figures
+      case At(ref)                                                 =>
         ref match
           case StudioRef.Trial(_) | StudioRef.Fixation(_, _) |
               StudioRef.SourceRecord(_, _, _, _) | StudioRef.TrialGroup(_, _) =>

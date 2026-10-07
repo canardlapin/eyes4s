@@ -50,7 +50,7 @@ final class RecipePaneHost(model: () => AppModel, app: Intent => Unit):
     choose.setOnAction(_ =>
       if !binding && !disposed then
         PresetPicker
-          .vm(model().document)
+          .vm(model().document, eyes4s.studio.app.analysis.AnalysesNavigator.selected(model()))
           .options
           .find(_.preset == preset.preset)
           .flatMap(_.choose)
@@ -65,7 +65,10 @@ final class RecipePaneHost(model: () => AppModel, app: Intent => Unit):
   node.getChildren.addAll(note, configuration)
 
   def sync(value: AppModel): Unit = if !disposed then
-    val picker = PresetPicker.vm(value.document)
+    val picker = PresetPicker.vm(
+      value.document,
+      eyes4s.studio.app.analysis.AnalysesNavigator.selected(value)
+    )
     binding = true
     try
       heading.setText(picker.heading)
@@ -80,7 +83,17 @@ final class RecipePaneHost(model: () => AppModel, app: Intent => Unit):
         detail.setText(option.detail + " · " + option.changes)
       }
       val recipe =
-        value.document.draftRecipe.orElse(value.document.latestAnalysis.map(_.recipe))
+        eyes4s.studio.app.analysis.AnalysesNavigator
+          .selected(value)
+          .flatMap(id =>
+            value.document
+              .analysis(id)
+              .map(_.recipe)
+              .orElse(value.document.draftContext.filter(_.id == id).map(_.recipe))
+          )
+          .orElse(
+            value.document.draftRecipe.orElse(value.document.latestAnalysis.map(_.recipe))
+          )
       configuration.setText(
         recipe.fold("")(r =>
           s"${r.weighting.render} · grid ${r.grid.render} · scales ${r.scales.render}"
@@ -91,7 +104,7 @@ final class RecipePaneHost(model: () => AppModel, app: Intent => Unit):
   def choose(preset: Preset): Unit     = options.find(_._1 == preset).foreach(_._2.fire())
   def enabled(preset: Preset): Boolean = options.find(_._1 == preset).exists(!_._2.isDisabled)
   def focusStops: Vector[FocusStop]    = PresetPicker
-    .vm(model().document)
+    .vm(model().document, eyes4s.studio.app.analysis.AnalysesNavigator.selected(model()))
     .options
     .filter(_.choose.isDefined)
     .map(o => FocusStop(A11yRole.RadioButton, o.accessible))

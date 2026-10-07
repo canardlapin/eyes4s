@@ -84,7 +84,9 @@ class InventorySourceSuite extends munit.FunSuite:
           259,
           257,
           Vector.empty,
-          ""
+          "",
+          5,
+          None
         )
       )
     )

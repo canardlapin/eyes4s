@@ -299,7 +299,7 @@ abstract class BackendConformanceSuite extends CatsEffectSuite:
       assertEquals(first.rows.head.design, PairDesign.Matched)
       assertEquals(
         wrong,
-        Left(BackendError.UnknownScale(s.current, summary.scales.size, summary.scales))
+        Left(BackendError.UnknownScale(s.current, summary.scales.size, summary.scaleLabels))
       )
   }
 

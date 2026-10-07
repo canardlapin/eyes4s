@@ -921,7 +921,7 @@ object FigureComposer:
             (for
               r     <- summaryOf(c, run)
               view  <- reportOf(c, run, s.reporting, i)
-              label <- r.scales
+              label <- r.scaleLabels
                 .lift(i.value)
                 .toRight(
                   PanelBody.Unavailable(s"The summary of ${run.label} has no scale ${i.value}.")

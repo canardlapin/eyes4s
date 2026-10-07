@@ -95,11 +95,25 @@ object PresetPicker:
         )
       case _ => None
 
-  def vm(document: StudioDocument): PresetPickerVM =
+  def vm(
+      document: StudioDocument,
+      selectedRevision: Option[eyes4s.studio.core.backend.AnalysisRevision] = None
+  ): PresetPickerVM =
     import PresetTextId.*
-    val target  = edited(document)
-    val current = selected(document)
-    val first   = document.latestAdmitted.filter(_ =>
+    val target = selectedRevision
+      .flatMap(r =>
+        document.draftContext
+          .filter(_.id == r)
+          .map(c => (c, c.recipe))
+          .orElse(document.analysis(r).map(a => (DraftContext.saved(a.id, a), a.recipe)))
+      )
+      .orElse(edited(document))
+    val current =
+      target.map((context, recipe) => RecipePresets.resolve(context.studio.preset, recipe))
+    val readOnly = selectedRevision.exists(r =>
+      document.draft.fold(document.latestAnalysis.forall(_.id != r))(_.id != r)
+    )
+    val first = document.latestAdmitted.filter(_ =>
       target.isEmpty && document.analyses.isEmpty && document.draft.isEmpty
     )
     val withoutRecipe =
@@ -124,7 +138,10 @@ object PresetPicker:
         detail = detail,
         selected = current.contains(p.preset),
         changes = diff,
-        choose = command(document, p.preset).map(_ => Intent.ChoosePreset(p.preset)),
+        choose = Option
+          .when(!readOnly)(command(document, p.preset))
+          .flatten
+          .map(_ => Intent.ChoosePreset(p.preset)),
         accessible = PresetText(OptionAccessible, title, detail, diff)
       )
     }

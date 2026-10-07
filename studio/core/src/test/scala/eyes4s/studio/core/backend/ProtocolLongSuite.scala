@@ -159,7 +159,7 @@ class ProtocolLongSuite extends munit.FunSuite:
       ServerFrame.Event(JobEvent.Advanced(ProtocolSamples.progress))
     )
     assertEquals(WireFormat.parse[ServerFrame](envelope.asJson.noSpaces), Right(envelope))
-    assertEquals(ProtocolVersion.Current, ProtocolVersion(1, 18))
+    assertEquals(ProtocolVersion.Current, ProtocolVersion(1, 19))
   }
 
   test("safe Long inputs accept both compatibility forms and re-encode as canonical numbers") {

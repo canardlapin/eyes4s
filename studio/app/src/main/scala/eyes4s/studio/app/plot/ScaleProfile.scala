@@ -38,8 +38,8 @@ enum ProfileError derives CanEqual:
   /** The run declares `declared` scales but its summary has `served`. */
   case ScaleCount(run: RunId, declared: Int, served: Int)
 
-  /** The summary's scale `index` is labelled `label`, which is not `sigma`. */
-  case ScaleLabel(run: RunId, index: Int, label: String, sigma: Sigma)
+  /** The summary's scale `index` differs from the declared scale. */
+  case ScaleIdentity(run: RunId, index: Int, served: Sigma, declared: Sigma)
 
   /** The summary lists `group` more than once. */
   case DuplicateGroup(run: RunId, group: Response)
@@ -83,8 +83,8 @@ enum ProfileError derives CanEqual:
   def message: String = this match
     case ScaleCount(r, d, s) =>
       s"Scale profile of run ${r.number}: $d scales are declared but the summary has $s."
-    case ScaleLabel(r, i, l, s) =>
-      s"Scale profile of run ${r.number}: scale $i is labelled $l, not ${s.render}."
+    case ScaleIdentity(r, i, l, s) =>
+      s"Scale profile of run ${r.number}: scale $i is ${l.render}, not ${s.render}."
     case DuplicateGroup(r, g) =>
       s"Scale profile of run ${r.number}: group ${g.label} is listed twice."
     case DuplicateParticipant(r, p) =>
@@ -158,9 +158,9 @@ object ScaleProfile:
       grouped: Vector[ReportView],
       overall: Vector[ReportView],
       scales: ScaleSet,
-      labels: Vector[String]
+      served: Vector[Sigma]
   ): Either[ProfileError, ScaleProfile] =
-    evaluated(grouped, overall, scales, labels, wholeReport = false)
+    evaluated(grouped, overall, scales, served, wholeReport = false)
 
   /** Results board: the report's whole-population mean and each participant's
     * ungrouped mean, with each declared scale's exact served value, reference
@@ -169,15 +169,15 @@ object ScaleProfile:
   def overall(
       reports: Vector[ReportView],
       scales: ScaleSet,
-      labels: Vector[String]
+      served: Vector[Sigma]
   ): Either[ProfileError, ScaleProfile] =
-    evaluated(reports, reports, scales, labels, wholeReport = true)
+    evaluated(reports, reports, scales, served, wholeReport = true)
 
   private def evaluated(
       grouped: Vector[ReportView],
       overall: Vector[ReportView],
       scales: ScaleSet,
-      labels: Vector[String],
+      served: Vector[Sigma],
       wholeReport: Boolean
   ): Either[ProfileError, ScaleProfile] =
     grouped.headOption
@@ -208,10 +208,13 @@ object ScaleProfile:
             }
         for
           _ <- Either.cond(
-            labels.size == declared.size,
+            served.size == declared.size,
             (),
-            ProfileError.ScaleCount(run, declared.size, labels.size)
+            ProfileError.ScaleCount(run, declared.size, served.size)
           )
+          _ <- declared.zip(served).zipWithIndex.traverse_ { case ((sigma, found), i) =>
+            Either.cond(found == sigma, (), ProfileError.ScaleIdentity(run, i, found, sigma))
+          }
           groupedAt <- checked(grouped, first.reporting)
           overallAt <- checked(overall, overallId)
           at        <- declared.zipWithIndex.traverse { case (sigma, i) =>
@@ -252,7 +255,7 @@ object ScaleProfile:
                   ProfilePoint(
                     c.ref,
                     index,
-                    labels(index.value),
+                    served(index.value).label,
                     sigma,
                     c.estimate,
                     Option.when(wholeReport)(ParticipantText.participants(c.participants))
@@ -282,7 +285,7 @@ object ScaleProfile:
                   ProfilePoint(
                     p.ref,
                     index,
-                    labels(index.value),
+                    served(index.value).label,
                     sigma,
                     p.value,
                     Option.when(wholeReport)(ParticipantText.queries(p.queries))
@@ -298,7 +301,7 @@ object ScaleProfile:
   /** One query's scale profile (ticket S8.5; Main.dc.html, the contrast
     * group's "Scale profile" tab): its D at each of the run's `scales`, as
     * the run's query row served it, each point its
-    * [[StudioRef.QueryContrast]]. `labels` are the run's scale labels, one
+    * [[StudioRef.QueryContrast]]. `served` are the run's typed scales, one
     * for each declared scale. A query that does not contribute has no D at
     * any scale: every point is missing, never zero.
     */
@@ -306,25 +309,25 @@ object ScaleProfile:
       run: RunId,
       reporting: ReportingId,
       row: QueryRow,
-      labels: Vector[String],
+      served: Vector[Sigma],
       scales: ScaleSet
   ): Either[ProfileError, ScaleProfile] =
     val declared = scales.values
     for
       _ <- Either.cond(
-        declared.size == labels.size,
+        declared.size == served.size,
         (),
-        ProfileError.ScaleCount(run, declared.size, labels.size)
+        ProfileError.ScaleCount(run, declared.size, served.size)
       )
-      at <- declared.zip(labels).zipWithIndex.traverse { case ((sigma, label), i) =>
+      at <- declared.zip(served).zipWithIndex.traverse { case ((sigma, found), i) =>
         for
           _ <- Either.cond(
-            degreesOf(label).contains(sigma.degrees),
+            found == sigma,
             (),
-            ProfileError.ScaleLabel(run, i, label, sigma)
+            ProfileError.ScaleIdentity(run, i, found, sigma)
           )
           index <- ScaleIndex.of(i).leftMap(_ => ProfileError.Scale(run, i))
-        yield (index, label, sigma)
+        yield (index, found.label, sigma)
       }
     yield
       val ds = row.status match
@@ -350,12 +353,6 @@ object ScaleProfile:
         ),
         Vector.empty
       )
-
-  /** A served scale label's degrees ("2°", "0.5°"), compared with a declared
-    * σ by value rather than as text.
-    */
-  private def degreesOf(label: String): Option[Double] =
-    label.trim.stripSuffix("°").trim.toDoubleOption
 
   /** The profile as a value source: every mean series' points, then every
     * participant's, each series in scale order, each point a row with its

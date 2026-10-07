@@ -64,7 +64,7 @@ class ScaleLadderSuite extends munit.FunSuite:
       ScaleLadder.load[Future](session.inspect, session.navigator)(
         at,
         query,
-        right(summary).scales
+        right(summary).scaleLabels
       )
     }
 

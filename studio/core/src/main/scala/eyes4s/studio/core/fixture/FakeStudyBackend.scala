@@ -266,7 +266,17 @@ final class FakeStudyBackend[F[_]] private[fixture] (
         summary.itemsInPool,
         summary.imagesFound,
         summary.missingImages,
-        summary.datasetHistory.getOrElse(d.label, "")
+        summary.datasetHistory.getOrElse(d.label, ""),
+        summary.quarantined,
+        Option.when(scenario != InventoryScenario.Undeclared)(
+          AdmissionEquation(
+            summary.admitted,
+            summary.quarantined,
+            summary.absent,
+            summary.inventoryTrials,
+            summary.admitted.toLong + summary.quarantined.toLong + summary.absent.toLong == summary.inventoryTrials.toLong
+          )
+        )
       )
     })
 
@@ -881,27 +891,49 @@ final class FakeStudyBackend[F[_]] private[fixture] (
     FakeNavigator[F](study, run => scored(run).map(_.void), status)
 
   def result(run: RunId): F[Either[BackendError, ResultSummary]] =
-    scored(run).map(_.map { r =>
-      ResultSummary(
-        r.run,
-        r.revision,
-        r.dataset,
-        summary.scales,
-        summary.pairRowsPerScale,
-        summary.pairRowsAllScales,
-        summary.eligibleQueries,
-        summary.contrasts,
-        summary.participants.map(p =>
-          ParticipantCounts(
-            p.participant,
-            p.requested,
-            p.contributing,
-            p.failed,
-            p.noMatch,
-            p.notAdmitted
+    scored(run).map(_.flatMap { r =>
+      // The mock file is an external fixture with degree labels; parse at its boundary.
+      summary.scales
+        .traverse { label =>
+          label
+            .stripSuffix("°")
+            .toDoubleOption
+            .toRight(
+              BackendError
+                .Unavailable(DiagnosticLocus.Artifact(s"Invalid fixture scale $label"))
+            )
+            .flatMap(degrees =>
+              eyes4s.studio.core.document.Sigma
+                .of(degrees)
+                .leftMap(e =>
+                  BackendError.Unavailable(
+                    DiagnosticLocus.Artifact(s"Fixture scale $label: ${e.message}")
+                  )
+                )
+            )
+        }
+        .map { scales =>
+          ResultSummary(
+            r.run,
+            r.revision,
+            r.dataset,
+            scales,
+            summary.pairRowsPerScale,
+            summary.pairRowsAllScales,
+            summary.eligibleQueries,
+            summary.contrasts,
+            summary.participants.map(p =>
+              ParticipantCounts(
+                p.participant,
+                p.requested,
+                p.contributing,
+                p.failed,
+                p.noMatch,
+                p.notAdmitted
+              )
+            )
           )
-        )
-      )
+        }
     })
 
   private def status(q: MockQuery): QueryStatus = q.status match

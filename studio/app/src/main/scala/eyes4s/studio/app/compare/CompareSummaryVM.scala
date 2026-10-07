@@ -133,7 +133,7 @@ object CompareSummaryVM:
   ): CompareSummaryVM =
     val available = s.available
     val shown     = s.shown
-    val scales    = r.scales.zipWithIndex.flatMap { (label, i) =>
+    val scales    = r.scaleLabels.zipWithIndex.flatMap { (label, i) =>
       ScaleIndex
         .of(i)
         .toOption
@@ -146,7 +146,7 @@ object CompareSummaryVM:
             Option.unless(available.contains(scale))(
               SummaryText(
                 SummaryTextId.ScaleUnavailable,
-                available.flatMap(a => r.scales.lift(a.value)).mkString(", ")
+                available.flatMap(a => r.scaleLabels.lift(a.value)).mkString(", ")
               )
             )
           )
@@ -160,7 +160,7 @@ object CompareSummaryVM:
       scale <- shown
       view  <- displayed(scale)
     yield ParticipantMeans
-      .of(view, r.scales.lift(scale.value).getOrElse(scale.value.toString))
+      .of(view, r.scaleLabels.lift(scale.value).getOrElse(scale.value.toString))
       .left
       .map(_.message)
       .flatMap(means =>
@@ -237,7 +237,7 @@ object CompareSummaryVM:
     import SummaryTextId.*
     def column(id: String, header: String, format: ColumnFormat) =
       ColumnId.of(id).map(PlotColumn(_, header, format))
-    val label = r.scales.lift(scale.value).getOrElse(scale.value.toString)
+    val label = r.scaleLabels.lift(scale.value).getOrElse(scale.value.toString)
     val fixed = Vector(
       ("participant", Participant, ColumnFormat.Label),
       ("requested", Requested, ColumnFormat.Count),
@@ -342,7 +342,7 @@ object CompareSummaryVM:
       rows: Vector[QueryRow]
   ): Either[String, PlotSource] =
     import SummaryTextId.*
-    val label = r.scales.lift(scale.value).getOrElse(scale.value.toString)
+    val label = r.scaleLabels.lift(scale.value).getOrElse(scale.value.toString)
     def column(id: String, header: SummaryTextId, format: ColumnFormat) =
       ColumnId.of(id).map(PlotColumn(_, SummaryText(header), format)).left.map(_.message)
     val specs = Vector(

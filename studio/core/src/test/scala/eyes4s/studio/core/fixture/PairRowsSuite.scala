@@ -130,7 +130,7 @@ class PairRowsSuite extends CatsEffectSuite:
       sum   <- b.result(run7).map(ok)
     yield
       assertEquals((past.rows, past.page.next), (Vector.empty, None))
-      assertEquals(neg, Left(BackendError.UnknownScale(run7, -1, sum.scales)))
+      assertEquals(neg, Left(BackendError.UnknownScale(run7, -1, sum.scaleLabels)))
   }
 
   // --- Reading every page (eyes4s.studio.core.figures.MethodsReads.pairRows) ---------

@@ -209,7 +209,7 @@ final class RealResults private (
       run,
       revision,
       dataset,
-      scales,
+      prepared.recipe.scales.values,
       prepared.counts.pairRowsPerScale,
       prepared.counts.totalPairs,
       prepared.counts.eligibleQueries.toInt,

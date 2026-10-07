@@ -152,6 +152,7 @@ final class Labels(model: AppModel, messages: Messages):
     case Place.Revision(revision) =>
       if doc.draft.exists(_.id == revision) then messages(CrumbDraftRevision, revision.label)
       else messages(CrumbRevision, revision.label)
+    case Place.Run(run)           => run.label
     case Place.Field(f)           => field(f)
     case Place.Summary(reporting) => messages(CrumbSummary, this.reporting(reporting))
     case Place.Group(_, group)    => group.label

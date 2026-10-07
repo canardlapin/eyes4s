@@ -99,6 +99,8 @@ final class StudioWindow private (
     timelineListener: AppModel => Unit,
     val resolvedDesign: ResolvedDesignHost,
     designListener: AppModel => Unit,
+    val analyses: eyes4s.studio.desktop.analysis.AnalysesNavigatorHost,
+    analysesListener: AppModel => Unit,
     val recipe: eyes4s.studio.desktop.analysis.RecipePaneHost,
     recipeListener: AppModel => Unit,
     val sourceRecords: SourceRecordsHost,
@@ -140,6 +142,7 @@ final class StudioWindow private (
     else if pane == StudioLayouts.trialView then explore.focusStops
     else if pane == StudioLayouts.timeline then timeline.focusStops
     else if pane == StudioLayouts.resolvedDesign then resolvedDesign.focusStops
+    else if pane == StudioLayouts.analyses then analyses.focusStops
     else if pane == StudioLayouts.recipe then recipe.focusStops
     else if pane == StudioLayouts.sourceRecords then sourceRecords.focusStops
     else if pane == StudioLayouts.exploreInspector then inspector.focusStops
@@ -195,6 +198,8 @@ final class StudioWindow private (
     explore.dispose()
     timeline.dispose()
     runtime.unlisten(designListener)
+    runtime.unlisten(analysesListener)
+    analyses.dispose()
     runtime.unlisten(recipeListener)
     recipe.dispose()
     runtime.unlisten(recordsListener)
@@ -591,6 +596,11 @@ object StudioWindow:
     r.listen(timelineListener)
     // The resolved-design table (Analysis): the backend's preview of the
     // target revision, prepared once the perspective is shown.
+    val analyses = eyes4s.studio.desktop.analysis.AnalysesNavigatorHost(dispatch)
+    host.host(StudioLayouts.analyses, analyses.node)
+    val analysesListener: AppModel => Unit = analyses.sync
+    r.listen(analysesListener)
+    analyses.sync(r.model)
     val recipe = eyes4s.studio.desktop.analysis.RecipePaneHost(() => r.model, dispatch)
     host.host(StudioLayouts.recipe, recipe.node)
     val recipeListener: AppModel => Unit = recipe.sync
@@ -676,6 +686,8 @@ object StudioWindow:
         timelineListener,
         design,
         designListener,
+        analyses,
+        analysesListener,
         recipe,
         recipeListener,
         sourceRecords,

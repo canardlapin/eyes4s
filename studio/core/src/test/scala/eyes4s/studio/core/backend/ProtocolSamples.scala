@@ -326,14 +326,16 @@ object ProtocolSamples:
     259,
     257,
     Vector(MissingImage("forest-044", Vector("P01", "P24"), 2)),
-    "onset declared ms"
+    "onset declared ms",
+    11,
+    Some(AdmissionEquation(937, 11, 6, 960, false))
   )
 
   val result: ResultSummary = ResultSummary(
     RunId(7),
     AnalysisRevision(4),
     DatasetRevision(3),
-    Vector("2°"),
+    Vector(right(eyes4s.studio.core.document.Sigma.of(2.0))),
     8969L,
     35876L,
     457,

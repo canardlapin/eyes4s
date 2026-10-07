@@ -150,20 +150,22 @@ class TrialTemporalExtentSuite extends munit.FunSuite:
   }
 
   test(
-    "legacy raw wire omissions are explicit missing; 1.17 frames are refused before bodies"
+    "legacy raw wire omissions are explicit missing; 1.17 and 1.18 frames are refused before bodies"
   ) {
     val response = ok(io.circe.parser.decode[BackendResponse](ProtocolPins.trialFixationsV17))
     response match
       case BackendResponse.TrialFixationsOf(value) =>
         assertEquals(value.extent, TrialTemporalExtent.LegacyMissing(value.trial))
       case _ => fail("wrong legacy response")
-    val previous = ProtocolVersion(1, 17)
-    val wire     = Envelope(RequestId(1), ServerFrame.Response(response): ServerFrame).asJson
-      .deepMerge(
-        Json.obj("version" -> previous.asJson, "body" -> Json.fromString("not a body"))
+    Vector(ProtocolVersion(1, 17), ProtocolVersion(1, 18)).foreach { previous =>
+      val wire = Envelope(RequestId(1), ServerFrame.Response(response): ServerFrame).asJson
+        .deepMerge(
+          Json.obj("version" -> previous.asJson, "body" -> Json.fromString("not a body"))
+        )
+      assertEquals(
+        WireFormat.parseCurrent[ServerFrame](wire.noSpaces),
+        Left(TransportError.Incompatible(previous, ProtocolVersion.Current))
       )
-    assertEquals(
-      WireFormat.parseCurrent[ServerFrame](wire.noSpaces),
-      Left(TransportError.Incompatible(previous, ProtocolVersion.Current))
-    )
+    }
+
   }

@@ -33,7 +33,7 @@ class ParticipantMeansSuite extends munit.FunSuite:
   ) {
     PlotReports.read.map { (summary, reports, _) =>
       val report = reports(2)
-      val means  = ok(ParticipantMeans.of(report, summary.scales(2)))
+      val means  = ok(ParticipantMeans.of(report, summary.scaleLabels(2)))
       assertEquals(means.scale.value, 2)
       assertEquals(means.groups.map(_.group), Vector(Response.Remembered, Response.Forgotten))
       assertEquals(

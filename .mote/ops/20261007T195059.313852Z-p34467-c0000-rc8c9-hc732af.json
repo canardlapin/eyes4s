@@ -1,0 +1,1 @@
+{"actor":"codex-trial-duration","entity":"bd-01M4BV2N1BSKSAPRENVN24NNYR","kind":"reserve_open","mode":"exclusive","op":"20261007T195059.313852Z-p34467-c0000-rc8c9-hc732af","paths":["studio/core/src/test/scala/eyes4s/studio/core/backend/ProtocolLongSuite.scala"],"reservation_id":"rv-01M4BYPKFHR2AESAJJ6SB0CH93","ts":"2026-10-07T19:50:59.313852Z","ttl_s":21600,"v":2}
