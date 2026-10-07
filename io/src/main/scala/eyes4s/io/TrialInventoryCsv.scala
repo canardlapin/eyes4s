@@ -143,8 +143,16 @@ object TrialInventoryColumns:
   def of(
       trial: TrialColumns,
       item: Option[String] = None,
-      attributes: Vector[AttributeColumn] = Vector.empty,
-      duration: Option[TrialDurationFromStart] = None
+      attributes: Vector[AttributeColumn] = Vector.empty
+  ): Either[FixationImportError, TrialInventoryColumns] =
+    of(trial, item, attributes, None)
+
+  /** Explicit timing; preserves the published three-argument constructor. */
+  def of(
+      trial: TrialColumns,
+      item: Option[String],
+      attributes: Vector[AttributeColumn],
+      duration: Option[TrialDurationFromStart]
   ): Either[FixationImportError, TrialInventoryColumns] =
     val mismatch = duration.flatMap(d =>
       attributes.find(a => a.name == d.column && a.kind != AttributeKind.Text)

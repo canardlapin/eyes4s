@@ -21,6 +21,8 @@ import eyes4s.plan.{AttributeValue, Attributes, InventoryError, InventoryTrial}
 
 /** An explicitly declared trial duration, defining [0, duration) from trial start.
   * The original cell remains a text attribute in the native inventory evidence.
+  * Duplicate declarations must agree on that exact text: 5 and 5.0 remain
+  * distinct attribute values even when their rounded durations agree.
   */
 final class TrialDurationFromStart private (
     val column: String,
