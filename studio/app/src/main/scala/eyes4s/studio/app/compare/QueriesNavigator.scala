@@ -208,7 +208,7 @@ object QueriesNavigator:
           strip(run, r.contrasts)
         )
       case (Some(run), Some(r), Some(QueriesAnswer.Answered(rows)), Some(scale)) =>
-        val label   = r.scales.lift(scale.value).getOrElse(scale.value.toString)
+        val label   = r.scaleLabels.lift(scale.value).getOrElse(scale.value.toString)
         val shown   = rows.filter(matches(nav.filter))
         val kept    = shown.map(_.query).toSet
         val entries =

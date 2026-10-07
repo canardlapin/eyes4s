@@ -384,10 +384,10 @@ object FigurePanels:
       grouped: Vector[ReportView],
       overall: Vector[ReportView],
       scales: ScaleSet,
-      labels: Vector[String]
+      served: Vector[Sigma]
   ): Either[String, PlotPanelVM] =
     for
-      profile <- ScaleProfile.of(grouped, overall, scales, labels).left.map(_.message)
+      profile <- ScaleProfile.of(grouped, overall, scales, served).left.map(_.message)
       columns <- ProfileColumns.standard.left.map(_.message)
       source  <- ScaleProfile.source(profile, columns).left.map(_.message)
     yield PlotPanelVM(

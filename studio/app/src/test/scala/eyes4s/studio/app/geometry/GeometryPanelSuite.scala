@@ -89,7 +89,9 @@ class GeometryPanelSuite extends munit.FunSuite:
       s.itemsInPool,
       s.imagesFound,
       Vector.empty,
-      ""
+      "",
+      0,
+      None
     )
 
   test("the panel follows the Data selection and asks for its records and counts") {

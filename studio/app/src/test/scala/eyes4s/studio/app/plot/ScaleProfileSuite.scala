@@ -53,7 +53,7 @@ class ScaleProfileSuite extends munit.FunSuite:
   }
 
   private val scales  = ok(ScaleSet.of(Vector(1.0, 2.0).map(d => ok(Sigma.of(d)))))
-  private val labels  = Vector("1°", "2°")
+  private val labels  = scales.values
   private def grouped = Vector.tabulate(2)(i => PlotReports.synthetic(scale = i))
   private def whole   = Vector.tabulate(2)(i =>
     PlotReports.synthetic(scale = i, group = None, id = PlotReports.overallId)
@@ -99,5 +99,14 @@ class ScaleProfileSuite extends munit.FunSuite:
       Left(
         ProfileError.MissingSeries(PlotReports.run, PlotReports.overallId, 1, None, Some("A"))
       )
+    )
+  }
+
+  test("served scale identities are checked even when numerical reports coincide") {
+    val reports = Vector.tabulate(2)(i => PlotReports.synthetic(scale = i))
+    val swapped = scales.values.reverse
+    assertEquals(
+      ScaleProfile.of(reports, whole, scales, swapped),
+      Left(ProfileError.ScaleIdentity(PlotReports.run, 0, swapped.head, scales.values.head))
     )
   }

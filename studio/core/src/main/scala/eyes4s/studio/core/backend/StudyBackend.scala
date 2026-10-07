@@ -619,9 +619,10 @@ object ProtocolVersion:
     * and adds native preview work progress and recipe-bound readiness. 1.17
     * adds archive restoration pending/refusal values and verified stored
     * manifest provenance (bead q-native-archive-readback).
+    * 1.18 serves ResultSummary scales as validated degree values and authoritative admission totals/equations.
     * Deploy client and backend together.
     */
-  val Current: ProtocolVersion = ProtocolVersion(1, 17)
+  val Current: ProtocolVersion = ProtocolVersion(1, 18)
 
 /** A client's correlation id; every frame answering a request carries it. */
 final case class RequestId(value: Long) derives CanEqual

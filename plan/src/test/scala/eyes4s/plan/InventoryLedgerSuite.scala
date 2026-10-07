@@ -397,3 +397,28 @@ class InventoryLedgerSuite extends munit.FunSuite:
       None
     )
   }
+
+  test("accounting partitions declared trials, including no-fixations in quarantine") {
+    val value = get(
+      inventory(
+        Vector(
+          T(a, "beach", Vector(2), TrialDisposition.Admitted),
+          T(b, "dog", Vector(3), TrialDisposition.NoFixations),
+          T(
+            id("c"),
+            "bird",
+            Vector(4),
+            TrialDisposition.Quarantined(
+              QuarantineCause.InvalidExtent("invalid trial duration")
+            )
+          ),
+          T(id("d"), "cat", Vector.empty, TrialDisposition.Absent)
+        )
+      )
+    )
+    assertEquals(value.admitted.size, 1)
+    assertEquals(value.quarantined.size, 2)
+    assertEquals(value.absent.size, 1)
+    assert(value.accountingBalances)
+    assert(get(inventory(Vector.empty)).accountingBalances)
+  }

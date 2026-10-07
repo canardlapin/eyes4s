@@ -149,8 +149,8 @@ object MethodsText:
     else if report.run != run then Left(MethodsError.OtherRun(run, report.run, "report"))
     else if report.reporting != source.reporting.id then
       Left(MethodsError.OtherReporting(source.reporting.id, report.reporting))
-    else if !result.scales.indices.contains(report.scale) then
-      Left(MethodsError.ReportScale(run, report.scale, result.scales))
+    else if !result.scaleLabels.indices.contains(report.scale) then
+      Left(MethodsError.ReportScale(run, report.scale, result.scaleLabels))
     else if facts.run != run then Left(MethodsError.OtherRun(run, facts.run, "query facts"))
     else if facts.admission.dataset != dataset.id then
       Left(MethodsError.OtherDataset(dataset.id, facts.admission.dataset))
@@ -165,7 +165,7 @@ object MethodsText:
             angular(source) ++
             Vector(initial(source.bound.analysis.recipe), maps(source)) ++
             Vector(comparison(source, result, facts), outcomes(source, result, facts)) ++
-            reporting(source, report, result.scales(report.scale)) ++
+            reporting(source, report, result.scaleLabels(report.scale)) ++
             Vector(
               sentence("D measures spatial correspondence, not sequential replay."),
               sentence(

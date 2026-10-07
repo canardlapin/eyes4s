@@ -188,12 +188,14 @@ object StudioLayouts:
   /** The pane that hosts the preflight findings and the run card (S7.6). */
   val preflight: PaneId = new PaneId("analysis.preflight")
 
+  val analyses: PaneId = new PaneId("analysis.analyses")
+
   /** Analysis.dc.html. */
   val analysis: PerspectiveLayout = layout(
     "analysis",
     Perspective.Analysis,
     columns(
-      navigator(pane("analysis.analyses", "Analyses", Navigator)),
+      navigator(PaneDecl(analyses, PaneTitle.Fixed("Analyses"), Navigator)),
       split(
         Axis.Vertical,
         group(

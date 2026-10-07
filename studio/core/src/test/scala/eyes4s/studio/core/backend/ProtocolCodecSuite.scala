@@ -67,7 +67,7 @@ class ProtocolCodecSuite extends munit.FunSuite:
     assertEquals(ProtocolPins.pins.keySet, actual.keySet)
   }
 
-  test("1.17 restored provenance and refusals require exact peers before body decoding") {
+  test("1.18 restored provenance and refusals require exact peers before body decoding") {
     val previous   = ProtocolVersion(1, 16)
     val provenance = Provenance(
       address,
@@ -351,7 +351,7 @@ class ProtocolCodecSuite extends munit.FunSuite:
   }
 
   test("protocol 1.2 Counting requires coordinated peers, not a relabelled 1.1 frame") {
-    assertEquals(ProtocolVersion.Current, ProtocolVersion(1, 17))
+    assertEquals(ProtocolVersion.Current, ProtocolVersion(1, 18))
     val previous = Envelope(RequestId(41), ServerFrame.Event(JobEvent.Advanced(progress)))
     assertEquals(legacyMeterTotal(previous.asJson), Right(Protocol11Total.Exact(8512L)))
     val counting = progress.asJson
@@ -408,4 +408,22 @@ class ProtocolCodecSuite extends munit.FunSuite:
       _.remove("inventory").add("inventoryTrials", 960.asJson).add("absent", 6.asJson)
     )
     assert(legacy.as[AdmissionSummary].isLeft)
+  }
+
+  test("1.18 result scales are validated degree values and reject legacy labels") {
+    val wire = result.asJson
+    assertEquals(wire.hcursor.get[Vector[Double]]("scales"), Right(Vector(2.0)))
+    Vector(
+      Json.arr(Json.fromString("2°")),
+      Json.arr(Json.fromDoubleOrNull(0.0)),
+      Json.arr(Json.fromDoubleOrNull(-1.0))
+    ).foreach { scales =>
+      assert(wire.deepMerge(Json.obj("scales" -> scales)).as[ResultSummary].isLeft)
+    }
+    val current = Envelope(
+      RequestId(99),
+      ServerFrame.Response(BackendResponse.Result(result)): ServerFrame
+    ).asJson
+    val previous = current.deepMerge(Json.obj("version" -> ProtocolVersion(1, 17).asJson))
+    assert(WireFormat.parseCurrent[ServerFrame](previous.noSpaces).isLeft)
   }

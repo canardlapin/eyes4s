@@ -76,7 +76,11 @@ class S45bPlotFxSuite extends StudioFxSuite:
       .create[IO](StoryMoment.T2)
       .flatMap { fake =>
         fake.result(run).flatMap { summary =>
-          ScaleLadder.load[IO](fake.inspect, fake.navigator)(run, focus, right(summary).scales)
+          ScaleLadder.load[IO](fake.inspect, fake.navigator)(
+            run,
+            focus,
+            right(summary).scaleLabels
+          )
         }
       }
       .unsafeRunSync()

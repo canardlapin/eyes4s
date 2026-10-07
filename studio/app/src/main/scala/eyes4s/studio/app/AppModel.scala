@@ -386,6 +386,7 @@ enum Intent derives CanEqual:
   case Dispatch(command: Command)
 
   /** Choose a recipe preset (S7.1): its declared fields only, as a draft. */
+  case NewAnalysis
   case ChoosePreset(preset: Preset)
   case Undo(stack: HistoryStack)
   case Redo(stack: HistoryStack)
@@ -758,6 +759,16 @@ object AppModel:
         )
     case Intent.Dispatch(command) =>
       applyHistory(m, JournalEntry.Apply(command), m.history.apply(command))
+    case Intent.NewAnalysis =>
+      eyes4s.studio.app.analysis.AnalysesNavigator.create(m.document).fold((m, none)) {
+        command =>
+          val (next, effects) = update(m, Intent.Dispatch(command))
+          if next.document == m.document then (next, effects)
+          else
+            val (shown, navigationEffects) =
+              navigate(next, Location(Perspective.Analysis, draftTrail(next.document)))
+            (shown, effects ++ navigationEffects)
+      }
     case Intent.ChoosePreset(preset) =>
       PresetPicker
         .command(m.document, preset)

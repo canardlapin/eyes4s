@@ -308,7 +308,7 @@ class FakeStudyBackendSuite extends CatsEffectSuite:
       fake   <- FakeStudyBackend.create[IO](StoryMoment.T2)
       result <- ok(fake.result(run7))
     yield
-      assertEquals(result.scales, get[Vector[String]](s, "scales"))
+      assertEquals(result.scaleLabels, get[Vector[String]](s, "scales"))
       assertEquals((result.pairRowsPerScale, result.pairRows), (8969L, 35876L))
       val participants = get[Vector[Json]](s, "participants")
       assertEquals(result.participants.size, participants.size)
@@ -497,7 +497,10 @@ class FakeStudyBackendSuite extends CatsEffectSuite:
     yield
       assertEquals(joined.inventory, InventoryJoin.Joined(960, 6))
       assertEquals((undeclared.inventory, undeclared.absent), (InventoryJoin.Undeclared, None))
-      assertEquals(undeclared.copy(inventory = joined.inventory), joined)
+      assertEquals(
+        undeclared.copy(inventory = joined.inventory, equation = joined.equation),
+        joined
+      )
       assertEquals((entries.page.total, entries.entries.size), (954, 954))
       assert(!entries.entries.exists(_.disposition == TrialDisposition.Absent))
       assertEquals(refused, Left(BackendError.InventoryRefused(r3, Vector(issue))))

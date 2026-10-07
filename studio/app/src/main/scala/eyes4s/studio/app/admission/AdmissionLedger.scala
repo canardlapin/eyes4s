@@ -227,7 +227,7 @@ object AdmissionLedger:
       ref.toVector.flatMap(r => r.parent.toVector.map(Place.At(_)) :+ Place.At(r))
 
   /** The trials quarantined or with no admissible record. */
-  def heldBack(summary: AdmissionSummary): Int = summary.quarantinedTrials + summary.noFixations
+  def heldBack(summary: AdmissionSummary): Int = summary.quarantinedTotal
 
   /** Whether `decision` admits a revision with these counts. */
   def permits(decision: CoreAdmissionDecision, summary: AdmissionSummary): Boolean =

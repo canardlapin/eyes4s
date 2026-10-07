@@ -304,7 +304,7 @@ object ProtocolPins:
     "request.Subscribe" ->
       """{"Subscribe":{"id":1}}""",
     "response.Admission" ->
-      """{"Admission":{"summary":{"dataset":3,"state":{"Admitted":{}},"inventory":{"Joined":{"trials":960,"absent":6}},"admitted":937,"quarantined":[{"code":"quarantine.overlap","trials":6}],"noFixations":5,"fixationRecords":11520,"window":{"outsideWindow":543,"outsideScreen":0,"total":11311,"trialsOutsideWindow":409,"trialsOutsideScreen":0,"trials":937,"untallied":0,"sourceRecords":11520,"outsideWindowMicros":159142000,"outsideScreenMicros":0,"totalMicros":3282108000},"items":259,"imagesFound":257,"missingImages":[{"item":"forest-044","participants":["P01","P24"],"encodingTrials":2}],"history":"onset declared ms"}}}""",
+      """{"Admission":{"summary":{"dataset":3,"state":{"Admitted":{}},"inventory":{"Joined":{"trials":960,"absent":6}},"admitted":937,"quarantined":[{"code":"quarantine.overlap","trials":6}],"noFixations":5,"fixationRecords":11520,"window":{"outsideWindow":543,"outsideScreen":0,"total":11311,"trialsOutsideWindow":409,"trialsOutsideScreen":0,"trials":937,"untallied":0,"sourceRecords":11520,"outsideWindowMicros":159142000,"outsideScreenMicros":0,"totalMicros":3282108000},"items":259,"imagesFound":257,"missingImages":[{"item":"forest-044","participants":["P01","P24"],"encodingTrials":2}],"history":"onset declared ms","quarantinedTotal":11,"equation":{"admitted":937,"quarantined":11,"absent":6,"inventory":960,"balances":false}}}}""",
     "response.Inspected" ->
       """{"Inspected":{"inspection":{"Contrast":{"address":{"ContrastRow":{"scale":2,"key":{"participant":"P17","phase":"Retrieval","trial":"ret_07","occurrence":1}}},"m":0.73,"b":0.35,"d":0.38}}}}""",
     "response.Job" ->
@@ -326,7 +326,7 @@ object ProtocolPins:
     "response.Refused" ->
       """{"Refused":{"error":{"UnknownRun":{"run":9,"known":[7]}}}}""",
     "response.Result" ->
-      """{"Result":{"summary":{"run":7,"revision":4,"dataset":3,"scales":["2°"],"pairRowsPerScale":8969,"pairRows":35876,"eligibleQueries":457,"contrasts":{"requested":480,"queryNotAdmitted":14,"noMatch":9,"failed":3,"contributing":454},"participants":[{"participant":"P17","requested":20,"contributing":19,"failed":0,"noMatch":0,"notAdmitted":1}]}}}""",
+      """{"Result":{"summary":{"run":7,"revision":4,"dataset":3,"scales":[2],"pairRowsPerScale":8969,"pairRows":35876,"eligibleQueries":457,"contrasts":{"requested":480,"queryNotAdmitted":14,"noMatch":9,"failed":3,"contributing":454},"participants":[{"participant":"P17","requested":20,"contributing":19,"failed":0,"noMatch":0,"notAdmitted":1}]}}}""",
     "response.Runs" ->
       """{"Runs":{"runs":[{"run":7,"revision":4,"dataset":3,"state":{"Current":{}}}]}}""",
     "run-state.Cancelled" ->
@@ -364,7 +364,7 @@ object ProtocolPins:
     "total.Unknown" ->
       """{"Unknown":{}}""",
     "envelope.restored" ->
-      """{"version":{"major":1,"minor":17},"id":42,"body":{"Response":{"response":{"ProvenanceOf":{"provenance":{"address":{"PairRow":{"scale":2,"design":{"Control":{}},"focal":{"participant":"P17","phase":"Retrieval","trial":"ret_07","occurrence":1},"reference":{"participant":"P17","phase":"Encoding","trial":"enc_03","occurrence":1}}},"trail":[{"Run":{"run":8}},{"Restored":{"manifest":"abababababababababababababababababababababababababababababababab"}}]}}}}}}""",
+      """{"version":{"major":1,"minor":18},"id":42,"body":{"Response":{"response":{"ProvenanceOf":{"provenance":{"address":{"PairRow":{"scale":2,"design":{"Control":{}},"focal":{"participant":"P17","phase":"Retrieval","trial":"ret_07","occurrence":1},"reference":{"participant":"P17","phase":"Encoding","trial":"enc_03","occurrence":1}}},"trail":[{"Run":{"run":8}},{"Restored":{"manifest":"abababababababababababababababababababababababababababababababab"}}]}}}}}}""",
     "error.ArchiveRestoreRefused" ->
       """{"ArchiveRestoreRefused":{"run":8,"cause":{"code":"study-failure.off-window","level":{"Error":{}},"origin":{"EyesCore":{}},"subject":[{"Trial":{"key":{"participant":"P17","phase":"Retrieval","trial":"ret_07","occurrence":1}}}],"message":"empty map","affected":[{"participant":"P17","phase":"Retrieval","trial":"ret_07","occurrence":1},{"participant":"P17","phase":"Encoding","trial":"enc_03","occurrence":1}],"category":"DataDependent","remedy":"ReviewAnalysisWindow"}}}""",
     "error.ResultRestoring" ->

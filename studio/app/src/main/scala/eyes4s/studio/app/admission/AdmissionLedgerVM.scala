@@ -88,7 +88,8 @@ final case class DecisionVM(
     value: CoreAdmissionDecision,
     label: String,
     note: String,
-    selected: Boolean
+    selected: Boolean,
+    refs: Vector[StudioRef] = Vector.empty
 ) derives CanEqual
 
 /** Everything the admission ledger shows, in the board's order. */
@@ -117,7 +118,23 @@ final case class AdmissionLedgerVM(
     countsSource: String,
     retry: Option[String],
     problem: Option[String]
-) derives CanEqual
+) derives CanEqual:
+  /** The backend equation's four count operands, for inspecting their ledger entries. */
+  def equationRefs: Vector[StudioRef] =
+    if equation.isEmpty then Vector.empty
+    else
+      rows.collect {
+        case row if (row.ref match
+              case StudioRef.InventoryCount(
+                    _,
+                    InventoryKind.Inventory | InventoryKind.Admitted |
+                    InventoryKind.Quarantined | InventoryKind.Absent
+                  ) =>
+                true
+              case _ => false
+            ) =>
+          row.ref
+      }
 
 object AdmissionLedgerVM:
   import LedgerTextId.*
@@ -376,14 +393,11 @@ object AdmissionLedgerVM:
     * inventory has all four counts.
     */
   private def equation(s: AdmissionSummary): Option[String] =
-    for
-      trials <- s.inventoryTrials
-      absent <- s.absent
-    yield
-      val held = AdmissionLedger.heldBack(s)
-      val args = Vector(n(s.admitted), n(held), n(absent), n(trials))
-      if s.admitted + held + absent == trials then t(Equation, args*)
-      else t(EquationMismatch, args*)
+    s.equation.map { served =>
+      val args =
+        Vector(n(served.admitted), n(served.quarantined), n(served.absent), n(served.inventory))
+      if served.balances then t(Equation, args*) else t(EquationMismatch, args*)
+    }
 
   private def openedVM(
       ledger: AdmissionLedger,
@@ -400,6 +414,13 @@ object AdmissionLedgerVM:
       case _ if entries.exists(_.isEmpty) => Some(t(NoTrials))
       case _                              => None
     OpenedVM(ref, title, entries.toVector.flatten.map(trialRow), note, t(Close))
+
+  private def decisionRefs(summary: Option[AdmissionSummary]): Vector[StudioRef] =
+    summary.toVector.flatMap(s =>
+      (Vector(InventoryKind.Admitted, InventoryKind.Quarantined) ++
+        Option.when(s.absent.isDefined)(InventoryKind.Absent))
+        .map(StudioRef.InventoryCount(s.dataset, _))
+    )
 
   private def decisions(
       ledger: AdmissionLedger,
@@ -430,13 +451,15 @@ object AdmissionLedgerVM:
         CoreAdmissionDecision.RequireComplete,
         decisionName(CoreAdmissionDecision.RequireComplete),
         require,
-        selected(CoreAdmissionDecision.RequireComplete)
+        selected(CoreAdmissionDecision.RequireComplete),
+        decisionRefs(summary)
       ),
       DecisionVM(
         CoreAdmissionDecision.ReviewExclusions,
         decisionName(CoreAdmissionDecision.ReviewExclusions),
         review,
-        selected(CoreAdmissionDecision.ReviewExclusions)
+        selected(CoreAdmissionDecision.ReviewExclusions),
+        decisionRefs(summary)
       )
     )
 

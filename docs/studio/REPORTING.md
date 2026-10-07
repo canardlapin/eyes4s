@@ -71,3 +71,11 @@ filtered contrast changing from +0.2 to −0.2. The original implementation was
 restored. Native golden-study regressions construct the library report specification
 independently and compare grouped, filtered, minimum and weighted report views;
 fixture display means are not evidence for a native scientific result.
+
+Protocol 1.18 serves `ResultSummary.scales` as validated `Sigma` degree values,
+serialized as numbers. Display and export labels are rendered from those values;
+profile builders compare scale identities directly. Admission answers also serve
+`quarantinedTotal` (including trials with no admissible fixation) and an optional
+`AdmissionEquation` with the inventory operands and the backend's balance check.
+An undeclared inventory has no equation. Client and backend must speak the exact
+same protocol version; version 1.17 bodies are refused before decoding.

@@ -326,7 +326,7 @@ class ExportBundleSuite extends munit.FunSuite:
         BundleTables.comparisons(r.source, s.summary, wrong).left.map(_.message),
         Left(
           s"The comparisons table has rows of scale ${s.summary.scales.size}; the run computes " +
-            s.summary.scales.mkString(", ") + "."
+            s.summary.scaleLabels.mkString(", ") + "."
         )
       )
     }

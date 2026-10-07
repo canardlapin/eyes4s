@@ -46,7 +46,7 @@ object LedgerCounts:
       kind match
         case InventoryKind.Inventory   => summary.inventoryTrials
         case InventoryKind.Admitted    => Some(summary.admitted)
-        case InventoryKind.Quarantined => Some(summary.quarantinedTrials + summary.noFixations)
+        case InventoryKind.Quarantined => Some(summary.quarantinedTotal)
         case InventoryKind.Cause(code) => summary.quarantined.find(_.code == code).map(_.trials)
         case InventoryKind.NoFixations => Some(summary.noFixations)
         case InventoryKind.Absent      => summary.absent

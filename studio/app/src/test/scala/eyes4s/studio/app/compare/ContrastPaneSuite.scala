@@ -58,7 +58,7 @@ class ContrastPaneSuite extends munit.FunSuite:
         ladder  <- ScaleLadder.load[Future](s.inspect, s.navigator)(
           run,
           query,
-          right(summary).scales
+          right(summary).scaleLabels
         )
       yield ContrastPane.read(pane, run, query, LadderAnswer.Answered(right(ladder))))
         .transformWith(x => s.close.transform(_ => x))

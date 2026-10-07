@@ -94,16 +94,19 @@ object FigureBundle:
       case BundleItem.Figure  => ("", None)
       case BundleItem.Results =>
         result.fold(("", Some(reading)))(r =>
-          (s"${Format.count(r.contrasts.requested)} queries × ${r.scales.size} σ", None)
+          (s"${Format.count(r.contrasts.requested)} queries × ${r.scaleLabels.size} σ", None)
         )
       case BundleItem.Comparisons =>
         result.fold(("", Some(reading)))(r => (s"${Format.count(r.pairRows)} pair rows", None))
       case BundleItem.Participants =>
         (result, report) match
-          case (Some(r), Some(Right(view))) if r.scales.isDefinedAt(view.scale) =>
+          case (Some(r), Some(Right(view))) if r.scaleLabels.isDefinedAt(view.scale) =>
             val groups =
               view.cells.filter(_.role == ReportRole.Difference).map(_.group).distinct
-            (s"${r.participants.size} × ${groups.size} groups at ${r.scales(view.scale)}", None)
+            (
+              s"${r.participants.size} × ${groups.size} groups at ${r.scaleLabels(view.scale)}",
+              None
+            )
           case (_, Some(Left(why)))   => ("", Some(why))
           case (_, Some(Right(view))) =>
             ("", Some(s"The summary of ${view.run.label} has no scale ${view.scale}."))
