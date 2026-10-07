@@ -85,8 +85,7 @@ class NativeArtifactsAppSuite extends munit.FunSuite:
     val commands = Vector(
       Command.SetTheme(theme),
       Command.PutReporting(renamed),
-      Command.SetPerspective(perspective),
-      Command.ShowRun(Some(run.id))
+      Command.SetPerspective(perspective)
     )
     commands.foldLeft(bound) { (model, command) =>
       val (next, effects) = AppModel.update(model, Intent.Dispatch(command))
@@ -96,6 +95,17 @@ class NativeArtifactsAppSuite extends munit.FunSuite:
       assert(effects.exists(_.isInstanceOf[AppEffect.Journal]), command.name)
       next
     }
+    // Showing the completed run consumes its Ready notice while retaining
+    // the exact request, including a backend-bound canonical input identity.
+    val (shown, effects) =
+      AppModel.update(bound, Intent.Dispatch(Command.ShowRun(Some(run.id))))
+    assertEquals(shown.jobs.jobs, bound.jobs.jobs)
+    assertEquals(shown.jobs.shelf.required, bound.jobs.shelf.required)
+    assertEquals(shown.jobs.shelf.shown, Some(run.id))
+    assertEquals(shown.document.presentation.shownRun, Some(run.id))
+    assertEquals(shown.jobs.ready, None)
+    assert(!effects.exists(_.isInstanceOf[AppEffect.Execution]))
+    assert(effects.exists(_.isInstanceOf[AppEffect.Journal]))
     ()
 
   test(
