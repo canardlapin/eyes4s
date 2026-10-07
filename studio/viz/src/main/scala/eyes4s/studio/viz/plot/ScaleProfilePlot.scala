@@ -127,7 +127,8 @@ final case class ScaleProfilePlot(columns: ProfileColumns) extends PlotBuilder:
         PlotText(
           PlotTextId.PlotKeys,
           ProfileText(
-            ProfileTextId.Summary,
+            if series.contains(Series.WholeReport) then ProfileTextId.OverallSummary
+            else ProfileTextId.Summary,
             source.caption,
             levelsOf(source, columns.scale).size.toString
           )
@@ -161,8 +162,8 @@ final case class ScaleProfilePlot(columns: ProfileColumns) extends PlotBuilder:
         case _                                     => NoPosition.MissingValue(columns.sigma)
     val order            = series.distinct
     val (groups, people) = order.partition {
-      case Series.Group(_) => true
-      case _               => false
+      case Series.Group(_) | Series.WholeReport => true
+      case _                                    => false
     }
     val lines = people.map { s =>
       val members = rows.filter(series(_) == s)
@@ -453,6 +454,7 @@ object ScaleProfilePlot:
 
   /** Which series a row belongs to, by its ref. */
   enum Series derives CanEqual:
+    case WholeReport
     case Group(label: String)
     case Participant(participant: String, group: Option[String])
 
@@ -463,6 +465,14 @@ object ScaleProfilePlot:
     case StudioRef.GroupCell(_, _, _, g)             => Some(Series.Group(g.label))
     case StudioRef.ParticipantSummary(_, _, _, g, p) =>
       Some(Series.Participant(p, g.map(_.label)))
+    case StudioRef.ReportCell(
+          _,
+          _,
+          _,
+          eyes4s.studio.core.selection.ReportGroup.Whole,
+          eyes4s.studio.core.backend.ReportRole.Difference
+        ) =>
+      Some(Series.WholeReport)
     case StudioRef.ReportCell(
           _,
           _,

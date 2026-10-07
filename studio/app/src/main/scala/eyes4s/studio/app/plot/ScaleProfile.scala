@@ -107,7 +107,8 @@ final case class ProfilePoint(
     scale: ScaleIndex,
     label: String,
     sigma: Sigma,
-    d: Option[Double]
+    d: Option[Double],
+    n: Option[String] = None
 ) derives CanEqual
 
 /** One series of a profile: a group's grand means over its `n`
@@ -117,10 +118,9 @@ final case class ProfilePoint(
 final case class ProfileSeries(name: String, n: String, points: Vector[ProfilePoint])
     derives CanEqual
 
-/** A run's scale profile under one reporting spec (ticket S4.5d): each
-  * group's grand mean D at every declared scale, and every participant's
-  * mean D over all its queries at every scale, every value as the summary
-  * served it.
+/** A run's scale profile under one reporting spec (ticket S4.5d): the
+  * whole-report or each group's grand mean D at every declared scale, and
+  * every participant's mean D, every value as the evaluated report served it.
   */
 final case class ScaleProfile(
     run: RunId,
@@ -160,6 +160,26 @@ object ScaleProfile:
       scales: ScaleSet,
       labels: Vector[String]
   ): Either[ProfileError, ScaleProfile] =
+    evaluated(grouped, overall, scales, labels, wholeReport = false)
+
+  /** Results board: the report's whole-population mean and each participant's
+    * ungrouped mean, with each declared scale's exact served value, reference
+    * and count. Group estimates are not substituted for the whole-report cell.
+    */
+  def overall(
+      reports: Vector[ReportView],
+      scales: ScaleSet,
+      labels: Vector[String]
+  ): Either[ProfileError, ScaleProfile] =
+    evaluated(reports, reports, scales, labels, wholeReport = true)
+
+  private def evaluated(
+      grouped: Vector[ReportView],
+      overall: Vector[ReportView],
+      scales: ScaleSet,
+      labels: Vector[String],
+      wholeReport: Boolean
+  ): Either[ProfileError, ScaleProfile] =
     grouped.headOption
       .toRight(ProfileError.MissingReports(scales.values.map(_.degrees)))
       .flatMap { first =>
@@ -197,11 +217,12 @@ object ScaleProfile:
           at        <- declared.zipWithIndex.traverse { case (sigma, i) =>
             ScaleIndex.of(i).leftMap(_ => ProfileError.Scale(run, i)).map((_, sigma))
           }
-          levels = groupedAt(0).cells.collect {
+          servedLevels = groupedAt(0).cells.collect {
             case c if c.role == ReportRole.Difference => c.group
           }
-          _ <- levels
-            .diff(levels.distinct)
+          levels = if wholeReport then Vector(None) else servedLevels
+          _ <- servedLevels
+            .diff(servedLevels.distinct)
             .headOption
             .map(g =>
               ProfileError.DuplicateGroup(
@@ -233,14 +254,18 @@ object ScaleProfile:
                     index,
                     labels(index.value),
                     sigma,
-                    c.estimate
+                    c.estimate,
+                    Option.when(wholeReport)(ParticipantText.participants(c.participants))
                   ) -> c.participants
                 )
             }.map(points =>
               ProfileSeries(
-                group.fold(
-                  ParticipantText(eyes4s.studio.app.text.ParticipantTextId.AllQueries)
-                )(_.label),
+                if wholeReport then ProfileText(ProfileTextId.GrandMean)
+                else
+                  group.fold(
+                    ParticipantText(eyes4s.studio.app.text.ParticipantTextId.AllQueries)
+                  )(_.label)
+                ,
                 ParticipantText.participants(points.head._2),
                 points.map(_._1)
               )
@@ -254,7 +279,14 @@ object ScaleProfile:
                   ProfileError.MissingSeries(run, overallId, index.value, None, Some(person))
                 )
                 .map(p =>
-                  ProfilePoint(p.ref, index, labels(index.value), sigma, p.value) -> p.queries
+                  ProfilePoint(
+                    p.ref,
+                    index,
+                    labels(index.value),
+                    sigma,
+                    p.value,
+                    Option.when(wholeReport)(ParticipantText.queries(p.queries))
+                  ) -> p.queries
                 )
             }.map(points =>
               ProfileSeries(person, ParticipantText.queries(points.head._2), points.map(_._1))
@@ -325,9 +357,10 @@ object ScaleProfile:
   private def degreesOf(label: String): Option[Double] =
     label.trim.stripSuffix("°").trim.toDoubleOption
 
-  /** The profile as a value source: every group's points, then every
+  /** The profile as a value source: every mean series' points, then every
     * participant's, each series in scale order, each point a row with its
-    * own ref. A mean the summary does not serve is missing, never zero.
+    * own ref. An unserved estimate is missing, never zero. A point's served
+    * count takes precedence over its series' common count.
     */
   def source(
       profile: ScaleProfile,
@@ -342,7 +375,7 @@ object ScaleProfile:
             PlotValue.Text(p.label),
             PlotValue.Number(p.sigma.degrees),
             p.d.fold(PlotValue.Missing)(PlotValue.Number(_)),
-            PlotValue.Text(s.n)
+            PlotValue.Text(p.n.getOrElse(s.n))
           )
         )
       )

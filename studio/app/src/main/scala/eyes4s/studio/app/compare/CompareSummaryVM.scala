@@ -164,11 +164,12 @@ object CompareSummaryVM:
         .map(_.recipe.scales)
         .toRight(s"run ${run.number} has no analysis revision in the document")
         .flatMap(scales =>
-          val grouped = scales.values.indices.toVector
-            .flatMap(i => ScaleIndex.of(i).toOption.flatMap(displayed))
-          val overall = scales.values.indices.toVector
-            .flatMap(i => ScaleIndex.of(i).toOption.flatMap(ungrouped))
-          ScaleProfile.of(grouped, overall, scales, r.scales).left.map(_.message)
+          // An already ungrouped spec is its own whole-report evaluation;
+          // deriving another identity would lose that cell's provenance.
+          val whole   = if s.spec.exists(_.groupBy.isEmpty) then displayed else ungrouped
+          val reports = scales.values.indices.toVector
+            .flatMap(i => ScaleIndex.of(i).toOption.flatMap(whole))
+          ScaleProfile.overall(reports, scales, r.scales).left.map(_.message)
         )
         .flatMap(p =>
           ProfileColumns.standard.flatMap(ScaleProfile.source(p, _)).left.map(_.message)

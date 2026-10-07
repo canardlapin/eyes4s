@@ -259,3 +259,42 @@ class ScaleProfilePlotSuite extends FunSuite:
       Some(PlotBuildError.UnexpectedRow("scale-profile", odd))
     )
   }
+
+  test("whole-report grand mean is one bold series of selectable true report cells") {
+    import eyes4s.studio.core.backend.ReportRole
+    import eyes4s.studio.core.selection.ReportGroup
+    val overall = board.copy(groups =
+      Vector(
+        board.groups.head.copy(
+          name = "Grand mean",
+          points =
+            board.groups.head.points.zip(Vector(Some(0.13), None, Some(0.26), Some(0.16))).map {
+              (p, d) =>
+                p.copy(
+                  ref = StudioRef.ReportCell(
+                    board.run,
+                    board.reporting,
+                    p.scale,
+                    ReportGroup.Whole,
+                    ReportRole.Difference
+                  ),
+                  d = d
+                )
+            }
+        )
+      )
+    )
+    val plot = built(overall)
+    val refs = overall.groups.head.points.map(_.ref)
+    assertEquals(
+      ScaleProfilePlot.seriesOf(refs.head),
+      Some(ScaleProfilePlot.Series.WholeReport)
+    )
+    assertEquals(plot.marks.filter(_.rows.size == 1).map(_.ref), refs.take(1) ++ refs.drop(2))
+    assert(plot.unplotted.exists(_.ref == refs(1)))
+    assertEquals(bold(plot).map(_.points.size), Vector(2))
+    assert(bold(plot).forall(_.gp.lineType == LineType.Solid))
+    val targets = targetsOn(plot)
+    refs.take(1).concat(refs.drop(2)).foreach(ref => assert(targets.target(ref).isDefined))
+    assert(plot.description.contains("whole-report grand mean D"), plot.description)
+  }

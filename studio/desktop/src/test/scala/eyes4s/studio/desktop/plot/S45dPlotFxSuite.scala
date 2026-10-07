@@ -78,7 +78,7 @@ class S45dPlotFxSuite extends StudioFxSuite:
   /** Run 7's profile at its analysis revision's declared scales, as the fake
     * backend serves it at story moment t2.
     */
-  private lazy val fixtureProfile: ScaleProfile =
+  private lazy val fixtureProfiles: (ScaleProfile, ScaleProfile) =
     val doc    = right(StoryMoments.t2)
     val scales = right(
       doc.run(run).flatMap(r => doc.analysis(r.analysis)).map(_.recipe.scales).toRight("no run")
@@ -104,9 +104,16 @@ class S45dPlotFxSuite extends StudioFxSuite:
       overall <- summary.scales.indices.toVector.traverse(i =>
         backend.report(run, overallSpec, i).map(right)
       )
-    yield ScaleProfile.of(grouped, overall, scales, summary.scales).left.map(_.message))
+    yield
+      for
+        groups <- ScaleProfile.of(grouped, overall, scales, summary.scales).left.map(_.message)
+        whole  <- ScaleProfile.overall(overall, scales, summary.scales).left.map(_.message)
+      yield (groups, whole))
       .unsafeRunSync()
       .fold(e => fail(e), identity)
+
+  private lazy val fixtureProfile: ScaleProfile = fixtureProfiles._1
+  private lazy val overallProfile: ScaleProfile = fixtureProfiles._2
 
   // fixture.json's summary, read without the backend.
   private lazy val fixtureSummary: Json =
@@ -367,4 +374,32 @@ class S45dPlotFxSuite extends StudioFxSuite:
       assert(runOnFx(w.twin.plotHost.profile.underDraws) > 0)
       fx.snapshot(StudioTheme.Light)
       runOnFx(w.twin.dispose())
+  }
+
+  fxStage.test("the whole-report grand mean dot selects its exact report cell and table row") {
+    fx =>
+      val w = Wired(fx)
+      try
+        val profile = overallProfile
+        val source  = right(ScaleProfile.source(profile, columns))
+        val targets = showAndDraw(w, source)
+        val point   = profile.groups.head.points(2)
+        import eyes4s.studio.core.selection.ReportGroup
+        assert(point.ref match
+          case StudioRef.ReportCell(`run`, _, _, ReportGroup.Whole, ReportRole.Difference) =>
+            true
+          case _ => false)
+        hoverAt(w, targets, anchor(targets, point.ref))
+        assertEquals(w.hover, Some(HoverAt(plotView, point.ref)))
+        assert(w.readout.exists(_.contains("Grand mean")), w.readout)
+        assert(w.readout.exists(_.contains(point.n.get)), w.readout)
+        click(w, targets, anchor(targets, point.ref))
+        assertEquals(w.selected, Vector(point.ref))
+        assertEquals(
+          runOnFx(w.twin.table.modelRowSelected.zipWithIndex.collect { case (true, i) => i }),
+          Vector(2)
+        )
+        assertEquals(runOnFx(w.twin.input.state.selectionRings(targets)).size, 1)
+        assertEquals(runOnFx(w.twin.input.lastOverlayError), None)
+      finally runOnFx(w.twin.dispose())
   }

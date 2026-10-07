@@ -256,7 +256,7 @@ class CompareSummarySuite extends munit.FunSuite:
       assertEquals(s0.shown, Some(right(ScaleIndex.of(0))))
       // The scale profile is at every protocol scale, the query table every query.
       val profile = right(vm.profile.getOrElse(fail("no profile")))
-      assertEquals(profile.rows.size, (2 + 24) * 4)
+      assertEquals(profile.rows.size, (1 + 24) * 4)
       val queries = right(vm.queries.getOrElse(fail("no queries")))
       assertEquals(queries.rows.size, 480)
       // The newer run's freshness, while run 8 runs.
@@ -408,31 +408,32 @@ class CompareSummarySuite extends munit.FunSuite:
     }
   }
 
-  test("the scale profile's group rows and participant dots have report refs and values") {
+  test(
+    "the Results scale profile shows true whole-report rows while participant dots retain grouped report values"
+  ) {
     loaded(t3Summary).map { s =>
       val vm      = CompareSummaryVM.of(s, t3Summary)
       val profile = right(vm.profile.getOrElse(fail("no profile")))
-      // FIXTURE.md: grand D by scale (0.5/1/2/4°) by group.
-      def byScale(group: String) =
-        profile.rows.indices
-          .filter(i =>
-            profile.rows(i).ref.isInstanceOf[StudioRef.ReportCell] && profile
-              .text(i, 0)
-              .contains(group)
-          )
-          .map(i => ascii(profile.text(i, 3).get))
-          .toVector
-      def served(group: Response) = Vector.tabulate(4) { i =>
+      val whole   = Vector.tabulate(4) { i =>
         s.reports
-          .get((right(ScaleIndex.of(i)), false))
+          .get((right(ScaleIndex.of(i)), true))
           .collect { case ReportAnswer.Answered(view) => view }
-          .flatMap(_.cell(Some(group), ReportRole.Difference))
-          .flatMap(_.estimate)
-          .map(Format.signed(_, 2))
-          .getOrElse(PlotSource.MissingText)
+          .flatMap(_.cell(None, ReportRole.Difference))
+          .get
       }
-      assertEquals(byScale("Remembered"), served(Response.Remembered))
-      assertEquals(byScale("Forgotten"), served(Response.Forgotten))
+      val means = profile.rows.take(4)
+      assertEquals(means.map(_.ref), whole.map(_.ref))
+      assertEquals(
+        means.map(_.values(3)),
+        whole.map(c => c.estimate.fold[PlotValue](PlotValue.Missing)(PlotValue.Number(_)))
+      )
+      assertEquals(
+        means.map(_.values.last),
+        whole.map(c =>
+          PlotValue.Text(eyes4s.studio.app.text.ParticipantText.participants(c.participants))
+        )
+      )
+      assertEquals(means.map(_.values.head).distinct, Vector(PlotValue.Text("Grand mean")))
       // Participant dots use the served participant ref and value.
       val plot                        = right(vm.participantPlot.get)
       val cols                        = right(ParticipantColumns.standard)
@@ -642,5 +643,45 @@ class CompareSummarySuite extends munit.FunSuite:
         assertEquals(lateSuccess.reports, withOverall.reports)
         assertEquals(lateFailure.reports, withOverall.reports)
       result.transformWith(value => session.close.transform(_ => value))
+    }
+  }
+
+  test("whole-report profile references navigate to the exact derived overall specification") {
+    loaded(t3Summary).map { state =>
+      val source    = right(CompareSummaryVM.of(state, t3Summary).profile.get)
+      val point     = source.rows.head.ref
+      val overall   = CompareSummary.overall(t3Summary.document.reporting.head).get
+      val navigated =
+        AppModel.update(t3Summary, eyes4s.studio.app.Intent.Explain(Place.At(point)))._1
+      assert(navigated.location.trail.contains(Place.Summary(overall.id)), navigated.location)
+      assertEquals(CompareSummary.reporting(navigated), Some(overall.id))
+      assertEquals(CompareSummary.reportingSpec(navigated.document, overall.id), Some(overall))
+      assertEquals(overall.filters, t3Summary.document.reporting.head.filters)
+      assertEquals(overall.weighting, t3Summary.document.reporting.head.weighting)
+    }
+  }
+
+  test("an already ungrouped report keeps its own whole-cell identity across the profile") {
+    val overall = CompareSummary.overall(t3Summary.document.reporting.head).get
+    val m       =
+      AppModel.update(t3Summary, eyes4s.studio.app.Intent.Explain(Place.Summary(overall.id)))._1
+    loaded(m).map { state =>
+      val profile  = right(CompareSummaryVM.of(state, m).profile.get)
+      val expected = Vector.tabulate(4)(i =>
+        state.reports
+          .get((right(ScaleIndex.of(i)), false))
+          .collect { case ReportAnswer.Answered(view) =>
+            view.cell(None, ReportRole.Difference).get
+          }
+          .get
+      )
+      assertEquals(profile.rows.take(4).map(_.ref), expected.map(_.ref))
+      assert(
+        profile.rows
+          .take(4)
+          .forall(_.ref match
+            case StudioRef.ReportCell(_, id, _, _, _) => id == overall.id
+            case _                                    => false)
+      )
     }
   }

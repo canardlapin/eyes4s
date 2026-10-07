@@ -101,3 +101,97 @@ class ScaleProfileSuite extends munit.FunSuite:
       )
     )
   }
+
+  test("Results uses each true whole-report estimate, reference and per-scale count") {
+    PlotReports.read.map { (summary, grouped, overall) =>
+      val profile =
+        ok(ScaleProfile.overall(overall.reverse, PlotReports.scales, summary.scales))
+      assertEquals(profile.groups.map(_.name), Vector("Grand mean"))
+      assertEquals(profile.participants.size, 24)
+      val source = ok(ScaleProfile.source(profile, columns))
+      assertEquals(source.rows.size, (1 + 24) * PlotReports.scales.values.size)
+      for point <- profile.groups.head.points do
+        val cell = overall(point.scale.value)
+          .cell(None, eyes4s.studio.core.backend.ReportRole.Difference)
+          .get
+        assertEquals(point.d, cell.estimate)
+        assertEquals(point.ref, cell.ref)
+        assertEquals(
+          source.rows(point.scale.value).values.last,
+          PlotValue.Text(eyes4s.studio.app.text.ParticipantText.participants(cell.participants))
+        )
+      // The figures' explicitly grouped profile remains a different view.
+      assertEquals(
+        ok(ScaleProfile.of(grouped, overall, PlotReports.scales, summary.scales)).groups
+          .map(_.name),
+        Vector("Remembered", "Forgotten")
+      )
+    }
+  }
+
+  test("overall profile retains missing and zero means with exact scale-specific counts") {
+    // A served estimate is authoritative even when participants' rendered
+    // payload alone would yield a different arithmetic reconstruction.
+    assertEquals(
+      ok(ScaleProfile.overall(whole, scales, labels)).groups.head.points.map(_.d),
+      Vector.fill(2)(Some(0.2))
+    )
+    val reports = whole.zipWithIndex.map { (report, i) =>
+      report.copy(
+        cells = report.cells.map(
+          _.copy(estimate = if i == 0 then Some(0.0) else None, participants = i + 2)
+        ),
+        participants = report.participants.map(_.copy(queries = i + 3))
+      )
+    }
+    val profile = ok(ScaleProfile.overall(reports, scales, labels))
+    assertEquals(profile.groups.head.points.map(_.d), Vector(Some(0.0), None))
+    assertEquals(profile.groups.head.points.map(_.ref), reports.map(_.cells.head.ref))
+    val source = ok(ScaleProfile.source(profile, columns))
+    assertEquals(
+      source.rows.take(2).map(_.values.last),
+      Vector(PlotValue.Text("2 participants"), PlotValue.Text("3 participants"))
+    )
+    assertEquals(
+      source.rows.slice(2, 4).map(_.values.last),
+      Vector(PlotValue.Text("3 queries"), PlotValue.Text("4 queries"))
+    )
+  }
+
+  test("overall profile refuses absent whole cells, wrong context and incomplete scales") {
+    val missing = whole.updated(0, whole.head.copy(cells = Vector.empty))
+    assertEquals(
+      ScaleProfile.overall(missing, scales, labels),
+      Left(ProfileError.MissingSeries(PlotReports.run, PlotReports.overallId, 0, None, None))
+    )
+    assert(ScaleProfile.overall(grouped, scales, labels).isLeft)
+    assert(ScaleProfile.overall(whole.take(1), scales, labels).isLeft)
+    assert(ScaleProfile.overall(Vector.fill(2)(whole.head), scales, labels).isLeft)
+    assert(
+      ScaleProfile
+        .overall(
+          whole.updated(1, whole(1).copy(run = eyes4s.studio.core.backend.RunId(8))),
+          scales,
+          labels
+        )
+        .isLeft
+    )
+    assert(
+      ScaleProfile
+        .overall(
+          whole.updated(1, whole(1).copy(reporting = PlotReports.reporting)),
+          scales,
+          labels
+        )
+        .isLeft
+    )
+    assert(
+      ScaleProfile
+        .overall(
+          whole.updated(0, whole.head.copy(cells = whole.head.cells ++ whole.head.cells)),
+          scales,
+          labels
+        )
+        .isLeft
+    )
+  }
