@@ -167,6 +167,7 @@ final class ImportWizardView(dispatch: WizardIntent => Unit):
     f -> l
   }.toMap
   private val geometryNote = label("import-note", "t11")
+  geometryNote.setWrapText(true)
   val geometry: VBox       = VBox()
   private val geometryGrid = GridPane()
   geometryGrid.setHgap(10)
@@ -203,7 +204,19 @@ final class ImportWizardView(dispatch: WizardIntent => Unit):
 
   node.getChildren.setAll(header, pages, footer)
 
-  private var last: Option[ImportWizardVM] = None
+  private var last: Option[ImportWizardVM]             = None
+  private var detached: Map[WizardTab, DataWizardPage] = Map.empty
+
+  /** Move one page into its own dock node; the same controls and draft remain in use. */
+  def detach(tab: WizardTab): DataWizardPage =
+    detached.get(tab).getOrElse {
+      val content = page(tab)
+      pages.getChildren.remove(content)
+      val hosted = DataWizardPage(tab, content, fire)
+      detached += tab -> hosted
+      last.foreach(hosted.render)
+      hosted
+    }
 
   /** The page each tab shows. */
   def page(tab: WizardTab): Region = tab match
@@ -229,9 +242,10 @@ final class ImportWizardView(dispatch: WizardIntent => Unit):
       }
       kind.setText(vm.kind)
       WizardTab.values.foreach { t =>
-        val p = page(t)
-        p.setVisible(t == vm.tab)
-        p.setManaged(t == vm.tab)
+        val p     = page(t)
+        val shown = detached.contains(t) || t == vm.tab
+        p.setVisible(shown)
+        p.setManaged(shown)
       }
       fixations.render(vm.fixations)
       trials.render(vm.trials)
@@ -312,6 +326,7 @@ final class ImportWizardView(dispatch: WizardIntent => Unit):
       commit.setText(vm.commit)
       commit.setAccessibleText(vm.commit)
       commit.setDisable(!vm.canCommit)
+      detached.values.foreach(_.render(vm))
       last = Some(vm)
     finally rendering = false
 
@@ -498,3 +513,53 @@ final class MappingTable(role: SourceRole, fire: WizardIntent => Unit):
         .foreach(c => fire(WizardIntent.Choose(role, d.vm.column, c.choice)))
     )
     d
+
+/** A detached Data page: one node per dock pane, with a shared wizard's actions. */
+final class DataWizardPage(
+    tab: WizardTab,
+    content: Region,
+    dispatch: WizardIntent => Unit
+):
+  import ImportWizardView.*
+
+  private val empty   = label("import-empty", "t12")
+  private val notice  = label("import-problem", "t12")
+  private val reading = label("import-status", "t12")
+  private val problem = label("import-problem", "t12")
+  private val status  = label("import-status", "t12")
+  Vector(empty, notice, reading, problem, status).foreach(_.setWrapText(true))
+  val cancel: Button = button("import-button", "t12")
+  val commit: Button = button("import-button", "primary", "t12")
+  cancel.setOnAction(_ => dispatch(WizardIntent.Cancel))
+  commit.setOnAction(_ => dispatch(WizardIntent.Commit))
+  private val footer = HBox(spacer(), cancel, commit)
+  footer.getStyleClass.add("import-footer")
+  private val scroll = ScrollPane(content)
+  scroll.setFitToWidth(true)
+  scroll.setHbarPolicy(ScrollPane.ScrollBarPolicy.NEVER)
+  scroll.setFocusTraversable(false)
+  VBox.setVgrow(scroll, Priority.ALWAYS)
+  val node: VBox = VBox(empty, notice, reading, scroll, problem, status, footer)
+  node.getStyleClass.add("import-wizard")
+  Option(getClass.getClassLoader.getResource(stylesheetResource))
+    .foreach(url => node.getStylesheets.add(url.toExternalForm))
+
+  def availability(opened: Boolean, vm: ColumnMappingPaneVM): Unit =
+    Vector(empty -> vm.empty, notice -> vm.notice, reading -> vm.reading).foreach { (l, text) =>
+      l.setText(text.getOrElse(""))
+      l.setVisible(text.isDefined)
+      l.setManaged(text.isDefined)
+    }
+    Vector(scroll, problem, status, footer).foreach { n =>
+      n.setVisible(opened)
+      n.setManaged(opened)
+    }
+
+  def render(vm: ImportWizardVM): Unit =
+    cancel.setText(vm.cancel)
+    cancel.setAccessibleText(ColumnMappingPane.siblingAction(tab, vm.cancel))
+    commit.setText(vm.commit)
+    commit.setAccessibleText(ColumnMappingPane.siblingAction(tab, vm.commit))
+    commit.setDisable(!vm.canCommit)
+    problem.setText(vm.problem.getOrElse(""))
+    status.setText(vm.status.getOrElse(""))

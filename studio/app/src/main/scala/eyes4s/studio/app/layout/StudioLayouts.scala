@@ -66,6 +66,9 @@ object StudioLayouts:
   /** The pane that hosts the import wizard on the selected dataset revision. */
   val columnMapping: PaneId = new PaneId("data.column-mapping")
 
+  /** The selected import draft's geometry, coordinated with column mapping. */
+  val dataGeometry: PaneId = new PaneId("data.geometry")
+
   /** The pane that hosts the admission ledger of the selected revision. */
   val admission: PaneId = new PaneId("data.admission")
 
@@ -119,7 +122,7 @@ object StudioLayouts:
           pane("data.outside-frame", "Records outside frame", Table)
         ) -> 0.45
       ),
-      group(pane("data.geometry", "Geometry", Form))
+      group(PaneDecl(dataGeometry, PaneTitle.Fixed("Geometry"), Form))
     ),
     MessageId.HintDataVerify
   )

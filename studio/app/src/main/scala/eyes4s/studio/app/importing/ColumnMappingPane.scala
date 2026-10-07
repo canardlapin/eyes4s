@@ -183,3 +183,15 @@ object ColumnMappingPane:
     tabs.map(t => FocusStop(A11yRole.ToggleButton, t.label)) ++ page ++
       Vector(FocusStop(A11yRole.Button, vm.cancel)) ++
       Option.when(vm.canCommit)(FocusStop(A11yRole.Button, vm.commit))
+
+  /** The action's accessible name distinguishes sibling panes sharing one draft. */
+  def siblingAction(page: WizardTab, action: String): String =
+    ImportText(ImportTextId.SiblingAction, ImportWizardVM.tabLabel(page), action)
+
+  /** The controls of a separately docked page, sharing the wizard's commit/revert. */
+  def siblingStops(vm: ImportWizardVM, page: WizardTab): Vector[FocusStop] =
+    focusStops(vm.copy(tab = page, showTabs = false)).map {
+      case FocusStop(A11yRole.Button, name) if name == vm.cancel || name == vm.commit =>
+        FocusStop(A11yRole.Button, siblingAction(page, name))
+      case other => other
+    }

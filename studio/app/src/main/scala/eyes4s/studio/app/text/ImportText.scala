@@ -57,7 +57,7 @@ enum ImportTextId derives CanEqual:
 
   // --- The column-mapping pane (re-map of the selected revision) ------------------
   case Revert, PaneNoDataset, PaneReading, PaneNoProject, PaneEditsDropped
-  case PanePresetsUnreadable
+  case PanePresetsUnreadable, SiblingAction
 
 /** The wizard's strings in the boards' wording. */
 object ImportText:
@@ -173,6 +173,7 @@ object ImportText:
       case PaneNoProject    => "no project is open to read it from"
       case PaneEditsDropped =>
         "{0} changed, so the edits not yet applied to it were dropped."
+      case SiblingAction         => "{0} · {1}"
       case PanePresetsUnreadable => "Some saved import presets could not be read: {0}"
 
   /** `id`'s English template with its arguments filled. */

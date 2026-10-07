@@ -66,6 +66,9 @@ final class ColumnMappingPaneHost(
     () => revert()
   )
 
+  /** Geometry is a distinct dock node backed by the same wizard and controls. */
+  val geometry: DataWizardPage = wizard.view.detach(WizardTab.Geometry)
+
   private val empty   = ImportWizardView.label("import-empty", "t12")
   private val reading = ImportWizardView.label("import-status", "t12")
   private val note    = ImportWizardView.label("import-problem", "t12")
@@ -98,6 +101,14 @@ final class ColumnMappingPaneHost(
     if !opened then Vector.empty
     else ColumnMappingPane.focusStops(ImportWizardVM.of(wizard.model, model().document))
 
+  def geometryStops: Vector[FocusStop] =
+    if !opened then Vector.empty
+    else
+      ColumnMappingPane.siblingStops(
+        ImportWizardVM.of(wizard.model, model().document),
+        WizardTab.Geometry
+      )
+
   /** Follow the model: reload when the selected revision changes. Nothing
     * is read until the Data perspective has been shown.
     */
@@ -109,7 +120,7 @@ final class ColumnMappingPaneHost(
     * could not be read are named in the pane's notice.
     */
   def presetsLoaded(presets: ImportPresets, errors: Vector[String]): Unit =
-    wizard.reset(wizard.model.withPresets(presets))
+    wizard.presetsLoaded(presets)
     if errors.nonEmpty then notice = Some(PaneNotice.PresetsUnreadable(errors))
     render()
 
@@ -228,6 +239,7 @@ final class ColumnMappingPaneHost(
 
   private def render(): Unit =
     val vm = ColumnMappingPane.vm(shown, remaining > 0, notice)
+    geometry.availability(opened, vm)
     empty.setText(vm.empty.getOrElse(""))
     empty.setVisible(vm.empty.isDefined)
     empty.setManaged(vm.empty.isDefined)

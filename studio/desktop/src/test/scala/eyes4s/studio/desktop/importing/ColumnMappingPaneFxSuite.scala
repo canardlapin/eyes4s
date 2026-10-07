@@ -34,7 +34,7 @@ import eyes4s.studio.core.bundle.{BundleSamples, InputKind, LockOwner, SharingOp
 import eyes4s.studio.core.command.HistoryStack
 import eyes4s.studio.core.document.*
 import eyes4s.studio.core.fixture.StoryMoment
-import eyes4s.studio.core.importing.ColumnChoice
+import eyes4s.studio.core.importing.{ColumnChoice, GeometryField}
 import eyes4s.studio.core.session.ProjectSession
 import eyes4s.studio.desktop.StudioWindow
 import eyes4s.studio.desktop.harness.FxStage
@@ -531,4 +531,43 @@ class ColumnMappingPaneFxSuite extends ShellFxSuite:
       case Some(WizardProblem.ReadFailed(path, _)) => assertEquals(path, "inputs/trials.csv")
       case other => fail(s"expected a read failure, got $other")
     assertEquals(runOnFx(w.columnMapping.wizard.model.fixations), None)
+  }
+
+  fxStage.test(
+    "Geometry is a distinct Data sibling editing and committing the selected shared draft"
+  ) { fx =>
+    assumeFullStage(fx)
+    withProject { (_, port) =>
+      val w = boot(fx, StoryModels.t1Data, StoryMoment.T1, project = Some(port))
+      loaded(fx, w, r3)
+      val geometryPane = runOnFx(w.host.node(StudioLayouts.dataGeometry))
+        .getOrElse(fail("no Geometry dock pane"))
+      assert(runOnFx(w.columnMapping.geometry.node.getParent eq geometryPane))
+      val before = runOnFx(w.runtime.model)
+      val width  = w.columnMapping.wizard.view.geometryFields(GeometryField.ImageWidth)
+      fx.robot.click(width)
+      runOnFx(width.selectAll())
+      fx.robot.typeText("1000")
+      assertEquals(
+        runOnFx(w.columnMapping.wizard.model.geometry.field(GeometryField.ImageWidth)),
+        "1000"
+      )
+      assertEquals(runOnFx(w.runtime.model.document), before.document)
+      // A late preset answer changes neither the shared geometry draft nor its sources.
+      runOnFx(
+        w.columnMapping
+          .presetsLoaded(eyes4s.studio.core.importing.ImportPresets.empty, Vector.empty)
+      )
+      assertEquals(runOnFx(width.getText), "1000")
+      fx.robot.click(w.columnMapping.geometry.commit)
+      loaded(fx, w, r3)
+      val after = runOnFx(w.runtime.model)
+      assertEquals(after.document.dataset(r3).map(_.geometry.image.width), Some(1000))
+      assertEquals(after.history.science.done.size, before.history.science.done.size + 1)
+      assertEquals(after.document.datasets.map(_.id), before.document.datasets.map(_.id))
+      dispatch(fx, w, Intent.Undo(HistoryStack.Science))
+      loaded(fx, w, r3)
+      assertEquals(runOnFx(w.runtime.model.document), before.document)
+      assertEquals(runOnFx(width.getText), "1024")
+    }
   }

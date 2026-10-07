@@ -398,3 +398,39 @@ class ColumnMappingPaneSuite extends munit.FunSuite:
       m.document
     )
   }
+
+  test("the sibling Geometry page edits the same draft and commits one reversible revision") {
+    val m         = StoryModels.t1Data
+    val (spec, w) = opened(m)
+    val changed   =
+      run(w, m.document, WizardIntent.EditGeometry(GeometryField.ImageWidth, "1000"))
+    assert(changed.editedSince(w))
+    val vm = ImportWizardVM.of(changed, m.document)
+    assertEquals(
+      ColumnMappingPane.siblingStops(vm, WizardTab.Geometry).take(7).map(_.name),
+      vm.geometry.map(_.label)
+    )
+    assertEquals(
+      ColumnMappingPane.siblingStops(vm, WizardTab.Geometry).takeRight(2).map(_.name),
+      Vector("Geometry · Revert", "Geometry · Apply to r3")
+    )
+    val (_, fx)  = ImportWizard.update(changed, WizardIntent.Commit, m.document)
+    val commands = fx.collect { case WizardEffect.Dispatch(c) => c }
+    assertEquals(commands.size, 1)
+    commands.head match
+      case Command.ReviseDataset(id, mapping, units, geometry, attributes, inventory) =>
+        assertEquals(id, spec.id)
+        assertEquals(mapping, spec.mapping)
+        assertEquals(units, spec.units)
+        assertEquals(geometry.image.width, 1000)
+        assertEquals(attributes, spec.attributes)
+        assertEquals(inventory, spec.inventory)
+      case other => fail(s"expected one ReviseDataset, got $other")
+    val after = AppModel.run(m, WizardEffect.appIntents(fx))._1
+    assertEquals(after.history.science.done.size, m.history.science.done.size + 1)
+    assertEquals(after.document.datasets.map(_.id), m.document.datasets.map(_.id))
+    assertEquals(
+      AppModel.update(after, Intent.Undo(HistoryStack.Science))._1.document,
+      m.document
+    )
+  }
