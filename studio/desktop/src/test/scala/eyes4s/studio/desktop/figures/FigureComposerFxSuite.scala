@@ -22,7 +22,8 @@ import eyes4s.studio.app.figures.{
   ComposerIntent,
   FigureIntent,
   PageWidth,
-  PanelBody
+  PanelBody,
+  NewPanel
 }
 import eyes4s.studio.app.nav.Location
 import eyes4s.studio.app.Intent
@@ -349,4 +350,43 @@ class FigureComposerFxSuite extends ShellFxSuite:
       w.figures.removePanel.isDisable && w.figures.movePanelEarlier.isDisable && w.figures.movePanelLater.isDisable
     )
     assertEquals(order, Vector("A"))
+  }
+
+  fxStage.test(
+    "Start figure with and Add panel menus build the board's A–E without a command bypass"
+  ) { fx =>
+    val w = boot(fx, StoryModels.t2Figures, StoryMoment.T2)
+    loaded(fx, w)
+    runOnFx(
+      w.runtime.dispatch(Intent.Navigate(Location(Perspective.Compare, StoryModels.queryTrail)))
+    )
+    runOnFx(
+      w.runtime.dispatch(Intent.Navigate(Location(Perspective.Figures, Vector(Place.Figures))))
+    )
+    eventually(fx, "all starting templates available")(
+      runOnFx(w.figures.startFigure.getItems.asScala.forall(!_.isDisable))
+    )
+    assertEquals(runOnFx(w.figures.startFigure.getAccessibleRole), AccessibleRole.MENU_BUTTON)
+    assert(runOnFx(w.figures.startFigure.isFocusTraversable))
+    runOnFx(w.figures.startFigure.getItems.get(0).fire())
+    eventually(fx, "Figure 3 starts with encoding A")(
+      w.runtime.model.document.figures.lastOption.exists(f =>
+        f.id.number == 3 && f.panels.map(_.letter.value) == Vector("A")
+      )
+    )
+    Vector(
+      NewPanel.RetrievalGaze,
+      NewPanel.DensityMaps,
+      NewPanel.ParticipantD,
+      NewPanel.ScaleProfile
+    ).zipWithIndex.foreach { (kind, i) =>
+      runOnFx(w.figures.addPanel.getItems.asScala.find(_.getText == kind.label).get.fire())
+      eventually(fx, s"${kind.label} appended")(
+        w.runtime.model.document.figures.last.panels.size == i + 2
+      )
+    }
+    assertEquals(
+      runOnFx(w.runtime.model.document.figures.last.panels),
+      ok(eyes4s.studio.core.fixture.StoryMoments.figure1).panels
+    )
   }

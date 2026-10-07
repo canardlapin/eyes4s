@@ -19,7 +19,8 @@ package eyes4s.studio.desktop.journey
 import eyes4s.studio.app.keys.{AppCommand, CommandRegistry, KeyChord, Modifier}
 import eyes4s.studio.app.nav.Place
 import eyes4s.studio.app.{AppModel, Intent, PlatformDialog, StoryModels}
-import eyes4s.studio.core.backend.RunId
+import eyes4s.studio.core.backend.{PairDesign, RunId}
+import eyes4s.studio.app.figures.NewPanel
 import eyes4s.studio.core.command.Command
 import eyes4s.studio.core.document.*
 import eyes4s.studio.core.fixture.{StoryMoment, StoryMoments}
@@ -28,7 +29,15 @@ import eyes4s.studio.desktop.StudioWindow
 import eyes4s.studio.desktop.harness.{FxStage, Modifiers}
 import eyes4s.studio.desktop.platform.TempDirs
 import eyes4s.studio.desktop.shell.ShellKeys
-import javafx.scene.control.{ComboBox, Labeled, ListView, Menu, MenuItem, RadioButton}
+import javafx.scene.control.{
+  ComboBox,
+  Labeled,
+  ListView,
+  Menu,
+  MenuButton,
+  MenuItem,
+  RadioButton
+}
 import javafx.scene.input.KeyCode
 import javafx.scene.{Node, Parent}
 
@@ -50,9 +59,9 @@ import scala.jdk.CollectionConverters.*
   *    (Ctrl-F2); off macOS the window shows no menu bar (S10.5 K1). The
   *    journey reaches every command it needs from the window, so none is
   *    fired that way ([[viaSystemMenu]] holds what was);
-  *  - starting a draft (`StartDraft`): no control starts one (S7.3), and the
-  *    board's A–E figure (`CreateFigure`): no control adds a panel; as in
-  *    the pointer route.
+  *  - starting a draft (`StartDraft`): no control starts one (S7.3);
+  *  - opening the matched-pair context for figure templates, as the pointer
+  *    route opens its crumb/row. Figure creation itself uses keyboard menus.
   */
 class KeyboardJourneySuite extends GoldenWindow:
   import StoryModels.{p17enc03, sigma2}
@@ -414,10 +423,43 @@ class KeyboardJourneySuite extends GoldenWindow:
       dispatch(
         fx,
         w,
-        Intent.Dispatch(
-          Command.CreateFigure(run6, StoryModels.reporting, ok(StoryMoments.figure1).panels)
+        Intent.Explain(
+          Place.At(
+            StudioRef.Pair(run6, sigma2, PairDesign.Matched, StoryModels.p17ret07, p17enc03)
+          )
         )
       )
+      chord(fx, CommandRegistry.figures)
+      def template(menuName: String, kind: NewPanel): Unit =
+        val menu = tabToNamed(fx, menuName).asInstanceOf[MenuButton]
+        eventually(fx, s"${kind.label} available")(
+          runOnFx(menu.getItems.asScala.exists(i => i.getText == kind.label && !i.isDisable))
+        )
+        val index = runOnFx(
+          menu.getItems.asScala.filterNot(_.isDisable).indexWhere(_.getText == kind.label)
+        )
+        space(fx)
+        eventually(fx, s"$menuName menu open")(runOnFx(menu.isShowing))
+        (0 to index).foreach(_ => fx.robot.press(KeyCode.DOWN))
+        fx.robot.press(KeyCode.ENTER)
+      template("Start figure with", NewPanel.EncodingGaze)
+      eventually(fx, "Figure 4 begins with A")(
+        w.runtime.model.document.figures.lastOption.exists(f =>
+          f.id.number == 4 && f.panels.map(_.letter.value) == Vector("A")
+        )
+      )
+      Vector(
+        NewPanel.RetrievalGaze,
+        NewPanel.DensityMaps,
+        NewPanel.ParticipantD,
+        NewPanel.ScaleProfile
+      ).zipWithIndex.foreach { (kind, i) =>
+        template("Add panel", kind)
+        eventually(fx, s"${kind.label} appended")(
+          w.runtime.model.document.figures.last.panels.size == i + 2
+        )
+      }
+      assertEquals(model(w).document.figures.last.panels, ok(StoryMoments.figure1).panels)
       val figure = model(w).document.figures.last.id
       assertEquals(figure.number, 4)
       // The figure list's row for Figure 4.

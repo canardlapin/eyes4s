@@ -18,6 +18,8 @@ package eyes4s.studio.app.figures
 
 import eyes4s.studio.app.AppModel
 import eyes4s.studio.app.compare.{PanelFocus, TrialPanels}
+import eyes4s.studio.core.backend.RunId
+import eyes4s.studio.core.figures.RebindProposal
 import eyes4s.studio.core.command.Command
 import eyes4s.studio.core.document.*
 
@@ -110,57 +112,113 @@ object AddPanel:
       kind: NewPanel
   ): Either[String, PanelSpec] =
     val focus = TrialPanels.focusOf(model).filter(_.run == figure.run)
-    for
-      letter <- nextLetter(figure)
-      panel  <- kind match
-        case NewPanel.EncodingGaze =>
-          focus
-            .flatMap(_.reference)
-            .map((_, reference) =>
-              PanelSpec(
-                letter,
-                kind.label,
-                PanelScale.Unscaled,
-                PanelSelection.Trial(reference)
-              )
-            )
-            .toRight(AddPanelText.NoPair)
-        case NewPanel.RetrievalGaze =>
-          focus
-            .map(f =>
-              PanelSpec(letter, kind.label, PanelScale.Unscaled, PanelSelection.Trial(f.query))
-            )
-            .toRight(AddPanelText.NoQuery)
-        case NewPanel.DensityMaps =>
-          for
-            f     <- focus.toRight(AddPanelText.NoQuery)
-            sigma <- sigmaOf(model, f).toRight(AddPanelText.noScale(f))
-          yield PanelSpec(
-            letter,
-            kind.label,
-            PanelScale.At(sigma),
-            PanelSelection.QueryWithReferences(f.query)
-          )
-        case NewPanel.ParticipantD =>
-          oneScale(model, figure, selected, focus)
-            .map(sigma =>
-              PanelSpec(
-                letter,
-                grouped(model, figure, kind.label),
-                PanelScale.At(sigma),
-                PanelSelection.AllQueries
-              )
-            )
-        case NewPanel.ScaleProfile =>
-          Right(
+    nextLetter(figure).flatMap(letter =>
+      make(
+        model,
+        figure.reporting,
+        letter,
+        kind,
+        focus,
+        oneScale(model, figure, selected, focus)
+      )
+    )
+
+  /** A new figure begins with A, using the same context as Add panel. */
+  def firstSpec(
+      model: AppModel,
+      run: RunId,
+      reporting: ReportingId,
+      kind: NewPanel
+  ): Either[String, PanelSpec] =
+    val focus = TrialPanels.focusOf(model).filter(_.run == run)
+    val scale = focus
+      .flatMap(sigmaOf(model, _))
+      .orElse(
+        model.document
+          .run(run)
+          .flatMap(r => model.document.analysis(r.analysis))
+          .flatMap(_.recipe.scales.values.headOption)
+      )
+      .toRight(s"${run.label} has no scales in the project.")
+    PanelLetter
+      .of("A")
+      .left
+      .map(_.message)
+      .flatMap(letter => make(model, reporting, letter, kind, focus, scale))
+
+  val StartLabel: String = "Start figure with"
+
+  def firstChoices(model: AppModel): AddPanelVM =
+    AddPanelVM(
+      StartLabel,
+      NewPanel.values.toVector.map { kind =>
+        val panel = for
+          run       <- RebindProposal.target(model.freshness).toRight(ComposerText.NoRun)
+          reporting <- model.document.reporting.headOption.toRight(ComposerText.NoReporting)
+          panel     <- firstSpec(model, run.id, reporting.id, kind)
+        yield panel
+        panel match
+          case Right(_)  => AddPanelChoiceVM(kind, kind.label, true, None)
+          case Left(why) => AddPanelChoiceVM(kind, kind.label, false, Some(why))
+      }
+    )
+
+  private def make(
+      model: AppModel,
+      reporting: ReportingId,
+      letter: PanelLetter,
+      kind: NewPanel,
+      focus: Option[PanelFocus],
+      scale: => Either[String, Sigma]
+  ): Either[String, PanelSpec] =
+    kind match
+      case NewPanel.EncodingGaze =>
+        focus
+          .flatMap(_.reference)
+          .map((_, reference) =>
             PanelSpec(
               letter,
-              grouped(model, figure, kind.label),
-              PanelScale.AllScales,
+              kind.label,
+              PanelScale.Unscaled,
+              PanelSelection.Trial(reference)
+            )
+          )
+          .toRight(AddPanelText.NoPair)
+      case NewPanel.RetrievalGaze =>
+        focus
+          .map(f =>
+            PanelSpec(letter, kind.label, PanelScale.Unscaled, PanelSelection.Trial(f.query))
+          )
+          .toRight(AddPanelText.NoQuery)
+      case NewPanel.DensityMaps =>
+        for
+          f     <- focus.toRight(AddPanelText.NoQuery)
+          sigma <- sigmaOf(model, f).toRight(AddPanelText.noScale(f))
+        yield PanelSpec(
+          letter,
+          kind.label,
+          PanelScale.At(sigma),
+          PanelSelection.QueryWithReferences(f.query)
+        )
+      case NewPanel.ParticipantD =>
+        scale
+          .map(sigma =>
+            PanelSpec(
+              letter,
+              grouped(model, reporting, kind.label),
+              PanelScale.At(sigma),
               PanelSelection.AllQueries
             )
           )
-    yield panel
+      case NewPanel.ScaleProfile =>
+        Right(
+          PanelSpec(
+            letter,
+            grouped(model, reporting, kind.label),
+            PanelScale.AllScales,
+            PanelSelection.AllQueries
+          )
+        )
 
   private def nextLetter(figure: FigureSpec): Either[String, PanelLetter] =
     val used = figure.panels.map(_.letter.value).toSet
@@ -198,9 +256,9 @@ object AddPanel:
       .toRight(AddPanelText.noRunScale(figure))
 
   // "Participant D by response" when the figure's spec groups.
-  private def grouped(model: AppModel, figure: FigureSpec, title: String): String =
+  private def grouped(model: AppModel, reporting: ReportingId, title: String): String =
     model.document.reporting
-      .find(_.id == figure.reporting)
+      .find(_.id == reporting)
       .flatMap(_.groupBy)
       .fold(title)(c => s"$title by ${c.label}")
 

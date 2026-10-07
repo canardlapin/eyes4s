@@ -714,12 +714,44 @@ object GoldenRoute:
             ).as(next)
           )
       ),
-      // The board's Figure 1 panels (A–E) have no control yet: no control adds
-      // a panel (AddPanel), so the figure is made by command (a named bypass).
-      sync("create Figure 4 on run 6, panels A–E as the board's Figure 1")(d =>
-        StoryMoments.figure1
-          .leftMap(e => DriverError.Expectation("figure 1", "valid", e.message))
-          .flatMap(f => d.command(Command.CreateFigure(run6, StoryModels.reporting, f.panels)))
+      sync("create Figure 4 through Start figure with and Add panel templates")(d =>
+        // The user's pair choice supplies the encoding trial and query.
+        val pair    = StudioRef.Pair(run6, sigma2, PairDesign.Matched, p17ret07, p17enc03)
+        val focused = d.perform(
+          "open the matched pair",
+          Intent.Explain(eyes4s.studio.app.nav.Place.At(pair))
+        )
+        val actions = Vector(ComposerIntent.NewFigureWith(NewPanel.EncodingGaze)) ++
+          Vector(
+            NewPanel.RetrievalGaze,
+            NewPanel.DensityMaps,
+            NewPanel.ParticipantD,
+            NewPanel.ScaleProfile
+          )
+            .map(ComposerIntent.AddPanelOf.apply)
+        actions
+          .foldLeft(focused) { (acc, action) =>
+            acc.flatMap { current =>
+              val (_, effects) =
+                FigureComposer.update(FigureComposer.empty, current.model, action)
+              effects
+                .collect { case ComposerEffect.App(i) => i }
+                .foldLeft(Right(current): Either[DriverError, StudioDriver])((next, i) =>
+                  next.flatMap(_.perform("figure template control", i))
+                )
+            }
+          }
+          .flatMap(next =>
+            StoryMoments.figure1
+              .leftMap(e => DriverError.Expectation("board figure", "valid", e.message))
+              .flatMap(expected =>
+                expect(
+                  "figure panels",
+                  expected.panels,
+                  next.model.document.figures.last.panels
+                ).as(next)
+              )
+          )
       ),
       check("the figure binds run 6 and the spec")(d =>
         expect(

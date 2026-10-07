@@ -1019,3 +1019,62 @@ class FigureComposerSuite extends munit.ScalaCheckSuite:
     assertEquals(effects, Vector.empty)
     assertEquals(figure(selected, 1).panels.map(_.letter.value), Vector("A"))
   }
+
+  test("Start figure with a template constructs exact board A–E through composer intents") {
+    val compare = StoryModels.play(
+      t2,
+      _ => Intent.Navigate(Location(Perspective.Compare, StoryModels.queryTrail))
+    )
+    val (_, effects) = FigureComposer.update(
+      FigureComposer.empty,
+      compare,
+      ComposerIntent.NewFigureWith(NewPanel.EncodingGaze)
+    )
+    val started = run(compare, effects)
+    assertEquals(figure(started, 3).panels.map(_.letter.value), Vector("A"))
+    assertEquals(FigureComposer.shownPanel(started), Some(letter("A")))
+    val all = Vector(
+      NewPanel.RetrievalGaze,
+      NewPanel.DensityMaps,
+      NewPanel.ParticipantD,
+      NewPanel.ScaleProfile
+    )
+      .foldLeft(started)((m, kind) => add(m, kind)._1)
+    assertEquals(figure(all, 3).panels, ok(StoryMoments.figure1).panels)
+    val undone = AppModel.update(all, Intent.Undo(HistoryStack.Science))._1
+    assertEquals(figure(undone, 3).panels.map(_.letter.value), Vector("A", "B", "C", "D"))
+    assertEquals(
+      figure(AppModel.update(undone, Intent.Redo(HistoryStack.Science))._1, 3),
+      figure(all, 3)
+    )
+  }
+
+  test(
+    "Start figure choices say why a trial template is unavailable; refused intent creates nothing"
+  ) {
+    val view = FigureComposer.view(FigureComposer.empty, t2).startFigure
+    assertEquals(view.label, AddPanel.StartLabel)
+    assertEquals(
+      view.choices.map(c => (c.kind, c.enabled)),
+      Vector(
+        NewPanel.EncodingGaze  -> false,
+        NewPanel.RetrievalGaze -> false,
+        NewPanel.DensityMaps   -> false,
+        NewPanel.ParticipantD  -> true,
+        NewPanel.ScaleProfile  -> true
+      )
+    )
+    val (state, effects) = FigureComposer.update(
+      FigureComposer.empty,
+      t2,
+      ComposerIntent.NewFigureWith(NewPanel.EncodingGaze)
+    )
+    assertEquals(state.problem, Some(AddPanelText.NoPair))
+    assertEquals(effects, Vector.empty)
+    for kind <- Vector(NewPanel.ParticipantD, NewPanel.ScaleProfile) do
+      val (_, made) =
+        FigureComposer.update(FigureComposer.empty, t2, ComposerIntent.NewFigureWith(kind))
+      val panels = figure(run(t2, made), 3).panels
+      assertEquals(panels.size, 1)
+      assertEquals(panels.head.letter, letter("A"))
+  }

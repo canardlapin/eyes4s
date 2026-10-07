@@ -99,7 +99,9 @@ class FigurePageMapSuite extends munit.FunSuite:
       AppearanceVM(Vector.empty, Vector.empty, None, ("images", true)),
       greyscale = false,
       ExportVM(Vector.empty, "Export", None),
-      AddPanelVM("Add panel", Vector.empty)
+      AddPanelVM("Add panel", Vector.empty),
+      eyes4s.studio.app.figures
+        .PanelEditingVM(Some(right(PanelLetter.of("C"))), false, false, false)
     )
 
   private def grobs(g: Grob): Vector[Grob] = g +: g.children.flatMap(grobs)

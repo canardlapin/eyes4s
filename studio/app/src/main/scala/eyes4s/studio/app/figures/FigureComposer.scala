@@ -88,6 +88,9 @@ enum ComposerIntent derives CanEqual:
     */
   case NewFigure
 
+  /** Begin a figure with one chosen template, letter A. */
+  case NewFigureWith(kind: NewPanel)
+
   /** Add panel (bead bd-01M44PBFHM4CWTXJAKQYMVV7RY): a `kind` panel, last,
     * in the shown figure ([[AddPanel]]), which the trail then shows.
     */
@@ -257,6 +260,7 @@ final case class PageVM(
 final case class ComposerVM(
     figures: FiguresVM,
     newFigure: String,
+    startFigure: AddPanelVM,
     widths: Vector[(PageWidth, String, Boolean)],
     page: Option[PageVM],
     methods: Option[MethodsVM],
@@ -473,6 +477,7 @@ object FigureComposer:
           Vector(ComposerEffect.App(Intent.Navigate(figureTrail(f, Some(letter)))))
         )
       case NewFigure                => newFigure(c, model)
+      case NewFigureWith(kind)      => newFigure(c, model, Some(kind))
       case AddPanelOf(kind)         => addPanel(c, model, kind)
       case RemoveSelectedPanel      => editPanel(c, model, None)
       case MoveSelectedPanelEarlier => editPanel(c, model, Some(-1))
@@ -615,7 +620,8 @@ object FigureComposer:
 
   private def newFigure(
       c: FigureComposer,
-      model: AppModel
+      model: AppModel,
+      kind: Option[NewPanel] = None
   ): (FigureComposer, Vector[ComposerEffect]) =
     val document = model.document
     val made     = for
@@ -625,25 +631,28 @@ object FigureComposer:
         .analysis(run.analysis)
         .map(_.recipe.scales.values)
         .toRight(ComposerText.NoRun)
-      first <- scales.headOption.toRight(ComposerText.NoRun)
-      a     <- PanelLetter.of("A").left.map(_.message)
-      b     <- PanelLetter.of("B").left.map(_.message)
-      next  <- document.nextFigureId.left.map(_.message)
+      first  <- scales.headOption.toRight(ComposerText.NoRun)
+      a      <- PanelLetter.of("A").left.map(_.message)
+      b      <- PanelLetter.of("B").left.map(_.message)
+      next   <- document.nextFigureId.left.map(_.message)
+      panels <- kind match
+        case Some(template) =>
+          AddPanel.firstSpec(model, run.id, rep.id, template).map(Vector(_))
+        case None =>
+          Right(
+            Vector(
+              PanelSpec(
+                a,
+                s"Participant D, ${first.render}",
+                PanelScale.At(first),
+                PanelSelection.AllQueries
+              ),
+              PanelSpec(b, "Scale profile", PanelScale.AllScales, PanelSelection.AllQueries)
+            )
+          )
     yield (
       next,
-      Command.CreateFigure(
-        run.id,
-        rep.id,
-        Vector(
-          PanelSpec(
-            a,
-            s"Participant D, ${first.render}",
-            PanelScale.At(first),
-            PanelSelection.AllQueries
-          ),
-          PanelSpec(b, "Scale profile", PanelScale.AllScales, PanelSelection.AllQueries)
-        )
-      )
+      Command.CreateFigure(run.id, rep.id, panels)
     )
     made match
       case Left(why)             => (c.copy(problem = Some(why)), none)
@@ -652,7 +661,14 @@ object FigureComposer:
           c.copy(problem = None),
           Vector(
             ComposerEffect.App(Intent.Dispatch(create)),
-            ComposerEffect.App(Intent.Navigate(figureTrail(next, None)))
+            ComposerEffect.App(
+              Intent.Navigate(
+                figureTrail(
+                  next,
+                  create.panels.headOption.filter(_ => kind.isDefined).map(_.letter)
+                )
+              )
+            )
           )
         )
 
@@ -781,6 +797,7 @@ object FigureComposer:
     ComposerVM(
       FigureBinding.view(c.binding, model),
       "New figure",
+      AddPanel.firstChoices(model),
       PageWidth.values.toVector.map(w => (w, w.label, w == c.width)),
       page.flatMap(_.toOption),
       methods,

@@ -364,6 +364,8 @@ final class FiguresHost(
   val newFigure: Button = Button()
   newFigure.getStyleClass.add("figures-new")
   newFigure.setOnAction(_ => dispatch(ComposerIntent.NewFigure))
+  val startFigure: MenuButton = MenuButton(AddPanel.StartLabel)
+  startFigure.setAccessibleText(AddPanel.StartLabel)
   private val count = Label()
   count.getStyleClass.addAll("figures-count", "t11")
   private val rows    = VBox()
@@ -377,7 +379,7 @@ final class FiguresHost(
 
   /** The Figures navigator pane. */
   val navigatorNode: VBox =
-    val head = HBox(8.0, newFigure, spacer(), count)
+    val head = HBox(8.0, newFigure, startFigure, spacer(), count)
     head.setAlignment(Pos.CENTER_LEFT)
     val box = VBox(6.0, head, rows, notice, dialog, problem)
     box.getStyleClass.add("figures-navigator")
@@ -652,6 +654,7 @@ final class FiguresHost(
 
   private def renderNavigator(v: ComposerVM): Unit =
     newFigure.setText(v.newFigure)
+    renderPanelChoices(startFigure, v.startFigure, ComposerIntent.NewFigureWith.apply)
     newFigure.setAccessibleText(v.newFigure)
     count.setText(v.figures.header)
     rows.getChildren.setAll(v.figures.rows.map { r =>
@@ -1100,17 +1103,24 @@ final class FiguresHost(
     }*): Unit
 
   private def renderAddPanel(v: AddPanelVM): Unit =
-    addPanel.setText(v.label)
-    addPanel.setAccessibleText(v.label)
-    addPanel.setDisable(false)
-    if addPanel.getItems.asScala.toVector.map(_.getText) != v.choices.map(_.text) then
-      addPanel.getItems.setAll(v.choices.map { c =>
+    renderPanelChoices(addPanel, v, ComposerIntent.AddPanelOf.apply)
+
+  private def renderPanelChoices(
+      menu: MenuButton,
+      v: AddPanelVM,
+      intent: NewPanel => ComposerIntent
+  ): Unit =
+    menu.setText(v.label)
+    menu.setAccessibleText(v.label)
+    menu.setDisable(!v.choices.exists(_.enabled))
+    if menu.getItems.asScala.toVector.map(_.getText) != v.choices.map(_.text) then
+      menu.getItems.setAll(v.choices.map { c =>
         val item = MenuItem(c.text)
         item.setDisable(!c.enabled)
-        item.setOnAction(_ => dispatch(ComposerIntent.AddPanelOf(c.kind)))
+        item.setOnAction(_ => dispatch(intent(c.kind)))
         item
       }*): Unit
-    else addPanel.getItems.asScala.zip(v.choices).foreach((i, c) => i.setDisable(!c.enabled))
+    else menu.getItems.asScala.zip(v.choices).foreach((i, c) => i.setDisable(!c.enabled))
 
   private def button(text: String): Button =
     val b = Button(text)
@@ -1123,6 +1133,11 @@ final class FiguresHost(
   def navigatorStops: Vector[FocusStop] =
     val v = vm
     Vector(FocusStop(A11yRole.Button, v.newFigure)) ++
+      Option
+        .when(v.startFigure.choices.exists(_.enabled))(
+          FocusStop(A11yRole.MenuButton, v.startFigure.label)
+        )
+        .toVector ++
       v.figures.rows.map(r => FocusStop(A11yRole.Button, FiguresHost.rowName(r))) ++
       v.figures.notice.toVector.flatMap(n =>
         Vector(FocusStop(A11yRole.Button, n.rebind), FocusStop(A11yRole.Button, n.keep))

@@ -20,7 +20,8 @@ import eyes4s.studio.app.driver.GoldenJourney
 import eyes4s.studio.app.keys.{CommandId, CommandRegistry}
 import eyes4s.studio.app.nav.{DataSection, Location, Place}
 import eyes4s.studio.app.{AppModel, Intent, PlatformDialog, StoryModels}
-import eyes4s.studio.core.backend.RunId
+import eyes4s.studio.core.backend.{PairDesign, RunId}
+import eyes4s.studio.app.figures.NewPanel
 import eyes4s.studio.core.command.Command
 import eyes4s.studio.core.document.*
 import eyes4s.studio.core.fixture.{StoryMoment, StoryMoments}
@@ -29,7 +30,15 @@ import eyes4s.studio.desktop.StudioWindow
 import eyes4s.studio.desktop.harness.{FxStage, StudioTheme}
 import eyes4s.studio.desktop.platform.TempDirs
 import javafx.scene.Node
-import javafx.scene.control.{Button, Labeled, Menu, MenuItem, RadioButton, ToggleButton}
+import javafx.scene.control.{
+  Button,
+  Labeled,
+  Menu,
+  MenuButton,
+  MenuItem,
+  RadioButton,
+  ToggleButton
+}
 
 import java.nio.file.Files
 import scala.concurrent.duration.*
@@ -57,9 +66,6 @@ import scala.jdk.CollectionConverters.*
   *  - starting a draft (`StartDraft`, rev 4 on r3 and rev 5 with σ 8°): no
   *    control starts a draft or edits a recipe yet (S7.3,
   *    bd-01M3DPFSE5NN4B3SSHHYA76B5B);
-  *  - the board's Figure 1 panels A–E (`CreateFigure`, Figure 4): New figure
-  *    makes Figure 3 with its two default panels, and no control adds a
-  *    panel (`AddPanel`) yet (a bead is requested in the S10.1 report);
   *  - the fake's `declare` of a draft's revision, until S3.7 binds plans.
   */
 class GoldenJourneyFxSuite extends GoldenWindow:
@@ -319,15 +325,40 @@ class GoldenJourneyFxSuite extends GoldenWindow:
         Some((run6, 2))
       )
 
-      // Figure 4 with the board's panels (CreateFigure: a named bypass until
-      // a control adds panels), and its bundle with the project snapshot.
+      // Figure 4 is authored through the template menus. Pair navigation is
+      // the same named crumb/row bypass used elsewhere in this route.
       dispatch(
         fx,
         w,
-        Intent.Dispatch(
-          Command.CreateFigure(run6, StoryModels.reporting, ok(StoryMoments.figure1).panels)
+        Intent.Explain(
+          Place.At(StudioRef.Pair(run6, sigma2, PairDesign.Matched, p17ret07, p17enc03))
         )
       )
+      dispatch(fx, w, Intent.Navigate(Location(Perspective.Figures, Vector(Place.Figures))))
+      def template(menuName: String, kind: NewPanel): Unit =
+        val menu = control(fx, w, menuName) { case m: MenuButton => m }
+        eventually(fx, s"${kind.label} available")(
+          runOnFx(menu.getItems.asScala.exists(i => i.getText == kind.label && !i.isDisable))
+        )
+        runOnFx(menu.getItems.asScala.find(_.getText == kind.label).get.fire())
+      template("Start figure with", NewPanel.EncodingGaze)
+      eventually(fx, "Figure 4 starts with A")(
+        w.runtime.model.document.figures.lastOption.exists(f =>
+          f.id.number == 4 && f.panels.map(_.letter.value) == Vector("A")
+        )
+      )
+      Vector(
+        NewPanel.RetrievalGaze,
+        NewPanel.DensityMaps,
+        NewPanel.ParticipantD,
+        NewPanel.ScaleProfile
+      ).zipWithIndex.foreach { (kind, i) =>
+        template("Add panel", kind)
+        eventually(fx, s"${kind.label} appended")(
+          w.runtime.model.document.figures.last.panels.size == i + 2
+        )
+      }
+      assertEquals(model(w).document.figures.last.panels, ok(StoryMoments.figure1).panels)
       val figure = model(w).document.figures.last.id
       assertEquals(figure.number, 4)
       dispatch(
