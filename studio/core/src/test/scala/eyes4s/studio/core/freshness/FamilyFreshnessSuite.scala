@@ -54,7 +54,7 @@ class FamilyFreshnessSuite extends munit.FunSuite:
       RunLifecycle.Cancelled(None)).foreach { state =>
       val other = run(3, b4, state)
       val result = derive(Vector(first, own, other))
-      val running = RunActivity.Running(own.id, own.analysis, None)
+      val running = new RunActivity.Running(own.id, own.analysis, None)
       assertEquals(result.badge, Badge.Shown(first, RunStanding.Current, Some(running)))
       assertEquals(result.banner, Some(Banner.NewerRunning(first, running, Vector.empty)))
       assertEquals(result.activity.map(_.run), Some(
