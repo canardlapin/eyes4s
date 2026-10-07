@@ -687,6 +687,50 @@ class MethodsGeneratorSuite extends munit.FunSuite:
     }
   }
 
+  test("restoring the saved baseline before callbacks retains the exact authored snapshot") {
+    read.map { (summary, facts, report) =>
+      val edited   = act(composer(facts, summary, report), MethodsIntent.Edit("Authored."))
+      val restored = act(reopened(edited), MethodsIntent.Edit(Golden))
+      assertEquals(methods(restored).text, Right(Golden))
+      assertEquals(restored.model.document.figures.head.methods.map(_.edited), Some(Golden))
+      val refused = act(restored, MethodsIntent.FactsRead(run7, Left("unavailable")))
+      assertEquals(methods(refused).text, Right(Golden))
+      assertEquals(methods(reopened(refused)).text, Right(Golden))
+    }
+  }
+
+  test("keeping prose equal to the pending offer retains that snapshot before callbacks") {
+    read.map { (summary, facts, report) =>
+      val edited  = act(composer(facts, summary, report), MethodsIntent.Edit("Authored."))
+      val changed = act(
+        edited,
+        MethodsIntent.FactsRead(
+          run7,
+          Right(facts.copy(failures = Vector("study-failure.empty-map" -> 3)))
+        )
+      )
+      val pending = act(changed, MethodsIntent.Regenerate)
+      val offered = pending.model.document.figures.head.methods.get.pending.get
+      val same    = act(reopened(pending), MethodsIntent.Edit(offered))
+      val kept    = act(same, MethodsIntent.KeepEdits)
+      assertEquals(methods(kept).text, Right(offered))
+      assertEquals(kept.model.document.figures.head.methods.map(_.base), Some(offered))
+      assertEquals(kept.model.document.figures.head.methods.flatMap(_.pending), None)
+      assertEquals(methods(reopened(kept)).text, Right(offered))
+    }
+  }
+
+  test("explicit unedited regeneration persists the generated snapshot through reopen") {
+    read.map { (summary, facts, report) =>
+      val regenerated = act(composer(facts, summary, report), MethodsIntent.Regenerate)
+      assertEquals(methods(reopened(regenerated)).text, Right(Golden))
+      val stored = regenerated.model.document.figures.head.methods.get
+      assertEquals(stored.base, Golden)
+      assertEquals(stored.edited, Golden)
+      assertEquals(stored.pending, None)
+    }
+  }
+
   test("sentences split at sentence ends only, and a rewrite counts once") {
     assertEquals(
       TextDiff.sentences("Cell 0.46°, σ = 0.5°. D = M − B. (P17) held 2. 18 left."),

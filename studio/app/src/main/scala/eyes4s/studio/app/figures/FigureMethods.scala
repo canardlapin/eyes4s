@@ -124,8 +124,7 @@ object FigureMethods:
       case Edit(text)             =>
         val next = (draft, current) match
           case (Some(d), _) =>
-            set(Some(d.copy(edited = text)).filter(d => d.isEdited || d.pending.isDefined))
-              .copy(status = None)
+            set(Some(d.copy(edited = text))).copy(status = None)
           case (None, Right(g)) if text != g.text =>
             set(Some(MethodsDraft(g.text, text, None))).copy(status = None)
           // Nothing to edit until the text is generated.
@@ -150,14 +149,15 @@ object FigureMethods:
               )
           case (_, Right(g)) =>
             (
-              set(None).copy(status = Some(MethodsStatus.Message(MethodsCopy.regenerated(g)))),
+              set(Some(MethodsDraft(g.text, g.text, None)))
+                .copy(status = Some(MethodsStatus.Message(MethodsCopy.regenerated(g)))),
               None
             )
       case KeepEdits =>
         draft.flatMap(d => d.pending.map(p => d.copy(base = p, pending = None))) match
           case Some(d) =>
             (
-              set(Some(d).filter(_.isEdited))
+              set(Some(d))
                 .copy(status = Some(MethodsStatus.Message(MethodsCopy.Kept))),
               None
             )
