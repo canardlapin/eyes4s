@@ -9,6 +9,7 @@ button: Review in Analysis
 button: Discard draft
 list: Figures
 button: New figure
+menu-button: Start figure with
 button: Figure 1, current, run 7 · rev 4 · data r3
 button: Figure 2, Stale, run 5 · rev 3 · data r2
 plot: Figure
@@ -18,6 +19,9 @@ button: Greyscale check, off
 button: Zoom out (−)
 button: Zoom in (+)
 menu-button: Add panel
+button: Move panel earlier
+button: Move panel later
+button: Remove panel
 button: Panel A, Encoding gaze
 button: Panel B, Retrieval gaze
 button: Panel C, Density maps
