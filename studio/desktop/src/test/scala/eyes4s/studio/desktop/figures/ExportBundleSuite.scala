@@ -22,7 +22,7 @@ import eyes4s.results.ResultCell
 import eyes4s.studio.app.compare.SummaryAnswer
 import eyes4s.studio.app.explore.DisplaySource
 import eyes4s.studio.app.figures.*
-import eyes4s.studio.app.{AppModel, StoryModels}
+import eyes4s.studio.app.{AppModel, Intent, StoryModels}
 import eyes4s.studio.core.backend.{
   PairRowPage,
   QueryRow,
@@ -32,7 +32,7 @@ import eyes4s.studio.core.backend.{
   ResultSummary,
   TrialTally
 }
-import eyes4s.studio.core.document.PanelLetter
+import eyes4s.studio.core.document.{PanelLetter, StudioDocument}
 import eyes4s.studio.core.figures.{
   BundleTableError,
   BundleTables,
@@ -118,13 +118,17 @@ class ExportBundleSuite extends munit.FunSuite:
         .fold(fail(_), identity)
       Served(ok(summary), ok(rows), ok(scores), c, ok(pairs), report)
 
-  private def request(c: FigureComposer): BundleRequest =
-    FigureComposer.update(c, t2, ComposerIntent.ExportBundle)._2 match
+  private def request(c: FigureComposer, model: AppModel = t2): BundleRequest =
+    FigureComposer.update(c, model, ComposerIntent.ExportBundle)._2 match
       case Vector(ComposerEffect.WriteBundle(r)) => r
       case other                                 => fail(s"expected one bundle, got $other")
 
-  private def files(s: Served, c: Option[FigureComposer] = None): Map[String, String] =
-    val r = request(c.getOrElse(s.composer))
+  private def files(
+      s: Served,
+      c: Option[FigureComposer] = None,
+      model: AppModel = t2
+  ): Map[String, String] =
+    val r = request(c.getOrElse(s.composer), model)
     ok(BundleFiles.assemble(r, s.summary, s.rows, s.pairs, report = Some(s.report)))
       .map((n, b) => n -> String(Array.from(b), UTF_8))
       .toMap
@@ -663,14 +667,32 @@ class ExportBundleSuite extends munit.FunSuite:
         "D measures spatial correspondence, not sequential replay.",
         "D measures where gaze went, not when."
       )
-      val c = FigureComposer
-        .update(
-          s.composer,
-          t2,
-          ComposerIntent.Methods(MethodsIntent.Edit(edited))
-        )
-        ._1
+      val (c, effects) = FigureComposer.update(
+        s.composer,
+        t2,
+        ComposerIntent.Methods(MethodsIntent.Edit(edited))
+      )
+      val model  = AppModel.run(t2, effects.collect { case ComposerEffect.App(i) => i })._1
+      val figure = request(s.composer).source.figure.id
+      val draft  = model.document.figures
+        .find(_.id == figure)
+        .flatMap(_.methods)
+        .getOrElse(fail("no draft"))
+      assertEquals(draft.base, shown)
+      assertEquals(draft.edited, edited)
       assertEquals(files(s)("methods.md"), shown + "\n")
-      assertEquals(files(s, Some(c))("methods.md"), edited + "\n")
+      assertEquals(files(s, Some(c), model)("methods.md"), edited + "\n")
+
+      val codec    = ok(StudioDocument.codec)
+      val document = ok(codec.decode(ok(codec.encode(model.document))))
+      val reopened = AppModel
+        .update(AppModel.open(document, model.project), Intent.Navigate(model.location))
+        ._1
+      assertEquals(
+        FigureComposer.view(FigureComposer.empty, reopened).methods.flatMap(_.text.toOption),
+        Some(edited)
+      )
+      // Reuse only immutable run reads, with the author's state supplied by the reopened document.
+      assertEquals(files(s, model = reopened)("methods.md"), edited + "\n")
     }
   }
