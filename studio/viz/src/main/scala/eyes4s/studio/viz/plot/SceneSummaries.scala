@@ -27,14 +27,15 @@ import intaglio.{GraphicsName, Grob, PlotSemantics, Scene, SemanticId}
   */
 object SceneSummaries:
 
-  /** A scene's semantic id: `studio-` and its [[SceneId]], every character
-    * outside Intaglio's portable identifier set (letters, digits, `-`, `_`,
-    * `.`) written `-`.
+  /** A scene's semantic id: portable ASCII is retained except `_`, the
+    * escape introducer. Other UTF-16 code units are `_` and four hex digits,
+    * so distinct SceneIds remain distinct on both JVM and JS.
     */
   def semanticId(id: SceneId): SemanticId =
-    val safe = id.value.map(c =>
-      if c.isLetterOrDigit && c < '\u0080' || c == '-' || c == '_' || c == '.' then c else '-'
-    )
+    val safe = id.value.iterator.map { c =>
+      if c.isLetterOrDigit && c < '\u0080' || c == '-' || c == '.' then c.toString
+      else "_" + ("0000" + c.toInt.toHexString).takeRight(4)
+    }.mkString
     SemanticId.unsafe(s"studio-$safe")
 
   /** A scene's semantics: its title; its alt text, what it shows in a

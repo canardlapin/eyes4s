@@ -155,3 +155,19 @@ class CommandRegistrySuite extends munit.ScalaCheckSuite:
     ).foreach(row => assert(rows.contains(row), s"$row\n$table"))
     assert(table.endsWith("\n") && !table.contains("{"), table)
   }
+
+  test("commands without chords have one named menu path with unique access keys") {
+    val menus = eyes4s.studio.app.vm.Menus.bar(StoryModels.t2Compare)
+    CommandRegistry.all.filter(_.shortcut.isEmpty).foreach { command =>
+      val paths = menus.flatMap(menu =>
+        menu.items
+          .filter(_.command == command.id)
+          .map(item => (menu.section, item.submenu, item.label))
+      )
+      assertEquals(paths.size, 1, command.id.value)
+      assert(paths.head._3.nonEmpty, command.id.value)
+    }
+    val accessKeys = menus.map(_.section.mnemonic)
+    assertEquals(accessKeys.distinct, accessKeys)
+    menus.foreach(menu => assert(menu.title.contains(menu.section.mnemonic)))
+  }

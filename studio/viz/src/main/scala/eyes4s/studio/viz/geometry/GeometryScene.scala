@@ -31,7 +31,14 @@ import eyes4s.studio.app.tokens.{
   ThemedToken,
   Tokens
 }
-import eyes4s.studio.viz.plot.{DataPanel, IntaglioColours, PlotScene, PlotSceneError, SceneId}
+import eyes4s.studio.viz.plot.{
+  DataPanel,
+  IntaglioColours,
+  PlotScene,
+  PlotSceneError,
+  SceneId,
+  SceneSummaries
+}
 import intaglio.{
   BatchColumn,
   Clip,
@@ -46,6 +53,7 @@ import intaglio.{
   PointShape,
   Rgba,
   Scene,
+  SceneSemantics,
   Size,
   StrokeUnit,
   Viewport,
@@ -80,7 +88,22 @@ object GeometryScene:
       frame: FramePicture,
       trial: ThumbnailPicture
   ): Either[PlotSceneError, PlotScene] =
-    build(id, frame)(() => marks(theme, stage, trial.marks).map(_.toVector))(stage)
+    build(id, frame)(() => marks(theme, stage, trial.marks).map(_.toVector))(stage).map {
+      scene =>
+        scene.withSemantics(
+          SceneSemantics.single(
+            SceneSummaries.semantics(
+              scene.id,
+              s"Placement preview: ${trial.trial.label}",
+              s"${trial.records} records; ${trial.outsideWindow} outside the image window; " +
+                s"${trial.outsideScreen} outside the screen.",
+              s"Screen ${frame.screenWidth} × ${frame.screenHeight} pixels, y down. " +
+                s"Image window at (${frame.left}, ${frame.top}), ${frame.width} × ${frame.height} pixels. " +
+                s"${trial.marks.count(_.place != MarkPlace.OutsideScreen)} marks drawn; off-screen records are counted only."
+            )
+          )
+        )
+    }
 
   /** Every record binned, as ramp levels over the screen. */
   def density(
@@ -89,7 +112,19 @@ object GeometryScene:
       frame: FramePicture,
       picture: DensityPicture
   ): Either[PlotSceneError, PlotScene] =
-    build(id, frame)(() => cells(frame, picture))(stage)
+    build(id, frame)(() => cells(frame, picture))(stage).map { scene =>
+      scene.withSemantics(
+        SceneSemantics.single(
+          SceneSummaries.semantics(
+            scene.id,
+            "Placement density",
+            s"${picture.records} records binned into ${picture.columns} × ${picture.rows} cells.",
+            s"Screen ${frame.screenWidth} × ${frame.screenHeight} pixels, y down. " +
+              s"${picture.levels.count(_ > 0)} cells drawn at four ramp levels relative to the fullest cell."
+          )
+        )
+      )
+    }
 
   private def build(id: String, frame: FramePicture)(
       content: () => Either[GraphicsError, Vector[Grob]]

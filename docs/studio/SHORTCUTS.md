@@ -9,6 +9,11 @@ also an item of the menu named in the first column. Inside a plot, the
 arrow keys move a roving cursor, Enter selects and Esc clears; Tab leaves
 the plot (DESIGN_SPEC section 10).
 
+On Windows and Linux the menu bar is visible in the window. F10 or Alt
+enters the bar; Alt+F/E/V/G/R/W/H opens File/Edit/View/Go/Run/Window/Help.
+Use arrows to reach items and submenus, Enter to invoke, and Esc to leave.
+Commands without a shortcut are reachable through this menu path.
+
 On macOS the native menu bar's accelerators are the only path for these
 chords (the window's key handler skips them, `CommandRegistry.windowKeymap`),
 so a key press cannot fire a command twice. A disabled command's item is

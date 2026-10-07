@@ -48,7 +48,8 @@ class A11yRenderSuite extends ShellFxSuite:
 
   private def dark(fx: FxStage, w: StudioWindow): Unit =
     runOnFx {
-      val view = w.shell.menus.find(_.getText == "View").getOrElse(fail("no View menu"))
+      val view =
+        w.shell.menus.find(_.getText.stripPrefix("_") == "View").getOrElse(fail("no View menu"))
       view.getItems.asScala
         .collectFirst { case m: Menu if m.getText == "Appearance" => m }
         .flatMap(

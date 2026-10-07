@@ -29,7 +29,7 @@ import javafx.scene.control.{
   SeparatorMenuItem,
   ToggleGroup
 }
-import javafx.scene.input.KeyEvent
+import javafx.scene.input.{KeyCode, KeyCodeCombination, KeyCombination, KeyEvent}
 import javafx.scene.layout.{Priority, StackPane, VBox}
 
 /** The window's content (tickets S1.4–S1.9): app bar, context strip,
@@ -62,15 +62,12 @@ final class AppShell(
   VBox.setVgrow(dockArea, Priority.ALWAYS)
 
   /** The menu bar generated from the command registry (S1.9): the system
-    * menu bar on macOS. Elsewhere it is kept out of the layout, and the
-    * keymap below carries the shortcuts.
+    * menu bar on macOS, and a visible in-window bar elsewhere. F10 or Alt
+    * enters its keyboard navigation; Alt plus a menu's mnemonic opens it.
     */
   val menuBar: MenuBar = MenuBar()
   menuBar.setUseSystemMenuBar(nativeMenu)
   menuBar.setFocusTraversable(false)
-  if !nativeMenu then
-    menuBar.setManaged(false)
-    menuBar.setVisible(false)
 
   val root: VBox =
     VBox(
@@ -85,6 +82,35 @@ final class AppShell(
     )
   root.getStyleClass.add("studio-shell")
 
+  // Use the skin's public scene accelerator: it enters JavaFX's transient
+  // menu focus, so arrows, submenus and Escape keep the normal behavior and
+  // return to the original focus owner. JavaFX binds Ctrl+F10 on Linux/macOS.
+  private def activateMenus(): Unit =
+    Option(menuBar.getScene).foreach { scene =>
+      val controlF10 = KeyCodeCombination(KeyCode.F10, KeyCombination.CONTROL_DOWN)
+      val plainF10   = KeyCodeCombination(KeyCode.F10)
+      Option(scene.getAccelerators.get(controlF10))
+        .orElse(Option(scene.getAccelerators.get(plainF10)))
+        .foreach(_.run())
+    }
+
+  if !nativeMenu then
+    root.addEventFilter(
+      KeyEvent.KEY_PRESSED,
+      (e: KeyEvent) =>
+        if e.getCode == KeyCode.F10 && !e.isAltDown && !e.isControlDown && !e.isMetaDown && !e.isShiftDown
+        then
+          activateMenus()
+          e.consume()
+        else if e.isAltDown && !e.isControlDown && !e.isMetaDown && !e.isShiftDown then
+          shownMenus
+            .zip(menus)
+            .find((vm, _) => e.getCode.getName == vm.section.mnemonic.toString)
+            .foreach { (_, menu) =>
+              menu.show()
+              e.consume()
+            }
+    )
   // The keymap: a registered chord that no focused control consumed is the
   // app's; it is consumed here, so the scene's menu accelerators (which run
   // after the handlers) never dispatch it a second time.
@@ -98,8 +124,10 @@ final class AppShell(
     KeyEvent.KEY_PRESSED,
     (e: KeyEvent) =>
       ShellKeys.chords(e).find(windowKeys.contains).foreach { c =>
-        dispatch(Intent.KeyPressed(c))
+        // Dispatch can rebuild menus and move focus. Consume before those
+        // changes so this press cannot reach a scene accelerator as well.
         e.consume()
+        dispatch(Intent.KeyPressed(c))
       }
   )
 
@@ -159,8 +187,9 @@ final class AppShell(
         menuBar.getMenus.setAll(bar.map(m => Menu(m.title))*): Unit
       bar.zip(menus).zipWithIndex.foreach { case ((vm, menu), i) =>
         if !before.lift(i).contains(vm) then
-          menu.setText(vm.title)
-          menu.setMnemonicParsing(false)
+          menu.setText(if nativeMenu then vm.title
+          else vm.title.replace(vm.section.mnemonic.toString, s"_${vm.section.mnemonic}"))
+          menu.setMnemonicParsing(!nativeMenu)
           menu.getItems.setAll(
             AppShell
               .grouped(vm.items)

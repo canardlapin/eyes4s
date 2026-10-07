@@ -52,7 +52,8 @@ class ThemeFxSuite extends ShellFxSuite:
 
   /** The View menu's Appearance choice `a`, as drawn. */
   private def choice(w: StudioWindow, a: Appearance): RadioMenuItem = runOnFx {
-    val view = w.shell.menus.find(_.getText == "View").getOrElse(fail("no View menu"))
+    val view =
+      w.shell.menus.find(_.getText.stripPrefix("_") == "View").getOrElse(fail("no View menu"))
     view.getItems.asScala
       .collectFirst { case m: Menu if m.getText == "Appearance" => m }
       .getOrElse(fail("no Appearance submenu"))
