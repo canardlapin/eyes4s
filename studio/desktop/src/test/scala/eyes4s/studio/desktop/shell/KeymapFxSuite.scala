@@ -455,8 +455,31 @@ class KeymapFxSuite extends ShellFxSuite:
     fx.robot.press(KeyCode.DOWN)
     assert(runOnFx(w.shell.menus.head.isShowing), "bare Alt did not enter menu navigation")
     popupKey(fx, KeyCode.ESCAPE)
+    def alt(kind: javafx.event.EventType[KeyEvent], down: Boolean): Unit =
+      runOnFx {
+        val target = Option(fx.scene.getFocusOwner).getOrElse(fx.scene.getRoot)
+        Event.fireEvent(
+          target,
+          KeyEvent(
+            kind,
+            KeyEvent.CHAR_UNDEFINED,
+            KeyCode.ALT.getName,
+            KeyCode.ALT,
+            false,
+            false,
+            down,
+            false
+          )
+        )
+      }
+      fx.awaitLayout()
+    alt(KeyEvent.KEY_PRESSED, true)
     fx.robot.press(KeyCode.H, Modifiers(alt = true))
     assert(runOnFx(w.shell.menus.last.isShowing), "Alt+H did not open Help")
+    alt(KeyEvent.KEY_RELEASED, false)
+    assert(runOnFx(w.shell.menus.last.isShowing), "Alt release closed Help")
+    assert(!runOnFx(w.shell.menus.head.isShowing), "Alt release reopened File")
+    assertEquals(dialogs.asked.toVector, Vector.empty)
     popupKey(fx, KeyCode.DOWN)
     popupKey(fx, KeyCode.ENTER)
     assertEquals(dialogs.asked.toVector, Vector(PlatformDialog.About))

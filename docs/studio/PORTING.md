@@ -34,7 +34,7 @@ Each row says who owns the seam's code and whether S0.9 introduced it.
 | 4 | Layout | `studio-app`: `layout.LayoutSpec`, `StudioLayouts` (existing) | map every `PerspectiveLayout` to the host's docking library and report layout changes back as intents | `desktop.dock.DockLayouts` (scaladock) |
 | 5 | Tokens and type | `studio-app`: `tokens.Tokens`, `TokenCss.web`, `TypeCss` (existing) | load the generated web CSS variables (`TokenCss.web`), never literal colours | `desktop.tokens.TokenFiles` (JavaFX CSS) |
 | 6 | Strings | `studio-app`: `text.Messages`, `Catalogue` (existing) | take every visible string from `Messages` | the same |
-| 7 | Scenes | `studio-viz`: `StudioScenes`, `plot`, `trial` (existing) | draw the scenes with an Intaglio backend and feed pointer and keyboard input back through `trial.TrialInput` | `desktop.plot.CanvasPlotHost`, `desktop.trial.*` |
+| 7 | Scenes | `studio-viz`: `StudioScenes`, `plot`, `trial` (existing) | draw the scenes with an Intaglio backend and feed pointer and keyboard input back through `plot.MarkInputState` and `plot.RovingCursor` | `desktop.plot.CanvasPlotHost`, `desktop.trial.*` |
 | 8 | Effects | `studio-app`: `AppEffect` (existing) | perform each case: execution to the backend, dialogs, journal and save to the project session, layout reset, dock commands | `desktop.runtime.DesktopEffects` |
 | 9 | Platform services | `studio-core`: `platform.Platform` (new in S0.9) | implement all eight members (below) | `desktop.platform.DesktopPlatform` (new) |
 | 10 | Project storage | `studio-core`: `bundle.ProjectStore` (existing, S2.3); opened through `FileSystem.project` (new) | provide a store per bundle that passes `ProjectStoreConformance` | `desktop.platform.FileProjectStore` |
