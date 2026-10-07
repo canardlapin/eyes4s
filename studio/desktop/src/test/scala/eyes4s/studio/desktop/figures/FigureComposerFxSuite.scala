@@ -305,3 +305,48 @@ class FigureComposerFxSuite extends ShellFxSuite:
         assert(owner.exists(_.getScene eq fx.scene), "the replacement Panel C is detached")
       }
   }
+
+  fxStage.test(
+    "panel edit buttons are keyboard controls, obey boundaries, and dispatch undoable edits"
+  ) { fx =>
+    val w = boot(fx, StoryModels.t2Figures, StoryMoment.T2)
+    loaded(fx, w)
+    assertEquals(runOnFx(w.figures.removePanel.getAccessibleRole), AccessibleRole.BUTTON)
+    assert(runOnFx(w.figures.removePanel.isFocusTraversable))
+    assert(runOnFx(w.figures.movePanelEarlier.isFocusTraversable))
+    assert(runOnFx(w.figures.movePanelLater.isFocusTraversable))
+    def order = runOnFx(
+      w.runtime.model.document.figures.find(_.id == figure1).get.panels.map(_.letter.value)
+    )
+    runOnFx(w.figures.movePanelEarlier.fire())
+    eventually(fx, "D moved before C")(order == Vector("A", "B", "D", "C", "E"))
+    runOnFx(w.runtime.dispatch(Intent.Undo(eyes4s.studio.core.command.HistoryStack.Science)))
+    eventually(fx, "move undone")(order == Vector("A", "B", "C", "D", "E"))
+    runOnFx(w.runtime.dispatch(Intent.Redo(eyes4s.studio.core.command.HistoryStack.Science)))
+    eventually(fx, "move redone")(order == Vector("A", "B", "D", "C", "E"))
+    runOnFx(w.figures.removePanel.fire())
+    eventually(fx, "D removed; C selected")(
+      order == Vector("A", "B", "C", "E") && w.figures.vm.page
+        .exists(_.panelEditing.selected.contains(letter("C")))
+    )
+    runOnFx(w.figures.dispatch(ComposerIntent.SelectPanel(figure1, letter("A"))))
+    eventually(fx, "first panel cannot move earlier")(
+      w.figures.movePanelEarlier.isDisable && !w.figures.movePanelLater.isDisable
+    )
+    runOnFx(w.figures.dispatch(ComposerIntent.SelectPanel(figure1, letter("E"))))
+    eventually(fx, "last panel cannot move later")(
+      w.figures.movePanelLater.isDisable && !w.figures.movePanelEarlier.isDisable
+    )
+    Vector("E", "C", "B").foreach { l =>
+      runOnFx(w.figures.dispatch(ComposerIntent.SelectPanel(figure1, letter(l))))
+      eventually(fx, s"$l selected")(
+        w.figures.vm.page.exists(_.panelEditing.selected.contains(letter(l)))
+      )
+      runOnFx(w.figures.removePanel.fire())
+      eventually(fx, s"$l removed")(!order.contains(l))
+    }
+    eventually(fx, "last-panel controls disabled")(
+      w.figures.removePanel.isDisable && w.figures.movePanelEarlier.isDisable && w.figures.movePanelLater.isDisable
+    )
+    assertEquals(order, Vector("A"))
+  }

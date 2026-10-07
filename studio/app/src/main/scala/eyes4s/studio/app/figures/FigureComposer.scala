@@ -92,6 +92,9 @@ enum ComposerIntent derives CanEqual:
     * in the shown figure ([[AddPanel]]), which the trail then shows.
     */
   case AddPanelOf(kind: NewPanel)
+  case RemoveSelectedPanel
+  case MoveSelectedPanelEarlier
+  case MoveSelectedPanelLater
   case SetWidth(width: PageWidth)
   case ZoomIn
   case ZoomOut
@@ -246,7 +249,8 @@ final case class PageVM(
     appearance: AppearanceVM,
     greyscale: Boolean,
     exporting: ExportVM,
-    addPanel: AddPanelVM
+    addPanel: AddPanelVM,
+    panelEditing: PanelEditingVM
 ) derives CanEqual
 
 /** Everything the Figures perspective shows. */
@@ -468,9 +472,12 @@ object FigureComposer:
           c.copy(problem = None),
           Vector(ComposerEffect.App(Intent.Navigate(figureTrail(f, Some(letter)))))
         )
-      case NewFigure        => newFigure(c, model)
-      case AddPanelOf(kind) => addPanel(c, model, kind)
-      case SetWidth(w)      =>
+      case NewFigure                => newFigure(c, model)
+      case AddPanelOf(kind)         => addPanel(c, model, kind)
+      case RemoveSelectedPanel      => editPanel(c, model, None)
+      case MoveSelectedPanelEarlier => editPanel(c, model, Some(-1))
+      case MoveSelectedPanelLater   => editPanel(c, model, Some(1))
+      case SetWidth(w)              =>
         // A narrower page holds no panel wider than itself.
         val clamped = c.appearance.view
           .mapValues(a => a.copy(widthsMm = a.widthsMm.view.mapValues(_.min(w.mm)).toMap))
@@ -670,6 +677,48 @@ object FigureComposer:
           )
         )
 
+  private def editPanel(
+      c: FigureComposer,
+      model: AppModel,
+      movement: Option[Int]
+  ): (FigureComposer, Vector[ComposerEffect]) =
+    val selected = for
+      id     <- shownFigure(model)
+      figure <- model.document.figures.find(_.id == id)
+      letter <- shownPanel(model)
+      index  <- Option.when(figure.panels.exists(_.letter == letter))(
+        figure.panels.indexWhere(_.letter == letter)
+      )
+    yield (figure, letter, index)
+    selected match
+      case None => (c.copy(problem = Some(PanelEditing.NoSelection)), none)
+      case Some((figure, letter, index)) =>
+        movement match
+          case None if figure.panels.size == 1 =>
+            (c.copy(problem = Some(PanelEditing.LastPanel)), none)
+          case None =>
+            val remaining = figure.panels.filterNot(_.letter == letter)
+            val next      = remaining.lift(index.min(remaining.size - 1)).map(_.letter)
+            (
+              c.copy(problem = None),
+              Vector(
+                ComposerEffect.App(Intent.Dispatch(Command.RemovePanel(figure.id, letter))),
+                ComposerEffect.App(Intent.Navigate(figureTrail(figure.id, next)))
+              )
+            )
+          case Some(offset) =>
+            val target = index + offset
+            if target < 0 || target >= figure.panels.size then (c.copy(problem = None), none)
+            else
+              (
+                c.copy(problem = None),
+                Vector(
+                  ComposerEffect.App(
+                    Intent.Dispatch(Command.MovePanel(figure.id, letter, target))
+                  )
+                )
+              )
+
   private def openInCompare(
       c: FigureComposer,
       model: AppModel
@@ -781,7 +830,8 @@ object FigureComposer:
         "Export figure…",
         c.exported
       ),
-      AddPanel.view(model, s.figure, selected)
+      AddPanel.view(model, s.figure, selected),
+      PanelEditing.view(s.figure, selected)
     )
 
   private def summaryOf(c: FigureComposer, run: RunId) =

@@ -412,6 +412,14 @@ final class FiguresHost(
   addPanel.getStyleClass.add("figures-add-panel")
   addPanel.setAccessibleText(AddPanel.Label)
 
+  /** Keyboard reachable edits of the selected panel. */
+  val removePanel: Button      = button(PanelEditing.Remove)
+  val movePanelEarlier: Button = button(PanelEditing.Earlier)
+  val movePanelLater: Button   = button(PanelEditing.Later)
+  removePanel.setOnAction(_ => dispatch(ComposerIntent.RemoveSelectedPanel))
+  movePanelEarlier.setOnAction(_ => dispatch(ComposerIntent.MoveSelectedPanelEarlier))
+  movePanelLater.setOnAction(_ => dispatch(ComposerIntent.MoveSelectedPanelLater))
+
   /** The page's panels, laid out in its columns. */
   val paper: FlowPane = FlowPane()
   paper.getStyleClass.add("figures-paper")
@@ -425,7 +433,10 @@ final class FiguresHost(
     val scroll = ScrollPane(paper)
     scroll.setFitToWidth(false)
     VBox.setVgrow(scroll, Priority.ALWAYS)
-    val box = VBox(bar, scroll)
+    val edits = HBox(8.0, movePanelEarlier, movePanelLater, removePanel)
+    edits.setAlignment(Pos.CENTER_LEFT)
+    edits.getStyleClass.add("figures-toolbar")
+    val box = VBox(bar, edits, scroll)
     box.getStyleClass.add("figures-page")
     sheet(box)
     box
@@ -711,6 +722,9 @@ final class FiguresHost(
         zoom.setText("")
         addPanel.getItems.clear()
         addPanel.setDisable(true)
+        removePanel.setDisable(true)
+        movePanelEarlier.setDisable(true)
+        movePanelLater.setDisable(true)
         paper.getChildren.clear()
         retire(Set.empty)
         tableNote.setText("")
@@ -726,6 +740,9 @@ final class FiguresHost(
         width.setText(p.widthLabel)
         zoom.setText(p.zoom)
         renderAddPanel(p.addPanel)
+        removePanel.setDisable(!p.panelEditing.canRemove)
+        movePanelEarlier.setDisable(!p.panelEditing.canMoveEarlier)
+        movePanelLater.setDisable(!p.panelEditing.canMoveLater)
         val px = p.pxPerMm
         paper.setPrefWrapLength(p.width.mm * px)
         paper.setMaxWidth(p.width.mm * px)
@@ -1130,6 +1147,15 @@ final class FiguresHost(
           FocusStop(A11yRole.Button, "Zoom in (+)"),
           FocusStop(A11yRole.MenuButton, p.addPanel.label)
         ) ++
+        Vector(
+          Option.when(p.panelEditing.canMoveEarlier)(
+            FocusStop(A11yRole.Button, PanelEditing.Earlier)
+          ),
+          Option.when(p.panelEditing.canMoveLater)(
+            FocusStop(A11yRole.Button, PanelEditing.Later)
+          ),
+          Option.when(p.panelEditing.canRemove)(FocusStop(A11yRole.Button, PanelEditing.Remove))
+        ).flatten ++
         p.panels.flatMap { q =>
           FocusStop(A11yRole.Button, FiguresHost.panelName(q)) +:
             (q.body match

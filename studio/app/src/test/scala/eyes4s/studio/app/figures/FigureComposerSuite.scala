@@ -940,3 +940,82 @@ class FigureComposerSuite extends munit.ScalaCheckSuite:
     val page = FigureComposer.view(on, t2).page.get
     assertEquals(page.copy(greyscale = false), FigureComposer.view(c0, t2).page.get)
   }
+
+  // --- Panel editing (bead bd-01M4B1T8X9SPB77J7AMTF84Z5J) ---
+
+  private def edit(m: AppModel, intent: ComposerIntent): AppModel =
+    val (_, effects) = FigureComposer.update(FigureComposer.empty, m, intent)
+    run(m, effects)
+
+  test("panel move preserves letter and selection, and undo/redo restore both positions") {
+    val start = at(t2, figure1, Some("D"))
+    val moved = edit(start, ComposerIntent.MoveSelectedPanelEarlier)
+    assertEquals(figure(moved, 1).panels.map(_.letter.value), Vector("A", "B", "D", "C", "E"))
+    assertEquals(FigureComposer.shownPanel(moved), Some(letter("D")))
+    assertEquals(
+      figure(moved, 1).panels.find(_.letter == letter("D")),
+      figure(start, 1).panels.find(_.letter == letter("D"))
+    )
+    val undone = AppModel.update(moved, Intent.Undo(HistoryStack.Science))._1
+    assertEquals(figure(undone, 1), figure(start, 1))
+    val redone = AppModel.update(undone, Intent.Redo(HistoryStack.Science))._1
+    assertEquals(figure(redone, 1), figure(moved, 1))
+    val restored = edit(moved, ComposerIntent.MoveSelectedPanelLater)
+    assertEquals(figure(restored, 1), figure(start, 1))
+  }
+
+  test(
+    "remove selects the next survivor or the previous at the end; undo restores exact panel"
+  ) {
+    val start   = at(t2, figure1, Some("D"))
+    val removed = edit(start, ComposerIntent.RemoveSelectedPanel)
+    assertEquals(figure(removed, 1).panels.map(_.letter.value), Vector("A", "B", "C", "E"))
+    assertEquals(FigureComposer.shownPanel(removed), Some(letter("E")))
+    val undone = AppModel.update(removed, Intent.Undo(HistoryStack.Science))._1
+    assertEquals(figure(undone, 1), figure(start, 1))
+    val redone = AppModel.update(undone, Intent.Redo(HistoryStack.Science))._1
+    assertEquals(figure(redone, 1), figure(removed, 1))
+    val end = edit(at(t2, figure1, Some("E")), ComposerIntent.RemoveSelectedPanel)
+    assertEquals(FigureComposer.shownPanel(end), Some(letter("D")))
+  }
+
+  test("panel edit controls disable missing selection and movement boundaries") {
+    def controls(m: AppModel) =
+      FigureComposer.view(FigureComposer.empty, m).page.get.panelEditing
+    assertEquals(controls(at(t2, figure1, None)), PanelEditingVM(None, false, false, false))
+    assertEquals(
+      controls(at(t2, figure1, Some("A"))),
+      PanelEditingVM(Some(letter("A")), true, false, true)
+    )
+    assertEquals(
+      controls(at(t2, figure1, Some("E"))),
+      PanelEditingVM(Some(letter("E")), true, true, false)
+    )
+    assertEquals(
+      controls(at(t2, figure1, Some("Z"))),
+      PanelEditingVM(None, false, false, false)
+    )
+    for (m, intent) <- Vector(
+        at(t2, figure1, Some("A")) -> ComposerIntent.MoveSelectedPanelEarlier,
+        at(t2, figure1, Some("E")) -> ComposerIntent.MoveSelectedPanelLater,
+        at(t2, figure1, None)      -> ComposerIntent.RemoveSelectedPanel,
+        at(t2, figure1, Some("Z")) -> ComposerIntent.RemoveSelectedPanel
+      )
+    do assertEquals(FigureComposer.update(FigureComposer.empty, m, intent)._2, Vector.empty)
+  }
+
+  test("the last panel cannot be removed or moved even by an intent") {
+    val only = Vector("B", "C", "D", "E").foldLeft(t2)((m, l) =>
+      edit(at(m, figure1, Some(l)), ComposerIntent.RemoveSelectedPanel)
+    )
+    val selected = at(only, figure1, Some("A"))
+    assertEquals(
+      FigureComposer.view(FigureComposer.empty, selected).page.get.panelEditing,
+      PanelEditingVM(Some(letter("A")), false, false, false)
+    )
+    val (state, effects) =
+      FigureComposer.update(FigureComposer.empty, selected, ComposerIntent.RemoveSelectedPanel)
+    assertEquals(state.problem, Some(PanelEditing.LastPanel))
+    assertEquals(effects, Vector.empty)
+    assertEquals(figure(selected, 1).panels.map(_.letter.value), Vector("A"))
+  }
