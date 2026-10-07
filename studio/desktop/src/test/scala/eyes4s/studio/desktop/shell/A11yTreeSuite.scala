@@ -141,6 +141,21 @@ class A11yTreeSuite extends ShellFxSuite:
         // design, so the stops are derived once it has answered.
         if runOnFx(w.runtime.model.perspective) == Perspective.Analysis then
           eventually(fx, "the design's check")(w.resolvedDesign.state.preview.receipt.isDefined)
+        // Explore's inspector rebuilds its links when any of its reads arrives.
+        // Wait for all reads before deriving stops or starting the Tab walk.
+        if runOnFx(w.runtime.model.perspective) == Perspective.Explore then
+          eventually(fx, "Explore inspector and navigation are served") {
+            val inspector = w.inspector.current
+            val nav       = w.navigator.state
+            Vector(
+              inspector.fixations,
+              inspector.record,
+              inspector.usedBy,
+              inspector.displays,
+              nav.entries,
+              nav.displays
+            ).forall(_.toOption.nonEmpty)
+          }
         // Derive the served Compare stops after the navigator and contrast
         // have published their controls, which the Tab walk then visits.
         if runOnFx(w.runtime.model.perspective) == Perspective.Compare then
