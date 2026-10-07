@@ -1144,8 +1144,9 @@ object AppModel:
       round: Long,
       found: InputCheck
   ): (AppModel, Vector[AppEffect]) =
-    // A round never asked is no answer (it could only be forged or scripted).
-    if round <= m.checks.answered || round > m.checks.asked then (m, Vector.empty)
+    // Only the newest requested verification may refresh the UI or release
+    // a waiting run. Older focus/open-time checks can complete out of order.
+    if round <= m.checks.answered || round != m.checks.asked then (m, Vector.empty)
     else
       val next = m.copy(inputs = found, checks = m.checks.copy(answered = round))
       next.checks.runAfter match

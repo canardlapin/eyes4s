@@ -154,10 +154,35 @@ final class StudioWindow private (
   /** Store each perspective's arrangement in the document (view-only). */
   def captureLayouts(): Unit = runtime.dispatch(Intent.LayoutsCaptured(host.capture()))
 
-  /** Keep `stage`'s title on the model's window title (S1.4). */
-  def bind(stage: javafx.stage.Stage): Unit = runtime.listen(_ => stage.setTitle(title))
+  private var binding: Option[
+    (javafx.stage.Stage, AppModel => Unit, javafx.beans.value.ChangeListener[java.lang.Boolean])
+  ]                  = None
+  private var closed = false
+
+  private def unbind(): Unit =
+    binding.foreach { (stage, titles, focus) =>
+      runtime.unlisten(titles)
+      stage.focusedProperty.removeListener(focus)
+    }
+    binding = None
+
+  /** Keep the native title current; reverify sources and assets on focus return. */
+  def bind(stage: javafx.stage.Stage): Unit =
+    if !closed then
+      unbind()
+      var hasFocused               = stage.isFocused
+      val titles: AppModel => Unit = _ => stage.setTitle(title)
+      val focus: javafx.beans.value.ChangeListener[java.lang.Boolean] = (_, _, now) =>
+        if now.booleanValue then
+          if hasFocused && project.isDefined then runtime.dispatch(Intent.CheckInputs)
+          hasFocused = true
+      binding = Some((stage, titles, focus))
+      runtime.listen(titles)
+      stage.focusedProperty.addListener(focus)
 
   def close(): Unit =
+    closed = true
+    unbind()
     runtime.unlisten(summaryListener)
     runtime.unlisten(navigatorListener)
     runtime.unlisten(sourcesListener)
