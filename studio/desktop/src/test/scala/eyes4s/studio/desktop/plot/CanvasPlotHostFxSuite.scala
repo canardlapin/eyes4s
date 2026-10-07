@@ -456,7 +456,11 @@ class CanvasPlotHostFxSuite extends StudioFxSuite:
       def runNext(): Unit =
         Option(queue.poll()).getOrElse(fail("no compile queued")).run()
         runOnFx(()) // the delivery was queued on the FX thread before this
-      val host = runOnFx(CanvasPlotHost(gated))
+      val host = runOnFx {
+        val h = CanvasPlotHost(gated)
+        h.setMaxSize(800, 600) // 3x remains inside the aggregate texture budget.
+        h
+      }
       fx.show(runOnFx(StackPane(host)))
       runOnFx {
         host.setOutputScaleOverride(Some(1.0))
@@ -594,4 +598,35 @@ class CanvasPlotHostFxSuite extends StudioFxSuite:
       Thread.sleep(20)
       fx.awaitLayout()
     assertEquals(alive, 0, s"$alive of $cycles disposed hosts are still reachable")
+  }
+
+  fxStage.test(
+    "the software renderer accepts the byte boundary and refuses 8192-square before allocation"
+  ) { fx =>
+    val host = runOnFx {
+      val h = CanvasPlotHost()
+      h.setManaged(false)
+      h.setOutputScaleOverride(Some(1.0))
+      h.resize(4096, 2730)
+      h
+    }
+    fx.show(runOnFx(StackPane(host)))
+    runOnFx(host.show(reference(Theme.Light)))
+    val frame = awaitFrame(host, 1.0)
+    assertEquals(frame.surface.canvasTextureBytes, 4096L * 2730 * 12)
+    val compiled = runOnFx(host.profile.compiles)
+    runOnFx(host.resize(8192, 8192))
+    awaitStatus(host)(_.isInstanceOf[PlotHostStatus.Failed]) match
+      case PlotHostStatus.Failed(
+            CanvasPlotError.Surface(error: PlotSceneError.CanvasTextureBudget)
+          ) =>
+        assertEquals(error.requiredBytes, 805306368L)
+        assertEquals(error.budgetBytes, PlotSurface.MaxCanvasTextureBytes)
+      case other => fail(other.toString)
+    assertEquals(runOnFx(host.profile.compiles), compiled)
+    assertEquals(runOnFx(host.canvasTexture), (0, 0))
+    assertEquals(runOnFx(host.frame), None)
+    runOnFx(host.resize(800, 600))
+    awaitFrame(host, 1.0)
+    runOnFx(host.dispose())
   }

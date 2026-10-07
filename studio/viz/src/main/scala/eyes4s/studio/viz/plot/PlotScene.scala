@@ -35,6 +35,15 @@ enum PlotSceneError derives CanEqual:
   /** A surface needs a positive, finite logical size and device scale. */
   case InvalidSurface(logicalWidth: Double, logicalHeight: Double, deviceScale: Double)
 
+  /** The three canvas layers exceed the stated per-host RGBA budget. */
+  case CanvasTextureBudget(
+      logicalWidth: Double,
+      logicalHeight: Double,
+      deviceScale: Double,
+      requiredBytes: Long,
+      budgetBytes: Long
+  )
+
   /** No top-level grob of the scene is drawn in the data panel. */
   case PanelNotInScene(sceneId: String, topLevelGrobs: Int)
 
@@ -52,6 +61,8 @@ enum PlotSceneError derives CanEqual:
       s"scene $id: the $a domain [$lo, $hi] has zero width"
     case InvalidSurface(w, h, s) =>
       s"surface ${w}x$h at device scale $s: size and scale must be positive and finite"
+    case CanvasTextureBudget(w, h, s, required, budget) =>
+      s"surface ${w}x$h at device scale $s: three RGBA canvas layers require $required bytes; budget is $budget bytes"
     case PanelNotInScene(id, n) =>
       s"scene $id: none of its $n top-level grobs is drawn in the data panel's viewport"
     case EmptyPanel(id, w, h) =>
