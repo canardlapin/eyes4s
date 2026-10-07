@@ -16,6 +16,7 @@
 
 package eyes4s.studio.viz.plot
 
+import cats.syntax.all.*
 import eyes4s.studio.app.plot.{
   ColumnId,
   PlotSource,
@@ -276,7 +277,8 @@ final case class PlotMark private (
     order: Int,
     name: GraphicsName,
     nudgePx: PixelOffset,
-    summary: Option[String] = None
+    summary: Option[String] = None,
+    lineRuns: Vector[Vector[DataPoint]] = Vector.empty
 ) derives CanEqual:
 
   /** Every row the mark accounts for, first row first. */
@@ -287,6 +289,12 @@ final case class PlotMark private (
 
   /** The refs of every row: what selecting the mark selects. */
   def refs: Vector[StudioRef] = rows.map(_.ref)
+
+  /** Drawn line runs, with singleton runs retained as isolated dots. Only
+    * plot builders attach the geometry already accepted by Intaglio.
+    */
+  private[plot] def withLineRuns(runs: Vector[Vector[DataPoint]]): PlotMark =
+    copy(lineRuns = runs)
 
   /** The same mark at roving position `order`. */
   def withOrder(order: Int): PlotMark = copy(order = order)
@@ -691,8 +699,11 @@ enum PlotTargetError derives CanEqual:
       s"scene ${id.value}: pointer tolerance $t device px is not finite and non-negative"
 
 /** A plot mark as laid out on one surface. */
-final case class PlotTarget(mark: PlotMark, anchor: DevicePoint) extends RovingTarget[StudioRef]
-    derives CanEqual:
+final case class PlotTarget(
+    mark: PlotMark,
+    anchor: DevicePoint,
+    override val selectionRuns: Vector[Vector[DevicePoint]] = Vector.empty
+) extends RovingTarget[StudioRef] derives CanEqual:
   def ref: StudioRef                   = mark.ref
   override def refs: Vector[StudioRef] = mark.refs
   def reachPx: Double                  = mark.reachPx
@@ -794,9 +805,19 @@ object PlotTargets:
           ts <- acc
           at <- transform.dataToDevice(m.at).left.map(PlotTargetError.Frame(id, _))
           k = transform.surface.deviceScale
+          runs <- m.lineRuns.traverse(
+            _.traverse(point =>
+              transform
+                .dataToDevice(point)
+                .left
+                .map(PlotTargetError.Frame(id, _))
+                .map(p => DevicePoint(p.x + m.nudgePx.dxPx * k, p.y + m.nudgePx.dyPx * k))
+            )
+          )
         yield ts :+ PlotTarget(
           m,
-          DevicePoint(at.x + m.nudgePx.dxPx * k, at.y + m.nudgePx.dyPx * k)
+          DevicePoint(at.x + m.nudgePx.dxPx * k, at.y + m.nudgePx.dyPx * k),
+          runs
         )
       }
     yield new PlotTargets(plot, transform, picking, targets)

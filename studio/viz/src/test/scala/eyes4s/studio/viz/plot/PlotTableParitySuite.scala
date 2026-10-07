@@ -403,7 +403,7 @@ class PlotTableParitySuite extends ScalaCheckSuite:
     }
   }
 
-  property("selecting a row rings its mark, and selecting a mark selects all its rows") {
+  property("selecting a row highlights its mark, and selecting a mark selects all its rows") {
     val cases = for
       (source, plot) <- genPlot
       if plot.marks.nonEmpty
@@ -425,13 +425,15 @@ class PlotTableParitySuite extends ScalaCheckSuite:
       val plotSees = initialPlot.project(byTable)
       assertEquals(plotSees.intents, Vector.empty)
       // A mark of several rows is only partly selected by one.
-      val partial = mark.rows.size > 1
-      assertEquals(
-        plotSees.state.selectionRings(t).map(r => (r.kind, r.ref, r.centre)),
-        Vector(
-          (if partial then RingKind.PartlySelected else RingKind.Selected, mark.ref, anchor)
+      val partial  = mark.rows.size > 1
+      val feedback = plotSees.state.selectionRings(t).map(_.ref) ++
+        plotSees.state.selectionLines(t).map(_.ref)
+      assertEquals(feedback.distinct, Vector(mark.ref))
+      if mark.lineRuns.isEmpty then
+        assertEquals(
+          plotSees.state.selectionRings(t).map(r => (r.kind, r.centre)),
+          Vector((if partial then RingKind.PartlySelected else RingKind.Selected, anchor))
         )
-      )
       assertEquals(
         onRow.project(byTable).state.vm(source).rows.map(_.selected),
         source.rows.map(_.ref == row.ref)
@@ -452,9 +454,12 @@ class PlotTableParitySuite extends ScalaCheckSuite:
         tableSees.state.vm(source).rows.map(_.selected),
         source.rows.map(r => mark.refs.contains(r.ref))
       )
+      val projected = onMark.project(byPlot).state
       assertEquals(
-        onMark.project(byPlot).state.selectionRings(t).map(r => (r.kind, r.ref)),
-        Vector((RingKind.Selected, mark.ref))
+        (projected
+          .selectionRings(t)
+          .map(_.ref) ++ projected.selectionLines(t).map(_.ref)).distinct,
+        Vector(mark.ref)
       )
 
       // The focused mark says what its rows say, selected or not; a mark of
@@ -490,7 +495,7 @@ class PlotTableParitySuite extends ScalaCheckSuite:
     }
   }
 
-  property("a selection of several rows rings each mark once, and the table marks every row") {
+  property("a selection of several rows highlights each mark, and the table marks every row") {
     val cases = for
       (source, plot) <- genPlot
       if plot.marks.size >= 2
@@ -504,16 +509,20 @@ class PlotTableParitySuite extends ScalaCheckSuite:
         .initial(tableView, SelectionState.empty)
         .submit(SelectionMode.Replace, refs, InputCause.Pointer)
       val selected = bus(SelectionState.empty, Vector(intent))
-      val rings    = MarkInputState
+      val state    = MarkInputState
         .initial[StudioRef](plotView, SelectionState.empty)
         .project(selected)
         .state
-        .selectionRings(t)
-      val marks             = refs.flatMap(plot.markOf).distinct
+      val marks        = refs.flatMap(plot.markOf).distinct
+      val feedbackRefs =
+        (state.selectionRings(t).map(_.ref) ++ state.selectionLines(t).map(_.ref)).toSet
+      assertEquals(feedbackRefs, marks.map(_.ref).toSet)
+      val ringMarks = marks.filter(_.lineRuns.isEmpty)
+      val rings     = state.selectionRings(t).filter(r => ringMarks.exists(_.ref == r.ref))
       def kind(m: PlotMark) =
         if m.refs.forall(refs.contains) then RingKind.Selected else RingKind.PartlySelected
-      assertEquals(rings.map(r => (r.kind, r.ref)), marks.map(m => (kind(m), m.ref)))
-      assertEquals(rings.map(_.centre), marks.map(m => t.target(m.ref).get.anchor))
+      assertEquals(rings.map(r => (r.kind, r.ref)), ringMarks.map(m => (kind(m), m.ref)))
+      assertEquals(rings.map(_.centre), ringMarks.map(m => t.target(m.ref).get.anchor))
       assertEquals(
         TableTwinState.initial(tableView, selected).vm(source).rows.map(_.selected),
         source.rows.map(r => refs.contains(r.ref))

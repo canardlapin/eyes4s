@@ -26,7 +26,8 @@ import eyes4s.studio.viz.plot.{
   MarkInputStep,
   OverlayPalette,
   OverlayRing,
-  OverlayRings,
+  OverlayLine,
+  OverlaySelections,
   RovingTargets
 }
 import intaglio.javafx.{JavaFxCanvasContext, JavaFxRenderer}
@@ -238,22 +239,25 @@ final class MarkInputAdapter[R <: StudioRef, E, T <: RovingTargets[R, E]] privat
     * scene.
     */
   override def paintUnder(gc: GraphicsContext, frame: PlotFrame): Unit =
-    draw(gc, frame, current.selectionRings)
+    draw(gc, frame, current.selectionRings, current.selectionLines)
 
   private def draw(
       gc: GraphicsContext,
       frame: PlotFrame,
-      ringsOf: T => Vector[OverlayRing]
+      ringsOf: T => Vector[OverlayRing],
+      linesOf: T => Vector[OverlayLine] = (_: T) => Vector.empty
   ): Unit =
     for
       t       <- targets
       palette <- layer.palette
     do
       val rings = ringsOf(t)
-      if rings.nonEmpty then
+      val lines = linesOf(t)
+      if rings.nonEmpty || lines.nonEmpty then
         val drawn = for
-          scene <- OverlayRings.scene(
+          scene <- OverlaySelections.scene(
             rings,
+            lines,
             palette,
             frame.surface.deviceWidth.toDouble,
             frame.surface.deviceHeight.toDouble,
