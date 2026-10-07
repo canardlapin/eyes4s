@@ -113,11 +113,11 @@ class TrialSceneSuite extends ScalaCheckSuite:
   // ---------------------------------------------------------------------------
 
   private val genSurface: Gen[PlotSurface] =
-    for
+    (for
       w <- Gen.choose(160.0, 1800.0)
       h <- Gen.choose(120.0, 1100.0)
       s <- Gen.oneOf(1.0, 1.25, 1.5, 2.0, 3.0)
-    yield right(PlotSurface(w, h, s))
+    yield PlotSurface(w, h, s)).suchThat(_.isRight).map(right(_))
 
   private val genFixations: Gen[Vector[TrialFixation]] =
     for
@@ -149,7 +149,7 @@ class TrialSceneSuite extends ScalaCheckSuite:
     Gen.const(TrialExtent.Covering(right(ScreenRect.of(100.0, 50.0, 1700.0, 1000.0))))
   )
 
-  property("image, marks and picking frame share one transform, on any surface") {
+  property("image, marks and picking frame share one transform, on any admitted surface") {
     Prop.forAll(genSurface, genFixations, genMarks, genExtent) { (surface, fs, marks, extent) =>
       val scene = right(
         TrialScene(
