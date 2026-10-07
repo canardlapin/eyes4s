@@ -236,7 +236,7 @@ class CanvasPlotHostFxSuite extends StudioFxSuite:
   fxStage.test("the host's accessible help is the scene's text summary, and none without one") {
     fx =>
       val (host, _) = hostIn(fx)
-      val plain     = reference(Theme.Light)
+      val plain     = reference(Theme.Light).withSemantics(intaglio.SceneSemantics.empty)
       val summed    = plain.withSemantics(
         intaglio.SceneSemantics.single(
           eyes4s.studio.viz.plot.SceneSummaries.semantics(plain.id, "Title", "Alt", "Summary")
@@ -244,7 +244,7 @@ class CanvasPlotHostFxSuite extends StudioFxSuite:
       )
       runOnFx(host.show(summed))
       assertEquals(runOnFx(host.getAccessibleHelp), "Summary")
-      // A diagram with no semantics carries none, and leaves no stale help.
+      // Explicitly removing semantics leaves no stale help.
       runOnFx(host.show(plain))
       assertEquals(runOnFx(Option(host.getAccessibleHelp)), None)
       runOnFx(host.show(summed))
