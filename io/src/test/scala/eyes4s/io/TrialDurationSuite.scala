@@ -16,7 +16,15 @@
 
 package eyes4s.io
 
-import eyes4s.plan.{AttributeColumn, AttributeKind, AttributeValue, InventoryError}
+import eyes4s.plan.{
+  AttributeColumn,
+  AttributeKind,
+  AttributeValue,
+  Attributes,
+  InventoryError,
+  InventoryTrial,
+  TrialDisposition
+}
 
 class TrialDurationSuite extends munit.FunSuite:
   private def ok[E, A](value: Either[E, A]): A = value.fold(e => fail(e.toString), identity)
@@ -70,6 +78,37 @@ class TrialDurationSuite extends munit.FunSuite:
     val inventory = ok(read(Vector(""))._2)
     assertEquals(declaration(TimestampUnit.Seconds).extent(inventory.trials.head), Right(None))
     assertEquals(inventory.trials.head.attributes.get("elapsed"), Some(AttributeValue.Blank))
+  }
+
+  test("native ledger trials retain declared duration even without fixation records") {
+    Vector("5", "").foreach { raw =>
+      val row                              = ok(read(Vector(raw, raw))._2).trials.head
+      def captured(attributes: Attributes) = ok(
+        InventoryTrial.of(
+          row.identity,
+          row.records,
+          row.item,
+          attributes,
+          Vector.empty,
+          Vector.empty,
+          TrialDisposition.Absent
+        )
+      )
+      val trial = captured(row.attributes)
+      assertEquals(trial.rows, Vector(2, 3))
+      assertEquals(trial.records, Vector.empty)
+      assertEquals(
+        declaration(TimestampUnit.Seconds).extent(trial).map(_.map(_.width.toMicros)),
+        Right(Option.when(raw.nonEmpty)(5000000L))
+      )
+      val numeric = captured(ok(Attributes.of(Vector("elapsed" -> AttributeValue.Number(5)))))
+      assertEquals(
+        declaration(TimestampUnit.Seconds).extent(numeric),
+        Left(
+          InventoryError.AttributeKindMismatch(row.identity.render, "elapsed", "Text", "Number")
+        )
+      )
+    }
   }
 
   test("malformed and nonpositive timing names the original record, column and cell") {
