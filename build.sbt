@@ -653,13 +653,14 @@ ThisBuild / checkKernelPurity := {
 lazy val forkHandshakeOptions: Seq[String] =
   if (sys.env.contains("CI")) Nil else Seq("-Djava.net.preferIPv6Addresses=true")
 
+lazy val forkHandshakeSettings = Seq(Test / javaOptions ++= forkHandshakeOptions)
+
 lazy val commonSettings = Seq(
   libraryDependencies ++= Seq(
     "org.scalameta" %%% "munit"            % munitV           % Test,
     "org.scalameta" %%% "munit-scalacheck" % munitScalacheckV % Test
-  ),
-  Test / javaOptions ++= forkHandshakeOptions
-)
+  )
+) ++ forkHandshakeSettings
 
 // ---------------------------------------------------------------------------
 // Modules
@@ -817,6 +818,7 @@ lazy val codec = crossProject(JVMPlatform, JSPlatform)
   */
 lazy val laws = crossProject(JVMPlatform, JSPlatform)
   .crossType(CrossType.Pure)
+  .settings(forkHandshakeSettings)
   .jvmSettings(ApiAudit.settings)
   .in(file("laws"))
   .dependsOn(kernel, core, detect, surface, aoi, compare, design, plan, results, codec)
