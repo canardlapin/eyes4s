@@ -17,7 +17,7 @@
 package eyes4s.studio.desktop.explore
 
 import cats.effect.IO
-import eyes4s.studio.app.AppModel
+import eyes4s.studio.app.{AppModel, StoryModels}
 import eyes4s.studio.app.explore.TimelineIntent
 import eyes4s.studio.core.document.*
 import eyes4s.studio.core.real.{DatasetSources, TrialDurationNativeFixture}
@@ -54,8 +54,8 @@ class TrialExtentFxSuite extends ShellFxSuite:
         original.jobs
       )
     )
-    val opened = AppModel.open(document, None)
-    AppModel
+    val opened    = AppModel.open(document, None)
+    val navigated = AppModel
       .update(
         opened,
         eyes4s.studio.app.Intent.Navigate(
@@ -72,6 +72,13 @@ class TrialExtentFxSuite extends ShellFxSuite:
         )
       )
       ._1
+    val fixation: StudioRef.Fixation =
+      StudioRef.Fixation(TrialDurationNativeFixture.trial, ok(FixationIndex.of(1)))
+    val selected = AppModel
+      .update(navigated, StoryModels.select(navigated, "explore.trial-view", fixation))
+      ._1
+    assertEquals(eyes4s.studio.app.explore.FixationInspector.focusOf(selected), Some(fixation))
+    selected
 
   private def sources(cell: Option[String]): DatasetSources[IO] = new DatasetSources[IO]:
     def bytes(dataset: DatasetRevisionSpec, source: Source): IO[Option[IArray[Byte]]] =
@@ -97,7 +104,10 @@ class TrialExtentFxSuite extends ShellFxSuite:
       fx =>
         val w = boot(fx, model(cell), StoryMoment.T2, nativeSources = Some(sources(cell)))
         val expected = if cell.contains("5") then "5.0 s" else "Not declared"
-        eventually(fx, "native inspector extent and timeline") {
+        eventually(
+          fx,
+          s"native inspector extent and timeline: selected ${w.runtime.model.selection.selected}, inspector ${w.inspector.vm.status}, timeline ${w.timeline.vm.note}"
+        ) {
           w.inspector.lines.contains("Extent" -> expected) && w.timeline.vm.enabled
         }
         val timeline = w.timeline.vm
