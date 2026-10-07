@@ -9029,7 +9029,6 @@
           "ioJVM/eyes4s.io.DiagnosticCoverageJvmSuite",
           "ioJVM/eyes4s.io.DiagnosticsDocJvmSuite",
           "ioJVM/eyes4s.io.IoDiagnosticCatalogSuite",
-          "lawsJVM/eyes4s.laws.FormLawSuite",
           "planJVM/eyes4s.plan.DiagnosticCatalogSuite",
           "planJVM/eyes4s.plan.FormDescriptorSuite",
           "planJVM/eyes4s.plan.UnmatchedReasonsSuite",
@@ -19188,7 +19187,8 @@
       "non-finite and unparseable coordinates still quarantine under ExcludeRecord",
       "records of one trial naming two items quarantine it once, naming both items",
       "the ledger records the policy on the wire; a version-1 ledger keeps version 1",
-      "the version-1 read and QuarantineTrial reject the record and quarantine its trial"
+      "the version-1 read and QuarantineTrial reject the record and quarantine its trial",
+      "two otherwise valid rows with conflicting occurrences quarantine the whole trial"
     ],
     "ioJS/eyes4s.io.ArtifactLoadingSuite": [
       "a read that fails inside the effect is reported as unreadable, naming the entry",
@@ -22980,7 +22980,8 @@
       "non-finite and unparseable coordinates still quarantine under ExcludeRecord",
       "records of one trial naming two items quarantine it once, naming both items",
       "the ledger records the policy on the wire; a version-1 ledger keeps version 1",
-      "the version-1 read and QuarantineTrial reject the record and quarantine its trial"
+      "the version-1 read and QuarantineTrial reject the record and quarantine its trial",
+      "two otherwise valid rows with conflicting occurrences quarantine the whole trial"
     ],
     "ioJVM/eyes4s.io.ArrowResultExportJvmSuite": [
       "IPC preserves nullability, exact signed Int64 and metadata while closing every allocation",
