@@ -95,3 +95,19 @@ class RunInProgressSuite extends munit.FunSuite:
       assertEquals(next.jobs.ready, None)
     }
   }
+
+  test("undo and redo of ShowRun keep the shelf's guard aligned with the document") {
+    val shown  = step(completed(StoryModels.t3Summary), Intent.ShowRun(run8))
+    val undone = step(shown, Intent.Undo(eyes4s.studio.core.command.HistoryStack.Presentation))
+    assertEquals(undone.document.presentation.shownRun, Some(run7))
+    assertEquals(undone.jobs.shelf.shown, Some(run7))
+    val late = step(
+      undone,
+      Intent.Execution(ExecutionEvent.Ready(RunReady(run8Job, run8, StoryModels.run8Stamp)))
+    )
+    assertEquals(late.jobs.ready.map(_.run), Some(run8))
+    val redone = step(late, Intent.Redo(eyes4s.studio.core.command.HistoryStack.Presentation))
+    assertEquals(redone.document.presentation.shownRun, Some(run8))
+    assertEquals(redone.jobs.shelf.shown, Some(run8))
+    assertEquals(redone.jobs.ready, None)
+  }

@@ -161,3 +161,13 @@ class ProtocolLongSuite extends munit.FunSuite:
     assertEquals(WireFormat.parse[ServerFrame](envelope.asJson.noSpaces), Right(envelope))
     assertEquals(ProtocolVersion.Current, ProtocolVersion(1, 17))
   }
+
+  test("safe Long inputs accept both compatibility forms and re-encode as canonical numbers") {
+    Vector(-5L, 0L, 5L, 9007199254740991L).foreach { n =>
+      Vector(Json.fromLong(n), Json.fromString(n.toString)).foreach { input =>
+        val id = right(input.as[RequestId])
+        assertEquals(id, RequestId(n))
+        assertEquals(id.asJson, Json.fromLong(n))
+      }
+    }
+  }

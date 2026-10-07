@@ -47,6 +47,10 @@ final case class PlotSurface private (
   /** The raster height in device pixels. */
   def deviceHeight: Int = PlotSurface.devicePixels(logicalHeight, deviceScale)
 
+  /** Maximum RGBA texture bytes reserved by the scene, selection and pointer layers. */
+  def canvasTextureBytes: Long =
+    deviceWidth.toLong * deviceHeight * PlotSurface.CanvasLayerCount * PlotSurface.BytesPerTexel
+
   /** The Intaglio render context for this surface. */
   def renderContext(sceneId: SceneId): Either[PlotSceneError, RenderContext] =
     RenderContext(
@@ -72,6 +76,15 @@ object PlotSurface:
     */
   val MaxDevicePixels: Int = 8192
 
+  /** Three full-size RGBA layers are reserved even when feedback is empty
+    * (bead q-canvas-texture-budget).
+    * The 128 MiB per-host cap leaves room for other views and Prism's
+    * temporary/clip buffers within its usual 512 MiB pool.
+    */
+  val CanvasLayerCount: Int       = 3
+  val BytesPerTexel: Int          = 4
+  val MaxCanvasTextureBytes: Long = 128L * 1024 * 1024
+
   def apply(
       logicalWidth: Double,
       logicalHeight: Double,
@@ -81,7 +94,19 @@ object PlotSurface:
     def fits(v: Double)  = v * deviceScale <= MaxDevicePixels.toDouble
     if valid(logicalWidth) && valid(logicalHeight) && valid(deviceScale) &&
       fits(logicalWidth) && fits(logicalHeight)
-    then Right(new PlotSurface(logicalWidth, logicalHeight, deviceScale))
+    then
+      val surface = new PlotSurface(logicalWidth, logicalHeight, deviceScale)
+      if surface.canvasTextureBytes <= MaxCanvasTextureBytes then Right(surface)
+      else
+        Left(
+          PlotSceneError.CanvasTextureBudget(
+            logicalWidth,
+            logicalHeight,
+            deviceScale,
+            surface.canvasTextureBytes,
+            MaxCanvasTextureBytes
+          )
+        )
     else Left(PlotSceneError.InvalidSurface(logicalWidth, logicalHeight, deviceScale))
 
   private def devicePixels(logical: Double, scale: Double): Int =

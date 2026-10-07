@@ -392,6 +392,7 @@ final class CanvasPlotHost private[plot] (
         if !inFlight then launch(scene, target, requested)
       case (Some(_), Left(error)) =>
         blank()
+        layers.release()
         statusWrapper.set(PlotHostStatus.Failed(error))
       case (Some(scene), Right(None)) =>
         blank()

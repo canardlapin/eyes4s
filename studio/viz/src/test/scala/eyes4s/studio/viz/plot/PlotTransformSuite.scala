@@ -156,3 +156,43 @@ class PlotTransformSuite extends munit.FunSuite:
       List("studio.reference.light", "studio.reference.dark")
     )
   }
+
+  test("three RGBA layers obey the byte budget, including raster rounding and HiDPI") {
+    val accepted = right(PlotSurface(4096, 2730, 1))
+    assertEquals(accepted.canvasTextureBytes, 4096L * 2730 * 3 * 4)
+    assertEquals(
+      right(PlotSurface(2048, 1365, 2)).canvasTextureBytes,
+      accepted.canvasTextureBytes
+    )
+    assertEquals(
+      PlotSurface(4096, 2731, 1),
+      Left(
+        PlotSceneError.CanvasTextureBudget(
+          4096,
+          2731,
+          1,
+          4096L * 2731 * 12,
+          PlotSurface.MaxCanvasTextureBytes
+        )
+      )
+    )
+    assertEquals(
+      PlotSurface(8192, 8192, 1),
+      Left(
+        PlotSceneError.CanvasTextureBudget(
+          8192,
+          8192,
+          1,
+          805306368L,
+          PlotSurface.MaxCanvasTextureBytes
+        )
+      )
+    )
+    val rounded =
+      PlotSurface(4096, 2730.1, 1).left.toOption.getOrElse(fail("rounding escaped the cap"))
+    assert(rounded.message.contains("budget is 134217728 bytes"), rounded.message)
+    assert(
+      rounded.message.contains("4096") && rounded.message.contains("2730.1"),
+      rounded.message
+    )
+  }

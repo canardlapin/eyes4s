@@ -68,8 +68,9 @@ object ExecutionEffect:
     case Require(stamp)          => service.require(stamp).map(Right(_))
 
 /** The shown run and the ready notice beside it ("Run 8 ready — Show"), as a
-  * pure value. A completion only ever fills `pending`; `shown` changes only
-  * through [[show]], and only to the pending run (S8.8, E2E-08).
+  * pure value. A completion only ever fills `pending`; [[show]] promotes
+  * only the pending run (S8.8, E2E-08), and [[withShown]] reconciles the
+  * presentation after a document view edit or its undo/redo.
   *
   * The shelf keeps its own record of the stamp it was last told to
   * [[require]] and accepts a notice only for that stamp: a second line of
@@ -94,6 +95,12 @@ final case class RunShelf private (
   /** The requested stamp is now `stamp`. */
   def require(stamp: RunStamp): RunShelf =
     copy(pending = pending.filter(_.stamp == stamp), required = Some(stamp))
+
+  /** Reconcile the presentation with the document, including undo/redo.
+    * The request and a still-newer pending notice survive the view edit.
+    */
+  def withShown(run: Option[RunId]): RunShelf =
+    copy(shown = run, pending = pending.filter(n => run.forall(_.number < n.run.number)))
 
   def show(run: RunId): Either[ExecutionError, RunShelf] = pending match
     case Some(notice) if notice.run == run => Right(copy(shown = Some(run), pending = None))

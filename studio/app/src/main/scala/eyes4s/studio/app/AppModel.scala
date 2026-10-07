@@ -1049,7 +1049,9 @@ object AppModel:
       val require = required
         .filter(s => submits.isEmpty && !m.jobs.shelf.required.contains(s))
         .map(s => AppEffect.Execution(ExecutionEffect.Require(s)))
-      val jobs = (submits ++ require.flatMap(_ => required)).foldLeft(m.jobs)(_.require(_))
+      val jobs = (submits ++ require.flatMap(_ => required))
+        .foldLeft(m.jobs)(_.require(_))
+        .withShown(doc.presentation.shownRun)
       // A prepared design is submitted once: a later run prepares again.
       val submitted = effects.exists {
         case AppEffect.Execution(ExecutionEffect.SubmitPreview(_, _)) => true
@@ -1142,8 +1144,9 @@ object AppModel:
       round: Long,
       found: InputCheck
   ): (AppModel, Vector[AppEffect]) =
-    // A round never asked is no answer (it could only be forged or scripted).
-    if round <= m.checks.answered || round > m.checks.asked then (m, Vector.empty)
+    // Only the newest requested verification may refresh the UI or release
+    // a waiting run. Older focus/open-time checks can complete out of order.
+    if round <= m.checks.answered || round != m.checks.asked then (m, Vector.empty)
     else
       val next = m.copy(inputs = found, checks = m.checks.copy(answered = round))
       next.checks.runAfter match

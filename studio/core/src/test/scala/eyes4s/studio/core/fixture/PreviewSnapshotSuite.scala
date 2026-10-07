@@ -125,30 +125,61 @@ class PreviewSnapshotSuite extends munit.CatsEffectSuite:
       assert(jobs.head eq captured)
   }
 
-  for changedDuringCounting <- List(false, true) do
-    test(
-      s"a changed authoritative dataset refuses submission; changed during counting=$changedDuringCounting"
-    ) {
-      for
-        (fake, state) <- subject
-        first         <- events(
-          fake.previewCounting(revision, budget(if changedDuringCounting then 1 else 24))
-        )
-        id = first
-          .collectFirst { case PreviewEvent.Initial(value, _, _) => value }
-          .getOrElse(fail("no preview id"))
-        _ <- state.update(s =>
-          s.copy(revisions = s.revisions.updated(revision, DatasetRevision(4)))
-        )
-        all <-
-          if changedDuringCounting then events(fake.continuePreview(id, budget(23)))
-          else IO.pure(first)
-        refusal <- fake.submitPreview(ready(all))
-        after   <- state.get
-      yield
-        assertEquals(refusal.left.map(_.code), Left("studio-backend.stale-preview"))
-        assertEquals(after.jobs, Vector.empty)
-    }
+  test("a changed dataset stops an incomplete preview without advancing or emitting Ready") {
+    for
+      (fake, state) <- subject
+      first         <- events(fake.previewCounting(revision, budget(1)))
+      id = first.collectFirst { case PreviewEvent.Initial(id, _, _) => id }.get
+      before <- state.get
+      _      <- state.update(s =>
+        s.copy(revisions = s.revisions.updated(revision, DatasetRevision(4)))
+      )
+      refused <- fake.continuePreview(id, budget(23)).compile.toVector
+      after   <- state.get
+    yield
+      assertEquals(refused.size, 1)
+      assertEquals(refused.head.left.map(_.code), Left("studio-backend.stale-preview"))
+      assertEquals(after.previews(id).progress, before.previews(id).progress)
+  }
+
+  test("a completed but stale preview cannot be offered again or submitted") {
+    for
+      (fake, state) <- subject
+      counted       <- events(fake.previewCounting(revision, budget(24)))
+      receipt = ready(counted)
+      _ <- state.update(s =>
+        s.copy(revisions = s.revisions.updated(revision, DatasetRevision(4)))
+      )
+      resumed <- fake.continuePreview(receipt.id, budget(1)).compile.toVector
+      refused <- fake.submitPreview(receipt)
+      after   <- state.get
+    yield
+      assertEquals(
+        resumed.map(_.left.map(_.code)),
+        Vector(Left("studio-backend.stale-preview"))
+      )
+      assertEquals(refused.left.map(_.code), Left("studio-backend.stale-preview"))
+      assertEquals(after.jobs, Vector.empty)
+  }
+
+  test("changing the dataset between Counting and Ready refuses the Ready boundary") {
+    for
+      (fake, state) <- subject
+      counted       <- fake
+        .previewCounting(revision, budget(24))
+        .evalTap {
+          case Right(PreviewEvent.Counting(_, progress)) if progress.isComplete =>
+            state.update(s =>
+              s.copy(revisions = s.revisions.updated(revision, DatasetRevision(4)))
+            )
+          case _ => IO.unit
+        }
+        .compile
+        .toVector
+    yield
+      assert(!counted.exists { case Right(PreviewEvent.Ready(_)) => true; case _ => false })
+      assertEquals(counted.last.left.map(_.code), Left("studio-backend.stale-preview"))
+  }
 
   test("stopping the direct stream at Initial performs no participant count") {
     for
