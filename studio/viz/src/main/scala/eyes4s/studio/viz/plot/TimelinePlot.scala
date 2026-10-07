@@ -63,7 +63,8 @@ import intaglio.{
 final case class TimelinePlot(
     columns: TimelineColumns,
     brush: Option[HalfOpenSpan] = None,
-    playheadMs: Option[Double] = None
+    playheadMs: Option[Double] = None,
+    trialEndMs: Option[Double] = None
 ) extends PlotBuilder:
 
   def kind: String = "timeline"
@@ -149,8 +150,10 @@ final case class TimelinePlot(
         g  <- Grob.rect(Point(cx, cy), Size.fromExtents(w, h), gp = gp, name = name)
       yield g
     val ends     = placed.map((_, at) => at.x + at.y)
-    val (x0, x1) = timeDomain(placed.map(_._2.x) ++ ends ++ playheadMs.toVector)
-    val y1       = (placed.map(_._2.y) :+ 1.0).max * (1.0 + Headroom)
+    val (x0, x1) = timeDomain(
+      placed.map(_._2.x) ++ ends ++ playheadMs.toVector ++ trialEndMs.toVector
+    )
+    val y1 = (placed.map(_._2.y) :+ 1.0).max * (1.0 + Headroom)
     for
       xScale   <- Interval(x0, x1)
       yScale   <- Interval(0.0, y1)

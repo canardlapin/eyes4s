@@ -79,3 +79,9 @@ profile builders compare scale identities directly. Admission answers also serve
 `AdmissionEquation` with the inventory operands and the backend's balance check.
 An undeclared inventory has no equation. Client and backend must speak the exact
 same protocol version; version 1.17 bodies are refused before decoding.
+
+Protocol 1.19 additionally serves declared trial extents with inventory provenance
+and explicit missing-duration states. The exact-version check refuses 1.18 peers
+before decoding their bodies. Results' grand mean uses the whole-report cell at
+each typed scale; Figures' grouped profile uses the group cells. Both retain
+the backend's values and references.

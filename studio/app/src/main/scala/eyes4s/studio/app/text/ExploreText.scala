@@ -34,7 +34,7 @@ enum ExploreTextId derives CanEqual:
 
   // --- The timeline (S6.3) ------------------------------------------------------------
   case Play, Pause, StepBack, StepForward, SpeedHalf, SpeedOne, SpeedTwo, PlayheadStatus
-  case BrushStatus, BrushDisclaimer, TimelineNotRead
+  case BrushStatus, BrushDisclaimer, TimelineNotRead, DeclaredTrialExtent, MissingTrialExtent
 
   // --- The legend ------------------------------------------------------------------------
   case LegendTitle, Fixation, OutsideWindowExcluded, OutsideWindowFails, OutsideScreen
@@ -75,16 +75,19 @@ object ExploreText:
     case SkippedMark       => "Fixation {0} lasts {1} ms, too short to draw; it is not shown."
     case PreviewUndrawable => "The preview of {0} cannot be drawn: {1}"
 
-    case Play            => "Play"
-    case Pause           => "Pause"
-    case StepBack        => "Step back"
-    case StepForward     => "Step forward"
-    case SpeedHalf       => "0.5×"
-    case SpeedOne        => "1×"
-    case SpeedTwo        => "2×"
-    case PlayheadStatus  => "playhead {0} s"
-    case BrushStatus     => "brush {0}–{1} s"
-    case BrushDisclaimer => "Brushing highlights; it does not crop the analysis"
+    case Play                => "Play"
+    case Pause               => "Pause"
+    case StepBack            => "Step back"
+    case StepForward         => "Step forward"
+    case SpeedHalf           => "0.5×"
+    case SpeedOne            => "1×"
+    case SpeedTwo            => "2×"
+    case PlayheadStatus      => "playhead {0} s"
+    case BrushStatus         => "brush {0}–{1} s"
+    case BrushDisclaimer     => "Brushing highlights; it does not crop the analysis"
+    case DeclaredTrialExtent => "Trial extent {0} s"
+    case MissingTrialExtent  =>
+      "Trial extent not declared; playback covers the fixation intervals."
     case TimelineNotRead => "The timeline of {0} cannot be drawn: {1}"
 
     case LegendTitle            => "Legend"

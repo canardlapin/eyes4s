@@ -174,6 +174,13 @@ object ColumnMappingPane:
           ) ++
           Option.when(vm.displays.enabled && vm.displays.selected.isDefined)(
             FocusStop(A11yRole.ComboBox, vm.displays.fileLabel)
+          ) ++
+          Option.when(vm.inventoryDuration.enabled)(
+            FocusStop(A11yRole.ComboBox, vm.inventoryDuration.unitLabel)
+          ) ++ Option.when(
+            vm.inventoryDuration.enabled && vm.inventoryDuration.selectedUnit.isDefined
+          )(
+            FocusStop(A11yRole.ComboBox, vm.inventoryDuration.columnLabel)
           )
       case WizardTab.Geometry   => vm.geometry.map(g => FocusStop(A11yRole.TextField, g.label))
       case WizardTab.DataIssues => Vector.empty
@@ -183,3 +190,19 @@ object ColumnMappingPane:
     tabs.map(t => FocusStop(A11yRole.ToggleButton, t.label)) ++ page ++
       Vector(FocusStop(A11yRole.Button, vm.cancel)) ++
       Option.when(vm.canCommit)(FocusStop(A11yRole.Button, vm.commit))
+
+  /** The action's accessible name distinguishes sibling panes sharing one draft. */
+  def siblingAction(page: WizardTab, action: String): String =
+    ImportText(ImportTextId.SiblingAction, ImportWizardVM.tabLabel(page), action)
+
+  /** The controls of a separately docked page, sharing the wizard's commit/revert. */
+  def siblingStops(vm: ImportWizardVM, page: WizardTab): Vector[FocusStop] =
+    focusStops(vm.copy(tab = page, showTabs = false)).map {
+      case FocusStop(A11yRole.Button, name) if name == vm.cancel || name == vm.commit =>
+        FocusStop(A11yRole.Button, siblingAction(page, name))
+      case other => other
+    }
+
+  /** Column mapping's stops once its sibling pages have their own dock tabs. */
+  def mappingStops(vm: ImportWizardVM): Vector[FocusStop] =
+    focusStops(vm.copy(tab = WizardTab.FixationMapping, showTabs = false))

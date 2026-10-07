@@ -119,6 +119,40 @@ final class ImportWizardView(dispatch: WizardIntent => Unit):
     HBox(10, displayKindLabel, displayKind, displayFileLabel, displayFile)
   trials.footer.getChildren.addAll(displayControls, displayNote)
 
+  /** Optional trial duration, with units declared before its column is selectable. */
+  val inventoryDurationUnit: ComboBox[TimeUnitOptionVM]        = ComboBox()
+  val inventoryDurationColumn: ComboBox[DisplayColumnOptionVM] = ComboBox()
+  private val inventoryDurationUnitLabel                       = label("import-label", "t11")
+  private val inventoryDurationColumnLabel                     = label("import-label", "t11")
+  private val inventoryDurationNote                            = label("import-note", "t11")
+  inventoryDurationNote.setWrapText(true)
+  inventoryDurationUnit.setConverter(converter(_.label))
+  inventoryDurationColumn.setConverter(converter(_.label))
+  inventoryDurationUnit.getStyleClass.addAll("role-select", "t12")
+  inventoryDurationColumn.getStyleClass.addAll("role-select", "t12")
+  inventoryDurationUnitLabel.setLabelFor(inventoryDurationUnit)
+  inventoryDurationColumnLabel.setLabelFor(inventoryDurationColumn)
+  inventoryDurationUnit.setOnAction(_ =>
+    Option(inventoryDurationUnit.getValue).foreach(o =>
+      fire(WizardIntent.DeclareInventoryDurationUnit(o.unit))
+    )
+  )
+  inventoryDurationColumn.setOnAction(_ =>
+    Option(inventoryDurationColumn.getValue).foreach(o =>
+      fire(WizardIntent.DeclareInventoryDurationColumn(o.column))
+    )
+  )
+  trials.footer.getChildren.addAll(
+    HBox(
+      10,
+      inventoryDurationUnitLabel,
+      inventoryDurationUnit,
+      inventoryDurationColumnLabel,
+      inventoryDurationColumn
+    ),
+    inventoryDurationNote
+  )
+
   // --- presets ---------------------------------------------------------------------
   val presetSelect: ComboBox[String] = ComboBox()
   presetSelect.getStyleClass.addAll("preset-select", "t12")
@@ -167,6 +201,7 @@ final class ImportWizardView(dispatch: WizardIntent => Unit):
     f -> l
   }.toMap
   private val geometryNote = label("import-note", "t11")
+  geometryNote.setWrapText(true)
   val geometry: VBox       = VBox()
   private val geometryGrid = GridPane()
   geometryGrid.setHgap(10)
@@ -203,7 +238,19 @@ final class ImportWizardView(dispatch: WizardIntent => Unit):
 
   node.getChildren.setAll(header, pages, footer)
 
-  private var last: Option[ImportWizardVM] = None
+  private var last: Option[ImportWizardVM]             = None
+  private var detached: Map[WizardTab, DataWizardPage] = Map.empty
+
+  /** Move one page into its own dock node; the same controls and draft remain in use. */
+  def detach(tab: WizardTab): DataWizardPage =
+    detached.get(tab).getOrElse {
+      val content = page(tab)
+      pages.getChildren.remove(content)
+      val hosted = DataWizardPage(tab, content, fire)
+      detached += tab -> hosted
+      last.foreach(hosted.render)
+      hosted
+    }
 
   /** The page each tab shows. */
   def page(tab: WizardTab): Region = tab match
@@ -221,17 +268,20 @@ final class ImportWizardView(dispatch: WizardIntent => Unit):
         b.setAccessibleText(t.label)
         b.setSelected(t.selected)
       }
-      // A re-map offers some of the pages only (S5.4).
+      // Docked pages use their dock tabs; File → Import keeps its own strip.
+      val offered = vm.tabs.filterNot(t => detached.contains(t.tab))
       WizardTab.values.foreach { t =>
-        val shown = vm.showTabs && vm.tabs.exists(_.tab == t)
+        val shown = vm.showTabs && offered.size > 1 && offered.exists(_.tab == t)
         tabs(t).setVisible(shown)
         tabs(t).setManaged(shown)
       }
       kind.setText(vm.kind)
+      val selected = if detached.contains(vm.tab) then WizardTab.FixationMapping else vm.tab
       WizardTab.values.foreach { t =>
-        val p = page(t)
-        p.setVisible(t == vm.tab)
-        p.setManaged(t == vm.tab)
+        val p     = page(t)
+        val shown = detached.contains(t) || t == selected
+        p.setVisible(shown)
+        p.setManaged(shown)
       }
       fixations.render(vm.fixations)
       trials.render(vm.trials)
@@ -261,6 +311,28 @@ final class ImportWizardView(dispatch: WizardIntent => Unit):
       displayFile.setAccessibleText(vm.displays.fileLabel)
       displayKind.setDisable(!vm.displays.enabled)
       displayFile.setDisable(!vm.displays.enabled || vm.displays.selected.isEmpty)
+
+      inventoryDurationUnitLabel.setText(vm.inventoryDuration.unitLabel)
+      inventoryDurationColumnLabel.setText(vm.inventoryDuration.columnLabel)
+      inventoryDurationNote.setText(vm.inventoryDuration.note)
+      if !last.map(_.inventoryDuration.units).contains(vm.inventoryDuration.units) then
+        inventoryDurationUnit.getItems.setAll(vm.inventoryDuration.units.asJava): Unit
+      if !last.map(_.inventoryDuration.columns).contains(vm.inventoryDuration.columns) then
+        inventoryDurationColumn.getItems.setAll(vm.inventoryDuration.columns.asJava): Unit
+      inventoryDurationUnit.setValue(
+        vm.inventoryDuration.units.find(_.unit == vm.inventoryDuration.selectedUnit).orNull
+      )
+      inventoryDurationColumn.setValue(
+        vm.inventoryDuration.columns
+          .find(_.column == vm.inventoryDuration.selected.map(_.column))
+          .orNull
+      )
+      inventoryDurationUnit.setAccessibleText(vm.inventoryDuration.unitLabel)
+      inventoryDurationColumn.setAccessibleText(vm.inventoryDuration.columnLabel)
+      inventoryDurationUnit.setDisable(!vm.inventoryDuration.enabled)
+      inventoryDurationColumn.setDisable(
+        !vm.inventoryDuration.enabled || vm.inventoryDuration.selectedUnit.isEmpty
+      )
 
       timeLabel.setText(vm.time.label)
       timeNote.setText(vm.time.note)
@@ -312,6 +384,7 @@ final class ImportWizardView(dispatch: WizardIntent => Unit):
       commit.setText(vm.commit)
       commit.setAccessibleText(vm.commit)
       commit.setDisable(!vm.canCommit)
+      detached.values.foreach(_.render(vm))
       last = Some(vm)
     finally rendering = false
 
@@ -498,3 +571,67 @@ final class MappingTable(role: SourceRole, fire: WizardIntent => Unit):
         .foreach(c => fire(WizardIntent.Choose(role, d.vm.column, c.choice)))
     )
     d
+
+/** A detached Data page: one node per dock pane, with a shared wizard's actions. */
+final class DataWizardPage(
+    tab: WizardTab,
+    content: Region,
+    dispatch: WizardIntent => Unit
+):
+  import ImportWizardView.*
+
+  private val empty   = label("import-empty", "t12")
+  private val notice  = label("import-problem", "t12")
+  private val reading = label("import-status", "t12")
+  private val problem = label("import-problem", "t12")
+  private val status  = label("import-status", "t12")
+  Vector(empty, notice, reading, problem, status).foreach(_.setWrapText(true))
+  val cancel: Button = button("import-button", "t12")
+  val commit: Button = button("import-button", "primary", "t12")
+  cancel.setOnAction(_ => dispatch(WizardIntent.Cancel))
+  commit.setOnAction(_ => dispatch(WizardIntent.Commit))
+  private val footer = HBox(spacer(), cancel, commit)
+  footer.getStyleClass.add("import-footer")
+  private val scroll = ScrollPane(content)
+  scroll.setFitToWidth(true)
+  scroll.setHbarPolicy(ScrollPane.ScrollBarPolicy.NEVER)
+  scroll.setFocusTraversable(false)
+  VBox.setVgrow(scroll, Priority.ALWAYS)
+  val node: VBox = VBox(empty, notice, reading, scroll, problem, status, footer)
+  node.getStyleClass.add("import-wizard")
+  Option(getClass.getClassLoader.getResource(stylesheetResource))
+    .foreach(url => node.getStylesheets.add(url.toExternalForm))
+
+  private var opened                       = false
+  private var shownProblem: Option[String] = None
+  private var shownStatus: Option[String]  = None
+
+  private def showMessages(): Unit =
+    Vector(problem -> shownProblem, status -> shownStatus).foreach { (l, text) =>
+      l.setText(text.getOrElse(""))
+      l.setVisible(opened && text.isDefined)
+      l.setManaged(opened && text.isDefined)
+    }
+
+  def availability(available: Boolean, vm: ColumnMappingPaneVM): Unit =
+    opened = available
+    Vector(empty -> vm.empty, notice -> vm.notice, reading -> vm.reading).foreach { (l, text) =>
+      l.setText(text.getOrElse(""))
+      l.setVisible(text.isDefined)
+      l.setManaged(text.isDefined)
+    }
+    Vector(scroll, footer).foreach { n =>
+      n.setVisible(opened)
+      n.setManaged(opened)
+    }
+    showMessages()
+
+  def render(vm: ImportWizardVM): Unit =
+    cancel.setText(vm.cancel)
+    cancel.setAccessibleText(ColumnMappingPane.siblingAction(tab, vm.cancel))
+    commit.setText(vm.commit)
+    commit.setAccessibleText(ColumnMappingPane.siblingAction(tab, vm.commit))
+    commit.setDisable(!vm.canCommit)
+    shownProblem = vm.problem.filter(_.nonEmpty)
+    shownStatus = vm.status.filter(_.nonEmpty)
+    showMessages()

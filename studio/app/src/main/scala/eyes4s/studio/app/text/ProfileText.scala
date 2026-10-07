@@ -24,7 +24,7 @@ package eyes4s.studio.app.text
   */
 enum ProfileTextId derives CanEqual:
   /** The source's caption, the plot's tab title and its accessible summary. */
-  case Caption, Title, Summary
+  case Caption, Title, Summary, OverallSummary, GrandMean
 
   /** The table's column headers. */
   case SeriesHeader, ScaleHeader, SigmaHeader, DHeader, NHeader
@@ -47,6 +47,10 @@ object ProfileText:
       case Summary =>
         "{0}: each group's grand mean D at {1} scales, bold, over each " +
           "participant's mean D, faint"
+      case OverallSummary =>
+        "{0}: the whole-report grand mean D at {1} scales, bold, over each " +
+          "participant's mean D, faint"
+      case GrandMean    => "Grand mean"
       case SeriesHeader => "Mean of"
       case ScaleHeader  => "Scale"
       case SigmaHeader  => "σ (°)"

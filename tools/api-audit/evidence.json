@@ -8996,7 +8996,6 @@
           "ioJVM/eyes4s.io.DiagnosticCoverageJvmSuite",
           "ioJVM/eyes4s.io.DiagnosticsDocJvmSuite",
           "ioJVM/eyes4s.io.IoDiagnosticCatalogSuite",
-          "lawsJVM/eyes4s.laws.FormLawSuite",
           "planJVM/eyes4s.plan.DiagnosticCatalogSuite",
           "planJVM/eyes4s.plan.FormDescriptorSuite",
           "planJVM/eyes4s.plan.UnmatchedReasonsSuite",
@@ -15502,10 +15501,15 @@
     "method eyes4s.io.TidyResultError.message():": "ioJVM/consumer.PublicIoSuite",
     "method eyes4s.io.TrialColumns$.of(java.lang.String,java.lang.String,java.lang.String,scala.Option):scala.util.Either": "ioJVM/eyes4s.io.SourceAdmissionSuite",
     "method eyes4s.io.TrialColumns.names():": "ioJVM/eyes4s.io.SourceAdmissionSuite",
+    "method eyes4s.io.TrialDurationFromStart$.of(java.lang.String,eyes4s.io.TimestampUnit,eyes4s.io.TimestampRounding):scala.util.Either": "ioJVM/eyes4s.io.TrialDurationSuite",
+    "method eyes4s.io.TrialDurationFromStart.extent(eyes4s.io.InventoryRow):scala.util.Either": "ioJVM/eyes4s.io.TrialDurationSuite",
+    "method eyes4s.io.TrialDurationFromStart.extent(eyes4s.plan.InventoryTrial):scala.util.Either": "ioJVM/eyes4s.io.TrialDurationSuite",
+    "method eyes4s.io.TrialDurationFromStart.parse(java.lang.String,scala.Int):scala.util.Either": "ioJVM/eyes4s.io.TrialDurationSuite",
     "method eyes4s.io.TrialInventory$.read(java.lang.String,eyes4s.io.TrialInventoryColumns):scala.util.Either": "ioJVM/eyes4s.io.SourceAdmissionSuite",
     "method eyes4s.io.TrialInventory.source(java.lang.String):eyes4s.plan.SourceRef": "ioJVM/eyes4s.io.SourceAdmissionSuite",
     "method eyes4s.io.TrialInventory.trial(eyes4s.plan.TrialIdentity):scala.Option": "ioJVM/eyes4s.io.InventoryReviewSuite",
     "method eyes4s.io.TrialInventoryColumns$.of(eyes4s.io.TrialColumns,scala.Option,scala.collection.immutable.Vector):scala.util.Either": "ioJVM/eyes4s.io.SourceAdmissionSuite",
+    "method eyes4s.io.TrialInventoryColumns$.of(eyes4s.io.TrialColumns,scala.Option,scala.collection.immutable.Vector,scala.Option):scala.util.Either": "ioJVM/eyes4s.io.SourceAdmissionSuite",
     "method eyes4s.io.TrialInventoryColumns.names():": "ioJVM/eyes4s.io.SourceAdmissionSuite",
     "method eyes4s.io.ValidityCodebook$.of(scala.collection.immutable.Set,scala.collection.immutable.Set,scala.collection.immutable.Set,scala.collection.immutable.Set):scala.util.Either": "ioJVM/eyes4s.io.PsychologyWorkflowSuite",
     "method eyes4s.io.ValidityCodebook.decode(java.lang.String):scala.Option": "ioJVM/eyes4s.io.PsychologyWorkflowSuite",
@@ -19674,6 +19678,17 @@
       "tidy export rejects detection and AOI temporal-support disagreement",
       "typed tidy rows retain every interpretation and evidence field"
     ],
+    "ioJS/eyes4s.io.TrialDurationSuite": [
+      "blank timing is explicitly absent rather than zero duration",
+      "different duration text conflicts even when rounded extents agree; blank is distinct",
+      "duration declarations refuse missing headers and lossy attribute kinds",
+      "equal duplicate text retains every source row and source record",
+      "explicit units produce exact half-open native extents and preserve source cells",
+      "malformed and nonpositive timing names the original record, column and cell",
+      "native ledger trials retain declared duration even without fixation records",
+      "native timestamp rounding policy is named and shared with fixation parsing",
+      "unsafe JSON-sized integer duration remains exact source text and native microseconds"
+    ],
     "ioJS/eyes4s.io.WindowConstructionSuite": [
       "a translation is built only by Correction.translate",
       "a units-per-degree scale is built only by LinearAngularScale.of",
@@ -23568,6 +23583,17 @@
       "the psychology report and explanation need no kernel vocabulary",
       "tidy export rejects detection and AOI temporal-support disagreement",
       "typed tidy rows retain every interpretation and evidence field"
+    ],
+    "ioJVM/eyes4s.io.TrialDurationSuite": [
+      "blank timing is explicitly absent rather than zero duration",
+      "different duration text conflicts even when rounded extents agree; blank is distinct",
+      "duration declarations refuse missing headers and lossy attribute kinds",
+      "equal duplicate text retains every source row and source record",
+      "explicit units produce exact half-open native extents and preserve source cells",
+      "malformed and nonpositive timing names the original record, column and cell",
+      "native ledger trials retain declared duration even without fixation records",
+      "native timestamp rounding policy is named and shared with fixation parsing",
+      "unsafe JSON-sized integer duration remains exact source text and native microseconds"
     ],
     "ioJVM/eyes4s.io.WindowConstructionSuite": [
       "a translation is built only by Correction.translate",

@@ -49,6 +49,7 @@ class LayoutSpecSuite extends munit.FunSuite:
         "Trial metadata"        -> "data.trial-metadata",
         "Admission"             -> "data.admission",
         "Records outside frame" -> "data.outside-frame",
+        "Data issues"           -> "data.issues",
         "Geometry"              -> "data.geometry"
       )
     ),
@@ -128,7 +129,7 @@ class LayoutSpecSuite extends munit.FunSuite:
     )
   )
 
-  test("every board pane is declared, in the board's order, and nothing else is") {
+  test("board panes and the coordinated Data issues extension are declared in order") {
     for (board, layout, tabs) <- boards do
       assertEquals(layout.panes.map(_.id.value), tabs.map(_._2), board)
   }

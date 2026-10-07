@@ -123,6 +123,9 @@ final class StudioWindow private (
   /** The controls a pane shows inside its own focus stop, in Tab order. */
   def paneStops(pane: PaneId): Vector[FocusStop] =
     if pane == StudioLayouts.columnMapping then columnMapping.focusStops
+    else if pane == StudioLayouts.dataGeometry then columnMapping.geometryStops
+    else if pane == StudioLayouts.trialMetadata then columnMapping.trialMetadataStops
+    else if pane == StudioLayouts.dataIssues then columnMapping.issuesStops
     else if pane == StudioLayouts.admission then admission.focusStops
     else if pane == StudioLayouts.sources then sources.focusStops
     else if pane == StudioLayouts.compareQueries || pane == StudioLayouts.compareItems then
@@ -506,6 +509,9 @@ object StudioWindow:
     presetReader.setDaemon(true)
     presetReader.start()
     host.host(StudioLayouts.columnMapping, mapping.node)
+    host.host(StudioLayouts.dataGeometry, mapping.geometry.node)
+    host.host(StudioLayouts.trialMetadata, mapping.trialMetadata.node)
+    host.host(StudioLayouts.dataIssues, mapping.issues.node)
     r.listen(mapping.sync)
     // The admission ledger (Data): the selected revision's counts, and Admit.
     val admission = AdmissionLedgerHost(() => r.model, dispatch, LedgerInputs.of(session))

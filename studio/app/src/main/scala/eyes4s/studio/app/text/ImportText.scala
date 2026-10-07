@@ -34,6 +34,8 @@ enum ImportTextId derives CanEqual:
   case RoleFor, Required
   case UnitNone, UnitScreenPx, UnitSamples, UnitUndeclared, UnitText
   case TimeUnitLabel, TimeUndeclared, TimeMilliseconds, TimeMicroseconds, TimeSeconds
+  case InventoryDurationUnit, InventoryDurationColumn, InventoryDurationNote,
+    InventoryDurationUnitNeeded
   case TimeNote
   case DisplayKindColumn, DisplayFileColumn, DisplayUnmapped, DisplayNote
 
@@ -57,7 +59,7 @@ enum ImportTextId derives CanEqual:
 
   // --- The column-mapping pane (re-map of the selected revision) ------------------
   case Revert, PaneNoDataset, PaneReading, PaneNoProject, PaneEditsDropped
-  case PanePresetsUnreadable
+  case PanePresetsUnreadable, SiblingAction
 
 /** The wizard's strings in the boards' wording. */
 object ImportText:
@@ -117,6 +119,12 @@ object ImportText:
       case DisplayNote       =>
         "Display kinds: image, blank, blank+fixation-cross, cue, or unknown. Image files name imported assets; " +
           "blank displays need no file. Leave these unmapped when no displays are declared."
+      case InventoryDurationUnit   => "Inventory duration unit (declared)"
+      case InventoryDurationColumn => "Inventory duration column"
+      case InventoryDurationNote   =>
+        "Declare the inventory duration unit, then choose its column. Durations are relative to trial start; blank cells stay unavailable."
+      case InventoryDurationUnitNeeded =>
+        "{0}: declare a unit before mapping trial duration column {1}."
       case GeometryNote =>
         "Declared, not calibrated: screen px, image frame = analysis window, linear px/°."
       case GeometryScreenWidth     => "Screen width (px)"
@@ -173,6 +181,7 @@ object ImportText:
       case PaneNoProject    => "no project is open to read it from"
       case PaneEditsDropped =>
         "{0} changed, so the edits not yet applied to it were dropped."
+      case SiblingAction         => "{0} · {1}"
       case PanePresetsUnreadable => "Some saved import presets could not be read: {0}"
 
   /** `id`'s English template with its arguments filled. */

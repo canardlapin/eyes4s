@@ -24,7 +24,13 @@ import eyes4s.studio.core.bundle.InputKind
 import eyes4s.studio.core.command.Command
 import eyes4s.studio.core.document.{Source, SourceRole, StudioDocument}
 import eyes4s.studio.desktop.runtime.ProjectPort
-import eyes4s.studio.core.importing.{ImportPreset, KeyGap, SniffedSource, SourceReadError}
+import eyes4s.studio.core.importing.{
+  ImportPreset,
+  ImportPresets,
+  KeyGap,
+  SniffedSource,
+  SourceReadError
+}
 import eyes4s.studio.desktop.platform.FilePresetStore
 import javafx.application.Platform
 import javafx.scene.Scene
@@ -112,6 +118,11 @@ final class ImportWizardHost(
   def reset(wizard: ImportWizard): Unit =
     state = wizard
     readFrom = Map.empty
+    render()
+
+  /** Late preset reads leave the current draft and remembered project readers intact. */
+  def presetsLoaded(presets: ImportPresets): Unit =
+    state = state.withPresets(presets)
     render()
 
   def dispatch(intent: WizardIntent): Unit =

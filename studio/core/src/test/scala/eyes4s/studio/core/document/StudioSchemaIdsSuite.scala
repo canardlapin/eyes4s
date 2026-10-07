@@ -58,11 +58,11 @@ class StudioSchemaIdsSuite extends munit.FunSuite:
     assertEquals(StudioDocument.ladder.map(_.versions.head), Right(ids.document))
     assertEquals(
       StudioDocument.codec.map(c => (c.schema.name, c.schema.version)),
-      Right((ids.document.name, ids.document.version + 7))
+      Right((ids.document.name, ids.document.version + 9))
     )
     assertEquals(ScienceContent.ladder.map(_.versions.head), Right(ids.science))
     assertEquals(
       ScienceContent.codec.map(c => (c.schema.name, c.schema.version)),
-      Right((ids.science.name, ids.science.version + 3))
+      Right((ids.science.name, ids.science.version + 5))
     )
   }

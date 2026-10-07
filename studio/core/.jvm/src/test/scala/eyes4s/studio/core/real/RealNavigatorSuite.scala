@@ -28,6 +28,9 @@ import munit.CatsEffectSuite
 import scala.concurrent.duration.*
 
 class RealNavigatorSuite extends CatsEffectSuite:
+  private val navigationTimeout         = 40.seconds
+  override def munitIOTimeout: Duration = navigationTimeout + 20.seconds
+
   private def get[E, A](value: Either[E, A]): A = value.fold(e => fail(e.toString), identity)
   private lazy val document                     = get(RealBackendConformanceSuite.trialLayout)
   private val scale                             = get(ScaleIndex.of(2))
@@ -131,5 +134,5 @@ class RealNavigatorSuite extends CatsEffectSuite:
               case other => fail(s"unexpected source $other")
         }
       }
-      .timeout(40.seconds)
+      .timeout(navigationTimeout)
   }

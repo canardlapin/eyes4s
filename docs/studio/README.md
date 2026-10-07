@@ -16,6 +16,23 @@ kind clears the file binding; removing and keeping the inventory preserves its d
 Display columns still pass through as attributes. Image displays name an asset file;
 absent image bytes are reported as missing, while blank displays need no file.
 
+Data's **Geometry**, **Trial metadata** and **Issues** panes share the selected
+revision's draft. Apply commits their changes together as one revision; Revert
+restores the baseline. The standalone import wizard uses the same draft flow.
+
+To declare trial length, choose an **Inventory duration unit (declared)** before
+binding the **Inventory duration column** in Trial metadata. The column's name
+does not infer its unit.
+Declared lengths start at trial time zero and retain the original inventory value
+and source records. Explore's inspector and initial timeline show that extent;
+without a declaration they identify fixation coverage separately and report why
+trial duration is unavailable. Blank duration cells remain missing.
+
+Results shows one **Grand mean** curve from the whole-report evaluation, alongside
+the participant curves. Its points retain the evaluated values, counts and Explain
+references under the current filter and weighting. Figures panel E continues to
+show the explicitly grouped curves.
+
 In Figures, **Start figure with** creates panel A from a chosen template. Use
 **Add panel**, **Move earlier**, **Move later** and **Remove panel** to arrange the
 page. Moving a panel retains its letter; the last panel cannot be removed.

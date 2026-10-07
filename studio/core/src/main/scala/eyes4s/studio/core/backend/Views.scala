@@ -435,7 +435,7 @@ final case class ResultSummary(
 
 object ResultSummary:
   // Safe integral degrees keep raw wire pins identical on JVM and JS.
-  // Document codecs remain unchanged; this codec belongs to protocol 1.18.
+  // Document codecs remain unchanged; this codec belongs to protocol 1.19.
   private given Codec[Sigma] = Codec.from(
     Decoder[Double].emap(d => Sigma.of(d).left.map(_.message)),
     Encoder.instance(sigma =>

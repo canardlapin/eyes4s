@@ -283,7 +283,9 @@ object FakeTrialViews:
               .leftMap(refused)
           )
       }
-      view <- TrialFixations.of(revision, dataset, trial, fixations).leftMap(refused)
+      view <- TrialFixations
+        .of(revision, dataset, trial, fixations, TrialTemporalExtent.Undeclared(trial, dataset))
+        .leftMap(refused)
     yield view
 
   private final case class Estimate(

@@ -17,7 +17,10 @@
 package eyes4s.studio.desktop.shell
 
 import eyes4s.studio.app.{AppModel, Intent, StoryModels}
-import eyes4s.studio.app.layout.PaneId
+import eyes4s.studio.app.layout.{PaneId, StudioLayouts}
+import eyes4s.studio.core.command.Command
+import eyes4s.studio.core.document.{LayoutBlob, Perspective, SavedLayout}
+import eyes4s.studio.core.fixture.StoryMoment
 import eyes4s.studio.desktop.StudioWindow
 import eyes4s.studio.desktop.dock.{DockGesture, DockLayouts, PerspectiveHost}
 import javafx.scene.Node
@@ -73,4 +76,70 @@ class DockFollowSuite extends ShellFxSuite:
           owner.getAccessibleText
         )
       }
+  }
+
+  private def legacyData: scaladock.LayoutState =
+    val id                                        = DockLayouts.paneId(StudioLayouts.dataIssues)
+    def remove(n: scaladock.Node): scaladock.Node = n match
+      case g: scaladock.Node.Group => g.copy(tabs = g.tabs.filterNot(_.id == id))
+      case s: scaladock.Node.Split =>
+        s.copy(cells = s.cells.map(c => c.copy(node = remove(c.node))))
+    val state = DockLayouts.state(StudioLayouts.dataVerify)
+    state.copy(root = state.root.map(remove))
+
+  private def savedData(state: scaladock.LayoutState): LayoutBlob =
+    LayoutBlob(ujson.write(ujson.Obj("data.verify" -> scaladock.LayoutCodec.encode(state))))
+
+  fxStage.test(
+    "older saved Data arrangements restore with reachable issues and repeat idempotently"
+  ) { fx =>
+    val old   = legacyData
+    val blob  = savedData(old)
+    val model = AppModel
+      .update(
+        StoryModels.t1Data,
+        Intent.Dispatch(Command.SaveLayout(Perspective.Data, Some(blob)))
+      )
+      ._1
+    val w        = boot(fx, model, StoryMoment.T1)
+    val restored = runOnFx(w.host.dock.state)
+    assert(restored.findPane(DockLayouts.paneId(StudioLayouts.dataIssues)).isDefined)
+    assertEquals(
+      restored.panes.filterNot(_.id == DockLayouts.paneId(StudioLayouts.dataIssues)),
+      old.panes
+    )
+    assertEquals(AppModel.savedLayout(runOnFx(w.runtime.model), Perspective.Data), Some(blob))
+    val again =
+      runOnFx(w.host.restore(Vector(SavedLayout(Perspective.Data, blob)), w.runtime.model))
+    assertEquals(again, Vector.empty)
+    assertEquals(runOnFx(w.host.dock.state.root), restored.root)
+    dispatch(fx, w, Intent.FocusPane(StudioLayouts.dataIssues))
+    assertEquals(
+      runOnFx(w.host.dock.state.focused),
+      Some(DockLayouts.paneId(StudioLayouts.dataIssues))
+    )
+  }
+
+  fxStage.test(
+    "a saved Data layout missing Admission falls back while preserving its original blob"
+  ) { fx =>
+    val blob  = savedData(DockLayouts.state(StudioLayouts.dataFirstRun))
+    val model = AppModel
+      .update(
+        StoryModels.t1Data,
+        Intent.Dispatch(Command.SaveLayout(Perspective.Data, Some(blob)))
+      )
+      ._1
+    val w = boot(fx, model, StoryMoment.T1)
+    assertEquals(AppModel.savedLayout(runOnFx(w.runtime.model), Perspective.Data), Some(blob))
+    assert(
+      runOnFx(
+        w.host.dock.state.findPane(DockLayouts.paneId(StudioLayouts.dataIssues))
+      ).isDefined
+    )
+    val refused =
+      runOnFx(w.host.restore(Vector(SavedLayout(Perspective.Data, blob)), w.runtime.model))
+    assertEquals(refused.map(_.perspective), Vector(Perspective.Data))
+    assert(refused.head.reason.contains("no Admission pane"), refused.head.reason)
+    assertEquals(AppModel.savedLayout(runOnFx(w.runtime.model), Perspective.Data), Some(blob))
   }

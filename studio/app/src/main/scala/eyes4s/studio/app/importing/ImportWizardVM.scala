@@ -24,6 +24,7 @@ import eyes4s.studio.core.document.{
   ColumnName,
   ColumnRole,
   DisplayColumns,
+  InventoryDurationColumn,
   SourceRole,
   StudioDocument,
   TimeUnit
@@ -71,6 +72,17 @@ final case class DisplayColumnsVM(
     fileLabel: String,
     options: Vector[DisplayColumnOptionVM],
     selected: Option[DisplayColumns],
+    enabled: Boolean,
+    note: String
+) derives CanEqual
+
+final case class InventoryDurationVM(
+    unitLabel: String,
+    columnLabel: String,
+    units: Vector[TimeUnitOptionVM],
+    columns: Vector[DisplayColumnOptionVM],
+    selectedUnit: Option[TimeUnit],
+    selected: Option[InventoryDurationColumn],
     enabled: Boolean,
     note: String
 ) derives CanEqual
@@ -137,7 +149,8 @@ final case class ImportWizardVM(
     problem: Option[String],
     key: TrialKeyVM,
     trialsSource: Option[(String, WizardIntent)],
-    displays: DisplayColumnsVM
+    displays: DisplayColumnsVM,
+    inventoryDuration: InventoryDurationVM
 ) derives CanEqual
 
 object ImportWizardVM:
@@ -220,6 +233,8 @@ object ImportWizardVM:
       KeyText(KeyTextId.NeedsRemap, d.label, missing.map(_.label).mkString(", "))
     case WizardProblem.NoOccurrenceColumn(file) =>
       KeyText(KeyTextId.NoOccurrenceColumn, file)
+    case WizardProblem.NoInventoryDurationUnit(file, column) =>
+      t(ImportTextId.InventoryDurationUnitNeeded, file, column.value)
     case WizardProblem.InventoryNeedsRemap(d, file, e) =>
       t(ImportTextId.InventoryNeedsRemap, d.label, file, e.message)
 
@@ -298,6 +313,8 @@ object ImportWizardVM:
     val fixationIssues = w.fixations.fold(Vector.empty)(_._2.issues)
     val trialIssues    = w.trialIssues
     val all            = w.issues
+    val geometryIssues =
+      w.geometry.parse.left.toOption.toVector.map(e => IssueVM(e.message, None, true))
     // The trial key's Studio checks block too (S5.3); its other findings warn.
     val keyIssues   = TrialKeyVM.issues(w)
     val keyBlocking = keyIssues.count(_.blocking)
@@ -346,7 +363,7 @@ object ImportWizardVM:
         case WizardTab.FixationMapping => fixationIssues.size + keyBlocking
         case WizardTab.TrialMetadata   => trialIssues.size
         case WizardTab.Geometry        => w.geometry.parse.fold(_ => 1, _ => 0)
-        case WizardTab.DataIssues      => all.size + keyBlocking
+        case WizardTab.DataIssues      => all.size + keyBlocking + geometryIssues.size
       val label =
         if count == 0 then tabLabel(tab)
         else t(ImportTextId.TabIssues, tabLabel(tab), Format.count(count.toLong))
@@ -407,6 +424,21 @@ object ImportWizardVM:
         w.trials.isDefined,
         t(ImportTextId.DisplayNote)
       ),
+      inventoryDuration = InventoryDurationVM(
+        t(ImportTextId.InventoryDurationUnit),
+        t(ImportTextId.InventoryDurationColumn),
+        (None +: TimeUnit.values.toVector.map(Some(_))).map(u =>
+          TimeUnitOptionVM(u, timeLabel(u))
+        ),
+        Vector(DisplayColumnOptionVM(None, t(ImportTextId.DisplayUnmapped))) ++
+          w.trials.toVector
+            .flatMap(_._2.preview.header)
+            .map(c => DisplayColumnOptionVM(Some(c), c.value)),
+        w.inventoryDurationUnit,
+        w.trials.flatMap(_._2.duration),
+        w.trials.isDefined,
+        t(ImportTextId.InventoryDurationNote)
+      ),
       time = TimeUnitVM(
         t(ImportTextId.TimeUnitLabel),
         (None +: TimeUnit.values.toVector.map(Some(_))).map(u =>
@@ -425,9 +457,10 @@ object ImportWizardVM:
       geometry = GeometryField.values.toVector.map(f =>
         GeometryFieldVM(f, geometryLabel(f), w.geometry.field(f))
       ),
-      issuesSummary = issuesSummary(all.size + keyBlocking),
-      issues = all.map(e => IssueVM(e.message, e.pointsAt.map(_.value), true)) ++
-        keyIssues.filter(_.blocking) ++ keyIssues.filterNot(_.blocking) ++ ragged,
+      issuesSummary = issuesSummary(all.size + keyBlocking + geometryIssues.size),
+      issues =
+        all.map(e => IssueVM(e.message, e.pointsAt.map(_.value), true)) ++ geometryIssues ++
+          keyIssues.filter(_.blocking) ++ keyIssues.filterNot(_.blocking) ++ ragged,
       presets = PresetsVM(
         t(ImportTextId.PresetLabel),
         w.presets.names.map(_.value),

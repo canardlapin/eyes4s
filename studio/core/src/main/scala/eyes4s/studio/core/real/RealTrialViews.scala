@@ -56,10 +56,55 @@ final class RealTrialViews private (
       key       <- inventory(trial)
       positions <- provenance.positions(key).leftMap(e => refused(trial, "scanpath", e.message))
       fixations <- positions.traverse(fixation(trial, key, _))
+      extent    <- temporalExtent(trial, key)
       done      <- TrialFixations
-        .of(work.revision, work.dataset, trial, fixations)
+        .of(work.revision, work.dataset, trial, fixations, extent)
         .leftMap(BackendError.TrialViewRefused(_))
     yield done
+
+  private def temporalExtent(
+      trial: TrialKey,
+      key: CoreKey
+  ): Either[BackendError, TrialTemporalExtent] =
+    spec.inventory.flatMap(_.duration) match
+      case None              => Right(TrialTemporalExtent.Undeclared(trial, work.dataset))
+      case Some(declaration) =>
+        for
+          native <- declaration.core.leftMap(e =>
+            refused(trial, "trial duration declaration", e.message)
+          )
+          source <- spec.sources.trials.toRight(
+            refused(trial, "trial duration source", "No inventory source is declared.")
+          )
+          evidence <- work.admitted.evidence.inventory.toRight(
+            refused(
+              trial,
+              "trial duration evidence",
+              "No native inventory evidence is retained."
+            )
+          )
+          row <- evidence
+            .trial(eyes4s.plan.TrialIdentity.of(key))
+            .toRight(
+              refused(
+                trial,
+                "trial duration evidence",
+                "The trial has no retained inventory record."
+              )
+            )
+          window <- native.extent(row).leftMap(e => refused(trial, "trial duration", e.message))
+          extent <- window match
+            case None =>
+              TrialExtentEvidence
+                .of(trial, work.dataset, source.path, declaration, row.rows)
+                .map(TrialTemporalExtent.Blank.apply)
+                .leftMap(BackendError.TrialViewRefused(_))
+            case Some(value) =>
+              TrialExtentFromStart
+                .of(trial, work.dataset, value, source.path, declaration, row.rows)
+                .map(TrialTemporalExtent.FromTrialStart.apply)
+                .leftMap(BackendError.TrialViewRefused(_))
+        yield extent
 
   /** The fixed 2-degree preview uses the prepared study's own estimator.
     * It preserves the run's initial-fixation, window and weighting policies.

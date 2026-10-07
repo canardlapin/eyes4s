@@ -684,7 +684,7 @@ object FixationCsv:
       .filter(_.isFinite)
       .toRight(FixationRowError.Number(column, raw, "a finite number"))
 
-  private def micros(
+  private[io] def micros(
       raw: String,
       column: String,
       unit: TimestampUnit,

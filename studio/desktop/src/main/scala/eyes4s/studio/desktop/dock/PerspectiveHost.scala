@@ -177,7 +177,16 @@ final class PerspectiveHost(spec: LayoutSpec, theme: DockTheme, report: DockGest
                 .decode(json, dock.paneTypes)
                 .left
                 .map(e => unreadable(e.message))
-                .map(_ => ok :+ (name -> json))
+                .flatMap { decoded =>
+                  val migrated =
+                    if name == DockLayouts
+                        .name(eyes4s.studio.app.layout.StudioLayouts.dataVerify)
+                    then DockLayouts.dataIssues(decoded)
+                    else Right(decoded)
+                  migrated.left
+                    .map(e => unreadable(e.message))
+                    .map(state => ok :+ (name -> LayoutCodec.encode(state)))
+                }
           }
         }
       )

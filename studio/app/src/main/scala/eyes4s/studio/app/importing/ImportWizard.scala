@@ -32,6 +32,7 @@ import eyes4s.studio.core.document.{
   DisplayColumns,
   Geometry,
   InventoryMapping,
+  InventoryDurationColumn,
   SourcePath,
   Sources,
   SourceRole,
@@ -93,11 +94,16 @@ enum WizardProblem derives CanEqual:
   /** No column of `file` can hold the occurrence the key was asked to add. */
   case NoOccurrenceColumn(file: String)
 
+  /** Inventory duration columns require an explicitly chosen unit. */
+  case NoInventoryDurationUnit(file: String, column: ColumnName)
+
   /** `dataset`'s trial inventory `file` keeps it from admission (`error`:
     * unmapped, or its trial key disagrees with the fixations'; S5.4
     * follow-up): it needs a re-map, or its removal from the revision.
     */
   case InventoryNeedsRemap(dataset: DatasetRevision, file: String, error: DocumentError)
+
+  def message: String = ImportWizardVM.problemText(this)
 
 /** A fact that is not a document command: a note the wizard shows once. */
 enum WizardNote derives CanEqual:
@@ -118,6 +124,8 @@ enum WizardIntent derives CanEqual:
 
   /** Declare inventory display columns, or leave displays unmapped. */
   case DeclareDisplays(columns: Option[DisplayColumns])
+  case DeclareInventoryDurationUnit(unit: Option[TimeUnit])
+  case DeclareInventoryDurationColumn(column: Option[ColumnName])
 
   /** Add the occurrence to the trial key, or leave it out (S5.3): the
     * occurrence column's role in each file's mapping.
@@ -202,7 +210,8 @@ final case class ImportWizard private (
     note: Option[WizardNote],
     keys: KeyChecks = KeyChecks.none,
     dropTrials: Boolean = false,
-    setAside: Option[(SniffedSource, TrialMetadataDraft)] = None
+    setAside: Option[(SniffedSource, TrialMetadataDraft)] = None,
+    inventoryDurationUnit: Option[TimeUnit] = None
 ) derives CanEqual:
 
   /** Every issue that blocks the commit: the fixation mapping's, then the
@@ -225,7 +234,7 @@ final case class ImportWizard private (
     */
   def editedSince(baseline: ImportWizard): Boolean =
     fixations != baseline.fixations || trials != baseline.trials ||
-      geometry != baseline.geometry
+      geometry != baseline.geometry || inventoryDurationUnit != baseline.inventoryDurationUnit
 
 object ImportWizard:
 
@@ -324,11 +333,25 @@ object ImportWizard:
           case SourceRole.Trials if w.dropTrials =>
             trialDraft(w, source, document) match
               case Left(p)      => refuse(p)
-              case Right(draft) => (cleared.copy(setAside = Some((source, draft))), none)
+              case Right(draft) =>
+                (
+                  cleared.copy(
+                    setAside = Some((source, draft)),
+                    inventoryDurationUnit = draft.duration.map(_.unit)
+                  ),
+                  none
+                )
           case SourceRole.Trials =>
             trialDraft(w, source, document) match
               case Left(p)      => refuse(p)
-              case Right(draft) => (cleared.copy(trials = Some((source, draft))), none)
+              case Right(draft) =>
+                (
+                  cleared.copy(
+                    trials = Some((source, draft)),
+                    inventoryDurationUnit = draft.duration.map(_.unit)
+                  ),
+                  none
+                )
       case WizardIntent.ReadFailed(path, error) => refuse(WizardProblem.ReadFailed(path, error))
       case WizardIntent.ChooseTab(tab)          => (cleared.copy(tab = tab), none)
       case WizardIntent.DropTrials(drop)        =>
@@ -374,6 +397,45 @@ object ImportWizard:
                 e => refuse(WizardProblem.Mapping(e)),
                 d => (cleared.copy(trials = Some((src, d))), none)
               )
+
+      case WizardIntent.DeclareInventoryDurationUnit(unit) =>
+        w.trials match
+          case None               => refuse(WizardProblem.NoTrials)
+          case Some((src, draft)) =>
+            val declared = (draft.duration, unit) match
+              case (Some(d), Some(u)) =>
+                InventoryDurationColumn
+                  .of(d.column, u, d.rounding)
+                  .left
+                  .map(MappingError.Refused(draft.file, _))
+                  .flatMap(v => draft.declareDuration(Some(v)))
+              case _ => draft.declareDuration(None)
+            declared.fold(
+              e => refuse(WizardProblem.Mapping(e)),
+              d => (cleared.copy(trials = Some((src, d)), inventoryDurationUnit = unit), none)
+            )
+
+      case WizardIntent.DeclareInventoryDurationColumn(column) =>
+        w.trials match
+          case None               => refuse(WizardProblem.NoTrials)
+          case Some((src, draft)) =>
+            val declared = column
+              .traverse { c =>
+                for
+                  unit <- w.inventoryDurationUnit.toRight(
+                    WizardProblem.NoInventoryDurationUnit(draft.file, c)
+                  )
+                  value <- InventoryDurationColumn
+                    .of(c, unit)
+                    .left
+                    .map(WizardProblem.BadSources(_))
+                yield value
+              }
+              .flatMap(v => draft.declareDuration(v).left.map(WizardProblem.Mapping(_)))
+            declared.fold(
+              refuse,
+              d => (cleared.copy(trials = Some((src, d))), none)
+            )
 
       case WizardIntent.DeclareTime(unit) =>
         w.fixations match

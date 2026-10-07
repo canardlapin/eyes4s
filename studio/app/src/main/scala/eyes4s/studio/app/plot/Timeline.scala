@@ -17,7 +17,7 @@
 package eyes4s.studio.app.plot
 
 import eyes4s.studio.app.text.{TimelineText, TimelineTextId}
-import eyes4s.studio.core.backend.TrialKey
+import eyes4s.studio.core.backend.{TrialKey, TrialTemporalExtent}
 import eyes4s.studio.core.selection.{FixationIndex, StudioRef}
 
 /** Why a trial's timeline was refused. Every case names the trial and the
@@ -27,6 +27,7 @@ enum TimelineError derives CanEqual:
 
   /** Fixation `fixation` begins before the trial's clock starts. */
   case NegativeOnset(trial: TrialKey, fixation: Int, onsetMs: Long)
+  case OtherExtent(trial: TrialKey, extentTrial: TrialKey)
 
   /** Fixation `fixation` lasts no time. */
   case DurationNotPositive(trial: TrialKey, fixation: Int, durationMs: Long)
@@ -38,6 +39,7 @@ enum TimelineError derives CanEqual:
   case OutOfOrder(trial: TrialKey, fixation: Int, onsetMs: Long, previousOnsetMs: Long)
 
   def message: String = this match
+    case OtherExtent(t, e) => s"Timeline of ${t.label} has a temporal extent for ${e.label}."
     case NegativeOnset(t, f, on) =>
       s"Timeline of ${t.label}: fixation $f begins at $on ms, before the trial."
     case DurationNotPositive(t, f, d) =>
@@ -53,8 +55,11 @@ final case class TimelineFixation(index: FixationIndex, onsetMs: Long, durationM
     derives CanEqual
 
 /** A trial's fixation intervals in onset order (ticket S4.5e). */
-final case class Timeline private (trial: TrialKey, fixations: Vector[TimelineFixation])
-    derives CanEqual:
+final case class Timeline private (
+    trial: TrialKey,
+    fixations: Vector[TimelineFixation],
+    extent: TrialTemporalExtent
+) derives CanEqual:
 
   /** The ref of each fixation, in order. */
   def refs: Vector[StudioRef] = fixations.map(f => StudioRef.Fixation(trial, f.index))
@@ -66,11 +71,16 @@ object Timeline:
     */
   def of(
       trial: TrialKey,
-      fixations: Vector[TimelineFixation]
+      fixations: Vector[TimelineFixation],
+      extent: Option[TrialTemporalExtent] = None
   ): Either[TimelineError, Timeline] =
     def first[A](as: Vector[A])(bad: A => Option[TimelineError]) =
       as.iterator.flatMap(bad).nextOption().toLeft(())
     for
+      _ <- extent
+        .filter(_.trial != trial)
+        .map(e => TimelineError.OtherExtent(trial, e.trial))
+        .toLeft(())
       _ <- first(fixations)(f =>
         Option.when(f.onsetMs < 0)(TimelineError.NegativeOnset(trial, f.index.value, f.onsetMs))
       )
@@ -87,7 +97,7 @@ object Timeline:
           TimelineError.OutOfOrder(trial, b.index.value, b.onsetMs, a.onsetMs)
         )
       )
-    yield Timeline(trial, fixations)
+    yield Timeline(trial, fixations, extent.getOrElse(TrialTemporalExtent.LegacyMissing(trial)))
 
   /** The timeline as a value source: one row per fixation, in onset order,
     * with its onset and duration as the data serve them.

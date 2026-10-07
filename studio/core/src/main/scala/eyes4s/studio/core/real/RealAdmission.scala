@@ -276,7 +276,8 @@ object RealAdmission:
       keys        <- TrialColumns
         .of(participant, phase, trial, mapping.column(ColumnRole.Occurrence).map(_.value))
         .leftMap(refused)
-      columns <- TrialInventoryColumns
+      duration <- mapping.duration.traverse(_.core).leftMap(refused)
+      columns  <- TrialInventoryColumns
         .of(
           keys,
           Some(item),
@@ -284,7 +285,8 @@ object RealAdmission:
             .column(ColumnRole.Response)
             .map(c => AttributeColumn(c.value, AttributeKind.Text))
             .toVector ++
-            mapping.coreAttributes
+            mapping.coreAttributes,
+          duration
         )
         .leftMap(refused)
     yield columns

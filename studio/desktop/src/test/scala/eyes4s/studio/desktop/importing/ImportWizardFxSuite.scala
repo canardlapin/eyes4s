@@ -671,3 +671,75 @@ class ImportWizardFxSuite extends StudioFxSuite:
       Vector("forest-044.png", "kitchen-081.png")
     )
   }
+
+  fxStage.test(
+    "real CSV inventory duration selectors require explicit units and persist their binding"
+  ) { fx =>
+    assumeFullStage(fx)
+    val dir = Files.createTempDirectory("eyes4s-inventory-duration-wizard")
+    try
+      val timed = dir.resolve("trials-duration.csv")
+      val lines = Files.readAllLines(trials, UTF_8).asScala.toVector
+      Files.writeString(
+        timed,
+        ((lines.head + ",presentation_ms") +: lines.tail.map(_ + ",1200"))
+          .mkString("", "\n", "\n"),
+        UTF_8
+      )
+      val m = mount(fx, ImportWizard.newImport(t2, ImportPresets.empty), t2)
+      readIn(fx, m, SourceRole.Fixations, fixations)
+      readIn(fx, m, SourceRole.Trials, timed, Some("trials.csv"))
+      declareMs(fx, m)
+      fx.robot.click(m.view.tabs(WizardTab.TrialMetadata))
+      fx.awaitLayout()
+      val unit   = m.view.inventoryDurationUnit
+      val column = m.view.inventoryDurationColumn
+      assert(runOnFx(column.isDisabled))
+      assertEquals(runOnFx(m.host.model.trials.flatMap(_._2.duration)), None)
+      // Even a header ending in _ms does not infer the declared unit.
+      runOnFx(
+        unit.getItems.asScala.find(_.unit.contains(TimeUnit.Seconds)).foreach(unit.setValue)
+      )
+      fx.awaitLayout()
+      assert(!runOnFx(column.isDisabled))
+      runOnFx(
+        column.getItems.asScala
+          .find(_.column.exists(_.value == "presentation_ms"))
+          .foreach(column.setValue)
+      )
+      fx.awaitLayout()
+      assertEquals(
+        runOnFx(m.host.model.trials.flatMap(_._2.duration).map(_.unit)),
+        Some(TimeUnit.Seconds)
+      )
+      runOnFx(unit.getItems.asScala.find(_.unit.isEmpty).foreach(unit.setValue))
+      fx.awaitLayout()
+      assert(runOnFx(column.isDisabled))
+      assertEquals(runOnFx(m.host.model.trials.flatMap(_._2.duration)), None)
+      runOnFx(
+        unit.getItems.asScala
+          .find(_.unit.contains(TimeUnit.Milliseconds))
+          .foreach(unit.setValue)
+      )
+      runOnFx(
+        column.getItems.asScala
+          .find(_.column.exists(_.value == "presentation_ms"))
+          .foreach(column.setValue)
+      )
+      fx.awaitLayout()
+      fx.robot.click(m.view.commit)
+      fx.awaitLayout()
+      assertEquals(dispatched(m).size, 1)
+      val imported = eyes4s.studio.app.AppModel
+        .run(eyes4s.studio.app.AppModel.open(t2, None), m.app.toVector)
+        ._1
+        .document
+      val codec    = ok(StudioDocument.codec)
+      val restored = ok(codec.decode(ok(codec.encode(imported))))
+      val duration = restored.datasets.last.inventory
+        .flatMap(_.duration)
+        .getOrElse(fail("duration mapping was not stored"))
+      assertEquals(duration.column.value, "presentation_ms")
+      assertEquals(duration.unit, TimeUnit.Milliseconds)
+    finally TempDirs.remove(dir)
+  }

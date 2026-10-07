@@ -18,7 +18,7 @@ package eyes4s.studio.desktop.plot
 
 import eyes4s.studio.app.StoryModels
 import eyes4s.studio.app.layout.{CompareLayout, StudioLayouts}
-import eyes4s.studio.app.nav.Place
+import eyes4s.studio.app.nav.{Location, Place}
 import eyes4s.studio.app.text.Format
 import eyes4s.studio.core.backend.{Response, ReportRole}
 import eyes4s.studio.core.fixture.{StoryMoment, StoryMoments}
@@ -37,6 +37,9 @@ import eyes4s.studio.desktop.compare.{CompareSummaryHost, SummaryInputs}
 import eyes4s.studio.desktop.runtime.{EffectPerformer, StudioRuntime}
 import eyes4s.studio.viz.plot.{DataPoint, RowMarking}
 import javafx.scene.control.{Label, ToggleButton}
+import javafx.event.Event
+import javafx.geometry.Point2D
+import javafx.scene.input.{MouseButton, MouseEvent, PickResult}
 import javafx.scene.layout.HBox
 
 import scala.collection.mutable
@@ -120,6 +123,7 @@ class CompareSummaryFxSuite extends ShellFxSuite:
     eventually(fx, "the summary and its queries are read") {
       val vm = w.summary.vm
       vm.participants.exists(_.isRight) && vm.queries.exists(_.isRight) &&
+      vm.scales.nonEmpty && vm.scales.forall(_.available) &&
       w.summary.participantPlot.status.get.isInstanceOf[PlotTwinStatus.Shown] &&
       w.summary.scaleProfile.status.get.isInstanceOf[PlotTwinStatus.Shown] &&
       w.summary.queryTable.rowCount > 0
@@ -166,7 +170,7 @@ class CompareSummaryFxSuite extends ShellFxSuite:
     )
     // The scale profile at the four protocol scales.
     val profile = runOnFx(w.summary.scaleProfile.plot).getOrElse(fail("no profile"))
-    assertEquals(profile.source.rows.size, (2 + 24) * 4)
+    assertEquals(profile.source.rows.size, (1 + 24) * 4)
     fx.snapshot(StudioTheme.Light)
   }
 
@@ -373,4 +377,168 @@ class CompareSummaryFxSuite extends ShellFxSuite:
     )
     assert(said.exists(_.startsWith("Run 5 could not be read")), said)
     runOnFx(host.dispose())
+  }
+
+  private lazy val savedUngroupedSummary: eyes4s.studio.app.AppModel =
+    val original = StoryModels.t3Summary.document.reporting.head
+    val spec     = eyes4s.studio.core.document.ReportingSpec
+      .of(
+        original.id,
+        "Saved ungrouped",
+        None,
+        original.filters,
+        original.minimumPerGroup,
+        eyes4s.studio.core.document.ReportingWeight.PooledQueries
+      )
+      .fold(e => fail(e.message), identity)
+    eyes4s.studio.app.AppModel
+      .update(StoryModels.t3Summary, Intent.Dispatch(Command.PutReporting(spec)))
+      ._1
+
+  Vector(
+    "derived overall" -> (() => StoryModels.t3Summary),
+    "saved ungrouped" -> (() => savedUngroupedSummary)
+  ).foreach { (context, initial) =>
+    fxStage.test(
+      s"the Results grand mean keeps exact cell, line, table and navigation context on return ($context)"
+    ) { fx =>
+      val w = boot(fx, initial(), StoryMoment.T3)
+      loaded(fx, w)
+      val twin = w.summary.scaleProfile
+      val plot = runOnFx(twin.plot).getOrElse(fail("no profile plot"))
+      val cell = plot.source.rows
+        .take(4)
+        .map(_.ref)
+        .collectFirst {
+          case ref @ StudioRef.ReportCell(_, _, scale, ReportGroup.Whole, ReportRole.Difference)
+              if scale == StoryModels.sigma2 =>
+            ref
+        }
+        .getOrElse(fail("no whole-report 2° cell"))
+      val expected = eyes4s.studio.app.compare.CompareSummary
+        .reportingSpec(runOnFx(w.runtime.model.document), cell.reporting)
+        .getOrElse(fail("the curve's reporting identity must resolve"))
+      assert(expected.groupBy.isEmpty)
+      def targets = runOnFx {
+        twin.plotHost.status.get match
+          case PlotHostStatus.Drawn(frame) if frame.plan.scene eq plot.plot.scene =>
+            twin.input.targets
+          case _ => None
+      }
+      eventually(fx, "the grand mean's actual canvas is drawn")(
+        targets.exists(_.target(cell).isDefined)
+      )
+      val target = targets.get
+      val at     = target.transform.deviceToCanvas(target.target(cell).get.anchor)
+      val scene  = runOnFx(twin.plotHost.localToScene(Point2D(at.x, at.y)))
+      runOnFx {
+        Vector(MouseEvent.MOUSE_PRESSED, MouseEvent.MOUSE_RELEASED, MouseEvent.MOUSE_CLICKED)
+          .foreach { kind =>
+            Event.fireEvent(
+              twin.plotHost,
+              MouseEvent(
+                kind,
+                scene.getX,
+                scene.getY,
+                scene.getX,
+                scene.getY,
+                MouseButton.PRIMARY,
+                1,
+                false,
+                false,
+                false,
+                false,
+                kind == MouseEvent.MOUSE_PRESSED,
+                false,
+                false,
+                true,
+                false,
+                true,
+                PickResult(twin.plotHost, scene.getX, scene.getY)
+              )
+            )
+          }
+      }
+      eventually(fx, "exact grand-mean cell selected")(
+        w.runtime.model.selection.selected == Vector(cell)
+      )
+      val selected = runOnFx(w.runtime.model)
+      val label    = eyes4s.studio.app.vm
+        .Labels(selected, eyes4s.studio.app.text.Messages.english)
+        .place(Place.At(cell), current = true)
+      assert(label.contains("All queries") && label.contains("D"), label)
+      dispatch(fx, w, Intent.Explain(Place.At(cell)))
+      val location = runOnFx(w.runtime.model.location)
+      assert(location.trail.contains(Place.Summary(expected.id)), location)
+      assert(location.trail.contains(Place.At(cell)), location)
+      dispatch(
+        fx,
+        w,
+        Intent.Navigate(
+          Location(
+            eyes4s.studio.core.document.Perspective.Explore,
+            Vector(Place.At(StudioRef.Participant("P17")))
+          )
+        )
+      )
+      dispatch(fx, w, Intent.Navigate(location))
+      loaded(fx, w)
+      val returned = runOnFx(w.runtime.model)
+      assertEquals(
+        eyes4s.studio.app.compare.CompareSummary.reporting(returned),
+        Some(expected.id)
+      )
+      assertEquals(
+        eyes4s.studio.app.compare.CompareSummary.reportingSpec(returned.document, expected.id),
+        Some(expected)
+      )
+      val source =
+        runOnFx(w.summary.scaleProfile.plot).getOrElse(fail("no returned profile")).source
+      assert(source.rows.take(4).exists(_.ref == cell), source.rows.take(4).map(_.ref))
+      assert(
+        source.rows
+          .take(4)
+          .forall(_.ref match
+            case StudioRef.ReportCell(_, id, _, ReportGroup.Whole, ReportRole.Difference) =>
+              id == expected.id
+            case _ => false)
+      )
+      assertEquals(returned.location, location)
+      val table = runOnFx(w.summary.participantTable.source)
+        .getOrElse(fail("no returned participant table"))
+      val lineRefs = source.rows.map(_.ref).collect {
+        case ref @ StudioRef.ReportParticipant(
+              _,
+              _,
+              scale,
+              ReportGroup.Whole,
+              ReportRole.Difference,
+              _
+            ) if scale == StoryModels.sigma2 =>
+          ref
+      }
+      assertEquals(table.rows.map(_.ref).toSet, lineRefs.toSet)
+      val person = table.rows.head.ref
+      dispatch(
+        fx,
+        w,
+        StoryModels.select(runOnFx(w.runtime.model), "compare.participant-table", person)
+      )
+      eventually(fx, "the whole participant has an accessible Explain action")(
+        w.summary.vm.explain.exists(_.keeps.contains("All queries"))
+      )
+      runOnFx(w.summary.explainNow())
+      val explained = runOnFx(w.runtime.model)
+      assertEquals(explained.selection.selected, Vector(person))
+      assert(explained.location.trail.contains(Place.At(person)), explained.location)
+      assertEquals(
+        eyes4s.studio.app.compare.CompareSummary.reporting(explained),
+        Some(expected.id)
+      )
+      assertEquals(
+        eyes4s.studio.app.compare.CompareSummary.reportingSpec(explained.document, expected.id),
+        Some(expected)
+      )
+    }
+
   }

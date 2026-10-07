@@ -63,6 +63,8 @@ enum DocumentError derives CanEqual:
   case MissingInventoryRoles(missing: Vector[ColumnRole])
   case InventoryRoleNotRead(column: String, role: ColumnRole)
   case InventoryAttributeIsMapped(column: String, role: ColumnRole)
+  case DurationColumnShared(column: String, mappedAs: String)
+  case DurationColumnKind(column: String, kind: AttributeKindChoice)
 
   /** `dataset` maps a trial inventory but has no trials source. */
   case InventoryWithoutTrials(dataset: DatasetRevision)
@@ -192,6 +194,10 @@ enum DocumentError derives CanEqual:
       s"The trial inventory mapping has no ${missing.map(_.label).mkString(", ")} column."
     case InventoryRoleNotRead(column, role) =>
       s"Trial inventory column $column: the ${role.label} role is not read from a trial inventory."
+    case DurationColumnShared(column, mappedAs) =>
+      s"Trial duration column '$column' is also mapped as $mappedAs."
+    case DurationColumnKind(column, kind) =>
+      s"Trial duration column '$column' is a $kind attribute; retain its exact source text as Text."
     case InventoryAttributeIsMapped(column, role) =>
       s"Trial inventory column $column is both an attribute and the ${role.label} column."
     case InventoryWithoutTrials(dataset) =>

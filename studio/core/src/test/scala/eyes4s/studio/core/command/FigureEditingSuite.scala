@@ -53,10 +53,11 @@ class FigureEditingSuite extends munit.FunSuite:
 
   private def refuseEarlier[A: Encoder](
       ladder: SchemaLadder[A],
-      value: A
+      value: A,
+      minimum: Int
   ): Unit =
     val envelope = ok(ladder.codec.encode(value))
-    ladder.versions.dropRight(1).foreach { version =>
+    ladder.versions.filter(_.version < minimum).foreach { version =>
       assert(ladder.writeAt(version, value).isLeft, s"write $version")
       assert(ladder.readAt(version, value.asJson).isLeft, s"read $version")
       assert(
@@ -98,9 +99,9 @@ class FigureEditingSuite extends munit.FunSuite:
     val scienceLadder = ok(ScienceContent.ladder)
     assertEquals(docLadder.earliest(document).version, 8)
     assertEquals(scienceLadder.earliest(document.science).version, 4)
-    refuseEarlier(docLadder, document)
+    refuseEarlier(docLadder, document, 8)
     val envelope = ok(scienceLadder.codec.encode(document.science))
-    scienceLadder.versions.dropRight(1).foreach { version =>
+    scienceLadder.versions.filter(_.version < 4).foreach { version =>
       assert(scienceLadder.writeAt(version, document.science).isLeft, s"write $version")
       assert(scienceLadder.readAt(version, document.science.asJson).isLeft, s"read $version")
       assert(
@@ -122,7 +123,7 @@ class FigureEditingSuite extends munit.FunSuite:
     ).foreach { command =>
       val line = JournalLine.Entry(1, JournalEntry.Apply(command))
       assertEquals(ladder.earliest(line).version, 7)
-      refuseEarlier(ladder, line)
+      refuseEarlier(ladder, line, 7)
       assertEquals(ladder.codec.decode(ok(ladder.codec.encode(line))), Right(line))
     }
     val legacy = JournalLine.Entry(1, JournalEntry.Apply(RestoreFigure(figure)))

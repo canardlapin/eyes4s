@@ -62,8 +62,10 @@ class FamilyPersistenceSuite extends munit.FunSuite:
 
   test("explicit ownership roundtrips through document and science and changes scientific identity") {
     val encoded = get(StudioDocument.encode(value))
+    assertEquals(encoded.hcursor.downField("schema").get[Int]("version"), Right(10))
     assertEquals(get(StudioDocument.decode(encoded)), value)
     val scienceCodec = get(ScienceContent.codec)
+    assertEquals(get(scienceCodec.encode(value.science)).hcursor.downField("schema").get[Int]("version"), Right(6))
     assertEquals(get(scienceCodec.decode(get(scienceCodec.encode(value.science)))), value.science)
     val legacy = get(StudioDocument.of(
       value.datasets, value.analyses, value.draft, value.runs, value.reporting, value.figures,

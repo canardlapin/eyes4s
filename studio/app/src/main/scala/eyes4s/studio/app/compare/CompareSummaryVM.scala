@@ -34,7 +34,14 @@ import eyes4s.studio.app.text.{Format, Messages, SummaryText, SummaryTextId}
 import eyes4s.studio.app.vm.{Labels, Shell}
 import eyes4s.studio.app.{AppModel, Intent}
 import eyes4s.studio.app.nav.Place
-import eyes4s.studio.core.backend.{QueryRow, QueryStatus, ReportRole, ResultSummary, RunId}
+import eyes4s.studio.core.backend.{
+  QueryRow,
+  QueryStatus,
+  ReportRole,
+  ReportView,
+  ResultSummary,
+  RunId
+}
 import eyes4s.studio.core.document.{Perspective, ReportingId, ReportingWeight}
 import eyes4s.studio.core.selection.{ReportGroup, ScaleIndex, StudioRef}
 
@@ -73,6 +80,14 @@ final case class CompareSummaryVM(
 ) derives CanEqual
 
 object CompareSummaryVM:
+
+  /** Curves, tables and their navigation use one whole-report evaluation.
+    * An ungrouped spec already names it; grouped specs use the explicit
+    * derived overall report, preserving filters and weighting.
+    */
+  private def wholeReport(s: CompareSummary, scale: ScaleIndex): Option[ReportView] =
+    val derived = !s.spec.exists(_.groupBy.isEmpty)
+    s.reports.get((scale, derived)).collect { case ReportAnswer.Answered(view) => view }
 
   def of(
       s: CompareSummary,
@@ -140,9 +155,6 @@ object CompareSummaryVM:
     def displayed(scale: ScaleIndex) = s.reports.get((scale, false)).collect {
       case ReportAnswer.Answered(view) => view
     }
-    def ungrouped(scale: ScaleIndex) = s.reports.get((scale, true)).collect {
-      case ReportAnswer.Answered(view) => view
-    }
     val reporting       = s.reporting
     val participantPlot = for
       scale <- shown
@@ -164,11 +176,9 @@ object CompareSummaryVM:
         .map(_.recipe.scales)
         .toRight(s"run ${run.number} has no analysis revision in the document")
         .flatMap(scales =>
-          val grouped = scales.values.indices.toVector
-            .flatMap(i => ScaleIndex.of(i).toOption.flatMap(displayed))
-          val overall = scales.values.indices.toVector
-            .flatMap(i => ScaleIndex.of(i).toOption.flatMap(ungrouped))
-          ScaleProfile.of(grouped, overall, scales, r.scales).left.map(_.message)
+          val reports = scales.values.indices.toVector
+            .flatMap(i => ScaleIndex.of(i).toOption.flatMap(wholeReport(s, _)))
+          ScaleProfile.overall(reports, scales, r.scales).left.map(_.message)
         )
         .flatMap(p =>
           ProfileColumns.standard.flatMap(ScaleProfile.source(p, _)).left.map(_.message)
@@ -178,7 +188,7 @@ object CompareSummaryVM:
       rep     <- reporting
       scale   <- shown
       grouped <- displayed(scale)
-      overall <- ungrouped(scale)
+      overall <- wholeReport(s, scale)
     yield participantTable(run, rep, scale, r, grouped, overall)
     val queries = for
       scale <- shown
@@ -426,12 +436,12 @@ object CompareSummaryVM:
             )
           )
         )
-      case ref @ StudioRef.ReportParticipant(`run`, derived, scale, ReportGroup.Whole, _, p)
-          if reporting.exists(rep => rep != derived && served(scale, whole = true, ref)) =>
-        // The table is served from the generated ungrouped spec. Its id has
-        // no saved navigation root. Keep its exact reference and explicitly
-        // place it below the displayed spec rather than fabricating a grouped
-        // report value under that spec.
+      case ref @ StudioRef.ReportParticipant(`run`, _, scale, ReportGroup.Whole, _, p)
+          if reporting.isDefined && wholeReport(s, scale).exists(
+            _.participants.exists(_.ref == ref)
+          ) =>
+        // Keep the exact whole-report reference below the current reporting
+        // root, for both saved ungrouped and explicitly derived evaluations.
         val rep   = reporting.get
         val keeps = Vector(labels.reporting(rep), SummaryText.reportGroup(ReportGroup.Whole), p)
           .mkString(" › ")

@@ -154,14 +154,22 @@ object ScienceContent:
         Either.cond(
           s.analysisFamilies.isEmpty,
           s,
-          CodecError.Unsupported("studio science", "explicit analysis families need a later version")
+          CodecError.Unsupported("studio science", "explicit analysis families need version 6")
         )
-      def beforeMethods(s: ScienceContent): Either[CodecError, ScienceContent] =
-        beforeFamilies(s).flatMap(_ => Either.cond(
-          s.figures.forall(_.methods.isEmpty),
+      def beforeDuration(s: ScienceContent): Either[CodecError, ScienceContent] =
+        beforeFamilies(s).flatMap(v => Either.cond(
+          s.datasets.forall(_.inventory.forall(_.duration.isEmpty)),
           s,
-          CodecError.Unsupported("studio science", "stored figure methods need version 4")
+          CodecError.Unsupported("studio science", "declared trial duration needs version 5")
         ))
+      def beforeMethods(s: ScienceContent): Either[CodecError, ScienceContent] =
+        beforeDuration(s).flatMap(v =>
+          Either.cond(
+            s.figures.forall(_.methods.isEmpty),
+            v,
+            CodecError.Unsupported("studio science", "stored figure methods need version 4")
+          )
+        )
       def beforeInitial(s: ScienceContent): Either[CodecError, ScienceContent] =
         beforeMethods(s).flatMap(v =>
           Either.cond(
@@ -187,17 +195,29 @@ object ScienceContent:
         )
         .next(
           s =>
-            s.figures.forall(_.methods.isEmpty) && !s.draft.exists(_.isInitial) && s.reporting
+            s.analysisFamilies.isEmpty && s.datasets.forall(_.inventory.forall(_.duration.isEmpty)) && s.figures.forall(
+              _.methods.isEmpty
+            ) && !s.draft.exists(_.isInitial) && s.reporting
               .forall(_.contrast.isEmpty),
           identity
         )(s => beforeInitial(s).flatMap(write))(json => read(json).flatMap(beforeInitial))
         .next(
-          s => s.figures.forall(_.methods.isEmpty) && !s.draft.exists(_.isInitial),
+          s =>
+            s.analysisFamilies.isEmpty && s.datasets.forall(_.inventory.forall(_.duration.isEmpty)) && s.figures.forall(
+              _.methods.isEmpty
+            ) && !s.draft.exists(_.isInitial),
           identity
         )(s => beforeMethods(s).flatMap(write))(json => read(json).flatMap(beforeMethods))
-        .next(_.figures.forall(_.methods.isEmpty), identity)(s => beforeFamilies(s).flatMap(write))(
-          json => read(json).flatMap(beforeFamilies)
-        )
+        .next(
+          s =>
+            s.analysisFamilies.isEmpty && s.datasets.forall(_.inventory.forall(_.duration.isEmpty)) && s.figures
+              .forall(_.methods.isEmpty),
+          identity
+        )(s => beforeDuration(s).flatMap(write))(json => read(json).flatMap(beforeDuration))
+        .next(s => s.analysisFamilies.isEmpty && s.datasets.forall(_.inventory.forall(_.duration.isEmpty)), identity)(
+          s => beforeFamilies(s).flatMap(write)
+        )(json => read(json).flatMap(beforeFamilies))
+        .next(_.analysisFamilies.isEmpty, identity)(write)(read)
     }
 
   val codec: Either[CodecError, VersionedCodec[ScienceContent]] = ladder.map(_.codec)
@@ -512,20 +532,26 @@ object StudioDocument:
     expressedByV5(document) && document.analyses.forall(a => presetBeforeV5(a.studio.preset))
 
   /** Version 6 first records explicit ordered reporting contrast operands. */
+  private def expressedByV9(document: StudioDocument): Boolean = document.analysisFamilies.isEmpty
+  private def beforeV10(document: StudioDocument): Either[CodecError, StudioDocument] =
+    Either.cond(expressedByV9(document), document,
+      CodecError.Unsupported("studio document", "explicit analysis families need version 10"))
+  private def expressedByV8(document: StudioDocument): Boolean =
+    expressedByV9(document) && document.datasets.forall(_.inventory.forall(_.duration.isEmpty))
+  private def beforeV9(document: StudioDocument): Either[CodecError, StudioDocument] =
+    beforeV10(document).flatMap(v => Either.cond(expressedByV8(v), v, durationVersionError))
+  private val durationVersionError =
+    CodecError.Unsupported("studio document", "declared trial duration needs version 9")
   private def expressedByV7(document: StudioDocument): Boolean =
-    document.figures.forall(_.methods.isEmpty)
-  private def beforeFamilies(document: StudioDocument): Either[CodecError, StudioDocument] =
-    Either.cond(
-      document.analysisFamilies.isEmpty,
-      document,
-      CodecError.Unsupported("studio document", "explicit analysis families need a later version")
-    )
+    expressedByV8(document) && document.figures.forall(_.methods.isEmpty)
   private def beforeV8(document: StudioDocument): Either[CodecError, StudioDocument] =
-    beforeFamilies(document).flatMap(_ => Either.cond(
-      expressedByV7(document),
-      document,
-      CodecError.Unsupported("studio document", "stored figure methods need version 8")
-    ))
+    beforeV9(document).flatMap(v =>
+      Either.cond(
+        expressedByV7(document),
+        v,
+        CodecError.Unsupported("studio document", "stored figure methods need version 8")
+      )
+    )
   private def expressedByV6(document: StudioDocument): Boolean =
     expressedByV7(document) && !document.draft.exists(_.isInitial)
   private def beforeV7(document: StudioDocument): Either[CodecError, StudioDocument] =
@@ -564,12 +590,24 @@ object StudioDocument:
       read: Json => Either[CodecError, StudioDocument]
   ): Json => Either[CodecError, StudioDocument] =
     json =>
-      read(json)
-        .flatMap(beforeV6)
-        .filterOrElse(
-          expressedByV4,
-          CodecError.Unsupported("studio document", "a preset needs version 5")
+      // Earlier payload transforms strip inventories; refuse timing before that transform.
+      val timing = json.hcursor
+        .downField("datasets")
+        .focus
+        .flatMap(_.asArray)
+        .toVector
+        .flatten
+        .exists(d =>
+          d.hcursor.downField("inventory").downField("duration").focus.exists(!_.isNull)
         )
+      if timing then Left(durationVersionError)
+      else
+        read(json)
+          .flatMap(beforeV6)
+          .filterOrElse(
+            expressedByV4,
+            CodecError.Unsupported("studio document", "a preset needs version 5")
+          )
 
   /** Whether a version-3 document can hold `document`: version 3 records
     * neither display columns nor repaired assets (S5.7).
@@ -657,6 +695,8 @@ object StudioDocument:
     * envelope cannot change scientific direction.
     */
   // Version 7 alone expresses a working recipe without a saved base.
+  // Version 9 adds trial duration; version 10 adds checked family ownership
+  // together with safe family-relative interpretation (bead q-analysis-family-identity).
   val ladder: Either[CodecError, SchemaLadder[StudioDocument]] =
     StudioSchemaIds.forCodec.map { ids =>
       SchemaLadder
@@ -681,9 +721,13 @@ object StudioDocument:
         .next(expressedByV6, identity)(d => beforeV8(d).map(v => CanonicalJson(v.asJson)))(
           json => read(json).flatMap(beforeV8)
         )
-        .next(expressedByV7, identity)(d => beforeFamilies(d).map(v => CanonicalJson(v.asJson)))(
-          json => read(json).flatMap(beforeFamilies)
+        .next(expressedByV7, identity)(d => beforeV9(d).map(v => CanonicalJson(v.asJson)))(
+          json => read(json).flatMap(beforeV9)
         )
+        .next(expressedByV8, identity)(d => beforeV10(d).map(v => CanonicalJson(v.asJson)))(
+          json => read(json).flatMap(beforeV10)
+        )
+        .next(expressedByV9, identity)(d => Right(CanonicalJson(d.asJson)))(read)
     }
 
   /** The versioned, canonical document codec. */

@@ -141,7 +141,24 @@ object CommandJournal:
 
   private val refusal = CodecError.Unsupported("studio journal", "a preset needs version 2")
 
-  private def expressedByV6(line: JournalLine): Boolean = line match
+  private def expressedByV7(line: JournalLine): Boolean = line match
+    case JournalLine.Entry(_, JournalEntry.Apply(c: Command.ImportSources)) =>
+      c.inventory.forall(_.duration.isEmpty)
+    case JournalLine.Entry(_, JournalEntry.Apply(c: Command.ReviseDataset)) =>
+      c.inventory.forall(_.duration.isEmpty)
+    case JournalLine.Entry(_, JournalEntry.Apply(Command.RestoreDataset(d))) =>
+      d.inventory.forall(_.duration.isEmpty)
+    case JournalLine.Entry(_, JournalEntry.Apply(Command.RestoreRepairedDataset(d, _))) =>
+      d.inventory.forall(_.duration.isEmpty)
+    case _ => true
+  private def beforeV8(line: JournalLine): Either[CodecError, JournalLine] =
+    Either.cond(
+      expressedByV7(line),
+      line,
+      CodecError.Unsupported("studio journal", "declared trial duration needs version 8")
+    )
+
+  private def expressedByV6(line: JournalLine): Boolean = expressedByV7(line) && (line match
     case JournalLine.Entry(
           _,
           JournalEntry.Apply(_: Command.MovePanel | _: Command.SetFigureMethods)
@@ -149,14 +166,16 @@ object CommandJournal:
       false
     case JournalLine.Entry(_, JournalEntry.Apply(Command.RestoreFigure(figure))) =>
       figure.methods.isEmpty
-    case _ => true
+    case _ => true)
   private def beforeV7(line: JournalLine): Either[CodecError, JournalLine] =
-    Either.cond(
-      expressedByV6(line),
-      line,
-      CodecError.Unsupported(
-        "studio journal",
-        "figure panel movement and stored methods need version 7"
+    beforeV8(line).flatMap(v =>
+      Either.cond(
+        expressedByV6(line),
+        v,
+        CodecError.Unsupported(
+          "studio journal",
+          "figure panel movement and stored methods need version 7"
+        )
       )
     )
 
@@ -250,7 +269,10 @@ object CommandJournal:
           .next(expressedByV5, identity)(l => beforeV7(l).map(v => CanonicalJson(v.asJson)))(
             json => read(json).flatMap(beforeV7)
           )
-          .next(expressedByV6, identity)(l => Right(CanonicalJson(l.asJson)))(read)
+          .next(expressedByV6, identity)(l => beforeV8(l).map(v => CanonicalJson(v.asJson)))(
+            json => read(json).flatMap(beforeV8)
+          )
+          .next(expressedByV7, identity)(l => Right(CanonicalJson(l.asJson)))(read)
       }
 
   val codec: Either[CodecError, VersionedCodec[JournalLine]] = ladder.map(_.codec)

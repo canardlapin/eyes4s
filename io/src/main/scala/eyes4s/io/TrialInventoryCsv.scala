@@ -134,7 +134,8 @@ object FixationTable:
 final class TrialInventoryColumns private (
     val trial: TrialColumns,
     val item: Option[String],
-    val attributes: Vector[AttributeColumn]
+    val attributes: Vector[AttributeColumn],
+    val duration: Option[TrialDurationFromStart]
 ):
   def names: Vector[String] = trial.names ++ item.toVector ++ attributes.map(_.name)
 
@@ -144,8 +145,38 @@ object TrialInventoryColumns:
       item: Option[String] = None,
       attributes: Vector[AttributeColumn] = Vector.empty
   ): Either[FixationImportError, TrialInventoryColumns] =
-    val columns = new TrialInventoryColumns(trial, item, attributes)
-    TrialColumns.distinct(columns.names).map(_ => columns)
+    of(trial, item, attributes, None)
+
+  /** Explicit timing; preserves the published three-argument constructor. */
+  def of(
+      trial: TrialColumns,
+      item: Option[String],
+      attributes: Vector[AttributeColumn],
+      duration: Option[TrialDurationFromStart]
+  ): Either[FixationImportError, TrialInventoryColumns] =
+    val mismatch = duration.flatMap(d =>
+      attributes.find(a => a.name == d.column && a.kind != AttributeKind.Text)
+    )
+    mismatch match
+      case Some(a) =>
+        Left(
+          FixationImportError.Inventory(
+            NonEmptyVector.one(
+              InventoryError.AttributeKindMismatch(
+                "trial duration declaration",
+                a.name,
+                "Text",
+                a.kind.toString
+              )
+            )
+          )
+        )
+      case None =>
+        val retained = attributes ++ duration.toVector
+          .filterNot(d => attributes.exists(_.name == d.column))
+          .map(d => AttributeColumn(d.column, AttributeKind.Text))
+        val columns = new TrialInventoryColumns(trial, item, retained, duration)
+        TrialColumns.distinct(columns.names).map(_ => columns)
 
 /** One declared trial: its identity, the inventory records that declare it
   * (repeats with equal parsed values collapse into one trial), its item and
@@ -246,8 +277,9 @@ object TrialInventory:
           .left
           .map(field(column.name, fields(column.name), _))
       )
+      val timing = columns.duration.toVector.map(d => d.parse(fields(d.column), number))
       val errors = identity.left.toSeq.flatten ++ item.left.toSeq.flatten ++
-        values.collect { case Left(e) => e }
+        values.collect { case Left(e) => e } ++ timing.collect { case Left(e) => e }
       if errors.nonEmpty then Left(errors.toVector)
       else
         for
