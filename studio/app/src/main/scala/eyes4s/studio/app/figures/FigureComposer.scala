@@ -652,11 +652,12 @@ object FigureComposer:
           )
     yield (
       next,
-      Command.CreateFigure(run.id, rep.id, panels)
+      Command.CreateFigure(run.id, rep.id, panels),
+      panels.headOption.filter(_ => kind.isDefined).map(_.letter)
     )
     made match
-      case Left(why)             => (c.copy(problem = Some(why)), none)
-      case Right((next, create)) =>
+      case Left(why)                       => (c.copy(problem = Some(why)), none)
+      case Right((next, create, selected)) =>
         (
           c.copy(problem = None),
           Vector(
@@ -665,7 +666,7 @@ object FigureComposer:
               Intent.Navigate(
                 figureTrail(
                   next,
-                  create.panels.headOption.filter(_ => kind.isDefined).map(_.letter)
+                  selected
                 )
               )
             )

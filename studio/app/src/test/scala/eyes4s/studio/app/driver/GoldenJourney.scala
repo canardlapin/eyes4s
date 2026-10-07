@@ -16,6 +16,8 @@
 
 package eyes4s.studio.app.driver
 
+import eyes4s.studio.app.figures.{ComposerEffect, ComposerIntent, FigureComposer, NewPanel}
+
 import cats.syntax.all.*
 import eyes4s.studio.app.{AppModel, Intent, PlatformDialog, StoryModels, TrialItems}
 import eyes4s.studio.app.nav.{DataSection, Location, Place, Provenance, SummaryScope}
@@ -545,20 +547,28 @@ object GoldenJourney:
     )
 
     val figureAndClose = Scenario.of[Future](
-      sync("create Figure 3 on run 6")(d =>
-        (for
-          letter <- PanelLetter.of("A")
-          scale  <- Sigma.of(2.0)
-        yield Vector(
-          PanelSpec(
-            letter,
-            "Participant D by response",
-            PanelScale.At(scale),
-            PanelSelection.AllQueries
+      sync("create Figure 3 on run 6 through Start figure with Participant D")(d =>
+        val focused = d.perform(
+          "open the matched pair",
+          Intent.Explain(
+            eyes4s.studio.app.nav.Place.At(
+              eyes4s.studio.core.selection.StudioRef
+                .Pair(run6, sigma2, PairDesign.Matched, p17ret07, p17enc03)
+            )
           )
-        ))
-          .leftMap(e => DriverError.Expectation("figure", "a valid panel", e.message))
-          .flatMap(panels => d.command(Command.CreateFigure(run6, reporting, panels)))
+        )
+        focused.flatMap { current =>
+          val (_, effects) = FigureComposer.update(
+            FigureComposer.empty,
+            current.model,
+            ComposerIntent.NewFigureWith(NewPanel.ParticipantD)
+          )
+          effects
+            .collect { case ComposerEffect.App(i) => i }
+            .foldLeft(Right(current): Either[DriverError, StudioDriver])((acc, i) =>
+              acc.flatMap(_.perform("figure template control", i))
+            )
+        }
       ),
       check("Figure 3 binds run 6 and the spec")(d =>
         expect(

@@ -42,7 +42,8 @@ import eyes4s.studio.desktop.harness.FxStage
 import eyes4s.studio.desktop.plot.PlotTwinStatus
 import eyes4s.studio.desktop.shell.ShellFxSuite
 import javafx.scene.{AccessibleRole, Node}
-import javafx.scene.control.Label
+import javafx.scene.control.{Button, Label}
+import javafx.scene.input.KeyCode
 import javafx.scene.layout.VBox
 
 import scala.concurrent.duration.Duration
@@ -316,16 +317,20 @@ class FigureComposerFxSuite extends ShellFxSuite:
     assert(runOnFx(w.figures.removePanel.isFocusTraversable))
     assert(runOnFx(w.figures.movePanelEarlier.isFocusTraversable))
     assert(runOnFx(w.figures.movePanelLater.isFocusTraversable))
+    def activate(b: Button): Unit =
+      runOnFx(b.requestFocus())
+      eventually(fx, s"${b.getText} focused")(runOnFx(w.root.getScene.getFocusOwner == b))
+      fx.robot.press(KeyCode.SPACE)
     def order = runOnFx(
       w.runtime.model.document.figures.find(_.id == figure1).get.panels.map(_.letter.value)
     )
-    runOnFx(w.figures.movePanelEarlier.fire())
+    activate(w.figures.movePanelEarlier)
     eventually(fx, "D moved before C")(order == Vector("A", "B", "D", "C", "E"))
     runOnFx(w.runtime.dispatch(Intent.Undo(eyes4s.studio.core.command.HistoryStack.Science)))
     eventually(fx, "move undone")(order == Vector("A", "B", "C", "D", "E"))
     runOnFx(w.runtime.dispatch(Intent.Redo(eyes4s.studio.core.command.HistoryStack.Science)))
     eventually(fx, "move redone")(order == Vector("A", "B", "D", "C", "E"))
-    runOnFx(w.figures.removePanel.fire())
+    activate(w.figures.removePanel)
     eventually(fx, "D removed; C selected")(
       order == Vector("A", "B", "C", "E") && w.figures.vm.page
         .exists(_.panelEditing.selected.contains(letter("C")))
@@ -343,7 +348,7 @@ class FigureComposerFxSuite extends ShellFxSuite:
       eventually(fx, s"$l selected")(
         w.figures.vm.page.exists(_.panelEditing.selected.contains(letter(l)))
       )
-      runOnFx(w.figures.removePanel.fire())
+      activate(w.figures.removePanel)
       eventually(fx, s"$l removed")(!order.contains(l))
     }
     eventually(fx, "last-panel controls disabled")(
