@@ -205,15 +205,21 @@ object CommandSamples:
       5,
       figure1.panels(3).copy(letter = right(PanelLetter.of("F")))
     ),
-    "RemovePanel"    -> RemovePanel(figure1.id, right(PanelLetter.of("E"))),
-    "RetitlePanel"   -> RetitlePanel(figure1.id, panelA, "Encoding gaze · P17"),
-    "SetPerspective" -> SetPerspective(Perspective.Compare),
-    "SetTheme"       -> SetTheme(Theme.Dark),
-    "SetStage"       -> SetStage(StageAppearance.Mid),
-    "SetMapOpacity"  -> SetMapOpacity(right(MapOpacity.of(0.4))),
-    "SetUnderlay"    -> SetUnderlay(true),
-    "ShowRun"        -> ShowRun(Some(run7)),
-    "ShowRun.none"   -> ShowRun(None),
+    "RemovePanel"      -> RemovePanel(figure1.id, right(PanelLetter.of("E"))),
+    "MovePanel"        -> MovePanel(figure1.id, panelA, 4),
+    "SetFigureMethods" -> SetFigureMethods(
+      figure1.id,
+      Some(right(FigureMethodsDraft.of("Generated base", "Authored text", Some("New base"))))
+    ),
+    "SetFigureMethods.none" -> SetFigureMethods(figure1.id, None),
+    "RetitlePanel"          -> RetitlePanel(figure1.id, panelA, "Encoding gaze · P17"),
+    "SetPerspective"        -> SetPerspective(Perspective.Compare),
+    "SetTheme"              -> SetTheme(Theme.Dark),
+    "SetStage"              -> SetStage(StageAppearance.Mid),
+    "SetMapOpacity"         -> SetMapOpacity(right(MapOpacity.of(0.4))),
+    "SetUnderlay"           -> SetUnderlay(true),
+    "ShowRun"               -> ShowRun(Some(run7)),
+    "ShowRun.none"          -> ShowRun(None),
     "SaveLayout" -> SaveLayout(Perspective.Figures, Some(LayoutBlob("""{"root":"figures"}"""))),
     "SaveLayout.clear" -> SaveLayout(Perspective.Data, None)
   )

@@ -321,6 +321,18 @@ object CommandGen:
         for
           f <- figures
           p <- Gen.oneOf(f.panels)
+          i <- Gen.choose(-1, f.panels.size)
+        yield Command.MovePanel(f.id, p.letter, i),
+        for
+          f       <- figures
+          base    <- text
+          edited  <- text
+          pending <- Gen.option(text)
+          draft   <- Gen.option(Gen.const(right(FigureMethodsDraft.of(base, edited, pending))))
+        yield Command.SetFigureMethods(f.id, draft),
+        for
+          f <- figures
+          p <- Gen.oneOf(f.panels)
           t <- text
         yield Command.RetitlePanel(f.id, p.letter, t)
       )
