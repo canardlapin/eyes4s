@@ -9,6 +9,13 @@ An exported project snapshot without images withholds stimulus image bytes. The 
 still travels, including its `image_file` column, so stimulus file names remain visible. The bundle
 control and its README state this distinction before and after export.
 
+In the import wizard's **Trial metadata** tab, choose **Display kind column** and
+**Image file column** from the inventory header. These optional bindings are saved with
+the dataset and restored in Data's column-mapping pane. Choosing **Not mapped** for the
+kind clears the file binding; removing and keeping the inventory preserves its draft.
+Display columns still pass through as attributes. Image displays name an asset file;
+absent image bytes are reported as missing, while blank displays need no file.
+
 | Path | What it is |
 |---|---|
 | `DESIGN_SPEC.md` | The design contract. §12 lists the round-3 amendments and overrides anything earlier in the file. |

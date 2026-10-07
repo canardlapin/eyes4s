@@ -29,6 +29,7 @@ import eyes4s.studio.core.document.{
   ColumnRole,
   DeclaredAttributes,
   DeclaredUnits,
+  DisplayColumns,
   DocumentError,
   TimeUnit
 }
@@ -131,7 +132,7 @@ enum MappingError derives CanEqual:
   /** The file has a header and no records: there is nothing to import. */
   case NoRecords(file: String)
 
-  /** The document refused the mapping (a defect in the checks above). */
+  /** The document refused a mapping or conflicting display bindings. */
   case Refused(file: String, error: DocumentError)
 
   def message: String = this match
@@ -385,12 +386,19 @@ private[importing] object RoleChecks:
 final case class TrialMetadataDraft private (
     preview: CsvPreview,
     choices: Vector[ColumnChoice],
-    kinds: Map[ColumnName, AttributeKindChoice] = Map.empty
+    kinds: Map[ColumnName, AttributeKindChoice] = Map.empty,
+    displays: Option[DisplayColumns] = None
 ) derives CanEqual:
 
   def file: String = preview.file
 
   def columns: Vector[(PreviewColumn, ColumnChoice)] = preview.columns.zip(choices)
+
+  /** Explicit display columns; their cells are still kept as attributes. */
+  def declareDisplays(value: Option[DisplayColumns]): Either[MappingError, TrialMetadataDraft] =
+    value.toVector.flatMap(_.columns).find(c => !preview.header.contains(c)) match
+      case Some(c) => Left(MappingError.UnknownColumn(file, c))
+      case None    => Right(copy(displays = value))
 
   def choose(
       column: ColumnName,
@@ -406,7 +414,19 @@ final case class TrialMetadataDraft private (
   def issues: Vector[MappingError] =
     val (roles, values) =
       RoleChecks.issues(file, columns, TrialMetadataDraft.required, TrialMetadataDraft.offered)
-    roles ++ values
+    val displayIssues = displays.toVector.flatMap { d =>
+      val shared = d.file
+        .filter(_ == d.kind)
+        .map(c => MappingError.Refused(file, DocumentError.DisplayColumnsShared(c.value)))
+        .toVector
+      shared ++ d.columns.flatMap(c =>
+        columns.collectFirst {
+          case (p, ColumnChoice.Role(r)) if p.name == c =>
+            MappingError.Refused(file, DocumentError.DisplayColumnMapped(c.value, r.label))
+        }
+      )
+    }
+    roles ++ values ++ displayIssues
 
   /** The columns passed through as trial attributes (UI-H). */
   def attributes: Vector[AttributeColumn] =
@@ -430,6 +450,7 @@ final case class TrialMetadataDraft private (
         DeclaredAttributes
           .of(declared)
           .flatMap(InventoryMapping.of(bindings, _))
+          .flatMap(InventoryMapping.withDisplays(_, displays))
           .left
           .map(e => NonEmptyVector.one(MappingError.Refused(file, e)))
 
@@ -463,9 +484,10 @@ object TrialMetadataDraft:
           TrialMetadataDraft(
             preview,
             choices,
-            mapping.attributes.bindings.map(a => a.column -> a.kind).toMap
+            mapping.attributes.bindings.map(a => a.column -> a.kind).toMap,
+            mapping.displays
           )
-        )
+        ).flatMap(_.declareDisplays(mapping.displays).left.map(NonEmptyVector.one))
 
   /** Suggested roles, restricted to those a trials table offers. */
   def proposed(preview: CsvPreview): TrialMetadataDraft =

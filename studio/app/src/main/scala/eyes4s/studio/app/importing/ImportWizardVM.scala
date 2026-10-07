@@ -23,6 +23,7 @@ import eyes4s.studio.core.document.{
   AdmissionDecision,
   ColumnName,
   ColumnRole,
+  DisplayColumns,
   SourceRole,
   StudioDocument,
   TimeUnit
@@ -58,6 +59,19 @@ final case class TimeUnitVM(
     label: String,
     options: Vector[TimeUnitOptionVM],
     selected: Option[TimeUnit],
+    note: String
+) derives CanEqual
+
+/** Optional inventory display bindings, selected explicitly by column name. */
+final case class DisplayColumnOptionVM(column: Option[ColumnName], label: String)
+    derives CanEqual
+
+final case class DisplayColumnsVM(
+    kindLabel: String,
+    fileLabel: String,
+    options: Vector[DisplayColumnOptionVM],
+    selected: Option[DisplayColumns],
+    enabled: Boolean,
     note: String
 ) derives CanEqual
 
@@ -122,7 +136,8 @@ final case class ImportWizardVM(
     status: Option[String],
     problem: Option[String],
     key: TrialKeyVM,
-    trialsSource: Option[(String, WizardIntent)]
+    trialsSource: Option[(String, WizardIntent)],
+    displays: DisplayColumnsVM
 ) derives CanEqual
 
 object ImportWizardVM:
@@ -380,6 +395,17 @@ object ImportWizardVM:
           rows(SourceRole.Trials, d.columns, None, trialIssues)
         ),
         choicesFor(TrialMetadataDraft.offered, TrialMetadataDraft.required)
+      ),
+      displays = DisplayColumnsVM(
+        t(ImportTextId.DisplayKindColumn),
+        t(ImportTextId.DisplayFileColumn),
+        Vector(DisplayColumnOptionVM(None, t(ImportTextId.DisplayUnmapped))) ++
+          w.trials.toVector
+            .flatMap(_._2.preview.header)
+            .map(c => DisplayColumnOptionVM(Some(c), c.value)),
+        w.trials.flatMap(_._2.displays),
+        w.trials.isDefined,
+        t(ImportTextId.DisplayNote)
       ),
       time = TimeUnitVM(
         t(ImportTextId.TimeUnitLabel),

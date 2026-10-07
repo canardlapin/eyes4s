@@ -524,3 +524,52 @@ class ColumnMappingSuite extends munit.FunSuite:
     assertEquals(p.ragged.head, RaggedRecord(1000, 9, 4))
     assertEquals(p.columns.map(_.samples.size).distinct, Vector(CsvSniffer.SampleRecords))
   }
+
+  test("inventory display columns survive resolve, codec round-trip and re-map") {
+    val p = preview(
+      "trials.csv",
+      "participant,phase,trial,display_kind,image_file\nP01,Encoding,t1,image,a.png\n"
+    )
+    val ds    = DisplayColumns(name("display_kind"), Some(name("image_file")))
+    val draft = TrialMetadataDraft
+      .proposed(p)
+      .declareDisplays(Some(ds))
+      .fold(e => fail(e.message), identity)
+    val mapping = draft.resolve.fold(e => fail(e.toString), identity)
+    assertEquals(mapping.displays, Some(ds))
+    assertEquals(mapping.attributes.columns, ds.columns)
+    val restored =
+      decode[InventoryMapping](mapping.asJson.noSpaces).fold(e => fail(e.getMessage), identity)
+    val remap = TrialMetadataDraft
+      .ofDataset(p, DatasetRevision(1), restored)
+      .fold(e => fail(e.toString), identity)
+    assertEquals(remap.resolve, Right(mapping))
+    assertEquals(
+      remap.declareDisplays(None).flatMap(_.resolve.left.map(_.head)).map(_.displays),
+      Right(None)
+    )
+  }
+
+  test("display bindings name missing columns and block shared columns and role conflicts") {
+    val p =
+      preview("trials.csv", "participant,phase,trial,kind,file\nP01,Encoding,t1,image,a.png\n")
+    val draft = TrialMetadataDraft.proposed(p)
+    assertEquals(
+      draft.declareDisplays(Some(DisplayColumns(name("absent"), None))),
+      Left(MappingError.UnknownColumn("trials.csv", name("absent")))
+    )
+    val shared =
+      draft.declareDisplays(Some(DisplayColumns(name("kind"), Some(name("kind"))))).toOption.get
+    assert(shared.issues.exists {
+      case MappingError.Refused("trials.csv", DocumentError.DisplayColumnsShared("kind")) =>
+        true
+      case _ => false
+    })
+    assert(shared.resolve.isLeft)
+    val conflicted =
+      draft.declareDisplays(Some(DisplayColumns(name("participant"), None))).toOption.get
+    assert(conflicted.resolve.isLeft)
+    val mapped = draft.declareDisplays(Some(DisplayColumns(name("kind"), None))).toOption.get
+    val later  = mapped.choose(name("kind"), ColumnChoice.Role(ColumnRole.Item)).toOption.get
+    assert(later.resolve.isLeft)
+  }

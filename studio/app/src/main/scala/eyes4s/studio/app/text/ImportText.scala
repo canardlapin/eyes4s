@@ -35,6 +35,7 @@ enum ImportTextId derives CanEqual:
   case UnitNone, UnitScreenPx, UnitSamples, UnitUndeclared, UnitText
   case TimeUnitLabel, TimeUndeclared, TimeMilliseconds, TimeMicroseconds, TimeSeconds
   case TimeNote
+  case DisplayKindColumn, DisplayFileColumn, DisplayUnmapped, DisplayNote
 
   // --- Geometry ----------------------------------------------------------------
   case GeometryNote, GeometryScreenWidth, GeometryScreenHeight, GeometryImageLeft
@@ -110,6 +111,12 @@ object ImportText:
       case TimeSeconds      => "s"
       case TimeNote         =>
         "Onset and duration units are declared here; Eyes Studio never infers them."
+      case DisplayKindColumn => "Display kind column"
+      case DisplayFileColumn => "Image file column"
+      case DisplayUnmapped   => "Not mapped"
+      case DisplayNote       =>
+        "Display kinds: image, blank, blank+fixation-cross, cue, or unknown. Image files name imported assets; " +
+          "blank displays need no file. Leave these unmapped when no displays are declared."
       case GeometryNote =>
         "Declared, not calibrated: screen px, image frame = analysis window, linear px/°."
       case GeometryScreenWidth     => "Screen width (px)"

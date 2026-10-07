@@ -17,7 +17,7 @@
 package eyes4s.studio.desktop.importing
 
 import eyes4s.studio.app.importing.*
-import eyes4s.studio.core.document.SourceRole
+import eyes4s.studio.core.document.{DisplayColumns, SourceRole}
 import eyes4s.studio.core.importing.GeometryField
 import eyes4s.studio.desktop.tokens.TokenFiles
 import javafx.scene.AccessibleRole
@@ -87,6 +87,37 @@ final class ImportWizardView(dispatch: WizardIntent => Unit):
   private val timeNote = label("import-note", "t11")
   fixations.toolbar.getChildren.addAll(timeLabel, time)
   fixations.footer.getChildren.add(0, timeNote)
+
+  /** Trial inventory display bindings: selecting no kind clears its file too. */
+  val displayKind: ComboBox[DisplayColumnOptionVM] = ComboBox()
+  val displayFile: ComboBox[DisplayColumnOptionVM] = ComboBox()
+  private val displayKindLabel                     = label("import-label", "t11")
+  private val displayFileLabel                     = label("import-label", "t11")
+  private val displayNote                          = label("import-note", "t11")
+  displayNote.setWrapText(true)
+  displayKindLabel.setLabelFor(displayKind)
+  displayFileLabel.setLabelFor(displayFile)
+  Vector(displayKind, displayFile).foreach { box =>
+    box.getStyleClass.addAll("role-select", "t12")
+    box.setConverter(converter(_.label))
+    box.setAccessibleRole(AccessibleRole.COMBO_BOX)
+  }
+  displayKind.setOnAction(_ =>
+    Option(displayKind.getValue).foreach { option =>
+      val file = Option(displayFile.getValue).flatMap(_.column)
+      fire(WizardIntent.DeclareDisplays(option.column.map(DisplayColumns(_, file))))
+    }
+  )
+  displayFile.setOnAction(_ =>
+    Option(displayFile.getValue).foreach { option =>
+      Option(displayKind.getValue).flatMap(_.column).foreach { kind =>
+        fire(WizardIntent.DeclareDisplays(Some(DisplayColumns(kind, option.column))))
+      }
+    }
+  )
+  private val displayControls =
+    HBox(10, displayKindLabel, displayKind, displayFileLabel, displayFile)
+  trials.footer.getChildren.addAll(displayControls, displayNote)
 
   // --- presets ---------------------------------------------------------------------
   val presetSelect: ComboBox[String] = ComboBox()
@@ -212,6 +243,24 @@ final class ImportWizardView(dispatch: WizardIntent => Unit):
       trialsSource.setAccessibleText(vm.trialsSource.fold("")(_._1))
       trialsSource.setVisible(vm.trialsSource.isDefined)
       trialsSource.setManaged(vm.trialsSource.isDefined)
+
+      displayKindLabel.setText(vm.displays.kindLabel)
+      displayFileLabel.setText(vm.displays.fileLabel)
+      displayNote.setText(vm.displays.note)
+      Vector(displayKind, displayFile).foreach { box =>
+        if !last.map(_.displays.options).contains(vm.displays.options) then
+          box.getItems.setAll(vm.displays.options.asJava): Unit
+      }
+      displayKind.setValue(
+        vm.displays.options.find(_.column == vm.displays.selected.map(_.kind)).orNull
+      )
+      displayFile.setValue(
+        vm.displays.options.find(_.column == vm.displays.selected.flatMap(_.file)).orNull
+      )
+      displayKind.setAccessibleText(vm.displays.kindLabel)
+      displayFile.setAccessibleText(vm.displays.fileLabel)
+      displayKind.setDisable(!vm.displays.enabled)
+      displayFile.setDisable(!vm.displays.enabled || vm.displays.selected.isEmpty)
 
       timeLabel.setText(vm.time.label)
       timeNote.setText(vm.time.note)

@@ -29,6 +29,7 @@ import eyes4s.studio.core.document.{
   ColumnRole,
   DatasetRevisionSpec,
   DocumentError,
+  DisplayColumns,
   Geometry,
   InventoryMapping,
   SourcePath,
@@ -114,6 +115,9 @@ enum WizardIntent derives CanEqual:
   case RequestFile(role: SourceRole)
   case Choose(role: SourceRole, column: ColumnName, choice: ColumnChoice)
   case DeclareTime(unit: Option[TimeUnit])
+
+  /** Declare inventory display columns, or leave displays unmapped. */
+  case DeclareDisplays(columns: Option[DisplayColumns])
 
   /** Add the occurrence to the trial key, or leave it out (S5.3): the
     * occurrence column's role in each file's mapping.
@@ -355,6 +359,17 @@ object ImportWizard:
           case Some((src, draft)) =>
             draft
               .choose(column, choice)
+              .fold(
+                e => refuse(WizardProblem.Mapping(e)),
+                d => (cleared.copy(trials = Some((src, d))), none)
+              )
+
+      case WizardIntent.DeclareDisplays(columns) =>
+        w.trials match
+          case None               => refuse(WizardProblem.NoTrials)
+          case Some((src, draft)) =>
+            draft
+              .declareDisplays(columns)
               .fold(
                 e => refuse(WizardProblem.Mapping(e)),
                 d => (cleared.copy(trials = Some((src, d))), none)

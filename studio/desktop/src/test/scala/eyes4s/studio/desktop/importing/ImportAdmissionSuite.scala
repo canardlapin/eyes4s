@@ -120,3 +120,119 @@ class ImportAdmissionSuite extends munit.FunSuite:
       flow.transformWith(result => session.close.transform(_ => result))
     }
   }
+
+  test(
+    "wizard display mapping survives project reopen and serves a real stored-source asset registry"
+  ) {
+    import cats.effect.IO
+    import cats.effect.unsafe.implicits.global
+    import eyes4s.studio.core.assets.{AssetRegistry, DisplayKind, DisplayState}
+    import eyes4s.studio.core.bundle.{InputEntry, InputKind, LockOwner, SharingOptions}
+    import eyes4s.studio.core.session.ProjectSession
+    import eyes4s.studio.desktop.platform.{FileProjectStore, TempDirs}
+    import eyes4s.studio.desktop.runtime.{DatasetSourceHosts, SessionPort}
+    import java.nio.charset.StandardCharsets.UTF_8
+    import scala.jdk.CollectionConverters.*
+
+    val document      = StoryModels.empty
+    val fixationBytes =
+      IArray.unsafeFromArray(Files.readAllBytes(GoldenTrials.golden.resolve("fixations.csv")))
+    // Rename the real fixture's display columns: no golden-digest shortcut can serve this import.
+    val trialText = Files
+      .readString(GoldenTrials.golden.resolve("trials.csv"), UTF_8)
+      .replace("display_kind,image_file", "presentation,asset_path")
+    val trialBytes = IArray.from(trialText.getBytes(UTF_8))
+    val source     =
+      ok(SniffedSource.read(SourceRole.Fixations, "inputs/fixations.csv", fixationBytes))
+    val trials   = ok(SniffedSource.read(SourceRole.Trials, "inputs/trials.csv", trialBytes))
+    val displays =
+      DisplayColumns(ok(ColumnName.of("presentation")), Some(ok(ColumnName.of("asset_path"))))
+    val geometry =
+      eyes4s.studio.core.importing.GeometryFields.of(StoryModels.t2.datasets.last.geometry)
+    val initial = eyes4s.studio.core.importing.GeometryField.values
+      .foldLeft(ImportWizard.newImport(document, ImportPresets.empty)) { (w, f) =>
+        ImportWizard.update(w, WizardIntent.EditGeometry(f, geometry.field(f)), document)._1
+      }
+    val ready = Vector(
+      WizardIntent.SourceRead(source),
+      WizardIntent.SourceRead(trials),
+      WizardIntent.DeclareTime(Some(TimeUnit.Milliseconds)),
+      WizardIntent.DeclareDisplays(Some(displays))
+    ).foldLeft(initial)((w, i) => ImportWizard.update(w, i, document)._1)
+    val commands = ok(ImportWizard.commands(ready, document))
+    val imported = AppModel
+      .run(AppModel.open(document, None), commands.map(eyes4s.studio.app.Intent.Dispatch(_)))
+      ._1
+      .document
+    val dir   = Files.createTempDirectory("eyes4s-display-import")
+    val owner = ok(LockOwner.of("ImportAdmissionSuite"))
+    val store = FileProjectStore.at[IO](dir.resolve("mapped.eyes")).unsafeRunSync()
+    try
+      val inputs = Vector(source -> fixationBytes, trials -> trialBytes).map { (s, bytes) =>
+        ok(
+          InputEntry.of(
+            InputKind.Source(s.role),
+            s.path.value.split('/').last,
+            s.bytes,
+            bytes.length.toLong
+          )
+        )
+      }
+      val session = ok(
+        ProjectSession
+          .create(store, owner, imported, SharingOptions.complete, inputs)
+          .unsafeRunSync()
+      )
+      try
+        ok(
+          session
+            .importInput(InputKind.Source(SourceRole.Fixations), "fixations.csv", fixationBytes)
+            .unsafeRunSync()
+        )
+        ok(
+          session
+            .importInput(InputKind.Source(SourceRole.Trials), "trials.csv", trialBytes)
+            .unsafeRunSync()
+        )
+        val images = Files.list(GoldenTrials.golden.resolve("stimuli"))
+        try
+          images.iterator.asScala.filter(Files.isRegularFile(_)).foreach { path =>
+            ok(
+              session
+                .importInput(
+                  InputKind.StimulusImage,
+                  path.getFileName.toString,
+                  IArray.unsafeFromArray(Files.readAllBytes(path))
+                )
+                .unsafeRunSync()
+            )
+          }
+        finally images.close()
+        ok(session.save.unsafeRunSync())
+      finally ok(session.close.unsafeRunSync())
+      val reopened = ok(ProjectSession.open(store, owner).unsafeRunSync()).session
+      val port     = SessionPort.start(reopened)
+      try
+        val saved = reopened.document.unsafeRunSync()
+        val spec  = saved.datasets.last
+        assertEquals(spec.inventory.flatMap(_.displays), Some(displays))
+        assert(!eyes4s.studio.core.fixture.GoldenAssets.describes(spec))
+        val registry = DatasetSourceHosts
+          .stored(port)
+          .assets(spec)
+          .unsafeRunSync()
+          .getOrElse(fail("no registry after reopening"))
+        assertEquals(registry.count(DisplayKind.Image), 480)
+        assertEquals(registry.count(DisplayKind.BlankWithFixationCross), 480)
+        assertEquals(registry.summary.present, 257)
+        assertEquals(
+          registry.summary.missing.map(_.file.value),
+          Vector("forest-044.png", "kitchen-081.png")
+        )
+        assertEquals(registry.trials.count(_.state == DisplayState.BlankWithFixationCross), 480)
+        assertEquals(AssetRegistry.check(registry, spec), Right(()))
+      finally
+        port.close()
+        ok(reopened.close.unsafeRunSync())
+    finally TempDirs.remove(dir)
+  }

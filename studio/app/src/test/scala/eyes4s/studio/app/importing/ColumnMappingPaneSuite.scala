@@ -355,3 +355,46 @@ class ColumnMappingPaneSuite extends munit.FunSuite:
     assertEquals(order.slice(pane + 1, pane + 1 + stops.size), stops)
     assertEquals(order.size, A11y.tabOrder(m).size + stops.size)
   }
+
+  test("display controls persist mappings, follow undo and keep dropped inventory edits") {
+    val m      = StoryModels.t1Data
+    val (_, w) = opened(m)
+    val ds     =
+      DisplayColumns(ok(ColumnName.of("display_kind")), Some(ok(ColumnName.of("image_file"))))
+    val changed = run(
+      w,
+      m.document,
+      WizardIntent.DeclareDisplays(Some(ds)),
+      WizardIntent.ChooseTab(WizardTab.TrialMetadata)
+    )
+    assert(changed.editedSince(w))
+    val vm = ImportWizardVM.of(changed, m.document)
+    assertEquals(vm.displays.selected, Some(ds))
+    assertEquals(
+      vm.displays.options.tail.map(_.label),
+      changed.trials.get._2.preview.header.map(_.value)
+    )
+    assertEquals(
+      ColumnMappingPane.focusStops(vm).takeRight(4).map(_.name),
+      Vector("Display kind column", "Image file column", "Revert", "Apply to r3")
+    )
+    val (_, fx) = ImportWizard.update(changed, WizardIntent.Commit, m.document)
+    val after   = AppModel.run(m, WizardEffect.appIntents(fx))._1
+    assertEquals(after.document.dataset(r3).flatMap(_.inventory).flatMap(_.displays), Some(ds))
+    val (_, reopened) = opened(after)
+    assertEquals(reopened.trials.flatMap(_._2.displays), Some(ds))
+    assertEquals(
+      ImportWizard.commands(reopened, after.document),
+      Left(WizardProblem.NoChange(r3))
+    )
+    val dropped = run(changed, m.document, WizardIntent.DropTrials(true))
+    assert(!ImportWizardVM.of(dropped, m.document).displays.enabled)
+    assertEquals(
+      run(dropped, m.document, WizardIntent.DropTrials(false)).trials.flatMap(_._2.displays),
+      Some(ds)
+    )
+    assertEquals(
+      AppModel.update(after, Intent.Undo(HistoryStack.Science))._1.document,
+      m.document
+    )
+  }

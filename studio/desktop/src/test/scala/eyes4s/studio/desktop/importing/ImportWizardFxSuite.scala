@@ -612,3 +612,62 @@ class ImportWizardFxSuite extends StudioFxSuite:
     assertEquals(drawn(m.view.problem), "Not saved: presets: read-only")
     assertEquals(drawn(m.view.status), "")
   }
+
+  fxStage.test(
+    "display bindings use inventory columns, clear their file, and commit through real CSV reads"
+  ) { fx =>
+    assumeFullStage(fx)
+    val m = mount(fx, ImportWizard.newImport(t2, ImportPresets.empty), t2)
+    readIn(fx, m, SourceRole.Fixations, fixations)
+    readIn(fx, m, SourceRole.Trials, trials)
+    declareMs(fx, m)
+    fx.robot.click(m.view.tabs(WizardTab.TrialMetadata))
+    fx.awaitLayout()
+    assert(runOnFx(m.view.displayFile.isDisabled))
+    assertEquals(runOnFx(m.view.displayKind.getAccessibleText), "Display kind column")
+    assertEquals(runOnFx(m.view.displayFile.getAccessibleText), "Image file column")
+    def select(box: ComboBox[DisplayColumnOptionVM], column: Option[String]): Unit =
+      runOnFx(box.getItems.asScala.find(_.column.map(_.value) == column).foreach(box.setValue))
+      fx.awaitLayout()
+    select(m.view.displayKind, Some("display_kind"))
+    assert(!runOnFx(m.view.displayFile.isDisabled))
+    select(m.view.displayFile, Some("image_file"))
+    val ds =
+      DisplayColumns(ok(ColumnName.of("display_kind")), Some(ok(ColumnName.of("image_file"))))
+    assertEquals(runOnFx(m.host.model.trials.flatMap(_._2.displays)), Some(ds))
+    runOnFx(m.view.displayKind.requestFocus())
+    fx.robot.press(javafx.scene.input.KeyCode.TAB)
+    fx.awaitLayout()
+    assert(runOnFx(fx.scene.getFocusOwner eq m.view.displayFile))
+    select(m.view.displayKind, None)
+    assert(runOnFx(m.view.displayFile.isDisabled))
+    assertEquals(runOnFx(m.host.model.trials.flatMap(_._2.displays)), None)
+    select(m.view.displayKind, Some("display_kind"))
+    assertEquals(runOnFx(m.host.model.trials.flatMap(_._2.displays).flatMap(_.file)), None)
+    select(m.view.displayFile, Some("image_file"))
+    fx.robot.click(m.view.commit)
+    fx.awaitLayout()
+    assertEquals(dispatched(m).size, 1)
+    val imported = eyes4s.studio.app.AppModel
+      .run(eyes4s.studio.app.AppModel.open(t2, None), m.app.toVector)
+      ._1
+    val spec = imported.document.datasets.last
+    assertEquals(spec.inventory.flatMap(_.displays), Some(ds))
+    val registry = ok(
+      eyes4s.studio.core.assets.AssetRegistry.fromInventory(
+        spec,
+        IArray.unsafeFromArray(Files.readAllBytes(trials)),
+        ok(eyes4s.studio.core.fixture.GoldenAssets.stimuli).map(_.asset),
+        Vector.empty
+      )
+    )
+    assertEquals(registry.count(eyes4s.studio.core.assets.DisplayKind.Image), 480)
+    assertEquals(
+      registry.count(eyes4s.studio.core.assets.DisplayKind.BlankWithFixationCross),
+      480
+    )
+    assertEquals(
+      registry.summary.missing.map(_.file.value),
+      Vector("forest-044.png", "kitchen-081.png")
+    )
+  }

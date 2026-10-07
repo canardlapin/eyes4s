@@ -168,7 +168,13 @@ object ColumnMappingPane:
         table(
           vm.trials,
           vm.trialsSource.map((label, _) => FocusStop(A11yRole.Button, label)).toVector
-        )
+        ) ++
+          Option.when(vm.displays.enabled)(
+            FocusStop(A11yRole.ComboBox, vm.displays.kindLabel)
+          ) ++
+          Option.when(vm.displays.enabled && vm.displays.selected.isDefined)(
+            FocusStop(A11yRole.ComboBox, vm.displays.fileLabel)
+          )
       case WizardTab.Geometry   => vm.geometry.map(g => FocusStop(A11yRole.TextField, g.label))
       case WizardTab.DataIssues => Vector.empty
     // The tabs are one toggle group: Tab stops on the selected one. A
