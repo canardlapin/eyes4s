@@ -24,6 +24,7 @@ import eyes4s.studio.core.assets.AssetRef
 import eyes4s.results.ResultTable
 import eyes4s.studio.core.figures.{BundleTableError, BundleTables}
 import eyes4s.studio.viz.trial.StimulusRaster
+import eyes4s.studio.desktop.platform.FileProjectStore
 
 import java.nio.charset.StandardCharsets.UTF_8
 import java.nio.file.{AtomicMoveNotSupportedException, Files, Path, StandardCopyOption}
@@ -134,7 +135,15 @@ object BundleWriter:
                 partial.resolve("project"),
                 {
                   case Left(why) => fail(s"project snapshot: $why")
-                  case Right(()) => finish()
+                  case Right(()) =>
+                    try
+                      // The snapshot writer has released its lock. This is
+                      // our private staging copy, never the live project.
+                      val project = partial.resolve("project")
+                      Files.deleteIfExists(project.resolve(FileProjectStore.LockName)): Unit
+                      Files.deleteIfExists(project.resolve(FileProjectStore.OwnerName)): Unit
+                      finish()
+                    catch case NonFatal(e) => fail(reason(e))
                 }
               )
 
