@@ -40,19 +40,33 @@ class NativeCommandJourneySuite extends munit.CatsEffectSuite:
   private def future[A](run: => scala.concurrent.Future[A]): IO[A] = IO.fromFuture(IO(run))
   private val owner = get(LockOwner.of("Native command reopen"))
 
+  /** Test-only elapsed phases; timings never change the qualification budget. */
+  private def phase[A](name: String)(body: IO[A]): IO[A] =
+    for
+      start <- IO.monotonic
+      _     <- IO.println(s"NATIVE-PHASE start $name")
+      value <- body.guarantee(
+        IO.monotonic.flatMap(end =>
+          IO.println(s"NATIVE-PHASE end $name ${(end - start).toMillis}ms")
+        )
+      )
+    yield value
+
   test(
     "new project imports, admits, previews, executes, inspects, saves, reopens and exports native science"
   ) {
     TempDirs.resource("eyes4s-native-command-").use { directory =>
       val path = directory.resolve("command.eyes")
       for
-        inputs       <- load
-        first        <- NativeCommandJourneyScenario.run(inputs, path)
-        direct       <- inputs.direct(first.document)
-        directResult <- IO.blocking(get(direct.work.run))
+        inputs <- phase("fixture-load")(load)
+        first  <- phase("initial-execution-readback-save")(
+          NativeCommandJourneyScenario.run(inputs, path)
+        )
+        direct       <- phase("direct-prepare")(inputs.direct(first.document))
+        directResult <- phase("direct-execution")(IO.blocking(get(direct.work.run)))
         _ = qualify(first, direct, directResult)
         store    <- FileProjectStore.at[IO](path)
-        reopened <- ProjectBundle.open(store).map(get)
+        reopened <- phase("project-bundle-open")(ProjectBundle.open(store).map(get))
         second   <- Resource
           .make(ProjectSession.open(store, owner).map(get))(_.session.close.map(get))
           .flatMap(opened =>
@@ -62,7 +76,9 @@ class NativeCommandJourneySuite extends munit.CatsEffectSuite:
           )
           .use { port =>
             for
-              stored <- port.session.loadNativeArtifacts(run).map(get)
+              stored <- phase("load-native-artifacts")(
+                port.session.loadNativeArtifacts(run).map(get)
+              )
               _ = println(
                 s"Native archive qualification: ${stored.files.size} entries, " +
                   s"${stored.files.foldLeft(BigInt(0))((n, file) => n + file._2.size)} bytes, " +
@@ -74,10 +90,12 @@ class NativeCommandJourneySuite extends munit.CatsEffectSuite:
                 stored.archive.index.archive,
                 first.document.run(run).get.archive
               )
-              _ = stored.archive.files.foreach { (entry, bytes) =>
-                assertEquals(entry.sha256, eyes4s.codec.ByteDigest.sha256(bytes))
-                assertEquals(entry.length, bytes.length.toLong)
-              }
+              _ <- phase("verify-stored-digests")(IO.delay {
+                stored.archive.files.foreach { (entry, bytes) =>
+                  assertEquals(entry.sha256, eyes4s.codec.ByteDigest.sha256(bytes))
+                  assertEquals(entry.length, bytes.length.toLong)
+                }
+              })
               sourceReads <- Ref.of[IO, Int](0)
               host    = DatasetSourceHosts.stored(port)
               counted = new DatasetSources[IO]:
@@ -98,7 +116,7 @@ class NativeCommandJourneySuite extends munit.CatsEffectSuite:
                 )(session => future(session.close))
                 .use { session =>
                   for
-                    summary <- future(session.result(run)).map(get)
+                    summary <- phase("restored-result")(future(session.result(run)).map(get))
                     reads   <- sourceReads.get
                     _ = assertEquals(summary, first.summary)
                     _ = assertEquals(
@@ -106,9 +124,11 @@ class NativeCommandJourneySuite extends munit.CatsEffectSuite:
                       0,
                       "stored scientific reads must not admit raw sources"
                     )
-                    captured <- NativeCommandJourneyReadback.capture(
-                      reopened.document,
-                      NativeCommandJourneyReadback.Port.from(session)
+                    captured <- phase("restored-readback-capture")(
+                      NativeCommandJourneyReadback.capture(
+                        reopened.document,
+                        NativeCommandJourneyReadback.Port.from(session)
+                      )
                     )
                     jobs <- session.rawBackend.jobs
                     _ = assertEquals(jobs, Vector.empty[JobStatus])
@@ -125,7 +145,9 @@ class NativeCommandJourneySuite extends munit.CatsEffectSuite:
                 )
                 .use { session =>
                   for
-                    summary    <- future(session.result(run)).map(get)
+                    summary <- phase("raw-source-fallback-reexecution")(
+                      future(session.result(run)).map(get)
+                    )
                     provenance <- future(
                       session.provenance(run, ResultAddress.ContrastRow(scale, focus))
                     ).map(get)

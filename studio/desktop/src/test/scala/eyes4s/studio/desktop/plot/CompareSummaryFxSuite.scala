@@ -123,6 +123,7 @@ class CompareSummaryFxSuite extends ShellFxSuite:
     eventually(fx, "the summary and its queries are read") {
       val vm = w.summary.vm
       vm.participants.exists(_.isRight) && vm.queries.exists(_.isRight) &&
+      vm.scales.nonEmpty && vm.scales.forall(_.available) &&
       w.summary.participantPlot.status.get.isInstanceOf[PlotTwinStatus.Shown] &&
       w.summary.scaleProfile.status.get.isInstanceOf[PlotTwinStatus.Shown] &&
       w.summary.queryTable.rowCount > 0
