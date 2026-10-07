@@ -435,7 +435,10 @@ object FigureComposer:
     val (binding, bound) =
       if figure.isEmpty || c.binding.selected == figure then (c.binding, Vector.empty)
       else FigureBinding.update(c.binding, model, FigureIntent.Select(figure.get))
-    val (asked, next) = asking(c.copy(binding = binding), model)
+    val (asked, next) = asking(
+      c.copy(binding = binding, methods = FigureMethods.hydrate(c.methods, model.document)),
+      model
+    )
     (asked, bound.map(lift) ++ next)
 
   /** Ask every currently-needed read once. A references answer may reveal the
@@ -453,11 +456,12 @@ object FigureComposer:
     case other               => ComposerEffect.Binding(other)
 
   def update(
-      c: FigureComposer,
+      initial: FigureComposer,
       model: AppModel,
       intent: ComposerIntent
   ): (FigureComposer, Vector[ComposerEffect]) =
     import ComposerIntent.*
+    val c = initial.copy(methods = FigureMethods.hydrate(initial.methods, model.document))
     intent match
       case Binding(i) =>
         val (b, effects) = FigureBinding.update(c.binding, model, i)
@@ -558,7 +562,32 @@ object FigureComposer:
           case FigureMethods.Show.Text => Intent.FocusPane(StudioLayouts.methods)
           case FigureMethods.Show.Diff => Intent.FocusPane(StudioLayouts.methodsDiff)
         }
-        (next.copy(methods = methods), focus.map(ComposerEffect.App(_)))
+        val writes: Either[DocumentError, Vector[ComposerEffect]] = i match
+          case MethodsIntent.FactsRead(_, _) | MethodsIntent.ShowDiff => Right(Vector.empty)
+          case _                                                      =>
+            source.toVector
+              .traverse { s =>
+                methods.drafts
+                  .get(s.figure.id)
+                  .traverse(d => FigureMethodsDraft.of(d.base, d.edited, d.pending))
+                  .map { draft =>
+                    if draft == s.figure.methods then Vector.empty
+                    else
+                      Vector(
+                        ComposerEffect
+                          .App(Intent.Dispatch(Command.SetFigureMethods(s.figure.id, draft)))
+                      )
+                  }
+              }
+              .map(_.flatten)
+        writes.fold(
+          e =>
+            (
+              next.copy(methods = methods, problem = Some(e.message)),
+              focus.map(ComposerEffect.App(_))
+            ),
+          effects => (next.copy(methods = methods), effects ++ focus.map(ComposerEffect.App(_)))
+        )
       case SetTextSize(size)          => (restyle(c, model)(_.copy(text = size)), none)
       case SetParticipantLines(lines) => (restyle(c, model)(_.copy(lines = lines)), none)
       case SetGreyscale(on)           => (c.copy(greyscale = on), none)
@@ -779,7 +808,12 @@ object FigureComposer:
     val methods = source
       .flatMap(_.toOption)
       .map(s =>
-        FigureMethods.view(c.methods, s, c.summaries.get(s.run.id), reportingAnswer(c, s))
+        FigureMethods.view(
+          FigureMethods.hydrate(c.methods, model.document),
+          s,
+          c.summaries.get(s.run.id),
+          reportingAnswer(c, s)
+        )
       )
     val bundle = for
       s <- source.flatMap(_.toOption)

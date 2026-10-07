@@ -21,8 +21,9 @@ import eyes4s.studio.app.compare.SummaryAnswer
 import eyes4s.studio.app.layout.StudioLayouts
 import eyes4s.studio.app.{AppModel, Intent, StoryModels}
 import eyes4s.studio.core.backend.{PageRequest, QueryStatus, ReportView, ResultSummary}
-import eyes4s.studio.core.document.FigureId
+import eyes4s.studio.core.document.{FigureId, StudioDocument, FigureMethodsDraft}
 import eyes4s.studio.core.figures.{FigureSource, MethodsFacts, MethodsReads}
+import eyes4s.studio.core.command.{Command, HistoryStack}
 import eyes4s.studio.core.fixture.{StoryMoment, StoryMoments}
 import eyes4s.studio.core.headless.HeadlessSession
 
@@ -327,11 +328,25 @@ class MethodsGeneratorSuite extends munit.FunSuite:
       assert(text.contains(s"paired n = ${paired.pairedN}"), text)
   }
 
+  private final case class MethodsHarness(composer: FigureComposer, model: AppModel)
+
+  private def update(
+      h: MethodsHarness,
+      intent: ComposerIntent
+  ): (MethodsHarness, Vector[ComposerEffect]) =
+    val (next, effects) = FigureComposer.update(h.composer, h.model, intent)
+    val model           = effects.foldLeft(h.model) { (m, e) =>
+      e match
+        case ComposerEffect.App(i) => AppModel.update(m, i)._1
+        case _                     => m
+    }
+    (MethodsHarness(FigureComposer.sync(next, model)._1, model), effects)
+
   private def composer(
       facts: MethodsFacts,
       summary: ResultSummary,
       report: ReportView
-  ): FigureComposer =
+  ): MethodsHarness =
     Vector(
       ComposerIntent.SummaryRead(run7, SummaryAnswer.Answered(summary)),
       ComposerIntent.ReportRead(
@@ -341,15 +356,15 @@ class MethodsGeneratorSuite extends munit.FunSuite:
         Right(report)
       ),
       ComposerIntent.Methods(MethodsIntent.FactsRead(run7, Right(facts)))
-    ).foldLeft(FigureComposer.sync(FigureComposer.empty, t2)._1)((c, i) =>
-      FigureComposer.update(c, t2, i)._1
+    ).foldLeft(MethodsHarness(FigureComposer.sync(FigureComposer.empty, t2)._1, t2))((c, i) =>
+      update(c, i)._1
     )
 
-  private def methods(c: FigureComposer): MethodsVM =
-    FigureComposer.view(c, t2).methods.getOrElse(fail("no methods pane"))
+  private def methods(c: MethodsHarness): MethodsVM =
+    FigureComposer.view(c.composer, c.model).methods.getOrElse(fail("no methods pane"))
 
-  private def act(c: FigureComposer, i: MethodsIntent): FigureComposer =
-    FigureComposer.update(c, t2, ComposerIntent.Methods(i))._1
+  private def act(c: MethodsHarness, i: MethodsIntent): MethodsHarness =
+    update(c, ComposerIntent.Methods(i))._1
 
   private val Replay = "D measures spatial correspondence, not sequential replay."
   private val Edited = "D measures where gaze went, not the order it went there."
@@ -358,7 +373,8 @@ class MethodsGeneratorSuite extends munit.FunSuite:
     read.map { (summary, facts, report) =>
       val (_, asked) = FigureComposer.sync(FigureComposer.empty, t2)
       assert(asked.contains(ComposerEffect.RequestMethods(run7, r3)), asked)
-      val waiting = methods(FigureComposer.sync(FigureComposer.empty, t2)._1)
+      val waiting =
+        methods(MethodsHarness(FigureComposer.sync(FigureComposer.empty, t2)._1, t2))
       assertEquals(waiting.text, Left("Reading run 7's results for the methods…"))
       val vm = methods(composer(facts, summary, report))
       assertEquals(vm.text, Right(Golden))
@@ -378,7 +394,7 @@ class MethodsGeneratorSuite extends munit.FunSuite:
       )
       // Show diff brings the "Diff vs generated" pane forward.
       assertEquals(
-        FigureComposer.update(c, t2, ComposerIntent.Methods(MethodsIntent.ShowDiff))._2,
+        update(c, ComposerIntent.Methods(MethodsIntent.ShowDiff))._2,
         Vector(ComposerEffect.App(Intent.FocusPane(StudioLayouts.methodsDiff)))
       )
       val vm = methods(c)
@@ -414,10 +430,10 @@ class MethodsGeneratorSuite extends munit.FunSuite:
         ComposerIntent.Methods(MethodsIntent.FactsRead(run7, Right(facts)))
       )
       replies.permutations.foreach { order =>
-        var state = FigureComposer.sync(FigureComposer.empty, t2)._1
+        var state = MethodsHarness(FigureComposer.sync(FigureComposer.empty, t2)._1, t2)
         order.zipWithIndex.foreach { (reply, index) =>
           assertEquals(methods(state).text, Left(MethodsCopy.reading(run7)))
-          state = FigureComposer.update(state, t2, reply)._1
+          state = update(state, reply)._1
           if index < order.size - 1 then
             assertEquals(methods(state).text, Left(MethodsCopy.reading(run7)))
         }
@@ -425,7 +441,7 @@ class MethodsGeneratorSuite extends munit.FunSuite:
         val authored = Golden.replace(Replay, Edited)
         state = act(state, MethodsIntent.Edit(authored))
         order.foreach { reply =>
-          state = FigureComposer.update(state, t2, reply)._1
+          state = update(state, reply)._1
           assertEquals(methods(state).text, Right(authored))
         }
       }
@@ -463,11 +479,11 @@ class MethodsGeneratorSuite extends munit.FunSuite:
         ComposerIntent.Methods(MethodsIntent.FactsRead(run7, Right(facts)))
       )
       replies.permutations.foreach { order =>
-        val initial = FigureComposer.sync(FigureComposer.empty, t2)._1
+        val initial = MethodsHarness(FigureComposer.sync(FigureComposer.empty, t2)._1, t2)
         val waiting = act(initial, MethodsIntent.Regenerate)
         assertEquals(methods(waiting).status, Some(MethodsCopy.reading(run7)))
         val ready =
-          order.foldLeft(waiting)((state, reply) => FigureComposer.update(state, t2, reply)._1)
+          order.foldLeft(waiting)((state, reply) => update(state, reply)._1)
         assertEquals(methods(ready).text, Right(Golden))
         assertEquals(methods(ready).status, None)
       }
@@ -493,9 +509,9 @@ class MethodsGeneratorSuite extends munit.FunSuite:
       val moved = act(edited, MethodsIntent.FactsRead(run7, Right(newer)))
       assert(methods(moved).heading.endsWith("regenerate to compare with new generated text"))
       val (waits, shown) =
-        FigureComposer.update(moved, t2, ComposerIntent.Methods(MethodsIntent.Regenerate))
+        update(moved, ComposerIntent.Methods(MethodsIntent.Regenerate))
       assertEquals(
-        shown,
+        shown.collect { case e @ ComposerEffect.App(_: Intent.FocusPane) => e },
         Vector(ComposerEffect.App(Intent.FocusPane(StudioLayouts.methodsDiff)))
       )
       val asked = methods(waits)
@@ -551,6 +567,122 @@ class MethodsGeneratorSuite extends munit.FunSuite:
       assertEquals(
         vm.status,
         Some("Regenerated from run 7 and reporting spec “By retrieval response”.")
+      )
+    }
+  }
+
+  private def reopened(h: MethodsHarness): MethodsHarness =
+    val codec    = ok(StudioDocument.codec)
+    val document = ok(codec.decode(ok(codec.encode(h.model.document))))
+    val fresh    = AppModel
+      .update(AppModel.open(document, h.model.project), Intent.Navigate(h.model.location))
+      ._1
+    MethodsHarness(FigureComposer.sync(FigureComposer.empty, fresh)._1, fresh)
+
+  test("authored methods and exact base survive document save/reopen before callbacks arrive") {
+    read.map { (summary, facts, report) =>
+      val authored = "  Authored µ text.\n\nKeep exact spacing.  "
+      val edited   = act(composer(facts, summary, report), MethodsIntent.Edit(authored))
+      val stored   = edited.model.document.figures.head.methods.get
+      assertEquals(stored.base, Golden)
+      assertEquals(stored.edited, authored)
+      assertEquals(stored.pending, None)
+      val opened = reopened(edited)
+      assertEquals(methods(opened).text, Right(authored))
+      assert(methods(opened).diff.exists(_.isInstanceOf[DiffLine.Added]))
+      val (refused, refusedEffects) = update(
+        opened,
+        ComposerIntent.Methods(MethodsIntent.FactsRead(run7, Left("temporary refusal")))
+      )
+      assertEquals(methods(refused).text, Right(authored))
+      assert(!refusedEffects.exists {
+        case ComposerEffect.App(_: Intent.Dispatch) => true; case _ => false
+      })
+      val recovered =
+        update(refused, ComposerIntent.Methods(MethodsIntent.FactsRead(run7, Right(facts))))._1
+      assertEquals(methods(recovered).text, Right(authored))
+      assertEquals(recovered.model.document.figures.head.methods, Some(stored))
+    }
+  }
+
+  test(
+    "methods undo and redo hydrate document authority rather than retaining stale session edits"
+  ) {
+    read.map { (summary, facts, report) =>
+      val c        = composer(facts, summary, report)
+      val authored = Golden.replace(Replay, Edited)
+      val edited   = act(c, MethodsIntent.Edit(authored))
+      assert(edited.model.document.figures.head.methods.isDefined)
+      val undoneModel = AppModel.update(edited.model, Intent.Undo(HistoryStack.Science))._1
+      val undone      =
+        MethodsHarness(FigureComposer.sync(edited.composer, undoneModel)._1, undoneModel)
+      assertEquals(methods(undone).text, Right(Golden))
+      assertEquals(undone.model.document.figures.head.methods, None)
+      val redoneModel = AppModel.update(undone.model, Intent.Redo(HistoryStack.Science))._1
+      val redone      =
+        MethodsHarness(FigureComposer.sync(undone.composer, redoneModel)._1, redoneModel)
+      assertEquals(methods(redone).text, Right(authored))
+      assertEquals(
+        redone.model.document.figures.head.methods,
+        edited.model.document.figures.head.methods
+      )
+    }
+  }
+
+  test(
+    "pending regeneration survives reopen and UseGenerated accepts exactly the offered text"
+  ) {
+    read.map { (summary, facts, report) =>
+      val edited = act(
+        composer(facts, summary, report),
+        MethodsIntent.Edit(Golden.replace(Replay, Edited))
+      )
+      val newer   = facts.copy(failures = Vector("study-failure.empty-map" -> 3))
+      val changed = act(edited, MethodsIntent.FactsRead(run7, Right(newer)))
+      val pending = act(changed, MethodsIntent.Regenerate)
+      val offered = pending.model.document.figures.head.methods.get.pending.get
+      val opened  = reopened(pending)
+      assertEquals(methods(opened).choice, Some(("Keep my edits", "Use the generated text")))
+      val accepted = act(opened, MethodsIntent.UseGenerated)
+      assertEquals(methods(accepted).text, Right(offered))
+      val different =
+        update(accepted, ComposerIntent.Methods(MethodsIntent.FactsRead(run7, Right(facts))))._1
+      assertEquals(methods(different).text, Right(offered))
+      assertEquals(
+        reopened(different).model.document.figures.head.methods.map(_.edited),
+        Some(offered)
+      )
+    }
+  }
+
+  test(
+    "separate figure drafts hydrate independently and delete/restore does not resurrect a discarded cache"
+  ) {
+    read.map { (summary, facts, report) =>
+      val c           = act(composer(facts, summary, report), MethodsIntent.Edit("Figure one."))
+      val second      = c.model.document.figures(1)
+      val secondDraft =
+        ok(FigureMethodsDraft.of("Second base.", "Figure two.", Some("Second pending.")))
+      val storedModel = AppModel
+        .update(
+          c.model,
+          Intent.Dispatch(Command.SetFigureMethods(second.id, Some(secondDraft)))
+        )
+        ._1
+      val withBoth = FigureComposer.sync(c.composer, storedModel)._1
+      assertEquals(withBoth.methods.drafts(second.id).edited, "Figure two.")
+      assertEquals(
+        withBoth.methods.drafts(c.model.document.figures.head.id).edited,
+        "Figure one."
+      )
+      val deletedModel =
+        AppModel.update(storedModel, Intent.Dispatch(Command.DeleteFigure(second.id)))._1
+      val deleted = FigureComposer.sync(withBoth, deletedModel)._1
+      assert(!deleted.methods.drafts.contains(second.id))
+      val restoredModel = AppModel.update(deletedModel, Intent.Undo(HistoryStack.Science))._1
+      assertEquals(
+        FigureComposer.sync(deleted, restoredModel)._1.methods.drafts(second.id).pending,
+        Some("Second pending.")
       )
     }
   }

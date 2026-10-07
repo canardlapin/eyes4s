@@ -19,7 +19,7 @@ package eyes4s.studio.app.figures
 import eyes4s.studio.app.compare.SummaryAnswer
 import eyes4s.studio.core.backend.ReportView
 import eyes4s.studio.core.backend.RunId
-import eyes4s.studio.core.document.FigureId
+import eyes4s.studio.core.document.{FigureId, StudioDocument}
 import eyes4s.studio.core.figures.{FigureSource, MethodsFacts}
 
 /** What the author does in the methods.md pane (ticket S9.4). */
@@ -71,6 +71,12 @@ final case class FigureMethods private (
 
 object FigureMethods:
   val empty: FigureMethods = FigureMethods(Map.empty, Map.empty, None)
+
+  /** The document is the authority for author state; reads remain session-local. */
+  def hydrate(m: FigureMethods, document: StudioDocument): FigureMethods =
+    m.copy(drafts = document.figures.flatMap { figure =>
+      figure.methods.map(d => figure.id -> MethodsDraft(d.base, d.edited, d.pending))
+    }.toMap)
 
   /** The figure's methods as generated now, or why they cannot be. */
   def generated(
@@ -158,9 +164,10 @@ object FigureMethods:
           case None => (m, None)
       case UseGenerated =>
         draft.flatMap(_.pending) match
-          case Some(_) =>
+          case Some(accepted) =>
             (
-              set(None).copy(status = Some(MethodsStatus.Message(MethodsCopy.Replaced))),
+              set(Some(MethodsDraft(accepted, accepted, None)))
+                .copy(status = Some(MethodsStatus.Message(MethodsCopy.Replaced))),
               Some(Show.Text)
             )
           case None => (m, None)
