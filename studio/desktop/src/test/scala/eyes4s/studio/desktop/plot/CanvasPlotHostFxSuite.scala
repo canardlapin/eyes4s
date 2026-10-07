@@ -36,6 +36,7 @@ import intaglio.{
 import intaglio.javafx.{JavaFxCanvasContext, JavaFxCommand, JavaFxRenderer}
 import javafx.application.Platform
 import javafx.geometry.Point2D
+import javafx.scene.SnapshotParameters
 import javafx.scene.canvas.Canvas
 import javafx.scene.layout.{Region, StackPane}
 
@@ -612,7 +613,18 @@ class CanvasPlotHostFxSuite extends StudioFxSuite:
     }
     fx.show(runOnFx(StackPane(host)))
     runOnFx(host.show(reference(Theme.Light)))
+    def assertRendered(frame: PlotFrame): Unit =
+      // A synchronous snapshot waits for Prism, unlike Drawn/layout status.
+      val image = runOnFx(host.snapshot(SnapshotParameters(), null))
+      assertEquals(image.getWidth, frame.surface.deviceWidth.toDouble)
+      assertEquals(image.getHeight, frame.surface.deviceHeight.toDouble)
+      val mark     = ReferenceScene.marks.find(_.role == ReferenceRole.Query).get
+      val point    = right(frame.transform.dataToDevice(mark.at))
+      val colour   = Tokens.themed(Theme.Light, ThemedToken.Query)
+      val expected = 0xff000000 | (colour.red << 16) | (colour.green << 8) | colour.blue
+      assertEquals(image.getPixelReader.getArgb(point.x.toInt, point.y.toInt), expected)
     val frame = awaitFrame(host, 1.0)
+    assertRendered(frame)
     assertEquals(frame.surface.canvasTextureBytes, 4096L * 2730 * 12)
     val compiled = runOnFx(host.profile.compiles)
     runOnFx(host.resize(8192, 8192))
@@ -627,6 +639,6 @@ class CanvasPlotHostFxSuite extends StudioFxSuite:
     assertEquals(runOnFx(host.canvasTexture), (0, 0))
     assertEquals(runOnFx(host.frame), None)
     runOnFx(host.resize(800, 600))
-    awaitFrame(host, 1.0)
+    assertRendered(awaitFrame(host, 1.0))
     runOnFx(host.dispose())
   }
