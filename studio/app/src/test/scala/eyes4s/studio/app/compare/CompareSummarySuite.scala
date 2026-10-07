@@ -685,3 +685,68 @@ class CompareSummarySuite extends munit.FunSuite:
       )
     }
   }
+
+  test(
+    "whole-report profile lines, participant table and Explain share refs for saved and derived ungrouped specs"
+  ) {
+    val original = t3Summary.document.reporting.head
+    val saved    = right(
+      ReportingSpec.of(
+        original.id,
+        "Saved ungrouped",
+        None,
+        original.filters,
+        original.minimumPerGroup,
+        ReportingWeight.PooledQueries
+      )
+    )
+    val savedModel = AppModel
+      .update(
+        t3Summary,
+        eyes4s.studio.app.Intent
+          .Dispatch(eyes4s.studio.core.command.Command.PutReporting(saved))
+      )
+      ._1
+    val derived      = CompareSummary.overall(original).get
+    val derivedModel =
+      AppModel.update(t3Summary, eyes4s.studio.app.Intent.Explain(Place.Summary(derived.id)))._1
+    Future.sequence(Vector(savedModel -> saved, derivedModel -> derived).map { (model, spec) =>
+      loaded(model).map { state =>
+        val vm      = CompareSummaryVM.of(state, model)
+        val profile = right(vm.profile.get)
+        val table   = right(vm.participants.get)
+        val at      = state.shown.get
+        val refs    = profile.rows.map(_.ref).collect {
+          case ref @ StudioRef.ReportParticipant(
+                _,
+                _,
+                scale,
+                eyes4s.studio.core.selection.ReportGroup.Whole,
+                ReportRole.Difference,
+                _
+              ) if scale == at =>
+            ref
+        }
+        assertEquals(table.rows.map(_.ref).toSet, refs.toSet)
+        val selected = AppModel
+          .update(
+            model,
+            StoryModels.select(model, "compare.participant-table", table.rows.head.ref)
+          )
+          ._1
+        val explain = CompareSummaryVM
+          .of(state, selected)
+          .explain
+          .getOrElse(fail("no whole participant Explain"))
+        assert(explain.keeps.contains("All queries"), explain.keeps)
+        val navigated = explain.intents.foldLeft(selected)((m, i) => AppModel.update(m, i)._1)
+        assert(
+          navigated.location.trail.contains(Place.At(table.rows.head.ref)),
+          navigated.location
+        )
+        assertEquals(CompareSummary.reporting(navigated), Some(spec.id))
+        assertEquals(CompareSummary.reportingSpec(navigated.document, spec.id), Some(spec))
+        assertEquals(navigated.selection.selected, Vector(table.rows.head.ref))
+      }
+    })
+  }
