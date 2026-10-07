@@ -16,18 +16,25 @@
 
 package eyes4s.studio.desktop.figures
 
-import eyes4s.studio.app.{Intent, StoryModels}
+import cats.effect.IO
+import cats.effect.unsafe.implicits.global
+import eyes4s.studio.app.{AppModel, Intent, StoryModels}
 import eyes4s.studio.app.appearance.Appearance
 import eyes4s.studio.app.tokens.Wcag
-import eyes4s.studio.app.figures.MethodsCopy
+import eyes4s.studio.app.figures.{FigureComposer, FigureMethods, MethodsCopy}
 import eyes4s.studio.core.backend.{DatasetRevision, RunId}
 import eyes4s.studio.core.document.Theme
-import eyes4s.studio.core.figures.MethodsFacts
+import eyes4s.studio.core.figures.{FigureSource, MethodsFacts}
 import eyes4s.studio.core.fixture.StoryMoment
+import eyes4s.studio.core.bundle.LockOwner
+import eyes4s.studio.core.session.{ProjectSession, SaveReceipt}
 import eyes4s.studio.desktop.{StudioWindow, ThemeHost}
 import eyes4s.studio.desktop.explore.NavigatorDisplays
 import eyes4s.studio.desktop.harness.FxStage
-import eyes4s.studio.desktop.shell.{A11yChecks, ShellFxSuite}
+import eyes4s.studio.desktop.journey.GoldenWindow
+import eyes4s.studio.desktop.platform.{FileProjectStore, TempDirs}
+import eyes4s.studio.desktop.runtime.SessionPort
+import eyes4s.studio.desktop.shell.A11yChecks
 import javafx.scene.control.{Button, Label}
 import javafx.scene.paint.Color
 import javafx.scene.text.Text
@@ -41,7 +48,7 @@ import scala.jdk.CollectionConverters.*
 /** The methods.md and "Diff vs generated" panes in the studio window (ticket
   * S9.4; Figures.dc.html) at story moment t2: Figure 1's methods from run 7.
   */
-class FigureMethodsFxSuite extends ShellFxSuite:
+class FigureMethodsFxSuite extends GoldenWindow:
 
   override val munitTimeout: Duration = Duration(180, "s")
 
@@ -262,4 +269,85 @@ class FigureMethodsFxSuite extends ShellFxSuite:
       w.figures.vm.methods.flatMap(_.status),
       Some("The generated text has not changed; your edits are kept.")
     )
+  }
+
+  fxStage.test(
+    "authored methods and their generated baseline survive project close and reopen"
+  ) { fx =>
+    TempDirs
+      .resource("eyes4s-authored-methods")
+      .use { dir =>
+        IO.blocking {
+          val model                              = StoryModels.t2Figures
+          val path                               = dir.resolve("methods.eyes")
+          val port                               = project(path, model.document)
+          val (authored, baseline, originalDiff) = try
+            val w = boot(fx, model, project = Some(port))
+            try
+              val baseline = generated(fx, w)
+              val authored = baseline.replace(Replay, Edited) + "\n\nAuthor: Zoë — α.\n"
+              runOnFx(w.figures.methodsEditor.setText(authored))
+              val saved = CompletableFuture[Either[String, SaveReceipt]]()
+              port.save(answer => saved.complete(answer): Unit)
+              ok(saved.get(20, TimeUnit.SECONDS))
+              val document = runOnFx(w.runtime.model.document)
+              assertEquals(port.session.saved.unsafeRunSync(), document)
+              val draft = document.figures.head.methods.getOrElse(fail("no stored methods"))
+              assertEquals(draft.base, baseline)
+              assertEquals(draft.edited, authored)
+              assertEquals(draft.pending, None)
+              (authored, baseline, diffTexts(w))
+            finally
+              runOnFx(w.close())
+              opened -= w
+          finally
+            port.close()
+            ok(port.session.close.unsafeRunSync())
+
+          val store   = FileProjectStore.at[IO](path).unsafeRunSync()
+          val owner   = ok(LockOwner.of("FigureMethodsFxSuite-reopen"))
+          val session = ok(ProjectSession.open(store, owner).unsafeRunSync()).session
+          try
+            val reopenedPort = SessionPort.start(session)
+            try
+              val document = session.document.unsafeRunSync()
+              val fresh    = AppModel.open(document, model.project)
+              val restored = AppModel.update(fresh, Intent.Navigate(model.location))._1
+              val reopened = boot(fx, restored, project = Some(reopenedPort))
+              try
+                assertEquals(runOnFx(reopened.figures.methodsEditor.getText), authored)
+                assertEquals(diffTexts(reopened), originalDiff)
+                eventually(fx, "the reopened project has fresh methods facts and reports") {
+                  val composer = reopened.figures.composer
+                  val source   = ok(
+                    FigureSource.of(reopened.runtime.model.document, document.figures.head.id)
+                  )
+                  val scale = ok(FigureComposer.reportingScale(source))
+                  FigureMethods
+                    .generated(
+                      composer.methods,
+                      source,
+                      composer.summaries.get(source.run.id),
+                      composer.reports.get((source.run.id, source.reporting, scale))
+                    )
+                    .isRight
+                }
+                assertEquals(runOnFx(reopened.figures.methodsEditor.getText), authored)
+                assertEquals(diffTexts(reopened), originalDiff)
+                assertEquals(document.figures.head.methods.map(_.base), Some(baseline))
+                press(reopened, "Regenerate")
+                assertEquals(
+                  runOnFx(reopened.figures.vm.methods.flatMap(_.status)),
+                  Some(MethodsCopy.Unchanged)
+                )
+                assertEquals(runOnFx(reopened.figures.methodsEditor.getText), authored)
+                assertEquals(diffTexts(reopened), originalDiff)
+              finally
+                runOnFx(reopened.close())
+                opened -= reopened
+            finally reopenedPort.close()
+          finally ok(session.close.unsafeRunSync())
+        }
+      }
+      .unsafeRunSync()
   }

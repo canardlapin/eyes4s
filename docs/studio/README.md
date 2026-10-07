@@ -16,6 +16,16 @@ kind clears the file binding; removing and keeping the inventory preserves its d
 Display columns still pass through as attributes. Image displays name an asset file;
 absent image bytes are reported as missing, while blank displays need no file.
 
+In Figures, **Start figure with** creates panel A from a chosen template. Use
+**Add panel**, **Move earlier**, **Move later** and **Remove panel** to arrange the
+page. Moving a panel retains its letter; the last panel cannot be removed.
+These edits support undo and redo.
+
+Authored methods prose, its generated baseline and any pending regeneration offer
+are saved with the figure and restored when the project reopens. **Keep my edits**
+and **Use the generated text** retain the chosen text even when fresh run facts are
+still loading. Explicit **Regenerate** saves the resulting snapshot as well.
+
 | Path | What it is |
 |---|---|
 | `DESIGN_SPEC.md` | The design contract. §12 lists the round-3 amendments and overrides anything earlier in the file. |
