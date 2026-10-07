@@ -621,7 +621,8 @@ object ProtocolVersion:
     * manifest provenance (bead q-native-archive-readback).
     * Deploy client and backend together.
     */
-  val Current: ProtocolVersion = ProtocolVersion(1, 17)
+  // 1.18 serves declared trial-relative extents and explicit missing provenance.
+  val Current: ProtocolVersion = ProtocolVersion(1, 18)
 
 /** A client's correlation id; every frame answering a request carries it. */
 final case class RequestId(value: Long) derives CanEqual

@@ -156,6 +156,7 @@ class FixationInspectorSuite extends munit.FunSuite:
           ("Key", "P17 · Encoding · enc_03 · occ 1"),
           ("Display", "Image · beach-042.png"),
           ("Match item", "beach-042"),
+          ("Extent", "Not declared"),
           ("Fixations", "13 · 1 outside")
         )
       )
@@ -326,4 +327,23 @@ class FixationInspectorSuite extends munit.FunSuite:
     val vm = FixationInspector.vm(FixationInspector.empty)
     assertEquals(vm.status, Some("Select a fixation to inspect it"))
     assertEquals(ScaleIndex.of(0).isRight, true)
+  }
+
+  test("inspector extent uses native declared duration rather than the last fixation end") {
+    val native     = eyes4s.studio.core.real.TrialDurationNativeFixture.served()
+    val (state, _) = FixationInspector.sync(FixationInspector.empty, StoryModels.t2Explore)
+    val (next, _)  = FixationInspector.update(
+      state,
+      InspectorIntent.FixationsRead(
+        native.revision,
+        native.trial,
+        state.ask,
+        Right(BackendAnswer.Answered(native))
+      )
+    )
+    assertEquals(native.fixations.last.onsetMs + native.fixations.last.durationMs, 400.0)
+    assertEquals(
+      FixationInspector.vm(next).trial.find(_.label == "Extent").map(_.value),
+      Some("5.0 s")
+    )
   }

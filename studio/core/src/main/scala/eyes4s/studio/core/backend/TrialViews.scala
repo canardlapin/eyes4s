@@ -35,6 +35,9 @@ enum TrialViewError derives CanEqual, Codec.AsObject:
   /** The fixations are not the trial's scanpath positions 1, 2, … in order. */
   case PositionOutOfOrder(trial: TrialKey, at: Int, position: Int)
   case OtherTrial(trial: TrialKey, fixation: TrialKey)
+  case ExtentInvalid(trial: TrialKey, fromMicros: Long, untilMicros: Long)
+  case ExtentRecords(trial: TrialKey, source: String, records: Vector[Int])
+  case ExtentDataset(trial: TrialKey, dataset: DatasetRevision, extentDataset: DatasetRevision)
   case SigmaNotPositive(trial: TrialKey, degrees: Double)
   case EmptyGrid(trial: TrialKey, columns: Int, rows: Int)
   case CellCount(trial: TrialKey, columns: Int, rows: Int, cells: Int)
@@ -62,6 +65,12 @@ enum TrialViewError derives CanEqual, Codec.AsObject:
       s"Fixation record $r of ${t.label} lasts $d ms; a fixation lasts more than 0 ms."
     case PositionOutOfOrder(t, at, p) =>
       s"Fixation ${at + 1} of ${t.label} is at scanpath position $p."
+    case ExtentInvalid(t, from, until) =>
+      s"Trial extent of ${t.label} is [$from, $until) μs from trial start; require zero start and a positive end."
+    case ExtentDataset(t, d, e) =>
+      s"Trial extent of ${t.label} names ${e.label}, but the fixations belong to ${d.label}."
+    case ExtentRecords(t, source, records) =>
+      s"Trial extent of ${t.label} names inventory $source records $records; require nonempty, increasing data records starting at 2."
     case OtherTrial(t, f)       => s"The fixations of ${t.label} include one of ${f.label}."
     case SigmaNotPositive(t, d) => s"The preview of ${t.label} has σ $d°; it must be positive."
     case EmptyGrid(t, c, r)     => s"The preview of ${t.label} has $c × $r cells."
@@ -170,7 +179,8 @@ final case class TrialFixations private (
     revision: AnalysisRevision,
     dataset: DatasetRevision,
     trial: TrialKey,
-    fixations: Vector[AdmittedFixation]
+    fixations: Vector[AdmittedFixation],
+    extent: TrialTemporalExtent
 ) derives CanEqual
 
 object TrialFixations:
@@ -180,17 +190,32 @@ object TrialFixations:
       trial: TrialKey,
       fixations: Vector[AdmittedFixation]
   ): Either[TrialViewError, TrialFixations] =
-    fixations.zipWithIndex
-      .collectFirst {
-        case (f, _) if f.ref.trial != trial => TrialViewError.OtherTrial(trial, f.ref.trial)
-        case (f, i) if f.ref.index.value != i + 1 =>
-          TrialViewError.PositionOutOfOrder(trial, i, f.ref.index.value)
-      }
-      .toLeft(TrialFixations(revision, dataset, trial, fixations))
+    of(revision, dataset, trial, fixations, TrialTemporalExtent.LegacyMissing(trial))
+
+  def of(
+      revision: AnalysisRevision,
+      dataset: DatasetRevision,
+      trial: TrialKey,
+      fixations: Vector[AdmittedFixation],
+      extent: TrialTemporalExtent
+  ): Either[TrialViewError, TrialFixations] =
+    if extent.trial != trial then Left(TrialViewError.OtherTrial(trial, extent.trial))
+    else if extent.declaredDataset.exists(_ != dataset) then
+      Left(
+        TrialViewError.ExtentDataset(trial, dataset, extent.declaredDataset.getOrElse(dataset))
+      )
+    else
+      fixations.zipWithIndex
+        .collectFirst {
+          case (f, _) if f.ref.trial != trial => TrialViewError.OtherTrial(trial, f.ref.trial)
+          case (f, i) if f.ref.index.value != i + 1 =>
+            TrialViewError.PositionOutOfOrder(trial, i, f.ref.index.value)
+        }
+        .toLeft(TrialFixations(revision, dataset, trial, fixations, extent))
 
   given Encoder.AsObject[TrialFixations] =
-    Encoder.forProduct4("revision", "dataset", "trial", "fixations")(t =>
-      (t.revision, t.dataset, t.trial, t.fixations)
+    Encoder.forProduct5("revision", "dataset", "trial", "fixations", "extent")(t =>
+      (t.revision, t.dataset, t.trial, t.fixations, t.extent)
     )
 
   given Decoder[TrialFixations] = Decoder.instance { c =>
@@ -198,9 +223,12 @@ object TrialFixations:
       c.get[AnalysisRevision]("revision"),
       c.get[DatasetRevision]("dataset"),
       c.get[TrialKey]("trial"),
-      c.get[Vector[AdmittedFixation]]("fixations")
-    ).flatMapN((r, d, t, fs) =>
-      of(r, d, t, fs).leftMap(e => DecodingFailure(e.message, c.history))
+      c.get[Vector[AdmittedFixation]]("fixations"),
+      c.get[Option[TrialTemporalExtent]]("extent")
+    ).flatMapN((r, d, t, fs, extent) =>
+      of(r, d, t, fs, extent.getOrElse(TrialTemporalExtent.LegacyMissing(t))).leftMap(e =>
+        DecodingFailure(e.message, c.history)
+      )
     )
   }
 

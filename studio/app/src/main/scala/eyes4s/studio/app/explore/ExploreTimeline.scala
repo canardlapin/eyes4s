@@ -57,8 +57,8 @@ enum TimelineIntent derives CanEqual:
   * selects the fixations whose intervals overlap it (S4.5e's
   * `BrushRule.Overlaps`), through the selection every view shares; it is
   * view state only and never changes the analysis or the document. The
-  * playhead is a time in the trial, from its start to the end of its last
-  * fixation; playback stops there.
+  * playhead runs to the served trial end. When that end is undeclared,
+  * playback covers the fixation intervals and labels that limitation.
   */
 final case class ExploreTimeline(
     trial: Option[TrialKey],
@@ -91,7 +91,9 @@ object ExploreTimeline:
       f -> TimelineFixation(f.ref.index, onset, math.round(f.onsetMs + f.durationMs) - onset)
     }
     val (drawn, skipped) = rounded.partition(_._2.durationMs > 0)
-    Timeline.of(fixations.trial, drawn.map(_._2)).map(TimelineRead(_, skipped.map(_._1)))
+    Timeline
+      .of(fixations.trial, drawn.map(_._2), Some(fixations.extent))
+      .map(TimelineRead(_, skipped.map(_._1)))
 
   /** The timeline of the trial view's fixations, when it has read them; or
     * why they make no timeline.
@@ -101,9 +103,18 @@ object ExploreTimeline:
       case None    => Right(None)
       case Some(f) => timeline(f).map(Some(_)).left.map(_.message)
 
-  /** The trial's end: the end of its last fixation. */
+  /** The served trial end, or fixation coverage when no duration is declared.
+    * The latter is labelled as coverage and never displayed as trial duration.
+    */
   def endMs(timeline: Timeline): Double =
-    timeline.fixations.map(f => (f.onsetMs + f.durationMs).toDouble).maxOption.getOrElse(0.0)
+    timeline.extent.declared
+      .map(_.window.until.toMicros / 1000.0)
+      .getOrElse(
+        timeline.fixations
+          .map(f => (f.onsetMs + f.durationMs).toDouble)
+          .maxOption
+          .getOrElse(0.0)
+      )
 
   /** Follow the trial view's trial: a new trial starts at its beginning,
     * paused and unbrushed; the speed stays.
@@ -160,7 +171,8 @@ final case class ExploreTimelineVM(
     brush: Option[HalfOpenSpan],
     note: Option[String],
     skipped: Vector[String],
-    enabled: Boolean
+    enabled: Boolean,
+    extentNote: Option[String]
 ) derives CanEqual
 
 object ExploreTimelineVM:
@@ -204,5 +216,10 @@ object ExploreTimelineVM:
       read.toVector
         .flatMap(_.skipped)
         .map(f => t(SkippedMark, f.ref.index.value.toString, f.durationMs.toString)),
-      timeline.isDefined
+      timeline.isDefined,
+      timeline.map(tl =>
+        tl.extent.declared match
+          case Some(extent) => t(DeclaredTrialExtent, seconds(extent.durationMicros / 1000.0))
+          case None         => t(MissingTrialExtent)
+      )
     )

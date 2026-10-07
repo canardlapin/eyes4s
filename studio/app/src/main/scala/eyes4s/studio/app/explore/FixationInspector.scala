@@ -422,6 +422,15 @@ object FixationInspector:
           ),
           InspectorLine(t(MatchItem), display.flatMap(_.item).fold(none)(_.value)),
           InspectorLine(
+            t(Extent),
+            fs.fold(none)(x =>
+              x.extent.declared
+                .fold(t(ExtentMissing))(e =>
+                  t(ExtentSeconds, Format.decimal(e.durationMicros / 1000000.0, 1))
+                )
+            )
+          ),
+          InspectorLine(
             t(Fixations),
             fs.fold(none)(x =>
               t(FixationsValue, x.fixations.size.toString, outside.getOrElse(0).toString)

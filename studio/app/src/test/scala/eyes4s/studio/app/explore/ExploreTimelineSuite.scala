@@ -236,3 +236,38 @@ class ExploreTimelineSuite extends munit.FunSuite:
     val moved   = ExploreTimeline.sync(playing, Some(other))
     assertEquals((moved.trial, moved.playing, moved.playheadMs), (Some(other), false, 0.0))
   }
+
+  test(
+    "declared native trial extends playback past the fixation tail; missing remains coverage"
+  ) {
+    val served = eyes4s.studio.core.real.TrialDurationNativeFixture.served()
+    val read   = ok(ExploreTimeline.timeline(served))
+    assertEquals(
+      read.timeline.fixations.last.onsetMs + read.timeline.fixations.last.durationMs,
+      400L
+    )
+    assertEquals(ExploreTimeline.endMs(read.timeline), 5000.0)
+    val start          = ExploreTimeline.sync(ExploreTimeline.empty, Some(served.trial))
+    val playing        = ExploreTimeline.update(start, Some(read.timeline), TimelineIntent.Play)
+    val afterFixations =
+      ExploreTimeline.update(playing, Some(read.timeline), TimelineIntent.Tick(1000))
+    assert(afterFixations.playing)
+    assertEquals(afterFixations.playheadMs, 1000.0)
+    val ended =
+      ExploreTimeline.update(afterFixations, Some(read.timeline), TimelineIntent.Tick(10000))
+    assertEquals((ended.playheadMs, ended.playing), (5000.0, false))
+    assertEquals(
+      ExploreTimelineVM.of(start, Right(Some(read))).extentNote,
+      Some("Trial extent 5.00 s")
+    )
+    val missing = ok(
+      ExploreTimeline.timeline(eyes4s.studio.core.real.TrialDurationNativeFixture.served(None))
+    )
+    assertEquals(ExploreTimeline.endMs(missing.timeline), 400.0)
+    assert(
+      ExploreTimelineVM
+        .of(start, Right(Some(missing)))
+        .extentNote
+        .exists(_.contains("not declared"))
+    )
+  }

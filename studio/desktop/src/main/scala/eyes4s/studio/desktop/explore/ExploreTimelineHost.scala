@@ -53,7 +53,14 @@ final class ExploreTimelineHost(
     ExploreTimeline.columns.fold(e => throw IllegalStateException(e.message), identity)
 
   private def builder(brush: Option[HalfOpenSpan]): TimelinePlot =
-    TimelinePlot(columns, brush, ExploreTimelineVM.of(state, shownRead).playheadMs)
+    TimelinePlot(
+      columns,
+      brush,
+      ExploreTimelineVM.of(state, shownRead).playheadMs,
+      shownRead.toOption.flatten
+        .flatMap(_.timeline.extent.declared)
+        .map(_.window.until.toMicros / 1000.0)
+    )
 
   private def view(id: String): ViewId =
     ViewId.of(id).fold(e => throw IllegalStateException(e.toString), identity)
@@ -228,7 +235,7 @@ final class ExploreTimelineHost(
     speeds.values.foreach(_.setDisable(!v.enabled))
     status.setText(v.status)
     disclaimer.setText(v.disclaimer)
-    val notes = v.note.toVector ++ v.skipped
+    val notes = v.note.toVector ++ v.extentNote.toVector ++ v.skipped
     note.setText(notes.mkString("\n"))
     note.setVisible(notes.nonEmpty)
     note.setManaged(notes.nonEmpty)

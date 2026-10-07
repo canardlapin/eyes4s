@@ -177,3 +177,14 @@ class TimelinePlotSuite extends FunSuite:
       )
     )
   }
+
+  test(
+    "a declared trial end keeps the gap after fixation bars inside the initial plot domain"
+  ) {
+    val declared = targetsOn(built(board, TimelinePlot(columns, trialEndMs = Some(10000.0))))
+    val end      = declared.transform.deviceToCanvas(device(declared, 10000.0))
+    assert(end.x <= declared.transform.surface.logicalWidth)
+    val coverage = targetsOn(built(board))
+    val beyond   = coverage.transform.deviceToCanvas(device(coverage, 10000.0))
+    assert(beyond.x > coverage.transform.surface.logicalWidth)
+  }

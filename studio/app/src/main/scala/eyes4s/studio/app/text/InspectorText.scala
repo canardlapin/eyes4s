@@ -32,7 +32,8 @@ enum InspectorTextId derives CanEqual:
   case UsedByTitle, UsedByNoScale, UsedByNoRun, MatchedOne, MatchedMany, AsControl, AsQuery,
     UsedByNone
   case TrialTitle, Key, KeyValue, DisplayLabel, DisplayImage, DisplayBlank, DisplayCross
-  case DisplayCue, DisplayUnknown, MatchItem, Fixations, FixationsValue
+  case DisplayCue, DisplayUnknown, MatchItem, Fixations, FixationsValue, Extent, ExtentSeconds,
+    ExtentMissing
   case NoFixation, Reading
 
 object InspectorText:
@@ -88,6 +89,9 @@ object InspectorText:
       case DisplayCue     => "Cue"
       case DisplayUnknown => "Unknown"
       case MatchItem      => "Match item"
+      case Extent         => "Extent"
+      case ExtentSeconds  => "{0} s"
+      case ExtentMissing  => "Not declared"
       case Fixations      => "Fixations"
       case FixationsValue => "{0} · {1} outside"
       case NoFixation     => "Select a fixation to inspect it"
