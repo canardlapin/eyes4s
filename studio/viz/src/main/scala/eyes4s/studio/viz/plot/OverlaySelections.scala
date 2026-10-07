@@ -54,7 +54,7 @@ object OverlaySelections:
     else
       for
         ringsScene <- OverlayRings.scene(rings, palette, width, height, deviceScale)
-        dash       <- DashPattern(DashPx.map(_ * deviceScale))
+        dash       <- DashPattern(DashPx)
         gp         <- GraphicParams.checked(
           stroke = Some(IntaglioColours.toIntaglio(palette.selectedOuter)),
           fill = None,

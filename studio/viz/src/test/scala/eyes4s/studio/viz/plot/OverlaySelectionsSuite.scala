@@ -90,7 +90,10 @@ class OverlaySelectionsSuite extends munit.FunSuite:
       val svg =
         right(intaglio.svg.SvgRenderer.render(RenderPlan(scene, transform.renderContext))).value
       assert(svg.contains(s"stroke-width=\"${(3 * scale).toInt}\""), svg)
-      assert(svg.contains("stroke-dasharray="), svg)
+      val dashes =
+        "stroke-dasharray=\"([^\"]+)\"".r.findAllMatchIn(svg).map(_.group(1)).toVector
+      val expectedDash = if scale == 1.0 then "6 3" else "12 6"
+      assertEquals(dashes, Vector.fill(2)(expectedDash))
     }
   }
 

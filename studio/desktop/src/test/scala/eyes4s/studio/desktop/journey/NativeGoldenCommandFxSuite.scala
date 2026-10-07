@@ -30,6 +30,13 @@ import eyes4s.studio.core.backend.{
   QueryStatus,
   ResultAddress
 }
+import eyes4s.studio.core.artifacts.{
+  NativeArtifactBudget,
+  NativeArtifactPackage,
+  NativeArtifactSource
+}
+import eyes4s.studio.core.document.RunRef
+import java.util.concurrent.atomic.AtomicReference
 import eyes4s.studio.core.bundle.{LockOwner, ProjectBundle}
 import eyes4s.studio.core.command.Command
 import eyes4s.studio.core.document.{CoreBinding, Perspective, Preset, RunLifecycle}
@@ -55,6 +62,14 @@ import scala.util.control.NonFatal
 class NativeGoldenCommandFxSuite extends GoldenWindow:
   import NativeCommandJourneyFixture.*
   override val munitTimeout: Duration = 600.seconds
+
+  private def timed[A](phase: String)(work: => A): A =
+    val started = System.nanoTime()
+    try work
+    finally
+      println(
+        s"NativeGoldenCommandFxSuite: $phase in ${(System.nanoTime() - started).nanos.toSeconds}s"
+      )
 
   private def until(fx: FxStage, what: String)(condition: => Boolean): Unit =
     val deadline = System.nanoTime() + 180.seconds.toNanos
@@ -169,7 +184,9 @@ class NativeGoldenCommandFxSuite extends GoldenWindow:
       dispatch(fx, w, Intent.Navigate(Location(Perspective.Figures, Vector(Place.Figures))))
       until(fx, "all edits saved") { !w.runtime.model.save.edited }
       val document = runOnFx(w.runtime.model.document)
-      val stored   = get(port.session.loadNativeArtifacts(run).unsafeRunSync())
+      val stored   = timed("warm archive verification") {
+        get(port.session.loadNativeArtifacts(run).unsafeRunSync())
+      }
       assertEquals(stored.facts.run, run)
       assertEquals(stored.facts.stamp, receipt.stamp)
       assertEquals(
@@ -181,9 +198,11 @@ class NativeGoldenCommandFxSuite extends GoldenWindow:
       val captured = NativeCommandJourneyReadback
         .capture(document, NativeCommandJourneyReadback.Port.from(w.session))
         .unsafeRunSync()
-      val commanded = NativeCommandJourneyScenario
-        .run(inputs, folder.resolve("commanded.eyes"))
-        .unsafeRunSync()
+      val commanded = timed("independent command oracle") {
+        NativeCommandJourneyScenario
+          .run(inputs, folder.resolve("commanded.eyes"))
+          .unsafeRunSync()
+      }
       assertEquals(captured.canonicalScience, commanded.canonicalScience)
       assertEquals(captured.rows, commanded.rows)
       assertEquals(captured.report, commanded.report)
@@ -236,55 +255,70 @@ class NativeGoldenCommandFxSuite extends GoldenWindow:
           .unsafeRunSync()
       ).session
       try
-        val cold = get(reopenedSession.loadNativeArtifacts(run).unsafeRunSync())
-        assertEquals(cold.facts, stored.facts)
-        assertEquals(cold.archive.index, stored.archive.index)
-        cold.archive.files.zip(stored.archive.files).foreach {
-          case ((entry, bytes), (firstEntry, firstBytes)) =>
-            assertEquals(entry, firstEntry)
-            assertEquals(Vector.from(bytes), Vector.from(firstBytes), entry.name.value)
-        }
-        Resource
-          .make(IO.blocking(SessionPort.start(reopenedSession)))(port =>
-            IO.blocking(port.close())
-          )
-          .use { port =>
-            Resource
-              .make(
-                IO.fromFuture(
-                  IO(
-                    NativeHeadlessSession.open(
-                      reopened.document,
-                      DatasetSourceHosts.stored(port),
-                      artifactSource = Some(port.nativeArtifactSource)
+        val loaded = new AtomicReference[Option[NativeArtifactPackage]](None)
+        timed("cold backend restoration") {
+          Resource
+            .make(IO.blocking(SessionPort.start(reopenedSession)))(port =>
+              IO.blocking(port.close())
+            )
+            .use { port =>
+              val observedSource = new NativeArtifactSource[IO]:
+                def load(ref: RunRef, budget: NativeArtifactBudget) =
+                  port.nativeArtifactSource.load(ref, budget).map { result =>
+                    result.foreach(loaded.set)
+                    result
+                  }
+              Resource
+                .make(
+                  IO.fromFuture(
+                    IO(
+                      NativeHeadlessSession.open(
+                        reopened.document,
+                        DatasetSourceHosts.stored(port),
+                        artifactSource = Some(observedSource)
+                      )
                     )
                   )
-                )
-              )(session => IO.fromFuture(IO(session.close)))
-              .use { session =>
-                for
-                  restored <- NativeCommandJourneyReadback.capture(
-                    reopened.document,
-                    NativeCommandJourneyReadback.Port.from(session)
-                  )
-                  jobs <- session.rawBackend.jobs
-                yield
-                  assertEquals(restored.canonicalScience, captured.canonicalScience)
-                  assertEquals(restored.rows, captured.rows)
-                  assertEquals(restored.report, captured.report)
-                  assertEquals(restored.source, captured.source)
-                  assertEquals(restored.exports, captured.exports)
-                  assertEquals(jobs, Vector.empty[JobStatus])
-                  assert(
-                    restored.provenance.trail
-                      .contains(ProvenanceStep.Restored(cold.manifestAddress))
-                  )
-                  assert(
-                    !restored.provenance.trail.exists(_.isInstanceOf[ProvenanceStep.Recomputed])
-                  )
-              }
-          }
-          .unsafeRunSync()
+                )(session => IO.fromFuture(IO(session.close)))
+                .use { session =>
+                  for
+                    restored <- NativeCommandJourneyReadback.capture(
+                      reopened.document,
+                      NativeCommandJourneyReadback.Port.from(session)
+                    )
+                    jobs <- session.rawBackend.jobs
+                  yield
+                    val cold =
+                      loaded.get().getOrElse(fail("Cold backend did not load the archive"))
+                    assertEquals(cold.facts, stored.facts)
+                    assertEquals(cold.archive.index, stored.archive.index)
+                    cold.archive.files.zip(stored.archive.files).foreach {
+                      case ((entry, bytes), (firstEntry, firstBytes)) =>
+                        assertEquals(entry, firstEntry)
+                        assertEquals(
+                          Vector.from(bytes),
+                          Vector.from(firstBytes),
+                          entry.name.value
+                        )
+                    }
+                    assertEquals(restored.canonicalScience, captured.canonicalScience)
+                    assertEquals(restored.rows, captured.rows)
+                    assertEquals(restored.report, captured.report)
+                    assertEquals(restored.source, captured.source)
+                    assertEquals(restored.exports, captured.exports)
+                    assertEquals(jobs, Vector.empty[JobStatus])
+                    assert(
+                      restored.provenance.trail
+                        .contains(ProvenanceStep.Restored(cold.manifestAddress))
+                    )
+                    assert(
+                      !restored.provenance.trail
+                        .exists(_.isInstanceOf[ProvenanceStep.Recomputed])
+                    )
+                }
+            }
+            .unsafeRunSync()
+        }
       finally get(reopenedSession.close.unsafeRunSync())
     catch
       case NonFatal(error) =>

@@ -470,7 +470,7 @@ final class FakeStudyBackend[F[_]] private[fixture] (
               Stream.raiseError[F](
                 new IllegalStateException(s"FakeStudyBackend preview: ${e.message}")
               )
-            case Right(retained) => page(retained, budget, initial = true).map(Right(_))
+            case Right(retained) => page(retained, budget, initial = true)
           }
     }
 
@@ -484,20 +484,40 @@ final class FakeStudyBackend[F[_]] private[fixture] (
           Stream.emit(
             Left(BackendError.UnknownPreview(id, s.previews.keys.toVector.sortBy(_.value)))
           )
-        case Some(retained) if retained.progress.isComplete =>
-          Stream.emit(Right(PreviewEvent.Ready(retained.ready)))
-        case Some(retained) => page(retained, budget, initial = false).map(Right(_))
+        case Some(retained) =>
+          currentPreview(s, retained) match
+            case Left(error)                               => Stream.emit(Left(error))
+            case Right(()) if retained.progress.isComplete =>
+              Stream.emit(Right(PreviewEvent.Ready(retained.ready)))
+            case Right(()) => page(retained, budget, initial = false)
     }
+
+  private def currentPreview(s: State, retained: RetainedPreview): Either[BackendError, Unit] =
+    val stamp = retained.ready.stamp
+    if s.revisions.get(stamp.revision).contains(stamp.dataset) then Right(())
+    else
+      Left(
+        BackendError.StalePreview(
+          retained.ready.id,
+          stamp,
+          PreviewStamp.fake(
+            stamp.revision,
+            s.revisions.getOrElse(stamp.revision, stamp.dataset)
+          )
+        )
+      )
 
   private def page(
       retained: RetainedPreview,
       budget: PreviewBudget,
       initial: Boolean
-  ): Stream[F, PreviewEvent] =
-    // `Initial` appears only on creation; resumed pages contain progress or Ready.
-    val opening = if initial then
+  ): Stream[F, Either[BackendError, PreviewEvent]] =
+    val opening: Stream[F, Either[BackendError, PreviewEvent]] = if initial then
       Stream.emit(
-        PreviewEvent.Initial(retained.ready.id, retained.ready.stamp, retained.ready.candidates)
+        Right(
+          PreviewEvent
+            .Initial(retained.ready.id, retained.ready.stamp, retained.ready.candidates)
+        )
       )
     else Stream.empty
     opening ++ Stream
@@ -506,24 +526,46 @@ final class FakeStudyBackend[F[_]] private[fixture] (
         state.modify { s =>
           s.previews.get(retained.ready.id) match
             case Some(current) =>
-              current.progress.advance match
-                case Some(done) =>
-                  val counting = PreviewEvent.Counting(current.ready.id, done)
-                  val ready    = Option.when(done.isComplete)(PreviewEvent.Ready(current.ready))
-                  (
-                    s.copy(previews =
-                      s.previews.updated(current.ready.id, current.copy(progress = done))
-                    ),
-                    Vector(counting) ++ ready.toVector
+              currentPreview(s, current) match
+                case Left(error) => (s, Vector(Left(error)))
+                case Right(())   =>
+                  current.progress.advance match
+                    case Some(done) =>
+                      val counting = Right(PreviewEvent.Counting(current.ready.id, done))
+                      val ready    =
+                        Option.when(done.isComplete)(Right(PreviewEvent.Ready(current.ready)))
+                      (
+                        s.copy(previews =
+                          s.previews.updated(current.ready.id, current.copy(progress = done))
+                        ),
+                        Vector(counting) ++ ready.toVector
+                      )
+                    case None => (s, Vector(Right(PreviewEvent.Ready(current.ready))))
+            case None =>
+              (
+                s,
+                Vector(
+                  Left(
+                    BackendError.UnknownPreview(
+                      retained.ready.id,
+                      s.previews.keys.toVector.sortBy(_.value)
+                    )
                   )
-                case None => (s, Vector(PreviewEvent.Ready(current.ready)))
-            case None => (s, Vector.empty)
+                )
+              )
         }
       }
       .flatMap(Stream.emits)
+      .evalMap {
+        // Consumers can edit the revision after the last Counting event.
+        // Check again at the Ready boundary rather than offering stale work.
+        case Right(event @ PreviewEvent.Ready(_)) =>
+          state.get.map(s => currentPreview(s, retained).map(_ => event))
+        case event => F.pure(event)
+      }
       .takeThrough {
-        case PreviewEvent.Ready(_) => false
-        case _                     => true
+        case Left(_) | Right(PreviewEvent.Ready(_)) => false
+        case _                                      => true
       }
 
   def submitPreview(ready: PreviewReady): F[Either[BackendError, JobStatus]] =

@@ -370,3 +370,44 @@ class AdmissionPolicySuite extends munit.FunSuite:
       )
     )
   }
+
+  test("two otherwise valid rows with conflicting occurrences quarantine the whole trial") {
+    val keys =
+      get(FixationKeyReader.trial("participant", "phase", "trial", "item", Some("occurrence")))
+    val header = Vector(
+      "participant",
+      "phase",
+      "trial",
+      "occurrence",
+      "fixation",
+      "x",
+      "y",
+      "onset",
+      "duration",
+      "n",
+      "item"
+    )
+    val imported = get(
+      FixationCsv.read(
+        Rfc4180.encode(
+          Vector(
+            header,
+            Vector("p1", "retrieval", "t1", "1", "0", "2", "3", "0", "100", "10", "d"),
+            Vector("p1", "retrieval", "t1", "2", "1", "4", "3", "200", "100", "10", "d")
+          )
+        ),
+        columns,
+        keys,
+        screen,
+        TimestampUnit.Milliseconds
+      )
+    )
+    assertEquals(imported.accepted.rows, Vector.empty)
+    assertEquals(
+      imported.rejected.map(_.error).distinct,
+      Vector(
+        FixationRowError.Trial(Vector(2, 3), QuarantineCause.OccurrenceConflict(Vector(1, 2)))
+      )
+    )
+    assertEquals(imported.rejected.size, 2)
+  }
