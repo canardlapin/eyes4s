@@ -143,7 +143,7 @@ enum DocumentError derives CanEqual:
   case PresetWithoutDefaults(preset: Preset, dataset: DatasetRevision)
 
   def message: String = this match
-    case FamilyOwnership(error) => error.message
+    case FamilyOwnership(error)                    => error.message
     case InitialDraftWithFamilies(draft, families) =>
       s"Initial ${draft.label} requires implicit legacy ownership; explicit families are $families."
     case PresetWithoutDefaults(preset, dataset) =>

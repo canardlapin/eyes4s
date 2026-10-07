@@ -209,11 +209,18 @@ object DocumentParts:
         if cursor.downField("analysisFamilies").succeeded then
           cursor.get[PartEntry]("analysisFamilies").map(Some(_))
         else Right(None)
-      parts <- Decoder.forProduct6(
-        "datasets", "analyses", "draft", "runs", "reporting", "figures"
-      )((datasets, analyses, draft, runs, reporting, figures) =>
-        DocumentParts(datasets, analyses, draft, runs, reporting, figures, families)
-      ).apply(cursor)
+      parts <- Decoder
+        .forProduct6(
+          "datasets",
+          "analyses",
+          "draft",
+          "runs",
+          "reporting",
+          "figures"
+        )((datasets, analyses, draft, runs, reporting, figures) =>
+          DocumentParts(datasets, analyses, draft, runs, reporting, figures, families)
+        )
+        .apply(cursor)
     yield parts
   }
 
@@ -409,9 +416,9 @@ object ProjectManifest:
             _.get[ScienceRecord]("science")
           ).flatMap(beforeFamilies)
         )
-        .next(_.parts.analysisFamilies.isEmpty, identity)(m => Right(CanonicalJson(writeV2(m))))(
-          json => read(json, _.get[SharingOptions]("sharing"), _.get[ScienceRecord]("science"))
-        )
+        .next(_.parts.analysisFamilies.isEmpty, identity)(m =>
+          Right(CanonicalJson(writeV2(m)))
+        )(json => read(json, _.get[SharingOptions]("sharing"), _.get[ScienceRecord]("science")))
     }
 
   val codec: Either[CodecError, VersionedCodec[ProjectManifest]] = ladder.map(_.codec)

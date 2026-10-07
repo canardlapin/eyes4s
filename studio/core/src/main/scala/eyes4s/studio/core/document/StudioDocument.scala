@@ -106,8 +106,8 @@ final class ScienceContent private (
   private def fields = (datasets, analyses, draft, runs, reporting, figures, analysisFamilies)
   override def equals(other: Any): Boolean = other match
     case that: ScienceContent => fields == that.fields
-    case _ => false
-  override def hashCode(): Int = fields.hashCode
+    case _                    => false
+  override def hashCode(): Int  = fields.hashCode
   override def toString: String = s"ScienceContent$fields"
 
 object ScienceContent:
@@ -120,7 +120,8 @@ object ScienceContent:
       reporting: Vector[ReportingSpec],
       figures: Vector[FigureSpec],
       analysisFamilies: Option[AnalysisFamilyRegistry]
-  ): ScienceContent = new ScienceContent(datasets, analyses, draft, runs, reporting, figures, analysisFamilies)
+  ): ScienceContent =
+    new ScienceContent(datasets, analyses, draft, runs, reporting, figures, analysisFamilies)
 
   private val legacyEncoder: Encoder.AsObject[ScienceContent] =
     Encoder.forProduct6("datasets", "analyses", "draft", "runs", "reporting", "figures")(s =>
@@ -157,11 +158,13 @@ object ScienceContent:
           CodecError.Unsupported("studio science", "explicit analysis families need version 6")
         )
       def beforeDuration(s: ScienceContent): Either[CodecError, ScienceContent] =
-        beforeFamilies(s).flatMap(v => Either.cond(
-          s.datasets.forall(_.inventory.forall(_.duration.isEmpty)),
-          s,
-          CodecError.Unsupported("studio science", "declared trial duration needs version 5")
-        ))
+        beforeFamilies(s).flatMap(v =>
+          Either.cond(
+            s.datasets.forall(_.inventory.forall(_.duration.isEmpty)),
+            v,
+            CodecError.Unsupported("studio science", "declared trial duration needs version 5")
+          )
+        )
       def beforeMethods(s: ScienceContent): Either[CodecError, ScienceContent] =
         beforeDuration(s).flatMap(v =>
           Either.cond(
@@ -195,7 +198,9 @@ object ScienceContent:
         )
         .next(
           s =>
-            s.analysisFamilies.isEmpty && s.datasets.forall(_.inventory.forall(_.duration.isEmpty)) && s.figures.forall(
+            s.analysisFamilies.isEmpty && s.datasets.forall(
+              _.inventory.forall(_.duration.isEmpty)
+            ) && s.figures.forall(
               _.methods.isEmpty
             ) && !s.draft.exists(_.isInitial) && s.reporting
               .forall(_.contrast.isEmpty),
@@ -203,20 +208,27 @@ object ScienceContent:
         )(s => beforeInitial(s).flatMap(write))(json => read(json).flatMap(beforeInitial))
         .next(
           s =>
-            s.analysisFamilies.isEmpty && s.datasets.forall(_.inventory.forall(_.duration.isEmpty)) && s.figures.forall(
+            s.analysisFamilies.isEmpty && s.datasets.forall(
+              _.inventory.forall(_.duration.isEmpty)
+            ) && s.figures.forall(
               _.methods.isEmpty
             ) && !s.draft.exists(_.isInitial),
           identity
         )(s => beforeMethods(s).flatMap(write))(json => read(json).flatMap(beforeMethods))
         .next(
           s =>
-            s.analysisFamilies.isEmpty && s.datasets.forall(_.inventory.forall(_.duration.isEmpty)) && s.figures
+            s.analysisFamilies.isEmpty && s.datasets.forall(
+              _.inventory.forall(_.duration.isEmpty)
+            ) && s.figures
               .forall(_.methods.isEmpty),
           identity
         )(s => beforeDuration(s).flatMap(write))(json => read(json).flatMap(beforeDuration))
-        .next(s => s.analysisFamilies.isEmpty && s.datasets.forall(_.inventory.forall(_.duration.isEmpty)), identity)(
-          s => beforeFamilies(s).flatMap(write)
-        )(json => read(json).flatMap(beforeFamilies))
+        .next(
+          s =>
+            s.analysisFamilies.isEmpty && s.datasets
+              .forall(_.inventory.forall(_.duration.isEmpty)),
+          identity
+        )(s => beforeFamilies(s).flatMap(write))(json => read(json).flatMap(beforeFamilies))
         .next(_.analysisFamilies.isEmpty, identity)(write)(read)
     }
 
@@ -239,11 +251,11 @@ final class StudioDocument private (
     val jobs: Vector[JobHandle],
     val relinks: AssetRelinks
 ) derives CanEqual:
-  private def fields = (science, presentation, jobs, relinks)
+  private def fields                       = (science, presentation, jobs, relinks)
   override def equals(other: Any): Boolean = other match
     case that: StudioDocument => fields == that.fields
-    case _ => false
-  override def hashCode(): Int = fields.hashCode
+    case _                    => false
+  override def hashCode(): Int  = fields.hashCode
   override def toString: String = s"StudioDocument$fields"
 
   private def copy(
@@ -252,12 +264,12 @@ final class StudioDocument private (
       relinks: AssetRelinks = this.relinks
   ): StudioDocument = new StudioDocument(science, presentation, jobs, relinks)
 
-  def datasets: Vector[DatasetRevisionSpec]  = science.datasets
-  def analyses: Vector[AnalysisRevisionSpec] = science.analyses
-  def draft: Option[Draft]                   = science.draft
-  def runs: Vector[RunRef]                   = science.runs
-  def reporting: Vector[ReportingSpec]       = science.reporting
-  def figures: Vector[FigureSpec]            = science.figures
+  def datasets: Vector[DatasetRevisionSpec]            = science.datasets
+  def analyses: Vector[AnalysisRevisionSpec]           = science.analyses
+  def draft: Option[Draft]                             = science.draft
+  def runs: Vector[RunRef]                             = science.runs
+  def reporting: Vector[ReportingSpec]                 = science.reporting
+  def figures: Vector[FigureSpec]                      = science.figures
   def analysisFamilies: Option[AnalysisFamilyRegistry] = science.analysisFamilies
 
   /** Saved revisions have exactly one owner. An existing draft inherits its
@@ -266,13 +278,17 @@ final class StudioDocument private (
     */
   def familyOf(revision: AnalysisRevision): Option[AnalysisFamilyId] =
     analysisFamilies match
-      case None => LegacyAnalysisFamily.familyOf(this, revision)
+      case None           => LegacyAnalysisFamily.familyOf(this, revision)
       case Some(registry) =>
-        registry.familyOf(revision).orElse(
-          draft.filter(_.id == revision).flatMap(_.origin match
-            case DraftOrigin.Existing(base) => registry.familyOf(base)
-            case DraftOrigin.Initial(_, _, _) => None)
-        )
+        registry
+          .familyOf(revision)
+          .orElse(
+            draft
+              .filter(_.id == revision)
+              .flatMap(_.origin match
+                case DraftOrigin.Existing(base)   => registry.familyOf(base)
+                case DraftOrigin.Initial(_, _, _) => None)
+          )
 
   def sameFamily(first: AnalysisRevision, second: AnalysisRevision): Boolean =
     familyOf(first).exists(family => familyOf(second).contains(family))
@@ -445,7 +461,8 @@ object StudioDocument:
       _ <- checkPresentation(runs, presentation)
       _ <- checkJobs(runs, jobs)
     yield new StudioDocument(
-      ScienceContent.checked(datasets, analyses, draft, runs, reporting, figures, analysisFamilies),
+      ScienceContent
+        .checked(datasets, analyses, draft, runs, reporting, figures, analysisFamilies),
       presentation,
       jobs.sortBy(_.run.number),
       AssetRelinks.empty
@@ -494,11 +511,13 @@ object StudioDocument:
       analyses <- c.get[Vector[AnalysisRevisionSpec]]("analyses")
       families <-
         if c.downField("analysisFamilies").succeeded then
-          c.get[Json]("analysisFamilies").flatMap(json =>
-            AnalysisFamilyRegistry.decode(json, analyses.map(_.id))
-              .leftMap(error => DecodingFailure(error.message, c.history))
-              .map(Some(_))
-          )
+          c.get[Json]("analysisFamilies")
+            .flatMap(json =>
+              AnalysisFamilyRegistry
+                .decode(json, analyses.map(_.id))
+                .leftMap(error => DecodingFailure(error.message, c.history))
+                .map(Some(_))
+            )
         else Right(None)
       document <- Decoder
         .forProduct8(
@@ -532,10 +551,14 @@ object StudioDocument:
     expressedByV5(document) && document.analyses.forall(a => presetBeforeV5(a.studio.preset))
 
   /** Version 6 first records explicit ordered reporting contrast operands. */
-  private def expressedByV9(document: StudioDocument): Boolean = document.analysisFamilies.isEmpty
+  private def expressedByV9(document: StudioDocument): Boolean =
+    document.analysisFamilies.isEmpty
   private def beforeV10(document: StudioDocument): Either[CodecError, StudioDocument] =
-    Either.cond(expressedByV9(document), document,
-      CodecError.Unsupported("studio document", "explicit analysis families need version 10"))
+    Either.cond(
+      expressedByV9(document),
+      document,
+      CodecError.Unsupported("studio document", "explicit analysis families need version 10")
+    )
   private def expressedByV8(document: StudioDocument): Boolean =
     expressedByV9(document) && document.datasets.forall(_.inventory.forall(_.duration.isEmpty))
   private def beforeV9(document: StudioDocument): Either[CodecError, StudioDocument] =

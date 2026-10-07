@@ -25,22 +25,24 @@ object FamilySamples:
 
   val a: AnalysisFamilyId = get(AnalysisFamilyId.of(1))
   val b: AnalysisFamilyId = get(AnalysisFamilyId.of(2))
-  private val source = DocumentSamples.t2
-  private val seed = source.analyses.last
-  val a1 = seed.copy(id = AnalysisRevision(1))
-  val b2 = seed.copy(id = AnalysisRevision(2))
-  val a3 = seed.copy(id = AnalysisRevision(3))
-  val b4 = seed.copy(id = AnalysisRevision(4))
-  val analyses = Vector(a1, b2, a3, b4)
-  val registry = get(AnalysisFamilyRegistry.of(
-    Vector(get(AnalysisFamily.of(a, "Same name")), get(AnalysisFamily.of(b, "Same name"))),
-    Vector((a1.id, a), (b2.id, b), (a3.id, a), (b4.id, b)).map((revision, family) =>
-      get(AnalysisFamilyOwner.of(revision, family))
-    ),
-    analyses.map(_.id)
-  ))
+  private val source      = DocumentSamples.t2
+  private val seed        = source.analyses.last
+  val a1                  = seed.copy(id = AnalysisRevision(1))
+  val b2                  = seed.copy(id = AnalysisRevision(2))
+  val a3                  = seed.copy(id = AnalysisRevision(3))
+  val b4                  = seed.copy(id = AnalysisRevision(4))
+  val analyses            = Vector(a1, b2, a3, b4)
+  val registry            = get(
+    AnalysisFamilyRegistry.of(
+      Vector(get(AnalysisFamily.of(a, "Same name")), get(AnalysisFamily.of(b, "Same name"))),
+      Vector((a1.id, a), (b2.id, b), (a3.id, a), (b4.id, b)).map((revision, family) =>
+        get(AnalysisFamilyOwner.of(revision, family))
+      ),
+      analyses.map(_.id)
+    )
+  )
   val change: RecipeChange = RecipeChange.Grid(a1.recipe.grid, get(GridSize.of(32, 24)))
-  val draftA: Draft = get(Draft.against(AnalysisRevision(5), a1, None, Vector(change)))
+  val draftA: Draft        = get(Draft.against(AnalysisRevision(5), a1, None, Vector(change)))
 
   def run(number: Int, analysis: AnalysisRevisionSpec, state: RunLifecycle): RunRef =
     RunRef(RunId(number), analysis.id, analysis.dataset, state, CoreBinding.unbound)
@@ -51,11 +53,28 @@ object FamilySamples:
       shown: Option[RunId] = None,
       figures: Vector[FigureSpec] = Vector.empty
   ): StudioDocument =
-    val p = source.presentation
-    val view = get(PresentationState.of(
-      p.perspective, p.theme, p.stage, p.mapOpacity, p.underlay, shown, p.layouts
-    ))
-    get(StudioDocument.of(
-      source.datasets, analyses, draft, runs, source.reporting, figures, view, Vector.empty,
-      Some(registry)
-    ))
+    val p    = source.presentation
+    val view = get(
+      PresentationState.of(
+        p.perspective,
+        p.theme,
+        p.stage,
+        p.mapOpacity,
+        p.underlay,
+        shown,
+        p.layouts
+      )
+    )
+    get(
+      StudioDocument.of(
+        source.datasets,
+        analyses,
+        draft,
+        runs,
+        source.reporting,
+        figures,
+        view,
+        Vector.empty,
+        Some(registry)
+      )
+    )

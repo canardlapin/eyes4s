@@ -276,7 +276,7 @@ object Freshness:
         .orElse(document.runs.findLast(_.state == RunLifecycle.Completed))
         .orElse(document.runs.lastOption)
 
-    val newest = document.runs.lastOption
+    val newest   = document.runs.lastOption
     val activity = document.running.lastOption
       .orElse(newest.filter(n => shown.forall(_.id.number <= n.id.number)))
       .flatMap(activityOf(document, session, _))
@@ -302,9 +302,11 @@ object Freshness:
 
     val banner = shown.filter(_.state == RunLifecycle.Completed) match
       case None =>
-        val latestInContext = shown.flatMap(s =>
-          document.analyses.findLast(a => document.sameFamily(s.analysis, a.id)).map(_.id)
-        ).orElse(latestAnalysis)
+        val latestInContext = shown
+          .flatMap(s =>
+            document.analyses.findLast(a => document.sameFamily(s.analysis, a.id)).map(_.id)
+          )
+          .orElse(latestAnalysis)
         Some(Banner.NoRun(latestInContext))
       case Some(s) =>
         val newer = contextualNewest.filter(_.id.number > s.id.number)
@@ -394,7 +396,7 @@ object Freshness:
     for
       shownSpec <- document.analysis(shown.analysis)
       if document.sameFamily(shown.analysis, draft.id)
-      context   <- document.draftContext.filter(_.id == draft.id)
+      context <- document.draftContext.filter(_.id == draft.id)
       recipe = context.recipe
       target = context.dataset
       diff   = RecipeChange.between(shownSpec.recipe, recipe)

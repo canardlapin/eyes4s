@@ -114,12 +114,19 @@ class NativeArtifactPersistenceSuite extends CatsEffectSuite:
       if explicitFamilies then Vector(analysis, analysis.copy(id = AnalysisRevision(2)))
       else Vector(analysis)
     val families = Option.when(explicitFamilies) {
-      get(AnalysisFamilyRegistry.of(
-        Vector(get(AnalysisFamily.of(FamilySamples.a, "A")), get(AnalysisFamily.of(FamilySamples.b, "B"))),
-        Vector(get(AnalysisFamilyOwner.of(analysis.id, FamilySamples.a)),
-          get(AnalysisFamilyOwner.of(AnalysisRevision(2), FamilySamples.b))),
-        analyses.map(_.id)
-      ))
+      get(
+        AnalysisFamilyRegistry.of(
+          Vector(
+            get(AnalysisFamily.of(FamilySamples.a, "A")),
+            get(AnalysisFamily.of(FamilySamples.b, "B"))
+          ),
+          Vector(
+            get(AnalysisFamilyOwner.of(analysis.id, FamilySamples.a)),
+            get(AnalysisFamilyOwner.of(AnalysisRevision(2), FamilySamples.b))
+          ),
+          analyses.map(_.id)
+        )
+      )
     }
     get(
       StudioDocument.of(
@@ -523,23 +530,27 @@ class NativeArtifactPersistenceSuite extends CatsEffectSuite:
 
   test("native prevalidation, terminal binding and cold restore retain independent owners") {
     for
-      store <- InMemoryProjectStore.create[IO]
+      store   <- InMemoryProjectStore.create[IO]
       session <- create(store, RunLifecycle.Running, explicitFamilies = true)
       initial <- session.history
-      _ <- session.storeNativeArtifacts(exported).map(get)
-      stored <- session.history
+      _       <- session.storeNativeArtifacts(exported).map(get)
+      stored  <- session.history
       _ = assertEquals(stored, initial)
-      _ <- ok(session.perform(JournalEntry.Apply(
-        Command.RecordRunOutcome(run, RunLifecycle.Completed, CoreBinding.unbound)
-      )))
-      _ <- bind(session)
-      _ <- ok(session.save)
-      saved <- session.document
-      _ <- ok(session.close)
+      _ <- ok(
+        session.perform(
+          JournalEntry.Apply(
+            Command.RecordRunOutcome(run, RunLifecycle.Completed, CoreBinding.unbound)
+          )
+        )
+      )
+      _        <- bind(session)
+      _        <- ok(session.save)
+      saved    <- session.document
+      _        <- ok(session.close)
       reopened <- ok(ProjectSession.open(store, owner))
       restored <- reopened.session.document
-      _ <- reopened.session.loadNativeArtifacts(run).map(get)
-      _ <- ok(reopened.session.close)
+      _        <- reopened.session.loadNativeArtifacts(run).map(get)
+      _        <- ok(reopened.session.close)
     yield
       assertEquals(saved.analysisFamilies, initial.document.analysisFamilies)
       assertEquals(restored.analysisFamilies, initial.document.analysisFamilies)

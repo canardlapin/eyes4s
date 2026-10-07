@@ -263,7 +263,7 @@ object LegacyAnalysisFamily:
   def familyOf(document: StudioDocument, revision: AnalysisRevision): Option[AnalysisFamilyId] =
     document.analysisFamilies match
       case Some(_) => document.familyOf(revision)
-      case None =>
+      case None    =>
         Option.when(
           document.analysis(revision).isDefined || document.draft.exists(_.id == revision)
         )(AnalysisFamilyId.Legacy)
