@@ -277,6 +277,12 @@ enum Command derives CanEqual:
   /** Remove a panel; a figure keeps at least one. */
   case RemovePanel(figure: FigureId, panel: PanelLetter)
 
+  /** Move one stable panel identity to its zero-based final position. */
+  case MovePanel(figure: FigureId, panel: PanelLetter, index: Int)
+
+  /** Persist authored prose without changing the bound analytical run. */
+  case SetFigureMethods(figure: FigureId, methods: Option[FigureMethodsDraft])
+
   case RetitlePanel(figure: FigureId, panel: PanelLetter, title: String)
 
   // --- View only -----------------------------------------------------------
@@ -308,8 +314,8 @@ enum Command derives CanEqual:
       ChangeKind.AnalysisRerun
     case DiscardDraft => ChangeKind.AnalysisRerun
     case _: (PutReporting | RemoveReporting | CreateFigure | RestoreFigure | DeleteFigure |
-          BindFigure | SetPanelScale | SetPanelSelection | AddPanel | RemovePanel |
-          RetitlePanel) =>
+          BindFigure | SetPanelScale | SetPanelSelection | AddPanel | RemovePanel | MovePanel |
+          SetFigureMethods | RetitlePanel) =>
       ChangeKind.ReportingNoRerun
     case _: (SetPerspective | SetTheme | SetStage | SetMapOpacity | SetUnderlay | ShowRun |
           SaveLayout) =>

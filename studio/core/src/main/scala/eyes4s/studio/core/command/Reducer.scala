@@ -594,7 +594,10 @@ object Reducer:
           (),
           NoChange(c.name, targetOf(d, c))
         )
-        spec <- FigureSpec.of(id, run, reporting, old.panels).left.map(refused(d, c))
+        spec <- FigureSpec
+          .of(id, run, reporting, old.panels, old.methods)
+          .left
+          .map(refused(d, c))
         next <- replaceFigure(d, c)(spec)
       yield reversible(next, BindFigure(id, old.run, old.reporting))
 
@@ -617,7 +620,10 @@ object Reducer:
           PanelIndex(id, index, old.panels.size)
         )
         panels = old.panels.patch(index, Vector(panel), 0)
-        spec <- FigureSpec.of(id, old.run, old.reporting, panels).left.map(refused(d, c))
+        spec <- FigureSpec
+          .of(id, old.run, old.reporting, panels, old.methods)
+          .left
+          .map(refused(d, c))
         next <- replaceFigure(d, c)(spec)
       yield reversible(next, RemovePanel(id, panel.letter))
 
@@ -627,9 +633,42 @@ object Reducer:
         index = old.panels.indexWhere(_.letter == letter)
         panel <- old.panels.lift(index).toRight(UnknownPanel(id, letter))
         panels = old.panels.patch(index, Vector.empty, 1)
-        spec <- FigureSpec.of(id, old.run, old.reporting, panels).left.map(refused(d, c))
+        spec <- FigureSpec
+          .of(id, old.run, old.reporting, panels, old.methods)
+          .left
+          .map(refused(d, c))
         next <- replaceFigure(d, c)(spec)
       yield reversible(next, AddPanel(id, index, panel))
+
+    case MovePanel(id, letter, index) =>
+      for
+        old <- figure(d, id)
+        from = old.panels.indexWhere(_.letter == letter)
+        panel <- old.panels.lift(from).toRight(UnknownPanel(id, letter))
+        _     <- Either.cond(
+          index >= 0 && index < old.panels.size,
+          (),
+          PanelIndex(id, index, old.panels.size)
+        )
+        _ <- Either.cond(index != from, (), NoChange(c.name, targetOf(d, c)))
+        panels = old.panels.patch(from, Vector.empty, 1).patch(index, Vector(panel), 0)
+        spec <- FigureSpec
+          .of(id, old.run, old.reporting, panels, old.methods)
+          .left
+          .map(refused(d, c))
+        next <- replaceFigure(d, c)(spec)
+      yield reversible(next, MovePanel(id, letter, from))
+
+    case SetFigureMethods(id, methods) =>
+      for
+        old  <- figure(d, id)
+        _    <- Either.cond(old.methods != methods, (), NoChange(c.name, targetOf(d, c)))
+        spec <- FigureSpec
+          .of(id, old.run, old.reporting, old.panels, methods)
+          .left
+          .map(refused(d, c))
+        next <- replaceFigure(d, c)(spec)
+      yield reversible(next, SetFigureMethods(id, old.methods))
 
     case RetitlePanel(id, letter, title) =>
       editPanel(d, c, id, letter)(_.title, (p, v) => p.copy(title = v), title)(
@@ -839,6 +878,8 @@ object Reducer:
     case SetPanelSelection(id, letter, _) => Target.OnPanel(id, letter)
     case AddPanel(id, _, panel)           => Target.OnPanel(id, panel.letter)
     case RemovePanel(id, letter)          => Target.OnPanel(id, letter)
+    case MovePanel(id, letter, _)         => Target.OnPanel(id, letter)
+    case SetFigureMethods(id, _)          => Target.OnFigure(id)
     case RetitlePanel(id, letter, _)      => Target.OnPanel(id, letter)
     case _: (SetPerspective | SetTheme | SetStage | SetMapOpacity | SetUnderlay | ShowRun |
           SaveLayout) =>
@@ -977,7 +1018,10 @@ object Reducer:
       panel <- old.panels.find(_.letter == letter).toRight(UnknownPanel(id, letter))
       _     <- Either.cond(get(panel) != value, (), NoChange(c.name, targetOf(d, c)))
       panels = old.panels.map(p => if p.letter == letter then set(p, value) else p)
-      spec <- FigureSpec.of(id, old.run, old.reporting, panels).left.map(refused(d, c))
+      spec <- FigureSpec
+        .of(id, old.run, old.reporting, panels, old.methods)
+        .left
+        .map(refused(d, c))
       next <- replaceFigure(d, c)(spec)
     yield reversible(next, inverse(get(panel)))
 

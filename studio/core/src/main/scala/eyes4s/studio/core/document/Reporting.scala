@@ -372,6 +372,26 @@ final case class PanelSpec(
 ) derives CanEqual,
       Codec.AsObject
 
+/** Exact authored methods state; blank text and whitespace are meaningful. */
+final case class FigureMethodsDraft private (
+    base: String,
+    edited: String,
+    pending: Option[String]
+) derives CanEqual
+
+object FigureMethodsDraft:
+  def of(
+      base: String,
+      edited: String,
+      pending: Option[String]
+  ): Either[DocumentError, FigureMethodsDraft] =
+    Right(new FigureMethodsDraft(base, edited, pending))
+
+  given Codec.AsObject[FigureMethodsDraft] = Codec.AsObject.from(
+    Decoder.forProduct3("base", "edited", "pending")(of).emap(_.left.map(_.message)),
+    Encoder.forProduct3("base", "edited", "pending")(d => (d.base, d.edited, d.pending))
+  )
+
 /** A figure binds one run and one reporting spec; it never follows the
   * latest result. Panels have distinct letters and there is at least one.
   */
@@ -379,7 +399,8 @@ final case class FigureSpec private (
     id: FigureId,
     run: RunId,
     reporting: ReportingId,
-    panels: Vector[PanelSpec]
+    panels: Vector[PanelSpec],
+    methods: Option[FigureMethodsDraft]
 ) derives CanEqual
 
 object FigureSpec:
@@ -387,20 +408,41 @@ object FigureSpec:
       id: FigureId,
       run: RunId,
       reporting: ReportingId,
-      panels: Vector[PanelSpec]
+      panels: Vector[PanelSpec],
+      methods: Option[FigureMethodsDraft] = None
   ): Either[DocumentError, FigureSpec] =
     val repeated = panels.map(_.letter).diff(panels.map(_.letter).distinct).distinct
     if panels.isEmpty then Left(DocumentError.NoPanels(id))
     else if repeated.nonEmpty then
       Left(DocumentError.DuplicatePanels(id, repeated.map(_.value)))
-    else Right(new FigureSpec(id, run, reporting, panels))
+    else Right(new FigureSpec(id, run, reporting, panels, methods))
 
-  given Encoder.AsObject[FigureSpec] =
+  private val legacyEncoder: Encoder.AsObject[FigureSpec] =
     Encoder.forProduct4("id", "run", "reporting", "panels")(f =>
       (f.id, f.run, f.reporting, f.panels)
     )
-  given Decoder[FigureSpec] =
-    Decoder.forProduct4("id", "run", "reporting", "panels")(of).emap(_.left.map(_.message))
+  given Encoder.AsObject[FigureSpec] = Encoder.AsObject.instance { f =>
+    val base = legacyEncoder.encodeObject(f)
+    f.methods.fold(base)(d => base.add("methods", summon[Encoder[FigureMethodsDraft]].apply(d)))
+  }
+  given Decoder[FigureSpec] = Decoder.instance { c =>
+    for
+      id        <- c.get[FigureId]("id")
+      run       <- c.get[RunId]("run")
+      reporting <- c.get[ReportingId]("reporting")
+      panels    <- c.get[Vector[PanelSpec]]("panels")
+      methods   <- c.downField("methods").focus match
+        case None                => Right(None)
+        case Some(v) if v.isNull =>
+          Left(
+            io.circe.DecodingFailure("Absent figure methods are omitted, not null.", c.history)
+          )
+        case Some(v) => v.as[FigureMethodsDraft].map(Some(_))
+      figure <- of(id, run, reporting, panels, methods).left.map(e =>
+        io.circe.DecodingFailure(e.message, c.history)
+      )
+    yield figure
+  }
 
   extension (figure: FigureSpec)
     /** The scales its panels name, for checking against the run. */

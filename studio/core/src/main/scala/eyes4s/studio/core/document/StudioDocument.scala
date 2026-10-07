@@ -125,11 +125,19 @@ object ScienceContent:
           )
           .as[StudioDocument]
           .bimap(f => CodecError.Field("science", json, f.getMessage), _.science)
-      def beforeInitial(s: ScienceContent): Either[CodecError, ScienceContent] =
+      def beforeMethods(s: ScienceContent): Either[CodecError, ScienceContent] =
         Either.cond(
-          !s.draft.exists(_.isInitial),
+          s.figures.forall(_.methods.isEmpty),
           s,
-          CodecError.Unsupported("studio science", "an initial draft needs version 3")
+          CodecError.Unsupported("studio science", "stored figure methods need version 4")
+        )
+      def beforeInitial(s: ScienceContent): Either[CodecError, ScienceContent] =
+        beforeMethods(s).flatMap(v =>
+          Either.cond(
+            !s.draft.exists(_.isInitial),
+            v,
+            CodecError.Unsupported("studio science", "an initial draft needs version 3")
+          )
         )
       def before(s: ScienceContent): Either[CodecError, ScienceContent] =
         beforeInitial(s).flatMap(_ =>
@@ -147,10 +155,16 @@ object ScienceContent:
           json => read(json).flatMap(before)
         )
         .next(
-          s => !s.draft.exists(_.isInitial) && s.reporting.forall(_.contrast.isEmpty),
+          s =>
+            s.figures.forall(_.methods.isEmpty) && !s.draft.exists(_.isInitial) && s.reporting
+              .forall(_.contrast.isEmpty),
           identity
         )(s => beforeInitial(s).flatMap(write))(json => read(json).flatMap(beforeInitial))
-        .next(s => !s.draft.exists(_.isInitial), identity)(write)(read)
+        .next(
+          s => s.figures.forall(_.methods.isEmpty) && !s.draft.exists(_.isInitial),
+          identity
+        )(s => beforeMethods(s).flatMap(write))(json => read(json).flatMap(beforeMethods))
+        .next(_.figures.forall(_.methods.isEmpty), identity)(write)(read)
     }
 
   val codec: Either[CodecError, VersionedCodec[ScienceContent]] = ladder.map(_.codec)
@@ -409,13 +423,23 @@ object StudioDocument:
     expressedByV5(document) && document.analyses.forall(a => presetBeforeV5(a.studio.preset))
 
   /** Version 6 first records explicit ordered reporting contrast operands. */
-  private def expressedByV6(document: StudioDocument): Boolean =
-    !document.draft.exists(_.isInitial)
-  private def beforeV7(document: StudioDocument): Either[CodecError, StudioDocument] =
+  private def expressedByV7(document: StudioDocument): Boolean =
+    document.figures.forall(_.methods.isEmpty)
+  private def beforeV8(document: StudioDocument): Either[CodecError, StudioDocument] =
     Either.cond(
-      expressedByV6(document),
+      expressedByV7(document),
       document,
-      CodecError.Unsupported("studio document", "an initial draft needs version 7")
+      CodecError.Unsupported("studio document", "stored figure methods need version 8")
+    )
+  private def expressedByV6(document: StudioDocument): Boolean =
+    expressedByV7(document) && !document.draft.exists(_.isInitial)
+  private def beforeV7(document: StudioDocument): Either[CodecError, StudioDocument] =
+    beforeV8(document).flatMap(v =>
+      Either.cond(
+        expressedByV6(document),
+        v,
+        CodecError.Unsupported("studio document", "an initial draft needs version 7")
+      )
     )
   private def expressedByV5(document: StudioDocument): Boolean =
     expressedByV6(document) && document.reporting.forall(_.contrast.isEmpty)
@@ -559,7 +583,10 @@ object StudioDocument:
         .next(expressedByV5, identity)(d => beforeV7(d).map(v => CanonicalJson(v.asJson)))(
           json => read(json).flatMap(beforeV7)
         )
-        .next(expressedByV6, identity)(d => Right(CanonicalJson(d.asJson)))(read)
+        .next(expressedByV6, identity)(d => beforeV8(d).map(v => CanonicalJson(v.asJson)))(
+          json => read(json).flatMap(beforeV8)
+        )
+        .next(expressedByV7, identity)(d => Right(CanonicalJson(d.asJson)))(read)
     }
 
   /** The versioned, canonical document codec. */

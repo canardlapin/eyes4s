@@ -141,15 +141,36 @@ object CommandJournal:
 
   private val refusal = CodecError.Unsupported("studio journal", "a preset needs version 2")
 
-  private def expressedByV5(line: JournalLine): Boolean = line match
+  private def expressedByV6(line: JournalLine): Boolean = line match
+    case JournalLine.Entry(
+          _,
+          JournalEntry.Apply(_: Command.MovePanel | _: Command.SetFigureMethods)
+        ) =>
+      false
+    case JournalLine.Entry(_, JournalEntry.Apply(Command.RestoreFigure(figure))) =>
+      figure.methods.isEmpty
+    case _ => true
+  private def beforeV7(line: JournalLine): Either[CodecError, JournalLine] =
+    Either.cond(
+      expressedByV6(line),
+      line,
+      CodecError.Unsupported(
+        "studio journal",
+        "figure panel movement and stored methods need version 7"
+      )
+    )
+
+  private def expressedByV5(line: JournalLine): Boolean = expressedByV6(line) && (line match
     case JournalLine.Entry(_, JournalEntry.Apply(Command.BindCompletedArtifacts(facts))) =>
       facts.datasetDefinition.isEmpty
-    case _ => true
+    case _ => true)
   private def beforeV6(line: JournalLine): Either[CodecError, JournalLine] =
-    Either.cond(
-      expressedByV5(line),
-      line,
-      CodecError.Unsupported("studio journal", "dataset definition bindings need version 6")
+    beforeV7(line).flatMap(v =>
+      Either.cond(
+        expressedByV5(line),
+        v,
+        CodecError.Unsupported("studio journal", "dataset definition bindings need version 6")
+      )
     )
 
   private def expressedByV3(line: JournalLine): Boolean = expressedByV4(line) && (line match
@@ -157,16 +178,18 @@ object CommandJournal:
     case JournalLine.Entry(_, JournalEntry.Apply(Command.RestoreDraft(draft))) =>
       !draft.isInitial
     case _ => true)
-  private def expressedByV4(line: JournalLine): Boolean = line match
+  private def expressedByV4(line: JournalLine): Boolean = expressedByV5(line) && (line match
     case JournalLine.Entry(_, JournalEntry.Apply(_: Command.BindCompletedArtifacts)) => false
-    case _                                                                           => true
+    case _                                                                           => true)
   private def beforeV5(line: JournalLine): Either[CodecError, JournalLine] =
-    Either.cond(
-      expressedByV4(line),
-      line,
-      CodecError.Unsupported(
-        "studio journal",
-        "verified native artifact bindings need version 5"
+    beforeV6(line).flatMap(v =>
+      Either.cond(
+        expressedByV4(line),
+        v,
+        CodecError.Unsupported(
+          "studio journal",
+          "verified native artifact bindings need version 5"
+        )
       )
     )
   private def beforeV4(line: JournalLine): Either[CodecError, JournalLine] =
@@ -224,7 +247,10 @@ object CommandJournal:
           .next(expressedByV4, identity)(l => beforeV6(l).map(v => CanonicalJson(v.asJson)))(
             json => read(json).flatMap(beforeV6)
           )
-          .next(expressedByV5, identity)(l => Right(CanonicalJson(l.asJson)))(read)
+          .next(expressedByV5, identity)(l => beforeV7(l).map(v => CanonicalJson(v.asJson)))(
+            json => read(json).flatMap(beforeV7)
+          )
+          .next(expressedByV6, identity)(l => Right(CanonicalJson(l.asJson)))(read)
       }
 
   val codec: Either[CodecError, VersionedCodec[JournalLine]] = ladder.map(_.codec)
