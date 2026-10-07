@@ -1,0 +1,256 @@
+{
+  "observed_at": "2026-10-06T23:08:14.687201+00:00",
+  "repository": "canardlapin/eyes4s",
+  "remote_main_sha": "7ab933d28090d1901ede45eb61ea371934afa6e4",
+  "dependency_graph_run": {
+    "id": 37541014553,
+    "head_sha": "7ab933d28090d1901ede45eb61ea371934afa6e4",
+    "conclusion": "failure",
+    "url": "https://github.com/canardlapin/eyes4s/actions/runs/37541014553"
+  },
+  "sbom_jackson": [
+    {
+      "name": "com.fasterxml.jackson.core:jackson-core",
+      "version": "2.21.7"
+    },
+    {
+      "name": "com.fasterxml.jackson.core:jackson-annotations",
+      "version": "2.21"
+    },
+    {
+      "name": "com.fasterxml.jackson.datatype:jackson-datatype-jsr310",
+      "version": "2.21.7"
+    },
+    {
+      "name": "com.fasterxml.jackson.core:jackson-databind",
+      "version": "2.21.7"
+    }
+  ],
+  "sbom_source_versions": [
+    "0.1-7ab933d-SNAPSHOT"
+  ],
+  "open_alert_count": 0,
+  "alerts": [
+    {
+      "number": 20,
+      "state": "fixed",
+      "package": "com.fasterxml.jackson.core:jackson-core",
+      "advisory": "GHSA-7hhh-6rmp-j9qf",
+      "fixed_at": "2026-10-06T22:32:46Z",
+      "updated_at": "2026-10-06T22:32:46Z",
+      "url": "https://github.com/canardlapin/eyes4s/security/dependabot/20"
+    },
+    {
+      "number": 19,
+      "state": "fixed",
+      "package": "com.fasterxml.jackson.core:jackson-core",
+      "advisory": "GHSA-p6pp-m3f8-5c89",
+      "fixed_at": "2026-10-06T22:32:45Z",
+      "updated_at": "2026-10-06T22:32:45Z",
+      "url": "https://github.com/canardlapin/eyes4s/security/dependabot/19"
+    },
+    {
+      "number": 18,
+      "state": "fixed",
+      "package": "com.fasterxml.jackson.core:jackson-databind",
+      "advisory": "GHSA-cxp5-3px4-pw24",
+      "fixed_at": "2026-10-06T22:32:45Z",
+      "updated_at": "2026-10-06T22:32:45Z",
+      "url": "https://github.com/canardlapin/eyes4s/security/dependabot/18"
+    },
+    {
+      "number": 17,
+      "state": "fixed",
+      "package": "com.fasterxml.jackson.core:jackson-databind",
+      "advisory": "GHSA-wv8q-qhhj-9h54",
+      "fixed_at": "2026-10-06T22:32:45Z",
+      "updated_at": "2026-10-06T22:32:45Z",
+      "url": "https://github.com/canardlapin/eyes4s/security/dependabot/17"
+    },
+    {
+      "number": 16,
+      "state": "fixed",
+      "package": "com.fasterxml.jackson.core:jackson-databind",
+      "advisory": "GHSA-gx83-3vf8-gh7j",
+      "fixed_at": "2026-10-06T22:32:45Z",
+      "updated_at": "2026-10-06T22:32:45Z",
+      "url": "https://github.com/canardlapin/eyes4s/security/dependabot/16"
+    },
+    {
+      "number": 15,
+      "state": "fixed",
+      "package": "com.fasterxml.jackson.core:jackson-databind",
+      "advisory": "GHSA-q4xh-88c3-wmh7",
+      "fixed_at": "2026-10-06T22:32:44Z",
+      "updated_at": "2026-10-06T22:32:44Z",
+      "url": "https://github.com/canardlapin/eyes4s/security/dependabot/15"
+    },
+    {
+      "number": 14,
+      "state": "fixed",
+      "package": "com.fasterxml.jackson.core:jackson-databind",
+      "advisory": "GHSA-wjgm-6hv5-3cvf",
+      "fixed_at": "2026-10-06T22:32:44Z",
+      "updated_at": "2026-10-06T22:32:44Z",
+      "url": "https://github.com/canardlapin/eyes4s/security/dependabot/14"
+    },
+    {
+      "number": 13,
+      "state": "fixed",
+      "package": "com.fasterxml.jackson.core:jackson-databind",
+      "advisory": "GHSA-vvgp-rfg2-7rr6",
+      "fixed_at": "2026-10-06T22:32:44Z",
+      "updated_at": "2026-10-06T22:32:44Z",
+      "url": "https://github.com/canardlapin/eyes4s/security/dependabot/13"
+    },
+    {
+      "number": 12,
+      "state": "fixed",
+      "package": "com.fasterxml.jackson.core:jackson-databind",
+      "advisory": "GHSA-5gvw-p9qm-jgwh",
+      "fixed_at": "2026-10-06T22:32:44Z",
+      "updated_at": "2026-10-06T22:32:44Z",
+      "url": "https://github.com/canardlapin/eyes4s/security/dependabot/12"
+    },
+    {
+      "number": 11,
+      "state": "fixed",
+      "package": "com.fasterxml.jackson.core:jackson-core",
+      "advisory": "GHSA-r7wm-3cxj-wff9",
+      "fixed_at": "2026-10-06T22:32:43Z",
+      "updated_at": "2026-10-06T22:32:43Z",
+      "url": "https://github.com/canardlapin/eyes4s/security/dependabot/11"
+    },
+    {
+      "number": 10,
+      "state": "fixed",
+      "package": "com.fasterxml.jackson.core:jackson-databind",
+      "advisory": "GHSA-mhm7-754m-9p8w",
+      "fixed_at": "2026-10-06T22:32:43Z",
+      "updated_at": "2026-10-06T22:32:43Z",
+      "url": "https://github.com/canardlapin/eyes4s/security/dependabot/10"
+    },
+    {
+      "number": 9,
+      "state": "fixed",
+      "package": "com.fasterxml.jackson.core:jackson-databind",
+      "advisory": "GHSA-3pjw-73gf-8qr5",
+      "fixed_at": "2026-10-06T22:32:43Z",
+      "updated_at": "2026-10-06T22:32:43Z",
+      "url": "https://github.com/canardlapin/eyes4s/security/dependabot/9"
+    },
+    {
+      "number": 8,
+      "state": "fixed",
+      "package": "com.fasterxml.jackson.core:jackson-databind",
+      "advisory": "GHSA-5hh8-q8hv-fr38",
+      "fixed_at": "2026-10-06T22:32:43Z",
+      "updated_at": "2026-10-06T22:32:43Z",
+      "url": "https://github.com/canardlapin/eyes4s/security/dependabot/8"
+    },
+    {
+      "number": 7,
+      "state": "fixed",
+      "package": "com.fasterxml.jackson.core:jackson-databind",
+      "advisory": "GHSA-9fxm-vc8v-hj55",
+      "fixed_at": "2026-10-06T22:32:43Z",
+      "updated_at": "2026-10-06T22:32:43Z",
+      "url": "https://github.com/canardlapin/eyes4s/security/dependabot/7"
+    },
+    {
+      "number": 6,
+      "state": "fixed",
+      "package": "com.fasterxml.jackson.core:jackson-databind",
+      "advisory": "GHSA-5jmj-h7xm-6q6v",
+      "fixed_at": "2026-10-06T22:32:42Z",
+      "updated_at": "2026-10-06T22:32:42Z",
+      "url": "https://github.com/canardlapin/eyes4s/security/dependabot/6"
+    },
+    {
+      "number": 5,
+      "state": "fixed",
+      "package": "com.fasterxml.jackson.core:jackson-databind",
+      "advisory": "GHSA-hgj6-7826-r7m5",
+      "fixed_at": "2026-10-06T22:32:42Z",
+      "updated_at": "2026-10-06T22:32:42Z",
+      "url": "https://github.com/canardlapin/eyes4s/security/dependabot/5"
+    },
+    {
+      "number": 4,
+      "state": "fixed",
+      "package": "com.fasterxml.jackson.core:jackson-databind",
+      "advisory": "GHSA-rmj7-2vxq-3g9f",
+      "fixed_at": "2026-10-06T22:32:42Z",
+      "updated_at": "2026-10-06T22:32:42Z",
+      "url": "https://github.com/canardlapin/eyes4s/security/dependabot/4"
+    },
+    {
+      "number": 3,
+      "state": "fixed",
+      "package": "com.fasterxml.jackson.core:jackson-databind",
+      "advisory": "GHSA-j3rv-43j4-c7qm",
+      "fixed_at": "2026-10-06T22:32:42Z",
+      "updated_at": "2026-10-06T22:32:42Z",
+      "url": "https://github.com/canardlapin/eyes4s/security/dependabot/3"
+    },
+    {
+      "number": 2,
+      "state": "fixed",
+      "package": "com.fasterxml.jackson.core:jackson-databind",
+      "advisory": "GHSA-rcqc-6cw3-h962",
+      "fixed_at": "2026-10-06T22:32:41Z",
+      "updated_at": "2026-10-06T22:32:41Z",
+      "url": "https://github.com/canardlapin/eyes4s/security/dependabot/2"
+    },
+    {
+      "number": 1,
+      "state": "fixed",
+      "package": "com.fasterxml.jackson.core:jackson-core",
+      "advisory": "GHSA-72hv-8253-57qq",
+      "fixed_at": "2026-10-06T22:32:41Z",
+      "updated_at": "2026-10-06T22:32:41Z",
+      "url": "https://github.com/canardlapin/eyes4s/security/dependabot/1"
+    }
+  ],
+  "hosted_evidence": {
+    "observed_at": "2026-10-06T23:53:01.788729+00:00",
+    "run_id": 37545160144,
+    "head_sha": "7ab933d28090d1901ede45eb61ea371934afa6e4",
+    "status": "completed",
+    "conclusion": "failure",
+    "url": "https://github.com/canardlapin/eyes4s/actions/runs/37545160144",
+    "jobs": [
+      {
+        "id": 112547301749,
+        "name": "Check the isolated published-artifact consumer",
+        "status": "completed",
+        "conclusion": "failure",
+        "started_at": "2026-10-06T23:11:36Z",
+        "completed_at": "2026-10-06T23:11:56Z",
+        "url": "https://github.com/canardlapin/eyes4s/actions/runs/37545160144/job/112547301749",
+        "failed_steps": [
+          "Check the isolated published-artifact consumer"
+        ]
+      },
+      {
+        "id": 112547302018,
+        "name": "Audit public API inventory and executed evidence",
+        "status": "completed",
+        "conclusion": "success",
+        "started_at": "2026-10-06T23:11:37Z",
+        "completed_at": "2026-10-06T23:52:20Z",
+        "url": "https://github.com/canardlapin/eyes4s/actions/runs/37545160144/job/112547302018",
+        "failed_steps": []
+      }
+    ],
+    "audit_summary": {
+      "runtime_entries": 3666,
+      "covered_runtime_entries": 3666,
+      "abstractions": 540,
+      "explicit_jvm_only_declarations": 34,
+      "uncovered_entries": 0,
+      "log_message": "API audit passed: 3666 runtime entries, 540 abstractions, 34 explicit JVM-only declarations; zero uncovered entries.",
+      "passed_at": "2026-10-06T23:52:07.7449707Z"
+    }
+  }
+}

@@ -2,7 +2,7 @@
 
 Tracker: `bd-01M473JQX6Q232YKCJTG478R68`.
 
-The current submitted GitHub SBOM contains Jackson core/databind/datatype-jsr310 2.21.0 and
+The initial GitHub SBOM read on 2026-10-05 contained Jackson core/databind/datatype-jsr310 2.21.0 and
 annotations 2.21. Local `ioJVM/update` resolution identifies the runtime path as
 `eyes4s-io` → optional `arrow-vector` 19.0.0 → Jackson. Arrow's
 [19.0.0 parent POM](https://repo.maven.apache.org/maven2/org/apache/arrow/arrow-java-root/19.0.0/arrow-java-root-19.0.0.pom)
@@ -73,9 +73,24 @@ Local validation used JDK 21.0.12.1 and sbt 1.11.7 on the integrated working tre
 - `BaselineExportMain` regenerated exports; all 67 files agreed byte for byte with
   `tools/result-export/receipt-v1.json`.
 
-The new isolated consumer Arrow suite, the full library/CI gates and the committed SHA/tree
-receipt remain integration checks; this evidence does not claim they have run.
+At the initial recording, the new isolated consumer Arrow suite, full library/CI gates and
+committed SHA/tree receipt remained integration checks. The initial credential could read the
+SBOM but returned HTTP 403 for repository Dependabot alerts.
 
-Remote completion requires dependency submission from the eventual committed SHA and a fresh
-alert-state read for that SHA. The local GitHub credential can read the SBOM, but listing
-repository Dependabot alerts returned HTTP 403 for insufficient scope. No alert was dismissed.
+## Remote qualification, 2026-10-06
+
+The [remote receipt](jackson-remediation-2026-10-06.json), verified at
+2026-10-06T23:08:14.687201Z using the repository owner's profile, records exact source
+`7ab933d28090d1901ede45eb61ea371934afa6e4`. The submitted SBOM identifies the project's
+`0.1-7ab933d-SNAPSHOT` artifacts and Jackson core/databind/datatype-jsr310 **2.21.7**, with
+annotations **2.21**. All twenty recorded alerts (#1–20) have state **fixed**, with fix timestamps
+between 2026-10-06T22:32:41Z and 22:32:46Z; the fresh API read found **zero open alerts**.
+No alert was dismissed.
+
+The [hosted public API audit](https://github.com/canardlapin/eyes4s/actions/runs/37545160144/job/112547302018)
+passed on that exact source at 2026-10-06T23:52:07Z: 3,666 covered runtime entries, 540 abstractions,
+and zero uncovered entries. The overall Evidence workflow failed because its
+[independent consumer job](https://github.com/canardlapin/eyes4s/actions/runs/37545160144/job/112547301749)
+refused the missing classification of this evidence page before building or publishing artifacts.
+That documentation inventory repair is tracked separately as `bd-01M49QNKF0VBPJP69KR5H40QTQ`;
+the successful audit does not establish that the whole hosted workflow passed.
