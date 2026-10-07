@@ -49,7 +49,11 @@ private[core] object ProtocolCodecs:
 
   /** Protocol 1.4 keeps safe integers as numbers and larger integers as canonical
     * decimal strings. Unsafe numeric input is refused on both platforms: a JS
-    * parser may already have rounded it before the decoder sees it.
+    * parser may already have rounded it before the decoder sees it. The
+    * reader also accepts canonical decimal strings for safe values, for
+    * compatibility with string-only peers (bead q-portable-long-input);
+    * re-encoding normalizes them to
+    * numbers. Strings refuse padding, signs on positive values and exponents.
     */
   given portableLong: Codec[Long] =
     val safe    = 9007199254740991L

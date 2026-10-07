@@ -80,6 +80,8 @@ final case class JobBoard private (jobs: Vector[ExecutionJob], shelf: RunShelf)
   /** Replace the jobs with a snapshot of the service's. */
   def withJobs(snapshot: Vector[ExecutionJob]): JobBoard = JobBoard.from(snapshot, shelf)
 
+  def withShown(run: Option[RunId]): JobBoard = copy(shelf = shelf.withShown(run))
+
   def require(stamp: RunStamp): JobBoard = copy(shelf = shelf.require(stamp))
 
   /** Show `run`: only the pending run can be shown (S8.8). */

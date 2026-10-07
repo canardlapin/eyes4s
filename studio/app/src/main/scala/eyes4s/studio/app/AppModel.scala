@@ -1049,7 +1049,9 @@ object AppModel:
       val require = required
         .filter(s => submits.isEmpty && !m.jobs.shelf.required.contains(s))
         .map(s => AppEffect.Execution(ExecutionEffect.Require(s)))
-      val jobs = (submits ++ require.flatMap(_ => required)).foldLeft(m.jobs)(_.require(_))
+      val jobs = (submits ++ require.flatMap(_ => required))
+        .foldLeft(m.jobs)(_.require(_))
+        .withShown(doc.presentation.shownRun)
       // A prepared design is submitted once: a later run prepares again.
       val submitted = effects.exists {
         case AppEffect.Execution(ExecutionEffect.SubmitPreview(_, _)) => true
