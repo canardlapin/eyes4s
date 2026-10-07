@@ -88,16 +88,23 @@ class InitialDraftSuite extends munit.FunSuite:
   }
 
   test(
-    "initial origins use conditional new schema versions; every older writer and reader refuses"
+    "initial origins use their first supported schema versions; earlier writers and readers refuse"
   ) {
     val document = initial
     val ladder   = get(StudioDocument.ladder)
     val encoded  = get(ladder.codec.encode(document))
     assertEquals(encoded.hcursor.downField("schema").get[Int]("version"), Right(7))
     assertEquals(ladder.codec.decode(encoded), Right(document))
-    ladder.versions.dropRight(1).foreach { version =>
+    ladder.versions.filter(_.version < 7).foreach { version =>
       assert(ladder.writeAt(version, document).isLeft)
       assert(ladder.readAt(version, document.asJson).isLeft)
+    }
+    ladder.versions.filter(_.version >= 7).foreach { version =>
+      assertEquals(ladder.readAt(version, document.asJson), Right(document))
+      assertEquals(
+        ladder.writeAt(version, document).flatMap(payload => ladder.readAt(version, payload)),
+        Right(document)
+      )
     }
     val science = get(ScienceContent.ladder)
     assertEquals(
@@ -106,9 +113,18 @@ class InitialDraftSuite extends munit.FunSuite:
         .get[Int]("version"),
       Right(3)
     )
-    science.versions.dropRight(1).foreach { version =>
+    science.versions.filter(_.version < 3).foreach { version =>
       assert(science.writeAt(version, document.science).isLeft)
       assert(science.readAt(version, document.science.asJson).isLeft)
+    }
+    science.versions.filter(_.version >= 3).foreach { version =>
+      assertEquals(science.readAt(version, document.science.asJson), Right(document.science))
+      assertEquals(
+        science
+          .writeAt(version, document.science)
+          .flatMap(payload => science.readAt(version, payload)),
+        Right(document.science)
+      )
     }
     val journal = get(CommandJournal.ladder)
     Vector(start, Command.RestoreDraft(document.draft.get)).foreach { command =>
