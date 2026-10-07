@@ -174,6 +174,13 @@ object ColumnMappingPane:
           ) ++
           Option.when(vm.displays.enabled && vm.displays.selected.isDefined)(
             FocusStop(A11yRole.ComboBox, vm.displays.fileLabel)
+          ) ++
+          Option.when(vm.inventoryDuration.enabled)(
+            FocusStop(A11yRole.ComboBox, vm.inventoryDuration.unitLabel)
+          ) ++ Option.when(
+            vm.inventoryDuration.enabled && vm.inventoryDuration.selectedUnit.isDefined
+          )(
+            FocusStop(A11yRole.ComboBox, vm.inventoryDuration.columnLabel)
           )
       case WizardTab.Geometry   => vm.geometry.map(g => FocusStop(A11yRole.TextField, g.label))
       case WizardTab.DataIssues => Vector.empty

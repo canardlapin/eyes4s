@@ -375,8 +375,14 @@ class ColumnMappingPaneSuite extends munit.FunSuite:
       changed.trials.get._2.preview.header.map(_.value)
     )
     assertEquals(
-      ColumnMappingPane.focusStops(vm).takeRight(4).map(_.name),
-      Vector("Display kind column", "Image file column", "Revert", "Apply to r3")
+      ColumnMappingPane.focusStops(vm).takeRight(5).map(_.name),
+      Vector(
+        "Display kind column",
+        "Image file column",
+        "Inventory duration unit (declared)",
+        "Revert",
+        "Apply to r3"
+      )
     )
     val (_, fx) = ImportWizard.update(changed, WizardIntent.Commit, m.document)
     val after   = AppModel.run(m, WizardEffect.appIntents(fx))._1
@@ -478,4 +484,71 @@ class ColumnMappingPaneSuite extends munit.FunSuite:
       AppModel.update(after, Intent.Undo(HistoryStack.Science))._1.document,
       m.document
     )
+  }
+
+  test(
+    "inventory duration requires explicit units and persists through the shared wizard remap"
+  ) {
+    val document = StoryModels.t2
+    val fixes    = ok(
+      SniffedSource.read(
+        SourceRole.Fixations,
+        "inputs/fixations.csv",
+        IArray.from(golden.getBytes(UTF_8))
+      )
+    )
+    val timedText =
+      "participant,phase,trial,occurrence,item,presentation_ms\nP01,Encoding,enc_01,1,beach-007,1200\n"
+    val timed = ok(
+      SniffedSource.read(
+        SourceRole.Trials,
+        "inputs/trials.csv",
+        IArray.from(timedText.getBytes(UTF_8))
+      )
+    )
+    val column = ok(ColumnName.of("presentation_ms"))
+    val w      = run(
+      ImportWizard.newImport(document, ImportPresets.empty),
+      document,
+      WizardIntent.SourceRead(fixes),
+      WizardIntent.SourceRead(timed),
+      WizardIntent.DeclareTime(Some(TimeUnit.Milliseconds))
+    )
+    assertEquals(ImportWizardVM.of(w, document).inventoryDuration.selectedUnit, None)
+    assertEquals(w.trials.flatMap(_._2.duration), None)
+    val refused = run(w, document, WizardIntent.DeclareInventoryDurationColumn(Some(column)))
+    assertEquals(
+      refused.problem,
+      Some(WizardProblem.NoInventoryDurationUnit("trials.csv", column))
+    )
+    assertEquals(refused.trials, w.trials)
+    val declared = run(
+      w,
+      document,
+      WizardIntent.DeclareInventoryDurationUnit(Some(TimeUnit.Milliseconds)),
+      WizardIntent.DeclareInventoryDurationColumn(Some(column))
+    )
+    val duration = declared.trials.flatMap(_._2.duration).get
+    assertEquals((duration.column, duration.unit), (column, TimeUnit.Milliseconds))
+    val (_, effects) = ImportWizard.update(declared, WizardIntent.Commit, document)
+    val imported     =
+      AppModel.run(AppModel.open(document, None), WizardEffect.appIntents(effects))._1.document
+    val codec    = ok(StudioDocument.codec)
+    val restored = ok(codec.decode(ok(codec.encode(imported))))
+    val spec     = restored.datasets.last
+    assertEquals(spec.inventory.flatMap(_.duration), Some(duration))
+    val remap = run(
+      ok(ImportWizard.remap(restored, spec.id, ImportPresets.empty)),
+      restored,
+      WizardIntent.SourceRead(fixes),
+      WizardIntent.SourceRead(timed)
+    )
+    assertEquals(
+      ImportWizardVM.of(remap, restored).inventoryDuration.selectedUnit,
+      Some(TimeUnit.Milliseconds)
+    )
+    assertEquals(ImportWizard.commands(remap, restored), Left(WizardProblem.NoChange(spec.id)))
+    val cleared = run(remap, restored, WizardIntent.DeclareInventoryDurationUnit(None))
+    assertEquals(cleared.trials.flatMap(_._2.duration), None)
+    assert(cleared.trials.get._2.attributes.exists(_.name == column.value))
   }

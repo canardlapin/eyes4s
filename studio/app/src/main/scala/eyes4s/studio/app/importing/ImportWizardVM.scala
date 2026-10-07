@@ -24,6 +24,7 @@ import eyes4s.studio.core.document.{
   ColumnName,
   ColumnRole,
   DisplayColumns,
+  InventoryDurationColumn,
   SourceRole,
   StudioDocument,
   TimeUnit
@@ -71,6 +72,17 @@ final case class DisplayColumnsVM(
     fileLabel: String,
     options: Vector[DisplayColumnOptionVM],
     selected: Option[DisplayColumns],
+    enabled: Boolean,
+    note: String
+) derives CanEqual
+
+final case class InventoryDurationVM(
+    unitLabel: String,
+    columnLabel: String,
+    units: Vector[TimeUnitOptionVM],
+    columns: Vector[DisplayColumnOptionVM],
+    selectedUnit: Option[TimeUnit],
+    selected: Option[InventoryDurationColumn],
     enabled: Boolean,
     note: String
 ) derives CanEqual
@@ -137,7 +149,8 @@ final case class ImportWizardVM(
     problem: Option[String],
     key: TrialKeyVM,
     trialsSource: Option[(String, WizardIntent)],
-    displays: DisplayColumnsVM
+    displays: DisplayColumnsVM,
+    inventoryDuration: InventoryDurationVM
 ) derives CanEqual
 
 object ImportWizardVM:
@@ -220,6 +233,8 @@ object ImportWizardVM:
       KeyText(KeyTextId.NeedsRemap, d.label, missing.map(_.label).mkString(", "))
     case WizardProblem.NoOccurrenceColumn(file) =>
       KeyText(KeyTextId.NoOccurrenceColumn, file)
+    case WizardProblem.NoInventoryDurationUnit(file, column) =>
+      t(ImportTextId.InventoryDurationUnitNeeded, file, column.value)
     case WizardProblem.InventoryNeedsRemap(d, file, e) =>
       t(ImportTextId.InventoryNeedsRemap, d.label, file, e.message)
 
@@ -408,6 +423,21 @@ object ImportWizardVM:
         w.trials.flatMap(_._2.displays),
         w.trials.isDefined,
         t(ImportTextId.DisplayNote)
+      ),
+      inventoryDuration = InventoryDurationVM(
+        t(ImportTextId.InventoryDurationUnit),
+        t(ImportTextId.InventoryDurationColumn),
+        (None +: TimeUnit.values.toVector.map(Some(_))).map(u =>
+          TimeUnitOptionVM(u, timeLabel(u))
+        ),
+        Vector(DisplayColumnOptionVM(None, t(ImportTextId.DisplayUnmapped))) ++
+          w.trials.toVector
+            .flatMap(_._2.preview.header)
+            .map(c => DisplayColumnOptionVM(Some(c), c.value)),
+        w.inventoryDurationUnit,
+        w.trials.flatMap(_._2.duration),
+        w.trials.isDefined,
+        t(ImportTextId.InventoryDurationNote)
       ),
       time = TimeUnitVM(
         t(ImportTextId.TimeUnitLabel),

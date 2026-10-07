@@ -119,6 +119,40 @@ final class ImportWizardView(dispatch: WizardIntent => Unit):
     HBox(10, displayKindLabel, displayKind, displayFileLabel, displayFile)
   trials.footer.getChildren.addAll(displayControls, displayNote)
 
+  /** Optional trial duration, with units declared before its column is selectable. */
+  val inventoryDurationUnit: ComboBox[TimeUnitOptionVM]        = ComboBox()
+  val inventoryDurationColumn: ComboBox[DisplayColumnOptionVM] = ComboBox()
+  private val inventoryDurationUnitLabel                       = label("import-label", "t11")
+  private val inventoryDurationColumnLabel                     = label("import-label", "t11")
+  private val inventoryDurationNote                            = label("import-note", "t11")
+  inventoryDurationNote.setWrapText(true)
+  inventoryDurationUnit.setConverter(converter(_.label))
+  inventoryDurationColumn.setConverter(converter(_.label))
+  inventoryDurationUnit.getStyleClass.addAll("role-select", "t12")
+  inventoryDurationColumn.getStyleClass.addAll("role-select", "t12")
+  inventoryDurationUnitLabel.setLabelFor(inventoryDurationUnit)
+  inventoryDurationColumnLabel.setLabelFor(inventoryDurationColumn)
+  inventoryDurationUnit.setOnAction(_ =>
+    Option(inventoryDurationUnit.getValue).foreach(o =>
+      fire(WizardIntent.DeclareInventoryDurationUnit(o.unit))
+    )
+  )
+  inventoryDurationColumn.setOnAction(_ =>
+    Option(inventoryDurationColumn.getValue).foreach(o =>
+      fire(WizardIntent.DeclareInventoryDurationColumn(o.column))
+    )
+  )
+  trials.footer.getChildren.addAll(
+    HBox(
+      10,
+      inventoryDurationUnitLabel,
+      inventoryDurationUnit,
+      inventoryDurationColumnLabel,
+      inventoryDurationColumn
+    ),
+    inventoryDurationNote
+  )
+
   // --- presets ---------------------------------------------------------------------
   val presetSelect: ComboBox[String] = ComboBox()
   presetSelect.getStyleClass.addAll("preset-select", "t12")
@@ -277,6 +311,28 @@ final class ImportWizardView(dispatch: WizardIntent => Unit):
       displayFile.setAccessibleText(vm.displays.fileLabel)
       displayKind.setDisable(!vm.displays.enabled)
       displayFile.setDisable(!vm.displays.enabled || vm.displays.selected.isEmpty)
+
+      inventoryDurationUnitLabel.setText(vm.inventoryDuration.unitLabel)
+      inventoryDurationColumnLabel.setText(vm.inventoryDuration.columnLabel)
+      inventoryDurationNote.setText(vm.inventoryDuration.note)
+      if !last.map(_.inventoryDuration.units).contains(vm.inventoryDuration.units) then
+        inventoryDurationUnit.getItems.setAll(vm.inventoryDuration.units.asJava): Unit
+      if !last.map(_.inventoryDuration.columns).contains(vm.inventoryDuration.columns) then
+        inventoryDurationColumn.getItems.setAll(vm.inventoryDuration.columns.asJava): Unit
+      inventoryDurationUnit.setValue(
+        vm.inventoryDuration.units.find(_.unit == vm.inventoryDuration.selectedUnit).orNull
+      )
+      inventoryDurationColumn.setValue(
+        vm.inventoryDuration.columns
+          .find(_.column == vm.inventoryDuration.selected.map(_.column))
+          .orNull
+      )
+      inventoryDurationUnit.setAccessibleText(vm.inventoryDuration.unitLabel)
+      inventoryDurationColumn.setAccessibleText(vm.inventoryDuration.columnLabel)
+      inventoryDurationUnit.setDisable(!vm.inventoryDuration.enabled)
+      inventoryDurationColumn.setDisable(
+        !vm.inventoryDuration.enabled || vm.inventoryDuration.selectedUnit.isEmpty
+      )
 
       timeLabel.setText(vm.time.label)
       timeNote.setText(vm.time.note)
