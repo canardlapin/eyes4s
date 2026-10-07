@@ -35,7 +35,8 @@ import io.circe.{Decoder, Encoder}
 final case class InventoryMapping private (
     bindings: Vector[ColumnBinding],
     attributes: DeclaredAttributes,
-    displays: Option[DisplayColumns]
+    displays: Option[DisplayColumns],
+    duration: Option[InventoryDurationColumn]
 ) derives CanEqual:
   def column(role: ColumnRole): Option[ColumnName] = bindings.find(_.role == role).map(_.column)
 
@@ -79,7 +80,7 @@ object InventoryMapping:
           )
         )
         .toLeft(())
-    yield new InventoryMapping(bindings.sortBy(_.role.ordinal), attributes, None)
+    yield new InventoryMapping(bindings.sortBy(_.role.ordinal), attributes, None, None)
 
   /** `mapping` reading each trial's display from `displays` (S5.7), or no
     * display (`None`): its columns are no role's (a column declared as an
@@ -93,6 +94,10 @@ object InventoryMapping:
     displays
       .traverse_ { d =>
         for
+          _ <- d.columns
+            .find(c => mapping.duration.exists(_.column == c))
+            .map(c => DocumentError.DurationColumnShared(c.value, "display"))
+            .toLeft(())
           _ <- d.file
             .filter(_ == d.kind)
             .map(c => DocumentError.DisplayColumnsShared(c.value))
@@ -107,13 +112,45 @@ object InventoryMapping:
       }
       .as(mapping.copy(displays = displays))
 
+  /** Declare trial-relative timing and preserve its original cell as a text attribute. */
+  def withDuration(
+      mapping: InventoryMapping,
+      duration: Option[InventoryDurationColumn]
+  ): Either[DocumentError, InventoryMapping] =
+    duration
+      .traverse_ { d =>
+        for
+          _ <- mapping.bindings
+            .find(_.column == d.column)
+            .map(b => DocumentError.DurationColumnShared(d.column.value, b.role.label))
+            .toLeft(())
+          _ <- mapping.displays
+            .filter(_.columns.contains(d.column))
+            .map(_ => DocumentError.DurationColumnShared(d.column.value, "display"))
+            .toLeft(())
+          _ <- mapping.attributes.bindings
+            .find(a => a.column == d.column && a.kind != AttributeKindChoice.Text)
+            .map(a => DocumentError.DurationColumnKind(d.column.value, a.kind))
+            .toLeft(())
+        yield ()
+      }
+      .flatMap { _ =>
+        val extra = duration.toVector
+          .filterNot(d => mapping.attributes.columns.contains(d.column))
+          .map(d => AttributeBinding(d.column, AttributeKindChoice.Text))
+        DeclaredAttributes
+          .of(mapping.attributes.bindings ++ extra)
+          .map(a => mapping.copy(attributes = a, duration = duration))
+      }
+
   /** `displays` is written only when the mapping reads them, so a mapping
     * without them is written as before S5.7, byte for byte.
     */
   given Encoder.AsObject[InventoryMapping] = Encoder.AsObject.instance { m =>
     val o =
       io.circe.JsonObject("bindings" -> m.bindings.asJson, "attributes" -> m.attributes.asJson)
-    m.displays.fold(o)(d => o.add("displays", d.asJson))
+    val display = m.displays.fold(o)(d => o.add("displays", d.asJson))
+    m.duration.fold(display)(d => display.add("duration", d.asJson))
   }
 
   given Decoder[InventoryMapping] = Decoder.instance { c =>
@@ -121,8 +158,10 @@ object InventoryMapping:
       bindings   <- c.get[Vector[ColumnBinding]]("bindings")
       attributes <- c.get[DeclaredAttributes]("attributes")
       displays   <- c.get[Option[DisplayColumns]]("displays")
+      duration   <- c.get[Option[InventoryDurationColumn]]("duration")
       mapping    <- of(bindings, attributes)
         .flatMap(withDisplays(_, displays))
+        .flatMap(withDuration(_, duration))
         .left
         .map(e => io.circe.DecodingFailure(e.message, c.history))
     yield mapping

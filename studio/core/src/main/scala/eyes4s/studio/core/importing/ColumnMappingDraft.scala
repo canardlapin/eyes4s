@@ -30,6 +30,7 @@ import eyes4s.studio.core.document.{
   DeclaredAttributes,
   DeclaredUnits,
   DisplayColumns,
+  InventoryDurationColumn,
   DocumentError,
   TimeUnit
 }
@@ -387,7 +388,8 @@ final case class TrialMetadataDraft private (
     preview: CsvPreview,
     choices: Vector[ColumnChoice],
     kinds: Map[ColumnName, AttributeKindChoice] = Map.empty,
-    displays: Option[DisplayColumns] = None
+    displays: Option[DisplayColumns] = None,
+    duration: Option[InventoryDurationColumn] = None
 ) derives CanEqual:
 
   def file: String = preview.file
@@ -399,6 +401,13 @@ final case class TrialMetadataDraft private (
     value.toVector.flatMap(_.columns).find(c => !preview.header.contains(c)) match
       case Some(c) => Left(MappingError.UnknownColumn(file, c))
       case None    => Right(copy(displays = value))
+
+  def declareDuration(
+      value: Option[InventoryDurationColumn]
+  ): Either[MappingError, TrialMetadataDraft] =
+    value.filterNot(d => preview.header.contains(d.column)) match
+      case Some(d) => Left(MappingError.UnknownColumn(file, d.column))
+      case None    => Right(copy(duration = value))
 
   def choose(
       column: ColumnName,
@@ -426,7 +435,31 @@ final case class TrialMetadataDraft private (
         }
       )
     }
-    roles ++ values ++ displayIssues
+    val durationIssues = duration.toVector.flatMap { d =>
+      val conflicts = columns.collectFirst {
+        case (p, ColumnChoice.Role(r)) if p.name == d.column =>
+          MappingError.Refused(
+            file,
+            DocumentError.DurationColumnShared(d.column.value, r.label)
+          )
+      }.toVector
+      val displayed = displays
+        .filter(_.columns.contains(d.column))
+        .map(_ =>
+          MappingError
+            .Refused(file, DocumentError.DurationColumnShared(d.column.value, "display"))
+        )
+        .toVector
+      val kind = kinds
+        .get(d.column)
+        .filter(_ != AttributeKindChoice.Text)
+        .map(k =>
+          MappingError.Refused(file, DocumentError.DurationColumnKind(d.column.value, k))
+        )
+        .toVector
+      conflicts ++ displayed ++ kind
+    }
+    roles ++ values ++ displayIssues ++ durationIssues
 
   /** The columns passed through as trial attributes (UI-H). */
   def attributes: Vector[AttributeColumn] =
@@ -451,6 +484,7 @@ final case class TrialMetadataDraft private (
           .of(declared)
           .flatMap(InventoryMapping.of(bindings, _))
           .flatMap(InventoryMapping.withDisplays(_, displays))
+          .flatMap(InventoryMapping.withDuration(_, duration))
           .left
           .map(e => NonEmptyVector.one(MappingError.Refused(file, e)))
 
@@ -485,9 +519,11 @@ object TrialMetadataDraft:
             preview,
             choices,
             mapping.attributes.bindings.map(a => a.column -> a.kind).toMap,
-            mapping.displays
+            mapping.displays,
+            mapping.duration
           )
         ).flatMap(_.declareDisplays(mapping.displays).left.map(NonEmptyVector.one))
+          .flatMap(_.declareDuration(mapping.duration).left.map(NonEmptyVector.one))
 
   /** Suggested roles, restricted to those a trials table offers. */
   def proposed(preview: CsvPreview): TrialMetadataDraft =
