@@ -142,3 +142,35 @@ class AnalysesNavigatorFxSuite extends ShellFxSuite:
     fx.robot.press(javafx.scene.input.KeyCode.SPACE)
     assertEquals(runOnFx(w.runtime.model.location.trail.last), Place.Run(run5))
   }
+
+  fxStage.test(
+    "choosing a preset from the latest saved run displays and prepares its new draft"
+  ) { fx =>
+    import eyes4s.studio.core.command.Command
+    import eyes4s.studio.core.document.Preset
+    val w = boot(fx, StoryModels.t2Analysis)
+    dispatch(fx, w, Intent.Dispatch(Command.DiscardDraft))
+    val saved = runOnFx(w.analyses.labels.find(_.contains("run 7")).get)
+    runOnFx(w.analyses.select(saved))
+    fx.awaitLayout()
+    assert(runOnFx(w.recipe.enabled(Preset.PerceptionImagery)))
+    val before = runOnFx(w.runtime.model.document)
+    runOnFx(w.recipe.choose(Preset.PerceptionImagery))
+    fx.awaitLayout()
+    assertEquals(runOnFx(w.runtime.model.location.trail.last), Place.Revision(rev5))
+    assertEquals(runOnFx(ResolvedDesign.target(w.runtime.model).map(_.revision)), Some(rev5))
+    assert(runOnFx(w.recipe.enabled(Preset.Recognition)))
+    assertEquals(
+      runOnFx(w.analyses.selectedLabels.map(_.startsWith("Draft rev 5"))),
+      Vector(true)
+    )
+    assertEquals(runOnFx(w.runtime.model.document.analyses), before.analyses)
+    assertEquals(runOnFx(w.runtime.model.document.runs), before.runs)
+    assertEquals(
+      runOnFx(w.runtime.model.document.presentation.shownRun),
+      before.presentation.shownRun
+    )
+    eventually(fx, "new draft is the preview target")(
+      w.resolvedDesign.state.target.exists(_.revision == rev5)
+    )
+  }

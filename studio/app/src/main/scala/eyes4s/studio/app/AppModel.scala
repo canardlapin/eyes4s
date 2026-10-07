@@ -770,9 +770,14 @@ object AppModel:
             (shown, effects ++ navigationEffects)
       }
     case Intent.ChoosePreset(preset) =>
-      PresetPicker
-        .command(m.document, preset)
-        .fold((m, none))(c => update(m, Intent.Dispatch(c)))
+      PresetPicker.command(m.document, preset).fold((m, none)) { command =>
+        val (next, effects) = update(m, Intent.Dispatch(command))
+        if next.document == m.document || next.document.draft.isEmpty then (next, effects)
+        else
+          val (shown, navigationEffects) =
+            navigate(next, Location(Perspective.Analysis, draftTrail(next.document)))
+          (shown, effects ++ navigationEffects)
+      }
     case Intent.Undo(stack) => applyHistory(m, undoEntry(stack), m.history.undoOn(stack))
     case Intent.Redo(stack) => applyHistory(m, redoEntry(stack), m.history.redoOn(stack))
 

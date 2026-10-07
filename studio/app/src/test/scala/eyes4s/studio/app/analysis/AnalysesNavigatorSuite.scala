@@ -106,3 +106,43 @@ class AnalysesNavigatorSuite extends munit.FunSuite:
     val running = rows(StoryModels.t3Summary)
     assert(running.exists(_.detail.contains("running")))
   }
+
+  test("a preset edit from saved history selects the draft and keeps its picker editable") {
+    import eyes4s.studio.core.document.Preset
+    val clean =
+      AppModel.update(StoryModels.t2Analysis, Intent.Dispatch(Command.DiscardDraft))._1
+    val saved   = rows(clean).find(_.run.contains(run7)).get
+    val viewing = AppModel.update(clean, saved.open)._1
+    val option  = PresetPicker
+      .vm(viewing.document, AnalysesNavigator.selected(viewing))
+      .options
+      .find(_.preset == Preset.PerceptionImagery)
+      .get
+    assert(option.choose.isDefined)
+    val (changed, effects) = AppModel.update(viewing, option.choose.get)
+    assertEquals(changed.location.trail.last, Place.Revision(rev5))
+    assertEquals(ResolvedDesign.target(changed).map(_.revision), Some(rev5))
+    val picker = PresetPicker.vm(changed.document, AnalysesNavigator.selected(changed))
+    assertEquals(
+      picker.options.filter(_.selected).map(_.preset),
+      Vector(Preset.PerceptionImagery)
+    )
+    assert(picker.options.find(_.preset == Preset.Recognition).get.choose.isDefined)
+    assertEquals(changed.document.analyses, viewing.document.analyses)
+    assertEquals(changed.document.runs, viewing.document.runs)
+    assertEquals(changed.document.presentation.shownRun, viewing.document.presentation.shownRun)
+    assert(!effects.exists {
+      case AppEffect.Execution(_: ExecutionEffect.Submit) => true; case _ => false
+    })
+  }
+
+  test("choosing the already-held preset is a no-op that preserves saved-history selection") {
+    import eyes4s.studio.core.document.Preset
+    val clean =
+      AppModel.update(StoryModels.t2Analysis, Intent.Dispatch(Command.DiscardDraft))._1
+    val viewing = AppModel.update(clean, rows(clean).find(_.run.contains(run7)).get.open)._1
+    val (same, effects) =
+      AppModel.update(viewing, Intent.ChoosePreset(Preset.EncodingRetrieval))
+    assertEquals(same, viewing)
+    assertEquals(effects, Vector.empty)
+  }
