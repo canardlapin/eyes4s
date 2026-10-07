@@ -21,7 +21,8 @@ import eyes4s.studio.app.layout.{
   LayoutNode,
   LayoutSpec,
   PaneDecl,
-  PerspectiveLayout
+  PerspectiveLayout,
+  StudioLayouts
 }
 import scaladock.{
   Cell,
@@ -34,6 +35,16 @@ import scaladock.{
   Pane,
   Size
 }
+
+/** Recoverable Data-layout migration failures name the missing layout operand. */
+private[dock] enum DataLayoutProblem derives CanEqual:
+  case MissingAdmission(layout: String)
+  case MissingIssuesTemplate(layout: String)
+
+  def message: String = this match
+    case MissingAdmission(layout) =>
+      s"$layout has no Admission pane to host the new Data issues tab; reset Data layout to restore it."
+    case MissingIssuesTemplate(layout) => s"$layout has no Data issues pane."
 
 /** The studio's UI-neutral [[LayoutSpec]] as scaladock layouts (ticket S1.5a).
   *
@@ -70,6 +81,32 @@ object DockLayouts:
   /** Every layout of `spec`, by perspective name, in declaration order. */
   def states(spec: LayoutSpec): Vector[(String, LayoutState)] =
     spec.all.map(l => name(l) -> state(l))
+
+  /** Restore the new issues tab into older Data arrangements without changing their geometry. */
+  private[desktop] def dataIssues(saved: LayoutState): Either[DataLayoutProblem, LayoutState] =
+    val issueId = paneId(StudioLayouts.dataIssues)
+    if saved.findPane(issueId).isDefined then Right(saved)
+    else
+      for
+        anchor <- saved
+          .groupOf(paneId(StudioLayouts.admission))
+          .toRight(
+            DataLayoutProblem.MissingAdmission("Data layout")
+          )
+        issue <- state(StudioLayouts.dataVerify)
+          .findPane(issueId)
+          .toRight(
+            DataLayoutProblem.MissingIssuesTemplate("The default Data layout")
+          )
+      yield
+        def add(n: Node): Node = n match
+          case g: Node.Group if g.id == anchor.id => g.copy(tabs = g.tabs :+ issue)
+          case s: Node.Split => s.copy(cells = s.cells.map(c => c.copy(node = add(c.node))))
+          case other         => other
+        saved.copy(
+          root = saved.root.map(add),
+          floating = saved.floating.map(f => f.copy(root = add(f.root)))
+        )
 
   private def axis(a: StudioAxis): scaladock.Axis = a match
     case StudioAxis.Horizontal => scaladock.Axis.Horizontal

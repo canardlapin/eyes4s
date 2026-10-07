@@ -195,3 +195,7 @@ object ColumnMappingPane:
         FocusStop(A11yRole.Button, siblingAction(page, name))
       case other => other
     }
+
+  /** Column mapping's stops once its sibling pages have their own dock tabs. */
+  def mappingStops(vm: ImportWizardVM): Vector[FocusStop] =
+    focusStops(vm.copy(tab = WizardTab.FixationMapping, showTabs = false))

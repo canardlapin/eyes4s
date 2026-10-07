@@ -234,16 +234,18 @@ final class ImportWizardView(dispatch: WizardIntent => Unit):
         b.setAccessibleText(t.label)
         b.setSelected(t.selected)
       }
-      // A re-map offers some of the pages only (S5.4).
+      // Docked pages use their dock tabs; File → Import keeps its own strip.
+      val offered = vm.tabs.filterNot(t => detached.contains(t.tab))
       WizardTab.values.foreach { t =>
-        val shown = vm.showTabs && vm.tabs.exists(_.tab == t)
+        val shown = vm.showTabs && offered.size > 1 && offered.exists(_.tab == t)
         tabs(t).setVisible(shown)
         tabs(t).setManaged(shown)
       }
       kind.setText(vm.kind)
+      val selected = if detached.contains(vm.tab) then WizardTab.FixationMapping else vm.tab
       WizardTab.values.foreach { t =>
         val p     = page(t)
-        val shown = detached.contains(t) || t == vm.tab
+        val shown = detached.contains(t) || t == selected
         p.setVisible(shown)
         p.setManaged(shown)
       }
@@ -544,16 +546,29 @@ final class DataWizardPage(
   Option(getClass.getClassLoader.getResource(stylesheetResource))
     .foreach(url => node.getStylesheets.add(url.toExternalForm))
 
-  def availability(opened: Boolean, vm: ColumnMappingPaneVM): Unit =
+  private var opened                       = false
+  private var shownProblem: Option[String] = None
+  private var shownStatus: Option[String]  = None
+
+  private def showMessages(): Unit =
+    Vector(problem -> shownProblem, status -> shownStatus).foreach { (l, text) =>
+      l.setText(text.getOrElse(""))
+      l.setVisible(opened && text.isDefined)
+      l.setManaged(opened && text.isDefined)
+    }
+
+  def availability(available: Boolean, vm: ColumnMappingPaneVM): Unit =
+    opened = available
     Vector(empty -> vm.empty, notice -> vm.notice, reading -> vm.reading).foreach { (l, text) =>
       l.setText(text.getOrElse(""))
       l.setVisible(text.isDefined)
       l.setManaged(text.isDefined)
     }
-    Vector(scroll, problem, status, footer).foreach { n =>
+    Vector(scroll, footer).foreach { n =>
       n.setVisible(opened)
       n.setManaged(opened)
     }
+    showMessages()
 
   def render(vm: ImportWizardVM): Unit =
     cancel.setText(vm.cancel)
@@ -561,5 +576,6 @@ final class DataWizardPage(
     commit.setText(vm.commit)
     commit.setAccessibleText(ColumnMappingPane.siblingAction(tab, vm.commit))
     commit.setDisable(!vm.canCommit)
-    problem.setText(vm.problem.getOrElse(""))
-    status.setText(vm.status.getOrElse(""))
+    shownProblem = vm.problem.filter(_.nonEmpty)
+    shownStatus = vm.status.filter(_.nonEmpty)
+    showMessages()

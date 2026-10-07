@@ -298,6 +298,8 @@ object ImportWizardVM:
     val fixationIssues = w.fixations.fold(Vector.empty)(_._2.issues)
     val trialIssues    = w.trialIssues
     val all            = w.issues
+    val geometryIssues =
+      w.geometry.parse.left.toOption.toVector.map(e => IssueVM(e.message, None, true))
     // The trial key's Studio checks block too (S5.3); its other findings warn.
     val keyIssues   = TrialKeyVM.issues(w)
     val keyBlocking = keyIssues.count(_.blocking)
@@ -346,7 +348,7 @@ object ImportWizardVM:
         case WizardTab.FixationMapping => fixationIssues.size + keyBlocking
         case WizardTab.TrialMetadata   => trialIssues.size
         case WizardTab.Geometry        => w.geometry.parse.fold(_ => 1, _ => 0)
-        case WizardTab.DataIssues      => all.size + keyBlocking
+        case WizardTab.DataIssues      => all.size + keyBlocking + geometryIssues.size
       val label =
         if count == 0 then tabLabel(tab)
         else t(ImportTextId.TabIssues, tabLabel(tab), Format.count(count.toLong))
@@ -425,9 +427,10 @@ object ImportWizardVM:
       geometry = GeometryField.values.toVector.map(f =>
         GeometryFieldVM(f, geometryLabel(f), w.geometry.field(f))
       ),
-      issuesSummary = issuesSummary(all.size + keyBlocking),
-      issues = all.map(e => IssueVM(e.message, e.pointsAt.map(_.value), true)) ++
-        keyIssues.filter(_.blocking) ++ keyIssues.filterNot(_.blocking) ++ ragged,
+      issuesSummary = issuesSummary(all.size + keyBlocking + geometryIssues.size),
+      issues =
+        all.map(e => IssueVM(e.message, e.pointsAt.map(_.value), true)) ++ geometryIssues ++
+          keyIssues.filter(_.blocking) ++ keyIssues.filterNot(_.blocking) ++ ragged,
       presets = PresetsVM(
         t(ImportTextId.PresetLabel),
         w.presets.names.map(_.value),

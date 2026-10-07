@@ -17,7 +17,7 @@
 package eyes4s.studio.desktop.dock
 
 import eyes4s.studio.app.layout.StudioLayouts
-import scaladock.{Header, LayoutCodec, PaneTypes}
+import scaladock.{Cell, Header, LayoutCodec, LayoutState, Node, NodeId, PaneTypes, Size}
 
 /** The LayoutSpec → scaladock mapping (ticket S1.5a), without the toolkit. */
 class DockLayoutsSuite extends munit.FunSuite:
@@ -80,4 +80,62 @@ class DockLayoutsSuite extends munit.FunSuite:
     }
     assert(!DockLayouts.defaultHeader.close && !DockLayouts.defaultHeader.popOut)
     assert(DockLayouts.navigatorHeader.minimize)
+  }
+
+  private def withoutIssues(state: LayoutState): LayoutState =
+    val id                    = DockLayouts.paneId(StudioLayouts.dataIssues)
+    def remove(n: Node): Node = n match
+      case g: Node.Group => g.copy(tabs = g.tabs.filterNot(_.id == id))
+      case s: Node.Split => s.copy(cells = s.cells.map(c => c.copy(node = remove(c.node))))
+    state.copy(root = state.root.map(remove))
+
+  test("older saved Data layouts gain only the missing issues tab and migrate idempotently") {
+    val old      = withoutIssues(DockLayouts.state(StudioLayouts.dataVerify))
+    val migrated = DockLayouts.dataIssues(old).fold(e => fail(e.message), identity)
+    assertEquals(
+      migrated.panes.filterNot(_.id == DockLayouts.paneId(StudioLayouts.dataIssues)),
+      old.panes
+    )
+    assertEquals(migrated.groups.map(_.id), old.groups.map(_.id))
+    assertEquals(migrated.groups.map(_.active), old.groups.map(_.active))
+    assertEquals(withoutIssues(migrated), old)
+    assertEquals(DockLayouts.dataIssues(migrated), Right(migrated))
+    val types = PaneTypes(StudioPanes.placeholder)
+    assertEquals(LayoutCodec.decode(LayoutCodec.encode(migrated), types), Right(migrated))
+  }
+
+  test("a custom Data arrangement retains split sizes, active tabs and minimization") {
+    val old      = withoutIssues(DockLayouts.state(StudioLayouts.dataVerify))
+    val anchor   = old.groupOf(DockLayouts.paneId(StudioLayouts.admission)).get
+    val geometry = old.groupOf(DockLayouts.paneId(StudioLayouts.dataGeometry)).get
+    val custom   = old.copy(
+      root = Some(
+        Node.Split(
+          NodeId("saved.custom"),
+          scaladock.Axis.Horizontal,
+          Vector(
+            Cell(
+              anchor.copy(active = scaladock.PaneId("data.outside-frame")),
+              Size.Fr(3.7),
+              121
+            ),
+            Cell(geometry, Size.Px(333), 97)
+          )
+        )
+      ),
+      minimized = Set(anchor.id),
+      focused = Some(geometry.active)
+    )
+    val migrated = DockLayouts.dataIssues(custom).fold(e => fail(e.message), identity)
+    assertEquals(withoutIssues(migrated), custom)
+    assertEquals(DockLayouts.dataIssues(migrated), Right(migrated))
+  }
+
+  test(
+    "a missing Admission anchor names the fallback instead of silently replacing a saved layout"
+  ) {
+    val old     = DockLayouts.state(StudioLayouts.dataFirstRun)
+    val encoded = LayoutCodec.encode(old)
+    assert(DockLayouts.dataIssues(old).left.exists(_.message.contains("no Admission pane")))
+    assertEquals(LayoutCodec.encode(old), encoded)
   }

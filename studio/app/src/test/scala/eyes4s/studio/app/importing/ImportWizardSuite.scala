@@ -127,7 +127,7 @@ class ImportWizardSuite extends munit.FunSuite:
     assertEquals(vm.fixations.rows.head.accessible, "Role for Subject")
     assertEquals(
       vm.tabs.map(_.label),
-      Vector("Column mapping", "Trial metadata", "Geometry (1)", "Data issues")
+      Vector("Column mapping", "Trial metadata", "Geometry (1)", "Data issues (1)")
     )
   }
 

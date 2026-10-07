@@ -69,6 +69,10 @@ object StudioLayouts:
   /** The selected import draft's geometry, coordinated with column mapping. */
   val dataGeometry: PaneId = new PaneId("data.geometry")
 
+  /** The trial metadata and issue pages of that same selected import draft. */
+  val trialMetadata: PaneId = new PaneId("data.trial-metadata")
+  val dataIssues: PaneId    = new PaneId("data.issues")
+
   /** The pane that hosts the admission ledger of the selected revision. */
   val admission: PaneId = new PaneId("data.admission")
 
@@ -115,11 +119,12 @@ object StudioLayouts:
         Axis.Vertical,
         group(
           PaneDecl(columnMapping, PaneTitle.Fixed("Column mapping"), Form),
-          pane("data.trial-metadata", "Trial metadata", Table)
+          PaneDecl(trialMetadata, PaneTitle.Fixed("Trial metadata"), Form)
         ) -> 0.55,
         group(
           PaneDecl(admission, PaneTitle.Fixed("Admission"), Form),
-          pane("data.outside-frame", "Records outside frame", Table)
+          pane("data.outside-frame", "Records outside frame", Table),
+          PaneDecl(dataIssues, PaneTitle.Fixed("Data issues"), Form)
         ) -> 0.45
       ),
       group(PaneDecl(dataGeometry, PaneTitle.Fixed("Geometry"), Form))

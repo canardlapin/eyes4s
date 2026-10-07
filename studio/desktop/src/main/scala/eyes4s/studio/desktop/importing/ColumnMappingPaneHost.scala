@@ -67,7 +67,9 @@ final class ColumnMappingPaneHost(
   )
 
   /** Geometry is a distinct dock node backed by the same wizard and controls. */
-  val geometry: DataWizardPage = wizard.view.detach(WizardTab.Geometry)
+  val geometry: DataWizardPage      = wizard.view.detach(WizardTab.Geometry)
+  val trialMetadata: DataWizardPage = wizard.view.detach(WizardTab.TrialMetadata)
+  val issues: DataWizardPage        = wizard.view.detach(WizardTab.DataIssues)
 
   private val empty   = ImportWizardView.label("import-empty", "t12")
   private val reading = ImportWizardView.label("import-status", "t12")
@@ -99,7 +101,7 @@ final class ColumnMappingPaneHost(
   /** The wizard's focus stops inside the pane (none while it is hidden). */
   def focusStops: Vector[FocusStop] =
     if !opened then Vector.empty
-    else ColumnMappingPane.focusStops(ImportWizardVM.of(wizard.model, model().document))
+    else ColumnMappingPane.mappingStops(ImportWizardVM.of(wizard.model, model().document))
 
   def geometryStops: Vector[FocusStop] =
     if !opened then Vector.empty
@@ -107,6 +109,22 @@ final class ColumnMappingPaneHost(
       ColumnMappingPane.siblingStops(
         ImportWizardVM.of(wizard.model, model().document),
         WizardTab.Geometry
+      )
+
+  def trialMetadataStops: Vector[FocusStop] =
+    if !opened then Vector.empty
+    else
+      ColumnMappingPane.siblingStops(
+        ImportWizardVM.of(wizard.model, model().document),
+        WizardTab.TrialMetadata
+      )
+
+  def issuesStops: Vector[FocusStop] =
+    if !opened then Vector.empty
+    else
+      ColumnMappingPane.siblingStops(
+        ImportWizardVM.of(wizard.model, model().document),
+        WizardTab.DataIssues
       )
 
   /** Follow the model: reload when the selected revision changes. Nothing
@@ -239,7 +257,7 @@ final class ColumnMappingPaneHost(
 
   private def render(): Unit =
     val vm = ColumnMappingPane.vm(shown, remaining > 0, notice)
-    geometry.availability(opened, vm)
+    Vector(geometry, trialMetadata, issues).foreach(_.availability(opened, vm))
     empty.setText(vm.empty.getOrElse(""))
     empty.setVisible(vm.empty.isDefined)
     empty.setManaged(vm.empty.isDefined)

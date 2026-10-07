@@ -390,13 +390,12 @@ class ColumnMappingPaneFxSuite extends ShellFxSuite:
       )
       // A re-map reads the project's files: no file to choose.
       assert(!runOnFx(view.fixations.choose.isVisible))
-      // r3 has a trials file: the re-map shows its mapping and its trial
-      // metadata (S5.4); geometry and the issues belong to the sibling panes.
+      // Dock tabs own the coordinated pages; the re-map has no nested tab strip.
       assertEquals(
         runOnFx(
           view.tabs.toVector.filter((_, t) => t.isVisible && t.isManaged).map(_._1).toSet
         ),
-        Set(WizardTab.FixationMapping, WizardTab.TrialMetadata)
+        Set.empty[WizardTab]
       )
       assertEquals(runOnFx(drawn(view.cancel)), "Revert")
       val onset = runOnFx(view.fixations.rowNode("onset_ms")).getOrElse(fail("no onset_ms row"))
@@ -420,12 +419,10 @@ class ColumnMappingPaneFxSuite extends ShellFxSuite:
         val w = boot(fx, StoryModels.t1Data, StoryMoment.T1, project = Some(port))
         loaded(fx, w, r3)
         val derived = runOnFx(w.paneStops(StudioLayouts.columnMapping))
-        // The selected page's tab (the re-map of r3 shows its trial metadata
-        // too, S5.4), the time unit, one role menu per column, the preset
-        // name, the trial key's occurrence toggle (S5.3), Revert and the commit.
-        assertEquals(derived.size, 1 + 1 + 10 + 1 + 1 + 2)
+        // Time unit, role menus, presets, trial key and shared actions; no nested tabs.
+        assertEquals(derived.size, 1 + 10 + 1 + 1 + 2)
         assertEquals(
-          derived(13),
+          derived(12),
           FocusStop(A11yRole.ToggleButton, "Occurrence: column occurrence")
         )
         val pane = runOnFx(w.host.node(StudioLayouts.columnMapping)).get
@@ -569,5 +566,71 @@ class ColumnMappingPaneFxSuite extends ShellFxSuite:
       loaded(fx, w, r3)
       assertEquals(runOnFx(w.runtime.model.document), before.document)
       assertEquals(runOnFx(width.getText), "1024")
+    }
+  }
+
+  fxStage.test(
+    "Data dock siblings preserve edits, show issues, and apply one shared revision"
+  ) { fx =>
+    assumeFullStage(fx)
+    withProject { (_, port) =>
+      val w = boot(fx, StoryModels.t1Data, StoryMoment.T1, project = Some(port))
+      loaded(fx, w, r3)
+      val before = runOnFx(w.runtime.model)
+      val reads  = runOnFx(w.columnMapping.readsAnswered)
+      pick(fx, w, "x", ColumnChoice.Attribute)
+      val width = w.columnMapping.wizard.view.geometryFields(GeometryField.ImageWidth)
+      fx.robot.click(width)
+      runOnFx(width.selectAll())
+      fx.robot.typeText("invalid")
+      dispatch(fx, w, Intent.FocusPane(StudioLayouts.trialMetadata))
+      val view = w.columnMapping.wizard.view
+      runOnFx {
+        view.displayKind.getItems.asScala
+          .find(_.column.exists(_.value == "display_kind"))
+          .foreach(view.displayKind.setValue)
+        view.displayFile.getItems.asScala
+          .find(_.column.exists(_.value == "image_file"))
+          .foreach(view.displayFile.setValue)
+      }
+      fx.awaitLayout()
+      dispatch(fx, w, Intent.FocusPane(StudioLayouts.dataIssues))
+      val issueTexts = runOnFx(view.issueList.getChildren.asScala.collect {
+        case l: javafx.scene.control.Label => l.getText
+      }.toVector)
+      assert(issueTexts.exists(_.contains("invalid")), issueTexts.toString)
+      assert(issueTexts.exists(_.contains("required x")), issueTexts.toString)
+      assertEquals(runOnFx(w.columnMapping.readsAnswered), reads)
+      fx.robot.click(w.columnMapping.issues.commit)
+      assertEquals(runOnFx(w.runtime.model.document), before.document)
+      dispatch(fx, w, Intent.FocusPane(StudioLayouts.columnMapping))
+      pick(fx, w, "x", ColumnChoice.Role(ColumnRole.X))
+      fx.robot.click(width)
+      runOnFx(width.selectAll())
+      fx.robot.typeText("1000")
+      dispatch(fx, w, Intent.FocusPane(StudioLayouts.trialMetadata))
+      assertEquals(
+        runOnFx(Option(view.displayFile.getValue).flatMap(_.column).map(_.value)),
+        Some("image_file")
+      )
+      assertEquals(runOnFx(w.columnMapping.readsAnswered), reads)
+      dispatch(fx, w, Intent.FocusPane(StudioLayouts.dataIssues))
+      fx.robot.click(w.columnMapping.issues.commit)
+      loaded(fx, w, r3)
+      val after = runOnFx(w.runtime.model)
+      assertEquals(after.document.dataset(r3).map(_.geometry.image.width), Some(1000))
+      assertEquals(
+        after.document
+          .dataset(r3)
+          .flatMap(_.inventory)
+          .flatMap(_.displays)
+          .flatMap(_.file)
+          .map(_.value),
+        Some("image_file")
+      )
+      assertEquals(after.history.science.done.size, before.history.science.done.size + 1)
+      dispatch(fx, w, Intent.Undo(HistoryStack.Science))
+      loaded(fx, w, r3)
+      assertEquals(runOnFx(w.runtime.model.document), before.document)
     }
   }

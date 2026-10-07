@@ -434,3 +434,48 @@ class ColumnMappingPaneSuite extends munit.FunSuite:
       m.document
     )
   }
+
+  test("mapping, trial metadata, geometry and issues share one draft and one command") {
+    val m         = StoryModels.t1Data
+    val (spec, w) = opened(m)
+    val x         = ok(ColumnName.of("x"))
+    val invalid   = run(
+      w,
+      m.document,
+      WizardIntent.Choose(SourceRole.Fixations, x, ColumnChoice.Attribute),
+      WizardIntent.EditGeometry(GeometryField.ImageWidth, "invalid")
+    )
+    val issueView = ImportWizardVM.of(invalid, m.document)
+    assert(issueView.issues.count(_.blocking) >= 2)
+    assert(issueView.issues.exists(_.text.contains("invalid")))
+    assert(!ColumnMappingPane.mappingStops(issueView).exists(_.name == "Column mapping"))
+    assertEquals(
+      ColumnMappingPane.siblingStops(issueView, WizardTab.DataIssues).map(_.name),
+      Vector("Data issues · Revert", "Data issues · Apply to r3")
+    )
+    val (_, refused) = ImportWizard.update(invalid, WizardIntent.Commit, m.document)
+    assert(!refused.exists(_.isInstanceOf[WizardEffect.Dispatch]))
+    val displays =
+      DisplayColumns(ok(ColumnName.of("display_kind")), Some(ok(ColumnName.of("image_file"))))
+    val fixed = run(
+      invalid,
+      m.document,
+      WizardIntent.Choose(SourceRole.Fixations, x, ColumnChoice.Role(ColumnRole.X)),
+      WizardIntent.EditGeometry(GeometryField.ImageWidth, "1000"),
+      WizardIntent.DeclareDisplays(Some(displays))
+    )
+    assertEquals(ImportWizardVM.of(fixed, m.document).issues.filter(_.blocking), Vector.empty)
+    val (_, effects) = ImportWizard.update(fixed, WizardIntent.Commit, m.document)
+    val commands     = effects.collect { case WizardEffect.Dispatch(c) => c }
+    assertEquals(commands.size, 1)
+    val after   = AppModel.run(m, WizardEffect.appIntents(effects))._1
+    val revised = after.document.dataset(r3).get
+    assertEquals(revised.geometry.image.width, 1000)
+    assertEquals(revised.inventory.flatMap(_.displays), Some(displays))
+    assertEquals(revised.mapping, spec.mapping)
+    assertEquals(after.history.science.done.size, m.history.science.done.size + 1)
+    assertEquals(
+      AppModel.update(after, Intent.Undo(HistoryStack.Science))._1.document,
+      m.document
+    )
+  }
