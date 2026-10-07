@@ -393,6 +393,15 @@ object StudioDocument:
 
   given Decoder[StudioDocument] = Decoder.instance { c =>
     for
+      // Family persistence and safe interpretation land together; bead q-analysis-family-identity.
+      _ <- Either.cond(
+        !c.downField("analysisFamilies").succeeded,
+        (),
+        DecodingFailure(
+          "Document field analysisFamilies requires supported family ownership and interpretation.",
+          c.history
+        )
+      )
       document <- Decoder
         .forProduct8(
           "datasets",
