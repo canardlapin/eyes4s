@@ -62,6 +62,11 @@ trait RovingTarget[+R <: StudioRef]:
   def reachPx: Double
   def order: Int
 
+  /** Drawn line runs in device pixels; a singleton is an isolated dot.
+    * Other marks retain their ring feedback.
+    */
+  def selectionRuns: Vector[Vector[DevicePoint]] = Vector.empty
+
 /** The marks of one drawn scene that a roving cursor and a pointer can reach
   * (tickets S4.2 and S4.5a). A trial's fixations and a plot's marks are both
   * this; [[MarkInputState]] handles input against either.
@@ -432,11 +437,22 @@ final case class MarkInputState[R <: StudioRef] private (
     * selection, so a host can keep it drawn across pointer moves.
     */
   def selectionRings(targets: RovingTargets[R, ?]): Vector[OverlayRing] =
-    selected.flatMap(targets.target).distinctBy(_.ref).map { t =>
+    selected.flatMap(targets.target).distinctBy(_.ref).flatMap { t =>
       val kind =
         if share(t) == SelectionShare.All then RingKind.Selected else RingKind.PartlySelected
-      ring(targets, kind, t)
+      val centres = if t.selectionRuns.isEmpty then Vector(t.anchor)
+      else t.selectionRuns.collect { case Vector(point) => point }
+      centres.map(point => ring(targets, kind, t).copy(centre = point))
     }
+
+  /** Selected multi-row lines follow every drawn run, never a missing-value
+    * gap. Their selection is redrawn with the same retained layer as rings.
+    */
+  def selectionLines(targets: RovingTargets[R, ?]): Vector[OverlayLine] =
+    selected
+      .flatMap(targets.target)
+      .distinctBy(_.ref)
+      .flatMap(t => t.selectionRuns.filter(_.size > 1).map(OverlayLine(t.ref, _)))
 
   /** The pointer and cursor layer: hover, then focus. */
   def pointerRings(targets: RovingTargets[R, ?]): Vector[OverlayRing] =

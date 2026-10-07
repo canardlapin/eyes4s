@@ -37,6 +37,9 @@ import javafx.event.Event
 import javafx.event.EventType
 import javafx.geometry.Point2D
 import javafx.scene.SnapshotParameters
+import javafx.scene.control.Labeled
+import javafx.scene.text.Text
+import scala.jdk.CollectionConverters.*
 import javafx.scene.image.WritableImage
 import javafx.scene.input.{MouseButton, MouseEvent, PickResult}
 import javafx.scene.layout.{HBox, Priority}
@@ -272,6 +275,15 @@ class S45dPlotFxSuite extends StudioFxSuite:
       val w       = Wired(fx)
       val t       = showAndDraw(w, source)
       assertEquals(rowTexts(w), source.rows.map(source.cellsOf))
+      // Read the text actually drawn by the label skin, after truncation.
+      val nText = runOnFx {
+        val row   = w.twin.table.rowNode(0).get.getGraphic.asInstanceOf[javafx.scene.Parent]
+        val label = row.getChildrenUnmodifiable.asScala.collect { case l: Labeled => l }.last
+        label.getChildrenUnmodifiable.asScala
+          .collectFirst { case t: Text => t.getText }
+          .getOrElse(label.getText)
+      }
+      assertEquals(nText, source.cellsOf(source.rows.head).last)
       // 24 participant lines and 2 × 4 group means.
       assertEquals(t.targets.size, 24 + 8)
 
@@ -335,6 +347,24 @@ class S45dPlotFxSuite extends StudioFxSuite:
       val p17 = profile.participants.find(_.name == "P17").getOrElse(fail("P17"))
       click(w, t, anchor(t, p17.points.head.ref))
       assertEquals(w.selected, p17.points.map(_.ref))
+      val selected = runOnFx(w.twin.input.state.selectionLines(t))
+      assertEquals(selected.size, 1)
+      assertEquals(selected.head.points.size, 4)
+      assertEquals(runOnFx(w.twin.input.state.selectionRings(t)), Vector.empty)
+      assertEquals(runOnFx(w.twin.input.lastOverlayError), None)
+      val highlighted = snapshot(w)
+      // A selected line paints dark dashes away from the roving anchor.
+      val a        = selected.head.points(1)
+      val b        = selected.head.points(2)
+      val interior = (1 until 10).map(i =>
+        DevicePoint(a.x + (b.x - a.x) * i / 10, a.y + (b.y - a.y) * i / 10)
+      )
+      assert(
+        interior.exists(p =>
+          near(highlighted, p, Tokens.themed(Theme.Light, ThemedToken.Ink), 40)
+        )
+      )
+      assert(runOnFx(w.twin.plotHost.profile.underDraws) > 0)
       fx.snapshot(StudioTheme.Light)
       runOnFx(w.twin.dispose())
   }

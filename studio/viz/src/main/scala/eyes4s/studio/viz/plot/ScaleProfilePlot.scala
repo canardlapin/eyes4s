@@ -113,7 +113,9 @@ final case class ScaleProfilePlot(columns: ProfileColumns) extends PlotBuilder:
         .map(PlotBuildError.Graphics(kind, "the scale profile", _))
       (grobs, viewport, names) = built
       marks <- traverseAll(drawn.zip(names).zipWithIndex) { case ((d, name), order) =>
-        PlotMark.of(kind, d.rows, d.at, d.reachPx, order, name)
+        PlotMark
+          .of(kind, d.rows, d.at, d.reachPx, order, name)
+          .map(m => if d.shape == Shape.Line then m.withLineRuns(d.runs) else m)
       }
       panel     <- DataPanel(id, viewport).left.map(PlotBuildError.Scene(kind, _))
       plotScene <- PlotScene(id, Scene(grobs), panel).left.map(PlotBuildError.Scene(kind, _))
