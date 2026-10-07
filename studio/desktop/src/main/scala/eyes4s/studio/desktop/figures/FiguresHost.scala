@@ -1159,9 +1159,13 @@ final class FiguresHost(
         Vector(
           FocusStop(A11yRole.Button, FiguresHost.greyscaleName(p.greyscale)),
           FocusStop(A11yRole.Button, "Zoom out (−)"),
-          FocusStop(A11yRole.Button, "Zoom in (+)"),
-          FocusStop(A11yRole.MenuButton, p.addPanel.label)
+          FocusStop(A11yRole.Button, "Zoom in (+)")
         ) ++
+        Option
+          .when(p.addPanel.choices.exists(_.enabled))(
+            FocusStop(A11yRole.MenuButton, p.addPanel.label)
+          )
+          .toVector ++
         Vector(
           Option.when(p.panelEditing.canMoveEarlier)(
             FocusStop(A11yRole.Button, PanelEditing.Earlier)

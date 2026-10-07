@@ -395,3 +395,43 @@ class FigureComposerFxSuite extends ShellFxSuite:
       ok(eyes4s.studio.core.fixture.StoryMoments.figure1).panels
     )
   }
+
+  fxStage.test("a full panel alphabet disables Add panel and omits its keyboard stop") { fx =>
+    val initial = StoryModels.t2Figures
+    val figure  = initial.document.figures.head
+    val full    = ('F' to 'Z').foldLeft(initial) { (model, c) =>
+      val panel = figure.panels.head.copy(letter = letter(c.toString))
+      eyes4s.studio.app.AppModel
+        .update(
+          model,
+          Intent.Dispatch(
+            eyes4s.studio.core.command.Command
+              .AddPanel(figure.id, model.document.figures.head.panels.size, panel)
+          )
+        )
+        ._1
+    }
+    assertEquals(full.document.figures.head.panels.size, 26)
+    val w = boot(fx, initial)
+    // Inspect the control contract without laying out a 26-panel export page.
+    val host = runOnFx {
+      val host = FiguresHost(
+        () => full,
+        _ => (),
+        FigureInputs.of(
+          w.session,
+          eyes4s.studio.desktop.explore.NavigatorDisplays.golden,
+          () => None
+        )
+      )
+      host.sync(full)
+      host
+    }
+    try
+      runOnFx {
+        assert(host.addPanel.isDisable)
+        assert(host.vm.page.exists(!_.addPanel.choices.exists(_.enabled)))
+        assert(!host.pageStops.exists(_.name == host.addPanel.getAccessibleText))
+      }
+    finally runOnFx(host.dispose())
+  }
