@@ -7,7 +7,6 @@ list: Sources
 button: Repair…
 button: Show 4 trials
 region: Column mapping
-toggle-button: Column mapping
 text-field: Preset name
 button: Revert
 region: Admission
@@ -22,3 +21,11 @@ button: Absent: 6 trials
 button: Outside screen: 0 trials
 radio-button: Require complete: Refuses r3 while 17 trials are quarantined (eyes4s admission). The 6 absent trials are counted by the inventory join.
 region: Geometry
+text-field: Screen width (px)
+text-field: Screen height (px)
+text-field: Image left (px)
+text-field: Image top (px)
+text-field: Image width (px)
+text-field: Image height (px)
+text-field: Pixels per degree (declared)
+button: Geometry · Revert
