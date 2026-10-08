@@ -92,6 +92,8 @@ final class ImportWizardHost(
   private var presetLoad                              = 0L
   private var lastImport                              = CompletableFuture.completedFuture(())
   private var lastPreset                              = CompletableFuture.completedFuture(())
+  private var presetQueue = Vector.empty[(ImportPreset, CompletableFuture[Unit])]
+  private var presetBusy  = false
   private var reads: Map[SourceRole, CompletableFuture[Unit]] = Map.empty
   private var disposed                                        = false
   private var storing                                         = false
@@ -118,6 +120,9 @@ final class ImportWizardHost(
     lastCheck.cancel(false)
     lastCheck = CompletableFuture.completedFuture(())
     requests = Map.empty
+    if disposed then
+      presetQueue.foreach(_._2.cancel(false))
+      presetQueue = Vector.empty
     storing = false
 
   def reset(wizard: ImportWizard): Unit = if !disposed then
@@ -278,18 +283,8 @@ final class ImportWizardHost(
 
   private def performOne(effect: WizardEffect): Unit = effect match
     case WizardEffect.Dispatch(command)   => app(Intent.Dispatch(command))
-    case WizardEffect.StorePreset(preset) =>
-      val done = CompletableFuture[Unit]()
-      lastPreset = done
-      val _ = launch(platform.storePreset(preset), resettable = false) { result =>
-        if !disposed then
-          result match
-            case Right(Left(e)) => dispatch(WizardIntent.StoreFailed(e))
-            case Left(e)        => dispatch(WizardIntent.StoreFailed(reason(e)))
-            case _              => ()
-        done.complete(()): Unit
-      }
-    case WizardEffect.OpenFile(role) =>
+    case WizardEffect.StorePreset(preset) => persistPreset(preset): Unit
+    case WizardEffect.OpenFile(role)      =>
       val request = token(role)
       val stop    = launch(platform.chooseFile(role)) {
         case Right(Right(Some(chosen))) if current(role, request) =>
@@ -310,6 +305,34 @@ final class ImportWizardHost(
       roleStops += role -> stop
     case check: WizardEffect.CheckKey => checkKey(check)
     case WizardEffect.Close           => close()
+
+  /** Preserve user action order even if an earlier same-name write is delayed. */
+  private[importing] def persistPreset(preset: ImportPreset): CompletableFuture[Unit] =
+    val done = CompletableFuture[Unit]()
+    lastPreset = done
+    if disposed then done.cancel(false): Unit
+    else
+      presetQueue :+= (preset -> done)
+      startPresetWrite()
+    done
+
+  private def startPresetWrite(): Unit =
+    if !disposed && !presetBusy then
+      presetQueue.headOption.foreach { (preset, done) =>
+        presetBusy = true
+        val _ = launch(platform.storePreset(preset), resettable = false) { result =>
+          if disposed then done.cancel(false): Unit
+          else
+            result match
+              case Right(Left(e)) => dispatch(WizardIntent.StoreFailed(e))
+              case Left(e)        => dispatch(WizardIntent.StoreFailed(reason(e)))
+              case _              => ()
+            presetQueue = presetQueue.drop(1)
+            presetBusy = false
+            done.complete(()): Unit
+            startPresetWrite()
+        }
+      }
 
   private def checkKey(check: WizardEffect.CheckKey): Unit =
     def refused(why: String) = WizardIntent.KeyChecked(

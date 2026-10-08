@@ -17,6 +17,7 @@
 package eyes4s.studio.desktop.importing
 
 import cats.effect.IO
+import cats.syntax.all.*
 import cats.effect.unsafe.implicits.global
 import eyes4s.studio.core.platform.HostPath
 import eyes4s.studio.app.importing.*
@@ -876,4 +877,42 @@ class ImportWizardFxSuite extends StudioFxSuite:
         Set("Earlier", "Newer")
       )
       runOnFx(host.dispose())
+  }
+
+
+  fxStage.test("delayed same-name preset writes retain the newer mapping in UI and on disk") { fx =>
+    import cats.effect.Deferred
+    import eyes4s.studio.core.platform.InMemoryPlatform
+    import eyes4s.studio.desktop.platform.PlatformPresetStore
+    val memory = InMemoryPlatform.create[IO]().unsafeRunSync()
+    val directory = ok(HostPath.of("/presets"))
+    val store = PlatformPresetStore(memory.platform.files, directory, p => Right(p.value.split('/').last))
+    val gate = Deferred[IO, Unit].unsafeRunSync()
+    val started = java.util.concurrent.CompletableFuture[Unit]()
+    val calls = java.util.concurrent.atomic.AtomicInteger(0)
+    val services = new Recorder():
+      override def storePreset(preset: ImportPreset): IO[Either[String, Unit]] = IO.defer {
+        if calls.incrementAndGet() == 1 then
+          IO { started.complete(()); () } >> gate.get >> store.save(preset)
+        else store.save(preset)
+      }
+    val host = mountService(fx, services)
+    val name = ok(eyes4s.studio.core.importing.PresetName.of("Same name"))
+    val first = ok(ImportPreset.of(name, Vector(ColumnBinding(ColumnRole.Participant, ok(ColumnName.of("OldSubject")))), None))
+    val newer = ok(ImportPreset.of(name, Vector(ColumnBinding(ColumnRole.Participant, ok(ColumnName.of("NewSubject")))), None))
+    try
+      val a = runOnFx(host.persistPreset(first))
+      started.get(30, java.util.concurrent.TimeUnit.SECONDS)
+      val b = runOnFx {
+        host.presetsLoaded(ok(ImportPresets.of(Vector(newer))))
+        host.persistPreset(newer)
+      }
+      assertEquals(calls.get(), 1)
+      gate.complete(()).unsafeRunSync(): Unit
+      a.get(30, java.util.concurrent.TimeUnit.SECONDS)
+      b.get(30, java.util.concurrent.TimeUnit.SECONDS)
+      assertEquals(calls.get(), 2)
+      assertEquals(store.load.unsafeRunSync()._1.all, Vector(newer))
+      assertEquals(runOnFx(host.model.presets.all), Vector(newer))
+    finally runOnFx(host.dispose())
   }
