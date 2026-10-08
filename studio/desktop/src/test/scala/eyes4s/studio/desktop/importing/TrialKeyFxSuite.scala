@@ -89,7 +89,7 @@ class TrialKeyFxSuite extends StudioFxSuite:
     Mounted(host, app)
 
   def readIn(fx: FxStage, m: Mounted, role: SourceRole, path: Path): Unit =
-    runOnFx(m.host.read(role, ok(HostPath.of(path.toString))))
+    runOnFx(m.host.read(role, HostPath.of(path.toString).fold(e => fail(e.message), identity)))
       .get(30, java.util.concurrent.TimeUnit.SECONDS)
     fx.awaitLayout()
 
