@@ -171,9 +171,21 @@ enum Command derives CanEqual:
 
   // --- Analysis · rerun ----------------------------------------------------
 
-  /** A draft of `base` with the next analysis id. */
+  /** Start the first working recipe without a synthetic saved revision. */
   case StartAnalysis(dataset: DatasetRevision, recipe: Recipe, studio: StudioFields)
 
+  /** Start an independent family from an admitted dataset and explicit seed.
+    * The reducer allocates both identities; the family remains provisional
+    * until SaveAndRun (bead q-analysis-family-identity).
+    */
+  case StartFamily(
+      familyName: String,
+      dataset: DatasetRevision,
+      recipe: Recipe,
+      studio: StudioFields
+  )
+
+  /** A draft of `base` with the next global analysis id. */
   case StartDraft(
       base: AnalysisRevision,
       dataset: Option[DatasetRevision],
@@ -308,8 +320,8 @@ enum Command derives CanEqual:
           AddCorrection | RemoveCorrection | VerifyDataset | WithdrawVerification |
           ResumeVerification | Admit) =>
       ChangeKind.DatasetReadmit
-    case _: (StartAnalysis | StartDraft | RestoreDraft | ChangeRecipe | ChangeRecipes |
-          RebaseDraft | SaveAndRun | RecordRunOutcome | CancelRun | BindPlan |
+    case _: (StartAnalysis | StartFamily | StartDraft | RestoreDraft | ChangeRecipe |
+          ChangeRecipes | RebaseDraft | SaveAndRun | RecordRunOutcome | CancelRun | BindPlan |
           BindCompletedArtifacts) =>
       ChangeKind.AnalysisRerun
     case DiscardDraft => ChangeKind.AnalysisRerun

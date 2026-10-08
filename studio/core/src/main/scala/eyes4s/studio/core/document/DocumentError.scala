@@ -24,6 +24,9 @@ import io.circe.{Codec, Decoder, Encoder}
   * is a default English rendering, never an identity.
   */
 enum DocumentError derives CanEqual:
+  case ExhaustedAnalysisRevision(last: AnalysisRevision)
+  case FamilyDraftRevision(draft: AnalysisRevision, expected: AnalysisRevision)
+  case FamilyDraftIdentity(found: AnalysisFamilyId, expected: AnalysisFamilyId)
   case FamilyOwnership(error: AnalysisFamilyError)
   case InitialDraftWithFamilies(draft: AnalysisRevision, families: Vector[AnalysisFamilyId])
   case Blank(field: String)
@@ -143,6 +146,12 @@ enum DocumentError derives CanEqual:
   case PresetWithoutDefaults(preset: Preset, dataset: DatasetRevision)
 
   def message: String = this match
+    case ExhaustedAnalysisRevision(last) =>
+      s"No positive analysis revision follows ${last.label}."
+    case FamilyDraftRevision(draft, expected) =>
+      s"New-family draft ${draft.label} must use next global identity ${expected.label}."
+    case FamilyDraftIdentity(found, expected) =>
+      s"Provisional ${found.label} must use next family identity ${expected.label}."
     case FamilyOwnership(error)                    => error.message
     case InitialDraftWithFamilies(draft, families) =>
       s"Initial ${draft.label} requires implicit legacy ownership; explicit families are $families."

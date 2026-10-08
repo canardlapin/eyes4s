@@ -154,9 +154,10 @@ object CommandSamples:
       CoreBinding.unbound,
       CoreBinding.unbound
     ),
-    "StartAnalysis"        -> StartAnalysis(r3, rev4Rec, t2.analysis(rev4).get.studio),
-    "StartDraft"           -> StartDraft(rev4, None, draft.changes),
-    "RestoreDraft"         -> RestoreDraft(draft),
+    "StartAnalysis" -> StartAnalysis(r3, rev4Rec, t2.analysis(rev4).get.studio),
+    "StartFamily"   -> StartFamily("Independent", r3, rev4Rec, t2.analysis(rev4).get.studio),
+    "StartDraft"    -> StartDraft(rev4, None, draft.changes),
+    "RestoreDraft"  -> RestoreDraft(draft),
     "RestoreDraft.initial" -> RestoreDraft(
       right(
         Draft.initial(

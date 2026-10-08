@@ -297,11 +297,26 @@ object Reducer:
         next <- rebuild(d, c)(draft = Some(draft))
       yield reversible(next, DiscardDraft)
 
+    case StartFamily(name, dataset, recipe, studio) =>
+      for
+        _        <- d.draft.map(existing => DraftExists(existing.id)).toLeft(())
+        data     <- d.dataset(dataset).toRight(UnknownDataset(dataset))
+        _        <- Either.cond(data.decision.isAdmitted, (), DatasetNotAdmitted(dataset))
+        id       <- d.nextAnalysisId.left.map(refused(d, c))
+        familyId <- d.nextFamilyId.left.map(refused(d, c))
+        family   <- AnalysisFamily
+          .of(familyId, name)
+          .left
+          .map(error => refused(d, c)(DocumentError.FamilyOwnership(error)))
+        draft <- Draft.newFamily(id, family, dataset, recipe, studio).left.map(refused(d, c))
+        next  <- rebuild(d, c)(draft = Some(draft))
+      yield reversible(next, DiscardDraft)
+
     case StartDraft(base, dataset, changes) =>
       for
-        _    <- d.draft.map(existing => DraftExists(existing.id)).toLeft(())
-        spec <- d.analysis(base).toRight(UnknownAnalysis(base))
-        id = AnalysisRevision(d.latestAnalysis.getOrElse(spec).id.number + 1)
+        _     <- d.draft.map(existing => DraftExists(existing.id)).toLeft(())
+        spec  <- d.analysis(base).toRight(UnknownAnalysis(base))
+        id    <- d.nextAnalysisId.left.map(refused(d, c))
         draft <- Draft.against(id, spec, dataset, changes).left.map(refused(d, c))
         next  <- rebuild(d, c)(draft = Some(draft))
       yield reversible(next, DiscardDraft)
@@ -390,28 +405,8 @@ object Reducer:
         )
         run     = RunId(d.runs.lastOption.fold(1)(_.id.number + 1))
         started = RunRef(run, draft.id, target, RunLifecycle.Running, CoreBinding.unbound)
-        families <- d.analysisFamilies.traverse { registry =>
-          for
-            owner <- d
-              .familyOf(draft.id)
-              .toRight(
-                refused(d, c)(DocumentError.UnknownAnalysis("family ownership", draft.id))
-              )
-            assignment <- AnalysisFamilyOwner
-              .of(revision.id, owner)
-              .left
-              .map(error => refused(d, c)(DocumentError.FamilyOwnership(error)))
-            next <- AnalysisFamilyRegistry
-              .of(
-                registry.families,
-                registry.owners :+ assignment,
-                (d.analyses :+ revision).map(_.id)
-              )
-              .left
-              .map(error => refused(d, c)(DocumentError.FamilyOwnership(error)))
-          yield next
-        }
-        next <- rebuild(d, c)(
+        families <- savedFamilies(d, c, draft, revision)
+        next     <- rebuild(d, c)(
           analysisFamilies = families,
           analyses = d.analyses :+ revision,
           draft = None,
@@ -763,6 +758,60 @@ object Reducer:
       .left
       .map(refused(d, c))
 
+  /** Materialization is one checked transition with the saved revision. An
+    * implicit legacy family's display name comes from its earliest saved
+    * revision; identities never come from that name.
+    */
+  private def savedFamilies(
+      d: StudioDocument,
+      c: Command,
+      draft: Draft,
+      revision: AnalysisRevisionSpec
+  ): Either[CommandError, Option[AnalysisFamilyRegistry]] = draft.origin match
+    case DraftOrigin.NewFamily(family, _, _, _) =>
+      val registry = d.analysisFamilies.fold {
+        for
+          legacy <- d.analyses.headOption.traverse(saved =>
+            AnalysisFamily.of(AnalysisFamilyId.Legacy, saved.studio.name.value)
+          )
+          owners <- d.analyses.traverse(saved =>
+            AnalysisFamilyOwner.of(saved.id, AnalysisFamilyId.Legacy)
+          )
+          held <- AnalysisFamilyRegistry.of(legacy.toVector, owners, d.analyses.map(_.id))
+        yield held
+      }(Right(_))
+      (for
+        held  <- registry
+        owner <- AnalysisFamilyOwner.of(revision.id, family.id)
+        next  <- AnalysisFamilyRegistry.of(
+          held.families :+ family,
+          held.owners :+ owner,
+          (d.analyses :+ revision).map(_.id)
+        )
+      yield Some(next)).left.map(error => refused(d, c)(DocumentError.FamilyOwnership(error)))
+    case _ =>
+      d.analysisFamilies.traverse { registry =>
+        for
+          owner <- d
+            .familyOf(draft.id)
+            .toRight(
+              refused(d, c)(DocumentError.UnknownAnalysis("family ownership", draft.id))
+            )
+          assignment <- AnalysisFamilyOwner
+            .of(revision.id, owner)
+            .left
+            .map(error => refused(d, c)(DocumentError.FamilyOwnership(error)))
+          next <- AnalysisFamilyRegistry
+            .of(
+              registry.families,
+              registry.owners :+ assignment,
+              (d.analyses :+ revision).map(_.id)
+            )
+            .left
+            .map(error => refused(d, c)(DocumentError.FamilyOwnership(error)))
+        yield next
+      }
+
   private def refused(d: StudioDocument, c: Command)(error: DocumentError): CommandError =
     Refused(c.name, targetOf(d, c), error)
 
@@ -891,6 +940,7 @@ object Reducer:
     case Admit(id, _, _, _, _)           => Target.OnDataset(id)
     case RestoreDraft(draft)             => Target.OnDraft(Some(draft.id))
     case _: StartAnalysis                => Target.OnDraft(Some(AnalysisRevision(1)))
+    case _: StartFamily                  => Target.OnDraft(d.nextAnalysisId.toOption)
     case _: (StartDraft | ChangeRecipe | ChangeRecipes | RebaseDraft | SaveAndRun) |
         DiscardDraft =>
       Target.OnDraft(
@@ -962,10 +1012,10 @@ object Reducer:
     d.draftContext match
       case Some(context) => Right((context, context.id, d.draft))
       case None          =>
-        d.latestAnalysis.toRight(NoAnalysis(c.name)).map { base =>
-          val id = AnalysisRevision(base.id.number + 1)
-          (DraftContext.saved(id, base), id, None)
-        }
+        for
+          base <- d.latestAnalysis.toRight(NoAnalysis(c.name))
+          id   <- d.nextAnalysisId.left.map(refused(d, c))
+        yield (DraftContext.saved(id, base), id, None)
 
   /** The draft of `base` that describes `target` on `dataset`, or none when
     * that is exactly the base.
@@ -988,6 +1038,10 @@ object Reducer:
             .flatMap(saved =>
               Draft.against(id, saved, dataset, changes).bimap(refused(d, c), Some(_))
             )
+      case DraftOrigin.NewFamily(family, seedDataset, seedRecipe, studio) =>
+        Draft
+          .newFamily(id, family, seedDataset, seedRecipe, studio, changes, dataset)
+          .bimap(refused(d, c), Some(_))
       case DraftOrigin.Initial(seedDataset, seedRecipe, studio) =>
         Draft
           .initial(id, seedDataset, seedRecipe, studio, changes, dataset)

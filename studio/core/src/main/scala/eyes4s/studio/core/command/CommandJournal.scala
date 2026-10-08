@@ -141,7 +141,19 @@ object CommandJournal:
 
   private val refusal = CodecError.Unsupported("studio journal", "a preset needs version 2")
 
-  private def expressedByV7(line: JournalLine): Boolean = line match
+  private def expressedByV8(line: JournalLine): Boolean = line match
+    case JournalLine.Entry(_, JournalEntry.Apply(_: Command.StartFamily))      => false
+    case JournalLine.Entry(_, JournalEntry.Apply(Command.RestoreDraft(draft))) =>
+      !draft.isNewFamily
+    case _ => true
+  private def beforeV9(line: JournalLine): Either[CodecError, JournalLine] =
+    Either.cond(
+      expressedByV8(line),
+      line,
+      CodecError.Unsupported("studio journal", "new-family commands and drafts need version 9")
+    )
+
+  private def expressedByV7(line: JournalLine): Boolean = expressedByV8(line) && (line match
     case JournalLine.Entry(_, JournalEntry.Apply(c: Command.ImportSources)) =>
       c.inventory.forall(_.duration.isEmpty)
     case JournalLine.Entry(_, JournalEntry.Apply(c: Command.ReviseDataset)) =>
@@ -150,12 +162,14 @@ object CommandJournal:
       d.inventory.forall(_.duration.isEmpty)
     case JournalLine.Entry(_, JournalEntry.Apply(Command.RestoreRepairedDataset(d, _))) =>
       d.inventory.forall(_.duration.isEmpty)
-    case _ => true
+    case _ => true)
   private def beforeV8(line: JournalLine): Either[CodecError, JournalLine] =
-    Either.cond(
-      expressedByV7(line),
-      line,
-      CodecError.Unsupported("studio journal", "declared trial duration needs version 8")
+    beforeV9(line).flatMap(v =>
+      Either.cond(
+        expressedByV7(line),
+        v,
+        CodecError.Unsupported("studio journal", "declared trial duration needs version 8")
+      )
     )
 
   private def expressedByV6(line: JournalLine): Boolean = expressedByV7(line) && (line match
@@ -272,7 +286,10 @@ object CommandJournal:
           .next(expressedByV6, identity)(l => beforeV8(l).map(v => CanonicalJson(v.asJson)))(
             json => read(json).flatMap(beforeV8)
           )
-          .next(expressedByV7, identity)(l => Right(CanonicalJson(l.asJson)))(read)
+          .next(expressedByV7, identity)(l => beforeV9(l).map(v => CanonicalJson(v.asJson)))(
+            json => read(json).flatMap(beforeV9)
+          )
+          .next(expressedByV8, identity)(l => Right(CanonicalJson(l.asJson)))(read)
       }
 
   val codec: Either[CodecError, VersionedCodec[JournalLine]] = ladder.map(_.codec)
