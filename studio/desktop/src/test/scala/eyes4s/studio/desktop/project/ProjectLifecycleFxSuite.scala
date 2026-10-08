@@ -32,13 +32,11 @@ import eyes4s.studio.desktop.platform.{
 }
 import eyes4s.studio.desktop.harness.FxStage
 import eyes4s.studio.desktop.shell.ShellFxSuite
-import javafx.application.Platform
 import javafx.event.Event
 import javafx.scene.control.{Button, Menu, MenuItem}
 import javafx.stage.{Window, WindowEvent}
 import java.nio.file.{Files, Path}
 import java.util.concurrent.atomic.AtomicInteger
-import java.util.concurrent.{CountDownLatch, TimeUnit}
 import scala.concurrent.duration.*
 import scala.jdk.CollectionConverters.*
 
@@ -47,29 +45,6 @@ class ProjectLifecycleFxSuite extends ShellFxSuite:
   override val munitTimeout: Duration           = 180.seconds
   private def get[E, A](value: Either[E, A]): A = value.fold(e => fail(e.toString), identity)
   private def path(value: Path): HostPath       = get(HostPath.of(value.toString))
-
-  /** Replacement intentionally installs a new scene; wait for that scene's pulse,
-    * rather than the fixture's original, now detached, scene.
-    */
-  override protected def eventually(fx: FxStage, what: String)(cond: => Boolean): Unit =
-    val deadline = System.nanoTime() + 20.seconds.toNanos
-    while !runOnFx(cond) do
-      if System.nanoTime() > deadline then fail(s"timed out waiting for $what")
-      val pulsed = CountDownLatch(1)
-      runOnFx {
-        val scene = fx.stage.getScene
-        scene.getRoot.applyCss()
-        scene.getRoot.layout()
-        lazy val listener: Runnable = () =>
-          scene.removePostLayoutPulseListener(listener)
-          pulsed.countDown()
-        scene.addPostLayoutPulseListener(listener)
-        Platform.requestNextPulse()
-      }
-      assert(
-        pulsed.await(5, TimeUnit.SECONDS),
-        s"no current-window pulse while waiting for $what"
-      )
 
   private def invoke(host: ProjectLifecycleHost, id: CommandId): Unit = runOnFx {
     val window = host.window.getOrElse(fail("no current window"))
@@ -147,7 +122,9 @@ class ProjectLifecycleFxSuite extends ShellFxSuite:
         IO.blocking {
           val project          = directory.resolve("study.eyes")
           val (platform, host) = setup(fx, directory)
+          val sceneStyles      = runOnFx(fx.scene.getStylesheets.asScala.toVector)
           try
+            assert(runOnFx(fx.stage.getScene eq fx.scene))
             assertEquals(runOnFx(fx.stage.getTitle), "Untitled project")
             assert(runOnFx(host.window.exists(_.session.fixture.isEmpty)))
             platform.answer(Some(path(project))).unsafeRunSync()
@@ -157,6 +134,7 @@ class ProjectLifecycleFxSuite extends ShellFxSuite:
                 .exists(_.runtime.model.project.exists(_.value == "study"))
             )
             val first = runOnFx(host.window.get)
+            assert(runOnFx(fx.stage.getScene eq fx.scene))
             assert(Files.isRegularFile(project.resolve(ProjectStore.ManifestName)))
             assertEquals(runOnFx(fx.stage.getTitle), "study.eyes")
             runOnFx(
@@ -182,6 +160,9 @@ class ProjectLifecycleFxSuite extends ShellFxSuite:
               Theme.Dark
             )
             assertEquals(runOnFx(fx.stage.getTitle), "study.eyes")
+            assert(runOnFx(fx.stage.getScene eq fx.scene))
+            assertEquals(runOnFx(fx.scene.getStylesheets.asScala.toVector), sceneStyles)
+            assertEquals(runOnFx(host.window.get.themes.theme), Some(Theme.Dark))
           finally runOnFx(host.shutdown())
           assert(usable(project))
         }

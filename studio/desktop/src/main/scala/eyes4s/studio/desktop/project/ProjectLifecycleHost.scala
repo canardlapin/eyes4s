@@ -175,9 +175,11 @@ final class ProjectLifecycleHost(
   private def install(live: Live): Unit =
     val old = current
     current = Some(live)
-    val width  = Option(stage.getScene).map(_.getWidth).filter(_ > 0).getOrElse(1440.0)
-    val height = Option(stage.getScene).map(_.getHeight).filter(_ > 0).getOrElse(900.0)
-    stage.setScene(Scene(live.window.root, width, height))
+    // Keep native scene observers, size and styles across project replacement.
+    // Window-specific key handlers and theme sheets belong to the replaced root.
+    Option(stage.getScene) match
+      case Some(scene) => scene.setRoot(live.window.root)
+      case None        => stage.setScene(Scene(live.window.root, 1440.0, 900.0))
     live.window.bind(stage)
     replaced(live.window)
     old.foreach(dispose)
