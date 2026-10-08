@@ -112,7 +112,8 @@ final class StudioWindow private (
     val figures: FiguresHost,
     figuresListener: AppModel => Unit,
     val themes: ThemeHost,
-    themeListener: AppModel => Unit
+    themeListener: AppModel => Unit,
+    deactivate: () => Unit
 ):
   /** The window content, with the studio stylesheets. */
   def root: javafx.scene.Parent = shell.root
@@ -164,6 +165,7 @@ final class StudioWindow private (
     (javafx.stage.Stage, AppModel => Unit, javafx.beans.value.ChangeListener[java.lang.Boolean])
   ]                  = None
   private var closed = false
+  def isClosed: Boolean = closed
 
   private def unbind(): Unit =
     binding.foreach { (stage, titles, focus) =>
@@ -186,8 +188,9 @@ final class StudioWindow private (
       runtime.listen(titles)
       stage.focusedProperty.addListener(focus)
 
-  def close(): Unit =
+  def close(): Unit = if !closed then
     closed = true
+    deactivate()
     unbind()
     runtime.unlisten(summaryListener)
     runtime.unlisten(navigatorListener)
@@ -316,8 +319,8 @@ object StudioWindow:
           // The About box follows later theme changes too (S1.10).
           themed(scene)
           stage.show()
-        case PlatformDialog.OpenProject =>
-          System.err.println(s"$dialog is not available until S2.9.")
+        case PlatformDialog.NewProject | PlatformDialog.OpenProject | PlatformDialog.CloseProject =>
+          System.err.println(s"$dialog requires the application project lifecycle host.")
 
   /** Open a window on `initial`, served by the fake backend at `moment`.
     * On the JavaFX thread. Each execution-service event reaches the model as
@@ -343,7 +346,9 @@ object StudioWindow:
       defect: (String, Throwable) => Unit = (_, _) => (),
       // Where an export bundle goes: the platform's chooser unless given.
       chooseFolder: FigureInputs.ChooseFolder = FigureInputs.directoryChooser,
-      nativeSources: Option[eyes4s.studio.core.real.DatasetSources[cats.effect.IO]] = None
+      nativeSources: Option[eyes4s.studio.core.real.DatasetSources[cats.effect.IO]] = None,
+      lifecycle: Option[PlatformDialogs] = None,
+      hostPlatform: Option[eyes4s.studio.core.platform.Platform[cats.effect.IO]] = None
   )(using IORuntime): Either[WindowError, StudioWindow] =
     // The window starts in the document's theme and follows it (S1.10).
     val theme = initial.theme
@@ -367,7 +372,9 @@ object StudioWindow:
         panels,
         defect,
         chooseFolder,
-        nativeSources
+        nativeSources,
+        lifecycle,
+        hostPlatform
       )
     yield window
 
@@ -388,7 +395,9 @@ object StudioWindow:
       panels: PanelSources,
       defect: (String, Throwable) => Unit,
       chooseFolder: FigureInputs.ChooseFolder,
-      nativeSources: Option[eyes4s.studio.core.real.DatasetSources[cats.effect.IO]]
+      nativeSources: Option[eyes4s.studio.core.real.DatasetSources[cats.effect.IO]],
+      lifecycle: Option[PlatformDialogs],
+      hostPlatform: Option[eyes4s.studio.core.platform.Platform[cats.effect.IO]]
   )(using IORuntime): Either[WindowError, StudioWindow] =
     // Late-bound: the runtime, the host and the effects refer to each other.
     var runtime: Option[StudioRuntime] = None
@@ -429,17 +438,17 @@ object StudioWindow:
     var themed: Option[ThemeHost] = None
     // Late-bound too: a verification's answer goes to the admission ledger.
     var ledger: Option[AdmissionLedgerHost] = None
-    val effects                             = DesktopEffects(
+    val defaults = fxDialogs(
+      () => runtime.fold(initial)(_.model), messages, project, presets,
+      scene => themed.foreach(_.register(scene))
+    )
+    val routed: PlatformDialogs = (dialog, dispatch) => dialog match
+      case PlatformDialog.NewProject | PlatformDialog.OpenProject | PlatformDialog.CloseProject =>
+        lifecycle.getOrElse(defaults).open(dialog, dispatch)
+      case _ => defaults.open(dialog, dispatch)
+    val effects = DesktopEffects(
       session,
-      dialogs.getOrElse(
-        fxDialogs(
-          () => runtime.fold(initial)(_.model),
-          messages,
-          project,
-          presets,
-          scene => themed.foreach(_.register(scene))
-        )
-      ),
+      dialogs.getOrElse(routed),
       p =>
         host.reset(p)
         runtime.foreach(r => host.sync(r.model))
@@ -699,6 +708,7 @@ object StudioWindow:
         figures,
         figuresListener,
         themes,
-        themeListener
+        themeListener,
+        () => runtime = None
       )
     )

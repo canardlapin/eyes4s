@@ -244,6 +244,19 @@ object CommandRegistry:
     m => m.document.draft.map(_ => Intent.RequestDiscardDraft)
   )
 
+  val newProject: AppCommand = AppCommand(
+    CommandId.declared("file.new-project"), MessageId.CommandNewProject, MenuSection.File,
+    None, always(Intent.RequestNewProject)
+  )
+  val openProject: AppCommand = AppCommand(
+    CommandId.declared("file.open-project"), MessageId.CommandOpenProject, MenuSection.File,
+    None, always(Intent.RequestOpenProject)
+  )
+  val closeProject: AppCommand = AppCommand(
+    CommandId.declared("file.close-project"), MessageId.CommandCloseProject, MenuSection.File,
+    None, always(Intent.RequestCloseProject)
+  )
+
   val importSources: AppCommand = AppCommand(
     CommandId.declared("data.import"),
     MessageId.CommandImport,
@@ -336,6 +349,9 @@ object CommandRegistry:
     showRun,
     reviewDraft,
     discardDraft,
+    newProject,
+    openProject,
+    closeProject,
     importSources,
     renameProject,
     revealProject,

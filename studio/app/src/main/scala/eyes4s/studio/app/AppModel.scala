@@ -262,7 +262,7 @@ enum DockCommand derives CanEqual:
   case NextTab, PreviousTab
 
 enum PlatformDialog derives CanEqual:
-  case ImportSources, OpenProject
+  case ImportSources, NewProject, OpenProject, CloseProject
 
   /** Ask for the project's new name; the answer is [[Intent.RenameProject]]. */
   case RenameProject
@@ -494,6 +494,7 @@ enum Intent derives CanEqual:
 
   // --- Project and layouts (S1.4, S1.5a) -------------------------------------------------------
   /** The project chip's Rename…: the platform asks for the name. */
+  case RequestNewProject, RequestOpenProject, RequestCloseProject
   case RequestRename
   case RenameProject(name: ProjectName)
 
@@ -955,6 +956,9 @@ object AppModel:
     case Intent.Saved(at, upTo)    => (m.copy(save = m.save.saved(at, upTo)), none)
     case Intent.SaveFailed(reason) => (m.copy(notice = Some(Notice.SaveFailed(reason))), none)
 
+    case Intent.RequestNewProject => (m, Vector(AppEffect.OpenDialog(PlatformDialog.NewProject)))
+    case Intent.RequestOpenProject => (m, Vector(AppEffect.OpenDialog(PlatformDialog.OpenProject)))
+    case Intent.RequestCloseProject => (m, Vector(AppEffect.OpenDialog(PlatformDialog.CloseProject)))
     case Intent.RequestRename =>
       (m, Vector(AppEffect.OpenDialog(PlatformDialog.RenameProject)))
     case Intent.RenameProject(name) =>

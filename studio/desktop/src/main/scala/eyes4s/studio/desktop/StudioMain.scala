@@ -18,12 +18,11 @@ package eyes4s.studio.desktop
 
 import cats.effect.unsafe.implicits.global
 import eyes4s.studio.app.{AppModel, Intent, ProjectName, TrialItems}
-import eyes4s.studio.core.fixture.{MockStudy, StoryMoment, StoryMoments}
+import eyes4s.studio.core.fixture.{MockStudy, StoryMoments}
 import eyes4s.studio.core.preferences.UserPreferences
-import eyes4s.studio.desktop.platform.{AppearancePreferenceHost, PreferencesLocation}
+import eyes4s.studio.desktop.platform.{AppearancePreferenceHost, PreferencesLocation, DesktopPlatform}
+import eyes4s.studio.desktop.project.ProjectLifecycleHost
 import javafx.application.{Application, Platform}
-import javafx.scene.Scene
-import javafx.scene.control.Label
 import eyes4s.studio.desktop.explore.{NavigatorDisplays, SessionBackend}
 import eyes4s.studio.app.report.LogState
 import eyes4s.studio.desktop.report.{ErrorDialogView, ErrorReporter, StudioLog}
@@ -31,14 +30,14 @@ import eyes4s.studio.desktop.trial.StimulusSource
 import javafx.stage.Stage
 
 /** The JavaFX application: renders view-models and dispatches intents
-  * (tickets S1.4, S1.5a). Until the project lifecycle (S2.9) and the real
-  * lifecycle is completed, it opens the memory-study project at story moment
-  * t2 on the native backend. Behaviour belongs in studio-app, where it is
-  * tested headlessly.
+  * (tickets S1.4, S1.5a, S2.9a). Starts untitled on the native backend;
+  * File New/Open/Close are owned by the project lifecycle host. The story
+  * helpers below remain explicit fixtures for native acceptance tests.
   */
 final class StudioApplication extends Application:
 
   private var window: Option[StudioWindow] = None
+  private var lifecycle: Option[ProjectLifecycleHost] = None
 
   /** The user's preferences (S2.8), read before the first window opens. */
   private var preferences: UserPreferences = UserPreferences.defaults
@@ -73,37 +72,27 @@ final class StudioApplication extends Application:
         ErrorDialogView.show(vm, closed, Option(stage.getScene).map(_.getWindow)): Unit
     )
     reporter.install(): Unit
-    StudioMain.initialModel.flatMap(
-      StudioWindow
-        .open(
-          _,
-          StoryMoment.T2,
-          StudioMain.displays,
-          StudioMain.stimuli,
-          defect = reporter.jobFailed,
-          nativeSources = Some(StudioMain.sources)
-        )
-        .left
-        .map(_.message)
-    ) match
-      case Left(problem) =>
-        stage.setScene(Scene(Label(problem), 480, 240))
-      case Right(w) =>
+    val appearance = AppearancePreferenceHost(
+      PreferencesLocation.store.toOption, preferences,
+      m => System.err.println(PreferencesLocation.redact(m))
+    )
+    val platform = DesktopPlatform.create(
+      getHostServices.showDocument, () => Some(stage)
+    )
+    val projects = ProjectLifecycleHost(stage, platform,
+      replaced = w =>
         window = Some(w)
-        w.bind(stage)
-        // S2.8: follow the platform's theme if the user chose to; save the
-        // appearance whenever the user changes it.
-        AppearancePreferenceHost(
-          PreferencesLocation.store.toOption,
-          preferences,
-          m => System.err.println(PreferencesLocation.redact(m))
-        ).attach(w.runtime)
-        stage.setScene(Scene(w.root, 1440, 900))
-        stage.setOnCloseRequest(_ => w.captureLayouts())
+        appearance.attach(w.runtime),
+      defect = reporter.jobFailed
+    )
+    lifecycle = Some(projects)
+    projects.start()
     stage.show()
 
   override def stop(): Unit =
-    window.foreach(_.close())
+    lifecycle.foreach(_.shutdown())
+    lifecycle = None
+    window = None
     Platform.exit()
 
 /** Entry point for the desktop shell. Tests never launch it. */

@@ -73,6 +73,7 @@ enum MessageId derives CanEqual:
   case CommandUndo, CommandRedo, CommandUndoView, CommandRedoView, CommandNextPane
   case CommandMaximize, CommandCancelRun, CommandShowRun, CommandReviewDraft
   case CommandDiscardDraft, CommandImport
+  case CommandNewProject, CommandOpenProject, CommandCloseProject
   case CommandRenameProject, CommandRevealProject, CommandProjectInfo
   case CommandResetPerspective, MenuView, WindowEdited
   case MenuAppearance, AppearanceLight, AppearanceDark, AppearanceSystem
@@ -251,6 +252,9 @@ object Catalogue:
       case CommandShowRun      => "Show the finished run"
       case CommandReviewDraft  => "Review draft in Analysis"
       case CommandDiscardDraft => "Discard draft"
+      case CommandNewProject => "New project…"
+      case CommandOpenProject => "Open project…"
+      case CommandCloseProject => "Close project"
       case CommandImport       => "Import sources…"
 
       case CommandRenameProject    => "Rename…"
