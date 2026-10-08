@@ -5,6 +5,27 @@ Eyes Studio is the JavaFX desktop workbench built on eyes4s. It lives in the `st
 eyes4s may depend on it. Architecture: DESIGN_SPEC §13.
 This folder is the reference that the implementation has to reach.
 
+The desktop starts with an untitled native project. **File → New project** creates
+a project in an empty `.eyes` location; **Open project** opens a project directory.
+Cancelling a chooser, refusing an invalid project, or keeping the current project
+open leaves its window and resources intact. Open also offers the existing autosave
+recovery choice. **Close project** returns to the untitled state; closing the
+application uses the same admission for unsaved edits and active work. Named
+projects can Save and Close. Untitled edits can be kept open or closed without
+saving; Save As and Open Recent belong to the remaining lifecycle work.
+
+Import choosers, streamed source reads and per-user preset files use the injected
+platform services. Source previews decode UTF-8 strictly across chunk boundaries
+and record the exact bytes' digest. Import checks the bytes again before storage;
+a changed file must be read again. Existing preset filenames and the per-user
+directory remain compatible, and asynchronous saves preserve user action order.
+
+Data's **Repair…** restores the same revision when the exact original source bytes
+are supplied. Different bytes create a pending replacement revision, which must be
+admitted before analysis. Changed or missing inputs block preview and Save and Run.
+Image repair is stored with its digest and survives reopening; a missing image
+renders a hatch pattern while a blank display remains plain.
+
 An exported project snapshot without images withholds stimulus image bytes. The trial inventory
 still travels, including its `image_file` column, so stimulus file names remain visible. The bundle
 control and its README state this distinction before and after export.
