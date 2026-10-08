@@ -16,82 +16,24 @@
 
 package eyes4s.studio.desktop.platform
 
+import cats.effect.IO
+import cats.effect.unsafe.implicits.global
 import eyes4s.studio.core.importing.{ImportPreset, ImportPresets}
-import io.circe.parser.decode
-import io.circe.syntax.*
+import eyes4s.studio.core.platform.{FileSystem, HostPath, PlatformError}
 
-import java.nio.charset.StandardCharsets.UTF_8
-import java.nio.file.{Files, Path, Paths, StandardCopyOption}
-import scala.jdk.CollectionConverters.*
-import scala.util.control.NonFatal
+import java.nio.file.Path
 
-/** Import presets (ticket S5.2) as JSON files in one directory, one file per
-  * preset, named by the hex of its name's UTF-8 bytes so any name is a safe
-  * file name. A write goes to a staging file that is moved into place, so a
-  * reader never sees a partial preset.
-  */
+/** Compatibility facade for legacy JVM callers; persistence belongs to the platform seam. */
 final class FilePresetStore(val directory: Path):
+  def on(files: FileSystem[IO]): Either[PlatformError, PlatformPresetStore[IO]] =
+    HostPath.of(directory.toString).map(PlatformPresetStore(files, _, DesktopPlatform.fileName))
 
-  private def fileOf(preset: ImportPreset): Path =
-    val hex = preset.name.value.getBytes(UTF_8).map(b => f"${b & 0xff}%02x").mkString
-    directory.resolve(s"$hex.json")
-
-  /** Write `preset`; the error names the file and the reason. */
+  /** Non-UI compatibility methods; wizard loads and saves use the effectful store. */
   def save(preset: ImportPreset): Either[String, Unit] =
-    val target = fileOf(preset)
-    try
-      Files.createDirectories(directory)
-      val staged = Files.createTempFile(directory, ".staging-", ".json")
-      Files.writeString(staged, preset.asJson.spaces2, UTF_8)
-      Files.move(
-        staged,
-        target,
-        StandardCopyOption.ATOMIC_MOVE,
-        StandardCopyOption.REPLACE_EXISTING
-      )
-      Right(())
-    catch case NonFatal(e) => Left(s"$target: ${Option(e.getMessage).getOrElse(e.toString)}")
-
-  /** Every readable preset in file-name order, and a message for each file
-    * that is not one (never dropped silently).
-    */
+    on(JvmFileSystem).left.map(_.message).flatMap(_.save(preset).unsafeRunSync())
   def load: (ImportPresets, Vector[String]) =
-    if !Files.isDirectory(directory) then (ImportPresets.empty, Vector.empty)
-    else
-      val listed =
-        try
-          val stream = Files.list(directory)
-          try
-            Right(
-              stream.iterator.asScala.toVector
-                .filter(p =>
-                  val n = p.getFileName.toString
-                  n.endsWith(".json") && !n.startsWith(".")
-                )
-                .sortBy(_.getFileName.toString)
-            )
-          finally stream.close()
-        catch
-          case NonFatal(e) =>
-            Left(
-              s"$directory could not be listed: ${Option(e.getMessage).getOrElse(e.toString)}"
-            )
-      val files = listed.getOrElse(Vector.empty)
-      val read  = files.map(f =>
-        (try decode[ImportPreset](Files.readString(f, UTF_8)).left.map(_.getMessage)
-        catch case NonFatal(e) => Left(Option(e.getMessage).getOrElse(e.toString))).left
-          .map(m => s"$f is not an import preset: $m")
-      )
-      val (presets, problems) = read.foldLeft((ImportPresets.empty, Vector.empty[String])) {
-        case ((acc, errs), Right(p)) =>
-          acc.add(p).fold(e => (acc, errs :+ e.message), next => (next, errs))
-        case ((acc, errs), Left(e)) => (acc, errs :+ e)
-      }
-      (presets, listed.left.toOption.toVector ++ problems)
+    on(JvmFileSystem).fold(e => (ImportPresets.empty, Vector(e.message)), _.load.unsafeRunSync())
 
 object FilePresetStore:
-  /** The user's preset directory: `~/.eyes4s-studio/import-presets`. */
-  def userDefault: FilePresetStore =
-    FilePresetStore(
-      Paths.get(sys.props.getOrElse("user.home", ".")).resolve(".eyes4s-studio/import-presets")
-    )
+  /** Keep the existing per-user directory and readable legacy files. */
+  def userDefault: FilePresetStore = FilePresetStore(DesktopPlatform.importPresetDirectory)

@@ -16,6 +16,9 @@
 
 package eyes4s.studio.desktop.importing
 
+import cats.effect.IO
+import cats.effect.unsafe.implicits.global
+import eyes4s.studio.core.platform.HostPath
 import eyes4s.studio.app.importing.*
 import eyes4s.studio.app.tokens.{Colour, Theme, ThemedToken, Tokens}
 import eyes4s.studio.app.{Intent, StoryModels}
@@ -67,28 +70,26 @@ class ImportWizardFxSuite extends StudioFxSuite:
   val trials: Path    = GoldenTrials.golden.resolve("trials.csv")
 
   /** A platform with no dialogs: files are read by the test. */
-  final class Recorder(
+  class Recorder(
       store: Option[FilePresetStore] = None,
       refuseInputs: Option[String] = None,
       refusePresets: Option[String] = None
   ) extends ImportPlatform:
     val stored                                     = mutable.ArrayBuffer.empty[ImportPreset]
-    def chooseFile(role: SourceRole): Option[Path] = None
-    def storePreset(p: ImportPreset): Either[String, Unit] =
+    def chooseFile(role: SourceRole): IO[Either[String, Option[ChosenSource]]] = IO.pure(Right(None))
+    def storePreset(p: ImportPreset): IO[Either[String, Unit]] = IO.delay {
       refusePresets.fold {
         stored += p
         store.fold(Right(()))(_.save(p))
       }(Left(_))
+    }
     val imported = mutable.ArrayBuffer.empty[String]
-    def importInput(
-        source: Source,
-        path: Path,
-        done: Either[String, Unit] => Unit
-    ): Unit =
+    def importInput(source: Source, path: HostPath): IO[Either[String, Unit]] = IO.delay {
       refuseInputs.fold {
         imported += source.path.value
-        done(Right(()))
-      }(reason => done(Left(reason)))
+        Right(())
+      }(reason => Left(reason))
+    }
 
   final case class Mounted(
       host: ImportWizardHost,
@@ -128,7 +129,7 @@ class ImportWizardFxSuite extends StudioFxSuite:
       path: Path,
       name: Option[String] = None
   ): Unit =
-    runOnFx(m.host.read(role, path, name)).get(30, java.util.concurrent.TimeUnit.SECONDS)
+    runOnFx(m.host.read(role, ok(HostPath.of(path.toString)), name)).get(30, java.util.concurrent.TimeUnit.SECONDS)
     fx.awaitLayout()
 
   def drawn(l: Labeled): String = runOnFx {
@@ -154,6 +155,7 @@ class ImportWizardFxSuite extends StudioFxSuite:
     fx.awaitLayout()
 
   def dispatched(m: Mounted): Vector[Command] =
+    m.host.importCompleted.get(30, java.util.concurrent.TimeUnit.SECONDS)
     m.app.toVector.collect { case Intent.Dispatch(c) => c }
 
   fxStage.test("golden fixations.csv: the board's four columns, one 28 px row per column") {
@@ -262,6 +264,7 @@ class ImportWizardFxSuite extends StudioFxSuite:
           assertEquals(mapping, t2.dataset(DatasetRevision(3)).get.mapping)
           assertEquals(units.time, Some(TimeUnit.Milliseconds))
         case other => fail(s"expected one ImportSources, got $other")
+      m.host.importCompleted.get(30, java.util.concurrent.TimeUnit.SECONDS)
       assert(m.closed())
       assertEquals(runOnFx(m.view.kind.getText), "Dataset · re-admit")
       // Both files' bytes go into the project with the command.
@@ -288,6 +291,7 @@ class ImportWizardFxSuite extends StudioFxSuite:
       runOnFx(first.view.presetName.setText("Golden export"))
       fx.awaitLayout()
       fx.robot.click(first.view.presetSave)
+      first.host.presetWritten.get(30, java.util.concurrent.TimeUnit.SECONDS)
       assertEquals(first.platform.stored.map(_.name.value).toVector, Vector("Golden export"))
       assertEquals(drawn(first.view.status), "Saved preset Golden export.")
 
@@ -486,6 +490,7 @@ class ImportWizardFxSuite extends StudioFxSuite:
     fx =>
       assumeFullStage(fx)
       import cats.effect.IO
+import cats.effect.unsafe.implicits.global
       import cats.effect.unsafe.implicits.global
       import eyes4s.studio.core.bundle.{BundleSamples, LockOwner, SharingOptions}
       import eyes4s.studio.core.command.JournalEntry
@@ -523,7 +528,7 @@ class ImportWizardFxSuite extends StudioFxSuite:
             () => ()
           )
         )
-        runOnFx(host.read(SourceRole.Fixations, second))
+        runOnFx(host.read(SourceRole.Fixations, ok(HostPath.of(second.toString))))
           .get(30, java.util.concurrent.TimeUnit.SECONDS)
         runOnFx(host.dispatch(WizardIntent.DeclareTime(Some(TimeUnit.Milliseconds))))
         runOnFx(host.dispatch(WizardIntent.Commit))
@@ -559,7 +564,7 @@ class ImportWizardFxSuite extends StudioFxSuite:
             () => ()
           )
         )
-        runOnFx(host3.read(SourceRole.Fixations, third))
+        runOnFx(host3.read(SourceRole.Fixations, ok(HostPath.of(third.toString))))
           .get(30, java.util.concurrent.TimeUnit.SECONDS)
         Files.writeString(third, "changed", UTF_8)
         runOnFx(host3.dispatch(WizardIntent.DeclareTime(Some(TimeUnit.Milliseconds))))
@@ -742,4 +747,92 @@ class ImportWizardFxSuite extends StudioFxSuite:
       assertEquals(duration.column.value, "presentation_ms")
       assertEquals(duration.unit, TimeUnit.Milliseconds)
     finally TempDirs.remove(dir)
+  }
+
+
+  private def mountService(fx: FxStage, services: ImportPlatform): ImportWizardHost =
+    val host = runOnFx(ImportWizardHost(ImportWizard.newImport(t2, ImportPresets.empty), () => t2, _ => (), services, () => ()))
+    runOnFx(fx.scene.setRoot(StackPane(host.view.node)))
+    fx.awaitLayout()
+    host
+
+  fxStage.test("a reset cancels a held streamed source and releases its resource before a newer read") { fx =>
+    import cats.effect.{Deferred, Resource}
+    import eyes4s.studio.core.platform.{FileSystem, InMemoryPlatform}
+    import fs2.{Chunk, Stream}
+    val memory = InMemoryPlatform.create[IO]().unsafeRunSync()
+    val started = java.util.concurrent.CompletableFuture[Unit]()
+    val released = java.util.concurrent.CompletableFuture[Unit]()
+    val gate = Deferred[IO, Unit].unsafeRunSync()
+    val old = ok(HostPath.of("/opaque-old"))
+    val fresh = ok(HostPath.of("/opaque-new"))
+    val bytes = IArray.from("participant,phase,trial,x,y,onset,duration,ordinal,sample_count\nP01,Encoding,t1,1,1,0,1,1,1\n".getBytes(UTF_8))
+    memory.platform.files.write(fresh, bytes).unsafeRunSync(): Unit
+    val services = new Recorder():
+      override def files: FileSystem[IO] = new FileSystem[IO]:
+        def child(dir: HostPath, name: String) = memory.platform.files.child(dir, name)
+        def read(path: HostPath) = memory.platform.files.read(path)
+        def write(path: HostPath, value: IArray[Byte]) = memory.platform.files.write(path, value)
+        def list(path: HostPath) = memory.platform.files.list(path)
+        def project(path: HostPath) = memory.platform.files.project(path)
+        def readStream(path: HostPath, size: Int) =
+          if path == old then
+            val resource = Resource.make(IO { started.complete(()); () })(_ => IO { released.complete(()); () })
+            IO.pure(Right(Stream.resource(resource).flatMap(_ => Stream.eval(gate.get).drain ++ Stream.chunk(Chunk.array(bytes.asInstanceOf[Array[Byte]])))))
+          else memory.platform.files.readStream(path, size)
+    val host = mountService(fx, services)
+    try
+      val stale = runOnFx(host.read(SourceRole.Fixations, old, Some("old.csv")))
+      started.get(30, java.util.concurrent.TimeUnit.SECONDS)
+      runOnFx(host.reset(ImportWizard.newImport(t2, ImportPresets.empty)))
+      released.get(30, java.util.concurrent.TimeUnit.SECONDS)
+      assert(stale.isCancelled)
+      val current = runOnFx(host.read(SourceRole.Fixations, fresh, Some("actual-new.csv")))
+      current.get(30, java.util.concurrent.TimeUnit.SECONDS)
+      assertEquals(runOnFx(host.model.fixations.map(_._1.preview.file)), Some("actual-new.csv"))
+      gate.complete(()).unsafeRunSync(): Unit
+      fx.awaitLayout()
+      assertEquals(runOnFx(host.model.fixations.map(_._1.preview.file)), Some("actual-new.csv"))
+    finally runOnFx(host.dispose())
+  }
+
+  fxStage.test("late chooser answers cannot overwrite a reset or disposed wizard") { fx =>
+    val waiting = java.util.concurrent.CompletableFuture[Either[String, Option[ChosenSource]] => Unit]()
+    val services = new Recorder():
+      override def chooseFile(role: SourceRole): IO[Either[String, Option[ChosenSource]]] = IO.async_[Either[String, Option[ChosenSource]]] { done =>
+        waiting.complete(answer => done(Right(answer))): Unit
+      }
+    val host = mountService(fx, services)
+    runOnFx(host.dispatch(WizardIntent.RequestFile(SourceRole.Fixations)))
+    val answer = waiting.get(30, java.util.concurrent.TimeUnit.SECONDS)
+    runOnFx(host.reset(ImportWizard.newImport(t2, ImportPresets.empty)))
+    answer(Right(Some(ChosenSource(ok(HostPath.of("/late")), "late.csv"))))
+    fx.awaitLayout()
+    assertEquals(runOnFx(host.model.fixations), None)
+    runOnFx(host.dispose())
+    answer(Right(None))
+    fx.awaitLayout()
+    assertEquals(runOnFx(host.model.fixations), None)
+  }
+
+  fxStage.test("per-user preset loads outlive reset and retain newer locally saved names") { fx =>
+    val waiting = java.util.concurrent.CompletableFuture[(ImportPresets, Vector[String]) => Unit]()
+    val services = new Recorder():
+      override def loadPresets: IO[(ImportPresets, Vector[String])] = IO.async_ { done =>
+        waiting.complete(answer => done(Right(answer))): Unit
+      }
+    val host = mountService(fx, services)
+    val old = ok(ImportPreset.of(ok(eyes4s.studio.core.importing.PresetName.of("Earlier")), Vector.empty, None))
+    val newer = ok(ImportPreset.of(ok(eyes4s.studio.core.importing.PresetName.of("Newer")), Vector.empty, None))
+    val loaded = java.util.concurrent.CompletableFuture[Unit]()
+    runOnFx(host.loadPresets(_ => { loaded.complete(()); () }))
+    val answer = waiting.get(30, java.util.concurrent.TimeUnit.SECONDS)
+    runOnFx {
+      host.reset(ImportWizard.newImport(t2, ImportPresets.empty))
+      host.presetsLoaded(ok(ImportPresets.of(Vector(newer))))
+    }
+    answer((ok(ImportPresets.of(Vector(old))), Vector.empty))
+    loaded.get(30, java.util.concurrent.TimeUnit.SECONDS)
+    assertEquals(runOnFx(host.model.presets.names.map(_.value).toSet), Set("Earlier", "Newer"))
+    runOnFx(host.dispose())
   }

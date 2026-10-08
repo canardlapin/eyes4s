@@ -20,13 +20,15 @@ import eyes4s.studio.app.{AppModel, Intent}
 import eyes4s.studio.app.importing.*
 import eyes4s.studio.app.vm.FocusStop
 import eyes4s.studio.core.document.{DatasetRevisionSpec, Perspective, Source}
-import eyes4s.studio.core.importing.{ImportPresets, SniffedSource}
+import cats.effect.unsafe.implicits.global
+import eyes4s.studio.core.importing.{ImportPresets, StreamedSource}
+import fs2.{Chunk, Stream}
+import scala.concurrent.ExecutionContext
 import eyes4s.studio.desktop.runtime.ProjectPort
 import javafx.application.Platform
 import javafx.scene.layout.{Priority, VBox}
 
 import java.util.concurrent.CompletableFuture
-import scala.util.control.NonFatal
 
 /** The Data perspective's column-mapping pane on the desktop (Data.dc.html,
   * column mapping; see [[ColumnMappingPane]]): the import wizard's view, on
@@ -46,6 +48,8 @@ final class ColumnMappingPaneHost(
     project: Option[ProjectPort]
 ):
   private var shown: Option[DatasetRevisionSpec] = None
+  private var disposed = false
+  private var pendingReads: Vector[() => Unit] = Vector.empty
   private var opened                             = false
   private var generation                         = 0L
   private var remaining                          = 0
@@ -130,7 +134,7 @@ final class ColumnMappingPaneHost(
   /** Follow the model: reload when the selected revision changes. Nothing
     * is read until the Data perspective has been shown.
     */
-  def sync(m: AppModel): Unit =
+  def sync(m: AppModel): Unit = if !disposed then
     val started = shown.isDefined || m.perspective == Perspective.Data
     if started && ColumnMappingPane.mustReload(shown, m) then load(m, elsewhere = !committing)
 
@@ -174,6 +178,8 @@ final class ColumnMappingPaneHost(
           .filter(_ => baseline.exists(wizard.model.editedSince))
           .map(s => PaneNotice.EditsDropped(s.id))
     if !settled.isDone then settled.cancel(false): Unit
+    pendingReads.foreach(_())
+    pendingReads = Vector.empty
     generation += 1
     val current = generation
     notice = dropped
@@ -206,33 +212,24 @@ final class ColumnMappingPaneHost(
         port.readInput(
           source,
           result =>
-            // Sniff on a worker: the port may answer on the JavaFX thread.
-            val worker = Thread(
-              () =>
-                val intent =
-                  try
-                    result.fold(
-                      ColumnMappingPane.unreadable(source, _),
-                      bytes =>
-                        SniffedSource
-                          .read(source.role, source.path.value, bytes)
-                          .fold(
-                            WizardIntent.ReadFailed(source.path.value, _),
-                            WizardIntent.SourceRead(_)
-                          )
-                    )
-                  catch
-                    case NonFatal(e) =>
-                      ColumnMappingPane.unreadable(
-                        source,
-                        Option(e.getMessage).getOrElse(e.toString)
-                      )
-                Platform.runLater(() => deliver(current, intent, Some(port -> source)))
-              ,
-              s"eyes4s-remap-read-${source.path.value}"
-            )
-            worker.setDaemon(true)
-            worker.start()
+            result match
+              case Left(reason) => Platform.runLater(() => deliver(current, ColumnMappingPane.unreadable(source, reason), Some(port -> source)))
+              case Right(bytes) =>
+                val stream = Stream.chunk(Chunk.array(bytes.asInstanceOf[Array[Byte]])).covary[cats.effect.IO]
+                val (future, cancel) = StreamedSource.preview[cats.effect.IO](source.role, source.path.value, stream).unsafeToFutureCancelable()
+                val stop = () => { cancel(); () }
+                def remember(): Unit =
+                  if !disposed && current == generation then pendingReads :+= stop
+                  else stop()
+                if Platform.isFxApplicationThread then remember()
+                else Platform.runLater(() => remember())
+                future.onComplete { result =>
+                  val intent = result.toEither match
+                    case Right(Right(read)) => WizardIntent.SourceRead(read)
+                    case Right(Left(error)) => WizardIntent.ReadFailed(source.path.value, error)
+                    case Left(error) => ColumnMappingPane.unreadable(source, Option(error.getMessage).getOrElse(error.toString))
+                  Platform.runLater(() => deliver(current, intent, Some(port -> source)))
+                }(ExecutionContext.global)
         )
 
   private def deliver(
@@ -241,7 +238,7 @@ final class ColumnMappingPaneHost(
       from: Option[(ProjectPort, Source)]
   ): Unit =
     answered += 1
-    if current == generation then
+    if !disposed && current == generation then
       // The file can be read again from the project (a streaming key check,
       // S5.3); registered before the read reaches the wizard.
       (intent, from) match
@@ -254,6 +251,21 @@ final class ColumnMappingPaneHost(
         baseline = Some(wizard.model)
         render()
         settled.complete(()): Unit
+
+  /** The per-user preset loader is independent of the selected revision's generation. */
+  def loadPresets(): Unit = wizard.loadPresets { errors =>
+    if !disposed && errors.nonEmpty then
+      notice = Some(PaneNotice.PresetsUnreadable(errors))
+      render()
+  }
+
+  def dispose(): Unit = if !disposed then
+    disposed = true
+    generation += 1
+    pendingReads.foreach(_())
+    pendingReads = Vector.empty
+    if !settled.isDone then settled.cancel(false): Unit
+    wizard.dispose()
 
   private def render(): Unit =
     val vm = ColumnMappingPane.vm(shown, remaining > 0, notice)
