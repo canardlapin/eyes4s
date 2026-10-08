@@ -228,6 +228,14 @@ object CommandGen:
             seed = right(InitialRecipe.of(data, preset))
           yield Command.StartAnalysis(data.id, seed._1, seed._2)
         }
+    val families = pick(admitted).toVector.map { datasets =>
+      for
+        name   <- text
+        data   <- datasets
+        seed   <- recipe
+        fields <- studio
+      yield Command.StartFamily(name, data, seed, fields.copy(preset = Preset.Custom))
+    }
     val current = d.draftRecipe.orElse(d.latestAnalysis.map(_.recipe))
     val changes = current.toVector.map { now =>
       recipe
@@ -262,7 +270,7 @@ object CommandGen:
       }
     }
     val rebases = pick(d.datasets.map(_.id)).toVector.map(_.map(Command.RebaseDraft(_)))
-    initial ++ changes ++ composites ++ reverts ++ starts ++ restores ++ rebases ++ Vector(
+    initial ++ families ++ changes ++ composites ++ reverts ++ starts ++ restores ++ rebases ++ Vector(
       Gen.const(Command.DiscardDraft),
       Gen.option(studio).map(Command.SaveAndRun(_))
     )
