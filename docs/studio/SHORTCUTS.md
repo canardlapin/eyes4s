@@ -31,6 +31,9 @@ Verified by hand on macOS: pending. The hand check covers:
 
 | Menu | Command | Shortcut | Id |
 |---|---|---|---|
+| File | New project… | — | `file.new-project` |
+| File | Open project… | — | `file.open-project` |
+| File | Close project | — | `file.close-project` |
 | File | Import sources… | — | `data.import` |
 | File | Rename… | — | `project.rename` |
 | File | Reveal in Finder | — | `project.reveal` |

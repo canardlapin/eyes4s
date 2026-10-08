@@ -16,12 +16,22 @@
 
 package eyes4s.studio.desktop.shell
 
+import cats.effect.IO
+import cats.effect.unsafe.implicits.global
 import eyes4s.studio.app.appearance.Appearance
 import eyes4s.studio.app.tokens.{ThemedToken, Tokens, Wcag, WcagError}
 import eyes4s.studio.app.{AppModel, Intent, StoryModels}
+import eyes4s.studio.core.bundle.{
+  BundleSamples,
+  InMemoryProjectStore,
+  LockOwner,
+  SharingOptions
+}
 import eyes4s.studio.core.document.{Perspective, Theme}
 import eyes4s.studio.core.fixture.StoryMoment
+import eyes4s.studio.core.session.ProjectSession
 import eyes4s.studio.desktop.harness.StudioTheme
+import eyes4s.studio.desktop.runtime.{ProjectPort, SessionPort}
 import eyes4s.studio.desktop.{StudioWindow, ThemeHost}
 import javafx.scene.Node
 import javafx.scene.control.{Labeled, Menu, RadioMenuItem, TextInputControl}
@@ -41,6 +51,30 @@ import scala.jdk.CollectionConverters.*
   * hash of every value the window shows unchanged.
   */
 class ThemeFxSuite extends ShellFxSuite:
+
+  private val projects = scala.collection.mutable.ArrayBuffer.empty[ProjectSession[IO]]
+
+  override def afterEach(context: AfterEach): Unit =
+    try super.afterEach(context)
+    finally
+      projects.foreach(_.close.unsafeRunSync().fold(e => fail(e.message), identity))
+      projects.clear()
+
+  private def savedProject(model: AppModel): ProjectPort =
+    val store   = InMemoryProjectStore.create[IO].unsafeRunSync()
+    val owner   = LockOwner.of("ThemeFxSuite").fold(e => fail(e.message), identity)
+    val project = ProjectSession
+      .create(
+        store,
+        owner,
+        model.document,
+        SharingOptions.complete,
+        BundleSamples.inputsFor(model.document)
+      )
+      .unsafeRunSync()
+      .fold(e => fail(e.message), identity)
+    projects += project
+    SessionPort.start(project)
 
   private val moments: Vector[(Perspective, () => AppModel)] = Vector(
     Perspective.Data     -> (() => StoryModels.t1Data),
@@ -155,8 +189,14 @@ class ThemeFxSuite extends ShellFxSuite:
   for (p, model) <- moments do
     fxStage.test(s"${p.label}: Dark restyles the window and its dock; no shown value changes") {
       fx =>
-        val w =
-          boot(fx, model(), if p == Perspective.Data then StoryMoment.T1 else StoryMoment.T2)
+        val initial = model()
+        val w       = boot(
+          fx,
+          initial,
+          if p == Perspective.Data then StoryMoment.T1 else StoryMoment.T2,
+          project = Some(savedProject(initial)),
+          clock = () => Some(StoryModels.savedAt)
+        )
         assertEquals(runOnFx(w.runtime.model.perspective), p)
         fx.awaitLayout()
         val before = settled(fx, w)
