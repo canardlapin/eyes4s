@@ -16,7 +16,18 @@
 
 package eyes4s.studio.desktop.data
 
+import cats.effect.IO
+import cats.effect.unsafe.IORuntime
+import eyes4s.studio.core.importing.StreamedSource
 import eyes4s.codec.ByteDigest
+import eyes4s.studio.core.platform.{
+  FileKind,
+  FileRequest,
+  HostPath,
+  Platform as HostPlatform,
+  PlatformError,
+  PlatformFailure
+}
 import eyes4s.studio.app.data.*
 import eyes4s.studio.app.text.{SourcesText, SourcesTextId}
 import eyes4s.studio.app.vm.{A11yRole, FocusStop}
@@ -130,6 +141,111 @@ object AssetFiles:
             Left(AssetFileRefusal.Unreadable(name, Option(e.getMessage).getOrElse(e.toString)))
       _ <- Either.cond(decoded, (), AssetFileRefusal.NotAnImage(name))
     yield (file, bytes)
+
+  /** Repair through injected services. Only the host edge interprets its paths. */
+  def onPlatform(
+      platform: HostPlatform[IO],
+      fileName: HostPath => Either[PlatformError, String],
+      imageLimit: Long = MaxBytes,
+      sourceLimit: Long = MaxSourceBytes
+  )(using runtime: IORuntime): AssetFiles =
+    new AssetFiles:
+      private val ChunkBytes = 64 * 1024
+      private val imageKinds = FileKind
+        .of("Images", Vector("png", "jpg", "jpeg", "bmp", "gif"))
+        .map(Vector(_))
+
+      private def read(
+          path: HostPath,
+          name: String,
+          limit: Long
+      ): IO[Either[AssetFileRefusal, IArray[Byte]]] =
+        if limit < 1 || limit > MaxSourceBytes then
+          IO.pure(
+            Left(
+              AssetFileRefusal.Unreadable(
+                name,
+                s"Repair limit $limit must be between 1 and $MaxSourceBytes bytes."
+              )
+            )
+          )
+        else
+          platform.files
+            .readStream(path, ChunkBytes)
+            .flatMap {
+              case Left(error) =>
+                IO.pure(Left(AssetFileRefusal.Unreadable(name, error.message)))
+              case Right(stream) =>
+                StreamedSource
+                  .bytes[IO](name, stream, limit)
+                  .map(_.left.map(error => AssetFileRefusal.Unreadable(name, error.message)))
+            }
+            .handleError {
+              case PlatformFailure(error) =>
+                Left(AssetFileRefusal.Unreadable(name, error.message))
+              case scala.util.control.NonFatal(error) =>
+                Left(
+                  AssetFileRefusal
+                    .Unreadable(name, Option(error.getMessage).getOrElse(error.toString))
+                )
+            }
+
+      override def locateSource(
+          source: Source,
+          done: Either[String, Option[IArray[Byte]]] => Unit
+      ): Unit =
+        val name    = source.path.value.split('/').last
+        val request = FileRequest(s"Repair $name", Vector.empty, None)
+        platform.dialogs
+          .chooseOpen(request)
+          .flatMap {
+            case None       => IO.pure(Right(None): Either[String, Option[IArray[Byte]]])
+            case Some(path) =>
+              read(path, name, sourceLimit).map(_.left.map(_.message).map(Some(_)))
+          }
+          .unsafeRunAsync {
+            case Right(value) => done(value)
+            case Left(error)  =>
+              done(
+                Left(
+                  s"${source.path.value}: ${Option(error.getMessage).getOrElse(error.toString)}"
+                )
+              )
+          }
+
+      def locate(
+          file: AssetFile,
+          done: Either[AssetFileRefusal, Option[(AssetFile, IArray[Byte])]] => Unit
+      ): Unit =
+        IO.fromEither(imageKinds.left.map(PlatformFailure.apply))
+          .flatMap { kinds =>
+            platform.dialogs.chooseOpen(FileRequest(s"Locate ${file.value}", kinds, None))
+          }
+          .flatMap {
+            case None =>
+              IO.pure(Right(None): Either[AssetFileRefusal, Option[(AssetFile, IArray[Byte])]])
+            case Some(path) =>
+              fileName(path).left
+                .map(e => AssetFileRefusal.BadName(path.value, e.message))
+                .flatMap(name =>
+                  AssetFile.of(name).left.map(e => AssetFileRefusal.BadName(name, e.message))
+                ) match
+                case Left(error)   => IO.pure(Left(error))
+                case Right(chosen) =>
+                  read(path, chosen.value, imageLimit).map(
+                    _.flatMap(raw => check(chosen.value, raw, limit = imageLimit).map(Some(_)))
+                  )
+          }
+          .unsafeRunAsync {
+            case Right(value) => done(value)
+            case Left(error)  =>
+              done(
+                Left(
+                  AssetFileRefusal
+                    .Unreadable(file.value, Option(error.getMessage).getOrElse(error.toString))
+                )
+              )
+          }
 
   /** A file chooser titled for the missing file, over images. The file is
     * chosen on the JavaFX thread and read off it, a too large file refused
