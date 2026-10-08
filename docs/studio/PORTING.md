@@ -178,9 +178,10 @@ A port is accepted when all of the following hold. None of them may be weakened 
 
 ## Known gaps
 
-- The desktop does not yet construct `DesktopPlatform` in `StudioApplication`. Fonts still load
-  through `StudioFonts.loadAll`, and `AppEffect.RevealProject` is not performed. The services
-  exist and pass conformance. The wiring is tracked on S2.9.
+- The desktop constructs `DesktopPlatform` for project New/Open/Close, import choosers and
+  source streams, preset files, and source/asset repair. Fonts still load through
+  `StudioFonts.loadAll`, and `AppEffect.RevealProject` is not performed. Save As, Open Recent
+  and the remaining runtime/platform wiring stay on S2.9.
 - `RemoteStudyBackend` opens one exchange per request. A shell that holds one long-lived
   connection demultiplexes frames by id itself (rule 5 above). No such client ships yet.
 - There is no Scala.js shell yet. Porting a shell's own code is not part of S0.9.
