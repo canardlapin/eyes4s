@@ -537,12 +537,19 @@ object RecipeChange:
       InitialFixations(before.initialFixations, after.initialFixations)
     ).filterNot(_.isIdentity)
 
-/** A first working recipe has an explicit seed, without a synthetic saved
-  * base revision; bead q-initial-analysis-draft records the persistence rationale.
+/** Seeded working recipes have no synthetic saved base revision. The first
+  * recipe follows bead q-initial-analysis-draft; independent families follow
+  * bead q-analysis-family-identity.
   */
 enum DraftOrigin derives CanEqual, Codec.AsObject:
   case Existing(base: AnalysisRevision)
   case Initial(dataset: DatasetRevision, seedRecipe: Recipe, studio: StudioFields)
+  case NewFamily(
+      family: AnalysisFamily,
+      dataset: DatasetRevision,
+      seedRecipe: Recipe,
+      studio: StudioFields
+  )
 
 /** The checked effective working recipe, without a synthetic saved revision. */
 final case class DraftContext private[document] (
@@ -571,21 +578,32 @@ object DraftContext:
 
 /** The next working analysis: typed changes against a saved recipe or an
   * explicit initial seed. Existing drafts require an edit or rebase; an
-  * initial draft remains present when every edit returns to its seed.
+  * seeded draft remains present when every edit returns to its seed.
   * `dataset` overrides the seed dataset only when rebased, and every change
   * starts from its checked seed value.
   */
-final case class Draft private (
-    id: AnalysisRevision,
-    origin: DraftOrigin,
-    dataset: Option[DatasetRevision],
-    changes: Vector[RecipeChange]
+final class Draft private (
+    val id: AnalysisRevision,
+    val origin: DraftOrigin,
+    val dataset: Option[DatasetRevision],
+    val changes: Vector[RecipeChange]
 ) derives CanEqual:
+  private def fields                       = (id, origin, dataset, changes)
+  override def equals(other: Any): Boolean = other match
+    case that: Draft => fields == that.fields
+    case _           => false
+  override def hashCode(): Int            = fields.hashCode
+  override def toString: String           = s"Draft$fields"
   def savedBase: Option[AnalysisRevision] = origin match
-    case DraftOrigin.Existing(base) => Some(base)
-    case _: DraftOrigin.Initial     => None
-  def base: Option[AnalysisRevision]     = savedBase
-  def isInitial: Boolean                 = savedBase.isEmpty
+    case DraftOrigin.Existing(base)                       => Some(base)
+    case _: (DraftOrigin.Initial | DraftOrigin.NewFamily) => None
+  def base: Option[AnalysisRevision] = savedBase
+  def isInitial: Boolean             = origin match
+    case _: DraftOrigin.Initial => true
+    case _                      => false
+  def isNewFamily: Boolean = origin match
+    case _: DraftOrigin.NewFamily => true
+    case _                        => false
   def changeCount: Int                   = changes.size + (if dataset.isDefined then 1 else 0)
   def recipe(baseRecipe: Recipe): Recipe = changes.foldLeft(baseRecipe)((r, c) => c.applyTo(r))
   def render: String                     =
@@ -605,6 +623,19 @@ final case class Draft private (
         )
       }
     case DraftOrigin.Initial(seedDataset, seedRecipe, studio) =>
+      Some(
+        DraftContext(
+          id,
+          origin,
+          None,
+          seedDataset,
+          seedRecipe,
+          dataset.getOrElse(seedDataset),
+          recipe(seedRecipe),
+          studio
+        )
+      )
+    case DraftOrigin.NewFamily(_, seedDataset, seedRecipe, studio) =>
       Some(
         DraftContext(
           id,
@@ -671,6 +702,33 @@ object Draft:
       _ <- rebase.filter(_ == dataset).map(d => DocumentError.RebaseToSame(id, d)).toLeft(())
     yield new Draft(id, DraftOrigin.Initial(dataset, recipe, studio), rebase, checked)
 
+  /** A provisional independent family; its saved registry is created only by
+    * SaveAndRun. Returning every edit to the seed keeps this draft present
+    * (bead q-analysis-family-identity).
+    */
+  def newFamily(
+      id: AnalysisRevision,
+      family: AnalysisFamily,
+      dataset: DatasetRevision,
+      recipe: Recipe,
+      studio: StudioFields,
+      changes: Vector[RecipeChange] = Vector.empty,
+      rebase: Option[DatasetRevision] = None
+  ): Either[DocumentError, Draft] =
+    for
+      _ <- Either.cond(
+        id.number > 0,
+        (),
+        DocumentError.NotPositive("analysis revision", id.number.toDouble)
+      )
+      seed <- initial(id, dataset, recipe, studio, changes, rebase)
+    yield new Draft(
+      id,
+      DraftOrigin.NewFamily(family, dataset, recipe, studio),
+      seed.dataset,
+      seed.changes
+    )
+
   def against(
       id: AnalysisRevision,
       base: AnalysisRevisionSpec,
@@ -713,7 +771,7 @@ object Draft:
           "dataset" -> d.dataset.asJson,
           "changes" -> d.changes.asJson
         )
-      case _: DraftOrigin.Initial =>
+      case _: (DraftOrigin.Initial | DraftOrigin.NewFamily) =>
         io.circe.JsonObject(
           "id"      -> d.id.asJson,
           "origin"  -> d.origin.asJson,
@@ -726,8 +784,10 @@ object Draft:
       id      <- c.get[AnalysisRevision]("id")
       dataset <- c.get[Option[DatasetRevision]]("dataset")
       changes <- c.get[Vector[RecipeChange]]("changes")
-      origin  <- c.get[Option[DraftOrigin]]("origin")
-      draft   <- (origin match
+      origin  <-
+        if c.downField("origin").succeeded then c.get[DraftOrigin]("origin").map(Some(_))
+        else Right(None)
+      draft <- (origin match
         case Some(DraftOrigin.Initial(seedDataset, seed, studio)) =>
           if c.downField("base").succeeded then
             Left(
@@ -735,6 +795,15 @@ object Draft:
             )
           else
             initial(id, seedDataset, seed, studio, changes, dataset).left
+              .map(e => io.circe.DecodingFailure(e.message, c.history))
+        case Some(DraftOrigin.NewFamily(family, seedDataset, seed, studio)) =>
+          if c.downField("base").succeeded then
+            Left(
+              io.circe
+                .DecodingFailure("A new-family draft cannot name a saved base.", c.history)
+            )
+          else
+            newFamily(id, family, seedDataset, seed, studio, changes, dataset).left
               .map(e => io.circe.DecodingFailure(e.message, c.history))
         case Some(_: DraftOrigin.Existing) =>
           Left(

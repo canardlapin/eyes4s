@@ -136,12 +136,12 @@ class FamilyPersistenceSuite extends munit.FunSuite:
   ) {
     val ladder = get(StudioDocument.ladder)
     val raw    = value.asJson
-    ladder.versions.dropRight(1).foreach { version =>
+    ladder.versions.filter(_.version < 10).foreach { version =>
       assert(ladder.readAt(version, raw).isLeft, version.toString)
       assert(ladder.writeAt(version, value).isLeft, version.toString)
     }
     val science = get(ScienceContent.ladder)
-    science.versions.dropRight(1).foreach { version =>
+    science.versions.filter(_.version < 6).foreach { version =>
       assert(science.readAt(version, value.science.asJson).isLeft, version.toString)
       assert(science.writeAt(version, value.science).isLeft, version.toString)
     }

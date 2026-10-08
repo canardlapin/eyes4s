@@ -151,11 +151,22 @@ object ScienceContent:
           )
           .as[StudioDocument]
           .bimap(f => CodecError.Field("science", json, f.getMessage), _.science)
-      def beforeFamilies(s: ScienceContent): Either[CodecError, ScienceContent] =
+      def beforeNewFamily(s: ScienceContent): Either[CodecError, ScienceContent] =
         Either.cond(
-          s.analysisFamilies.isEmpty,
+          !s.draft.exists(_.isNewFamily),
           s,
-          CodecError.Unsupported("studio science", "explicit analysis families need version 6")
+          CodecError.Unsupported("studio science", "new-family drafts need version 7")
+        )
+      def beforeFamilies(s: ScienceContent): Either[CodecError, ScienceContent] =
+        beforeNewFamily(s).flatMap(v =>
+          Either.cond(
+            s.analysisFamilies.isEmpty,
+            v,
+            CodecError.Unsupported(
+              "studio science",
+              "explicit analysis families need version 6"
+            )
+          )
         )
       def beforeDuration(s: ScienceContent): Either[CodecError, ScienceContent] =
         beforeFamilies(s).flatMap(v =>
@@ -198,7 +209,7 @@ object ScienceContent:
         )
         .next(
           s =>
-            s.analysisFamilies.isEmpty && s.datasets.forall(
+            !s.draft.exists(_.isNewFamily) && s.analysisFamilies.isEmpty && s.datasets.forall(
               _.inventory.forall(_.duration.isEmpty)
             ) && s.figures.forall(
               _.methods.isEmpty
@@ -208,7 +219,7 @@ object ScienceContent:
         )(s => beforeInitial(s).flatMap(write))(json => read(json).flatMap(beforeInitial))
         .next(
           s =>
-            s.analysisFamilies.isEmpty && s.datasets.forall(
+            !s.draft.exists(_.isNewFamily) && s.analysisFamilies.isEmpty && s.datasets.forall(
               _.inventory.forall(_.duration.isEmpty)
             ) && s.figures.forall(
               _.methods.isEmpty
@@ -217,7 +228,7 @@ object ScienceContent:
         )(s => beforeMethods(s).flatMap(write))(json => read(json).flatMap(beforeMethods))
         .next(
           s =>
-            s.analysisFamilies.isEmpty && s.datasets.forall(
+            !s.draft.exists(_.isNewFamily) && s.analysisFamilies.isEmpty && s.datasets.forall(
               _.inventory.forall(_.duration.isEmpty)
             ) && s.figures
               .forall(_.methods.isEmpty),
@@ -225,11 +236,14 @@ object ScienceContent:
         )(s => beforeDuration(s).flatMap(write))(json => read(json).flatMap(beforeDuration))
         .next(
           s =>
-            s.analysisFamilies.isEmpty && s.datasets
+            !s.draft.exists(_.isNewFamily) && s.analysisFamilies.isEmpty && s.datasets
               .forall(_.inventory.forall(_.duration.isEmpty)),
           identity
         )(s => beforeFamilies(s).flatMap(write))(json => read(json).flatMap(beforeFamilies))
-        .next(_.analysisFamilies.isEmpty, identity)(write)(read)
+        .next(s => !s.draft.exists(_.isNewFamily) && s.analysisFamilies.isEmpty, identity)(s =>
+          beforeNewFamily(s).flatMap(write)
+        )(json => read(json).flatMap(beforeNewFamily))
+        .next(s => !s.draft.exists(_.isNewFamily), identity)(write)(read)
     }
 
   val codec: Either[CodecError, VersionedCodec[ScienceContent]] = ladder.map(_.codec)
@@ -277,18 +291,40 @@ final class StudioDocument private (
     * Legacy projects retain their implicit family (bead q-analysis-family-identity).
     */
   def familyOf(revision: AnalysisRevision): Option[AnalysisFamilyId] =
-    analysisFamilies match
-      case None           => LegacyAnalysisFamily.familyOf(this, revision)
-      case Some(registry) =>
-        registry
-          .familyOf(revision)
-          .orElse(
-            draft
-              .filter(_.id == revision)
-              .flatMap(_.origin match
-                case DraftOrigin.Existing(base)   => registry.familyOf(base)
-                case DraftOrigin.Initial(_, _, _) => None)
-          )
+    draft
+      .filter(_.id == revision)
+      .flatMap(_.origin match
+        case DraftOrigin.NewFamily(family, _, _, _) => Some(family.id)
+        case _                                      => None)
+      .orElse(analysisFamilies match
+        case None           => LegacyAnalysisFamily.familyOf(this, revision)
+        case Some(registry) =>
+          registry
+            .familyOf(revision)
+            .orElse(
+              draft
+                .filter(_.id == revision)
+                .flatMap(_.origin match
+                  case DraftOrigin.Existing(base)             => registry.familyOf(base)
+                  case DraftOrigin.Initial(_, _, _)           => None
+                  case DraftOrigin.NewFamily(family, _, _, _) => Some(family.id))
+            ))
+
+  /** Allocators inspect saved facts only, so discarding a provisional family
+    * restores both counters without consuming a saved identity.
+    */
+  def nextFamilyId: Either[DocumentError, AnalysisFamilyId] =
+    analysisFamilies
+      .fold(
+        AnalysisFamilyId.of(if analyses.isEmpty then 1 else 2)
+      )(_.nextId)
+      .leftMap(DocumentError.FamilyOwnership(_))
+
+  def nextAnalysisId: Either[DocumentError, AnalysisRevision] = latestAnalysis match
+    case Some(last) if last.id.number == Int.MaxValue =>
+      Left(DocumentError.ExhaustedAnalysisRevision(last.id))
+    case Some(last) => Right(AnalysisRevision(last.id.number + 1))
+    case None       => Right(AnalysisRevision(1))
 
   def sameFamily(first: AnalysisRevision, second: AnalysisRevision): Boolean =
     familyOf(first).exists(family => familyOf(second).contains(family))
@@ -401,6 +437,37 @@ object StudioDocument:
                 ) *>
                   d.check(base)
               }
+          case DraftOrigin.NewFamily(family, seedDataset, _, _) =>
+            for
+              revision <- analysisIds.lastOption match
+                case Some(last) if last.number == Int.MaxValue =>
+                  Left(DocumentError.ExhaustedAnalysisRevision(last))
+                case Some(last) => Right(AnalysisRevision(last.number + 1))
+                case None       => Right(AnalysisRevision(1))
+              _ <- Either.cond(
+                d.id == revision,
+                (),
+                DocumentError.FamilyDraftRevision(d.id, revision)
+              )
+              nextFamily <- analysisFamilies
+                .fold(
+                  AnalysisFamilyId.of(if analyses.isEmpty then 1 else 2)
+                )(_.nextId)
+                .leftMap(DocumentError.FamilyOwnership(_))
+              _ <- Either.cond(
+                family.id == nextFamily,
+                (),
+                DocumentError.FamilyDraftIdentity(family.id, nextFamily)
+              )
+              data <- datasets
+                .find(_.id == seedDataset)
+                .toRight(DocumentError.UnknownDataset(referrer, seedDataset))
+              _ <- Either.cond(
+                data.decision.isAdmitted,
+                (),
+                DocumentError.RebaseNotAdmitted(d.id, seedDataset)
+              )
+            yield ()
           case DraftOrigin.Initial(seedDataset, _, _) =>
             for
               _ <- Either.cond(
@@ -550,14 +617,24 @@ object StudioDocument:
   private def expressedByV4(document: StudioDocument): Boolean =
     expressedByV5(document) && document.analyses.forall(a => presetBeforeV5(a.studio.preset))
 
-  /** Version 6 first records explicit ordered reporting contrast operands. */
-  private def expressedByV9(document: StudioDocument): Boolean =
-    document.analysisFamilies.isEmpty
-  private def beforeV10(document: StudioDocument): Either[CodecError, StudioDocument] =
+  /** Version 11 first records provisional independent-family drafts. */
+  private def expressedByV10(document: StudioDocument): Boolean =
+    !document.draft.exists(_.isNewFamily)
+  private def beforeV11(document: StudioDocument): Either[CodecError, StudioDocument] =
     Either.cond(
-      expressedByV9(document),
+      expressedByV10(document),
       document,
-      CodecError.Unsupported("studio document", "explicit analysis families need version 10")
+      CodecError.Unsupported("studio document", "new-family drafts need version 11")
+    )
+  private def expressedByV9(document: StudioDocument): Boolean =
+    expressedByV10(document) && document.analysisFamilies.isEmpty
+  private def beforeV10(document: StudioDocument): Either[CodecError, StudioDocument] =
+    beforeV11(document).flatMap(v =>
+      Either.cond(
+        expressedByV9(document),
+        v,
+        CodecError.Unsupported("studio document", "explicit analysis families need version 10")
+      )
     )
   private def expressedByV8(document: StudioDocument): Boolean =
     expressedByV9(document) && document.datasets.forall(_.inventory.forall(_.duration.isEmpty))
@@ -750,7 +827,10 @@ object StudioDocument:
         .next(expressedByV8, identity)(d => beforeV10(d).map(v => CanonicalJson(v.asJson)))(
           json => read(json).flatMap(beforeV10)
         )
-        .next(expressedByV9, identity)(d => Right(CanonicalJson(d.asJson)))(read)
+        .next(expressedByV9, identity)(d => beforeV11(d).map(v => CanonicalJson(v.asJson)))(
+          json => read(json).flatMap(beforeV11)
+        )
+        .next(expressedByV10, identity)(d => Right(CanonicalJson(d.asJson)))(read)
     }
 
   /** The versioned, canonical document codec. */
