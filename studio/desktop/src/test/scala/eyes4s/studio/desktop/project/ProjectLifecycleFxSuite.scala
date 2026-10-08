@@ -257,3 +257,20 @@ class ProjectLifecycleFxSuite extends ShellFxSuite:
       finally runOnFx(host.shutdown())
     }}.unsafeRunSync()
   }
+
+  fxStage.test("untitled persistence reports missing location and Import directs native project creation") { fx =>
+    TempDirs.resource("eyes4s-lifecycle-location-").use { directory => IO.blocking {
+      val (_, host) = setup(fx, directory)
+      try
+        val window = runOnFx(host.window.get)
+        runOnFx(window.runtime.dispatch(Intent.RenameProject(get(ProjectName.of("unsaved")))))
+        eventually(fx, "no save location explained") {
+          eyes4s.studio.app.vm.Shell.project(window.runtime.model).notice.exists(_.text.contains("no project save location"))
+        }
+        invoke(host, CommandRegistry.importSources.id)
+        press(fx, "OK")
+        assertEquals(runOnFx(window.runtime.model.document.datasets), Vector.empty)
+        assert(!runOnFx(window.isClosed))
+      finally runOnFx(host.shutdown())
+    }}.unsafeRunSync()
+  }

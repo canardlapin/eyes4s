@@ -289,6 +289,12 @@ object StudioWindow:
           a.setTitle(messages(MessageId.CommandProjectInfo))
           a.setHeaderText(eyes4s.studio.app.vm.Menus.windowTitle(model(), messages))
           a.show()
+        case PlatformDialog.ImportSources if project.isEmpty =>
+          val alert = Alert(Alert.AlertType.INFORMATION)
+          alert.setTitle("Import sources")
+          alert.setHeaderText("Create a project first")
+          alert.setContentText("Use File New project… to choose a save location, then import your sources.")
+          alert.show()
         case PlatformDialog.ImportSources =>
           // The import wizard (S5.2): its commands come back as intents.
           val theme = model().theme match
