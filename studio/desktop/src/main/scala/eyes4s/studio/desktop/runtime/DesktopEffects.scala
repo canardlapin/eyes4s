@@ -143,7 +143,11 @@ final class DesktopEffects(
     case e @ AppEffect.Persist(mark) =>
       project.fold {
         report(EffectProblem.NotWired(e, "S2.9"))
-        dispatch(Intent.SaveFailed("This window has no project save location. Use File New project… before importing or saving work."))
+        dispatch(
+          Intent.SaveFailed(
+            "This window has no project save location. Use File New project… before importing or saving work."
+          )
+        )
       } {
         _.save { outcome =>
           ui { () =>

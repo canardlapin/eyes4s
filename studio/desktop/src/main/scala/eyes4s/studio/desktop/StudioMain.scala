@@ -20,7 +20,11 @@ import cats.effect.unsafe.implicits.global
 import eyes4s.studio.app.{AppModel, Intent, ProjectName, TrialItems}
 import eyes4s.studio.core.fixture.{MockStudy, StoryMoments}
 import eyes4s.studio.core.preferences.UserPreferences
-import eyes4s.studio.desktop.platform.{AppearancePreferenceHost, PreferencesLocation, DesktopPlatform}
+import eyes4s.studio.desktop.platform.{
+  AppearancePreferenceHost,
+  PreferencesLocation,
+  DesktopPlatform
+}
 import eyes4s.studio.desktop.project.ProjectLifecycleHost
 import javafx.application.{Application, Platform}
 import eyes4s.studio.desktop.explore.{NavigatorDisplays, SessionBackend}
@@ -36,7 +40,7 @@ import javafx.stage.Stage
   */
 final class StudioApplication extends Application:
 
-  private var window: Option[StudioWindow] = None
+  private var window: Option[StudioWindow]            = None
   private var lifecycle: Option[ProjectLifecycleHost] = None
 
   /** The user's preferences (S2.8), read before the first window opens. */
@@ -73,16 +77,21 @@ final class StudioApplication extends Application:
     )
     reporter.install(): Unit
     val appearance = AppearancePreferenceHost(
-      PreferencesLocation.store.toOption, preferences,
+      PreferencesLocation.store.toOption,
+      preferences,
       m => System.err.println(PreferencesLocation.redact(m))
     )
     val platform = DesktopPlatform.create(
-      getHostServices.showDocument, () => Some(stage)
+      getHostServices.showDocument,
+      () => Some(stage)
     )
-    val projects = ProjectLifecycleHost(stage, platform,
+    val projects = ProjectLifecycleHost(
+      stage,
+      platform,
       replaced = w =>
         window = Some(w)
-        appearance.attach(w.runtime),
+        appearance.attach(w.runtime)
+      ,
       defect = reporter.jobFailed
     )
     lifecycle = Some(projects)

@@ -245,16 +245,25 @@ object CommandRegistry:
   )
 
   val newProject: AppCommand = AppCommand(
-    CommandId.declared("file.new-project"), MessageId.CommandNewProject, MenuSection.File,
-    None, always(Intent.RequestNewProject)
+    CommandId.declared("file.new-project"),
+    MessageId.CommandNewProject,
+    MenuSection.File,
+    None,
+    always(Intent.RequestNewProject)
   )
   val openProject: AppCommand = AppCommand(
-    CommandId.declared("file.open-project"), MessageId.CommandOpenProject, MenuSection.File,
-    None, always(Intent.RequestOpenProject)
+    CommandId.declared("file.open-project"),
+    MessageId.CommandOpenProject,
+    MenuSection.File,
+    None,
+    always(Intent.RequestOpenProject)
   )
   val closeProject: AppCommand = AppCommand(
-    CommandId.declared("file.close-project"), MessageId.CommandCloseProject, MenuSection.File,
-    None, always(Intent.RequestCloseProject)
+    CommandId.declared("file.close-project"),
+    MessageId.CommandCloseProject,
+    MenuSection.File,
+    None,
+    always(Intent.RequestCloseProject)
   )
 
   val importSources: AppCommand = AppCommand(

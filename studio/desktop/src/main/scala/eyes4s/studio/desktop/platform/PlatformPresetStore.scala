@@ -38,29 +38,49 @@ final class PlatformPresetStore[F[_]: Sync](
   def save(preset: ImportPreset): F[Either[String, Unit]] =
     fileOf(preset).fold(
       e => Sync[F].pure(Left(e.message)),
-      target => files.write(target, IArray.from(preset.asJson.spaces2.getBytes(UTF_8)))
-        .map(_.left.map(_.message))
+      target =>
+        files
+          .write(target, IArray.from(preset.asJson.spaces2.getBytes(UTF_8)))
+          .map(_.left.map(_.message))
     )
 
   /** Failed entries remain named errors; missing first-use directories are empty. */
   def load: F[(ImportPresets, Vector[String])] =
     files.list(directory).flatMap {
       case Left(_: PlatformError.Missing) => Sync[F].pure((ImportPresets.empty, Vector.empty))
-      case Left(e) => Sync[F].pure((ImportPresets.empty, Vector(e.message)))
+      case Left(e)       => Sync[F].pure((ImportPresets.empty, Vector(e.message)))
       case Right(listed) =>
-        listed.sortBy(_.value).traverse { path =>
-          val read: F[Option[Either[String, ImportPreset]]] = displayName(path) match
-            case Left(e) => Sync[F].pure(Some(Left(e.message)))
-            case Right(name) if !name.endsWith(".json") || name.startsWith(".") =>
-              Sync[F].pure(None)
-            case Right(_) => files.read(path).map(_.left.map(_.message).flatMap { bytes =>
-              SniffedSource.decodeUtf8(path.value, bytes).left.map(_.message)
-                .flatMap(text => decode[ImportPreset](text.toString).left.map(_.getMessage))
-            }.left.map(e => s"${path.value} is not an import preset: $e")).map(Some(_))
-          read
-        }.map(_.flatten.foldLeft((ImportPresets.empty, Vector.empty[String])) {
-          case ((presets, errors), Right(p)) =>
-            presets.add(p).fold(e => (presets, errors :+ e.message), next => (next, errors))
-          case ((presets, errors), Left(e)) => (presets, errors :+ e)
-        })
+        listed
+          .sortBy(_.value)
+          .traverse { path =>
+            val read: F[Option[Either[String, ImportPreset]]] = displayName(path) match
+              case Left(e) => Sync[F].pure(Some(Left(e.message)))
+              case Right(name) if !name.endsWith(".json") || name.startsWith(".") =>
+                Sync[F].pure(None)
+              case Right(_) =>
+                files
+                  .read(path)
+                  .map(
+                    _.left
+                      .map(_.message)
+                      .flatMap { bytes =>
+                        SniffedSource
+                          .decodeUtf8(path.value, bytes)
+                          .left
+                          .map(_.message)
+                          .flatMap(text =>
+                            decode[ImportPreset](text.toString).left.map(_.getMessage)
+                          )
+                      }
+                      .left
+                      .map(e => s"${path.value} is not an import preset: $e")
+                  )
+                  .map(Some(_))
+            read
+          }
+          .map(_.flatten.foldLeft((ImportPresets.empty, Vector.empty[String])) {
+            case ((presets, errors), Right(p)) =>
+              presets.add(p).fold(e => (presets, errors :+ e.message), next => (next, errors))
+            case ((presets, errors), Left(e)) => (presets, errors :+ e)
+          })
     }

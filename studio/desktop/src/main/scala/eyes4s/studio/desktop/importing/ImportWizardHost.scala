@@ -24,7 +24,13 @@ import eyes4s.studio.app.importing.*
 import eyes4s.codec.ByteDigest
 import eyes4s.studio.core.command.Command
 import eyes4s.studio.core.document.{Source, SourceRole, StudioDocument}
-import eyes4s.studio.core.importing.{ImportPreset, ImportPresets, KeyGap, SourceReadError, StreamedSource}
+import eyes4s.studio.core.importing.{
+  ImportPreset,
+  ImportPresets,
+  KeyGap,
+  SourceReadError,
+  StreamedSource
+}
 import eyes4s.studio.core.platform.{FileSystem, HostPath, Platform as HostPlatform}
 import eyes4s.studio.desktop.platform.{DesktopPlatform, FilePresetStore, JvmFileSystem}
 import eyes4s.studio.desktop.runtime.ProjectPort
@@ -37,11 +43,13 @@ import java.util.concurrent.CompletableFuture
 import scala.concurrent.ExecutionContext
 
 trait ImportPlatform:
-  def files: FileSystem[IO] = JvmFileSystem
-  def sourceName(path: HostPath): Either[String, String] = DesktopPlatform.fileName(path).left.map(_.message)
+  def files: FileSystem[IO]                              = JvmFileSystem
+  def sourceName(path: HostPath): Either[String, String] =
+    DesktopPlatform.fileName(path).left.map(_.message)
   def chooseFile(role: SourceRole): IO[Either[String, Option[ChosenSource]]]
   def storePreset(preset: ImportPreset): IO[Either[String, Unit]]
-  def loadPresets: IO[(ImportPresets, Vector[String])] = IO.pure((ImportPresets.empty, Vector.empty))
+  def loadPresets: IO[(ImportPresets, Vector[String])] =
+    IO.pure((ImportPresets.empty, Vector.empty))
   def importInput(source: Source, path: HostPath): IO[Either[String, Unit]]
 
 enum ByteSource:
@@ -49,13 +57,22 @@ enum ByteSource:
   case Project(read: (Either[String, IArray[Byte]] => Unit) => Unit)
 
   def stream(files: FileSystem[IO]): IO[Either[String, Stream[IO, Byte]]] = this match
-    case File(path) => files.readStream(path, StreamedSource.ChunkBytes).map(_.left.map(_.message))
-    case Project(read) => IO.async_[Either[String, Stream[IO, Byte]]](done =>
-      read(answer => done(Right(answer.map(bytes => Stream.chunk(Chunk.array(bytes.asInstanceOf[Array[Byte]]))))))
-    )
+    case File(path) =>
+      files.readStream(path, StreamedSource.ChunkBytes).map(_.left.map(_.message))
+    case Project(read) =>
+      IO.async_[Either[String, Stream[IO, Byte]]](done =>
+        read(answer =>
+          done(
+            Right(
+              answer.map(bytes => Stream.chunk(Chunk.array(bytes.asInstanceOf[Array[Byte]])))
+            )
+          )
+        )
+      )
 
 object ByteSource:
-  def project(port: ProjectPort, source: Source): ByteSource = Project(done => port.readInput(source, done))
+  def project(port: ProjectPort, source: Source): ByteSource =
+    Project(done => port.readInput(source, done))
 
 /** One asynchronous wizard controller. Every result returns to FX and is fenced by its request. */
 final class ImportWizardHost(
@@ -65,28 +82,29 @@ final class ImportWizardHost(
     platform: ImportPlatform,
     close: () => Unit
 ):
-  private var state = initial
-  private var readFrom: Map[ByteDigest, ByteSource] = Map.empty
-  private var epoch = 0L
-  private var serial = 0L
-  private var requests: Map[SourceRole, Long] = Map.empty
+  private var state                                   = initial
+  private var readFrom: Map[ByteDigest, ByteSource]   = Map.empty
+  private var epoch                                   = 0L
+  private var serial                                  = 0L
+  private var requests: Map[SourceRole, Long]         = Map.empty
   private var tasks: Map[Long, (() => Unit, Boolean)] = Map.empty
-  private var roleStops: Map[SourceRole, () => Unit] = Map.empty
-  private var presetLoad = 0L
-  private var lastImport = CompletableFuture.completedFuture(())
-  private var lastPreset = CompletableFuture.completedFuture(())
+  private var roleStops: Map[SourceRole, () => Unit]  = Map.empty
+  private var presetLoad                              = 0L
+  private var lastImport                              = CompletableFuture.completedFuture(())
+  private var lastPreset                              = CompletableFuture.completedFuture(())
   private var reads: Map[SourceRole, CompletableFuture[Unit]] = Map.empty
-  private var disposed = false
-  private var storing = false
+  private var disposed                                        = false
+  private var storing                                         = false
   @volatile private var lastCheck = CompletableFuture.completedFuture(())
 
   val view: ImportWizardView = ImportWizardView(dispatch)
   render()
-  def model: ImportWizard = state
-  def keyChecked: CompletableFuture[Unit] = lastCheck
-  def importCompleted: CompletableFuture[Unit] = lastImport
-  def presetWritten: CompletableFuture[Unit] = lastPreset
-  def remember(digest: ByteDigest, source: ByteSource): Unit = if !disposed then readFrom += digest -> source
+  def model: ImportWizard                                    = state
+  def keyChecked: CompletableFuture[Unit]                    = lastCheck
+  def importCompleted: CompletableFuture[Unit]               = lastImport
+  def presetWritten: CompletableFuture[Unit]                 = lastPreset
+  def remember(digest: ByteDigest, source: ByteSource): Unit =
+    if !disposed then readFrom += digest -> source
   def render(): Unit = if !disposed then view.render(ImportWizardVM.of(state, document()))
 
   private def invalidate(): Unit =
@@ -118,28 +136,41 @@ final class ImportWizardHost(
   def loadPresets(done: Vector[String] => Unit = _ => ()): Unit = if !disposed then
     presetLoad += 1
     val current = presetLoad
-    val saved = state.presets
-    val _ = launch(platform.loadPresets, resettable = false) {
+    val saved   = state.presets
+    val _       = launch(platform.loadPresets, resettable = false) {
       case Right((presets, errors)) if !disposed && current == presetLoad =>
         val loaded =
           if state.presets == saved then Right(presets)
-          else ImportPresets.of(presets.all.filterNot(p => state.presets.names.contains(p.name)) ++ state.presets.all)
-        loaded.fold(e => done(errors :+ e.message), value => { presetsLoaded(value); done(errors) })
+          else
+            ImportPresets.of(
+              presets.all.filterNot(p =>
+                state.presets.names.contains(p.name)
+              ) ++ state.presets.all
+            )
+        loaded.fold(
+          e => done(errors :+ e.message),
+          value => { presetsLoaded(value); done(errors) }
+        )
       case Left(e) if !disposed && current == presetLoad => done(Vector(reason(e)))
-      case _ => ()
+      case _                                             => ()
     }
 
-  private def reason(error: Throwable): String = Option(error.getMessage).getOrElse(error.toString)
-  private def launch[A](io: IO[A], resettable: Boolean = true)(answer: Either[Throwable, A] => Unit): () => Unit =
+  private def reason(error: Throwable): String =
+    Option(error.getMessage).getOrElse(error.toString)
+  private def launch[A](io: IO[A], resettable: Boolean = true)(
+      answer: Either[Throwable, A] => Unit
+  ): () => Unit =
     serial += 1
-    val id = serial
+    val id               = serial
     val (future, cancel) = io.unsafeToFutureCancelable()
-    val stop = () => { cancel(); () }
+    val stop             = () => { cancel(); () }
     tasks += id -> (stop -> resettable)
-    future.onComplete { result => Platform.runLater(() =>
-      tasks -= id
-      answer(result.toEither)
-    ) }(ExecutionContext.global)
+    future.onComplete { result =>
+      Platform.runLater(() =>
+        tasks -= id
+        answer(result.toEither)
+      )
+    }(ExecutionContext.global)
     stop
 
   def dispatch(intent: WizardIntent): Unit = if !disposed then
@@ -157,20 +188,35 @@ final class ImportWizardHost(
   private def current(role: SourceRole, token: (Long, Long)): Boolean =
     !disposed && epoch == token._1 && requests.get(role).contains(token._2)
 
-  def read(role: SourceRole, path: HostPath, name: Option[String] = None): CompletableFuture[Unit] =
+  def read(
+      role: SourceRole,
+      path: HostPath,
+      name: Option[String] = None
+  ): CompletableFuture[Unit] =
     readAt(role, path, name, token(role))
 
-  private def readAt(role: SourceRole, path: HostPath, name: Option[String], request: (Long, Long)): CompletableFuture[Unit] =
+  private def readAt(
+      role: SourceRole,
+      path: HostPath,
+      name: Option[String],
+      request: (Long, Long)
+  ): CompletableFuture[Unit] =
     val done = CompletableFuture[Unit]()
     reads += role -> done
     val named: Either[String, String] = name.fold(platform.sourceName(path))(Right(_))
     named match
       case Left(error) =>
-        if current(role, request) then dispatch(WizardIntent.ReadFailed(path.value, SourceReadError.Unreadable(path.value, error.toString)))
+        if current(role, request) then
+          dispatch(
+            WizardIntent.ReadFailed(
+              path.value,
+              SourceReadError.Unreadable(path.value, error.toString)
+            )
+          )
         done.complete(()): Unit
       case Right(importName) =>
         val io = platform.files.readStream(path, StreamedSource.ChunkBytes).flatMap {
-          case Left(e) => IO.pure(Left(SourceReadError.Unreadable(path.value, e.message)))
+          case Left(e)       => IO.pure(Left(SourceReadError.Unreadable(path.value, e.message)))
           case Right(stream) => StreamedSource.preview[IO](role, importName, stream)
         }
         val stop = launch(io) { answer =>
@@ -180,7 +226,13 @@ final class ImportWizardHost(
                 remember(source.bytes, ByteSource.File(path))
                 dispatch(WizardIntent.SourceRead(source))
               case Right(Left(e)) => dispatch(WizardIntent.ReadFailed(importName, e))
-              case Left(e) => dispatch(WizardIntent.ReadFailed(path.value, SourceReadError.Unreadable(path.value, reason(e))))
+              case Left(e)        =>
+                dispatch(
+                  WizardIntent.ReadFailed(
+                    path.value,
+                    SourceReadError.Unreadable(path.value, reason(e))
+                  )
+                )
             done.complete(()): Unit
           else done.cancel(false): Unit
         }
@@ -191,62 +243,84 @@ final class ImportWizardHost(
   private def perform(effects: Vector[WizardEffect]): Unit =
     val inputs = effects.collect {
       case WizardEffect.Dispatch(Command.ImportSources(_, sources, _, _, _, _, _, _)) =>
-        sources.entries.flatMap(s => readFrom.get(s.bytes).collect { case ByteSource.File(path) => s -> path })
+        sources.entries.flatMap(s =>
+          readFrom.get(s.bytes).collect { case ByteSource.File(path) => s -> path }
+        )
     }.flatten
     if inputs.isEmpty then effects.foreach(performOne)
     else if !storing then
       storing = true
-      val at = epoch
+      val at        = epoch
       val submitted = state
-      val done = CompletableFuture[Unit]()
+      val done      = CompletableFuture[Unit]()
       lastImport = done
-      val _ = launch(inputs.traverse { (source, path) => platform.importInput(source, path) }) { answer =>
-        if !disposed && epoch == at then
-          storing = false
-          val result = answer.left.map(reason).flatMap(_.sequence)
-          result match
-            case Left(e) => dispatch(WizardIntent.StoreFailed(e))
-            case Right(_) if state.editedSince(submitted) =>
-              dispatch(WizardIntent.StoreFailed("The import draft changed while its sources were stored; apply the current draft again."))
-            case Right(_) => effects.foreach {
-              case WizardEffect.Close => done.complete(()); performOne(WizardEffect.Close)
-              case effect => performOne(effect)
-            }
-          done.complete(()): Unit
-        else done.cancel(false): Unit
+      val _ = launch(inputs.traverse { (source, path) => platform.importInput(source, path) }) {
+        answer =>
+          if !disposed && epoch == at then
+            storing = false
+            val result = answer.left.map(reason).flatMap(_.sequence)
+            result match
+              case Left(e) => dispatch(WizardIntent.StoreFailed(e))
+              case Right(_) if state.editedSince(submitted) =>
+                dispatch(
+                  WizardIntent.StoreFailed(
+                    "The import draft changed while its sources were stored; apply the current draft again."
+                  )
+                )
+              case Right(_) =>
+                effects.foreach {
+                  case WizardEffect.Close => done.complete(()); performOne(WizardEffect.Close)
+                  case effect             => performOne(effect)
+                }
+            done.complete(()): Unit
+          else done.cancel(false): Unit
       }
 
   private def performOne(effect: WizardEffect): Unit = effect match
-    case WizardEffect.Dispatch(command) => app(Intent.Dispatch(command))
+    case WizardEffect.Dispatch(command)   => app(Intent.Dispatch(command))
     case WizardEffect.StorePreset(preset) =>
       val done = CompletableFuture[Unit]()
       lastPreset = done
       val _ = launch(platform.storePreset(preset), resettable = false) { result =>
-        if !disposed then result match
-          case Right(Left(e)) => dispatch(WizardIntent.StoreFailed(e))
-          case Left(e) => dispatch(WizardIntent.StoreFailed(reason(e)))
-          case _ => ()
+        if !disposed then
+          result match
+            case Right(Left(e)) => dispatch(WizardIntent.StoreFailed(e))
+            case Left(e)        => dispatch(WizardIntent.StoreFailed(reason(e)))
+            case _              => ()
         done.complete(()): Unit
       }
     case WizardEffect.OpenFile(role) =>
       val request = token(role)
-      val stop = launch(platform.chooseFile(role)) {
+      val stop    = launch(platform.chooseFile(role)) {
         case Right(Right(Some(chosen))) if current(role, request) =>
           readAt(role, chosen.path, Some(chosen.name), request): Unit
         case Right(Left(e)) if current(role, request) =>
-          dispatch(WizardIntent.ReadFailed(role.toString, SourceReadError.Unreadable(role.toString, e)))
+          dispatch(
+            WizardIntent.ReadFailed(role.toString, SourceReadError.Unreadable(role.toString, e))
+          )
         case Left(e) if current(role, request) =>
-          dispatch(WizardIntent.ReadFailed(role.toString, SourceReadError.Unreadable(role.toString, reason(e))))
+          dispatch(
+            WizardIntent.ReadFailed(
+              role.toString,
+              SourceReadError.Unreadable(role.toString, reason(e))
+            )
+          )
         case _ => ()
       }
       roleStops += role -> stop
     case check: WizardEffect.CheckKey => checkKey(check)
-    case WizardEffect.Close => close()
+    case WizardEffect.Close           => close()
 
   private def checkKey(check: WizardEffect.CheckKey): Unit =
-    def refused(why: String) = WizardIntent.KeyChecked(check.role, check.source, check.columns, check.unit, Left(KeyGap.Unreadable(check.file, why)))
+    def refused(why: String) = WizardIntent.KeyChecked(
+      check.role,
+      check.source,
+      check.columns,
+      check.unit,
+      Left(KeyGap.Unreadable(check.file, why))
+    )
     val done = CompletableFuture[Unit]()
-    val at = epoch
+    val at   = epoch
     lastCheck = done
     readFrom.get(check.source) match
       case None =>
@@ -254,12 +328,14 @@ final class ImportWizardHost(
         done.complete(()): Unit
       case Some(source) =>
         val io = source.stream(platform.files).flatMap {
-          case Left(e) => IO.pure(refused(e))
-          case Right(stream) => StreamedSource.text[IO](check.file, stream).map {
-            case Left(e) => refused(e.message)
-            case Right(read) if read.bytes != check.source => refused(s"${check.file} changed after it was read; read it again")
-            case Right(read) => KeyChecks.run(check, read.value)
-          }
+          case Left(e)       => IO.pure(refused(e))
+          case Right(stream) =>
+            StreamedSource.text[IO](check.file, stream).map {
+              case Left(e)                                   => refused(e.message)
+              case Right(read) if read.bytes != check.source =>
+                refused(s"${check.file} changed after it was read; read it again")
+              case Right(read) => KeyChecks.run(check, read.value)
+            }
         }
         val stop = launch(io) { result =>
           if !disposed && epoch == at && !done.isDone then
@@ -270,9 +346,17 @@ final class ImportWizardHost(
         done.whenComplete((_, _) => if done.isCancelled then stop()): Unit
 
 object ImportWizardHost:
-  def onPlatform(platform: HostPlatform[IO], store: FilePresetStore, project: Option[ProjectPort]): ImportPlatform =
+  def onPlatform(
+      platform: HostPlatform[IO],
+      store: FilePresetStore,
+      project: Option[ProjectPort]
+  ): ImportPlatform =
     PlatformImport(platform, store.on(platform.files), project)
-  def fxPlatform(owner: () => Window, store: FilePresetStore, project: Option[ProjectPort]): ImportPlatform =
+  def fxPlatform(
+      owner: () => Window,
+      store: FilePresetStore,
+      project: Option[ProjectPort]
+  ): ImportPlatform =
     onPlatform(DesktopPlatform.create(_ => (), () => Option(owner())), store, project)
 
   def openWindow(
@@ -283,9 +367,16 @@ object ImportWizardHost:
       project: Option[ProjectPort],
       hostPlatform: Option[HostPlatform[IO]] = None
   ): (Stage, ImportWizardHost) =
-    val stage = Stage()
-    val services = hostPlatform.fold(fxPlatform(() => stage, store, project))(onPlatform(_, store, project))
-    val host = ImportWizardHost(ImportWizard.newImport(document(), ImportPresets.empty), document, app, services, () => stage.close())
+    val stage    = Stage()
+    val services =
+      hostPlatform.fold(fxPlatform(() => stage, store, project))(onPlatform(_, store, project))
+    val host = ImportWizardHost(
+      ImportWizard.newImport(document(), ImportPresets.empty),
+      document,
+      app,
+      services,
+      () => stage.close()
+    )
     host.loadPresets(errors => errors.foreach(e => System.err.println(e)))
     stage.setOnHidden(_ => host.dispose())
     val scene = Scene(host.view.node, 960, 640)

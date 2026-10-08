@@ -27,10 +27,18 @@ import java.nio.charset.StandardCharsets.UTF_8
 
 class PlatformPresetStoreSuite extends CatsEffectSuite:
   private def ok[E, A](result: Either[E, A]): A = result.fold(e => fail(e.toString), identity)
-  private val directory = ok(HostPath.of("/user/import-presets"))
-  private def names(path: HostPath): Either[PlatformError, String] = Right(path.value.split('/').last)
+  private val directory                         = ok(HostPath.of("/user/import-presets"))
+  private def names(path: HostPath): Either[PlatformError, String] = Right(
+    path.value.split('/').last
+  )
   private def preset(name: String, column: String = "Subject"): ImportPreset =
-    ok(ImportPreset.of(ok(PresetName.of(name)), Vector(ColumnBinding(ColumnRole.Participant, ok(ColumnName.of(column)))), Some(TimeUnit.Milliseconds)))
+    ok(
+      ImportPreset.of(
+        ok(PresetName.of(name)),
+        Vector(ColumnBinding(ColumnRole.Participant, ok(ColumnName.of(column)))),
+        Some(TimeUnit.Milliseconds)
+      )
+    )
 
   test("independent in-memory writes preserve both presets and legacy UTF8-hex files") {
     for
@@ -38,22 +46,31 @@ class PlatformPresetStoreSuite extends CatsEffectSuite:
       store = PlatformPresetStore(memory.platform.files, directory, names)
       initial <- store.load
       results <- (store.save(preset("Alpha")), store.save(preset("µ lab"))).parTupled
-      loaded <- store.load
-      files <- memory.platform.files.list(directory).map(ok)
+      loaded  <- store.load
+      files   <- memory.platform.files.list(directory).map(ok)
     yield
       assertEquals(initial._1.all, Vector.empty)
       assertEquals(initial._2, Vector.empty)
       assertEquals(results, (Right(()), Right(())))
       assertEquals(loaded._1.all.toSet, Set(preset("Alpha"), preset("µ lab")))
       assertEquals(loaded._2, Vector.empty)
-      assertEquals(files.map(_.value), Vector("/user/import-presets/416c706861.json", "/user/import-presets/c2b5206c6162.json"))
+      assertEquals(
+        files.map(_.value),
+        Vector("/user/import-presets/416c706861.json", "/user/import-presets/c2b5206c6162.json")
+      )
   }
 
   test("malformed JSON and UTF8 presets are reported by name") {
     for
       memory <- InMemoryPlatform.create[IO]()
-      _ <- memory.platform.files.write(ok(HostPath.of("/user/import-presets/bad.json")), IArray.from("broken".getBytes(UTF_8)))
-      _ <- memory.platform.files.write(ok(HostPath.of("/user/import-presets/utf8.json")), IArray.from(Vector(0xc3.toByte, 0x28.toByte)))
+      _      <- memory.platform.files.write(
+        ok(HostPath.of("/user/import-presets/bad.json")),
+        IArray.from("broken".getBytes(UTF_8))
+      )
+      _ <- memory.platform.files.write(
+        ok(HostPath.of("/user/import-presets/utf8.json")),
+        IArray.from(Vector(0xc3.toByte, 0x28.toByte))
+      )
       store = PlatformPresetStore(memory.platform.files, directory, names)
       loaded <- store.load
     yield
@@ -67,26 +84,27 @@ class PlatformPresetStoreSuite extends CatsEffectSuite:
     for
       memory <- InMemoryPlatform.create[IO]()
       store = PlatformPresetStore(memory.platform.files, directory, names)
-      _ <- store.save(preset("Alpha"))
-      _ <- store.save(preset("Other"))
-      _ <- store.save(preset("Alpha", "Participant"))
+      _      <- store.save(preset("Alpha"))
+      _      <- store.save(preset("Other"))
+      _      <- store.save(preset("Alpha", "Participant"))
       loaded <- store.load
     yield
       assertEquals(loaded._1.all.toSet, Set(preset("Alpha", "Participant"), preset("Other")))
       assertEquals(loaded._2, Vector.empty)
   }
 
-
   test("a listed preset disappearing before read is retained as a named failure") {
     for
       memory <- InMemoryPlatform.create[IO]()
       missing = ok(HostPath.of("/user/import-presets/disappeared.json"))
-      files = new eyes4s.studio.core.platform.FileSystem[IO]:
-        def child(dir: HostPath, name: String) = memory.platform.files.child(dir, name)
-        def read(path: HostPath) = memory.platform.files.read(path)
+      files   = new eyes4s.studio.core.platform.FileSystem[IO]:
+        def child(dir: HostPath, name: String)    = memory.platform.files.child(dir, name)
+        def read(path: HostPath)                  = memory.platform.files.read(path)
         def readStream(path: HostPath, size: Int) = memory.platform.files.readStream(path, size)
-        def write(path: HostPath, bytes: IArray[Byte]) = memory.platform.files.write(path, bytes)
-        def list(path: HostPath): IO[Either[PlatformError, Vector[HostPath]]] = IO.pure(Right(Vector(missing)))
+        def write(path: HostPath, bytes: IArray[Byte]) =
+          memory.platform.files.write(path, bytes)
+        def list(path: HostPath): IO[Either[PlatformError, Vector[HostPath]]] =
+          IO.pure(Right(Vector(missing)))
         def project(path: HostPath) = memory.platform.files.project(path)
       store = PlatformPresetStore(files, directory, names)
       loaded <- store.load

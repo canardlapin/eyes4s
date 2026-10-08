@@ -58,8 +58,9 @@ class TrialKeyFxSuite extends StudioFxSuite:
 
   /** A platform with no dialogs; files are read by the test. */
   object Quiet extends ImportPlatform:
-    def chooseFile(role: SourceRole): IO[Either[String, Option[ChosenSource]]] = IO.pure(Right(None))
-    def storePreset(p: ImportPreset): IO[Either[String, Unit]] = IO.pure(Right(()))
+    def chooseFile(role: SourceRole): IO[Either[String, Option[ChosenSource]]] =
+      IO.pure(Right(None))
+    def storePreset(p: ImportPreset): IO[Either[String, Unit]]        = IO.pure(Right(()))
     def importInput(s: Source, p: HostPath): IO[Either[String, Unit]] = IO.pure(Right(()))
 
   final case class Mounted(host: ImportWizardHost, app: mutable.ArrayBuffer[Intent]):
@@ -88,7 +89,8 @@ class TrialKeyFxSuite extends StudioFxSuite:
     Mounted(host, app)
 
   def readIn(fx: FxStage, m: Mounted, role: SourceRole, path: Path): Unit =
-    runOnFx(m.host.read(role, ok(HostPath.of(path.toString)))).get(30, java.util.concurrent.TimeUnit.SECONDS)
+    runOnFx(m.host.read(role, ok(HostPath.of(path.toString))))
+      .get(30, java.util.concurrent.TimeUnit.SECONDS)
     fx.awaitLayout()
 
   def drawn(l: Labeled): String = runOnFx {

@@ -28,21 +28,22 @@ import java.nio.charset.StandardCharsets.UTF_8
 
 class PlatformImportSuite extends CatsEffectSuite:
   private def ok[E, A](value: Either[E, A]): A = value.fold(e => fail(e.toString), identity)
-  private val file = ok(HostPath.of("opaque-id-42"))
-  private val directory = ok(HostPath.of("/presets"))
-  private val original = IArray.from("participant,phase,trial\r\nP01,Encoding,t1\r\n".getBytes(UTF_8))
+  private val file                             = ok(HostPath.of("opaque-id-42"))
+  private val directory                        = ok(HostPath.of("/presets"))
+  private val original                         =
+    IArray.from("participant,phase,trial\r\nP01,Encoding,t1\r\n".getBytes(UTF_8))
   private def names(path: HostPath): Either[PlatformError, String] = Right("actual µ.csv")
 
   test("opaque chooser paths preserve supplied source names and cancellation is no selection") {
     for
       memory <- InMemoryPlatform.create[IO]()
-      store = PlatformPresetStore(memory.platform.files, directory, names)
+      store    = PlatformPresetStore(memory.platform.files, directory, names)
       platform = PlatformImport(memory.platform, Right(store), None, names)
-      _ <- memory.answer(Some(file))
-      chosen <- platform.chooseFile(SourceRole.Trials)
-      _ <- memory.answer(None)
+      _         <- memory.answer(Some(file))
+      chosen    <- platform.chooseFile(SourceRole.Trials)
+      _         <- memory.answer(None)
       cancelled <- platform.chooseFile(SourceRole.Fixations)
-      requests <- memory.requests
+      requests  <- memory.requests
     yield
       assertEquals(chosen, Right(Some(ChosenSource(file, "actual µ.csv"))))
       assertEquals(cancelled, Right(None))
@@ -55,19 +56,25 @@ class PlatformImportSuite extends CatsEffectSuite:
       writes <- Ref.of[IO, Int](0)
       port = new ProjectPort:
         def journal(entry: eyes4s.studio.core.command.JournalEntry): Unit = ()
-        def save(done: Either[String, eyes4s.studio.core.session.SaveReceipt] => Unit): Unit = done(Left("unused"))
+        def save(done: Either[String, eyes4s.studio.core.session.SaveReceipt] => Unit): Unit =
+          done(Left("unused"))
         def close(): Unit = ()
-        override def importInput(kind: eyes4s.studio.core.bundle.InputKind, name: String, bytes: IArray[Byte], done: Either[String, Unit] => Unit): Unit =
+        override def importInput(
+            kind: eyes4s.studio.core.bundle.InputKind,
+            name: String,
+            bytes: IArray[Byte],
+            done: Either[String, Unit] => Unit
+        ): Unit =
           import cats.effect.unsafe.implicits.global
           writes.update(_ + 1).unsafeRunSync()
           done(Right(()))
-      store = PlatformPresetStore(memory.platform.files, directory, names)
+      store    = PlatformPresetStore(memory.platform.files, directory, names)
       platform = PlatformImport(memory.platform, Right(store), Some(port), names)
       _ <- memory.platform.files.write(file, original)
       source = ok(SniffedSource.read(SourceRole.Trials, "actual µ.csv", original)).source
-      _ <- memory.platform.files.write(file, IArray.from("changed".getBytes(UTF_8)))
+      _       <- memory.platform.files.write(file, IArray.from("changed".getBytes(UTF_8)))
       refused <- platform.importInput(source, file)
-      total <- writes.get
+      total   <- writes.get
     yield
       assert(refused.left.exists(_.contains("changed after")))
       assertEquals(total, 0)

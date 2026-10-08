@@ -252,8 +252,8 @@ object Catalogue:
       case CommandShowRun      => "Show the finished run"
       case CommandReviewDraft  => "Review draft in Analysis"
       case CommandDiscardDraft => "Discard draft"
-      case CommandNewProject => "New project…"
-      case CommandOpenProject => "Open project…"
+      case CommandNewProject   => "New project…"
+      case CommandOpenProject  => "Open project…"
       case CommandCloseProject => "Close project"
       case CommandImport       => "Import sources…"
 

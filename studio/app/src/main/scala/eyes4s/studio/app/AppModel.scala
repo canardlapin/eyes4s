@@ -956,9 +956,12 @@ object AppModel:
     case Intent.Saved(at, upTo)    => (m.copy(save = m.save.saved(at, upTo)), none)
     case Intent.SaveFailed(reason) => (m.copy(notice = Some(Notice.SaveFailed(reason))), none)
 
-    case Intent.RequestNewProject => (m, Vector(AppEffect.OpenDialog(PlatformDialog.NewProject)))
-    case Intent.RequestOpenProject => (m, Vector(AppEffect.OpenDialog(PlatformDialog.OpenProject)))
-    case Intent.RequestCloseProject => (m, Vector(AppEffect.OpenDialog(PlatformDialog.CloseProject)))
+    case Intent.RequestNewProject =>
+      (m, Vector(AppEffect.OpenDialog(PlatformDialog.NewProject)))
+    case Intent.RequestOpenProject =>
+      (m, Vector(AppEffect.OpenDialog(PlatformDialog.OpenProject)))
+    case Intent.RequestCloseProject =>
+      (m, Vector(AppEffect.OpenDialog(PlatformDialog.CloseProject)))
     case Intent.RequestRename =>
       (m, Vector(AppEffect.OpenDialog(PlatformDialog.RenameProject)))
     case Intent.RenameProject(name) =>

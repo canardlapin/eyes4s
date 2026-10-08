@@ -48,8 +48,8 @@ final class ColumnMappingPaneHost(
     project: Option[ProjectPort]
 ):
   private var shown: Option[DatasetRevisionSpec] = None
-  private var disposed = false
-  private var pendingReads: Vector[() => Unit] = Vector.empty
+  private var disposed                           = false
+  private var pendingReads: Vector[() => Unit]   = Vector.empty
   private var opened                             = false
   private var generation                         = 0L
   private var remaining                          = 0
@@ -213,11 +213,22 @@ final class ColumnMappingPaneHost(
           source,
           result =>
             result match
-              case Left(reason) => Platform.runLater(() => deliver(current, ColumnMappingPane.unreadable(source, reason), Some(port -> source)))
+              case Left(reason) =>
+                Platform.runLater(() =>
+                  deliver(
+                    current,
+                    ColumnMappingPane.unreadable(source, reason),
+                    Some(port -> source)
+                  )
+                )
               case Right(bytes) =>
-                val stream = Stream.chunk(Chunk.array(bytes.asInstanceOf[Array[Byte]])).covary[cats.effect.IO]
-                val (future, cancel) = StreamedSource.preview[cats.effect.IO](source.role, source.path.value, stream).unsafeToFutureCancelable()
-                val stop = () => { cancel(); () }
+                val stream = Stream
+                  .chunk(Chunk.array(bytes.asInstanceOf[Array[Byte]]))
+                  .covary[cats.effect.IO]
+                val (future, cancel) = StreamedSource
+                  .preview[cats.effect.IO](source.role, source.path.value, stream)
+                  .unsafeToFutureCancelable()
+                val stop             = () => { cancel(); () }
                 def remember(): Unit =
                   if !disposed && current == generation then pendingReads :+= stop
                   else stop()
@@ -227,7 +238,11 @@ final class ColumnMappingPaneHost(
                   val intent = result.toEither match
                     case Right(Right(read)) => WizardIntent.SourceRead(read)
                     case Right(Left(error)) => WizardIntent.ReadFailed(source.path.value, error)
-                    case Left(error) => ColumnMappingPane.unreadable(source, Option(error.getMessage).getOrElse(error.toString))
+                    case Left(error)        =>
+                      ColumnMappingPane.unreadable(
+                        source,
+                        Option(error.getMessage).getOrElse(error.toString)
+                      )
                   Platform.runLater(() => deliver(current, intent, Some(port -> source)))
                 }(ExecutionContext.global)
         )

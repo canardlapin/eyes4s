@@ -163,8 +163,8 @@ final class StudioWindow private (
 
   private var binding: Option[
     (javafx.stage.Stage, AppModel => Unit, javafx.beans.value.ChangeListener[java.lang.Boolean])
-  ]                  = None
-  private var closed = false
+  ]                     = None
+  private var closed    = false
   def isClosed: Boolean = closed
 
   private def unbind(): Unit =
@@ -293,7 +293,9 @@ object StudioWindow:
           val alert = Alert(Alert.AlertType.INFORMATION)
           alert.setTitle("Import sources")
           alert.setHeaderText("Create a project first")
-          alert.setContentText("Use File New project… to choose a save location, then import your sources.")
+          alert.setContentText(
+            "Use File New project… to choose a save location, then import your sources."
+          )
           alert.show()
         case PlatformDialog.ImportSources =>
           // The import wizard (S5.2): its commands come back as intents.
@@ -328,7 +330,8 @@ object StudioWindow:
           // The About box follows later theme changes too (S1.10).
           themed(scene)
           stage.show()
-        case PlatformDialog.NewProject | PlatformDialog.OpenProject | PlatformDialog.CloseProject =>
+        case PlatformDialog.NewProject | PlatformDialog.OpenProject |
+            PlatformDialog.CloseProject =>
           System.err.println(s"$dialog requires the application project lifecycle host.")
 
   /** Open a window on `initial`, served by the fake backend at `moment`.
@@ -447,14 +450,20 @@ object StudioWindow:
     var themed: Option[ThemeHost] = None
     // Late-bound too: a verification's answer goes to the admission ledger.
     var ledger: Option[AdmissionLedgerHost] = None
-    val defaults = fxDialogs(
-      () => runtime.fold(initial)(_.model), messages, project, presets,
-      scene => themed.foreach(_.register(scene)), hostPlatform
+    val defaults                            = fxDialogs(
+      () => runtime.fold(initial)(_.model),
+      messages,
+      project,
+      presets,
+      scene => themed.foreach(_.register(scene)),
+      hostPlatform
     )
-    val routed: PlatformDialogs = (dialog, dispatch) => dialog match
-      case PlatformDialog.NewProject | PlatformDialog.OpenProject | PlatformDialog.CloseProject =>
-        lifecycle.getOrElse(defaults).open(dialog, dispatch)
-      case _ => defaults.open(dialog, dispatch)
+    val routed: PlatformDialogs = (dialog, dispatch) =>
+      dialog match
+        case PlatformDialog.NewProject | PlatformDialog.OpenProject |
+            PlatformDialog.CloseProject =>
+          lifecycle.getOrElse(defaults).open(dialog, dispatch)
+        case _ => defaults.open(dialog, dispatch)
     val effects = DesktopEffects(
       session,
       dialogs.getOrElse(routed),
@@ -509,7 +518,9 @@ object StudioWindow:
     // revision. Saved presets are read once, off the JavaFX thread.
     val importServices = hostPlatform.fold(
       ImportWizardHost.fxPlatform(
-        () => Option(shell.root.getScene).map(_.getWindow).orNull, presets, project
+        () => Option(shell.root.getScene).map(_.getWindow).orNull,
+        presets,
+        project
       )
     )(ImportWizardHost.onPlatform(_, presets, project))
     val mapping = ColumnMappingPaneHost(() => r.model, dispatch, importServices, project)
@@ -576,7 +587,9 @@ object StudioWindow:
       assetFiles.getOrElse(
         hostPlatform.fold(
           AssetFiles.chooser(() => Option(shell.root.getScene).map(_.getWindow).orNull)
-        )(p => AssetFiles.onPlatform(p, eyes4s.studio.desktop.platform.DesktopPlatform.fileName))
+        )(p =>
+          AssetFiles.onPlatform(p, eyes4s.studio.desktop.platform.DesktopPlatform.fileName)
+        )
       ),
       project
     )

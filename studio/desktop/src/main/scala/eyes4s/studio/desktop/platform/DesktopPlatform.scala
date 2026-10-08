@@ -63,8 +63,10 @@ object DesktopPlatform:
 
   /** Native naming metadata; portable import code never interprets opaque host paths. */
   def fileName(path: HostPath): Either[PlatformError, String] =
-    try Option(Paths.get(path.value).getFileName).map(_.toString)
-      .toRight(PlatformError.Unreadable(path, "a root has no file name"))
+    try
+      Option(Paths.get(path.value).getFileName)
+        .map(_.toString)
+        .toRight(PlatformError.Unreadable(path, "a root has no file name"))
     catch case e: InvalidPathException => Left(PlatformError.InvalidPath(path, e.getReason))
 
   /** Preserve the legacy per-user preset directory at the native location edge. */

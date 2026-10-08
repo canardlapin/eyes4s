@@ -25,15 +25,22 @@ enum ProjectOperation derives CanEqual:
 /** Close admission uses the current window, including work still running. */
 final case class ProjectWork(run: RunId, job: Option[JobId]) derives CanEqual
 
-final case class ProjectCloseFacts(title: String, named: Boolean, edited: Boolean,
-    activeWork: Boolean, work: Set[ProjectWork] = Set.empty) derives CanEqual:
+final case class ProjectCloseFacts(
+    title: String,
+    named: Boolean,
+    edited: Boolean,
+    activeWork: Boolean,
+    work: Set[ProjectWork] = Set.empty
+) derives CanEqual:
   /** A queued run receiving its job id is the same admitted work; a new
     * job for an already-running run needs fresh admission.
     */
   def hasNewWork(previous: ProjectCloseFacts): Boolean =
-    (activeWork && !previous.activeWork) || work.exists(w => !previous.work.exists(p =>
-      p.run == w.run && (w.job.isEmpty || p.job.isEmpty || p.job == w.job)
-    ))
+    (activeWork && !previous.activeWork) || work.exists(w =>
+      !previous.work.exists(p =>
+        p.run == w.run && (w.job.isEmpty || p.job.isEmpty || p.job == w.job)
+      )
+    )
   def needsAdmission: Boolean = edited || activeWork
 
 /** Untitled work cannot be saved here: Save As is a separate lifecycle slice. */
@@ -62,45 +69,82 @@ final case class ProjectLifecycle private (
     stopped: Boolean
 ) derives CanEqual:
   def owns(id: ProjectOperationId): Boolean = !stopped && operation.exists(_._1 == id)
-  def busy: Boolean = operation.isDefined
+  def busy: Boolean                         = operation.isDefined
 
   /** Only one operation owns a candidate. Callers cancel before starting another. */
   def begin(request: ProjectOperation): (ProjectLifecycle, Option[ProjectOperationId]) =
     if stopped || busy then (this, None)
     else
       val next = generation + 1
-      val id = ProjectOperationId.next(next)
-      (copy(generation = next, operation = Some((id, request, ProjectLifecyclePhase.Preparing))), Some(id))
+      val id   = ProjectOperationId.next(next)
+      (
+        copy(
+          generation = next,
+          operation = Some((id, request, ProjectLifecyclePhase.Preparing))
+        ),
+        Some(id)
+      )
 
   /** A candidate is ready, or Close/Quit needs no candidate. */
-  def prepared(id: ProjectOperationId, facts: ProjectCloseFacts): (ProjectLifecycle, ProjectLifecycleAction) =
+  def prepared(
+      id: ProjectOperationId,
+      facts: ProjectCloseFacts
+  ): (ProjectLifecycle, ProjectLifecycleAction) =
     operation match
       case Some((`id`, request, ProjectLifecyclePhase.Preparing)) if !stopped =>
         if facts.needsAdmission then
-          (copy(operation = Some((id, request, ProjectLifecyclePhase.Confirming(facts)))), ProjectLifecycleAction.Ask(facts))
-        else (copy(operation = Some((id, request, ProjectLifecyclePhase.Committing))), ProjectLifecycleAction.Commit)
+          (
+            copy(operation = Some((id, request, ProjectLifecyclePhase.Confirming(facts)))),
+            ProjectLifecycleAction.Ask(facts)
+          )
+        else
+          (
+            copy(operation = Some((id, request, ProjectLifecyclePhase.Committing))),
+            ProjectLifecycleAction.Commit
+          )
       case _ => (this, ProjectLifecycleAction.Ignored)
 
-  def choose(id: ProjectOperationId, choice: ProjectCloseChoice): (ProjectLifecycle, ProjectLifecycleAction) =
+  def choose(
+      id: ProjectOperationId,
+      choice: ProjectCloseChoice
+  ): (ProjectLifecycle, ProjectLifecycleAction) =
     operation match
       case Some((`id`, request, ProjectLifecyclePhase.Confirming(facts))) if !stopped =>
         choice match
-          case ProjectCloseChoice.KeepOpen => (copy(operation = None), ProjectLifecycleAction.KeepOpen)
+          case ProjectCloseChoice.KeepOpen =>
+            (copy(operation = None), ProjectLifecycleAction.KeepOpen)
           case ProjectCloseChoice.CloseWithoutSaving =>
-            (copy(operation = Some((id, request, ProjectLifecyclePhase.Committing))), ProjectLifecycleAction.Commit)
+            (
+              copy(operation = Some((id, request, ProjectLifecyclePhase.Committing))),
+              ProjectLifecycleAction.Commit
+            )
           case ProjectCloseChoice.SaveAndClose if facts.named =>
-            (copy(operation = Some((id, request, ProjectLifecyclePhase.Saving(facts)))), ProjectLifecycleAction.Save)
+            (
+              copy(operation = Some((id, request, ProjectLifecyclePhase.Saving(facts)))),
+              ProjectLifecycleAction.Save
+            )
           case _ => (this, ProjectLifecycleAction.Ignored)
       case _ => (this, ProjectLifecycleAction.Ignored)
 
   /** A failed save keeps the window. Edits arriving during a save need new admission. */
-  def saved(id: ProjectOperationId, success: Boolean, facts: ProjectCloseFacts): (ProjectLifecycle, ProjectLifecycleAction) =
+  def saved(
+      id: ProjectOperationId,
+      success: Boolean,
+      facts: ProjectCloseFacts
+  ): (ProjectLifecycle, ProjectLifecycleAction) =
     operation match
       case Some((`id`, request, ProjectLifecyclePhase.Saving(admitted))) if !stopped =>
         if !success then (copy(operation = None), ProjectLifecycleAction.KeepOpen)
         else if facts.edited || facts.hasNewWork(admitted) then
-          (copy(operation = Some((id, request, ProjectLifecyclePhase.Confirming(facts)))), ProjectLifecycleAction.Ask(facts))
-        else (copy(operation = Some((id, request, ProjectLifecyclePhase.Committing))), ProjectLifecycleAction.Commit)
+          (
+            copy(operation = Some((id, request, ProjectLifecyclePhase.Confirming(facts)))),
+            ProjectLifecycleAction.Ask(facts)
+          )
+        else
+          (
+            copy(operation = Some((id, request, ProjectLifecyclePhase.Committing))),
+            ProjectLifecycleAction.Commit
+          )
       case _ => (this, ProjectLifecycleAction.Ignored)
 
   def cancel(id: ProjectOperationId): ProjectLifecycle =
@@ -111,7 +155,7 @@ final case class ProjectLifecycle private (
       case Some((`id`, ProjectOperation.Quit, ProjectLifecyclePhase.Committing)) =>
         copy(operation = None, stopped = true)
       case Some((`id`, _, ProjectLifecyclePhase.Committing)) => copy(operation = None)
-      case _ => this
+      case _                                                 => this
 
   def shutdown: ProjectLifecycle = copy(operation = None, stopped = true)
 
@@ -121,14 +165,15 @@ object ProjectLifecycle:
 /** Text used by the native close admission; no storage details leak into the title. */
 object ProjectLifecycleText:
   def operation(value: ProjectOperation): String = value match
-    case ProjectOperation.New => "New project"
-    case ProjectOperation.Open => "Open project"
+    case ProjectOperation.New   => "New project"
+    case ProjectOperation.Open  => "Open project"
     case ProjectOperation.Close => "Close project"
-    case ProjectOperation.Quit => "Close Eyes Studio"
+    case ProjectOperation.Quit  => "Close Eyes Studio"
 
   def admission(facts: ProjectCloseFacts): String =
     val edits = if facts.edited then
-      if facts.named then "This project has unsaved changes. Any autosave recovery is kept if you close without saving."
+      if facts.named then
+        "This project has unsaved changes. Any autosave recovery is kept if you close without saving."
       else "This untitled project's unsaved changes will be lost."
     else ""
     val work = if facts.activeWork then "Active work will stop." else ""

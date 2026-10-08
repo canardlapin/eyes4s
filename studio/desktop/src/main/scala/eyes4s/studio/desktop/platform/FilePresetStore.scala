@@ -32,7 +32,10 @@ final class FilePresetStore(val directory: Path):
   def save(preset: ImportPreset): Either[String, Unit] =
     on(JvmFileSystem).left.map(_.message).flatMap(_.save(preset).unsafeRunSync())
   def load: (ImportPresets, Vector[String]) =
-    on(JvmFileSystem).fold(e => (ImportPresets.empty, Vector(e.message)), _.load.unsafeRunSync())
+    on(JvmFileSystem).fold(
+      e => (ImportPresets.empty, Vector(e.message)),
+      _.load.unsafeRunSync()
+    )
 
 object FilePresetStore:
   /** Keep the existing per-user directory and readable legacy files. */
