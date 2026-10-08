@@ -102,7 +102,7 @@ backend through a `BackendTransport`:
 
 The wire format is `WireFormat`:
 
-1. Each message is one JSON envelope, `{"version":{"major":1,"minor":2},"id":<long>,"body":…}`,
+1. Each message is one JSON envelope, `{"version":{"major":1,"minor":19},"id":<long>,"body":…}`,
    encoded as UTF-8 and terminated by `\n` (NDJSON). JSON escapes newlines inside strings, so one
    line always holds one envelope. Over a WebSocket, each text message is one line without its
    terminator. A line may be at most `WireFormat.MaxLineLength` characters (16 MiB). Neither side
@@ -124,16 +124,18 @@ The wire format is `WireFormat`:
 5. The server serves requests concurrently. Frames of different requests interleave on the
    connection, so the client demultiplexes them by id. A live subscription never holds up a later
    request.
-6. Versions: the server refuses a request of another major version with
-   `Refused(UnsupportedVersion)`. The client treats a frame of another major version as a transport
-   defect (`TransportError.Incompatible`). Protocol 1.1 added the S0.9 request and refusal
+6. Versions: the server refuses a request of another protocol version with
+   `Refused(UnsupportedVersion)`. The client treats a frame of another protocol version as a transport
+   defect (`TransportError.Incompatible`). This applies to both major and minor versions.
+   Protocol 1.1 added the S0.9 request and refusal
    variants; 1.2 added `ProgressTotal.Counting`, and 1.3 encodes Long values outside the safe
    JSON integer range as canonical decimal strings. `WireFormat` parses numbers exactly on both
    platforms; a port must also prevent fractional numeric text from rounding into an integer
    before validating a count. Client and backend must be upgraded together:
-   mixed-minor deployments are unsupported. The transport decodes a typed body before checking
-   the major version and does not negotiate minor capabilities. An older decoder cannot read a
-   new variant; changing the envelope's version label does not change that. See the
+   mixed-minor deployments are unsupported. `WireFormat.parseCurrent` reads and checks the
+   version before decoding the typed body, so an incompatible peer is identified even when
+   its body cannot decode. The transport does not negotiate minor capabilities. Changing
+   the envelope's version label does not migrate its body. See the
    [protocol regression](README.md#backend-protocol-versions) for the legacy-total decoder probe.
 7. Refusals are values (`BackendError`). A frame for the wrong id, or a missing, duplicated or
    mismatched response, is a `TransportError`, raised as a `TransportFailure`.
