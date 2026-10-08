@@ -192,6 +192,7 @@ final class StudioWindow private (
     closed = true
     deactivate()
     unbind()
+    columnMapping.dispose()
     runtime.unlisten(summaryListener)
     runtime.unlisten(navigatorListener)
     runtime.unlisten(sourcesListener)
@@ -272,7 +273,8 @@ object StudioWindow:
       messages: Messages,
       project: Option[ProjectPort] = None,
       presets: FilePresetStore = FilePresetStore.userDefault,
-      themed: javafx.scene.Scene => Unit = _ => ()
+      themed: javafx.scene.Scene => Unit = _ => (),
+      hostPlatform: Option[eyes4s.studio.core.platform.Platform[cats.effect.IO]] = None
   ): PlatformDialogs =
     (dialog: PlatformDialog, dispatch: Intent => Unit) =>
       dialog match
@@ -298,7 +300,8 @@ object StudioWindow:
             followImports(model, dispatch),
             presets,
             sheets,
-            project
+            project,
+            hostPlatform
           )
           // The wizard follows later theme changes too (S1.10).
           themed(stage.getScene)
@@ -440,7 +443,7 @@ object StudioWindow:
     var ledger: Option[AdmissionLedgerHost] = None
     val defaults = fxDialogs(
       () => runtime.fold(initial)(_.model), messages, project, presets,
-      scene => themed.foreach(_.register(scene))
+      scene => themed.foreach(_.register(scene)), hostPlatform
     )
     val routed: PlatformDialogs = (dialog, dispatch) => dialog match
       case PlatformDialog.NewProject | PlatformDialog.OpenProject | PlatformDialog.CloseProject =>
@@ -498,25 +501,13 @@ object StudioWindow:
     themes.start()
     // The column-mapping pane (Data): the import wizard on the selected
     // revision. Saved presets are read once, off the JavaFX thread.
-    val mapping = ColumnMappingPaneHost(
-      () => r.model,
-      dispatch,
+    val importServices = hostPlatform.fold(
       ImportWizardHost.fxPlatform(
-        () => Option(shell.root.getScene).map(_.getWindow).orNull,
-        presets,
-        project
-      ),
-      project
-    )
-    val presetReader = Thread(
-      () =>
-        val (saved, errors) = presets.load
-        Platform.runLater(() => mapping.presetsLoaded(saved, errors))
-      ,
-      "eyes4s-presets-read"
-    )
-    presetReader.setDaemon(true)
-    presetReader.start()
+        () => Option(shell.root.getScene).map(_.getWindow).orNull, presets, project
+      )
+    )(ImportWizardHost.onPlatform(_, presets, project))
+    val mapping = ColumnMappingPaneHost(() => r.model, dispatch, importServices, project)
+    mapping.loadPresets()
     host.host(StudioLayouts.columnMapping, mapping.node)
     host.host(StudioLayouts.dataGeometry, mapping.geometry.node)
     host.host(StudioLayouts.trialMetadata, mapping.trialMetadata.node)
