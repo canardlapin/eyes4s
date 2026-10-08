@@ -17,8 +17,8 @@
 package eyes4s.studio.desktop.importing
 
 import cats.effect.{IO, Ref}
-import eyes4s.studio.core.document.{Source, SourceRole}
-import eyes4s.studio.core.importing.{ImportPresets, SniffedSource}
+import eyes4s.studio.core.document.SourceRole
+import eyes4s.studio.core.importing.SniffedSource
 import eyes4s.studio.core.platform.{HostPath, InMemoryPlatform, PlatformError}
 import eyes4s.studio.desktop.platform.PlatformPresetStore
 import eyes4s.studio.desktop.runtime.ProjectPort
@@ -32,7 +32,7 @@ class PlatformImportSuite extends CatsEffectSuite:
   private val directory                        = ok(HostPath.of("/presets"))
   private val original                         =
     IArray.from("participant,phase,trial\r\nP01,Encoding,t1\r\n".getBytes(UTF_8))
-  private def names(path: HostPath): Either[PlatformError, String] = Right("actual µ.csv")
+  private val names: HostPath => Either[PlatformError, String] = _ => Right("actual µ.csv")
 
   test("opaque chooser paths preserve supplied source names and cancellation is no selection") {
     for

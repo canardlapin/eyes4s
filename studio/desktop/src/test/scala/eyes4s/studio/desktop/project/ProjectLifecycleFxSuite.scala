@@ -18,7 +18,6 @@ package eyes4s.studio.desktop.project
 
 import cats.effect.{Deferred, IO}
 import cats.effect.unsafe.implicits.global
-import cats.syntax.all.*
 import eyes4s.studio.app.{AppModel, Intent, ProjectName}
 import eyes4s.studio.app.keys.{CommandId, CommandRegistry}
 import eyes4s.studio.core.bundle.*
