@@ -491,9 +491,6 @@ class ImportWizardFxSuite extends StudioFxSuite:
   fxStage.test("a new import's files are stored in the project, so the next save succeeds") {
     fx =>
       assumeFullStage(fx)
-      import cats.effect.IO
-    import cats.effect.unsafe.implicits.global
-    import cats.effect.unsafe.implicits.global
     import eyes4s.studio.core.bundle.{BundleSamples, LockOwner, SharingOptions}
     import eyes4s.studio.core.command.JournalEntry
     import eyes4s.studio.core.session.ProjectSession
