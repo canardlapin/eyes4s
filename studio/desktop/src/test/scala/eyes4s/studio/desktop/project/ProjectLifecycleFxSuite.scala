@@ -32,11 +32,13 @@ import eyes4s.studio.desktop.platform.{
 }
 import eyes4s.studio.desktop.harness.FxStage
 import eyes4s.studio.desktop.shell.ShellFxSuite
+import javafx.application.Platform
 import javafx.event.Event
 import javafx.scene.control.{Button, Menu, MenuItem}
 import javafx.stage.{Window, WindowEvent}
 import java.nio.file.{Files, Path}
 import java.util.concurrent.atomic.AtomicInteger
+import java.util.concurrent.{CountDownLatch, TimeUnit}
 import scala.concurrent.duration.*
 import scala.jdk.CollectionConverters.*
 
@@ -45,6 +47,29 @@ class ProjectLifecycleFxSuite extends ShellFxSuite:
   override val munitTimeout: Duration           = 180.seconds
   private def get[E, A](value: Either[E, A]): A = value.fold(e => fail(e.toString), identity)
   private def path(value: Path): HostPath       = get(HostPath.of(value.toString))
+
+  /** Replacement intentionally installs a new scene; wait for that scene's pulse,
+    * rather than the fixture's original, now detached, scene.
+    */
+  override protected def eventually(fx: FxStage, what: String)(cond: => Boolean): Unit =
+    val deadline = System.nanoTime() + 20.seconds.toNanos
+    while !runOnFx(cond) do
+      if System.nanoTime() > deadline then fail(s"timed out waiting for $what")
+      val pulsed = CountDownLatch(1)
+      runOnFx {
+        val scene = fx.stage.getScene
+        scene.getRoot.applyCss()
+        scene.getRoot.layout()
+        lazy val listener: Runnable = () =>
+          scene.removePostLayoutPulseListener(listener)
+          pulsed.countDown()
+        scene.addPostLayoutPulseListener(listener)
+        Platform.requestNextPulse()
+      }
+      assert(
+        pulsed.await(5, TimeUnit.SECONDS),
+        s"no current-window pulse while waiting for $what"
+      )
 
   private def invoke(host: ProjectLifecycleHost, id: CommandId): Unit = runOnFx {
     val window = host.window.getOrElse(fail("no current window"))
@@ -330,6 +355,37 @@ class ProjectLifecycleFxSuite extends ShellFxSuite:
             assertEquals(runOnFx(host.window), Some(original))
             assert(!runOnFx(original.isClosed))
             assertEquals(runOnFx(original.runtime.model.jobs.jobs), work)
+          finally runOnFx(host.shutdown())
+        }
+      }
+      .unsafeRunSync()
+  }
+
+  fxStage.test("named active-work admission saves and closes through the actual dialog") { fx =>
+    TempDirs
+      .resource("eyes4s-lifecycle-save-close-")
+      .use { directory =>
+        IO.blocking {
+          val target = directory.resolve("saved.eyes")
+          create(target)
+          val (platform, host) = setup(fx, directory)
+          try
+            platform.answer(Some(path(target))).unsafeRunSync()
+            invoke(host, CommandRegistry.openProject.id)
+            eventually(fx, "named project ready for save admission")(
+              !host.busy && host.window.exists(_.runtime.model.project.isDefined)
+            )
+            val original = runOnFx(host.window.get)
+            val work     =
+              eyes4s.studio.app.StoryModels.t3Summary.jobs.jobs.filterNot(_.phase.isTerminal)
+            runOnFx(original.runtime.dispatch(Intent.JobsChanged(work)))
+            invoke(host, CommandRegistry.closeProject.id)
+            press(fx, "Save and close")
+            eventually(fx, "named save and close completed")(
+              !host.busy && host.window.exists(_.runtime.model.project.isEmpty)
+            )
+            assert(runOnFx(original.isClosed))
+            assert(usable(target), "save admission must drain the port and release the writer")
           finally runOnFx(host.shutdown())
         }
       }

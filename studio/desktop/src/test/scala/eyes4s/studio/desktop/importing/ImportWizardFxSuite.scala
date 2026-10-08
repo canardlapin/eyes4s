@@ -489,8 +489,7 @@ class ImportWizardFxSuite extends StudioFxSuite:
   }
 
   fxStage.test("a new import's files are stored in the project, so the next save succeeds") {
-    fx =>
-      assumeFullStage(fx)
+    fx => assumeFullStage(fx)
     import eyes4s.studio.core.bundle.{BundleSamples, LockOwner, SharingOptions}
     import eyes4s.studio.core.command.JournalEntry
     import eyes4s.studio.core.session.ProjectSession
@@ -842,7 +841,8 @@ class ImportWizardFxSuite extends StudioFxSuite:
   fxStage.test("per-user preset loads outlive reset and retain newer locally saved names") {
     fx =>
       val waiting =
-        java.util.concurrent.CompletableFuture[Function1[(ImportPresets, Vector[String]), Unit]]()
+        java.util.concurrent
+          .CompletableFuture[Function1[(ImportPresets, Vector[String]), Unit]]()
       val services = new Recorder():
         override def loadPresets: IO[(ImportPresets, Vector[String])] = IO.async_ { done =>
           waiting.complete(answer => done(Right(answer))): Unit
