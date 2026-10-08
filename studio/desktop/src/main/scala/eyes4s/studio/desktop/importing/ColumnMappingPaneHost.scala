@@ -244,7 +244,7 @@ final class ColumnMappingPaneHost(
                         Option(error.getMessage).getOrElse(error.toString)
                       )
                   Platform.runLater(() => deliver(current, intent, Some(port -> source)))
-                }(ExecutionContext.global)
+                }(using ExecutionContext.global)
         )
 
   private def deliver(

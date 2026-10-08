@@ -267,7 +267,6 @@ final class ProjectLifecycleHost(
                 case None       => IO.pure(Right(None))
                 case Some(path) => acquire(action, path).map(_.map(Some(_)))
               }
-              .attempt
               .unsafeRunAsync {
                 case Right(Right(Some(project))) =>
                   arriving.put(operationId, project): Unit
@@ -334,7 +333,7 @@ final class ProjectLifecycleHost(
           live.project.foreach(_.port.save { answer =>
             val clock =
               if answer.isRight then platform.scheduler.now.map(Some(_)) else IO.pure(None)
-            clock.attempt.unsafeRunAsync(result =>
+            clock.unsafeRunAsync(result =>
               later {
                 if state.owns(id) then
                   result.toOption.flatten.foreach(t =>
@@ -392,7 +391,6 @@ final class ProjectLifecycleHost(
                 case Right(_)     =>
                   project.session.document.map(d => Right(AppModel.open(d, Some(project.name))))
               }
-              .attempt
               .unsafeRunAsync {
                 case Right(Right(model)) =>
                   later {

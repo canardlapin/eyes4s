@@ -170,7 +170,7 @@ final class ImportWizardHost(
         tasks -= id
         answer(result.toEither)
       )
-    }(ExecutionContext.global)
+    }(using ExecutionContext.global)
     stop
 
   def dispatch(intent: WizardIntent): Unit = if !disposed then
