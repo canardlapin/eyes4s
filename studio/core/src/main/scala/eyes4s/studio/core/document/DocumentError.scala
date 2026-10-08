@@ -24,6 +24,8 @@ import io.circe.{Codec, Decoder, Encoder}
   * is a default English rendering, never an identity.
   */
 enum DocumentError derives CanEqual:
+  case FamilyOwnership(error: AnalysisFamilyError)
+  case InitialDraftWithFamilies(draft: AnalysisRevision, families: Vector[AnalysisFamilyId])
   case Blank(field: String)
   case BadPath(path: String, reason: String)
   case BadDigest(field: String, value: String, reason: String)
@@ -141,6 +143,9 @@ enum DocumentError derives CanEqual:
   case PresetWithoutDefaults(preset: Preset, dataset: DatasetRevision)
 
   def message: String = this match
+    case FamilyOwnership(error)                    => error.message
+    case InitialDraftWithFamilies(draft, families) =>
+      s"Initial ${draft.label} requires implicit legacy ownership; explicit families are $families."
     case PresetWithoutDefaults(preset, dataset) =>
       s"Preset $preset declares no initial recipe for ${dataset.label}."
     case Blank(field)           => s"$field is blank."

@@ -390,7 +390,29 @@ object Reducer:
         )
         run     = RunId(d.runs.lastOption.fold(1)(_.id.number + 1))
         started = RunRef(run, draft.id, target, RunLifecycle.Running, CoreBinding.unbound)
+        families <- d.analysisFamilies.traverse { registry =>
+          for
+            owner <- d
+              .familyOf(draft.id)
+              .toRight(
+                refused(d, c)(DocumentError.UnknownAnalysis("family ownership", draft.id))
+              )
+            assignment <- AnalysisFamilyOwner
+              .of(revision.id, owner)
+              .left
+              .map(error => refused(d, c)(DocumentError.FamilyOwnership(error)))
+            next <- AnalysisFamilyRegistry
+              .of(
+                registry.families,
+                registry.owners :+ assignment,
+                (d.analyses :+ revision).map(_.id)
+              )
+              .left
+              .map(error => refused(d, c)(DocumentError.FamilyOwnership(error)))
+          yield next
+        }
         next <- rebuild(d, c)(
+          analysisFamilies = families,
           analyses = d.analyses :+ revision,
           draft = None,
           runs = d.runs :+ started
@@ -721,10 +743,21 @@ object Reducer:
       reporting: Vector[ReportingSpec] = d.reporting,
       figures: Vector[FigureSpec] = d.figures,
       jobs: Vector[JobHandle] = d.jobs,
-      relinks: AssetRelinks = d.relinks
+      relinks: AssetRelinks = d.relinks,
+      analysisFamilies: Option[AnalysisFamilyRegistry] = d.analysisFamilies
   ): Either[CommandError, StudioDocument] =
     StudioDocument
-      .of(datasets, analyses, draft, runs, reporting, figures, d.presentation, jobs)
+      .of(
+        datasets,
+        analyses,
+        draft,
+        runs,
+        reporting,
+        figures,
+        d.presentation,
+        jobs,
+        analysisFamilies
+      )
       // The repaired assets go with the science they repair.
       .flatMap(_.withRelinks(relinks))
       .left

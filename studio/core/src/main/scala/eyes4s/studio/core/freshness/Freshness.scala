@@ -39,7 +39,7 @@ import eyes4s.studio.core.document.*
   * a completed successor or newly admitted data does.
   */
 enum StaleReason derives CanEqual:
-  /** Run `by`, of the later analysis revision `revision`, has completed. */
+  /** Run `by`, of a later revision `revision` in the same family, has completed. */
   case Superseded(by: RunId, revision: AnalysisRevision)
 
   /** The run used `run`; `latest` is the latest admitted dataset revision. */
@@ -97,7 +97,9 @@ object SessionFacts:
 final case class RunMeter(stage: StageKind, completedPairs: Long, totalPairs: ProgressTotal)
     derives CanEqual
 
-/** A run at least as new as the shown one that has not completed. */
+/** A run that has not completed. Result-relative activity is scoped further
+  * to the shown run's family; the project jobs chip can show an older running job.
+  */
 enum RunActivity derives CanEqual:
   /** `meter` is `None` until this session holds a progress report from the
     * run's own job.
@@ -230,17 +232,18 @@ final case class Freshness(
 
 /** The pure freshness derivation (ticket S2.7).
   *
-  * A completed run is stale when a newer run of a later analysis revision has
-  * completed ([[StaleReason.Superseded]]) or when it did not use the latest
+  * A completed run is stale when a newer run of a later analysis revision in
+  * the same family has completed ([[StaleReason.Superseded]]) or when it did not use the latest
   * admitted dataset revision ([[StaleReason.DatasetMoved]]); otherwise it is
   * current. Saving a revision, running it, or a newer run failing or being
   * cancelled leaves it current. A draft is not saved science; a dataset
   * revision still being verified is reported in [[Freshness.pending]].
   *
   * The shown run is the presentation's, or else the latest completed run, or
-  * else the latest run of any lifecycle. The newest run is the jobs chip's
-  * activity when it is at least as new as the shown run and has not
-  * completed; the badge carries it only while it runs.
+  * else the latest run of any lifecycle. The jobs chip shows the latest running
+  * job across the project, or the latest ended activity at least as new as the
+  * shown run. Result banners and the badge's newer chip compare runs only
+  * within the shown run's family.
   */
 object Freshness:
 
@@ -255,7 +258,8 @@ object Freshness:
       case RunLifecycle.Cancelled(at) => RunStanding.Cancelled(at)
       case RunLifecycle.Completed     =>
         val successor = completed.findLast(n =>
-          n.id.number > run.id.number && n.analysis.number > run.analysis.number
+          document.sameFamily(run.analysis, n.analysis) &&
+            n.id.number > run.id.number && n.analysis.number > run.analysis.number
         )
         val reasons =
           successor.map(n => StaleReason.Superseded(n.id, n.analysis)) ++
@@ -273,7 +277,16 @@ object Freshness:
         .orElse(document.runs.lastOption)
 
     val newest   = document.runs.lastOption
-    val activity = newest
+    val activity = document.running.lastOption
+      .orElse(newest.filter(n => shown.forall(_.id.number <= n.id.number)))
+      .flatMap(activityOf(document, session, _))
+
+    // The jobs chip describes project-wide activity. Result comparisons only
+    // consider the shown family's runs, even when another family ran later.
+    val contextualNewest = shown.flatMap(s =>
+      document.runs.findLast(n => document.sameFamily(s.analysis, n.analysis))
+    )
+    val contextualActivity = contextualNewest
       .filter(n => shown.forall(_.id.number <= n.id.number))
       .flatMap(activityOf(document, session, _))
 
@@ -281,21 +294,27 @@ object Freshness:
       Badge.Shown(
         s,
         standingOf(s),
-        activity.collect { case r: RunActivity.Running if r.run != s.id => r }
+        contextualActivity.collect { case r: RunActivity.Running if r.run != s.id => r }
       )
     }
 
     val chip = document.draft.map(d => DraftChip(d, readiness(d, session.draftCheck)))
 
     val banner = shown.filter(_.state == RunLifecycle.Completed) match
-      case None    => Some(Banner.NoRun(latestAnalysis))
+      case None =>
+        val latestInContext = shown
+          .flatMap(s =>
+            document.analyses.findLast(a => document.sameFamily(s.analysis, a.id)).map(_.id)
+          )
+          .orElse(latestAnalysis)
+        Some(Banner.NoRun(latestInContext))
       case Some(s) =>
-        val newer = newest.filter(_.id.number > s.id.number)
-        activity
+        val newer = contextualNewest.filter(_.id.number > s.id.number)
+        contextualActivity
           .collect { case r: RunActivity.Running if r.run.number > s.id.number => r }
           .map(r => Banner.NewerRunning(s, r, changes(document, s.analysis, r.revision)))
           .orElse(
-            activity.collect {
+            contextualActivity.collect {
               case a @ (_: RunActivity.Failed | _: RunActivity.Cancelled)
                   if a.run.number > s.id.number =>
                 Banner.NewerEnded(s, a)
@@ -376,7 +395,8 @@ object Freshness:
   ): Option[Banner] =
     for
       shownSpec <- document.analysis(shown.analysis)
-      context   <- document.draftContext.filter(_.id == draft.id)
+      if document.sameFamily(shown.analysis, draft.id)
+      context <- document.draftContext.filter(_.id == draft.id)
       recipe = context.recipe
       target = context.dataset
       diff   = RecipeChange.between(shownSpec.recipe, recipe)

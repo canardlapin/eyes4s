@@ -175,9 +175,9 @@ final case class DocumentParts(
     draft: Option[PartEntry],
     runs: Vector[PartEntry],
     reporting: Vector[PartEntry],
-    figures: Vector[PartEntry]
-) derives CanEqual,
-      Codec.AsObject:
+    figures: Vector[PartEntry],
+    analysisFamilies: Option[PartEntry] = None
+) derives CanEqual:
   /** Every part with the area it must lie in and a name for errors. */
   def located: Vector[(String, BundleArea, PartEntry)] =
     datasets.flatMap(d =>
@@ -189,9 +189,40 @@ final case class DocumentParts(
       draft.map(("draft", BundleArea.Analyses, _)) ++
       runs.map(("run", BundleArea.Runs, _)) ++
       reporting.map(("reporting spec", BundleArea.Reporting, _)) ++
-      figures.map(("figure", BundleArea.Figures, _))
+      figures.map(("figure", BundleArea.Figures, _)) ++
+      analysisFamilies.map(("analysis families", BundleArea.Analyses, _))
 
   def all: Vector[PartEntry] = located.map(_._3)
+
+object DocumentParts:
+  private val legacyEncoder: Encoder.AsObject[DocumentParts] =
+    Encoder.forProduct6("datasets", "analyses", "draft", "runs", "reporting", "figures")(p =>
+      (p.datasets, p.analyses, p.draft, p.runs, p.reporting, p.figures)
+    )
+  given Encoder.AsObject[DocumentParts] = Encoder.AsObject.instance { parts =>
+    val legacy = legacyEncoder.encodeObject(parts)
+    parts.analysisFamilies.fold(legacy)(entry => legacy.add("analysisFamilies", entry.asJson))
+  }
+  given Decoder[DocumentParts] = Decoder.instance { cursor =>
+    for
+      families <-
+        if cursor.downField("analysisFamilies").succeeded then
+          cursor.get[PartEntry]("analysisFamilies").map(Some(_))
+        else Right(None)
+      parts <- Decoder
+        .forProduct6(
+          "datasets",
+          "analyses",
+          "draft",
+          "runs",
+          "reporting",
+          "figures"
+        )((datasets, analyses, draft, runs, reporting, figures) =>
+          DocumentParts(datasets, analyses, draft, runs, reporting, figures, families)
+        )
+        .apply(cursor)
+    yield parts
+  }
 
 // ---------------------------------------------------------------------------
 // The manifest
@@ -344,20 +375,31 @@ object ProjectManifest:
       )
 
   private def expressedByV1(m: ProjectManifest): Boolean =
-    m.sharing == SharingOptions.complete && m.science == ScienceRecord.Unrecorded
+    m.parts.analysisFamilies.isEmpty &&
+      m.sharing == SharingOptions.complete && m.science == ScienceRecord.Unrecorded
+
+  private def beforeFamilies(manifest: ProjectManifest): Either[CodecError, ProjectManifest] =
+    Either.cond(
+      manifest.parts.analysisFamilies.isEmpty,
+      manifest,
+      CodecError.Unsupported("studio project manifest", "analysis family parts need version 3")
+    )
 
   /** Every version of the manifest schema (CR3). Version 1 lifts to version
     * 2 by stating what it always meant: everything travels, and no science
     * digest was recorded (`Unrecorded`, never `Verified`). Version 2 requires
-    * `science`: a missing or null record is refused.
+    * `science`: a missing or null record is refused. Version 3 carries the
+    * optional immutable analysis-family part; older readers and writers refuse
+    * it. Legacy manifests omit that member and retain their original bytes.
     */
   val ladder: Either[CodecError, SchemaLadder[ProjectManifest]] =
     StudioSchemaIds.forCodec.map { ids =>
       SchemaLadder
         .of[ProjectManifest]("studio project manifest", ids.project)(m =>
-          Right(CanonicalJson(writeV1(m)))
+          beforeFamilies(m).map(v => CanonicalJson(writeV1(v)))
         )(json =>
           read(json, _ => Right(SharingOptions.complete), _ => Right(ScienceRecord.Unrecorded))
+            .flatMap(beforeFamilies)
         )
         .next(
           expressedByV1,
@@ -367,13 +409,16 @@ object ProjectManifest:
               "science" -> (ScienceRecord.Unrecorded: ScienceRecord).asJson
             )
           )
-        )(m => Right(CanonicalJson(writeV2(m))))(json =>
+        )(m => beforeFamilies(m).map(v => CanonicalJson(writeV2(v))))(json =>
           read(
             json,
             _.get[SharingOptions]("sharing"),
             _.get[ScienceRecord]("science")
-          )
+          ).flatMap(beforeFamilies)
         )
+        .next(_.parts.analysisFamilies.isEmpty, identity)(m =>
+          Right(CanonicalJson(writeV2(m)))
+        )(json => read(json, _.get[SharingOptions]("sharing"), _.get[ScienceRecord]("science")))
     }
 
   val codec: Either[CodecError, VersionedCodec[ProjectManifest]] = ladder.map(_.codec)

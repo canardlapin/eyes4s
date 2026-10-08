@@ -207,7 +207,8 @@ final class ProjectSession[F[_]: Concurrent] private (
                     document.reporting,
                     document.figures,
                     document.presentation,
-                    document.jobs.filterNot(_.run == run.id)
+                    document.jobs.filterNot(_.run == run.id),
+                    document.analysisFamilies
                   )
                   .leftMap(e => failure("prevalidate storage", e.message))
               case other =>

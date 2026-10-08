@@ -266,12 +266,12 @@ class ProjectBundleSuite extends CatsEffectSuite:
       written.flatMap(ladder.lift).map(_.hcursor.downField("value").focus),
       ladder.writeAt(latest, value).map(Some(_))
     )
-    assertEquals(ladder.versions.map(_.version), Vector(1, 2))
+    assertEquals(ladder.versions.map(_.version), Vector(1, 2, 3))
     assertEquals(ladder.earliest(value), first)
     // A manifest with a science digest or withheld inputs needs version 2.
     val current =
       right(ProjectBundle.encode(t2, SharingOptions.complete, inputsFor(t2))).manifest
-    assertEquals(ladder.earliest(current), latest)
+    assertEquals(ladder.earliest(current), ladder.versions(1))
     assertEquals(
       ladder.lift(v1).map(_.hcursor.downField("value").downField("science").focus),
       Right(Some(Json.obj("Unrecorded" -> Json.obj())))

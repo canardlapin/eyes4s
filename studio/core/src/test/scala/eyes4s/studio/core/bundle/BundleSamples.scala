@@ -84,6 +84,7 @@ object BundleSamples:
         document.reporting,
         document.figures,
         document.presentation,
-        document.jobs
+        document.jobs,
+        document.analysisFamilies
       )
     )
