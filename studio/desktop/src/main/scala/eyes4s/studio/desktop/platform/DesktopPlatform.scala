@@ -61,6 +61,16 @@ object DesktopPlatform:
       JvmPreferences(preferences)
     )
 
+  /** Native naming metadata; portable import code never interprets opaque host paths. */
+  def fileName(path: HostPath): Either[PlatformError, String] =
+    try Option(Paths.get(path.value).getFileName).map(_.toString)
+      .toRight(PlatformError.Unreadable(path, "a root has no file name"))
+    catch case e: InvalidPathException => Left(PlatformError.InvalidPath(path, e.getReason))
+
+  /** Preserve the legacy per-user preset directory at the native location edge. */
+  def importPresetDirectory: Path =
+    Paths.get(sys.props.getOrElse("user.home", ".")).resolve(".eyes4s-studio/import-presets")
+
   /** macOS has the one native menu bar; elsewhere the menu is in the window. */
   val capabilities: HostCapabilities = HostCapabilities(
     nativeMenuBar = sys.props.getOrElse("os.name", "").toLowerCase.contains("mac"),
