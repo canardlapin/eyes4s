@@ -17,7 +17,6 @@
 package eyes4s.studio.desktop.importing
 
 import cats.effect.IO
-import cats.syntax.all.*
 import cats.effect.unsafe.implicits.global
 import eyes4s.studio.core.platform.HostPath
 import eyes4s.studio.app.importing.*
@@ -490,97 +489,100 @@ class ImportWizardFxSuite extends StudioFxSuite:
   }
 
   fxStage.test("a new import's files are stored in the project, so the next save succeeds") {
-    fx => assumeFullStage(fx)
-    import eyes4s.studio.core.bundle.{BundleSamples, LockOwner, SharingOptions}
-    import eyes4s.studio.core.command.JournalEntry
-    import eyes4s.studio.core.session.ProjectSession
-    import eyes4s.studio.desktop.platform.FileProjectStore
-    import eyes4s.studio.desktop.runtime.SessionPort
-    val dir = Files.createTempDirectory("eyes4s-import")
-    try
-      val store   = FileProjectStore.at[IO](dir.resolve("memory-study.eyes")).unsafeRunSync()
-      val owner   = LockOwner.of("ImportWizardFxSuite").fold(e => fail(e.toString), identity)
-      val session = ProjectSession
-        .create(store, owner, t2, SharingOptions.complete, BundleSamples.inputsFor(t2))
-        .unsafeRunSync()
-        .fold(e => fail(e.message), identity)
-      val port = SessionPort.start(session)
-      // A second session's export: bytes the project does not hold yet.
-      val second = dir.resolve("session2.csv")
-      Files.writeString(
-        second,
-        Files.readAllLines(fixations, UTF_8).asScala.take(40).mkString("\n"),
-        UTF_8
-      )
-      val app      = mutable.ArrayBuffer.empty[Intent]
-      val platform = ImportWizardHost.fxPlatform(
-        () => fx.stage,
-        FilePresetStore(dir.resolve("presets")),
-        Some(port)
-      )
-      val host = runOnFx(
-        ImportWizardHost(
-          ImportWizard.newImport(t2, ImportPresets.empty),
-          () => t2,
-          app += _,
-          platform,
-          () => ()
+    fx =>
+      assumeFullStage(fx)
+      import cats.effect.unsafe.implicits.global
+      import eyes4s.studio.core.bundle.{BundleSamples, LockOwner, SharingOptions}
+      import eyes4s.studio.core.command.JournalEntry
+      import eyes4s.studio.core.session.ProjectSession
+      import eyes4s.studio.desktop.platform.FileProjectStore
+      import eyes4s.studio.desktop.runtime.SessionPort
+      val dir = Files.createTempDirectory("eyes4s-import")
+      try
+        val store   = FileProjectStore.at[IO](dir.resolve("memory-study.eyes")).unsafeRunSync()
+        val owner   = LockOwner.of("ImportWizardFxSuite").fold(e => fail(e.toString), identity)
+        val session = ProjectSession
+          .create(store, owner, t2, SharingOptions.complete, BundleSamples.inputsFor(t2))
+          .unsafeRunSync()
+          .fold(e => fail(e.message), identity)
+        val port = SessionPort.start(session)
+        // A second session's export: bytes the project does not hold yet.
+        val second = dir.resolve("session2.csv")
+        Files.writeString(
+          second,
+          Files.readAllLines(fixations, UTF_8).asScala.take(40).mkString("\n"),
+          UTF_8
         )
-      )
-      runOnFx(host.read(SourceRole.Fixations, ok(HostPath.of(second.toString))))
-        .get(30, java.util.concurrent.TimeUnit.SECONDS)
-      runOnFx(host.dispatch(WizardIntent.DeclareTime(Some(TimeUnit.Milliseconds))))
-      runOnFx(host.dispatch(WizardIntent.Commit))
-      val deadline = System.nanoTime + 30_000_000_000L
-      while runOnFx(app.isEmpty) && System.nanoTime < deadline do Thread.sleep(20)
-      val command = runOnFx(app.toVector.collectFirst { case Intent.Dispatch(c) => c })
-        .getOrElse(fail("the command never reached the app"))
-      port.journal(JournalEntry.Apply(command))
-      val saved = scala.concurrent.Promise[Either[String, Unit]]()
-      port.save(r => saved.success(r.map(_ => ())))
-      assertEquals(
-        scala.concurrent.Await
-          .result(saved.future, scala.concurrent.duration.Duration(30, "s")),
-        Right(())
-      )
-      assertEquals(runOnFx(host.model.problem), None)
-      assertEquals(session.saved.unsafeRunSync().datasets.last.id, DatasetRevision(4))
-      // A file that changes between reading and committing is not stored,
-      // and nothing is applied: the bytes on commit must be those read.
-      val third = dir.resolve("session3.csv")
-      Files.writeString(
-        third,
-        Files.readAllLines(fixations, UTF_8).asScala.take(30).mkString("\n"),
-        UTF_8
-      )
-      val app3  = mutable.ArrayBuffer.empty[Intent]
-      val host3 = runOnFx(
-        ImportWizardHost(
-          ImportWizard.newImport(t2, ImportPresets.empty),
-          () => t2,
-          app3 += _,
-          platform,
-          () => ()
+        val app      = mutable.ArrayBuffer.empty[Intent]
+        val platform = ImportWizardHost.fxPlatform(
+          () => fx.stage,
+          FilePresetStore(dir.resolve("presets")),
+          Some(port)
         )
-      )
-      runOnFx(host3.read(SourceRole.Fixations, ok(HostPath.of(third.toString))))
-        .get(30, java.util.concurrent.TimeUnit.SECONDS)
-      Files.writeString(third, "changed", UTF_8)
-      runOnFx(host3.dispatch(WizardIntent.DeclareTime(Some(TimeUnit.Milliseconds))))
-      runOnFx(host3.dispatch(WizardIntent.Commit))
-      val until = System.nanoTime + 30_000_000_000L
-      while runOnFx(host3.model.problem).isEmpty && System.nanoTime < until do Thread.sleep(20)
-      assert(
-        runOnFx(host3.model.problem).exists {
-          case WizardProblem.StoreFailed(r) => r.contains("changed after it was read")
-          case _                            => false
-        },
-        runOnFx(host3.model.problem).toString
-      )
-      assertEquals(runOnFx(app3.toVector), Vector.empty)
-      port.close()
-      session.close.unsafeRunSync(): Unit
-    finally TempDirs.remove(dir)
+        val host = runOnFx(
+          ImportWizardHost(
+            ImportWizard.newImport(t2, ImportPresets.empty),
+            () => t2,
+            app += _,
+            platform,
+            () => ()
+          )
+        )
+        runOnFx(host.read(SourceRole.Fixations, ok(HostPath.of(second.toString))))
+          .get(30, java.util.concurrent.TimeUnit.SECONDS)
+        runOnFx(host.dispatch(WizardIntent.DeclareTime(Some(TimeUnit.Milliseconds))))
+        runOnFx(host.dispatch(WizardIntent.Commit))
+        val deadline = System.nanoTime + 30_000_000_000L
+        while runOnFx(app.isEmpty) && System.nanoTime < deadline do Thread.sleep(20)
+        val command = runOnFx(app.toVector.collectFirst { case Intent.Dispatch(c) => c })
+          .getOrElse(fail("the command never reached the app"))
+        port.journal(JournalEntry.Apply(command))
+        val saved = scala.concurrent.Promise[Either[String, Unit]]()
+        port.save(r => saved.success(r.map(_ => ())))
+        assertEquals(
+          scala.concurrent.Await
+            .result(saved.future, scala.concurrent.duration.Duration(30, "s")),
+          Right(())
+        )
+        assertEquals(runOnFx(host.model.problem), None)
+        assertEquals(session.saved.unsafeRunSync().datasets.last.id, DatasetRevision(4))
+        // A file that changes between reading and committing is not stored,
+        // and nothing is applied: the bytes on commit must be those read.
+        val third = dir.resolve("session3.csv")
+        Files.writeString(
+          third,
+          Files.readAllLines(fixations, UTF_8).asScala.take(30).mkString("\n"),
+          UTF_8
+        )
+        val app3  = mutable.ArrayBuffer.empty[Intent]
+        val host3 = runOnFx(
+          ImportWizardHost(
+            ImportWizard.newImport(t2, ImportPresets.empty),
+            () => t2,
+            app3 += _,
+            platform,
+            () => ()
+          )
+        )
+        runOnFx(host3.read(SourceRole.Fixations, ok(HostPath.of(third.toString))))
+          .get(30, java.util.concurrent.TimeUnit.SECONDS)
+        Files.writeString(third, "changed", UTF_8)
+        runOnFx(host3.dispatch(WizardIntent.DeclareTime(Some(TimeUnit.Milliseconds))))
+        runOnFx(host3.dispatch(WizardIntent.Commit))
+        val until = System.nanoTime + 30_000_000_000L
+        while runOnFx(host3.model.problem).isEmpty && System.nanoTime < until do
+          Thread.sleep(20)
+        assert(
+          runOnFx(host3.model.problem).exists {
+            case WizardProblem.StoreFailed(r) => r.contains("changed after it was read")
+            case _                            => false
+          },
+          runOnFx(host3.model.problem).toString
+        )
+        assertEquals(runOnFx(app3.toVector), Vector.empty)
+        port.close()
+        session.close.unsafeRunSync(): Unit
+      finally TempDirs.remove(dir)
   }
 
   fxStage.test("a file the project cannot store applies nothing and keeps the wizard open") {
@@ -841,9 +843,8 @@ class ImportWizardFxSuite extends StudioFxSuite:
 
   fxStage.test("per-user preset loads outlive reset and retain newer locally saved names") {
     fx =>
-      val waiting =
-        java.util.concurrent
-          .CompletableFuture[Function1[(ImportPresets, Vector[String]), Unit]]()
+      val waiting = java.util.concurrent
+        .CompletableFuture[Function1[(ImportPresets, Vector[String]), Unit]]()
       val services = new Recorder():
         override def loadPresets: IO[(ImportPresets, Vector[String])] = IO.async_ { done =>
           waiting.complete(answer => done(Right(answer))): Unit
@@ -879,40 +880,56 @@ class ImportWizardFxSuite extends StudioFxSuite:
       runOnFx(host.dispose())
   }
 
-
-  fxStage.test("delayed same-name preset writes retain the newer mapping in UI and on disk") { fx =>
-    import cats.effect.Deferred
-    import eyes4s.studio.core.platform.InMemoryPlatform
-    import eyes4s.studio.desktop.platform.PlatformPresetStore
-    val memory = InMemoryPlatform.create[IO]().unsafeRunSync()
-    val directory = ok(HostPath.of("/presets"))
-    val store = PlatformPresetStore(memory.platform.files, directory, p => Right(p.value.split('/').last))
-    val gate = Deferred[IO, Unit].unsafeRunSync()
-    val started = java.util.concurrent.CompletableFuture[Unit]()
-    val calls = java.util.concurrent.atomic.AtomicInteger(0)
-    val services = new Recorder():
-      override def storePreset(preset: ImportPreset): IO[Either[String, Unit]] = IO.defer {
-        if calls.incrementAndGet() == 1 then
-          IO { started.complete(()); () } >> gate.get >> store.save(preset)
-        else store.save(preset)
-      }
-    val host = mountService(fx, services)
-    val name = ok(eyes4s.studio.core.importing.PresetName.of("Same name"))
-    val first = ok(ImportPreset.of(name, Vector(ColumnBinding(ColumnRole.Participant, ok(ColumnName.of("OldSubject")))), None))
-    val newer = ok(ImportPreset.of(name, Vector(ColumnBinding(ColumnRole.Participant, ok(ColumnName.of("NewSubject")))), None))
-    try
-      val a = runOnFx(host.persistPreset(first))
-      started.get(30, java.util.concurrent.TimeUnit.SECONDS)
-      val b = runOnFx {
-        host.presetsLoaded(ok(ImportPresets.of(Vector(newer))))
-        host.persistPreset(newer)
-      }
-      assertEquals(calls.get(), 1)
-      gate.complete(()).unsafeRunSync(): Unit
-      a.get(30, java.util.concurrent.TimeUnit.SECONDS)
-      b.get(30, java.util.concurrent.TimeUnit.SECONDS)
-      assertEquals(calls.get(), 2)
-      assertEquals(store.load.unsafeRunSync()._1.all, Vector(newer))
-      assertEquals(runOnFx(host.model.presets.all), Vector(newer))
-    finally runOnFx(host.dispose())
+  fxStage.test("delayed same-name preset writes retain the newer mapping in UI and on disk") {
+    fx =>
+      import cats.effect.Deferred
+      import eyes4s.studio.core.platform.InMemoryPlatform
+      import eyes4s.studio.desktop.platform.PlatformPresetStore
+      val memory    = InMemoryPlatform.create[IO]().unsafeRunSync()
+      val directory = ok(HostPath.of("/presets"))
+      val store     = PlatformPresetStore(
+        memory.platform.files,
+        directory,
+        p => Right(p.value.split('/').last)
+      )
+      val gate     = Deferred[IO, Unit].unsafeRunSync()
+      val started  = java.util.concurrent.CompletableFuture[Unit]()
+      val calls    = java.util.concurrent.atomic.AtomicInteger(0)
+      val services = new Recorder():
+        override def storePreset(preset: ImportPreset): IO[Either[String, Unit]] = IO.defer {
+          if calls.incrementAndGet() == 1 then
+            IO { started.complete(()); () } >> gate.get >> store.save(preset)
+          else store.save(preset)
+        }
+      val host  = mountService(fx, services)
+      val name  = ok(eyes4s.studio.core.importing.PresetName.of("Same name"))
+      val first = ok(
+        ImportPreset.of(
+          name,
+          Vector(ColumnBinding(ColumnRole.Participant, ok(ColumnName.of("OldSubject")))),
+          None
+        )
+      )
+      val newer = ok(
+        ImportPreset.of(
+          name,
+          Vector(ColumnBinding(ColumnRole.Participant, ok(ColumnName.of("NewSubject")))),
+          None
+        )
+      )
+      try
+        val a = runOnFx(host.persistPreset(first))
+        started.get(30, java.util.concurrent.TimeUnit.SECONDS)
+        val b = runOnFx {
+          host.presetsLoaded(ok(ImportPresets.of(Vector(newer))))
+          host.persistPreset(newer)
+        }
+        assertEquals(calls.get(), 1)
+        gate.complete(()).unsafeRunSync(): Unit
+        a.get(30, java.util.concurrent.TimeUnit.SECONDS)
+        b.get(30, java.util.concurrent.TimeUnit.SECONDS)
+        assertEquals(calls.get(), 2)
+        assertEquals(store.load.unsafeRunSync()._1.all, Vector(newer))
+        assertEquals(runOnFx(host.model.presets.all), Vector(newer))
+      finally runOnFx(host.dispose())
   }
