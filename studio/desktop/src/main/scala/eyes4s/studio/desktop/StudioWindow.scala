@@ -574,7 +574,9 @@ object StudioWindow:
       dispatch,
       displays,
       assetFiles.getOrElse(
-        AssetFiles.chooser(() => Option(shell.root.getScene).map(_.getWindow).orNull)
+        hostPlatform.fold(
+          AssetFiles.chooser(() => Option(shell.root.getScene).map(_.getWindow).orNull)
+        )(p => AssetFiles.onPlatform(p, eyes4s.studio.desktop.platform.DesktopPlatform.fileName))
       ),
       project
     )
