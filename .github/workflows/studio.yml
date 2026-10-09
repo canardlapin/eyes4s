@@ -115,7 +115,7 @@ jobs:
     name: Studio (macOS, functional JavaFX)
     strategy:
       matrix:
-        os: [macos-15-intel]
+        os: [macos-15]
         java: [temurin@25]
     runs-on: ${{ matrix.os }}
     timeout-minutes: 60
@@ -147,7 +147,7 @@ jobs:
       - name: Run functional JavaFX tests (no goldens)
         env:
           EYES4S_STUDIO_SMALL_DISPLAY: skip
-        run: sbt -J-Xmx3g -Djavafx.platform=mac -Deyes4s.studio.fx.visible=true studioDesktop/test
+        run: sbt -J-Xmx2g -Djavafx.platform=mac-aarch64 -Deyes4s.studio.test.heap=5g -Deyes4s.studio.fx.visible=true studioDesktop/test
 
   studio-clean-clone:
     name: Studio pins from a clean clone

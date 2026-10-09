@@ -1538,8 +1538,8 @@ def studioFxTestOptions(buildRoot: File): Seq[String] = {
   )
   Seq(
     // Native archive round trips decode the full golden study. The sbt launcher's
-    // heap does not configure this fork; use the same budget on local and CI hosts.
-    "-Xmx8g",
+    // heap does not configure this fork; make its CI budget reproducible locally.
+    "-Xmx" + sys.props.getOrElse("eyes4s.studio.test.heap", "8g"),
     "-XX:+ExitOnOutOfMemoryError",
     s"-Deyes4s.studio.snapshots=${(buildRoot / "target" / "studio-snapshots").getAbsolutePath}",
     "-Djava.awt.headless=true"
@@ -1692,7 +1692,7 @@ lazy val studioMacosJob = WorkflowJob(
   studioJobSetup ::: List(
     WorkflowStep.Run(
       List(
-        "sbt -J-Xmx3g -Djavafx.platform=mac -Deyes4s.studio.fx.visible=true studioDesktop/test"
+        "sbt -J-Xmx2g -Djavafx.platform=mac-aarch64 -Deyes4s.studio.test.heap=5g -Deyes4s.studio.fx.visible=true studioDesktop/test"
       ),
       name = Some("Run functional JavaFX tests (no goldens)"),
       // The runner's display is 1024x768, which clamps a 1440x900 stage: tests
@@ -1701,8 +1701,7 @@ lazy val studioMacosJob = WorkflowJob(
     )
   ),
   sbtStepPreamble = Nil,
-  // The standard Intel runner has 14 GB RAM, enough for the 8 GB test fork and sbt.
-  oses = List("macos-15-intel"),
+  oses = List("macos-15"),
   scalas = Nil,
   javas = List(studioJdk),
   timeoutMinutes = Some(60)
