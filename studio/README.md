@@ -34,8 +34,14 @@ exhaustion so a failed decode cannot leave later FX tests waiting for a dead
 runtime. Linux CI gives sbt 3 GB and the test fork 8 GB. Apple Silicon macOS CI
 compiles with 2 GB, then exits that process and starts a fresh 1 GB sbt process
 with a 4 GB test fork, leaving room for JVM native memory and macOS within the
-runner's 7 GB of RAM. Assertions and timing budgets are the same. Local FX tests
-remain headless by default.
+runner's 7 GB of RAM. Both platforms use the same assertions and test budgets.
+Local FX tests remain headless by default.
+
+The full native command journey qualifies archive contents and cold restoration.
+It allows five minutes for verified archive persistence and ten minutes for the
+whole journey, including the independent science comparison and reopen. These
+test-harness deadlines accommodate shared-runner variation; the separate frame
+performance assertions retain their 32 ms median and 250 ms worst-frame limits.
 
 ## Source pins
 

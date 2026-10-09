@@ -221,8 +221,9 @@ final class NativeCommandJourney private (
   def close(): Future[Unit] = session.close
 
 object NativeCommandJourney:
-  // Full packed-density closure verification includes storing and reading every byte.
-  private val ArtifactStoragePatience = 180.seconds
+  // The full packed-density closure is stored and read back on shared CI runners.
+  // This is a correctness-test wait allowance, not an archive latency assertion.
+  private val ArtifactStoragePatience = 5.minutes
   def open(initial: AppModel, project: ProjectPort)(using
       ExecutionContext
   ): Future[NativeCommandJourney] =

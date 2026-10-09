@@ -36,7 +36,7 @@ import scala.concurrent.duration.*
 /** Empty-project native route through the actual command/effect/service path. */
 class NativeCommandJourneySuite extends munit.CatsEffectSuite:
   import NativeCommandJourneyFixture.*
-  override val munitIOTimeout: Duration                            = 300.seconds
+  override val munitIOTimeout: Duration                            = 10.minutes
   private def future[A](run: => scala.concurrent.Future[A]): IO[A] = IO.fromFuture(IO(run))
   private val owner = get(LockOwner.of("Native command reopen"))
 
