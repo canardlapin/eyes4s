@@ -80,7 +80,7 @@ object StudyCodecs:
       VersionedCodec.unit(DefinitionId.unit)
     )
 
-  /** A [[TrialKey]] with its item beside its identity. */
+  /** A [[eyes4s.plan.TrialKey TrialKey]] with its item beside its identity. */
   def trialKey(schema: DefinitionId): VersionedCodec[TrialKey] =
     VersionedCodec.of[TrialKey](schema)(k =>
       Json.obj(

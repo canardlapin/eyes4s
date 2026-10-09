@@ -44,7 +44,7 @@ object CsvLayoutError:
   * importers' RFC 4180 decoder reads them: a record ends at an unquoted LF or
   * CRLF, a quoted field may hold line breaks, and a trailing record is kept
   * when it has a field or a character. So record `n` of the layout is record
-  * `n` of the decoder, and the ledger's record numbers ([[CsvRecord]]s) name
+  * `n` of the decoder, and the ledger's record numbers ([[eyes4s.plan.CsvRecord CsvRecord]]s) name
   * the same records. The text is kept so a record's verbatim text can be
   * shown.
   */

@@ -57,7 +57,7 @@ object EvaluationInfo:
 /** Explicit evidence that a generic evaluator is symmetric.
   *
   * Canonical-undirected pair storage accepts this capability, not an ordinary
-  * function. [[SymmetricCompare]] supplies the same evidence for comparisons.
+  * function. [[eyes4s.compare.SymmetricCompare SymmetricCompare]] supplies the same evidence for comparisons.
   */
 final class SymmetricEvaluator[A, E, S] private (
     f: (A, A) => Either[E, S]
@@ -392,7 +392,7 @@ object WorkQuanta:
   *
   * A [[PairEvaluation.Whole]] closure runs as one indivisible operation per
   * pair; the schedule is still paged, so cancellation is bounded at pair
-  * granularity only. [[PairEvaluation.Bounded]] needs a [[BoundedCompare]],
+  * granularity only. [[PairEvaluation.Bounded]] needs a [[eyes4s.compare.BoundedCompare BoundedCompare]],
   * whose cursor yields inside each pair; an arbitrary closure cannot be lifted
   * into it.
   */
@@ -1157,7 +1157,7 @@ object ReductionRow:
       case ReductionError.MeanFailure(_, _)                  => true
 
 object ReductionReport:
-  /** Checked reconstruction of the realized counts alone; [[Analysis.reconstruct]]
+  /** Checked reconstruction of the realized counts alone; [[eyes4s.design.Analysis$ Analysis]] reconstruction
     * cross-checks them against the stored rows.
     */
   def reconstruct[K](

@@ -21,7 +21,7 @@ package eyes4s.plan
   * importer's own row identity. The grouping only orders records.
   *
   * An application parses an occurrence with [[TrialOccurrence.of]], builds its
-  * [[TrialIdentity]], and then calls [[of]]. Thus a Studio import builder can
+  * [[TrialIdentity]], and then calls [[eyes4s.plan.TrialConflictRow$.of of]]. Thus a Studio import builder can
   * use the same typed boundary as `eyes4s-io`; raw occurrence text and invalid
   * record positions cannot reach the grouping.
   */

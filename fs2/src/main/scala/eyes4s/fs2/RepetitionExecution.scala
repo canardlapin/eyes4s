@@ -44,7 +44,7 @@ type RepetitionRun[F[_], K] =
   Run[F, RepetitionRunId, RepetitionStage, RepetitionStage, Nothing, RepetitionPlanResult[K]]
 
 /** Interpret a repetition plan's bounded steps under Cats Effect through the
-  * shared [[Execution]] runner. The cursor is [[RepetitionPlan.work]]: the
+  * shared [[Execution]] runner. The cursor is [[eyes4s.plan.RepetitionPlan!.work RepetitionPlan.work]]: the
   * matched pairs, then the control pairs, a page of comparisons per step, so a
   * completed run is the pure `run`. Each stage is its own segment, with the
   * exact pair total its pairing fixed. Cancellation lands between steps.

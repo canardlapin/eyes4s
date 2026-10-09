@@ -307,7 +307,7 @@ object Generators:
 
   /** Positive-duration fixations laid end to end on one clock, each separated
     * from the last by a non-negative gap, so that the sequence is ordered and
-    * non-overlapping by construction -- exactly what [[Scanpath.of]] demands.
+    * non-overlapping by construction -- exactly what [[eyes4s.core.Scanpath$.of Scanpath.of]] demands.
     *
     * A zero gap is generated deliberately: abutting fixations are the case the
     * type exists to handle honestly (a transition with no measured extent),

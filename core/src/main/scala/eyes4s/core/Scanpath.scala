@@ -60,7 +60,7 @@ final class ScanpathTransition[U <: Unit2D] private[core] (
   *
   * ==The trajectory side of the duality==
   *
-  * A scanpath keeps its order, so it supports the measures a [[PointMeasure]]
+  * A scanpath keeps its order, so it supports the measures a [[eyes4s.kernel.PointMeasure PointMeasure]]
   * cannot: path length, transition structure, alignment, recurrence. Going the
   * other way is [[occupancy]], which is explicitly lossy.
   */

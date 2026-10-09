@@ -32,7 +32,7 @@ import org.typelevel.discipline.Laws
   */
 trait PayloadLaws extends Laws:
   /** Packing and unpacking `values` in the given layout through `pack` and
-    * `unpack`; [[PayloadLaws.shippedArrays]] supplies [[PackedArrays]], and a
+    * `unpack`; [[PayloadLaws.shippedArrays]] supplies [[eyes4s.codec.PackedArrays PackedArrays]], and a
     * test supplies others to show that the laws kill a broken implementation.
     */
   def packedArrays[A](

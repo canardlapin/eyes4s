@@ -26,7 +26,7 @@ import org.typelevel.discipline.Laws
   *
   * `select` is an observation adapter so downstream implementations and the
   * deliberate mutants in this module's conformance suite can be tested without
-  * making [[MassLevel]] constructible outside the kernel.
+  * making [[eyes4s.kernel.MassLevel MassLevel]] constructible outside the kernel.
   */
 trait MassLevelsLaws extends Laws:
 

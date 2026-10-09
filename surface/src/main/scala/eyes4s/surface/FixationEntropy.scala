@@ -128,9 +128,9 @@ enum OutsideLattice derives CanEqual:
 
 /** Whether a coordinate on a lattice's upper bound belongs to its last cell.
   *
-  * Every other cell is half-open, `[lower, upper)`. [[Closed]] makes the last
+  * Every other cell is half-open, `[lower, upper)`. [[eyes4s.surface.LatticeUpperEdge.Closed Closed]] makes the last
   * cell `[lower, upper]`, as eyesim's grid method does
-  * (`rightmost.closed = TRUE`); [[Open]] keeps it half-open like a [[Frame]].
+  * (`rightmost.closed = TRUE`); [[eyes4s.surface.LatticeUpperEdge.Open Open]] keeps it half-open like a [[eyes4s.kernel.Frame Frame]].
   */
 enum LatticeUpperEdge derives CanEqual:
   case Closed, Open
@@ -151,9 +151,9 @@ enum LatticePlacement derives CanEqual:
 
 /** An equal-width counting lattice over explicit bounds in a scanpath's frame.
   *
-  * Unlike a [[Grid]], a lattice may extend past its frame: eyesim's default
+  * Unlike a [[eyes4s.kernel.Grid Grid]], a lattice may extend past its frame: eyesim's default
   * pads the observed range of the fixations, which can reach off the display.
-  * Cell `index = iy * nx + ix`, the [[Grid]] order. Column `ix` covers
+  * Cell `index = iy * nx + ix`, the [[eyes4s.kernel.Grid Grid]] order. Column `ix` covers
   * `[xMin + ix * w, xMin + (ix + 1) * w)` with `w = (xMax - xMin) / nx`, and
   * the last column ends exactly at `xMax`.
   */
@@ -272,8 +272,8 @@ enum EntropyQuantity derives CanEqual:
 
 /** How the entropies of several scales become one number.
   *
-  * There is no unweighted default hidden behind a missing argument: [[Mean]]
-  * weighs every scale equally, [[Weighted]] names each scale's weight.
+  * There is no unweighted default hidden behind a missing argument: [[eyes4s.surface.ScaleReduction.Mean Mean]]
+  * weighs every scale equally, [[eyes4s.surface.ScaleReduction.Weighted Weighted]] names each scale's weight.
   */
 enum ScaleReduction[U <: Unit2D]:
   case Mean()
@@ -451,12 +451,12 @@ end MultiscaleEntropy
   * the smoother, the log base and, across scales, the reduction.
   *
   *   - [[occupancy]] counts (or accumulates dwell) in the cells of an
-  *     [[OccupancyLattice]]; with [[Weight.Uniform]], a lattice from
+  *     [[OccupancyLattice]]; with [[eyes4s.core.Weight.Uniform Weight.Uniform]], a lattice from
   *     [[OccupancyLattice.paddedRange]] with padding `0.05`,
   *     [[LatticeUpperEdge.Closed]] and [[OutsideLattice.ClampToEdgeCell]], it
   *     is eyesim's `method = "grid"`.
   *   - [[density]] smooths the occupancy with the native [[Smoother]] on a
-  *     [[Grid]] over the scanpath's frame and measures the resulting [[Mass]].
+  *     [[eyes4s.kernel.Grid Grid]] over the scanpath's frame and measures the resulting [[eyes4s.kernel.Mass Mass]].
   *     It is not eyesim's `method = "density"`, which evaluates a continuous
   *     `ks` estimate at endpoint-inclusive lattice points; the entropy step
   *     is the same.

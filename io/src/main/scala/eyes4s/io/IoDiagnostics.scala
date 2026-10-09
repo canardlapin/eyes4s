@@ -21,7 +21,7 @@ import eyes4s.plan.*
 /** The code table of io's error families: fixation and result CSV import and
   * export, delimited sample schemas, the psychology workflow, EyeLink ASC
   * import and conversion evidence, and the retired EyeLink evidence families
-  * ([[retired]]). Codes are unique across this table, [[DiagnosticCatalog]]
+  * ([[retired]]). Codes are unique across this table, [[eyes4s.plan.DiagnosticCatalog DiagnosticCatalog]]
   * and `CodecDiagnosticCatalog`, and codes are only ever appended.
   */
 object IoDiagnosticCatalog:
@@ -319,14 +319,14 @@ object IoDiagnosticCatalog:
   /** Every code ever issued, live or retired, in issue order. */
   val issued: Vector[DiagnosticCode] = issuedFamilies.flatMap(_.codes)
 
-/** io's [[Diagnose]] instances. Import `IoDiagnostics.given` for
+/** io's [[eyes4s.plan.Diagnose Diagnose]] instances. Import `IoDiagnostics.given` for
   * `Diagnostic.of` over io's families. Each field becomes a typed operand
   * under its own name, and a wrapped error keeps its subject. A case that
   * names a text source and a line has the subject `Locus.Line`; a tidy CSV
   * error names its logical record (the header is record 1) as `Locus.Record`;
   * and a fixation import refused for rejected rows names them as
   * `Locus.Records`. Export errors that wrap a `CodecError` carry its trial
-  * keys as [[ErasedKey]]s.
+  * keys as [[eyes4s.plan.ErasedKey ErasedKey]]s.
   */
 object IoDiagnostics:
   import IoDiagnosticCatalog as C

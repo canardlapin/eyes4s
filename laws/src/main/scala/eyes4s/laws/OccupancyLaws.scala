@@ -22,7 +22,7 @@ import org.scalacheck.Prop.forAll
 import org.scalacheck.{Gen, Prop}
 import org.typelevel.discipline.Laws
 
-/** Law suite for [[Region]] as a Boolean algebra.
+/** Law suite for [[eyes4s.kernel.Region Region]] as a Boolean algebra.
   *
   * ==Observational, necessarily==
   *
@@ -106,7 +106,7 @@ end RegionLaws
 object RegionLaws extends RegionLaws
 
 /** Law suites for the occupancy layer: the module on signed surfaces, the
-  * invariants a [[Mass]] claims, and the identity that makes [[PointMeasure]]
+  * invariants a [[eyes4s.kernel.Mass Mass]] claims, and the identity that makes [[eyes4s.kernel.PointMeasure PointMeasure]]
   * a measure rather than a bag of numbers.
   */
 trait SurfaceLaws extends Laws:
@@ -174,7 +174,7 @@ trait SurfaceLaws extends Laws:
       "zero is dimensioned by its grid" -> Prop(M.zero.size == g.size)
     )
 
-  /** What a [[Mass]] guarantees, and what the operations on it preserve. */
+  /** What a [[eyes4s.kernel.Mass Mass]] guarantees, and what the operations on it preserve. */
   def mass[U <: Unit2D](g: Grid[U], tol: Tolerance = Tolerance.roundTrip): RuleSet =
     val gm = genMass(g)
     val gi = genIntensity(g)
@@ -247,7 +247,7 @@ trait SurfaceLaws extends Laws:
       }
     )
 
-  /** The identity that makes a [[PointMeasure]] a measure. */
+  /** The identity that makes a [[eyes4s.kernel.PointMeasure PointMeasure]] a measure. */
   def measure[U <: Unit2D](g: Grid[U], tol: Tolerance = Tolerance.roundTrip): RuleSet =
     val gm = genPointMeasure(g.frame)
     val gr = genRegion(g.frame)

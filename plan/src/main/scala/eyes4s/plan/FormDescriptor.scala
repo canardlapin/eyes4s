@@ -43,7 +43,7 @@ enum Counted derives CanEqual:
   *
   * A numeric field names exactly one quantity; a field whose parts differ is
   * `Composite`, and its parts name their own. Units come from the kernel's
-  * [[PlanarUnit]] and [[LengthUnit]], never from a string.
+  * [[eyes4s.kernel.PlanarUnit PlanarUnit]] and [[eyes4s.kernel.LengthUnit LengthUnit]], never from a string.
   */
 enum Quantity derives CanEqual:
   /** A position, extent or standard deviation in a frame of `unit`. */
@@ -58,7 +58,7 @@ enum Quantity derives CanEqual:
   /** A physical length, such as a viewing distance. */
   case Length(unit: LengthUnit)
 
-  /** A time interval in integer microseconds ([[Span]]). */
+  /** A time interval in integer microseconds ([[eyes4s.kernel.Span Span]]). */
   case Duration
 
   /** A whole number of things. */

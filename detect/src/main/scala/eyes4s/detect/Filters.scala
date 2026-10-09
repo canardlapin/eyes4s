@@ -29,7 +29,7 @@ enum WindowObservationPolicy derives CanEqual:
     */
   case IncludeOffScreen
 
-/** Sample-level preprocessing, as composable [[Machine]]s.
+/** Sample-level preprocessing, as composable [[eyes4s.kernel.Machine Machine]]s.
   *
   * Each of these is a `Machine[Sample[U], Sample[U]]`, so they chain with each
   * other and with a detector using the same `andThen`, and the whole chain runs

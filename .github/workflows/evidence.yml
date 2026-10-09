@@ -36,6 +36,7 @@ jobs:
           java-version: 17
           cache: sbt
 
+
       - name: Audit public API inventory and executed evidence
         run: python3 tools/api-audit/run.py
 
@@ -68,6 +69,7 @@ jobs:
           java-version: 17
           cache: sbt
 
+
       - name: Check the isolated published-artifact consumer
         run: python3 tools/check-docs.py --platform none --run-consumer
 
@@ -81,4 +83,42 @@ jobs:
             target/study-consumer/publish.log
             target/study-consumer/consumer.log
             target/study-consumer/receipt.json
+          if-no-files-found: warn
+
+  scala-js-bundle-sizes:
+    name: Report executable Scala.js bundle sizes
+    runs-on: ubuntu-22.04
+    timeout-minutes: 120
+    steps:
+      - name: Checkout current revision
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Setup sbt
+        uses: sbt/setup-sbt@v1
+
+      - name: Setup Java
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: 17
+          cache: sbt
+
+      - name: Setup Node
+        uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          package-manager-cache: false
+
+      - name: Report executable Scala.js bundle sizes
+        run: python3 tools/js-bundle-sizes/report.py
+
+      - name: Upload evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: scala-js-bundle-sizes-${{ github.sha }}
+          path: |
+            target/js-bundle-sizes/
           if-no-files-found: warn

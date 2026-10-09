@@ -72,7 +72,7 @@ object Entropy:
   /** Shannon entropy of non-negative weights over `weights.length` cells,
     * after dividing each by their total.
     *
-    * The same computation as [[Mass.entropy]] for weights that are not yet a
+    * The same computation as [[eyes4s.kernel.entropy Mass.entropy]] for weights that are not yet a
     * [[Mass]]: counts in the cells of a lattice that is not a [[Grid]], for
     * instance. A negative or non-finite weight is refused with the index that
     * carries it, and weights with no mass have no distribution to measure.
@@ -256,7 +256,7 @@ object Surface:
     yield new Signed(g, values, provenance)
 
   /** Direct construction of a mass, for values already known to be a
-    * distribution. Prefer [[Intensity.normalised]], which cannot be wrong.
+    * distribution. Prefer [[eyes4s.kernel.normalised Intensity.normalised]], which cannot be wrong.
     */
   def mass[U <: Unit2D](
       g: Grid[U],

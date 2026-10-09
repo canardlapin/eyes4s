@@ -20,7 +20,7 @@ import eyes4s.kernel.*
 
 /** The physical arrangement of observer and display.
   *
-  * A thin, named wrapper over the kernel's [[Perspective]]. The projection
+  * A thin, named wrapper over the kernel's [[eyes4s.kernel.Perspective Perspective]]. The projection
   * itself is geometry -- how large a rectangle of known size appears from a
   * known distance -- and belongs in the kernel, where it can serve a camera or
   * a simulated observer as readily as an eye. This is the eye-tracking name for
@@ -294,7 +294,7 @@ final class Recording[U <: Unit2D] private (
   /** Samples falling in a window.
     *
     * The policy argument is deliberately absent: a sample is instantaneous, so
-    * there is nothing to straddle. [[Overlap]] applies to events, which have
+    * there is nothing to straddle. [[eyes4s.kernel.Overlap Overlap]] applies to events, which have
     * extent. Accepting a policy here would imply a choice that does not exist.
     */
   def within(w: Window, anchor: Instant): Either[CoreError, Recording[U]] =

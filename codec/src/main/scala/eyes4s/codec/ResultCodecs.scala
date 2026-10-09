@@ -116,7 +116,7 @@ object StudyResultCodecs:
         )
     )
 
-/** Versioned codec for one completed [[StudyResult]] of one plan family.
+/** Versioned codec for one completed [[eyes4s.plan.StudyResult StudyResult]] of one plan family.
   *
   * The archive keeps the result's identity (plan description, input digest,
   * layout and method identities, the score and difference schemas), every

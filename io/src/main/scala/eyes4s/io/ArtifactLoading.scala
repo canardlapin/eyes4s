@@ -26,7 +26,7 @@ import eyes4s.kernel.Unit2D
   * reads in `F`: a JVM directory, a browser store, an object store.
   *
   * `resolve` reads the manifest, then every entry it lists, one request at a
-  * time, and only then hands the bytes to the pure [[ArtifactResolver]], which
+  * time, and only then hands the bytes to the pure [[eyes4s.codec.ArtifactResolver ArtifactResolver]], which
   * verifies every length and digest before decoding anything. Each read is a
   * separate `F`, so an `F` that supports cancellation can cancel resolution
   * between reads or inside one; the source owns whatever it opens and

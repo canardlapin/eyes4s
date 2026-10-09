@@ -35,7 +35,7 @@ object ComparisonMethodDefinitions:
 /** One registered map comparison method: its typed measure, its stable
   * identity, and the descriptor an application presents it with.
   *
-  * The measure keeps its interface ([[MapSimilarityMethod.interface]]); the
+  * The measure keeps its interface ([[eyes4s.compare.MapSimilarityMethod!.interface MapSimilarityMethod.interface]]); the
   * descriptor's declared properties and execution capability are derived from
   * that interface and the measure's declared scale, never from a name.
   */
@@ -156,7 +156,7 @@ object ComparisonMethods:
     "Distance correlation"
   )
 
-  /** Every entry, in the order of [[MapSimilarityMethod.values]]. */
+  /** Every entry, in the order of [[eyes4s.compare.MapSimilarityMethod$.values MapSimilarityMethod.values]]. */
   val all: Vector[ComparisonMethod] =
     Vector(
       pearson,
@@ -169,7 +169,7 @@ object ComparisonMethods:
     )
 
   /** The entry of a registered method. A compatibility-only method, which has
-    * no built-in identity, is [[MapComparisonError.UnsupportedMethod]].
+    * no built-in identity, is [[eyes4s.compare.MapComparisonError.UnsupportedMethod MapComparisonError.UnsupportedMethod]].
     */
   def of(method: MapSimilarityMethod): Either[MapComparisonError, ComparisonMethod] =
     all.find(_.method == method).toRight(MapComparisonError.UnsupportedMethod(method.token))

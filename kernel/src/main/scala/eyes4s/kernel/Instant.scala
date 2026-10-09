@@ -23,7 +23,7 @@ import cats.kernel.Order
   * An `Instant` carries no clock identity of its own: two instants are only
   * comparable if something else established that they came from the same
   * timeline. That "something else" is [[Interval]], which does carry a
-  * [[ClockId]], and [[Recording]] in `eyes4s-core`. Bare instants are a
+  * [[ClockId]], and `Recording` in `eyes4s-core`. Bare instants are a
   * primitive, not a public currency.
   *
   * Note the deliberate absence of an overloaded `-`. Subtracting a [[Span]]

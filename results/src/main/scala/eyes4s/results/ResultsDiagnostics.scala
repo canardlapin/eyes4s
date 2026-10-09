@@ -113,7 +113,7 @@ object ResultsDiagnosticCatalog:
   /** Every stable code, in catalog order. */
   val codes: Vector[DiagnosticCode] = families.flatMap(_.codes)
 
-/** The results module's [[Diagnose]] instances. Import `ResultsDiagnostics.given`
+/** The results module's [[eyes4s.plan.Diagnose Diagnose]] instances. Import `ResultsDiagnostics.given`
   * for `Diagnostic.of` over its families. A finding or refusal that names a
   * trial has the subject `Locus.Trial`; one that names a participant or a
   * group has `Locus.Participant` or `Locus.Group`.

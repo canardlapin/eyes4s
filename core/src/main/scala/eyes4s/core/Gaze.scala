@@ -52,7 +52,7 @@ enum PupilUnit derives CanEqual:
   * the compiler will not let a match go unhandled, and there is no numeric
   * value that secretly means "absent".
   *
-  * The distinction between [[Blink]] and [[Lost]] is worth keeping. A blink is
+  * The distinction between [[eyes4s.core.Gaze.Blink Blink]] and [[eyes4s.core.Gaze.Lost Lost]] is worth keeping. A blink is
   * a physiological event with a duration that belongs in the record; signal
   * loss is a measurement failure. Data-quality reporting needs to tell them
   * apart, and only the tracker knows which it saw.

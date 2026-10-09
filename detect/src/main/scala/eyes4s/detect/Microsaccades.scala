@@ -297,7 +297,7 @@ object Merge:
     * of a degree apart. Both criteria are required: a long pause in the same
     * place is two fixations, and so is a quick move to somewhere else.
     *
-    * The input is an [[EventSeries]], not a raw event stream. Its constructor
+    * The input is an [[eyes4s.core.EventSeries EventSeries]], not a raw event stream. Its constructor
     * has already proved one frame, one clock, one source recording, and exact
     * ordered sample ranges. Merging combines those ranges and reconstructs the
     * fixation summary from source samples, so no clock is relabelled and no

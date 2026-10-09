@@ -22,11 +22,11 @@ import org.scalacheck.Prop.forAll
 import org.scalacheck.{Gen, Prop}
 import org.typelevel.discipline.Laws
 
-/** Law suites for the [[Compare]] hierarchy.
+/** Law suites for the [[eyes4s.compare.Compare Compare]] hierarchy.
   *
   * ==The interface is a claim; this is the audit==
   *
-  * A measure that extends [[Metric]] is asserting three things about itself,
+  * A measure that extends [[eyes4s.compare.Metric Metric]] is asserting three things about itself,
   * and nothing in the type system checks them. These rule sets do. Publishing
   * them main-scope means an author adding a measure -- theirs or ours -- runs
   * the same audit rather than writing three ad-hoc assertions and hoping they
@@ -143,7 +143,7 @@ trait MeasureLaws extends Laws:
       }
     )
 
-  /** The one law a [[SymmetricCompare]] promises, for any score type.
+  /** The one law a [[eyes4s.compare.SymmetricCompare SymmetricCompare]] promises, for any score type.
     *
     * Required by PRD C-9 for every instance: an unordered pair evaluation
     * depends on this and nothing else.
@@ -198,7 +198,7 @@ trait MeasureLaws extends Laws:
         separates(d.compare, distinct, minSeparation)
     )
 
-  /** A [[Kernel]] promises symmetry and positive semi-definiteness: every Gram
+  /** A [[eyes4s.compare.Kernel Kernel]] promises symmetry and positive semi-definiteness: every Gram
     * matrix `K(i, j) = k(x_i, x_j)` has `c' K c >= 0` for every real `c`.
     *
     * Tested on Gram matrices of `size` generated inputs against generated
@@ -244,7 +244,7 @@ trait MeasureLaws extends Laws:
   /** Every score lies in the range the measure's info declares: a bounded,
     * correlation or probability scale within its bounds (up to `tol`), an
     * unbounded or distance scale finite. The claim an application reads from
-    * [[MeasureInfo.scale]] is thereby the measure's actual range.
+    * [[eyes4s.compare.MeasureInfo!.scale MeasureInfo.scale]] is thereby the measure's actual range.
     */
   def withinScale[A, S](
       c: Compare[A, A, S],

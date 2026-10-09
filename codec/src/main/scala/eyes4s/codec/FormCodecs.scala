@@ -26,7 +26,7 @@ object FormCodecDefinitions:
   /** A host's raw form values, keyed by field. */
   val formValues: DefinitionId = DefinitionId.builtIn("eyes4s.form-values", 1)
 
-  /** The fields a method or recipe presents ([[FormView]]). */
+  /** The fields a method or recipe presents ([[eyes4s.plan.FormView FormView]]). */
   val formView: DefinitionId = DefinitionId.builtIn("eyes4s.form-view", 1)
 
 /** Codecs for form values and form views (`eyes4s.form-values@1`,
@@ -34,9 +34,9 @@ object FormCodecDefinitions:
   *
   * A number stays the text the user typed, so an empty or malformed entry
   * survives a round trip exactly. Form values are written in ascending field
-  * order, with no absent entry: [[FormValues]] holds none. A view decodes
-  * through the plan's own constructors ([[FieldView.of]], [[NumericBounds.of]],
-  * [[DefaultValue.of]]), so a stored view cannot hold a field the plan would
+  * order, with no absent entry: [[eyes4s.plan.FormValues FormValues]] holds none. A view decodes
+  * through the plan's own constructors ([[eyes4s.plan.FieldView$.of FieldView.of]], [[eyes4s.plan.NumericBounds$.of NumericBounds.of]],
+  * [[eyes4s.plan.DefaultValue$.of DefaultValue.of]]), so a stored view cannot hold a field the plan would
   * refuse. Every tag is a lower-camel token; units are their symbols.
   */
 object FormCodecs:

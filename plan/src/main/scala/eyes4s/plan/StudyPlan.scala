@@ -384,7 +384,7 @@ object StudyFailure:
     case StudyFailure.PreparedPlan(k, _)     => Vector(k)
 
 /** Typed evidence of how a method's comparison executes. A synchronous closure
-  * runs whole per pair; only a [[BoundedCompare]] can be declared bounded, so
+  * runs whole per pair; only a [[eyes4s.compare.BoundedCompare BoundedCompare]] can be declared bounded, so
   * the reported capability is never inferred from a name or a flag.
   */
 enum MethodExecution[-P, U <: Unit2D, +S]:
@@ -509,7 +509,7 @@ final class StudyResult[K, U <: Unit2D, S, D] private[plan] (
 )
 
 /** Refusals while rebuilding a completed result from stored parts. A scale's
-  * own refusal is wrapped in [[Scale]] with the scale index; every other case
+  * own refusal is wrapped in [[eyes4s.plan.StudyResultError.Scale Scale]] with the scale index; every other case
   * names the trial keys, pair keys, design or declared values that disagree.
   */
 enum StudyResultError[K] derives CanEqual:

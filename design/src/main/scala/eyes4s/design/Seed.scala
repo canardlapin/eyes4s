@@ -29,7 +29,7 @@ import eyes4s.kernel.ContentHash
   *
   * ==Derivation, not sequencing==
   *
-  * [[derive]] produces an independent seed from a label rather than advancing a
+  * [[eyes4s.design.Seed$.derive derive]] produces an independent seed from a label rather than advancing a
   * shared one. That is what makes a result independent of evaluation order: a
   * stratum's sampling depends on the stratum's name, not on how many strata
   * happened to be processed first.

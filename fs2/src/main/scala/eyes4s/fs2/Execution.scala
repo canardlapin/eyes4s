@@ -82,7 +82,7 @@ final class Run[F[_], Id, Stage, Segment, E, R] private[fs2] (
 /** Everything the runner needs from one plan family: the deterministic id of
   * this submission, the quanta that cut its steps, how to begin its cursor,
   * which counted segment each stage belongs to and what each segment's total
-  * is, plus the [[Stepwise]] evidence that the cursor is step-shaped. The
+  * is, plus the [[eyes4s.plan.Stepwise Stepwise]] evidence that the cursor is step-shaped. The
   * family objects build these; see `StudyExecution.submission`.
   *
   * `total` is asked once per segment, as the segment begins, with the cursor

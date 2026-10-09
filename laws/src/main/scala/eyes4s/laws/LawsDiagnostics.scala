@@ -60,7 +60,7 @@ object LawsDiagnosticCatalog:
   /** Every stable code, in catalog order. */
   val codes: Vector[DiagnosticCode] = families.flatMap(_.codes)
 
-/** The laws module's [[Diagnose]] instances. Import `LawsDiagnostics.given`
+/** The laws module's [[eyes4s.plan.Diagnose Diagnose]] instances. Import `LawsDiagnostics.given`
   * for `Diagnostic.of` over these families.
   */
 object LawsDiagnostics:

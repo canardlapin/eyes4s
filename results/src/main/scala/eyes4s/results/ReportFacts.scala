@@ -54,7 +54,7 @@ object ReportFacts:
     *     `SmallestGroups` otherwise: the cells with the fewest queries.
     *
     * A group's level is its levels' labels joined by " · ". The facts are
-    * refused only as [[Fact.of]] refuses them (a blank name or level).
+    * refused only as [[eyes4s.plan.Fact$.of Fact.of]] refuses them (a blank name or level).
     */
   def of[K](
       report: Report[K],

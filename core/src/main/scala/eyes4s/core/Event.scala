@@ -22,7 +22,7 @@ import eyes4s.kernel.*
   *
   * ==Events have extent; samples do not==
   *
-  * This is why [[Overlap]] exists and why `Recording.within` takes no policy
+  * This is why [[eyes4s.kernel.Overlap Overlap]] exists and why `Recording.within` takes no policy
   * while event selection does. A sample is an instant and either falls in a
   * window or does not. An event straddling the boundary genuinely admits three
   * answers, and which one an analysis takes changes its results.
@@ -32,7 +32,7 @@ import eyes4s.kernel.*
   * `eyesim` represents a fixation as an onset plus a duration and has no offset
   * column anywhere in the package, so every window filter it performs tests the
   * onset alone: a fixation beginning one millisecond before a window closes is
-  * counted in full, however long it ran on. Here the extent is an [[Interval]]
+  * counted in full, however long it ran on. Here the extent is an [[eyes4s.kernel.Interval Interval]]
   * and the straddling policy is named.
   */
 sealed trait Event[U <: Unit2D] derives CanEqual:
@@ -78,7 +78,7 @@ object Dispersion:
       .map(new Dispersion(_, method))
 
 /** Structural evidence for the exact spatial transform used to rebuild an
-  * event summary. This mirrors the closed [[Warp]] algebra rather than using a
+  * event summary. This mirrors the closed [[eyes4s.kernel.Warp Warp]] algebra rather than using a
   * rendered string as scientific identity.
   */
 enum SpatialTransform derives CanEqual:

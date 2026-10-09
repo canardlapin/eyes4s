@@ -722,7 +722,7 @@ enum DetectionPage[U <: Unit2D]:
 
 /** Immutable detection cursor. Feeding consumes at most `maximum` samples;
   * after the last feed and flush, assembly advances at most `maximum` operations
-  * within one [[AssemblyPhase]]. Pages charge samples while feeding and assembly
+  * within one [[eyes4s.core.AssemblyPhase AssemblyPhase]]. Pages charge samples while feeding and assembly
   * operations thereafter. `consumed` always counts only source samples.
   * Cancellation during assembly exposes no partial artifact. A custom machine's
   * per-sample step and flush remain indivisible operations.
