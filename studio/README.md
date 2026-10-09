@@ -23,6 +23,13 @@ sbt studioAll checkBoundaries studioStyleCheck
 `studioAll` tests every studio project and links the Scala.js app. The library's
 `compileAll` and `testAll` never touch studio.
 
+Desktop tests run in a separate JVM with an 8 GB maximum heap for full native
+archive round trips. An sbt `-J-Xmx` option controls only the build JVM. The test
+JVM exits on heap exhaustion so a failed decode cannot leave later FX tests
+waiting for a dead runtime. CI gives sbt a 3 GB heap and uses the standard
+14 GB Intel macOS runner for the native Mac glass tests; local FX tests remain
+headless by default.
+
 ## Source pins
 
 scaladock and Intaglio are source-only pre-release repositories with no
