@@ -72,7 +72,7 @@ enum MapPlacement derives CanEqual:
   * of the `measured` frame (the analysis window, or the admission frame of a
   * whole-frame plan), `unitsPerDegree` frame units to a degree as the plan
   * declares, into the `degrees` frame, whose `x` runs right and `y` up
-  * (`degrees.yAxis` is [[YAxis.Up]]). The degrees frame is named after the
+  * (`degrees.yAxis` is [[eyes4s.kernel.YAxis.Up YAxis.Up]]). The degrees frame is named after the
   * measured frame, `<measured>/degrees`.
   */
 final case class AngularReference[U <: Unit2D] private[plan] (

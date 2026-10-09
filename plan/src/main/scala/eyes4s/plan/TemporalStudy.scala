@@ -362,7 +362,7 @@ object TemporalStudyResult:
       .toLeft(())
 
 /** Refusals while rebuilding a completed temporal result from its plan and
-  * archived cells. A cell's own refusal is wrapped in [[Cell]] with the names
+  * archived cells. A cell's own refusal is wrapped in [[eyes4s.plan.TemporalResultError.Cell Cell]] with the names
   * of its repetition and window.
   */
 enum TemporalResultError[K] derives CanEqual:

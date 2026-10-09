@@ -708,12 +708,23 @@ lazy val forkHandshakeOptions: Seq[String] =
 
 lazy val forkHandshakeSettings = Seq(Test / javaOptions ++= forkHandshakeOptions)
 
+lazy val strictScaladocSettings = Seq(
+  Compile / doc := {
+    val generated = (Compile / doc).value
+    StrictScaladoc.verify(
+      moduleName.value,
+      (Compile / doc / streams).value.cacheDirectory / "out"
+    )
+    generated
+  }
+)
+
 lazy val commonSettings = Seq(
   libraryDependencies ++= Seq(
     "org.scalameta" %%% "munit"            % munitV           % Test,
     "org.scalameta" %%% "munit-scalacheck" % munitScalacheckV % Test
   )
-) ++ forkHandshakeSettings
+) ++ forkHandshakeSettings ++ strictScaladocSettings
 
 // ---------------------------------------------------------------------------
 // Modules
@@ -871,7 +882,7 @@ lazy val codec = crossProject(JVMPlatform, JSPlatform)
   */
 lazy val laws = crossProject(JVMPlatform, JSPlatform)
   .crossType(CrossType.Pure)
-  .settings(forkHandshakeSettings)
+  .settings(forkHandshakeSettings, strictScaladocSettings)
   .jvmSettings(ApiAudit.settings)
   .in(file("laws"))
   .dependsOn(kernel, core, detect, surface, aoi, compare, design, plan, results, codec)

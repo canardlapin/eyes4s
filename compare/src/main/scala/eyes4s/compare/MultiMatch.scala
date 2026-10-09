@@ -120,7 +120,7 @@ object MultiMatchScore:
   * Canonical MultiMatch optionally merges short adjacent saccades before
   * comparing, controlled by amplitude, direction and duration thresholds. That
   * step is absent here, as it is absent from eyesim's R implementation -- which
-  * has it only through a Python bridge. Use [[Merge]] beforehand if you want
+  * has it only through a Python bridge. Use `eyes4s.detect.Merge` beforehand if you want
   * it; the difference is stated rather than silently absorbed.
   */
 object MultiMatch:

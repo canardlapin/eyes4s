@@ -19,7 +19,7 @@ package eyes4s.codec
 import eyes4s.results.*
 import io.circe.{ACursor, Codec, Decoder, DecodingFailure, Encoder, Json}
 
-/** The JSON form of a report reference ([[ReportRef]]) that an application
+/** The JSON form of a report reference ([[eyes4s.results.ReportRef ReportRef]]) that an application
   * stores in its own documents. A reference is an object with one member
   * naming its level:
   *

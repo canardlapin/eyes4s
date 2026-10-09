@@ -118,7 +118,7 @@ object Smoother:
   /** An isotropic Gaussian kernel of the given standard deviation.
     *
     * The bandwidth is a standard deviation in frame units. Always. See
-    * [[Sigma]] for why that is stated so insistently.
+    * [[eyes4s.kernel.Sigma Sigma]] for why that is stated so insistently.
     */
   def gaussian[U <: Unit2D](
       sigma: Sigma[U],

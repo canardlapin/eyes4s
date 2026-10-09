@@ -23,7 +23,7 @@ import org.scalacheck.{Gen, Prop}
 import org.scalacheck.Prop.forAll
 import org.typelevel.discipline.Laws
 
-/** The invariants every [[Scanpath]] carries, stated as laws so that a
+/** The invariants every [[eyes4s.core.Scanpath Scanpath]] carries, stated as laws so that a
   * downstream author with their own way of producing scanpaths -- a detector,
   * a file reader, a generator -- can check that what comes out is what the
   * type promises.

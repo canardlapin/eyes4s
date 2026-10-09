@@ -25,7 +25,7 @@ import org.typelevel.discipline.Laws
 
 /** Laws for form-grade descriptor fields.
   *
-  * A [[NumericField]] parses a raw value in three stages: its shape, its
+  * A [[eyes4s.plan.NumericField NumericField]] parses a raw value in three stages: its shape, its
   * declared bounds, then the domain constructor. The bounds are a statement
   * about the constructor, so the laws hold them to it:
   *

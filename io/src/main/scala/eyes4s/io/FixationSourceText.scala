@@ -104,7 +104,7 @@ final case class SourceTextPage[K, U <: Unit2D](
 
 /** The text of a fixation table, checked to be the source an admission
   * ledger was made from: its decoded header and records have the digest of
-  * the ledger's `SourceRef`. Pages of a [[SourceRecordListing]] then carry
+  * the ledger's `SourceRef`. Pages of a [[eyes4s.plan.SourceRecordListing SourceRecordListing]] then carry
   * each record's verbatim text, its lines, and for an admitted record the
   * position fields as recorded and their parse, which must correct to the
   * admitted position bit for bit.

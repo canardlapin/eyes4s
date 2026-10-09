@@ -192,6 +192,6 @@ object RecordIdentityLaws extends Laws:
       }
     )
 
-  /** Layouts built by [[RecordLines.of]] from generated line counts. */
+  /** Layouts built by [[eyes4s.plan.RecordLines$.of RecordLines.of]] from generated line counts. */
   val layouts: Gen[(Vector[Int], RecordLines)] =
     lineCounts.map(counts => counts -> get(RecordLines.of(counts)))

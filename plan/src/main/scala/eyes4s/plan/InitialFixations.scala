@@ -69,7 +69,7 @@ object InitialFixationError:
   *  - `DropFirst`: the first fixation of the trial, whatever its position.
   *  - `DropLeadingInClosedDisc`: the leading run of fixations whose centres lie
   *    in the closed disc of `radiusDegrees` around `cross` (admission-frame
-  *    units), measured through the plan's one [[LinearAngularScale]]: the
+  *    units), measured through the plan's one [[eyes4s.kernel.LinearAngularScale LinearAngularScale]]: the
   *    fixations before the first one whose centre lies farther than the
   *    radius from the cross. A later return to the cross is kept. The
   *    distance is `centre.distanceTo(cross) / unitsPerDegree`, the linear

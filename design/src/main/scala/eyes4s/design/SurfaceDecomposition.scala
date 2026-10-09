@@ -139,7 +139,7 @@ final case class ConstrainedDiagnostics(
 
 /** An intercept-free non-negative least-squares fit. Coefficients are
   * non-negative scale factors, not mixture weights: they need not sum to one,
-  * so the fit is an [[Intensity]], not a [[Mass]].
+  * so the fit is an [[eyes4s.kernel.Intensity Intensity]], not a [[eyes4s.kernel.Mass Mass]].
   */
 final class SurfaceNnlsFit[U <: Unit2D] private[design] (
     val coefficients: Vector[(PredictorId, Double)],
@@ -149,7 +149,7 @@ final class SurfaceNnlsFit[U <: Unit2D] private[design] (
 )
 
 /** A simplex-constrained fit: non-negative weights summing to one, so the fit
-  * is itself a [[Mass]] and the weights are mixture weights. With
+  * is itself a [[eyes4s.kernel.Mass Mass]] and the weights are mixture weights. With
   * [[Intercept.Include]] a uniform mass over the grid joins the mixture and
   * `background` is its weight; `weights` and `background` then sum to one.
   */

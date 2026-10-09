@@ -271,7 +271,7 @@ object StudyGeometry:
 
 /** A study's estimation scale, declared in the unit it was chosen in. An
   * `Angular` scale's bandwidths are degrees and are resolved to the plan's
-  * frame units through the plan's one [[LinearAngularScale]].
+  * frame units through the plan's one [[eyes4s.kernel.LinearAngularScale LinearAngularScale]].
   */
 enum StudyScale[U <: Unit2D] derives CanEqual:
   case Native(estimate: StudyEstimate[U])

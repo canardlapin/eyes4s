@@ -305,7 +305,7 @@ object Detectors:
     *
     * Dispersion here is a bounding-box size, not a standard deviation. They
     * differ by a factor that depends on the sample distribution, so accepting a
-    * [[Sigma]] would be a type pun that silently rescales every threshold a
+    * [[eyes4s.kernel.Sigma Sigma]] would be a type pun that silently rescales every threshold a
     * user transfers from the literature.
     *
     * The detector advances the candidate start by one sample until a
@@ -317,7 +317,7 @@ object Detectors:
     * Unlike I-VT this works in any unit: a bounding box in pixels is a
     * well-defined claim about a particular display, which is sometimes exactly
     * what is wanted. The emitted summary records `BoundingBoxDiagonal`; the
-    * acceptance threshold remains the named per-axis [[Extent]].
+    * acceptance threshold remains the named per-axis [[eyes4s.kernel.Extent Extent]].
     */
   def idt[U <: Unit2D](
       extent: Extent[U],

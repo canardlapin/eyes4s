@@ -123,7 +123,7 @@ type StudyRun[F[_], K, U <: Unit2D, S, D] =
 
 /** Interpret a prepared study's bounded steps under Cats Effect.
   *
-  * Both entry points drive the same [[StudyCursor]] that `PreparedStudy.run`
+  * Both entry points drive the same [[eyes4s.plan.StudyCursor StudyCursor]] that `PreparedStudy.run`
   * drives, so a completed result is the pure runner's result. Each step is
   * one `cursor.advance(quanta)` followed by its bookkeeping, evaluated as a
   * single uncancelable region; the fiber cedes before every step, so

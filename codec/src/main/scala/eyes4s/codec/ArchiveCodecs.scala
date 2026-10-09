@@ -25,7 +25,7 @@ import eyes4s.kernel.Unit2D.Deg
 import eyes4s.plan.*
 import io.circe.Json
 
-/** Versioned archive of one completed [[RecordingAnalysis]]
+/** Versioned archive of one completed [[eyes4s.plan.RecordingAnalysis RecordingAnalysis]]
   * (`eyes4s.recording-result@1`).
   *
   * The archive embeds the plan the analysis ran (through the plan family's
@@ -195,7 +195,7 @@ object TemporalResultCodecs:
     new TemporalStudyCodec(planSchema, StudyCodecs.cosine[U])
       .results(StudyResultCodecs.similarity(), StudyResultCodecs.signedDifference())
 
-/** Versioned archive of one completed [[TemporalStudyResult]]
+/** Versioned archive of one completed [[eyes4s.plan.TemporalStudyResult TemporalStudyResult]]
   * (`eyes4s.temporal-result@1`).
   *
   * The archive embeds the temporal plan (through the plan family's codec)

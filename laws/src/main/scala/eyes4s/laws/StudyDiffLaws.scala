@@ -32,7 +32,7 @@ import org.typelevel.discipline.Laws
   *    when the two plans describe the same study;
   *  - the diff is antisymmetric: the diff in the other direction is the
   *    inverse of every change;
-  *  - the diff lists at most one change per field, in [[StudyField]] order;
+  *  - the diff lists at most one change per field, in [[eyes4s.plan.StudyField StudyField]] order;
   *  - applying the diff of `a` to `b` to `a` gives a plan equal to `b`,
   *    with an empty diff to it; and
   *  - a change that does not start from the plan's value is refused.

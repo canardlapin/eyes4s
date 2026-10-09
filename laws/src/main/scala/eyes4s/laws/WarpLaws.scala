@@ -23,7 +23,7 @@ import org.scalacheck.Prop.forAll
 import org.scalacheck.{Gen, Prop}
 import org.typelevel.discipline.Laws
 
-/** Law suite for [[Warp]] as a **partial** category.
+/** Law suite for [[eyes4s.kernel.Warp Warp]] as a **partial** category.
   *
   * ==Why partial, and what that changes==
   *
@@ -176,7 +176,7 @@ end WarpLaws
 
 object WarpLaws extends WarpLaws
 
-/** Law suite for [[Machine]] composition.
+/** Law suite for [[eyes4s.kernel.Machine Machine]] composition.
   *
   * ==Observational, and this one could not be otherwise==
   *

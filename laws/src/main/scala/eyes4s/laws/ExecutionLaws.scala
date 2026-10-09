@@ -42,7 +42,7 @@ import org.typelevel.discipline.Laws
   * What the reference run proves depends on where it comes from. For the
   * shipped families it is the plan's own `run` (`PreparedStudy.run`,
   * `RecordingPlan.run`, `PreparedTemporalStudy.run`), and that `run` drives
-  * the same cursor at [[WorkQuanta.default]]. The completion laws then say
+  * the same cursor at [[eyes4s.design.WorkQuanta$.default WorkQuanta.default]]. The completion laws then say
   * that every cut, and every sequence of cuts, reaches the default-quanta
   * result: cut invariance, not scientific correctness. They are kept
   * separate from the `Stepwise` instance under test, so an instance that

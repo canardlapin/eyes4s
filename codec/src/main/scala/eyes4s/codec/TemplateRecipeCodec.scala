@@ -23,7 +23,7 @@ import eyes4s.plan.DefinitionId
 import io.circe.Json
 
 /** The one template recipe codec: the complete inputs of a
-  * [[TemplateSplit]] under any [[TemplateDesign]], saved so that reopening
+  * [[eyes4s.design.TemplateSplit TemplateSplit]] under any [[eyes4s.design.TemplateDesign TemplateDesign]], saved so that reopening
   * reruns admission and exclusion, checks the training identity and refits
   * deterministically. Fitted coefficients are never read back as proof of
   * fitting.

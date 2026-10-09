@@ -21,7 +21,7 @@ import io.circe.Json
 
 /** The code table of the codec's error families: decoding, artifact
   * resolution, storage failures, manifest relations, manifests, payloads and
-  * byte digests. Codes are unique across this table and [[DiagnosticCatalog]].
+  * byte digests. Codes are unique across this table and [[eyes4s.plan.DiagnosticCatalog DiagnosticCatalog]].
   */
 object CodecDiagnosticCatalog:
   import DiagnosticFamily.error
@@ -236,7 +236,7 @@ private[eyes4s] object CodecDiagnosticSupport:
 /** The projections behind [[CodecDiagnostics]]. Wrapped plan, admission,
   * recording and result errors project through their own families, so a
   * decode failure names the trial, record or sample it concerns. Keys keep
-  * their runtime values here; the instances wrap them as [[ErasedKey]].
+  * their runtime values here; the instances wrap them as [[eyes4s.plan.ErasedKey ErasedKey]].
   */
 private[codec] object CodecProjections:
   import CodecDiagnosticSupport.*
@@ -684,10 +684,10 @@ private[codec] object CodecProjections:
           Operand.Key(actual)
         )
 
-/** The codec's [[Diagnose]] instances. Import `CodecDiagnostics.given` for
+/** The codec's [[eyes4s.plan.Diagnose Diagnose]] instances. Import `CodecDiagnostics.given` for
   * `Diagnostic.of` over the codec's families. A decoded study's key type is
   * not known statically where the codec reports, so trial keys inside a
-  * wrapped plan, admission or result error are [[ErasedKey]]s; narrow a
+  * wrapped plan, admission or result error are [[eyes4s.plan.ErasedKey ErasedKey]]s; narrow a
   * diagnostic to the application's key type with `ErasedKey.narrow`.
   */
 object CodecDiagnostics:

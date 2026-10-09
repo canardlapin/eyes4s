@@ -316,7 +316,7 @@ enum ResolveError derives CanEqual:
     case Relation(relation, mismatch) => s"Relation ${relation.render}: ${mismatch.message}"
 
 /** Evidence that the spatial unit `U` is display pixels, the only unit a
-  * [[RecordingPlan]] runs in. The trait is sealed and its one instance is for
+  * [[eyes4s.plan.RecordingPlan RecordingPlan]] runs in. The trait is sealed and its one instance is for
   * `Unit2D.Px`, where the conversion is the identity, so decoders that are
   * generic in `U` check a recording plan against a recording input of their
   * own unit without a cast. A manifest in any other unit cannot register
@@ -435,7 +435,7 @@ trait ArtifactDecoders[K, U <: Unit2D]:
 
   /** A recording plan; refused, with no supported schema, unless registered
     * through [[withRecordings]]. A decorator that wraps other decoders
-    * extends [[ArtifactDecoders.Delegating]], which forwards this and every
+    * extends [[eyes4s.codec.ArtifactDecoders$.Delegating ArtifactDecoders.Delegating]], which forwards this and every
     * other decoder, so wrapping never drops a registration.
     */
   def recordingPlan(document: Json): Either[CodecError, LoadedRecordingPlan[U]] =
@@ -648,7 +648,7 @@ object ArtifactDecoders:
       yield value
 
   /** The ordinary participant/stimulus/phase route of every registered map
-    * method ([[ComparisonMethods.all]]).
+    * method ([[eyes4s.plan.ComparisonMethods$.all ComparisonMethods.all]]).
     */
   def study[U <: Unit2D: UnitLabel]: Either[CodecError, ArtifactDecoders[StudyKey, U]] = for
     plans <- ComparisonMethods.all.foldLeft(
@@ -668,7 +668,7 @@ object ArtifactDecoders:
   yield of(plans, inputs, results).withImportSpecs(ImportSpecCodec.study[U])
 
   /** The trial-keyed route of every registered map method
-    * ([[ComparisonMethods.all]]): participant, phase, trial and occurrence
+    * ([[eyes4s.plan.ComparisonMethods$.all ComparisonMethods.all]]): participant, phase, trial and occurrence
     * keys matched on their item, as `StudyCodecs.trialSimilarity` saves them.
     */
   def trial[U <: Unit2D: UnitLabel]: Either[CodecError, ArtifactDecoders[TrialKey, U]] = for
