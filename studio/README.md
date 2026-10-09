@@ -28,8 +28,9 @@ archive round trips; `-Deyes4s.studio.test.heap=5g` sets a smaller test heap.
 An sbt `-J-Xmx` option controls only the build JVM. The test JVM exits on heap
 exhaustion so a failed decode cannot leave later FX tests waiting for a dead
 runtime. Linux CI gives sbt 3 GB and the test fork 8 GB. Apple Silicon macOS CI
-uses 2 GB for sbt and 5 GB for the test fork, with the same assertions and timing
-budgets. Local FX tests remain headless by default.
+compiles with 2 GB, then exits that process and starts a fresh 1 GB sbt process
+with a 5 GB test fork to fit the runner's 7 GB of RAM. Assertions and timing
+budgets are the same. Local FX tests remain headless by default.
 
 ## Source pins
 
