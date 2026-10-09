@@ -18252,6 +18252,8 @@
       "a report without covariates writes its absent ledger as null, and reads it back",
       "a stored report whose values the shipped reduction does not give is refused",
       "a stored report with other accounting than the reduction's is refused naming the part",
+      "retained study bindings belong to their own snapshot",
+      "retained study sources validate each schema even after a successful read",
       "the public source binds exactly the plan, input, result and ledger it reads"
     ],
     "codecJS/eyes4s.codec.ReportRefCodecSuite": [
@@ -22023,6 +22025,8 @@
       "a report without covariates writes its absent ledger as null, and reads it back",
       "a stored report whose values the shipped reduction does not give is refused",
       "a stored report with other accounting than the reduction's is refused naming the part",
+      "retained study bindings belong to their own snapshot",
+      "retained study sources validate each schema even after a successful read",
       "the public source binds exactly the plan, input, result and ledger it reads"
     ],
     "codecJVM/eyes4s.codec.ReportRefCodecSuite": [
