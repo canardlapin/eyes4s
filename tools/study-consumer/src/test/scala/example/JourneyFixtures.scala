@@ -41,6 +41,18 @@ object JourneyFixtures:
     }
     .mkString("", "\n", "\n")
 
+  /** One admitted reference has only one fixation. Dropping the first
+    * fixation empties s1/b/encode while the other eleven trials remain usable.
+    * All 45 source records are valid; this is an estimation failure, not a
+    * rejected input record or a whole-scale failure.
+    */
+  val mixed: String = table.linesIterator
+    .filter { line =>
+      val f = fields(line)
+      f.take(3) != Vector("s1", "b", "encode") || f(3) == "0"
+    }
+    .mkString("", "\n", "\n")
+
   /** The same table with a negative duration in fixation 2 of `s1/b/encode`. */
   val broken: String = table.linesIterator
     .map { line =>
