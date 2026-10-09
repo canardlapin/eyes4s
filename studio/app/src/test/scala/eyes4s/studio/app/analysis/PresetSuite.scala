@@ -145,8 +145,18 @@ class PresetSuite extends munit.ScalaCheckSuite:
       vm.options.map(_.choose),
       Vector(
         None,
-        Some(Intent.ChoosePreset(Preset.PerceptionImagery)),
-        Some(Intent.ChoosePreset(Preset.Recognition))
+        Some(
+          Intent.ChoosePreset(
+            Preset.PerceptionImagery,
+            Some(eyes4s.studio.core.fixture.StoryMoments.rev5)
+          )
+        ),
+        Some(
+          Intent.ChoosePreset(
+            Preset.Recognition,
+            Some(eyes4s.studio.core.fixture.StoryMoments.rev5)
+          )
+        )
       )
     )
     val empty = PresetPicker.vm(StoryModels.empty)

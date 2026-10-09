@@ -26,6 +26,18 @@ admitted before analysis. Changed or missing inputs block preview and Save and R
 Image repair is stored with its digest and survives reopening; a missing image
 renders a hatch pattern while a blank display remains plain.
 
+Analysis history groups revisions and runs by their saved analysis family. Families
+may share a name; equal names display the family identifier to distinguish them.
+Selecting history inspects that exact revision. Choosing a preset starts a draft
+from the inspected revision, or edits the selected draft. Finish or discard the
+one working draft before editing another saved revision.
+
+**New analysis…** starts an independent draft on the latest admitted dataset, using
+the Encoding → Retrieval defaults. Saving and running materializes its family;
+discarding or undoing it leaves the saved families intact. The navigator reports
+the selected family's current run. Switching families preserves the displayed
+result; **Show current result** is offered when that run has a ready notice.
+
 An exported project snapshot without images withholds stimulus image bytes. The trial inventory
 still travels, including its `image_file` column, so stimulus file names remain visible. The bundle
 control and its README state this distinction before and after export.

@@ -21,6 +21,7 @@ import eyes4s.studio.app.analysis.{AnalysesNavigator, AnalysesNavigatorVM, Analy
 import eyes4s.studio.app.text.{AnalysesText, AnalysesTextId}
 import eyes4s.studio.app.vm.FocusStop
 import eyes4s.studio.core.backend.{AnalysisRevision, RunId}
+import eyes4s.studio.core.document.AnalysisFamilyId
 import javafx.application.Platform
 import javafx.scene.control.{Button, Label, ScrollPane, ToggleButton}
 import javafx.scene.layout.{Priority, VBox}
@@ -31,11 +32,21 @@ final class AnalysesNavigatorHost(app: Intent => Unit):
   private var disposed                           = false
   private var shown: Option[AnalysesNavigatorVM] = None
   private var controls                           = Map.empty[Key, ToggleButton]
-  private var structure                          = Vector.empty[(String, Vector[Key])]
+  private var structure                          = Vector.empty[(AnalysisFamilyId, Vector[Key])]
+  private var titles                             = Map.empty[AnalysisFamilyId, Label]
   val create: Button = Button(AnalysesText(AnalysesTextId.NewAnalysis))
   create.setAccessibleText(create.getText)
   create.getStyleClass.add("btn")
   create.setOnAction(_ => if !disposed then shown.flatMap(_.create).foreach(app))
+  val current = Label()
+  current.setWrapText(true)
+  current.getStyleClass.add("t11")
+  val showCurrent = Button(AnalysesText(AnalysesTextId.ShowCurrent))
+  showCurrent.setAccessibleText(showCurrent.getText)
+  showCurrent.getStyleClass.add("btn")
+  showCurrent.setOnAction(_ =>
+    if !disposed then shown.flatMap(_.current).flatMap(_.show).foreach(app)
+  )
   private val history    = VBox(6.0)
   val scroll: ScrollPane = ScrollPane(history)
   scroll.setFitToWidth(true)
@@ -45,7 +56,7 @@ final class AnalysesNavigatorHost(app: Intent => Unit):
   private val note = Label()
   note.setWrapText(true)
   note.getStyleClass.add("t11")
-  val node: VBox = VBox(8.0, create, scroll, note)
+  val node: VBox = VBox(8.0, create, current, showCurrent, scroll, note)
   node.getStyleClass.add("inspector")
 
   private def key(row: AnalysisHistoryRow): Key = (row.revision, row.run)
@@ -87,6 +98,11 @@ final class AnalysesNavigatorHost(app: Intent => Unit):
       shown = Some(view)
       create.setDisable(view.create.isEmpty)
       note.setText(view.note)
+      current.setText(view.currentLabel)
+      val canShow = view.current.exists(_.show.isDefined)
+      showCurrent.setDisable(!canShow)
+      showCurrent.setVisible(canShow)
+      showCurrent.setManaged(canShow)
       val keys = rows.map(key).toSet
       controls = controls.filter((id, _) => keys(id))
       rows.foreach { row =>
@@ -102,20 +118,37 @@ final class AnalysesNavigatorHost(app: Intent => Unit):
             app(row.open)
         )
       }
-      val next = view.groups.map(group => group.name -> group.rows.map(key))
+      val next = view.groups.map(group => group.family -> group.rows.map(key))
       if next != structure then
         structure = next
         history.getChildren.clear()
+        titles = titles.filter((id, _) => view.groups.exists(_.family == id))
         view.groups.foreach { group =>
-          val title = Label(group.name)
-          title.getStyleClass.add("t13")
-          title.setWrapText(true)
+          val title = titles.getOrElse(
+            group.family, {
+              val label = Label()
+              label.getStyleClass.add("t13")
+              label.setWrapText(true)
+              label
+            }
+          )
+          titles = titles.updated(group.family, title)
           history.getChildren.add(title)
           group.rows.foreach(row => history.getChildren.add(controls(key(row))))
         }
         focused.flatMap(controls.get).foreach(_.requestFocus())
+      view.groups.foreach { group =>
+        titles.get(group.family).foreach { title =>
+          title.setText(group.heading)
+          title.setAccessibleText(group.accessible)
+        }
+      }
+
+  def groupLabels: Vector[String] =
+    shown.toVector.flatMap(_.groups.flatMap(g => titles.get(g.family).map(_.getText)))
 
   def dispose(): Unit =
     disposed = true
     controls = Map.empty
+    titles = Map.empty
     shown = None

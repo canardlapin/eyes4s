@@ -28,7 +28,9 @@ import eyes4s.studio.core.freshness.{DraftCheck, FreshnessText, SessionFacts}
   * (ticket S1.0). Every slot text is copied character for character from the
   * board named in the test (docs/studio/design/); `*…*` marks the current
   * crumb, `[…]` a disabled button and "(current)" the selected perspective,
-  * which the boards draw rather than print.
+  * which the boards draw rather than print. The Analysis family crumb uses the
+  * document's current name and nominal identity (S7.7b4), replacing the board's
+  * preset-only label.
   */
 class ViewModelSnapshotSuite extends munit.FunSuite:
 
@@ -113,7 +115,7 @@ class ViewModelSnapshotSuite extends munit.FunSuite:
           |app.perspectives: ${switcher("Analysis ⌘3")}
           |app.jobs: No jobs
           |context.nav: Back (⌘[) | [Forward (⌘])]
-          |context.trail: Analyses › Reinstatement · Enc→Ret › *Draft rev 5*
+          |context.trail: Analyses › Encoding → retrieval reinstatement · analysis 1 › *Draft rev 5*
           |context.freshness: Analysis rev 4 · run 7 · data r3 · current
           |context.draft: Draft rev 5 · 1 change · ready
           |status: Selected: Draft rev 5 › Scales | Edits change the draft only · runs are never relabelled | No jobs | Saved 10:24""".stripMargin

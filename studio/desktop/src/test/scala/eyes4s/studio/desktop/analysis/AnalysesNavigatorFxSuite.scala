@@ -174,3 +174,222 @@ class AnalysesNavigatorFxSuite extends ShellFxSuite:
       w.resolvedDesign.state.target.exists(_.revision == rev5)
     )
   }
+
+  fxStage.test(
+    "duplicate family names retain independent history, preset targets and current runs"
+  ) { fx =>
+    import eyes4s.studio.core.document.*
+    import eyes4s.studio.core.backend.RunId
+    import eyes4s.studio.app.AppModel
+    import FamilySamples.*
+    val document = FamilySamples.document(
+      Vector(
+        run(1, a1, RunLifecycle.Completed),
+        run(2, b2, RunLifecycle.Completed),
+        run(3, a3, RunLifecycle.Completed)
+      ),
+      shown = Some(RunId(1))
+    )
+    val w = boot(
+      fx,
+      AppModel
+        .update(AppModel.open(document, None), Intent.SwitchPerspective(Perspective.Analysis))
+        ._1
+    )
+    assertEquals(
+      runOnFx(w.analyses.groupLabels),
+      Vector("Same name · analysis 2", "Same name · analysis 1")
+    )
+    stageSnapshot(fx)
+    val historical = runOnFx(w.analyses.labels.find(_.startsWith("rev 1 ·")).get)
+    runOnFx(w.analyses.select(historical))
+    fx.awaitLayout()
+    assertEquals(runOnFx(w.analyses.current.getText), "Current run · rev 3 · run 3")
+    assertEquals(runOnFx(w.runtime.model.document.presentation.shownRun), Some(RunId(1)))
+    assert(runOnFx(w.recipe.enabled(Preset.Recognition)))
+    runOnFx(w.recipe.choose(Preset.Recognition))
+    fx.awaitLayout()
+    assertEquals(
+      runOnFx(w.runtime.model.document.draft.map(_.origin)),
+      Some(DraftOrigin.Existing(a1.id))
+    )
+    assertEquals(
+      runOnFx(
+        w.runtime.model.document.familyOf(eyes4s.studio.core.backend.AnalysisRevision(5))
+      ),
+      Some(a)
+    )
+    val other = runOnFx(w.analyses.labels.find(_.startsWith("rev 4 ·")).get)
+    runOnFx(w.analyses.select(other))
+    fx.awaitLayout()
+    assert(!runOnFx(w.recipe.enabled(Preset.PerceptionImagery)))
+    assertEquals(runOnFx(w.analyses.current.getText), "Current run · rev 2 · run 2")
+    assertEquals(runOnFx(w.runtime.model.document.analyses), document.analyses)
+    assertEquals(runOnFx(w.runtime.model.document.runs), document.runs)
+  }
+
+  fxStage.test("family name updates preserve keyed controls and keyboard focus") { fx =>
+    import eyes4s.studio.core.document.*
+    import eyes4s.studio.app.AppModel
+    import FamilySamples.*
+    val document = FamilySamples.document()
+    val w        = boot(
+      fx,
+      AppModel
+        .update(AppModel.open(document, None), Intent.SwitchPerspective(Perspective.Analysis))
+        ._1
+    )
+    val label   = runOnFx(w.analyses.labels.find(_.startsWith("rev 1 ·")).get)
+    val control = runOnFx(w.analyses.button(label).get)
+    runOnFx(control.requestFocus())
+    fx.awaitLayout()
+    assert(runOnFx(fx.scene.getFocusOwner eq control))
+    val renamed = get(
+      AnalysisFamilyRegistry.of(
+        Vector(get(AnalysisFamily.of(a, "Renamed")), get(AnalysisFamily.of(b, "Same name"))),
+        registry.owners,
+        analyses.map(_.id)
+      )
+    )
+    val next = get(
+      StudioDocument.of(
+        document.datasets,
+        document.analyses,
+        None,
+        document.runs,
+        document.reporting,
+        document.figures,
+        document.presentation,
+        document.jobs,
+        Some(renamed)
+      )
+    )
+    runOnFx(w.analyses.sync(AppModel.open(next, None)))
+    fx.awaitLayout()
+    assertEquals(runOnFx(w.analyses.groupLabels), Vector("Same name", "Renamed"))
+    assert(runOnFx(w.analyses.button(label).get eq control))
+    assert(runOnFx(fx.scene.getFocusOwner eq control))
+    fx.robot.press(javafx.scene.input.KeyCode.TAB)
+    assert(runOnFx(fx.scene.getFocusOwner ne control))
+  }
+
+  fxStage.test(
+    "New analysis creates a separate editable family and undo restores saved history"
+  ) { fx =>
+    import eyes4s.studio.core.document.*
+    import eyes4s.studio.core.backend.AnalysisRevision
+    import eyes4s.studio.core.command.HistoryStack
+    import eyes4s.studio.app.AppModel
+    import FamilySamples.*
+    val document = FamilySamples.document()
+    val w        = boot(
+      fx,
+      AppModel
+        .update(AppModel.open(document, None), Intent.SwitchPerspective(Perspective.Analysis))
+        ._1
+    )
+    runOnFx(w.analyses.create.fire())
+    fx.awaitLayout()
+    assertEquals(
+      runOnFx(w.runtime.model.document.familyOf(AnalysisRevision(5))),
+      Some(get(AnalysisFamilyId.of(3)))
+    )
+    assertEquals(runOnFx(w.analyses.groupLabels.head), "Analysis 3")
+    assert(runOnFx(w.analyses.create.isDisabled))
+    assert(runOnFx(w.runtime.model.document.draft.exists(_.isNewFamily)))
+    assertEquals(runOnFx(w.analyses.current.getText), "No current run for this analysis.")
+    runOnFx(w.recipe.choose(Preset.PerceptionImagery))
+    fx.awaitLayout()
+    assertEquals(
+      runOnFx(w.runtime.model.document.draftContext.map(_.recipe.phases.focal.label)),
+      Some("Imagery")
+    )
+    assertEquals(runOnFx(w.runtime.model.document.analyses), document.analyses)
+    dispatch(fx, w, Intent.Undo(HistoryStack.Science))
+    dispatch(fx, w, Intent.Undo(HistoryStack.Science))
+    assertEquals(runOnFx(w.runtime.model.document.science), document.science)
+    assert(!runOnFx(w.analyses.create.isDisabled))
+  }
+
+  fxStage.test("reopened multi-family overflow keeps old history reachable by keyboard") { fx =>
+    import eyes4s.studio.core.document.*
+    import eyes4s.studio.core.backend.AnalysisRevision
+    import eyes4s.studio.app.AppModel
+    import FamilySamples.*
+    val original = FamilySamples.document()
+    val extra    = Vector.tabulate(30)(i => a1.copy(id = AnalysisRevision(i + 5)))
+    val all      = original.analyses ++ extra
+    val owners   = registry.owners ++ extra.zipWithIndex.map((value, i) =>
+      get(AnalysisFamilyOwner.of(value.id, if i % 2 == 0 then a else b))
+    )
+    val families = get(AnalysisFamilyRegistry.of(registry.families, owners, all.map(_.id)))
+    val saved    = get(
+      StudioDocument.of(
+        original.datasets,
+        all,
+        None,
+        original.runs,
+        original.reporting,
+        original.figures,
+        original.presentation,
+        original.jobs,
+        Some(families)
+      )
+    )
+    val reopened = get(StudioDocument.decode(get(StudioDocument.encode(saved))))
+    val w        = boot(
+      fx,
+      AppModel
+        .update(AppModel.open(reopened, None), Intent.SwitchPerspective(Perspective.Analysis))
+        ._1
+    )
+    assertEquals(runOnFx(w.analyses.groupLabels.size), 2)
+    val last    = runOnFx(w.analyses.labels.last)
+    val control = runOnFx(w.analyses.button(last).get)
+    runOnFx(control.requestFocus())
+    fx.awaitLayout()
+    eventually(fx, "reopened family history is scrolled into view")(
+      w.analyses.scroll.getVvalue > 0.5
+    )
+    val (bounds, viewport) = runOnFx {
+      val visible = w.analyses.scroll.lookup(".viewport")
+      (
+        visible.sceneToLocal(control.localToScene(control.getLayoutBounds)),
+        visible.getLayoutBounds
+      )
+    }
+    assert(bounds.getMinY >= viewport.getMinY, s"row $bounds, viewport $viewport")
+    assert(bounds.getMaxY <= viewport.getMaxY, s"row $bounds, viewport $viewport")
+    fx.robot.press(javafx.scene.input.KeyCode.SPACE)
+    fx.awaitLayout()
+    assertEquals(runOnFx(ResolvedDesign.target(w.runtime.model).map(_.revision)), Some(a1.id))
+    assert(runOnFx(fx.scene.getFocusOwner eq control))
+    assertEquals(runOnFx(w.runtime.model.document.science), saved.science)
+  }
+
+  fxStage.test("the current result button sends Show only when explicitly activated") { fx =>
+    import eyes4s.studio.app.AppModel
+    import eyes4s.studio.core.execution.{ExecutionEvent, ExecutionJob, JobPhase, RunReady}
+    import eyes4s.studio.core.document.Perspective
+    val job = ExecutionJob(
+      run8Job,
+      run8,
+      StoryModels.run8Stamp,
+      JobPhase.Succeeded(StoryModels.run8Progress(44845L))
+    )
+    val completed =
+      AppModel.update(StoryModels.t3Summary, Intent.Execution(ExecutionEvent.Changed(job)))._1
+    val ready = AppModel
+      .update(
+        completed,
+        Intent.Execution(ExecutionEvent.Ready(RunReady(run8Job, run8, job.stamp)))
+      )
+      ._1
+    val w = boot(fx, AppModel.update(ready, Intent.SwitchPerspective(Perspective.Analysis))._1)
+    assertEquals(runOnFx(w.runtime.model.document.presentation.shownRun), Some(run7))
+    assert(runOnFx(w.analyses.showCurrent.isVisible))
+    runOnFx(w.analyses.showCurrent.fire())
+    fx.awaitLayout()
+    assertEquals(runOnFx(w.runtime.model.document.presentation.shownRun), Some(run8))
+    assert(!runOnFx(w.analyses.showCurrent.isVisible))
+  }
