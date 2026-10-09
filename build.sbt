@@ -1415,7 +1415,19 @@ lazy val studioDesktop = project
     },
     // FX tests (StudioFxSuite, S0.4) start the toolkit once per forked JVM.
     Test / fork := true,
-    Test / javaOptions ++= studioFxTestOptions((ThisBuild / baseDirectory).value)
+    Test / javaOptions ++= studioFxTestOptions((ThisBuild / baseDirectory).value),
+    Test / testGrouping := {
+      val options            = (Test / forkOptions).value
+      val (native, ordinary) = (Test / definedTests).value.partition(
+        _.name.startsWith("eyes4s.studio.desktop.journey.Native")
+      )
+      // Large archive journeys get fresh heaps. A timed-out asynchronous journey
+      // also cannot keep running in the JVM that measures later FX frames.
+      native.sortBy(_.name).map { test =>
+        new Tests.Group(test.name, Seq(test), Tests.SubProcess(options))
+      } ++ Seq(new Tests.Group("studio-desktop", ordinary, Tests.SubProcess(options)))
+    },
+    Test / parallelExecution := false
   )
   .settings(studioTokenSettings)
   .settings(studioNoticeSettings)

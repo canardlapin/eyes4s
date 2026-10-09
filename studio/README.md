@@ -23,8 +23,12 @@ sbt studioAll checkBoundaries studioStyleCheck
 `studioAll` tests every studio project and links the Scala.js app. The library's
 `compileAll` and `testAll` never touch studio.
 
-Desktop tests run in a separate JVM with an 8 GB maximum heap for full native
+Desktop tests run in separate JVMs with an 8 GB maximum heap for full native
 archive round trips; `-Deyes4s.studio.test.heap=4g` sets a smaller test heap.
+Each `journey.Native*` suite gets a fresh JVM, and the other desktop tests share
+one JVM. The groups run sequentially, retaining the machine-wide FX lock.
+This releases each archive journey's heap and any unfinished asynchronous work
+before another group starts, including the frame-timing tests.
 An sbt `-J-Xmx` option controls only the build JVM. The test JVM exits on heap
 exhaustion so a failed decode cannot leave later FX tests waiting for a dead
 runtime. Linux CI gives sbt 3 GB and the test fork 8 GB. Apple Silicon macOS CI
