@@ -1695,7 +1695,7 @@ lazy val studioMacosJob = WorkflowJob(
         // Release the compiler JVM before the test fork starts: this runner has
         // 7 GB of RAM, shared by sbt, the native archive tests and the OS.
         "sbt -J-Xmx2g -Djavafx.platform=mac-aarch64 studioDesktop/Test/compile",
-        "sbt -J-Xmx1g -Djavafx.platform=mac-aarch64 -Deyes4s.studio.test.heap=5g -Deyes4s.studio.fx.visible=true studioDesktop/test"
+        "sbt -J-Xmx1g -Djavafx.platform=mac-aarch64 -Deyes4s.studio.test.heap=4g -Deyes4s.studio.fx.visible=true studioDesktop/test"
       ),
       name = Some("Run functional JavaFX tests (no goldens)"),
       // The runner's display is 1024x768, which clamps a 1440x900 stage: tests

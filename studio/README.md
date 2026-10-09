@@ -24,13 +24,14 @@ sbt studioAll checkBoundaries studioStyleCheck
 `compileAll` and `testAll` never touch studio.
 
 Desktop tests run in a separate JVM with an 8 GB maximum heap for full native
-archive round trips; `-Deyes4s.studio.test.heap=5g` sets a smaller test heap.
+archive round trips; `-Deyes4s.studio.test.heap=4g` sets a smaller test heap.
 An sbt `-J-Xmx` option controls only the build JVM. The test JVM exits on heap
 exhaustion so a failed decode cannot leave later FX tests waiting for a dead
 runtime. Linux CI gives sbt 3 GB and the test fork 8 GB. Apple Silicon macOS CI
 compiles with 2 GB, then exits that process and starts a fresh 1 GB sbt process
-with a 5 GB test fork to fit the runner's 7 GB of RAM. Assertions and timing
-budgets are the same. Local FX tests remain headless by default.
+with a 4 GB test fork, leaving room for JVM native memory and macOS within the
+runner's 7 GB of RAM. Assertions and timing budgets are the same. Local FX tests
+remain headless by default.
 
 ## Source pins
 
