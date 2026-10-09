@@ -237,6 +237,48 @@ class ReportManifestSuite extends munit.FunSuite:
     )
   }
 
+  test("retained study sources validate each schema even after a successful read") {
+    val retained = ReportSources.retainedStudy(studies, inputs, results)(
+      plan,
+      input,
+      result,
+      Some(ledger)
+    )
+    val memory = get(CovariateName.of("memory"))
+    val levels = get(Levels.of(Vector("Remembered", "Forgotten")))
+    val schema = get(
+      CovariateSchema.of(Vector(Covariate(memory, CovariateType.Categorical(levels))))
+    )
+    assertEquals(get(retained(CovariateSchema.empty)).binding, binding)
+    assertEquals(
+      retained(schema).left.map(_.message),
+      Left(CodecError.Report(ReportError.UnboundCovariates(Vector("memory"))).message)
+    )
+    val again = get(retained(CovariateSchema.empty))
+    assertEquals(get(Report.evaluate(spec, again)), evaluated(binding))
+  }
+
+  test("retained study bindings belong to their own snapshot") {
+    val withLedger = ReportSources.retainedStudy(studies, inputs, results)(
+      plan,
+      input,
+      result,
+      Some(ledger)
+    )
+    val withoutLedger = ReportSources.retainedStudy(studies, inputs, results)(
+      plan,
+      input,
+      result,
+      None
+    )
+    assertEquals(get(withLedger(CovariateSchema.empty)).binding, binding)
+    assertEquals(
+      get(withoutLedger(CovariateSchema.empty)).binding,
+      binding.copy(covariates = None)
+    )
+    assertEquals(get(withLedger(CovariateSchema.empty)).binding, binding)
+  }
+
   test("a report of other trials, bound to this study's documents, is refused naming them") {
     // The review's reproducer: a genuine binding over an unrelated query table.
     val forged  = get(Report.reduce(ReportFixtures.spec, ReportFixtures.table, binding))
