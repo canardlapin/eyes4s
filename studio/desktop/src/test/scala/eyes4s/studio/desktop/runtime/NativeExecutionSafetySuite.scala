@@ -59,16 +59,27 @@ class NativeExecutionSafetySuite extends munit.CatsEffectSuite:
         IO.pure(Fixture.this.bytes.get(source.role))
       def assets(dataset: DatasetRevisionSpec) = IO.pure(Some(registry))
 
-  private def fixture(participants: Int = 1, items: Int = 2): Fixture =
+  /** `repeated`: P1 encodes item 1 a second time, as trial enc_9, so its
+    * retrieval query has two matched references.
+    */
+  private def fixture(
+      participants: Int = 1,
+      items: Int = 2,
+      repeated: Boolean = false
+  ): Fixture =
     val story  = get(StoryMoments.t2)
-    val trials = (for
+    val again  = Vector("P1,Encoding,enc_9,1,item-1,blank,,").filter(_ => repeated)
+    val trials = again ++ (for
       person <- 1 to participants
       phase  <- Vector("Encoding", "Retrieval")
       item   <- 1 to items
     yield s"P$person,$phase,${
         if phase == "Encoding" then "enc" else "ret"
       }_$item,1,item-$item,blank,,${if phase == "Retrieval" then "Remembered" else ""}").toVector
-    val fixations = (for
+    val againFixations = (1 to 8).toVector
+      .filter(_ => repeated)
+      .map(o => s"P1,Encoding,enc_9,1,$o,${640 + o},${520 + o * 3},${(o - 1) * 200},100,50")
+    val fixations = againFixations ++ (for
       person  <- 1 to participants
       phase   <- Vector("Encoding", "Retrieval")
       item    <- 1 to items
@@ -127,12 +138,16 @@ class NativeExecutionSafetySuite extends munit.CatsEffectSuite:
         registry
       )
     )
-    assertEquals(admitted.input.trials.rows.size, participants * items * 2)
+    assertEquals(
+      admitted.input.trials.rows.size,
+      participants * items * 2 + (if repeated then 1 else 0)
+    )
     val oldBase = story.analysis(StoryMoments.rev4).get
     val recipe  = oldBase.recipe.copy(
       layout = DefinitionRef.fromCore(TrialKeyDefinitions.trialLayout),
       grid = get(GridSize.of(32, 24)),
-      scales = get(ScaleSet.of(Vector(get(Sigma.of(2.0)))))
+      scales = get(ScaleSet.of(Vector(get(Sigma.of(2.0))))),
+      matched = MatchedChoice.RequireOne
     )
     val base  = oldBase.copy(recipe = recipe, plan = CoreBinding.unbound)
     val draft = get(Draft.between(revision, base, recipe.copy(grid = get(GridSize.of(40, 30)))))
@@ -459,6 +474,43 @@ class NativeExecutionSafetySuite extends munit.CatsEffectSuite:
         assertEquals(h.model.get().document.presentation.shownRun, None)
         assertEquals(h.model.get().jobs.shelf.shown, None)
         assertEquals(h.model.get().jobs.shelf.pending, None)
+    }
+  }
+
+  // S3.5 recheck on the real backend (slice r2 of S3.7): a retrieval query
+  // with two matched encodings under RequireOne is eyes4s's
+  // matched-cardinality finding, naming the query and both references, and
+  // Save & run is unavailable while it stands.
+  test("two matched references under RequireOne are eyes4s's blocking finding") {
+    val f = fixture(repeated = true)
+    harness(f.document, f.sources).use { h =>
+      for
+        ready <- h.prepared
+        recipe = f.document.draft.get.recipe(f.document.analyses.head.recipe)
+        _ <- h.dispatch(Intent.DesignPrepared(PreparedDesign(ready, recipe)))
+      yield
+        val query = TrialKey("P1", Phase.Retrieval, "ret_1", 1)
+        val refs  = Vector(
+          TrialKey("P1", Phase.Encoding, "enc_1", 1),
+          TrialKey("P1", Phase.Encoding, "enc_9", 1)
+        )
+        val cardinality =
+          ready.diagnostics.filter(_.code == "study-finding.matched-cardinality")
+        assertEquals(
+          cardinality.map(d => (d.level, d.affected.toSet)),
+          Vector((DiagnosticLevel.Error, (query +: refs).toSet))
+        )
+        assert(
+          !ready.diagnostics.exists(_.code == "plan.matched-cardinality"),
+          "the digest-only plan refusal must not stand in for the keyed finding"
+        )
+        val presented =
+          eyes4s.studio.app.diagnostics.DiagnosticsPresenter.present(ready.diagnostics)
+        assert(presented.blockers >= 1, presented.toString)
+        val finding = presented.eyes4s.find(_.code == "study-finding.matched-cardinality").get
+        assertEquals(finding.title, "Matched cardinality")
+        assertEquals(finding.affected.toSet, (query +: refs).toSet)
+        assertEquals(finding.remedy.map(_.trials.toSet), Some((query +: refs).toSet))
     }
   }
 
