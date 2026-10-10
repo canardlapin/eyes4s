@@ -17,6 +17,7 @@
 package eyes4s.studio.app.analysis
 
 import eyes4s.studio.app.Intent
+import eyes4s.studio.core.backend.AnalysisRevision
 import eyes4s.plan.UnmatchedKind
 import eyes4s.studio.app.text.{PresetText, PresetTextId, UnmatchedText}
 import eyes4s.studio.core.command.Command
@@ -48,7 +49,8 @@ final case class PresetPickerVM(
 ) derives CanEqual
 
 /** The preset picker over the document (ticket S7.1). The edited recipe is
-  * the draft's, else the latest revision's. Choosing a preset sets only its
+  * the explicitly selected revision's, defaulting to the draft then latest
+  * revision. Choosing a preset sets only its
   * declared fields ([[RecipePreset.changes]]), in one undoable command, so the
   * draft's plan.diff is exactly those fields. Save & run records the preset
   * the saved recipe holds. Pure.
@@ -63,30 +65,36 @@ object PresetPicker:
   )
 
   /** The revision the draft starts from (or would) and the recipe edited. */
-  def edited(document: StudioDocument): Option[(DraftContext, Recipe)] =
-    document.draftContext
-      .map(c => (c, c.recipe))
-      .orElse(document.latestAnalysis.map(a => (DraftContext.saved(a.id, a), a.recipe)))
+  def edited(
+      document: StudioDocument,
+      revision: Option[AnalysisRevision] = None
+  ): Option[(DraftContext, Recipe)] =
+    AnalysisSelection.context(document, revision).map(c => (c, c.recipe))
 
   /** The preset the edited recipe holds, if there is a recipe. */
   def selected(document: StudioDocument): Option[Preset] =
     edited(document).map((base, recipe) => RecipePresets.resolve(base.studio.preset, recipe))
 
   /** The one document command that chooses `preset`, an edit undone in one
-    * step: a draft of the latest revision with the preset's changes when
+    * step: a draft of the selected saved revision with the preset's changes when
     * there is no draft, else those changes to the draft together. None when
-    * the recipe already holds it, or there is no revision, or it is `Custom`
+    * another draft is held, the recipe already holds it, or it is `Custom`
     * (a recipe becomes custom by editing its fields, not by a choice).
     */
-  def command(document: StudioDocument, preset: Preset): Option[Command] =
-    (edited(document), RecipePresets.of(preset)) match
-      case (Some((base, recipe)), Some(p)) =>
+  def command(
+      document: StudioDocument,
+      preset: Preset,
+      revision: Option[AnalysisRevision] = None
+  ): Option[Command] =
+    (edited(document, revision), RecipePresets.of(preset)) match
+      case (Some((base, recipe)), Some(p)) if document.draft.forall(_.id == base.id) =>
         val changes = p.changes(recipe)
         Option.when(changes.nonEmpty)(
           if document.draft.isEmpty then Command.StartDraft(base.id, None, changes)
           else Command.ChangeRecipes(changes)
         )
-      case (None, Some(_)) if document.analyses.isEmpty && document.draft.isEmpty =>
+      case (None, Some(_))
+          if revision.isEmpty && document.analyses.isEmpty && document.draft.isEmpty =>
         document.latestAdmitted.flatMap(dataset =>
           InitialRecipe
             .of(dataset, preset)
@@ -97,22 +105,12 @@ object PresetPicker:
 
   def vm(
       document: StudioDocument,
-      selectedRevision: Option[eyes4s.studio.core.backend.AnalysisRevision] = None
+      selectedRevision: Option[AnalysisRevision] = None
   ): PresetPickerVM =
     import PresetTextId.*
-    val target = selectedRevision
-      .flatMap(r =>
-        document.draftContext
-          .filter(_.id == r)
-          .map(c => (c, c.recipe))
-          .orElse(document.analysis(r).map(a => (DraftContext.saved(a.id, a), a.recipe)))
-      )
-      .orElse(edited(document))
+    val target  = edited(document, selectedRevision)
     val current =
       target.map((context, recipe) => RecipePresets.resolve(context.studio.preset, recipe))
-    val readOnly = selectedRevision.exists(r =>
-      document.draft.fold(document.latestAnalysis.forall(_.id != r))(_.id != r)
-    )
     val first = document.latestAdmitted.filter(_ =>
       target.isEmpty && document.analyses.isEmpty && document.draft.isEmpty
     )
@@ -138,10 +136,8 @@ object PresetPicker:
         detail = detail,
         selected = current.contains(p.preset),
         changes = diff,
-        choose = Option
-          .when(!readOnly)(command(document, p.preset))
-          .flatten
-          .map(_ => Intent.ChoosePreset(p.preset)),
+        choose = command(document, p.preset, selectedRevision)
+          .map(_ => Intent.ChoosePreset(p.preset, target.map(_._1.id))),
         accessible = PresetText(OptionAccessible, title, detail, diff)
       )
     }

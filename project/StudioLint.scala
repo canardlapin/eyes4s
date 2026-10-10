@@ -313,9 +313,9 @@ object StudioLint {
   // Rule 5: unbound report constructors
   // ---------------------------------------------------------------------------
 
-  /** eyes4s report constructors that take no source binding. Studio obtains
-    * bound reports only through `eyes4s.codec.ReportSources.study`; these are
-    * `private[eyes4s]`, which studio packages can technically reach.
+  /** Report constructors that bypass codec verification of source bindings.
+    * Studio obtains checked sources through `eyes4s.codec.ReportSources`.
+    * The constructors below are `private[eyes4s]`, which studio can reach.
     */
   val forbiddenMembers: Seq[String] = Seq(
     "Report.reduce",

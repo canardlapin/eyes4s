@@ -178,10 +178,13 @@ class SourceRepairFileFxSuite extends ShellFxSuite:
                 )
               )
             )
+            fx.awaitLayout()
             eventually(fx, "real file-backed trial frame drawn") {
               (view.status.get, view.plotHost.status.get) match
                 case (TrialViewStatus.Shown(scene), PlotHostStatus.Drawn(frame)) =>
-                  frame.plan.scene eq scene.plot.scene
+                  (frame.plan.scene eq scene.plot.scene) &&
+                  frame.surface.logicalWidth == view.plotHost.getWidth &&
+                  frame.surface.logicalHeight == view.plotHost.getHeight
                 case _ => false
             }
             runOnFx {
