@@ -494,5 +494,42 @@ class NativeGoldenWorkflowSuite extends munit.CatsEffectSuite:
           else assertEquals((c("d__valid"), c("d")), ("false", ""), at)
         }
         assert(scored >= first.summary.contrasts.contributing, s"only $scored scored cells")
+        // comparisons.csv, as written: every scored pair is eyes4s's pair score.
+        val keys = admitted.input.trials.rows
+          .map(t =>
+            (t.key.participant, t.key.phase, t.key.trial, t.key.occurrence.value) -> t.key
+          )
+          .toMap
+        val pairCsv = second.files
+          .collectFirst { case ("comparisons.csv", data) => String(Array.from(data), UTF_8) }
+          .getOrElse(fail("no comparisons.csv exported"))
+        val pairs  = get(CsvSniffer.records("comparisons.csv", pairCsv, Delimiter.Comma))
+        val pcol   = pairs.head.zipWithIndex.toMap
+        var paired = 0
+        pairs.tail.foreach { r =>
+          def c(name: String)                                       = r(pcol(name))
+          def key(phase: String, trial: String, occurrence: String) =
+            keys
+              .get((c("participant"), c(phase), c(trial), c(occurrence).toInt))
+              .getOrElse(fail(s"no direct key for ${r.mkString(",")}"))
+          if c("score__valid") == "true" then
+            paired += 1
+            val index  = c("scale").toInt
+            val design = c("design") match
+              case "matched" => eyes4s.plan.StudyDesign.Matched
+              case "control" => eyes4s.plan.StudyDesign.Control
+              case other     => fail(s"unknown design $other")
+            val ref = ResultRef.PairRow(
+              index,
+              design,
+              key("phase", "trial", "occurrence"),
+              key("reference_phase", "reference_trial", "reference_occurrence")
+            )
+            val direct = get(
+              inspection.scales(index).pairs(design).get(ref).toRight(s"no direct pair $ref")
+            ).outcome.toOption.getOrElse(fail(s"direct pair $ref has no score")).value.value
+            assertEquals(c("score").toDouble, direct, ref.toString)
+        }
+        assert(paired > 0, "comparisons.csv holds no scored pair")
     }
   }
