@@ -1122,6 +1122,13 @@ class RealStudyBackendSuite extends CatsEffectSuite:
           (grid.region.left, grid.region.top, grid.region.right, grid.region.bottom),
           (448.0, 156.0, 1472.0, 924.0)
         )
+        // Isoline levels are eyes4s's highest-density regions of this mass,
+        // not thresholds Studio derives (S4.4 recheck, slice r9 of S3.7).
+        assertEquals(
+          grid.levels.map(l => (l.coverage, l.threshold)),
+          get(eyes4s.kernel.MassLevels.of(mass, Vector(0.5, 0.9)))
+            .map(l => (l.coverage, l.threshold))
+        )
         for role <- ReportRole.values do
           val actual = report.cell(None, role).get
           // Native SCORES.json and the illustrative mock fixture have
