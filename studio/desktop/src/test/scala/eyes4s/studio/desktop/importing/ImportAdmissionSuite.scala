@@ -47,7 +47,11 @@ class ImportAdmissionSuite extends munit.FunSuite:
 
   private val r3 = DatasetRevision(3)
 
-  test("an unknown-role column passes through verification and admission as an attribute") {
+  /** r3 re-mapped by the wizard: occurrence loses its role in both files,
+    * which must name the trial by the same key (S5.4 follow-up), and passes
+    * through as an attribute.
+    */
+  private def remapped(): StudioDriver =
     val bytes =
       IArray.unsafeFromArray(Files.readAllBytes(GoldenTrials.golden.resolve("fixations.csv")))
     val source     = ok(SniffedSource.read(SourceRole.Fixations, "inputs/fixations.csv", bytes))
@@ -55,9 +59,7 @@ class ImportAdmissionSuite extends munit.FunSuite:
     val trialBytes =
       IArray.unsafeFromArray(Files.readAllBytes(GoldenTrials.golden.resolve("trials.csv")))
     val trials = ok(SniffedSource.read(SourceRole.Trials, "inputs/trials.csv", trialBytes))
-    // The wizard re-maps r3: occurrence loses its role in both files, which
-    // must name the trial by the same key (S5.4 follow-up), and passes through.
-    val wizard       = ok(ImportWizard.remap(t1, r3, ImportPresets.empty))
+    val wizard = ok(ImportWizard.remap(t1, r3, ImportPresets.empty))
     val (_, effects) = Vector(
       WizardIntent.SourceRead(source),
       WizardIntent.SourceRead(trials),
@@ -68,10 +70,14 @@ class ImportAdmissionSuite extends munit.FunSuite:
       val (next, more) = ImportWizard.update(w, i, t1)
       (next, fx ++ more)
     }
-    val remapped = StudioDriver
+    val driver = StudioDriver
       .open(AppModel.open(t1, None))
       .dispatchAll(WizardEffect.appIntents(effects))
-    assertEquals(remapped.model.notice, None)
+    assertEquals(driver.model.notice, None)
+    driver
+
+  test("an unknown-role column passes through verification and admission as an attribute") {
+    val remapped = this.remapped()
     HeadlessSession.open(StoryMoment.T1).flatMap { session =>
       val flow =
         for
@@ -119,6 +125,29 @@ class ImportAdmissionSuite extends munit.FunSuite:
           )
       flow.transformWith(result => session.close.transform(_ => result))
     }
+  }
+
+  // S5.2 recheck on the real backend (slice r3 of S3.7): eyes4s's own
+  // admission accepts the re-mapped dataset with occurrence declared as an
+  // attribute, and admits it exactly as it admits r3.
+  test("the real backend admits a re-mapped attribute column as it admits r3") {
+    import eyes4s.studio.core.fixture.{GoldenAssets, GoldenCsv}
+    import eyes4s.studio.core.real.RealAdmission
+    val spec     = remapped().model.document.dataset(r3).getOrElse(fail("no re-mapped r3"))
+    val original = t1.dataset(r3).getOrElse(fail("no r3"))
+    assertEquals(spec.mapping.column(ColumnRole.Occurrence), None)
+    assertEquals(
+      spec.attributes.core,
+      Vector(AttributeColumn("occurrence", AttributeKind.Text))
+    )
+    def admit(d: DatasetRevisionSpec) =
+      RealAdmission
+        .admit(d, GoldenCsv.fixations, GoldenCsv.trials, ok(GoldenAssets.registry(d)))
+        .fold(e => fail(s"eyes4s refused ${d.id}: ${e.message}"), identity)
+    val withAttribute = admit(spec)
+    val plain         = admit(original)
+    assertEquals(withAttribute.summary, plain.summary)
+    assertEquals(withAttribute.ledger, plain.ledger)
   }
 
   test(
