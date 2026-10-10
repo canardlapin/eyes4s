@@ -132,7 +132,7 @@ object RealAdmission:
         .flatMap(o =>
           owners
             .get(o.record)
-            .map(identity => identity -> OutsideFrame(o.record, o.x, o.y, o.frame.name))
+            .map(identity => identity -> outsideFrame(o))
         )
         .groupMap(_._1)(_._2)
       response = spec.inventory.flatMap(_.column(ColumnRole.Response)).map(_.value)
@@ -416,6 +416,14 @@ object RealAdmission:
   private def identityOf(k: CoreKey): Identity =
     (k.participant, k.phase, k.trial, k.occurrence.value)
 
+  /** eyes4s's off-screen record in the protocol's numbering. eyes4s names a
+    * record by its line in the file, the header being line 1; the protocol
+    * numbers records from 1 with the header excluded, as source records and
+    * placement do, so record n is line n + 1.
+    */
+  private def outsideFrame(o: CoreOutsideFrame): OutsideFrame =
+    OutsideFrame(o.record - 1, o.x, o.y, o.frame.name)
+
   /** The admitted records outside the admission frame, by trial (occurrence
     * included, so repeated occurrences keep their own records).
     */
@@ -427,7 +435,7 @@ object RealAdmission:
       .flatMap { (o: CoreOutsideFrame) =>
         trialOf
           .get(o.record)
-          .map(k => identityOf(k) -> OutsideFrame(o.record, o.x, o.y, o.frame.name))
+          .map(k => identityOf(k) -> outsideFrame(o))
       }
       .groupMap(_._1)(_._2)
 

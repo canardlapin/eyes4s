@@ -105,6 +105,32 @@ class RealPlacementSuite extends munit.FunSuite:
     assertEquals(after.input.trials.rows.head.value.fixations.length, 2)
   }
 
+  // S5.5 recheck on the real admission path (slice r10 of S3.7): under
+  // ExcludeRecord eyes4s admits the off-screen record and lists it in the
+  // ledger as outside the frame (studies leave it out of every map); its
+  // trial stays admitted and the source bytes are never rewritten.
+  test("ExcludeRecord lists the off-screen record natively and keeps its trial admitted") {
+    val exclude =
+      spec.copy(admission = spec.admission.copy(offScreen = OffScreenChoice.ExcludeRecord))
+    val admitted = get(admit(exclude))
+    assertEquals(admitted.ledger.head.disposition, TrialDisposition.Admitted)
+    assertEquals(
+      admitted.input.trials.rows.head.value.fixations.iterator.map(_.centre).toVector,
+      Vector(Pt[Unit2D.Px](260.0, 120.0), Pt[Unit2D.Px](-40.5, 500.0))
+    )
+    assertEquals(
+      admitted.ledger.head.outsideFrame.map(o => (o.record, o.x, o.y)),
+      // The same record the placement preview and source records call 2.
+      Vector((2, -40.5, 500.0))
+    )
+    val preview = get(RealPlacement.place(exclude, bytes))
+    assertEquals(
+      preview.records.map(r => (r.record, r.placement)),
+      Vector((1, RecordPlacement.OutsideWindow), (2, RecordPlacement.OutsideScreen))
+    )
+    assertEquals(ByteDigest.sha256(bytes), exclude.sources.fixations.get.bytes)
+  }
+
   test(
     "conflicting correction rules quarantine natively and preserve every unplaced source record"
   ) {
