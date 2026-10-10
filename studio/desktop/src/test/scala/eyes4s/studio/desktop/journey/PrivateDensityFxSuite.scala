@@ -310,6 +310,8 @@ class PrivateDensityFxSuite extends ShellFxSuite:
                   form.unmatched.setValue(UnmatchedChoice.Refuse)
                 }
                 until(fx, "recipe settings can be applied") { !form.apply.isDisabled }
+                runOnFx(w.recipe.node.setVvalue(1.0))
+                fx.awaitLayout()
                 fx.robot.click(form.apply)
                 until(fx, "resolved recipe and run control") {
                   w.resolvedDesign.state.preview.receipt

@@ -20,7 +20,7 @@ import eyes4s.studio.app.{AppModel, Intent}
 import eyes4s.studio.app.analysis.PresetPicker
 import eyes4s.studio.app.vm.{A11yRole, FocusStop}
 import eyes4s.studio.core.document.Preset
-import javafx.scene.control.{Label, RadioButton}
+import javafx.scene.control.{Label, RadioButton, ScrollPane}
 import javafx.scene.layout.VBox
 
 /** The recipe pane's actual preset controls, including the first analysis
@@ -59,11 +59,14 @@ final class RecipePaneHost(model: () => AppModel, app: Intent => Unit):
     (preset.preset, choose, detail)
   }
   val editor: RecipeForm = RecipeForm(model, app)
-  val node: VBox         = VBox(8.0)
-  node.getStyleClass.add("inspector")
-  node.getChildren.addAll(heading)
-  options.foreach((_, choose, detail) => node.getChildren.addAll(choose, detail))
-  node.getChildren.addAll(note, configuration, editor.node)
+  private val content    = VBox(8.0)
+  content.getStyleClass.add("inspector")
+  content.getChildren.addAll(heading)
+  options.foreach((_, choose, detail) => content.getChildren.addAll(choose, detail))
+  content.getChildren.addAll(note, configuration, editor.node)
+  val node: ScrollPane = ScrollPane(content)
+  node.setFitToWidth(true)
+  node.setFocusTraversable(false)
 
   def sync(value: AppModel): Unit = if !disposed then
     val picker = PresetPicker.vm(
