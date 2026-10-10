@@ -73,7 +73,7 @@ class NativeGoldenCommandFxSuite extends GoldenWindow:
         s"NativeGoldenCommandFxSuite: $phase in ${(System.nanoTime() - started).nanos.toSeconds}s"
       )
 
-  private def until(fx: FxStage, what: String)(condition: => Boolean): Unit =
+  private def until(fx: FxStage, what: => String)(condition: => Boolean): Unit =
     val deadline = System.nanoTime() + 180.seconds.toNanos
     while !runOnFx(condition) do
       if System.nanoTime() > deadline then fail(s"Timed out: $what")
@@ -259,6 +259,57 @@ class NativeGoldenCommandFxSuite extends GoldenWindow:
       captured.exports.foreach { (name, bytes) =>
         assertEquals(Files.readAllBytes(written.resolve(name)).toVector, bytes, name)
       }
+      // S2.6 recheck on the real backend (slice r5 of S3.7): after a newer
+      // native run, the figure bound to run 1 loads run 1's own stored
+      // archive, never the latest run's.
+      val figure = runOnFx(w.runtime.model.document.figures.last)
+      assertEquals(figure.run, run)
+      dispatch(fx, w, Intent.SwitchPerspective(Perspective.Analysis))
+      dispatch(
+        fx,
+        w,
+        Intent.Dispatch(
+          Command.ChangeRecipe(
+            eyes4s.studio.core.document.RecipeChange
+              .Grid(recipe.grid, get(eyes4s.studio.core.document.GridSize.of(48, 32)))
+          )
+        )
+      )
+      // The Analysis target follows the shown run until the draft is reviewed.
+      dispatch(fx, w, Intent.ReviewDraft)
+      until(
+        fx,
+        "the newer draft's preview and run control: " + runOnFx(
+          s"draft=${w.runtime.model.document.draft.map(d => (d.id, d.isInitial))} " +
+            s"preview=${w.resolvedDesign.state.preview.toString.take(600)} " +
+            s"run=${w.preflight.runButton}"
+        )
+      ) {
+        w.resolvedDesign.state.preview.receipt.exists(_.stamp.revision != revision) &&
+        w.preflight.runButton._2
+      }
+      runOnFx(w.preflight.pressRun())
+      until(fx, "a newer run reserved") { w.runtime.model.document.runs.size == 2 }
+      val newer = runOnFx(w.runtime.model.document.runs.last.id)
+      until(fx, "the newer run's native archive stored and bound") {
+        w.runtime.model.document
+          .run(newer)
+          .exists(_.archive.isInstanceOf[CoreBinding.Bound[?]])
+      }
+      until(fx, "all edits saved after the newer run") { !w.runtime.model.save.edited }
+      val finalDocument = runOnFx(w.runtime.model.document)
+      val newerStored   = get(port.session.loadNativeArtifacts(newer).unsafeRunSync())
+      assertNotEquals(newerStored.facts.result, stored.facts.result)
+      val figureArchive = eyes4s.studio.core.runs
+        .RunStore(FileProjectStore.at[IO](projectDir).unsafeRunSync())
+        .figure(finalDocument, figure.id)
+        .unsafeRunSync()
+      assertEquals(figureArchive.map(_.index.run), Right(run))
+      assertEquals(figureArchive.map(_.index), Right(stored.archive.index))
+      // The document's science now holds run 2 as well.
+      val afterNewer = NativeCommandJourneyReadback
+        .capture(finalDocument, NativeCommandJourneyReadback.Port.from(w.session))
+        .unsafeRunSync()
       runOnFx(w.close())
       opened -= w
       window = None
@@ -268,7 +319,7 @@ class NativeGoldenCommandFxSuite extends GoldenWindow:
         store   <- FileProjectStore.at[IO](projectDir)
         project <- ProjectBundle.open(store)
       yield project).unsafeRunSync())
-      assertEquals(reopened.document, document)
+      assertEquals(reopened.document, finalDocument)
       assert(reopened.science.verified)
       val reopenedStore   = FileProjectStore.at[IO](projectDir).unsafeRunSync()
       val reopenedSession = get(
@@ -323,7 +374,7 @@ class NativeGoldenCommandFxSuite extends GoldenWindow:
                           entry.name.value
                         )
                     }
-                    assertEquals(restored.canonicalScience, captured.canonicalScience)
+                    assertEquals(restored.canonicalScience, afterNewer.canonicalScience)
                     assertEquals(restored.rows, captured.rows)
                     assertEquals(restored.report, captured.report)
                     assertEquals(restored.source, captured.source)
