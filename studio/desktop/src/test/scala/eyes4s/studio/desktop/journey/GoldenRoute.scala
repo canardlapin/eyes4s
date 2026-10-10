@@ -52,15 +52,6 @@ object GoldenRoute:
 
   given ExecutionContext = ExecutionContext.global
 
-  /** The steps a later ticket implements, by name, and why. */
-  object Pending:
-    val LibraryScores: (String, String) = (
-      "direct-library scores",
-      "pending S0.7b (SCORES.json from eyes4s) and S3.7 (real backend): M, B and D by " +
-        "query and scale, contributing 454 and failed 3 of the 457 eligible, the group " +
-        "n range [2, 17], and every participant and group mean; held to FIXTURE.md until then"
-    )
-
   val doc     = FixtureDoc
   val library = GoldenLibrary.facts
   val run6    = RunId(6)
@@ -82,8 +73,6 @@ object GoldenRoute:
 
   def all(checks: Either[DriverError, Unit]*): Either[DriverError, Unit] =
     checks.toVector.sequence_
-
-  def pending(p: (String, String)): S = Step.stub[Future](p._1, p._2)
 
   /** The journey's own steps, on session `s`; trial views from `views`. */
   final class Route(s: HeadlessSession, views: HeadlessSession):
@@ -1239,6 +1228,108 @@ object GoldenRoute:
             }
     )
 
+    /** What only the run decides, from eyes4s itself (S3.7, S0.7b): the
+      * journey's reopened dataset r3 and analysis rev 4, admitted and run
+      * directly by eyes4s, give SCORES.json's M, B and D for every query at
+      * every scale (to its 6-place rounding), FIXTURE.md's 454 contributing
+      * and 3 failed of the 457 eligible, and groups of 2 to 17 queries.
+      */
+    private val libraryScores: S = Step.check[Future](
+      "direct-library scores = SCORES.json = FIXTURE.md"
+    ) { d =>
+      import eyes4s.plan.{ResultInspection, ResultRef, ScaleContrast, StudyDesign}
+      import eyes4s.studio.core.fixture.{GoldenCsv, GoldenScores}
+      import eyes4s.studio.core.real.{RealAdmission, RealPrepared}
+      val tolerance = 5e-7 + 1e-12
+      val document  = closed.getOrElse(d.model.document)
+      for
+        spec <- document
+          .dataset(StoryMoments.r3)
+          .toRight(DriverError.Expectation("scores", "dataset r3", "none"))
+        recipe <- document
+          .analysis(rev4)
+          .map(_.recipe)
+          .toRight(DriverError.Expectation("scores", "analysis rev 4", "none"))
+        registry <- GoldenAssets
+          .registry(spec)
+          .leftMap(e => DriverError.Expectation("scores", "the asset registry", e.toString))
+        admitted <- RealAdmission
+          .admit(spec, GoldenCsv.fixations, GoldenCsv.trials, registry)
+          .leftMap(e => DriverError.Expectation("scores", "eyes4s admission", e.message))
+        prepared <- RealPrepared
+          .of(rev4, StoryMoments.r3, recipe, admitted)
+          .leftMap(e => DriverError.Expectation("scores", "a prepared study", e.message))
+        result <- prepared.work.run
+          .leftMap(e => DriverError.Expectation("scores", "a completed run", e.toString))
+        inspected <- ResultInspection
+          .study(prepared.plan, result, admitted.input, Some(admitted.evidence))
+          .leftMap(e => DriverError.Expectation("scores", "an inspection", e.toString))
+        scores <- io.circe.parser
+          .parse(GoldenScores.text)
+          .leftMap(e => DriverError.Expectation("scores", "SCORES.json", e.message))
+        queries = scores.hcursor.downField("queries").values.toVector.flatten
+        keys    = admitted.input.trials.rows.map(_.key)
+        checked <- queries.traverse { q =>
+          val c                   = q.hcursor
+          def text(field: String) = c.get[String](field).toOption.getOrElse("")
+          val status              = text("status")
+          if status != "contributing" then Right(None)
+          else
+            val key = keys.find(k =>
+              k.participant == text("participant") && k.phase == "Retrieval" &&
+                k.trial == text("trial")
+            )
+            key
+              .toRight(DriverError.Expectation("scores", "a query key", text("trial")))
+              .flatMap { k =>
+                Vector("0.5", "1", "2", "4").zipWithIndex
+                  .traverse { (sigma, i) =>
+                    val scale                        = inspected.scales(i)
+                    def reduced(design: StudyDesign) = scale
+                      .reductions(design)
+                      .get(ResultRef.Reduction(i, design, k))
+                      .flatMap(_.outcome.toOption)
+                      .map(_.value.value)
+                    val difference = scale.contrast match
+                      case ScaleContrast.Rows(rows) =>
+                        rows
+                          .get(ResultRef.ContrastRow(i, k))
+                          .flatMap(_.outcome.toOption)
+                          .map(_.value.value)
+                      case _ => None
+                    val pinned = c.downField("scales").downField(sigma)
+                    Vector(
+                      "M" -> reduced(StudyDesign.Matched),
+                      "B" -> reduced(StudyDesign.Control),
+                      "D" -> difference
+                    ).traverse { (role, value) =>
+                      val at = s"${text("participant")} ${text("trial")} σ $sigma $role"
+                      (value, pinned.get[Double](role).toOption) match
+                        case (Some(v), Some(p)) if math.abs(v - p) <= tolerance => Right(())
+                        case other                                              =>
+                          Left(DriverError.Expectation(at, "SCORES.json", other.toString))
+                    }
+                  }
+                  .as(Some(text("participant") -> text("response")))
+              }
+        }
+        contributing = checked.flatten
+        failed       = queries.count(
+          _.hcursor.get[String]("status").toOption.exists(_.startsWith("failed:"))
+        )
+        groups = contributing.groupBy(identity).values.map(_.size)
+        _ <- all(
+          stated(
+            "contributing",
+            "Eligible (computed) queries: 457 (454 contributing + 3 failed)",
+            (457, 454, 3),
+            (contributing.size + failed, contributing.size, failed)
+          ),
+          expect("group sizes", (2, 17), (groups.min, groups.max))
+        )
+      yield ()
+    }
+
     // -------------------------------------------------------------------------
 
     val scenario: Scenario[Future] =
@@ -1251,4 +1342,4 @@ object GoldenRoute:
         g.summary ++ Scenario.of(summary) ++
         rev5 ++
         figureAndExport ++
-        Scenario.of(Step.settle[Future](s), closeAndReopen, pending(Pending.LibraryScores))
+        Scenario.of(Step.settle[Future](s), closeAndReopen, libraryScores)
