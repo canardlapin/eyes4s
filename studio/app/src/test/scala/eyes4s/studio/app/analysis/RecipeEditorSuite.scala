@@ -21,24 +21,38 @@ import eyes4s.studio.core.document.*
 
 class RecipeEditorSuite extends munit.FunSuite:
   private val document = StoryModels.t2
-  private val base = PresetPicker.edited(document).get._2
-  private val fields = RecipeEditor.input(base)
+  private val base     = PresetPicker.edited(document).get._2
+  private val fields   = RecipeEditor.input(base)
 
   test("an unchanged form preserves every recipe field") {
     assertEquals(RecipeEditor.parse(base, fields), Right(base))
     assertEquals(RecipeEditor.command(document, fields), Right(None))
   }
   test("incomplete, nonfinite, duplicate and inverted values name their operands") {
-    Vector(fields.copy(columns = "1.5"), fields.copy(scales = "NaN"),
-      fields.copy(scales = "1, 1"), fields.copy(xMin = "900", xMax = "2"),
-      fields.copy(reference = fields.focal), fields.copy(pixelsPerDegree = "0"),
-      fields.copy(xMin = "")).foreach { invalid =>
+    Vector(
+      fields.copy(columns = "1.5"),
+      fields.copy(scales = "NaN"),
+      fields.copy(scales = "1, 1"),
+      fields.copy(xMin = "900", xMax = "2"),
+      fields.copy(reference = fields.focal),
+      fields.copy(pixelsPerDegree = "0"),
+      fields.copy(xMin = "")
+    ).foreach { invalid =>
       assert(RecipeEditor.parse(base, invalid).left.exists(_.message.nonEmpty))
     }
   }
   test("phase grid crop and kernel edits are one typed change with other policies intact") {
-    val edited = fields.copy(focal = "Cue", reference = "Study", columns = "60", rows = "40",
-      scales = "0.75, 1.25", xMin = "10", yMin = "20", xMax = "310", yMax = "220")
+    val edited = fields.copy(
+      focal = "Cue",
+      reference = "Study",
+      columns = "60",
+      rows = "40",
+      scales = "0.75, 1.25",
+      xMin = "10",
+      yMin = "20",
+      xMax = "310",
+      yMax = "220"
+    )
     val result = RecipeEditor.parse(base, edited).toOption.get
     assertEquals(result.phases.focal.label, "Cue")
     assertEquals(result.grid.columns, 60)
@@ -47,7 +61,10 @@ class RecipeEditorSuite extends munit.FunSuite:
     assertEquals(result.method, base.method)
     assertEquals(result.controls, base.controls)
     assert(RecipeEditor.command(document, edited).toOption.flatten.nonEmpty)
-    val full = RecipeEditor.parse(base, fields.copy(xMin="",yMin="",xMax="",yMax="")).toOption.get
+    val full = RecipeEditor
+      .parse(base, fields.copy(xMin = "", yMin = "", xMax = "", yMax = ""))
+      .toOption
+      .get
     assertEquals(full.window, None)
     assertEquals(full.offWindow, None)
   }

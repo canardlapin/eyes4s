@@ -13,6 +13,18 @@ toggle-button: rev 3 · run 5 · data r2 · stale
 region: Recipe
 radio-button: Perception → Imagery preset, Query: Imagery on blank · Reference: Perception; changes phases Retrieval vs Encoding → Imagery vs Perception
 radio-button: Study → Recognition preset, Old probes only. Lures and novel: No corresponding study trial (by design); changes phases Retrieval vs Encoding → Recognition vs Study
+text-field: Query phase
+text-field: Reference phase
+text-field: Grid columns
+text-field: Grid rows
+text-field: Gaussian σ (degrees, comma separated)
+text-field: Pixels per degree (blank = undeclared)
+text-field: Window x minimum (px)
+text-field: Window y minimum (px)
+text-field: Window x maximum (exclusive, px)
+text-field: Window y maximum (exclusive, px)
+combo-box: Fixation weighting
+combo-box: Queries without a match
 region: Resolved design
 toggle-button: All requested
 toggle-button: Eligible
@@ -21,4 +33,6 @@ toggle-button: Query not admitted
 table: Resolved design, rev 5; arrow keys move the row cursor
 region: Preflight
 button: Open the affected trials
+text-field: Analysis name
+text-area: Analysis notes
 button: Save & run rev 5 · 44,845 pairs

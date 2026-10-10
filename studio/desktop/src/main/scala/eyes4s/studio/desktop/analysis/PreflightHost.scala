@@ -24,7 +24,10 @@ import eyes4s.studio.app.vm.{A11yRole, FocusStop}
 import eyes4s.studio.app.{AppModel, Intent}
 import eyes4s.studio.desktop.plot.TableTwinView
 import javafx.geometry.Pos
-import javafx.scene.control.{Button, Label, ScrollPane}
+import javafx.scene.input.{KeyCode, KeyEvent}
+import javafx.scene.control.{Button, Label, ScrollPane, TextArea, TextField}
+import eyes4s.studio.core.document.{Preset, RevisionName, StudioFields}
+import eyes4s.studio.core.command.Command
 import javafx.scene.layout.{GridPane, HBox, Priority, Region, VBox}
 
 /** The Analysis perspective's preflight pane and run card on the desktop
@@ -59,6 +62,38 @@ final class PreflightHost(model: () => AppModel, app: Intent => Unit):
   private val run = Button()
   run.getStyleClass.add("preflight-run")
   run.setMaxWidth(Double.MaxValue)
+  val runName: TextField = TextField()
+  runName.setAccessibleText("Analysis name")
+  val runDescription: TextArea = TextArea()
+  runDescription.setAccessibleText("Analysis notes")
+  runDescription.setPrefRowCount(3)
+  runDescription.setWrapText(true)
+  runDescription.addEventFilter(
+    KeyEvent.KEY_PRESSED,
+    (e: KeyEvent) =>
+      if e.getCode == KeyCode.TAB && !e.isControlDown && !e.isAltDown && !e.isMetaDown then
+        e.consume()
+        runDescription.fireEvent(
+          KeyEvent(KeyEvent.KEY_PRESSED, "", "", KeyCode.TAB, e.isShiftDown, true, false, false)
+        )
+  )
+  private val nameError = label("", "t11", "preflight-note")
+  private var metadataFor: Option[eyes4s.studio.core.backend.AnalysisRevision] = None
+  private var bindingMetadata                                                  = false
+  private def metadata                                                         = RevisionName
+    .of(runName.getText)
+    .map(n =>
+      val preset = eyes4s.studio.app.analysis.AnalysisSelection
+        .selected(model())
+        .map(c => eyes4s.studio.core.preset.RecipePresets.resolve(c.studio.preset, c.recipe))
+        .getOrElse(Preset.Custom)
+      StudioFields(preset, n, runDescription.getText)
+    )
+  runName.textProperty.addListener((_, _, _) =>
+    if !bindingMetadata then
+      run.setDisable(vm.card.run.isEmpty || metadata.isLeft)
+      nameError.setText(metadata.fold(_.message, _ => ""))
+  )
   private val verdict = label("", "t11", "preflight-note")
 
   private def heading(text: String, side: javafx.scene.Node): HBox =
@@ -82,6 +117,11 @@ final class PreflightHost(model: () => AppModel, app: Intent => Unit):
       label(PreflightText(PreflightTextId.RunKind), "kind")
     ),
     lines,
+    label("Analysis name", "t11"),
+    runName,
+    nameError,
+    label("Analysis notes", "t11"),
+    runDescription,
     run,
     verdict
   )
@@ -150,7 +190,13 @@ final class PreflightHost(model: () => AppModel, app: Intent => Unit):
     val v        = vm
     val remedies = v.findings.toVector.flatMap(f => (f.studio ++ f.eyes4s).flatMap(_.remedy))
     remedies.map(r => FocusStop(A11yRole.Button, r.label)) ++
-      Option.when(v.card.enabled)(FocusStop(A11yRole.Button, v.card.button))
+      (if runName.isDisabled then Vector.empty
+       else
+         Vector(
+           FocusStop(A11yRole.TextField, "Analysis name"),
+           FocusStop(A11yRole.TextArea, "Analysis notes")
+         )) ++
+      Option.when(!run.isDisabled)(FocusStop(A11yRole.Button, v.card.button))
 
   /** Follows the resolved design's state. */
   def follow(state: ResolvedDesign): Unit =
@@ -211,5 +257,27 @@ final class PreflightHost(model: () => AppModel, app: Intent => Unit):
     run.setText(v.card.button)
     run.setAccessibleText(v.card.button)
     run.setDisable(!v.card.enabled)
-    run.setOnAction(_ => v.card.run.foreach(app))
+    val context = eyes4s.studio.app.analysis.AnalysisSelection.selected(model())
+    val id      = context.map(_.id)
+    if id != metadataFor then
+      metadataFor = id
+      bindingMetadata = true
+      try
+        runName.setText(context.fold("")(_.studio.name.value))
+        runDescription.setText(context.fold("")(_.studio.description))
+      finally bindingMetadata = false
+    val editable = context.exists(c => model().document.draft.forall(_.id == c.id))
+    runName.setDisable(!editable)
+    runDescription.setDisable(!editable)
+    run.setDisable(v.card.run.isEmpty || metadata.isLeft)
+    nameError.setText(metadata.fold(_.message, _ => ""))
+    run.setOnAction(_ =>
+      metadata.foreach { fields =>
+        v.card.run.foreach {
+          case Intent.Dispatch(Command.SaveAndRun(_)) =>
+            app(Intent.Dispatch(Command.SaveAndRun(Some(fields))))
+          case intent => app(intent)
+        }
+      }
+    )
     verdict.setText(v.card.reason.getOrElse(v.card.verdict))

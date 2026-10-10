@@ -123,8 +123,8 @@ class PrivateDensityFxSuite extends ShellFxSuite:
       val expected = get(read(root.resolve("eyes4s.json")).hcursor.get[Vector[Json]]("sources"))
         .map(j => get(j.hcursor.get[String]("id")) -> j)
         .toMap
-      val phases  = sources.map(j => get(j.hcursor.get[String]("phase"))).distinct.sorted
-      val initial = get(AppModel.newProject)
+      val phases   = sources.map(j => get(j.hcursor.get[String]("phase"))).distinct.sorted
+      val initial  = get(AppModel.newProject)
       val ppd      = get(DeclaredPixelsPerDegree.of(number("pixels_per_degree")))
       val geometry = get(
         Geometry.of(
@@ -145,7 +145,7 @@ class PrivateDensityFxSuite extends ShellFxSuite:
           ppd
         )
       )
-      val dataset = DatasetRevision(1)
+      val dataset     = DatasetRevision(1)
       val projectPath = root.resolve("density.eyes")
       val results     = project(projectPath, initial.document, Vector.empty)
         .use { port =>
@@ -161,54 +161,81 @@ class PrivateDensityFxSuite extends ShellFxSuite:
             )
             try
               assertEquals(w.session.fixture, None)
-              val importer = runOnFx(ImportWizardHost(
-                ImportWizard.newImport(w.runtime.model.document, ImportPresets.empty),
-                () => w.runtime.model.document, w.runtime.dispatch,
-                ImportWizardHost.fxPlatform(() => fx.stage, noPresets(), Some(port)),
-                () => ()
-              ))
+              val importer = runOnFx(
+                ImportWizardHost(
+                  ImportWizard.newImport(w.runtime.model.document, ImportPresets.empty),
+                  () => w.runtime.model.document,
+                  w.runtime.dispatch,
+                  ImportWizardHost.fxPlatform(() => fx.stage, noPresets(), Some(port)),
+                  () => ()
+                )
+              )
               try
                 fx.show(importer.view.node)
-                Vector(SourceRole.Fixations -> "fixations.csv", SourceRole.Trials -> "trials.csv")
+                Vector(
+                  SourceRole.Fixations -> "fixations.csv",
+                  SourceRole.Trials    -> "trials.csv"
+                )
                   .foreach { (role, name) =>
                     runOnFx(importer.read(role, get(HostPath.of(root.resolve(name).toString))))
                       .get(60, java.util.concurrent.TimeUnit.SECONDS)
                   }
-                def pick(table: eyes4s.studio.desktop.importing.MappingTable,
-                    column: String, role: ColumnRole): Unit = runOnFx {
-                  val menu = table.menu(column).getOrElse(fail(s"Missing role menu: $column"))
-                  val option = menu.getItems.asScala.find(_.choice == ColumnChoice.Role(role)).get
+                def pick(
+                    table: eyes4s.studio.desktop.importing.MappingTable,
+                    column: String,
+                    role: ColumnRole
+                ): Unit = runOnFx {
+                  val menu   = table.menu(column).getOrElse(fail(s"Missing role menu: $column"))
+                  val option =
+                    menu.getItems.asScala.find(_.choice == ColumnChoice.Role(role)).get
                   menu.setValue(option)
                 }
-                NativeCommandJourneyFixture.mapping.bindings.foreach(b =>
-                  pick(importer.view.fixations, b.column.value, b.role))
-                NativeCommandJourneyFixture.inventory.bindings.foreach(b =>
-                  pick(importer.view.trials, b.column.value, b.role))
+                NativeCommandJourneyFixture.mapping.bindings
+                  .foreach(b => pick(importer.view.fixations, b.column.value, b.role))
+                NativeCommandJourneyFixture.inventory.bindings
+                  .foreach(b => pick(importer.view.trials, b.column.value, b.role))
                 runOnFx {
                   val time = importer.view.time
-                  time.setValue(time.getItems.asScala.find(_.unit.contains(TimeUnit.Milliseconds)).get)
+                  time.setValue(
+                    time.getItems.asScala.find(_.unit.contains(TimeUnit.Milliseconds)).get
+                  )
                   val kind = importer.view.displayKind
-                  kind.setValue(kind.getItems.asScala.find(_.column.exists(_.value == "display_kind")).get)
+                  kind.setValue(
+                    kind.getItems.asScala.find(_.column.exists(_.value == "display_kind")).get
+                  )
                   val file = importer.view.displayFile
-                  file.setValue(file.getItems.asScala.find(_.column.exists(_.value == "image_file")).get)
+                  file.setValue(
+                    file.getItems.asScala.find(_.column.exists(_.value == "image_file")).get
+                  )
                   importer.view.tabs(WizardTab.Geometry).fire()
                   Vector(
-                    GeometryField.ScreenWidth -> number("screen_width_px"),
+                    GeometryField.ScreenWidth  -> number("screen_width_px"),
                     GeometryField.ScreenHeight -> number("screen_height_px"),
-                    GeometryField.ImageLeft -> number("x_min"),
-                    GeometryField.ImageTop -> number("y_min"),
-                    GeometryField.ImageWidth -> (number("x_max") - number("x_min")),
-                    GeometryField.ImageHeight -> (number("y_max") - number("y_min"))
-                  ).foreach((field, value) => importer.view.geometryFields(field).setText(value.toInt.toString))
-                  importer.view.geometryFields(GeometryField.PixelsPerDegree).setText(ppd.value.toString)
+                    GeometryField.ImageLeft    -> number("x_min"),
+                    GeometryField.ImageTop     -> number("y_min"),
+                    GeometryField.ImageWidth   -> (number("x_max") - number("x_min")),
+                    GeometryField.ImageHeight  -> (number("y_max") - number("y_min"))
+                  ).foreach((field, value) =>
+                    importer.view.geometryFields(field).setText(value.toInt.toString)
+                  )
+                  importer.view
+                    .geometryFields(GeometryField.PixelsPerDegree)
+                    .setText(ppd.value.toString)
                 }
-                until(fx, "import controls validate mappings and geometry") { !importer.view.commit.isDisabled }
+                until(fx, "import controls validate mappings and geometry") {
+                  !importer.view.commit.isDisabled
+                }
                 fx.snapshot(StudioTheme.Light, List(SnapshotScale.X1))
                   .foreach(p => Files.copy(p, root.resolve("import-settings.png")))
                 fx.robot.click(importer.view.commit)
                 importer.importCompleted.get(60, java.util.concurrent.TimeUnit.SECONDS)
-                until(fx, "imported dataset") { w.runtime.model.document.dataset(dataset).isDefined }
-                assertEquals(runOnFx(w.runtime.model.document.dataset(dataset).map(_.geometry)), Some(geometry))
+                until(fx, "imported dataset") {
+                  w.runtime.model.document.dataset(dataset).isDefined
+                }
+                assertEquals(
+                  runOnFx(w.runtime.model.document.dataset(dataset).map(_.geometry)),
+                  Some(geometry)
+                )
               finally runOnFx(importer.dispose())
               fx.show(w.root)
               dispatch(
@@ -234,7 +261,7 @@ class PrivateDensityFxSuite extends ShellFxSuite:
               }
               phases.zipWithIndex.map { (phase, index) =>
                 val recipe = Recipe(
-                  None,
+                  runOnFx(w.runtime.model.document.latestAnalysis.flatMap(_.recipe.input)),
                   DefinitionRef.fromCore(TrialKeyDefinitions.trialLayout),
                   MethodSpec(get(DefinitionRef.of("eyes4s.cosine", 1)), Vector.empty),
                   PhasePair(Phase(phase), Phase.Encoding),
@@ -257,17 +284,27 @@ class PrivateDensityFxSuite extends ShellFxSuite:
                 )
                 dispatch(fx, w, Intent.SwitchPerspective(Perspective.Analysis))
                 if index == 0 then runOnFx(w.recipe.choose(Preset.EncodingRetrieval))
-                dispatch(fx, w, Intent.FocusPane(get(eyes4s.studio.app.layout.PaneId.of("analysis.recipe"))))
-                until(fx, "recipe editor ready") { w.recipe.editor.node.isVisible && !w.recipe.editor.node.isDisabled }
+                dispatch(
+                  fx,
+                  w,
+                  Intent.FocusPane(get(eyes4s.studio.app.layout.PaneId.of("analysis.recipe")))
+                )
+                until(fx, "recipe editor ready") {
+                  w.recipe.editor.node.isVisible && !w.recipe.editor.node.isDisabled
+                }
                 val form = w.recipe.editor
                 runOnFx {
-                  Map("focal" -> phase, "reference" -> "Encoding",
-                    "columns" -> get(request.get[Int]("nx")).toString,
-                    "rows" -> get(request.get[Int]("ny")).toString,
-                    "scales" -> (number("sigma_px") / ppd.value).toString,
+                  Map(
+                    "focal"           -> phase,
+                    "reference"       -> "Encoding",
+                    "columns"         -> get(request.get[Int]("nx")).toString,
+                    "rows"            -> get(request.get[Int]("ny")).toString,
+                    "scales"          -> (number("sigma_px") / ppd.value).toString,
                     "pixelsPerDegree" -> ppd.value.toString,
-                    "xMin" -> number("x_min").toString, "yMin" -> number("y_min").toString,
-                    "xMax" -> number("x_max").toString, "yMax" -> number("y_max").toString
+                    "xMin"            -> number("x_min").toString,
+                    "yMin"            -> number("y_min").toString,
+                    "xMax"            -> number("x_max").toString,
+                    "yMax"            -> number("y_max").toString
                   ).foreach((name, text) => form.fields(name).setText(text))
                   form.weighting.setValue(WeightChoice.Duration)
                   form.unmatched.setValue(UnmatchedChoice.Refuse)
@@ -279,6 +316,10 @@ class PrivateDensityFxSuite extends ShellFxSuite:
                     .exists(_.recipe.contains(recipe)) && w.preflight.runButton._2
                 }
                 assertEquals(runOnFx(w.runtime.model.document.draftRecipe), Some(recipe))
+                runOnFx {
+                  w.preflight.runName.setText(phase)
+                  w.preflight.runDescription.setText(get(request.get[String]("geometry_note")))
+                }
                 fx.snapshot(StudioTheme.Light, List(SnapshotScale.X1))
                   .foreach(p => Files.copy(p, root.resolve(s"phase-${index + 1}-settings.png")))
                 val runButton =
@@ -290,6 +331,14 @@ class PrivateDensityFxSuite extends ShellFxSuite:
                 until(fx, "analysis complete") {
                   w.runtime.model.jobs.ready.exists(_.run == run)
                 }
+                assertEquals(
+                  runOnFx(w.runtime.model.document.latestAnalysis.map(_.studio.name.value)),
+                  Some(phase)
+                )
+                assertEquals(
+                  runOnFx(w.runtime.model.document.latestAnalysis.map(_.studio.description)),
+                  Some(get(request.get[String]("geometry_note")))
+                )
                 until(fx, "native artifacts saved") {
                   w.runtime.model.document
                     .run(run)

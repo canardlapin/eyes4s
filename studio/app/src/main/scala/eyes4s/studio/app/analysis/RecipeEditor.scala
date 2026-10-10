@@ -17,7 +17,7 @@
 package eyes4s.studio.app.analysis
 
 import cats.syntax.all.*
-import eyes4s.studio.core.backend.Phase
+import eyes4s.studio.core.backend.{AnalysisRevision, Phase}
 import eyes4s.studio.core.command.Command
 import eyes4s.studio.core.document.*
 
@@ -45,66 +45,116 @@ enum RecipeInputError derives CanEqual:
 object RecipeEditor:
   def input(r: Recipe): RecipeInput =
     RecipeInput(
-      r.phases.focal.label, r.phases.reference.label,
-      r.grid.columns.toString, r.grid.rows.toString,
+      r.phases.focal.label,
+      r.phases.reference.label,
+      r.grid.columns.toString,
+      r.grid.rows.toString,
       r.scales.values.map(_.degrees.toString).mkString(", "),
       r.angularScale.fold("")(_.value.toString),
-      r.window.fold("")(_.xMin.toString), r.window.fold("")(_.yMin.toString),
-      r.window.fold("")(_.xMax.toString), r.window.fold("")(_.yMax.toString),
-      r.weighting, r.unmatched
+      r.window.fold("")(_.xMin.toString),
+      r.window.fold("")(_.yMin.toString),
+      r.window.fold("")(_.xMax.toString),
+      r.window.fold("")(_.yMax.toString),
+      r.weighting,
+      r.unmatched
     )
 
   def parse(base: Recipe, f: RecipeInput): Either[RecipeInputError, Recipe] =
     def number(name: String, raw: String): Either[RecipeInputError, Double] =
-      raw.trim.toDoubleOption.filter(_.isFinite)
+      raw.trim.toDoubleOption
+        .filter(_.isFinite)
         .toRight(RecipeInputError.Invalid(name, raw, "enter a finite number"))
     def integer(name: String, raw: String): Either[RecipeInputError, Int] =
-      raw.trim.toIntOption.filter(_ > 0)
+      raw.trim.toIntOption
+        .filter(_ > 0)
         .toRight(RecipeInputError.Invalid(name, raw, "enter a positive integer"))
     def domain[A](name: String, raw: String)(v: Either[DocumentError, A]) =
       v.leftMap(e => RecipeInputError.Invalid(name, raw, e.message))
     def phase(name: String, raw: String): Either[RecipeInputError, Phase] =
-      Either.cond(raw.trim.nonEmpty, Phase(raw.trim),
-        RecipeInputError.Invalid(name, raw, "enter a phase label"))
+      Either.cond(
+        raw.trim.nonEmpty,
+        Phase(raw.trim),
+        RecipeInputError.Invalid(name, raw, "enter a phase label")
+      )
     val coordinates = Vector(f.xMin, f.yMin, f.xMax, f.yMax)
     for
-      focal <- phase("Query phase", f.focal)
+      focal     <- phase("Query phase", f.focal)
       reference <- phase("Reference phase", f.reference)
-      _ <- Either.cond(focal != reference, (),
-        RecipeInputError.Invalid("Phases", f.focal, "query and reference must differ"))
-      cols <- integer("Grid columns", f.columns)
-      rows <- integer("Grid rows", f.rows)
-      grid <- domain("Grid", s"${f.columns} × ${f.rows}")(GridSize.of(cols, rows))
-      scales <- f.scales.split(",", -1).toVector.traverse(raw =>
-        number("Gaussian σ (degrees)", raw).flatMap(v => domain("Gaussian σ", raw)(Sigma.of(v))))
+      _         <- Either.cond(
+        focal != reference,
+        (),
+        RecipeInputError.Invalid("Phases", f.focal, "query and reference must differ")
+      )
+      cols   <- integer("Grid columns", f.columns)
+      rows   <- integer("Grid rows", f.rows)
+      grid   <- domain("Grid", s"${f.columns} × ${f.rows}")(GridSize.of(cols, rows))
+      scales <- f.scales
+        .split(",", -1)
+        .toVector
+        .traverse(raw =>
+          number("Gaussian σ (degrees)", raw)
+            .flatMap(v => domain("Gaussian σ", raw)(Sigma.of(v)))
+        )
         .flatMap(v => domain("Gaussian scales", f.scales)(ScaleSet.of(v)))
-      ppd <- if f.pixelsPerDegree.trim.isEmpty then Right(None)
-        else number("Pixels per degree", f.pixelsPerDegree)
-          .flatMap(v => domain("Pixels per degree", f.pixelsPerDegree)(DeclaredPixelsPerDegree.of(v)))
-          .map(Some(_))
-      window <- if coordinates.forall(_.trim.isEmpty) then Right(None)
-        else for
-          x0 <- number("Window x minimum", f.xMin)
-          y0 <- number("Window y minimum", f.yMin)
-          x1 <- number("Window x maximum", f.xMax)
-          y1 <- number("Window y maximum", f.yMax)
-          w <- domain("Half-open window", coordinates.mkString(", "))(AnalysisWindow.of(x0,y0,x1,y1))
-        yield Some(w)
-    yield base.copy(phases = PhasePair(focal, reference), grid = grid, scales = scales,
-      angularScale = ppd, window = window,
+      ppd <-
+        if f.pixelsPerDegree.trim.isEmpty then Right(None)
+        else
+          number("Pixels per degree", f.pixelsPerDegree)
+            .flatMap(v =>
+              domain("Pixels per degree", f.pixelsPerDegree)(DeclaredPixelsPerDegree.of(v))
+            )
+            .map(Some(_))
+      window <-
+        if coordinates.forall(_.trim.isEmpty) then Right(None)
+        else
+          for
+            x0 <- number("Window x minimum", f.xMin)
+            y0 <- number("Window y minimum", f.yMin)
+            x1 <- number("Window x maximum", f.xMax)
+            y1 <- number("Window y maximum", f.yMax)
+            w  <- domain("Half-open window", coordinates.mkString(", "))(
+              AnalysisWindow.of(x0, y0, x1, y1)
+            )
+          yield Some(w)
+    yield base.copy(
+      phases = PhasePair(focal, reference),
+      grid = grid,
+      scales = scales,
+      angularScale = ppd,
+      window = window,
       offWindow = window.map(_ => base.offWindow.getOrElse(OffWindowChoice.Exclude)),
-      weighting = f.weighting, unmatched = f.unmatched)
+      weighting = f.weighting,
+      unmatched = f.unmatched
+    )
 
   /** A single undoable edit; stale-before checks stay in the command reducer. */
-  def command(document: StudioDocument, input: RecipeInput): Either[RecipeInputError, Option[Command]] =
-    PresetPicker.edited(document).toRight(
-      RecipeInputError.Invalid("Analysis", "", "choose a preset to start an analysis")
-    ).flatMap { (context, base) =>
-      parse(base, input).map { next =>
-        val changes = RecipeChange.between(base, next)
-        Option.when(changes.nonEmpty)(
-          if document.draft.isEmpty then Command.StartDraft(context.id, None, changes)
-          else Command.ChangeRecipes(changes)
-        )
+  def command(
+      document: StudioDocument,
+      input: RecipeInput,
+      revision: Option[AnalysisRevision] = None
+  ): Either[RecipeInputError, Option[Command]] =
+    PresetPicker
+      .edited(document, revision)
+      .toRight(
+        RecipeInputError.Invalid("Analysis", "", "choose a preset to start an analysis")
+      )
+      .flatMap { (context, base) =>
+        Either
+          .cond(
+            document.draft.forall(_.id == context.id),
+            (),
+            RecipeInputError.Invalid(
+              "Analysis",
+              context.id.toString,
+              "finish or discard the other draft first"
+            )
+          )
+          .flatMap(_ => parse(base, input))
+          .map { next =>
+            val changes = RecipeChange.between(base, next)
+            Option.when(changes.nonEmpty)(
+              if document.draft.isEmpty then Command.StartDraft(context.id, None, changes)
+              else Command.ChangeRecipes(changes)
+            )
+          }
       }
-    }
