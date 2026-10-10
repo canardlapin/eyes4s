@@ -23,6 +23,26 @@ sbt studioAll checkBoundaries studioStyleCheck
 `studioAll` tests every studio project and links the Scala.js app. The library's
 `compileAll` and `testAll` never touch studio.
 
+Desktop tests run in separate JVMs with an 8 GB maximum heap for full native
+archive round trips; `-Deyes4s.studio.test.heap=4g` sets a smaller test heap.
+Each `journey.Native*` suite gets a fresh JVM, and the other desktop tests share
+one JVM. The groups run sequentially, retaining the machine-wide FX lock.
+This releases each archive journey's heap and any unfinished asynchronous work
+before another group starts, including the frame-timing tests.
+An sbt `-J-Xmx` option controls only the build JVM. The test JVM exits on heap
+exhaustion so a failed decode cannot leave later FX tests waiting for a dead
+runtime. Linux CI gives sbt 3 GB and the test fork 8 GB. Apple Silicon macOS CI
+compiles with 2 GB, then exits that process and starts a fresh 1 GB sbt process
+with a 4 GB test fork, leaving room for JVM native memory and macOS within the
+runner's 7 GB of RAM. Both platforms use the same assertions and test budgets.
+Local FX tests remain headless by default.
+
+The full native command journey qualifies archive contents and cold restoration.
+It allows five minutes for verified archive persistence and ten minutes for the
+whole journey, including the independent science comparison and reopen. These
+test-harness deadlines accommodate shared-runner variation; the separate frame
+performance assertions retain their 32 ms median and 250 ms worst-frame limits.
+
 ## Source pins
 
 scaladock and Intaglio are source-only pre-release repositories with no

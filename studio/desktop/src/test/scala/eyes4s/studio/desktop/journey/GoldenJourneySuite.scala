@@ -43,7 +43,9 @@ import scala.concurrent.ExecutionContext
   * not admitted, 9 without a match, 457 eligible, 219,486 candidates, 8,969
   * pairs per scale with 19 or 18 controls, so 35,876 and rev 5's 44,845); and
   * the methods text's 11,311 admitted records and duration share. The scores
-  * and everything only the run decides are pending (below).
+  * are eyes4s's own: the reopened dataset and analysis, admitted and run by
+  * eyes4s directly, give SCORES.json's M, B and D for every query at every
+  * scale and FIXTURE.md's 454 contributing and 3 failed of 457 eligible.
   *
   * The figure is composed and its bundle assembled through the composer and
   * the desktop's bundle assembly; the project is saved to a real project
@@ -54,13 +56,9 @@ import scala.concurrent.ExecutionContext
   * The two missing images are repaired in Data › Sources (S5.7), and the
   * trail follows the selected fixation and Next in Explore (S6.6).
   *
-  * Pending, a named stub in the driver's record:
-  *  - [[Pending.LibraryScores]]: what only the run decides, from eyes4s
-  *    itself (M, B and D by query and scale, contributing 454 / failed 3, the
-  *    group n range, every participant and group mean). The fake serves
-  *    fixture.json's scores, not eyes4s's on these files (fixtures/
-  *    studio-golden/README.md); S0.7b freezes eyes4s's as SCORES.json and S3.7
-  *    runs the real backend. Until then these are held to FIXTURE.md.
+  * The route runs on the fake backend (the story's fixture.json scores); the
+  * same journey on the real backend is NativeCommandJourneySuite (headless)
+  * and NativeGoldenCommandFxSuite (window), each held to SCORES.json.
   */
 class GoldenJourneySuite extends munit.FunSuite:
 
@@ -82,10 +80,7 @@ class GoldenJourneySuite extends munit.FunSuite:
             case Right(end)    =>
               assertEquals(
                 end.records.collect { case DriverRecord.Stubbed(step, _) => step },
-                Vector(
-                  "import dialog",
-                  GoldenRoute.Pending.LibraryScores._1
-                )
+                Vector("import dialog")
               )
               assertEquals(
                 end.records.collect { case r: DriverRecord.Refused => r },

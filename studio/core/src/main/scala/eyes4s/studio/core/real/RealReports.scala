@@ -17,7 +17,6 @@
 package eyes4s.studio.core.real
 
 import cats.syntax.all.*
-import eyes4s.codec.ReportSources
 import eyes4s.plan.{AttributeValue, TrialKey as CoreKey}
 import eyes4s.results.{
   Covariate,
@@ -89,14 +88,8 @@ object RealReports:
         }
         .leftMap(refused)
       schema <- CovariateSchema.of(declarations).leftMap(e => refused(sourceError(e.message)))
-      source <- ReportSources
-        .study(p.plans, p.inputs, p.results)(
-          p.plan,
-          p.admitted.input,
-          held.result,
-          Some(p.admitted.evidence),
-          schema
-        )
+      source <- held
+        .reportSource(schema)
         .leftMap(e => refused(sourceError(e.message)))
       levels = declarations.collect { case Covariate(name, CovariateType.Categorical(found)) =>
         name.value -> found.values

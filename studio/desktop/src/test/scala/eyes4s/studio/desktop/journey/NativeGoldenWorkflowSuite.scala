@@ -454,5 +454,80 @@ class NativeGoldenWorkflowSuite extends munit.CatsEffectSuite:
               )
             case _ => ()
         }
+        // S9.5 recheck on the real backend (slice r7 of S3.7): the exported
+        // results.csv, as written, holds eyes4s's own D in every scored cell
+        // and an empty, invalid cell everywhere else.
+        import eyes4s.studio.core.importing.{CsvSniffer, Delimiter}
+        val csv = second.files
+          .collectFirst { case ("results.csv", data) => String(Array.from(data), UTF_8) }
+          .getOrElse(fail("no results.csv exported"))
+        val written = get(CsvSniffer.records("results.csv", csv, Delimiter.Comma))
+        val column  = written.head.zipWithIndex.toMap
+        val cells   = written.tail
+        assertEquals(cells.size, first.rows.size * 4)
+        var scored = 0
+        cells.foreach { r =>
+          def c(name: String) = r(column(name))
+          val at              = s"${c("participant")} ${c("trial")} scale ${c("scale")}"
+          if c("status") == "contributing" then
+            scored += 1
+            val core = admitted.input.trials.rows
+              .find(t =>
+                t.key.participant == c("participant") && t.key.phase == c("phase") &&
+                  t.key.trial == c("trial") && t.key.occurrence.value == c("occurrence").toInt
+              )
+              .getOrElse(fail(s"$at: no direct query key"))
+              .key
+            val index      = c("scale").toInt
+            val directRows = inspection.scales(index).contrast match
+              case eyes4s.plan.ScaleContrast.Rows(rows) => rows
+              case other => fail(s"direct contrast unavailable $other")
+            val d = get(
+              directRows.get(ResultRef.ContrastRow(index, core)).toRight(s"$at: no D")
+            ).outcome.toOption
+              .getOrElse(fail(s"$at: no direct score"))
+              .value
+              .value
+            assertEquals((c("d__valid"), c("d").toDouble), ("true", d), at)
+          else assertEquals((c("d__valid"), c("d")), ("false", ""), at)
+        }
+        assert(scored >= first.summary.contrasts.contributing, s"only $scored scored cells")
+        // comparisons.csv, as written: every scored pair is eyes4s's pair score.
+        val keys = admitted.input.trials.rows
+          .map(t =>
+            (t.key.participant, t.key.phase, t.key.trial, t.key.occurrence.value) -> t.key
+          )
+          .toMap
+        val pairCsv = second.files
+          .collectFirst { case ("comparisons.csv", data) => String(Array.from(data), UTF_8) }
+          .getOrElse(fail("no comparisons.csv exported"))
+        val pairs  = get(CsvSniffer.records("comparisons.csv", pairCsv, Delimiter.Comma))
+        val pcol   = pairs.head.zipWithIndex.toMap
+        var paired = 0
+        pairs.tail.foreach { r =>
+          def c(name: String)                                       = r(pcol(name))
+          def key(phase: String, trial: String, occurrence: String) =
+            keys
+              .get((c("participant"), c(phase), c(trial), c(occurrence).toInt))
+              .getOrElse(fail(s"no direct key for ${r.mkString(",")}"))
+          if c("score__valid") == "true" then
+            paired += 1
+            val index  = c("scale").toInt
+            val design = c("design") match
+              case "matched" => eyes4s.plan.StudyDesign.Matched
+              case "control" => eyes4s.plan.StudyDesign.Control
+              case other     => fail(s"unknown design $other")
+            val ref = ResultRef.PairRow(
+              index,
+              design,
+              key("phase", "trial", "occurrence"),
+              key("reference_phase", "reference_trial", "reference_occurrence")
+            )
+            val direct = get(
+              inspection.scales(index).pairs(design).get(ref).toRight(s"no direct pair $ref")
+            ).outcome.toOption.getOrElse(fail(s"direct pair $ref has no score")).value.value
+            assertEquals(c("score").toDouble, direct, ref.toString)
+        }
+        assert(paired > 0, "comparisons.csv holds no scored pair")
     }
   }

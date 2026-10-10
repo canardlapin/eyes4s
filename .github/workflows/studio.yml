@@ -90,7 +90,7 @@ jobs:
         run: python3 tools/studio-fixture/verify_counts.py
 
       - name: Build and test studio (xvfb, software pipeline)
-        run: xvfb-run -a -s '-screen 0 1920x1200x24' sbt -J-Xmx8g -Djavafx.platform=linux studioAll studioStyleCheck
+        run: xvfb-run -a -s '-screen 0 1920x1200x24' sbt -J-Xmx3g -Djavafx.platform=linux studioAll studioStyleCheck
 
       - name: Check studio resolved-graph boundaries
         run: sbt -J-Xmx4g -Djavafx.platform=linux studioBoundaries
@@ -147,7 +147,9 @@ jobs:
       - name: Run functional JavaFX tests (no goldens)
         env:
           EYES4S_STUDIO_SMALL_DISPLAY: skip
-        run: sbt -J-Xmx4g -Djavafx.platform=mac-aarch64 -Deyes4s.studio.fx.visible=true studioDesktop/test
+        run: |
+          sbt -J-Xmx2g -Djavafx.platform=mac-aarch64 studioDesktop/Test/compile
+          sbt -J-Xmx1g -Djavafx.platform=mac-aarch64 -Deyes4s.studio.test.heap=4g -Deyes4s.studio.fx.visible=true studioDesktop/test
 
   studio-clean-clone:
     name: Studio pins from a clean clone

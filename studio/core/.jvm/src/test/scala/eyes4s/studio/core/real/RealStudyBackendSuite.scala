@@ -1122,6 +1122,13 @@ class RealStudyBackendSuite extends CatsEffectSuite:
           (grid.region.left, grid.region.top, grid.region.right, grid.region.bottom),
           (448.0, 156.0, 1472.0, 924.0)
         )
+        // Isoline levels are eyes4s's highest-density regions of this mass,
+        // not thresholds Studio derives (S4.4 recheck, slice r9 of S3.7).
+        assertEquals(
+          grid.levels.map(l => (l.coverage, l.threshold)),
+          get(eyes4s.kernel.MassLevels.of(mass, Vector(0.5, 0.9)))
+            .map(l => (l.coverage, l.threshold))
+        )
         for role <- ReportRole.values do
           val actual = report.cell(None, role).get
           // Native SCORES.json and the illustrative mock fixture have
@@ -1312,6 +1319,98 @@ class RealStudyBackendSuite extends CatsEffectSuite:
             profiles.last.cell(Some(Response.Remembered), role).get.estimate
           )
         assertEquals(jobs.size, 1, "report edits reuse retained scores")
+    }
+  }
+
+  // S8.7 / E2E-09 recheck on the real backend (slice r1 of S3.7): a reporting
+  // filter selects which queries a report keeps; it never touches the pairs
+  // eyes4s scored, so a query's control pool keeps encodings of items the
+  // participant forgot.
+  test(
+    "a hit-only reporting filter keeps P17 ret_07's control pool, Forgotten items included"
+  ) {
+    import eyes4s.studio.core.document.*
+    val attribute = get(Covariate.of("response"))
+    val keep      =
+      ReportingFilter.Keep(attribute, get(ValueSet.of(attribute, Vector("Remembered"))))
+    val hitsOnly = get(
+      ReportingSpec.of(
+        get(ReportingId.of("hits-only")),
+        "Hits only",
+        Some(attribute),
+        Vector(keep),
+        None,
+        ReportingWeight.ParticipantMeans
+      )
+    )
+    val query = TrialKey("P17", Phase.Retrieval, "ret_07", 1)
+    RealStudyBackend.resource[IO](trialLayout, RealBackendConformanceSuite.golden).use { real =>
+      for
+        _      <- recompute(real, StoryMoments.run7)
+        before <- allPairRows(real, StoryMoments.run7, 2)
+        report <- real.report(StoryMoments.run7, hitsOnly, 2).map(get)
+        after  <- allPairRows(real, StoryMoments.run7, 2)
+        ledger <- every(real, StoryMoments.r3)
+        jobs   <- real.jobs
+      yield
+        val controls = before.filter(r => r.query == query && r.design == PairDesign.Control)
+        assertEquals(after, before, "a reporting filter changed the scored pairs")
+        assertEquals(controls.size, 19)
+        val recalled = ledger.collect {
+          case e if e.trial.participant == "P17" && e.trial.phase == Phase.Retrieval =>
+            e.item -> e.response
+        }.toMap
+        val forgotten = controls
+          .filter(c => recalled.get(c.referenceItem).flatten.contains(Response.Forgotten))
+        assert(forgotten.nonEmpty, s"no control of a Forgotten item among $controls")
+        assert(report.cells.nonEmpty, report.toString)
+        assertEquals(jobs.size, 1, "a reporting edit starts no run")
+    }
+  }
+
+  // S3.1 recheck on the real backend (slice r11 of S3.7): a cancel answers
+  // within the ticket's 500 ms and settles the job Cancelled for good; the
+  // cancelled run's last progress is the last step eyes4s commits, so no
+  // pair is scored after the step that was in flight when it was cancelled.
+  test("cancelling a real run settles it within 500 ms and commits no later step") {
+    import scala.concurrent.duration.*
+    val budget = 500.millis
+    RealStudyBackend.resource[IO](trialLayout, RealBackendConformanceSuite.golden).use { real =>
+      for
+        status <- real.submit(StoryMoments.rev4).map(get)
+        stream <- real.subscribe(status.job).map(get)
+        // Every frame the subscription delivers, read until Finished.
+        events  <- stream.compile.toVector.start
+        running <- real
+          .subscribe(status.job)
+          .map(get)
+          .flatMap(_.collect { case JobEvent.Advanced(p) => p }.take(1).compile.lastOrError)
+        start     <- IO.monotonic
+        cancelled <- real.cancel(status.job).map(get)
+        end       <- IO.monotonic
+        frames    <- events.joinWithNever.timeout(20.seconds)
+        _         <- IO.sleep(budget)
+        later     <- real.job(status.job).map(get)
+        out       <- real.outcome(status.job).map(get)
+        runs      <- real.runs
+      yield
+        assert(end - start <= budget, s"cancel answered after ${(end - start).toMillis} ms")
+        val last = out match
+          case Some(JobOutcome.Cancelled(_, _, last)) => last
+          case other                                  => fail(s"not cancelled: $other")
+        assertEquals(cancelled.state, JobState.Finished(out.get))
+        assertEquals(later, cancelled, "the job changed after it was cancelled")
+        assert(last.forall(_.step >= running.step), s"$last precedes the running step $running")
+        assertEquals(frames.lastOption, Some(JobEvent.Finished(out.get)))
+        val advanced = frames.collect { case JobEvent.Advanced(p) => p.step }
+        assert(
+          advanced.forall(s => last.exists(_.step >= s)),
+          s"steps $advanced reported beyond the cancelled run's last progress $last"
+        )
+        assert(
+          runs.exists(r => r.run == status.run && r.state.isInstanceOf[RunState.Cancelled]),
+          runs
+        )
     }
   }
 

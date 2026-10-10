@@ -20,6 +20,7 @@ import eyes4s.studio.core.backend.RunId
 
 import eyes4s.studio.core.backend.{AnalysisRevision, DatasetRevision, Response}
 import eyes4s.studio.core.document.{
+  AnalysisFamilyId,
   FigureId,
   Perspective,
   Preset,
@@ -45,7 +46,9 @@ enum Place derives CanEqual:
   case DataView(section: DataSection)
   case Analyses
 
-  /** The analysis family a revision belongs to ("Reinstatement · Enc→Ret"). */
+  case Family(family: AnalysisFamilyId)
+
+  /** Legacy preset breadcrumb; family ownership is carried by Family. */
   case Lineage(preset: Preset)
   case Revision(revision: AnalysisRevision)
   case Run(run: RunId)
@@ -72,11 +75,12 @@ object Place:
       case _                        => false
     }
     trail.lastOption.map {
-      case NewProject | Dataset(_) | Source(_) | DataView(_)       => Perspective.Data
-      case Analyses | Lineage(_) | Revision(_) | Run(_) | Field(_) => Perspective.Analysis
-      case Summary(_) | Group(_, _)                                => Perspective.Compare
-      case Figures | Figure(_)                                     => Perspective.Figures
-      case At(ref)                                                 =>
+      case NewProject | Dataset(_) | Source(_) | DataView(_) => Perspective.Data
+      case Analyses | Family(_) | Lineage(_) | Revision(_) | Run(_) | Field(_) =>
+        Perspective.Analysis
+      case Summary(_) | Group(_, _) => Perspective.Compare
+      case Figures | Figure(_)      => Perspective.Figures
+      case At(ref)                  =>
         ref match
           case StudioRef.Trial(_) | StudioRef.Fixation(_, _) |
               StudioRef.SourceRecord(_, _, _, _) | StudioRef.TrialGroup(_, _) =>

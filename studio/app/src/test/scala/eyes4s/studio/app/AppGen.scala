@@ -69,6 +69,12 @@ object AppGen:
     AppModel.draftTrail(m.document),
     Vector(Place.Figures, Place.At(panelD)),
     Vector(Place.NewProject),
+    m.document.analyses.lastOption.toVector.flatMap(a =>
+      eyes4s.studio.app.analysis.AnalysisSelection.trail(m.document, a.id)
+    ),
+    m.document.draft.toVector.flatMap(d =>
+      eyes4s.studio.app.analysis.AnalysisSelection.trail(m.document, d.id)
+    ),
     m.document.datasets.map(d => Place.Dataset(d.id)).take(1) :+ Place.DataView(
       DataSection.Admission
     ),
@@ -223,7 +229,18 @@ object AppGen:
       .map(Intent.ShowRun(_)),
     1 -> run(m).map(Intent.DismissReady(_)),
     3 -> simple,
-    1 -> Gen.oneOf(Preset.values.toSeq).map(Intent.ChoosePreset(_)),
+    1 -> Gen.const(Intent.NewAnalysis),
+    1 -> Gen
+      .zip(
+        Gen.oneOf(Preset.values.toSeq),
+        Gen.option(
+          Gen.oneOf(
+            m.document.analyses.map(_.id) ++ m.document.draft
+              .map(_.id) :+ eyes4s.studio.core.backend.AnalysisRevision(99)
+          )
+        )
+      )
+      .map((preset, revision) => Intent.ChoosePreset(preset, revision)),
     2 -> Gen.oneOf(CommandRegistry.all).map(c => Intent.Invoke(c.id)),
     2 -> chord.map(Intent.KeyPressed(_)),
     1 -> Gen.oneOf(panes).map(Intent.FocusPane(_)),

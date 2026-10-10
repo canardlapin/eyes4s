@@ -18,21 +18,26 @@ package eyes4s.studio.app.text
 
 enum AnalysesTextId derives CanEqual:
   case NewAnalysis, Draft, NotRun, Current, Stale, Running, Cancelled, CancelledAt, Failed,
-    HeldDraft, Immutable
+    HeldDraft, Immutable, NewFamilyName, CurrentRun, NoCurrentRun, ShowCurrent, FamilyLabel
 
 object AnalysesText:
   def english(id: AnalysesTextId): String =
     import AnalysesTextId.*
     id match
-      case NewAnalysis => "New analysis…"
-      case Draft       => "Draft {0}"
-      case NotRun      => "data {0} · not run"
-      case Current     => "current"
-      case Stale       => "stale"
-      case Running     => "running"
-      case Cancelled   => "cancelled"
-      case CancelledAt => "cancelled at {0}"
-      case Failed      => "failed"
+      case FamilyLabel   => "{0} · {1}"
+      case NewAnalysis   => "New analysis…"
+      case NewFamilyName => "Analysis {0}"
+      case CurrentRun    => "Current run · {0} · {1}"
+      case NoCurrentRun  => "No current run for this analysis."
+      case ShowCurrent   => "Show current result"
+      case Draft         => "Draft {0}"
+      case NotRun        => "data {0} · not run"
+      case Current       => "current"
+      case Stale         => "stale"
+      case Running       => "running"
+      case Cancelled     => "cancelled"
+      case CancelledAt   => "cancelled at {0}"
+      case Failed        => "failed"
       case HeldDraft => "Finish or discard the existing draft before starting another analysis."
       case Immutable =>
         "Revisions are immutable. Recipe edits start a draft; existing runs keep their revision."

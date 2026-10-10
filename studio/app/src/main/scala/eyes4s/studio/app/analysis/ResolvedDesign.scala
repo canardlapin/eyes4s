@@ -203,24 +203,14 @@ object ResolvedDesign:
 
   /** The revision the pane prepares for `model` (see [[DesignTarget]]). */
   def target(model: AppModel): Option[DesignTarget] =
-    val d      = model.document
-    val chosen = model.navigation
-      .trail(Perspective.Analysis)
-      .reverseIterator
-      .collectFirst { case Place.Revision(r) => r }
-    def draft(r: AnalysisRevision): Option[(DatasetRevision, Recipe)] =
-      for context <- d.draftContext.filter(_.id == r)
-      yield (context.dataset, context.recipe)
-    def saved(r: AnalysisRevision): Option[(DatasetRevision, Recipe)] =
-      d.analysis(r).map(a => (a.dataset, a.recipe))
-    def of(r: AnalysisRevision): Option[DesignTarget] =
-      draft(r).orElse(saved(r)).map { (dataset, recipe) =>
-        DesignTarget(r, dataset, AppModel.stampOf(d, r, dataset), recipe)
-      }
-    chosen
-      .flatMap(of)
-      .orElse(d.draft.flatMap(dr => of(dr.id)))
-      .orElse(d.latestAnalysis.flatMap(a => of(a.id)))
+    AnalysisSelection.selected(model).map { context =>
+      DesignTarget(
+        context.id,
+        context.dataset,
+        AppModel.stampOf(model.document, context.id, context.dataset),
+        context.recipe
+      )
+    }
 
   /** Follow the model: a new target prepares its design again and reads its
     * rows; the filter is kept.
