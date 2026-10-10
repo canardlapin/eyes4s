@@ -128,13 +128,9 @@ object RealAdmission:
         case eyes4s.plan.SourceRecord(record, CoreRecordDisposition.Admitted(key, _)) =>
           record -> identityOf(key)
       }.toMap
-      outside = evidence.outsideFrame
-        .flatMap(o =>
-          owners
-            .get(o.record)
-            .map(identity => identity -> outsideFrame(o))
-        )
-        .groupMap(_._1)(_._2)
+      outside <- byTrial(
+        evidence.outsideFrame.flatMap(o => owners.get(o.record).map(_ -> o))
+      )
       response = spec.inventory.flatMap(_.column(ColumnRole.Response)).map(_.value)
       entries <- inventory.trials.traverse(entry(_, response, outside))
     yield new ArchivedDatasetContext(entries, screen, input, evidence, spec)
@@ -185,7 +181,7 @@ object RealAdmission:
         )
       )
       response = inventory.column(ColumnRole.Response).map(_.value)
-      outside  = outsideFrameByTrial(imported)
+      outside <- outsideFrameByTrial(imported)
       entries <- imported.trials.traverse(entry(_, response, outside))
     yield
       // The admitted trials; an admission that requires a complete input
@@ -416,28 +412,38 @@ object RealAdmission:
   private def identityOf(k: CoreKey): Identity =
     (k.participant, k.phase, k.trial, k.occurrence.value)
 
-  /** eyes4s's off-screen record in the protocol's numbering. eyes4s names a
-    * record by its line in the file, the header being line 1; the protocol
-    * numbers records from 1 with the header excluded, as source records and
-    * placement do, so record n is line n + 1.
+  /** eyes4s's off-screen records by trial, in the protocol's numbering. An
+    * admission ledger stores a record as a [[eyes4s.plan.CsvRecord]], which
+    * counts the header as record 1; the protocol names the
+    * [[eyes4s.plan.DataRecord]], as source records and placement do.
     */
-  private def outsideFrame(o: CoreOutsideFrame): OutsideFrame =
-    OutsideFrame(o.record - 1, o.x, o.y, o.frame.name)
+  private def byTrial(
+      owned: Vector[(Identity, CoreOutsideFrame)]
+  ): Either[BackendError, Map[Identity, Vector[OutsideFrame]]] =
+    owned
+      .traverse { (identity, o) =>
+        eyes4s.plan.CsvRecord
+          .of(o.record)
+          .flatMap(_.dataRecord)
+          .bimap(
+            e => BackendError.Unavailable(DiagnosticLocus.Artifact(e.message)),
+            record => identity -> OutsideFrame(record.value, o.x, o.y, o.frame.name)
+          )
+      }
+      .map(_.groupMap(_._1)(_._2))
 
   /** The admitted records outside the admission frame, by trial (occurrence
     * included, so repeated occurrences keep their own records).
     */
   private def outsideFrameByTrial(
       imported: InventoryImport[Unit2D.Px]
-  ): Map[Identity, Vector[OutsideFrame]] =
+  ): Either[BackendError, Map[Identity, Vector[OutsideFrame]]] =
     val trialOf = imported.fixations.admitted.map(r => r.rowNumber -> r.key).toMap
-    imported.fixations.outsideFrame
-      .flatMap { (o: CoreOutsideFrame) =>
-        trialOf
-          .get(o.record)
-          .map(k => identityOf(k) -> outsideFrame(o))
-      }
-      .groupMap(_._1)(_._2)
+    byTrial(
+      imported.fixations.outsideFrame.flatMap(o =>
+        trialOf.get(o.record).map(identityOf(_) -> o)
+      )
+    )
 
   /** A trial's ledger entry. A trial with no item, in the inventory or its
     * records, is refused rather than given an empty item.
