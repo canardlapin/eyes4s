@@ -98,6 +98,7 @@ by token name, never by hex value.
 - [ ] Figure-level binding, locked: run 7 plus "By retrieval response". Panels choose only scale and selection.
 - [ ] Panel C reads "Matched 0.73 · highest of 19 controls street-112 0.61 · control mean B 0.35 · D +0.38". Panel D uses a Δ-cosine axis with a zero rule. Panel E uses a log x axis. Figure text is Plex Sans at 7 pt.
 - [ ] Stale Figure 2 reads "r3 changed the admission status of 4 trials", with Rebind… / Keep.
+- [ ] Binding note: the board's "Rebinding makes a new figure version; the old one stays reproducible" is a recorded deviation. Rebinding replaces the binding in place and Undo restores it; 1.0 persists no figure versions (decision on `bd-01M42HMHQ1PQMZCJFS4AHQ8QE5`).
 - [ ] methods.md states:
   - [ ] 457 eligible queries.
   - [ ] 543 of the 11,311 fixation records of admitted trials (4.8% of their fixation duration).

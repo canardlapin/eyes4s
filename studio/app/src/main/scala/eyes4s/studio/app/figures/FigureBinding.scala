@@ -302,7 +302,8 @@ object FigureBinding:
           s.reporting.name,
           FigureText.unit(s.reporting.weighting),
           "Rebind figure…",
-          "One run and one reporting spec for the whole figure; methods.md cites them once."
+          "One run and one reporting spec for the whole figure; methods.md cites them once. " +
+            "Rebinding replaces the binding in place; Undo restores the previous one."
         )
       ),
       binding.rebind.map(p =>
