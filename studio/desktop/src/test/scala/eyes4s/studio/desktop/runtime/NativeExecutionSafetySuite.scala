@@ -462,6 +462,87 @@ class NativeExecutionSafetySuite extends munit.CatsEffectSuite:
     }
   }
 
+  // S1.7 recheck on the real backend (slice r4 of S3.7): with a native run
+  // shown in Compare, the banner follows the draft's recipe change, then the
+  // native job of its Save & run, then that job's completion.
+  test("the draft banner follows a native draft, its running job and its completion") {
+    val f = fixture(participants = 20, items = 4)
+    harness(f.document, f.sources).use { h =>
+      def banner = eyes4s.studio.app.vm.Shell.banner(h.model.get())
+      for
+        _ <- h.dispatch(Intent.Dispatch(Command.SaveAndRun(None)))
+        first = h.model.get().document.runs.last.id
+        _ <- h.until {
+          case Intent.Execution(ExecutionEvent.Ready(value)) => value.run == first
+          case _                                             => false
+        }
+        _ <- h.dispatch(Intent.ShowRun(first))
+        _ <- h.dispatch(Intent.SwitchPerspective(Perspective.Compare))
+        shown = banner
+        saved = h.model.get().document.analyses.last.recipe
+        _ <- h.dispatch(
+          Intent.Dispatch(
+            Command.ChangeRecipe(RecipeChange.Grid(saved.grid, get(GridSize.of(48, 32))))
+          )
+        )
+        drafted = banner
+        _ <- h.dispatch(Intent.Dispatch(Command.SaveAndRun(None)))
+        second = h.model.get().document.runs.last.id
+        _ <- h.until {
+          case Intent.Execution(ExecutionEvent.Changed(job)) =>
+            job.run == second && !job.phase.isTerminal
+          case _ => false
+        }
+        running = banner
+        _ <- h.until {
+          case Intent.Execution(ExecutionEvent.Ready(value)) => value.run == second
+          case _                                             => false
+        }
+        completed = banner
+      yield
+        def text(b: Option[eyes4s.studio.app.vm.DraftBannerVM]) = b.map(v => (v.lead, v.detail))
+        // Nothing differs from the shown native run yet.
+        assertEquals(shown, None)
+        assertEquals(
+          text(drafted),
+          Some(
+            (
+              "Showing run 1 (analysis rev 5).",
+              "Draft rev 6 grid 40×30 → 48×32 and has not been run."
+            )
+          )
+        )
+        assertEquals(
+          text(running),
+          Some(
+            (
+              "Showing run 1 (rev 5).",
+              "Run 2 (rev 6, grid 40×30 → 48×32) is running — results will not replace " +
+                "this view until you choose Show."
+            )
+          )
+        )
+        assertEquals(
+          running.map(_.actions.map(a => (a.enabled, a.intent))),
+          Some(Vector((false, Intent.ShowRun(second))))
+        )
+        assertEquals(
+          text(completed),
+          Some(
+            (
+              "Showing run 1 (analysis rev 5).",
+              "Run 2 (rev 6) has finished — choose Show to see it."
+            )
+          )
+        )
+        assertEquals(
+          completed.map(_.actions.map(a => (a.enabled, a.intent))),
+          Some(Vector((true, Intent.ShowRun(second))))
+        )
+        assert(second != first)
+    }
+  }
+
   test(
     "native runtime supersession: late old completion events cannot replace a newer draft's ready run"
   ) {
