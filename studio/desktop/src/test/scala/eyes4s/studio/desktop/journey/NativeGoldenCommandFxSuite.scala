@@ -182,6 +182,26 @@ class NativeGoldenCommandFxSuite extends GoldenWindow:
       inspection match
         case _: Inspection.Contrast => ()
         case other                  => fail(s"Native query not scored: $other")
+      // S3.4 recheck on the real backend (slice r6 of S3.7): explaining P17
+      // in the native Remembered group lands on summary › group › participant.
+      val remembered = eyes4s.studio.core.backend.Response("Remembered")
+      dispatch(
+        fx,
+        w,
+        Intent.Explain(
+          Place.At(
+            StudioRef.ParticipantSummary(run, reporting.id, sigma, Some(remembered), "P17")
+          )
+        )
+      )
+      assertEquals(
+        runOnFx(w.runtime.model.location.trail).take(2),
+        Vector(Place.Summary(reporting.id), Place.Group(reporting.id, remembered))
+      )
+      val crumbs =
+        runOnFx(eyes4s.studio.app.vm.Shell.context(w.runtime.model).trail.map(_.label))
+      assertEquals(crumbs.drop(1), Vector("Remembered", "P17"))
+      assert(crumbs.head.startsWith("Summary · "), crumbs.toString)
       dispatch(fx, w, Intent.Dispatch(Command.CreateFigure(run, reporting.id, panels)))
       dispatch(fx, w, Intent.Navigate(Location(Perspective.Figures, Vector(Place.Figures))))
       until(fx, "all edits saved") { !w.runtime.model.save.edited }
