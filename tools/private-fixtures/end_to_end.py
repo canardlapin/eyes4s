@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Local estimator comparison, independent numerical oracles, and optional real Studio UI run."""
 import argparse
+from bisect import bisect_right
 from collections import defaultdict
 import csv
 import hashlib
@@ -75,7 +76,7 @@ def axes(p, centers=True):
     return axis(p["x_min"], p["x_max"], p["nx"]), axis(p["y_min"], p["y_max"], p["ny"])
 
 
-def gaussian(p, item, xs, ys, quantize=False, truncate=False):
+def gaussian(p, item, xs, ys, quantize=False, truncate=False, support_sigma=None):
     """Direct sum of per-point outer products; independent of convolution passes."""
     f = item["fixations"]
     dx = (p["x_max"] - p["x_min"]) / p["nx"]
@@ -88,13 +89,21 @@ def gaussian(p, item, xs, ys, quantize=False, truncate=False):
         iy = min(p["ny"] - 1, int((y - p["y_min"]) / dy))
         if quantize:
             x, y = p["x_min"] + (ix + .5) * dx, p["y_min"] + (iy + .5) * dy
+        # ks's unbinned finite support includes the grid point immediately
+        # below each support bound (clipped at the grid's left/top edge).
+        lx, ux, ly, uy = 0, len(xs), 0, len(ys)
+        if support_sigma is not None:
+            lx = max(0, bisect_right(xs, x - support_sigma * sigma) - 1)
+            ux = bisect_right(xs, x + support_sigma * sigma)
+            ly = max(0, bisect_right(ys, y - support_sigma * sigma) - 1)
+            uy = bisect_right(ys, y + support_sigma * sigma)
         kx = [math.exp(-.5 * ((v - x) / sigma) ** 2)
               if not truncate or abs(j - ix) <= rx else 0.0 for j, v in enumerate(xs)]
         ky = [math.exp(-.5 * ((v - y) / sigma) ** 2)
               if not truncate or abs(j - iy) <= ry else 0.0 for j, v in enumerate(ys)]
-        for row, ay in enumerate(ky):
-            for col, ax in enumerate(kx):
-                result[row * len(xs) + col] += weight * ax * ay
+        for row in range(ly, uy):
+            for col in range(lx, ux):
+                result[row * len(xs) + col] += weight * kx[col] * ky[row]
     return normalized(result)
 
 
@@ -129,6 +138,12 @@ def analyze(p, output):
     details = []
     for item in p["templates"] + p["sources"]:
         ident = item["id"]
+        if r[ident]["binned"] is not False or r[ident]["support_sigma"] != 3.7:
+            raise ValueError("Reference estimator convention differs")
+        native_r = gaussian(p, item, r[ident]["x"], r[ident]["y"], support_sigma=3.7)
+        native_digits = max(0, math.floor(7 - math.log10(max(native_r)) + .5))
+        native_rounding = Tolerance(absolute=.50001 * 10 ** -native_digits + 2e-13, relative=0)
+        assert_close(r[ident]["values"], native_r, native_rounding, "eyesim finite-support Gaussian")
         exact_r = gaussian(p, item, r[ident]["exact_x"], r[ident]["exact_y"])
         # eyesim deliberately rounds normalized cells relative to the map maximum.
         # R's zapsmall passes fractional digits to round(); round chooses the
@@ -141,10 +156,12 @@ def analyze(p, output):
         truncated = gaussian(p, item, xs, ys, quantize=True, truncate=True)
         assert_close(s[ident], truncated, MAP_TOLERANCE, "eyes4s grid Gaussian")
         details.append({"id": ident,
+            "eyesim_native_oracle": discrepancy(r[ident]["values"], native_r),
+            "eyesim_native_rounding_tolerance": native_rounding.__dict__,
             "eyesim_exact_oracle": discrepancy(r[ident]["exact"], exact_r),
             "eyesim_rounding_decimal_places": digits,
             "eyesim_rounding_tolerance": rounding.__dict__,
-            "eyesim_default_vs_exact": discrepancy(normalized(r[ident]["values"]), exact_r),
+            "eyesim_finite_support_vs_exact": discrepancy(normalized(r[ident]["values"]), exact_r),
             "endpoint_vs_center_grid": discrepancy(exact_r, direct_centers),
             "point_binning": discrepancy(direct_centers, binned_centers),
             "finite_kernel_support": discrepancy(binned_centers, truncated),

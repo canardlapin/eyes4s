@@ -22,7 +22,8 @@ density <- function(item, exact = FALSE) {
   # variant covers the entire requested rectangle for every included point.
   extras <- if (exact) list(binned = FALSE,
     supp = max(request$x_max - request$x_min, request$y_max - request$y_min) /
-      request$sigma_px + 1) else list()
+      request$sigma_px + 1) else if (isTRUE(request$end_to_end))
+        list(binned = FALSE, supp = 3.7) else list()
   d <- do.call(eye_density, c(list(fixation_group(x, y, duration, onset),
     sigma = request$sigma_px, xbounds = c(request$x_min, request$x_max),
     ybounds = c(request$y_min, request$y_max), outdim = c(request$nx, request$ny),
@@ -75,6 +76,7 @@ if (isTRUE(request$end_to_end)) {
     d <- all_maps[[i]]
     stopifnot(identical(dim(d$z), c(as.integer(request$nx), as.integer(request$ny))))
     list(id = all_items[[i]]$id, x = d$x, y = d$y,
+         binned = FALSE, support_sigma = 3.7,
          values = as.numeric(d$z), exact = as.numeric(exact$z),
          exact_x = exact$x, exact_y = exact$y)
   })

@@ -133,8 +133,10 @@ matched/control identities. It verifies each estimator against an independent
 direct Gaussian calculation, then measures differences between their results.
 It does **not** assert that the two native estimators are identical:
 
-- eyesim/ks uses endpoint evaluation coordinates, its own finite support and
-  optional binning, then rounds cells with `zapsmall(digits = 7)`.
+- This comparison explicitly selects eyesim/ks with `binned = FALSE` and
+  `supp = 3.7`, endpoint evaluation coordinates and `zapsmall(digits = 7)` rounding.
+  This fixes the algorithm rather than allowing ks to switch to binning at larger
+  fixation counts. Its finite-support maps also pass an independent oracle.
 - eyes4s bins points into cells, evaluates at cell centers, truncates its
   separable kernel at `ceil(3 sigma / cell size)` cells per axis, and normalizes
   the resulting map globally. The edge policy is `Truncate`.
@@ -143,7 +145,7 @@ It does **not** assert that the two native estimators are identical:
   implied by that map's decimal precision. The eyes4s oracle explicitly models
   its binning and finite support, with named absolute/relative tolerances.
 
-The output separates the default-reference approximation, endpoint versus center
+The output separates the reference's finite support, endpoint versus center
 grid, point binning, and finite support. Array discrepancies compare corresponding
 indices; endpoints and centers are different physical coordinates. Per-source
 matched, control-mean, and corrected-score differences are reported by phase.
