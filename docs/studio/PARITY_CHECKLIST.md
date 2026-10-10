@@ -74,6 +74,7 @@ by token name, never by hex value.
   - [ ] 480 = 454 + 3 + 9 + 14.
   - [ ] Input digest plus plan revision.
 - [ ] Preflight keeps eyes4s findings separate from Studio checks ("0 queries with >1 matched reference · checked"). "Save & run rev 5 · 44,845 pairs" is enabled.
+- [ ] Preflight budget row: a recorded deviation. The board's "Budget: pairs ≤ 50,000 · cells ≤ 20M" is omitted because the real backend prepares with eyes4s's default `PairScheduleBudget`, which sets no limit, and eyes4s has no cell budget. The row returns, from the served value, when an analysis applies a budget (decision on `bd-01M437FHJSCPPAZ8PMZ3WD7EGH`).
 
 ## Main and MainDark (moment t2)
 - [ ] Queries navigator with the count strip, including "by design".
