@@ -823,9 +823,10 @@ final class AoiAssignment[U <: Unit2D]:          // per-sample SampleMembership 
 Decided (2026-10-09, `bd-01M2R16EWFP1AF92ZXS80JQ7SM`): the set stays keyed by `AoiId`. Region
 identity and entity identity differ, so the v1.1 layer below reaches its entities through a separate
 validated binding from `AoiId` to `E` and never re-runs gaze assignment; that binding is an additive,
-binary-compatible extension. Decided (2026-10-09, `bd-01M2R18YTC8BF4T1890QX991RW`): visits are
-fixation-level, so a saccade or blink between two contained fixations does not split a visit; the
-sample-level count keeps an explicit name of its own. The spatial-overlap policy that RA-1 asked for exists as
+binary-compatible extension. Decided (2026-10-09, `bd-01M2R18YTC8BF4T1890QX991RW`): 1.0 measures visits at
+fixation level, so a saccade or blink between two contained fixations does not split a visit. The
+shipped `runCount` is still the sample-level count; the fixation-level measures and an explicit name
+for the sample-level count are tracked by `bd-01M4HM49D6CNZ3M7N1QFXNMDNT`. The spatial-overlap policy that RA-1 asked for exists as
 `MembershipPolicy`; the remaining laws-module receipts are tracked by `aoi-set`. The scanpath-level `sequence` is not exposed on `AoiSet`;
 `ScanMatch.similarity` takes `Vector[A]` and callers build the sequence. Transition counts exist
 (`aoi-seq`, closed) as the k×k table `AoiMeasurements.transitions`; the `Digraph[E]` projection
