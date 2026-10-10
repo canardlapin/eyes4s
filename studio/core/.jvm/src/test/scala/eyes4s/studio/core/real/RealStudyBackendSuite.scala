@@ -1368,6 +1368,52 @@ class RealStudyBackendSuite extends CatsEffectSuite:
     }
   }
 
+  // S3.1 recheck on the real backend (slice r11 of S3.7): a cancel answers
+  // within the ticket's 500 ms and settles the job Cancelled for good; the
+  // cancelled run's last progress is the last step eyes4s commits, so no
+  // pair is scored after the step that was in flight when it was cancelled.
+  test("cancelling a real run settles it within 500 ms and commits no later step") {
+    import scala.concurrent.duration.*
+    val budget = 500.millis
+    RealStudyBackend.resource[IO](trialLayout, RealBackendConformanceSuite.golden).use { real =>
+      for
+        status <- real.submit(StoryMoments.rev4).map(get)
+        stream <- real.subscribe(status.job).map(get)
+        // Every frame the subscription delivers, read until Finished.
+        events  <- stream.compile.toVector.start
+        running <- real
+          .subscribe(status.job)
+          .map(get)
+          .flatMap(_.collect { case JobEvent.Advanced(p) => p }.take(1).compile.lastOrError)
+        start     <- IO.monotonic
+        cancelled <- real.cancel(status.job).map(get)
+        end       <- IO.monotonic
+        frames    <- events.joinWithNever.timeout(20.seconds)
+        _         <- IO.sleep(budget)
+        later     <- real.job(status.job).map(get)
+        out       <- real.outcome(status.job).map(get)
+        runs      <- real.runs
+      yield
+        assert(end - start <= budget, s"cancel answered after ${(end - start).toMillis} ms")
+        val last = out match
+          case Some(JobOutcome.Cancelled(_, _, last)) => last
+          case other                                  => fail(s"not cancelled: $other")
+        assertEquals(cancelled.state, JobState.Finished(out.get))
+        assertEquals(later, cancelled, "the job changed after it was cancelled")
+        assert(last.forall(_.step >= running.step), s"$last precedes the running step $running")
+        assertEquals(frames.lastOption, Some(JobEvent.Finished(out.get)))
+        val advanced = frames.collect { case JobEvent.Advanced(p) => p.step }
+        assert(
+          advanced.forall(s => last.exists(_.step >= s)),
+          s"steps $advanced reported beyond the cancelled run's last progress $last"
+        )
+        assert(
+          runs.exists(r => r.run == status.run && r.state.isInstanceOf[RunState.Cancelled]),
+          runs
+        )
+    }
+  }
+
   test("releasing the backend cancels its running job promptly") {
     import scala.concurrent.duration.*
     RealStudyBackend
