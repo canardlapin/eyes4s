@@ -387,7 +387,7 @@ enum Intent derives CanEqual:
 
   /** Choose a recipe preset (S7.1): its declared fields only, as a draft. */
   case NewAnalysis
-  case ChoosePreset(preset: Preset)
+  case ChoosePreset(preset: Preset, revision: Option[AnalysisRevision] = None)
   case Undo(stack: HistoryStack)
   case Redo(stack: HistoryStack)
 
@@ -665,11 +665,12 @@ object AppModel:
 
   /** The Analysis trail of the current draft, or of the latest revision. */
   def draftTrail(document: StudioDocument): Vector[Place] =
-    val revision = document.draft.map(_.id).orElse(document.latestAnalysis.map(_.id))
-    val studio   =
-      document.draftContext.map(_.studio).orElse(document.latestAnalysis.map(_.studio))
-    Vector(Place.Analyses) ++ studio.map(fields => Place.Lineage(fields.preset)) ++
-      revision.map(Place.Revision(_))
+    document.draft
+      .map(_.id)
+      .orElse(document.latestAnalysis.map(_.id))
+      .fold(Vector(Place.Analyses))(
+        eyes4s.studio.app.analysis.AnalysisSelection.trail(document, _)
+      )
 
   /** Apply intents in order, collecting their effects. */
   def run(model: AppModel, intents: Iterable[Intent]): (AppModel, Vector[AppEffect]) =
@@ -770,15 +771,21 @@ object AppModel:
               navigate(next, Location(Perspective.Analysis, draftTrail(next.document)))
             (shown, effects ++ navigationEffects)
       }
-    case Intent.ChoosePreset(preset) =>
-      PresetPicker.command(m.document, preset).fold((m, none)) { command =>
-        val (next, effects) = update(m, Intent.Dispatch(command))
-        if next.document == m.document || next.document.draft.isEmpty then (next, effects)
-        else
-          val (shown, navigationEffects) =
-            navigate(next, Location(Perspective.Analysis, draftTrail(next.document)))
-          (shown, effects ++ navigationEffects)
-      }
+    case Intent.ChoosePreset(preset, revision) =>
+      PresetPicker
+        .command(
+          m.document,
+          preset,
+          revision.orElse(eyes4s.studio.app.analysis.AnalysesNavigator.selected(m))
+        )
+        .fold((m, none)) { command =>
+          val (next, effects) = update(m, Intent.Dispatch(command))
+          if next.document == m.document || next.document.draft.isEmpty then (next, effects)
+          else
+            val (shown, navigationEffects) =
+              navigate(next, Location(Perspective.Analysis, draftTrail(next.document)))
+            (shown, effects ++ navigationEffects)
+        }
     case Intent.Undo(stack) => applyHistory(m, undoEntry(stack), m.history.undoOn(stack))
     case Intent.Redo(stack) => applyHistory(m, redoEntry(stack), m.history.redoOn(stack))
 

@@ -16,7 +16,6 @@
 
 package eyes4s.studio.desktop.journey
 
-import eyes4s.studio.desktop.harness.NativeArchiveRuns
 import cats.effect.{IO, Resource}
 import cats.effect.unsafe.implicits.global
 import eyes4s.plan.AdmissionDecision as NativeAdmissionDecision
@@ -61,7 +60,6 @@ import scala.util.control.NonFatal
   * report/panel configuration are explicit commands where controls are absent.
   */
 class NativeGoldenCommandFxSuite extends GoldenWindow:
-  override def munitIgnore: Boolean = NativeArchiveRuns.skipped
   import NativeCommandJourneyFixture.*
   override val munitTimeout: Duration = 600.seconds
 

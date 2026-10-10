@@ -104,7 +104,13 @@ class QueriesNavigatorFxSuite extends ShellFxSuite:
     // in proportion to D; negative D runs left and ends at it; no D, no bar.
     runOnFx(w.summary.queries.press("P05"))
     fx.awaitLayout()
-    val shown = runOnFx(w.summary.queries.rows.filter(_.size == 3).zip(w.summary.queries.bars))
+    val shown = runOnFx {
+      // A report can replace the rows after awaitLayout returns. Lay out and
+      // measure in the same FX turn so newly rendered ink has its width.
+      w.root.applyCss()
+      w.root.layout()
+      w.summary.queries.rows.filter(_.size == 3).zip(w.summary.queries.bars)
+    }
     def bar(trial: String, d: String) = shown
       .collectFirst { case (Vector(`trial`, _, `d`), b) =>
         b

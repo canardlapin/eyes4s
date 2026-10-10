@@ -145,10 +145,17 @@ final class Labels(model: AppModel, messages: Messages):
     case Place.Dataset(id) =>
       val pending = doc.dataset(id).exists(!_.decision.isAdmitted)
       messages(if pending then CrumbDatasetDraft else CrumbDataset, id.label)
-    case Place.Source(role)       => sourceFile(role)
-    case Place.DataView(section)  => this.section(section)
-    case Place.Analyses           => messages(CrumbAnalyses)
-    case Place.Lineage(preset)    => lineage(preset)
+    case Place.Source(role)      => sourceFile(role)
+    case Place.DataView(section) => this.section(section)
+    case Place.Analyses          => messages(CrumbAnalyses)
+    case Place.Lineage(preset)   => lineage(preset)
+    case Place.Family(family)    =>
+      eyes4s.studio.app.analysis.AnalysisSelection
+        .name(doc, family)
+        .fold(family.label)(name =>
+          eyes4s.studio.app.text
+            .AnalysesText(eyes4s.studio.app.text.AnalysesTextId.FamilyLabel, name, family.label)
+        )
     case Place.Revision(revision) =>
       if doc.draft.exists(_.id == revision) then messages(CrumbDraftRevision, revision.label)
       else messages(CrumbRevision, revision.label)

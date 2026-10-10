@@ -1415,8 +1415,19 @@ lazy val studioDesktop = project
     },
     // FX tests (StudioFxSuite, S0.4) start the toolkit once per forked JVM.
     Test / fork := true,
-    Test / javaOptions ++= studioFxTestOptions((ThisBuild / baseDirectory).value) ++
-      studioTestHeapOptions
+    Test / javaOptions ++= studioFxTestOptions((ThisBuild / baseDirectory).value),
+    Test / testGrouping := {
+      val options            = (Test / forkOptions).value
+      val (native, ordinary) = (Test / definedTests).value.partition(
+        _.name.startsWith("eyes4s.studio.desktop.journey.Native")
+      )
+      // Large archive journeys get fresh heaps. A timed-out asynchronous journey
+      // also cannot keep running in the JVM that measures later FX frames.
+      native.sortBy(_.name).map { test =>
+        new Tests.Group(test.name, Seq(test), Tests.SubProcess(options))
+      } ++ Seq(new Tests.Group("studio-desktop", ordinary, Tests.SubProcess(options)))
+    },
+    Test / parallelExecution := false
   )
   .settings(studioTokenSettings)
   .settings(studioNoticeSettings)
@@ -1538,24 +1549,15 @@ def studioFxTestOptions(buildRoot: File): Seq[String] = {
     "-Dheadless.geometry=1920x1200-32"
   )
   Seq(
+    // Native archive round trips decode the full golden study. The sbt launcher's
+    // heap does not configure this fork; make its CI budget reproducible locally.
+    "-Xmx" + sys.props.getOrElse("eyes4s.studio.test.heap", "8g"),
+    "-XX:+ExitOnOutOfMemoryError",
     s"-Deyes4s.studio.snapshots=${(buildRoot / "target" / "studio-snapshots").getAbsolutePath}",
     "-Djava.awt.headless=true"
   ) ++ (if (studioFxVisible) Nil else headless) ++
     (if (!studioFxVisible || sys.env.contains("CI")) software else Nil)
 }
-
-// The forked studio-desktop test JVM gets an explicit heap rather than the
-// JVM default of a quarter of physical memory, which is ~8 GB on a 32 GB
-// workstation but ~4 GB on the hosted Linux runner and less on macOS: the
-// native-archive journeys need several GB, so the default made local gates
-// pass while hosted runs ran out of memory (bead
-// bd-01M4GMYBSRG806CPZR724X33RR). `-Deyes4s.studio.test.heap=<size>` overrides
-// the size. An OutOfMemoryError ends the fork at once, so a run fails within
-// seconds instead of leaving every later FX suite to time out.
-lazy val studioTestHeap: String = sys.props.getOrElse("eyes4s.studio.test.heap", "6g")
-
-lazy val studioTestHeapOptions: Seq[String] =
-  Seq(s"-Xmx$studioTestHeap", "-XX:+ExitOnOutOfMemoryError")
 
 lazy val studioCrossModules = Seq("studioCore", "studioApp", "studioViz")
 lazy val studioProjects     =
@@ -1660,7 +1662,7 @@ lazy val studioLinuxJob = WorkflowJob(
     ),
     WorkflowStep.Run(
       List(
-        "xvfb-run -a -s '-screen 0 1920x1200x24' sbt -J-Xmx6g -Djavafx.platform=linux studioAll studioStyleCheck"
+        "xvfb-run -a -s '-screen 0 1920x1200x24' sbt -J-Xmx3g -Djavafx.platform=linux studioAll studioStyleCheck"
       ),
       name = Some("Build and test studio (xvfb, software pipeline)")
     ),
@@ -1702,17 +1704,15 @@ lazy val studioMacosJob = WorkflowJob(
   studioJobSetup ::: List(
     WorkflowStep.Run(
       List(
-        "sbt -J-Xmx4g -Djavafx.platform=mac-aarch64 -Deyes4s.studio.fx.visible=true -Deyes4s.studio.test.heap=2g studioDesktop/test"
+        // Release the compiler JVM before the test fork starts: this runner has
+        // 7 GB of RAM, shared by sbt, the native archive tests and the OS.
+        "sbt -J-Xmx2g -Djavafx.platform=mac-aarch64 studioDesktop/Test/compile",
+        "sbt -J-Xmx1g -Djavafx.platform=mac-aarch64 -Deyes4s.studio.test.heap=4g -Deyes4s.studio.fx.visible=true studioDesktop/test"
       ),
       name = Some("Run functional JavaFX tests (no goldens)"),
       // The runner's display is 1024x768, which clamps a 1440x900 stage: tests
-      // that need the full stage skip here and run in the Linux job. The
-      // runner has 7 GB, too little for the native-archive journeys beside
-      // sbt; they exercise science rather than the Mac glass and run on Linux.
-      env = Map(
-        "EYES4S_STUDIO_SMALL_DISPLAY"  -> "skip",
-        "EYES4S_STUDIO_NATIVE_ARCHIVE" -> "skip"
-      )
+      // that need the full stage skip here and run in the Linux job.
+      env = Map("EYES4S_STUDIO_SMALL_DISPLAY" -> "skip")
     )
   ),
   sbtStepPreamble = Nil,

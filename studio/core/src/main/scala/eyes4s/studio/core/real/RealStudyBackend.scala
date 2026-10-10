@@ -20,7 +20,7 @@ import cats.effect.kernel.{Concurrent, Deferred, Ref, Resource}
 import cats.effect.std.{Mutex, Supervisor}
 import cats.kernel.Eq
 import cats.syntax.all.*
-import eyes4s.codec.{ByteDigest, CanonicalDigest}
+import eyes4s.codec.{ByteDigest, CanonicalDigest, ReportSources}
 import eyes4s.fs2.{Execution, RunOutcome, StudyExecution}
 import eyes4s.studio.core.assets.AssetRegistry
 import eyes4s.studio.core.artifacts.{
@@ -1191,4 +1191,11 @@ object RealStudyBackend:
       prepared: RealPrepared,
       result: RealExecution.Result,
       origin: RunOrigin
-  )
+  ):
+    private[real] lazy val reportSource = ReportSources
+      .retainedStudy(prepared.plans, prepared.inputs, prepared.results)(
+        prepared.plan,
+        prepared.admitted.input,
+        result,
+        Some(prepared.admitted.evidence)
+      )

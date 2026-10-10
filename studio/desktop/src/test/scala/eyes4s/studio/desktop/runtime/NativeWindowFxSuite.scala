@@ -16,7 +16,6 @@
 
 package eyes4s.studio.desktop.runtime
 
-import eyes4s.studio.desktop.harness.NativeArchiveRuns
 import eyes4s.studio.app.StoryModels
 import eyes4s.studio.app.compare.ReportAnswer
 import eyes4s.studio.core.backend.{PageRequest, QueryStatus, ReportRole}
@@ -31,7 +30,6 @@ import scala.concurrent.duration.*
   * specification. Editing reporting reuses scores; it must not start a run.
   */
 class NativeWindowFxSuite extends ShellFxSuite:
-  override def munitIgnore: Boolean   = NativeArchiveRuns.skipped
   override val munitTimeout: Duration = 300.seconds
 
   private def get[E, A](value: Either[E, A]): A = value.fold(e => fail(e.toString), identity)
