@@ -14,6 +14,11 @@ import sys
 
 from run import ROOT, Tolerance, digest, dump, implementation, micros, outside_git
 
+try:
+    import numpy as np
+except ImportError:
+    np = None
+
 MAP_TOLERANCE = Tolerance(absolute=2e-13, relative=2e-12)
 SCORE_TOLERANCE = Tolerance(absolute=2e-12, relative=2e-12)
 
@@ -83,7 +88,7 @@ def gaussian(p, item, xs, ys, quantize=False, truncate=False, support_sigma=None
     dy = (p["y_max"] - p["y_min"]) / p["ny"]
     rx, ry = math.ceil(3 * p["sigma_px"] / dx), math.ceil(3 * p["sigma_px"] / dy)
     sigma = p["sigma_px"]
-    result = [0.0] * (len(xs) * len(ys))
+    result = [0.0] * (len(xs) * len(ys)) if np is None else np.zeros((len(ys), len(xs)))
     for x, y, weight in zip(f["x"], f["y"], f["duration_ms"]):
         ix = min(p["nx"] - 1, int((x - p["x_min"]) / dx))
         iy = min(p["ny"] - 1, int((y - p["y_min"]) / dy))
@@ -101,15 +106,27 @@ def gaussian(p, item, xs, ys, quantize=False, truncate=False, support_sigma=None
               if not truncate or abs(j - ix) <= rx else 0.0 for j, v in enumerate(xs)]
         ky = [math.exp(-.5 * ((v - y) / sigma) ** 2)
               if not truncate or abs(j - iy) <= ry else 0.0 for j, v in enumerate(ys)]
-        for row in range(ly, uy):
-            for col in range(lx, ux):
-                result[row * len(xs) + col] += weight * kx[col] * ky[row]
-    return normalized(result)
+        if np is None:
+            for row in range(ly, uy):
+                for col in range(lx, ux):
+                    result[row * len(xs) + col] += weight * kx[col] * ky[row]
+        else:
+            result[ly:uy, lx:ux] += weight * np.outer(ky[ly:uy], kx[lx:ux])
+    return normalized(result if np is None else result.ravel().tolist())
 
 
 def cosine(a, b):
     return math.fsum(x * y for x, y in zip(a, b)) / math.sqrt(
         math.fsum(x * x for x in a) * math.fsum(x * x for x in b))
+
+
+def score_function(maps):
+    """Cache norms once; optional BLAS only changes evaluation, not pair selection."""
+    if np is None:
+        return lambda a, b: cosine(maps[a], maps[b])
+    unit = {key: np.asarray(values, dtype=float) /
+            math.sqrt(math.fsum(x*x for x in values)) for key, values in maps.items()}
+    return lambda a, b: float(np.dot(unit[a], unit[b]))
 
 
 def discrepancy(a, b):
@@ -177,22 +194,24 @@ def analyze(p, output):
     for source in p["sources"]:
         eligible[source["participant"]].add(source["template"])
     scores = []
+    native_score = score_function(s)
+    reference_score = score_function({key: value["values"] for key, value in r.items()})
     for source in p["sources"]:
         ident, match = source["id"], source["template"]
         controls = sorted(eligible[source["participant"]] - {match})
         found = actual[ident]
         if found["template"] != match or sorted(found["controls"]) != controls:
             raise ValueError("Exact pair identities differ")
-        observed = cosine(s[ident], s[match])
-        baseline = math.fsum(cosine(s[ident], s[t]) for t in controls) / len(controls)
+        observed = native_score(ident, match)
+        baseline = math.fsum(native_score(ident, t) for t in controls) / len(controls)
         values = [observed, baseline, observed - baseline]
         names = ("observed", "baseline", "difference")
         assert_close([found[n] for n in names], values, SCORE_TOLERANCE, "eyes4s scores")
         rv = r_scores[ident]
         if rv["n_perm"] != len(controls):
             raise ValueError("Reference control cardinality differs")
-        r_observed = cosine(r[ident]["values"], r[match]["values"])
-        r_baseline = math.fsum(cosine(r[ident]["values"], r[t]["values"]) for t in controls) / len(controls)
+        r_observed = reference_score(ident, match)
+        r_baseline = math.fsum(reference_score(ident, t) for t in controls) / len(controls)
         assert_close([rv[n] for n in names], [r_observed, r_baseline, r_observed-r_baseline],
                      SCORE_TOLERANCE, "eyesim scores")
         scores.append({"id": ident, "participant": source["participant"],
