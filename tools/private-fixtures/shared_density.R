@@ -8,7 +8,7 @@ out <- args[[3L]]
 stopifnot(request$schema_version == 1L, length(request$templates) > 1L,
           length(request$sources) > 0L, request$min_fixations >= 2L)
 
-density <- function(item) {
+density <- function(item, exact = FALSE) {
   f <- item$fixations
   x <- as.numeric(unlist(f$x)); y <- as.numeric(unlist(f$y))
   duration <- as.numeric(unlist(f$duration_ms)); onset <- as.numeric(unlist(f$onset_ms))
@@ -18,11 +18,16 @@ density <- function(item) {
   # Selection and crop exclusions must already be explicit in the private request.
   stopifnot(all(x >= request$x_min & x < request$x_max),
             all(y >= request$y_min & y < request$y_max))
-  d <- eye_density(fixation_group(x, y, duration, onset),
+  # ks also truncates unbinned kernels at supp=3.7 by default. The oracle
+  # variant covers the entire requested rectangle for every included point.
+  extras <- if (exact) list(binned = FALSE,
+    supp = max(request$x_max - request$x_min, request$y_max - request$y_min) /
+      request$sigma_px + 1) else list()
+  d <- do.call(eye_density, c(list(fixation_group(x, y, duration, onset),
     sigma = request$sigma_px, xbounds = c(request$x_min, request$x_max),
     ybounds = c(request$y_min, request$y_max), outdim = c(request$nx, request$ny),
     duration_weighted = TRUE, min_fixations = request$min_fixations,
-    normalize = TRUE, kde_pkg = "ks")
+    normalize = TRUE, kde_pkg = "ks"), extras))
   stopifnot(!is.null(d), all(is.finite(get_density(d))))
   d
 }
@@ -59,3 +64,20 @@ result <- list(nx = request$nx, ny = request$ny,
     baseline = scores$perm_sim[[i]], difference = scores$eye_sim_diff[[i]], n_perm = scores$n_perm[[i]])))
 write_json(result, file.path(out, "shared.json"), auto_unbox = TRUE, digits = NA)
 writeLines(capture.output(sessionInfo()), file.path(out, "R-session.txt"))
+
+# The opt-in end-to-end runner additionally checks the estimator against an
+# independent Gaussian oracle, at the actual R evaluation coordinates.
+if (isTRUE(request$end_to_end)) {
+  all_items <- c(templates, sources)
+  all_maps <- c(template_maps, source_maps)
+  details <- lapply(seq_along(all_items), function(i) {
+    exact <- density(all_items[[i]], exact = TRUE)
+    d <- all_maps[[i]]
+    stopifnot(identical(dim(d$z), c(as.integer(request$nx), as.integer(request$ny))))
+    list(id = all_items[[i]]$id, x = d$x, y = d$y,
+         values = as.numeric(d$z), exact = as.numeric(exact$z),
+         exact_x = exact$x, exact_y = exact$y)
+  })
+  write_json(list(maps = details), file.path(out, "eyesim-maps.json"),
+             auto_unbox = TRUE, digits = NA)
+}

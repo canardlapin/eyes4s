@@ -125,3 +125,97 @@ Foils without encoding matches are not assigned a fabricated zero score.
 Before reporting an upstream defect, check the current upstream revision and
 existing issues, and reproduce it with synthetic inputs that contain no private
 records, identifiers, stimulus names or manuscript results.
+
+## End-to-end density comparison and automatic UI harness
+
+`end_to_end.py` starts both estimators from the same fixations and explicit
+matched/control identities. It verifies each estimator against an independent
+direct Gaussian calculation, then measures differences between their results.
+It does **not** assert that the two native estimators are identical:
+
+- eyesim/ks uses endpoint evaluation coordinates, its own finite support and
+  optional binning, then rounds cells with `zapsmall(digits = 7)`.
+- eyes4s bins points into cells, evaluates at cell centers, truncates its
+  separable kernel at `ceil(3 sigma / cell size)` cells per axis, and normalizes
+  the resulting map globally. The edge policy is `Truncate`.
+- A separate eyesim run disables binning and extends support across the whole
+  requested rectangle. Its independent oracle allows only the rounding error
+  implied by that map's decimal precision. The eyes4s oracle explicitly models
+  its binning and finite support, with named absolute/relative tolerances.
+
+The output separates the default-reference approximation, endpoint versus center
+grid, point binning, and finite support. Array discrepancies compare corresponding
+indices; endpoints and centers are different physical coordinates. Per-source
+matched, control-mean, and corrected-score differences are reported by phase.
+These descriptive checks are not an estimate of a manuscript effect or its model.
+
+The request uses the schema above. Map IDs must be globally unique, and its
+template pool must equal the distinct templates represented in the source cohort.
+Every participant must have at least two such templates. Sources may add `phase`.
+Maps may also supply `response`, `display_kind` and `image_file` for Studio's
+inventory. Omitted display kinds remain `unknown`; missing images are never
+relabeled as blank displays. Image bytes are not required for this comparison.
+For the UI, every source needs a nonempty phase distinct from `Encoding`, and the
+request additionally declares:
+
+```json
+{
+  "screen_width_px": 800,
+  "screen_height_px": 600,
+  "sample_rate_hz": 250,
+  "pixels_per_degree": 30,
+  "geometry_note": "Synthetic geometry; declared 30 pixels per degree."
+}
+```
+
+UI crop bounds must be integral pixels. Studio currently declares smoothing in
+degrees: the harness sets `sigma_px / pixels_per_degree`, preserving the requested
+pixel kernel. Document the source and approximation of a real angular conversion;
+do not substitute a guessed calibration. CSV sample counts are explicitly derived
+from the declared sample rate; they are not observed tracker counts.
+
+With JDK 22+ (25 recommended), R, eyesim's dependencies, and the Studio pins installed
+as described in the Studio build documentation, run this synthetic demonstration:
+
+```sh
+python3 tools/private-fixtures/synthetic.py --output /private/tmp/density-request.json
+python3 tools/private-fixtures/end_to_end.py \
+  --request /private/tmp/density-request.json \
+  --eyesim /path/to/eyesim-checkout \
+  --r-library /path/to/local/R-library \
+  --output-dir /private/tmp/density-demonstration \
+  --ui
+```
+
+Use the same command with an external private request. Each output directory must
+be new. Omit `--ui` for numerical checks alone. The synthetic request exercises
+asymmetric rectangular grids, unequal duration weights, subcell shifts, edge
+points, multiple participants, and three phases without private records.
+
+The automatic UI route uses the real `StudioWindow`, native admission and native
+execution backend. It supplies file-dialog answers and an explicit typed recipe
+seed through application commands, then clicks the actual Admit and Save & run
+controls. It runs one independent analysis family per retrieval phase, reads all
+query and pair pages, checks exact matched/control identities and unrounded scores
+against the separate direct-library run, opens the Query table, and checks every
+rendered row. It also verifies the saved project after closing the window.
+The harness does not claim that arbitrary recipe fields were typed into GUI controls;
+the saved recipe is the reproducible starting point.
+
+It uses Monocle headlessly and retains the normal machine-wide FX lock. The build
+receives no private inputs; a separate JUnit JVM runs in the external directory,
+with external snapshots and logs. The suite is opt-in and reads no dataset during
+ordinary CI. The runner's final receipt requires both JUnit success and the UI
+result, so a skipped or failed test cannot count as evidence.
+
+Inspect these files under the output's `comparison/` directory:
+
+- `end-to-end.json`: estimator decomposition, scores, exact controls, phase summaries.
+- `phase-N-settings.png`, `phase-N-results.png`: the actual Studio window.
+- `phase-N-ui-rows.json`: full-precision rows delivered to the UI.
+- `ui-result.json`: UI route and result counts.
+- `density.eyes/`: the saved native project; open it with Studio's **File → Open**.
+
+`receipt.json` binds the run to the implementation, request, and exact eyesim
+Git archive. All project bytes, screenshots, logs and derived results remain
+outside Git. The harness never files an upstream issue automatically.
