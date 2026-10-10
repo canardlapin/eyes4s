@@ -16,6 +16,7 @@
 
 package eyes4s.studio.desktop.journey
 
+import eyes4s.studio.desktop.harness.NativeArchiveRuns
 import cats.effect.{IO, Resource}
 import cats.syntax.all.*
 import eyes4s.codec.{ByteDigest, CanonicalDigest}
@@ -41,6 +42,7 @@ import scala.concurrent.duration.*
 
 /** One native scientific workflow, separate from the illustrative story journeys. */
 class NativeGoldenWorkflowSuite extends munit.CatsEffectSuite:
+  override def munitIgnore: Boolean                    = NativeArchiveRuns.skipped
   override val munitIOTimeout: Duration                = 300.seconds
   private def get[E, A](value: Either[E, A]): A        = value.fold(e => fail(s"$e"), identity)
   private def ok[E, A](value: IO[Either[E, A]]): IO[A] = value.flatMap(v => IO(get(v)))

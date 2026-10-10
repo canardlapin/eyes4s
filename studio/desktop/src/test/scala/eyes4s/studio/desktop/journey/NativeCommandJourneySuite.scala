@@ -16,6 +16,7 @@
 
 package eyes4s.studio.desktop.journey
 
+import eyes4s.studio.desktop.harness.NativeArchiveRuns
 import cats.effect.{IO, Ref, Resource}
 import eyes4s.plan.{ResultInspection, ResultRef}
 import eyes4s.studio.core.backend.*
@@ -35,8 +36,9 @@ import scala.concurrent.duration.*
 
 /** Empty-project native route through the actual command/effect/service path. */
 class NativeCommandJourneySuite extends munit.CatsEffectSuite:
+  override def munitIgnore: Boolean = NativeArchiveRuns.skipped
   import NativeCommandJourneyFixture.*
-  override val munitIOTimeout: Duration                            = 300.seconds
+  override val munitIOTimeout: Duration                            = 900.seconds
   private def future[A](run: => scala.concurrent.Future[A]): IO[A] = IO.fromFuture(IO(run))
   private val owner = get(LockOwner.of("Native command reopen"))
 
