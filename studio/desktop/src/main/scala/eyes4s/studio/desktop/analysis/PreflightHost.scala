@@ -28,7 +28,7 @@ import javafx.scene.input.{KeyCode, KeyEvent}
 import javafx.scene.control.{Button, Label, ScrollPane, TextArea, TextField}
 import eyes4s.studio.core.document.{Preset, RevisionName, StudioFields}
 import eyes4s.studio.core.command.Command
-import javafx.scene.layout.{GridPane, HBox, Priority, Region, VBox}
+import javafx.scene.layout.{ColumnConstraints, GridPane, HBox, Priority, Region, VBox}
 
 /** The Analysis perspective's preflight pane and run card on the desktop
   * (ticket S7.6; Analysis.dc.html, preflight; see [[Preflight]]): the studio's
@@ -59,6 +59,11 @@ final class PreflightHost(model: () => AppModel, app: Intent => Unit):
   private val lines      = GridPane()
   lines.setHgap(8.0)
   lines.setVgap(3.0)
+  private val keyColumn   = ColumnConstraints(78)
+  private val valueColumn = ColumnConstraints()
+  valueColumn.setMinWidth(0)
+  valueColumn.setHgrow(Priority.ALWAYS)
+  lines.getColumnConstraints.setAll(keyColumn, valueColumn)
   private val run = Button()
   run.getStyleClass.add("preflight-run")
   run.setMaxWidth(Double.MaxValue)

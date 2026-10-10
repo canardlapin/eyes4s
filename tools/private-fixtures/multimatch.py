@@ -83,6 +83,7 @@ def main():
         parser.add_argument('--'+arg,required=True,type=Path)
     parser.add_argument("--workers",type=int,default=2,choices=range(1,5))
     args=parser.parse_args()
+    args.r_library=args.r_library.expanduser().resolve()
     os.umask(0o077)
     if os.environ.get('CI') or os.environ.get('GITHUB_ACTIONS'):
         raise ValueError('Private MultiMatch is disabled in CI')
@@ -100,6 +101,21 @@ def main():
     shards=evidence.get('participant_receipts',[{'receipt':str(density/'receipt.json'),'sha256':digest(density/'receipt.json')}])
     all_queries=[]; total=Counter(); maxima=dict.fromkeys(COMPONENTS,0.0); differences=0
     receipts=[]
+    first=outside_git(Path(shards[0]['receipt'])).parent/'comparison'
+    pinned=read(first/'receipt.json')
+    if digest(first/'eyesim.tar')!=pinned['eyesim_archive_sha256']:
+        raise ValueError('Reference archive changed')
+    library=out/'library'; library.mkdir()
+    ref_source=out/'eyesim-source'; ref_source.mkdir()
+    with tarfile.open(first/'eyesim.tar') as archive:
+        members=archive.getmembers()
+        if any(not (ref_source/m.name).resolve().is_relative_to(ref_source)
+               or not (m.isfile() or m.isdir()) for m in members):
+            raise ValueError('Unsafe reference archive')
+        archive.extractall(ref_source,members=members)
+    with (out/'reference-install.log').open('x') as log:
+        subprocess.run(['R','CMD','INSTALL','--clean',f'--library={library}',str(ref_source)],
+            cwd=out,env=dict(os.environ,R_LIBS=str(args.r_library)),stdout=log,stderr=subprocess.STDOUT,check=True)
     original_items={v['id']:v for v in request['sources']+request['templates']}
     def shard_run(index,entry):
         receipt_path=outside_git(Path(entry['receipt']))
@@ -132,6 +148,8 @@ def main():
         folder=out/f'participant-{index:03d}'; folder.mkdir(mode=0o700)
         dump(folder/'multimatch-request.json',shard)
         reference_receipt=read(parent/'receipt.json')
+        if any(reference_receipt[k]!=pinned[k] for k in ('eyesim_revision','eyesim_archive_sha256')):
+            raise ValueError('Cohort contains different reference revisions')
         own_receipt=read(receipt_path)
         if digest(parent/'receipt.json')!=own_receipt['reference_receipt_sha256']:
             raise ValueError('Density reference receipt changed')
@@ -143,17 +161,7 @@ def main():
         with (folder/'jvm.log').open('x') as log:
             subprocess.run(['java','-Xmx2g','-XX:ActiveProcessorCount=2','-cp',classpath,'eyes4s.examples.PrivateMultiMatchCli'],
                 cwd=folder,env=dict(os.environ,EYES4S_PRIVATE_RUN=str(folder)),stdout=log,stderr=subprocess.STDOUT,check=True)
-        library=folder/'library'; library.mkdir()
-        ref_source=folder/'eyesim-source'; ref_source.mkdir()
-        with tarfile.open(parent/'eyesim.tar') as archive:
-            members=archive.getmembers()
-            if any(not (ref_source/m.name).resolve().is_relative_to(ref_source)
-                   or not (m.isfile() or m.isdir()) for m in members):
-                raise ValueError('Unsafe reference archive')
-            archive.extractall(ref_source,members=members)
         with (folder/'reference.log').open('x') as log:
-            subprocess.run(['R','CMD','INSTALL','--clean',f'--library={library}',str(ref_source)],
-                cwd=folder,env=dict(os.environ,R_LIBS=str(args.r_library)),stdout=log,stderr=subprocess.STDOUT,check=True)
             subprocess.run(['Rscript','--vanilla',str(Path(__file__).with_name('multimatch.R')),
                 str(library),str(folder/'multimatch-request.json'),str(folder/'multimatch-eyesim.jsonl')],
                 cwd=folder,env=dict(os.environ,R_LIBS=str(args.r_library)),stdout=log,stderr=subprocess.STDOUT,check=True)
@@ -181,7 +189,8 @@ def main():
         'normalization':'Physical screen diagonal, original screen-pixel coordinates; same cropped fixation sequences as density',
         'grouping':False,'omitted_reference_component':'mm_position_emd is not a MultiMatch dimension'})
     dump(out/'receipt.json',{'status':'passed' if differences==0 else 'review-required',
-        'implementation':provenance,'input_sha256':source_hash,'density_receipt_sha256':digest(density/'receipt.json'),
+        'implementation':provenance,'input_sha256':source_hash,'eyesim_revision':pinned['eyesim_revision'],
+        'eyesim_archive_sha256':pinned['eyesim_archive_sha256'],'density_receipt_sha256':digest(density/'receipt.json'),
         'queries':len(all_queries),'fully_comparable_queries':len(included),'pairs':dict(total),
         'disagreements':differences,'maximum_absolute_error':maxima,'tolerance':vars(TOLERANCE),
         'participant_receipts':receipts,'summary_sha256':digest(out/'summary.json')})

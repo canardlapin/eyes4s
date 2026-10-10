@@ -171,6 +171,10 @@ class PrivateDensityFxSuite extends ShellFxSuite:
                 )
               )
               try
+                runOnFx {
+                  importer.view.node.getStyleClass.add("es")
+                  importer.view.node.getStylesheets.addAll(w.root.getStylesheets)
+                }
                 fx.show(importer.view.node)
                 Vector(
                   SourceRole.Fixations -> "fixations.csv",
