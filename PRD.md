@@ -513,11 +513,17 @@ analyses never read, whereas `contains` is cheap, exact, and is what dwell time 
 
 ### AOI assignment and relational attention
 
-**RA-1.** `AoiSet[U, E]` is a greenfield, smart-constructed value carrying a frame and entity-keyed
-regions. Frame checking, duplicate entity keys and spatial-overlap behaviour are part of its public
-contract; no existing temporal `Overlap` value is reused for spatial membership.
+**RA-1.** `AoiSet[U]` is a smart-constructed value carrying a frame and regions keyed by a nominal
+`AoiId`. Frame checking, duplicate `AoiId`s and spatial-overlap behaviour (`MembershipPolicy`) are
+part of its public contract; no existing temporal `Overlap` value is reused for spatial membership.
+Entity identity is not a key of the set: a region and an entity are different things (one entity may
+own several regions, move between frames, or persist across scenes). Analyses that need typed
+entities bind them through a separate validated relation from `AoiId` to `E`, added beside
+`Construal` by the visual-world module as a binary-compatible extension (bead
+`bd-01M2R16EWFP1AF92ZXS80JQ7SM`, decided 2026-10-09).
 
-**RA-2.** The primitive time-course result is `EntityTrace[E, Q]`. Roles are never the native
+**RA-2.** The primitive time-course result is `EntityTrace[E, Q]`, whose entities are reached from
+`AoiId`s through the RA-1 entity binding. Roles are never the native
 currency of binning. A `Construal[C, E, R]` is a validated relation between entity and role values,
 and role traces are pure projections of an entity trace. Reinterpreting one scene under another
 construal therefore cannot rerun gaze assignment or alter the entity trace.
