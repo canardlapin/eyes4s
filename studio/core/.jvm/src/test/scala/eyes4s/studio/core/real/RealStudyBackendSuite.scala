@@ -1322,6 +1322,52 @@ class RealStudyBackendSuite extends CatsEffectSuite:
     }
   }
 
+  // S8.7 / E2E-09 recheck on the real backend (slice r1 of S3.7): a reporting
+  // filter selects which queries a report keeps; it never touches the pairs
+  // eyes4s scored, so a query's control pool keeps encodings of items the
+  // participant forgot.
+  test(
+    "a hit-only reporting filter keeps P17 ret_07's control pool, Forgotten items included"
+  ) {
+    import eyes4s.studio.core.document.*
+    val attribute = get(Covariate.of("response"))
+    val keep      =
+      ReportingFilter.Keep(attribute, get(ValueSet.of(attribute, Vector("Remembered"))))
+    val hitsOnly = get(
+      ReportingSpec.of(
+        get(ReportingId.of("hits-only")),
+        "Hits only",
+        Some(attribute),
+        Vector(keep),
+        None,
+        ReportingWeight.ParticipantMeans
+      )
+    )
+    val query = TrialKey("P17", Phase.Retrieval, "ret_07", 1)
+    RealStudyBackend.resource[IO](trialLayout, RealBackendConformanceSuite.golden).use { real =>
+      for
+        _      <- recompute(real, StoryMoments.run7)
+        before <- allPairRows(real, StoryMoments.run7, 2)
+        report <- real.report(StoryMoments.run7, hitsOnly, 2).map(get)
+        after  <- allPairRows(real, StoryMoments.run7, 2)
+        ledger <- every(real, StoryMoments.r3)
+        jobs   <- real.jobs
+      yield
+        val controls = before.filter(r => r.query == query && r.design == PairDesign.Control)
+        assertEquals(after, before, "a reporting filter changed the scored pairs")
+        assertEquals(controls.size, 19)
+        val recalled = ledger.collect {
+          case e if e.trial.participant == "P17" && e.trial.phase == Phase.Retrieval =>
+            e.item -> e.response
+        }.toMap
+        val forgotten = controls
+          .filter(c => recalled.get(c.referenceItem).flatten.contains(Response.Forgotten))
+        assert(forgotten.nonEmpty, s"no control of a Forgotten item among $controls")
+        assert(report.cells.nonEmpty, report.toString)
+        assertEquals(jobs.size, 1, "a reporting edit starts no run")
+    }
+  }
+
   test("releasing the backend cancels its running job promptly") {
     import scala.concurrent.duration.*
     RealStudyBackend
