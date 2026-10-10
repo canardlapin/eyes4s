@@ -45,20 +45,37 @@ object ReportSources:
       ledger: Option[AdmissionLedger[K]],
       covariates: CovariateSchema
   ): Either[CodecError, ReportSource[K]] =
-    val table = covariateTable(plan, input, ledger, covariates)
-    for
-      found   <- table
-      binding <- ReportCodecs.binding(
-        (plans.codec, plan),
-        (inputs.input, input),
-        (results.codec, result),
-        ledger.map(l => (inputs.ledger, l))
-      )
-      source <- ReportSource
-        .study(plan, input, result, found, binding)
-        .left
-        .map(CodecError.Report.apply)
-    yield source
+    retainedStudy(plans, inputs, results)(plan, input, result, ledger)(covariates)
+
+  /** One immutable study snapshot can serve several reporting schemas. Its
+    * canonical binding is computed once; each request still validates and reads
+    * its own covariates before using that binding.
+    */
+  private[eyes4s] def retainedStudy[K, U <: Unit2D, P, S, D](
+      plans: StudyCodec[K, U, P, S, D],
+      inputs: StudyInputCodec[K, U],
+      results: StudyResultCodec[K, U, P, S, D]
+  )(
+      plan: StudyPlan[K, U, P, S, D],
+      input: StudyInput[K, U],
+      result: StudyResult[K, U, S, D],
+      ledger: Option[AdmissionLedger[K]]
+  ): CovariateSchema => Either[CodecError, ReportSource[K]] =
+    lazy val binding = ReportCodecs.binding(
+      (plans.codec, plan),
+      (inputs.input, input),
+      (results.codec, result),
+      ledger.map(l => (inputs.ledger, l))
+    )
+    covariates =>
+      for
+        found  <- covariateTable(plan, input, ledger, covariates)
+        signed <- binding
+        source <- ReportSource
+          .study(plan, input, result, found, signed)
+          .left
+          .map(CodecError.Report.apply)
+      yield source
 
   /** A source over query tables a host already holds, one per scale in
     * scale order, with the covariate table their covariate values come

@@ -302,6 +302,23 @@ object RealPreview:
       )
     yield (identity, candidates, cursor)
 
+  /** The pairing findings eyes4s's study preflight reports, keyed by trial
+    * (`Preflight`): item conflicts, queries with more than one matched
+    * reference and reference groups the pairing rule cannot reduce. The
+    * plan's own refusal names the same trials only by key digest, which
+    * Studio cannot open, so these keyed findings stand in for it.
+    */
+  private def cardinality(
+      counts: StudyCounts[CoreKey]
+  ): Vector[StudyFinding[CoreKey, eyes4s.kernel.Unit2D.Px]] =
+    val c      = counts.cardinality
+    val policy = c.pairing.matched
+    c.itemConflicts.map(StudyFinding.MatchItemConflict(_)) ++
+      c.multiple.map((key, references) =>
+        StudyFinding.MatchedCardinality(key, references, policy)
+      ) ++
+      c.blockingReferences.map(StudyFinding.AmbiguousReferences(_, policy))
+
   private def complete(
       id: PreviewId,
       retained: Retained,
@@ -326,9 +343,11 @@ object RealPreview:
             StudyFinding.UnmatchedFocal[CoreKey, eyes4s.kernel.Unit2D.Px](key, reason)
           )
         )
-      } ++ prepared.pairingRefusal.toVector.map(error =>
-        RealResults.diagnostic(Diagnostic.of(error))
-      )
+      } ++ cardinality(counts).map(finding => RealResults.diagnostic(Diagnostic.of(finding))) ++
+        prepared.pairingRefusal.toVector.collect {
+          case error: eyes4s.plan.PlanError.UnmatchedFocalRefused =>
+            RealResults.diagnostic(Diagnostic.of(error))
+        }
       receipt <- PreviewReady
         .of(
           id,

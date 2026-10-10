@@ -1,0 +1,1 @@
+{"actor":"codex-family-pr","kind":"session_status","message":"PR #1 open. All pre-PR gates and API audit passed; isolated artifact consumer active under shared Ivy lock. Awaiting Studio CI; no main advance.","op":"20261009T160325.170252Z-p91379-c0000-rca09-h674c12","session_id":"sess-01M4GMJX00HKBXF048E6VVGVSS","status":"working","ts":"2026-10-09T16:03:25.170252Z","v":1}

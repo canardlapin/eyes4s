@@ -2,7 +2,7 @@ menu-button: Project memory-study
 toggle-button: Analysis (⌘3)
 button: Back (⌘[)
 button: Analyses
-button: Reinstatement · Enc→Ret
+button: Encoding → retrieval reinstatement · analysis 1
 button: Draft rev 5, current location
 button: Draft rev 5 · 1 change · ready; review in Analysis
 list: Analyses

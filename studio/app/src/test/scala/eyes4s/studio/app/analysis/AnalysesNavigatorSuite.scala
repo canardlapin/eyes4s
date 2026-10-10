@@ -64,7 +64,7 @@ class AnalysesNavigatorSuite extends munit.FunSuite:
   }
 
   test(
-    "initial creation is undoable; existing analysis chains do not offer an unchanged draft"
+    "initial and independent creation are undoable and respect the held draft"
   ) {
     import eyes4s.studio.core.document.{PresentationState, StudioDocument}
     import eyes4s.studio.core.command.HistoryStack
@@ -72,8 +72,14 @@ class AnalysesNavigatorSuite extends munit.FunSuite:
     assertEquals(AnalysesNavigator.vm(held).create, None)
     assertEquals(AppModel.update(held, Intent.NewAnalysis)._1.document, held.document)
     val clean = AppModel.update(held, Intent.Dispatch(Command.DiscardDraft))._1
-    assertEquals(AnalysesNavigator.vm(clean).create, None)
-    assertEquals(AppModel.update(clean, Intent.NewAnalysis)._1.document, clean.document)
+    assertEquals(AnalysesNavigator.vm(clean).create, Some(Intent.NewAnalysis))
+    val independent = AppModel.update(clean, Intent.NewAnalysis)._1
+    assert(independent.document.draft.exists(_.isNewFamily))
+    assertEquals(independent.document.analyses, clean.document.analyses)
+    assertEquals(
+      AppModel.update(independent, Intent.Undo(HistoryStack.Science))._1.document.science,
+      clean.document.science
+    )
     val data = held.document.datasets.last
       .copy(id = eyes4s.studio.core.backend.DatasetRevision(1), parent = None)
     val document = StudioDocument

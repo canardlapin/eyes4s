@@ -74,6 +74,7 @@ by token name, never by hex value.
   - [ ] 480 = 454 + 3 + 9 + 14.
   - [ ] Input digest plus plan revision.
 - [ ] Preflight keeps eyes4s findings separate from Studio checks ("0 queries with >1 matched reference · checked"). "Save & run rev 5 · 44,845 pairs" is enabled.
+- [ ] Preflight budget row: a recorded deviation. The board's "Budget: pairs ≤ 50,000 · cells ≤ 20M" is omitted because the real backend prepares with eyes4s's default `PairScheduleBudget`, which sets no limit, and eyes4s has no cell budget. The row returns, from the served value, when an analysis applies a budget (decision on `bd-01M437FHJSCPPAZ8PMZ3WD7EGH`).
 
 ## Main and MainDark (moment t2)
 - [ ] Queries navigator with the count strip, including "by design".
@@ -98,6 +99,7 @@ by token name, never by hex value.
 - [ ] Figure-level binding, locked: run 7 plus "By retrieval response". Panels choose only scale and selection.
 - [ ] Panel C reads "Matched 0.73 · highest of 19 controls street-112 0.61 · control mean B 0.35 · D +0.38". Panel D uses a Δ-cosine axis with a zero rule. Panel E uses a log x axis. Figure text is Plex Sans at 7 pt.
 - [ ] Stale Figure 2 reads "r3 changed the admission status of 4 trials", with Rebind… / Keep.
+- [ ] Binding note: the board's "Rebinding makes a new figure version; the old one stays reproducible" is a recorded deviation. Rebinding replaces the binding in place and Undo restores it; 1.0 persists no figure versions (decision on `bd-01M42HMHQ1PQMZCJFS4AHQ8QE5`).
 - [ ] methods.md states:
   - [ ] 457 eligible queries.
   - [ ] 543 of the 11,311 fixation records of admitted trials (4.8% of their fixation duration).

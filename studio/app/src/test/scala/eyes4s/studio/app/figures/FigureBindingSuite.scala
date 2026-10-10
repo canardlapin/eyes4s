@@ -114,6 +114,10 @@ class FigureBindingSuite extends munit.FunSuite:
         )
       )
     )
+    // Rebinding replaces the binding; no figure version is kept (bead 4AHQ8QE5).
+    val note = FigureBinding.view(read, t2).binding.map(_.note).getOrElse("")
+    assert(note.contains("Rebinding replaces the binding in place; Undo restores"), note)
+    assert(!note.contains("reproducible"), note)
   }
 
   test("Keep as rev 3 puts the notice away; the figure stays bound and stale") {

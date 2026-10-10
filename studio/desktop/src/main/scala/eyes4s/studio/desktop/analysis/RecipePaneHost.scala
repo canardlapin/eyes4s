@@ -82,18 +82,7 @@ final class RecipePaneHost(model: () => AppModel, app: Intent => Unit):
         choose.setSelected(option.selected)
         detail.setText(option.detail + " · " + option.changes)
       }
-      val recipe =
-        eyes4s.studio.app.analysis.AnalysesNavigator
-          .selected(value)
-          .flatMap(id =>
-            value.document
-              .analysis(id)
-              .map(_.recipe)
-              .orElse(value.document.draftContext.filter(_.id == id).map(_.recipe))
-          )
-          .orElse(
-            value.document.draftRecipe.orElse(value.document.latestAnalysis.map(_.recipe))
-          )
+      val recipe = eyes4s.studio.app.analysis.AnalysisSelection.selected(value).map(_.recipe)
       configuration.setText(
         recipe.fold("")(r =>
           s"${r.weighting.render} · grid ${r.grid.render} · scales ${r.scales.render}"
