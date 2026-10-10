@@ -185,6 +185,33 @@ class NativeCommandJourneySuite extends munit.CatsEffectSuite:
             bytes
           )
         }
+        // S9.4 recheck on the real backend (slice r8 of S3.7): the native
+        // methods text is pinned, and its study counts are eyes4s's, as
+        // FIXTURE.md records them independently of Studio.
+        val methods = second.exports
+          .collectFirst {
+            case (name, bytes) if name.endsWith("methods.md") =>
+              String(bytes.toArray, java.nio.charset.StandardCharsets.UTF_8)
+          }
+          .getOrElse(fail("no methods.md exported"))
+        val golden = FixtureDoc.root.resolve("docs/studio/methods/native-golden-methods.md")
+        if sys.env.contains("EYES4S_UPDATE_GOLDENS") then
+          Files.createDirectories(golden.getParent)
+          Files.writeString(golden, methods, java.nio.charset.StandardCharsets.UTF_8): Unit
+        assert(Files.exists(golden), s"missing $golden; run with EYES4S_UPDATE_GOLDENS=1")
+        assertNoDiff(
+          methods,
+          Files.readString(golden, java.nio.charset.StandardCharsets.UTF_8)
+        )
+        Vector(
+          "937 admitted",
+          "543 of the 11,311",
+          "457 were eligible",
+          "454 contributed",
+          "3 failed",
+          "9 had no matched trial",
+          "14 queries were not admitted"
+        ).foreach(n => assert(methods.contains(n), s"methods.md does not state $n:\n$methods"))
     }
   }
 
