@@ -192,7 +192,7 @@ class TokenFilesSuite extends munit.FunSuite:
     val named = boards.flatMap(_._2.keySet).toSet
     assertEquals(
       Tokens.all.map(_.cssName).filterNot(named),
-      List("sel-ring-inner", "isoline-ink", "isoline-case", "fig-control-fill")
+      List("sel-ring-inner")
     )
     // The deviations are real: the boards still say otherwise.
     deviations.keys.foreach { case (block, name) =>
