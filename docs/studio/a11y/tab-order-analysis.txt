@@ -25,6 +25,7 @@ text-field: Window x maximum (exclusive, px)
 text-field: Window y maximum (exclusive, px)
 combo-box: Fixation weighting
 combo-box: Queries without a match
+button: Open MultiMatch scanpath workspace
 region: Resolved design
 toggle-button: All requested
 toggle-button: Eligible

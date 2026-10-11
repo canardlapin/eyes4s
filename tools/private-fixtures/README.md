@@ -261,3 +261,75 @@ an unavailable matched or control pair makes that query unavailable. Reports giv
 component-specific participant cells and conditional contrasts with those query
 exclusions listed. The R package's sixth EMD component is outside this comparison.
 A `review-required` receipt records disagreements rather than claiming parity.
+
+### Common eligibility and the MultiMatch workspace
+
+`eligibility.py --request /private/original.json --output-dir /private/common`
+creates a separate sensitivity request with at least three cropped fixations in
+queries and matched templates. It freezes the represented within-participant
+reference pool across phases **after** selection, requires a distinct control,
+and records decisions for every original query and template. This changes the
+population and control pool; retain the original analysis alongside it. Run
+`cohort.py` and `multimatch.py` on this new request as above.
+
+Studio's **Analysis → Recipe → Open MultiMatch scanpath workspace** opens a
+separate scanpath workspace. Open an explicit request JSON, choose a query phase,
+and click **Run MultiMatch**. The component selector displays shape, direction,
+length, position and duration, with matched scores, control means, differences,
+and query/pair failures. This is ungrouped MultiMatch normalized by the physical
+screen diagonal. Short paths stay failed pairs; RequireAll makes any affected
+query unavailable. Saved JSON workspaces contain input and results and are
+recomputed and verified on reopening. They are separate from density `.eyes`
+projects; they do not yet use the density recipe/run/report pipeline.
+
+The request uses schema version 1, `screen_width_px`, `screen_height_px`,
+`sample_rate_hz`, `templates` and `sources`. Each item has globally unique `id`,
+`participant` and `fixations` arrays (`x`, `y`, `duration_ms`, `onset_ms`). Sources
+also declare `phase` and matched `template`. Coordinates use physical screen
+pixels, y down; times are trial-relative milliseconds. Optional half-open bounds
+`x_min`, `y_min`, `x_max`, `y_max` require already cropped inputs; unaccounted
+outside-window points are refused. Controls are the distinct nonmatching
+references represented by that participant's queries across phases. Optional
+`pairs` must state exactly that schedule. The fixture tools' requests also carry
+explicit selection/exclusion provenance and density geometry.
+
+Runnable UI proof (JDK 22+, headless FX by default):
+
+```sh
+python3 tools/private-fixtures/scanpath_ui.py \
+  --request /private/request.json --output-dir /private/new-ui-run
+```
+
+The harness independently runs the command-line MultiMatch implementation, then
+uses Open, phase selection, Run, component selection, Save and Open controls.
+It checks every pair's five scores or failure, every query's rendered component
+values, and exact save/reopen equality. Only file-dialog answers are supplied by
+the harness. Private inputs, snapshots and saved workspaces stay outside Git and
+are refused in CI. Synthetic coverage runs in `ScanpathWorkbenchFxSuite`.
+
+### Sampled Spearman analysis and statistical handoff
+
+The planned-score runner and its tests require NumPy.
+
+`planned_scores.py` consumes a verified density cohort and an external protocol
+with `method: "spearman"`, positive `controls` and integer `seed`. It samples
+nonmatching controls without replacement using SHA-256 priorities on
+`[seed, query ID, reference ID]`, caps at the available pool, and persists the
+actual draw. Both native estimator arrays use exactly the same draw. Cached
+average ranks treat ties exactly; no Gaussian estimator equivalence is assumed.
+
+`planned_check.R` independently checks every rank vector and direct eyesim calls
+for four queries per phase/participant on both map sets.
+`PlannedDensityCheckCli` checks the same sample with public eyes4s Spearman calls.
+These checks qualify the cached evaluator; they do not claim every sampled pair
+was executed through each library's direct function.
+
+`planned_models.R` is an optional external `brms`/RStan handoff. It takes the
+frozen protocol, model-ready CSV, fresh output directory, engine and phase. Keep
+protocol-specific behavioral joins outside the repository, require one-to-one
+trial identity, report complete-case exclusions, and preserve every model
+attempt. The script retains fits, coefficient summaries, sampler diagnostics and
+posterior predictive plots. Prior choices and seeds must be recorded before
+fitting. These analyses are exploratory, not a preregistration or a statement of
+causality. Diagnostic criteria follow [Stan's guidance](https://mc-stan.org/learn-stan/diagnostics-warnings.html);
+model arguments follow the [brms reference](https://paulbuerkner.com/brms/reference/brm.html).

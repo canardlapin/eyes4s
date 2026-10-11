@@ -20,7 +20,7 @@ import eyes4s.studio.app.{AppModel, Intent}
 import eyes4s.studio.app.analysis.PresetPicker
 import eyes4s.studio.app.vm.{A11yRole, FocusStop}
 import eyes4s.studio.core.document.Preset
-import javafx.scene.control.{Label, RadioButton, ScrollPane}
+import javafx.scene.control.{Button, Label, RadioButton, ScrollPane}
 import javafx.scene.layout.VBox
 
 /** The recipe pane's actual preset controls, including the first analysis
@@ -63,7 +63,17 @@ final class RecipePaneHost(model: () => AppModel, app: Intent => Unit):
   content.getStyleClass.add("inspector")
   content.getChildren.addAll(heading)
   options.foreach((_, choose, detail) => content.getChildren.addAll(choose, detail))
-  content.getChildren.addAll(note, configuration, editor.node)
+  val scanpaths = Button("Open MultiMatch scanpath workspace")
+  scanpaths.setWrapText(true)
+  scanpaths.setAccessibleText("Open MultiMatch scanpath workspace")
+  private var scanpathWindows = Vector.empty[javafx.stage.Stage]
+  scanpaths.setOnAction { _ =>
+    if !disposed then
+      val window =
+        eyes4s.studio.desktop.scanpath.ScanpathWorkbench.open(node.getScene.getWindow)
+      scanpathWindows = scanpathWindows.filter(_.isShowing) :+ window
+  }
+  content.getChildren.addAll(note, configuration, editor.node, scanpaths)
   val node: ScrollPane = ScrollPane(content)
   node.setFitToWidth(true)
   node.setFocusTraversable(false)
@@ -103,7 +113,10 @@ final class RecipePaneHost(model: () => AppModel, app: Intent => Unit):
     .vm(model().document, eyes4s.studio.app.analysis.AnalysesNavigator.selected(model()))
     .options
     .filter(_.choose.isDefined)
-    .map(o => FocusStop(A11yRole.RadioButton, o.accessible)) ++ editor.focusStops
+    .map(o => FocusStop(A11yRole.RadioButton, o.accessible)) ++ editor.focusStops :+
+    FocusStop(A11yRole.Button, "Open MultiMatch scanpath workspace")
   def dispose(): Unit =
     disposed = true
     editor.dispose()
+    scanpathWindows.foreach(_.close())
+    scanpathWindows = Vector.empty
