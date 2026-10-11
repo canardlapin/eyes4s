@@ -95,7 +95,7 @@ Status key: **[approved]** owner-approved · **[bug]** a pure bug, landable with
     - The thumbnail caption split (`ThumbTrial` + count ids), the singular form, and `ThumbMissing`.
     - At `GeometryText.scala:40, 105-107`.
     - Tests: `GeometryPanelSuite:451-462`.
-25. **G3, missing-asset thumbnail.** *Decision:* deferred as a separate feature. Thumbnails stay the grey placement frame plus marks (`GeometryScene.scala:63`); the board marks a missing asset by its caption and accessible name only. The proposal, if taken up:
+25. **G3, missing-asset thumbnail.** *Decision:* thumbnails stay the grey placement frame plus marks (`GeometryScene.scala:63`), except a missing-asset trial, which is hatched with an X and never blank (DESIGN_SPEC §9), as the Data board draws it. Image frame art in thumbnails would be a separate feature.
     - `ThumbnailPicture` (`GeometryPictures.scala:72-78`) carries the trial's frame state (Present / Missing(file) / Unreadable).
     - `GeometryScene.thumbnail`/`layers` (`:84, :142`) draws `TrialScene.hatched` as a shared helper (`TrialScene.scala:793-818`), with a thumbnail-scale hatch and X.
     - Tests: a `GeometrySceneSuite` test that a missing frame draws a hatch + X; a `GeometryPanelSuite` caption test.
@@ -107,4 +107,4 @@ Status key: **[approved]** owner-approved · **[bug]** a pure bug, landable with
 **J. Parity harness **
 28. The board's resting depicted focus (`.kf`) gets a desktop counterpart only in tests. Moments put visible focus on the depicted node via `requestFocusTraversal`/Tab (`ShellMomentsFxSuite`, `AppShellFxSuite`), or `PARITY_CHECKLIST.md` exempts resting focus rings. No runtime change.
 
-**Settled 2026-10-11:** methods denominator (DESIGN_SPEC §15); dark-stage casing (ticket 17); D4 (ticket 15); NeutralMark (11); density levels (23, rule to write); figure cross arm (22); Data thumbnails stay the grey placement frame plus marks (`GeometryScene.scala:63`) — frame art would be a separate feature. Stage selection keeps the two-band ring with the focus ring outside it; add parity tests for selection only, focus only, both on one mark, and both on different marks (fallback: focus as corner brackets).
+**Settled 2026-10-11:** methods denominator (DESIGN_SPEC §15); dark-stage casing (ticket 17); D4 (ticket 15); NeutralMark (11); density levels (23, rule to write); figure cross arm (22); Data thumbnails stay the grey placement frame plus marks (`GeometryScene.scala:63`), missing assets hatched (25); image frame art would be a separate feature. The mock fixture's science scores are reconciled to the golden fixture in their own ticket, since every board and many studio tests read them. Stage selection keeps the two-band ring with the focus ring outside it; add parity tests for selection only, focus only, both on one mark, and both on different marks (fallback: focus as corner brackets).

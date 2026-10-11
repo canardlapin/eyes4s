@@ -414,22 +414,9 @@ S["paired_D_diff"] = {
 assert S["paired_D_diff"]["mean"] == 0.155667 and S["paired_D_diff"]["paired_n"] == S["n_paired"]
 assert (lo, round(diffs[lo], 6), hi, round(diffs[hi], 4)) == ("P21", 0.05, "P15", 0.2613)
 
-# Focus-query control scores at every scale. Only the σ 2° list is drawn above; the other
-# scales are mock values derived from it by rule (rank kept, spread scaled by (1 − B)/(1 − B₂))
-# so that each list's mean is the focus query's B at that scale. Illustrative, like all scores here.
-ctrl_items = [c["item"] for c in foc["control_scores_2deg"]]
+# Control scores exist only at σ 2° (control_scores_2deg). Other scales are not invented: a board that
+# draws them tags them "illustrative".
 ctrl_trials = [c["trial"] for c in foc["control_scores_2deg"]]
-c2 = [c["cos"] for c in foc["control_scores_2deg"]]
-m2 = st.mean(c2)
-foc["control_scores_by_scale"] = {}
-for i, sc in enumerate(SCALES):
-    k = (1 - foc["B"][i]) / (1 - foc["B"][2])
-    vals = [round(foc["B"][i] + (c - m2) * k, 2) for c in c2]
-    assert round(st.mean(vals), 2) == foc["B"][i] and all(0 <= v <= 1 for v in vals), sc
-    foc["control_scores_by_scale"][sc] = [
-        {"item": it, "trial": t, "cos": v} for it, t, v in zip(ctrl_items, ctrl_trials, vals)
-    ]
-assert foc["control_scores_by_scale"]["2°"] == foc["control_scores_2deg"]
 
 # Focus fixation lists, copied from the golden fixations.csv (screen px, y down): the query
 # P17 ret_07, its matched reference P17 enc_03 and its 19 control encoding trials.
@@ -465,7 +452,6 @@ with open("FIXTURE.md", "a") as f:
     f.write(f"- Methods: of {S['records_in_admitted_trials']:,} fixation records in admitted trials, {S['outside_window_records']} lay outside the analysis window ({S['outside_window_duration_ms']:,} / {S['admitted_fixation_duration_ms']:,} ms = {100 * S['outside_window_duration_share']:.2f}% of those trials' fixation duration). Records outside the screen: {S['outside_screen_records']} (SCORES.json counts.recordsOutsideScreen).\n")
     pd = S["paired_D_diff"]
     f.write(f"- Paired Δ Remembered − Forgotten (σ 2°, status ok, {pd['rounding']}): mean {pd['mean']}; min {pd['min']['participant']} {pd['min']['value']}, max {pd['max']['participant']} {pd['max']['value']}; higher in {pd['positive_k']} of {pd['paired_n']} paired participants; missing pairs {pd['missing_pairs']}.\n")
-    f.write("- Focus control scores by scale (fixture.json control_scores_by_scale; 2° drawn, other scales derived by rule, mean = B): " + "; ".join(f"{sc} max {v[0]['cos']} min {v[-1]['cos']}" for sc, v in foc["control_scores_by_scale"].items()) + ".\n")
     f.write(f"- Focus fixation lists (fixture.json focus_fixations, from the golden fixations.csv): {len(study['focus_fixations']['trials'])} trials, P17 ret_07, enc_03 and its 19 controls.\n")
     f.write("\n## Story moments (boards are snapshots in one timeline)\n")
     f.write("- t1 Data · verify: dataset r3 draft (re-import of r2). Run 5 (rev 3, data r2) exists and becomes stale when r3 is admitted. No run on r3 yet.\n")

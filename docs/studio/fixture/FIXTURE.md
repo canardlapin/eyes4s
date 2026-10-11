@@ -61,7 +61,6 @@ Focus query: P17 · ret_07 · beach-042 (Remembered). Matched reference: P17 · 
 - Records by admission (golden fixations.csv): 11,311 in admitted trials, 209 in the 17 quarantined trials; outside-window records in quarantined trials: 0.
 - Methods: of 11,311 fixation records in admitted trials, 543 lay outside the analysis window (159,142 / 3,282,108 ms = 4.85% of those trials' fixation duration). Records outside the screen: 0 (SCORES.json counts.recordsOutsideScreen).
 - Paired Δ Remembered − Forgotten (σ 2°, status ok, computed before rounding participant means): mean 0.155667; min P21 0.05, max P15 0.261282; higher in 24 of 24 paired participants; missing pairs 0.
-- Focus control scores by scale (fixture.json control_scores_by_scale; 2° drawn, other scales derived by rule, mean = B): 0.5° max 0.53 min 0.04; 1° max 0.57 min 0.13; 2° max 0.61 min 0.2; 4° max 0.78 min 0.54.
 - Focus fixation lists (fixture.json focus_fixations, from the golden fixations.csv): 21 trials, P17 ret_07, enc_03 and its 19 controls.
 
 ## Story moments (boards are snapshots in one timeline)

@@ -125,4 +125,4 @@ the deviation below instead of failing. Tickets are numbered as in the design re
 - Explore: NeutralMark alpha .35 and halo (11); timeline, including bars outside the brush dimmed (18).
 - Results: y ticks and signed values (20); annotation column (26); paired descriptive (27).
 - Figures: tile rows and wrapping (21); figure cross arm (22).
-- Data: density levels, pending the level rule (23); thumbnail caption text ids (24), including "Missing asset · forest-044.png". The missing-asset thumbnail hatch (25) is deferred: thumbnails stay the grey frame plus marks.
+- Data: density levels, pending the level rule (23); thumbnail caption text ids (24), including "Missing asset · forest-044.png"; the missing-asset thumbnail hatch and X (25).

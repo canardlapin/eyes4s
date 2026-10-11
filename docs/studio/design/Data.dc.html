@@ -196,7 +196,7 @@ body{margin:0}
 </div>
 <div style="margin:0 12px;padding:10px;border:1px dashed var(--warn-text);border-radius:6px;background:var(--warn-soft);display:flex;flex-direction:column;gap:6px">
 <div class="row" style="gap:6px"><svg width="14" height="11" viewBox="0 0 14 11" aria-hidden="true"><rect x=".75" y=".75" width="12.5" height="9.5" fill="var(--warn-soft)" stroke="var(--warn-text)" stroke-width="1.5" stroke-dasharray="2 1.5"/><path d="M4 3l6 5M10 3 4 8" stroke="var(--warn-text)" stroke-width="1.2"/></svg><span style="font-weight:600;color:var(--warn-text)">2 image files missing</span></div>
-<span class="t11" style="color:var(--ink)">forest-044.png, kitchen-081.png. Their 4 Encoding trials (P01 enc_08, enc_15; P24 enc_05, enc_18) are drawn as <strong>missing asset</strong> in trial views, never as blank. Gaze and scores are unaffected.</span>
+<span class="t11" style="color:var(--ink)">forest-044.png, kitchen-081.png. Their 4 Encoding trials (P01 enc_08, enc_15; P24 enc_05, enc_18) are drawn as <strong>missing asset</strong> (hatched), never as blank. Gaze and scores are unaffected.</span>
 <div class="row"><button class="btn" style="height:22px" aria-label="Repair 2 missing image files…">Repair…</button><button class="btn" style="height:22px" aria-label="Show the 4 missing-asset trials">Show 4 trials</button></div>
 </div>
 </div>
@@ -295,6 +295,7 @@ body{margin:0}
 <rect width="1920" height="1080" fill="var(--stage)"/>
 <rect x="448" y="156" width="1024" height="768" fill="var(--screen)"/>
 <g fill="var(--neutral-mark)" stroke="var(--halo)" stroke-width="14"><sc-for list="{{t.marks}}" as="m" hint-placeholder-count="12"><circle cx="{{m.x}}" cy="{{m.y}}" r="34"/></sc-for></g>
+<sc-if value="{{t.missing}}" hint-placeholder-val="{{false}}"><rect x="448" y="156" width="1024" height="768" fill="url(#hs2)"/><path d="M820 400l280 280M1100 400 820 680" stroke="var(--warn-text)" stroke-width="22"/></sc-if>
 <rect x="448" y="156" width="1024" height="768" fill="none" stroke="var(--on-stage)" stroke-width="14" stroke-dasharray="82 55"/>
 </svg>
 <span class="t11 mono" style="color:var(--ink)">{{t.id}}</span>
@@ -302,6 +303,7 @@ body{margin:0}
 </div>
 </sc-for>
 </div>
+<svg width="0" height="0" aria-hidden="true" style="position:absolute"><defs><pattern id="hs2" width="80" height="80" patternUnits="userSpaceOnUse"><rect width="80" height="80" fill="var(--warn-soft)"/><path d="M0 80 80 0M-20 20 20 -20M60 100 100 60" stroke="var(--warn-text)" stroke-width="14"/></pattern></defs></svg>
 <div style="display:flex;flex-direction:column;gap:4px">
 <div class="row" style="gap:10px;align-items:flex-start">
 <svg width="140" height="79" viewBox="0 0 1920 1080" role="img" aria-label="Density of all 11,520 fixation records overlaid, screen coordinates" style="flex:none">
@@ -414,10 +416,10 @@ class Component extends DCLogic {
       .map(([c, n]) => ({ c, n, aria: n + ' trials quarantined for ' + c }));
     // GeometryScene.thumbnail: stage, the image frame as a flat --screen field, the records as
     // neutral marks with the stage halo, the dashed on-stage outline; no stimulus art, no cross.
-    // Owner D7: every thumbnail, a missing-asset trial included, is GeometryScene's grey placement frame + marks
-    // (GeometryScene.scala:63); FrameArt thumbnails would be a separate feature. A missing-asset trial (fixture
-    // missing_images: P01 enc_08 = forest-044) is named only by its caption, "Missing asset · forest-044.png"
-    // (TrialText.MissingLabel wording, TrialText.scala:83) in --warn-text; its count stays in the accessible name.
+    // Thumbnails are GeometryScene's grey placement frame + marks (GeometryScene.scala:63; image FrameArt would be a
+    // separate feature), EXCEPT a missing-asset trial (fixture missing_images: P01 enc_08 = forest-044): its field is
+    // --warn-soft + the hatch and X (DESIGN_SPEC §9: missing asset is hatched, never blank; landing ticket 25), with
+    // the caption "Missing asset · forest-044.png" (TrialText.MissingLabel wording) in --warn-text.
     // Caption = GeometryText ThumbInside / ThumbOutside ("{trial} · n records inside", "{trial} · n of m outside"),
     // drawn as two lines (trial, then count) so it never wraps mid-phrase (proposed: break after the trial label).
     // P17 ret_07 = the fixture's 12 fixations (image px + (448, 156)); the other trials' positions are stand-ins.
@@ -428,10 +430,10 @@ class Component extends DCLogic {
     const thumbs0 = [
       { id: 'P03 · enc_02', count: '12 records inside', aria: 'P03 · enc_02: 12 records, 0 outside the image frame, 0 outside the screen', marks: inside(302) },
       { id: 'P17 · ret_07', count: '1 of 12 outside', aria: 'P17 · ret_07: 12 records, 1 outside the image frame, 0 outside the screen', marks: toScreen(ret07) },
-      { id: 'P01 · enc_08', count: 'Missing asset · forest-044.png', cc: 'var(--warn-text)', aria: 'P01 · enc_08: missing asset, forest-044.png not found; placement frame drawn grey as on every thumbnail; 12 records, 0 outside the image frame, 0 outside the screen', marks: inside(108) },
+      { id: 'P01 · enc_08', count: 'Missing asset · forest-044.png', missing: true, cc: 'var(--warn-text)', aria: 'P01 · enc_08: missing asset, forest-044.png not found, field drawn hatched; 12 records, 0 outside the image frame, 0 outside the screen', marks: inside(108) },
       { id: 'P05 · ret_04', count: '11 of 11 outside', aria: 'P05 · ret_04: 11 records, 11 outside the image frame, 0 outside the screen', marks: p05 }
     ];
-    const thumbs = thumbs0.map((t, i) => Object.assign({ cc: 'var(--ink-2)' }, t, { domId: 'th-' + i, cursor: i === 0 ? 'true' : null }));
+    const thumbs = thumbs0.map((t, i) => Object.assign({ cc: 'var(--ink-2)', missing: false }, t, { domId: 'th-' + i, cursor: i === 0 ? 'true' : null }));
     const binned = binnedLevels(standInRecords(), 1920, 1080, 64);
     const binKey = ['≥1', '≥4', '≥16', '≥64'].map((label, i) => ({ label, fill: 'var(--ramp-' + i + ')' }));
     return { rootClass: this.props.dark ? 'es dark' : 'es', cols, causes, thumbs, bins: binned.cells, binsDrawn: String(binned.cells.length), binKey };
