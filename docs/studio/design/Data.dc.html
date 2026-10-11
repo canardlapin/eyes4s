@@ -12,14 +12,17 @@
 <style>
 body{margin:0}
 /* ===== Eyes Studio tokens (the only place colours are written) ===== */
-.es{--ground:#ECE9E2;--surface:#FBFAF7;--surface-2:#F3F1EC;--surface-3:#E9E6DF;--hairline:#DAD6CC;--ink:#1C1E21;--ink-2:#464B52;--ink-3:#5E636A;--accent:#0E6E68;--accent-soft:#DCEFEC;--on-accent:#FFFFFF;--query:#3A2E6E;--query-soft:#E6E2F2;--match:#2F6DB5;--match-soft:#E0EAF6;--match-text:#255A98;--control:#B86E0E;--control-fill:#D98A1C;--control-text:#9A4A07;--control-soft:#F7E7D0;--fail:#A3261B;--fail-soft:#F6DEDA;--warn-text:#7A4F00;--warn-soft:#FBF1D9;--stage:#1A1A1A;--on-stage:#D9D6CF;--neutral-mark:rgba(28,30,33,.35);--sel-ring:0 0 0 2px #FFFFFF,0 0 0 4px #1C1E21;--tl-bg:#ECECEC;--tl-text:#4D4D4D}
-.es [data-stage=light],.es[data-stage=light]{--stage:#F2F2F2;--on-stage:#1C1E21}.es [data-stage=mid],.es[data-stage=mid]{--stage:#808080;--on-stage:#FFFFFF}
-.es.dark{--ground:#121315;--surface:#1B1C1F;--surface-2:#222327;--surface-3:#2A2C31;--hairline:#34363C;--ink:#ECEAE5;--ink-2:#BDBAB3;--ink-3:#9C9990;--accent:#43B5AA;--accent-soft:#183A37;--on-accent:#0B1413;--query:#D6CBFF;--query-soft:#2B2544;--match:#5C95E0;--match-soft:#1D2A3D;--match-text:#7FB0EE;--control:#E8A23C;--control-fill:#E8A23C;--control-text:#EBB066;--control-soft:#3A2A14;--fail:#F08A7E;--fail-soft:#3A1E1B;--warn-text:#E7C274;--warn-soft:#33290F;--neutral-mark:rgba(236,234,229,.35);--sel-ring:0 0 0 2px #000000,0 0 0 4px #ECEAE5;--tl-bg:#2B2B2B;--tl-text:#B0B0B0}
+.es{--sel-fill:#E4E0D6;--ground:#ECE9E2;--surface:#FBFAF7;--surface-2:#F3F1EC;--surface-3:#E9E6DF;--hairline:#DAD6CC;--ink:#1C1E21;--ink-2:#464B52;--ink-3:#5E636A;--accent:#0E6E68;--accent-soft:#DCEFEC;--on-accent:#FFFFFF;--query:#3A2E6E;--query-soft:#E6E2F2;--match:#2F6DB5;--match-soft:#E0EAF6;--match-text:#255A98;--control:#B86E0E;--control-fill:#D98A1C;--control-text:#9A4A07;--control-soft:#F7E7D0;--fail:#A3261B;--fail-soft:#F6DEDA;--warn-text:#7A4F00;--warn-soft:#FBF1D9;--stage:#1A1A1A;--on-stage:#D9D6CF;--neutral-mark:rgba(28,30,33,.35);--sel-ring:0 0 0 2px #FFFFFF,0 0 0 4px #1C1E21;--tl-bg:#ECECEC;--tl-text:#4D4D4D}
+.es [data-stage=light],.es[data-stage=light]{--stage:#F2F2F2;--on-stage:#1C1E21;--halo:#1C1E21}.es [data-stage=mid],.es[data-stage=mid]{--stage:#767676;--on-stage:#FFFFFF;--halo:#FFFFFF}
+.es.dark{--sel-fill:#2E3035;--ground:#121315;--surface:#1B1C1F;--surface-2:#222327;--surface-3:#2A2C31;--hairline:#34363C;--ink:#ECEAE5;--ink-2:#BDBAB3;--ink-3:#9C9990;--accent:#43B5AA;--accent-soft:#183A37;--on-accent:#0B1413;--query:#D6CBFF;--query-soft:#2B2544;--match:#5C95E0;--match-soft:#1D2A3D;--match-text:#7FB0EE;--control:#E8A23C;--control-fill:#E8A23C;--control-text:#EBB066;--control-soft:#3A2A14;--fail:#F08A7E;--fail-soft:#3A1E1B;--warn-text:#E7C274;--warn-soft:#33290F;--neutral-mark:rgba(236,234,229,.35);--sel-ring:0 0 0 2px #000000,0 0 0 4px #ECEAE5;--tl-bg:#2B2B2B;--tl-text:#B0B0B0}
+.es{--halo:#FFFFFF;--screen:#9A9A96;--isoline-case:rgba(255,255,255,.9);--isoline-ink:rgba(28,30,33,.9);--ramp-0:#F9D9EA;--ramp-1:#E58FB9;--ramp-2:#B83F86;--ramp-3:#6B0F4F}
+/* not product tokens: stimulus picture pixels and the mock macOS title bar */
+.es{--stim-sea:#8FA3AB;--tl-close:#FF5F57;--tl-min:#FEBC2E;--tl-max:#28C840}
 .es{font-family:"IBM Plex Sans",-apple-system,"Helvetica Neue",sans-serif;font-size:12px;color:var(--ink);background:var(--ground)}
 .es button{font-family:inherit;font-size:inherit;color:inherit;cursor:pointer}
 .es a{color:var(--accent)}.es a:hover{color:var(--ink)}
 .mono{font-family:"IBM Plex Mono",ui-monospace,monospace}
-.t11{font-size:11px}.t13{font-size:13px;font-weight:600}.t16{font-size:16px}.t28{font-size:28px;font-weight:500;letter-spacing:-.02em}
+.t11{font-size:11px}.t13{font-size:13px;font-weight:600}.t16{font-size:16px}.t28{font-size:28px;font-weight:500;}
 .row{display:flex;align-items:center;gap:8px}
 .chip{display:flex;align-items:center;gap:6px;height:24px;padding:0 9px;border:1px solid var(--hairline);border-radius:6px;background:var(--surface);color:var(--ink-2);white-space:nowrap}
 .seg{display:flex;gap:2px;padding:2px;background:var(--surface-3);border-radius:7px}
@@ -36,7 +39,6 @@ body{margin:0}
 .tb{height:30px;flex:none;display:flex;align-items:center;gap:8px;padding:0 10px;border-bottom:1px solid var(--hairline);background:var(--surface)}
 .lbl{font-size:11px;font-weight:600;color:var(--ink-3)}
 .tog{height:22px;border:1px solid var(--hairline);background:var(--surface);border-radius:4px;padding:0 8px;color:var(--ink-2)}
-.tog.on{background:var(--ink);border-color:var(--ink);color:var(--surface)}
 .crumb{height:22px;border:0;background:transparent;border-radius:4px;padding:0 6px;color:var(--ink-2)}
 .crumb:hover{background:var(--surface-3)}
 .crumb.cur{color:var(--ink);font-weight:600}
@@ -55,9 +57,67 @@ body{margin:0}
 .cnt{border:0;background:transparent;padding:0 4px;height:22px;border-radius:4px;text-decoration:underline;text-decoration-color:var(--hairline);text-underline-offset:3px;font-family:"IBM Plex Mono",monospace}
 .cnt:hover{background:var(--surface-3)}
 .led{display:grid;grid-template-columns:minmax(0,1fr) 90px;align-items:center;height:26px;padding:0 14px;border-bottom:1px solid var(--surface-3)}
-.keyblk{display:flex;align-items:center;height:26px;padding:0 10px;border:1px solid var(--ink-2);border-radius:4px;background:var(--surface);font-weight:500}
+.keyblk{display:flex;align-items:center;height:26px;padding:0 10px;border:1px solid var(--ink-2);border-radius:4px;background:var(--surface);font-weight:400}
 .fld{height:22px;border:1px solid var(--hairline);border-radius:4px;background:var(--surface);color:var(--ink);font:inherit;padding:0 6px;width:84px}
-.thumb{display:flex;flex-direction:column;gap:3px}
+.thumb{display:flex;flex-direction:column;gap:2px;border-radius:4px;padding:2px;justify-self:start}
+.thumb span{white-space:nowrap}
+.es strong{font-weight:600}
+.srcname{font-family:"IBM Plex Mono",monospace;font-size:12px;font-weight:400}
+.src.sel .srcname{font-weight:500}
+.src.sel{background:var(--sel-fill)}
+.cnt{min-width:28px;text-align:right}
+.dd{display:flex;align-items:center;justify-content:space-between;gap:6px;height:22px;width:100%;padding:0 6px 0 8px;border:1px solid var(--hairline);border-radius:4px;background:var(--surface);color:var(--ink);white-space:nowrap}
+.maprow.sel{background:var(--sel-fill)}
+.maprow.sel .mono{font-weight:500}.maprow.sel .dd{font-weight:600}
+.sg{display:inline-flex;gap:2px;padding:2px;background:var(--surface-3);border-radius:6px}
+.sg button{height:20px;border:0;border-radius:4px;padding:0 7px;background:transparent;color:var(--ink-2);font-weight:500;white-space:nowrap}
+.sg button:hover{background:var(--surface-2)}
+.sg button[aria-pressed=true],.sg button[aria-checked=true]{background:var(--surface);color:var(--ink);box-shadow:inset 0 0 0 1px var(--hairline)}
+.na{display:inline-flex;align-items:center;height:20px;padding:0 6px;border:1px dashed var(--ink-3);border-radius:4px;color:var(--ink-2);font-size:11px;white-space:nowrap}
+.warnglyph{flex:none;vertical-align:-1px}
+
+/* ===== round-1 shared rules: JavaFX parity + interaction states ===== */
+.es,.es *{box-sizing:border-box}
+.es{line-height:1.3}
+.es :focus{outline:none}
+.es :focus-visible{outline:none;box-shadow:inset 0 0 0 2px var(--accent)}
+.es .sel:focus-visible,.es .on:focus-visible{box-shadow:inset 0 0 0 2px var(--accent),inset 0 0 0 4px var(--ink)}
+.es a{color:var(--ink);text-decoration:underline;text-decoration-color:var(--ink-3)}.es a:hover{color:var(--ink-2)}
+.es .chip,.es .pill,.es .kind,.es .btn,.es .tog,.es .tab,.es .crumb{white-space:nowrap}
+.es .btn:hover,.es .tog:hover,.es .ib:hover,.es .tab:hover{background:var(--surface-3)}
+.es .btn.pri:hover{background:var(--accent)}
+.es .btn:disabled,.es .btn[aria-disabled=true]{cursor:default}
+.es .tog{background:var(--surface-2);color:var(--ink-2)}
+.es .tog.on{background:var(--surface);border-color:var(--ink-3);color:var(--ink);font-weight:600}
+.es .kf{box-shadow:inset 0 0 0 2px var(--accent)}
+.es .sel.kf,.es .on.kf{box-shadow:inset 0 0 0 2px var(--accent),inset 0 0 0 4px var(--ink)}
+
+/* ===== round-2 shared rules: focus never hidden, selection = fill (not a ring), native controls ===== */
+.es [aria-pressed=true]:focus-visible,.es [aria-checked=true]:focus-visible,.es [aria-selected=true]:focus-visible,.es .sg button:focus-visible{box-shadow:inset 0 0 0 2px var(--accent)}
+.es .sel.kf,.es .on.kf,.es .sel:focus-visible{box-shadow:inset 0 0 0 2px var(--accent)}
+.es .ib:disabled,.es .ib[aria-disabled=true],.es .tog:disabled{opacity:.4;cursor:default}
+.es input[type=radio],.es input[type=checkbox]{accent-color:var(--ink);width:14px;height:14px;margin:0;flex:none}
+.es input[type=range]{accent-color:var(--ink-2)}
+.es input[type=text],.es input[type=search],.es input:not([type]){height:24px;border:1px solid var(--hairline);border-radius:4px;background:var(--surface);color:var(--ink);padding:0 8px;font:inherit}
+
+/* ===== round-3 shared rules: one ring per focused composite, hover != selection, disabled = opacity ===== */
+.es [role=tree]:focus-visible,.es [role=listbox]:focus-visible,.es [role=grid]:focus-visible,.es [data-composite]:focus-visible{box-shadow:none}
+.es [role=tree]:focus-visible [data-cursor],.es [role=listbox]:focus-visible [data-cursor],.es [role=grid]:focus-visible [data-cursor],.es [data-composite]:focus-visible [data-cursor]{box-shadow:inset 0 0 0 2px var(--accent)}
+.es .cur-ring{visibility:hidden}
+.es .kf .cur-ring,.es .kf.cur-ring,.es :focus-visible .cur-ring{visibility:visible}
+.es [role=option]:not([aria-selected=true]):hover,.es [role=treeitem]:not([aria-selected=true]):hover,.es [role=row]:not([aria-selected=true]):hover{background:var(--surface-2)}
+.es .btn:disabled,.es .btn[aria-disabled=true],.es .sg button:disabled,.es .sg button[aria-disabled=true],.es .chip[aria-disabled=true],.es .tab[aria-disabled=true],.es input:disabled{opacity:.4;border-style:solid;cursor:default}
+.es input:disabled+label,.es label:has(input:disabled){opacity:.4;cursor:default}
+
+/* ===== polish v3b shared rules: grid row cursor painted on cells; depicted focus yields to real focus ===== */
+.es [role=grid]:focus-visible tr[data-cursor]{box-shadow:none}
+.es [role=grid]:focus-visible tr[data-cursor]>*{box-shadow:inset 0 2px 0 var(--accent),inset 0 -2px 0 var(--accent)}
+.es [role=grid]:focus-visible tr[data-cursor]>*:first-child{box-shadow:inset 2px 0 0 var(--accent),inset 0 2px 0 var(--accent),inset 0 -2px 0 var(--accent)}
+.es [role=grid]:focus-visible tr[data-cursor]>*:last-child{box-shadow:inset -2px 0 0 var(--accent),inset 0 2px 0 var(--accent),inset 0 -2px 0 var(--accent)}
+.es:has(:focus-visible) .kf:not(:focus-visible):not(:focus-visible *){box-shadow:none}
+.es:has(:focus-visible) .kf:not(:focus-visible):not(:focus-visible *) .cur-ring,.es:has(:focus-visible) .kf.cur-ring:not(:focus-visible *){visibility:hidden}
+.es:has(:focus-visible) :focus-visible .cur-ring,.es:has(:focus-visible) :focus-visible.cur-ring{visibility:visible}
+.es:has(:focus-visible) .sel.kf:not(:focus-visible):not(:focus-visible *),.es:has(:focus-visible) .on.kf:not(:focus-visible):not(:focus-visible *){box-shadow:none}
 </style>
 </helmet>
 
@@ -65,7 +125,7 @@ body{margin:0}
 
 <!-- 1 · Native title bar (system-drawn; shown for context only) -->
 <div style="height:28px;flex:none;display:flex;align-items:center;padding:0 12px;background:var(--tl-bg);position:relative">
-<div style="display:flex;gap:8px"><span style="width:12px;height:12px;border-radius:50%;background:#FF5F57"></span><span style="width:12px;height:12px;border-radius:50%;background:#FEBC2E"></span><span style="width:12px;height:12px;border-radius:50%;background:#28C840"></span></div>
+<div style="display:flex;gap:8px"><span style="width:12px;height:12px;border-radius:50%;background:var(--tl-close)"></span><span style="width:12px;height:12px;border-radius:50%;background:var(--tl-min)"></span><span style="width:12px;height:12px;border-radius:50%;background:var(--tl-max)"></span></div>
 <div style="position:absolute;left:0;right:0;text-align:center;color:var(--tl-text);pointer-events:none">memory-study.eyes</div>
 </div>
 
@@ -73,7 +133,7 @@ body{margin:0}
 <header style="height:44px;flex:none;display:flex;align-items:center;gap:10px;padding:0 12px 0 14px;background:var(--surface);border-bottom:1px solid var(--hairline)">
 <div class="row" style="gap:7px;margin-right:4px">
 <svg width="20" height="20" viewBox="0 0 20 20" aria-hidden="true"><path d="M1.5 10C4 5.5 7 3.5 10 3.5S16 5.5 18.5 10C16 14.5 13 16.5 10 16.5S4 14.5 1.5 10Z" fill="none" stroke="var(--ink)" stroke-width="1.5"/><circle cx="10" cy="10" r="3.2" fill="var(--ink)"/><circle cx="11.2" cy="8.8" r="1" fill="var(--surface)"/></svg>
-<span class="t13" style="letter-spacing:-.01em">Eyes Studio</span>
+<span class="t13" style="">Eyes Studio</span>
 </div>
 <button class="chip"><span>memory-study</span><svg width="10" height="10" viewBox="0 0 10 10" aria-hidden="true"><path d="M2 3.5 5 6.5 8 3.5" fill="none" stroke="currentColor" stroke-width="1.5"/></svg></button>
 <div style="flex:1"></div>
@@ -106,35 +166,38 @@ body{margin:0}
 
 <!-- Navigator: Sources -->
 <section class="grp" style="width:252px;flex:none" aria-label="Sources navigator">
-<div class="hdr"><button class="tab sel">Sources</button><div class="hbtns"><button class="ib" aria-label="Minimize group"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 8h8"/></svg></button></div></div>
+<div class="hdr"><div role="tablist" aria-label="Sources navigator tabs" style="display:flex"><button class="tab sel" role="tab" aria-selected="true" tabindex="0">Sources</button></div><div class="hbtns"><button class="ib" aria-label="Minimize Sources group"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M4 8h8"/></svg></button></div></div>
 <div style="flex:1;overflow:hidden;display:flex;flex-direction:column">
-<div class="src" style="box-shadow:inset 0 0 0 2px var(--ink);background:var(--surface-2)">
-<div class="row" style="justify-content:space-between"><span class="t13 mono" style="font-size:12px">fixations.csv</span><span class="kind">Fixations</span></div>
+<div role="listbox" tabindex="0" aria-label="Sources, 3 files; arrow keys move, Enter opens" aria-activedescendant="src-fix" style="display:flex;flex-direction:column">
+<div class="src sel" id="src-fix" role="option" tabindex="-1" aria-selected="true" data-cursor="">
+<div class="row" style="justify-content:space-between"><span class="srcname">fixations.csv</span><span class="kind">Fixations</span></div>
 <span class="mono t11" style="color:var(--ink-2)">11,520 records · 11 columns mapped</span>
 <span class="mono t11" style="color:var(--ink-3)">byte digest recorded · copied into project</span>
 </div>
-<div class="src">
-<div class="row" style="justify-content:space-between"><span class="t13 mono" style="font-size:12px">trials.csv</span><span class="kind">Inventory</span></div>
+<div class="src" id="src-trials" role="option" tabindex="-1" aria-selected="false">
+<div class="row" style="justify-content:space-between"><span class="srcname">trials.csv</span><span class="kind">Inventory</span></div>
 <span class="mono t11" style="color:var(--ink-2)">960 trials · inventory</span>
 <span class="mono t11" style="color:var(--ink-3)">byte digest recorded · copied into project</span>
 </div>
-<div class="src">
-<div class="row" style="justify-content:space-between"><span class="t13 mono" style="font-size:12px">stimuli/</span><span class="kind">Images</span></div>
+<div class="src" id="src-stim" role="option" tabindex="-1" aria-selected="false">
+<div class="row" style="justify-content:space-between"><span class="srcname">stimuli/</span><span class="kind">Images</span></div>
 <span class="mono t11" style="color:var(--ink-2)">257 of 259 images found</span>
 <span class="mono t11" style="color:var(--ink-3)">matched by filename = item · copied</span>
 </div>
+</div>
 <div style="padding:10px 12px;display:flex;flex-direction:column;gap:6px">
-<span class="lbl">What each trial displayed</span>
+<div class="row" style="justify-content:space-between"><span class="lbl">What each trial displayed</span><span class="mono t11" style="color:var(--ink-3)">960 trials</span></div>
 <div class="t11" style="display:grid;grid-template-columns:18px minmax(0,1fr) auto;row-gap:5px;column-gap:6px;align-items:center">
 <svg width="14" height="11" viewBox="0 0 14 11" aria-hidden="true"><rect x=".75" y=".75" width="12.5" height="9.5" fill="var(--surface-3)" stroke="var(--ink-2)" stroke-width="1.5"/><path d="M2 9l3.5-4 3 3 2-2 2 3" fill="none" stroke="var(--ink-2)" stroke-width="1.2"/></svg><span>Image · Encoding</span><span class="mono">476</span>
-<svg width="14" height="11" viewBox="0 0 14 11" aria-hidden="true"><rect x=".75" y=".75" width="12.5" height="9.5" fill="#9A9A96" stroke="var(--ink-2)" stroke-width="1.5"/><path d="M7 3.5v4M5 5.5h4" stroke="#FFFFFF" stroke-width="1.2"/></svg><span>Blank + fixation cross · Retrieval</span><span class="mono">480</span>
-<svg width="14" height="11" viewBox="0 0 14 11" aria-hidden="true"><rect x=".75" y=".75" width="12.5" height="9.5" fill="none" stroke="var(--ink-3)" stroke-width="1.5" stroke-dasharray="2 2"/></svg><span style="color:var(--ink-3)">Blank · Cue · Unknown</span><span class="mono" style="color:var(--ink-3)">0</span>
+<svg width="14" height="11" viewBox="0 0 14 11" aria-hidden="true"><rect x=".75" y=".75" width="12.5" height="9.5" fill="var(--warn-soft)" stroke="var(--warn-text)" stroke-width="1.5" stroke-dasharray="2 1.5"/><path d="M4 3l6 5M10 3 4 8" stroke="var(--warn-text)" stroke-width="1.2"/></svg><span>Missing asset · Encoding</span><span class="mono">4</span>
+<svg width="14" height="11" viewBox="0 0 14 11" aria-hidden="true"><rect x=".75" y=".75" width="12.5" height="9.5" fill="var(--screen)" stroke="var(--ink-2)" stroke-width="1.5"/><path d="M7 3.5v4M5 5.5h4" stroke="var(--halo)" stroke-width="1.2"/></svg><span>Blank + fixation cross · Retrieval</span><span class="mono">480</span>
+<svg width="14" height="11" viewBox="0 0 14 11" aria-hidden="true"><rect x=".75" y=".75" width="12.5" height="9.5" fill="none" stroke="var(--ink-3)" stroke-width="1.5" stroke-dasharray="2 2"/></svg><span style="color:var(--ink-2)">Blank · Cue · Unknown</span><span class="mono" style="color:var(--ink-2)">0</span>
 </div>
 </div>
-<div style="margin:0 12px;padding:10px;border:1px solid var(--warn-text);border-radius:6px;background:var(--warn-soft);display:flex;flex-direction:column;gap:6px">
-<div class="row" style="gap:6px"><svg width="14" height="11" viewBox="0 0 14 11" aria-hidden="true"><defs><pattern id="hs" width="3" height="3" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><line x1="0" y1="0" x2="0" y2="3" stroke="var(--warn-text)" stroke-width="1.2"/></pattern></defs><rect x=".75" y=".75" width="12.5" height="9.5" fill="url(#hs)" stroke="var(--warn-text)" stroke-width="1.5"/></svg><span style="font-weight:600;color:var(--warn-text)">2 image files missing</span></div>
-<span class="t11" style="color:var(--ink);line-height:1.45">forest-044.png, kitchen-081.png. Their 4 Encoding trials (P01 enc_08, enc_15; P24 enc_05, enc_18) are drawn as <strong>missing asset</strong>, never as blank. Gaze and scores are unaffected.</span>
-<div class="row"><button class="btn" style="height:22px">Repair…</button><button class="btn" style="height:22px">Show 4 trials</button></div>
+<div style="margin:0 12px;padding:10px;border:1px dashed var(--warn-text);border-radius:6px;background:var(--warn-soft);display:flex;flex-direction:column;gap:6px">
+<div class="row" style="gap:6px"><svg width="14" height="11" viewBox="0 0 14 11" aria-hidden="true"><rect x=".75" y=".75" width="12.5" height="9.5" fill="var(--warn-soft)" stroke="var(--warn-text)" stroke-width="1.5" stroke-dasharray="2 1.5"/><path d="M4 3l6 5M10 3 4 8" stroke="var(--warn-text)" stroke-width="1.2"/></svg><span style="font-weight:600;color:var(--warn-text)">2 image files missing</span></div>
+<span class="t11" style="color:var(--ink)">forest-044.png, kitchen-081.png. Their 4 Encoding trials (P01 enc_08, enc_15; P24 enc_05, enc_18) are drawn as <strong>missing asset</strong> in trial views, never as blank. Gaze and scores are unaffected.</span>
+<div class="row"><button class="btn" style="height:22px" aria-label="Repair 2 missing image files…">Repair…</button><button class="btn" style="height:22px" aria-label="Show the 4 missing-asset trials">Show 4 trials</button></div>
 </div>
 </div>
 </section>
@@ -144,19 +207,20 @@ body{margin:0}
 
 <!-- Column mapping -->
 <section class="grp" style="flex:none;height:432px" aria-label="Column mapping">
-<div class="hdr"><button class="tab sel focus">Column mapping</button><button class="tab">Trial metadata</button><div class="hbtns"><span class="kind" style="margin-right:6px">Dataset · re-admit</span><button class="ib" aria-label="Maximize group"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="10" height="10"/></svg></button></div></div>
-<div class="t11" style="display:grid;grid-template-columns:120px minmax(0,1fr) 150px 96px;gap:10px;padding:6px 14px 5px;font-weight:600;color:var(--ink-3);border-bottom:1px solid var(--hairline);background:var(--surface-2)">
-<span>fixations.csv column</span><span>First records</span><span>Role</span><span>Units (declared)</span>
+<div class="hdr"><div role="tablist" aria-label="Column mapping tabs" style="display:flex"><button class="tab sel focus" role="tab" aria-selected="true" tabindex="0" data-accent-job="focus">Column mapping</button><button class="tab" role="tab" aria-selected="false" tabindex="-1">Trial metadata</button></div><div class="hbtns"><span class="kind" style="margin-right:6px">Dataset · re-admit</span><button class="ib" aria-label="Maximize Column mapping group"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><rect x="3" y="3" width="10" height="10"/></svg></button></div></div>
+<div role="grid" tabindex="0" aria-label="Column mapping for fixations.csv, 11 columns; arrow keys move, Enter opens the role list" aria-activedescendant="m8" style="display:flex;flex-direction:column">
+<div role="row" class="t11" style="display:grid;grid-template-columns:120px minmax(0,1fr) 150px 96px;gap:10px;padding:6px 14px 5px;font-weight:600;color:var(--ink-3);border-bottom:1px solid var(--hairline);background:var(--surface-2)">
+<span role="columnheader">fixations.csv column</span><span role="columnheader">First records</span><span role="columnheader">Role</span><span role="columnheader">Units (declared)</span>
 </div>
 <sc-for list="{{cols}}" as="c" hint-placeholder-count="11">
-<div class="maprow">
-<span class="mono">{{c.col}}</span>
-<span class="mono t11" style="color:var(--ink-2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{c.sample}}</span>
-<label style="position:absolute;left:-9999px" for="{{c.id}}">Role for {{c.col}}</label>
-<select class="sel2" id="{{c.id}}"><option>{{c.role}}</option></select>
-<span class="mono t11" style="color:{{c.uc}}">{{c.units}}</span>
+<div class="{{c.cls}}" id="{{c.id}}" role="row" tabindex="-1" aria-selected="{{c.selected}}" data-cursor="{{c.cursor}}">
+<span class="mono" role="gridcell">{{c.col}}</span>
+<span class="mono t11" role="gridcell" style="color:var(--ink-2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{c.sample}}</span>
+<span role="gridcell"><button class="dd" tabindex="-1" aria-haspopup="listbox" aria-label="{{c.aria}}"><span>{{c.role}}</span><svg width="10" height="10" viewBox="0 0 10 10" aria-hidden="true"><path d="M2 3.5 5 6.5 8 3.5" fill="none" stroke="currentColor" stroke-width="1.5"/></svg></button></span>
+<span class="mono t11" role="gridcell" style="color:{{c.uc}}">{{c.units}}</span>
 </div>
 </sc-for>
+</div>
 <div style="padding:10px 14px;display:flex;flex-direction:column;gap:7px;border-top:1px solid var(--hairline);margin-top:auto">
 <div class="row" style="justify-content:space-between"><span class="t13">Trial identity</span><span class="t11" style="color:var(--ink-2)">Every record and every inventory entry must resolve to exactly one key.</span></div>
 <div class="row" style="gap:6px">
@@ -170,28 +234,30 @@ body{margin:0}
 
 <!-- Admission -->
 <section class="grp" style="flex:1;min-height:0" aria-label="Admission">
-<div class="hdr"><button class="tab sel">Admission</button><button class="tab">Records outside frame</button><div class="hbtns"><button class="ib" aria-label="Maximize group"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="10" height="10"/></svg></button></div></div>
+<div class="hdr"><div role="tablist" aria-label="Admission tabs" style="display:flex"><button class="tab sel" role="tab" aria-selected="true" tabindex="0">Admission</button><button class="tab" role="tab" aria-selected="false" tabindex="-1">Records outside frame</button></div><div class="hbtns"><button class="ib" aria-label="Maximize Admission group"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><rect x="3" y="3" width="10" height="10"/></svg></button></div></div>
 <div style="flex:1;display:flex;min-height:0">
 <div style="flex:1;min-width:0;display:flex;flex-direction:column">
-<div class="t11" style="display:grid;grid-template-columns:minmax(0,1fr) 90px;padding:6px 14px 5px;font-weight:600;color:var(--ink-3);border-bottom:1px solid var(--hairline);background:var(--surface-2)"><span>Counted from the trials.csv inventory</span><span style="text-align:right">Trials</span></div>
-<div class="led"><span style="font-weight:600">Inventory</span><span style="text-align:right"><button class="cnt" style="font-weight:600">960</button></span></div>
-<div class="led"><span>Admitted</span><span style="text-align:right"><button class="cnt">937</button></span></div>
-<div class="led" style="background:var(--surface-2)"><span>Quarantined — whole trial held back when any record is invalid</span><span style="text-align:right"><button class="cnt">17</button></span></div>
+<div role="grid" tabindex="0" aria-label="Admission ledger, 960 = 937 + 17 + 6 trials; arrow keys move, Enter opens a count's trials and records" aria-activedescendant="led-inv" style="display:flex;flex-direction:column">
+<div role="row" class="t11" style="display:grid;grid-template-columns:minmax(0,1fr) 90px;padding:6px 14px 5px;font-weight:600;color:var(--ink-3);border-bottom:1px solid var(--hairline);background:var(--surface-2)"><span role="columnheader">Counted from the trials.csv inventory</span><span role="columnheader" style="text-align:right">Trials</span></div>
+<div class="led" id="led-inv" role="row" aria-selected="false" data-cursor=""><span role="rowheader" style="font-weight:600">Inventory</span><span role="gridcell" style="text-align:right"><button class="cnt" tabindex="-1" style="font-weight:500" aria-label="960 trials in the inventory">960</button></span></div>
+<div class="led" role="row"><span role="rowheader">Admitted</span><span role="gridcell" style="text-align:right"><button class="cnt" tabindex="-1" aria-label="937 admitted trials">937</button></span></div>
+<div class="led" role="row" style="background:var(--surface-2)"><span role="rowheader">Quarantined — whole trial held back when any record is invalid</span><span role="gridcell" style="text-align:right"><button class="cnt" tabindex="-1" aria-label="17 quarantined trials">17</button></span></div>
 <sc-for list="{{causes}}" as="q" hint-placeholder-count="4">
-<div class="led" style="padding-left:30px"><span class="mono t11" style="color:var(--ink-2)">{{q.c}}</span><span style="text-align:right"><button class="cnt" aria-label="{{q.aria}}">{{q.n}}</button></span></div>
+<div class="led" role="row" style="padding-left:30px"><span role="rowheader" class="mono t11" style="color:var(--ink-2)">{{q.c}}</span><span role="gridcell" style="text-align:right"><button class="cnt" tabindex="-1" aria-label="{{q.aria}}">{{q.n}}</button></span></div>
 </sc-for>
-<div class="led"><span>Absent — in trials.csv, no fixation records at all <span class="kind">pending UI-H</span></span><span style="text-align:right"><button class="cnt">6</button></span></div>
-<div class="t11" style="padding:7px 14px;color:var(--ink-2);line-height:1.45">937 + 17 + 6 = 960. <strong>no-fixations</strong>: the trial has records but none is admissible. <strong>Absent</strong>: listed in the inventory, no records in fixations.csv. Each count opens its trials and records.</div>
+<div class="led" role="row"><span role="rowheader">Absent — in trials.csv, no fixation records at all <span class="kind">pending UI-H</span></span><span role="gridcell" style="text-align:right"><button class="cnt" tabindex="-1" aria-label="6 absent trials">6</button></span></div>
+</div>
+<div class="t11" style="padding:7px 14px;color:var(--ink-2)">937 + 17 + 6 = 960. <strong>no-fixations</strong>: the trial has records but none is admissible. <strong>Absent</strong>: listed in the inventory, no records in fixations.csv. Each count opens its trials and records.</div>
 </div>
 <div style="width:300px;flex:none;border-left:1px solid var(--hairline);padding:12px 14px;display:flex;flex-direction:column;gap:9px">
 <span class="t13">Admit dataset r3</span>
 <fieldset style="border:0;margin:0;padding:0;display:flex;flex-direction:column;gap:8px">
 <legend style="position:absolute;left:-9999px">Admission decision</legend>
-<label class="row" style="align-items:flex-start;gap:8px"><input type="radio" name="adm" style="margin:2px 0 0;accent-color:var(--accent)"><span><strong>Require complete</strong><br><span class="t11" style="color:var(--ink-2)">Refuses r3 while 17 trials are quarantined (eyes4s admission). The 6 absent trials are counted by the inventory join (pending UI-H).</span></span></label>
-<label class="row" style="align-items:flex-start;gap:8px"><input type="radio" name="adm" checked style="margin:2px 0 0;accent-color:var(--accent)"><span><strong>Review exclusions</strong><br><span class="t11" style="color:var(--ink-2)">Admits 937 trials; 17 quarantined and 6 absent are recorded with their causes in r3.</span></span></label>
+<label class="row" style="align-items:flex-start;gap:8px"><input type="radio" name="adm" style="margin:2px 0 0;accent-color:var(--ink)"><span><strong>Require complete</strong><br><span class="t11" style="color:var(--ink-2)">Refuses r3 while 17 trials are quarantined (eyes4s admission). The 6 absent trials are counted by the inventory join (pending UI-H).</span></span></label>
+<label class="row" style="align-items:flex-start;gap:8px"><input type="radio" name="adm" checked style="margin:2px 0 0;accent-color:var(--ink)"><span><strong>Review exclusions</strong><br><span class="t11" style="color:var(--ink-2)">Admits 937 trials; 17 quarantined and 6 absent are recorded with their causes in r3.</span></span></label>
 </fieldset>
-<div class="t11" style="color:var(--ink-2);line-height:1.45">Changes from r2: onset declared in ms; Block mapped to occurrence; 4 trials change status. Admitting creates dataset r3. Run 5 stays on r2 and is marked stale.</div>
-<button class="btn pri" style="align-self:flex-start">Admit as r3</button>
+<div class="t11" style="color:var(--ink-2)">Changes from r2: onset declared in ms; Block mapped to occurrence; 4 trials change status. Admitting creates dataset r3. Run 5 stays on r2 and is marked stale.</div>
+<button class="btn pri" style="align-self:flex-start" data-accent-job="primary">Admit as r3</button>
 </div>
 </div>
 </section>
@@ -199,7 +265,7 @@ body{margin:0}
 
 <!-- Geometry -->
 <section class="grp" style="width:372px;flex:none" aria-label="Geometry">
-<div class="hdr"><button class="tab sel">Geometry</button><div class="hbtns"><span class="kind" style="margin-right:6px">Dataset · re-admit</span><button class="ib" aria-label="Minimize group"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 8h8"/></svg></button></div></div>
+<div class="hdr"><div role="tablist" aria-label="Geometry tabs" style="display:flex"><button class="tab sel" role="tab" aria-selected="true" tabindex="0">Geometry</button></div><div class="hbtns"><span class="kind" style="margin-right:6px">Dataset · re-admit</span><button class="ib" aria-label="Minimize Geometry group"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M4 8h8"/></svg></button></div></div>
 <div style="flex:1;overflow:hidden;display:flex;flex-direction:column">
 <div style="padding:10px 14px;display:flex;flex-direction:column;gap:7px">
 <dl class="kv">
@@ -207,7 +273,8 @@ body{margin:0}
 <dt>Screen</dt><dd class="mono">1920 × 1080 px</dd>
 <dt>Image placement</dt><dd class="mono">1024 × 768 at (448, 156)</dd>
 <dt>Analysis window</dt><dd>Image frame</dd>
-<dt>Pixels per degree</dt><dd><span class="mono">35</span> <span class="t11" style="color:var(--warn-text)">· declared, not calibrated</span></dd>
+<dt>Pixels per degree</dt><dd class="row" style="gap:5px"><span class="mono">35 px/°</span><span class="row t11" style="gap:4px;color:var(--warn-text)"><svg class="warnglyph" width="12" height="11" viewBox="0 0 12 11" aria-hidden="true"><path d="M6 1 11.2 10H.8Z" fill="var(--warn-soft)" stroke="var(--warn-text)" stroke-width="1.2" stroke-linejoin="round"/><path d="M6 4.2v2.8M6 7.9v1" stroke="var(--warn-text)" stroke-width="1.2"/></svg>declared · not calibrated</span></dd>
+<dt>Off-screen records</dt><dd><div class="sg" role="radiogroup" aria-label="Off-screen policy for finite records outside the 1920 × 1080 screen; changing it re-admits the dataset"><button role="radio" aria-checked="true" tabindex="0">Exclude record</button><button role="radio" aria-checked="false" tabindex="-1">Quarantine trial</button></div></dd>
 </dl>
 <div class="row" style="gap:10px">
 <label class="row t11" style="gap:5px" for="vd">Viewing distance<input id="vd" class="fld" placeholder="not recorded"></label>
@@ -219,42 +286,48 @@ body{margin:0}
 <span style="color:var(--ink-3)">Degrees</span><span class="t11">from image centre · x right · y up</span>
 </div>
 </div>
-<div class="sect" style="gap:8px">
+<div class="sect" style="gap:6px;padding:8px 14px">
 <div class="row" style="justify-content:space-between"><span class="t13">Check placement</span><span class="t11" style="color:var(--ink-2)">screen outline · image frame</span></div>
-<div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px">
+<div role="listbox" tabindex="0" aria-label="Placement check, 4 trials; arrow keys move, Enter or Space chooses the trial to mark" aria-activedescendant="th-0" style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:4px 10px">
 <sc-for list="{{thumbs}}" as="t" hint-placeholder-count="4">
-<div class="thumb">
-<svg width="164" height="92" viewBox="0 0 1920 1080" class="stage" role="img" aria-label="{{t.aria}}">
+<div class="thumb" id="{{t.domId}}" role="option" tabindex="-1" aria-selected="false" aria-label="{{t.aria}}" data-cursor="{{t.cursor}}">
+<svg width="140" height="79" viewBox="0 0 1920 1080" class="stage" aria-hidden="true">
 <rect width="1920" height="1080" fill="var(--stage)"/>
-<rect x="448" y="156" width="1024" height="768" fill="{{t.fill}}"/>
-<sc-if value="{{t.missing}}" hint-placeholder-val="{{false}}"><rect x="448" y="156" width="1024" height="768" fill="url(#hs2)"/></sc-if>
-<sc-if value="{{t.cross}}" hint-placeholder-val="{{false}}"><path d="M960 510v60M930 540h60" stroke="#E7E5E0" stroke-width="8"/></sc-if>
-<rect x="448" y="156" width="1024" height="768" fill="none" stroke="var(--on-stage)" stroke-width="6" stroke-dasharray="24 14"/>
-<g fill="var(--neutral-mark)" stroke="#FFFFFF" stroke-width="5.3"><circle cx="{{t.x1}}" cy="{{t.y1}}" r="26"/><circle cx="{{t.x2}}" cy="{{t.y2}}" r="34"/><circle cx="{{t.x3}}" cy="{{t.y3}}" r="22"/><circle cx="{{t.x4}}" cy="{{t.y4}}" r="30"/></g>
+<rect x="448" y="156" width="1024" height="768" fill="var(--screen)"/>
+<g fill="var(--neutral-mark)" stroke="var(--halo)" stroke-width="14"><sc-for list="{{t.marks}}" as="m" hint-placeholder-count="12"><circle cx="{{m.x}}" cy="{{m.y}}" r="34"/></sc-for></g>
+<rect x="448" y="156" width="1024" height="768" fill="none" stroke="var(--on-stage)" stroke-width="14" stroke-dasharray="82 55"/>
 </svg>
-<span class="t11 mono" style="color:var(--ink-2)">{{t.label}}</span>
+<span class="t11 mono" style="color:var(--ink)">{{t.id}}</span>
+<span class="t11" style="color:{{t.cc}}">{{t.count}}</span>
 </div>
 </sc-for>
 </div>
-<svg width="0" height="0" aria-hidden="true" style="position:absolute"><defs><pattern id="hs2" width="60" height="60" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><line x1="0" y1="0" x2="0" y2="60" stroke="var(--warn-text)" stroke-width="18"/></pattern></defs></svg>
+<div style="display:flex;flex-direction:column;gap:4px">
 <div class="row" style="gap:10px;align-items:flex-start">
-<svg width="164" height="92" viewBox="0 0 1920 1080" role="img" aria-label="Density of all 11,520 fixation records overlaid, screen coordinates">
-<defs><radialGradient id="ad"><stop offset="0" stop-color="#6B0F4F"/><stop offset=".4" stop-color="#B83F86"/><stop offset=".75" stop-color="#E58FB9"/><stop offset="1" stop-color="#F9D9EA" stop-opacity="0"/></radialGradient></defs>
-<rect width="1920" height="1080" fill="var(--stage)"/>
-<g opacity=".6"><ellipse cx="960" cy="540" rx="520" ry="380" fill="url(#ad)"/>
-<ellipse cx="900" cy="470" rx="260" ry="190" fill="url(#ad)"/></g>
-<rect x="448" y="156" width="1024" height="768" fill="none" stroke="var(--on-stage)" stroke-width="6" stroke-dasharray="24 14"/>
+<svg width="140" height="79" viewBox="0 0 1920 1080" role="img" aria-label="Density of all 11,520 fixation records overlaid, screen coordinates" style="flex:none">
+<desc>11,520 records binned into 64 × 36 cells. {{binsDrawn}} cells drawn at four log-spaced levels: at least 1, 4, 16 and 64 records per cell.</desc>
+<rect width="1920" height="1080" fill="var(--stage)"></rect>
+<rect x="448" y="156" width="1024" height="768" fill="var(--screen)"></rect>
+<g shape-rendering="crispEdges"><sc-for list="{{bins}}" as="c" hint-placeholder-count="1"><rect x="{{c.x}}" y="{{c.y}}" width="30" height="30" fill="{{c.fill}}" fill-opacity="0.6"></rect></sc-for></g>
+<rect x="448" y="156" width="1024" height="768" fill="none" stroke="var(--on-stage)" stroke-width="14" stroke-dasharray="82 55"></rect>
 </svg>
-<div class="t11" style="display:flex;flex-direction:column;gap:5px;line-height:1.4">
-<span style="font-weight:600">All trials overlaid</span>
+<div class="t11" style="display:flex;flex-direction:column;gap:4px;min-width:0">
+<div class="row" style="gap:6px"><span style="font-weight:600;white-space:nowrap">All trials overlaid</span><span style="color:var(--ink-3);border:1px dashed var(--hairline);border-radius:3px;padding:0 5px;white-space:nowrap">illustrative</span></div>
 <span style="color:var(--ink-2)">11,520 records, screen coordinates. A flipped or shifted participant shows up as mass away from the image frame.</span>
-<button class="btn" style="height:22px;align-self:flex-start">Mark trial as wrong orientation…</button>
 </div>
 </div>
+<div class="row t11" style="gap:6px">
+<sc-for list="{{binKey}}" as="k" hint-placeholder-count="4"><span class="row" style="gap:2px"><svg width="12" height="10" viewBox="0 0 12 10" aria-hidden="true" style="flex:none"><rect width="12" height="10" fill="var(--stage)"></rect><rect width="12" height="10" fill="{{k.fill}}" fill-opacity="0.6"></rect></svg><span style="color:var(--ink-2)">{{k.label}}</span></span></sc-for>
+<div style="flex:1"></div>
+<button class="btn" style="height:22px" aria-label="Mark a trial as wrong orientation…">Mark wrong orientation…</button>
 </div>
-<div class="sect" style="gap:4px">
-<div class="row" style="justify-content:space-between"><span style="font-weight:600">Outside image frame</span><button class="cnt">543 of 11,520 records · 409 trials</button></div>
-<span class="t11" style="color:var(--ink-2);line-height:1.45">Reported, not dropped from the data. Excluded from maps because the analysis window is the image frame; each trial lists its own count.</span>
+<span class="t11" style="color:var(--ink-2);white-space:nowrap">Records per cell, log steps · 64 × 36 screen cells</span>
+</div>
+</div>
+<div class="sect" style="gap:3px;padding:8px 14px">
+<div class="row" style="justify-content:space-between"><span style="font-weight:600">Outside image frame</span><button class="cnt" style="min-width:0" aria-label="543 of 11,520 records outside the image frame, in 409 trials">543 of 11,520 records · 409 trials</button></div>
+<div class="row" style="justify-content:space-between"><span style="font-weight:600">Outside screen</span><span class="na" aria-label="Outside-screen records: counted when r3 is admitted">counted when r3 is admitted</span></div>
+<span class="t11" style="color:var(--ink-2)">Window: kept and reported, not mapped. Screen: excluded record, reported under its own cause; non-finite coordinates still quarantine.</span>
 </div>
 </div>
 </section>
@@ -273,6 +346,55 @@ body{margin:0}
 </div>
 </x-dc>
 <script type="text/x-dc" data-dc-script data-props='{"dark":{"editor":"boolean","default":false},"$preview":{"width":1440,"height":900}}'>
+// "All trials overlaid" is NOT a trial map: it mirrors the desktop's placement density
+// (studio/viz GeometryScene.density over studio/app GeometryPictures DensityPicture.of):
+//  - eyes4s bins every placed record on a 64-column screen grid (RealPlacement.Columns = 64,
+//    rows = round(64 x 1080 / 1920) = 36), counts per cell, no smoothing, no duration weight;
+//  - PROPOSED (v3, SPEC-AMENDMENTS 15): every non-zero cell is drawn (DensityPicture.Floor 5% -> one
+//    record); v3b extends 15 with LOG-SPACED levels by count: >=1, >=4, >=16, >=64 records -> ramp-0..3
+//    (was linear share of the fullest cell, which put 1-19 records in one step),
+//    each rect at alpha 0.6. The desktop today still drops cells under 5% of the fullest;
+//  - no isolines. Stage, then the image frame in --screen, then cells, then the dashed outline.
+// The records binned here are an illustrative stand-in (the fixture has no positions for all
+// 11,520 records): 10,977 inside the frame and 543 outside it, as the fixture counts them.
+function rng(seed) { return () => { seed |= 0; seed = seed + 0x6D2B79F5 | 0; let t = Math.imul(seed ^ seed >>> 15, 1 | seed); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
+function binnedLevels(points, screenW, screenH, columns) {
+  const rows = Math.max(1, Math.round(columns * screenH / screenW)), cw = screenW / columns, ch = screenH / rows;
+  const counts = new Array(columns * rows).fill(0);
+  for (const p of points) {
+    if (p.x < 0 || p.y < 0 || p.x >= screenW || p.y >= screenH) continue;
+    counts[Math.floor(p.y / ch) * columns + Math.floor(p.x / cw)] += 1;
+  }
+  const max = Math.max(...counts), ramp = ['var(--ramp-0)', 'var(--ramp-1)', 'var(--ramp-2)', 'var(--ramp-3)'];
+  const cells = [];
+  counts.forEach((c, i) => {
+    if (c <= 0) return;
+    // log-spaced count levels (extends SPEC-AMENDMENTS 15): >=1, >=4, >=16, >=64 records per cell,
+    // so a dense off-frame cluster no longer shares the lowest step with scattered single records
+    const level = c >= 64 ? 4 : c >= 16 ? 3 : c >= 4 ? 2 : 1;
+    cells.push({ x: (i % columns) * cw, y: Math.floor(i / columns) * ch, fill: ramp[level - 1] });
+  });
+  return { cells, rows };
+}
+function standInRecords() {
+  const r = rng(20261010), out = [];
+  const gauss = () => Math.sqrt(-2 * Math.log(1 - r())) * Math.cos(2 * Math.PI * r());
+  const inFrame = p => p.x >= 448 && p.x < 1472 && p.y >= 156 && p.y < 924;
+  const blobs = [[960, 540, 150, 115, 0.55], [760, 430, 90, 70, 0.2], [1180, 640, 100, 80, 0.25]];
+  while (out.length < 10977) {
+    let u = r(), b = blobs[0];
+    for (const c of blobs) { if (u < c[4]) { b = c; break; } u -= c[4]; }
+    const p = { x: b[0] + gauss() * b[2], y: b[1] + gauss() * b[3] };
+    if (inFrame(p)) out.push(p);
+  }
+  let outside = 0;
+  while (outside < 543) {
+    const p = { x: 448 + (r() * 1.3 - 0.15) * 1024, y: 156 + (r() * 1.3 - 0.15) * 768 };
+    if (!inFrame(p)) { out.push(p); outside += 1; }
+  }
+  return out;
+}
+
 class Component extends DCLogic {
   renderVals() {
     const cols = [
@@ -287,16 +409,32 @@ class Component extends DCLogic {
       ['FixStart','0, 214, 498, 861','Onset','ms'],
       ['FixDur','198, 262, 341, 175','Duration','ms'],
       ['NSamples','99, 131, 170, 87','Sample count','samples']
-    ].map((c, i) => ({ id: 'm' + i, col: c[0], sample: c[1], role: c[2], units: c[3], uc: c[3] === '—' ? 'var(--ink-3)' : 'var(--ink)' }));
+    ].map((c, i) => ({ id: 'm' + i, cls: i === 8 ? 'maprow sel kf' : 'maprow', selected: i === 8 ? 'true' : 'false', cursor: i === 8 ? 'true' : null, col: c[0], sample: c[1], role: c[2], units: c[3], aria: 'Role for ' + c[0] + ': ' + c[2], uc: c[3] === '—' ? 'var(--ink-3)' : 'var(--ink)' }));
     const causes = [['overlap',6],['no-fixations',5],['duplicate-ordinals',4],['rejected-records',2]]
       .map(([c, n]) => ({ c, n, aria: n + ' trials quarantined for ' + c }));
-    const thumbs = [
-      { label: 'P03 · enc_02 · image', fill: '#8FA3AB', missing: false, cross: false, aria: 'P03 enc_02, image trial, gaze inside frame', x1:700,y1:420,x2:980,y2:500,x3:1200,y3:380,x4:860,y4:700 },
-      { label: 'P17 · ret_07 · blank + cross', fill: '#9A9A96', missing: false, cross: true, aria: 'P17 ret_07, blank with fixation cross', x1:960,y1:540,x2:778,y2:596,x3:1148,y3:456,x4:1088,y4:716 },
-      { label: 'P01 · enc_08 · missing asset', fill: '#3A3A3A', missing: true, cross: false, aria: 'P01 enc_08, forest-044.png missing, drawn hatched', x1:760,y1:360,x2:1010,y2:560,x3:1260,y3:640,x4:620,y4:480 },
-      { label: 'P05 · ret_04 · 11 of 11 outside', fill: '#9A9A96', missing: false, cross: true, aria: 'P05 ret_04, all fixations outside the image frame', x1:260,y1:120,x2:1620,y2:980,x3:1700,y3:140,x4:240,y4:960 }
+    // GeometryScene.thumbnail: stage, the image frame as a flat --screen field, the records as
+    // neutral marks with the stage halo, the dashed on-stage outline; no stimulus art, no cross.
+    // Owner D7: every thumbnail, a missing-asset trial included, is GeometryScene's grey placement frame + marks
+    // (GeometryScene.scala:63); FrameArt thumbnails would be a separate feature. A missing-asset trial (fixture
+    // missing_images: P01 enc_08 = forest-044) is named only by its caption, "Missing asset · forest-044.png"
+    // (TrialText.MissingLabel wording, TrialText.scala:83) in --warn-text; its count stays in the accessible name.
+    // Caption = GeometryText ThumbInside / ThumbOutside ("{trial} · n records inside", "{trial} · n of m outside"),
+    // drawn as two lines (trial, then count) so it never wraps mid-phrase (proposed: break after the trial label).
+    // P17 ret_07 = the fixture's 12 fixations (image px + (448, 156)); the other trials' positions are stand-ins.
+    const ret07 = [[512,384],[330,440],[290,470],[520,370],[590,400],[690,310],[730,320],[640,560],[600,540],[420,610],[470,500],[-46,520]];
+    const toScreen = pts => pts.map(([x, y]) => ({ x: x + 448, y: y + 156 }));
+    const inside = (seed) => { const r = rng(seed), o = []; while (o.length < 12) o.push({ x: Math.round(560 + r() * 800), y: Math.round(250 + r() * 580) }); return o; };
+    const p05 = [[260,120],[1620,980],[1700,140],[240,960],[330,520],[1600,560],[980,80],[900,1000],[1560,300],[380,760],[1250,1010]].map(([x, y]) => ({ x, y }));
+    const thumbs0 = [
+      { id: 'P03 · enc_02', count: '12 records inside', aria: 'P03 · enc_02: 12 records, 0 outside the image frame, 0 outside the screen', marks: inside(302) },
+      { id: 'P17 · ret_07', count: '1 of 12 outside', aria: 'P17 · ret_07: 12 records, 1 outside the image frame, 0 outside the screen', marks: toScreen(ret07) },
+      { id: 'P01 · enc_08', count: 'Missing asset · forest-044.png', cc: 'var(--warn-text)', aria: 'P01 · enc_08: missing asset, forest-044.png not found; placement frame drawn grey as on every thumbnail; 12 records, 0 outside the image frame, 0 outside the screen', marks: inside(108) },
+      { id: 'P05 · ret_04', count: '11 of 11 outside', aria: 'P05 · ret_04: 11 records, 11 outside the image frame, 0 outside the screen', marks: p05 }
     ];
-    return { rootClass: this.props.dark ? 'es dark' : 'es', cols, causes, thumbs };
+    const thumbs = thumbs0.map((t, i) => Object.assign({ cc: 'var(--ink-2)' }, t, { domId: 'th-' + i, cursor: i === 0 ? 'true' : null }));
+    const binned = binnedLevels(standInRecords(), 1920, 1080, 64);
+    const binKey = ['≥1', '≥4', '≥16', '≥64'].map((label, i) => ({ label, fill: 'var(--ramp-' + i + ')' }));
+    return { rootClass: this.props.dark ? 'es dark' : 'es', cols, causes, thumbs, bins: binned.cells, binsDrawn: String(binned.cells.length), binKey };
   }
 }
 </script>

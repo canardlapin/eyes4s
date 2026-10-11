@@ -1,6 +1,7 @@
 """Deterministic mock study for the Eyes Studio design boards. Every number on every
 board must come from fixture.json (or FIXTURE.md, which summarises it)."""
-import json, random, statistics as st
+import csv, json, random, statistics as st, sys
+from pathlib import Path
 
 rng = random.Random(20260925)
 CATS = [
@@ -276,42 +277,79 @@ print("\n".join(lines[:16]))
 print("focus match trial:", foc["match"])
 
 # ---- Round 3 additions: every remaining board number is generated here ----
-rng3 = random.Random(3)
-inv = []  # (participant, trial) for every inventory trial that has fixation records
-for P in study["participants"]:
-    for ph in ("enc", "ret"):
-        for k in range(1, 21):
-            t = f"{ph}_{k:02d}"
-            if (P["id"], t) not in absent:
-                inv.append((P["id"], t))
-# 954 trials with records share 11,520 fixation records
-counts = {key: 12 for key in inv}
-extra = 11520 - 12 * len(inv)
-keys = sorted(inv)
-for i in range(abs(extra)):
-    counts[keys[(i * 37) % len(keys)]] += 1 if extra > 0 else -1
-assert sum(counts.values()) == 11520
-counts[("P17", "ret_07")] = 12
-counts[("P17", "enc_03")] = 13
-outside = {}
-for key in keys:
-    outside[key] = sum(rng3.random() < 0.045 for _ in range(counts[key]))
+# Record-level facts (records per trial, which records lie outside the analysis
+# window, durations, the focus fixations) come from the executable golden
+# fixture, which is authoritative for them (owner decision D2, 2026-10-11).
+# The path is resolved from this file, never from the working directory.
+GOLDEN = Path(__file__).resolve().parents[3] / "fixtures" / "studio-golden"
+SCREEN_BOX = (0, 0, 1920, 1080)  # screen frame, px, y down, half-open
+WINDOW_BOX = (448, 156, 448 + 1024, 156 + 768)  # image frame on screen = analysis window
+
+
+def in_box(box, x, y):
+    return box[0] <= x < box[2] and box[1] <= y < box[3]
+
+
+if not (GOLDEN / "fixations.csv").is_file():
+    sys.exit(f"make_fixture.py: {GOLDEN / 'fixations.csv'} is missing; it is the record-level source")
+golden_rows = list(csv.DictReader(open(GOLDEN / "fixations.csv", newline="")))
+golden_scores = json.load(open(GOLDEN / "SCORES.json"))
+records = {}  # (participant, trial) -> [(ordinal, x, y, onset_ms, duration_ms, sample_count)]
+for r in golden_rows:
+    records.setdefault((r["participant"], r["trial"]), []).append(
+        (int(r["ordinal"]), float(r["x"]), float(r["y"]), int(r["onset_ms"]),
+         int(r["duration_ms"]), int(r["sample_count"]))
+    )
+assert set(records) == {
+    (P["id"], f"{ph}_{k:02d}") for P in study["participants"] for ph in ("enc", "ret")
+    for k in range(1, 21)
+} - absent, "golden trials with records != inventory minus absent"
+counts = {key: len(v) for key, v in records.items()}
+outside = {key: sum(not in_box(WINDOW_BOX, x, y) for (_, x, y, *_r) in v) for key, v in records.items()}
+assert sum(counts.values()) == 11520 == S["fixation_records"]
+quarantined_records = sum(counts[key] for key in quarantine)
+admitted_keys = [key for key in counts if key not in quarantine]
+assert quarantined_records == 209, quarantined_records
+assert sum(counts[key] for key in admitted_keys) == 11311
+assert sum(outside[key] for key in quarantine) == 0, "outside-window records in quarantined trials"
+assert sum(outside[key] for key in admitted_keys) == sum(outside.values()) == 543
+assert sum(1 for key in admitted_keys if outside[key]) == 409
 for key in failed_q:
-    counts[key] = 11
-    outside[key] = 11
-outside[("P17", "ret_07")] = 1
-outside[("P17", "enc_03")] = 1
-# rebalance the totals after the pinned values
-diff = 11520 - sum(counts.values())
-counts[keys[0]] += diff
-assert sum(counts.values()) == 11520
+    assert counts[key] == outside[key] == 11, key
+dur = lambda key, keep: sum(d for (_, x, y, _o, d, _n) in records[key] if keep(x, y))
+outside_ms = sum(dur(k, lambda x, y: not in_box(WINDOW_BOX, x, y)) for k in admitted_keys)
+admitted_ms = sum(dur(k, lambda x, y: True) for k in admitted_keys)
+assert (outside_ms, admitted_ms) == (159142, 3282108), (outside_ms, admitted_ms)
+outside_screen = sum(not in_box(SCREEN_BOX, r[1], r[2]) for v in records.values() for r in v)
+assert outside_screen == golden_scores["counts"]["recordsOutsideScreen"] == 0
 S["outside_window_records"] = sum(outside.values())
 S["outside_window_trials"] = sum(1 for v in outside.values() if v > 0)
+S["records_in_quarantined_trials"] = quarantined_records
+S["records_in_admitted_trials"] = sum(counts[key] for key in admitted_keys)
+S["outside_window_records_in_quarantined_trials"] = sum(outside[key] for key in quarantine)
+S["outside_window_duration_ms"] = outside_ms
+S["admitted_fixation_duration_ms"] = admitted_ms
+S["outside_window_duration_share"] = round(outside_ms / admitted_ms, 6)
+S["outside_screen_records"] = golden_scores["counts"]["recordsOutsideScreen"]
+
+
+def focus_outside_text(key):
+    share = dur(key, lambda x, y: not in_box(WINDOW_BOX, x, y)) / dur(key, lambda x, y: True)
+    return f"{outside[key]} of {counts[key]} fixations · {round(100 * share)}% of duration"
+
+
 S["focus_outside"] = {"ret_07": "1 of 12 fixations · 4% of duration", "enc_03": "1 of 13 fixations · 3% of duration"}
+assert S["focus_outside"] == {t: focus_outside_text(("P17", t)) for t in ("ret_07", "enc_03")}
 S["focus_fixation"] = {"trial": "P17 enc_03", "fixation": 6, "record": 7214,
     "image_px": [700, 300], "screen_px": [1148, 456],
     "deg_from_centre_y_up": [round((700 - 512) / 35, 1), round((384 - 300) / 35, 1)],
     "onset_ms": 2160, "duration_ms": 412}
+_ff = S["focus_fixation"]
+assert golden_rows[_ff["record"] - 1]["participant"] == "P17"
+assert records[("P17", "enc_03")][_ff["fixation"] - 1] == (
+    _ff["fixation"], *map(float, _ff["screen_px"]), _ff["onset_ms"], _ff["duration_ms"], _ff["duration_ms"] // 2
+)
+assert [a - b for a, b in zip(_ff["screen_px"], WINDOW_BOX)] == _ff["image_px"]
 # Missing images: two pool items; count the encoding trials that display them
 seen = {}
 for P in study["participants"]:
@@ -350,6 +388,63 @@ def gscale(g):
     return out
 S["grand_D_by_scale_Remembered"] = gscale("Remembered")
 S["grand_D_by_scale_Forgotten"] = gscale("Forgotten")
+
+# Paired descriptive (Results "Δ Remembered − Forgotten"), σ 2°, status ok: per participant,
+# mean Remembered D − mean Forgotten D over the (2-dp) query D values, computed before
+# rounding participant means; then the plain mean over participants with both groups.
+diffs = {}
+for P in study["participants"]:
+    ok = [q for q in P["queries"] if q["status"] == "ok"]
+    g = {r: [q["D"][2] for q in ok if q["response"] == r] for r in ("Remembered", "Forgotten")}
+    if g["Remembered"] and g["Forgotten"]:
+        diffs[P["id"]] = st.mean(g["Remembered"]) - st.mean(g["Forgotten"])
+lo, hi = min(diffs, key=diffs.get), max(diffs, key=diffs.get)
+S["paired_D_diff"] = {
+    "scale": "2°",
+    "status": "ok",
+    "rounding": "computed before rounding participant means",
+    "mean": round(st.mean(diffs.values()), 6),
+    "min": {"participant": lo, "value": round(diffs[lo], 6)},
+    "max": {"participant": hi, "value": round(diffs[hi], 6)},
+    "positive_k": sum(v > 0 for v in diffs.values()),
+    "paired_n": len(diffs),
+    "missing_pairs": len(parts) - len(diffs),
+    "by_participant": {p: round(v, 6) for p, v in sorted(diffs.items())},
+}
+assert S["paired_D_diff"]["mean"] == 0.155667 and S["paired_D_diff"]["paired_n"] == S["n_paired"]
+assert (lo, round(diffs[lo], 6), hi, round(diffs[hi], 4)) == ("P21", 0.05, "P15", 0.2613)
+
+# Focus-query control scores at every scale. Only the σ 2° list is drawn above; the other
+# scales are mock values derived from it by rule (rank kept, spread scaled by (1 − B)/(1 − B₂))
+# so that each list's mean is the focus query's B at that scale. Illustrative, like all scores here.
+ctrl_items = [c["item"] for c in foc["control_scores_2deg"]]
+ctrl_trials = [c["trial"] for c in foc["control_scores_2deg"]]
+c2 = [c["cos"] for c in foc["control_scores_2deg"]]
+m2 = st.mean(c2)
+foc["control_scores_by_scale"] = {}
+for i, sc in enumerate(SCALES):
+    k = (1 - foc["B"][i]) / (1 - foc["B"][2])
+    vals = [round(foc["B"][i] + (c - m2) * k, 2) for c in c2]
+    assert round(st.mean(vals), 2) == foc["B"][i] and all(0 <= v <= 1 for v in vals), sc
+    foc["control_scores_by_scale"][sc] = [
+        {"item": it, "trial": t, "cos": v} for it, t, v in zip(ctrl_items, ctrl_trials, vals)
+    ]
+assert foc["control_scores_by_scale"]["2°"] == foc["control_scores_2deg"]
+
+# Focus fixation lists, copied from the golden fixations.csv (screen px, y down): the query
+# P17 ret_07, its matched reference P17 enc_03 and its 19 control encoding trials.
+assert sorted(ctrl_trials) == sorted(
+    t for (p, t) in counts if p == "P17" and t.startswith("enc") and t != "enc_03"
+)
+study["focus_fixations"] = {
+    "source": "fixtures/studio-golden/fixations.csv",
+    "frame": "screen px, x right, y down; image px = screen px − (448, 156)",
+    "columns": ["ordinal", "x", "y", "onset_ms", "duration_ms", "sample_count", "in_window"],
+    "trials": {
+        f"P17 {t}": [list(r) + [in_box(WINDOW_BOX, r[1], r[2])] for r in records[("P17", t)]]
+        for t in ["ret_07", "enc_03"] + ctrl_trials
+    },
+}
 json.dump(study, open("fixture.json", "w"), indent=1)
 with open("FIXTURE.md", "a") as f:
     f.write(f"- Grand D by scale (0.5/1/2/4°) by group: Remembered {S['grand_D_by_scale_Remembered']}, Forgotten {S['grand_D_by_scale_Forgotten']}.\n")
@@ -366,6 +461,12 @@ with open("FIXTURE.md", "a") as f:
     f.write(f"- Per-group n range across participants (Remembered/Forgotten): {S['paired_group_n_range']}.\n")
     f.write("- enc_03 (beach-042) is used by ret_07 as the matched reference and by the 18 other admitted P17 queries as a control.\n")
     f.write("- Matched cardinality: every eligible query has exactly 1 matched reference (0 duplicates, checked). The 9 no-match queries are reported under the persisted policy 'Queries without a matched reference: report as no match'.\n")
+    f.write(f"- Records by admission (golden fixations.csv): {S['records_in_admitted_trials']:,} in admitted trials, {S['records_in_quarantined_trials']} in the 17 quarantined trials; outside-window records in quarantined trials: {S['outside_window_records_in_quarantined_trials']}.\n")
+    f.write(f"- Methods: of {S['records_in_admitted_trials']:,} fixation records in admitted trials, {S['outside_window_records']} lay outside the analysis window ({S['outside_window_duration_ms']:,} / {S['admitted_fixation_duration_ms']:,} ms = {100 * S['outside_window_duration_share']:.2f}% of those trials' fixation duration). Records outside the screen: {S['outside_screen_records']} (SCORES.json counts.recordsOutsideScreen).\n")
+    pd = S["paired_D_diff"]
+    f.write(f"- Paired Δ Remembered − Forgotten (σ 2°, status ok, {pd['rounding']}): mean {pd['mean']}; min {pd['min']['participant']} {pd['min']['value']}, max {pd['max']['participant']} {pd['max']['value']}; higher in {pd['positive_k']} of {pd['paired_n']} paired participants; missing pairs {pd['missing_pairs']}.\n")
+    f.write("- Focus control scores by scale (fixture.json control_scores_by_scale; 2° drawn, other scales derived by rule, mean = B): " + "; ".join(f"{sc} max {v[0]['cos']} min {v[-1]['cos']}" for sc, v in foc["control_scores_by_scale"].items()) + ".\n")
+    f.write(f"- Focus fixation lists (fixture.json focus_fixations, from the golden fixations.csv): {len(study['focus_fixations']['trials'])} trials, P17 ret_07, enc_03 and its 19 controls.\n")
     f.write("\n## Story moments (boards are snapshots in one timeline)\n")
     f.write("- t1 Data · verify: dataset r3 draft (re-import of r2). Run 5 (rev 3, data r2) exists and becomes stale when r3 is admitted. No run on r3 yet.\n")
     f.write("- t2 Explore / Analysis / Compare·query / Figures: data r3 admitted; rev 4 · run 7 current; draft rev 5 (adds σ 8°) is ready and not run. No jobs.\n")
