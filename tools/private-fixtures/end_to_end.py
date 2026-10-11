@@ -265,7 +265,7 @@ def write_ui_inputs(p, output):
                         writer.writerow(key + [ordinal, x, y, onset, duration, count])
 
 
-def ui(output):
+def ui(output, suite="eyes4s.studio.desktop.journey.PrivateDensityFxSuite"):
     # Build has no data path or private environment; test framework runs separately.
     env = dict(os.environ, GITHUB_ACTIONS="true")
     with (output / "studio-build.log").open("x") as log:
@@ -280,7 +280,7 @@ def ui(output):
              f"-Deyes4s.studio.snapshots={output / 'snapshots'}"]
     with (output / "ui.log").open("x") as log:
         subprocess.run(["java", "-Xmx3g", "-XX:ActiveProcessorCount=4", *flags, "-cp", classpath,
-                        "org.junit.runner.JUnitCore", "eyes4s.studio.desktop.journey.PrivateDensityFxSuite"],
+                        "org.junit.runner.JUnitCore", suite],
                        cwd=output, env=dict(os.environ, EYES4S_PRIVATE_RUN=str(output)),
                        stdout=log, stderr=subprocess.STDOUT, check=True)
     result = json.loads((output / "ui-result.json").read_text())

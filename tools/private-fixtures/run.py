@@ -60,8 +60,11 @@ def implementation():
     """Bind local evidence to the checkout and the unpublished harness sources too."""
     files = sorted(Path(__file__).parent.glob("*.py")) + sorted(Path(__file__).parent.glob("*.R"))
     files += [ROOT / "tools/study-cli" / name for name in
-              ("PrivateFixationCli.scala", "SharedDensityParityCli.scala", "EndToEndDensityCli.scala", "PrivateMultiMatchCli.scala")]
+              ("PrivateFixationCli.scala", "SharedDensityParityCli.scala", "EndToEndDensityCli.scala", "PrivateMultiMatchCli.scala", "PlannedDensityCheckCli.scala")]
     files += sorted((ROOT / "studio/desktop/src/test/scala/eyes4s/studio/desktop/journey").glob("PrivateDensity*.scala"))
+    files += sorted((ROOT / "studio/core/src/main/scala/eyes4s/studio/core/scanpath").glob("*.scala"))
+    files += sorted((ROOT / "studio/desktop/src/main/scala/eyes4s/studio/desktop/scanpath").glob("*.scala"))
+    files += [ROOT / "studio/desktop/src/test/scala/eyes4s/studio/desktop/journey/ScanpathWorkbenchFxSuite.scala"]
     return {
         "commit": subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=ROOT, text=True).strip(),
         "tree": subprocess.check_output(["git", "rev-parse", "HEAD^{tree}"], cwd=ROOT, text=True).strip(),
