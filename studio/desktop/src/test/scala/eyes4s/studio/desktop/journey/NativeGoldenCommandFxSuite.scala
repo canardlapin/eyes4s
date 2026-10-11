@@ -76,7 +76,8 @@ class NativeGoldenCommandFxSuite extends GoldenWindow:
     while !runOnFx(condition) do
       if System.nanoTime() > deadline then fail(s"Timed out: $what")
       Thread.sleep(25)
-      fx.awaitLayout()
+    // State polling lets normal pulses run; layout is needed once before UI inspection.
+    fx.awaitLayout()
 
   private def nodes(root: Node): Vector[Node] = root match
     case parent: javafx.scene.Parent =>

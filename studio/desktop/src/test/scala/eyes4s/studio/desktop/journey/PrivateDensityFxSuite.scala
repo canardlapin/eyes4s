@@ -66,7 +66,8 @@ class PrivateDensityFxSuite extends ShellFxSuite:
     while !runOnFx(condition) do
       if System.nanoTime() > deadline then fail(s"Timed out: $what")
       Thread.sleep(25)
-      fx.awaitLayout()
+    // State polling lets normal pulses run; layout is needed once before UI inspection.
+    fx.awaitLayout()
 
   private def safe(path: Path): Path =
     val p              = path.toRealPath()

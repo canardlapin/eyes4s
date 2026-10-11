@@ -51,6 +51,7 @@ import eyes4s.studio.desktop.figures.{FigureInputs, FiguresHost}
 import eyes4s.studio.desktop.dock.{DockGesture, DockLayouts, PerspectiveHost}
 import eyes4s.studio.desktop.runtime.{
   DesktopEffects,
+  ExecutionEventDelivery,
   PlatformDialogs,
   ProjectPort,
   StudioRuntime,
@@ -414,15 +415,16 @@ object StudioWindow:
     // Late-bound: the runtime, the host and the effects refer to each other.
     var runtime: Option[StudioRuntime] = None
     def dispatch(i: Intent): Unit      = runtime.foreach(_.dispatch(i))
-    def later(i: Intent): Unit         = Platform.runLater(() => dispatch(i))
 
+    val execution =
+      ExecutionEventDelivery(Platform.runLater, e => dispatch(Intent.Execution(e)))
     val session = nativeSources.fold(
-      StudioSession.start(moment, e => later(Intent.Execution(e)))
+      StudioSession.start(moment, execution.submit)
     )(sources =>
       StudioSession.start(
         initial.document,
         sources,
-        e => later(Intent.Execution(e)),
+        execution.submit,
         artifactSink = project.map(_.nativeArtifactSink),
         artifactSource = project.map(_.nativeArtifactSource)
       )
