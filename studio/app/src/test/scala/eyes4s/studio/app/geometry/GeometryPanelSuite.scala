@@ -459,7 +459,7 @@ class GeometryPanelSuite extends munit.FunSuite:
         "P01 · enc_01 · 2 records inside",
         "P05 · ret_04 · 2 of 2 outside",
         "P09 · enc_01 · 1 of 1 off screen",
-        "P17 · enc_03 · 1 records inside"
+        "P17 · enc_03 · 1 record inside"
       )
     )
     assertEquals(

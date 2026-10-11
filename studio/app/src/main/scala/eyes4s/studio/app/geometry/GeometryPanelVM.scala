@@ -249,6 +249,7 @@ object GeometryPanelVM:
               t(ThumbOffScreen, name, p.outsideScreen.toString, p.records.toString)
             else if p.outsideWindow > 0 then
               t(ThumbOutside, name, p.outsideWindow.toString, p.records.toString)
+            else if p.records == 1 then t(ThumbInsideOne, name)
             else t(ThumbInside, name, p.records.toString)
           val marked     = panel.marked.contains(p.trial)
           val accessible = t(

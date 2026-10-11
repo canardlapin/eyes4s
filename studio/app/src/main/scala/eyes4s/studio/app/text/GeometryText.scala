@@ -37,8 +37,9 @@ enum GeometryTextId derives CanEqual:
   case ExampleNoDegrees
 
   // --- Placement check ---------------------------------------------------------------------
-  case CheckPlacement, CheckPlacementNote, ThumbInside, ThumbOutside, ThumbOffScreen
-  case ThumbAccessible, ThumbMarked, AllTrials, AllTrialsCaption, AllTrialsCorrected
+  case CheckPlacement, CheckPlacementNote, ThumbInside, ThumbInsideOne, ThumbOutside
+  case ThumbOffScreen, ThumbAccessible, ThumbMarked, AllTrials, AllTrialsCaption
+  case AllTrialsCorrected
   case DensityAccessible, PositionsWaiting, PositionsStale, PositionsFailed, PositionsUnplaced
 
   // --- Corrections ---------------------------------------------------------------------------
@@ -103,6 +104,7 @@ object GeometryText:
     case CheckPlacement     => "Check placement"
     case CheckPlacementNote => "screen outline · image frame"
     case ThumbInside        => "{0} · {1} records inside"
+    case ThumbInsideOne     => "{0} · 1 record inside"
     case ThumbOutside       => "{0} · {1} of {2} outside"
     case ThumbOffScreen     => "{0} · {1} of {2} off screen"
     case ThumbAccessible    =>
