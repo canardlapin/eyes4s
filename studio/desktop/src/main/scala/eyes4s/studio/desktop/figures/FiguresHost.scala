@@ -57,7 +57,6 @@ import eyes4s.studio.app.plot.ParticipantLines
 import eyes4s.studio.app.tokens.FontFace
 import javafx.beans.property.ReadOnlyObjectWrapper
 import javafx.scene.control.{Button, Label, MenuButton, MenuItem, ScrollPane, TextArea}
-import javafx.scene.effect.ColorAdjust
 import javafx.scene.input.{KeyCode, KeyEvent}
 import javafx.scene.text.Font
 import javafx.stage.{DirectoryChooser, FileChooser, Window}
@@ -66,7 +65,7 @@ import java.nio.file.Files
 import scala.util.control.NonFatal
 
 import scala.jdk.CollectionConverters.*
-import javafx.scene.layout.{FlowPane, HBox, Priority, Region, VBox}
+import javafx.scene.layout.{FlowPane, HBox, Priority, Region, StackPane, VBox}
 
 /** Where the Figures perspective reads what its panels show. `done` may be
   * called on any thread.
@@ -393,8 +392,6 @@ final class FiguresHost(
 
   /** "Greyscale check": the paper shown without colour, as it prints in greyscale. */
   private val greyscale = Button("Greyscale check")
-  private val grey      = ColorAdjust()
-  grey.setSaturation(-1.0)
 
   private val zoomOut = Button("−")
   private val zoomIn  = Button("+")
@@ -426,13 +423,18 @@ final class FiguresHost(
   val paper: FlowPane = FlowPane()
   paper.getStyleClass.add("figures-paper")
 
+  /** The greyscale check, drawn over the paper while it is on. */
+  val greyscaleProof: GreyscaleProof = GreyscaleProof(paper)
+
   /** The page pane: the toolbar, then the paper. */
   val pageNode: VBox =
     val bar =
       HBox(8.0, title, width, widths, spacer(), greyscale, zoomOut, zoom, zoomIn, addPanel)
     bar.setAlignment(Pos.CENTER_LEFT)
     bar.getStyleClass.add("figures-toolbar")
-    val scroll = ScrollPane(paper)
+    val sheetOfPaper = StackPane(paper, greyscaleProof.node)
+    sheetOfPaper.setAlignment(Pos.TOP_LEFT)
+    val scroll = ScrollPane(sheetOfPaper)
     scroll.setFitToWidth(false)
     VBox.setVgrow(scroll, Priority.ALWAYS)
     val edits = HBox(8.0, movePanelEarlier, movePanelLater, removePanel)
@@ -720,6 +722,7 @@ final class FiguresHost(
     }*): Unit
     v.page match
       case None =>
+        greyscaleProof.show(false)
         title.setText("")
         width.setText("")
         zoom.setText("")
@@ -738,7 +741,7 @@ final class FiguresHost(
         if p.greyscale then greyscale.getStyleClass.add("figures-chosen"): Unit
         else greyscale.getStyleClass.remove("figures-chosen"): Unit
         // A check of the paper only: the export keeps its colours.
-        paper.setEffect(if p.greyscale then grey else null)
+        greyscaleProof.show(p.greyscale)
         title.setText(p.title)
         width.setText(p.widthLabel)
         zoom.setText(p.zoom)
@@ -1062,6 +1065,7 @@ final class FiguresHost(
   def dispose(): Unit =
     if !disposed then
       disposed = true
+      greyscaleProof.dispose()
       retire(Set.empty)
       table.dispose()
 

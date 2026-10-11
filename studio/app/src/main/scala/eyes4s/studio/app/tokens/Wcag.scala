@@ -88,8 +88,7 @@ object Wcag:
     def mix(f: Double, b: Double): Double = f * a + b * (1.0 - a)
     (mix(fr, br), mix(fgG, bgG), mix(fb, bb))
 
-  private def linear(c: Double): Double =
-    if c <= 0.04045 then c / 12.92 else math.pow((c + 0.055) / 1.055, 2.4)
+  private def linear(c: Double): Double = Greyscale.toLinear(c)
 
   private def luminance(rgb: Rgb): Double =
     val (r, g, b) = rgb

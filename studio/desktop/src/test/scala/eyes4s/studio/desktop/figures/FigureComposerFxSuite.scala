@@ -41,7 +41,11 @@ import eyes4s.studio.desktop.StudioWindow
 import eyes4s.studio.desktop.harness.FxStage
 import eyes4s.studio.desktop.plot.PlotTwinStatus
 import eyes4s.studio.desktop.shell.ShellFxSuite
-import javafx.scene.{AccessibleRole, Node}
+import eyes4s.studio.app.tokens.{Greyscale, PaletteToken, Tokens}
+import javafx.geometry.Rectangle2D
+import javafx.scene.image.PixelFormat
+import javafx.scene.transform.Transform
+import javafx.scene.{AccessibleRole, Node, SnapshotParameters}
 import javafx.scene.control.{Button, Label}
 import javafx.scene.input.KeyCode
 import javafx.scene.layout.VBox
@@ -162,6 +166,72 @@ class FigureComposerFxSuite extends ShellFxSuite:
       b.contains("Displayed: blank + fixation cross. The remembered image was not shown."),
       b
     )
+  }
+
+  fxStage.test("the greyscale check shows the paper in Rec. 709 greys, live under it") { fx =>
+    val w = boot(fx, StoryModels.t2Figures, StoryMoment.T2)
+    loaded(fx, w)
+    val proof                                             = w.figures.greyscaleProof
+    def argb(image: javafx.scene.image.Image): Array[Int] =
+      val (iw, ih) = (image.getWidth.toInt, image.getHeight.toInt)
+      val out      = new Array[Int](iw * ih)
+      image.getPixelReader.getPixels(0, 0, iw, ih, PixelFormat.getIntArgbInstance, out, 0, iw)
+      out
+    def colourPaper(): Array[Int] = runOnFx {
+      val paper  = w.figures.paper
+      val scale  = paper.getScene.getWindow.getOutputScaleX
+      val params = SnapshotParameters()
+      params.setTransform(Transform.scale(scale, scale))
+      params.setViewport(
+        Rectangle2D(
+          0,
+          0,
+          math.ceil(paper.getWidth * scale),
+          math.ceil(paper.getHeight * scale)
+        )
+      )
+      params.setFill(javafx.scene.paint.Color.TRANSPARENT)
+      argb(paper.snapshot(params, null))
+    }
+    assert(!runOnFx(proof.node.isVisible))
+    runOnFx(w.figures.dispatch(ComposerIntent.SetGreyscale(true)))
+    fx.awaitLayout()
+    eventually(fx, "the greyscale image")(proof.isOn && proof.node.getImage != null)
+    // It lets the page be used: clicks reach the panels under it.
+    assert(runOnFx(proof.node.isMouseTransparent && proof.node.isVisible))
+    // Once the page is quiet, the image is the paper's pixels in greys.
+    def quiet(): Boolean =
+      val before = runOnFx(proof.redraws)
+      fx.awaitLayout()
+      fx.awaitLayout()
+      runOnFx(proof.redraws) == before
+    val deadline = System.nanoTime + 20_000_000_000L
+    while !quiet() do
+      if System.nanoTime > deadline then fail("the greyscale image never settled")
+    val colour = colourPaper()
+    val greys  = argb(runOnFx(proof.node.getImage))
+    assertEquals(greys.length, colour.length)
+    assert(greys.indices.forall(i => greys(i) == Greyscale.argb(colour(i))))
+    // Panel D's matched marks print as the matched role's Rec. 709 grey,
+    // not as the largest channel (GreyscaleSuite: the control role prints
+    // apart from it).
+    val matched = Tokens.palette(PaletteToken.FigMatch)
+    val rgb     = 0xff000000 | (matched.red << 16) | (matched.green << 8) | matched.blue
+    val at      = colour.indices.filter(colour(_) == rgb)
+    assert(at.nonEmpty, "no matched-mark pixel on the paper")
+    val g = Greyscale.grey(matched)
+    assertEquals(
+      at.map(greys(_)).distinct.toVector,
+      Vector(0xff000000 | (g << 16) | (g << 8) | g)
+    )
+    // A quiet page is rendered after each pulse but not redrawn.
+    val settled = runOnFx(proof.redraws)
+    (1 to 5).foreach(_ => fx.awaitLayout())
+    assertEquals(runOnFx(proof.redraws), settled)
+    runOnFx(w.figures.dispatch(ComposerIntent.SetGreyscale(false)))
+    fx.awaitLayout()
+    assert(!runOnFx(proof.isOn || proof.node.isVisible))
+    assertEquals(runOnFx(proof.node.getImage), null)
   }
 
   fxStage.test("the navigator: Figure 2 is stale and says why; New figure adds Figure 3") {
