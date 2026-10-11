@@ -143,16 +143,13 @@ class TokenFilesSuite extends munit.FunSuite:
     Tokens.all.map(ref => ref.cssName -> Tokens.resolve(ref, theme, stage).webCss).toMap +
       ("sel-ring" -> TokenCss.webSelectionRing(theme))
 
-  // Where the token source departs from the boards, and why (see Tokens). The
-  // light stage's ink halo is not a board deviation: the boards give the halo
-  // once, as a palette colour, and the dark (default) stage keeps it white.
+  // Where the boards depart from the token source, and why. The design review
+  // (DESIGN_SPEC §15) adopted the generated mid stage (#767676) and figure
+  // control (#B86E0E, with #D98A1C as its fill) and made selection a fill ahead
+  // of the code; the token lands with ticket 9 (docs/studio/design/REVIEW.md).
   private val deviations: Map[(String, String), String] = Map(
-    ("mid", "stage")           -> "#767676 so white captions reach 4.54:1 (review decision)",
-    ("figures", "fig-control") -> "#D98A1C is 2.76:1 on paper; it is fig-control-fill now",
-    // The design review (DESIGN_SPEC §15) made selection a fill ahead of the code;
-    // the token lands with landing ticket 9 (docs/studio/design/REVIEW.md).
-    ("light", "sel-fill")      -> "selection fill, pending ticket 9",
-    ("dark", "sel-fill")       -> "selection fill, pending ticket 9"
+    ("light", "sel-fill") -> "selection fill, pending ticket 9",
+    ("dark", "sel-fill")  -> "selection fill, pending ticket 9"
   )
 
   // Board-only colours that are not product tokens: the stand-in stimulus
@@ -199,11 +196,6 @@ class TokenFilesSuite extends munit.FunSuite:
       val (_, board, ours) = boards.find(_._1 == block).getOrElse(fail(block))
       assertNotEquals(board.get(name), ours.get(name), s"$block --$name")
     }
-    // The board's figure control colour survives as the outlined fill.
-    assertEquals(
-      declarations(figures, ".es", "--paper")("fig-control"),
-      light("fig-control-fill")
-    )
   }
 
   test("code outside the token package cannot mint a colour") {
