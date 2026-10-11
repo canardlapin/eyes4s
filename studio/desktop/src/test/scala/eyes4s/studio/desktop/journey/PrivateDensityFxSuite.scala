@@ -19,7 +19,6 @@ package eyes4s.studio.desktop.journey
 import cats.effect.{IO, Resource}
 import cats.effect.unsafe.implicits.global
 import cats.syntax.all.*
-import eyes4s.codec.ByteDigest
 import eyes4s.plan.TrialKeyDefinitions
 import eyes4s.studio.app.{AppModel, Intent}
 import eyes4s.studio.app.geometry.Loading
@@ -37,13 +36,18 @@ import eyes4s.studio.desktop.runtime.{DatasetSourceHosts, SessionPort}
 import eyes4s.studio.desktop.shell.ShellFxSuite
 import io.circe.{Json, parser}
 import io.circe.syntax.*
+import eyes4s.studio.app.importing.{ImportWizard, WizardTab}
+import eyes4s.studio.core.importing.{ColumnChoice, GeometryField, ImportPresets}
+import eyes4s.studio.core.platform.HostPath
+import eyes4s.studio.desktop.importing.ImportWizardHost
 import javafx.scene.control.Button
+import scala.jdk.CollectionConverters.*
 import java.nio.file.{Files, Path, StandardOpenOption}
 import scala.concurrent.duration.*
 
 /** Opt-in real-window test. Requests, saved projects, logs and snapshots stay outside Git.
-  * File-dialog answers and the explicit recipe seed use typed application commands;
-  * admission and Save & run use the actual controls. No fixture backend is installed.
+  * File-dialog answers supply paths; mappings, geometry, recipe configuration,
+  * admission and Save & run use actual controls. No fixture backend is installed.
   */
 class PrivateDensityFxSuite extends ShellFxSuite:
   private final case class Tolerance(absolute: Double, relative: Double):
@@ -119,14 +123,8 @@ class PrivateDensityFxSuite extends ShellFxSuite:
       val expected = get(read(root.resolve("eyes4s.json")).hcursor.get[Vector[Json]]("sources"))
         .map(j => get(j.hcursor.get[String]("id")) -> j)
         .toMap
-      val phases  = sources.map(j => get(j.hcursor.get[String]("phase"))).distinct.sorted
-      val initial = get(AppModel.newProject)
-      val entries =
-        Vector(SourceRole.Fixations -> "fixations.csv", SourceRole.Trials -> "trials.csv").map {
-          (role, name) =>
-            val bytes = IArray.from(Files.readAllBytes(root.resolve(name)))
-            Source(role, get(SourcePath.of(name)), ByteDigest.sha256(bytes), None) -> bytes
-        }
+      val phases   = sources.map(j => get(j.hcursor.get[String]("phase"))).distinct.sorted
+      val initial  = get(AppModel.newProject)
       val ppd      = get(DeclaredPixelsPerDegree.of(number("pixels_per_degree")))
       val geometry = get(
         Geometry.of(
@@ -147,19 +145,9 @@ class PrivateDensityFxSuite extends ShellFxSuite:
           ppd
         )
       )
-      val dataset = DatasetRevision(1)
-      val command = Command.ImportSources(
-        None,
-        get(Sources.of(entries.map(_._1))),
-        NativeCommandJourneyFixture.mapping,
-        NativeCommandJourneyFixture.units,
-        geometry,
-        DeclaredAttributes.empty,
-        None,
-        Some(NativeCommandJourneyFixture.inventory)
-      )
+      val dataset     = DatasetRevision(1)
       val projectPath = root.resolve("density.eyes")
-      val results     = project(projectPath, initial.document, entries)
+      val results     = project(projectPath, initial.document, Vector.empty)
         .use { port =>
           IO.blocking {
             val w = boot(
@@ -173,7 +161,87 @@ class PrivateDensityFxSuite extends ShellFxSuite:
             )
             try
               assertEquals(w.session.fixture, None)
-              dispatch(fx, w, Intent.Dispatch(command))
+              val importer = runOnFx(
+                ImportWizardHost(
+                  ImportWizard.newImport(w.runtime.model.document, ImportPresets.empty),
+                  () => w.runtime.model.document,
+                  w.runtime.dispatch,
+                  ImportWizardHost.fxPlatform(() => fx.stage, noPresets(), Some(port)),
+                  () => ()
+                )
+              )
+              try
+                runOnFx {
+                  importer.view.node.getStyleClass.add("es")
+                  importer.view.node.getStylesheets.addAll(w.root.getStylesheets)
+                }
+                fx.show(importer.view.node)
+                Vector(
+                  SourceRole.Fixations -> "fixations.csv",
+                  SourceRole.Trials    -> "trials.csv"
+                )
+                  .foreach { (role, name) =>
+                    runOnFx(importer.read(role, get(HostPath.of(root.resolve(name).toString))))
+                      .get(60, java.util.concurrent.TimeUnit.SECONDS)
+                  }
+                def pick(
+                    table: eyes4s.studio.desktop.importing.MappingTable,
+                    column: String,
+                    role: ColumnRole
+                ): Unit = runOnFx {
+                  val menu   = table.menu(column).getOrElse(fail(s"Missing role menu: $column"))
+                  val option =
+                    menu.getItems.asScala.find(_.choice == ColumnChoice.Role(role)).get
+                  menu.setValue(option)
+                }
+                NativeCommandJourneyFixture.mapping.bindings
+                  .foreach(b => pick(importer.view.fixations, b.column.value, b.role))
+                NativeCommandJourneyFixture.inventory.bindings
+                  .foreach(b => pick(importer.view.trials, b.column.value, b.role))
+                runOnFx {
+                  val time = importer.view.time
+                  time.setValue(
+                    time.getItems.asScala.find(_.unit.contains(TimeUnit.Milliseconds)).get
+                  )
+                  val kind = importer.view.displayKind
+                  kind.setValue(
+                    kind.getItems.asScala.find(_.column.exists(_.value == "display_kind")).get
+                  )
+                  val file = importer.view.displayFile
+                  file.setValue(
+                    file.getItems.asScala.find(_.column.exists(_.value == "image_file")).get
+                  )
+                  importer.view.tabs(WizardTab.Geometry).fire()
+                  Vector(
+                    GeometryField.ScreenWidth  -> number("screen_width_px"),
+                    GeometryField.ScreenHeight -> number("screen_height_px"),
+                    GeometryField.ImageLeft    -> number("x_min"),
+                    GeometryField.ImageTop     -> number("y_min"),
+                    GeometryField.ImageWidth   -> (number("x_max") - number("x_min")),
+                    GeometryField.ImageHeight  -> (number("y_max") - number("y_min"))
+                  ).foreach((field, value) =>
+                    importer.view.geometryFields(field).setText(value.toInt.toString)
+                  )
+                  importer.view
+                    .geometryFields(GeometryField.PixelsPerDegree)
+                    .setText(ppd.value.toString)
+                }
+                until(fx, "import controls validate mappings and geometry") {
+                  !importer.view.commit.isDisabled
+                }
+                fx.snapshot(StudioTheme.Light, List(SnapshotScale.X1))
+                  .foreach(p => Files.copy(p, root.resolve("import-settings.png")))
+                fx.robot.click(importer.view.commit)
+                importer.importCompleted.get(60, java.util.concurrent.TimeUnit.SECONDS)
+                until(fx, "imported dataset") {
+                  w.runtime.model.document.dataset(dataset).isDefined
+                }
+                assertEquals(
+                  runOnFx(w.runtime.model.document.dataset(dataset).map(_.geometry)),
+                  Some(geometry)
+                )
+              finally runOnFx(importer.dispose())
+              fx.show(w.root)
               dispatch(
                 fx,
                 w,
@@ -197,7 +265,7 @@ class PrivateDensityFxSuite extends ShellFxSuite:
               }
               phases.zipWithIndex.map { (phase, index) =>
                 val recipe = Recipe(
-                  None,
+                  runOnFx(w.runtime.model.document.latestAnalysis.flatMap(_.recipe.input)),
                   DefinitionRef.fromCore(TrialKeyDefinitions.trialLayout),
                   MethodSpec(get(DefinitionRef.of("eyes4s.cosine", 1)), Vector.empty),
                   PhasePair(Phase(phase), Phase.Encoding),
@@ -218,26 +286,46 @@ class PrivateDensityFxSuite extends ShellFxSuite:
                   UnmatchedChoice.Refuse,
                   InitialFixationChoice.KeepAll
                 )
-                val fields = StudioFields(
-                  Preset.Custom,
-                  get(RevisionName.of(phase)),
-                  get(
-                    request.get[String]("geometry_note")
-                  ) + "; fixed pixel kernel; exhaustive controls"
-                )
+                dispatch(fx, w, Intent.SwitchPerspective(Perspective.Analysis))
+                if index == 0 then runOnFx(w.recipe.choose(Preset.EncodingRetrieval))
                 dispatch(
                   fx,
                   w,
-                  Intent.Dispatch(if index == 0 then
-                    Command.StartAnalysis(dataset, recipe, fields)
-                  else Command.StartFamily(phase, dataset, recipe, fields))
+                  Intent.FocusPane(get(eyes4s.studio.app.layout.PaneId.of("analysis.recipe")))
                 )
-                dispatch(fx, w, Intent.SwitchPerspective(Perspective.Analysis))
+                until(fx, "recipe editor ready") {
+                  w.recipe.editor.node.isVisible && !w.recipe.editor.node.isDisabled
+                }
+                val form = w.recipe.editor
+                runOnFx {
+                  Map(
+                    "focal"           -> phase,
+                    "reference"       -> "Encoding",
+                    "columns"         -> get(request.get[Int]("nx")).toString,
+                    "rows"            -> get(request.get[Int]("ny")).toString,
+                    "scales"          -> (number("sigma_px") / ppd.value).toString,
+                    "pixelsPerDegree" -> ppd.value.toString,
+                    "xMin"            -> number("x_min").toString,
+                    "yMin"            -> number("y_min").toString,
+                    "xMax"            -> number("x_max").toString,
+                    "yMax"            -> number("y_max").toString
+                  ).foreach((name, text) => form.fields(name).setText(text))
+                  form.weighting.setValue(WeightChoice.Duration)
+                  form.unmatched.setValue(UnmatchedChoice.Refuse)
+                }
+                until(fx, "recipe settings can be applied") { !form.apply.isDisabled }
+                runOnFx(w.recipe.node.setVvalue(1.0))
+                fx.awaitLayout()
+                fx.robot.click(form.apply)
                 until(fx, "resolved recipe and run control") {
                   w.resolvedDesign.state.preview.receipt
                     .exists(_.recipe.contains(recipe)) && w.preflight.runButton._2
                 }
                 assertEquals(runOnFx(w.runtime.model.document.draftRecipe), Some(recipe))
+                runOnFx {
+                  w.preflight.runName.setText(phase)
+                  w.preflight.runDescription.setText(get(request.get[String]("geometry_note")))
+                }
                 fx.snapshot(StudioTheme.Light, List(SnapshotScale.X1))
                   .foreach(p => Files.copy(p, root.resolve(s"phase-${index + 1}-settings.png")))
                 val runButton =
@@ -249,6 +337,14 @@ class PrivateDensityFxSuite extends ShellFxSuite:
                 until(fx, "analysis complete") {
                   w.runtime.model.jobs.ready.exists(_.run == run)
                 }
+                assertEquals(
+                  runOnFx(w.runtime.model.document.latestAnalysis.map(_.studio.name.value)),
+                  Some(phase)
+                )
+                assertEquals(
+                  runOnFx(w.runtime.model.document.latestAnalysis.map(_.studio.description)),
+                  Some(get(request.get[String]("geometry_note")))
+                )
                 until(fx, "native artifacts saved") {
                   w.runtime.model.document
                     .run(run)
@@ -374,7 +470,7 @@ class PrivateDensityFxSuite extends ShellFxSuite:
           "status"  -> Json.fromString("passed"),
           "backend" -> Json.fromString("real"),
           "route"   -> Json.fromString(
-            "typed import and recipe seed; admission, Save & run, Compare UI; verified saved project"
+            "actual import mapping, geometry and recipe controls; admission, Save & run, Compare UI; verified saved project"
           ),
           "runs"    -> Json.arr(results*),
           "project" -> Json.fromString("density.eyes")

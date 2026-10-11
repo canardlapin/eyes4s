@@ -195,14 +195,14 @@ asymmetric rectangular grids, unequal duration weights, subcell shifts, edge
 points, multiple participants, and three phases without private records.
 
 The automatic UI route uses the real `StudioWindow`, native admission and native
-execution backend. It supplies file-dialog answers and an explicit typed recipe
-seed through application commands, then clicks the actual Admit and Save & run
-controls. It runs one independent analysis family per retrieval phase, reads all
-query and pair pages, checks exact matched/control identities and unrounded scores
-against the separate direct-library run, opens the Query table, and checks every
-rendered row. It also verifies the saved project after closing the window.
-The harness does not claim that arbitrary recipe fields were typed into GUI controls;
-the saved recipe is the reproducible starting point.
+execution backend. Only file-dialog answers supply paths. The harness selects
+column mappings, time units, display metadata and geometry in the real import
+wizard, admits the dataset, chooses a preset and edits phase labels, grid, crop,
+weighting and Gaussian scales through the actual recipe controls. It clicks Apply
+settings and Save & run, verifies every raw query and exact pair identity, checks
+the rendered results table, and reopens the saved project to verify its artifacts.
+Each retrieval phase has its own saved revision and run; the harness never seeds
+a custom recipe through a test-only command.
 
 It uses Monocle headlessly and retains the normal machine-wide FX lock. The build
 receives no private inputs; a separate JUnit JVM runs in the external directory,
@@ -221,3 +221,43 @@ Inspect these files under the output's `comparison/` directory:
 `receipt.json` binds the run to the implementation, request, and exact eyesim
 Git archive. All project bytes, screenshots, logs and derived results remain
 outside Git. The harness never files an upstream issue automatically.
+
+For a complete cohort, `cohort.py` accepts the same arguments and partitions the
+request by participant. Every declared query and its entire within-participant
+control pool are retained. It writes participant cells, equal-participant condition
+means, and paired cue/probe contrasts; absent cells are never imputed. These are
+descriptive comparisons, not a reproduction of sampled-control manuscript models.
+All request metadata and reports remain in the external output directory.
+
+```sh
+python3 -m venv /private/tmp/eyes4s-analysis-python
+/private/tmp/eyes4s-analysis-python/bin/python -m pip install numpy
+/private/tmp/eyes4s-analysis-python/bin/python tools/private-fixtures/cohort.py \
+  --request /private/path/all-trials.json --eyesim /private/path/eyesim \
+  --r-library /private/path/R-library --output-dir /private/path/new-cohort-run
+```
+
+NumPy is optional and accelerates the independent per-point Gaussian sums and
+cosine dot products. The synthetic tests compare it to the standard-library oracle
+under the same tolerances. Use `--ui` to exercise all participant shards in Studio.
+`--resume` accepts only the identical request, source revision and implementation;
+failed attempts are preserved and rerun in a fresh directory.
+
+
+`multimatch.py` consumes a verified density run and the identical original request:
+
+```sh
+python3 tools/private-fixtures/multimatch.py \
+  --request /private/path/all-trials.json --density-run /private/path/cohort-run \
+  --r-library /private/path/R-library --output-dir /private/path/new-multimatch-run
+```
+
+It reinstalls the archived reference revision, compares the five ungrouped
+MultiMatch components on the exact density pair schedule, and normalizes spatial
+components by the declared physical screen diagonal. The cropped fixation
+sequences and their order remain unchanged. Every pair is retained, including
+short paths and errors. The three-fixation baseline is explicit; under RequireAll,
+an unavailable matched or control pair makes that query unavailable. Reports give
+component-specific participant cells and conditional contrasts with those query
+exclusions listed. The R package's sixth EMD component is outside this comparison.
+A `review-required` receipt records disagreements rather than claiming parity.

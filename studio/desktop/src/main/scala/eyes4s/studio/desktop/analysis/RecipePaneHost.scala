@@ -20,7 +20,7 @@ import eyes4s.studio.app.{AppModel, Intent}
 import eyes4s.studio.app.analysis.PresetPicker
 import eyes4s.studio.app.vm.{A11yRole, FocusStop}
 import eyes4s.studio.core.document.Preset
-import javafx.scene.control.{Label, RadioButton}
+import javafx.scene.control.{Label, RadioButton, ScrollPane}
 import javafx.scene.layout.VBox
 
 /** The recipe pane's actual preset controls, including the first analysis
@@ -58,17 +58,24 @@ final class RecipePaneHost(model: () => AppModel, app: Intent => Unit):
     )
     (preset.preset, choose, detail)
   }
-  val node: VBox = VBox(8.0)
-  node.getStyleClass.add("inspector")
-  node.getChildren.addAll(heading)
-  options.foreach((_, choose, detail) => node.getChildren.addAll(choose, detail))
-  node.getChildren.addAll(note, configuration)
+  val editor: RecipeForm = RecipeForm(model, app)
+  private val content    = VBox(8.0)
+  content.getStyleClass.add("inspector")
+  content.getChildren.addAll(heading)
+  options.foreach((_, choose, detail) => content.getChildren.addAll(choose, detail))
+  content.getChildren.addAll(note, configuration, editor.node)
+  val node: ScrollPane = ScrollPane(content)
+  node.setFitToWidth(true)
+  node.setFocusTraversable(false)
 
   def sync(value: AppModel): Unit = if !disposed then
     val picker = PresetPicker.vm(
       value.document,
       eyes4s.studio.app.analysis.AnalysesNavigator.selected(value)
     )
+    val selected = eyes4s.studio.app.analysis.AnalysesNavigator.selected(value)
+    val editable = value.document.draft.forall(d => selected.contains(d.id))
+    editor.sync(value, editable)
     binding = true
     try
       heading.setText(picker.heading)
@@ -96,5 +103,7 @@ final class RecipePaneHost(model: () => AppModel, app: Intent => Unit):
     .vm(model().document, eyes4s.studio.app.analysis.AnalysesNavigator.selected(model()))
     .options
     .filter(_.choose.isDefined)
-    .map(o => FocusStop(A11yRole.RadioButton, o.accessible))
-  def dispose(): Unit = disposed = true
+    .map(o => FocusStop(A11yRole.RadioButton, o.accessible)) ++ editor.focusStops
+  def dispose(): Unit =
+    disposed = true
+    editor.dispose()
