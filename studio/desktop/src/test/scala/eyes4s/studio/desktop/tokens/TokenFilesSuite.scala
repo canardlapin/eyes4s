@@ -148,7 +148,11 @@ class TokenFilesSuite extends munit.FunSuite:
   // once, as a palette colour, and the dark (default) stage keeps it white.
   private val deviations: Map[(String, String), String] = Map(
     ("mid", "stage")           -> "#767676 so white captions reach 4.54:1 (review decision)",
-    ("figures", "fig-control") -> "#D98A1C is 2.76:1 on paper; it is fig-control-fill now"
+    ("figures", "fig-control") -> "#D98A1C is 2.76:1 on paper; it is fig-control-fill now",
+    // The design review (DESIGN_SPEC §15) made selection a fill ahead of the code;
+    // the token lands with landing ticket 9 (docs/studio/design/REVIEW.md).
+    ("light", "sel-fill")      -> "selection fill, pending ticket 9",
+    ("dark", "sel-fill")       -> "selection fill, pending ticket 9"
   )
 
   test("tokens match the boards' token block, except the recorded deviations") {

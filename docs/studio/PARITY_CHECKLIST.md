@@ -105,7 +105,7 @@ by token name, never by hex value.
 - [ ] Binding note: the board's "Rebinding makes a new figure version; the old one stays reproducible" is a recorded deviation. Rebinding replaces the binding in place and Undo restores it; 1.0 persists no figure versions (decision on `bd-01M42HMHQ1PQMZCJFS4AHQ8QE5`).
 - [ ] methods.md states:
   - [ ] 457 eligible queries.
-  - [ ] "Of 11,311 fixation records in admitted trials, 543 lay outside the analysis window (4.8% of those trials' fixation duration)".
+  - [ ] 543 of the 11,311 fixation records of admitted trials (4.8% of their fixation duration).
   - [ ] The off-screen policy and the occurrence rule.
   - [ ] The confound sentence.
 - [ ] Export bundle list.

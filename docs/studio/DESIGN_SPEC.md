@@ -289,8 +289,8 @@ deviation with its ticket.
   means: +0.16 (range +0.05 P21 to +0.26 P15; higher in 24 of 24). It is descriptive only, and the
   headline notes that it differs from the difference of the rounded group means by rounding.
 - **Outside-window wording.** Geometry: "543 of 11,520 source records outside the window in 409
-  trials". Methods: "Of 11,311 fixation records in admitted trials, 543 lay outside the analysis
-  window (4.8% of those trials' fixation duration)". All 543 lie in admitted trials.
+  trials". Methods (as `MethodsText` writes it): "543 of the 11,311 fixation records of admitted trials
+  (4.8% of their fixation duration)". All 543 lie in admitted trials.
 - **Science values.** The executable golden fixture (`fixtures/studio-golden`) is authoritative;
   the mock (`fixture/make_fixture.py`) is reconciled to it, and anything a board draws that neither
   contains is tagged "illustrative".
