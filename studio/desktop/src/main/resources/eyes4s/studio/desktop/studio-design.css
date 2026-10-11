@@ -65,6 +65,13 @@
   -fx-background-insets: -1, 1;
 }
 
+/* A focused chip that is also selected keeps the selected fill inside the ring:
+ * -fx-background-color is one property, so :focused alone would replace it. */
+.design-chip:selected:focused {
+  -fx-background-color: -es-accent, -es-accent-soft;
+  -fx-background-insets: -1, 1;
+}
+
 .design-chip-count {
   -fx-text-fill: inherit;
 }

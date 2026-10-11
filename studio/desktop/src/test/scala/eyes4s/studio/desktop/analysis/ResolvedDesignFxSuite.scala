@@ -18,6 +18,7 @@ package eyes4s.studio.desktop.analysis
 
 import eyes4s.studio.app.analysis.*
 import eyes4s.studio.app.nav.Place
+import eyes4s.studio.app.tokens.{Theme, ThemedToken, Tokens}
 import eyes4s.studio.app.{Intent, PreparedDesign, StoryModels}
 import eyes4s.studio.core.backend.{Eligibility, TrialKey}
 import eyes4s.studio.core.command.Command
@@ -28,7 +29,12 @@ import eyes4s.studio.core.selection.StudioRef
 import eyes4s.studio.desktop.StudioWindow
 import eyes4s.studio.desktop.harness.{FxStage, StudioTheme}
 import eyes4s.studio.desktop.shell.ShellFxSuite
+import javafx.css.PseudoClass
+import javafx.scene.control.ToggleButton
 import javafx.scene.input.KeyCode
+import javafx.scene.paint.Color
+
+import scala.jdk.CollectionConverters.*
 
 /** The resolved-design table on the desktop (ticket S7.5; Analysis.dc.html,
   * resolved design) at t2's draft rev 5, over the fake backend's preview of
@@ -182,6 +188,38 @@ class ResolvedDesignFxSuite extends ShellFxSuite:
     assertEquals(
       runOnFx(w.resolvedDesign.state.cursor),
       Some(notAdmitted(notAdmitted.size - 1 - ResolvedDesign.CursorPage).query)
+    )
+  }
+
+  fxStage.test("a focused chip keeps its selected fill inside the focus ring") { fx =>
+    val w = boot(fx, StoryModels.t2Analysis, StoryMoment.T2)
+    ready(fx, w)
+    def colour(t: ThemedToken): Color =
+      val c = Tokens.themed(Theme.Light, t)
+      Color.rgb(c.red, c.green, c.blue, c.alphaPercent / 100.0)
+    // As in A11yTreeSuite: :focused is set explicitly, since JavaFX shows it
+    // only while the window has focus, which a headless run cannot guarantee.
+    val Focused = PseudoClass.getPseudoClass("focused")
+    def fills(b: ToggleButton, focused: Boolean): List[(Color, Double)] = runOnFx {
+      b.pseudoClassStateChanged(Focused, focused)
+      b.applyCss()
+      b.getBackground.getFills.asScala.toList.map(f =>
+        (f.getFill.asInstanceOf[Color], f.getInsets.getTop)
+      )
+    }
+    fx.robot.click(runOnFx(chip(w, DesignFilter.Eligible).button))
+    fx.awaitLayout()
+    val selected   = runOnFx(chip(w, DesignFilter.Eligible).button)
+    val unselected = runOnFx(chip(w, DesignFilter.NoMatch).button)
+    assert(runOnFx(selected.isSelected) && !runOnFx(unselected.isSelected))
+    val accent = colour(ThemedToken.Accent)
+    val soft   = colour(ThemedToken.AccentSoft)
+    assertEquals(fills(selected, focused = false), List(accent -> 0.0, soft -> 1.0))
+    // The ring grows outward (-1) and the selected fill stays inside it.
+    assertEquals(fills(selected, focused = true), List(accent -> -1.0, soft -> 1.0))
+    assertEquals(
+      fills(unselected, focused = true),
+      List(accent -> -1.0, colour(ThemedToken.Surface) -> 1.0)
     )
   }
 
