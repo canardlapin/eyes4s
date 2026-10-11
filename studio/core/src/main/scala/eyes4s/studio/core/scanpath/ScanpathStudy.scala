@@ -143,7 +143,7 @@ object ScanpathStudy:
   private def decode(request: Json): Either[String, ScanpathStudy] =
     val c                                                = request.hcursor
     def field[A: io.circe.Decoder](j: Json, key: String) =
-      j.hcursor.get[A](key).leftMap(_.message)
+      j.hcursor.get[A](key).leftMap(e => s"Field '$key': ${e.message}")
     def check(ok: Boolean, message: => String) = Either.cond(ok, (), message)
     def name(j: Json, key: String)             = field[String](j, key).flatMap(v =>
       check(v.trim.nonEmpty, s"Blank $key in scanpath item").as(v)

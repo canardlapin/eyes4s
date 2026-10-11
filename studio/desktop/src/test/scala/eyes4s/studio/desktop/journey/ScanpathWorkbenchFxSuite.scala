@@ -60,7 +60,7 @@ class ScanpathWorkbenchFxSuite extends StudioFxSuite:
     }
     var toOpen = root.resolve("request.json")
     var toSave = root.resolve("workspace.json")
-    val view   = runOnFx(ScanpathWorkbench(() => Some(toOpen), () => Some(toSave)))
+    var view   = runOnFx(ScanpathWorkbench(() => Some(toOpen), () => Some(toSave)))
     try
       fx.show(view.node)
       fx.robot.click(view.open)
@@ -146,6 +146,10 @@ class ScanpathWorkbenchFxSuite extends StudioFxSuite:
         fx.robot.click(view.save)
         until(fx)(!view.busy && Files.exists(toSave))
         toOpen = toSave
+        // A new instance proves restoration; the old result cannot mask an open failure.
+        runOnFx(view.dispose())
+        view = runOnFx(ScanpathWorkbench(() => Some(toOpen), () => Some(toSave)))
+        fx.show(view.node)
         fx.robot.click(view.open)
         until(fx)(!view.busy && view.result.nonEmpty)
         assertEquals(runOnFx(view.result), Some(result))
@@ -174,6 +178,34 @@ class ScanpathWorkbenchFxSuite extends StudioFxSuite:
     finally stream.close()
     val result = exercise(fx, root, None)
     assertEquals(get(result.hcursor.get[String]("status")), "passed")
+  }
+  fxStage.test("altered saved results are rejected without installing a workspace") { fx =>
+    val root   = Files.createTempDirectory("studio-scanpath-tampered-")
+    val stream = getClass.getResourceAsStream("/scanpath/request.json")
+    val input  = try
+      get(parser.parse(String(stream.readAllBytes(), java.nio.charset.StandardCharsets.UTF_8)))
+    finally stream.close()
+    val study  = get(ScanpathStudy.read(input))
+    val result = get(study.run(study.phases.head)).deepMerge(Json.obj("pairs" -> Json.arr()))
+    val path   = root.resolve("tampered.json")
+    Files.writeString(
+      path,
+      Json
+        .obj(
+          "scanpath_workspace_version" -> Json.fromInt(1),
+          "request"                    -> input,
+          "result"                     -> result
+        )
+        .noSpaces
+    )
+    val view = runOnFx(ScanpathWorkbench(() => Some(path), () => None))
+    try
+      fx.show(view.node)
+      fx.robot.click(view.open)
+      until(fx)(!view.busy && view.status.getText.contains("differs"))
+      assertEquals(runOnFx(view.result), None)
+      assert(runOnFx(view.run.isDisabled && view.save.isDisabled))
+    finally runOnFx(view.dispose())
   }
   sys.env.get("EYES4S_PRIVATE_RUN").foreach { directory =>
     fxStage.test("private scanpath controls agree with independently retained CLI pairs") {

@@ -21,7 +21,7 @@ library(brms)
 library(jsonlite)
 library(posterior)
 protocol <- fromJSON(args[[1]],simplifyVector=TRUE)
-data <- read.csv(args[[2]],stringsAsFactors=FALSE,na.strings=c('','NA'))
+data <- read.csv(args[[2]],stringsAsFactors=FALSE,na.strings=c('','NA'),colClasses=c(id='character',pid='character'))
 output <- args[[3]]; engine <- args[[4]]; phase <- args[[5]]
 stopifnot(engine %in% protocol$engines, phase %in% protocol$phases)
 dir.create(output,recursive=TRUE,showWarnings=FALSE,mode='0700')

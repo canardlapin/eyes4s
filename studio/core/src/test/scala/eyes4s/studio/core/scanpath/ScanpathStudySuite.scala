@@ -87,3 +87,8 @@ class ScanpathStudySuite extends FunSuite:
       ScanpathStudy.read(request().deepMerge(Json.obj("pairs" -> Json.arr(pair, pair)))).isLeft
     )
   }
+  test("malformed fields name the input operand") {
+    val invalid = request().mapObject(_.remove("screen_width_px"))
+    val error   = ScanpathStudy.read(invalid).swap.toOption.get
+    assert(error.message.contains("screen_width_px"))
+  }
