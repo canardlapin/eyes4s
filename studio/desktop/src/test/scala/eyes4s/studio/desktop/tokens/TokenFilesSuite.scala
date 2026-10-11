@@ -155,6 +155,11 @@ class TokenFilesSuite extends munit.FunSuite:
     ("dark", "sel-fill")       -> "selection fill, pending ticket 9"
   )
 
+  // Board-only colours that are not product tokens: the stand-in stimulus
+  // picture's pixels and the macOS title-bar buttons the boards draw.
+  private def boardOnly(name: String): Boolean =
+    name.startsWith("stim-") || name.startsWith("tl-")
+
   test("tokens match the boards' token block, except the recorded deviations") {
     val main    = read("docs/studio/design/Main.dc.html")
     val system  = read("docs/studio/design/System.dc.html")
@@ -178,6 +183,7 @@ class TokenFilesSuite extends munit.FunSuite:
       (block, board, ours) <- boards
       (name, value)        <- board.toList.sortBy(_._1)
       if !deviations.contains((block, name))
+      if !boardOnly(name)
       if !ours.get(name).contains(value)
     yield s"$block --$name: board $value, tokens ${ours.getOrElse(name, "absent")}"
     assert(mismatches.isEmpty, mismatches.mkString("\n", "\n", ""))
