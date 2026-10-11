@@ -128,7 +128,7 @@
 }
 
 .list-cell.current .nav-label {
-  -fx-font-family: "IBM Plex Mono SmBld";
+  -fx-font-family: "IBM Plex Mono Medm";
 }
 
 .list-cell.warn .nav-item,

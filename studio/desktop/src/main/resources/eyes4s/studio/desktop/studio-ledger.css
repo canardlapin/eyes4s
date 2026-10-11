@@ -96,7 +96,7 @@
 }
 
 .ledger-row.total .ledger-count {
-  -fx-font-family: "IBM Plex Mono SmBld";
+  -fx-font-family: "IBM Plex Mono Medm";
 }
 
 .ledger-count:hover {

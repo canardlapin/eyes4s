@@ -97,6 +97,43 @@ class FontLoadSuite extends StudioFxSuite:
     assertEquals(declared, TypeSize.values.toList.map(_.px))
   }
 
+  test("every font family named in studio CSS is a face the studio loads") {
+    // JavaFX selects a face by family name and silently falls back to its
+    // default font for a name it does not know (DESIGN_SPEC section 14).
+    val buildRoot = Paths.get(String(bytes("eyes4s/studio/desktop/build-root.txt"), UTF_8).trim)
+    val loaded    = FontFace.values.map(_.javaFxFamily).toSet
+    val named     = StudioFontFamilies.named(buildRoot.resolve("studio"))
+    assert(named.nonEmpty, "no -fx-font-family declarations found under studio/")
+    val unknown = named.filterNot(n => loaded(n.family))
+    assert(
+      unknown.isEmpty,
+      unknown
+        .map(n => s"${buildRoot.relativize(n.file)}:${n.line}  '${n.family}'")
+        .mkString(
+          "families no bundled face carries:\n",
+          "\n",
+          s"\nloaded: ${loaded.toList.sorted}"
+        )
+    )
+  }
+
+  test("the family scan reads declarations, shorthands and lists, and skips comments") {
+    val css =
+      """/* -fx-font-family: "Commented Out"; */
+        |.a { -fx-font-family: "IBM Plex Mono SmBld"; }
+        |.b { -fx-font: 13px "Shorthand Face", 'Second Face'; }
+        |.c { -fx-font-family: Bare; -fx-font-size: 12px; }""".stripMargin
+    assertEquals(
+      StudioFontFamilies.scan(Paths.get("x.css"), css).map(n => (n.line, n.family)),
+      List(
+        2 -> "IBM Plex Mono SmBld",
+        3 -> "Shorthand Face",
+        3 -> "Second Face",
+        4 -> "Bare"
+      )
+    )
+  }
+
   fxStage.test("the type classes select the bundled faces at the five sizes") { fx =>
     assertEquals(StudioFonts.loadAll(), Nil)
     def label(classes: String*): Label =
