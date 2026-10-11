@@ -20,7 +20,7 @@ import eyes4s.studio.app.{AppModel, Intent}
 import eyes4s.studio.app.analysis.PresetPicker
 import eyes4s.studio.app.vm.{A11yRole, FocusStop}
 import eyes4s.studio.core.document.Preset
-import javafx.scene.control.{Label, RadioButton}
+import javafx.scene.control.{Button, Label, RadioButton, ScrollPane}
 import javafx.scene.layout.VBox
 
 /** The recipe pane's actual preset controls, including the first analysis
@@ -58,17 +58,34 @@ final class RecipePaneHost(model: () => AppModel, app: Intent => Unit):
     )
     (preset.preset, choose, detail)
   }
-  val node: VBox = VBox(8.0)
-  node.getStyleClass.add("inspector")
-  node.getChildren.addAll(heading)
-  options.foreach((_, choose, detail) => node.getChildren.addAll(choose, detail))
-  node.getChildren.addAll(note, configuration)
+  val editor: RecipeForm = RecipeForm(model, app)
+  private val content    = VBox(8.0)
+  content.getStyleClass.add("inspector")
+  content.getChildren.addAll(heading)
+  options.foreach((_, choose, detail) => content.getChildren.addAll(choose, detail))
+  val scanpaths = Button("Open MultiMatch scanpath workspace")
+  scanpaths.setWrapText(true)
+  scanpaths.setAccessibleText("Open MultiMatch scanpath workspace")
+  private var scanpathWindows = Vector.empty[javafx.stage.Stage]
+  scanpaths.setOnAction { _ =>
+    if !disposed then
+      val window =
+        eyes4s.studio.desktop.scanpath.ScanpathWorkbench.open(node.getScene.getWindow)
+      scanpathWindows = scanpathWindows.filter(_.isShowing) :+ window
+  }
+  content.getChildren.addAll(note, configuration, editor.node, scanpaths)
+  val node: ScrollPane = ScrollPane(content)
+  node.setFitToWidth(true)
+  node.setFocusTraversable(false)
 
   def sync(value: AppModel): Unit = if !disposed then
     val picker = PresetPicker.vm(
       value.document,
       eyes4s.studio.app.analysis.AnalysesNavigator.selected(value)
     )
+    val selected = eyes4s.studio.app.analysis.AnalysesNavigator.selected(value)
+    val editable = value.document.draft.forall(d => selected.contains(d.id))
+    editor.sync(value, editable)
     binding = true
     try
       heading.setText(picker.heading)
@@ -82,18 +99,7 @@ final class RecipePaneHost(model: () => AppModel, app: Intent => Unit):
         choose.setSelected(option.selected)
         detail.setText(option.detail + " · " + option.changes)
       }
-      val recipe =
-        eyes4s.studio.app.analysis.AnalysesNavigator
-          .selected(value)
-          .flatMap(id =>
-            value.document
-              .analysis(id)
-              .map(_.recipe)
-              .orElse(value.document.draftContext.filter(_.id == id).map(_.recipe))
-          )
-          .orElse(
-            value.document.draftRecipe.orElse(value.document.latestAnalysis.map(_.recipe))
-          )
+      val recipe = eyes4s.studio.app.analysis.AnalysisSelection.selected(value).map(_.recipe)
       configuration.setText(
         recipe.fold("")(r =>
           s"${r.weighting.render} · grid ${r.grid.render} · scales ${r.scales.render}"
@@ -107,5 +113,10 @@ final class RecipePaneHost(model: () => AppModel, app: Intent => Unit):
     .vm(model().document, eyes4s.studio.app.analysis.AnalysesNavigator.selected(model()))
     .options
     .filter(_.choose.isDefined)
-    .map(o => FocusStop(A11yRole.RadioButton, o.accessible))
-  def dispose(): Unit = disposed = true
+    .map(o => FocusStop(A11yRole.RadioButton, o.accessible)) ++ editor.focusStops :+
+    FocusStop(A11yRole.Button, "Open MultiMatch scanpath workspace")
+  def dispose(): Unit =
+    disposed = true
+    editor.dispose()
+    scanpathWindows.foreach(_.close())
+    scanpathWindows = Vector.empty

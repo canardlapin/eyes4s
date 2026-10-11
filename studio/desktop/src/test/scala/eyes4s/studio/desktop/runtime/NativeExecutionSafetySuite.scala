@@ -59,16 +59,27 @@ class NativeExecutionSafetySuite extends munit.CatsEffectSuite:
         IO.pure(Fixture.this.bytes.get(source.role))
       def assets(dataset: DatasetRevisionSpec) = IO.pure(Some(registry))
 
-  private def fixture(participants: Int = 1, items: Int = 2): Fixture =
+  /** `repeated`: P1 encodes item 1 a second time, as trial enc_9, so its
+    * retrieval query has two matched references.
+    */
+  private def fixture(
+      participants: Int = 1,
+      items: Int = 2,
+      repeated: Boolean = false
+  ): Fixture =
     val story  = get(StoryMoments.t2)
-    val trials = (for
+    val again  = Vector("P1,Encoding,enc_9,1,item-1,blank,,").filter(_ => repeated)
+    val trials = again ++ (for
       person <- 1 to participants
       phase  <- Vector("Encoding", "Retrieval")
       item   <- 1 to items
     yield s"P$person,$phase,${
         if phase == "Encoding" then "enc" else "ret"
       }_$item,1,item-$item,blank,,${if phase == "Retrieval" then "Remembered" else ""}").toVector
-    val fixations = (for
+    val againFixations = (1 to 8).toVector
+      .filter(_ => repeated)
+      .map(o => s"P1,Encoding,enc_9,1,$o,${640 + o},${520 + o * 3},${(o - 1) * 200},100,50")
+    val fixations = againFixations ++ (for
       person  <- 1 to participants
       phase   <- Vector("Encoding", "Retrieval")
       item    <- 1 to items
@@ -127,12 +138,16 @@ class NativeExecutionSafetySuite extends munit.CatsEffectSuite:
         registry
       )
     )
-    assertEquals(admitted.input.trials.rows.size, participants * items * 2)
+    assertEquals(
+      admitted.input.trials.rows.size,
+      participants * items * 2 + (if repeated then 1 else 0)
+    )
     val oldBase = story.analysis(StoryMoments.rev4).get
     val recipe  = oldBase.recipe.copy(
       layout = DefinitionRef.fromCore(TrialKeyDefinitions.trialLayout),
       grid = get(GridSize.of(32, 24)),
-      scales = get(ScaleSet.of(Vector(get(Sigma.of(2.0)))))
+      scales = get(ScaleSet.of(Vector(get(Sigma.of(2.0))))),
+      matched = MatchedChoice.RequireOne
     )
     val base  = oldBase.copy(recipe = recipe, plan = CoreBinding.unbound)
     val draft = get(Draft.between(revision, base, recipe.copy(grid = get(GridSize.of(40, 30)))))
@@ -459,6 +474,124 @@ class NativeExecutionSafetySuite extends munit.CatsEffectSuite:
         assertEquals(h.model.get().document.presentation.shownRun, None)
         assertEquals(h.model.get().jobs.shelf.shown, None)
         assertEquals(h.model.get().jobs.shelf.pending, None)
+    }
+  }
+
+  // S3.5 recheck on the real backend (slice r2 of S3.7): a retrieval query
+  // with two matched encodings under RequireOne is eyes4s's
+  // matched-cardinality finding, naming the query and both references, and
+  // Save & run is unavailable while it stands.
+  test("two matched references under RequireOne are eyes4s's blocking finding") {
+    val f = fixture(repeated = true)
+    harness(f.document, f.sources).use { h =>
+      for
+        ready <- h.prepared
+        recipe = f.document.draft.get.recipe(f.document.analyses.head.recipe)
+        _ <- h.dispatch(Intent.DesignPrepared(PreparedDesign(ready, recipe)))
+      yield
+        val query = TrialKey("P1", Phase.Retrieval, "ret_1", 1)
+        val refs  = Vector(
+          TrialKey("P1", Phase.Encoding, "enc_1", 1),
+          TrialKey("P1", Phase.Encoding, "enc_9", 1)
+        )
+        val cardinality =
+          ready.diagnostics.filter(_.code == "study-finding.matched-cardinality")
+        assertEquals(
+          cardinality.map(d => (d.level, d.affected.toSet)),
+          Vector((DiagnosticLevel.Error, (query +: refs).toSet))
+        )
+        assert(
+          !ready.diagnostics.exists(_.code == "plan.matched-cardinality"),
+          "the digest-only plan refusal must not stand in for the keyed finding"
+        )
+        val presented =
+          eyes4s.studio.app.diagnostics.DiagnosticsPresenter.present(ready.diagnostics)
+        assert(presented.blockers >= 1, presented.toString)
+        val finding = presented.eyes4s.find(_.code == "study-finding.matched-cardinality").get
+        assertEquals(finding.title, "Matched cardinality")
+        assertEquals(finding.affected.toSet, (query +: refs).toSet)
+        assertEquals(finding.remedy.map(_.trials.toSet), Some((query +: refs).toSet))
+    }
+  }
+
+  // S1.7 recheck on the real backend (slice r4 of S3.7): with a native run
+  // shown in Compare, the banner follows the draft's recipe change, then the
+  // native job of its Save & run, then that job's completion.
+  test("the draft banner follows a native draft, its running job and its completion") {
+    val f = fixture(participants = 20, items = 4)
+    harness(f.document, f.sources).use { h =>
+      def banner = eyes4s.studio.app.vm.Shell.banner(h.model.get())
+      for
+        _ <- h.dispatch(Intent.Dispatch(Command.SaveAndRun(None)))
+        first = h.model.get().document.runs.last.id
+        _ <- h.until {
+          case Intent.Execution(ExecutionEvent.Ready(value)) => value.run == first
+          case _                                             => false
+        }
+        _ <- h.dispatch(Intent.ShowRun(first))
+        _ <- h.dispatch(Intent.SwitchPerspective(Perspective.Compare))
+        shown = banner
+        saved = h.model.get().document.analyses.last.recipe
+        _ <- h.dispatch(
+          Intent.Dispatch(
+            Command.ChangeRecipe(RecipeChange.Grid(saved.grid, get(GridSize.of(48, 32))))
+          )
+        )
+        drafted = banner
+        _ <- h.dispatch(Intent.Dispatch(Command.SaveAndRun(None)))
+        second = h.model.get().document.runs.last.id
+        _ <- h.until {
+          case Intent.Execution(ExecutionEvent.Changed(job)) =>
+            job.run == second && !job.phase.isTerminal
+          case _ => false
+        }
+        running = banner
+        _ <- h.until {
+          case Intent.Execution(ExecutionEvent.Ready(value)) => value.run == second
+          case _                                             => false
+        }
+        completed = banner
+      yield
+        def text(b: Option[eyes4s.studio.app.vm.DraftBannerVM]) = b.map(v => (v.lead, v.detail))
+        // Nothing differs from the shown native run yet.
+        assertEquals(shown, None)
+        assertEquals(
+          text(drafted),
+          Some(
+            (
+              "Showing run 1 (analysis rev 5).",
+              "Draft rev 6 grid 40×30 → 48×32 and has not been run."
+            )
+          )
+        )
+        assertEquals(
+          text(running),
+          Some(
+            (
+              "Showing run 1 (rev 5).",
+              "Run 2 (rev 6, grid 40×30 → 48×32) is running — results will not replace " +
+                "this view until you choose Show."
+            )
+          )
+        )
+        assertEquals(
+          running.map(_.actions.map(a => (a.enabled, a.intent))),
+          Some(Vector((false, Intent.ShowRun(second))))
+        )
+        assertEquals(
+          text(completed),
+          Some(
+            (
+              "Showing run 1 (analysis rev 5).",
+              "Run 2 (rev 6) has finished — choose Show to see it."
+            )
+          )
+        )
+        assertEquals(
+          completed.map(_.actions.map(a => (a.enabled, a.intent))),
+          Some(Vector((true, Intent.ShowRun(second))))
+        )
+        assert(second != first)
     }
   }
 

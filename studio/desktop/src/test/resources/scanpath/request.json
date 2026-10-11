@@ -1,0 +1,460 @@
+{
+  "schema_version": 1,
+  "x_min": 60,
+  "y_min": 40,
+  "x_max": 380,
+  "y_max": 240,
+  "nx": 32,
+  "ny": 20,
+  "sigma_px": 20,
+  "min_fixations": 2,
+  "screen_width_px": 800,
+  "screen_height_px": 600,
+  "sample_rate_hz": 250,
+  "pixels_per_degree": 30,
+  "geometry_note": "Synthetic display with explicitly declared 30 px/degree; no measured participant geometry.",
+  "templates": [
+    {
+      "id": "P1-a",
+      "participant": "P1",
+      "fixations": {
+        "x": [
+          60.1,
+          145,
+          205
+        ],
+        "y": [
+          40.1,
+          95,
+          155
+        ],
+        "duration_ms": [
+          120,
+          300,
+          60
+        ],
+        "onset_ms": [
+          0,
+          500,
+          1000
+        ]
+      }
+    },
+    {
+      "id": "P1-b",
+      "participant": "P1",
+      "fixations": {
+        "x": [
+          379.9,
+          265,
+          105
+        ],
+        "y": [
+          239.9,
+          135,
+          195
+        ],
+        "duration_ms": [
+          320,
+          100,
+          80
+        ],
+        "onset_ms": [
+          0,
+          500,
+          1000
+        ]
+      }
+    },
+    {
+      "id": "P2-a",
+      "participant": "P2",
+      "fixations": {
+        "x": [
+          60.1,
+          158,
+          205
+        ],
+        "y": [
+          40.1,
+          95,
+          155
+        ],
+        "duration_ms": [
+          120,
+          300,
+          60
+        ],
+        "onset_ms": [
+          0,
+          500,
+          1000
+        ]
+      }
+    },
+    {
+      "id": "P2-b",
+      "participant": "P2",
+      "fixations": {
+        "x": [
+          379.9,
+          265,
+          105
+        ],
+        "y": [
+          239.9,
+          148,
+          195
+        ],
+        "duration_ms": [
+          320,
+          100,
+          80
+        ],
+        "onset_ms": [
+          0,
+          500,
+          1000
+        ]
+      }
+    }
+  ],
+  "sources": [
+    {
+      "id": "P1-a-Cue",
+      "participant": "P1",
+      "phase": "Cue",
+      "template": "P1-a",
+      "fixations": {
+        "x": [
+          61.0,
+          145.9,
+          205.9
+        ],
+        "y": [
+          40.1,
+          95,
+          155
+        ],
+        "duration_ms": [
+          120,
+          300,
+          60
+        ],
+        "onset_ms": [
+          0,
+          500,
+          1000
+        ]
+      }
+    },
+    {
+      "id": "P1-a-Delay",
+      "participant": "P1",
+      "phase": "Delay",
+      "template": "P1-a",
+      "fixations": {
+        "x": [
+          65.0,
+          149.9,
+          209.9
+        ],
+        "y": [
+          40.1,
+          95,
+          155
+        ],
+        "duration_ms": [
+          120,
+          300,
+          60
+        ],
+        "onset_ms": [
+          0,
+          500,
+          1000
+        ]
+      }
+    },
+    {
+      "id": "P1-a-Probe",
+      "participant": "P1",
+      "phase": "Probe",
+      "template": "P1-a",
+      "fixations": {
+        "x": [
+          60.050000000000004,
+          144.95,
+          204.95
+        ],
+        "y": [
+          40.1,
+          95,
+          155
+        ],
+        "duration_ms": [
+          120,
+          300,
+          60
+        ],
+        "onset_ms": [
+          0,
+          500,
+          1000
+        ]
+      }
+    },
+    {
+      "id": "P1-b-Cue",
+      "participant": "P1",
+      "phase": "Cue",
+      "template": "P1-b",
+      "fixations": {
+        "x": [
+          379.99,
+          265.9,
+          105.9
+        ],
+        "y": [
+          239.9,
+          135,
+          195
+        ],
+        "duration_ms": [
+          320,
+          100,
+          80
+        ],
+        "onset_ms": [
+          0,
+          500,
+          1000
+        ]
+      }
+    },
+    {
+      "id": "P1-b-Delay",
+      "participant": "P1",
+      "phase": "Delay",
+      "template": "P1-b",
+      "fixations": {
+        "x": [
+          379.99,
+          269.9,
+          109.9
+        ],
+        "y": [
+          239.9,
+          135,
+          195
+        ],
+        "duration_ms": [
+          320,
+          100,
+          80
+        ],
+        "onset_ms": [
+          0,
+          500,
+          1000
+        ]
+      }
+    },
+    {
+      "id": "P1-b-Probe",
+      "participant": "P1",
+      "phase": "Probe",
+      "template": "P1-b",
+      "fixations": {
+        "x": [
+          379.84999999999997,
+          264.95,
+          104.95
+        ],
+        "y": [
+          239.9,
+          135,
+          195
+        ],
+        "duration_ms": [
+          320,
+          100,
+          80
+        ],
+        "onset_ms": [
+          0,
+          500,
+          1000
+        ]
+      }
+    },
+    {
+      "id": "P2-a-Cue",
+      "participant": "P2",
+      "phase": "Cue",
+      "template": "P2-a",
+      "fixations": {
+        "x": [
+          61.0,
+          158.9,
+          205.9
+        ],
+        "y": [
+          40.1,
+          95,
+          155
+        ],
+        "duration_ms": [
+          120,
+          300,
+          60
+        ],
+        "onset_ms": [
+          0,
+          500,
+          1000
+        ]
+      }
+    },
+    {
+      "id": "P2-a-Delay",
+      "participant": "P2",
+      "phase": "Delay",
+      "template": "P2-a",
+      "fixations": {
+        "x": [
+          65.0,
+          162.9,
+          209.9
+        ],
+        "y": [
+          40.1,
+          95,
+          155
+        ],
+        "duration_ms": [
+          120,
+          300,
+          60
+        ],
+        "onset_ms": [
+          0,
+          500,
+          1000
+        ]
+      }
+    },
+    {
+      "id": "P2-a-Probe",
+      "participant": "P2",
+      "phase": "Probe",
+      "template": "P2-a",
+      "fixations": {
+        "x": [
+          60.050000000000004,
+          157.95,
+          204.95
+        ],
+        "y": [
+          40.1,
+          95,
+          155
+        ],
+        "duration_ms": [
+          120,
+          300,
+          60
+        ],
+        "onset_ms": [
+          0,
+          500,
+          1000
+        ]
+      }
+    },
+    {
+      "id": "P2-b-Cue",
+      "participant": "P2",
+      "phase": "Cue",
+      "template": "P2-b",
+      "fixations": {
+        "x": [
+          379.99,
+          265.9,
+          105.9
+        ],
+        "y": [
+          239.9,
+          148,
+          195
+        ],
+        "duration_ms": [
+          320,
+          100,
+          80
+        ],
+        "onset_ms": [
+          0,
+          500,
+          1000
+        ]
+      }
+    },
+    {
+      "id": "P2-b-Delay",
+      "participant": "P2",
+      "phase": "Delay",
+      "template": "P2-b",
+      "fixations": {
+        "x": [
+          379.99,
+          269.9,
+          109.9
+        ],
+        "y": [
+          239.9,
+          148,
+          195
+        ],
+        "duration_ms": [
+          320,
+          100,
+          80
+        ],
+        "onset_ms": [
+          0,
+          500,
+          1000
+        ]
+      }
+    },
+    {
+      "id": "P2-b-Probe",
+      "participant": "P2",
+      "phase": "Probe",
+      "template": "P2-b",
+      "fixations": {
+        "x": [
+          379.84999999999997,
+          264.95,
+          104.95
+        ],
+        "y": [
+          239.9,
+          148,
+          195
+        ],
+        "duration_ms": [
+          320,
+          100,
+          80
+        ],
+        "onset_ms": [
+          0,
+          500,
+          1000
+        ]
+      }
+    }
+  ]
+}

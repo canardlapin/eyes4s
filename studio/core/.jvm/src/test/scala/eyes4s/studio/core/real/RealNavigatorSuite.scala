@@ -22,8 +22,8 @@ import eyes4s.studio.core.backend.*
 import eyes4s.studio.core.document.{ReportingId, ReportingSpec, ReportingWeight}
 import eyes4s.studio.core.fixture.StoryMoments
 import eyes4s.studio.core.headless.NativeReads
-import eyes4s.studio.core.navigation.{ReportRef, UsedByRole}
-import eyes4s.studio.core.selection.{ScaleIndex, StudioRef}
+import eyes4s.studio.core.navigation.{NavigationError, ReportRef, UsedByRole}
+import eyes4s.studio.core.selection.{FixationIndex, ScaleIndex, StudioRef}
 import munit.CatsEffectSuite
 import scala.concurrent.duration.*
 
@@ -69,7 +69,15 @@ class RealNavigatorSuite extends CatsEffectSuite:
             maps      <- reads.navigator.maps(pair).map(get)
             fixations <- reads.navigator.fixations(maps.query, page).map(get)
             fixation = fixations.entries.headOption.getOrElse(fail("no fixation"))
-            record     <- reads.navigator.record(fixation).map(get)
+            record <- reads.navigator.record(fixation).map(get)
+            // S3.4 recheck (slice r6 of S3.7): a fixation the run did not
+            // serve has no source context; the lookup refuses it by name
+            // rather than resolving some record.
+            unserved = fixation match
+              case StudioRef.Fixation(trial, _) =>
+                StudioRef.Fixation(trial, get(FixationIndex.of(10000)))
+              case other => fail(s"not a fixation: $other")
+            beyond     <- reads.navigator.record(unserved)
             used       <- reads.navigator.usedByCounts(maps.query).map(get)
             usingPairs <- reads.navigator.usedBy(maps.query, UsedByRole.AsQuery, page).map(get)
             matchedRoleCell = ReportRef.Cell(
@@ -110,6 +118,7 @@ class RealNavigatorSuite extends CatsEffectSuite:
             assert(matchedParticipants.entries.forall(_.cell.role == ReportRole.Matched))
             assert(usingPairs.entries.contains(pair))
             assert(used.asQuery > 0)
+            assertEquals(beyond, Left(NavigationError.UnboundFixation(unserved)))
             record match
               case StudioRef.SourceRecord(trial, Some(index), _, number) =>
                 val core = held.prepared.admitted.input.trials.rows
