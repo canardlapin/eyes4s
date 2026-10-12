@@ -228,6 +228,47 @@ class ParticipantPlotSuite extends FunSuite:
     assert(written.contains("+0.30") && written.contains("+0.15"), written)
   }
 
+  test("the D axis labels zero and every grid rule, signed, at its value") {
+    val plot  = built(board)
+    val texts = grobs(plot).collect { case t: Grob.Text => t }
+    // The board's means span −0.23 to +0.45: a 0.1 step, one place.
+    val axis = Vector("−0.2", "−0.1", "0", "+0.1", "+0.2", "+0.3", "+0.4", "+0.5")
+    val tick = raw"0|[+−]\d\.\d".r
+    assertEquals(texts.map(_.label).filter(tick.matches), axis)
+    axis.zip(Vector(-0.2, -0.1, 0.0, 0.1, 0.2, 0.3, 0.4, 0.5)).foreach { (label, d) =>
+      val t = texts.find(_.label == label).getOrElse(fail(label))
+      assertEquals(Right(t.at.y), intaglio.LengthExpr.native(d), label)
+    }
+  }
+
+  test("the D grid step is a power of ten, doubled past ten intervals; labels follow it") {
+    val wide = ParticipantPlot.Frame.of(Vector(0.0, 1.5), false)
+    assertEquals(wide.ticks.size, 9)
+    assertEquals(
+      wide.ticks.map(wide.label),
+      Vector("0", "+0.2", "+0.4", "+0.6", "+0.8", "+1.0", "+1.2", "+1.4", "+1.6")
+    )
+    val narrow = ParticipantPlot.Frame.of(Vector(-0.18, 0.02), false)
+    assertEquals(narrow.ticks.map(narrow.label), Vector("−0.1", "0"))
+    val whole = ParticipantPlot.Frame.of(Vector(-3.0, 4.0), false)
+    assertEquals(
+      whole.ticks.map(whole.label),
+      Vector("−3", "−2", "−1", "0", "+1", "+2", "+3", "+4")
+    )
+  }
+
+  test("a negative grand mean is written signed, with a true minus, as the table writes it") {
+    val below = means(
+      Vector(("Remembered", -0.08, 2), ("Forgotten", 0.05, 2)),
+      Vector("P01" -> Vector(Some((-0.10, 4)), Some((0.05, 3))))
+    )
+    val written = grobs(built(below)).collect { case t: Grob.Text => t.label }
+    assert(written.contains("−0.08") && written.contains("+0.05"), written)
+    val table = source(below)
+    val row   = right(table.rowOf(grand(below, "Remembered").ref).toRight("row"))
+    assertEquals(table.text(row, right(table.indexOf(columns.d).toRight("d"))), Some("−0.08"))
+  }
+
   test("each grand mean says its own group's n, not another group's") {
     val means           = zeroAndMissing
     val plot            = built(means)
