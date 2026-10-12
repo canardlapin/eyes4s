@@ -120,8 +120,6 @@ the deviation below instead of failing. Tickets are numbered as in the design re
   radio, checkbox and slider styling and the segmented bar (16).
 - Shared: the board's one resting focus ring (`.kf`) is shown in tests by putting real keyboard focus on that
   node, not drawn at rest (28).
-- Bugs found by the review: Mono "SmBld" family named in `studio-navigator.css:131` and `studio-ledger.css:99`
-  (4); `.design-chip` focus replaces its selected fill (5); greyscale proof by desaturation (6); "1 records" (7).
 - Maps: alpha floor and hatched missing cells (8); fixation cross above the map and cased, round isoline caps,
   map legend (17).
 - Explore: NeutralMark alpha .35 and halo (11); timeline, including bars outside the brush dimmed (18).

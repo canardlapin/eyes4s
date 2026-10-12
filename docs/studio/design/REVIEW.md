@@ -22,10 +22,10 @@ Status key: **[approved]** owner-approved · **[bug]** a pure bug, landable with
 3. [board] Main "Edit in Analysis ⌘3" weight 400. Data thumbnail dash `82 55`, width 14 (6/4 px at 0.073×).
 
 **B. Pure bugs (code; land first, small PRs)**
-4. [bug] Mono SmBld → "IBM Plex Mono Medm" at `studio-navigator.css:131` and `studio-ledger.css:99`. Test: a TypeCss/font-family lint that every family named in CSS is loaded.
-5. [bug] `.design-chip:focused` (`studio-design.css:63`) replaces the `:selected` fill (`:53`). Write the compound `.design-chip:selected:focused`. Test: `ResolvedDesignFxSuite` snapshot.
-6. [bug] Greyscale proof: `ColorAdjust` (`FiguresHost.scala:396`) gives max(R,G,B), so match and control print the same grey. Replace it with a Rec. 709 luma render. Test: a new luma check that the match and control greys differ.
-7. [bug] Plural: "1 records inside" (`GeometryText.scala:105`; `GeometryPanelSuite:461`). Add a singular form.
+4. [bug] Mono SmBld → "IBM Plex Mono Medm" at `studio-navigator.css:131` and `studio-ledger.css:99`. Test: a TypeCss/font-family lint that every family named in CSS is loaded. **Fixed.**
+5. [bug] `.design-chip:focused` (`studio-design.css:63`) replaces the `:selected` fill (`:53`). Write the compound `.design-chip:selected:focused`. Test: `ResolvedDesignFxSuite` snapshot. **Fixed.**
+6. [bug] Greyscale proof: `ColorAdjust` (`FiguresHost.scala:396`) gives max(R,G,B), so match and control print the same grey. Replace it with a Rec. 709 luma render. Test: a new luma check that the match and control greys differ. **Fixed.**
+7. [bug] Plural: "1 records inside" (`GeometryText.scala:105`; `GeometryPanelSuite:461`). Add a singular form. **Fixed.**
 
 **C. Owner-approved**
 8. [approved] Map alpha floor (SPEC-AMENDMENTS #1, #10).
