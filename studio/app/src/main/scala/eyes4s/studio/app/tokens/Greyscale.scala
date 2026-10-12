@@ -51,7 +51,7 @@ object Greyscale:
   /** A non-premultiplied `0xAARRGGBB` pixel as its grey, alpha kept. */
   def argb(pixel: Int): Int =
     val g = grey((pixel >>> 16) & 0xff, (pixel >>> 8) & 0xff, pixel & 0xff)
-    (pixel & 0xff000000) | (g << 16) | (g << 8) | g
+    ((pixel >>> 24) << 24) | (g << 16) | (g << 8) | g
 
   // The linear light of each 8-bit level.
   private val linearLevels: Array[Double] = Array.tabulate(256)(i => toLinear(i / 255.0))
