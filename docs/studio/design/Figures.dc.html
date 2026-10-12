@@ -12,16 +12,18 @@
 <style>
 body{margin:0}
 /* ===== Eyes Studio tokens (the only place colours are written) ===== */
-.es{--ground:#ECE9E2;--surface:#FBFAF7;--surface-2:#F3F1EC;--surface-3:#E9E6DF;--hairline:#DAD6CC;--ink:#1C1E21;--ink-2:#464B52;--ink-3:#5E636A;--accent:#0E6E68;--accent-soft:#DCEFEC;--on-accent:#FFFFFF;--query:#3A2E6E;--query-soft:#E6E2F2;--match:#2F6DB5;--match-soft:#E0EAF6;--match-text:#255A98;--control:#B86E0E;--control-fill:#D98A1C;--control-text:#9A4A07;--control-soft:#F7E7D0;--fail:#A3261B;--fail-soft:#F6DEDA;--warn-text:#7A4F00;--warn-soft:#FBF1D9;--stage:#1A1A1A;--on-stage:#D9D6CF;--neutral-mark:rgba(28,30,33,.35);--sel-ring:0 0 0 2px #FFFFFF,0 0 0 4px #1C1E21;--tl-bg:#ECECEC;--tl-text:#4D4D4D}
-.es [data-stage=light],.es[data-stage=light]{--stage:#F2F2F2;--on-stage:#1C1E21}.es [data-stage=mid],.es[data-stage=mid]{--stage:#808080;--on-stage:#FFFFFF}
-.es.dark{--ground:#121315;--surface:#1B1C1F;--surface-2:#222327;--surface-3:#2A2C31;--hairline:#34363C;--ink:#ECEAE5;--ink-2:#BDBAB3;--ink-3:#9C9990;--accent:#43B5AA;--accent-soft:#183A37;--on-accent:#0B1413;--query:#D6CBFF;--query-soft:#2B2544;--match:#5C95E0;--match-soft:#1D2A3D;--match-text:#7FB0EE;--control:#E8A23C;--control-fill:#E8A23C;--control-text:#EBB066;--control-soft:#3A2A14;--fail:#F08A7E;--fail-soft:#3A1E1B;--warn-text:#E7C274;--warn-soft:#33290F;--neutral-mark:rgba(236,234,229,.35);--sel-ring:0 0 0 2px #000000,0 0 0 4px #ECEAE5;--tl-bg:#2B2B2B;--tl-text:#B0B0B0}
+.es{--ground:#ECE9E2;--sel-fill:#E4E0D6;--surface:#FBFAF7;--surface-2:#F3F1EC;--surface-3:#E9E6DF;--hairline:#DAD6CC;--ink:#1C1E21;--ink-2:#464B52;--ink-3:#5E636A;--accent:#0E6E68;--accent-soft:#DCEFEC;--on-accent:#FFFFFF;--query:#3A2E6E;--query-soft:#E6E2F2;--match:#2F6DB5;--match-soft:#E0EAF6;--match-text:#255A98;--control:#B86E0E;--control-fill:#D98A1C;--control-text:#9A4A07;--control-soft:#F7E7D0;--fail:#A3261B;--fail-soft:#F6DEDA;--warn-text:#7A4F00;--warn-soft:#FBF1D9;--stage:#1A1A1A;--on-stage:#D9D6CF;--neutral-mark:rgba(28,30,33,.35);--sel-ring:0 0 0 2px #FFFFFF,0 0 0 4px #1C1E21;--tl-bg:#ECECEC;--tl-text:#4D4D4D}
+.es [data-stage=light],.es[data-stage=light]{--stage:#F2F2F2;--on-stage:#1C1E21;--halo:#1C1E21}.es [data-stage=mid],.es[data-stage=mid]{--stage:#767676;--on-stage:#FFFFFF;--halo:#FFFFFF}
+.es.dark{--ground:#121315;--sel-fill:#2E3035;--surface:#1B1C1F;--surface-2:#222327;--surface-3:#2A2C31;--hairline:#34363C;--ink:#ECEAE5;--ink-2:#BDBAB3;--ink-3:#9C9990;--accent:#43B5AA;--accent-soft:#183A37;--on-accent:#0B1413;--query:#D6CBFF;--query-soft:#2B2544;--match:#5C95E0;--match-soft:#1D2A3D;--match-text:#7FB0EE;--control:#E8A23C;--control-fill:#E8A23C;--control-text:#EBB066;--control-soft:#3A2A14;--fail:#F08A7E;--fail-soft:#3A1E1B;--warn-text:#E7C274;--warn-soft:#33290F;--neutral-mark:rgba(236,234,229,.35);--sel-ring:0 0 0 2px #000000,0 0 0 4px #ECEAE5;--tl-bg:#2B2B2B;--tl-text:#B0B0B0}
 /* Figures-only token: a figure page is paper in both themes; its ink is fixed too */
-.es{--paper:#FFFFFF;--paper-ink:#1C1E21;--paper-ink-2:#464B52;--paper-rule:#C9C5BC;--fig-query:#3A2E6E;--fig-match:#2F6DB5;--fig-control:#D98A1C}
+.es{--paper:#FFFFFF;--paper-ink:#1C1E21;--paper-ink-2:#464B52;--paper-rule:#C9C5BC;--fig-query:#3A2E6E;--fig-match:#2F6DB5;--fig-control:#B86E0E;--fig-control-fill:#D98A1C}
+/* Figure-page scene: stage halo (StageToken.Halo; the gaze panels set data-stage=light), blank screen and isolines (PaletteToken);
+   not product tokens: stimulus picture pixels (--stim-*), native title-bar lights. Greyscale greys are computed (luma), not tokens. */
+.es{--halo:#FFFFFF;--screen:#9A9A96;--isoline-case:rgba(255,255,255,.9);--isoline-ink:rgba(28,30,33,.9);--stim-sky:#C9D3D6;--stim-sea:#8FA3AB;--stim-sand:#D9CDB4;--stim-sun:#E9E4D6;--stim-frond:#5E6660;--stim-shade:#A45C4A;--stim-pole:#6E5B4A;--tl-close:#FF5F57;--tl-min:#FEBC2E;--tl-max:#28C840}
 .es{font-family:"IBM Plex Sans",-apple-system,"Helvetica Neue",sans-serif;font-size:12px;color:var(--ink);background:var(--ground)}
 .es button{font-family:inherit;font-size:inherit;color:inherit;cursor:pointer}
-.es a{color:var(--accent)}.es a:hover{color:var(--ink)}
 .mono{font-family:"IBM Plex Mono",ui-monospace,monospace}
-.t11{font-size:11px}.t13{font-size:13px;font-weight:600}.t16{font-size:16px}.t28{font-size:28px;font-weight:500;letter-spacing:-.02em}
+.t11{font-size:11px}.t13{font-size:13px;font-weight:600}.t16{font-size:16px}.t28{font-size:28px;font-weight:500;}
 .row{display:flex;align-items:center;gap:8px}
 .chip{display:flex;align-items:center;gap:6px;height:24px;padding:0 9px;border:1px solid var(--hairline);border-radius:6px;background:var(--surface);color:var(--ink-2);white-space:nowrap}
 .seg{display:flex;gap:2px;padding:2px;background:var(--surface-3);border-radius:7px}
@@ -37,8 +39,10 @@ body{margin:0}
 .ib{width:22px;height:22px;border:0;background:transparent;border-radius:4px;display:flex;align-items:center;justify-content:center;color:var(--ink-3);padding:0}
 .tb{height:30px;flex:none;display:flex;align-items:center;gap:8px;padding:0 10px;border-bottom:1px solid var(--hairline);background:var(--surface)}
 .lbl{font-size:11px;font-weight:600;color:var(--ink-3)}
-.tog{height:22px;border:1px solid var(--hairline);background:var(--surface);border-radius:4px;padding:0 8px;color:var(--ink-2)}
-.tog.on{background:var(--ink);border-color:var(--ink);color:var(--surface)}
+.sg{display:flex;gap:2px;padding:2px;background:var(--surface-3);border-radius:6px}
+.sg button{height:20px;border:0;border-radius:4px;padding:0 7px;background:transparent;color:var(--ink-2);font-weight:500;white-space:nowrap}
+.sg button:hover{background:var(--surface-2)}
+.sg button[aria-pressed=true],.sg button[aria-checked=true]{background:var(--surface);color:var(--ink);box-shadow:0 0 0 1px var(--hairline)}
 .crumb{height:22px;border:0;background:transparent;border-radius:4px;padding:0 6px;color:var(--ink-2)}
 .crumb:hover{background:var(--surface-3)}
 .crumb.cur{color:var(--ink);font-weight:600}
@@ -46,23 +50,67 @@ body{margin:0}
 .pill{display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:600;padding:1px 6px;border-radius:4px}
 .kind{font-size:11px;font-weight:600;padding:1px 6px;border-radius:3px;border:1px solid var(--hairline);color:var(--ink-2);background:var(--surface-2)}
 .sect{border-top:1px solid var(--hairline);padding:12px 14px;display:flex;flex-direction:column;gap:8px}
-.kv{display:grid;grid-template-columns:118px minmax(0,1fr);row-gap:5px;column-gap:8px;margin:0}
+.kv{display:grid;grid-template-columns:96px minmax(0,1fr);row-gap:5px;column-gap:8px;margin:0}
 .kv dt{color:var(--ink-3);margin:0}.kv dd{margin:0}
 .btn{height:26px;padding:0 10px;border-radius:4px;border:1px solid var(--hairline);background:var(--surface);font-weight:500}
 .btn.pri{background:var(--accent);border-color:var(--accent);color:var(--on-accent)}
 .stage{background:var(--stage)}
 /* Figures board */
 .fi{display:grid;grid-template-columns:14px minmax(0,1fr) auto;align-items:center;gap:6px;height:26px;padding:0 10px 0 24px;border:0;background:transparent;width:100%;text-align:left;color:var(--ink)}
-.fi.sel{box-shadow:inset 0 0 0 2px var(--ink);background:var(--surface-2)}
-.fig{font-family:"IBM Plex Sans",sans-serif;color:var(--paper-ink)}
-.pl{font-size:10px;font-weight:600}
-.fc{font-size:9px;color:var(--paper-ink-2);line-height:1.3}
-.panel{position:relative;display:flex;flex-direction:column;gap:3px;border-radius:2px}
-.panel.sel{box-shadow:var(--sel-ring)}
-.hatch{background:repeating-linear-gradient(135deg,var(--warn-soft) 0 6px,var(--surface) 6px 12px)}
+.fi.sel{background:var(--sel-fill)}
+.pnl{position:absolute;padding:0;border:0;background:transparent;border-radius:2px;cursor:pointer}
+/* page panels: ONE ring at a time, inside the hit area's 4 px gutter. Selected = 2 px ink; the focus cursor = 2 px accent in
+   the same place (replaces the ink ring, never adds a second band). The gutter tag and the navigator also name the selection. */
+.pnl.sel{box-shadow:inset 0 0 0 2px var(--ink)}
+.es .pnl.sel.kf,.es [data-composite]:focus-visible .pnl[data-cursor]{box-shadow:inset 0 0 0 2px var(--accent)}
+.es:has(:focus-visible) .pnl.sel.kf:not(:focus-visible):not(:focus-visible *){box-shadow:inset 0 0 0 2px var(--ink)}
+.stale{background:var(--warn-soft);border-bottom:1px dashed var(--warn-text)}
 .ck{display:flex;align-items:center;gap:8px}
-.ck input{accent-color:var(--accent);margin:0}
+.ck input{accent-color:var(--ink);margin:0}
 .serif{font-family:"Source Serif 4",Georgia,serif}
+
+/* ===== round-1 shared rules: JavaFX parity + interaction states ===== */
+.es,.es *{box-sizing:border-box}
+.es{line-height:1.3}
+.es :focus{outline:none}
+.es :focus-visible{outline:none;box-shadow:inset 0 0 0 2px var(--accent)}
+.es .sel:focus-visible,.es .on:focus-visible{box-shadow:inset 0 0 0 2px var(--accent),inset 0 0 0 4px var(--ink)}
+.es a{color:var(--ink);text-decoration:underline;text-decoration-color:var(--ink-3)}.es a:hover{color:var(--ink-2)}
+.es .chip,.es .pill,.es .kind,.es .btn,.es .tog,.es .tab,.es .crumb{white-space:nowrap}
+.es .btn:hover,.es .tog:hover,.es .ib:hover,.es .tab:hover{background:var(--surface-3)}
+.es .btn.pri:hover{background:var(--accent)}
+.es .btn:disabled,.es .btn[aria-disabled=true]{cursor:default}
+.es .tog{background:var(--surface-2);color:var(--ink-2)}
+.es .tog.on{background:var(--surface);border-color:var(--ink-3);color:var(--ink);font-weight:600}
+.es .kf{box-shadow:inset 0 0 0 2px var(--accent)}
+.es .sel.kf,.es .on.kf{box-shadow:inset 0 0 0 2px var(--accent),inset 0 0 0 4px var(--ink)}
+
+/* ===== round-2 shared rules: focus never hidden, selection = fill (not a ring), native controls ===== */
+.es [aria-pressed=true]:focus-visible,.es [aria-checked=true]:focus-visible,.es [aria-selected=true]:focus-visible,.es .sg button:focus-visible{box-shadow:inset 0 0 0 2px var(--accent)}
+.es .sel.kf,.es .on.kf,.es .sel:focus-visible{box-shadow:inset 0 0 0 2px var(--accent)}
+.es .ib:disabled,.es .ib[aria-disabled=true],.es .tog:disabled{opacity:.4;cursor:default}
+.es input[type=radio],.es input[type=checkbox]{accent-color:var(--ink);width:14px;height:14px;margin:0;flex:none}
+.es input[type=range]{accent-color:var(--ink-2)}
+.es input[type=text],.es input[type=search],.es input:not([type]){height:24px;border:1px solid var(--hairline);border-radius:4px;background:var(--surface);color:var(--ink);padding:0 8px;font:inherit}
+
+/* ===== round-3 shared rules: one ring per focused composite, hover != selection, disabled = opacity ===== */
+.es [role=tree]:focus-visible,.es [role=listbox]:focus-visible,.es [role=grid]:focus-visible,.es [data-composite]:focus-visible{box-shadow:none}
+.es [role=tree]:focus-visible [data-cursor],.es [role=listbox]:focus-visible [data-cursor],.es [role=grid]:focus-visible [data-cursor],.es [data-composite]:focus-visible [data-cursor]{box-shadow:inset 0 0 0 2px var(--accent)}
+.es .cur-ring{visibility:hidden}
+.es .kf .cur-ring,.es .kf.cur-ring,.es :focus-visible .cur-ring{visibility:visible}
+.es [role=option]:not([aria-selected=true]):hover,.es [role=treeitem]:not([aria-selected=true]):hover,.es [role=row]:not([aria-selected=true]):hover{background:var(--surface-2)}
+.es .btn:disabled,.es .btn[aria-disabled=true],.es .sg button:disabled,.es .sg button[aria-disabled=true],.es .chip[aria-disabled=true],.es .tab[aria-disabled=true],.es input:disabled{opacity:.4;border-style:solid;cursor:default}
+.es input:disabled+label,.es label:has(input:disabled){opacity:.4;cursor:default}
+
+/* ===== polish v3b shared rules: grid row cursor painted on cells; depicted focus yields to real focus ===== */
+.es [role=grid]:focus-visible tr[data-cursor]{box-shadow:none}
+.es [role=grid]:focus-visible tr[data-cursor]>*{box-shadow:inset 0 2px 0 var(--accent),inset 0 -2px 0 var(--accent)}
+.es [role=grid]:focus-visible tr[data-cursor]>*:first-child{box-shadow:inset 2px 0 0 var(--accent),inset 0 2px 0 var(--accent),inset 0 -2px 0 var(--accent)}
+.es [role=grid]:focus-visible tr[data-cursor]>*:last-child{box-shadow:inset -2px 0 0 var(--accent),inset 0 2px 0 var(--accent),inset 0 -2px 0 var(--accent)}
+.es:has(:focus-visible) .kf:not(:focus-visible):not(:focus-visible *){box-shadow:none}
+.es:has(:focus-visible) .kf:not(:focus-visible):not(:focus-visible *) .cur-ring,.es:has(:focus-visible) .kf.cur-ring:not(:focus-visible *){visibility:hidden}
+.es:has(:focus-visible) :focus-visible .cur-ring,.es:has(:focus-visible) :focus-visible.cur-ring{visibility:visible}
+.es:has(:focus-visible) .sel.kf:not(:focus-visible):not(:focus-visible *),.es:has(:focus-visible) .on.kf:not(:focus-visible):not(:focus-visible *){box-shadow:none}
 </style>
 </helmet>
 
@@ -70,7 +118,7 @@ body{margin:0}
 
 <!-- 1 · Native title bar (system-drawn; shown for context only) -->
 <div style="height:28px;flex:none;display:flex;align-items:center;padding:0 12px;background:var(--tl-bg);position:relative">
-<div style="display:flex;gap:8px"><span style="width:12px;height:12px;border-radius:50%;background:#FF5F57"></span><span style="width:12px;height:12px;border-radius:50%;background:#FEBC2E"></span><span style="width:12px;height:12px;border-radius:50%;background:#28C840"></span></div>
+<div style="display:flex;gap:8px"><span style="width:12px;height:12px;border-radius:50%;background:var(--tl-close)"></span><span style="width:12px;height:12px;border-radius:50%;background:var(--tl-min)"></span><span style="width:12px;height:12px;border-radius:50%;background:var(--tl-max)"></span></div>
 <div style="position:absolute;left:0;right:0;text-align:center;color:var(--tl-text);pointer-events:none">memory-study.eyes</div>
 </div>
 
@@ -78,7 +126,7 @@ body{margin:0}
 <header style="height:44px;flex:none;display:flex;align-items:center;gap:10px;padding:0 12px 0 14px;background:var(--surface);border-bottom:1px solid var(--hairline)">
 <div class="row" style="gap:7px;margin-right:4px">
 <svg width="20" height="20" viewBox="0 0 20 20" aria-hidden="true"><path d="M1.5 10C4 5.5 7 3.5 10 3.5S16 5.5 18.5 10C16 14.5 13 16.5 10 16.5S4 14.5 1.5 10Z" fill="none" stroke="var(--ink)" stroke-width="1.5"/><circle cx="10" cy="10" r="3.2" fill="var(--ink)"/><circle cx="11.2" cy="8.8" r="1" fill="var(--surface)"/></svg>
-<span class="t13" style="letter-spacing:-.01em">Eyes Studio</span>
+<span class="t13" style="">Eyes Studio</span>
 </div>
 <button class="chip"><span>memory-study</span><svg width="10" height="10" viewBox="0 0 10 10" aria-hidden="true"><path d="M2 3.5 5 6.5 8 3.5" fill="none" stroke="currentColor" stroke-width="1.5"/></svg></button>
 <div style="flex:1"></div>
@@ -103,7 +151,7 @@ body{margin:0}
 <button class="crumb cur" aria-current="location">{{panelCrumb}}</button>
 </nav>
 <div style="flex:1"></div>
-<span class="chip" style="height:22px"><span style="width:7px;height:7px;border-radius:50%;background:var(--accent)"></span>Analysis rev 4 · run 7 · data r3 · current</span>
+<span class="chip" style="height:22px"><span data-accent-job="current" style="width:7px;height:7px;border-radius:50%;background:var(--accent)"></span>Analysis rev 4 · run 7 · data r3 · current</span>
 <button class="chip" style="height:22px;border-style:dashed;border-color:var(--ink-2);color:var(--ink)">Draft rev 5 · 1 change · ready</button>
 </div>
 
@@ -121,177 +169,142 @@ body{margin:0}
 
 <!-- Navigator -->
 <section class="grp" style="width:240px;flex:none" aria-label="Figures navigator">
-<div class="hdr"><button class="tab sel">Figures</button><div class="hbtns"><button class="ib" aria-label="Minimize group"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 8h8"/></svg></button></div></div>
+<div class="hdr"><div role="tablist" aria-label="Navigator views" style="display:flex"><button class="tab sel" role="tab" aria-selected="true" tabindex="0">Figures</button></div><div class="hbtns"><button class="ib" aria-label="Minimize navigator"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 8h8"/></svg></button></div></div>
 <div class="tb"><button class="btn" style="height:22px">New figure</button><div style="flex:1"></div><span class="lbl">2 figures</span></div>
 <div style="flex:1;overflow:hidden;display:flex;flex-direction:column">
 <div style="padding:8px 10px 4px;display:flex;flex-direction:column;gap:2px">
-<div class="row" style="justify-content:space-between"><span class="t13">Figure 1</span><span class="row t11" style="gap:5px;color:var(--ink-2)"><span style="width:7px;height:7px;border-radius:50%;background:var(--accent)"></span>current</span></div>
+<div class="row" style="justify-content:space-between"><span class="t13">Figure 1</span><span class="row t11" style="gap:5px;color:var(--ink-2)"><span data-accent-job="current" style="width:7px;height:7px;border-radius:50%;background:var(--accent)"></span>current</span></div>
 <span class="t11 mono" style="color:var(--ink-2)">run 7 · rev 4 · data r3</span>
 <span class="t11" style="color:var(--ink-2)">Reporting: By retrieval response</span>
 </div>
+<div role="listbox" tabindex="0" aria-activedescendant="{{panelAd}}" aria-label="Figure 1 panels. One focus stop; arrow keys move the panel cursor.">
 <sc-for list="{{panels}}" as="p" hint-placeholder-count="5">
-<button class="{{p.cls}}" onClick="{{p.pick}}" aria-label="{{p.aria}}"><span class="mono" style="font-weight:600">{{p.letter}}</span><span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{p.name}}</span><span class="t11 mono" style="color:var(--ink-3)">{{p.scope}}</span></button>
+<button class="{{p.cls}}" role="option" id="{{p.domId}}" tabindex="-1" aria-selected="{{p.selA}}" data-cursor="{{p.cur}}" onClick="{{p.pick}}" aria-label="{{p.aria}}"><span class="mono" style="font-weight:500">{{p.letter}}</span><span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{p.name}}</span><span class="t11 mono" style="color:var(--ink-3)">{{p.scope}}</span></button>
 </sc-for>
-<div style="margin:12px 10px 0;border:1px solid var(--hairline);border-radius:6px;overflow:hidden">
-<div class="hatch" style="padding:8px 10px;display:flex;flex-direction:column;gap:3px">
+</div>
+<div style="margin:12px 10px 0;border:1px dashed var(--warn-text);border-radius:6px;overflow:hidden">
+<div class="stale" style="padding:8px 10px;display:flex;flex-direction:column;gap:3px">
 <div class="row" style="justify-content:space-between"><span class="t13">Figure 2</span><span class="t11" style="font-weight:600;color:var(--warn-text)">Stale</span></div>
 <span class="t11 mono" style="color:var(--ink-2)">run 5 · rev 3 · data r2</span>
 </div>
 <div style="padding:8px 10px;display:flex;flex-direction:column;gap:6px;background:var(--surface)">
-<span class="t11" style="color:var(--ink-2);line-height:1.45">Bound to run 5 · rev 3 · data r2, which is no longer current: dataset r3 changed the admission status of 4 trials. The figure still shows run 5 exactly as it was.</span>
-<div class="row" style="gap:6px"><button class="btn" style="height:22px">Rebind…</button><button class="btn" style="height:22px">Keep as rev 3</button></div>
+<span class="t11" style="color:var(--ink-2);">Bound to run 5 · rev 3 · data r2, which is no longer current: dataset r3 changed the admission status of 4 trials. The figure still shows run 5 exactly as it was.</span>
+<div class="row" style="gap:6px"><button class="btn" style="height:22px" aria-label="Rebind Figure 2">Rebind…</button><button class="btn" style="height:22px" aria-label="Keep Figure 2 as rev 3">Keep as rev 3</button></div>
 </div>
 </div>
 </div>
-<div class="t11" style="border-top:1px solid var(--hairline);padding:8px 12px;color:var(--ink-2);line-height:1.45">A figure binds to one run and one reporting spec. It never follows the latest result.</div>
+<div class="t11" style="border-top:1px solid var(--hairline);padding:8px 12px;color:var(--ink-2);">A figure binds to one run and one reporting spec. It never follows the latest result.</div>
 </section>
 
 <!-- Centre: page + methods -->
 <div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:1px">
 <section class="grp" style="flex:1;min-height:0" aria-label="Figure 1 page">
-<div class="hdr"><button class="tab sel focus">Figure 1</button><button class="tab">Table</button><div class="hbtns"><button class="ib" aria-label="Maximize group"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="10" height="10"/></svg></button></div></div>
+<div class="hdr"><div role="tablist" aria-label="Figure views" style="display:flex"><button class="tab sel focus" data-accent-job="focus" role="tab" aria-selected="true" tabindex="0">Figure 1</button><button class="tab" role="tab" aria-selected="false" tabindex="-1">Table</button></div><div class="hbtns"><button class="ib" aria-label="Maximize figure page"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="10" height="10"/></svg></button></div></div>
 <div class="tb">
 <span class="lbl">Page</span><span class="mono t11">183 mm · two-column</span>
 <span style="width:1px;height:14px;background:var(--hairline)"></span>
-<button class="{{greyCls}}" onClick="{{toggleGrey}}">Greyscale check</button>
+<span class="sg"><button aria-pressed="{{greyPressed}}" onClick="{{toggleGrey}}" aria-label="Greyscale check: preview the page as a luma greyscale print">Greyscale check</button></span>
 <span class="t11" style="color:var(--ink-2)">{{greyNote}}</span>
 <div style="flex:1"></div>
-<span class="mono t11" style="color:var(--ink-3)">100% · 3.5 px/mm</span>
+<span class="mono t11" style="color:var(--ink-3)">100% · 3.5 px/mm · text 7 pt</span>
 </div>
-<div style="flex:1;min-height:0;display:flex;align-items:center;justify-content:center;background:var(--surface-3)">
-<div class="fig" tabindex="0" role="group" aria-label="Figure 1 page, 5 panels; arrow keys move between panels" style="width:640px;height:420px;box-sizing:border-box;padding:12px 14px 10px;background:var(--paper);box-shadow:0 1px 3px rgba(0,0,0,.18);display:flex;flex-direction:column;gap:9px;filter:{{greyFilter}}">
-
-<!-- Row 1: A, B, C -->
-<div style="display:flex;gap:10px;height:156px">
-<!-- A -->
-<div class="{{clsA}}" style="width:170px">
-<span class="pl">A <span style="font-weight:400">Encoding · enc_03 · beach-042</span></span>
-<svg width="170" height="128" viewBox="0 0 1024 768" role="img" aria-label="Panel A: encoding gaze on beach-042, 13 fixations">
-<rect width="1024" height="330" fill="#C9D3D6"/><rect y="330" width="1024" height="150" fill="#8FA3AB"/><rect y="480" width="1024" height="288" fill="#D9CDB4"/>
-<circle cx="820" cy="140" r="54" fill="#E9E4D6"/>
-<path d="M300 480V330M300 330q-60-30-110 0M300 330q60-40 120-10M300 330q-20-60-50-80M300 330q30-60 80-68" stroke="#5E6660" stroke-width="10" fill="none"/>
-<path d="M580 600 740 470l20 130Z" fill="#A45C4A" opacity=".75"/><rect x="640" y="600" width="12" height="90" fill="#6E5B4A"/>
-<polyline points="512,384 300,430 540,360 700,300 640,560" fill="none" stroke="#FFFFFF" stroke-width="5" stroke-dasharray="14 10"/>
-<g fill="var(--fig-match)" stroke="#FFFFFF" stroke-width="5"><path d="M512 370 526 384 512 398 498 384Z"/><path d="M300 400 330 430 300 460 270 430Z"/><path d="M540 324 576 360 540 396 504 360Z"/><path d="M700 274 726 300 700 326 674 300Z"/><path d="M640 538 662 560 640 582 618 560Z"/></g>
+<div style="flex:1;min-height:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;background:var(--surface-3)">
+<div style="position:relative;width:{{pageBoxW}};height:{{pageBoxH}};flex:none">
+<!-- Selection tag: outside the page, in the left gutter, top-aligned with the selected panel -->
+<div class="t11" style="position:absolute;right:{{tagRight}};top:{{tagTop}};display:flex;flex-direction:column;gap:1px;padding:4px 7px;border:1px solid var(--ink);border-radius:4px;background:var(--surface);color:var(--ink-2);white-space:nowrap" aria-hidden="true">
+<span style="font-weight:600;color:var(--ink)">Panel {{panelLetter}}</span><span class="mono">{{tagScale}}</span><span>{{tagSel}}</span>
+</div>
+<div tabindex="0" role="group" data-composite="" aria-activedescendant="{{pageAd}}" aria-label="Figure 1 page, 5 panels, panel {{panelLetter}} selected. One focus stop; arrow keys move between panels." style="position:absolute;left:0;top:0;width:{{pageBoxW}};height:{{pageBoxH}};border:1px solid var(--hairline);background:var(--paper)">
+<!-- Intaglio scene: FigurePage.build, laid out by FigurePage.layout (183 mm page, 5 mm gutter, x from 0), drawn at 3.5 px/mm.
+     Paper text is in points scaled by zoom (7 pt = 8.64 px, 8 pt letters = 9.88 px), not chrome type. Every string below is
+     computed in renderVals with FigurePage.wrap (perLine = floor(widthMm / (pt · 0.3528 · 0.52))). -->
+<svg data-scene="figure-page" width="{{pageW}}" height="{{pageH}}" viewBox="{{pageVb}}" style="display:block" role="img" aria-label="Figure 1: A encoding gaze, B retrieval gaze, C density maps, D participant D by retrieval response, E scale profile by retrieval response">
+<!-- A · Encoding gaze: TrialScene panel only (light stage, no surround), extent = frame ∪ fixations grown 48 px (TrialExtent.Gaze) -->
+<g data-stage="light">
+<svg x="{{ga.x}}" y="{{ga.y}}" width="{{ga.w}}" height="{{ga.h}}" viewBox="{{ga.vb}}">
+<rect width="1024" height="330" fill="{{c.sky}}"></rect><rect y="330" width="1024" height="150" fill="{{c.sea}}"></rect><rect y="480" width="1024" height="288" fill="{{c.sand}}"></rect>
+<rect x="766" y="86" width="108" height="108" rx="54" fill="{{c.sun}}"></rect>
+<path d="M300 480V330M300 330L245 318L190 330M300 330L360 305L420 320M300 330L280 280L250 250M300 330L330 280L380 262" stroke="{{c.frond}}" stroke-width="10" fill="none"></path>
+<path d="M580 600 740 470l20 130Z" fill="{{c.shade}}"></path><rect x="640" y="600" width="12" height="90" fill="{{c.pole}}"></rect>
+<polyline points="{{ga.order}}" fill="none" stroke="var(--halo)" stroke-width="{{ga.ow}}" stroke-dasharray="{{ga.od}}"></polyline>
+<sc-for list="{{ga.marks}}" as="m" hint-placeholder-count="13"><polygon points="{{m.pts}}" fill="{{m.fill}}" stroke="var(--halo)" stroke-width="{{m.sw}}" stroke-dasharray="{{m.dash}}"></polygon></sc-for>
 </svg>
-<span class="fc">Displayed: image. Diamonds: fixations (area ∝ duration); dashes: order only.</span>
-</div>
-<!-- B -->
-<div class="{{clsB}}" style="width:170px">
-<span class="pl">B <span style="font-weight:400">Retrieval · ret_07</span></span>
-<svg width="170" height="128" viewBox="0 0 1024 768" role="img" aria-label="Panel B: retrieval gaze on blank screen with fixation cross, 12 fixations">
-<rect width="1024" height="768" fill="#9A9A96"/>
-<path d="M512 354v60M482 384h60" stroke="#E7E5E0" stroke-width="6"/>
-<polyline points="512,384 330,440 290,470 520,370 590,400 700,300 730,320 640,560 600,540 420,610" fill="none" stroke="#FFFFFF" stroke-width="5" stroke-dasharray="14 10"/>
-<g fill="var(--fig-query)" stroke="#FFFFFF" stroke-width="5"><circle cx="512" cy="384" r="14"/><circle cx="330" cy="440" r="28"/><circle cx="290" cy="470" r="20"/><circle cx="520" cy="370" r="32"/><circle cx="590" cy="400" r="22"/><circle cx="700" cy="300" r="30"/><circle cx="730" cy="320" r="16"/><circle cx="640" cy="560" r="26"/><circle cx="600" cy="540" r="18"/><circle cx="420" cy="610" r="20"/></g>
-</svg>
-<span class="fc">Displayed: blank + fixation cross. The remembered image was not shown.</span>
-</div>
-<!-- C -->
-<div class="{{clsC}}" style="flex:1;min-width:0">
-<span class="pl">C <span style="font-weight:400">Density maps, σ 2° · single trial P17 ret_07</span></span>
-<div style="display:flex;gap:6px">
-<div style="display:flex;flex-direction:column;gap:2px">
-<svg width="84" height="63" viewBox="0 0 1024 768" role="img" aria-label="Query map ret_07">
-<defs><radialGradient id="fq"><stop offset="0" stop-color="#6B0F4F"/><stop offset=".35" stop-color="#B83F86"/><stop offset=".7" stop-color="#E58FB9"/><stop offset="1" stop-color="#F9D9EA" stop-opacity="0"/></radialGradient></defs>
-<rect width="1024" height="768" fill="var(--stage)"/>
-<ellipse cx="320" cy="445" rx="150" ry="120" fill="url(#fq)"/><ellipse cx="560" cy="385" rx="170" ry="130" fill="url(#fq)"/><ellipse cx="700" cy="300" rx="120" ry="100" fill="url(#fq)"/><ellipse cx="640" cy="560" rx="110" ry="90" fill="url(#fq)"/>
-<g fill="none" stroke="#FFFFFF" stroke-opacity=".7" stroke-width="12"><ellipse cx="545" cy="400" rx="300" ry="190"/><ellipse cx="560" cy="385" rx="90" ry="70"/></g><g fill="none" stroke="#1C1E21" stroke-opacity=".8" stroke-width="6"><ellipse cx="545" cy="400" rx="300" ry="190"/><ellipse cx="560" cy="385" rx="90" ry="70"/></g>
-</svg>
-<span class="fc row" style="gap:3px"><svg width="7" height="7" viewBox="0 0 8 8" aria-hidden="true"><circle cx="4" cy="4" r="4" fill="var(--fig-query)"/></svg>Query ret_07</span>
-</div>
-<div style="display:flex;flex-direction:column;gap:2px">
-<svg width="84" height="63" viewBox="0 0 1024 768" role="img" aria-label="Matched map enc_03, cosine 0.73">
-<defs><radialGradient id="fmm"><stop offset="0" stop-color="#6B0F4F"/><stop offset=".35" stop-color="#B83F86"/><stop offset=".7" stop-color="#E58FB9"/><stop offset="1" stop-color="#F9D9EA" stop-opacity="0"/></radialGradient></defs>
-<rect width="1024" height="768" fill="var(--stage)"/>
-<ellipse cx="300" cy="430" rx="160" ry="125" fill="url(#fmm)"/><ellipse cx="540" cy="360" rx="150" ry="120" fill="url(#fmm)"/><ellipse cx="700" cy="300" rx="120" ry="100" fill="url(#fmm)"/><ellipse cx="640" cy="560" rx="100" ry="85" fill="url(#fmm)"/>
-<g fill="none" stroke="#FFFFFF" stroke-opacity=".7" stroke-width="12"><ellipse cx="520" cy="400" rx="300" ry="190"/><ellipse cx="540" cy="360" rx="92" ry="72"/></g><g fill="none" stroke="#1C1E21" stroke-opacity=".8" stroke-width="6"><ellipse cx="520" cy="400" rx="300" ry="190"/><ellipse cx="540" cy="360" rx="92" ry="72"/></g>
-</svg>
-<span class="fc row" style="gap:3px"><svg width="7" height="7" viewBox="0 0 8 8" aria-hidden="true"><path d="M4 0 8 4 4 8 0 4Z" fill="var(--fig-match)"/></svg>Matched enc_03 · 0.73</span>
-</div>
-<div style="display:flex;flex-direction:column;gap:2px">
-<svg width="84" height="63" viewBox="0 0 1024 768" role="img" aria-label="Highest-scoring control street-112, cosine 0.61">
-<defs><radialGradient id="fmc"><stop offset="0" stop-color="#6B0F4F"/><stop offset=".35" stop-color="#B83F86"/><stop offset=".7" stop-color="#E58FB9"/><stop offset="1" stop-color="#F9D9EA" stop-opacity="0"/></radialGradient></defs>
-<rect width="1024" height="768" fill="var(--stage)"/>
-<ellipse cx="420" cy="300" rx="160" ry="125" fill="url(#fmc)"/><ellipse cx="610" cy="420" rx="150" ry="120" fill="url(#fmc)"/><ellipse cx="760" cy="560" rx="120" ry="100" fill="url(#fmc)"/>
-<g fill="none" stroke="#FFFFFF" stroke-opacity=".7" stroke-width="12"><ellipse cx="590" cy="420" rx="290" ry="200"/><ellipse cx="610" cy="420" rx="92" ry="72"/></g><g fill="none" stroke="#1C1E21" stroke-opacity=".8" stroke-width="6"><ellipse cx="590" cy="420" rx="290" ry="200"/><ellipse cx="610" cy="420" rx="92" ry="72"/></g>
-</svg>
-<span class="fc row" style="gap:3px"><svg width="7" height="7" viewBox="0 0 8 8" aria-hidden="true"><circle cx="4" cy="4" r="3" fill="none" stroke="var(--fig-control)" stroke-width="1.5"/></svg>Control street-112 · 0.61</span>
-</div>
-</div>
-<span class="fc">Matched 0.73 · highest of 19 controls street-112 0.61 · control mean B 0.35 · D +0.38. Magenta: fixation duration mass per cell, shared limits; lines: 50% and 90% mass.</span>
-</div>
-</div>
-
-<!-- Row 2: D, E -->
-<div style="display:flex;gap:10px;height:196px">
-<!-- D -->
-<div class="{{clsD}}" style="width:330px">
-<sc-if value="{{isD}}" hint-placeholder-val="{{true}}">
-<div class="t11" style="position:absolute;right:0;top:-22px;height:18px;display:flex;align-items:center;gap:5px;padding:0 7px;border-radius:4px;background:var(--ink);color:var(--surface);font-family:'IBM Plex Mono',monospace;white-space:nowrap"><svg width="10" height="10" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><rect x="3" y="7" width="10" height="7" rx="1"/><path d="M5.5 7V5a2.5 2.5 0 0 1 5 0v2"/></svg>panel: σ 2° · all admitted queries</div>
-</sc-if>
-<span class="pl">D <span style="font-weight:400">Reinstatement by retrieval response, σ 2°</span></span>
-<svg width="330" height="164" viewBox="0 0 330 164" role="img" aria-label="Panel D: participant mean D for Remembered and Forgotten retrieval trials, 24 participants each, paired lines; grand means plus 0.30 and plus 0.15">
-<g font-family="IBM Plex Sans" font-size="9" fill="var(--paper-ink-2)">
-<text x="34" y="{{yt6}}" text-anchor="end">0.6</text><text x="34" y="{{yt4}}" text-anchor="end">0.4</text><text x="34" y="{{yt2}}" text-anchor="end">0.2</text><text x="34" y="{{yt0}}" text-anchor="end">0</text><text x="34" y="{{ytm2}}" text-anchor="end">−0.2</text>
 </g>
-<text transform="translate(9 84) rotate(-90)" text-anchor="middle" font-family="IBM Plex Sans" font-size="9" fill="var(--paper-ink)">Δ cosine (D = M − B)</text>
-<path d="M40 {{y6}}V{{ym3}}" stroke="var(--paper-rule)" stroke-width="1"/>
-<path d="M40 {{y0}}H250" stroke="var(--paper-ink)" stroke-width="1"/>
-<path d="{{dLines}}" stroke="var(--paper-rule)" stroke-width="0.8" fill="none"/>
-<path d="{{remDots}}" fill="var(--paper-ink)"/>
-<path d="{{forgDots}}" fill="var(--paper)" stroke="var(--paper-ink-2)" stroke-width="1"/>
-<path d="M76 {{yRem}}H124" stroke="var(--paper-ink)" stroke-width="2.5"/>
-<path d="M186 {{yForg}}H234" stroke="var(--paper-ink-2)" stroke-width="2.5" stroke-dasharray="4 2"/>
-<g font-family="IBM Plex Sans" font-size="9" fill="var(--paper-ink)">
-<text x="100" y="158" text-anchor="middle">Remembered</text><text x="210" y="158" text-anchor="middle">Forgotten</text>
-<text x="128" y="{{yRemT}}">+0.30</text><text x="238" y="{{yForgT}}">+0.15</text>
-</g>
-<g font-family="IBM Plex Sans" font-size="9" fill="var(--paper-ink-2)">
-<text x="258" y="24">n = 24 each</text><text x="258" y="36">paired n = 24</text><text x="258" y="52">bars: grand mean</text><text x="258" y="64">of participant</text><text x="258" y="76">means, equal</text><text x="258" y="88">weight</text>
-</g>
+<!-- B · Retrieval gaze: blank + fixation cross (screen fill, cross in the stage halo, 20 px arms) -->
+<g data-stage="light">
+<svg x="{{gb.x}}" y="{{gb.y}}" width="{{gb.w}}" height="{{gb.h}}" viewBox="{{gb.vb}}">
+<rect width="1024" height="768" fill="{{c.screen}}"></rect>
+<path d="{{gb.xh}}" stroke="var(--isoline-case)" stroke-width="{{gb.cc}}"></path><path d="{{gb.xh}}" stroke="var(--halo)" stroke-width="{{gb.cw}}"></path>
+<polyline points="{{gb.order}}" fill="none" stroke="var(--halo)" stroke-width="{{gb.ow}}" stroke-dasharray="{{gb.od}}"></polyline>
+<sc-for list="{{gb.marks}}" as="m" hint-placeholder-count="12"><circle cx="{{m.x}}" cy="{{m.y}}" r="{{m.r}}" fill="{{m.fill}}" stroke="var(--halo)" stroke-width="{{m.sw}}" stroke-dasharray="{{m.dash}}"></circle></sc-for>
 </svg>
-<span class="fc">Each pair of dots is one participant; per participant, 2–17 queries per group. Descriptive only: no intervals or tests. P05 (lowest) had 3 failed contrasts; its means use 17 of 20 queries.</span>
-</div>
-<!-- E -->
-<div class="{{clsE}}" style="flex:1;min-width:0">
-<span class="pl">E <span style="font-weight:400">Scale profile by retrieval response (scales declared before run)</span></span>
-<svg width="272" height="164" viewBox="0 0 272 164" role="img" aria-label="Panel E: grand mean D by smoothing scale 0.5, 1, 2 and 4 degrees. Remembered 0.15, 0.24, 0.30, 0.19; Forgotten 0.07, 0.12, 0.15, 0.09">
-<g font-family="IBM Plex Sans" font-size="9" fill="var(--paper-ink-2)">
-<text x="30" y="{{e5}}" text-anchor="end">0.5</text><text x="30" y="{{e3}}" text-anchor="end">0.3</text><text x="30" y="{{e1}}" text-anchor="end">0.1</text><text x="30" y="{{e0t}}" text-anchor="end">0</text>
 </g>
-<text transform="translate(8 80) rotate(-90)" text-anchor="middle" font-family="IBM Plex Sans" font-size="9" fill="var(--paper-ink)">Δ cosine (D)</text>
-<path d="M36 {{e0}}H250" stroke="var(--paper-ink)" stroke-width="1"/>
-<path d="{{eMean}}" stroke="var(--paper-ink)" stroke-width="2" fill="none"/>
-<path d="{{eMeanDots}}" fill="var(--paper-ink)"/>
-<path d="{{eForg}}" stroke="var(--paper-ink-2)" stroke-width="2" stroke-dasharray="4 2" fill="none"/>
-<path d="{{eForgDots}}" fill="var(--paper)" stroke="var(--paper-ink-2)" stroke-width="1"/>
-<g font-family="IBM Plex Sans" font-size="9"><text x="246" y="{{eRemL}}" fill="var(--paper-ink)">Rem.</text><text x="246" y="{{eForgL}}" fill="var(--paper-ink-2)">Forg.</text></g>
-<g font-family="IBM Plex Sans" font-size="9" fill="var(--paper-ink)">
-<text x="60" y="152" text-anchor="middle">0.5°</text><text x="120" y="152" text-anchor="middle">1°</text><text x="180" y="152" text-anchor="middle">2°</text><text x="240" y="152" text-anchor="middle">4°</text>
-<text x="150" y="163" text-anchor="middle" fill="var(--paper-ink-2)">Gaussian σ (log scale)</text>
-</g>
+<!-- Proposal (no FigurePage source): a plated "outside frame" label beside each panel's own outside mark -->
+<sc-for list="{{plates}}" as="pl" hint-placeholder-count="2"><rect x="{{pl.x}}" y="{{pl.y}}" width="{{pl.w}}" height="{{pl.h}}" rx="2" fill="var(--paper)"></rect></sc-for>
+<!-- C · Density maps: three tiles (FigurePage.tiles, 1 mm padding, 0.5 pt paper-rule box). Each tile is MapTileScene: a light-stage field (var(--stage) under data-stage=light) then the
+     raster opaque, cell for cell (alpha floor: the stage shows through below 10% of the shared max), isolines 1 px over a 2 px casing.
+     Proposal (P3 small-multiple grammar): one fixed title row with the role glyph (● query / ◆ matched / ○ control), maps on one baseline,
+     title continuation lines and the label on fixed caption rows (label always last). Only the glyph that matches the tile role is drawn (the others get r=0 / empty points). -->
+<sc-for list="{{tiles}}" as="mp" hint-placeholder-count="3">
+<rect x="{{mp.x}}" y="{{mp.y}}" width="{{mp.w}}" height="{{mp.h}}" fill="none" stroke="var(--paper-rule)" stroke-width="0.62"></rect>
+<svg x="{{mp.mx}}" y="{{mp.my}}" width="{{mp.mw}}" height="{{mp.mh}}" data-stage="light">
+<rect width="{{mp.mw}}" height="{{mp.mh}}" fill="var(--stage)"></rect>
+<g shape-rendering="crispEdges"><sc-for list="{{mp.cells}}" as="q" hint-placeholder-count="1"><rect x="{{q.x}}" y="{{q.y}}" width="{{q.w}}" height="{{q.h}}" fill="{{q.fill}}" fill-opacity="{{q.op}}"></rect></sc-for></g>
+<path d="{{mp.p9}}" fill="none" stroke="var(--isoline-case)" stroke-width="2"></path><path d="{{mp.p9}}" fill="none" stroke="var(--isoline-ink)" stroke-width="1"></path>
+<path d="{{mp.p5}}" fill="none" stroke="var(--isoline-case)" stroke-width="2"></path><path d="{{mp.p5}}" fill="none" stroke="var(--isoline-ink)" stroke-width="1"></path>
 </svg>
-<span class="fc">Grand mean of participant means, equal weight; solid Remembered, dashed Forgotten; n = 24 each. Each scale computed separately.</span>
+<circle cx="{{mp.gx}}" cy="{{mp.gy}}" r="{{mp.gr}}" fill="{{mp.gq}}" stroke="none"></circle>
+<polygon points="{{mp.gd}}" fill="{{mp.gm}}" stroke="none"></polygon>
+<circle cx="{{mp.gx}}" cy="{{mp.gy}}" r="{{mp.gcr}}" fill="none" stroke="{{mp.gc}}" stroke-width="{{mp.gcw}}"></circle>
+</sc-for>
+<!-- D · ParticipantPlot (light): grid + zero rule, participant lines, Remembered solid ink / Forgotten hollow, grand-mean bars -->
+<path d="{{dp.grid}}" stroke="var(--paper-rule)" stroke-width="0.6"></path>
+<path d="{{dp.zero}}" stroke="var(--paper-ink)" stroke-width="1"></path>
+<path d="{{dp.link}}" stroke="var(--paper-rule)" stroke-width="0.8" fill="none"></path>
+<sc-for list="{{dp.rem}}" as="o" hint-placeholder-count="24"><circle cx="{{o.x}}" cy="{{o.y}}" r="2.4" fill="var(--paper-ink)"></circle></sc-for>
+<sc-for list="{{dp.forg}}" as="o" hint-placeholder-count="24"><circle cx="{{o.x}}" cy="{{o.y}}" r="2.4" fill="var(--paper)" stroke="var(--paper-ink-2)" stroke-width="1"></circle></sc-for>
+<path d="{{dp.rb}}" stroke="var(--paper-ink)" stroke-width="2.5"></path>
+<path d="{{dp.fb}}" stroke="var(--paper-ink-2)" stroke-width="2.5" stroke-dasharray="4 2"></path>
+<!-- E · ScaleProfilePlot (light): grid + zero rule, first group solid, the other dashed and hollow -->
+<path d="{{ep.grid}}" stroke="var(--paper-rule)" stroke-width="0.6"></path>
+<path d="{{ep.zero}}" stroke="var(--paper-ink)" stroke-width="1"></path>
+<polyline points="{{ep.rem}}" stroke="var(--paper-ink)" stroke-width="2" fill="none"></polyline>
+<polyline points="{{ep.forg}}" stroke="var(--paper-ink-2)" stroke-width="2" stroke-dasharray="4 2" fill="none"></polyline>
+<sc-for list="{{ep.remDots}}" as="o" hint-placeholder-count="4"><circle cx="{{o.x}}" cy="{{o.y}}" r="3" fill="var(--paper-ink)"></circle></sc-for>
+<sc-for list="{{ep.forgDots}}" as="o" hint-placeholder-count="4"><circle cx="{{o.x}}" cy="{{o.y}}" r="2.6" fill="var(--paper)" stroke="var(--paper-ink-2)" stroke-width="1"></circle></sc-for>
+<!-- All page text: letters 8 pt Sans 600; titles, notes, captions and the stamp 7 pt; plot numerals in Mono (as the plots draw them) -->
+<sc-for list="{{texts}}" as="t" hint-placeholder-count="60"><text x="{{t.x}}" y="{{t.y}}" font-family="{{t.ff}}" font-size="{{t.fs}}" font-weight="{{t.fw}}" fill="{{t.fill}}" text-anchor="{{t.a}}">{{t.s}}</text></sc-for>
+</svg>
+<div role="listbox" aria-label="Figure 1 panels on the page">
+<sc-for list="{{hits}}" as="h" hint-placeholder-count="5">
+<button tabindex="-1" role="option" id="{{h.domId}}" aria-selected="{{h.curA}}" class="{{h.cls}}" data-accent-job="{{h.job}}" data-cursor="{{h.cur}}" onClick="{{h.pick}}" aria-label="{{h.aria}}" style="left:{{h.l}};top:{{h.t}};width:{{h.w}};height:{{h.h}}"></button>
+</sc-for>
 </div>
 </div>
-<div class="fc" style="font-size:9px;border-top:1px solid var(--paper-rule);padding-top:4px">Figure 1. Matched-minus-control spatial similarity of retrieval gaze (dataset r3, analysis rev 4, run 7). Spatial correspondence, not sequential replay.</div>
+</div>
+<!-- Panel C map key: screen only (FigurePage prints the key in the panel's own sentence) -->
+<div class="t11 row" style="gap:6px;color:var(--ink-2);flex:none" role="group" aria-label="Panel C map key, shown on screen only">
+<span>Panel C key · screen only:</span><span class="mono">0</span>
+<svg width="82" height="10" viewBox="0 0 82 10" aria-hidden="true" shape-rendering="crispEdges" data-stage="light"><rect x="0.5" y="0.5" width="81" height="9" fill="var(--stage)" stroke="var(--hairline)"></rect><g><sc-for list="{{mapKey}}" as="k" hint-placeholder-count="8"><rect x="{{k.x}}" y="1" width="10" height="8" fill="{{k.fill}}" fill-opacity="{{k.op}}"></rect></sc-for></g></svg>
+<span>max · fixation duration mass per cell · fades below 10% of max</span><span>·</span>
+<svg width="16" height="8" viewBox="0 0 16 8" aria-hidden="true"><path d="M0 4h16" stroke="var(--isoline-case)" stroke-width="4"></path><path d="M0 4h16" stroke="var(--isoline-ink)" stroke-width="2"></path></svg>
+<span>50% · 90% of mass · shared limits</span>
 </div>
 </div>
 </section>
 
 <!-- methods.md -->
-<section class="grp" style="height:236px;flex:none" aria-label="methods.md">
-<div class="hdr"><button class="tab sel">methods.md</button><button class="tab">Diff vs generated</button><div class="hbtns"><button class="ib" aria-label="Maximize group"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="10" height="10"/></svg></button></div></div>
+<section class="grp" style="height:{{methodsH}};flex:none" aria-label="methods.md">
+<div class="hdr"><div role="tablist" aria-label="Methods views" style="display:flex"><button class="tab sel" role="tab" aria-selected="true" tabindex="0">methods.md</button><button class="tab" role="tab" aria-selected="false" tabindex="-1">Diff vs generated</button></div><div class="hbtns"><button class="ib" aria-label="Maximize methods.md"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="10" height="10"/></svg></button></div></div>
 <div class="tb">
 <span class="t11" style="color:var(--ink-2)">Generated from run 7 and reporting spec "By retrieval response" · 1 sentence edited by you</span>
 <div style="flex:1"></div>
-<button class="btn" style="height:22px">Show diff</button>
-<button class="btn" style="height:22px">Regenerate</button>
+<button class="btn" style="height:22px" aria-label="Show methods.md diff">Show diff</button>
+<button class="btn" style="height:22px" aria-label="Regenerate methods.md">Regenerate</button>
 </div>
-<div style="flex:1;min-height:0;overflow:hidden;padding:10px 18px;display:flex;gap:18px">
-<div class="serif" style="flex:1;font-size:12px;line-height:1.55;color:var(--ink)">
-Fixations (fixations.csv, 11,520 records; dataset r3) were admitted per trial against the trials.csv inventory of 960 trials: 937 admitted, 17 quarantined (overlap 6, no-fixations 5, duplicate-ordinals 4, rejected-records 2) and 6 absent (no fixation records). Positions were analysed in the 1024 × 768 image frame placed in a 1920 × 1080 screen; 543 of 11,520 fixation records (4.7%), in 409 trials, fell outside the frame and were excluded from the maps; they are reported per trial. Degrees are measured from the image centre (x right, y up) using a declared, uncalibrated 35 px/° with linear conversion. The initial-fixation policy was Keep all: every fixation, including the first, was kept. Each trial was represented as a duration-weighted fixation density map on a 64 × 48 grid (cell 0.46°), smoothed with Gaussian kernels at σ = 0.5°, 1°, 2° and 4°, declared before the run. Of 480 retrieval queries, 457 were eligible; for each of the 457 eligible queries, cosine similarity was computed to the matched encoding trial (M) and to every admitted encoding trial of another item from the same participant (19 per query; 18 where one encoding trial was not admitted); their mean is B, and D = M − B. A contrast required all of its pairs: 454 contributed, 3 failed (empty map), 9 had no matched trial and 14 queries were not admitted. D was averaged within participant, then across participants with equal weight, separately by retrieval response (n = 24 each; paired n = 24). Per participant, groups held 2–17 queries; the minimum of 3 queries per group was not applied in this reporting spec (P17 and P21 each have 2 Forgotten queries). D measures spatial correspondence, not sequential replay. D does not separate participant-specific reinstatement from item-driven salience common to all viewers of that image, and may retain residual centre bias. Analysis rev 4, run 7; eyes4s [VERSION].
+<div style="flex:1;min-height:0;overflow-y:auto;padding:10px 18px;display:flex;gap:18px" tabindex="0" role="document" aria-label="methods.md text, scrollable">
+<div class="serif" style="flex:none;width:486px;font-size:12px;color:var(--ink)">
+Fixations (fixations.csv, 11,520 records; dataset r3) were admitted per trial against the trials.csv inventory of 960 trials: 937 admitted, 17 quarantined (overlap 6, no-fixations 5, duplicate-ordinals 4, rejected-records 2) and 6 absent (no fixation records). Trials were keyed by participant, phase, trial and occurrence (Block → occurrence); the occurrence selection used for the matched reference also applied to the control pool, so each other item contributed one reference per participant. Positions were analysed in the 1024 × 768 image frame placed in a 1920 × 1080 screen. Of the 11,311 fixation records of admitted trials, 543 (4.8% of their fixation duration), in 409 trials, fell outside the frame and were excluded from the maps; they are reported per trial. Degrees are measured from the image centre (x right, y up) using a declared, uncalibrated 35 px/° with linear conversion. Fixation records outside the screen were excluded (off-screen policy: exclude the record, the default) and are reported as “outside screen”, separately from “outside window”. The initial-fixation policy was Keep all: every fixation, including the first, was kept. Each trial was represented as a duration-weighted fixation density map on a 64 × 48 grid (cell 0.46°), smoothed with Gaussian kernels whose standard deviation σ (in degrees, not the FWHM) was 0.5°, 1°, 2° and 4°, declared before the run. Of 480 retrieval queries, 457 were eligible; for each of the 457 eligible queries, cosine similarity was computed to the matched encoding trial (M) and to every admitted encoding trial of another item from the same participant (19 per query; 18 where one encoding trial was not admitted); their mean is B, and D = M − B. A contrast required all of its pairs: 454 contributed, 3 failed (empty map), 9 had no matched trial and 14 queries were not admitted. D was averaged within participant, then across participants with equal weight, separately by retrieval response (n = 24 each; paired n = 24). Per participant, groups held 2–17 queries; the minimum of 3 queries per group was not applied in this reporting spec (P17 and P21 each have 2 Forgotten queries). D measures spatial correspondence, not sequential replay. D does not separate participant-specific reinstatement from item-driven salience common to all viewers of that image, and may retain residual centre bias. Input digest sha256:9f2c…e41; analysis rev 4, run 7; eyes4s 0.1.
 </div>
 </div>
 </section>
@@ -299,17 +312,18 @@ Fixations (fixations.csv, 11,520 records; dataset r3) were admitted per trial ag
 
 <!-- Inspector -->
 <section class="grp" style="width:300px;flex:none" aria-label="Panel inspector">
-<div class="hdr"><button class="tab sel">Panel {{panelLetter}}</button><div class="hbtns"><button class="ib" aria-label="Minimize group"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 8h8"/></svg></button></div></div>
+<div class="hdr"><div role="tablist" aria-label="Inspector" style="display:flex"><button class="tab sel" role="tab" aria-selected="true" tabindex="0">Panel {{panelLetter}}</button></div><div class="hbtns"><button class="ib" aria-label="Minimize inspector"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 8h8"/></svg></button></div></div>
 <div style="flex:1;overflow:hidden;display:flex;flex-direction:column">
 <div style="padding:12px 14px;display:flex;flex-direction:column;gap:8px">
-<div class="row" style="justify-content:space-between"><span class="t13">Figure 1 binding</span><span class="kind row" style="gap:4px"><svg width="10" height="10" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><rect x="3" y="7" width="10" height="7" rx="1"/><path d="M5.5 7V5a2.5 2.5 0 0 1 5 0v2"/></svg>Locked · scientific</span></div>
+<div class="row" style="justify-content:space-between"><span class="t13">Figure 1 binding</span><span class="kind row" style="gap:4px"><svg width="10" height="10" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><rect x="3" y="7" width="10" height="7" rx="1"/><path d="M5.5 7V4.5L6.5 3h3l1 1.5V7"/></svg>Locked · scientific</span></div>
 <dl class="kv">
 <dt>Run</dt><dd class="mono">run 7 · rev 4 · data r3</dd>
 <dt>Reporting spec</dt><dd>By retrieval response</dd>
-<dt>Unit</dt><dd>Participant means, equal weight</dd>
+<dt>Unit</dt><dd>Participant means</dd>
+<dt>Weighting</dt><dd>Equal per participant</dd>
 </dl>
-<div class="row" style="gap:6px"><button class="btn" style="height:24px">Open in Compare</button><button class="btn" style="height:24px">Rebind figure…</button></div>
-<span class="t11" style="color:var(--ink-2);line-height:1.45">One run and one reporting spec for the whole figure; methods.md cites them once. Rebinding makes a new figure version; the old one stays reproducible.</span>
+<div class="row" style="gap:6px"><button class="btn" style="height:24px" aria-label="Open Figure 1 binding in Compare">Open in Compare</button><button class="btn" style="height:24px" aria-label="Rebind Figure 1">Rebind figure…</button></div>
+<span class="t11" style="color:var(--ink-2);">One run and one reporting spec for the whole figure; methods.md cites them once. Rebinding makes a new figure version; the old one stays reproducible.</span>
 </div>
 <div class="sect">
 <div class="row" style="justify-content:space-between"><span class="t13">Panel {{panelLetter}}</span><span class="kind">Panel choice</span></div>
@@ -319,13 +333,13 @@ Fixations (fixations.csv, 11,520 records; dataset r3) were admitted per trial ag
 </dl>
 <div class="sect">
 <div class="row" style="justify-content:space-between"><span class="t13">Appearance</span><span class="kind">View only</span></div>
-<div class="row" style="justify-content:space-between"><span>Text size</span><span class="seg" style="padding:1px"><button style="height:20px;padding:0 8px">6 pt</button><button class="on" style="height:20px;padding:0 8px">7 pt</button><button style="height:20px;padding:0 8px">8 pt</button></span></div>
-<div class="row" style="justify-content:space-between"><span>Participant lines</span><span class="seg" style="padding:1px"><button class="on" style="height:20px;padding:0 8px">Show</button><button style="height:20px;padding:0 8px">Hide</button></span></div>
-<div class="row" style="justify-content:space-between"><span>Panel width</span><span class="mono">94 mm</span></div>
+<div class="row" style="justify-content:space-between"><span>Text size</span><span class="sg" role="radiogroup" aria-label="Figure text size"><button role="radio" aria-checked="false" tabindex="-1">6 pt</button><button role="radio" aria-checked="true" tabindex="0">7 pt</button><button role="radio" aria-checked="false" tabindex="-1">8 pt</button></span></div>
+<div class="row" style="justify-content:space-between"><span>Participant lines</span><span class="sg" role="radiogroup" aria-label="Participant lines"><button role="radio" aria-checked="true" tabindex="0">Show</button><button role="radio" aria-checked="false" tabindex="-1">Hide</button></span></div>
+<div class="row" style="justify-content:space-between"><span>Panel width</span><span class="mono">{{panelWidth}}</span></div>
 </div>
 <div class="sect" style="flex:1">
 <span class="t13">Export</span>
-<div class="row" style="justify-content:space-between"><span>Figure format</span><span class="seg" style="padding:1px"><button class="on" style="height:20px;padding:0 8px">SVG</button><button style="height:20px;padding:0 8px">PDF</button><button style="height:20px;padding:0 8px">PNG</button></span></div>
+<div class="row" style="justify-content:space-between"><span>Figure format</span><span class="sg" role="radiogroup" aria-label="Figure format"><button role="radio" aria-checked="true" tabindex="0">SVG</button><button role="radio" aria-checked="false" tabindex="-1">PDF</button><button role="radio" aria-checked="false" tabindex="-1">PNG</button></span></div>
 <div class="lbl" style="margin-top:2px">Bundle</div>
 <div style="display:flex;flex-direction:column;gap:5px">
 <label class="ck"><input type="checkbox" checked><span class="mono">figure-1.svg</span></label>
@@ -355,58 +369,351 @@ Fixations (fixations.csv, 11,520 records; dataset r3) were admitted per trial ag
 </div>
 </x-dc>
 <script type="text/x-dc" data-dc-script data-props='{"dark":{"editor":"boolean","default":false},"$preview":{"width":1440,"height":900}}'>
+// MAP_RECIPE v2 (round 2: alpha floor, owner decision 2026-10-11) — paste these functions (unchanged) inside a board's `class Component extends DCLogic`
+// script, ABOVE the class, and call massMap(...) from renderVals(). It mirrors the desktop exactly:
+//  - studio/app/.../maps/MapPalette.scala `MapColours.along`: 4 evenly spaced ramp stops
+//    (ramp-0..3 = #F9D9EA #E58FB9 #B83F86 #6B0F4F), channel-wise sRGB interpolation, opaque per cell,
+//    one global opacity (MapOpacity.Default 0.6) applied to the whole raster group.
+//  - studio/app/.../maps/Isolines.scala: marching squares over cell centres, linear crossing along
+//    edges, saddles resolved by the 4-corner mean; levels = 50% and 90% of mass (UI-E).
+//  - TrialScene.scala:379-383: isoline ink 2 px over a 4 px casing (stage halo), drawn as
+//    straight Segments (Intaglio has no curves) => emit one <path> of M/L pairs, never curves.
+// The grid is 64x48 on the image frame (DESIGN_SPEC §9). Draw cells as <rect>s in an <svg> group with
+// opacity="0.6" (use shape-rendering="crispEdges").
+// ALPHA FLOOR (owner decision, amends DESIGN_SPEC §6 "opaque per cell"): a cell's alpha rises linearly from
+// 0 at zero mass to 1 at FLOOR (10%) of the colour-limit max; colour is the ramp colour as before. So the
+// stimulus/stage shows through low-mass regions. Coverage is shown by the frame outline, not by ramp-0 paint;
+// zero mass inside the frame is therefore drawn transparent, and missing data (NoCoverage) is never drawn
+// as a colour either — a map with missing cells must say so in its caption (missing ≠ zero still holds:
+// a missing MAP is the dashed "no value" state, never an empty frame). Desktop change: MapColours.argb
+// gains alpha = min(1, t / 0.10) where t is the fraction along the limits (ticket to file on landing).
+// Values are display mock-ups derived from the board's own fixation list: same fixations as drawn.
+const RAMP = [[0xF9, 0xD9, 0xEA], [0xE5, 0x8F, 0xB9], [0xB8, 0x3F, 0x86], [0x6B, 0x0F, 0x4F]];
+function rampColour(t) {
+  t = Math.max(0, Math.min(1, t));
+  const seg = RAMP.length - 1, at = t * seg, k = Math.min(seg - 1, Math.floor(at)), f = at - k;
+  const a = RAMP[k], b = RAMP[k + 1];
+  const c = [0, 1, 2].map(i => Math.round(a[i] + (b[i] - a[i]) * f));
+  return 'rgb(' + c.join(',') + ')';
+}
+// fix: [{x, y, dur}] in IMAGE pixels (1024x768 frame); sigmaPx = σ in image px (35 px/°: σ 2° = 70 px).
+// w, h: drawn size of the frame in the board (px). Returns {cells, iso50, iso90, max} where cells are
+// {x, y, w, h, fill} in drawn px and iso50/iso90 are SVG path strings of straight segments.
+const FLOOR = 0.10;
+// limitMax (optional): shared colour-limit maximum (Shared limits across panels); default = this map's max.
+function massMap(fix, sigmaPx, w, h, gw, gh, limitMax) {
+  gw = gw || 64; gh = gh || 48;
+  const cw = 1024 / gw, ch = 768 / gh, g = [];
+  let total = 0, max = 0;
+  for (let j = 0; j < gh; j++) {
+    const row = [];
+    for (let i = 0; i < gw; i++) {
+      const cx = (i + 0.5) * cw, cy = (j + 0.5) * ch;
+      let v = 0;
+      for (const f of fix) { const dx = cx - f.x, dy = cy - f.y; v += f.dur * Math.exp(-(dx * dx + dy * dy) / (2 * sigmaPx * sigmaPx)); }
+      row.push(v); total += v; if (v > max) max = v;
+    }
+    g.push(row);
+  }
+  const sx = w / gw, sy = h / gh, cells = [], lim = limitMax || max;
+  for (let j = 0; j < gh; j++) for (let i = 0; i < gw; i++) {
+    const t = lim ? g[j][i] / lim : 0, op = Math.min(1, t / FLOOR);
+    if (op < 0.01) continue; // transparent: stage/stimulus shows through
+    cells.push({ x: +(i * sx).toFixed(2), y: +(j * sy).toFixed(2), w: +(sx + 0.05).toFixed(2), h: +(sy + 0.05).toFixed(2), fill: rampColour(t), op: +op.toFixed(3) });
+  }
+  // level enclosing `share` of the mass: descending cell values, cumulative sum
+  const sorted = g.flat().sort((a, b) => b - a);
+  const levelFor = share => { let acc = 0; for (const v of sorted) { acc += v; if (acc >= share * total) return v; } return 0; };
+  const contour = level => {
+    const P = (i, j) => [((i + 0.5) * sx), ((j + 0.5) * sy)];
+    const lerp = (p, q, v0, v1) => { const t = v1 === v0 ? 0.5 : (level - v0) / (v1 - v0); return [p[0] + (q[0] - p[0]) * t, p[1] + (q[1] - p[1]) * t]; };
+    let d = '';
+    const seg = (p, q) => { d += 'M' + p[0].toFixed(1) + ' ' + p[1].toFixed(1) + 'L' + q[0].toFixed(1) + ' ' + q[1].toFixed(1); };
+    for (let j = 0; j < gh - 1; j++) for (let i = 0; i < gw - 1; i++) {
+      const a = g[j][i], b = g[j][i + 1], c = g[j + 1][i + 1], e = g[j + 1][i];
+      const A = P(i, j), B = P(i + 1, j), C = P(i + 1, j + 1), E = P(i, j + 1);
+      const code = (a >= level ? 8 : 0) | (b >= level ? 4 : 0) | (c >= level ? 2 : 0) | (e >= level ? 1 : 0);
+      if (code === 0 || code === 15) continue;
+      const top = lerp(A, B, a, b), right = lerp(B, C, b, c), bottom = lerp(E, C, e, c), left = lerp(A, E, a, e);
+      const mean = (a + b + c + e) / 4 >= level;
+      switch (code) {
+        case 1: case 14: seg(left, bottom); break;
+        case 2: case 13: seg(bottom, right); break;
+        case 3: case 12: seg(left, right); break;
+        case 4: case 11: seg(top, right); break;
+        case 6: case 9: seg(top, bottom); break;
+        case 7: case 8: seg(left, top); break;
+        case 5: if (mean) { seg(left, top); seg(bottom, right); } else { seg(left, bottom); seg(top, right); } break;
+        case 10: if (mean) { seg(left, bottom); seg(top, right); } else { seg(left, top); seg(bottom, right); } break;
+      }
+    }
+    return d;
+  };
+  return { cells, iso50: contour(levelFor(0.5)), iso90: contour(levelFor(0.9)), max };
+}
+// Markup (inside the frame's <svg> sized w x h, after the stimulus/stage and BEFORE the marks):
+//   <g opacity="0.6" shape-rendering="crispEdges"><sc-for list="{{map.cells}}" as="c" hint-placeholder-count="1">
+//     <rect x="{{c.x}}" y="{{c.y}}" width="{{c.w}}" height="{{c.h}}" fill="{{c.fill}}" fill-opacity="{{c.op}}"></rect></sc-for></g>
+//   <path d="{{map.iso90}}" fill="none" stroke="var(--isoline-case)" stroke-width="4" stroke-linecap="round"></path>
+//   <path d="{{map.iso90}}" fill="none" stroke="var(--isoline-ink)" stroke-width="2" stroke-linecap="round"></path>
+//   (same pair for iso50)
+// Define --isoline-case / --isoline-ink in the token block if the board lacks them:
+//   light & dark: --isoline-case: rgba(255,255,255,.9); --isoline-ink: rgba(28,30,33,.9)  (DESIGN_SPEC §6).
+// Add a compact legend under/beside every map: a 4-stop ramp strip built from 8 <rect>s via rampColour,
+// labelled "fixation duration mass per cell · 0 → max", and "isolines: 50% · 90% of mass".
+
+// LEGEND (one component on every board, drawn as the map is drawn): mapLegend() returns 8 swatches whose
+// fill/opacity reproduce the map at the stage: render each as <rect fill="{{s.fill}}" fill-opacity="{{s.op}}">
+// inside a <g opacity="0.6"> on a stage-coloured strip (var(--stage) background, 1px hairline), then
+// text in this order and wording, 11 px:  "0" [strip] "max · fixation duration mass per cell" · [isoline
+// sample: 4px casing + 2px ink, 16px] "50% · 90% of mass" (+ " · shared limits" when limits are shared).
+function mapLegend() {
+  const out = [];
+  for (let k = 0; k < 8; k++) { const t = k / 7; out.push({ x: k * 10, fill: rampColour(t), op: +Math.min(1, t / FLOOR).toFixed(3) }); }
+  return out;
+}
+// FIXATION CROSS (blank + fixation cross displays): draw it ABOVE the map raster and below the marks, as two
+// straight Segments (desktop TrialScene uses the stage halo token for the cross): 2 px var(--halo) strokes
+// cased by a 4 px var(--isoline-ink) underlay so it reads on any stage and over any map colour.
+// MARK CASING: marks are cased with the STAGE halo token var(--halo) (TrialScene), never a themed token.
+
+// ---- Figures board helpers (not part of MAP_RECIPE) ----
+// FigurePage.wrap: break at word boundaries, perLine = floor(widthMm / (pt mm · AverageAdvanceEm 0.52)).
+const MM_PER_PT = 25.4 / 72, PX_PER_MM = 3.5, ADV_EM = 0.52, LINE = 1.25;
+function wrapText(text, widthMm, pt) {
+  const perLine = Math.max(1, Math.floor(widthMm / (pt * MM_PER_PT * ADV_EM)));
+  return text.split(' ').filter(w => w.length).reduce((lines, w) => {
+    const last = lines[lines.length - 1];
+    if (last !== undefined && last.length + 1 + w.length <= perLine) lines[lines.length - 1] = last + ' ' + w; else lines.push(w);
+    return lines;
+  }, []);
+}
+// Greyscale check: simple sRGB luma, Y' = 0.2126 R' + 0.7152 G' + 0.0722 B' on the gamma-encoded values (Rec. 709
+// weights, no linearisation), the grey a print driver's luminance conversion approximates. Not ColorAdjust(saturation −1),
+// which yields max(R, G, B) and would print fig-match and fig-control as the same grey.
+function lumaGrey(c) {
+  const m = c.startsWith('#') ? [1, 3, 5].map(i => parseInt(c.slice(i, i + 2), 16)) : c.match(/\d+/g).map(Number);
+  const v = Math.round(0.2126 * m[0] + 0.7152 * m[1] + 0.0722 * m[2]);
+  return 'rgb(' + v + ',' + v + ',' + v + ')';
+}
+// Token values the greyscale check converts (mirrors Tokens.scala PaletteToken; stimulus pixels are the picture's own).
+const PAINT = { 'fig-query': '#3A2E6E', 'fig-match': '#2F6DB5', 'fig-control': '#B86E0E', 'fig-control-fill': '#D98A1C', screen: '#9A9A96',
+  'stim-sky': '#C9D3D6', 'stim-sea': '#8FA3AB', 'stim-sand': '#D9CDB4', 'stim-sun': '#E9E4D6', 'stim-frond': '#5E6660', 'stim-shade': '#A45C4A', 'stim-pole': '#6E5B4A' };
+
 class Component extends DCLogic {
   constructor(p){ super(p); this.state = { panel: 'D', grey: false }; }
   renderVals() {
+    const grey = this.state.grey;
+    const paint = n => grey ? lumaGrey(PAINT[n]) : 'var(--' + n + ')';
+    const c = { sky: paint('stim-sky'), sea: paint('stim-sea'), sand: paint('stim-sand'), sun: paint('stim-sun'), frond: paint('stim-frond'),
+      shade: paint('stim-shade'), pole: paint('stim-pole'), screen: paint('screen'),
+      query: paint('fig-query'), match: paint('fig-match'), control: paint('fig-control') };
+    const f1 = v => (+v).toFixed(1), px = mm => mm * PX_PER_MM;
+    const PT = 7, LET = 8, ptPx = pt => px(pt * MM_PER_PT), lineMm = pt => pt * MM_PER_PT * LINE;
+    const fsT = +ptPx(PT).toFixed(2), fsL = +ptPx(LET).toFixed(2);
+    const inFrame = ([x, y]) => x >= 0 && x <= 1024 && y >= 0 && y <= 768;
+    // enc_03: the same 13 fixations Explore and Compare draw (1 outside the frame, 110 of 3,592 ms = 3%)
+    const A = [[512,384,180],[300,430,320],[260,340,260],[540,360,380],[610,410,240],[700,300,412],[760,250,200],[640,560,350],[590,600,220],[420,620,300],[820,560,260],[1080,420,110],[540,380,360]];
+    // ret_07: Compare's canonical list (H/notes/ret07-canonical.json): 12 fixations, 1 outside (140 of 3,310 ms = 4%)
+    const B = [[512,384,180],[330,440,340],[290,470,250],[520,370,420],[590,400,280],[690,310,390],[730,320,200],[640,560,330],[600,540,230],[420,610,250],[470,500,300],[-46,520,140]];
+    // street-112 (enc_01), the highest-scoring control: Compare's ctrlFix(0), 11 fixations, 0 outside
+    const spots = [[420,300],[610,420],[760,560],[300,610]];
+    const S = (() => { let seed = 7; const rnd = () => { seed = (seed * 1103515245 + 12345) % 2147483648; return seed / 2147483648; };
+      const out = [[512, 384, 170]];
+      for (let j = 0; j < 10; j++) { const q = spots[j % 4]; out.push([Math.round(Math.min(990, Math.max(34, q[0] + (rnd() - .5) * 200))), Math.round(Math.min(734, Math.max(34, q[1] + (rnd() - .5) * 170))), Math.round(200 + rnd() * 220)]); }
+      return out; })();
+
+    // ---- FigurePage.layout: widths A = B = 47, C = 79, D = 94, E = 84 mm; rows fill 183 mm with 5 mm gutters ----
+    const PAGE = 183, GUT = 5, PAD = 1;
+    const gazeExtent = L => { let x0 = 0, y0 = 0, x1 = 1024, y1 = 768; for (const [x, y] of L) { x0 = Math.min(x0, x); y0 = Math.min(y0, y); x1 = Math.max(x1, x); y1 = Math.max(y1, y); }
+      return [x0 - 48, y0 - 48, x1 - x0 + 96, y1 - y0 + 96]; }; // TrialExtent.Gaze: frame ∪ fixations, grown GazeMarginPx 48
+    const exA = gazeExtent(A), exB = gazeExtent(B);
+    const gazeTexts = {
+      A: ['Encoding · enc_03 · beach-042', 'Displayed: image.', '13 fixations in scanpath order; marker area shows duration.'],
+      B: ['Retrieval · ret_07', 'Displayed: blank + fixation cross. The remembered image was not shown.', '12 fixations in scanpath order; marker area shows duration.']
+    };
+    // Panel C small multiples: one title row (role glyph + title), the map, then fixed caption rows (title continuation, then the label).
+    // Wording is FigurePanels.densityMaps (studio/app figures/FigurePanels.scala ~255-276), verbatim:
+    //   titles "Query ret_07" / "Matched enc_03" / "Highest of 19 controls · street-112" (HighestControl.rank),
+    //   labels "P17 · σ 2°" / "0.73" / "0.61".
+    // Each title is wrapped as FigurePage.wrap does at the tile's inner width (23.67 mm at 7 pt: perLine 18), so the
+    // control's title breaks "Highest of 19" / "controls ·" / "street-112". Line 1 sits in the title row; continuation
+    // lines fill the caption rows above the label, and the label takes the LAST caption row on every tile, so the
+    // values share one baseline.
+    const tileDefs = [
+      { role: 'query', title: 'Query ret_07', label: 'P17 · σ 2°', fx: B },
+      { role: 'match', title: 'Matched enc_03', label: '0.73', fx: A },
+      { role: 'control', title: 'Highest of 19 controls · street-112', label: '0.61', fx: S }];
+    const cTexts = ['Matched 0.73 · highest of 19 controls street-112 0.61 · control mean B 0.35 · D +0.38',
+      'Magenta: fixation duration mass per cell, shared limits; lines: 50% and 90% mass.'];
+    const dNotes = ['n = 24 each · paired n = 24', 'bars: grand mean of participant means, equal weight',
+      'Each pair of dots is one participant; per participant, 2–17 queries per group. Descriptive only: no intervals or tests.'];
+    const eNotes = ['Each scale computed separately.'];
+    const panels = [
+      { l: 'A', title: 'Encoding gaze', w: 47, kind: 'gaze', ex: exA, texts: gazeTexts.A },
+      { l: 'B', title: 'Retrieval gaze', w: 47, kind: 'gaze', ex: exB, texts: gazeTexts.B },
+      { l: 'C', title: 'Density maps', w: 79, kind: 'maps' },
+      { l: 'D', title: 'Participant D by retrieval response', w: 94, kind: 'plot', texts: dNotes },
+      { l: 'E', title: 'Scale profile by retrieval response', w: 84, kind: 'plot', texts: eNotes }];
+    const nLines = (texts, w) => texts.reduce((n, t) => n + wrapText(t, w, PT).length, 0);
+    const tileW = w => (w - 2 * PAD) / 3, tileMapW = w => tileW(w) - 2 * PAD, tileMapH = w => tileMapW(w) * 768 / 1024;
+    const tileLines = w => tileDefs.map(t => wrapText(t.title, tileMapW(w), PT));
+    const CONT_ROWS = w => Math.max(...tileLines(w).map(ls => ls.length - 1)); // continuation rows the longest title needs
+    const TILE_ROWS = w => 1 + CONT_ROWS(w) + 1; // title row + continuation rows + label row, fixed for every tile so maps and values share baselines
+    const tileH = w => TILE_ROWS(w) * lineMm(PT) + tileMapH(w) + 3 * PAD;
+    const drawH = p => p.kind === 'gaze' ? p.w * p.ex[3] / p.ex[2] : p.kind === 'plot' ? p.w * 0.62 : tileH(p.w);
+    const bodyH = p => drawH(p) + nLines(p.kind === 'maps' ? cTexts : p.texts, p.w) * lineMm(PT);
+    const panelH = p => lineMm(LET) + bodyH(p);
+    const rows = panels.reduce((rs, p) => { const row = rs[rs.length - 1];
+      if (row && row.reduce((s, q) => s + q.w + GUT, 0) + p.w <= PAGE + 1e-9) row.push(p); else rs.push([p]); return rs; }, []);
+    let top = 0;
+    for (const row of rows) { const h = Math.max(...row.map(panelH)); let x = 0; for (const p of row) { p.x = x; p.y = top; p.h = h; x += p.w + GUT; } top += h + GUT; }
+    const panelsH = top;
+    const caption = 'Figure 1. Matched-minus-control spatial similarity of retrieval gaze (dataset r3, analysis rev 4, run 7). Spatial correspondence, not sequential replay. D does not separate participant-specific reinstatement from item-driven salience common to all viewers of that image, and may retain residual centre bias.';
+    const stamp = 'Analysis rev 4 · run 7 (archive unbound) · data r3 · reporting “By retrieval response” (sha256:3a0e…5dd) · studio build eyes4s 0.1';
+    const foot = [caption, stamp].map(t => wrapText(t, PAGE, PT));
+    const heightMm = panelsH + foot.reduce((n, l) => n + l.length, 0) * lineMm(PT);
+    const pageW = Math.ceil(px(PAGE)), pageH = Math.ceil(px(heightMm));
+
+    // ---- text: VJust.Top at `top` (mm); the baseline sits one ascent (0.95 em) below ----
+    const texts = [];
+    const T = (s, xMm, topMm, o) => { o = o || {}; const fs = o.fs || fsT;
+      // The runtime wraps an interpolated string in an HTML <span>, which SVG <text> does not render; a Fragment child
+      // renders as a plain text node.
+      texts.push({ s: React.createElement(React.Fragment, null, s), x: f1(o.xPx !== undefined ? o.xPx : px(xMm)), y: f1(o.yPx !== undefined ? o.yPx : px(topMm) + 0.95 * fs), fs, ff: o.mono ? 'IBM Plex Mono' : 'IBM Plex Sans',
+        fw: o.fw || 400, fill: o.fill || 'var(--paper-ink)', a: o.a || 'start' }); };
+    const para = (list, xMm, topMm, wMm, fill) => { let y = topMm; for (const t of list) for (const ln of wrapText(t, wMm, PT)) { T(ln, xMm, y, { fill }); y += lineMm(PT); } return y; };
+    for (const p of panels) {
+      T(p.l, p.x, p.y, { fs: fsL, fw: 600 });
+      T(p.title, p.x + 2 * LET * MM_PER_PT, p.y);
+      p.body = p.y + lineMm(LET);
+    }
+
+    // ---- A, B: trial panels (marks: TrialScene radius 0.4·√ms px, halo 2 px, order lines 1.5 px dashed 6/5, on the light stage) ----
+    const PX_PT = 72 / 96, ptToPx = v => v * MM_PER_PT * PX_PER_MM; // device px → points → page px
+    const gaze = (p, L, diamond, role) => {
+      const [ex, ey, ew, eh] = p.ex, wPx = px(p.w), k = wPx / ew; // page px per screen px
+      const u = v => ptToPx(v * PX_PT) / k; // a TrialScene device-px length in this svg's image units
+      const marks = L.map(q => { const out = !inFrame(q), r = u(0.4 * Math.sqrt(q[2]));
+        const base = { fill: out ? 'none' : role, sw: f1(u(2)), dash: out ? f1(u(3)) + ' ' + f1(u(2.5)) : 'none' };
+        if (!diamond) return Object.assign(base, { x: q[0], y: q[1], r: f1(r) });
+        const hd = r * Math.sqrt(Math.PI / 2); // equal-area diamond
+        return Object.assign(base, { pts: [[q[0], q[1] - hd], [q[0] + hd, q[1]], [q[0], q[1] + hd], [q[0] - hd, q[1]]].map(v => f1(v[0]) + ',' + f1(v[1])).join(' ') }); });
+      return { x: f1(px(p.x)), y: f1(px(p.body)), w: f1(wPx), h: f1(wPx * eh / ew), vb: [ex, ey, ew, eh].join(' '), marks,
+        order: L.map(q => q[0] + ',' + q[1]).join(' '), ow: f1(u(1.5)), od: f1(u(6)) + ' ' + f1(u(5)), cw: f1(u(2)), cc: f1(u(4)), k, // cross: 2 px halo cased 4 px, above the field, below the marks (MAP_RECIPE v2; on the LIGHT stage the halo is dark, so the casing is --isoline-case, the light one)
+        // Owner D7: arms are TrialScene.CrossArmPx = 20 px half-arm in NATIVE screen coordinates (TrialScene.scala:423, :834),
+        // i.e. 20 image units in this viewBox, scaled with the drawn frame (at figure scale it lies mostly under fixation 1).
+        xh: (a => 'M512 ' + f1(384 - a) + 'V' + f1(384 + a) + 'M' + f1(512 - a) + ' 384H' + f1(512 + a))(20) };
+    };
+    const pA = panels[0], pB = panels[1];
+    const ga = gaze(pA, A, true, c.match), gb = gaze(pB, B, false, c.query);
+    for (const p of [pA, pB]) para(p.texts, p.x, p.body + drawH(p), p.w, 'var(--paper-ink-2)');
+    // Outside-frame marks: each sits inside its own panel's extent; the plated label (proposal) names it there.
+    const plates = [];
+    const outLabel = (p, g, q, side) => { const mx = px(p.x) + (q[0] - p.ex[0]) * g.k, my = px(p.body) + (q[1] - p.ex[1]) * g.k;
+      const r = ptToPx(0.4 * Math.sqrt(q[2]) * PX_PT), w = 34, y = my - r - 3 - fsT;
+      const x = side === 'end' ? px(p.x + p.w) - w : px(p.x);
+      plates.push({ x: f1(x), y: f1(y - 1), w, h: f1(fsT + 2) });
+      T('outside', 0, 0, { xPx: side === 'end' ? x + w - 1 : x + 1, yPx: y + 0.82 * fsT, fill: 'var(--paper-ink-2)', a: side });
+    };
+    outLabel(pA, ga, A[11], 'end'); outLabel(pB, gb, B[11], 'start');
+
+    // ---- C: tiles (FigurePage.tiles), shared colour limits over the three maps (alpha floor, MAP_RECIPE v2) ----
+    const pC = panels[2], tw = tileW(pC.w), mw = tileMapW(pC.w), mh = tileMapH(pC.w), th = tileH(pC.w);
+    const inF = L => L.filter(inFrame).map(([x, y, dur]) => ({ x, y, dur }));
+    const mwPx = px(mw), mhPx = px(mh);
+    const gmax = Math.max(...tileDefs.map(t => massMap(inF(t.fx), 70, mwPx, mhPx).max));
+    const tiles = tileDefs.map((t, i) => {
+      const x = pC.x + i * (tw + PAD), titleTop = pC.body + PAD, mapTop = titleTop + lineMm(PT), capTop = mapTop + mh + PAD;
+      const gr = 0.36 * fsT, gx = px(x + PAD) + gr + 0.5, gy = px(titleTop) + 0.62 * fsT; // glyph: one text-height, on the title's x-height centre
+      const tl = wrapText(t.title, mw, PT), tx = gx + gr + 0.45 * fsT, nc = CONT_ROWS(pC.w);
+      T(tl[0], 0, titleTop, { xPx: tx, fw: 600 });
+      tl.slice(1).forEach((ln, j) => T(ln, x + PAD, capTop + j * lineMm(PT), { fw: 600 }));
+      T(t.label, x + PAD, capTop + nc * lineMm(PT));
+      const m = massMap(inF(t.fx), 70, mwPx, mhPx, 64, 48, gmax), hd = gr * Math.sqrt(Math.PI / 2);
+      return { x: f1(px(x)), y: f1(px(pC.body)), w: f1(px(tw)), h: f1(px(th)), mx: f1(px(x + PAD)), my: f1(px(mapTop)), mw: f1(mwPx), mh: f1(mhPx),
+        gx: f1(gx), gy: f1(gy), gr: t.role === 'query' ? f1(gr) : 0, gq: c.query, gm: c.match, gc: c.control,
+        gd: t.role === 'match' ? [[gx, gy - hd], [gx + hd, gy], [gx, gy + hd], [gx - hd, gy]].map(v => f1(v[0]) + ',' + f1(v[1])).join(' ') : '',
+        gcr: t.role === 'control' ? f1(gr - 0.6) : 0, gcw: 1.2,
+        cells: m.cells.map(q => grey ? Object.assign({}, q, { fill: lumaGrey(q.fill) }) : q), p9: m.iso90, p5: m.iso50 };
+    });
+    para(cTexts, pC.x, pC.body + th, pC.w, 'var(--paper-ink-2)');
+
+    // ---- D: ParticipantPlot in w × 0.62w; frame npc x 0.10–0.97, y 0.10–0.78; D −0.3 … +0.5; levels at ¼ and ¾ ----
+    const pD = panels[3], DX = px(pD.x), DY = px(pD.body), DW = px(pD.w), DH = DW * 0.62;
+    const fx0 = DX + 0.10 * DW, fx1 = DX + 0.97 * DW, fy0 = DY + 0.10 * DH, fy1 = DY + 0.78 * DH;
+    const dy = v => fy0 + (0.5 - v) / 0.8 * (fy1 - fy0), lx = i => fx0 + (i === 0 ? 0.25 : 0.75) * (fx1 - fx0);
     const rem  = [.26,.27,.38,.36,-.03,.30,.32,.31,.34,.45,.28,.34,.17,.29,.18,.45,.38,.42,.29,.26,.32,.27,.34,.36];
     const forg = [.06,.12,.15,.18,-.23,.17,.10,.15,.24,.33,.11,.19,.03,.22,-.08,.28,.32,.37,.06,.12,.27,.06,.21,.17];
-    const all  = [.17,.22,.33,.29,-.08,.25,.27,.25,.32,.43,.22,.28,.11,.27,.10,.38,.38,.41,.24,.22,.31,.19,.30,.30];
-    const f = v => v.toFixed(1);
-    // Panel D: Δ cosine from −0.3 to +0.6
-    const y = v => 12 + (0.6 - v) / 0.9 * 132;
     const jit = k => ((k * 7) % 9 - 4) * 2.6;
-    const circ = (x, yy, r) => `M${f(x - r)} ${f(yy)}a${r} ${r} 0 1 0 ${2 * r} 0a${r} ${r} 0 1 0 ${-2 * r} 0`;
-    const dLines = rem.map((r, k) => `M${f(100 + jit(k))} ${f(y(r))}L${f(210 + jit(k))} ${f(y(forg[k]))}`).join('');
-    const remDots = rem.map((r, k) => circ(100 + jit(k), y(r), 2.6)).join('');
-    const forgDots = forg.map((r, k) => circ(210 + jit(k), y(r), 2.6)).join('');
-    // Panel E: D from −0.1 to 0.5 over log-spaced σ
-    const ey = v => 10 + (0.5 - v) / 0.6 * 126;
-    const xs = [60, 120, 180, 240], prof = [0.5, 0.78, 1.0, 0.62];
-    const mean = [0.15, 0.24, 0.30, 0.19], fmean = [0.07, 0.12, 0.15, 0.09];
-    const eMean = mean.map((m, i) => (i ? 'L' : 'M') + xs[i] + ' ' + f(ey(m))).join('');
-    const eMeanDots = mean.map((m, i) => circ(xs[i], ey(m), 3)).join('');
-    const eForg = fmean.map((m, i) => (i ? 'L' : 'M') + xs[i] + ' ' + f(ey(m))).join('');
-    const eForgDots = fmean.map((m, i) => circ(xs[i], ey(m), 2.6)).join('');
+    const dp = {
+      grid: [-0.2, 0.2, 0.4].map(v => `M${f1(fx0)} ${f1(dy(v))}H${f1(fx1)}`).join(''), zero: `M${f1(fx0)} ${f1(dy(0))}H${f1(fx1)}`,
+      link: rem.map((r, k) => `M${f1(lx(0) + jit(k))} ${f1(dy(r))}L${f1(lx(1) + jit(k))} ${f1(dy(forg[k]))}`).join(''),
+      rem: rem.map((r, k) => ({ x: f1(lx(0) + jit(k)), y: f1(dy(r)) })), forg: forg.map((r, k) => ({ x: f1(lx(1) + jit(k)), y: f1(dy(r)) })),
+      rb: `M${f1(lx(0) - 22)} ${f1(dy(0.30))}H${f1(lx(0) + 22)}`, fb: `M${f1(lx(1) - 22)} ${f1(dy(0.15))}H${f1(lx(1) + 22)}`
+    };
+    T('D (Δ cosine), participant mean', 0, 0, { xPx: DX + 0.10 * DW, yPx: DY + 0.02 * DH + 0.95 * fsT, fill: 'var(--paper-ink-2)' });
+    // Proposal (ParticipantPlot): every gridline labelled, signed, 1 dp (golden figure-1 labels only 0).
+    const sgn = v => v === 0 ? '0' : (v > 0 ? '+' : '−') + Math.abs(v).toFixed(1);
+    [-0.2, 0, 0.2, 0.4].forEach(v => T(sgn(v), 0, 0, { xPx: fx0 - 0.015 * (fx1 - fx0), yPx: dy(v) + 0.35 * fsT, mono: true, a: 'end', fill: v === 0 ? 'var(--paper-ink)' : 'var(--paper-ink-2)' }));
+    T('+0.30', 0, 0, { xPx: lx(0) - 25, yPx: dy(0.30) + 0.35 * fsT, mono: true, fw: 500, a: 'end' });
+    T('+0.15', 0, 0, { xPx: lx(1) + 25, yPx: dy(0.15) + 0.35 * fsT, mono: true, fw: 500, fill: 'var(--paper-ink-2)' });
+    ['Remembered', 'Forgotten'].forEach((g, i) => {
+      T('n = 24', 0, 0, { xPx: lx(i), yPx: fy1 + 0.04 * (fy1 - fy0) + 0.95 * fsT, mono: true, a: 'middle', fill: 'var(--paper-ink-2)' });
+      T(g, 0, 0, { xPx: lx(i), yPx: fy1 + 0.12 * (fy1 - fy0) + 0.95 * fsT + 2, fw: 600, a: 'middle' }); });
+    para(pD.texts, pD.x, pD.body + pD.w * 0.62, pD.w, 'var(--paper-ink-2)');
+
+    // ---- E: ScaleProfilePlot in w × 0.62w; σ log-spaced; values beside each dot (solid above, hollow below) ----
+    const pE = panels[4], EX = px(pE.x), EY = px(pE.body), EW = px(pE.w), EH = EW * 0.62;
+    const ex0 = EX + 0.11 * EW, ex1 = EX + 0.80 * EW, ey0 = EY + 0.12 * EH, ey1 = EY + 0.76 * EH;
+    const ey = v => ey0 + (0.35 - v) / 0.35 * (ey1 - ey0), sx = i => ex0 + (i + 0.5) / 4 * (ex1 - ex0);
+    const mean = [0.15, 0.24, 0.30, 0.19], fmean = [0.07, 0.12, 0.15, 0.09], sig = ['0.5°', '1°', '2°', '4°'];
+    const ep = {
+      grid: [0.1, 0.2, 0.3].map(v => `M${f1(ex0)} ${f1(ey(v))}H${f1(ex1)}`).join(''), zero: `M${f1(ex0)} ${f1(ey(0))}H${f1(ex1)}`,
+      rem: mean.map((m, i) => f1(sx(i)) + ',' + f1(ey(m))).join(' '), forg: fmean.map((m, i) => f1(sx(i)) + ',' + f1(ey(m))).join(' '),
+      remDots: mean.map((m, i) => ({ x: f1(sx(i)), y: f1(ey(m)) })), forgDots: fmean.map((m, i) => ({ x: f1(sx(i)), y: f1(ey(m)) }))
+    };
+    T('D (Δ cosine)', 0, 0, { xPx: EX + 0.10 * EW, yPx: EY + 0.02 * EH + 0.95 * fsT, fill: 'var(--paper-ink-2)' });
+    // Proposal (ScaleProfilePlot): gridlines labelled 0, +0.1, +0.2, +0.3; direct labels signed as the golden prints them.
+    [0, 0.1, 0.2, 0.3].forEach(v => T(sgn(v), 0, 0, { xPx: ex0 - 0.015 * (ex1 - ex0), yPx: ey(v) + 0.35 * fsT, mono: true, a: 'end', fill: v === 0 ? 'var(--paper-ink)' : 'var(--paper-ink-2)' }));
+    const sd = v => '+' + v.toFixed(2);
+    mean.forEach((m, i) => T(sd(m), 0, 0, { xPx: sx(i), yPx: ey(m) - 11, mono: true, fw: 500, a: 'middle' }));
+    fmean.forEach((m, i) => T(sd(m), 0, 0, { xPx: sx(i), yPx: ey(m) + 8 + 0.75 * fsT, mono: true, fw: 500, a: 'middle', fill: 'var(--paper-ink-2)' }));
+    sig.forEach((s, i) => T(s, 0, 0, { xPx: sx(i), yPx: ey1 + 0.04 * (ey1 - ey0) + 0.95 * fsT, mono: true, a: 'middle', fill: 'var(--paper-ink-2)' }));
+    T('Gaussian σ (log spacing)', 0, 0, { xPx: EX + 0.53 * EW, yPx: EY + 0.98 * EH, a: 'middle', fill: 'var(--paper-ink-2)' });
+    // Proposal (ScaleProfilePlot draws no series names): name each line at its right end.
+    T('Remembered', 0, 0, { xPx: sx(3) + 8, yPx: ey(mean[3]) + 0.35 * fsT });
+    T('Forgotten', 0, 0, { xPx: sx(3) + 8, yPx: ey(fmean[3]) + 0.35 * fsT, fill: 'var(--paper-ink-2)' });
+    para(pE.texts, pE.x, pE.body + pE.w * 0.62, pE.w, 'var(--paper-ink-2)');
+
+    // ---- foot: figure caption, then the provenance stamp (FigureCaption.stamp), full page width ----
+    let fy = panelsH;
+    for (const lines of foot) for (const ln of lines) { T(ln, 0, fy); fy += lineMm(PT); }
+
+    // ---- selection, navigator, inspector ----
     const P = this.state.panel;
-    const defs = [
-      ['A','Encoding gaze','trial'],['B','Retrieval gaze','trial'],['C','Density maps','trial'],
-      ['D','Participant D by response','study'],['E','Scale profile by response','study']
-    ];
-    const bind = {
-      A: ['—', 'P17 enc_03 · beach-042 (1 trial)'],
-      B: ['—', 'P17 ret_07 · beach-042 (1 trial)'],
-      C: ['σ 2°', 'P17 ret_07 · matched + highest control'],
-      D: ['σ 2°', 'All admitted retrieval queries'],
-      E: ['0.5° · 1° · 2° · 4°', 'All admitted retrieval queries']
-    }[P];
-    const cls = l => l === P ? 'panel sel' : 'panel';
+    const defs = [['A','Encoding gaze','trial'],['B','Retrieval gaze','trial'],['C','Density maps','trial'],['D','Participant D by response','study'],['E','Scale profile by response','study']];
+    const bind = { A: ['—', 'P17 enc_03 · beach-042'], B: ['—', 'P17 ret_07 · beach-042'], C: ['σ 2°', 'ret_07 · M + top control'],
+      D: ['σ 2°', 'All admitted queries'], E: ['0.5° · 1° · 2° · 4°', 'All admitted queries'] }[P];
+    const byL = Object.fromEntries(panels.map(p => [p.l, p]));
+    const hits = defs.map(([l, n]) => { const p = byL[l], on = l === P;
+      return { domId: 'pg-' + l, curA: on ? 'true' : 'false', cls: on ? 'pnl sel kf' : 'pnl', job: on ? 'focus' : '', cur: on ? '' : null, l: f1(px(p.x) - 4) + 'px', t: f1(px(p.y) - 4) + 'px', w: f1(px(p.w) + 8) + 'px', h: f1(px(p.h) + 8) + 'px',
+        aria: 'Panel ' + l + ', ' + n + (on ? ', selected' : ''), pick: () => this.setState({ panel: l }) }; });
+    const mapKey = mapLegend().map(k => ({ x: k.x + 1, fill: grey ? lumaGrey(k.fill) : k.fill, op: k.op }));
     return {
       rootClass: this.props.dark ? 'es dark' : 'es',
-      panels: defs.map(([l, n, s]) => ({ letter: l, name: n, scope: s, cls: l === P ? 'fi sel' : 'fi',
-        aria: 'Panel ' + l + ', ' + n, pick: () => this.setState({ panel: l }) })),
-      clsA: cls('A'), clsB: cls('B'), clsC: cls('C'), clsD: cls('D'), clsE: cls('E'), isD: P === 'D',
-      panelLetter: P, panelCrumb: 'Panel ' + P,
+      c, ga, gb, plates, tiles, dp, ep, texts, hits, mapKey,
+      methodsH: (742 - 1 - (28 + 30 + pageH + 2 + 6 + 14 + 12)) + 'px',
+      pageW, pageH, pageVb: '0 0 ' + pageW + ' ' + pageH, pageBoxW: (pageW + 2) + 'px', pageBoxH: (pageH + 2) + 'px', tagRight: (pageW + 8) + 'px',
+      panels: defs.map(([l, n, sc]) => ({ letter: l, name: n, scope: sc, cls: l === P ? 'fi sel' : 'fi', selA: l === P ? 'true' : 'false',
+        domId: 'fp-' + l, cur: l === P ? '' : null, aria: 'Panel ' + l + ', ' + n, pick: () => this.setState({ panel: l }) })),
+      panelAd: 'fp-' + P, pageAd: 'pg-' + P,
+      panelLetter: P, panelCrumb: 'Panel ' + P, panelWidth: byL[P].w + ' mm',
+      tagTop: f1(px(byL[P].y) + 1) + 'px', tagScale: bind[0] === '—' ? 'single trial' : bind[0], tagSel: bind[1],
       bScale: bind[0], bSel: bind[1],
-      greyCls: this.state.grey ? 'tog on' : 'tog',
+      greyPressed: grey ? 'true' : 'false',
       toggleGrey: () => this.setState({ grey: !this.state.grey }),
-      greyFilter: this.state.grey ? 'grayscale(1)' : 'none',
-      greyNote: this.state.grey ? 'Roles still differ by shape and lightness' : 'Preview the figure as a greyscale print',
-      dLines, remDots, forgDots,
-      y6: f(y(0.6)), ym3: f(y(-0.3)), y0: f(y(0)),
-      yt6: f(y(0.6) + 3), yt4: f(y(0.4) + 3), yt2: f(y(0.2) + 3), yt0: f(y(0) + 3), ytm2: f(y(-0.2) + 3),
-      yRem: f(y(0.30)), yForg: f(y(0.15)), yRemT: f(y(0.30) + 3), yForgT: f(y(0.15) + 3),
-      eMean, eMeanDots, eForg, eForgDots, eRemL: f(ey(0.19) + 3), eForgL: f(ey(0.09) + 3),
-      e0: f(ey(0)), e5: f(ey(0.5) + 3), e3: f(ey(0.3) + 3), e1: f(ey(0.1) + 3), e0t: f(ey(0) + 3)
+      greyNote: grey ? 'Luma greys (sRGB Rec. 709 weights) · roles differ by shape and lightness' : 'Preview the figure as a greyscale print'
     };
   }
 }

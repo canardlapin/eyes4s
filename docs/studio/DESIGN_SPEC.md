@@ -242,3 +242,55 @@ and the colour lint does not yet catch named CSS colours or `Color.*` constants.
 `-fx-font-weight`. Weights therefore use the legacy family names from each face's name table:
 "IBM Plex Sans Medm" and "IBM Plex Sans SmBld", "IBM Plex Mono Medm", and "Source Serif 4 Semibold".
 The type lint rejects `-fx-font-weight` and `FontWeight` in studio sources.
+
+## 15. Design hill climb amendments (owner decisions 2026-10-11, override anything above)
+
+The boards in `design/` were revised in a scored review (baseline 6.34 → accepted 8.28 of 10; four
+reviewers per round: visual, function and accessibility, science, JavaFX build). Where a board and
+the desktop disagree, the desktop rule below stands, and `PARITY_CHECKLIST.md` records each open
+deviation with its ticket.
+
+- **Map alpha floor (§6).** A mass-map cell's alpha rises linearly from 0 at zero mass to 1 at 10%
+  of the colour-limit range (`alpha = min(1, t / 0.10)`, t the fraction along the limits). The colour
+  is unchanged and the one global map opacity (0.6) still applies. Coverage is shown by the frame
+  outline, so the stimulus and stage show through low-mass regions. Mass maps only: difference maps
+  stay opaque (zero sits mid-ramp). Missing cells are never transparent and never a ramp colour:
+  they carry the missing-asset hatch, and the caption gives their count (missing ≠ zero).
+- **Selection is a fill; focus is a ring.** Selected rows and items take the themed `--sel-fill`
+  (light `#E4E0D6`, dark `#2E3035`) and weight 600 (Sans; selected Mono stays 500, the heaviest
+  Mono face). Keyboard focus is the 2 px accent ring; focused and selected shows both. Hover uses
+  `--surface-2`, so hover never reads as selection. On stages, marks keep the two-band `--sel-ring`
+  (§4) and the focused mark gets the accent ring outside it.
+- **Composite focus.** A list, tree, grid, plot or stage is one tab stop. While it holds keyboard
+  focus its cursor item draws the accent ring (cased with the halo on stages) and the container
+  draws none; the focused group's tab carries the accent top rule. The cursor ring shows only while
+  the composite has keyboard focus (`:focus-visible`), and a composite with no items shows the ring
+  on the container. Selection persists without focus. In JavaFX, `:focus-visible` rules come after
+  `:selected`/`:armed` rules, and selected-and-focused is written as a compound rule.
+- **Disabled and pending.** A pending or blocked action (for example "Save & run" while preflight
+  is pending) is disabled and stays fully readable: opacity 1 and normal contrast
+  (`PreflightFxSuite`). Its reason is visible next to it and attached to it for assistive
+  technology. Any remedy or progress is a separate enabled control ("Cancel waiting"). Only
+  controls with no workflow meaning fade to opacity 0.4.
+- **Stage casing.** `--halo` stays a stage token (§14). Where a focus or role mark falls below 3:1
+  on a stage with both mark and casing, it gets its own contrasting inner casing; it does not invert
+  the halo. Tested in both themes on all three stages over map and image grounds.
+- **Weights.** Sans 400, 500 (button, tab and segment labels only), 600; Mono 400 and 500; the hero
+  number 500. No Mono 600 and no Sans 700.
+- **Greyscale proof.** Figures' greyscale proof is a Rec. 709 relative-luminance render in linear
+  light, not desaturation, so that match and control print as different greys.
+- **Figures.** Participant and scale-profile plots label their numeric y ticks and print signed
+  values. The fixation cross is a 20 px half-arm in native screen coordinates.
+- **Geometry density.** Every occupied cell is drawn (the 5% share floor hid most outside-frame
+  records). Levels step by record count and are fixed for one dataset revision, never rescaled per
+  view; the exact level rule is specified before it is implemented.
+- **Paired descriptive (Results).** "Δ Remembered − Forgotten" is the mean over participants of
+  each participant's mean Remembered D minus mean Forgotten D, computed before rounding participant
+  means: +0.16 (range +0.05 P21 to +0.26 P15; higher in 24 of 24). It is descriptive only, and the
+  headline notes that it differs from the difference of the rounded group means by rounding.
+- **Outside-window wording.** Geometry: "543 of 11,520 source records outside the window in 409
+  trials". Methods (as `MethodsText` writes it): "543 of the 11,311 fixation records of admitted trials
+  (4.8% of their fixation duration)". All 543 lie in admitted trials.
+- **Science values.** The executable golden fixture (`fixtures/studio-golden`) is authoritative;
+  the mock (`fixture/make_fixture.py`) is reconciled to it, and anything a board draws that neither
+  contains is tagged "illustrative".

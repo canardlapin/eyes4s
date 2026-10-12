@@ -12,14 +12,14 @@
 <style>
 body{margin:0}
 /* ===== Eyes Studio tokens (the only place colours are written) ===== */
-.es{--ground:#ECE9E2;--surface:#FBFAF7;--surface-2:#F3F1EC;--surface-3:#E9E6DF;--hairline:#DAD6CC;--ink:#1C1E21;--ink-2:#464B52;--ink-3:#5E636A;--accent:#0E6E68;--accent-soft:#DCEFEC;--on-accent:#FFFFFF;--query:#3A2E6E;--query-soft:#E6E2F2;--match:#2F6DB5;--match-soft:#E0EAF6;--match-text:#255A98;--control:#B86E0E;--control-fill:#D98A1C;--control-text:#9A4A07;--control-soft:#F7E7D0;--fail:#A3261B;--fail-soft:#F6DEDA;--warn-text:#7A4F00;--warn-soft:#FBF1D9;--stage:#1A1A1A;--on-stage:#D9D6CF;--neutral-mark:rgba(28,30,33,.35);--sel-ring:0 0 0 2px #FFFFFF,0 0 0 4px #1C1E21;--tl-bg:#ECECEC;--tl-text:#4D4D4D}
-.es [data-stage=light],.es[data-stage=light]{--stage:#F2F2F2;--on-stage:#1C1E21}.es [data-stage=mid],.es[data-stage=mid]{--stage:#808080;--on-stage:#FFFFFF}
-.es.dark{--ground:#121315;--surface:#1B1C1F;--surface-2:#222327;--surface-3:#2A2C31;--hairline:#34363C;--ink:#ECEAE5;--ink-2:#BDBAB3;--ink-3:#9C9990;--accent:#43B5AA;--accent-soft:#183A37;--on-accent:#0B1413;--query:#D6CBFF;--query-soft:#2B2544;--match:#5C95E0;--match-soft:#1D2A3D;--match-text:#7FB0EE;--control:#E8A23C;--control-fill:#E8A23C;--control-text:#EBB066;--control-soft:#3A2A14;--fail:#F08A7E;--fail-soft:#3A1E1B;--warn-text:#E7C274;--warn-soft:#33290F;--neutral-mark:rgba(236,234,229,.35);--sel-ring:0 0 0 2px #000000,0 0 0 4px #ECEAE5;--tl-bg:#2B2B2B;--tl-text:#B0B0B0}
+.es{--ground:#ECE9E2;--sel-fill:#E4E0D6;--surface:#FBFAF7;--surface-2:#F3F1EC;--surface-3:#E9E6DF;--hairline:#DAD6CC;--ink:#1C1E21;--ink-2:#464B52;--ink-3:#5E636A;--accent:#0E6E68;--accent-soft:#DCEFEC;--on-accent:#FFFFFF;--query:#3A2E6E;--query-soft:#E6E2F2;--match:#2F6DB5;--match-soft:#E0EAF6;--match-text:#255A98;--control:#B86E0E;--control-fill:#D98A1C;--control-text:#9A4A07;--control-soft:#F7E7D0;--fail:#A3261B;--fail-soft:#F6DEDA;--warn-text:#7A4F00;--warn-soft:#FBF1D9;--stage:#1A1A1A;--on-stage:#D9D6CF;--neutral-mark:rgba(28,30,33,.35);--sel-ring:0 0 0 2px #FFFFFF,0 0 0 4px #1C1E21;--tl-bg:#ECECEC;--tl-text:#4D4D4D;--tl-close:#FF5F57;--tl-min:#FEBC2E;--tl-max:#28C840;--sel-ring-inner:#FFFFFF}
+.es [data-stage=light],.es[data-stage=light]{--stage:#F2F2F2;--on-stage:#1C1E21;--halo:#1C1E21}.es [data-stage=mid],.es[data-stage=mid]{--stage:#767676;--on-stage:#FFFFFF;--halo:#FFFFFF}
+.es.dark{--ground:#121315;--sel-fill:#2E3035;--surface:#1B1C1F;--surface-2:#222327;--surface-3:#2A2C31;--hairline:#34363C;--ink:#ECEAE5;--ink-2:#BDBAB3;--ink-3:#9C9990;--accent:#43B5AA;--accent-soft:#183A37;--on-accent:#0B1413;--query:#D6CBFF;--query-soft:#2B2544;--match:#5C95E0;--match-soft:#1D2A3D;--match-text:#7FB0EE;--control:#E8A23C;--control-fill:#E8A23C;--control-text:#EBB066;--control-soft:#3A2A14;--fail:#F08A7E;--fail-soft:#3A1E1B;--warn-text:#E7C274;--warn-soft:#33290F;--neutral-mark:rgba(236,234,229,.35);--sel-ring:0 0 0 2px #000000,0 0 0 4px #ECEAE5;--tl-bg:#2B2B2B;--tl-text:#B0B0B0;--tl-close:#FF5F57;--tl-min:#FEBC2E;--tl-max:#28C840;--sel-ring-inner:#000000}
 .es{font-family:"IBM Plex Sans",-apple-system,"Helvetica Neue",sans-serif;font-size:12px;color:var(--ink);background:var(--ground)}
 .es button{font-family:inherit;font-size:inherit;color:inherit;cursor:pointer}
 .es a{color:var(--accent)}.es a:hover{color:var(--ink)}
 .mono{font-family:"IBM Plex Mono",ui-monospace,monospace}
-.t11{font-size:11px}.t13{font-size:13px;font-weight:600}.t16{font-size:16px}.t28{font-size:28px;font-weight:500;letter-spacing:-.02em}
+.t11{font-size:11px}.t13{font-size:13px;font-weight:600}.t16{font-size:16px}.t28{font-size:28px;font-weight:500;}
 .row{display:flex;align-items:center;gap:8px}
 .chip{display:flex;align-items:center;gap:6px;height:24px;padding:0 9px;border:1px solid var(--hairline);border-radius:6px;background:var(--surface);color:var(--ink-2);white-space:nowrap}
 .seg{display:flex;gap:2px;padding:2px;background:var(--surface-3);border-radius:7px}
@@ -36,7 +36,6 @@ body{margin:0}
 .tb{height:30px;flex:none;display:flex;align-items:center;gap:8px;padding:0 10px;border-bottom:1px solid var(--hairline);background:var(--surface)}
 .lbl{font-size:11px;font-weight:600;color:var(--ink-3)}
 .tog{height:22px;border:1px solid var(--hairline);background:var(--surface);border-radius:4px;padding:0 8px;color:var(--ink-2)}
-.tog.on{background:var(--ink);border-color:var(--ink);color:var(--surface)}
 .crumb{height:22px;border:0;background:transparent;border-radius:4px;padding:0 6px;color:var(--ink-2)}
 .crumb:hover{background:var(--surface-3)}
 .crumb.cur{color:var(--ink);font-weight:600}
@@ -50,14 +49,89 @@ body{margin:0}
 .btn.pri{background:var(--accent);border-color:var(--accent);color:var(--on-accent)}
 .stage{background:var(--stage)}
 /* board-specific */
-.pi{display:grid;grid-template-columns:40px minmax(0,1fr) 48px;align-items:center;gap:6px;height:25px;padding:0 12px;border:0;background:transparent;width:100%;text-align:left;color:var(--ink)}
-.pi.sel{box-shadow:inset 0 0 0 2px var(--ink);background:var(--surface-2);font-weight:600}
+.pl{outline:none}
+.pi{display:grid;grid-template-columns:26px minmax(0,1fr) 42px;align-items:center;gap:6px;height:25px;padding:0 12px;width:100%;color:var(--ink);white-space:nowrap}
+.pi.sel{background:var(--sel-fill);font-weight:600}
+.pi.sel .mono{font-weight:500}
 .tbl{width:100%;border-collapse:collapse}
-.tbl th{position:sticky;top:0;background:var(--surface-2);font-size:11px;font-weight:600;color:var(--ink-3);text-align:right;padding:0 10px;height:26px;border-bottom:1px solid var(--hairline);white-space:nowrap}
+.tbl th{background:var(--surface-2);font-size:11px;font-weight:600;color:var(--ink-3);text-align:right;padding:0 10px;height:26px;border-bottom:1px solid var(--hairline);white-space:nowrap}
 .tbl th:first-child,.tbl td:first-child{text-align:left}
 .tbl td{font-family:"IBM Plex Mono",ui-monospace,monospace;text-align:right;padding:0 10px;height:24px;border-bottom:1px solid var(--surface-3);white-space:nowrap}
-.tbl tr.sel td{background:var(--surface-2);box-shadow:inset 0 2px 0 var(--ink),inset 0 -2px 0 var(--ink)}
-.cnt{height:22px;border:1px solid var(--hairline);background:var(--surface);border-radius:4px;padding:0 8px;display:flex;align-items:center;gap:6px}
+.tbl tr.sel td{background:var(--sel-fill);font-weight:500}
+.tbl tr.sel td:first-child{font-weight:600}
+.hl{height:72px;flex:none;display:flex;flex-direction:column;justify-content:center;gap:2px;padding:0 12px;border-bottom:1px solid var(--hairline);background:var(--surface)}
+.hl .bs{display:flex;align-items:flex-start;gap:24px}
+.hl .b{display:flex;flex-direction:column;white-space:nowrap}
+.hl .b .k{font-size:11px;color:var(--ink-3)}
+.hl .b .v{font-family:"IBM Plex Mono",ui-monospace,monospace;font-size:28px;font-weight:500;color:var(--ink)}
+.hl .b .vr{display:flex;align-items:baseline;gap:8px}
+.hl .b.dif{border-left:1px solid var(--hairline);padding-left:24px}
+.hl .b .u{font-size:11px;color:var(--ink-2)}
+.hl .note{font-size:11px;color:var(--ink-2);white-space:nowrap}
+.sg{display:flex;gap:2px;padding:2px;background:var(--surface-3);border-radius:6px}
+.sg button{height:20px;border:0;border-radius:4px;padding:0 7px;background:transparent;color:var(--ink-2);font-weight:500;white-space:nowrap}
+.sg button:hover{background:var(--surface-2)}
+.sg button[aria-pressed=true],.sg button[aria-checked=true]{background:var(--surface);color:var(--ink);box-shadow:0 0 0 1px var(--hairline)}
+.cap{font-size:11px;color:var(--ink-2);padding:0 12px;white-space:nowrap}
+.cstrip{height:46px;flex:none;border-top:1px solid var(--hairline);display:flex;align-items:center;gap:4px;padding:0 10px;background:var(--surface-2);color:var(--ink-2);font-size:11px}
+.cs{min-width:80px;height:36px;flex:none;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:0;border:1px solid var(--hairline);background:var(--surface);border-radius:4px;padding:0 4px;white-space:nowrap;color:var(--ink-2)}
+.cs .n{font-family:"IBM Plex Mono",ui-monospace,monospace;font-size:13px;font-weight:500;color:var(--ink)}
+.cs .l{font-size:11px}
+.cs.fail{border-color:var(--fail)}.cs.fail .n{color:var(--fail)}
+.cs.na{border-style:dashed;background:transparent;color:var(--ink-3)}.cs.na .n{color:var(--ink-3)}
+.cs.wide{min-width:132px;align-items:flex-start;padding:0 8px;border-color:transparent;background:transparent}
+.op{width:10px;text-align:center;flex:none}
+.spec{display:flex;align-items:center;justify-content:space-between;gap:8px;height:28px;padding:0 8px;border-radius:4px;white-space:nowrap}
+.spec.sel{background:var(--sel-fill);font-weight:600}
+
+/* ===== round-1 shared rules: JavaFX parity + interaction states ===== */
+.es,.es *{box-sizing:border-box}
+.es{line-height:1.3}
+.es :focus{outline:none}
+.es :focus-visible{outline:none;box-shadow:inset 0 0 0 2px var(--accent)}
+.es .sel:focus-visible,.es .on:focus-visible{box-shadow:inset 0 0 0 2px var(--accent),inset 0 0 0 4px var(--ink)}
+.es a{color:var(--ink);text-decoration:underline;text-decoration-color:var(--ink-3)}.es a:hover{color:var(--ink-2)}
+.es .chip,.es .pill,.es .kind,.es .btn,.es .tog,.es .tab,.es .crumb{white-space:nowrap}
+.es .btn:hover,.es .tog:hover,.es .ib:hover,.es .tab:hover{background:var(--surface-3)}
+.es .btn.pri:hover{background:var(--accent)}
+.es .btn:disabled,.es .btn[aria-disabled=true]{cursor:default}
+.es .tog{background:var(--surface-2);color:var(--ink-2)}
+.es .tog.on{background:var(--surface);border-color:var(--ink-3);color:var(--ink);font-weight:600}
+.es .kf{box-shadow:inset 0 0 0 2px var(--accent)}
+.es .sel.kf,.es .on.kf{box-shadow:inset 0 0 0 2px var(--accent),inset 0 0 0 4px var(--ink)}
+
+/* ===== round-2 shared rules: focus never hidden, selection = fill (not a ring), native controls ===== */
+.es [aria-pressed=true]:focus-visible,.es [aria-checked=true]:focus-visible,.es [aria-selected=true]:focus-visible,.es .sg button:focus-visible{box-shadow:inset 0 0 0 2px var(--accent)}
+.es .sel.kf,.es .on.kf,.es .sel:focus-visible{box-shadow:inset 0 0 0 2px var(--accent)}
+.es .ib:disabled,.es .ib[aria-disabled=true],.es .tog:disabled{opacity:.4;cursor:default}
+.es input[type=radio],.es input[type=checkbox]{accent-color:var(--ink);width:14px;height:14px;margin:0;flex:none}
+.es input[type=range]{accent-color:var(--ink-2)}
+.es input[type=text],.es input[type=search],.es input:not([type]){height:24px;border:1px solid var(--hairline);border-radius:4px;background:var(--surface);color:var(--ink);padding:0 8px;font:inherit}
+
+/* ===== round-3 shared rules: one ring per focused composite, hover != selection, disabled = opacity ===== */
+.es [role=tree]:focus-visible,.es [role=listbox]:focus-visible,.es [role=grid]:focus-visible,.es [data-composite]:focus-visible{box-shadow:none}
+.es [role=tree]:focus-visible [data-cursor],.es [role=listbox]:focus-visible [data-cursor],.es [role=grid]:focus-visible [data-cursor],.es [data-composite]:focus-visible [data-cursor]{box-shadow:inset 0 0 0 2px var(--accent)}
+.es .cur-ring{visibility:hidden}
+.es .kf .cur-ring,.es .kf.cur-ring,.es :focus-visible .cur-ring{visibility:visible}
+.es [role=option]:not([aria-selected=true]):hover,.es [role=treeitem]:not([aria-selected=true]):hover,.es [role=row]:not([aria-selected=true]):hover{background:var(--surface-2)}
+.es .btn:disabled,.es .btn[aria-disabled=true],.es .sg button:disabled,.es .sg button[aria-disabled=true],.es .chip[aria-disabled=true],.es .tab[aria-disabled=true],.es input:disabled{opacity:.4;border-style:solid;cursor:default}
+.es input:disabled+label,.es label:has(input:disabled){opacity:.4;cursor:default}
+
+/* ===== polish v3b shared rules: grid row cursor painted on cells; depicted focus yields to real focus ===== */
+.es [role=grid]:focus-visible tr[data-cursor]{box-shadow:none}
+.es [role=grid]:focus-visible tr[data-cursor]>*{box-shadow:inset 0 2px 0 var(--accent),inset 0 -2px 0 var(--accent)}
+.es [role=grid]:focus-visible tr[data-cursor]>*:first-child{box-shadow:inset 2px 0 0 var(--accent),inset 0 2px 0 var(--accent),inset 0 -2px 0 var(--accent)}
+.es [role=grid]:focus-visible tr[data-cursor]>*:last-child{box-shadow:inset -2px 0 0 var(--accent),inset 0 2px 0 var(--accent),inset 0 -2px 0 var(--accent)}
+.es:has(:focus-visible) .kf:not(:focus-visible):not(:focus-visible *){box-shadow:none}
+.es:has(:focus-visible) .kf:not(:focus-visible):not(:focus-visible *) .cur-ring,.es:has(:focus-visible) .kf.cur-ring:not(:focus-visible *){visibility:hidden}
+.es:has(:focus-visible) :focus-visible .cur-ring,.es:has(:focus-visible) :focus-visible.cur-ring{visibility:visible}
+.es:has(:focus-visible) .sel.kf:not(:focus-visible):not(:focus-visible *),.es:has(:focus-visible) .on.kf:not(:focus-visible):not(:focus-visible *){box-shadow:none}
+
+/* ===== final pre-landing rules (owner D4): a pending or blocked action is disabled but stays fully readable,
+   as studio-plot.css .preflight-run:disabled; its reason is visible text named by aria-describedby.
+   Opacity .4 remains only for disabled controls with no workflow meaning. ===== */
+.es .btn.pend:disabled,.es .btn.pend[aria-disabled=true]{opacity:1;background:var(--surface-2);border-color:var(--hairline);border-style:solid;color:var(--ink-2)}
+.es .btn.pend:disabled:hover,.es .btn.pend[aria-disabled=true]:hover{background:var(--surface-2)}
 </style>
 </helmet>
 
@@ -65,7 +139,7 @@ body{margin:0}
 
 <!-- 1 · Native title bar (system-drawn; shown for context only) -->
 <div style="height:28px;flex:none;display:flex;align-items:center;padding:0 12px;background:var(--tl-bg);position:relative">
-<div style="display:flex;gap:8px"><span style="width:12px;height:12px;border-radius:50%;background:#FF5F57"></span><span style="width:12px;height:12px;border-radius:50%;background:#FEBC2E"></span><span style="width:12px;height:12px;border-radius:50%;background:#28C840"></span></div>
+<div style="display:flex;gap:8px"><span style="width:12px;height:12px;border-radius:6px;background:var(--tl-close)"></span><span style="width:12px;height:12px;border-radius:6px;background:var(--tl-min)"></span><span style="width:12px;height:12px;border-radius:6px;background:var(--tl-max)"></span></div>
 <div style="position:absolute;left:0;right:0;text-align:center;color:var(--tl-text);pointer-events:none">memory-study.eyes</div>
 </div>
 
@@ -73,9 +147,9 @@ body{margin:0}
 <header style="height:44px;flex:none;display:flex;align-items:center;gap:10px;padding:0 12px 0 14px;background:var(--surface);border-bottom:1px solid var(--hairline)">
 <div class="row" style="gap:7px;margin-right:4px">
 <svg width="20" height="20" viewBox="0 0 20 20" aria-hidden="true"><path d="M1.5 10C4 5.5 7 3.5 10 3.5S16 5.5 18.5 10C16 14.5 13 16.5 10 16.5S4 14.5 1.5 10Z" fill="none" stroke="var(--ink)" stroke-width="1.5"/><circle cx="10" cy="10" r="3.2" fill="var(--ink)"/><circle cx="11.2" cy="8.8" r="1" fill="var(--surface)"/></svg>
-<span class="t13" style="letter-spacing:-.01em">Eyes Studio</span>
+<span class="t13">Eyes Studio</span>
 </div>
-<button class="chip"><span>memory-study</span><svg width="10" height="10" viewBox="0 0 10 10" aria-hidden="true"><path d="M2 3.5 5 6.5 8 3.5" fill="none" stroke="currentColor" stroke-width="1.5"/></svg></button>
+<button class="chip" aria-label="Project memory-study"><span>memory-study</span><svg width="10" height="10" viewBox="0 0 10 10" aria-hidden="true"><path d="M2 3.5 5 6.5 8 3.5" fill="none" stroke="currentColor" stroke-width="1.5"/></svg></button>
 <div style="flex:1"></div>
 <nav class="seg" aria-label="Perspectives">
 <button>Data <span class="k">⌘1</span></button>
@@ -85,26 +159,28 @@ body{margin:0}
 <button>Figures <span class="k">⌘5</span></button>
 </nav>
 <div style="flex:1"></div>
-<!-- Jobs chip: running -->
-<div class="chip" style="gap:8px;padding-right:3px;color:var(--ink)" role="status" aria-label="Run 8 comparing, 21,400 of 44,845 pairs">
+<!-- Jobs chip: running (spinner + ink-2 progress; no accent) -->
+<div class="chip" style="gap:8px;height:28px;padding-right:2px;color:var(--ink)" role="status" aria-label="Run 8 comparing, 21,400 of 44,845 pairs">
 <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M8 2a6 6 0 1 1-6 6"/></svg>
 <span style="font-weight:600">Run 8</span><span style="color:var(--ink-2)">Comparing</span>
 <span class="mono t11">21,400 / 44,845 pairs</span>
-<span style="width:64px;height:4px;border-radius:2px;background:var(--surface-3);position:relative;overflow:hidden"><span style="position:absolute;left:0;top:0;bottom:0;width:48%;background:var(--accent)"></span></span>
-<button class="btn" style="height:18px;padding:0 7px;font-size:11px">Cancel</button>
+<span role="progressbar" aria-label="Run 8 progress" aria-valuenow="48" aria-valuemin="0" aria-valuemax="100" style="width:64px;height:4px;border-radius:2px;background:var(--surface-3);position:relative;overflow:hidden"><span style="position:absolute;left:0;top:0;bottom:0;width:48%;background:var(--ink-2)"></span></span>
+<button class="btn" style="height:22px;padding:0 8px;font-size:11px" aria-label="Cancel run 8">Cancel</button>
 </div>
 </header>
 
 <!-- 3 · Context strip: trail + freshness -->
 <div style="height:32px;flex:none;display:flex;align-items:center;gap:4px;padding:0 10px;background:var(--surface);border-bottom:1px solid var(--hairline)">
-<button class="ib" aria-label="Back (⌘[)"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M10 3 5 8l5 5"/></svg></button>
-<button class="ib" aria-label="Forward (⌘])"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="m6 3 5 5-5 5"/></svg></button>
+<button class="ib" aria-label="Back (⌘[)"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M10 3 5 8l5 5"/></svg></button>
+<button class="ib" aria-label="Forward (⌘])"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="m6 3 5 5-5 5"/></svg></button>
 <nav class="row" style="gap:2px;margin-left:4px" aria-label="Trail">
 <button class="crumb cur" aria-current="location">Summary · by retrieval response</button>
 </nav>
 <div style="flex:1"></div>
-<span class="chip" style="height:22px"><span style="width:7px;height:7px;border-radius:50%;border:1.5px solid var(--ink-2);box-sizing:border-box"></span>Showing analysis rev 4 · run 7 · data r3</span>
-<span class="chip" style="height:22px;color:var(--ink)"><span style="width:7px;height:7px;border-radius:50%;background:var(--accent)"></span>Rev 5 · run 8 running · 48%</span>
+<!-- shown = current: filled accent dot -->
+<span class="chip" style="height:22px;color:var(--ink)" aria-label="Showing analysis rev 4, run 7, data r3: current view"><span data-accent-job="current" style="width:7px;height:7px;border-radius:4px;background:var(--accent)"></span>Showing analysis rev 4 · run 7 · data r3 · current</span>
+<!-- running: neutral spinner glyph, no accent -->
+<span class="chip" style="height:22px;color:var(--ink-2)" aria-label="Rev 5, run 8 running, 48 percent"><svg width="11" height="11" viewBox="0 0 16 16" fill="none" stroke="var(--ink-2)" stroke-width="2" aria-hidden="true"><path d="M8 2a6 6 0 1 1-6 6"/></svg>Rev 5 · run 8 running · 48%</span>
 </div>
 
 <!-- 4 · Banner: newer run in progress -->
@@ -112,191 +188,208 @@ body{margin:0}
 <span style="font-weight:600">Showing run 7 (rev 4).</span>
 <span style="color:var(--ink-2)">Run 8 (rev 5, adds σ 8°) is running — results will not replace this view until you choose Show.</span>
 <div style="flex:1"></div>
-<button class="btn" style="height:22px" disabled aria-disabled="true">Show run 8 · when finished</button>
+<button class="btn pend" style="height:22px" disabled aria-describedby="show8-why">Show run 8</button>
+<span id="show8-why" class="t11" style="color:var(--ink-2);white-space:nowrap">Available when run 8 finishes</span>
 </div>
 
 <!-- 5 · Dock -->
 <div style="flex:1;min-height:0;display:flex;gap:1px;background:var(--hairline)">
 
 <!-- Navigator -->
-<section class="grp" style="width:200px;flex:none" aria-label="Participants navigator">
-<div class="hdr"><button class="tab sel">Participants</button><div class="hbtns"><button class="ib" aria-label="Minimize group"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 8h8"/></svg></button></div></div>
-<div class="t11" style="display:grid;grid-template-columns:40px minmax(0,1fr) 48px;gap:6px;padding:6px 12px 4px;font-weight:600;color:var(--ink-3)"><span>P</span><span>Contrib.</span><span style="text-align:right">D · 2°</span></div>
-<div style="flex:1;overflow:hidden">
+<section class="grp" style="width:216px;flex:none" aria-label="Participants navigator">
+<div class="hdr"><div role="tablist" aria-label="Navigator" style="display:flex"><button class="tab sel" role="tab" aria-selected="true" tabindex="0">Participants</button></div><div class="hbtns"><button class="ib" aria-label="Minimize Participants navigator"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M4 8h8"/></svg></button></div></div>
+<div class="t11" style="display:grid;grid-template-columns:26px minmax(0,1fr) 42px;gap:6px;padding:6px 12px 4px;font-weight:600;color:var(--ink-3)" aria-hidden="true"><span>P</span><span>Contributing</span><span style="text-align:right">D · 2°</span></div>
+<div class="pl" style="flex:1;overflow:hidden" role="listbox" tabindex="0" aria-label="Participants, 24. One focus stop; arrow keys move, Enter opens the participant's queries." aria-activedescendant="nav-P17">
 <sc-for list="{{nav}}" as="p" hint-placeholder-count="24">
-<button class="{{p.cls}}" aria-label="{{p.aria}}"><span class="mono">{{p.id}}</span><span class="mono t11" style="color:{{p.cc}}">{{p.c}}</span><span class="mono" style="text-align:right">{{p.d}}</span></button>
+<div class="{{p.cls}}" role="option" id="{{p.domId}}" tabindex="-1" aria-selected="{{p.selected}}" data-cursor="{{p.cur}}" aria-label="{{p.aria}}"><span class="mono">{{p.id}}</span><span class="mono t11" style="color:{{p.cc}};overflow:hidden">{{p.c}}</span><span class="mono" style="text-align:right">{{p.d}}</span></div>
 </sc-for>
 </div>
 </section>
 
 <!-- Centre -->
 <div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:1px">
-<div style="flex:none;height:410px;display:flex;gap:1px">
+<div style="flex:none;height:452px;display:flex;gap:1px">
 
 <!-- Participant plot -->
-<section class="grp" style="flex:1.35" aria-label="Participant D by retrieval response">
-<div class="hdr"><button class="tab sel focus">Participants · D by response</button><button class="tab">Table</button><div class="hbtns"><button class="ib" aria-label="Maximize group"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="10" height="10"/></svg></button></div></div>
+<section class="grp" style="width:556px;flex:none" aria-label="Participant D by retrieval response">
+<div class="hdr"><div role="tablist" aria-label="Participant plot views" style="display:flex"><button class="tab sel focus" data-accent-job="focus" role="tab" aria-selected="true" tabindex="0">Participants · D by response</button><button class="tab" role="tab" aria-selected="false" tabindex="-1">Table</button></div><div class="hbtns"><button class="ib" aria-label="Maximize participant plot"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><rect x="3" y="3" width="10" height="10"/></svg></button></div></div>
 <div class="tb">
-<span class="lbl">σ</span>
-<div class="seg" style="padding:1px"><button style="height:20px;padding:0 8px">0.5°</button><button style="height:20px;padding:0 8px">1°</button><button class="on" style="height:20px;padding:0 8px">2°</button><button style="height:20px;padding:0 8px">4°</button></div>
+<span class="lbl" aria-hidden="true">σ</span>
+<div class="sg" role="radiogroup" aria-label="Scale σ"><button role="radio" aria-checked="false" tabindex="-1">0.5°</button><button role="radio" aria-checked="false" tabindex="-1">1°</button><button role="radio" aria-checked="true" tabindex="0">2°</button><button role="radio" aria-checked="false" tabindex="-1">4°</button></div>
 <div style="flex:1"></div>
-<span class="t11" style="color:var(--ink-2)">Descriptive only · no intervals or tests</span>
+<span class="t11" style="color:var(--ink-2)">All queries · run 7</span>
 </div>
-<div style="flex:1;position:relative;padding:4px 10px 0" tabindex="0" role="group" aria-label="Participant D plot. One focus stop; arrow keys move between participants, Enter selects.">
-<svg width="560" height="340" viewBox="0 0 560 340" role="img" aria-label="Participant mean D at sigma 2 degrees for Remembered and Forgotten retrieval trials, 24 participants, lines join each participant's two means.">
+<!-- Headline: grand means per group (t28 hero) + paired n (fixture); the scope note sits directly under the numbers -->
+<div class="hl" role="group" aria-label="Summary: Remembered mean D plus 0.30, Forgotten mean D plus 0.15. Remembered minus Forgotten, paired over 24 participants: mean difference plus 0.16, higher in 24 of 24 participants, range plus 0.05 to plus 0.26, computed before rounding participant means. Descriptive only, no intervals or tests.">
+<div class="bs">
+<div class="b"><span class="k">Remembered · mean D</span><span class="v">+0.30</span></div>
+<div class="b"><span class="k">Forgotten · mean D</span><span class="v">+0.15</span></div>
+<div class="b dif"><span class="k">Δ Remembered − Forgotten · paired n 24</span><span class="vr"><span class="v">{{pairMean}}</span><span class="u">higher in {{pairPos}} of {{pairN}}</span></span></div>
+</div>
+<span class="note">Range {{pairMin}} to {{pairMax}} · computed before rounding participant means · Descriptive only, no intervals or tests</span>
+</div>
+<div style="flex:none;padding:4px 10px 0" tabindex="0" role="group" data-composite="" aria-label="Participant D plot. One focus stop; arrow keys move between participants, Enter selects. Cursor and selection on P17.">
+<svg width="536" height="272" viewBox="0 0 536 272" role="img" aria-label="Participant mean D at sigma 2 degrees for Remembered and Forgotten retrieval trials, 24 participants, lines join each participant's two means. Annotations: P17 selected, 19 of 20 contributing, Remembered plus 0.38 n 17, Forgotten plus 0.32 n 2. P05, 17 of 20 contributing, 3 failed queries, 2 Remembered and 1 Forgotten, no value, not zero; P05's participant means are plotted.">
 <!-- y axis -->
 <g font-family="IBM Plex Mono" font-size="11" fill="var(--ink-3)" text-anchor="end">
-<text x="54" y="{{y05}}" dy="4">+0.5</text><text x="54" y="{{y04}}" dy="4">+0.4</text><text x="54" y="{{y03}}" dy="4">+0.3</text><text x="54" y="{{y02}}" dy="4">+0.2</text><text x="54" y="{{y01}}" dy="4">+0.1</text><text x="54" y="{{y00}}" dy="4" fill="var(--ink)">0</text><text x="54" y="{{ym01}}" dy="4">−0.1</text><text x="54" y="{{ym02}}" dy="4">−0.2</text><text x="54" y="{{ym03}}" dy="4">−0.3</text>
+<text x="44" y="{{yt.0.y}}" dy="4" fill="{{yt.0.c}}">+0.5</text><text x="44" y="{{yt.1.y}}" dy="4" fill="{{yt.1.c}}">+0.4</text><text x="44" y="{{yt.2.y}}" dy="4" fill="{{yt.2.c}}">+0.3</text><text x="44" y="{{yt.3.y}}" dy="4" fill="{{yt.3.c}}">+0.2</text><text x="44" y="{{yt.4.y}}" dy="4" fill="{{yt.4.c}}">+0.1</text><text x="44" y="{{yt.5.y}}" dy="4" fill="{{yt.5.c}}">0</text><text x="44" y="{{yt.6.y}}" dy="4" fill="{{yt.6.c}}">−0.1</text><text x="44" y="{{yt.7.y}}" dy="4" fill="{{yt.7.c}}">−0.2</text><text x="44" y="{{yt.8.y}}" dy="4" fill="{{yt.8.c}}">−0.3</text>
 </g>
-<path d="{{grid}}" stroke="var(--surface-3)" stroke-width="1"/>
-<line x1="62" x2="470" y1="{{y00}}" y2="{{y00}}" stroke="var(--ink)" stroke-width="1.5"/>
-<text x="16" y="170" font-family="IBM Plex Sans" font-size="11" fill="var(--ink-3)" transform="rotate(-90 16 170)" text-anchor="middle">D (Δ cosine), participant mean</text>
+<sc-for list="{{grid}}" as="g" hint-placeholder-count="8"><line x1="52" x2="340" y1="{{g}}" y2="{{g}}" stroke="var(--surface-3)" stroke-width="1"/></sc-for>
+<line x1="52" x2="340" y1="{{y00}}" y2="{{y00}}" stroke="var(--ink)" stroke-width="1.5"/>
+<text x="14" y="122" font-family="IBM Plex Sans" font-size="11" fill="var(--ink-3)" transform="rotate(-90 14 122)" text-anchor="middle">D (Δ cosine), participant mean</text>
 <!-- links -->
-<path d="{{links}}" stroke="var(--ink-3)" stroke-opacity=".45" stroke-width="1" fill="none"/>
+<sc-for list="{{links}}" as="k" hint-placeholder-count="23"><line x1="{{k.x1}}" y1="{{k.y1}}" x2="{{k.x2}}" y2="{{k.y2}}" stroke="var(--ink-3)" stroke-opacity=".45" stroke-width="1"/></sc-for>
 <!-- Remembered: filled ink; Forgotten: hollow ink-3 -->
-<path d="{{remDots}}" fill="var(--ink)"/>
-<path d="{{forDots}}" fill="var(--surface)" stroke="var(--ink-3)" stroke-width="1.5"/>
+<sc-for list="{{dots}}" as="o" hint-placeholder-count="48"><circle cx="{{o.x}}" cy="{{o.y}}" r="4" fill="{{o.f}}" stroke="{{o.s}}" stroke-width="1.5"/></sc-for>
 <!-- grand means -->
 <line x1="{{remX0}}" x2="{{remX1}}" y1="{{yRemMean}}" y2="{{yRemMean}}" stroke="var(--ink)" stroke-width="4"/>
 <line x1="{{forX0}}" x2="{{forX1}}" y1="{{yForMean}}" y2="{{yForMean}}" stroke="var(--ink-3)" stroke-width="4" stroke-dasharray="6 3"/>
 <text x="{{remX0}}" y="{{yRemMean}}" dx="-6" dy="4" text-anchor="end" font-family="IBM Plex Mono" font-size="11" font-weight="500" fill="var(--ink)">+0.30</text>
 <text x="{{forX1}}" y="{{yForMean}}" dx="6" dy="4" font-family="IBM Plex Mono" font-size="11" font-weight="500" fill="var(--ink-2)">+0.15</text>
-<!-- selected P17: role-free selection ring -->
-<path d="{{selLink}}" stroke="var(--ink)" stroke-width="2" fill="none"/>
-<path d="{{selRing}}" fill="none" stroke="#FFFFFF" stroke-width="2"/>
-<path d="{{selRing2}}" fill="none" stroke="var(--ink)" stroke-width="2"/>
-<!-- P05 failed marker -->
-<path d="{{failMark}}" fill="none" stroke="var(--fail)" stroke-width="1.5" stroke-dasharray="3 2"/>
-<!-- column labels -->
-<g font-family="IBM Plex Sans" font-size="12" text-anchor="middle">
-<text x="{{remX}}" y="330" font-weight="600" fill="var(--ink)">Remembered</text>
-<text x="{{forX}}" y="330" font-weight="600" fill="var(--ink-2)">Forgotten</text>
-</g>
+<!-- selected P17: plot sel-ring (inner ring + ink ring) on both marks -->
+<line x1="{{s1x}}" y1="{{s1y}}" x2="{{s2x}}" y2="{{s2y}}" stroke="var(--ink)" stroke-width="2"/>
+<circle cx="{{s1x}}" cy="{{s1y}}" r="6" fill="none" stroke="var(--sel-ring-inner)" stroke-width="2"/><circle cx="{{s1x}}" cy="{{s1y}}" r="8" fill="none" stroke="var(--ink)" stroke-width="2"/>
+<circle cx="{{s2x}}" cy="{{s2y}}" r="6" fill="none" stroke="var(--sel-ring-inner)" stroke-width="2"/><circle cx="{{s2x}}" cy="{{s2y}}" r="8" fill="none" stroke="var(--ink)" stroke-width="2"/>
+<!-- keyboard cursor = P17's Remembered mark (the focused composite's cursor item): 2px accent ring outside the sel-ring, cased -->
+<g class="cur-ring kf" data-accent-job="focus"><circle cx="{{s1x}}" cy="{{s1y}}" r="11" fill="none" stroke="var(--sel-ring-inner)" stroke-width="4"/><circle cx="{{s1x}}" cy="{{s1y}}" r="11" fill="none" stroke="var(--accent)" stroke-width="2"/></g>
+<!-- column labels (reserved band: nothing may enter) -->
 <g font-family="IBM Plex Mono" font-size="11" text-anchor="middle" fill="var(--ink-3)">
-<text x="{{remX}}" y="316">n = 24</text><text x="{{forX}}" y="316">n = 24</text>
+<text x="{{remX}}" y="248">n = 24</text><text x="{{forX}}" y="248">n = 24</text>
+</g>
+<g font-family="IBM Plex Sans" font-size="12" text-anchor="middle">
+<text x="{{remX}}" y="264" font-weight="600" fill="var(--ink)">Remembered</text>
+<text x="{{forX}}" y="264" font-weight="600" fill="var(--ink-2)">Forgotten</text>
+</g>
+<!-- annotation column (x ≥ 348, right margin of the same scene): one mono Text per fact, fixed 14 px slots.
+     Leaders are straight Segments that stop at the frame edge (x 340). -->
+<polyline points="{{l17pts}}" stroke="var(--ink)" stroke-width="1" fill="none"/>
+<line x1="{{l05x1}}" y1="{{f5y}}" x2="340" y2="{{l05y2}}" stroke="var(--fail)" stroke-width="1"/>
+<g font-family="IBM Plex Mono" font-size="11">
+<text x="348" y="{{ann.0.y}}" fill="{{ann.0.c}}" font-weight="{{ann.0.w}}">P17 · selected</text>
+<text x="348" y="{{ann.1.y}}" fill="{{ann.1.c}}" font-weight="{{ann.1.w}}">19 of 20 contributing</text>
+<text x="348" y="{{ann.2.y}}" fill="{{ann.2.c}}" font-weight="{{ann.2.w}}">Rem +0.38 (n 17)</text>
+<text x="348" y="{{ann.3.y}}" fill="{{ann.3.c}}" font-weight="{{ann.3.w}}">Forg +0.32 (n 2)</text>
+<text x="348" y="{{ann.4.y}}" fill="{{ann.4.c}}" font-weight="{{ann.4.w}}">P05 · 17 of 20 contributing</text>
+<text x="348" y="{{ann.5.y}}" fill="{{ann.5.c}}" font-weight="{{ann.5.w}}">Rem −0.03 (n 13)</text>
+<text x="348" y="{{ann.6.y}}" fill="{{ann.6.c}}" font-weight="{{ann.6.w}}">Forg −0.23 (n 4)</text>
+<text x="348" y="{{ann.7.y}}" fill="{{ann.7.c}}" font-weight="{{ann.7.w}}">3 failed queries:</text>
+<text x="348" y="{{ann.8.y}}" fill="{{ann.8.c}}" font-weight="{{ann.8.w}}">2 Remembered, 1 Forgotten</text>
+<text x="348" y="{{ann.9.y}}" fill="{{ann.9.c}}" font-weight="{{ann.9.w}}">no value, not zero</text>
 </g>
 </svg>
-<!-- annotations (HTML, so they reflow) -->
-<div style="position:absolute;left:{{p17Left}};top:{{p17Top}};background:var(--surface);border:1px solid var(--ink);border-radius:6px;padding:6px 8px;display:flex;flex-direction:column;gap:3px;box-shadow:0 2px 6px rgba(28,30,33,.12)">
-<span style="font-weight:600">P17 <span class="t11 mono" style="font-weight:400;color:var(--ink-2)">19 of 20 contributing</span></span>
-<span class="mono t11">Rem +0.38 (n 17) · Forg +0.32 (n 2)</span>
-<a href="Main.dc.html" style="font-weight:600" aria-label="Explain P17: opens Compare query layout with trail Summary · by retrieval response › Remembered › P17">Explain P17 →</a>
-<span class="t11" style="color:var(--ink-3)">keeps: by retrieval response › Remembered › P17</span>
 </div>
-<div style="position:absolute;left:{{p05Left}};top:{{p05Top}};background:var(--fail-soft);border:1px dashed var(--fail);border-radius:6px;padding:5px 8px;display:flex;flex-direction:column;gap:2px;max-width:170px">
-<span class="t11" style="font-weight:600;color:var(--fail)">P05 · 3 failed</span>
-<span class="t11" style="color:var(--ink)">failed · empty map · no value. Not counted in either mean; not zero.</span>
-</div>
-<div class="t11" style="position:absolute;right:14px;top:10px;display:flex;flex-direction:column;gap:4px;color:var(--ink-2);text-align:right">
-<span>Paired n = 24 participants</span>
-<span>Means: equal participant weight</span>
-<span>Unit below each dot: query trial</span>
-<span>Per-group n: 2–17 queries per participant</span>
-</div>
+<div class="cap" style="height:20px;flex:none;display:flex;align-items:center">Each dot: one participant's mean over its query trials · equal participant weight · per-group n 2–17</div>
+<div style="height:26px;flex:none;display:flex;align-items:center;justify-content:flex-end;gap:8px;padding:0 12px">
+<span class="t11" style="color:var(--ink-3)">Opens P17's query layout · trail kept</span>
+<button class="btn" style="height:22px" aria-label="Explain P17: opens Compare query layout with trail Summary · by retrieval response › Remembered › P17">Explain P17 →</button>
 </div>
 </section>
 
 <!-- Scale profile -->
-<section class="grp" style="flex:1" aria-label="Scale profile">
-<div class="hdr"><button class="tab sel">Scale profile</button><button class="tab">Table</button><div class="hbtns"><button class="ib" aria-label="Maximize group"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="10" height="10"/></svg></button></div></div>
+<section class="grp" style="flex:1;min-width:0" aria-label="Scale profile">
+<div class="hdr"><div role="tablist" aria-label="Scale profile views" style="display:flex"><button class="tab sel" role="tab" aria-selected="true" tabindex="0">Scale profile</button><button class="tab" role="tab" aria-selected="false" tabindex="-1">Table</button></div><div class="hbtns"><button class="ib" aria-label="Maximize scale profile"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><rect x="3" y="3" width="10" height="10"/></svg></button></div></div>
 <div class="tb">
 <span class="kind">Protocol scales · declared in rev 4</span>
 <div style="flex:1"></div>
 <span class="t11" style="color:var(--ink-2)">All queries · run 7</span>
 </div>
-<div style="flex:1;padding:4px 10px 0;position:relative" tabindex="0" role="group" aria-label="Scale profile plot. One focus stop; arrow keys move between scales.">
-<svg width="400" height="330" viewBox="0 0 400 330" role="img" aria-label="Grand mean D by smoothing scale: 0.13 at 0.5 degrees, 0.20 at 1, 0.26 at 2, 0.16 at 4. Faint lines are the 24 participants.">
+<!-- legend row, above the plot frame -->
+<div class="t11" style="height:26px;flex:none;display:flex;align-items:center;gap:12px;padding:0 12px;color:var(--ink-2);white-space:nowrap">
+<span class="row" style="gap:5px"><svg width="16" height="6" aria-hidden="true"><line x1="0" x2="16" y1="3" y2="3" stroke="var(--ink)" stroke-width="3"/></svg>Grand mean · 24</span>
+<span class="row" style="gap:5px"><svg width="16" height="6" aria-hidden="true"><line x1="0" x2="16" y1="3" y2="3" stroke="var(--ink)" stroke-width="1.5" stroke-dasharray="4 3"/></svg>P17 (selected)</span>
+<span class="row" style="gap:5px"><svg width="16" height="6" aria-hidden="true"><line x1="0" x2="16" y1="3" y2="3" stroke="var(--ink-3)" stroke-opacity=".5" stroke-width="1"/></svg>Other participants</span>
+</div>
+<div style="flex:none;padding:0 10px;position:relative" tabindex="0" role="group" data-composite="" aria-label="Scale profile plot. One focus stop; arrow keys move between scales. Cursor on σ 2°, grand mean +0.26.">
+<svg width="353" height="336" viewBox="0 0 353 336" role="img" aria-label="Grand mean D by smoothing scale: 0.13 at 0.5 degrees, 0.20 at 1, 0.26 at 2, 0.16 at 4. P17 dashed: 0.19, 0.29, 0.38, 0.23. Faint lines are the other 23 participants' profiles.">
 <g font-family="IBM Plex Mono" font-size="11" fill="var(--ink-3)" text-anchor="end">
-<text x="44" y="{{sy05}}" dy="4">+0.5</text><text x="44" y="{{sy04}}" dy="4">+0.4</text><text x="44" y="{{sy03}}" dy="4">+0.3</text><text x="44" y="{{sy02}}" dy="4">+0.2</text><text x="44" y="{{sy01}}" dy="4">+0.1</text><text x="44" y="{{sy00}}" dy="4" fill="var(--ink)">0</text><text x="44" y="{{sym01}}" dy="4">−0.1</text>
+<text x="40" y="{{syt.0.y}}" dy="4" fill="{{syt.0.c}}">+0.5</text><text x="40" y="{{syt.1.y}}" dy="4" fill="{{syt.1.c}}">+0.4</text><text x="40" y="{{syt.2.y}}" dy="4" fill="{{syt.2.c}}">+0.3</text><text x="40" y="{{syt.3.y}}" dy="4" fill="{{syt.3.c}}">+0.2</text><text x="40" y="{{syt.4.y}}" dy="4" fill="{{syt.4.c}}">+0.1</text><text x="40" y="{{syt.5.y}}" dy="4" fill="{{syt.5.c}}">0</text><text x="40" y="{{syt.6.y}}" dy="4" fill="{{syt.6.c}}">−0.1</text>
 </g>
-<path d="{{sgrid}}" stroke="var(--surface-3)" stroke-width="1"/>
-<line x1="52" x2="380" y1="{{sy00}}" y2="{{sy00}}" stroke="var(--ink)" stroke-width="1.5"/>
-<text x="14" y="150" font-family="IBM Plex Sans" font-size="11" fill="var(--ink-3)" transform="rotate(-90 14 150)" text-anchor="middle">D (Δ cosine)</text>
-<path d="{{plines}}" stroke="var(--ink-3)" stroke-opacity=".28" stroke-width="1" fill="none"/>
-<path d="{{p17line}}" stroke="var(--ink)" stroke-width="1.5" stroke-dasharray="4 3" fill="none"/>
-<path d="{{meanLine}}" stroke="var(--ink)" stroke-width="3" fill="none"/>
-<path d="{{meanDots}}" fill="var(--ink)"/>
-<g font-family="IBM Plex Mono" font-size="11" font-weight="500" fill="var(--ink)" text-anchor="middle">
-<text x="{{sx0}}" y="{{mly0}}">+0.13</text><text x="{{sx1}}" y="{{mly1}}">+0.20</text><text x="{{sx2}}" y="{{mly2}}">+0.26</text><text x="{{sx3}}" y="{{mly3}}">+0.16</text>
-</g>
+<sc-for list="{{sgrid}}" as="g" hint-placeholder-count="6"><line x1="48" x2="343" y1="{{g}}" y2="{{g}}" stroke="var(--surface-3)" stroke-width="1"/></sc-for>
+<line x1="48" x2="343" y1="{{sy00}}" y2="{{sy00}}" stroke="var(--ink)" stroke-width="1.5"/>
+<text x="12" y="150" font-family="IBM Plex Sans" font-size="11" fill="var(--ink-3)" transform="rotate(-90 12 150)" text-anchor="middle">D (Δ cosine)</text>
+<sc-for list="{{plines}}" as="pl" hint-placeholder-count="23"><polyline points="{{pl}}" stroke="var(--ink-3)" stroke-opacity=".28" stroke-width="1" fill="none"/></sc-for>
+<polyline points="{{p17line}}" stroke="var(--ink)" stroke-width="1.5" stroke-dasharray="4 3" fill="none"/>
+<polyline points="{{meanLine}}" stroke="var(--ink)" stroke-width="3" fill="none"/>
+<sc-for list="{{meanPts}}" as="m" hint-placeholder-count="4"><circle cx="{{m.x}}" cy="{{m.y}}" r="4.5" fill="var(--ink)"/><rect x="{{m.px}}" y="{{m.py}}" width="38" height="15" rx="3" fill="var(--surface)"/></sc-for>
+<g font-family="IBM Plex Mono" font-size="11" font-weight="500" fill="var(--ink)" text-anchor="middle"><text x="{{meanPts.0.x}}" y="{{meanPts.0.ly}}">+0.13</text><text x="{{meanPts.1.x}}" y="{{meanPts.1.ly}}">+0.20</text><text x="{{meanPts.2.x}}" y="{{meanPts.2.ly}}">+0.26</text><text x="{{meanPts.3.x}}" y="{{meanPts.3.ly}}">+0.16</text></g>
 <g font-family="IBM Plex Mono" font-size="11" fill="var(--ink-2)" text-anchor="middle">
-<text x="{{sx0}}" y="296">0.5°</text><text x="{{sx1}}" y="296">1°</text><text x="{{sx2}}" y="296">2°</text><text x="{{sx3}}" y="296">4°</text>
+<text x="{{sx0}}" y="308">0.5°</text><text x="{{sx1}}" y="308">1°</text><text x="{{sx2}}" y="308">2°</text><text x="{{sx3}}" y="308">4°</text>
 </g>
-<text x="216" y="318" font-family="IBM Plex Sans" font-size="11" fill="var(--ink-3)" text-anchor="middle">Gaussian σ (log spacing) · cell 0.46°</text>
+<!-- keyboard cursor (shown when the plot has focus): σ 2° grand-mean point, cased accent ring -->
+<g class="cur-ring" data-accent-job="focus"><circle cx="{{sc2x}}" cy="{{sc2y}}" r="9" fill="none" stroke="var(--sel-ring-inner)" stroke-width="4"/><circle cx="{{sc2x}}" cy="{{sc2y}}" r="9" fill="none" stroke="var(--accent)" stroke-width="2"/></g>
+<text x="196" y="330" font-family="IBM Plex Sans" font-size="11" fill="var(--ink-3)" text-anchor="middle">Gaussian σ (log spacing) · cell 0.46°</text>
 </svg>
-<div class="t11" style="position:absolute;right:14px;top:10px;display:flex;flex-direction:column;gap:4px;align-items:flex-end;color:var(--ink-2)">
-<span class="row" style="gap:6px"><span style="width:18px;height:3px;background:var(--ink)"></span>Grand mean, 24 participants</span>
-<span class="row" style="gap:6px"><span style="width:18px;height:0;border-top:1.5px dashed var(--ink)"></span>P17 (selected)</span>
-<span class="row" style="gap:6px"><span style="width:18px;height:1px;background:var(--ink-3);opacity:.5"></span>Each participant</span>
-<span style="max-width:170px;text-align:right">Scales are reported separately; never averaged or picked by score.</span>
 </div>
-</div>
+<div class="t11" style="padding:4px 12px 0;color:var(--ink-2)">Scales are reported separately; never averaged or picked by score.</div>
 </section>
 </div>
 
 <!-- Participant table -->
 <section class="grp" style="flex:1;min-height:0" aria-label="Participant table">
-<div class="hdr"><button class="tab sel">Participant table · σ 2°</button><button class="tab">Query table</button><div class="hbtns"><button class="ib" aria-label="Maximize group"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="10" height="10"/></svg></button></div></div>
-<div style="flex:1;min-height:0;overflow:hidden" tabindex="0" role="group" aria-label="Participant table. One focus stop; arrow keys move the row cursor.">
-<table class="tbl">
-<caption style="position:absolute;left:-9999px">Participant summary at sigma 2 degrees, run 7</caption>
-<thead><tr><th scope="col">Participant</th><th scope="col">Requested</th><th scope="col">Contributing</th><th scope="col">Failed</th><th scope="col">No match</th><th scope="col">Not admitted</th><th scope="col" style="color:var(--match-text)">Mean M</th><th scope="col" style="color:var(--control-text)">Mean B</th><th scope="col" style="color:var(--ink)">Mean D</th><th scope="col">Remembered D (n)</th><th scope="col">Forgotten D (n)</th></tr></thead>
+<div class="hdr"><div role="tablist" aria-label="Table views" style="display:flex"><button class="tab sel" role="tab" aria-selected="true" tabindex="0">Participant table · σ 2°</button><button class="tab" role="tab" aria-selected="false" tabindex="-1">Query table</button></div><div class="hbtns"><button class="ib" aria-label="Maximize participant table"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><rect x="3" y="3" width="10" height="10"/></svg></button></div></div>
+<div style="flex:1;min-height:0;overflow:hidden">
+<table class="tbl" tabindex="0" role="grid" aria-label="Participant table, 24 participants. One focus stop; arrow keys move the row cursor." aria-rowcount="25" aria-activedescendant="tr-P17">
+<thead><tr role="row" aria-rowindex="1"><th role="columnheader" scope="col">Participant</th><th role="columnheader" scope="col">Requested</th><th role="columnheader" scope="col">Contributing</th><th role="columnheader" scope="col">Failed</th><th role="columnheader" scope="col">No match</th><th role="columnheader" scope="col">Not admitted</th><th role="columnheader" scope="col" style="color:var(--match-text)">Mean M</th><th role="columnheader" scope="col" style="color:var(--control-text)">Mean B</th><th role="columnheader" scope="col" style="color:var(--ink)">Mean D</th><th role="columnheader" scope="col">Remembered D (n)</th><th role="columnheader" scope="col">Forgotten D (n)</th></tr></thead>
 <tbody>
-<tr class="sel" aria-selected="true"><td style="font-family:'IBM Plex Sans';font-weight:600">P17 <span class="t11" style="font-weight:400;color:var(--ink-3)">pinned · selected</span></td><td>20</td><td>19</td><td>0</td><td>0</td><td>1</td><td>0.73</td><td>0.35</td><td style="font-weight:600">+0.38</td><td>+0.38 (17)</td><td>+0.32 (2)</td></tr>
-<sc-for list="{{rows}}" as="r" hint-placeholder-count="8">
-<tr><td style="font-family:'IBM Plex Sans'">{{r.id}}</td><td>{{r.req}}</td><td>{{r.con}}</td><td style="color:{{r.fc}};font-weight:{{r.fw}}">{{r.fail}}</td><td>{{r.nm}}</td><td>{{r.na}}</td><td>{{r.m}}</td><td>{{r.b}}</td><td style="font-weight:600">{{r.d}}</td><td>{{r.rem}}</td><td>{{r.forg}}</td></tr>
+<tr class="sel" role="row" id="tr-P17" aria-rowindex="2" aria-selected="true" data-cursor=""><td role="gridcell" style="font-family:'IBM Plex Sans'">P17 <span class="t11" style="font-weight:400;color:var(--ink-3)">pinned · selected</span></td><td role="gridcell">20</td><td role="gridcell">19</td><td role="gridcell">0</td><td role="gridcell">0</td><td role="gridcell">1</td><td role="gridcell">0.73</td><td role="gridcell">0.35</td><td role="gridcell">+0.38</td><td role="gridcell">+0.38 (17)</td><td role="gridcell">+0.32 (2)</td></tr>
+<sc-for list="{{rows}}" as="r" hint-placeholder-count="6">
+<tr role="row" aria-rowindex="{{r.ri}}" aria-selected="false"><td role="gridcell" style="font-family:'IBM Plex Sans'">{{r.id}}</td><td role="gridcell">{{r.req}}</td><td role="gridcell">{{r.con}}</td><td role="gridcell" style="color:{{r.fc}};font-weight:{{r.fw}}">{{r.fail}}</td><td role="gridcell">{{r.nm}}</td><td role="gridcell">{{r.na}}</td><td role="gridcell">{{r.m}}</td><td role="gridcell">{{r.b}}</td><td role="gridcell" style="font-weight:500">{{r.d}}</td><td role="gridcell">{{r.rem}}</td><td role="gridcell">{{r.forg}}</td></tr>
 </sc-for>
 </tbody>
 </table>
 </div>
-<!-- Count strip -->
-<div class="t11" style="height:34px;flex:none;border-top:1px solid var(--hairline);display:flex;align-items:center;gap:6px;padding:0 10px;background:var(--surface-2);color:var(--ink-2)">
-<span style="font-weight:600;color:var(--ink)">Query contrasts</span>
-<button class="cnt"><span class="mono" style="color:var(--ink)">480</span>requested</button><span>=</span>
-<button class="cnt"><span class="mono" style="color:var(--ink)">454</span>contributing</button><span>+</span>
-<button class="cnt" style="border-color:var(--fail)"><span class="mono" style="color:var(--fail)">3</span>failed · empty map</button><span>+</span>
-<button class="cnt"><span class="mono" style="color:var(--ink)">9</span>no match · reference not admitted</button><span>+</span>
-<button class="cnt"><span class="mono" style="color:var(--ink)">14</span>query not admitted</button>
-<span class="cnt" style="border-style:dashed;color:var(--ink-3)"><span class="mono">n/a</span>by design · not in this preset</span>
+<div class="cap" style="height:22px;flex:none;display:flex;align-items:center;gap:12px;border-top:1px solid var(--hairline)"><span>M, B and D are each rounded separately; M − B may differ from D by 0.01</span><div style="flex:1"></div><span style="color:var(--ink-3)">Rows 1–7 of 24 · scroll for more</span></div>
+<!-- Count strip: fixed cells, number over one short label -->
+<div class="cstrip" role="group" aria-label="Query contrasts: 480 requested = 454 contributing + 3 failed + 9 no match + 14 query not admitted; by design not applicable">
+<span style="font-weight:600;color:var(--ink);flex:none;margin-right:4px">Query contrasts</span>
+<button class="cs" title="480 query contrasts requested" aria-label="480 query contrasts requested"><span class="n">480</span><span class="l">requested</span></button><span class="op" aria-hidden="true">=</span>
+<button class="cs" title="454 contributing" aria-label="454 contributing query contrasts"><span class="n">454</span><span class="l">contributing</span></button><span class="op" aria-hidden="true">+</span>
+<button class="cs fail" title="3 failed · empty map (no value, not zero)" aria-label="3 failed, empty map: no value, not zero"><span class="n">3</span><span class="l">failed</span></button><span class="op" aria-hidden="true">+</span>
+<button class="cs" title="9 no match · reference not admitted" aria-label="9 no match, reference not admitted"><span class="n">9</span><span class="l">no match · reference</span></button><span class="op" aria-hidden="true">+</span>
+<button class="cs" title="14 query not admitted" aria-label="14 query not admitted"><span class="n">14</span><span class="l">query not admitted</span></button>
+<span class="cs na" style="margin-left:10px" title="By design · not in this preset (no corresponding study trial)" aria-label="By design: not applicable for this preset"><span class="n">n/a</span><span class="l">by design</span></span>
 <div style="flex:1"></div>
-<span>Pair scores: <span class="mono">35,876</span> (8,969 per scale × 4)</span>
+<span class="cs wide" title="35,876 pair scores: 8,969 per scale × 4 scales"><span class="n">35,876</span><span class="l">pair scores · 8,969 × 4</span></span>
 </div>
 </section>
 </div>
 
 <!-- Reporting inspector -->
-<section class="grp" style="width:300px;flex:none" aria-label="Reporting inspector">
-<div class="hdr"><button class="tab sel">Reporting</button><div class="hbtns"><button class="ib" aria-label="Minimize group"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 8h8"/></svg></button></div></div>
+<section class="grp" style="width:292px;flex:none" aria-label="Reporting inspector">
+<div class="hdr"><div role="tablist" aria-label="Inspector" style="display:flex"><button class="tab sel" role="tab" aria-selected="true" tabindex="0">Reporting</button></div><div class="hbtns"><button class="ib" aria-label="Minimize Reporting inspector"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M4 8h8"/></svg></button></div></div>
 <div style="flex:1;overflow:hidden;display:flex;flex-direction:column">
 <div style="padding:12px 14px;display:flex;flex-direction:column;gap:10px">
 <div class="row" style="justify-content:space-between"><span class="t13">By retrieval response</span><span class="kind">Reporting · no rerun</span></div>
-<div class="t11" style="color:var(--ink-2);line-height:1.45">Reuses run 7's 35,876 pair scores. Grouping, filtering and weighting never change a pair score or a control set.</div>
+<div class="t11" style="color:var(--ink-2)">Reuses run 7's 35,876 pair scores. Grouping, filtering and weighting never change a pair score or a control set.</div>
 <div style="display:flex;flex-direction:column;gap:4px">
-<label for="gb" class="lbl">Group by</label>
-<select id="gb" style="height:26px;border:1px solid var(--hairline);border-radius:4px;background:var(--surface);color:var(--ink);font:inherit;padding:0 6px"><option>Retrieval response (trials.csv · response)</option><option>None</option></select>
-<span class="t11" style="color:var(--ink-3)">Remembered · Forgotten · every admitted query has a value</span>
+<span id="gb-l" class="lbl">Group by</span>
+<button id="gb" class="chip" aria-haspopup="listbox" aria-labelledby="gb-l gb" style="width:100%;height:26px;color:var(--ink);justify-content:space-between"><span style="overflow:hidden;text-overflow:ellipsis">Retrieval response (trials.csv · response)</span><svg width="10" height="10" viewBox="0 0 10 10" aria-hidden="true" style="flex:none"><path d="M2 3.5 5 6.5 8 3.5" fill="none" stroke="currentColor" stroke-width="1.5"/></svg></button>
+<span class="t11" style="color:var(--ink-3)">Remembered · Forgotten · every admitted query has a response label</span>
 </div>
 <fieldset style="border:0;margin:0;padding:0;display:flex;flex-direction:column;gap:5px">
 <legend class="lbl" style="padding:0;margin-bottom:4px">Filter queries</legend>
-<label class="row" style="gap:6px"><input type="checkbox" checked disabled style="accent-color:var(--accent)">All contributing retrieval queries (454)</label>
-<label class="row" style="gap:6px;align-items:flex-start"><input type="checkbox" style="accent-color:var(--accent);margin-top:2px"><span>Exclude queries with &gt;25% of fixation duration outside the analysis window <span class="t11" style="display:block;color:var(--ink-3)">count shown when applied</span></span></label>
-<label class="row" style="gap:6px;align-items:flex-start"><input type="checkbox" style="accent-color:var(--accent);margin-top:2px"><span>Minimum queries per group: <span class="mono">3</span> <span class="t11" style="display:block;color:var(--ink-3)">off · would drop 2 Forgotten cells (P17 n 2, P21 n 2)</span></span></label>
+<div style="display:flex;flex-direction:column;gap:1px"><label class="row" style="gap:6px;border:0"><input type="checkbox" checked disabled aria-describedby="allq-why">All contributing retrieval queries (454)</label>
+<span id="allq-why" class="t11" style="color:var(--ink-3);padding-left:20px">Always on · the base set the filters below narrow</span></div>
+<label class="row" style="gap:6px;align-items:flex-start"><input type="checkbox" style="accent-color:var(--ink);margin-top:2px"><span>Exclude queries with &gt;25% of fixation duration outside the analysis window <span class="t11" style="display:block;color:var(--ink-3)">count shown when applied</span></span></label>
+<label class="row" style="gap:6px;align-items:flex-start"><input type="checkbox" style="accent-color:var(--ink);margin-top:2px"><span>Minimum queries per group: <span class="mono">3</span> <span class="t11" style="display:block;color:var(--ink-3)">off · would drop 2 Forgotten cells: P17, P21 (n 2)</span></span></label>
 </fieldset>
 <fieldset style="border:0;margin:0;padding:0;display:flex;flex-direction:column;gap:5px">
 <legend class="lbl" style="padding:0;margin-bottom:4px">Summary unit and weighting</legend>
 <span class="t11" style="color:var(--ink-2)">Query trial → participant mean → grand mean</span>
-<label class="row" style="gap:6px"><input type="radio" name="w" checked style="accent-color:var(--accent)">Equal weight per participant</label>
-<label class="row" style="gap:6px"><input type="radio" name="w" style="accent-color:var(--accent)">Weight by contributing queries</label>
+<label class="row" style="gap:6px"><input type="radio" name="w" checked style="accent-color:var(--ink)">Equal weight per participant</label>
+<label class="row" style="gap:6px"><input type="radio" name="w" style="accent-color:var(--ink)">Weight by contributing queries</label>
 </fieldset>
 </div>
 <div class="sect">
 <span class="lbl">What D measures</span>
-<div style="line-height:1.5">D is the matched-minus-control spatial similarity of duration-weighted fixation density. It reflects spatial correspondence, not sequential replay. D does not separate participant-specific reinstatement from item-driven salience common to all viewers of that image, and may retain residual centre bias.</div>
+<div>D is the matched-minus-control spatial similarity of duration-weighted fixation density. It reflects spatial correspondence, not sequential replay. D does not separate participant-specific reinstatement from item-driven salience common to all viewers of that image, and may retain residual centre bias.</div>
 </div>
-<div class="sect">
-<div class="row" style="justify-content:space-between"><span class="lbl">Saved reporting specs</span><button class="btn" style="height:22px">Save as…</button></div>
-<button class="btn" style="height:auto;padding:6px 8px;display:flex;flex-direction:column;align-items:flex-start;gap:2px;text-align:left"><span>All queries · participant means</span><span class="t11 mono" style="color:var(--ink-3)">run 7 · not used by a figure</span></button>
-<button class="btn" style="height:auto;padding:6px 8px;display:flex;flex-direction:column;align-items:flex-start;gap:2px;text-align:left;box-shadow:inset 0 0 0 2px var(--ink)"><span style="font-weight:600">By retrieval response</span><span class="t11 mono" style="color:var(--ink-3)">run 7 · current view · used by Figure 1</span></button>
+<div class="sect" style="gap:6px">
+<div class="row" style="justify-content:space-between"><span class="lbl" id="specs-l">Saved reporting specs</span><button class="btn" style="height:22px" aria-label="Save reporting spec as…">Save as…</button></div>
+<div role="listbox" tabindex="0" aria-label="Saved reporting specs, 2" aria-activedescendant="spec-2" style="display:flex;flex-direction:column;gap:2px">
+<div class="spec" role="option" id="spec-1" tabindex="-1" aria-selected="false" title="All queries · participant means · run 7 · not used by a figure"><span>All queries · participant means</span><span class="mono t11" style="color:var(--ink-3)">unused</span></div>
+<div class="spec sel" role="option" id="spec-2" tabindex="-1" aria-selected="true" data-cursor="" title="By retrieval response · run 7 · current view · used by Figure 1"><span>By retrieval response</span><span class="mono t11" style="color:var(--ink-3);font-weight:400">current · Figure 1</span></div>
+</div>
 </div>
 </div>
 </section>
@@ -304,11 +397,11 @@ body{margin:0}
 
 <!-- 6 · Status bar -->
 <footer class="t11" style="height:24px;flex:none;display:flex;align-items:center;gap:12px;padding:0 12px;background:var(--surface-2);border-top:1px solid var(--hairline);color:var(--ink-2)">
-<span class="row" style="gap:6px"><span style="width:6px;height:6px;border-radius:50%;background:var(--ink)"></span>Selected:<span class="mono" style="color:var(--ink)">P17 · by retrieval response · σ 2°</span></span>
+<span class="row" style="gap:6px"><span style="width:6px;height:6px;border-radius:3px;background:var(--ink)"></span>Selected:<span class="mono" style="color:var(--ink)">P17 · by retrieval response · σ 2°</span></span>
 <span style="width:1px;height:12px;background:var(--hairline)"></span>
 <span>Enter on a participant opens its queries · F6 next pane</span>
 <div style="flex:1"></div>
-<span class="row" style="gap:6px">Run 8 · Comparing <span class="mono">21,400 / 44,845</span><button class="btn" style="height:18px;padding:0 7px;font-size:11px">Cancel</button></span>
+<span class="row" style="gap:6px">Run 8 · Comparing <span class="mono">21,400 / 44,845</span><button class="btn" style="height:22px;padding:0 8px;font-size:11px" aria-label="Cancel run 8">Cancel</button></span>
 <span style="width:1px;height:12px;background:var(--hairline)"></span>
 <span>Saved 10:24</span>
 </footer>
@@ -333,63 +426,96 @@ class Component extends DCLogic {
       ['P23',20,19,0,0,1,.64,.34,.30,.34,14,.21,5],['P24',20,19,0,0,1,.65,.34,.30,.36,13,.17,6]
     ];
     const sgn = v => (v >= 0 ? '+' : '−') + Math.abs(v).toFixed(2);
-    // participant plot geometry
-    const Y = d => 20 + (0.5 - d) / 0.8 * 280;
-    const remX = 190, forX = 370;
+    const r1 = v => Math.round(v * 10) / 10;
+    // participant plot geometry: frame x 52–340, gutter x ≥ 352, D range +0.5 … −0.3 (y 14 … 230)
+    const Y = d => r1(14 + (0.5 - d) / 0.8 * 216);
+    const remX = 125, forX = 265;
     const jit = i => ((i * 7) % 11 - 5) * 2.2;
-    const circ = (x, y, r) => `M${(x - r).toFixed(1)} ${y.toFixed(1)}a${r} ${r} 0 1 0 ${2 * r} 0a${r} ${r} 0 1 0 ${-2 * r} 0`;
-    let links = '', rem = '', forg = '';
+    const links = [], dots = [];
     P.forEach((p, i) => {
-      const x1 = remX + jit(i), x2 = forX + jit(i + 3), y1 = Y(p[9]), y2 = Y(p[11]);
-      if (p[0] !== 'P17') links += `M${x1.toFixed(1)} ${y1.toFixed(1)}L${x2.toFixed(1)} ${y2.toFixed(1)}`;
-      rem += circ(x1, y1, 4); forg += circ(x2, y2, 4);
+      const x1 = r1(remX + jit(i)), x2 = r1(forX + jit(i + 3)), y1 = Y(p[9]), y2 = Y(p[11]);
+      if (p[0] !== 'P17') links.push({ x1, y1, x2, y2 });
+      dots.push({ x: x1, y: y1, f: 'var(--ink)', s: 'var(--ink)' });
+      dots.push({ x: x2, y: y2, f: 'var(--surface)', s: 'var(--ink-3)' });
     });
+    // paired descriptive: per-participant Remembered − Forgotten (participant means above), no test
+    // Computed from UNROUNDED data, not from the 2-dp participant means in P (those give 0.1546 -> +0.15, double-rounded).
+    // Source: docs/studio/fixture/fixture.json participants[].queries[], sigma 2 deg (D[2]), status "ok" only;
+    // per participant mean(Remembered D) - mean(Forgotten D), then the mean over 24 participants = 0.15567 -> +0.16.
+    // Min 0.0500 (P21), max 0.2613 (P15), positive in 24 of 24. Proposed fixture field: summary.paired_D_diff_mean.
+    const PAIRED = { mean: 0.15567, min: 0.0500, max: 0.2613, pos: 24, n: 24 };
+    const pairMean = sgn(PAIRED.mean);
+    const pairPos = PAIRED.pos, pairN = PAIRED.n;
+    const pairMin = sgn(PAIRED.min), pairMax = sgn(PAIRED.max);
     const i17 = 16, p17 = P[i17];
-    const s1x = remX + jit(i17), s1y = Y(p17[9]), s2x = forX + jit(i17 + 3), s2y = Y(p17[11]);
+    const s1x = r1(remX + jit(i17)), s1y = Y(p17[9]), s2x = r1(forX + jit(i17 + 3)), s2y = Y(p17[11]);
     const i05 = 4, p05 = P[i05];
-    const f5x = forX + jit(i05 + 3), f5y = Y(p05[11]);
-    let grid = '';
-    [0.5, 0.4, 0.3, 0.2, 0.1, -0.1, -0.2, -0.3].forEach(v => { grid += `M62 ${Y(v).toFixed(1)}H470`; });
-    // scale profile geometry (log2 spacing)
-    const SX = [70, 170, 270, 370];
-    const SY = d => 24 + (0.5 - d) / 0.6 * 250;
-    const prof = [.5, .78, 1, .62];
-    let plines = '';
-    P.forEach(p => { plines += prof.map((f, k) => `${k ? 'L' : 'M'}${SX[k]} ${SY(p[8] * f).toFixed(1)}`).join(''); });
-    const p17s = [0.19, 0.29, 0.38, 0.23];
+    const f5x = r1(forX + jit(i05 + 3)), f5y = Y(p05[11]);
+    const ticks = [0.5, 0.4, 0.3, 0.2, 0.1, 0, -0.1, -0.2, -0.3];
+    const lab = v => v === 0 ? '0' : (v > 0 ? '+' : '−') + Math.abs(v).toFixed(1);
+    const yt = ticks.map(v => ({ y: Y(v), s: lab(v), c: v === 0 ? 'var(--ink)' : 'var(--ink-3)' }));
+    const grid = ticks.filter(v => v !== 0).map(Y);
+    // annotation column: Intaglio Text lines at x 348, fixed 14 px slots; leaders stop at the frame edge x 340
+    const A17 = 32, A05 = 156, slot = 14;
+    const line = (top, k, t, c, w) => ({ y: top + 4 + k * slot, t, c, w: w || 400 });
+    const ann = [
+      line(A17, 0, 'P17 · selected', 'var(--ink)', 500),
+      line(A17, 1, p17[2] + ' of 20 contributing', 'var(--ink-2)'),
+      line(A17, 2, 'Rem ' + sgn(p17[9]) + ' (n ' + p17[10] + ')', 'var(--ink-2)'),
+      line(A17, 3, 'Forg ' + sgn(p17[11]) + ' (n ' + p17[12] + ')', 'var(--ink-2)'),
+      line(A05, 0, 'P05 · ' + p05[2] + ' of 20 contributing', 'var(--fail)', 500),
+      line(A05, 1, 'Rem ' + sgn(p05[9]) + ' (n ' + p05[10] + ')', 'var(--ink-2)'),
+      line(A05, 2, 'Forg ' + sgn(p05[11]) + ' (n ' + p05[12] + ')', 'var(--ink-2)'),
+      line(A05, 3, p05[3] + ' failed queries:', 'var(--ink)'),
+      line(A05, 4, '2 Remembered, 1 Forgotten', 'var(--ink)'),
+      line(A05, 5, 'no value, not zero', 'var(--fail)')
+    ];
+    // scale profile geometry (log2 spacing), frame x 48–343, D +0.5 … −0.1 (y 10 … 288)
+    const SX = [64, 148, 232, 316];
+    const SY = d => r1(10 + (0.5 - d) / 0.6 * 278);
+    // fixture.json summary.participants[i].all.D_by_scale, scales [0.5, 1, 2, 4] (all queries, run 7)
+    const DBS = {
+      P01: [0.09, 0.13, 0.17, 0.11], P02: [0.11, 0.17, 0.22, 0.14], P03: [0.17, 0.26, 0.33, 0.21], P04: [0.15, 0.23, 0.29, 0.18],
+      P05: [-0.04, -0.06, -0.08, -0.05], P06: [0.12, 0.19, 0.25, 0.15], P07: [0.14, 0.21, 0.27, 0.17], P08: [0.13, 0.20, 0.25, 0.16],
+      P09: [0.16, 0.25, 0.32, 0.20], P10: [0.22, 0.34, 0.43, 0.27], P11: [0.11, 0.17, 0.22, 0.14], P12: [0.14, 0.22, 0.28, 0.18],
+      P13: [0.05, 0.09, 0.11, 0.07], P14: [0.14, 0.21, 0.27, 0.17], P15: [0.05, 0.08, 0.10, 0.06], P16: [0.19, 0.30, 0.38, 0.24],
+      P17: [0.19, 0.29, 0.38, 0.23], P18: [0.21, 0.32, 0.41, 0.26], P19: [0.12, 0.19, 0.24, 0.15], P20: [0.11, 0.17, 0.22, 0.14],
+      P21: [0.16, 0.25, 0.31, 0.19], P22: [0.10, 0.15, 0.19, 0.12], P23: [0.15, 0.24, 0.30, 0.19], P24: [0.15, 0.23, 0.30, 0.19]
+    };
+    const pts = v => v.map((d, k) => SX[k] + ',' + SY(d)).join(' ');
+    const plines = P.filter(p => p[0] !== 'P17').map(p => pts(DBS[p[0]]));
+    const p17s = DBS.P17;
+    // summary.grand_D_by_scale (equal weight per participant; = mean of the 24 profiles above)
     const mean = [0.13, 0.20, 0.26, 0.16];
-    const meanLine = mean.map((v, k) => `${k ? 'L' : 'M'}${SX[k]} ${SY(v).toFixed(1)}`).join('');
-    const meanDots = mean.map((v, k) => circ(SX[k], SY(v), 4.5)).join('');
-    let sgrid = '';
-    [0.5, 0.4, 0.3, 0.2, 0.1, -0.1].forEach(v => { sgrid += `M52 ${SY(v).toFixed(1)}H380`; });
-    const rows = P.filter(p => p[0] !== 'P17').slice(0, 8).map(p => ({
-      id: p[0], req: p[1], con: p[2], fail: p[3], nm: p[4], na: p[5],
-      fc: p[3] ? 'var(--fail)' : 'var(--ink)', fw: p[3] ? 600 : 400,
+    const below = [true, true, false, true];
+    const meanPts = mean.map((v, k) => {
+      const y = SY(v), ly = below[k] ? y + 21 : y - 15;
+      return { x: SX[k], y, ly, px: SX[k] - 19, py: ly - 12, s: sgn(v) };
+    });
+    const sticks = [0.5, 0.4, 0.3, 0.2, 0.1, 0, -0.1];
+    const syt = sticks.map(v => ({ y: SY(v), s: lab(v), c: v === 0 ? 'var(--ink)' : 'var(--ink-3)' }));
+    const sgrid = sticks.filter(v => v !== 0).map(SY);
+    const rows = P.filter(p => p[0] !== 'P17').slice(0, 6).map((p, k) => ({
+      ri: k + 3, id: p[0], req: p[1], con: p[2], fail: p[3], nm: p[4], na: p[5],
+      fc: p[3] ? 'var(--fail)' : 'var(--ink)', fw: p[3] ? 500 : 400,
       m: p[6].toFixed(2), b: p[7].toFixed(2), d: sgn(p[8]),
       rem: sgn(p[9]) + ' (' + p[10] + ')', forg: sgn(p[11]) + ' (' + p[12] + ')'
     }));
     const nav = P.map(p => ({
-      id: p[0], cls: p[0] === 'P17' ? 'pi sel' : 'pi',
-      c: p[3] ? p[2] + ' of 20 · ' + p[3] + ' failed' : p[2] + ' of 20',
+      id: p[0], domId: 'nav-' + p[0], selected: p[0] === 'P17' ? 'true' : 'false',
+      cls: p[0] === 'P17' ? 'pi sel' : 'pi', cur: p[0] === 'P17' ? 'true' : null,
+      c: p[3] ? p[2] + '/20 · ' + p[3] + ' failed' : p[2] + ' of 20',
       cc: p[3] ? 'var(--fail)' : 'var(--ink-3)', d: sgn(p[8]),
-      aria: p[0] + ', ' + p[2] + ' of 20 contributing, mean D ' + p[8].toFixed(2)
+      aria: p[0] + ', ' + p[2] + ' of 20 contributing' + (p[3] ? ', ' + p[3] + ' failed (no value)' : '') + ', mean D ' + sgn(p[8])
     }));
     return {
-      yes: true, nav, rows,
-      grid, links, remDots: rem, forDots: forg,
-      y05: Y(.5), y04: Y(.4), y03: Y(.3), y02: Y(.2), y01: Y(.1), y00: Y(0), ym01: Y(-.1), ym02: Y(-.2), ym03: Y(-.3),
-      remX, forX, remX0: remX - 26, remX1: remX + 26, forX0: forX - 26, forX1: forX + 26,
+      nav, rows, yt, grid, links, dots, pairMean, pairPos, pairN, pairMin, pairMax,
+      y00: Y(0), remX, forX, remX0: remX - 26, remX1: remX + 26, forX0: forX - 26, forX1: forX + 26,
       yRemMean: Y(0.30), yForMean: Y(0.15),
-      selLink: `M${s1x} ${s1y}L${s2x} ${s2y}`,
-      selRing: circ(s1x, s1y, 6) + circ(s2x, s2y, 6), selRing2: circ(s1x, s1y, 8) + circ(s2x, s2y, 8),
-      failMark: circ(f5x, f5y + 26, 6) + `M${f5x} ${(f5y + 11).toFixed(1)}V${(f5y + 20).toFixed(1)}`,
-      p17Left: (s2x + 26) + 'px', p17Top: (s2y - 24) + 'px',
-      p05Left: (f5x + 22) + 'px', p05Top: (f5y - 8) + 'px',
-      sgrid, plines, meanLine, meanDots,
-      p17line: p17s.map((v, k) => `${k ? 'L' : 'M'}${SX[k]} ${SY(v).toFixed(1)}`).join(''),
-      sy05: SY(.5), sy04: SY(.4), sy03: SY(.3), sy02: SY(.2), sy01: SY(.1), sy00: SY(0), sym01: SY(-.1),
-      sx0: SX[0], sx1: SX[1], sx2: SX[2], sx3: SX[3],
-      mly0: SY(mean[0]) + 18, mly1: SY(mean[1]) + 18, mly2: SY(mean[2]) - 10, mly3: SY(mean[3]) + 18
+      s1x, s1y, s2x, s2y, f5y,
+      ann, l17pts: s2x + ',' + r1(s2y - 9) + ' ' + s2x + ',' + A17 + ' 340,' + A17, l05x1: f5x + 5, l05y2: A05,
+      sgrid, syt, plines, meanPts, meanLine: pts(mean), p17line: pts(p17s), sc2x: SX[2], sc2y: SY(mean[2]),
+      sy00: SY(0), sx0: SX[0], sx1: SX[1], sx2: SX[2], sx3: SX[3]
     };
   }
 }

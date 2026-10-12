@@ -1390,7 +1390,7 @@ Layout rebuilt for the target (not a screenshot); rasters embedded for maps; gre
 
 *Board:* Figures.dc.html (methods.md)
 
-Generate methods.md from the run, plan descriptors and reporting spec: dataset revision, ledger, eligible 457 of 480, controls 19/18 rule, window + outside share (543 of 11,520), initial fixation policy, declared px/°, cell size, scales, cosine, require-all, participant means equal weight, group n range, spatial-not-replay, confound sentence; editable with Regenerate / Show diff. Methods cite the OffScreenPolicy and the occurrence-selection rule for matched references and controls.
+Generate methods.md from the run, plan descriptors and reporting spec: dataset revision, ledger, eligible 457 of 480, controls 19/18 rule, window + outside share (543 of the 11,311 records in admitted trials), initial fixation policy, declared px/°, cell size, scales, cosine, require-all, participant means equal weight, group n range, spatial-not-replay, confound sentence; editable with Regenerate / Show diff. Methods cite the OffScreenPolicy and the occurrence-selection rule for matched references and controls.
 
 **Acceptance criteria**
 

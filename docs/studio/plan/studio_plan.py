@@ -1116,7 +1116,7 @@ t(
     "Methods generator",
     0,
     "Figures.dc.html (methods.md)",
-    "Generate methods.md from the run, plan descriptors and reporting spec: dataset revision, ledger, eligible 457 of 480, controls 19/18 rule, window + outside share (543 of 11,520), initial fixation policy, declared px/°, cell size, scales, cosine, require-all, participant means equal weight, group n range, spatial-not-replay, confound sentence; editable with Regenerate / Show diff.",
+    "Generate methods.md from the run, plan descriptors and reporting spec: dataset revision, ledger, eligible 457 of 480, controls 19/18 rule, window + outside share (543 of the 11,311 records in admitted trials), initial fixation policy, declared px/°, cell size, scales, cosine, require-all, participant means equal weight, group n range, spatial-not-replay, confound sentence; editable with Regenerate / Show diff.",
     [
         "Every number in the text is generated (golden text for the fixture).",
         "Editing then regenerating shows a diff and never silently discards edits.",
