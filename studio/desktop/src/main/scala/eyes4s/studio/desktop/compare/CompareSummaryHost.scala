@@ -33,6 +33,7 @@ import eyes4s.studio.core.document.ReportingSpec
 import eyes4s.studio.core.selection.{ScaleIndex, ViewId}
 import eyes4s.studio.desktop.plot.{PlotTwin, TableTwinView}
 import eyes4s.studio.desktop.runtime.StudioSession
+import eyes4s.studio.desktop.tokens.TokenFiles
 import eyes4s.studio.viz.plot.{ParticipantPlot, ScaleLadderPlot, ScaleProfilePlot}
 import javafx.application.Platform
 import javafx.geometry.Pos
@@ -141,6 +142,11 @@ object SummaryInputs:
 
   private def reason(e: Throwable): String = Option(e.getMessage).getOrElse(e.toString)
 
+object CompareSummaryHost:
+
+  /** The classpath resource of the Results headline's stylesheet. */
+  val stylesheetResource: String = s"${TokenFiles.resourceDirectory}/studio-results.css"
+
 /** Compare's summary layout on the desktop (ticket S8.6; Results.dc.html):
   * the participant plot and the scale profile, each with its Table tab, the
   * participant table with the σ selector, the notes, the newer run's
@@ -181,6 +187,36 @@ final class CompareSummaryHost(
       app
     )
     .fold(e => throw IllegalStateException(e.message), identity)
+
+  // The headline's paired descriptive (design review ticket 27): the key,
+  // the rounded mean difference with how many are higher, then the note.
+  private val pairedHeading = Label()
+  private val pairedValue   = Label()
+  private val pairedHigher  = Label()
+  private val pairedNote    = Label()
+  pairedHeading.getStyleClass.addAll("paired-heading", "t11")
+  pairedValue.getStyleClass.addAll("paired-value", "mono", "t28")
+  pairedHigher.getStyleClass.addAll("paired-higher", "t11")
+  pairedNote.getStyleClass.addAll("paired-note", "t11")
+  // A narrow pane wraps the note rather than cutting "Descriptive only".
+  pairedNote.setWrapText(true)
+  private val pairedRow = HBox(8.0, pairedValue, pairedHigher)
+  pairedRow.setAlignment(Pos.BASELINE_LEFT)
+
+  /** The Results headline above the participant plot (Results.dc.html
+    * `.hl`): the paired descriptive of the shown σ, hidden when the shown
+    * report declares no contrast.
+    */
+  val headline: VBox = VBox(2.0, VBox(pairedHeading, pairedRow), pairedNote)
+  headline.getStyleClass.add("results-headline")
+  Option(getClass.getClassLoader.getResource(CompareSummaryHost.stylesheetResource))
+    .foreach(url => headline.getStylesheets.add(url.toExternalForm))
+  headline.setVisible(false)
+  headline.setManaged(false)
+
+  /** The participant plot's pane: the headline over the plot. */
+  val participantPlotNode: VBox = VBox(headline, participantPlot.plotNode)
+  VBox.setVgrow(participantPlot.plotNode, Priority.ALWAYS)
 
   /** The scale profile and its table. */
   val scaleProfile: PlotTwin = PlotTwin
@@ -632,6 +668,7 @@ final class CompareSummaryHost(
           explain.setVisible(true); keeps.setVisible(true)
         case None =>
           explain.setVisible(false); keeps.setVisible(false)
+      renderPaired(v.paired)
       show("participant-plot", v.participantPlot, theme)(
         participantPlot.show(_, theme),
         participantPlot.clear()
@@ -679,6 +716,18 @@ final class CompareSummaryHost(
         referenceTrialTable.clear()
       )
       rendered.foreach(_())
+
+  private def renderPaired(paired: Option[PairedDescriptiveVM]): Unit =
+    headline.setVisible(paired.isDefined)
+    headline.setManaged(paired.isDefined)
+    pairedHeading.setText(paired.fold("")(_.heading))
+    pairedValue.setText(paired.flatMap(_.value).getOrElse(""))
+    pairedHigher.setText(paired.flatMap(_.higher).getOrElse(""))
+    // Nothing paired: no value row, only the note that says so.
+    val valued = paired.exists(_.value.isDefined)
+    pairedRow.setVisible(valued); pairedRow.setManaged(valued)
+    pairedNote.setText(paired.fold("")(_.note))
+    headline.setAccessibleText(paired.map(_.spoken).orNull)
 
   // Draws a part when its source or the theme changes. A part with no source
   // (the run is still being read) or one that could not be built is cleared,

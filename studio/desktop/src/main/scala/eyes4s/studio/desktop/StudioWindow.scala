@@ -541,7 +541,7 @@ object StudioWindow:
     val summary =
       CompareSummaryHost(() => r.model, dispatch, SummaryInputs.of(session), panels)
     Vector(
-      "compare.participant-plot"       -> summary.participantPlot.plotNode,
+      "compare.participant-plot"       -> summary.participantPlotNode,
       "compare.participant-plot.table" -> summary.participantPlot.tableNode,
       "compare.scale-profile"          -> summary.scaleProfile.plotNode,
       "compare.scale-profile.table"    -> summary.scaleProfile.tableNode,
