@@ -145,12 +145,10 @@ class TokenFilesSuite extends munit.FunSuite:
 
   // Where the boards depart from the token source, and why. The design review
   // (DESIGN_SPEC §15) adopted the generated mid stage (#767676) and figure
-  // control (#B86E0E, with #D98A1C as its fill) and made selection a fill ahead
-  // of the code; the token lands with ticket 9 (docs/studio/design/REVIEW.md).
-  private val deviations: Map[(String, String), String] = Map(
-    ("light", "sel-fill") -> "selection fill, pending ticket 9",
-    ("dark", "sel-fill")  -> "selection fill, pending ticket 9"
-  )
+  // control (#B86E0E, with #D98A1C as its fill), and the selection fill
+  // (--sel-fill) landed with ticket 9 (docs/studio/design/REVIEW.md): none is
+  // open. A board revised ahead of the code records its ticket here.
+  private val deviations: Map[(String, String), String] = Map.empty
 
   // Board-only colours that are not product tokens: the stand-in stimulus
   // picture's pixels and the macOS title-bar buttons the boards draw.

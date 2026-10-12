@@ -122,12 +122,19 @@ object TokenUsage:
 
   private val chromeSurfaces = List(Ground, Surface, Surface2, Surface3)
 
+  /** Text a selected row or item can carry: its labels, hints, M and B
+    * columns, role labels and status text (DESIGN_SPEC section 15).
+    */
+  val selectedRowText: List[ThemedToken] =
+    List(Ink, Ink2, Ink3, Accent, Query, MatchText, ControlText, Fail, WarnText)
+
   /** Every text pair. */
   val text: List[TextUse] =
     (for
       ink     <- List(Ink, Ink2, Ink3)
       surface <- chromeSurfaces
     yield TextUse(t(ink), t(surface), Label, "labels, body and hints on chrome surfaces")) ++
+      selectedRowText.map(fg => TextUse(t(fg), t(SelFill), Label, "a selected row or item")) ++
       List(
         TextUse(t(Ink), t(Surface), Hero, "hero number"),
         TextUse(t(Ink), t(FailSoft), Label, "Studio check block"),
@@ -166,7 +173,7 @@ object TokenUsage:
           (Fail, None, "failure outline"),
           (WarnText, None, "missing-asset cross")
         )
-        surface <- List(Ground, Surface, Surface2)
+        surface <- List(Ground, Surface, Surface2, SelFill)
       yield MarkUse(t(mark), t(surface), casing, s"$where on ${surface.cssName}")
     val onStage =
       StageMarkHalo.map(r => cased(r, s(Stage), s"--${r.mark.cssName} mark on the stage")) ++

@@ -140,6 +140,36 @@ class TokenContrastSuite extends munit.FunSuite:
     }
   }
 
+  test("text on a selected row is measured on --sel-fill") {
+    import ThemedToken.*
+    assert(
+      TokenUsage.selectedRowText.contains(Ink) && TokenUsage.selectedRowText.contains(Ink2)
+    )
+    TokenUsage.selectedRowText.foreach { fg =>
+      assert(
+        TokenUsage.text.exists(u =>
+          u.text == TokenRef.Themed(fg) && u.background == TokenRef.Themed(SelFill)
+        ),
+        s"no text pair --${fg.cssName} on --sel-fill"
+      )
+    }
+  }
+
+  test("hover (--surface-2) never reads as selection (--sel-fill)") {
+    // No contrast threshold applies to two fills (WCAG 1.4.11 measures a
+    // control against its surroundings); the rule is only that they differ,
+    // and selection also takes weight 600 (DESIGN_SPEC section 15).
+    Theme.values.foreach { theme =>
+      val sel   = Tokens.themed(theme, ThemedToken.SelFill)
+      val hover = Tokens.themed(theme, ThemedToken.Surface2)
+      assertNotEquals(sel, hover, s"$theme: --sel-fill equals --surface-2")
+      assert(
+        ratio(sel, hover) > 1.0,
+        s"$theme: --sel-fill and --surface-2 have equal luminance"
+      )
+    }
+  }
+
   test("every token is measured, or is listed as unmeasured with a reason") {
     val foregrounds = TokenUsage.text.map(_.text) ++ TokenUsage.marks.map(_.mark) ++
       TokenUsage.marks.flatMap(_.casing)
