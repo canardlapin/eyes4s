@@ -155,6 +155,17 @@ class TokenContrastSuite extends munit.FunSuite:
     }
   }
 
+  test("--neutral-mark is the theme's ink at alpha .35, never an opaque grey") {
+    // DESIGN_SPEC section 5; review ticket 11 settled the token over the
+    // board's former opaque --ink-3.
+    Theme.values.foreach { theme =>
+      val mark = Tokens.themed(theme, ThemedToken.NeutralMark)
+      val ink  = Tokens.themed(theme, ThemedToken.Ink)
+      assertEquals(mark.alphaPercent, 35, s"$theme")
+      assertEquals(mark.hexRgb, ink.hexRgb, s"$theme")
+    }
+  }
+
   test("hover (--surface-2) never reads as selection (--sel-fill)") {
     // No contrast threshold applies to two fills (WCAG 1.4.11 measures a
     // control against its surroundings); the rule is only that they differ,

@@ -410,6 +410,12 @@ object TrialScene:
     */
   val HaloPx: Double = 2.0
 
+  /** The halo of a neutral (Explore) mark, and the outline of a neutral mark
+    * outside the window (DESIGN_SPEC section 5: 1.5 px; bead
+    * bd-01M4R9CYZBR63XDRCWJJJP4JH3, review ticket 11).
+    */
+  val NeutralHaloPx: Double = 1.5
+
   /** The halo casing of a hollow control mark (Intaglio `StrokeCasing`): 1 px
     * of halo either side of its 2 px outline.
     */
@@ -908,26 +914,32 @@ object TrialScene:
     // policies remain visible even though neither adds an out-of-window point.
     private def markParams(f: TrialFixation): Either[GraphicsError, GraphicParams] =
       val halo = staged(StageToken.Halo)
+      val px   = haloPx
       def included(line: LineType): Either[GraphicsError, GraphicParams] = input.marks match
         case MarkStyle.Role(TrialRole.Control) =>
-          stroke(markColour(TrialRole.Control), HaloPx, line)
+          stroke(markColour(TrialRole.Control), px, line)
         case MarkStyle.Role(role) =>
-          stroke(halo, HaloPx, line).map(_.withSolidFill(Some(markColour(role))))
+          stroke(halo, px, line).map(_.withSolidFill(Some(markColour(role))))
         case MarkStyle.Neutral =>
-          stroke(halo, HaloPx, line).map(_.withSolidFill(Some(themed(ThemedToken.NeutralMark))))
+          stroke(halo, px, line).map(_.withSolidFill(Some(themed(ThemedToken.NeutralMark))))
       f.placement match
         case MapPlacement.DroppedInitial =>
-          stroke(halo, HaloPx, LineType.Custom(DroppedInitialDash))
+          stroke(halo, px, LineType.Custom(DroppedInitialDash))
         case MapPlacement.OutsideScreen =>
-          stroke(halo, HaloPx, LineType.Custom(OutsideScreenDash))
+          stroke(halo, px, LineType.Custom(OutsideScreenDash))
         case MapPlacement.OutsideWindow(OffWindowPolicy.Exclude) =>
-          stroke(halo, HaloPx, LineType.Custom(OutsideExcludeDash))
+          stroke(halo, px, LineType.Custom(OutsideExcludeDash))
         // A failing trial's in-window fixations are drawn as its outside ones are:
         // the trial contributes no map. Its text and announcement say why.
         case MapPlacement.OutsideWindow(OffWindowPolicy.FailTrial) |
             MapPlacement.TrialFailed(_) =>
-          stroke(halo, HaloPx, LineType.Custom(OutsideFailTrialDash))
+          stroke(halo, px, LineType.Custom(OutsideFailTrialDash))
         case MapPlacement.InWindow => included(LineType.Solid)
+
+    // Explore's neutral marks take the thinner halo of DESIGN_SPEC section 5.
+    private def haloPx: Double = input.marks match
+      case MarkStyle.Neutral => NeutralHaloPx
+      case MarkStyle.Role(_) => HaloPx
 
     private def sizeOf(f: TrialFixation): Either[GraphicsError, ExtentExpr] =
       ExtentExpr.points(pt(radiusPx(f.durationMs)))
@@ -982,7 +994,7 @@ object TrialScene:
       val outline = shape match
         case PointShape.Diamond => PointShape.diamondHalfDiagonal(r)
         case _                  => r
-      outline + (if cased(f) then CasingPx else HaloPx) / 2.0
+      outline + (if cased(f) then CasingPx else haloPx) / 2.0
 
     // One named grob per mark, in fixation order, inside the named marks group.
     private def marks: R[(Vector[Grob], Vector[TrialMark])] =
