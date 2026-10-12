@@ -2354,7 +2354,14 @@ Participants: 50 marks for 50 rows. Every row is drawn.</desc>
             <text fill="#5e636a" stroke="none" font-family="IBM Plex Mono" font-size="11" x="461.2346" y="496.7882" text-anchor="middle" dominant-baseline="text-before-edge">n = 24 participants</text>
             <text fill="#1c1e21" stroke="none" font-family="IBM Plex Sans SmBld" font-size="11" x="605.8772" y="509.1347" text-anchor="middle" dominant-baseline="text-before-edge">Forgotten</text>
             <text fill="#5e636a" stroke="none" font-family="IBM Plex Mono" font-size="11" x="605.8772" y="496.7882" text-anchor="middle" dominant-baseline="text-before-edge">n = 24 participants</text>
+            <text fill="#5e636a" stroke="none" font-family="IBM Plex Mono" font-size="11" x="384.5741" y="473.2046" text-anchor="end" dominant-baseline="middle">−0.2</text>
+            <text fill="#5e636a" stroke="none" font-family="IBM Plex Mono" font-size="11" x="384.5741" y="453.8704" text-anchor="end" dominant-baseline="middle">−0.1</text>
             <text fill="#1c1e21" stroke="none" font-family="IBM Plex Mono" font-size="11" x="384.5741" y="434.5363" text-anchor="end" dominant-baseline="middle">0</text>
+            <text fill="#5e636a" stroke="none" font-family="IBM Plex Mono" font-size="11" x="384.5741" y="415.2021" text-anchor="end" dominant-baseline="middle">+0.1</text>
+            <text fill="#5e636a" stroke="none" font-family="IBM Plex Mono" font-size="11" x="384.5741" y="395.8679" text-anchor="end" dominant-baseline="middle">+0.2</text>
+            <text fill="#5e636a" stroke="none" font-family="IBM Plex Mono" font-size="11" x="384.5741" y="376.5337" text-anchor="end" dominant-baseline="middle">+0.3</text>
+            <text fill="#5e636a" stroke="none" font-family="IBM Plex Mono" font-size="11" x="384.5741" y="357.1996" text-anchor="end" dominant-baseline="middle">+0.4</text>
+            <text fill="#5e636a" stroke="none" font-family="IBM Plex Mono" font-size="11" x="384.5741" y="337.8654" text-anchor="end" dominant-baseline="middle">+0.5</text>
           </g>
           <text fill="#5e636a" stroke="none" font-family="IBM Plex Sans" font-size="11" x="388.9134" y="319.6005" text-anchor="start" dominant-baseline="text-before-edge">D (Δ cosine), participant mean</text>
         </g>
@@ -2486,7 +2493,12 @@ Scale profile: 32 marks for 104 rows. Every row is drawn.</desc>
             <text fill="#464b52" stroke="none" font-family="IBM Plex Mono" font-size="11" x="139.3979" y="784.2402" text-anchor="middle" dominant-baseline="text-before-edge">1°</text>
             <text fill="#464b52" stroke="none" font-family="IBM Plex Mono" font-size="11" x="217.1627" y="784.2402" text-anchor="middle" dominant-baseline="text-before-edge">2°</text>
             <text fill="#464b52" stroke="none" font-family="IBM Plex Mono" font-size="11" x="294.9275" y="784.2402" text-anchor="middle" dominant-baseline="text-before-edge">4°</text>
+            <text fill="#5e636a" stroke="none" font-family="IBM Plex Mono" font-size="11" x="29.2985" y="773.8815" text-anchor="end" dominant-baseline="middle">−0.1</text>
             <text fill="#1c1e21" stroke="none" font-family="IBM Plex Mono" font-size="11" x="29.2985" y="747.7422" text-anchor="end" dominant-baseline="middle">0</text>
+            <text fill="#5e636a" stroke="none" font-family="IBM Plex Mono" font-size="11" x="29.2985" y="721.6029" text-anchor="end" dominant-baseline="middle">+0.1</text>
+            <text fill="#5e636a" stroke="none" font-family="IBM Plex Mono" font-size="11" x="29.2985" y="695.4636" text-anchor="end" dominant-baseline="middle">+0.2</text>
+            <text fill="#5e636a" stroke="none" font-family="IBM Plex Mono" font-size="11" x="29.2985" y="669.3244" text-anchor="end" dominant-baseline="middle">+0.3</text>
+            <text fill="#5e636a" stroke="none" font-family="IBM Plex Mono" font-size="11" x="29.2985" y="643.1851" text-anchor="end" dominant-baseline="middle">+0.4</text>
           </g>
           <text fill="#5e636a" stroke="none" font-family="IBM Plex Sans" font-size="11" x="33.6378" y="607.0525" text-anchor="start" dominant-baseline="text-before-edge">D (Δ cosine)</text>
           <text fill="#5e636a" stroke="none" font-family="IBM Plex Sans" font-size="11" x="178.2803" y="807.2646" text-anchor="middle" dominant-baseline="text-after-edge">Gaussian σ (log spacing)</text>

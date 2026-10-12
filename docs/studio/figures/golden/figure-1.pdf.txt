@@ -30,7 +30,14 @@ Remembered
 n = 24 participants
 Forgotten
 n = 24 participants
+−0.2
+−0.1
 0
++0.1
++0.2
++0.3
++0.4
++0.5
 D (Δ cosine), participant mean
 n = 24 each
 bars: grand mean of participant means, equal weight
@@ -46,7 +53,12 @@ E Scale profile by response
 +0.15
 +0.09
 0.5° 1° 2° 4°
+−0.1
 0
++0.1
++0.2
++0.3
++0.4
 D (Δ cosine)
 Gaussian σ (log spacing)
 Each scale computed separately.
