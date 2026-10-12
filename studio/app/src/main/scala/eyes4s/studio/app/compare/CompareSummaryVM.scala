@@ -70,6 +70,10 @@ final case class ExplainVM(label: String, keeps: String, intents: Vector[Intent]
 final case class CompareSummaryVM(
     status: Option[String],
     participantPlot: Option[Either[String, PlotSource]],
+    /** The headline's paired descriptive of the shown σ's contrast, when the
+      * shown report has one (design review ticket 27).
+      */
+    paired: Option[PairedDescriptiveVM],
     profile: Option[Either[String, PlotSource]],
     participants: Option[Either[String, PlotSource]],
     queries: Option[Either[String, PlotSource]],
@@ -113,6 +117,7 @@ object CompareSummaryVM:
   private def empty(status: Option[String], freshness: Option[String]) =
     CompareSummaryVM(
       status,
+      None,
       None,
       None,
       None,
@@ -169,6 +174,11 @@ object CompareSummaryVM:
           .left
           .map(_.message)
       )
+    val paired = for
+      scale <- shown
+      view  <- displayed(scale)
+      p     <- PairedDescriptive.of(view)
+    yield PairedDescriptiveVM.of(p)
     val profile = reporting.map { _ =>
       m.document
         .run(run)
@@ -213,6 +223,7 @@ object CompareSummaryVM:
     CompareSummaryVM(
       None,
       participantPlot,
+      paired,
       profile,
       participants,
       queries,
