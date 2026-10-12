@@ -219,6 +219,62 @@ class ExploreTimelineSuite extends munit.FunSuite:
     assertEquals(refs, Vector(StudioRef.Fixation(enc03, ok(FixationIndex.of(2)))))
   }
 
+  test("the read names the drawn fixations outside the window or off the screen") {
+    import eyes4s.plan.{MapPlacement, OffWindowPolicy}
+    def fix(i: Int, onset: Double, placement: MapPlacement) =
+      ok(
+        AdmittedFixation.of(
+          StudioRef.Fixation(enc03, ok(FixationIndex.of(i))),
+          7208 + i,
+          960.5,
+          540.5,
+          onset,
+          if i == 6 then 0.2 else 50.0,
+          placement
+        )
+      )
+    val placements = Vector(
+      MapPlacement.InWindow,
+      MapPlacement.OutsideWindow(OffWindowPolicy.Exclude),
+      MapPlacement.OutsideWindow(OffWindowPolicy.FailTrial),
+      MapPlacement.OutsideScreen,
+      MapPlacement.DroppedInitial,
+      // Too short to draw: not on the timeline, so not named.
+      MapPlacement.OutsideScreen
+    )
+    val read = ok(
+      ExploreTimeline.timeline(
+        ok(
+          TrialFixations.of(
+            AnalysisRevision(4),
+            DatasetRevision(3),
+            enc03,
+            placements.zipWithIndex.map((p, k) => fix(k + 1, 100.0 * k, p))
+          )
+        )
+      )
+    )
+    assertEquals(
+      read.outsideWindow,
+      Set(2, 3, 4).map(i => StudioRef.Fixation(enc03, ok(FixationIndex.of(i))): StudioRef)
+    )
+    // The fixture's one record outside the window (Explore.dc.html: "13 · 1 outside").
+    for
+      session <- HeadlessSession.open(StoryMoment.T2)
+      fs      <- session.trialFixations(AnalysisRevision(4), enc03)
+      _       <- session.close
+    yield
+      val fixture = ok(ExploreTimeline.timeline(ok(fs)))
+      assertEquals(
+        fixture.outsideWindow,
+        ok(fs).fixations
+          .filter(f => ExploreTimeline.outsideWindow(f.placement))
+          .map(f => f.ref: StudioRef)
+          .toSet
+      )
+      assertEquals(fixture.outsideWindow.size, 1)
+  }
+
   test("a tick that reaches the end exactly stops playback there") {
     timeline.map { t =>
       val s    = step(t)
