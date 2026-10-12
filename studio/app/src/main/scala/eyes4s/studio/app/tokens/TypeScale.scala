@@ -141,3 +141,35 @@ object TypeScale:
   /** The face that sets `family` at `size`. */
   def face(family: TypeFamily, size: TypeSize): FontFace =
     FontFace.nearest(family, size.weight)
+
+/** A weight helper class of the boards (System board, type specimen): a size
+  * of the scale, or none, set in a heavier face (DESIGN_SPEC section 15,
+  * "Weights"). `size` is `None` for a helper that combines with a size class,
+  * as `mono-500` does (`mono-500 t11`).
+  */
+enum TypeHelper(
+    val styleClass: String,
+    val family: TypeFamily,
+    val size: Option[TypeSize],
+    val weight: TypeWeight
+) derives CanEqual:
+
+  /** Field and group labels: 11/600. */
+  case T11Strong
+      extends TypeHelper("t11-strong", TypeFamily.Sans, Some(TypeSize.T11), TypeWeight.SemiBold)
+
+  /** Button, tab and segment labels: 12/500. */
+  case T12Label
+      extends TypeHelper("t12-label", TypeFamily.Sans, Some(TypeSize.T12), TypeWeight.Medium)
+
+  /** Selected rows and items: 12/600. */
+  case T12Strong
+      extends TypeHelper("t12-strong", TypeFamily.Sans, Some(TypeSize.T12), TypeWeight.SemiBold)
+
+  /** Emphasised numerals, and selected Mono (Mono stops at 500). */
+  case Mono500 extends TypeHelper("mono-500", TypeFamily.Mono, None, TypeWeight.Medium)
+
+  /** The bundled face that sets this helper; every helper names one of the
+    * family's own weights, so it is never a substitute.
+    */
+  def face: FontFace = FontFace.nearest(family, weight)
