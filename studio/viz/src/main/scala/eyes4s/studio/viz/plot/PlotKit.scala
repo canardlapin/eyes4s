@@ -259,7 +259,8 @@ object PixelOffset:
   * drawn centre in logical pixels, its position in the plot's roving order
   * (from 0), the name of its grob, and an optional `summary`
   * ([[summarised]]). The roving cursor and the feedback rings centre on the
-  * drawn centre, the anchor moved by the nudge.
+  * drawn centre, the anchor moved by the nudge; a mark drawn as a box
+  * ([[boxed]]) is ringed round that box instead.
   *
   * A mark is keyed by the ref of its first row ([[ref]]): the roving
   * cursor's focus and a feedback ring name that ref. Selecting the mark
@@ -278,7 +279,8 @@ final case class PlotMark private (
     name: GraphicsName,
     nudgePx: PixelOffset,
     summary: Option[String] = None,
-    lineRuns: Vector[Vector[DataPoint]] = Vector.empty
+    lineRuns: Vector[Vector[DataPoint]] = Vector.empty,
+    box: Option[(DataPoint, DataPoint)] = None
 ) derives CanEqual:
 
   /** Every row the mark accounts for, first row first. */
@@ -295,6 +297,12 @@ final case class PlotMark private (
     */
   private[plot] def withLineRuns(runs: Vector[Vector[DataPoint]]): PlotMark =
     copy(lineRuns = runs)
+
+  /** The same mark drawn as the rectangle with opposite data corners `from`
+    * and `to` (a timeline bar), so its feedback rings follow that rectangle.
+    */
+  private[plot] def boxed(from: DataPoint, to: DataPoint): PlotMark =
+    copy(box = Some((from, to)))
 
   /** The same mark at roving position `order`. */
   def withOrder(order: Int): PlotMark = copy(order = order)
@@ -702,7 +710,8 @@ enum PlotTargetError derives CanEqual:
 final case class PlotTarget(
     mark: PlotMark,
     anchor: DevicePoint,
-    override val selectionRuns: Vector[Vector[DevicePoint]] = Vector.empty
+    override val selectionRuns: Vector[Vector[DevicePoint]] = Vector.empty,
+    override val box: Option[DeviceBox] = None
 ) extends RovingTarget[StudioRef] derives CanEqual:
   def ref: StudioRef                   = mark.ref
   override def refs: Vector[StudioRef] = mark.refs
@@ -804,20 +813,20 @@ object PlotTargets:
         for
           ts <- acc
           at <- transform.dataToDevice(m.at).left.map(PlotTargetError.Frame(id, _))
-          k = transform.surface.deviceScale
-          runs <- m.lineRuns.traverse(
-            _.traverse(point =>
-              transform
-                .dataToDevice(point)
-                .left
-                .map(PlotTargetError.Frame(id, _))
-                .map(p => DevicePoint(p.x + m.nudgePx.dxPx * k, p.y + m.nudgePx.dyPx * k))
-            )
-          )
+          k      = transform.surface.deviceScale
+          device = (point: DataPoint) =>
+            transform
+              .dataToDevice(point)
+              .left
+              .map(PlotTargetError.Frame(id, _))
+              .map(p => DevicePoint(p.x + m.nudgePx.dxPx * k, p.y + m.nudgePx.dyPx * k))
+          runs <- m.lineRuns.traverse(_.traverse(device))
+          box  <- m.box.traverse((a, b) => (device(a), device(b)).mapN(DeviceBox.spanning))
         yield ts :+ PlotTarget(
           m,
           DevicePoint(at.x + m.nudgePx.dxPx * k, at.y + m.nudgePx.dyPx * k),
-          runs
+          runs,
+          box
         )
       }
     yield new PlotTargets(plot, transform, picking, targets)
