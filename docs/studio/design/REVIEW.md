@@ -39,7 +39,7 @@ Status key: **[approved]** owner-approved · **[bug]** a pure bug, landable with
 11. NeutralMark: *Decision* — token alpha .35 (the Explore board is aligned); was opaque ink-3 vs alpha 35 (`Tokens.scala:269, :300`); `HaloPx` 2.0 vs spec 1.5 (`TrialScene.scala:411`); DESIGN_SPEC.md:78. Tests: `TokenContrastSuite`, `TrialSceneSuite` neutral marks, `GeometrySceneSuite:41`. **Fixed** (the 1.5 px halo applies to neutral marks only; role marks keep 2 px, DESIGN_SPEC §13).
 
 **E. Desktop CSS sweep (desktop; one PR) **
-12. **D1, composite cursor.**
+12. **D1, composite cursor.** **Fixed** (row-level accent frame at `:focused` until ticket 14; the design table's container ring also removed; the pane-placeholder ring is unchanged).
     - Remove the container rings: `.nav-rows:focused` (`studio-navigator.css:78-81`), `.table-twin:focused` (`studio-plot.css:59-61`), and modena `.list-view:focused`/`.tree-view:focused` (override in `studio-shell.css`).
     - Cursor = row-level layered background `-es-accent, <fill>` at insets 0, 2:
       - `.table-twin:focus-visible .table-twin-row:cursor` replaces `studio-plot.css:124-127`;
@@ -49,7 +49,7 @@ Status key: **[approved]** owner-approved · **[bug]** a pure bug, landable with
       - compound `:cursor:selected` → `-es-accent, -es-sel-fill`.
     - Not per-cell (no `:first-child` in JavaFX).
     - Tests: re-baseline `AppShellFxSuite`/`ShellMomentsFxSuite`; `TableTwinViewFxSuite`, `SourceRecordsFxSuite` (cursor state unchanged); `A11yTreeSuite`.
-13. **D2, selection and hover.**
+13. **D2, selection and hover.** **Fixed.**
     - `-fx-selection-bar[-non-focused]: -es-sel-fill`, `-fx-cell-hover-color: -es-surface-2` (`studio-shell.css:41-44`), and `.list-cell:filled:hover`.
     - Fold the accent-soft fills (`studio-navigator.css:89`, `studio-ledger.css:66,162`, `studio-explore.css:49,58`, `studio-timeline.css:44`, `studio-design.css:53`, `studio-figures.css:43-45`) and `.table-twin-row:selected` ink rules (`studio-plot.css:108-111`) into sel-fill + SmBld.
     - Tests: FX snapshot re-baseline.
@@ -77,7 +77,7 @@ Status key: **[approved]** owner-approved · **[bug]** a pure bug, landable with
 
 **G. Figures (viz/app; regenerate the golden figure once) **
 20. **F1, y ticks and signed values**: `ParticipantPlot` (`:416-421`, value labels `:368-371`) and `ScaleProfilePlot` (`:379-384`). Tests: `ParticipantPlotSuite:231`, `ScaleProfilePlotSuite:216`, `PlotTableParitySuite`, `FigurePageMapSuite`. **Fixed.**
-21. **F2, tile rows.**
+21. **F2, tile rows.** **Fixed** (`MapTileVM.subtitle`; fixed title row, map and two caption rows, elided, not wrapped; role glyphs drawn as shapes because Plex lacks U+25CF/25C6/25CB).
     - `MapTileVM` gains `subtitle` (`FigurePanels.scala:114, 255-276`).
     - `FigurePage` uses a fixed title row, a map, and a fixed two-row caption drawn without `wrap` (`:161-166, :183, :348, :398`).
     - A Points role glyph (Plex coverage of ● ◆ ○ is unverified).

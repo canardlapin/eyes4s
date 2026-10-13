@@ -115,13 +115,11 @@ by token name, never by hex value.
 The boards were revised ahead of the code (DESIGN_SPEC §15). Until each ticket lands, a parity check records
 the deviation below instead of failing. Tickets are numbered as in the design review's landing list.
 
-- Shared: selected rows and items drawn with `--sel-fill` and weight 600 (ticket 13); composite cursor and
-  `:focus-visible` gating (12, 14); radio, checkbox and slider styling and the segmented bar (16).
+- Shared: `:focus-visible` gating (14); radio, checkbox and slider styling and the segmented bar (16).
 - Shared: the board's one resting focus ring (`.kf`) is shown in tests by putting real keyboard focus on that
   node, not drawn at rest (28).
 - Maps: fixation cross above the map and cased, round isoline caps, map legend (17). Figure tiles fade in but do
   not hatch cells without coverage (8).
 - Explore: timeline bars outside the brush dimmed (18).
 - Results: annotation column (26).
-- Figures: tile rows and wrapping (21).
 - Data: the missing-asset thumbnail hatch and X, with its "Missing asset · forest-044.png" caption (25).
