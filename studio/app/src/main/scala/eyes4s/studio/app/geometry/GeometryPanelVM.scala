@@ -34,17 +34,25 @@ final case class FieldVM(field: GeometryField, label: String, value: String) der
 /** One row of the worked example ("→ image frame", "(700, 300) px · …"). */
 final case class ExampleRowVM(label: String, value: String) derives CanEqual
 
-/** A representative trial's thumbnail: its label under the picture, its
-  * accessible name, and whether it is the trial chosen for marking. `ref`
-  * is the trial the thumbnail's numbers describe.
+/** A representative trial's thumbnail: the two caption lines under the
+  * picture, the trial (`name`, "P05 · ret_04") and its count ("11 of 11
+  * outside"), its accessible name, and whether it is the trial chosen for
+  * marking. `ref` is the trial the thumbnail's numbers describe.
   */
 final case class ThumbnailVM(
     trial: TrialKey,
     ref: Option[StudioRef],
-    label: String,
+    name: String,
+    count: String,
     accessible: String,
     marked: Boolean
 ) derives CanEqual
+
+/** The all-trials density's key (DESIGN_SPEC section 15.1): its caption and
+  * the four swatch labels, lowest level first. Swatch `i` is ramp stop `i`
+  * at the density opacity.
+  */
+final case class DensityKeyVM(caption: String, labels: Vector[String]) derives CanEqual
 
 /** A recorded correction rule and its Remove button's accessible name. */
 final case class RuleVM(index: Int, text: String, remove: String) derives CanEqual
@@ -89,6 +97,7 @@ final case class GeometryPanelVM(
     densityTitle: String,
     densityCaption: String,
     densityAccessible: String,
+    densityKey: DensityKeyVM,
     mark: String,
     canMark: Boolean,
     markNote: Option[String],
@@ -122,7 +131,8 @@ object GeometryPanelVM:
   /** Degrees to one place with an explicit sign ("+5.4", "−2.4"). */
   def deg(v: Double): String = Format.signed(v, 1)
 
-  def trialLabel(trial: TrialKey): String = s"${trial.participant} · ${trial.trial}"
+  /** A trial as the panel names it ("P05 · ret_04"). */
+  def trialLabel(trial: TrialKey): String = t(ThumbTrial, trial.participant, trial.trial)
 
   def fieldLabel(f: GeometryField): String = t(f match
     case GeometryField.ScreenWidth     => FieldScreenWidth
@@ -145,6 +155,36 @@ object GeometryPanelVM:
 
   def ruleText(index: Int, rule: CorrectionRule): String =
     t(RuleText, (index + 1).toString, correctionText(rule.correction), targetText(rule.target))
+
+  /** The density levels of `steps` as closed count ranges, lowest first, and
+    * the overflow level open: "1–3", "4–15", "16–63", "≥64" for a step of 4
+    * (DESIGN_SPEC section 15.1). The key and the density's semantics text
+    * both read them.
+    */
+  def densityLabels(steps: DensitySteps): Vector[String] =
+    val starts = steps.starts
+    starts
+      .zip(starts.drop(1))
+      .map((from, next) => t(DensityRange, Format.count(from), Format.count(next - 1))) :+
+      t(DensityOverflow, Format.count(starts.last))
+
+  /** The key of a density of `columns × rows` screen cells (dashes before
+    * the grid is known) at `steps`.
+    */
+  def densityKey(grid: Option[(Int, Int)], steps: DensitySteps): DensityKeyVM =
+    val (c, r) =
+      grid.fold(("—", "—"))((c, r) => (Format.count(c.toLong), Format.count(r.toLong)))
+    DensityKeyVM(t(DensityKey, c, r), densityLabels(steps))
+
+  /** A thumbnail's count line: off screen before outside the frame, else
+    * the records inside, in the singular for one record.
+    */
+  def thumbCount(p: ThumbnailPicture): String =
+    def n(v: Int): String = Format.count(v.toLong)
+    if p.outsideScreen > 0 then t(ThumbOffScreen, n(p.outsideScreen), n(p.records))
+    else if p.outsideWindow > 0 then t(ThumbOutside, n(p.outsideWindow), n(p.records))
+    else if p.records == 1 then t(ThumbInsideOne)
+    else t(ThumbInside, n(p.records))
 
   /** The panel's view-model; `pictures` are the latest drawn for it, if any. */
   def of(
@@ -243,38 +283,31 @@ object GeometryPanelVM:
     val thumbnails =
       shownPictures.toVector.flatMap(pic => pic.thumbnails.map(pic.key.dataset -> _)).map {
         (dataset, p) =>
-          val name  = trialLabel(p.trial)
-          val label =
-            if p.outsideScreen > 0 then
-              t(ThumbOffScreen, name, p.outsideScreen.toString, p.records.toString)
-            else if p.outsideWindow > 0 then
-              t(ThumbOutside, name, p.outsideWindow.toString, p.records.toString)
-            else if p.records == 1 then t(ThumbInsideOne, name)
-            else t(ThumbInside, name, p.records.toString)
+          val name       = trialLabel(p.trial)
           val marked     = panel.marked.contains(p.trial)
-          val accessible = t(
-            ThumbAccessible,
-            name,
-            p.records.toString,
-            p.outsideWindow.toString,
-            p.outsideScreen.toString
-          )
+          val window     = Format.count(p.outsideWindow.toLong)
+          val screen     = Format.count(p.outsideScreen.toLong)
+          val accessible =
+            if p.records == 1 then t(ThumbAccessibleOne, name, window, screen)
+            else t(ThumbAccessible, name, Format.count(p.records.toLong), window, screen)
           ThumbnailVM(
             p.trial,
             // The thumbnail's counts are the backend's window tally of the
             // trial, unless they are the previous placement's.
             Option.when(!stale)(StudioRef.TrialPlacementTally(dataset, p.trial)),
-            label,
+            name,
+            thumbCount(p),
             if marked then t(ThumbMarked, accessible) else accessible,
             marked
           )
       }
     val source        = spec.flatMap(_.sources.fixations).map(_.path.value).getOrElse("")
     val positionsNote = panel.placement match
-      case _ if stale                                => Some(t(PositionsStale, source))
-      case Loading.Waiting                           => Some(t(PositionsWaiting, source))
-      case Loading.Failed(why)                       => Some(t(PositionsFailed, why))
-      case Loading.Ready(ps) if ps.unplaced.nonEmpty =>
+      case _ if stale                                 => Some(t(PositionsStale, source))
+      case Loading.Waiting                            => Some(t(PositionsWaiting, source))
+      case Loading.Failed(why)                        => Some(t(PositionsFailed, why))
+      case Loading.Ready(ps) if ps.unplaced.size == 1 => Some(t(PositionsUnplacedOne))
+      case Loading.Ready(ps) if ps.unplaced.nonEmpty  =>
         Some(t(PositionsUnplaced, Format.count(ps.unplaced.size.toLong)))
       case _ => None
     val records = panel.placement.toOption.map(p => Format.count(p.records.size.toLong))
@@ -282,6 +315,15 @@ object GeometryPanelVM:
     val caption = records.fold(t(AllTrialsCaption, "—"))(n =>
       if rules.isEmpty then t(AllTrialsCaption, n)
       else t(AllTrialsCorrected, n, rules.size.toString)
+    )
+    // The key labels the density drawn, at its own revision's levels; before
+    // one is drawn, the default levels over the grid being placed.
+    val drawnDensity = shownPictures.map(_.density)
+    val densityKey   = GeometryPanelVM.densityKey(
+      drawnDensity
+        .map(d => d.columns -> d.rows)
+        .orElse(panel.placement.toOption.map(p => p.density.columns -> p.density.rows)),
+      drawnDensity.fold(DensitySteps.Default)(_.steps)
     )
     val policy      = spec.map(_.admission.offScreen).getOrElse(OffScreenChoice.ExcludeRecord)
     val orientation = panel.orientation.map { f =>
@@ -327,6 +369,7 @@ object GeometryPanelVM:
       densityTitle = t(AllTrials),
       densityCaption = caption,
       densityAccessible = t(DensityAccessible, records.getOrElse("—")),
+      densityKey = densityKey,
       mark = t(MarkOrientation),
       canMark = spec.isDefined && panel.marked.isDefined && panel.orientation.isEmpty,
       markNote = Option.when(spec.isDefined && panel.marked.isEmpty)(t(MarkNeedsTrial)),

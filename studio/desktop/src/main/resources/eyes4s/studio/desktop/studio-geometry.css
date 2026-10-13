@@ -169,6 +169,27 @@
   -fx-background-color: -es-stage;
 }
 
+/* The density key: board gap 6 px between swatches, 2 px to each label. */
+.geometry-key {
+  -fx-spacing: 6;
+  -fx-alignment: center-left;
+}
+
+.geometry-key > .label {
+  -fx-graphic-text-gap: 2;
+}
+
+/* A swatch: its ramp stop (at the density opacity, set by the view) over
+ * the stage, as the density draws its cells. */
+.geometry-swatch {
+  -fx-background-color: -es-stage;
+}
+
+.geometry-swatch-fill.level-0 { -fx-background-color: -es-ramp-0; }
+.geometry-swatch-fill.level-1 { -fx-background-color: -es-ramp-1; }
+.geometry-swatch-fill.level-2 { -fx-background-color: -es-ramp-2; }
+.geometry-swatch-fill.level-3 { -fx-background-color: -es-ramp-3; }
+
 /* The thumbnail chosen for marking, and the focused one: a 2 px accent ring. */
 .geometry-picture.marked {
   -fx-border-color: -es-accent;

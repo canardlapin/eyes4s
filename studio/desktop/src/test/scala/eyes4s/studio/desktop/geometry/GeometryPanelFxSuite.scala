@@ -216,12 +216,20 @@ class GeometryPanelFxSuite extends StudioFxSuite:
         case PlotHostStatus.Drawn(_) => ()
         case other                   => fail(s"a picture is not drawn: $other")
       }
-      assertEquals(runOnFx(v.thumbnails.map(t => drawn(t.caption))).count(_.nonEmpty), 4)
-      // P05's three failed queries lie wholly outside: the worst is shown.
-      assert(
-        runOnFx(v.thumbnails.map(t => drawn(t.caption)))
-          .contains("P05 · ret_04 · 11 of 11 outside"),
-        runOnFx(v.thumbnails.map(t => drawn(t.caption)))
+      val captions = runOnFx(v.thumbnails.map(t => (drawn(t.name), drawn(t.count))))
+      assertEquals(captions.count(_._2.nonEmpty), 4)
+      // P05's three failed queries lie wholly outside: the worst is shown,
+      // its trial and its count on two lines.
+      assert(captions.contains(("P05 · ret_04", "11 of 11 outside")), captions)
+      // The density key at the golden fixture's levels (s = 4, DESIGN_SPEC
+      // section 15.1), in closed ranges.
+      assertEquals(
+        runOnFx(v.densitySwatches.map(drawn)),
+        Vector("1–3", "4–15", "16–63", "≥64")
+      )
+      assertEquals(
+        drawn(v.densityKey),
+        "Records per cell, log steps · 64 × 36 screen cells"
       )
       fx.snapshot(StudioTheme.Light)
   }
@@ -330,7 +338,7 @@ class GeometryPanelFxSuite extends StudioFxSuite:
     val v      = rig.host.view
     val before = runOnFx(rig.host.state.placement.toOption.get)
     val p05    = TrialKey("P05", Phase.Retrieval, "ret_04", 1)
-    val at = runOnFx(v.thumbnails.indexWhere(t => drawn(t.caption).startsWith("P05 · ret_04")))
+    val at     = runOnFx(v.thumbnails.indexWhere(t => drawn(t.name) == "P05 · ret_04"))
     assert(at >= 0)
     assertEquals(runOnFx(v.mark.isDisabled), true)
     runOnFx {

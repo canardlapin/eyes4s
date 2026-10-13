@@ -19,12 +19,13 @@ package eyes4s.studio.viz.geometry
 import eyes4s.studio.app.geometry.{
   DensityPicture,
   FramePicture,
+  GeometryPanelVM,
   MarkPicture,
   MarkPlace,
   ThumbnailPicture
 }
 import eyes4s.studio.app.text.{Format, GeometryText}
-import eyes4s.studio.app.text.GeometryTextId.{DensityCellsDrawn, DensityRange}
+import eyes4s.studio.app.text.GeometryTextId.{DensityCellsDrawn, DensityCellsDrawnOne}
 import eyes4s.studio.app.tokens.{
   PaletteToken,
   StageToken,
@@ -133,16 +134,11 @@ object GeometryScene:
     * section 15.1), so it names the ranges the key labels.
     */
   private def levelsText(picture: DensityPicture): String =
-    val starts = picture.steps.starts
-    val ranges = starts
-      .zip(starts.drop(1))
-      .map((from, next) =>
-        GeometryText(DensityRange, Format.count(from), Format.count(next - 1))
-      )
-    GeometryText(
-      DensityCellsDrawn,
-      (Format.count(picture.levels.count(_ > 0).toLong) +: ranges :+ Format.count(starts.last))*
-    )
+    val ranges = GeometryPanelVM.densityLabels(picture.steps).init
+    val last   = Format.count(picture.steps.starts.last)
+    picture.levels.count(_ > 0) match
+      case 1 => GeometryText(DensityCellsDrawnOne, (ranges :+ last)*)
+      case n => GeometryText(DensityCellsDrawn, (Format.count(n.toLong) +: ranges :+ last)*)
 
   private def build(id: String, frame: FramePicture)(
       content: () => Either[GraphicsError, Vector[Grob]]
