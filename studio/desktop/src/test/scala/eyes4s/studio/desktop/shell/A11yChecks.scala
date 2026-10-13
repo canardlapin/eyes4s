@@ -219,26 +219,16 @@ object A11yChecks:
   private val FocusVisible = javafx.css.PseudoClass.getPseudoClass("focus-visible")
   private val FocusWithin  = javafx.css.PseudoClass.getPseudoClass("focus-within")
 
-  /** A composite's cursor row: it, not the composite, carries the focus
-    * ring (DESIGN_SPEC 15): a row with `:cursor`, or the focus model's cell.
-    */
-  private def cursorRow(n: Node): Boolean =
-    val states = n.getPseudoClassStates.asScala.map(_.getPseudoClassName)
-    states.contains("cursor") ||
-    (n.isInstanceOf[javafx.scene.control.IndexedCell[?]] && states.contains("focused"))
-
-  /** How `n`, what it draws, its cursor row and what encloses it are drawn:
-    * background fills and border strokes, under CSS as it stands.
+  /** How `n`, what it draws and what encloses it are drawn: background fills
+    * and border strokes, under CSS as it stands.
     */
   private def drawn(n: Node): Vector[String] =
     n.getScene.getRoot.applyCss()
-    val below = all(n).drop(1)
-    (ancestors(n).toVector ++ below.take(8) ++ below.drop(8).filter(cursorRow)).collect {
-      case r: Region =>
-        Option(r.getBackground).toVector
-          .flatMap(_.getFills.asScala.map(f => s"${f.getFill}@${f.getInsets}")) ++
-          Option(r.getBorder).toVector
-            .flatMap(_.getStrokes.asScala.map(s => s"${s.getTopStroke}/${s.getWidths}"))
+    (ancestors(n).toVector ++ all(n).drop(1)).collect { case r: Region =>
+      Option(r.getBackground).toVector
+        .flatMap(_.getFills.asScala.map(f => s"${f.getFill}@${f.getInsets}")) ++
+        Option(r.getBorder).toVector
+          .flatMap(_.getStrokes.asScala.map(s => s"${s.getTopStroke}/${s.getWidths}"))
     }.flatten
 
   /** `n` drawn with keyboard focus or without: `:focused` and
