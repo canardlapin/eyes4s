@@ -103,6 +103,30 @@ object TokenUsage:
     "--isoline-ink alone vanishes over dark map cells and the dark stage"
   )
 
+  /** The inner casing on the stage (DESIGN_SPEC section 15, "Stage casing";
+    * review ticket 17): the tone of the isoline pair opposite the stage's
+    * `--halo`. `--halo` stays stage-keyed; a role mark and the focus ring
+    * wear this band inside their halo, because on some map or image ground
+    * neither the mark nor the halo reaches 3:1 (white `--halo` on the blank
+    * screen is 2.82:1). The fixation cross is the same pair the other way
+    * round: `--halo` ink over this casing.
+    */
+  def innerCasing(stage: StageVariant): TokenRef = stage match
+    case StageVariant.Dark | StageVariant.Mid => p(IsolineInk)
+    case StageVariant.Light                   => p(IsolineCase)
+
+  /** The grounds a stage mark is drawn on inside the image frame: map cells
+    * (the mass ramp's stops) and the image (the blank screen, the only image
+    * a token depicts).
+    */
+  val mapGrounds: List[TokenRef]   = List(Ramp0, Ramp1, Ramp2, Ramp3).map(p)
+  val imageGrounds: List[TokenRef] = List(p(Screen))
+
+  /** The marks that wear [[innerCasing]] inside their halo: the role and
+    * neutral marks and the keyboard focus ring.
+    */
+  val innerCased: List[TokenRef] = StageMarkHalo.map(_.mark) :+ StageFocusRingHalo.mark
+
   /** Every drawing rule. */
   val casingRules: List[CasingRule] =
     List(ControlFillOutline, FigureControlFillOutline, StageFocusRingHalo, IsolineCasing) ++
