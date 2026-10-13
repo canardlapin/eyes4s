@@ -1,0 +1,1 @@
+{"actor":"claude-w01-exp","entity":"bd-01M441B5J02QVWZY929E1YFGFD","kind":"reserve_open","mode":"exclusive","op":"20261010T004318.223540Z-p1446-c0000-r7500-hbf8aed","paths":["surface/src/main/","surface/src/test/"],"reservation_id":"rv-01M4HM79AFWB5ANEXYBVJ0JR6N","ts":"2026-10-10T00:43:18.223540Z","ttl_s":3600,"v":2}

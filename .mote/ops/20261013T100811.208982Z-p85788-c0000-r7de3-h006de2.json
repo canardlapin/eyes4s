@@ -1,0 +1,1 @@
+{"actor":"claude-s20","entity":"bd-01M4R9DEFHP0KYBN2D0Y9V8KD4","kind":"reserve_open","mode":"exclusive","op":"20261013T100811.208982Z-p85788-c0000-r7de3-h006de2","paths":["studio/desktop/src/test/scala/eyes4s/studio/desktop/geometry/GeometryPicturesTimingSuite.scala"],"reservation_id":"rv-01M4TBQRY878DGVTMSSSPTM2WM","ts":"2026-10-13T10:08:11.208982Z","ttl_s":3600,"v":2}
