@@ -344,15 +344,20 @@ class FocusVisibleFxSuite extends ShellFxSuite:
         assert(keyed(c)(strokes(c)).contains(accent), s"$clue: $name: no ring on the container")
       }
       containerRing("no rows")
-      // Rows, but none under the cursor yet: the container still draws it.
+      // Rows, but none under the cursor yet.
       runOnFx {
         table.show(source(3))
         list.getItems.addAll("enc_01", "enc_02")
         list.getFocusModel.focus(-1)
       }
       fx.awaitLayout()
-      assert(runOnFx(CompositeFocus.hasNoCursor(table)))
-      assert(keyed(table)(strokes(table)).contains(accent), "rows without a cursor")
+      // A table with rows has a home row for focus to put the cursor on, so
+      // the row carries the ring and the container none.
+      assert(!runOnFx(CompositeFocus.hasNoCursor(table)), "rows without a cursor")
+      assert(
+        !keyed(table)(strokes(table)).contains(accent),
+        "rows without a cursor: container ring"
+      )
       // A row under the cursor carries the ring, and the container none.
       runOnFx {
         table.moveCursor(Some(source(3).rows(1).ref))
