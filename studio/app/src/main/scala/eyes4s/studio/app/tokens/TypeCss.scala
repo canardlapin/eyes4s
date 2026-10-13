@@ -27,6 +27,11 @@ package eyes4s.studio.app.tokens
   * ([[FontFace]]), so each class names the face's own family. A size class
   * also sets the family, so `mono` belongs on the node that shows the numeral,
   * not on an ancestor.
+  *
+  * The weight helpers ([[TypeHelper]]: `t11-strong`, `t12-label`,
+  * `t12-strong`, `mono-500`) come last, so a helper wins over a size class of
+  * equal specificity (`mono-500 t11`). `mono-500` replaces `mono` rather than
+  * joining it: `.mono.t11` would outrank it.
   */
 object TypeCss:
 
@@ -84,11 +89,20 @@ object TypeCss:
         )
       }
     }
+    val helpers = TypeHelper.values.toList.map { helper =>
+      block(
+        s".${helper.styleClass}",
+        List("-fx-font-family" -> quoted(helper.face.javaFxFamily)) ++
+          helper.size.map(size => "-fx-font-size" -> s"${size.px}px").toList
+      )
+    }
     TokenCss.licenseHeader + generatedNote +
       "\n/* Eyes Studio type scale: five sizes, JavaFX. Body text is set on the root. */\n" +
       root + "\n" + sizes.mkString("\n") +
       "\n/* Families: numerals and identifiers in Plex Mono, methods prose in Source Serif 4. */\n" +
-      families.mkString("\n")
+      families.mkString("\n") +
+      "\n/* Weight helpers: a heavier face at a size of the scale. Last, so they win. */\n" +
+      helpers.mkString("\n")
 
   /** The file name JavaFX loads the type scale from. */
   val javaFxFileName: String = "studio-type.css"
@@ -137,6 +151,15 @@ object TypeCss:
       }
       plain :: substituted
     }
+    val helpers = TypeHelper.values.toList.map { helper =>
+      val family = helper.family.styleClass.map(_ => "font-family" -> stack(helper.family))
+      block(
+        s".${helper.styleClass}",
+        family.toList ++ helper.size.map(size => "font-size" -> s"${size.px}px").toList :+
+          ("font-weight" -> helper.weight.css.toString)
+      )
+    }
     TokenCss.licenseHeader + generatedNote +
       "\n/* Eyes Studio type scale as web CSS, for a future web shell. */\n" +
-      root + "\n" + sizes.mkString("\n") + "\n" + families.mkString("\n")
+      root + "\n" + sizes.mkString("\n") + "\n" + families.mkString("\n") + "\n" +
+      helpers.mkString("\n")

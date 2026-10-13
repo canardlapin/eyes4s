@@ -95,3 +95,23 @@
 .serif.t28 {
   -fx-font-family: "Source Serif 4";
 }
+
+/* Weight helpers: a heavier face at a size of the scale. Last, so they win. */
+.t11-strong {
+  -fx-font-family: "IBM Plex Sans SmBld";
+  -fx-font-size: 11px;
+}
+
+.t12-label {
+  -fx-font-family: "IBM Plex Sans Medm";
+  -fx-font-size: 12px;
+}
+
+.t12-strong {
+  -fx-font-family: "IBM Plex Sans SmBld";
+  -fx-font-size: 12px;
+}
+
+.mono-500 {
+  -fx-font-family: "IBM Plex Mono Medm";
+}
