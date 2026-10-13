@@ -16,7 +16,16 @@
 
 package eyes4s.studio.viz.trial
 
-import eyes4s.studio.app.maps.{GridPoint, Isolines, MapGrid, MapId, MapOpacity, MapRaster}
+import eyes4s.studio.app.maps.{
+  GridPoint,
+  Isolines,
+  LimitsScope,
+  MapGrid,
+  MapId,
+  MapOpacity,
+  MapRaster,
+  StageCasing
+}
 import eyes4s.studio.app.plot.{PlotText, PlotTextId}
 import eyes4s.studio.app.text.{Format, TrialText, TrialTextId}
 import eyes4s.studio.app.tokens.{
@@ -26,6 +35,8 @@ import eyes4s.studio.app.tokens.{
   StageVariant,
   Theme,
   ThemedToken,
+  TokenRef,
+  TokenUsage,
   Tokens,
   TypeSize
 }
@@ -34,6 +45,7 @@ import eyes4s.studio.core.backend.TrialKey
 import eyes4s.studio.core.document.ScreenSize
 import eyes4s.studio.core.selection.{FixationIndex, StudioRef}
 import eyes4s.plan.{MapPlacement, OffWindowPolicy}
+import eyes4s.studio.viz.maps.MapLegendScene
 import eyes4s.studio.viz.plot.{
   DataPanel,
   DataPoint,
@@ -59,6 +71,7 @@ import intaglio.{
   Interval,
   Length,
   LengthExpr,
+  LineCap,
   LineType,
   PatternPaint,
   PatternRecipe,
@@ -251,12 +264,15 @@ final case class TrialSceneOptions(
   * raster from the map raster cache (S4.4), and the one global opacity it
   * is drawn with. The raster covers the image frame cell for cell; the
   * grid's backend-supplied isoline levels are contoured over it, cased.
+  * `limits` says whether the panels shown with it share its colour limits,
+  * which its legend states ([[eyes4s.studio.viz.maps.MapLegendScene]]).
   */
 final case class TrialMap(
     grid: MapGrid,
     raster: MapRaster,
     opacity: MapOpacity = MapOpacity.Default,
-    covers: MapCoverage = MapCoverage.ImageFrame
+    covers: MapCoverage = MapCoverage.ImageFrame,
+    limits: LimitsScope = LimitsScope.PerPanel
 ) derives CanEqual
 
 /** Which region of the screen a map's grid covers: the image frame (a run's
@@ -376,9 +392,12 @@ object TrialScene:
   val IsolinesName: String  = "trial-isolines"
   val UncoveredName: String = "trial-map-uncovered"
   val RememberName: String  = "trial-remembered"
+  val CrossName: String     = "trial-cross"
+  val CrossCaseName: String = "trial-cross-casing"
 
   /** A map isoline: its ink, and the halo casing under it, 2 units of ink
-    * over 4 of casing (bead S4.3b, bd-01M3DPFM4ZG9GV0RTYWWA1M2P9).
+    * over 4 of casing (bead S4.3b, bd-01M3DPFM4ZG9GV0RTYWWA1M2P9), with
+    * round caps (review ticket 17).
     */
   val IsolinePx: Double       = 2.0
   val IsolineCasingPx: Double = 4.0
@@ -417,10 +436,21 @@ object TrialScene:
     */
   val NeutralHaloPx: Double = 1.5
 
-  /** The halo casing of a hollow control mark (Intaglio `StrokeCasing`): 1 px
-    * of halo either side of its 2 px outline.
+  /** The inner casing of a hollow control mark (Intaglio `StrokeCasing`): 1 px
+    * either side of its 2 px outline, inside [[HaloBandPx]] of halo.
     */
   val CasingPx: Double = 4.0
+
+  /** The stage halo visible either side of a mark's inner casing
+    * ([[TokenUsage.innerCasing]]; DESIGN_SPEC section 15, "Stage casing").
+    */
+  val HaloBandPx: Double = 1.0
+
+  /** The fixation cross: `--halo` ink over the inner-casing tone, drawn above
+    * the map (review ticket 17; `docs/studio/design/MAP_RECIPE.js`).
+    */
+  val CrossPx: Double       = 2.0
+  val CrossCasingPx: Double = 4.0
 
   /** Order lines and the analysis-window outline. */
   val OrderLinePx: Double  = 1.5
@@ -555,14 +585,17 @@ object TrialScene:
       panel <- DataPanel(id, viewport).left.map(TrialSceneError.Plot(trial, _))
       plot  <- PlotScene(id, Scene(grobs), panel).left.map(TrialSceneError.Plot(trial, _))
     yield new TrialScene(
-      // The scene carries its semantics (S4.6): the caption is its alt text.
+      // The scene carries its semantics (S4.6): the caption is its alt text,
+      // and its summary ends with the map legend's description when the map
+      // has a legend (review ticket 17).
       plot.withSemantics(
         SceneSemantics.single(
           SceneSummaries.semantics(
             id,
             trial.label,
             caption,
-            PlotText(PlotTextId.TrialSummary, caption, marks.size.toString)
+            (PlotText(PlotTextId.TrialSummary, caption, marks.size.toString) +:
+              legendOf(input).toVector).mkString(" ")
           )
         )
       ),
@@ -573,6 +606,10 @@ object TrialScene:
       input.map.map(_.grid.map),
       disclosureOf(input)
     )
+
+  /** What the legend of `input`'s map says, when its map has a legend. */
+  def legendOf(input: TrialSceneInput): Option[String] =
+    input.map.flatMap(m => MapLegendScene.describe(m.raster.key.style.palette, m.limits))
 
   /** What the trial view says about the remembered image: that it was not
     * displayed, whenever it is shown as an underlay, and that it is not
@@ -620,6 +657,19 @@ object TrialScene:
     private def palette(t: PaletteToken): Rgba =
       IntaglioColours.toIntaglio(Tokens.palette(t))
 
+    // The band a mark wears inside its stage halo, and the cross's casing
+    // (DESIGN_SPEC section 15).
+    private val innerCasing: Rgba =
+      IntaglioColours.toIntaglio(
+        Tokens.resolve(TokenUsage.innerCasing(input.stage), input.theme, input.stage)
+      )
+
+    // Whether this scene's marks wear the inner casing: only where the mark
+    // and its halo alone fall below 3:1 on some frame ground, one answer for
+    // the scene's one mark style.
+    private val innerCased: Boolean =
+      StageCasing.needed(markToken(input.marks), input.theme, input.stage)
+
     private val placement = input.display.placement
     private val frameLeft = placement.left.toDouble
     private val frameTop  = placement.top.toDouble
@@ -631,13 +681,15 @@ object TrialScene:
     private def stroke(
         colour: Rgba,
         widthPx: Double,
-        lineType: LineType = LineType.Solid
+        lineType: LineType = LineType.Solid,
+        lineCap: LineCap = LineCap.Butt
     ): Either[GraphicsError, GraphicParams] =
       GraphicParams.checked(
         stroke = Some(colour),
         fill = None,
         lineWidth = pt(widthPx),
         lineType = lineType,
+        lineCap = lineCap,
         lineWidthUnit = StrokeUnit.Point
       )
 
@@ -826,7 +878,11 @@ object TrialScene:
       else
         part("isolines")(
           for
-            ink    <- stroke(palette(PaletteToken.IsolineInk), IsolinePx)
+            ink <- stroke(
+              palette(PaletteToken.IsolineInk),
+              IsolinePx,
+              lineCap = LineCap.Round
+            )
             width  <- StrokeWidth.points(pt(IsolineCasingPx))
             casing <- StrokeCasing.checked(
               palette(PaletteToken.IsolineCase),
@@ -891,19 +947,7 @@ object TrialScene:
         case FrameArt.Picture(asset)  => picture(asset)
         case FrameArt.Screen          => screenFill.map(Vector(_))
         case FrameArt.ScreenWithCross =>
-          for
-            screen <- screenFill
-            cross  <- part("fixation cross")(
-              for
-                gp <- stroke(staged(StageToken.Halo), 1.5)
-                v1 <- Point.native(centreX, centreY - CrossArmPx)
-                v2 <- Point.native(centreX, centreY + CrossArmPx)
-                h1 <- Point.native(centreX - CrossArmPx, centreY)
-                h2 <- Point.native(centreX + CrossArmPx, centreY)
-                s  <- Grob.segments(Vector(v1 -> v2, h1 -> h2), gp = gp)
-              yield s
-            )
-          yield Vector(screen, cross)
+          screenFill.map(Vector(_)) // the cross is drawn above the map
         case FrameArt.CueText(text) =>
           for
             screen <- screenFill
@@ -933,6 +977,29 @@ object TrialScene:
             yield Vector(rect, text)
           )
 
+    // The fixation cross of a blank + cross display, drawn after the map so
+    // that a map never hides it: 2 px of halo over a 4 px casing in the
+    // inner-casing tone. The casing is its own grob, drawn before either arm,
+    // so the second arm's casing cannot cut the first where they cross; its
+    // square caps case the arms' ends.
+    private def cross(art: FrameArt): R[Vector[Grob]] =
+      if art != FrameArt.ScreenWithCross then Right(Vector.empty)
+      else
+        part("fixation cross")(
+          for
+            v1     <- Point.native(centreX, centreY - CrossArmPx)
+            v2     <- Point.native(centreX, centreY + CrossArmPx)
+            h1     <- Point.native(centreX - CrossArmPx, centreY)
+            h2     <- Point.native(centreX + CrossArmPx, centreY)
+            caseGp <- stroke(innerCasing, CrossCasingPx, lineCap = LineCap.Square)
+            inkGp  <- stroke(staged(StageToken.Halo), CrossPx)
+            caseN  <- name(CrossCaseName)
+            inkN   <- name(CrossName)
+            casing <- Grob.segments(Vector(v1 -> v2, h1 -> h2), gp = caseGp, name = Some(caseN))
+            ink    <- Grob.segments(Vector(v1 -> v2, h1 -> h2), gp = inkGp, name = Some(inkN))
+          yield Vector(casing, ink)
+        )
+
     private def window(art: FrameArt): R[Vector[Grob]] =
       // The unknown and loading states already draw the frame's outline.
       val outlined = art match
@@ -959,6 +1026,13 @@ object TrialScene:
           yield Vector(rect, label)
         )
 
+    // The token a mark style fills or outlines its marks with.
+    private def markToken(style: MarkStyle): TokenRef = style match
+      case MarkStyle.Neutral                 => TokenRef.Themed(ThemedToken.NeutralMark)
+      case MarkStyle.Role(TrialRole.Query)   => TokenRef.Themed(ThemedToken.Query)
+      case MarkStyle.Role(TrialRole.Matched) => TokenRef.Themed(ThemedToken.Match)
+      case MarkStyle.Role(TrialRole.Control) => TokenRef.Themed(ThemedToken.Control)
+
     private def markColour(role: TrialRole): Rgba = role match
       case TrialRole.Query   => themed(ThemedToken.Query)
       case TrialRole.Matched => themed(ThemedToken.Match)
@@ -971,16 +1045,27 @@ object TrialScene:
     // A mark's paint (DESIGN_SPEC sections 5, 9, 12, 14): each core placement
     // has its own visible treatment. Only InMap is filled; the two window
     // policies remain visible even though neither adds an out-of-window point.
+    // Where the scene's marks are inner-cased, a filled mark in the map is
+    // outlined in the inner casing, cased by the halo: `HaloBandPx` of halo
+    // shows either side of the band (DESIGN_SPEC section 15, "Stage
+    // casing"); otherwise its outline is the halo. A control ring wears its
+    // bands in `ring`.
     private def markParams(f: TrialFixation): Either[GraphicsError, GraphicParams] =
-      val halo = staged(StageToken.Halo)
-      val px   = haloPx
+      val halo                               = staged(StageToken.Halo)
+      val px                                 = haloPx
+      def filled(fill: Rgba, line: LineType) =
+        if !innerCased then stroke(halo, px, line).map(_.withSolidFill(Some(fill)))
+        else
+          for
+            base   <- stroke(innerCasing, px, line)
+            width  <- StrokeWidth.points(pt(px + 2.0 * HaloBandPx))
+            casing <- StrokeCasing.checked(halo, CasingWidth.Absolute(width))
+          yield base.withSolidFill(Some(fill)).withCasing(casing)
       def included(line: LineType): Either[GraphicsError, GraphicParams] = input.marks match
         case MarkStyle.Role(TrialRole.Control) =>
           stroke(markColour(TrialRole.Control), px, line)
-        case MarkStyle.Role(role) =>
-          stroke(halo, px, line).map(_.withSolidFill(Some(markColour(role))))
-        case MarkStyle.Neutral =>
-          stroke(halo, px, line).map(_.withSolidFill(Some(themed(ThemedToken.NeutralMark))))
+        case MarkStyle.Role(role) => filled(markColour(role), line)
+        case MarkStyle.Neutral    => filled(themed(ThemedToken.NeutralMark), line)
       f.placement match
         case MapPlacement.DroppedInitial =>
           stroke(halo, px, LineType.Custom(DroppedInitialDash))
@@ -1007,9 +1092,11 @@ object TrialScene:
     private def cased(f: TrialFixation): Boolean =
       f.placement == MapPlacement.InWindow && input.marks == MarkStyle.Role(TrialRole.Control)
 
-    // A cased mark is a closed ring with an Intaglio StrokeCasing: Intaglio
-    // paints casings on linear outlines only, not on point marks. The casing
-    // is paint of the ring, not a second grob, so picking sees one target.
+    // A cased mark is a closed ring in the control colour with an Intaglio
+    // StrokeCasing: the halo, or where the scene is inner-cased the inner
+    // casing over an unnamed ring of halo `HaloBandPx` wider either side,
+    // both in a group of the mark's name. The ring carries the name too, so
+    // picking sees one target.
     private def ring(f: TrialFixation, n: GraphicsName): Either[GraphicsError, Grob] =
       val r = pt(radiusPx(f.durationMs))
       def offset(base: LengthExpr, d: Double): Either[GraphicsError, LengthExpr] =
@@ -1026,11 +1113,18 @@ object TrialScene:
             y  <- offset(y0, r * math.sin(a))
           yield ps :+ Point(x, y)
         }
-        gp     <- markParams(f)
-        width  <- StrokeWidth.points(pt(CasingPx))
-        casing <- StrokeCasing.checked(staged(StageToken.Halo), CasingWidth.Absolute(width))
+        gp    <- markParams(f)
+        width <- StrokeWidth.points(pt(CasingPx))
+        band = if innerCased then innerCasing else staged(StageToken.Halo)
+        casing <- StrokeCasing.checked(band, CasingWidth.Absolute(width))
         grob   <- Grob.polygon(vertices, gp = gp.withCasing(casing), name = Some(n))
-      yield grob
+        drawn  <-
+          if !innerCased then Right(grob)
+          else
+            stroke(staged(StageToken.Halo), CasingPx + 2.0 * HaloBandPx)
+              .flatMap(Grob.polygon(vertices, _))
+              .map(halo => Grob.group(Vector(halo, grob), name = Some(n)))
+      yield drawn
 
     private def mark(f: TrialFixation, shape: PointShape, n: GraphicsName) =
       if cased(f) then ring(f, n)
@@ -1053,7 +1147,12 @@ object TrialScene:
       val outline = shape match
         case PointShape.Diamond => PointShape.diamondHalfDiagonal(r)
         case _                  => r
-      outline + (if cased(f) then CasingPx else haloPx) / 2.0
+      val band  = if innerCased then 2.0 * HaloBandPx else 0.0
+      val paint =
+        if cased(f) then CasingPx + band
+        else if f.placement == MapPlacement.InWindow then haloPx + band
+        else haloPx
+      outline + paint / 2.0
 
     // One named grob per mark, in fixation order, inside the named marks group.
     private def marks: R[(Vector[Grob], Vector[TrialMark])] =
@@ -1200,6 +1299,7 @@ object TrialScene:
         artGrobs    <- frameArt(art)
         under       <- underlay
         mapGrobs    <- mapLayer
+        crossGrobs  <- cross(art)
         windowGrobs <- window(art)
         orderGrobs  <- order
         marked      <- marks
@@ -1209,7 +1309,8 @@ object TrialScene:
         Vector(
           stage,
           Grob.group(
-            artGrobs ++ under ++ mapGrobs ++ windowGrobs ++ orderGrobs ++ markGrobs,
+            artGrobs ++ under ++ mapGrobs ++ crossGrobs ++ windowGrobs ++ orderGrobs ++
+              markGrobs,
             viewport = Some(viewport),
             name = Some(panel)
           )

@@ -31,6 +31,26 @@ enum WcagError derives CanEqual:
     case TranslucentColour(c) =>
       s"colour ${c.webCss} is translucent; composite it over an opaque colour first"
 
+/** An opaque ground by its sRGB channels, 0 to 255: a composite that no
+  * token names, such as a map cell drawn over the image beneath it.
+  */
+final case class Ground(red: Double, green: Double, blue: Double) derives CanEqual:
+
+  /** `channels` (0 to 255) drawn over this ground at `alpha`, 0 to 1. */
+  def under(red: Double, green: Double, blue: Double, alpha: Double): Ground =
+    def mix(top: Double, base: Double): Double = top * alpha + base * (1.0 - alpha)
+    Ground(mix(red, this.red), mix(green, this.green), mix(blue, this.blue))
+
+object Ground:
+
+  /** An opaque colour as a ground; None for a translucent one, whose ground
+    * depends on what lies beneath it.
+    */
+  def of(colour: Colour): Option[Ground] =
+    Option.when(colour.isOpaque)(
+      Ground(colour.red.toDouble, colour.green.toDouble, colour.blue.toDouble)
+    )
+
 /** WCAG 2.2 contrast and CIE lightness for the token checks (ticket S1.1).
   *
   * Contrast follows the WCAG definition of relative luminance and contrast
@@ -64,6 +84,15 @@ object Wcag:
       val b = luminance(channels(background))
       Right((math.max(a, b) + 0.05) / (math.min(a, b) + 0.05))
 
+  /** The contrast ratio of `foreground` drawn over `ground`, an opaque
+    * composite (a map cell over what lies beneath it) that no token names.
+    */
+  def contrastOn(foreground: Colour, ground: Ground): Double =
+    val bg = (ground.red / 255.0, ground.green / 255.0, ground.blue / 255.0)
+    val a  = luminance(compositeOver(foreground, bg))
+    val b  = luminance(bg)
+    (math.max(a, b) + 0.05) / (math.min(a, b) + 0.05)
+
   /** WCAG relative luminance of an opaque colour, 0 to 1. */
   def relativeLuminance(colour: Colour): Either[WcagError, Double] =
     if colour.isOpaque then Right(luminance(channels(colour)))
@@ -81,10 +110,12 @@ object Wcag:
 
   private def channels(c: Colour): Rgb = (c.red / 255.0, c.green / 255.0, c.blue / 255.0)
 
-  private def composite(fg: Colour, bg: Colour): Rgb =
+  private def composite(fg: Colour, bg: Colour): Rgb = compositeOver(fg, channels(bg))
+
+  private def compositeOver(fg: Colour, bg: Rgb): Rgb =
     val a                                 = fg.alphaPercent / 100.0
     val (fr, fgG, fb)                     = channels(fg)
-    val (br, bgG, bb)                     = channels(bg)
+    val (br, bgG, bb)                     = bg
     def mix(f: Double, b: Double): Double = f * a + b * (1.0 - a)
     (mix(fr, br), mix(fgG, bgG), mix(fb, bb))
 

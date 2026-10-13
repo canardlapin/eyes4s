@@ -34,8 +34,11 @@ import eyes4s.studio.core.selection.{
 }
 import eyes4s.plan.{MapPlacement, OffWindowPolicy}
 import eyes4s.studio.viz.plot.{
+  IntaglioColours,
   MarkInputEvent,
   MarkInputState,
+  OverlayPalette,
+  OverlayRing,
   OverlayRings,
   PlotSurface,
   PlotTransform,
@@ -553,6 +556,68 @@ class RovingCursorSuite extends ScalaCheckSuite:
       2.0 * OverlayRings.SelectedBandPx * 2.0,
       1e-9
     )
+  }
+
+  test("on a stage the focus ring wears the inner casing inside the halo") {
+    import eyes4s.studio.app.maps.StageCasing
+    import eyes4s.studio.app.tokens.{StageToken, ThemedToken, TokenRef, TokenUsage, Tokens}
+    import intaglio.{CasingWidth, Grob, Point, StrokeWidth}
+    val ring = OverlayRing(
+      RingKind.Focus,
+      StudioRef.Fixation(ret07, right(FixationIndex.of(1))),
+      DevicePoint(50, 50),
+      10.0
+    )
+    def polygons(palette: OverlayPalette, k: Double): Vector[Grob.Polygon] =
+      right(OverlayRings.scene(Vector(ring), palette, 100, 100, k)).grobs
+        .flatMap(_.children)
+        .collect { case p: Grob.Polygon => p }
+    // A round band's first vertex lies at angle 0, `at` right of the centre.
+    def startsAt(p: Grob.Polygon, at: Double): Unit =
+      assertEquals(p.points.head, right(Point.native(50.0 + at, 50.0)))
+    for
+      theme <- Theme.values.toList
+      stage <- StageVariant.values.toList
+      k     <- List(1.0, 2.0)
+    do
+      val ink = (c: eyes4s.studio.app.tokens.Colour) => IntaglioColours.toIntaglio(c)
+      // The accent needs its inner casing on every stage (StageCasing).
+      assertEquals(
+        OverlayPalette.of(theme, stage).focusInner.nonEmpty,
+        StageCasing.needed(TokenRef.Themed(ThemedToken.Accent), theme, stage)
+      )
+      polygons(OverlayPalette.of(theme, stage), k) match
+        case Vector(halo, accent) =>
+          // Halo 1 px, inner casing 1 px, accent 2 px, inner casing, halo: the
+          // innermost band starts at the ring's radius.
+          assertEquals(halo.gp.stroke, Some(ink(Tokens.staged(stage, StageToken.Halo))))
+          assertEqualsDouble(
+            halo.gp.lineWidth,
+            (OverlayRings.FocusCasingPx + 2.0 * OverlayRings.FocusHaloBandPx) * k,
+            1e-9
+          )
+          assertEquals(accent.gp.stroke, Some(ink(Tokens.themed(theme, ThemedToken.Accent))))
+          assertEqualsDouble(accent.gp.lineWidth, OverlayRings.FocusPx * k, 1e-9)
+          assertEquals(
+            accent.gp.casing.map(c => (c.color, c.width)),
+            Some(
+              ink(Tokens.resolve(TokenUsage.innerCasing(stage), theme, stage)) ->
+                CasingWidth.Absolute(
+                  StrokeWidth.devicePixelsUnsafe(OverlayRings.FocusCasingPx * k)
+                )
+            )
+          )
+          startsAt(halo, 10.0 + 3.0 * k)
+          startsAt(accent, 10.0 + 3.0 * k)
+        case other => fail(s"$theme ${stage.cssName}: $other")
+      // On a pane surface the ring keeps its one surface casing.
+      polygons(OverlayPalette.onSurface(theme), k) match
+        case Vector(accent) =>
+          assertEquals(
+            accent.gp.casing.map(_.color),
+            Some(ink(Tokens.themed(theme, ThemedToken.Surface)))
+          )
+        case other => fail(s"$theme on surface: $other")
   }
 
   test("the focused mark's accessible text comes from its semantic id") {

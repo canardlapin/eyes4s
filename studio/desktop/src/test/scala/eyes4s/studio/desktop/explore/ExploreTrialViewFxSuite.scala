@@ -26,7 +26,9 @@ import eyes4s.studio.core.fixture.StoryMoment
 import eyes4s.studio.desktop.StudioWindow
 import eyes4s.studio.desktop.harness.FxStage
 import eyes4s.studio.desktop.shell.ShellFxSuite
-import eyes4s.studio.desktop.trial.TrialViewStatus
+import eyes4s.studio.desktop.plot.PlotHostStatus
+import eyes4s.studio.desktop.trial.{MapLegendPlacement, TrialViewStatus}
+import eyes4s.studio.viz.maps.MapLegendScene
 import eyes4s.studio.viz.trial.{MarkStyle, TrialScene}
 import intaglio.{Grob, value}
 import javafx.scene.Node
@@ -131,7 +133,10 @@ class ExploreTrialViewFxSuite extends ShellFxSuite:
         "Outside the analysis window · excluded from the map",
         "Order between fixation centres, not measured saccades",
         "Image",
-        "Preview density · σ 2° · not a result"
+        "Preview density · σ 2° · not a result",
+        "0",
+        "max · fixation duration mass per cell",
+        "50% · 90% of mass"
       )
     )
   }
@@ -176,4 +181,49 @@ class ExploreTrialViewFxSuite extends ShellFxSuite:
     fire(fx, p.toggles(TrialToggle.Map))
     assertEquals(runOnFx(p.mapLabel.getText), "Map: preview · σ 2° · not a result")
     eventually(fx, "the preview map again")(scene(w).exists(_.map.isDefined))
+  }
+
+  fxStage.test("the preview map's legend keys are in the legend row, none under the stage") {
+    fx =>
+      val w     = ready(fx)
+      val p     = w.explore.pane
+      val trial = w.explore.trialView
+      // The map has its legend (its description ends the trial's), placed in
+      // the host's row: the view draws none and keeps no room for one.
+      eventually(fx, "the preview map's legend")(runOnFx(trial.legend).isDefined)
+      assertEquals(runOnFx(trial.legendPlacement), MapLegendPlacement.InHostLegend)
+      assert(!runOnFx(trial.legendPlotHost.isVisible), "a legend is drawn under the stage")
+      assert(!runOnFx(trial.legendUnderTrial))
+      // The keys follow the preview map's entry, as Explore.dc.html has them.
+      val row = runOnFx(p.legend.getChildren.asScala.toVector)
+      val at  = row.indexWhere(n => n eq p.rampItem)
+      assert(at > 0, "no ramp key in the legend row")
+      assertEquals(row.lift(at + 1).map(_ eq p.isolineItem), Some(true))
+      assertEquals(
+        runOnFx(all(row(at - 1)).collect { case l: Labeled => l.getText }),
+        Vector("Preview density · σ 2° · not a result")
+      )
+      // Each key draws the legend's own pieces, at the key's size.
+      eventually(fx, "the keys drawn")(runOnFx {
+        Vector(p.rampKey, p.isolineKey).forall(_.status.get match
+          case PlotHostStatus.Drawn(_) => true
+          case _                       => false)
+      })
+      assertEquals(
+        runOnFx((p.rampKey.getWidth, p.rampKey.getHeight)),
+        (MapLegendScene.RampKeyWidthPx, MapLegendScene.RampKeyHeightPx)
+      )
+      assertEquals(
+        runOnFx((p.isolineKey.getWidth, p.isolineKey.getHeight)),
+        (MapLegendScene.IsolineKeyWidthPx, MapLegendScene.IsolineKeyHeightPx)
+      )
+      // Where the map fades out is said to assistive technology (and shown as
+      // the key's tooltip), as the board's title says it.
+      val said = runOnFx(Option(p.rampItem.getAccessibleText))
+      assert(said.exists(_.contains("fading out below 10 percent of max")), said)
+      // Map off: no keys.
+      fire(fx, p.toggles(TrialToggle.Map))
+      eventually(fx, "the scene without its map")(scene(w).exists(_.map.isEmpty))
+      val bare = runOnFx(p.legend.getChildren.asScala.toVector)
+      assert(!bare.exists(n => (n eq p.rampItem) || (n eq p.isolineItem)), bare)
   }

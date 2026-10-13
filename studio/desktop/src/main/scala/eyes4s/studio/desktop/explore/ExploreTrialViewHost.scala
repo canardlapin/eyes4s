@@ -30,7 +30,15 @@ import eyes4s.studio.core.backend.{
 }
 import eyes4s.studio.core.document.{DatasetRevisionSpec, Perspective}
 import eyes4s.studio.desktop.runtime.StudioSession
-import eyes4s.studio.desktop.trial.{MapRequest, StimulusSource, TrialInputAdapter, TrialView}
+import eyes4s.studio.app.tokens.Theme
+import eyes4s.studio.desktop.trial.{
+  MapLegendPlacement,
+  MapRequest,
+  StimulusSource,
+  TrialInputAdapter,
+  TrialView
+}
+import eyes4s.studio.viz.maps.{MapLegendKeys, MapLegendScene}
 import eyes4s.studio.viz.trial.{
   MapCoverage,
   MarkStyle,
@@ -101,6 +109,9 @@ final class ExploreTrialViewHost(
 
   val trialView: TrialView       = TrialView(stimuli)
   val pane: ExploreTrialViewPane = ExploreTrialViewPane(dispatch, trialView, step)
+  // The preview map's legend goes in the legend row, as the Explore board
+  // has it, not under the stage (review ticket 17).
+  trialView.placeLegend(MapLegendPlacement.InHostLegend)
 
   /** The marks' input (S6.6): a pick, Enter or Escape selects through the
     * one selection, as every Explore view does.
@@ -166,6 +177,8 @@ final class ExploreTrialViewHost(
   def dispose(): Unit =
     input.dispose()
     trialView.dispose()
+    pane.rampKey.dispose()
+    pane.isolineKey.dispose()
 
   private def render(m: AppModel): Unit =
     val vm               = ExploreTrialViewVM.of(view, m)
@@ -174,22 +187,38 @@ final class ExploreTrialViewHost(
         val (i, r) = ExploreTrialViewHost.sceneInput(s)
         (Some(i), r)
       )
+    val request = vm.shown.flatMap(
+      ExploreTrialViewHost.mapRequest(_, m.document.presentation.mapOpacity.value)
+    )
     pane.render(
       vm,
       refused,
-      (ExploreLinked.canStep(view, m, -1), ExploreLinked.canStep(view, m, 1))
+      (ExploreLinked.canStep(view, m, -1), ExploreLinked.canStep(view, m, 1)),
+      for
+        r <- request
+        s <- vm.shown
+        k <- legendKeys(r.opacity, s.theme)
+      yield k
     )
     changed.foreach(_())
     follow(m)
     if input != drawn then
       drawn = input
       input.fold(trialView.clear())(trialView.show)
-    val request = vm.shown.flatMap(
-      ExploreTrialViewHost.mapRequest(_, m.document.presentation.mapOpacity.value)
-    )
     if request != mapped then
       mapped = request
       trialView.showMap(request)
+
+  // The legend keys at the map's opacity in the theme, built again only when
+  // either changes; keys Intaglio refused are not shown.
+  private var keyed: Option[((MapOpacity, Theme), Option[MapLegendKeys])]          = None
+  private def legendKeys(opacity: MapOpacity, theme: Theme): Option[MapLegendKeys] =
+    keyed match
+      case Some((at, keys)) if at == (opacity, theme) => keys
+      case _                                          =>
+        val keys = MapLegendScene.keys(opacity, theme).toOption
+        keyed = Some(((opacity, theme), keys))
+        keys
 
   // The trail follows the selected fixation to its fixation and record crumbs.
   // Asked after the update that shows it, never from inside one.

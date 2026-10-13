@@ -16,6 +16,8 @@
 
 package eyes4s.studio.app.tokens
 
+import eyes4s.studio.app.maps.StageCasing
+
 /** WCAG contrast of every token pair the design draws, in both themes and on
   * every stage (ticket S1.1). Runs on the JVM and on Scala.js.
   */
@@ -206,6 +208,60 @@ class TokenContrastSuite extends munit.FunSuite:
         s"--${rule.mark.cssName} passes without its --${rule.casing.cssName} casing: " +
           "the rule is not needed"
       )
+    }
+  }
+
+  // A stage mark over the image frame (DESIGN_SPEC section 15, "Stage
+  // casing"): the markFailures rule with two bands, the stage halo and the
+  // inner casing inside it where StageCasing applies it. `inner = false`
+  // measures the halo alone.
+  private def frameFailures(inner: Boolean): List[String] =
+    for
+      theme  <- Theme.values.toList
+      stage  <- StageVariant.values.toList
+      ground <- TokenUsage.mapGrounds ++ TokenUsage.imageGrounds
+      mark   <- TokenUsage.innerCased
+      bg   = Tokens.resolve(ground, theme, stage)
+      m    = ratio(Tokens.resolve(mark, theme, stage), bg)
+      halo = ratio(Tokens.staged(stage, StageToken.Halo), bg)
+      in   = ratio(Tokens.resolve(TokenUsage.innerCasing(stage), theme, stage), bg)
+      if m < Wcag.NonTextMinimum && halo < Wcag.NonTextMinimum &&
+        (!inner || !StageCasing.needed(mark, theme, stage) || in < Wcag.NonTextMinimum)
+    yield f"${label(theme, stage, true)}: --${mark.cssName} on --${ground.cssName}: " +
+      f"mark $m%.2f, halo $halo%.2f, inner casing $in%.2f < ${Wcag.NonTextMinimum}%.1f"
+
+  test(
+    "over map and image grounds, a stage mark or focus ring reaches 3:1 as StageCasing cases it"
+  ) {
+    // Both themes x three stages x (map cells, the blank screen).
+    val failures = frameFailures(inner = true)
+    assert(failures.isEmpty, failures.mkString("\n", "\n", ""))
+  }
+
+  test("the inner casing is needed: the stage halo alone leaves marks below 3:1") {
+    val bare = frameFailures(inner = false)
+    // White --halo on the blank screen, ink --halo on the darkest map cell.
+    assert(bare.exists(_.startsWith("dark theme, dark stage: --query on --screen")), bare)
+    assert(bare.exists(_.startsWith("light theme, light stage: --query on --ramp-3")), bare)
+    assert(bare.exists(_.contains("--accent on")), bare)
+  }
+
+  test("the inner casing stands off its halo, and the cross reads on every frame ground") {
+    StageVariant.values.foreach { stage =>
+      val halo  = Tokens.staged(stage, StageToken.Halo)
+      val inner = Tokens.resolve(TokenUsage.innerCasing(stage), Theme.Light, stage)
+      assert(
+        ratio(inner, halo) >= Wcag.NonTextMinimum,
+        s"${stage.cssName}: ${ratio(inner, halo)}"
+      )
+      // The fixation cross: --halo ink over the inner-casing tone.
+      (TokenUsage.mapGrounds ++ TokenUsage.imageGrounds).foreach { ground =>
+        val bg = Tokens.resolve(ground, Theme.Light, stage)
+        assert(
+          math.max(ratio(halo, bg), ratio(inner, bg)) >= Wcag.NonTextMinimum,
+          s"${stage.cssName} stage: cross on --${ground.cssName}"
+        )
+      }
     }
   }
 

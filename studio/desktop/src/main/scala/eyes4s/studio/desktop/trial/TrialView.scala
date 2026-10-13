@@ -16,11 +16,13 @@
 
 package eyes4s.studio.desktop.trial
 
-import eyes4s.studio.app.maps.{MapGrid, MapOpacity, MapStyle, RasterKey}
+import eyes4s.studio.app.maps.{LimitsScope, MapGrid, MapOpacity, MapStyle, RasterKey}
 import eyes4s.studio.app.tokens.{StageToken, Tokens}
 import eyes4s.studio.core.assets.{AssetLink, AssetRef}
 import eyes4s.studio.desktop.maps.{MapRasterStore, RasterRefusal}
 import eyes4s.studio.desktop.plot.CanvasPlotHost
+import eyes4s.studio.viz.maps.MapLegendScene
+import eyes4s.studio.viz.plot.PlotSceneError
 import eyes4s.studio.viz.trial.{
   MapCoverage,
   RememberedImage,
@@ -48,15 +50,28 @@ enum TrialViewStatus derives CanEqual:
 
   case Disposed
 
+/** Where a [[TrialView]] shows its map's legend (review ticket 17). */
+enum MapLegendPlacement derives CanEqual:
+
+  /** On its own canvas under the trial's caption, as the Main board does. */
+  case UnderTrial
+
+  /** Not on the stage: the host shows the legend's keys in its own legend
+    * row, as the Explore board does ([[MapLegendScene.keys]]).
+    */
+  case InHostLegend
+
 /** A map to draw over a trial (ticket S4.3b): the run's grid, the style it
-  * is coloured in, the global opacity, and the screen region it covers (a
-  * run's map covers the image frame; a backend preview its window, S6.2).
+  * is coloured in, the global opacity, the screen region it covers (a
+  * run's map covers the image frame; a backend preview its window, S6.2),
+  * and whether the panels shown with it share its limits (its legend says so).
   */
 final case class MapRequest(
     grid: MapGrid,
     style: MapStyle,
     opacity: MapOpacity = MapOpacity.Default,
-    covers: MapCoverage = MapCoverage.ImageFrame
+    covers: MapCoverage = MapCoverage.ImageFrame,
+    limits: LimitsScope = LimitsScope.PerPanel
 ) derives CanEqual:
   def key: RasterKey = RasterKey(grid.map, style)
 
@@ -83,6 +98,14 @@ final case class MapRequest(
   * the map raster cache, rendered off the FX thread; until the raster
   * arrives the trial shows without it. A remembered image shown as an
   * underlay is read like the display's own image.
+  *
+  * Under a drawn mass map the view shows the map's legend
+  * ([[MapLegendScene]], review ticket 17) where the Main board does: on a
+  * second canvas directly below the trial's caption, as wide as the trial,
+  * [[MapLegendScene.HeightPx]] tall. A difference map and no map have none.
+  * The legend's description ends the trial's own (its scene summary). A
+  * host with a legend row of its own places it there instead
+  * ([[placeLegend]]); the view then keeps no room for it.
   */
 final class TrialView(source: StimulusSource, loader: Executor, maps: MapRasterStore)
     extends Region:
@@ -94,8 +117,10 @@ final class TrialView(source: StimulusSource, loader: Executor, maps: MapRasterS
   def this(source: StimulusSource, loader: Executor) =
     this(source, loader, TrialView.sharedMaps)
 
-  private val host = CanvasPlotHost()
-  getChildren.add(host)
+  private val host       = CanvasPlotHost()
+  private val legendHost = CanvasPlotHost()
+  legendHost.getStyleClass.add("map-legend")
+  getChildren.addAll(host, legendHost)
   getStyleClass.add("trial-view")
 
   private val statusWrapper =
@@ -113,6 +138,10 @@ final class TrialView(source: StimulusSource, loader: Executor, maps: MapRasterS
   private var mapLayer: Option[TrialMap]     = None
   private val refusalWrapper                 =
     ReadOnlyObjectWrapper[Option[RasterRefusal]](this, "mapRefused", None)
+  private var legendShown: Option[Either[PlotSceneError, MapLegendScene]] = None
+  private var placement: MapLegendPlacement                               =
+    MapLegendPlacement.UnderTrial
+  legendHost.setVisible(false)
 
   /** What the view shows. */
   def status: ReadOnlyObjectProperty[TrialViewStatus] = statusWrapper.getReadOnlyProperty
@@ -138,6 +167,28 @@ final class TrialView(source: StimulusSource, loader: Executor, maps: MapRasterS
 
   /** The canvas host, for the input adapter (S4.2) and tests. */
   def plotHost: CanvasPlotHost = host
+
+  /** The map legend's canvas host, under the trial's; for tests. */
+  def legendPlotHost: CanvasPlotHost = legendHost
+
+  /** The legend of the map drawn, if the view draws one. */
+  def legend: Option[MapLegendScene] = legendShown.flatMap(_.toOption)
+
+  /** Where the view shows its map's legend. */
+  def legendPlacement: MapLegendPlacement = placement
+
+  /** Shows the map's legend at `where` from now on. */
+  def placeLegend(where: MapLegendPlacement): Unit =
+    onFxThread("placeLegend")
+    if !disposed && where != placement then
+      placement = where
+      showLegend(legendShown.map(_.map(Some(_))))
+
+  /** Whether the legend is drawn under the trial. */
+  def legendUnderTrial: Boolean = legend.isDefined && placement == MapLegendPlacement.UnderTrial
+
+  /** Why the drawn map's legend could not be built, if it could not. */
+  def legendRefused: Option[PlotSceneError] = legendShown.flatMap(_.left.toOption)
 
   /** The input the view shows, if any (its theme, stage and trial, for S4.2). */
   def input: Option[TrialSceneInput] = current
@@ -195,7 +246,7 @@ final class TrialView(source: StimulusSource, loader: Executor, maps: MapRasterS
     then
       answer match
         case Right(raster) =>
-          mapLayer = Some(TrialMap(m.grid, raster, m.opacity, m.covers))
+          mapLayer = Some(TrialMap(m.grid, raster, m.opacity, m.covers, m.limits))
           render()
         case Left(refusal) => refusalWrapper.set(Some(refusal))
 
@@ -206,6 +257,7 @@ final class TrialView(source: StimulusSource, loader: Executor, maps: MapRasterS
       current = None
       aspect = None
       host.clear()
+      showLegend(None)
       statusWrapper.set(TrialViewStatus.Empty)
 
   /** Disposes the canvas host and drops the loaded rasters. Idempotent. */
@@ -220,7 +272,9 @@ final class TrialView(source: StimulusSource, loader: Executor, maps: MapRasterS
       mapRequest = None
       mapLayer = None
       refusalWrapper.set(None)
+      legendShown = None
       host.dispose()
+      legendHost.dispose()
       getChildren.clear()
       statusWrapper.set(TrialViewStatus.Disposed)
 
@@ -274,26 +328,54 @@ final class TrialView(source: StimulusSource, loader: Executor, maps: MapRasterS
             aspect = Some(scene.aspect)
             requestLayout()
           host.show(scene.plot)
+          showLegend(mapLayer.map { m =>
+            MapLegendScene(
+              m.raster.key.style.palette,
+              m.limits,
+              m.opacity,
+              input.theme,
+              input.stage
+            )
+          })
           statusWrapper.set(TrialViewStatus.Shown(scene))
         case Left(error) =>
           aspect = None
           host.clear()
+          showLegend(None)
           statusWrapper.set(TrialViewStatus.Refused(error))
     }
+
+  // Shows the legend `built`, or none: a difference map's is none, and a
+  // refused one is kept as its error and not drawn.
+  private def showLegend(built: Option[Either[PlotSceneError, Option[MapLegendScene]]]): Unit =
+    val next = built.flatMap {
+      case Right(legend) => legend.map(Right(_))
+      case Left(error)   => Some(Left(error))
+    }
+    val was = legendUnderTrial
+    legendShown = next
+    legend.filter(_ => legendUnderTrial) match
+      case Some(l) => legendHost.show(l.plot)
+      case None    => legendHost.clear()
+    legendHost.setVisible(legendUnderTrial)
+    if was != legendUnderTrial then requestLayout()
 
   override protected def layoutChildren(): Unit =
     val w = getWidth
     val h = getHeight
     aspect match
       case Some(a) =>
-        val (fw, fh) = TrialScene.fit(w, h, a)
-        host.resizeRelocate(
-          math.floor((w - fw) / 2.0),
-          math.floor((h - fh) / 2.0),
-          math.floor(fw),
-          math.floor(fh)
-        )
-      case None => host.resizeRelocate(0.0, 0.0, w, h)
+        // The legend, when there is one, sits under the trial's caption; the
+        // trial and its legend are centred together.
+        val below    = if legendUnderTrial then MapLegendScene.HeightPx else 0.0
+        val (fw, fh) = TrialScene.fit(w, math.max(0.0, h - below), a)
+        val left     = math.floor((w - fw) / 2.0)
+        val top      = math.floor((h - fh - below) / 2.0)
+        host.resizeRelocate(left, top, math.floor(fw), math.floor(fh))
+        legendHost.resizeRelocate(left, top + math.floor(fh), math.floor(fw), below)
+      case None =>
+        host.resizeRelocate(0.0, 0.0, w, h)
+        legendHost.resizeRelocate(0.0, h, w, 0.0)
 
   private def onFxThread(operation: String): Unit =
     if !Platform.isFxApplicationThread then
