@@ -739,8 +739,9 @@ object Preflight:
     case PlanError.InvalidOccurrence(_) | PlanError.BlankKeyField(_) |
         PlanError.OccurrenceUnavailable(_, _) | PlanError.MatchedCardinality(_, _, _) =>
       Remedy.ChooseMatchedReference
-    case PlanError.MatchItemConflict(_)     => Remedy.ResolveMatchItemConflict
-    case PlanError.UnmatchedFocalRefused(_) => Remedy.SupplyMatchedReference
+    case PlanError.MatchItemConflict(_)                => Remedy.ResolveMatchItemConflict
+    case PlanError.UnmatchedFocalRefused(_)            => Remedy.SupplyMatchedReference
+    case PlanError.ExpectedUnmatchedSelection(_, _, _) => Remedy.ReconcileMethodDescriptor
     case PlanError.InitialFixations(InitialFixationError.MissingAngularScale(_)) =>
       Remedy.ReviseScaleDeclaration
     case PlanError.InitialFixations(_) => Remedy.ReviseInitialFixationPolicy

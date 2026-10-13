@@ -346,6 +346,7 @@ fails after rewriting, so review the change and run it again.
 | `plan.matched-cardinality` | `MatchedCardinality` | `matched`, `focalDigests`, `referenceGroups` |
 | `plan.unmatched-focal-refused` | `UnmatchedFocalRefused` | `focalDigests` |
 | `plan.initial-fixations` | `InitialFixations` | `underlying` |
+| `plan.expected-unmatched-selection` | `ExpectedUnmatchedSelection` | `column`, `value`, `reason` |
 
 ### `study-failure` — `StudyFailure`
 

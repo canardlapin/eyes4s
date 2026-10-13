@@ -462,7 +462,8 @@ object RecipeDescriptors:
     ),
     info(V.angularScale(unit)),
     info(V.pairing),
-    info(V.initialFixations(unit))
+    info(V.initialFixations(unit)),
+    info(ExpectedUnmatchedForm.view)
   )
 
   private def inspect(

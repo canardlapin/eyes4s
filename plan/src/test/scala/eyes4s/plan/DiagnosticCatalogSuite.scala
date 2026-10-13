@@ -28,8 +28,8 @@ class DiagnosticCatalogSuite extends munit.FunSuite:
   private val all = DiagnosticSamples.all
 
   /** Every issued code, one per line, pinned by count and portable digest. */
-  private val PinnedCount  = 742
-  private val PinnedDigest = "469d9a3c400f0e42"
+  private val PinnedCount  = 743
+  private val PinnedDigest = "799705196164a7c2"
 
   private val TrialEstimateCodes = Set(
     "study-failure.trial-cardinality",
@@ -211,9 +211,10 @@ class DiagnosticCatalogSuite extends munit.FunSuite:
     val rendered = DiagnosticCatalog.issued.map(_.render)
     val stable   =
       rendered.filterNot(code =>
-        Cr5Codes(code) || Cr2Codes(code) || Cr4Codes(code) || SourceCodes(code) || UiECodes(
-          code
-        ) || UiGCodes(code) || UiDCodes(code) || Cr6Codes(code) || Cr6bCodes(code) ||
+        code == "plan.expected-unmatched-selection" ||
+          Cr5Codes(code) || Cr2Codes(code) || Cr4Codes(code) || SourceCodes(code) || UiECodes(
+            code
+          ) || UiGCodes(code) || UiDCodes(code) || Cr6Codes(code) || Cr6bCodes(code) ||
           ActiveSetCodes(code) || Cr6dCodes(code) || S07bCodes(code) || TrialEstimateCodes(code)
       )
     assertEquals(stable.size, StableCount)

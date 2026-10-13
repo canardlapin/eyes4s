@@ -252,6 +252,13 @@ private[codec] object TemporalWire:
           "outsideWindowMicros" -> long(windowMicros),
           "totalMicros"         -> long(totalMicros)
         )
+      case ExpectedUnmatchedSelection(column, value, reason) =>
+        tagged(
+          "expectedUnmatchedSelection",
+          "column" -> text(column),
+          "value"  -> text(value),
+          "reason" -> text(reason)
+        )
       case InitialFixations(e) =>
         tagged("initialFixations", "error" -> ResultWire.initialFixationError(e))
 
@@ -311,6 +318,8 @@ private[codec] object TemporalWire:
           Wire.field[Vector[String]](json, "focal"),
           Wire.field[Vector[Vector[String]]](json, "references")
         ).mapN(MatchedCardinality.apply)
+      case "expectedUnmatchedSelection" =>
+        (str("column"), str("value"), str("reason")).mapN(ExpectedUnmatchedSelection.apply)
       case "unmatchedFocalRefused" =>
         Wire.field[Vector[String]](json, "focal").map(UnmatchedFocalRefused.apply)
       case "geometry" => error.flatMap(ResultWire.readGeometryError).map(Geometry.apply)

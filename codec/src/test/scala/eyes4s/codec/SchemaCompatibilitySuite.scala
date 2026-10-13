@@ -79,6 +79,7 @@ class SchemaCompatibilitySuite extends munit.FunSuite:
     Pinned("study-v1", SavedStudyFixtures.versionOne, studies.codec),
     Pinned("study-v2", StudyV2Mirrors.studyVersionTwo, studies.codec),
     Pinned("study-v3", StudyV3Mirrors.studyVersionThree, studies.codec),
+    Pinned("study-v4", StudyV4Mirrors.studyVersionFour, StudyCodecs.trialCosine[Px].codec),
     Pinned(
       "study-trial-v2",
       StudyV2Mirrors.trialStudyVersionTwo,
@@ -231,6 +232,7 @@ class SchemaCompatibilitySuite extends munit.FunSuite:
         "eyes4s.study@1",
         "eyes4s.study@2",
         "eyes4s.study@3",
+        "eyes4s.study@4",
         "eyes4s.temporal-result@1",
         "eyes4s.temporal-study-input@1",
         "eyes4s.temporal-study@1",
@@ -310,7 +312,8 @@ class SchemaCompatibilitySuite extends munit.FunSuite:
           Vector(
             DefinitionId.study,
             StudyCodecDefinitions.studyV2,
-            StudyCodecDefinitions.studyV3
+            StudyCodecDefinitions.studyV3,
+            StudyCodecDefinitions.studyV4
           )
         )
       )
@@ -363,18 +366,19 @@ class SchemaCompatibilitySuite extends munit.FunSuite:
     assertEquals(
       plans
         .decode(
-          withSchema(parse(SavedStudyFixtures.versionOne), "eyes4s.study", Json.fromInt(4))
+          withSchema(parse(SavedStudyFixtures.versionOne), "eyes4s.study", Json.fromInt(5))
         )
         .left
         .toOption,
       Some(
         CodecError.UnsupportedSchema(
           "study plan",
-          id("eyes4s.study", 4),
+          id("eyes4s.study", 5),
           Vector(
             DefinitionId.study,
             StudyCodecDefinitions.studyV2,
-            StudyCodecDefinitions.studyV3
+            StudyCodecDefinitions.studyV3,
+            StudyCodecDefinitions.studyV4
           )
         )
       )

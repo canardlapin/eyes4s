@@ -53,7 +53,8 @@ object DiagnosticCatalog:
     "MatchItemConflict",
     "MatchedCardinality",
     "UnmatchedFocalRefused",
-    "InitialFixations"
+    "InitialFixations",
+    "ExpectedUnmatchedSelection"
   )
   val studyFailure: DiagnosticFamily =
     error("study-failure")(

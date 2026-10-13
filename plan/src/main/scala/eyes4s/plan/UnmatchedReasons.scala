@@ -83,7 +83,8 @@ object UnmatchedReasons:
       pairing: StudyPairing,
       referencePhase: String,
       unmatched: Vector[K],
-      inventory: InventoryLedger
+      inventory: InventoryLedger,
+      expected: Option[ExpectedUnmatched] = None
   ): UnmatchedReasons[K] =
     val sameOccurrence =
       pairing.matched == MatchedReferences.SameOccurrence && layout.occurrence.isDefined
@@ -106,7 +107,8 @@ object UnmatchedReasons:
         .filter(t => selected.forall(_ == t.identity.occurrence.value))
       val admitted = references.filter(_.disposition == TrialDisposition.Admitted)
       key -> (
-        if references.isEmpty then UnmatchedKind.NoReferenceInDesign
+        if expected.exists(_.contains(layout, key)) || references.isEmpty then
+          UnmatchedKind.NoReferenceInDesign
         else if admitted.isEmpty then
           UnmatchedKind.ReferenceNotAdmitted(
             references.map(t => DeclaredReference(t.identity, t.disposition))
@@ -114,6 +116,19 @@ object UnmatchedReasons:
         else UnmatchedKind.ReferenceNotPairable(admitted.map(_.identity))
       )
     })
+
+  /** Declared expected-unmatched trials need no admission inference. */
+  def declared[K](
+      layout: StudyLayout[K],
+      unmatched: Vector[K],
+      expected: Option[ExpectedUnmatched]
+  ): UnmatchedReasons[K] =
+    new UnmatchedReasons(
+      unmatched.map(k =>
+        k -> (if expected.exists(_.contains(layout, k)) then UnmatchedKind.NoReferenceInDesign
+              else UnmatchedKind.Undetermined)
+      )
+    )
 
   /** Every reason undetermined: no inventory was given. */
   def undetermined[K](unmatched: Vector[K]): UnmatchedReasons[K] =

@@ -126,6 +126,7 @@ enum PlanError derives CanEqual:
   )
   case UnmatchedFocalRefused(focalDigests: Vector[String])
   case InitialFixations(underlying: InitialFixationError)
+  case ExpectedUnmatchedSelection(column: String, value: String, reason: String)
 
   def message: String = this match
     case InvalidDefinition(n, v) =>
@@ -175,7 +176,9 @@ enum PlanError derives CanEqual:
       s"Under ${matched.render}, ${parts.mkString(", and ")}; choose an occurrence."
     case UnmatchedFocalRefused(focal) =>
       s"Focal trials $focal have no matched reference, and the plan refuses unmatched focal trials."
-    case InitialFixations(e) => e.message
+    case InitialFixations(e)                               => e.message
+    case ExpectedUnmatchedSelection(column, value, reason) =>
+      s"Expected-unmatched selection on '$column' for '$value': $reason."
 
 /** A registered interpretation of user keys. Identity and matching stay in K.
   *
@@ -882,7 +885,8 @@ final class StudyPlan[K, U <: Unit2D, P, S, D] private (
     val method: StudyMethod[P, U, S, D],
     val parameters: P,
     val pairing: StudyPairing,
-    val initialFixationRule: InitialFixationRule[U]
+    val initialFixationRule: InitialFixationRule[U],
+    val expectedUnmatched: Option[ExpectedUnmatched]
 )(using unit: UnitLabel[U]):
   /** The grid every density lies on. */
   def grid: Grid[U] = geometry.grid
@@ -902,7 +906,7 @@ final class StudyPlan[K, U <: Unit2D, P, S, D] private (
     * matched reference averaged and every fixation kept.
     */
   def isVersion1: Boolean =
-    keepsAllFixations &&
+    expectedUnmatched.isEmpty && keepsAllFixations &&
       pairing.isVersion1 && geometry.isInstanceOf[StudyGeometry.WholeFrame[?]] &&
       angularScale.isEmpty &&
       scales.forall {
@@ -961,7 +965,7 @@ final class StudyPlan[K, U <: Unit2D, P, S, D] private (
       (if pairing.isVersion1 then Vector.empty else pairing.description) ++
       Option
         .unless(keepsAllFixations)("initialFixations" -> initialFixations.parameters)
-        .toVector
+        .toVector ++ expectedUnmatched.toVector.map(s => "expectedUnmatched" -> s.description)
 
   override def equals(other: Any): Boolean = other match
     case that: StudyPlan[?, ?, ?, ?, ?] => description == that.description
@@ -1067,7 +1071,8 @@ final class StudyPlan[K, U <: Unit2D, P, S, D] private (
       method,
       parameters,
       pairing,
-      initialFixations
+      initialFixations,
+      expectedUnmatched
     )
 
   /** One scale's method specification; identical for pure and resumable execution. */
@@ -1219,7 +1224,8 @@ object StudyPlan:
       method: StudyMethod[P, U, S, D],
       parameters: P,
       pairing: StudyPairing = StudyPairing.default,
-      initialFixations: InitialFixationPolicy[U] = InitialFixationPolicy.keepAll[U]
+      initialFixations: InitialFixationPolicy[U] = InitialFixationPolicy.keepAll[U],
+      expectedUnmatched: Option[ExpectedUnmatched] = None
   )(using UnitLabel[U]): Either[PlanError, StudyPlan[K, U, P, S, D]] =
     val needsOccurrence = pairing.matched match
       case MatchedReferences.SameOccurrence | MatchedReferences.Select(_) => true
@@ -1281,5 +1287,6 @@ object StudyPlan:
       method,
       parameters,
       pairing,
-      initial
+      initial,
+      expectedUnmatched
     )

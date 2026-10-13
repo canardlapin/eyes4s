@@ -125,6 +125,34 @@ class PlanCodecLawSuite extends munit.DisciplineSuite:
       (a: TrialPlan, b: TrialPlan) => a.description == b.description && a.input == b.input
     )
   )
+  checkAll(
+    "expected-unmatched study plan",
+    CodecLaws.roundTrip(
+      StudyCodecs.trialCosine[Px].codec,
+      expectedUnmatchedPlans,
+      (a: TrialPlan, b: TrialPlan) => a.description == b.description && a.input == b.input
+    )
+  )
+  test("the selection codec law kills dropped and reassigned declarations") {
+    val codec   = StudyCodecs.trialCosine[Px].codec
+    val same    = (a: TrialPlan, b: TrialPlan) => a.description == b.description
+    val dropped = mutant(codec)(p =>
+      p.revise(Vector(StudyChange.ExpectedUnmatched(p.expectedUnmatched, None))).toOption
+    )
+    val reassigned = mutant(codec)(p =>
+      p.expectedUnmatched.flatMap { s =>
+        ExpectedUnmatched
+          .of(s.column, s.values, s.assignments.map((k, _) => k -> "wrong"))
+          .toOption
+          .flatMap(next =>
+            p.revise(Vector(StudyChange.ExpectedUnmatched(Some(s), Some(next)))).toOption
+          )
+      }
+    )
+    assert(killed(dropped, expectedUnmatchedPlans, same))
+    assert(killed(reassigned, expectedUnmatchedPlans, same))
+    assert(survives(codec, expectedUnmatchedPlans, same))
+  }
   // Every other registered map method on the trial-keyed route.
   ComparisonMethods.all.filterNot(_ eq ComparisonMethods.cosine).foreach { method =>
     checkAll(
@@ -149,7 +177,7 @@ class PlanCodecLawSuite extends munit.DisciplineSuite:
     "trial study plan versions",
     SchemaLadderLaws.ladder(
       StudyCodecs.trialCosine[Px].ladder,
-      trialPlans,
+      Gen.oneOf(trialPlans, expectedUnmatchedPlans),
       (a: TrialPlan, b: TrialPlan) => a.description == b.description && a.input == b.input
     )
   )
@@ -742,6 +770,26 @@ object PlanCodecLawSuite:
   /** Trial-keyed plans under every pairing rule. */
   val trialPlans: Gen[StudyPlan[TrialKey, Px, Unit, Similarity, SignedDifference]] =
     trialSimilarityPlans(ComparisonMethods.cosine)
+
+  /** Nonempty declared selections with trial assignments and occurrence identity. */
+  val expectedUnmatchedPlans: Gen[StudyPlan[TrialKey, Px, Unit, Similarity, SignedDifference]] =
+    for
+      plan       <- trialPlans
+      column     <- labels
+      selected   <- distinctLabels
+      occurrence <- Gen.choose(1, 100)
+      id = sure(
+        TrialIdentity.of(
+          "participant",
+          plan.focalPhase,
+          "probe",
+          sure(TrialOccurrence.of(occurrence))
+        )
+      )
+      selection = sure(
+        ExpectedUnmatched.of(column, Vector(selected._1), Vector(id -> selected._1))
+      )
+    yield sure(plan.revise(Vector(StudyChange.ExpectedUnmatched(None, Some(selection)))))
 
   /** Trial-keyed plans of a registered map method under every pairing rule. */
   def trialSimilarityPlans(

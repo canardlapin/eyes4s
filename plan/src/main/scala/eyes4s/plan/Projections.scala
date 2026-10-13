@@ -129,6 +129,13 @@ private[eyes4s] object Projections:
         val inner = RevisionDiagnostics.initialFixation(underlying)
         diagnostic(C.plan, e, e.message, inner.subject)(cause(inner))
 
+      case ExpectedUnmatchedSelection(column, value, reason) =>
+        diagnostic(C.plan, e, e.message, Vector(Locus.Field("expectedUnmatched")))(
+          name(column),
+          text(value),
+          text(reason)
+        )
+
   def failure[K](e: StudyFailure[K]): Diagnostic[K] =
     import StudyFailure.*
     def trial(key: K, inner: Diagnostic[Nothing]) =

@@ -87,7 +87,8 @@ final case class StudyRecipe[U <: Unit2D](
     angularScale: Option[LinearAngularScale[U]],
     scales: Vector[StudyScale[U]],
     pairing: StudyPairing,
-    initialFixations: InitialFixationPolicy[U]
+    initialFixations: InitialFixationPolicy[U],
+    expectedUnmatched: Option[ExpectedUnmatched] = None
 ):
   /** The plan these values describe with the given input, layout and method,
     * or the first whole-recipe refusal, keyed by the field it concerns.
@@ -125,7 +126,8 @@ final case class StudyRecipe[U <: Unit2D](
           method,
           parameters,
           pairing,
-          initialFixations
+          initialFixations,
+          expectedUnmatched
         )
         .left
         .map(StudyRecipeError.Plan.apply)
@@ -179,8 +181,9 @@ object StudyRecipeError:
       case InvalidOccurrence(_) | OccurrenceUnavailable(_, _) | MatchItemConflict(_) |
           MatchedCardinality(_, _, _) =>
         StudyField.MatchedReferences
-      case UnmatchedFocalRefused(_) => StudyField.UnmatchedFocal
-      case InitialFixations(_)      => StudyField.InitialFixations
+      case UnmatchedFocalRefused(_)            => StudyField.UnmatchedFocal
+      case InitialFixations(_)                 => StudyField.InitialFixations
+      case ExpectedUnmatchedSelection(_, _, _) => StudyField.ExpectedUnmatched
 
 /** The form of a fixation study's recipe: one field per editable recipe
   * field, each parsed on its own (a raw value to a typed value, or a
@@ -435,7 +438,8 @@ final class StudyForm[U <: Unit2D](val context: StudyFormContext[U])(using u: Un
     StudyField.Scales            -> scales,
     StudyField.AngularScale      -> angularScale,
     StudyField.MatchedReferences -> pairing,
-    StudyField.InitialFixations  -> initialFixations
+    StudyField.InitialFixations  -> initialFixations,
+    StudyField.ExpectedUnmatched -> ExpectedUnmatchedForm.field
   )
 
   /** The host views of the fields, in order. */
@@ -457,20 +461,21 @@ final class StudyForm[U <: Unit2D](val context: StudyFormContext[U])(using u: Un
 
   /** Every field parsed on its own; all refusals are reported together. */
   def parse(values: FormValues): Either[FormParse.Refusals, StudyRecipe[U]] =
-    val p       = phases.parse(values.get(phases.view.id))
-    val w       = weight.parse(values.get(weight.view.id))
-    val f       = failurePolicy.parse(values.get(failurePolicy.view.id))
-    val g       = grid.parse(values.get(grid.view.id))
-    val wi      = window.parse(values.get(window.view.id))
-    val o       = offWindow.parse(values.get(offWindow.view.id))
-    val a       = angularScale.parse(values.get(angularScale.view.id))
-    val s       = scales.parse(values.get(scales.view.id))
-    val pa      = pairing.parse(values.get(pairing.view.id))
-    val i       = initialFixations.parse(values.get(initialFixations.view.id))
-    val unknown = values.values.keys.toVector.sortBy(_.value).collect {
+    val p        = phases.parse(values.get(phases.view.id))
+    val w        = weight.parse(values.get(weight.view.id))
+    val f        = failurePolicy.parse(values.get(failurePolicy.view.id))
+    val g        = grid.parse(values.get(grid.view.id))
+    val wi       = window.parse(values.get(window.view.id))
+    val o        = offWindow.parse(values.get(offWindow.view.id))
+    val a        = angularScale.parse(values.get(angularScale.view.id))
+    val s        = scales.parse(values.get(scales.view.id))
+    val pa       = pairing.parse(values.get(pairing.view.id))
+    val i        = initialFixations.parse(values.get(initialFixations.view.id))
+    val expected = ExpectedUnmatchedForm.field.parse(values.get(ExpectedUnmatchedForm.view.id))
+    val unknown  = values.values.keys.toVector.sortBy(_.value).collect {
       case k if !fields.exists(_._2.view.id == k) => FieldError.UnknownField(k)
     }
-    FormParse.errors(p, w, f, g, wi, o, a, s, pa, i) match
+    FormParse.errors(p, w, f, g, wi, o, a, s, pa, i, expected) match
       case Some(refusals) => Left(refusals.appendVector(unknown))
       case None           =>
         cats.data.NonEmptyVector.fromVector(unknown).toLeft(()).flatMap { _ =>
@@ -485,7 +490,8 @@ final class StudyForm[U <: Unit2D](val context: StudyFormContext[U])(using u: Un
             s1  <- s
             pa1 <- pa
             i1  <- i
-          yield StudyRecipe(context, p1, w1, f1, g1, wi1, o1, a1, s1, pa1, i1)).left.map(
+            e1  <- expected
+          yield StudyRecipe(context, p1, w1, f1, g1, wi1, o1, a1, s1, pa1, i1, e1)).left.map(
             cats.data.NonEmptyVector.one
           )
         }
@@ -496,16 +502,17 @@ final class StudyForm[U <: Unit2D](val context: StudyFormContext[U])(using u: Un
       case StudyGeometry.Windowed(win, _, policy) => (Some(win), Some(policy))
       case _                                      => (None, None)
     FormValues.of(
-      phases.view.id           -> phases.raw(StudyPhases.of(plan)),
-      weight.view.id           -> weight.raw(plan.weight),
-      failurePolicy.view.id    -> failurePolicy.raw(plan.policy),
-      grid.view.id             -> grid.raw(GridCells.of(plan.grid)),
-      window.view.id           -> window.raw(w),
-      offWindow.view.id        -> offWindow.raw(o),
-      angularScale.view.id     -> angularScale.raw(plan.angularScale),
-      scales.view.id           -> scales.raw(plan.scales),
-      pairing.view.id          -> pairing.raw(plan.pairing),
-      initialFixations.view.id -> initialFixations.raw(plan.initialFixations)
+      phases.view.id                -> phases.raw(StudyPhases.of(plan)),
+      weight.view.id                -> weight.raw(plan.weight),
+      failurePolicy.view.id         -> failurePolicy.raw(plan.policy),
+      grid.view.id                  -> grid.raw(GridCells.of(plan.grid)),
+      window.view.id                -> window.raw(w),
+      offWindow.view.id             -> offWindow.raw(o),
+      angularScale.view.id          -> angularScale.raw(plan.angularScale),
+      scales.view.id                -> scales.raw(plan.scales),
+      pairing.view.id               -> pairing.raw(plan.pairing),
+      initialFixations.view.id      -> initialFixations.raw(plan.initialFixations),
+      ExpectedUnmatchedForm.view.id -> ExpectedUnmatchedForm.field.raw(plan.expectedUnmatched)
     )
 
 object StudyForm:
@@ -543,7 +550,8 @@ object StudyForm:
     case StudyField.MatchedReferences | StudyField.ControlReferences |
         StudyField.UnmatchedFocal =>
       Some(ids.pairing)
-    case StudyField.InitialFixations => Some(ids.initialFixations)
+    case StudyField.InitialFixations  => Some(ids.initialFixations)
+    case StudyField.ExpectedUnmatched => Some(ExpectedUnmatchedForm.view.id)
 
   /** The token prefix of a scale declared in degrees. */
   val degrees: String = "degrees."

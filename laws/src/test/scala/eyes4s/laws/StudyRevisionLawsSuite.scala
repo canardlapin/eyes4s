@@ -398,6 +398,8 @@ object StudyRevisionLawsSuite:
       case StudyChange.Unmatched(_, a)    => StudyChange.Unmatched(self.pairing.unmatched, a)
       case StudyChange.InitialFixations(_, a) =>
         StudyChange.InitialFixations(self.initialFixations, a)
+      case StudyChange.ExpectedUnmatched(_, a) =>
+        StudyChange.ExpectedUnmatched(self.expectedUnmatched, a)
 
   private val otherLayout =
     StudyKey.layout(PlanCodecLawSuite.definition("eyes4s.revised-layout", 1))

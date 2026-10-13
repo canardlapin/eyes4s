@@ -35,6 +35,9 @@ object StudyCodecDefinitions:
   /** A version-2 study plan that also records its initial-fixation policy. */
   val studyV3: DefinitionId = DefinitionId.builtIn("eyes4s.study", 3)
 
+  /** A plan retaining declared expected-unmatched trial assignments. */
+  val studyV4: DefinitionId = DefinitionId.builtIn("eyes4s.study", 4)
+
 /** Codecs for the concrete geometry needed by a fixation study. */
 object StudyCodecs:
   def cosine[U <: Unit2D](using
@@ -144,7 +147,9 @@ final class StudyCodec[K, U <: Unit2D, P, S, D](
   /** The plan schema that also records the initial-fixation policy. */
   val schemaV3: DefinitionId = DefinitionId.builtIn(schema.name, schema.version + 2)
 
-  /** The three plan versions. A version-1 plan maps the whole frame with
+  val schemaV4: DefinitionId = DefinitionId.builtIn(schema.name, schema.version + 3)
+
+  /** The four plan versions. A version-1 plan maps the whole frame with
     * scales in frame units, averages every matched reference and keeps every
     * fixation; a version-2 plan keeps every fixation. A plan is written under
     * the earliest version that expresses it, so version-1 and version-2
@@ -153,16 +158,39 @@ final class StudyCodec[K, U <: Unit2D, P, S, D](
     */
   val ladder: SchemaLadder[StudyPlan[K, U, P, S, D]] =
     SchemaLadder
-      .of[StudyPlan[K, U, P, S, D]]("study plan", schema)(write)(read(_, version = 1))
-      .next(_.isVersion1, StudyCodec.upcastV1)(writeVersion2)(read(_, version = 2))
-      .next(_.keepsAllFixations, StudyCodec.upcastV2)(plan =>
-        writeVersion2(plan).map(
+      .of[StudyPlan[K, U, P, S, D]]("study plan", schema)(legacy(write))(read(_, version = 1))
+      .next(_.isVersion1, StudyCodec.upcastV1)(legacy(writeVersion2))(read(_, version = 2))
+      .next(p => p.keepsAllFixations && p.expectedUnmatched.isEmpty, StudyCodec.upcastV2)(
+        plan =>
+          legacy(writeVersion2)(plan).map(
+            Wire.append(
+              _,
+              Json.obj("initialFixations" -> StudyWire.initialFixations(plan.initialFixations))
+            )
+          )
+      )(read(_, version = 3))
+      .next(
+        _.expectedUnmatched.isEmpty,
+        p => Wire.append(p, Json.obj("expectedUnmatched" -> Json.Null))
+      )(plan =>
+        writeVersion2(plan).map(p =>
           Wire.append(
-            _,
-            Json.obj("initialFixations" -> StudyWire.initialFixations(plan.initialFixations))
+            p,
+            Json.obj(
+              "initialFixations"  -> StudyWire.initialFixations(plan.initialFixations),
+              "expectedUnmatched" -> plan.expectedUnmatched
+                .fold(Json.Null)(StudyWire.expectedUnmatched)
+            )
           )
         )
-      )(read(_, version = 3))
+      )(read(_, version = 4))
+
+  private def legacy(writePlan: StudyPlan[K, U, P, S, D] => Either[CodecError, Json])(
+      plan: StudyPlan[K, U, P, S, D]
+  ): Either[CodecError, Json] =
+    if plan.expectedUnmatched.nonEmpty then
+      Left(CodecError.Unsupported("study plan", "expected-unmatched selection needs version 4"))
+    else writePlan(plan)
 
   /** The version-2 payload: `estimates` replaced by the declared `scales`. */
   private def writeVersion2(plan: StudyPlan[K, U, P, S, D]): Either[CodecError, Json] =
@@ -243,6 +271,11 @@ final class StudyCodec[K, U <: Unit2D, P, S, D](
       .flatMap(found => Either.cond(found == expected, (), CodecError.Schema(expected, found)))
 
   private def read(json: Json, version: Int): Either[CodecError, StudyPlan[K, U, P, S, D]] = for
+    _ <- Either.cond(
+      version >= 4 || !json.hcursor.downField("expectedUnmatched").focus.exists(j => !j.isNull),
+      (),
+      CodecError.Unsupported("study plan", "expected-unmatched selection needs version 4")
+    )
     _      <- requireId(json, "layout", layout.id)
     _      <- requireId(json, "keySchema", keys.schema)
     _      <- requireId(json, "method", method.id)
@@ -304,6 +337,12 @@ final class StudyCodec[K, U <: Unit2D, P, S, D](
               Wire
                 .field[Json](json, "initialFixations")
                 .flatMap(StudyWire.readInitialFixations[U])
+          expected <-
+            if version < 4 then Right(None)
+            else
+              Wire
+                .field[Option[Json]](json, "expectedUnmatched")
+                .flatMap(_.filterNot(_.isNull).traverse(StudyWire.readExpectedUnmatched))
           plan <- StudyPlan
             .configure(
               input,
@@ -318,7 +357,8 @@ final class StudyCodec[K, U <: Unit2D, P, S, D](
               method,
               params,
               pairing,
-              initial
+              initial,
+              expected
             )
             .left
             .map(CodecError.Definition.apply)
@@ -570,7 +610,46 @@ private[codec] object StudyWire:
         Left(CodecError.Field("matched", json, s"unknown matched-reference rule $other"))
     }
 
-  private val controlNames   = ControlReferences.values.toVector.map(v => v -> v.name)
+  private val controlNames = ControlReferences.values.toVector.map(v => v -> v.name)
+  def expectedUnmatched(value: ExpectedUnmatched): Json = Json.obj(
+    "column"      -> Json.fromString(value.column),
+    "values"      -> Json.arr(value.values.map(Json.fromString)*),
+    "assignments" -> Json.arr(value.assignments.map { (t, v) =>
+      Json.obj(
+        "participant" -> Json.fromString(t.participant),
+        "phase"       -> Json.fromString(t.phase),
+        "trial"       -> Json.fromString(t.trial),
+        "occurrence"  -> Json.fromInt(t.occurrence.value),
+        "value"       -> Json.fromString(v)
+      )
+    }*)
+  )
+
+  def readExpectedUnmatched(json: Json): Either[CodecError, ExpectedUnmatched] =
+    for
+      column      <- Wire.field[String](json, "column")
+      values      <- Wire.field[Vector[String]](json, "values")
+      raw         <- Wire.field[Vector[Json]](json, "assignments")
+      assignments <- raw.traverse { j =>
+        for
+          p          <- Wire.field[String](j, "participant")
+          phase      <- Wire.field[String](j, "phase")
+          trial      <- Wire.field[String](j, "trial")
+          n          <- Wire.field[Int](j, "occurrence")
+          occurrence <- TrialOccurrence.of(n).left.map(CodecError.Definition.apply)
+          id         <- TrialIdentity
+            .of(p, phase, trial, occurrence)
+            .left
+            .map(CodecError.Definition.apply)
+          value <- Wire.field[String](j, "value")
+        yield id -> value
+      }
+      selection <- ExpectedUnmatched
+        .of(column, values, assignments)
+        .left
+        .map(CodecError.Definition.apply)
+    yield selection
+
   private val unmatchedNames = UnmatchedFocalPolicy.values.toVector.map(v => v -> v.name)
 
   def pairing(value: StudyPairing): Json = Json.obj(

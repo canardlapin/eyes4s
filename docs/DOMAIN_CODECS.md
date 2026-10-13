@@ -147,7 +147,7 @@ binocular recording, recording input, temporal input, timeline, manifest, the fo
 difference schemas, the recording and temporal result archives, the covariate schema, report
 specification and report of [reducing study results](REDUCING_RESULTS.md), and the conventional
 `eyes4s.recording-plan@1` and `eyes4s.temporal-study@1` plan schemas), plus a pinned v2 document
-of the study plan and admission ledger and a pinned v3 document of each, with a test that fails if a pinned schema version is
+of the study plan and admission ledger and a pinned v3 document of each and a pinned v4 study plan, with a test that fails if a pinned schema version is
 missing, and the packed recording,
 whose decoder also takes its payloads. The schema registry described under
 [Evidence](#evidence) checks the same fixtures on the JVM.
@@ -173,7 +173,11 @@ meaning, in every later release. The study plan and the admission ledger have a 
 `admission-ledger-v2.json`), and both a version 3: `eyes4s.admission-ledger@3` (declared in
 `InventoryDefinitions` and pinned by `admission-ledger-v3.json`) adds the trial inventory, and
 `eyes4s.study@3` (declared in `StudyCodecDefinitions` and pinned by `study-v3.json`) adds the
-initial-fixation policy. A version-1 document decodes with its version-1 meaning (the whole frame,
+initial-fixation policy. `eyes4s.study@4` (also in `StudyCodecDefinitions`, pinned by
+`study-v4.json`) adds the expected-unmatched selection: a declared text column, its selected
+values, and assignments keyed by participant, phase, trial and occurrence. Selected trials
+remain counted but receive neither matched nor control pairs, even when item IDs collide.
+Older plan versions refuse that field rather than dropping its meaning. A version-1 document decodes with its version-1 meaning (the whole frame,
 scales in frame units, every matched reference averaged, every fixation kept, and the admission
 policy that quarantines off-screen records), a version-2 plan keeps every fixation, and a document
 older than the version that introduced a cause may not name it. For every other schema, version 1 is the first version, so every current decoder reads exactly
@@ -190,7 +194,8 @@ from a payload of the previous version to a payload of the new version with the 
 version cannot exist without its upcast, and `ladder.codec` is the `VersionedCodec` the schema
 ships. The upcasts state what an earlier version left implicit: the study plan's v1 to v2 upcast
 turns `estimates` into native `scales` and writes the whole-frame geometry, the version-1 pairing
-and no angular scale, and its v2 to v3 upcast writes `"initialFixations": {"kind": "keepAll"}`;
+and no angular scale, its v2 to v3 upcast writes `"initialFixations": {"kind": "keepAll"}`, and its v3 to v4
+upcast writes `"expectedUnmatched": null`;
 the ledger's v1 to v2 upcast writes the version-1 admission policy and no records outside the
 frame, and its v2 to v3 upcast writes `"inventory": null`.
 

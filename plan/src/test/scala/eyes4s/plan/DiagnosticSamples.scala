@@ -184,7 +184,12 @@ object DiagnosticSamples:
           Vector(Vector(digest2))
         ),
       PlanError.UnmatchedFocalRefused(Vector(digest)),
-      PlanError.InitialFixations(InitialFixationError.MissingAngularScale(1.5))
+      PlanError.InitialFixations(InitialFixationError.MissingAngularScale(1.5)),
+      PlanError.ExpectedUnmatchedSelection(
+        "old_new",
+        "p1/recognition/r1#1",
+        "missing declaration"
+      )
     ),
     family[StudyFailure[StudyKey]]("StudyFailure")(
       StudyFailure.Frame(k1, frameError),

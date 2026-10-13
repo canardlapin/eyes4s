@@ -212,6 +212,21 @@ object StudyText:
       case Vector(e) => Some(e)
       case _         => None
 
+  private def declaredUnmatched(plan: StudyPlan[?, ?, ?, ?, ?]): Vector[Clause] =
+    plan.expectedUnmatched.toVector.map { selected =>
+      val field = ExpectedUnmatchedForm.view.id
+      Clause(
+        field,
+        Vector(
+          w("Queries whose "),
+          Value(field, TokenRole.Policy, selected.column),
+          w(" is "),
+          Value(field, TokenRole.Policy, selected.values.mkString(" or ")),
+          w(" are unmatched by design and excluded from both pair schedules.")
+        )
+      )
+    }
+
   /** The one-sentence recipe summary of Studio S7.2. */
   def sentence[K, U <: Unit2D, P, S, D](plan: StudyPlan[K, U, P, S, D])(using
       u: UnitLabel[U]
@@ -238,7 +253,7 @@ object StudyText:
             w(".")
           )
         )
-      )
+      ) ++ declaredUnmatched(plan)
     )
 
   /** The methods text of Studio S9.4: one clause per recipe field the plan
@@ -419,7 +434,9 @@ object StudyText:
           )
     )
     Phrase(
-      known.admission ++ Vector(comparison, unmatched) ++ known.design ++
+      known.admission ++ Vector(comparison, unmatched) ++ declaredUnmatched(
+        plan
+      ) ++ known.design ++
         Vector(mapped) ++ known.outsideScreen ++ declared ++
         Vector(initialClause, gridClause, scaleClause, metric, contrast, failures) ++
         known.reporting
