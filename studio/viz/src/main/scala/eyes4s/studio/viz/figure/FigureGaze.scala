@@ -34,6 +34,11 @@ import eyes4s.studio.viz.trial.{
   * fixations as the trial view draws them, on a light stage, marked by role
   * (query or matched reference, DESIGN_SPEC section 5). The page and its
   * export draw the same input.
+  *
+  * The panel is the trial scene itself, so a blank + fixation cross display
+  * draws the trial view's cross: a half-arm of [[TrialScene.CrossArmPx]]
+  * native screen pixels, scaled with the panel like the image frame
+  * (DESIGN_SPEC section 15, `FigureGazeSuite`).
   */
 object FigureGaze:
 
