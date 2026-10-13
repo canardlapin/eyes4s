@@ -153,9 +153,10 @@ class CompareSummaryFxSuite extends ShellFxSuite:
       "Per-group n: 2–17 queries per participant",
       "Rev 5 · run 8 running · 48%"
     ).foreach(t => assert(shown.contains(t), s"'$t' not shown in $shown"))
-    assert(!shown.exists(_.startsWith("Paired n")), "the story spec declares no contrast")
-    // Nor, without a declared direction, a paired descriptive.
-    assert(!runOnFx(w.summary.headline.isVisible), "no contrast, no paired headline")
+    // t3's spec declares Remembered − Forgotten (design review ticket 27):
+    // the paired n note and the paired headline.
+    assert(shown.contains("Paired n = 24 participants"), shown)
+    eventually(fx, "the paired headline is shown")(w.summary.headline.isVisible)
     val toggles = runOnFx(
       w.summary.participantNode.lookupAll(".toggle-button").asScala.toVector.collect {
         case b: ToggleButton => (b.getText, b.isDisable, b.isSelected)
@@ -176,26 +177,8 @@ class CompareSummaryFxSuite extends ShellFxSuite:
     fx.snapshot(StudioTheme.Light)
   }
 
-  /** t3 with "By retrieval response" declaring Remembered − Forgotten. */
-  private lazy val contrastedSummary: eyes4s.studio.app.AppModel =
-    val original = StoryModels.t3Summary.document.reporting.head
-    val spec     = eyes4s.studio.core.document.ReportingSpec
-      .of(
-        original.id,
-        original.name,
-        original.groupBy,
-        original.filters,
-        original.minimumPerGroup,
-        original.weighting,
-        eyes4s.studio.core.document.ReportingContrast.of("Remembered", "Forgotten").toOption
-      )
-      .fold(e => fail(e.message), identity)
-    eyes4s.studio.app.AppModel
-      .update(StoryModels.t3Summary, Intent.Dispatch(Command.PutReporting(spec)))
-      ._1
-
   fxStage.test("the headline's paired descriptive reads +0.16, P21 to P15, 24 of 24") { fx =>
-    val w = boot(fx, contrastedSummary, StoryMoment.T3)
+    val w = boot(fx, StoryModels.t3Summary, StoryMoment.T3)
     loaded(fx, w)
     eventually(fx, "the paired headline is shown")(w.summary.headline.isVisible)
     val (texts, inScene, spoken) = runOnFx {

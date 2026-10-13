@@ -42,9 +42,18 @@ class CommandReducerSuite extends munit.FunSuite:
   private val panelA  = right(PanelLetter.of("A"))
   private val eight   = right(Sigma.of(8.0))
 
-  test("Save & run on t2 makes rev 5 and run 8 on r3: the science of t3") {
-    val step = ok(History.start(t2).apply(SaveAndRun(None)))
+  test("Save & run on t2 makes rev 5 and run 8 on r3: with the contrast, the science of t3") {
+    // t3's reporting spec also declares Remembered − Forgotten (design review
+    // ticket 27), which t2's does not: the user declares it before saving.
+    val contrasted = ok(
+      History.start(t2).apply(PutReporting(right(StoryMoments.byResponseContrasted)))
+    )
+    val step = ok(contrasted.history.apply(SaveAndRun(None)))
     assertEquals(step.history.document.science, t3.science)
+    assertNotEquals(
+      ok(History.start(t2).apply(SaveAndRun(None))).history.document.science,
+      t3.science
+    )
     assertEquals(step.effects, Vector(Effect.RequestRun(run8, rev5, r3), Effect.Persist))
     assertEquals(step.history.document.draft, None)
   }

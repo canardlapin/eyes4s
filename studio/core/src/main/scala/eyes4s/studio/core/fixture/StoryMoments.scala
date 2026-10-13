@@ -249,6 +249,26 @@ object StoryMoments:
       spec      <- ReportingSpec.grouped(id, "By retrieval response", Some(covariate))
     yield spec
 
+  /** t3's "By retrieval response", declaring the Results board's direction
+    * Remembered − Forgotten (owner decision 2026-10-12, design review ticket
+    * 27): the paired descriptive needs a declared contrast, since grouping
+    * alone never declares one. t1 and t2 keep the undirected spec.
+    */
+  val byResponseContrasted: Either[DocumentError, ReportingSpec] =
+    for
+      base     <- byResponse
+      contrast <- ReportingContrast.of("Remembered", "Forgotten")
+      spec     <- ReportingSpec.of(
+        base.id,
+        base.name,
+        base.groupBy,
+        base.filters,
+        base.minimumPerGroup,
+        base.weighting,
+        Some(contrast)
+      )
+    yield spec
+
   private def panel(
       letter: String,
       title: String,
@@ -373,7 +393,7 @@ object StoryMoments:
         a3   <- analysis(rev3, r2, scalesRev4)
         a4   <- analysis(rev4, r3, scalesRev4)
         a5   <- analysis(rev5, r3, scalesRev5)
-        rep  <- byResponse
+        rep  <- byResponseContrasted
         f1   <- figure1
         f2   <- figure2
         view <- presentation(Perspective.Compare, run7)

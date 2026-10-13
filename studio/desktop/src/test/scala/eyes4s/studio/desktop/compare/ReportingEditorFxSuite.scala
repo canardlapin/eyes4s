@@ -93,6 +93,16 @@ class ReportingEditorFxSuite extends ShellFxSuite:
     val w = boot(fx, StoryModels.t3Summary, StoryMoment.T3)
     val r = w.reporting
     eventually(fx, "run 7's summary")(r.shown("reuses").contains("35,876"))
+    // t3's story declares the board's direction (design review ticket 27);
+    // clearing it leaves the grouping with no direction at all.
+    assertEquals(
+      runOnFx(w.runtime.model.document.reporting.head.contrast),
+      ReportingContrast.of("Remembered", "Forgotten").toOption
+    )
+    runOnFx(r.clearContrast())
+    eventually(fx, "story contrast removed")(
+      w.runtime.model.document.reporting.head.contrast.isEmpty
+    )
     val before = runOnFx(w.runtime.model)
     assertEquals(before.document.reporting.head.contrast, None)
     runOnFx(r.applyContrast("Remembered", "Forgotten"))

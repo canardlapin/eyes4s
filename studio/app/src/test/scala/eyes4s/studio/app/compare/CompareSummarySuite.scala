@@ -245,8 +245,15 @@ class CompareSummarySuite extends munit.FunSuite:
         )
       )
       val range = served.queryRange(ReportRole.Difference).get
-      assertEquals(served.contrasts, Vector.empty)
-      assert(!vm.notes.exists(_.startsWith("Paired")))
+      // t3's spec declares Remembered − Forgotten (design review ticket 27).
+      val contrast = served.contrast(ReportRole.Difference).getOrElse(fail("no contrast"))
+      assertEquals((contrast.minuend, contrast.subtrahend), (remembered, Response.Forgotten))
+      assertEquals(contrast.pairedN, 24)
+      assert(vm.notes.contains(SummaryText(SummaryTextId.PairedN, "24")), vm.notes)
+      // The headline's paired block at the shown σ (+0.16 at 2°:
+      // PairedDescriptiveSuite).
+      assertEquals(vm.paired, PairedDescriptive.of(served).map(PairedDescriptiveVM.of))
+      assertEquals(vm.paired.map(_.heading), Some("Δ Remembered − Forgotten · paired n 24"))
       assertEquals(
         vm.notes.last,
         SummaryText(SummaryTextId.GroupRange, range.fewest.toString, range.most.toString)
