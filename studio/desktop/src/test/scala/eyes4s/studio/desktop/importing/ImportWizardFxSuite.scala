@@ -614,6 +614,8 @@ class ImportWizardFxSuite extends StudioFxSuite:
     runOnFx(m.view.presetName.setText("Lab"))
     fx.awaitLayout()
     fx.robot.click(m.view.presetSave)
+    runOnFx(m.host.presetWritten).get(30, java.util.concurrent.TimeUnit.SECONDS)
+    fx.awaitLayout()
     assertEquals(drawn(m.view.problem), "Not saved: presets: read-only")
     assertEquals(drawn(m.view.status), "")
   }
