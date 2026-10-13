@@ -19,8 +19,8 @@ package eyes4s.studio.app.compare
 import eyes4s.studio.app.plot.PlotReports
 import eyes4s.studio.app.text.{Format, PairedText, PairedTextId}
 import eyes4s.studio.core.backend.*
-import eyes4s.studio.core.document.{ReportingContrast, ReportingSpec}
-import eyes4s.studio.core.fixture.StoryMoment
+import eyes4s.studio.core.document.ReportingSpec
+import eyes4s.studio.core.fixture.{StoryMoment, StoryMoments}
 import eyes4s.studio.core.headless.HeadlessSession
 import eyes4s.studio.core.selection.{ReportGroup, ScaleIndex, StudioRef}
 
@@ -77,24 +77,10 @@ class PairedDescriptiveSuite extends munit.FunSuite:
   private def two(v: Double): Double =
     BigDecimal(v).setScale(2, BigDecimal.RoundingMode.HALF_UP).toDouble
 
-  private val forward = ok(ReportingContrast.of("Remembered", "Forgotten"))
-
-  /** "By retrieval response" with its direction declared: grouping alone
-    * never declares one (ReportingSpec).
+  /** t3's "By retrieval response", which declares Remembered − Forgotten;
+    * grouping alone never declares a direction (ReportingSpec).
     */
-  private val contrasted: ReportingSpec =
-    val s = PlotReports.spec
-    ok(
-      ReportingSpec.of(
-        s.id,
-        s.name,
-        s.groupBy,
-        s.filters,
-        s.minimumPerGroup,
-        s.weighting,
-        Some(forward)
-      )
-    )
+  private val contrasted: ReportingSpec = ok(StoryMoments.byResponseContrasted)
 
   /** Run 7's native report at σ 2° under `spec`. */
   private def native(spec: ReportingSpec): Future[ReportView] =
