@@ -14502,7 +14502,7 @@
     "method eyes4s.codec.SchemaLadder.upTo(eyes4s.plan.DefinitionId):scala.util.Either": "lawsJVM/eyes4s.laws.TemplateRecipeFixtureJvmSuite",
     "method eyes4s.codec.SchemaLadder.upcast(eyes4s.plan.DefinitionId,io.circe.Json):scala.util.Either": "lawsJVM/eyes4s.laws.SchemaRegistryJvmSuite",
     "method eyes4s.codec.SchemaLadder.upcastTo(eyes4s.plan.DefinitionId,eyes4s.plan.DefinitionId,io.circe.Json):scala.util.Either": "codecJVM/eyes4s.codec.LadderLiftSuite",
-    "method eyes4s.codec.SchemaLadder.writeAt(eyes4s.plan.DefinitionId,java.lang.Object):scala.util.Either": "lawsJVM/eyes4s.laws.SchemaRegistryJvmSuite",
+    "method eyes4s.codec.SchemaLadder.writeAt(eyes4s.plan.DefinitionId,java.lang.Object):scala.util.Either": "codecJVM/eyes4s.codec.ResultPayloadManifestSuite",
     "method eyes4s.codec.ScientificManifest$.address(eyes4s.codec.ScientificManifest):scala.util.Either": "codecJVM/eyes4s.codec.ManifestV1Suite",
     "method eyes4s.codec.ScientificManifest$.bytes(eyes4s.codec.ScientificManifest):scala.util.Either": "codecJVM/eyes4s.repetitionconsumer.RepetitionPlanSuite",
     "method eyes4s.codec.ScientificManifest$.of(scala.collection.immutable.Vector,scala.collection.immutable.Vector):scala.util.Either": "codecJVM/eyes4s.repetitionconsumer.RepetitionPlanSuite",
@@ -18300,6 +18300,7 @@
       "recording payload roles cannot substitute for result payloads",
       "redeclaring chunk bytes and references still cannot change the stored density digest",
       "result payloads require layout and a version-two result owner",
+      "result reference checks stay scoped by result and retain every relation refusal",
       "same bytes with a different layout cannot satisfy an archive chunk reference",
       "unknown role and relation remain typed refusals in manifest@1",
       "unreferenced extra chunks are refused by semantic relation checking"
@@ -22082,6 +22083,7 @@
       "recording payload roles cannot substitute for result payloads",
       "redeclaring chunk bytes and references still cannot change the stored density digest",
       "result payloads require layout and a version-two result owner",
+      "result reference checks stay scoped by result and retain every relation refusal",
       "same bytes with a different layout cannot satisfy an archive chunk reference",
       "unknown role and relation remain typed refusals in manifest@1",
       "unreferenced extra chunks are refused by semantic relation checking"
