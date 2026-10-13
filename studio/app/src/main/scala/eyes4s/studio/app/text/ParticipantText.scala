@@ -42,6 +42,30 @@ enum ParticipantTextId derives CanEqual:
     */
   case Queries, OneQuery, Participants, OneParticipant
 
+  /** The annotation column's lines (review ticket 26; the Results board's
+    * notes beside the plot): the selected participant's heading, a
+    * participant with failed queries' heading, its contributing queries, its
+    * mean in a group (shown with the group's short name, spoken with its
+    * whole one), its failed queries in all and by group, why a failed query
+    * has no value, and the line that counts the blocks left out.
+    */
+  case NoteSelected, NoteFailedHeading, NoteContributing
+  case NoteGroupMean, NoteGroupMeanSpoken, NoteGroupNoValue
+  case NoteFailed, NoteOneFailed, NoteFailedSpoken, NoteOneFailedSpoken, NoteFailedInGroup,
+    NoteFailedByGroup, NoteNoValue
+  case NoteMore, NoteMoreSpoken
+
+  /** How the column's parts are joined: the parts of one line ("2
+    * Remembered, 1 Forgotten") and, when spoken, the lines of a block and
+    * the blocks.
+    */
+  case NoteSeparator, NoteBlockSeparator
+
+  /** The plot's accessible summary when it has annotations: the summary,
+    * then every block's lines as spoken.
+    */
+  case AnnotatedSummary
+
 /** The participant plot's strings in the boards' wording. */
 object ParticipantText:
 
@@ -54,19 +78,37 @@ object ParticipantText:
       case Summary =>
         "Participant plot of {0}: each participant's mean D in {1} groups, lines join a " +
           "participant's means, a tick marks each group's grand mean"
-      case GroupHeader     => "Group"
-      case MeanOfHeader    => "Mean of"
-      case DHeader         => "D"
-      case NHeader         => "n"
-      case AllParticipants => "all participants"
-      case AllQueries      => "All queries"
-      case DAxis           => "D (Δ cosine), participant mean"
-      case NoValue         => "no value"
-      case GroupN          => "n = {0}"
-      case Queries         => "{0} queries"
-      case OneQuery        => "1 query"
-      case Participants    => "{0} participants"
-      case OneParticipant  => "1 participant"
+      case GroupHeader         => "Group"
+      case MeanOfHeader        => "Mean of"
+      case DHeader             => "D"
+      case NHeader             => "n"
+      case AllParticipants     => "all participants"
+      case AllQueries          => "All queries"
+      case DAxis               => "D (Δ cosine), participant mean"
+      case NoValue             => "no value"
+      case GroupN              => "n = {0}"
+      case Queries             => "{0} queries"
+      case OneQuery            => "1 query"
+      case Participants        => "{0} participants"
+      case OneParticipant      => "1 participant"
+      case NoteSelected        => "{0} · selected"
+      case NoteFailedHeading   => "{0} · {1} of {2} contributing"
+      case NoteContributing    => "{0} of {1} contributing"
+      case NoteGroupMean       => "{0} {1} (n {2})"
+      case NoteGroupMeanSpoken => "{0} {1}, n {2}"
+      case NoteGroupNoValue    => "{0} no value"
+      case NoteFailed          => "{0} failed queries:"
+      case NoteOneFailed       => "1 failed query:"
+      case NoteFailedSpoken    => "{0} failed queries"
+      case NoteOneFailedSpoken => "1 failed query"
+      case NoteFailedInGroup   => "{0} {1}"
+      case NoteFailedByGroup   => "{0}"
+      case NoteNoValue         => "no value, not zero"
+      case NoteMore            => "+{0} more"
+      case NoteMoreSpoken      => "{0} more participants not annotated"
+      case NoteSeparator       => ", "
+      case NoteBlockSeparator  => "; "
+      case AnnotatedSummary    => "{0}. Annotations: {1}"
 
   /** "2 queries": the n of a participant's mean in a group. */
   def queries(n: Int): String =
