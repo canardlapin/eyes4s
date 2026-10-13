@@ -119,7 +119,8 @@ class FigureComposerFxSuite extends ShellFxSuite:
       val w = boot(fx, StoryModels.t2Figures, StoryMoment.T2)
       loaded(fx, w)
       val said = texts(panelNode(w, "C"))
-      assert(said.contains("Highest of 19 controls · street-112"), said)
+      // The control's heading is split over its title row and subtitle row.
+      assert(said.contains("Highest of 19") && said.contains("controls · street-112"), said)
       assert(
         said.contains(
           "Matched 0.73 · highest of 19 controls street-112 0.61 · control mean B 0.35 · D +0.38"
