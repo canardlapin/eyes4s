@@ -223,7 +223,7 @@ object A11yChecks:
     */
   private def drawn(n: Node): Vector[String] =
     n.getScene.getRoot.applyCss()
-    (ancestors(n).toVector ++ all(n).drop(1).take(8)).collect { case r: Region =>
+    (ancestors(n).toVector ++ all(n).drop(1)).collect { case r: Region =>
       Option(r.getBackground).toVector
         .flatMap(_.getFills.asScala.map(f => s"${f.getFill}@${f.getInsets}")) ++
         Option(r.getBorder).toVector
