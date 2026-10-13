@@ -188,6 +188,49 @@ class ResultPayloadManifestSuite extends munit.FunSuite:
     )
   }
 
+  test("result reference checks stay scoped by result and retain every relation refusal") {
+    val codec  = new DensityArchiveCodec(results)
+    val bundle = get(codec.encode(result, DensityStorage.Inline))
+    val inline = get(
+      StoredArtifact.document(
+        "inline-result",
+        ArtifactRole.StudyResult,
+        Json.obj(
+          "schema" -> Wire.id(codec.ladder.latest),
+          "value"  -> get(codec.ladder.writeAt(codec.ladder.latest, bundle.archive))
+        ),
+        None
+      )
+    )
+    val layout =
+      get(PayloadLayout.of(ElementKind.Float64, Vector(1, 1, 1), ArrayOrder.RowMajor))
+    val chunk        = get(PackedArrays.pack(layout, IArray(0.5)))
+    val extra        = get(StoredArtifact.resultPayload("extra", chunk))
+    val first        = ManifestRelation.ResultPayloadOf(inline.name, packed.payloads.head.name)
+    val second       = ManifestRelation.ResultPayloadOf(packed.result.name, extra.name)
+    val third        = ManifestRelation.ResultPayloadOf(inline.name, extra.name)
+    val owned        = packed.payloads.head.entry
+    val firstRefusal = ResolveError.Relation(
+      first,
+      RelationMismatch.UnreferencedPayload(PayloadRef(owned.sha256, owned.layout.get))
+    )
+    val extraRefusal =
+      ResolveError.Relation(second, RelationMismatch.UnreferencedPayload(chunk.ref))
+    val thirdRefusal =
+      ResolveError.Relation(third, RelationMismatch.UnreferencedPayload(chunk.ref))
+    val base =
+      relations :+ ManifestRelation.ResultOf(inline.name, planArtifact.name, inputArtifact.name)
+    Vector(
+      Vector(first, second, third) -> Vector(firstRefusal, extraRefusal, thirdRefusal),
+      Vector(second, third, first) -> Vector(extraRefusal, thirdRefusal, firstRefusal)
+    ).foreach { (edges, errors) =>
+      assertEquals(
+        resolve(save(artifacts ++ Vector(inline, extra), base ++ edges)),
+        Left(errors)
+      )
+    }
+  }
+
   test("same bytes with a different layout cannot satisfy an archive chunk reference") {
     val p      = packed.payloads.head
     val old    = p.entry.layout.get
