@@ -33,6 +33,7 @@ import eyes4s.studio.core.selection.{
 import eyes4s.studio.desktop.harness.{FxStage, StageSize, StudioFxSuite}
 import eyes4s.studio.desktop.plot.{CanvasPlotHost, PlotFrame, PlotHostProfile, PlotHostStatus}
 import eyes4s.studio.desktop.runtime.{EffectPerformer, StudioRuntime}
+import eyes4s.studio.desktop.shell.KeyboardFocus
 import eyes4s.studio.desktop.typography.StudioFonts
 import eyes4s.studio.app.plot.RovingMove
 import eyes4s.studio.viz.plot.{OverlayRings, RingKind}
@@ -399,16 +400,18 @@ class InputAdapterFxSuite extends StudioFxSuite:
     runOnFx(w.view.dispose())
   }
 
-  fxStage.test("with OS window focus, the host's focused property shows the focus ring") { fx =>
+  fxStage.test("with OS window focus, keyboard focus on the host shows the focus ring") { fx =>
     val w      = Wired(viewIn(fx))
     val (_, t) = showAndDraw(w, input(ret07, ret07Fix), 1.0)
     runOnFx {
       fx.stage.toFront()
       fx.stage.requestFocus()
-      w.host.requestFocus()
     }
     fx.awaitLayout()
     assume(runOnFx(fx.stage.isFocused), "the test window did not receive OS focus")
+    // Tab brings the focus, as the ring is the keyboard's (REVIEW ticket 14).
+    runOnFx(KeyboardFocus.byKeyboard(w.host))
+    fx.awaitLayout()
     fx.robot.press(KeyCode.HOME)
     assert(runOnFx(w.host.isFocused))
     assertEquals(

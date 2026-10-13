@@ -65,9 +65,10 @@ import scala.jdk.CollectionConverters.*
   * Mono 500; a hovered row draws surface-2, and a selected row stays selected
   * when hovered. The accent is focus's: no selection is drawn with it.
   *
-  * `:hover` and `:focused` are set explicitly, as A11yTreeSuite sets
-  * `:focused`: a headless run moves no pointer and cannot guarantee focus.
-  * Each check reads the rendered background fills and fonts.
+  * `:hover` is set explicitly: a headless run moves no pointer. Focus is
+  * real keyboard focus, reached by traversal ([[KeyboardFocus]]), since the
+  * rings are drawn only under `:focus-visible`. Each check reads the
+  * rendered background fills and fonts.
   */
 class SelectionFillFxSuite extends StudioFxSuite:
 
@@ -77,7 +78,6 @@ class SelectionFillFxSuite extends StudioFxSuite:
     assert(problems.isEmpty, problems.map(_.message).mkString("\n"))
 
   private val Hover    = PseudoClass.getPseudoClass("hover")
-  private val Focused  = PseudoClass.getPseudoClass("focused")
   private val Selected = PseudoClass.getPseudoClass("selected")
 
   private val SansSemibold = "IBM Plex Sans SmBld"
@@ -107,6 +107,15 @@ class SelectionFillFxSuite extends StudioFxSuite:
   /** `node` under `pseudo` (set or cleared); `read` runs after CSS. */
   private def drawn[A](node: Region, pseudo: (PseudoClass, Boolean)*)(read: => A): A = runOnFx {
     pseudo.foreach((p, on) => node.pseudoClassStateChanged(p, on))
+    node.getScene.getRoot.applyCss()
+    read
+  }
+
+  /** `node` with the keyboard focus, or with the focus moved off it by Tab;
+    * `read` runs after CSS.
+    */
+  private def keyed[A](node: Region, focused: Boolean = true)(read: => A): A = runOnFx {
+    if focused then KeyboardFocus.byKeyboard(node) else KeyboardFocus.away(node)
     node.getScene.getRoot.applyCss()
     read
   }
@@ -164,7 +173,7 @@ class SelectionFillFxSuite extends StudioFxSuite:
         val plain    = cell(l, 2)
         Vector(false, true).foreach { focused =>
           val clue = s"list ${style.getOrElse("plain")} focused=$focused"
-          drawn(l, Focused -> focused)(())
+          keyed(l, focused)(())
           assertEquals(drawn(selected)(fills(selected)), List(selFill), clue)
           assertEquals(textFill(selected), ink, clue)
           assertEquals(face(selected), SansSemibold, clue)
@@ -242,7 +251,7 @@ class SelectionFillFxSuite extends StudioFxSuite:
     // In place, under the view's own sheet, the focused list's cursor row
     // keeps its frame around the selection fill (CompositeCursorFxSuite).
     runOnFx(view.rows.getFocusModel.focus(0))
-    assertEquals(drawn(view.rows, Focused -> true)(fills(group)), List(accent, selFill))
+    assertEquals(keyed(view.rows)(fills(group)), List(accent, selFill))
   }
 
   private val view = right(ViewId.of("test.selection"))
@@ -346,8 +355,12 @@ class SelectionFillFxSuite extends StudioFxSuite:
     val recordCell  = labelled("mono", "t11", "records-cell")
     val record      = box("records-row")(recordCell)
     val plainRecord = box("records-row")(labelled("mono", "t11", "records-cell"))
-    // Nothing takes real focus: :focused is set where it is read.
-    Vector(chip, toggle, speed, ledgerCount).foreach(n => runOnFx(n.setFocusTraversable(false)))
+    // The ledger count takes no focus; the figure row is a Tab stop, as in
+    // the Figures navigator.
+    runOnFx {
+      ledgerCount.setFocusTraversable(false)
+      figure.setFocusTraversable(true)
+    }
     fx.show(
       themed(
         VBox(chip, toggle, speed, figure, ledger, record, plainRecord),
@@ -383,10 +396,10 @@ class SelectionFillFxSuite extends StudioFxSuite:
     assertEquals(drawn(record, Hover -> true)(fills(record)), List(selFill))
     assertEquals(drawn(figure, Hover -> true)(fills(figure)), List(selFill))
     // Focused and selected shows both: the ring around the selection fill.
-    assertEquals(drawn(speed, Focused -> true)(fills(speed)), List(accent, selFill))
-    assertEquals(drawn(toggle, Focused -> true)(fills(toggle)), List(accent, selFill))
-    assertEquals(drawn(chip, Focused -> true)(fills(chip)), List(accent, selFill))
-    assertEquals(drawn(figure, Focused -> true)(fills(figure)), List(accent, selFill))
+    assertEquals(keyed(speed)(fills(speed)), List(accent, selFill))
+    assertEquals(keyed(toggle)(fills(toggle)), List(accent, selFill))
+    assertEquals(keyed(chip)(fills(chip)), List(accent, selFill))
+    assertEquals(keyed(figure)(fills(figure)), List(accent, selFill))
     assert(cases.forall((_, n, _, _, _) => !drawn(n)(fills(n)).contains(soft)))
   }
 
