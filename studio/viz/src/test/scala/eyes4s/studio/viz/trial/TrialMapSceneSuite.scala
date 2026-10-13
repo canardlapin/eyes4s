@@ -534,3 +534,28 @@ class TrialMapSceneSuite extends munit.FunSuite:
       case Some(t: Grob.Text) => assertEquals(t.label, one)
       case other              => fail(s"no caption: $other")
   }
+
+  test("a mass map's legend ends the trial's description; a difference map or none adds none") {
+    def summary(m: Option[TrialMap]) =
+      right(TrialScene(withMap(m))).plot.scene.semantics.plots.headOption
+        .flatMap(_.description)
+        .getOrElse(fail("the trial scene has no summary"))
+    val legend = MapLegendSceneDescription
+    val mass   = summary(Some(TrialMap(grid(), MapRaster.render(grid(), style))))
+    assert(mass.endsWith(" " + legend), mass)
+    val shared = summary(
+      Some(TrialMap(grid(), MapRaster.render(grid(), style), limits = LimitsScope.Shared))
+    )
+    assert(shared.contains("shared colour limits across panels"), shared)
+    val difference = ColourLimits.spanning(MapPalette.Difference, Vector(grid()))
+    val diverging  = summary(Some(TrialMap(grid(), MapRaster.render(grid(), difference))))
+    assert(!diverging.contains("Map legend"), diverging)
+    val bare = summary(None)
+    assert(!bare.contains("Map legend"), bare)
+    // Said once, after the trial's own summary.
+    assert(!mass.stripSuffix(" " + legend).contains("Map legend"), mass)
+  }
+
+  private val MapLegendSceneDescription =
+    "Map legend: fixation duration mass per cell from 0 to max, fading out below 10 percent " +
+      "of max; isolines enclose 50 and 90 percent of mass"

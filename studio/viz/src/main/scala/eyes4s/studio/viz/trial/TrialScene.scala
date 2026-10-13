@@ -19,6 +19,7 @@ package eyes4s.studio.viz.trial
 import eyes4s.studio.app.maps.{
   GridPoint,
   Isolines,
+  LimitsScope,
   MapGrid,
   MapId,
   MapOpacity,
@@ -44,6 +45,7 @@ import eyes4s.studio.core.backend.TrialKey
 import eyes4s.studio.core.document.ScreenSize
 import eyes4s.studio.core.selection.{FixationIndex, StudioRef}
 import eyes4s.plan.{MapPlacement, OffWindowPolicy}
+import eyes4s.studio.viz.maps.MapLegendScene
 import eyes4s.studio.viz.plot.{
   DataPanel,
   DataPoint,
@@ -262,12 +264,15 @@ final case class TrialSceneOptions(
   * raster from the map raster cache (S4.4), and the one global opacity it
   * is drawn with. The raster covers the image frame cell for cell; the
   * grid's backend-supplied isoline levels are contoured over it, cased.
+  * `limits` says whether the panels shown with it share its colour limits,
+  * which its legend states ([[eyes4s.studio.viz.maps.MapLegendScene]]).
   */
 final case class TrialMap(
     grid: MapGrid,
     raster: MapRaster,
     opacity: MapOpacity = MapOpacity.Default,
-    covers: MapCoverage = MapCoverage.ImageFrame
+    covers: MapCoverage = MapCoverage.ImageFrame,
+    limits: LimitsScope = LimitsScope.PerPanel
 ) derives CanEqual
 
 /** Which region of the screen a map's grid covers: the image frame (a run's
@@ -580,14 +585,17 @@ object TrialScene:
       panel <- DataPanel(id, viewport).left.map(TrialSceneError.Plot(trial, _))
       plot  <- PlotScene(id, Scene(grobs), panel).left.map(TrialSceneError.Plot(trial, _))
     yield new TrialScene(
-      // The scene carries its semantics (S4.6): the caption is its alt text.
+      // The scene carries its semantics (S4.6): the caption is its alt text,
+      // and its summary ends with the map legend's description when the map
+      // has a legend (review ticket 17).
       plot.withSemantics(
         SceneSemantics.single(
           SceneSummaries.semantics(
             id,
             trial.label,
             caption,
-            PlotText(PlotTextId.TrialSummary, caption, marks.size.toString)
+            (PlotText(PlotTextId.TrialSummary, caption, marks.size.toString) +:
+              legendOf(input).toVector).mkString(" ")
           )
         )
       ),
@@ -598,6 +606,10 @@ object TrialScene:
       input.map.map(_.grid.map),
       disclosureOf(input)
     )
+
+  /** What the legend of `input`'s map says, when its map has a legend. */
+  def legendOf(input: TrialSceneInput): Option[String] =
+    input.map.flatMap(m => MapLegendScene.describe(m.raster.key.style.palette, m.limits))
 
   /** What the trial view says about the remembered image: that it was not
     * displayed, whenever it is shown as an underlay, and that it is not
