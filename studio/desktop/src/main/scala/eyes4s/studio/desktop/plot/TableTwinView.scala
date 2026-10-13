@@ -93,7 +93,7 @@ final class TableTwinView private (initial: TableTwinState, dispatch: Intent => 
   private var disposed: Boolean                                = false
   private val keyHandler: EventHandler[KeyEvent]               = e => onKey(e)
   private val focusListener: ChangeListener[java.lang.Boolean] =
-    (_, _, now) => commit(current.focusChanged(now.booleanValue))
+    (_, _, now) => commit(current.focusChanged(now.booleanValue, shown))
   addEventFilter(KeyEvent.KEY_PRESSED, keyHandler)
   focusedProperty.addListener(focusListener)
 
@@ -160,7 +160,13 @@ final class TableTwinView private (initial: TableTwinState, dispatch: Intent => 
           }
           if getGraphic ne cells then setGraphic(cells)
           pseudoClassStateChanged(Selected, r.selected)
-          pseudoClassStateChanged(Cursor, r.cursor)
+          // With no cursor, the row the cursor takes on focus is marked
+          // already; the stylesheet draws :cursor only while the table has
+          // focus, so a focused table always shows its cursor row.
+          pseudoClassStateChanged(
+            Cursor,
+            r.cursor || (current.cursor.isEmpty && shown.flatMap(current.home).contains(r.ref))
+          )
           pseudoClassStateChanged(Pinned, r.pinned)
       // A list row rebound by scrolling may now hold, or no longer hold, the
       // focus item.

@@ -191,6 +191,27 @@ class ResolvedDesignFxSuite extends ShellFxSuite:
     )
   }
 
+  fxStage.test("the table takes focus with its cursor on the first row, or where it was") {
+    fx =>
+      val w = boot(fx, StoryModels.t2Analysis, StoryMoment.T2)
+      ready(fx, w)
+      val table = runOnFx(w.resolvedDesign.view.table)
+      val chips = runOnFx(chip(w, DesignFilter.Eligible).button)
+      runOnFx(chips.requestFocus())
+      fx.awaitLayout()
+      assertEquals(runOnFx(w.resolvedDesign.state.cursor), None)
+      val visible = runOnFx(w.resolvedDesign.state.visible.map(_.query))
+      runOnFx(table.requestFocus())
+      fx.awaitLayout()
+      assertEquals(runOnFx(w.resolvedDesign.state.cursor), visible.headOption)
+      // A cursor it already has stays where it is.
+      fx.robot.press(KeyCode.DOWN)
+      runOnFx(chips.requestFocus())
+      runOnFx(table.requestFocus())
+      fx.awaitLayout()
+      assertEquals(runOnFx(w.resolvedDesign.state.cursor), visible.lift(1))
+  }
+
   fxStage.test("a focused chip keeps its selected fill inside the focus ring") { fx =>
     val w = boot(fx, StoryModels.t2Analysis, StoryMoment.T2)
     ready(fx, w)

@@ -161,6 +161,48 @@ class TableTwinSuite extends munit.FunSuite:
     assertEquals(onRow2.carry(Vector.empty, source).state.cursor, Some(ref(2)))
   }
 
+  test("taking focus with no cursor puts it on the first selected row, else the first") {
+    val first = initial.focusChanged(true, Some(source))
+    assertEquals(
+      (first.state.cursor, first.changed, first.intents),
+      (Some(ref(0)), true, Vector.empty)
+    )
+    val chosen = selecting(initial, 3, 1)
+    val seeded = chosen.focusChanged(true, Some(source))
+    assertEquals((seeded.state.cursor, seeded.intents), (Some(ref(1)), Vector.empty))
+    assertEquals(
+      seeded.state.vm(source).rows.map(_.selected),
+      chosen.vm(source).rows.map(_.selected)
+    )
+    // Pinned rows count in shown order: row 3 is pinned above row 0.
+    assertEquals(
+      selecting(pinning, 3).focusChanged(true, Some(source)).state.cursor,
+      Some(ref(3))
+    )
+    // A cursor it already has stays; losing focus keeps it; no source, no cursor.
+    val onRow2 = chosen.moveCursor(Some(ref(2)), source).state
+    assertEquals(onRow2.focusChanged(true, Some(source)).state.cursor, Some(ref(2)))
+    assertEquals(first.state.focusChanged(false, Some(source)).state.cursor, Some(ref(0)))
+    assertEquals(initial.focusChanged(false, Some(source)).state.cursor, None)
+    assertEquals(initial.focusChanged(true, None).state.cursor, None)
+    // The placed cursor is the focus item, but the table is still announced
+    // by how to use it until the cursor moves.
+    val keys = PlotText(PlotTextId.TableKeys, "Participant D")
+    assertEquals(first.state.vm(source).cursorRow, Some(0))
+    assertEquals(first.state.vm(source).accessibleText, keys)
+    assertEquals(
+      first.state.focusChanged(false, Some(source)).state.vm(source).accessibleText,
+      keys
+    )
+    val moved = key(first.state, RovingMove.Down)
+    assertEquals(moved.cursor, Some(ref(1)))
+    assertEquals(moved.vm(source).accessibleText, source.rowTextOf(source.rows(1)))
+    assertEquals(
+      first.state.moveCursor(Some(ref(2)), source).state.vm(source).accessibleText,
+      source.rowTextOf(source.rows(2))
+    )
+  }
+
   test("moveCursor and retarget keep the cursor on listed rows only") {
     val carried = initial.moveCursor(Some(ref(2)), source)
     assertEquals((carried.state.cursor, carried.intents), (Some(ref(2)), Vector.empty))
