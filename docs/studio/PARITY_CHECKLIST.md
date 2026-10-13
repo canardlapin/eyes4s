@@ -115,9 +115,11 @@ by token name, never by hex value.
 The boards were revised ahead of the code (DESIGN_SPEC §15). Until each ticket lands, a parity check records
 the deviation below instead of failing. Tickets are numbered as in the design review's landing list.
 
-- Shared: focus rings on canvases gated on keyboard focus (14); radio, checkbox and slider styling and the segmented bar (16).
+- Shared: a clicked canvas's pane still draws its accent border (`:focus-within` has no keyboard-only form; 14, slice S24).
+  The slider's track is drawn whole; the board's range fills it to the thumb (16).
 - Shared: the board's one resting focus ring (`.kf`) is shown in tests by putting real keyboard focus on that
   node, not drawn at rest (28).
-- Maps: fixation cross above the map and cased, round isoline caps, map legend (17). Figure tiles fade in but do
-  not hatch cells without coverage (8).
-- Data: the missing-asset thumbnail hatch and X, with its "Missing asset · forest-044.png" caption (25).
+- Maps: figure tiles fade in but do not hatch cells without coverage (8). The missing-cell hatch renders partly
+  transparent at some drawing sizes (bd-01M4TCR2EWPSX1NG4R686MY3M7).
+- Data: the geometry panel (density and key, thumbnails, the all-trials overlay) is built but not yet mounted in
+  the window (23–25; slice S26, bd-01M4TCYAVJ45D2F11C1A9NWD0H).

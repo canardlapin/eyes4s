@@ -53,17 +53,17 @@ Status key: **[approved]** owner-approved · **[bug]** a pure bug, landable with
     - `-fx-selection-bar[-non-focused]: -es-sel-fill`, `-fx-cell-hover-color: -es-surface-2` (`studio-shell.css:41-44`), and `.list-cell:filled:hover`.
     - Fold the accent-soft fills (`studio-navigator.css:89`, `studio-ledger.css:66,162`, `studio-explore.css:49,58`, `studio-timeline.css:44`, `studio-design.css:53`, `studio-figures.css:43-45`) and `.table-twin-row:selected` ink rules (`studio-plot.css:108-111`) into sel-fill + SmBld.
     - Tests: FX snapshot re-baseline.
-14. **D3, focus-visible.** **Slice a fixed** (`:focus-visible` on every control rule and composite cursor; primary ring accent / on-accent / accent at 0, 2, 4; `:armed` → hairline; a composite pane draws no ring while its rows carry the cursor; a focused table puts its cursor on its home row, the first selected, else the first; only a composite with no rows rings its container (`CompositeFocus`); canvas rings remain).
+14. **D3, focus-visible.** **Fixed** (slice b: canvas focus rings show only after Tab or a roving key since focus arrived, `MarkInputAdapter.showFocus`; slice a: `:focus-visible` on every control rule and composite cursor; primary ring accent / on-accent / accent at 0, 2, 4; `:armed` → hairline; a composite pane draws no ring while its rows carry the cursor; a focused table puts its cursor on its home row, the first selected, else the first; only a composite with no rows rings its container (`CompositeFocus`); the clicked canvas pane border remains, S24).
     - `:focused` → `:focus-visible` on ~32 control rules.
     - Canvas rings gated on focusVisible OR keyboard-since-focus (Issue 1): `MarkInputAdapter.scala:137` listens on `focusedProperty`, and `TrialInputAdapter.focusChanged` is at `:75`.
     - Primary focus `-es-accent, -es-on-accent, -es-accent` at insets 0, 2, 4 (`studio-plot.css:316`, `studio-geometry.css:154`, `studio-ledger.css:216`, `studio-import.css:192`).
     - `:armed` → `-es-hairline`.
     - Tests: FX focus tests use `requestFocusTraversal(TraversalDirection.NEXT)` or a robot Tab, not `requestFocus()` (verified: focusVisible = false). This touches `InputAdapterFxSuite:402` and any ring assertion.
 15. **D4, disabled.** *Decision:* keep the desktop rule — pending and blocked actions are disabled but fully readable (`PreflightFxSuite:55-100`, the readable overrides stay); the boards were amended to match. Remaining code: attach each visible reason to its control for assistive technology (accessible help text), with an `A11yTreeSuite` check. Only controls with no workflow meaning fade to 0.4. **Fixed** (`DisabledReason.attach`; `A11yTreeSuite`).
-16. **D5, controls** (split into slices of at most half a day: the controls CSS, then the `SegmentedBar`). `studio-controls.css` for radio, checkbox and slider, and a `SegmentedBar` replacing the RadioButtons at `CompareInspectorHost.scala:114-116`. Test: a new FX snapshot.
+16. **D5, controls** (split into slices of at most half a day: the controls CSS, then the `SegmentedBar`). `studio-controls.css` for radio, checkbox and slider, and a `SegmentedBar` replacing the RadioButtons at `CompareInspectorHost.scala:114-116`. Test: a new FX snapshot. **Fixed** (`studio-controls.css` for radio, check box and slider; the `SegmentedBar` replaces the Compare inspector radios).
 
 **F. Scenes (viz) **
-17. **E1, TrialScene.**
+17. **E1, TrialScene.** **Fixed** (S10: cross above the map, cased; inner casing only where 3:1 needs it, derived by `StageCasing`; round isoline caps. S11: `MapLegendScene` under the trial, Explore's keys in its legend row; difference maps have no legend).
     - Cross after the map, 2 px halo with a 4 px casing (`TrialScene.scala:828-841`, layer order ~:1129-1141). *Decision:* `--halo` stays stage-keyed; where a focus or role mark is below 3:1, it gets its own inner casing (`OverlayPalette` already separates focus paint from casing, `MarkInput.scala:218`). Test both themes × three stages over map and image grounds (`TokenContrastSuite:64` rule).
     - Isoline `LineCap.Round`.
     - A `MapLegendScene` with the legend text "fades below 10% of max" as a TrialText/ExploreText id.
@@ -95,7 +95,7 @@ Status key: **[approved]** owner-approved · **[bug]** a pure bug, landable with
     - The thumbnail caption split (`ThumbTrial` + count ids), the singular form, and `ThumbMissing`.
     - At `GeometryText.scala:40, 105-107`.
     - Tests: `GeometryPanelSuite:451-462`.
-25. **G3, missing-asset thumbnail.** *Decision:* thumbnails stay the grey placement frame plus marks (`GeometryScene.scala:63`), except a missing-asset trial, which is hatched with an X and never blank (DESIGN_SPEC §9), as the Data board draws it. Image frame art in thumbnails would be a separate feature.
+25. **G3, missing-asset thumbnail.** *Decision:* thumbnails stay the grey placement frame plus marks (`GeometryScene.scala:63`), except a missing-asset trial, which is hatched with an X and never blank (DESIGN_SPEC §9), as the Data board draws it. Image frame art in thumbnails would be a separate feature. **Fixed** (hatch and X from the served asset registry; mounted in the window by S26).
     - `ThumbnailPicture` (`GeometryPictures.scala:72-78`) carries the trial's frame state (Present / Missing(file) / Unreadable).
     - `GeometryScene.thumbnail`/`layers` (`:84, :142`) draws `TrialScene.hatched` as a shared helper (`TrialScene.scala:793-818`), with a thumbnail-scale hatch and X.
     - Tests: a `GeometrySceneSuite` test that a missing frame draws a hatch + X; a `GeometryPanelSuite` caption test.
