@@ -23,6 +23,8 @@ import eyes4s.studio.app.geometry.{
   MarkPlace,
   ThumbnailPicture
 }
+import eyes4s.studio.app.text.{Format, GeometryText}
+import eyes4s.studio.app.text.GeometryTextId.{DensityCellsDrawn, DensityRange}
 import eyes4s.studio.app.tokens.{
   PaletteToken,
   StageToken,
@@ -120,11 +122,27 @@ object GeometryScene:
             "Placement density",
             s"${picture.records} records binned into ${picture.columns} × ${picture.rows} cells.",
             s"Screen ${frame.screenWidth} × ${frame.screenHeight} pixels, y down. " +
-              s"${picture.levels.count(_ > 0)} cells drawn at four ramp levels relative to the fullest cell."
+              levelsText(picture)
           )
         )
       )
     }
+
+  /** "{n} cells drawn at four log-spaced levels: 1–3, 4–15, 16–63 and at
+    * least 64 records per cell.", from the picture's own steps (DESIGN_SPEC
+    * section 15.1), so it names the ranges the key labels.
+    */
+  private def levelsText(picture: DensityPicture): String =
+    val starts = picture.steps.starts
+    val ranges = starts
+      .zip(starts.drop(1))
+      .map((from, next) =>
+        GeometryText(DensityRange, Format.count(from), Format.count(next - 1))
+      )
+    GeometryText(
+      DensityCellsDrawn,
+      (Format.count(picture.levels.count(_ > 0).toLong) +: ranges :+ Format.count(starts.last))*
+    )
 
   private def build(id: String, frame: FramePicture)(
       content: () => Either[GraphicsError, Vector[Grob]]

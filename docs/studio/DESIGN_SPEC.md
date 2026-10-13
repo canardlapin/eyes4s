@@ -302,7 +302,9 @@ The Data perspective's "All trials overlaid" density (`DensityPicture`, drawn by
 grid: 64 columns, rows = round(64 × screen height / screen width), so 64 × 36 cells of 30 × 30 px
 on the 1920 × 1080 screen. This grid is not the 64 × 48 map grid of §9. Counts are records, one
 per placed record, with no smoothing and no duration weight; an off-screen record falls in no cell.
-The levels are:
+The owner settled this rule's four choices on 2026-10-12: the median-anchored step, the closed-range
+key labels, the default key for an empty study, and the unchanged ramp for level 1 on the Mid and
+Light stages. The levels are:
 
 - **Count.** A cell's count is its whole number of records: the backend's count rounded half up,
   and at least 1 when the backend's count is above zero. A cell with count 0 is empty and is not
@@ -313,7 +315,8 @@ The levels are:
 - **Step.** `s` is the power of 4 nearest `m` on a log scale, at least 4: the largest `s = 4^j`
   with `j ≥ 1` and `s / 2 ≤ m`, else 4. A tie (`m = s / 2`) takes the larger step. This uses only
   integer comparisons. Snapping to a power of 4 keeps the key's labels round, and a correction that
-  moves the median within its band (m from 1 to 7 for s = 4) leaves the levels unchanged.
+  moves the median within its band (m from 1 to 7 for s = 4) leaves the levels unchanged. The
+  owner chose this anchored step over fixed steps of 1, 4, 16 and 64 for every study (2026-10-12).
 - **Thresholds.** Four levels start at 1, `s`, `4s` and `16s` records. A cell's level is the
   highest level whose start it reaches. Level 4 is the overflow level and has no upper bound. The
   levels use ramp stops 0 to 3 (§6) at the density opacity (0.6). Because the lowest start is
@@ -330,14 +333,19 @@ The levels are:
   swatches, ramp-0 to ramp-3 at the density opacity over the stage. They are labelled with closed
   count ranges, `1–(s−1)`, `s–(4s−1)`, `4s–(16s−1)`, and the overflow as `≥16s`. Counts use
   thousands separators. For s = 4 the labels are "1–3", "4–15", "16–63", "≥64". The key always
-  shows all four swatches, including a level that holds no cell.
+  shows all four swatches, including a level that holds no cell. The owner chose these closed
+  ranges over the Data board's "≥1, ≥4, ≥16, ≥64" (2026-10-12); the board is to be edited to match.
+- **Contrast.** Level 1 keeps ramp-0 on every stage (owner, 2026-10-12). At the density opacity,
+  ramp-0 over the stage measures 5.57:1 on Dark, 2.25:1 on Mid and 1.09:1 on Light;
+  `GeometrySceneSuite` pins these values. Colours that depend on the stage are a separate proposal
+  (mote bd-01M4SJ6T6MMGAW1PRGREGVSX50).
 - **Semantics.** "{n} cells drawn at four log-spaced levels: 1–3, 4–15, 16–63 and at least 64
   records per cell." The ranges are the key's.
 - **Empty and single-cell studies.** If no record falls on the screen (no placed records, or all
   of them off screen), there is no median. The step is 4, no cell is drawn, the key still shows
-  "1–3" to "≥64", and the semantics text reads "0 cells drawn". With one non-empty cell, `m` is
-  that cell's count. One record gives s = 4 and level 1. 300 records give s = 256, so the levels
-  start at 1, 256, 1,024 and 4,096, and the cell is at level 2.
+  "1–3" to "≥64" (owner, 2026-10-12), and the semantics text reads "0 cells drawn". With one
+  non-empty cell, `m` is that cell's count. One record gives s = 4 and level 1. 300 records give
+  s = 256, so the levels start at 1, 256, 1,024 and 4,096, and the cell is at level 2.
 
 Worked example: the golden fixture (`fixtures/studio-golden`, r1 as imported, no corrections).
 11,520 records fall in 1,287 non-empty cells, with none off screen. The fullest cell has 100

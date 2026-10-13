@@ -469,8 +469,12 @@ class GeometryPanelSuite extends munit.FunSuite:
     )
     assertEquals(vm.densityCaption.take(9), "6 records")
     assertEquals(pics.density.records, 6)
-    // The off-screen record falls in no cell: five cells are drawn.
+    // The off-screen record falls in no cell: five cells are drawn. Each
+    // holds one record, so m = 1 and s = 4, and every one is at level 1
+    // (DESIGN_SPEC section 15.1); the share floor drew them at level 4.
     assertEquals(pics.density.levels.count(_ > 0), 5)
+    assertEquals(pics.density.levels.filter(_ > 0), Vector.fill(5)(1))
+    assertEquals(pics.density.steps, DensitySteps.Default)
     // Pictures stay shown until their redraw; the marked trial shows at once.
     val marked = GeometryPanel.update(panel, small, GeometryIntent.MarkTrial(p05ret04))._1
     assertNotEquals(GeometryPictures.keyOf(marked, small), Some(pics.key))
