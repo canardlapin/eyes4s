@@ -119,10 +119,9 @@ the deviation below instead of failing. Tickets are numbered as in the design re
   `:focus-visible` gating (12, 14); radio, checkbox and slider styling and the segmented bar (16).
 - Shared: the board's one resting focus ring (`.kf`) is shown in tests by putting real keyboard focus on that
   node, not drawn at rest (28).
-- Maps: alpha floor and hatched missing cells (8); fixation cross above the map and cased, round isoline caps,
-  map legend (17).
+- Maps: fixation cross above the map and cased, round isoline caps, map legend (17). Figure tiles fade in but do
+  not hatch cells without coverage (8).
 - Explore: timeline bars outside the brush dimmed (18).
-- Results: annotation column (26). The paired descriptive (27) shows only when the reporting spec declares its
-  contrast, and the t3 story spec declares none, so moment t3 does not show it yet.
-- Figures: tile rows and wrapping (21); figure cross arm (22).
-- Data: density levels, pending the level rule (23); thumbnail caption text ids (24), including "Missing asset · forest-044.png"; the missing-asset thumbnail hatch and X (25).
+- Results: annotation column (26).
+- Figures: tile rows and wrapping (21).
+- Data: the missing-asset thumbnail hatch and X, with its "Missing asset · forest-044.png" caption (25).

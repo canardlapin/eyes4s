@@ -80,7 +80,7 @@ D has no hue: ink, sign shown by position relative to a zero rule. Groups (Remem
 Forgotten): solid ink vs dashed --ink-3, plus labels.
 
 ## 6. Maps and plots
-Mass-map ramp (sequential, opaque per cell, one global opacity): #F9D9EA → #E58FB9 → #B83F86 →
+Mass-map ramp (sequential, each cell fading in below 10% of the limits (§15), one global opacity): #F9D9EA → #E58FB9 → #B83F86 →
 #6B0F4F, plus isolines at 50% and 90% of mass: 2 units of ink rgba(28,30,33,.9) over a 4-unit
 casing #FFFFFF @.9, on every stage (bead S4.3b bd-01M3DPFM4ZG9GV0RTYWWA1M2P9, isoline-contrast
 decision of 2026-10-04: at least 3:1 against the ground over any ramp colour at map opacity 0.6).
@@ -334,7 +334,7 @@ Light stages. The levels are:
   count ranges, `1–(s−1)`, `s–(4s−1)`, `4s–(16s−1)`, and the overflow as `≥16s`. Counts use
   thousands separators. For s = 4 the labels are "1–3", "4–15", "16–63", "≥64". The key always
   shows all four swatches, including a level that holds no cell. The owner chose these closed
-  ranges over the Data board's "≥1, ≥4, ≥16, ≥64" (2026-10-12); the board is to be edited to match.
+  ranges over lower bounds ("≥1, ≥4, ≥16, ≥64") on 2026-10-12, and the Data board was edited to match.
 - **Contrast.** Level 1 keeps ramp-0 on every stage (owner, 2026-10-12). At the density opacity,
   ramp-0 over the stage measures 5.57:1 on Dark, 2.25:1 on Mid and 1.09:1 on Light;
   `GeometrySceneSuite` pins these values. Colours that depend on the stage are a separate proposal
@@ -349,8 +349,8 @@ Light stages. The levels are:
 
 Worked example: the golden fixture (`fixtures/studio-golden`, r1 as imported, no corrections).
 11,520 records fall in 1,287 non-empty cells, with none off screen. The fullest cell has 100
-records. The 644th smallest count is m = 4, so s = 4 and the levels start at 1, 4, 16 and 64. This
-matches the Data board's "≥1, ≥4, ≥16, ≥64".
+records. The 644th smallest count is m = 4, so s = 4 and the levels start at 1, 4, 16 and 64. These
+are the Data board's key labels, 1–3, 4–15, 16–63 and ≥64.
 
 | level | records per cell | cells | records |
 |---|---|---|---|

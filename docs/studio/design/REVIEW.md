@@ -28,7 +28,7 @@ Status key: **[approved]** owner-approved · **[bug]** a pure bug, landable with
 7. [bug] Plural: "1 records inside" (`GeometryText.scala:105`; `GeometryPanelSuite:461`). Add a singular form. **Fixed.**
 
 **C. Owner-approved**
-8. [approved] Map alpha floor (SPEC-AMENDMENTS #1, #10).
+8. [approved] Map alpha floor (SPEC-AMENDMENTS #1, #10). **Fixed** (figure tiles fade in but do not hatch).
    - `MapColours.argb` (`MapPalette.scala:164`): alpha = min(1, t/0.10), for mass maps only.
    - Missing cells draw the missing-asset hatch (never transparent, never a ramp colour), with a "{n} cells without coverage" TrialText id in the caption.
    - Tests: `PaletteSuite` (~:36-59, :150), `TrialMapSceneSuite:118, :295-320`, `MapTileSceneSuite:81-96`, `TrialViewMapFxSuite`.
@@ -82,15 +82,15 @@ Status key: **[approved]** owner-approved · **[bug]** a pure bug, landable with
     - `FigurePage` uses a fixed title row, a map, and a fixed two-row caption drawn without `wrap` (`:161-166, :183, :348, :398`).
     - A Points role glyph (Plex coverage of ● ◆ ○ is unverified).
     - Tests: `FigurePageMapSuite:117`, plus a new "every map shares one top".
-22. **F3, figure cross arm.** *Decision:* 20 px half-arm in native screen coordinates, as `TrialScene` (`:423`, `:834`). Test: a `FigureGaze` cross-length test.
+22. **F3, figure cross arm.** *Decision:* 20 px half-arm in native screen coordinates, as `TrialScene` (`:423`, `:834`). Test: a `FigureGaze` cross-length test. **Fixed** (already drawn by `TrialScene`'s cross via `FigureGaze`; pinned by `FigureGazeSuite`).
 
 **H. Data (app/viz) **
-23. **G1, DensityPicture** (SPEC-AMENDMENTS #15, extended). **Slice a fixed** (level rule: DESIGN_SPEC §15.1).
+23. **G1, DensityPicture** (SPEC-AMENDMENTS #15, extended). **Fixed** (S17 rule, S18 code).
     - Floor → every non-zero cell (`GeometryPictures.scala:95`).
     - Log levels (`:97-103`): *Decision:* fixed per dataset revision, never rescaled per view; write the level rule (threshold placement, rounding, empty and single-cell studies, overflow level, labelled count ranges, singletons visible) before coding this part.
     - Scaladoc `:80-87` and the semantics text `GeometryScene.scala:123`.
     - Tests: `GeometryPanelSuite:473` (still 5 cells), `GeometrySceneSuite:91-94`, a new level-threshold test.
-24. **G2, text ids.**
+24. **G2, text ids.** **Fixed** (`ThumbMissing` is wired with ticket 25).
     - The density key ("Records per cell, log steps · {c} × {r} screen cells" with swatch labels).
     - The thumbnail caption split (`ThumbTrial` + count ids), the singular form, and `ThumbMissing`.
     - At `GeometryText.scala:40, 105-107`.
@@ -101,8 +101,8 @@ Status key: **[approved]** owner-approved · **[bug]** a pure bug, landable with
     - Tests: a `GeometrySceneSuite` test that a missing frame draws a hatch + X; a `GeometryPanelSuite` caption test.
 
 **I. Plots and Results **
-26. **H1, ParticipantPlot annotations** (split into slices of at most half a day): an `Annotations` API and `ParticipantTextId`s. Tests: a new suite, plus a Results FX snapshot.
-27. **H2, Results paired descriptive**: an app VM plus text. Test: a fixture value test of **0.15567 → "+0.16"**, range +0.05 (P21) to +0.26 (P15), 24 of 24, computed before rounding participant means. The fixture field is added in this landing (`docs/studio/fixture`). **Fixed** (shown when the reporting spec declares the contrast; the t3 story spec declares none yet).
+26. **H1, ParticipantPlot annotations** (split into slices of at most half a day): an `Annotations` API and `ParticipantTextId`s. Tests: a new suite, plus a Results FX snapshot. **Slice a fixed** (`Annotations` API in viz; the text ids, Results wiring and snapshot remain).
+27. **H2, Results paired descriptive**: an app VM plus text. Test: a fixture value test of **0.15567 → "+0.16"**, range +0.05 (P21) to +0.26 (P15), 24 of 24, computed before rounding participant means. The fixture field is added in this landing (`docs/studio/fixture`). **Fixed** (the t3 story spec declares Remembered − Forgotten).
 
 **J. Parity harness **
 28. The board's resting depicted focus (`.kf`) gets a desktop counterpart only in tests. Moments put visible focus on the depicted node via `requestFocusTraversal`/Tab (`ShellMomentsFxSuite`, `AppShellFxSuite`), or `PARITY_CHECKLIST.md` exempts resting focus rings. No runtime change.
