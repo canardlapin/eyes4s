@@ -14,10 +14,11 @@
  * limitations under the License.
  */
 
-/* Radio buttons, check boxes and sliders on the tokens (REVIEW ticket 16,
- * slice a; docs/studio/design/System.dc.html, the `.rd` specimen and the
- * `input[type=radio|checkbox|range]` rules). Modena keeps the behaviour (keys,
- * hit areas, the toggle groups); this sheet replaces its gradients.
+/* Radio buttons, check boxes, sliders and the segmented bar on the tokens
+ * (REVIEW ticket 16; docs/studio/design/System.dc.html, the `.rd` and `.sg`
+ * specimens and the `input[type=radio|checkbox|range]` rules). Modena keeps
+ * the behaviour (keys, hit areas, the toggle groups); this sheet replaces its
+ * gradients.
  *
  * A radio or a check box is one 22 px row: a 14 px box, a 5 px gap and its
  * label, 6 px in from the row's rounded edge. The row takes surface-3 on
@@ -172,11 +173,67 @@
   -fx-tick-label-fill: -es-ink-2;
 }
 
+/* ---- the segmented bar -------------------------------------------------- */
+/* SegmentedBar, after the board's `.sg`: a surface-3 track (radius 6, 2 px
+ * in, 2 px between) of 20 px segments (radius 4, 7 px either side of the
+ * label) in ink-2 at weight 500. Hover is surface-2 and pressed the hairline,
+ * as for any selectable item. The chosen segment is the selection fill in a
+ * hairline edge, its label ink at weight 600 (DESIGN_SPEC section 15: the
+ * board's surface fill would read as hover's lighter step). Each segment
+ * carries a transparent 2 px border, counted in its 7 px, for the focus ring
+ * below. The segments have no modena class, so only the bar fades when
+ * disabled, once; with a drawn reason it stays opaque. */
+
+.segmented-bar {
+  -fx-padding: 2;
+  -fx-spacing: 2;
+  -fx-background-color: -es-surface-3;
+  -fx-background-radius: 6;
+  -fx-alignment: center-left;
+}
+
+.segmented-bar > .segment {
+  -fx-min-height: 20px;
+  -fx-pref-height: 20px;
+  -fx-max-height: 20px;
+  -fx-padding: 0 5 0 5;
+  -fx-background-color: transparent;
+  -fx-background-insets: 0;
+  -fx-background-radius: 4;
+  -fx-border-color: transparent;
+  -fx-border-width: 2;
+  -fx-border-radius: 4;
+  -fx-text-fill: -es-ink-2;
+  -fx-font-family: "IBM Plex Sans Medm";
+  -fx-font-size: 12px;
+}
+
+.segmented-bar > .segment:hover {
+  -fx-background-color: -es-surface-2;
+}
+
+.segmented-bar > .segment:armed {
+  -fx-background-color: -es-hairline;
+}
+
+.segmented-bar > .segment:selected {
+  -fx-background-color: -es-hairline, -es-sel-fill;
+  -fx-background-insets: 0, 1;
+  -fx-background-radius: 4, 3;
+  -fx-text-fill: -es-ink;
+  -fx-font-family: "IBM Plex Sans SmBld";
+}
+
+.segmented-bar:disabled {
+  -fx-opacity: 0.4;
+}
+
 /* ---- disabled: readable with a reason, else faded ----------------------- */
 
 .radio-button.has-reason:disabled,
 .check-box.has-reason:disabled,
-.slider.has-reason:disabled {
+.slider.has-reason:disabled,
+.segmented-bar.has-reason:disabled {
   -fx-opacity: 1;
   -fx-text-fill: -es-ink-2;
 }
@@ -210,6 +267,7 @@
 
 .radio-button:focus-visible,
 .check-box:focus-visible,
-.slider:focus-visible {
+.slider:focus-visible,
+.segmented-bar > .segment:focus-visible {
   -fx-border-color: -es-accent;
 }
