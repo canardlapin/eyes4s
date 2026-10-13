@@ -454,9 +454,8 @@ class NativeGoldenWorkflowSuite extends munit.CatsEffectSuite:
               )
             case _ => ()
         }
-        // S9.5 recheck on the real backend (slice r7 of S3.7): the exported
-        // results.csv, as written, holds eyes4s's own D in every scored cell
-        // and an empty, invalid cell everywhere else.
+        // Compare the exported bytes with independent library evaluation,
+        // including exact key sets, all three roles and explicit absences.
         import eyes4s.studio.core.importing.{CsvSniffer, Delimiter}
         val csv = second.files
           .collectFirst { case ("results.csv", data) => String(Array.from(data), UTF_8) }
@@ -465,10 +464,98 @@ class NativeGoldenWorkflowSuite extends munit.CatsEffectSuite:
         val column  = written.head.zipWithIndex.toMap
         val cells   = written.tail
         assertEquals(cells.size, first.rows.size * 4)
+        val exportedKeys = cells.map { r =>
+          def c(name: String) = r(column(name))
+          (c("participant"), c("phase"), c("trial"), c("occurrence").toInt, c("scale").toInt)
+        }
+        val queryLedger = admitted.ledger.filter(_.trial.phase == recipe.phases.focal)
+        val unmatched   = eyes4s.plan.UnmatchedReasons.of(
+          prepared.plan.layout,
+          prepared.plan.pairing,
+          prepared.plan.referencePhase,
+          prepared.counts.cardinality.unmatched,
+          admitted.evidence.inventory.get
+        )
+        val requestedKeys = queryLedger.flatMap(row =>
+          (0 until 4).map(index =>
+            (
+              row.trial.participant,
+              row.trial.phase.label,
+              row.trial.trial,
+              row.trial.occurrence,
+              index
+            )
+          )
+        )
+        assertEquals(exportedKeys.distinct.size, exportedKeys.size)
+        assertEquals(exportedKeys.toSet, requestedKeys.toSet)
         var scored = 0
         cells.foreach { r =>
           def c(name: String) = r(column(name))
           val at              = s"${c("participant")} ${c("trial")} scale ${c("scale")}"
+          val ledger          = queryLedger
+            .find(e =>
+              e.trial.participant == c("participant") &&
+                e.trial.phase.label == c("phase") && e.trial.trial == c("trial") &&
+                e.trial.occurrence == c("occurrence").toInt
+            )
+            .getOrElse(fail(s"$at: no admitted ledger entry"))
+          assertEquals(c("item"), ledger.item, at)
+          assertEquals(c("response"), ledger.response.get.label, at)
+          assertEquals(c("sigma"), prepared.summary.scales(c("scale").toInt), at)
+          val pinned = expected.get(
+            (ledger.trial.participant, ledger.trial.trial, ledger.trial.occurrence)
+          )
+          val status = pinned
+            .fold("not-admitted")(q => get(q.hcursor.get[String]("status")).takeWhile(_ != ':'))
+          assertEquals(c("status"), status, at)
+          val compared = status == "contributing" || status == "failed"
+          assertEquals(c("matched_trial__valid"), compared.toString, at)
+          assertEquals(c("controls__valid"), compared.toString, at)
+          if compared then
+            val q = pinned.get.hcursor
+            assertEquals(c("matched_trial"), get(q.get[Vector[String]]("matched")).head, at)
+            assertEquals(c("controls").toInt, get(q.get[Int]("controls")), at)
+          else
+            assertEquals(c("matched_trial"), "", at)
+            assertEquals(c("controls"), "", at)
+          assertEquals(c("reason__valid"), (status != "contributing").toString, at)
+          assertEquals(c("reason").isEmpty, status == "contributing", at)
+          val directReason = ledger.disposition match
+            case TrialDisposition.Quarantined(cause) => Some(s"${cause.code}: ${cause.message}")
+            case TrialDisposition.NoFixations        => Some("no-fixations")
+            case TrialDisposition.Absent             => Some("absent")
+            case TrialDisposition.Admitted if status == "contributing" => None
+            case TrialDisposition.Admitted                             =>
+              val core = admitted.input.trials.rows
+                .find(t =>
+                  t.key.participant == ledger.trial.participant &&
+                    t.key.phase == ledger.trial.phase.label && t.key.trial == ledger.trial.trial &&
+                    t.key.occurrence.value == ledger.trial.occurrence
+                )
+                .get
+                .key
+              val diagnostic = if status == "no-match" then
+                eyes4s.plan.Diagnostic.of(
+                  eyes4s.plan.StudyFinding
+                    .UnmatchedFocal[eyes4s.plan.TrialKey, eyes4s.kernel.Unit2D.Px](
+                      core,
+                      unmatched.reason(core).get
+                    )
+                )
+              else
+                inspection.scales(c("scale").toInt).contrast match
+                  case eyes4s.plan.ScaleContrast.Rows(rows) =>
+                    rows
+                      .get(ResultRef.ContrastRow(c("scale").toInt, core))
+                      .get
+                      .outcome
+                      .swap
+                      .toOption
+                      .get
+                  case other => fail(s"$at: no direct contrast failure: $other")
+              Some(s"${diagnostic.code.render}: ${diagnostic.message}")
+          assertEquals(c("reason"), directReason.getOrElse(""), at)
           if c("status") == "contributing" then
             scored += 1
             val core = admitted.input.trials.rows
@@ -489,9 +576,38 @@ class NativeGoldenWorkflowSuite extends munit.CatsEffectSuite:
               .value
               .value
             assertEquals((c("d__valid"), c("d").toDouble), ("true", d), at)
-          else assertEquals((c("d__valid"), c("d")), ("false", ""), at)
+            Vector(
+              "m" -> eyes4s.plan.StudyDesign.Matched,
+              "b" -> eyes4s.plan.StudyDesign.Control
+            ).foreach { (name, design) =>
+              val reduction = get(
+                inspection
+                  .scales(index)
+                  .reductions(design)
+                  .get(ResultRef.Reduction(index, design, core))
+                  .toRight(s"$at: no $name")
+              )
+              val value = get(reduction.outcome).value.value
+              assertEquals((c(s"${name}__valid"), c(name).toDouble), ("true", value), at)
+            }
+            Vector("m", "b", "d").foreach { name =>
+              assertEquals(
+                (c(s"${name}_absence__valid"), c(s"${name}_absence")),
+                ("false", ""),
+                at
+              )
+            }
+          else
+            Vector("m", "b", "d").foreach { name =>
+              assertEquals((c(s"${name}__valid"), c(name)), ("false", ""), at)
+              assertEquals(
+                (c(s"${name}_absence__valid"), c(s"${name}_absence")),
+                ("true", c("status")),
+                at
+              )
+            }
         }
-        assert(scored >= first.summary.contrasts.contributing, s"only $scored scored cells")
+        assertEquals(scored, first.summary.contrasts.contributing * 4)
         // comparisons.csv, as written: every scored pair is eyes4s's pair score.
         val keys = admitted.input.trials.rows
           .map(t =>
@@ -501,33 +617,191 @@ class NativeGoldenWorkflowSuite extends munit.CatsEffectSuite:
         val pairCsv = second.files
           .collectFirst { case ("comparisons.csv", data) => String(Array.from(data), UTF_8) }
           .getOrElse(fail("no comparisons.csv exported"))
-        val pairs  = get(CsvSniffer.records("comparisons.csv", pairCsv, Delimiter.Comma))
-        val pcol   = pairs.head.zipWithIndex.toMap
-        var paired = 0
-        pairs.tail.foreach { r =>
+        val pairs         = get(CsvSniffer.records("comparisons.csv", pairCsv, Delimiter.Comma))
+        val pcol          = pairs.head.zipWithIndex.toMap
+        val directTallies = prepared.plan
+          .windowTallies(admitted.input)
+          .map((key, tally) => key -> get(tally))
+          .toMap
+        val writtenPairRefs = pairs.tail.map { r =>
           def c(name: String)                                       = r(pcol(name))
           def key(phase: String, trial: String, occurrence: String) =
             keys
               .get((c("participant"), c(phase), c(trial), c(occurrence).toInt))
               .getOrElse(fail(s"no direct key for ${r.mkString(",")}"))
-          if c("score__valid") == "true" then
-            paired += 1
-            val index  = c("scale").toInt
-            val design = c("design") match
-              case "matched" => eyes4s.plan.StudyDesign.Matched
-              case "control" => eyes4s.plan.StudyDesign.Control
-              case other     => fail(s"unknown design $other")
-            val ref = ResultRef.PairRow(
-              index,
-              design,
-              key("phase", "trial", "occurrence"),
-              key("reference_phase", "reference_trial", "reference_occurrence")
+          val index = c("scale").toInt
+          assertEquals(c("sigma"), prepared.summary.scales(index))
+          assertEquals(
+            c("reference_item"),
+            key("reference_phase", "reference_trial", "reference_occurrence").item
+          )
+          Vector(
+            "query"     -> key("phase", "trial", "occurrence"),
+            "reference" -> key("reference_phase", "reference_trial", "reference_occurrence")
+          ).foreach { (role, key) =>
+            val tally = directTallies.getOrElse(key, fail(s"no direct window tally for $key"))
+            assertEquals(c(s"${role}_outside_window_count__valid"), "true")
+            assertEquals(c(s"${role}_outside_window_count").toInt, tally.outsideWindow)
+            assertEquals(c(s"${role}_outside_window_of__valid"), "true")
+            assertEquals(c(s"${role}_outside_window_of").toInt, tally.total)
+            assertEquals(
+              c(s"${role}_outside_window_share__valid"),
+              tally.outsideWindowShare.nonEmpty.toString
             )
-            val direct = get(
-              inspection.scales(index).pairs(design).get(ref).toRight(s"no direct pair $ref")
-            ).outcome.toOption.getOrElse(fail(s"direct pair $ref has no score")).value.value
-            assertEquals(c("score").toDouble, direct, ref.toString)
+            assertEquals(
+              Option.when(c(s"${role}_outside_window_share").nonEmpty)(
+                c(s"${role}_outside_window_share").toDouble
+              ),
+              tally.outsideWindowShare
+            )
+          }
+          val design = c("design") match
+            case "matched" => eyes4s.plan.StudyDesign.Matched
+            case "control" => eyes4s.plan.StudyDesign.Control
+            case other     => fail(s"unknown design $other")
+          val ref = ResultRef.PairRow(
+            index,
+            design,
+            key("phase", "trial", "occurrence"),
+            key("reference_phase", "reference_trial", "reference_occurrence")
+          )
+          val outcome = get(
+            inspection.scales(index).pairs(design).get(ref).toRight(s"no direct pair $ref")
+          ).outcome
+          outcome match
+            case Right(score) =>
+              assertEquals((c("reason__valid"), c("reason")), ("false", ""), ref.toString)
+              assertEquals(
+                (c("score__valid"), c("score").toDouble),
+                ("true", score.value.value),
+                ref.toString
+              )
+              assertEquals(
+                (c("score_absence__valid"), c("score_absence")),
+                ("false", ""),
+                ref.toString
+              )
+            case Left(diagnostic) =>
+              assertEquals((c("score__valid"), c("score")), ("false", ""), ref.toString)
+              assertEquals(
+                (c("score_absence__valid"), c("score_absence")),
+                ("true", "failed"),
+                ref.toString
+              )
+              assertEquals(c("reason__valid"), "true", ref.toString)
+              assertEquals(
+                c("reason"),
+                s"${diagnostic.code.render}: ${diagnostic.message}",
+                ref.toString
+              )
+          ref
         }
-        assert(paired > 0, "comparisons.csv holds no scored pair")
+        val directPairRefs = inspection.scales.flatMap(s =>
+          Vector(eyes4s.plan.StudyDesign.Matched, eyes4s.plan.StudyDesign.Control)
+            .flatMap(d => s.pairs(d).references)
+        )
+        assert(directPairRefs.nonEmpty)
+        assertEquals(writtenPairRefs.distinct.size, writtenPairRefs.size)
+        assertEquals(writtenPairRefs.toSet, directPairRefs.toSet)
+
+        val name   = get(eyes4s.results.CovariateName.of("response"))
+        val levels = get(eyes4s.results.Levels.of(Vector("Forgotten", "Remembered")))
+        val term   = eyes4s.results.LevelTerm.Categorical(name, levels)
+        val schema = get(
+          eyes4s.results.CovariateSchema.of(
+            Vector(
+              eyes4s.results.Covariate(name, eyes4s.results.CovariateType.Categorical(levels))
+            )
+          )
+        )
+        val reportSource = get(
+          eyes4s.codec.ReportSources.study(prepared.plans, prepared.inputs, prepared.results)(
+            prepared.plan,
+            admitted.input,
+            direct,
+            Some(admitted.evidence),
+            schema
+          )
+        )
+        val reportSpec = get(
+          eyes4s.results.ReportSpec.of(
+            get(eyes4s.results.ReportId.of("independent-csv-oracle")),
+            scale.value,
+            get(
+              eyes4s.results.ReportSelection
+                .of(eyes4s.results.Role.values.toVector, Vector("value"))
+            ),
+            groupBy = Vector(eyes4s.results.Grouping.ByLevel(term)),
+            reduce = eyes4s.results.ReducePolicy
+              .ParticipantMeans(get(eyes4s.results.MinimumQueries.of(1))),
+            contrast = Some(eyes4s.results.LevelContrast(term, "Remembered", "Forgotten"))
+          )
+        )
+        val directReport   = get(eyes4s.results.Report.evaluate(reportSpec, reportSource))
+        val participantCsv = second.files
+          .collectFirst { case ("participants.csv", data) =>
+            String(Array.from(data), UTF_8)
+          }
+          .getOrElse(fail("no participants.csv exported"))
+        val participants =
+          get(CsvSniffer.records("participants.csv", participantCsv, Delimiter.Comma))
+        val participantColumns = participants.head.zipWithIndex.toMap
+        val participantKeys    = participants.tail.map { row =>
+          def c(name: String) = row(participantColumns(name))
+          val participant     = c("participant")
+          val group           = c("group")
+          val ledger          = queryLedger.filter(_.trial.participant == participant)
+          val scoredQueries   = expected.collect { case ((`participant`, _, _), query) =>
+            query
+          }.toVector
+          val statuses = scoredQueries.map(q => get(q.hcursor.get[String]("status")))
+          assertEquals(c("requested").toInt, ledger.size)
+          assertEquals(c("contributing").toInt, statuses.count(_ == "contributing"))
+          assertEquals(c("failed").toInt, statuses.count(_.startsWith("failed:")))
+          assertEquals(c("no_match").toInt, statuses.count(_ == "no-match"))
+          assertEquals(
+            c("not_admitted").toInt,
+            ledger.count(_.disposition != TrialDisposition.Admitted)
+          )
+          Vector(
+            "m" -> eyes4s.results.Role.Matched,
+            "b" -> eyes4s.results.Role.Control,
+            "d" -> eyes4s.results.Role.Difference
+          ).foreach { (name, role) =>
+            val cell = directReport.cells
+              .find(cell =>
+                cell.role == role && cell.group.levels.contains(term.render -> group)
+              )
+              .getOrElse(fail(s"no direct $group $role cell"))
+            val expected = cell.perParticipant
+              .find(_.participant == participant)
+              .getOrElse(fail(s"no direct $participant $group $role mean"))
+            assertEquals(c(s"${name}__valid"), expected.value.isPresent.toString)
+            assertEquals(
+              Option.when(c(name).nonEmpty)(c(name).toDouble),
+              expected.value.toOption
+            )
+            val absence = expected.value.absence.map {
+              case eyes4s.results.Absence.EmptyGroup         => "empty-group"
+              case eyes4s.results.Absence.BelowMinimum(_, _) => "below-minimum"
+              case eyes4s.results.Absence.Unpaired           => "unpaired"
+              case eyes4s.results.Absence.NotRecorded        => "not-recorded"
+              case eyes4s.results.Absence.Unparsed           => "unparsed"
+              case eyes4s.results.Absence.Failed(_, _)       => "failed"
+              case eyes4s.results.Absence.Undefined(_)       => "undefined"
+            }
+            assertEquals(c(s"${name}_absence__valid"), absence.nonEmpty.toString)
+            assertEquals(c(s"${name}_absence"), absence.getOrElse(""))
+            if name == "d" then assertEquals(c("n").toInt, expected.queries)
+          }
+          participant -> group
+        }
+        val directParticipantKeys =
+          directReport.cells.filter(_.role == eyes4s.results.Role.Difference).flatMap { cell =>
+            val group = cell.group.levels.find(_._1 == term.render).get._2
+            cell.perParticipant.map(p => p.participant -> group)
+          }
+        assertEquals(participantKeys.distinct.size, participantKeys.size)
+        assertEquals(participantKeys.toSet, directParticipantKeys.toSet)
     }
   }

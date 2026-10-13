@@ -24,7 +24,7 @@ import eyes4s.studio.app.compare.SummaryAnswer
 import eyes4s.studio.app.figures.*
 import eyes4s.studio.core.backend.*
 import eyes4s.studio.core.document.{FigureId, ScienceContent, StudioDocument}
-import eyes4s.studio.core.figures.{FigureSource, MethodsReads}
+import eyes4s.studio.core.figures.{FigureSource, MethodsFacts, MethodsReads}
 import eyes4s.studio.core.headless.NativeHeadlessSession
 import eyes4s.studio.core.navigation.StudyNavigator
 import eyes4s.studio.core.selection.{ScaleIndex, StudioRef}
@@ -88,6 +88,8 @@ object NativeCommandJourneyReadback:
       source: SourceRecordPage,
       sourceRef: StudioRef,
       provenance: Provenance,
+      methods: GeneratedMethods,
+      methodsFacts: MethodsFacts,
       exports: Vector[(String, Vector[Byte])]
   )
   private def ok[E, A](value: IO[Either[E, A]]): IO[A] = value.map(get)
@@ -141,9 +143,10 @@ object NativeCommandJourneyReadback:
         .view(composer, model)
         .page
         .getOrElse(throw new AssertionError("No native figure page"))
-      bound   = get(FigureSource.of(document, get(FigureId.of(1))))
-      methods = FigureComposer.view(composer, model).methods.flatMap(_.text.toOption)
-      request = BundleRequest(
+      bound     = get(FigureSource.of(document, get(FigureId.of(1))))
+      generated = get(MethodsText.generate(bound, summary, facts, report))
+      methods   = FigureComposer.view(composer, model).methods.flatMap(_.text.toOption)
+      request   = BundleRequest(
         bound,
         page,
         ExportFormat.Svg,
@@ -175,5 +178,7 @@ object NativeCommandJourneyReadback:
       source,
       sourceRef,
       provenance,
+      generated,
+      facts,
       files.map((name, data) => name -> Vector.from(data))
     )

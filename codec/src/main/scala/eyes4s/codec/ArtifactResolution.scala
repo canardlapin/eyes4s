@@ -1067,6 +1067,18 @@ object ArtifactResolver:
         .toRight(ResolveError.Missing(name))
         .flatMap((entry, bytes) => document(entry, bytes))
 
+    // Participant chunks share one result document. Retain its reference list
+    // between relation checks, so each edge does not parse that document again.
+    val resultReferences = manifest.relations
+      .collect { case ManifestRelation.ResultPayloadOf(result, _) => result }
+      .distinct
+      .map { name =>
+        name -> stored(name).flatMap(
+          ResultManifest.references(_).left.map(ResolveError.Decode(name, _))
+        )
+      }
+      .toMap
+
     def stampMismatch(
         resultName: ArtifactName,
         planName: ArtifactName,
@@ -1205,12 +1217,7 @@ object ArtifactResolver:
               relation @ ManifestRelation.ResultPayloadOf(result, _),
               Vector(Some(Decoded.Result(_)), Some(Decoded.Payload(payload)))
             ) =>
-          val references = verified.collectFirst {
-            case (entry, bytes) if entry.name == result =>
-              document(entry, bytes).flatMap(json =>
-                attempt(entry, ResultManifest.references(json))
-              )
-          }
+          val references = resultReferences.get(result)
           references match
             case Some(Right(refs)) if refs.contains(payload.ref) => None
             case Some(Right(_))    => fail(RelationMismatch.UnreferencedPayload(payload.ref))

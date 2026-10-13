@@ -132,8 +132,14 @@ class ImportAdmissionSuite extends munit.FunSuite:
   // attribute, and admits it exactly as it admits r3.
   test("the real backend admits a re-mapped attribute column as it admits r3") {
     import eyes4s.studio.core.fixture.{GoldenAssets, GoldenCsv}
-    import eyes4s.studio.core.real.RealAdmission
-    val spec     = remapped().model.document.dataset(r3).getOrElse(fail("no re-mapped r3"))
+    import cats.effect.IO
+    import cats.effect.unsafe.implicits.global
+    import eyes4s.studio.core.assets.AssetRegistry
+    import eyes4s.studio.core.backend.LedgerPages
+    import eyes4s.studio.core.real.{DatasetSources, RealAdmission, RealStudyBackend}
+    import java.nio.charset.StandardCharsets.UTF_8
+    val document = remapped().model.document
+    val spec     = document.dataset(r3).getOrElse(fail("no re-mapped r3"))
     val original = t1.dataset(r3).getOrElse(fail("no r3"))
     assertEquals(spec.mapping.column(ColumnRole.Occurrence), None)
     assertEquals(
@@ -148,6 +154,25 @@ class ImportAdmissionSuite extends munit.FunSuite:
     val plain         = admit(original)
     assertEquals(withAttribute.summary, plain.summary)
     assertEquals(withAttribute.ledger, plain.ledger)
+    val sources = new DatasetSources[IO]:
+      def bytes(dataset: DatasetRevisionSpec, source: Source): IO[Option[IArray[Byte]]] =
+        val text = source.role match
+          case SourceRole.Fixations => GoldenCsv.fixations
+          case SourceRole.Trials    => GoldenCsv.trials
+        IO.pure(Some(IArray.from(text.getBytes(UTF_8))))
+      def assets(dataset: DatasetRevisionSpec): IO[Option[AssetRegistry]] =
+        IO.pure(GoldenAssets.registry(dataset).toOption)
+    RealStudyBackend
+      .resource[IO](document, sources)
+      .use { backend =>
+        for
+          verified <- backend.verify(r3, ok(DatasetRevisionSpec.contentDigest(spec)))
+          ledger   <- LedgerPages.all[IO](backend.ledger(r3, _))
+        yield
+          assertEquals(verified, Right(withAttribute.summary))
+          assertEquals(ledger, Right(withAttribute.ledger))
+      }
+      .unsafeRunSync()
   }
 
   test(

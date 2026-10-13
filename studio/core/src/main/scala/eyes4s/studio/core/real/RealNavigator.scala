@@ -373,6 +373,17 @@ final class RealNavigator[F[_]] private[real] (
                         fixation,
                         MissingSource.of(reason, RealResults.key)
                       )
+                    case eyes4s.plan.NavigationError.Provenance(
+                          eyes4s.plan.ProvenanceError.FixationOutOfRange(key, position, count)
+                        ) =>
+                      NavigationError.Source(
+                        fixation,
+                        MissingSource.FixationOutOfRange(
+                          RealResults.key(key),
+                          position.number.value,
+                          count
+                        )
+                      )
                     case other => unavailable(other.message)
                   }
                 ordinal <- RecordNumber.of(record.value).leftMap(e => unavailable(e.message))
