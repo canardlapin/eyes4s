@@ -453,13 +453,25 @@ class GeometryPanelSuite extends munit.FunSuite:
     val panel = loaded(small)
     val pics  = picture(panel, small)
     val vm    = GeometryPanelVM.of(panel, small, Some(pics))
+    // Two caption lines, as the board draws them: the trial, then its count
+    // (review ticket 24), so a caption never wraps mid-phrase.
     assertEquals(
-      vm.thumbnails.map(_.label),
+      vm.thumbnails.map(t => (t.name, t.count)),
       Vector(
-        "P01 · enc_01 · 2 records inside",
-        "P05 · ret_04 · 2 of 2 outside",
-        "P09 · enc_01 · 1 of 1 off screen",
-        "P17 · enc_03 · 1 record inside"
+        ("P01 · enc_01", "2 records inside"),
+        ("P05 · ret_04", "2 of 2 outside"),
+        ("P09 · enc_01", "1 of 1 off screen"),
+        ("P17 · enc_03", "1 record inside")
+      )
+    )
+    // The accessible names, in the singular for a trial of one record.
+    assertEquals(
+      vm.thumbnails.map(_.accessible),
+      Vector(
+        "P01 · enc_01: 2 records, 0 outside the image frame, 0 outside the screen",
+        "P05 · ret_04: 2 records, 2 outside the image frame, 0 outside the screen",
+        "P09 · enc_01: 1 record, 0 outside the image frame, 1 outside the screen",
+        "P17 · enc_03: 1 record, 0 outside the image frame, 0 outside the screen"
       )
     )
     assertEquals(
@@ -485,6 +497,107 @@ class GeometryPanelSuite extends munit.FunSuite:
     // Pictures of other records are never shown.
     val (other, _) = GeometryPanel.sync(GeometryPanel.empty, t1)
     assertEquals(GeometryPanelVM.of(other, t1, Some(pics)).thumbnails, Vector.empty)
+  }
+
+  test("the density key: its grid and four closed count ranges at the drawn levels") {
+    val panel = loaded(small)
+    val pics  = picture(panel, small)
+    // s = 4 (DESIGN_SPEC section 15.1): the owner's closed ranges, not the
+    // board's former "≥1, ≥4, ≥16, ≥64".
+    assertEquals(
+      GeometryPanelVM.of(panel, small, Some(pics)).densityKey,
+      DensityKeyVM(
+        "Records per cell, log steps · 64 × 36 screen cells",
+        Vector("1–3", "4–15", "16–63", "≥64")
+      )
+    )
+    // The labels follow the drawn picture's own steps: s = 256, with
+    // thousands separators.
+    val dense = pics.copy(density = pics.density.copy(steps = DensitySteps.anchored(300L)))
+    assertEquals(
+      GeometryPanelVM.of(panel, small, Some(dense)).densityKey.labels,
+      Vector("1–255", "256–1,023", "1,024–4,095", "≥4,096")
+    )
+    // Before the pictures are drawn, the default levels over the grid placed.
+    assertEquals(
+      GeometryPanelVM.of(panel, small, None).densityKey,
+      DensityKeyVM(
+        "Records per cell, log steps · 64 × 36 screen cells",
+        Vector("1–3", "4–15", "16–63", "≥64")
+      )
+    )
+  }
+
+  test("an empty study keeps the default density key") {
+    val panel = loaded(small)
+    val pics  = picture(panel, small)
+    val none  = ok(PlacementDensityGrid.of(64, 36, Vector.fill(64 * 36)(0.0), 0))
+    val empty = pics.copy(density = DensityPicture.of(none))
+    assertEquals(empty.density.steps, DensitySteps.Default)
+    assertEquals(
+      GeometryPanelVM.of(panel, small, Some(empty)).densityKey,
+      DensityKeyVM(
+        "Records per cell, log steps · 64 × 36 screen cells",
+        Vector("1–3", "4–15", "16–63", "≥64")
+      )
+    )
+    // No placed records at all: dashes for the grid, still the default key.
+    assertEquals(
+      GeometryPanelVM.densityKey(None, DensitySteps.Default),
+      DensityKeyVM(
+        "Records per cell, log steps · — × — screen cells",
+        Vector("1–3", "4–15", "16–63", "≥64")
+      )
+    )
+  }
+
+  test("records with no finite position are counted, one in the singular") {
+    val panel                                = loaded(small)
+    val ps                                   = panel.placement.toOption.get
+    def withUnplaced(n: Int): Option[String] =
+      val unplaced = Vector.tabulate(n)(i => UnplacedSourceRecord(100 + i, "x is not finite"))
+      val preview  = PlacementPreview
+        .of(r3, ps.records, unplaced, ps.trials, ps.density)
+        .fold(e => fail(e.message), identity)
+      val read = GeometryPanel
+        .update(
+          panel,
+          small,
+          GeometryIntent.PlacementRead(panel.placementKey.get, Right(preview))
+        )
+        ._1
+      GeometryPanelVM.of(read, small, None).positionsNote
+    assertEquals(withUnplaced(0), None)
+    assertEquals(
+      withUnplaced(1),
+      Some("1 record has no finite position and is not drawn.")
+    )
+    assertEquals(
+      withUnplaced(2),
+      Some("2 records have no finite position and are not drawn.")
+    )
+  }
+
+  test("a thumbnail's count line, and the missing-asset caption") {
+    val trial = TrialKey("P01", Phase.Encoding, "enc_08", 1)
+    def count(records: Int, window: Int, screen: Int): String =
+      GeometryPanelVM.thumbCount(ThumbnailPicture(trial, records, window, screen, Vector.empty))
+    assertEquals(count(12, 0, 0), "12 records inside")
+    assertEquals(count(1, 0, 0), "1 record inside")
+    assertEquals(count(12, 1, 0), "1 of 12 outside")
+    assertEquals(count(1_200, 1_100, 0), "1,100 of 1,200 outside")
+    // Off screen is named before outside the frame.
+    assertEquals(count(12, 3, 2), "2 of 12 off screen")
+    assertEquals(GeometryPanelVM.trialLabel(trial), "P01 · enc_08")
+    // The Data board's caption for a trial whose image is missing (drawn by
+    // the missing-asset thumbnail, review ticket 25).
+    assertEquals(
+      eyes4s.studio.app.text.GeometryText(
+        eyes4s.studio.app.text.GeometryTextId.ThumbMissing,
+        "forest-044.png"
+      ),
+      "Missing asset · forest-044.png"
+    )
   }
 
   test("the worked example of the selected record: raw → image frame → degrees") {

@@ -136,11 +136,12 @@ class GeometrySceneSuite extends munit.FunSuite:
           "3 cells drawn at four log-spaced levels: 1–3, 4–15, 16–63 and at least 64 records per cell."
         )
     )
-    // Computed from the picture's own steps, with thousands separators.
+    // Computed from the picture's own steps, with thousands separators; one
+    // cell in the singular (review ticket 24).
     assert(
       clue(described(DensityPicture(2, 1, Vector(2, 0), 300, DensitySteps.anchored(300L))))
         .endsWith(
-          "1 cells drawn at four log-spaced levels: 1–255, 256–1,023, 1,024–4,095 and at least " +
+          ". 1 cell drawn at four log-spaced levels: 1–255, 256–1,023, 1,024–4,095 and at least " +
             "4,096 records per cell."
         )
     )

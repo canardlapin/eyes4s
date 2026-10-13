@@ -435,7 +435,7 @@ class Component extends DCLogic {
     ];
     const thumbs = thumbs0.map((t, i) => Object.assign({ cc: 'var(--ink-2)', missing: false }, t, { domId: 'th-' + i, cursor: i === 0 ? 'true' : null }));
     const binned = binnedLevels(standInRecords(), 1920, 1080, 64);
-    const binKey = ['≥1', '≥4', '≥16', '≥64'].map((label, i) => ({ label, fill: 'var(--ramp-' + i + ')' }));
+    const binKey = ['1–3', '4–15', '16–63', '≥64'].map((label, i) => ({ label, fill: 'var(--ramp-' + i + ')' }));
     return { rootClass: this.props.dark ? 'es dark' : 'es', cols, causes, thumbs, bins: binned.cells, binsDrawn: String(binned.cells.length), binKey };
   }
 }

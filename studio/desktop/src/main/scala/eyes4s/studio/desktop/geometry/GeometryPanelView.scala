@@ -138,6 +138,17 @@ final class GeometryPanelView(dispatch: GeometryIntent => Unit):
   private val densityRow = HBox(densityBox, densityText)
   densityRow.getStyleClass.add("geometry-row")
 
+  /** The density key's four swatches, lowest level first, each labelled
+    * with its count range; then its caption (DESIGN_SPEC section 15.1).
+    */
+  val densitySwatches: Vector[Label] = Vector.tabulate(DensityPicture.Levels)(swatch)
+  val densityKey: Label              = label("geometry-note", "t11")
+  densityKey.setWrapText(true)
+  // The board ends this row with the marking button; it keeps its own row
+  // below the key, so a narrow panel never elides a range or the button.
+  private val keyRow = HBox(densitySwatches*)
+  keyRow.getStyleClass.add("geometry-key")
+
   // --- the marking form ---------------------------------------------------------------------
   val orientationTitle: Label                 = label("geometry-strong", "t12")
   private val fixGroup                        = ToggleGroup()
@@ -219,6 +230,8 @@ final class GeometryPanelView(dispatch: GeometryIntent => Unit):
     thumbGrid,
     positionsNote,
     densityRow,
+    keyRow,
+    densityKey,
     mark,
     markNote,
     orientation
@@ -309,6 +322,8 @@ final class GeometryPanelView(dispatch: GeometryIntent => Unit):
       densityTitle.setText(vm.densityTitle)
       densityCaption.setText(vm.densityCaption)
       densityBox.setAccessibleText(vm.densityAccessible)
+      densitySwatches.zip(vm.densityKey.labels).foreach((l, text) => l.setText(text))
+      densityKey.setText(vm.densityKey.caption)
       mark.setText(vm.mark)
       mark.setDisable(!vm.canMark)
       show(markNote, vm.markNote)
@@ -427,6 +442,28 @@ object GeometryPanelView:
 
   def plotHost(): CanvasPlotHost = CanvasPlotHost()
 
+  /** A swatch's size in logical pixels (the board's 12 × 10). */
+  val SwatchWidth: Double  = 12.0
+  val SwatchHeight: Double = 10.0
+
+  /** The key swatch of density level `i` (0 is the lowest): ramp stop `i`
+    * at the density opacity over the stage, as the density draws its cells.
+    */
+  def swatch(i: Int): Label =
+    val fill = Region()
+    fill.getStyleClass.addAll("geometry-swatch-fill", s"level-$i")
+    fill.setOpacity(eyes4s.studio.viz.geometry.GeometryScene.DensityOpacity)
+    val chip = StackPane(fill)
+    chip.getStyleClass.add("geometry-swatch")
+    chip.setMinSize(SwatchWidth, SwatchHeight)
+    chip.setPrefSize(SwatchWidth, SwatchHeight)
+    chip.setMaxSize(SwatchWidth, SwatchHeight)
+    val l = label("geometry-note", "t11")
+    l.setGraphic(chip)
+    // A range is never elided.
+    l.setMinWidth(Region.USE_PREF_SIZE)
+    l
+
   /** `host` in a box of the thumbnail size. */
   def sized(host: CanvasPlotHost): StackPane =
     val box = StackPane(host)
@@ -445,14 +482,15 @@ object GeometryPanelView:
     n.setManaged(on)
 
   /** One representative trial: a focusable picture that marks its trial
-    * for correction (click, Enter or Space), and its label.
+    * for correction (click, Enter or Space), and its caption on two lines,
+    * the trial and then its count, so it never wraps mid-phrase.
     */
   final class Thumbnail(fire: GeometryIntent => Unit):
     val host: CanvasPlotHost = plotHost()
     val picture: StackPane   = sized(host)
-    val caption: Label       = label("geometry-caption", "mono", "t11")
-    caption.setWrapText(true)
-    caption.setMaxWidth(ThumbWidth)
+    val name: Label          = label("geometry-value", "mono", "t11")
+    val count: Label         = label("geometry-caption", "t11")
+    Vector(name, count).foreach(_.setMaxWidth(ThumbWidth))
     private var trial: Option[eyes4s.studio.core.backend.TrialKey] = None
     picture.setFocusTraversable(true)
     picture.setAccessibleRole(AccessibleRole.TOGGLE_BUTTON)
@@ -462,14 +500,16 @@ object GeometryPanelView:
         mark()
         e.consume()
     )
-    val node: VBox = VBox(picture, caption)
+    private val caption = VBox(name, count)
+    val node: VBox      = VBox(picture, caption)
     node.getStyleClass.addAll("geometry-thumb", "geometry-stack")
 
     private def mark(): Unit = trial.foreach(t => fire(GeometryIntent.MarkTrial(t)))
 
     def render(vm: Option[ThumbnailVM]): Unit =
       trial = vm.map(_.trial)
-      caption.setText(vm.fold("")(_.label))
+      name.setText(vm.fold("")(_.name))
+      count.setText(vm.fold("")(_.count))
       picture.setAccessibleText(vm.fold("")(_.accessible))
       val classes = picture.getStyleClass
       classes.remove("marked")
