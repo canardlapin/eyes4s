@@ -25,8 +25,8 @@ import intaglio.svg.SvgRenderer
 import intaglio.{Grob, alpha, blue, green, red, value}
 
 /** Panel C's map tile (bd-01M42K7ZYDRR90JXZYNDD2HVXP): the served grid's
-  * raster, opaque and cell for cell over the region it covers, on the
-  * stage, with the served levels contoured and cased.
+  * raster, cell for cell over the region it covers and faded in under the
+  * mass alpha floor, on the stage, with the served levels contoured and cased.
   */
 class MapTileSceneSuite extends munit.FunSuite:
 
@@ -78,7 +78,7 @@ class MapTileSceneSuite extends munit.FunSuite:
     case intaglio.LengthExpr.Const(l) => l.value
     case other                        => fail(s"not a native constant: $other")
 
-  test("the tile is the grid's raster in the shared style, opaque, cell for cell") {
+  test("the tile is the grid's raster in the shared style, cell for cell, floor faded") {
     val image = named(MapTileScene.MapName) match
       case Some(i: Grob.Image) => i.image
       case other               => fail(s"no map image: $other")
@@ -92,9 +92,14 @@ class MapTileSceneSuite extends munit.FunSuite:
       val d = MapColours.argb(style, g.atTop(x, y))
       assertEquals(
         (p.red, p.green, p.blue, p.alpha),
-        ((d >> 16) & 0xff, (d >> 8) & 0xff, d & 0xff, 255),
+        ((d >> 16) & 0xff, (d >> 8) & 0xff, d & 0xff, (d >>> 24) & 0xff),
         s"cell ($x, $y)"
       )
+    // No global opacity on a tile: a cell at or above 10% of the shared
+    // limits is opaque, and a fainter one fades in (the 10% alpha floor).
+    assertEquals(image.pixelUnsafe(5, 3).alpha, 255)
+    assert(g.atTop(0, 11).exists(_ / 2.0 < 0.10))
+    assert(image.pixelUnsafe(0, 11).alpha < 255, "a faint cell is not faded in")
     // Under a limit above its peak, the fullest cell is not the ramp's darkest.
     val peak = MapColours.argb(style, Some(1.0))
     assertNotEquals(peak, MapColours.argb(style, Some(2.0)))

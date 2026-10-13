@@ -113,9 +113,19 @@ class TrialMapSceneSuite extends munit.FunSuite:
         ((d >> 16) & 0xff, (d >> 8) & 0xff, d & 0xff, (d >>> 24) & 0xff),
         s"cell ($x, $y)"
       )
-    // Every pixel is the grid's value's colour: the missing cell covers nothing.
+    // Every pixel is the grid's value's colour: the missing cell covers
+    // nothing in the raster (the hatch is drawn over it), a cell at or above
+    // 10% of the limits is opaque before the global 0.6, and a fainter one
+    // fades in below it.
     assertEquals(image.pixelUnsafe(100 % Columns, 100 / Columns).alpha, 0)
-    assertEquals(image.pixelUnsafe(5, 5).alpha, math.round(255 * 0.6).toInt)
+    assertEquals(image.pixelUnsafe(20, 12).alpha, math.round(255 * 0.6).toInt)
+    // The limits run from 0 to the bump's peak, 1: a value is its fraction.
+    val faint = g.atTop(5, 5).get
+    assert(faint > 0.0 && faint < 0.10, s"cell (5, 5) is at $faint")
+    assertEquals(
+      image.pixelUnsafe(5, 5).alpha,
+      math.round(math.round(255 * faint / 0.10).toInt * 0.6).toInt
+    )
     // Drawing changed no stored value.
     assertEquals(g.contentHash, hash)
     assertEquals(raster.argb.toVector, MapRaster.render(g, style).argb.toVector)
@@ -292,7 +302,8 @@ class TrialMapSceneSuite extends munit.FunSuite:
     )
     val ink    = Tokens.palette(PaletteToken.IsolineInk)
     val casing = Tokens.palette(PaletteToken.IsolineCase)
-    // Every mass colour from the ramp's lightest to its darkest, at 0.6, and no map.
+    // Every mass colour from the ramp's lightest to its darkest, faded in
+    // under the 10% alpha floor and drawn at 0.6, and no map.
     val unit = right(ColourLimits.sequential(0.0, 1.0).flatMap(MapStyle.of(MapPalette.Mass, _)))
     val grounds = for
       (where, bg) <- backgrounds
@@ -302,7 +313,7 @@ class TrialMapSceneSuite extends munit.FunSuite:
         val c = MapColours.argb(unit, Some(v))
         over(
           (((c >> 16) & 0xff).toDouble, ((c >> 8) & 0xff).toDouble, (c & 0xff).toDouble),
-          MapOpacity.Default.value,
+          ((c >>> 24) & 0xff) / 255.0 * MapOpacity.Default.value,
           bg
         )
       }
@@ -318,4 +329,95 @@ class TrialMapSceneSuite extends munit.FunSuite:
       }
       .minBy(_._1)
     assert(worst._1 >= 3.0, f"worst: ${worst._2} at ${worst._1}%.2f")
+  }
+
+  // --- Cells without coverage (review ticket 8) --------------------------------
+
+  private def uncovered(scene: TrialScene): Option[Grob] =
+    grobs(scene).find {
+      case g: Grob.Group => g.name.exists(_.value == TrialScene.UncoveredName)
+      case _             => false
+    }
+
+  private def missingAt(missing: Set[Int]): MapGrid =
+    val stored =
+      cells().zipWithIndex.map((c, i) => if missing(i) then None else Some(c.getOrElse(0.0)))
+    right(MapGrid.of(mapId(), Columns, Rows, RowOrder.TopFirst, stored, Vector(0.5)))
+
+  test("a missing cell is hatched over the map, opaque, never a ramp colour") {
+    val g     = grid()
+    val scene = right(TrialScene(withMap(Some(TrialMap(g, MapRaster.render(g, style))))))
+    val hatch = uncovered(scene).getOrElse(fail("no hatch over the missing cell"))
+    val rects = hatch.children.collect { case r: Grob.Rect => r }
+    assertEquals(rects.size, 1)
+    val r = rects.head
+    // The missing-asset hatch, exactly as a missing asset's frame wears it.
+    assert(r.gp.fillPattern.isDefined, "the missing cell is not hatched")
+    val asset = right(
+      TrialScene(withMap(None).copy(display = display(ret07, displays.toMap.apply("missing"))))
+    )
+    val frameHatch = grobs(asset).collectFirst {
+      case f: Grob.Rect if f.name.exists(_.value == TrialScene.FrameName) => f.gp.fillPattern
+    }
+    assertEquals(frameHatch, Some(r.gp.fillPattern))
+    // Over cell 100 (column 36, row 1) of the frame, cell for cell.
+    val frame    = display(ret07, Display.Blank).placement
+    val (cw, ch) = (frame.width.toDouble / Columns, frame.height.toDouble / Rows)
+    assertEquals(
+      r.center,
+      right(intaglio.Point.native(frame.left + 36.5 * cw, frame.top + 1.5 * ch))
+    )
+    assertEquals(
+      r.size,
+      intaglio.Size.fromExtents(
+        right(intaglio.ExtentExpr.native(cw)),
+        right(intaglio.ExtentExpr.native(ch))
+      )
+    )
+    // Over the raster, under the isolines.
+    val order         = grobs(scene)
+    def at(n: String) = order.indexWhere(x => named(scene, n).exists(_ eq x))
+    val hatchAt       = order.indexWhere(_ eq hatch)
+    assert(at(TrialScene.MapName) < hatchAt && hatchAt < at(TrialScene.IsolinesName))
+  }
+
+  test("a run of missing cells along a row is one hatched rect; a full grid draws none") {
+    // Row 3: columns 10-12 missing, then 14; row 4: column 0.
+    val g = missingAt(
+      Set(3 * Columns + 10, 3 * Columns + 11, 3 * Columns + 12, 3 * Columns + 14, 4 * Columns)
+    )
+    val scene = right(TrialScene(withMap(Some(TrialMap(g, MapRaster.render(g, style))))))
+    val rects = uncovered(scene).toVector.flatMap(_.children).collect { case r: Grob.Rect => r }
+    val frame = display(ret07, Display.Blank).placement
+    val cw    = frame.width.toDouble / Columns
+    def wide(r: Grob.Rect) = r.size.width match
+      case intaglio.ExtentExpr(intaglio.LengthExpr.Const(l)) => l.value
+      case other                                             => fail(s"$other")
+    assertEquals(rects.map(wide), Vector(3 * cw, cw, cw))
+    val full = missingAt(Set.empty)
+    val none = right(TrialScene(withMap(Some(TrialMap(full, MapRaster.render(full, style))))))
+    assertEquals(uncovered(none), None)
+  }
+
+  test("the caption counts the cells without coverage, singular for one") {
+    def captionOf(g: MapGrid) =
+      right(TrialScene(withMap(Some(TrialMap(g, MapRaster.render(g, style)))))).caption
+    val one = captionOf(grid())
+    assert(one.endsWith(" · 1 cell without coverage"), one)
+    assertEquals(TrialText(TrialTextId.MapUncoveredOne), "1 cell without coverage")
+    val many = captionOf(missingAt((0 until 1200).toSet))
+    assert(many.endsWith(" · 1,200 cells without coverage"), many)
+    assertEquals(TrialText(TrialTextId.MapUncovered, "2"), "2 cells without coverage")
+    // No missing cell, or no map: nothing said.
+    val full = captionOf(missingAt(Set.empty))
+    assert(!full.contains("coverage"), full)
+    val bare = right(TrialScene(withMap(None))).caption
+    assert(!bare.contains("coverage"), bare)
+    // The drawn caption is the scene's caption.
+    named(
+      right(TrialScene(withMap(Some(TrialMap(grid(), MapRaster.render(grid(), style)))))),
+      TrialScene.CaptionName
+    ) match
+      case Some(t: Grob.Text) => assertEquals(t.label, one)
+      case other              => fail(s"no caption: $other")
   }
