@@ -559,7 +559,8 @@ class RovingCursorSuite extends ScalaCheckSuite:
   }
 
   test("on a stage the focus ring wears the inner casing inside the halo") {
-    import eyes4s.studio.app.tokens.{StageToken, ThemedToken, TokenUsage, Tokens}
+    import eyes4s.studio.app.maps.StageCasing
+    import eyes4s.studio.app.tokens.{StageToken, ThemedToken, TokenRef, TokenUsage, Tokens}
     import intaglio.{CasingWidth, Grob, Point, StrokeWidth}
     val ring = OverlayRing(
       RingKind.Focus,
@@ -580,6 +581,11 @@ class RovingCursorSuite extends ScalaCheckSuite:
       k     <- List(1.0, 2.0)
     do
       val ink = (c: eyes4s.studio.app.tokens.Colour) => IntaglioColours.toIntaglio(c)
+      // The accent needs its inner casing on every stage (StageCasing).
+      assertEquals(
+        OverlayPalette.of(theme, stage).focusInner.nonEmpty,
+        StageCasing.needed(TokenRef.Themed(ThemedToken.Accent), theme, stage)
+      )
       polygons(OverlayPalette.of(theme, stage), k) match
         case Vector(halo, accent) =>
           // Halo 1 px, inner casing 1 px, accent 2 px, inner casing, halo: the

@@ -16,6 +16,8 @@
 
 package eyes4s.studio.app.tokens
 
+import eyes4s.studio.app.maps.StageCasing
+
 /** WCAG contrast of every token pair the design draws, in both themes and on
   * every stage (ticket S1.1). Runs on the JVM and on Scala.js.
   */
@@ -211,7 +213,8 @@ class TokenContrastSuite extends munit.FunSuite:
 
   // A stage mark over the image frame (DESIGN_SPEC section 15, "Stage
   // casing"): the markFailures rule with two bands, the stage halo and the
-  // inner casing inside it. `inner = false` measures the halo alone.
+  // inner casing inside it where StageCasing applies it. `inner = false`
+  // measures the halo alone.
   private def frameFailures(inner: Boolean): List[String] =
     for
       theme  <- Theme.values.toList
@@ -223,12 +226,12 @@ class TokenContrastSuite extends munit.FunSuite:
       halo = ratio(Tokens.staged(stage, StageToken.Halo), bg)
       in   = ratio(Tokens.resolve(TokenUsage.innerCasing(stage), theme, stage), bg)
       if m < Wcag.NonTextMinimum && halo < Wcag.NonTextMinimum &&
-        (!inner || in < Wcag.NonTextMinimum)
+        (!inner || !StageCasing.needed(mark, theme, stage) || in < Wcag.NonTextMinimum)
     yield f"${label(theme, stage, true)}: --${mark.cssName} on --${ground.cssName}: " +
       f"mark $m%.2f, halo $halo%.2f, inner casing $in%.2f < ${Wcag.NonTextMinimum}%.1f"
 
   test(
-    "over map and image grounds, a stage mark or focus ring reaches 3:1 with its inner casing"
+    "over map and image grounds, a stage mark or focus ring reaches 3:1 as StageCasing cases it"
   ) {
     // Both themes x three stages x (map cells, the blank screen).
     val failures = frameFailures(inner = true)

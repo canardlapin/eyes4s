@@ -18,12 +18,14 @@ package eyes4s.studio.viz.plot
 
 import eyes4s.studio.app.Intent
 import eyes4s.studio.app.plot.{RovingKey, RovingMove, ViewSelection}
+import eyes4s.studio.app.maps.StageCasing
 import eyes4s.studio.app.tokens.{
   Colour,
   StageToken,
   StageVariant,
   Theme,
   ThemedToken,
+  TokenRef,
   TokenUsage,
   Tokens
 }
@@ -281,15 +283,18 @@ final case class OverlayPalette(
 
 object OverlayPalette:
 
-  /** Rings over a trial on its stage: the focus ring inside the stage's
-    * inner casing and halo ([[TokenUsage.innerCasing]]), hover in the
-    * on-stage colour.
+  /** Rings over a trial on its stage: the focus ring cased by the stage
+    * halo, with the stage's inner casing between them where the accent and
+    * the halo alone fall below 3:1 ([[StageCasing]]), hover in the on-stage
+    * colour.
     */
   def of(theme: Theme, stage: StageVariant): OverlayPalette =
     OverlayPalette(
       focus = Tokens.themed(theme, ThemedToken.Accent),
       focusCase = Tokens.staged(stage, StageToken.Halo),
-      focusInner = Some(Tokens.resolve(TokenUsage.innerCasing(stage), theme, stage)),
+      focusInner = Option.when(
+        StageCasing.needed(TokenRef.Themed(ThemedToken.Accent), theme, stage)
+      )(Tokens.resolve(TokenUsage.innerCasing(stage), theme, stage)),
       selectedInner = Tokens.themed(theme, ThemedToken.SelRingInner),
       selectedOuter = Tokens.themed(theme, ThemedToken.Ink),
       hover = Tokens.staged(stage, StageToken.OnStage)

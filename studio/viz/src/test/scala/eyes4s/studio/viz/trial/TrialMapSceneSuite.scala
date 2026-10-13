@@ -405,9 +405,10 @@ class TrialMapSceneSuite extends munit.FunSuite:
 
   test("marks, the focus ring and the cross read over photographs and every map colour") {
     // DESIGN_SPEC section 15, "Stage casing": --halo stays stage-keyed, and
-    // the inner casing inside it carries a mark where neither the mark nor
-    // the halo reaches 3:1 (TokenContrastSuite's rule, here over a continuum
-    // of grounds). Both themes, every stage.
+    // the inner casing inside it, where StageCasing applies it, carries a
+    // mark where neither the mark nor the halo reaches 3:1 (TokenContrastSuite's
+    // rule, here over a continuum of grounds that adds photographs). Both
+    // themes, every stage.
     val unit = right(ColourLimits.sequential(0.0, 1.0).flatMap(MapStyle.of(MapPalette.Mass, _)))
     def withAlpha(c: Colour) = (rgb(c), c.alphaPercent / 100.0)
     val failures             = for
@@ -432,8 +433,11 @@ class TrialMapSceneSuite extends munit.FunSuite:
       halo  = withAlpha(Tokens.staged(stage, StageToken.Halo))
       inner = withAlpha(Tokens.resolve(TokenUsage.innerCasing(stage), theme, stage))
       mark <- TokenUsage.innerCased
-      fill = withAlpha(Tokens.resolve(mark, theme, stage))
-      best = List(fill, halo, inner).map((c, a) => contrast(over(c, a, ground), ground)).max
+      fill  = withAlpha(Tokens.resolve(mark, theme, stage))
+      bands =
+        if StageCasing.needed(mark, theme, stage) then List(fill, halo, inner)
+        else List(fill, halo)
+      best = bands.map((c, a) => contrast(over(c, a, ground), ground)).max
       if best < 3.0
     yield f"$theme, ${stage.cssName} stage, --${mark.cssName} over $where" +
       t.fold("")(v => f" under the map at $v%.2f") + f": $best%.2f"
