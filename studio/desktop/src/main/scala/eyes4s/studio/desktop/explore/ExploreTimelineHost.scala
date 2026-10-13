@@ -59,7 +59,8 @@ final class ExploreTimelineHost(
       ExploreTimelineVM.of(state, shownRead).playheadMs,
       shownRead.toOption.flatten
         .flatMap(_.timeline.extent.declared)
-        .map(_.window.until.toMicros / 1000.0)
+        .map(_.window.until.toMicros / 1000.0),
+      shownRead.toOption.flatten.fold(Set.empty)(_.outsideWindow)
     )
 
   private def view(id: String): ViewId =

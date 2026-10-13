@@ -17,16 +17,19 @@
 package eyes4s.studio.viz.plot
 
 import eyes4s.studio.app.plot.*
-import eyes4s.studio.app.tokens.Theme
+import eyes4s.studio.app.tokens.{Theme, ThemedToken}
 import eyes4s.studio.core.selection.{
+  ContextRevision,
   InputCause,
+  InputStamp,
+  SelectionInput,
   SelectionMode,
   SelectionState,
   StudioRef,
   ViewId
 }
 import eyes4s.studio.app.Intent
-import intaglio.{DevicePoint, Grob}
+import intaglio.{DashPattern, DevicePoint, Grob, LineType, Point, value}
 import intaglio.interaction.NamedPicking
 import munit.FunSuite
 
@@ -187,4 +190,105 @@ class TimelinePlotSuite extends FunSuite:
     val coverage = targetsOn(built(board))
     val beyond   = coverage.transform.deviceToCanvas(device(coverage, 10000.0))
     assert(beyond.x > coverage.transform.surface.logicalWidth)
+  }
+
+  test("a fixation outside the window is a dashed outline with no fill, still picked") {
+    val outside = board.refs(11)
+    val plot    = built(board, TimelinePlot(columns, outsideWindow = Set(outside)))
+    val rects   = grobs(plot).collect {
+      case r: Grob.Rect if r.name.exists(_.value.startsWith(TimelinePlot.MarkPrefix)) =>
+        r.name.get.value -> r
+    }.toMap
+    assertEquals(rects.size, 13)
+    val ink3 = IntaglioColours.themed(Theme.Light, ThemedToken.Ink3)
+    val dash = right(DashPattern(TimelinePlot.OutsideDashPx))
+    board.refs.zipWithIndex.foreach { (ref, i) =>
+      val gp = rects(s"${TimelinePlot.MarkPrefix}$i").gp
+      if ref == outside then
+        assertEquals(gp.fill, None, "outside: no fill")
+        assertEquals(gp.stroke, Some(ink3), "outside: Ink3 outline")
+        assertEquals(gp.lineType, LineType.Custom(dash), "outside: the custom dash")
+      else assertEquals((gp.fill, gp.stroke), (Some(ink3), None), s"$ref: a filled bar")
+    }
+    // Unfilled, it is still the fixation a click in it picks.
+    val t   = targetsOn(plot)
+    val f   = board.fixations(11)
+    val mid =
+      right(
+        t.transform.dataToDevice(DataPoint(f.onsetMs + f.durationMs / 2.0, f.durationMs / 2.0))
+      )
+    assertEquals(right(t.pick(mid, 0.0)).map(_.ref), Some(outside))
+    // Every other mark is drawn as before.
+    assertEquals(plot.marks, built(board).marks)
+  }
+
+  test("a bar's selection and focus rings are rectangles round the bar, not circles") {
+    val plot      = built(board)
+    val scale     = 2.0
+    val transform = right(PlotTransform.resolve(plot.plot, right(PlotSurface(800, 150, scale))))
+    val picking   = right(NamedPicking.compile(plot.plot.scene, transform.renderContext))
+    val t         = right(PlotTargets.resolve(plot, transform, picking))
+    val f         = board.fixations(5)
+    val ref       = board.refs(5)
+    val corner    = right(transform.dataToDevice(DataPoint(f.onsetMs.toDouble, 0.0)))
+    val opposite  = right(
+      transform.dataToDevice(
+        DataPoint((f.onsetMs + f.durationMs).toDouble, f.durationMs.toDouble)
+      )
+    )
+    val bar = DeviceBox.spanning(corner, opposite)
+    assertEquals(right(t.target(ref).toRight("6")).box, Some(bar))
+    val view = right(ViewId.of("explore.timeline"))
+    val bus  = right(
+      SelectionState.empty.submit(
+        SelectionInput(
+          InputStamp(ContextRevision(0), view, 0L, InputCause.Pointer),
+          SelectionMode.Replace,
+          Vector(ref)
+        )
+      )
+    )
+    val state = MarkInputState
+      .initial[StudioRef](view, bus)
+      .moveFocus(Some(ref), t)
+      .state
+      .focusChanged(true)
+      .state
+    val shape = RingShape.Box(bar.halfWidth, bar.halfHeight)
+    assertEquals(
+      state.overlay(t),
+      Vector(
+        OverlayRing(RingKind.Selected, ref, bar.centre, OverlayRings.GapPx * scale, shape),
+        OverlayRing(
+          RingKind.Focus,
+          ref,
+          bar.centre,
+          (OverlayRings.GapPx + 2.0 * OverlayRings.SelectedBandPx) * scale,
+          shape
+        )
+      )
+    )
+    // Drawn, each band is a four-cornered outline round the bar.
+    val scene = right(
+      OverlayRings.scene(
+        state.overlay(t),
+        OverlayPalette.onSurface(Theme.Light),
+        1600,
+        300,
+        scale
+      )
+    )
+    def all(g: Grob): Vector[Grob] = g +: g.children.flatMap(all)
+    val outlines = scene.grobs.flatMap(all).collect { case p: Grob.Polygon => p.points }
+    val out      = OverlayRings.SelectedBandPx / 2.0 * scale + OverlayRings.GapPx * scale
+    val inner    = Vector((-1.0, -1.0), (1.0, -1.0), (1.0, 1.0), (-1.0, 1.0)).map((sx, sy) =>
+      right(
+        Point.native(
+          bar.centre.x + sx * (bar.halfWidth + out),
+          bar.centre.y + sy * (bar.halfHeight + out)
+        )
+      )
+    )
+    assertEquals(outlines.map(_.size), Vector(4, 4, 4))
+    assertEquals(outlines.head, inner)
   }

@@ -26,7 +26,9 @@ import eyes4s.studio.app.plot.{
   TimelineFixation
 }
 import eyes4s.studio.app.text.{ExploreText, ExploreTextId, Format}
+import eyes4s.plan.MapPlacement
 import eyes4s.studio.core.backend.{AdmittedFixation, TrialFixations, TrialKey}
+import eyes4s.studio.core.selection.StudioRef
 
 /** A playback speed of the timeline (Explore.dc.html, timeline). */
 enum PlaybackSpeed(val factor: Double) derives CanEqual:
@@ -75,8 +77,9 @@ object ExploreTimeline:
   /** The columns of the timeline's source. */
   val columns: Either[PlotSourceError, TimelineColumns] = TimelineColumns.standard
 
-  /** A trial's timeline from its admitted fixations, to the millisecond, and
-    * the fixations too short to draw at that resolution.
+  /** A trial's timeline from its admitted fixations, to the millisecond, the
+    * fixations too short to draw at that resolution, and the drawn ones that
+    * lie outside the analysis window or off the screen.
     *
     * Each fixation's onset and end are rounded, and its duration is the
     * difference, so fixations that meet in the data meet on the timeline:
@@ -93,7 +96,20 @@ object ExploreTimeline:
     val (drawn, skipped) = rounded.partition(_._2.durationMs > 0)
     Timeline
       .of(fixations.trial, drawn.map(_._2), Some(fixations.extent))
-      .map(TimelineRead(_, skipped.map(_._1)))
+      .map(
+        TimelineRead(
+          _,
+          skipped.map(_._1),
+          drawn.collect { case (f, _) if outsideWindow(f.placement) => f.ref }.toSet
+        )
+      )
+
+  /** Whether a fixation so placed lies outside the analysis window: beyond
+    * it on the screen, or off the screen.
+    */
+  def outsideWindow(placement: MapPlacement): Boolean = placement match
+    case MapPlacement.OutsideWindow(_) | MapPlacement.OutsideScreen => true
+    case _                                                          => false
 
   /** The timeline of the trial view's fixations, when it has read them; or
     * why they make no timeline.
@@ -154,9 +170,14 @@ object ExploreTimeline:
           .flatMap(_.fixations.map(_.onsetMs.toDouble).findLast(_ < state.playheadMs))
           .fold(state)(at => state.copy(playheadMs = at, playing = false))
 
-/** A trial's timeline, and the admitted fixations too short to draw on it. */
-final case class TimelineRead(timeline: Timeline, skipped: Vector[AdmittedFixation])
-    derives CanEqual
+/** A trial's timeline, the admitted fixations too short to draw on it, and
+  * the drawn fixations outside the analysis window.
+  */
+final case class TimelineRead(
+    timeline: Timeline,
+    skipped: Vector[AdmittedFixation],
+    outsideWindow: Set[StudioRef] = Set.empty
+) derives CanEqual
 
 /** What the timeline's toolbar and plot show. */
 final case class ExploreTimelineVM(

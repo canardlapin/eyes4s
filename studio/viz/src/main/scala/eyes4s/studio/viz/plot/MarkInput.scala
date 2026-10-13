@@ -67,6 +67,28 @@ trait RovingTarget[+R <: StudioRef]:
     */
   def selectionRuns: Vector[Vector[DevicePoint]] = Vector.empty
 
+  /** The painted rectangle of a mark drawn as a box (a timeline bar), whose
+    * feedback rings follow that rectangle; `None` for a round mark, ringed by
+    * a circle round its anchor.
+    */
+  def box: Option[DeviceBox] = None
+
+/** A mark's painted rectangle in device pixels: its centre and how far it
+  * reaches from it across (`halfWidth`) and down (`halfHeight`).
+  */
+final case class DeviceBox(centre: DevicePoint, halfWidth: Double, halfHeight: Double)
+    derives CanEqual
+
+object DeviceBox:
+
+  /** The rectangle with opposite corners `a` and `b`, in either order. */
+  def spanning(a: DevicePoint, b: DevicePoint): DeviceBox =
+    DeviceBox(
+      DevicePoint((a.x + b.x) / 2.0, (a.y + b.y) / 2.0),
+      math.abs(b.x - a.x) / 2.0,
+      math.abs(b.y - a.y) / 2.0
+    )
+
 /** The marks of one drawn scene that a roving cursor and a pointer can reach
   * (tickets S4.2 and S4.5a). A trial's fixations and a plot's marks are both
   * this; [[MarkInputState]] handles input against either.
@@ -121,10 +143,11 @@ object RovingCursor:
           case RovingMove.Previous => if i > 0 then targets.lift(i - 1) else None
           case direction           => directional(targets, at, direction)
 
-  /** The last-drawn target whose painted reach covers `point`: a pick
-    * fallback that makes the inside of a hollow mark pickable, since
-    * Intaglio picks an unfilled outline on its annulus only. It can go once
-    * Intaglio has an interior pick policy (intaglio bd-01M3FQQHVHHCEC349JV46VM4FB).
+  /** The last-drawn target whose painted reach, or painted box, covers
+    * `point`: a pick fallback that makes the inside of a hollow mark (and of
+    * an outlined bar) pickable, since Intaglio picks an unfilled outline on
+    * its stroke only. It can go once Intaglio has an interior pick policy
+    * (intaglio bd-01M3FQQHVHHCEC349JV46VM4FB).
     */
   def inside[T <: RovingTarget[?]](
       targets: Vector[T],
@@ -132,7 +155,12 @@ object RovingCursor:
       deviceScale: Double
   ): Option[T] =
     targets.reverseIterator.find { t =>
-      math.hypot(t.anchor.x - point.x, t.anchor.y - point.y) <= t.reachPx * deviceScale
+      t.box match
+        case Some(b) =>
+          math.abs(b.centre.x - point.x) <= b.halfWidth &&
+          math.abs(b.centre.y - point.y) <= b.halfHeight
+        case None =>
+          math.hypot(t.anchor.x - point.x, t.anchor.y - point.y) <= t.reachPx * deviceScale
     }
 
   private def directional[T <: RovingTarget[?]](
@@ -203,12 +231,30 @@ enum SelectionShare derives CanEqual:
   case Partly(selected: Int, of: Int)
   case All
 
-/** One feedback ring around a mark: its centre and radius in device pixels. */
+/** The outline a feedback ring follows. */
+enum RingShape derives CanEqual:
+
+  /** A circle round a round mark: its inner edge lies
+    * [[OverlayRing.radius]] from the centre.
+    */
+  case Round
+
+  /** A rectangle round a mark drawn as a box of half-extents `halfWidth`
+    * and `halfHeight` (device pixels): its inner edge lies
+    * [[OverlayRing.radius]] outside the box.
+    */
+  case Box(halfWidth: Double, halfHeight: Double)
+
+/** One feedback ring around a mark: its centre, and how far its inner edge
+  * lies out from the centre (a round mark) or from the mark's box, in device
+  * pixels.
+  */
 final case class OverlayRing(
     kind: RingKind,
     ref: StudioRef,
     centre: DevicePoint,
-    radius: Double
+    radius: Double,
+    shape: RingShape = RingShape.Round
 ) derives CanEqual
 
 /** The token colours of the feedback rings (DESIGN_SPEC sections 4 and 14):
@@ -265,14 +311,15 @@ object OverlayRings:
   /** The hover ring. */
   val HoverPx: Double = 1.5
 
-  /** Straight segments of each drawn ring. */
+  /** Straight segments of each drawn round ring. */
   val Segments: Int = 64
 
   /** The rings as an Intaglio scene on a `width` × `height` device raster at
     * `deviceScale`, for the host to draw on its overlay canvas: the colours
     * are tokens, and the focus ring's halo is Intaglio `StrokeCasing` paint.
     * Each band is a ring centred where [[OverlayRing.radius]] and the band
-    * widths put it.
+    * widths put it: a circle, or a rectangle round a boxed mark
+    * ([[RingShape.Box]]).
     */
   def scene(
       rings: Vector[OverlayRing],
@@ -290,21 +337,27 @@ object OverlayRings:
         lineWidth = px * k,
         lineType = line
       )
-    def circle(r: OverlayRing, at: Double, style: GraphicParams) =
-      val points = (0 until Segments).foldLeft[Either[GraphicsError, Vector[Point]]](
-        Right(Vector.empty)
-      ) { (acc, i) =>
-        val a = 2.0 * math.Pi * i / Segments
-        for
-          ps <- acc
-          p  <- Point.native(r.centre.x + at * math.cos(a), r.centre.y + at * math.sin(a))
-        yield ps :+ p
+    // The band whose centre line lies `out` beyond the ring's inner edge.
+    def outline(r: OverlayRing, out: Double, style: GraphicParams) =
+      val at      = r.radius + out
+      val corners = r.shape match
+        case RingShape.Round =>
+          (0 until Segments).toVector.map { i =>
+            val a = 2.0 * math.Pi * i / Segments
+            (r.centre.x + at * math.cos(a), r.centre.y + at * math.sin(a))
+          }
+        case RingShape.Box(hw, hh) =>
+          Vector((-1.0, -1.0), (1.0, -1.0), (1.0, 1.0), (-1.0, 1.0)).map((sx, sy) =>
+            (r.centre.x + sx * (hw + at), r.centre.y + sy * (hh + at))
+          )
+      val points = corners.foldLeft[Either[GraphicsError, Vector[Point]]](Right(Vector.empty)) {
+        case (acc, (x, y)) => acc.flatMap(ps => Point.native(x, y).map(ps :+ _))
       }
       points.flatMap(Grob.polygon(_, gp = style))
     def bands(r: OverlayRing): Either[GraphicsError, Vector[Grob]] = r.kind match
       case RingKind.Hover =>
         gp(palette.hover, HoverPx)
-          .flatMap(circle(r, r.radius + HoverPx / 2.0 * k, _))
+          .flatMap(outline(r, HoverPx / 2.0 * k, _))
           .map(
             Vector(_)
           )
@@ -313,15 +366,15 @@ object OverlayRings:
         for
           inner <- gp(palette.selectedInner, SelectedBandPx, line)
           outer <- gp(palette.selectedOuter, SelectedBandPx, line)
-          a     <- circle(r, r.radius + SelectedBandPx / 2.0 * k, inner)
-          b     <- circle(r, r.radius + 1.5 * SelectedBandPx * k, outer)
+          a     <- outline(r, SelectedBandPx / 2.0 * k, inner)
+          b     <- outline(r, 1.5 * SelectedBandPx * k, outer)
         yield Vector(a, b)
       case RingKind.Focus =>
         for
           base   <- gp(palette.focus, FocusPx)
           width  <- StrokeWidth.devicePixels(FocusCasingPx * k)
           casing <- StrokeCasing.checked(ink(palette.focusCase), CasingWidth.Absolute(width))
-          ring   <- circle(r, r.radius + FocusCasingPx / 2.0 * k, base.withCasing(casing))
+          ring   <- outline(r, FocusCasingPx / 2.0 * k, base.withCasing(casing))
         yield Vector(ring)
     for
       xs    <- Interval(0.0, width)
@@ -440,9 +493,11 @@ final case class MarkInputState[R <: StudioRef] private (
     selected.flatMap(targets.target).distinctBy(_.ref).flatMap { t =>
       val kind =
         if share(t) == SelectionShare.All then RingKind.Selected else RingKind.PartlySelected
-      val centres = if t.selectionRuns.isEmpty then Vector(t.anchor)
-      else t.selectionRuns.collect { case Vector(point) => point }
-      centres.map(point => ring(targets, kind, t).copy(centre = point))
+      if t.selectionRuns.isEmpty then Vector(ring(targets, kind, t))
+      else
+        t.selectionRuns
+          .collect { case Vector(point) => point }
+          .map(point => ring(targets, kind, t).copy(centre = point))
     }
 
   /** Selected multi-row lines follow every drawn run, never a missing-value
@@ -480,12 +535,18 @@ final case class MarkInputState[R <: StudioRef] private (
       if (kind == RingKind.Hover || kind == RingKind.Focus) && isSelected(t) then
         2.0 * OverlayRings.SelectedBandPx
       else 0.0
-    OverlayRing(
-      kind,
-      t.ref,
-      t.anchor,
-      (t.reachPx + OverlayRings.GapPx + outside) * targets.deviceScale
-    )
+    val k = targets.deviceScale
+    t.box match
+      case Some(b) =>
+        OverlayRing(
+          kind,
+          t.ref,
+          b.centre,
+          (OverlayRings.GapPx + outside) * k,
+          RingShape.Box(b.halfWidth, b.halfHeight)
+        )
+      case None =>
+        OverlayRing(kind, t.ref, t.anchor, (t.reachPx + OverlayRings.GapPx + outside) * k)
 
   /** The view's accessible text: `mark` of the focused mark (and how much of
     * it is selected) when the targets draw it, else `idle`, how to use the
