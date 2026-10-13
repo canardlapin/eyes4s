@@ -303,6 +303,56 @@ class TrialViewMapFxSuite extends StudioFxSuite:
     w.dispose()
   }
 
+  // --- Cells without coverage (review ticket 8) ---------------------------------
+
+  /** `grid` without a value in a 16 × 16 block of cells from column 8, row 8
+    * down from the top: test values, not results.
+    */
+  private lazy val holed: MapGrid =
+    right(
+      MapGrid.of(
+        grid.map,
+        Columns,
+        Rows,
+        RowOrder.TopFirst,
+        grid.cells.zipWithIndex.map { (c, i) =>
+          val (x, y) = (i % Columns, i / Columns)
+          if x >= 8 && x < 24 && y >= 8 && y < 24 then None else c
+        },
+        grid.levels
+      )
+    )
+
+  fxStage.test("cells without coverage are hatched on screen and counted in the caption") {
+    fx =>
+      val w          = Wired(fx)
+      val holedStyle = ColourLimits.spanning(MapPalette.Mass, Vector(holed))
+      runOnFx {
+        w.view.plotHost.setOutputScaleOverride(Some(1.0))
+        w.view.show(input(blank))
+        w.view.showMap(Some(MapRequest(holed, holedStyle)))
+      }
+      val (scene, frame) = drawn(w, 1.0)(_.map.contains(holed.map))
+      assert(scene.caption.endsWith(" · 256 cells without coverage"), scene.caption)
+      val img = snapshot(fx, SnapshotScale.X1)
+      // A row across the hole: the hatch's stripes and ground, never the
+      // blank screen showing through and never a ramp colour.
+      val y   = frameTop + 16.0 * cell
+      val row = (0 until 24).map(k =>
+        rgb(img, pixelAt(w, frame, frameLeft + (9.0 + 0.6 * k) * cell, y, 1))
+      )
+      val screen = Tokens.palette(PaletteToken.Screen)
+      def near(c: (Int, Int, Int), t: eyes4s.studio.app.tokens.Colour, tol: Int) =
+        math.abs(c._1 - t.red) <= tol && math.abs(c._2 - t.green) <= tol &&
+          math.abs(c._3 - t.blue) <= tol
+      val warnText = Tokens.themed(Theme.Light, eyes4s.studio.app.tokens.ThemedToken.WarnText)
+      val warnSoft = Tokens.themed(Theme.Light, eyes4s.studio.app.tokens.ThemedToken.WarnSoft)
+      assert(!row.exists(near(_, screen, 6)), s"the screen shows through: ${row.distinct}")
+      assert(row.exists(near(_, warnText, 40)), s"no hatch stroke: ${row.distinct}")
+      assert(row.exists(near(_, warnSoft, 24)), s"no hatch ground: ${row.distinct}")
+      w.dispose()
+  }
+
   // --- Another trial ---------------------------------------------------------------
 
   private lazy val enc03: TrialDisplay = GoldenTrials.display("P17", "enc_03")

@@ -59,6 +59,11 @@ enum TrialTextId derives CanEqual:
     */
   case RememberedShown, RememberedHidden
 
+  /** A result map's cells without coverage, counted in the caption: missing
+    * is not zero, so the count is said as well as hatched (review ticket 8).
+    */
+  case MapUncovered, MapUncoveredOne
+
 /** The trial view's strings in the boards' wording. */
 object TrialText:
 
@@ -100,6 +105,8 @@ object TrialText:
         "{0} · in window, trial fails: {1} of {2} fixations outside window"
       case RememberedShown  => "Reference image — not displayed during this trial"
       case RememberedHidden => "Remembered image not shown"
+      case MapUncovered     => "{0} cells without coverage"
+      case MapUncoveredOne  => "1 cell without coverage"
 
   /** `id`'s English template with `args` filled in. */
   def apply(id: TrialTextId, args: String*): String =

@@ -18,7 +18,7 @@ package eyes4s.studio.viz.trial
 
 import eyes4s.studio.app.maps.{GridPoint, Isolines, MapGrid, MapId, MapOpacity, MapRaster}
 import eyes4s.studio.app.plot.{PlotText, PlotTextId}
-import eyes4s.studio.app.text.{TrialText, TrialTextId}
+import eyes4s.studio.app.text.{Format, TrialText, TrialTextId}
 import eyes4s.studio.app.tokens.{
   FontFace,
   PaletteToken,
@@ -364,17 +364,18 @@ final case class TrialScene private (
 object TrialScene:
 
   // --- Names of the scene's grobs (the op log and the tests find them) -----
-  val StageName: String    = "trial-stage"
-  val FrameName: String    = "trial-image-frame"
-  val StimulusName: String = "trial-stimulus"
-  val WindowName: String   = "trial-window"
-  val OrderName: String    = "trial-order"
-  val MarksName: String    = "trial-fixations"
-  val CaptionName: String  = "trial-caption"
-  val UnderlayName: String = "trial-underlay"
-  val MapName: String      = "trial-map"
-  val IsolinesName: String = "trial-isolines"
-  val RememberName: String = "trial-remembered"
+  val StageName: String     = "trial-stage"
+  val FrameName: String     = "trial-image-frame"
+  val StimulusName: String  = "trial-stimulus"
+  val WindowName: String    = "trial-window"
+  val OrderName: String     = "trial-order"
+  val MarksName: String     = "trial-fixations"
+  val CaptionName: String   = "trial-caption"
+  val UnderlayName: String  = "trial-underlay"
+  val MapName: String       = "trial-map"
+  val IsolinesName: String  = "trial-isolines"
+  val UncoveredName: String = "trial-map-uncovered"
+  val RememberName: String  = "trial-remembered"
 
   /** A map isoline: its ink, and the halo casing under it, 2 units of ink
     * over 4 of casing (bead S4.3b, bd-01M3DPFM4ZG9GV0RTYWWA1M2P9).
@@ -530,7 +531,15 @@ object TrialScene:
       input.screen.width.toString,
       input.screen.height.toString
     )
-    display + TrialText(Separator) + placement
+    val uncovered = input.map.map(m => uncoveredCells(m.grid)).filter(_ > 0).map { n =>
+      TrialText(Separator) +
+        (if n == 1 then TrialText(MapUncoveredOne)
+         else TrialText(MapUncovered, Format.count(n)))
+    }
+    display + TrialText(Separator) + placement + uncovered.getOrElse("")
+
+  /** How many of `grid`'s cells have no value: missing, not zero. */
+  def uncoveredCells(grid: MapGrid): Int = grid.cells.count(_.isEmpty)
 
   /** The trial scene of `input`. */
   def apply(input: TrialSceneInput): Either[TrialSceneError, TrialScene] =
@@ -727,7 +736,7 @@ object TrialScene:
       case MapCoverage.Region(r)  => (r.left, r.top, r.width, r.height)
 
     // The map's raster at the global opacity, cell for cell over the region
-    // it covers, and its isolines, cased.
+    // it covers, its missing cells hatched, and its isolines, cased.
     private def mapLayer: R[Vector[Grob]] =
       input.map.fold[R[Vector[Grob]]](Right(Vector.empty)) { m =>
         val raster            = m.raster
@@ -754,9 +763,53 @@ object TrialScene:
               )
             yield img
           )
-          lines <- isolines(m.grid, left, top, w, h)
-        yield layer +: lines
+          missing <- uncovered(m.grid, left, top, w, h)
+          lines   <- isolines(m.grid, left, top, w, h)
+        yield (layer +: missing) ++ lines
       }
+
+    // A map's cells without coverage, in the missing-asset hatch and opaque
+    // (review ticket 8): never transparent and never a ramp colour. One
+    // rect for each run of missing cells along a row.
+    private def uncovered(
+        grid: MapGrid,
+        left: Double,
+        top: Double,
+        w: Double,
+        h: Double
+    ): R[Vector[Grob]] =
+      val cellW = w / grid.columns
+      val cellH = h / grid.rows
+      val runs  = for
+        y   <- (0 until grid.rows).toVector
+        run <- (0 until grid.columns).toVector
+          .filter(x => grid.atTop(x, y).isEmpty)
+          .foldLeft(Vector.empty[(Int, Int)]) {
+            case (rs :+ ((from, to)), x) if x == to => rs :+ (from -> (x + 1))
+            case (rs, x)                            => rs :+ (x    -> (x + 1))
+          }
+      yield (y, run._1, run._2)
+      if runs.isEmpty then Right(Vector.empty)
+      else
+        part("uncovered map cells")(
+          for
+            gp    <- hatchPaint
+            cells <- runs.foldLeft[Either[GraphicsError, Vector[Grob]]](Right(Vector.empty)) {
+              case (acc, (y, from, to)) =>
+                for
+                  rs     <- acc
+                  centre <- Point.native(
+                    left + (from + to) / 2.0 * cellW,
+                    top + (y + 0.5) * cellH
+                  )
+                  rw   <- ExtentExpr.native((to - from) * cellW)
+                  rh   <- ExtentExpr.native(cellH)
+                  rect <- Grob.rect(centre, Size.fromExtents(rw, rh), gp = gp)
+                yield rs :+ rect
+            }
+            n <- name(UncoveredName)
+          yield Vector(Grob.group(cells, name = Some(n)))
+        )
 
     private def isolines(
         grid: MapGrid,
@@ -796,18 +849,24 @@ object TrialScene:
     private def screenFill: R[Grob] =
       part("blank screen")(fill(palette(PaletteToken.Screen)).flatMap(frameRect(_, FrameName)))
 
+    // The missing-asset hatch: warn-text stripes on warn-soft. A missing
+    // asset's frame and a map's uncovered cells both wear it.
+    private def hatchPaint: Either[GraphicsError, GraphicParams] =
+      for
+        recipe <- PatternRecipe.angledHatch(45.0, 9.0, 3.0)
+        base   <- fill(themed(ThemedToken.WarnSoft))
+      yield base.withPatternFill(
+        PatternPaint(
+          recipe,
+          themed(ThemedToken.WarnText),
+          Some(themed(ThemedToken.WarnSoft))
+        )
+      )
+
     private def hatched(label: String): R[Vector[Grob]] =
       part("missing-asset hatching")(
         for
-          recipe <- PatternRecipe.angledHatch(45.0, 9.0, 3.0)
-          base   <- fill(themed(ThemedToken.WarnSoft))
-          gp = base.withPatternFill(
-            PatternPaint(
-              recipe,
-              themed(ThemedToken.WarnText),
-              Some(themed(ThemedToken.WarnSoft))
-            )
-          )
+          gp   <- hatchPaint
           rect <- frameRect(gp, FrameName)
           xGp  <- stroke(themed(ThemedToken.WarnText), 2.0)
           arm = frameH * 0.06
