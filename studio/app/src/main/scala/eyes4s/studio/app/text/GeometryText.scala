@@ -37,10 +37,12 @@ enum GeometryTextId derives CanEqual:
   case ExampleNoDegrees
 
   // --- Placement check ---------------------------------------------------------------------
-  case CheckPlacement, CheckPlacementNote, ThumbInside, ThumbInsideOne, ThumbOutside
-  case ThumbOffScreen, ThumbAccessible, ThumbMarked, AllTrials, AllTrialsCaption
-  case AllTrialsCorrected
-  case DensityAccessible, PositionsWaiting, PositionsStale, PositionsFailed, PositionsUnplaced
+  case CheckPlacement, CheckPlacementNote, ThumbTrial, ThumbInside, ThumbInsideOne
+  case ThumbOutside, ThumbOffScreen, ThumbMissing, ThumbAccessible, ThumbAccessibleOne
+  case ThumbMarked, AllTrials, AllTrialsCaption, AllTrialsCorrected
+  case DensityAccessible, DensityCellsDrawn, DensityCellsDrawnOne, DensityRange
+  case DensityOverflow, DensityKey, PositionsWaiting, PositionsStale, PositionsFailed
+  case PositionsUnplaced, PositionsUnplacedOne
 
   // --- Corrections ---------------------------------------------------------------------------
   case MarkOrientation, MarkNeedsTrial, OrientationTitle, FixX, FixY, ScopeTrial
@@ -103,12 +105,16 @@ object GeometryText:
 
     case CheckPlacement     => "Check placement"
     case CheckPlacementNote => "screen outline · image frame"
-    case ThumbInside        => "{0} · {1} records inside"
-    case ThumbInsideOne     => "{0} · 1 record inside"
-    case ThumbOutside       => "{0} · {1} of {2} outside"
-    case ThumbOffScreen     => "{0} · {1} of {2} off screen"
+    case ThumbTrial         => "{0} · {1}"
+    case ThumbInside        => "{0} records inside"
+    case ThumbInsideOne     => "1 record inside"
+    case ThumbOutside       => "{0} of {1} outside"
+    case ThumbOffScreen     => "{0} of {1} off screen"
+    case ThumbMissing       => "Missing asset · {0}"
     case ThumbAccessible    =>
       "{0}: {1} records, {2} outside the image frame, {3} outside the screen"
+    case ThumbAccessibleOne =>
+      "{0}: 1 record, {1} outside the image frame, {2} outside the screen"
     case ThumbMarked      => "{0}, chosen for marking"
     case AllTrials        => "All trials overlaid"
     case AllTrialsCaption =>
@@ -119,11 +125,19 @@ object GeometryText:
         "or shifted participant shows up as mass away from the image frame."
     case DensityAccessible =>
       "Density of all {0} fixation records overlaid, screen coordinates"
+    case DensityCellsDrawn =>
+      "{0} cells drawn at four log-spaced levels: {1}, {2}, {3} and at least {4} records per cell."
+    case DensityCellsDrawnOne =>
+      "1 cell drawn at four log-spaced levels: {0}, {1}, {2} and at least {3} records per cell."
+    case DensityRange     => "{0}–{1}"
+    case DensityOverflow  => "≥{0}"
+    case DensityKey       => "Records per cell, log steps · {0} × {1} screen cells"
     case PositionsWaiting => "Placing the records of {0}…"
     case PositionsStale   =>
       "Drawn for the previous rules or geometry; {0} is being placed again under the new ones."
-    case PositionsFailed   => "Fixation positions are not available: {0}"
-    case PositionsUnplaced => "{0} records have no finite position and are not drawn."
+    case PositionsFailed      => "Fixation positions are not available: {0}"
+    case PositionsUnplaced    => "{0} records have no finite position and are not drawn."
+    case PositionsUnplacedOne => "1 record has no finite position and is not drawn."
 
     case MarkOrientation  => "Mark trial as wrong orientation…"
     case MarkNeedsTrial   => "Choose a trial above to mark."

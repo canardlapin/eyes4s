@@ -24,13 +24,16 @@ import eyes4s.studio.app.tokens.{Colour, Tokens}
 enum MapPalette derives CanEqual:
 
   /** Mass maps: the magenta sequential ramp, light to dark from the lower
-    * limit to the upper, opaque per cell. Its limits are
+    * limit to the upper, each cell fading in from transparent at the lower
+    * limit to opaque at [[MapColours.MassAlphaFloor]] of the range, so the
+    * stimulus and stage show through low mass. Its limits are
     * [[ColourLimits.Sequential]].
     */
   case Mass
 
   /** Difference maps only: the BlueRust diverging ramp, its middle colour
-    * pinned to zero. Its limits are [[ColourLimits.Symmetric]].
+    * pinned to zero, opaque per cell (zero sits mid-ramp, so no value fades).
+    * Its limits are [[ColourLimits.Symmetric]].
     */
   case Difference
 
@@ -140,8 +143,10 @@ object MapStyle:
       case _ => Left(LimitsError.PaletteMismatch(palette, limits))
 
 /** The colour of one map value (ticket S4.4): every colour is a token's or
-  * lies between two of a ramp's stops, packed as opaque ARGB; a missing
-  * value is [[NoCoverage]], so missing is drawn differently from zero. The
+  * lies between two of a ramp's stops, packed as ARGB, opaque except where
+  * a mass map's alpha floor fades it in (review ticket 8; DESIGN_SPEC
+  * section 15). A missing value is [[NoCoverage]]: the scenes draw it with
+  * the missing-asset hatch, so missing is drawn differently from zero. The
   * one global map opacity is applied when the raster is drawn
   * ([[MapOpacity.over]]), not here.
   */
@@ -152,6 +157,12 @@ object MapColours:
     */
   val NoCoverage: Int = 0
 
+  /** The fraction of a mass map's limits at which a cell becomes opaque:
+    * below it the cell's alpha rises linearly from zero, as
+    * `min(1, t / MassAlphaFloor)` for `t` the fraction along the limits.
+    */
+  val MassAlphaFloor: Double = 0.10
+
   // The ramps' stops, read once from the tokens.
   private val massStops: Vector[Colour]       = Tokens.massRamp.stops.toVector
   private val differenceStops: Vector[Colour] =
@@ -159,23 +170,29 @@ object MapColours:
     Vector(ramp.negative, ramp.zero, ramp.positive)
 
   /** The ARGB of `value` in `style`. Values beyond the limits take the end
-    * colour.
+    * colour; a mass value below the alpha floor keeps its colour and fades.
     */
   def argb(style: MapStyle, value: Option[Double]): Int =
     value.fold(NoCoverage) { v =>
       style.limits match
-        case ColourLimits.Sequential(lo, hi) => along(massStops, fraction(v, lo, hi))
+        case ColourLimits.Sequential(lo, hi) =>
+          val t = fraction(v, lo, hi)
+          (floorAlpha(t) << 24) | (along(massStops, t) & MapOpacity.ChannelBits)
         // Zero falls at the middle stop, whatever the extent: it is pinned.
         case ColourLimits.Symmetric(extent) =>
           along(differenceStops, fraction(v, -extent, extent))
     }
 
+  /** The alpha, 0 to 255, of a mass cell at fraction `t` along its limits. */
+  private def floorAlpha(t: Double): Int =
+    math.round(255 * math.min(1.0, t / MassAlphaFloor)).toInt
+
   /** Where `v` lies from `lo` (0) to `hi` (1), clamped; `lo < hi`. */
   private def fraction(v: Double, lo: Double, hi: Double): Double =
     math.max(0.0, math.min(1.0, (v - lo) / (hi - lo)))
 
-  /** The colour at fraction `t` along evenly spaced `stops`, interpolated
-    * channel by channel in sRGB between the two stops around it.
+  /** The opaque colour at fraction `t` along evenly spaced `stops`,
+    * interpolated channel by channel in sRGB between the two stops around it.
     */
   private def along(stops: Vector[Colour], t: Double): Int =
     val segments                 = stops.size - 1

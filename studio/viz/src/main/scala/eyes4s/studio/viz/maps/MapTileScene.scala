@@ -45,10 +45,11 @@ import intaglio.{
 /** One density map drawn alone (ticket bd-01M42K7ZYDRR90JXZYNDD2HVXP; the
   * Figures board's panel C tiles): the screen region the grid covers, in
   * screen pixels with y down, on its stage; the map's raster in its style,
-  * cell for cell and opaque; and its isolines at the served levels, cased
-  * as on the trial view (`--isoline-ink` inside `--isoline-case`). Every
-  * colour is a token's or the map palette's; nothing here derives a value
-  * or a level.
+  * cell for cell, with no global opacity (a mass cell still fades in below
+  * the alpha floor, [[eyes4s.studio.app.maps.MapColours.MassAlphaFloor]]);
+  * and its isolines at the served levels, cased as on the trial view
+  * (`--isoline-ink` inside `--isoline-case`). Every colour is a token's or
+  * the map palette's; nothing here derives a value or a level.
   */
 object MapTileScene:
 
@@ -90,7 +91,10 @@ object MapTileScene:
       region: ScreenRegion,
       stage: StageVariant
   ): Either[GraphicsError, (Vector[Grob], Viewport)] =
-    // Opaque, cell for cell: a figure tile is the map alone, not an overlay.
+    // Cell for cell and without the global opacity: a figure tile is the map
+    // alone, not an overlay. Missing cells are not hatched here yet: a tile
+    // is drawn without an app theme, so it has no warn tokens (review
+    // ticket 8 leaves tiles as a known gap); they show the stage.
     val raster = MapRaster.render(grid, style)
     for
       xs      <- Interval(region.left, region.right)

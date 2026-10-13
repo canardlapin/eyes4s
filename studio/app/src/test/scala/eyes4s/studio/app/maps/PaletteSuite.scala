@@ -19,10 +19,11 @@ package eyes4s.studio.app.maps
 import eyes4s.studio.app.tokens.{Colour, PaletteToken, Tokens}
 
 /** The map palettes (ticket S4.4; the System board's map ramps): the
-  * magenta mass ramp opaque per cell, the BlueRust difference ramp with zero
-  * pinned, missing drawn differently from zero, checked colour limits tied
-  * to their palette, shared and per-panel limits, and the one global
-  * opacity, applied when drawing, which alters no stored value.
+  * magenta mass ramp, fading in below 10% of its limits (review ticket 8),
+  * the BlueRust difference ramp opaque with zero pinned, missing drawn
+  * differently from zero, checked colour limits tied to their palette,
+  * shared and per-panel limits, and the one global opacity, applied when
+  * drawing, which alters no stored value.
   */
 class PaletteSuite extends munit.FunSuite:
   import MapSamples.*
@@ -33,29 +34,58 @@ class PaletteSuite extends munit.FunSuite:
   private def luminance(argb: Int): Double =
     0.2126 * ((argb >> 16) & 0xff) + 0.7152 * ((argb >> 8) & 0xff) + 0.0722 * (argb & 0xff)
 
-  test("the mass ramp runs from ramp-0 to ramp-3 through its stops, opaque, darker with mass") {
+  private def rgb(argb: Int): Int = argb & 0x00ffffff
+
+  test("the mass ramp runs from ramp-0 to ramp-3 through its stops, darker with mass") {
     def at(v: Double) = MapColours.argb(massStyle, Some(v))
-    assertEquals(at(0.0), token(PaletteToken.Ramp0))
+    assertEquals(rgb(at(0.0)), rgb(token(PaletteToken.Ramp0)))
     assertEquals(at(1.0 / 3.0), token(PaletteToken.Ramp1))
     assertEquals(at(2.0 / 3.0), token(PaletteToken.Ramp2))
     assertEquals(at(1.0), token(PaletteToken.Ramp3))
     val ramp = (0 to 30).map(k => at(k / 30.0))
-    assert(ramp.forall(alpha(_) == 0xff), "every mass cell is opaque")
     ramp.zip(ramp.tail).foreach((a, b) => assert(luminance(b) <= luminance(a), s"$a then $b"))
     // Beyond its limits a value takes the end colour.
     assertEquals(at(-1.0), at(0.0))
     assertEquals(at(7.0), at(1.0))
   }
 
-  test("missing covers nothing and is drawn differently from zero, in both palettes") {
+  test("a mass cell's alpha rises linearly from zero to opaque at 10% of its limits") {
+    // DESIGN_SPEC section 15: alpha = min(1, t / 0.10), t the fraction along
+    // the limits; the colour is the ramp's, whatever the alpha.
+    val Floor = 0.10
+    Vector((massStyle, 0.0, 1.0), (mass(2.0, 4.0), 2.0, 4.0)).foreach { (style, lo, hi) =>
+      def at(t: Double) = MapColours.argb(style, Some(lo + t * (hi - lo)))
+      assertEquals(alpha(at(0.0)), 0, style)
+      assertEquals(alpha(at(-0.5)), 0, style)
+      assertEquals(alpha(at(Floor / 4.0)), 64, style)
+      assertEquals(alpha(at(Floor)), 0xff, style)
+      // Linear below the floor: steps of 5 in alpha, away from rounding ties.
+      (0 to 51).foreach(k => assertEquals(alpha(at(Floor * k / 51.0)), 5 * k, s"$style, k $k"))
+      // Opaque from the floor up.
+      (10 to 100).foreach(k => assertEquals(alpha(at(k / 100.0)), 0xff, s"$style at $k%"))
+      // The floor fades the colour in; it does not change it.
+      assertEquals(rgb(at(0.05)), rgb(MapColours.argb(massStyle, Some(0.05))), style)
+    }
+  }
+
+  test("difference maps stay opaque: zero sits mid-ramp, so the floor never applies") {
+    (-30 to 30).map(k => k / 30.0).foreach { v =>
+      assertEquals(alpha(MapColours.argb(differenceStyle, Some(v))), 0xff, s"at $v")
+    }
+  }
+
+  test("missing covers nothing and is told apart from zero, in both palettes") {
     Vector(massStyle, differenceStyle).foreach { style =>
       val none = MapColours.argb(style, None)
       val zero = MapColours.argb(style, Some(0.0))
       assertEquals(none, MapColours.NoCoverage, style)
       assertEquals(alpha(none), 0, style)
-      assertEquals(alpha(zero), 0xff, style)
       assertNotEquals(zero, none, style)
     }
+    // Zero mass fades out under the floor but keeps its ramp colour; the
+    // scenes draw a missing cell hatched, never as a ramp colour.
+    assertEquals(MapColours.argb(massStyle, Some(0.0)), rgb(token(PaletteToken.Ramp0)))
+    assertEquals(MapColours.argb(differenceStyle, Some(0.0)), token(PaletteToken.DivMid))
   }
 
   test("BlueRust pins zero to its middle colour at any extent, blue below and rust above") {
@@ -146,8 +176,12 @@ class PaletteSuite extends munit.FunSuite:
       o <- opacities
     do
       val drawn = r.drawn(o)
-      // Drawn at the opacity: every covered cell's alpha is scaled.
-      assertEquals(drawn.map(_ >>> 24).toSet, Set(0, math.round(255 * o.value).toInt))
+      // Drawn at the opacity: every cell's alpha is scaled, its colour kept.
+      r.argb.indices.foreach { i =>
+        val stored = r.argb(i)
+        assertEquals(drawn(i) >>> 24, math.round(alpha(stored) * o.value).toInt)
+        assertEquals(rgb(drawn(i)), rgb(stored))
+      }
     // Drawing at any opacity changed neither the grid nor the stored rasters.
     assertEquals(g.contentHash, before)
     assertEquals(g.cells, bump)

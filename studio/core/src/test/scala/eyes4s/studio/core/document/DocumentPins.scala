@@ -181,5 +181,5 @@ object DocumentPins:
   val science: Map[String, String] = Map(
     "t1" -> "sha256:68fa44faa863290f53eef7095c96d69b59b6d2aa92a8954dcb4216001a5dbaf4",
     "t2" -> "sha256:c3df002fbacd5f20cbc2b6853c875d60844deedaf1387718970d21f2291ff30e",
-    "t3" -> "sha256:32e91c2602fdae7c6ac7983c6d3a583e34f75e8e6b91989a0bfe2eff40798b9a"
+    "t3" -> "sha256:738c76e445bd8dd5158c50082eb1f3fcc1fb44181f9ce916f4467ce3095f511f"
   )
