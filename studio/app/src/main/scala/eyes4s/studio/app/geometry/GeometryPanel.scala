@@ -17,9 +17,11 @@
 package eyes4s.studio.app.geometry
 
 import eyes4s.codec.ByteDigest
+import eyes4s.studio.app.explore.DisplaySource
 import eyes4s.studio.app.nav.{Location, Place}
 import eyes4s.studio.app.text.{GeometryText, GeometryTextId}
 import eyes4s.studio.app.{AppModel, Intent}
+import eyes4s.studio.core.assets.AssetRegistry
 import eyes4s.studio.core.backend.{
   AdmissionSummary,
   DatasetRevision,
@@ -150,6 +152,9 @@ enum GeometryIntent derives CanEqual:
   /** The backend's admission summary asked for `dataset`. */
   case CountsRead(dataset: DatasetRevision, result: Either[String, AdmissionSummary])
 
+  /** The platform's trial displays asked for `dataset`. */
+  case DisplaysRead(dataset: DatasetRevision, result: Either[String, DisplaySource])
+
 /** What the platform or the app must do after a panel update. */
 enum GeometryEffect derives CanEqual:
   /** Dispatch an app intent: a document command, in order. */
@@ -166,6 +171,12 @@ enum GeometryEffect derives CanEqual:
     */
   case RequestCounts(dataset: DatasetRevision)
 
+  /** Ask the platform for `spec`'s trial displays (its asset registry), for
+    * which thumbnails' frames are missing; the answer is
+    * [[GeometryIntent.DisplaysRead]].
+    */
+  case RequestDisplays(spec: DatasetRevisionSpec)
+
 /** The Data perspective's geometry panel (ticket S5.5; Data.dc.html,
   * geometry, tagged "Dataset · re-admit"). It shows the selected dataset
   * revision's declared geometry, checks placement against its own fixation
@@ -178,6 +189,8 @@ enum GeometryEffect derives CanEqual:
   * new pending revision carrying the change, in one command ([[commands]]),
   * since admitted data never changes under a run, and the Data selection
   * follows it ([[follow]]).
+  * The revision's trial displays say which representative trials' frames
+  * are missing, drawn hatched ([[frames]]).
   * Corrections are rules in the revision's admission choice: applying them
   * is eyes4s's, to a derived view, and never rewrites a source coordinate.
   */
@@ -187,6 +200,7 @@ final case class GeometryPanel(
     placementKey: Option[PlacementKey],
     placement: Loading[PlacementPreview],
     counts: Loading[AdmissionSummary],
+    displays: Loading[DisplaySource],
     marked: Option[TrialKey],
     orientation: Option[OrientationForm],
     problem: Option[String]
@@ -204,6 +218,7 @@ object GeometryPanel:
       None,
       GeometryFields.blank,
       None,
+      Loading.Idle,
       Loading.Idle,
       Loading.Idle,
       None,
@@ -263,6 +278,15 @@ object GeometryPanel:
           val (counts, count) =
             if sameId then (panel.counts, none)
             else (Loading.Waiting, Vector(GeometryEffect.RequestCounts(spec.id)))
+          // The displays are the revision's: read again for another revision
+          // or another trial inventory.
+          val sameDisplays = panel.shown.exists(s =>
+            s.id == spec.id && s.inventory == spec.inventory &&
+              s.sources.trials == spec.sources.trials
+          )
+          val (displays, display) =
+            if sameDisplays then (panel.displays, none)
+            else (Loading.Waiting, Vector(GeometryEffect.RequestDisplays(spec)))
           val sameTrials = both(PlacementKey.sameRecords)
           (
             GeometryPanel(
@@ -271,11 +295,12 @@ object GeometryPanel:
               key,
               placement,
               counts,
+              displays,
               panel.marked.filter(_ => sameTrials),
               panel.orientation.filter(_ => sameTrials),
               None
             ),
-            read ++ count
+            read ++ count ++ display
           )
 
   /** The Elm-style update: pure; effects are data. */
@@ -354,6 +379,25 @@ object GeometryPanel:
                 (panel, spec.parent.map(GeometryEffect.RequestCounts(_)).toVector)
               case Left(reason) => (panel.copy(counts = Loading.Failed(reason)), none)
           case _ => (panel, none)
+      case DisplaysRead(dataset, result) =>
+        if !panel.shown.exists(_.id == dataset) then (panel, none)
+        else (panel.copy(displays = result.fold(Loading.Failed(_), Loading.Ready(_))), none)
+
+  /** The trials whose frame is not present, as the shown revision's served
+    * displays state them with the document's repairs (S5.7): each trial
+    * whose display names a missing file. None before the displays are read,
+    * when they are not served, or when a repair cannot be applied (the
+    * Sources pane says why).
+    */
+  def frames(panel: GeometryPanel, model: AppModel): Map[TrialKey, FrameState] =
+    val registry: Option[AssetRegistry] = panel.displays.toOption.collect {
+      case DisplaySource.Served(r) if panel.shown.exists(_.id == r.dataset) =>
+        r.withRelinks(model.document.relinks.of(r.dataset)).toOption
+    }.flatten
+    registry.toVector
+      .flatMap(_.missing)
+      .flatMap(m => m.trials.map(_ -> FrameState.Missing(m.file)))
+      .toMap
 
   /** Make `c` to the model's live copy of the shown revision. */
   private def change(

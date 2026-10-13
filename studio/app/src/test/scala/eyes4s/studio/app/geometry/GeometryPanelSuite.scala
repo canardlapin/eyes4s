@@ -17,12 +17,14 @@
 package eyes4s.studio.app.geometry
 
 import eyes4s.codec.ByteDigest
+import eyes4s.studio.app.explore.DisplaySource
 import eyes4s.studio.app.nav.{Location, Place}
 import eyes4s.studio.app.{AppModel, Intent, StoryModels}
+import eyes4s.studio.core.assets.AssetFile
 import eyes4s.studio.core.backend.*
 import eyes4s.studio.core.command.{Command, HistoryStack}
 import eyes4s.studio.core.document.*
-import eyes4s.studio.core.fixture.{MockStudy, StoryMoments}
+import eyes4s.studio.core.fixture.{FakePlacement, GoldenAssets, MockStudy, StoryMoments}
 import eyes4s.studio.core.importing.GeometryField
 import eyes4s.studio.core.selection.{RecordNumber, StudioRef, TallyRegion}
 
@@ -100,15 +102,19 @@ class GeometryPanelSuite extends munit.FunSuite:
     assertEquals(panel.fields.field(GeometryField.ImageLeft), "448")
     assertEquals(
       effects.map(_.productPrefix),
-      Vector("RequestPlacement", "RequestCounts")
+      Vector("RequestPlacement", "RequestCounts", "RequestDisplays")
     )
-    assertEquals(effects.last, GeometryEffect.RequestCounts(r3))
+    assertEquals(effects(1), GeometryEffect.RequestCounts(r3))
+    assertEquals(effects.last, GeometryEffect.RequestDisplays(panel.shown.get))
     // r2 shares r3's source file but not its mapping: its records are read again.
     val onR2 =
       play(t1, _ => Intent.Navigate(Location(Perspective.Data, Vector(Place.Dataset(r2)))))
     val (moved, again) = GeometryPanel.sync(panel, onR2)
     assertEquals(moved.shown.map(_.id), Some(r2))
-    assertEquals(again.map(_.productPrefix), Vector("RequestPlacement", "RequestCounts"))
+    assertEquals(
+      again.map(_.productPrefix),
+      Vector("RequestPlacement", "RequestCounts", "RequestDisplays")
+    )
   }
 
   test(
@@ -225,9 +231,16 @@ class GeometryPanelSuite extends munit.FunSuite:
     )
     val followed = AppModel.update(model, follow.get)._1
     assertEquals(GeometryPanel.selected(followed).map(_.id), Some(r4))
-    // The new draft shares r3's records; only its counts are asked for.
+    // The new draft shares r3's records; only its counts and its own
+    // displays are asked for.
     val (onR4, asks) = GeometryPanel.sync(panel, followed)
-    assertEquals(asks, Vector(GeometryEffect.RequestCounts(r4)))
+    assertEquals(
+      asks,
+      Vector(
+        GeometryEffect.RequestCounts(r4),
+        GeometryEffect.RequestDisplays(followed.document.dataset(r4).get)
+      )
+    )
     // The fake backend has no r4: the panel falls back to its parent's counts, labelled.
     val refused =
       GeometryPanel.update(onR4, followed, GeometryIntent.CountsRead(r4, Left("No dataset r4")))
@@ -581,7 +594,9 @@ class GeometryPanelSuite extends munit.FunSuite:
   test("a thumbnail's count line, and the missing-asset caption") {
     val trial = TrialKey("P01", Phase.Encoding, "enc_08", 1)
     def count(records: Int, window: Int, screen: Int): String =
-      GeometryPanelVM.thumbCount(ThumbnailPicture(trial, records, window, screen, Vector.empty))
+      GeometryPanelVM.thumbCount(
+        ThumbnailPicture(trial, records, window, screen, Vector.empty, FrameState.Present)
+      )
     assertEquals(count(12, 0, 0), "12 records inside")
     assertEquals(count(1, 0, 0), "1 record inside")
     assertEquals(count(12, 1, 0), "1 of 12 outside")
@@ -589,15 +604,83 @@ class GeometryPanelSuite extends munit.FunSuite:
     // Off screen is named before outside the frame.
     assertEquals(count(12, 3, 2), "2 of 12 off screen")
     assertEquals(GeometryPanelVM.trialLabel(trial), "P01 · enc_08")
-    // The Data board's caption for a trial whose image is missing (drawn by
-    // the missing-asset thumbnail, review ticket 25).
+    // A missing or unreadable asset is named before any count (the Data
+    // board's caption, review ticket 25).
+    val forest                            = ok(AssetFile.of("forest-044.png"))
+    def framed(frame: FrameState): String =
+      GeometryPanelVM.thumbCount(ThumbnailPicture(trial, 12, 3, 2, Vector.empty, frame))
+    assertEquals(framed(FrameState.Missing(forest)), "Missing asset · forest-044.png")
     assertEquals(
-      eyes4s.studio.app.text.GeometryText(
-        eyes4s.studio.app.text.GeometryTextId.ThumbMissing,
-        "forest-044.png"
-      ),
-      "Missing asset · forest-044.png"
+      framed(FrameState.Unreadable(forest, "not a PNG")),
+      "Unreadable asset · forest-044.png"
     )
+  }
+
+  test("the fixture's missing images are hatched thumbnails captioned by their files") {
+    // t1's r3 reads the golden trials: 257 of 259 images, forest-044.png and
+    // kitchen-081.png missing (P01 enc_08 and enc_15 among their trials).
+    val (synced0, effects) = synced(t1)
+    val spec = effects.collectFirst { case GeometryEffect.RequestDisplays(s) => s }.get
+    val key  =
+      effects.collectFirst { case GeometryEffect.RequestPlacement(k, _) => k }.get
+    def read(panel: GeometryPanel, intent: GeometryIntent) =
+      GeometryPanel.update(panel, t1, intent)._1
+    val placed = read(
+      synced0,
+      GeometryIntent.PlacementRead(key, FakePlacement.of(spec).left.map(_.message))
+    )
+    val registry = GoldenAssets.registry(spec).fold(fail(_), identity)
+    val shown    =
+      read(placed, GeometryIntent.DisplaysRead(r3, Right(DisplaySource.Served(registry))))
+    val p01enc08 = TrialKey("P01", Phase.Encoding, "enc_08", 1)
+    val p01enc15 = TrialKey("P01", Phase.Encoding, "enc_15", 1)
+    val frames   = GeometryPanel.frames(shown, t1)
+    assertEquals(frames.size, 4)
+    assertEquals(
+      frames.get(p01enc08),
+      Some(FrameState.Missing(ok(AssetFile.of("forest-044.png"))))
+    )
+    assertEquals(
+      frames.get(p01enc15),
+      Some(FrameState.Missing(ok(AssetFile.of("kitchen-081.png"))))
+    )
+    // Before the displays are read, no frame is missing and none is drawn hatched.
+    assertEquals(GeometryPanel.frames(placed, t1), Map.empty)
+    assert(
+      picture(placed, t1).thumbnails.forall(_.frame == FrameState.Present),
+      picture(placed, t1).thumbnails
+    )
+    // The first missing trial is a representative, captioned by its file.
+    val vm      = GeometryPanelVM.of(shown, t1, Some(picture(shown, t1)))
+    val missing =
+      vm.thumbnails.find(_.trial == p01enc08).getOrElse(fail(vm.thumbnails.toString))
+    assertEquals(
+      (missing.name, missing.count),
+      ("P01 · enc_08", "Missing asset · forest-044.png")
+    )
+    assert(missing.assetMissing)
+    assert(
+      missing.accessible.startsWith(
+        "P01 · enc_08: missing asset, forest-044.png not found, field drawn hatched; "
+      ),
+      missing.accessible
+    )
+    assertEquals(vm.thumbnails.count(_.assetMissing), 1)
+    // The marked trial is shown too: kitchen-081.png's.
+    val marked  = read(shown, GeometryIntent.MarkTrial(p01enc15))
+    val again   = GeometryPanelVM.of(marked, t1, Some(picture(marked, t1)))
+    val kitchen =
+      again.thumbnails.find(_.trial == p01enc15).getOrElse(fail(again.thumbnails.toString))
+    assertEquals(kitchen.count, "Missing asset · kitchen-081.png")
+    // A present frame keeps its records count and its plain accessible name.
+    again.thumbnails.filterNot(_.assetMissing).foreach { t =>
+      assert(!t.count.startsWith("Missing"), t.count)
+      assert(!t.accessible.contains("missing asset"), t.accessible)
+    }
+    // Displays of another revision are not this one's.
+    val other =
+      read(placed, GeometryIntent.DisplaysRead(r2, Right(DisplaySource.Served(registry))))
+    assertEquals(other.displays, placed.displays)
   }
 
   test("the worked example of the selected record: raw → image frame → degrees") {

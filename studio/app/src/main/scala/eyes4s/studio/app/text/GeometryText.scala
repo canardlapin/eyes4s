@@ -38,7 +38,8 @@ enum GeometryTextId derives CanEqual:
 
   // --- Placement check ---------------------------------------------------------------------
   case CheckPlacement, CheckPlacementNote, ThumbTrial, ThumbInside, ThumbInsideOne
-  case ThumbOutside, ThumbOffScreen, ThumbMissing, ThumbAccessible, ThumbAccessibleOne
+  case ThumbOutside, ThumbOffScreen, ThumbMissing, ThumbUnreadable, ThumbAccessible
+  case ThumbAccessibleMissing, ThumbAccessibleUnreadable, ThumbRecords, ThumbRecordsOne
   case ThumbMarked, AllTrials, AllTrialsCaption, AllTrialsCorrected
   case DensityAccessible, DensityCellsDrawn, DensityCellsDrawnOne, DensityRange
   case DensityOverflow, DensityKey, PositionsWaiting, PositionsStale, PositionsFailed
@@ -103,18 +104,21 @@ object GeometryText:
     case ExampleDegreesValue   => "from image centre · x right · y up"
     case ExampleNoDegrees      => "({0}, {1}) px · degrees unavailable"
 
-    case CheckPlacement     => "Check placement"
-    case CheckPlacementNote => "screen outline · image frame"
-    case ThumbTrial         => "{0} · {1}"
-    case ThumbInside        => "{0} records inside"
-    case ThumbInsideOne     => "1 record inside"
-    case ThumbOutside       => "{0} of {1} outside"
-    case ThumbOffScreen     => "{0} of {1} off screen"
-    case ThumbMissing       => "Missing asset · {0}"
-    case ThumbAccessible    =>
-      "{0}: {1} records, {2} outside the image frame, {3} outside the screen"
-    case ThumbAccessibleOne =>
-      "{0}: 1 record, {1} outside the image frame, {2} outside the screen"
+    case CheckPlacement         => "Check placement"
+    case CheckPlacementNote     => "screen outline · image frame"
+    case ThumbTrial             => "{0} · {1}"
+    case ThumbInside            => "{0} records inside"
+    case ThumbInsideOne         => "1 record inside"
+    case ThumbOutside           => "{0} of {1} outside"
+    case ThumbOffScreen         => "{0} of {1} off screen"
+    case ThumbMissing           => "Missing asset · {0}"
+    case ThumbUnreadable        => "Unreadable asset · {0}"
+    case ThumbAccessible        => "{0}: {1}"
+    case ThumbAccessibleMissing => "{0}: missing asset, {1} not found, field drawn hatched; {2}"
+    case ThumbAccessibleUnreadable =>
+      "{0}: unreadable asset, {1} could not be read, field drawn hatched; {2}"
+    case ThumbRecords     => "{0} records, {1} outside the image frame, {2} outside the screen"
+    case ThumbRecordsOne  => "1 record, {0} outside the image frame, {1} outside the screen"
     case ThumbMarked      => "{0}, chosen for marking"
     case AllTrials        => "All trials overlaid"
     case AllTrialsCaption =>

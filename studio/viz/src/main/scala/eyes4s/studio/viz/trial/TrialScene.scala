@@ -50,6 +50,7 @@ import eyes4s.studio.viz.plot.{
   DataPanel,
   DataPoint,
   IntaglioColours,
+  MissingAssetHatch,
   PlotScene,
   PlotSceneError,
   SceneId,
@@ -73,8 +74,6 @@ import intaglio.{
   LengthExpr,
   LineCap,
   LineType,
-  PatternPaint,
-  PatternRecipe,
   Point,
   PointShape,
   RasterDimensions,
@@ -908,29 +907,20 @@ object TrialScene:
     // The missing-asset hatch: warn-text stripes on warn-soft. A missing
     // asset's frame and a map's uncovered cells both wear it.
     private def hatchPaint: Either[GraphicsError, GraphicParams] =
-      for
-        recipe <- PatternRecipe.angledHatch(45.0, 9.0, 3.0)
-        base   <- fill(themed(ThemedToken.WarnSoft))
-      yield base.withPatternFill(
-        PatternPaint(
-          recipe,
-          themed(ThemedToken.WarnText),
-          Some(themed(ThemedToken.WarnSoft))
-        )
-      )
+      MissingAssetHatch.paint(input.theme, MissingAssetHatch.Trial)
 
     private def hatched(label: String): R[Vector[Grob]] =
       part("missing-asset hatching")(
         for
-          gp   <- hatchPaint
-          rect <- frameRect(gp, FrameName)
-          xGp  <- stroke(themed(ThemedToken.WarnText), 2.0)
-          arm = frameH * 0.06
-          a1      <- Point.native(centreX - arm, centreY - arm)
-          b1      <- Point.native(centreX + arm, centreY + arm)
-          a2      <- Point.native(centreX + arm, centreY - arm)
-          b2      <- Point.native(centreX - arm, centreY + arm)
-          cross   <- Grob.segments(Vector(a1 -> b1, a2 -> b2), gp = xGp)
+          gp    <- hatchPaint
+          rect  <- frameRect(gp, FrameName)
+          cross <- MissingAssetHatch.cross(
+            input.theme,
+            centreX,
+            centreY,
+            frameH * 0.06,
+            pt(2.0)
+          )
           plateAt <- Point.native(centreX, centreY + frameH * 0.16)
           plateW  <- ExtentExpr.native(frameW * 0.8)
           plateH  <- ExtentExpr.points(pt(22.0))

@@ -19,6 +19,7 @@ package eyes4s.studio.desktop.geometry
 import cats.effect.IO
 import cats.effect.unsafe.implicits.global
 import eyes4s.codec.ByteDigest
+import eyes4s.studio.app.explore.DisplaySource
 import eyes4s.studio.app.geometry.*
 import eyes4s.studio.app.nav.{Location, Place}
 import eyes4s.studio.app.tokens.Theme
@@ -29,6 +30,7 @@ import eyes4s.studio.core.fixture.{FakeStudyBackend, StoryMoment, StoryMoments}
 import eyes4s.studio.core.geometry.{CorrectionLedger, Placement, SourcePositions}
 import eyes4s.studio.core.importing.GeometryField
 import eyes4s.studio.desktop.StudioStyles
+import eyes4s.studio.desktop.explore.NavigatorDisplays
 import eyes4s.studio.desktop.harness.{FxStage, StageSize, StudioFxSuite, StudioTheme}
 import eyes4s.studio.desktop.plot.PlotHostStatus
 import eyes4s.studio.desktop.trial.GoldenTrials
@@ -87,6 +89,8 @@ class GeometryPanelFxSuite extends StudioFxSuite:
       backend.placement(spec).map(r => done(r.left.map(_.message))).unsafeRunAndForget()
     def admission(d: DatasetRevision, done: Either[String, AdmissionSummary] => Unit): Unit =
       backend.admission(d).map(r => done(r.left.map(_.message))).unsafeRunAndForget()
+    def displays(spec: DatasetRevisionSpec, done: Either[String, DisplaySource] => Unit): Unit =
+      NavigatorDisplays.golden.read(spec, done)
 
   /** The app's runtime reduced to what the pane needs: a model, updates, and
     * the pane synced after each.
@@ -123,8 +127,9 @@ class GeometryPanelFxSuite extends StudioFxSuite:
     fx.awaitLayout()
 
   def loaded(fx: FxStage, rig: Rig): Unit =
-    await(fx, "records and counts") {
-      rig.host.state.placement.toOption.isDefined && rig.host.state.counts.toOption.isDefined
+    await(fx, "records, counts and displays") {
+      rig.host.state.placement.toOption.isDefined && rig.host.state.counts.toOption.isDefined &&
+      rig.host.state.displays.toOption.isDefined
     }
 
   /** The next redraw after `seen` receipts. */
@@ -221,6 +226,24 @@ class GeometryPanelFxSuite extends StudioFxSuite:
       // P05's three failed queries lie wholly outside: the worst is shown,
       // its trial and its count on two lines.
       assert(captions.contains(("P05 · ret_04", "11 of 11 outside")), captions)
+      // The fixture's first missing image (review ticket 25): its trial is a
+      // representative, hatched, captioned by its file in the warning ink.
+      assert(captions.contains(("P01 · enc_08", "Missing asset · forest-044.png")), captions)
+      val warned = runOnFx(
+        v.thumbnails
+          .filter(_.count.getStyleClass.contains("geometry-warn"))
+          .map(t => t.name.getText)
+      )
+      assertEquals(warned, Vector("P01 · enc_08"))
+      val missingThumb = runOnFx(
+        v.thumbnails.find(_.name.getText == "P01 · enc_08").map(_.picture.getAccessibleText)
+      )
+      assert(
+        missingThumb.exists(
+          _.startsWith("P01 · enc_08: missing asset, forest-044.png not found")
+        ),
+        missingThumb
+      )
       // The density key at the golden fixture's levels (s = 4, DESIGN_SPEC
       // section 15.1), in closed ranges.
       assertEquals(
