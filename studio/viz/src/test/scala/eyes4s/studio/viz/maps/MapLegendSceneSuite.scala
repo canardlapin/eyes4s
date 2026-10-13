@@ -285,4 +285,37 @@ class MapLegendSceneSuite extends munit.FunSuite:
     assert(svg.contains("50% · 90% of mass"), svg)
   }
 
+  test("the keys drawn alone are the legend's own strip and sample, at the keys' sizes") {
+    for theme <- themes do
+      val keys   = right(MapLegendScene.keys(MapOpacity.Default, theme))
+      val legend = grobs(this.legend(theme))
+      def flat(scene: eyes4s.studio.viz.plot.PlotScene): Vector[Grob] =
+        def walk(g: Grob): Vector[Grob] = g +: g.children.flatMap(walk)
+        scene.scene.grobs.flatMap(walk)
+      val ramp = flat(keys.ramp).collect { case p: Grob.Polygon => p }
+      val full = legend.collect { case p: Grob.Polygon => p }
+      // The same swatches and frame, moved to the key's own origin: no ground.
+      assertEquals(ramp.size, MapLegendScene.Swatches + 1)
+      assertEquals(ramp.map(_.gp), full.map(_.gp))
+      assertEquals(ramp.map(_.name), full.map(_.name))
+      val dx = MapLegendScene.StripLeftPx
+      val dy = MapLegendScene.FirstRowPx - MapLegendScene.RampKeyHeightPx / 2.0
+      assertEquals(
+        ramp.map(_.points.map(xy)),
+        full.map(_.points.map(xy).map((x, y) => (x - dx, y - dy)))
+      )
+      assert(!flat(keys.ramp).exists(_.isInstanceOf[Grob.Rect]), "the ramp key has a ground")
+      assertEquals(keys.ramp.panel.xDomain.upper, MapLegendScene.RampKeyWidthPx)
+      assertEquals(keys.ramp.panel.yDomain.upper, MapLegendScene.RampKeyHeightPx)
+      val line   = flat(keys.isoline).collect { case l: Grob.Lines => l }
+      val sample = legend.collect { case l: Grob.Lines => l }
+      assertEquals(line.map(_.gp), sample.map(_.gp))
+      assertEquals(
+        line.flatMap(_.points.map(xy)),
+        Vector((1.0, 4.0), (15.0, 4.0))
+      )
+      assertEquals(keys.isoline.panel.xDomain.upper, MapLegendScene.IsolineKeyWidthPx)
+      assertEquals(keys.isoline.panel.yDomain.upper, MapLegendScene.IsolineKeyHeightPx)
+  }
+
   extension (c: (Int, Int, Int, Int)) private def take3: (Int, Int, Int) = (c._1, c._2, c._3)

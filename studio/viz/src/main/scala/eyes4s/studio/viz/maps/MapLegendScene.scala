@@ -93,6 +93,16 @@ import intaglio.{
   */
 final class MapLegendScene private (val plot: PlotScene, val description: String)
 
+/** The legend's two keys drawn alone, for a host that sets the legend's
+  * words beside them itself (Explore's legend row, Explore.dc.html): the
+  * ramp strip, [[MapLegendScene.RampKeyWidthPx]] × [[MapLegendScene.RampKeyHeightPx]],
+  * with no ground of its own (the zero swatch shows the row through), and
+  * the isoline sample, [[MapLegendScene.IsolineKeyWidthPx]] ×
+  * [[MapLegendScene.IsolineKeyHeightPx]]. They are the legend's own
+  * swatches, frame and sample, so there is one definition of each.
+  */
+final class MapLegendKeys private[maps] (val ramp: PlotScene, val isoline: PlotScene)
+
 object MapLegendScene:
 
   // --- Names of the scene's grobs (the tests find them) ---------------------
@@ -130,6 +140,12 @@ object MapLegendScene:
   val RowGapPx: Double  = 2.0
   val PaddingPx: Double = 2.0
 
+  /** The keys' sizes when drawn alone ([[MapLegendKeys]]). */
+  val RampKeyWidthPx: Double     = Swatches * SwatchWidthPx
+  val RampKeyHeightPx: Double    = SwatchHeightPx
+  val IsolineKeyWidthPx: Double  = SampleWidthPx
+  val IsolineKeyHeightPx: Double = 8.0
+
   /** The legend's height: what a host gives it under the trial. */
   val HeightPx: Double = 2 * PaddingPx + 2 * RowPx + RowGapPx
 
@@ -160,10 +176,13 @@ object MapLegendScene:
   // swatch's value is its fraction.
   private val unitMass: MapStyle = ColourLimits.spanning(MapPalette.Mass, Vector.empty)
 
+  /** "fades below 10% of max": where the ramp fades out, from the floor. */
+  def fadesText: String =
+    TrialText(TrialTextId.MapLegendFades, Format.percent(MapColours.MassAlphaFloor))
+
   /** The words of the first row after the strip. */
   def rampText: String =
-    TrialText(TrialTextId.MapLegendRamp) + TrialText(TrialTextId.Separator) +
-      TrialText(TrialTextId.MapLegendFades, Format.percent(MapColours.MassAlphaFloor))
+    TrialText(TrialTextId.MapLegendRamp) + TrialText(TrialTextId.Separator) + fadesText
 
   /** The words of the second row after the isoline sample. */
   def isolineText(limits: LimitsScope): String =
@@ -200,9 +219,12 @@ object MapLegendScene:
       case Some(description) =>
         for
           id    <- SceneId(s"$SceneIdPrefix.${limits.toString.toLowerCase}")
-          built <- Builder(limits, opacity, theme, stage).build.left.map(
-            PlotSceneError.Graphics(id.value, "the map legend", _)
-          )
+          built <- Builder(opacity, theme)
+            .legend(limits, stage)
+            .left
+            .map(
+              PlotSceneError.Graphics(id.value, "the map legend", _)
+            )
           (grobs, viewport) = built
           panel <- DataPanel(id, viewport)
           plot  <- PlotScene(id, Scene(grobs), panel)
@@ -222,12 +244,23 @@ object MapLegendScene:
           )
         )
 
-  private final class Builder(
-      limits: LimitsScope,
-      opacity: MapOpacity,
-      theme: Theme,
-      stage: StageVariant
-  ):
+  /** The ramp and isoline keys of a mass map drawn at `opacity`, in `theme`. */
+  def keys(opacity: MapOpacity, theme: Theme): Either[PlotSceneError, MapLegendKeys] =
+    val b = Builder(opacity, theme)
+    def scene(id: String, built: Either[GraphicsError, (Vector[Grob], Viewport)]) =
+      for
+        sid <- SceneId(s"$SceneIdPrefix.$id")
+        bv  <- built.left.map(PlotSceneError.Graphics(sid.value, "the map legend's key", _))
+        (grobs, viewport) = bv
+        panel <- DataPanel(sid, viewport)
+        plot  <- PlotScene(sid, Scene(grobs), panel)
+      yield plot
+    for
+      ramp    <- scene("ramp-key", b.rampKey)
+      isoline <- scene("isoline-key", b.isolineKey)
+    yield MapLegendKeys(ramp, isoline)
+
+  private final class Builder(opacity: MapOpacity, theme: Theme):
     private type E[A] = Either[GraphicsError, A]
 
     private def name(value: String): E[GraphicsName] = GraphicsName(value, "map legend")
@@ -260,6 +293,7 @@ object MapLegendScene:
       )
 
     private def text(
+        stage: StageVariant,
         label: String,
         x: Double,
         y: Double,
@@ -279,7 +313,8 @@ object MapLegendScene:
         t <- Grob.text(label, p, Anchor(hjust, VJust.Center), gp = gp, name = Some(n))
       yield t
 
-    private def swatch(k: Int): E[Grob] =
+    // Swatch `k` of a strip whose left edge is `stripLeft`, centred on `row`.
+    private def swatch(k: Int, stripLeft: Double, row: Double): E[Grob] =
       val argb   = swatchArgb(k, opacity)
       val colour = Rgba.unsafe(
         (argb >> 16) & 0xff,
@@ -287,35 +322,36 @@ object MapLegendScene:
         argb & 0xff,
         ((argb >>> 24) & 0xff) / 255.0
       )
-      val left = StripLeftPx + k * SwatchWidthPx
+      val left = stripLeft + k * SwatchWidthPx
       for
         gp  <- fill(colour)
         pts <- box(
           left,
-          FirstRowPx - SwatchHeightPx / 2.0,
+          row - SwatchHeightPx / 2.0,
           left + SwatchWidthPx,
-          FirstRowPx + SwatchHeightPx / 2.0
+          row + SwatchHeightPx / 2.0
         )
         n <- name(s"$SwatchPrefix$k")
         g <- Grob.polygon(pts, gp = gp, name = Some(n))
       yield g
 
     // The strip's hairline, inside its edge as the board draws it.
-    private def frame: E[Grob] =
+    private def frame(stripLeft: Double, row: Double): E[Grob] =
       for
         gp  <- stroke(IntaglioColours.themed(theme, ThemedToken.Hairline), 1.0)
         pts <- box(
-          StripLeftPx + 0.5,
-          FirstRowPx - SwatchHeightPx / 2.0 + 0.5,
-          StripRightPx - 0.5,
-          FirstRowPx + SwatchHeightPx / 2.0 - 0.5
+          stripLeft + 0.5,
+          row - SwatchHeightPx / 2.0 + 0.5,
+          stripLeft + RampKeyWidthPx - 0.5,
+          row + SwatchHeightPx / 2.0 - 0.5
         )
         n <- name(FrameName)
         g <- Grob.polygon(pts, gp = gp, name = Some(n))
       yield g
 
     // The isoline sample, cased as the trial's isolines are.
-    private def sample: E[Grob] =
+    // In a 16 px key whose left edge is `left`, centred on `row`.
+    private def sample(left: Double, row: Double): E[Grob] =
       for
         ink <- stroke(
           IntaglioColours.toIntaglio(Tokens.palette(PaletteToken.IsolineInk)),
@@ -326,49 +362,73 @@ object MapLegendScene:
           IntaglioColours.toIntaglio(Tokens.palette(PaletteToken.IsolineCase)),
           CasingWidth.Absolute(width)
         )
-        a <- at(InsetPx + 1.0, SecondRowPx)
-        b <- at(InsetPx + SampleWidthPx - 1.0, SecondRowPx)
+        a <- at(left + 1.0, row)
+        b <- at(left + SampleWidthPx - 1.0, row)
         n <- name(IsolineName)
         g <- Grob.lines(Vector(a, b), gp = ink.withCasing(casing), name = Some(n))
       yield g
 
-    def build: E[(Vector[Grob], Viewport)] =
+    // Native units are logical pixels from the canvas's top-left corner,
+    // however large the canvas is.
+    private def pixels(w: Double, h: Double): E[Viewport] =
       for
-        // Native units are logical pixels from the canvas's top-left corner,
-        // however large the canvas is.
-        xs       <- Interval(0.0, NominalWidth)
-        ys       <- Interval(0.0, HeightPx)
-        top      <- LengthExpr.npc(1.0)
-        left     <- LengthExpr.npc(0.0)
-        width    <- ExtentExpr.points(pt(NominalWidth))
-        height   <- ExtentExpr.points(pt(HeightPx))
-        viewport <- Viewport.checked(
-          Point(left, top - LengthExpr(Length.pointsUnsafe(pt(HeightPx)))),
+        xs     <- Interval(0.0, w)
+        ys     <- Interval(0.0, h)
+        top    <- LengthExpr.npc(1.0)
+        left   <- LengthExpr.npc(0.0)
+        width  <- ExtentExpr.points(pt(w))
+        height <- ExtentExpr.points(pt(h))
+        vp     <- Viewport.checked(
+          Point(left, top - LengthExpr(Length.pointsUnsafe(pt(h)))),
           Size.fromExtents(width, height),
           xs,
           ys,
           Clip.Off,
           yDirection = YDirection.Down
         )
-        stageGp <- fill(IntaglioColours.staged(stage, StageToken.Stage))
-        centre  <- Point.npc(0.5, 0.5)
-        whole   <- Size.npc(1.0, 1.0)
-        sn      <- name(StageName)
-        ground  <- Grob.rect(centre, whole, gp = stageGp, name = Some(sn))
-        zero    <- text(
+      yield vp
+
+    private def strip(stripLeft: Double, row: Double): E[Vector[Grob]] =
+      for
+        swatches <- (0 until Swatches).toVector.foldLeft[E[Vector[Grob]]](Right(Vector.empty))(
+          (acc, k) => acc.flatMap(gs => swatch(k, stripLeft, row).map(gs :+ _))
+        )
+        outline <- frame(stripLeft, row)
+      yield swatches :+ outline
+
+    def rampKey: E[(Vector[Grob], Viewport)] =
+      for
+        viewport <- pixels(RampKeyWidthPx, RampKeyHeightPx)
+        grobs    <- strip(0.0, RampKeyHeightPx / 2.0)
+      yield (Vector(Grob.group(grobs, viewport = Some(viewport))), viewport)
+
+    def isolineKey: E[(Vector[Grob], Viewport)] =
+      for
+        viewport <- pixels(IsolineKeyWidthPx, IsolineKeyHeightPx)
+        line     <- sample(0.0, IsolineKeyHeightPx / 2.0)
+      yield (Vector(Grob.group(Vector(line), viewport = Some(viewport))), viewport)
+
+    def legend(limits: LimitsScope, stage: StageVariant): E[(Vector[Grob], Viewport)] =
+      for
+        viewport <- pixels(NominalWidth, HeightPx)
+        stageGp  <- fill(IntaglioColours.staged(stage, StageToken.Stage))
+        centre   <- Point.npc(0.5, 0.5)
+        whole    <- Size.npc(1.0, 1.0)
+        sn       <- name(StageName)
+        ground   <- Grob.rect(centre, whole, gp = stageGp, name = Some(sn))
+        zero     <- text(
+          stage,
           TrialText(TrialTextId.MapLegendZero),
           StripLeftPx - GapPx,
           FirstRowPx,
           HJust.Right,
           ZeroName
         )
-        swatches <- (0 until Swatches).toVector.foldLeft[E[Vector[Grob]]](Right(Vector.empty))(
-          (acc, k) => acc.flatMap(gs => swatch(k).map(gs :+ _))
-        )
-        outline <- frame
-        ramp    <- text(rampText, StripRightPx + GapPx, FirstRowPx, HJust.Left, RampName)
-        line    <- sample
-        key     <- text(
+        swatches <- strip(StripLeftPx, FirstRowPx)
+        ramp <- text(stage, rampText, StripRightPx + GapPx, FirstRowPx, HJust.Left, RampName)
+        line <- sample(InsetPx, SecondRowPx)
+        key  <- text(
+          stage,
           isolineText(limits),
           InsetPx + SampleWidthPx + GapPx,
           SecondRowPx,
@@ -379,7 +439,7 @@ object MapLegendScene:
         Vector(
           ground,
           Grob.group(
-            Vector(zero) ++ swatches ++ Vector(outline, ramp, line, key),
+            Vector(zero) ++ swatches ++ Vector(ramp, line, key),
             viewport = Some(viewport)
           )
         ),

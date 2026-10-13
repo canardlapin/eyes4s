@@ -17,13 +17,16 @@
 package eyes4s.studio.desktop.explore
 
 import eyes4s.studio.app.explore.*
-import eyes4s.studio.app.text.{ExploreText, ExploreTextId}
+import eyes4s.studio.app.maps.{LimitsScope, MapPalette}
+import eyes4s.studio.app.text.{ExploreText, ExploreTextId, TrialText, TrialTextId}
 import eyes4s.studio.core.assets.DisplayKind
 import eyes4s.studio.core.selection.InputCause
+import eyes4s.studio.desktop.plot.CanvasPlotHost
 import eyes4s.studio.desktop.tokens.TokenFiles
 import eyes4s.studio.desktop.trial.TrialView
+import eyes4s.studio.viz.maps.{MapLegendKeys, MapLegendScene}
 import javafx.geometry.Pos
-import javafx.scene.control.{Button, ButtonBase, Label, ToggleButton}
+import javafx.scene.control.{Button, ButtonBase, Label, ToggleButton, Tooltip}
 import javafx.scene.input.{KeyEvent, MouseEvent}
 import javafx.scene.layout.*
 import javafx.scene.shape.{Circle, Line, Rectangle, Shape}
@@ -104,6 +107,32 @@ final class ExploreTrialViewPane(
   legendRow.getStyleClass.add("explore-legend-row")
   HBox.setHgrow(legend, Priority.ALWAYS)
 
+  /** The preview map's keys in the legend row (review ticket 17; Explore.dc.html):
+    * "0", the ramp strip and its words, described with where the map fades
+    * out; then the isoline sample and its words. They follow the preview
+    * map's entry while the map is drawn.
+    */
+  val rampKey: CanvasPlotHost =
+    keyHost(MapLegendScene.RampKeyWidthPx, MapLegendScene.RampKeyHeightPx)
+  val isolineKey: CanvasPlotHost =
+    keyHost(MapLegendScene.IsolineKeyWidthPx, MapLegendScene.IsolineKeyHeightPx)
+  private val described = MapLegendScene.describe(MapPalette.Mass, LimitsScope.PerPanel)
+  val rampItem: HBox    = HBox(
+    text(TrialText(TrialTextId.MapLegendZero), "mono", "t11"),
+    rampKey,
+    text(TrialText(TrialTextId.MapLegendRamp), "t11")
+  )
+  rampItem.getStyleClass.addAll("explore-legend-item", "explore-map-key")
+  rampItem.setAlignment(Pos.CENTER_LEFT)
+  described.foreach { d =>
+    rampItem.setAccessibleText(d)
+    Tooltip.install(rampItem, Tooltip(d))
+  }
+  val isolineItem: HBox =
+    HBox(isolineKey, text(TrialText(TrialTextId.MapLegendIsolines), "t11"))
+  isolineItem.getStyleClass.addAll("explore-legend-item", "explore-map-key")
+  isolineItem.setAlignment(Pos.CENTER_LEFT)
+
   val node: VBox = VBox(bar, status, stage, legendRow)
   node.getStyleClass.add("explore-panel")
   // The legend's display glyphs are the navigator's.
@@ -113,9 +142,15 @@ final class ExploreTrialViewPane(
   )
 
   /** Bind `vm`: the toolbar, the status and the legend; `refused` are the
-    * marks the scene could not draw.
+    * marks the scene could not draw; `keys` the preview map's legend keys,
+    * shown after its legend entry.
     */
-  def render(vm: ExploreTrialViewVM, refused: Vector[String], steps: (Boolean, Boolean)): Unit =
+  def render(
+      vm: ExploreTrialViewVM,
+      refused: Vector[String],
+      steps: (Boolean, Boolean),
+      keys: Option[MapLegendKeys] = None
+  ): Unit =
     rendering = true
     try
       prev.setDisable(!steps._1)
@@ -140,13 +175,20 @@ final class ExploreTrialViewPane(
       visible(retry, vm.retry.isDefined)
       visible(status, vm.note.isDefined || refused.nonEmpty || vm.retry.isDefined)
       legendTitle.setText(vm.legendTitle)
-      legend.getChildren.setAll(vm.legend.map { e =>
+      val shownKeys = keys.filter(_ => vm.legend.exists(_.swatch == LegendSwatch.PreviewMap))
+      shownKeys.foreach { k =>
+        rampKey.show(k.ramp)
+        isolineKey.show(k.isoline)
+      }
+      legend.getChildren.setAll(vm.legend.flatMap { e =>
         val text = label("explore-legend-label", "t11")
         text.setText(e.label)
         val item = HBox(swatch(e.swatch), text)
         item.setAlignment(Pos.CENTER_LEFT)
         item.getStyleClass.add("explore-legend-item")
-        item
+        if e.swatch == LegendSwatch.PreviewMap && shownKeys.isDefined then
+          Vector(item, rampItem, isolineItem)
+        else Vector(item)
       }*)
       visible(legendRow, vm.legend.nonEmpty)
     finally rendering = false
@@ -174,6 +216,19 @@ object ExploreTrialViewPane:
     }
 
   val stylesheetResource: String = s"${TokenFiles.resourceDirectory}/studio-explore.css"
+
+  // A key's canvas, at the key's own size.
+  private def keyHost(w: Double, h: Double): CanvasPlotHost =
+    val host = CanvasPlotHost()
+    host.setMinSize(w, h)
+    host.setPrefSize(w, h)
+    host.setMaxSize(w, h)
+    host
+
+  private def text(words: String, styles: String*): Label =
+    val l = label(("explore-legend-label" +: styles)*)
+    l.setText(words)
+    l
 
   def label(classes: String*): Label =
     val l = Label()

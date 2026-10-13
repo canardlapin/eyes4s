@@ -50,6 +50,17 @@ enum TrialViewStatus derives CanEqual:
 
   case Disposed
 
+/** Where a [[TrialView]] shows its map's legend (review ticket 17). */
+enum MapLegendPlacement derives CanEqual:
+
+  /** On its own canvas under the trial's caption, as the Main board does. */
+  case UnderTrial
+
+  /** Not on the stage: the host shows the legend's keys in its own legend
+    * row, as the Explore board does ([[MapLegendScene.keys]]).
+    */
+  case InHostLegend
+
 /** A map to draw over a trial (ticket S4.3b): the run's grid, the style it
   * is coloured in, the global opacity, the screen region it covers (a
   * run's map covers the image frame; a backend preview its window, S6.2),
@@ -92,7 +103,9 @@ final case class MapRequest(
   * ([[MapLegendScene]], review ticket 17) where the Main board does: on a
   * second canvas directly below the trial's caption, as wide as the trial,
   * [[MapLegendScene.HeightPx]] tall. A difference map and no map have none.
-  * The legend's description ends the trial's own (its scene summary).
+  * The legend's description ends the trial's own (its scene summary). A
+  * host with a legend row of its own places it there instead
+  * ([[placeLegend]]); the view then keeps no room for it.
   */
 final class TrialView(source: StimulusSource, loader: Executor, maps: MapRasterStore)
     extends Region:
@@ -126,6 +139,8 @@ final class TrialView(source: StimulusSource, loader: Executor, maps: MapRasterS
   private val refusalWrapper                 =
     ReadOnlyObjectWrapper[Option[RasterRefusal]](this, "mapRefused", None)
   private var legendShown: Option[Either[PlotSceneError, MapLegendScene]] = None
+  private var placement: MapLegendPlacement                               =
+    MapLegendPlacement.UnderTrial
   legendHost.setVisible(false)
 
   /** What the view shows. */
@@ -158,6 +173,19 @@ final class TrialView(source: StimulusSource, loader: Executor, maps: MapRasterS
 
   /** The legend of the map drawn, if the view draws one. */
   def legend: Option[MapLegendScene] = legendShown.flatMap(_.toOption)
+
+  /** Where the view shows its map's legend. */
+  def legendPlacement: MapLegendPlacement = placement
+
+  /** Shows the map's legend at `where` from now on. */
+  def placeLegend(where: MapLegendPlacement): Unit =
+    onFxThread("placeLegend")
+    if !disposed && where != placement then
+      placement = where
+      showLegend(legendShown.map(_.map(Some(_))))
+
+  /** Whether the legend is drawn under the trial. */
+  def legendUnderTrial: Boolean = legend.isDefined && placement == MapLegendPlacement.UnderTrial
 
   /** Why the drawn map's legend could not be built, if it could not. */
   def legendRefused: Option[PlotSceneError] = legendShown.flatMap(_.left.toOption)
@@ -324,13 +352,13 @@ final class TrialView(source: StimulusSource, loader: Executor, maps: MapRasterS
       case Right(legend) => legend.map(Right(_))
       case Left(error)   => Some(Left(error))
     }
-    val was = legend.isDefined
+    val was = legendUnderTrial
     legendShown = next
-    legend match
+    legend.filter(_ => legendUnderTrial) match
       case Some(l) => legendHost.show(l.plot)
       case None    => legendHost.clear()
-    legendHost.setVisible(legend.isDefined)
-    if was != legend.isDefined then requestLayout()
+    legendHost.setVisible(legendUnderTrial)
+    if was != legendUnderTrial then requestLayout()
 
   override protected def layoutChildren(): Unit =
     val w = getWidth
@@ -339,7 +367,7 @@ final class TrialView(source: StimulusSource, loader: Executor, maps: MapRasterS
       case Some(a) =>
         // The legend, when there is one, sits under the trial's caption; the
         // trial and its legend are centred together.
-        val below    = if legend.isDefined then MapLegendScene.HeightPx else 0.0
+        val below    = if legendUnderTrial then MapLegendScene.HeightPx else 0.0
         val (fw, fh) = TrialScene.fit(w, math.max(0.0, h - below), a)
         val left     = math.floor((w - fw) / 2.0)
         val top      = math.floor((h - fh - below) / 2.0)
