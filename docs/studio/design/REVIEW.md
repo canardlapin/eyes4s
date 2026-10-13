@@ -34,9 +34,9 @@ Status key: **[approved]** owner-approved · **[bug]** a pure bug, landable with
    - Tests: `PaletteSuite` (~:36-59, :150), `TrialMapSceneSuite:118, :295-320`, `MapTileSceneSuite:81-96`, `TrialViewMapFxSuite`.
 
 **D. Tokens and type (app) **
-9. `ThemedToken.SelFill` (light #E4E0D6, dark #2E3035) in `Tokens.scala` (ThemedToken :36-72, values ~:269/:300 blocks). Tests: `TokenContrastSuite` (text pairs, plus hover surface-2 vs sel-fill), TokenCss golden.
-10. TypeCss `.t11-strong`, `.t12-strong`, `.t12-label`, `.mono-500`. Test: a TypeCss unit test; `checkStudioTypeScale` is unaffected.
-11. NeutralMark: *Decision* — token alpha .35 (the Explore board is aligned); was opaque ink-3 vs alpha 35 (`Tokens.scala:269, :300`); `HaloPx` 2.0 vs spec 1.5 (`TrialScene.scala:411`); DESIGN_SPEC.md:78. Tests: `TokenContrastSuite`, `TrialSceneSuite` neutral marks, `GeometrySceneSuite:41`.
+9. `ThemedToken.SelFill` (light #E4E0D6, dark #2E3035) in `Tokens.scala` (ThemedToken :36-72, values ~:269/:300 blocks). Tests: `TokenContrastSuite` (text pairs, plus hover surface-2 vs sel-fill), TokenCss golden. **Fixed.**
+10. TypeCss `.t11-strong`, `.t12-strong`, `.t12-label`, `.mono-500`. Test: a TypeCss unit test; `checkStudioTypeScale` is unaffected. **Fixed.**
+11. NeutralMark: *Decision* — token alpha .35 (the Explore board is aligned); was opaque ink-3 vs alpha 35 (`Tokens.scala:269, :300`); `HaloPx` 2.0 vs spec 1.5 (`TrialScene.scala:411`); DESIGN_SPEC.md:78. Tests: `TokenContrastSuite`, `TrialSceneSuite` neutral marks, `GeometrySceneSuite:41`. **Fixed** (the 1.5 px halo applies to neutral marks only; role marks keep 2 px, DESIGN_SPEC §13).
 
 **E. Desktop CSS sweep (desktop; one PR) **
 12. **D1, composite cursor.**
@@ -59,7 +59,7 @@ Status key: **[approved]** owner-approved · **[bug]** a pure bug, landable with
     - Primary focus `-es-accent, -es-on-accent, -es-accent` at insets 0, 2, 4 (`studio-plot.css:316`, `studio-geometry.css:154`, `studio-ledger.css:216`, `studio-import.css:192`).
     - `:armed` → `-es-hairline`.
     - Tests: FX focus tests use `requestFocusTraversal(TraversalDirection.NEXT)` or a robot Tab, not `requestFocus()` (verified: focusVisible = false). This touches `InputAdapterFxSuite:402` and any ring assertion.
-15. **D4, disabled.** *Decision:* keep the desktop rule — pending and blocked actions are disabled but fully readable (`PreflightFxSuite:55-100`, the readable overrides stay); the boards were amended to match. Remaining code: attach each visible reason to its control for assistive technology (accessible help text), with an `A11yTreeSuite` check. Only controls with no workflow meaning fade to 0.4.
+15. **D4, disabled.** *Decision:* keep the desktop rule — pending and blocked actions are disabled but fully readable (`PreflightFxSuite:55-100`, the readable overrides stay); the boards were amended to match. Remaining code: attach each visible reason to its control for assistive technology (accessible help text), with an `A11yTreeSuite` check. Only controls with no workflow meaning fade to 0.4. **Fixed** (`DisabledReason.attach`; `A11yTreeSuite`).
 16. **D5, controls** (split into slices of at most half a day: the controls CSS, then the `SegmentedBar`). `studio-controls.css` for radio, checkbox and slider, and a `SegmentedBar` replacing the RadioButtons at `CompareInspectorHost.scala:114-116`. Test: a new FX snapshot.
 
 **F. Scenes (viz) **
@@ -68,7 +68,7 @@ Status key: **[approved]** owner-approved · **[bug]** a pure bug, landable with
     - Isoline `LineCap.Round`.
     - A `MapLegendScene` with the legend text "fades below 10% of max" as a TrialText/ExploreText id.
     - Tests: `TrialMapSceneSuite` (cross after map); `TrialViewFxSuite` goldens.
-18. **E2, timeline.**
+18. **E2, timeline.** **Slice a fixed.**
     - `OverlayRing` rectangle geometry (`MarkInput.scala:207, 253-325, 474-487`) and an outside-window bar style (Custom dash, no fill) in `TimelinePlot` (`:187-191`).
     - Fill and height already match.
     - Tests: `TimelinePlotSuite:62` (unchanged), `OverlaySelectionsSuite`, `RovingCursorSuite`.
@@ -76,7 +76,7 @@ Status key: **[approved]** owner-approved · **[bug]** a pure bug, landable with
 19. **E3, Explore mark halo.** The board draws the halo outside r = `radiusPx` (`:438`), so no code change, only a board tweak. **Closed as code.**
 
 **G. Figures (viz/app; regenerate the golden figure once) **
-20. **F1, y ticks and signed values**: `ParticipantPlot` (`:416-421`, value labels `:368-371`) and `ScaleProfilePlot` (`:379-384`). Tests: `ParticipantPlotSuite:231`, `ScaleProfilePlotSuite:216`, `PlotTableParitySuite`, `FigurePageMapSuite`.
+20. **F1, y ticks and signed values**: `ParticipantPlot` (`:416-421`, value labels `:368-371`) and `ScaleProfilePlot` (`:379-384`). Tests: `ParticipantPlotSuite:231`, `ScaleProfilePlotSuite:216`, `PlotTableParitySuite`, `FigurePageMapSuite`. **Fixed.**
 21. **F2, tile rows.**
     - `MapTileVM` gains `subtitle` (`FigurePanels.scala:114, 255-276`).
     - `FigurePage` uses a fixed title row, a map, and a fixed two-row caption drawn without `wrap` (`:161-166, :183, :348, :398`).
@@ -85,7 +85,7 @@ Status key: **[approved]** owner-approved · **[bug]** a pure bug, landable with
 22. **F3, figure cross arm.** *Decision:* 20 px half-arm in native screen coordinates, as `TrialScene` (`:423`, `:834`). Test: a `FigureGaze` cross-length test.
 
 **H. Data (app/viz) **
-23. **G1, DensityPicture** (SPEC-AMENDMENTS #15, extended).
+23. **G1, DensityPicture** (SPEC-AMENDMENTS #15, extended). **Slice a fixed** (level rule: DESIGN_SPEC §15.1).
     - Floor → every non-zero cell (`GeometryPictures.scala:95`).
     - Log levels (`:97-103`): *Decision:* fixed per dataset revision, never rescaled per view; write the level rule (threshold placement, rounding, empty and single-cell studies, overflow level, labelled count ranges, singletons visible) before coding this part.
     - Scaladoc `:80-87` and the semantics text `GeometryScene.scala:123`.
@@ -102,7 +102,7 @@ Status key: **[approved]** owner-approved · **[bug]** a pure bug, landable with
 
 **I. Plots and Results **
 26. **H1, ParticipantPlot annotations** (split into slices of at most half a day): an `Annotations` API and `ParticipantTextId`s. Tests: a new suite, plus a Results FX snapshot.
-27. **H2, Results paired descriptive**: an app VM plus text. Test: a fixture value test of **0.15567 → "+0.16"**, range +0.05 (P21) to +0.26 (P15), 24 of 24, computed before rounding participant means. The fixture field is added in this landing (`docs/studio/fixture`).
+27. **H2, Results paired descriptive**: an app VM plus text. Test: a fixture value test of **0.15567 → "+0.16"**, range +0.05 (P21) to +0.26 (P15), 24 of 24, computed before rounding participant means. The fixture field is added in this landing (`docs/studio/fixture`). **Fixed** (shown when the reporting spec declares the contrast; the t3 story spec declares none yet).
 
 **J. Parity harness **
 28. The board's resting depicted focus (`.kf`) gets a desktop counterpart only in tests. Moments put visible focus on the depicted node via `requestFocusTraversal`/Tab (`ShellMomentsFxSuite`, `AppShellFxSuite`), or `PARITY_CHECKLIST.md` exempts resting focus rings. No runtime change.
