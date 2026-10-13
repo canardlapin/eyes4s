@@ -22,10 +22,14 @@ import eyes4s.studio.app.tokens.StageVariant
 import eyes4s.studio.core.document.{Perspective, StageAppearance}
 import eyes4s.studio.core.fixture.StoryMoment
 import eyes4s.studio.desktop.harness.StudioTheme
-import eyes4s.studio.desktop.shell.ShellFxSuite
+import eyes4s.studio.desktop.shell.{KeyboardFocus, SegmentedBar, ShellFxSuite}
 import eyes4s.studio.desktop.trial.GoldenTrials
+import javafx.scene.AccessibleRole
+import javafx.scene.control.ToggleButton
+import javafx.scene.input.KeyCode
 
 import scala.concurrent.duration.Duration
+import scala.jdk.CollectionConverters.*
 
 /** Compare's inspector in the studio window (ticket S8.4; Main.dc.html,
   * inspector) at t2: it binds the explanation and the read-only sections of
@@ -77,6 +81,28 @@ class CompareInspectorFxSuite extends ShellFxSuite:
       )
       runOnFx(i.chooseLimits(LimitsScope.PerPanel))
       assertEquals(runOnFx(i.chosen._2), Some(LimitsScope.PerPanel))
+
+      // The stage is a segmented bar (REVIEW ticket 16): one Tab stop, the
+      // chosen segment, read as a radio button; Left chooses the previous.
+      val segments = runOnFx(
+        i.node.lookupAll(s".${SegmentedBar.SegmentStyleClass}").asScala.toVector.collect {
+          case b: ToggleButton => b
+        }
+      )
+      val light = segments
+        .find(b => runOnFx(b.getAccessibleText) == "Stage: Light")
+        .getOrElse(fail(s"no Stage: Light segment in ${segments.map(_.getAccessibleText)}"))
+      assertEquals(runOnFx(light.getAccessibleRole), AccessibleRole.RADIO_BUTTON)
+      assertEquals(
+        runOnFx(segments.filter(_.isFocusTraversable).map(_.getAccessibleText)),
+        Vector("Stage: Light", "Colour limits: Per panel")
+      )
+      runOnFx(KeyboardFocus.byKeyboard(light))
+      fx.robot.press(KeyCode.LEFT)
+      eventually(fx, "the mid stage by the keyboard")(
+        w.runtime.model.document.presentation.stage == StageAppearance.Mid
+      )
+      assertEquals(runOnFx(i.chosen._1), Some(StageAppearance.Mid))
 
       runOnFx(i.pressEdit())
       eventually(fx, "Analysis")(w.runtime.model.perspective == Perspective.Analysis)

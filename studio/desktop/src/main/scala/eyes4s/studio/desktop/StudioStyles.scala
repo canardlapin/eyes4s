@@ -24,7 +24,8 @@ final case class MissingStylesheet(resource: String):
   def message: String = s"stylesheet $resource is not on the classpath"
 
 /** The stylesheets a studio scene loads, in order: the theme's tokens
-  * (S1.1), the type scale (S1.2), the icons (S1.3) and the shell (S1.4).
+  * (S1.1), the type scale (S1.2), the icons (S1.3), the shell (S1.4) and
+  * the stock controls (REVIEW ticket 16).
   */
 object StudioStyles:
 
@@ -34,13 +35,20 @@ object StudioStyles:
   /** The classpath resource of the shell stylesheet (S1.4, S1.5a). */
   val shellStylesheetResource: String = s"${TokenFiles.resourceDirectory}/studio-shell.css"
 
+  /** The classpath resource of the controls stylesheet: radio buttons,
+    * check boxes and sliders on the tokens (REVIEW ticket 16).
+    */
+  val controlsStylesheetResource: String =
+    s"${TokenFiles.resourceDirectory}/studio-controls.css"
+
   /** The classpath resources of `theme`'s stylesheets. */
   def resources(theme: Theme): List[String] =
     List(
       TokenFiles.stylesheetResource(theme),
       TokenFiles.typeStylesheetResource,
       iconStylesheetResource,
-      shellStylesheetResource
+      shellStylesheetResource,
+      controlsStylesheetResource
     )
 
   /** The stylesheet URLs of `theme`, for `Scene.getStylesheets`. */

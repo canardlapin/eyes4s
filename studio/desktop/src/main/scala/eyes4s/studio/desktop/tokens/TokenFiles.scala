@@ -65,9 +65,10 @@ object TokenFiles:
 
   /** A theme's scaladock `DockTheme.Custom` sheet (S1.10), generated from the
     * token source: it imports the theme's token sheet, the type scale, the
-    * icons and the shell, then `studio-dock.css`, which maps the `-dock-*`
-    * variables onto the tokens. A floating dock window is a scene of its own,
-    * so this sheet alone gives its panes the studio's look in the theme.
+    * icons, the shell and the controls, then `studio-dock.css`, which maps
+    * the `-dock-*` variables onto the tokens. A floating dock window is a
+    * scene of its own, so this sheet alone gives its panes the studio's look
+    * in the theme.
     */
   def dockSheet(theme: Theme): String =
     val imports = List(
@@ -75,6 +76,7 @@ object TokenFiles:
       TypeCss.javaFxFileName,
       "studio-icons.css",
       "studio-shell.css",
+      "studio-controls.css",
       "studio-dock.css"
     ).map(f => s"@import \"$f\";").mkString("\n")
     TokenCss.licenseHeader +

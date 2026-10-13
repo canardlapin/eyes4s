@@ -24,9 +24,10 @@ import eyes4s.studio.core.backend.{DatasetRevision, LedgerPages}
 import eyes4s.studio.core.document.StageAppearance
 import eyes4s.studio.desktop.plot.TableTwinView
 import eyes4s.studio.desktop.runtime.StudioSession
+import eyes4s.studio.desktop.shell.SegmentedBar
 import javafx.application.Platform
 import javafx.geometry.Pos
-import javafx.scene.control.{Button, Label, RadioButton, ScrollPane, Slider, ToggleGroup}
+import javafx.scene.control.{Button, Label, ScrollPane, Slider}
 import javafx.scene.layout.{GridPane, HBox, Priority, Region, VBox}
 
 /** Where Compare's inspector reads a dataset's admission ledger. `done` may
@@ -110,24 +111,9 @@ final class CompareInspectorHost(
   private val opacityLabel    = label("t12")
   private val opacityValue    = label("mono", "t11")
 
-  private val stageGroup                                     = ToggleGroup()
-  private val stages: Vector[(StageAppearance, RadioButton)] =
-    StageAppearance.values.toVector.map { st =>
-      val b = RadioButton()
-      b.getStyleClass.add("t12")
-      b.setToggleGroup(stageGroup)
-      b.setOnAction(_ => if !binding then app(WhyReference.stageIntent(st)))
-      st -> b
-    }
-  private val limitsGroup                                = ToggleGroup()
-  private val limits: Vector[(LimitsScope, RadioButton)] =
-    LimitsScope.values.toVector.map { l =>
-      val b = RadioButton()
-      b.getStyleClass.add("t12")
-      b.setToggleGroup(limitsGroup)
-      b.setOnAction(_ => if !binding then dispatch(WhyIntent.ChooseLimits(l)))
-      l -> b
-    }
+  // The stage and the colour limits: segmented bars (REVIEW ticket 16).
+  private val stages  = SegmentedBar[StageAppearance](st => app(WhyReference.stageIntent(st)))
+  private val limits  = SegmentedBar[LimitsScope](l => dispatch(WhyIntent.ChooseLimits(l)))
   private val opacity = Slider(0.0, 1.0, 0.6)
   opacity.setPrefWidth(120.0)
   // A drag is dispatched once, on release; a click or a key step at once.
@@ -157,8 +143,8 @@ final class CompareInspectorHost(
     section(head(reportingTitle, reportingKind), reporting),
     section(
       head(appearanceTitle, appearanceKind),
-      row(stageLabel, stages.map(_._2)*),
-      row(limitsLabel, limits.map(_._2)*),
+      row(stageLabel, stages.node),
+      row(limitsLabel, limits.node),
       row(opacityLabel, opacity, opacityValue)
     )
   )
@@ -191,15 +177,11 @@ final class CompareInspectorHost(
 
   /** The appearance as shown: the chosen stage and limits, and the opacity. */
   def chosen: (Option[StageAppearance], Option[LimitsScope], Double) =
-    (
-      stages.collectFirst { case (s, b) if b.isSelected => s },
-      limits.collectFirst { case (l, b) if b.isSelected => l },
-      opacity.getValue
-    )
+    (stages.chosen, limits.chosen, opacity.getValue)
 
   /** The user's gestures: a stage, a limit scope, an opacity, Edit. */
-  def chooseStage(s: StageAppearance): Unit = stages.find(_._1 == s).foreach(_._2.fire())
-  def chooseLimits(l: LimitsScope): Unit    = limits.find(_._1 == l).foreach(_._2.fire())
+  def chooseStage(s: StageAppearance): Unit = stages.choose(s)
+  def chooseLimits(l: LimitsScope): Unit    = limits.choose(l)
   def setOpacity(v: Double): Unit           = opacity.setValue(v)
   def pressEdit(): Unit                     = edit.fire()
 
@@ -261,14 +243,13 @@ final class CompareInspectorHost(
       limitsLabel.setText(a.limitsLabel)
       opacityLabel.setText(a.opacityLabel)
       opacityValue.setText(a.opacityText)
-      def bind[A](pairs: Vector[(A, RadioButton)], segs: Vector[SegmentVM[A]], name: String) =
-        pairs.foreach { (value, b) =>
-          segs.find(_.value == value).foreach { seg =>
-            b.setText(seg.label)
-            b.setAccessibleText(s"$name: ${seg.label}")
-            b.setSelected(seg.chosen)
-          }
-        }
+      def bind[A](bar: SegmentedBar[A], segs: Vector[SegmentVM[A]], name: String) =
+        bar.node.setAccessibleText(name)
+        bar.show(
+          segs.map(seg =>
+            SegmentedBar.Segment(seg.value, seg.label, s"$name: ${seg.label}", seg.chosen)
+          )
+        )
       bind(stages, a.stages, a.stageLabel)
       bind(limits, a.limits, a.limitsLabel)
       if !opacity.isValueChanging then opacity.setValue(a.opacity)

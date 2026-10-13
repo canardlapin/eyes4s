@@ -1,0 +1,273 @@
+/*
+ * Copyright 2026 canardlapin
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+/* Radio buttons, check boxes, sliders and the segmented bar on the tokens
+ * (REVIEW ticket 16; docs/studio/design/System.dc.html, the `.rd` and `.sg`
+ * specimens and the `input[type=radio|checkbox|range]` rules). Modena keeps
+ * the behaviour (keys, hit areas, the toggle groups); this sheet replaces its
+ * gradients.
+ *
+ * A radio or a check box is one 22 px row: a 14 px box, a 5 px gap and its
+ * label, 6 px in from the row's rounded edge. The row takes surface-3 on
+ * hover and the hairline fill while pressed, as the board's buttons do. The
+ * box is drawn in ink, the board's accent-color: unchecked an ink-3 edge on
+ * the surface, checked an ink edge and dot (radio) or an ink box with a
+ * surface mark (check box). A chosen radio's label is set at weight 600.
+ *
+ * Keyboard focus is the 2 px accent ring on the row, drawn only under
+ * :focus-visible (DESIGN_SPEC section 15): every row carries a transparent
+ * 2 px border at rest, so the ring never moves its content, and modena's
+ * :focused ring on the box (which a click sets) is replaced by the rest
+ * drawing. A disabled control fades to 0.4 unless a reason is drawn beside it
+ * (`has-reason`, DisabledReason): then it stays readable, its box in the
+ * hairline on surface-2 and its label in ink-2. */
+
+/* ---- the row ------------------------------------------------------------ */
+
+.radio-button,
+.check-box {
+  -fx-min-height: 22px;
+  -fx-padding: 0 4 0 4;
+  -fx-label-padding: 0 0 0 5;
+  -fx-background-color: transparent;
+  -fx-background-radius: 4;
+  -fx-border-color: transparent;
+  -fx-border-width: 2;
+  -fx-border-radius: 4;
+  -fx-text-fill: -es-ink;
+}
+
+.radio-button:hover,
+.check-box:hover {
+  -fx-background-color: -es-surface-3;
+}
+
+.radio-button:armed,
+.check-box:armed {
+  -fx-background-color: -es-hairline;
+}
+
+.radio-button:selected {
+  -fx-font-family: "IBM Plex Sans SmBld";
+}
+
+/* ---- the radio ---------------------------------------------------------- */
+/* 14 px around a 6 px dot, sized outright: modena sizes them from padding,
+ * which the skin rounds up. */
+
+.radio-button > .radio {
+  -fx-min-width: 14px;
+  -fx-pref-width: 14px;
+  -fx-max-width: 14px;
+  -fx-min-height: 14px;
+  -fx-pref-height: 14px;
+  -fx-max-height: 14px;
+  -fx-background-color: -es-ink-3, -es-surface;
+  -fx-background-insets: 0, 1;
+  -fx-background-radius: 7, 6;
+  -fx-padding: 0;
+}
+
+.radio-button > .radio > .dot {
+  -fx-min-width: 6px;
+  -fx-pref-width: 6px;
+  -fx-max-width: 6px;
+  -fx-min-height: 6px;
+  -fx-pref-height: 6px;
+  -fx-max-height: 6px;
+  -fx-background-color: transparent;
+  -fx-background-insets: 0;
+  -fx-background-radius: 3;
+  -fx-padding: 0;
+}
+
+.radio-button:selected > .radio {
+  -fx-background-color: -es-ink, -es-surface;
+}
+
+.radio-button:selected > .radio > .dot {
+  -fx-background-color: -es-ink;
+}
+
+/* ---- the check box ------------------------------------------------------ */
+/* 14 px: a 2 px pad around a 10 px mark; the dash is 10 x 2, unscaled. */
+
+.check-box > .box {
+  -fx-background-color: -es-ink-3, -es-surface;
+  -fx-background-insets: 0, 1;
+  -fx-background-radius: 2, 1;
+  -fx-padding: 2;
+}
+
+.check-box > .box > .mark {
+  -fx-background-color: transparent;
+  -fx-background-insets: 0;
+  -fx-padding: 5;
+}
+
+.check-box:indeterminate > .box {
+  -fx-padding: 0;
+}
+
+.check-box:indeterminate > .box > .mark {
+  -fx-padding: 7;
+}
+
+.check-box:selected > .box,
+.check-box:indeterminate > .box {
+  -fx-background-color: -es-ink;
+  -fx-background-insets: 0;
+  -fx-background-radius: 2;
+}
+
+.check-box:selected > .box > .mark,
+.check-box:indeterminate > .box > .mark {
+  -fx-background-color: -es-surface;
+}
+
+/* ---- the slider --------------------------------------------------------- */
+/* A 22 px row like the radio's: a 4 px track and a 14 px ink-2 thumb (the
+ * board's range accent-color), inside the same transparent 2 px border. */
+
+.slider {
+  -fx-padding: 2 4 2 4;
+  -fx-border-color: transparent;
+  -fx-border-width: 2;
+  -fx-border-radius: 4;
+}
+
+.slider > .track {
+  -fx-background-color: -es-hairline, -es-surface-3;
+  -fx-background-insets: 0, 1;
+  -fx-background-radius: 2, 1;
+  -fx-padding: 2;
+}
+
+.slider > .thumb {
+  -fx-background-color: -es-ink-2;
+  -fx-background-insets: 0;
+  -fx-background-radius: 7;
+  -fx-padding: 7;
+  -fx-effect: null;
+}
+
+.slider > .thumb:hover,
+.slider > .thumb:pressed {
+  -fx-background-color: -es-ink;
+}
+
+.slider > .axis {
+  -fx-tick-label-fill: -es-ink-2;
+}
+
+/* ---- the segmented bar -------------------------------------------------- */
+/* SegmentedBar, after the board's `.sg`: a surface-3 track (radius 6, 2 px
+ * in, 2 px between) of 20 px segments (radius 4, 7 px either side of the
+ * label) in ink-2 at weight 500. Hover is surface-2 and pressed the hairline,
+ * as for any selectable item. The chosen segment is the selection fill in a
+ * hairline edge, its label ink at weight 600 (DESIGN_SPEC section 15: the
+ * board's surface fill would read as hover's lighter step). Each segment
+ * carries a transparent 2 px border, counted in its 7 px, for the focus ring
+ * below. The segments have no modena class, so only the bar fades when
+ * disabled, once; with a drawn reason it stays opaque. */
+
+.segmented-bar {
+  -fx-padding: 2;
+  -fx-spacing: 2;
+  -fx-background-color: -es-surface-3;
+  -fx-background-radius: 6;
+  -fx-alignment: center-left;
+}
+
+.segmented-bar > .segment {
+  -fx-min-height: 20px;
+  -fx-pref-height: 20px;
+  -fx-max-height: 20px;
+  -fx-padding: 0 5 0 5;
+  -fx-background-color: transparent;
+  -fx-background-insets: 0;
+  -fx-background-radius: 4;
+  -fx-border-color: transparent;
+  -fx-border-width: 2;
+  -fx-border-radius: 4;
+  -fx-text-fill: -es-ink-2;
+  -fx-font-family: "IBM Plex Sans Medm";
+  -fx-font-size: 12px;
+}
+
+.segmented-bar > .segment:hover {
+  -fx-background-color: -es-surface-2;
+}
+
+.segmented-bar > .segment:armed {
+  -fx-background-color: -es-hairline;
+}
+
+.segmented-bar > .segment:selected {
+  -fx-background-color: -es-hairline, -es-sel-fill;
+  -fx-background-insets: 0, 1;
+  -fx-background-radius: 4, 3;
+  -fx-text-fill: -es-ink;
+  -fx-font-family: "IBM Plex Sans SmBld";
+}
+
+.segmented-bar:disabled {
+  -fx-opacity: 0.4;
+}
+
+/* ---- disabled: readable with a reason, else faded ----------------------- */
+
+.radio-button.has-reason:disabled,
+.check-box.has-reason:disabled,
+.slider.has-reason:disabled,
+.segmented-bar.has-reason:disabled {
+  -fx-opacity: 1;
+  -fx-text-fill: -es-ink-2;
+}
+
+.radio-button.has-reason:disabled > .radio {
+  -fx-background-color: -es-hairline, -es-surface-2;
+  -fx-background-insets: 0, 1;
+  -fx-background-radius: 7, 6;
+}
+
+.check-box.has-reason:disabled > .box {
+  -fx-background-color: -es-hairline, -es-surface-2;
+  -fx-background-insets: 0, 1;
+  -fx-background-radius: 2, 1;
+}
+
+.radio-button.has-reason:disabled:selected > .radio > .dot,
+.check-box.has-reason:disabled:selected > .box > .mark,
+.check-box.has-reason:disabled:indeterminate > .box > .mark {
+  -fx-background-color: -es-ink-2;
+}
+
+.slider.has-reason:disabled > .thumb {
+  -fx-background-color: -es-ink-3;
+}
+
+/* ---- keyboard focus, last (DESIGN_SPEC 15) ------------------------------ */
+/* After every rule above, hover and pressed included, so focus is never
+ * hidden; it changes only the border, so the fills of hover, pressed and
+ * checked stay as they are inside the ring. */
+
+.radio-button:focus-visible,
+.check-box:focus-visible,
+.slider:focus-visible,
+.segmented-bar > .segment:focus-visible {
+  -fx-border-color: -es-accent;
+}
