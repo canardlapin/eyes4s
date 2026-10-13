@@ -127,6 +127,9 @@ class ExpectedUnmatchedSuite extends munit.FunSuite:
       UnmatchedReasons.declared(layout, counts.cardinality.unmatched, p.expectedUnmatched)
     assertEquals(reasons.reason(lure), Some(UnmatchedKind.NoReferenceInDesign))
     assertEquals(reasons.reason(old), Some(UnmatchedKind.Undetermined))
+    val unknown = UnmatchedReasons.undetermined(counts.cardinality.unmatched)
+    assertEquals(unknown.reason(lure), Some(UnmatchedKind.Undetermined))
+    assertEquals(unknown.byDesign, 0)
   }
 
   test(
@@ -182,6 +185,9 @@ class ExpectedUnmatchedSuite extends munit.FunSuite:
     assert(StudyText.methods(after).text.contains("excluded from both pair schedules"))
     val changes = before.structuralDiff(after)
     assertEquals(changes.map(_.field), Vector(StudyField.ExpectedUnmatched))
+    assert(changes.head.render.contains("old_new"))
+    assertEquals(changes.head.stated, "none")
+    assert(changes.head.inverse.stated.contains("lure"))
     assertEquals(get(before.revise(changes)), after)
     assertEquals(get(after.revise(changes.map(_.inverse))), before)
     assert(get(after.inspect).fields.exists(_.info.id == "expectedUnmatched"))
@@ -193,4 +199,62 @@ class ExpectedUnmatchedSuite extends munit.FunSuite:
     val recipe = get(form.parse(form.values(p)))
     assertEquals(recipe.expectedUnmatched, Some(selection))
     assertEquals(get(recipe.plan(p.input, p.layout, p.method, p.parameters)), p)
+  }
+
+  private def ledger(withStudy: Boolean, blankLure: Boolean = false): InventoryLedger =
+    val rows = all.zipWithIndex.map { (key, i) =>
+      val absent = key == studied && !withStudy
+      val value  = if key == lure && blankLure then AttributeValue.Blank
+      else
+        AttributeValue.Text(if key == lure then "lure"
+        else if key == novel then "new"
+        else "old")
+      get(
+        InventoryTrial.of(
+          TrialIdentity.of(key),
+          Vector(i + 2),
+          Some(key.item),
+          get(Attributes.of(Vector("old_new" -> value))),
+          if absent then Vector.empty else Vector(key.item),
+          if absent then Vector.empty else Vector(i + 2),
+          if absent then TrialDisposition.Absent else TrialDisposition.Admitted
+        )
+      )
+    }
+    get(
+      InventoryLedger.of(
+        SourceRef.of("trials.csv", Vector("old_new"), Vector.empty),
+        Vector("old_new"),
+        Vector(AttributeColumn("old_new", AttributeKind.Text)),
+        rows,
+        Vector.empty,
+        Vector.empty,
+        Vector.empty,
+        SampleCountRule.PositiveColumn("n")
+      )
+    )
+
+  test(
+    "a reusable rule binds every pre-admission trial and survives reference disposition changes"
+  ) {
+    val rule = get(ExpectedUnmatchedRule.of("old_new", Vector("new", "lure")))
+    assertEquals(rule.column, "old_new")
+    assertEquals(rule.values, Vector("lure", "new"))
+    val admitted = get(rule.bind(ledger(true)))
+    val absent   = get(ExpectedUnmatched.fromInventory(rule.column, rule.values, ledger(false)))
+    assertEquals(admitted, selection)
+    assertEquals(absent, admitted)
+    assert(absent.contains(layout, lure))
+    assert(!absent.contains(layout, old))
+    assert(ExpectedUnmatchedRule.of("", Vector("new")).isLeft)
+    assert(ExpectedUnmatched.fromInventory("missing_column", rule.values, ledger(true)).isLeft)
+  }
+
+  test("a blank inventory declaration is retained and refuses use as a focal trial") {
+    val rule  = get(ExpectedUnmatchedRule.of("old_new", Vector("lure", "new")))
+    val blank = get(rule.bind(ledger(true, blankLure = true)))
+    assertEquals(blank.assignments.find(_._1 == TrialIdentity.of(lure)).map(_._2), Some(""))
+    val failure = plan(input(all), Some(blank)).prepare(input(all)).swap.toOption.get
+    assert(failure.message.contains("old_new"))
+    assert(failure.message.contains(lure.trial))
   }

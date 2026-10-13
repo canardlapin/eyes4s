@@ -330,6 +330,15 @@ class RealPreviewCursorSuite extends CatsEffectSuite:
       assertEquals(counts.matched.eligiblePairs, 0L)
       assertEquals(counts.controls.eligiblePairs, 0L)
       assertEquals(counts.keysPerDesign, 1L)
+      val served = get(
+        RealRecipeForm.serve(
+          RecipeEditRequest(StoryMoments.rev4, StoryMoments.r3, changed),
+          data.screen,
+          data.input,
+          data.evidence.inventory
+        )
+      )
+      assertEquals(served.accepted, Some(changed))
       val inventory = data.evidence.inventory.get
       val reasons   = get(configured.work.unmatchedReasons(inventory))
       assertEquals(reasons.byDesign, 1)
