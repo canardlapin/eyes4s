@@ -36,8 +36,9 @@ final case class ExampleRowVM(label: String, value: String) derives CanEqual
 
 /** A representative trial's thumbnail: the two caption lines under the
   * picture, the trial (`name`, "P05 · ret_04") and its count ("11 of 11
-  * outside"), its accessible name, and whether it is the trial chosen for
-  * marking. `ref` is the trial the thumbnail's numbers describe.
+  * outside", or "Missing asset · forest-044.png" in the warning ink when
+  * `assetMissing`), its accessible name, and whether it is the trial chosen
+  * for marking. `ref` is the trial the thumbnail's numbers describe.
   */
 final case class ThumbnailVM(
     trial: TrialKey,
@@ -45,7 +46,8 @@ final case class ThumbnailVM(
     name: String,
     count: String,
     accessible: String,
-    marked: Boolean
+    marked: Boolean,
+    assetMissing: Boolean
 ) derives CanEqual
 
 /** The all-trials density's key (DESIGN_SPEC section 15.1): its caption and
@@ -176,10 +178,18 @@ object GeometryPanelVM:
       grid.fold(("—", "—"))((c, r) => (Format.count(c.toLong), Format.count(r.toLong)))
     DensityKeyVM(t(DensityKey, c, r), densityLabels(steps))
 
-  /** A thumbnail's count line: off screen before outside the frame, else
-    * the records inside, in the singular for one record.
+  /** A thumbnail's count line: a missing or unreadable asset first ("Missing
+    * asset · forest-044.png", the Data board's caption), then off screen
+    * before outside the frame, else the records inside, in the singular for
+    * one record.
     */
   def thumbCount(p: ThumbnailPicture): String =
+    p.frame match
+      case FrameState.Missing(file)       => t(ThumbMissing, file.value)
+      case FrameState.Unreadable(file, _) => t(ThumbUnreadable, file.value)
+      case FrameState.Present             => recordsCount(p)
+
+  private def recordsCount(p: ThumbnailPicture): String =
     def n(v: Int): String = Format.count(v.toLong)
     if p.outsideScreen > 0 then t(ThumbOffScreen, n(p.outsideScreen), n(p.records))
     else if p.outsideWindow > 0 then t(ThumbOutside, n(p.outsideWindow), n(p.records))
@@ -283,13 +293,20 @@ object GeometryPanelVM:
     val thumbnails =
       shownPictures.toVector.flatMap(pic => pic.thumbnails.map(pic.key.dataset -> _)).map {
         (dataset, p) =>
-          val name       = trialLabel(p.trial)
-          val marked     = panel.marked.contains(p.trial)
-          val window     = Format.count(p.outsideWindow.toLong)
-          val screen     = Format.count(p.outsideScreen.toLong)
-          val accessible =
-            if p.records == 1 then t(ThumbAccessibleOne, name, window, screen)
-            else t(ThumbAccessible, name, Format.count(p.records.toLong), window, screen)
+          val name    = trialLabel(p.trial)
+          val marked  = panel.marked.contains(p.trial)
+          val window  = Format.count(p.outsideWindow.toLong)
+          val screen  = Format.count(p.outsideScreen.toLong)
+          val records =
+            if p.records == 1 then t(ThumbRecordsOne, window, screen)
+            else t(ThumbRecords, Format.count(p.records.toLong), window, screen)
+          // A missing or unreadable asset is named first, as the caption names it.
+          val accessible = p.frame match
+            case FrameState.Present       => t(ThumbAccessible, name, records)
+            case FrameState.Missing(file) =>
+              t(ThumbAccessibleMissing, name, file.value, records)
+            case FrameState.Unreadable(file, _) =>
+              t(ThumbAccessibleUnreadable, name, file.value, records)
           ThumbnailVM(
             p.trial,
             // The thumbnail's counts are the backend's window tally of the
@@ -298,7 +315,8 @@ object GeometryPanelVM:
             name,
             thumbCount(p),
             if marked then t(ThumbMarked, accessible) else accessible,
-            marked
+            marked,
+            p.frame != FrameState.Present
           )
       }
     val source        = spec.flatMap(_.sources.fixations).map(_.path.value).getOrElse("")

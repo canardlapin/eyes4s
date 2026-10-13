@@ -24,10 +24,12 @@ import eyes4s.studio.app.tokens.{
   StageToken,
   StageVariant,
   Theme,
+  ThemedToken,
   Tokens,
   Wcag
 }
-import eyes4s.studio.viz.plot.IntaglioColours
+import eyes4s.studio.viz.plot.{IntaglioColours, MissingAssetHatch}
+import eyes4s.studio.core.assets.AssetFile
 import eyes4s.studio.core.backend.{Phase, TrialKey}
 import intaglio.{Grob, YDirection, value}
 
@@ -58,7 +60,8 @@ class GeometrySceneSuite extends munit.FunSuite:
         MarkPicture(700.0, 420.0, MarkPlace.Inside, corrected = false),
         MarkPicture(260.0, 120.0, MarkPlace.OutsideWindow, corrected = true),
         MarkPicture(2000.0, 420.0, MarkPlace.OutsideScreen, corrected = false)
-      )
+      ),
+      FrameState.Present
     )
     val scene = get(
       GeometryScene.thumbnail(
@@ -90,12 +93,99 @@ class GeometrySceneSuite extends munit.FunSuite:
       1,
       0,
       1,
-      Vector(MarkPicture(-50.0, 20.0, MarkPlace.OutsideScreen, corrected = false))
+      Vector(MarkPicture(-50.0, 20.0, MarkPlace.OutsideScreen, corrected = false)),
+      FrameState.Present
     )
     val scene = get(
       GeometryScene.thumbnail("geometry.thumb.1", Theme.Dark, StageVariant.Mid, frame, picture)
     )
     assertEquals(scene.scene.grobs.flatMap(names), Vector("image-frame", "window-outline"))
+  }
+
+  /** Every grob of the scene, groups flattened. */
+  private def flat(g: Grob): Vector[Grob] = g match
+    case Grob.Group(children, _, _) => children.flatMap(flat)
+    case other                      => Vector(other)
+
+  private def named(scene: eyes4s.studio.viz.plot.PlotScene, n: String): Vector[Grob] =
+    scene.scene.grobs.flatMap(flat).filter(_.name.exists(_.value == n))
+
+  private val forest = AssetFile.of("forest-044.png").fold(e => fail(e.message), identity)
+
+  private def framed(state: FrameState, theme: Theme = Theme.Light) =
+    val picture = ThumbnailPicture(
+      trial,
+      2,
+      0,
+      0,
+      Vector(
+        MarkPicture(700.0, 420.0, MarkPlace.Inside, corrected = false),
+        MarkPicture(900.0, 500.0, MarkPlace.Inside, corrected = false)
+      ),
+      state
+    )
+    get(GeometryScene.thumbnail("geometry.thumb.m", theme, StageVariant.Dark, frame, picture))
+
+  test("a missing asset's thumbnail is hatched with an X under its records, never blank") {
+    Vector(Theme.Light, Theme.Dark).foreach { theme =>
+      val scene = framed(FrameState.Missing(forest), theme)
+      assertEquals(
+        scene.scene.grobs.flatMap(names),
+        Vector(
+          GeometryScene.MissingFieldName,
+          GeometryScene.MissingCrossName,
+          "records",
+          "window-outline"
+        )
+      )
+      val warnText = IntaglioColours.themed(theme, ThemedToken.WarnText)
+      val warnSoft = IntaglioColours.themed(theme, ThemedToken.WarnSoft)
+      // The field is the image frame, in the thumbnail-scale hatch.
+      named(scene, GeometryScene.MissingFieldName) match
+        case Vector(r: Grob.Rect) =>
+          val hatch = r.gp.fillPattern.getOrElse(fail("the missing frame has no hatch"))
+          assertEquals(hatch.ink, warnText)
+          assertEquals(hatch.background, Some(warnSoft))
+          val thumb = MissingAssetHatch.Thumbnail
+          assertEquals(
+            hatch.recipe,
+            intaglio.PatternRecipe
+              .angledHatch(45.0, thumb.spacing, thumb.lineWidth)
+              .fold(e => fail(e.toString), identity)
+          )
+        case other => fail(s"expected one hatched rect, got $other")
+      // The X: two warn-text strokes crossing at the frame's centre (960, 540).
+      named(scene, GeometryScene.MissingCrossName) match
+        case Vector(x: Grob.Segments) =>
+          assertEquals(x.segments.size, 2)
+          assertEquals(x.gp.stroke, Some(warnText))
+        case other => fail(s"expected the X's segments, got $other")
+      assert(
+        scene.scene.semantics.plots.head.description
+          .exists(_.contains("Missing asset · forest-044.png")),
+        scene.scene.semantics.plots.head.description
+      )
+    }
+  }
+
+  test("an unreadable asset's thumbnail is hatched too; a present one is not") {
+    val unreadable = framed(FrameState.Unreadable(forest, "not a PNG"))
+    assertEquals(named(unreadable, GeometryScene.MissingFieldName).size, 1)
+    assertEquals(named(unreadable, GeometryScene.MissingCrossName).size, 1)
+    assert(
+      unreadable.scene.semantics.plots.head.description
+        .exists(_.contains("Unreadable asset · forest-044.png"))
+    )
+    val present = framed(FrameState.Present)
+    assertEquals(
+      present.scene.grobs.flatMap(names),
+      Vector("image-frame", "records", "window-outline")
+    )
+    present.scene.grobs.flatMap(flat).foreach {
+      case r: Grob.Rect => assert(r.gp.fillPattern.isEmpty, r)
+      case _            => ()
+    }
+    assert(!present.scene.semantics.plots.head.description.exists(_.contains("asset")))
   }
 
   test("the density draws one rect per non-empty cell, at the map opacity") {
@@ -207,7 +297,8 @@ class GeometrySceneSuite extends munit.FunSuite:
         MarkPicture(700, 420, MarkPlace.Inside, corrected = false),
         MarkPicture(260, 120, MarkPlace.OutsideWindow, corrected = true),
         MarkPicture(2000, 420, MarkPlace.OutsideScreen, corrected = false)
-      )
+      ),
+      FrameState.Present
     )
     val thumbnail =
       get(GeometryScene.thumbnail("thumb", Theme.Light, StageVariant.Dark, frame, picture))

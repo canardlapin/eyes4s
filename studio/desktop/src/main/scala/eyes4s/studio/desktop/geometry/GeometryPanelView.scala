@@ -514,6 +514,9 @@ object GeometryPanelView:
       val classes = picture.getStyleClass
       classes.remove("marked")
       if vm.exists(_.marked) then classes.add("marked"): Unit
+      // A missing asset's caption is in the warning ink, as the board draws it.
+      count.getStyleClass.remove("geometry-warn")
+      if vm.exists(_.assetMissing) then count.getStyleClass.add("geometry-warn"): Unit
       node.setVisible(vm.isDefined)
 
   /** A count of records outside a frame, with what it means. */

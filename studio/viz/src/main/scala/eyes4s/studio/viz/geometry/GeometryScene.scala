@@ -19,6 +19,7 @@ package eyes4s.studio.viz.geometry
 import eyes4s.studio.app.geometry.{
   DensityPicture,
   FramePicture,
+  FrameState,
   GeometryPanelVM,
   MarkPicture,
   MarkPlace,
@@ -37,6 +38,7 @@ import eyes4s.studio.app.tokens.{
 import eyes4s.studio.viz.plot.{
   DataPanel,
   IntaglioColours,
+  MissingAssetHatch,
   PlotScene,
   PlotSceneError,
   SceneId,
@@ -83,7 +85,20 @@ object GeometryScene:
   /** The map opacity every density is drawn at (DESIGN_SPEC section 12). */
   val DensityOpacity: Double = 0.6
 
-  /** One representative trial. `id` names the scene for its host. */
+  /** The names of a missing asset's hatched frame and its X. */
+  val MissingFieldName: String = "missing-asset"
+  val MissingCrossName: String = "missing-asset-cross"
+
+  // The Data board's missing-asset X: 22-pixel strokes of the screen, at the
+  // thumbnail's scale, each arm reaching 140 of the frame's 768 pixels from
+  // its centre.
+  private val CrossArm: Double     = 140.0 / 768.0
+  private val CrossWidthPx: Double = 22.0 * MissingAssetHatch.ThumbnailScale
+
+  /** One representative trial. `id` names the scene for its host. A trial
+    * whose asset is missing or unreadable has its image frame hatched, with
+    * an X, under its records (DESIGN_SPEC section 9: never blank).
+    */
   def thumbnail(
       id: String,
       theme: Theme,
@@ -91,8 +106,12 @@ object GeometryScene:
       frame: FramePicture,
       trial: ThumbnailPicture
   ): Either[PlotSceneError, PlotScene] =
-    build(id, frame)(() => marks(theme, stage, trial.marks).map(_.toVector))(stage).map {
-      scene =>
+    val hatched = Option.when(trial.frame != FrameState.Present)(theme)
+    val asset   = Option
+      .when(trial.frame != FrameState.Present)(s" ${GeometryPanelVM.thumbCount(trial)}.")
+      .getOrElse("")
+    build(id, frame, hatched)(() => marks(theme, stage, trial.marks).map(_.toVector))(stage)
+      .map { scene =>
         scene.withSemantics(
           SceneSemantics.single(
             SceneSummaries.semantics(
@@ -101,12 +120,12 @@ object GeometryScene:
               s"${trial.records} records; ${trial.outsideWindow} outside the image window; " +
                 s"${trial.outsideScreen} outside the screen.",
               s"Screen ${frame.screenWidth} × ${frame.screenHeight} pixels, y down. " +
-                s"Image window at (${frame.left}, ${frame.top}), ${frame.width} × ${frame.height} pixels. " +
+                s"Image window at (${frame.left}, ${frame.top}), ${frame.width} × ${frame.height} pixels.$asset " +
                 s"${trial.marks.count(_.place != MarkPlace.OutsideScreen)} marks drawn; off-screen records are counted only."
             )
           )
         )
-    }
+      }
 
   /** Every record binned, as ramp levels over the screen. */
   def density(
@@ -140,12 +159,12 @@ object GeometryScene:
       case 1 => GeometryText(DensityCellsDrawnOne, (ranges :+ last)*)
       case n => GeometryText(DensityCellsDrawn, (Format.count(n.toLong) +: ranges :+ last)*)
 
-  private def build(id: String, frame: FramePicture)(
+  private def build(id: String, frame: FramePicture, hatched: Option[Theme] = None)(
       content: () => Either[GraphicsError, Vector[Grob]]
   )(stage: StageVariant): Either[PlotSceneError, PlotScene] =
     for
       sceneId <- SceneId(id)
-      built   <- layers(frame, content, stage).left.map(
+      built   <- layers(frame, content, stage, hatched).left.map(
         PlotSceneError.Graphics(sceneId.value, "the geometry scene", _)
       )
       (grobs, viewport) = built
@@ -153,10 +172,14 @@ object GeometryScene:
       scene <- PlotScene(sceneId, Scene(grobs), panel)
     yield scene
 
+  /** The screen, the image frame (hatched with an X in `hatched`'s theme for
+    * a missing asset), `content` and the frame's dashed outline.
+    */
   private def layers(
       frame: FramePicture,
       content: () => Either[GraphicsError, Vector[Grob]],
-      stage: StageVariant
+      stage: StageVariant,
+      hatched: Option[Theme]
   ): Either[GraphicsError, (Vector[Grob], Viewport)] =
     val w = frame.screenWidth.toDouble
     val h = frame.screenHeight.toDouble
@@ -174,12 +197,28 @@ object GeometryScene:
       screen    <- Grob.rect(centre, whole, gp = stageGp)
       imageAt   <- Point.native(frame.left + frame.width / 2.0, frame.top + frame.height / 2.0)
       imageSize <- sizeOf(frame.width.toDouble, frame.height.toDouble)
-      fieldGp   <- GraphicParams.checked(
-        stroke = None,
-        fill = Some(IntaglioColours.toIntaglio(Tokens.palette(PaletteToken.Screen)))
-      )
-      fieldName <- name("image-frame")
+      fieldGp   <- hatched.fold(
+        GraphicParams.checked(
+          stroke = None,
+          fill = Some(IntaglioColours.toIntaglio(Tokens.palette(PaletteToken.Screen)))
+        )
+      )(MissingAssetHatch.paint(_, MissingAssetHatch.Thumbnail))
+      fieldName <- name(if hatched.isDefined then MissingFieldName else "image-frame")
       field     <- Grob.rect(imageAt, imageSize, gp = fieldGp, name = Some(fieldName))
+      cross <- hatched.fold[Either[GraphicsError, Vector[Grob]]](Right(Vector.empty))(theme =>
+        name(MissingCrossName).flatMap(n =>
+          MissingAssetHatch
+            .cross(
+              theme,
+              frame.left + frame.width / 2.0,
+              frame.top + frame.height / 2.0,
+              frame.height * CrossArm,
+              px(CrossWidthPx),
+              Some(n)
+            )
+            .map(Vector(_))
+        )
+      )
       outlineGp <- GraphicParams.checked(
         stroke = Some(IntaglioColours.staged(stage, StageToken.OnStage)),
         fill = None,
@@ -192,7 +231,10 @@ object GeometryScene:
       drawn       <- content()
     yield (
       Vector(
-        Grob.group(Vector(screen, field) ++ drawn ++ Vector(outline), viewport = Some(vp))
+        Grob.group(
+          Vector(screen, field) ++ cross ++ drawn ++ Vector(outline),
+          viewport = Some(vp)
+        )
       ),
       vp
     )

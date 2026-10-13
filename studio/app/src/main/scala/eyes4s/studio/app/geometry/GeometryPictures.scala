@@ -16,6 +16,7 @@
 
 package eyes4s.studio.app.geometry
 
+import eyes4s.studio.core.assets.AssetFile
 import eyes4s.studio.core.backend.{
   DatasetRevision,
   PlacedRecord,
@@ -66,15 +67,32 @@ object FramePicture:
       g.image.height
     )
 
-/** One representative trial: its records and how many eyes4s places outside
-  * the image frame and outside the screen.
+/** What a representative trial's image frame showed, as its displays say
+  * (DESIGN_SPEC section 9): an asset that is missing or unreadable is drawn
+  * hatched with an X, never as the plain frame.
+  */
+enum FrameState derives CanEqual:
+  /** No asset of the trial is missing: the frame is drawn plain (thumbnails
+    * draw no image art).
+    */
+  case Present
+
+  /** The trial's display names `file`, which the project does not hold. */
+  case Missing(file: AssetFile)
+
+  /** The project holds `file` but it cannot be read as an image. */
+  case Unreadable(file: AssetFile, reason: String)
+
+/** One representative trial: its records, how many eyes4s places outside
+  * the image frame and outside the screen, and what its frame showed.
   */
 final case class ThumbnailPicture(
     trial: TrialKey,
     records: Int,
     outsideWindow: Int,
     outsideScreen: Int,
-    marks: Vector[MarkPicture]
+    marks: Vector[MarkPicture],
+    frame: FrameState
 ) derives CanEqual:
   def outside: Int = outsideWindow + outsideScreen
 
@@ -178,7 +196,10 @@ final case class GeometryPictures(
     unplaced: Int
 ) derives CanEqual
 
-/** Everything the pictures depend on; equal keys draw equal pictures. */
+/** Everything the pictures depend on; equal keys draw equal pictures.
+  * `frames` holds the trials whose frame is not [[FrameState.Present]], as
+  * the revision's displays state them (none before they are read).
+  */
 final case class PicturesKey(
     dataset: DatasetRevision,
     geometry: Geometry,
@@ -186,8 +207,10 @@ final case class PicturesKey(
     placement: PlacementKey,
     marked: Option[TrialKey],
     focusTrial: Option[TrialKey],
-    focusRecord: Option[Int]
-) derives CanEqual
+    focusRecord: Option[Int],
+    frames: Map[TrialKey, FrameState]
+) derives CanEqual:
+  def frameOf(trial: TrialKey): FrameState = frames.getOrElse(trial, FrameState.Present)
 
 object GeometryPictures:
 
@@ -201,7 +224,16 @@ object GeometryPictures:
       spec <- panel.shown.flatMap(s => model.document.dataset(s.id))
       key  <- panel.placementKey
       _    <- panel.placement.toOption
-    yield PicturesKey(spec.id, spec.geometry, spec.admission, key, panel.marked, trial, record)
+    yield PicturesKey(
+      spec.id,
+      spec.geometry,
+      spec.admission,
+      key,
+      panel.marked,
+      trial,
+      record,
+      GeometryPanel.frames(panel, model)
+    )
 
   /** The pictures of `spec`'s records as the backend placed them (eyes4s,
     * under the revision's geometry and recorded corrections): the
@@ -210,9 +242,10 @@ object GeometryPictures:
     *
     * The representative trials are, in order and without repeats: the
     * source's first trial; the selected trial; the marked trial; each trial
-    * a trial-scoped rule corrects; then the trials with the most records
-    * outside the image frame (ties in source order), then the next trials
-    * in source order.
+    * a trial-scoped rule corrects; the first trial in source order whose
+    * frame is not present (the Data board's missing-asset thumbnail); then
+    * the trials with the most records outside the image frame (ties in
+    * source order), then the next trials in source order.
     */
   def of(
       key: PicturesKey,
@@ -229,15 +262,17 @@ object GeometryPictures:
     val ruled = spec.admission.corrections.collect {
       case CorrectionRule(eyes4s.studio.core.document.CorrectionTarget.Trial(k), _) => k
     }
-    val chosen = (trials.take(1) ++ key.focusTrial ++ key.marked ++ ruled ++ worst ++ trials)
-      .filter(byTrial.contains)
-      .distinct
-      .take(Thumbnails)
+    val unshown = trials.find(t => key.frameOf(t) != FrameState.Present)
+    val chosen  =
+      (trials.take(1) ++ key.focusTrial ++ key.marked ++ ruled ++ unshown ++ worst ++ trials)
+        .filter(byTrial.contains)
+        .distinct
+        .take(Thumbnails)
     val tallyOf = tallies.map(t => t.trial -> t).toMap
     GeometryPictures(
       key,
       FramePicture.of(spec.geometry),
-      chosen.map(t => thumbnail(tallyOf(t), byTrial(t))),
+      chosen.map(t => thumbnail(tallyOf(t), byTrial(t), key.frameOf(t))),
       DensityPicture.of(preview.density),
       exampleOf(key, preview),
       preview.unplaced.size
@@ -245,7 +280,8 @@ object GeometryPictures:
 
   private def thumbnail(
       tally: eyes4s.studio.core.backend.TrialPlacement,
-      placed: Vector[PlacedRecord]
+      placed: Vector[PlacedRecord],
+      frame: FrameState
   ): ThumbnailPicture =
     ThumbnailPicture(
       tally.trial,
@@ -254,7 +290,8 @@ object GeometryPictures:
       tally.outsideScreen,
       placed.map(p =>
         MarkPicture(p.correctedX, p.correctedY, MarkPlace.of(p.placement), p.rule.isDefined)
-      )
+      ),
+      frame
     )
 
   /** The selected record, else the marked trial's first, else the first. */

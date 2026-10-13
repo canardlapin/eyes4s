@@ -16,11 +16,13 @@
 
 package eyes4s.studio.desktop.geometry
 
+import eyes4s.studio.app.explore.DisplaySource
 import eyes4s.studio.app.geometry.*
 import eyes4s.studio.app.tokens.{StageVariant, Theme}
 import eyes4s.studio.app.{AppModel, Intent}
 import eyes4s.studio.core.backend.{AdmissionSummary, DatasetRevision, PlacementPreview}
 import eyes4s.studio.core.document.{DatasetRevisionSpec, Perspective, StageAppearance}
+import eyes4s.studio.desktop.explore.NavigatorDisplays
 import eyes4s.studio.desktop.runtime.StudioSession
 import eyes4s.studio.viz.geometry.GeometryScene
 import eyes4s.studio.viz.plot.PlotScene
@@ -29,18 +31,26 @@ import javafx.application.Platform
 import java.util.concurrent.{Executor, ExecutorService, Executors, RejectedExecutionException}
 import scala.util.control.NonFatal
 
-/** Where the geometry panel reads a revision's fixation source and asks for
-  * its admission counts. `done` may be called on any thread.
+/** Where the geometry panel reads a revision's fixation source, asks for
+  * its admission counts and reads its trial displays. `done` may be called
+  * on any thread.
   */
 trait GeometryInputs:
   /** The backend's placement preview of `spec` (S5.5); `done` on any thread. */
   def placement(spec: DatasetRevisionSpec, done: Either[String, PlacementPreview] => Unit): Unit
   def admission(dataset: DatasetRevision, done: Either[String, AdmissionSummary] => Unit): Unit
 
+  /** `spec`'s trial displays, which say whose image is missing. */
+  def displays(spec: DatasetRevisionSpec, done: Either[String, DisplaySource] => Unit): Unit
+
 object GeometryInputs:
-  /** The window's backend. */
-  def of(session: StudioSession): GeometryInputs =
+  /** The window's backend, and its display source. */
+  def of(session: StudioSession, source: NavigatorDisplays): GeometryInputs =
     new GeometryInputs:
+      def displays(
+          spec: DatasetRevisionSpec,
+          done: Either[String, DisplaySource] => Unit
+      ): Unit = source.read(spec, done)
       def placement(
           spec: DatasetRevisionSpec,
           done: Either[String, PlacementPreview] => Unit
@@ -127,6 +137,7 @@ final class GeometryPaneHost(
       case GeometryEffect.App(i)                   => app(i)
       case GeometryEffect.RequestPlacement(key, s) => place(key, s)
       case GeometryEffect.RequestCounts(d)         => counts(d)
+      case GeometryEffect.RequestDisplays(s)       => displays(s)
     }
     if changes.nonEmpty then GeometryPanel.follow(before, model().document).foreach(app)
 
@@ -141,6 +152,12 @@ final class GeometryPaneHost(
     inputs.admission(
       dataset,
       result => Platform.runLater(() => dispatch(GeometryIntent.CountsRead(dataset, result)))
+    )
+
+  private def displays(spec: DatasetRevisionSpec): Unit =
+    inputs.displays(
+      spec,
+      result => Platform.runLater(() => dispatch(GeometryIntent.DisplaysRead(spec.id, result)))
     )
 
   /** Render the view-model and, when the pictures' key changed, draw them. */

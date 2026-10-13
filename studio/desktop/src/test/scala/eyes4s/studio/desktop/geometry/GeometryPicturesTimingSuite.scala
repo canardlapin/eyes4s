@@ -45,7 +45,8 @@ class GeometryPicturesTimingSuite extends munit.FunSuite:
       PlacementKey.of(spec).getOrElse(fail("no fixation source")),
       None,
       None,
-      None
+      None,
+      Map.empty
     )
     def once(): Double =
       val start   = System.nanoTime()
