@@ -1,0 +1,40 @@
+/*
+ * Copyright 2026 canardlapin
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+/* The Results headline over the participant plot (design review ticket 27;
+ * docs/studio/design/Results.dc.html, .hl). Colours are token names only;
+ * sizes come from studio-type.css classes; weights are face families
+ * (DESIGN_SPEC 14). */
+
+.results-headline {
+  -fx-min-height: 72px;
+  -fx-alignment: center-left;
+  -fx-padding: 6 12 6 12;
+  -fx-background-color: -es-hairline, -es-surface;
+  -fx-background-insets: 0, 0 0 1 0;
+}
+
+.paired-heading {
+  -fx-text-fill: -es-ink-3;
+}
+
+.paired-value {
+  -fx-text-fill: -es-ink;
+}
+
+.paired-higher, .paired-note {
+  -fx-text-fill: -es-ink-2;
+}

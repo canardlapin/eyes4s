@@ -23,6 +23,7 @@ import eyes4s.studio.app.text.{DiagnosticText, DiagnosticTextId, PreflightText, 
 import eyes4s.studio.app.vm.{A11yRole, FocusStop}
 import eyes4s.studio.app.{AppModel, Intent}
 import eyes4s.studio.desktop.plot.TableTwinView
+import eyes4s.studio.desktop.shell.DisabledReason
 import javafx.geometry.Pos
 import javafx.scene.input.{KeyCode, KeyEvent}
 import javafx.scene.control.{Button, Label, ScrollPane, TextArea, TextField}
@@ -100,6 +101,9 @@ final class PreflightHost(model: () => AppModel, app: Intent => Unit):
       nameError.setText(metadata.fold(_.message, _ => ""))
   )
   private val verdict = label("", "t11", "preflight-note")
+  // Disabled, Save & run takes no focus: the name's error and the verdict
+  // reach assistive technology as its help.
+  DisabledReason.attach(run, nameError, verdict)
 
   private def heading(text: String, side: javafx.scene.Node): HBox =
     val spacer = Region()

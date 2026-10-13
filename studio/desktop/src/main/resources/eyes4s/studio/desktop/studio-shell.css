@@ -90,6 +90,17 @@
 
 /* ---- shared pieces ------------------------------------------------------ */
 
+/* A pending or blocked action is disabled but stays readable, its reason drawn
+ * next to it (DisabledReason, DESIGN_SPEC section 14); only controls with no
+ * workflow meaning take Modena's fade. The compound selector outranks a
+ * pane's own `.x:disabled` and `.x.primary` rules. */
+.button.has-reason:disabled {
+  -fx-opacity: 1;
+  -fx-background-color: -es-hairline, -es-surface-2;
+  -fx-background-insets: 0, 1;
+  -fx-text-fill: -es-ink-2;
+}
+
 .chip {
   -fx-min-height: 24px;
   -fx-pref-height: 24px;

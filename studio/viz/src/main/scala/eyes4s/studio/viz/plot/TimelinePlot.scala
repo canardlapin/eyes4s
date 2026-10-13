@@ -26,9 +26,11 @@ import eyes4s.studio.app.plot.{
 }
 import eyes4s.studio.app.text.{TimelineText, TimelineTextId}
 import eyes4s.studio.app.tokens.{FontFace, Theme, ThemedToken, TypeSize}
+import eyes4s.studio.core.selection.StudioRef
 import intaglio.{
   Anchor,
   Clip,
+  DashPattern,
   GraphicParams,
   GraphicsError,
   GraphicsName,
@@ -37,6 +39,7 @@ import intaglio.{
   Interval,
   Length,
   LengthExpr,
+  LineType,
   Point,
   Rgba,
   Scene,
@@ -58,13 +61,18 @@ import intaglio.{
   * view's state, not rows: `brush` is the span a drag selected (picking
   * the fixations whose intervals overlap it,
   * [[eyes4s.studio.app.plot.TimelineColumns.brushRule]]) and `playheadMs` the playback
-  * time. The plot writes no numbers; every number is a row's in the table.
+  * time. `outsideWindow` are the fixations that lie outside the analysis
+  * window or off the screen: their bars are drawn as dashed outlines with no
+  * fill, as the board draws a record outside the window. The plot writes no
+  * numbers; every number is a row's in the table. A bar's feedback rings
+  * follow its rectangle.
   */
 final case class TimelinePlot(
     columns: TimelineColumns,
     brush: Option[HalfOpenSpan] = None,
     playheadMs: Option[Double] = None,
-    trialEndMs: Option[Double] = None
+    trialEndMs: Option[Double] = None,
+    outsideWindow: Set[StudioRef] = Set.empty
 ) extends PlotBuilder:
 
   def kind: String = "timeline"
@@ -99,11 +107,17 @@ final case class TimelinePlot(
       }
       id <- SceneId(s"studio.plot.$kind.${theme.toString.toLowerCase}").left
         .map(PlotBuildError.Scene(kind, _))
-      built <- scene(theme, placed).left
+      built <- scene(
+        theme,
+        placed,
+        placed.map((i, _) => outsideWindow(source.rows(i).ref))
+      ).left
         .map(PlotBuildError.Graphics(kind, "the timeline", _))
       (grobs, viewport, names) = built
       marks = placed.zip(names).zipWithIndex.map { case (((i, at), name), order) =>
-        PlotMark.placed(source.rows(i).ref, i, at, ReachPx, order, name)
+        PlotMark
+          .placed(source.rows(i).ref, i, at, ReachPx, order, name)
+          .boxed(DataPoint(at.x, 0.0), DataPoint(at.x + at.y, at.y))
       }
       panel     <- DataPanel(id, viewport).left.map(PlotBuildError.Scene(kind, _))
       plotScene <- PlotScene(id, Scene(grobs), panel).left.map(PlotBuildError.Scene(kind, _))
@@ -122,10 +136,12 @@ final case class TimelinePlot(
       )
     yield plot
 
-  // The grobs, the data viewport and each bar's grob name, in row order.
+  // The grobs, the data viewport and each bar's grob name, in row order;
+  // `outside` says, row by row, whether a bar is outside the window.
   private def scene(
       theme: Theme,
-      placed: Vector[(Int, DataPoint)]
+      placed: Vector[(Int, DataPoint)],
+      outside: Vector[Boolean]
   ): Either[GraphicsError, (Vector[Grob], Viewport, Vector[GraphicsName])] =
     import TimelinePlot.*
     def colour(token: ThemedToken): Rgba = IntaglioColours.themed(theme, token)
@@ -185,10 +201,18 @@ final case class TimelinePlot(
       )
       baseline <- Grob.segments(Vector((Point(left, zero), Point(right, zero))), gp = baseGp)
       barGp    <- GraphicParams.checked(stroke = None, fill = Some(colour(ThemedToken.Ink3)))
-      bars     <- traverse(placed) { (i, at) =>
+      dash     <- DashPattern(OutsideDashPx)
+      outGp    <- GraphicParams.checked(
+        stroke = Some(colour(ThemedToken.Ink3)),
+        fill = None,
+        lineWidth = px(OutsideStrokePx),
+        lineWidthUnit = StrokeUnit.Point,
+        lineType = LineType.Custom(dash)
+      )
+      bars <- traverse(placed.zip(outside)) { case ((i, at), out) =>
         for
           name <- GraphicsName(s"$MarkPrefix$i", "timeline bar")
-          grob <- box(at.x, at.x + at.y, 0.0, at.y, barGp, Some(name))
+          grob <- box(at.x, at.x + at.y, 0.0, at.y, if out then outGp else barGp, Some(name))
         yield (grob, name)
       }
       playGp <- GraphicParams.checked(
@@ -235,6 +259,12 @@ object TimelinePlot:
 
   /** How far a bar's mark reaches from its anchor, its top-left corner. */
   val ReachPx: Double = 4.0
+
+  /** The outline of a bar outside the window: 1 px, dashed 3 on 3 (the
+    * board's CSS `1px dashed`), in logical pixels.
+    */
+  val OutsideStrokePx: Double       = 1.0
+  val OutsideDashPx: Vector[Double] = Vector(3.0, 3.0)
 
   /** The playhead's width. */
   val PlayheadPx: Double = 2.0

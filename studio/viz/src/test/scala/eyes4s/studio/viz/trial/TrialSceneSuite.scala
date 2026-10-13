@@ -561,6 +561,40 @@ class TrialSceneSuite extends ScalaCheckSuite:
       }
   }
 
+  test("neutral marks: the translucent token fill inside a 1.5 px halo; role halos stay 2 px") {
+    import eyes4s.studio.app.tokens.{StageToken, ThemedToken}
+    def params(style: MarkStyle, theme: Theme, scale: Double) =
+      val scene =
+        right(TrialScene(input(Display.BlankWithFixationCross, marks = style, theme = theme)))
+      val (_, device) = lower(scene, right(PlotSurface(800, 600, scale)))
+      val gps         = markPrimitives(primitives(device.elements)).collect {
+        case (n, DevicePrimitive.PointBatch(_, _, _, gps, _)) => n -> gps.valueAt(0)
+      }
+      scene.marks.map(m => (m.placement, gps(m.name.value)))
+    for
+      theme <- Theme.values.toList
+      scale <- List(1.0, 2.0)
+    do
+      val neutral = params(MarkStyle.Neutral, theme, scale)
+      assertEquals(neutral.size, ret07Fixations.size)
+      neutral.foreach { (placement, gp) =>
+        assertEqualsDouble(gp.lineWidth, TrialScene.NeutralHaloPx * scale, Tolerance)
+        assertEquals(
+          gp.stroke,
+          Some(IntaglioColours.staged(StageVariant.Dark, StageToken.Halo))
+        )
+        if placement == MapPlacement.InWindow then
+          assertEquals(gp.fill, Some(IntaglioColours.themed(theme, ThemedToken.NeutralMark)))
+      }
+      params(MarkStyle.Role(TrialRole.Query), theme, scale).foreach { (_, gp) =>
+        assertEqualsDouble(gp.lineWidth, TrialScene.HaloPx * scale, Tolerance)
+      }
+    // DESIGN_SPEC section 5: Explore's neutral fixations take a 1.5 px halo;
+    // section 13: role-mark halos are 2 px on screen.
+    assertEquals(TrialScene.NeutralHaloPx, 1.5)
+    assertEquals(TrialScene.HaloPx, 2.0)
+  }
+
   test("mark area is proportional to duration") {
     val scene = right(TrialScene(input(Display.Blank)))
     val pairs = scene.marks.map(m => (m.radiusPx, ret07Fixations(m.order).durationMs))

@@ -75,7 +75,8 @@ import intaglio.{
   *
   * Every number the plot writes is a row's cell as the table writes it:
   * each grand mean beside its dot and each scale's label under its σ. The
-  * only axis label is the zero rule's. Marks are ordered, and drawn, with
+  * D axis labels zero and each grid rule, signed, as the participant plot's
+  * ([[ParticipantPlot.Frame]]). Marks are ordered, and drawn, with
   * the participants' lines first and then each group's dots in scale order.
   */
 final case class ScaleProfilePlot(columns: ProfileColumns) extends PlotBuilder:
@@ -375,14 +376,10 @@ final case class ScaleProfilePlot(columns: ProfileColumns) extends PlotBuilder:
               .map(Vector(_))
           }
       }
-      gutter    <- LengthExpr.npc(-0.015)
-      axisGp    <- font(FontFace.MonoRegular, ThemedToken.Ink)
-      zeroLabel <- Grob.text(
-        ParticipantPlot.ZeroLabel,
-        Point(gutter, zeroY),
-        Anchor(HJust.Right, VJust.Center),
-        gp = axisGp
-      )
+      gutter  <- LengthExpr.npc(-0.015)
+      axisGp  <- font(FontFace.MonoRegular, ThemedToken.Ink)
+      tickGp  <- font(FontFace.MonoRegular, ThemedToken.Ink3)
+      yTicks  <- ParticipantPlot.tickLabels(frame, gutter, axisGp, tickGp)
       titleGp <- font(FontFace.SansRegular, ThemedToken.Ink3)
       yAt     <- Point.npc(0.1, 0.98)
       yTitle  <- Grob.text(
@@ -410,7 +407,7 @@ final case class ScaleProfilePlot(columns: ProfileColumns) extends PlotBuilder:
             drawn.zip(marked).collect { case (d, (g, _)) if d.shape != Shape.Line => g },
           viewport = Some(viewport)
         ),
-        Grob.group(values.flatten ++ labels.flatten :+ zeroLabel, viewport = Some(frameVp)),
+        Grob.group(values.flatten ++ labels.flatten ++ yTicks, viewport = Some(frameVp)),
         yTitle,
         xTitle
       ),

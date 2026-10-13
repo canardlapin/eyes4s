@@ -103,7 +103,7 @@ class TypeScaleSuite extends munit.FunSuite:
       Set(".root", ".mono", ".serif") ++
         TypeSize.values.flatMap(s =>
           List("", ".mono", ".serif").map(f => s"$f.${s.styleClass}")
-        )
+        ) ++ TypeHelper.values.map(h => s".${h.styleClass}")
     )
     val sizes = css.values.flatMap(_.get("-fx-font-size")).toSet
     assertEquals(sizes, TypeSize.values.map(s => s"${s.px}px").toSet)
@@ -118,4 +118,44 @@ class TypeScaleSuite extends munit.FunSuite:
     assertEquals(css(".mono.t13"), Map("font-weight" -> "500"))
     assertEquals(css(".serif.t28"), Map("font-weight" -> "400"))
     assert(!css.contains(".mono.t12"), "only substituted weights get a rule")
+  }
+
+  test("the weight helpers: t11-strong 11/600, t12-label 12/500, t12-strong 12/600, mono-500") {
+    assertEquals(
+      TypeHelper.values.toList.map(h =>
+        (h.styleClass, h.family, h.size.map(_.px), h.weight.css)
+      ),
+      List(
+        ("t11-strong", TypeFamily.Sans, Some(11), 600),
+        ("t12-label", TypeFamily.Sans, Some(12), 500),
+        ("t12-strong", TypeFamily.Sans, Some(12), 600),
+        ("mono-500", TypeFamily.Mono, None, 500)
+      )
+    )
+    // Each helper names a weight its family bundles: no substitution.
+    TypeHelper.values.foreach(h => assertEquals(h.face.weight, h.weight, h.styleClass))
+    val fx = blocks(TypeCss.javaFx)
+    assertEquals(
+      fx(".t11-strong"),
+      Map("-fx-font-family" -> "\"IBM Plex Sans SmBld\"", "-fx-font-size" -> "11px")
+    )
+    assertEquals(
+      fx(".t12-label"),
+      Map("-fx-font-family" -> "\"IBM Plex Sans Medm\"", "-fx-font-size" -> "12px")
+    )
+    assertEquals(
+      fx(".t12-strong"),
+      Map("-fx-font-family" -> "\"IBM Plex Sans SmBld\"", "-fx-font-size" -> "12px")
+    )
+    assertEquals(fx(".mono-500"), Map("-fx-font-family" -> "\"IBM Plex Mono Medm\""))
+    // A helper follows the size classes, so it wins at equal specificity.
+    val fxSheet = TypeCss.javaFx
+    assert(fxSheet.indexOf(".mono-500 {") > fxSheet.indexOf(".t28 {"))
+    assert(fxSheet.indexOf(".t11-strong {") > fxSheet.indexOf(".serif.t28 {"))
+    val web = blocks(TypeCss.web)
+    assertEquals(web(".t11-strong"), Map("font-size" -> "11px", "font-weight" -> "600"))
+    assertEquals(web(".t12-label"), Map("font-size" -> "12px", "font-weight" -> "500"))
+    assertEquals(web(".t12-strong"), Map("font-size" -> "12px", "font-weight" -> "600"))
+    assertEquals(web(".mono-500")("font-weight"), "500")
+    assert(web(".mono-500")("font-family").startsWith("\"IBM Plex Mono\""))
   }

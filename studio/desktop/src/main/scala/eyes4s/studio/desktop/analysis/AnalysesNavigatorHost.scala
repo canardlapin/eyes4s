@@ -22,6 +22,7 @@ import eyes4s.studio.app.text.{AnalysesText, AnalysesTextId}
 import eyes4s.studio.app.vm.FocusStop
 import eyes4s.studio.core.backend.{AnalysisRevision, RunId}
 import eyes4s.studio.core.document.AnalysisFamilyId
+import eyes4s.studio.desktop.shell.DisabledReason
 import javafx.application.Platform
 import javafx.scene.control.{Button, Label, ScrollPane, ToggleButton}
 import javafx.scene.layout.{Priority, VBox}
@@ -56,6 +57,8 @@ final class AnalysesNavigatorHost(app: Intent => Unit):
   private val note = Label()
   note.setWrapText(true)
   note.getStyleClass.add("t11")
+  // A held draft blocks New analysis, and the note says so.
+  DisabledReason.attach(create, note)
   val node: VBox = VBox(8.0, create, current, showCurrent, scroll, note)
   node.getStyleClass.add("inspector")
 

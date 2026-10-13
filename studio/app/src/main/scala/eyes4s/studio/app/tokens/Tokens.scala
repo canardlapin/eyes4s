@@ -34,10 +34,15 @@ enum StageVariant(val cssName: String) derives CanEqual:
   * the CSS custom property without its leading `--`.
   */
 enum ThemedToken(val cssName: String) derives CanEqual:
-  case Ground      extends ThemedToken("ground")
-  case Surface     extends ThemedToken("surface")
-  case Surface2    extends ThemedToken("surface-2")
-  case Surface3    extends ThemedToken("surface-3")
+  case Ground   extends ThemedToken("ground")
+  case Surface  extends ThemedToken("surface")
+  case Surface2 extends ThemedToken("surface-2")
+  case Surface3 extends ThemedToken("surface-3")
+
+  /** The fill of a selected row or item (DESIGN_SPEC section 15: selection is
+    * a fill, focus is a ring). Hover uses [[Surface2]], never this.
+    */
+  case SelFill     extends ThemedToken("sel-fill")
   case Hairline    extends ThemedToken("hairline")
   case Ink         extends ThemedToken("ink")
   case Ink2        extends ThemedToken("ink-2")
@@ -246,6 +251,7 @@ object Tokens:
       case ThemedToken.Surface      => Colour.srgb(0xfbfaf7)
       case ThemedToken.Surface2     => Colour.srgb(0xf3f1ec)
       case ThemedToken.Surface3     => Colour.srgb(0xe9e6df)
+      case ThemedToken.SelFill      => Colour.srgb(0xe4e0d6)
       case ThemedToken.Hairline     => Colour.srgb(0xdad6cc)
       case ThemedToken.Ink          => Colour.srgb(0x1c1e21)
       case ThemedToken.Ink2         => Colour.srgb(0x464b52)
@@ -277,6 +283,7 @@ object Tokens:
       case ThemedToken.Surface      => Colour.srgb(0x1b1c1f)
       case ThemedToken.Surface2     => Colour.srgb(0x222327)
       case ThemedToken.Surface3     => Colour.srgb(0x2a2c31)
+      case ThemedToken.SelFill      => Colour.srgb(0x2e3035)
       case ThemedToken.Hairline     => Colour.srgb(0x34363c)
       case ThemedToken.Ink          => Colour.srgb(0xeceae5)
       case ThemedToken.Ink2         => Colour.srgb(0xbdbab3)

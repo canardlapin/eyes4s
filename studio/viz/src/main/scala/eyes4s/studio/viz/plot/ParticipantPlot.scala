@@ -25,7 +25,7 @@ import eyes4s.studio.app.plot.{
   PlotTextId,
   PlotValue
 }
-import eyes4s.studio.app.text.{ParticipantText, ParticipantTextId}
+import eyes4s.studio.app.text.{Format, ParticipantText, ParticipantTextId}
 import eyes4s.studio.app.tokens.{FontFace, Theme, ThemedToken, TypeSize}
 import eyes4s.studio.core.selection.StudioRef
 import intaglio.{
@@ -75,8 +75,8 @@ import intaglio.{
   * Each participant's dots are spread across their column by a fixed pixel
   * nudge, the same for the participant in every group. Every number the
   * plot writes is a row's cell as the table writes it: a grand mean beside
-  * its tick and each group's n (its participants) under its column. The
-  * only axis label is the zero rule's.
+  * its tick and each group's n (its participants) under its column. The D
+  * axis labels zero and each grid rule ([[ParticipantPlot.Frame]]), signed.
   *
   * Marks are ordered, and drawn, column by column: the participants in row
   * order, then the grand mean on top.
@@ -414,12 +414,8 @@ final case class ParticipantPlot(
       }
       gutter    <- LengthExpr.npc(-0.015)
       axisGp    <- font(FontFace.MonoRegular, ThemedToken.Ink)
-      zeroLabel <- Grob.text(
-        ParticipantPlot.ZeroLabel,
-        Point(gutter, zeroY),
-        Anchor(HJust.Right, VJust.Center),
-        gp = axisGp
-      )
+      tickGp    <- font(FontFace.MonoRegular, ThemedToken.Ink3)
+      yTicks    <- tickLabels(frame, gutter, axisGp, tickGp)
       bandGp    <- font(FontFace.SansRegular, ThemedToken.Ink3)
       bandLabel <-
         if !frame.hasBand then Right(Vector.empty)
@@ -449,7 +445,7 @@ final case class ParticipantPlot(
         Grob.group(gridLines :+ zeroRule, viewport = Some(frameVp)),
         Grob.group(linked ++ marked.map(_._1), viewport = Some(viewport)),
         Grob.group(
-          values.flatten ++ underneath.flatten ++ (zeroLabel +: bandLabel),
+          values.flatten ++ underneath.flatten ++ yTicks ++ bandLabel,
           viewport = Some(frameVp)
         ),
         title
@@ -494,6 +490,11 @@ object ParticipantPlot:
 
   /** The zero rule's label. */
   val ZeroLabel: String = "0"
+
+  /** The most intervals of the D range one grid step may cut it into
+    * before the step doubles (see [[Frame]]).
+    */
+  val MaxIntervals: Int = 10
 
   /** The fraction of the D range added above and below it, the gap between
     * the lowest value and the band of missing means, and the least range
@@ -557,32 +558,75 @@ object ParticipantPlot:
   /** The D range drawn, `y0` to `y1`: zero and every drawn value with
     * [[Margin]], at least [[MinRange]] wide, and below them, when some mean
     * is missing, the band its rings are drawn on. `grid` holds the D values
-    * of the faint rules, at a round step, other than zero.
+    * of the faint rules other than zero, at every multiple of the grid step
+    * within the values' padded range. The step is the power of ten no more
+    * than half the range, doubled when the range would hold more than
+    * [[MaxIntervals]] of it; `decimals` are that power's places.
     */
   final case class Frame(
       y0: Double,
       y1: Double,
       band: Double,
       hasBand: Boolean,
-      grid: Vector[Double]
-  )
+      grid: Vector[Double],
+      decimals: Int
+  ):
+
+    /** The D values the axis labels, ascending: zero and every grid rule. */
+    def ticks: Vector[Double] = (grid :+ 0.0).sorted
+
+    /** The label of the tick at `y`: [[ZeroLabel]] at zero, otherwise signed
+      * at the step's places ("+0.4", "−0.2").
+      */
+    def label(y: Double): String =
+      if y == 0.0 then ZeroLabel else Format.signed(y, decimals)
 
   object Frame:
     def of(values: Vector[Double], missing: Boolean): Frame =
-      val lo    = (values :+ 0.0).min
-      val hi    = (values :+ 0.0).max
-      val range = math.max(hi - lo, MinRange)
-      val pad   = range * Margin
-      val y1    = hi + pad
-      val low   = lo - pad
-      val band  = low - range * BandGap
-      val y0    = if missing then band - pad else low
-      val step  = math.pow(10.0, math.floor(math.log10(range / 2.0)))
-      val grid  = (math.ceil(low / step).toLong to math.floor(y1 / step).toLong)
+      val lo     = (values :+ 0.0).min
+      val hi     = (values :+ 0.0).max
+      val range  = math.max(hi - lo, MinRange)
+      val pad    = range * Margin
+      val y1     = hi + pad
+      val low    = lo - pad
+      val band   = low - range * BandGap
+      val y0     = if missing then band - pad else low
+      val decade = math.floor(math.log10(range / 2.0)).toInt
+      val scale  = math.pow(10.0, math.abs(decade).toDouble)
+      val power  = if decade < 0 then 1.0 / scale else scale
+      val steps  = if range / power > MaxIntervals then 2L else 1L
+      val step   = steps * power
+      // A multiple of the step, divided or multiplied by a whole power of ten
+      // so that the rule lies at the double nearest the value its label writes.
+      def at(k: Long): Double =
+        if decade < 0 then (k * steps).toDouble / scale else (k * steps).toDouble * scale
+      val grid = (math.ceil(low / step).toLong to math.floor(y1 / step).toLong)
         .filter(_ != 0L)
-        .map(_ * step)
+        .map(at)
         .toVector
-      Frame(y0, y1, band, missing, grid)
+      Frame(y0, y1, band, missing, grid, math.max(0, -decade))
+
+  /** The y axis's labels: each of `frame`'s ticks at its D, right-aligned
+    * at `gutter`, zero in `zeroGp` and the others in `tickGp`.
+    */
+  private[plot] def tickLabels(
+      frame: Frame,
+      gutter: LengthExpr,
+      zeroGp: GraphicParams,
+      tickGp: GraphicParams
+  ): Either[GraphicsError, Vector[Grob]] =
+    traverseAll(frame.ticks)(y =>
+      LengthExpr
+        .native(y)
+        .flatMap(ny =>
+          Grob.text(
+            frame.label(y),
+            Point(gutter, ny),
+            Anchor(HJust.Right, VJust.Center),
+            gp = if y == 0.0 then zeroGp else tickGp
+          )
+        )
+    )
 
   /** How a mark is drawn: a dot (filled in the solid group), the empty ring
     * of a missing mean, or a grand mean's tick.

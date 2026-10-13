@@ -43,6 +43,7 @@ import eyes4s.studio.core.selection.{ScaleIndex, ViewId}
 import eyes4s.studio.desktop.explore.NavigatorDisplays
 import eyes4s.studio.desktop.plot.{CanvasPlotHost, PlotTwin, TableTwinView}
 import eyes4s.studio.desktop.runtime.{ProjectPort, StudioSession}
+import eyes4s.studio.desktop.shell.DisabledReason
 import eyes4s.studio.desktop.tokens.TokenFiles
 import eyes4s.studio.viz.figure.{FigureGaze, PlotGeometry}
 import eyes4s.studio.viz.maps.MapTileScene
@@ -701,6 +702,8 @@ final class FiguresHost(
         val l = Label(t); l.setWrapText(true); l.getStyleClass.add("t11"); l
       }
       val confirm = button(d.confirm)
+      // The conflicts, after the plan and the data lines, are why Rebind is disabled.
+      DisabledReason.attach(confirm, lines.drop(2)*)
       confirm.setDisable(!d.canConfirm)
       confirm.setOnAction(_ => dispatch(ComposerIntent.Binding(FigureIntent.ConfirmRebind)))
       val cancel = button(d.cancel)
@@ -991,6 +994,7 @@ final class FiguresHost(
       val why = r.unavailable.toVector.map { w =>
         val l = Label(w); l.setWrapText(true); l.getStyleClass.addAll("figures-note", "t11"); l
       }
+      DisabledReason.attach(t, why*)
       VBox(2.0, (t +: why)*)
     }
     val write = button(b.action)
@@ -1087,6 +1091,8 @@ final class FiguresHost(
       case None            => ("", Some(MethodsCopy.NoFigure))
     methodsEditor.setDisable(why.isDefined)
     methodsEditor.setPromptText(why.getOrElse(""))
+    // The prompt is the drawn reason; a disabled editor takes no focus.
+    methodsEditor.setAccessibleHelp(why.orNull)
     if methodsEditor.getText != text then
       writing = true
       try methodsEditor.setText(text)

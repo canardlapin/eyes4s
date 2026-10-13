@@ -411,8 +411,9 @@ class PlotTableParitySuite extends ScalaCheckSuite:
       row  <- Gen.oneOf(mark.rows)
     yield (source, plot, mark, row)
     Prop.forAll(cases) { (source, plot, mark, row) =>
-      val t            = targetsOn(plot, 1.0)
-      val anchor       = t.target(mark.ref).get.anchor
+      val t = targetsOn(plot, 1.0)
+      // A ring centres on the mark's anchor, or on its box when drawn as one.
+      val centre       = t.target(mark.ref).map(m => m.box.fold(m.anchor)(_.centre)).get
       val initialPlot  = MarkInputState.initial[StudioRef](plotView, SelectionState.empty)
       val initialTable = TableTwinState.initial(tableView, SelectionState.empty)
 
@@ -432,7 +433,7 @@ class PlotTableParitySuite extends ScalaCheckSuite:
       if mark.lineRuns.isEmpty then
         assertEquals(
           plotSees.state.selectionRings(t).map(r => (r.kind, r.centre)),
-          Vector((if partial then RingKind.PartlySelected else RingKind.Selected, anchor))
+          Vector((if partial then RingKind.PartlySelected else RingKind.Selected, centre))
         )
       assertEquals(
         onRow.project(byTable).state.vm(source).rows.map(_.selected),
@@ -522,7 +523,10 @@ class PlotTableParitySuite extends ScalaCheckSuite:
       def kind(m: PlotMark) =
         if m.refs.forall(refs.contains) then RingKind.Selected else RingKind.PartlySelected
       assertEquals(rings.map(r => (r.kind, r.ref)), ringMarks.map(m => (kind(m), m.ref)))
-      assertEquals(rings.map(_.centre), ringMarks.map(m => t.target(m.ref).get.anchor))
+      assertEquals(
+        rings.map(_.centre),
+        ringMarks.map(m => t.target(m.ref).map(t => t.box.fold(t.anchor)(_.centre)).get)
+      )
       assertEquals(
         TableTwinState.initial(tableView, selected).vm(source).rows.map(_.selected),
         source.rows.map(r => refs.contains(r.ref))

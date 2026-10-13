@@ -115,14 +115,14 @@ by token name, never by hex value.
 The boards were revised ahead of the code (DESIGN_SPEC §15). Until each ticket lands, a parity check records
 the deviation below instead of failing. Tickets are numbered as in the design review's landing list.
 
-- Shared: selection fill `--sel-fill` and weight 600 not yet in the desktop (tickets 9, 13); composite cursor
-  and `:focus-visible` gating (12, 14); type helpers `.t11-strong`, `.t12-strong`, `.t12-label`, `.mono-500` (10);
-  radio, checkbox and slider styling and the segmented bar (16).
+- Shared: selected rows and items drawn with `--sel-fill` and weight 600 (ticket 13); composite cursor and
+  `:focus-visible` gating (12, 14); radio, checkbox and slider styling and the segmented bar (16).
 - Shared: the board's one resting focus ring (`.kf`) is shown in tests by putting real keyboard focus on that
   node, not drawn at rest (28).
 - Maps: alpha floor and hatched missing cells (8); fixation cross above the map and cased, round isoline caps,
   map legend (17).
-- Explore: NeutralMark alpha .35 and halo (11); timeline, including bars outside the brush dimmed (18).
-- Results: y ticks and signed values (20); annotation column (26); paired descriptive (27).
+- Explore: timeline bars outside the brush dimmed (18).
+- Results: annotation column (26). The paired descriptive (27) shows only when the reporting spec declares its
+  contrast, and the t3 story spec declares none, so moment t3 does not show it yet.
 - Figures: tile rows and wrapping (21); figure cross arm (22).
 - Data: density levels, pending the level rule (23); thumbnail caption text ids (24), including "Missing asset · forest-044.png"; the missing-asset thumbnail hatch and X (25).

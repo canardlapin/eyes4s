@@ -234,6 +234,31 @@ class ScaleProfilePlotSuite extends FunSuite:
     )
   }
 
+  test("the D axis labels zero and every grid rule, signed, at its value") {
+    val plot  = built(board)
+    val texts = plot.plot.scene.grobs.flatMap(g => g +: g.children).collect {
+      case t: Grob.Text => t
+    }
+    // Drawn values span −0.08 (P05) to +0.38 (P17): a 0.1 step, one place.
+    val axis = Vector("−0.1", "0", "+0.1", "+0.2", "+0.3", "+0.4")
+    val tick = raw"0|[+−]\d\.\d".r
+    assertEquals(texts.map(_.label).filter(tick.matches), axis)
+    axis.zip(Vector(-0.1, 0.0, 0.1, 0.2, 0.3, 0.4)).foreach { (label, d) =>
+      val t = texts.find(_.label == label).getOrElse(fail(label))
+      assertEquals(Right(t.at.y), intaglio.LengthExpr.native(d), label)
+    }
+    // A negative mean is written with a true minus, as the table writes it.
+    val low = profile(
+      protocol,
+      Vector(("Remembered", 24, Vector(-0.08, 0.05, 0.10, 0.02).map(Some(_)))),
+      Vector.empty
+    )
+    val written = built(low).plot.scene.grobs.flatMap(g => g +: g.children).collect {
+      case t: Grob.Text => t.label
+    }
+    assert(written.contains("−0.08") && written.contains("+0.05"), written)
+  }
+
   test("σ at or below zero is off the log scale; a row of another kind is refused") {
     val base = source(board)
     val ref  = series(board, "Remembered").points.head.ref

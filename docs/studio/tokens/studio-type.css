@@ -63,3 +63,23 @@
 .serif.t28 {
   font-weight: 400;
 }
+
+.t11-strong {
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.t12-label {
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.t12-strong {
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.mono-500 {
+  font-family: "IBM Plex Mono",ui-monospace,monospace;
+  font-weight: 500;
+}
