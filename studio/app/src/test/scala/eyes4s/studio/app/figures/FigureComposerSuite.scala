@@ -235,11 +235,20 @@ class FigureComposerSuite extends munit.ScalaCheckSuite:
         case PanelBody.Maps(maps) => maps
         case other                => fail(other.toString)
       assertEquals(
-        c.tiles.map(t => (t.title, t.label)),
+        c.tiles.map(t => (t.heading, t.label)),
         Vector(
           "Query ret_07"                        -> "P17 · σ 2°",
           "Matched enc_03"                      -> "0.73",
           "Highest of 19 controls · street-112" -> "0.61"
+        )
+      )
+      // Each tile's rows: the title over the map, then the subtitle and the label.
+      assertEquals(
+        c.tiles.map(t => (t.title, t.subtitle, t.label)),
+        Vector(
+          ("Query ret_07", "", "P17 · σ 2°"),
+          ("Matched enc_03", "", "0.73"),
+          ("Highest of 19", "controls · street-112", "0.61")
         )
       )
       assertEquals(
@@ -247,7 +256,7 @@ class FigureComposerSuite extends munit.ScalaCheckSuite:
         "Matched 0.73 · highest of 19 controls street-112 0.61 · control mean B 0.35 · D +0.38"
       )
       // B is said only as the control mean; the control's score only with its rank.
-      val said = c.tiles.flatMap(t => Vector(t.title, t.label)) :+ c.caption
+      val said = c.tiles.flatMap(t => Vector(t.title, t.subtitle, t.label)) :+ c.caption
       assert(said.forall(s => !s.contains("0.35") || s.contains("control mean B 0.35")), said)
       assert(c.tiles.forall(t => !t.label.contains("0.35")))
     }
@@ -278,9 +287,9 @@ class FigureComposerSuite extends munit.ScalaCheckSuite:
       val rank =
         if s.controls.size == s.controlMembers then s"highest of ${s.controlMembers} controls"
         else s"highest of ${s.controls.size} scored of ${s.controlMembers} controls"
-      assert(control.forall(_.title.startsWith(rank.capitalize)), control)
+      assert(control.forall(_.heading.startsWith(rank.capitalize)), control)
       // No tile is the control mean; B is in the caption, named.
-      assert(vm.tiles.forall(t => !t.title.toLowerCase.contains("mean")), vm.tiles)
+      assert(vm.tiles.forall(t => !t.heading.toLowerCase.contains("mean")), vm.tiles)
       assert(
         vm.caption.contains(s"control mean B ${eyes4s.studio.app.text.Format.decimal(s.b, 2)}")
       )

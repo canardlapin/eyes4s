@@ -92,9 +92,18 @@ object PanelTemplate:
 final case class HighestControl private (pair: PairScore, scored: Int, members: Int)
     derives CanEqual:
   /** "highest of 19 controls", "highest of 12 scored of 19 controls". */
-  def rank: String =
-    if scored == members then s"highest of $members controls"
-    else s"highest of $scored scored of $members controls"
+  def rank: String = s"$rankHead $rankTail"
+
+  /** The rank's first words, which a panel C tile's title row holds:
+    * "highest of 19", "highest of 12 scored".
+    */
+  def rankHead: String =
+    if scored == members then s"highest of $members" else s"highest of $scored scored"
+
+  /** The rest of the rank, which opens the tile's subtitle: "controls",
+    * "of 19 controls".
+    */
+  def rankTail: String = if scored == members then "controls" else s"of $members controls"
 
 object HighestControl:
   /** The highest of `controls`, of `members` in all, when there is one. */
@@ -110,14 +119,26 @@ enum TileMap derives CanEqual:
   case Waiting
   case Unavailable(reason: String)
 
-/** A drawn tile of panel C: its title, score label, reference and served map. */
+/** A drawn tile of panel C: its title, its two caption rows (the subtitle,
+  * then the score label), its reference and served map. A tile lays each out
+  * on one fixed row (design review ticket 21), so the title and subtitle
+  * split a long heading the way the board breaks it: "Highest of 19" over
+  * the map, "controls · street-112" below it. An empty subtitle leaves its
+  * row blank, so every tile's label shares one row.
+  */
 final case class MapTileVM(
     title: String,
+    subtitle: String,
     label: String,
     ref: StudioRef,
     trial: TrialKey,
     map: TileMap
-) derives CanEqual
+) derives CanEqual:
+
+  /** The title and subtitle as one phrase: "Highest of 19 controls ·
+    * street-112", "Query ret_07".
+    */
+  def heading: String = if subtitle.isEmpty then title else s"$title $subtitle"
 
 /** Panel C: three tiles and the caption that says what each number is. The
   * one control tile is the highest control, labelled with its rank; B is
@@ -254,6 +275,7 @@ object FigurePanels:
     val heads = Vector(
       MapTileVM(
         s"Query ${query.trial}",
+        "",
         s"${query.participant} · ${sigma.render}",
         StudioRef.QueryContrast(run, scale, query),
         query,
@@ -261,6 +283,7 @@ object FigurePanels:
       ),
       MapTileVM(
         s"Matched ${scores.matched.reference.trial}",
+        "",
         two(scores.matched.score),
         pair(eyes4s.studio.core.backend.PairDesign.Matched, scores.matched.reference),
         scores.matched.reference,
@@ -268,7 +291,8 @@ object FigurePanels:
       )
     ) ++ highest.map(h =>
       MapTileVM(
-        s"${h.rank.capitalize} · ${h.pair.item}",
+        h.rankHead.capitalize,
+        s"${h.rankTail} · ${h.pair.item}",
         two(h.pair.score),
         pair(eyes4s.studio.core.backend.PairDesign.Control, h.pair.reference),
         h.pair.reference,
