@@ -283,7 +283,7 @@ deviation with its ticket.
   values. The fixation cross is a 20 px half-arm in native screen coordinates.
 - **Geometry density.** Every occupied cell is drawn (the 5% share floor hid most outside-frame
   records). Levels step by record count and are fixed for one dataset revision, never rescaled per
-  view; the exact level rule is specified before it is implemented.
+  view; the level rule is §15.1.
 - **Paired descriptive (Results).** "Δ Remembered − Forgotten" is the mean over participants of
   each participant's mean Remembered D minus mean Forgotten D, computed before rounding participant
   means: +0.16 (range +0.05 P21 to +0.26 P15; higher in 24 of 24). It is descriptive only, and the
@@ -294,3 +294,76 @@ deviation with its ticket.
 - **Science values.** The executable golden fixture (`fixtures/studio-golden`) is authoritative;
   the mock (`fixture/make_fixture.py`) is reconciled to it, and anything a board draws that neither
   contains is tagged "illustrative".
+
+### 15.1 Placement density levels (review ticket 23)
+
+The Data perspective's "All trials overlaid" density (`DensityPicture`, drawn by
+`GeometryScene.density`) bins every placed record of a dataset revision on the backend's screen
+grid: 64 columns, rows = round(64 × screen height / screen width), so 64 × 36 cells of 30 × 30 px
+on the 1920 × 1080 screen. This grid is not the 64 × 48 map grid of §9. Counts are records, one
+per placed record, with no smoothing and no duration weight; an off-screen record falls in no cell.
+The levels are:
+
+- **Count.** A cell's count is its whole number of records: the backend's count rounded half up,
+  and at least 1 when the backend's count is above zero. A cell with count 0 is empty and is not
+  drawn. Every other cell is drawn. There is no share floor.
+- **Anchor.** `m` is the median count of the revision's non-empty cells, taking the lower middle
+  value when there is an even number of them (the ⌈n/2⌉-th smallest of n). `m` is a whole number
+  of records, so it needs no rounding.
+- **Step.** `s` is the power of 4 nearest `m` on a log scale, at least 4: the largest `s = 4^j`
+  with `j ≥ 1` and `s / 2 ≤ m`, else 4. A tie (`m = s / 2`) takes the larger step. This uses only
+  integer comparisons. Snapping to a power of 4 keeps the key's labels round, and a correction that
+  moves the median within its band (m from 1 to 7 for s = 4) leaves the levels unchanged.
+- **Thresholds.** Four levels start at 1, `s`, `4s` and `16s` records. A cell's level is the
+  highest level whose start it reaches. Level 4 is the overflow level and has no upper bound. The
+  levels use ramp stops 0 to 3 (§6) at the density opacity (0.6). Because the lowest start is
+  always 1 and `s ≥ 4`, a cell holding one record is always at level 1. A singleton is never
+  hidden, never merged with empty cells, and never shares a level with a cell of `s` or more
+  records.
+- **Fixed per revision.** The levels are computed once, in `DensityPicture.of`, from the whole
+  grid of the shown revision: every placed record, including records of quarantined trials. They
+  are never recomputed from a selection, a marked or focused trial, the stage, or the size of the
+  drawing. `DensityPicture` carries the four starts, so the cells, the key and the semantics text
+  read the same numbers. A new revision (a geometry, mapping or admission change, §8) gets its own
+  levels, and its key shows them.
+- **Key.** The key is the caption "Records per cell, log steps · {c} × {r} screen cells" and four
+  swatches, ramp-0 to ramp-3 at the density opacity over the stage. They are labelled with closed
+  count ranges, `1–(s−1)`, `s–(4s−1)`, `4s–(16s−1)`, and the overflow as `≥16s`. Counts use
+  thousands separators. For s = 4 the labels are "1–3", "4–15", "16–63", "≥64". The key always
+  shows all four swatches, including a level that holds no cell.
+- **Semantics.** "{n} cells drawn at four log-spaced levels: 1–3, 4–15, 16–63 and at least 64
+  records per cell." The ranges are the key's.
+- **Empty and single-cell studies.** If no record falls on the screen (no placed records, or all
+  of them off screen), there is no median. The step is 4, no cell is drawn, the key still shows
+  "1–3" to "≥64", and the semantics text reads "0 cells drawn". With one non-empty cell, `m` is
+  that cell's count. One record gives s = 4 and level 1. 300 records give s = 256, so the levels
+  start at 1, 256, 1,024 and 4,096, and the cell is at level 2.
+
+Worked example: the golden fixture (`fixtures/studio-golden`, r1 as imported, no corrections).
+11,520 records fall in 1,287 non-empty cells, with none off screen. The fullest cell has 100
+records. The 644th smallest count is m = 4, so s = 4 and the levels start at 1, 4, 16 and 64. This
+matches the Data board's "≥1, ≥4, ≥16, ≥64".
+
+| level | records per cell | cells | records |
+|---|---|---|---|
+| 1 | 1–3 | 618 | 927 |
+| 2 | 4–15 | 364 | 3,414 |
+| 3 | 16–63 | 296 | 6,460 |
+| 4 | ≥64 | 9 | 719 |
+
+- The 9 overflow cells are the central cluster of the retrieval fixation cross. Their cells start
+  at x 900–990 and y 480–570 (cell origin, screen px). The fullest is (930, 540) with 100 records;
+  (900, 540) and (930, 480) hold exactly 64.
+- The 543 records outside the image frame lie in 434 cells: 432 at level 1 and 2 at level 2. The
+  cells wholly outside the frame hold at most 5 records each: (240, 990) has 5 and (1200, 990)
+  has 4, which puts both at level 2. The other 427 are at level 1, 337 of them singletons. All 33
+  records of P05 ret_04, ret_11 and ret_16, which lie outside the frame, are at level 1.
+- Record 7,214 (screen (1148, 456)) lies in cell (1140, 450), which holds 8 records: level 2.
+- Boundary cells: (900, 210) holds 3 records (level 1) and (510, 450) holds 4 (level 2); (870, 360)
+  holds 15 (level 2) and (600, 390) holds 16 (level 3).
+- The rule it replaces drew a cell only at 5% of the fullest cell or more (5 records here). That
+  hid 659 of the 1,287 cells, which hold 1,091 records, including 538 of the 543 records outside the
+  frame. It also put every cell from 5 to 24 records on the lowest step.
+- `GeometryPanelSuite`'s small study places 6 records, 5 of them on screen in 5 cells of one
+  record each. So m = 1, s = 4, and all five cells are at level 1. The share rule drew them at
+  level 4.
