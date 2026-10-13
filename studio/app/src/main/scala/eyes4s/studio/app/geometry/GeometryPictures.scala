@@ -78,30 +78,77 @@ final case class ThumbnailPicture(
 ) derives CanEqual:
   def outside: Int = outsideWindow + outsideScreen
 
-/** eyes4s's binned counts of every placed record as ramp levels, by the
-  * cell's share of the fullest cell: below [[DensityPicture.Floor]] it is
-  * not drawn (0), then the four map-ramp stops (DESIGN_SPEC section 6) at
-  * shares from the floor, 1/4, 1/2 and 3/4. A lone stray record does not
-  * paint the screen; a participant's displaced mass does. Row 0 is the top
-  * row.
+/** The four density levels of one dataset revision (DESIGN_SPEC section
+  * 15.1): they start at 1, `step`, `4 × step` and `16 × step` records per
+  * cell, and the last is the overflow level, with no upper bound. `step` is
+  * a power of 4, at least 4, so a cell of one record is always at level 1
+  * and never shares a level with a cell of `step` records or more.
   */
-final case class DensityPicture(columns: Int, rows: Int, levels: Vector[Int], records: Int)
-    derives CanEqual
+final case class DensitySteps private (step: Long) derives CanEqual:
+
+  /** The first count of each level, lowest first. */
+  def starts: Vector[Long] = Vector(1L, step, 4L * step, 16L * step)
+
+  /** The level of a cell of `count` records: 0 (not drawn) for an empty
+    * cell, else the highest level whose start it reaches.
+    */
+  def level(count: Long): Int =
+    if count <= 0L then 0 else starts.lastIndexWhere(_ <= count) + 1
+
+object DensitySteps:
+
+  /** The smallest step, and the step of a study with no record on screen. */
+  val Default: DensitySteps = DensitySteps(4L)
+
+  /** The step anchored at `median`, the median count of the non-empty
+    * cells: the largest `4^j` (`j ≥ 1`) whose half is at most `median`,
+    * else 4. A tie (`median` = half the step) takes the larger step.
+    */
+  def anchored(median: Long): DensitySteps =
+    // The next step 4s has half 2s; 2s ≤ median is s ≤ median / 2 in whole
+    // numbers. The cap keeps 16 × step, the overflow start, a Long.
+    @annotation.tailrec
+    def grow(step: Long): Long =
+      if step <= median / 2L && step <= Long.MaxValue / 64L then grow(4L * step) else step
+    DensitySteps(grow(Default.step))
+
+  /** The steps of `counts`, one whole count per cell: anchored at the
+    * median of the non-empty cells (the lower middle one of an even number),
+    * or [[Default]] when every cell is empty.
+    */
+  def of(counts: Vector[Long]): DensitySteps =
+    val filled = counts.filter(_ > 0L).sorted
+    if filled.isEmpty then Default else anchored(filled((filled.size - 1) / 2))
+
+/** eyes4s's binned counts of every placed record as ramp levels (DESIGN_SPEC
+  * section 15.1): every cell holding a record is drawn, at the level its
+  * whole count reaches under `steps`; an empty cell is 0 and not drawn. The
+  * levels are the four map-ramp stops (section 6). `steps` is computed once
+  * from the whole grid of the shown revision, never from a selection or a
+  * view, so the cells, the key and the semantics text read the same
+  * numbers. Row 0 is the top row.
+  */
+final case class DensityPicture(
+    columns: Int,
+    rows: Int,
+    levels: Vector[Int],
+    records: Int,
+    steps: DensitySteps
+) derives CanEqual
 
 object DensityPicture:
   val Levels: Int = 4
 
-  /** The smallest share of the fullest cell that is drawn. */
-  val Floor: Double = 0.05
+  /** A cell's whole number of records: the backend's count rounded half up,
+    * and at least 1 when the count is above zero.
+    */
+  def count(binned: Double): Long =
+    if binned <= 0.0 then 0L else math.max(1L, math.floor(binned + 0.5).toLong)
 
   def of(d: PlacementDensityGrid): DensityPicture =
-    val max    = d.counts.foldLeft(0.0)(_ max _)
-    val levels = d.counts.toVector.map { c =>
-      val share = if max <= 0.0 then 0.0 else c / max
-      if c <= 0.0 || share < Floor then 0
-      else math.min(Levels, 1 + math.floor(Levels * share).toInt)
-    }
-    DensityPicture(d.columns, d.rows, levels, d.placed)
+    val counts = d.counts.map(count)
+    val steps  = DensitySteps.of(counts)
+    DensityPicture(d.columns, d.rows, counts.map(steps.level), d.placed, steps)
 
 /** The worked example of one record, raw → corrected → image → degrees. */
 final case class ExamplePicture(
