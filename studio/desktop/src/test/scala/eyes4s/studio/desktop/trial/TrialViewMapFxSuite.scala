@@ -215,13 +215,16 @@ class TrialViewMapFxSuite extends StudioFxSuite:
     assertEquals(image.width * image.height, expected.length)
     // The grid's values are as the backend served them.
     assertEquals(sloped.contentHash, hash)
-    // On screen: a cell far from the isoline is its ramp colour at 0.6 over
-    // the blank screen.
+    // On screen: a cell far from the isoline is its ramp colour over the
+    // blank screen, at 0.6 times its own alpha (below 10% of the limits, a
+    // mass cell fades in).
     val img    = snapshot(fx, SnapshotScale.X1)
     val px     = pixelAt(w, frame, frameLeft + 5.5 * cell, frameTop + 5.5 * cell, 1)
     val argb   = MapColours.argb(slopedStyle, sloped.atTop(5, 5))
     val screen = Tokens.palette(PaletteToken.Screen)
-    def mix(c: Int, s: Int) = math.round(c * 0.6 + s * 0.4).toInt
+    val a      = ((argb >>> 24) & 0xff) / 255.0 * 0.6
+    assert(a < 0.6, s"cell (5, 5) should lie under the alpha floor, at alpha $a")
+    def mix(c: Int, s: Int) = math.round(c * a + s * (1.0 - a)).toInt
     val want                = (
       mix((argb >> 16) & 0xff, screen.red),
       mix((argb >> 8) & 0xff, screen.green),
