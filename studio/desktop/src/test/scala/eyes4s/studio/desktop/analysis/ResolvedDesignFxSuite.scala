@@ -212,11 +212,15 @@ class ResolvedDesignFxSuite extends ShellFxSuite:
     val selected   = runOnFx(chip(w, DesignFilter.Eligible).button)
     val unselected = runOnFx(chip(w, DesignFilter.NoMatch).button)
     assert(runOnFx(selected.isSelected) && !runOnFx(unselected.isSelected))
-    val accent = colour(ThemedToken.Accent)
-    val soft   = colour(ThemedToken.AccentSoft)
-    assertEquals(fills(selected, focused = false), List(accent -> 0.0, soft -> 1.0))
+    val accent  = colour(ThemedToken.Accent)
+    val selFill = colour(ThemedToken.SelFill)
+    // Selected is the selection fill inside the hairline; the accent is focus's.
+    assertEquals(
+      fills(selected, focused = false),
+      List(colour(ThemedToken.Hairline) -> 0.0, selFill -> 1.0)
+    )
     // The ring grows outward (-1) and the selected fill stays inside it.
-    assertEquals(fills(selected, focused = true), List(accent -> -1.0, soft -> 1.0))
+    assertEquals(fills(selected, focused = true), List(accent -> -1.0, selFill -> 1.0))
     assertEquals(
       fills(unselected, focused = true),
       List(accent -> -1.0, colour(ThemedToken.Surface) -> 1.0)

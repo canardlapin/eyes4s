@@ -38,10 +38,12 @@
   -fx-mid-text-color: -es-ink-2;
   -fx-light-text-color: -es-surface;
   -fx-prompt-text-fill: -es-ink-3;
-  -fx-selection-bar: -es-accent-soft;
-  -fx-selection-bar-non-focused: -es-surface-3;
+  /* Selection is a fill, the same with or without focus; hover is lighter
+   * than selection so it never reads as one (DESIGN_SPEC section 15). */
+  -fx-selection-bar: -es-sel-fill;
+  -fx-selection-bar-non-focused: -es-sel-fill;
   -fx-selection-bar-text: -es-ink;
-  -fx-cell-hover-color: -es-surface-3;
+  -fx-cell-hover-color: -es-surface-2;
   -fx-mark-color: -es-ink-2;
 }
 
@@ -86,6 +88,30 @@
 .pane-placeholder:focused {
   -fx-background-color: -es-accent, -es-surface;
   -fx-background-insets: 0, 2;
+}
+
+/* ---- selection and hover: a fill, never the accent (DESIGN_SPEC 15) ----- */
+/* Modena defines -fx-cell-hover-color but draws no hover on cells. A hovered
+ * row takes surface-2; a selected row keeps the selection fill when hovered
+ * (the rule comes later at the same specificity) and sets its text in ink
+ * at weight 600, the semibold face. */
+.list-cell:filled:hover,
+.tree-cell:filled:hover,
+.table-row-cell:filled:hover {
+  -fx-background: -fx-cell-hover-color;
+}
+
+.list-cell:filled:selected,
+.tree-cell:filled:selected,
+.table-row-cell:filled:selected {
+  -fx-background: -fx-selection-bar-non-focused;
+  -fx-text-fill: -fx-selection-bar-text;
+  -fx-font-family: "IBM Plex Sans SmBld";
+}
+
+.table-row-cell:filled:selected > .table-cell {
+  -fx-text-fill: -fx-selection-bar-text;
+  -fx-font-family: "IBM Plex Sans SmBld";
 }
 
 /* ---- composite focus: the cursor row carries the ring (DESIGN_SPEC 15) -- */

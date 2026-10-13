@@ -41,13 +41,25 @@
   -fx-text-fill: -es-ink;
 }
 
+/* The chosen speed: the selection fill, its mono numerals in Mono 500 (the
+ * compound outranks the type scale's `.mono.t11`). */
 .timeline-speed:selected {
-  -fx-background-color: -es-hairline, -es-accent-soft;
+  -fx-background-color: -es-hairline, -es-sel-fill;
+}
+
+.timeline-speed.mono:selected {
+  -fx-font-family: "IBM Plex Mono Medm";
 }
 
 .timeline-button:focused,
 .timeline-speed:focused {
   -fx-background-color: -es-accent, -es-surface;
+}
+
+/* A focused speed that is also chosen keeps the selection fill inside the
+ * ring: -fx-background-color is one property. */
+.timeline-speed:selected:focused {
+  -fx-background-color: -es-accent, -es-sel-fill;
 }
 
 .timeline-status,

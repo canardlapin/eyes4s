@@ -100,10 +100,24 @@
   -fx-alignment: center-right;
 }
 
-/* The selected row: surface-2 between 2 px ink rules (the board's tr.sel). */
+/* A hovered row takes surface-2; the selected row, hovered or not, the
+ * selection fill, its cells at weight 600 and its mono numerals in Mono 500,
+ * the heaviest Mono face (the board's tr.sel; DESIGN_SPEC 15). Both keep the
+ * row's bottom rule. */
+.table-twin-row:hover {
+  -fx-background-color: -es-surface-3, -es-surface-2;
+}
+
 .table-twin-row:selected {
-  -fx-background-color: -es-ink, -es-surface-2;
-  -fx-background-insets: 0, 2 0 2 0;
+  -fx-background-color: -es-surface-3, -es-sel-fill;
+}
+
+.table-twin-row:selected .table-twin-cell {
+  -fx-font-family: "IBM Plex Sans SmBld";
+}
+
+.table-twin-row:selected .table-twin-cell.mono {
+  -fx-font-family: "IBM Plex Mono Medm";
 }
 
 /* A selected row pinned at the top: its annotation (Results board). */
@@ -242,8 +256,18 @@
   -fx-background-color: transparent;
 }
 
-.records-row:selected {
+/* Hover is surface-2; a selected record, hovered or not, the selection fill
+ * with its mono cells in Mono 500. */
+.records-row:hover {
   -fx-background-color: -es-surface-2;
+}
+
+.records-row:selected {
+  -fx-background-color: -es-sel-fill;
+}
+
+.records-row:selected .records-cell {
+  -fx-font-family: "IBM Plex Mono Medm";
 }
 
 /* The row cursor, while the records' pane stop has focus: a 2 px accent frame
