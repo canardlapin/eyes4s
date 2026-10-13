@@ -88,6 +88,30 @@
   -fx-background-insets: 0, 2;
 }
 
+/* ---- composite focus: the cursor row carries the ring (DESIGN_SPEC 15) -- */
+/* A list or a tree is one focus stop whose container draws no ring: modena's
+ * focused box is drawn as its unfocused one, and the cursor row (the focus
+ * model's focused cell) takes a 2 px accent frame around its own fill. A
+ * cursor row that is also selected keeps the selection fill inside the frame:
+ * -fx-background-color is one property, so that is a compound rule. */
+.list-view:focused,
+.tree-view:focused {
+  -fx-background-color: -fx-box-border, -fx-control-inner-background;
+  -fx-background-insets: 0, 1;
+  -fx-background-radius: 0;
+}
+
+.list-view:focused > .virtual-flow > .clipped-container > .sheet > .list-cell:focused,
+.tree-view:focused > .virtual-flow > .clipped-container > .sheet > .tree-cell:focused {
+  -fx-background-color: -es-accent, -fx-background;
+  -fx-background-insets: 0, 2;
+}
+
+.list-view:focused > .virtual-flow > .clipped-container > .sheet > .list-cell:focused:selected,
+.tree-view:focused > .virtual-flow > .clipped-container > .sheet > .tree-cell:focused:selected {
+  -fx-background-color: -es-accent, -es-sel-fill;
+}
+
 /* ---- shared pieces ------------------------------------------------------ */
 
 /* A pending or blocked action is disabled but stays readable, its reason drawn

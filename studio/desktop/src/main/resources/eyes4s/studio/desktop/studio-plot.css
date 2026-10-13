@@ -56,10 +56,6 @@
   -fx-border-width: 2;
 }
 
-.table-twin:focused {
-  -fx-border-color: -es-accent;
-}
-
 .table-twin .list-view,
 .table-twin .list-view > .virtual-flow > .clipped-container > .sheet {
   -fx-background-color: -es-surface;
@@ -120,10 +116,16 @@
   -fx-font-family: "IBM Plex Sans SmBld";
 }
 
-/* The row cursor, while the table has focus: a 2 px accent rule on the left. */
+/* The row cursor, while the table has focus: a 2 px accent frame around the
+ * row's fill; the table itself draws no ring (DESIGN_SPEC 15, composite focus).
+ * A selected cursor row keeps the selection fill inside the frame. */
 .table-twin:focused .table-twin-row:cursor {
-  -fx-border-color: -es-accent;
-  -fx-border-width: 0 0 0 2;
+  -fx-background-color: -es-accent, -es-surface;
+  -fx-background-insets: 0, 2;
+}
+
+.table-twin:focused .table-twin-row:cursor:selected {
+  -fx-background-color: -es-accent, -es-sel-fill;
 }
 
 /* ---- Compare's Queries and Items navigators (S8.1; Main.dc.html, left) ---------- */
@@ -244,9 +246,15 @@
   -fx-background-color: -es-surface-2;
 }
 
-.records-row:cursor {
-  -fx-background-color: -es-ink, -es-surface-2;
+/* The row cursor, while the records' pane stop has focus: a 2 px accent frame
+ * around the row's fill (the pane hosting the records is their focus stop). */
+.pane-placeholder:focused .records-row:cursor {
+  -fx-background-color: -es-accent, -es-surface;
   -fx-background-insets: 0, 2;
+}
+
+.pane-placeholder:focused .records-row:cursor:selected {
+  -fx-background-color: -es-accent, -es-sel-fill;
 }
 
 .records-raw {

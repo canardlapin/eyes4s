@@ -126,11 +126,6 @@
   -fx-background-color: -es-surface;
 }
 
-.design-table:focused {
-  -fx-background-color: -es-accent, -es-surface;
-  -fx-background-insets: 0, 1;
-}
-
 .design-row {
   -fx-min-height: 22px;
   -fx-alignment: center-left;
@@ -155,8 +150,11 @@
   -fx-text-fill: -es-warn-text;
 }
 
-.design-row:cursor {
-  -fx-background-color: -es-accent-soft;
+/* The row cursor, while the table has focus: a 2 px accent frame around the
+ * row's fill; the table itself draws no ring (DESIGN_SPEC 15, composite focus). */
+.design-table:focused .design-row:cursor {
+  -fx-background-color: -es-accent, -es-surface;
+  -fx-background-insets: 0, 2;
 }
 
 /* ---- notes under the table ---------------------------------------------------- */

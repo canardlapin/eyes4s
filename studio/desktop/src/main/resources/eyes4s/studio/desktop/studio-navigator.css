@@ -75,12 +75,16 @@
   -fx-padding: 0;
 }
 
-.nav-rows:focused {
-  -fx-background-color: -es-accent, -es-surface;
-  -fx-background-insets: 0, 1;
+/* One focus stop whose cursor row carries the ring (studio-shell.css): the
+ * focused list keeps its unfocused, borderless fill. */
+.list-view.nav-rows:focused {
+  -fx-background-color: -es-surface;
+  -fx-background-insets: 0;
 }
 
+/* -fx-background is the row's own fill, which the cursor's frame surrounds. */
 .nav-rows .list-cell {
+  -fx-background: -es-surface;
   -fx-background-color: -es-surface;
   -fx-text-fill: -es-ink;
   -fx-padding: 2 10 2 10;
