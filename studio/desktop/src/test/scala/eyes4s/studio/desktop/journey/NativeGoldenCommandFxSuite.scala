@@ -37,8 +37,16 @@ import eyes4s.studio.core.artifacts.{
 }
 import eyes4s.studio.core.document.RunRef
 import java.util.concurrent.atomic.AtomicReference
-import eyes4s.studio.core.bundle.{LockOwner, ProjectBundle}
-import eyes4s.studio.core.command.Command
+import eyes4s.studio.core.bundle.{LockOwner, ProjectBundle, Sidecar}
+import eyes4s.studio.core.command.{Command, History}
+import eyes4s.studio.core.runs.{
+  BindingSource,
+  KeepReason,
+  PrunePlan,
+  RetentionBasis,
+  RunStore,
+  RunStoreError
+}
 import eyes4s.studio.core.document.{CoreBinding, Perspective, Preset, RunLifecycle}
 import eyes4s.studio.core.selection.{ScaleIndex, StudioRef}
 import eyes4s.studio.core.session.ProjectSession
@@ -320,7 +328,46 @@ class NativeGoldenCommandFxSuite extends GoldenWindow:
       yield project).unsafeRunSync())
       assertEquals(reopened.document, finalDocument)
       assert(reopened.science.verified)
-      val reopenedStore   = FileProjectStore.at[IO](projectDir).unsafeRunSync()
+      val reopenedStore = FileProjectStore.at[IO](projectDir).unsafeRunSync()
+      val previousBytes =
+        get(reopenedStore.readSidecar(Sidecar.PreviousManifest).unsafeRunSync())
+      val previous = get(ProjectBundle.openFrom(reopenedStore, previousBytes).unsafeRunSync())
+      // A fresh session has no undo history or pending ready notice. Include both
+      // persisted manifests: the older figure must survive a real archive prune.
+      val basis = RetentionBasis.session(
+        History.start(reopened.document),
+        Some(reopened.document),
+        Some(previous.document),
+        None
+      )
+      val archives = RunStore(reopenedStore)
+      val storage  = get(archives.storage(basis).unsafeRunSync())
+      assert(basis.reasons(run).contains(KeepReason.Figure(figure.id, BindingSource.Current)))
+      assertEquals(
+        PrunePlan.of(storage, Vector(run)).left.map(_.isInstanceOf[RunStoreError.KeptRun]),
+        Left(true)
+      )
+      val plan      = get(PrunePlan.of(storage, Vector(newer)))
+      val pruneLock =
+        get(reopenedStore.acquire(get(LockOwner.of("native archive pruning"))).unsafeRunSync())
+      try
+        val pruned = get(archives.prune(pruneLock, plan.confirm, basis).unsafeRunSync())
+        assertEquals(pruned.runs, Vector(newer))
+        assert(pruned.freedBytes > 0L)
+        assert(pruned.deleted.nonEmpty)
+      finally get(reopenedStore.release(pruneLock).unsafeRunSync())
+      assertEquals(
+        archives
+          .load(finalDocument.run(newer).get)
+          .unsafeRunSync()
+          .left
+          .map(_.isInstanceOf[RunStoreError.NoArchive]),
+        Left(true)
+      )
+      assertEquals(
+        archives.figure(reopened.document, figure.id).unsafeRunSync().map(_.index),
+        Right(stored.archive.index)
+      )
       val reopenedSession = get(
         ProjectSession
           .open(reopenedStore, get(LockOwner.of("native artifact cold verification")))
