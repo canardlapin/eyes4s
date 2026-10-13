@@ -21,6 +21,7 @@ import eyes4s.studio.app.compare.*
 import eyes4s.studio.app.plot.{
   LadderColumns,
   ParticipantColumns,
+  ParticipantNotes,
   PlotSource,
   ProfileColumns,
   ScaleLadder,
@@ -34,7 +35,7 @@ import eyes4s.studio.core.selection.{ScaleIndex, ViewId}
 import eyes4s.studio.desktop.plot.{PlotTwin, TableTwinView}
 import eyes4s.studio.desktop.runtime.StudioSession
 import eyes4s.studio.desktop.tokens.TokenFiles
-import eyes4s.studio.viz.plot.{ParticipantPlot, ScaleLadderPlot, ScaleProfilePlot}
+import eyes4s.studio.viz.plot.{Annotations, ParticipantPlot, ScaleLadderPlot, ScaleProfilePlot}
 import javafx.application.Platform
 import javafx.geometry.Pos
 import javafx.scene.input.{KeyCode, KeyEvent}
@@ -175,12 +176,16 @@ final class CompareSummaryHost(
   private var contrast   = ContrastPane.empty
   private var pairsState = PairsTable.empty
 
+  private val participantColumns: ParticipantColumns =
+    ParticipantColumns.standard.fold(e => throw IllegalStateException(e.message), identity)
+
+  // The notes the participant plot was last built with (review ticket 26).
+  private var plotNotes: ParticipantNotes = ParticipantNotes.empty
+
   /** The participant plot and its table. */
   val participantPlot: PlotTwin = PlotTwin
     .attach(
-      ParticipantPlot(
-        ParticipantColumns.standard.fold(e => throw IllegalStateException(e.message), identity)
-      ),
+      ParticipantPlot(participantColumns),
       view("compare.participant-plot"),
       view("compare.participant-plot.table"),
       selection,
@@ -669,6 +674,16 @@ final class CompareSummaryHost(
         case None =>
           explain.setVisible(false); keeps.setVisible(false)
       renderPaired(v.paired)
+      // New notes rebuild the plot with its annotation column; the notes
+      // come from the same served means as the plot's source.
+      if v.plotNotes != plotNotes then
+        plotNotes = v.plotNotes
+        participantPlot.rebuild(
+          ParticipantPlot(
+            participantColumns,
+            annotations = Annotations.from(plotNotes).getOrElse(Annotations.empty)
+          )
+        )
       show("participant-plot", v.participantPlot, theme)(
         participantPlot.show(_, theme),
         participantPlot.clear()
