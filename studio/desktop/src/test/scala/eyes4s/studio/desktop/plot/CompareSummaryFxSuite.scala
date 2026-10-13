@@ -154,6 +154,8 @@ class CompareSummaryFxSuite extends ShellFxSuite:
       "Rev 5 · run 8 running · 48%"
     ).foreach(t => assert(shown.contains(t), s"'$t' not shown in $shown"))
     assert(!shown.exists(_.startsWith("Paired n")), "the story spec declares no contrast")
+    // Nor, without a declared direction, a paired descriptive.
+    assert(!runOnFx(w.summary.headline.isVisible), "no contrast, no paired headline")
     val toggles = runOnFx(
       w.summary.participantNode.lookupAll(".toggle-button").asScala.toVector.collect {
         case b: ToggleButton => (b.getText, b.isDisable, b.isSelected)
@@ -171,6 +173,51 @@ class CompareSummaryFxSuite extends ShellFxSuite:
     // The scale profile at the four protocol scales.
     val profile = runOnFx(w.summary.scaleProfile.plot).getOrElse(fail("no profile"))
     assertEquals(profile.source.rows.size, (1 + 24) * 4)
+    fx.snapshot(StudioTheme.Light)
+  }
+
+  /** t3 with "By retrieval response" declaring Remembered − Forgotten. */
+  private lazy val contrastedSummary: eyes4s.studio.app.AppModel =
+    val original = StoryModels.t3Summary.document.reporting.head
+    val spec     = eyes4s.studio.core.document.ReportingSpec
+      .of(
+        original.id,
+        original.name,
+        original.groupBy,
+        original.filters,
+        original.minimumPerGroup,
+        original.weighting,
+        eyes4s.studio.core.document.ReportingContrast.of("Remembered", "Forgotten").toOption
+      )
+      .fold(e => fail(e.message), identity)
+    eyes4s.studio.app.AppModel
+      .update(StoryModels.t3Summary, Intent.Dispatch(Command.PutReporting(spec)))
+      ._1
+
+  fxStage.test("the headline's paired descriptive reads +0.16, P21 to P15, 24 of 24") { fx =>
+    val w = boot(fx, contrastedSummary, StoryMoment.T3)
+    loaded(fx, w)
+    eventually(fx, "the paired headline is shown")(w.summary.headline.isVisible)
+    val (texts, inScene, spoken) = runOnFx {
+      val h = w.summary.headline
+      (
+        h.lookupAll(".label").asScala.toVector.collect { case l: Label => l.getText },
+        h.getScene != null && w.summary.participantPlotNode.getChildren.get(0) == h,
+        h.getAccessibleText
+      )
+    }
+    assertEquals(
+      texts,
+      Vector(
+        "Δ Remembered − Forgotten · paired n 24",
+        "+0.16",
+        "higher in 24 of 24",
+        "Range +0.05 P21 to +0.26 P15 · computed before rounding participant means · " +
+          "Descriptive only, no intervals or tests"
+      )
+    )
+    assert(inScene, "the headline sits over the participant plot in the window")
+    assert(spoken.contains("mean difference +0.16"), spoken)
     fx.snapshot(StudioTheme.Light)
   }
 
