@@ -18,13 +18,21 @@ package eyes4s.studio.viz.trial
 
 import eyes4s.studio.app.maps.*
 import eyes4s.studio.app.text.{TrialText, TrialTextId}
-import eyes4s.studio.app.tokens.{Colour, PaletteToken, StageVariant, Theme, Tokens}
+import eyes4s.studio.app.tokens.{
+  Colour,
+  PaletteToken,
+  StageToken,
+  StageVariant,
+  Theme,
+  TokenUsage,
+  Tokens
+}
 import eyes4s.studio.core.assets.Display
 import eyes4s.studio.core.backend.{RunId, TrialKey}
 import eyes4s.studio.core.selection.ScaleIndex
 import eyes4s.studio.viz.plot.IntaglioColours
 import intaglio.svg.SvgRenderer
-import intaglio.{Grob, alpha, blue, green, red, value}
+import intaglio.{Grob, LineCap, LineType, alpha, blue, green, red, value}
 
 /** The trial view's result map (ticket S4.3b): the raster of the run's
   * grid drawn cell for cell over the image frame at the global opacity, the
@@ -65,15 +73,18 @@ class TrialMapSceneSuite extends munit.FunSuite:
 
   private def withMap(
       m: Option[TrialMap],
-      remembered: RememberedImage = RememberedImage.Absent
+      remembered: RememberedImage = RememberedImage.Absent,
+      shown: Display = Display.Blank,
+      theme: Theme = Theme.Light,
+      stage: StageVariant = StageVariant.Dark
   ) =
     TrialSceneInput(
-      display(ret07, Display.Blank),
+      display(ret07, shown),
       screen,
       ret07Fixations,
       MarkStyle.Role(TrialRole.Query),
-      Theme.Light,
-      StageVariant.Dark,
+      theme,
+      stage,
       rasters = Map(beach -> StimulusRaster.Loaded(raster)),
       map = m,
       remembered = remembered
@@ -225,6 +236,8 @@ class TrialMapSceneSuite extends munit.FunSuite:
       lines.gp.casing.map(_.color),
       Some(IntaglioColours.toIntaglio(Tokens.palette(PaletteToken.IsolineCase)))
     )
+    // Round caps (review ticket 17); the casing takes the line's caps.
+    assertEquals(lines.gp.lineCap, LineCap.Round)
     // Drawn over the map raster, under the marks.
     val order = grobs(scene)
     val at    = (n: String) => order.indexWhere(g => named(scene, n).exists(_ eq g))
@@ -233,6 +246,65 @@ class TrialMapSceneSuite extends munit.FunSuite:
     val bare = grid(levels = Vector.empty)
     val none = right(TrialScene(withMap(Some(TrialMap(bare, MapRaster.render(bare, style))))))
     assertEquals(named(none, TrialScene.IsolinesName), None)
+  }
+
+  test("the fixation cross is drawn above the map: 2 px of halo over a 4 px casing") {
+    val g = grid(levels = Vector(0.5))
+    for
+      theme <- Theme.values.toList
+      stage <- StageVariant.values.toList
+    do
+      val scene = right(
+        TrialScene(
+          withMap(
+            Some(TrialMap(g, MapRaster.render(g, style))),
+            shown = Display.BlankWithFixationCross,
+            theme = theme,
+            stage = stage
+          )
+        )
+      )
+      val (ink, casing) =
+        (named(scene, TrialScene.CrossName), named(scene, TrialScene.CrossCaseName)) match
+          case (Some(i: Grob.Segments), Some(c: Grob.Segments)) => (i, c)
+          case other => fail(s"no cased cross: $other")
+      // After the map and its isolines, the casing under the ink, the marks
+      // last.
+      val order = grobs(scene)
+      val at    = (n: String) => order.indexWhere(g => named(scene, n).exists(_ eq g))
+      val marks = order.indexWhere {
+        case g: Grob.Group => g.name.exists(_.value == TrialScene.MarksName)
+        case _             => false
+      }
+      assert(at(TrialScene.MapName) < at(TrialScene.IsolinesName))
+      assert(at(TrialScene.IsolinesName) < at(TrialScene.CrossCaseName))
+      assert(at(TrialScene.CrossCaseName) < at(TrialScene.CrossName))
+      assert(marks > at(TrialScene.CrossName), s"marks at $marks")
+      // Both arms, the same two segments, in the stage halo over the inner
+      // casing, at 2 and 4 px (points at 96 px per inch).
+      assertEquals(ink.segments, casing.segments)
+      assertEquals(ink.segments.size, 2)
+      assertEquals(
+        ink.gp.stroke,
+        Some(IntaglioColours.staged(stage, StageToken.Halo))
+      )
+      assertEquals(
+        casing.gp.stroke,
+        Some(
+          IntaglioColours.toIntaglio(
+            Tokens.resolve(TokenUsage.innerCasing(stage), theme, stage)
+          )
+        )
+      )
+      assertEqualsDouble(ink.gp.lineWidth, TrialScene.CrossPx * 0.75, 1e-12)
+      assertEqualsDouble(casing.gp.lineWidth, TrialScene.CrossCasingPx * 0.75, 1e-12)
+      assertEquals(ink.gp.lineType, LineType.Solid)
+      assertEquals(casing.gp.lineCap, LineCap.Square)
+    assertEquals((TrialScene.CrossPx, TrialScene.CrossCasingPx), (2.0, 4.0))
+    // A plain blank display draws no cross.
+    val blank = right(TrialScene(withMap(None)))
+    assertEquals(named(blank, TrialScene.CrossName), None)
+    assertEquals(named(blank, TrialScene.CrossCaseName), None)
   }
 
   test("the underlay is disclosed whenever it is shown, and said to be hidden otherwise") {
@@ -329,6 +401,43 @@ class TrialMapSceneSuite extends munit.FunSuite:
       }
       .minBy(_._1)
     assert(worst._1 >= 3.0, f"worst: ${worst._2} at ${worst._1}%.2f")
+  }
+
+  test("marks, the focus ring and the cross read over photographs and every map colour") {
+    // DESIGN_SPEC section 15, "Stage casing": --halo stays stage-keyed, and
+    // the inner casing inside it carries a mark where neither the mark nor
+    // the halo reaches 3:1 (TokenContrastSuite's rule, here over a continuum
+    // of grounds). Both themes, every stage.
+    val unit = right(ColourLimits.sequential(0.0, 1.0).flatMap(MapStyle.of(MapPalette.Mass, _)))
+    def withAlpha(c: Colour) = (rgb(c), c.alphaPercent / 100.0)
+    val failures             = for
+      theme <- Theme.values.toList
+      stage <- StageVariant.values.toList
+      backgrounds = Vector(
+        "sky"          -> (135.0, 190.0, 235.0),
+        "sand"         -> (225.0, 198.0, 153.0),
+        "blank screen" -> rgb(Tokens.palette(PaletteToken.Screen)),
+        "stage"        -> rgb(Tokens.staged(stage, StageToken.Stage))
+      )
+      (where, bg) <- backgrounds.toList
+      t           <- ((0 to 100).map(k => Some(k / 100.0)) :+ None).toList
+      ground = t.fold(bg) { v =>
+        val c = MapColours.argb(unit, Some(v))
+        over(
+          (((c >> 16) & 0xff).toDouble, ((c >> 8) & 0xff).toDouble, (c & 0xff).toDouble),
+          ((c >>> 24) & 0xff) / 255.0 * MapOpacity.Default.value,
+          bg
+        )
+      }
+      halo  = withAlpha(Tokens.staged(stage, StageToken.Halo))
+      inner = withAlpha(Tokens.resolve(TokenUsage.innerCasing(stage), theme, stage))
+      mark <- TokenUsage.innerCased
+      fill = withAlpha(Tokens.resolve(mark, theme, stage))
+      best = List(fill, halo, inner).map((c, a) => contrast(over(c, a, ground), ground)).max
+      if best < 3.0
+    yield f"$theme, ${stage.cssName} stage, --${mark.cssName} over $where" +
+      t.fold("")(v => f" under the map at $v%.2f") + f": $best%.2f"
+    assert(failures.isEmpty, failures.mkString("\n", "\n", ""))
   }
 
   // --- Cells without coverage (review ticket 8) --------------------------------

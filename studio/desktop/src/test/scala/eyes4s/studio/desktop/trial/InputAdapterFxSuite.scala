@@ -18,7 +18,15 @@ package eyes4s.studio.desktop.trial
 
 import eyes4s.studio.app.text.TrialText
 import eyes4s.plan.MapPlacement
-import eyes4s.studio.app.tokens.{Colour, StageToken, StageVariant, Theme, ThemedToken, Tokens}
+import eyes4s.studio.app.tokens.{
+  Colour,
+  StageToken,
+  StageVariant,
+  Theme,
+  ThemedToken,
+  TokenUsage,
+  Tokens
+}
 import eyes4s.studio.app.{AppEffect, AppModel, Intent}
 import eyes4s.studio.core.assets.TrialDisplay
 import eyes4s.studio.core.selection.{
@@ -370,7 +378,9 @@ class InputAdapterFxSuite extends StudioFxSuite:
     runOnFx(w.view.dispose())
   }
 
-  fxStage.test("the focus ring is 2 px accent, cased by the halo, drawn over the stage") { fx =>
+  fxStage.test(
+    "the focus ring is 2 px accent inside its inner casing and the halo, over the stage"
+  ) { fx =>
     val w      = Wired(viewIn(fx))
     val (f, t) = showAndDraw(w, input(ret07, ret07Fix), 2.0)
     runOnFx(w.host.requestFocus())
@@ -385,10 +395,15 @@ class InputAdapterFxSuite extends StudioFxSuite:
     val image  = snapshotHost(w, 2)
     val accent = Tokens.themed(Theme.Light, ThemedToken.Accent)
     val halo   = Tokens.staged(StageVariant.Dark, StageToken.Halo)
-    // The accent band is centred 2 px outside the ring's start; the halo lies
-    // in the outer casing band, 1 px beyond the accent (device px at 2x).
-    assert(onCircle(image, ring.centre, ring.radius + 4.0, accent) >= 16, "no accent ring")
-    assert(onCircle(image, ring.centre, ring.radius + 7.0, halo) >= 16, "no halo casing")
+    val inner  =
+      Tokens.resolve(TokenUsage.innerCasing(StageVariant.Dark), Theme.Light, StageVariant.Dark)
+    // From the ring's start, in device px at 2x: 2 of halo, 2 of inner
+    // casing, 4 of accent, 2 of inner casing, 2 of halo (DESIGN_SPEC
+    // section 15, "Stage casing").
+    assert(onCircle(image, ring.centre, ring.radius + 6.0, accent) >= 16, "no accent ring")
+    assert(onCircle(image, ring.centre, ring.radius + 3.0, inner) >= 16, "no inner casing")
+    assert(onCircle(image, ring.centre, ring.radius + 9.0, inner) >= 16, "no inner casing")
+    assert(onCircle(image, ring.centre, ring.radius + 11.0, halo) >= 16, "no halo casing")
     assertEquals(
       runOnFx(w.host.getAccessibleText),
       TrialText.mark(t.targets.head.ref, t.targets.head.mark.placement, false)

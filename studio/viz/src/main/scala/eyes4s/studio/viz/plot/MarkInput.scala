@@ -18,7 +18,15 @@ package eyes4s.studio.viz.plot
 
 import eyes4s.studio.app.Intent
 import eyes4s.studio.app.plot.{RovingKey, RovingMove, ViewSelection}
-import eyes4s.studio.app.tokens.{Colour, StageToken, StageVariant, Theme, ThemedToken, Tokens}
+import eyes4s.studio.app.tokens.{
+  Colour,
+  StageToken,
+  StageVariant,
+  Theme,
+  ThemedToken,
+  TokenUsage,
+  Tokens
+}
 import eyes4s.studio.core.selection.{
   ContextRevision,
   InputCause,
@@ -258,12 +266,14 @@ final case class OverlayRing(
 ) derives CanEqual
 
 /** The token colours of the feedback rings (DESIGN_SPEC sections 4 and 14):
-  * the 2 px accent focus ring cased by the ground it is drawn on, the
+  * the 2 px accent focus ring cased by the ground it is drawn on (on a stage,
+  * with an inner casing between the ring and the halo, section 15), the
   * selection ring's inner and outer bands, and the hover ring.
   */
 final case class OverlayPalette(
     focus: Colour,
     focusCase: Colour,
+    focusInner: Option[Colour],
     selectedInner: Colour,
     selectedOuter: Colour,
     hover: Colour
@@ -271,13 +281,15 @@ final case class OverlayPalette(
 
 object OverlayPalette:
 
-  /** Rings over a trial on its stage: cased by the stage halo, hover in the
+  /** Rings over a trial on its stage: the focus ring inside the stage's
+    * inner casing and halo ([[TokenUsage.innerCasing]]), hover in the
     * on-stage colour.
     */
   def of(theme: Theme, stage: StageVariant): OverlayPalette =
     OverlayPalette(
       focus = Tokens.themed(theme, ThemedToken.Accent),
       focusCase = Tokens.staged(stage, StageToken.Halo),
+      focusInner = Some(Tokens.resolve(TokenUsage.innerCasing(stage), theme, stage)),
       selectedInner = Tokens.themed(theme, ThemedToken.SelRingInner),
       selectedOuter = Tokens.themed(theme, ThemedToken.Ink),
       hover = Tokens.staged(stage, StageToken.OnStage)
@@ -290,6 +302,7 @@ object OverlayPalette:
     OverlayPalette(
       focus = Tokens.themed(theme, ThemedToken.Accent),
       focusCase = Tokens.themed(theme, ThemedToken.Surface),
+      focusInner = None,
       selectedInner = Tokens.themed(theme, ThemedToken.SelRingInner),
       selectedOuter = Tokens.themed(theme, ThemedToken.Ink),
       hover = Tokens.themed(theme, ThemedToken.Ink2)
@@ -304,6 +317,11 @@ object OverlayRings:
   /** The focus ring and the halo casing around it (1 px either side). */
   val FocusPx: Double       = 2.0
   val FocusCasingPx: Double = 4.0
+
+  /** On a stage, the focus ring's inner casing is [[FocusCasingPx]] wide and
+    * the halo shows this much either side of it.
+    */
+  val FocusHaloBandPx: Double = 1.0
 
   /** Each band of the selection ring; the outer band lies outside the inner. */
   val SelectedBandPx: Double = 2.0
@@ -370,12 +388,29 @@ object OverlayRings:
           b     <- outline(r, 1.5 * SelectedBandPx * k, outer)
         yield Vector(a, b)
       case RingKind.Focus =>
-        for
-          base   <- gp(palette.focus, FocusPx)
-          width  <- StrokeWidth.devicePixels(FocusCasingPx * k)
-          casing <- StrokeCasing.checked(ink(palette.focusCase), CasingWidth.Absolute(width))
-          ring   <- outline(r, FocusCasingPx / 2.0 * k, base.withCasing(casing))
-        yield Vector(ring)
+        palette.focusInner match
+          case None =>
+            for
+              base   <- gp(palette.focus, FocusPx)
+              width  <- StrokeWidth.devicePixels(FocusCasingPx * k)
+              casing <- StrokeCasing.checked(
+                ink(palette.focusCase),
+                CasingWidth.Absolute(width)
+              )
+              ring <- outline(r, FocusCasingPx / 2.0 * k, base.withCasing(casing))
+            yield Vector(ring)
+          // On a stage: halo, inner casing, accent, inner casing, halo, the
+          // innermost band starting at the ring's radius.
+          case Some(inner) =>
+            val haloPx = FocusCasingPx + 2.0 * FocusHaloBandPx
+            for
+              halo   <- gp(palette.focusCase, haloPx)
+              base   <- gp(palette.focus, FocusPx)
+              width  <- StrokeWidth.devicePixels(FocusCasingPx * k)
+              casing <- StrokeCasing.checked(ink(inner), CasingWidth.Absolute(width))
+              under  <- outline(r, haloPx / 2.0 * k, halo)
+              ring   <- outline(r, haloPx / 2.0 * k, base.withCasing(casing))
+            yield Vector(under, ring)
     for
       xs    <- Interval(0.0, width)
       ys    <- Interval(0.0, height)

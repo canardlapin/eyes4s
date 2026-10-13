@@ -510,13 +510,20 @@ class TrialSceneSuite extends ScalaCheckSuite:
   }
 
   test("role marks: query filled circle, matched diamond, control hollow and cased") {
-    import eyes4s.studio.app.tokens.{StageToken, ThemedToken}
+    import eyes4s.studio.app.tokens.{StageToken, ThemedToken, TokenUsage}
     import intaglio.{CasingWidth, PointShape, StrokeWidth}
-    def marks(style: MarkStyle, scale: Double = 1.0) =
+    val halo  = IntaglioColours.staged(StageVariant.Dark, StageToken.Halo)
+    val inner = IntaglioColours.toIntaglio(
+      Tokens.resolve(TokenUsage.innerCasing(StageVariant.Dark), Theme.Light, StageVariant.Dark)
+    )
+    def all(style: MarkStyle, scale: Double) =
       val scene       = right(TrialScene(input(Display.BlankWithFixationCross, marks = style)))
       val (_, device) = lower(scene, right(PlotSurface(800, 600, scale)))
-      (scene, primitives(device.elements).filter(isMark))
-    val (_, query) = marks(MarkStyle.Role(TrialRole.Query))
+      (scene, primitives(device.elements))
+    def marks(style: MarkStyle, scale: Double = 1.0) =
+      val (scene, prims) = all(style, scale)
+      (scene, prims.filter(isMark))
+    val (scene0, query) = marks(MarkStyle.Role(TrialRole.Query))
     assertEquals(query.size, ret07Fixations.size)
     val shapes = query.collect { case DevicePrimitive.PointBatch(_, _, s, gps, _) =>
       (s.valueAt(0), gps.valueAt(0))
@@ -527,15 +534,61 @@ class TrialSceneSuite extends ScalaCheckSuite:
       shapes.head._2.fill,
       Some(IntaglioColours.themed(Theme.Light, ThemedToken.Query))
     )
+    // A filled mark in the map is outlined in the inner casing, cased by the
+    // halo 1 px wider either side (DESIGN_SPEC section 15, "Stage casing").
+    val inMap =
+      scene0.marks.filter(_.placement == MapPlacement.InWindow).map(_.name.value).toSet
+    query.foreach {
+      case DevicePrimitive.PointBatch(_, _, _, gps, Some(n)) if inMap(n.value) =>
+        val gp = gps.valueAt(0)
+        assertEquals(gp.stroke, Some(inner))
+        assertEqualsDouble(gp.lineWidth, TrialScene.HaloPx, Tolerance)
+        assertEquals(
+          gp.casing.map(c => (c.color, c.width)),
+          Some(
+            halo -> CasingWidth.Absolute(
+              StrokeWidth.devicePixelsUnsafe(TrialScene.HaloPx + 2.0 * TrialScene.HaloBandPx)
+            )
+          )
+        )
+      case DevicePrimitive.PointBatch(_, _, _, gps, _) =>
+        assertEquals(gps.valueAt(0).stroke, Some(halo))
+        assertEquals(gps.valueAt(0).casing, None)
+      case other => fail(s"a query mark is drawn as $other")
+    }
+    // A mark's reach includes its halo band beyond the inner casing.
+    scene0.marks.foreach { m =>
+      val paint =
+        if m.placement == MapPlacement.InWindow then
+          TrialScene.HaloPx + 2.0 * TrialScene.HaloBandPx
+        else TrialScene.HaloPx
+      assertEqualsDouble(m.reachPx, m.radiusPx + paint / 2.0, Tolerance)
+    }
     val (_, matched) = marks(MarkStyle.Role(TrialRole.Matched))
     val diamonds     = matched.collect { case DevicePrimitive.PointBatch(_, _, s, _, _) =>
       s.valueAt(0)
     }
     assertEquals(diamonds, Vector.fill(matched.size)(PointShape.Diamond))
-    // A control mark in the window is one ring whose casing is Intaglio
-    // StrokeCasing paint (the halo, 4 px on screen): no second casing grob.
+    // A control mark in the window is one named ring whose casing is Intaglio
+    // StrokeCasing paint (the inner casing, 4 px on screen), over an unnamed
+    // halo ring 1 px wider either side, both in a group of the mark's name.
     for scale <- List(1.0, 2.0) do
       val (scene, control) = marks(MarkStyle.Role(TrialRole.Control), scale)
+      val halos            = all(MarkStyle.Role(TrialRole.Control), scale)._2.collect {
+        case DevicePrimitive.Polyline(points, true, gp, None) => (points, gp)
+      }
+      assertEquals(halos.size, scene.marks.count(_.placement == MapPlacement.InWindow))
+      halos.foreach { (points, gp) =>
+        assertEquals(points.size, TrialScene.RingSegments)
+        assertEquals(gp.fill, None)
+        assertEquals(gp.casing, None)
+        assertEquals(gp.stroke, Some(halo))
+        assertEqualsDouble(
+          gp.lineWidth,
+          (TrialScene.CasingPx + 2.0 * TrialScene.HaloBandPx) * scale,
+          Tolerance
+        )
+      }
       assertEquals(control.size, ret07Fixations.size)
       val rings = control.collect { case DevicePrimitive.Polyline(points, true, gp, _) =>
         (points, gp)
@@ -546,10 +599,17 @@ class TrialSceneSuite extends ScalaCheckSuite:
         assertEquals(gp.fill, None)
         assertEquals(gp.stroke, Some(IntaglioColours.themed(Theme.Light, ThemedToken.Control)))
         val casing = gp.casing.getOrElse(fail("a control ring has no casing"))
-        assertEquals(casing.color, IntaglioColours.staged(StageVariant.Dark, StageToken.Halo))
+        assertEquals(casing.color, inner)
         assertEquals(
           casing.width,
           CasingWidth.Absolute(StrokeWidth.devicePixelsUnsafe(TrialScene.CasingPx * scale))
+        )
+      }
+      scene.marks.filter(_.placement == MapPlacement.InWindow).foreach { m =>
+        assertEqualsDouble(
+          m.reachPx,
+          m.radiusPx + (TrialScene.CasingPx + 2.0 * TrialScene.HaloBandPx) / 2.0,
+          Tolerance
         )
       }
       // The ring is the mark's size: its vertices lie at the mark's radius.
@@ -562,7 +622,8 @@ class TrialSceneSuite extends ScalaCheckSuite:
   }
 
   test("neutral marks: the translucent token fill inside a 1.5 px halo; role halos stay 2 px") {
-    import eyes4s.studio.app.tokens.{StageToken, ThemedToken}
+    import eyes4s.studio.app.tokens.{StageToken, ThemedToken, TokenUsage}
+    import intaglio.{CasingWidth, StrokeWidth}
     def params(style: MarkStyle, theme: Theme, scale: Double) =
       val scene =
         right(TrialScene(input(Display.BlankWithFixationCross, marks = style, theme = theme)))
@@ -577,14 +638,35 @@ class TrialSceneSuite extends ScalaCheckSuite:
     do
       val neutral = params(MarkStyle.Neutral, theme, scale)
       assertEquals(neutral.size, ret07Fixations.size)
+      val halo = IntaglioColours.staged(StageVariant.Dark, StageToken.Halo)
       neutral.foreach { (placement, gp) =>
         assertEqualsDouble(gp.lineWidth, TrialScene.NeutralHaloPx * scale, Tolerance)
-        assertEquals(
-          gp.stroke,
-          Some(IntaglioColours.staged(StageVariant.Dark, StageToken.Halo))
-        )
         if placement == MapPlacement.InWindow then
+          // The inner casing inside the halo (DESIGN_SPEC section 15).
           assertEquals(gp.fill, Some(IntaglioColours.themed(theme, ThemedToken.NeutralMark)))
+          assertEquals(
+            gp.stroke,
+            Some(
+              IntaglioColours.toIntaglio(
+                Tokens.resolve(
+                  TokenUsage.innerCasing(StageVariant.Dark),
+                  theme,
+                  StageVariant.Dark
+                )
+              )
+            )
+          )
+          assertEquals(
+            gp.casing.map(c => (c.color, c.width)),
+            Some(
+              halo -> CasingWidth.Absolute(
+                StrokeWidth.devicePixelsUnsafe(
+                  (TrialScene.NeutralHaloPx + 2.0 * TrialScene.HaloBandPx) * scale
+                )
+              )
+            )
+          )
+        else assertEquals(gp.stroke, Some(halo))
       }
       params(MarkStyle.Role(TrialRole.Query), theme, scale).foreach { (_, gp) =>
         assertEqualsDouble(gp.lineWidth, TrialScene.HaloPx * scale, Tolerance)

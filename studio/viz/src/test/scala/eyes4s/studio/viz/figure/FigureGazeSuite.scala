@@ -100,8 +100,8 @@ class FigureGazeSuite extends munit.FunSuite:
       cross: Vector[Vector[DevicePoint]]
   )
 
-  // The image frame and the cross's two arms: the panel's only unnamed open
-  // two-point lines (the order line is named).
+  // The image frame and the cross's two arms: the open two-point lines of
+  // its ink grob (its casing is a grob of its own, under the ink).
   private def drawn(prims: Vector[DevicePrimitive]): Drawn =
     val frame = prims
       .collectFirst {
@@ -109,7 +109,9 @@ class FigureGazeSuite extends munit.FunSuite:
       }
       .getOrElse(fail("no image frame drawn"))
     val cross = prims.collect {
-      case DevicePrimitive.Polyline(points, false, _, None) if points.size == 2 => points
+      case DevicePrimitive.Polyline(points, false, _, Some(n))
+          if points.size == 2 && n.value == TrialScene.CrossName =>
+        points
     }
     assertEquals(cross.size, 2, s"the cross is not two arms: $cross")
     Drawn(frame, cross)
