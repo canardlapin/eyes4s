@@ -97,7 +97,8 @@ trait MarkLayer[R <: StudioRef, E, T <: RovingTargets[R, E]]:
   *
   * Feedback is an overlay on the host ([[PlotOverlay]]): hover, the selection
   * as [[project]]ed from the bus, and a 2 px accent focus ring (DESIGN_SPEC
-  * sections 10 and 14). Redrawing it never compiles or redraws the scene.
+  * sections 10 and 14), shown only for the keyboard ([[showFocus]]).
+  * Redrawing it never compiles or redraws the scene.
   *
   * FX thread only. [[dispose]] removes every handler and listener it added
   * and restores what it changed on the host.
@@ -110,16 +111,21 @@ final class MarkInputAdapter[R <: StudioRef, E, T <: RovingTargets[R, E]] privat
     toleranceLogicalPx: Double
 ) extends PlotOverlay:
 
-  private var current: MarkInputState[R]                       = initial
-  private var cached: Option[(PlotFrame, T)]                   = None
-  private var failure: Option[E]                               = None
-  private var disposed: Boolean                                = false
-  private var brushing: Boolean                                = false
-  private var overlayFailure: Option[IntaglioError]            = None
-  private val mouseHandler: EventHandler[MouseEvent]           = e => onMouse(e)
-  private val keyHandler: EventHandler[KeyEvent]               = e => onKey(e)
-  private val focusListener: ChangeListener[java.lang.Boolean] =
-    (_, _, now) => focusChanged(now.booleanValue)
+  private var current: MarkInputState[R]             = initial
+  private var cached: Option[(PlotFrame, T)]         = None
+  private var failure: Option[E]                     = None
+  private var disposed: Boolean                      = false
+  private var brushing: Boolean                      = false
+  private var overlayFailure: Option[IntaglioError]  = None
+  private val mouseHandler: EventHandler[MouseEvent] = e => onMouse(e)
+  private val keyHandler: EventHandler[KeyEvent]     = e => onKey(e)
+
+  // Whether a key has operated the view since its focus arrived.
+  private var keyed: Boolean                                   = false
+  private val focusListener: ChangeListener[java.lang.Boolean] = (_, _, _) =>
+    keyed = false
+    showFocus()
+  private val focusVisibleListener: ChangeListener[java.lang.Boolean] = (_, _, _) => showFocus()
 
   // What attach changed on the host, restored by dispose.
   private val priorRole                                     = host.getAccessibleRole
@@ -135,6 +141,7 @@ final class MarkInputAdapter[R <: StudioRef, E, T <: RovingTargets[R, E]] privat
   host.addEventHandler(MouseEvent.ANY, mouseHandler)
   host.addEventHandler(KeyEvent.KEY_PRESSED, keyHandler)
   host.focusedProperty.addListener(focusListener)
+  host.focusVisibleProperty.addListener(focusVisibleListener)
   host.status.addListener(frameListener)
   host.setFocusTraversable(true)
   host.setAccessibleRole(AccessibleRole.PARENT)
@@ -206,12 +213,21 @@ final class MarkInputAdapter[R <: StudioRef, E, T <: RovingTargets[R, E]] privat
           host.repaintOverlay(under = true)
           describe()
 
-  /** The view gained or lost keyboard focus (the host's `focused` property,
-    * which is true only while its window has focus): the focus ring shows
-    * only while it has it.
+  /** Whether the view shows its focus ring: the input [[showFocus]] drives
+    * from the host's focus, and a test drives directly.
     */
   private[desktop] def focusChanged(now: Boolean): Unit =
     if !disposed then commit(current.focusChanged(now))
+
+  /** The focus ring is the keyboard's (REVIEW ticket 14): it shows while the
+    * host has focus (its `focused` property, true only while its window has
+    * focus) that keyboard traversal brought (`focusVisible`, as Tab sets it),
+    * or that a key has operated the view since it arrived (an arrow after a
+    * click). A click or the program alone shows none; the selection and
+    * hover rings are the pointer's and do not depend on it.
+    */
+  private def showFocus(): Unit =
+    focusChanged(host.isFocused && (host.isFocusVisible || keyed))
 
   /** Removes the adapter's handlers, listeners and overlay. Idempotent. */
   def dispose(): Unit =
@@ -221,6 +237,7 @@ final class MarkInputAdapter[R <: StudioRef, E, T <: RovingTargets[R, E]] privat
       host.removeEventHandler(MouseEvent.ANY, mouseHandler)
       host.removeEventHandler(KeyEvent.KEY_PRESSED, keyHandler)
       host.focusedProperty.removeListener(focusListener)
+      host.focusVisibleProperty.removeListener(focusVisibleListener)
       host.status.removeListener(frameListener)
       host.setOverlay(None)
       host.setFocusTraversable(priorTraversable)
@@ -290,6 +307,9 @@ final class MarkInputAdapter[R <: StudioRef, E, T <: RovingTargets[R, E]] privat
 
   private def onKey(e: KeyEvent): Unit =
     RovingKeys.of(e).foreach { k =>
+      if !keyed then
+        keyed = true
+        showFocus()
       handle(MarkInputEvent.Key(k))
       e.consume()
     }

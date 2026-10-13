@@ -42,7 +42,8 @@ enum TrialInputError derives CanEqual:
   * trial's [[TrialTargets]]. Every fixation mark is its own pick target; a
   * pick, Enter or Escape is an [[Intent.Select]]; a hover change is the view's
   * own [[Intent.HoverOver]]. The rings are an overlay on the host, the 2 px
-  * accent focus ring cased by the stage halo (DESIGN_SPEC sections 10 and 14),
+  * accent focus ring cased by the stage halo (DESIGN_SPEC sections 10 and 14)
+  * shown only for the keyboard (Tab, or a key since a click),
   * and the focused mark's accessible text comes from its
   * [[eyes4s.studio.core.selection.StudioRef]].
   *
@@ -69,8 +70,9 @@ final class TrialInputAdapter private (
   /** The selection as the bus now holds it: redraws the overlay, emits nothing. */
   def project(selection: SelectionState): Unit = core.project(selection)
 
-  /** The view gained or lost keyboard focus: the focus ring shows only while
-    * it has it.
+  /** Whether the view shows its focus ring, as the host's keyboard focus
+    * drives it ([[eyes4s.studio.desktop.plot.MarkInputAdapter]]): for tests
+    * that cannot rely on OS window focus.
     */
   private[trial] def focusChanged(now: Boolean): Unit = core.focusChanged(now)
 
