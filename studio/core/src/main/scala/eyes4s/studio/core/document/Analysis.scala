@@ -22,6 +22,7 @@ import eyes4s.design.FailurePolicy
 import eyes4s.studio.core.preset.RecipePresets
 import eyes4s.plan.{
   ControlReferences,
+  ExpectedUnmatchedRule,
   DefinitionId,
   MatchedReferences,
   OccurrenceChoice,
@@ -31,6 +32,7 @@ import eyes4s.plan.{
 }
 import eyes4s.studio.core.backend.{AnalysisRevision, DatasetRevision, Phase}
 import io.circe.{Codec, Decoder, Encoder}
+import Recipe.given
 
 // ---------------------------------------------------------------------------
 // Recipe values
@@ -95,18 +97,33 @@ object CrossRadius:
 
   given Codec[CrossRadius] = DocumentCodecs.validated(of, _.degrees)
 
+/** An explicitly declared fixation-cross position in admission-screen pixels. */
+final case class ScreenCross private (x: Double, y: Double) derives CanEqual
+
+object ScreenCross:
+  def of(x: Double, y: Double): Either[DocumentError, ScreenCross] =
+    for
+      a <- Checks.finite("fixation cross x (screen px)", x)
+      b <- Checks.finite("fixation cross y (screen px)", y)
+    yield new ScreenCross(a, b)
+  given Encoder.AsObject[ScreenCross] = Encoder.forProduct2("x", "y")(p => (p.x, p.y))
+  given Decoder[ScreenCross] = Decoder.forProduct2("x", "y")(of).emap(_.left.map(_.message))
+
 /** eyes4s `InitialFixationPolicy` (UI-F), applied to queries and references
   * alike.
   */
 enum InitialFixationChoice derives CanEqual, Codec.AsObject:
   case KeepAll, DropFirst
   case DropLeadingNearCross(radius: CrossRadius)
+  case DropLeadingAtScreenCross(cross: ScreenCross, radius: CrossRadius)
 
   def render: String = this match
     case KeepAll                 => "keep all"
     case DropFirst               => "drop first fixation"
     case DropLeadingNearCross(r) =>
       s"drop fixations within ${Degrees.render(r.degrees)}° of the cross before first saccade"
+    case DropLeadingAtScreenCross(cross, r) =>
+      s"drop leading fixations within ${Degrees.render(r.degrees)}° of the cross at (${cross.x}, ${cross.y}) screen px"
 
 /** An occurrence number, 1 for an item's first presentation. */
 final case class Occurrence private (value: Int) derives CanEqual
@@ -325,9 +342,27 @@ final case class Recipe(
     matched: MatchedChoice,
     controls: ControlChoice,
     unmatched: UnmatchedChoice,
-    initialFixations: InitialFixationChoice
-) derives CanEqual,
-      Codec.AsObject
+    initialFixations: InitialFixationChoice,
+    expectedUnmatched: Option[ExpectedUnmatchedRule] = None
+) derives CanEqual
+
+object Recipe:
+  given Codec.AsObject[ExpectedUnmatchedRule] = Codec.AsObject.from(
+    Decoder
+      .forProduct2("column", "values")((c: String, v: Vector[String]) => (c, v))
+      .emap((c, v) => ExpectedUnmatchedRule.of(c, v).left.map(_.message)),
+    Encoder.forProduct2[ExpectedUnmatchedRule, String, Vector[String]]("column", "values")(s =>
+      (s.column, s.values)
+    )
+  )
+  private val derived: Codec.AsObject[Recipe] = Codec.AsObject.derived[Recipe]
+  given Codec.AsObject[Recipe]                = Codec.AsObject.from(
+    derived,
+    Encoder.AsObject.instance(r =>
+      val json = derived.encodeObject(r)
+      if r.expectedUnmatched.isEmpty then json.remove("expectedUnmatched") else json
+    )
+  )
 
 // ---------------------------------------------------------------------------
 // Drafts
@@ -336,7 +371,8 @@ final case class Recipe(
 /** The recipe fields a draft changes: every eyes4s `StudyField`, in its order. */
 enum RecipeField derives CanEqual, Codec.AsObject:
   case Input, Layout, Method, Phases, Weighting, FailurePolicy, Grid, Window, OffWindow, Scales,
-    AngularScale, MatchedReferences, ControlReferences, UnmatchedFocal, InitialFixations
+    AngularScale, MatchedReferences, ControlReferences, UnmatchedFocal, InitialFixations,
+    ExpectedUnmatched
 
   def core: StudyField = this match
     case Input             => StudyField.Input
@@ -354,6 +390,7 @@ enum RecipeField derives CanEqual, Codec.AsObject:
     case ControlReferences => StudyField.ControlReferences
     case UnmatchedFocal    => StudyField.UnmatchedFocal
     case InitialFixations  => StudyField.InitialFixations
+    case ExpectedUnmatched => StudyField.ExpectedUnmatched
 
   def label: String = core.label
 
@@ -375,6 +412,7 @@ object RecipeField:
     case StudyField.ControlReferences => ControlReferences
     case StudyField.UnmatchedFocal    => UnmatchedFocal
     case StudyField.InitialFixations  => InitialFixations
+    case StudyField.ExpectedUnmatched => ExpectedUnmatched
 
 /** One field's typed values and how a recipe holds it. */
 private[document] final class FieldPart[A](
@@ -412,6 +450,10 @@ enum RecipeChange derives CanEqual, Codec.AsObject:
   case Controls(before: ControlChoice, after: ControlChoice)
   case Unmatched(before: UnmatchedChoice, after: UnmatchedChoice)
   case InitialFixations(before: InitialFixationChoice, after: InitialFixationChoice)
+  case ExpectedUnmatched(
+      before: Option[ExpectedUnmatchedRule],
+      after: Option[ExpectedUnmatchedRule]
+  )
 
   private def part: FieldPart[?] = this match
     case Input(b, a) =>
@@ -453,43 +495,55 @@ enum RecipeChange derives CanEqual, Codec.AsObject:
     case Controls(b, a) => FieldPart(b, a, _.controls, (r, v) => r.copy(controls = v), _.render)
     case Unmatched(b, a) =>
       FieldPart(b, a, _.unmatched, (r, v) => r.copy(unmatched = v), _.render)
+    case ExpectedUnmatched(b, a) =>
+      FieldPart(
+        b,
+        a,
+        _.expectedUnmatched,
+        (r, v) => r.copy(expectedUnmatched = v),
+        OptionalRender[ExpectedUnmatchedRule]("none")(s =>
+          s"${s.column}: ${s.values.mkString(", ")}"
+        )
+      )
     case InitialFixations(b, a) =>
       FieldPart(b, a, _.initialFixations, (r, v) => r.copy(initialFixations = v), _.render)
 
   def field: RecipeField = this match
-    case Input(_, _)            => RecipeField.Input
-    case Layout(_, _)           => RecipeField.Layout
-    case Method(_, _)           => RecipeField.Method
-    case Phases(_, _)           => RecipeField.Phases
-    case Weighting(_, _)        => RecipeField.Weighting
-    case Failures(_, _)         => RecipeField.FailurePolicy
-    case Grid(_, _)             => RecipeField.Grid
-    case Window(_, _)           => RecipeField.Window
-    case OffWindow(_, _)        => RecipeField.OffWindow
-    case Scales(_, _)           => RecipeField.Scales
-    case AngularScale(_, _)     => RecipeField.AngularScale
-    case Matched(_, _)          => RecipeField.MatchedReferences
-    case Controls(_, _)         => RecipeField.ControlReferences
-    case Unmatched(_, _)        => RecipeField.UnmatchedFocal
-    case InitialFixations(_, _) => RecipeField.InitialFixations
+    case Input(_, _)             => RecipeField.Input
+    case Layout(_, _)            => RecipeField.Layout
+    case Method(_, _)            => RecipeField.Method
+    case Phases(_, _)            => RecipeField.Phases
+    case Weighting(_, _)         => RecipeField.Weighting
+    case Failures(_, _)          => RecipeField.FailurePolicy
+    case Grid(_, _)              => RecipeField.Grid
+    case Window(_, _)            => RecipeField.Window
+    case OffWindow(_, _)         => RecipeField.OffWindow
+    case Scales(_, _)            => RecipeField.Scales
+    case AngularScale(_, _)      => RecipeField.AngularScale
+    case Matched(_, _)           => RecipeField.MatchedReferences
+    case Controls(_, _)          => RecipeField.ControlReferences
+    case Unmatched(_, _)         => RecipeField.UnmatchedFocal
+    case InitialFixations(_, _)  => RecipeField.InitialFixations
+    case ExpectedUnmatched(_, _) => RecipeField.ExpectedUnmatched
 
   /** The same change in the other direction. */
   def inverse: RecipeChange = this match
-    case Input(b, a)            => Input(a, b)
-    case Layout(b, a)           => Layout(a, b)
-    case Method(b, a)           => Method(a, b)
-    case Phases(b, a)           => Phases(a, b)
-    case Weighting(b, a)        => Weighting(a, b)
-    case Failures(b, a)         => Failures(a, b)
-    case Grid(b, a)             => Grid(a, b)
-    case Window(b, a)           => Window(a, b)
-    case OffWindow(b, a)        => OffWindow(a, b)
-    case Scales(b, a)           => Scales(a, b)
-    case AngularScale(b, a)     => AngularScale(a, b)
-    case Matched(b, a)          => Matched(a, b)
-    case Controls(b, a)         => Controls(a, b)
-    case Unmatched(b, a)        => Unmatched(a, b)
-    case InitialFixations(b, a) => InitialFixations(a, b)
+    case Input(b, a)             => Input(a, b)
+    case Layout(b, a)            => Layout(a, b)
+    case Method(b, a)            => Method(a, b)
+    case Phases(b, a)            => Phases(a, b)
+    case Weighting(b, a)         => Weighting(a, b)
+    case Failures(b, a)          => Failures(a, b)
+    case Grid(b, a)              => Grid(a, b)
+    case Window(b, a)            => Window(a, b)
+    case OffWindow(b, a)         => OffWindow(a, b)
+    case Scales(b, a)            => Scales(a, b)
+    case AngularScale(b, a)      => AngularScale(a, b)
+    case Matched(b, a)           => Matched(a, b)
+    case Controls(b, a)          => Controls(a, b)
+    case Unmatched(b, a)         => Unmatched(a, b)
+    case InitialFixations(b, a)  => InitialFixations(a, b)
+    case ExpectedUnmatched(b, a) => ExpectedUnmatched(a, b)
 
   /** The rendered values before and after. */
   def renderedValues: (String, String) = part.rendered
@@ -534,7 +588,8 @@ object RecipeChange:
       Matched(before.matched, after.matched),
       Controls(before.controls, after.controls),
       Unmatched(before.unmatched, after.unmatched),
-      InitialFixations(before.initialFixations, after.initialFixations)
+      InitialFixations(before.initialFixations, after.initialFixations),
+      ExpectedUnmatched(before.expectedUnmatched, after.expectedUnmatched)
     ).filterNot(_.isIdentity)
 
 /** Seeded working recipes have no synthetic saved base revision. The first

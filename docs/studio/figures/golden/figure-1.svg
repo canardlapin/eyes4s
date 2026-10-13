@@ -45,19 +45,31 @@ Displayed: image beach-042.png · 1024×768 at (448, 156) in 1920×1080: 13 fixa
             <g>
               <title>Fixations of P17 · enc_03</title>
               <g data-name="trial-fixations">
-                <polygon data-name="trial-fixation-1" stroke="#1c1e21" fill="#2f6db5" stroke-width="2" stroke-linecap="butt" stroke-linejoin="miter" points="87.1238,63.2987 96.2308,72.4058 87.1238,81.5128 78.0167,72.4058" />
-                <polygon data-name="trial-fixation-2" stroke="#1c1e21" fill="#2f6db5" stroke-width="2" stroke-linecap="butt" stroke-linejoin="miter" points="225.5893,175.726 235.3619,185.4986 225.5893,195.2712 215.8166,185.4986" />
-                <polygon data-name="trial-fixation-3" stroke="#1c1e21" fill="#2f6db5" stroke-width="2" stroke-linecap="butt" stroke-linejoin="miter" points="106.6141,82.0021 115.9931,91.3811 106.6141,100.76 97.2352,91.3811" />
-                <polygon data-name="trial-fixation-4" stroke="#1c1e21" fill="#2f6db5" stroke-width="2" stroke-linecap="butt" stroke-linejoin="miter" points="276.9852,73.2187 287.2594,83.4928 276.9852,93.7669 266.7111,83.4928" />
-                <polygon data-name="trial-fixation-5" stroke="#1c1e21" fill="#2f6db5" stroke-width="2" stroke-linecap="butt" stroke-linejoin="miter" points="87.8014,94.5598 97.4446,104.203 87.8014,113.8462 78.1583,104.203" />
-                <polygon data-name="trial-fixation-6" stroke="#1c1e21" fill="#2f6db5" stroke-width="2" stroke-linecap="butt" stroke-linejoin="miter" points="235.5378,98.1475 245.7136,108.3233 235.5378,118.4991 225.362,108.3233" />
-                <polygon data-name="trial-fixation-7" stroke="#1c1e21" fill="#2f6db5" stroke-width="2" stroke-linecap="butt" stroke-linejoin="miter" points="126.9177,136.8673 136.1617,146.1113 126.9177,155.3553 117.6737,146.1113" />
-                <polygon data-name="trial-fixation-8" stroke="#1c1e21" fill="#2f6db5" stroke-width="2" stroke-linecap="butt" stroke-linejoin="miter" points="261.1544,87.3253 269.9812,96.152 261.1544,104.9788 252.3277,96.152" />
-                <polygon data-name="trial-fixation-9" stroke="#1c1e21" fill="#2f6db5" stroke-width="2" stroke-linecap="butt" stroke-linejoin="miter" points="275.4672,69.6707 284.9792,79.1827 275.4672,88.6947 265.9552,79.1827" />
+                <polygon stroke="#1c1e21" fill="none" stroke-width="4" stroke-linecap="butt" stroke-linejoin="miter" pointer-events="none" points="87.1238,63.2987 96.2308,72.4058 87.1238,81.5128 78.0167,72.4058" />
+                <polygon data-name="trial-fixation-1" stroke="#ffffff" stroke-opacity="0.9" fill="#2f6db5" stroke-width="2" stroke-linecap="butt" stroke-linejoin="miter" points="87.1238,63.2987 96.2308,72.4058 87.1238,81.5128 78.0167,72.4058" />
+                <polygon stroke="#1c1e21" fill="none" stroke-width="4" stroke-linecap="butt" stroke-linejoin="miter" pointer-events="none" points="225.5893,175.726 235.3619,185.4986 225.5893,195.2712 215.8166,185.4986" />
+                <polygon data-name="trial-fixation-2" stroke="#ffffff" stroke-opacity="0.9" fill="#2f6db5" stroke-width="2" stroke-linecap="butt" stroke-linejoin="miter" points="225.5893,175.726 235.3619,185.4986 225.5893,195.2712 215.8166,185.4986" />
+                <polygon stroke="#1c1e21" fill="none" stroke-width="4" stroke-linecap="butt" stroke-linejoin="miter" pointer-events="none" points="106.6141,82.0021 115.9931,91.3811 106.6141,100.76 97.2352,91.3811" />
+                <polygon data-name="trial-fixation-3" stroke="#ffffff" stroke-opacity="0.9" fill="#2f6db5" stroke-width="2" stroke-linecap="butt" stroke-linejoin="miter" points="106.6141,82.0021 115.9931,91.3811 106.6141,100.76 97.2352,91.3811" />
+                <polygon stroke="#1c1e21" fill="none" stroke-width="4" stroke-linecap="butt" stroke-linejoin="miter" pointer-events="none" points="276.9852,73.2187 287.2594,83.4928 276.9852,93.7669 266.7111,83.4928" />
+                <polygon data-name="trial-fixation-4" stroke="#ffffff" stroke-opacity="0.9" fill="#2f6db5" stroke-width="2" stroke-linecap="butt" stroke-linejoin="miter" points="276.9852,73.2187 287.2594,83.4928 276.9852,93.7669 266.7111,83.4928" />
+                <polygon stroke="#1c1e21" fill="none" stroke-width="4" stroke-linecap="butt" stroke-linejoin="miter" pointer-events="none" points="87.8014,94.5598 97.4446,104.203 87.8014,113.8462 78.1583,104.203" />
+                <polygon data-name="trial-fixation-5" stroke="#ffffff" stroke-opacity="0.9" fill="#2f6db5" stroke-width="2" stroke-linecap="butt" stroke-linejoin="miter" points="87.8014,94.5598 97.4446,104.203 87.8014,113.8462 78.1583,104.203" />
+                <polygon stroke="#1c1e21" fill="none" stroke-width="4" stroke-linecap="butt" stroke-linejoin="miter" pointer-events="none" points="235.5378,98.1475 245.7136,108.3233 235.5378,118.4991 225.362,108.3233" />
+                <polygon data-name="trial-fixation-6" stroke="#ffffff" stroke-opacity="0.9" fill="#2f6db5" stroke-width="2" stroke-linecap="butt" stroke-linejoin="miter" points="235.5378,98.1475 245.7136,108.3233 235.5378,118.4991 225.362,108.3233" />
+                <polygon stroke="#1c1e21" fill="none" stroke-width="4" stroke-linecap="butt" stroke-linejoin="miter" pointer-events="none" points="126.9177,136.8673 136.1617,146.1113 126.9177,155.3553 117.6737,146.1113" />
+                <polygon data-name="trial-fixation-7" stroke="#ffffff" stroke-opacity="0.9" fill="#2f6db5" stroke-width="2" stroke-linecap="butt" stroke-linejoin="miter" points="126.9177,136.8673 136.1617,146.1113 126.9177,155.3553 117.6737,146.1113" />
+                <polygon stroke="#1c1e21" fill="none" stroke-width="4" stroke-linecap="butt" stroke-linejoin="miter" pointer-events="none" points="261.1544,87.3253 269.9812,96.152 261.1544,104.9788 252.3277,96.152" />
+                <polygon data-name="trial-fixation-8" stroke="#ffffff" stroke-opacity="0.9" fill="#2f6db5" stroke-width="2" stroke-linecap="butt" stroke-linejoin="miter" points="261.1544,87.3253 269.9812,96.152 261.1544,104.9788 252.3277,96.152" />
+                <polygon stroke="#1c1e21" fill="none" stroke-width="4" stroke-linecap="butt" stroke-linejoin="miter" pointer-events="none" points="275.4672,69.6707 284.9792,79.1827 275.4672,88.6947 265.9552,79.1827" />
+                <polygon data-name="trial-fixation-9" stroke="#ffffff" stroke-opacity="0.9" fill="#2f6db5" stroke-width="2" stroke-linecap="butt" stroke-linejoin="miter" points="275.4672,69.6707 284.9792,79.1827 275.4672,88.6947 265.9552,79.1827" />
                 <polygon data-name="trial-fixation-10" stroke="#1c1e21" fill="none" stroke-width="2" stroke-linecap="butt" stroke-linejoin="miter" stroke-dasharray="3 2.5" points="13.0116,95.8919 18.639,101.5193 13.0116,107.1467 7.3843,101.5193" />
-                <polygon data-name="trial-fixation-11" stroke="#1c1e21" fill="#2f6db5" stroke-width="2" stroke-linecap="butt" stroke-linejoin="miter" points="113.0657,67.2022 122.1727,76.3093 113.0657,85.4163 103.9587,76.3093" />
-                <polygon data-name="trial-fixation-12" stroke="#1c1e21" fill="#2f6db5" stroke-width="2" stroke-linecap="butt" stroke-linejoin="miter" points="272.9191,74.1048 281.6023,82.788 272.9191,91.4712 264.2359,82.788" />
-                <polygon data-name="trial-fixation-13" stroke="#1c1e21" fill="#2f6db5" stroke-width="2" stroke-linecap="butt" stroke-linejoin="miter" points="282.8134,55.1114 292.1923,64.4904 282.8134,73.8693 273.4344,64.4904" />
+                <polygon stroke="#1c1e21" fill="none" stroke-width="4" stroke-linecap="butt" stroke-linejoin="miter" pointer-events="none" points="113.0657,67.2022 122.1727,76.3093 113.0657,85.4163 103.9587,76.3093" />
+                <polygon data-name="trial-fixation-11" stroke="#ffffff" stroke-opacity="0.9" fill="#2f6db5" stroke-width="2" stroke-linecap="butt" stroke-linejoin="miter" points="113.0657,67.2022 122.1727,76.3093 113.0657,85.4163 103.9587,76.3093" />
+                <polygon stroke="#1c1e21" fill="none" stroke-width="4" stroke-linecap="butt" stroke-linejoin="miter" pointer-events="none" points="272.9191,74.1048 281.6023,82.788 272.9191,91.4712 264.2359,82.788" />
+                <polygon data-name="trial-fixation-12" stroke="#ffffff" stroke-opacity="0.9" fill="#2f6db5" stroke-width="2" stroke-linecap="butt" stroke-linejoin="miter" points="272.9191,74.1048 281.6023,82.788 272.9191,91.4712 264.2359,82.788" />
+                <polygon stroke="#1c1e21" fill="none" stroke-width="4" stroke-linecap="butt" stroke-linejoin="miter" pointer-events="none" points="282.8134,55.1114 292.1923,64.4904 282.8134,73.8693 273.4344,64.4904" />
+                <polygon data-name="trial-fixation-13" stroke="#ffffff" stroke-opacity="0.9" fill="#2f6db5" stroke-width="2" stroke-linecap="butt" stroke-linejoin="miter" points="282.8134,55.1114 292.1923,64.4904 282.8134,73.8693 273.4344,64.4904" />
               </g>
             </g>
           </g>
@@ -83,24 +95,37 @@ Displayed: blank + fixation cross · 1024×768 at (448, 156) in 1920×1080: 12 f
         <g clip-path="url(#clip-1)">
           <g data-name="trial-panel">
             <rect data-name="trial-image-frame" stroke="none" fill="#9a9a96" stroke-width="1" stroke-linecap="butt" stroke-linejoin="miter" x="421.1989" y="26.0988" width="258.3447" height="193.7585" />
-            <polyline stroke="#1c1e21" fill="none" stroke-width="1.5" stroke-linecap="butt" stroke-linejoin="miter" points="550.3713,117.9323 550.3713,128.0239" />
-            <polyline stroke="#1c1e21" fill="none" stroke-width="1.5" stroke-linecap="butt" stroke-linejoin="miter" points="545.3255,122.9781 555.4171,122.9781" />
+            <polyline data-name="trial-cross-casing" stroke="#ffffff" stroke-opacity="0.9" fill="none" stroke-width="4" stroke-linecap="square" stroke-linejoin="miter" points="550.3713,117.9323 550.3713,128.0239" />
+            <polyline data-name="trial-cross-casing" stroke="#ffffff" stroke-opacity="0.9" fill="none" stroke-width="4" stroke-linecap="square" stroke-linejoin="miter" points="545.3255,122.9781 555.4171,122.9781" />
+            <polyline data-name="trial-cross" stroke="#1c1e21" fill="none" stroke-width="2" stroke-linecap="butt" stroke-linejoin="miter" points="550.3713,117.9323 550.3713,128.0239" />
+            <polyline data-name="trial-cross" stroke="#1c1e21" fill="none" stroke-width="2" stroke-linecap="butt" stroke-linejoin="miter" points="545.3255,122.9781 555.4171,122.9781" />
             <polyline data-name="trial-order" stroke="#1c1e21" fill="none" stroke-width="1.5" stroke-linecap="butt" stroke-linejoin="miter" stroke-dasharray="6 5" points="544.3163,124.9712 610.3405,98.7078 628.9848,62.7818 631.0788,78.7517 640.5396,78.8274 457.6043,101.4073 470.4459,79.2815 639.9089,82.2586 367.3855,50.3187 628.3036,67.4996 498.9294,91.4167 611.047,107.7146" />
             <g>
               <title>Fixations of P17 · ret_07</title>
               <g data-name="trial-fixations">
-                <circle data-name="trial-fixation-1" stroke="#1c1e21" fill="#3a2e6e" stroke-width="2" stroke-linecap="butt" stroke-linejoin="miter" cx="544.3163" cy="124.9712" r="6.425" />
-                <circle data-name="trial-fixation-2" stroke="#1c1e21" fill="#3a2e6e" stroke-width="2" stroke-linecap="butt" stroke-linejoin="miter" cx="610.3405" cy="98.7078" r="6.8118" />
-                <circle data-name="trial-fixation-3" stroke="#1c1e21" fill="#3a2e6e" stroke-width="2" stroke-linecap="butt" stroke-linejoin="miter" cx="628.9848" cy="62.7818" r="8.6902" />
-                <circle data-name="trial-fixation-4" stroke="#1c1e21" fill="#3a2e6e" stroke-width="2" stroke-linecap="butt" stroke-linejoin="miter" cx="631.0788" cy="78.7517" r="6.2738" />
-                <circle data-name="trial-fixation-5" stroke="#1c1e21" fill="#3a2e6e" stroke-width="2" stroke-linecap="butt" stroke-linejoin="miter" cx="640.5396" cy="78.8274" r="6.2482" />
-                <circle data-name="trial-fixation-6" stroke="#1c1e21" fill="#3a2e6e" stroke-width="2" stroke-linecap="butt" stroke-linejoin="miter" cx="457.6043" cy="101.4073" r="8.2365" />
-                <circle data-name="trial-fixation-7" stroke="#1c1e21" fill="#3a2e6e" stroke-width="2" stroke-linecap="butt" stroke-linejoin="miter" cx="470.4459" cy="79.2815" r="7.526" />
-                <circle data-name="trial-fixation-8" stroke="#1c1e21" fill="#3a2e6e" stroke-width="2" stroke-linecap="butt" stroke-linejoin="miter" cx="639.9089" cy="82.2586" r="7.02" />
+                <circle stroke="#1c1e21" fill="none" stroke-width="4" stroke-linecap="butt" stroke-linejoin="miter" pointer-events="none" cx="544.3163" cy="124.9712" r="6.425" />
+                <circle data-name="trial-fixation-1" stroke="#ffffff" stroke-opacity="0.9" fill="#3a2e6e" stroke-width="2" stroke-linecap="butt" stroke-linejoin="miter" cx="544.3163" cy="124.9712" r="6.425" />
+                <circle stroke="#1c1e21" fill="none" stroke-width="4" stroke-linecap="butt" stroke-linejoin="miter" pointer-events="none" cx="610.3405" cy="98.7078" r="6.8118" />
+                <circle data-name="trial-fixation-2" stroke="#ffffff" stroke-opacity="0.9" fill="#3a2e6e" stroke-width="2" stroke-linecap="butt" stroke-linejoin="miter" cx="610.3405" cy="98.7078" r="6.8118" />
+                <circle stroke="#1c1e21" fill="none" stroke-width="4" stroke-linecap="butt" stroke-linejoin="miter" pointer-events="none" cx="628.9848" cy="62.7818" r="8.6902" />
+                <circle data-name="trial-fixation-3" stroke="#ffffff" stroke-opacity="0.9" fill="#3a2e6e" stroke-width="2" stroke-linecap="butt" stroke-linejoin="miter" cx="628.9848" cy="62.7818" r="8.6902" />
+                <circle stroke="#1c1e21" fill="none" stroke-width="4" stroke-linecap="butt" stroke-linejoin="miter" pointer-events="none" cx="631.0788" cy="78.7517" r="6.2738" />
+                <circle data-name="trial-fixation-4" stroke="#ffffff" stroke-opacity="0.9" fill="#3a2e6e" stroke-width="2" stroke-linecap="butt" stroke-linejoin="miter" cx="631.0788" cy="78.7517" r="6.2738" />
+                <circle stroke="#1c1e21" fill="none" stroke-width="4" stroke-linecap="butt" stroke-linejoin="miter" pointer-events="none" cx="640.5396" cy="78.8274" r="6.2482" />
+                <circle data-name="trial-fixation-5" stroke="#ffffff" stroke-opacity="0.9" fill="#3a2e6e" stroke-width="2" stroke-linecap="butt" stroke-linejoin="miter" cx="640.5396" cy="78.8274" r="6.2482" />
+                <circle stroke="#1c1e21" fill="none" stroke-width="4" stroke-linecap="butt" stroke-linejoin="miter" pointer-events="none" cx="457.6043" cy="101.4073" r="8.2365" />
+                <circle data-name="trial-fixation-6" stroke="#ffffff" stroke-opacity="0.9" fill="#3a2e6e" stroke-width="2" stroke-linecap="butt" stroke-linejoin="miter" cx="457.6043" cy="101.4073" r="8.2365" />
+                <circle stroke="#1c1e21" fill="none" stroke-width="4" stroke-linecap="butt" stroke-linejoin="miter" pointer-events="none" cx="470.4459" cy="79.2815" r="7.526" />
+                <circle data-name="trial-fixation-7" stroke="#ffffff" stroke-opacity="0.9" fill="#3a2e6e" stroke-width="2" stroke-linecap="butt" stroke-linejoin="miter" cx="470.4459" cy="79.2815" r="7.526" />
+                <circle stroke="#1c1e21" fill="none" stroke-width="4" stroke-linecap="butt" stroke-linejoin="miter" pointer-events="none" cx="639.9089" cy="82.2586" r="7.02" />
+                <circle data-name="trial-fixation-8" stroke="#ffffff" stroke-opacity="0.9" fill="#3a2e6e" stroke-width="2" stroke-linecap="butt" stroke-linejoin="miter" cx="639.9089" cy="82.2586" r="7.02" />
                 <circle data-name="trial-fixation-9" stroke="#1c1e21" fill="none" stroke-width="2" stroke-linecap="butt" stroke-linejoin="miter" stroke-dasharray="3 2.5" cx="367.3855" cy="50.3187" r="4.6303" />
-                <circle data-name="trial-fixation-10" stroke="#1c1e21" fill="#3a2e6e" stroke-width="2" stroke-linecap="butt" stroke-linejoin="miter" cx="628.3036" cy="67.4996" r="6.4498" />
-                <circle data-name="trial-fixation-11" stroke="#1c1e21" fill="#3a2e6e" stroke-width="2" stroke-linecap="butt" stroke-linejoin="miter" cx="498.9294" cy="91.4167" r="4.9315" />
-                <circle data-name="trial-fixation-12" stroke="#1c1e21" fill="#3a2e6e" stroke-width="2" stroke-linecap="butt" stroke-linejoin="miter" cx="611.047" cy="107.7146" r="5.7411" />
+                <circle stroke="#1c1e21" fill="none" stroke-width="4" stroke-linecap="butt" stroke-linejoin="miter" pointer-events="none" cx="628.3036" cy="67.4996" r="6.4498" />
+                <circle data-name="trial-fixation-10" stroke="#ffffff" stroke-opacity="0.9" fill="#3a2e6e" stroke-width="2" stroke-linecap="butt" stroke-linejoin="miter" cx="628.3036" cy="67.4996" r="6.4498" />
+                <circle stroke="#1c1e21" fill="none" stroke-width="4" stroke-linecap="butt" stroke-linejoin="miter" pointer-events="none" cx="498.9294" cy="91.4167" r="4.9315" />
+                <circle data-name="trial-fixation-11" stroke="#ffffff" stroke-opacity="0.9" fill="#3a2e6e" stroke-width="2" stroke-linecap="butt" stroke-linejoin="miter" cx="498.9294" cy="91.4167" r="4.9315" />
+                <circle stroke="#1c1e21" fill="none" stroke-width="4" stroke-linecap="butt" stroke-linejoin="miter" pointer-events="none" cx="611.047" cy="107.7146" r="5.7411" />
+                <circle data-name="trial-fixation-12" stroke="#ffffff" stroke-opacity="0.9" fill="#3a2e6e" stroke-width="2" stroke-linecap="butt" stroke-linejoin="miter" cx="611.047" cy="107.7146" r="5.7411" />
               </g>
             </g>
           </g>

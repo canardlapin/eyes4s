@@ -325,6 +325,32 @@ final class FakeStudyBackend[F[_]] private[fixture] (
       _.flatMap(d => known(d, trial).flatMap(FakeTrialViews.preview(moment, r, _, trial)))
     )
 
+  def recipeForm(request: RecipeEditRequest): F[Either[BackendError, RecipeFormResult]] =
+    dataset(request.dataset).map(_.flatMap { _ =>
+      for
+        document <- StoryMoments.t2.left.map(reason =>
+          BackendError.RegistryRefused(DiagnosticLocus.Dataset(request.dataset), reason)
+        )
+        spec <- document.datasets
+          .find(_.id == request.dataset)
+          .toRight(BackendError.UnknownDataset(request.dataset, document.datasets.map(_.id)))
+        screen <- eyes4s.kernel.Frame
+          .screen("screen", spec.geometry.screen.width, spec.geometry.screen.height)
+          .left
+          .map(e =>
+            BackendError.RegistryRefused(DiagnosticLocus.Dataset(request.dataset), e.message)
+          )
+        result <- eyes4s.studio.core.real.RealRecipeForm.serve(
+          request,
+          screen,
+          eyes4s.plan.StudyInput[eyes4s.plan.TrialKey, eyes4s.kernel.Unit2D.Px](
+            eyes4s.design.Trials(Vector.empty)
+          ),
+          None
+        )
+      yield result
+    })
+
   def placement(spec: DatasetRevisionSpec): F[Either[BackendError, PlacementPreview]] =
     Concurrent[F].pure(FakePlacement.of(spec))
 

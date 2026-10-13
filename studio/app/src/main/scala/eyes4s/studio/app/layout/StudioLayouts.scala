@@ -188,7 +188,9 @@ object StudioLayouts:
   val diagnostics: PaneId = new PaneId("analysis.diagnostics")
 
   /** The preset and first-analysis controls. */
-  val recipe: PaneId = new PaneId("analysis.recipe")
+  val recipe: PaneId            = new PaneId("analysis.recipe")
+  val recipeDiff: PaneId        = new PaneId("analysis.diff")
+  val recipeDescription: PaneId = new PaneId("analysis.description")
 
   /** The resolved-design table (S7.5). */
   val resolvedDesign: PaneId = new PaneId("analysis.resolved-design")
@@ -208,8 +210,8 @@ object StudioLayouts:
         Axis.Vertical,
         group(
           dynamic(recipe.value, "Recipe", Form),
-          dynamic("analysis.diff", "Diff", Text),
-          pane("analysis.description", "Description", Text)
+          dynamic(recipeDiff.value, "Diff", Text),
+          pane(recipeDescription.value, "Description", Form)
         ) -> 0.6,
         group(
           // A region (the board's section) holding the table's own focus stop.

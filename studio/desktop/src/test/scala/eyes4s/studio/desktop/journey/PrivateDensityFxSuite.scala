@@ -295,24 +295,67 @@ class PrivateDensityFxSuite extends ShellFxSuite:
                   Intent.FocusPane(get(eyes4s.studio.app.layout.PaneId.of("analysis.recipe")))
                 )
                 until(fx, "recipe editor ready") {
-                  w.recipe.editor.node.isVisible && !w.recipe.editor.node.isDisabled
+                  w.recipe.editor.ready && w.recipe.editor.node.isVisible && !w.recipe.editor.node.isDisabled
                 }
                 val form = w.recipe.editor
                 runOnFx {
-                  Map(
-                    "focal"           -> phase,
-                    "reference"       -> "Encoding",
-                    "columns"         -> get(request.get[Int]("nx")).toString,
-                    "rows"            -> get(request.get[Int]("ny")).toString,
-                    "scales"          -> (number("sigma_px") / ppd.value).toString,
-                    "pixelsPerDegree" -> ppd.value.toString,
-                    "xMin"            -> number("x_min").toString,
-                    "yMin"            -> number("y_min").toString,
-                    "xMax"            -> number("x_max").toString,
-                    "yMax"            -> number("y_max").toString
-                  ).foreach((name, text) => form.fields(name).setText(text))
-                  form.weighting.setValue(WeightChoice.Duration)
-                  form.unmatched.setValue(UnmatchedChoice.Refuse)
+                  val id = (name: String) => get(eyes4s.plan.FieldId.of(name))
+                  import eyes4s.plan.RawValue
+                  def group(parts: (String, RawValue)*) =
+                    RawValue.Group(parts.toVector.map((name, value) => id(name) -> value))
+                  val raw = form.state.values.get
+                    .updated(
+                      id("phases"),
+                      group(
+                        "focal"     -> RawValue.Choice(phase),
+                        "reference" -> RawValue.Choice("Encoding")
+                      )
+                    )
+                    .updated(
+                      id("grid"),
+                      group(
+                        "columns" -> RawValue.Number(get(request.get[Int]("nx")).toString),
+                        "rows"    -> RawValue.Number(get(request.get[Int]("ny")).toString)
+                      )
+                    )
+                    .updated(
+                      id("window"),
+                      group(
+                        "xMin" -> RawValue.Number(number("x_min").toString),
+                        "yMin" -> RawValue.Number(number("y_min").toString),
+                        "xMax" -> RawValue.Number(number("x_max").toString),
+                        "yMax" -> RawValue.Number(number("y_max").toString)
+                      )
+                    )
+                    .updated(id("angularScale"), RawValue.Number(ppd.value.toString))
+                    .updated(
+                      id("scales"),
+                      RawValue.Items(
+                        Vector(
+                          RawValue.Variant(
+                            "degrees.gaussian",
+                            Vector(
+                              id("sigma") -> RawValue
+                                .Number((number("sigma_px") / ppd.value).toString),
+                              id("edges") -> RawValue.Choice("Truncate")
+                            )
+                          )
+                        )
+                      )
+                    )
+                  val pairing = raw.get(id("pairing")) match
+                    case RawValue.Group(parts) =>
+                      RawValue.Group(parts.map {
+                        case (field, _) if field.value == "unmatched" =>
+                          field -> RawValue.Choice("refuse")
+                        case other => other
+                      })
+                    case other => other
+                  form.editValues(
+                    raw
+                      .updated(id("weight"), RawValue.Choice("Duration"))
+                      .updated(id("pairing"), pairing)
+                  )
                 }
                 until(fx, "recipe settings can be applied") { !form.apply.isDisabled }
                 runOnFx(w.recipe.node.setVvalue(1.0))

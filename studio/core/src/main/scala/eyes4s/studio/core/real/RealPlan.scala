@@ -71,7 +71,8 @@ object RealPlan:
       revision: AnalysisRevision,
       recipe: Recipe,
       screen: Frame[Unit2D.Px],
-      input: StudyInput[CoreKey, Unit2D.Px]
+      input: StudyInput[CoreKey, Unit2D.Px],
+      inventory: Option[eyes4s.plan.InventoryLedger] = None
   ): Either[BackendError, (Plan, ComparisonMethod)] =
     // Until the S3.7 protocol minor's typed plan refusal, a refusal is
     // `Unavailable` naming the revision, the recipe field and why: eyes4s's
@@ -140,6 +141,11 @@ object RealPlan:
           s"${recipe.initialFixations.render} needs the cross position, which the recipe does not state"
         )
       )
+      expected <- recipe.expectedUnmatched.traverse(rule =>
+        inventory
+          .toRight(refused("expectedUnmatched", "selection needs the declared trial inventory"))
+          .flatMap(i => rule.bind(i).leftMap(e => refused("expectedUnmatched", reason(e))))
+      )
       studyRec = StudyRecipe(
         StudyFormContext(screen, window.as(WindowFrame), GridName),
         phases,
@@ -151,7 +157,8 @@ object RealPlan:
         angular,
         scales,
         pairing,
-        initial
+        initial,
+        expected
       )
       plan <- studyRec
         .plan(
@@ -209,4 +216,8 @@ object RealPlan:
     recipe.initialFixations match
       case InitialFixationChoice.KeepAll   => Some(InitialFixationPolicy.keepAll)
       case InitialFixationChoice.DropFirst => Some(InitialFixationPolicy.dropFirst)
-      case InitialFixationChoice.DropLeadingNearCross(_) => None
+      case InitialFixationChoice.DropLeadingNearCross(_)                 => None
+      case InitialFixationChoice.DropLeadingAtScreenCross(cross, radius) =>
+        InitialFixationPolicy
+          .dropLeadingInClosedDisc(Pt[Unit2D.Px](cross.x, cross.y), radius.degrees)
+          .toOption

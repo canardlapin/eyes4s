@@ -379,6 +379,14 @@ object MethodsText:
         Fact(S.InitialFixations, "Drop first"),
         ": the first fixation of every trial was left out."
       )
+    case InitialFixationChoice.DropLeadingAtScreenCross(cross, r) =>
+      sentence(
+        "Leading fixations were excluded within ",
+        Fact(S.InitialFixations, degrees(r.degrees)),
+        " of the declared fixation cross at ",
+        Fact(S.InitialFixations, s"(${cross.x}, ${cross.y}) screen px"),
+        "."
+      )
     case InitialFixationChoice.DropLeadingNearCross(r) =>
       sentence(
         "The initial-fixation policy left out fixations within ",

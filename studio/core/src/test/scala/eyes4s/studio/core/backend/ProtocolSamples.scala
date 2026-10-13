@@ -737,6 +737,20 @@ object ProtocolSamples:
       )
     )
 
+  private lazy val recipeForm: RecipeFormResult = RecipeFormResult(
+    right(
+      eyes4s.codec.FormCodecs.view
+        .encode(right(eyes4s.plan.FormView.of(eyes4s.plan.DefinitionId.study, Vector.empty)))
+    ),
+    right(eyes4s.codec.FormCodecs.values.encode(eyes4s.plan.FormValues.empty)),
+    None,
+    Vector.empty,
+    None,
+    Vector.empty,
+    Vector.empty,
+    Vector.empty
+  )
+
   val requests: Vector[BackendRequest] = Vector(
     BackendRequest.Admission(DatasetRevision(3)),
     BackendRequest.Ledger(DatasetRevision(3), page),
@@ -764,7 +778,14 @@ object ProtocolSamples:
     BackendRequest.Verify(DatasetRevision(3), content("ab")),
     BackendRequest.PlacementOf(placementSpec),
     BackendRequest.MapGridOf(run, 2, query),
-    BackendRequest.ReportOf(run, reportingSpec, 2)
+    BackendRequest.ReportOf(run, reportingSpec, 2),
+    BackendRequest.RecipeFormOf(
+      RecipeEditRequest(
+        AnalysisRevision(4),
+        DatasetRevision(3),
+        eyes4s.studio.core.document.DocumentSamples.t2.analyses(1).recipe
+      )
+    )
   )
 
   val responses: Vector[BackendResponse] = Vector(
@@ -870,7 +891,8 @@ object ProtocolSamples:
     BackendResponse.PairRowsOf(pairRowPage),
     BackendResponse.PlacementOf(placementPreview),
     BackendResponse.MapGridOf(densityGrid),
-    BackendResponse.ReportOf(reportView)
+    BackendResponse.ReportOf(reportView),
+    BackendResponse.RecipeFormOf(recipeForm)
   )
 
   /** t1's r3 declared at 35.5 px/°: an integral double prints as `35.0` on

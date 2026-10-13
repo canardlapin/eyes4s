@@ -175,7 +175,7 @@ Round-2 scores: interaction 8 APPROVE, buildability 8 APPROVE, visual 8 APPROVE,
   Mark halos: 5.3 viewBox units (2px on screen). Default map opacity 0.6. Wordmark 13/600.
 - Minimum queries per group (Reporting option, default OFF; turning it on changes n and means) and per-group n range [2, 17] in
   captions. Methods: "for each of the 457 eligible queries".
-- Descriptor fields not yet in eyes4s carry a small "pending UI-A"/"pending UI-F" tag.
+- Descriptor fields not yet in eyes4s carry a small "pending UI-A"/"pending UI-F" tag. The Analysis window, grid and initial-fixation fields are now served by eyes4s; their board tags read "served UI-A"/"served UI-F" (Analysis editing tranche, 2026-10-13).
 - Upstream tickets: UI-A window/px°/corrections · UI-B matched cardinality + occurrence layout ·
   UI-C ReportSpec · UI-D progress/stale/preview counts · UI-E density grids · UI-F initial
   fixation + plan.diff · UI-G provenance/paging/ResultRef · UI-H FixationCsv extras + inventory.

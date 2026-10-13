@@ -376,6 +376,9 @@ object RemoteStudyBackend:
     ): F[Either[BackendError, AdmissionSummary]] =
       ask(Q.Verify(dataset, content)) { case A.Admission(s) => s }
 
+    def recipeForm(request: RecipeEditRequest): F[Either[BackendError, RecipeFormResult]] =
+      ask(Q.RecipeFormOf(request)) { case A.RecipeFormOf(result) => result }
+
     def placement(spec: DatasetRevisionSpec): F[Either[BackendError, PlacementPreview]] =
       ask(Q.PlacementOf(spec)) { case A.PlacementOf(p) => p }
 

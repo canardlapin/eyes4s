@@ -340,6 +340,9 @@ enum BackendError derives CanEqual, Codec.AsObject:
   */
 trait StudyBackend[F[_]]:
 
+  /** Serve library descriptors or validate edits against this exact recipe. */
+  def recipeForm(request: RecipeEditRequest): F[Either[BackendError, RecipeFormResult]]
+
   def admission(dataset: DatasetRevision): F[Either[BackendError, AdmissionSummary]]
 
   /** `dataset`'s admission summary, verified for `content` (protocol 1.11,
@@ -527,6 +530,9 @@ enum BackendRequest derives CanEqual, Codec.AsObject:
   /** Protocol 1.11. */
   case ReportOf(run: RunId, reporting: ReportingSpec, scale: Int)
 
+  /** Protocol 1.20. */
+  case RecipeFormOf(request: RecipeEditRequest)
+
 /** A response of the [[StudyBackend]] protocol. */
 enum BackendResponse derives CanEqual, Codec.AsObject:
   case Refused(error: BackendError)
@@ -571,6 +577,9 @@ enum BackendResponse derives CanEqual, Codec.AsObject:
 
   /** Protocol 1.11. */
   case ReportOf(report: ReportView)
+
+  /** Protocol 1.20. */
+  case RecipeFormOf(result: RecipeFormResult)
 
 /** A frame from backend to client: the one response to a request, or one
   * event of a subscription.
@@ -622,9 +631,10 @@ object ProtocolVersion:
     * 1.18 serves validated result scales and authoritative admission
     * totals/equations. 1.19 adds declared trial-relative extents with explicit
     * missing provenance and refuses every earlier peer before body decoding.
+    * 1.20 serves recipe descriptors, field validation and scale advice.
     * Deploy client and backend together.
     */
-  val Current: ProtocolVersion = ProtocolVersion(1, 19)
+  val Current: ProtocolVersion = ProtocolVersion(1, 20)
 
 /** A client's correlation id; every frame answering a request carries it. */
 final case class RequestId(value: Long) derives CanEqual
@@ -700,10 +710,11 @@ object StudyBackend:
       case Q.TrialPreviewOf(r, t)     => answer(backend.trialPreview(r, t))(A.TrialPreviewOf(_))
       case Q.SourceRecordsOf(r, f, n) =>
         answer(backend.sourceRecords(r, f, n))(A.SourceRecordsOf(_))
-      case Q.PairRowsOf(r, s, p)  => answer(backend.pairRows(r, s, p))(A.PairRowsOf(_))
-      case Q.PlacementOf(spec)    => answer(backend.placement(spec))(A.PlacementOf(_))
-      case Q.MapGridOf(r, s, t)   => answer(backend.mapGrid(r, s, t))(A.MapGridOf(_))
-      case Q.ReportOf(r, spec, s) => answer(backend.report(r, spec, s))(A.ReportOf(_))
+      case Q.PairRowsOf(r, s, p)   => answer(backend.pairRows(r, s, p))(A.PairRowsOf(_))
+      case Q.RecipeFormOf(request) => answer(backend.recipeForm(request))(A.RecipeFormOf(_))
+      case Q.PlacementOf(spec)     => answer(backend.placement(spec))(A.PlacementOf(_))
+      case Q.MapGridOf(r, s, t)    => answer(backend.mapGrid(r, s, t))(A.MapGridOf(_))
+      case Q.ReportOf(r, spec, s)  => answer(backend.report(r, spec, s))(A.ReportOf(_))
       // In process a subscription is ended by dropping its stream; only a
       // connection (SidecarServer) holds subscriptions to end.
       case Q.Unsubscribe(id) => Stream.emit(ServerFrame.Response(A.Unsubscribed(id, false)))

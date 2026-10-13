@@ -346,6 +346,10 @@ object FakeTrialViews:
           Right(eyes4s.plan.InitialFixationPolicy.dropFirst[Unit2D.Px])
         case InitialFixationChoice.DropLeadingNearCross(_) =>
           Left(study("initial fixations")("the recipe declares no fixation-cross position"))
+        case InitialFixationChoice.DropLeadingAtScreenCross(cross, radius) =>
+          eyes4s.plan.InitialFixationPolicy
+            .dropLeadingInClosedDisc(Pt[Unit2D.Px](cross.x, cross.y), radius.degrees)
+            .leftMap(e => study("initial fixations")(e.message))
       key   = eyes4s.plan.StudyKey(trial.participant, trial.trial, trial.phase.label)
       input = eyes4s.plan.StudyInput(
         eyes4s.design.Trials(Vector(eyes4s.design.Trial(key, (), path)))

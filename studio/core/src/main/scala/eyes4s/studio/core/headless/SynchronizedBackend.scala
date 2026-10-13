@@ -45,7 +45,8 @@ final class SynchronizedBackend[F[_]](
       case Right(_)    => request
     }
 
-  def admission(dataset: DatasetRevision) = before(underlying.admission(dataset))
+  def recipeForm(request: RecipeEditRequest) = before(underlying.recipeForm(request))
+  def admission(dataset: DatasetRevision)    = before(underlying.admission(dataset))
   def verify(dataset: DatasetRevision, content: CanonicalDigest[DatasetRevisionSpec]) = before(
     underlying.verify(dataset, content)
   )

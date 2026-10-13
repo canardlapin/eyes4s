@@ -528,6 +528,13 @@ object WhyReference:
             case InitialFixationChoice.DropFirst               => WhyText(DropFirst)
             case InitialFixationChoice.DropLeadingNearCross(c) =>
               WhyText(DropNearCross, whole(c.degrees))
+            case InitialFixationChoice.DropLeadingAtScreenCross(cross, c) =>
+              eyes4s.studio.app.text.RecipeText(
+                eyes4s.studio.app.text.RecipeTextId.CrossDeclared,
+                whole(c.degrees),
+                whole(cross.x),
+                whole(cross.y)
+              )
           ,
           None
         ),

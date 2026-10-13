@@ -34,7 +34,7 @@ class RealPreviewCursorSuite extends CatsEffectSuite:
   private lazy val recipe                       =
     get(document.analysis(StoryMoments.rev4).toRight("no analysis")).recipe
       .copy(layout = DefinitionRef.fromCore(eyes4s.plan.TrialKeyDefinitions.trialLayout))
-  private lazy val admitted =
+  private def admitPair(withReference: Boolean): AdmittedDataset =
     val original = get(document.dataset(StoryMoments.r3).toRight("no dataset"))
     val displays = get(GoldenAssets.rows)
     val focal    = displays
@@ -53,6 +53,7 @@ class RealPreviewCursorSuite extends CatsEffectSuite:
     val fixations =
       "participant,phase,trial,occurrence,ordinal,onset_ms,duration_ms,x,y,sample_count\n" +
         selected
+          .filter(row => withReference || row == focal)
           .map(row =>
             s"${row.trial.participant},${row.trial.phase.label},${row.trial.trial},${row.trial.occurrence},1,0,100,600,300,1"
           )
@@ -76,6 +77,7 @@ class RealPreviewCursorSuite extends CatsEffectSuite:
     )
     val spec = original.copy(sources = sources)
     get(RealAdmission.admit(spec, fixations, inventory, get(GoldenAssets.registry(spec))))
+  private lazy val admitted   = admitPair(true)
   private lazy val configured =
     get(RealPrepared.configure(StoryMoments.rev4, StoryMoments.r3, recipe, admitted))
   private val onePage = get(PreviewBudget.of(1))
@@ -313,4 +315,28 @@ class RealPreviewCursorSuite extends CatsEffectSuite:
         .collectFirst { case PreviewEvent.Ready(value) => value }
         .getOrElse(fail("no fresh Ready"))
       assertEquals(receipt.recipe, Some(changed.recipe))
+  }
+
+  Vector(true, false).foreach { withReference =>
+    test(
+      s"declared unmatched query keeps by-design classification with reference admitted=$withReference"
+    ) {
+      val data    = admitPair(withReference)
+      val rule    = get(eyes4s.plan.ExpectedUnmatchedRule.of("response", Vector("Remembered")))
+      val changed = recipe.copy(expectedUnmatched = Some(rule))
+      val configured =
+        get(RealPrepared.configure(StoryMoments.rev4, StoryMoments.r3, changed, data))
+      val counts = get(configured.work.counts)
+      assertEquals(counts.matched.eligiblePairs, 0L)
+      assertEquals(counts.controls.eligiblePairs, 0L)
+      assertEquals(counts.keysPerDesign, 1L)
+      val inventory = data.evidence.inventory.get
+      val reasons   = get(configured.work.unmatchedReasons(inventory))
+      assertEquals(reasons.byDesign, 1)
+      assertEquals(reasons.notAdmitted, 0)
+      val original =
+        get(RealPrepared.configure(StoryMoments.rev4, StoryMoments.r3, recipe, data))
+      if withReference then assertEquals(get(original.work.counts).matched.eligiblePairs, 1L)
+      else assertEquals(get(original.work.unmatchedReasons(inventory)).notAdmitted, 1)
+    }
   }

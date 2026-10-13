@@ -275,7 +275,8 @@ object RealPreview:
           configured.plan.pairing,
           configured.plan.referencePhase,
           keys,
-          inventory
+          inventory,
+          configured.plan.expectedUnmatched
         )
       }
 
@@ -424,7 +425,8 @@ object RealPreview:
         prepared.plan.pairing,
         prepared.plan.referencePhase,
         prepared.counts.cardinality.unmatched,
-        inventory
+        inventory,
+        prepared.plan.expectedUnmatched
       )
       rows <- requested.traverse { entry =>
         val membership: Either[BackendError, (Option[TrialKey], Option[Int], Eligibility)] =

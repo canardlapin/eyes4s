@@ -35,6 +35,8 @@ object DocumentPins:
       """{"AngularScale":{"before":35.0,"after":null}}""",
     "change.Controls" ->
       """{"Controls":{"before":{"SameSelection":{}},"after":{"AllOccurrences":{}}}}""",
+    "change.ExpectedUnmatched" ->
+      """{"ExpectedUnmatched":{"before":null,"after":{"column":"old_new","values":["new"]}}}""",
     "change.Failures" ->
       """{"Failures":{"before":{"RequireAll":{}},"after":{"SuccessfulOnly":{"minimum":2}}}}""",
     "change.Grid" ->
@@ -93,6 +95,8 @@ object DocumentPins:
       """{"columns":64,"rows":48}""",
     "initial.DropFirst" ->
       """{"DropFirst":{}}""",
+    "initial.DropLeadingAtScreenCross" ->
+      """{"DropLeadingAtScreenCross":{"cross":{"x":960.0,"y":540.0},"radius":1.5}}""",
     "initial.DropLeadingNearCross" ->
       """{"DropLeadingNearCross":{"radius":1.5}}""",
     "initial.KeepAll" ->

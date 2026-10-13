@@ -146,6 +146,7 @@ final class StudioWindow private (
     else if pane == StudioLayouts.resolvedDesign then resolvedDesign.focusStops
     else if pane == StudioLayouts.analyses then analyses.focusStops
     else if pane == StudioLayouts.recipe then recipe.focusStops
+    else if pane == StudioLayouts.recipeDescription then preflight.descriptionStops
     else if pane == StudioLayouts.sourceRecords then sourceRecords.focusStops
     else if pane == StudioLayouts.exploreInspector then inspector.focusStops
     else if pane == StudioLayouts.preflight then preflight.focusStops
@@ -624,8 +625,13 @@ object StudioWindow:
     val analysesListener: AppModel => Unit = analyses.sync
     r.listen(analysesListener)
     analyses.sync(r.model)
-    val recipe = eyes4s.studio.desktop.analysis.RecipePaneHost(() => r.model, dispatch)
+    val recipe = eyes4s.studio.desktop.analysis.RecipePaneHost(
+      () => r.model,
+      dispatch,
+      eyes4s.studio.desktop.analysis.RecipeInputs.of(session)
+    )
     host.host(StudioLayouts.recipe, recipe.node)
+    host.host(StudioLayouts.recipeDiff, recipe.diffNode)
     val recipeListener: AppModel => Unit = recipe.sync
     r.listen(recipeListener)
     recipe.sync(r.model)
@@ -657,10 +663,12 @@ object StudioWindow:
     // The preflight pane and run card (Analysis): the design's findings.
     val preflight = PreflightHost(() => r.model, dispatch)
     host.host(StudioLayouts.preflight, preflight.node)
+    host.host(StudioLayouts.recipeDescription, preflight.descriptionNode)
     design.follow(preflight.follow)
     val preflightListener: AppModel => Unit = preflight.sync
     r.listen(preflightListener)
     preflight.follow(design.state)
+    recipe.editor.followEditing(preflight.recipeEditing)
     // The Figures perspective: navigator, page, Table tab and binding.
     val figures = FiguresHost(
       () => r.model,

@@ -271,3 +271,35 @@
 .segmented-bar > .segment:focus-visible {
   -fx-border-color: -es-accent;
 }
+
+/* Shared editable fields and ordinary actions. Opt in so existing specialized
+ * controls keep their own layout. A mouse click never draws a focus ring. */
+.studio-field,
+.studio-field:focused,
+.studio-button,
+.studio-button:focused {
+  -fx-background-color: -es-hairline, -es-surface;
+  -fx-background-insets: 0, 1;
+  -fx-background-radius: 4, 3;
+  -fx-border-color: transparent;
+  -fx-border-width: 2;
+  -fx-border-radius: 4;
+  -fx-text-fill: -es-ink;
+}
+.studio-field {
+  -fx-prompt-text-fill: -es-ink-3;
+}
+.studio-field .content {
+  -fx-background-color: -es-surface;
+}
+.studio-button:hover {
+  -fx-background-color: -es-hairline, -es-surface-3;
+}
+.studio-button:armed {
+  -fx-background-color: -es-hairline;
+  -fx-background-insets: 0;
+}
+.studio-field:focus-visible,
+.studio-button:focus-visible {
+  -fx-border-color: -es-accent;
+}

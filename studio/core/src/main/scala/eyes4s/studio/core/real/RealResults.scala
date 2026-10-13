@@ -73,7 +73,8 @@ final class RealResults private (
         prepared.plan.pairing,
         prepared.plan.referencePhase,
         prepared.counts.cardinality.unmatched,
-        inventory
+        inventory,
+        prepared.plan.expectedUnmatched
       )
       rows <- prepared.admitted.ledger
         .filter(_.trial.phase == prepared.recipe.phases.focal)
@@ -334,7 +335,8 @@ final class RealResults private (
                   prepared.plan.pairing,
                   prepared.plan.referencePhase,
                   prepared.counts.cardinality.unmatched,
-                  inventory
+                  inventory,
+                  prepared.plan.expectedUnmatched
                 )
                 .reason(key)
                 .toRight(queryRefusal(trial, "no retained unmatched reason"))

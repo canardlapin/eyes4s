@@ -40,7 +40,12 @@ import javafx.scene.layout.{ColumnConstraints, GridPane, HBox, Priority, Region,
   * the JavaFX thread.
   */
 final class PreflightHost(model: () => AppModel, app: Intent => Unit):
-  private var design = ResolvedDesign.empty
+  private var design                              = ResolvedDesign.empty
+  private var editing: Option[String]             = None
+  def recipeEditing(reason: Option[String]): Unit =
+    if editing != reason then
+      editing = reason
+      render()
   // The view the remedies select from (a constant; PreflightSuite checks it).
   private var selection =
     Preflight.viewId.toOption.map(ViewSelection.initial(_, model().selection))
@@ -69,9 +74,13 @@ final class PreflightHost(model: () => AppModel, app: Intent => Unit):
   run.getStyleClass.add("preflight-run")
   run.setMaxWidth(Double.MaxValue)
   val runName: TextField = TextField()
-  runName.setAccessibleText("Analysis name")
+  runName.setAccessibleText(
+    eyes4s.studio.app.text.RecipeText(eyes4s.studio.app.text.RecipeTextId.Name)
+  )
   val runDescription: TextArea = TextArea()
-  runDescription.setAccessibleText("Analysis notes")
+  runDescription.setAccessibleText(
+    eyes4s.studio.app.text.RecipeText(eyes4s.studio.app.text.RecipeTextId.Notes)
+  )
   runDescription.setPrefRowCount(3)
   runDescription.setWrapText(true)
   runDescription.addEventFilter(
@@ -83,6 +92,36 @@ final class PreflightHost(model: () => AppModel, app: Intent => Unit):
           KeyEvent(KeyEvent.KEY_PRESSED, "", "", KeyCode.TAB, e.isShiftDown, true, false, false)
         )
   )
+  private val descriptionText = TextArea()
+  descriptionText.setAccessibleText(
+    eyes4s.studio.app.text.RecipeText(eyes4s.studio.app.text.RecipeTextId.Description)
+  )
+  descriptionText.getStyleClass.add("studio-field")
+  descriptionText.setWrapText(true)
+  descriptionText.setFocusTraversable(true)
+  descriptionText.textProperty.bindBidirectional(runDescription.textProperty)
+  descriptionText.disableProperty.bind(runDescription.disableProperty)
+  descriptionText.addEventFilter(
+    KeyEvent.KEY_PRESSED,
+    (e: KeyEvent) =>
+      if e.getCode == KeyCode.TAB && !e.isControlDown && !e.isAltDown && !e.isMetaDown then
+        e.consume()
+        descriptionText.fireEvent(
+          KeyEvent(KeyEvent.KEY_PRESSED, "", "", KeyCode.TAB, e.isShiftDown, true, false, false)
+        )
+  )
+  private val descriptionReason = label(
+    eyes4s.studio.app.text.RecipeText(eyes4s.studio.app.text.RecipeTextId.DescriptionSave),
+    "t11"
+  )
+  DisabledReason.attach(descriptionText, descriptionReason)
+  val descriptionNode = VBox(8, descriptionText, descriptionReason)
+  descriptionNode.setPadding(javafx.geometry.Insets(10, 16, 10, 16))
+  def descriptionStops: Vector[FocusStop] = Option
+    .when(!descriptionText.isDisabled)(
+      FocusStop(A11yRole.TextArea, descriptionText.getAccessibleText)
+    )
+    .toVector
   private val nameError = label("", "t11", "preflight-note")
   private var metadataFor: Option[eyes4s.studio.core.backend.AnalysisRevision] = None
   private var bindingMetadata                                                  = false
@@ -97,7 +136,7 @@ final class PreflightHost(model: () => AppModel, app: Intent => Unit):
     )
   runName.textProperty.addListener((_, _, _) =>
     if !bindingMetadata then
-      run.setDisable(vm.card.run.isEmpty || metadata.isLeft)
+      run.setDisable(vm.card.run.isEmpty || metadata.isLeft || editing.nonEmpty)
       nameError.setText(metadata.fold(_.message, _ => ""))
   )
   private val verdict = label("", "t11", "preflight-note")
@@ -126,10 +165,10 @@ final class PreflightHost(model: () => AppModel, app: Intent => Unit):
       label(PreflightText(PreflightTextId.RunKind), "kind")
     ),
     lines,
-    label("Analysis name", "t11"),
+    label(eyes4s.studio.app.text.RecipeText(eyes4s.studio.app.text.RecipeTextId.Name), "t11"),
     runName,
     nameError,
-    label("Analysis notes", "t11"),
+    label(eyes4s.studio.app.text.RecipeText(eyes4s.studio.app.text.RecipeTextId.Notes), "t11"),
     runDescription,
     run,
     verdict
@@ -202,8 +241,14 @@ final class PreflightHost(model: () => AppModel, app: Intent => Unit):
       (if runName.isDisabled then Vector.empty
        else
          Vector(
-           FocusStop(A11yRole.TextField, "Analysis name"),
-           FocusStop(A11yRole.TextArea, "Analysis notes")
+           FocusStop(
+             A11yRole.TextField,
+             eyes4s.studio.app.text.RecipeText(eyes4s.studio.app.text.RecipeTextId.Name)
+           ),
+           FocusStop(
+             A11yRole.TextArea,
+             eyes4s.studio.app.text.RecipeText(eyes4s.studio.app.text.RecipeTextId.Notes)
+           )
          )) ++
       Option.when(!run.isDisabled)(FocusStop(A11yRole.Button, v.card.button))
 
@@ -278,15 +323,16 @@ final class PreflightHost(model: () => AppModel, app: Intent => Unit):
     val editable = context.exists(c => model().document.draft.forall(_.id == c.id))
     runName.setDisable(!editable)
     runDescription.setDisable(!editable)
-    run.setDisable(v.card.run.isEmpty || metadata.isLeft)
+    run.setDisable(v.card.run.isEmpty || metadata.isLeft || editing.nonEmpty)
     nameError.setText(metadata.fold(_.message, _ => ""))
     run.setOnAction(_ =>
-      metadata.foreach { fields =>
-        v.card.run.foreach {
-          case Intent.Dispatch(Command.SaveAndRun(_)) =>
-            app(Intent.Dispatch(Command.SaveAndRun(Some(fields))))
-          case intent => app(intent)
+      if editing.isEmpty then
+        metadata.foreach { fields =>
+          v.card.run.foreach {
+            case Intent.Dispatch(Command.SaveAndRun(_)) =>
+              app(Intent.Dispatch(Command.SaveAndRun(Some(fields))))
+            case intent => app(intent)
+          }
         }
-      }
     )
-    verdict.setText(v.card.reason.getOrElse(v.card.verdict))
+    verdict.setText(editing.orElse(v.card.reason).getOrElse(v.card.verdict))

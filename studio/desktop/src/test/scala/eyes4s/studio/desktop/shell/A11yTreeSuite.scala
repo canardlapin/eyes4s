@@ -145,7 +145,9 @@ class A11yTreeSuite extends ShellFxSuite:
         // The preflight pane's controls follow the backend's check of the
         // design, so the stops are derived once it has answered.
         if runOnFx(w.runtime.model.perspective) == Perspective.Analysis then
-          eventually(fx, "the design's check")(w.resolvedDesign.state.preview.receipt.isDefined)
+          eventually(fx, "the design and recipe fields are served")(
+            w.resolvedDesign.state.preview.receipt.isDefined && w.recipe.editor.ready
+          )
         // Explore's inspector rebuilds its links when any of its reads arrives.
         // Wait for all reads before deriving stops or starting the Tab walk.
         if runOnFx(w.runtime.model.perspective) == Perspective.Explore then
@@ -158,7 +160,10 @@ class A11yTreeSuite extends ShellFxSuite:
               inspector.usedBy,
               inspector.displays,
               nav.entries,
-              nav.displays
+              nav.displays,
+              w.explore.state.fixations,
+              w.explore.state.preview,
+              w.explore.state.displays
             ).forall(_.toOption.nonEmpty)
           }
         // Derive the served Compare stops after the navigator and contrast
