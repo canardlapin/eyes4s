@@ -16,6 +16,7 @@
 
 package eyes4s.studio.viz.plot
 
+import eyes4s.studio.app.plot.{NoteBlock, NoteLine, NoteRole, NoteTone, ParticipantNotes}
 import eyes4s.studio.app.text.{ParticipantText, ParticipantTextId}
 import eyes4s.studio.app.tokens.{FontFace, Theme, ThemedToken}
 import eyes4s.studio.core.selection.StudioRef
@@ -275,4 +276,81 @@ class AnnotationsSuite extends FunSuite:
     )
     // The band's own label and the annotation's line.
     assertEquals(texts(plot).count(_.label == ParticipantText(ParticipantTextId.NoValue)), 2)
+  }
+
+  test("the app's notes draw as written and are spoken in the plot's accessible summary") {
+    def note(
+        id: ParticipantTextId,
+        role: NoteRole,
+        tone: NoteTone,
+        spoken: String,
+        args: String*
+    ) =
+      NoteLine(id, args.toVector, role, tone, spoken)
+    val notes = ParticipantNotes(
+      Vector(
+        NoteBlock(
+          "P17",
+          cellRef("P17", "Forgotten"),
+          None,
+          Vector(
+            note(
+              ParticipantTextId.NoteSelected,
+              NoteRole.Heading,
+              NoteTone.Primary,
+              "P17 · selected",
+              "P17"
+            ),
+            note(
+              ParticipantTextId.NoteGroupMean,
+              NoteRole.Fact,
+              NoteTone.Secondary,
+              "Forgotten +0.32, n 2",
+              "Forg",
+              "+0.32",
+              "2"
+            )
+          )
+        ),
+        NoteBlock(
+          "P05",
+          cellRef("P05", "Forgotten"),
+          None,
+          Vector(
+            note(
+              ParticipantTextId.NoteNoValue,
+              NoteRole.Fact,
+              NoteTone.Failure,
+              "no value, not zero"
+            )
+          )
+        )
+      ),
+      0
+    )
+    val annotations = right(Annotations.from(notes))
+    assertEquals(
+      annotations.blocks.map(b => b.lines.map(l => (l.label.text, l.role, l.drawnTone))),
+      Vector(
+        Vector(
+          ("P17 · selected", Role.Heading, Tone.Primary),
+          ("Forg +0.32 (n 2)", Role.Fact, Tone.Secondary)
+        ),
+        Vector(("no value, not zero", Role.Fact, Tone.Failure))
+      )
+    )
+    val plot = built(annotations)
+    assert(texts(plot).exists(_.label == "Forg +0.32 (n 2)"))
+    val plain = right(ParticipantPlot(columns).build(source(board), Theme.Light))
+    // The summary as before, then the blocks in the order given, as spoken.
+    assertEquals(
+      plot.description,
+      plain.description.replace(
+        ParticipantText(ParticipantTextId.Summary, source(board).caption, "2"),
+        ParticipantText(ParticipantTextId.Summary, source(board).caption, "2") +
+          ". Annotations: P17 · selected, Forgotten +0.32, n 2; no value, not zero"
+      )
+    )
+    assert(plot.description != plain.description)
+    assert(!plain.description.contains("Annotations"), plain.description)
   }

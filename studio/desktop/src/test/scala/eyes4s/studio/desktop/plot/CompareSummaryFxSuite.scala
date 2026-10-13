@@ -204,6 +204,48 @@ class CompareSummaryFxSuite extends ShellFxSuite:
     fx.snapshot(StudioTheme.Light)
   }
 
+  fxStage.test("the participant plot's annotation column: P17 selected and P05's failures") {
+    fx =>
+      val w = boot(fx, StoryModels.t3Summary, StoryMoment.T3)
+      loaded(fx, w)
+      eventually(fx, "the plot is drawn with its notes")(
+        runOnFx(w.summary.participantPlot.plot).exists(_.description.contains("Annotations:"))
+      )
+      val (plot, spoken) = runOnFx(
+        (
+          w.summary.participantPlot.plot.getOrElse(fail("no plot")),
+          w.summary.participantPlot.plotHost.getAccessibleText
+        )
+      )
+      def all(g: intaglio.Grob): Vector[intaglio.Grob] = g +: g.children.flatMap(all)
+      val drawn = plot.plot.scene.grobs.flatMap(all).collect { case t: intaglio.Grob.Text =>
+        t.label
+      }
+      // The board's ten lines, P05's Forgotten mean as served (−0.235 → −0.24).
+      val notes = Vector(
+        "P17 · selected",
+        "19 of 20 contributing",
+        "Rem +0.38 (n 17)",
+        "Forg +0.32 (n 2)",
+        "P05 · 17 of 20 contributing",
+        "Rem −0.03 (n 13)",
+        "Forg −0.24 (n 4)",
+        "3 failed queries:",
+        "2 Remembered, 1 Forgotten",
+        "no value, not zero"
+      )
+      assertEquals(drawn.filter(notes.contains), notes)
+      // The marks are unchanged by the column: 24 participants twice, two grand means.
+      assertEquals(plot.marks.size, 50)
+      val said =
+        "Annotations: P17 · selected, 19 of 20 contributing, Remembered +0.38, n 17, " +
+          "Forgotten +0.32, n 2; P05 · 17 of 20 contributing, Remembered −0.03, n 13, " +
+          "Forgotten −0.24, n 4, 3 failed queries, 2 Remembered, 1 Forgotten, no value, not zero"
+      assert(plot.description.contains(said), plot.description)
+      assert(Option(spoken).exists(_.contains(said)), s"accessible text: $spoken")
+      fx.snapshot(StudioTheme.Light)
+  }
+
   fxStage.test("Explain P17 carries the spec and the group into the query layout") { fx =>
     val w          = boot(fx, StoryModels.t3Summary, StoryMoment.T3)
     val remembered = Response.Remembered

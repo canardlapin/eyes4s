@@ -154,15 +154,19 @@ final case class ParticipantPlot(
         source,
         plotScene,
         ParticipantText(ParticipantTextId.Title),
-        PlotText(
-          PlotTextId.PlotKeys,
-          ParticipantText(ParticipantTextId.Summary, source.caption, levels.size.toString)
-        ),
+        PlotText(PlotTextId.PlotKeys, summary(source, levels)),
         encoding,
         marks,
         unplotted
       )
     yield plot
+
+  // What the plot says it draws, then its annotations as spoken.
+  private def summary(source: PlotSource, levels: Vector[String]): String =
+    val plain = ParticipantText(ParticipantTextId.Summary, source.caption, levels.size.toString)
+    annotations.spoken.fold(plain)(
+      ParticipantText(ParticipantTextId.AnnotatedSummary, plain, _)
+    )
 
   // The marks to draw, in order, the rows set aside, and the D range drawn.
   private def plan(
