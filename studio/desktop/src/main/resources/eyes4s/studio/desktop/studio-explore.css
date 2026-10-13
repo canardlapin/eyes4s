@@ -46,9 +46,11 @@
   -fx-text-fill: -es-ink-2;
 }
 
+/* Selected: the selection fill and weight 600; the accent is only focus's. */
 .explore-toggle:selected {
-  -fx-background-color: -es-hairline, -es-accent-soft;
+  -fx-background-color: -es-hairline, -es-sel-fill;
   -fx-text-fill: -es-ink;
+  -fx-font-family: "IBM Plex Sans SmBld";
 }
 
 .explore-toggle:focused {
@@ -56,7 +58,7 @@
 }
 
 .explore-toggle:selected:focused {
-  -fx-background-color: -es-accent, -es-accent-soft;
+  -fx-background-color: -es-accent, -es-sel-fill;
 }
 
 /* The preview label's dashed frame says the map is not a result. */

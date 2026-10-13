@@ -30,8 +30,20 @@
   -fx-background-radius: 4;
 }
 
-.figures-row-selected {
-  -fx-background-color: -es-accent-soft;
+/* A hovered figure takes surface-2, lighter than selection. */
+.figures-row:hover {
+  -fx-background-color: -es-surface-2;
+}
+
+/* The selected figure: the selection fill, hovered or not, its title (the
+ * row's one t12 label) at weight 600. */
+.figures-row-selected,
+.figures-row-selected:hover {
+  -fx-background-color: -es-sel-fill;
+}
+
+.figures-row-selected .t12 {
+  -fx-font-family: "IBM Plex Sans SmBld";
 }
 
 /* A row is a Tab stop: the ring is drawn inside its edge (S10.5). */
@@ -41,7 +53,7 @@
 }
 
 .figures-row-selected:focused {
-  -fx-background-color: -es-accent, -es-accent-soft;
+  -fx-background-color: -es-accent, -es-sel-fill;
 }
 
 .figures-chip {

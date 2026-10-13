@@ -75,19 +75,30 @@
   -fx-padding: 0;
 }
 
-.nav-rows:focused {
-  -fx-background-color: -es-accent, -es-surface;
-  -fx-background-insets: 0, 1;
+/* One focus stop whose cursor row carries the ring (studio-shell.css): the
+ * focused list keeps its unfocused, borderless fill. */
+.list-view.nav-rows:focused {
+  -fx-background-color: -es-surface;
+  -fx-background-insets: 0;
 }
 
+/* -fx-background is the row's own fill, which the cursor's frame surrounds:
+ * surface at rest, surface-2 hovered, and the selection fill when selected,
+ * hovered or not (DESIGN_SPEC 15). This sheet outranks the shell's, so its
+ * row fill restates the shell's hover and selection. */
 .nav-rows .list-cell {
-  -fx-background-color: -es-surface;
+  -fx-background: -es-surface;
+  -fx-background-color: -fx-background;
   -fx-text-fill: -es-ink;
   -fx-padding: 2 10 2 10;
 }
 
-.nav-rows .list-cell:selected {
-  -fx-background-color: -es-accent-soft;
+.nav-rows .list-cell:filled:hover {
+  -fx-background: -es-surface-2;
+}
+
+.nav-rows .list-cell:filled:selected {
+  -fx-background: -es-sel-fill;
 }
 
 .nav-row-box {
@@ -128,6 +139,18 @@
 }
 
 .list-cell.current .nav-label {
+  -fx-font-family: "IBM Plex Mono Medm";
+}
+
+/* A selected row is set at weight 600; its mono labels in Mono 500, the
+ * heaviest Mono face (DESIGN_SPEC 15). Participant, phase and item labels are
+ * already semibold. */
+.nav-rows .list-cell:selected .nav-item {
+  -fx-font-family: "IBM Plex Sans SmBld";
+}
+
+.nav-rows .list-cell.nav-trial:selected .nav-label,
+.nav-rows .list-cell.nav-range:selected .nav-label {
   -fx-font-family: "IBM Plex Mono Medm";
 }
 
