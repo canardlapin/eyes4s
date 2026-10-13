@@ -45,6 +45,19 @@ backend gets bytes only through its host port. Imports are read structurally
 
 ## Build and test
 
+On macOS, keep the Studio JDK in `~/Library/Java/JavaVirtualMachines`, not `/tmp`
+or `/private/tmp`: system cleanup can remove unused JDK files during a gate. The
+local Temurin 25 installation is
+`~/Library/Java/JavaVirtualMachines/temurin-25.0.4.1+1.jdk/Contents/Home`.
+Select the registered JDK for the whole gate process (including its child sbt
+and test JVMs):
+
+```sh
+export JAVA_HOME="$(/usr/libexec/java_home -v 25)"
+export PATH="$JAVA_HOME/bin:$PATH"
+java -version
+```
+
 ```sh
 sbt compileAll          # all modules, JVM + JS
 sbt testAll

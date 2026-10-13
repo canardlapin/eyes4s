@@ -15,6 +15,20 @@ aggregate (`docs/studio/DESIGN_SPEC.md` section 13).
 
 ## Build
 
+Install JDK 25 in a durable location. On macOS, use
+`~/Library/Java/JavaVirtualMachines` and select it before building:
+
+```sh
+export JAVA_HOME="$(/usr/libexec/java_home -v 25)"
+export PATH="$JAVA_HOME/bin:$PATH"
+java -version
+```
+
+Do not unpack a build JDK under `/tmp` or `/private/tmp`; macOS cleanup can
+remove its files while a long build is running. Set both `JAVA_HOME` and `PATH`:
+some sbt launchers choose `java` from `PATH`. Child sbt invocations in the landing
+gate and pin publisher inherit both settings.
+
 ```sh
 bash studio/publish-pins.sh            # once per pin change; see below
 sbt studioAll checkBoundaries studioStyleCheck
