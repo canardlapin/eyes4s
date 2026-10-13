@@ -21,12 +21,17 @@ import eyes4s.studio.app.{AppModel, StoryModels}
 import eyes4s.studio.app.figures.{BundleItem, PanelBody}
 import eyes4s.studio.app.tokens.{Theme, ThemedToken, Tokens}
 import eyes4s.studio.app.vm.{A11y, A11yRole}
+import eyes4s.kernel.Unit2D
+import eyes4s.plan.{Diagnostic, MatchedReferences, StudyFinding}
+import eyes4s.studio.app.analysis.DesignIntent
+import eyes4s.studio.core.backend.{Phase, StudioDiagnostic, TrialKey}
 import eyes4s.studio.core.fixture.StoryMoment
+import eyes4s.studio.core.preview.{PreviewEvent, PreviewId, PreviewReady}
 import eyes4s.studio.desktop.StudioWindow
 import eyes4s.studio.desktop.dock.StudioPanes
 import eyes4s.studio.desktop.harness.FxStage
 import javafx.scene.{AccessibleRole, Node, Parent}
-import javafx.scene.control.Labeled
+import javafx.scene.control.{Button, Label, Labeled}
 import javafx.scene.input.KeyCode
 import javafx.scene.layout.Region
 import javafx.scene.paint.Color
@@ -203,6 +208,135 @@ class A11yTreeSuite extends ShellFxSuite:
         assertEquals(stop(runOnFx(fx.scene.getFocusOwner)), walked.last)
         assert(back ne runOnFx(fx.scene.getFocusOwner))
     }
+  }
+
+  /** What a disabled action's reason labels show: each visible, non-blank
+    * text in reading order, one per line; the control's accessible help must
+    * say exactly this.
+    */
+  private def drawn(reasons: Vector[Labeled]): Option[String] =
+    val lines =
+      reasons.filter(_.isVisible).map(_.getText).filter(t => t != null && t.trim.nonEmpty)
+    Option.when(lines.nonEmpty)(lines.mkString("\n"))
+
+  /** What is wrong with `control`'s attached reasons, if anything. */
+  private def reasonFaults(control: Node): Vector[String] =
+    val reasons = DisabledReason.reasons(control)
+    val name    = s"${control.getAccessibleText} (${A11yChecks.path(control)})"
+    Vector(
+      Option.when(Option(control.getAccessibleHelp) != drawn(reasons))(
+        s"$name: accessible help ${Option(control.getAccessibleHelp)}, drawn ${drawn(reasons)}"
+      ),
+      Option.when(control.isDisabled && control.getOpacity != 1.0)(
+        s"$name: disabled with a reason, but faded to ${control.getOpacity}"
+      )
+    ).flatten ++ reasons.filter(r => r.isVisible && r.getText.nonEmpty).flatMap { r =>
+      // The reason is drawn text in the same scene: a screen reader's
+      // reading order reaches it as well as the control's help.
+      Vector(
+        Option.when(r.getAccessibleRole != AccessibleRole.TEXT)(
+          s"$name: reason '${r.getText}' reads as ${r.getAccessibleRole}"
+        ),
+        Option.when(!(r.getScene eq control.getScene))(
+          s"$name: reason '${r.getText}' is not in the control's scene"
+        )
+      ).flatten
+    }
+
+  (perspectives ++ extra).foreach { (name, model, moment) =>
+    fxStage.test(s"$name: a disabled action's drawn reason is its accessible help") { fx =>
+      val w        = boot(fx, model(), moment)
+      val attached = runOnFx(all(w.root).filter(DisabledReason.reasons(_).nonEmpty))
+      assertEquals(runOnFx(attached.flatMap(reasonFaults)), Vector.empty[String])
+    }
+  }
+
+  fxStage.test("a drawn reason follows its control: enabled, disabled, and a changed reason") {
+    fx =>
+      val (root, action, reason, other) = runOnFx {
+        val reason = Label("")
+        val other  = Label("")
+        val action = Button("Do it")
+        action.setAccessibleText("Do it")
+        val root = javafx.scene.layout.VBox(action, reason, other)
+        root.getStylesheets.setAll(
+          eyes4s.studio.desktop.ThemeHost
+            .sheets(eyes4s.studio.core.document.Theme.Light)
+            .fold(e => fail(e.message), identity)*
+        )
+        DisabledReason.attach(action, reason, other)
+        (root, action, reason, other)
+      }
+      fx.show(root)
+      fx.awaitLayout()
+      def help   = runOnFx(Option(action.getAccessibleHelp))
+      def faults = runOnFx { action.applyCss(); reasonFaults(action) }
+      assertEquals(help, None)
+      runOnFx { action.setDisable(true); reason.setText("Waiting for the check") }
+      assertEquals(help, Some("Waiting for the check"))
+      assertEquals(faults, Vector.empty[String])
+      runOnFx(reason.setText("1 blocker"))
+      assertEquals(help, Some("1 blocker"))
+      runOnFx(other.setText("Name the analysis"))
+      assertEquals(help, Some("1 blocker\nName the analysis"))
+      runOnFx(reason.setVisible(false))
+      assertEquals(help, Some("Name the analysis"))
+      assertEquals(faults, Vector.empty[String])
+  }
+
+  fxStage.test("Save & run carries its drawn reason through enabled, disabled and blocked") {
+    fx =>
+      val w = boot(fx, StoryModels.t2Analysis, StoryMoment.T2)
+      eventually(fx, "the counted preview")(w.resolvedDesign.state.preview.receipt.isDefined)
+      val run = runOnFx(
+        A11yChecks
+          .all(w.preflight.node)
+          .collectFirst { case b: Button if b.getStyleClass.contains("preflight-run") => b }
+          .getOrElse(fail("no Save & run"))
+      )
+      def help                = runOnFx(Option(run.getAccessibleHelp))
+      def said                = runOnFx(w.preflight.runButton)
+      def check(clue: String) =
+        fx.awaitLayout()
+        assertEquals(runOnFx(reasonFaults(run)), Vector.empty[String], clue)
+      check("enabled")
+      assertEquals(said._2, true)
+      assertEquals(help, Some(said._3))
+      // Enabled → disabled: a blank name, said above the button.
+      runOnFx(w.preflight.runName.setText(""))
+      check("blank name")
+      assertEquals(said._2, false)
+      assert(help.exists(h => h.contains("analysis name") && h.endsWith(said._3)), help)
+      // The reason changes while the button stays disabled: a blocker.
+      val p11  = TrialKey("P11", Phase.Retrieval, "ret_05", 1)
+      val refs = Vector(
+        TrialKey("P11", Phase.Encoding, "enc_04", 1),
+        TrialKey("P11", Phase.Encoding, "enc_04", 2)
+      )
+      val finding: StudyFinding[TrialKey, Unit2D.Px] =
+        StudyFinding.MatchedCardinality(p11, refs, MatchedReferences.RequireOne)
+      val blocker = StudioDiagnostic.of(Diagnostic.of(finding), identity)
+      runOnFx {
+        val s       = w.resolvedDesign.state
+        val r       = s.preview.receipt.get
+        val id      = PreviewId(r.id.value + 1)
+        val blocked = PreviewReady
+          .of(id, r.stamp, r.candidates, r.counts, r.diagnostics :+ blocker, r.recipe)
+          .fold(e => fail(e.toString), identity)
+        w.resolvedDesign.dispatch(
+          DesignIntent.Previewed(s.generation, PreviewEvent.Initial(id, r.stamp, r.candidates))
+        )
+        w.resolvedDesign.dispatch(
+          DesignIntent.Previewed(s.generation, PreviewEvent.Ready(blocked))
+        )
+      }
+      check("blank name and a blocker")
+      assertEquals(said._3, "Save & run disabled: 1 blocker")
+      assert(help.exists(_.endsWith("\nSave & run disabled: 1 blocker")), help)
+      runOnFx(w.preflight.runName.setText("Encoding → retrieval"))
+      check("a blocker")
+      assertEquals(said._2, false)
+      assertEquals(help, Some("Save & run disabled: 1 blocker"))
   }
 
   private def fx(c: eyes4s.studio.app.tokens.Colour): Color =

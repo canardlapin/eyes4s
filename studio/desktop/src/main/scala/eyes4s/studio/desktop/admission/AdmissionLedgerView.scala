@@ -19,6 +19,7 @@ package eyes4s.studio.desktop.admission
 import eyes4s.plan.AdmissionDecision as CoreAdmissionDecision
 import eyes4s.studio.app.admission.*
 import eyes4s.studio.core.selection.StudioRef
+import eyes4s.studio.desktop.shell.DisabledReason
 import eyes4s.studio.desktop.tokens.TokenFiles
 import javafx.geometry.Pos
 import javafx.scene.control.*
@@ -133,7 +134,8 @@ final class AdmissionLedgerView(dispatch: LedgerIntent => Unit):
   val consequence: Label = wrapping("ledger-note", "t11")
   val admit: Button      = button("ledger-button", "primary")
   admit.setOnAction(_ => fire(LedgerIntent.Admit))
-  val admitNote: Label    = wrapping("ledger-warn", "t11")
+  val admitNote: Label = wrapping("ledger-warn", "t11")
+  DisabledReason.attach(admit, admitNote)
   val status: Label       = wrapping("ledger-note", "t12")
   val countsSource: Label = wrapping("ledger-note", "t11")
   val retry: Button       = button("ledger-button")
