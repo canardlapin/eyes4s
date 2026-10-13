@@ -53,7 +53,7 @@ Status key: **[approved]** owner-approved · **[bug]** a pure bug, landable with
     - `-fx-selection-bar[-non-focused]: -es-sel-fill`, `-fx-cell-hover-color: -es-surface-2` (`studio-shell.css:41-44`), and `.list-cell:filled:hover`.
     - Fold the accent-soft fills (`studio-navigator.css:89`, `studio-ledger.css:66,162`, `studio-explore.css:49,58`, `studio-timeline.css:44`, `studio-design.css:53`, `studio-figures.css:43-45`) and `.table-twin-row:selected` ink rules (`studio-plot.css:108-111`) into sel-fill + SmBld.
     - Tests: FX snapshot re-baseline.
-14. **D3, focus-visible.**
+14. **D3, focus-visible.** **Slice a fixed** (`:focus-visible` on every control rule and composite cursor; primary ring accent / on-accent / accent at 0, 2, 4; `:armed` → hairline; a composite pane draws no ring while its rows carry the cursor; a focused table puts its cursor on its home row, the first selected, else the first; only a composite with no rows rings its container (`CompositeFocus`); canvas rings remain).
     - `:focused` → `:focus-visible` on ~32 control rules.
     - Canvas rings gated on focusVisible OR keyboard-since-focus (Issue 1): `MarkInputAdapter.scala:137` listens on `focusedProperty`, and `TrialInputAdapter.focusChanged` is at `:75`.
     - Primary focus `-es-accent, -es-on-accent, -es-accent` at insets 0, 2, 4 (`studio-plot.css:316`, `studio-geometry.css:154`, `studio-ledger.css:216`, `studio-import.css:192`).
@@ -68,11 +68,11 @@ Status key: **[approved]** owner-approved · **[bug]** a pure bug, landable with
     - Isoline `LineCap.Round`.
     - A `MapLegendScene` with the legend text "fades below 10% of max" as a TrialText/ExploreText id.
     - Tests: `TrialMapSceneSuite` (cross after map); `TrialViewFxSuite` goldens.
-18. **E2, timeline.** **Slice a fixed.**
+18. **E2, timeline.** **Fixed.**
     - `OverlayRing` rectangle geometry (`MarkInput.scala:207, 253-325, 474-487`) and an outside-window bar style (Custom dash, no fill) in `TimelinePlot` (`:187-191`).
     - Fill and height already match.
     - Tests: `TimelinePlotSuite:62` (unchanged), `OverlaySelectionsSuite`, `RovingCursorSuite`.
-    - The board dims bars outside the brush (`--neutral-mark`); `TimelinePlot` only shades the brush. Add the dimming here.
+    - Bars outside the brush (no half-open overlap, the brush rule) take `--neutral-mark`; outside-window outlines dim too; rings stay at full strength. A dimmed bar is de-emphasis by design and below 3:1 on purpose; its values are in the table twin.
 19. **E3, Explore mark halo.** The board draws the halo outside r = `radiusPx` (`:438`), so no code change, only a board tweak. **Closed as code.**
 
 **G. Figures (viz/app; regenerate the golden figure once) **
@@ -101,7 +101,7 @@ Status key: **[approved]** owner-approved · **[bug]** a pure bug, landable with
     - Tests: a `GeometrySceneSuite` test that a missing frame draws a hatch + X; a `GeometryPanelSuite` caption test.
 
 **I. Plots and Results **
-26. **H1, ParticipantPlot annotations** (split into slices of at most half a day): an `Annotations` API and `ParticipantTextId`s. Tests: a new suite, plus a Results FX snapshot. **Slice a fixed** (`Annotations` API in viz; the text ids, Results wiring and snapshot remain).
+26. **H1, ParticipantPlot annotations** (split into slices of at most half a day): an `Annotations` API and `ParticipantTextId`s. Tests: a new suite, plus a Results FX snapshot. **Fixed** (slice a: the `Annotations` API; slice b: text ids, the app builder, Results wiring, accessible summary).
 27. **H2, Results paired descriptive**: an app VM plus text. Test: a fixture value test of **0.15567 → "+0.16"**, range +0.05 (P21) to +0.26 (P15), 24 of 24, computed before rounding participant means. The fixture field is added in this landing (`docs/studio/fixture`). **Fixed** (the t3 story spec declares Remembered − Forgotten).
 
 **J. Parity harness **
