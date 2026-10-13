@@ -19,6 +19,7 @@ package eyes4s.studio.viz.plot
 import eyes4s.studio.app.plot.{
   ColumnId,
   HalfOpenSpan,
+  PlotBrush,
   PlotSource,
   PlotText,
   PlotTextId,
@@ -63,9 +64,20 @@ import intaglio.{
   * [[eyes4s.studio.app.plot.TimelineColumns.brushRule]]) and `playheadMs` the playback
   * time. `outsideWindow` are the fixations that lie outside the analysis
   * window or off the screen: their bars are drawn as dashed outlines with no
-  * fill, as the board draws a record outside the window. The plot writes no
-  * numbers; every number is a row's in the table. A bar's feedback rings
-  * follow its rectangle.
+  * fill, as the board draws a record outside the window.
+  *
+  * A brush dims the bars it does not pick: a bar is inside the brush iff the
+  * brush rule picks its row, that is iff its half-open interval
+  * [onset, onset + duration) overlaps the half-open span (touching at an
+  * endpoint is not overlap), so the bars left at full ink are exactly the
+  * fixations the brush selects. A bar outside the brush is drawn in the
+  * neutral mark colour (`--neutral-mark`, ink at alpha .35) in place of
+  * `--ink-3`: its fill, or, outside the window too, its dashed outline, which
+  * keeps its dash and its absent fill. Without a brush no bar is dimmed. The
+  * brush only shades and dims; it does not crop the analysis. The plot
+  * writes no numbers; every number is a row's in the table. A bar's feedback
+  * rings follow its rectangle and are drawn over the plot, at full strength
+  * on a dimmed bar.
   */
 final case class TimelinePlot(
     columns: TimelineColumns,
@@ -107,10 +119,14 @@ final case class TimelinePlot(
       }
       id <- SceneId(s"studio.plot.$kind.${theme.toString.toLowerCase}").left
         .map(PlotBuildError.Scene(kind, _))
+      inBrush = brush.map(PlotBrush.rows(source, TimelineColumns.brushRule(columns), _).toSet)
       built <- scene(
         theme,
         placed,
-        placed.map((i, _) => outsideWindow(source.rows(i).ref))
+        placed.map { (i, _) =>
+          val ref = source.rows(i).ref
+          BarStyle(outsideWindow(ref), inBrush.exists(!_(ref)))
+        }
       ).left
         .map(PlotBuildError.Graphics(kind, "the timeline", _))
       (grobs, viewport, names) = built
@@ -137,11 +153,11 @@ final case class TimelinePlot(
     yield plot
 
   // The grobs, the data viewport and each bar's grob name, in row order;
-  // `outside` says, row by row, whether a bar is outside the window.
+  // `styles` says, row by row, how a bar is drawn.
   private def scene(
       theme: Theme,
       placed: Vector[(Int, DataPoint)],
-      outside: Vector[Boolean]
+      styles: Vector[TimelinePlot.BarStyle]
   ): Either[GraphicsError, (Vector[Grob], Viewport, Vector[GraphicsName])] =
     import TimelinePlot.*
     def colour(token: ThemedToken): Rgba = IntaglioColours.themed(theme, token)
@@ -165,6 +181,17 @@ final case class TimelinePlot(
         h  <- intaglio.ExtentExpr.native(y1 - y0)
         g  <- Grob.rect(Point(cx, cy), Size.fromExtents(w, h), gp = gp, name = name)
       yield g
+    // A bar's paint in `ink`: filled, or a dashed outline outside the window.
+    def barGp(ink: Rgba, outsideWindow: Boolean, dash: DashPattern) =
+      if outsideWindow then
+        GraphicParams.checked(
+          stroke = Some(ink),
+          fill = None,
+          lineWidth = px(OutsideStrokePx),
+          lineWidthUnit = StrokeUnit.Point,
+          lineType = LineType.Custom(dash)
+        )
+      else GraphicParams.checked(stroke = None, fill = Some(ink))
     val ends     = placed.map((_, at) => at.x + at.y)
     val (x0, x1) = timeDomain(
       placed.map(_._2.x) ++ ends ++ playheadMs.toVector ++ trialEndMs.toVector
@@ -200,19 +227,13 @@ final case class TimelinePlot(
         lineWidthUnit = StrokeUnit.Point
       )
       baseline <- Grob.segments(Vector((Point(left, zero), Point(right, zero))), gp = baseGp)
-      barGp    <- GraphicParams.checked(stroke = None, fill = Some(colour(ThemedToken.Ink3)))
       dash     <- DashPattern(OutsideDashPx)
-      outGp    <- GraphicParams.checked(
-        stroke = Some(colour(ThemedToken.Ink3)),
-        fill = None,
-        lineWidth = px(OutsideStrokePx),
-        lineWidthUnit = StrokeUnit.Point,
-        lineType = LineType.Custom(dash)
-      )
-      bars <- traverse(placed.zip(outside)) { case ((i, at), out) =>
+      bars     <- traverse(placed.zip(styles)) { case ((i, at), style) =>
+        val ink = colour(if style.dimmed then ThemedToken.NeutralMark else ThemedToken.Ink3)
         for
+          gp   <- barGp(ink, style.outsideWindow, dash)
           name <- GraphicsName(s"$MarkPrefix$i", "timeline bar")
-          grob <- box(at.x, at.x + at.y, 0.0, at.y, if out then outGp else barGp, Some(name))
+          grob <- box(at.x, at.x + at.y, 0.0, at.y, gp, Some(name))
         yield (grob, name)
       }
       playGp <- GraphicParams.checked(
@@ -256,6 +277,13 @@ final case class TimelinePlot(
     )
 
 object TimelinePlot:
+
+  /** How one bar is drawn: `outsideWindow`, a dashed outline with no fill
+    * rather than a filled bar; `dimmed` (outside the brush), in the neutral
+    * mark colour rather than `--ink-3`. The two are independent.
+    */
+  private[plot] final case class BarStyle(outsideWindow: Boolean, dimmed: Boolean)
+      derives CanEqual
 
   /** How far a bar's mark reaches from its anchor, its top-left corner. */
   val ReachPx: Double = 4.0
