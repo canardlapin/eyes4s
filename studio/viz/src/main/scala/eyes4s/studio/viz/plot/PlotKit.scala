@@ -108,6 +108,11 @@ enum PlotBuildError derives CanEqual:
   /** The source has row `ref`, which is not a kind of row the plot draws. */
   case UnexpectedRow(plot: String, ref: StudioRef)
 
+  /** An annotation is anchored to row `ref`, which is not a participant row
+    * the plot draws.
+    */
+  case Unanchored(plot: String, ref: StudioRef)
+
   def message: String = this match
     case MissingColumn(p, c)  => s"plot $p: the source has no column '${c.value}'"
     case NotNumeric(p, c)     => s"plot $p: column '${c.value}' is not numeric"
@@ -135,6 +140,8 @@ enum PlotBuildError derives CanEqual:
       s"plot $p: mark '$n' places one row, so its readout is that row, not a summary"
     case BlankSummary(p, n)    => s"plot $p: mark '$n' is given a blank summary"
     case UnexpectedRow(p, ref) => s"plot $p: row $ref is not a kind of row this plot draws"
+    case Unanchored(p, ref)    =>
+      s"plot $p: an annotation is anchored to row $ref, which is not a participant row it draws"
 
 /** Why a row of the source has no position in a plot. The row is then drawn
   * as a positionless mark ([[RowMarking.Positionless]]) or set aside

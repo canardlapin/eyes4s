@@ -80,10 +80,16 @@ import intaglio.{
   *
   * Marks are ordered, and drawn, column by column: the participants in row
   * order, then the grand mean on top.
+  *
+  * `annotations`, when there are any, are written in a column right of the
+  * frame, each block joined to its participant's mark by a leader; the frame
+  * narrows to make room ([[Annotations]] states the column's rule). Without
+  * them the plot is drawn as if the column did not exist.
   */
 final case class ParticipantPlot(
     columns: ParticipantColumns,
-    lines: ParticipantLines = ParticipantLines.Shown
+    lines: ParticipantLines = ParticipantLines.Shown,
+    annotations: Annotations = Annotations.empty
 ) extends PlotBuilder:
 
   def kind: String = "participant-plot"
@@ -125,9 +131,15 @@ final case class ParticipantPlot(
         )
       }
       (drawn, unplotted, frame) = plan(source, encoding, levels, roles)
+      anchored <- traverseAll(annotations.blocks)(b =>
+        drawn
+          .find(d => d.row.ref == b.anchor && d.drawsParticipant)
+          .map(b -> _)
+          .toRight(PlotBuildError.Unanchored(kind, b.anchor))
+      )
       id <- SceneId(s"studio.plot.$kind.${theme.toString.toLowerCase}").left
         .map(PlotBuildError.Scene(kind, _))
-      built <- scene(theme, source, levels, drawn, frame, di, ni).left
+      built <- scene(theme, source, levels, drawn, frame, di, ni, anchored).left
         .map(PlotBuildError.Graphics(kind, "the participant plot", _))
       (grobs, viewport, names) = built
       marks <- traverseAll(drawn.zip(names).zipWithIndex) { case ((d, name), order) =>
@@ -228,7 +240,8 @@ final case class ParticipantPlot(
       drawn: Vector[ParticipantPlot.Drawn],
       frame: ParticipantPlot.Frame,
       dIndex: Int,
-      nIndex: Int
+      nIndex: Int,
+      anchored: Vector[(Annotations.Block, ParticipantPlot.Drawn)]
   ): Either[GraphicsError, (Vector[Grob], Viewport, Vector[GraphicsName])] =
     import ParticipantPlot.*
     def colour(token: ThemedToken): Rgba = IntaglioColours.themed(theme, token)
@@ -273,11 +286,13 @@ final case class ParticipantPlot(
         }
       )
       .sortBy((a, _) => a.row.row)
+    // Highest anchor first, so the blocks stack top down as their marks do.
+    val blocks = anchored.sortBy((_, d) => -d.at.y)
     for
       xScale   <- Interval(-0.5, math.max(levels.size, 1) - 0.5)
       yScale   <- Interval(frame.y0, frame.y1)
       origin   <- Point.npc(0.1, 0.16)
-      size     <- Size.npc(0.86, 0.74)
+      size     <- frameSize(blocks.nonEmpty)
       viewport <- Viewport.checked(origin, size, xScale, yScale, Clip.On)
       frameVp  <- Viewport.checked(origin, size, xScale, yScale, Clip.Off)
       whole    <- Size.npc(1.0, 1.0)
@@ -439,17 +454,19 @@ final case class ParticipantPlot(
         Anchor(HJust.Left, VJust.Top),
         gp = titleGp
       )
+      column <- annotationColumn(theme, blocks)
     yield (
       Vector(
         background,
-        Grob.group(gridLines :+ zeroRule, viewport = Some(frameVp)),
-        Grob.group(linked ++ marked.map(_._1), viewport = Some(viewport)),
-        Grob.group(
-          values.flatten ++ underneath.flatten ++ yTicks ++ bandLabel,
-          viewport = Some(frameVp)
-        ),
-        title
-      ),
+        Grob.group(gridLines :+ zeroRule, viewport = Some(frameVp))
+      ) ++ column._1.map(leaders => Grob.group(leaders, viewport = Some(frameVp))) ++
+        Vector(
+          Grob.group(linked ++ marked.map(_._1), viewport = Some(viewport)),
+          Grob.group(
+            values.flatten ++ underneath.flatten ++ yTicks ++ bandLabel,
+            viewport = Some(frameVp)
+          )
+        ) ++ column._2.map(written => Grob.group(written, viewport = Some(frameVp))) :+ title,
       viewport,
       marked.map(_._2)
     )
@@ -476,6 +493,9 @@ object ParticipantPlot:
 
   /** The gap between a tick's end and its written value. */
   val ValueGapPx: Double = TickHalfPx + 6.0
+
+  /** The width of an annotation's leader. */
+  val LeaderPx: Double = 1.0
 
   /** The zero rule's width, and the opacity of a participant's link. */
   val ZeroRulePx: Double = 1.5
@@ -628,6 +648,82 @@ object ParticipantPlot:
         )
     )
 
+  /** The frame's size: 86% by 74% of the plot, less the annotation column's
+    * [[Annotations.ColumnPx]] across when there is one.
+    */
+  private def frameSize(annotated: Boolean): Either[GraphicsError, Size] =
+    if !annotated then Size.npc(0.86, 0.74)
+    else
+      for
+        across <- LengthExpr.npc(0.86)
+        column <- Length.points(px(Annotations.ColumnPx))
+        width  <- ExtentExpr.fromExpr(across - LengthExpr(column))
+        height <- ExtentExpr.npc(0.74)
+      yield Size.fromExtents(width, height)
+
+  /** The annotation column, in the frame's viewport: each block's leader,
+    * from its anchor's mark to the frame's right edge at the middle of the
+    * block's first slot, and each line, left-aligned [[Annotations.GapPx]]
+    * right of that edge in its slot. `blocks` are in drawing order, top
+    * down. Both are `None` without blocks, so the scene gains no group.
+    */
+  private def annotationColumn(
+      theme: Theme,
+      blocks: Vector[(Annotations.Block, Drawn)]
+  ): Either[GraphicsError, (Option[Vector[Grob]], Option[Vector[Grob]])] =
+    def colour(tone: Annotations.Tone): Rgba =
+      IntaglioColours.themed(theme, Annotations.token(tone))
+    // The middle of slot `k`, down from the frame's top.
+    def slotY(k: Int): Either[GraphicsError, LengthExpr] =
+      for
+        top  <- LengthExpr.npc(1.0)
+        down <- ExtentExpr.points(px((k + 0.5) * Annotations.SlotPx))
+      yield top - down
+    val slots = Annotations.slots(blocks.map(_._1))
+    if blocks.isEmpty then Right((None, None))
+    else
+      for
+        edge    <- LengthExpr.npc(1.0)
+        gap     <- ExtentExpr.points(px(Annotations.GapPx))
+        size    <- Length.points(px(Annotations.TextPx))
+        leaders <- traverseAll(blocks.zip(slots)) { case ((block, d), ks) =>
+          for
+            nx   <- LengthExpr.native(d.at.x)
+            ny   <- LengthExpr.native(d.at.y)
+            dx   <- Length.points(px(d.dxPx))
+            endY <- slotY(ks.head)
+            gp   <- GraphicParams.checked(
+              stroke = Some(colour(block.lines.head.drawnTone)),
+              fill = None,
+              lineWidth = px(LeaderPx),
+              lineWidthUnit = StrokeUnit.Point
+            )
+            g <- Grob.segments(
+              Vector((Point(nx + LengthExpr(dx), ny), Point(edge, endY))),
+              gp = gp
+            )
+          yield g
+        }
+        lines <- traverseAll(blocks.zip(slots).flatMap((b, ks) => b._1.lines.zip(ks))) {
+          (line, k) =>
+            for
+              y  <- slotY(k)
+              gp <- GraphicParams.checked(
+                stroke = None,
+                fill = Some(colour(line.drawnTone)),
+                fontFamily = Some(Annotations.face(line.role).javaFxFamily),
+                fontSize = size
+              )
+              g <- Grob.text(
+                Annotations.fit(line.label.text),
+                Point(edge + gap, y),
+                Anchor(HJust.Left, VJust.Center),
+                gp = gp
+              )
+            yield g
+        }
+      yield (Some(leaders), Some(lines))
+
   /** How a mark is drawn: a dot (filled in the solid group), the empty ring
     * of a missing mean, or a grand mean's tick.
     */
@@ -646,6 +742,12 @@ object ParticipantPlot:
       shape: Shape,
       participant: Option[String]
   ):
+
+    /** Whether the mark is a participant's: a dot or a missing mean's ring. */
+    def drawsParticipant: Boolean = shape match
+      case Shape.Tick(_) => false
+      case _             => true
+
     def reachPx: Double = shape match
       case Shape.Dot(true)  => DotRadiusPx
       case Shape.Dot(false) => DotRadiusPx + HollowEdgePx / 2.0
