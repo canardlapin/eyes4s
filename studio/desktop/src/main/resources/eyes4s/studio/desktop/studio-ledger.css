@@ -115,7 +115,12 @@
   -fx-background-color: -es-surface-3;
 }
 
-.ledger-count:focused {
+/* Pressed: the hairline fill, one step past hover. */
+.ledger-count:armed {
+  -fx-background-color: -es-hairline;
+}
+
+.ledger-count:focus-visible {
   -fx-background-color: -es-accent, -es-surface;
   -fx-background-insets: 0, 2;
 }
@@ -220,20 +225,30 @@
   -fx-font-family: "IBM Plex Sans Medm";
 }
 
+/* Pressed: the hairline fill, one step past hover. A primary action is drawn
+ * pressed as at rest: its rule comes later. */
+.ledger-button:armed {
+  -fx-background-color: -es-hairline;
+  -fx-background-insets: 0;
+}
+
 .ledger-button.primary {
   -fx-background-color: -es-accent;
   -fx-background-insets: 0;
   -fx-text-fill: -es-on-accent;
 }
 
-.ledger-button:focused {
+.ledger-button:focus-visible {
   -fx-background-color: -es-accent, -es-surface;
   -fx-background-insets: 0, 2;
 }
 
-.ledger-button.primary:focused {
-  -fx-background-color: -es-ink, -es-accent;
-  -fx-background-insets: 0, 2;
+/* A focused primary action: the accent ring, an on-accent gap, then its own
+ * accent fill, so the ring reads against the button and the ground alike. */
+.ledger-button.primary:focus-visible {
+  -fx-background-color: -es-accent, -es-on-accent, -es-accent;
+  -fx-background-insets: 0, 2, 4;
+  -fx-background-radius: 4, 3, 2;
 }
 
 /* No workflow meaning: Admit, which has one, carries its reason (has-reason). */

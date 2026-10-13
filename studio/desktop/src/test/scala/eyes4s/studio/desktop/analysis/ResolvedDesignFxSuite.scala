@@ -28,8 +28,7 @@ import eyes4s.studio.core.fixture.{StoryMoment, StoryMoments}
 import eyes4s.studio.core.selection.StudioRef
 import eyes4s.studio.desktop.StudioWindow
 import eyes4s.studio.desktop.harness.{FxStage, StudioTheme}
-import eyes4s.studio.desktop.shell.ShellFxSuite
-import javafx.css.PseudoClass
+import eyes4s.studio.desktop.shell.{KeyboardFocus, ShellFxSuite}
 import javafx.scene.control.ToggleButton
 import javafx.scene.input.KeyCode
 import javafx.scene.paint.Color
@@ -218,11 +217,10 @@ class ResolvedDesignFxSuite extends ShellFxSuite:
     def colour(t: ThemedToken): Color =
       val c = Tokens.themed(Theme.Light, t)
       Color.rgb(c.red, c.green, c.blue, c.alphaPercent / 100.0)
-    // As in A11yTreeSuite: :focused is set explicitly, since JavaFX shows it
-    // only while the window has focus, which a headless run cannot guarantee.
-    val Focused = PseudoClass.getPseudoClass("focused")
+    // Focus is keyboard focus, reached by traversal: the ring is drawn only
+    // under :focus-visible (REVIEW ticket 14).
     def fills(b: ToggleButton, focused: Boolean): List[(Color, Double)] = runOnFx {
-      b.pseudoClassStateChanged(Focused, focused)
+      if focused then KeyboardFocus.byKeyboard(b) else KeyboardFocus.away(b)
       b.applyCss()
       b.getBackground.getFills.asScala.toList.map(f =>
         (f.getFill.asInstanceOf[Color], f.getInsets.getTop)

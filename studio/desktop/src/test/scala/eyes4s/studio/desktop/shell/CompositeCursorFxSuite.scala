@@ -36,7 +36,7 @@ import eyes4s.studio.desktop.plot.TableTwinView
 import javafx.collections.FXCollections
 import javafx.css.PseudoClass
 import javafx.scene.Parent
-import javafx.scene.control.{ListCell, ListView}
+import javafx.scene.control.{Button, ListCell, ListView}
 import javafx.scene.layout.{HBox, Region, StackPane, VBox}
 import javafx.scene.paint.Color
 
@@ -48,13 +48,12 @@ import scala.jdk.CollectionConverters.*
   * cursor row draws a 2 px accent frame around its own fill, and a cursor
   * row that is also selected keeps the selection fill inside the frame.
   *
-  * As in A11yTreeSuite, `:focused` is set explicitly on the focus stop:
-  * JavaFX shows it only while the window has focus, which a headless run
-  * cannot guarantee. Each check reads the rendered background fills.
+  * The cursor shows only while the keyboard holds the focus
+  * (`:focus-visible`, REVIEW ticket 14): each check reaches the stop by
+  * traversal, as Tab does ([[KeyboardFocus]]), or moves the focus off it
+  * the same way, and reads the rendered background fills.
   */
 class CompositeCursorFxSuite extends StudioFxSuite:
-
-  private val Focused = PseudoClass.getPseudoClass("focused")
 
   private def right[E, A](either: Either[E, A]): A =
     either.fold(e => fail(s"unexpected Left: $e"), identity)
@@ -75,13 +74,16 @@ class CompositeCursorFxSuite extends StudioFxSuite:
 
   /** `stop` drawn with and without keyboard focus; `read` runs after CSS. */
   private def drawn[A](stop: Region, focused: Boolean)(read: => A): A = runOnFx {
-    stop.pseudoClassStateChanged(Focused, focused)
-    stop.applyCss()
+    if focused then KeyboardFocus.byKeyboard(stop) else KeyboardFocus.away(stop)
+    stop.getScene.getRoot.applyCss()
     read
   }
 
-  private def themed(content: Parent, sheets: String*): StackPane = runOnFx {
-    val root = StackPane(content)
+  /** `content` under the studio's sheets, after a button that holds the
+    * focus while the stop has none.
+    */
+  private def themed(content: Parent, sheets: String*): VBox = runOnFx {
+    val root = VBox(Button("away"), content)
     root.getStylesheets.setAll(right(StudioStyles.stylesheets(Theme.Light))*)
     sheets.foreach(s =>
       Option(getClass.getClassLoader.getResource(s))
@@ -258,12 +260,14 @@ class CompositeCursorFxSuite extends StudioFxSuite:
     val table  = runOnFx {
       val t = StackPane(VBox(design*))
       t.getStyleClass.add("design-table")
+      t.setFocusTraversable(true)
       t
     }
     val records = rows(3, "records-row")
     val pane    = runOnFx {
       val p = VBox(records*)
       p.getStyleClass.add("pane-placeholder")
+      p.setFocusTraversable(true)
       p
     }
     fx.show(

@@ -23,6 +23,7 @@ import eyes4s.studio.app.vm.{A11yRole, FocusStop}
 import eyes4s.studio.app.{AppModel, Intent}
 import eyes4s.studio.core.selection.ViewId
 import eyes4s.studio.desktop.plot.TableTwinView
+import eyes4s.studio.desktop.shell.CompositeFocus
 import javafx.application.Platform
 import javafx.collections.FXCollections
 import javafx.geometry.Pos
@@ -157,6 +158,10 @@ final class SourceRecordsHost(
   /** The pane's content. */
   val node: VBox = VBox(toolbar, raw, header, list)
   node.getStyleClass.add("source-records")
+  // The rows carry the hosting pane's focus; with no cursor row, the pane
+  // draws it.
+  CompositeFocus.paneContent(node)
+  CompositeFocus.noCursor(node, true)
   Option(getClass.getClassLoader.getResource(TableTwinView.stylesheetResource))
     .foreach(url => node.getStylesheets.add(url.toExternalForm))
 
@@ -267,6 +272,7 @@ final class SourceRecordsHost(
     val said = SourceRecords.status(state)
     status.setText(said.getOrElse(""))
     val total = state.total.getOrElse(0)
+    CompositeFocus.noCursor(node, !state.cursor.exists(c => c >= 0 && c < total))
     if list.getItems.size != total then
       // The row indices, without boxing a list of them: a row is its index.
       val indices = new java.util.AbstractList[Integer]:

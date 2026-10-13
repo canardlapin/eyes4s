@@ -17,6 +17,7 @@
 package eyes4s.studio.desktop.explore
 
 import eyes4s.studio.app.explore.*
+import eyes4s.studio.desktop.shell.CompositeFocus
 import eyes4s.studio.desktop.tokens.TokenFiles
 import javafx.geometry.Pos
 import javafx.scene.control.*
@@ -59,6 +60,7 @@ final class TrialsNavigatorView(
 
   val rows: ListView[NavigatorRowVM] = ListView()
   rows.getStyleClass.add("nav-rows")
+  CompositeFocus.track(rows)
   rows.setCellFactory(_ => RowCell())
   VBox.setVgrow(rows, Priority.ALWAYS)
   rows.setOnKeyPressed(e =>

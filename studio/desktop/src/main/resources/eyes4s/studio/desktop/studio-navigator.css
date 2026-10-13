@@ -40,7 +40,7 @@
   -fx-padding: 0 8 0 8;
 }
 
-.nav-filter:focused {
+.nav-filter:focus-visible {
   -fx-background-color: -es-accent, -es-surface;
 }
 
@@ -62,7 +62,13 @@
   -fx-text-fill: -es-ink;
 }
 
-.nav-button:focused {
+/* Pressed: the hairline fill, one step past hover. */
+.nav-button:armed {
+  -fx-background-color: -es-hairline;
+  -fx-background-insets: 0;
+}
+
+.nav-button:focus-visible {
   -fx-background-color: -es-accent, -es-surface;
 }
 

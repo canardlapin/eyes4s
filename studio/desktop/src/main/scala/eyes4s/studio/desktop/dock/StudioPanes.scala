@@ -18,6 +18,9 @@ package eyes4s.studio.desktop.dock
 
 import eyes4s.studio.app.layout.{LayoutSpec, PaneDecl}
 import eyes4s.studio.app.vm.{A11y, A11yRole}
+import eyes4s.studio.desktop.shell.CompositeFocus
+import javafx.collections.SetChangeListener
+import javafx.css.PseudoClass
 import javafx.scene.AccessibleRole
 import javafx.scene.control.Label
 import javafx.scene.layout.{Priority, VBox}
@@ -113,7 +116,9 @@ object StudioPanes:
     case A11yRole.CheckBox     => AccessibleRole.CHECK_BOX
 
   /** A titled, empty panel: one focus stop (DESIGN_SPEC section 10), named
-    * by its title, with its kind's role.
+    * by its title, with its kind's role. Content whose rows carry the pane's
+    * focus makes it a composite pane ([[CompositeFocus.paneContent]]), which
+    * follows the content's `no-cursor` state.
     */
   private[dock] final class Placeholder(
       id: PaneId,
@@ -133,8 +138,22 @@ object StudioPanes:
       box.setFocusTraversable(true)
       box
 
+    private var hosted: Option[javafx.scene.Node]          = None
+    private val cursorless: SetChangeListener[PseudoClass] = _ => followCursor()
+
+    private def followCursor(): Unit =
+      CompositeFocus.noCursor(node, hosted.exists(CompositeFocus.hasNoCursor))
+
     /** Replace the title with a pane's real content, filling the pane. */
     def show(content: javafx.scene.Node): Unit =
       VBox.setVgrow(content, Priority.ALWAYS)
       node.getStyleClass.add("pane-hosted")
       node.getChildren.setAll(content): Unit
+      hosted.foreach(_.getPseudoClassStates.removeListener(cursorless))
+      hosted = Option.when(CompositeFocus.isPaneContent(content))(content)
+      node.getStyleClass.remove(CompositeFocus.PaneStyle): Unit
+      hosted.foreach { c =>
+        node.getStyleClass.add(CompositeFocus.PaneStyle): Unit
+        c.getPseudoClassStates.addListener(cursorless)
+      }
+      followCursor()

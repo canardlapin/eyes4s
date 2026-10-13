@@ -215,8 +215,9 @@ object A11yChecks:
 
   // --- focus ------------------------------------------------------------------
 
-  private val Focused     = javafx.css.PseudoClass.getPseudoClass("focused")
-  private val FocusWithin = javafx.css.PseudoClass.getPseudoClass("focus-within")
+  private val Focused      = javafx.css.PseudoClass.getPseudoClass("focused")
+  private val FocusVisible = javafx.css.PseudoClass.getPseudoClass("focus-visible")
+  private val FocusWithin  = javafx.css.PseudoClass.getPseudoClass("focus-within")
 
   /** How `n`, what it draws and what encloses it are drawn: background fills
     * and border strokes, under CSS as it stands.
@@ -230,13 +231,17 @@ object A11yChecks:
           .flatMap(_.getStrokes.asScala.map(s => s"${s.getTopStroke}/${s.getWidths}"))
     }.flatten
 
-  /** `n` drawn focused or not: `:focused` on it and `:focus-within` on it
-    * and what encloses it, as JavaFX sets them for the focus owner. A
-    * headless window cannot be sure to hold the OS focus that JavaFX shows
-    * them under, so they are set directly (as A11yTreeSuite does).
+  /** `n` drawn with keyboard focus or without: `:focused` and
+    * `:focus-visible` on it and `:focus-within` on it and what encloses it,
+    * as JavaFX sets them when Tab brings the focus (a ring is drawn only
+    * under `:focus-visible`). They are set directly rather than by moving
+    * the focus to every stop in turn, which would move the composites'
+    * cursors between the two readings; KeyboardFocus reaches real keyboard
+    * focus where a test reads one stop.
     */
   private def as(n: Node, focused: Boolean): Vector[String] =
     n.pseudoClassStateChanged(Focused, focused)
+    n.pseudoClassStateChanged(FocusVisible, focused)
     ancestors(n).foreach(_.pseudoClassStateChanged(FocusWithin, focused))
     drawn(n)
 
@@ -246,6 +251,7 @@ object A11yChecks:
       val (before, after) = (as(n, false), as(n, true))
       // Back to the state JavaFX holds.
       n.pseudoClassStateChanged(Focused, n.isFocused)
+      n.pseudoClassStateChanged(FocusVisible, n.isFocusVisible)
       ancestors(n).foreach(a => a.pseudoClassStateChanged(FocusWithin, a.isFocusWithin))
       Option.when(before == after)(
         s"${n.getAccessibleRole}: ${Option(n.getAccessibleText).getOrElse("").take(60)} at ${path(n)}"
