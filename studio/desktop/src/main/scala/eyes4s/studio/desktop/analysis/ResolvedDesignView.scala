@@ -80,6 +80,12 @@ final class ResolvedDesignView(dispatch: DesignIntent => Unit):
   table.setFocusTraversable(true)
   table.setAccessibleRole(AccessibleRole.TABLE_VIEW)
   VBox.setVgrow(table, Priority.ALWAYS)
+  // A focused composite always shows its cursor item (DESIGN_SPEC section 15):
+  // taking focus with no cursor puts it on the first row.
+  table.focusedProperty.addListener((_, _, now) =>
+    if now && !hasCursor then
+      shownRows.headOption.foreach(r => fire(DesignIntent.FocusRow(r.query)))
+  )
   table.addEventHandler(
     KeyEvent.KEY_PRESSED,
     (e: KeyEvent) =>
@@ -106,6 +112,7 @@ final class ResolvedDesignView(dispatch: DesignIntent => Unit):
 
   private var shownRows: Vector[DesignRowVM] = Vector.empty
   private var rowNodes: Vector[HBox]         = Vector.empty
+  private var hasCursor: Boolean             = false
 
   /** The row nodes now drawn, in order. */
   def rows: Vector[HBox] = rowNodes
@@ -142,7 +149,12 @@ final class ResolvedDesignView(dispatch: DesignIntent => Unit):
         shownRows = unfocused
         rowNodes = vm.rows.map(rowNode)
         rowBox.getChildren.setAll(rowNodes*): Unit
-      rowNodes.zip(vm.rows).foreach((n, r) => n.pseudoClassStateChanged(Cursor, r.focused))
+      // With no cursor, the first row (where focus puts it) is marked already;
+      // the stylesheet draws :cursor only while the table has focus.
+      hasCursor = vm.cursor.isDefined
+      rowNodes.zipWithIndex.foreach((n, i) =>
+        n.pseudoClassStateChanged(Cursor, vm.cursor.fold(i == 0)(_ == i))
+      )
       vm.cursor.foreach(reveal)
       shown(rowsNote, vm.rowsNote)
       notes.getChildren.setAll(vm.notes.map { n =>

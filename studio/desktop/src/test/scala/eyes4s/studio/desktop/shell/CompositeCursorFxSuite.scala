@@ -23,7 +23,8 @@ import eyes4s.studio.app.plot.{
   PlotColumn,
   PlotRow,
   PlotSource,
-  PlotValue
+  PlotValue,
+  TableTwinState
 }
 import eyes4s.studio.app.tokens.{Theme, ThemedToken, Tokens}
 import eyes4s.studio.core.selection.{SelectionState, StudioRef, ViewId}
@@ -198,6 +199,46 @@ class CompositeCursorFxSuite extends StudioFxSuite:
       List(accent -> 0.0, selFill -> 2.0)
     )
     runOnFx(table.dispose())
+  }
+
+  fxStage.test("a table focused with no cursor shows it on the selected row, else the first") {
+    fx =>
+      // The bus's selection with row 4 chosen, as a click on it submits it.
+      val chosen = TableTwinState
+        .initial(view, SelectionState.empty)
+        .click(pairs.rows(4).ref, toggle = false, pairs)
+        .intents match
+        case Vector(Intent.Select(input)) => right(SelectionState.empty.submit(input))
+        case other                        => fail(s"unexpected $other")
+      Vector((SelectionState.empty, 0), (chosen, 4)).foreach { (selection, home) =>
+        val intents = ArrayBuffer.empty[Intent]
+        val table   = runOnFx {
+          val t = TableTwinView.attach(view, selection, intents += _)
+          t.show(pairs)
+          t
+        }
+        // A control ahead of the table takes the scene's first focus.
+        val before = runOnFx(javafx.scene.control.Button("Before"))
+        fx.show(themed(VBox(before, table)))
+        fx.awaitLayout()
+        runOnFx(before.requestFocus())
+        def row(i: Int): Region = runOnFx(table.rowNode(i).getOrElse(fail(s"no row $i")))
+        assertEquals(runOnFx(table.state.cursor), None)
+        // Drawn focused, the table shows where its cursor will be.
+        val frame = drawn(table, focused = true)(fills(row(home)))
+        assertEquals(frame.headOption, Some(accent -> 0.0), s"row $home")
+        assert(!drawn(table, focused = false)(fills(row(home))).exists(_._1 == accent))
+        val others = pairs.rows.indices.filterNot(_ == home)
+        others.foreach(i =>
+          assert(!drawn(table, focused = true)(fills(row(i))).exists(_._1 == accent), i)
+        )
+        // Taking focus puts the cursor there, selecting nothing.
+        runOnFx(table.requestFocus())
+        fx.awaitLayout()
+        assertEquals(runOnFx(table.state.cursor), Some(pairs.rows(home).ref))
+        assertEquals(intents.toVector, Vector.empty)
+        runOnFx(table.dispose())
+      }
   }
 
   private val CursorRow = PseudoClass.getPseudoClass("cursor")
