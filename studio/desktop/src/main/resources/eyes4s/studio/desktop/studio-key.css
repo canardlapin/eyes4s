@@ -62,7 +62,13 @@
   -fx-text-fill: -es-ink-3;
 }
 
-.key-toggle:focused {
+/* Pressed: the hairline fill, one step past hover. */
+.key-toggle:armed {
+  -fx-background-color: -es-hairline;
+  -fx-background-insets: 0;
+}
+
+.key-toggle:focus-visible {
   -fx-background-color: -es-accent, -es-surface;
   -fx-background-insets: 0, 2;
 }

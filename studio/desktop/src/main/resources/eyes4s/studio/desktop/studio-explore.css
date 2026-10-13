@@ -53,11 +53,17 @@
   -fx-font-family: "IBM Plex Sans SmBld";
 }
 
-.explore-toggle:focused {
+/* Pressed: the hairline fill, one step past hover. */
+.explore-toggle:armed {
+  -fx-background-color: -es-hairline;
+  -fx-background-insets: 0;
+}
+
+.explore-toggle:focus-visible {
   -fx-background-color: -es-accent, -es-surface;
 }
 
-.explore-toggle:selected:focused {
+.explore-toggle:selected:focus-visible {
   -fx-background-color: -es-accent, -es-sel-fill;
 }
 
@@ -103,7 +109,13 @@
   -fx-text-fill: -es-ink;
 }
 
-.explore-button:focused {
+/* Pressed: the hairline fill, one step past hover. */
+.explore-button:armed {
+  -fx-background-color: -es-hairline;
+  -fx-background-insets: 0;
+}
+
+.explore-button:focus-visible {
   -fx-background-color: -es-accent, -es-surface;
 }
 

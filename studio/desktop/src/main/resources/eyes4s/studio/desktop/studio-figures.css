@@ -47,12 +47,12 @@
 }
 
 /* A row is a Tab stop: the ring is drawn inside its edge (S10.5). */
-.figures-row:focused {
+.figures-row:focus-visible {
   -fx-background-color: -es-accent, -es-surface;
   -fx-background-insets: 0, 2;
 }
 
-.figures-row-selected:focused {
+.figures-row-selected:focus-visible {
   -fx-background-color: -es-accent, -es-sel-fill;
 }
 

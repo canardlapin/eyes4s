@@ -19,7 +19,7 @@ package eyes4s.studio.desktop.admission
 import eyes4s.plan.AdmissionDecision as CoreAdmissionDecision
 import eyes4s.studio.app.admission.*
 import eyes4s.studio.core.selection.StudioRef
-import eyes4s.studio.desktop.shell.DisabledReason
+import eyes4s.studio.desktop.shell.{CompositeFocus, DisabledReason}
 import eyes4s.studio.desktop.tokens.TokenFiles
 import javafx.geometry.Pos
 import javafx.scene.control.*
@@ -74,6 +74,7 @@ final class AdmissionLedgerView(dispatch: LedgerIntent => Unit):
   val openedNote: Label            = label("ledger-note", "t11")
   val trials: ListView[TrialRowVM] = ListView()
   trials.getStyleClass.add("ledger-trials")
+  CompositeFocus.track(trials)
   trials.setPrefHeight(180)
   trials.setCellFactory(_ =>
     new ListCell[TrialRowVM]:

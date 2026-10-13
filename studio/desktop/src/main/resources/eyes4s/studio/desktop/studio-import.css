@@ -54,11 +54,6 @@
   -fx-font-family: "IBM Plex Sans SmBld";
 }
 
-.import-tab:focused {
-  -fx-background-color: -es-accent, -es-surface;
-  -fx-background-insets: 0, 2;
-}
-
 .import-kind {
   -fx-padding: 1 6 1 6;
   -fx-background-color: -es-hairline, -es-surface-2;
@@ -139,8 +134,17 @@
   -fx-background-radius: 4, 3;
 }
 
-.role-select:focused, .time-select:focused, .preset-select:focused,
-.import-field:focused, .import-button:focused {
+/* Pressed: the hairline fill, one step past hover. A primary action is drawn
+ * pressed as at rest (its rule comes later). Keyboard focus, after it, is the
+ * 2 px accent ring (DESIGN_SPEC 15); a click draws none. */
+.import-tab:armed, .import-button:armed {
+  -fx-background-color: -es-hairline;
+  -fx-background-insets: 0;
+}
+
+.import-tab:focus-visible,
+.role-select:focus-visible, .time-select:focus-visible, .preset-select:focus-visible,
+.import-field:focus-visible, .import-button:focus-visible {
   -fx-background-color: -es-accent, -es-surface;
   -fx-background-insets: 0, 2;
 }
@@ -189,9 +193,12 @@
   -fx-text-fill: -es-on-accent;
 }
 
-.import-button.primary:focused {
-  -fx-background-color: -es-ink, -es-accent;
-  -fx-background-insets: 0, 2;
+/* A focused primary action: the accent ring, an on-accent gap, then its own
+ * accent fill, so the ring reads against the button and the ground alike. */
+.import-button.primary:focus-visible {
+  -fx-background-color: -es-accent, -es-on-accent, -es-accent;
+  -fx-background-insets: 0, 2, 4;
+  -fx-background-radius: 4, 3, 2;
 }
 
 /* ---- data issues and the footer ----------------------------------------------- */

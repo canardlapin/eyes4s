@@ -28,6 +28,7 @@ import eyes4s.studio.app.plot.{
   TableTwinVM
 }
 import eyes4s.studio.core.selection.{SelectionState, StudioRef, ViewId}
+import eyes4s.studio.desktop.shell.CompositeFocus
 import eyes4s.studio.desktop.tokens.TokenFiles
 import javafx.application.Platform
 import javafx.beans.value.ChangeListener
@@ -505,6 +506,11 @@ final class TableTwinView private (initial: TableTwinState, dispatch: Intent => 
     // A pending or cleared table has no served name or content. It becomes
     // a focus stop after its source supplies an accessible caption.
     setFocusTraversable(text.nonEmpty)
+    // With no row under the cursor, the table draws the focus ring.
+    CompositeFocus.noCursor(
+      this,
+      shown.forall(s => current.cursor.flatMap(current.shownIndex(s, _)).isEmpty)
+    )
 
   // --- Input -------------------------------------------------------------------------
 

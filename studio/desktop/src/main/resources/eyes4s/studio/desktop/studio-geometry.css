@@ -140,20 +140,30 @@
   -fx-font-family: "IBM Plex Sans Medm";
 }
 
+/* Pressed: the hairline fill, one step past hover. A primary action is drawn
+ * pressed as at rest: its rule comes later. */
+.geometry-button:armed {
+  -fx-background-color: -es-hairline;
+  -fx-background-insets: 0;
+}
+
 .geometry-button.primary {
   -fx-background-color: -es-accent;
   -fx-background-insets: 0;
   -fx-text-fill: -es-on-accent;
 }
 
-.geometry-field:focused, .geometry-button:focused {
+.geometry-field:focus-visible, .geometry-button:focus-visible {
   -fx-background-color: -es-accent, -es-surface;
   -fx-background-insets: 0, 2;
 }
 
-.geometry-button.primary:focused {
-  -fx-background-color: -es-ink, -es-accent;
-  -fx-background-insets: 0, 2;
+/* A focused primary action: the accent ring, an on-accent gap, then its own
+ * accent fill, so the ring reads against the button and the ground alike. */
+.geometry-button.primary:focus-visible {
+  -fx-background-color: -es-accent, -es-on-accent, -es-accent;
+  -fx-background-insets: 0, 2, 4;
+  -fx-background-radius: 4, 3, 2;
 }
 
 .geometry-form {
@@ -196,7 +206,7 @@
   -fx-border-width: 2;
 }
 
-.geometry-picture:focused {
+.geometry-picture:focus-visible {
   -fx-border-color: -es-accent;
   -fx-border-width: 2;
 }

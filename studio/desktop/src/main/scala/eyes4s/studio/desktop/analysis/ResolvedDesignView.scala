@@ -18,6 +18,7 @@ package eyes4s.studio.desktop.analysis
 
 import eyes4s.studio.app.analysis.*
 import eyes4s.studio.core.backend.TrialKey
+import eyes4s.studio.desktop.shell.CompositeFocus
 import eyes4s.studio.desktop.tokens.TokenFiles
 import javafx.css.PseudoClass
 import javafx.geometry.Pos
@@ -143,6 +144,8 @@ final class ResolvedDesignView(dispatch: DesignIntent => Unit):
         rowNodes = vm.rows.map(rowNode)
         rowBox.getChildren.setAll(rowNodes*): Unit
       rowNodes.zip(vm.rows).foreach((n, r) => n.pseudoClassStateChanged(Cursor, r.focused))
+      // With no row under the cursor, the table draws the focus ring.
+      CompositeFocus.noCursor(table, !vm.rows.exists(_.focused))
       vm.cursor.foreach(reveal)
       shown(rowsNote, vm.rowsNote)
       notes.getChildren.setAll(vm.notes.map { n =>
