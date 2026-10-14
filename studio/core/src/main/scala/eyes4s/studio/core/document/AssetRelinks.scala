@@ -49,7 +49,7 @@ object AssetRelink:
   * a new one) does not carry its parent's repairs; a discarded revision's
   * are dropped with it and put back by its undo.
   */
-final case class AssetRelinks private (entries: Vector[AssetRelink]) derives CanEqual:
+sealed abstract case class AssetRelinks private (entries: Vector[AssetRelink]) derives CanEqual:
   def isEmpty: Boolean = entries.isEmpty
 
   /** `dataset`'s repairs. */
@@ -75,6 +75,9 @@ final case class AssetRelinks private (entries: Vector[AssetRelink]) derives Can
     )
 
 object AssetRelinks:
+  private def apply(entries: Vector[AssetRelink]): AssetRelinks =
+    new AssetRelinks(entries) {}
+
   val empty: AssetRelinks = AssetRelinks(Vector.empty)
 
   private def sorted(entries: Vector[AssetRelink]): AssetRelinks =

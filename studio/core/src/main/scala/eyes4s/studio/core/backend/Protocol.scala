@@ -230,7 +230,7 @@ private[backend] object Counted:
     else Right(())
 
 /** UI-D `StageMeter`: one segment's count in its own unit. */
-final case class StageMeter private (
+sealed abstract case class StageMeter private (
     kind: StageKind,
     unit: CountUnit,
     done: Long,
@@ -238,13 +238,21 @@ final case class StageMeter private (
 ) derives CanEqual
 
 object StageMeter:
+  private def apply(
+      kind: StageKind,
+      unit: CountUnit,
+      done: Long,
+      total: ProgressTotal
+  ): StageMeter =
+    new StageMeter(kind, unit, done, total) {}
+
   def of(
       kind: StageKind,
       unit: CountUnit,
       done: Long,
       total: ProgressTotal
   ): Either[ProgressError, StageMeter] =
-    Counted.check("meter", done, total).map(_ => new StageMeter(kind, unit, done, total))
+    Counted.check("meter", done, total).map(_ => StageMeter(kind, unit, done, total))
 
   given Encoder.AsObject[StageMeter] =
     Encoder.forProduct4("kind", "unit", "done", "total")(m => (m.kind, m.unit, m.done, m.total))
@@ -257,7 +265,7 @@ object StageMeter:
 /** Run-cumulative counts: maps estimated and pairs compared over every scale.
   * The chip reads `completedPairs / totalPairs`.
   */
-final case class RunTotals private (
+sealed abstract case class RunTotals private (
     completedMaps: Long,
     totalMaps: ProgressTotal,
     completedPairs: Long,
@@ -265,6 +273,14 @@ final case class RunTotals private (
 ) derives CanEqual
 
 object RunTotals:
+  private def apply(
+      completedMaps: Long,
+      totalMaps: ProgressTotal,
+      completedPairs: Long,
+      totalPairs: ProgressTotal
+  ): RunTotals =
+    new RunTotals(completedMaps, totalMaps, completedPairs, totalPairs) {}
+
   def of(
       completedMaps: Long,
       totalMaps: ProgressTotal,
@@ -274,7 +290,7 @@ object RunTotals:
     for
       _ <- Counted.check("completedMaps", completedMaps, totalMaps)
       _ <- Counted.check("completedPairs", completedPairs, totalPairs)
-    yield new RunTotals(completedMaps, totalMaps, completedPairs, totalPairs)
+    yield RunTotals(completedMaps, totalMaps, completedPairs, totalPairs)
 
   given Encoder.AsObject[RunTotals] =
     Encoder.forProduct4("completedMaps", "totalMaps", "completedPairs", "totalPairs")(t =>
@@ -289,7 +305,7 @@ object RunTotals:
 /** One progress report of a job: eyes4s `RunProgress` with the UI-D meter.
   * The meter's kind and unit are the segment's.
   */
-final case class JobProgress private (
+sealed abstract case class JobProgress private (
     job: JobId,
     run: RunId,
     step: Long,
@@ -299,6 +315,16 @@ final case class JobProgress private (
 ) derives CanEqual
 
 object JobProgress:
+  private def apply(
+      job: JobId,
+      run: RunId,
+      step: Long,
+      segment: Segment,
+      meter: StageMeter,
+      totals: RunTotals
+  ): JobProgress =
+    new JobProgress(job, run, step, segment, meter, totals) {}
+
   def of(
       job: JobId,
       run: RunId,
@@ -310,7 +336,7 @@ object JobProgress:
     if step < 0 then Left(ProgressError.Negative("step", step))
     else if meter.kind != segment.kind || meter.unit != segment.unit then
       Left(ProgressError.UnitMismatch(segment, meter))
-    else Right(new JobProgress(job, run, step, segment, meter, totals))
+    else Right(JobProgress(job, run, step, segment, meter, totals))
 
   given Encoder.AsObject[JobProgress] =
     Encoder.forProduct6("job", "run", "step", "segment", "meter", "totals")(p =>
@@ -577,9 +603,12 @@ enum PageError derives CanEqual:
     case SizeOutOfRange(size, maximum) => s"Page size $size is outside 1 to $maximum."
 
 /** One page of a listing: `offset` from the start, at most `size` entries. */
-final case class PageRequest private (offset: Int, size: Int) derives CanEqual
+sealed abstract case class PageRequest private (offset: Int, size: Int) derives CanEqual
 
 object PageRequest:
+  private def apply(offset: Int, size: Int): PageRequest =
+    new PageRequest(offset, size) {}
+
   /** eyes4s `PageSize`: 1 to 4096 entries. */
   val MaximumSize: Int = 4096
 
@@ -587,7 +616,7 @@ object PageRequest:
     if offset < 0 then Left(PageError.NegativeOffset(offset))
     else if size < 1 || size > MaximumSize then
       Left(PageError.SizeOutOfRange(size, MaximumSize))
-    else Right(new PageRequest(offset, size))
+    else Right(PageRequest(offset, size))
 
   def first(size: Int): Either[PageError, PageRequest] = of(0, size)
 

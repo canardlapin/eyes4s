@@ -24,12 +24,15 @@ import eyes4s.codec.ByteDigest
   * recognise it ("Eyes Studio on lab-mac, process 4121"). A refused writer
   * is shown this text.
   */
-final case class LockOwner private (description: String) derives CanEqual
+sealed abstract case class LockOwner private (description: String) derives CanEqual
 
 object LockOwner:
+  private def apply(description: String): LockOwner =
+    new LockOwner(description) {}
+
   def of(description: String): Either[BundleError, LockOwner] =
     if description.trim.isEmpty then Left(BundleError.BlankLockOwner)
-    else Right(new LockOwner(description.trim))
+    else Right(LockOwner(description.trim))
 
 /** The capability to write one bundle: issued by [[ProjectStore.acquire]] and
   * valid until [[ProjectStore.release]]. A store accepts a lock only while it

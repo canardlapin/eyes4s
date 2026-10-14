@@ -32,18 +32,34 @@ import io.circe.{Decoder, Encoder}
   * Every offered role once, every required role present, no column in two
   * roles, no attribute column also a role's.
   */
-final case class InventoryMapping private (
+sealed abstract case class InventoryMapping private (
     bindings: Vector[ColumnBinding],
     attributes: DeclaredAttributes,
     displays: Option[DisplayColumns],
     duration: Option[InventoryDurationColumn]
 ) derives CanEqual:
+
+  private def copy(
+      bindings: Vector[ColumnBinding] = this.bindings,
+      attributes: DeclaredAttributes = this.attributes,
+      displays: Option[DisplayColumns] = this.displays,
+      duration: Option[InventoryDurationColumn] = this.duration
+  ): InventoryMapping =
+    InventoryMapping(bindings, attributes, displays, duration)
   def column(role: ColumnRole): Option[ColumnName] = bindings.find(_.role == role).map(_.column)
 
   /** The eyes4s attribute declarations of the inventory's attribute columns. */
   def coreAttributes: Vector[AttributeColumn] = attributes.core
 
 object InventoryMapping:
+
+  private def apply(
+      bindings: Vector[ColumnBinding],
+      attributes: DeclaredAttributes,
+      displays: Option[DisplayColumns],
+      duration: Option[InventoryDurationColumn]
+  ): InventoryMapping =
+    new InventoryMapping(bindings, attributes, displays, duration) {}
 
   /** The trial identity eyes4s `TrialColumns` requires. */
   val required: Vector[ColumnRole] =
@@ -80,7 +96,7 @@ object InventoryMapping:
           )
         )
         .toLeft(())
-    yield new InventoryMapping(bindings.sortBy(_.role.ordinal), attributes, None, None)
+    yield InventoryMapping(bindings.sortBy(_.role.ordinal), attributes, None, None)
 
   /** `mapping` reading each trial's display from `displays` (S5.7), or no
     * display (`None`): its columns are no role's (a column declared as an

@@ -112,7 +112,7 @@ enum RowOrder derives CanEqual, Codec.AsObject:
   * in milliseconds, and where the analysis revision's study places it
   * against the map (eyes4s `MapPlacement`).
   */
-final case class AdmittedFixation private (
+sealed abstract case class AdmittedFixation private (
     ref: StudioRef.Fixation,
     record: Int,
     screenX: Double,
@@ -123,6 +123,17 @@ final case class AdmittedFixation private (
 ) derives CanEqual
 
 object AdmittedFixation:
+  private def apply(
+      ref: StudioRef.Fixation,
+      record: Int,
+      screenX: Double,
+      screenY: Double,
+      onsetMs: Double,
+      durationMs: Double,
+      placement: MapPlacement
+  ): AdmittedFixation =
+    new AdmittedFixation(ref, record, screenX, screenY, onsetMs, durationMs, placement) {}
+
   def of(
       ref: StudioRef.Fixation,
       record: Int,
@@ -175,7 +186,7 @@ object AdmittedFixation:
   * S6.2): its scanpath in order, positions 1, 2, …, each placed by the
   * revision's study. Built only through [[TrialFixations.of]].
   */
-final case class TrialFixations private (
+sealed abstract case class TrialFixations private (
     revision: AnalysisRevision,
     dataset: DatasetRevision,
     trial: TrialKey,
@@ -184,6 +195,15 @@ final case class TrialFixations private (
 ) derives CanEqual
 
 object TrialFixations:
+  private def apply(
+      revision: AnalysisRevision,
+      dataset: DatasetRevision,
+      trial: TrialKey,
+      fixations: Vector[AdmittedFixation],
+      extent: TrialTemporalExtent
+  ): TrialFixations =
+    new TrialFixations(revision, dataset, trial, fixations, extent) {}
+
   def of(
       revision: AnalysisRevision,
       dataset: DatasetRevision,
@@ -235,12 +255,19 @@ object TrialFixations:
 /** The half-open region `[left, right) × [top, bottom)` of the screen, in
   * screen pixels (origin top-left, y down), that a grid covers.
   */
-final case class ScreenRegion private (left: Double, top: Double, right: Double, bottom: Double)
-    derives CanEqual:
+sealed abstract case class ScreenRegion private (
+    left: Double,
+    top: Double,
+    right: Double,
+    bottom: Double
+) derives CanEqual:
   def width: Double  = right - left
   def height: Double = bottom - top
 
 object ScreenRegion:
+  private def apply(left: Double, top: Double, right: Double, bottom: Double): ScreenRegion =
+    new ScreenRegion(left, top, right, bottom) {}
+
   def of(
       trial: TrialKey,
       left: Double,
@@ -268,7 +295,7 @@ object ScreenRegion:
   * is the top; a cell is `None` where the backend holds no value. `levels`
   * are the backend's isoline levels.
   */
-final case class TrialPreview private (
+sealed abstract case class TrialPreview private (
     revision: AnalysisRevision,
     trial: TrialKey,
     sigmaDegrees: Double,
@@ -281,6 +308,29 @@ final case class TrialPreview private (
 ) derives CanEqual
 
 object TrialPreview:
+  private def apply(
+      revision: AnalysisRevision,
+      trial: TrialKey,
+      sigmaDegrees: Double,
+      region: ScreenRegion,
+      columns: Int,
+      rows: Int,
+      order: RowOrder,
+      cells: Vector[Option[Double]],
+      levels: Vector[Double]
+  ): TrialPreview =
+    new TrialPreview(
+      revision,
+      trial,
+      sigmaDegrees,
+      region,
+      columns,
+      rows,
+      order,
+      cells,
+      levels
+    ) {}
+
   def of(
       revision: AnalysisRevision,
       trial: TrialKey,

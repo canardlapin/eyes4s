@@ -24,7 +24,7 @@ enum InventoryDurationRounding derives CanEqual, Codec.AsObject:
   case NearestMicrosecond
 
 /** An inventory duration defining [0, duration) relative to trial start. */
-final case class InventoryDurationColumn private (
+sealed abstract case class InventoryDurationColumn private (
     column: ColumnName,
     unit: TimeUnit,
     rounding: InventoryDurationRounding
@@ -39,12 +39,19 @@ final case class InventoryDurationColumn private (
     TrialDurationFromStart.of(column.value, units, precision)
 
 object InventoryDurationColumn:
+  private def apply(
+      column: ColumnName,
+      unit: TimeUnit,
+      rounding: InventoryDurationRounding
+  ): InventoryDurationColumn =
+    new InventoryDurationColumn(column, unit, rounding) {}
+
   def of(
       column: ColumnName,
       unit: TimeUnit,
       rounding: InventoryDurationRounding = InventoryDurationRounding.NearestMicrosecond
   ): Either[DocumentError, InventoryDurationColumn] =
-    Right(new InventoryDurationColumn(column, unit, rounding))
+    Right(InventoryDurationColumn(column, unit, rounding))
 
   given Codec.AsObject[InventoryDurationColumn] = Codec.AsObject.from(
     Decoder.forProduct3("column", "unit", "rounding")(of).emap(_.left.map(_.message)),

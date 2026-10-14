@@ -121,7 +121,7 @@ final case class Transition(from: TrialStatus, to: TrialStatus, trials: Vector[T
   * other does not (a remapped occurrence, say) is a change from or to
   * [[TrialStatus.Unlisted]].
   */
-final case class StatusChanges private (
+sealed abstract case class StatusChanges private (
     from: DatasetRevision,
     to: DatasetRevision,
     changes: Vector[StatusChange]
@@ -139,6 +139,13 @@ final case class StatusChanges private (
       .sortBy(t => (-t.count, changes.indexWhere(c => c.from == t.from && c.to == t.to)))
 
 object StatusChanges:
+  private def apply(
+      from: DatasetRevision,
+      to: DatasetRevision,
+      changes: Vector[StatusChange]
+  ): StatusChanges =
+    new StatusChanges(from, to, changes) {}
+
   /** Compare `fromLedger` (of `from`) with `toLedger` (of `to`), in the
     * later ledger's order, then the trials only the earlier one lists. A
     * ledger listing a trial twice is refused.
@@ -218,12 +225,21 @@ enum DiffError derives CanEqual:
   * to their own content, in the order sources, units, mappings, geometry,
   * admission choices, and the trials whose admission status changed.
   */
-final case class DatasetDiff private (
+sealed abstract case class DatasetDiff private (
     from: DatasetRevision,
     to: DatasetRevision,
     changes: Vector[DatasetChange],
     status: StatusDiff
 ) derives CanEqual:
+
+  private def copy(
+      from: DatasetRevision = this.from,
+      to: DatasetRevision = this.to,
+      changes: Vector[DatasetChange] = this.changes,
+      status: StatusDiff
+  ): DatasetDiff =
+    DatasetDiff(from, to, changes, status)
+
   /** The number of trials whose status changed, once compared. */
   def statusChanges: Option[Int] = status match
     case StatusDiff.Compared(c) => Some(c.trials)
@@ -234,6 +250,14 @@ final case class DatasetDiff private (
     DatasetDiff.checkStatus(from, to, next).map(_ => copy(status = next))
 
 object DatasetDiff:
+  private def apply(
+      from: DatasetRevision,
+      to: DatasetRevision,
+      changes: Vector[DatasetChange],
+      status: StatusDiff
+  ): DatasetDiff =
+    new DatasetDiff(from, to, changes, status) {}
+
   /** The diff from `from` to `to`. */
   def of(
       from: DatasetRevisionSpec,

@@ -28,7 +28,7 @@ import io.circe.{Decoder, DecodingFailure, Encoder, Json}
 /** Canonical values and semantic source identity are distinct from stored byte SHA.
   * A job id is session-local and has no place in these persisted facts.
   */
-final case class NativeBindingFacts private (
+sealed abstract case class NativeBindingFacts private (
     run: RunId,
     stamp: RunStamp,
     source: SemanticIdentity,
@@ -44,6 +44,27 @@ final case class NativeBindingFacts private (
   def inputCanonical = checkedInput
 
 object NativeBindingFacts:
+  private def apply(
+      run: RunId,
+      stamp: RunStamp,
+      source: SemanticIdentity,
+      result: CanonicalDigest[ResultArchiveArtifact],
+      recipeSnapshot: Recipe,
+      datasetDefinition: Option[NativeDatasetDefinition],
+      checkedPlan: CanonicalDigest[StudyPlanArtifact],
+      checkedInput: CanonicalDigest[StudyInputArtifact]
+  ): NativeBindingFacts =
+    new NativeBindingFacts(
+      run,
+      stamp,
+      source,
+      result,
+      recipeSnapshot,
+      datasetDefinition,
+      checkedPlan,
+      checkedInput
+    ) {}
+
   def of(
       run: RunId,
       stamp: RunStamp,
@@ -72,7 +93,7 @@ object NativeBindingFacts:
           )
         else
           Right(
-            new NativeBindingFacts(
+            NativeBindingFacts(
               run,
               stamp,
               source,

@@ -68,12 +68,16 @@ enum KeepReason derives CanEqual:
   * every source explicitly, so a caller cannot prune under a partial basis
   * by leaving one out.
   */
-final case class RetentionBasis private (keeps: Vector[(RunId, KeepReason)]) derives CanEqual:
+sealed abstract case class RetentionBasis private (keeps: Vector[(RunId, KeepReason)])
+    derives CanEqual:
   def reasons(run: RunId): Vector[KeepReason] = keeps.collect { case (`run`, r) => r }.distinct
   def kept(run: RunId): Boolean               = keeps.exists(_._1 == run)
   def runs: Vector[RunId]                     = keeps.map(_._1).distinct.sortBy(_.number)
 
 object RetentionBasis:
+  private def apply(keeps: Vector[(RunId, KeepReason)]): RetentionBasis =
+    new RetentionBasis(keeps) {}
+
   /** The basis of a writing session:
     *
     *  - `history`: the open document, its running runs, and every document
@@ -186,7 +190,7 @@ enum RunRetention derives CanEqual:
 /** Every stored archive, each kept or prunable, in run order: what the
   * store shows, with sizes.
   */
-final case class RunStorage private (rows: Vector[RunRetention]) derives CanEqual:
+sealed abstract case class RunStorage private (rows: Vector[RunRetention]) derives CanEqual:
   def row(run: RunId): Option[RunRetention] = rows.find(_.run == run)
 
   def kept: Vector[RunRetention.Kept]         = rows.collect { case k: RunRetention.Kept => k }
@@ -202,6 +206,9 @@ final case class RunStorage private (rows: Vector[RunRetention]) derives CanEqua
   def prunableBytes: Long = prunable.flatMap(_.record.size).sum
 
 object RunStorage:
+  private def apply(rows: Vector[RunRetention]): RunStorage =
+    new RunStorage(rows) {}
+
   /** Classify `records` under `basis`: a run the basis keeps is kept, with
     * its reasons; every other is prunable.
     */
@@ -216,7 +223,7 @@ object RunStorage:
   * the user's confirmation ([[PrunePlan.confirm]]), and is re-checked
   * against the store and the retention basis when it runs.
   */
-final case class PrunePlan private (records: Vector[ArchiveRecord]) derives CanEqual:
+sealed abstract case class PrunePlan private (records: Vector[ArchiveRecord]) derives CanEqual:
   def runs: Vector[RunId] = records.map(_.run)
 
   /** The known bytes pruning frees, and whether some archive's size is
@@ -229,6 +236,9 @@ final case class PrunePlan private (records: Vector[ArchiveRecord]) derives CanE
   def confirm: ConfirmedPrune = ConfirmedPrune(this)
 
 object PrunePlan:
+  private def apply(records: Vector[ArchiveRecord]): PrunePlan =
+    new PrunePlan(records) {}
+
   /** A plan to prune the archives of `runs`, each stored and prunable in
     * `storage`.
     */
@@ -252,10 +262,14 @@ object PrunePlan:
   def everything(storage: RunStorage): Either[RunStoreError, PrunePlan] =
     of(storage, storage.prunable.map(_.run))
 
+object ConfirmedPrune:
+  private[runs] def apply(plan: PrunePlan): ConfirmedPrune =
+    new ConfirmedPrune(plan) {}
+
 /** A [[PrunePlan]] the user confirmed: the only thing
   * [[RunStore.prune]] accepts.
   */
-final case class ConfirmedPrune private[runs] (plan: PrunePlan) derives CanEqual
+sealed abstract case class ConfirmedPrune private[runs] (plan: PrunePlan) derives CanEqual
 
 /** What a prune removed. */
 final case class PruneReport(

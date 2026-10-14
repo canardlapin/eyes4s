@@ -45,39 +45,48 @@ private[document] object Degrees:
     else value.toString
 
 /** One smoothing scale: the kernel's standard deviation, in degrees. */
-final case class Sigma private (degrees: Double) derives CanEqual:
+sealed abstract case class Sigma private (degrees: Double) derives CanEqual:
   def label: String  = s"${Degrees.render(degrees)}°"
   def render: String = s"σ $label"
 
 object Sigma:
+  private def apply(degrees: Double): Sigma =
+    new Sigma(degrees) {}
+
   def of(degrees: Double): Either[DocumentError, Sigma] =
-    Checks.positive("sigma (degrees)", degrees).map(new Sigma(_))
+    Checks.positive("sigma (degrees)", degrees).map(Sigma(_))
 
   given Codec[Sigma] = DocumentCodecs.validated(of, _.degrees)
 
 /** The declared scales, in order: at least one, none repeated. */
-final case class ScaleSet private (values: Vector[Sigma]) derives CanEqual:
+sealed abstract case class ScaleSet private (values: Vector[Sigma]) derives CanEqual:
   def render: String = values.map(s => Degrees.render(s.degrees)).mkString(", ") + "°"
 
   def contains(sigma: Sigma): Boolean = values.contains(sigma)
 
 object ScaleSet:
+  private def apply(values: Vector[Sigma]): ScaleSet =
+    new ScaleSet(values) {}
+
   def of(values: Vector[Sigma]): Either[DocumentError, ScaleSet] =
     if values.isEmpty then Left(DocumentError.EmptyScales)
     else if values.distinct.size != values.size then
       Left(DocumentError.DuplicateScales(values.map(_.degrees)))
-    else Right(new ScaleSet(values))
+    else Right(ScaleSet(values))
 
   given Codec[ScaleSet] = DocumentCodecs.validated(of, _.values)
 
 /** The density grid on the image frame, in cells. */
-final case class GridSize private (columns: Int, rows: Int) derives CanEqual:
+sealed abstract case class GridSize private (columns: Int, rows: Int) derives CanEqual:
   def render: String = s"$columns×$rows"
 
 object GridSize:
+  private def apply(columns: Int, rows: Int): GridSize =
+    new GridSize(columns, rows) {}
+
   def of(columns: Int, rows: Int): Either[DocumentError, GridSize] =
     (Checks.positive("grid columns", columns), Checks.positive("grid rows", rows))
-      .mapN(new GridSize(_, _))
+      .mapN(GridSize(_, _))
 
   given Encoder.AsObject[GridSize] =
     Encoder.forProduct2("columns", "rows")(g => (g.columns, g.rows))
@@ -89,23 +98,29 @@ final case class PhasePair(focal: Phase, reference: Phase) derives CanEqual, Cod
   def render: String = s"${focal.label} vs ${reference.label}"
 
 /** The radius of the disc around the fixation cross, in degrees. */
-final case class CrossRadius private (degrees: Double) derives CanEqual
+sealed abstract case class CrossRadius private (degrees: Double) derives CanEqual
 
 object CrossRadius:
+  private def apply(degrees: Double): CrossRadius =
+    new CrossRadius(degrees) {}
+
   def of(degrees: Double): Either[DocumentError, CrossRadius] =
-    Checks.positive("cross radius (degrees)", degrees).map(new CrossRadius(_))
+    Checks.positive("cross radius (degrees)", degrees).map(CrossRadius(_))
 
   given Codec[CrossRadius] = DocumentCodecs.validated(of, _.degrees)
 
 /** An explicitly declared fixation-cross position in admission-screen pixels. */
-final case class ScreenCross private (x: Double, y: Double) derives CanEqual
+sealed abstract case class ScreenCross private (x: Double, y: Double) derives CanEqual
 
 object ScreenCross:
+  private def apply(x: Double, y: Double): ScreenCross =
+    new ScreenCross(x, y) {}
+
   def of(x: Double, y: Double): Either[DocumentError, ScreenCross] =
     for
       a <- Checks.finite("fixation cross x (screen px)", x)
       b <- Checks.finite("fixation cross y (screen px)", y)
-    yield new ScreenCross(a, b)
+    yield ScreenCross(a, b)
   given Encoder.AsObject[ScreenCross] = Encoder.forProduct2("x", "y")(p => (p.x, p.y))
   given Decoder[ScreenCross] = Decoder.forProduct2("x", "y")(of).emap(_.left.map(_.message))
 
@@ -126,11 +141,14 @@ enum InitialFixationChoice derives CanEqual, Codec.AsObject:
       s"drop leading fixations within ${Degrees.render(r.degrees)}° of the cross at (${cross.x}, ${cross.y}) screen px"
 
 /** An occurrence number, 1 for an item's first presentation. */
-final case class Occurrence private (value: Int) derives CanEqual
+sealed abstract case class Occurrence private (value: Int) derives CanEqual
 
 object Occurrence:
+  private def apply(value: Int): Occurrence =
+    new Occurrence(value) {}
+
   def of(value: Int): Either[DocumentError, Occurrence] =
-    Checks.positive("occurrence", value).map(new Occurrence(_))
+    Checks.positive("occurrence", value).map(Occurrence(_))
 
   given Codec[Occurrence] = DocumentCodecs.validated(of, _.value)
 
@@ -200,19 +218,22 @@ object UnmatchedChoice:
 /** A registered eyes4s definition, by name and version (a layout or a
   * method). Validated by the public `DefinitionId.of`.
   */
-final case class DefinitionRef private (name: String, version: Int) derives CanEqual:
+sealed abstract case class DefinitionRef private (name: String, version: Int) derives CanEqual:
   def render: String = s"$name@$version"
 
 object DefinitionRef:
+  private def apply(name: String, version: Int): DefinitionRef =
+    new DefinitionRef(name, version) {}
+
   def of(name: String, version: Int): Either[DocumentError, DefinitionRef] =
     DefinitionId
       .of(name, version)
       .bimap(
         _ => DocumentError.BadDefinition(name, version),
-        d => new DefinitionRef(d.name, d.version)
+        d => DefinitionRef(d.name, d.version)
       )
 
-  def fromCore(id: DefinitionId): DefinitionRef = new DefinitionRef(id.name, id.version)
+  def fromCore(id: DefinitionId): DefinitionRef = DefinitionRef(id.name, id.version)
 
   given Encoder.AsObject[DefinitionRef] =
     Encoder.forProduct2("name", "version")(d => (d.name, d.version))
@@ -245,11 +266,14 @@ object WeightChoice:
     case Weight.Duration => Duration
 
 /** The fewest successful scores a reduction needs. */
-final case class MinimumSuccessful private (value: Int) derives CanEqual
+sealed abstract case class MinimumSuccessful private (value: Int) derives CanEqual
 
 object MinimumSuccessful:
+  private def apply(value: Int): MinimumSuccessful =
+    new MinimumSuccessful(value) {}
+
   def of(value: Int): Either[DocumentError, MinimumSuccessful] =
-    Checks.positive("minimum successful scores", value).map(new MinimumSuccessful(_))
+    Checks.positive("minimum successful scores", value).map(MinimumSuccessful(_))
 
   given Codec[MinimumSuccessful] = DocumentCodecs.validated(of, _.value)
 
@@ -270,13 +294,20 @@ object FailureChoice:
 /** The analysis window in admission-frame units (screen px, y down): the
   * half-open box [xMin, xMax) × [yMin, yMax), non-empty and finite.
   */
-final case class AnalysisWindow private (xMin: Double, yMin: Double, xMax: Double, yMax: Double)
-    derives CanEqual:
+sealed abstract case class AnalysisWindow private (
+    xMin: Double,
+    yMin: Double,
+    xMax: Double,
+    yMax: Double
+) derives CanEqual:
   def render: String =
     s"[${Degrees.render(xMin)}, ${Degrees.render(xMax)}) × " +
       s"[${Degrees.render(yMin)}, ${Degrees.render(yMax)}) px"
 
 object AnalysisWindow:
+  private def apply(xMin: Double, yMin: Double, xMax: Double, yMax: Double): AnalysisWindow =
+    new AnalysisWindow(xMin, yMin, xMax, yMax) {}
+
   def of(
       xMin: Double,
       yMin: Double,
@@ -292,7 +323,7 @@ object AnalysisWindow:
         (),
         DocumentError.EmptyWindow(xMin, yMin, xMax, yMax)
       )
-    yield new AnalysisWindow(xMin, yMin, xMax, yMax)
+    yield AnalysisWindow(xMin, yMin, xMax, yMax)
 
   given Encoder.AsObject[AnalysisWindow] =
     Encoder.forProduct4("xMin", "yMin", "xMax", "yMax")(w => (w.xMin, w.yMin, w.xMax, w.yMax))
@@ -607,7 +638,7 @@ enum DraftOrigin derives CanEqual, Codec.AsObject:
   )
 
 /** The checked effective working recipe, without a synthetic saved revision. */
-final case class DraftContext private[document] (
+sealed abstract case class DraftContext private[document] (
     id: AnalysisRevision,
     origin: DraftOrigin,
     savedBase: Option[AnalysisRevisionSpec],
@@ -619,6 +650,18 @@ final case class DraftContext private[document] (
 ) derives CanEqual
 
 object DraftContext:
+  private[document] def apply(
+      id: AnalysisRevision,
+      origin: DraftOrigin,
+      savedBase: Option[AnalysisRevisionSpec],
+      seedDataset: DatasetRevision,
+      seedRecipe: Recipe,
+      dataset: DatasetRevision,
+      recipe: Recipe,
+      studio: StudioFields
+  ): DraftContext =
+    new DraftContext(id, origin, savedBase, seedDataset, seedRecipe, dataset, recipe, studio) {}
+
   def saved(id: AnalysisRevision, base: AnalysisRevisionSpec): DraftContext =
     DraftContext(
       id,
@@ -897,11 +940,14 @@ enum Preset derives CanEqual, Codec.AsObject:
   case PerceptionImagery
 
 /** A non-blank name. */
-final case class RevisionName private (value: String) derives CanEqual
+sealed abstract case class RevisionName private (value: String) derives CanEqual
 
 object RevisionName:
+  private def apply(value: String): RevisionName =
+    new RevisionName(value) {}
+
   def of(value: String): Either[DocumentError, RevisionName] =
-    Checks.nonBlank("analysis name", value).map(new RevisionName(_))
+    Checks.nonBlank("analysis name", value).map(RevisionName(_))
 
   given Codec[RevisionName] = DocumentCodecs.validated(of, _.value)
 

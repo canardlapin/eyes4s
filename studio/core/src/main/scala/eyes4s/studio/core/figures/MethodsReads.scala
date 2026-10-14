@@ -24,13 +24,16 @@ import eyes4s.studio.core.backend.*
 /** How many queries of a run had each count of something, ascending by the
   * count: `(count, queries)`.
   */
-final case class Tally private (entries: Vector[(Int, Int)]) derives CanEqual:
+sealed abstract case class Tally private (entries: Vector[(Int, Int)]) derives CanEqual:
   def queries: Int = entries.map(_._2).sum
 
   /** The count most queries share (the smaller on a tie). */
   def mode: Option[Int] = entries.maxByOption((count, queries) => (queries, -count)).map(_._1)
 
 object Tally:
+  private def apply(entries: Vector[(Int, Int)]): Tally =
+    new Tally(entries) {}
+
   def of(counts: Vector[Int]): Tally =
     Tally(counts.groupMapReduce(identity)(_ => 1)(_ + _).toVector.sortBy(_._1))
 

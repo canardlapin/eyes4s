@@ -17,7 +17,7 @@
 package eyes4s.studio.core.artifacts
 
 /** Whole-package limits are explicit because RunStore persists complete archives. */
-final case class NativeArtifactBudget private (
+sealed abstract case class NativeArtifactBudget private (
     maxDensityCells: Long,
     maxRows: Long,
     maxEntries: Int,
@@ -25,8 +25,16 @@ final case class NativeArtifactBudget private (
 ) derives CanEqual
 
 object NativeArtifactBudget:
+  private def apply(
+      maxDensityCells: Long,
+      maxRows: Long,
+      maxEntries: Int,
+      maxTotalBytes: Long
+  ): NativeArtifactBudget =
+    new NativeArtifactBudget(maxDensityCells, maxRows, maxEntries, maxTotalBytes) {}
+
   val Default: NativeArtifactBudget =
-    new NativeArtifactBudget(20_000_000L, 1_000_000L, 512, 256L * 1024 * 1024)
+    NativeArtifactBudget(20_000_000L, 1_000_000L, 512, 256L * 1024 * 1024)
   def of(
       maxDensityCells: Long = Default.maxDensityCells,
       maxRows: Long = Default.maxRows,
@@ -42,4 +50,4 @@ object NativeArtifactBudget:
       .collectFirst {
         case (field, value) if value <= 0 => NativeArtifactError.InvalidBudget(field, value)
       }
-      .toLeft(new NativeArtifactBudget(maxDensityCells, maxRows, maxEntries, maxTotalBytes))
+      .toLeft(NativeArtifactBudget(maxDensityCells, maxRows, maxEntries, maxTotalBytes))

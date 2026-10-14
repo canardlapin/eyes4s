@@ -174,16 +174,19 @@ object DisplayKind:
     else values.find(_.token == t).toRight(AssetError.UnrecognisedKind(trial, token))
 
 /** An asset's file name as the trial inventory names it: one path segment. */
-final case class AssetFile private (value: String) derives CanEqual
+sealed abstract case class AssetFile private (value: String) derives CanEqual
 
 object AssetFile:
+  private def apply(value: String): AssetFile =
+    new AssetFile(value) {}
+
   def of(value: String): Either[AssetError, AssetFile] =
     if value.trim.isEmpty then Left(AssetError.BadFileName(value, "it is blank"))
     else if value.exists(c => c == '/' || c == '\\') then
       Left(AssetError.BadFileName(value, "it is not a single path segment"))
     else if value == "." || value == ".." then
       Left(AssetError.BadFileName(value, "it names a directory"))
-    else Right(new AssetFile(value))
+    else Right(AssetFile(value))
 
   given Ordering[AssetFile] = Ordering.by(_.value)
   given Codec[AssetFile]    = AssetCodecs.validated(of, _.value)
@@ -230,15 +233,18 @@ object AssetLink:
   * its display: imagery trials that share one blank display keep their own
   * items.
   */
-final case class MatchItem private (value: String) derives CanEqual
+sealed abstract case class MatchItem private (value: String) derives CanEqual
 
 object MatchItem:
+  private def apply(value: String): MatchItem =
+    new MatchItem(value) {}
+
   def of(trial: TrialKey, value: String): Either[AssetError, MatchItem] =
-    Either.cond(value.trim.nonEmpty, new MatchItem(value), AssetError.BlankItem(trial))
+    Either.cond(value.trim.nonEmpty, MatchItem(value), AssetError.BlankItem(trial))
 
   given Encoder[MatchItem] = Encoder[String].contramap(_.value)
   given Decoder[MatchItem] = Decoder[String].emap(v =>
-    Either.cond(v.trim.nonEmpty, new MatchItem(v), "a match item is blank")
+    Either.cond(v.trim.nonEmpty, MatchItem(v), "a match item is blank")
   )
 
 /** What a trial showed, with its asset: an image always names one, a blank
@@ -398,7 +404,7 @@ final case class AssetSummary(files: Int, present: Int, missing: Vector[MissingA
   * frame lies inside the screen, one file name has one digest, and a file is
   * never present for one trial and missing for another.
   */
-final case class AssetRegistry private (
+sealed abstract case class AssetRegistry private (
     dataset: DatasetRevision,
     inventory: ByteDigest,
     screen: ScreenSize,
@@ -490,6 +496,14 @@ final case class AssetRegistry private (
       )
 
 object AssetRegistry:
+  private def apply(
+      dataset: DatasetRevision,
+      inventory: ByteDigest,
+      screen: ScreenSize,
+      trials: Vector[TrialDisplay]
+  ): AssetRegistry =
+    new AssetRegistry(dataset, inventory, screen, trials) {}
+
   def of(
       dataset: DatasetRevision,
       inventory: ByteDigest,
@@ -526,7 +540,7 @@ object AssetRegistry:
         }
         .flatten
         .toLeft(())
-    yield new AssetRegistry(dataset, inventory, screen, trials)
+    yield AssetRegistry(dataset, inventory, screen, trials)
 
   private def firstRepeat[A](values: Vector[A]): Option[A] =
     values.diff(values.distinct).headOption
