@@ -90,6 +90,19 @@ gaps, add a microsecond to every contained fixation's dwell, or divide by the el
 scanpath extent. All three mutants failed on JVM and Scala.js; the implementation was
 restored byte for byte before ordinary verification.
 
+`FixationAoiCodecs.assignment(schema)` persists the assignment under a caller-supplied
+versioned schema. It reuses the established scanpath and AOI geometry wire forms,
+retains source-supported fixation evidence, and replays assignment on decode. Stored
+memberships, time accounting, measures and transitions must agree with that replay.
+
+`FixationAoiTables.tables(assignment, key)` projects metrics and transitions into the
+shared `eyes4s-results` table layer. CSV and Arrow use their existing writers. Times
+and counts are Int64; missing proportions and first entries retain validity and
+absence reasons. Each table names the fixation-time denominator and visit convention,
+and binds exact geometry, timing, policy and source evidence in its input digest.
+The sample export estimand is now `sample_run_count`; previous `run_count` columns
+represented the same sample-level quantity and must not be read as fixation visits.
+
 ## Scope
 
 The laws cover the static sample-time and fixation-time APIs. They do not cover the deferred entity-trace

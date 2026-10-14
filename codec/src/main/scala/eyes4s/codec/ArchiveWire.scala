@@ -934,7 +934,7 @@ private[codec] object RecordingResultWire:
           case ExclusionReason.OffSurface => "offSurface")
       )
 
-  private def policy(value: MembershipPolicy): Json = value match
+  private[codec] def policy(value: MembershipPolicy): Json = value match
     case MembershipPolicy.Multiple              => tagged("multiple")
     case MembershipPolicy.ExclusiveByPriority   => tagged("exclusiveByPriority")
     case MembershipPolicy.RejectOverlap         => tagged("rejectOverlap")
