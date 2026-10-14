@@ -25,7 +25,7 @@ import eyes4s.kernel.*
 import eyes4s.kernel.Unit2D.Px
 import eyes4s.laws.*
 import eyes4s.plan.*
-import eyes4s.surface.EdgePolicy
+import eyes4s.surface.{Bandwidth, EdgePolicy}
 import io.circe.Json
 import org.scalacheck.Gen
 import scala.compiletime.testing.typeCheckErrors
@@ -544,13 +544,64 @@ class ConsumerSuite extends munit.DisciplineSuite:
     val numbers = result.scales.flatMap(scale =>
       get(scale.contrast).rows.map(row => Json.fromDoubleOrNull(get(row.difference).value))
     )
+    val gaussianBits = result.scales.flatMap(scale =>
+      get(scale.contrast).rows.map(row =>
+        Json.fromString(
+          java.lang.Double.doubleToRawLongBits(get(row.difference).value).toString
+        )
+      )
+    )
+    val fixations = input.trials.rows.flatMap(_.value.fixations.toVector)
+    val pooled    = get(
+      PointMeasure.of(
+        frame,
+        IArray.from(fixations.map(_.centre)),
+        IArray.from(fixations.map(_.duration.toSeconds))
+      )
+    )
+    val automaticSigmas = Vector(get(Bandwidth.silverman(pooled)), get(Bandwidth.scott(pooled)))
+    val automatic       = get(
+      StudyPlan.of(
+        input.reference,
+        layout,
+        get(Grid.over(frame, 8, 8)),
+        "recall",
+        "encode",
+        Weight.Duration,
+        automaticSigmas.map(StudyEstimate.Gaussian(_, EdgePolicy.Truncate)),
+        FailurePolicy.RequireAll,
+        method,
+        get(Multiplier.of(2.0))
+      )
+    )
+    val encodedAutomatic  = get(persistence.codec.encode(automatic))
+    val restoredAutomatic = get(persistence.codec.decode(encodedAutomatic))
+    val automaticResult   = get(restoredAutomatic.run(input))
+    val automaticBits     = get(FixationJourney.fingerprint(restoredAutomatic, automaticResult))
+    assert(automaticBits.nonEmpty && automaticBits.forall(_.isDefined))
+    assertEquals(
+      automaticBits,
+      get(FixationJourney.fingerprint(automatic, get(automatic.run(input))))
+    )
     println(
       "EYES4S_CROSS_RUNTIME=" + Json
         .obj(
-          "plan"        -> get(persistence.codec.encode(original)),
-          "input"       -> Json.fromString(input.reference.digest),
-          "binned_bits" -> Json.arr(bits*),
-          "gaussian"    -> Json.arr(numbers*)
+          "plan"               -> get(persistence.codec.encode(original)),
+          "input"              -> Json.fromString(input.reference.digest),
+          "binned_bits"        -> Json.arr(bits*),
+          "gaussian"           -> Json.arr(numbers*),
+          "gaussian_bits"      -> Json.arr(gaussianBits*),
+          "automatic_gaussian" -> Json.obj(
+            "plan"           -> encodedAutomatic,
+            "bandwidth_bits" -> Json.arr(
+              automaticSigmas.map(s =>
+                Json.fromString(java.lang.Double.doubleToRawLongBits(s.value).toString)
+              )*
+            ),
+            "pipeline_bits" -> Json.arr(
+              automaticBits.map(_.fold[Json](Json.Null)(b => Json.fromString(b.toString)))*
+            )
+          )
         )
         .noSpaces
     )

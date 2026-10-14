@@ -30,6 +30,7 @@ import scala.util.Try
   */
 enum AscSampleLayoutConvention derives CanEqual:
   case Edf2AscCanonicalV1
+  case Edf2AscCanonicalCrWarningsV1
 
 enum AscDotGazePolicy derives CanEqual:
   case MissingNativeNotBlink
@@ -158,7 +159,8 @@ final class AscNativeSample private[io] (
     val input: Option[AscNativeInteger],
     val buttons: Option[AscNativeInteger],
     val status: Option[AscNativeInteger],
-    val headTarget: Option[AscHeadTarget]
+    val headTarget: Option[AscHeadTarget],
+    val crWarnings: AscCrWarningEvidence
 )
 
 enum AscDiagnosticSeverity derives CanEqual:
@@ -226,6 +228,13 @@ enum AscSampleDiagnostic:
       previous: String,
       current: String
   )
+  case InvalidCrWarningFlags(
+      source: String,
+      line: Long,
+      block: Long,
+      eyes: AscEyeLayout,
+      value: String
+  )
 
   def severity: AscDiagnosticSeverity = this match
     case PupilRepresentationUndeclared(_, _, _) => AscDiagnosticSeverity.Warning
@@ -259,6 +268,8 @@ enum AscSampleDiagnostic:
       s"ASC source='$source' line=$line block=$block has no PUPIL representation declaration; native pupil remains Unspecified."
     case NonIncreasingTimestamp(source, line, block, previous, current) =>
       s"ASC source='$source' line=$line block=$block sample timestamp=$current is not later than previous=$previous."
+    case InvalidCrWarningFlags(source, line, block, eyes, value) =>
+      s"ASC source='$source' line=$line block=$block eye layout=$eyes has invalid native CR warning flags='$value'."
 
 end AscSampleDiagnostic
 
@@ -373,6 +384,7 @@ object EyeLinkAscSamples:
           )
         )
 
+  /** Canonical declared columns, before an optional warning token in declared CR mode. */
   def expectedFieldCount(layout: AscDataLayout): Int =
     val eyes = layout.eyeLayout match
       case Some(AscEyeLayout.Binocular) => 2
@@ -408,7 +420,12 @@ object EyeLinkAscSamples:
         )
       case _ => ()
     }
-    val expected = expectedFieldCount(layout)
+    val canonical  = expectedFieldCount(layout)
+    val declaredCr = layout.trackingEvidence.contains("CR")
+    val hasCrToken = declaredCr && values.length > canonical
+    val expected   = canonical + (if hasCrToken then 1 else 0)
+    val convention = if hasCrToken then AscSampleLayoutConvention.Edf2AscCanonicalCrWarningsV1
+    else AscSampleLayoutConvention.Edf2AscCanonicalV1
     if values.length != expected then
       diagnostics += AscSampleDiagnostic.UnexpectedFieldCount(
         source.source,
@@ -416,7 +433,7 @@ object EyeLinkAscSamples:
         blockNumber,
         expected,
         values.length,
-        AscSampleLayoutConvention.Edf2AscCanonicalV1
+        convention
       )
     if values.exists(_.isEmpty) || values.length != expected then
       new AscSampleParseResult(line, None, diagnostics.result())
@@ -511,6 +528,27 @@ object EyeLinkAscSamples:
           yield new AscHeadTarget(position, distance, flags)
         else None
 
+      val crWarnings =
+        if !declaredCr then AscCrWarningEvidence.NotDeclared
+        else if !hasCrToken then AscCrWarningEvidence.NotExported
+        else
+          val parsed = for
+            raw   <- cursor.raw("native CR warning flags")
+            eyes  <- layout.eyeLayout
+            flags <- AscCrWarningFlags.parse(eyes, raw).orElse {
+              diagnostics += AscSampleDiagnostic.InvalidCrWarningFlags(
+                source.source,
+                source.number,
+                blockNumber,
+                eyes,
+                AscDiagnosticText.bounded(raw)
+              )
+              None
+            }
+          yield flags
+          parsed.fold[AscCrWarningEvidence](AscCrWarningEvidence.NotExported)(
+            AscCrWarningEvidence.Observed.apply
+          )
       val allDiagnostics = diagnostics.result()
       val hasErrors      = allDiagnostics.exists(_.severity == AscDiagnosticSeverity.Error)
       val sample         =
@@ -518,7 +556,7 @@ object EyeLinkAscSamples:
         else
           timestamp.map(value =>
             new AscNativeSample(
-              AscSampleLayoutConvention.Edf2AscCanonicalV1,
+              convention,
               AscDotGazePolicy.MissingNativeNotBlink,
               AscZeroPupilPolicy.MissingNative,
               source,
@@ -530,7 +568,8 @@ object EyeLinkAscSamples:
               input,
               buttons,
               status,
-              headTarget
+              headTarget,
+              crWarnings
             )
           )
       new AscSampleParseResult(line, sample, allDiagnostics)
