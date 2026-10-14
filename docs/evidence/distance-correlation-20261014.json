@@ -1,0 +1,268 @@
+{
+  "version": 1,
+  "date": "2026-10-14",
+  "scope": "exact biased estimator conformance and opt-in timing; full landing gate is a separate qualification",
+  "runtime": {
+    "host": "macOS-15.1.1-arm64-arm-64bit",
+    "machine": "arm64",
+    "jvm": "Eclipse Temurin25.0.4.1+1-LTS, arm64",
+    "node": "v24.21.0",
+    "scala": "3.7.4"
+  },
+  "source_sha256": {
+    "compare/src/main/scala/eyes4s/compare/UnivariateDistanceCorrelation.scala": "128ec643604552783853663173eee0e6ab2267f33ae9ae8e20bc8b863bb6171d",
+    "compare/src/main/scala/eyes4s/compare/Distribution.scala": "647e71f324dea2a27365a33fe4927f3eb980b781f932d6c9319377bbad58a44f",
+    "compare/src/test/scala/eyes4s/compare/DistanceCorrelationBenchmark.scala": "d1975196ca315c9014e447c75ce8cfb88dc892ab2bea91f6eb18b843d8aba31c"
+  },
+  "log_sha256": "a6154ecf32c97ed92a749c40971f9d4355bda32292ff2150e6c56b9f638e5d59",
+  "conformance": {
+    "tolerance_absolute": 1e-12,
+    "tests_per_runtime": 47,
+    "exhaustive_nonconstant_ternary_pairs": 6696,
+    "largest_analytic_binary_cells": 65536,
+    "pinned_comparison_dispatch": true
+  },
+  "cross_runtime": {
+    "all_measured_score_bits_equal": true,
+    "scores_unchanged_by_primitive_refactor": true
+  },
+  "timing": {
+    "jvm": [
+      {
+        "cells": 16384,
+        "iteration": 0,
+        "milliseconds": 54.044542,
+        "score": 0.00886777138573545,
+        "bits": "4576265543945329270"
+      },
+      {
+        "cells": 16384,
+        "iteration": 1,
+        "milliseconds": 27.855375,
+        "score": 0.00886777138573545,
+        "bits": "4576265543945329270"
+      },
+      {
+        "cells": 16384,
+        "iteration": 2,
+        "milliseconds": 51.901792,
+        "score": 0.00886777138573545,
+        "bits": "4576265543945329270"
+      },
+      {
+        "cells": 65536,
+        "iteration": 0,
+        "milliseconds": 71.562583,
+        "score": 0.0069609496933931035,
+        "bits": "4574675450747682291"
+      },
+      {
+        "cells": 65536,
+        "iteration": 1,
+        "milliseconds": 113.6995,
+        "score": 0.0069609496933931035,
+        "bits": "4574675450747682291"
+      },
+      {
+        "cells": 65536,
+        "iteration": 2,
+        "milliseconds": 87.3795,
+        "score": 0.0069609496933931035,
+        "bits": "4574675450747682291"
+      },
+      {
+        "cells": 262144,
+        "iteration": 0,
+        "milliseconds": 569.37325,
+        "score": 0.0025834509897040858,
+        "bits": "4568103454930567813"
+      },
+      {
+        "cells": 262144,
+        "iteration": 1,
+        "milliseconds": 561.57825,
+        "score": 0.0025834509897040858,
+        "bits": "4568103454930567813"
+      },
+      {
+        "cells": 262144,
+        "iteration": 2,
+        "milliseconds": 626.666042,
+        "score": 0.0025834509897040858,
+        "bits": "4568103454930567813"
+      },
+      {
+        "cells": 1048576,
+        "iteration": 0,
+        "milliseconds": 1962.476209,
+        "score": 0.0019591498199719474,
+        "bits": "4566663914442697030"
+      },
+      {
+        "cells": 1048576,
+        "iteration": 1,
+        "milliseconds": 3433.28475,
+        "score": 0.0019591498199719474,
+        "bits": "4566663914442697030"
+      },
+      {
+        "cells": 1048576,
+        "iteration": 2,
+        "milliseconds": 2869.769833,
+        "score": 0.0019591498199719474,
+        "bits": "4566663914442697030"
+      }
+    ],
+    "node": [
+      {
+        "cells": 16384,
+        "iteration": 0,
+        "milliseconds": 102.127125,
+        "score": 0.00886777138573545,
+        "bits": "4576265543945329270"
+      },
+      {
+        "cells": 16384,
+        "iteration": 1,
+        "milliseconds": 467.125792,
+        "score": 0.00886777138573545,
+        "bits": "4576265543945329270"
+      },
+      {
+        "cells": 16384,
+        "iteration": 2,
+        "milliseconds": 123.087875,
+        "score": 0.00886777138573545,
+        "bits": "4576265543945329270"
+      },
+      {
+        "cells": 65536,
+        "iteration": 0,
+        "milliseconds": 647.961,
+        "score": 0.0069609496933931035,
+        "bits": "4574675450747682291"
+      },
+      {
+        "cells": 65536,
+        "iteration": 1,
+        "milliseconds": 549.180667,
+        "score": 0.0069609496933931035,
+        "bits": "4574675450747682291"
+      },
+      {
+        "cells": 65536,
+        "iteration": 2,
+        "milliseconds": 584.221959,
+        "score": 0.0069609496933931035,
+        "bits": "4574675450747682291"
+      },
+      {
+        "cells": 262144,
+        "iteration": 0,
+        "milliseconds": 2311.306292,
+        "score": 0.0025834509897040858,
+        "bits": "4568103454930567813"
+      },
+      {
+        "cells": 262144,
+        "iteration": 1,
+        "milliseconds": 2521.61225,
+        "score": 0.0025834509897040858,
+        "bits": "4568103454930567813"
+      },
+      {
+        "cells": 262144,
+        "iteration": 2,
+        "milliseconds": 2332.633209,
+        "score": 0.0025834509897040858,
+        "bits": "4568103454930567813"
+      },
+      {
+        "cells": 1048576,
+        "iteration": 0,
+        "milliseconds": 11738.910125,
+        "score": 0.0019591498199719474,
+        "bits": "4566663914442697030"
+      },
+      {
+        "cells": 1048576,
+        "iteration": 1,
+        "milliseconds": 10404.517958,
+        "score": 0.0019591498199719474,
+        "bits": "4566663914442697030"
+      },
+      {
+        "cells": 1048576,
+        "iteration": 2,
+        "milliseconds": 11058.013958,
+        "score": 0.0019591498199719474,
+        "bits": "4566663914442697030"
+      }
+    ]
+  },
+  "summary": {
+    "jvm": {
+      "16384": {
+        "median_ms": 51.901792,
+        "minimum_ms": 27.855375,
+        "maximum_ms": 54.044542
+      },
+      "65536": {
+        "median_ms": 87.3795,
+        "minimum_ms": 71.562583,
+        "maximum_ms": 113.6995
+      },
+      "262144": {
+        "median_ms": 569.37325,
+        "minimum_ms": 561.57825,
+        "maximum_ms": 626.666042
+      },
+      "1048576": {
+        "median_ms": 2869.769833,
+        "minimum_ms": 1962.476209,
+        "maximum_ms": 3433.28475
+      }
+    },
+    "node": {
+      "16384": {
+        "median_ms": 123.087875,
+        "minimum_ms": 102.127125,
+        "maximum_ms": 467.125792
+      },
+      "65536": {
+        "median_ms": 584.221959,
+        "minimum_ms": 549.180667,
+        "maximum_ms": 647.961
+      },
+      "262144": {
+        "median_ms": 2332.633209,
+        "minimum_ms": 2311.306292,
+        "maximum_ms": 2521.61225
+      },
+      "1048576": {
+        "median_ms": 11058.013958,
+        "minimum_ms": 10404.517958,
+        "maximum_ms": 11738.910125
+      }
+    }
+  },
+  "limits": "one warm-up per size, three measured calls; runtime and GC variation retained; no portable deadline/cancellation guarantee",
+  "mutation": {
+    "mutation": "subtract rather than add grand-product correction",
+    "source_restored_sha256": "128ec643604552783853663173eee0e6ab2267f33ae9ae8e20bc8b863bb6171d",
+    "results": [
+      {
+        "axis": "JVM",
+        "exit": 1,
+        "killed": true,
+        "log_sha256": "7b1e6a7a96bbe667aa780001c846ba6672edd0e1b2f265aa728f8f5e800b7045"
+      },
+      {
+        "axis": "JS",
+        "exit": 1,
+        "killed": true,
+        "log_sha256": "99c2c273b55024f559c49aaebf4efec811d8481b91d1d81ad969273c319bda62"
+      }
+    ]
+  }
+}
