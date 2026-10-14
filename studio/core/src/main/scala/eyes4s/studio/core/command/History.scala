@@ -25,7 +25,7 @@ final case class UndoEntry(command: Command, inverse: Command) derives CanEqual
   * and the barrier undo stops at, if one has been passed. Entries behind a
   * barrier are dropped: they can never be reached again.
   */
-final case class UndoStack private[command] (
+sealed abstract case class UndoStack private[command] (
     done: List[UndoEntry],
     undone: List[UndoEntry],
     barrier: Option[HistoryBarrier]
@@ -35,14 +35,21 @@ final case class UndoStack private[command] (
 
   /** A new edit: it becomes the next undo, and the redo list is cleared. */
   private[command] def push(entry: UndoEntry): UndoStack =
-    new UndoStack(entry :: done, Nil, barrier)
+    UndoStack(entry :: done, Nil, barrier)
 
   /** An irreversible edit: nothing before it can be undone or redone. */
   private[command] def fence(at: HistoryBarrier): UndoStack =
-    new UndoStack(Nil, Nil, Some(at))
+    UndoStack(Nil, Nil, Some(at))
 
 object UndoStack:
-  val empty: UndoStack = new UndoStack(Nil, Nil, None)
+  private[command] def apply(
+      done: List[UndoEntry],
+      undone: List[UndoEntry],
+      barrier: Option[HistoryBarrier]
+  ): UndoStack =
+    new UndoStack(done, undone, barrier) {}
+
+  val empty: UndoStack = UndoStack(Nil, Nil, None)
 
 /** A history step's result: the history after it and the effects to perform. */
 final case class Step(history: History, effects: Vector[Effect]) derives CanEqual
@@ -60,12 +67,20 @@ final case class Step(history: History, effects: Vector[Effect]) derives CanEqua
   *    no presentation edit can reach the science or its hash. Coalescing a
   *    slider drag into one entry is the app's job (dispatch on release).
   */
-final case class History private (
+sealed abstract case class History private (
     document: StudioDocument,
     science: UndoStack,
     presentation: UndoStack,
-    rule: MappingRule = MappingRule.Commit
+    rule: MappingRule
 ) derives CanEqual:
+
+  private def copy(
+      document: StudioDocument = this.document,
+      science: UndoStack = this.science,
+      presentation: UndoStack = this.presentation,
+      rule: MappingRule = this.rule
+  ): History =
+    History(document, science, presentation, rule)
   import CommandError.*
 
   def stack(which: HistoryStack): UndoStack = which match
@@ -107,7 +122,7 @@ final case class History private (
           .map { o =>
             Step(
               copy(document = o.document)
-                .withStack(which, new UndoStack(rest, entry :: s.undone, s.barrier)),
+                .withStack(which, UndoStack(rest, entry :: s.undone, s.barrier)),
               o.effects
             )
           }
@@ -128,7 +143,7 @@ final case class History private (
               case _                             => entry
             Step(
               copy(document = o.document)
-                .withStack(which, new UndoStack(redone :: s.done, rest, s.barrier)),
+                .withStack(which, UndoStack(redone :: s.done, rest, s.barrier)),
               o.effects
             )
           }
@@ -147,6 +162,14 @@ final case class History private (
     case JournalEntry.RedoView       => redoView
 
 object History:
+  private def apply(
+      document: StudioDocument,
+      science: UndoStack,
+      presentation: UndoStack,
+      rule: MappingRule = MappingRule.Commit
+  ): History =
+    new History(document, science, presentation, rule) {}
+
   /** A document with empty histories. */
   def start(document: StudioDocument): History =
     History(document, UndoStack.empty, UndoStack.empty)

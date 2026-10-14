@@ -67,42 +67,54 @@ final case class RunRef(
 // ---------------------------------------------------------------------------
 
 /** A reporting spec's stable identity within a document. */
-final case class ReportingId private (value: String) derives CanEqual
+sealed abstract case class ReportingId private (value: String) derives CanEqual
 
 object ReportingId:
+  private def apply(value: String): ReportingId =
+    new ReportingId(value) {}
+
   def of(value: String): Either[DocumentError, ReportingId] =
-    Checks.nonBlank("reporting id", value).map(new ReportingId(_))
+    Checks.nonBlank("reporting id", value).map(ReportingId(_))
 
   given Codec[ReportingId] = DocumentCodecs.validated(of, _.value)
 
 /** An inventory attribute reporting groups or filters on, such as
   * `response`.
   */
-final case class Covariate private (label: String) derives CanEqual
+sealed abstract case class Covariate private (label: String) derives CanEqual
 
 object Covariate:
+  private def apply(label: String): Covariate =
+    new Covariate(label) {}
+
   def of(label: String): Either[DocumentError, Covariate] =
-    Checks.nonBlank("covariate", label).map(new Covariate(_))
+    Checks.nonBlank("covariate", label).map(Covariate(_))
 
   given Codec[Covariate] = DocumentCodecs.validated(of, _.label)
 
 /** The attribute values a filter keeps: at least one, sorted, distinct. */
-final case class ValueSet private (values: Vector[String]) derives CanEqual
+sealed abstract case class ValueSet private (values: Vector[String]) derives CanEqual
 
 object ValueSet:
+  private def apply(values: Vector[String]): ValueSet =
+    new ValueSet(values) {}
+
   def of(attribute: Covariate, values: Vector[String]): Either[DocumentError, ValueSet] =
     Either.cond(
       values.nonEmpty,
-      new ValueSet(values.distinct.sorted),
+      ValueSet(values.distinct.sorted),
       DocumentError.EmptyFilter(attribute.label)
     )
 
 /** A share in [0, 1]. */
-final case class Share private (value: Double) derives CanEqual
+sealed abstract case class Share private (value: Double) derives CanEqual
 
 object Share:
+  private def apply(value: Double): Share =
+    new Share(value) {}
+
   def of(value: Double): Either[DocumentError, Share] =
-    Checks.finite("share", value).flatMap(Checks.within("share", _, 0.0, 1.0)).map(new Share(_))
+    Checks.finite("share", value).flatMap(Checks.within("share", _, 0.0, 1.0)).map(Share(_))
 
   given Codec[Share] = DocumentCodecs.validated(of, _.value)
 
@@ -156,11 +168,14 @@ object ReportingFilter:
 /** The fewest contributing queries a participant needs in a group to count
   * in it. Turning it on changes n and the means.
   */
-final case class MinimumPerGroup private (queries: Int) derives CanEqual
+sealed abstract case class MinimumPerGroup private (queries: Int) derives CanEqual
 
 object MinimumPerGroup:
+  private def apply(queries: Int): MinimumPerGroup =
+    new MinimumPerGroup(queries) {}
+
   def of(queries: Int): Either[DocumentError, MinimumPerGroup] =
-    Checks.positive("minimum queries per group", queries).map(new MinimumPerGroup(_))
+    Checks.positive("minimum queries per group", queries).map(MinimumPerGroup(_))
 
   given Codec[MinimumPerGroup] = DocumentCodecs.validated(of, _.queries)
 
@@ -176,10 +191,13 @@ enum ReportingWeight derives CanEqual, Codec.AsObject:
   * levels. Both operands are nonblank and distinct; the run's inventory
   * validates that they are levels of the grouping covariate when reporting.
   */
-final case class ReportingContrast private (minuend: String, subtrahend: String)
+sealed abstract case class ReportingContrast private (minuend: String, subtrahend: String)
     derives CanEqual
 
 object ReportingContrast:
+  private def apply(minuend: String, subtrahend: String): ReportingContrast =
+    new ReportingContrast(minuend, subtrahend) {}
+
   def of(minuend: String, subtrahend: String): Either[DocumentError, ReportingContrast] =
     for
       _ <- Checks.nonBlank("contrast minuend", minuend)
@@ -189,7 +207,7 @@ object ReportingContrast:
         (),
         DocumentError.ContrastOperands(minuend, subtrahend)
       )
-    yield new ReportingContrast(minuend, subtrahend)
+    yield ReportingContrast(minuend, subtrahend)
 
   given Encoder.AsObject[ReportingContrast] =
     Encoder.forProduct2("minuend", "subtrahend")(c => (c.minuend, c.subtrahend))
@@ -203,7 +221,7 @@ object ReportingContrast:
   * in any order are the same spec and hash alike. A grouping without
   * `contrast` has no level subtraction; direction is never inferred.
   */
-final case class ReportingSpec private (
+sealed abstract case class ReportingSpec private (
     id: ReportingId,
     name: String,
     groupBy: Option[Covariate],
@@ -214,6 +232,17 @@ final case class ReportingSpec private (
 ) derives CanEqual
 
 object ReportingSpec:
+  private def apply(
+      id: ReportingId,
+      name: String,
+      groupBy: Option[Covariate],
+      filters: Vector[ReportingFilter],
+      minimumPerGroup: Option[MinimumPerGroup],
+      weighting: ReportingWeight,
+      contrast: Option[ReportingContrast]
+  ): ReportingSpec =
+    new ReportingSpec(id, name, groupBy, filters, minimumPerGroup, weighting, contrast) {}
+
   def of(
       id: ReportingId,
       name: String,
@@ -237,7 +266,7 @@ object ReportingSpec:
         )
       }
       .map(
-        new ReportingSpec(
+        ReportingSpec(
           id,
           _,
           groupBy,
@@ -320,23 +349,29 @@ object ReportingSpec:
 // ---------------------------------------------------------------------------
 
 /** A figure's number, displayed `Figure 1`. */
-final case class FigureId private (number: Int) derives CanEqual:
+sealed abstract case class FigureId private (number: Int) derives CanEqual:
   def label: String = s"Figure $number"
 
 object FigureId:
+  private def apply(number: Int): FigureId =
+    new FigureId(number) {}
+
   def of(number: Int): Either[DocumentError, FigureId] =
-    Checks.positive("figure number", number).map(new FigureId(_))
+    Checks.positive("figure number", number).map(FigureId(_))
 
   given Codec[FigureId] = DocumentCodecs.validated(of, _.number)
 
 /** A panel letter, `A` to `Z`. */
-final case class PanelLetter private (value: String) derives CanEqual
+sealed abstract case class PanelLetter private (value: String) derives CanEqual
 
 object PanelLetter:
+  private def apply(value: String): PanelLetter =
+    new PanelLetter(value) {}
+
   def of(value: String): Either[DocumentError, PanelLetter] =
     Either.cond(
       value.length == 1 && value.head >= 'A' && value.head <= 'Z',
-      new PanelLetter(value),
+      PanelLetter(value),
       DocumentError.BadPanelLetter(value)
     )
 
@@ -373,19 +408,22 @@ final case class PanelSpec(
       Codec.AsObject
 
 /** Exact authored methods state; blank text and whitespace are meaningful. */
-final case class FigureMethodsDraft private (
+sealed abstract case class FigureMethodsDraft private (
     base: String,
     edited: String,
     pending: Option[String]
 ) derives CanEqual
 
 object FigureMethodsDraft:
+  private def apply(base: String, edited: String, pending: Option[String]): FigureMethodsDraft =
+    new FigureMethodsDraft(base, edited, pending) {}
+
   def of(
       base: String,
       edited: String,
       pending: Option[String]
   ): Either[DocumentError, FigureMethodsDraft] =
-    Right(new FigureMethodsDraft(base, edited, pending))
+    Right(FigureMethodsDraft(base, edited, pending))
 
   given Codec.AsObject[FigureMethodsDraft] = Codec.AsObject.from(
     Decoder.forProduct3("base", "edited", "pending")(of).emap(_.left.map(_.message)),
@@ -395,7 +433,7 @@ object FigureMethodsDraft:
 /** A figure binds one run and one reporting spec; it never follows the
   * latest result. Panels have distinct letters and there is at least one.
   */
-final case class FigureSpec private (
+sealed abstract case class FigureSpec private (
     id: FigureId,
     run: RunId,
     reporting: ReportingId,
@@ -404,6 +442,15 @@ final case class FigureSpec private (
 ) derives CanEqual
 
 object FigureSpec:
+  private def apply(
+      id: FigureId,
+      run: RunId,
+      reporting: ReportingId,
+      panels: Vector[PanelSpec],
+      methods: Option[FigureMethodsDraft]
+  ): FigureSpec =
+    new FigureSpec(id, run, reporting, panels, methods) {}
+
   def of(
       id: FigureId,
       run: RunId,
@@ -415,7 +462,7 @@ object FigureSpec:
     if panels.isEmpty then Left(DocumentError.NoPanels(id))
     else if repeated.nonEmpty then
       Left(DocumentError.DuplicatePanels(id, repeated.map(_.value)))
-    else Right(new FigureSpec(id, run, reporting, panels, methods))
+    else Right(FigureSpec(id, run, reporting, panels, methods))
 
   private val legacyEncoder: Encoder.AsObject[FigureSpec] =
     Encoder.forProduct4("id", "run", "reporting", "panels")(f =>

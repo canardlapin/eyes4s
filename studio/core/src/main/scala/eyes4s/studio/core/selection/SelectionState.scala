@@ -27,11 +27,14 @@ enum InputCause derives CanEqual:
   case Pointer, Keyboard, Programmatic, Projected
 
 /** The view an input came from, such as "compare.scale-ladder". */
-final case class ViewId private (value: String) derives CanEqual
+sealed abstract case class ViewId private (value: String) derives CanEqual
 
 object ViewId:
+  private def apply(value: String): ViewId =
+    new ViewId(value) {}
+
   def of(value: String): Either[SelectionError, ViewId] =
-    Either.cond(value.trim.nonEmpty, new ViewId(value), SelectionError.BlankView)
+    Either.cond(value.trim.nonEmpty, ViewId(value), SelectionError.BlankView)
 
 /** The selection context's revision. It moves when what the refs can mean
   * changes (another document, another shown run); an input produced against
@@ -92,12 +95,20 @@ enum SelectionRelation derives CanEqual:
   * revision and the last applied sequence per view. Hover is not here: it is
   * local to a view ([[Hover]]).
   */
-final case class SelectionState private (
+sealed abstract case class SelectionState private (
     context: ContextRevision,
     selected: Vector[StudioRef],
     delivered: Map[ViewId, Long],
     revision: Long
 ) derives CanEqual:
+
+  private def copy(
+      context: ContextRevision = this.context,
+      selected: Vector[StudioRef],
+      delivered: Map[ViewId, Long],
+      revision: Long
+  ): SelectionState =
+    SelectionState(context, selected, delivered, revision)
 
   def isSelected(ref: StudioRef): Boolean = selected.contains(ref)
 
@@ -161,6 +172,14 @@ final case class SelectionState private (
       else SelectionRelation.Unrelated
 
 object SelectionState:
+  private def apply(
+      context: ContextRevision,
+      selected: Vector[StudioRef],
+      delivered: Map[ViewId, Long],
+      revision: Long
+  ): SelectionState =
+    new SelectionState(context, selected, delivered, revision) {}
+
   val empty: SelectionState = SelectionState(ContextRevision(0), Vector.empty, Map.empty, 0)
 
   /** An empty selection in the given context. */

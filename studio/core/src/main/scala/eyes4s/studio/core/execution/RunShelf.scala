@@ -78,11 +78,18 @@ object ExecutionEffect:
   * never offered. A notice is withdrawn when the requirement changes, and an
   * older run's notice never replaces a newer one's.
   */
-final case class RunShelf private (
+sealed abstract case class RunShelf private (
     shown: Option[RunId],
     pending: Option[RunReady],
     required: Option[RunStamp]
 ) derives CanEqual:
+
+  private def copy(
+      shown: Option[RunId] = this.shown,
+      pending: Option[RunReady],
+      required: Option[RunStamp] = this.required
+  ): RunShelf =
+    RunShelf(shown, pending, required)
 
   def receive(event: ExecutionEvent): RunShelf = event match
     case ExecutionEvent.Ready(notice)
@@ -109,6 +116,13 @@ final case class RunShelf private (
   def dismiss(run: RunId): RunShelf = copy(pending = pending.filterNot(_.run == run))
 
 object RunShelf:
+  private def apply(
+      shown: Option[RunId],
+      pending: Option[RunReady],
+      required: Option[RunStamp]
+  ): RunShelf =
+    new RunShelf(shown, pending, required) {}
+
   /** The shelf of a document showing `shown`, with nothing ready and nothing
     * required yet: it offers no run until [[RunShelf.require]] names a stamp.
     */

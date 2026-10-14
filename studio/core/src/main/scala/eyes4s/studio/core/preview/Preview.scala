@@ -34,13 +34,16 @@ object PreviewId:
   * The fake's fixture page completes one participant; the real backend
   * advances one library counting step with its fixed work quantum.
   */
-final case class PreviewBudget private (pages: Int) derives CanEqual
+sealed abstract case class PreviewBudget private (pages: Int) derives CanEqual
 object PreviewBudget:
+  private def apply(pages: Int): PreviewBudget =
+    new PreviewBudget(pages) {}
+
   val MaximumPages: Int                                         = 4096
   def of(pages: Int): Either[PreviewBudgetError, PreviewBudget] =
     Either.cond(
       pages > 0 && pages <= MaximumPages,
-      new PreviewBudget(pages),
+      PreviewBudget(pages),
       PreviewBudgetError.OutOfRange(pages, MaximumPages)
     )
   given Encoder[PreviewBudget] = Encoder.encodeInt.contramap(_.pages)
@@ -87,18 +90,24 @@ private object PreviewCount:
     decode.emap(_.left.map(_.message))
 
 /** A number of participants, never negative. */
-final case class ParticipantCount private[preview] (value: Int) derives CanEqual
+sealed abstract case class ParticipantCount private[preview] (value: Int) derives CanEqual
 object ParticipantCount:
+  private[preview] def apply(value: Int): ParticipantCount =
+    new ParticipantCount(value) {}
+
   def of(value: Int): Either[PreviewError, ParticipantCount] =
-    PreviewCount.nonNegative("participant count", value).map(_ => new ParticipantCount(value))
+    PreviewCount.nonNegative("participant count", value).map(_ => ParticipantCount(value))
   given Encoder[ParticipantCount] = Encoder.encodeInt.contramap(_.value)
   given Decoder[ParticipantCount] = PreviewCount.decoder(Decoder.decodeInt.map(of))
 
 /** A number of focal trials (queries), never negative. */
-final case class QueryCount private[preview] (value: Int) derives CanEqual
+sealed abstract case class QueryCount private[preview] (value: Int) derives CanEqual
 object QueryCount:
+  private[preview] def apply(value: Int): QueryCount =
+    new QueryCount(value) {}
+
   def of(value: Int): Either[PreviewError, QueryCount] =
-    PreviewCount.nonNegative("query count", value).map(_ => new QueryCount(value))
+    PreviewCount.nonNegative("query count", value).map(_ => QueryCount(value))
   given Encoder[QueryCount] = Encoder.encodeInt.contramap(_.value)
   given Decoder[QueryCount] = PreviewCount.decoder(Decoder.decodeInt.map(of))
 
@@ -111,7 +120,7 @@ object QueryCount:
   * focal trials the recipe states have no reference by design (a recognition
   * lure), or `None` when the recipe has no such category.
   */
-final case class PreviewCandidates private (
+sealed abstract case class PreviewCandidates private (
     focalTrials: Int,
     referenceTrials: Int,
     participants: Int,
@@ -122,6 +131,25 @@ final case class PreviewCandidates private (
 ) derives CanEqual
 
 object PreviewCandidates:
+  private def apply(
+      focalTrials: Int,
+      referenceTrials: Int,
+      participants: Int,
+      candidatePairsPerScale: Long,
+      requestedQueries: QueryCount,
+      queriesNotAdmitted: QueryCount,
+      byDesignQueries: Option[QueryCount]
+  ): PreviewCandidates =
+    new PreviewCandidates(
+      focalTrials,
+      referenceTrials,
+      participants,
+      candidatePairsPerScale,
+      requestedQueries,
+      queriesNotAdmitted,
+      byDesignQueries
+    ) {}
+
   def of(
       focalTrials: Int,
       referenceTrials: Int,
@@ -144,14 +172,14 @@ object PreviewCandidates:
         PreviewError.BeyondTotal("queriesNotAdmitted", queriesNotAdmitted, requestedQueries)
       )
       _ <- byDesignQueries.fold(Right(()))(PreviewCount.nonNegative("byDesignQueries", _))
-    yield new PreviewCandidates(
+    yield PreviewCandidates(
       focalTrials,
       referenceTrials,
       participants,
       candidatePairsPerScale,
-      new QueryCount(requestedQueries),
-      new QueryCount(queriesNotAdmitted),
-      byDesignQueries.map(new QueryCount(_))
+      QueryCount(requestedQueries),
+      QueryCount(queriesNotAdmitted),
+      byDesignQueries.map(QueryCount(_))
     )
 
   given Encoder.AsObject[PreviewCandidates] =
@@ -199,23 +227,28 @@ object PreviewCandidates:
 /** A count supplied only after the backend has completed a participant page:
   * neither count is negative and no more participants are complete than exist.
   */
-final case class PreviewProgress private (completedParticipants: Int, totalParticipants: Int)
-    derives CanEqual:
+sealed abstract case class PreviewProgress private (
+    completedParticipants: Int,
+    totalParticipants: Int
+) derives CanEqual:
 
   /** Every participant has been counted. */
   def isComplete: Boolean = completedParticipants == totalParticipants
 
   /** One more participant counted, or `None` when every one already is. */
   def advance: Option[PreviewProgress] =
-    Option.unless(isComplete)(new PreviewProgress(completedParticipants + 1, totalParticipants))
+    Option.unless(isComplete)(PreviewProgress(completedParticipants + 1, totalParticipants))
 
-  def completed: ParticipantCount = new ParticipantCount(completedParticipants)
-  def total: ParticipantCount     = new ParticipantCount(totalParticipants)
+  def completed: ParticipantCount = ParticipantCount(completedParticipants)
+  def total: ParticipantCount     = ParticipantCount(totalParticipants)
 
 object PreviewProgress:
+  private def apply(completedParticipants: Int, totalParticipants: Int): PreviewProgress =
+    new PreviewProgress(completedParticipants, totalParticipants) {}
+
   /** No participant of `candidates` counted yet. */
   def start(candidates: PreviewCandidates): PreviewProgress =
-    new PreviewProgress(0, candidates.participants)
+    PreviewProgress(0, candidates.participants)
 
   def of(
       completedParticipants: Int,
@@ -230,7 +263,7 @@ object PreviewProgress:
         PreviewError
           .BeyondTotal("completedParticipants", completedParticipants, totalParticipants)
       )
-    yield new PreviewProgress(completedParticipants, totalParticipants)
+    yield PreviewProgress(completedParticipants, totalParticipants)
 
   given Encoder.AsObject[PreviewProgress] =
     Encoder.forProduct2("completedParticipants", "totalParticipants")(p =>
@@ -248,7 +281,7 @@ object PreviewProgress:
   * result, and none is negative. `eligibleQueries` focal trials enter the
   * comparisons; `unmatchedQueries` were admitted without a matched reference.
   */
-final case class PreviewCounts private (
+sealed abstract case class PreviewCounts private (
     eligiblePairsPerScale: Long,
     eligiblePairs: Long,
     eligibleQueries: QueryCount,
@@ -257,6 +290,21 @@ final case class PreviewCounts private (
 ) derives CanEqual
 
 object PreviewCounts:
+  private def apply(
+      eligiblePairsPerScale: Long,
+      eligiblePairs: Long,
+      eligibleQueries: QueryCount,
+      unmatchedQueries: QueryCount,
+      ambiguousMatches: Int
+  ): PreviewCounts =
+    new PreviewCounts(
+      eligiblePairsPerScale,
+      eligiblePairs,
+      eligibleQueries,
+      unmatchedQueries,
+      ambiguousMatches
+    ) {}
+
   def of(
       eligiblePairsPerScale: Long,
       eligiblePairs: Long,
@@ -270,11 +318,11 @@ object PreviewCounts:
       _ <- PreviewCount.nonNegative("eligibleQueries", eligibleQueries)
       _ <- PreviewCount.nonNegative("unmatchedQueries", unmatchedQueries)
       _ <- PreviewCount.nonNegative("ambiguousMatches", ambiguousMatches)
-    yield new PreviewCounts(
+    yield PreviewCounts(
       eligiblePairsPerScale,
       eligiblePairs,
-      new QueryCount(eligibleQueries),
-      new QueryCount(unmatchedQueries),
+      QueryCount(eligibleQueries),
+      QueryCount(unmatchedQueries),
       ambiguousMatches
     )
 
@@ -316,7 +364,7 @@ object PreviewCounts:
   * eligible + unmatched + not admitted (+ by design, when the recipe has that
   * category), so no count exceeds the requested ones.
   */
-final case class PreviewReady private (
+sealed abstract case class PreviewReady private (
     id: PreviewId,
     stamp: RunStamp,
     candidates: PreviewCandidates,
@@ -326,6 +374,16 @@ final case class PreviewReady private (
 ) derives CanEqual
 
 object PreviewReady:
+  private def apply(
+      id: PreviewId,
+      stamp: RunStamp,
+      candidates: PreviewCandidates,
+      counts: PreviewCounts,
+      diagnostics: Vector[StudioDiagnostic],
+      recipe: Option[Recipe]
+  ): PreviewReady =
+    new PreviewReady(id, stamp, candidates, counts, diagnostics, recipe) {}
+
   def of(
       id: PreviewId,
       stamp: RunStamp,
@@ -335,7 +393,7 @@ object PreviewReady:
       recipe: Option[Recipe] = None
   ): Either[PreviewError, PreviewReady] =
     partition(candidates, counts).map(_ =>
-      new PreviewReady(id, stamp, candidates, counts, diagnostics, recipe)
+      PreviewReady(id, stamp, candidates, counts, diagnostics, recipe)
     )
 
   /** Whether `counts` partition the queries `candidates` requests. */

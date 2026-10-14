@@ -27,16 +27,22 @@ import io.circe.{Codec, Decoder, DecodingFailure, Encoder}
   * policy. Decision lifecycle and ledger bindings are bookkeeping, excluded by
   * DatasetRevisionSpec.contentDigest (bead bd-01M49A48HB52R4AT20V94ZP6PY).
   */
-final case class NativeDatasetDefinition private (
+sealed abstract case class NativeDatasetDefinition private (
     content: CanonicalDigest[DatasetRevisionSpec],
     policy: Option[CoreAdmissionDecision]
 ) derives CanEqual
 
 object NativeDatasetDefinition:
+  private def apply(
+      content: CanonicalDigest[DatasetRevisionSpec],
+      policy: Option[CoreAdmissionDecision]
+  ): NativeDatasetDefinition =
+    new NativeDatasetDefinition(content, policy) {}
+
   def of(spec: DatasetRevisionSpec): Either[CodecError, NativeDatasetDefinition] =
     DatasetRevisionSpec
       .contentDigest(spec)
-      .map(d => new NativeDatasetDefinition(d, spec.decision.admittedUnder))
+      .map(d => NativeDatasetDefinition(d, spec.decision.admittedUnder))
 
   given Codec.AsObject[NativeDatasetDefinition] = Codec.AsObject.from(
     Decoder.instance { c =>
@@ -52,7 +58,7 @@ object NativeDatasetDefinition:
             )
           )
           .flatMap(_.as[Option[CoreAdmissionDecision]])
-      yield new NativeDatasetDefinition(content, policy)
+      yield NativeDatasetDefinition(content, policy)
     },
     Encoder.forProduct2("content", "policy")(d => (d.content, d.policy))
   )

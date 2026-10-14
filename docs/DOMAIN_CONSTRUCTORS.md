@@ -14,4 +14,8 @@ Trusted internal updates formerly written as case-class copies now use the same 
 
 This removes a public generic construction route deliberately. Consumer decoders and generic derivations that depended on `Mirror.ProductOf` must use the public smart constructor or a checked codec. Read-only `Product` access remains supported; arbitrary reflective construction is outside this API contract.
 
-Studio has additional private-constructor case classes and remains a separate unfinished slice under the parent invariant-enforcement ticket. The library sweep does not claim house-wide completion.
+The Studio core slice protects a further 108 products, including saved dataset declarations, archive indexes, native budgets, preview state and nominal source identities. Its 109 external-consumer checks cover constructing mirrors and private copy helpers. Nine private copy helpers preserve trusted internal state updates; inaccessible abstract constructors no longer carry unused defaults, while smart constructors and private factories retain their defaults. The original native-budget representation is restored as a mutant and caught on both runtimes.
+
+Complete Studio core qualification passes 1,089 JVM tests and 1,001 Scala.js tests with strict compiler warnings, a 4 GiB sbt heap and six active processors. The existing test timeouts remain unchanged. An earlier run under competing builds hit three asynchronous backend timeouts; those suites passed in isolation, followed by the complete passing matrix. Both runs are retained in the evidence receipt.
+
+The remaining 50 private products in Studio app, visualization and desktop are a separate unfinished slice under the parent invariant-enforcement ticket. These library and Studio core slices do not claim house-wide completion.

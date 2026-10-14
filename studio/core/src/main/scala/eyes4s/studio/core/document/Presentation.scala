@@ -33,16 +33,19 @@ enum StageAppearance derives CanEqual, Codec.AsObject:
   case Dark, Mid, Light
 
 /** Map opacity in [0, 1]; the default is 0.6 (DESIGN_SPEC section 12). */
-final case class MapOpacity private (value: Double) derives CanEqual
+sealed abstract case class MapOpacity private (value: Double) derives CanEqual
 
 object MapOpacity:
-  val default: MapOpacity = new MapOpacity(0.6)
+  private def apply(value: Double): MapOpacity =
+    new MapOpacity(value) {}
+
+  val default: MapOpacity = MapOpacity(0.6)
 
   def of(value: Double): Either[DocumentError, MapOpacity] =
     Checks
       .finite("map opacity", value)
       .flatMap(Checks.within("map opacity", _, 0.0, 1.0))
-      .map(new MapOpacity(_))
+      .map(MapOpacity(_))
 
   given Codec[MapOpacity] = DocumentCodecs.validated(of, _.value)
 
@@ -66,7 +69,7 @@ final case class SavedLayout(perspective: Perspective, layout: LayoutBlob)
   * ([[StudioDocument.scienceDigest]]). `shownRun` is the run Compare and the
   * banners show until the user chooses Show on a newer one.
   */
-final case class PresentationState private (
+sealed abstract case class PresentationState private (
     perspective: Perspective,
     theme: Theme,
     stage: StageAppearance,
@@ -77,10 +80,21 @@ final case class PresentationState private (
 ) derives CanEqual
 
 object PresentationState:
+  private def apply(
+      perspective: Perspective,
+      theme: Theme,
+      stage: StageAppearance,
+      mapOpacity: MapOpacity,
+      underlay: Boolean,
+      shownRun: Option[RunId],
+      layouts: Vector[SavedLayout]
+  ): PresentationState =
+    new PresentationState(perspective, theme, stage, mapOpacity, underlay, shownRun, layouts) {}
+
   /** Data perspective, light theme, dark stage, opacity 0.6, the
     * remembered-image underlay off, no run shown, no saved layouts.
     */
-  val default: PresentationState = new PresentationState(
+  val default: PresentationState = PresentationState(
     Perspective.Data,
     Theme.Light,
     StageAppearance.Dark,
@@ -104,7 +118,7 @@ object PresentationState:
     val repeated     = perspectives.diff(perspectives.distinct).distinct
     Either.cond(
       repeated.isEmpty,
-      new PresentationState(
+      PresentationState(
         perspective,
         theme,
         stage,

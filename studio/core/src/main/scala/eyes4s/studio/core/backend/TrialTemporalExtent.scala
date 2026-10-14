@@ -22,7 +22,7 @@ import io.circe.{Codec, Decoder, DecodingFailure, Encoder}
 import ProtocolCodecs.portableLong
 
 /** Inventory evidence names data rows (the header is record 1), never fabricated timing. */
-final case class TrialExtentEvidence private (
+sealed abstract case class TrialExtentEvidence private (
     trial: TrialKey,
     dataset: DatasetRevision,
     source: SourcePath,
@@ -31,6 +31,15 @@ final case class TrialExtentEvidence private (
 ) derives CanEqual
 
 object TrialExtentEvidence:
+  private def apply(
+      trial: TrialKey,
+      dataset: DatasetRevision,
+      source: SourcePath,
+      declaration: InventoryDurationColumn,
+      records: Vector[Int]
+  ): TrialExtentEvidence =
+    new TrialExtentEvidence(trial, dataset, source, declaration, records) {}
+
   def of(
       trial: TrialKey,
       dataset: DatasetRevision,
@@ -41,7 +50,7 @@ object TrialExtentEvidence:
     if records.isEmpty || records
         .exists(_ < 2) || records.zip(records.drop(1)).exists((a, b) => a >= b)
     then Left(TrialViewError.ExtentRecords(trial, source.value, records))
-    else Right(new TrialExtentEvidence(trial, dataset, source, declaration, records))
+    else Right(TrialExtentEvidence(trial, dataset, source, declaration, records))
 
   given Codec.AsObject[TrialExtentEvidence] = Codec.AsObject.from(
     Decoder
@@ -53,7 +62,7 @@ object TrialExtentEvidence:
   )
 
 /** A native declared half-open extent anchored at trial start, with its inventory evidence. */
-final case class TrialExtentFromStart private (
+sealed abstract case class TrialExtentFromStart private (
     window: Window,
     evidence: TrialExtentEvidence
 ) derives CanEqual:
@@ -65,6 +74,9 @@ final case class TrialExtentFromStart private (
   def durationMicros: Long                 = window.width.toMicros
 
 object TrialExtentFromStart:
+  private def apply(window: Window, evidence: TrialExtentEvidence): TrialExtentFromStart =
+    new TrialExtentFromStart(window, evidence) {}
+
   def of(
       trial: TrialKey,
       dataset: DatasetRevision,
@@ -78,7 +90,7 @@ object TrialExtentFromStart:
     else
       TrialExtentEvidence
         .of(trial, dataset, source, declaration, records)
-        .map(e => new TrialExtentFromStart(window, e))
+        .map(e => TrialExtentFromStart(window, e))
 
   given Codec.AsObject[TrialExtentFromStart] = Codec.AsObject.from(
     Decoder.instance { c =>

@@ -25,14 +25,17 @@ import scala.concurrent.duration.FiniteDuration
   * the desktop, a file handle's id in a browser. Studio never parses it; only
   * the host's [[FileSystem]] gives it meaning.
   */
-final case class HostPath private (value: String) derives CanEqual
+sealed abstract case class HostPath private (value: String) derives CanEqual
 
 object HostPath:
+  private def apply(value: String): HostPath =
+    new HostPath(value) {}
+
   def of(value: String): Either[PlatformError, HostPath] =
     if value.trim.isEmpty then Left(PlatformError.BlankPath)
     else
       value.indexWhere(c => c < ' ' || c == '\u007f') match
-        case -1    => Right(new HostPath(value))
+        case -1    => Right(HostPath(value))
         case index => Left(PlatformError.ControlCharacter(value.length, index))
 
   /** Whether `name` names a direct child: not blank, `.` or `..`, and free of
@@ -45,15 +48,18 @@ object HostPath:
 /** One kind of file a dialog offers, such as "EyeLink fixation CSV" with the
   * extensions `csv` and `tsv`. Extensions are given without a leading dot.
   */
-final case class FileKind private (description: String, extensions: Vector[String])
+sealed abstract case class FileKind private (description: String, extensions: Vector[String])
     derives CanEqual
 
 object FileKind:
+  private def apply(description: String, extensions: Vector[String]): FileKind =
+    new FileKind(description, extensions) {}
+
   def of(description: String, extensions: Vector[String]): Either[PlatformError, FileKind] =
     val bad = extensions.find(e => e.isEmpty || e.exists(c => c == '.' || c == '*' || c == '/'))
     if description.trim.isEmpty || extensions.isEmpty || bad.nonEmpty then
       Left(PlatformError.InvalidFileKind(description, extensions))
-    else Right(new FileKind(description, extensions))
+    else Right(FileKind(description, extensions))
 
 /** What an open or save dialog asks for. `suggestedName` is the file name a
   * save dialog proposes; an open dialog ignores it.
@@ -68,16 +74,19 @@ final case class FileRequest(
   * `https:`, `http:` and `mailto:` addresses are accepted: studio never asks
   * the host to open an arbitrary scheme.
   */
-final case class ExternalUrl private (value: String) derives CanEqual
+sealed abstract case class ExternalUrl private (value: String) derives CanEqual
 
 object ExternalUrl:
+  private def apply(value: String): ExternalUrl =
+    new ExternalUrl(value) {}
+
   val Schemes: Vector[String] = Vector("https://", "http://", "mailto:")
 
   def of(value: String): Either[PlatformError, ExternalUrl] =
     val lower = value.toLowerCase
     Schemes.find(lower.startsWith) match
       case Some(s) if value.length > s.length && !value.exists(_.isWhitespace) =>
-        Right(new ExternalUrl(value))
+        Right(ExternalUrl(value))
       case _ => Left(PlatformError.InvalidUrl(value))
 
 /** What [[ExternalOpen]] shows outside studio. */
@@ -95,9 +104,12 @@ enum ExternalTarget derives CanEqual:
 /** A preference's name: lower-case letters, digits, `.` and `-`, at most 80
   * characters (the limit of the most restrictive host store, Java's).
   */
-final case class PreferenceKey private (value: String) derives CanEqual
+sealed abstract case class PreferenceKey private (value: String) derives CanEqual
 
 object PreferenceKey:
+  private def apply(value: String): PreferenceKey =
+    new PreferenceKey(value) {}
+
   val MaxLength: Int = 80
 
   def of(value: String): Either[PlatformError, PreferenceKey] =
@@ -105,7 +117,7 @@ object PreferenceKey:
       (c >= 'a' && c <= 'z') || (c >= '0' && c <= '9') || c == '.' ||
         c == '-'
     if value.nonEmpty && value.length <= MaxLength && value.forall(allowed) then
-      Right(new PreferenceKey(value))
+      Right(PreferenceKey(value))
     else Left(PlatformError.InvalidPreferenceKey(value))
 
 /** A bundled font face the host must register before the first frame:
@@ -113,19 +125,23 @@ object PreferenceKey:
   * under `eyes4s/studio/desktop/fonts/`; a web host maps it to the URL it serves the
   * file at) and `family` the family name stylesheets use for it.
   */
-final case class FontRequest private (family: String, resource: String) derives CanEqual
+sealed abstract case class FontRequest private (family: String, resource: String)
+    derives CanEqual
 
 object FontRequest:
+  private def apply(family: String, resource: String): FontRequest =
+    new FontRequest(family, resource) {}
+
   def of(family: String, resource: String): Either[PlatformError, FontRequest] =
     if family.trim.isEmpty || resource.trim.isEmpty then
       Left(PlatformError.InvalidFont(family, resource))
-    else Right(new FontRequest(family, resource))
+    else Right(FontRequest(family, resource))
 
 /** A wall-clock reading: milliseconds since the Unix epoch and the host's UTC
   * offset at that instant, so studio can show local times without a time-zone
   * database (which Scala.js does not ship).
   */
-final case class ClockReading private (epochMillis: Long, utcOffsetMinutes: Int)
+sealed abstract case class ClockReading private (epochMillis: Long, utcOffsetMinutes: Int)
     derives CanEqual:
   private def localMinutes: Long =
     Math.floorMod(Math.floorDiv(epochMillis, 60000L) + utcOffsetMinutes, 24L * 60L)
@@ -137,16 +153,19 @@ final case class ClockReading private (epochMillis: Long, utcOffsetMinutes: Int)
   def localMinute: Int = (localMinutes % 60L).toInt
 
 object ClockReading:
+  private def apply(epochMillis: Long, utcOffsetMinutes: Int): ClockReading =
+    new ClockReading(epochMillis, utcOffsetMinutes) {}
+
   /** UTC offsets in use lie within ±18 hours. */
   val MaxOffsetMinutes: Int = 18 * 60
 
   /** A reading at UTC, whose offset is always valid. */
-  def utc(epochMillis: Long): ClockReading = new ClockReading(epochMillis, 0)
+  def utc(epochMillis: Long): ClockReading = ClockReading(epochMillis, 0)
 
   def of(epochMillis: Long, utcOffsetMinutes: Int): Either[PlatformError, ClockReading] =
     if Math.abs(utcOffsetMinutes) > MaxOffsetMinutes then
       Left(PlatformError.InvalidOffset(utcOffsetMinutes))
-    else Right(new ClockReading(epochMillis, utcOffsetMinutes))
+    else Right(ClockReading(epochMillis, utcOffsetMinutes))
 
 /** Why a platform service refused. Every case names its operands. */
 enum PlatformError derives CanEqual:

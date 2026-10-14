@@ -87,7 +87,8 @@ enum PathProblem derives CanEqual:
   * backslash, colon or control character. It can therefore name neither a
   * file outside the bundle, nor the manifest, nor a store's own files.
   */
-final case class BundlePath private (value: String, area: BundleArea) derives CanEqual:
+sealed abstract case class BundlePath private (value: String, area: BundleArea)
+    derives CanEqual:
   def segments: Vector[String] = value.split('/').toVector
   def name: String             = segments.last
 
@@ -98,6 +99,9 @@ final case class BundlePath private (value: String, area: BundleArea) derives Ca
   override def toString: String = value
 
 object BundlePath:
+  private def apply(value: String, area: BundleArea): BundlePath =
+    new BundlePath(value, area) {}
+
   given Ordering[BundlePath] = Ordering.by(_.value)
 
   def of(value: String): Either[BundleError, BundlePath] =
@@ -122,7 +126,7 @@ object BundlePath:
           BundleArea.named(segments.head) match
             case None => refuse(PathProblem.OutsideAreas(segments.head))
             case Some(area) if segments.size == 1 => refuse(PathProblem.NoName(area))
-            case Some(area)                       => Right(new BundlePath(value, area))
+            case Some(area)                       => Right(BundlePath(value, area))
 
   /** The path `rest` inside `area`. */
   def in(area: BundleArea, rest: String): Either[BundleError, BundlePath] =

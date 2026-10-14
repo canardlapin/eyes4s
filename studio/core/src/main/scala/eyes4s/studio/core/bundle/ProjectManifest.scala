@@ -71,7 +71,7 @@ enum InputKind derives CanEqual, Codec.AsObject:
   * inputs with the same bytes are therefore two equal entries, one for
   * each input.
   */
-final case class InputEntry private (
+sealed abstract case class InputEntry private (
     kind: InputKind,
     name: Option[String],
     sha256: ByteDigest,
@@ -81,13 +81,22 @@ final case class InputEntry private (
   def stored: Boolean = path.isDefined
 
   /** The same input, withheld: its name and path omitted. */
-  def withheld: InputEntry = new InputEntry(kind, None, sha256, length, None)
+  def withheld: InputEntry = InputEntry(kind, None, sha256, length, None)
 
   /** Its order in a manifest: stored inputs by path, then withheld ones. */
   private[bundle] def sortKey: (Int, String, String) =
     (if stored then 0 else 1, path.fold("")(_.value), sha256.hex)
 
 object InputEntry:
+  private def apply(
+      kind: InputKind,
+      name: Option[String],
+      sha256: ByteDigest,
+      length: Long,
+      path: Option[BundlePath]
+  ): InputEntry =
+    new InputEntry(kind, name, sha256, length, path) {}
+
   /** A stored input at `inputs/<sha256>/<name>`; `name` is one path segment. */
   def of(
       kind: InputKind,
@@ -101,7 +110,7 @@ object InputEntry:
           Left(BundleError.BadPath(name, PathProblem.Reserved('/', name.indexOf('/'))))
         else BundlePath.in(BundleArea.Inputs, s"${sha256.hex}/$name")
       _ <- Either.cond(length >= 0, (), BundleError.NegativeLength(path.value, length))
-    yield new InputEntry(kind, Some(name), sha256, length, Some(path))
+    yield InputEntry(kind, Some(name), sha256, length, Some(path))
 
   /** A withheld input: listed by kind, digest and length only. */
   def withheld(
@@ -111,7 +120,7 @@ object InputEntry:
   ): Either[BundleError, InputEntry] =
     Either.cond(
       length >= 0,
-      new InputEntry(kind, None, sha256, length, None),
+      InputEntry(kind, None, sha256, length, None),
       BundleError.NegativeLength(s"withheld input ${sha256.hex}", length)
     )
 
@@ -279,7 +288,7 @@ object ScienceRecord:
   * no path or input is listed twice, an input is named exactly when
   * `sharing` includes its kind, and inputs are kept in path order.
   */
-final case class ProjectManifest private (
+sealed abstract case class ProjectManifest private (
     document: DefinitionId,
     science: ScienceRecord,
     sharing: SharingOptions,
@@ -291,6 +300,16 @@ final case class ProjectManifest private (
   def paths: Vector[BundlePath] = parts.all.map(_.path) ++ inputs.flatMap(_.path)
 
 object ProjectManifest:
+  private def apply(
+      document: DefinitionId,
+      science: ScienceRecord,
+      sharing: SharingOptions,
+      inputs: Vector[InputEntry],
+      parts: DocumentParts,
+      presentation: Json
+  ): ProjectManifest =
+    new ProjectManifest(document, science, sharing, inputs, parts, presentation) {}
+
   given CanEqual[Json, Json] = CanEqual.derived
 
   def of(
@@ -318,7 +337,7 @@ object ProjectManifest:
       // entries: each stands for one input (bead bd-01M44PBFX4Y94X9DSS56T6Q62Z).
       stored = inputs.filter(_.stored)
       _ <- stored.diff(stored.distinct).headOption.map(BundleError.DuplicateInput(_)).toLeft(())
-    yield new ProjectManifest(
+    yield ProjectManifest(
       document,
       science,
       sharing,

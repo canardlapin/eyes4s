@@ -48,47 +48,59 @@ private object RefCodecs:
     Codec.from(Decoder[Int].emap(of(_).left.map(_.message)), Encoder[Int].contramap(unwrap))
 
 /** A result's scale index, as in eyes4s `ResultRef`: 0 or more. */
-final case class ScaleIndex private[selection] (value: Int) derives CanEqual
+sealed abstract case class ScaleIndex private[selection] (value: Int) derives CanEqual
 
 object ScaleIndex:
+  private[selection] def apply(value: Int): ScaleIndex =
+    new ScaleIndex(value) {}
+
   def of(value: Int): Either[RefError, ScaleIndex] =
-    Either.cond(value >= 0, new ScaleIndex(value), RefError.NegativeScale(value))
+    Either.cond(value >= 0, ScaleIndex(value), RefError.NegativeScale(value))
 
   given Codec[ScaleIndex] = RefCodecs.validated(of, _.value)
 
   /** The first declared scale; every scale set has one. */
-  val first: ScaleIndex = new ScaleIndex(0)
+  val first: ScaleIndex = ScaleIndex(0)
 
 /** A fixation's position within its trial, from 1 ("fixation 6"). */
-final case class FixationIndex private (value: Int) derives CanEqual
+sealed abstract case class FixationIndex private (value: Int) derives CanEqual
 
 object FixationIndex:
+  private def apply(value: Int): FixationIndex =
+    new FixationIndex(value) {}
+
   def of(value: Int): Either[RefError, FixationIndex] =
-    Either.cond(value >= 1, new FixationIndex(value), RefError.FixationIndexNotPositive(value))
+    Either.cond(value >= 1, FixationIndex(value), RefError.FixationIndexNotPositive(value))
 
   given Codec[FixationIndex] = RefCodecs.validated(of, _.value)
 
 /** A record of a source file, from 1 ("fixations.csv record 7,214"). */
-final case class RecordNumber private (value: Int) derives CanEqual
+sealed abstract case class RecordNumber private (value: Int) derives CanEqual
 
 object RecordNumber:
+  private def apply(value: Int): RecordNumber =
+    new RecordNumber(value) {}
+
   def of(value: Int): Either[RefError, RecordNumber] =
-    Either.cond(value >= 1, new RecordNumber(value), RefError.RecordNotPositive(value))
+    Either.cond(value >= 1, RecordNumber(value), RefError.RecordNotPositive(value))
 
   given Codec[RecordNumber] = RefCodecs.validated(of, _.value)
 
 /** A backend [[ResultAddress]] (eyes4s `ResultRef`) whose scale index has been
   * checked.
   */
-final case class CheckedAddress private (value: ResultAddress) derives CanEqual:
-  def scale: ScaleIndex = new ScaleIndex(value.scale)
+sealed abstract case class CheckedAddress private (value: ResultAddress) derives CanEqual:
+  def scale: ScaleIndex = ScaleIndex(value.scale)
 
 object CheckedAddress:
+  private def apply(value: ResultAddress): CheckedAddress =
+    new CheckedAddress(value) {}
+
   def of(address: ResultAddress): Either[RefError, CheckedAddress] =
-    ScaleIndex.of(address.scale).map(_ => new CheckedAddress(address))
+    ScaleIndex.of(address.scale).map(_ => CheckedAddress(address))
 
   private[selection] def trusted(address: ResultAddress): CheckedAddress =
-    new CheckedAddress(address)
+    CheckedAddress(address)
 
   given Codec[CheckedAddress] = Codec.from(
     Decoder[ResultAddress].emap(of(_).left.map(_.message)),

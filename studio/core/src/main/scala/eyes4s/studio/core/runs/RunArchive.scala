@@ -39,10 +39,16 @@ import io.circe.{Decoder, DecodingFailure, Encoder, HCursor, Json}
 /** One file of a run's result archive: its eyes4s artifact name and the
   * exact length and SHA-256 of its bytes. Studio never reads inside it.
   */
-final case class ArchiveEntry private (name: ArtifactName, length: Long, sha256: ByteDigest)
-    derives CanEqual
+sealed abstract case class ArchiveEntry private (
+    name: ArtifactName,
+    length: Long,
+    sha256: ByteDigest
+) derives CanEqual
 
 object ArchiveEntry:
+  private def apply(name: ArtifactName, length: Long, sha256: ByteDigest): ArchiveEntry =
+    new ArchiveEntry(name, length, sha256) {}
+
   def of(
       name: ArtifactName,
       length: Long,
@@ -50,13 +56,13 @@ object ArchiveEntry:
   ): Either[RunStoreError, ArchiveEntry] =
     Either.cond(
       length >= 0L,
-      new ArchiveEntry(name, length, sha256),
+      ArchiveEntry(name, length, sha256),
       RunStoreError.NegativeLength(name, length)
     )
 
   /** The entry describing `bytes`. */
   def describe(name: ArtifactName, bytes: IArray[Byte]): ArchiveEntry =
-    new ArchiveEntry(name, bytes.length.toLong, ByteDigest.sha256(bytes))
+    ArchiveEntry(name, bytes.length.toLong, ByteDigest.sha256(bytes))
 
 /** The index of one run's stored result archive (S2.6): the run, the eyes4s
   * archive binding its [[RunRef]] carries, and its entries, at least one,
@@ -65,7 +71,7 @@ object ArchiveEntry:
   * The index is what the run store reads to show an archive and its size;
   * an entry's bytes are read only when asked for.
   */
-final case class ArchiveIndex private (
+sealed abstract case class ArchiveIndex private (
     run: RunId,
     archive: CoreBinding[ResultArchiveArtifact],
     entries: Vector[ArchiveEntry]
@@ -79,6 +85,13 @@ final case class ArchiveIndex private (
   def contentBytes: Long = entries.distinctBy(_.sha256.hex).map(_.length).sum
 
 object ArchiveIndex:
+  private def apply(
+      run: RunId,
+      archive: CoreBinding[ResultArchiveArtifact],
+      entries: Vector[ArchiveEntry]
+  ): ArchiveIndex =
+    new ArchiveIndex(run, archive, entries) {}
+
   def of(
       run: RunId,
       archive: CoreBinding[ResultArchiveArtifact],
@@ -88,7 +101,7 @@ object ArchiveIndex:
     val repeated = names.diff(names.distinct).distinct
     if entries.isEmpty then Left(RunStoreError.EmptyArchive(run))
     else if repeated.nonEmpty then Left(RunStoreError.DuplicateEntries(run, repeated))
-    else Right(new ArchiveIndex(run, archive, entries.sortBy(_.name.value)))
+    else Right(ArchiveIndex(run, archive, entries.sortBy(_.name.value)))
 
   private given Encoder[ArtifactName] = Encoder[String].contramap(_.value)
   private given Decoder[ArtifactName] =
