@@ -361,5 +361,20 @@
       "sha256": "e9dd414166d2bb0e934c02042f8158ce7f6b51d2ccd3aac37114fe1cfddee17e",
       "reason": "Adding a source-declaration semantic field changed the dataset definition after computation; cold restore correctly refused the changed definition. Final harness preserves the exact admitted dataset and binds only the computed recipe input. No production gates changed."
     }
-  ]
+  ],
+  "post_commit_compile": {
+    "source_sha": "25ec0dc25cdca52dacd68640f9e48f58cd10479d",
+    "source_tree": "355637820561b8ee305264ff488e75583977cd51",
+    "full_root_jvm_js_werror": true,
+    "studio_clients_test_compile": [
+      "studioAppJVM",
+      "studioVizJVM",
+      "studioDesktop",
+      "studioAppJS",
+      "studioVizJS"
+    ],
+    "log": "eyes4s-archive-full-client-compile.log",
+    "log_sha256": "5743e22b8ff9cdfb02e646ad02fa5714a5a616c55ddc8ffcbec14e13492e8a6f",
+    "scope": "Compile qualification only; complete frozen library and Studio gates remain required before landing."
+  }
 }
