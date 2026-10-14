@@ -1,0 +1,1 @@
+{"actor":"codex-core-completion-20261014","entity":"archive-native-memory","kind":"reserve_open","mode":"exclusive","op":"20261014T220823.220132Z-p37302-c0000-ra7bd-h1336a3","paths":["studio/core/src/test/scala/eyes4s/studio/core/real/NativeArtifactPersistenceSuite.scala"],"reservation_id":"rv-01M4Y7B75M6H876Q97BQVHM8JJ","ts":"2026-10-14T22:08:23.220132Z","ttl_s":28800,"v":2}
