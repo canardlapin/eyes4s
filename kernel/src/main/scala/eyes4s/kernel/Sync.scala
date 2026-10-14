@@ -33,8 +33,12 @@ package eyes4s.kernel
   *              offset. A value of 1e-6 means the target clock runs one
   *              microsecond fast per second.
   */
-final case class Sync private (from: ClockId, to: ClockId, offset: Span, drift: Double)
-    derives CanEqual:
+sealed abstract case class Sync private (
+    from: ClockId,
+    to: ClockId,
+    offset: Span,
+    drift: Double
+) derives CanEqual:
 
   /** Convert an instant. Unchecked: the caller asserts it is on `from`.
     *
@@ -63,6 +67,9 @@ final case class Sync private (from: ClockId, to: ClockId, offset: Span, drift: 
 end Sync
 
 object Sync:
+
+  private def apply(from: ClockId, to: ClockId, offset: Span, drift: Double): Sync =
+    new Sync(from, to, offset, drift) {}
 
   /** An affine synchronization with a finite, direction-preserving clock
     * scale.

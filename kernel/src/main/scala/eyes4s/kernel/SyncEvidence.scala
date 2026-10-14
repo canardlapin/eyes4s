@@ -78,7 +78,7 @@ object SyncErrorMagnitude:
     def render: String   = Span.renderMilliseconds(Span.toMicros(value))
 
 /** Signed target-clock error for one retained common mark. */
-final case class SyncResidual private (
+sealed abstract case class SyncResidual private (
     mark: SyncMark,
     predictedTarget: Instant,
     error: Span
@@ -90,22 +90,32 @@ final case class SyncResidual private (
     )
 
 object SyncResidual:
+  private def apply(mark: SyncMark, predictedTarget: Instant, error: Span): SyncResidual =
+    new SyncResidual(mark, predictedTarget, error) {}
+
   private[kernel] def fromPrediction(mark: SyncMark, predictedTarget: Instant): SyncResidual =
-    new SyncResidual(mark, predictedTarget, predictedTarget.until(mark.onTarget))
+    SyncResidual(mark, predictedTarget, predictedTarget.until(mark.onTarget))
 
 /** A mark excluded because its initial fitted residual exceeded the policy. */
-final case class RejectedSyncMark private (
+sealed abstract case class RejectedSyncMark private (
     mark: SyncMark,
     residual: SyncErrorMagnitude,
     limit: SyncResidualLimit
 ) derives CanEqual
 
 object RejectedSyncMark:
+  private def apply(
+      mark: SyncMark,
+      residual: SyncErrorMagnitude,
+      limit: SyncResidualLimit
+  ): RejectedSyncMark =
+    new RejectedSyncMark(mark, residual, limit) {}
+
   private[kernel] def fromResidual(
       residual: SyncResidual,
       limit: SyncResidualLimit
   ): RejectedSyncMark =
-    new RejectedSyncMark(residual.mark, residual.absolute, limit)
+    RejectedSyncMark(residual.mark, residual.absolute, limit)
 
 /** Auditable evidence for an affine map between two nominal clocks.
   *
