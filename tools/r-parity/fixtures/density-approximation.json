@@ -1,0 +1,4993 @@
+{
+  "schema": 1,
+  "eyesim_revision": "735d010911c5ec86fae430c8a0010b8107a4431c",
+  "R": "4.5.1",
+  "packages": {
+    "KernSmooth": "2.23-26",
+    "MASS": "7.3-65",
+    "Matrix": "1.7-3",
+    "R6": "2.6.1",
+    "RColorBrewer": "1.1-3",
+    "Rcpp": "1.1.2",
+    "S7": "0.2.2",
+    "assertthat": "0.2.1",
+    "backports": "1.5.1",
+    "base": "4.5.1",
+    "broom": "1.0.13",
+    "cli": "3.6.6",
+    "codetools": "0.2-20",
+    "compiler": "4.5.1",
+    "datasets": "4.5.1",
+    "digest": "0.6.39",
+    "dplyr": "1.2.1",
+    "eyesim": "0.1.0.9000",
+    "farver": "2.1.2",
+    "future": "1.75.0",
+    "generics": "0.1.4",
+    "ggplot2": "4.0.3",
+    "globals": "0.19.1",
+    "glue": "1.8.1",
+    "grDevices": "4.5.1",
+    "graphics": "4.5.1",
+    "grid": "4.5.1",
+    "gtable": "0.3.6",
+    "jsonlite": "2.0.0",
+    "ks": "1.15.1",
+    "lattice": "0.22-7",
+    "lifecycle": "1.0.5",
+    "listenv": "1.0.0",
+    "magrittr": "2.0.5",
+    "mclust": "6.1.2",
+    "methods": "4.5.1",
+    "mvtnorm": "1.3-6",
+    "parallel": "4.5.1",
+    "parallelly": "1.48.0",
+    "pillar": "1.11.1",
+    "pkgconfig": "2.0.3",
+    "pracma": "2.4.6",
+    "proxy": "0.4-29",
+    "purrr": "1.2.2",
+    "rlang": "1.3.0",
+    "scales": "1.4.0",
+    "stats": "4.5.1",
+    "tibble": "3.3.1",
+    "tidyr": "1.3.2",
+    "tidyselect": "1.2.1",
+    "tools": "4.5.1",
+    "utils": "4.5.1",
+    "vctrs": "0.7.3"
+  },
+  "runtime_header": "R version 4.5.1 (2025-06-13)\nPlatform: aarch64-unknown-linux-gnu\nRunning under: Ubuntu 24.04.3 LTS\n\nMatrix products: default\nBLAS:   /usr/lib/aarch64-linux-gnu/openblas-pthread/libblas.so.3 \nLAPACK: /usr/lib/aarch64-linux-gnu/openblas-pthread/libopenblasp-r0.3.26.so;  LAPACK version 3.12.0",
+  "input_sha256": "fe59b0dbbcf3cc7710425034cf34a7b2c75a321e4ebab31dade4f0e26f1ebe85",
+  "conventions": "ks unbinned supp=3.7; endpoint grid; duration weights; normalized then zapsmall7; exhaustive within-participant controls",
+  "map_tolerance": {
+    "absolute": 2e-13,
+    "relative": 2e-12
+  },
+  "score_tolerance": {
+    "absolute": 2e-12,
+    "relative": 2e-12
+  },
+  "contexts": [
+    {
+      "nx": 8,
+      "ny": 6,
+      "sigma": 0.2,
+      "maps": 24,
+      "support_map_max_absolute_error": 0.0,
+      "full_map_max_absolute_error": 0.0,
+      "score_max_absolute_error": 1.1102230246251565e-16,
+      "loaded_namespaces": {
+        "KernSmooth": "2.23-26",
+        "MASS": "7.3-65",
+        "Matrix": "1.7-3",
+        "R6": "2.6.1",
+        "RColorBrewer": "1.1-3",
+        "Rcpp": "1.1.2",
+        "S7": "0.2.2",
+        "assertthat": "0.2.1",
+        "backports": "1.5.1",
+        "base": "4.5.1",
+        "broom": "1.0.13",
+        "cli": "3.6.6",
+        "codetools": "0.2-20",
+        "compiler": "4.5.1",
+        "datasets": "4.5.1",
+        "digest": "0.6.39",
+        "dplyr": "1.2.1",
+        "eyesim": "0.1.0.9000",
+        "farver": "2.1.2",
+        "future": "1.75.0",
+        "generics": "0.1.4",
+        "ggplot2": "4.0.3",
+        "globals": "0.19.1",
+        "glue": "1.8.1",
+        "grDevices": "4.5.1",
+        "graphics": "4.5.1",
+        "grid": "4.5.1",
+        "gtable": "0.3.6",
+        "jsonlite": "2.0.0",
+        "ks": "1.15.1",
+        "lattice": "0.22-7",
+        "lifecycle": "1.0.5",
+        "listenv": "1.0.0",
+        "magrittr": "2.0.5",
+        "mclust": "6.1.2",
+        "methods": "4.5.1",
+        "mvtnorm": "1.3-6",
+        "parallel": "4.5.1",
+        "parallelly": "1.48.0",
+        "pillar": "1.11.1",
+        "pkgconfig": "2.0.3",
+        "pracma": "2.4.6",
+        "proxy": "0.4-29",
+        "purrr": "1.2.2",
+        "rlang": "1.3.0",
+        "scales": "1.4.0",
+        "stats": "4.5.1",
+        "tibble": "3.3.1",
+        "tidyr": "1.3.2",
+        "tidyselect": "1.2.1",
+        "tools": "4.5.1",
+        "utils": "4.5.1",
+        "vctrs": "0.7.3"
+      },
+      "scores": [
+        {
+          "query": "P1/A/matched",
+          "observed": 0.9998093804874367,
+          "baseline": 0.0006762982834154187,
+          "difference": 0.9991330822040213,
+          "controls": [
+            "P1/B/encode",
+            "P1/C/encode"
+          ]
+        },
+        {
+          "query": "P1/A/near-midpoint",
+          "observed": 0.22488576268555768,
+          "baseline": 0.49997283938519704,
+          "difference": -0.2750870766996394,
+          "controls": [
+            "P1/B/encode",
+            "P1/C/encode"
+          ]
+        },
+        {
+          "query": "P1/A/mismatch",
+          "observed": 0,
+          "baseline": 0.500000061296324,
+          "difference": -0.500000061296324,
+          "controls": [
+            "P1/B/encode",
+            "P1/C/encode"
+          ]
+        },
+        {
+          "query": "P1/B/matched",
+          "observed": 0.9998822236639627,
+          "baseline": 0,
+          "difference": 0.9998822236639627,
+          "controls": [
+            "P1/A/encode",
+            "P1/C/encode"
+          ]
+        },
+        {
+          "query": "P1/B/near-midpoint",
+          "observed": 0.982174319937903,
+          "baseline": 0.09905107868136415,
+          "difference": 0.8831232412565388,
+          "controls": [
+            "P1/A/encode",
+            "P1/C/encode"
+          ]
+        },
+        {
+          "query": "P1/B/mismatch",
+          "observed": 1.2259264805834618e-07,
+          "baseline": 0.5006915060427534,
+          "difference": -0.5006913834501053,
+          "controls": [
+            "P1/A/encode",
+            "P1/C/encode"
+          ]
+        },
+        {
+          "query": "P1/C/matched",
+          "observed": 0.9893936778041399,
+          "baseline": 0.00022430276912451677,
+          "difference": 0.9891693750350153,
+          "controls": [
+            "P1/A/encode",
+            "P1/B/encode"
+          ]
+        },
+        {
+          "query": "P1/C/near-midpoint",
+          "observed": 0.0025390586682855114,
+          "baseline": 0.6682571345441699,
+          "difference": -0.6657180758758844,
+          "controls": [
+            "P1/A/encode",
+            "P1/B/encode"
+          ]
+        },
+        {
+          "query": "P1/C/mismatch",
+          "observed": 0.0013830120855068035,
+          "baseline": 0.5000000000000001,
+          "difference": -0.4986169879144933,
+          "controls": [
+            "P1/A/encode",
+            "P1/B/encode"
+          ]
+        },
+        {
+          "query": "P2/A/matched",
+          "observed": 0.9998506855115574,
+          "baseline": 5.117185239081932e-06,
+          "difference": 0.9998455683263183,
+          "controls": [
+            "P2/B/encode",
+            "P2/C/encode"
+          ]
+        },
+        {
+          "query": "P2/A/near-midpoint",
+          "observed": 0.15701060028367042,
+          "baseline": 0.5301642911987141,
+          "difference": -0.3731536909150437,
+          "controls": [
+            "P2/B/encode",
+            "P2/C/encode"
+          ]
+        },
+        {
+          "query": "P2/A/mismatch",
+          "observed": 0,
+          "baseline": 0.49999999999999994,
+          "difference": -0.49999999999999994,
+          "controls": [
+            "P2/B/encode",
+            "P2/C/encode"
+          ]
+        },
+        {
+          "query": "P2/B/matched",
+          "observed": 0.9972513952530283,
+          "baseline": 0,
+          "difference": 0.9972513952530283,
+          "controls": [
+            "P2/A/encode",
+            "P2/C/encode"
+          ]
+        },
+        {
+          "query": "P2/B/near-midpoint",
+          "observed": 0.9911382626403717,
+          "baseline": 0.08002919469858868,
+          "difference": 0.911109067941783,
+          "controls": [
+            "P2/A/encode",
+            "P2/C/encode"
+          ]
+        },
+        {
+          "query": "P2/B/mismatch",
+          "observed": 0,
+          "baseline": 0.5000050738998153,
+          "difference": -0.5000050738998153,
+          "controls": [
+            "P2/A/encode",
+            "P2/C/encode"
+          ]
+        },
+        {
+          "query": "P2/C/matched",
+          "observed": 0.974245972105622,
+          "baseline": 1.9043310954283735e-06,
+          "difference": 0.9742440677745265,
+          "controls": [
+            "P2/A/encode",
+            "P2/B/encode"
+          ]
+        },
+        {
+          "query": "P2/C/near-midpoint",
+          "observed": 0.0068816278447725214,
+          "baseline": 0.629053440781897,
+          "difference": -0.6221718129371244,
+          "controls": [
+            "P2/A/encode",
+            "P2/B/encode"
+          ]
+        },
+        {
+          "query": "P2/C/mismatch",
+          "observed": 1.0147799630395786e-05,
+          "baseline": 0.4999999999999999,
+          "difference": -0.4999898522003695,
+          "controls": [
+            "P2/A/encode",
+            "P2/B/encode"
+          ]
+        }
+      ]
+    },
+    {
+      "nx": 8,
+      "ny": 6,
+      "sigma": 0.4,
+      "maps": 24,
+      "support_map_max_absolute_error": 0.0,
+      "full_map_max_absolute_error": 0.0,
+      "score_max_absolute_error": 2.220446049250313e-16,
+      "loaded_namespaces": {
+        "KernSmooth": "2.23-26",
+        "MASS": "7.3-65",
+        "Matrix": "1.7-3",
+        "R6": "2.6.1",
+        "RColorBrewer": "1.1-3",
+        "Rcpp": "1.1.2",
+        "S7": "0.2.2",
+        "assertthat": "0.2.1",
+        "backports": "1.5.1",
+        "base": "4.5.1",
+        "broom": "1.0.13",
+        "cli": "3.6.6",
+        "codetools": "0.2-20",
+        "compiler": "4.5.1",
+        "datasets": "4.5.1",
+        "digest": "0.6.39",
+        "dplyr": "1.2.1",
+        "eyesim": "0.1.0.9000",
+        "farver": "2.1.2",
+        "future": "1.75.0",
+        "generics": "0.1.4",
+        "ggplot2": "4.0.3",
+        "globals": "0.19.1",
+        "glue": "1.8.1",
+        "grDevices": "4.5.1",
+        "graphics": "4.5.1",
+        "grid": "4.5.1",
+        "gtable": "0.3.6",
+        "jsonlite": "2.0.0",
+        "ks": "1.15.1",
+        "lattice": "0.22-7",
+        "lifecycle": "1.0.5",
+        "listenv": "1.0.0",
+        "magrittr": "2.0.5",
+        "mclust": "6.1.2",
+        "methods": "4.5.1",
+        "mvtnorm": "1.3-6",
+        "parallel": "4.5.1",
+        "parallelly": "1.48.0",
+        "pillar": "1.11.1",
+        "pkgconfig": "2.0.3",
+        "pracma": "2.4.6",
+        "proxy": "0.4-29",
+        "purrr": "1.2.2",
+        "rlang": "1.3.0",
+        "scales": "1.4.0",
+        "stats": "4.5.1",
+        "tibble": "3.3.1",
+        "tidyr": "1.3.2",
+        "tidyselect": "1.2.1",
+        "tools": "4.5.1",
+        "utils": "4.5.1",
+        "vctrs": "0.7.3"
+      },
+      "scores": [
+        {
+          "query": "P1/A/matched",
+          "observed": 0.9993427923255762,
+          "baseline": 0.09465026551367367,
+          "difference": 0.9046925268119026,
+          "controls": [
+            "P1/B/encode",
+            "P1/C/encode"
+          ]
+        },
+        {
+          "query": "P1/A/near-midpoint",
+          "observed": 0.3830153640619179,
+          "baseline": 0.6182347225145972,
+          "difference": -0.23521935845267933,
+          "controls": [
+            "P1/B/encode",
+            "P1/C/encode"
+          ]
+        },
+        {
+          "query": "P1/A/mismatch",
+          "observed": 3.7189804860815256e-05,
+          "baseline": 0.5048541996383672,
+          "difference": -0.5048170098335064,
+          "controls": [
+            "P1/B/encode",
+            "P1/C/encode"
+          ]
+        },
+        {
+          "query": "P1/B/matched",
+          "observed": 0.9999765065621949,
+          "baseline": 0.004534130031439915,
+          "difference": 0.9954423765307551,
+          "controls": [
+            "P1/A/encode",
+            "P1/C/encode"
+          ]
+        },
+        {
+          "query": "P1/B/near-midpoint",
+          "observed": 0.9417418548395491,
+          "baseline": 0.24976757793858465,
+          "difference": 0.6919742769009645,
+          "controls": [
+            "P1/A/encode",
+            "P1/C/encode"
+          ]
+        },
+        {
+          "query": "P1/B/mismatch",
+          "observed": 0.009708399276734161,
+          "baseline": 0.5941684677103426,
+          "difference": -0.5844600684336084,
+          "controls": [
+            "P1/A/encode",
+            "P1/C/encode"
+          ]
+        },
+        {
+          "query": "P1/C/matched",
+          "observed": 0.9884764258451012,
+          "baseline": 0.08171021552108021,
+          "difference": 0.906766210324021,
+          "controls": [
+            "P1/A/encode",
+            "P1/B/encode"
+          ]
+        },
+        {
+          "query": "P1/C/near-midpoint",
+          "observed": 0.14488773884406525,
+          "baseline": 0.7023907049947298,
+          "difference": -0.5575029661506645,
+          "controls": [
+            "P1/A/encode",
+            "P1/B/encode"
+          ]
+        },
+        {
+          "query": "P1/C/mismatch",
+          "observed": 0.18833693542068505,
+          "baseline": 0.5000185949024305,
+          "difference": -0.3116816594817454,
+          "controls": [
+            "P1/A/encode",
+            "P1/B/encode"
+          ]
+        },
+        {
+          "query": "P2/A/matched",
+          "observed": 0.9975657080605121,
+          "baseline": 0.05150922210718446,
+          "difference": 0.9460564859533277,
+          "controls": [
+            "P2/B/encode",
+            "P2/C/encode"
+          ]
+        },
+        {
+          "query": "P2/A/near-midpoint",
+          "observed": 0.31095566454292733,
+          "baseline": 0.6364179536999566,
+          "difference": -0.32546228915702924,
+          "controls": [
+            "P2/B/encode",
+            "P2/C/encode"
+          ]
+        },
+        {
+          "query": "P2/A/mismatch",
+          "observed": 5.368631990367125e-05,
+          "baseline": 0.5031064664535796,
+          "difference": -0.5030527801336759,
+          "controls": [
+            "P2/B/encode",
+            "P2/C/encode"
+          ]
+        },
+        {
+          "query": "P2/B/matched",
+          "observed": 0.9997694637911181,
+          "baseline": 0.003082316928276094,
+          "difference": 0.996687146862842,
+          "controls": [
+            "P2/A/encode",
+            "P2/C/encode"
+          ]
+        },
+        {
+          "query": "P2/B/near-midpoint",
+          "observed": 0.9525613357998804,
+          "baseline": 0.22412279196259685,
+          "difference": 0.7284385438372836,
+          "controls": [
+            "P2/A/encode",
+            "P2/C/encode"
+          ]
+        },
+        {
+          "query": "P2/B/mismatch",
+          "observed": 0.006212932907159167,
+          "baseline": 0.5478618176326877,
+          "difference": -0.5416488847255285,
+          "controls": [
+            "P2/A/encode",
+            "P2/C/encode"
+          ]
+        },
+        {
+          "query": "P2/C/matched",
+          "observed": 0.9955745528716405,
+          "baseline": 0.043755067365144694,
+          "difference": 0.9518194855064959,
+          "controls": [
+            "P2/A/encode",
+            "P2/B/encode"
+          ]
+        },
+        {
+          "query": "P2/C/near-midpoint",
+          "observed": 0.0890218274384944,
+          "baseline": 0.6901739502051591,
+          "difference": -0.6011521227666647,
+          "controls": [
+            "P2/A/encode",
+            "P2/B/encode"
+          ]
+        },
+        {
+          "query": "P2/C/mismatch",
+          "observed": 0.09572363526537513,
+          "baseline": 0.500026843159952,
+          "difference": -0.4043032078945769,
+          "controls": [
+            "P2/A/encode",
+            "P2/B/encode"
+          ]
+        }
+      ]
+    },
+    {
+      "nx": 8,
+      "ny": 6,
+      "sigma": 0.8,
+      "maps": 24,
+      "support_map_max_absolute_error": 0.0,
+      "full_map_max_absolute_error": 0.0,
+      "score_max_absolute_error": 2.220446049250313e-16,
+      "loaded_namespaces": {
+        "KernSmooth": "2.23-26",
+        "MASS": "7.3-65",
+        "Matrix": "1.7-3",
+        "R6": "2.6.1",
+        "RColorBrewer": "1.1-3",
+        "Rcpp": "1.1.2",
+        "S7": "0.2.2",
+        "assertthat": "0.2.1",
+        "backports": "1.5.1",
+        "base": "4.5.1",
+        "broom": "1.0.13",
+        "cli": "3.6.6",
+        "codetools": "0.2-20",
+        "compiler": "4.5.1",
+        "datasets": "4.5.1",
+        "digest": "0.6.39",
+        "dplyr": "1.2.1",
+        "eyesim": "0.1.0.9000",
+        "farver": "2.1.2",
+        "future": "1.75.0",
+        "generics": "0.1.4",
+        "ggplot2": "4.0.3",
+        "globals": "0.19.1",
+        "glue": "1.8.1",
+        "grDevices": "4.5.1",
+        "graphics": "4.5.1",
+        "grid": "4.5.1",
+        "gtable": "0.3.6",
+        "jsonlite": "2.0.0",
+        "ks": "1.15.1",
+        "lattice": "0.22-7",
+        "lifecycle": "1.0.5",
+        "listenv": "1.0.0",
+        "magrittr": "2.0.5",
+        "mclust": "6.1.2",
+        "methods": "4.5.1",
+        "mvtnorm": "1.3-6",
+        "parallel": "4.5.1",
+        "parallelly": "1.48.0",
+        "pillar": "1.11.1",
+        "pkgconfig": "2.0.3",
+        "pracma": "2.4.6",
+        "proxy": "0.4-29",
+        "purrr": "1.2.2",
+        "rlang": "1.3.0",
+        "scales": "1.4.0",
+        "stats": "4.5.1",
+        "tibble": "3.3.1",
+        "tidyr": "1.3.2",
+        "tidyselect": "1.2.1",
+        "tools": "4.5.1",
+        "utils": "4.5.1",
+        "vctrs": "0.7.3"
+      },
+      "scores": [
+        {
+          "query": "P1/A/matched",
+          "observed": 0.9987094105752796,
+          "baseline": 0.3247800638814449,
+          "difference": 0.6739293466938348,
+          "controls": [
+            "P1/B/encode",
+            "P1/C/encode"
+          ]
+        },
+        {
+          "query": "P1/A/near-midpoint",
+          "observed": 0.6408802741763169,
+          "baseline": 0.7301750158226485,
+          "difference": -0.08929474164633167,
+          "controls": [
+            "P1/B/encode",
+            "P1/C/encode"
+          ]
+        },
+        {
+          "query": "P1/A/mismatch",
+          "observed": 0.018077202474973006,
+          "baseline": 0.571372892862608,
+          "difference": -0.5532956903876349,
+          "controls": [
+            "P1/B/encode",
+            "P1/C/encode"
+          ]
+        },
+        {
+          "query": "P1/B/matched",
+          "observed": 0.9997617066644674,
+          "baseline": 0.07841686937935652,
+          "difference": 0.9213448372851109,
+          "controls": [
+            "P1/A/encode",
+            "P1/C/encode"
+          ]
+        },
+        {
+          "query": "P1/B/near-midpoint",
+          "observed": 0.8253727679877246,
+          "baseline": 0.5720008721042956,
+          "difference": 0.253371895883429,
+          "controls": [
+            "P1/A/encode",
+            "P1/C/encode"
+          ]
+        },
+        {
+          "query": "P1/B/mismatch",
+          "observed": 0.14274578572521568,
+          "baseline": 0.8088752242078964,
+          "difference": -0.6661294384826807,
+          "controls": [
+            "P1/A/encode",
+            "P1/C/encode"
+          ]
+        },
+        {
+          "query": "P1/C/matched",
+          "observed": 0.999046249398215,
+          "baseline": 0.37537203922372353,
+          "difference": 0.6236742101744914,
+          "controls": [
+            "P1/A/encode",
+            "P1/B/encode"
+          ]
+        },
+        {
+          "query": "P1/C/near-midpoint",
+          "observed": 0.5815259955863038,
+          "baseline": 0.7118638082457267,
+          "difference": -0.1303378126594229,
+          "controls": [
+            "P1/A/encode",
+            "P1/B/encode"
+          ]
+        },
+        {
+          "query": "P1/C/mismatch",
+          "observed": 0.617750448415793,
+          "baseline": 0.5090386012374866,
+          "difference": 0.1087118471783064,
+          "controls": [
+            "P1/A/encode",
+            "P1/B/encode"
+          ]
+        },
+        {
+          "query": "P2/A/matched",
+          "observed": 0.9985675245999825,
+          "baseline": 0.32343183791528357,
+          "difference": 0.6751356866846989,
+          "controls": [
+            "P2/B/encode",
+            "P2/C/encode"
+          ]
+        },
+        {
+          "query": "P2/A/near-midpoint",
+          "observed": 0.6431528824365823,
+          "baseline": 0.7300245302343711,
+          "difference": -0.08687164779778878,
+          "controls": [
+            "P2/B/encode",
+            "P2/C/encode"
+          ]
+        },
+        {
+          "query": "P2/A/mismatch",
+          "observed": 0.018083714799395047,
+          "baseline": 0.5730772626896088,
+          "difference": -0.5549935478902137,
+          "controls": [
+            "P2/B/encode",
+            "P2/C/encode"
+          ]
+        },
+        {
+          "query": "P2/B/matched",
+          "observed": 0.9996769859268482,
+          "baseline": 0.08021688420259512,
+          "difference": 0.9194601017242531,
+          "controls": [
+            "P2/A/encode",
+            "P2/C/encode"
+          ]
+        },
+        {
+          "query": "P2/B/near-midpoint",
+          "observed": 0.821188753283363,
+          "baseline": 0.57787115116212,
+          "difference": 0.2433176021212431,
+          "controls": [
+            "P2/A/encode",
+            "P2/C/encode"
+          ]
+        },
+        {
+          "query": "P2/B/mismatch",
+          "observed": 0.14615452537921758,
+          "baseline": 0.8071165328162526,
+          "difference": -0.660962007437035,
+          "controls": [
+            "P2/A/encode",
+            "P2/C/encode"
+          ]
+        },
+        {
+          "query": "P2/C/matched",
+          "observed": 0.9991050718392628,
+          "baseline": 0.37556653521770245,
+          "difference": 0.6235385366215603,
+          "controls": [
+            "P2/A/encode",
+            "P2/B/encode"
+          ]
+        },
+        {
+          "query": "P2/C/near-midpoint",
+          "observed": 0.5844219074188401,
+          "baseline": 0.7118446806637875,
+          "difference": -0.12742277324494733,
+          "controls": [
+            "P2/A/encode",
+            "P2/B/encode"
+          ]
+        },
+        {
+          "query": "P2/C/mismatch",
+          "observed": 0.6142330656325055,
+          "baseline": 0.5090418573996974,
+          "difference": 0.10519120823280803,
+          "controls": [
+            "P2/A/encode",
+            "P2/B/encode"
+          ]
+        }
+      ]
+    },
+    {
+      "nx": 8,
+      "ny": 6,
+      "sigma": 1.6,
+      "maps": 24,
+      "support_map_max_absolute_error": 0.0,
+      "full_map_max_absolute_error": 0.0,
+      "score_max_absolute_error": 3.3306690738754696e-16,
+      "loaded_namespaces": {
+        "KernSmooth": "2.23-26",
+        "MASS": "7.3-65",
+        "Matrix": "1.7-3",
+        "R6": "2.6.1",
+        "RColorBrewer": "1.1-3",
+        "Rcpp": "1.1.2",
+        "S7": "0.2.2",
+        "assertthat": "0.2.1",
+        "backports": "1.5.1",
+        "base": "4.5.1",
+        "broom": "1.0.13",
+        "cli": "3.6.6",
+        "codetools": "0.2-20",
+        "compiler": "4.5.1",
+        "datasets": "4.5.1",
+        "digest": "0.6.39",
+        "dplyr": "1.2.1",
+        "eyesim": "0.1.0.9000",
+        "farver": "2.1.2",
+        "future": "1.75.0",
+        "generics": "0.1.4",
+        "ggplot2": "4.0.3",
+        "globals": "0.19.1",
+        "glue": "1.8.1",
+        "grDevices": "4.5.1",
+        "graphics": "4.5.1",
+        "grid": "4.5.1",
+        "gtable": "0.3.6",
+        "jsonlite": "2.0.0",
+        "ks": "1.15.1",
+        "lattice": "0.22-7",
+        "lifecycle": "1.0.5",
+        "listenv": "1.0.0",
+        "magrittr": "2.0.5",
+        "mclust": "6.1.2",
+        "methods": "4.5.1",
+        "mvtnorm": "1.3-6",
+        "parallel": "4.5.1",
+        "parallelly": "1.48.0",
+        "pillar": "1.11.1",
+        "pkgconfig": "2.0.3",
+        "pracma": "2.4.6",
+        "proxy": "0.4-29",
+        "purrr": "1.2.2",
+        "rlang": "1.3.0",
+        "scales": "1.4.0",
+        "stats": "4.5.1",
+        "tibble": "3.3.1",
+        "tidyr": "1.3.2",
+        "tidyselect": "1.2.1",
+        "tools": "4.5.1",
+        "utils": "4.5.1",
+        "vctrs": "0.7.3"
+      },
+      "scores": [
+        {
+          "query": "P1/A/matched",
+          "observed": 0.9997609786455431,
+          "baseline": 0.5263304302142899,
+          "difference": 0.4734305484312532,
+          "controls": [
+            "P1/B/encode",
+            "P1/C/encode"
+          ]
+        },
+        {
+          "query": "P1/A/near-midpoint",
+          "observed": 0.7767545479477989,
+          "baseline": 0.843051144043925,
+          "difference": -0.06629659609612615,
+          "controls": [
+            "P1/B/encode",
+            "P1/C/encode"
+          ]
+        },
+        {
+          "query": "P1/A/mismatch",
+          "observed": 0.23413092939707736,
+          "baseline": 0.7604881369762843,
+          "difference": -0.5263572075792069,
+          "controls": [
+            "P1/B/encode",
+            "P1/C/encode"
+          ]
+        },
+        {
+          "query": "P1/B/matched",
+          "observed": 0.9999545780081034,
+          "baseline": 0.372732769824762,
+          "difference": 0.6272218081833414,
+          "controls": [
+            "P1/A/encode",
+            "P1/C/encode"
+          ]
+        },
+        {
+          "query": "P1/B/near-midpoint",
+          "observed": 0.8365743097741176,
+          "baseline": 0.7930468651352508,
+          "difference": 0.04352744463886682,
+          "controls": [
+            "P1/A/encode",
+            "P1/C/encode"
+          ]
+        },
+        {
+          "query": "P1/B/mismatch",
+          "observed": 0.5209762739525686,
+          "baseline": 0.9012399407567994,
+          "difference": -0.38026366680423074,
+          "controls": [
+            "P1/A/encode",
+            "P1/C/encode"
+          ]
+        },
+        {
+          "query": "P1/C/matched",
+          "observed": 0.9997698291342749,
+          "baseline": 0.6607786643427067,
+          "difference": 0.3389911647915682,
+          "controls": [
+            "P1/A/encode",
+            "P1/B/encode"
+          ]
+        },
+        {
+          "query": "P1/C/near-midpoint",
+          "observed": 0.8765710639012974,
+          "baseline": 0.7797869549566426,
+          "difference": 0.09678410894465472,
+          "controls": [
+            "P1/A/encode",
+            "P1/B/encode"
+          ]
+        },
+        {
+          "query": "P1/C/mismatch",
+          "observed": 0.8024798815135985,
+          "baseline": 0.6170654646985387,
+          "difference": 0.18541441681505977,
+          "controls": [
+            "P1/A/encode",
+            "P1/B/encode"
+          ]
+        },
+        {
+          "query": "P2/A/matched",
+          "observed": 0.99976061163147,
+          "baseline": 0.5249379091782274,
+          "difference": 0.47482270245324265,
+          "controls": [
+            "P2/B/encode",
+            "P2/C/encode"
+          ]
+        },
+        {
+          "query": "P2/A/near-midpoint",
+          "observed": 0.7766939903250696,
+          "baseline": 0.8447913044561142,
+          "difference": -0.06809731413104458,
+          "controls": [
+            "P2/B/encode",
+            "P2/C/encode"
+          ]
+        },
+        {
+          "query": "P2/A/mismatch",
+          "observed": 0.2336347214362579,
+          "baseline": 0.765015049828176,
+          "difference": -0.5313803283919181,
+          "controls": [
+            "P2/B/encode",
+            "P2/C/encode"
+          ]
+        },
+        {
+          "query": "P2/B/matched",
+          "observed": 0.9999553473198365,
+          "baseline": 0.37772608282938447,
+          "difference": 0.622229264490452,
+          "controls": [
+            "P2/A/encode",
+            "P2/C/encode"
+          ]
+        },
+        {
+          "query": "P2/B/near-midpoint",
+          "observed": 0.8349979162747386,
+          "baseline": 0.7966916500354513,
+          "difference": 0.038306266239287345,
+          "controls": [
+            "P2/A/encode",
+            "P2/C/encode"
+          ]
+        },
+        {
+          "query": "P2/B/mismatch",
+          "observed": 0.5300300996563522,
+          "baseline": 0.899988712903115,
+          "difference": -0.3699586132467628,
+          "controls": [
+            "P2/A/encode",
+            "P2/C/encode"
+          ]
+        },
+        {
+          "query": "P2/C/matched",
+          "observed": 0.9997697703099908,
+          "baseline": 0.6641361922710756,
+          "difference": 0.33563357803891525,
+          "controls": [
+            "P2/A/encode",
+            "P2/B/encode"
+          ]
+        },
+        {
+          "query": "P2/C/near-midpoint",
+          "observed": 0.8808381568605618,
+          "baseline": 0.7798839252300803,
+          "difference": 0.10095423163048145,
+          "controls": [
+            "P2/A/encode",
+            "P2/B/encode"
+          ]
+        },
+        {
+          "query": "P2/C/mismatch",
+          "observed": 0.79997742580623,
+          "baseline": 0.6168173607181286,
+          "difference": 0.18316006508810134,
+          "controls": [
+            "P2/A/encode",
+            "P2/B/encode"
+          ]
+        }
+      ]
+    },
+    {
+      "nx": 16,
+      "ny": 12,
+      "sigma": 0.2,
+      "maps": 24,
+      "support_map_max_absolute_error": 0.0,
+      "full_map_max_absolute_error": 0.0,
+      "score_max_absolute_error": 3.3306690738754696e-16,
+      "loaded_namespaces": {
+        "KernSmooth": "2.23-26",
+        "MASS": "7.3-65",
+        "Matrix": "1.7-3",
+        "R6": "2.6.1",
+        "RColorBrewer": "1.1-3",
+        "Rcpp": "1.1.2",
+        "S7": "0.2.2",
+        "assertthat": "0.2.1",
+        "backports": "1.5.1",
+        "base": "4.5.1",
+        "broom": "1.0.13",
+        "cli": "3.6.6",
+        "codetools": "0.2-20",
+        "compiler": "4.5.1",
+        "datasets": "4.5.1",
+        "digest": "0.6.39",
+        "dplyr": "1.2.1",
+        "eyesim": "0.1.0.9000",
+        "farver": "2.1.2",
+        "future": "1.75.0",
+        "generics": "0.1.4",
+        "ggplot2": "4.0.3",
+        "globals": "0.19.1",
+        "glue": "1.8.1",
+        "grDevices": "4.5.1",
+        "graphics": "4.5.1",
+        "grid": "4.5.1",
+        "gtable": "0.3.6",
+        "jsonlite": "2.0.0",
+        "ks": "1.15.1",
+        "lattice": "0.22-7",
+        "lifecycle": "1.0.5",
+        "listenv": "1.0.0",
+        "magrittr": "2.0.5",
+        "mclust": "6.1.2",
+        "methods": "4.5.1",
+        "mvtnorm": "1.3-6",
+        "parallel": "4.5.1",
+        "parallelly": "1.48.0",
+        "pillar": "1.11.1",
+        "pkgconfig": "2.0.3",
+        "pracma": "2.4.6",
+        "proxy": "0.4-29",
+        "purrr": "1.2.2",
+        "rlang": "1.3.0",
+        "scales": "1.4.0",
+        "stats": "4.5.1",
+        "tibble": "3.3.1",
+        "tidyr": "1.3.2",
+        "tidyselect": "1.2.1",
+        "tools": "4.5.1",
+        "utils": "4.5.1",
+        "vctrs": "0.7.3"
+      },
+      "scores": [
+        {
+          "query": "P1/A/matched",
+          "observed": 0.9707082084186944,
+          "baseline": 0.034885488115895286,
+          "difference": 0.9358227203027991,
+          "controls": [
+            "P1/B/encode",
+            "P1/C/encode"
+          ]
+        },
+        {
+          "query": "P1/A/near-midpoint",
+          "observed": 0.30671520720269085,
+          "baseline": 0.6585967845949678,
+          "difference": -0.351881577392277,
+          "controls": [
+            "P1/B/encode",
+            "P1/C/encode"
+          ]
+        },
+        {
+          "query": "P1/A/mismatch",
+          "observed": 0,
+          "baseline": 0.500000135946443,
+          "difference": -0.500000135946443,
+          "controls": [
+            "P1/B/encode",
+            "P1/C/encode"
+          ]
+        },
+        {
+          "query": "P1/B/matched",
+          "observed": 0.9976647587988483,
+          "baseline": 1.2450541924400764e-07,
+          "difference": 0.9976646342934291,
+          "controls": [
+            "P1/A/encode",
+            "P1/C/encode"
+          ]
+        },
+        {
+          "query": "P1/B/near-midpoint",
+          "observed": 0.938695383202395,
+          "baseline": 0.25040110726256753,
+          "difference": 0.6882942759398274,
+          "controls": [
+            "P1/A/encode",
+            "P1/C/encode"
+          ]
+        },
+        {
+          "query": "P1/B/mismatch",
+          "observed": 2.718928857414239e-07,
+          "baseline": 0.5324900923234858,
+          "difference": -0.5324898204306,
+          "controls": [
+            "P1/A/encode",
+            "P1/C/encode"
+          ]
+        },
+        {
+          "query": "P1/C/matched",
+          "observed": 0.9697320010873761,
+          "baseline": 0.031257999796818724,
+          "difference": 0.9384740012905574,
+          "controls": [
+            "P1/A/encode",
+            "P1/B/encode"
+          ]
+        },
+        {
+          "query": "P1/C/near-midpoint",
+          "observed": 0.0754713860402982,
+          "baseline": 0.6963136547730652,
+          "difference": -0.6208422687327669,
+          "controls": [
+            "P1/A/encode",
+            "P1/B/encode"
+          ]
+        },
+        {
+          "query": "P1/C/mismatch",
+          "observed": 0.06498018464697132,
+          "baseline": 0.4999999999999999,
+          "difference": -0.4350198153530286,
+          "controls": [
+            "P1/A/encode",
+            "P1/B/encode"
+          ]
+        },
+        {
+          "query": "P2/A/matched",
+          "observed": 0.9911382638982656,
+          "baseline": 0.013697681316156044,
+          "difference": 0.9774405825821096,
+          "controls": [
+            "P2/B/encode",
+            "P2/C/encode"
+          ]
+        },
+        {
+          "query": "P2/A/near-midpoint",
+          "observed": 0.3557237393317053,
+          "baseline": 0.6559537116557599,
+          "difference": -0.3002299723240546,
+          "controls": [
+            "P2/B/encode",
+            "P2/C/encode"
+          ]
+        },
+        {
+          "query": "P2/A/mismatch",
+          "observed": 0,
+          "baseline": 0.5000000782037859,
+          "difference": -0.5000000782037859,
+          "controls": [
+            "P2/B/encode",
+            "P2/C/encode"
+          ]
+        },
+        {
+          "query": "P2/B/matched",
+          "observed": 0.9978053999290876,
+          "baseline": 9.65850825680139e-08,
+          "difference": 0.997805303344005,
+          "controls": [
+            "P2/A/encode",
+            "P2/C/encode"
+          ]
+        },
+        {
+          "query": "P2/B/near-midpoint",
+          "observed": 0.9071983187712583,
+          "baseline": 0.30023209260818035,
+          "difference": 0.6069662261630779,
+          "controls": [
+            "P2/A/encode",
+            "P2/C/encode"
+          ]
+        },
+        {
+          "query": "P2/B/mismatch",
+          "observed": 1.56407571512501e-07,
+          "baseline": 0.5165151432103201,
+          "difference": -0.5165149868027485,
+          "controls": [
+            "P2/A/encode",
+            "P2/C/encode"
+          ]
+        },
+        {
+          "query": "P2/C/matched",
+          "observed": 0.9760881807877936,
+          "baseline": 0.011553906837202728,
+          "difference": 0.9645342739505909,
+          "controls": [
+            "P2/A/encode",
+            "P2/B/encode"
+          ]
+        },
+        {
+          "query": "P2/C/near-midpoint",
+          "observed": 0.07052769365470284,
+          "baseline": 0.7050736226913106,
+          "difference": -0.6345459290366078,
+          "controls": [
+            "P2/A/encode",
+            "P2/B/encode"
+          ]
+        },
+        {
+          "query": "P2/C/mismatch",
+          "observed": 0.033030286420640424,
+          "baseline": 0.49999999999999983,
+          "difference": -0.4669697135793594,
+          "controls": [
+            "P2/A/encode",
+            "P2/B/encode"
+          ]
+        }
+      ]
+    },
+    {
+      "nx": 16,
+      "ny": 12,
+      "sigma": 0.4,
+      "maps": 24,
+      "support_map_max_absolute_error": 0.0,
+      "full_map_max_absolute_error": 0.0,
+      "score_max_absolute_error": 4.996003610813204e-16,
+      "loaded_namespaces": {
+        "KernSmooth": "2.23-26",
+        "MASS": "7.3-65",
+        "Matrix": "1.7-3",
+        "R6": "2.6.1",
+        "RColorBrewer": "1.1-3",
+        "Rcpp": "1.1.2",
+        "S7": "0.2.2",
+        "assertthat": "0.2.1",
+        "backports": "1.5.1",
+        "base": "4.5.1",
+        "broom": "1.0.13",
+        "cli": "3.6.6",
+        "codetools": "0.2-20",
+        "compiler": "4.5.1",
+        "datasets": "4.5.1",
+        "digest": "0.6.39",
+        "dplyr": "1.2.1",
+        "eyesim": "0.1.0.9000",
+        "farver": "2.1.2",
+        "future": "1.75.0",
+        "generics": "0.1.4",
+        "ggplot2": "4.0.3",
+        "globals": "0.19.1",
+        "glue": "1.8.1",
+        "grDevices": "4.5.1",
+        "graphics": "4.5.1",
+        "grid": "4.5.1",
+        "gtable": "0.3.6",
+        "jsonlite": "2.0.0",
+        "ks": "1.15.1",
+        "lattice": "0.22-7",
+        "lifecycle": "1.0.5",
+        "listenv": "1.0.0",
+        "magrittr": "2.0.5",
+        "mclust": "6.1.2",
+        "methods": "4.5.1",
+        "mvtnorm": "1.3-6",
+        "parallel": "4.5.1",
+        "parallelly": "1.48.0",
+        "pillar": "1.11.1",
+        "pkgconfig": "2.0.3",
+        "pracma": "2.4.6",
+        "proxy": "0.4-29",
+        "purrr": "1.2.2",
+        "rlang": "1.3.0",
+        "scales": "1.4.0",
+        "stats": "4.5.1",
+        "tibble": "3.3.1",
+        "tidyr": "1.3.2",
+        "tidyselect": "1.2.1",
+        "tools": "4.5.1",
+        "utils": "4.5.1",
+        "vctrs": "0.7.3"
+      },
+      "scores": [
+        {
+          "query": "P1/A/matched",
+          "observed": 0.9932100414179363,
+          "baseline": 0.19877598895655685,
+          "difference": 0.7944340524613795,
+          "controls": [
+            "P1/B/encode",
+            "P1/C/encode"
+          ]
+        },
+        {
+          "query": "P1/A/near-midpoint",
+          "observed": 0.550174684652953,
+          "baseline": 0.6771001233055047,
+          "difference": -0.12692543865255168,
+          "controls": [
+            "P1/B/encode",
+            "P1/C/encode"
+          ]
+        },
+        {
+          "query": "P1/A/mismatch",
+          "observed": 4.87305608705406e-05,
+          "baseline": 0.5049675668455056,
+          "difference": -0.5049188362846351,
+          "controls": [
+            "P1/B/encode",
+            "P1/C/encode"
+          ]
+        },
+        {
+          "query": "P1/B/matched",
+          "observed": 0.9988419140600145,
+          "baseline": 0.004601671155992159,
+          "difference": 0.9942402429040224,
+          "controls": [
+            "P1/A/encode",
+            "P1/C/encode"
+          ]
+        },
+        {
+          "query": "P1/B/near-midpoint",
+          "observed": 0.8356988360375589,
+          "baseline": 0.4609693686749227,
+          "difference": 0.3747294673626362,
+          "controls": [
+            "P1/A/encode",
+            "P1/C/encode"
+          ]
+        },
+        {
+          "query": "P1/B/mismatch",
+          "observed": 0.009935133691010975,
+          "baseline": 0.693485659571732,
+          "difference": -0.6835505258807211,
+          "controls": [
+            "P1/A/encode",
+            "P1/C/encode"
+          ]
+        },
+        {
+          "query": "P1/C/matched",
+          "observed": 0.993094119149259,
+          "baseline": 0.1907599282291529,
+          "difference": 0.8023341909201062,
+          "controls": [
+            "P1/A/encode",
+            "P1/B/encode"
+          ]
+        },
+        {
+          "query": "P1/C/near-midpoint",
+          "observed": 0.33701293007368405,
+          "baseline": 0.7054149906494738,
+          "difference": -0.3684020605757897,
+          "controls": [
+            "P1/A/encode",
+            "P1/B/encode"
+          ]
+        },
+        {
+          "query": "P1/C/mismatch",
+          "observed": 0.3869713191434641,
+          "baseline": 0.5000243652804355,
+          "difference": -0.11305304613697137,
+          "controls": [
+            "P1/A/encode",
+            "P1/B/encode"
+          ]
+        },
+        {
+          "query": "P2/A/matched",
+          "observed": 0.9935779657438811,
+          "baseline": 0.19519849862803193,
+          "difference": 0.7983794671158492,
+          "controls": [
+            "P2/B/encode",
+            "P2/C/encode"
+          ]
+        },
+        {
+          "query": "P2/A/near-midpoint",
+          "observed": 0.5547053873817896,
+          "baseline": 0.6747299092847854,
+          "difference": -0.12002452190299573,
+          "controls": [
+            "P2/B/encode",
+            "P2/C/encode"
+          ]
+        },
+        {
+          "query": "P2/A/mismatch",
+          "observed": 4.240682579597825e-05,
+          "baseline": 0.5048328031335466,
+          "difference": -0.5047903963077507,
+          "controls": [
+            "P2/B/encode",
+            "P2/C/encode"
+          ]
+        },
+        {
+          "query": "P2/B/matched",
+          "observed": 0.9982054522979055,
+          "baseline": 0.004527680775113232,
+          "difference": 0.9936777715227922,
+          "controls": [
+            "P2/A/encode",
+            "P2/C/encode"
+          ]
+        },
+        {
+          "query": "P2/B/near-midpoint",
+          "observed": 0.8318535464045588,
+          "baseline": 0.4646445764934146,
+          "difference": 0.36720896991114416,
+          "controls": [
+            "P2/A/encode",
+            "P2/C/encode"
+          ]
+        },
+        {
+          "query": "P2/B/mismatch",
+          "observed": 0.009665606267093056,
+          "baseline": 0.690536796381269,
+          "difference": -0.680871190114176,
+          "controls": [
+            "P2/A/encode",
+            "P2/C/encode"
+          ]
+        },
+        {
+          "query": "P2/C/matched",
+          "observed": 0.9931667437228473,
+          "baseline": 0.1870024806446612,
+          "difference": 0.8061642630781861,
+          "controls": [
+            "P2/A/encode",
+            "P2/B/encode"
+          ]
+        },
+        {
+          "query": "P2/C/near-midpoint",
+          "observed": 0.3375307173423167,
+          "baseline": 0.7053188596587551,
+          "difference": -0.36778814231643836,
+          "controls": [
+            "P2/A/encode",
+            "P2/B/encode"
+          ]
+        },
+        {
+          "query": "P2/C/mismatch",
+          "observed": 0.38107359276253766,
+          "baseline": 0.500021203412898,
+          "difference": -0.11894761065036036,
+          "controls": [
+            "P2/A/encode",
+            "P2/B/encode"
+          ]
+        }
+      ]
+    },
+    {
+      "nx": 16,
+      "ny": 12,
+      "sigma": 0.8,
+      "maps": 24,
+      "support_map_max_absolute_error": 0.0,
+      "full_map_max_absolute_error": 0.0,
+      "score_max_absolute_error": 8.881784197001252e-16,
+      "loaded_namespaces": {
+        "KernSmooth": "2.23-26",
+        "MASS": "7.3-65",
+        "Matrix": "1.7-3",
+        "R6": "2.6.1",
+        "RColorBrewer": "1.1-3",
+        "Rcpp": "1.1.2",
+        "S7": "0.2.2",
+        "assertthat": "0.2.1",
+        "backports": "1.5.1",
+        "base": "4.5.1",
+        "broom": "1.0.13",
+        "cli": "3.6.6",
+        "codetools": "0.2-20",
+        "compiler": "4.5.1",
+        "datasets": "4.5.1",
+        "digest": "0.6.39",
+        "dplyr": "1.2.1",
+        "eyesim": "0.1.0.9000",
+        "farver": "2.1.2",
+        "future": "1.75.0",
+        "generics": "0.1.4",
+        "ggplot2": "4.0.3",
+        "globals": "0.19.1",
+        "glue": "1.8.1",
+        "grDevices": "4.5.1",
+        "graphics": "4.5.1",
+        "grid": "4.5.1",
+        "gtable": "0.3.6",
+        "jsonlite": "2.0.0",
+        "ks": "1.15.1",
+        "lattice": "0.22-7",
+        "lifecycle": "1.0.5",
+        "listenv": "1.0.0",
+        "magrittr": "2.0.5",
+        "mclust": "6.1.2",
+        "methods": "4.5.1",
+        "mvtnorm": "1.3-6",
+        "parallel": "4.5.1",
+        "parallelly": "1.48.0",
+        "pillar": "1.11.1",
+        "pkgconfig": "2.0.3",
+        "pracma": "2.4.6",
+        "proxy": "0.4-29",
+        "purrr": "1.2.2",
+        "rlang": "1.3.0",
+        "scales": "1.4.0",
+        "stats": "4.5.1",
+        "tibble": "3.3.1",
+        "tidyr": "1.3.2",
+        "tidyselect": "1.2.1",
+        "tools": "4.5.1",
+        "utils": "4.5.1",
+        "vctrs": "0.7.3"
+      },
+      "scores": [
+        {
+          "query": "P1/A/matched",
+          "observed": 0.9985471016141515,
+          "baseline": 0.3404909486921573,
+          "difference": 0.6580561529219942,
+          "controls": [
+            "P1/B/encode",
+            "P1/C/encode"
+          ]
+        },
+        {
+          "query": "P1/A/near-midpoint",
+          "observed": 0.6903286690809026,
+          "baseline": 0.7276303237612843,
+          "difference": -0.03730165468038171,
+          "controls": [
+            "P1/B/encode",
+            "P1/C/encode"
+          ]
+        },
+        {
+          "query": "P1/A/mismatch",
+          "observed": 0.02328648006367244,
+          "baseline": 0.5875591917250531,
+          "difference": -0.5642727116613807,
+          "controls": [
+            "P1/B/encode",
+            "P1/C/encode"
+          ]
+        },
+        {
+          "query": "P1/B/matched",
+          "observed": 0.9995835878574826,
+          "baseline": 0.09657028931922765,
+          "difference": 0.903013298538255,
+          "controls": [
+            "P1/A/encode",
+            "P1/C/encode"
+          ]
+        },
+        {
+          "query": "P1/B/near-midpoint",
+          "observed": 0.7706728319648712,
+          "baseline": 0.6506732894762802,
+          "difference": 0.11999954248859102,
+          "controls": [
+            "P1/A/encode",
+            "P1/C/encode"
+          ]
+        },
+        {
+          "query": "P1/B/mismatch",
+          "observed": 0.17511838345010608,
+          "baseline": 0.8219624219704866,
+          "difference": -0.6468440385203805,
+          "controls": [
+            "P1/A/encode",
+            "P1/C/encode"
+          ]
+        },
+        {
+          "query": "P1/C/matched",
+          "observed": 0.9991570620980191,
+          "baseline": 0.40555089871868333,
+          "difference": 0.5936061633793358,
+          "controls": [
+            "P1/A/encode",
+            "P1/B/encode"
+          ]
+        },
+        {
+          "query": "P1/C/near-midpoint",
+          "observed": 0.6477844480194975,
+          "baseline": 0.7069386973093903,
+          "difference": -0.05915424928989277,
+          "controls": [
+            "P1/A/encode",
+            "P1/B/encode"
+          ]
+        },
+        {
+          "query": "P1/C/mismatch",
+          "observed": 0.6439248439409732,
+          "baseline": 0.5116432400318363,
+          "difference": 0.1322816039091369,
+          "controls": [
+            "P1/A/encode",
+            "P1/B/encode"
+          ]
+        },
+        {
+          "query": "P2/A/matched",
+          "observed": 0.9985676444742049,
+          "baseline": 0.3388261419230018,
+          "difference": 0.659741502551203,
+          "controls": [
+            "P2/B/encode",
+            "P2/C/encode"
+          ]
+        },
+        {
+          "query": "P2/A/near-midpoint",
+          "observed": 0.6913941495797457,
+          "baseline": 0.7278747471425171,
+          "difference": -0.036480597562771444,
+          "controls": [
+            "P2/B/encode",
+            "P2/C/encode"
+          ]
+        },
+        {
+          "query": "P2/A/mismatch",
+          "observed": 0.02265882373827449,
+          "baseline": 0.5890650553094811,
+          "difference": -0.5664062315712066,
+          "controls": [
+            "P2/B/encode",
+            "P2/C/encode"
+          ]
+        },
+        {
+          "query": "P2/B/matched",
+          "observed": 0.9995196573318673,
+          "baseline": 0.09842127263097425,
+          "difference": 0.9010983847008931,
+          "controls": [
+            "P2/A/encode",
+            "P2/C/encode"
+          ]
+        },
+        {
+          "query": "P2/B/near-midpoint",
+          "observed": 0.7685072135599381,
+          "baseline": 0.6531374152439242,
+          "difference": 0.1153697983160139,
+          "controls": [
+            "P2/A/encode",
+            "P2/C/encode"
+          ]
+        },
+        {
+          "query": "P2/B/mismatch",
+          "observed": 0.17813011061896217,
+          "baseline": 0.8205595701572256,
+          "difference": -0.6424294595382634,
+          "controls": [
+            "P2/A/encode",
+            "P2/C/encode"
+          ]
+        },
+        {
+          "query": "P2/C/matched",
+          "observed": 0.9991555549394647,
+          "baseline": 0.40599109256877075,
+          "difference": 0.593164462370694,
+          "controls": [
+            "P2/A/encode",
+            "P2/B/encode"
+          ]
+        },
+        {
+          "query": "P2/C/near-midpoint",
+          "observed": 0.6501379267288874,
+          "baseline": 0.707214681079972,
+          "difference": -0.05707675435108461,
+          "controls": [
+            "P2/A/encode",
+            "P2/B/encode"
+          ]
+        },
+        {
+          "query": "P2/C/mismatch",
+          "observed": 0.6411191403144514,
+          "baseline": 0.511329411869137,
+          "difference": 0.12978972844531433,
+          "controls": [
+            "P2/A/encode",
+            "P2/B/encode"
+          ]
+        }
+      ]
+    },
+    {
+      "nx": 16,
+      "ny": 12,
+      "sigma": 1.6,
+      "maps": 24,
+      "support_map_max_absolute_error": 0.0,
+      "full_map_max_absolute_error": 0.0,
+      "score_max_absolute_error": 1.2212453270876722e-15,
+      "loaded_namespaces": {
+        "KernSmooth": "2.23-26",
+        "MASS": "7.3-65",
+        "Matrix": "1.7-3",
+        "R6": "2.6.1",
+        "RColorBrewer": "1.1-3",
+        "Rcpp": "1.1.2",
+        "S7": "0.2.2",
+        "assertthat": "0.2.1",
+        "backports": "1.5.1",
+        "base": "4.5.1",
+        "broom": "1.0.13",
+        "cli": "3.6.6",
+        "codetools": "0.2-20",
+        "compiler": "4.5.1",
+        "datasets": "4.5.1",
+        "digest": "0.6.39",
+        "dplyr": "1.2.1",
+        "eyesim": "0.1.0.9000",
+        "farver": "2.1.2",
+        "future": "1.75.0",
+        "generics": "0.1.4",
+        "ggplot2": "4.0.3",
+        "globals": "0.19.1",
+        "glue": "1.8.1",
+        "grDevices": "4.5.1",
+        "graphics": "4.5.1",
+        "grid": "4.5.1",
+        "gtable": "0.3.6",
+        "jsonlite": "2.0.0",
+        "ks": "1.15.1",
+        "lattice": "0.22-7",
+        "lifecycle": "1.0.5",
+        "listenv": "1.0.0",
+        "magrittr": "2.0.5",
+        "mclust": "6.1.2",
+        "methods": "4.5.1",
+        "mvtnorm": "1.3-6",
+        "parallel": "4.5.1",
+        "parallelly": "1.48.0",
+        "pillar": "1.11.1",
+        "pkgconfig": "2.0.3",
+        "pracma": "2.4.6",
+        "proxy": "0.4-29",
+        "purrr": "1.2.2",
+        "rlang": "1.3.0",
+        "scales": "1.4.0",
+        "stats": "4.5.1",
+        "tibble": "3.3.1",
+        "tidyr": "1.3.2",
+        "tidyselect": "1.2.1",
+        "tools": "4.5.1",
+        "utils": "4.5.1",
+        "vctrs": "0.7.3"
+      },
+      "scores": [
+        {
+          "query": "P1/A/matched",
+          "observed": 0.9997627464616817,
+          "baseline": 0.5446159756697745,
+          "difference": 0.45514677079190724,
+          "controls": [
+            "P1/B/encode",
+            "P1/C/encode"
+          ]
+        },
+        {
+          "query": "P1/A/near-midpoint",
+          "observed": 0.7954501725324068,
+          "baseline": 0.8488331126830899,
+          "difference": -0.05338294015068312,
+          "controls": [
+            "P1/B/encode",
+            "P1/C/encode"
+          ]
+        },
+        {
+          "query": "P1/A/mismatch",
+          "observed": 0.2605959616343236,
+          "baseline": 0.7773479352887338,
+          "difference": -0.5167519736544102,
+          "controls": [
+            "P1/B/encode",
+            "P1/C/encode"
+          ]
+        },
+        {
+          "query": "P1/B/matched",
+          "observed": 0.9999490666923979,
+          "baseline": 0.40218981597928144,
+          "difference": 0.5977592507131164,
+          "controls": [
+            "P1/A/encode",
+            "P1/C/encode"
+          ]
+        },
+        {
+          "query": "P1/B/near-midpoint",
+          "observed": 0.8290527905235582,
+          "baseline": 0.8189765585834375,
+          "difference": 0.010076231940120639,
+          "controls": [
+            "P1/A/encode",
+            "P1/C/encode"
+          ]
+        },
+        {
+          "query": "P1/B/mismatch",
+          "observed": 0.5546958705774673,
+          "baseline": 0.9061879334900376,
+          "difference": -0.3514920629125703,
+          "controls": [
+            "P1/A/encode",
+            "P1/C/encode"
+          ]
+        },
+        {
+          "query": "P1/C/matched",
+          "observed": 0.999778095665891,
+          "baseline": 0.6826615253302898,
+          "difference": 0.31711657033560126,
+          "controls": [
+            "P1/A/encode",
+            "P1/B/encode"
+          ]
+        },
+        {
+          "query": "P1/C/near-midpoint",
+          "observed": 0.8948420351233369,
+          "baseline": 0.785256012050189,
+          "difference": 0.10958602307314791,
+          "controls": [
+            "P1/A/encode",
+            "P1/B/encode"
+          ]
+        },
+        {
+          "query": "P1/C/mismatch",
+          "observed": 0.8123758669800755,
+          "baseline": 0.6302979808171618,
+          "difference": 0.18207788616291365,
+          "controls": [
+            "P1/A/encode",
+            "P1/B/encode"
+          ]
+        },
+        {
+          "query": "P2/A/matched",
+          "observed": 0.9997621748194185,
+          "baseline": 0.5428839386851921,
+          "difference": 0.4568782361342264,
+          "controls": [
+            "P2/B/encode",
+            "P2/C/encode"
+          ]
+        },
+        {
+          "query": "P2/A/near-midpoint",
+          "observed": 0.7949585606096036,
+          "baseline": 0.8503732391847271,
+          "difference": -0.0554146785751235,
+          "controls": [
+            "P2/B/encode",
+            "P2/C/encode"
+          ]
+        },
+        {
+          "query": "P2/A/mismatch",
+          "observed": 0.25992697879299387,
+          "baseline": 0.7813730072309801,
+          "difference": -0.5214460284379863,
+          "controls": [
+            "P2/B/encode",
+            "P2/C/encode"
+          ]
+        },
+        {
+          "query": "P2/B/matched",
+          "observed": 0.999955449022693,
+          "baseline": 0.4069981687607264,
+          "difference": 0.5929572802619665,
+          "controls": [
+            "P2/A/encode",
+            "P2/C/encode"
+          ]
+        },
+        {
+          "query": "P2/B/near-midpoint",
+          "observed": 0.8279679639431315,
+          "baseline": 0.8214950548252753,
+          "difference": 0.0064729091178562514,
+          "controls": [
+            "P2/A/encode",
+            "P2/C/encode"
+          ]
+        },
+        {
+          "query": "P2/B/mismatch",
+          "observed": 0.5627460144619602,
+          "baseline": 0.9046864510479526,
+          "difference": -0.3419404365859925,
+          "controls": [
+            "P2/A/encode",
+            "P2/C/encode"
+          ]
+        },
+        {
+          "query": "P2/C/matched",
+          "observed": 0.999778143913279,
+          "baseline": 0.6852242999153632,
+          "difference": 0.31455384399791586,
+          "controls": [
+            "P2/A/encode",
+            "P2/B/encode"
+          ]
+        },
+        {
+          "query": "P2/C/near-midpoint",
+          "observed": 0.8979476908657329,
+          "baseline": 0.7854874523655867,
+          "difference": 0.11246023850014619,
+          "controls": [
+            "P2/A/encode",
+            "P2/B/encode"
+          ]
+        },
+        {
+          "query": "P2/C/mismatch",
+          "observed": 0.8093729020959053,
+          "baseline": 0.6299634893964963,
+          "difference": 0.17940941269940902,
+          "controls": [
+            "P2/A/encode",
+            "P2/B/encode"
+          ]
+        }
+      ]
+    },
+    {
+      "nx": 32,
+      "ny": 24,
+      "sigma": 0.2,
+      "maps": 24,
+      "support_map_max_absolute_error": 0.0,
+      "full_map_max_absolute_error": 0.0,
+      "score_max_absolute_error": 2.220446049250313e-16,
+      "loaded_namespaces": {
+        "KernSmooth": "2.23-26",
+        "MASS": "7.3-65",
+        "Matrix": "1.7-3",
+        "R6": "2.6.1",
+        "RColorBrewer": "1.1-3",
+        "Rcpp": "1.1.2",
+        "S7": "0.2.2",
+        "assertthat": "0.2.1",
+        "backports": "1.5.1",
+        "base": "4.5.1",
+        "broom": "1.0.13",
+        "cli": "3.6.6",
+        "codetools": "0.2-20",
+        "compiler": "4.5.1",
+        "datasets": "4.5.1",
+        "digest": "0.6.39",
+        "dplyr": "1.2.1",
+        "eyesim": "0.1.0.9000",
+        "farver": "2.1.2",
+        "future": "1.75.0",
+        "generics": "0.1.4",
+        "ggplot2": "4.0.3",
+        "globals": "0.19.1",
+        "glue": "1.8.1",
+        "grDevices": "4.5.1",
+        "graphics": "4.5.1",
+        "grid": "4.5.1",
+        "gtable": "0.3.6",
+        "jsonlite": "2.0.0",
+        "ks": "1.15.1",
+        "lattice": "0.22-7",
+        "lifecycle": "1.0.5",
+        "listenv": "1.0.0",
+        "magrittr": "2.0.5",
+        "mclust": "6.1.2",
+        "methods": "4.5.1",
+        "mvtnorm": "1.3-6",
+        "parallel": "4.5.1",
+        "parallelly": "1.48.0",
+        "pillar": "1.11.1",
+        "pkgconfig": "2.0.3",
+        "pracma": "2.4.6",
+        "proxy": "0.4-29",
+        "purrr": "1.2.2",
+        "rlang": "1.3.0",
+        "scales": "1.4.0",
+        "stats": "4.5.1",
+        "tibble": "3.3.1",
+        "tidyr": "1.3.2",
+        "tidyselect": "1.2.1",
+        "tools": "4.5.1",
+        "utils": "4.5.1",
+        "vctrs": "0.7.3"
+      },
+      "scores": [
+        {
+          "query": "P1/A/matched",
+          "observed": 0.9723674470232657,
+          "baseline": 0.047739883078803697,
+          "difference": 0.924627563944462,
+          "controls": [
+            "P1/B/encode",
+            "P1/C/encode"
+          ]
+        },
+        {
+          "query": "P1/A/near-midpoint",
+          "observed": 0.3979583430257891,
+          "baseline": 0.6641951052445997,
+          "difference": -0.2662367622188106,
+          "controls": [
+            "P1/B/encode",
+            "P1/C/encode"
+          ]
+        },
+        {
+          "query": "P1/A/mismatch",
+          "observed": 0,
+          "baseline": 0.5000001443922418,
+          "difference": -0.5000001443922418,
+          "controls": [
+            "P1/B/encode",
+            "P1/C/encode"
+          ]
+        },
+        {
+          "query": "P1/B/matched",
+          "observed": 0.9954490404961669,
+          "baseline": 1.7470083135036808e-07,
+          "difference": 0.9954488657953355,
+          "controls": [
+            "P1/A/encode",
+            "P1/C/encode"
+          ]
+        },
+        {
+          "query": "P1/B/near-midpoint",
+          "observed": 0.8624810000101061,
+          "baseline": 0.37204706665764403,
+          "difference": 0.49043393335246205,
+          "controls": [
+            "P1/A/encode",
+            "P1/C/encode"
+          ]
+        },
+        {
+          "query": "P1/B/mismatch",
+          "observed": 2.8878448370707905e-07,
+          "baseline": 0.542695739459286,
+          "difference": -0.5426954506748023,
+          "controls": [
+            "P1/A/encode",
+            "P1/C/encode"
+          ]
+        },
+        {
+          "query": "P1/C/matched",
+          "observed": 0.972692644182482,
+          "baseline": 0.035606890090212735,
+          "difference": 0.9370857540922692,
+          "controls": [
+            "P1/A/encode",
+            "P1/B/encode"
+          ]
+        },
+        {
+          "query": "P1/C/near-midpoint",
+          "observed": 0.11439389375464014,
+          "baseline": 0.7055236246248378,
+          "difference": -0.5911297308701976,
+          "controls": [
+            "P1/A/encode",
+            "P1/B/encode"
+          ]
+        },
+        {
+          "query": "P1/C/mismatch",
+          "observed": 0.08539147891857177,
+          "baseline": 0.4999999999999999,
+          "difference": -0.4146085210814281,
+          "controls": [
+            "P1/A/encode",
+            "P1/B/encode"
+          ]
+        },
+        {
+          "query": "P2/A/matched",
+          "observed": 0.9736752284296096,
+          "baseline": 0.04828994755602841,
+          "difference": 0.9253852808735812,
+          "controls": [
+            "P2/B/encode",
+            "P2/C/encode"
+          ]
+        },
+        {
+          "query": "P2/A/near-midpoint",
+          "observed": 0.40946748200061306,
+          "baseline": 0.6606635258401368,
+          "difference": -0.2511960438395237,
+          "controls": [
+            "P2/B/encode",
+            "P2/C/encode"
+          ]
+        },
+        {
+          "query": "P2/A/mismatch",
+          "observed": 0,
+          "baseline": 0.5000000524755387,
+          "difference": -0.5000000524755387,
+          "controls": [
+            "P2/B/encode",
+            "P2/C/encode"
+          ]
+        },
+        {
+          "query": "P2/B/matched",
+          "observed": 0.9919500762175826,
+          "baseline": 1.9951248471996962e-07,
+          "difference": 0.9919498767050978,
+          "controls": [
+            "P2/A/encode",
+            "P2/C/encode"
+          ]
+        },
+        {
+          "query": "P2/B/near-midpoint",
+          "observed": 0.8612696067079902,
+          "baseline": 0.37336054025926124,
+          "difference": 0.487909066448729,
+          "controls": [
+            "P2/A/encode",
+            "P2/C/encode"
+          ]
+        },
+        {
+          "query": "P2/B/mismatch",
+          "observed": 1.049510777173323e-07,
+          "baseline": 0.5427341977542951,
+          "difference": -0.5427340928032174,
+          "controls": [
+            "P2/A/encode",
+            "P2/C/encode"
+          ]
+        },
+        {
+          "query": "P2/C/matched",
+          "observed": 0.9716662408885993,
+          "baseline": 0.03570277674733761,
+          "difference": 0.9359634641412617,
+          "controls": [
+            "P2/A/encode",
+            "P2/B/encode"
+          ]
+        },
+        {
+          "query": "P2/C/near-midpoint",
+          "observed": 0.12006721265403787,
+          "baseline": 0.7055057115113659,
+          "difference": -0.585438498857328,
+          "controls": [
+            "P2/A/encode",
+            "P2/B/encode"
+          ]
+        },
+        {
+          "query": "P2/C/mismatch",
+          "observed": 0.08546839550859035,
+          "baseline": 0.5000000000000002,
+          "difference": -0.41453160449140986,
+          "controls": [
+            "P2/A/encode",
+            "P2/B/encode"
+          ]
+        }
+      ]
+    },
+    {
+      "nx": 32,
+      "ny": 24,
+      "sigma": 0.4,
+      "maps": 24,
+      "support_map_max_absolute_error": 0.0,
+      "full_map_max_absolute_error": 0.0,
+      "score_max_absolute_error": 3.3306690738754696e-16,
+      "loaded_namespaces": {
+        "KernSmooth": "2.23-26",
+        "MASS": "7.3-65",
+        "Matrix": "1.7-3",
+        "R6": "2.6.1",
+        "RColorBrewer": "1.1-3",
+        "Rcpp": "1.1.2",
+        "S7": "0.2.2",
+        "assertthat": "0.2.1",
+        "backports": "1.5.1",
+        "base": "4.5.1",
+        "broom": "1.0.13",
+        "cli": "3.6.6",
+        "codetools": "0.2-20",
+        "compiler": "4.5.1",
+        "datasets": "4.5.1",
+        "digest": "0.6.39",
+        "dplyr": "1.2.1",
+        "eyesim": "0.1.0.9000",
+        "farver": "2.1.2",
+        "future": "1.75.0",
+        "generics": "0.1.4",
+        "ggplot2": "4.0.3",
+        "globals": "0.19.1",
+        "glue": "1.8.1",
+        "grDevices": "4.5.1",
+        "graphics": "4.5.1",
+        "grid": "4.5.1",
+        "gtable": "0.3.6",
+        "jsonlite": "2.0.0",
+        "ks": "1.15.1",
+        "lattice": "0.22-7",
+        "lifecycle": "1.0.5",
+        "listenv": "1.0.0",
+        "magrittr": "2.0.5",
+        "mclust": "6.1.2",
+        "methods": "4.5.1",
+        "mvtnorm": "1.3-6",
+        "parallel": "4.5.1",
+        "parallelly": "1.48.0",
+        "pillar": "1.11.1",
+        "pkgconfig": "2.0.3",
+        "pracma": "2.4.6",
+        "proxy": "0.4-29",
+        "purrr": "1.2.2",
+        "rlang": "1.3.0",
+        "scales": "1.4.0",
+        "stats": "4.5.1",
+        "tibble": "3.3.1",
+        "tidyr": "1.3.2",
+        "tidyselect": "1.2.1",
+        "tools": "4.5.1",
+        "utils": "4.5.1",
+        "vctrs": "0.7.3"
+      },
+      "scores": [
+        {
+          "query": "P1/A/matched",
+          "observed": 0.9930754194764411,
+          "baseline": 0.2036571755363873,
+          "difference": 0.7894182439400538,
+          "controls": [
+            "P1/B/encode",
+            "P1/C/encode"
+          ]
+        },
+        {
+          "query": "P1/A/near-midpoint",
+          "observed": 0.5895768678361746,
+          "baseline": 0.6676489355564328,
+          "difference": -0.07807206772025821,
+          "controls": [
+            "P1/B/encode",
+            "P1/C/encode"
+          ]
+        },
+        {
+          "query": "P1/A/mismatch",
+          "observed": 6.025940729938256e-05,
+          "baseline": 0.5060463771946618,
+          "difference": -0.5059861177873625,
+          "controls": [
+            "P1/B/encode",
+            "P1/C/encode"
+          ]
+        },
+        {
+          "query": "P1/B/matched",
+          "observed": 0.9982589248708762,
+          "baseline": 0.0056221375854207285,
+          "difference": 0.9926367872854555,
+          "controls": [
+            "P1/A/encode",
+            "P1/C/encode"
+          ]
+        },
+        {
+          "query": "P1/B/near-midpoint",
+          "observed": 0.7837337650676336,
+          "baseline": 0.52336601488298,
+          "difference": 0.26036775018465363,
+          "controls": [
+            "P1/A/encode",
+            "P1/C/encode"
+          ]
+        },
+        {
+          "query": "P1/B/mismatch",
+          "observed": 0.012092754389323768,
+          "baseline": 0.6983674998348558,
+          "difference": -0.686274745445532,
+          "controls": [
+            "P1/A/encode",
+            "P1/C/encode"
+          ]
+        },
+        {
+          "query": "P1/C/matched",
+          "observed": 0.9931009235996981,
+          "baseline": 0.19623856601565884,
+          "difference": 0.7968623575840393,
+          "controls": [
+            "P1/A/encode",
+            "P1/B/encode"
+          ]
+        },
+        {
+          "query": "P1/C/near-midpoint",
+          "observed": 0.37042967011870936,
+          "baseline": 0.6995191337486095,
+          "difference": -0.32908946362990016,
+          "controls": [
+            "P1/A/encode",
+            "P1/B/encode"
+          ]
+        },
+        {
+          "query": "P1/C/mismatch",
+          "observed": 0.39673499966971204,
+          "baseline": 0.5000301297036497,
+          "difference": -0.10329513003393764,
+          "controls": [
+            "P1/A/encode",
+            "P1/B/encode"
+          ]
+        },
+        {
+          "query": "P2/A/matched",
+          "observed": 0.9931263854197439,
+          "baseline": 0.2024015885476362,
+          "difference": 0.7907247968721076,
+          "controls": [
+            "P2/B/encode",
+            "P2/C/encode"
+          ]
+        },
+        {
+          "query": "P2/A/near-midpoint",
+          "observed": 0.5919042131472108,
+          "baseline": 0.6668871902315682,
+          "difference": -0.07498297708435742,
+          "controls": [
+            "P2/B/encode",
+            "P2/C/encode"
+          ]
+        },
+        {
+          "query": "P2/A/mismatch",
+          "observed": 6.08939495149744e-05,
+          "baseline": 0.5058110554599676,
+          "difference": -0.5057501615104526,
+          "controls": [
+            "P2/B/encode",
+            "P2/C/encode"
+          ]
+        },
+        {
+          "query": "P2/B/matched",
+          "observed": 0.9977741765249929,
+          "baseline": 0.00549208267774272,
+          "difference": 0.9922820938472502,
+          "controls": [
+            "P2/A/encode",
+            "P2/C/encode"
+          ]
+        },
+        {
+          "query": "P2/B/near-midpoint",
+          "observed": 0.7857499399041552,
+          "baseline": 0.5204896387815554,
+          "difference": 0.2652603011225998,
+          "controls": [
+            "P2/A/encode",
+            "P2/C/encode"
+          ]
+        },
+        {
+          "query": "P2/B/mismatch",
+          "observed": 0.011622110919935457,
+          "baseline": 0.6969595379558857,
+          "difference": -0.6853374270359502,
+          "controls": [
+            "P2/A/encode",
+            "P2/C/encode"
+          ]
+        },
+        {
+          "query": "P2/C/matched",
+          "observed": 0.9931010900151289,
+          "baseline": 0.194607666905121,
+          "difference": 0.7984934231100079,
+          "controls": [
+            "P2/A/encode",
+            "P2/B/encode"
+          ]
+        },
+        {
+          "query": "P2/C/near-midpoint",
+          "observed": 0.3704968107914623,
+          "baseline": 0.7005806308643991,
+          "difference": -0.33008382007293685,
+          "controls": [
+            "P2/A/encode",
+            "P2/B/encode"
+          ]
+        },
+        {
+          "query": "P2/C/mismatch",
+          "observed": 0.3939190759117715,
+          "baseline": 0.5000304469747575,
+          "difference": -0.10611137106298602,
+          "controls": [
+            "P2/A/encode",
+            "P2/B/encode"
+          ]
+        }
+      ]
+    },
+    {
+      "nx": 32,
+      "ny": 24,
+      "sigma": 0.8,
+      "maps": 24,
+      "support_map_max_absolute_error": 0.0,
+      "full_map_max_absolute_error": 0.0,
+      "score_max_absolute_error": 3.3306690738754696e-16,
+      "loaded_namespaces": {
+        "KernSmooth": "2.23-26",
+        "MASS": "7.3-65",
+        "Matrix": "1.7-3",
+        "R6": "2.6.1",
+        "RColorBrewer": "1.1-3",
+        "Rcpp": "1.1.2",
+        "S7": "0.2.2",
+        "assertthat": "0.2.1",
+        "backports": "1.5.1",
+        "base": "4.5.1",
+        "broom": "1.0.13",
+        "cli": "3.6.6",
+        "codetools": "0.2-20",
+        "compiler": "4.5.1",
+        "datasets": "4.5.1",
+        "digest": "0.6.39",
+        "dplyr": "1.2.1",
+        "eyesim": "0.1.0.9000",
+        "farver": "2.1.2",
+        "future": "1.75.0",
+        "generics": "0.1.4",
+        "ggplot2": "4.0.3",
+        "globals": "0.19.1",
+        "glue": "1.8.1",
+        "grDevices": "4.5.1",
+        "graphics": "4.5.1",
+        "grid": "4.5.1",
+        "gtable": "0.3.6",
+        "jsonlite": "2.0.0",
+        "ks": "1.15.1",
+        "lattice": "0.22-7",
+        "lifecycle": "1.0.5",
+        "listenv": "1.0.0",
+        "magrittr": "2.0.5",
+        "mclust": "6.1.2",
+        "methods": "4.5.1",
+        "mvtnorm": "1.3-6",
+        "parallel": "4.5.1",
+        "parallelly": "1.48.0",
+        "pillar": "1.11.1",
+        "pkgconfig": "2.0.3",
+        "pracma": "2.4.6",
+        "proxy": "0.4-29",
+        "purrr": "1.2.2",
+        "rlang": "1.3.0",
+        "scales": "1.4.0",
+        "stats": "4.5.1",
+        "tibble": "3.3.1",
+        "tidyr": "1.3.2",
+        "tidyselect": "1.2.1",
+        "tools": "4.5.1",
+        "utils": "4.5.1",
+        "vctrs": "0.7.3"
+      },
+      "scores": [
+        {
+          "query": "P1/A/matched",
+          "observed": 0.9985280000652342,
+          "baseline": 0.34545330501909743,
+          "difference": 0.6530746950461368,
+          "controls": [
+            "P1/B/encode",
+            "P1/C/encode"
+          ]
+        },
+        {
+          "query": "P1/A/near-midpoint",
+          "observed": 0.7084276955131964,
+          "baseline": 0.7259168995296048,
+          "difference": -0.01748920401640841,
+          "controls": [
+            "P1/B/encode",
+            "P1/C/encode"
+          ]
+        },
+        {
+          "query": "P1/A/mismatch",
+          "observed": 0.026117924616579302,
+          "baseline": 0.5969797280620595,
+          "difference": -0.5708618034454802,
+          "controls": [
+            "P1/B/encode",
+            "P1/C/encode"
+          ]
+        },
+        {
+          "query": "P1/B/matched",
+          "observed": 0.9994939728631437,
+          "baseline": 0.10705367967489211,
+          "difference": 0.8924402931882516,
+          "controls": [
+            "P1/A/encode",
+            "P1/C/encode"
+          ]
+        },
+        {
+          "query": "P1/B/near-midpoint",
+          "observed": 0.7435860392355685,
+          "baseline": 0.6847828729030154,
+          "difference": 0.058803166332553114,
+          "controls": [
+            "P1/A/encode",
+            "P1/C/encode"
+          ]
+        },
+        {
+          "query": "P1/B/mismatch",
+          "observed": 0.1939594561241192,
+          "baseline": 0.825374901547159,
+          "difference": -0.6314154454230398,
+          "controls": [
+            "P1/A/encode",
+            "P1/C/encode"
+          ]
+        },
+        {
+          "query": "P1/C/matched",
+          "observed": 0.9991652571221341,
+          "baseline": 0.4187014273836779,
+          "difference": 0.5804638297384562,
+          "controls": [
+            "P1/A/encode",
+            "P1/B/encode"
+          ]
+        },
+        {
+          "query": "P1/C/near-midpoint",
+          "observed": 0.6737734896305484,
+          "baseline": 0.7025513976220912,
+          "difference": -0.028777907991542784,
+          "controls": [
+            "P1/A/encode",
+            "P1/B/encode"
+          ]
+        },
+        {
+          "query": "P1/C/mismatch",
+          "observed": 0.6507498030943177,
+          "baseline": 0.5130589623082897,
+          "difference": 0.137690840786028,
+          "controls": [
+            "P1/A/encode",
+            "P1/B/encode"
+          ]
+        },
+        {
+          "query": "P2/A/matched",
+          "observed": 0.9985506260717846,
+          "baseline": 0.34355929162050125,
+          "difference": 0.6549913344512833,
+          "controls": [
+            "P2/B/encode",
+            "P2/C/encode"
+          ]
+        },
+        {
+          "query": "P2/A/near-midpoint",
+          "observed": 0.708972655061327,
+          "baseline": 0.7262433214010716,
+          "difference": -0.01727066633974461,
+          "controls": [
+            "P2/B/encode",
+            "P2/C/encode"
+          ]
+        },
+        {
+          "query": "P2/A/mismatch",
+          "observed": 0.025344085992790772,
+          "baseline": 0.5980960394917608,
+          "difference": -0.57275195349897,
+          "controls": [
+            "P2/B/encode",
+            "P2/C/encode"
+          ]
+        },
+        {
+          "query": "P2/B/matched",
+          "observed": 0.9994523636540394,
+          "baseline": 0.10870100817080885,
+          "difference": 0.8907513554832306,
+          "controls": [
+            "P2/A/encode",
+            "P2/C/encode"
+          ]
+        },
+        {
+          "query": "P2/B/near-midpoint",
+          "observed": 0.7424876411262166,
+          "baseline": 0.6856808675168905,
+          "difference": 0.05680677360932607,
+          "controls": [
+            "P2/A/encode",
+            "P2/C/encode"
+          ]
+        },
+        {
+          "query": "P2/B/mismatch",
+          "observed": 0.19619207898352103,
+          "baseline": 0.8238742529344067,
+          "difference": -0.6276821739508858,
+          "controls": [
+            "P2/A/encode",
+            "P2/C/encode"
+          ]
+        },
+        {
+          "query": "P2/C/matched",
+          "observed": 0.999162370025115,
+          "baseline": 0.4186471556642867,
+          "difference": 0.5805152143608283,
+          "controls": [
+            "P2/A/encode",
+            "P2/B/encode"
+          ]
+        },
+        {
+          "query": "P2/C/near-midpoint",
+          "observed": 0.6753122029661086,
+          "baseline": 0.7032217612469309,
+          "difference": -0.02790955828082231,
+          "controls": [
+            "P2/A/encode",
+            "P2/B/encode"
+          ]
+        },
+        {
+          "query": "P2/C/mismatch",
+          "observed": 0.6477485058688138,
+          "baseline": 0.5126720429963955,
+          "difference": 0.13507646287241837,
+          "controls": [
+            "P2/A/encode",
+            "P2/B/encode"
+          ]
+        }
+      ]
+    },
+    {
+      "nx": 32,
+      "ny": 24,
+      "sigma": 1.6,
+      "maps": 24,
+      "support_map_max_absolute_error": 0.0,
+      "full_map_max_absolute_error": 0.0,
+      "score_max_absolute_error": 4.440892098500626e-16,
+      "loaded_namespaces": {
+        "KernSmooth": "2.23-26",
+        "MASS": "7.3-65",
+        "Matrix": "1.7-3",
+        "R6": "2.6.1",
+        "RColorBrewer": "1.1-3",
+        "Rcpp": "1.1.2",
+        "S7": "0.2.2",
+        "assertthat": "0.2.1",
+        "backports": "1.5.1",
+        "base": "4.5.1",
+        "broom": "1.0.13",
+        "cli": "3.6.6",
+        "codetools": "0.2-20",
+        "compiler": "4.5.1",
+        "datasets": "4.5.1",
+        "digest": "0.6.39",
+        "dplyr": "1.2.1",
+        "eyesim": "0.1.0.9000",
+        "farver": "2.1.2",
+        "future": "1.75.0",
+        "generics": "0.1.4",
+        "ggplot2": "4.0.3",
+        "globals": "0.19.1",
+        "glue": "1.8.1",
+        "grDevices": "4.5.1",
+        "graphics": "4.5.1",
+        "grid": "4.5.1",
+        "gtable": "0.3.6",
+        "jsonlite": "2.0.0",
+        "ks": "1.15.1",
+        "lattice": "0.22-7",
+        "lifecycle": "1.0.5",
+        "listenv": "1.0.0",
+        "magrittr": "2.0.5",
+        "mclust": "6.1.2",
+        "methods": "4.5.1",
+        "mvtnorm": "1.3-6",
+        "parallel": "4.5.1",
+        "parallelly": "1.48.0",
+        "pillar": "1.11.1",
+        "pkgconfig": "2.0.3",
+        "pracma": "2.4.6",
+        "proxy": "0.4-29",
+        "purrr": "1.2.2",
+        "rlang": "1.3.0",
+        "scales": "1.4.0",
+        "stats": "4.5.1",
+        "tibble": "3.3.1",
+        "tidyr": "1.3.2",
+        "tidyselect": "1.2.1",
+        "tools": "4.5.1",
+        "utils": "4.5.1",
+        "vctrs": "0.7.3"
+      },
+      "scores": [
+        {
+          "query": "P1/A/matched",
+          "observed": 0.9997636894672169,
+          "baseline": 0.5536201361253055,
+          "difference": 0.44614355334191147,
+          "controls": [
+            "P1/B/encode",
+            "P1/C/encode"
+          ]
+        },
+        {
+          "query": "P1/A/near-midpoint",
+          "observed": 0.8037822860478728,
+          "baseline": 0.8517575277075458,
+          "difference": -0.04797524165967293,
+          "controls": [
+            "P1/B/encode",
+            "P1/C/encode"
+          ]
+        },
+        {
+          "query": "P1/A/mismatch",
+          "observed": 0.2739450912229144,
+          "baseline": 0.7855033367745344,
+          "difference": -0.5115582455516201,
+          "controls": [
+            "P1/B/encode",
+            "P1/C/encode"
+          ]
+        },
+        {
+          "query": "P1/B/matched",
+          "observed": 0.9999460733132789,
+          "baseline": 0.41671429244340397,
+          "difference": 0.5832317808698749,
+          "controls": [
+            "P1/A/encode",
+            "P1/C/encode"
+          ]
+        },
+        {
+          "query": "P1/B/near-midpoint",
+          "observed": 0.8261853537157848,
+          "baseline": 0.8303958360594476,
+          "difference": -0.004210482343662725,
+          "controls": [
+            "P1/A/encode",
+            "P1/C/encode"
+          ]
+        },
+        {
+          "query": "P1/B/mismatch",
+          "observed": 0.5710066735490686,
+          "baseline": 0.9084561621765219,
+          "difference": -0.3374494886274533,
+          "controls": [
+            "P1/A/encode",
+            "P1/C/encode"
+          ]
+        },
+        {
+          "query": "P1/C/matched",
+          "observed": 0.9997824676568802,
+          "baseline": 0.6931183736650663,
+          "difference": 0.3066640939918138,
+          "controls": [
+            "P1/A/encode",
+            "P1/B/encode"
+          ]
+        },
+        {
+          "query": "P1/C/near-midpoint",
+          "observed": 0.9024951172597395,
+          "baseline": 0.7879713104063178,
+          "difference": 0.11452380685342167,
+          "controls": [
+            "P1/A/encode",
+            "P1/B/encode"
+          ]
+        },
+        {
+          "query": "P1/C/mismatch",
+          "observed": 0.8169123243530436,
+          "baseline": 0.6369725456114572,
+          "difference": 0.1799397787415864,
+          "controls": [
+            "P1/A/encode",
+            "P1/B/encode"
+          ]
+        },
+        {
+          "query": "P2/A/matched",
+          "observed": 0.9997630236273846,
+          "baseline": 0.5517913340247181,
+          "difference": 0.4479716896026664,
+          "controls": [
+            "P2/B/encode",
+            "P2/C/encode"
+          ]
+        },
+        {
+          "query": "P2/A/near-midpoint",
+          "observed": 0.80317634160458,
+          "baseline": 0.8531969335252003,
+          "difference": -0.05002059192062036,
+          "controls": [
+            "P2/B/encode",
+            "P2/C/encode"
+          ]
+        },
+        {
+          "query": "P2/A/mismatch",
+          "observed": 0.2732872135389812,
+          "baseline": 0.7892906240011234,
+          "difference": -0.5160034104621422,
+          "controls": [
+            "P2/B/encode",
+            "P2/C/encode"
+          ]
+        },
+        {
+          "query": "P2/B/matched",
+          "observed": 0.9999552048801624,
+          "baseline": 0.42147364538740634,
+          "difference": 0.5784815594927561,
+          "controls": [
+            "P2/A/encode",
+            "P2/C/encode"
+          ]
+        },
+        {
+          "query": "P2/B/near-midpoint",
+          "observed": 0.825302347110318,
+          "baseline": 0.8324820039464399,
+          "difference": -0.007179656836121873,
+          "controls": [
+            "P2/A/encode",
+            "P2/C/encode"
+          ]
+        },
+        {
+          "query": "P2/B/mismatch",
+          "observed": 0.5785812480022465,
+          "baseline": 0.906856040204569,
+          "difference": -0.3282747922023225,
+          "controls": [
+            "P2/A/encode",
+            "P2/C/encode"
+          ]
+        },
+        {
+          "query": "P2/C/matched",
+          "observed": 0.9997825498397394,
+          "baseline": 0.6953236558465674,
+          "difference": 0.30445889399317194,
+          "controls": [
+            "P2/A/encode",
+            "P2/B/encode"
+          ]
+        },
+        {
+          "query": "P2/C/near-midpoint",
+          "observed": 0.9051042387943267,
+          "baseline": 0.7882942291649622,
+          "difference": 0.1168100096293645,
+          "controls": [
+            "P2/A/encode",
+            "P2/B/encode"
+          ]
+        },
+        {
+          "query": "P2/C/mismatch",
+          "observed": 0.8137120804091378,
+          "baseline": 0.6366436067694905,
+          "difference": 0.17706847363964728,
+          "controls": [
+            "P2/A/encode",
+            "P2/B/encode"
+          ]
+        }
+      ]
+    },
+    {
+      "nx": 64,
+      "ny": 48,
+      "sigma": 0.2,
+      "maps": 24,
+      "support_map_max_absolute_error": 0.0,
+      "full_map_max_absolute_error": 0.0,
+      "score_max_absolute_error": 3.3306690738754696e-16,
+      "loaded_namespaces": {
+        "KernSmooth": "2.23-26",
+        "MASS": "7.3-65",
+        "Matrix": "1.7-3",
+        "R6": "2.6.1",
+        "RColorBrewer": "1.1-3",
+        "Rcpp": "1.1.2",
+        "S7": "0.2.2",
+        "assertthat": "0.2.1",
+        "backports": "1.5.1",
+        "base": "4.5.1",
+        "broom": "1.0.13",
+        "cli": "3.6.6",
+        "codetools": "0.2-20",
+        "compiler": "4.5.1",
+        "datasets": "4.5.1",
+        "digest": "0.6.39",
+        "dplyr": "1.2.1",
+        "eyesim": "0.1.0.9000",
+        "farver": "2.1.2",
+        "future": "1.75.0",
+        "generics": "0.1.4",
+        "ggplot2": "4.0.3",
+        "globals": "0.19.1",
+        "glue": "1.8.1",
+        "grDevices": "4.5.1",
+        "graphics": "4.5.1",
+        "grid": "4.5.1",
+        "gtable": "0.3.6",
+        "jsonlite": "2.0.0",
+        "ks": "1.15.1",
+        "lattice": "0.22-7",
+        "lifecycle": "1.0.5",
+        "listenv": "1.0.0",
+        "magrittr": "2.0.5",
+        "mclust": "6.1.2",
+        "methods": "4.5.1",
+        "mvtnorm": "1.3-6",
+        "parallel": "4.5.1",
+        "parallelly": "1.48.0",
+        "pillar": "1.11.1",
+        "pkgconfig": "2.0.3",
+        "pracma": "2.4.6",
+        "proxy": "0.4-29",
+        "purrr": "1.2.2",
+        "rlang": "1.3.0",
+        "scales": "1.4.0",
+        "stats": "4.5.1",
+        "tibble": "3.3.1",
+        "tidyr": "1.3.2",
+        "tidyselect": "1.2.1",
+        "tools": "4.5.1",
+        "utils": "4.5.1",
+        "vctrs": "0.7.3"
+      },
+      "scores": [
+        {
+          "query": "P1/A/matched",
+          "observed": 0.9726923528636,
+          "baseline": 0.04896576231877862,
+          "difference": 0.9237265905448214,
+          "controls": [
+            "P1/B/encode",
+            "P1/C/encode"
+          ]
+        },
+        {
+          "query": "P1/A/near-midpoint",
+          "observed": 0.4243464142631921,
+          "baseline": 0.6565483487614732,
+          "difference": -0.23220193449828108,
+          "controls": [
+            "P1/B/encode",
+            "P1/C/encode"
+          ]
+        },
+        {
+          "query": "P1/A/mismatch",
+          "observed": 0,
+          "baseline": 0.5000001377545122,
+          "difference": -0.5000001377545122,
+          "controls": [
+            "P1/B/encode",
+            "P1/C/encode"
+          ]
+        },
+        {
+          "query": "P1/B/matched",
+          "observed": 0.9932462387127193,
+          "baseline": 1.5708785272865957e-07,
+          "difference": 0.9932460816248666,
+          "controls": [
+            "P1/A/encode",
+            "P1/C/encode"
+          ]
+        },
+        {
+          "query": "P1/B/near-midpoint",
+          "observed": 0.8204881597120093,
+          "baseline": 0.420883061083587,
+          "difference": 0.3996050986284223,
+          "controls": [
+            "P1/A/encode",
+            "P1/C/encode"
+          ]
+        },
+        {
+          "query": "P1/B/mismatch",
+          "observed": 2.755090241789649e-07,
+          "baseline": 0.543816386748506,
+          "difference": -0.5438161112394818,
+          "controls": [
+            "P1/A/encode",
+            "P1/C/encode"
+          ]
+        },
+        {
+          "query": "P1/C/matched",
+          "observed": 0.9722668372826191,
+          "baseline": 0.036665665107279956,
+          "difference": 0.9356011721753391,
+          "controls": [
+            "P1/A/encode",
+            "P1/B/encode"
+          ]
+        },
+        {
+          "query": "P1/C/near-midpoint",
+          "observed": 0.12510680119598883,
+          "baseline": 0.7006460840438644,
+          "difference": -0.5755392828478756,
+          "controls": [
+            "P1/A/encode",
+            "P1/B/encode"
+          ]
+        },
+        {
+          "query": "P1/C/mismatch",
+          "observed": 0.08763277349701204,
+          "baseline": 0.5000000000000001,
+          "difference": -0.41236722650298807,
+          "controls": [
+            "P1/A/encode",
+            "P1/B/encode"
+          ]
+        },
+        {
+          "query": "P2/A/matched",
+          "observed": 0.9727351900386869,
+          "baseline": 0.04859007415714129,
+          "difference": 0.9241451158815456,
+          "controls": [
+            "P2/B/encode",
+            "P2/C/encode"
+          ]
+        },
+        {
+          "query": "P2/A/near-midpoint",
+          "observed": 0.42890568781558175,
+          "baseline": 0.6559605280356869,
+          "difference": -0.2270548402201052,
+          "controls": [
+            "P2/B/encode",
+            "P2/C/encode"
+          ]
+        },
+        {
+          "query": "P2/A/mismatch",
+          "observed": 0,
+          "baseline": 0.5000000744341795,
+          "difference": -0.5000000744341795,
+          "controls": [
+            "P2/B/encode",
+            "P2/C/encode"
+          ]
+        },
+        {
+          "query": "P2/B/matched",
+          "observed": 0.9913366316021832,
+          "baseline": 8.213970638679724e-08,
+          "difference": 0.9913365494624768,
+          "controls": [
+            "P2/A/encode",
+            "P2/C/encode"
+          ]
+        },
+        {
+          "query": "P2/B/near-midpoint",
+          "observed": 0.8293133055162578,
+          "baseline": 0.41108289614718974,
+          "difference": 0.4182304093690681,
+          "controls": [
+            "P2/A/encode",
+            "P2/C/encode"
+          ]
+        },
+        {
+          "query": "P2/B/mismatch",
+          "observed": 1.488683586524211e-07,
+          "baseline": 0.5433143426777788,
+          "difference": -0.5433141938094201,
+          "controls": [
+            "P2/A/encode",
+            "P2/C/encode"
+          ]
+        },
+        {
+          "query": "P2/C/matched",
+          "observed": 0.9722665534128847,
+          "baseline": 0.03625496259029464,
+          "difference": 0.9360115908225901,
+          "controls": [
+            "P2/A/encode",
+            "P2/B/encode"
+          ]
+        },
+        {
+          "query": "P2/C/near-midpoint",
+          "observed": 0.1289152369791009,
+          "baseline": 0.7025490861154271,
+          "difference": -0.5736338491363262,
+          "controls": [
+            "P2/A/encode",
+            "P2/B/encode"
+          ]
+        },
+        {
+          "query": "P2/C/mismatch",
+          "observed": 0.08662868535555758,
+          "baseline": 0.5,
+          "difference": -0.41337131464444243,
+          "controls": [
+            "P2/A/encode",
+            "P2/B/encode"
+          ]
+        }
+      ]
+    },
+    {
+      "nx": 64,
+      "ny": 48,
+      "sigma": 0.4,
+      "maps": 24,
+      "support_map_max_absolute_error": 0.0,
+      "full_map_max_absolute_error": 0.0,
+      "score_max_absolute_error": 4.440892098500626e-16,
+      "loaded_namespaces": {
+        "KernSmooth": "2.23-26",
+        "MASS": "7.3-65",
+        "Matrix": "1.7-3",
+        "R6": "2.6.1",
+        "RColorBrewer": "1.1-3",
+        "Rcpp": "1.1.2",
+        "S7": "0.2.2",
+        "assertthat": "0.2.1",
+        "backports": "1.5.1",
+        "base": "4.5.1",
+        "broom": "1.0.13",
+        "cli": "3.6.6",
+        "codetools": "0.2-20",
+        "compiler": "4.5.1",
+        "datasets": "4.5.1",
+        "digest": "0.6.39",
+        "dplyr": "1.2.1",
+        "eyesim": "0.1.0.9000",
+        "farver": "2.1.2",
+        "future": "1.75.0",
+        "generics": "0.1.4",
+        "ggplot2": "4.0.3",
+        "globals": "0.19.1",
+        "glue": "1.8.1",
+        "grDevices": "4.5.1",
+        "graphics": "4.5.1",
+        "grid": "4.5.1",
+        "gtable": "0.3.6",
+        "jsonlite": "2.0.0",
+        "ks": "1.15.1",
+        "lattice": "0.22-7",
+        "lifecycle": "1.0.5",
+        "listenv": "1.0.0",
+        "magrittr": "2.0.5",
+        "mclust": "6.1.2",
+        "methods": "4.5.1",
+        "mvtnorm": "1.3-6",
+        "parallel": "4.5.1",
+        "parallelly": "1.48.0",
+        "pillar": "1.11.1",
+        "pkgconfig": "2.0.3",
+        "pracma": "2.4.6",
+        "proxy": "0.4-29",
+        "purrr": "1.2.2",
+        "rlang": "1.3.0",
+        "scales": "1.4.0",
+        "stats": "4.5.1",
+        "tibble": "3.3.1",
+        "tidyr": "1.3.2",
+        "tidyselect": "1.2.1",
+        "tools": "4.5.1",
+        "utils": "4.5.1",
+        "vctrs": "0.7.3"
+      },
+      "scores": [
+        {
+          "query": "P1/A/matched",
+          "observed": 0.9929832164376539,
+          "baseline": 0.20546760021187815,
+          "difference": 0.7875156162257757,
+          "controls": [
+            "P1/B/encode",
+            "P1/C/encode"
+          ]
+        },
+        {
+          "query": "P1/A/near-midpoint",
+          "observed": 0.6071331065702532,
+          "baseline": 0.6608020982937524,
+          "difference": -0.05366899172349915,
+          "controls": [
+            "P1/B/encode",
+            "P1/C/encode"
+          ]
+        },
+        {
+          "query": "P1/A/mismatch",
+          "observed": 6.727477326925357e-05,
+          "baseline": 0.5066973611288069,
+          "difference": -0.5066300863555376,
+          "controls": [
+            "P1/B/encode",
+            "P1/C/encode"
+          ]
+        },
+        {
+          "query": "P1/B/matched",
+          "observed": 0.9978608618400123,
+          "baseline": 0.006237132271020895,
+          "difference": 0.9916237295689915,
+          "controls": [
+            "P1/A/encode",
+            "P1/C/encode"
+          ]
+        },
+        {
+          "query": "P1/B/near-midpoint",
+          "observed": 0.7528240079449938,
+          "baseline": 0.5554086780867764,
+          "difference": 0.19741532985821741,
+          "controls": [
+            "P1/A/encode",
+            "P1/C/encode"
+          ]
+        },
+        {
+          "query": "P1/B/mismatch",
+          "observed": 0.013394722257613952,
+          "baseline": 0.7000936970167032,
+          "difference": -0.6866989747590893,
+          "controls": [
+            "P1/A/encode",
+            "P1/C/encode"
+          ]
+        },
+        {
+          "query": "P1/C/matched",
+          "observed": 0.9931035065615681,
+          "baseline": 0.19858440203967218,
+          "difference": 0.7945191045218959,
+          "controls": [
+            "P1/A/encode",
+            "P1/B/encode"
+          ]
+        },
+        {
+          "query": "P1/C/near-midpoint",
+          "observed": 0.3857230552561311,
+          "baseline": 0.6943988192389542,
+          "difference": -0.3086757639828231,
+          "controls": [
+            "P1/A/encode",
+            "P1/B/encode"
+          ]
+        },
+        {
+          "query": "P1/C/mismatch",
+          "observed": 0.4001873940334065,
+          "baseline": 0.5000336373866345,
+          "difference": -0.09984624335322806,
+          "controls": [
+            "P1/A/encode",
+            "P1/B/encode"
+          ]
+        },
+        {
+          "query": "P2/A/matched",
+          "observed": 0.9930629773764886,
+          "baseline": 0.20410534574639108,
+          "difference": 0.7889576316300976,
+          "controls": [
+            "P2/B/encode",
+            "P2/C/encode"
+          ]
+        },
+        {
+          "query": "P2/A/near-midpoint",
+          "observed": 0.6089271335393565,
+          "baseline": 0.6607868867411191,
+          "difference": -0.051859753201762615,
+          "controls": [
+            "P2/B/encode",
+            "P2/C/encode"
+          ]
+        },
+        {
+          "query": "P2/A/mismatch",
+          "observed": 6.366019464315714e-05,
+          "baseline": 0.5063981466278188,
+          "difference": -0.5063344864331756,
+          "controls": [
+            "P2/B/encode",
+            "P2/C/encode"
+          ]
+        },
+        {
+          "query": "P2/B/matched",
+          "observed": 0.9974630951088717,
+          "baseline": 0.006067176418466828,
+          "difference": 0.9913959186904048,
+          "controls": [
+            "P2/A/encode",
+            "P2/C/encode"
+          ]
+        },
+        {
+          "query": "P2/B/near-midpoint",
+          "observed": 0.7571927693677397,
+          "baseline": 0.550399120768083,
+          "difference": 0.20679364859965677,
+          "controls": [
+            "P2/A/encode",
+            "P2/C/encode"
+          ]
+        },
+        {
+          "query": "P2/B/mismatch",
+          "observed": 0.01279629325563757,
+          "baseline": 0.6986706882400459,
+          "difference": -0.6858743949844083,
+          "controls": [
+            "P2/A/encode",
+            "P2/C/encode"
+          ]
+        },
+        {
+          "query": "P2/C/matched",
+          "observed": 0.9931020092518986,
+          "baseline": 0.19689224151137905,
+          "difference": 0.7962097677405195,
+          "controls": [
+            "P2/A/encode",
+            "P2/B/encode"
+          ]
+        },
+        {
+          "query": "P2/C/near-midpoint",
+          "observed": 0.385367498599072,
+          "baseline": 0.6962198615622379,
+          "difference": -0.31085236296316593,
+          "controls": [
+            "P2/A/encode",
+            "P2/B/encode"
+          ]
+        },
+        {
+          "query": "P2/C/mismatch",
+          "observed": 0.39734137648009177,
+          "baseline": 0.5000318300973216,
+          "difference": -0.10269045361722978,
+          "controls": [
+            "P2/A/encode",
+            "P2/B/encode"
+          ]
+        }
+      ]
+    },
+    {
+      "nx": 64,
+      "ny": 48,
+      "sigma": 0.8,
+      "maps": 24,
+      "support_map_max_absolute_error": 0.0,
+      "full_map_max_absolute_error": 0.0,
+      "score_max_absolute_error": 6.661338147750939e-16,
+      "loaded_namespaces": {
+        "KernSmooth": "2.23-26",
+        "MASS": "7.3-65",
+        "Matrix": "1.7-3",
+        "R6": "2.6.1",
+        "RColorBrewer": "1.1-3",
+        "Rcpp": "1.1.2",
+        "S7": "0.2.2",
+        "assertthat": "0.2.1",
+        "backports": "1.5.1",
+        "base": "4.5.1",
+        "broom": "1.0.13",
+        "cli": "3.6.6",
+        "codetools": "0.2-20",
+        "compiler": "4.5.1",
+        "datasets": "4.5.1",
+        "digest": "0.6.39",
+        "dplyr": "1.2.1",
+        "eyesim": "0.1.0.9000",
+        "farver": "2.1.2",
+        "future": "1.75.0",
+        "generics": "0.1.4",
+        "ggplot2": "4.0.3",
+        "globals": "0.19.1",
+        "glue": "1.8.1",
+        "grDevices": "4.5.1",
+        "graphics": "4.5.1",
+        "grid": "4.5.1",
+        "gtable": "0.3.6",
+        "jsonlite": "2.0.0",
+        "ks": "1.15.1",
+        "lattice": "0.22-7",
+        "lifecycle": "1.0.5",
+        "listenv": "1.0.0",
+        "magrittr": "2.0.5",
+        "mclust": "6.1.2",
+        "methods": "4.5.1",
+        "mvtnorm": "1.3-6",
+        "parallel": "4.5.1",
+        "parallelly": "1.48.0",
+        "pillar": "1.11.1",
+        "pkgconfig": "2.0.3",
+        "pracma": "2.4.6",
+        "proxy": "0.4-29",
+        "purrr": "1.2.2",
+        "rlang": "1.3.0",
+        "scales": "1.4.0",
+        "stats": "4.5.1",
+        "tibble": "3.3.1",
+        "tidyr": "1.3.2",
+        "tidyselect": "1.2.1",
+        "tools": "4.5.1",
+        "utils": "4.5.1",
+        "vctrs": "0.7.3"
+      },
+      "scores": [
+        {
+          "query": "P1/A/matched",
+          "observed": 0.9985203556133321,
+          "baseline": 0.34786468973123696,
+          "difference": 0.6506556658820951,
+          "controls": [
+            "P1/B/encode",
+            "P1/C/encode"
+          ]
+        },
+        {
+          "query": "P1/A/near-midpoint",
+          "observed": 0.7166568157546067,
+          "baseline": 0.7250704586638888,
+          "difference": -0.008413642909282038,
+          "controls": [
+            "P1/B/encode",
+            "P1/C/encode"
+          ]
+        },
+        {
+          "query": "P1/A/mismatch",
+          "observed": 0.027659451843445877,
+          "baseline": 0.6020149455957282,
+          "difference": -0.5743554937522823,
+          "controls": [
+            "P1/B/encode",
+            "P1/C/encode"
+          ]
+        },
+        {
+          "query": "P1/B/matched",
+          "observed": 0.9994434380205567,
+          "baseline": 0.1126693955226856,
+          "difference": 0.8867740424978711,
+          "controls": [
+            "P1/A/encode",
+            "P1/C/encode"
+          ]
+        },
+        {
+          "query": "P1/B/near-midpoint",
+          "observed": 0.7299896665599763,
+          "baseline": 0.7009925406968814,
+          "difference": 0.028997125863094886,
+          "controls": [
+            "P1/A/encode",
+            "P1/C/encode"
+          ]
+        },
+        {
+          "query": "P1/B/mismatch",
+          "observed": 0.20402989119145612,
+          "baseline": 0.8269541253659445,
+          "difference": -0.6229242341744884,
+          "controls": [
+            "P1/A/encode",
+            "P1/C/encode"
+          ]
+        },
+        {
+          "query": "P1/C/matched",
+          "observed": 0.9991692922906571,
+          "baseline": 0.425502915156219,
+          "difference": 0.5736663771344381,
+          "controls": [
+            "P1/A/encode",
+            "P1/B/encode"
+          ]
+        },
+        {
+          "query": "P1/C/near-midpoint",
+          "observed": 0.6858035347682906,
+          "baseline": 0.6999724606506874,
+          "difference": -0.014168925882396821,
+          "controls": [
+            "P1/A/encode",
+            "P1/B/encode"
+          ]
+        },
+        {
+          "query": "P1/C/mismatch",
+          "observed": 0.6539082507318891,
+          "baseline": 0.513829725921723,
+          "difference": 0.14007852481016603,
+          "controls": [
+            "P1/A/encode",
+            "P1/B/encode"
+          ]
+        },
+        {
+          "query": "P2/A/matched",
+          "observed": 0.9985428223435571,
+          "baseline": 0.34588130783425064,
+          "difference": 0.6526615145093064,
+          "controls": [
+            "P2/B/encode",
+            "P2/C/encode"
+          ]
+        },
+        {
+          "query": "P2/A/near-midpoint",
+          "observed": 0.7170433696316908,
+          "baseline": 0.7254012044904701,
+          "difference": -0.008357834858779278,
+          "controls": [
+            "P2/B/encode",
+            "P2/C/encode"
+          ]
+        },
+        {
+          "query": "P2/A/mismatch",
+          "observed": 0.02677050540701589,
+          "baseline": 0.6029193607808429,
+          "difference": -0.576148855373827,
+          "controls": [
+            "P2/B/encode",
+            "P2/C/encode"
+          ]
+        },
+        {
+          "query": "P2/B/matched",
+          "observed": 0.9994121680188627,
+          "baseline": 0.11417942918606637,
+          "difference": 0.8852327388327963,
+          "controls": [
+            "P2/A/encode",
+            "P2/C/encode"
+          ]
+        },
+        {
+          "query": "P2/B/near-midpoint",
+          "observed": 0.7293369496955687,
+          "baseline": 0.7012561249755638,
+          "difference": 0.02808082472000495,
+          "controls": [
+            "P2/A/encode",
+            "P2/C/encode"
+          ]
+        },
+        {
+          "query": "P2/B/mismatch",
+          "observed": 0.2058387215616854,
+          "baseline": 0.8254263018466255,
+          "difference": -0.6195875802849401,
+          "controls": [
+            "P2/A/encode",
+            "P2/C/encode"
+          ]
+        },
+        {
+          "query": "P2/C/matched",
+          "observed": 0.9991661564709646,
+          "baseline": 0.4251907780202089,
+          "difference": 0.5739753784507557,
+          "controls": [
+            "P2/A/encode",
+            "P2/B/encode"
+          ]
+        },
+        {
+          "query": "P2/C/near-midpoint",
+          "observed": 0.6870795375064334,
+          "baseline": 0.7008366520017785,
+          "difference": -0.013757114495345113,
+          "controls": [
+            "P2/A/encode",
+            "P2/B/encode"
+          ]
+        },
+        {
+          "query": "P2/C/mismatch",
+          "observed": 0.6508526036932506,
+          "baseline": 0.5133852527035079,
+          "difference": 0.13746735098974272,
+          "controls": [
+            "P2/A/encode",
+            "P2/B/encode"
+          ]
+        }
+      ]
+    },
+    {
+      "nx": 64,
+      "ny": 48,
+      "sigma": 1.6,
+      "maps": 24,
+      "support_map_max_absolute_error": 0.0,
+      "full_map_max_absolute_error": 0.0,
+      "score_max_absolute_error": 5.551115123125783e-16,
+      "loaded_namespaces": {
+        "KernSmooth": "2.23-26",
+        "MASS": "7.3-65",
+        "Matrix": "1.7-3",
+        "R6": "2.6.1",
+        "RColorBrewer": "1.1-3",
+        "Rcpp": "1.1.2",
+        "S7": "0.2.2",
+        "assertthat": "0.2.1",
+        "backports": "1.5.1",
+        "base": "4.5.1",
+        "broom": "1.0.13",
+        "cli": "3.6.6",
+        "codetools": "0.2-20",
+        "compiler": "4.5.1",
+        "datasets": "4.5.1",
+        "digest": "0.6.39",
+        "dplyr": "1.2.1",
+        "eyesim": "0.1.0.9000",
+        "farver": "2.1.2",
+        "future": "1.75.0",
+        "generics": "0.1.4",
+        "ggplot2": "4.0.3",
+        "globals": "0.19.1",
+        "glue": "1.8.1",
+        "grDevices": "4.5.1",
+        "graphics": "4.5.1",
+        "grid": "4.5.1",
+        "gtable": "0.3.6",
+        "jsonlite": "2.0.0",
+        "ks": "1.15.1",
+        "lattice": "0.22-7",
+        "lifecycle": "1.0.5",
+        "listenv": "1.0.0",
+        "magrittr": "2.0.5",
+        "mclust": "6.1.2",
+        "methods": "4.5.1",
+        "mvtnorm": "1.3-6",
+        "parallel": "4.5.1",
+        "parallelly": "1.48.0",
+        "pillar": "1.11.1",
+        "pkgconfig": "2.0.3",
+        "pracma": "2.4.6",
+        "proxy": "0.4-29",
+        "purrr": "1.2.2",
+        "rlang": "1.3.0",
+        "scales": "1.4.0",
+        "stats": "4.5.1",
+        "tibble": "3.3.1",
+        "tidyr": "1.3.2",
+        "tidyselect": "1.2.1",
+        "tools": "4.5.1",
+        "utils": "4.5.1",
+        "vctrs": "0.7.3"
+      },
+      "scores": [
+        {
+          "query": "P1/A/matched",
+          "observed": 0.9997643246535183,
+          "baseline": 0.5581009451131849,
+          "difference": 0.4416633795403334,
+          "controls": [
+            "P1/B/encode",
+            "P1/C/encode"
+          ]
+        },
+        {
+          "query": "P1/A/near-midpoint",
+          "observed": 0.8077282565294762,
+          "baseline": 0.8532474937263312,
+          "difference": -0.04551923719685502,
+          "controls": [
+            "P1/B/encode",
+            "P1/C/encode"
+          ]
+        },
+        {
+          "query": "P1/A/mismatch",
+          "observed": 0.2806700769433975,
+          "baseline": 0.7895396429566846,
+          "difference": -0.508869566013287,
+          "controls": [
+            "P1/B/encode",
+            "P1/C/encode"
+          ]
+        },
+        {
+          "query": "P1/B/matched",
+          "observed": 0.9999444550467868,
+          "baseline": 0.42396047746905485,
+          "difference": 0.5759839775777319,
+          "controls": [
+            "P1/A/encode",
+            "P1/C/encode"
+          ]
+        },
+        {
+          "query": "P1/B/near-midpoint",
+          "observed": 0.8249770118314421,
+          "baseline": 0.8357704681322302,
+          "difference": -0.010793456300788096,
+          "controls": [
+            "P1/A/encode",
+            "P1/C/encode"
+          ]
+        },
+        {
+          "query": "P1/B/mismatch",
+          "observed": 0.5790792859133695,
+          "baseline": 0.9095461452036592,
+          "difference": -0.3304668592902896,
+          "controls": [
+            "P1/A/encode",
+            "P1/C/encode"
+          ]
+        },
+        {
+          "query": "P1/C/matched",
+          "observed": 0.9997846797967456,
+          "baseline": 0.6982603547367653,
+          "difference": 0.3015243250599803,
+          "controls": [
+            "P1/A/encode",
+            "P1/B/encode"
+          ]
+        },
+        {
+          "query": "P1/C/near-midpoint",
+          "observed": 0.90601589181626,
+          "baseline": 0.789341445152121,
+          "difference": 0.11667444666413895,
+          "controls": [
+            "P1/A/encode",
+            "P1/B/encode"
+          ]
+        },
+        {
+          "query": "P1/C/mismatch",
+          "observed": 0.8190922904073181,
+          "baseline": 0.6403350384716986,
+          "difference": 0.17875725193561953,
+          "controls": [
+            "P1/A/encode",
+            "P1/B/encode"
+          ]
+        },
+        {
+          "query": "P2/A/matched",
+          "observed": 0.9997634326862971,
+          "baseline": 0.556238598807129,
+          "difference": 0.4435248338791681,
+          "controls": [
+            "P2/B/encode",
+            "P2/C/encode"
+          ]
+        },
+        {
+          "query": "P2/A/near-midpoint",
+          "observed": 0.8070788950349047,
+          "baseline": 0.8546360413677476,
+          "difference": -0.047557146332842914,
+          "controls": [
+            "P2/B/encode",
+            "P2/C/encode"
+          ]
+        },
+        {
+          "query": "P2/A/mismatch",
+          "observed": 0.28003113384462913,
+          "baseline": 0.7932101430979347,
+          "difference": -0.5131790092533055,
+          "controls": [
+            "P2/B/encode",
+            "P2/C/encode"
+          ]
+        },
+        {
+          "query": "P2/B/matched",
+          "observed": 0.999954985154235,
+          "baseline": 0.42869907820618103,
+          "difference": 0.571255906948054,
+          "controls": [
+            "P2/A/encode",
+            "P2/C/encode"
+          ]
+        },
+        {
+          "query": "P2/B/near-midpoint",
+          "observed": 0.8241865812706769,
+          "baseline": 0.8376627614799009,
+          "difference": -0.013476180209224031,
+          "controls": [
+            "P2/A/encode",
+            "P2/C/encode"
+          ]
+        },
+        {
+          "query": "P2/B/mismatch",
+          "observed": 0.5864202861958695,
+          "baseline": 0.9078996986468411,
+          "difference": -0.32147941245097156,
+          "controls": [
+            "P2/A/encode",
+            "P2/C/encode"
+          ]
+        },
+        {
+          "query": "P2/C/matched",
+          "observed": 0.9997847745010091,
+          "baseline": 0.7002920451685966,
+          "difference": 0.29949272933241256,
+          "controls": [
+            "P2/A/encode",
+            "P2/B/encode"
+          ]
+        },
+        {
+          "query": "P2/C/near-midpoint",
+          "observed": 0.90839147397256,
+          "baseline": 0.7897124936448326,
+          "difference": 0.11867898032772739,
+          "controls": [
+            "P2/A/encode",
+            "P2/B/encode"
+          ]
+        },
+        {
+          "query": "P2/C/mismatch",
+          "observed": 0.8157993972936821,
+          "baseline": 0.6400155669223146,
+          "difference": 0.17578383037136747,
+          "controls": [
+            "P2/A/encode",
+            "P2/B/encode"
+          ]
+        }
+      ]
+    },
+    {
+      "nx": 128,
+      "ny": 96,
+      "sigma": 0.2,
+      "maps": 24,
+      "support_map_max_absolute_error": 0.0,
+      "full_map_max_absolute_error": 0.0,
+      "score_max_absolute_error": 4.440892098500626e-16,
+      "loaded_namespaces": {
+        "KernSmooth": "2.23-26",
+        "MASS": "7.3-65",
+        "Matrix": "1.7-3",
+        "R6": "2.6.1",
+        "RColorBrewer": "1.1-3",
+        "Rcpp": "1.1.2",
+        "S7": "0.2.2",
+        "assertthat": "0.2.1",
+        "backports": "1.5.1",
+        "base": "4.5.1",
+        "broom": "1.0.13",
+        "cli": "3.6.6",
+        "codetools": "0.2-20",
+        "compiler": "4.5.1",
+        "datasets": "4.5.1",
+        "digest": "0.6.39",
+        "dplyr": "1.2.1",
+        "eyesim": "0.1.0.9000",
+        "farver": "2.1.2",
+        "future": "1.75.0",
+        "generics": "0.1.4",
+        "ggplot2": "4.0.3",
+        "globals": "0.19.1",
+        "glue": "1.8.1",
+        "grDevices": "4.5.1",
+        "graphics": "4.5.1",
+        "grid": "4.5.1",
+        "gtable": "0.3.6",
+        "jsonlite": "2.0.0",
+        "ks": "1.15.1",
+        "lattice": "0.22-7",
+        "lifecycle": "1.0.5",
+        "listenv": "1.0.0",
+        "magrittr": "2.0.5",
+        "mclust": "6.1.2",
+        "methods": "4.5.1",
+        "mvtnorm": "1.3-6",
+        "parallel": "4.5.1",
+        "parallelly": "1.48.0",
+        "pillar": "1.11.1",
+        "pkgconfig": "2.0.3",
+        "pracma": "2.4.6",
+        "proxy": "0.4-29",
+        "purrr": "1.2.2",
+        "rlang": "1.3.0",
+        "scales": "1.4.0",
+        "stats": "4.5.1",
+        "tibble": "3.3.1",
+        "tidyr": "1.3.2",
+        "tidyselect": "1.2.1",
+        "tools": "4.5.1",
+        "utils": "4.5.1",
+        "vctrs": "0.7.3"
+      },
+      "scores": [
+        {
+          "query": "P1/A/matched",
+          "observed": 0.9723683780700219,
+          "baseline": 0.04937071567891029,
+          "difference": 0.9229976623911116,
+          "controls": [
+            "P1/B/encode",
+            "P1/C/encode"
+          ]
+        },
+        {
+          "query": "P1/A/near-midpoint",
+          "observed": 0.4366930362618746,
+          "baseline": 0.6505279169921807,
+          "difference": -0.2138348807303061,
+          "controls": [
+            "P1/B/encode",
+            "P1/C/encode"
+          ]
+        },
+        {
+          "query": "P1/A/mismatch",
+          "observed": 0,
+          "baseline": 0.500000117125584,
+          "difference": -0.500000117125584,
+          "controls": [
+            "P1/B/encode",
+            "P1/C/encode"
+          ]
+        },
+        {
+          "query": "P1/B/matched",
+          "observed": 0.9917773969069174,
+          "baseline": 1.376536255949626e-07,
+          "difference": 0.9917772592532917,
+          "controls": [
+            "P1/A/encode",
+            "P1/C/encode"
+          ]
+        },
+        {
+          "query": "P1/B/near-midpoint",
+          "observed": 0.7940813004694075,
+          "baseline": 0.4477442347858861,
+          "difference": 0.3463370656835214,
+          "controls": [
+            "P1/A/encode",
+            "P1/C/encode"
+          ]
+        },
+        {
+          "query": "P1/B/mismatch",
+          "observed": 2.342511680989457e-07,
+          "baseline": 0.5441847421942382,
+          "difference": -0.54418450794307,
+          "controls": [
+            "P1/A/encode",
+            "P1/C/encode"
+          ]
+        },
+        {
+          "query": "P1/C/matched",
+          "observed": 0.9722664327814288,
+          "baseline": 0.03697039328824708,
+          "difference": 0.9352960394931817,
+          "controls": [
+            "P1/A/encode",
+            "P1/B/encode"
+          ]
+        },
+        {
+          "query": "P1/C/near-midpoint",
+          "observed": 0.13025757328167256,
+          "baseline": 0.6961652211444783,
+          "difference": -0.5659076478628058,
+          "controls": [
+            "P1/A/encode",
+            "P1/B/encode"
+          ]
+        },
+        {
+          "query": "P1/C/mismatch",
+          "observed": 0.0883694843884765,
+          "baseline": 0.4999999999999997,
+          "difference": -0.4116305156115232,
+          "controls": [
+            "P1/A/encode",
+            "P1/B/encode"
+          ]
+        },
+        {
+          "query": "P2/A/matched",
+          "observed": 0.9726570964685423,
+          "baseline": 0.04892489229717375,
+          "difference": 0.9237322041713685,
+          "controls": [
+            "P2/B/encode",
+            "P2/C/encode"
+          ]
+        },
+        {
+          "query": "P2/A/near-midpoint",
+          "observed": 0.44053079348948193,
+          "baseline": 0.6514392173639056,
+          "difference": -0.2109084238744237,
+          "controls": [
+            "P2/B/encode",
+            "P2/C/encode"
+          ]
+        },
+        {
+          "query": "P2/A/mismatch",
+          "observed": 0,
+          "baseline": 0.5000001028132061,
+          "difference": -0.5000001028132061,
+          "controls": [
+            "P2/B/encode",
+            "P2/C/encode"
+          ]
+        },
+        {
+          "query": "P2/B/matched",
+          "observed": 0.990429938120103,
+          "baseline": 1.3148684020277412e-07,
+          "difference": 0.9904298066332629,
+          "controls": [
+            "P2/A/encode",
+            "P2/C/encode"
+          ]
+        },
+        {
+          "query": "P2/B/near-midpoint",
+          "observed": 0.8076073234253273,
+          "baseline": 0.4340707544175653,
+          "difference": 0.37353656900776194,
+          "controls": [
+            "P2/A/encode",
+            "P2/C/encode"
+          ]
+        },
+        {
+          "query": "P2/B/mismatch",
+          "observed": 2.0562641205927788e-07,
+          "baseline": 0.5436537571238937,
+          "difference": -0.5436535514974817,
+          "controls": [
+            "P2/A/encode",
+            "P2/C/encode"
+          ]
+        },
+        {
+          "query": "P2/C/matched",
+          "observed": 0.9722665940934732,
+          "baseline": 0.03652580234558063,
+          "difference": 0.9357407917478925,
+          "controls": [
+            "P2/A/encode",
+            "P2/B/encode"
+          ]
+        },
+        {
+          "query": "P2/C/near-midpoint",
+          "observed": 0.13380799108327354,
+          "baseline": 0.6994502069719968,
+          "difference": -0.5656422158887232,
+          "controls": [
+            "P2/A/encode",
+            "P2/B/encode"
+          ]
+        },
+        {
+          "query": "P2/C/mismatch",
+          "observed": 0.08730751424778783,
+          "baseline": 0.5000000000000002,
+          "difference": -0.4126924857522124,
+          "controls": [
+            "P2/A/encode",
+            "P2/B/encode"
+          ]
+        }
+      ]
+    },
+    {
+      "nx": 128,
+      "ny": 96,
+      "sigma": 0.4,
+      "maps": 24,
+      "support_map_max_absolute_error": 0.0,
+      "full_map_max_absolute_error": 0.0,
+      "score_max_absolute_error": 3.3306690738754696e-16,
+      "loaded_namespaces": {
+        "KernSmooth": "2.23-26",
+        "MASS": "7.3-65",
+        "Matrix": "1.7-3",
+        "R6": "2.6.1",
+        "RColorBrewer": "1.1-3",
+        "Rcpp": "1.1.2",
+        "S7": "0.2.2",
+        "assertthat": "0.2.1",
+        "backports": "1.5.1",
+        "base": "4.5.1",
+        "broom": "1.0.13",
+        "cli": "3.6.6",
+        "codetools": "0.2-20",
+        "compiler": "4.5.1",
+        "datasets": "4.5.1",
+        "digest": "0.6.39",
+        "dplyr": "1.2.1",
+        "eyesim": "0.1.0.9000",
+        "farver": "2.1.2",
+        "future": "1.75.0",
+        "generics": "0.1.4",
+        "ggplot2": "4.0.3",
+        "globals": "0.19.1",
+        "glue": "1.8.1",
+        "grDevices": "4.5.1",
+        "graphics": "4.5.1",
+        "grid": "4.5.1",
+        "gtable": "0.3.6",
+        "jsonlite": "2.0.0",
+        "ks": "1.15.1",
+        "lattice": "0.22-7",
+        "lifecycle": "1.0.5",
+        "listenv": "1.0.0",
+        "magrittr": "2.0.5",
+        "mclust": "6.1.2",
+        "methods": "4.5.1",
+        "mvtnorm": "1.3-6",
+        "parallel": "4.5.1",
+        "parallelly": "1.48.0",
+        "pillar": "1.11.1",
+        "pkgconfig": "2.0.3",
+        "pracma": "2.4.6",
+        "proxy": "0.4-29",
+        "purrr": "1.2.2",
+        "rlang": "1.3.0",
+        "scales": "1.4.0",
+        "stats": "4.5.1",
+        "tibble": "3.3.1",
+        "tidyr": "1.3.2",
+        "tidyselect": "1.2.1",
+        "tools": "4.5.1",
+        "utils": "4.5.1",
+        "vctrs": "0.7.3"
+      },
+      "scores": [
+        {
+          "query": "P1/A/matched",
+          "observed": 0.9929443953355906,
+          "baseline": 0.20630668753197068,
+          "difference": 0.78663770780362,
+          "controls": [
+            "P1/B/encode",
+            "P1/C/encode"
+          ]
+        },
+        {
+          "query": "P1/A/near-midpoint",
+          "observed": 0.6153656946318743,
+          "baseline": 0.6569104293902446,
+          "difference": -0.04154473475837028,
+          "controls": [
+            "P1/B/encode",
+            "P1/C/encode"
+          ]
+        },
+        {
+          "query": "P1/A/mismatch",
+          "observed": 7.275310918017585e-05,
+          "baseline": 0.5070510022508167,
+          "difference": -0.5069782491416365,
+          "controls": [
+            "P1/B/encode",
+            "P1/C/encode"
+          ]
+        },
+        {
+          "query": "P1/B/matched",
+          "observed": 0.9976237190798662,
+          "baseline": 0.006559597377752417,
+          "difference": 0.9910641217021138,
+          "controls": [
+            "P1/A/encode",
+            "P1/C/encode"
+          ]
+        },
+        {
+          "query": "P1/B/near-midpoint",
+          "observed": 0.736110307908542,
+          "baseline": 0.5714832474181175,
+          "difference": 0.16462706049042453,
+          "controls": [
+            "P1/A/encode",
+            "P1/C/encode"
+          ]
+        },
+        {
+          "query": "P1/B/mismatch",
+          "observed": 0.014102004501633203,
+          "baseline": 0.7008728390900425,
+          "difference": -0.6867708345884093,
+          "controls": [
+            "P1/A/encode",
+            "P1/C/encode"
+          ]
+        },
+        {
+          "query": "P1/C/matched",
+          "observed": 0.9931031695216863,
+          "baseline": 0.19973486461605552,
+          "difference": 0.7933683049056308,
+          "controls": [
+            "P1/A/encode",
+            "P1/B/encode"
+          ]
+        },
+        {
+          "query": "P1/C/near-midpoint",
+          "observed": 0.3930340381708311,
+          "baseline": 0.6912888635369508,
+          "difference": -0.29825482536611975,
+          "controls": [
+            "P1/A/encode",
+            "P1/B/encode"
+          ]
+        },
+        {
+          "query": "P1/C/mismatch",
+          "observed": 0.4017456781800858,
+          "baseline": 0.5000363765545902,
+          "difference": -0.09829069837450444,
+          "controls": [
+            "P1/A/encode",
+            "P1/B/encode"
+          ]
+        },
+        {
+          "query": "P2/A/matched",
+          "observed": 0.9930280716483747,
+          "baseline": 0.2049271167174153,
+          "difference": 0.7881009549309594,
+          "controls": [
+            "P2/B/encode",
+            "P2/C/encode"
+          ]
+        },
+        {
+          "query": "P2/A/near-midpoint",
+          "observed": 0.6171115880574158,
+          "baseline": 0.6572399289827641,
+          "difference": -0.04012834092534823,
+          "controls": [
+            "P2/B/encode",
+            "P2/C/encode"
+          ]
+        },
+        {
+          "query": "P2/A/mismatch",
+          "observed": 6.870542395846702e-05,
+          "baseline": 0.506709420054674,
+          "difference": -0.5066407146307156,
+          "controls": [
+            "P2/B/encode",
+            "P2/C/encode"
+          ]
+        },
+        {
+          "query": "P2/B/matched",
+          "observed": 0.9972677838644131,
+          "baseline": 0.0063802291472938606,
+          "difference": 0.9908875547171192,
+          "controls": [
+            "P2/A/encode",
+            "P2/C/encode"
+          ]
+        },
+        {
+          "query": "P2/B/near-midpoint",
+          "observed": 0.7415329721911037,
+          "baseline": 0.5656866365269351,
+          "difference": 0.17584633566416863,
+          "controls": [
+            "P2/A/encode",
+            "P2/C/encode"
+          ]
+        },
+        {
+          "query": "P2/B/mismatch",
+          "observed": 0.01341884010934805,
+          "baseline": 0.699477320743942,
+          "difference": -0.686058480634594,
+          "controls": [
+            "P2/A/encode",
+            "P2/C/encode"
+          ]
+        },
+        {
+          "query": "P2/C/matched",
+          "observed": 0.9931014478144355,
+          "baseline": 0.1980197899513342,
+          "difference": 0.7950816578631014,
+          "controls": [
+            "P2/A/encode",
+            "P2/B/encode"
+          ]
+        },
+        {
+          "query": "P2/C/near-midpoint",
+          "observed": 0.39265627919073504,
+          "baseline": 0.6935043471695277,
+          "difference": -0.30084806797879265,
+          "controls": [
+            "P2/A/encode",
+            "P2/B/encode"
+          ]
+        },
+        {
+          "query": "P2/C/mismatch",
+          "observed": 0.39895464148788423,
+          "baseline": 0.5000343527119794,
+          "difference": -0.10107971122409515,
+          "controls": [
+            "P2/A/encode",
+            "P2/B/encode"
+          ]
+        }
+      ]
+    },
+    {
+      "nx": 128,
+      "ny": 96,
+      "sigma": 0.8,
+      "maps": 24,
+      "support_map_max_absolute_error": 0.0,
+      "full_map_max_absolute_error": 0.0,
+      "score_max_absolute_error": 5.551115123125783e-16,
+      "loaded_namespaces": {
+        "KernSmooth": "2.23-26",
+        "MASS": "7.3-65",
+        "Matrix": "1.7-3",
+        "R6": "2.6.1",
+        "RColorBrewer": "1.1-3",
+        "Rcpp": "1.1.2",
+        "S7": "0.2.2",
+        "assertthat": "0.2.1",
+        "backports": "1.5.1",
+        "base": "4.5.1",
+        "broom": "1.0.13",
+        "cli": "3.6.6",
+        "codetools": "0.2-20",
+        "compiler": "4.5.1",
+        "datasets": "4.5.1",
+        "digest": "0.6.39",
+        "dplyr": "1.2.1",
+        "eyesim": "0.1.0.9000",
+        "farver": "2.1.2",
+        "future": "1.75.0",
+        "generics": "0.1.4",
+        "ggplot2": "4.0.3",
+        "globals": "0.19.1",
+        "glue": "1.8.1",
+        "grDevices": "4.5.1",
+        "graphics": "4.5.1",
+        "grid": "4.5.1",
+        "gtable": "0.3.6",
+        "jsonlite": "2.0.0",
+        "ks": "1.15.1",
+        "lattice": "0.22-7",
+        "lifecycle": "1.0.5",
+        "listenv": "1.0.0",
+        "magrittr": "2.0.5",
+        "mclust": "6.1.2",
+        "methods": "4.5.1",
+        "mvtnorm": "1.3-6",
+        "parallel": "4.5.1",
+        "parallelly": "1.48.0",
+        "pillar": "1.11.1",
+        "pkgconfig": "2.0.3",
+        "pracma": "2.4.6",
+        "proxy": "0.4-29",
+        "purrr": "1.2.2",
+        "rlang": "1.3.0",
+        "scales": "1.4.0",
+        "stats": "4.5.1",
+        "tibble": "3.3.1",
+        "tidyr": "1.3.2",
+        "tidyselect": "1.2.1",
+        "tools": "4.5.1",
+        "utils": "4.5.1",
+        "vctrs": "0.7.3"
+      },
+      "scores": [
+        {
+          "query": "P1/A/matched",
+          "observed": 0.9985170069640829,
+          "baseline": 0.34905348280378296,
+          "difference": 0.6494635241603,
+          "controls": [
+            "P1/B/encode",
+            "P1/C/encode"
+          ]
+        },
+        {
+          "query": "P1/A/near-midpoint",
+          "observed": 0.7205507943972932,
+          "baseline": 0.7246733590912808,
+          "difference": -0.00412256469398764,
+          "controls": [
+            "P1/B/encode",
+            "P1/C/encode"
+          ]
+        },
+        {
+          "query": "P1/A/mismatch",
+          "observed": 0.028434265568381415,
+          "baseline": 0.6046208310328418,
+          "difference": -0.5761865654644603,
+          "controls": [
+            "P1/B/encode",
+            "P1/C/encode"
+          ]
+        },
+        {
+          "query": "P1/B/matched",
+          "observed": 0.9994165539356878,
+          "baseline": 0.11555050381431996,
+          "difference": 0.8838660501213679,
+          "controls": [
+            "P1/A/encode",
+            "P1/C/encode"
+          ]
+        },
+        {
+          "query": "P1/B/near-midpoint",
+          "observed": 0.7232299280999407,
+          "baseline": 0.7088447196126015,
+          "difference": 0.014385208487339152,
+          "controls": [
+            "P1/A/encode",
+            "P1/C/encode"
+          ]
+        },
+        {
+          "query": "P1/B/mismatch",
+          "observed": 0.20924166206568331,
+          "baseline": 0.8277112002653385,
+          "difference": -0.6184695381996552,
+          "controls": [
+            "P1/A/encode",
+            "P1/C/encode"
+          ]
+        },
+        {
+          "query": "P1/C/matched",
+          "observed": 0.9991714510474962,
+          "baseline": 0.4289480105776608,
+          "difference": 0.5702234404698354,
+          "controls": [
+            "P1/A/encode",
+            "P1/B/encode"
+          ]
+        },
+        {
+          "query": "P1/C/near-midpoint",
+          "observed": 0.6915723582304865,
+          "baseline": 0.6985946918286412,
+          "difference": -0.00702233359815474,
+          "controls": [
+            "P1/A/encode",
+            "P1/B/encode"
+          ]
+        },
+        {
+          "query": "P1/C/mismatch",
+          "observed": 0.655422400530677,
+          "baseline": 0.5142171327841907,
+          "difference": 0.14120526774648634,
+          "controls": [
+            "P1/A/encode",
+            "P1/B/encode"
+          ]
+        },
+        {
+          "query": "P2/A/matched",
+          "observed": 0.9985391412367407,
+          "baseline": 0.3470327124438476,
+          "difference": 0.6515064287928931,
+          "controls": [
+            "P2/B/encode",
+            "P2/C/encode"
+          ]
+        },
+        {
+          "query": "P2/A/near-midpoint",
+          "observed": 0.7208927954780733,
+          "baseline": 0.7249953924224752,
+          "difference": -0.004102596944401959,
+          "controls": [
+            "P2/B/encode",
+            "P2/C/encode"
+          ]
+        },
+        {
+          "query": "P2/A/mismatch",
+          "observed": 0.02751484300943147,
+          "baseline": 0.6054127800555107,
+          "difference": -0.5778979370460792,
+          "controls": [
+            "P2/B/encode",
+            "P2/C/encode"
+          ]
+        },
+        {
+          "query": "P2/B/matched",
+          "observed": 0.9993905224678263,
+          "baseline": 0.11699437433537302,
+          "difference": 0.8823961481324534,
+          "controls": [
+            "P2/A/encode",
+            "P2/C/encode"
+          ]
+        },
+        {
+          "query": "P2/B/near-midpoint",
+          "observed": 0.7227808849467159,
+          "baseline": 0.7088313231473115,
+          "difference": 0.01394956179940443,
+          "controls": [
+            "P2/A/encode",
+            "P2/C/encode"
+          ]
+        },
+        {
+          "query": "P2/B/mismatch",
+          "observed": 0.21082556011102146,
+          "baseline": 0.8261721470648016,
+          "difference": -0.6153465869537801,
+          "controls": [
+            "P2/A/encode",
+            "P2/C/encode"
+          ]
+        },
+        {
+          "query": "P2/C/matched",
+          "observed": 0.9991683644548209,
+          "baseline": 0.4285141938613953,
+          "difference": 0.5706541705934256,
+          "controls": [
+            "P2/A/encode",
+            "P2/B/encode"
+          ]
+        },
+        {
+          "query": "P2/C/near-midpoint",
+          "observed": 0.6927338504053849,
+          "baseline": 0.6995645556076746,
+          "difference": -0.0068307052022896775,
+          "controls": [
+            "P2/A/encode",
+            "P2/B/encode"
+          ]
+        },
+        {
+          "query": "P2/C/mismatch",
+          "observed": 0.6523442941296029,
+          "baseline": 0.5137574215047157,
+          "difference": 0.13858687262488723,
+          "controls": [
+            "P2/A/encode",
+            "P2/B/encode"
+          ]
+        }
+      ]
+    },
+    {
+      "nx": 128,
+      "ny": 96,
+      "sigma": 1.6,
+      "maps": 24,
+      "support_map_max_absolute_error": 0.0,
+      "full_map_max_absolute_error": 0.0,
+      "score_max_absolute_error": 4.440892098500626e-16,
+      "loaded_namespaces": {
+        "KernSmooth": "2.23-26",
+        "MASS": "7.3-65",
+        "Matrix": "1.7-3",
+        "R6": "2.6.1",
+        "RColorBrewer": "1.1-3",
+        "Rcpp": "1.1.2",
+        "S7": "0.2.2",
+        "assertthat": "0.2.1",
+        "backports": "1.5.1",
+        "base": "4.5.1",
+        "broom": "1.0.13",
+        "cli": "3.6.6",
+        "codetools": "0.2-20",
+        "compiler": "4.5.1",
+        "datasets": "4.5.1",
+        "digest": "0.6.39",
+        "dplyr": "1.2.1",
+        "eyesim": "0.1.0.9000",
+        "farver": "2.1.2",
+        "future": "1.75.0",
+        "generics": "0.1.4",
+        "ggplot2": "4.0.3",
+        "globals": "0.19.1",
+        "glue": "1.8.1",
+        "grDevices": "4.5.1",
+        "graphics": "4.5.1",
+        "grid": "4.5.1",
+        "gtable": "0.3.6",
+        "jsonlite": "2.0.0",
+        "ks": "1.15.1",
+        "lattice": "0.22-7",
+        "lifecycle": "1.0.5",
+        "listenv": "1.0.0",
+        "magrittr": "2.0.5",
+        "mclust": "6.1.2",
+        "methods": "4.5.1",
+        "mvtnorm": "1.3-6",
+        "parallel": "4.5.1",
+        "parallelly": "1.48.0",
+        "pillar": "1.11.1",
+        "pkgconfig": "2.0.3",
+        "pracma": "2.4.6",
+        "proxy": "0.4-29",
+        "purrr": "1.2.2",
+        "rlang": "1.3.0",
+        "scales": "1.4.0",
+        "stats": "4.5.1",
+        "tibble": "3.3.1",
+        "tidyr": "1.3.2",
+        "tidyselect": "1.2.1",
+        "tools": "4.5.1",
+        "utils": "4.5.1",
+        "vctrs": "0.7.3"
+      },
+      "scores": [
+        {
+          "query": "P1/A/matched",
+          "observed": 0.9997646527387618,
+          "baseline": 0.560333595669764,
+          "difference": 0.43943105706899777,
+          "controls": [
+            "P1/B/encode",
+            "P1/C/encode"
+          ]
+        },
+        {
+          "query": "P1/A/near-midpoint",
+          "observed": 0.8096460313948481,
+          "baseline": 0.853999403439055,
+          "difference": -0.04435337204420686,
+          "controls": [
+            "P1/B/encode",
+            "P1/C/encode"
+          ]
+        },
+        {
+          "query": "P1/A/mismatch",
+          "observed": 0.28403685639115395,
+          "baseline": 0.7915464004419458,
+          "difference": -0.5075095440507918,
+          "controls": [
+            "P1/B/encode",
+            "P1/C/encode"
+          ]
+        },
+        {
+          "query": "P1/B/matched",
+          "observed": 0.9999437050591466,
+          "baseline": 0.4275793813938892,
+          "difference": 0.5723643236652575,
+          "controls": [
+            "P1/A/encode",
+            "P1/C/encode"
+          ]
+        },
+        {
+          "query": "P1/B/near-midpoint",
+          "observed": 0.8244286610883608,
+          "baseline": 0.838374999151692,
+          "difference": -0.013946338063331232,
+          "controls": [
+            "P1/A/encode",
+            "P1/C/encode"
+          ]
+        },
+        {
+          "query": "P1/B/mismatch",
+          "observed": 0.5830928008838918,
+          "baseline": 0.9100803711835317,
+          "difference": -0.3269875702996399,
+          "controls": [
+            "P1/A/encode",
+            "P1/C/encode"
+          ]
+        },
+        {
+          "query": "P1/C/matched",
+          "observed": 0.9997857895219373,
+          "baseline": 0.7008089964858206,
+          "difference": 0.2989767930361167,
+          "controls": [
+            "P1/A/encode",
+            "P1/B/encode"
+          ]
+        },
+        {
+          "query": "P1/C/near-midpoint",
+          "observed": 0.9077053161944015,
+          "baseline": 0.7900285910791123,
+          "difference": 0.11767672511528926,
+          "controls": [
+            "P1/A/encode",
+            "P1/B/encode"
+          ]
+        },
+        {
+          "query": "P1/C/mismatch",
+          "observed": 0.8201607423670636,
+          "baseline": 0.6420184281955771,
+          "difference": 0.17814231417148652,
+          "controls": [
+            "P1/A/encode",
+            "P1/B/encode"
+          ]
+        },
+        {
+          "query": "P2/A/matched",
+          "observed": 0.9997636991314689,
+          "baseline": 0.55845822181894,
+          "difference": 0.4413054773125289,
+          "controls": [
+            "P2/B/encode",
+            "P2/C/encode"
+          ]
+        },
+        {
+          "query": "P2/A/near-midpoint",
+          "observed": 0.8089803598420214,
+          "baseline": 0.8553633086245018,
+          "difference": -0.04638294878248039,
+          "controls": [
+            "P2/B/encode",
+            "P2/C/encode"
+          ]
+        },
+        {
+          "query": "P2/A/mismatch",
+          "observed": 0.2834152573601884,
+          "baseline": 0.7951610488660374,
+          "difference": -0.511745791505849,
+          "controls": [
+            "P2/B/encode",
+            "P2/C/encode"
+          ]
+        },
+        {
+          "query": "P2/B/matched",
+          "observed": 0.9999548998459841,
+          "baseline": 0.4323134344507005,
+          "difference": 0.5676414653952836,
+          "controls": [
+            "P2/A/encode",
+            "P2/C/encode"
+          ]
+        },
+        {
+          "query": "P2/B/near-midpoint",
+          "observed": 0.8236824180497891,
+          "baseline": 0.8401781851374944,
+          "difference": -0.016495767087705282,
+          "controls": [
+            "P2/A/encode",
+            "P2/C/encode"
+          ]
+        },
+        {
+          "query": "P2/B/mismatch",
+          "observed": 0.5903220977320752,
+          "baseline": 0.9084122453938671,
+          "difference": -0.3180901476617919,
+          "controls": [
+            "P2/A/encode",
+            "P2/C/encode"
+          ]
+        },
+        {
+          "query": "P2/C/matched",
+          "observed": 0.9997858894379873,
+          "baseline": 0.7027579662567802,
+          "difference": 0.2970279231812071,
+          "controls": [
+            "P2/A/encode",
+            "P2/B/encode"
+          ]
+        },
+        {
+          "query": "P2/C/near-midpoint",
+          "observed": 0.9099690773560736,
+          "baseline": 0.7904253368494222,
+          "difference": 0.1195437405066514,
+          "controls": [
+            "P2/A/encode",
+            "P2/B/encode"
+          ]
+        },
+        {
+          "query": "P2/C/mismatch",
+          "observed": 0.8168244907877343,
+          "baseline": 0.6417076286800945,
+          "difference": 0.17511686210763988,
+          "controls": [
+            "P2/A/encode",
+            "P2/B/encode"
+          ]
+        }
+      ]
+    }
+  ]
+}

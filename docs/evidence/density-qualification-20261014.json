@@ -1,0 +1,74 @@
+{
+  "schema": 1,
+  "date": "2026-10-14",
+  "scope": "Focused scientific and portable implementation qualification; full landing gate recorded separately",
+  "r_reference_regeneration_byte_identical": true,
+  "native_full_contexts_per_runtime": 60,
+  "native_exact_jvm_js": true,
+  "map_checks": 1440,
+  "query_checks": 360,
+  "r_maps": 480,
+  "r_queries": 360,
+  "restored_tests_per_runtime": 4,
+  "root_jvm_js_werror": true,
+  "locked_r_json_transport_tests": 3,
+  "source_sha256": {
+    "tools/density-approximation/summarize.py": "c3786342f1efdecb164b6f4f057e4b87aee8a15be4f8cf89d033d46a17c93e5c",
+    "tools/density-approximation/generate_regression.py": "14c512e5eda05477023fa0f5680510a6dc8901001d0b9c926cca9e682f728745",
+    "tools/density-approximation/reference.py": "1e0950457cf0b8d1342d9f14bd32e8b159020c76e353fe3d64f05ca239710e6e",
+    "tools/density-approximation/generate_inputs.py": "14e6cd790b5237ce5da30a8c541f97f96e21e3fe4a14da2a99343e0febf8a090",
+    "tools/density-approximation/analyze.py": "f2ebbee661b19b3d1c17e984e9f0aa70908426c47ac15e23670dea3685df42bc",
+    "plan/src/test/scala/eyes4s/plan/DensityApproximationCourt.scala": "0c7c1d3cd21f5ace29e3793b387c4079bdfed99e79b09adba06d5990e44c1291",
+    "plan/src/test/scala/eyes4s/plan/DensityApproximationInputs.scala": "42ecc33909b6e1b9cd3c38f1493abf25c71533d48c4a5669790fca03e5becc1b",
+    "plan/src/test/scala/eyes4s/plan/DensityApproximationSuite.scala": "58293233c758c0d9cb452876fab40f4b2db6938651d0b729ebee2888557ab78e",
+    "plan/src/test/scala/eyes4s/plan/DensityApproximationReference.scala": "92e03023cd30fcebce287064cb51a42063d676d9482487625cd004e1f0138c95",
+    "tools/private-fixtures/shared_density.R": "76bc660cfec4324f54e349750810e723be84d41d4e32621fbe5ae8e9da4c66fd",
+    "tools/private-fixtures/evidence_json.R": "a686289e4dd2f8027eadcbf53424e79a29498e8a1a181dc6fad4a3c5f9320253",
+    "tools/private-fixtures/test_json_precision.py": "8d3369e62d5f928577fed22640adb108505140c0ee210c6ca598c9cc5c045b35",
+    "tools/private-fixtures/end_to_end.py": "6789449f36bebe50aff3a130f5387a9cf15f2bfcfd96663644e228660adfbefe",
+    "surface/src/main/scala/eyes4s/surface/Smoother.scala": "5e3dc8c960cab8fe9d39d638c9c123dfbe8bcb83bc79769e12df9d96ef91babb",
+    "surface/src/main/scala/eyes4s/surface/KernelMath.scala": "d8e82d5bedd3f3fdb038d05a465c8eaa9845b63152ab8ff2665fe3f835bbd4d1"
+  },
+  "logs_sha256": {
+    "eyes4s-density-native-full.log": "e2215dd2a4393904889d1fe0a62f9a4cd0c3ddeafcd0c9d7cc253198cb615afb",
+    "eyes4s-density-r-reference-attempt4.log": "279b0f6233bb627086c4da7310c662602b5c1a227080ffe61ad8aab06000b7e9",
+    "eyes4s-density-r-reference-check.log": "279b0f6233bb627086c4da7310c662602b5c1a227080ffe61ad8aab06000b7e9",
+    "eyes4s-density-regression.log": "d7bf1f2db8879ad7b9f30d06e4d945de343eea88d9aed8c72e70eb04df410b3f",
+    "eyes4s-density-restored-werror.log": "f04d93b83ca7abd7cf6c313ec62feaa73697882044d4db8fafec4550ae87c14b",
+    "eyes4s-density-json-precision-locked-attempt2.log": "62dc0a396162ab776f9e5e48a1a4b8bde55a9df940f926025023b5d66d9c4740",
+    "eyes4s-density-baseline-final-attempt2.log": "b5c5d7caa92640686029df3dafc061b238232c1ab6b46434e4b3b4524f1da009"
+  },
+  "support_mutation": {
+    "original_sha256": "5e3dc8c960cab8fe9d39d638c9c123dfbe8bcb83bc79769e12df9d96ef91babb",
+    "mutation": "kernel support ceil(3sigma) -> ceil(2sigma)",
+    "runs": [
+      {
+        "platform": "JVM",
+        "exit_code": 1,
+        "log_sha256": "73b44725fe4d605226e538958ffbe3fd4ae35c647dc8d6d2a8398a1d873e6904"
+      },
+      {
+        "platform": "JS",
+        "exit_code": 1,
+        "log_sha256": "172d7b3c9408cc7cc27882936a21c2b88f4572fb947ece7ea04f9a12e538ac60"
+      }
+    ],
+    "restored_sha256": "5e3dc8c960cab8fe9d39d638c9c123dfbe8bcb83bc79769e12df9d96ef91babb"
+  },
+  "rounding_mutation": {
+    "mutation": "replace fractional zapsmall decimal count with 7-floor(log10(max))",
+    "context": "n8-s0.2",
+    "actual_R_map_failures": 24,
+    "actual_R_map_sha256": "9d1afd27e78a53c0da1bd5e1ecf8f50d36d27d733b9789195dc96ed653240c20"
+  },
+  "historical_failures_preserved": [
+    "/private/tmp/eyes4s-density-r-reference-attempt2-20261014 (rounding convention mismatch)",
+    "/private/tmp/eyes4s-density-r-reference-attempt3-20261014 (last endpoint placement mismatch)"
+  ],
+  "r_environment": {
+    "platform": "Linux aarch64, Ubuntu24.04.3, R4.5.1, OpenBLAS0.3.26/LAPACK3.12.0",
+    "base_image": "rocker/r-ver@sha256:03b023fbf7b1b24ac1bb8b2ac5fd7e15a767e67b40ff50c155e328110981c2aa",
+    "derived_image": "eyes4s-density-r451:20261014 (adds libgsl-dev)",
+    "package_audit": "standard parity.r_session, baseline source archive and complete r-lock.json"
+  }
+}
