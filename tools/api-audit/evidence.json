@@ -3857,6 +3857,7 @@
           "ioJVM/eyes4s.io.LedgerReverificationSuite",
           "ioJVM/eyes4s.io.ManifestReverificationSuite",
           "ioJVM/eyes4s.io.PsychologyWorkflowSuite",
+          "ioJVM/eyes4s.io.PublicAscEndToEndSuite",
           "ioJVM/eyes4s.io.RepetitionGuideSuite",
           "ioJVM/eyes4s.io.SourceAdmissionSuite",
           "ioJVM/eyes4s.io.StampedStudyExecutionSuite",
@@ -6745,6 +6746,7 @@
           "detectJVM/eyes4s.detect.DetectSuite",
           "detectJVM/eyes4s.detect.DetectorConformanceSuite",
           "ioJVM/eyes4s.io.FreshProcessReconstructionJvmSuite",
+          "ioJVM/eyes4s.io.PublicAscEndToEndSuite",
           "lawsJVM/eyes4s.laws.DetectorMetamorphicLawsSuite",
           "lawsJVM/eyes4s.laws.RecordingResultCodecLawSuite",
           "lawsJVM/eyes4s.laws.TrustRegressionSuite"
@@ -6808,6 +6810,7 @@
         "owner": "eyes4s/io/EyeLinkAscBlocks$$anon$6",
         "suites": [
           "ioJVM/docconsumer.DocumentationExamplesSuite",
+          "ioJVM/eyes4s.io.AscCrWarningsSuite",
           "ioJVM/eyes4s.io.EyeLinkAscBlocksSuite",
           "ioJVM/eyes4s.io.EyeLinkAscCorruptionSuite",
           "ioJVM/eyes4s.io.EyeLinkAscImportSuite",
@@ -6820,7 +6823,8 @@
           "ioJVM/eyes4s.io.EyeLinkAscStreamingJvmSuite",
           "ioJVM/eyes4s.io.EyeLinkConformanceSuite",
           "ioJVM/eyes4s.io.EyeLinkCorpusJvmSuite",
-          "ioJVM/eyes4s.io.EyeLinkOracleJvmSuite"
+          "ioJVM/eyes4s.io.EyeLinkOracleJvmSuite",
+          "ioJVM/eyes4s.io.PublicAscEndToEndSuite"
         ]
       },
       {
@@ -6828,6 +6832,7 @@
         "owner": "eyes4s/io/EyeLinkAscFraming$$anon$1",
         "suites": [
           "ioJVM/docconsumer.DocumentationExamplesSuite",
+          "ioJVM/eyes4s.io.AscCrWarningsSuite",
           "ioJVM/eyes4s.io.EyeLinkAscCorruptionSuite",
           "ioJVM/eyes4s.io.EyeLinkAscImportSuite",
           "ioJVM/eyes4s.io.EyeLinkAscMutationSuite",
@@ -6836,14 +6841,16 @@
           "ioJVM/eyes4s.io.EyeLinkAscStreamingJvmSuite",
           "ioJVM/eyes4s.io.EyeLinkAscStreamingSuite",
           "ioJVM/eyes4s.io.EyeLinkConformanceSuite",
-          "ioJVM/eyes4s.io.EyeLinkOracleJvmSuite"
+          "ioJVM/eyes4s.io.EyeLinkOracleJvmSuite",
+          "ioJVM/eyes4s.io.PublicAscEndToEndSuite"
         ]
       },
       {
         "descriptor": "(Ljava/lang/Object;)Lscala/collection/immutable/Vector;",
-        "owner": "eyes4s/io/EyeLinkAscNative$$anon$7",
+        "owner": "eyes4s/io/EyeLinkAscNative$$anon$8",
         "suites": [
           "ioJVM/docconsumer.DocumentationExamplesSuite",
+          "ioJVM/eyes4s.io.AscCrWarningsSuite",
           "ioJVM/eyes4s.io.EyeLinkAscCorruptionSuite",
           "ioJVM/eyes4s.io.EyeLinkAscImportSuite",
           "ioJVM/eyes4s.io.EyeLinkAscMutationSuite",
@@ -6853,7 +6860,8 @@
           "ioJVM/eyes4s.io.EyeLinkAscSessionSuite",
           "ioJVM/eyes4s.io.EyeLinkAscStreamingJvmSuite",
           "ioJVM/eyes4s.io.EyeLinkConformanceSuite",
-          "ioJVM/eyes4s.io.EyeLinkOracleJvmSuite"
+          "ioJVM/eyes4s.io.EyeLinkOracleJvmSuite",
+          "ioJVM/eyes4s.io.PublicAscEndToEndSuite"
         ]
       },
       {
@@ -6861,6 +6869,7 @@
         "owner": "eyes4s/io/EyeLinkAscSamples$$anon$11",
         "suites": [
           "ioJVM/docconsumer.DocumentationExamplesSuite",
+          "ioJVM/eyes4s.io.AscCrWarningsSuite",
           "ioJVM/eyes4s.io.EyeLinkAscCorruptionSuite",
           "ioJVM/eyes4s.io.EyeLinkAscImportSuite",
           "ioJVM/eyes4s.io.EyeLinkAscMutationSuite",
@@ -6870,7 +6879,8 @@
           "ioJVM/eyes4s.io.EyeLinkAscStreamingJvmSuite",
           "ioJVM/eyes4s.io.EyeLinkConformanceSuite",
           "ioJVM/eyes4s.io.EyeLinkCorpusJvmSuite",
-          "ioJVM/eyes4s.io.EyeLinkOracleJvmSuite"
+          "ioJVM/eyes4s.io.EyeLinkOracleJvmSuite",
+          "ioJVM/eyes4s.io.PublicAscEndToEndSuite"
         ]
       },
       {
@@ -6906,6 +6916,7 @@
         "suites": [
           "detectJVM/eyes4s.detect.DetectSuite",
           "fs2ModuleJVM/eyes4s.fs2.StreamingSuite",
+          "ioJVM/eyes4s.io.AscCrWarningsSuite",
           "ioJVM/eyes4s.io.EyeLinkAscMutationSuite",
           "ioJVM/eyes4s.io.EyeLinkAscNativeSuite",
           "ioJVM/eyes4s.io.EyeLinkAscNativeTimelineSuite",
@@ -6965,6 +6976,7 @@
           "detectJVM/eyes4s.detect.DetectSuite",
           "detectJVM/eyes4s.detect.DetectorConformanceSuite",
           "ioJVM/eyes4s.io.FreshProcessReconstructionJvmSuite",
+          "ioJVM/eyes4s.io.PublicAscEndToEndSuite",
           "lawsJVM/eyes4s.laws.DetectorMetamorphicLawsSuite",
           "lawsJVM/eyes4s.laws.RecordingResultCodecLawSuite",
           "lawsJVM/eyes4s.laws.TrustRegressionSuite"
@@ -7028,6 +7040,7 @@
         "owner": "eyes4s/io/EyeLinkAscBlocks$$anon$6",
         "suites": [
           "ioJVM/docconsumer.DocumentationExamplesSuite",
+          "ioJVM/eyes4s.io.AscCrWarningsSuite",
           "ioJVM/eyes4s.io.EyeLinkAscBlocksSuite",
           "ioJVM/eyes4s.io.EyeLinkAscCorruptionSuite",
           "ioJVM/eyes4s.io.EyeLinkAscImportSuite",
@@ -7040,7 +7053,8 @@
           "ioJVM/eyes4s.io.EyeLinkAscStreamingJvmSuite",
           "ioJVM/eyes4s.io.EyeLinkConformanceSuite",
           "ioJVM/eyes4s.io.EyeLinkCorpusJvmSuite",
-          "ioJVM/eyes4s.io.EyeLinkOracleJvmSuite"
+          "ioJVM/eyes4s.io.EyeLinkOracleJvmSuite",
+          "ioJVM/eyes4s.io.PublicAscEndToEndSuite"
         ]
       },
       {
@@ -7048,6 +7062,7 @@
         "owner": "eyes4s/io/EyeLinkAscFraming$$anon$1",
         "suites": [
           "ioJVM/docconsumer.DocumentationExamplesSuite",
+          "ioJVM/eyes4s.io.AscCrWarningsSuite",
           "ioJVM/eyes4s.io.EyeLinkAscCorruptionSuite",
           "ioJVM/eyes4s.io.EyeLinkAscImportSuite",
           "ioJVM/eyes4s.io.EyeLinkAscMutationSuite",
@@ -7056,14 +7071,16 @@
           "ioJVM/eyes4s.io.EyeLinkAscStreamingJvmSuite",
           "ioJVM/eyes4s.io.EyeLinkAscStreamingSuite",
           "ioJVM/eyes4s.io.EyeLinkConformanceSuite",
-          "ioJVM/eyes4s.io.EyeLinkOracleJvmSuite"
+          "ioJVM/eyes4s.io.EyeLinkOracleJvmSuite",
+          "ioJVM/eyes4s.io.PublicAscEndToEndSuite"
         ]
       },
       {
         "descriptor": "()Ljava/lang/Object;",
-        "owner": "eyes4s/io/EyeLinkAscNative$$anon$7",
+        "owner": "eyes4s/io/EyeLinkAscNative$$anon$8",
         "suites": [
           "ioJVM/docconsumer.DocumentationExamplesSuite",
+          "ioJVM/eyes4s.io.AscCrWarningsSuite",
           "ioJVM/eyes4s.io.EyeLinkAscCorruptionSuite",
           "ioJVM/eyes4s.io.EyeLinkAscImportSuite",
           "ioJVM/eyes4s.io.EyeLinkAscMutationSuite",
@@ -7073,7 +7090,8 @@
           "ioJVM/eyes4s.io.EyeLinkAscSessionSuite",
           "ioJVM/eyes4s.io.EyeLinkAscStreamingJvmSuite",
           "ioJVM/eyes4s.io.EyeLinkConformanceSuite",
-          "ioJVM/eyes4s.io.EyeLinkOracleJvmSuite"
+          "ioJVM/eyes4s.io.EyeLinkOracleJvmSuite",
+          "ioJVM/eyes4s.io.PublicAscEndToEndSuite"
         ]
       },
       {
@@ -7081,6 +7099,7 @@
         "owner": "eyes4s/io/EyeLinkAscSamples$$anon$11",
         "suites": [
           "ioJVM/docconsumer.DocumentationExamplesSuite",
+          "ioJVM/eyes4s.io.AscCrWarningsSuite",
           "ioJVM/eyes4s.io.EyeLinkAscCorruptionSuite",
           "ioJVM/eyes4s.io.EyeLinkAscImportSuite",
           "ioJVM/eyes4s.io.EyeLinkAscMutationSuite",
@@ -7090,7 +7109,8 @@
           "ioJVM/eyes4s.io.EyeLinkAscStreamingJvmSuite",
           "ioJVM/eyes4s.io.EyeLinkConformanceSuite",
           "ioJVM/eyes4s.io.EyeLinkCorpusJvmSuite",
-          "ioJVM/eyes4s.io.EyeLinkOracleJvmSuite"
+          "ioJVM/eyes4s.io.EyeLinkOracleJvmSuite",
+          "ioJVM/eyes4s.io.PublicAscEndToEndSuite"
         ]
       },
       {
@@ -7126,6 +7146,7 @@
         "suites": [
           "detectJVM/eyes4s.detect.DetectSuite",
           "fs2ModuleJVM/eyes4s.fs2.StreamingSuite",
+          "ioJVM/eyes4s.io.AscCrWarningsSuite",
           "ioJVM/eyes4s.io.EyeLinkAscMutationSuite",
           "ioJVM/eyes4s.io.EyeLinkAscNativeSuite",
           "ioJVM/eyes4s.io.EyeLinkAscNativeTimelineSuite",
@@ -7185,6 +7206,7 @@
           "detectJVM/eyes4s.detect.DetectSuite",
           "detectJVM/eyes4s.detect.DetectorConformanceSuite",
           "ioJVM/eyes4s.io.FreshProcessReconstructionJvmSuite",
+          "ioJVM/eyes4s.io.PublicAscEndToEndSuite",
           "lawsJVM/eyes4s.laws.DetectorMetamorphicLawsSuite",
           "lawsJVM/eyes4s.laws.RecordingResultCodecLawSuite",
           "lawsJVM/eyes4s.laws.TrustRegressionSuite"
@@ -7248,6 +7270,7 @@
         "owner": "eyes4s/io/EyeLinkAscBlocks$$anon$6",
         "suites": [
           "ioJVM/docconsumer.DocumentationExamplesSuite",
+          "ioJVM/eyes4s.io.AscCrWarningsSuite",
           "ioJVM/eyes4s.io.EyeLinkAscBlocksSuite",
           "ioJVM/eyes4s.io.EyeLinkAscCorruptionSuite",
           "ioJVM/eyes4s.io.EyeLinkAscImportSuite",
@@ -7260,7 +7283,8 @@
           "ioJVM/eyes4s.io.EyeLinkAscStreamingJvmSuite",
           "ioJVM/eyes4s.io.EyeLinkConformanceSuite",
           "ioJVM/eyes4s.io.EyeLinkCorpusJvmSuite",
-          "ioJVM/eyes4s.io.EyeLinkOracleJvmSuite"
+          "ioJVM/eyes4s.io.EyeLinkOracleJvmSuite",
+          "ioJVM/eyes4s.io.PublicAscEndToEndSuite"
         ]
       },
       {
@@ -7268,6 +7292,7 @@
         "owner": "eyes4s/io/EyeLinkAscFraming$$anon$1",
         "suites": [
           "ioJVM/docconsumer.DocumentationExamplesSuite",
+          "ioJVM/eyes4s.io.AscCrWarningsSuite",
           "ioJVM/eyes4s.io.EyeLinkAscCorruptionSuite",
           "ioJVM/eyes4s.io.EyeLinkAscImportSuite",
           "ioJVM/eyes4s.io.EyeLinkAscMutationSuite",
@@ -7276,14 +7301,16 @@
           "ioJVM/eyes4s.io.EyeLinkAscStreamingJvmSuite",
           "ioJVM/eyes4s.io.EyeLinkAscStreamingSuite",
           "ioJVM/eyes4s.io.EyeLinkConformanceSuite",
-          "ioJVM/eyes4s.io.EyeLinkOracleJvmSuite"
+          "ioJVM/eyes4s.io.EyeLinkOracleJvmSuite",
+          "ioJVM/eyes4s.io.PublicAscEndToEndSuite"
         ]
       },
       {
         "descriptor": "(Ljava/lang/Object;Ljava/lang/Object;)Lscala/Tuple2;",
-        "owner": "eyes4s/io/EyeLinkAscNative$$anon$7",
+        "owner": "eyes4s/io/EyeLinkAscNative$$anon$8",
         "suites": [
           "ioJVM/docconsumer.DocumentationExamplesSuite",
+          "ioJVM/eyes4s.io.AscCrWarningsSuite",
           "ioJVM/eyes4s.io.EyeLinkAscCorruptionSuite",
           "ioJVM/eyes4s.io.EyeLinkAscImportSuite",
           "ioJVM/eyes4s.io.EyeLinkAscMutationSuite",
@@ -7293,7 +7320,8 @@
           "ioJVM/eyes4s.io.EyeLinkAscSessionSuite",
           "ioJVM/eyes4s.io.EyeLinkAscStreamingJvmSuite",
           "ioJVM/eyes4s.io.EyeLinkConformanceSuite",
-          "ioJVM/eyes4s.io.EyeLinkOracleJvmSuite"
+          "ioJVM/eyes4s.io.EyeLinkOracleJvmSuite",
+          "ioJVM/eyes4s.io.PublicAscEndToEndSuite"
         ]
       },
       {
@@ -7301,6 +7329,7 @@
         "owner": "eyes4s/io/EyeLinkAscSamples$$anon$11",
         "suites": [
           "ioJVM/docconsumer.DocumentationExamplesSuite",
+          "ioJVM/eyes4s.io.AscCrWarningsSuite",
           "ioJVM/eyes4s.io.EyeLinkAscCorruptionSuite",
           "ioJVM/eyes4s.io.EyeLinkAscImportSuite",
           "ioJVM/eyes4s.io.EyeLinkAscMutationSuite",
@@ -7310,7 +7339,8 @@
           "ioJVM/eyes4s.io.EyeLinkAscStreamingJvmSuite",
           "ioJVM/eyes4s.io.EyeLinkConformanceSuite",
           "ioJVM/eyes4s.io.EyeLinkCorpusJvmSuite",
-          "ioJVM/eyes4s.io.EyeLinkOracleJvmSuite"
+          "ioJVM/eyes4s.io.EyeLinkOracleJvmSuite",
+          "ioJVM/eyes4s.io.PublicAscEndToEndSuite"
         ]
       },
       {
@@ -7346,6 +7376,7 @@
         "suites": [
           "detectJVM/eyes4s.detect.DetectSuite",
           "fs2ModuleJVM/eyes4s.fs2.StreamingSuite",
+          "ioJVM/eyes4s.io.AscCrWarningsSuite",
           "ioJVM/eyes4s.io.EyeLinkAscMutationSuite",
           "ioJVM/eyes4s.io.EyeLinkAscNativeSuite",
           "ioJVM/eyes4s.io.EyeLinkAscNativeTimelineSuite",
@@ -9132,6 +9163,7 @@
           "ioJVM/eyes4s.io.DiagnosticCoverageJvmSuite",
           "ioJVM/eyes4s.io.DiagnosticsDocJvmSuite",
           "ioJVM/eyes4s.io.IoDiagnosticCatalogSuite",
+          "lawsJVM/eyes4s.laws.FormLawSuite",
           "planJVM/eyes4s.plan.DiagnosticCatalogSuite",
           "planJVM/eyes4s.plan.FormDescriptorSuite",
           "planJVM/eyes4s.plan.UnmatchedReasonsSuite",
@@ -11660,6 +11692,7 @@
           "fs2ModuleJVM/eyes4s.fs2.RecordingExecutionSuite",
           "fs2ModuleJVM/eyes4s.fs2.StreamingSuite",
           "ioJVM/docconsumer.DocumentationExamplesSuite",
+          "ioJVM/eyes4s.io.AscCrWarningsSuite",
           "ioJVM/eyes4s.io.EyeLinkAscBlocksSuite",
           "ioJVM/eyes4s.io.EyeLinkAscCorruptionSuite",
           "ioJVM/eyes4s.io.EyeLinkAscImportSuite",
@@ -11677,6 +11710,7 @@
           "ioJVM/eyes4s.io.FamilyConformanceSuite",
           "ioJVM/eyes4s.io.FreshProcessReconstructionJvmSuite",
           "ioJVM/eyes4s.io.PsychologyWorkflowSuite",
+          "ioJVM/eyes4s.io.PublicAscEndToEndSuite",
           "ioJVM/eyes4s.io.TidyResultSuite",
           "kernelJVM/eyes4s.kernel.MachineCursorSuite",
           "kernelJVM/eyes4s.kernel.MachineSuite",
@@ -12706,6 +12740,11 @@
       "instance": "eyes4s/io/AscCoordinateMode$$anon$2",
       "suite": "ioJVM/docconsumer.DocumentationExamplesSuite"
     },
+    "class eyes4s.io.AscCrWarningEvidence": {
+      "classification": "data-sum",
+      "instance": "eyes4s/io/AscCrWarningEvidence$$anon$1",
+      "suite": "ioJVM/docconsumer.DocumentationExamplesSuite"
+    },
     "class eyes4s.io.AscDiagnosticSeverity": {
       "classification": "data-sum",
       "instance": "eyes4s/io/AscDiagnosticSeverity$$anon$10",
@@ -12758,8 +12797,8 @@
     },
     "class eyes4s.io.AscMessageCategory": {
       "classification": "data-sum",
-      "instance": "eyes4s/io/AscMessageCategory$$anon$5",
-      "suite": "ioJVM/eyes4s.io.EyeLinkAscImportSuite"
+      "instance": "eyes4s/io/AscMessageCategory$$anon$6",
+      "suite": "ioJVM/eyes4s.io.PublicAscEndToEndSuite"
     },
     "class eyes4s.io.AscNativeDiagnostic": {
       "classification": "data-sum",
@@ -12773,37 +12812,42 @@
     },
     "class eyes4s.io.AscNativeEventBody": {
       "classification": "data-sum",
-      "instance": "eyes4s/io/AscNativeEventBody$$anon$4",
-      "suite": "ioJVM/eyes4s.io.EyeLinkAscNativeTimelineSuite"
+      "instance": "eyes4s/io/AscNativeEventBody$$anon$5",
+      "suite": "ioJVM/eyes4s.io.PublicAscEndToEndSuite"
     },
     "class eyes4s.io.AscNativeEventKind": {
       "classification": "data-sum",
       "instance": "eyes4s/io/AscNativeEventKind$$anon$5",
-      "suite": "ioJVM/eyes4s.io.EyeLinkCorpusJvmSuite"
+      "suite": "ioJVM/eyes4s.io.PublicAscEndToEndSuite"
     },
     "class eyes4s.io.AscNativeEventPhase": {
       "classification": "data-sum",
       "instance": "eyes4s/io/AscNativeEventPhase$$anon$3",
-      "suite": "ioJVM/eyes4s.io.EyeLinkAscNativeTimelineSuite"
+      "suite": "ioJVM/eyes4s.io.PublicAscEndToEndSuite"
     },
     "class eyes4s.io.AscNativeEventProducer": {
       "classification": "data-sum",
       "instance": "eyes4s/io/AscNativeEventProducer$$anon$1",
-      "suite": "ioJVM/eyes4s.io.EyeLinkAscNativeTimelineSuite"
+      "suite": "ioJVM/eyes4s.io.PublicAscEndToEndSuite"
     },
     "class eyes4s.io.AscNativeEventType": {
       "classification": "data-sum",
       "instance": "eyes4s/io/AscNativeEventType$$anon$2",
-      "suite": "ioJVM/eyes4s.io.EyeLinkAscNativeTimelineSuite"
+      "suite": "ioJVM/eyes4s.io.PublicAscEndToEndSuite"
     },
     "class eyes4s.io.AscNativeInteger": {
       "classification": "data-sum",
       "instance": "eyes4s/io/AscNativeInteger$Value",
       "suite": "ioJVM/eyes4s.io.EyeLinkCorpusJvmSuite"
     },
+    "class eyes4s.io.AscNativeIntervalConvention": {
+      "classification": "data-sum",
+      "instance": "eyes4s/io/AscNativeIntervalConvention$InclusiveFinalSample",
+      "suite": "ioJVM/eyes4s.io.PublicAscEndToEndSuite"
+    },
     "class eyes4s.io.AscNativeMetadataKind": {
       "classification": "data-sum",
-      "instance": "eyes4s/io/AscNativeMetadataKind$$anon$6",
+      "instance": "eyes4s/io/AscNativeMetadataKind$$anon$7",
       "suite": "ioJVM/eyes4s.io.EyeLinkAscCorruptionSuite"
     },
     "class eyes4s.io.AscNativePair": {
@@ -12814,12 +12858,17 @@
     "class eyes4s.io.AscNativePairingDiagnostic": {
       "classification": "data-sum",
       "instance": "eyes4s/io/AscNativePairingDiagnostic$DuplicateStart",
-      "suite": "ioJVM/eyes4s.io.EyeLinkAscNativeTimelineSuite"
+      "suite": "ioJVM/eyes4s.io.PublicAscEndToEndSuite"
+    },
+    "class eyes4s.io.AscNativePairingPolicy": {
+      "classification": "data-sum",
+      "instance": "eyes4s/io/AscNativePairingPolicy$$anon$2",
+      "suite": "ioJVM/docconsumer.DocumentationExamplesSuite"
     },
     "class eyes4s.io.AscNativeScalar": {
       "classification": "data-sum",
       "instance": "eyes4s/io/AscNativeScalar$Value",
-      "suite": "ioJVM/eyes4s.io.EyeLinkCorpusJvmSuite"
+      "suite": "ioJVM/eyes4s.io.PublicAscEndToEndSuite"
     },
     "class eyes4s.io.AscNativeTimelineError": {
       "classification": "data-sum",
@@ -12833,8 +12882,8 @@
     },
     "class eyes4s.io.AscParsedNativeRecord": {
       "classification": "data-sum",
-      "instance": "eyes4s/io/AscParsedNativeRecord$Message",
-      "suite": "ioJVM/eyes4s.io.EyeLinkAscImportSuite"
+      "instance": "eyes4s/io/AscParsedNativeRecord$Event",
+      "suite": "ioJVM/eyes4s.io.PublicAscEndToEndSuite"
     },
     "class eyes4s.io.AscPixelPosition": {
       "classification": "data-sum",
@@ -12958,7 +13007,7 @@
     },
     "class eyes4s.io.EyeLinkAscDiagnosticSeverity": {
       "classification": "data-sum",
-      "instance": "eyes4s/io/EyeLinkAscDiagnosticSeverity$$anon$2",
+      "instance": "eyes4s/io/EyeLinkAscDiagnosticSeverity$$anon$3",
       "suite": "ioJVM/docconsumer.DocumentationExamplesSuite"
     },
     "class eyes4s.io.EyeLinkAscOrigin": {
@@ -15469,7 +15518,7 @@
     "method eyes4s.io.AscBlockOutcome.message():": "ioJVM/eyes4s.io.EyeLinkAscCorruptionSuite",
     "method eyes4s.io.AscBlockRequirement.message():": "ioJVM/eyes4s.io.EyeLinkAscBlocksSuite",
     "method eyes4s.io.AscDataLayout.isRemote():": "ioJVM/eyes4s.io.EyeLinkAscBlocksSuite",
-    "method eyes4s.io.AscFields.remainderAfter(scala.Int):scala.Option": "ioJVM/eyes4s.io.EyeLinkAscImportSuite",
+    "method eyes4s.io.AscFields.remainderAfter(scala.Int):scala.Option": "ioJVM/eyes4s.io.PublicAscEndToEndSuite",
     "method eyes4s.io.AscFields.size():": "ioJVM/docconsumer.DocumentationExamplesSuite",
     "method eyes4s.io.AscFields.token(scala.Int):scala.Option": "ioJVM/docconsumer.DocumentationExamplesSuite",
     "method eyes4s.io.AscFramingDiagnostic.message():": "ioJVM/consumer.PublicIoSuite",
@@ -15483,10 +15532,11 @@
     "method eyes4s.io.AscNativeDiagnostic.severity():": "ioJVM/consumer.PublicIoSuite",
     "method eyes4s.io.AscNativeEventLedger$.reconcile(scala.collection.immutable.Vector):eyes4s.io.AscNativeEventLedger": "ioJVM/docconsumer.DocumentationExamplesSuite",
     "method eyes4s.io.AscNativeEyeSample.pixelPosition(eyes4s.kernel.Frame):scala.util.Either": "ioJVM/docconsumer.DocumentationExamplesSuite",
+    "method eyes4s.io.AscNativeInterval.halfOpenOffset():": "ioJVM/eyes4s.io.PublicAscEndToEndSuite",
     "method eyes4s.io.AscNativePairingDiagnostic.message():": "ioJVM/eyes4s.io.EyeLinkAscNativeTimelineSuite",
     "method eyes4s.io.AscNativeParseResult.hasErrors():": "ioJVM/eyes4s.io.EyeLinkAscNativeSuite",
     "method eyes4s.io.AscNativeTimelineError.message():": "ioJVM/eyes4s.io.DiagnosticsDocJvmSuite",
-    "method eyes4s.io.AscPayload.ascii():": "ioJVM/eyes4s.io.EyeLinkAscImportSuite",
+    "method eyes4s.io.AscPayload.ascii():": "ioJVM/eyes4s.io.PublicAscEndToEndSuite",
     "method eyes4s.io.AscPositiveDecimal.toString():": "ioJVM/eyes4s.io.EyeLinkAscBlocksSuite",
     "method eyes4s.io.AscReadChunkSize$.of(scala.Int):scala.util.Either": "ioJVM/docconsumer.DocumentationExamplesSuite",
     "method eyes4s.io.AscSampleDiagnostic.message():": "ioJVM/eyes4s.io.EyeLinkAscCorruptionSuite",
@@ -15545,14 +15595,14 @@
     "method eyes4s.io.EyeLinkAscImportReport.sampleMaterializationReconcile():": "ioJVM/docconsumer.DocumentationExamplesSuite",
     "method eyes4s.io.EyeLinkAscImportReport.sampleParsingReconcile():": "ioJVM/docconsumer.DocumentationExamplesSuite",
     "method eyes4s.io.EyeLinkAscLexer$.parse(eyes4s.io.AscSourceLine,eyes4s.io.AscEncodingPolicy):eyes4s.io.AscLineResult": "ioJVM/docconsumer.DocumentationExamplesSuite",
-    "method eyes4s.io.EyeLinkAscNative$.parse(eyes4s.io.AscBlockLine):eyes4s.io.AscNativeParseResult": "ioJVM/eyes4s.io.EyeLinkAscImportSuite",
+    "method eyes4s.io.EyeLinkAscNative$.parse(eyes4s.io.AscBlockLine):eyes4s.io.AscNativeParseResult": "ioJVM/eyes4s.io.PublicAscEndToEndSuite",
     "method eyes4s.io.EyeLinkAscNativeTimeline$.observedMessages(eyes4s.kernel.ClockId,scala.collection.immutable.Vector):scala.util.Either": "ioJVM/docconsumer.DocumentationExamplesSuite",
     "method eyes4s.io.EyeLinkAscNativeTimeline$.reconcileBlinkSamples(1,scala.Long,eyes4s.io.AscRecordedEye,eyes4s.core.Sample[],eyes4s.io.AscNativeEventLedger,eyes4s.io.AscBlinkReconciliationPolicy):scala.util.Either": "ioJVM/docconsumer.DocumentationExamplesSuite",
     "method eyes4s.io.EyeLinkAscOrigin.ascDigest():": "ioJVM/docconsumer.DocumentationExamplesSuite",
     "method eyes4s.io.EyeLinkAscOrigin.assess(eyes4s.io.ConversionEvidencePolicy):scala.util.Either": "ioJVM/docconsumer.DocumentationExamplesSuite",
     "method eyes4s.io.EyeLinkAscSamples$.expectedFieldCount(eyes4s.io.AscDataLayout):scala.Int": "ioJVM/docconsumer.DocumentationExamplesSuite",
     "method eyes4s.io.EyeLinkAscSamples$.parse(eyes4s.io.AscBlockLine):eyes4s.io.AscSampleParseResult": "ioJVM/docconsumer.DocumentationExamplesSuite",
-    "method eyes4s.io.EyeLinkAscSessionConfig$.of(eyes4s.kernel.Frame,eyes4s.kernel.ClockId,eyes4s.io.ConversionEvidencePolicy,eyes4s.io.AscBlinkReconciliationPolicy,eyes4s.io.AscUnspecifiedPupilPolicy,scala.Long):scala.util.Either": "ioJVM/docconsumer.DocumentationExamplesSuite",
+    "method eyes4s.io.EyeLinkAscSessionConfig$.of(eyes4s.kernel.Frame,eyes4s.kernel.ClockId,eyes4s.io.ConversionEvidencePolicy,eyes4s.io.AscBlinkReconciliationPolicy,eyes4s.io.AscUnspecifiedPupilPolicy,scala.Long,eyes4s.io.AscNativePairingPolicy):scala.util.Either": "ioJVM/docconsumer.DocumentationExamplesSuite",
     "method eyes4s.io.EyeLinkAscSessionConfigError.message():": "ioJVM/consumer.PublicIoSuite",
     "method eyes4s.io.EyeLinkAscSessionDiagnostic.message():": "ioJVM/docconsumer.DocumentationExamplesSuite",
     "method eyes4s.io.EyeLinkAscSessionDiagnostic.severity():": "ioJVM/docconsumer.DocumentationExamplesSuite",
@@ -19427,6 +19477,13 @@
       "an in-memory effectful source resolves the saved graph",
       "cancelling during a read runs the source's finalizers and decodes nothing"
     ],
+    "ioJS/eyes4s.io.AscCrWarningsSuite": [
+      "absent exports and undeclared tracking stay distinct; dots do not infer blink",
+      "binocular warnings keep each eye separate and follow all optional numeric columns",
+      "malformed warning lengths and positions retain source operands as failures",
+      "monocular left and right warning tokens retain every warning combination",
+      "native interpolation reaches recording lineage without manufacturing a blink"
+    ],
     "ioJS/eyes4s.io.BaselineExportsSuite": [
       "CSV validity preserves missing versus empty text, quoting and negative zero without sentinels",
       "JSON columns are canonical values and malformed JSON is refused",
@@ -19530,6 +19587,7 @@
       "GAZE start and end records preserve EyeLink identity and exact summaries",
       "HREF end records preserve both HREF and GAZE summaries plus resolution",
       "MSG signed integration offsets are explicit and numeric-leading payloads stay payload",
+      "inclusive final sample durations require the exact declared event period",
       "invalid event widths, eyes, intervals, pairs, and offsets are named and not dropped",
       "message categories are typed without changing their payload",
       "message payload bytes and trailing whitespace remain byte exact",
@@ -19539,6 +19597,7 @@
     ],
     "ioJS/eyes4s.io.EyeLinkAscNativeTimelineSuite": [
       "duplicate starts and orphan ends remain named evidence",
+      "inclusive terminal sample remains inside a confirmed native blink",
       "messages become observed marks at effective time with stable simultaneous order",
       "missing samples without confirmed blink events remain signal loss",
       "native starts and ends reconcile only when block, type, eye, and onset agree",
@@ -19598,6 +19657,7 @@
       "mixed valid and invalid blocks retain a lossless partition and refuse trusted assembly",
       "multiple mono and binocular blocks retain native evidence and exact source support",
       "off-surface pupil loss is explicit while its native value remains recoverable",
+      "preserving unconfirmed native pairs is explicit and never confirms the abandoned start",
       "undeclared measured pupil values require an explicit caller policy"
     ],
     "ioJS/eyes4s.io.EyeLinkAscStreamingSuite": [
@@ -19846,6 +19906,9 @@
       "recording registry rejects unavailable methods, incompatible schemas and invalid parameters",
       "the real recording saves and reloads all scientific choices through the pure plan",
       "the tidy stage refuses an analysis that ran on another recording, naming both"
+    ],
+    "ioJS/eyes4s.io.PublicAscEndToEndSuite": [
+      "public ASC reconciles every source row and reaches source-supported pixel Scanpaths"
     ],
     "ioJS/eyes4s.io.RepetitionGuideSuite": [
       "bad input stays inspectable and blocks a saved analysis without dropping a trial",
@@ -21896,6 +21959,12 @@
       "native 5 by 3 Gaussian agrees with a direct two-dimensional discrete-kernel oracle",
       "type-7 IQR suggestion and display clamps match the pinned convention separately from native rules"
     ],
+    "surfaceJS/eyes4s.surface.KernelMathSuite": [
+      "634949 kernel taps match the independently generated StrictMath digest",
+      "exponential boundary witnesses retain their exact StrictMath bits",
+      "observation counts one through100000 match the independent fixed-exponent power digest",
+      "positive-count power witnesses retain exact bits at interval and exponent boundaries"
+    ],
     "surfaceJS/eyes4s.surface.SmootherCardSuite": [
       "a card cannot be declared with empty text or clashing parameter names",
       "a smoother's configuration names exactly the card's parameters, in order",
@@ -23329,6 +23398,13 @@
       "an in-memory effectful source resolves the saved graph",
       "cancelling during a read runs the source's finalizers and decodes nothing"
     ],
+    "ioJVM/eyes4s.io.AscCrWarningsSuite": [
+      "absent exports and undeclared tracking stay distinct; dots do not infer blink",
+      "binocular warnings keep each eye separate and follow all optional numeric columns",
+      "malformed warning lengths and positions retain source operands as failures",
+      "monocular left and right warning tokens retain every warning combination",
+      "native interpolation reaches recording lineage without manufacturing a blink"
+    ],
     "ioJVM/eyes4s.io.BaselineExportsSuite": [
       "CSV validity preserves missing versus empty text, quoting and negative zero without sentinels",
       "JSON columns are canonical values and malformed JSON is refused",
@@ -23444,6 +23520,7 @@
       "GAZE start and end records preserve EyeLink identity and exact summaries",
       "HREF end records preserve both HREF and GAZE summaries plus resolution",
       "MSG signed integration offsets are explicit and numeric-leading payloads stay payload",
+      "inclusive final sample durations require the exact declared event period",
       "invalid event widths, eyes, intervals, pairs, and offsets are named and not dropped",
       "message categories are typed without changing their payload",
       "message payload bytes and trailing whitespace remain byte exact",
@@ -23453,6 +23530,7 @@
     ],
     "ioJVM/eyes4s.io.EyeLinkAscNativeTimelineSuite": [
       "duplicate starts and orphan ends remain named evidence",
+      "inclusive terminal sample remains inside a confirmed native blink",
       "messages become observed marks at effective time with stable simultaneous order",
       "missing samples without confirmed blink events remain signal loss",
       "native starts and ends reconcile only when block, type, eye, and onset agree",
@@ -23522,6 +23600,7 @@
       "mixed valid and invalid blocks retain a lossless partition and refuse trusted assembly",
       "multiple mono and binocular blocks retain native evidence and exact source support",
       "off-surface pupil loss is explicit while its native value remains recoverable",
+      "preserving unconfirmed native pairs is explicit and never confirms the abandoned start",
       "undeclared measured pupil values require an explicit caller policy"
     ],
     "ioJVM/eyes4s.io.EyeLinkAscStreamingJvmSuite": [
@@ -23813,6 +23892,9 @@
       "recording registry rejects unavailable methods, incompatible schemas and invalid parameters",
       "the real recording saves and reloads all scientific choices through the pure plan",
       "the tidy stage refuses an analysis that ran on another recording, naming both"
+    ],
+    "ioJVM/eyes4s.io.PublicAscEndToEndSuite": [
+      "public ASC reconciles every source row and reaches source-supported pixel Scanpaths"
     ],
     "ioJVM/eyes4s.io.RepetitionGuideSuite": [
       "bad input stays inspectable and blocks a saved analysis without dropping a trial",
@@ -25915,6 +25997,16 @@
       "explicit zero mass and incompatible frames remain failures instead of dropped groups",
       "native 5 by 3 Gaussian agrees with a direct two-dimensional discrete-kernel oracle",
       "type-7 IQR suggestion and display clamps match the pinned convention separately from native rules"
+    ],
+    "surfaceJVM/eyes4s.surface.KernelMathJvmSuite": [
+      "shared exponential agrees exactly with StrictMath on kernel taps and extremes",
+      "shared fixed-exponent power agrees exactly with StrictMath for observation counts"
+    ],
+    "surfaceJVM/eyes4s.surface.KernelMathSuite": [
+      "634949 kernel taps match the independently generated StrictMath digest",
+      "exponential boundary witnesses retain their exact StrictMath bits",
+      "observation counts one through100000 match the independent fixed-exponent power digest",
+      "positive-count power witnesses retain exact bits at interval and exponent boundaries"
     ],
     "surfaceJVM/eyes4s.surface.SmootherCardSuite": [
       "a card cannot be declared with empty text or clashing parameter names",
