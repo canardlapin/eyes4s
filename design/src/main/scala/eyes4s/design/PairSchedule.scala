@@ -80,8 +80,17 @@ enum PairScheduleError derives CanEqual:
     case SelectedBudget(relation, attempted, maximum) =>
       s"Pair relation '$relation' would select $attempted pairs, exceeding budget $maximum."
 
+object ScheduledPair:
+  private[design] def apply[KL, KR](
+      leftIndex: Int,
+      rightIndex: Int,
+      left: KL,
+      right: KR
+  ): ScheduledPair[KL, KR] =
+    new ScheduledPair[KL, KR](leftIndex, rightIndex, left, right) {}
+
 /** Source positions address the original operands, before duplicate exclusion. */
-final case class ScheduledPair[KL, KR] private[design] (
+sealed abstract case class ScheduledPair[KL, KR] private[design] (
     leftIndex: Int,
     rightIndex: Int,
     left: KL,

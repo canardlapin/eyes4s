@@ -95,17 +95,20 @@ object SourceInterpretation:
     )
 
 /** Versioned semantic identity. Labels, paths and byte checksums are not operands. */
-final case class SourceIdentity private (hash: ContentHash) derives CanEqual:
+sealed abstract case class SourceIdentity private (hash: ContentHash) derives CanEqual:
   def digest: String = hash.render
 
 object SourceIdentity:
+  private def apply(hash: ContentHash): SourceIdentity =
+    new SourceIdentity(hash) {}
+
   val versionTag: String = "eyes4s.source-identity/1"
 
   def of(
       records: ArtifactRef[Vector[Vector[String]]],
       interpretation: SourceInterpretation.Declared
   ): SourceIdentity =
-    new SourceIdentity(
+    SourceIdentity(
       ContentHash.combineAll(
         Vector(
           ContentHash.ofString(versionTag),
@@ -121,7 +124,7 @@ object SourceIdentity:
   def parse(value: String): Either[SourceIdentityError, SourceIdentity] =
     ContentHash
       .parse(value)
-      .map(new SourceIdentity(_))
+      .map(SourceIdentity(_))
       .toRight(SourceIdentityError.InvalidDigest(value))
 
 /** Why a source identity or interpretation was refused: a digest that is not 16 lowercase
@@ -148,15 +151,20 @@ enum IdentityChange derives CanEqual:
   case Format, Parser, Options, Records, Undeclared
 
 /** A non-empty set: construction always requires at least one cause. */
-final case class IdentityChanges private (head: IdentityChange, rest: Set[IdentityChange])
-    derives CanEqual:
+sealed abstract case class IdentityChanges private (
+    head: IdentityChange,
+    rest: Set[IdentityChange]
+) derives CanEqual:
   def values: Set[IdentityChange] = rest + head
 
 object IdentityChanges:
+  private def apply(head: IdentityChange, rest: Set[IdentityChange]): IdentityChanges =
+    new IdentityChanges(head, rest) {}
+
   def of(head: IdentityChange, rest: Set[IdentityChange] = Set.empty): IdentityChanges =
     val values = rest + head
     val first  = values.minBy(_.ordinal)
-    new IdentityChanges(first, values - first)
+    IdentityChanges(first, values - first)
 
 /** Identity is checked before bytes. Equal bytes under changed options are stale. */
 enum SourceComparison derives CanEqual:

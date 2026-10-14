@@ -120,10 +120,14 @@ enum ExclusionReason derives CanEqual:
 sealed trait SampleMembership derives CanEqual
 
 object SampleMembership:
+  object Areas:
+    private[aoi] def apply(ids: Vector[AoiId]): Areas =
+      new Areas(ids) {}
+
   /** The containing areas, non-empty and in set order; more than one only under
     * `MembershipPolicy.Multiple`. Only assignment constructs it.
     */
-  final case class Areas private[aoi] (ids: Vector[AoiId]) extends SampleMembership
+  sealed abstract case class Areas private[aoi] (ids: Vector[AoiId]) extends SampleMembership
 
   /** A tracked sample inside the frame but outside every area. */
   case object Background extends SampleMembership

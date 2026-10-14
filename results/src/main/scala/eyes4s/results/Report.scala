@@ -22,14 +22,17 @@ import eyes4s.plan.ResultRef
   * the canonical digest (`eyes4s.codec.CanonicalDigest`) of the plan, input,
   * result or covariate source the report was evaluated over.
   */
-final case class BindingDigest private (hex: String) derives CanEqual:
+sealed abstract case class BindingDigest private (hex: String) derives CanEqual:
   override def toString: String = s"sha256:$hex"
 
 object BindingDigest:
+  private def apply(hex: String): BindingDigest =
+    new BindingDigest(hex) {}
+
   def parse(field: String, hex: String): Either[ReportError[Nothing], BindingDigest] =
     Either.cond(
       hex.length == 64 && hex.forall(c => (c >= '0' && c <= '9') || (c >= 'a' && c <= 'f')),
-      new BindingDigest(hex),
+      BindingDigest(hex),
       ReportError.MalformedDigest(field, hex)
     )
 
@@ -125,7 +128,7 @@ final case class LevelContrastStat(
   * together hold `kept - missingGroupAttribute` queries. `belowMinimum`
   * counts participant-and-group pairs left out under the minimum.
   */
-final case class Accounting private (
+sealed abstract case class Accounting private (
     role: Role,
     eligible: Int,
     kept: Int,
@@ -137,6 +140,27 @@ final case class Accounting private (
 ) derives CanEqual
 
 object Accounting:
+  private def apply(
+      role: Role,
+      eligible: Int,
+      kept: Int,
+      filteredOut: Int,
+      unknownPredicate: Int,
+      failed: Int,
+      missingGroupAttribute: Int,
+      belowMinimum: Int
+  ): Accounting =
+    new Accounting(
+      role,
+      eligible,
+      kept,
+      filteredOut,
+      unknownPredicate,
+      failed,
+      missingGroupAttribute,
+      belowMinimum
+    ) {}
+
   def of(
       role: Role,
       eligible: Int,
@@ -152,7 +176,7 @@ object Accounting:
       counts.forall(_ >= 0) && belowMinimum >= 0 &&
         eligible == kept + filteredOut + unknownPredicate + failed &&
         missingGroupAttribute <= kept,
-      new Accounting(
+      Accounting(
         role,
         eligible,
         kept,

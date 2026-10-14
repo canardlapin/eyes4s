@@ -210,13 +210,31 @@ final class RecurrenceMatrix private[compare] (
 
 end RecurrenceMatrix
 
+object CrqaMetrics:
+  private[compare] def apply(
+      recurrenceRate: Double,
+      determinism: Double,
+      laminarity: Double,
+      diagonalEntropyNats: Double,
+      trappingTime: Double,
+      longestDiagonal: Int
+  ): CrqaMetrics =
+    new CrqaMetrics(
+      recurrenceRate,
+      determinism,
+      laminarity,
+      diagonalEntropyNats,
+      trappingTime,
+      longestDiagonal
+    ) {}
+
 /** The standard recurrence-quantification statistics.
   *
   * RR, DET, and LAM are proportions in `[0, 1]`. `diagonalEntropyNats` names
   * its logarithm convention. TT is a mean line length in embedded time steps,
   * and `longestDiagonal` is L_max in the same steps.
   */
-final case class CrqaMetrics private[compare] (
+sealed abstract case class CrqaMetrics private[compare] (
     recurrenceRate: Double,
     determinism: Double,
     laminarity: Double,
@@ -225,8 +243,17 @@ final case class CrqaMetrics private[compare] (
     longestDiagonal: Int
 ) derives CanEqual
 
+object CrqaResult:
+  private[compare] def apply[U <: Unit2D](
+      matrix: RecurrenceMatrix,
+      selectedRadius: Distance[U],
+      config: CrqaConfig[U],
+      metrics: CrqaMetrics
+  ): CrqaResult[U] =
+    new CrqaResult[U](matrix, selectedRadius, config, metrics) {}
+
 /** CRQA output, including the evidence from which the summary was computed. */
-final case class CrqaResult[U <: Unit2D] private[compare] (
+sealed abstract case class CrqaResult[U <: Unit2D] private[compare] (
     matrix: RecurrenceMatrix,
     selectedRadius: Distance[U],
     config: CrqaConfig[U],

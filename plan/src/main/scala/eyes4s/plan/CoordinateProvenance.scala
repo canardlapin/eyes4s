@@ -25,12 +25,22 @@ import scala.annotation.tailrec
 /** A position and the frame it is in. */
 final case class FramedPosition[U <: Unit2D](frame: FrameId, position: Pt[U]) derives CanEqual
 
+object RecordedPosition:
+  private[eyes4s] def apply[U <: Unit2D](
+      xColumn: String,
+      yColumn: String,
+      xText: String,
+      yText: String,
+      parsed: FramedPosition[U]
+  ): RecordedPosition[U] =
+    new RecordedPosition[U](xColumn, yColumn, xText, yText, parsed) {}
+
 /** A record's position fields as its source holds them, and the position
   * parsed from them before any correction, in the admission frame. Only
   * `eyes4s-io`, which holds the source text, builds one, after checking that
   * correcting the parsed position gives the admitted position bit for bit.
   */
-final case class RecordedPosition[U <: Unit2D] private[eyes4s] (
+sealed abstract case class RecordedPosition[U <: Unit2D] private[eyes4s] (
     xColumn: String,
     yColumn: String,
     xText: String,
@@ -68,6 +78,15 @@ enum MapPlacement derives CanEqual:
   /** In the window, in a trial the window policy keeps. */
   case InWindow
 
+object AngularReference:
+  private[plan] def apply[U <: Unit2D](
+      measured: FrameId,
+      origin: Pt[U],
+      unitsPerDegree: Double,
+      degrees: Frame[Unit2D.Deg]
+  ): AngularReference[U] =
+    new AngularReference[U](measured, origin, unitsPerDegree, degrees) {}
+
 /** How a study measures degrees of visual angle: from the centre (`origin`)
   * of the `measured` frame (the analysis window, or the admission frame of a
   * whole-frame plan), `unitsPerDegree` frame units to a degree as the plan
@@ -75,7 +94,7 @@ enum MapPlacement derives CanEqual:
   * (`degrees.yAxis` is [[eyes4s.kernel.YAxis.Up YAxis.Up]]). The degrees frame is named after the
   * measured frame, `<measured>/degrees`.
   */
-final case class AngularReference[U <: Unit2D] private[plan] (
+sealed abstract case class AngularReference[U <: Unit2D] private[plan] (
     measured: FrameId,
     origin: Pt[U],
     unitsPerDegree: Double,
@@ -87,6 +106,17 @@ final case class AngularPosition[U <: Unit2D](
     reference: AngularReference[U],
     position: Pt[Unit2D.Deg]
 ) derives CanEqual
+
+object CoordinateTrail:
+  private[eyes4s] def apply[U <: Unit2D](
+      recorded: Option[RecordedPosition[U]],
+      correction: Option[CorrectionApplied],
+      admitted: FramedPosition[U],
+      window: Option[FramedPosition[U]],
+      placement: MapPlacement,
+      angular: Option[AngularPosition[U]]
+  ): CoordinateTrail[U] =
+    new CoordinateTrail[U](recorded, correction, admitted, window, placement, angular) {}
 
 /** Every coordinate a fixation's position has, each in a named frame:
   *
@@ -100,7 +130,7 @@ final case class AngularPosition[U <: Unit2D](
   *  - `angular`: degrees from the centre of the window (or of the admission
   *    frame), `x` right and `y` up, when the plan declares units per degree.
   */
-final case class CoordinateTrail[U <: Unit2D] private[eyes4s] (
+sealed abstract case class CoordinateTrail[U <: Unit2D] private[eyes4s] (
     recorded: Option[RecordedPosition[U]],
     correction: Option[CorrectionApplied],
     admitted: FramedPosition[U],
@@ -109,7 +139,7 @@ final case class CoordinateTrail[U <: Unit2D] private[eyes4s] (
     angular: Option[AngularPosition[U]]
 ) derives CanEqual:
   private[eyes4s] def withRecorded(position: RecordedPosition[U]): CoordinateTrail[U] =
-    copy(recorded = Some(position))
+    CoordinateTrail(Some(position), correction, admitted, window, placement, angular)
 
 /** One admitted fixation: its trial and scanpath position, its interval, the
   * source record that supplied it (or why none is known) and its coordinates.
@@ -231,7 +261,7 @@ final class CoordinateProvenance[K, U <: Unit2D] private (
   def positions(key: K): Either[ProvenanceError[K], Vector[ScanpathPosition]] =
     paths.get(key) match
       case None               => Left(ProvenanceError.UnknownTrial(key))
-      case Some(Vector(path)) => Right((0 until path.n).toVector.map(new ScanpathPosition(_)))
+      case Some(Vector(path)) => Right((0 until path.n).toVector.map(ScanpathPosition(_)))
       case Some(found)        => Left(ProvenanceError.AmbiguousTrial(key, found.size))
 
   /** The provenance of the fixation at a scanpath position of a trial. */
@@ -483,7 +513,7 @@ final class SourceRecordListing[K, U <: Unit2D] private[plan] (
             .flatMap(_.admitted.find(_.record == entry.record))
             .fold(Right(SourceRecordView(record, entry, None))) { source =>
               provenance
-                .fixation(key, new ScanpathPosition(source.index))
+                .fixation(key, ScanpathPosition(source.index))
                 .map(p => SourceRecordView(record, entry, Some(p)))
             }
         case Disposition.Rejected(_, _, _) => Right(SourceRecordView(record, entry, None))

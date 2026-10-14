@@ -38,7 +38,7 @@ object TrialKeyDefinitions:
   * items are a conflict the importer and the prepared study refuse
   * (`QuarantineCause.ItemConflict`, `PlanError.MatchItemConflict`).
   */
-final case class TrialKey private (
+sealed abstract case class TrialKey private (
     participant: String,
     phase: String,
     trial: String,
@@ -47,6 +47,15 @@ final case class TrialKey private (
 ) derives CanEqual
 
 object TrialKey:
+  private def apply(
+      participant: String,
+      phase: String,
+      trial: String,
+      occurrence: TrialOccurrence,
+      item: String
+  ): TrialKey =
+    new TrialKey(participant, phase, trial, occurrence, item) {}
+
   def of(
       participant: String,
       phase: String,
@@ -58,10 +67,14 @@ object TrialKey:
       .collectFirst {
         case (field, value) if value.trim.isEmpty => PlanError.BlankKeyField(field)
       }
-      .toLeft(new TrialKey(participant, phase, trial, occurrence, item))
+      .toLeft(TrialKey(participant, phase, trial, occurrence, item))
 
-  given KeyDigest[TrialKey] = KeyDigest.derived[TrialKey]
-  given Ordering[TrialKey]  =
+  given KeyDigest[TrialKey] =
+    // The same typed fields and positions as the former product derivation,
+    // without exposing a constructing mirror (bead q-domain-constructing-mirrors).
+    val fields = KeyDigest.derived[(String, String, String, TrialOccurrence, String)]
+    key => fields.digest((key.participant, key.phase, key.trial, key.occurrence, key.item))
+  given Ordering[TrialKey] =
     Ordering.by(k => (k.participant, k.phase, k.trial, k.occurrence.value, k.item))
 
   /** Participant, phase and item as the study projections, with the

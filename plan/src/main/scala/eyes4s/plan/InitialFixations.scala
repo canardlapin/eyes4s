@@ -117,11 +117,18 @@ object InitialFixationPolicy:
   /** Drop the first fixation of every trial, wherever it lies. */
   final case class DropFirst[U <: Unit2D]() extends InitialFixationPolicy[U]
 
+  object DropLeadingInClosedDisc:
+    private[plan] def apply[U <: Unit2D](
+        cross: Pt[U],
+        radiusDegrees: Double
+    ): DropLeadingInClosedDisc[U] =
+      new DropLeadingInClosedDisc[U](cross, radiusDegrees) {}
+
   /** Drop the leading run of fixations centred within `radiusDegrees` (closed)
     * of `cross`; built only by `dropLeadingInClosedDisc`, which requires a positive
     * finite radius and a finite cross.
     */
-  final case class DropLeadingInClosedDisc[U <: Unit2D] private[plan] (
+  sealed abstract case class DropLeadingInClosedDisc[U <: Unit2D] private[plan] (
       cross: Pt[U],
       radiusDegrees: Double
   ) extends InitialFixationPolicy[U]
@@ -147,7 +154,7 @@ object InitialFixationPolicy:
 /** How the policy fell on one trial, by count and by duration: the leading
   * `dropped` of its `total` fixations were left out and the rest kept.
   */
-final case class InitialFixationTally private (
+sealed abstract case class InitialFixationTally private (
     dropped: Int,
     total: Int,
     droppedDuration: Span,
@@ -161,6 +168,14 @@ final case class InitialFixationTally private (
       s"${totalDuration.render})"
 
 object InitialFixationTally:
+  private def apply(
+      dropped: Int,
+      total: Int,
+      droppedDuration: Span,
+      totalDuration: Span
+  ): InitialFixationTally =
+    new InitialFixationTally(dropped, total, droppedDuration, totalDuration) {}
+
   /** Rebuild a stored tally. It must partition its trial: the dropped
     * fixations lie within it, none dropped means no dropped duration, and
     * all dropped means all of the duration.
@@ -177,7 +192,7 @@ object InitialFixationTally:
       (dropped != 0 || droppedDuration.toMicros == 0L) &&
       (dropped != total || droppedDuration.toMicros == totalDuration.toMicros)
     if counts && durations then
-      Right(new InitialFixationTally(dropped, total, droppedDuration, totalDuration))
+      Right(InitialFixationTally(dropped, total, droppedDuration, totalDuration))
     else
       Left(
         InitialFixationError.InvalidTally(
@@ -197,7 +212,7 @@ object InitialFixationTally:
       totalDuration = totalDuration + d
       if i < dropped then droppedDuration = droppedDuration + d
       i += 1
-    new InitialFixationTally(dropped, path.n, droppedDuration, totalDuration)
+    InitialFixationTally(dropped, path.n, droppedDuration, totalDuration)
 
 /** One trial under the policy: its tally and the scanpath of the fixations it
   * keeps, absent when it keeps none. Under `KeepAll`, and whenever nothing is

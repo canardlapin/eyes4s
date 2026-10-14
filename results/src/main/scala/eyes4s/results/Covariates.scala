@@ -19,12 +19,15 @@ package eyes4s.results
 import eyes4s.plan.*
 
 /** The name of a declared covariate: a trials-table attribute column. */
-final case class CovariateName private (value: String) derives CanEqual:
+sealed abstract case class CovariateName private (value: String) derives CanEqual:
   override def toString: String = value
 
 object CovariateName:
+  private def apply(value: String): CovariateName =
+    new CovariateName(value) {}
+
   def of(value: String): Either[CovariateError[Nothing], CovariateName] =
-    Either.cond(value.trim.nonEmpty, new CovariateName(value), CovariateError.BlankName(value))
+    Either.cond(value.trim.nonEmpty, CovariateName(value), CovariateError.BlankName(value))
   given Ordering[CovariateName] = Ordering.by(_.value)
 
 /** The declared levels of an ordinal or categorical covariate: non-empty,
@@ -32,24 +35,30 @@ object CovariateName:
   * declared order, lowest first; for a categorical one it is only the order
   * groups are listed in.
   */
-final case class Levels private (values: Vector[String]) derives CanEqual:
+sealed abstract case class Levels private (values: Vector[String]) derives CanEqual:
   /** The position of `level` in the declared order. */
   def rank(level: String): Option[Int] = Option(values.indexOf(level)).filter(_ >= 0)
   def contains(level: String): Boolean = values.contains(level)
 
 object Levels:
+  private def apply(values: Vector[String]): Levels =
+    new Levels(values) {}
+
   def of(values: Vector[String]): Either[CovariateError[Nothing], Levels] =
     val repeated = values.diff(values.distinct).distinct
     if values.isEmpty || values.exists(_.trim.isEmpty) || repeated.nonEmpty then
       Left(CovariateError.InvalidLevels(values, repeated))
-    else Right(new Levels(values))
+    else Right(Levels(values))
 
 /** The unit a numeric covariate is measured in, e.g. `rating` or `ms`. */
-final case class NumericUnit private (symbol: String) derives CanEqual
+sealed abstract case class NumericUnit private (symbol: String) derives CanEqual
 
 object NumericUnit:
+  private def apply(symbol: String): NumericUnit =
+    new NumericUnit(symbol) {}
+
   def of(symbol: String): Either[CovariateError[Nothing], NumericUnit] =
-    Either.cond(symbol.trim.nonEmpty, new NumericUnit(symbol), CovariateError.BlankUnit(symbol))
+    Either.cond(symbol.trim.nonEmpty, NumericUnit(symbol), CovariateError.BlankUnit(symbol))
 
 /** The declared type of a trial covariate. It fixes how a trials-table cell
   * is read and which filters and groupings apply: a numeric covariate is
@@ -129,27 +138,39 @@ final case class Covariate(name: CovariateName, kind: CovariateType) derives Can
 /** The declared covariates of a report's trials: distinct names, each with
   * its type. The schema is what `eyes4s.covariate-schema@1` persists.
   */
-final case class CovariateSchema private (covariates: Vector[Covariate]) derives CanEqual:
+sealed abstract case class CovariateSchema private (covariates: Vector[Covariate])
+    derives CanEqual:
   def names: Vector[CovariateName]                    = covariates.map(_.name)
   def get(name: CovariateName): Option[CovariateType] =
     covariates.collectFirst { case Covariate(`name`, kind) => kind }
 
 object CovariateSchema:
-  val empty: CovariateSchema = new CovariateSchema(Vector.empty)
+  private def apply(covariates: Vector[Covariate]): CovariateSchema =
+    new CovariateSchema(covariates) {}
+
+  val empty: CovariateSchema = CovariateSchema(Vector.empty)
 
   def of(covariates: Vector[Covariate]): Either[CovariateError[Nothing], CovariateSchema] =
     val names    = covariates.map(_.name.value)
     val repeated = names.diff(names.distinct).distinct
     Either.cond(
       repeated.isEmpty,
-      new CovariateSchema(covariates),
+      CovariateSchema(covariates),
       CovariateError.DuplicateCovariate(repeated)
     )
+
+object CovariateRow:
+  private[results] def apply[K](
+      key: K,
+      values: Vector[(CovariateName, Value[CovariateValue])],
+      unparsed: Vector[(CovariateName, String)]
+  ): CovariateRow[K] =
+    new CovariateRow[K](key, values, unparsed) {}
 
 /** The covariates of one trial: each declared covariate's value, and the
   * raw text of each cell that did not parse.
   */
-final case class CovariateRow[+K] private[results] (
+sealed abstract case class CovariateRow[+K] private[results] (
     key: K,
     values: Vector[(CovariateName, Value[CovariateValue])],
     unparsed: Vector[(CovariateName, String)]

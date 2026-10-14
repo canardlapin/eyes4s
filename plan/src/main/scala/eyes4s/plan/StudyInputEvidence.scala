@@ -303,7 +303,7 @@ final case class OutsideFrame(record: Int, x: Double, y: Double, frame: FrameId)
   * with exactly one disposition, in record order, plus the recorded outcome.
   * Trial identity is the typed key; no digest or label stands in for it.
   */
-final case class AdmissionLedger[K] private (
+sealed abstract case class AdmissionLedger[K] private (
     source: SourceRef,
     header: Vector[String],
     records: Vector[SourceRecord[K]],
@@ -480,7 +480,17 @@ final case class AdmissionLedger[K] private (
       .orElse(unlisted)
       .orElse(attributes)
       .map(AdmissionError.Inventory.apply)
-      .toLeft(copy(inventory = Some(value)))
+      .toLeft(
+        AdmissionLedger(
+          this.source,
+          this.header,
+          this.records,
+          this.outcome,
+          this.policy,
+          this.outsideFrame,
+          Some(value)
+        )
+      )
 
   /** Every admitted record must lie in a trial at most one correction rule
     * covers, under the layout's participant projection.
@@ -540,6 +550,17 @@ final case class AdmissionLedger[K] private (
           .toLeft(())
 
 object AdmissionLedger:
+  private def apply[K](
+      source: SourceRef,
+      header: Vector[String],
+      records: Vector[SourceRecord[K]],
+      outcome: AdmissionOutcome,
+      policy: AdmissionPolicy[K],
+      outsideFrame: Vector[OutsideFrame],
+      inventory: Option[InventoryLedger]
+  ): AdmissionLedger[K] =
+    new AdmissionLedger[K](source, header, records, outcome, policy, outsideFrame, inventory) {}
+
   /** A version-1 ledger: no corrections, and off-screen records quarantine. */
   def of[K](
       source: SourceRef,
@@ -692,7 +713,7 @@ object AdmissionLedger:
       .orElse(scopes)
       .orElse(consistent)
       .orElse(outside)
-      .toLeft(new AdmissionLedger(source, header, records, outcome, policy, outsideFrame, None))
+      .toLeft(AdmissionLedger(source, header, records, outcome, policy, outsideFrame, None))
 
   /** Derive the outcome from the analyst's decision and the rejected count. */
   def decide[K](

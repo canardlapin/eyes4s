@@ -23,20 +23,23 @@ import cats.syntax.all.*
   * failure's diagnostic code (`study-contrast.off-window`). Lowercase words
   * joined by `-`, segments by `.`.
   */
-final case class FactCode private (value: String) derives CanEqual:
+sealed abstract case class FactCode private (value: String) derives CanEqual:
   /** The code's last segment, as a methods text names it: `off-window`. */
   def label: String             = value.substring(value.lastIndexOf('.') + 1)
   override def toString: String = value
 
 object FactCode:
+  private def apply(value: String): FactCode =
+    new FactCode(value) {}
+
   private val Pattern = "[a-z0-9]+(-[a-z0-9]+)*(\\.[a-z0-9]+(-[a-z0-9]+)*)*".r
 
   def of(value: String): Either[FactError, FactCode] =
-    Either.cond(Pattern.matches(value), new FactCode(value), FactError.InvalidCode(value))
+    Either.cond(Pattern.matches(value), FactCode(value), FactError.InvalidCode(value))
 
   /** The ledger's code for a quarantine cause, without its family. */
   def of(cause: QuarantineCause): FactCode =
-    new FactCode(DiagnosticFamily.slug(cause.productPrefix))
+    FactCode(DiagnosticFamily.slug(cause.productPrefix))
 
 /** Why a trial is missing from the analysis: quarantined with a cause, no
   * admitted fixations, or absent from the fixation records.
@@ -320,10 +323,13 @@ enum FactError derives CanEqual:
 /** One fact for a methods text: what it states, where it comes from, and its
   * value.
   */
-final case class Fact private (slot: FactSlot, source: FactSource, value: FactValue)
+sealed abstract case class Fact private (slot: FactSlot, source: FactSource, value: FactValue)
     derives CanEqual
 
 object Fact:
+  private def apply(slot: FactSlot, source: FactSource, value: FactValue): Fact =
+    new Fact(slot, source, value) {}
+
   /** A fact whose value has the kind its slot takes: counts and ranges are
     * non-negative and ranges non-empty, shares are fractions, labels and
     * group levels are not blank, and a controls fact gives each control count
@@ -372,7 +378,7 @@ object Fact:
           ) =>
         count(n)
       case _ => Left(FactError.WrongValue(name, value.toString, expectedKind(slot)))
-    (level *> kind).map(_ => new Fact(slot, source, value))
+    (level *> kind).map(_ => Fact(slot, source, value))
 
   private def expectedKind(slot: FactSlot): String = slot match
     case FactSlot.DatasetRevision | FactSlot.ReportingSpec      => "a label"
@@ -387,11 +393,14 @@ object Fact:
   * [[StudyText.methods]] states every one of them; each number is a token
   * carrying its slot, its typed value and its one source.
   */
-final case class MethodsFacts private (facts: Vector[Fact]) derives CanEqual:
+sealed abstract case class MethodsFacts private (facts: Vector[Fact]) derives CanEqual:
   def get(slot: FactSlot): Option[Fact] = facts.find(_.slot == slot)
 
 object MethodsFacts:
-  val empty: MethodsFacts = new MethodsFacts(Vector.empty)
+  private def apply(facts: Vector[Fact]): MethodsFacts =
+    new MethodsFacts(facts) {}
+
+  val empty: MethodsFacts = MethodsFacts(Vector.empty)
 
   /** The facts, each slot once (the first repeated slot, in input order, is
     * refused), whose totals agree with their parts:
@@ -450,4 +459,4 @@ object MethodsFacts:
           case FactSlot.FailureCause(_) => true
           case _                        => false
         }
-      ) *> Right(new MethodsFacts(facts))
+      ) *> Right(MethodsFacts(facts))

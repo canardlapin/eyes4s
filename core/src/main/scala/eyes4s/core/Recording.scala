@@ -94,7 +94,16 @@ sealed trait SamplingEvidence derives CanEqual:
   def render: String
 
 object SamplingEvidence:
-  final case class Fixed private[core] (
+  object Fixed:
+    private[core] def apply(
+        rate: Hz,
+        nominalPeriod: Span,
+        tolerance: SamplingTolerance,
+        maximumDeviation: Span
+    ): Fixed =
+      new Fixed(rate, nominalPeriod, tolerance, maximumDeviation) {}
+
+  sealed abstract case class Fixed private[core] (
       rate: Hz,
       nominalPeriod: Span,
       tolerance: SamplingTolerance,

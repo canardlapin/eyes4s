@@ -20,6 +20,28 @@ import cats.syntax.all.*
 import eyes4s.kernel.*
 import eyes4s.plan.{AdmissionPolicy, DataRecord, QuarantineCause, TrialIdentity}
 
+object FixationPosition:
+  private[io] def apply[U <: Unit2D](
+      record: DataRecord,
+      trial: TrialIdentity,
+      fields: Vector[String],
+      raw: Pt[U],
+      corrected: Pt[U],
+      rule: Option[Int],
+      outsideFrame: Boolean,
+      admissionFailure: Option[FixationRowError]
+  ): FixationPosition[U] =
+    new FixationPosition[U](
+      record,
+      trial,
+      fields,
+      raw,
+      corrected,
+      rule,
+      outsideFrame,
+      admissionFailure
+    ) {}
+
 /** One source record's finite position under its declared correction policy.
   * This is a position preview, not an assertion that the whole fixation or
   * trial is admitted. `admissionFailure` records the admission frame's
@@ -27,7 +49,7 @@ import eyes4s.plan.{AdmissionPolicy, DataRecord, QuarantineCause, TrialIdentity}
   * fixation importer's responsibility. Raw fields and coordinates remain
   * unchanged, including when the corrected point lies outside the frame.
   */
-final case class FixationPosition[U <: Unit2D] private[io] (
+sealed abstract case class FixationPosition[U <: Unit2D] private[io] (
     record: DataRecord,
     trial: TrialIdentity,
     fields: Vector[String],
@@ -38,22 +60,40 @@ final case class FixationPosition[U <: Unit2D] private[io] (
     admissionFailure: Option[FixationRowError]
 )
 
+object UnplacedFixationPosition:
+  private[io] def apply(
+      record: DataRecord,
+      fields: Vector[String],
+      trial: Option[TrialIdentity],
+      error: FixationRowError
+  ): UnplacedFixationPosition =
+    new UnplacedFixationPosition(record, fields, trial, error) {}
+
 /** A position that could not be interpreted, returned beside the placed
   * records. The key is absent only when its declared fields cannot be read.
   */
-final case class UnplacedFixationPosition private[io] (
+sealed abstract case class UnplacedFixationPosition private[io] (
     record: DataRecord,
     fields: Vector[String],
     trial: Option[TrialIdentity],
     error: FixationRowError
 )
 
+object PlacedFixationPosition:
+  private[io] def apply[U <: Unit2D](
+      source: FixationPosition[U],
+      image: Pt[U],
+      windowPlacement: HalfOpenPlacement[U],
+      degrees: Option[Pt[Unit2D.Deg]]
+  ): PlacedFixationPosition[U] =
+    new PlacedFixationPosition[U](source, image, windowPlacement, degrees) {}
+
 /** One interpreted source position in a named window and optional angular
   * frame. The window membership is half-open. `image` is in the window's
   * local coordinates even for positions outside the window; nothing is
   * clamped to make an outside point fit.
   */
-final case class PlacedFixationPosition[U <: Unit2D] private[io] (
+sealed abstract case class PlacedFixationPosition[U <: Unit2D] private[io] (
     source: FixationPosition[U],
     image: Pt[U],
     windowPlacement: HalfOpenPlacement[U],
@@ -62,10 +102,19 @@ final case class PlacedFixationPosition[U <: Unit2D] private[io] (
   def outsideFrame: Boolean  = source.outsideFrame
   def outsideWindow: Boolean = !outsideFrame && !windowPlacement.isInside
 
+object FixationPlacementTally:
+  private[io] def apply(
+      trial: TrialIdentity,
+      records: Int,
+      outsideWindow: Int,
+      outsideFrame: Int
+  ): FixationPlacementTally =
+    new FixationPlacementTally(trial, records, outsideWindow, outsideFrame) {}
+
 /** Native per-trial position counts. Unreadable records remain in
   * `unplaced` rather than being counted as successfully positioned.
   */
-final case class FixationPlacementTally private[io] (
+sealed abstract case class FixationPlacementTally private[io] (
     trial: TrialIdentity,
     records: Int,
     outsideWindow: Int,

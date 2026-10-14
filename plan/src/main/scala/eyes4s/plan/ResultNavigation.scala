@@ -252,5 +252,5 @@ object ResultNavigation:
           .trial(key)
           .toOption
           .flatMap(_.admitted.find(_.record == number))
-          .map(source => FixationRef(key, new ScanpathPosition(source.index)))
+          .map(source => FixationRef(key, ScanpathPosition(source.index)))
           .toRight(NavigationError.NotAdmitted(record))

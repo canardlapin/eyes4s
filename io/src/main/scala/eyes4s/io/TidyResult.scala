@@ -91,7 +91,7 @@ final case class ResultClockSpec(
   * a measured sample that is smoothed and projected contributes to all three
   * corresponding fields. `derived` counts samples with any derived value.
   */
-final case class SampleOriginCounts private[io] (
+sealed abstract case class SampleOriginCounts private[io] (
     sampleCount: Int,
     measured: Int,
     interpolated: Int,
@@ -101,6 +101,16 @@ final case class SampleOriginCounts private[io] (
 ) derives CanEqual
 
 object SampleOriginCounts:
+  private[io] def apply(
+      sampleCount: Int,
+      measured: Int,
+      interpolated: Int,
+      smoothed: Int,
+      projected: Int,
+      derived: Int
+  ): SampleOriginCounts =
+    new SampleOriginCounts(sampleCount, measured, interpolated, smoothed, projected, derived) {}
+
   def from[U <: Unit2D](recording: Recording[U]): SampleOriginCounts =
     val lineages = recording.samples.iterator.map(_.lineage).toVector
     SampleOriginCounts(

@@ -22,19 +22,22 @@ import eyes4s.kernel.*
 /** A form's raw values by field id. An `Absent` value is not stored, so a
   * field the map lacks and an absent field are the same form.
   */
-final case class FormValues private (values: Map[FieldId, RawValue]) derives CanEqual:
+sealed abstract case class FormValues private (values: Map[FieldId, RawValue]) derives CanEqual:
   def get(id: FieldId): RawValue                      = values.getOrElse(id, RawValue.Absent)
   def updated(id: FieldId, raw: RawValue): FormValues =
-    if raw == RawValue.Absent then new FormValues(values - id)
-    else new FormValues(values.updated(id, raw))
+    if raw == RawValue.Absent then FormValues(values - id)
+    else FormValues(values.updated(id, raw))
 
 object FormValues:
-  val empty: FormValues = new FormValues(Map.empty)
+  private def apply(values: Map[FieldId, RawValue]): FormValues =
+    new FormValues(values) {}
+
+  val empty: FormValues = FormValues(Map.empty)
 
   def of(values: (FieldId, RawValue)*): FormValues = from(values.toMap)
 
   def from(values: Map[FieldId, RawValue]): FormValues =
-    new FormValues(values.filterNot(_._2 == RawValue.Absent))
+    FormValues(values.filterNot(_._2 == RawValue.Absent))
 
 /** A typed field over any [[FieldView]]: a raw value first passes the view's
   * own checks (shape, bounds and rules, [[FieldView.check]]), then `read`
