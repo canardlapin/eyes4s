@@ -962,5 +962,36 @@ object DiagnosticSamples:
     generated[StudyRecipeError]("StudyRecipeError"),
     generated[StudyAdvisory]("StudyAdvisory"),
     generated[FactError]("FactError"),
-    generated[NavigationError[StudyKey]]("NavigationError")
+    generated[NavigationError[StudyKey]]("NavigationError"),
+    family[ProjectFinding[StudyKey, String]]("ProjectFinding")(
+      ProjectFinding.MissingRecording(get(SessionKey.of("recording"))),
+      ProjectFinding.MissingViewing(),
+      ProjectFinding.MissingAreas(get(SessionKey.of("areas"))),
+      ProjectFinding.MissingGrid(get(SessionKey.of("grid"))),
+      ProjectFinding.MissingObservedTimeline(
+        k1,
+        MarkSelector("start", Occurrence.RequireUnique),
+        ClockId("observed")
+      ),
+      ProjectFinding.Anchor(
+        EpochError.AnchorMatches(k1, MarkSelector("start", Occurrence.RequireUnique), 2)
+      ),
+      ProjectFinding.MissingSynchronization(
+        k1,
+        MarkSelector("start", Occurrence.RequireUnique),
+        ClockId("observed"),
+        ClockId("tracker"),
+        SyncErrorMagnitude.zero,
+        Vector(ClockId("other") -> ClockId("tracker"))
+      ),
+      ProjectFinding.ImpreciseSynchronization(
+        k1,
+        MarkSelector("start", Occurrence.RequireUnique),
+        ClockId("observed"),
+        ClockId("tracker"),
+        SyncErrorMagnitude.zero,
+        get(SyncErrorMagnitude.of(Span.micros(2)))
+      ),
+      ProjectFinding.MissingSchema(DefinitionId.timeline, Vector(2))
+    )
   )

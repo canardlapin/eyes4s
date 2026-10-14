@@ -21,7 +21,7 @@ the key type of the trials the diagnostic names: `Nothing` for a family that
 names none, the study key for a keyed family. `Diagnose` is contravariant in
 the error, so a case type such as `CodecError.Entry` projects through its
 enum's instance. The instances of the plan and every pure module below it are
-in `Diagnose`'s companion and need no import. The codec's families
+available through implicit companion search and need no import. The codec's families
 (`CodecError`, `ResolveError`, `SourceFailure`, `RelationMismatch`,
 `ManifestError`, `PayloadError`, `ByteDigestError`) project through
 `CodecDiagnostics`, the results module's (report findings and refusals,
@@ -1537,6 +1537,20 @@ fails after rewriting, so review the change and run it again.
 | `navigation.no-record` | `NoRecord` | `key`, `position`, `reason` |
 | `navigation.unknown-record` | `UnknownRecord` | `record` |
 | `navigation.not-admitted` | `NotAdmitted` | `record` |
+
+### `project-prerequisite` — `ProjectFinding`
+
+| Code | Case | Operands |
+|---|---|---|
+| `project-prerequisite.missing-recording` | `MissingRecording` | `key` |
+| `project-prerequisite.missing-viewing` | `MissingViewing` |  |
+| `project-prerequisite.missing-areas` | `MissingAreas` | `key` |
+| `project-prerequisite.missing-grid` | `MissingGrid` | `key` |
+| `project-prerequisite.missing-observed-timeline` | `MissingObservedTimeline` | `trial`, `selector`, `expected` |
+| `project-prerequisite.anchor` | `Anchor` | `underlying` |
+| `project-prerequisite.missing-synchronization` | `MissingSynchronization` | `trial`, `selector`, `source`, `target`, `maximum`, `available` |
+| `project-prerequisite.imprecise-synchronization` | `ImpreciseSynchronization` | `trial`, `selector`, `source`, `target`, `maximum`, `best` |
+| `project-prerequisite.missing-schema` | `MissingSchema` | `id`, `availableVersions` |
 
 ### `codec` — `CodecError`
 
