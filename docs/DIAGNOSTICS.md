@@ -840,6 +840,7 @@ fails after rewriting, so review the change and run it again.
 | `aoi.frame-conflict` | `FrameConflict` | `underlying` |
 | `aoi.resolution-grid-failure` | `ResolutionGridFailure` | `frame`, `nx`, `ny`, `underlying` |
 | `aoi.observed-overlap` | `ObservedOverlap` | `frame`, `sampleIndex`, `x`, `y`, `areas` |
+| `aoi.observed-fixation-overlap` | `ObservedFixationOverlap` | `frame`, `fixationIndex`, `x`, `y`, `areas` |
 
 ### `descriptor` — `DescriptorError`
 
