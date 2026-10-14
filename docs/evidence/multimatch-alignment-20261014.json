@@ -1,0 +1,112 @@
+{
+  "mutations": [
+    {
+      "variant": "ignore-canonical",
+      "runtime": "JVM",
+      "exit": 1,
+      "killed": true,
+      "counts": [
+        [
+          "9",
+          "2"
+        ]
+      ],
+      "log_sha256": "8cd303487218ac16d794583634d19bc6df6a462a24dc5b327fd66467089265db"
+    },
+    {
+      "variant": "ignore-canonical",
+      "runtime": "JS",
+      "exit": 1,
+      "killed": true,
+      "counts": [
+        [
+          "9",
+          "2"
+        ]
+      ],
+      "log_sha256": "0a541b3ea40167d53c6254335404c5ecff319a780d5952788b6ad5030e701639"
+    },
+    {
+      "variant": "fuzzy-cost",
+      "runtime": "JVM",
+      "exit": 1,
+      "killed": true,
+      "counts": [
+        [
+          "9",
+          "2"
+        ]
+      ],
+      "log_sha256": "b0b341611c86d7173edb9086bf4e3d1bfeaf9974627eee0b5736715b04ae8e8b"
+    },
+    {
+      "variant": "fuzzy-cost",
+      "runtime": "JS",
+      "exit": 1,
+      "killed": true,
+      "counts": [
+        [
+          "9",
+          "2"
+        ]
+      ],
+      "log_sha256": "5bc2fb60a0fcddc2d87eaaa14a9dfdf8110f9764446799a9b658cb6f3716bf73"
+    },
+    {
+      "variant": "non-diagonal-tie",
+      "runtime": "JVM",
+      "exit": 1,
+      "killed": true,
+      "counts": [
+        [
+          "9",
+          "1"
+        ]
+      ],
+      "log_sha256": "43d65933189d6780cb42d28964613903c23d03648dc3b7a646530411d91edccb"
+    },
+    {
+      "variant": "non-diagonal-tie",
+      "runtime": "JS",
+      "exit": 1,
+      "killed": true,
+      "counts": [
+        [
+          "9",
+          "1"
+        ]
+      ],
+      "log_sha256": "64d1287dae32817729aa6cb3351fc202bea396f7db1e87dfc7321f59e90816bd"
+    }
+  ],
+  "restored_sha256": {
+    "compare/src/main/scala/eyes4s/compare/MultiMatch.scala": "d89c94f2951f8d7e8aada05c2b769067b5f0f0e0e087cad123e80400e6818ab9",
+    "compare/src/main/scala/eyes4s/compare/Alignment.scala": "297d324a65d02a8109f93adc8e6439dcedf72f0524bd0441a24245339a86388d"
+  },
+  "version": 1,
+  "date": "2026-10-14",
+  "scope": "native ungrouped MultiMatch exact/near-tie convention conformance and whole-root Werror compile; full landing gate pending",
+  "convention": "CanonicalOperandsExactCostTracebackV1",
+  "decision": "q-multimatch-canonical-ties",
+  "checks": {
+    "existing_and_new_reference_tests_per_runtime": 32,
+    "final_contract_tests_per_runtime": 9,
+    "exhaustive_ternary_pairs": 729,
+    "root_jvm_werror": true,
+    "root_js_werror": true,
+    "oracle_regeneration_byte_identical": true
+  },
+  "sources_sha256": {
+    "compare/src/main/scala/eyes4s/compare/MultiMatch.scala": "2d53fb5f39275bd0ff28a18a547aa552920d98b33eda4a8817082a6df583c6c3",
+    "compare/src/test/scala/eyes4s/compare/MultiMatchAlignmentSuite.scala": "12c591acca526e8824565619903665cf6b40a64d0a2bfc92e5c88e2cce363b77",
+    "compare/src/test/scala/eyes4s/compare/MultiMatchAlignmentReference.scala": "2221c3a01cab015a9ed04798ffcc0ee32b68cc141276db657ea9ff8ee1b1bac4",
+    "tools/multimatch-reference/generate.py": "1ed69dfc8eefdf4303768230eec41a5832ea7380227c85f135218f55c7f386d0",
+    "tools/multimatch-reference/fixtures.json": "04e5e2d5b52be1fd0f19e49d9d3184058ab311ba4a572fd47692957362931cbd"
+  },
+  "logs_sha256": {
+    "eyes4s-multimatch-attempt2.log": "03b9f2436fed919fb29ba6e00d47d29a16969b69e35f1727434951ea95e08c13",
+    "eyes4s-multimatch-final-focused.log": "72c8474ab80411ac32cf89b2057d6a0ea050cfc00dfcbf424ee683ea3bcf3f52",
+    "eyes4s-multimatch-restored-werror.log": "69211a767f885048bcac2cfb0dac641e88d5285b13be9f5e8c641fd535541fc0",
+    "eyes4s-multimatch-final-contract.log": "62dfb72a1f49bf286c16d3276fb5599fb852828142a2b160700e60b3145199bd"
+  }
+}
