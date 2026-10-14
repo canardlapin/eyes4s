@@ -54,8 +54,44 @@ latencies with zero and run counts with zero. Both mutants failed the published 
 on JVM and Scala.js; the production source was restored byte for byte. Analytic cases
 pin a zero-support entry and a recording with a nonzero start.
 
+## Fixation accounting and visits
+
+`AoiSet.assign(scanpath, policy)` returns a `FixationAoiAssignment` with one membership
+per input fixation. `FixationAoiLaws.accounting(assignments, tolerance)` publishes the
+corresponding Discipline rules. The sample API remains available with the explicit
+`AoiMetric.sampleRunCount` and CSV estimand `sample_run_count`.
+
+A fixation-level visit is a maximal run of contained fixations in fixation order.
+It survives intervening saccades, blinks, signal loss and other gaps. A background or
+off-surface fixation ends the visit. Every visit starts with an entry, including a
+contained first fixation, so `entryCount == visitCount`; `fixationCount` counts all
+contained fixations. First-entry latency is relative to the first fixation onset,
+not an inferred recording onset. These conventions implement the decision recorded
+in bead `bd-01M2R18YTC8BF4T1890QX991RW`.
+
+Dwell sums only fixation durations. Its proportion uses on-surface fixation time,
+including background, and is absent when that denominator is zero. The report keeps
+union, background, off-surface and inter-fixation time separately. Those times partition
+the scanpath extent; duplicated AOI time accounts for overlaps without inflating
+the denominator. A scanpath does not identify the causes of its gaps, so the report
+does not label those gaps as measured blinks or saccades.
+
+The laws independently reclassify centres against geometry under every membership
+policy. They check exact accounting, dwell, fixation counts, first entries, visits,
+ordered transitions and proportions. An all-contained scanpath has exactly one visit;
+visit count never exceeds contained fixation count. The generator explicitly includes
+all-contained paths and positive gaps. `FixationAoiLawsSuite` and `FixationAoiSuite`
+also pin analytic gap, interruption, overlap and zero-denominator examples on both
+platforms. Frame checks use `Agreement`, and overlap refusal names the fixation index,
+centre, frame and competing AOIs.
+
+The published fixation laws reject production mutations that split visits at positive
+gaps, add a microsecond to every contained fixation's dwell, or divide by the elapsed
+scanpath extent. All three mutants failed on JVM and Scala.js; the implementation was
+restored byte for byte before ordinary verification.
+
 ## Scope
 
-The laws cover the static sample-time API. They do not cover the deferred entity-trace
+The laws cover the static sample-time and fixation-time APIs. They do not cover the deferred entity-trace
 API, generic entity keys, or the public pairwise-overlap and multiplicity tables that the
 broader relational-attention design requires (PRD RA-1/RA-6).

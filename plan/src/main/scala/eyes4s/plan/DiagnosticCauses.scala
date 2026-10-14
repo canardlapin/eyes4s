@@ -735,6 +735,14 @@ private[plan] object CauseDiagnostics:
           real(y),
           names(areas.map(_.value))
         )
+      case ObservedFixationOverlap(id, fixation, x, y, areas) =>
+        diagnostic(C.aoi, e, e.message, Vector(Locus.Fixation(fixation)))(
+          frame(id),
+          int(fixation),
+          real(x),
+          real(y),
+          names(areas.map(_.value))
+        )
 
   def descriptor(e: DescriptorError): Diagnostic[Nothing] =
     import DescriptorError.*

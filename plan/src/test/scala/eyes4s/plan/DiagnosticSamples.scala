@@ -636,7 +636,8 @@ object DiagnosticSamples:
       AoiError.DuplicateId(aoiA, 0, 2),
       AoiError.FrameConflict(frameError),
       AoiError.ResolutionGridFailure(fid, 0, 1, GeometryError.DegenerateGrid(0, 1)),
-      AoiError.ObservedOverlap(fid, 3, 1, 2, Vector(aoiA, aoiB))
+      AoiError.ObservedOverlap(fid, 3, 1, 2, Vector(aoiA, aoiB)),
+      AoiError.ObservedFixationOverlap(fid, 3, 1, 2, Vector(aoiA, aoiB))
     ),
     family[DescriptorError]("DescriptorError")(
       DescriptorError.InvalidField("sigma", 0, " "),

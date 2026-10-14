@@ -419,7 +419,8 @@ object DiagnosticCatalog:
     "DuplicateId",
     "FrameConflict",
     "ResolutionGridFailure",
-    "ObservedOverlap"
+    "ObservedOverlap",
+    "ObservedFixationOverlap"
   )
 
   // ---------------------------------------------------------------- descriptors and preflight

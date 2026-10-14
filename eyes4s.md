@@ -807,6 +807,7 @@ final class Aoi[U <: Unit2D] private (id: AoiId, label: String, frame: Frame[U],
                                        attributes: Map[String, String])   // priority is list order
 final class AoiSet[U <: Unit2D] private (areas: Vector[Aoi[U]]):
   def assign(recording: Recording[U], policy: MembershipPolicy): Either[AoiError, AoiAssignment[U]]
+  def assign(scanpath: Scanpath[U], policy: MembershipPolicy): Either[AoiError, FixationAoiAssignment[U]]
 object AoiSet:
   def of[U <: Unit2D](areas: Vector[Aoi[U]]): Either[AoiError, AoiSet[U]]   // frame identity, unique ids
 
@@ -825,7 +826,12 @@ identity and entity identity differ, so the v1.1 layer below reaches its entitie
 validated binding from `AoiId` to `E` and never re-runs gaze assignment; that binding is an additive,
 binary-compatible extension. Decided (2026-10-09, `bd-01M2R18YTC8BF4T1890QX991RW`): 1.0 measures visits at
 fixation level, so a saccade or blink between two contained fixations does not split a visit. The
-shipped `sampleRunCount` counts consecutive sample membership; fixation-level measures are tracked by `bd-01M4HM49D6CNZ3M7N1QFXNMDNT`. The spatial-overlap policy that RA-1 asked for exists as
+shipped `sampleRunCount` counts consecutive sample membership. `FixationAoiAssignment.measure`
+returns fixation dwell, first-entry latency, contained fixation count and visit/entry counts.
+A non-contained fixation ends a visit; gaps between contained fixations do not. Dwell excludes
+those gaps, retained as `FixationAoiReport.interFixationTime`, and proportions divide by on-surface
+fixation time including background. See [AOI accounting laws](docs/AOI_LAWS.md).
+The spatial-overlap policy that RA-1 asked for exists as
 `MembershipPolicy`; the remaining laws-module receipts are tracked by `aoi-set`. The scanpath-level `sequence` is not exposed on `AoiSet`;
 `ScanMatch.similarity` takes `Vector[A]` and callers build the sequence. Transition counts exist
 (`aoi-seq`, closed) as the k×k table `AoiMeasurements.transitions`; the `Digraph[E]` projection
