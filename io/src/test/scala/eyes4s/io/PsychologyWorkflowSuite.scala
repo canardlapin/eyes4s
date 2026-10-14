@@ -217,11 +217,11 @@ class PsychologyWorkflowSuite extends munit.FunSuite:
         ("left", "", "dwell", "476500"),
         ("left", "", "dwell_proportion", "0.790215588723"),
         ("left", "", "first_entry_latency", "0"),
-        ("left", "", "run_count", "3"),
+        ("left", "", "sample_run_count", "3"),
         ("right", "", "dwell", "12500"),
         ("right", "", "dwell_proportion", "0.020729684909"),
         ("right", "", "first_entry_latency", "222000"),
-        ("right", "", "run_count", "1"),
+        ("right", "", "sample_run_count", "1"),
         ("left", "right", "transition_count", "1"),
         ("right", "left", "transition_count", "1")
       )
@@ -253,7 +253,7 @@ class PsychologyWorkflowSuite extends munit.FunSuite:
     assertEquals(result.tidy.evidence.clock.analysis.name, "trial-relative")
     assertEquals(
       Sha256.ofUtf8(result.csv).hex,
-      "c9a2ec351a09d94533305ef2bdb7743ee4773f41a6c1d2d21c068a13927b9f76"
+      "0f595b81da5a772ffa53cc64f90c4054ed9ccc6bf7eb8b9c2d7ba5dc2159f390"
     )
     assertEquals(document.encode, result.csv)
     assert(result.explain.contains("Accepted 90 of 90 source rows"))

@@ -120,7 +120,7 @@ trait AoiLaws extends Laws:
           val starts  = present.zipWithIndex.count { (inside, index) =>
             inside && (index == 0 || !present(index - 1))
           }
-          metric.runCount == starts
+          metric.sampleRunCount == starts
         }
       },
       "dwell proportions use analysable union plus background" -> forAll(assignments) { a =>

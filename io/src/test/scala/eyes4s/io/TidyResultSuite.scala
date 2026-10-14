@@ -146,7 +146,7 @@ class TidyResultSuite extends munit.FunSuite:
         AoiEstimand.Dwell,
         AoiEstimand.DwellProportion,
         AoiEstimand.FirstEntryLatency,
-        AoiEstimand.RunCount
+        AoiEstimand.SampleRunCount
       )
     )
     assertEquals(result.rows.last.estimand, AoiEstimand.TransitionCount)
@@ -266,15 +266,15 @@ class TidyResultSuite extends munit.FunSuite:
         "left"   -> "dwell",
         "left"   -> "dwell_proportion",
         "left"   -> "first_entry_latency",
-        "left"   -> "run_count",
+        "left"   -> "sample_run_count",
         "right"  -> "dwell",
         "right"  -> "dwell_proportion",
         "right"  -> "first_entry_latency",
-        "right"  -> "run_count",
+        "right"  -> "sample_run_count",
         "unused" -> "dwell",
         "unused" -> "dwell_proportion",
         "unused" -> "first_entry_latency",
-        "unused" -> "run_count",
+        "unused" -> "sample_run_count",
         "left"   -> "transition_count"
       )
     )

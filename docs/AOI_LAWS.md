@@ -15,7 +15,7 @@ The suite checks the following contracts of the shipped static sample-time API:
 - Each area's dwell equals its independently selected sample support.
 - First entry is the first assigned sample's onset relative to the recording start;
   a zero-support sample can still record an entry.
-- Runs count maximal consecutive membership, with background, blink and signal
+- `sampleRunCount` counts maximal consecutive sample membership, with background, blink and signal
   loss separating runs.
 - Summed dwell equals visible union plus duplicated time. A sample in three areas
   contributes one duration to union and two extra durations to duplicated time.

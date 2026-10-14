@@ -121,7 +121,7 @@ class AoiLawsSuite extends munit.DisciplineSuite:
     assertEquals(wide.dwell, Span.zero)
     assertEquals(wide.dwellProportion, None)
     assertEquals(wide.firstEntryLatency, Some(Span.zero))
-    assertEquals(wide.runCount, 1)
+    assertEquals(wide.sampleRunCount, 1)
   }
 
   test("background and exclusions separate runs and latency starts at the recording") {
@@ -146,7 +146,7 @@ class AoiLawsSuite extends munit.DisciplineSuite:
     )
     val wide = assigned.measure.areas.find(_.id == get(AoiId.of("wide"))).get
     assertEquals(wide.firstEntryLatency, Some(Span.micros(100)))
-    assertEquals(wide.runCount, 3)
+    assertEquals(wide.sampleRunCount, 3)
     assertEquals(wide.dwell, Span.micros(400))
   }
 

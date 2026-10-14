@@ -383,7 +383,7 @@ object AoiAssignment:
   * `dwellProportion` divides by the analysable time (areas plus background, excluding
   * exclusions and policy censoring) and is `None` when that time is zero.
   * `firstEntryLatency` runs from the recording's first sample to the first sample in the
-  * area, `None` if it is never entered. `runCount` counts maximal runs of consecutive
+  * area, `None` if it is never entered. `sampleRunCount` counts maximal runs of consecutive
   * samples in the area.
   */
 final case class AoiMetric(
@@ -392,7 +392,7 @@ final case class AoiMetric(
     dwell: Span,
     dwellProportion: Option[Double],
     firstEntryLatency: Option[Span],
-    runCount: Int
+    sampleRunCount: Int
 ) derives CanEqual
 
 /** How many times membership moved from `from` to a different area `to` between adjacent
