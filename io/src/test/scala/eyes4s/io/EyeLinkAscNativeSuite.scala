@@ -47,6 +47,40 @@ class EyeLinkAscNativeSuite extends munit.FunSuite:
       case Some(AscParsedNativeRecord.Message(found)) => found
       case other                                      => fail(s"expected message, found=$other")
 
+  test("inclusive final sample durations require the exact declared event period") {
+    val results = parsed(
+      "START 0 LEFT EVENTS",
+      "EVENTS GAZE LEFT RATE 250",
+      "EFIX L 10 20 14 100 200 500",
+      "ESACC L 21 29 12 100 200 120 220 2 100",
+      "EBLINK L 30 30 4",
+      "EBLINK L 30 34 8",
+      "EBLINK L 30 34 9",
+      "EBLINK L 30 34 4",
+      "END 40"
+    )
+    results.take(4).map(event).foreach { value =>
+      val interval = value.interval.getOrElse(fail("end event needs interval"))
+      assertEquals(
+        interval.convention,
+        AscNativeIntervalConvention.InclusiveFinalSample(BigDecimal(250))
+      )
+      assertEquals(interval.halfOpenOffset, interval.end + BigDecimal(4))
+    }
+    assert(results(4).diagnostics.exists(_.isInstanceOf[AscNativeDiagnostic.DurationMismatch]))
+    val legacy =
+      event(results(5)).interval.getOrElse(fail("expected retained endpoint-difference form"))
+    assertEquals(legacy.convention, AscNativeIntervalConvention.EndpointDifference)
+    assertEquals(legacy.halfOpenOffset, BigDecimal(34))
+    val fractional =
+      parsed("START 0 LEFT EVENTS", "EVENTS GAZE LEFT RATE 2000", "EBLINK L 1 2 1.5", "END 3")
+        .map(event)
+        .head
+        .interval
+        .getOrElse(fail("expected 2000 Hz half-millisecond terminal sample"))
+    assertEquals(fractional.halfOpenOffset, BigDecimal("2.5"))
+  }
+
   test("GAZE start and end records preserve EyeLink identity and exact summaries") {
     val results = parsed(
       "START 1 LEFT EVENTS",

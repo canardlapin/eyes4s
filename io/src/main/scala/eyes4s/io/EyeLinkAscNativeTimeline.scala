@@ -236,7 +236,11 @@ object EyeLinkAscNativeTimeline:
             event.interval.map { interval =>
               for
                 start <- AscTrackerTime.instant(event.source, "blink-start", interval.start)
-                end   <- AscTrackerTime.instant(event.source, "blink-end", interval.end)
+                end   <- AscTrackerTime.instant(
+                  event.source,
+                  "blink-end",
+                  interval.halfOpenOffset
+                )
               yield start -> end
             }
         }.flatten

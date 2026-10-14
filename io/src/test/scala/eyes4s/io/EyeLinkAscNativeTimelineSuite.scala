@@ -50,6 +50,33 @@ class EyeLinkAscNativeTimelineSuite extends munit.FunSuite:
       value
     }
 
+  test("inclusive terminal sample remains inside a confirmed native blink") {
+    val ledger = AscNativeEventLedger.reconcile(
+      events(
+        "START 0 LEFT EVENTS",
+        "EVENTS GAZE LEFT RATE 250",
+        "SBLINK L 10",
+        "EBLINK L 10 14 8",
+        "END 18"
+      )
+    )
+    val samples = IArray(10, 14, 18).map { milliseconds =>
+      Sample(Instant.millis(milliseconds), Gaze.Lost[Unit2D.Px]())
+    }
+    val result = EyeLinkAscNativeTimeline
+      .reconcileBlinkSamples(
+        1L,
+        AscRecordedEye.Left,
+        samples,
+        ledger,
+        AscBlinkReconciliationPolicy.ConfirmedNativeIntervals
+      )
+      .fold(errors => fail(errors.head.message), identity)
+    assert(result(0).gaze.isInstanceOf[Gaze.Blink[?]])
+    assert(result(1).gaze.isInstanceOf[Gaze.Blink[?]])
+    assert(result(2).gaze.isInstanceOf[Gaze.Lost[?]])
+  }
+
   test("messages become observed marks at effective time with stable simultaneous order") {
     val clock  = ClockId("tracker")
     val source = messages(

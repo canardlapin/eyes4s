@@ -37,6 +37,29 @@ GAZE_COORDS supply the 1600 by 1200 pixel display. Physical viewing geometry is
 unknown, so the workflow must not invent a pixel-to-degree conversion.
 
 `manifest.json` records independent lexical counts and observed conversion
-information. Admission of this source alone does not prove parser, timeline or
-Scanpath support. That claim requires the complete portable end-to-end test
-with exact source accounting and output witnesses on JVM and Scala.js.
+information. `PublicAscEndToEndSuite` imports the complete file on JVM and
+Scala.js and pins all three source-supported pixel IDT Scanpath fingerprints.
+Both runtimes retain all 237,664 samples, reconcile 247,992 physical lines and
+10,295 native records, and retain 42 observed messages. The detector uses a 50 px
+square extent and 100 ms minimum duration with `GapPolicy.Break`; these are stated
+workflow parameters, not a reconstruction of EyeLink's online detector settings.
+
+Native event durations include the final 4 ms sample at the declared 250 Hz rate.
+The parser retains the exported end and duration under
+`AscNativeIntervalConvention.InclusiveFinalSample` and derives the half-open
+offset for native blink reconciliation. The manufacturer's
+[ASC guide](https://www.sr-research.com/download/dispdoc/page25.html) describes
+the exported end as the last sample within an event.
+
+The file contains a second SFIX at line 103 while the SFIX at line 32 has no
+matching end. The test explicitly chooses
+`AscNativePairingPolicy.PreserveUnconfirmedEvents`; the source diagnostic and
+all events remain in the ledger, and only exactly paired ends enter
+`confirmedEnds`. The default `RequireConsistentPairs` still rejects that
+inconsistency. The fixture path uses exploratory conversion evidence because
+the complete converter receipt remains unavailable.
+
+The qualification receipt is `docs/evidence/public-asc-20261014.json`. Portable
+acceptance and warning-as-error compilation passed; the complete branch landing
+gate remains separate. This does not certify every EyeLink exporter/device or
+claim that pixel IDT reproduces the native online fixation annotations.

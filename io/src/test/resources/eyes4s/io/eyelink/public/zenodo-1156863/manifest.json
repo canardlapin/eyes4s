@@ -141,5 +141,6 @@
     "specification": "SR Research EyeLink II User Manual v2.14 section4.9.2.1 page81 (PDF page88)",
     "manual_url": "https://www.bjbrainvision.com/uploads/20201202/c28e58251454de21de1c86b8a6fb0a8d.pdf"
   },
-  "qualification": "source admission only; parser/timeline/Scanpath evidence pending; no release-converter or whole-device-matrix claim"
+  "qualification": "complete byte-verified import, native ledger, observed timeline and source-supported pixel IDT Scanpaths passed on JVM and Scala.js; receipt scopes portable acceptance separately from the branch landing gate; no complete converter or device-matrix claim",
+  "portable_workflow_evidence": "docs/evidence/public-asc-20261014.json"
 }
