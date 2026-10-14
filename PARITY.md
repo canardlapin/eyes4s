@@ -20,6 +20,33 @@ repeat those counts. The sections below give the measured findings case by case.
 | Implementation gap | The case names a live task and a selected falsification input; no parity is claimed. |
 | Out of baseline | Removed from the baseline by an owner decision recorded with its reason and date. The record and its evidence are kept and validated, but reported separately: it is neither a gap nor progress towards closing the baseline. |
 
+## Fixation-level AOI visits: independent conformance
+
+`AoiSet.assign(scanpath, policy)` measures fixation centres directly. Its visits survive
+non-fixation gaps, including saccades or blinks between contained fixations; an intervening
+background or off-surface fixation ends a visit. Each visit starts with one entry,
+including a contained initial fixation. Dwell excludes every gap and its proportion
+uses on-surface fixation duration including background. These are the conventions
+chosen in bead `bd-01M2R18YTC8BF4T1890QX991RW`.
+
+The per-ticket [synthetic inputs](tools/r-parity/fixtures/cases/cr7-fixation-conformance.json)
+and [exact oracle](tools/r-parity/fixtures/cr7-fixation-conformance.json) use integer
+microseconds and rational half-open rectangle membership. The independent generator
+computes memberships, overlap accounting, dwell, first entries, entries/visits and ordered
+transitions under every spatial policy, including raster-based smallest-area selection.
+`FixationAoiConformanceSuite` consumes those outputs on JVM and Scala.js; proportions
+use a named tolerance and times/counts are exact. Positive gaps, interruptions, three-way
+overlap, upper boundaries, absent support and clocks beyond floating-point integer precision
+are covered. The published laws also reject gap-splitting, extra-dwell and denominator mutants
+on both runtimes. [AOI contracts](docs/AOI_LAWS.md) describe replay-checked persistence
+and exports with explicit fixation-time denominators.
+
+The pinned eyesim source and export inventory have no AOI visit/dwell entry point, so
+this evidence is independent native conformance, not a measured eyesim equivalence claim.
+The existing sample API still counts consecutive sample runs, now named `sampleRunCount`
+and exported as `sample_run_count`. A gap can split sample runs while leaving one
+fixation-level visit; the two estimands must not be substituted for each other.
+
 ## Fixation admission: measured differences
 
 The [pinned admission fixture](tools/r-parity/fixtures/admission.json) calls `eye_table`,

@@ -1,0 +1,35 @@
+{
+  "schema": 1,
+  "ticket": "cr7-fixation-conformance",
+  "fixtures": {
+    "cr7-fixation-input": {
+      "path": "tools/r-parity/fixtures/cases/cr7-fixation-conformance.json",
+      "sha256": "5c80283e43d3312138aa44d2e0ccbe032c9ee07fd9032d7f2171a9de090aa4ec",
+      "license": "Apache-2.0; synthetic inputs authored for eyes4s",
+      "role": "Independent synthetic fixation AOI input cases"
+    },
+    "cr7-fixation-oracle": {
+      "path": "tools/r-parity/fixtures/cr7-fixation-conformance.json",
+      "sha256": "f15180ccea0b46eb949f22d1a19266283337e11723762ac5f8a785dd23d6d590",
+      "license": "Apache-2.0; synthetic inputs authored for eyes4s",
+      "role": "Exact integer/rational native AOI conformance; no eyesim parity claim"
+    },
+    "cr7-fixation-scala": {
+      "path": "laws/src/test/scala/eyes4s/laws/FixationAoiReference.scala",
+      "sha256": "1ec707ad9eeec8f1572cc1471c62ac73a7acde7a3e05d1fa4a3765a21f58cbb3",
+      "license": "Apache-2.0; synthetic inputs authored for eyes4s",
+      "role": "Portable independently generated AOI expectations"
+    }
+  },
+  "regeneration": {
+    "cr7-fixation-oracle": {
+      "command": "python3 tools/r-parity/generate_fixation_aoi.py --check",
+      "requires_eyesim": false,
+      "outputs": [
+        "cr7-fixation-oracle",
+        "cr7-fixation-scala"
+      ]
+    }
+  },
+  "cases": []
+}
