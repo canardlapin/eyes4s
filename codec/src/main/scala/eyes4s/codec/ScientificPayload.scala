@@ -47,7 +47,7 @@ enum ByteOrder(val wire: String) derives CanEqual:
   * [[PayloadLayout.maximumBytes]], so a layout never describes an array that
   * cannot be allocated on either platform.
   */
-final case class PayloadLayout private (
+sealed abstract case class PayloadLayout private (
     element: ElementKind,
     shape: Vector[Int],
     order: ArrayOrder,
@@ -60,6 +60,14 @@ final case class PayloadLayout private (
   def byteLength: Int = count * element.width
 
 object PayloadLayout:
+  private def apply(
+      element: ElementKind,
+      shape: Vector[Int],
+      order: ArrayOrder,
+      byteOrder: ByteOrder
+  ): PayloadLayout =
+    new PayloadLayout(element, shape, order, byteOrder) {}
+
   /** The largest payload, in bytes: the largest array JVM runtimes allocate. */
   val maximumBytes: Int = Int.MaxValue - 8
 
@@ -78,7 +86,7 @@ object PayloadLayout:
           val bytes = shape.foldLeft(BigInt(element.width))(_ * _)
           Either.cond(
             bytes <= maximumBytes,
-            new PayloadLayout(element, shape, order, ByteOrder.LittleEndian),
+            PayloadLayout(element, shape, order, ByteOrder.LittleEndian),
             PayloadError.TooLarge(element, shape, maximumBytes)
           )
 

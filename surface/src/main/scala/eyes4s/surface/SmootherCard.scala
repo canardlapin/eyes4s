@@ -70,7 +70,7 @@ enum SmootherCardError derives CanEqual:
   * primary source for it. A card records what is known, not what would look
   * respectable.
   */
-final case class SmootherCard private (
+sealed abstract case class SmootherCard private (
     id: String,
     name: String,
     summary: String,
@@ -86,6 +86,17 @@ final case class SmootherCard private (
     s"$name (${parameters.map(p => s"${p.name}: ${p.units.render}").mkString(", ")})"
 
 object SmootherCard:
+
+  private def apply(
+      id: String,
+      name: String,
+      summary: String,
+      parameters: Vector[SmootherParameter],
+      bandwidthRule: String,
+      conventions: Vector[String],
+      citation: Option[String]
+  ): SmootherCard =
+    new SmootherCard(id, name, summary, parameters, bandwidthRule, conventions, citation) {}
 
   def of(
       id: String,
@@ -110,7 +121,7 @@ object SmootherCard:
     else if citation.exists(_.trim.isEmpty) then Left(SmootherCardError.EmptyText("citation"))
     else
       Right(
-        new SmootherCard(id, name, summary, parameters, bandwidthRule, conventions, citation)
+        SmootherCard(id, name, summary, parameters, bandwidthRule, conventions, citation)
       )
 
   private[surface] def literal(
@@ -122,7 +133,7 @@ object SmootherCard:
       conventions: Vector[String],
       citation: Option[String]
   ): SmootherCard =
-    new SmootherCard(id, name, summary, parameters, bandwidthRule, conventions, citation)
+    SmootherCard(id, name, summary, parameters, bandwidthRule, conventions, citation)
 
 /** Canonical cards for the smoothers shipped by eyes4s. */
 object SmootherCards:

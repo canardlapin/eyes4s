@@ -24,7 +24,7 @@ import eyes4s.kernel.Hz
   * fixation records are joined on; the item is resolved separately (see
   * [[InventoryTrial.item]]).
   */
-final case class TrialIdentity private (
+sealed abstract case class TrialIdentity private (
     participant: String,
     phase: String,
     trial: String,
@@ -38,6 +38,14 @@ final case class TrialIdentity private (
   def render: String = s"$participant/$phase/$trial#${occurrence.value}"
 
 object TrialIdentity:
+  private def apply(
+      participant: String,
+      phase: String,
+      trial: String,
+      occurrence: TrialOccurrence
+  ): TrialIdentity =
+    new TrialIdentity(participant, phase, trial, occurrence) {}
+
   def of(
       participant: String,
       phase: String,
@@ -48,11 +56,11 @@ object TrialIdentity:
       .collectFirst {
         case (field, value) if value.trim.isEmpty => PlanError.BlankKeyField(field)
       }
-      .toLeft(new TrialIdentity(participant, phase, trial, occurrence))
+      .toLeft(TrialIdentity(participant, phase, trial, occurrence))
 
   /** The identity of a trial key: everything but its item. */
   def of(key: TrialKey): TrialIdentity =
-    new TrialIdentity(key.participant, key.phase, key.trial, key.occurrence)
+    TrialIdentity(key.participant, key.phase, key.trial, key.occurrence)
 
   /** The identity a layout projects from its keys, when it names a trial
     * label; a layout without an occurrence projection means occurrence 1.
@@ -60,7 +68,7 @@ object TrialIdentity:
   def projection[K](layout: StudyLayout[K]): Option[K => TrialIdentity] =
     layout.trial.map(trial =>
       key =>
-        new TrialIdentity(
+        TrialIdentity(
           layout.participant(key),
           layout.phase(key),
           trial(key),
@@ -68,8 +76,10 @@ object TrialIdentity:
         )
     )
 
-  given KeyDigest[TrialIdentity] = KeyDigest.derived[TrialIdentity]
-  given Ordering[TrialIdentity]  =
+  given KeyDigest[TrialIdentity] =
+    val fields = KeyDigest.derived[(String, String, String, TrialOccurrence)]
+    key => fields.digest((key.participant, key.phase, key.trial, key.occurrence))
+  given Ordering[TrialIdentity] =
     Ordering.by(k => (k.participant, k.phase, k.trial, k.occurrence.value))
 
 /** The declared type of an attribute column. */
@@ -158,7 +168,7 @@ enum AttributeValue derives CanEqual:
   case Blank
 
 /** Named attribute values in declaration order; names are distinct. */
-final case class Attributes private (entries: Vector[(String, AttributeValue)])
+sealed abstract case class Attributes private (entries: Vector[(String, AttributeValue)])
     derives CanEqual:
   def names: Vector[String]                     = entries.map(_._1)
   def get(name: String): Option[AttributeValue] = entries.collectFirst { case (`name`, value) =>
@@ -167,13 +177,16 @@ final case class Attributes private (entries: Vector[(String, AttributeValue)])
   def isEmpty: Boolean = entries.isEmpty
 
 object Attributes:
-  val empty: Attributes = new Attributes(Vector.empty)
+  private def apply(entries: Vector[(String, AttributeValue)]): Attributes =
+    new Attributes(entries) {}
+
+  val empty: Attributes = Attributes(Vector.empty)
 
   def of(entries: Vector[(String, AttributeValue)]): Either[InventoryError, Attributes] =
     val names = entries.map(_._1)
     val twice = names.diff(names.distinct).distinct
     if twice.nonEmpty then Left(InventoryError.DuplicateAttribute(twice))
-    else Right(new Attributes(entries))
+    else Right(Attributes(entries))
 
 /** Where a fixation's sample support comes from. A fixation is supported by
   * at least one sample; the rule is recorded with the admission because the
@@ -233,7 +246,7 @@ private def sortedDistinct(values: Vector[String]): Boolean =
   * name. Records that name different items, or an item other than the
   * inventory's, are a conflict (see [[itemConflict]]).
   */
-final case class InventoryTrial private (
+sealed abstract case class InventoryTrial private (
     identity: TrialIdentity,
     rows: Vector[Int],
     inventoryItem: Option[String],
@@ -262,6 +275,25 @@ final case class InventoryTrial private (
     item.orElse(inventoryItem).orElse(recordItems.headOption)
 
 object InventoryTrial:
+  private def apply(
+      identity: TrialIdentity,
+      rows: Vector[Int],
+      inventoryItem: Option[String],
+      attributes: Attributes,
+      recordItems: Vector[String],
+      records: Vector[Int],
+      disposition: TrialDisposition
+  ): InventoryTrial =
+    new InventoryTrial(
+      identity,
+      rows,
+      inventoryItem,
+      attributes,
+      recordItems,
+      records,
+      disposition
+    ) {}
+
   /** Inventory and fixation records are strictly increasing and positive;
     * record items are sorted, distinct and non-blank; a trial is absent
     * exactly when it has no records, and then names no items; an item
@@ -279,7 +311,7 @@ object InventoryTrial:
       disposition: TrialDisposition
   ): Either[InventoryError, InventoryTrial] =
     val trial =
-      new InventoryTrial(
+      InventoryTrial(
         identity,
         rows,
         inventoryItem,
@@ -317,13 +349,20 @@ object InventoryTrial:
   * never admitted; each admissible one is quarantined with
   * `QuarantineCause.NotInInventory`.
   */
-final case class UnlistedTrial private (
+sealed abstract case class UnlistedTrial private (
     identity: TrialIdentity,
     recordItems: Vector[String],
     records: Vector[Int]
 ) derives CanEqual
 
 object UnlistedTrial:
+  private def apply(
+      identity: TrialIdentity,
+      recordItems: Vector[String],
+      records: Vector[Int]
+  ): UnlistedTrial =
+    new UnlistedTrial(identity, recordItems, records) {}
+
   /** Records are non-empty and strictly increasing; items sorted and distinct. */
   def of(
       identity: TrialIdentity,
@@ -334,16 +373,20 @@ object UnlistedTrial:
       Left(InventoryError.RecordOrder(identity.render, records))
     else if !sortedDistinct(recordItems) then
       Left(InventoryError.RecordItems(identity.render, "not in the inventory", recordItems))
-    else Right(new UnlistedTrial(identity, recordItems, records))
+    else Right(UnlistedTrial(identity, recordItems, records))
 
 /** The declared record attributes of one admitted fixation record. */
-final case class RecordAttributes private (record: Int, attributes: Attributes) derives CanEqual
+sealed abstract case class RecordAttributes private (record: Int, attributes: Attributes)
+    derives CanEqual
 
 object RecordAttributes:
+  private def apply(record: Int, attributes: Attributes): RecordAttributes =
+    new RecordAttributes(record, attributes) {}
+
   def of(record: Int, attributes: Attributes): Either[InventoryError, RecordAttributes] =
     Either.cond(
       record >= 1,
-      new RecordAttributes(record, attributes),
+      RecordAttributes(record, attributes),
       InventoryError.AttributeRecord(record)
     )
 
@@ -355,7 +398,7 @@ object RecordAttributes:
   * numbers are those of the ledger's own records; inventory record numbers
   * (`rows`) count the inventory's header as record 1.
   */
-final case class InventoryLedger private (
+sealed abstract case class InventoryLedger private (
     source: SourceRef,
     header: Vector[String],
     attributeColumns: Vector[AttributeColumn],
@@ -390,6 +433,27 @@ final case class InventoryLedger private (
     admitted.size.toLong + quarantined.size.toLong + absent.size.toLong == trials.size.toLong
 
 object InventoryLedger:
+  private def apply(
+      source: SourceRef,
+      header: Vector[String],
+      attributeColumns: Vector[AttributeColumn],
+      trials: Vector[InventoryTrial],
+      unlisted: Vector[UnlistedTrial],
+      recordAttributeColumns: Vector[AttributeColumn],
+      recordAttributes: Vector[RecordAttributes],
+      sampleCounts: SampleCountRule
+  ): InventoryLedger =
+    new InventoryLedger(
+      source,
+      header,
+      attributeColumns,
+      trials,
+      unlisted,
+      recordAttributeColumns,
+      recordAttributes,
+      sampleCounts
+    ) {}
+
   /** Declared attribute names are distinct; every trial's and record's
     * attributes are exactly the declared columns, in order, each of its
     * kind or blank; identities are distinct and no two trials share a label
@@ -463,7 +527,7 @@ object InventoryLedger:
       .orElse(kinds)
       .orElse(attributes)
       .toLeft(
-        new InventoryLedger(
+        InventoryLedger(
           source,
           header,
           attributeColumns,

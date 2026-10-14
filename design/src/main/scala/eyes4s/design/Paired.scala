@@ -18,11 +18,22 @@ package eyes4s.design
 
 import eyes4s.kernel.Provenance
 
+object IndexedTrial:
+  private[design] def apply[K, M, A](index: Int, trial: Trial[K, M, A]): IndexedTrial[K, M, A] =
+    new IndexedTrial[K, M, A](index, trial) {}
+
 /** A source trial together with its stable position in a [[Trials]] value. */
-final case class IndexedTrial[K, M, A] private[design] (
+sealed abstract case class IndexedTrial[K, M, A] private[design] (
     index: Int,
     trial: Trial[K, M, A]
 ) derives CanEqual
+
+object DuplicateTrials:
+  private[design] def apply[K, M, A](
+      key: K,
+      occurrences: Vector[IndexedTrial[K, M, A]]
+  ): DuplicateTrials[K, M, A] =
+    new DuplicateTrials[K, M, A](key, occurrences) {}
 
 /** Every occurrence of a duplicate full key.
   *
@@ -30,7 +41,7 @@ final case class IndexedTrial[K, M, A] private[design] (
   * duplicate to the first row. The complete source trials remain available to
   * the caller as diagnostic data.
   */
-final case class DuplicateTrials[K, M, A] private[design] (
+sealed abstract case class DuplicateTrials[K, M, A] private[design] (
     key: K,
     occurrences: Vector[IndexedTrial[K, M, A]]
 ) derives CanEqual
@@ -83,7 +94,7 @@ object PairSpace:
     val storage: PairStorage = PairStorage.WithinUndirected
 
 /** Auditable diagnostics shared by pairing and pair evaluation. */
-final case class PairingReport[KL, KR] private[design] (
+sealed abstract case class PairingReport[KL, KR] private[design] (
     pairSpace: PairSpace,
     eligiblePairCount: Long,
     selectedPairCount: Int,
@@ -131,7 +142,25 @@ sealed trait Paired[KL, ML, KR, MR, A, B] derives CanEqual:
       )
     )
 
-final case class DirectedPaired[KL, ML, KR, MR, A, B] private[design] (
+object DirectedPaired:
+  private[design] def apply[KL, ML, KR, MR, A, B](
+      pairs: Vector[(Trial[KL, ML, A], Trial[KR, MR, B])],
+      eligiblePairCount: Long,
+      unmatchedLeft: Vector[KL],
+      unmatchedRight: Vector[KR],
+      ambiguous: PairingAmbiguities[KL, ML, KR, MR, A, B],
+      pairSpace: PairSpace.BetweenDirected | PairSpace.WithinDirected
+  ): DirectedPaired[KL, ML, KR, MR, A, B] =
+    new DirectedPaired[KL, ML, KR, MR, A, B](
+      pairs,
+      eligiblePairCount,
+      unmatchedLeft,
+      unmatchedRight,
+      ambiguous,
+      pairSpace
+    ) {}
+
+sealed abstract case class DirectedPaired[KL, ML, KR, MR, A, B] private[design] (
     pairs: Vector[(Trial[KL, ML, A], Trial[KR, MR, B])],
     eligiblePairCount: Long,
     unmatchedLeft: Vector[KL],
@@ -140,7 +169,25 @@ final case class DirectedPaired[KL, ML, KR, MR, A, B] private[design] (
     pairSpace: PairSpace.BetweenDirected | PairSpace.WithinDirected
 ) extends Paired[KL, ML, KR, MR, A, B] derives CanEqual
 
-final case class UndirectedPaired[K, M, A] private[design] (
+object UndirectedPaired:
+  private[design] def apply[K, M, A](
+      pairs: Vector[(Trial[K, M, A], Trial[K, M, A])],
+      eligiblePairCount: Long,
+      unmatchedLeft: Vector[K],
+      unmatchedRight: Vector[K],
+      ambiguous: PairingAmbiguities[K, M, K, M, A, A],
+      pairSpace: PairSpace.WithinUndirected
+  ): UndirectedPaired[K, M, A] =
+    new UndirectedPaired[K, M, A](
+      pairs,
+      eligiblePairCount,
+      unmatchedLeft,
+      unmatchedRight,
+      ambiguous,
+      pairSpace
+    ) {}
+
+sealed abstract case class UndirectedPaired[K, M, A] private[design] (
     pairs: Vector[(Trial[K, M, A], Trial[K, M, A])],
     eligiblePairCount: Long,
     unmatchedLeft: Vector[K],
@@ -166,14 +213,23 @@ sealed trait PairwiseAnalysis[KL, KR, E, S] derives CanEqual:
   def provenance: Provenance
   def evaluation: EvaluationInfo
 
-final case class DirectedPairwiseAnalysis[KL, KR, E, S] private[design] (
+sealed abstract case class DirectedPairwiseAnalysis[KL, KR, E, S] private[design] (
     rows: Vector[PairScore[KL, KR, E, S]],
     diagnostics: PairingReport[KL, KR],
     provenance: Provenance,
     evaluation: EvaluationInfo
 ) extends PairwiseAnalysis[KL, KR, E, S] derives CanEqual
 
-final case class UndirectedPairwiseAnalysis[K, E, S] private[design] (
+object UndirectedPairwiseAnalysis:
+  private[design] def apply[K, E, S](
+      rows: Vector[PairScore[K, K, E, S]],
+      diagnostics: PairingReport[K, K],
+      provenance: Provenance,
+      evaluation: EvaluationInfo
+  ): UndirectedPairwiseAnalysis[K, E, S] =
+    new UndirectedPairwiseAnalysis[K, E, S](rows, diagnostics, provenance, evaluation) {}
+
+sealed abstract case class UndirectedPairwiseAnalysis[K, E, S] private[design] (
     rows: Vector[PairScore[K, K, E, S]],
     diagnostics: PairingReport[K, K],
     provenance: Provenance,
@@ -432,6 +488,23 @@ private[design] object PairConstruction:
 end PairConstruction
 
 object PairingReport:
+  private[design] def apply[KL, KR](
+      pairSpace: PairSpace,
+      eligiblePairCount: Long,
+      selectedPairCount: Int,
+      unmatchedLeft: Vector[KL],
+      unmatchedRight: Vector[KR],
+      ambiguous: Vector[PairingAmbiguity[KL, KR]]
+  ): PairingReport[KL, KR] =
+    new PairingReport[KL, KR](
+      pairSpace,
+      eligiblePairCount,
+      selectedPairCount,
+      unmatchedLeft,
+      unmatchedRight,
+      ambiguous
+    ) {}
+
   /** Checked reconstruction: counts are non-negative and selection never exceeds eligibility. */
   def reconstruct[KL, KR](
       pairSpace: PairSpace,
@@ -456,6 +529,14 @@ object PairingReport:
     )
 
 object DirectedPairwiseAnalysis:
+  private[design] def apply[KL, KR, E, S](
+      rows: Vector[PairScore[KL, KR, E, S]],
+      diagnostics: PairingReport[KL, KR],
+      provenance: Provenance,
+      evaluation: EvaluationInfo
+  ): DirectedPairwiseAnalysis[KL, KR, E, S] =
+    new DirectedPairwiseAnalysis[KL, KR, E, S](rows, diagnostics, provenance, evaluation) {}
+
   /** Checked reconstruction: one row per selected pair, and the stored
     * provenance must be exactly what evaluating those rows records.
     */

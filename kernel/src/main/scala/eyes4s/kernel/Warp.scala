@@ -66,16 +66,29 @@ end Warp
 
 object Warp:
 
+  object Id:
+    private[kernel] def apply[A <: Unit2D](frame: Frame[A]): Id[A] =
+      new Id[A](frame) {}
+
   /** The identity on a frame. */
-  final case class Id[A <: Unit2D] private[kernel] (frame: Frame[A]) extends Warp[A, A]:
+  sealed abstract case class Id[A <: Unit2D] private[kernel] (frame: Frame[A])
+      extends Warp[A, A]:
     def from: Frame[A]                 = frame
     def to: Frame[A]                   = frame
     def apply(p: Pt[A]): Option[Pt[A]] = Some(p)
     def inverse: Option[Warp[A, A]]    = Some(this)
     def render: String                 = s"id[${frame.id}]"
 
+  object Affine:
+    private[kernel] def apply[A <: Unit2D, B <: Unit2D](
+        from: Frame[A],
+        to: Frame[B],
+        m: Mat3
+    ): Affine[A, B] =
+      new Affine[A, B](from, to, m) {}
+
   /** A linear transform in homogeneous coordinates, restricted to affine. */
-  final case class Affine[A <: Unit2D, B <: Unit2D] private[kernel] (
+  sealed abstract case class Affine[A <: Unit2D, B <: Unit2D] private[kernel] (
       from: Frame[A],
       to: Frame[B],
       m: Mat3
@@ -84,8 +97,16 @@ object Warp:
     def inverse: Option[Warp[B, A]]    = m.inverse.map(Affine(to, from, _))
     def render: String                 = s"affine[${from.id}->${to.id}]"
 
+  object Homography:
+    private[kernel] def apply[A <: Unit2D, B <: Unit2D](
+        from: Frame[A],
+        to: Frame[B],
+        h: Mat3
+    ): Homography[A, B] =
+      new Homography[A, B](from, to, h) {}
+
   /** A full projective transform, for surfaces seen at an angle. */
-  final case class Homography[A <: Unit2D, B <: Unit2D] private[kernel] (
+  sealed abstract case class Homography[A <: Unit2D, B <: Unit2D] private[kernel] (
       from: Frame[A],
       to: Frame[B],
       h: Mat3
@@ -98,6 +119,15 @@ object Warp:
   enum Sense derives CanEqual:
     case Forward // linear -> angular
     case Inverse // angular -> linear
+
+  object Tangent:
+    private[kernel] def apply[A <: Unit2D, B <: Unit2D](
+        from: Frame[A],
+        to: Frame[B],
+        perspective: Perspective,
+        sense: Sense
+    ): Tangent[A, B] =
+      new Tangent[A, B](from, to, perspective, sense) {}
 
   /** The projection between a linear unit on a flat surface and the angle that
     * surface subtends from a viewpoint.
@@ -128,7 +158,7 @@ object Warp:
     * the same value with the sense flipped and the frames swapped, so
     * `inverse` never has to return `None` for want of a case to return.
     */
-  final case class Tangent[A <: Unit2D, B <: Unit2D] private[kernel] (
+  sealed abstract case class Tangent[A <: Unit2D, B <: Unit2D] private[kernel] (
       from: Frame[A],
       to: Frame[B],
       perspective: Perspective,
@@ -175,10 +205,17 @@ object Warp:
 
   end Tangent
 
+  object Then:
+    private[kernel] def apply[A <: Unit2D, B <: Unit2D, C <: Unit2D](
+        f: Warp[A, B],
+        g: Warp[B, C]
+    ): Then[A, B, C] =
+      new Then[A, B, C](f, g) {}
+
   /** Composition. Private: reachable only through [[Warp.andThen]], which
     * checks that the frames meet.
     */
-  final case class Then[A <: Unit2D, B <: Unit2D, C <: Unit2D] private[kernel] (
+  sealed abstract case class Then[A <: Unit2D, B <: Unit2D, C <: Unit2D] private[kernel] (
       f: Warp[A, B],
       g: Warp[B, C]
   ) extends Warp[A, C]:

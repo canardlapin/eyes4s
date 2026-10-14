@@ -1,0 +1,85 @@
+{
+  "schema": 1,
+  "date": "2026-10-14",
+  "scope": "Kernel slice only; focused qualification before complete landing gate. Non-kernel migration remains open.",
+  "protected_product_types": [
+    "eyes4s.kernel.Correction.Translate",
+    "eyes4s.kernel.Sync",
+    "eyes4s.kernel.Perspective",
+    "eyes4s.kernel.Interval",
+    "eyes4s.kernel.Window",
+    "eyes4s.kernel.SyncResidual",
+    "eyes4s.kernel.RejectedSyncMark",
+    "eyes4s.kernel.Extent[eyes4s.kernel.Unit2D.Px]",
+    "eyes4s.kernel.Bounds[eyes4s.kernel.Unit2D.Px]",
+    "eyes4s.kernel.FrameSpec",
+    "eyes4s.kernel.Frame[eyes4s.kernel.Unit2D.Px]",
+    "eyes4s.kernel.Region.Rect[eyes4s.kernel.Unit2D.Px]",
+    "eyes4s.kernel.Region.Ellipse[eyes4s.kernel.Unit2D.Px]",
+    "eyes4s.kernel.Region.Polygon[eyes4s.kernel.Unit2D.Px]",
+    "eyes4s.kernel.Region.Union[eyes4s.kernel.Unit2D.Px]",
+    "eyes4s.kernel.Region.Intersect[eyes4s.kernel.Unit2D.Px]",
+    "eyes4s.kernel.Region.Complement[eyes4s.kernel.Unit2D.Px]",
+    "eyes4s.kernel.Region.Empty[eyes4s.kernel.Unit2D.Px]",
+    "eyes4s.kernel.Region.Everything[eyes4s.kernel.Unit2D.Px]",
+    "eyes4s.kernel.GridSpec",
+    "eyes4s.kernel.Grid[eyes4s.kernel.Unit2D.Px]",
+    "eyes4s.kernel.Moving[eyes4s.kernel.Unit2D.Px, eyes4s.kernel.Unit2D.Px]",
+    "eyes4s.kernel.Warp.Id[eyes4s.kernel.Unit2D.Px]",
+    "eyes4s.kernel.Warp.Affine[eyes4s.kernel.Unit2D.Px, eyes4s.kernel.Unit2D.Px]",
+    "eyes4s.kernel.Warp.Homography[eyes4s.kernel.Unit2D.Px, eyes4s.kernel.Unit2D.Px]",
+    "eyes4s.kernel.Warp.Tangent[eyes4s.kernel.Unit2D.Px, eyes4s.kernel.Unit2D.Px]",
+    "eyes4s.kernel.Warp.Then[eyes4s.kernel.Unit2D.Px, eyes4s.kernel.Unit2D.Px, eyes4s.kernel.Unit2D.Px]"
+  ],
+  "consumer_package": "consumer",
+  "kernel_tests_per_runtime": 249,
+  "kernel_law_checks_per_runtime": 179,
+  "full_root_jvm_js_werror": true,
+  "source_sha256": {
+    "kernel/src/main/scala/eyes4s/kernel/Frame.scala": "d7e1f9c4139f3dd28b67877db38b0822c9b6236f1932384694ecaf7bd7f37cb2",
+    "kernel/src/main/scala/eyes4s/kernel/Grid.scala": "522c4ac1617d7a4cfe855356259e453a93eaa29b35c983d869a6e1eb69008688",
+    "kernel/src/main/scala/eyes4s/kernel/Interval.scala": "fad375ecee53e1db16cb949ac5ec0b77be3f9ff6a77cea99c010972af397fba6",
+    "kernel/src/main/scala/eyes4s/kernel/Moving.scala": "5f82f522ce01532a88b1697506886c4536fa0a4c1fc3e8eb412f0fd1a3f409d0",
+    "kernel/src/main/scala/eyes4s/kernel/Perspective.scala": "50a8e0e4ad1c45e4dc51c6f8c21afc6e87db7620f56922764af9245c8e18091c",
+    "kernel/src/main/scala/eyes4s/kernel/Region.scala": "06710f8a9c14d2b0b93b3286da536ac9faa2d5f3d637ebec37670198847589eb",
+    "kernel/src/main/scala/eyes4s/kernel/Subframe.scala": "939bd66cbdec37338de8eae9fd13024dcb3cb2c159939b48ff3bc13ce7c69358",
+    "kernel/src/main/scala/eyes4s/kernel/Sync.scala": "effd74e4285ae12f03b76c2c9c8864f8384534282893547ef49264f624ee10d7",
+    "kernel/src/main/scala/eyes4s/kernel/SyncEvidence.scala": "7e88767a1a2780bb7498e6f5ac0454c22cb58e88919bc30fda7638a88e85996d",
+    "kernel/src/main/scala/eyes4s/kernel/Warp.scala": "9300c530f8bc6e61cb43476cc0e5e7da919f6c41f376fe51e0974829d938f264",
+    "kernel/src/test/scala/consumer/DomainInvariantSuite.scala": "1281154a9cd25a64fa4ee8211c709b38b52d53281459e7c021f9280b657cd94b",
+    "kernel/src/test/scala/consumer/DomainProductMirrorSuite.scala": "815f2b1d474f6916492f1b740886da445145378c44500c54793cad1b0dc46286",
+    "docs/DOMAIN_CONSTRUCTORS.md": "2a0faa235d8bbbe785a8186bdf568a3d6c4e918d38c073970c156d30dc27f6a6"
+  },
+  "logs_sha256": {
+    "eyes4s-invariants-kernel-sweep.log": "7939613aa6d7c89c0e6b3a0fce0b8e28945b6768cd7b5695cd20c1feb9f7c3df",
+    "eyes4s-invariants-kernel-root-initial.log": "000629af15560924bd908dad7575003f4f9b7ba0e2e5c6226b375188a16e2559",
+    "eyes4s-invariants-final-qualify.log": "862fa9688804e19462b7387e2f2c30f843d57217161062e49a2b7b315f5dcad8",
+    "eyes4s-invariants-final-restored.log": "86c7dd30cfb0cfd350c350e3c8582e66397ee0dd2d000f2c3610d2153bf1a03b"
+  },
+  "mutation": {
+    "mutation": "restore final private case class Extent and ordinary concrete allocation",
+    "consumer_package": "consumer (outside eyes4s.kernel)",
+    "original_sha256": "d7e1f9c4139f3dd28b67877db38b0822c9b6236f1932384694ecaf7bd7f37cb2",
+    "test_sources": {
+      "kernel/src/test/scala/consumer/DomainInvariantSuite.scala": "1281154a9cd25a64fa4ee8211c709b38b52d53281459e7c021f9280b657cd94b",
+      "kernel/src/test/scala/consumer/DomainProductMirrorSuite.scala": "815f2b1d474f6916492f1b740886da445145378c44500c54793cad1b0dc46286"
+    },
+    "runs": [
+      {
+        "platform": "JVM",
+        "exit_code": 1,
+        "failed_tests": 2,
+        "test_classes_recompiled": true,
+        "log_sha256": "6e888af19cbacf66e8d4f6db31a51b428312d48c744667de8e73f278016ba840"
+      },
+      {
+        "platform": "JS",
+        "exit_code": 1,
+        "failed_tests": 2,
+        "test_classes_recompiled": true,
+        "log_sha256": "d29670b68d994535d8dfef768292f950638ff3ec959d84ff2ac2551d27996e87"
+      }
+    ],
+    "restored_sha256": "d7e1f9c4139f3dd28b67877db38b0822c9b6236f1932384694ecaf7bd7f37cb2"
+  }
+}

@@ -31,7 +31,7 @@ final case class TimeColumns(onset: String, duration: String, unit: TimestampUni
   * optionally, occurrence (1 when no column is named). The label (participant,
   * phase and trial) identifies a trial; the occurrence is checked against it.
   */
-final case class TrialColumns private (
+sealed abstract case class TrialColumns private (
     participant: String,
     phase: String,
     trial: String,
@@ -67,6 +67,14 @@ final case class TrialColumns private (
       case _ => Left(Vector(p, f, t, n).collect { case Left(e) => e })
 
 object TrialColumns:
+  private def apply(
+      participant: String,
+      phase: String,
+      trial: String,
+      occurrence: Option[String]
+  ): TrialColumns =
+    new TrialColumns(participant, phase, trial, occurrence) {}
+
   def of(
       participant: String,
       phase: String,
@@ -74,7 +82,7 @@ object TrialColumns:
       occurrence: Option[String] = None
   ): Either[FixationImportError, TrialColumns] =
     distinct(Vector(participant, phase, trial) ++ occurrence.toVector)
-      .map(_ => new TrialColumns(participant, phase, trial, occurrence))
+      .map(_ => TrialColumns(participant, phase, trial, occurrence))
 
   private[io] def distinct(names: Vector[String]): Either[FixationImportError, Unit] =
     Either.cond(

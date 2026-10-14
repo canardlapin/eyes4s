@@ -185,16 +185,23 @@ enum UpperEdge derives CanEqual:
   case Included
 
 /** One declared bin of a numeric term. */
-final case class Bin private (label: String, from: Double, until: Double, upper: UpperEdge)
-    derives CanEqual:
+sealed abstract case class Bin private (
+    label: String,
+    from: Double,
+    until: Double,
+    upper: UpperEdge
+) derives CanEqual:
   def contains(value: Double): Boolean =
     from <= value && (value < until || (upper == UpperEdge.Included && value == until))
 
 object Bin:
+  private def apply(label: String, from: Double, until: Double, upper: UpperEdge): Bin =
+    new Bin(label, from, until, upper) {}
+
   def of(label: String, from: Double, until: Double, upper: UpperEdge): Either[SpecError, Bin] =
     Either.cond(
       label.trim.nonEmpty && from.isFinite && until.isFinite && from < until,
-      new Bin(label, from, until, upper),
+      Bin(label, from, until, upper),
       SpecError.InvalidBin(label, from, until)
     )
 
@@ -202,11 +209,14 @@ object Bin:
   * ascending order and pairwise disjoint. A value no bin contains has no
   * group.
   */
-final case class Bins private (bins: Vector[Bin]) derives CanEqual:
+sealed abstract case class Bins private (bins: Vector[Bin]) derives CanEqual:
   def labels: Vector[String]             = bins.map(_.label)
   def locate(value: Double): Option[Bin] = bins.find(_.contains(value))
 
 object Bins:
+  private def apply(bins: Vector[Bin]): Bins =
+    new Bins(bins) {}
+
   def of(bins: Vector[Bin]): Either[SpecError, Bins] =
     val labels   = bins.map(_.label)
     val disjoint = bins.zip(bins.drop(1)).forall { (a, b) =>
@@ -214,7 +224,7 @@ object Bins:
     }
     Either.cond(
       bins.nonEmpty && labels.distinct.size == labels.size && disjoint,
-      new Bins(bins),
+      Bins(bins),
       SpecError.InvalidBins(labels)
     )
 

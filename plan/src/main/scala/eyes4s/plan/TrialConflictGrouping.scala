@@ -25,24 +25,28 @@ package eyes4s.plan
   * use the same typed boundary as `eyes4s-io`; raw occurrence text and invalid
   * record positions cannot reach the grouping.
   */
-final case class TrialConflictRow[R] private (key: TrialKey, record: R) derives CanEqual:
+sealed abstract case class TrialConflictRow[R] private (key: TrialKey, record: R)
+    derives CanEqual:
   def identity: TrialIdentity = TrialIdentity.of(key)
 
 object TrialConflictRow:
+  private def apply[R](key: TrialKey, record: R): TrialConflictRow[R] =
+    new TrialConflictRow[R](key, record) {}
+
   /** Bind a parsed identity, its item attribute and a physical CSV record. */
   def of(
       identity: TrialIdentity,
       item: String,
       record: CsvRecord
   ): Either[PlanError, TrialConflictRow[CsvRecord]] =
-    identity.withItem(item).map(new TrialConflictRow(_, record))
+    identity.withItem(item).map(TrialConflictRow(_, record))
 
   /** Bind a validated trial key to a record the caller already identifies:
     * a [[CsvRecord]], or an importer's own row identity. It has no failure
     * path because neither value can be invalid here.
     */
   def from[R](key: TrialKey, record: R): TrialConflictRow[R] =
-    new TrialConflictRow(key, record)
+    TrialConflictRow(key, record)
 
 /** The consistency status of all records with one participant, phase and trial label. */
 enum TrialConflictClassification derives CanEqual:
@@ -50,10 +54,19 @@ enum TrialConflictClassification derives CanEqual:
   case ItemConflict(items: Vector[String])
   case OccurrenceConflict(occurrences: Vector[TrialOccurrence])
 
+object TrialConflictGroup:
+  private[plan] def apply[R](
+      representative: TrialKey,
+      keys: Vector[TrialKey],
+      records: Vector[R],
+      classification: TrialConflictClassification
+  ): TrialConflictGroup[R] =
+    new TrialConflictGroup[R](representative, keys, records, classification) {}
+
 /** One canonical trial-label group. `representative` is the least complete
   * [[TrialKey]] and records are in increasing order.
   */
-final case class TrialConflictGroup[R] private[plan] (
+sealed abstract case class TrialConflictGroup[R] private[plan] (
     representative: TrialKey,
     keys: Vector[TrialKey],
     records: Vector[R],
@@ -99,7 +112,7 @@ object TrialConflictGrouping:
           if keys.size == 1 then TrialConflictClassification.Ok
           else if items.size > 1 then TrialConflictClassification.ItemConflict(items)
           else TrialConflictClassification.OccurrenceConflict(occurrences)
-        new TrialConflictGroup(
+        TrialConflictGroup(
           representative,
           keys,
           recordsByKey.valuesIterator.flatten.toVector.sorted,

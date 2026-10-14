@@ -24,7 +24,7 @@ import eyes4s.kernel.Provenance
   * cannot turn a lure into a match when its item collides with a studied item.
   * They are scientific inputs, not classifications inferred from item names.
   */
-final case class ExpectedUnmatched private (
+sealed abstract case class ExpectedUnmatched private (
     column: String,
     values: Vector[String],
     assignments: Vector[(TrialIdentity, String)]
@@ -74,6 +74,13 @@ final case class ExpectedUnmatched private (
       }
 
 object ExpectedUnmatched:
+  private def apply(
+      column: String,
+      values: Vector[String],
+      assignments: Vector[(TrialIdentity, String)]
+  ): ExpectedUnmatched =
+    new ExpectedUnmatched(column, values, assignments) {}
+
   /** Parse explicit declarations. Trial identities are unique; order is canonical.
     * Empty assignment values are retained and refused only when used as focal trials.
     */
@@ -96,7 +103,7 @@ object ExpectedUnmatched:
       )
     else if assignments.map(_._1).distinct.size != assignments.size then
       invalid(assignments.map(_._1.render).mkString(", "), "trial assignments must be unique")
-    else Right(new ExpectedUnmatched(column, values.sorted, assignments.sortBy(_._1)))
+    else Right(ExpectedUnmatched(column, values.sorted, assignments.sortBy(_._1)))
 
   /** Resolve the declared text column against every pre-admission inventory trial.
     * Admission dispositions never change the selection.
@@ -135,13 +142,18 @@ object ExpectedUnmatched:
     yield selection
 
 /** The reusable recipe declaration, rebound to the inventory of each dataset revision. */
-final case class ExpectedUnmatchedRule private (column: String, values: Vector[String])
-    derives CanEqual:
+sealed abstract case class ExpectedUnmatchedRule private (
+    column: String,
+    values: Vector[String]
+) derives CanEqual:
   def bind(inventory: InventoryLedger): Either[PlanError, ExpectedUnmatched] =
     ExpectedUnmatched.fromInventory(column, values, inventory)
 
 object ExpectedUnmatchedRule:
+  private def apply(column: String, values: Vector[String]): ExpectedUnmatchedRule =
+    new ExpectedUnmatchedRule(column, values) {}
+
   def of(column: String, values: Vector[String]): Either[PlanError, ExpectedUnmatchedRule] =
     ExpectedUnmatched
       .of(column, values, Vector.empty)
-      .map(s => new ExpectedUnmatchedRule(s.column, s.values))
+      .map(s => ExpectedUnmatchedRule(s.column, s.values))

@@ -51,15 +51,18 @@ object TableJson:
   /** A JSON number, kept as the text it was written with. The text is
     * checked against the JSON number grammar, so it always parses.
     */
-  final case class Number private (text: String) extends TableJson
+  sealed abstract case class Number private (text: String) extends TableJson
 
   object Number:
+    private def apply(text: String): Number =
+      new Number(text) {}
+
     private val grammar = "-?(0|[1-9][0-9]*)(\\.[0-9]+)?([eE][+-]?[0-9]+)?".r
 
     /** The number spelled `text`, when it is a JSON number. */
-    def of(text: String): Option[Number] = Option.when(grammar.matches(text))(new Number(text))
+    def of(text: String): Option[Number] = Option.when(grammar.matches(text))(Number(text))
 
-    def apply(value: Long): Number = new Number(value.toString)
+    def apply(value: Long): Number = Number(value.toString)
 
   def obj(fields: (String, TableJson)*): TableJson = Obj(fields.toVector)
   def arr(items: TableJson*): TableJson            = Arr(items.toVector)

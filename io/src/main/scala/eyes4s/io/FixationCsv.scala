@@ -22,7 +22,7 @@ import eyes4s.kernel.*
 import eyes4s.plan.*
 
 /** Raw fixation table columns. Time units are declared separately, never inferred. */
-final case class FixationColumns private (
+sealed abstract case class FixationColumns private (
     ordinal: String,
     x: String,
     y: String,
@@ -32,6 +32,16 @@ final case class FixationColumns private (
 ) derives CanEqual:
   def names: Vector[String] = Vector(ordinal, x, y, onset, duration, sampleCount)
 object FixationColumns:
+  private def apply(
+      ordinal: String,
+      x: String,
+      y: String,
+      onset: String,
+      duration: String,
+      sampleCount: String
+  ): FixationColumns =
+    new FixationColumns(ordinal, x, y, onset, duration, sampleCount) {}
+
   def of(
       ordinal: String,
       x: String,
@@ -43,7 +53,7 @@ object FixationColumns:
     val names = Vector(ordinal, x, y, onset, duration, sampleCount)
     if names.exists(_.trim.isEmpty) || names.distinct.size != names.size then
       Left(FixationImportError.Columns(names))
-    else Right(new FixationColumns(ordinal, x, y, onset, duration, sampleCount))
+    else Right(FixationColumns(ordinal, x, y, onset, duration, sampleCount))
 
 /** A typed boundary reader for user keys; only the raw file boundary uses column strings. */
 /** An attribute a key carries beside its identity, such as the item a trial
@@ -208,16 +218,32 @@ enum FixationRowError derives CanEqual:
     case Event(reason)      => s"Fixation: $reason"
     case Trial(rows, cause) => s"Trial from rows $rows: ${cause.message}"
 
-final case class RejectedFixationRow[K] private[io] (
+object RejectedFixationRow:
+  private[io] def apply[K](
+      rowNumber: Int,
+      raw: Vector[String],
+      key: Option[K],
+      error: FixationRowError
+  ): RejectedFixationRow[K] =
+    new RejectedFixationRow[K](rowNumber, raw, key, error) {}
+
+sealed abstract case class RejectedFixationRow[K] private[io] (
     rowNumber: Int,
     raw: Vector[String],
     key: Option[K],
     error: FixationRowError
 ) derives CanEqual
 
+object AdmittedFixationRow:
+  private[io] def apply[K](rowNumber: Int, key: K, ordinal: Int): AdmittedFixationRow[K] =
+    new AdmittedFixationRow[K](rowNumber, key, ordinal) {}
+
 /** The record/ordinal link of one admitted source row to its typed trial key. */
-final case class AdmittedFixationRow[K] private[io] (rowNumber: Int, key: K, ordinal: Int)
-    derives CanEqual
+sealed abstract case class AdmittedFixationRow[K] private[io] (
+    rowNumber: Int,
+    key: K,
+    ordinal: Int
+) derives CanEqual
 
 /** The default admission refuses incomplete studies. Accepted trial groups are
   * separately available for an analyst who explicitly reviews the exclusions.
@@ -641,7 +667,11 @@ object FixationCsv:
           }
       }
     val renamed = invalid
-      .map(r => r.key.flatMap(overrides.get).fold(r)(c => r.copy(key = Some(c._1))))
+      .map(r =>
+        r.key
+          .flatMap(overrides.get)
+          .fold(r)(c => RejectedFixationRow(r.rowNumber, r.raw, Some(c._1), r.error))
+      )
     val rejected = (renamed ++ groups.collect { case Left(errors) => errors }.flatten)
       .sortBy(_.rowNumber)
     val links =

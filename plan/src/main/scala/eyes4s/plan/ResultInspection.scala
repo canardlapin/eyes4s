@@ -105,13 +105,16 @@ enum InspectionError[+K] derives CanEqual:
       s"Density at $reference has invalid '$field' geometry metadata: $found."
 
 /** A bounded page length. */
-final case class PageSize private (value: Int) derives CanEqual
+sealed abstract case class PageSize private (value: Int) derives CanEqual
 object PageSize:
+  private def apply(value: Int): PageSize =
+    new PageSize(value) {}
+
   val maximum: Int                                               = 4096
   def of(value: Int): Either[InspectionError[Nothing], PageSize] =
     Either.cond(
       value >= 1 && value <= maximum,
-      new PageSize(value),
+      PageSize(value),
       InspectionError.InvalidPageSize(value, maximum)
     )
 
@@ -123,13 +126,16 @@ final case class Page[K, A](entries: Vector[A], next: Option[ResultRef[K]])
 /** A position in a listing, counted from 0: the first entry is at offset 0.
   * An application that scrolls a listing asks for pages by offset.
   */
-final case class ListingOffset private[plan] (value: Int) derives CanEqual
+sealed abstract case class ListingOffset private[plan] (value: Int) derives CanEqual
 
 object ListingOffset:
-  val start: ListingOffset = new ListingOffset(0)
+  private[plan] def apply(value: Int): ListingOffset =
+    new ListingOffset(value) {}
+
+  val start: ListingOffset = ListingOffset(0)
 
   def of(value: Int): Either[NavigationError[Nothing], ListingOffset] =
-    Either.cond(value >= 0, new ListingOffset(value), NavigationError.NegativeOffset(value))
+    Either.cond(value >= 0, ListingOffset(value), NavigationError.NegativeOffset(value))
 
 /** One page by offset: at most the requested number of entries from
   * `offset`, the listing's `total`, and the offset the next page starts at.
@@ -153,7 +159,7 @@ object OffsetPage:
       (start until end).toVector.map(entry),
       offset,
       total,
-      Option.when(end < total)(new ListingOffset(end))
+      Option.when(end < total)(ListingOffset(end))
     )
 
 /** An immutable, keyed view in the result's own order. Entries are reached by

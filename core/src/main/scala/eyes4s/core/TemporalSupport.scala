@@ -28,7 +28,10 @@ object MaximumSupportGap:
     private[core] def retain(gap: Span): Span = gap
     def render: String                        = "unlimited"
 
-  final case class AtMost private[core] (span: Span) extends MaximumSupportGap:
+  object AtMost:
+    private[core] def apply(span: Span): AtMost = new AtMost(span) {}
+
+  sealed abstract case class AtMost private[core] (span: Span) extends MaximumSupportGap:
     private[core] def retain(gap: Span): Span =
       if gap.toMicros <= span.toMicros then gap else span
     def render: String = s"at-most(${span.render})"
@@ -51,7 +54,10 @@ object EdgeSupport:
   case object MedianInterval extends EdgeSupport:
     def render: String = "median-interval"
 
-  final case class Fixed private[core] (span: Span) extends EdgeSupport:
+  object Fixed:
+    private[core] def apply(span: Span): Fixed = new Fixed(span) {}
+
+  sealed abstract case class Fixed private[core] (span: Span) extends EdgeSupport:
     def render: String = s"fixed(${span.render})"
 
   def fixed(span: Span): Either[TemporalSupportError, EdgeSupport] =
@@ -63,7 +69,10 @@ sealed trait TemporalSupport derives CanEqual:
   def render: String
 
 object TemporalSupport:
-  final case class Fixed private[core] (period: Span) extends TemporalSupport:
+  object Fixed:
+    private[core] def apply(period: Span): Fixed = new Fixed(period) {}
+
+  sealed abstract case class Fixed private[core] (period: Span) extends TemporalSupport:
     def render: String = s"fixed(period=${period.render})"
 
   final case class Voronoi(
@@ -84,7 +93,7 @@ object TemporalSupport:
     else Right(Fixed(period))
 
   private[core] def default(rate: Rate): TemporalSupport = rate match
-    case Rate.Fixed(hz) => new Fixed(hz.period)
+    case Rate.Fixed(hz) => Fixed(hz.period)
     case Rate.Irregular => Voronoi(MaximumSupportGap.Unlimited, EdgeSupport.MedianInterval)
 
 /** A temporal-support configuration was not locally meaningful. */

@@ -75,7 +75,7 @@ final case class GridId(name: String) derives CanEqual:
   * Cell centres and half-open boundary membership are fixed conventions of
   * [[Grid]], so the varying specification is its frame and dimensions.
   */
-final case class GridSpec private (
+sealed abstract case class GridSpec private (
     frameId: FrameId,
     frame: FrameSpec,
     nx: Int,
@@ -84,6 +84,9 @@ final case class GridSpec private (
   def render: String = s"${nx}x$ny over $frameId (${frame.render})"
 
 object GridSpec:
+  private def apply(frameId: FrameId, frame: FrameSpec, nx: Int, ny: Int): GridSpec =
+    new GridSpec(frameId, frame, nx, ny) {}
+
   private[kernel] def from[U <: Unit2D](grid: Grid[U]): GridSpec =
     GridSpec(grid.frame.id, grid.frame.spec, grid.nx, grid.ny)
 
@@ -104,7 +107,7 @@ object GridSpec:
   * assigned "to" a cell belongs to the whole rectangle. Conflating the two is
   * how cell-area factors go missing from normalisation.
   */
-final case class Grid[U <: Unit2D] private (
+sealed abstract case class Grid[U <: Unit2D] private (
     id: GridId,
     frame: Frame[U],
     nx: Int,
@@ -188,6 +191,9 @@ final case class Grid[U <: Unit2D] private (
 end Grid
 
 object Grid:
+
+  private def apply[U <: Unit2D](id: GridId, frame: Frame[U], nx: Int, ny: Int): Grid[U] =
+    new Grid[U](id, frame, nx, ny) {}
 
   def of[U <: Unit2D](
       id: GridId,

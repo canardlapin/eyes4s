@@ -228,9 +228,14 @@ object Correction:
     def render: String = "flipX"
   case object FlipY extends Correction:
     def render: String = "flipY"
-  final case class Translate private[kernel] (dx: Double, dy: Double) extends Correction:
+  object Translate:
+    private[kernel] def apply(dx: Double, dy: Double): Translate =
+      new Translate(dx, dy) {}
+
+  sealed abstract case class Translate private[kernel] (dx: Double, dy: Double)
+      extends Correction:
     def render: String = s"translate($dx, $dy)"
 
   def translate(dx: Double, dy: Double): Either[GeometryError, Correction] =
-    if dx.isFinite && dy.isFinite then Right(new Translate(dx, dy))
+    if dx.isFinite && dy.isFinite then Right(Translate(dx, dy))
     else Left(GeometryError.NonFiniteTranslation(dx, dy))

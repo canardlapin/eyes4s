@@ -25,33 +25,40 @@ import eyes4s.surface.EdgePolicy
 /** The focal (query) and reference phases of a study: non-empty and
   * different.
   */
-final case class StudyPhases private (focal: String, reference: String) derives CanEqual
+sealed abstract case class StudyPhases private (focal: String, reference: String)
+    derives CanEqual
 
 object StudyPhases:
+  private def apply(focal: String, reference: String): StudyPhases =
+    new StudyPhases(focal, reference) {}
+
   /** The phases of a configured plan, which `StudyPlan.configure` checked. */
   def of[K, U <: Unit2D, P, S, D](plan: StudyPlan[K, U, P, S, D]): StudyPhases =
-    new StudyPhases(plan.focalPhase, plan.referencePhase)
+    StudyPhases(plan.focalPhase, plan.referencePhase)
 
   def of(focal: String, reference: String): Either[PlanError, StudyPhases] =
     Either.cond(
       focal.trim.nonEmpty && reference.trim.nonEmpty && focal != reference,
-      new StudyPhases(focal, reference),
+      StudyPhases(focal, reference),
       PlanError.InvalidPhases(focal, reference)
     )
 
 /** A grid's columns and rows: positive, with a cell count an `Int` holds, the
   * same rule as `Grid.of`.
   */
-final case class GridCells private (columns: Int, rows: Int) derives CanEqual
+sealed abstract case class GridCells private (columns: Int, rows: Int) derives CanEqual
 
 object GridCells:
+  private def apply(columns: Int, rows: Int): GridCells =
+    new GridCells(columns, rows) {}
+
   def of(columns: Int, rows: Int): Either[GeometryError, GridCells] =
     if columns <= 0 || rows <= 0 then Left(GeometryError.DegenerateGrid(columns, rows))
     else if columns.toLong * rows.toLong > Int.MaxValue then
       Left(GeometryError.GridCellCountOverflow(columns, rows, columns.toLong * rows.toLong))
-    else Right(new GridCells(columns, rows))
+    else Right(GridCells(columns, rows))
 
-  def of[U <: Unit2D](grid: Grid[U]): GridCells = new GridCells(grid.nx, grid.ny)
+  def of[U <: Unit2D](grid: Grid[U]): GridCells = GridCells(grid.nx, grid.ny)
 
 /** What a study form takes from outside the form: the admission frame the
   * input lies on, the grid's identity and, when the host declares one, the

@@ -415,6 +415,8 @@ private[eyes4s] object DiagnosticOperand extends DiagnosticOperandCauses:
   given nonNegativeLong: DiagnosticOperand[NonNegativeLong, Nothing] =
     of(value => DiagnosticSupport.long(value.toLong))
   given contentHash: DiagnosticOperand[ContentHash, Nothing]       = of(h => artifact(h.render))
+  given artifactRef[A]: DiagnosticOperand[ArtifactRef[A], Nothing] =
+    of(value => fields("digest" -> text(value.digest)))
   given evaluationInfo: DiagnosticOperand[EvaluationInfo, Nothing] =
     of(DiagnosticSupport.evaluation)
   given sourceInterpretation: DiagnosticOperand[SourceInterpretation, Nothing] = of {

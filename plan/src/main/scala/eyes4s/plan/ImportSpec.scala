@@ -51,7 +51,7 @@ enum SourceKeyColumns[K] derives CanEqual:
     case Custom(_, _, columns) => columns
 
 /** Pure fixation-column declarations shared by Studio and the importer. */
-final case class SourceFixationColumns private (
+sealed abstract case class SourceFixationColumns private (
     ordinal: String,
     x: String,
     y: String,
@@ -64,6 +64,17 @@ final case class SourceFixationColumns private (
     samples.countColumn.toVector ++ attributes.map(_.name)
 
 object SourceFixationColumns:
+  private def apply(
+      ordinal: String,
+      x: String,
+      y: String,
+      onset: String,
+      duration: String,
+      samples: SampleCountRule,
+      attributes: Vector[AttributeColumn]
+  ): SourceFixationColumns =
+    new SourceFixationColumns(ordinal, x, y, onset, duration, samples, attributes) {}
+
   def of(
       ordinal: String,
       x: String,
@@ -73,11 +84,11 @@ object SourceFixationColumns:
       samples: SampleCountRule,
       attributes: Vector[AttributeColumn] = Vector.empty
   ): Either[ImportSpecError, SourceFixationColumns] =
-    val value = new SourceFixationColumns(ordinal, x, y, onset, duration, samples, attributes)
+    val value = SourceFixationColumns(ordinal, x, y, onset, duration, samples, attributes)
     ImportSpec.checkColumns(value.names).map(_ => value)
 
 /** The independent trial-inventory source interpretation. */
-final case class InventoryImportSpec private (
+sealed abstract case class InventoryImportSpec private (
     participant: String,
     phase: String,
     trial: String,
@@ -106,6 +117,16 @@ final case class InventoryImportSpec private (
     )
 
 object InventoryImportSpec:
+  private def apply(
+      participant: String,
+      phase: String,
+      trial: String,
+      occurrence: Option[String],
+      item: Option[String],
+      attributes: Vector[AttributeColumn]
+  ): InventoryImportSpec =
+    new InventoryImportSpec(participant, phase, trial, occurrence, item, attributes) {}
+
   def of(
       participant: String,
       phase: String,
@@ -114,7 +135,7 @@ object InventoryImportSpec:
       item: Option[String] = None,
       attributes: Vector[AttributeColumn] = Vector.empty
   ): Either[ImportSpecError, InventoryImportSpec] =
-    val value = new InventoryImportSpec(participant, phase, trial, occurrence, item, attributes)
+    val value = InventoryImportSpec(participant, phase, trial, occurrence, item, attributes)
     ImportSpec.checkColumns(value.names).map(_ => value)
 
 /** An inventory admission binds both the declaration and its whole-source identity. */

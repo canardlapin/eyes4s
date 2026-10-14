@@ -315,19 +315,26 @@ final class DensityEntropy[U <: Unit2D] private[surface] (
 )
 
 /** One scale's entropy, computed from its map: the three fields always agree. */
-final case class ScaleEntropy[U <: Unit2D] private (
+sealed abstract case class ScaleEntropy[U <: Unit2D] private (
     sigma: Sigma[U],
     entropy: Entropy,
     relativeEntropy: Double
 ) derives CanEqual
 
 object ScaleEntropy:
+  private def apply[U <: Unit2D](
+      sigma: Sigma[U],
+      entropy: Entropy,
+      relativeEntropy: Double
+  ): ScaleEntropy[U] =
+    new ScaleEntropy[U](sigma, entropy, relativeEntropy) {}
+
   private[surface] def of[U <: Unit2D](
       sigma: Sigma[U],
       mass: Mass[U],
       base: LogBase
   ): ScaleEntropy[U] =
-    new ScaleEntropy(sigma, mass.entropy(base), mass.relativeEntropy(base))
+    ScaleEntropy(sigma, mass.entropy(base), mass.relativeEntropy(base))
 
 /** Entropies of one map at several bandwidths, in ascending order of sigma.
   *
