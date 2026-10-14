@@ -1,0 +1,13 @@
+# Project prerequisites
+
+`ProjectPrerequisites.query(session, evidence, catalogue)` evaluates a complete application catalogue in one pure call. Every entry carries a `DefinitionId` and an ordered list of typed requirements. The report preserves all entries and exposes both available analyses and unavailable entries with their exact findings. Availability means that the declared prerequisites are satisfied; numerical execution may still return data-dependent failures.
+
+The checked `Session` supplies recordings, AOI sets and grids in its spatial frame. `ProjectEvidence` supplies a physical `Viewing`, observed timelines keyed by trial, directed synchronization evidence and the exact installed schema identities. No planned timeline is accepted as observed evidence. A request for schema version 3 remains unavailable when only versions 1 and 2 are installed; the finding names all three versions.
+
+An observed-anchor requirement names the trial, recording, selector, expected observed clock and maximum accepted synchronization uncertainty. `MarkSelector.resolve` performs the same stable occurrence selection for this query and for `EpochPlan.resolve`: unique, first, last or zero-based Nth. Missing and ambiguous selections preserve the selector and observed match count. A timeline on a foreign nominal clock is refused through `Agreement.clocks`.
+
+If the observed and recording clocks agree, no fitted conversion is needed. Otherwise, only evidence directed from the observed clock to that recording clock is eligible. Any eligible fit within the requested inclusive uncertainty limit satisfies the requirement. A reversed fit is not implicitly inverted. Missing evidence reports the required clock operands and available directed pairs; imprecise evidence reports the best eligible uncertainty and requested limit.
+
+Requirements and catalogue entries are deliberately not deduplicated. The same analysis definition can appear with different configured requirements, and every requested entry receives a result. Session insertion still owns frame validation. This query does not grant authority to use arbitrary objects outside that checked Session.
+
+The catalogue must declare all prerequisites for its analyses. The query checks those declarations; it does not infer the requirements of arbitrary user functions. Existing per-plan preflight checks remain responsible for plan/input identity, schedule bounds, method-specific configuration and data-dependent warnings. Family adapters and the project catalogue conformance witness must establish that shipped analysis entries declare their complete requirements before the project-wide acceptance ticket closes.

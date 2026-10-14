@@ -1,0 +1,79 @@
+{
+  "schema": 1,
+  "date": "2026-10-14",
+  "scope": "Project-query foundation, explicit catalogue requirements, common diagnostics and epoch selector seam. Shipped catalogue/family adapters remain required before app-prereq closure; full landing qualification recorded separately.",
+  "root_jvm_js_werror": true,
+  "focused_tests_per_runtime": 35,
+  "documentation_tests_jvm": 3,
+  "diagnostic_codes": {
+    "issued": 753,
+    "pin": "0d07fb2fbfd17fcb",
+    "unchanged_stable_count": 445,
+    "unchanged_stable_pin": "fb7ffbd3d3db7f63"
+  },
+  "mutation": {
+    "schema": 1,
+    "source_sha256": "dc67bfd584b28882fbe072bc1f7a82aedc48283618fc8df697c07a0ff8725be0",
+    "runs": [
+      {
+        "mutation": "source-clock",
+        "platform": "JVM",
+        "exit_code": 1,
+        "failed_tests": 1,
+        "log_sha256": "706fe8d5e4a1fdaedc6d59001397fdcd7aa488702f6def8868ac73bc5813e0e3"
+      },
+      {
+        "mutation": "source-clock",
+        "platform": "JS",
+        "exit_code": 1,
+        "failed_tests": 1,
+        "log_sha256": "08fed09f4012cb15af259cebb9b6b7f97b46011db5875198fc7bdbc8169ba8f9"
+      },
+      {
+        "mutation": "target-clock",
+        "platform": "JVM",
+        "exit_code": 1,
+        "failed_tests": 1,
+        "log_sha256": "a1781dff1403004c075ef32cf536aa52f58632fe5d730907becdb427f9e83989"
+      },
+      {
+        "mutation": "target-clock",
+        "platform": "JS",
+        "exit_code": 1,
+        "failed_tests": 1,
+        "log_sha256": "fd330fae6213fa210dbd41a538c934128300c4303ea320e9f17488709f207d63"
+      },
+      {
+        "mutation": "inclusive-precision",
+        "platform": "JVM",
+        "exit_code": 1,
+        "failed_tests": 2,
+        "log_sha256": "8b03c7a18e1799fd9d07b2ac1aa77080713cecef97ea55603bde1d723ce26710"
+      },
+      {
+        "mutation": "inclusive-precision",
+        "platform": "JS",
+        "exit_code": 1,
+        "failed_tests": 2,
+        "log_sha256": "3f91e8c8cd2e02f52260c261b107de58bac7e5450b397a669f5506e48aec504b"
+      }
+    ],
+    "restored_sha256": "dc67bfd584b28882fbe072bc1f7a82aedc48283618fc8df697c07a0ff8725be0"
+  },
+  "source_sha256": {
+    "docs/DIAGNOSTICS.md": "e9f6e2eb956382052eefea077d507d9c3f12642112fc6423fe75e9e0ec327c60",
+    "docs/PROJECT_PREREQUISITES.md": "08378e2b75eba58a37e07c849f54a0b06980fb04b628b243cfcc3643b57b9d9c",
+    "plan/src/main/scala/eyes4s/plan/DiagnosticCatalog.scala": "e02eb3f47b2563d21d784276166748c2df436b09963570cbb7b2677dcabcd2f4",
+    "plan/src/main/scala/eyes4s/plan/EpochPlan.scala": "938fa84de9cfa684920660336e587b5e70157fcd711be49a5cbc62b527e3f247",
+    "plan/src/main/scala/eyes4s/plan/ProjectPrerequisiteDiagnostics.scala": "5d23c2fcfec09d28801c17100dd2deb948459c4b9a0b9560f291301bdd732aa6",
+    "plan/src/main/scala/eyes4s/plan/ProjectPrerequisites.scala": "dc67bfd584b28882fbe072bc1f7a82aedc48283618fc8df697c07a0ff8725be0",
+    "plan/src/test/scala/eyes4s/plan/DiagnosticCatalogSuite.scala": "fac572abb4dd57c3b438b4ea724dbd23a2b5f9bbd9caa3536991ee8c2a82fe78",
+    "plan/src/test/scala/eyes4s/plan/DiagnosticSamples.scala": "e9ea90f58356e13ef347ccf4e739246f3ad7b95b658c8757dde2751ecd06fa73",
+    "plan/src/test/scala/eyes4s/plan/ProjectPrerequisitesSuite.scala": "3d82a83884fcfb8bd3639ead976ab59c7f2f17c8bb9bbe64228092cc0203b1b1"
+  },
+  "logs_sha256": {
+    "eyes4s-project-prereq-diagnostics.log": "f66b3c442037f93754986408d51766de15688f1cadfb925e8e73b3187c3a7286",
+    "eyes4s-project-prereq-doc-verified.log": "d8c43353c1ddb116e4a43b3eb26c12af4c0883812691a73450f0553730a9f637",
+    "eyes4s-project-prereq-restored.log": "e1ce497356063628d7f8cf7c4a4b64f7beb76bcf663155d837c0593654327a9f"
+  }
+}

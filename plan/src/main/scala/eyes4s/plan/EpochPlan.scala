@@ -33,7 +33,27 @@ enum FinalBin derives CanEqual:
   case RequireExactDivision, IncludeShortFinal, ExcludeAndReport
 
 /** Selection is data; equal-time marks retain Timeline's stable input order. */
-final case class MarkSelector[K](kind: K, occurrence: Occurrence)
+final case class MarkSelector[K](kind: K, occurrence: Occurrence):
+  /** Resolve only the observed anchor, without allocating epoch bins. */
+  def resolve[T](
+      trial: T,
+      timeline: ObservedTimeline[K],
+      expectedClock: ClockId
+  )(using keys: Eq[K]): Either[EpochError[T, K], Instant] =
+    for
+      _ <- Agreement
+        .clocks(expectedClock, timeline.clock)
+        .left
+        .map(e => EpochError.Clock(trial, this, e))
+      matches  = timeline.marks.filter(m => keys.eqv(m.value, kind))
+      selected = occurrence match
+        case Occurrence.RequireUnique => Option.when(matches.size == 1)(0)
+        case Occurrence.First         => Option.when(matches.nonEmpty)(0)
+        case Occurrence.Last          => Option.when(matches.nonEmpty)(matches.size - 1)
+        case Occurrence.Nth(index)    =>
+          Option.when(index.toLong < matches.size.toLong)(index.toLong.toInt)
+      mark <- selected.map(matches).toRight(EpochError.AnchorMatches(trial, this, matches.size))
+    yield mark.at
 
 /** One trial's resolved epoch on its observed clock. `interval` is the whole
   * window around `anchor`; `bins` are contiguous half-open intervals of the plan's
@@ -97,26 +117,14 @@ final class EpochPlan[K] private (
       maximumBins: NonNegativeLong
   )(using keys: Eq[K]): Either[EpochError[T, K], EpochBins] =
     for
-      clock <- Agreement
-        .clocks(expectedClock, timeline.clock)
-        .left
-        .map(e => EpochError.Clock(trial, anchor, e))
-      matches  = timeline.marks.filter(m => keys.eqv(m.value, anchor.kind))
-      selected = anchor.occurrence match
-        case Occurrence.RequireUnique => Option.when(matches.size == 1)(0)
-        case Occurrence.First         => Option.when(matches.nonEmpty)(0)
-        case Occurrence.Last          => Option.when(matches.nonEmpty)(matches.size - 1)
-        case Occurrence.Nth(index)    =>
-          Option.when(index.toLong < matches.size.toLong)(index.toLong.toInt)
-      mark <- selected
-        .map(matches)
-        .toRight(EpochError.AnchorMatches(trial, anchor, matches.size))
-      from  = BigInt(mark.at.toMicros) + window.from.toMicros
-      until = BigInt(mark.at.toMicros) + window.until.toMicros
+      at <- anchor.resolve(trial, timeline, expectedClock)
+      clock = expectedClock
+      from  = BigInt(at.toMicros) + window.from.toMicros
+      until = BigInt(at.toMicros) + window.until.toMicros
       _ <- Either.cond(
         from.isValidLong && until.isValidLong,
         (),
-        EpochError.AnchorOverflow(trial, anchor, mark.at, window)
+        EpochError.AnchorOverflow(trial, anchor, at, window)
       )
       width  = BigInt(binWidth.toMicros)
       length = until - from
@@ -169,7 +177,7 @@ final class EpochPlan[K] private (
             .map(e => EpochError.Clock(trial, anchor, e))
             .map(Some(_))
         else Right(None)
-    yield new EpochBins(mark.at, interval, bins, tail)
+    yield new EpochBins(at, interval, bins, tail)
 
 object EpochPlan:
   def of[K](
