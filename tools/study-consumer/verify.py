@@ -35,7 +35,7 @@ FIXTURES = (
 )
 # The facade journey's AdSERP excerpt and tidy export, as the library's own suite pins them.
 FACADE_SOURCE_SHA256 = "57dc3230c1e2a701017011a9652e215fcb09b7f1b63a16fe00ca0ed1ca9639d0"
-FACADE_CSV_SHA256 = "c9a2ec351a09d94533305ef2bdb7743ee4773f41a6c1d2d21c068a13927b9f76"
+FACADE_CSV_SHA256 = "0f595b81da5a772ffa53cc64f90c4054ed9ccc6bf7eb8b9c2d7ba5dc2159f390"
 # Degrees: the recording route's angular warp is trigonometric.
 ANGULAR_TOLERANCE = 1e-9
 # The named tolerance of the Gaussian and temporal cosine oracles.

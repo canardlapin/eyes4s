@@ -231,7 +231,7 @@ class FacadeJourneySuite extends munit.FunSuite:
     assertEquals(report.synchronizationRmsMilliseconds, 0.0)
     assertEquals(
       Sha256.ofUtf8(direct.csv).hex,
-      "c9a2ec351a09d94533305ef2bdb7743ee4773f41a6c1d2d21c068a13927b9f76"
+      "0f595b81da5a772ffa53cc64f90c4054ed9ccc6bf7eb8b9c2d7ba5dc2159f390"
     )
     assert(
       PsychologyWorkflow

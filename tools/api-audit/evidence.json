@@ -3764,6 +3764,7 @@
         "descriptor": "()Leyes4s/kernel/Interval;",
         "owner": "eyes4s/core/Event$Fixation",
         "suites": [
+          "aoiJVM/eyes4s.aoi.FixationAoiSuite",
           "codecJVM/eyes4s.codec.AnalysisArchiveSuite",
           "codecJVM/eyes4s.codec.ArchiveManifestSuite",
           "codecJVM/eyes4s.codec.ArchiveReconstructionSuite",
@@ -3773,6 +3774,7 @@
           "codecJVM/eyes4s.codec.CanonicalWireSuite",
           "codecJVM/eyes4s.codec.CombinedSourceResultManifestSuite",
           "codecJVM/eyes4s.codec.DensityArchiveSuite",
+          "codecJVM/eyes4s.codec.FixationAoiCodecSuite",
           "codecJVM/eyes4s.codec.InputPayloadCodecSuite",
           "codecJVM/eyes4s.codec.InputPayloadV1JvmSuite",
           "codecJVM/eyes4s.codec.InputPayloadV1Suite",
@@ -3839,6 +3841,7 @@
           "ioJVM/eyes4s.io.CsvLayoutSuite",
           "ioJVM/eyes4s.io.EyeLinkAscImportSuite",
           "ioJVM/eyes4s.io.FamilyConformanceSuite",
+          "ioJVM/eyes4s.io.FixationAoiExportSuite",
           "ioJVM/eyes4s.io.FixationPositionsSuite",
           "ioJVM/eyes4s.io.FixationRowInterpretationSuite",
           "ioJVM/eyes4s.io.FixationSourceTextSuite",
@@ -3868,6 +3871,8 @@
           "lawsJVM/eyes4s.laws.DensityArchiveLawSuite",
           "lawsJVM/eyes4s.laws.DetectorMetamorphicLawsSuite",
           "lawsJVM/eyes4s.laws.ExecutionLawsSuite",
+          "lawsJVM/eyes4s.laws.FixationAoiConformanceSuite",
+          "lawsJVM/eyes4s.laws.FixationAoiLawsSuite",
           "lawsJVM/eyes4s.laws.ManifestLawSuite",
           "lawsJVM/eyes4s.laws.NavigationLawsSuite",
           "lawsJVM/eyes4s.laws.RecordingInputCodecLawSuite",
@@ -3901,6 +3906,7 @@
           "planJVM/eyes4s.plan.TemporalCursorSuite",
           "planJVM/eyes4s.plan.UnmatchedReasonsSuite",
           "planJVM/eyes4s.pointconsumer.PointSamplingSuite",
+          "resultsJVM/eyes4s.results.FixationAoiTablesSuite",
           "resultsJVM/eyes4s.results.ReportNavigationSuite",
           "resultsJVM/eyes4s.results.ReportSuite",
           "resultsJVM/eyes4s.results.RunFactsSuite",
@@ -7411,7 +7417,8 @@
         "owner": "eyes4s/kernel/Region$Complement",
         "suites": [
           "kernelJVM/eyes4s.kernel.GridRegionSuite",
-          "lawsJVM/eyes4s.laws.KernelLawsSuite"
+          "lawsJVM/eyes4s.laws.KernelLawsSuite",
+          "resultsJVM/eyes4s.results.FixationAoiTablesSuite"
         ]
       },
       {
@@ -7419,7 +7426,8 @@
         "owner": "eyes4s/kernel/Region$Ellipse",
         "suites": [
           "kernelJVM/eyes4s.kernel.GridRegionSuite",
-          "lawsJVM/eyes4s.laws.KernelLawsSuite"
+          "lawsJVM/eyes4s.laws.KernelLawsSuite",
+          "resultsJVM/eyes4s.results.FixationAoiTablesSuite"
         ]
       },
       {
@@ -7429,7 +7437,8 @@
           "coreJVM/consumer.PublicCoreSuite",
           "kernelJVM/eyes4s.kernel.GridRegionSuite",
           "lawsJVM/eyes4s.laws.KernelLawsSuite",
-          "lawsJVM/eyes4s.laws.RecordingResultCodecLawSuite"
+          "lawsJVM/eyes4s.laws.RecordingResultCodecLawSuite",
+          "resultsJVM/eyes4s.results.FixationAoiTablesSuite"
         ]
       },
       {
@@ -7437,7 +7446,8 @@
         "owner": "eyes4s/kernel/Region$Everything",
         "suites": [
           "kernelJVM/eyes4s.kernel.GridRegionSuite",
-          "lawsJVM/eyes4s.laws.KernelLawsSuite"
+          "lawsJVM/eyes4s.laws.KernelLawsSuite",
+          "resultsJVM/eyes4s.results.FixationAoiTablesSuite"
         ]
       },
       {
@@ -7445,14 +7455,16 @@
         "owner": "eyes4s/kernel/Region$Intersect",
         "suites": [
           "kernelJVM/eyes4s.kernel.GridRegionSuite",
-          "lawsJVM/eyes4s.laws.KernelLawsSuite"
+          "lawsJVM/eyes4s.laws.KernelLawsSuite",
+          "resultsJVM/eyes4s.results.FixationAoiTablesSuite"
         ]
       },
       {
         "descriptor": "(Leyes4s/kernel/Pt;)Z",
         "owner": "eyes4s/kernel/Region$Polygon",
         "suites": [
-          "kernelJVM/eyes4s.kernel.GridRegionSuite"
+          "kernelJVM/eyes4s.kernel.GridRegionSuite",
+          "resultsJVM/eyes4s.results.FixationAoiTablesSuite"
         ]
       },
       {
@@ -7460,8 +7472,10 @@
         "owner": "eyes4s/kernel/Region$Rect",
         "suites": [
           "aoiJVM/eyes4s.aoi.AoiSuite",
+          "aoiJVM/eyes4s.aoi.FixationAoiSuite",
           "codecJVM/eyes4s.codec.ArchiveManifestSuite",
           "codecJVM/eyes4s.codec.ArchiveReconstructionSuite",
+          "codecJVM/eyes4s.codec.FixationAoiCodecSuite",
           "codecJVM/eyes4s.codec.InputPayloadCodecSuite",
           "codecJVM/eyes4s.codec.RecordingMethodsSuite",
           "codecJVM/eyes4s.codec.ResultArchivesV1JvmSuite",
@@ -7472,6 +7486,7 @@
           "coreJVM/eyes4s.core.ScanpathSuite",
           "fs2ModuleJVM/eyes4s.fs2.RecordingExecutionSuite",
           "ioJVM/eyes4s.io.FamilyConformanceSuite",
+          "ioJVM/eyes4s.io.FixationAoiExportSuite",
           "ioJVM/eyes4s.io.FreshProcessReconstructionJvmSuite",
           "ioJVM/eyes4s.io.PsychologyWorkflowSuite",
           "ioJVM/eyes4s.io.TidyResultSuite",
@@ -7479,12 +7494,15 @@
           "kernelJVM/eyes4s.kernel.OccupancySuite",
           "lawsJVM/eyes4s.laws.AoiLawsSuite",
           "lawsJVM/eyes4s.laws.ExecutionLawsSuite",
+          "lawsJVM/eyes4s.laws.FixationAoiConformanceSuite",
+          "lawsJVM/eyes4s.laws.FixationAoiLawsSuite",
           "lawsJVM/eyes4s.laws.KernelLawsSuite",
           "lawsJVM/eyes4s.laws.RecordingResultCodecLawSuite",
           "lawsJVM/eyes4s.laws.SchemaRegistryJvmSuite",
           "planJVM/eyes4s.plan.PreflightSuite",
           "planJVM/eyes4s.plan.RecordingCursorSuite",
-          "planJVM/eyes4s.plan.ResultInspectionSuite"
+          "planJVM/eyes4s.plan.ResultInspectionSuite",
+          "resultsJVM/eyes4s.results.FixationAoiTablesSuite"
         ]
       },
       {
@@ -7492,7 +7510,8 @@
         "owner": "eyes4s/kernel/Region$Union",
         "suites": [
           "kernelJVM/eyes4s.kernel.GridRegionSuite",
-          "lawsJVM/eyes4s.laws.KernelLawsSuite"
+          "lawsJVM/eyes4s.laws.KernelLawsSuite",
+          "resultsJVM/eyes4s.results.FixationAoiTablesSuite"
         ]
       }
     ],
@@ -8363,6 +8382,7 @@
           "codecJVM/eyes4s.codec.DescriptorPersistenceSuite",
           "codecJVM/eyes4s.codec.DomainCodecSuite",
           "codecJVM/eyes4s.codec.ExpectedUnmatchedCodecSuite",
+          "codecJVM/eyes4s.codec.FixationAoiCodecSuite",
           "codecJVM/eyes4s.codec.ImportSpecSuite",
           "codecJVM/eyes4s.codec.InputPayloadCodecSuite",
           "codecJVM/eyes4s.codec.InputPayloadV1JvmSuite",
@@ -8423,6 +8443,7 @@
           "ioJVM/eyes4s.io.DiagnosticCoverageJvmSuite",
           "ioJVM/eyes4s.io.DiagnosticsDocJvmSuite",
           "ioJVM/eyes4s.io.FamilyConformanceSuite",
+          "ioJVM/eyes4s.io.FixationAoiExportSuite",
           "ioJVM/eyes4s.io.FixationSourceTextSuite",
           "ioJVM/eyes4s.io.FixationStudySuite",
           "ioJVM/eyes4s.io.FixationTrialDecisionSuite",
@@ -8496,6 +8517,7 @@
           "planJVM/eyes4s.plan.TemporalCursorSuite",
           "planJVM/eyes4s.plan.UnmatchedReasonsSuite",
           "planJVM/eyes4s.pointconsumer.PointSamplingSuite",
+          "resultsJVM/eyes4s.results.FixationAoiTablesSuite",
           "resultsJVM/eyes4s.results.ReportNavigationSuite",
           "resultsJVM/eyes4s.results.ReportSuite",
           "resultsJVM/eyes4s.results.ResultsDiagnosticCatalogSuite",
@@ -9070,6 +9092,7 @@
           "ioJVM/eyes4s.io.DiagnosticCoverageJvmSuite",
           "ioJVM/eyes4s.io.DiagnosticsDocJvmSuite",
           "ioJVM/eyes4s.io.IoDiagnosticCatalogSuite",
+          "lawsJVM/eyes4s.laws.FormLawSuite",
           "planJVM/eyes4s.plan.DiagnosticCatalogSuite",
           "planJVM/eyes4s.plan.FormDescriptorSuite",
           "planJVM/eyes4s.plan.UnmatchedReasonsSuite",
@@ -9103,6 +9126,7 @@
           "ioJVM/eyes4s.io.DiagnosticCoverageJvmSuite",
           "ioJVM/eyes4s.io.DiagnosticsDocJvmSuite",
           "ioJVM/eyes4s.io.IoDiagnosticCatalogSuite",
+          "lawsJVM/eyes4s.laws.FormLawSuite",
           "planJVM/eyes4s.plan.DiagnosticCatalogSuite",
           "planJVM/eyes4s.plan.FormDescriptorSuite",
           "planJVM/eyes4s.plan.UnmatchedReasonsSuite",
@@ -11702,10 +11726,15 @@
       "instance": "eyes4s/aoi/ExclusionReason$$anon$2",
       "suite": "aoiJVM/eyes4s.aoi.AoiSuite"
     },
+    "class eyes4s.aoi.FixationMembership": {
+      "classification": "behavior-or-sealed-data",
+      "instance": "eyes4s/aoi/FixationMembership$Areas",
+      "suite": "aoiJVM/eyes4s.aoi.FixationAoiSuite"
+    },
     "class eyes4s.aoi.MembershipPolicy": {
       "classification": "data-sum",
       "instance": "eyes4s/aoi/MembershipPolicy$$anon$1",
-      "suite": "aoiJVM/eyes4s.aoi.AoiSuite"
+      "suite": "aoiJVM/eyes4s.aoi.FixationAoiSuite"
     },
     "class eyes4s.aoi.SampleMembership": {
       "classification": "behavior-or-sealed-data",
@@ -13257,6 +13286,11 @@
       "instance": "eyes4s/laws/DetectorValidationError$LabelCountMismatch",
       "suite": "lawsJVM/consumer.PublicLawsSuite"
     },
+    "class eyes4s.laws.FixationAoiLaws": {
+      "classification": "behavior-or-sealed-data",
+      "instance": "eyes4s/laws/FixationAoiLaws$",
+      "suite": "lawsJVM/eyes4s.laws.FixationAoiLawsSuite"
+    },
     "class eyes4s.laws.MachineLaws": {
       "classification": "behavior-or-sealed-data",
       "instance": "eyes4s/laws/MachineLaws$",
@@ -14391,10 +14425,10 @@
   "entries": {
     "method eyes4s.aoi.Aoi$.of(1,java.lang.String,java.lang.String,eyes4s.kernel.Frame,eyes4s.kernel.Region,scala.collection.immutable.Map):scala.util.Either": "aoiJVM/consumer.PublicAoiSuite",
     "method eyes4s.aoi.Aoi$package$.AoiId$.of(java.lang.String):scala.util.Either": "aoiJVM/consumer.PublicAoiSuite",
-    "method eyes4s.aoi.Aoi$package$.AoiId$.value(java.lang.String):java.lang.String": "aoiJVM/eyes4s.aoi.AoiSuite",
-    "method eyes4s.aoi.Aoi$package$.AoiResolution$.nx(scala.Tuple2):scala.Int": "aoiJVM/eyes4s.aoi.AoiSuite",
-    "method eyes4s.aoi.Aoi$package$.AoiResolution$.ny(scala.Tuple2):scala.Int": "aoiJVM/eyes4s.aoi.AoiSuite",
-    "method eyes4s.aoi.Aoi$package$.AoiResolution$.of(scala.Int,scala.Int):scala.util.Either": "aoiJVM/eyes4s.aoi.AoiSuite",
+    "method eyes4s.aoi.Aoi$package$.AoiId$.value(java.lang.String):java.lang.String": "aoiJVM/eyes4s.aoi.FixationAoiSuite",
+    "method eyes4s.aoi.Aoi$package$.AoiResolution$.nx(scala.Tuple2):scala.Int": "aoiJVM/eyes4s.aoi.FixationAoiSuite",
+    "method eyes4s.aoi.Aoi$package$.AoiResolution$.ny(scala.Tuple2):scala.Int": "aoiJVM/eyes4s.aoi.FixationAoiSuite",
+    "method eyes4s.aoi.Aoi$package$.AoiResolution$.of(scala.Int,scala.Int):scala.util.Either": "aoiJVM/eyes4s.aoi.FixationAoiSuite",
     "method eyes4s.aoi.Aoi.equals(java.lang.Object):scala.Boolean": "aoiJVM/consumer.PublicAoiSuite",
     "method eyes4s.aoi.Aoi.hashCode():": "aoiJVM/consumer.PublicAoiSuite",
     "method eyes4s.aoi.AoiAssignment.accountingHolds():": "aoiJVM/eyes4s.aoi.AoiSuite",
@@ -14404,12 +14438,26 @@
     "method eyes4s.aoi.AoiAssignment.toVector():": "lawsJVM/eyes4s.laws.RecordingResultCodecLawSuite",
     "method eyes4s.aoi.AoiAssignmentReport.accountedTime():": "aoiJVM/eyes4s.aoi.AoiSuite",
     "method eyes4s.aoi.AoiAssignmentReport.analysableTime():": "aoiJVM/eyes4s.aoi.AoiSuite",
-    "method eyes4s.aoi.AoiError.message():": "ioJVM/eyes4s.io.DiagnosticsDocJvmSuite",
+    "method eyes4s.aoi.AoiError.message():": "aoiJVM/eyes4s.aoi.FixationAoiSuite",
     "method eyes4s.aoi.AoiSet$.of(1,scala.collection.immutable.Vector):scala.util.Either": "aoiJVM/consumer.PublicAoiSuite",
     "method eyes4s.aoi.AoiSet.assign(eyes4s.core.Recording,eyes4s.aoi.MembershipPolicy):scala.util.Either": "aoiJVM/eyes4s.aoi.AoiSuite",
     "method eyes4s.aoi.AoiSet.assign(eyes4s.core.Recording,eyes4s.aoi.MembershipPolicy,eyes4s.core.TemporalSupport):scala.util.Either": "lawsJVM/eyes4s.laws.RecordingResultCodecLawSuite",
-    "method eyes4s.aoi.AoiSet.ids():": "aoiJVM/eyes4s.aoi.AoiSuite",
+    "method eyes4s.aoi.AoiSet.assign(eyes4s.core.Scanpath,eyes4s.aoi.MembershipPolicy):scala.util.Either": "aoiJVM/eyes4s.aoi.FixationAoiSuite",
+    "method eyes4s.aoi.AoiSet.ids():": "aoiJVM/eyes4s.aoi.FixationAoiSuite",
     "method eyes4s.aoi.AoiSet.size():": "aoiJVM/consumer.PublicAoiSuite",
+    "method eyes4s.aoi.FixationAoiAssignment.accountingHolds():": "aoiJVM/eyes4s.aoi.FixationAoiSuite",
+    "method eyes4s.aoi.FixationAoiAssignment.get(scala.Int):scala.Option": "aoiJVM/eyes4s.aoi.FixationAoiSuite",
+    "method eyes4s.aoi.FixationAoiAssignment.measure():": "aoiJVM/eyes4s.aoi.FixationAoiSuite",
+    "method eyes4s.aoi.FixationAoiAssignment.size():": "aoiJVM/eyes4s.aoi.FixationAoiSuite",
+    "method eyes4s.aoi.FixationAoiAssignment.toVector():": "aoiJVM/eyes4s.aoi.FixationAoiSuite",
+    "method eyes4s.aoi.FixationAoiMetric.entryCount():": "aoiJVM/eyes4s.aoi.FixationAoiSuite",
+    "method eyes4s.aoi.FixationAoiReport.accountedTime():": "aoiJVM/eyes4s.aoi.FixationAoiSuite",
+    "method eyes4s.aoi.FixationAoiReport.analysableTime():": "aoiJVM/eyes4s.aoi.FixationAoiSuite",
+    "method eyes4s.aoi.FixationAoiReport.fixationTime():": "aoiJVM/eyes4s.aoi.FixationAoiSuite",
+    "method eyes4s.aoi.FixationMembership$.Areas$.unapply(eyes4s.aoi.FixationMembership$.Areas):scala.Some": "aoiJVM/eyes4s.aoi.FixationAoiSuite",
+    "method eyes4s.aoi.FixationMembership$.Areas.equals(java.lang.Object):scala.Boolean": "aoiJVM/eyes4s.aoi.FixationAoiSuite",
+    "method eyes4s.aoi.FixationMembership$.Areas.hashCode():": "aoiJVM/eyes4s.aoi.FixationAoiSuite",
+    "method eyes4s.aoi.FixationMembership$.Areas.toString():": "aoiJVM/eyes4s.aoi.FixationAoiSuite",
     "method eyes4s.codec.AnalysisRegistration$.of(2,eyes4s.codec.VersionedCodec,eyes4s.codec.VersionedCodec,scala.Function1,scala.Function1,scala.Function1,scala.Option):eyes4s.codec.AnalysisRegistration": "codecJVM/eyes4s.repetitionconsumer.RepetitionPlanSuite",
     "method eyes4s.codec.AnalysisRegistry$.of(scala.collection.immutable.Vector):scala.util.Either": "codecJVM/eyes4s.codec.AnalysisArchiveSuite",
     "method eyes4s.codec.AnalysisRegistry.forResult(eyes4s.plan.DefinitionId):scala.Option": "codecJVM/eyes4s.repetitionconsumer.RepetitionPlanSuite",
@@ -14511,6 +14559,7 @@
     "method eyes4s.codec.DomainCodecs$.unit(1,eyes4s.plan.DefinitionId,eyes4s.kernel.UnitLabel):eyes4s.codec.VersionedCodec": "lawsJVM/eyes4s.laws.DomainCodecLawSuite",
     "method eyes4s.codec.DomainCodecs$.window(eyes4s.plan.DefinitionId):eyes4s.codec.VersionedCodec": "lawsJVM/eyes4s.laws.DomainCodecLawSuite",
     "method eyes4s.codec.EpochCodecs$.plan(1,eyes4s.plan.DefinitionId,eyes4s.codec.VersionedCodec):eyes4s.codec.VersionedCodec": "codecJVM/eyes4s.codec.EpochCodecSuite",
+    "method eyes4s.codec.FixationAoiCodecs$.assignment(1,eyes4s.plan.DefinitionId,eyes4s.kernel.UnitLabel):eyes4s.codec.VersionedCodec": "codecJVM/eyes4s.codec.FixationAoiCodecSuite",
     "method eyes4s.codec.ImportSpecCodec$.custom(2,eyes4s.codec.VersionedCodec,eyes4s.design.KeyDigest,eyes4s.kernel.UnitLabel):eyes4s.codec.VersionedCodec": "codecJVM/eyes4s.codec.ImportSpecSuite",
     "method eyes4s.codec.ImportSpecCodec$.study(1,eyes4s.kernel.UnitLabel):eyes4s.codec.VersionedCodec": "codecJVM/eyes4s.repetitionconsumer.RepetitionPlanSuite",
     "method eyes4s.codec.ImportSpecCodec$.trial(1,eyes4s.kernel.UnitLabel):eyes4s.codec.VersionedCodec": "codecJVM/eyes4s.codec.ImportSpecSuite",
@@ -16094,6 +16143,7 @@
     "method eyes4s.laws.ExecutionLaws$.oracle(5,eyes4s.laws.ExecutionLaws$.Family,java.lang.Object):scala.util.Either": "lawsJVM/eyes4s.laws.ExecutionLawsSuite",
     "method eyes4s.laws.ExecutionLaws$.quanta(scala.collection.immutable.Seq,scala.collection.immutable.Seq,scala.collection.immutable.Seq):org.scalacheck.Gen": "lawsJVM/eyes4s.laws.ExecutionLawsSuite",
     "method eyes4s.laws.ExecutionLaws$.trace(5,eyes4s.laws.ExecutionLaws$.Family,java.lang.Object,scala.Function1):eyes4s.laws.ExecutionLaws$.Trace": "lawsJVM/eyes4s.laws.ExecutionLawsSuite",
+    "method eyes4s.laws.FixationAoiLaws.accounting(1,org.scalacheck.Gen,eyes4s.laws.Tolerance):org.typelevel.discipline.Laws.RuleSet": "lawsJVM/eyes4s.laws.FixationAoiLawsSuite",
     "method eyes4s.laws.FormLaws$.form(1,java.lang.String,org.scalacheck.Gen,scala.Function1):org.typelevel.discipline.Laws.RuleSet": "lawsJVM/eyes4s.laws.SchemaRegistryJvmSuite",
     "method eyes4s.laws.FormLaws$.inspection(org.scalacheck.Gen):org.typelevel.discipline.Laws.RuleSet": "lawsJVM/eyes4s.laws.SchemaRegistryJvmSuite",
     "method eyes4s.laws.FormLaws$.numbers(3,eyes4s.plan.NumericField):org.scalacheck.Gen": "lawsJVM/eyes4s.laws.SchemaRegistryJvmSuite",
@@ -17152,6 +17202,7 @@
     "method eyes4s.results.CovariateType.admits(eyes4s.plan.AttributeKind):scala.Boolean": "resultsJVM/eyes4s.results.CovariateSuite",
     "method eyes4s.results.CovariateType.read(eyes4s.plan.AttributeValue):eyes4s.results.Value": "resultsJVM/eyes4s.results.CovariateSuite",
     "method eyes4s.results.CovariateType.render():": "resultsJVM/eyes4s.results.CovariateSuite",
+    "method eyes4s.results.FixationAoiTables$.tables(1,eyes4s.aoi.FixationAoiAssignment,eyes4s.results.TableJson,eyes4s.kernel.UnitLabel):scala.util.Either": "resultsJVM/eyes4s.results.FixationAoiTablesSuite",
     "method eyes4s.results.FlagTerm.render():": "resultsJVM/eyes4s.results.CovariateSuite",
     "method eyes4s.results.GroupKey.render():": "resultsJVM/eyes4s.results.ReportNavigationSuite",
     "method eyes4s.results.Grouping.declared():": "resultsJVM/eyes4s.results.ReportNavigationSuite",
@@ -17213,7 +17264,7 @@
     "method eyes4s.results.ResultCell.text():": "ioJVM/docconsumer.DocumentationExamplesSuite",
     "method eyes4s.results.ResultTable$.columnJson(eyes4s.results.ResultColumn):eyes4s.results.TableJson": "ioJVM/docconsumer.DocumentationExamplesSuite",
     "method eyes4s.results.ResultTable$.of(eyes4s.results.ResultFamily,scala.collection.immutable.Vector,scala.collection.immutable.Vector,eyes4s.results.TableJson):scala.util.Either": "ioJVM/docconsumer.DocumentationExamplesSuite",
-    "method eyes4s.results.ResultTable.column(java.lang.String):scala.Option": "resultsJVM/eyes4s.results.ReportSuite",
+    "method eyes4s.results.ResultTable.column(java.lang.String):scala.Option": "resultsJVM/eyes4s.results.FixationAoiTablesSuite",
     "method eyes4s.results.ResultTable.csvHeader():": "ioJVM/docconsumer.DocumentationExamplesSuite",
     "method eyes4s.results.ResultTable.csvRows():": "ioJVM/docconsumer.DocumentationExamplesSuite",
     "method eyes4s.results.ResultTable.metadata():": "ioJVM/docconsumer.DocumentationExamplesSuite",
@@ -17228,19 +17279,19 @@
     "method eyes4s.results.RunFacts$.study(4,eyes4s.plan.StudyResult,eyes4s.results.QueryTable):scala.util.Either": "resultsJVM/eyes4s.results.RunFactsSuite",
     "method eyes4s.results.SpecError.message():": "resultsJVM/eyes4s.results.ResultsDiagnosticCatalogSuite",
     "method eyes4s.results.TableDigest$.ofUtf8(java.lang.String):eyes4s.results.TableDigest": "ioJVM/docconsumer.DocumentationExamplesSuite",
-    "method eyes4s.results.TableDigest.equals(java.lang.Object):scala.Boolean": "ioJVM/eyes4s.io.ResultTableLayerSuite",
+    "method eyes4s.results.TableDigest.equals(java.lang.Object):scala.Boolean": "resultsJVM/eyes4s.results.FixationAoiTablesSuite",
     "method eyes4s.results.TableDigest.hashCode():": "resultsJVM/eyes4s.results.CovariateSuite",
     "method eyes4s.results.TableDigest.toString():": "resultsJVM/eyes4s.results.CovariateSuite",
     "method eyes4s.results.TableJson$.Number$.apply(scala.Long):eyes4s.results.TableJson$.Number": "ioJVM/docconsumer.DocumentationExamplesSuite",
     "method eyes4s.results.TableJson$.Number$.of(java.lang.String):scala.Option": "ioJVM/docconsumer.DocumentationExamplesSuite",
-    "method eyes4s.results.TableJson$.arr(scala.collection.immutable.Seq):eyes4s.results.TableJson": "resultsJVM/eyes4s.results.CovariateSuite",
+    "method eyes4s.results.TableJson$.arr(scala.collection.immutable.Seq):eyes4s.results.TableJson": "resultsJVM/eyes4s.results.FixationAoiTablesSuite",
     "method eyes4s.results.TableJson$.integer(scala.Long):eyes4s.results.TableJson": "ioJVM/docconsumer.DocumentationExamplesSuite",
     "method eyes4s.results.TableJson$.obj(scala.collection.immutable.Seq):eyes4s.results.TableJson": "ioJVM/docconsumer.DocumentationExamplesSuite",
     "method eyes4s.results.TableJson$.parse(java.lang.String):scala.util.Either": "ioJVM/docconsumer.DocumentationExamplesSuite",
     "method eyes4s.results.TableJson$.text(java.lang.String):eyes4s.results.TableJson": "ioJVM/docconsumer.DocumentationExamplesSuite",
     "method eyes4s.results.TableJson.canonical():": "ioJVM/docconsumer.DocumentationExamplesSuite",
     "method eyes4s.results.TableJson.compact():": "ioJVM/eyes4s.io.ConstrainedExportsSuite",
-    "method eyes4s.results.TableJson.field(java.lang.String):scala.Option": "resultsJVM/eyes4s.results.CovariateSuite",
+    "method eyes4s.results.TableJson.field(java.lang.String):scala.Option": "resultsJVM/eyes4s.results.FixationAoiTablesSuite",
     "method eyes4s.results.Term.covariate():": "resultsJVM/eyes4s.results.ReportNavigationSuite",
     "method eyes4s.results.Truth.and(scala.Function0):eyes4s.results.Truth": "resultsJVM/eyes4s.results.ReportSuite",
     "method eyes4s.results.Truth.not():": "resultsJVM/eyes4s.results.ReportSuite",
@@ -18094,6 +18145,15 @@
       "the shared support ledger agrees exactly with occupancy accounting",
       "trusted recordings reject false Tracked state and explicit off-surface support is kept"
     ],
+    "aoiJS/eyes4s.aoi.FixationAoiSuite": [
+      "an all-off-surface path retains every fixation and has no analysable denominator",
+      "assignment rejects nominal and structural frame conflicts",
+      "membership and metrics cannot bypass assignment with constructors or Product mirrors",
+      "outside fixations interrupt visits and first entry is relative to the scanpath",
+      "overlap policies preserve ordered membership and account for every duplicate duration",
+      "smallest-area ties preserve set priority and a singleton starts one visit",
+      "visits survive saccades and blinks; only fixation time contributes dwell"
+    ],
     "codecJS/consumer.PublicCodecSuite": [
       "byte digests render the independent empty SHA256 and custom registrations declare absence"
     ],
@@ -18245,6 +18305,13 @@
       "earlier schema writers and relabelled payloads cannot erase selection",
       "legacy plans keep their bytes and do not acquire a selection",
       "version 4 preserves the declared selection, assignments and scientific description"
+    ],
+    "codecJS/eyes4s.codec.FixationAoiCodecSuite": [
+      "all spatial policies roundtrip complete assignment, measures and exact 64-bit times",
+      "replay refuses each altered derived field rather than trusting stored metrics",
+      "source-supported scanpaths retain samples and rederive summaries on decode",
+      "unknown versions, missing schemas, invalid policies and duplicate area ids fail explicitly",
+      "well-formed but false visit counts and duration ledgers are rejected"
     ],
     "codecJS/eyes4s.codec.FormCodecSuite": [
       "a 64-bit raw number keeps its text exactly on both platforms",
@@ -19616,6 +19683,10 @@
       "every recipe family has exactly one witness, in declaration order",
       "the named gaps are exactly the pinned ones"
     ],
+    "ioJS/eyes4s.io.FixationAoiExportSuite": [
+      "both fixation AOI families use the shared CSV writer with exact time, quoting and null validity",
+      "off-surface and background rows retain absent versus zero proportions in CSV"
+    ],
     "ioJS/eyes4s.io.FixationPositionsSuite": [
       "analytical translation, half-open window boundaries and angular projection are explicit",
       "geometry identity and empty position previews remain explicit",
@@ -20578,6 +20649,34 @@
       "the failing fixtures fail where the laws must tolerate it",
       "the plans' own runs are the shipped instances driven at the default quanta",
       "the shipped study instance fails no law alone and every mutant fails the laws that name it"
+    ],
+    "lawsJS/eyes4s.laws.FixationAoiConformanceSuite": [
+      "abutting-contained-fixations",
+      "all-contained-gaps-exclusive",
+      "all-contained-gaps-multiple",
+      "all-contained-gaps-reject",
+      "all-contained-gaps-smallest",
+      "all-off-surface",
+      "half-open-edges-and-large-clock",
+      "interrupted-visits-exclusive",
+      "interrupted-visits-multiple",
+      "interrupted-visits-reject",
+      "interrupted-visits-smallest",
+      "three-way-overlap-exclusive",
+      "three-way-overlap-multiple",
+      "three-way-overlap-reject",
+      "three-way-overlap-smallest"
+    ],
+    "lawsJS/eyes4s.laws.FixationAoiLawsSuite": [
+      "a background fixation ends a visit while its gaps remain outside the denominator",
+      "fixation AOIs: fixationAoiAccounting.cardinality and centre membership agree with geometry",
+      "fixation AOIs: fixationAoiAccounting.dwell and fixation counts exclude non-fixation time",
+      "fixation AOIs: fixationAoiAccounting.first entry follows the first contained fixation onset",
+      "fixation AOIs: fixationAoiAccounting.fixation time and inter-fixation time partition the extent",
+      "fixation AOIs: fixationAoiAccounting.proportions use on-surface fixation time including background",
+      "fixation AOIs: fixationAoiAccounting.transitions follow adjacent fixations and preserve ordered pairs",
+      "fixation AOIs: fixationAoiAccounting.visits follow consecutive fixation membership regardless of gaps",
+      "the all-contained generator witness has one visit across positive gaps"
     ],
     "lawsJS/eyes4s.laws.FormLawSuite": [
       "a field that reads its value back wrongly fails the raw round trip",
@@ -21660,6 +21759,12 @@
       "table JSON reads members and arrays, and a digest prints as hex",
       "values say why they are missing, and fold without a default"
     ],
+    "resultsJS/eyes4s.results.FixationAoiTablesSuite": [
+      "every region constructor and spatial policy has deterministic structural input identity",
+      "identity binds exact input geometry and absolute timing even when measures agree",
+      "metrics retain exact fixation counts, visits and named denominators; transitions retain orientation",
+      "missing proportions differ from zero and empty transition tables retain their schema"
+    ],
     "resultsJS/eyes4s.results.ReportFactsSuite": [
       "a blank display name is refused as the methods facts refuse it",
       "a grouped report with a contrast and no minimum: n, paired n, sizes, smallest",
@@ -21835,6 +21940,15 @@
       "the shared support ledger agrees exactly with occupancy accounting",
       "trusted recordings reject false Tracked state and explicit off-surface support is kept"
     ],
+    "aoiJVM/eyes4s.aoi.FixationAoiSuite": [
+      "an all-off-surface path retains every fixation and has no analysable denominator",
+      "assignment rejects nominal and structural frame conflicts",
+      "membership and metrics cannot bypass assignment with constructors or Product mirrors",
+      "outside fixations interrupt visits and first entry is relative to the scanpath",
+      "overlap policies preserve ordered membership and account for every duplicate duration",
+      "smallest-area ties preserve set priority and a singleton starts one visit",
+      "visits survive saccades and blinks; only fixation time contributes dwell"
+    ],
     "codecJVM/consumer.PublicCodecSuite": [
       "byte digests render the independent empty SHA256 and custom registrations declare absence"
     ],
@@ -21986,6 +22100,13 @@
       "earlier schema writers and relabelled payloads cannot erase selection",
       "legacy plans keep their bytes and do not acquire a selection",
       "version 4 preserves the declared selection, assignments and scientific description"
+    ],
+    "codecJVM/eyes4s.codec.FixationAoiCodecSuite": [
+      "all spatial policies roundtrip complete assignment, measures and exact 64-bit times",
+      "replay refuses each altered derived field rather than trusting stored metrics",
+      "source-supported scanpaths retain samples and rederive summaries on decode",
+      "unknown versions, missing schemas, invalid policies and duplicate area ids fail explicitly",
+      "well-formed but false visit counts and duration ledgers are rejected"
     ],
     "codecJVM/eyes4s.codec.FormCodecSuite": [
       "a 64-bit raw number keeps its text exactly on both platforms",
@@ -23506,6 +23627,10 @@
       "every recipe family has exactly one witness, in declaration order",
       "the named gaps are exactly the pinned ones"
     ],
+    "ioJVM/eyes4s.io.FixationAoiExportSuite": [
+      "both fixation AOI families use the shared CSV writer with exact time, quoting and null validity",
+      "off-surface and background rows retain absent versus zero proportions in CSV"
+    ],
     "ioJVM/eyes4s.io.FixationPositionsSuite": [
       "analytical translation, half-open window boundaries and angular projection are explicit",
       "geometry identity and empty position previews remain explicit",
@@ -24506,6 +24631,34 @@
       "the failing fixtures fail where the laws must tolerate it",
       "the plans' own runs are the shipped instances driven at the default quanta",
       "the shipped study instance fails no law alone and every mutant fails the laws that name it"
+    ],
+    "lawsJVM/eyes4s.laws.FixationAoiConformanceSuite": [
+      "abutting-contained-fixations",
+      "all-contained-gaps-exclusive",
+      "all-contained-gaps-multiple",
+      "all-contained-gaps-reject",
+      "all-contained-gaps-smallest",
+      "all-off-surface",
+      "half-open-edges-and-large-clock",
+      "interrupted-visits-exclusive",
+      "interrupted-visits-multiple",
+      "interrupted-visits-reject",
+      "interrupted-visits-smallest",
+      "three-way-overlap-exclusive",
+      "three-way-overlap-multiple",
+      "three-way-overlap-reject",
+      "three-way-overlap-smallest"
+    ],
+    "lawsJVM/eyes4s.laws.FixationAoiLawsSuite": [
+      "a background fixation ends a visit while its gaps remain outside the denominator",
+      "fixation AOIs: fixationAoiAccounting.cardinality and centre membership agree with geometry",
+      "fixation AOIs: fixationAoiAccounting.dwell and fixation counts exclude non-fixation time",
+      "fixation AOIs: fixationAoiAccounting.first entry follows the first contained fixation onset",
+      "fixation AOIs: fixationAoiAccounting.fixation time and inter-fixation time partition the extent",
+      "fixation AOIs: fixationAoiAccounting.proportions use on-surface fixation time including background",
+      "fixation AOIs: fixationAoiAccounting.transitions follow adjacent fixations and preserve ordered pairs",
+      "fixation AOIs: fixationAoiAccounting.visits follow consecutive fixation membership regardless of gaps",
+      "the all-contained generator witness has one visit across positive gaps"
     ],
     "lawsJVM/eyes4s.laws.FormLawSuite": [
       "a field that reads its value back wrongly fails the raw round trip",
@@ -25619,6 +25772,12 @@
       "forKeys joins study keys to inventory trials through the layout's trial identity",
       "table JSON reads members and arrays, and a digest prints as hex",
       "values say why they are missing, and fold without a default"
+    ],
+    "resultsJVM/eyes4s.results.FixationAoiTablesSuite": [
+      "every region constructor and spatial policy has deterministic structural input identity",
+      "identity binds exact input geometry and absolute timing even when measures agree",
+      "metrics retain exact fixation counts, visits and named denominators; transitions retain orientation",
+      "missing proportions differ from zero and empty transition tables retain their schema"
     ],
     "resultsJVM/eyes4s.results.ReportFactsSuite": [
       "a blank display name is refused as the methods facts refuse it",
