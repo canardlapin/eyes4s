@@ -53,7 +53,9 @@ object IqrBandwidth:
       val x   = iqr(measure.positions.toVector.map(_.x))
       val y   = iqr(measure.positions.toVector.map(_.y))
       val raw =
-        math.hypot(x, y) / math.sqrt(2.0) / 1.349 * math.pow(measure.size.toDouble, -1.0 / 6.0)
+        math.hypot(x, y) / math.sqrt(2.0) / 1.349 * KernelMath.fdlibmInverseSixthPower(
+          measure.size
+        )
       val value = clamp match
         case IqrBandwidthClamp.Unclamped                  => raw
         case IqrBandwidthClamp.DisplayOneToFifteenPercent =>

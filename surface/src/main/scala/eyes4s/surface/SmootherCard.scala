@@ -157,6 +157,7 @@ object SmootherCards:
       "separable: two one-dimensional passes, along x then along y",
       "each one-dimensional kernel is truncated at ceil(3 sigma / cell) cells, " +
         "never fewer than one, and normalised to sum to one",
+      "kernel exponentials use shared fdlibm 5.3 arithmetic on JVM and Scala.js",
       "Renormalise is a source-side correction whose on-grid share factorises per axis",
       "the result is an Intensity in the input's mass units; density normalises it separately"
     ),

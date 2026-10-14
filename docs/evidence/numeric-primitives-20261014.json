@@ -1,0 +1,78 @@
+{
+  "version": 1,
+  "date": "2026-10-14",
+  "scope": "primitive conformance, not completed Gaussian A9 pipeline or full landing gate",
+  "runtime": {
+    "host": "macOS-15.1.1-arm64-arm-64bit",
+    "jvm": "Temurin25.0.4.1+1-LTS/aarch64",
+    "node": "24.21.0",
+    "scala": "3.7.4"
+  },
+  "source_sha256": {
+    "surface/src/main/scala/eyes4s/surface/KernelMath.scala": "d8e82d5bedd3f3fdb038d05a465c8eaa9845b63152ab8ff2665fe3f835bbd4d1",
+    "surface/src/main/scala/eyes4s/surface/Smoother.scala": "5e3dc8c960cab8fe9d39d638c9c123dfbe8bcb83bc79769e12df9d96ef91babb",
+    "surface/src/main/scala/eyes4s/surface/IqrBandwidth.scala": "5fa0af2d17b37dc1f773a1501ca476633097b8de0dc73d1135e1ce5cca1cb531",
+    "surface/src/main/scala/eyes4s/surface/SmootherCard.scala": "81deb96755970b3c0aac628325ba1e1cedee05ed09000a044189d5262c1a4f3a",
+    "surface/src/test/scala/eyes4s/surface/KernelMathReference.scala": "5b319d569a26f213b111dffa68459393896a4b44b8c73c43b18ea61b729d4ff2",
+    "surface/src/test/scala/eyes4s/surface/KernelMathSuite.scala": "b05f64ec7ab2d5d68766e4d7cd3b2f3efef610802ec62157cd639df9bc5a3516",
+    "surface/.jvm/src/test/scala/eyes4s/surface/KernelMathJvmSuite.scala": "87486b44872452e56b776a6f6ff1569ae93805c3437a0f59fc3023f6d931978f",
+    "tools/numerical-reference/Generate.java": "ee725c512bfd59bb9b1969adb36e4d6c5f18eb5f0d702449e55462007637e8fd",
+    "tools/numerical-reference/generate.py": "e7c04c3f5a38a258b18c1d68f690a4e7535157fa69b091610ff4434fcb150d7d"
+  },
+  "logs_sha256": {
+    "eyes4s-numerical-initial.log": "aa342e263b3ce7b3d08fc02eff4407b7ce20714f7f01457eba452a6cd444292c",
+    "eyes4s-numerical-portable.log": "866ff048368ebca1fb26b2362e3f0d39c1f9d8acbbfdc9df021b6f80a176b882",
+    "eyes4s-numerical-native-exp-mutation.log": "fc36e591bf45f5945e6b49ca6b2646056274f02cc223f061413077b037feefb2",
+    "eyes4s-numerical-native-pow-mutation.log": "5fc010c7d148c9d6a9afacdba7a6f93d7be262ee2134968f3d9b71d5dbcbe5c7"
+  },
+  "contract": {
+    "finite_exp": "exact StrictMath/fdlibm53 bits",
+    "positive_int_count_power": "exact StrictMath.pow(n,-1.0/6.0) bits",
+    "nonfinite_exp": "canonical NaN bits"
+  },
+  "oracle": {
+    "kind": "standalone StrictMath Java program; no eyes4s classes",
+    "regeneration_byte_identical": true,
+    "kernel_taps": 634949,
+    "counts": {
+      "from": 1,
+      "through": 100000
+    },
+    "boundaries_through_int_max": true
+  },
+  "native_differences": {
+    "aarch64": {
+      "exp": 0,
+      "pow": 0
+    },
+    "node": {
+      "exp": 276,
+      "pow": 11947
+    }
+  },
+  "mutations": {
+    "source_restored_sha256": "d8e82d5bedd3f3fdb038d05a465c8eaa9845b63152ab8ff2665fe3f835bbd4d1",
+    "results": [
+      {
+        "variant": "exp",
+        "runtime": "Scala.js/Node",
+        "killed": true,
+        "exit": 1,
+        "log_sha256": "fc36e591bf45f5945e6b49ca6b2646056274f02cc223f061413077b037feefb2"
+      },
+      {
+        "variant": "pow",
+        "runtime": "Scala.js/Node",
+        "killed": true,
+        "exit": 1,
+        "log_sha256": "5fc010c7d148c9d6a9afacdba7a6f93d7be262ee2134968f3d9b71d5dbcbe5c7"
+      }
+    ],
+    "scope": "finite kernel-tap and positive-count digest tests; JVM native mutations equivalent on this arm64 host, x86 witness remains required"
+  },
+  "outstanding": [
+    "exact packaged Gaussian pipelines",
+    "x86 execution witness",
+    "whole branch landing gate"
+  ]
+}

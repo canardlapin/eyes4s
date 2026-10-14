@@ -227,7 +227,7 @@ object Smoother:
         val radius = math.max(1, math.ceil(3.0 * sigmaCells).toInt)
         val k      = Array.tabulate(2 * radius + 1) { i =>
           val d = (i - radius).toDouble
-          math.exp(-0.5 * d * d / (sigmaCells * sigmaCells))
+          KernelMath.fdlibmExp(-0.5 * d * d / (sigmaCells * sigmaCells))
         }
         val s = k.sum
         var i = 0
@@ -362,7 +362,7 @@ object Bandwidth:
           .filter(_ > 0.0)
       spreads.minOption match
         case None    => Left(GeometryError.NonPositiveSigma(0.0))
-        case Some(s) => Sigma.of[U](s * math.pow(n.toDouble, -1.0 / 6.0) * factor)
+        case Some(s) => Sigma.of[U](s * KernelMath.fdlibmInverseSixthPower(n) * factor)
 
   /** The conventional foveal bandwidth: one degree. */
   def foveal: Either[GeometryError, Sigma[Unit2D.Deg]] = Sigma.deg(1.0)
