@@ -177,7 +177,21 @@ final class StudyResultCodec[K, U <: Unit2D, P, S, D](
           )
         )
 
-  private def describe(result: StudyResult[K, U, S, D]): Either[CodecError, CanonicalDoc] = for
+  private def describe(result: StudyResult[K, U, S, D]): Either[CodecError, CanonicalDoc] =
+    describeWith(result, DensityWire.inline[U])
+
+  /** Storage metadata, checked through the ordinary writer without allocating
+    * inline density cells. The archive writer supplies each storage outcome.
+    */
+  private[codec] def storageMetadata(
+      result: StudyResult[K, U, S, D]
+  ): Either[CodecError, Json] =
+    describeWith(result, DensityWire.metadata[U]).flatMap(_.json)
+
+  private def describeWith(
+      result: StudyResult[K, U, S, D],
+      massDocument: Mass[U] => Json
+  ): Either[CodecError, CanonicalDoc] = for
     _     <- described(result.description, "layout", layout.id)
     _     <- described(result.description, "method", method.id)
     table <- result.scales.zipWithIndex.foldLeft[Either[CodecError, DocumentIdentities]](
@@ -204,7 +218,7 @@ final class StudyResultCodec[K, U <: Unit2D, P, S, D](
       }*)),
       "identities" -> Leaf(table.json),
       "scales"     -> CanonicalDoc.items(result.scales) { (scale, index) =>
-        describeScale(scale).left
+        describeScale(scale, massDocument).left
           .map(Wire.at(s"scales[$index]"))
           .map(_.mapError(Wire.at(s"scales[$index]")))
       }
@@ -228,7 +242,8 @@ final class StudyResultCodec[K, U <: Unit2D, P, S, D](
 
   private def readIn(
       json: Json,
-      context: Vector[(String, Provenance.Param)]
+      context: Vector[(String, Provenance.Param)],
+      materialized: Option[Vector[Vector[Option[Mass[U]]]]] = None
   ): Either[CodecError, StudyResult[K, U, S, D]] = for
     _      <- Wire.requireId(json, "layout", layout.id)
     _      <- Wire.requireId(json, "keySchema", keys.schema)
@@ -254,8 +269,19 @@ final class StudyResultCodec[K, U <: Unit2D, P, S, D](
     _       <- described(description, "method", method.id)
     table   <- Wire.field[Json](json, "identities").flatMap(DocumentIdentities.read)
     entries <- Wire.field[Vector[Json]](json, "scales")
-    scales  <- entries.zipWithIndex.traverse { case (entry, index) =>
-      readScale(table, entry).left.map(Wire.at(s"scales[$index]"))
+    _       <- materialized match
+      case Some(values) if values.size != entries.size =>
+        Left(
+          CodecError.Field(
+            "scales",
+            json,
+            s"expected ${entries.size} materialized scales, found ${values.size}"
+          )
+        )
+      case _ => Right(())
+    scales <- entries.zipWithIndex.traverse { case (entry, index) =>
+      readScale(table, entry, materialized.flatMap(_.lift(index))).left
+        .map(Wire.at(s"scales[$index]"))
     }
     result <- StudyResult
       .reconstruct(input, layout, description, scales, context)
@@ -263,23 +289,25 @@ final class StudyResultCodec[K, U <: Unit2D, P, S, D](
       .map(e => CodecError.Result(e))
   yield result
 
+  /** Reuse every completed-result reconstruction gate with checked typed
+    * densities, rather than encoding their cells to JSON and parsing them again.
+    */
+  private[eyes4s] def restoreDensities(
+      payload: Json,
+      materialized: Vector[Vector[Option[Mass[U]]]]
+  ): Either[CodecError, StudyResult[K, U, S, D]] =
+    readIn(payload, Vector.empty, Some(materialized))
+
   private def describeScale(
-      scale: StudyScaleResult[K, U, S, D]
+      scale: StudyScaleResult[K, U, S, D],
+      massDocument: Mass[U] => Json
   ): Either[CodecError, CanonicalDoc] =
     import CanonicalDoc.Leaf
     val estimation = CanonicalDoc.items(scale.estimation) { case ((key, outcome), index) =>
       (for
         k <- keys.encode(key)
         o <- outcome match
-          case Right(mass) =>
-            Right(
-              ResultWire.tagged(
-                "mass",
-                "grid"       -> Json.fromString(mass.grid.id.name),
-                "values"     -> Json.arr(mass.values.toVector.map(Json.fromDoubleOrNull)*),
-                "provenance" -> ResultWire.provenance(mass.provenance)
-              )
-            )
+          case Right(mass)   => Right(massDocument(mass))
           case Left(failure) =>
             ResultWire
               .studyFailure(keys)(failure)
@@ -316,12 +344,24 @@ final class StudyResultCodec[K, U <: Unit2D, P, S, D](
 
   private def readScale(
       table: DocumentIdentities,
-      json: Json
+      json: Json,
+      materialized: Option[Vector[Option[Mass[U]]]]
   ): Either[CodecError, StudyScaleResult[K, U, S, D]] = for
-    estimate   <- Wire.field[Json](json, "estimate").flatMap(StudyWire.readEstimate[U])
-    rows       <- Wire.field[Vector[Json]](json, "estimation")
+    estimate <- Wire.field[Json](json, "estimate").flatMap(StudyWire.readEstimate[U])
+    rows     <- Wire.field[Vector[Json]](json, "estimation")
+    _        <- materialized match
+      case Some(values) if values.size != rows.size =>
+        Left(
+          CodecError.Field(
+            "estimation",
+            json,
+            s"expected ${rows.size} materialized rows, found ${values.size}"
+          )
+        )
+      case _ => Right(())
     estimation <- rows.zipWithIndex.traverse { case (row, index) =>
-      readEstimate(table, row).left.map(Wire.at(s"estimation[$index]"))
+      readEstimate(table, row, materialized.flatMap(_.lift(index))).left
+        .map(Wire.at(s"estimation[$index]"))
     }
     excluded  <- ResultWire.keyVector(keys, json, "excludedPhases")
     analysesJ <- Wire.field[Json](json, "analyses")
@@ -352,13 +392,39 @@ final class StudyResultCodec[K, U <: Unit2D, P, S, D](
 
   private def readEstimate(
       table: DocumentIdentities,
-      json: Json
+      json: Json,
+      materialized: Option[Option[Mass[U]]]
   ): Either[CodecError, Estimate] =
     for
       key     <- ResultWire.keyed(keys, json, "key")
       outcome <- Wire.field[Json](json, "outcome")
       kind    <- ResultWire.kind(outcome)
       value   <- kind match
+        case "mass" if materialized.nonEmpty =>
+          for
+            grid <- Wire
+              .field[String](outcome, "grid")
+              .flatMap(name => table.grid[U](GridId(name)))
+            provenance <- Wire
+              .field[Json](outcome, "provenance")
+              .flatMap(ResultWire.readProvenance)
+            mass <- materialized.flatten.toRight(
+              CodecError.Field("mass", outcome, "missing materialized mass")
+            )
+            _ <- Agreement
+              .grids(grid, mass.grid)
+              .left
+              .map(e => CodecError.Field("grid", outcome, e.message))
+            _ <- Either.cond(
+              mass.provenance == provenance,
+              (),
+              CodecError.Field(
+                "provenance",
+                outcome,
+                "materialized mass provenance differs from the archive"
+              )
+            )
+          yield Right(mass)
         case "mass" =>
           for
             grid <- Wire
@@ -378,10 +444,15 @@ final class StudyResultCodec[K, U <: Unit2D, P, S, D](
               .map(e => CodecError.Field("values", outcome, e.message))
           yield Right(mass)
         case "failure" =>
-          Wire
-            .field[Json](outcome, "failure")
-            .flatMap(ResultWire.readStudyFailure(keys))
-            .map(Left(_))
+          if materialized.flatten.nonEmpty then
+            Left(
+              CodecError.Field("mass", outcome, "a failed estimation has a materialized mass")
+            )
+          else
+            Wire
+              .field[Json](outcome, "failure")
+              .flatMap(ResultWire.readStudyFailure(keys))
+              .map(Left(_))
         case other => Left(ResultWire.unknown(outcome, "estimation outcome", other))
     yield key -> value
 

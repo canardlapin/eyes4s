@@ -413,8 +413,8 @@ class NativeArtifactPersistenceSuite extends CatsEffectSuite:
   }
 
   private def seeded(
-      files: Vector[(ArtifactName, Vector[Byte])],
-      extraBodies: Vector[Vector[Byte]] = Vector.empty
+      files: Vector[(ArtifactName, IndexedSeq[Byte])],
+      extraBodies: Vector[IndexedSeq[Byte]] = Vector.empty
   ): IO[Either[NativeArtifactError, Option[NativeArtifactPackage]]] =
     val bound = get(
       Reducer.run(document(), Command.BindCompletedArtifacts(exported.facts))

@@ -122,9 +122,11 @@ private[real] object NativeArtifacts:
       factCodec <- codec("facts codec")(NativeBindingFacts.codec)
       factJson  <- codec("facts encode")(factCodec.encode(facts))
       files = Vector(
-        NativeArtifactPackage.FactsName    -> factJson.noSpaces.getBytes(UTF_8).toVector,
-        NativeArtifactPackage.ManifestName -> Vector.from(saved.bytes)
-      ) ++ saved.artifacts.map(a => a.name -> Vector.from(a.bytes))
+        NativeArtifactPackage.FactsName -> NativeArtifactBytes.copyOf(
+          IArray.from(factJson.noSpaces.getBytes(UTF_8))
+        ),
+        NativeArtifactPackage.ManifestName -> NativeArtifactBytes.copyOf(saved.bytes)
+      ) ++ saved.artifacts.map(a => a.name -> NativeArtifactBytes.copyOf(a.bytes))
       verified <- NativeArtifactPackage.verify(files, budget)
       _        <- Either.cond(
         verified.facts == facts,

@@ -901,12 +901,12 @@ object ArtifactResolver:
       }
     val documents = verified.collect {
       case (entry, bytes) if entry.media == MediaKind.JsonText =>
-        entry -> document(entry, bytes)
+        entry -> bytes
     }
     // Study inputs first: a temporal input embedding its base by reference needs it.
     val inputs = documents.collect {
-      case (entry, doc) if entry.role == ArtifactRole.StudyInput =>
-        entry -> doc.flatMap(json =>
+      case (entry, bytes) if entry.role == ArtifactRole.StudyInput =>
+        entry -> document(entry, bytes).flatMap(json =>
           attempt(entry, decoders.input(json)).flatMap(value =>
             checkIdentity(entry, value.hash).as(Decoded.Input(value))
           )
@@ -916,8 +916,8 @@ object ArtifactResolver:
       entry.name -> value
     }.toMap
     val others = documents.collect {
-      case (entry, doc) if entry.role != ArtifactRole.StudyInput =>
-        entry -> doc.flatMap(json =>
+      case (entry, bytes) if entry.role != ArtifactRole.StudyInput =>
+        entry -> document(entry, bytes).flatMap(json =>
           decodeOne(manifest, entry, json, decoders, payloads, decodedInputs)
         )
     }

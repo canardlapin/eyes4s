@@ -23,6 +23,7 @@ import cats.effect.{Concurrent, Ref}
 import cats.syntax.all.*
 import eyes4s.codec.ByteDigest
 import eyes4s.studio.core.artifacts.{
+  NativeArtifactBytes,
   NativeArtifactBudget,
   NativeArtifactError,
   NativeArtifactPackage,
@@ -254,7 +255,9 @@ final class ProjectSession[F[_]: Concurrent] private (
           )
           verified <- EitherT.fromEither[F](
             NativeArtifactPackage.verify(
-              loaded.files.map((entry, bytes) => entry.name -> Vector.from(bytes)),
+              loaded.files.map((entry, bytes) =>
+                entry.name -> NativeArtifactBytes.copyOf(bytes)
+              ),
               artifacts.budget
             )
           )
@@ -315,7 +318,9 @@ final class ProjectSession[F[_]: Concurrent] private (
           )
           verified <- EitherT.fromEither[F](
             NativeArtifactPackage.verify(
-              loaded.files.map((entry, bytes) => entry.name -> Vector.from(bytes)),
+              loaded.files.map((entry, bytes) =>
+                entry.name -> NativeArtifactBytes.copyOf(bytes)
+              ),
               budget
             )
           )
