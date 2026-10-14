@@ -48,6 +48,10 @@
     "node": {
       "exp": 276,
       "pow": 11947
+    },
+    "x86_64-macos-translated": {
+      "exp": 57842,
+      "pow": 11925
     }
   },
   "mutations": {
@@ -68,11 +72,18 @@
         "log_sha256": "5fc010c7d148c9d6a9afacdba7a6f93d7be262ee2134968f3d9b71d5dbcbe5c7"
       }
     ],
-    "scope": "finite kernel-tap and positive-count digest tests; JVM native mutations equivalent on this arm64 host, x86 witness remains required"
+    "scope": "finite kernel-tap and positive-count digest tests; native mutations killed on Node. Native JVM math matched the arm64 probes, while the x86_64 execution witness recorded57842 differing taps and11925 differing counts."
   },
   "outstanding": [
-    "exact packaged Gaussian pipelines",
-    "x86 execution witness",
     "whole branch landing gate"
-  ]
+  ],
+  "packaged_pipeline_receipt": "docs/evidence/numeric-pipeline-20261014.json",
+  "architecture_witness": {
+    "runtime": "Temurin21.0.12.1+1-LTS x86_64 macOS under translation on arm64 host",
+    "source_revision": "deec89459f094e57c171fc9186bfc3885f6caf75",
+    "tests": 42,
+    "failed": 0,
+    "log_sha256": "4d11be0dc3d790abf4f8a0286aaac3ef8f58b48c27cf3e7c6c8828e0f5626a7f",
+    "jdk_archive_sha256": "44db0f08196daf19a47f90d13388b0c943b67663cb537f998fe29e836fa842ce"
+  }
 }

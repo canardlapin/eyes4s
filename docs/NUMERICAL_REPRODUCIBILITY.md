@@ -32,7 +32,10 @@ boundaries; positive-count interval and exponent boundaries through
 `StrictMath`. On the qualified arm64 host, native JVM math matched these probes;
 Node 24.21.0 native `exp` differed on 276 taps and native `pow` on 11,947 counts.
 An equivalent native-math mutant on one architecture cannot prove the absence
-of the defect on another.
+of the defect on another. A Temurin21 x86_64 JVM executed under macOS translation
+passed 42 focused surface tests, including the same exact oracle comparisons.
+Its native `exp` differed on 57,842 taps and native `pow` on 11,925 counts. This is
+an Intel JVM execution witness on the arm64 host, not a native Intel hardware run.
 
 The designated A-9 Gaussian pipeline uses the existing isolated artifact
 consumer. Its fixation CSV becomes typed scanpaths and a saved plan; the real
@@ -65,3 +68,17 @@ Run the complete isolated consumer with
 source revision, artifacts, runtime outcomes and exact comparisons. Primitive
 conformance or consumer compilation alone does not qualify the complete A-9
 pipeline; successful packaged execution on both runtimes is required.
+
+The 2026-10-14 packaged run at `deec89459f094e57c171fc9186bfc3885f6caf75`
+passed both consumer suites with exact designated pipeline comparisons. Its
+[summary](evidence/numeric-pipeline-20261014.json) binds the
+[complete receipt](evidence/numeric-pipeline-20261014-receipt.json), including
+raw bits, package digests and executed source revision. Architecture conformance
+and the complete landing gate remain separate qualification steps.
+
+The same published jars and shared Gaussian consumer sources also passed 53
+focused consumer tests on the translated x86_64 JVM. The
+[Intel receipt](evidence/numeric-x64-20261014.json) retains the actual result
+bits, which matched both the arm64 and Scala.js receipts exactly for the
+designated saved plans and complete cosine/scaled pipelines. Its scope excludes
+rerunning the fresh-process archive readers on Intel.

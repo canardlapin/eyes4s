@@ -1,0 +1,164 @@
+{
+  "artifact_version": "0.0.0-workflow-slices",
+  "source_revision": {
+    "head": "deec89459f094e57c171fc9186bfc3885f6caf75",
+    "modified_tracked_files": false
+  },
+  "artifacts_sha256": {
+    "eyes4s-kernel_3": "5497044206cc8611a3bbdb256ce1a093068e99b41b4428a6aed598521abda777",
+    "eyes4s-kernel_sjs1_3": "16d8c9412f0a0fd48465a59a68c600481303f35ebd31e3bb1f36efafe1f3b822",
+    "eyes4s-core_3": "8705fe4908c5bb5524dba4d9721c9251998f1948eb750ea3169aefa2488aada0",
+    "eyes4s-core_sjs1_3": "2ef6f0024ccd954842d59db3708dc3b9fdb88a53205745ef71ef782c1c79dc44",
+    "eyes4s-detect_3": "e8e6db114ea67a80331c6b31bf4a78345a6a641c84021a78e55c6265d9d1bc36",
+    "eyes4s-detect_sjs1_3": "b820a3ec549196d75ce18439b9dff1750168f8a505680a55708f3cc37ec71d8a",
+    "eyes4s-surface_3": "17269f00471686f3fc7799f58f18b38046b0b7ef2e3a813dab593b90d5dcb461",
+    "eyes4s-surface_sjs1_3": "2135fa3c3251efad9ff0d66f0986ab306965424582b8b064c7ae2a4e9ec24215",
+    "eyes4s-aoi_3": "c2c4af0cc8b33afd002970c3dd77d5a54a1598755324bb5db17619d4772e1646",
+    "eyes4s-aoi_sjs1_3": "4eff25b3f1d50d055495a919495f9b194eb59be235aaf4b99dfcea32d9f8c993",
+    "eyes4s-compare_3": "36540c68e5f2d32d6e1050579bf32d1d595debca97621d83ba2cb83b7f27e634",
+    "eyes4s-compare_sjs1_3": "c19fa03c3850cc96c9e0d02f86024f10adc2eca49374d1547426414a16f6d46e",
+    "eyes4s-design_3": "e437ed8b7804db3948c6a84bf5979334f1a300d8bed8c75e8a27daa9d774932f",
+    "eyes4s-design_sjs1_3": "574ee5f0365f6b76d7a037284721d6961f4bac635e568ee0f9204598d5c833da",
+    "eyes4s-plan_3": "985eb80c1137fc38679e7b4f432f4aca287d246a94fc144158a41ff782337c24",
+    "eyes4s-plan_sjs1_3": "03b4d14ef5cd6caca59b3bf89068536d73e71a9ff5cf4bd56a00cb0c75af8c2a",
+    "eyes4s-results_3": "4d4415d8c2072b415b8e9c518ceca22c75789006554648afdbe461816ee07435",
+    "eyes4s-results_sjs1_3": "b61af56aa76f6595160ab38266d754c0659e60346a45c40da78ba452374e3252",
+    "eyes4s-codec_3": "7b150926a3d3059a970c5c91caad87234980da08285b64dddeb51c38fa367fa6",
+    "eyes4s-codec_sjs1_3": "be59dbb253055ca97eb47539082c9e6c9c6f6535cb696039640dcae6edc4746a",
+    "eyes4s-laws_3": "52c5f061bb58f2936f14003ff05d661c8bcdff4547606792022622d3429c6e58",
+    "eyes4s-laws_sjs1_3": "88b28614091ba68bc96fbf31e5db439a66e0f74ffd2f968ba204491309acda62",
+    "eyes4s-fs2_3": "1b2a2fcc2fb5a43a1ced18a2084a998a35faa40a6fe96b26accf0727512c742c",
+    "eyes4s-fs2_sjs1_3": "bf804b1e48955cf897445551405dd57fdc4ad532a318e4295a317403ccf5e56f",
+    "eyes4s-io_3": "d65734bae7f39bffa1fb5914a83b0cae471ddf6a5261eb33c196f07a1bff344a",
+    "eyes4s-io_sjs1_3": "681764a5c2aedc96455bf59d74c7357096563c6ffb724e4c309064d0dcd8cb92"
+  },
+  "fixtures_sha256": {
+    "tools/r-parity/fixtures/exact.json": "def7355c2186d19c15c2cf1b400301561eabb976c2b4f7f497562863f4bc64aa",
+    "tools/r-parity/fixtures/multiscale.json": "c582abffeee0f738c26bfb711120ed3b7cca74d0ca29e257f1f9ec64238e1694",
+    "tools/r-parity/fixtures/matched-control.csv": "166519d85ee043cc56d70f8f32cee2d35d4ce7e5ca6b83a38c92675f1fc1084e",
+    "tools/r-parity/fixtures/temporal.json": "fb322844da4e0d70105438c5eff28b66e2bb55b4da8db253be899b046ec12f42",
+    "tools/r-parity/fixtures/temporal-study.csv": "9ab2b0301c2313c170a330b1735b856d7337544983991a8cb7b120a7705d9e3f",
+    "tools/detector-conformance/reference.json": "7582beb4de3650a6631362c91849cdaae6bd394dc821d0ef5fd2b394290892b7",
+    "tools/r-parity/fixtures/point-sampling.json": "d8e3fb82ef0a2130360f2be5246a958d48ae7af75a0acf052283de84a2a6a2e1"
+  },
+  "runtime": {
+    "python": "3.12.10",
+    "platform": "macOS-15.1.1-arm64-arm-64bit",
+    "sbt": "sbt.version=1.11.7",
+    "scala": "3.7.4",
+    "jvm": {
+      "java": "25.0.4.1",
+      "vm": "OpenJDK 64-Bit Server VM",
+      "vendor": "Eclipse Adoptium",
+      "os": "Mac OS X",
+      "os_version": "15.1.1",
+      "arch": "aarch64",
+      "processors": 10,
+      "max_heap_mib": 8192,
+      "effect": "munit-cats-effect IORuntime"
+    }
+  },
+  "gates": {
+    "commands": [
+      "publishLocal",
+      "scalafmtCheckAll",
+      "scalafmtSbtCheck",
+      "consumerJVM/test",
+      "consumerJS/test"
+    ],
+    "test_totals": {
+      "jvm": {
+        "total": 213,
+        "failed": 0,
+        "errors": 0,
+        "passed": 213
+      },
+      "js": {
+        "total": 201,
+        "failed": 0,
+        "errors": 0,
+        "passed": 201
+      }
+    },
+    "not_run_here": [
+      "library compileAll/testAll/checkBoundaries",
+      "library headerCheckAll/scalafmtCheckAll/scalafmtSbtCheck/githubWorkflowCheck"
+    ],
+    "checks": [
+      "consumer classpaths use only the packaged artifacts",
+      "packaged sources equal the checkout",
+      "fresh reader classpath: own classes, published jars, third-party jars",
+      "transcribed tables equal the pinned fixture files",
+      "fixation journey against exact.json and multiscale.json",
+      "generate_multiscale.py --check and generate_temporal.py --check",
+      "recording journey against the I-VT conformance fixture",
+      "the fixture's fixations against the pymovements oracle events",
+      "temporal journey against temporal.json targets and ledgers",
+      "fresh-process reload and bit-for-bit rerun of every route",
+      "facade journey: PsychologyWorkflow equals the explicit composition",
+      "report journey: Report.evaluate equals the explicit reduction; exports",
+      "repetition journey: RepetitionPlan and PointSamplingPlan against explicit compositions and point-sampling.json",
+      "template journey: fits and decompositions equal the explicit kernels",
+      "JVM and Scala.js agree exactly on portable evidence"
+    ]
+  },
+  "cross_runtime": {
+    "exact": [
+      "plan",
+      "input",
+      "binned_bits",
+      "gaussian_bits",
+      "automatic_gaussian"
+    ],
+    "reference_oracle_absolute_tolerance": 1e-12
+  },
+  "tests": [
+    "consumerJVM/test",
+    "consumerJS/test"
+  ],
+  "sources_sha256": {
+    ".jvm/src/test/scala/example/ArrowArtifactJvmSuite.scala": "0994c98e28fc8c772d7cee71dccb0fdcd5dfd85eb5c03bdf45b930e65f03fd16",
+    ".jvm/src/test/scala/example/FreshProcessJourneyJvmSuite.scala": "8c4f8e9fb272660d4ccf17e264dec1834f592e21a553c1b2a1786e9006df5576",
+    ".jvm/src/test/scala/example/FreshProcessRoutesJvmSuite.scala": "e20c4e1783be82612a6eba0eec5daa55163c50c4b6f2f3e3445498e5f2f40e1a",
+    ".jvm/src/test/scala/example/JourneyReader.scala": "5b45841049e25ac8e6ea572e630f7bb5880e640b46a241dac6b87fd084e7230f",
+    ".jvm/src/test/scala/example/ResponseEnvelopeJvmSuite.scala": "1e2626bb74e244dd1a45341e65e2027be69778e52b22238e2d341896079e03da",
+    ".jvm/src/test/scala/example/RouteReader.scala": "30a0c4f9a27e9494678f5064c1dd4fa3c42afbb4fd7e4dd4ea7f45257c2e1e1e",
+    "src/main/scala/example/AnalysisRoute.scala": "975c9f33d59082a7430449668fcfbccc7449391c7184c8e923c145778d6ab8a1",
+    "src/main/scala/example/CustomDetector.scala": "9cbcad8e35e5fe5a10c521c01021c24ce2aecebae240b1291fd35c008c455873",
+    "src/main/scala/example/CustomMethod.scala": "8528321a5d94e42e5ca000ccee197fad86554004a8a27659c7bc08010621257d",
+    "src/main/scala/example/FixationJourney.scala": "50c19f38dade52227556b0cb9c2efaeab16fbfcd2012b12aca45ae1a7e4cad26",
+    "src/main/scala/example/RecordingJourney.scala": "220b2950564515bb4a7b88c28ec629b83523a2ad914931e960ff1623435c2b16",
+    "src/main/scala/example/RecordingRoute.scala": "a684dd8ac4c5777173563aeee3c28aca219241a0368a72011fc04cba4acb23f0",
+    "src/main/scala/example/SavedRun.scala": "a5e9a346533447bb845ae61d5b561a350d843be88b7730e7275247817e2b8f70",
+    "src/main/scala/example/TemporalJourney.scala": "f543292915105412d64c9df5b4f9d8e2ef51b28ea6e55a1abc27a59800e68927",
+    "src/main/scala/example/TemporalRoute.scala": "9c3fb26ce52470dfc536b2560ebdeece372c217bb9656b0bd1818bd31dd15e08",
+    "src/test/scala/example/ConsumerFixtures.scala": "3db1187a1291844d3537b911e8cbcc793d4a377f8793ac0502c7203b34884166",
+    "src/test/scala/example/ConsumerLawsSuite.scala": "bab07134d39f26f246be40d72712bdca5d9816230b2ac49ec7008aaab8c29bed",
+    "src/test/scala/example/ConsumerSuite.scala": "10132a2e2f64374e8260978e2b917fe86e55ae2a01d3d0d01fe17cdf009268e6",
+    "src/test/scala/example/FacadeFixtures.scala": "e16a4fff94ff2f60277f63f56176a769396562021297368a67ae404416439b69",
+    "src/test/scala/example/FacadeJourneySuite.scala": "4fb46ef5737977d861f4ad97066ddde6d58d500e08044f9d139aa3d4b287d3a4",
+    "src/test/scala/example/FixationJourneySuite.scala": "0b311f2dfd73600cf6d10832c87f4be7b5b683ad75e1349a2c4ecad355f92e87",
+    "src/test/scala/example/Forgery.scala": "61dbbf6b12c6d3dae56fcfa53bdf1eab698818c437e58874f230499467c5f0a6",
+    "src/test/scala/example/Journey.scala": "b9b50032e4bac4ebd80fab8b44f489b028b6a0834579b413be192bf79c4474a1",
+    "src/test/scala/example/JourneyFixtures.scala": "44eab636ff6275ad9b6c9e5bfc6818fc3e7df6c8f628f0b523c879502ca62789",
+    "src/test/scala/example/MixedFailureJourneySuite.scala": "ddcb92275e7c827c4c3eca1173573a816d3243e6c1051a5cd1fce382b44780a6",
+    "src/test/scala/example/PointSamplingOracle.scala": "cc67c569579202b30ec7e684aa5695b82c30e030776e53f4e99fdbc2a999639d",
+    "src/test/scala/example/RecordingFixtures.scala": "ae3396f8da78d97d9a2b1a1f05a7f2a40add3e053cc201b8739619a987db56a4",
+    "src/test/scala/example/RecordingJourneySuite.scala": "c2054f0ef3551a8724281dc3ff79e86cd9a92e1f033a7b31d6a527000d4fdad0",
+    "src/test/scala/example/RecordingRun.scala": "acd4a6fe7644ad36a94a5d7f933cad8a81750448ee0cf4adb274d55d322ef72a",
+    "src/test/scala/example/RepetitionJourneySuite.scala": "ff67216494b482e7558d2d1ab62ca323428dcaddab24bdca2f4ae4ab74889927",
+    "src/test/scala/example/ReportJourneySuite.scala": "9556ff084c9f2776d7787c3d43d9c8c1adf2b815117fa557181151fd07462c1f",
+    "src/test/scala/example/TemplateJourneySuite.scala": "0d2c574f2fa91dcca6ab4db01c2eea1814afb368f946654c65987584b2c9f37a",
+    "src/test/scala/example/TemporalConsumerFixtures.scala": "578569c7cc3092361aaa7f411c6b44121c807cae50e62984cb282c40a82205b3",
+    "src/test/scala/example/TemporalJourneySuite.scala": "b803b489a92a742b82dad6101071b7ac8d57a7de996e9e2d624768ad7c16e4fa",
+    "src/test/scala/example/TemporalRun.scala": "85f09a43698511e4c5a7bbbbbd6ff27e09bdce1c169d4274b5c2af0676d9c1d0"
+  },
+  "receipt_sha256": "47b31c4ef5ca454bafd947f89c58aa960fa099fbe4f02eb394b41532fdcb533d",
+  "receipt_bytes": 607794,
+  "scope": "fresh packaged Gaussian A9 conformance on arm64 JVM and Scala.js; architecture and landing gates recorded separately",
+  "fingerprints": {
+    "runtime_evidence": "2ff73beca5cd9af8c9976baeb04a436779dc10e374df76df1d8e59e5f4a1e281",
+    "fixation_journey": "1f45025a8c1c6fdbb923bd2611676349e419b0931514dfe4206bea88b03ed7bb"
+  },
+  "receipt_path": "docs/evidence/numeric-pipeline-20261014-receipt.json"
+}
