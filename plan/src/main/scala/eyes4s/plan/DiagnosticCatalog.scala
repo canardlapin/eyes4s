@@ -1003,6 +1003,18 @@ object DiagnosticCatalog:
 
   val studyRun: DiagnosticFamily = error("study-run")("Plan", "Meter", "UnexpectedCompletion")
 
+  val projectPrerequisite: DiagnosticFamily = error("project-prerequisite")(
+    "MissingRecording",
+    "MissingViewing",
+    "MissingAreas",
+    "MissingGrid",
+    "MissingObservedTimeline",
+    "Anchor",
+    "MissingSynchronization",
+    "ImpreciseSynchronization",
+    "MissingSchema"
+  )
+
   /** Every family ever issued, in issue order: families are only appended,
     * and a retired family keeps its place.
     */
@@ -1108,7 +1120,8 @@ object DiagnosticCatalog:
     studyRecipe,
     studyAdvisory,
     methodsFact,
-    navigation
+    navigation,
+    projectPrerequisite
   )
 
   /** Every live family, grouped as documented. */
