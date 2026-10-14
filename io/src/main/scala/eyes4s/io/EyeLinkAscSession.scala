@@ -25,6 +25,7 @@ import eyes4s.core.Rate
 import eyes4s.core.Recording
 import eyes4s.core.RecordingError
 import eyes4s.core.Sample
+import eyes4s.core.SampleLineage
 import eyes4s.core.SamplingTolerance
 import eyes4s.kernel.ClockId
 import eyes4s.kernel.Frame
@@ -39,6 +40,13 @@ enum AscUnspecifiedPupilPolicy derives CanEqual:
   case RejectMeasuredValues
   case TreatMeasuredValuesAsArbitrary
 
+/** Whether incomplete native pairs prevent assembly of the independently validated samples.
+  * Unconfirmed events are always retained and never enter `confirmedEnds`.
+  */
+enum AscNativePairingPolicy derives CanEqual:
+  case RequireConsistentPairs
+  case PreserveUnconfirmedEvents
+
 /** Complete caller-supplied context needed to turn native ASC values into
   * trusted eyes4s artifacts.
   */
@@ -48,7 +56,8 @@ final class EyeLinkAscSessionConfig private (
     val conversionEvidence: ConversionEvidencePolicy,
     val blinkReconciliation: AscBlinkReconciliationPolicy,
     val unspecifiedPupil: AscUnspecifiedPupilPolicy,
-    val samplingTolerance: SamplingTolerance
+    val samplingTolerance: SamplingTolerance,
+    val nativePairing: AscNativePairingPolicy
 )
 
 object EyeLinkAscSessionConfig:
@@ -58,7 +67,8 @@ object EyeLinkAscSessionConfig:
       conversionEvidence: ConversionEvidencePolicy,
       blinkReconciliation: AscBlinkReconciliationPolicy,
       unspecifiedPupil: AscUnspecifiedPupilPolicy,
-      samplingTolerance: SamplingTolerance = SamplingTolerance.TimestampQuantisation
+      samplingTolerance: SamplingTolerance = SamplingTolerance.TimestampQuantisation,
+      nativePairing: AscNativePairingPolicy = AscNativePairingPolicy.RequireConsistentPairs
   ): Either[EyeLinkAscSessionConfigError, EyeLinkAscSessionConfig] =
     if frame.id.name.trim.isEmpty then
       Left(EyeLinkAscSessionConfigError.BlankFrame(frame.id.name))
@@ -72,7 +82,8 @@ object EyeLinkAscSessionConfig:
           conversionEvidence,
           blinkReconciliation,
           unspecifiedPupil,
-          samplingTolerance
+          samplingTolerance,
+          nativePairing
         )
       )
 
@@ -159,6 +170,7 @@ enum EyeLinkAscSessionDiagnostic:
   case Sample(value: AscSampleDiagnostic)
   case Native(value: AscNativeDiagnostic)
   case Pairing(value: AscNativePairingDiagnostic)
+  case UnconfirmedPairing(value: AscNativePairingDiagnostic)
   case Timeline(value: AscNativeTimelineError)
   case UnknownRecord(source: String, line: Long, token: String)
   case SourceChanged(expected: String, actual: String, line: Long)
@@ -230,8 +242,9 @@ enum EyeLinkAscSessionDiagnostic:
   case AssemblyUnavailable(sourceDigest: Sha256)
 
   def severity: EyeLinkAscDiagnosticSeverity = this match
-    case ConversionWarning(_) | UnknownRecord(_, _, _) | PupilTreatedAsArbitrary(_, _, _) |
-        UndocumentedPupilUnit(_, _, _, _) | OffSurfacePupilExcluded(_, _, _, _, _) =>
+    case UnconfirmedPairing(_) | ConversionWarning(_) | UnknownRecord(_, _, _) |
+        PupilTreatedAsArbitrary(_, _, _) | UndocumentedPupilUnit(_, _, _, _) |
+        OffSurfacePupilExcluded(_, _, _, _, _) =>
       EyeLinkAscDiagnosticSeverity.Warning
     case BlockOutcome(AscBlockOutcome.DuplicateConfiguration(_, _, _, _, _, false)) =>
       EyeLinkAscDiagnosticSeverity.Warning
@@ -260,6 +273,7 @@ enum EyeLinkAscSessionDiagnostic:
     case Sample(value)                      => value.message
     case Native(value)                      => value.message
     case Pairing(value)                     => value.message
+    case UnconfirmedPairing(value)          => value.message
     case Timeline(value)                    => value.message
     case UnknownRecord(source, line, token) =>
       s"ASC source='$source' line=$line has unknown record token='$token'; the raw line is retained."
@@ -526,7 +540,13 @@ object EyeLinkAscSessions:
     val messages = parsedNative.collect { case AscParsedNativeRecord.Message(value) => value }
     val metadata = parsedNative.collect { case AscParsedNativeRecord.Metadata(value) => value }
     val ledger   = AscNativeEventLedger.reconcile(events)
-    diagnostics ++= ledger.diagnostics.map(EyeLinkAscSessionDiagnostic.Pairing.apply)
+    diagnostics ++= ledger.diagnostics.map { value =>
+      config.nativePairing match
+        case AscNativePairingPolicy.RequireConsistentPairs =>
+          EyeLinkAscSessionDiagnostic.Pairing(value)
+        case AscNativePairingPolicy.PreserveUnconfirmedEvents =>
+          EyeLinkAscSessionDiagnostic.UnconfirmedPairing(value)
+    }
 
     val observed = EyeLinkAscNativeTimeline.observedMessages(config.clock, messages) match
       case Left(errors) =>
@@ -1003,8 +1023,12 @@ object EyeLinkAscSessions:
                   AscPupilObservation.MissingZero =>
                 ()
             Some(Gaze.OffScreen(point))
+        val lineage = sample.crWarnings match
+          case AscCrWarningEvidence.Observed(flags) if flags.interpolated =>
+            SampleLineage.interpolated
+          case _ => SampleLineage.measured
         for acceptedTime <- time; acceptedGaze <- gaze
-        yield Sample(acceptedTime, acceptedGaze)
+        yield Sample(acceptedTime, acceptedGaze, lineage)
 
   private def validateSource(framing: Vector[AscFramingEmission]): SourceValidation =
     val parsed   = framing.collect { case AscFramingEmission.Parsed(value) => value }

@@ -1,0 +1,96 @@
+{
+  "version": 1,
+  "date": "2026-10-14",
+  "scope": "complete public EDF-derived ASC portable acceptance and root JVM/JS Werror compile; full landing gate pending",
+  "source_sha256": "c23a7fb86d2fa4d7dcd8578a06f82911214073f1b6d36536bc9bc39316d70b19",
+  "runtime": {
+    "jvm": "Temurin25.0.4.1+1-LTS/aarch64",
+    "js": "Scala.js/Node24.21.0",
+    "scala": "3.7.4"
+  },
+  "accounting": {
+    "physical_lines": 247992,
+    "parsed_samples": 237664,
+    "materialized_samples": 237664,
+    "parsed_native_records": 10295,
+    "native_events": 10253,
+    "confirmed_native_ends": 5126,
+    "observed_messages": 42,
+    "recording_blocks": 3,
+    "warnings": 1662,
+    "errors": 0
+  },
+  "policies": {
+    "conversion": "Exploratory; Unidentified source origin with exact ASC digest",
+    "native_pairing": "PreserveUnconfirmedEvents; default remains RequireConsistentPairs",
+    "blink": "ConfirmedNativeIntervals",
+    "gap": "Break",
+    "detector": "pixel IDT, 50px square bounding-box extent, minimum100ms; no fabricated Viewing"
+  },
+  "unconfirmed_pair": {
+    "kind": "DuplicateStart",
+    "source": "zenodo1156863:C023.asc",
+    "line": 103,
+    "previous_line": 32,
+    "block": 1,
+    "event": "Fixation",
+    "eye": "Left"
+  },
+  "scanpath_witnesses": [
+    {
+      "block": 1,
+      "samples": 77610,
+      "fixations": 504,
+      "dwell_us": 133016000,
+      "sha256": "15ce6d411b5cc6e0f85734ea945679375948a72dbae23909572c8b05ff90d152"
+    },
+    {
+      "block": 2,
+      "samples": 50334,
+      "fixations": 477,
+      "dwell_us": 129772000,
+      "sha256": "ec450cd1d615a239fca3261f21bf6ba582bc23c0ab0404715dbc151d086ff098"
+    },
+    {
+      "block": 3,
+      "samples": 109720,
+      "fixations": 1235,
+      "dwell_us": 313812000,
+      "sha256": "5dd8c55e38c6f3e5bf693bb143d77e090e3eedad8d74330951bdbcc45a997627"
+    }
+  ],
+  "witness_encoding": "UTF-8 LF-separated onset_us:half_open_offset_us:Double.doubleToLongBits(centre.x):Double.doubleToLongBits(centre.y), no final newline; regression witnesses independently rerun on both runtimes, not an online EyeLink detector oracle",
+  "checks": {
+    "focused_cr_parser": {
+      "jvm": 34,
+      "js": 34
+    },
+    "native_policy_and_end_to_end": {
+      "jvm": 29,
+      "js": 29
+    },
+    "pinned_end_to_end_and_cr": {
+      "jvm": 6,
+      "js": 6
+    },
+    "root_jvm_werror": true,
+    "root_js_werror": true
+  },
+  "logs_sha256": {
+    "eyes4s-asc-cr-warnings-test.log": "9a5269417b47508cc1ce12c33ec07cc7a6902223cffa968a0e3eefe6d9100f38",
+    "eyes4s-public-asc-e2e-attempt4.log": "5240b0cb7c16f568100613cf454a5c9cc410b774d99d8027f7dab1240e89e68f",
+    "eyes4s-public-asc-pinned-werror.log": "bfa410f3121d9188f1f0d5e0dbf469832ed8c2149cf7a4b32e27f07a3853352f"
+  },
+  "sources_sha256": {
+    "io/src/main/scala/eyes4s/io/AscCrWarnings.scala": "fc3f307d1fa1eed2bd63094db3343dbd9abbf22f564129aa62ab4b10edb9c358",
+    "io/src/main/scala/eyes4s/io/EyeLinkAscSamples.scala": "6950450135589d936a5d89857d4c98dbbceb33c8bec23409c19fcb1a1fd47650",
+    "io/src/main/scala/eyes4s/io/EyeLinkAscNative.scala": "251cb232ef0306ea9d3d35e726c6a18cf13f31e5a5d85b188fb50aa0a1d40831",
+    "io/src/main/scala/eyes4s/io/EyeLinkAscNativeTimeline.scala": "f234ad0d42742d128f7224d61f75afcb0558a08d859a54e9301721c2278b2d97",
+    "io/src/main/scala/eyes4s/io/EyeLinkAscSession.scala": "7da1f9cd958da180bd7900417ed36d7e344a3bdf2c6c0bfd09819ef47ea49bf8",
+    "io/src/test/scala/eyes4s/io/PublicAscEndToEndSuite.scala": "2ce731b1eb193ece39b72039541357bfdbe70c34d8d868b355211c54e50f9027"
+  },
+  "outstanding": [
+    "complete landing gate and land",
+    "complete converter and original EDF evidence remain unknown; outside bounded public fixture qualification"
+  ]
+}

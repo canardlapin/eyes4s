@@ -1,3 +1,6 @@
 # EyeLink oracle manifests have a strict nine-column TSV schema. Value rows
 # intentionally retain an empty final detail field, represented by a terminal tab.
 io/src/test/resources/eyes4s/io/eyelink/oracles/*.tsv whitespace=-blank-at-eol
+
+# Preserve the complete public ASC fixture, including its original CRLF bytes.
+io/src/test/resources/eyes4s/io/eyelink/public/zenodo-1156863/C023.asc -text
