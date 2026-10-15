@@ -308,6 +308,9 @@ object NumericBounds:
   /** Strictly positive: `(0, ∞)`. */
   val positive: NumericBounds = NumericBounds(Some(Endpoint.Open(0)), None)
 
+  /** Strictly between zero and one: `(0, 1)`. */
+  val openUnit: NumericBounds = NumericBounds(Some(Endpoint.Open(0)), Some(Endpoint.Open(1)))
+
   /** Zero or more: `[0, ∞)`. */
   val nonNegative: NumericBounds = NumericBounds(Some(Endpoint.Closed(0)), None)
 

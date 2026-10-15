@@ -52,6 +52,7 @@ enum TemplateError derives CanEqual:
   case Numerical(key: String, prediction: Double, response: Double)
   case Evaluation(failed: Vector[String], total: Int)
   case Aggregate(operation: String, value: Double)
+  case SplitGroups(values: Vector[String])
   def message: String = this match
     case Basis(i, c, u) =>
       s"Template basis '$i' requires unique nonblank columns $c and response unit '$u'."
@@ -78,7 +79,9 @@ enum TemplateError derives CanEqual:
       s"Template row=$k prediction=$p response=$y has nonfinite prediction/residual."
     case Evaluation(f, n) =>
       s"Cannot summarize $n held-out predictions with failed keys $f or no rows."
-    case Aggregate(o, v) => s"Template $o is not finite: $v."
+    case Aggregate(o, v)     => s"Template $o is not finite: $v."
+    case SplitGroups(values) =>
+      s"Template held-out groups must be nonempty and unique, received=$values."
 
 /** Fixed, predeclared features. The ID must change when their scientific definition changes.
   * No learned feature construction, centering or tuning is performed.
@@ -133,6 +136,13 @@ sealed trait TemplateDesign[X]:
 
   private[design] def admit(key: String, input: X): Either[TemplateError, Unit]
   private[design] def digest[K: KeyDigest](rows: Vector[TemplateObservation[K, X]]): ContentHash
+
+  /** Complete source binding additionally retains input evidence; existing
+    * training digests keep their published scientific-data meaning.
+    */
+  private[design] def sourceDigest[K: KeyDigest](
+      rows: Vector[TemplateObservation[K, X]]
+  ): ContentHash = digest(rows)
 
   /** Whether every row must name a match group. */
   private[design] def requiresMatchGroup: Boolean
@@ -279,6 +289,11 @@ object TemplateDesign:
         )
       )
     }
+
+    override private[design] def sourceDigest[K: KeyDigest](
+        rows: Vector[TemplateObservation[K, Mass[U]]]
+    ): ContentHash =
+      ContentHash.combineAll(digest(rows) +: rows.map(_.input.provenance.digest))
 
     private[design] def requiresMatchGroup: Boolean = true
 
@@ -427,7 +442,10 @@ final class TemplateSplit[K, X] private (
     val training: TemplateTraining[K, X],
     val heldOut: TemplateHeldOut[K, X],
     val excluded: Vector[TemplateExcludedRow[K, X]]
-)
+):
+  /** Complete ordered scientific rows, including match-group exclusions. */
+  def inputHash(using KeyDigest[K]): ContentHash = design.sourceDigest(rows)
+
 object TemplateSplit:
   /** Admit every row under `design`, then partition by the explicit held-out
     * split groups. Every requested group must exist, keys are unique across
@@ -599,7 +617,16 @@ object Template:
 
   /** Native fitting as a whole operation followed by row-paged evaluation. */
   def crossValidationWork[K, X](split: TemplateSplit[K, X]): TemplateValidationWork[K, X] =
-    new TemplateValidationWork(split, None)
+    new TemplateValidationWork(split, None, TemplateValidationFit.Native[X]())
+
+  /** Check a supplied imported-fit receipt, then page its held-out evaluation.
+    * This does not invoke an external backend or label an import as native fitting.
+    */
+  def importedCrossValidationWork[K](
+      split: TemplateSplit[K, Vector[Double]],
+      receipt: TemplateImportedFit
+  ): TemplateValidationWork[K, Vector[Double]] =
+    new TemplateValidationWork(split, None, TemplateValidationFit.Imported(receipt))
 
   /** Import only a full-rank `lm` fit with exactly the requested ordered
     * feature names, for a fixed-feature design whose route is the imported fit.

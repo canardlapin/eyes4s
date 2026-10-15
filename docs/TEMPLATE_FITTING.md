@@ -108,6 +108,43 @@ an operand-bearing `TemplateError`. The descriptive `meanSquaredError` refuses f
 it never quietly changes its denominator. No per-cell coefficient p-values or standard errors are
 imported, and no population inference is claimed.
 
+## Complete saved plans and results
+
+`TemplateFitPlan.of(split)` describes a native fixed-feature or training-mean-map fit.
+Its source identity includes every ordered input row, including match-group exclusions;
+its plan identity also includes the held-out groups and fitting route. `description`,
+`inspect`, `diff`, `TemplateFitForm` and `preflight` use that same recipe. Preflight
+checks the source artifact identity; numerical rank and evaluation remain explicit
+unchecked work until execution.
+
+`plan.work` performs one `FittingWholeTraining` operation, then evaluates at most
+`WorkQuanta.pairs` complete held-out rows per step. `TemplateFitExecution` uses the
+shared execution protocol and reports exact fitting and evaluation totals. Cancellation
+is observed between these operations; neither a fit nor one row's feature extraction
+is interrupted internally.
+
+For a historical imported-lm split, construct `TemplateImportedFit.of` from the
+external receipt, then `TemplateFitPlan.imported(split, receipt)`. Execution reports
+`CheckingWholeImportedReceipt` before evaluation. The receipt retains the ordered
+columns, coefficients, rank, row count, training hash and named backend. Reopening
+checks and reuses that receipt; it does not perform an external fit or certify the
+backend's coefficients. Native and imported routes retain their existing admission
+rules.
+
+`TemplateFitCodec.fixed(keyCodec)` and `TemplateFitCodec.meanMap(keyCodec)` provide
+built-in plan/result schemas, registered through the generic analysis archive roles.
+`TemplateFitArchive.completed(plan, result)` binds an already completed result to
+its exact source and recipe without refitting. Results carry canonical `RunStamp`s;
+restore checks the stamp, reconstructs the saved recipe, runs its declared route and
+verifies the saved predictions, failures and fit metadata. The inner split codec still
+reads both existing template-recipe versions.
+
+`ResultExports.fixedTemplate(archive, codec)` and `learnedTemplate(archive, codec)`
+project completed results without fitting again. Each table carries the stamped archive
+context. Fixed-feature results include coefficients, every held-out prediction or
+failure, and the exclusion ledger; learned-map results include the learned map,
+predictions and exclusions.
+
 ## Evidence and limits
 
 [template.json](../tools/r-parity/fixtures/template.json) records the actual R receipt and an exact

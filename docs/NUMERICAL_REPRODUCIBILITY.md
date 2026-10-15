@@ -82,3 +82,39 @@ focused consumer tests on the translated x86_64 JVM. The
 bits, which matched both the arm64 and Scala.js receipts exactly for the
 designated saved plans and complete cosine/scaled pipelines. Its scope excludes
 rerunning the fresh-process archive readers on Intel.
+
+## Native template and decomposition norms
+
+Native QR column scaling, Householder norms and active-set admission use the
+shared `LeastSquaresNormConvention.FdlibmHypotV1`. The implementation adapts
+[fdlibm e_hypot.c](https://www.netlib.org/fdlibm/e_hypot.c), preserving its Sun
+notice, arithmetic order, scaling and word splitting. It uses no fused
+multiply-add or runtime `hypot` call. Existing training-recipe digests retain
+their scientific-data meaning.
+
+The complete template/decomposition family plans bind the norm convention in
+their saved data and plan identities and refuse an unsupported convention.
+Imported fixed-feature receipts retain their declared external backend;
+checking a receipt does not perform a native refit. Native saved results keep
+exact replay verification, including learned-template cells and provenance.
+
+The JVM conformance suite compares 100,000 deterministic raw binary pairs and
+20,000 close-exponent pairs with both `StrictMath.hypot` and `Math.hypot`.
+The portable corpus contains 1,024 independent JVM oracle cases covering
+signed zero, subnormals, overflow/scaling boundaries, nonfinite semantics and
+varied finite values. Its binary rows have SHA-256
+`3e7f6f86895e3c33397f9cca5844ac4630ce6781c3d1ed3f33a028b5b2f63ab9`.
+NaN results are compared through canonical NaN bits; public solvers refuse
+nonfinite inputs before computing norms.
+
+```sh
+python3 tools/numerical/hypot.py
+sbt 'designJVM/testOnly *ReproducibleHypotSuite *ReproducibleHypotJvmSuite' \
+    'designJS/testOnly *ReproducibleHypotSuite' \
+    'codecJVM/testOnly *TemplateFitCodecSuite *DecompositionCodecSuite' \
+    'codecJS/testOnly *TemplateFitCodecSuite *DecompositionCodecSuite'
+```
+
+These checks accompany the existing rational and pinned R decomposition and
+template oracles under their named tolerances. They do not designate native
+`hypot` calls elsewhere in the library as exact across runtimes.

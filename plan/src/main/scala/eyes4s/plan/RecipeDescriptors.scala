@@ -61,6 +61,7 @@ enum RecipeParameterError derives CanEqual:
   /** A pair design's own constructor refused the value, such as a control cap. */
   case Pairing(error: PairingError)
   case PointSampling(error: PointSamplingError[Nothing])
+  case LeastSquares(error: LeastSquaresError)
   def message: String = this match
     case Geometry(e)          => e.message
     case Time(e)              => e.message
@@ -79,6 +80,7 @@ enum RecipeParameterError derives CanEqual:
       s"A window of admission frame '${a.name}' needs a declared window frame identity."
     case Pairing(e)       => e.message
     case PointSampling(e) => e.message
+    case LeastSquares(e) => e.message
 
 /** Concrete typed construction routes. No universal scientific defaults are imposed.
   *

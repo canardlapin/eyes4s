@@ -18,7 +18,7 @@ package eyes4s.design
 
 /** The indivisible native fit, then pages of whole held-out row predictions. */
 enum TemplateValidationStage derives CanEqual:
-  case FittingWholeTraining, EvaluatingWholeRows
+  case FittingWholeTraining, CheckingWholeImportedReceipt, EvaluatingWholeRows
 
 enum TemplateValidationStep[K, X]:
   case More(stage: TemplateValidationStage, workUnits: Int, next: TemplateValidationWork[K, X])
@@ -30,10 +30,11 @@ enum TemplateValidationStep[K, X]:
   */
 final class TemplateValidationWork[K, X] private[design] (
     split: TemplateSplit[K, X],
-    evaluating: Option[(FittedTemplate[K, X], TemplateEvaluationWork[K, X])]
+    evaluating: Option[(FittedTemplate[K, X], TemplateEvaluationWork[K, X])],
+    fitting: TemplateValidationFit[X]
 ):
   def stage: TemplateValidationStage = evaluating match
-    case None    => TemplateValidationStage.FittingWholeTraining
+    case None    => fitting.stage
     case Some(_) => TemplateValidationStage.EvaluatingWholeRows
   def totalRows: Int     = split.heldOut.rows.size
   def processedRows: Int = evaluating.fold(0)(_._2.position)
@@ -42,12 +43,12 @@ final class TemplateValidationWork[K, X] private[design] (
     evaluating match
       case None =>
         for
-          fitted <- Template.fit(split.training)
+          fitted <- fitting.fit(split.training)
           work   <- fitted.evaluationWork(split.heldOut)
         yield TemplateValidationStep.More(
-          TemplateValidationStage.FittingWholeTraining,
+          stage,
           1,
-          new TemplateValidationWork(split, Some(fitted -> work))
+          new TemplateValidationWork(split, Some(fitted -> work), fitting)
         )
       case Some((fitted, work)) =>
         Right(work.advance(quantum) match
@@ -55,7 +56,7 @@ final class TemplateValidationWork[K, X] private[design] (
             TemplateValidationStep.More(
               TemplateValidationStage.EvaluatingWholeRows,
               units,
-              new TemplateValidationWork(split, Some(fitted -> next))
+              new TemplateValidationWork(split, Some(fitted -> next), fitting)
             )
           case TemplateEvaluationStep.Done(units, evaluation) =>
             TemplateValidationStep.Done(units, new TemplateValidation(fitted, evaluation)))

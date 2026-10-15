@@ -126,7 +126,7 @@ class TemplateValidationWorkSuite extends munit.FunSuite:
       Nil
     )
     val errors = typeCheckErrors(
-      "new eyes4s.design.TemplateValidationWork[String, Vector[Double]](null,None)"
+      "new eyes4s.design.TemplateValidationWork[String, Vector[Double]](null,None, null)"
     )
     assert(errors.exists(_.message.contains("TemplateValidationWork")))
   }
