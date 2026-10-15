@@ -251,6 +251,8 @@ final class GeometryPanelView(dispatch: GeometryIntent => Unit):
   scroll.setFitToWidth(true)
   scroll.setHbarPolicy(ScrollPane.ScrollBarPolicy.NEVER)
   scroll.getStyleClass.add("edge-to-edge")
+  // The pane is the focus stop; Tab goes through its controls, not the scroller.
+  scroll.setFocusTraversable(false)
   VBox.setVgrow(scroll, Priority.ALWAYS)
 
   val node: VBox = VBox(header, scroll)
@@ -258,13 +260,40 @@ final class GeometryPanelView(dispatch: GeometryIntent => Unit):
   Option(getClass.getClassLoader.getResource(stylesheetResource))
     .foreach(url => node.getStylesheets.add(url.toExternalForm))
 
+  private var editor: Option[Region] = None
+
+  /** Whether the panel's own typed fields edit the geometry: until
+    * [[embed]] gives it another editor.
+    */
+  def editsFields: Boolean = editor.isEmpty
+
+  /** Show `form` as the geometry's one editor, after the declared facts
+    * where the panel's own typed fields were: they are then hidden, and so
+    * are the panel's no-revision sentence (the form says that itself) and
+    * its title, which the pane's tab already shows (the board's header holds
+    * only the tab and the kind). In the window, `form` is the import draft's
+    * geometry page, so a geometry edit joins the draft's one revision commit
+    * (Column mapping, Trial metadata and Data issues share it). The form
+    * scrolls with the panel's body.
+    */
+  def embed(form: Region): Unit =
+    editor.foreach(e => declared.getChildren.remove(e): Unit)
+    editor = Some(form)
+    form.setMinHeight(Region.USE_PREF_SIZE)
+    declared.getChildren.add(declared.getChildren.indexOf(facts) + 1, form)
+    GeometryField.values.foreach { f =>
+      visible(fields(f), false)
+      visible(fieldLabels(f), false)
+    }
+    visible(title, false)
+
   /** Bind `vm`: text, choices, enablement and visibility. */
   def render(vm: GeometryPanelVM): Unit =
     rendering = true
     try
       title.setText(vm.title)
       kind.setText(vm.kind)
-      show(empty, vm.empty)
+      show(empty, vm.empty.filter(_ => editsFields))
       show(target, vm.target)
       show(problem, vm.problem)
       val hasDataset = vm.empty.isEmpty
@@ -325,6 +354,7 @@ final class GeometryPanelView(dispatch: GeometryIntent => Unit):
       densitySwatches.zip(vm.densityKey.labels).foreach((l, text) => l.setText(text))
       densityKey.setText(vm.densityKey.caption)
       mark.setText(vm.mark)
+      mark.setAccessibleText(vm.mark)
       mark.setDisable(!vm.canMark)
       show(markNote, vm.markNote)
 
@@ -333,16 +363,12 @@ final class GeometryPanelView(dispatch: GeometryIntent => Unit):
         case Some(o) =>
           visible(orientation, true)
           orientationTitle.setText(o.title)
-          o.fixes.foreach(c =>
-            fixes(c.value).setText(c.label)
-            fixes(c.value).setSelected(c.selected)
-          )
-          o.scopes.foreach(c =>
-            scopes(c.value).setText(c.label)
-            scopes(c.value).setSelected(c.selected)
-          )
+          o.fixes.foreach(c => choose(fixes(c.value), c.label, c.selected))
+          o.scopes.foreach(c => choose(scopes(c.value), c.label, c.selected))
           record.setText(o.record)
+          record.setAccessibleText(o.record)
           cancel.setText(o.cancel)
+          cancel.setAccessibleText(o.cancel)
 
       rulesTitle.setText(vm.rulesTitle)
       rulesNote.setText(vm.rulesNote)
@@ -362,10 +388,7 @@ final class GeometryPanelView(dispatch: GeometryIntent => Unit):
       show(rulesEmpty, vm.rulesEmpty)
 
       policyTitle.setText(vm.policyTitle)
-      vm.policies.foreach { c =>
-        policies(c.value).setText(c.label)
-        policies(c.value).setSelected(c.selected)
-      }
+      vm.policies.foreach(c => choose(policies(c.value), c.label, c.selected))
       policyNote.setText(vm.policyNote)
       outsideWindow.render(vm.outsideWindow)
       outsideScreen.render(vm.outsideScreen)
@@ -473,6 +496,11 @@ object GeometryPanelView:
     box.setMaxSize(ThumbWidth, ThumbHeight)
     box
 
+  private def choose(r: RadioButton, text: String, selected: Boolean): Unit =
+    r.setText(text)
+    r.setAccessibleText(text)
+    r.setSelected(selected)
+
   private def show(l: Label, text: Option[String]): Unit =
     l.setText(text.getOrElse(""))
     visible(l, text.isDefined)
@@ -539,7 +567,7 @@ object GeometryPanelView:
     def render(vm: CountVM): Unit =
       title.setText(vm.title)
       value.setText(vm.value.getOrElse("—"))
-      value.setAccessibleText(s"${vm.title}: ${vm.value.getOrElse("—")}")
+      value.setAccessibleText(vm.accessible)
       ref = vm.ref
       value.setDisable(vm.ref.isEmpty)
       note.setText(vm.note)
