@@ -446,11 +446,21 @@ class TrialMapSceneSuite extends munit.FunSuite:
 
   // --- Cells without coverage (review ticket 8) --------------------------------
 
-  private def uncovered(scene: TrialScene): Option[Grob] =
-    grobs(scene).find {
-      case g: Grob.Group => g.name.exists(_.value == TrialScene.UncoveredName)
-      case _             => false
+  private def uncovered(scene: TrialScene): Option[Grob.CompoundPolygon] =
+    grobs(scene).collectFirst {
+      case g: Grob.CompoundPolygon if g.name.exists(_.value == TrialScene.UncoveredName) => g
     }
+
+  // The ring of the cells from column `from` up to `to` in row `y` of the
+  // frame: its corners clockwise on the screen from the top left.
+  private def ring(from: Int, to: Int, y: Int): Vector[intaglio.Point] =
+    val frame    = display(ret07, Display.Blank).placement
+    val (cw, ch) = (frame.width.toDouble / Columns, frame.height.toDouble / Rows)
+    val (x0, x1) = (frame.left + from * cw, frame.left + to * cw)
+    val (y0, y1) = (frame.top + y * ch, frame.top + (y + 1) * ch)
+    Vector((x0, y0), (x1, y0), (x1, y1), (x0, y1)).map((x, y) =>
+      right(intaglio.Point.native(x, y))
+    )
 
   private def missingAt(missing: Set[Int]): MapGrid =
     val stored =
@@ -461,32 +471,17 @@ class TrialMapSceneSuite extends munit.FunSuite:
     val g     = grid()
     val scene = right(TrialScene(withMap(Some(TrialMap(g, MapRaster.render(g, style))))))
     val hatch = uncovered(scene).getOrElse(fail("no hatch over the missing cell"))
-    val rects = hatch.children.collect { case r: Grob.Rect => r }
-    assertEquals(rects.size, 1)
-    val r = rects.head
     // The missing-asset hatch, exactly as a missing asset's frame wears it.
-    assert(r.gp.fillPattern.isDefined, "the missing cell is not hatched")
+    assert(hatch.gp.fillPattern.isDefined, "the missing cell is not hatched")
     val asset = right(
       TrialScene(withMap(None).copy(display = display(ret07, displays.toMap.apply("missing"))))
     )
     val frameHatch = grobs(asset).collectFirst {
       case f: Grob.Rect if f.name.exists(_.value == TrialScene.FrameName) => f.gp.fillPattern
     }
-    assertEquals(frameHatch, Some(r.gp.fillPattern))
+    assertEquals(frameHatch, Some(hatch.gp.fillPattern))
     // Over cell 100 (column 36, row 1) of the frame, cell for cell.
-    val frame    = display(ret07, Display.Blank).placement
-    val (cw, ch) = (frame.width.toDouble / Columns, frame.height.toDouble / Rows)
-    assertEquals(
-      r.center,
-      right(intaglio.Point.native(frame.left + 36.5 * cw, frame.top + 1.5 * ch))
-    )
-    assertEquals(
-      r.size,
-      intaglio.Size.fromExtents(
-        right(intaglio.ExtentExpr.native(cw)),
-        right(intaglio.ExtentExpr.native(ch))
-      )
-    )
+    assertEquals(hatch.rings, Vector(ring(36, 37, 1)))
     // Over the raster, under the isolines.
     val order         = grobs(scene)
     def at(n: String) = order.indexWhere(x => named(scene, n).exists(_ eq x))
@@ -494,19 +489,18 @@ class TrialMapSceneSuite extends munit.FunSuite:
     assert(at(TrialScene.MapName) < hatchAt && hatchAt < at(TrialScene.IsolinesName))
   }
 
-  test("a run of missing cells along a row is one hatched rect; a full grid draws none") {
+  test(
+    "a run of missing cells along a row is one ring of one hatched shape; a full grid none"
+  ) {
     // Row 3: columns 10-12 missing, then 14; row 4: column 0.
     val g = missingAt(
       Set(3 * Columns + 10, 3 * Columns + 11, 3 * Columns + 12, 3 * Columns + 14, 4 * Columns)
     )
     val scene = right(TrialScene(withMap(Some(TrialMap(g, MapRaster.render(g, style))))))
-    val rects = uncovered(scene).toVector.flatMap(_.children).collect { case r: Grob.Rect => r }
-    val frame = display(ret07, Display.Blank).placement
-    val cw    = frame.width.toDouble / Columns
-    def wide(r: Grob.Rect) = r.size.width match
-      case intaglio.ExtentExpr(intaglio.LengthExpr.Const(l)) => l.value
-      case other                                             => fail(s"$other")
-    assertEquals(rects.map(wide), Vector(3 * cw, cw, cw))
+    // One shape, so the rows' shared edges are filled once (separate rects
+    // let the screen show through a seam that crosses a device pixel).
+    val rings = uncovered(scene).getOrElse(fail("no hatch over the missing cells")).rings
+    assertEquals(rings, Vector(ring(10, 13, 3), ring(14, 15, 3), ring(0, 1, 4)))
     val full = missingAt(Set.empty)
     val none = right(TrialScene(withMap(Some(TrialMap(full, MapRaster.render(full, style))))))
     assertEquals(uncovered(none), None)
