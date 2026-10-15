@@ -80,6 +80,7 @@ class PointSamplingFamilySuite extends munit.FunSuite:
     form.fields.foreach { field =>
       val raw = form.values(p).get(field.view.id)
       assertEquals(field.restore(raw), Right(raw))
+      assertEquals(form.validate(field.view.id, raw), Right(()))
     }
     assertEquals(get(get(form.parse(form.values(p))).plan(p)).description, p.description)
     assertEquals(p.diff(p), Vector.empty)
@@ -156,6 +157,10 @@ class PointSamplingFamilySuite extends munit.FunSuite:
       .values(p)
       .updated(form.bins.view.id, invalidBins)
       .updated(form.controlSelection.view.id, invalidSelection)
+    assert(form.validate(form.bins.view.id, invalidBins).isLeft)
+    assert(form.validate(form.controlSelection.view.id, invalidSelection).isLeft)
+    val unknown = get(FieldId.of("unregistered-point-field"))
+    assertEquals(form.validate(unknown, RawValue.Absent), Left(FieldError.UnknownField(unknown)))
     assertEquals(form.parse(values).left.toOption.get.toVector.size, 2)
   }
 
