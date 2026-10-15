@@ -88,13 +88,22 @@ final case class StorageView(
   * built only from that classification, and only a confirmed plan becomes
   * an effect.
   */
-final case class RunStoragePanel private (
+sealed abstract case class RunStoragePanel private (
     storage: Option[RunStorage],
     chosen: Vector[RunId],
     confirming: Option[PrunePlan],
     busy: Boolean,
     notice: Option[String]
 ) derives CanEqual:
+
+  private def copy(
+      storage: Option[RunStorage] = this.storage,
+      chosen: Vector[RunId] = this.chosen,
+      confirming: Option[PrunePlan] = this.confirming,
+      busy: Boolean = this.busy,
+      notice: Option[String] = this.notice
+  ): RunStoragePanel =
+    RunStoragePanel(storage, chosen, confirming, busy, notice)
   import StorageIntent.*
 
   def update(intent: StorageIntent): (RunStoragePanel, Vector[StorageEffect]) = intent match
@@ -154,6 +163,15 @@ final case class RunStoragePanel private (
     )
 
 object RunStoragePanel:
+  private def apply(
+      storage: Option[RunStorage],
+      chosen: Vector[RunId],
+      confirming: Option[PrunePlan],
+      busy: Boolean,
+      notice: Option[String]
+  ): RunStoragePanel =
+    new RunStoragePanel(storage, chosen, confirming, busy, notice) {}
+
   /** A panel that has not listed the store yet; it asks to. */
   def start: (RunStoragePanel, Vector[StorageEffect]) =
     (RunStoragePanel(None, Vector.empty, None, false, None), Vector(StorageEffect.Refresh))

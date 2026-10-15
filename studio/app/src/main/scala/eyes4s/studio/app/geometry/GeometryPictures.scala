@@ -102,7 +102,7 @@ final case class ThumbnailPicture(
   * a power of 4, at least 4, so a cell of one record is always at level 1
   * and never shares a level with a cell of `step` records or more.
   */
-final case class DensitySteps private (step: Long) derives CanEqual:
+sealed abstract case class DensitySteps private (step: Long) derives CanEqual:
 
   /** The first count of each level, lowest first. */
   def starts: Vector[Long] = Vector(1L, step, 4L * step, 16L * step)
@@ -114,6 +114,9 @@ final case class DensitySteps private (step: Long) derives CanEqual:
     if count <= 0L then 0 else starts.lastIndexWhere(_ <= count) + 1
 
 object DensitySteps:
+
+  private def apply(step: Long): DensitySteps =
+    new DensitySteps(step) {}
 
   /** The smallest step, and the step of a study with no record on screen. */
   val Default: DensitySteps = DensitySteps(4L)

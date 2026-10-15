@@ -69,15 +69,24 @@ sealed trait ColourLimits derives CanEqual
 
 object ColourLimits:
 
+  object Sequential:
+    private[maps] def apply(lower: Double, upper: Double): Sequential =
+      new Sequential(lower, upper) {}
+
   /** A sequential ramp from `lower` (its lightest stop) to `upper` (its
     * darkest), `lower < upper`, both finite.
     */
-  final case class Sequential private[maps] (lower: Double, upper: Double) extends ColourLimits
+  sealed abstract case class Sequential private[maps] (lower: Double, upper: Double)
+      extends ColourLimits
+
+  object Symmetric:
+    private[maps] def apply(extent: Double): Symmetric =
+      new Symmetric(extent) {}
 
   /** A diverging ramp from `−extent` to `+extent`, zero at its middle,
     * `extent` finite and above zero.
     */
-  final case class Symmetric private[maps] (extent: Double) extends ColourLimits
+  sealed abstract case class Symmetric private[maps] (extent: Double) extends ColourLimits
 
   def sequential(lower: Double, upper: Double): Either[LimitsError, ColourLimits] =
     if !lower.isFinite then Left(LimitsError.NotFinite("lower", lower))
@@ -130,10 +139,13 @@ enum LimitsScope derives CanEqual:
   * difference between symmetric ones. Made only through [[MapStyle.of]] or
   * [[ColourLimits.spanning]], so a palette never reads another's limits.
   */
-final case class MapStyle private[maps] (palette: MapPalette, limits: ColourLimits)
+sealed abstract case class MapStyle private[maps] (palette: MapPalette, limits: ColourLimits)
     derives CanEqual
 
 object MapStyle:
+
+  private[maps] def apply(palette: MapPalette, limits: ColourLimits): MapStyle =
+    new MapStyle(palette, limits) {}
 
   def of(palette: MapPalette, limits: ColourLimits): Either[LimitsError, MapStyle] =
     (palette, limits) match
@@ -211,7 +223,7 @@ object MapColours:
   * DESIGN_SPEC section 6), between 0 and 1. Changing it redraws; it never
   * changes a stored value or a cached raster.
   */
-final case class MapOpacity private (value: Double) derives CanEqual:
+sealed abstract case class MapOpacity private (value: Double) derives CanEqual:
 
   /** A stored pixel as drawn at this opacity: its alpha scaled, its colour
     * kept. The draw-time path; the stored pixel is unchanged.
@@ -221,6 +233,9 @@ final case class MapOpacity private (value: Double) derives CanEqual:
     (alpha << 24) | (argb & MapOpacity.ChannelBits)
 
 object MapOpacity:
+  private def apply(value: Double): MapOpacity =
+    new MapOpacity(value) {}
+
   val Default: MapOpacity = MapOpacity(0.6)
 
   /** The low 24 bits of a packed pixel: its colour channels, without alpha. */

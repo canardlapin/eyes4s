@@ -24,14 +24,17 @@ import eyes4s.studio.core.command.{CommandError, HistoryStack}
 import eyes4s.studio.core.document.Perspective
 
 /** A registered command's identity ("perspective.compare", "edit.undo"). */
-final case class CommandId private (value: String) derives CanEqual
+sealed abstract case class CommandId private (value: String) derives CanEqual
 
 object CommandId:
+  private def apply(value: String): CommandId =
+    new CommandId(value) {}
+
   /** Lookup by id text, for scripting (S3.6): only registered ids resolve. */
   def parse(value: String): Option[CommandId] =
     CommandRegistry.all.map(_.id).find(_.value == value)
 
-  private[keys] def declared(value: String): CommandId = new CommandId(value)
+  private[keys] def declared(value: String): CommandId = CommandId(value)
 
 /** The menu of the system menu bar a command is listed in (S1.9), in bar
   * order. macOS adds the application menu itself.

@@ -90,21 +90,27 @@ enum AppError derives CanEqual:
     case BadClock(h, m)   => s"$h:$m is not a time of day (hours 0–23, minutes 0–59)."
 
 /** The project's name as the app bar and window title show it ("memory-study"). */
-final case class ProjectName private (value: String) derives CanEqual
+sealed abstract case class ProjectName private (value: String) derives CanEqual
 
 object ProjectName:
+  private def apply(value: String): ProjectName =
+    new ProjectName(value) {}
+
   def of(value: String): Either[AppError, ProjectName] =
-    Either.cond(value.trim.nonEmpty, new ProjectName(value.trim), AppError.BlankProjectName)
+    Either.cond(value.trim.nonEmpty, ProjectName(value.trim), AppError.BlankProjectName)
 
 /** A local wall-clock time, supplied by the platform clock ("Saved 10:24"). */
-final case class ClockTime private (hour: Int, minute: Int) derives CanEqual:
+sealed abstract case class ClockTime private (hour: Int, minute: Int) derives CanEqual:
   def render: String = Format.clock(hour, minute)
 
 object ClockTime:
+  private def apply(hour: Int, minute: Int): ClockTime =
+    new ClockTime(hour, minute) {}
+
   def of(hour: Int, minute: Int): Either[AppError, ClockTime] =
     Either.cond(
       hour >= 0 && hour < 24 && minute >= 0 && minute < 60,
-      new ClockTime(hour, minute),
+      ClockTime(hour, minute),
       AppError.BadClock(hour, minute)
     )
 
@@ -537,7 +543,7 @@ enum Intent derives CanEqual:
   * saves and undoes with the presentation; [[navigation]] keeps the trail
   * of each perspective and the back/forward history.
   */
-final case class AppModel private (
+sealed abstract case class AppModel private (
     project: Option[ProjectName],
     history: History,
     session: SessionFacts,
@@ -555,6 +561,43 @@ final case class AppModel private (
     inputs: InputCheck,
     checks: InputChecks
 ) derives CanEqual:
+
+  private def copy(
+      project: Option[ProjectName] = this.project,
+      history: History = this.history,
+      session: SessionFacts = this.session,
+      jobs: JobBoard = this.jobs,
+      navigation: Navigation = this.navigation,
+      selection: SelectionState = this.selection,
+      hover: Option[HoverAt] = this.hover,
+      items: TrialItems = this.items,
+      panes: PaneState = this.panes,
+      pending: Option[Confirmation] = this.pending,
+      notice: Option[Notice] = this.notice,
+      save: SaveState = this.save,
+      prepared: Option[PreparedDesign] = this.prepared,
+      appearance: AppearanceState = this.appearance,
+      inputs: InputCheck = this.inputs,
+      checks: InputChecks = this.checks
+  ): AppModel =
+    AppModel(
+      project,
+      history,
+      session,
+      jobs,
+      navigation,
+      selection,
+      hover,
+      items,
+      panes,
+      pending,
+      notice,
+      save,
+      prepared,
+      appearance,
+      inputs,
+      checks
+    )
 
   def document: StudioDocument = history.document
 
@@ -604,6 +647,43 @@ final case class AppModel private (
   def isMaximized: Boolean = panes.maximized.contains(layout.id)
 
 object AppModel:
+
+  private def apply(
+      project: Option[ProjectName],
+      history: History,
+      session: SessionFacts,
+      jobs: JobBoard,
+      navigation: Navigation,
+      selection: SelectionState,
+      hover: Option[HoverAt],
+      items: TrialItems,
+      panes: PaneState,
+      pending: Option[Confirmation],
+      notice: Option[Notice],
+      save: SaveState,
+      prepared: Option[PreparedDesign],
+      appearance: AppearanceState,
+      inputs: InputCheck,
+      checks: InputChecks
+  ): AppModel =
+    new AppModel(
+      project,
+      history,
+      session,
+      jobs,
+      navigation,
+      selection,
+      hover,
+      items,
+      panes,
+      pending,
+      notice,
+      save,
+      prepared,
+      appearance,
+      inputs,
+      checks
+    ) {}
 
   private val none: Vector[AppEffect] = Vector.empty
 

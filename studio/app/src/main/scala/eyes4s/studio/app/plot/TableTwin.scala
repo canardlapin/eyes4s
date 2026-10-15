@@ -76,13 +76,22 @@ final case class TableTwinStep(state: TableTwinState, intents: Vector[Intent], c
   * numbered in that shown order: the cursor moves through it, and row 0 is
   * the first pinned row. Deselecting returns a row to its place.
   */
-final case class TableTwinState private (
+sealed abstract case class TableTwinState private (
     selection: ViewSelection,
     cursor: Option[StudioRef],
     focused: Boolean,
     pinsSelected: Boolean,
     placedByFocus: Boolean
 ) derives CanEqual:
+
+  private def copy(
+      selection: ViewSelection = this.selection,
+      cursor: Option[StudioRef] = this.cursor,
+      focused: Boolean = this.focused,
+      pinsSelected: Boolean = this.pinsSelected,
+      placedByFocus: Boolean = this.placedByFocus
+  ): TableTwinState =
+    TableTwinState(selection, cursor, focused, pinsSelected, placedByFocus)
 
   def view: ViewId = selection.view
 
@@ -270,6 +279,15 @@ final case class TableTwinState private (
     TableTwinStep(copy(selection = next), Vector(intent), false)
 
 object TableTwinState:
+
+  private def apply(
+      selection: ViewSelection,
+      cursor: Option[StudioRef],
+      focused: Boolean,
+      pinsSelected: Boolean,
+      placedByFocus: Boolean
+  ): TableTwinState =
+    new TableTwinState(selection, cursor, focused, pinsSelected, placedByFocus) {}
 
   /** A table with no cursor, showing `selection`; `pinsSelected` pins its
     * selected rows at the top.

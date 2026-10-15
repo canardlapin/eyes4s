@@ -62,12 +62,20 @@ enum RovingKey derives CanEqual:
   * another view's selection. A plot and its TableTwin are two views, each
   * with its own id, projecting the same bus.
   */
-final case class ViewSelection private (
+sealed abstract case class ViewSelection private (
     view: ViewId,
     selected: Vector[StudioRef],
     context: ContextRevision,
     sequence: Long
 ) derives CanEqual:
+
+  private def copy(
+      view: ViewId = this.view,
+      selected: Vector[StudioRef] = this.selected,
+      context: ContextRevision = this.context,
+      sequence: Long
+  ): ViewSelection =
+    ViewSelection(view, selected, context, sequence)
 
   def isSelected(ref: StudioRef): Boolean = selected.contains(ref)
 
@@ -90,6 +98,14 @@ final case class ViewSelection private (
     (next, selection.selected != selected)
 
 object ViewSelection:
+
+  private def apply(
+      view: ViewId,
+      selected: Vector[StudioRef],
+      context: ContextRevision,
+      sequence: Long
+  ): ViewSelection =
+    new ViewSelection(view, selected, context, sequence) {}
 
   /** `view` showing `selection`. */
   def initial(view: ViewId, selection: SelectionState): ViewSelection =

@@ -108,17 +108,35 @@ final case class FiguresVM(
   * `statuses` holds the trial status comparisons asked for, keyed by the
   * pair of dataset revisions: `NotRead` until the platform answers.
   */
-final case class FigureBinding private (
+sealed abstract case class FigureBinding private (
     selected: Option[FigureId],
     kept: Vector[(FigureId, RunId)],
     rebind: Option[RebindProposal],
     statuses: Map[(DatasetRevision, DatasetRevision), StatusDiff],
     problem: Option[String]
 ) derives CanEqual:
+
+  private def copy(
+      selected: Option[FigureId] = this.selected,
+      kept: Vector[(FigureId, RunId)] = this.kept,
+      rebind: Option[RebindProposal] = this.rebind,
+      statuses: Map[(DatasetRevision, DatasetRevision), StatusDiff] = this.statuses,
+      problem: Option[String] = this.problem
+  ): FigureBinding =
+    FigureBinding(selected, kept, rebind, statuses, problem)
   def status(from: DatasetRevision, to: DatasetRevision): StatusDiff =
     statuses.getOrElse((from, to), StatusDiff.NotRead)
 
 object FigureBinding:
+  private def apply(
+      selected: Option[FigureId],
+      kept: Vector[(FigureId, RunId)],
+      rebind: Option[RebindProposal],
+      statuses: Map[(DatasetRevision, DatasetRevision), StatusDiff],
+      problem: Option[String]
+  ): FigureBinding =
+    new FigureBinding(selected, kept, rebind, statuses, problem) {}
+
   val empty: FigureBinding = FigureBinding(None, Vector.empty, None, Map.empty, None)
 
   private val none: Vector[FigureEffect] = Vector.empty
