@@ -31,6 +31,12 @@ enum RecipeFamily derives CanEqual:
   /** Repetition similarity over supplied maps (CR4 S3). */
   case Repetition
 
+  /** Native template fitting and held-out evaluation (CR4 S4). */
+  case TemplateFit
+
+  /** Cellwise OLS, NNLS and simplex decomposition (CR4 S4). */
+  case Decomposition
+
 /** A blocker means the plan's own constructors or prerequisites refuse the
   * recipe as a whole, so `prepare`/`run` cannot proceed. A warning means
   * execution proceeds, but the named trial has a deterministic failure or the
@@ -60,7 +66,8 @@ enum Remedy derives CanEqual:
 /** Outcomes that only execution decides. Preflight lists them instead of guessing. */
 enum UncheckedAspect derives CanEqual:
   case OccupancyEstimation, PairComparison, FailurePolicyReduction, WindowOccupancy,
-    SampleSynchronization, GapInterpolation, EventDetection, AreaAssignment
+    SampleSynchronization, GapInterpolation, EventDetection, AreaAssignment, TemplateFitting,
+    TemplateEvaluation, SurfaceSolving
 
 /** A report's verdict: `Ready` when it has no blocker, else `Unavailable`. */
 enum Availability derives CanEqual:

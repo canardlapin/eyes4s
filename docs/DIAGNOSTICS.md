@@ -1327,6 +1327,7 @@ fails after rewriting, so review the change and run it again.
 | `recipe-parameter.unknown-token` | `UnknownToken` | `field`, `token`, `options` |
 | `recipe-parameter.undeclared-window-frame` | `UndeclaredWindowFrame` | `admission` |
 | `recipe-parameter.pairing` | `Pairing` | `error` |
+| `recipe-parameter.least-squares` | `LeastSquares` | `error` |
 
 ### `repetition-plan` — `RepetitionPlanError`
 
@@ -1392,6 +1393,7 @@ fails after rewriting, so review the change and run it again.
 | `template.numerical` | `Numerical` | `key`, `prediction`, `response` |
 | `template.evaluation` | `Evaluation` | `failed`, `total` |
 | `template.aggregate` | `Aggregate` | `operation`, `value` |
+| `template.split-groups` | `SplitGroups` | `values` |
 
 ### `analysis-finding` — `AnalysisFinding`
 

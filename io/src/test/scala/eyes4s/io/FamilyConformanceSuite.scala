@@ -45,11 +45,11 @@ import scala.deriving.Mirror
   *     fixture and blocked without its input, and every diagnostic it projects
   *     (causes included) carries a catalogued code;
   *   - `Stepwise.complete` at the finest and the default quanta equals `run`,
-  *     and the finest cut takes more steps than the default (the cursor
-  *     honours its quanta);
+  *     paged cursors take more steps at the finest cut, while a declared
+  *     whole operation takes exactly one step at every quantum;
   *   - the shared `Execution` runner completes with `run`'s result and, when
-  *     cancelled while parked between two steps, settles `Cancelled` after
-  *     exactly the steps the cursor took;
+  *     cancelled at a supported boundary, settles `Cancelled` after exactly
+  *     the steps the cursor took (before work for a whole operation);
   *   - the plan and result codecs round-trip, re-encoding to the same bytes;
   *   - the result projects to a `ResultTable`.
   *
@@ -146,8 +146,6 @@ class FamilyConformanceSuite extends munit.FunSuite:
       AnalysisKind.withoutFamily.toSet,
       Set(
         AnalysisKind.PointSampling,
-        AnalysisKind.TemplateFit,
-        AnalysisKind.Decomposition,
         AnalysisKind.ScanpathComparison
       )
     )
@@ -234,6 +232,8 @@ abstract class FamilyWitness[F](val family: F & RecipeFamily):
   type Segment
   type Error
   type Result
+
+  def cursorContract: CursorContract = CursorContract.Paged
 
   def description: Vector[(String, Vector[Provenance.Param])]
   def inspection: Either[DescriptorError, RecipeInspection]
@@ -335,11 +335,17 @@ abstract class FamilyWitness[F](val family: F & RecipeFamily):
         s"Stepwise.complete at $quanta differs from run"
       )
     }
-    // The cursor honours its quanta: the finest cut takes more, smaller steps.
-    check(
-      steps(Finest) > steps(WorkQuanta.default),
-      s"${steps(Finest)} finest steps against ${steps(WorkQuanta.default)} default steps"
-    )
+    cursorContract match
+      case CursorContract.Paged =>
+        check(
+          steps(Finest) > steps(WorkQuanta.default),
+          s"${steps(Finest)} finest steps against ${steps(WorkQuanta.default)} default steps"
+        )
+      case CursorContract.WholeOperation =>
+        check(
+          steps(Finest) == 1 && steps(WorkQuanta.default) == 1,
+          "a declared whole operation must complete in exactly one step at every quantum"
+        )
 
   /** Steps the runner takes at `quanta`, from a pure trace. */
   private def steps(quanta: WorkQuanta): Int =
@@ -362,7 +368,17 @@ abstract class FamilyWitness[F](val family: F & RecipeFamily):
   /** Park the runner at its between-step hook after `completed` steps, cancel
     * it there, and count the advances the cursor took.
     */
-  final def cancels(): IO[Unit] =
+  final def cancels(): IO[Unit] = cursorContract match
+    case CursorContract.WholeOperation =>
+      Execution[IO].start(submission(Finest), IO.never).use { run =>
+        run.cancel >> run.outcome.map {
+          case RunOutcome.Cancelled(_, None) => ()
+          case other => check(false, s"whole operation did not cancel before work: $other")
+        }
+      }
+    case CursorContract.Paged => cancelsPaged()
+
+  private def cancelsPaged(): IO[Unit] =
     val total     = steps
     val completed = total / 2
     check(total >= 2, s"the fixture takes only $total step")
@@ -403,6 +419,9 @@ abstract class FamilyWitness[F](val family: F & RecipeFamily):
     tables(get(run)).map(get)
 
 object FamilyWitness:
+  enum CursorContract:
+    case Paged, WholeOperation
+
   /** An obligation of the definition of done. */
   enum Obligation derives CanEqual:
     case Inspect, Preflight, Stepwise, Execution, Archive, Table, Form
@@ -965,4 +984,184 @@ object FamilyWitnesses:
             "failurePolicy"    -> "failurePolicy"
           ),
           Set("repetition.input", "layout", "grid", "pairing")
+        )
+
+  private val templateBasis = get(
+    TemplateBasis.of("conformance-template", Vector("x", "z"), "score")
+  )
+  private val templateRows = Vector(
+    get(TemplateObservation.of("x", "train", Vector(1.0, 0.0), 2.0, Some("x"))),
+    get(TemplateObservation.of("z", "train", Vector(0.0, 1.0), 3.0, Some("z"))),
+    get(TemplateObservation.of("excluded", "train", Vector(4.0, 5.0), 99.0, Some("held-item"))),
+    get(TemplateObservation.of("held", "held", Vector(2.0, 1.0), 8.0, Some("held-item"))),
+    get(TemplateObservation.of("held-2", "held", Vector(1.0, 2.0), 9.0, Some("held-item-2"))),
+    get(TemplateObservation.of("held-3", "held", Vector(2.0, 2.0), 11.0, Some("held-item-3")))
+  )
+  private val templatePlan = get(
+    TemplateFitPlan.of(
+      get(TemplateSplit.of(TemplateDesign.fixed(templateBasis), templateRows, Set("held")))
+    )
+  )
+  private val templateCodecs =
+    TemplateFitCodec.fixed(VersionedCodec.string(definition("conformance.template-key")))
+
+  given templateFit: FamilyWitness[RecipeFamily.TemplateFit.type] =
+    new FamilyWitness[RecipeFamily.TemplateFit.type](RecipeFamily.TemplateFit):
+      type Id      = eyes4s.fs2.TemplateFitRunId
+      type Cursor  = TemplateFitCursor[String, Vector[Double]]
+      type Stage   = TemplateValidationStage
+      type Segment = TemplateValidationStage
+      type Error   = TemplateError
+      type Result  = TemplateFitResult[String, Vector[Double]]
+      def description = templatePlan.description
+      def inspection  = templatePlan.inspect
+      def ready       =
+        val report = templatePlan.preflight(Some(templatePlan.inputRef))
+        Preflighted.of(report, report.diagnostics)
+      def unavailable =
+        val report = templatePlan.preflight(None)
+        Preflighted.of(report, report.diagnostics)
+      def run                            = templatePlan.run
+      def cursor                         = Right(templatePlan.work)
+      def submission(quanta: WorkQuanta) =
+        eyes4s.fs2.TemplateFitExecution.submission(templatePlan, quanta)
+      given stepping: Stepwise[Cursor, Stage, Error, Result] = TemplateFitCursor.stepwise
+      def archived(result: Result)                           = TemplateFitArchive
+        .completed(templatePlan, result)
+        .flatMap(templateCodecs.results.encode)
+      def rearchived(document: Json) =
+        templateCodecs.results.decode(document).flatMap(templateCodecs.results.encode)
+      def savedPlan                    = templateCodecs.plans.encode(templatePlan)
+      def reloadedPlan(document: Json) = templateCodecs.plans
+        .decode(document)
+        .flatMap(p => templateCodecs.plans.encode(p).map(p.description -> _))
+      def tables(result: Result) = Right(
+        TemplateFitArchive
+          .completed(templatePlan, result)
+          .left
+          .map(ResultExportError.Codec.apply)
+          .flatMap { archive =>
+            ResultExports
+              .fixedTemplate(archive, templateCodecs)
+              .map(
+                _.zip(
+                  Vector(
+                    templateBasis.columns.size,
+                    templatePlan.split.heldOut.rows.size,
+                    templatePlan.split.excluded.size
+                  )
+                )
+                  .map((table, rows) => Tabulated(table, rows, None))
+              )
+          }
+      )
+      def form =
+        val f = new TemplateFitForm(templatePlan)
+        FormEvidence(
+          f.fields,
+          f.values,
+          Some(
+            f.parse(f.values)
+              .left
+              .map(_.message)
+              .flatMap(_.plan(templatePlan).left.map(_.message))
+              .map(_.description)
+          ),
+          Map("heldOutGroups" -> "heldOutGroups"),
+          Set(
+            "template.input",
+            "design",
+            "fittingRoute",
+            "normConvention",
+            "receipt",
+            "method",
+            "features",
+            "responseUnit",
+            "training",
+            "heldOut",
+            "excluded"
+          )
+        )
+
+  private val decompositionFrame = get(Frame.screen("conformance-decomposition", 3, 1))
+  private val decompositionGrid  = get(Grid.over(decompositionFrame, 3, 1))
+  private def decompositionMass(a: Double, b: Double, c: Double): Mass[Px] =
+    val values = IArray(a, b, c)
+    get(
+      Surface
+        .intensity(decompositionGrid, values, Provenance.raw(ContentHash.of(values)))
+        .flatMap(_.normalised)
+    )
+  private val decompositionPredictors = get(
+    PredictorSet.of(
+      Vector(
+        get(PredictorId.of("a")) -> decompositionMass(1, 0, 0),
+        get(PredictorId.of("b")) -> decompositionMass(0, 1, 0)
+      )
+    )
+  )
+  private val decompositionPlan = get(
+    DecompositionPlan.of(
+      decompositionMass(1, 3, 0),
+      decompositionPredictors,
+      DecompositionSpec.Ols(Intercept.Exclude, RelativeRankTolerance.default)
+    )
+  )
+  private val decompositionCodecs = new DecompositionCodec[Px]
+  given decomposition: FamilyWitness[RecipeFamily.Decomposition.type] =
+    new FamilyWitness[RecipeFamily.Decomposition.type](RecipeFamily.Decomposition):
+      type Id      = eyes4s.fs2.DecompositionRunId
+      type Cursor  = DecompositionCursor[Px]
+      type Stage   = DecompositionStage
+      type Segment = DecompositionStage
+      type Error   = DecompositionError
+      type Result  = DecompositionResult[Px]
+      override def cursorContract = CursorContract.WholeOperation
+      def description             = decompositionPlan.description
+      def inspection              = decompositionPlan.inspect
+      def ready                   =
+        val report = decompositionPlan.preflight(Some(decompositionPlan.inputRef))
+        Preflighted.of(report, report.diagnostics)
+      def unavailable =
+        val report = decompositionPlan.preflight(None)
+        Preflighted.of(report, report.diagnostics)
+      def run                            = decompositionPlan.run
+      def cursor                         = Right(decompositionPlan.work)
+      def submission(quanta: WorkQuanta) =
+        eyes4s.fs2.DecompositionExecution.submission(decompositionPlan, quanta)
+      given stepping: Stepwise[Cursor, Stage, Error, Result] = DecompositionCursor.stepwise
+      def archived(result: Result)                           = DecompositionArchive
+        .completed(decompositionPlan, result)
+        .flatMap(decompositionCodecs.results.encode)
+      def rearchived(document: Json) =
+        decompositionCodecs.results.decode(document).flatMap(decompositionCodecs.results.encode)
+      def savedPlan                    = decompositionCodecs.plans.encode(decompositionPlan)
+      def reloadedPlan(document: Json) = decompositionCodecs.plans
+        .decode(document)
+        .flatMap(p => decompositionCodecs.plans.encode(p).map(p.description -> _))
+      def tables(result: Result) = Right(
+        DecompositionArchive
+          .completed(decompositionPlan, result)
+          .left
+          .map(ResultExportError.Codec.apply)
+          .flatMap { archive =>
+            ResultExports
+              .decomposition(archive, decompositionCodecs)
+              .map(_.zip(Vector(2, 1, 3)).map((table, rows) => Tabulated(table, rows, None)))
+          }
+      )
+      def form =
+        val f = new DecompositionForm
+        FormEvidence(
+          f.fields,
+          f.values(decompositionPlan),
+          Some(
+            f.parse(f.values(decompositionPlan))
+              .left
+              .map(_.message)
+              .flatMap(_.plan(decompositionPlan).left.map(_.message))
+              .map(_.description)
+          ),
+          Map("spec" -> "spec"),
+          Set("decomposition.input", "normConvention", "grid", "predictors")
         )

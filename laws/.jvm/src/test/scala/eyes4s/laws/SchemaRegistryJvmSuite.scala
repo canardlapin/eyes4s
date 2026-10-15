@@ -394,6 +394,67 @@ object SchemaRegistry:
       Kind.Document,
       Vector("report-v1.json"),
       codecLaw(reports, "study report")
+    ),
+    Entry(
+      TemplateFitCodecDefinitions.fixedPlan,
+      Kind.Document,
+      Vector("fixed-template-plan-v1.json", "fixed-template-imported-plan-v1.json"),
+      codecLaw(() => new TemplateFitCodecLawSuite, "fixed template plan")
+    ),
+    Entry(
+      TemplateFitCodecDefinitions.fixedResult,
+      Kind.Document,
+      Vector("fixed-template-result-v1.json", "fixed-template-imported-result-v1.json"),
+      codecLaw(() => new TemplateFitCodecLawSuite, "fixed template result")
+    ),
+    Entry(
+      TemplateFitCodecDefinitions.meanMapPlan,
+      Kind.Document,
+      Vector("mean-map-template-plan-v1.json"),
+      codecLaw(() => new TemplateFitCodecLawSuite, "mean-map template plan")
+    ),
+    Entry(
+      TemplateFitCodecDefinitions.meanMapResult,
+      Kind.Document,
+      Vector("mean-map-template-result-v1.json"),
+      codecLaw(() => new TemplateFitCodecLawSuite, "mean-map template result")
+    ),
+    Entry(
+      TemplateRecipeCodecs.schema,
+      Kind.Document,
+      Vector(
+        "template-recipe-v1.json",
+        "template-recipe-lm-v1.json",
+        "template-recipe-maps-v1.json"
+      ),
+      codecLaw(templates, "fixed template recipe") ++
+        codecLaw(templates, "map template recipe")
+    ),
+    Entry(
+      get(DefinitionId.of("eyes4s.template-recipe", 2)),
+      Kind.Document,
+      Vector("template-recipe-grouped-v2.json"),
+      codecLaw(templates, "grouped template recipe")
+    ),
+    Entry(
+      DecompositionCodecDefinitions.plan,
+      Kind.Document,
+      Vector(
+        "decomposition-ols-plan-v1.json",
+        "decomposition-nnls-plan-v1.json",
+        "decomposition-mixture-plan-v1.json"
+      ),
+      codecLaw(() => new DecompositionCodecLawSuite, "decomposition plan")
+    ),
+    Entry(
+      DecompositionCodecDefinitions.result,
+      Kind.Document,
+      Vector(
+        "decomposition-ols-result-v1.json",
+        "decomposition-nnls-result-v1.json",
+        "decomposition-mixture-result-v1.json"
+      ),
+      codecLaw(() => new DecompositionCodecLawSuite, "decomposition result")
     )
   ) ++ methodPlans.map((id, fixture) =>
     Entry(
@@ -435,23 +496,6 @@ object SchemaRegistry:
       Kind.Document,
       Vector("temporal-study-v1.json"),
       codecLaw(plans, "temporal study plan")
-    ),
-    Entry(
-      TemplateRecipeCodecs.schema,
-      Kind.Document,
-      Vector(
-        "template-recipe-v1.json",
-        "template-recipe-lm-v1.json",
-        "template-recipe-maps-v1.json"
-      ),
-      codecLaw(templates, "fixed template recipe") ++
-        codecLaw(templates, "map template recipe")
-    ),
-    Entry(
-      get(DefinitionId.of("eyes4s.template-recipe", 2)),
-      Kind.Document,
-      Vector("template-recipe-grouped-v2.json"),
-      codecLaw(templates, "grouped template recipe")
     )
   )
 
@@ -1008,6 +1052,17 @@ private object Decoders:
     def study: VersionedCodec[?] =
       method.fold(StudyCodecs.cosine[Px].codec)(StudyCodecs.similarity[Px](_).codec)
     id match
+      case DecompositionCodecDefinitions.plan =>
+        Some(DecompositionFamilyCodecFixture.codec.plans)
+      case DecompositionCodecDefinitions.result =>
+        Some(DecompositionFamilyCodecFixture.codec.results)
+      case TemplateFitCodecDefinitions.fixedPlan => Some(TemplateFamilyCodecFixture.fixed.plans)
+      case TemplateFitCodecDefinitions.fixedResult =>
+        Some(TemplateFamilyCodecFixture.fixed.results)
+      case TemplateFitCodecDefinitions.meanMapPlan =>
+        Some(TemplateFamilyCodecFixture.meanMap.plans)
+      case TemplateFitCodecDefinitions.meanMapResult =>
+        Some(TemplateFamilyCodecFixture.meanMap.results)
       case DefinitionId.study           => Some(study)
       case DefinitionId.studyInput      => Some(StudyInputCodecs.study[Px].input)
       case DefinitionId.admissionLedger => Some(StudyInputCodecs.study[Px].ledger)

@@ -60,10 +60,16 @@ final class LeastSquaresFit private[design] (
     val scaledDiagonalRatio: Double
 )
 
+/** The elementary norm arithmetic used by native QR and active-set solves. */
+enum LeastSquaresNormConvention derives CanEqual:
+  case FdlibmHypotV1
+
 /** Native full-column-rank OLS. Column scaling and Householder reflections avoid
   * forming normal equations. A deficient pivot is an error, never a dropped column.
   */
 object LeastSquares:
+  val normConvention: LeastSquaresNormConvention = LeastSquaresNormConvention.FdlibmHypotV1
+
   def fit(
       rows: Vector[Vector[Double]],
       response: Vector[Double],
@@ -103,7 +109,7 @@ object LeastSquares:
     while j < p && error.isEmpty do
       var i = 0
       while i < n do
-        scales(j) = math.hypot(scales(j), a(i)(j))
+        scales(j) = ReproducibleHypot(scales(j), a(i)(j))
         i += 1
       if !scales(j).isFinite then
         error = Some(LeastSquaresError.ColumnArithmetic("column norm", j))
@@ -120,7 +126,7 @@ object LeastSquares:
       var norm = 0.0
       var i    = k
       while i < n do
-        norm = math.hypot(norm, a(i)(k))
+        norm = ReproducibleHypot(norm, a(i)(k))
         i += 1
       if !norm.isFinite then
         error = Some(LeastSquaresError.ColumnArithmetic("reflector norm", k))
