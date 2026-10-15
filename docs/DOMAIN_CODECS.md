@@ -17,6 +17,9 @@ synchronization diagnostics belong to the completed-result archive work in S4.
 and `ObservedTimeline[A]` codecs given a codec for the mark values.
 `EpochCodecs.plan(schema, keyCodec)` similarly persists the selector, checked bin width
 and final-bin policy of an [epoch plan](EPOCH_PLANS.md), under explicit caller-supplied identities.
+`EpochCodecs.of(keyCodec)` supplies the registered `eyes4s.epoch-plan@1` envelope with the
+same version-one payload and conditional mark-key codec. The key's exact schema travels
+inside the anchor envelope; decoding requires that schema and version.
 
 ## Numeric policy
 
