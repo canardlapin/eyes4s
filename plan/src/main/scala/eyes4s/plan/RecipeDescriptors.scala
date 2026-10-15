@@ -60,6 +60,7 @@ enum RecipeParameterError derives CanEqual:
 
   /** A pair design's own constructor refused the value, such as a control cap. */
   case Pairing(error: PairingError)
+  case Scanpath(error: ScanpathComparisonError)
   def message: String = this match
     case Geometry(e)          => e.message
     case Time(e)              => e.message
@@ -76,7 +77,8 @@ enum RecipeParameterError derives CanEqual:
       s"Form field '$f' has no alternative '$t'; its alternatives are ${options.mkString(", ")}."
     case UndeclaredWindowFrame(a) =>
       s"A window of admission frame '${a.name}' needs a declared window frame identity."
-    case Pairing(e) => e.message
+    case Pairing(e)  => e.message
+    case Scanpath(e) => e.message
 
 /** Concrete typed construction routes. No universal scientific defaults are imposed.
   *

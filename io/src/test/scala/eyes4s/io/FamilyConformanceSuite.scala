@@ -147,8 +147,7 @@ class FamilyConformanceSuite extends munit.FunSuite:
       Set(
         AnalysisKind.PointSampling,
         AnalysisKind.TemplateFit,
-        AnalysisKind.Decomposition,
-        AnalysisKind.ScanpathComparison
+        AnalysisKind.Decomposition
       )
     )
     RecipeFamily.values.foreach { family =>
@@ -965,4 +964,99 @@ object FamilyWitnesses:
             "failurePolicy"    -> "failurePolicy"
           ),
           Set("repetition.input", "layout", "grid", "pairing")
+        )
+
+  private lazy val scanpathPlan =
+    ScanpathExportFixtures.archive(ScanpathExportFixtures.methods.head).plan
+  private val scanpathCodec = ScanpathExportFixtures.codec
+  given scanpathComparison: FamilyWitness[RecipeFamily.ScanpathComparison.type] =
+    new FamilyWitness[RecipeFamily.ScanpathComparison.type](RecipeFamily.ScanpathComparison):
+      type Id      = eyes4s.fs2.ScanpathStudyRunId
+      type Cursor  = ScanpathStudyCursor[StudyKey, Px]
+      type Stage   = ScanpathStudyStage
+      type Segment = ScanpathStudyStage
+      type Error   = PlanError
+      type Result  = ScanpathStudyResult[StudyKey, Px]
+      def description = scanpathPlan.description
+      def inspection  = scanpathPlan.inspect
+      def ready       =
+        val report = scanpathPlan.preflight(Some(scanpathPlan.inputRef))
+        Preflighted.of(report, report.diagnostics)
+      def unavailable =
+        val report = scanpathPlan.preflight(None)
+        Preflighted.of(report, report.diagnostics)
+      def run                            = scanpathPlan.run
+      def cursor                         = Right(scanpathPlan.work)
+      def submission(quanta: WorkQuanta) =
+        eyes4s.fs2.ScanpathStudyExecution.submission(scanpathPlan, quanta)
+      given stepping: Stepwise[Cursor, Stage, Error, Result] = ScanpathStudyCursor.stepwise
+      def archived(result: Result)                           = ScanpathStudyArchive
+        .completed(scanpathPlan, result)
+        .flatMap(scanpathCodec.results.encode)
+      def rearchived(document: Json) =
+        scanpathCodec.results.decode(document).flatMap(scanpathCodec.results.encode)
+      def savedPlan                    = scanpathCodec.plans.encode(scanpathPlan)
+      def reloadedPlan(document: Json) = scanpathCodec.plans
+        .decode(document)
+        .flatMap(plan => scanpathCodec.plans.encode(plan).map(plan.description -> _))
+      def tables(result: Result) = Right(
+        ScanpathStudyArchive
+          .completed(scanpathPlan, result)
+          .left
+          .map(ResultExportError.Codec.apply)
+          .flatMap(archive => ResultExports.scanpaths(archive, scanpathCodec))
+          .map { tables =>
+            tables.map { table =>
+              val componentCount = scanpathPlan.method.componentNames.size
+              val pairs          = result.matched.rows ++ result.controls.rows
+              val expected       = table.family match
+                case ResultFamily.ScanpathPairs   => pairs.size * componentCount
+                case ResultFamily.ScanpathQueries =>
+                  pairs
+                    .flatMap(_.result.toOption)
+                    .map {
+                      case ScanpathMethodOutput.Overlap(value) => value.rows.size
+                      case _                                   => 0
+                    }
+                    .sum
+                case ResultFamily.ScanpathTransportDiagnostics =>
+                  pairs.count(_.result.exists {
+                    case ScanpathMethodOutput.Transport(_) => true
+                    case _                                 => false
+                  })
+                case ResultFamily.ScanpathReductions => result.contrasts.size * 2
+                case ResultFamily.ScanpathContrasts  => result.contrasts.size
+                case ResultFamily.ScanpathExclusions => result.excludedPhases.size
+                case _                               => -1
+              val differences = Option.when(table.family == ResultFamily.ScanpathContrasts)(
+                result.contrasts.flatMap(_.difference.toOption)
+              )
+              Tabulated(table, expected, differences)
+            }
+          }
+      )
+      def form =
+        val form = new ScanpathStudyForm[Px](ScanpathExportFixtures.clock)
+        FormEvidence(
+          form.fields,
+          form.values(scanpathPlan),
+          Some(
+            form
+              .parse(form.values(scanpathPlan))
+              .left
+              .map(_.toVector.map(_.message).mkString("; "))
+              .flatMap(_.plan(scanpathPlan).left.map(_.message))
+              .map(_.description)
+          ),
+          Map(
+            "focalPhase"       -> "phases",
+            "referencePhase"   -> "phases",
+            "method"           -> "method",
+            "method.*"         -> "method",
+            "pairing"          -> "pairing",
+            "controlSelection" -> "controlSelection",
+            "failurePolicy"    -> "failurePolicy",
+            "budget"           -> "budget"
+          ),
+          Set("input", "layout", "unit", "frame", "preparationAdmission")
         )

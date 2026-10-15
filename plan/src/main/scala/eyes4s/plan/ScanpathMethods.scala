@@ -153,13 +153,14 @@ enum ScanpathMethod[U <: Unit2D]:
         )
       case Overlap(spec) =>
         Vector(
-          "kind"      -> Vector(Text("overlap")),
-          "clock"     -> Vector(Text(spec.clock.name)),
-          "queries"   -> spec.queries.map(at => Text(at.toMicros.toString)),
-          "threshold" -> Vector(Num(spec.threshold.value)),
-          "distance"  -> Vector(Text(spec.distance.toString)),
-          "endpoint"  -> Vector(Text(spec.endpoint.toString)),
-          "missing"   -> Vector(Text(spec.missing.toString))
+          "kind"           -> Vector(Text("overlap")),
+          "clock"          -> Vector(Text(spec.clock.name)),
+          "queries"        -> spec.queries.map(at => Text(at.toMicros.toString)),
+          "threshold"      -> Vector(Num(spec.threshold.value)),
+          "distance"       -> Vector(Text(spec.distance.toString)),
+          "normConvention" -> Vector(Text(spec.distance.normConvention.toString)),
+          "endpoint"       -> Vector(Text(spec.endpoint.toString)),
+          "missing"        -> Vector(Text(spec.missing.toString))
         )
       case Transport(config) =>
         Vector(
@@ -293,8 +294,9 @@ object ScanpathMethodDescriptions:
       "clock" -> "Nominal timeline shared by overlap queries and both trajectories",
       "queries" -> "Ordered exact signed64 microsecond instants; repetitions contribute repeatedly",
       "threshold" -> s"Strict distance threshold in ${summon[UnitLabel[U]].symbol}; equality is not overlap",
-      "distance" -> "Euclidean or Manhattan distance between latest-onset positions",
-      "endpoint" -> "Support ends at the final onset or holds its fixation indefinitely",
+      "distance"       -> "Euclidean or Manhattan distance between latest-onset positions",
+      "normConvention" -> "Named binary64 operation order for the selected distance",
+      "endpoint"       -> "Support ends at the final onset or holds its fixation indefinitely",
       "missing" -> "Count missing queries as non-overlap or refuse the scalar summary; retain all query rows",
       "xScale" -> s"Positive horizontal ground-cost scale in ${summon[UnitLabel[U]].symbol}",
       "yScale" -> s"Positive vertical ground-cost scale in ${summon[UnitLabel[U]].symbol}",

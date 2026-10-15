@@ -83,10 +83,11 @@ final class ScanpathMethodCodec[U <: Unit2D: UnitLabel]:
         Json.obj(
           "clock"   -> Json.fromString(spec.clock.name),
           "queries" -> Json.arr(spec.queries.map(at => Json.fromString(at.toMicros.toString))*),
-          "threshold" -> ResultWire.double(spec.threshold.value),
-          "distance"  -> Json.fromString(spec.distance.toString),
-          "endpoint"  -> Json.fromString(spec.endpoint.toString),
-          "missing"   -> Json.fromString(spec.missing.toString)
+          "threshold"      -> ResultWire.double(spec.threshold.value),
+          "distance"       -> Json.fromString(spec.distance.toString),
+          "normConvention" -> Json.fromString(spec.distance.normConvention.toString),
+          "endpoint"       -> Json.fromString(spec.endpoint.toString),
+          "missing"        -> Json.fromString(spec.missing.toString)
         )
       case ScanpathMethod.Transport(config) =>
         Json.obj(
@@ -165,7 +166,15 @@ final class ScanpathMethodCodec[U <: Unit2D: UnitLabel]:
       for
         _ <- fields(
           json,
-          Set("clock", "queries", "threshold", "distance", "endpoint", "missing")
+          Set(
+            "clock",
+            "queries",
+            "threshold",
+            "distance",
+            "normConvention",
+            "endpoint",
+            "missing"
+          )
         )
         clock   <- field[String](json, "clock")
         values  <- field[Vector[String]](json, "queries")
@@ -184,6 +193,16 @@ final class ScanpathMethodCodec[U <: Unit2D: UnitLabel]:
           fixation(json, "threshold", OverlapThreshold.of[U](value))
         )
         distance <- enumeration(json, "distance", FixationGroundDistance.values.toVector)
+        norm     <- field[String](json, "normConvention")
+        _        <- Either.cond(
+          norm == distance.normConvention.toString,
+          (),
+          CodecError.Field(
+            "normConvention",
+            json,
+            s"Expected ${distance.normConvention}, found=$norm"
+          )
+        )
         endpoint <- enumeration(json, "endpoint", TrajectoryEndpoint.values.toVector)
         missing  <- enumeration(json, "missing", MissingOverlapPolicy.values.toVector)
         spec     <- fixation(

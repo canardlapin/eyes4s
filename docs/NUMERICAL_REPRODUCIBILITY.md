@@ -82,3 +82,21 @@ focused consumer tests on the translated x86_64 JVM. The
 bits, which matched both the arm64 and Scala.js receipts exactly for the
 designated saved plans and complete cosine/scaled pipelines. Its scope excludes
 rerunning the fresh-process archive readers on Intel.
+
+
+## Shared Euclidean overlap norm
+
+Euclidean fixation overlap now uses the neutral kernel's shared fdlibm `hypot` operation
+order, named `FixationNormConvention.FdlibmHypotV1`; Manhattan distance names
+`AbsoluteAxisSumV1`. The norm convention is encoded and checked in saved method parameters.
+The observed native calculation `hypot(24,4)` returned 24.331050121192877 on JVM and
+24.331050121192874 on Scala.js. The shared kernel and a public overlap regression require the
+JVM reference value exactly on both runtimes. Its 1,024 independently generated portable cases
+retain SHA256 `3e7f6f86895e3c33397f9cca5844ac4630ce6781c3d1ed3f33a028b5b2f63ab9`;
+120,000 JVM raw/close-exponent pairs also agree bit for bit with StrictMath and Math.
+
+Saved scanpath results use exact replay or typed refusal. The complete fixtures replay on
+both runtimes, including the original overlap query distances and transport residuals.
+They do not establish a universal exactness claim for every input to native elementary
+operations elsewhere in MultiMatch, transport or bandwidth estimation. Reference tolerances
+have not been widened to accommodate archive differences.

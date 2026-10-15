@@ -28,8 +28,8 @@ class DiagnosticCatalogSuite extends munit.FunSuite:
   private val all = DiagnosticSamples.all
 
   /** Every issued code, one per line, pinned by count and portable digest. */
-  private val PinnedCount  = 757
-  private val PinnedDigest = "e03024cfd72cd293"
+  private val PinnedCount  = 758
+  private val PinnedDigest = "45012640afa31d29"
 
   private val TrialEstimateCodes = Set(
     "study-failure.trial-cardinality",

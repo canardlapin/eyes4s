@@ -384,3 +384,21 @@ of study keys, with equal instants beyond 2^53 kept in order), `score-codecs-v1.
 envelope of each score and difference schema, the only fixture of `measure-distance@1` and
 `scalar@1`), and the standalone, binocular and packed recordings with their payloads listed under
 [artifact manifests](SAVED_STUDIES.md#artifact-manifests-and-verified-resolution).
+
+
+### Scanpath study family
+
+`ScanpathStudyCodec[K, U](layout, keys)` registers the complete
+`eyes4s.scanpath-study-plan@1` and `eyes4s.scanpath-study-result@1` documents.
+The plan embeds `StudyInput`, its frame and typed key codec, the registered scanpath method,
+phases, `StudyPairing`, exact control seed and work ceilings. The saved method's
+Euclidean/Manhattan norm convention is explicit and checked. The complete plan is the input
+to both sides of its canonical `RunStamp`; the stamp is checked before replay.
+
+Results retain complete keyed pair outcomes, pairing reports, query failures and exact times,
+transport convergence diagnostics, reductions and excluded phases. Reading requires exact
+structured equality after replay; any runtime deviation is refused rather than tolerated or
+silently substituted. Encoding an already completed archive does not rerun the method.
+Generic manifest roles use `AnalysisInputs.EmbeddedInPlan`. The schema registry requires the
+six pinned documents, generated plan/result codec laws, and a re-encoding check on each runtime.
+See [scanpath comparison](SCANPATH_COMPARISON.md) for execution and numerical conventions.

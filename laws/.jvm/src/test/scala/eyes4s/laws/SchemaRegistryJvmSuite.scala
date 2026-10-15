@@ -396,6 +396,26 @@ object SchemaRegistry:
       codecLaw(reports, "study report")
     ),
     Entry(
+      ScanpathStudyDefinitions.plan,
+      Kind.Document,
+      Vector(
+        "scanpath-study-multimatch-plan-v1.json",
+        "scanpath-study-overlap-plan-v1.json",
+        "scanpath-study-transport-plan-v1.json"
+      ),
+      codecLaw(() => new ScanpathStudyCodecLawSuite, "scanpath study plan")
+    ),
+    Entry(
+      ScanpathStudyDefinitions.result,
+      Kind.Document,
+      Vector(
+        "scanpath-study-multimatch-result-v1.json",
+        "scanpath-study-overlap-result-v1.json",
+        "scanpath-study-transport-result-v1.json"
+      ),
+      codecLaw(() => new ScanpathStudyCodecLawSuite, "scanpath study result")
+    ),
+    Entry(
       ScanpathMethodCodecDefinitions.method,
       Kind.Document,
       Vector(
@@ -1036,6 +1056,8 @@ private object Decoders:
     def study: VersionedCodec[?] =
       method.fold(StudyCodecs.cosine[Px].codec)(StudyCodecs.similarity[Px](_).codec)
     id match
+      case ScanpathStudyDefinitions.plan         => Some(ScanpathStudyLawFixture.codec.plans)
+      case ScanpathStudyDefinitions.result       => Some(ScanpathStudyLawFixture.codec.results)
       case ScanpathMethodCodecDefinitions.method => Some(ScanpathMethodLawFixture.codec)
       case DefinitionId.study                    => Some(study)
       case DefinitionId.studyInput               => Some(StudyInputCodecs.study[Px].input)

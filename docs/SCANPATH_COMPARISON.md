@@ -137,6 +137,46 @@ convention before constructing a method. Pinned documents cover all three method
 and Scala.js. Regeneration is `python3 tools/codec-fixtures/scanpath-method.py --write`;
 without `--write` the command checks byte identity.
 
-This method document is a reusable component. A complete saved scanpath study still needs
-the study-level input, layout, pairing, result and table contracts; the method document alone
-does not constitute that archive.
+The method document is a reusable component. `ScanpathStudyPlan` supplies the complete study
+family over `StudyLayout`, `StudyPairing` and `StudyInput`, including the two phases, keyed
+control selection, failure policy, expected frame and preparation budget. The native two-fixation
+and baseline three-fixation MultiMatch admissions remain separate choices.
+
+## Saved scanpath studies
+
+`ScanpathStudyCodec(layout, keys)` writes `eyes4s.scanpath-study-plan@1` and
+`eyes4s.scanpath-study-result@1`. Plans embed the complete typed input, registered method and
+all settings. A canonical `RunStamp` binds that complete plan before result replay. Completed
+archives and result-table projections reuse the existing result without recomputing comparisons.
+Decoding recomputes and requires exact structured equality with every stored result field;
+a different result is a typed refusal, with no tolerance-based acceptance or silent replacement.
+The portable fixtures demonstrate all three methods. This is an exact replay-or-refusal contract,
+not a claim that every native elementary operation produces identical bits for every possible
+input on all runtimes. Transport and MultiMatch retain native operations outside the named shared
+norm. The original numeric reference tolerances remain unchanged.
+
+Euclidean overlap uses the shared `FdlibmHypotV1` operation order; Manhattan distance uses
+`AbsoluteAxisSumV1`. The distance's `normConvention` is saved and checked. The observed native
+`hypot(24,4)` discrepancy is an exact public regression, alongside 120,000 JVM reference pairs
+and the 1,024 independent portable kernel cases. Regeneration is
+`python3 tools/numerical/hypot.py` and `python3 tools/codec-fixtures/scanpath-study.py --write`.
+
+Preparation uses `ConservativeRawPairsV1`: the raw focal/reference product must fit all pair
+ceilings before either pairing is allocated. Filtering or bottom-k selection does not relax that
+reservation. Preparation and final reduction are whole operations. `WorkQuanta.pairs` bounds
+whole pair comparisons; it does not split alignment, overlap queries or transport iterations.
+`ScanpathStudyExecution` reports exact per-stage totals and supports cancellation between those
+operations. A cancelled execution returns no partial result.
+
+Results retain both trial keys for every selected pair, original pairing reports, excluded-phase
+keys, complete overlap query ledgers, transport diagnostics and per-component matched/control
+means with selected, successful and contributing counts. Typed diagnostics retain pair operands
+and reduction roles. Ambiguous keys and unmatched focal trials are reported, never replaced by an
+arbitrary first match. Controls are evaluated only for focal keys that have a matched reference.
+
+`ResultExports.scanpaths` produces six typed tables: pair scores, overlap queries, transport
+diagnostics, reductions, matched-minus-control contrasts and exclusions. Empty method-specific
+tables retain their schema. Exact query times use Int64, missing distances use nullable fields,
+and repeated query times keep their query indices. CSV uses explicit validity columns; Arrow
+retains nulls, booleans and signed Int64 values. Every table shares one converted complete archive
+context so the embedded input graph is not copied for each projection.

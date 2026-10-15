@@ -119,6 +119,19 @@ class ScanpathMethodCodecSuite extends munit.FunSuite:
         .decode(alter(saved, "method", method.mapObject(_.add("version", Json.fromInt(2)))))
         .isLeft
     )
+    val overlapSaved = get(codec.encode(overlap))
+    assert(
+      codec
+        .decode(
+          alter(
+            overlapSaved,
+            "parameters",
+            parameters(overlapSaved)
+              .mapObject(_.add("normConvention", Json.fromString("runtime-native")))
+          )
+        )
+        .isLeft
+    )
   }
   test("missing, extra and invalid method settings are named refusals") {
     val saved = get(codec.encode(multiMatch))

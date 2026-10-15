@@ -29,7 +29,7 @@ enum RecipeFamily derives CanEqual:
   case FixationStudy, EventRecording, TemporalStudy
 
   /** Repetition similarity over supplied maps (CR4 S3). */
-  case Repetition
+  case Repetition, ScanpathComparison
 
 /** A blocker means the plan's own constructors or prerequisites refuse the
   * recipe as a whole, so `prepare`/`run` cannot proceed. A warning means

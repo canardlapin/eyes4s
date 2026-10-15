@@ -157,3 +157,24 @@ class ScanpathMethodsSuite extends munit.FunSuite:
         assertEquals(value.rightCount, 3)
       case other => fail(s"$other")
   }
+
+  test("Euclidean overlap uses the named exact fdlibm norm on both runtimes") {
+    val left  = path(Vector((0, 0)))
+    val right = path(Vector((24, 4)))
+    val spec  = get(
+      FixationOverlapSpec.of(
+        clock,
+        Vector(Instant.micros(0)),
+        get(OverlapThreshold.of[Px](30.0)),
+        FixationGroundDistance.Euclidean,
+        TrajectoryEndpoint.OnsetRange,
+        MissingOverlapPolicy.RequireComplete
+      )
+    )
+    val method = ScanpathMethod.Overlap(spec)
+    assertEquals(spec.distance.normConvention, FixationNormConvention.FdlibmHypotV1)
+    get(method.compare(left, right)) match
+      case ScanpathMethodOutput.Overlap(value) =>
+        assertEquals(value.rows.head.distance, Right(24.331050121192877))
+      case other => fail(s"$other")
+  }
