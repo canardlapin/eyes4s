@@ -10,4 +10,27 @@ If the observed and recording clocks agree, no fitted conversion is needed. Othe
 
 Requirements and catalogue entries are deliberately not deduplicated. The same analysis definition can appear with different configured requirements, and every requested entry receives a result. Session insertion still owns frame validation. This query does not grant authority to use arbitrary objects outside that checked Session.
 
-The catalogue must declare all prerequisites for its analyses. The query checks those declarations; it does not infer the requirements of arbitrary user functions. Existing per-plan preflight checks remain responsible for plan/input identity, schedule bounds, method-specific configuration and data-dependent warnings. Family adapters and the project catalogue conformance witness must establish that shipped analysis entries declare their complete requirements before the project-wide acceptance ticket closes.
+`ProjectCatalogue.query(session, evidence, entries)` is the typed built-in entry point. Each
+entry supplies its definition, a `ProjectWorkflow` and its exact registered schema requirements.
+The workflow derives the resource requirements, rather than asking the application to assemble
+an untyped list. The conformance witness covers every `AnalysisKind` and `AnalysisComponent`:
+fixation study, event recording, temporal study, repetition, point sampling, template fitting,
+decomposition, scanpath comparison and epochs.
+
+`ProjectInputOrigin.Recordings` requires a nonempty collection of recording keys;
+`ProjectInputOrigin.Supplied` represents checked scanpaths or maps already supplied to the
+analysis. Supplied inputs do not require their original recordings to remain in the project.
+`ProjectCoordinates.DegreesFromPixels` requires physical viewing geometry, while native measured
+coordinates require no new calibration. Fixed-feature template fitting needs neither viewing
+geometry nor a map grid; mean-map fitting and map decomposition name their required grid.
+Event-recording analysis names its recording, AOI set and viewing geometry.
+
+Temporal studies distinguish supplied measured windows from a newly resolved observed-anchor
+binding. `ProjectTemporalWindows.Observed` and the epoch component require a nonempty set of
+`ProjectAnchor` values, preserving the trial, recording, selector, observed clock and uncertainty
+limit through the shared query. Planned timing cannot substitute for any of those observations.
+
+This query reports resource prerequisites. Supplied data still go through their checked domain
+constructors and the corresponding plan's artifact-identity, configuration, budget and numerical
+checks. The low-level `ProjectPrerequisites.query` remains available for downstream catalogue
+extensions; arbitrary custom behavior must declare its own requirements.
