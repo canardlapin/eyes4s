@@ -340,8 +340,8 @@ body{margin:0}
 <!-- Readout -->
 <div style="width:250px;flex:none;border-left:1px solid var(--hairline);padding:10px 14px;display:flex;flex-direction:column;gap:6px">
 <div class="lbl">ret_07 contrast · σ 2°</div>
-<div class="row" style="align-items:baseline;gap:8px"><span class="t28 mono">+0.38</span><span style="color:var(--ink-2)">D</span></div>
-<div class="mono" style="display:grid;grid-template-columns:minmax(0,1fr) auto;row-gap:2px"><span style="color:var(--match-text)">M matched</span><span>0.73</span><span style="color:var(--control-text)">B mean of 19 controls</span><span>0.35</span></div>
+<div class="row" style="align-items:baseline;gap:8px"><span class="t28 mono">+0.62</span><span style="color:var(--ink-2)">D</span></div>
+<div class="mono" style="display:grid;grid-template-columns:minmax(0,1fr) auto;row-gap:2px"><span style="color:var(--match-text)">M matched</span><span>0.94</span><span style="color:var(--control-text)">B mean of 19 controls</span><span>0.32</span></div>
 <div class="t11" style="color:var(--ink-2)">Spatial correspondence, not replay. D does not separate participant-specific reinstatement from item-driven salience common to all viewers of that image, and may retain residual centre bias.</div>
 <div style="border-top:1px solid var(--hairline);padding-top:6px;display:flex;flex-direction:column;gap:3px">
 <div class="lbl">Inspected pair</div>
@@ -520,8 +520,8 @@ const inFrame = f => f.x >= 0 && f.x <= 1024 && f.y >= 0 && f.y <= 768;
 class Component extends DCLogic {
   constructor(p){ super(p); this.state = { ref: -1 }; }
   renderVals() {
-    // Fixture: P17 ret_07 control_scores_2deg (19 controls, cosine at 2°).
-    const ctrl = [["street-112","enc_01",.61],["dog-077","enc_08",.52],["office-203","enc_15",.47],["kitchen-017","enc_02",.44],["forest-008","enc_09",.41],["garden-054","enc_16",.39],["bridge-019","enc_10",.37],["market-066","enc_17",.36],["tower-150","enc_04",.35],["harbor-231","enc_11",.33],["library-388","enc_18",.31],["desert-305","enc_05",.30],["church-417","enc_12",.29],["station-529","enc_19",.27],["field-613","enc_06",.27],["cafe-702","enc_13",.26],["museum-814","enc_20",.26],["canyon-126","enc_07",.24],["bakery-240","enc_14",.20]];
+    // Fixture: P17 ret_07 control_scores_2deg (19 controls, cosine at 2°, SCORES.json's), highest first.
+    const ctrl = [["harbor-231","enc_11",0.718785],["forest-008","enc_09",0.599044],["library-388","enc_18",0.519679],["cafe-702","enc_13",0.506757],["market-066","enc_17",0.474384],["bridge-019","enc_10",0.418235],["field-613","enc_06",0.403274],["office-203","enc_15",0.366034],["dog-077","enc_08",0.314534],["kitchen-017","enc_02",0.264388],["canyon-126","enc_07",0.261609],["church-417","enc_12",0.251898],["desert-305","enc_05",0.191021],["bakery-240","enc_14",0.190606],["station-529","enc_19",0.186556],["street-112","enc_01",0.120571],["museum-814","enc_20",0.111363],["tower-150","enc_04",0.107287],["garden-054","enc_16",0.101629]];
     const n = ctrl.length;
     const i = this.state.ref, isControl = i >= 0;
     // Drawn geometry: image px (1024x768 frame) scaled by S, frame offset (OX, OY) inside the stage svg so that
@@ -589,17 +589,18 @@ class Component extends DCLogic {
           label: 'Control ' + ctrl[k][1] + ' · ' + ctrl[k][0] + (main ? ', cosine ' + v.toFixed(2) + ' at σ ' + s : ', illustrative position at σ ' + s + ' (fixture gives control scores at 2° only)'),
           pick: () => this.setState({ ref: main ? k : this.state.ref }) })) };
     };
-    const spread = (b, w) => ctrl.map(c => +(b + (c[2] - .35) * w).toFixed(3));
+    // Stand-in spreads keep the 2° controls' order about each scale's B, narrowed where B is small.
+    const spread = (b, w) => ctrl.map(c => +(b + (c[2] - 0.321456) * w * Math.min(1, b / 0.321456)).toFixed(3));
     const ladder = [
-      mk('0.5°', .41, .22, .19, spread(.22, .7), false),
-      mk('1°', .58, .29, .29, spread(.29, .9), false),
-      mk('2°', .73, .35, .38, ctrl.map(c => c[2]), true),
-      mk('4°', .86, .63, .23, spread(.63, .6), false)
+      mk('0.5°', 0.463138, 0.044608, 0.41853, spread(0.044608, .7), false),
+      mk('1°', 0.823414, 0.128756, 0.694658, spread(0.128756, .9), false),
+      mk('2°', 0.936849, 0.321456, 0.615394, ctrl.map(c => c[2]), true),
+      mk('4°', 0.974504, 0.635355, 0.339148, spread(0.635355, .6), false)
     ];
 
     // Queries navigator. The trail is "… › Remembered › P17", so a participant row shows that participant's
     // REMEMBERED mean D at 2° (fixture.json: mean of per-query D over contributing Remembered queries;
-    // Results "Remembered D (n)": P17 +0.38 (17), P18 +0.42 (16), P19 +0.29 (15)). Query rows show their own D.
+    // Results "Remembered D (n)": P17 +0.40 (17), P18 +0.43 (16), P19 +0.41 (15)). Query rows show their own D.
     const sgn = d => (d >= 0 ? '+' : '−') + Math.abs(d).toFixed(2);
     const bar = d => ({ bx: d >= 0 ? 4 : 4 + d * 50, bw: Math.abs(d) * 50, zo: 1, ew: 0 });
     const group = (p, d, nRem, allD, open) => Object.assign({ cls: 'qh qcols', level: 1, ariaSel: 'false', cur: null, dir: open ? 'M3 4.5L6 7.5L9 4.5' : 'M4.5 3L7.5 6L4.5 9', r: 0,
@@ -607,7 +608,7 @@ class Component extends DCLogic {
       aria: p + ': Remembered mean D ' + sgn(d) + ' at 2° over ' + nRem + ' contributing Remembered queries; all-query mean ' + sgn(allD) + ', 19 of 20 contributing' + (open ? ', expanded' : ', collapsed'),
       title: p + ' · Remembered mean D at 2° over ' + nRem + ' contributing Remembered queries · all-query mean ' + sgn(allD) + ' (19 of 20 contributing)' }, bar(d));
     // All 20 P17 queries (fixture.json participants[P17].queries, D at 2°): the list fills the pane; P18 onward is below the fold.
-    const qs = [['ret_01','street-112',.29,'R'],['ret_02','dog-077',.31,'R'],['ret_03','office-203',.42,'R'],['ret_04','kitchen-017',.38,'R'],['ret_05','forest-008',.20,'F'],['ret_06','garden-054',.50,'R'],['ret_07','beach-042',.38,'R'],['ret_08','bridge-019',.35,'R'],['ret_09','market-066',null,'R'],['ret_10','tower-150',.47,'R'],['ret_11','harbor-231',.38,'R'],['ret_12','library-388',.39,'R'],['ret_13','desert-305',.27,'R'],['ret_14','church-417',.39,'R'],['ret_15','station-529',.25,'R'],['ret_16','field-613',.53,'R'],['ret_17','cafe-702',.44,'F'],['ret_18','museum-814',.43,'R'],['ret_19','canyon-126',.42,'R'],['ret_20','bakery-240',.34,'R']];
+    const qs = [['ret_01','street-112',0.381032,'R'],['ret_02','dog-077',0.337874,'R'],['ret_03','office-203',0.383137,'R'],['ret_04','kitchen-017',0.253069,'R'],['ret_05','forest-008',0.287737,'F'],['ret_06','garden-054',0.349746,'R'],['ret_07','beach-042',0.615394,'R'],['ret_08','bridge-019',0.366601,'R'],['ret_09','market-066',null,'R'],['ret_10','tower-150',0.516188,'R'],['ret_11','harbor-231',0.428438,'R'],['ret_12','library-388',0.41017,'R'],['ret_13','desert-305',0.225607,'R'],['ret_14','church-417',0.293457,'R'],['ret_15','station-529',0.454964,'R'],['ret_16','field-613',0.357648,'R'],['ret_17','cafe-702',0.152967,'F'],['ret_18','museum-814',0.567767,'R'],['ret_19','canyon-126',0.45126,'R'],['ret_20','bakery-240',0.430752,'R']];
     const kids = qs.map(([t, item, d, resp]) => {
       const sel = t === 'ret_07', has = d !== null, forgot = resp === 'F';
       const respWord = forgot ? 'Forgotten' : 'Remembered';
@@ -618,12 +619,12 @@ class Component extends DCLogic {
         title: t + ' · ' + item + ' · ' + respWord + (has ? '' : ' · query not admitted (trial absent): no value, not zero') + (forgot ? ' · not in the Remembered group' : '') },
         has ? bar(d) : { bx: 4, bw: 0, zo: 0, ew: 0 }, { fTag: forgot ? 'F' : '' });
     });
-    const navRows = [group('P17', .38, 17, .38, true), ...kids];
+    const navRows = [group('P17', 0.401359, 17, 0.382306, true), ...kids];
     // Scroll thumb: 24 participants + 20 open P17 rows = 44 rows; 21 visible, 16 collapsed participants above.
     const thumbTop = (16 / 44 * 100).toFixed(1) + '%', thumbH = (21 / 44 * 100).toFixed(1) + '%';
     navRows.forEach(r => { r.f = r.fTag || ''; r.domId = 'q-' + r.t; });
 
-    const ref = isControl ? { item: ctrl[i][0], t: ctrl[i][1], s: ctrl[i][2] } : { item: 'beach-042', t: 'enc_03', s: .73 };
+    const ref = isControl ? { item: ctrl[i][0], t: ctrl[i][1], s: ctrl[i][2] } : { item: 'beach-042', t: 'enc_03', s: 0.936849 };
     return {
       rootClass: this.props.dark ? 'es dark' : 'es',
       svgW: W, svgH: H, viewBox: '0 0 ' + W + ' ' + H, ox: OX, oy: OY, fw: FW, fh: FH,

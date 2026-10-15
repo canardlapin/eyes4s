@@ -220,16 +220,16 @@ body{margin:0}
 <span class="t11" style="color:var(--ink-2)">All queries · run 7</span>
 </div>
 <!-- Headline: grand means per group (t28 hero) + paired n (fixture); the scope note sits directly under the numbers -->
-<div class="hl" role="group" aria-label="Summary: Remembered mean D plus 0.30, Forgotten mean D plus 0.15. Remembered minus Forgotten, paired over 24 participants: mean difference plus 0.16, higher in 24 of 24 participants, range plus 0.05 to plus 0.26, computed before rounding participant means. Descriptive only, no intervals or tests.">
+<div class="hl" role="group" aria-label="Summary: Remembered mean D plus 0.43, Forgotten mean D plus 0.24. Remembered minus Forgotten, paired over 24 participants: mean difference plus 0.18, higher in 24 of 24 participants, range plus 0.04 to plus 0.34, computed before rounding participant means. Descriptive only, no intervals or tests.">
 <div class="bs">
-<div class="b"><span class="k">Remembered · mean D</span><span class="v">+0.30</span></div>
-<div class="b"><span class="k">Forgotten · mean D</span><span class="v">+0.15</span></div>
+<div class="b"><span class="k">Remembered · mean D</span><span class="v">+0.43</span></div>
+<div class="b"><span class="k">Forgotten · mean D</span><span class="v">+0.24</span></div>
 <div class="b dif"><span class="k">Δ Remembered − Forgotten · paired n 24</span><span class="vr"><span class="v">{{pairMean}}</span><span class="u">higher in {{pairPos}} of {{pairN}}</span></span></div>
 </div>
 <span class="note">Range {{pairMin}} to {{pairMax}} · computed before rounding participant means · Descriptive only, no intervals or tests</span>
 </div>
 <div style="flex:none;padding:4px 10px 0" tabindex="0" role="group" data-composite="" aria-label="Participant D plot. One focus stop; arrow keys move between participants, Enter selects. Cursor and selection on P17.">
-<svg width="536" height="272" viewBox="0 0 536 272" role="img" aria-label="Participant mean D at sigma 2 degrees for Remembered and Forgotten retrieval trials, 24 participants, lines join each participant's two means. Annotations: P17 selected, 19 of 20 contributing, Remembered plus 0.38 n 17, Forgotten plus 0.32 n 2. P05, 17 of 20 contributing, 3 failed queries, 2 Remembered and 1 Forgotten, no value, not zero; P05's participant means are plotted.">
+<svg width="536" height="272" viewBox="0 0 536 272" role="img" aria-label="Participant mean D at sigma 2 degrees for Remembered and Forgotten retrieval trials, 24 participants, lines join each participant's two means. Annotations: P17 selected, 19 of 20 contributing, Remembered plus 0.40 n 17, Forgotten plus 0.22 n 2. P05, 17 of 20 contributing, 3 failed queries, 2 Remembered and 1 Forgotten, no value, not zero; P05's participant means are plotted.">
 <!-- y axis -->
 <g font-family="IBM Plex Mono" font-size="11" fill="var(--ink-3)" text-anchor="end">
 <text x="44" y="{{yt.0.y}}" dy="4" fill="{{yt.0.c}}">+0.5</text><text x="44" y="{{yt.1.y}}" dy="4" fill="{{yt.1.c}}">+0.4</text><text x="44" y="{{yt.2.y}}" dy="4" fill="{{yt.2.c}}">+0.3</text><text x="44" y="{{yt.3.y}}" dy="4" fill="{{yt.3.c}}">+0.2</text><text x="44" y="{{yt.4.y}}" dy="4" fill="{{yt.4.c}}">+0.1</text><text x="44" y="{{yt.5.y}}" dy="4" fill="{{yt.5.c}}">0</text><text x="44" y="{{yt.6.y}}" dy="4" fill="{{yt.6.c}}">−0.1</text><text x="44" y="{{yt.7.y}}" dy="4" fill="{{yt.7.c}}">−0.2</text><text x="44" y="{{yt.8.y}}" dy="4" fill="{{yt.8.c}}">−0.3</text>
@@ -244,8 +244,8 @@ body{margin:0}
 <!-- grand means -->
 <line x1="{{remX0}}" x2="{{remX1}}" y1="{{yRemMean}}" y2="{{yRemMean}}" stroke="var(--ink)" stroke-width="4"/>
 <line x1="{{forX0}}" x2="{{forX1}}" y1="{{yForMean}}" y2="{{yForMean}}" stroke="var(--ink-3)" stroke-width="4" stroke-dasharray="6 3"/>
-<text x="{{remX0}}" y="{{yRemMean}}" dx="-6" dy="4" text-anchor="end" font-family="IBM Plex Mono" font-size="11" font-weight="500" fill="var(--ink)">+0.30</text>
-<text x="{{forX1}}" y="{{yForMean}}" dx="6" dy="4" font-family="IBM Plex Mono" font-size="11" font-weight="500" fill="var(--ink-2)">+0.15</text>
+<text x="{{remX0}}" y="{{yRemMean}}" dx="-6" dy="4" text-anchor="end" font-family="IBM Plex Mono" font-size="11" font-weight="500" fill="var(--ink)">+0.43</text>
+<text x="{{forX1}}" y="{{yForMean}}" dx="6" dy="4" font-family="IBM Plex Mono" font-size="11" font-weight="500" fill="var(--ink-2)">+0.24</text>
 <!-- selected P17: plot sel-ring (inner ring + ink ring) on both marks -->
 <line x1="{{s1x}}" y1="{{s1y}}" x2="{{s2x}}" y2="{{s2y}}" stroke="var(--ink)" stroke-width="2"/>
 <circle cx="{{s1x}}" cy="{{s1y}}" r="6" fill="none" stroke="var(--sel-ring-inner)" stroke-width="2"/><circle cx="{{s1x}}" cy="{{s1y}}" r="8" fill="none" stroke="var(--ink)" stroke-width="2"/>
@@ -267,11 +267,11 @@ body{margin:0}
 <g font-family="IBM Plex Mono" font-size="11">
 <text x="348" y="{{ann.0.y}}" fill="{{ann.0.c}}" font-weight="{{ann.0.w}}">P17 · selected</text>
 <text x="348" y="{{ann.1.y}}" fill="{{ann.1.c}}" font-weight="{{ann.1.w}}">19 of 20 contributing</text>
-<text x="348" y="{{ann.2.y}}" fill="{{ann.2.c}}" font-weight="{{ann.2.w}}">Rem +0.38 (n 17)</text>
-<text x="348" y="{{ann.3.y}}" fill="{{ann.3.c}}" font-weight="{{ann.3.w}}">Forg +0.32 (n 2)</text>
+<text x="348" y="{{ann.2.y}}" fill="{{ann.2.c}}" font-weight="{{ann.2.w}}">Rem +0.40 (n 17)</text>
+<text x="348" y="{{ann.3.y}}" fill="{{ann.3.c}}" font-weight="{{ann.3.w}}">Forg +0.22 (n 2)</text>
 <text x="348" y="{{ann.4.y}}" fill="{{ann.4.c}}" font-weight="{{ann.4.w}}">P05 · 17 of 20 contributing</text>
-<text x="348" y="{{ann.5.y}}" fill="{{ann.5.c}}" font-weight="{{ann.5.w}}">Rem −0.03 (n 13)</text>
-<text x="348" y="{{ann.6.y}}" fill="{{ann.6.c}}" font-weight="{{ann.6.w}}">Forg −0.24 (n 4)</text>
+<text x="348" y="{{ann.5.y}}" fill="{{ann.5.c}}" font-weight="{{ann.5.w}}">Rem +0.39 (n 13)</text>
+<text x="348" y="{{ann.6.y}}" fill="{{ann.6.c}}" font-weight="{{ann.6.w}}">Forg +0.22 (n 4)</text>
 <text x="348" y="{{ann.7.y}}" fill="{{ann.7.c}}" font-weight="{{ann.7.w}}">3 failed queries:</text>
 <text x="348" y="{{ann.8.y}}" fill="{{ann.8.c}}" font-weight="{{ann.8.w}}">2 Remembered, 1 Forgotten</text>
 <text x="348" y="{{ann.9.y}}" fill="{{ann.9.c}}" font-weight="{{ann.9.w}}">no value, not zero</text>
@@ -299,8 +299,8 @@ body{margin:0}
 <span class="row" style="gap:5px"><svg width="16" height="6" aria-hidden="true"><line x1="0" x2="16" y1="3" y2="3" stroke="var(--ink)" stroke-width="1.5" stroke-dasharray="4 3"/></svg>P17 (selected)</span>
 <span class="row" style="gap:5px"><svg width="16" height="6" aria-hidden="true"><line x1="0" x2="16" y1="3" y2="3" stroke="var(--ink-3)" stroke-opacity=".5" stroke-width="1"/></svg>Other participants</span>
 </div>
-<div style="flex:none;padding:0 10px;position:relative" tabindex="0" role="group" data-composite="" aria-label="Scale profile plot. One focus stop; arrow keys move between scales. Cursor on σ 2°, grand mean +0.26.">
-<svg width="353" height="336" viewBox="0 0 353 336" role="img" aria-label="Grand mean D by smoothing scale: 0.13 at 0.5 degrees, 0.20 at 1, 0.26 at 2, 0.16 at 4. P17 dashed: 0.19, 0.29, 0.38, 0.23. Faint lines are the other 23 participants' profiles.">
+<div style="flex:none;padding:0 10px;position:relative" tabindex="0" role="group" data-composite="" aria-label="Scale profile plot. One focus stop; arrow keys move between scales. Cursor on σ 2°, grand mean +0.38.">
+<svg width="353" height="336" viewBox="0 0 353 336" role="img" aria-label="Grand mean D by smoothing scale: 0.27 at 0.5 degrees, 0.42 at 1, 0.38 at 2, 0.19 at 4. P17 dashed: 0.29, 0.44, 0.38, 0.16. Faint lines are the other 23 participants' profiles.">
 <g font-family="IBM Plex Mono" font-size="11" fill="var(--ink-3)" text-anchor="end">
 <text x="40" y="{{syt.0.y}}" dy="4" fill="{{syt.0.c}}">+0.5</text><text x="40" y="{{syt.1.y}}" dy="4" fill="{{syt.1.c}}">+0.4</text><text x="40" y="{{syt.2.y}}" dy="4" fill="{{syt.2.c}}">+0.3</text><text x="40" y="{{syt.3.y}}" dy="4" fill="{{syt.3.c}}">+0.2</text><text x="40" y="{{syt.4.y}}" dy="4" fill="{{syt.4.c}}">+0.1</text><text x="40" y="{{syt.5.y}}" dy="4" fill="{{syt.5.c}}">0</text><text x="40" y="{{syt.6.y}}" dy="4" fill="{{syt.6.c}}">−0.1</text>
 </g>
@@ -311,7 +311,7 @@ body{margin:0}
 <polyline points="{{p17line}}" stroke="var(--ink)" stroke-width="1.5" stroke-dasharray="4 3" fill="none"/>
 <polyline points="{{meanLine}}" stroke="var(--ink)" stroke-width="3" fill="none"/>
 <sc-for list="{{meanPts}}" as="m" hint-placeholder-count="4"><circle cx="{{m.x}}" cy="{{m.y}}" r="4.5" fill="var(--ink)"/><rect x="{{m.px}}" y="{{m.py}}" width="38" height="15" rx="3" fill="var(--surface)"/></sc-for>
-<g font-family="IBM Plex Mono" font-size="11" font-weight="500" fill="var(--ink)" text-anchor="middle"><text x="{{meanPts.0.x}}" y="{{meanPts.0.ly}}">+0.13</text><text x="{{meanPts.1.x}}" y="{{meanPts.1.ly}}">+0.20</text><text x="{{meanPts.2.x}}" y="{{meanPts.2.ly}}">+0.26</text><text x="{{meanPts.3.x}}" y="{{meanPts.3.ly}}">+0.16</text></g>
+<g font-family="IBM Plex Mono" font-size="11" font-weight="500" fill="var(--ink)" text-anchor="middle"><text x="{{meanPts.0.x}}" y="{{meanPts.0.ly}}">+0.27</text><text x="{{meanPts.1.x}}" y="{{meanPts.1.ly}}">+0.42</text><text x="{{meanPts.2.x}}" y="{{meanPts.2.ly}}">+0.38</text><text x="{{meanPts.3.x}}" y="{{meanPts.3.ly}}">+0.19</text></g>
 <g font-family="IBM Plex Mono" font-size="11" fill="var(--ink-2)" text-anchor="middle">
 <text x="{{sx0}}" y="308">0.5°</text><text x="{{sx1}}" y="308">1°</text><text x="{{sx2}}" y="308">2°</text><text x="{{sx3}}" y="308">4°</text>
 </g>
@@ -331,7 +331,7 @@ body{margin:0}
 <table class="tbl" tabindex="0" role="grid" aria-label="Participant table, 24 participants. One focus stop; arrow keys move the row cursor." aria-rowcount="25" aria-activedescendant="tr-P17">
 <thead><tr role="row" aria-rowindex="1"><th role="columnheader" scope="col">Participant</th><th role="columnheader" scope="col">Requested</th><th role="columnheader" scope="col">Contributing</th><th role="columnheader" scope="col">Failed</th><th role="columnheader" scope="col">No match</th><th role="columnheader" scope="col">Not admitted</th><th role="columnheader" scope="col" style="color:var(--match-text)">Mean M</th><th role="columnheader" scope="col" style="color:var(--control-text)">Mean B</th><th role="columnheader" scope="col" style="color:var(--ink)">Mean D</th><th role="columnheader" scope="col">Remembered D (n)</th><th role="columnheader" scope="col">Forgotten D (n)</th></tr></thead>
 <tbody>
-<tr class="sel" role="row" id="tr-P17" aria-rowindex="2" aria-selected="true" data-cursor=""><td role="gridcell" style="font-family:'IBM Plex Sans'">P17 <span class="t11" style="font-weight:400;color:var(--ink-3)">pinned · selected</span></td><td role="gridcell">20</td><td role="gridcell">19</td><td role="gridcell">0</td><td role="gridcell">0</td><td role="gridcell">1</td><td role="gridcell">0.73</td><td role="gridcell">0.35</td><td role="gridcell">+0.38</td><td role="gridcell">+0.38 (17)</td><td role="gridcell">+0.32 (2)</td></tr>
+<tr class="sel" role="row" id="tr-P17" aria-rowindex="2" aria-selected="true" data-cursor=""><td role="gridcell" style="font-family:'IBM Plex Sans'">P17 <span class="t11" style="font-weight:400;color:var(--ink-3)">pinned · selected</span></td><td role="gridcell">20</td><td role="gridcell">19</td><td role="gridcell">0</td><td role="gridcell">0</td><td role="gridcell">1</td><td role="gridcell">0.72</td><td role="gridcell">0.34</td><td role="gridcell">+0.38</td><td role="gridcell">+0.40 (17)</td><td role="gridcell">+0.22 (2)</td></tr>
 <sc-for list="{{rows}}" as="r" hint-placeholder-count="6">
 <tr role="row" aria-rowindex="{{r.ri}}" aria-selected="false"><td role="gridcell" style="font-family:'IBM Plex Sans'">{{r.id}}</td><td role="gridcell">{{r.req}}</td><td role="gridcell">{{r.con}}</td><td role="gridcell" style="color:{{r.fc}};font-weight:{{r.fw}}">{{r.fail}}</td><td role="gridcell">{{r.nm}}</td><td role="gridcell">{{r.na}}</td><td role="gridcell">{{r.m}}</td><td role="gridcell">{{r.b}}</td><td role="gridcell" style="font-weight:500">{{r.d}}</td><td role="gridcell">{{r.rem}}</td><td role="gridcell">{{r.forg}}</td></tr>
 </sc-for>
@@ -411,21 +411,21 @@ body{margin:0}
 class Component extends DCLogic {
   renderVals() {
     // FIXTURE.md participant table (σ 2°): id, req, contrib, failed, noMatch, notAdmitted, M, B, D, remD, remN, forD, forN
-    // The four rounding-boundary cells (REPORTING.md) are the app's evaluated half-up display, not FIXTURE.md's:
-    // P05 forD −.24, P13 forD .02, P16 remD .44, P24 forD .18.
+    // Every cell is the app's evaluated half-up display of its means of the stored (SCORES.json) query rows; at σ 2°
+    // none sits on a rounding boundary, so each also reads as FIXTURE.md's (SCORES.json's) participant mean.
     const P = [
-      ['P01',20,19,0,0,1,.52,.35,.17,.26,11,.06,8],['P02',20,19,0,0,1,.58,.36,.22,.27,13,.12,6],
-      ['P03',20,19,0,1,0,.68,.35,.33,.38,15,.15,4],['P04',20,19,0,0,1,.65,.36,.29,.36,12,.18,7],
-      ['P05',20,17,3,0,0,.27,.34,-.08,-.03,13,-.24,4],['P06',20,19,0,0,1,.59,.34,.25,.30,11,.17,8],
-      ['P07',20,19,0,1,0,.62,.35,.27,.32,15,.10,4],['P08',20,19,0,1,0,.61,.35,.25,.31,12,.15,7],
-      ['P09',20,19,0,0,1,.67,.35,.32,.34,15,.24,4],['P10',20,19,0,1,0,.78,.35,.43,.45,16,.33,3],
-      ['P11',20,19,0,1,0,.57,.35,.22,.28,13,.11,6],['P12',20,19,0,0,1,.64,.35,.28,.34,12,.19,7],
-      ['P13',20,19,0,0,1,.47,.36,.11,.17,11,.02,8],['P14',20,19,0,1,0,.62,.35,.27,.29,14,.22,5],
-      ['P15',20,19,0,1,0,.45,.35,.10,.18,13,-.08,6],['P16',20,19,0,0,1,.74,.35,.38,.44,12,.28,7],
-      ['P17',20,19,0,0,1,.73,.35,.38,.38,17,.32,2],['P18',20,19,0,1,0,.76,.35,.41,.42,16,.37,3],
-      ['P19',20,19,0,0,1,.59,.35,.24,.29,15,.06,4],['P20',20,19,0,0,1,.59,.37,.22,.26,14,.12,5],
-      ['P21',20,19,0,1,0,.67,.35,.31,.32,17,.27,2],['P22',20,19,0,0,1,.54,.35,.19,.27,12,.06,7],
-      ['P23',20,19,0,0,1,.64,.34,.30,.34,14,.21,5],['P24',20,19,0,0,1,.65,.34,.30,.36,13,.18,6]
+      ['P01',20,19,0,0,1,.73,.31,.42,.47,11,.35,8],['P02',20,19,0,0,1,.71,.29,.43,.46,13,.35,6],
+      ['P03',20,19,0,1,0,.80,.33,.47,.49,15,.37,4],['P04',20,19,0,0,1,.71,.36,.35,.44,12,.20,7],
+      ['P05',20,17,3,0,0,.70,.35,.35,.39,13,.22,4],['P06',20,19,0,0,1,.69,.38,.31,.38,11,.22,8],
+      ['P07',20,19,0,1,0,.69,.35,.34,.38,15,.21,4],['P08',20,19,0,1,0,.75,.41,.34,.40,12,.25,7],
+      ['P09',20,19,0,0,1,.72,.35,.37,.41,15,.21,4],['P10',20,19,0,1,0,.80,.37,.43,.44,16,.34,3],
+      ['P11',20,19,0,1,0,.70,.34,.36,.47,13,.12,6],['P12',20,19,0,0,1,.75,.34,.41,.48,12,.29,7],
+      ['P13',20,19,0,0,1,.69,.39,.30,.36,11,.22,8],['P14',20,19,0,1,0,.72,.38,.34,.40,14,.17,5],
+      ['P15',20,19,0,1,0,.73,.35,.38,.39,13,.36,6],['P16',20,19,0,0,1,.73,.33,.40,.47,12,.27,7],
+      ['P17',20,19,0,0,1,.72,.34,.38,.40,17,.22,2],['P18',20,19,0,1,0,.76,.38,.38,.43,16,.14,3],
+      ['P19',20,19,0,0,1,.73,.35,.37,.41,15,.22,4],['P20',20,19,0,0,1,.75,.38,.37,.44,14,.20,5],
+      ['P21',20,19,0,1,0,.76,.40,.36,.38,17,.23,2],['P22',20,19,0,0,1,.74,.36,.38,.50,12,.19,7],
+      ['P23',20,19,0,0,1,.77,.40,.37,.41,14,.28,5],['P24',20,19,0,0,1,.77,.38,.39,.46,13,.25,6]
     ];
     const sgn = v => (v >= 0 ? '+' : '−') + Math.abs(v).toFixed(2);
     const r1 = v => Math.round(v * 10) / 10;
@@ -441,11 +441,12 @@ class Component extends DCLogic {
       dots.push({ x: x2, y: y2, f: 'var(--surface)', s: 'var(--ink-3)' });
     });
     // paired descriptive: per-participant Remembered − Forgotten (participant means above), no test
-    // Computed from UNROUNDED data, not from the 2-dp participant means in P (those give 0.1546 -> +0.15, double-rounded).
-    // Source: docs/studio/fixture/fixture.json participants[].queries[], sigma 2 deg (D[2]), status "ok" only;
-    // per participant mean(Remembered D) - mean(Forgotten D), then the mean over 24 participants = 0.15567 -> +0.16.
-    // Min 0.0500 (P21), max 0.2613 (P15), positive in 24 of 24. Proposed fixture field: summary.paired_D_diff_mean.
-    const PAIRED = { mean: 0.15567, min: 0.0500, max: 0.2613, pos: 24, n: 24 };
+    // Computed from UNROUNDED data, not from the 2-dp participant means in P (those give 0.1825, which still reads +0.18).
+    // Source: docs/studio/fixture/fixture.json summary.paired_D_diff (sigma 2 deg, status "ok"): per participant
+    // mean(Remembered D) - mean(Forgotten D) over its SCORES.json query rows, then the mean over 24 participants =
+    // 0.184178 -> +0.18 (SCORES.json rememberedMinusForgotten 0.184178).
+    // Min 0.0381 (P15), max 0.3439 (P11), positive in 24 of 24.
+    const PAIRED = { mean: 0.184177735, min: 0.038113782, max: 0.343853141, pos: 24, n: 24 };
     const pairMean = sgn(PAIRED.mean);
     const pairPos = PAIRED.pos, pairN = PAIRED.n;
     const pairMin = sgn(PAIRED.min), pairMax = sgn(PAIRED.max);
@@ -472,29 +473,30 @@ class Component extends DCLogic {
       line(A05, 4, '2 Remembered, 1 Forgotten', 'var(--ink)'),
       line(A05, 5, 'no value, not zero', 'var(--fail)')
     ];
-    // scale profile geometry (log2 spacing), frame x 48–343, D +0.5 … −0.1 (y 10 … 288)
+    // scale profile geometry (log2 spacing), frame x 48–343, D +0.6 … 0 (y 10 … 288)
     const SX = [64, 148, 232, 316];
-    const SY = d => r1(10 + (0.5 - d) / 0.6 * 278);
-    // fixture.json summary.participants[i].all.D_by_scale, scales [0.5, 1, 2, 4] (all queries, run 7)
+    const SY = d => r1(10 + (0.6 - d) / 0.6 * 278);
+    // The app's means of the stored (SCORES.json) query D by scale, [0.5, 1, 2, 4], half up (all queries, run 7);
+    // they read as fixture.json summary.participants[i].all.D_by_scale.
     const DBS = {
-      P01: [0.09, 0.13, 0.17, 0.11], P02: [0.11, 0.17, 0.22, 0.14], P03: [0.17, 0.26, 0.33, 0.21], P04: [0.15, 0.23, 0.29, 0.18],
-      P05: [-0.04, -0.06, -0.08, -0.05], P06: [0.12, 0.19, 0.25, 0.15], P07: [0.14, 0.21, 0.27, 0.17], P08: [0.13, 0.20, 0.25, 0.16],
-      P09: [0.16, 0.25, 0.32, 0.20], P10: [0.22, 0.34, 0.43, 0.27], P11: [0.11, 0.17, 0.22, 0.14], P12: [0.14, 0.22, 0.28, 0.18],
-      P13: [0.05, 0.09, 0.11, 0.07], P14: [0.14, 0.21, 0.27, 0.17], P15: [0.05, 0.08, 0.10, 0.06], P16: [0.19, 0.30, 0.38, 0.24],
-      P17: [0.19, 0.29, 0.38, 0.23], P18: [0.21, 0.32, 0.41, 0.26], P19: [0.12, 0.19, 0.24, 0.15], P20: [0.11, 0.17, 0.22, 0.14],
-      P21: [0.16, 0.25, 0.31, 0.19], P22: [0.10, 0.15, 0.19, 0.12], P23: [0.15, 0.24, 0.30, 0.19], P24: [0.15, 0.23, 0.30, 0.19]
+      P01: [0.30, 0.45, 0.42, 0.24], P02: [0.25, 0.42, 0.43, 0.27], P03: [0.34, 0.50, 0.47, 0.26], P04: [0.22, 0.36, 0.35, 0.19],
+      P05: [0.31, 0.43, 0.35, 0.15], P06: [0.23, 0.35, 0.31, 0.15], P07: [0.24, 0.39, 0.34, 0.17], P08: [0.29, 0.41, 0.34, 0.13],
+      P09: [0.24, 0.40, 0.37, 0.19], P10: [0.26, 0.45, 0.43, 0.23], P11: [0.22, 0.37, 0.36, 0.20], P12: [0.25, 0.43, 0.41, 0.21],
+      P13: [0.24, 0.35, 0.30, 0.14], P14: [0.28, 0.40, 0.34, 0.15], P15: [0.24, 0.41, 0.38, 0.19], P16: [0.28, 0.43, 0.40, 0.22],
+      P17: [0.29, 0.44, 0.38, 0.16], P18: [0.32, 0.45, 0.38, 0.19], P19: [0.28, 0.41, 0.37, 0.20], P20: [0.33, 0.46, 0.37, 0.16],
+      P21: [0.24, 0.41, 0.36, 0.17], P22: [0.28, 0.42, 0.38, 0.20], P23: [0.29, 0.44, 0.37, 0.17], P24: [0.29, 0.45, 0.39, 0.16]
     };
     const pts = v => v.map((d, k) => SX[k] + ',' + SY(d)).join(' ');
     const plines = P.filter(p => p[0] !== 'P17').map(p => pts(DBS[p[0]]));
     const p17s = DBS.P17;
     // summary.grand_D_by_scale (equal weight per participant; = mean of the 24 profiles above)
-    const mean = [0.13, 0.20, 0.26, 0.16];
+    const mean = [0.27, 0.42, 0.38, 0.19];
     const below = [true, true, false, true];
     const meanPts = mean.map((v, k) => {
       const y = SY(v), ly = below[k] ? y + 21 : y - 15;
       return { x: SX[k], y, ly, px: SX[k] - 19, py: ly - 12, s: sgn(v) };
     });
-    const sticks = [0.5, 0.4, 0.3, 0.2, 0.1, 0, -0.1];
+    const sticks = [0.6, 0.5, 0.4, 0.3, 0.2, 0.1, 0];
     const syt = sticks.map(v => ({ y: SY(v), s: lab(v), c: v === 0 ? 'var(--ink)' : 'var(--ink-3)' }));
     const sgrid = sticks.filter(v => v !== 0).map(SY);
     const rows = P.filter(p => p[0] !== 'P17').slice(0, 6).map((p, k) => ({
@@ -513,7 +515,7 @@ class Component extends DCLogic {
     return {
       nav, rows, yt, grid, links, dots, pairMean, pairPos, pairN, pairMin, pairMax,
       y00: Y(0), remX, forX, remX0: remX - 26, remX1: remX + 26, forX0: forX - 26, forX1: forX + 26,
-      yRemMean: Y(0.30), yForMean: Y(0.15),
+      yRemMean: Y(0.43), yForMean: Y(0.24),
       s1x, s1y, s2x, s2y, f5y,
       ann, l17pts: s2x + ',' + r1(s2y - 9) + ' ' + s2x + ',' + A17 + ' 340,' + A17, l05x1: f5x + 5, l05y2: A05,
       sgrid, syt, plines, meanPts, meanLine: pts(mean), p17line: pts(p17s), sc2x: SX[2], sc2y: SY(mean[2]),

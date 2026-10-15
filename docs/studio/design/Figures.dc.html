@@ -516,7 +516,7 @@ class Component extends DCLogic {
     const A = [[512,384,180],[300,430,320],[260,340,260],[540,360,380],[610,410,240],[700,300,412],[760,250,200],[640,560,350],[590,600,220],[420,620,300],[820,560,260],[1080,420,110],[540,380,360]];
     // ret_07: Compare's canonical list (H/notes/ret07-canonical.json): 12 fixations, 1 outside (140 of 3,310 ms = 4%)
     const B = [[512,384,180],[330,440,340],[290,470,250],[520,370,420],[590,400,280],[690,310,390],[730,320,200],[640,560,330],[600,540,230],[420,610,250],[470,500,300],[-46,520,140]];
-    // street-112 (enc_01), the highest-scoring control: Compare's ctrlFix(0), 11 fixations, 0 outside
+    // harbor-231 (enc_11), the highest-scoring control: Compare's ctrlFix(0), 11 fixations, 0 outside
     const spots = [[420,300],[610,420],[760,560],[300,610]];
     const S = (() => { let seed = 7; const rnd = () => { seed = (seed * 1103515245 + 12345) % 2147483648; return seed / 2147483648; };
       const out = [[512, 384, 170]];
@@ -534,15 +534,15 @@ class Component extends DCLogic {
     };
     // Panel C small multiples: one title row (role glyph + title), the map, then two fixed caption rows (the subtitle, then the label).
     // Wording is FigurePanels.densityMaps (studio/app figures/FigurePanels.scala, MapTileVM), verbatim:
-    //   titles "Query ret_07" / "Matched enc_03" / "Highest of 19" (HighestControl.rank), subtitles "" / "" / "controls · street-112",
-    //   labels "P17 · σ 2°" / "0.73" / "0.61".
+    //   titles "Query ret_07" / "Matched enc_03" / "Highest of 19" (HighestControl.rank), subtitles "" / "" / "controls · harbor-231",
+    //   labels "P17 · σ 2°" / "0.94" / "0.72".
     // As FigurePage.tiles lays them out, each sits on one fixed row: the title in the title row, the subtitle in the first
     // caption row (blank when empty), and the label in the second on every tile, so the values share one baseline.
     const tileDefs = [
       { role: 'query', title: 'Query ret_07', sub: '', label: 'P17 · σ 2°', fx: B },
-      { role: 'match', title: 'Matched enc_03', sub: '', label: '0.73', fx: A },
-      { role: 'control', title: 'Highest of 19', sub: 'controls · street-112', label: '0.61', fx: S }];
-    const cTexts = ['Matched 0.73 · highest of 19 controls street-112 0.61 · control mean B 0.35 · D +0.38',
+      { role: 'match', title: 'Matched enc_03', sub: '', label: '0.94', fx: A },
+      { role: 'control', title: 'Highest of 19', sub: 'controls · harbor-231', label: '0.72', fx: S }];
+    const cTexts = ['Matched 0.94 · highest of 19 controls harbor-231 0.72 · control mean B 0.32 · D +0.62',
       'Magenta: fixation duration mass per cell, shared limits; lines: 50% and 90% mass.'];
     const dNotes = ['n = 24 each · paired n = 24', 'bars: grand mean of participant means, equal weight',
       'Each pair of dots is one participant; per participant, 2–17 queries per group. Descriptive only: no intervals or tests.'];
@@ -640,23 +640,23 @@ class Component extends DCLogic {
     const pD = panels[3], DX = px(pD.x), DY = px(pD.body), DW = px(pD.w), DH = DW * 0.62;
     const fx0 = DX + 0.10 * DW, fx1 = DX + 0.97 * DW, fy0 = DY + 0.10 * DH, fy1 = DY + 0.78 * DH;
     const dy = v => fy0 + (0.5 - v) / 0.8 * (fy1 - fy0), lx = i => fx0 + (i === 0 ? 0.25 : 0.75) * (fx1 - fx0);
-    // P01–P24 participant means at σ 2°; the four rounding-boundary cells (REPORTING.md) carry the app's evaluated
-    // half-up display: P05 forg −.24, P13 forg .02, P16 rem .44, P24 forg .18.
-    const rem  = [.26,.27,.38,.36,-.03,.30,.32,.31,.34,.45,.28,.34,.17,.29,.18,.44,.38,.42,.29,.26,.32,.27,.34,.36];
-    const forg = [.06,.12,.15,.18,-.24,.17,.10,.15,.24,.33,.11,.19,.02,.22,-.08,.28,.32,.37,.06,.12,.27,.06,.21,.18];
+    // P01–P24 participant means at σ 2°: the app's evaluated half-up display of its means of the stored
+    // (SCORES.json) query rows, which reads as FIXTURE.md's participant table.
+    const rem  = [.47,.46,.49,.44,.39,.38,.38,.40,.41,.44,.47,.48,.36,.40,.39,.47,.40,.43,.41,.44,.38,.50,.41,.46];
+    const forg = [.35,.35,.37,.20,.22,.22,.21,.25,.21,.34,.12,.29,.22,.17,.36,.27,.22,.14,.22,.20,.23,.19,.28,.25];
     const jit = k => ((k * 7) % 9 - 4) * 2.6;
     const dp = {
       grid: [-0.2, 0.2, 0.4].map(v => `M${f1(fx0)} ${f1(dy(v))}H${f1(fx1)}`).join(''), zero: `M${f1(fx0)} ${f1(dy(0))}H${f1(fx1)}`,
       link: rem.map((r, k) => `M${f1(lx(0) + jit(k))} ${f1(dy(r))}L${f1(lx(1) + jit(k))} ${f1(dy(forg[k]))}`).join(''),
       rem: rem.map((r, k) => ({ x: f1(lx(0) + jit(k)), y: f1(dy(r)) })), forg: forg.map((r, k) => ({ x: f1(lx(1) + jit(k)), y: f1(dy(r)) })),
-      rb: `M${f1(lx(0) - 22)} ${f1(dy(0.30))}H${f1(lx(0) + 22)}`, fb: `M${f1(lx(1) - 22)} ${f1(dy(0.15))}H${f1(lx(1) + 22)}`
+      rb: `M${f1(lx(0) - 22)} ${f1(dy(0.43))}H${f1(lx(0) + 22)}`, fb: `M${f1(lx(1) - 22)} ${f1(dy(0.24))}H${f1(lx(1) + 22)}`
     };
     T('D (Δ cosine), participant mean', 0, 0, { xPx: DX + 0.10 * DW, yPx: DY + 0.02 * DH + 0.95 * fsT, fill: 'var(--paper-ink-2)' });
     // Proposal (ParticipantPlot): every gridline labelled, signed, 1 dp (golden figure-1 labels only 0).
     const sgn = v => v === 0 ? '0' : (v > 0 ? '+' : '−') + Math.abs(v).toFixed(1);
     [-0.2, 0, 0.2, 0.4].forEach(v => T(sgn(v), 0, 0, { xPx: fx0 - 0.015 * (fx1 - fx0), yPx: dy(v) + 0.35 * fsT, mono: true, a: 'end', fill: v === 0 ? 'var(--paper-ink)' : 'var(--paper-ink-2)' }));
-    T('+0.30', 0, 0, { xPx: lx(0) - 25, yPx: dy(0.30) + 0.35 * fsT, mono: true, fw: 500, a: 'end' });
-    T('+0.15', 0, 0, { xPx: lx(1) + 25, yPx: dy(0.15) + 0.35 * fsT, mono: true, fw: 500, fill: 'var(--paper-ink-2)' });
+    T('+0.43', 0, 0, { xPx: lx(0) - 25, yPx: dy(0.43) + 0.35 * fsT, mono: true, fw: 500, a: 'end' });
+    T('+0.24', 0, 0, { xPx: lx(1) + 25, yPx: dy(0.24) + 0.35 * fsT, mono: true, fw: 500, fill: 'var(--paper-ink-2)' });
     ['Remembered', 'Forgotten'].forEach((g, i) => {
       T('n = 24', 0, 0, { xPx: lx(i), yPx: fy1 + 0.04 * (fy1 - fy0) + 0.95 * fsT, mono: true, a: 'middle', fill: 'var(--paper-ink-2)' });
       T(g, 0, 0, { xPx: lx(i), yPx: fy1 + 0.12 * (fy1 - fy0) + 0.95 * fsT + 2, fw: 600, a: 'middle' }); });
@@ -665,16 +665,16 @@ class Component extends DCLogic {
     // ---- E: ScaleProfilePlot in w × 0.62w; σ log-spaced; values beside each dot (solid above, hollow below) ----
     const pE = panels[4], EX = px(pE.x), EY = px(pE.body), EW = px(pE.w), EH = EW * 0.62;
     const ex0 = EX + 0.11 * EW, ex1 = EX + 0.80 * EW, ey0 = EY + 0.12 * EH, ey1 = EY + 0.76 * EH;
-    const ey = v => ey0 + (0.35 - v) / 0.35 * (ey1 - ey0), sx = i => ex0 + (i + 0.5) / 4 * (ex1 - ex0);
-    const mean = [0.15, 0.24, 0.30, 0.19], fmean = [0.07, 0.12, 0.15, 0.09], sig = ['0.5°', '1°', '2°', '4°'];
+    const ey = v => ey0 + (0.5 - v) / 0.5 * (ey1 - ey0), sx = i => ex0 + (i + 0.5) / 4 * (ex1 - ex0);
+    const mean = [0.31, 0.47, 0.43, 0.22], fmean = [0.18, 0.28, 0.24, 0.11], sig = ['0.5°', '1°', '2°', '4°'];
     const ep = {
-      grid: [0.1, 0.2, 0.3].map(v => `M${f1(ex0)} ${f1(ey(v))}H${f1(ex1)}`).join(''), zero: `M${f1(ex0)} ${f1(ey(0))}H${f1(ex1)}`,
+      grid: [0.1, 0.2, 0.3, 0.4].map(v => `M${f1(ex0)} ${f1(ey(v))}H${f1(ex1)}`).join(''), zero: `M${f1(ex0)} ${f1(ey(0))}H${f1(ex1)}`,
       rem: mean.map((m, i) => f1(sx(i)) + ',' + f1(ey(m))).join(' '), forg: fmean.map((m, i) => f1(sx(i)) + ',' + f1(ey(m))).join(' '),
       remDots: mean.map((m, i) => ({ x: f1(sx(i)), y: f1(ey(m)) })), forgDots: fmean.map((m, i) => ({ x: f1(sx(i)), y: f1(ey(m)) }))
     };
     T('D (Δ cosine)', 0, 0, { xPx: EX + 0.10 * EW, yPx: EY + 0.02 * EH + 0.95 * fsT, fill: 'var(--paper-ink-2)' });
-    // Proposal (ScaleProfilePlot): gridlines labelled 0, +0.1, +0.2, +0.3; direct labels signed as the golden prints them.
-    [0, 0.1, 0.2, 0.3].forEach(v => T(sgn(v), 0, 0, { xPx: ex0 - 0.015 * (ex1 - ex0), yPx: ey(v) + 0.35 * fsT, mono: true, a: 'end', fill: v === 0 ? 'var(--paper-ink)' : 'var(--paper-ink-2)' }));
+    // Proposal (ScaleProfilePlot): gridlines labelled 0, +0.1, +0.2, +0.3, +0.4; direct labels signed as the golden prints them.
+    [0, 0.1, 0.2, 0.3, 0.4].forEach(v => T(sgn(v), 0, 0, { xPx: ex0 - 0.015 * (ex1 - ex0), yPx: ey(v) + 0.35 * fsT, mono: true, a: 'end', fill: v === 0 ? 'var(--paper-ink)' : 'var(--paper-ink-2)' }));
     const sd = v => '+' + v.toFixed(2);
     mean.forEach((m, i) => T(sd(m), 0, 0, { xPx: sx(i), yPx: ey(m) - 11, mono: true, fw: 500, a: 'middle' }));
     fmean.forEach((m, i) => T(sd(m), 0, 0, { xPx: sx(i), yPx: ey(m) + 8 + 0.75 * fsT, mono: true, fw: 500, a: 'middle', fill: 'var(--paper-ink-2)' }));

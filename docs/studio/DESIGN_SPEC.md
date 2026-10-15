@@ -286,7 +286,7 @@ deviation with its ticket.
   view; the level rule is §15.1.
 - **Paired descriptive (Results).** "Δ Remembered − Forgotten" is the mean over participants of
   each participant's mean Remembered D minus mean Forgotten D, computed before rounding participant
-  means: +0.16 (range +0.05 P21 to +0.26 P15; higher in 24 of 24). It is descriptive only, and the
+  means: +0.18 (range +0.04 P15 to +0.34 P11; higher in 24 of 24). It is descriptive only, and the
   headline notes that it differs from the difference of the rounded group means by rounding.
 - **Outside-window wording.** Geometry: "543 of 11,520 source records outside the window in 409
   trials". Methods (as `MethodsText` writes it): "543 of the 11,311 fixation records of admitted trials

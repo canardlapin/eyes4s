@@ -91,15 +91,15 @@ other boards' pending tags remain unchanged. Full qualification is recorded with
 - [ ] Query panel: filled circles, "Displayed: blank + fixation cross".
 - [ ] Reference panel: diamonds for matched, hollow circles for control. Clicking a control dot switches the panel. "Back to matched reference" is present.
 - [ ] Scale ladder: 19 control dots in a beeswarm, a 3 px B tick, the M diamond and the ink D bar.
-- [ ] Readout: D +0.38 in 28/500, M 0.73, B 0.35 (19 controls), and the confound sentence verbatim.
+- [ ] Readout: D +0.62 in 28/500, M 0.94, B 0.32 (19 controls), and the confound sentence verbatim.
 - [ ] "Why this reference?" panel, including the outside-window counts. Reporting reads "By retrieval response" with "Min queries per group: Off · n 2–17". Appearance offers the stage, colour-limit and opacity (0.6) controls.
 - [ ] Dark theme: the query / matched L* spread is at least 20, and every role pill reaches 4.5:1.
 - Deviation (S10.5 F3, accessibility): the contrast group also has the scale profile's Table tab after "Scale profile", which the board does not show. Every plot has its Table twin (DESIGN_SPEC §10).
 
 ## Results (moment t3)
 - [ ] Jobs chip is running. The banner says the results will not replace this view until Show.
-- [ ] Participant plot shows 24 participants with grand means +0.30 and +0.15, each group labelled "n = 24", paired n = 24, n range 2–17. P05 has participant means (D −0.08); its 3 failed queries show as "no value".
-- [ ] Paired descriptive "Δ Remembered − Forgotten +0.16" (range +0.05 P21 to +0.26 P15; higher in 24 of 24), computed before rounding participant means, with the rounding note.
+- [ ] Participant plot shows 24 participants with grand means +0.43 and +0.24, each group labelled "n = 24", paired n = 24, n range 2–17. P05 has participant means (D +0.35); its 3 failed queries show as "no value".
+- [ ] Paired descriptive "Δ Remembered − Forgotten +0.18" (range +0.04 P15 to +0.34 P11; higher in 24 of 24), computed before rounding participant means, with the rounding note.
 - [ ] Scale profile on a log-spaced x axis. Participant table matches FIXTURE.md exactly.
 - [ ] Reporting inspector:
   - [ ] Minimum queries per group is off, and it states what turning it on would drop.
@@ -108,7 +108,7 @@ other boards' pending tags remain unchanged. Full qualification is recorded with
 
 ## Figures (moment t2)
 - [ ] Figure-level binding, locked: run 7 plus "By retrieval response". Panels choose only scale and selection.
-- [ ] Panel C reads "Matched 0.73 · highest of 19 controls street-112 0.61 · control mean B 0.35 · D +0.38". Panel D uses a Δ-cosine axis with a zero rule. Panel E uses a log x axis. Figure text is Plex Sans at 7 pt.
+- [ ] Panel C reads "Matched 0.94 · highest of 19 controls harbor-231 0.72 · control mean B 0.32 · D +0.62". Panel D uses a Δ-cosine axis with a zero rule. Panel E uses a log x axis. Figure text is Plex Sans at 7 pt.
 - [ ] Stale Figure 2 reads "r3 changed the admission status of 4 trials", with Rebind… / Keep.
 - [ ] Binding note: the board's "Rebinding makes a new figure version; the old one stays reproducible" is a recorded deviation. Rebinding replaces the binding in place and Undo restores it; 1.0 persists no figure versions (decision on `bd-01M42HMHQ1PQMZCJFS4AHQ8QE5`).
 - [ ] methods.md states:

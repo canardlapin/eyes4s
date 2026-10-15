@@ -31,15 +31,14 @@ the native whole-group references under the display label "All queries". Scale
 profiles use the reports' explicit run, reporting id and scale indices, preserve
 their returned references and refuse missing series cells.
 
-The illustrative `fixture.json` summaries remain frozen display metadata from
-Python's `statistics.mean` and two-decimal `round`; grand summaries average already
-rounded participant values. Reports instead evaluate the stored query rows directly.
-Four participant/group means lie on decimal rounding boundaries (P05 Forgotten
-−0.235, P13 Forgotten 0.025, P16 Remembered 0.445 and P24 Forgotten 0.175), where
-floating accumulation and display rounding change the final hundredth. Tests retain
-the original FIXTURE.md metadata pins, independently average the stored query values
-with decimal arithmetic, and pin those four evaluated display cells separately.
-These illustrative values do not replace the native golden scientific results.
+The `fixture.json` scores and summaries are eyes4s's own, copied by
+`make_fixture.py` from `fixtures/studio-golden/SCORES.json` to six places;
+`MockScoresGoldenJvmSuite` fails when they drift. Reports evaluate the stored query
+rows directly, so a served mean differs from SCORES.json's by the six-place rounding
+of its operands (within 1e-6). At σ 2° no participant or group mean lies near a
+two-place rounding boundary, so the app's half-up display of its evaluated means
+reads as FIXTURE.md's table; tests independently average the stored query values
+with decimal arithmetic and check every displayed cell against FIXTURE.md.
 
 ## Persistence and compatibility
 
