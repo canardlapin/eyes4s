@@ -394,6 +394,12 @@ object SchemaRegistry:
       Kind.Document,
       Vector("report-v1.json"),
       codecLaw(reports, "study report")
+    ),
+    Entry(
+      EpochCodecDefinitions.plan,
+      Kind.Document,
+      Vector("epoch-plan-v1.json"),
+      codecLaw(() => new EpochCodecLawSuite, "epoch plan")
     )
   ) ++ methodPlans.map((id, fixture) =>
     Entry(
@@ -1008,6 +1014,7 @@ private object Decoders:
     def study: VersionedCodec[?] =
       method.fold(StudyCodecs.cosine[Px].codec)(StudyCodecs.similarity[Px](_).codec)
     id match
+      case EpochCodecDefinitions.plan   => Some(EpochCodecFixture.codec)
       case DefinitionId.study           => Some(study)
       case DefinitionId.studyInput      => Some(StudyInputCodecs.study[Px].input)
       case DefinitionId.admissionLedger => Some(StudyInputCodecs.study[Px].ledger)

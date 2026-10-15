@@ -162,6 +162,34 @@ class FamilyConformanceSuite extends munit.FunSuite:
     assertEquals(AnalysisComponent.values.toVector, Vector(AnalysisComponent.Epochs))
   }
 
+  test("the epoch component has a complete descriptor and conditional built-in schema") {
+    def get[E, A](value: Either[E, A]): A = value.fold(e => fail(e.toString), identity)
+    val markerSchema                      = get(DefinitionId.of("example.marker", 1))
+    val codec                             = EpochCodecs.of(VersionedCodec.string(markerSchema))
+    val plan                              = get(
+      EpochPlan.of(
+        MarkSelector("start", Occurrence.RequireUnique),
+        get(Window.of(Span.micros(-5), Span.micros(8))),
+        get(PositiveSpan.of(Span.micros(4))),
+        FinalBin.IncludeShortFinal
+      )
+    )
+    val inspected = get(EpochComponent.inspect(plan, markerSchema))
+    assertEquals(EpochComponent.component, AnalysisComponent.Epochs)
+    assertEquals(inspected.description, EpochComponent.description(plan, markerSchema))
+    assertEquals(inspected.fields.size, inspected.description.size)
+    assertEquals(codec.schema, EpochCodecDefinitions.plan)
+    val decoded  = get(codec.decode(get(codec.encode(plan))))
+    val timeline = get(
+      ObservedTimeline.of(ClockId("experiment"), Vector(Mark(Instant.micros(100), "start")))
+    )
+    val budget   = get(NonNegativeLong.of(4))
+    val original = get(plan.resolve("trial", timeline, timeline.clock, budget))
+    val restored = get(decoded.resolve("trial", timeline, timeline.clock, budget))
+    assertEquals(restored.bins, original.bins)
+    assertEquals(restored.excludedTail, original.excludedTail)
+  }
+
   test("the named gaps are exactly the pinned ones") {
     assertEquals(
       witnesses.flatMap(w => w.gaps.map(g => w.family -> g.obligation)).toSet,

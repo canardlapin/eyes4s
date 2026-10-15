@@ -20,10 +20,17 @@ import eyes4s.kernel.*
 import eyes4s.plan.*
 import io.circe.Json
 
+object EpochCodecDefinitions:
+  val plan: DefinitionId = DefinitionId.builtIn("eyes4s.epoch-plan", 1)
+
 /** Conditional epoch codec: callers supply explicit recipe and mark-key schemas,
   * as for DomainCodecs and TimelineCodecs. No behavior is loaded by decoding.
   */
 object EpochCodecs:
+  /** The registered built-in envelope, with the existing conditional v1 payload. */
+  def of[K](markers: VersionedCodec[K]): VersionedCodec[EpochPlan[K]] =
+    plan(EpochCodecDefinitions.plan, markers)
+
   def plan[K](schema: DefinitionId, key: VersionedCodec[K]): VersionedCodec[EpochPlan[K]] =
     VersionedCodec.checked[EpochPlan[K]](schema)(p =>
       key.encode(p.anchor.kind).map { kind =>
