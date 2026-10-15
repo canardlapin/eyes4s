@@ -203,3 +203,22 @@ class PointSamplingCodecSuite extends munit.FunSuite:
     )
     assert(other.plan.decode(json).isLeft)
   }
+
+  test("legacy v1 replay payloads reconstruct typed point failure context") {
+    val original = PointSamplingArchive.run(plan(queryClock = ClockId("different-clock")))
+    val encoded  = get(codec.archive.encode(original))
+    val restored = get(codec.archive.decode(encoded))
+    assertEquals(get(codec.archive.encode(restored)), encoded)
+    restored.result.rows.foreach { row =>
+      row.points.foreach { point =>
+        val failure = point.value.swap.toOption.get
+        assertEquals(
+          Diagnostic.of(failure).affectedTrials,
+          Vector(row.key, row.template.toOption.get).distinct
+        )
+      }
+    }
+    // Trial/template context is already bound by the unchanged v1 row/control keys.
+    assert(!encoded.noSpaces.contains("atTrial"))
+    assert(encoded.noSpaces.contains("\"kind\":\"clock\""))
+  }

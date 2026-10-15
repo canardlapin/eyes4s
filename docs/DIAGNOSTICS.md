@@ -1309,6 +1309,7 @@ fails after rewriting, so review the change and run it again.
 | `point-sampling.point` | `Point` | `error` |
 | `point-sampling.insufficient` | `Insufficient` | `level`, `requested`, `successful`, `minimum` |
 | `point-sampling.non-finite` | `NonFinite` | `level`, `index`, `value` |
+| `point-sampling.at-trial` | `AtTrial` | `source`, `template`, `underlying` |
 
 ### `recipe-parameter` — `RecipeParameterError`
 

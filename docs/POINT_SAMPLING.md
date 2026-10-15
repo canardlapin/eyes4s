@@ -103,3 +103,26 @@ python3 tools/r-parity/generate_point_sampling.py --eyesim /path/to/eyesim --che
 sbt 'planJVM/testOnly *PointSamplingSuite' 'planJS/testOnly *PointSamplingSuite' \
     'codecJVM/testOnly *PointSamplingCodecSuite' 'codecJS/testOnly *PointSamplingCodecSuite'
 ```
+
+## Typed failure operands
+
+`PointSamplingError[K]` retains the focal key and, for an actual lookup, the template
+key in `AtTrial`. Matching refusals retain the focal key even when no unique template
+exists. Query-control and bin reductions retain their focal key; individual selected
+control values also retain the template they sampled. `Diagnostic.of` names these
+keys as typed trial or pair subjects and named operands, with the original reason as
+its nested cause. `reason` exposes that original key-free refusal when it is needed.
+
+Independent `PointBins`, `PointSamplingSpec` and `PointSamplingMean` operations return
+key-free refusals (`PointSamplingError[Nothing]`); `PointSamplingMean.forTrial` attaches
+a known focal key to an aggregation refusal. Completed row values, means and bins
+carry the study key type.
+
+The existing conditional version-one archive payload is unchanged. Its row and control
+keys already bind these contexts. Deterministic replay reconstructs typed failures from
+the saved recipe and refuses a saved result that differs from that replay. No decoder
+accepts an independently supplied failure context.
+
+The [typed failure evidence receipt](evidence/point-sampling-keyed-errors-20261014.json)
+records nominal-key compilation checks, preserved archive fixtures, unchanged R
+reference checks and key-loss mutants killed on both runtimes.

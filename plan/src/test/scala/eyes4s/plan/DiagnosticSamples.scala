@@ -44,6 +44,9 @@ final case class FamilySamples(
   * so a new case appears in `labels` before anyone writes a code for it.
   */
 object DiagnosticSamples:
+  given DiagnosticExample[PointSamplingError[Nothing]] = DiagnosticExample.of(seed =>
+    PointSamplingError.NonFinite("sample", seed, Double.PositiveInfinity)
+  )
   given DiagnosticExample[SourceKeyColumns[?]] = DiagnosticExample.of(seed =>
     SourceKeyColumns.Study(s"participant-$seed", s"item-$seed", s"phase-$seed")
   )
@@ -885,7 +888,7 @@ object DiagnosticSamples:
     generated[LeastSquaresError]("LeastSquaresError"),
     generated[RngError]("RngError"),
     generated[EpochError[StudyKey, String]]("EpochError"),
-    generated[PointSamplingError]("PointSamplingError"),
+    generated[PointSamplingError[StudyKey]]("PointSamplingError"),
     generated[RecipeParameterError]("RecipeParameterError"),
     generated[RepetitionPlanError]("RepetitionPlanError"),
     generated[DiagnosticCodeError]("DiagnosticCodeError"),

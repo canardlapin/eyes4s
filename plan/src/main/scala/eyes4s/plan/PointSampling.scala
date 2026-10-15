@@ -32,18 +32,25 @@ enum PointBinEndpoint derives CanEqual:
   * rows, template keys, aggregation level or value index concerned. Failures are
   * retained in result rows rather than dropped.
   */
-enum PointSamplingError derives CanEqual:
-  case Boundaries(values: Vector[Long])
-  case Clock(error: TimeError)
-  case Frames(error: GeometryError)
+enum PointSamplingError[+K] derives CanEqual:
+  case Boundaries(values: Vector[Long]) extends PointSamplingError[Nothing]
+  case Clock(error: TimeError)          extends PointSamplingError[Nothing]
+  case Frames(error: GeometryError)     extends PointSamplingError[Nothing]
   case MissingTemplate(participant: String, stimulus: String)
+      extends PointSamplingError[Nothing]
   case AmbiguousTemplate(participant: String, stimulus: String, indices: Vector[Int])
-  case DuplicateSource(indices: Vector[Int])
+      extends PointSamplingError[Nothing]
+  case DuplicateSource(indices: Vector[Int]) extends PointSamplingError[Nothing]
   case Density(templateIndex: Int, error: DensityLookupError)
-  case Point(error: DensityPointFailure)
+      extends PointSamplingError[Nothing]
+  case Point(error: DensityPointFailure) extends PointSamplingError[Nothing]
   case Insufficient(level: String, requested: Int, successful: Int, minimum: Int)
-  case NonFinite(level: String, index: Int, value: Double)
+      extends PointSamplingError[Nothing]
+  case NonFinite(level: String, index: Int, value: Double) extends PointSamplingError[Nothing]
+  case AtTrial(source: K, template: Option[K], underlying: PointSamplingError[Nothing])
   def message: String = this match
+    case AtTrial(source, template, underlying) =>
+      s"Point-sampling source=$source template=$template: ${underlying.message}"
     case Boundaries(v) =>
       s"Point bins require at least two strictly increasing microsecond boundaries, got $v."
     case Clock(e)                         => e.message
@@ -57,6 +64,21 @@ enum PointSamplingError derives CanEqual:
     case Insufficient(l, n, k, m) =>
       s"Point-sampling $l has $k successful of $n requested values; minimum=$m."
     case NonFinite(l, i, v) => s"Point-sampling $l value[$i]=$v is nonfinite."
+
+  /** The original reason, retained by the legacy v1 replay payload. */
+  def reason: PointSamplingError[Nothing] = this match
+    case AtTrial(_, _, underlying)                           => underlying
+    case Boundaries(v)                                       => Boundaries(v)
+    case Clock(e)                                            => Clock(e)
+    case Frames(e)                                           => Frames(e)
+    case MissingTemplate(p, s)                               => MissingTemplate(p, s)
+    case AmbiguousTemplate(p, s, indices)                    => AmbiguousTemplate(p, s, indices)
+    case DuplicateSource(indices)                            => DuplicateSource(indices)
+    case Density(index, e)                                   => Density(index, e)
+    case Point(e)                                            => Point(e)
+    case Insufficient(level, requested, successful, minimum) =>
+      Insufficient(level, requested, successful, minimum)
+    case NonFinite(level, index, value) => NonFinite(level, index, value)
 
 /** Exact absolute point bins; final endpoint admission is separate from short-bin policy. */
 final class PointBins private (
@@ -81,7 +103,7 @@ object PointBins:
       clock: ClockId,
       boundaries: Vector[Instant],
       endpoint: PointBinEndpoint
-  ): Either[PointSamplingError, PointBins] =
+  ): Either[PointSamplingError[Nothing], PointBins] =
     val values = boundaries.map(_.toMicros)
     if values.size < 2 || values.zip(values.drop(1)).exists((a, b) => a >= b) then
       Left(PointSamplingError.Boundaries(values))
@@ -121,9 +143,9 @@ object PointSamplingSpec:
       controls: PointControlSelection,
       controlPolicy: FailurePolicy,
       binPolicy: FailurePolicy
-  ): Either[PointSamplingError, PointSamplingSpec] =
+  ): Either[PointSamplingError[Nothing], PointSamplingSpec] =
     bins
-      .fold[Either[PointSamplingError, Unit]](Right(()))(b =>
+      .fold[Either[PointSamplingError[Nothing], Unit]](Right(()))(b =>
         Agreement.clocks(clock, b.clock).left.map(PointSamplingError.Clock.apply).map(_ => ())
       )
       .map(_ =>
@@ -144,11 +166,11 @@ object PointSamplingSpec:
   * values, the failure policy applied, and the mean or the reason it is absent.
   * `contributing` is zero when the mean failed. Built by `PointSamplingMean`.
   */
-final class PointMean private[plan] (
+final class PointMean[+K] private[plan] (
     val requested: Int,
     val successful: Int,
     val policy: FailurePolicy,
-    val result: Either[PointSamplingError, Double]
+    val result: Either[PointSamplingError[K], Double]
 ):
   def contributing: Int = if result.isRight then successful else 0
 
@@ -157,11 +179,11 @@ final class PointMean private[plan] (
   */
 object PointSamplingMean:
   /** Used first across selected controls at each time, then across time means in each bin. */
-  def apply(
+  def apply[K](
       level: String,
-      values: Vector[Either[PointSamplingError, Double]],
+      values: Vector[Either[PointSamplingError[K], Double]],
       policy: FailurePolicy
-  ): PointMean =
+  ): PointMean[Nothing] =
     val good    = values.flatMap(_.toOption).filter(_.isFinite)
     val minimum = policy match
       case FailurePolicy.RequireAll        => math.max(1, values.size)
@@ -178,6 +200,21 @@ object PointSamplingMean:
         Either.cond(mean.isFinite, mean, PointSamplingError.NonFinite(level, good.size, mean))
     new PointMean(values.size, good.size, policy, result)
 
+  /** Aggregate on a known focal trial; any aggregate refusal retains that key. */
+  def forTrial[K](
+      source: K,
+      level: String,
+      values: Vector[Either[PointSamplingError[K], Double]],
+      policy: FailurePolicy
+  ): PointMean[K] =
+    val mean = apply(level, values, policy)
+    new PointMean(
+      mean.requested,
+      mean.successful,
+      mean.policy,
+      mean.result.left.map(error => PointSamplingError.AtTrial(source, None, error.reason))
+    )
+
 /** One control template: `template` is its key and `occurrence` the admitted source that
   * represents it, the matching occurrence with the smallest key digest. Each distinct template is
   * a single candidate.
@@ -185,19 +222,19 @@ object PointSamplingMean:
 final case class PointControl[K](
     occurrence: K,
     template: K,
-    values: Vector[Either[PointSamplingError, Double]]
+    values: Vector[Either[PointSamplingError[K], Double]]
 )
 
 /** One query time on a focal path: the point there (`None` when the path has no
   * location at that time), the template value or its error, the control mean when controls are
   * sampled, and the bin the time falls in.
   */
-final case class PointObservation[U <: Unit2D](
+final case class PointObservation[K, U <: Unit2D](
     index: Int,
     time: Instant,
     point: Option[Pt[U]],
-    value: Either[PointSamplingError, Double],
-    control: Option[PointMean],
+    value: Either[PointSamplingError[K], Double],
+    control: Option[PointMean[K]],
     bin: Option[Int]
 )
 
@@ -205,16 +242,17 @@ final case class PointObservation[U <: Unit2D](
   * query indices, the mean observed value and, with controls, the control mean;
   * `difference` is observed minus control, and fails if either mean failed.
   */
-final case class PointBinResult(
+final case class PointBinResult[K](
+    source: K,
     index: Int,
     from: Instant,
     until: Instant,
     includesFinalEndpoint: Boolean,
     queries: Vector[Int],
-    observed: PointMean,
-    control: Option[PointMean]
+    observed: PointMean[K],
+    control: Option[PointMean[K]]
 ):
-  def difference: Option[Either[PointSamplingError, Double]] = control.map { mean =>
+  def difference: Option[Either[PointSamplingError[K], Double]] = control.map { mean =>
     for
       a <- observed.result
       b <- mean.result
@@ -222,7 +260,11 @@ final case class PointBinResult(
       result <- Either.cond(
         difference.isFinite,
         difference,
-        PointSamplingError.NonFinite(s"bin[$index] difference", index, difference)
+        PointSamplingError.AtTrial(
+          source,
+          None,
+          PointSamplingError.NonFinite(s"bin[$index] difference", index, difference)
+        )
       )
     yield result
   }
@@ -233,11 +275,11 @@ final case class PointBinResult(
 final case class PointTrialResult[K, U <: Unit2D](
     index: Int,
     key: K,
-    template: Either[PointSamplingError, K],
+    template: Either[PointSamplingError[K], K],
     eligibleControls: Int,
     controls: Vector[PointControl[K]],
-    points: Vector[PointObservation[U]],
-    bins: Vector[PointBinResult]
+    points: Vector[PointObservation[K, U]],
+    bins: Vector[PointBinResult[K]]
 )
 
 /** A completed point-sampling run: one row per admitted source trial in order, the
@@ -272,18 +314,35 @@ final class PointSamplingPlan[K, U <: Unit2D] private (
     given KeyDigest[K] = layout.digest
     val sources        = source.trials.rows
     val duplicates = sources.zipWithIndex.groupBy(_._1.key).view.mapValues(_.map(_._2)).toMap
-    val resolved   = sources.map { row =>
+    val resolved: Vector[Either[PointSamplingError[K], Int]] = sources.map { row =>
       val p          = layout.participant(row.key); val s = layout.stimulus(row.key)
       val candidates = templates.rows.zipWithIndex.collect {
         case (t, i) if layout.participant(t.key) == p && layout.stimulus(t.key) == s => i
       }
       if duplicates(row.key).size > 1 then
-        Left(PointSamplingError.DuplicateSource(duplicates(row.key)))
+        Left(
+          PointSamplingError
+            .AtTrial(row.key, None, PointSamplingError.DuplicateSource(duplicates(row.key)))
+        )
       else
         candidates match
           case Vector(i) => Right(i)
-          case Vector()  => Left(PointSamplingError.MissingTemplate(p, s))
-          case indices   => Left(PointSamplingError.AmbiguousTemplate(p, s, indices))
+          case Vector()  =>
+            Left(
+              PointSamplingError.AtTrial(
+                row.key,
+                None,
+                PointSamplingError.MissingTemplate(p, s)
+              )
+            )
+          case indices =>
+            Left(
+              PointSamplingError.AtTrial(
+                row.key,
+                None,
+                PointSamplingError.AmbiguousTemplate(p, s, indices)
+              )
+            )
     }
     val admitted = Trials(
       sources.zip(resolved).collect { case (row, Right(index)) => Trial(row.key, (), index) }
@@ -321,14 +380,27 @@ final class PointSamplingPlan[K, U <: Unit2D] private (
         .left
         .map(PointSamplingError.Clock.apply)
       def sample(
-          index: Either[PointSamplingError, Int]
-      ): Vector[Either[PointSamplingError, Double]] =
+          index: Either[PointSamplingError[K], Int]
+      ): Vector[Either[PointSamplingError[K], Double]] =
         val samples = for
-          i      <- index
-          field  <- prepared(i)
-          path   <- trajectory
-          points <- field.along(path, spec.lookup).left.map(PointSamplingError.Frames.apply)
-        yield points.map(_.value.left.map(PointSamplingError.Point.apply))
+          i     <- index
+          field <- prepared(i).left
+            .map(e => PointSamplingError.AtTrial(row.key, Some(templates.rows(i).key), e))
+          path <- trajectory.left
+            .map(e => PointSamplingError.AtTrial(row.key, Some(templates.rows(i).key), e))
+          points <- field
+            .along(path, spec.lookup)
+            .left
+            .map(e =>
+              PointSamplingError
+                .AtTrial(row.key, Some(templates.rows(i).key), PointSamplingError.Frames(e))
+            )
+        yield points.map(
+          _.value.left.map(e =>
+            PointSamplingError
+              .AtTrial(row.key, Some(templates.rows(i).key), PointSamplingError.Point(e))
+          )
+        )
         samples.fold(e => Vector.fill(spec.queries.size)(Left(e)), identity)
       val matched  = sample(target)
       val controls = selected.getOrElse(row.key, Vector.empty).map { (_, candidate) =>
@@ -343,7 +415,8 @@ final class PointSamplingPlan[K, U <: Unit2D] private (
           case PointControlSelection.Disabled      => None
           case PointControlSelection.Candidates(_) =>
             Some(
-              PointSamplingMean(
+              PointSamplingMean.forTrial(
+                row.key,
                 s"query[$i] controls",
                 controls.map(_.values(i)),
                 spec.controlPolicy
@@ -357,7 +430,8 @@ final class PointSamplingPlan[K, U <: Unit2D] private (
           val indices = binIndices.zipWithIndex.collect {
             case (Some(index), i) if index == b => i
           }
-          val observed = PointSamplingMean(
+          val observed = PointSamplingMean.forTrial(
+            row.key,
             s"bin[$b] observed",
             indices.map(i => points(i).value),
             spec.binPolicy
@@ -366,13 +440,15 @@ final class PointSamplingPlan[K, U <: Unit2D] private (
             case PointControlSelection.Disabled      => None
             case PointControlSelection.Candidates(_) =>
               Some(
-                PointSamplingMean(
+                PointSamplingMean.forTrial(
+                  row.key,
                   s"bin[$b] control-time means",
                   indices.flatMap(i => points(i).control.map(_.result)),
                   spec.binPolicy
                 )
               )
           PointBinResult(
+            row.key,
             b,
             bins.boundaries(b),
             bins.boundaries(b + 1),

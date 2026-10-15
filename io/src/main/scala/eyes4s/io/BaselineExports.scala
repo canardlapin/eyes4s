@@ -400,7 +400,7 @@ object ResultExports:
           B(b.includesFinalEndpoint),
           T(b.queries.mkString("[", ",", "]"))
         )
-        def mean(role: String, m: PointMean) = prefix ++ Vector(T(role)) ++ scalar(
+        def mean(role: String, m: PointMean[K]) = prefix ++ Vector(T(role)) ++ scalar(
           m.result.left.map(codec.error)
         ) ++ Vector(I(m.requested.toLong), I(m.successful.toLong), I(m.contributing.toLong))
         Vector(mean("observed", b.observed)) ++ b.control.toVector.map(

@@ -52,7 +52,7 @@ final class PointSamplingCodec[K, U <: Unit2D: UnitLabel](
     keys
   )
   private def domain[A](json: Json)(
-      value: Either[PointSamplingError, A]
+      value: Either[PointSamplingError[Nothing], A]
   ): Either[CodecError, A] =
     value.left.map(e => CodecError.Field("pointSampling", json, e.message))
   private def named[A](json: Json, field: String, values: Array[A]): Either[CodecError, A] =
@@ -217,10 +217,11 @@ final class PointSamplingCodec[K, U <: Unit2D: UnitLabel](
       yield a
     }
 
-  private[eyes4s] def error(value: PointSamplingError): Json =
+  private[eyes4s] def error(value: PointSamplingError[K]): Json =
     import ResultWire.{tagged, double, long}
     value match
-      case PointSamplingError.Boundaries(v) =>
+      case PointSamplingError.AtTrial(_, _, underlying) => error(underlying)
+      case PointSamplingError.Boundaries(v)             =>
         tagged("boundaries", "values" -> Json.arr(v.map(long)*))
       case PointSamplingError.Clock(e)  => tagged("clock", "error" -> ResultWire.timeError(e))
       case PointSamplingError.Frames(e) =>
@@ -280,17 +281,17 @@ final class PointSamplingCodec[K, U <: Unit2D: UnitLabel](
           "index" -> Json.fromInt(i),
           "value" -> double(v)
         )
-  private def value(v: Either[PointSamplingError, Double]): Json = v match
+  private def value(v: Either[PointSamplingError[K], Double]): Json = v match
     case Right(x) => ResultWire.tagged("success", "value" -> Json.fromDoubleOrNull(x))
     case Left(e)  => ResultWire.tagged("failure", "error" -> error(e))
-  private def mean(m: PointMean): Json = Json.obj(
+  private def mean(m: PointMean[K]): Json = Json.obj(
     "requested"    -> Json.fromInt(m.requested),
     "successful"   -> Json.fromInt(m.successful),
     "contributing" -> Json.fromInt(m.contributing),
     "policy"       -> StudyWire.policy(m.policy),
     "result"       -> value(m.result)
   )
-  private def keyed(v: Either[PointSamplingError, K]): Either[CodecError, Json] = v match
+  private def keyed(v: Either[PointSamplingError[K], K]): Either[CodecError, Json] = v match
     case Right(k) => keys.encode(k).map(j => ResultWire.tagged("success", "key" -> j))
     case Left(e)  => Right(ResultWire.tagged("failure", "error" -> error(e)))
   private def resultJson(r: PointSamplingResult[K, U]): Either[CodecError, Json] = for
