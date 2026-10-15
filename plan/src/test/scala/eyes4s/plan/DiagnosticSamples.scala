@@ -996,5 +996,6 @@ object DiagnosticSamples:
         get(SyncErrorMagnitude.of(Span.micros(2)))
       ),
       ProjectFinding.MissingSchema(DefinitionId.timeline, Vector(2))
-    )
+    ),
+    generated[ScanpathComparisonError]("ScanpathComparisonError")
   )

@@ -64,8 +64,14 @@ object OverlapThreshold:
       FixationComparisonError.Parameter("threshold", value)
     )
 
+enum FixationNormConvention derives CanEqual:
+  case FdlibmHypotV1, AbsoluteAxisSumV1
+
 enum FixationGroundDistance derives CanEqual:
   case Euclidean, Manhattan
+  def normConvention: FixationNormConvention = this match
+    case Euclidean => FixationNormConvention.FdlibmHypotV1
+    case Manhattan => FixationNormConvention.AbsoluteAxisSumV1
 
 enum MissingOverlapPolicy derives CanEqual:
   /** Pinned reference denominator: every requested query, with missing support a non-hit. */
@@ -123,7 +129,7 @@ object FixationOverlap:
           case (Right(p), Right(q)) =>
             val dx = math.abs(p.point.x - q.point.x); val dy = math.abs(p.point.y - q.point.y)
             val value = distance match
-              case FixationGroundDistance.Euclidean => math.hypot(dx, dy)
+              case FixationGroundDistance.Euclidean => FdlibmHypot(dx, dy)
               case FixationGroundDistance.Manhattan => dx + dy
             Either.cond(
               value.isFinite,

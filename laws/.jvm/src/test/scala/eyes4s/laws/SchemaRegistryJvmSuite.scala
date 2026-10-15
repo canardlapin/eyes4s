@@ -396,6 +396,54 @@ object SchemaRegistry:
       codecLaw(reports, "study report")
     ),
     Entry(
+      ScanpathStudyDefinitions.plan,
+      Kind.Document,
+      Vector(
+        "scanpath-study-multimatch-plan-v1.json",
+        "scanpath-study-overlap-plan-v1.json",
+        "scanpath-study-transport-plan-v1.json"
+      ),
+      codecLaw(() => new ScanpathStudyCodecLawSuite, "scanpath study plan")
+    ),
+    Entry(
+      ScanpathStudyDefinitions.result,
+      Kind.Document,
+      Vector(
+        "scanpath-study-multimatch-result-v1.json",
+        "scanpath-study-overlap-result-v1.json",
+        "scanpath-study-transport-result-v1.json"
+      ),
+      codecLaw(() => new ScanpathStudyCodecLawSuite, "scanpath study result")
+    ),
+    Entry(
+      ScanpathMethodCodecDefinitions.method,
+      Kind.Document,
+      Vector(
+        "scanpath-method-multimatch-v1.json",
+        "scanpath-method-overlap-v1.json",
+        "scanpath-method-transport-v1.json"
+      ),
+      codecLaw(() => new ScanpathMethodCodecLawSuite, "scanpath method")
+    ),
+    Entry(
+      ScanpathMethodDefinitions.multiMatch,
+      Kind.Definition,
+      Vector("scanpath-method-multimatch-v1.json"),
+      codecLaw(() => new ScanpathMethodCodecLawSuite, "scanpath method")
+    ),
+    Entry(
+      ScanpathMethodDefinitions.overlap,
+      Kind.Definition,
+      Vector("scanpath-method-overlap-v1.json"),
+      codecLaw(() => new ScanpathMethodCodecLawSuite, "scanpath method")
+    ),
+    Entry(
+      ScanpathMethodDefinitions.transport,
+      Kind.Definition,
+      Vector("scanpath-method-transport-v1.json"),
+      codecLaw(() => new ScanpathMethodCodecLawSuite, "scanpath method")
+    ),
+    Entry(
       PointSamplingFamilyDefinitions.plan,
       Kind.Document,
       Vector("point-sampling-plan-v1.json"),
@@ -1070,13 +1118,16 @@ private object Decoders:
     def study: VersionedCodec[?] =
       method.fold(StudyCodecs.cosine[Px].codec)(StudyCodecs.similarity[Px](_).codec)
     id match
+      case ScanpathStudyDefinitions.plan         => Some(ScanpathStudyLawFixture.codec.plans)
+      case ScanpathStudyDefinitions.result       => Some(ScanpathStudyLawFixture.codec.results)
+      case ScanpathMethodCodecDefinitions.method => Some(ScanpathMethodLawFixture.codec)
       case PointSamplingFamilyDefinitions.plan   => Some(PointFamilyCodecFixture.codec.plans)
       case PointSamplingFamilyDefinitions.result => Some(PointFamilyCodecFixture.codec.results)
       case EpochCodecDefinitions.plan            => Some(EpochCodecFixture.codec)
       case DefinitionId.study                    => Some(study)
       case DefinitionId.studyInput               => Some(StudyInputCodecs.study[Px].input)
       case DefinitionId.admissionLedger          => Some(StudyInputCodecs.study[Px].ledger)
-      case DecompositionCodecDefinitions.plan =>
+      case DecompositionCodecDefinitions.plan    =>
         Some(DecompositionFamilyCodecFixture.codec.plans)
       case DecompositionCodecDefinitions.result =>
         Some(DecompositionFamilyCodecFixture.codec.results)

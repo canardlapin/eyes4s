@@ -1,0 +1,1 @@
+{"schema":{"name":"eyes4s.scanpath-method","version":1},"value":{"unit":"px","method":{"name":"eyes4s.fixation-transport","version":1},"parameters":{"xScale":12.5,"yScale":2.25,"timeScaleMicros":"9007199254740993","timeWeight":0.25,"lambda":0.125,"maximumIterations":321,"marginalTolerance":1.0E-8,"maximumCosts":1234,"maximumWork":"9223372036854775807"}}}

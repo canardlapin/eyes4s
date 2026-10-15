@@ -1329,6 +1329,8 @@ fails after rewriting, so review the change and run it again.
 | `recipe-parameter.undeclared-window-frame` | `UndeclaredWindowFrame` | `admission` |
 | `recipe-parameter.pairing` | `Pairing` | `error` |
 | `recipe-parameter.point-sampling` | `PointSampling` | `error` |
+| `recipe-parameter.least-squares` | `LeastSquares` | `error` |
+| `recipe-parameter.scanpath` | `Scanpath` | `error` |
 
 ### `repetition-plan` — `RepetitionPlanError`
 
@@ -1394,6 +1396,7 @@ fails after rewriting, so review the change and run it again.
 | `template.numerical` | `Numerical` | `key`, `prediction`, `response` |
 | `template.evaluation` | `Evaluation` | `failed`, `total` |
 | `template.aggregate` | `Aggregate` | `operation`, `value` |
+| `template.split-groups` | `SplitGroups` | `values` |
 
 ### `analysis-finding` — `AnalysisFinding`
 
@@ -1553,6 +1556,15 @@ fails after rewriting, so review the change and run it again.
 | `project-prerequisite.missing-synchronization` | `MissingSynchronization` | `trial`, `selector`, `source`, `target`, `maximum`, `available` |
 | `project-prerequisite.imprecise-synchronization` | `ImpreciseSynchronization` | `trial`, `selector`, `source`, `target`, `maximum`, `best` |
 | `project-prerequisite.missing-schema` | `MissingSchema` | `id`, `availableVersions` |
+
+### `scanpath-comparison` — `ScanpathComparisonError`
+
+| Code | Case | Operands |
+|---|---|---|
+| `scanpath-comparison.parameter` | `Parameter` | `name`, `value` |
+| `scanpath-comparison.alignment-size` | `AlignmentSize` | `leftFixations`, `rightFixations`, `cells`, `maximum` |
+| `scanpath-comparison.alignment` | `Alignment` | `underlying` |
+| `scanpath-comparison.fixations` | `Fixations` | `underlying` |
 
 ### `codec` — `CodecError`
 

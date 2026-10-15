@@ -1041,3 +1041,9 @@ object ResultExports:
         )
       )
     )
+
+  /** Project an already completed scanpath archive into the common table layer. */
+  def scanpaths[K, U <: Unit2D: UnitLabel](
+      archive: ScanpathStudyArchive[K, U],
+      codec: ScanpathStudyCodec[K, U]
+  ): Either[ResultExportError, Vector[ResultTable]] = ScanpathResultExports(archive, codec)

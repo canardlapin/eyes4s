@@ -821,7 +821,8 @@ object DiagnosticCatalog:
     // appended by CR4 S3: a pair design refusal (a repetition control cap)
     "Pairing",
     "PointSampling",
-    "LeastSquares"
+    "LeastSquares",
+    "Scanpath"
   )
   val repetitionPlan: DiagnosticFamily = error("repetition-plan")(
     "ProjectionIds",
@@ -1125,7 +1126,8 @@ object DiagnosticCatalog:
     studyAdvisory,
     methodsFact,
     navigation,
-    projectPrerequisite
+    projectPrerequisite,
+    ScanpathMethodDiagnostics.comparison
   )
 
   /** Every live family, grouped as documented. */

@@ -271,7 +271,8 @@ class PreflightSuite extends munit.FunSuite:
         RecipeFamily.Repetition,
         RecipeFamily.PointSampling,
         RecipeFamily.TemplateFit,
-        RecipeFamily.Decomposition
+        RecipeFamily.Decomposition,
+        RecipeFamily.ScanpathComparison
       )
     )
   }
