@@ -369,12 +369,12 @@ class FakeStudyBackendSuite extends CatsEffectSuite:
       assertEquals(
         row.status,
         QueryStatus.Contributing(
-          Vector(0.41, 0.58, 0.73, 0.86),
-          Vector(0.22, 0.29, 0.35, 0.63),
-          Vector(0.19, 0.29, 0.38, 0.23)
+          Vector(0.463138, 0.823414, 0.936849, 0.974504),
+          Vector(0.044608, 0.128756, 0.321456, 0.635355),
+          Vector(0.41853, 0.694658, 0.615394, 0.339148)
         )
       )
-      assertEquals(pair, Inspection.Pair(control, "street-112", 0.61))
+      assertEquals(pair, Inspection.Pair(control, "street-112", 0.120571))
       assertEquals(
         other,
         Left(BackendError.Unavailable(DiagnosticLocus.Address(atScale1)))
@@ -397,7 +397,7 @@ class FakeStudyBackendSuite extends CatsEffectSuite:
       )
   }
 
-  test("the focus query's 19 control scores: highest street-112 0.61, mean 0.35") {
+  test("the focus query's 19 control scores: highest harbor-231 0.72, mean 0.32") {
     val focus    = key("P17", "ret_07")
     val controls = Vector(
       "enc_01",
@@ -433,9 +433,10 @@ class FakeStudyBackendSuite extends CatsEffectSuite:
       }
     yield
       assertEquals(scores.size, 19)
-      assertEquals(scores.maxBy(_._2), ("street-112", 0.61))
-      // FIXTURE.md rounds the mean to two places; B at 2° is the same mean.
-      assertEqualsDouble(scores.map(_._2).sum / 19, 0.35, 0.005)
+      assertEquals(scores.maxBy(_._2), ("harbor-231", 0.718785))
+      // B at 2° is the same mean, each operand and B stored to 6 places
+      // (SCORES.json): half a unit from the operands, half from B.
+      assertEqualsDouble(scores.map(_._2).sum / 19, 0.321456, 1e-6)
   }
 
   test("only run 7 has scores; data r2 is not in the fixture") {

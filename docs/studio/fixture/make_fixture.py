@@ -1,6 +1,12 @@
 """Deterministic mock study for the Eyes Studio design boards. Every number on every
-board must come from fixture.json (or FIXTURE.md, which summarises it)."""
+board must come from fixture.json (or FIXTURE.md, which summarises it).
+
+Science values (every M, B and D, the focus query's control scores, participant and
+grand means) are read from the executable golden fixture's SCORES.json, which eyes4s
+computed and which is authoritative for them (DESIGN_SPEC §15, owner decision
+2026-10-11). This script computes none of them."""
 import csv, json, random, statistics as st, sys
+from decimal import ROUND_HALF_UP, Decimal
 from pathlib import Path
 
 rng = random.Random(20260925)
@@ -94,6 +100,18 @@ def enc_of_item(k):  # encoding order differs from retrieval order
     return f"enc_{((k * 7) % 20) + 1:02d}"
 
 
+# The executable golden fixture. The path is resolved from this file, never from the
+# working directory (tools/studio-fixture runs this script in a scratch directory).
+GOLDEN = Path(__file__).resolve().parents[3] / "fixtures" / "studio-golden"
+if not (GOLDEN / "SCORES.json").is_file():
+    sys.exit(f"make_fixture.py: {GOLDEN / 'SCORES.json'} is missing; it is the science source")
+golden_scores = json.load(open(GOLDEN / "SCORES.json"))
+GOLDEN_SCALES = ["0.5", "1", "2", "4"]  # SCORES.json scale keys, in SCALES order
+FOCUS_SCALE = "2"  # σ 2°, the scale of every single-scale summary below
+golden_query = {(q["participant"], q["trial"]): q for q in golden_scores["queries"]}
+golden_summary = golden_scores["summaries"]
+
+
 study = {"participants": [], "summary": {}}
 pair_rows = 0
 qc = {
@@ -110,7 +128,10 @@ for pi, p in enumerate(parts):
         for (pp, t) in list(quarantine) + list(absent)
         if pp == p and t.startswith("enc")
     }
-    skill = rng.gauss(0.18, 0.09)
+    # The seed's draws are kept, in order, so the design they decide (each retrieval
+    # response) stays the one the golden trials table was generated from. The draws
+    # that once made illustrative scores are discarded.
+    rng.gauss(0.18, 0.09)
     queries = []
     for k, item in enumerate(items):
         rt = f"ret_{k+1:02d}"
@@ -142,42 +163,50 @@ for pi, p in enumerate(parts):
             else:
                 q["status"] = "ok"
                 qc["contributing"] += 1
-                base = skill + (0.12 if remembered else -0.06) + rng.gauss(0, 0.1)
-                prof = [0.5, 0.78, 1.0, 0.62]
-                q["D"] = [round(base * f, 2) for f in prof]
-                B = [round(v, 2) for v in (0.22, 0.29, 0.35, 0.63)]
-                q["B"] = [round(b + rng.gauss(0, 0.03), 2) for b in B]
-                q["M"] = [round(q["B"][i] + q["D"][i], 2) for i in range(4)]
+                for _ in range(5):
+                    rng.gauss(0, 1)
+                g = golden_query[(p, rt)]
+                assert g["status"] == "contributing", (p, rt, g["status"])
+                for k in ("M", "B", "D"):
+                    q[k] = [g["scales"][s][k] for s in GOLDEN_SCALES]
         queries.append(q)
     study["participants"].append({"id": p, "queries": queries})
 
-# Pin focus query P17 ret_07 beach-042
+# Focus query P17 ret_07 beach-042: its 19 control scores at σ 2°, from SCORES.json
+# focusQuery, highest first (ties in eyes4s's pair order).
 foc = next(q for q in study["participants"][16]["queries"] if q["item"] == "beach-042")
-foc.update(
-    {
-        "response": "Remembered",
-        "status": "ok",
-        "M": [0.41, 0.58, 0.73, 0.86],
-        "B": [0.22, 0.29, 0.35, 0.63],
-        "D": [0.19, 0.29, 0.38, 0.23],
-    }
+foc["response"] = "Remembered"  # the story's pin, which the golden trials table carries
+assert (foc["trial"], foc["status"], foc["controls"]) == ("ret_07", "ok", 19)
+# The design agrees with the golden fixture's query by query.
+for P in study["participants"]:
+    for q in P["queries"]:
+        g = golden_query.get((P["id"], q["trial"]))
+        if g is None:
+            assert q["status"] == "query not admitted", (P["id"], q["trial"])
+            continue
+        assert (g["item"], g["response"], g["controls"]) == (q["item"], q["response"], q.get("controls")), (P["id"], q["trial"])
+focus_golden = golden_scores["focusQuery"]
+assert (focus_golden["participant"], focus_golden["trial"]) == ("P17", "ret_07")
+foc["control_scores_2deg"] = sorted(
+    (
+        {"item": c["item"], "trial": c["reference"], "cos": c["score"]}
+        for c in focus_golden["controlPairs"][FOCUS_SCALE]
+    ),
+    key=lambda c: -c["cos"],
 )
-ctrl2 = [0.61,0.52,0.47,0.44,0.41,0.39,0.37,0.36,0.35,0.33,0.31,0.30,0.29,0.27,0.27,0.26,0.26,0.24,0.20]
-assert len(ctrl2) == 19
-foc["controls"] = 19
-foc["control_scores_2deg"] = [
-    {"item": it, "trial": enc_of_item(P17_ITEMS.index(it)), "cos": c}
-    for it, c in zip(
-        [i for i in P17_ITEMS if i != "beach-042"], sorted(ctrl2, reverse=True)
-    )
-]
-b = round(st.mean(ctrl2), 2)
-assert b == 0.35, b
+assert len(foc["control_scores_2deg"]) == 19
+assert all(c["item"] == P17_ITEMS[[enc_of_item(k) for k in range(20)].index(c["trial"])]
+           for c in foc["control_scores_2deg"])
+# B is the mean of the control scores, each rounded to 6 places as SCORES.json stores them.
+assert abs(st.mean(c["cos"] for c in foc["control_scores_2deg"]) - foc["B"][2]) <= 1e-6
 
-# Participant summaries (reporting spec: participant means, equal weight)
+# Participant summaries (reporting spec: participant means, equal weight), as eyes4s
+# reported them in SCORES.json summaries.
 rows = []
 for P in study["participants"]:
     ok = [q for q in P["queries"] if q["status"] == "ok"]
+    gp = {s: golden_summary[s]["participants"][P["id"]] for s in GOLDEN_SCALES}
+    assert gp[FOCUS_SCALE]["queries"] == len(ok), P["id"]
     r = {
         "id": P["id"],
         "requested": len(P["queries"]),
@@ -187,29 +216,25 @@ for P in study["participants"]:
         "not_admitted": sum(q["status"] == "query not admitted" for q in P["queries"]),
     }
     for g in ("Remembered", "Forgotten"):
-        gq = [q for q in ok if q["response"] == g]
+        gg = gp[FOCUS_SCALE]["byResponse"][g]
+        assert gg["queries"] == sum(q["response"] == g for q in ok), (P["id"], g)
         r[g] = (
             None
-            if not gq
-            else {
-                "n": len(gq),
-                "M": round(st.mean(q["M"][2] for q in gq), 2),
-                "B": round(st.mean(q["B"][2] for q in gq), 2),
-                "D": round(st.mean(q["D"][2] for q in gq), 2),
-            }
+            if not gg["queries"]
+            else {"n": gg["queries"], "M": gg["M"], "B": gg["B"], "D": gg["D"]}
         )
     r["all"] = {
-        "M": round(st.mean(q["M"][2] for q in ok), 2),
-        "B": round(st.mean(q["B"][2] for q in ok), 2),
-        "D": round(st.mean(q["D"][2] for q in ok), 2),
-        "D_by_scale": [round(st.mean(q["D"][i] for q in ok), 2) for i in range(4)],
+        "M": gp[FOCUS_SCALE]["M"],
+        "B": gp[FOCUS_SCALE]["B"],
+        "D": gp[FOCUS_SCALE]["D"],
+        "D_by_scale": [gp[s]["D"] for s in GOLDEN_SCALES],
     }
     rows.append(r)
-# P05: force Forgotten group empty to demonstrate "no value, not zero"
-p05 = next(r for r in rows if r["id"] == "P05")
 study["summary"]["participants"] = rows
-gm = lambda g: round(st.mean(r[g]["D"] for r in rows if r[g]), 2)
+grand = lambda s: golden_summary[s]["grand"]["D"]["estimate"]
+by_response = lambda s, g: golden_summary[s]["byResponse"][g]
 paired = [r for r in rows if r["Remembered"] and r["Forgotten"]]
+assert golden_summary[FOCUS_SCALE]["rememberedMinusForgotten"]["paired"] == len(paired)
 study["summary"].update(
     {
         "inventory_trials": 960,
@@ -228,20 +253,31 @@ study["summary"].update(
         "pair_rows_per_scale": pair_rows,
         "pair_rows_all_scales": pair_rows * 4,
         "scales": SCALES,
-        "grand_D_all": round(st.mean(r["all"]["D"] for r in rows), 2),
-        "grand_D_by_scale": [
-            round(st.mean(r["all"]["D_by_scale"][i] for r in rows), 2) for i in range(4)
-        ],
-        "grand_D_Remembered": gm("Remembered"),
-        "grand_D_Forgotten": gm("Forgotten"),
-        "n_Remembered": sum(1 for r in rows if r["Remembered"]),
-        "n_Forgotten": sum(1 for r in rows if r["Forgotten"]),
+        "grand_D_all": grand(FOCUS_SCALE),
+        "grand_D_by_scale": [grand(s) for s in GOLDEN_SCALES],
+        "grand_D_Remembered": by_response(FOCUS_SCALE, "Remembered")["estimate"],
+        "grand_D_Forgotten": by_response(FOCUS_SCALE, "Forgotten")["estimate"],
+        "n_Remembered": by_response(FOCUS_SCALE, "Remembered")["participants"],
+        "n_Forgotten": by_response(FOCUS_SCALE, "Forgotten")["participants"],
         "n_paired": len(paired),
     }
 )
 json.dump(study, open("fixture.json", "w"), indent=1)
 
 S = study["summary"]
+
+
+def fmt(value, signed=False):
+    """2 places, half-up on the shortest decimal of the double, U+2212 for a minus:
+    the app's Format.decimal / Format.signed, so a board cell reads as the app."""
+    text = str(Decimal(repr(value)).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP))
+    if text.startswith("-"):
+        return "−" + text[1:]
+    return "+" + text if signed and text != "0.00" else text
+
+
+fmts = lambda vs: "[" + ", ".join(fmt(v) for v in vs) + "]"
+ranked = foc["control_scores_2deg"]
 lines = [
     "# Mock study fixture (generated by make_fixture.py — do not hand-edit numbers)",
     "",
@@ -255,12 +291,13 @@ lines = [
     "Controls: same participant, Encoding, other items, all admitted → 19 per query (18 where one encoding trial was not admitted).",
     f"Query contrasts (retrieval trials): {json.dumps(S['query_contrasts'])}.",
     f"Pair rows: {S['pair_rows_per_scale']} per scale, {S['pair_rows_all_scales']} across 4 scales.",
-    f"Grand mean D (participant means, equal weight, σ 2°): {S['grand_D_all']}. By scale: {S['grand_D_by_scale']}.",
-    f"Reporting by retrieval response: Remembered mean D {S['grand_D_Remembered']} (n={S['n_Remembered']} participants), "
-    f"Forgotten {S['grand_D_Forgotten']} (n={S['n_Forgotten']}); paired n={S['n_paired']}.",
+    "Science values: every M, B and D below is eyes4s's, read from fixtures/studio-golden/SCORES.json (6 places in fixture.json, shown here to 2 places as the app rounds them).",
+    f"Grand mean D (participant means, equal weight, σ 2°): {fmt(S['grand_D_all'])}. By scale: {fmts(S['grand_D_by_scale'])}.",
+    f"Reporting by retrieval response: Remembered mean D {fmt(S['grand_D_Remembered'])} (n={S['n_Remembered']} participants), "
+    f"Forgotten {fmt(S['grand_D_Forgotten'])} (n={S['n_Forgotten']}); paired n={S['n_paired']}.",
     "",
     "Focus query: P17 · ret_07 · beach-042 (Remembered). Matched reference: P17 · enc_03 · beach-042 (encoding order differs from retrieval order). P17 ret_09 is absent (not admitted)..",
-    f"  M/B/D by scale: M {foc['M']} B {foc['B']} D {foc['D']}. 19 controls at 2°, highest street-112 (enc_01) 0.61, mean 0.35.",
+    f"  M/B/D by scale: M {fmts(foc['M'])} B {fmts(foc['B'])} D {fmts(foc['D'])}. 19 controls at 2°, highest {ranked[0]['item']} ({ranked[0]['trial']}) {fmt(ranked[0]['cos'])}, mean {fmt(foc['B'][2])}.",
     "",
     "## Participant table (σ 2°)",
     "",
@@ -268,9 +305,9 @@ lines = [
     "|---|---|---|---|---|---|---|---|---|---|---|",
 ]
 for r in rows:
-    f = lambda g: "—" if not r[g] else f"{r[g]['D']:+.2f} ({r[g]['n']})"
+    f = lambda g: "—" if not r[g] else f"{fmt(r[g]['D'], True)} ({r[g]['n']})"
     lines.append(
-        f"| {r['id']} | {r['requested']} | {r['contributing']} | {r['failed']} | {r['no_match']} | {r['not_admitted']} | {r['all']['M']:.2f} | {r['all']['B']:.2f} | {r['all']['D']:+.2f} | {f('Remembered')} | {f('Forgotten')} |"
+        f"| {r['id']} | {r['requested']} | {r['contributing']} | {r['failed']} | {r['no_match']} | {r['not_admitted']} | {fmt(r['all']['M'])} | {fmt(r['all']['B'])} | {fmt(r['all']['D'], True)} | {f('Remembered')} | {f('Forgotten')} |"
     )
 open("FIXTURE.md", "w").write("\n".join(lines) + "\n")
 print("\n".join(lines[:16]))
@@ -280,8 +317,6 @@ print("focus match trial:", foc["match"])
 # Record-level facts (records per trial, which records lie outside the analysis
 # window, durations, the focus fixations) come from the executable golden
 # fixture, which is authoritative for them (owner decision D2, 2026-10-11).
-# The path is resolved from this file, never from the working directory.
-GOLDEN = Path(__file__).resolve().parents[3] / "fixtures" / "studio-golden"
 SCREEN_BOX = (0, 0, 1920, 1080)  # screen frame, px, y down, half-open
 WINDOW_BOX = (448, 156, 448 + 1024, 156 + 768)  # image frame on screen = analysis window
 
@@ -293,7 +328,6 @@ def in_box(box, x, y):
 if not (GOLDEN / "fixations.csv").is_file():
     sys.exit(f"make_fixture.py: {GOLDEN / 'fixations.csv'} is missing; it is the record-level source")
 golden_rows = list(csv.DictReader(open(GOLDEN / "fixations.csv", newline="")))
-golden_scores = json.load(open(GOLDEN / "SCORES.json"))
 records = {}  # (participant, trial) -> [(ordinal, x, y, onset_ms, duration_ms, sample_count)]
 for r in golden_rows:
     records.setdefault((r["participant"], r["trial"]), []).append(
@@ -376,34 +410,26 @@ S["candidate_pairs_cartesian_per_scale"] = (
 S["paired_group_n_range"] = [min(min(r["Remembered"]["n"], r["Forgotten"]["n"]) for r in rows),
                             max(max(r["Remembered"]["n"], r["Forgotten"]["n"]) for r in rows)]
 S["P17_queries_as_control_for_enc_03"] = 18
-def gscale(g):
-    out = []
-    for i in range(4):
-        vals = []
-        for P in study["participants"]:
-            gq = [q for q in P["queries"] if q["status"] == "ok" and q["response"] == g]
-            if gq:
-                vals.append(st.mean(q["D"][i] for q in gq))
-        out.append(round(st.mean(vals), 2))
-    return out
-S["grand_D_by_scale_Remembered"] = gscale("Remembered")
-S["grand_D_by_scale_Forgotten"] = gscale("Forgotten")
+S["grand_D_by_scale_Remembered"] = [by_response(s, "Remembered")["estimate"] for s in GOLDEN_SCALES]
+S["grand_D_by_scale_Forgotten"] = [by_response(s, "Forgotten")["estimate"] for s in GOLDEN_SCALES]
 
-# Paired descriptive (Results "Δ Remembered − Forgotten"), σ 2°, status ok: per participant,
-# mean Remembered D − mean Forgotten D over the (2-dp) query D values, computed before
-# rounding participant means; then the plain mean over participants with both groups.
-diffs = {}
-for P in study["participants"]:
-    ok = [q for q in P["queries"] if q["status"] == "ok"]
-    g = {r: [q["D"][2] for q in ok if q["response"] == r] for r in ("Remembered", "Forgotten")}
-    if g["Remembered"] and g["Forgotten"]:
-        diffs[P["id"]] = st.mean(g["Remembered"]) - st.mean(g["Forgotten"])
+# Paired descriptive (Results "Δ Remembered − Forgotten"), σ 2°, status ok. The mean is
+# eyes4s's contrast (SCORES.json rememberedMinusForgotten). Each participant's difference
+# is the difference of its two SCORES.json group means, so it carries their 6-place
+# rounding: within 1e-6 of eyes4s's unrounded difference.
+contrast = golden_summary[FOCUS_SCALE]["rememberedMinusForgotten"]
+diffs = {
+    r["id"]: round(r["Remembered"]["D"] - r["Forgotten"]["D"], 6)
+    for r in rows
+    if r["Remembered"] and r["Forgotten"]
+}
+assert abs(st.mean(diffs.values()) - contrast["estimate"]) <= 1e-6
 lo, hi = min(diffs, key=diffs.get), max(diffs, key=diffs.get)
 S["paired_D_diff"] = {
     "scale": "2°",
     "status": "ok",
-    "rounding": "computed before rounding participant means",
-    "mean": round(st.mean(diffs.values()), 6),
+    "rounding": "differences of the 6-place participant group means",
+    "mean": contrast["estimate"],
     "min": {"participant": lo, "value": round(diffs[lo], 6)},
     "max": {"participant": hi, "value": round(diffs[hi], 6)},
     "positive_k": sum(v > 0 for v in diffs.values()),
@@ -411,8 +437,8 @@ S["paired_D_diff"] = {
     "missing_pairs": len(parts) - len(diffs),
     "by_participant": {p: round(v, 6) for p, v in sorted(diffs.items())},
 }
-assert S["paired_D_diff"]["mean"] == 0.155667 and S["paired_D_diff"]["paired_n"] == S["n_paired"]
-assert (lo, round(diffs[lo], 6), hi, round(diffs[hi], 4)) == ("P21", 0.05, "P15", 0.2613)
+assert S["paired_D_diff"]["paired_n"] == S["n_paired"] == contrast["paired"]
+assert contrast["unpaired"] == S["paired_D_diff"]["missing_pairs"]
 
 # Control scores exist only at σ 2° (control_scores_2deg). Other scales are not invented: a board that
 # draws them tags them "illustrative".
@@ -434,7 +460,7 @@ study["focus_fixations"] = {
 }
 json.dump(study, open("fixture.json", "w"), indent=1)
 with open("FIXTURE.md", "a") as f:
-    f.write(f"- Grand D by scale (0.5/1/2/4°) by group: Remembered {S['grand_D_by_scale_Remembered']}, Forgotten {S['grand_D_by_scale_Forgotten']}.\n")
+    f.write(f"- Grand D by scale (0.5/1/2/4°) by group: Remembered {fmts(S['grand_D_by_scale_Remembered'])}, Forgotten {fmts(S['grand_D_by_scale_Forgotten'])}.\n")
     f.write("\n## Round 3 additions (generated)\n\n")
     f.write(f"- Fixation records outside the image frame (analysis window): {S['outside_window_records']} of 11,520, in {S['outside_window_trials']} trials. Excluded from maps, reported.\n")
     f.write(f"- Focus query outside window: ret_07 {S['focus_outside']['ret_07']}; enc_03 {S['focus_outside']['enc_03']}. P05's 3 failed queries: 11 of 11 fixations outside.\n")

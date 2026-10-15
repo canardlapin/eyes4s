@@ -9,41 +9,42 @@ Scales σ: 0.5°, 1°, 2°, 4° (declared 35 px/°, not calibrated). Grid 64×48
 Controls: same participant, Encoding, other items, all admitted → 19 per query (18 where one encoding trial was not admitted).
 Query contrasts (retrieval trials): {"requested": 480, "query_not_admitted": 14, "no_match": 9, "failed": 3, "contributing": 454}.
 Pair rows: 8969 per scale, 35876 across 4 scales.
-Grand mean D (participant means, equal weight, σ 2°): 0.26. By scale: [0.13, 0.2, 0.26, 0.16].
-Reporting by retrieval response: Remembered mean D 0.3 (n=24 participants), Forgotten 0.15 (n=24); paired n=24.
+Science values: every M, B and D below is eyes4s's, read from fixtures/studio-golden/SCORES.json (6 places in fixture.json, shown here to 2 places as the app rounds them).
+Grand mean D (participant means, equal weight, σ 2°): 0.38. By scale: [0.27, 0.42, 0.38, 0.19].
+Reporting by retrieval response: Remembered mean D 0.43 (n=24 participants), Forgotten 0.24 (n=24); paired n=24.
 
 Focus query: P17 · ret_07 · beach-042 (Remembered). Matched reference: P17 · enc_03 · beach-042 (encoding order differs from retrieval order). P17 ret_09 is absent (not admitted)..
-  M/B/D by scale: M [0.41, 0.58, 0.73, 0.86] B [0.22, 0.29, 0.35, 0.63] D [0.19, 0.29, 0.38, 0.23]. 19 controls at 2°, highest street-112 (enc_01) 0.61, mean 0.35.
+  M/B/D by scale: M [0.46, 0.82, 0.94, 0.97] B [0.04, 0.13, 0.32, 0.64] D [0.42, 0.69, 0.62, 0.34]. 19 controls at 2°, highest harbor-231 (enc_11) 0.72, mean 0.32.
 
 ## Participant table (σ 2°)
 
 | P | req | contrib | failed | no match | not admitted | mean M | mean B | mean D | Rem D (n) | Forg D (n) |
 |---|---|---|---|---|---|---|---|---|---|---|
-| P01 | 20 | 19 | 0 | 0 | 1 | 0.52 | 0.35 | +0.17 | +0.26 (11) | +0.06 (8) |
-| P02 | 20 | 19 | 0 | 0 | 1 | 0.58 | 0.36 | +0.22 | +0.27 (13) | +0.12 (6) |
-| P03 | 20 | 19 | 0 | 1 | 0 | 0.68 | 0.35 | +0.33 | +0.38 (15) | +0.15 (4) |
-| P04 | 20 | 19 | 0 | 0 | 1 | 0.65 | 0.36 | +0.29 | +0.36 (12) | +0.18 (7) |
-| P05 | 20 | 17 | 3 | 0 | 0 | 0.27 | 0.34 | -0.08 | -0.03 (13) | -0.23 (4) |
-| P06 | 20 | 19 | 0 | 0 | 1 | 0.59 | 0.34 | +0.25 | +0.30 (11) | +0.17 (8) |
-| P07 | 20 | 19 | 0 | 1 | 0 | 0.62 | 0.35 | +0.27 | +0.32 (15) | +0.10 (4) |
-| P08 | 20 | 19 | 0 | 1 | 0 | 0.61 | 0.35 | +0.25 | +0.31 (12) | +0.15 (7) |
-| P09 | 20 | 19 | 0 | 0 | 1 | 0.67 | 0.35 | +0.32 | +0.34 (15) | +0.24 (4) |
-| P10 | 20 | 19 | 0 | 1 | 0 | 0.78 | 0.35 | +0.43 | +0.45 (16) | +0.33 (3) |
-| P11 | 20 | 19 | 0 | 1 | 0 | 0.57 | 0.35 | +0.22 | +0.28 (13) | +0.11 (6) |
-| P12 | 20 | 19 | 0 | 0 | 1 | 0.64 | 0.35 | +0.28 | +0.34 (12) | +0.19 (7) |
-| P13 | 20 | 19 | 0 | 0 | 1 | 0.47 | 0.36 | +0.11 | +0.17 (11) | +0.03 (8) |
-| P14 | 20 | 19 | 0 | 1 | 0 | 0.62 | 0.35 | +0.27 | +0.29 (14) | +0.22 (5) |
-| P15 | 20 | 19 | 0 | 1 | 0 | 0.45 | 0.35 | +0.10 | +0.18 (13) | -0.08 (6) |
-| P16 | 20 | 19 | 0 | 0 | 1 | 0.74 | 0.35 | +0.38 | +0.45 (12) | +0.28 (7) |
-| P17 | 20 | 19 | 0 | 0 | 1 | 0.73 | 0.35 | +0.38 | +0.38 (17) | +0.32 (2) |
-| P18 | 20 | 19 | 0 | 1 | 0 | 0.76 | 0.35 | +0.41 | +0.42 (16) | +0.37 (3) |
-| P19 | 20 | 19 | 0 | 0 | 1 | 0.59 | 0.35 | +0.24 | +0.29 (15) | +0.06 (4) |
-| P20 | 20 | 19 | 0 | 0 | 1 | 0.59 | 0.37 | +0.22 | +0.26 (14) | +0.12 (5) |
-| P21 | 20 | 19 | 0 | 1 | 0 | 0.67 | 0.35 | +0.31 | +0.32 (17) | +0.27 (2) |
-| P22 | 20 | 19 | 0 | 0 | 1 | 0.54 | 0.35 | +0.19 | +0.27 (12) | +0.06 (7) |
-| P23 | 20 | 19 | 0 | 0 | 1 | 0.64 | 0.34 | +0.30 | +0.34 (14) | +0.21 (5) |
-| P24 | 20 | 19 | 0 | 0 | 1 | 0.65 | 0.34 | +0.30 | +0.36 (13) | +0.17 (6) |
-- Grand D by scale (0.5/1/2/4°) by group: Remembered [0.15, 0.24, 0.3, 0.19], Forgotten [0.07, 0.12, 0.15, 0.09].
+| P01 | 20 | 19 | 0 | 0 | 1 | 0.73 | 0.31 | +0.42 | +0.47 (11) | +0.35 (8) |
+| P02 | 20 | 19 | 0 | 0 | 1 | 0.71 | 0.29 | +0.43 | +0.46 (13) | +0.35 (6) |
+| P03 | 20 | 19 | 0 | 1 | 0 | 0.80 | 0.33 | +0.47 | +0.49 (15) | +0.37 (4) |
+| P04 | 20 | 19 | 0 | 0 | 1 | 0.71 | 0.36 | +0.35 | +0.44 (12) | +0.20 (7) |
+| P05 | 20 | 17 | 3 | 0 | 0 | 0.70 | 0.35 | +0.35 | +0.39 (13) | +0.22 (4) |
+| P06 | 20 | 19 | 0 | 0 | 1 | 0.69 | 0.38 | +0.31 | +0.38 (11) | +0.22 (8) |
+| P07 | 20 | 19 | 0 | 1 | 0 | 0.69 | 0.35 | +0.34 | +0.38 (15) | +0.21 (4) |
+| P08 | 20 | 19 | 0 | 1 | 0 | 0.75 | 0.41 | +0.34 | +0.40 (12) | +0.25 (7) |
+| P09 | 20 | 19 | 0 | 0 | 1 | 0.72 | 0.35 | +0.37 | +0.41 (15) | +0.21 (4) |
+| P10 | 20 | 19 | 0 | 1 | 0 | 0.80 | 0.37 | +0.43 | +0.44 (16) | +0.34 (3) |
+| P11 | 20 | 19 | 0 | 1 | 0 | 0.70 | 0.34 | +0.36 | +0.47 (13) | +0.12 (6) |
+| P12 | 20 | 19 | 0 | 0 | 1 | 0.75 | 0.34 | +0.41 | +0.48 (12) | +0.29 (7) |
+| P13 | 20 | 19 | 0 | 0 | 1 | 0.69 | 0.39 | +0.30 | +0.36 (11) | +0.22 (8) |
+| P14 | 20 | 19 | 0 | 1 | 0 | 0.72 | 0.38 | +0.34 | +0.40 (14) | +0.17 (5) |
+| P15 | 20 | 19 | 0 | 1 | 0 | 0.73 | 0.35 | +0.38 | +0.39 (13) | +0.36 (6) |
+| P16 | 20 | 19 | 0 | 0 | 1 | 0.73 | 0.33 | +0.40 | +0.47 (12) | +0.27 (7) |
+| P17 | 20 | 19 | 0 | 0 | 1 | 0.72 | 0.34 | +0.38 | +0.40 (17) | +0.22 (2) |
+| P18 | 20 | 19 | 0 | 1 | 0 | 0.76 | 0.38 | +0.38 | +0.43 (16) | +0.14 (3) |
+| P19 | 20 | 19 | 0 | 0 | 1 | 0.73 | 0.35 | +0.37 | +0.41 (15) | +0.22 (4) |
+| P20 | 20 | 19 | 0 | 0 | 1 | 0.75 | 0.38 | +0.37 | +0.44 (14) | +0.20 (5) |
+| P21 | 20 | 19 | 0 | 1 | 0 | 0.76 | 0.40 | +0.36 | +0.38 (17) | +0.23 (2) |
+| P22 | 20 | 19 | 0 | 0 | 1 | 0.74 | 0.36 | +0.38 | +0.50 (12) | +0.19 (7) |
+| P23 | 20 | 19 | 0 | 0 | 1 | 0.77 | 0.40 | +0.37 | +0.41 (14) | +0.28 (5) |
+| P24 | 20 | 19 | 0 | 0 | 1 | 0.77 | 0.38 | +0.39 | +0.46 (13) | +0.25 (6) |
+- Grand D by scale (0.5/1/2/4°) by group: Remembered [0.31, 0.47, 0.43, 0.22], Forgotten [0.18, 0.28, 0.24, 0.11].
 
 ## Round 3 additions (generated)
 
@@ -60,7 +61,7 @@ Focus query: P17 · ret_07 · beach-042 (Remembered). Matched reference: P17 · 
 - Matched cardinality: every eligible query has exactly 1 matched reference (0 duplicates, checked). The 9 no-match queries are reported under the persisted policy 'Queries without a matched reference: report as no match'.
 - Records by admission (golden fixations.csv): 11,311 in admitted trials, 209 in the 17 quarantined trials; outside-window records in quarantined trials: 0.
 - Methods: of 11,311 fixation records in admitted trials, 543 lay outside the analysis window (159,142 / 3,282,108 ms = 4.85% of those trials' fixation duration). Records outside the screen: 0 (SCORES.json counts.recordsOutsideScreen).
-- Paired Δ Remembered − Forgotten (σ 2°, status ok, computed before rounding participant means): mean 0.155667; min P21 0.05, max P15 0.261282; higher in 24 of 24 paired participants; missing pairs 0.
+- Paired Δ Remembered − Forgotten (σ 2°, status ok, differences of the 6-place participant group means): mean 0.184178; min P15 0.038114, max P11 0.343853; higher in 24 of 24 paired participants; missing pairs 0.
 - Focus fixation lists (fixture.json focus_fixations, from the golden fixations.csv): 21 trials, P17 ret_07, enc_03 and its 19 controls.
 
 ## Story moments (boards are snapshots in one timeline)

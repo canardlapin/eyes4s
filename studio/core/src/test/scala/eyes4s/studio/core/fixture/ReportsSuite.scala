@@ -33,8 +33,11 @@ import munit.CatsEffectSuite
 class ReportsSuite extends CatsEffectSuite:
   import StoryMoments.run7
 
-  /** The fixture's means are written to two decimals; eyes4s's are exact. */
-  private val FixtureRounding: Double = 0.005 + 1e-9
+  /** The fixture's means are SCORES.json's, rounded to six places; the
+    * served ones are means of query scores each rounded to six places: half a
+    * unit in the last place from each side.
+    */
+  private val FixtureRounding: Double = 1e-6 + 1e-12
 
   private def fake = FakeStudyBackend.create[IO](StoryMoment.T2)
 
