@@ -40,7 +40,7 @@ enum GeometryTextId derives CanEqual:
   case CheckPlacement, CheckPlacementNote, ThumbTrial, ThumbInside, ThumbInsideOne
   case ThumbOutside, ThumbOffScreen, ThumbMissing, ThumbUnreadable, ThumbAccessible
   case ThumbAccessibleMissing, ThumbAccessibleUnreadable, ThumbRecords, ThumbRecordsOne
-  case ThumbMarked, AllTrials, AllTrialsCaption, AllTrialsCorrected
+  case ThumbMarked, ThumbList, ThumbListOne, AllTrials, AllTrialsCaption, AllTrialsCorrected
   case DensityAccessible, DensityCellsDrawn, DensityCellsDrawnOne, DensityRange
   case DensityOverflow, DensityKey, PositionsWaiting, PositionsStale, PositionsFailed
   case PositionsUnplaced, PositionsUnplacedOne
@@ -117,9 +117,13 @@ object GeometryText:
     case ThumbAccessibleMissing => "{0}: missing asset, {1} not found, field drawn hatched; {2}"
     case ThumbAccessibleUnreadable =>
       "{0}: unreadable asset, {1} could not be read, field drawn hatched; {2}"
-    case ThumbRecords     => "{0} records, {1} outside the image frame, {2} outside the screen"
-    case ThumbRecordsOne  => "1 record, {0} outside the image frame, {1} outside the screen"
-    case ThumbMarked      => "{0}, chosen for marking"
+    case ThumbRecords    => "{0} records, {1} outside the image frame, {2} outside the screen"
+    case ThumbRecordsOne => "1 record, {0} outside the image frame, {1} outside the screen"
+    case ThumbMarked     => "{0}, chosen for marking"
+    case ThumbList       =>
+      "Placement check, {0} trials; arrow keys move, Enter or Space chooses the trial to mark"
+    case ThumbListOne =>
+      "Placement check, 1 trial; arrow keys move, Enter or Space chooses the trial to mark"
     case AllTrials        => "All trials overlaid"
     case AllTrialsCaption =>
       "{0} records, screen coordinates. A flipped or shifted participant shows up as mass " +

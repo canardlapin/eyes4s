@@ -896,15 +896,62 @@ class GeometryPanelSuite extends munit.FunSuite:
     )
   }
 
-  test("each drawn thumbnail is a stop before the density, in the order drawn") {
+  test(
+    "the drawn thumbnails are one list stop before the density, named as the board names it"
+  ) {
     import eyes4s.studio.app.vm.{A11yRole, FocusStop}
     val panel = loaded(small)
     val vm    = GeometryPanelVM.of(panel, small, Some(picture(panel, small)))
-    assert(vm.thumbnails.nonEmpty)
+    assert(vm.thumbnails.size > 1)
     val stops = GeometryPanelVM.focusStops(vm, fields = false)
     assertEquals(
-      stops.take(vm.thumbnails.size + 1),
-      vm.thumbnails.map(t => FocusStop(A11yRole.ToggleButton, t.accessible)) :+
+      stops.take(2),
+      Vector(
+        FocusStop(A11yRole.List, vm.thumbnailsAccessible),
         FocusStop(A11yRole.Plot, vm.densityAccessible)
+      )
     )
+    assertEquals(stops.count(_.role == A11yRole.List), 1)
+    assertEquals(stops.count(_.role == A11yRole.ToggleButton), 0)
+    assertEquals(
+      vm.thumbnailsAccessible,
+      s"Placement check, ${vm.thumbnails.size} trials; arrow keys move, Enter or Space " +
+        "chooses the trial to mark"
+    )
+    // No thumbnail drawn, no list stop.
+    val none = GeometryPanelVM.of(panel, small, None)
+    assertEquals(none.thumbnails, Vector.empty)
+    assert(!GeometryPanelVM.focusStops(none, fields = false).exists(_.role == A11yRole.List))
+  }
+
+  test("the thumbnail strip's cursor: home on the marked thumbnail, else the first") {
+    val panel  = loaded(small)
+    val vm     = GeometryPanelVM.of(panel, small, Some(picture(panel, small)))
+    val thumbs = vm.thumbnails
+    assert(thumbs.size > 1)
+    assertEquals(GeometryPanelVM.thumbnailHome(Vector.empty), None)
+    assertEquals(GeometryPanelVM.thumbnailHome(thumbs), Some(0))
+    val second = thumbs(1).trial
+    val marked = GeometryPanel.update(panel, small, GeometryIntent.MarkTrial(second))._1
+    val vm2    = GeometryPanelVM.of(marked, small, Some(picture(marked, small)))
+    assertEquals(GeometryPanelVM.thumbnailHome(vm2.thumbnails), Some(1))
+  }
+
+  test("the thumbnail strip's keys: arrows step and move a row, Home and End, never wrap") {
+    import eyes4s.studio.app.plot.RovingMove.*
+    def move(at: Int, m: eyes4s.studio.app.plot.RovingMove, count: Int = 4) =
+      GeometryPanelVM.thumbnailMove(at, m, count)
+    // Two columns: 0 1 / 2 3.
+    assertEquals(GeometryPanelVM.ThumbnailColumns, 2)
+    assertEquals(Vector(move(0, Right), move(1, Right), move(3, Right)), Vector(1, 2, 3))
+    assertEquals(Vector(move(3, Left), move(2, Left), move(0, Left)), Vector(2, 1, 0))
+    assertEquals(Vector(move(0, Next), move(3, Next), move(1, Previous)), Vector(1, 3, 0))
+    assertEquals(Vector(move(0, Down), move(1, Down), move(2, Down)), Vector(2, 3, 2))
+    assertEquals(Vector(move(3, Up), move(2, Up), move(1, Up)), Vector(1, 0, 1))
+    assertEquals(Vector(move(2, First), move(0, Last)), Vector(0, 3))
+    // Three thumbnails: below 1 there is none, so Down stays put.
+    assertEquals(move(1, Down, 3), 1)
+    assertEquals(move(0, Down, 3), 2)
+    assertEquals(move(0, Last, 3), 2)
+    assertEquals(move(0, Right, 1), 0)
   }
