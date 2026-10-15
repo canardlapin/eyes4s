@@ -141,3 +141,12 @@ The cursor preserves every row and failure in input order. Its `Stepwise` instan
 uses the same operations. The [cursor evidence](evidence/point-sampling-cursor-20261015.json)
 records pinned legacy-payload comparisons across quanta, overflow and immutability
 checks, JVM/Scala.js validation, and a dropped-row mutant rejected on both runtimes.
+
+`PointSamplingExecution[F]` interprets this work through the common `Execution`
+runner. `events` emits deterministic step progress; `start` returns a cancellable
+resource with an outcome and a coalescing progress stream. Preparation has one
+unit, and the sampling segment has exactly the focal-trial count. Empty input
+finishes in preparation. The run identity binds input, recipe and trial quantum.
+Cancellation retains the last completed step and is observed between operations.
+The [execution receipt](evidence/point-sampling-execution-20261015.json) records
+barrier-controlled cancellation and the full shared-runner regression matrix.
