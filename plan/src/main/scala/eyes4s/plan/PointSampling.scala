@@ -310,6 +310,31 @@ final class PointSamplingPlan[K, U <: Unit2D] private (
     val inputHash: ContentHash,
     val planHash: ContentHash
 ):
+  /** The complete source and template input identity. */
+  def inputRef: ArtifactRef[(StudyInput[K, U], Trials[K, Unit, Signed[U]])] =
+    ArtifactRef.of(inputHash)
+  def description: Vector[(String, Vector[Provenance.Param])] =
+    PointSamplingDescriptions.description(this)
+  def inspect: Either[DescriptorError, RecipeInspection] =
+    PointSamplingDescriptions.inspect(this)
+  def diff(other: PointSamplingPlan[K, U]): Vector[PlanChange] =
+    PlanChange.between(description, other.description)
+
+  /** Metadata-only availability: matching, clocks and frames are checked;
+    * normalization, point lookup and numerical reductions remain execution work.
+    */
+  def preflight(
+      available: Option[ArtifactRef[(StudyInput[K, U], Trials[K, Unit, Signed[U]])]]
+  ): AnalysisReport[K, (StudyInput[K, U], Trials[K, Unit, Signed[U]])] =
+    AnalysisReport.of(
+      RecipeFamily.PointSampling,
+      description,
+      inputRef,
+      available,
+      PointSamplingChecks.findings(this),
+      Vector(UncheckedAspect.PointSampling, UncheckedAspect.FailurePolicyReduction)
+    )
+
   /** Unstarted work: preparation and each trial's complete sampling are whole operations. */
   def work: PointSamplingCursor[K, U] =
     new PointSamplingCursor(this, None, 0, Vector.empty)
@@ -319,38 +344,8 @@ final class PointSamplingPlan[K, U <: Unit2D] private (
   private[plan] def prepareWork: PreparedPointSampling[K, U] =
     given KeyDigest[K] = layout.digest
     val sources        = source.trials.rows
-    val duplicates = sources.zipWithIndex.groupBy(_._1.key).view.mapValues(_.map(_._2)).toMap
-    val resolved: Vector[Either[PointSamplingError[K], Int]] = sources.map { row =>
-      val p          = layout.participant(row.key); val s = layout.stimulus(row.key)
-      val candidates = templates.rows.zipWithIndex.collect {
-        case (t, i) if layout.participant(t.key) == p && layout.stimulus(t.key) == s => i
-      }
-      if duplicates(row.key).size > 1 then
-        Left(
-          PointSamplingError
-            .AtTrial(row.key, None, PointSamplingError.DuplicateSource(duplicates(row.key)))
-        )
-      else
-        candidates match
-          case Vector(i) => Right(i)
-          case Vector()  =>
-            Left(
-              PointSamplingError.AtTrial(
-                row.key,
-                None,
-                PointSamplingError.MissingTemplate(p, s)
-              )
-            )
-          case indices =>
-            Left(
-              PointSamplingError.AtTrial(
-                row.key,
-                None,
-                PointSamplingError.AmbiguousTemplate(p, s, indices)
-              )
-            )
-    }
-    val admitted = Trials(
+    val resolved       = PointSamplingChecks.matches(this)
+    val admitted       = Trials(
       sources.zip(resolved).collect { case (row, Right(index)) => Trial(row.key, (), index) }
     )
     // One candidate per distinct matched template, so a template matched by several sources is

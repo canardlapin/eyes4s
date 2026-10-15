@@ -280,8 +280,23 @@ object ResultExports:
   def points[K, U <: Unit2D: UnitLabel](
       archive: PointSamplingArchive[K, U],
       codec: PointSamplingCodec[K, U]
+  ): Either[ResultExportError, Vector[ResultTable]] =
+    pointTables(archive, codec.keys, codec.archive.encode(archive), codec.error)
+
+  /** The uniform family route retains the stamped archive in table context. */
+  def points[K, U <: Unit2D: UnitLabel](
+      archive: PointSamplingArchive[K, U],
+      codec: PointSamplingFamilyCodec[K, U]
+  ): Either[ResultExportError, Vector[ResultTable]] =
+    pointTables(archive, codec.keys, codec.results.encode(archive), codec.error)
+
+  private def pointTables[K, U <: Unit2D: UnitLabel](
+      archive: PointSamplingArchive[K, U],
+      keys: VersionedCodec[K],
+      document: Either[CodecError, Json],
+      error: PointSamplingError[K] => Json
   ): Either[ResultExportError, Vector[ResultTable]] = for
-    saved <- encoded(codec.archive.encode(archive))
+    saved <- encoded(document)
     result  = archive.result
     context = Json.obj(
       "archive"         -> saved,
@@ -291,14 +306,14 @@ object ResultExports:
     )
     keyed <- result.rows.traverse { row =>
       for
-        k        <- key(row.key, codec.keys)
-        template <- row.template.traverse(k => encoded(codec.keys.encode(k)))
+        k        <- key(row.key, keys)
+        template <- row.template.traverse(k => encoded(keys.encode(k)))
       yield (row, k, template)
     }
     sourceRows = keyed.map { (row, k, template) =>
       Vector(I(row.index.toLong), k) ++ (template match
         case Right(t) => Vector(T(t.noSpaces), T("success"), M)
-        case Left(e)  => Vector(M, T("failure"), T(codec.error(e).noSpaces))) ++ Vector(
+        case Left(e)  => Vector(M, T("failure"), T(error(e).noSpaces))) ++ Vector(
         I(row.eligibleControls.toLong),
         I(row.controls.size.toLong)
       )
@@ -316,8 +331,7 @@ object ResultExports:
     controlRows <- keyed.traverse { (row, k, _) =>
       row.controls.zipWithIndex
         .traverse { (c, ci) =>
-          for
-            occurrence <- key(c.occurrence, codec.keys); template <- key(c.template, codec.keys)
+          for occurrence <- key(c.occurrence, keys); template <- key(c.template, keys)
           yield c.values.zipWithIndex.map((v, i) =>
             Vector(
               I(row.index.toLong),
@@ -327,7 +341,7 @@ object ResultExports:
               template,
               I(i.toLong),
               I(archive.plan.spec.queries(i).toMicros)
-            ) ++ scalar(v.left.map(codec.error))
+            ) ++ scalar(v.left.map(error))
           )
         }
         .map(_.flatten)
@@ -359,13 +373,13 @@ object ResultExports:
           p.point.fold[ResultCell](M)(v => N(v.y))
         )
         val observed =
-          prefix ++ Vector(T("observed")) ++ scalar(p.value.left.map(codec.error)) ++ Vector(
+          prefix ++ Vector(T("observed")) ++ scalar(p.value.left.map(error)) ++ Vector(
             I(1),
             I(if p.value.isRight then 1 else 0),
             I(if p.value.isRight then 1 else 0)
           )
         Vector(observed) ++ p.control.toVector.map(c =>
-          prefix ++ Vector(T("control")) ++ scalar(c.result.left.map(codec.error)) ++ Vector(
+          prefix ++ Vector(T("control")) ++ scalar(c.result.left.map(error)) ++ Vector(
             I(c.requested.toLong),
             I(c.successful.toLong),
             I(c.contributing.toLong)
@@ -401,12 +415,12 @@ object ResultExports:
           T(b.queries.mkString("[", ",", "]"))
         )
         def mean(role: String, m: PointMean[K]) = prefix ++ Vector(T(role)) ++ scalar(
-          m.result.left.map(codec.error)
+          m.result.left.map(error)
         ) ++ Vector(I(m.requested.toLong), I(m.successful.toLong), I(m.contributing.toLong))
         Vector(mean("observed", b.observed)) ++ b.control.toVector.map(
           mean("control", _)
         ) ++ b.difference.toVector.map(d =>
-          prefix ++ Vector(T("difference")) ++ scalar(d.left.map(codec.error)) ++ Vector(
+          prefix ++ Vector(T("difference")) ++ scalar(d.left.map(error)) ++ Vector(
             M,
             M,
             M

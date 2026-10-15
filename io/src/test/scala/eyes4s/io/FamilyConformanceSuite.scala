@@ -28,7 +28,7 @@ import eyes4s.fs2.{RepetitionExecution, TemporalExecution}
 import eyes4s.kernel.*
 import eyes4s.kernel.Unit2D.{Deg, Px}
 import eyes4s.plan.*
-import eyes4s.surface.EdgePolicy
+import eyes4s.surface.*
 import io.circe.Json
 import scala.compiletime.summonAll
 import scala.compiletime.testing.typeCheckErrors
@@ -145,7 +145,6 @@ class FamilyConformanceSuite extends munit.FunSuite:
     assertEquals(
       AnalysisKind.withoutFamily.toSet,
       Set(
-        AnalysisKind.PointSampling,
         AnalysisKind.TemplateFit,
         AnalysisKind.Decomposition,
         AnalysisKind.ScanpathComparison
@@ -993,4 +992,134 @@ object FamilyWitnesses:
             "failurePolicy"    -> "failurePolicy"
           ),
           Set("repetition.input", "layout", "grid", "pairing")
+        )
+
+  private val pointClock = ClockId("conformance-point-clock")
+  private val pointPath  = get(
+    Scanpath.of(
+      frame,
+      pointClock,
+      IArray(
+        get(
+          Event.Fixation.withoutDispersion(
+            get(Interval.of(pointClock, Instant.micros(0), Instant.micros(10))),
+            Pt[Px](0.5, 0.5),
+            1
+          )
+        )
+      )
+    )
+  )
+  private val pointSource = StudyInput(
+    Trials(
+      Vector("a", "b").map(stimulus =>
+        Trial(StudyKey("person", stimulus, "source"), (), pointPath)
+      )
+    )
+  )
+  private val pointTemplates = Trials(Vector("a" -> 1.0, "b" -> 3.0).map { (stimulus, base) =>
+    val values = IArray(base, base + 1, base + 2, base + 3)
+    Trial(
+      StudyKey("person", stimulus, "template"),
+      (),
+      get(Surface.signed(grid, values, Provenance.raw(ContentHash.of(values))))
+    )
+  })
+  private val pointSpec = get(
+    PointSamplingSpec.of(
+      pointClock,
+      Vector(0L, 5L, 10L).map(Instant.micros),
+      Some(
+        get(
+          PointBins.of(
+            pointClock,
+            Vector(0L, 5L, 10L).map(Instant.micros),
+            PointBinEndpoint.IncludeFinalEndpoint
+          )
+        )
+      ),
+      DensityNormalization.None,
+      DensityLookupPolicy.NearestClampedRIndex,
+      TrajectoryEndpoint.HoldLastOnset,
+      PointControlSelection.Candidates(
+        Selection.BottomK(
+          get(PairLimit.of(1)),
+          Seed(Long.MinValue + 7),
+          SampleId("conformance-points")
+        )
+      ),
+      FailurePolicy.RequireAll,
+      FailurePolicy.RequireAll
+    )
+  )
+  private val pointLayout = StudyKey.layout(definition("conformance.point-layout"))
+  private val pointPlan   =
+    PointSamplingPlan.of(pointLayout, pointSource, pointTemplates, pointSpec)
+  private val pointCodecs = new PointSamplingFamilyCodec[StudyKey, Px](
+    pointLayout,
+    StudyCodecs.key(definition("conformance.point-key"))
+  )
+
+  given pointSampling: FamilyWitness[RecipeFamily.PointSampling.type] =
+    new FamilyWitness[RecipeFamily.PointSampling.type](RecipeFamily.PointSampling):
+      type Id      = eyes4s.fs2.PointSamplingRunId
+      type Cursor  = PointSamplingCursor[StudyKey, Px]
+      type Stage   = PointSamplingStage
+      type Segment = PointSamplingStage
+      type Error   = Nothing
+      type Result  = PointSamplingResult[StudyKey, Px]
+      def description = pointPlan.description
+      def inspection  = pointPlan.inspect
+      def ready       =
+        val report = pointPlan.preflight(Some(pointPlan.inputRef))
+        Preflighted.of(report, report.diagnostics)
+      def unavailable =
+        val report = pointPlan.preflight(None)
+        Preflighted.of(report, report.diagnostics)
+      def run                            = Right(pointPlan.run)
+      def cursor                         = Right(pointPlan.work)
+      def submission(quanta: WorkQuanta) =
+        eyes4s.fs2.PointSamplingExecution.submission(pointPlan, quanta)
+      given stepping: Stepwise[Cursor, Stage, Error, Result] = PointSamplingCursor.stepwise
+      def archived(result: Result)                           =
+        PointSamplingArchive.completed(pointPlan, result).flatMap(pointCodecs.results.encode)
+      def rearchived(document: Json) =
+        pointCodecs.results.decode(document).flatMap(pointCodecs.results.encode)
+      def savedPlan                    = pointCodecs.plans.encode(pointPlan)
+      def reloadedPlan(document: Json) = pointCodecs.plans
+        .decode(document)
+        .flatMap(p => pointCodecs.plans.encode(p).map(p.description -> _))
+      def tables(result: Result) = Right(
+        PointSamplingArchive
+          .completed(pointPlan, result)
+          .left
+          .map(ResultExportError.Codec.apply)
+          .flatMap { archive =>
+            ResultExports.points(archive, pointCodecs).map { tables =>
+              val counts = Vector(
+                result.rows.size,
+                result.rows.map(r => r.controls.map(_.values.size).sum).sum,
+                result.rows.map(r => r.points.map(p => 1 + p.control.size).sum).sum,
+                result.rows
+                  .map(r => r.bins.map(b => 1 + b.control.size + b.difference.size).sum)
+                  .sum
+              )
+              tables.zip(counts).map((table, rows) => Tabulated(table, rows, None))
+            }
+          }
+      )
+      def form =
+        val f = new PointSamplingForm(pointClock)
+        FormEvidence(
+          f.fields,
+          f.values(pointPlan),
+          Some(
+            f.parse(f.values(pointPlan))
+              .left
+              .map(_.toVector.map(_.message).mkString("; "))
+              .flatMap(_.plan(pointPlan).left.map(_.message))
+              .map(_.description)
+          ),
+          PointSamplingViews.fields.map(v => v.id.value -> v.id.value).toMap,
+          Set("input", "layout", "method", "clock")
         )

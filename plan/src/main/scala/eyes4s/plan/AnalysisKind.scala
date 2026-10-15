@@ -51,11 +51,12 @@ enum AnalysisKind derives CanEqual:
 
   /** The recipe family that carries this analysis, if it has one yet. */
   def family: Option[RecipeFamily] = this match
-    case FixationStudy  => Some(RecipeFamily.FixationStudy)
-    case EventRecording => Some(RecipeFamily.EventRecording)
-    case TemporalStudy  => Some(RecipeFamily.TemporalStudy)
-    case Repetition     => Some(RecipeFamily.Repetition)
-    case PointSampling | TemplateFit | Decomposition | ScanpathComparison => None
+    case FixationStudy                                    => Some(RecipeFamily.FixationStudy)
+    case EventRecording                                   => Some(RecipeFamily.EventRecording)
+    case TemporalStudy                                    => Some(RecipeFamily.TemporalStudy)
+    case Repetition                                       => Some(RecipeFamily.Repetition)
+    case PointSampling                                    => Some(RecipeFamily.PointSampling)
+    case TemplateFit | Decomposition | ScanpathComparison => None
 
 /** A reusable part of other analyses, not an analysis of its own: it has a
   * descriptor and a schema but no family, cursor or archive role.
@@ -67,7 +68,7 @@ enum AnalysisComponent derives CanEqual:
 object AnalysisKind:
   /** The analyses that do not yet have a recipe family, in declaration order. */
   val withoutFamily: Vector[AnalysisKind] =
-    Vector(PointSampling, TemplateFit, Decomposition, ScanpathComparison)
+    Vector(TemplateFit, Decomposition, ScanpathComparison)
 
   /** The analysis each recipe family carries. */
   def of(family: RecipeFamily): AnalysisKind = family match
@@ -75,3 +76,4 @@ object AnalysisKind:
     case RecipeFamily.EventRecording => EventRecording
     case RecipeFamily.TemporalStudy  => TemporalStudy
     case RecipeFamily.Repetition     => Repetition
+    case RecipeFamily.PointSampling  => PointSampling

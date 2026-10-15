@@ -1,0 +1,106 @@
+{
+  "schema": 1,
+  "date": "2026-10-15",
+  "issue": "bd-01M3F9JDW47XHXFEAXPCR26CEW",
+  "base_sha": "77dd93350fb3aef41040c0a6ab0fc80dd846ead5",
+  "scope": "Complete PointSampling recipe family: descriptor and typed form, metadata preflight, existing Stepwise/fs2 execution, built-in stamped plan/result codecs, generic manifest roles and registration, one result-table layer, codec laws/fixtures and common family witness. Epoch component and keyed errors are reviewed dependencies with their own receipts.",
+  "contract": {
+    "forms": "Eight editable fields; exact signed64 query/bin instants and bottom-k seed, both endpoint policies, explicit controls and nested reduction policies. Context supplies timeline, layout and scientific input.",
+    "preflight": "Combined scanpath/template content reference; shared matching logic retains focal keys and nominal template keys for deterministic matched clock/frame refusals. Data failures are warnings; absent/wrong input is blocking. No density normalization or point lookup in preflight.",
+    "schemas": [
+      "eyes4s.point-sampling-plan@1",
+      "eyes4s.point-sampling-result@1"
+    ],
+    "result_stamp": "SHA256 canonical complete embedded plan used for both plan and embedded-input claims; missing/stale stamp refused before numerical replay. Valid-stamp saved values must match deterministic replay.",
+    "completed_result": "PointSamplingArchive.completed binds existing input/plan/provenance identities and row/query metadata without rerunning sampling; it retains the same result object.",
+    "legacy": "Existing caller-defined conditional v1 plan/archive payload and R sampling fixtures are unchanged.",
+    "tables": "Legacy and stamped overloads share the same points table implementation; stamped route retains its archive in context. No second table abstraction.",
+    "execution": "One whole-study preparation, then quantum-bounded batches of whole focal trials; cancellation between operations only.",
+    "family_mapping": "PointSampling now maps to RecipeFamily.PointSampling and leaves the explicit withoutFamily allowlist. Epochs remain a component, with no analysis role."
+  },
+  "verification": {
+    "restored_matrix_totals": [
+      38,
+      16,
+      14,
+      54,
+      38,
+      16,
+      4,
+      54
+    ],
+    "jvm_total": 122,
+    "js_total": 112,
+    "diagnostic_document_checks": 3,
+    "root_jvm_js_test_compile_werror": "passed",
+    "family_conformance_tests_each_runtime": 45,
+    "baseline_result_export_tests_each_runtime": 9,
+    "codec_laws_each_runtime": 4,
+    "schema_registry_jvm_tests": 10,
+    "independent_canonical_plan_stamp": "b76c6c58906dadf6cc259180df124fa17cbff145465e665f98b4122c4b5a4a45",
+    "canonical_oracle": "Independent Python tagged binary canonical renderer, including insertion-ordered objects, UTF16 strings and binary64 numbers. Both runtime encoders match the pinned stamp and fixtures.",
+    "diagnostics": {
+      "count": 755,
+      "digest": "7ccb33797505113d",
+      "original_stable_count": 445,
+      "original_stable_digest": "fb7ffbd3d3db7f63",
+      "append": "recipe-parameter.point-sampling"
+    },
+    "mutation": {
+      "mutation": "decode every template normalization as None",
+      "original_sha256": "3c5341a16b063921d784dfa276c5763db1c2518dc5d56141fa5cf6d93c278873",
+      "runs": [
+        {
+          "platform": "JVM",
+          "failed_tests": 4,
+          "log_sha256": "8ee628920ea41a3d83ad73c0f52574db794ae3d5122d4f163bae44ad9f58be9a"
+        },
+        {
+          "platform": "JS",
+          "failed_tests": 4,
+          "log_sha256": "3586e6b126aae45f9f875667e1d5770d1d5e895176c81df98d6ccf2ecd273652"
+        }
+      ],
+      "restored_sha256": "3c5341a16b063921d784dfa276c5763db1c2518dc5d56141fa5cf6d93c278873"
+    },
+    "development_fixes": [
+      "External form test used NonEmptyVector.size without syntax; changed to.toVector.size.",
+      "Invalid-bin accumulation test initially omitted an absent field rather than supplying it; used FormValues.updated.",
+      "Clock diagnostic correctly names both source and template keys; assertion updated to include both.",
+      "Constant-field z-scoring intentionally preserves its input; independent nonfinite-sum normalization fixture now proves preflight leaves numerical refusal unchecked.",
+      "Append-only diagnostic count/digest and generated documentation deliberately refreshed, original stable table unchanged."
+    ],
+    "canonical_oracle_command": "python3 tools/codec-fixtures/point-sampling.py"
+  },
+  "source_sha256": {
+    "codec/src/main/scala/eyes4s/codec/PointSamplingCodec.scala": "3c5341a16b063921d784dfa276c5763db1c2518dc5d56141fa5cf6d93c278873",
+    "codec/src/main/scala/eyes4s/codec/PointSamplingFamilyCodec.scala": "a1bbf5c568ab5d8491b09ffde259c4211a90a46e36c90bab76df98f01858ef90",
+    "codec/src/test/resources/eyes4s/point-sampling-plan-v1.json": "27c0a9e218f6fb4eaa7749270f08f358b6edd7191cb36abdc30e9ff3d90b74f9",
+    "codec/src/test/resources/eyes4s/point-sampling-result-v1.json": "4eb1d406e90d4c31194dde5aef5c69c3f9e2a3a86323dc706e1fa0e56c4395a5",
+    "codec/src/test/scala/eyes4s/codec/PointSamplingFamilyCodecSuite.scala": "14201358ccd8a17899353ad7c0bef4de246130f158e58221e3d9e24bd0bc2230",
+    "docs/DIAGNOSTICS.md": "78fb20e037053e6e3866a3318eb45f8caad8a40b5bcaee92dbbb9dbae41595f8",
+    "io/src/main/scala/eyes4s/io/BaselineExports.scala": "15afb59cb7e63d313c6dd4b2bbbe3beb5489ad934be490a92326714a462404dd",
+    "io/src/test/scala/eyes4s/io/FamilyConformanceSuite.scala": "13acd809c5bfb7be7054c568bd1182a247a691b9a66431a552d7eea2fbf163d3",
+    "laws/.jvm/src/test/scala/eyes4s/laws/SchemaRegistryJvmSuite.scala": "12d7a7c91510650e56b9f7c0db8b4edc3d99b73c04543e246be6b9e84c92a335",
+    "laws/src/test/scala/eyes4s/laws/PointSamplingFamilyCodecLawSuite.scala": "465799e27fa6860911f089eb9c8c8db6def7bf32b7780c8dcb3086d153301a79",
+    "plan/src/main/scala/eyes4s/plan/AnalysisKind.scala": "6afb6dc987f7388906d8418002148b54fd7721f4a973b8fb3378a3a4e26f8cbb",
+    "plan/src/main/scala/eyes4s/plan/DiagnosticCatalog.scala": "c5d2814afef9dea2736b0f9d3c1e054c13f64106f2d0c2a95ad7a38d763bb3d9",
+    "plan/src/main/scala/eyes4s/plan/PointSampling.scala": "c064887727729d2dd29c94a29da450f44d8d5ef8626516bfa48b0dfdf9abb0b1",
+    "plan/src/main/scala/eyes4s/plan/PointSamplingFamily.scala": "7f6aa8fd4207fc3aca6428371748ff8212f5f551fbd70240f8dcec37f1d79432",
+    "plan/src/main/scala/eyes4s/plan/Preflight.scala": "eb1d966de5997b7e6029e9ab25187ce0eedc19e048a0a3aef4294e214bba6a73",
+    "plan/src/main/scala/eyes4s/plan/RecipeDescriptors.scala": "604aa6fbe39dada6ec6aa564239b7ba7ca5c9407c81297adbb244854bc3dcdf2",
+    "plan/src/test/scala/eyes4s/plan/DiagnosticCatalogSuite.scala": "12264a14a149728184c431b85314f590e19f8dbf04714f5fe86d645c1af2dbc1",
+    "plan/src/test/scala/eyes4s/plan/PointSamplingFamilySuite.scala": "d8ebe9363a635e63e4b2c0cb2ae592d5c5274e73ceb57f1c48a6798cb92fe964",
+    "tools/codec-fixtures/point-sampling.py": "35b5ddfd1532320b3d36040d68351a2e560ccba88cb232eea09fe1c47d7e0b37"
+  },
+  "logs_sha256": {
+    "eyes4s-point-family-attempt5.log": "7311ed2241b743357205828f1bf4a14facd10b4916bc4236eaed2b5b2b9ac608",
+    "eyes4s-cr4-point-family-mutant-JVM.log": "8ee628920ea41a3d83ad73c0f52574db794ae3d5122d4f163bae44ad9f58be9a",
+    "eyes4s-cr4-point-family-mutant-JS.log": "3586e6b126aae45f9f875667e1d5770d1d5e895176c81df98d6ccf2ecd273652",
+    "eyes4s-cr4-point-family-restored.log": "7be87a07d9722e788eb03f481f6c53e1d003401e959c49d1affc9a9833d773d6",
+    "eyes4s-point-family-diagnostics-generation.log": "a026f34f19292b090712e6bf21764014e25a5adf5740b1c3574c6e4c099d0fe2",
+    "eyes4s-point-family-diagnostics-verified.log": "0482508355b12fbd2c0f7f83c0701dbbb2897118d948f051a91753ff7fd885e1",
+    "eyes4s-cr4-point-family-root-werror.log": "711a118d6e15eaf4e93ed3e182927106ab95531f7a033fdc8464fc8ea5b018aa"
+  },
+  "landing_status": "Reviewed family slice awaiting combined qualification and landing. S5 parent remains open until all reviewed slices land."
+}

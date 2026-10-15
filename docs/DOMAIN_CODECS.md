@@ -387,3 +387,13 @@ of study keys, with equal instants beyond 2^53 kept in order), `score-codecs-v1.
 envelope of each score and difference schema, the only fixture of `measure-distance@1` and
 `scalar@1`), and the standalone, binocular and packed recordings with their payloads listed under
 [artifact manifests](SAVED_STUDIES.md#artifact-manifests-and-verified-resolution).
+
+The point-sampling family ships `eyes4s.point-sampling-plan@1` and
+`eyes4s.point-sampling-result@1` through `PointSamplingFamilyCodec`. Conditional
+layout/key identities remain explicit. The pinned
+[plan](../codec/src/test/resources/eyes4s/point-sampling-plan-v1.json) and
+[result](../codec/src/test/resources/eyes4s/point-sampling-result-v1.json)
+fixtures are registered with `PointSamplingFamilyCodecLawSuite`. The result
+checks its canonical embedded-plan stamp before deterministic replay; the
+legacy caller-defined codec retains its original wire shape. See
+[point sampling](POINT_SAMPLING.md#saved-analysis-family).

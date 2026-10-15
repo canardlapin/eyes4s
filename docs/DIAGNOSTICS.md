@@ -1328,6 +1328,7 @@ fails after rewriting, so review the change and run it again.
 | `recipe-parameter.unknown-token` | `UnknownToken` | `field`, `token`, `options` |
 | `recipe-parameter.undeclared-window-frame` | `UndeclaredWindowFrame` | `admission` |
 | `recipe-parameter.pairing` | `Pairing` | `error` |
+| `recipe-parameter.point-sampling` | `PointSampling` | `error` |
 
 ### `repetition-plan` — `RepetitionPlanError`
 

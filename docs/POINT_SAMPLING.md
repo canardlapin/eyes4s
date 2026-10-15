@@ -150,3 +150,41 @@ finishes in preparation. The run identity binds input, recipe and trial quantum.
 Cancellation retains the last completed step and is observed between operations.
 The [execution receipt](evidence/point-sampling-execution-20261015.json) records
 barrier-controlled cancellation and the full shared-runner regression matrix.
+
+## Saved analysis family
+
+`PointSamplingFamilyCodec(layout, keys)` supplies the built-in
+`eyes4s.point-sampling-plan@1` and `eyes4s.point-sampling-result@1` schemas.
+Its `registration` plugs into `AnalysisRegistry` under the common analysis-plan
+and analysis-result manifest roles, with `AnalysisInputs.EmbeddedInPlan`.
+The result includes a canonical `RunStamp` of the complete embedded plan.
+Reading checks the stamp first, then reruns sampling and compares every saved
+result value. Existing caller-defined conditional version-one codecs keep
+their original payload.
+
+`PointSamplingArchive.completed(plan, result)` binds an already-computed result
+without executing the analysis again. It checks input and recipe identities,
+provenance, focal row order and query metadata. The archive decoder still
+verifies numerical values by replay. `ResultExports.points(archive, family)`
+uses the same four result tables as the legacy overload, with the stamped
+archive in their context.
+
+`PointSamplingForm(clock)` edits queries, optional bins, normalization, lookup,
+trajectory endpoints, control selection and the two failure policies. Times
+and seeds retain all signed 64-bit bits. `plan.inspect` explains every field;
+`plan.description` and `diff` expose its scientific choices.
+
+`plan.preflight` checks the combined source/template artifact reference,
+matching, query clocks and matched-template frames. Deterministic row failures
+retain focal and template keys as warnings; missing or different input blocks
+availability. Normalization, point lookup and numerical reductions remain
+explicitly unchecked until execution. A ready report does not promise
+numerical success.
+
+The [family evidence](evidence/point-sampling-family-20261015.json) records
+common family conformance on both runtimes, generic manifest resolution,
+canonical fixtures and stamps, result tables, codec properties, mutation
+evidence, and unchanged pinned eyesim sampling targets.
+
+Run `python3 tools/codec-fixtures/point-sampling.py` to check both built-in
+fixtures and their stamp with the independent canonical renderer.

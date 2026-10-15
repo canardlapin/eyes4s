@@ -819,7 +819,8 @@ object DiagnosticCatalog:
     "UnknownToken",
     "UndeclaredWindowFrame",
     // appended by CR4 S3: a pair design refusal (a repetition control cap)
-    "Pairing"
+    "Pairing",
+    "PointSampling"
   )
   val repetitionPlan: DiagnosticFamily = error("repetition-plan")(
     "ProjectionIds",

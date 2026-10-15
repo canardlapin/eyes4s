@@ -396,6 +396,18 @@ object SchemaRegistry:
       codecLaw(reports, "study report")
     ),
     Entry(
+      PointSamplingFamilyDefinitions.plan,
+      Kind.Document,
+      Vector("point-sampling-plan-v1.json"),
+      codecLaw(() => new PointSamplingFamilyCodecLawSuite, "point-sampling plan")
+    ),
+    Entry(
+      PointSamplingFamilyDefinitions.result,
+      Kind.Document,
+      Vector("point-sampling-result-v1.json"),
+      codecLaw(() => new PointSamplingFamilyCodecLawSuite, "point-sampling result")
+    ),
+    Entry(
       EpochCodecDefinitions.plan,
       Kind.Document,
       Vector("epoch-plan-v1.json"),
@@ -1014,10 +1026,12 @@ private object Decoders:
     def study: VersionedCodec[?] =
       method.fold(StudyCodecs.cosine[Px].codec)(StudyCodecs.similarity[Px](_).codec)
     id match
-      case EpochCodecDefinitions.plan   => Some(EpochCodecFixture.codec)
-      case DefinitionId.study           => Some(study)
-      case DefinitionId.studyInput      => Some(StudyInputCodecs.study[Px].input)
-      case DefinitionId.admissionLedger => Some(StudyInputCodecs.study[Px].ledger)
+      case PointSamplingFamilyDefinitions.plan   => Some(PointFamilyCodecFixture.codec.plans)
+      case PointSamplingFamilyDefinitions.result => Some(PointFamilyCodecFixture.codec.results)
+      case EpochCodecDefinitions.plan            => Some(EpochCodecFixture.codec)
+      case DefinitionId.study                    => Some(study)
+      case DefinitionId.studyInput               => Some(StudyInputCodecs.study[Px].input)
+      case DefinitionId.admissionLedger          => Some(StudyInputCodecs.study[Px].ledger)
       case StudyCodecDefinitions.studyV2 | StudyCodecDefinitions.studyV3 |
           StudyCodecDefinitions.studyV4
           if document.hcursor

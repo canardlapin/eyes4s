@@ -30,6 +30,31 @@ final class PointSamplingArchive[K, U <: Unit2D] private (
     val result: PointSamplingResult[K, U]
 )
 object PointSamplingArchive:
+  /** Bind an already-completed result without repeating the computation.
+    * Identity and row/query metadata are checked here; decoding an archive
+    * still verifies all numerical values by deterministic replay.
+    */
+  def completed[K, U <: Unit2D](
+      plan: PointSamplingPlan[K, U],
+      result: PointSamplingResult[K, U]
+  ): Either[CodecError, PointSamplingArchive[K, U]] =
+    val expectedKeys = plan.source.trials.rows.map(_.key)
+    val metadata     = result.inputHash == plan.inputHash && result.planHash == plan.planHash &&
+      result.provenance.inputs == plan.inputHash && result.rows.map(_.key) == expectedKeys &&
+      result.unbinned == plan.spec.unbinned && result.rows.zipWithIndex.forall { (row, index) =>
+        row.index == index && row.points.map(_.time) == plan.spec.queries &&
+        row.points.map(_.index) == plan.spec.queries.indices.toVector
+      }
+    Either.cond(
+      metadata,
+      new PointSamplingArchive(plan, result),
+      CodecError.Field(
+        "pointSamplingResult",
+        Json.fromString(result.planHash.render),
+        s"Expected plan=${plan.planHash.render}, input=${plan.inputHash.render}, sourceRows=${expectedKeys.size}; found plan=${result.planHash.render}, input=${result.inputHash.render}, sourceRows=${result.rows.size}, or row/query metadata differs."
+      )
+    )
+
   def run[K, U <: Unit2D](plan: PointSamplingPlan[K, U]): PointSamplingArchive[K, U] =
     new PointSamplingArchive(plan, plan.run)
 
