@@ -489,9 +489,11 @@ class GeometryPanelFxSuite extends StudioFxSuite:
       }
       assertEquals(framed, Vector(false, false, true, false))
       assertEquals(runOnFx(v.strip.cursor), Some(2))
-      // Space marks it, as Enter does: the mark stays on the cursor's trial.
+      // Space marks the cursor's trial, as Enter does.
+      val fourth = runOnFx(v.thumbnails(3).trial).getOrElse(fail("no fourth thumbnail"))
+      runOnFx(press(v.strip, KeyCode.RIGHT))
       runOnFx(press(v.strip, KeyCode.SPACE))
-      assertEquals(runOnFx(rig.host.state.marked), Some(third))
+      assertEquals(runOnFx(rig.host.state.marked), Some(fourth))
       // A click moves the cursor to its thumbnail and marks it.
       val first = runOnFx(v.thumbnails(0).trial).getOrElse(fail("no first thumbnail"))
       runOnFx(
