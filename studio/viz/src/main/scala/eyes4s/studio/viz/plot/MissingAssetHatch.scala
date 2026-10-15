@@ -16,7 +16,7 @@
 
 package eyes4s.studio.viz.plot
 
-import eyes4s.studio.app.tokens.{Theme, ThemedToken}
+import eyes4s.studio.app.tokens.{PaletteToken, Theme, ThemedToken, Tokens}
 import intaglio.{
   GraphicParams,
   GraphicsError,
@@ -25,6 +25,7 @@ import intaglio.{
   PatternPaint,
   PatternRecipe,
   Point,
+  Rgba,
   StrokeUnit
 }
 
@@ -32,7 +33,8 @@ import intaglio.{
   * hatched, never blank): warn-text stripes on warn-soft, with a warn-text X
   * across the frame. A trial's missing or unreadable image frame, a map's
   * uncovered cells and a placement thumbnail's missing frame all wear it,
-  * each at its own [[MissingAssetHatch.Scale]].
+  * each at its own [[MissingAssetHatch.Scale]]; a figure's map tile wears it
+  * in the paper palette ([[MissingAssetHatch.paper]]).
   */
 object MissingAssetHatch:
 
@@ -54,13 +56,31 @@ object MissingAssetHatch:
 
   /** The hatch's fill: 45° warn-text stripes over warn-soft. */
   def paint(theme: Theme, scale: Scale): Either[GraphicsError, GraphicParams] =
-    val warnSoft = IntaglioColours.themed(theme, ThemedToken.WarnSoft)
+    painted(
+      IntaglioColours.themed(theme, ThemedToken.WarnText),
+      IntaglioColours.themed(theme, ThemedToken.WarnSoft),
+      scale
+    )
+
+  /** The hatch's fill on paper, where a figure is drawn without an app
+    * theme: 45° `fig-hatch` stripes over `fig-hatch-ground` (slice S27).
+    */
+  def paper(scale: Scale): Either[GraphicsError, GraphicParams] =
+    painted(
+      IntaglioColours.toIntaglio(Tokens.palette(PaletteToken.FigHatch)),
+      IntaglioColours.toIntaglio(Tokens.palette(PaletteToken.FigHatchGround)),
+      scale
+    )
+
+  private def painted(
+      stripes: Rgba,
+      ground: Rgba,
+      scale: Scale
+  ): Either[GraphicsError, GraphicParams] =
     for
       recipe <- PatternRecipe.angledHatch(45.0, scale.spacing, scale.lineWidth)
-      base   <- GraphicParams.checked(stroke = None, fill = Some(warnSoft))
-    yield base.withPatternFill(
-      PatternPaint(recipe, IntaglioColours.themed(theme, ThemedToken.WarnText), Some(warnSoft))
-    )
+      base   <- GraphicParams.checked(stroke = None, fill = Some(ground))
+    yield base.withPatternFill(PatternPaint(recipe, stripes, Some(ground)))
 
   /** The X: two warn-text strokes `widthPt` points wide crossing at
     * (`x`, `y`), each arm reaching `arm` native units from it along both

@@ -45,7 +45,7 @@ import eyes4s.studio.core.backend.TrialKey
 import eyes4s.studio.core.document.ScreenSize
 import eyes4s.studio.core.selection.{FixationIndex, StudioRef}
 import eyes4s.plan.{MapPlacement, OffWindowPolicy}
-import eyes4s.studio.viz.maps.MapLegendScene
+import eyes4s.studio.viz.maps.{MapLegendScene, UncoveredCells}
 import eyes4s.studio.viz.plot.{
   DataPanel,
   DataPoint,
@@ -847,12 +847,7 @@ object TrialScene:
       }
 
     // A map's cells without coverage, in the missing-asset hatch and opaque
-    // (review ticket 8): never transparent and never a ramp colour. One ring
-    // for each run of missing cells along a row, all in one shape: runs in
-    // adjacent rows share an edge, and as separate rects each would cover
-    // only its part of a device pixel that edge crosses, so the screen
-    // showed through the seam (bead bd-01M4TCR2EWPSX1NG4R686MY3M7). One fill
-    // covers the seam once.
+    // (review ticket 8), as one shape (UncoveredCells).
     private def uncovered(
         grid: MapGrid,
         left: Double,
@@ -860,39 +855,13 @@ object TrialScene:
         w: Double,
         h: Double
     ): R[Vector[Grob]] =
-      val cellW = w / grid.columns
-      val cellH = h / grid.rows
-      val runs  = for
-        y   <- (0 until grid.rows).toVector
-        run <- (0 until grid.columns).toVector
-          .filter(x => grid.atTop(x, y).isEmpty)
-          .foldLeft(Vector.empty[(Int, Int)]) {
-            case (rs :+ ((from, to)), x) if x == to => rs :+ (from -> (x + 1))
-            case (rs, x)                            => rs :+ (x    -> (x + 1))
-          }
-      yield (y, run._1, run._2)
-      if runs.isEmpty then Right(Vector.empty)
-      else
-        part("uncovered map cells")(
-          for
-            gp    <- hatchPaint
-            rings <- runs.foldLeft[Either[GraphicsError, Vector[Vector[Point]]]](
-              Right(Vector.empty)
-            ) { case (acc, (y, from, to)) =>
-              val (x0, x1) = (left + from * cellW, left + to * cellW)
-              val (y0, y1) = (top + y * cellH, top + (y + 1) * cellH)
-              for
-                rs <- acc
-                a  <- Point.native(x0, y0)
-                b  <- Point.native(x1, y0)
-                c  <- Point.native(x1, y1)
-                d  <- Point.native(x0, y1)
-              yield rs :+ Vector(a, b, c, d)
-            }
-            n     <- name(UncoveredName)
-            shape <- Grob.compoundPolygon(rings, gp = gp, name = Some(n))
-          yield Vector(shape)
-        )
+      part("uncovered map cells")(
+        for
+          gp    <- hatchPaint
+          n     <- name(UncoveredName)
+          shape <- UncoveredCells.shape(grid, left, top, w, h, gp, n)
+        yield shape.toVector
+      )
 
     private def isolines(
         grid: MapGrid,
