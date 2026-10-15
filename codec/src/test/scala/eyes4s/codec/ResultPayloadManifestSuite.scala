@@ -66,6 +66,17 @@ class ResultPayloadManifestSuite extends munit.FunSuite:
     assertEquals(loaded.payloads.map(_._1), packed.payloads.map(_.name))
   }
 
+  test("verified metadata reconstructs every completed field with the retained masses") {
+    val inline   = get(results.registration.decode(get(results.codec.encode(result))))
+    val restored = get(resolve(save())).results.head._2
+    val masses   = result.scales.map(_.estimation.map(_._2.toOption))
+    Vector(inline, restored).foreach { loaded =>
+      val rebuilt = get(results.restoreDensities(get(loaded.reconstructionMetadata), masses))
+      assertEquals(get(results.codec.encode(rebuilt)), get(results.codec.encode(result)))
+      assertEquals(get(results.codec.digest(rebuilt)), get(results.codec.digest(result)))
+    }
+  }
+
   test("unknown role and relation remain typed refusals in manifest@1") {
     val document = get(ScientificManifest.codec.encode(save().manifest))
     val body     = get(document.hcursor.get[Json]("value"))

@@ -735,7 +735,10 @@ final class StudyResultCodec[K, U <: Unit2D, P, S, D](
         new LoadedResult[K, U]:
           type Score      = S
           type Difference = D
-          def result              = value
+          def result                                          = value
+          override private[eyes4s] def reconstructionMetadata = archive match
+            case Some(saved) => Right(saved.payload)
+            case None        => storageMetadata(value)
           override def stampClaim = archive.flatMap(_.stampClaim)
           def encode              = archive.filter(_.stampClaim.nonEmpty) match
             case None        => codec.encode(value)
@@ -763,6 +766,13 @@ trait LoadedResult[K, U <: Unit2D]:
   type Difference
   def result: StudyResult[K, U, Score, Difference]
   def encode: Either[CodecError, Json]
+
+  /** Structural evidence for checked reconstruction with already verified masses.
+    * Built-in registrations reuse the decoded archive metadata, without another
+    * parse or inline cell document. External implementations retain a safe fallback.
+    */
+  private[eyes4s] def reconstructionMetadata: Either[CodecError, Json] =
+    encode.flatMap(Wire.field[Json](_, "value"))
 
   /** None is a legacy result; a saved claim still requires actual plan/input verification. */
   def stampClaim: Option[RunStamp[?, StudyInput[K, U]]] = None

@@ -241,13 +241,8 @@ object NativeArtifactPackage:
           "This native package exports plain retained results, not stamped archives."
         )
       )
-      resultJson    <- need(ResultName).flatMap(decoded("stored result", _))
-      resultPayload <- resultJson.hcursor
-        .get[io.circe.Json]("value")
-        .leftMap(e =>
-          NativeArtifactError.Package(facts.run, "stored result payload", e.message)
-        )
-      nativeResult <- layout("native result reconstruction")(
+      resultPayload <- layout("stored result metadata")(result.reconstructionMetadata)
+      nativeResult  <- layout("native result reconstruction")(
         nativeResults.restoreDensities(
           resultPayload,
           result.result.scales.map(_.estimation.map(_._2.toOption))
