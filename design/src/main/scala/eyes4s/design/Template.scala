@@ -521,30 +521,32 @@ final class FittedTemplate[K, X] private[design] (
     val backend: String,
     val method: String
 ):
-  def evaluate(heldOut: TemplateHeldOut[K, X]): Either[TemplateError, TemplateEvaluation[K]] =
+  /** An immutable held-out evaluation, paged by the number of row keys visited.
+    * Each row's feature extraction remains a whole synchronous operation.
+    */
+  def evaluationWork(
+      heldOut: TemplateHeldOut[K, X]
+  ): Either[TemplateError, TemplateEvaluationWork[K, X]] =
     if heldOut.trainingHash != training.hash then
       Left(TemplateError.Identity(training.hash, heldOut.trainingHash))
-    else
-      Right(
-        new TemplateEvaluation(
-          training.hash,
-          heldOut.hash,
-          heldOut.rows.map { row =>
-            val result = training.design
-              .features(row.key.toString, row.input, template)
-              .flatMap { x =>
-                val prediction = x.zip(coefficients).map(_ * _).sum
-                val residual   = row.response - prediction
-                Either.cond(
-                  prediction.isFinite && residual.isFinite,
-                  (prediction, residual),
-                  TemplateError.Numerical(row.key.toString, prediction, row.response)
-                )
-              }
-            TemplatePrediction(row.key, row.splitGroup, row.matchGroup, row.response, result)
-          }
+    else Right(new TemplateEvaluationWork(this, heldOut, 0, Vector.empty))
+
+  def evaluate(heldOut: TemplateHeldOut[K, X]): Either[TemplateError, TemplateEvaluation[K]] =
+    evaluationWork(heldOut).map(_.complete())
+
+  private[design] def prediction(row: TemplateObservation[K, X]): TemplatePrediction[K] =
+    val result = training.design
+      .features(row.key.toString, row.input, template)
+      .flatMap { x =>
+        val prediction = x.zip(coefficients).map(_ * _).sum
+        val residual   = row.response - prediction
+        Either.cond(
+          prediction.isFinite && residual.isFinite,
+          (prediction, residual),
+          TemplateError.Numerical(row.key.toString, prediction, row.response)
         )
-      )
+      }
+    TemplatePrediction(row.key, row.splitGroup, row.matchGroup, row.response, result)
 
 /** A fit and its held-out evaluation, from [[Template.crossValidate]]. */
 final class TemplateValidation[K, X] private[design] (
