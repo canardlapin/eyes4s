@@ -560,6 +560,7 @@
         "descriptor": "()Leyes4s/codec/ElementKind;",
         "owner": "eyes4s/codec/PackedElement$float64$",
         "suites": [
+          "codecJVM/eyes4s.codec.ArchiveMemorySuite",
           "codecJVM/eyes4s.codec.CombinedSourceResultManifestSuite",
           "codecJVM/eyes4s.codec.DensityArchiveSuite",
           "codecJVM/eyes4s.codec.InputsManifestV1JvmSuite",
@@ -1238,6 +1239,7 @@
         "suites": [
           "codecJVM/eyes4s.codec.AnalysisArchiveSuite",
           "codecJVM/eyes4s.codec.ArchiveManifestSuite",
+          "codecJVM/eyes4s.codec.ArchiveMemorySuite",
           "codecJVM/eyes4s.codec.ArchiveReconstructionSuite",
           "codecJVM/eyes4s.codec.CanonicalDigestSuite",
           "codecJVM/eyes4s.codec.CanonicalDocSuite",
@@ -1351,6 +1353,7 @@
         "suites": [
           "codecJVM/eyes4s.codec.AnalysisArchiveSuite",
           "codecJVM/eyes4s.codec.ArchiveManifestSuite",
+          "codecJVM/eyes4s.codec.ArchiveMemorySuite",
           "codecJVM/eyes4s.codec.ArchiveReconstructionSuite",
           "codecJVM/eyes4s.codec.CanonicalDigestSuite",
           "codecJVM/eyes4s.codec.CanonicalDocSuite",
@@ -1494,6 +1497,7 @@
         "suites": [
           "codecJVM/eyes4s.codec.AnalysisArchiveSuite",
           "codecJVM/eyes4s.codec.ArchiveManifestSuite",
+          "codecJVM/eyes4s.codec.ArchiveMemorySuite",
           "codecJVM/eyes4s.codec.ArchiveReconstructionSuite",
           "codecJVM/eyes4s.codec.CanonicalDigestSuite",
           "codecJVM/eyes4s.codec.CanonicalDocSuite",
@@ -1613,6 +1617,7 @@
         "suites": [
           "codecJVM/eyes4s.codec.AnalysisArchiveSuite",
           "codecJVM/eyes4s.codec.ArchiveManifestSuite",
+          "codecJVM/eyes4s.codec.ArchiveMemorySuite",
           "codecJVM/eyes4s.codec.ArchiveReconstructionSuite",
           "codecJVM/eyes4s.codec.CanonicalDigestSuite",
           "codecJVM/eyes4s.codec.CanonicalDocSuite",
@@ -1726,6 +1731,7 @@
         "suites": [
           "codecJVM/eyes4s.codec.AnalysisArchiveSuite",
           "codecJVM/eyes4s.codec.ArchiveManifestSuite",
+          "codecJVM/eyes4s.codec.ArchiveMemorySuite",
           "codecJVM/eyes4s.codec.ArchiveReconstructionSuite",
           "codecJVM/eyes4s.codec.CanonicalDigestSuite",
           "codecJVM/eyes4s.codec.CanonicalDocSuite",
@@ -1838,6 +1844,7 @@
         "suites": [
           "codecJVM/eyes4s.codec.AnalysisArchiveSuite",
           "codecJVM/eyes4s.codec.ArchiveManifestSuite",
+          "codecJVM/eyes4s.codec.ArchiveMemorySuite",
           "codecJVM/eyes4s.codec.ArchiveReconstructionSuite",
           "codecJVM/eyes4s.codec.CanonicalDigestSuite",
           "codecJVM/eyes4s.codec.CanonicalDocSuite",
@@ -1957,6 +1964,7 @@
         "suites": [
           "codecJVM/eyes4s.codec.AnalysisArchiveSuite",
           "codecJVM/eyes4s.codec.ArchiveManifestSuite",
+          "codecJVM/eyes4s.codec.ArchiveMemorySuite",
           "codecJVM/eyes4s.codec.ArchiveReconstructionSuite",
           "codecJVM/eyes4s.codec.CanonicalDigestSuite",
           "codecJVM/eyes4s.codec.CanonicalDocSuite",
@@ -2324,6 +2332,7 @@
         "suites": [
           "codecJVM/eyes4s.codec.AnalysisArchiveSuite",
           "codecJVM/eyes4s.codec.ArchiveManifestSuite",
+          "codecJVM/eyes4s.codec.ArchiveMemorySuite",
           "codecJVM/eyes4s.codec.ArchiveReconstructionSuite",
           "codecJVM/eyes4s.codec.CanonicalDigestSuite",
           "codecJVM/eyes4s.codec.CanonicalDocSuite",
@@ -2439,6 +2448,7 @@
         "suites": [
           "codecJVM/eyes4s.codec.AnalysisArchiveSuite",
           "codecJVM/eyes4s.codec.ArchiveManifestSuite",
+          "codecJVM/eyes4s.codec.ArchiveMemorySuite",
           "codecJVM/eyes4s.codec.ArchiveReconstructionSuite",
           "codecJVM/eyes4s.codec.CanonicalDigestSuite",
           "codecJVM/eyes4s.codec.CanonicalDocSuite",
@@ -2552,6 +2562,7 @@
         "suites": [
           "codecJVM/eyes4s.codec.AnalysisArchiveSuite",
           "codecJVM/eyes4s.codec.ArchiveManifestSuite",
+          "codecJVM/eyes4s.codec.ArchiveMemorySuite",
           "codecJVM/eyes4s.codec.ArchiveReconstructionSuite",
           "codecJVM/eyes4s.codec.CanonicalDigestSuite",
           "codecJVM/eyes4s.codec.CanonicalDocSuite",
@@ -2665,6 +2676,7 @@
         "suites": [
           "codecJVM/eyes4s.codec.AnalysisArchiveSuite",
           "codecJVM/eyes4s.codec.ArchiveManifestSuite",
+          "codecJVM/eyes4s.codec.ArchiveMemorySuite",
           "codecJVM/eyes4s.codec.ArchiveReconstructionSuite",
           "codecJVM/eyes4s.codec.CanonicalDigestSuite",
           "codecJVM/eyes4s.codec.CanonicalDocSuite",
@@ -2778,6 +2790,7 @@
         "suites": [
           "codecJVM/eyes4s.codec.AnalysisArchiveSuite",
           "codecJVM/eyes4s.codec.ArchiveManifestSuite",
+          "codecJVM/eyes4s.codec.ArchiveMemorySuite",
           "codecJVM/eyes4s.codec.ArchiveReconstructionSuite",
           "codecJVM/eyes4s.codec.CanonicalDigestSuite",
           "codecJVM/eyes4s.codec.CanonicalDocSuite",
@@ -2960,6 +2973,7 @@
         "suites": [
           "codecJVM/eyes4s.codec.AnalysisArchiveSuite",
           "codecJVM/eyes4s.codec.ArchiveManifestSuite",
+          "codecJVM/eyes4s.codec.ArchiveMemorySuite",
           "codecJVM/eyes4s.codec.ArchiveReconstructionSuite",
           "codecJVM/eyes4s.codec.CanonicalDigestSuite",
           "codecJVM/eyes4s.codec.CanonicalDocSuite",
@@ -3070,6 +3084,7 @@
         "suites": [
           "codecJVM/eyes4s.codec.AnalysisArchiveSuite",
           "codecJVM/eyes4s.codec.ArchiveManifestSuite",
+          "codecJVM/eyes4s.codec.ArchiveMemorySuite",
           "codecJVM/eyes4s.codec.ArchiveReconstructionSuite",
           "codecJVM/eyes4s.codec.CanonicalDigestSuite",
           "codecJVM/eyes4s.codec.CanonicalDocSuite",
@@ -3181,6 +3196,7 @@
         "suites": [
           "codecJVM/eyes4s.codec.AnalysisArchiveSuite",
           "codecJVM/eyes4s.codec.ArchiveManifestSuite",
+          "codecJVM/eyes4s.codec.ArchiveMemorySuite",
           "codecJVM/eyes4s.codec.ArchiveReconstructionSuite",
           "codecJVM/eyes4s.codec.CanonicalDigestSuite",
           "codecJVM/eyes4s.codec.CanonicalDocSuite",
@@ -3292,6 +3308,7 @@
         "suites": [
           "codecJVM/eyes4s.codec.AnalysisArchiveSuite",
           "codecJVM/eyes4s.codec.ArchiveManifestSuite",
+          "codecJVM/eyes4s.codec.ArchiveMemorySuite",
           "codecJVM/eyes4s.codec.ArchiveReconstructionSuite",
           "codecJVM/eyes4s.codec.CanonicalDigestSuite",
           "codecJVM/eyes4s.codec.CanonicalDocSuite",
@@ -3405,6 +3422,7 @@
         "suites": [
           "codecJVM/eyes4s.codec.AnalysisArchiveSuite",
           "codecJVM/eyes4s.codec.ArchiveManifestSuite",
+          "codecJVM/eyes4s.codec.ArchiveMemorySuite",
           "codecJVM/eyes4s.codec.ArchiveReconstructionSuite",
           "codecJVM/eyes4s.codec.CanonicalDigestSuite",
           "codecJVM/eyes4s.codec.CanonicalDocSuite",
@@ -3516,6 +3534,7 @@
         "suites": [
           "codecJVM/eyes4s.codec.AnalysisArchiveSuite",
           "codecJVM/eyes4s.codec.ArchiveManifestSuite",
+          "codecJVM/eyes4s.codec.ArchiveMemorySuite",
           "codecJVM/eyes4s.codec.ArchiveReconstructionSuite",
           "codecJVM/eyes4s.codec.CanonicalDigestSuite",
           "codecJVM/eyes4s.codec.CanonicalDocSuite",
@@ -3627,6 +3646,7 @@
         "suites": [
           "codecJVM/eyes4s.codec.AnalysisArchiveSuite",
           "codecJVM/eyes4s.codec.ArchiveManifestSuite",
+          "codecJVM/eyes4s.codec.ArchiveMemorySuite",
           "codecJVM/eyes4s.codec.ArchiveReconstructionSuite",
           "codecJVM/eyes4s.codec.CanonicalDigestSuite",
           "codecJVM/eyes4s.codec.CanonicalDocSuite",
@@ -3793,6 +3813,7 @@
           "aoiJVM/eyes4s.aoi.FixationAoiSuite",
           "codecJVM/eyes4s.codec.AnalysisArchiveSuite",
           "codecJVM/eyes4s.codec.ArchiveManifestSuite",
+          "codecJVM/eyes4s.codec.ArchiveMemorySuite",
           "codecJVM/eyes4s.codec.ArchiveReconstructionSuite",
           "codecJVM/eyes4s.codec.ArchiveWireSuite",
           "codecJVM/eyes4s.codec.CanonicalDigestSuite",
@@ -4075,6 +4096,7 @@
         "owner": "eyes4s/design/Contrastable$given_Contrastable_Similarity_SignedDifference$",
         "suites": [
           "codecJVM/eyes4s.codec.ArchiveManifestSuite",
+          "codecJVM/eyes4s.codec.ArchiveMemorySuite",
           "codecJVM/eyes4s.codec.ArchiveReconstructionSuite",
           "codecJVM/eyes4s.codec.CanonicalDigestSuite",
           "codecJVM/eyes4s.codec.CanonicalDocSuite",
@@ -4281,6 +4303,7 @@
         "suites": [
           "codecJVM/eyes4s.codec.AnalysisArchiveSuite",
           "codecJVM/eyes4s.codec.ArchiveManifestSuite",
+          "codecJVM/eyes4s.codec.ArchiveMemorySuite",
           "codecJVM/eyes4s.codec.ArchiveReconstructionSuite",
           "codecJVM/eyes4s.codec.CanonicalDigestSuite",
           "codecJVM/eyes4s.codec.CanonicalDocSuite",
@@ -4377,6 +4400,7 @@
           "lawsJVM/eyes4s.laws.StudyRevisionLawsSuite",
           "lawsJVM/eyes4s.laws.TemporalResultCodecLawSuite",
           "lawsJVM/eyes4s.laws.WindowLawsSuite",
+          "planJVM/consumer.ValidatedKeyDigestSuite",
           "planJVM/eyes4s.plan.AdmissionLedgerSuite",
           "planJVM/eyes4s.plan.CoordinateProvenanceSuite",
           "planJVM/eyes4s.plan.CountedStudyCursorSuite",
@@ -4408,6 +4432,7 @@
         "suites": [
           "codecJVM/eyes4s.codec.AnalysisArchiveSuite",
           "codecJVM/eyes4s.codec.ArchiveManifestSuite",
+          "codecJVM/eyes4s.codec.ArchiveMemorySuite",
           "codecJVM/eyes4s.codec.ArchiveReconstructionSuite",
           "codecJVM/eyes4s.codec.CanonicalDigestSuite",
           "codecJVM/eyes4s.codec.CanonicalDocSuite",
@@ -4504,6 +4529,7 @@
           "lawsJVM/eyes4s.laws.StudyRevisionLawsSuite",
           "lawsJVM/eyes4s.laws.TemporalResultCodecLawSuite",
           "lawsJVM/eyes4s.laws.WindowLawsSuite",
+          "planJVM/consumer.ValidatedKeyDigestSuite",
           "planJVM/eyes4s.plan.AdmissionLedgerSuite",
           "planJVM/eyes4s.plan.CoordinateProvenanceSuite",
           "planJVM/eyes4s.plan.CountedStudyCursorSuite",
@@ -4537,6 +4563,7 @@
         "suites": [
           "codecJVM/eyes4s.codec.AnalysisArchiveSuite",
           "codecJVM/eyes4s.codec.ArchiveManifestSuite",
+          "codecJVM/eyes4s.codec.ArchiveMemorySuite",
           "codecJVM/eyes4s.codec.ArchiveReconstructionSuite",
           "codecJVM/eyes4s.codec.CanonicalDigestSuite",
           "codecJVM/eyes4s.codec.CanonicalDocSuite",
@@ -4633,6 +4660,7 @@
           "lawsJVM/eyes4s.laws.StudyRevisionLawsSuite",
           "lawsJVM/eyes4s.laws.TemporalResultCodecLawSuite",
           "lawsJVM/eyes4s.laws.WindowLawsSuite",
+          "planJVM/consumer.ValidatedKeyDigestSuite",
           "planJVM/eyes4s.plan.AdmissionLedgerSuite",
           "planJVM/eyes4s.plan.CoordinateProvenanceSuite",
           "planJVM/eyes4s.plan.CountedStudyCursorSuite",
@@ -4704,6 +4732,7 @@
           "lawsJVM/eyes4s.laws.SchemaRegistryJvmSuite",
           "lawsJVM/eyes4s.laws.StudyInputCodecLawSuite",
           "lawsJVM/eyes4s.laws.WindowLawsSuite",
+          "planJVM/consumer.ValidatedKeyDigestSuite",
           "planJVM/eyes4s.plan.CountedStudyCursorSuite",
           "planJVM/eyes4s.plan.ExpectedUnmatchedSuite",
           "planJVM/eyes4s.plan.OccurrencePairingSuite",
@@ -4734,6 +4763,7 @@
         "suites": [
           "codecJVM/eyes4s.codec.AnalysisArchiveSuite",
           "codecJVM/eyes4s.codec.ArchiveManifestSuite",
+          "codecJVM/eyes4s.codec.ArchiveMemorySuite",
           "codecJVM/eyes4s.codec.ArchiveReconstructionSuite",
           "codecJVM/eyes4s.codec.CanonicalDigestSuite",
           "codecJVM/eyes4s.codec.CanonicalDocSuite",
@@ -4838,6 +4868,7 @@
           "lawsJVM/eyes4s.laws.TemplateRecipeLawSuite",
           "lawsJVM/eyes4s.laws.TemporalResultCodecLawSuite",
           "lawsJVM/eyes4s.laws.WindowLawsSuite",
+          "planJVM/consumer.ValidatedKeyDigestSuite",
           "planJVM/eyes4s.plan.AdmissionLedgerSuite",
           "planJVM/eyes4s.plan.CoordinateProvenanceSuite",
           "planJVM/eyes4s.plan.CountedStudyCursorSuite",
@@ -4958,6 +4989,7 @@
         "owner": "eyes4s/design/PairSpace$BetweenDirected",
         "suites": [
           "codecJVM/eyes4s.codec.ArchiveManifestSuite",
+          "codecJVM/eyes4s.codec.ArchiveMemorySuite",
           "codecJVM/eyes4s.codec.ArchiveReconstructionSuite",
           "codecJVM/eyes4s.codec.CanonicalDocSuite",
           "codecJVM/eyes4s.codec.CombinedSourceResultManifestSuite",
@@ -5083,6 +5115,7 @@
         "owner": "eyes4s/design/PairSpace$BetweenDirected",
         "suites": [
           "codecJVM/eyes4s.codec.ArchiveManifestSuite",
+          "codecJVM/eyes4s.codec.ArchiveMemorySuite",
           "codecJVM/eyes4s.codec.ArchiveReconstructionSuite",
           "codecJVM/eyes4s.codec.CanonicalDocSuite",
           "codecJVM/eyes4s.codec.CombinedSourceResultManifestSuite",
@@ -5486,6 +5519,7 @@
         "owner": "eyes4s/design/DirectedPairwiseAnalysis",
         "suites": [
           "codecJVM/eyes4s.codec.ArchiveManifestSuite",
+          "codecJVM/eyes4s.codec.ArchiveMemorySuite",
           "codecJVM/eyes4s.codec.ArchiveReconstructionSuite",
           "codecJVM/eyes4s.codec.CanonicalDocSuite",
           "codecJVM/eyes4s.codec.CombinedSourceResultManifestSuite",
@@ -5589,6 +5623,7 @@
         "owner": "eyes4s/design/DirectedPairwiseAnalysis",
         "suites": [
           "codecJVM/eyes4s.codec.ArchiveManifestSuite",
+          "codecJVM/eyes4s.codec.ArchiveMemorySuite",
           "codecJVM/eyes4s.codec.ArchiveReconstructionSuite",
           "codecJVM/eyes4s.codec.CanonicalDocSuite",
           "codecJVM/eyes4s.codec.CombinedSourceResultManifestSuite",
@@ -5678,6 +5713,7 @@
         "owner": "eyes4s/design/DirectedPairwiseAnalysis",
         "suites": [
           "codecJVM/eyes4s.codec.ArchiveManifestSuite",
+          "codecJVM/eyes4s.codec.ArchiveMemorySuite",
           "codecJVM/eyes4s.codec.ArchiveReconstructionSuite",
           "codecJVM/eyes4s.codec.CanonicalDocSuite",
           "codecJVM/eyes4s.codec.CombinedSourceResultManifestSuite",
@@ -5781,6 +5817,7 @@
         "owner": "eyes4s/design/DirectedPairwiseAnalysis",
         "suites": [
           "codecJVM/eyes4s.codec.ArchiveManifestSuite",
+          "codecJVM/eyes4s.codec.ArchiveMemorySuite",
           "codecJVM/eyes4s.codec.ArchiveReconstructionSuite",
           "codecJVM/eyes4s.codec.CanonicalDocSuite",
           "codecJVM/eyes4s.codec.CombinedSourceResultManifestSuite",
@@ -7748,6 +7785,7 @@
         "owner": "eyes4s/kernel/Mass",
         "suites": [
           "codecJVM/eyes4s.codec.ArchiveManifestSuite",
+          "codecJVM/eyes4s.codec.ArchiveMemorySuite",
           "codecJVM/eyes4s.codec.ArchiveReconstructionSuite",
           "codecJVM/eyes4s.codec.CanonicalDocSuite",
           "codecJVM/eyes4s.codec.CombinedSourceResultManifestSuite",
@@ -7968,6 +8006,7 @@
         "owner": "eyes4s/kernel/Mass",
         "suites": [
           "codecJVM/eyes4s.codec.ArchiveManifestSuite",
+          "codecJVM/eyes4s.codec.ArchiveMemorySuite",
           "codecJVM/eyes4s.codec.ArchiveReconstructionSuite",
           "codecJVM/eyes4s.codec.CanonicalDocSuite",
           "codecJVM/eyes4s.codec.CombinedSourceResultManifestSuite",
@@ -8168,6 +8207,7 @@
         "owner": "eyes4s/kernel/Mass",
         "suites": [
           "codecJVM/eyes4s.codec.ArchiveManifestSuite",
+          "codecJVM/eyes4s.codec.ArchiveMemorySuite",
           "codecJVM/eyes4s.codec.ArchiveReconstructionSuite",
           "codecJVM/eyes4s.codec.CanonicalDocSuite",
           "codecJVM/eyes4s.codec.CombinedSourceResultManifestSuite",
@@ -8307,6 +8347,7 @@
         "owner": "eyes4s/kernel/UnitLabel$$anon$1",
         "suites": [
           "codecJVM/eyes4s.codec.ArchiveManifestSuite",
+          "codecJVM/eyes4s.codec.ArchiveMemorySuite",
           "codecJVM/eyes4s.codec.ArchiveReconstructionSuite",
           "codecJVM/eyes4s.codec.ArchiveWireSuite",
           "codecJVM/eyes4s.codec.CanonicalDigestSuite",
@@ -8460,6 +8501,7 @@
         "suites": [
           "codecJVM/eyes4s.codec.AnalysisArchiveSuite",
           "codecJVM/eyes4s.codec.ArchiveManifestSuite",
+          "codecJVM/eyes4s.codec.ArchiveMemorySuite",
           "codecJVM/eyes4s.codec.ArchiveReconstructionSuite",
           "codecJVM/eyes4s.codec.ArchiveWireSuite",
           "codecJVM/eyes4s.codec.CanonicalDigestSuite",
@@ -8938,6 +8980,7 @@
           "planJVM/eyes4s.plan.DiagnosticCatalogSuite",
           "planJVM/eyes4s.plan.InitialFixationSuite",
           "planJVM/eyes4s.plan.PreflightSuite",
+          "planJVM/eyes4s.plan.ProjectPrerequisitesSuite",
           "planJVM/eyes4s.plan.ResultInspectionSuite",
           "planJVM/eyes4s.plan.StudyCountsSuite",
           "planJVM/eyes4s.plan.StudyFormKeysSuite",
@@ -8957,6 +9000,7 @@
           "ioJVM/eyes4s.io.DiagnosticsDocJvmSuite",
           "ioJVM/eyes4s.io.IoDiagnosticCatalogSuite",
           "planJVM/eyes4s.plan.DiagnosticCatalogSuite",
+          "planJVM/eyes4s.plan.ProjectPrerequisitesSuite",
           "planJVM/eyes4s.plan.StudyFormKeysSuite",
           "planJVM/eyes4s.plan.StudyFormSuite",
           "planJVM/eyes4s.plan.UnmatchedReasonsSuite",
@@ -8990,6 +9034,7 @@
           "ioJVM/eyes4s.io.DiagnosticsDocJvmSuite",
           "ioJVM/eyes4s.io.IoDiagnosticCatalogSuite",
           "planJVM/eyes4s.plan.DiagnosticCatalogSuite",
+          "planJVM/eyes4s.plan.ProjectPrerequisitesSuite",
           "planJVM/eyes4s.plan.StudyFormKeysSuite",
           "planJVM/eyes4s.plan.StudyFormSuite",
           "planJVM/eyes4s.plan.UnmatchedReasonsSuite",
@@ -9215,7 +9260,6 @@
           "ioJVM/eyes4s.io.DiagnosticCoverageJvmSuite",
           "ioJVM/eyes4s.io.DiagnosticsDocJvmSuite",
           "ioJVM/eyes4s.io.IoDiagnosticCatalogSuite",
-          "lawsJVM/eyes4s.laws.FormLawSuite",
           "planJVM/eyes4s.plan.DiagnosticCatalogSuite",
           "planJVM/eyes4s.plan.FormDescriptorSuite",
           "planJVM/eyes4s.plan.UnmatchedReasonsSuite",
@@ -11833,12 +11877,17 @@
     },
     "class eyes4s.aoi.SampleMembership": {
       "classification": "behavior-or-sealed-data",
-      "instance": "eyes4s/aoi/SampleMembership$Areas",
+      "instance": "eyes4s/aoi/SampleMembership$Areas$$anon$3",
+      "suite": "aoiJVM/eyes4s.aoi.AoiSuite"
+    },
+    "class eyes4s.aoi.SampleMembership$.Areas": {
+      "classification": "behavior-or-sealed-data",
+      "instance": "eyes4s/aoi/SampleMembership$Areas$$anon$3",
       "suite": "aoiJVM/eyes4s.aoi.AoiSuite"
     },
     "class eyes4s.codec.AnalysisInputs": {
       "classification": "data-sum",
-      "instance": "eyes4s/codec/AnalysisInputs$$anon$24",
+      "instance": "eyes4s/codec/AnalysisInputs$$anon$26",
       "suite": "codecJVM/eyes4s.repetitionconsumer.RepetitionPlanSuite"
     },
     "class eyes4s.codec.ArrayOrder": {
@@ -11850,6 +11899,11 @@
       "classification": "behavior-or-sealed-data",
       "instance": "eyes4s/codec/ArtifactDecoders$$anon$11",
       "suite": "lawsJVM/eyes4s.laws.ManifestLawSuite"
+    },
+    "class eyes4s.codec.ArtifactName": {
+      "classification": "behavior-or-sealed-data",
+      "instance": "eyes4s/codec/ArtifactName$$anon$1",
+      "suite": "codecJVM/eyes4s.repetitionconsumer.RepetitionPlanSuite"
     },
     "class eyes4s.codec.ArtifactRole": {
       "classification": "data-sum",
@@ -11898,7 +11952,7 @@
     },
     "class eyes4s.codec.LedgerSourceRole": {
       "classification": "data-sum",
-      "instance": "eyes4s/codec/LedgerSourceRole$$anon$22",
+      "instance": "eyes4s/codec/LedgerSourceRole$$anon$23",
       "suite": "codecJVM/eyes4s.codec.InspectionManifestJvmSuite"
     },
     "class eyes4s.codec.LoadedAnalysisPlan": {
@@ -11946,6 +12000,11 @@
       "instance": "eyes4s/codec/TemporalResultCodec$$anon$4$$anon$5",
       "suite": "codecJVM/eyes4s.codec.ArchiveManifestSuite"
     },
+    "class eyes4s.codec.ManifestEntry": {
+      "classification": "behavior-or-sealed-data",
+      "instance": "eyes4s/codec/ManifestEntry$$anon$25",
+      "suite": "codecJVM/eyes4s.repetitionconsumer.RepetitionPlanSuite"
+    },
     "class eyes4s.codec.ManifestError": {
       "classification": "data-sum",
       "instance": "eyes4s/codec/ManifestError$DuplicateRelation",
@@ -11958,7 +12017,7 @@
     },
     "class eyes4s.codec.MediaKind": {
       "classification": "data-sum",
-      "instance": "eyes4s/codec/MediaKind$$anon$1",
+      "instance": "eyes4s/codec/MediaKind$$anon$2",
       "suite": "codecJVM/eyes4s.repetitionconsumer.RepetitionPlanSuite"
     },
     "class eyes4s.codec.PackedElement": {
@@ -11968,8 +12027,13 @@
     },
     "class eyes4s.codec.PayloadError": {
       "classification": "data-sum",
-      "instance": "eyes4s/codec/PayloadError$$anon$9",
+      "instance": "eyes4s/codec/PayloadError$$anon$10",
       "suite": "codecJVM/eyes4s.codec.CodecDiagnosticCatalogSuite"
+    },
+    "class eyes4s.codec.PayloadLayout": {
+      "classification": "behavior-or-sealed-data",
+      "instance": "eyes4s/codec/PayloadLayout$$anon$8",
+      "suite": "codecJVM/eyes4s.codec.CombinedSourceResultManifestSuite"
     },
     "class eyes4s.codec.PixelUnit": {
       "classification": "behavior-or-sealed-data",
@@ -11999,6 +12063,11 @@
     "class eyes4s.codec.RunStampError": {
       "classification": "data-sum",
       "instance": "eyes4s/codec/RunStampError$ChangedInput",
+      "suite": "codecJVM/eyes4s.repetitionconsumer.RepetitionPlanSuite"
+    },
+    "class eyes4s.codec.ScientificManifest": {
+      "classification": "behavior-or-sealed-data",
+      "instance": "eyes4s/codec/ScientificManifest$$anon$27",
       "suite": "codecJVM/eyes4s.repetitionconsumer.RepetitionPlanSuite"
     },
     "class eyes4s.codec.SourceFailure": {
@@ -12096,6 +12165,11 @@
       "instance": "eyes4s/compare/CrqaError$Geometry",
       "suite": "compareJVM/eyes4s.compare.CrqaSuite"
     },
+    "class eyes4s.compare.CrqaMetrics": {
+      "classification": "behavior-or-sealed-data",
+      "instance": "eyes4s/compare/CrqaMetrics$$anon$3",
+      "suite": "compareJVM/consumer.PublicCompareSuite"
+    },
     "class eyes4s.compare.CrqaOperand": {
       "classification": "data-sum",
       "instance": "eyes4s/compare/CrqaOperand$$anon$2",
@@ -12104,6 +12178,11 @@
     "class eyes4s.compare.CrqaParameterError": {
       "classification": "data-sum",
       "instance": "eyes4s/compare/CrqaParameterError$NonPositiveEmbeddingDimension",
+      "suite": "compareJVM/consumer.PublicCompareSuite"
+    },
+    "class eyes4s.compare.CrqaResult": {
+      "classification": "behavior-or-sealed-data",
+      "instance": "eyes4s/compare/CrqaResult$$anon$4",
       "suite": "compareJVM/consumer.PublicCompareSuite"
     },
     "class eyes4s.compare.Divergence": {
@@ -12238,7 +12317,12 @@
     },
     "class eyes4s.core.EdgeSupport": {
       "classification": "behavior-or-sealed-data",
-      "instance": "eyes4s/core/EdgeSupport$Fixed",
+      "instance": "eyes4s/core/EdgeSupport$Fixed$$anon$2",
+      "suite": "coreJVM/consumer.PublicCoreSuite"
+    },
+    "class eyes4s.core.EdgeSupport$.Fixed": {
+      "classification": "behavior-or-sealed-data",
+      "instance": "eyes4s/core/EdgeSupport$Fixed$$anon$2",
       "suite": "coreJVM/consumer.PublicCoreSuite"
     },
     "class eyes4s.core.Event": {
@@ -12283,7 +12367,7 @@
     },
     "class eyes4s.core.Fusion": {
       "classification": "data-sum",
-      "instance": "eyes4s/core/Fusion$$anon$4",
+      "instance": "eyes4s/core/Fusion$$anon$5",
       "suite": "coreJVM/eyes4s.core.RecordingSuite"
     },
     "class eyes4s.core.Gaze": {
@@ -12293,7 +12377,12 @@
     },
     "class eyes4s.core.MaximumSupportGap": {
       "classification": "behavior-or-sealed-data",
-      "instance": "eyes4s/core/MaximumSupportGap$AtMost",
+      "instance": "eyes4s/core/MaximumSupportGap$AtMost$$anon$1",
+      "suite": "coreJVM/eyes4s.core.RecordingSuite"
+    },
+    "class eyes4s.core.MaximumSupportGap$.AtMost": {
+      "classification": "behavior-or-sealed-data",
+      "instance": "eyes4s/core/MaximumSupportGap$AtMost$$anon$1",
       "suite": "coreJVM/eyes4s.core.RecordingSuite"
     },
     "class eyes4s.core.OccupancyError": {
@@ -12313,7 +12402,7 @@
     },
     "class eyes4s.core.PositionalGazeState": {
       "classification": "data-sum",
-      "instance": "eyes4s/core/PositionalGazeState$$anon$3",
+      "instance": "eyes4s/core/PositionalGazeState$$anon$4",
       "suite": "coreJVM/eyes4s.core.RecordingSuite"
     },
     "class eyes4s.core.PupilUnit": {
@@ -12328,12 +12417,12 @@
     },
     "class eyes4s.core.RecordingChannel": {
       "classification": "data-sum",
-      "instance": "eyes4s/core/RecordingChannel$$anon$2",
+      "instance": "eyes4s/core/RecordingChannel$$anon$3",
       "suite": "coreJVM/consumer.PublicCoreSuite"
     },
     "class eyes4s.core.RecordingError": {
       "classification": "data-sum",
-      "instance": "eyes4s/core/RecordingError$$anon$5",
+      "instance": "eyes4s/core/RecordingError$$anon$6",
       "suite": "coreJVM/eyes4s.core.RecordingSuite"
     },
     "class eyes4s.core.ReplicationError": {
@@ -12348,7 +12437,12 @@
     },
     "class eyes4s.core.SamplingEvidence": {
       "classification": "behavior-or-sealed-data",
-      "instance": "eyes4s/core/SamplingEvidence$Fixed",
+      "instance": "eyes4s/core/SamplingEvidence$Fixed$$anon$2",
+      "suite": "coreJVM/consumer.PublicCoreSuite"
+    },
+    "class eyes4s.core.SamplingEvidence$.Fixed": {
+      "classification": "behavior-or-sealed-data",
+      "instance": "eyes4s/core/SamplingEvidence$Fixed$$anon$2",
       "suite": "coreJVM/consumer.PublicCoreSuite"
     },
     "class eyes4s.core.ScanpathError": {
@@ -12368,7 +12462,12 @@
     },
     "class eyes4s.core.TemporalSupport": {
       "classification": "behavior-or-sealed-data",
-      "instance": "eyes4s/core/TemporalSupport$Fixed",
+      "instance": "eyes4s/core/TemporalSupport$Fixed$$anon$3",
+      "suite": "coreJVM/consumer.PublicCoreSuite"
+    },
+    "class eyes4s.core.TemporalSupport$.Fixed": {
+      "classification": "behavior-or-sealed-data",
+      "instance": "eyes4s/core/TemporalSupport$Fixed$$anon$3",
       "suite": "coreJVM/consumer.PublicCoreSuite"
     },
     "class eyes4s.core.TemporalSupportError": {
@@ -12441,6 +12540,21 @@
       "instance": "eyes4s/design/DifferenceError$NonFiniteDifference",
       "suite": "designJVM/eyes4s.design.EvaluationWorkSuite"
     },
+    "class eyes4s.design.DirectedPaired": {
+      "classification": "behavior-or-sealed-data",
+      "instance": "eyes4s/design/DirectedPaired$$anon$4",
+      "suite": "designJVM/consumer.PublicDesignSuite"
+    },
+    "class eyes4s.design.DirectedPairwiseAnalysis": {
+      "classification": "behavior-or-sealed-data",
+      "instance": "eyes4s/design/DirectedPairwiseAnalysis$$anon$11",
+      "suite": "designJVM/consumer.PublicDesignSuite"
+    },
+    "class eyes4s.design.DuplicateTrials": {
+      "classification": "behavior-or-sealed-data",
+      "instance": "eyes4s/design/DuplicateTrials$$anon$2",
+      "suite": "designJVM/consumer.PublicDesignSuite"
+    },
     "class eyes4s.design.EvaluationPage": {
       "classification": "data-sum",
       "instance": "eyes4s/design/EvaluationPage$Done",
@@ -12471,6 +12585,11 @@
       "instance": "eyes4s/design/FailurePolicy$$anon$2",
       "suite": "designJVM/consumer.PublicDesignSuite"
     },
+    "class eyes4s.design.IndexedTrial": {
+      "classification": "behavior-or-sealed-data",
+      "instance": "eyes4s/design/IndexedTrial$$anon$1",
+      "suite": "designJVM/consumer.PublicDesignSuite"
+    },
     "class eyes4s.design.Intercept": {
       "classification": "data-sum",
       "instance": "eyes4s/design/Intercept$$anon$1",
@@ -12484,7 +12603,7 @@
     "class eyes4s.design.KeyDigest$.ProductDigest": {
       "classification": "behavior-or-sealed-data",
       "instance": "eyes4s/design/KeyDigest$productCons",
-      "suite": "lawsJVM/consumer.PublicLawsSuite"
+      "suite": "planJVM/consumer.ValidatedKeyDigestSuite"
     },
     "class eyes4s.design.LeastSquaresError": {
       "classification": "data-sum",
@@ -12518,18 +12637,28 @@
     },
     "class eyes4s.design.PairStorage": {
       "classification": "data-sum",
-      "instance": "eyes4s/design/PairStorage$$anon$1",
+      "instance": "eyes4s/design/PairStorage$$anon$3",
       "suite": "designJVM/consumer.PublicDesignSuite"
     },
     "class eyes4s.design.Paired": {
       "classification": "behavior-or-sealed-data",
-      "instance": "eyes4s/design/DirectedPaired",
+      "instance": "eyes4s/design/DirectedPaired$$anon$4",
       "suite": "designJVM/consumer.PublicDesignSuite"
     },
     "class eyes4s.design.PairedPage": {
       "classification": "data-sum",
       "instance": "eyes4s/design/PairedPage$Done",
       "suite": "codecJVM/eyes4s.repetitionconsumer.RepetitionPlanSuite"
+    },
+    "class eyes4s.design.Pairing$.Between": {
+      "classification": "behavior-or-sealed-data",
+      "instance": "eyes4s/design/Pairing$Between$$anon$3",
+      "suite": "designJVM/consumer.PublicDesignSuite"
+    },
+    "class eyes4s.design.Pairing$.Within": {
+      "classification": "behavior-or-sealed-data",
+      "instance": "eyes4s/design/Pairing$Within$$anon$4",
+      "suite": "designJVM/consumer.PublicDesignSuite"
     },
     "class eyes4s.design.PairingAmbiguity": {
       "classification": "behavior-or-sealed-data",
@@ -12541,9 +12670,14 @@
       "instance": "eyes4s/design/PairingError$NonPositiveLimit",
       "suite": "ioJVM/docconsumer.DocumentationExamplesSuite"
     },
+    "class eyes4s.design.PairingReport": {
+      "classification": "behavior-or-sealed-data",
+      "instance": "eyes4s/design/PairingReport$$anon$10",
+      "suite": "designJVM/consumer.PublicDesignSuite"
+    },
     "class eyes4s.design.PairwiseAnalysis": {
       "classification": "behavior-or-sealed-data",
-      "instance": "eyes4s/design/DirectedPairwiseAnalysis",
+      "instance": "eyes4s/design/DirectedPairwiseAnalysis$$anon$11",
       "suite": "designJVM/consumer.PublicDesignSuite"
     },
     "class eyes4s.design.RSquaredReference": {
@@ -12576,6 +12710,16 @@
       "instance": "eyes4s/design/ReductionPolicyError$NonPositiveMinimumSuccessful",
       "suite": "designJVM/eyes4s.design.AnalysisSuite"
     },
+    "class eyes4s.design.ReductionReport": {
+      "classification": "behavior-or-sealed-data",
+      "instance": "eyes4s/design/ReductionReport$$anon$9",
+      "suite": "designJVM/consumer.PublicDesignSuite"
+    },
+    "class eyes4s.design.ReductionRow": {
+      "classification": "behavior-or-sealed-data",
+      "instance": "eyes4s/design/ReductionRow$$anon$8",
+      "suite": "designJVM/consumer.PublicDesignSuite"
+    },
     "class eyes4s.design.Relation": {
       "classification": "behavior-or-sealed-data",
       "instance": "eyes4s/design/Relation$All",
@@ -12590,6 +12734,11 @@
       "classification": "data-sum",
       "instance": "eyes4s/design/RngError$NonPositiveBound",
       "suite": "designJVM/eyes4s.design.SeedDigestSuite"
+    },
+    "class eyes4s.design.ScheduledPair": {
+      "classification": "behavior-or-sealed-data",
+      "instance": "eyes4s/design/ScheduledPair$$anon$1",
+      "suite": "designJVM/consumer.PublicDesignSuite"
     },
     "class eyes4s.design.ScoreMean": {
       "classification": "behavior-or-sealed-data",
@@ -12645,6 +12794,16 @@
       "classification": "behavior-or-sealed-data",
       "instance": "eyes4s/design/TemplateInput$features$",
       "suite": "designJVM/eyes4s.templateconsumer.NativeTemplateSuite"
+    },
+    "class eyes4s.design.UndirectedPaired": {
+      "classification": "behavior-or-sealed-data",
+      "instance": "eyes4s/design/UndirectedPaired$$anon$5",
+      "suite": "designJVM/consumer.PublicDesignSuite"
+    },
+    "class eyes4s.design.UndirectedPairwiseAnalysis": {
+      "classification": "behavior-or-sealed-data",
+      "instance": "eyes4s/design/UndirectedPairwiseAnalysis$$anon$6",
+      "suite": "designJVM/consumer.PublicDesignSuite"
     },
     "class eyes4s.design.WorkQuantaError": {
       "classification": "data-sum",
@@ -12751,9 +12910,14 @@
       "instance": "eyes4s/fs2/RunOutcome$Cancelled",
       "suite": "fs2ModuleJVM/eyes4s.fs2.CountExecutionSuite"
     },
+    "class eyes4s.io.AdmittedFixationRow": {
+      "classification": "behavior-or-sealed-data",
+      "instance": "eyes4s/io/AdmittedFixationRow$$anon$4",
+      "suite": "ioJVM/eyes4s.io.RepetitionGuideSuite"
+    },
     "class eyes4s.io.AoiEstimand": {
       "classification": "data-sum",
-      "instance": "eyes4s/io/AoiEstimand$$anon$2",
+      "instance": "eyes4s/io/AoiEstimand$$anon$3",
       "suite": "ioJVM/eyes4s.io.PsychologyWorkflowSuite"
     },
     "class eyes4s.io.ArrowExportError": {
@@ -13101,10 +13265,25 @@
       "instance": "eyes4s/io/EyeLinkEvidence$$anon$2",
       "suite": "ioJVM/consumer.PublicIoSuite"
     },
+    "class eyes4s.io.FixationColumns": {
+      "classification": "behavior-or-sealed-data",
+      "instance": "eyes4s/io/FixationColumns$$anon$1",
+      "suite": "ioJVM/eyes4s.io.RepetitionGuideSuite"
+    },
     "class eyes4s.io.FixationImportError": {
       "classification": "data-sum",
       "instance": "eyes4s/io/FixationImportError$Columns",
       "suite": "ioJVM/consumer.PublicIoSuite"
+    },
+    "class eyes4s.io.FixationPlacementTally": {
+      "classification": "behavior-or-sealed-data",
+      "instance": "eyes4s/io/FixationPlacementTally$$anon$4",
+      "suite": "ioJVM/eyes4s.io.FixationPositionsSuite"
+    },
+    "class eyes4s.io.FixationPosition": {
+      "classification": "behavior-or-sealed-data",
+      "instance": "eyes4s/io/FixationPosition$$anon$1",
+      "suite": "ioJVM/eyes4s.io.FixationPositionsSuite"
     },
     "class eyes4s.io.FixationRowError": {
       "classification": "data-sum",
@@ -13136,10 +13315,20 @@
       "instance": "eyes4s/io/NativeValidity$$anon$13",
       "suite": "ioJVM/eyes4s.io.DiagnosticsDocJvmSuite"
     },
+    "class eyes4s.io.PlacedFixationPosition": {
+      "classification": "behavior-or-sealed-data",
+      "instance": "eyes4s/io/PlacedFixationPosition$$anon$3",
+      "suite": "ioJVM/eyes4s.io.FixationPositionsSuite"
+    },
     "class eyes4s.io.PsychologyWorkflowError": {
       "classification": "data-sum",
       "instance": "eyes4s/io/PsychologyWorkflowError$MillisecondsOutsideRange",
       "suite": "ioJVM/consumer.PublicIoSuite"
+    },
+    "class eyes4s.io.RejectedFixationRow": {
+      "classification": "behavior-or-sealed-data",
+      "instance": "eyes4s/io/RejectedFixationRow$$anon$3",
+      "suite": "ioJVM/eyes4s.io.FixationRowInterpretationSuite"
     },
     "class eyes4s.io.ResultExportError": {
       "classification": "data-sum",
@@ -13148,7 +13337,12 @@
     },
     "class eyes4s.io.ResultUnit": {
       "classification": "data-sum",
-      "instance": "eyes4s/io/ResultUnit$$anon$7",
+      "instance": "eyes4s/io/ResultUnit$$anon$10",
+      "suite": "ioJVM/eyes4s.io.PsychologyWorkflowSuite"
+    },
+    "class eyes4s.io.SampleOriginCounts": {
+      "classification": "behavior-or-sealed-data",
+      "instance": "eyes4s/io/SampleOriginCounts$$anon$2",
       "suite": "ioJVM/eyes4s.io.PsychologyWorkflowSuite"
     },
     "class eyes4s.io.Sha256Error": {
@@ -13178,7 +13372,7 @@
     },
     "class eyes4s.io.TidyCsvError": {
       "classification": "data-sum",
-      "instance": "eyes4s/io/TidyCsvError$$anon$14",
+      "instance": "eyes4s/io/TidyCsvError$$anon$15",
       "suite": "ioJVM/consumer.PublicIoSuite"
     },
     "class eyes4s.io.TidyResultError": {
@@ -13206,25 +13400,70 @@
       "instance": "eyes4s/io/TimestampUnit$$anon$6",
       "suite": "ioJVM/eyes4s.io.FixationRowInterpretationSuite"
     },
+    "class eyes4s.io.TrialColumns": {
+      "classification": "behavior-or-sealed-data",
+      "instance": "eyes4s/io/TrialColumns$$anon$2",
+      "suite": "ioJVM/eyes4s.io.SourceAdmissionSuite"
+    },
+    "class eyes4s.io.UnplacedFixationPosition": {
+      "classification": "behavior-or-sealed-data",
+      "instance": "eyes4s/io/UnplacedFixationPosition$$anon$2",
+      "suite": "ioJVM/eyes4s.io.FixationPositionsSuite"
+    },
+    "class eyes4s.kernel.Bounds": {
+      "classification": "behavior-or-sealed-data",
+      "instance": "eyes4s/kernel/Bounds$$anon$2",
+      "suite": "kernelJVM/consumer.DomainInvariantSuite"
+    },
     "class eyes4s.kernel.Correction": {
       "classification": "behavior-or-sealed-data",
       "instance": "eyes4s/kernel/Correction$FlipX$",
       "suite": "lawsJVM/eyes4s.laws.CoordinateProvenanceLawsSuite"
+    },
+    "class eyes4s.kernel.Correction$.Translate": {
+      "classification": "behavior-or-sealed-data",
+      "instance": "eyes4s/kernel/Correction$Translate$$anon$1",
+      "suite": "lawsJVM/eyes4s.laws.SchemaRegistryJvmSuite"
     },
     "class eyes4s.kernel.Detector": {
       "classification": "behavior-or-sealed-data",
       "instance": "eyes4s/detect/Filter$$anon$4",
       "suite": "lawsJVM/eyes4s.laws.DetectLawsSuite"
     },
+    "class eyes4s.kernel.Extent": {
+      "classification": "behavior-or-sealed-data",
+      "instance": "eyes4s/kernel/Extent$$anon$1",
+      "suite": "kernelJVM/consumer.DomainInvariantSuite"
+    },
+    "class eyes4s.kernel.Frame": {
+      "classification": "behavior-or-sealed-data",
+      "instance": "eyes4s/kernel/Frame$$anon$5",
+      "suite": "kernelJVM/consumer.DomainInvariantSuite"
+    },
+    "class eyes4s.kernel.FrameSpec": {
+      "classification": "behavior-or-sealed-data",
+      "instance": "eyes4s/kernel/FrameSpec$$anon$4",
+      "suite": "kernelJVM/consumer.DomainInvariantSuite"
+    },
     "class eyes4s.kernel.GeometryError": {
       "classification": "data-sum",
-      "instance": "eyes4s/kernel/GeometryError$BoundsExtentOverflow",
+      "instance": "eyes4s/kernel/GeometryError$DegenerateBounds",
+      "suite": "kernelJVM/consumer.DomainInvariantSuite"
+    },
+    "class eyes4s.kernel.Grid": {
+      "classification": "behavior-or-sealed-data",
+      "instance": "eyes4s/kernel/Grid$$anon$2",
       "suite": "kernelJVM/consumer.PublicKernelSuite"
     },
     "class eyes4s.kernel.GridCellOrder": {
       "classification": "data-sum",
       "instance": "eyes4s/kernel/GridCellOrder$$anon$1",
       "suite": "kernelJVM/eyes4s.kernel.GridGeometrySuite"
+    },
+    "class eyes4s.kernel.GridSpec": {
+      "classification": "behavior-or-sealed-data",
+      "instance": "eyes4s/kernel/GridSpec$$anon$1",
+      "suite": "lawsJVM/consumer.KernelConformanceSuite"
     },
     "class eyes4s.kernel.HalfOpenPlacement": {
       "classification": "data-sum",
@@ -13234,6 +13473,11 @@
     "class eyes4s.kernel.Interp": {
       "classification": "data-sum",
       "instance": "eyes4s/kernel/Interp$$anon$1",
+      "suite": "kernelJVM/consumer.PublicKernelSuite"
+    },
+    "class eyes4s.kernel.Interval": {
+      "classification": "behavior-or-sealed-data",
+      "instance": "eyes4s/kernel/Interval$$anon$1",
       "suite": "kernelJVM/consumer.PublicKernelSuite"
     },
     "class eyes4s.kernel.LengthUnit": {
@@ -13266,14 +13510,24 @@
       "instance": "eyes4s/kernel/Module$package$$anon$1",
       "suite": "lawsJVM/eyes4s.laws.KernelLawsSuite"
     },
+    "class eyes4s.kernel.Moving": {
+      "classification": "behavior-or-sealed-data",
+      "instance": "eyes4s/kernel/Moving$$anon$2",
+      "suite": "kernelJVM/consumer.PublicKernelSuite"
+    },
     "class eyes4s.kernel.MovingError": {
       "classification": "data-sum",
-      "instance": "eyes4s/kernel/MovingError$$anon$3",
+      "instance": "eyes4s/kernel/MovingError$$anon$4",
       "suite": "kernelJVM/eyes4s.kernel.MovingSuite"
     },
     "class eyes4s.kernel.Overlap": {
       "classification": "data-sum",
-      "instance": "eyes4s/kernel/Overlap$$anon$1",
+      "instance": "eyes4s/kernel/Overlap$$anon$3",
+      "suite": "lawsJVM/consumer.PublicLawsSuite"
+    },
+    "class eyes4s.kernel.Perspective": {
+      "classification": "behavior-or-sealed-data",
+      "instance": "eyes4s/kernel/Perspective$$anon$2",
       "suite": "lawsJVM/consumer.PublicLawsSuite"
     },
     "class eyes4s.kernel.PlanarUnit": {
@@ -13288,8 +13542,53 @@
     },
     "class eyes4s.kernel.Region": {
       "classification": "behavior-or-sealed-data",
-      "instance": "eyes4s/kernel/Region$Complement",
+      "instance": "eyes4s/kernel/Region$Complement$$anon$6",
       "suite": "lawsJVM/eyes4s.laws.KernelLawsSuite"
+    },
+    "class eyes4s.kernel.Region$.Complement": {
+      "classification": "behavior-or-sealed-data",
+      "instance": "eyes4s/kernel/Region$Complement$$anon$6",
+      "suite": "kernelJVM/consumer.PublicKernelSuite"
+    },
+    "class eyes4s.kernel.Region$.Ellipse": {
+      "classification": "behavior-or-sealed-data",
+      "instance": "eyes4s/kernel/Region$Ellipse$$anon$2",
+      "suite": "kernelJVM/consumer.PublicKernelSuite"
+    },
+    "class eyes4s.kernel.Region$.Empty": {
+      "classification": "behavior-or-sealed-data",
+      "instance": "eyes4s/kernel/Region$Empty$$anon$7",
+      "suite": "kernelJVM/consumer.PublicKernelSuite"
+    },
+    "class eyes4s.kernel.Region$.Everything": {
+      "classification": "behavior-or-sealed-data",
+      "instance": "eyes4s/kernel/Region$Everything$$anon$8",
+      "suite": "kernelJVM/consumer.PublicKernelSuite"
+    },
+    "class eyes4s.kernel.Region$.Intersect": {
+      "classification": "behavior-or-sealed-data",
+      "instance": "eyes4s/kernel/Region$Intersect$$anon$5",
+      "suite": "kernelJVM/consumer.PublicKernelSuite"
+    },
+    "class eyes4s.kernel.Region$.Polygon": {
+      "classification": "behavior-or-sealed-data",
+      "instance": "eyes4s/kernel/Region$Polygon$$anon$3",
+      "suite": "kernelJVM/consumer.PublicKernelSuite"
+    },
+    "class eyes4s.kernel.Region$.Rect": {
+      "classification": "behavior-or-sealed-data",
+      "instance": "eyes4s/kernel/Region$Rect$$anon$1",
+      "suite": "kernelJVM/consumer.PublicKernelSuite"
+    },
+    "class eyes4s.kernel.Region$.Union": {
+      "classification": "behavior-or-sealed-data",
+      "instance": "eyes4s/kernel/Region$Union$$anon$4",
+      "suite": "kernelJVM/consumer.PublicKernelSuite"
+    },
+    "class eyes4s.kernel.RejectedSyncMark": {
+      "classification": "behavior-or-sealed-data",
+      "instance": "eyes4s/kernel/RejectedSyncMark$$anon$3",
+      "suite": "kernelJVM/eyes4s.kernel.SyncEvidenceSuite"
     },
     "class eyes4s.kernel.Surface": {
       "classification": "behavior-or-sealed-data",
@@ -13301,6 +13600,11 @@
       "instance": "eyes4s/kernel/SurfaceError$DegenerateTotal",
       "suite": "kernelJVM/consumer.PublicKernelSuite"
     },
+    "class eyes4s.kernel.Sync": {
+      "classification": "behavior-or-sealed-data",
+      "instance": "eyes4s/kernel/Sync$$anon$1",
+      "suite": "kernelJVM/consumer.PublicKernelSuite"
+    },
     "class eyes4s.kernel.SyncEvidenceError": {
       "classification": "data-sum",
       "instance": "eyes4s/kernel/SyncEvidenceError$DuplicateMarkId",
@@ -13309,6 +13613,11 @@
     "class eyes4s.kernel.SyncFitMode": {
       "classification": "data-sum",
       "instance": "eyes4s/kernel/SyncFitMode$$anon$1",
+      "suite": "kernelJVM/consumer.PublicKernelSuite"
+    },
+    "class eyes4s.kernel.SyncResidual": {
+      "classification": "behavior-or-sealed-data",
+      "instance": "eyes4s/kernel/SyncResidual$$anon$2",
       "suite": "kernelJVM/consumer.PublicKernelSuite"
     },
     "class eyes4s.kernel.TimeError": {
@@ -13353,18 +13662,48 @@
     },
     "class eyes4s.kernel.Warp": {
       "classification": "behavior-or-sealed-data",
-      "instance": "eyes4s/kernel/Warp$Affine",
+      "instance": "eyes4s/kernel/Warp$Affine$$anon$2",
       "suite": "lawsJVM/eyes4s.laws.KernelLawsSuite"
+    },
+    "class eyes4s.kernel.Warp$.Affine": {
+      "classification": "behavior-or-sealed-data",
+      "instance": "eyes4s/kernel/Warp$Affine$$anon$2",
+      "suite": "kernelJVM/eyes4s.kernel.MovingSuite"
+    },
+    "class eyes4s.kernel.Warp$.Homography": {
+      "classification": "behavior-or-sealed-data",
+      "instance": "eyes4s/kernel/Warp$Homography$$anon$3",
+      "suite": "kernelJVM/consumer.PublicKernelSuite"
+    },
+    "class eyes4s.kernel.Warp$.Id": {
+      "classification": "behavior-or-sealed-data",
+      "instance": "eyes4s/kernel/Warp$Id$$anon$1",
+      "suite": "kernelJVM/consumer.PublicKernelSuite"
     },
     "class eyes4s.kernel.Warp$.Sense": {
       "classification": "data-sum",
-      "instance": "eyes4s/kernel/Warp$Sense$$anon$1",
+      "instance": "eyes4s/kernel/Warp$Sense$$anon$4",
       "suite": "ioJVM/docconsumer.DocumentationExamplesSuite"
+    },
+    "class eyes4s.kernel.Warp$.Tangent": {
+      "classification": "behavior-or-sealed-data",
+      "instance": "eyes4s/kernel/Warp$Tangent$$anon$5",
+      "suite": "ioJVM/docconsumer.DocumentationExamplesSuite"
+    },
+    "class eyes4s.kernel.Warp$.Then": {
+      "classification": "behavior-or-sealed-data",
+      "instance": "eyes4s/kernel/Warp$Then$$anon$6",
+      "suite": "kernelJVM/eyes4s.kernel.WarpSuite"
+    },
+    "class eyes4s.kernel.Window": {
+      "classification": "behavior-or-sealed-data",
+      "instance": "eyes4s/kernel/Window$$anon$2",
+      "suite": "kernelJVM/consumer.PublicKernelSuite"
     },
     "class eyes4s.kernel.YAxis": {
       "classification": "data-sum",
-      "instance": "eyes4s/kernel/YAxis$$anon$1",
-      "suite": "kernelJVM/consumer.PublicKernelSuite"
+      "instance": "eyes4s/kernel/YAxis$$anon$3",
+      "suite": "kernelJVM/consumer.DomainInvariantSuite"
     },
     "class eyes4s.laws.AoiLaws": {
       "classification": "behavior-or-sealed-data",
@@ -13526,6 +13865,11 @@
       "instance": "eyes4s/plan/AdmissionError$AmbiguousTrial",
       "suite": "planJVM/eyes4s.plan.AdmissionLedgerSuite"
     },
+    "class eyes4s.plan.AdmissionLedger": {
+      "classification": "behavior-or-sealed-data",
+      "instance": "eyes4s/plan/AdmissionLedger$$anon$21",
+      "suite": "planJVM/eyes4s.plan.AdmissionLedgerSuite"
+    },
     "class eyes4s.plan.AdmissionOutcome": {
       "classification": "data-sum",
       "instance": "eyes4s/plan/AdmissionOutcome$$anon$3",
@@ -13551,20 +13895,35 @@
       "instance": "eyes4s/plan/AnalysisKind$$anon$2",
       "suite": "ioJVM/eyes4s.io.FamilyConformanceSuite"
     },
+    "class eyes4s.plan.AngularReference": {
+      "classification": "behavior-or-sealed-data",
+      "instance": "eyes4s/plan/AngularReference$$anon$3",
+      "suite": "planJVM/eyes4s.plan.CoordinateProvenanceSuite"
+    },
     "class eyes4s.plan.AreaCorner": {
       "classification": "data-sum",
       "instance": "eyes4s/plan/AreaCorner$$anon$8",
       "suite": "planJVM/eyes4s.plan.UnmatchedReasonsSuite"
     },
+    "class eyes4s.plan.ArtifactRef": {
+      "classification": "behavior-or-sealed-data",
+      "instance": "eyes4s/plan/ArtifactRef$$anon$2",
+      "suite": "codecJVM/eyes4s.pointcodecconsumer.PointSamplingCodecSuite"
+    },
     "class eyes4s.plan.AttributeKind": {
       "classification": "data-sum",
-      "instance": "eyes4s/plan/AttributeKind$$anon$2",
+      "instance": "eyes4s/plan/AttributeKind$$anon$3",
       "suite": "planJVM/eyes4s.plan.ExpectedUnmatchedSuite"
     },
     "class eyes4s.plan.AttributeValue": {
       "classification": "data-sum",
-      "instance": "eyes4s/plan/AttributeValue$$anon$4",
+      "instance": "eyes4s/plan/AttributeValue$$anon$5",
       "suite": "planJVM/eyes4s.plan.ExpectedUnmatchedSuite"
+    },
+    "class eyes4s.plan.Attributes": {
+      "classification": "behavior-or-sealed-data",
+      "instance": "eyes4s/plan/Attributes$$anon$7",
+      "suite": "planJVM/eyes4s.plan.UnmatchedReasonsSuite"
     },
     "class eyes4s.plan.Availability": {
       "classification": "data-sum",
@@ -13601,6 +13960,11 @@
       "instance": "eyes4s/plan/ControlReferences$$anon$3",
       "suite": "codecJVM/eyes4s.pointcodecconsumer.PointSamplingCodecSuite"
     },
+    "class eyes4s.plan.CoordinateTrail": {
+      "classification": "behavior-or-sealed-data",
+      "instance": "eyes4s/plan/CoordinateTrail$$anon$4",
+      "suite": "planJVM/eyes4s.plan.CoordinateProvenanceSuite"
+    },
     "class eyes4s.plan.CorrectionScope": {
       "classification": "data-sum",
       "instance": "eyes4s/plan/CorrectionScope$AllTrials",
@@ -13613,8 +13977,28 @@
     },
     "class eyes4s.plan.Counted": {
       "classification": "data-sum",
-      "instance": "eyes4s/plan/Counted$$anon$1",
+      "instance": "eyes4s/plan/Counted$$anon$2",
       "suite": "codecJVM/eyes4s.repetitionconsumer.RepetitionPlanSuite"
+    },
+    "class eyes4s.plan.CsvRecord": {
+      "classification": "behavior-or-sealed-data",
+      "instance": "eyes4s/plan/CsvRecord$$anon$3",
+      "suite": "planJVM/eyes4s.plan.CoordinateProvenanceSuite"
+    },
+    "class eyes4s.plan.DataRecord": {
+      "classification": "behavior-or-sealed-data",
+      "instance": "eyes4s/plan/DataRecord$$anon$2",
+      "suite": "planJVM/eyes4s.plan.CoordinateProvenanceSuite"
+    },
+    "class eyes4s.plan.DefaultValue": {
+      "classification": "behavior-or-sealed-data",
+      "instance": "eyes4s/plan/DefaultValue$$anon$11",
+      "suite": "planJVM/eyes4s.plan.StudyFormKeysSuite"
+    },
+    "class eyes4s.plan.DefinitionId": {
+      "classification": "behavior-or-sealed-data",
+      "instance": "eyes4s/plan/DefinitionId$$anon$1",
+      "suite": "planJVM/eyes4s.pointconsumer.PointSamplingSuite"
     },
     "class eyes4s.plan.DescriptorError": {
       "classification": "data-sum",
@@ -13626,6 +14010,11 @@
       "instance": "eyes4s/plan/Diagnose$$anon$1",
       "suite": "planJVM/eyes4s.plan.DiagnosticCatalogSuite"
     },
+    "class eyes4s.plan.DiagnosticCode": {
+      "classification": "behavior-or-sealed-data",
+      "instance": "eyes4s/plan/DiagnosticCode$$anon$1",
+      "suite": "planJVM/consumer.PublicPlanSuite"
+    },
     "class eyes4s.plan.DiagnosticCodeError": {
       "classification": "data-sum",
       "instance": "eyes4s/plan/DiagnosticCodeError$InvalidFamily",
@@ -13633,12 +14022,12 @@
     },
     "class eyes4s.plan.DiagnosticSeverity": {
       "classification": "data-sum",
-      "instance": "eyes4s/plan/DiagnosticSeverity$$anon$2",
+      "instance": "eyes4s/plan/DiagnosticSeverity$$anon$3",
       "suite": "planJVM/consumer.PublicPlanSuite"
     },
     "class eyes4s.plan.DiagnosticSource": {
       "classification": "data-sum",
-      "instance": "eyes4s/plan/DiagnosticSource$$anon$1",
+      "instance": "eyes4s/plan/DiagnosticSource$$anon$2",
       "suite": "planJVM/consumer.PublicPlanSuite"
     },
     "class eyes4s.plan.Disposition": {
@@ -13663,7 +14052,7 @@
     },
     "class eyes4s.plan.EventKind": {
       "classification": "data-sum",
-      "instance": "eyes4s/plan/EventKind$$anon$6",
+      "instance": "eyes4s/plan/EventKind$$anon$8",
       "suite": "planJVM/eyes4s.plan.ResultInspectionSuite"
     },
     "class eyes4s.plan.ExecutionCapability": {
@@ -13675,6 +14064,26 @@
       "classification": "data-sum",
       "instance": "eyes4s/plan/Expected$Number",
       "suite": "planJVM/eyes4s.plan.UnmatchedReasonsSuite"
+    },
+    "class eyes4s.plan.ExpectedUnmatched": {
+      "classification": "behavior-or-sealed-data",
+      "instance": "eyes4s/plan/ExpectedUnmatched$$anon$3",
+      "suite": "planJVM/eyes4s.plan.ExpectedUnmatchedSuite"
+    },
+    "class eyes4s.plan.ExpectedUnmatchedRule": {
+      "classification": "behavior-or-sealed-data",
+      "instance": "eyes4s/plan/ExpectedUnmatchedRule$$anon$4",
+      "suite": "planJVM/eyes4s.plan.ExpectedUnmatchedSuite"
+    },
+    "class eyes4s.plan.Fact": {
+      "classification": "behavior-or-sealed-data",
+      "instance": "eyes4s/plan/Fact$$anon$7",
+      "suite": "planJVM/eyes4s.plan.StudyFormSuite"
+    },
+    "class eyes4s.plan.FactCode": {
+      "classification": "behavior-or-sealed-data",
+      "instance": "eyes4s/plan/FactCode$$anon$1",
+      "suite": "planJVM/eyes4s.plan.StudyFormSuite"
     },
     "class eyes4s.plan.FactError": {
       "classification": "data-sum",
@@ -13688,7 +14097,7 @@
     },
     "class eyes4s.plan.FactSlot": {
       "classification": "data-sum",
-      "instance": "eyes4s/plan/FactSlot$$anon$4",
+      "instance": "eyes4s/plan/FactSlot$$anon$5",
       "suite": "planJVM/eyes4s.plan.ExpectedUnmatchedSuite"
     },
     "class eyes4s.plan.FactSource": {
@@ -13706,9 +14115,14 @@
       "instance": "eyes4s/plan/FieldError$NotAChoice",
       "suite": "codecJVM/eyes4s.repetitionconsumer.RepetitionPlanSuite"
     },
+    "class eyes4s.plan.FieldId": {
+      "classification": "behavior-or-sealed-data",
+      "instance": "eyes4s/plan/FieldId$$anon$1",
+      "suite": "planJVM/consumer.PublicPlanSuite"
+    },
     "class eyes4s.plan.FieldKind": {
       "classification": "data-sum",
-      "instance": "eyes4s/plan/FieldKind$$anon$8",
+      "instance": "eyes4s/plan/FieldKind$$anon$10",
       "suite": "planJVM/consumer.PublicPlanSuite"
     },
     "class eyes4s.plan.FinalBin": {
@@ -13721,19 +14135,39 @@
       "instance": "eyes4s/plan/FindingClass$$anon$3",
       "suite": "planJVM/eyes4s.plan.UnmatchedReasonsSuite"
     },
+    "class eyes4s.plan.FixationNumber": {
+      "classification": "behavior-or-sealed-data",
+      "instance": "eyes4s/plan/FixationNumber$$anon$9",
+      "suite": "planJVM/eyes4s.plan.CoordinateProvenanceSuite"
+    },
     "class eyes4s.plan.FormField": {
       "classification": "behavior-or-sealed-data",
       "instance": "eyes4s/plan/NumericField",
       "suite": "codecJVM/eyes4s.repetitionconsumer.RepetitionPlanSuite"
     },
+    "class eyes4s.plan.FormValues": {
+      "classification": "behavior-or-sealed-data",
+      "instance": "eyes4s/plan/FormValues$$anon$1",
+      "suite": "codecJVM/eyes4s.repetitionconsumer.RepetitionPlanSuite"
+    },
+    "class eyes4s.plan.GridCells": {
+      "classification": "behavior-or-sealed-data",
+      "instance": "eyes4s/plan/GridCells$$anon$2",
+      "suite": "planJVM/eyes4s.plan.ExpectedUnmatchedSuite"
+    },
     "class eyes4s.plan.GroupRule": {
       "classification": "data-sum",
-      "instance": "eyes4s/plan/GroupRule$$anon$7",
+      "instance": "eyes4s/plan/GroupRule$$anon$9",
       "suite": "codecJVM/eyes4s.repetitionconsumer.RepetitionPlanSuite"
     },
     "class eyes4s.plan.IdentityChange": {
       "classification": "data-sum",
-      "instance": "eyes4s/plan/IdentityChange$$anon$3",
+      "instance": "eyes4s/plan/IdentityChange$$anon$4",
+      "suite": "planJVM/eyes4s.plan.SourceIdentitySuite"
+    },
+    "class eyes4s.plan.IdentityChanges": {
+      "classification": "behavior-or-sealed-data",
+      "instance": "eyes4s/plan/IdentityChanges$$anon$5",
       "suite": "planJVM/eyes4s.plan.SourceIdentitySuite"
     },
     "class eyes4s.plan.ImportSpecError": {
@@ -13751,9 +14185,19 @@
       "instance": "eyes4s/plan/InitialFixationPolicy$KeepAll",
       "suite": "ioJVM/docconsumer.DocumentationExamplesSuite"
     },
+    "class eyes4s.plan.InitialFixationPolicy$.DropLeadingInClosedDisc": {
+      "classification": "behavior-or-sealed-data",
+      "instance": "eyes4s/plan/InitialFixationPolicy$DropLeadingInClosedDisc$$anon$1",
+      "suite": "planJVM/eyes4s.plan.InitialFixationSuite"
+    },
+    "class eyes4s.plan.InitialFixationTally": {
+      "classification": "behavior-or-sealed-data",
+      "instance": "eyes4s/plan/InitialFixationTally$$anon$2",
+      "suite": "ioJVM/docconsumer.DocumentationExamplesSuite"
+    },
     "class eyes4s.plan.InputDomain": {
       "classification": "data-sum",
-      "instance": "eyes4s/plan/InputDomain$$anon$6",
+      "instance": "eyes4s/plan/InputDomain$$anon$8",
       "suite": "codecJVM/eyes4s.repetitionconsumer.RepetitionPlanSuite"
     },
     "class eyes4s.plan.InspectionError": {
@@ -13766,6 +14210,21 @@
       "instance": "eyes4s/plan/InventoryError$AbsentMismatch",
       "suite": "planJVM/eyes4s.plan.UnmatchedReasonsSuite"
     },
+    "class eyes4s.plan.InventoryImportSpec": {
+      "classification": "behavior-or-sealed-data",
+      "instance": "eyes4s/plan/InventoryImportSpec$$anon$4",
+      "suite": "lawsJVM/eyes4s.laws.SchemaRegistryJvmSuite"
+    },
+    "class eyes4s.plan.InventoryLedger": {
+      "classification": "behavior-or-sealed-data",
+      "instance": "eyes4s/plan/InventoryLedger$$anon$12",
+      "suite": "planJVM/eyes4s.plan.UnmatchedReasonsSuite"
+    },
+    "class eyes4s.plan.InventoryTrial": {
+      "classification": "behavior-or-sealed-data",
+      "instance": "eyes4s/plan/InventoryTrial$$anon$9",
+      "suite": "planJVM/eyes4s.plan.UnmatchedReasonsSuite"
+    },
     "class eyes4s.plan.Labelled": {
       "classification": "behavior-or-sealed-data",
       "instance": "eyes4s/plan/Labelled$$anon$1",
@@ -13773,13 +14232,23 @@
     },
     "class eyes4s.plan.LedgerCount": {
       "classification": "data-sum",
-      "instance": "eyes4s/plan/LedgerCount$$anon$2",
+      "instance": "eyes4s/plan/LedgerCount$$anon$3",
       "suite": "planJVM/eyes4s.plan.StudyFormSuite"
     },
     "class eyes4s.plan.LineBreak": {
       "classification": "data-sum",
-      "instance": "eyes4s/plan/LineBreak$$anon$3",
+      "instance": "eyes4s/plan/LineBreak$$anon$5",
       "suite": "ioJVM/eyes4s.io.CsvLayoutSuite"
+    },
+    "class eyes4s.plan.LineSpan": {
+      "classification": "behavior-or-sealed-data",
+      "instance": "eyes4s/plan/LineSpan$$anon$7",
+      "suite": "planJVM/eyes4s.plan.RecordIdentitySuite"
+    },
+    "class eyes4s.plan.ListingOffset": {
+      "classification": "behavior-or-sealed-data",
+      "instance": "eyes4s/plan/ListingOffset$$anon$2",
+      "suite": "planJVM/eyes4s.plan.ResultNavigationSuite"
     },
     "class eyes4s.plan.Locus": {
       "classification": "data-sum",
@@ -13788,7 +14257,7 @@
     },
     "class eyes4s.plan.MapPlacement": {
       "classification": "data-sum",
-      "instance": "eyes4s/plan/MapPlacement$$anon$1",
+      "instance": "eyes4s/plan/MapPlacement$$anon$2",
       "suite": "planJVM/eyes4s.plan.CoordinateProvenanceSuite"
     },
     "class eyes4s.plan.MatchedReferences": {
@@ -13798,7 +14267,7 @@
     },
     "class eyes4s.plan.Membership": {
       "classification": "data-sum",
-      "instance": "eyes4s/plan/Membership$$anon$1",
+      "instance": "eyes4s/plan/Membership$$anon$3",
       "suite": "planJVM/eyes4s.plan.ResultInspectionSuite"
     },
     "class eyes4s.plan.MethodExecution": {
@@ -13806,9 +14275,14 @@
       "instance": "eyes4s/plan/MethodExecution$Bounded",
       "suite": "lawsJVM/consumer.PublicLawsSuite"
     },
+    "class eyes4s.plan.MethodsFacts": {
+      "classification": "behavior-or-sealed-data",
+      "instance": "eyes4s/plan/MethodsFacts$$anon$8",
+      "suite": "planJVM/eyes4s.plan.ExpectedUnmatchedSuite"
+    },
     "class eyes4s.plan.MissingSource": {
       "classification": "data-sum",
-      "instance": "eyes4s/plan/MissingSource$$anon$4",
+      "instance": "eyes4s/plan/MissingSource$$anon$5",
       "suite": "planJVM/eyes4s.plan.CoordinateProvenanceSuite"
     },
     "class eyes4s.plan.NavigationError": {
@@ -13823,12 +14297,17 @@
     },
     "class eyes4s.plan.NumberShape": {
       "classification": "data-sum",
-      "instance": "eyes4s/plan/NumberShape$$anon$3",
+      "instance": "eyes4s/plan/NumberShape$$anon$4",
       "suite": "codecJVM/eyes4s.repetitionconsumer.RepetitionPlanSuite"
     },
     "class eyes4s.plan.Numeral": {
       "classification": "behavior-or-sealed-data",
       "instance": "eyes4s/plan/Numeral$int32$",
+      "suite": "codecJVM/eyes4s.repetitionconsumer.RepetitionPlanSuite"
+    },
+    "class eyes4s.plan.NumericBounds": {
+      "classification": "behavior-or-sealed-data",
+      "instance": "eyes4s/plan/NumericBounds$$anon$6",
       "suite": "codecJVM/eyes4s.repetitionconsumer.RepetitionPlanSuite"
     },
     "class eyes4s.plan.Occurrence": {
@@ -13855,6 +14334,11 @@
       "classification": "data-sum",
       "instance": "eyes4s/plan/Operand$Name",
       "suite": "planJVM/consumer.PublicPlanSuite"
+    },
+    "class eyes4s.plan.PageSize": {
+      "classification": "behavior-or-sealed-data",
+      "instance": "eyes4s/plan/PageSize$$anon$1",
+      "suite": "planJVM/eyes4s.plan.CoordinateProvenanceSuite"
     },
     "class eyes4s.plan.PairingSide": {
       "classification": "data-sum",
@@ -13916,6 +14400,16 @@
       "instance": "eyes4s/plan/StudyReport",
       "suite": "planJVM/eyes4s.plan.StudyCursorSuite"
     },
+    "class eyes4s.plan.ProjectFinding": {
+      "classification": "data-sum",
+      "instance": "eyes4s/plan/ProjectFinding$Anchor",
+      "suite": "planJVM/eyes4s.plan.UnmatchedReasonsSuite"
+    },
+    "class eyes4s.plan.ProjectRequirement": {
+      "classification": "data-sum",
+      "instance": "eyes4s/plan/ProjectRequirement$Areas",
+      "suite": "planJVM/eyes4s.plan.ProjectPrerequisitesSuite"
+    },
     "class eyes4s.plan.ProvenanceError": {
       "classification": "data-sum",
       "instance": "eyes4s/plan/ProvenanceError$AmbiguousTrial",
@@ -13923,7 +14417,7 @@
     },
     "class eyes4s.plan.Quantity": {
       "classification": "data-sum",
-      "instance": "eyes4s/plan/Quantity$$anon$2",
+      "instance": "eyes4s/plan/Quantity$$anon$3",
       "suite": "lawsJVM/consumer.PublicLawsSuite"
     },
     "class eyes4s.plan.QuarantineCause": {
@@ -13933,12 +14427,12 @@
     },
     "class eyes4s.plan.QueryTotal": {
       "classification": "data-sum",
-      "instance": "eyes4s/plan/QueryTotal$$anon$3",
+      "instance": "eyes4s/plan/QueryTotal$$anon$4",
       "suite": "planJVM/eyes4s.plan.StudyFormSuite"
     },
     "class eyes4s.plan.RawValue": {
       "classification": "data-sum",
-      "instance": "eyes4s/plan/RawValue$$anon$5",
+      "instance": "eyes4s/plan/RawValue$$anon$7",
       "suite": "codecJVM/eyes4s.repetitionconsumer.RepetitionPlanSuite"
     },
     "class eyes4s.plan.RecipeFamily": {
@@ -13951,6 +14445,11 @@
       "instance": "eyes4s/plan/RecipeParameterError$UndeclaredWindowFrame",
       "suite": "planJVM/eyes4s.plan.StudyFormKeysSuite"
     },
+    "class eyes4s.plan.RecordAttributes": {
+      "classification": "behavior-or-sealed-data",
+      "instance": "eyes4s/plan/RecordAttributes$$anon$11",
+      "suite": "planJVM/eyes4s.plan.InventoryLedgerSuite"
+    },
     "class eyes4s.plan.RecordIdentityError": {
       "classification": "data-sum",
       "instance": "eyes4s/plan/RecordIdentityError$HeaderRecord",
@@ -13958,8 +14457,13 @@
     },
     "class eyes4s.plan.RecordRole": {
       "classification": "data-sum",
-      "instance": "eyes4s/plan/RecordRole$$anon$2",
+      "instance": "eyes4s/plan/RecordRole$$anon$4",
       "suite": "planJVM/eyes4s.plan.RecordIdentitySuite"
+    },
+    "class eyes4s.plan.RecordedPosition": {
+      "classification": "behavior-or-sealed-data",
+      "instance": "eyes4s/plan/RecordedPosition$$anon$1",
+      "suite": "ioJVM/eyes4s.io.FixationSourceTextSuite"
     },
     "class eyes4s.plan.RecordingChannels": {
       "classification": "data-sum",
@@ -14036,6 +14540,11 @@
       "instance": "eyes4s/plan/ScaleContrast$Rows",
       "suite": "planJVM/eyes4s.plan.ResultNavigationSuite"
     },
+    "class eyes4s.plan.ScanpathPosition": {
+      "classification": "behavior-or-sealed-data",
+      "instance": "eyes4s/plan/ScanpathPosition$$anon$8",
+      "suite": "planJVM/eyes4s.plan.CoordinateProvenanceSuite"
+    },
     "class eyes4s.plan.ScoreDirection": {
       "classification": "data-sum",
       "instance": "eyes4s/plan/ScoreDirection$$anon$5",
@@ -14053,23 +14562,33 @@
     },
     "class eyes4s.plan.ShareBasis": {
       "classification": "data-sum",
-      "instance": "eyes4s/plan/ShareBasis$$anon$5",
+      "instance": "eyes4s/plan/ShareBasis$$anon$6",
       "suite": "planJVM/eyes4s.plan.StudyFormSuite"
     },
     "class eyes4s.plan.Side": {
       "classification": "data-sum",
-      "instance": "eyes4s/plan/Side$$anon$4",
+      "instance": "eyes4s/plan/Side$$anon$5",
       "suite": "codecJVM/eyes4s.repetitionconsumer.RepetitionPlanSuite"
     },
     "class eyes4s.plan.SourceComparison": {
       "classification": "data-sum",
-      "instance": "eyes4s/plan/SourceComparison$$anon$4",
+      "instance": "eyes4s/plan/SourceComparison$$anon$6",
+      "suite": "planJVM/eyes4s.plan.SourceIdentitySuite"
+    },
+    "class eyes4s.plan.SourceFixationColumns": {
+      "classification": "behavior-or-sealed-data",
+      "instance": "eyes4s/plan/SourceFixationColumns$$anon$3",
       "suite": "planJVM/eyes4s.plan.SourceIdentitySuite"
     },
     "class eyes4s.plan.SourceFormat": {
       "classification": "data-sum",
       "instance": "eyes4s/plan/SourceFormat$$anon$1",
       "suite": "planJVM/eyes4s.plan.UnmatchedReasonsSuite"
+    },
+    "class eyes4s.plan.SourceIdentity": {
+      "classification": "behavior-or-sealed-data",
+      "instance": "eyes4s/plan/SourceIdentity$$anon$3",
+      "suite": "planJVM/eyes4s.plan.SourceIdentitySuite"
     },
     "class eyes4s.plan.SourceIdentityError": {
       "classification": "data-sum",
@@ -14079,12 +14598,17 @@
     "class eyes4s.plan.SourceInterpretation": {
       "classification": "behavior-or-sealed-data",
       "instance": "eyes4s/plan/SourceInterpretation$LegacyUnspecified$",
-      "suite": "planJVM/eyes4s.plan.AdmissionLedgerSuite"
+      "suite": "planJVM/eyes4s.plan.DiagnosticSourceRefSuite"
     },
     "class eyes4s.plan.SourceKeyColumns": {
       "classification": "data-sum",
       "instance": "eyes4s/plan/SourceKeyColumns$Study",
       "suite": "planJVM/eyes4s.plan.UnmatchedReasonsSuite"
+    },
+    "class eyes4s.plan.SourceLine": {
+      "classification": "behavior-or-sealed-data",
+      "instance": "eyes4s/plan/SourceLine$$anon$6",
+      "suite": "planJVM/eyes4s.plan.RecordIdentitySuite"
     },
     "class eyes4s.plan.SourceLink": {
       "classification": "data-sum",
@@ -14161,9 +14685,19 @@
       "instance": "eyes4s/plan/StudyGeometry$WholeFrame",
       "suite": "ioJVM/docconsumer.DocumentationExamplesSuite"
     },
+    "class eyes4s.plan.StudyGeometry$.Windowed": {
+      "classification": "behavior-or-sealed-data",
+      "instance": "eyes4s/plan/StudyGeometry$Windowed$$anon$5",
+      "suite": "planJVM/eyes4s.plan.CoordinateProvenanceSuite"
+    },
+    "class eyes4s.plan.StudyPhases": {
+      "classification": "behavior-or-sealed-data",
+      "instance": "eyes4s/plan/StudyPhases$$anon$1",
+      "suite": "planJVM/eyes4s.plan.ExpectedUnmatchedSuite"
+    },
     "class eyes4s.plan.StudyRecipeError": {
       "classification": "data-sum",
-      "instance": "eyes4s/plan/StudyRecipeError$$anon$1",
+      "instance": "eyes4s/plan/StudyRecipeError$$anon$3",
       "suite": "planJVM/eyes4s.plan.StudyFormKeysSuite"
     },
     "class eyes4s.plan.StudyResultError": {
@@ -14248,23 +14782,48 @@
     },
     "class eyes4s.plan.TrialConflictClassification": {
       "classification": "data-sum",
-      "instance": "eyes4s/plan/TrialConflictClassification$$anon$1",
+      "instance": "eyes4s/plan/TrialConflictClassification$$anon$2",
+      "suite": "planJVM/eyes4s.plan.TrialConflictGroupingSuite"
+    },
+    "class eyes4s.plan.TrialConflictGroup": {
+      "classification": "behavior-or-sealed-data",
+      "instance": "eyes4s/plan/TrialConflictGroup$$anon$3",
+      "suite": "planJVM/eyes4s.plan.TrialConflictGroupingSuite"
+    },
+    "class eyes4s.plan.TrialConflictRow": {
+      "classification": "behavior-or-sealed-data",
+      "instance": "eyes4s/plan/TrialConflictRow$$anon$1",
       "suite": "planJVM/eyes4s.plan.TrialConflictGroupingSuite"
     },
     "class eyes4s.plan.TrialDisposition": {
       "classification": "data-sum",
-      "instance": "eyes4s/plan/TrialDisposition$$anon$6",
+      "instance": "eyes4s/plan/TrialDisposition$$anon$8",
       "suite": "planJVM/eyes4s.plan.UnmatchedReasonsSuite"
+    },
+    "class eyes4s.plan.TrialIdentity": {
+      "classification": "behavior-or-sealed-data",
+      "instance": "eyes4s/plan/TrialIdentity$$anon$1",
+      "suite": "planJVM/consumer.ValidatedKeyDigestSuite"
+    },
+    "class eyes4s.plan.TrialKey": {
+      "classification": "behavior-or-sealed-data",
+      "instance": "eyes4s/plan/TrialKey$$anon$1",
+      "suite": "planJVM/consumer.ValidatedKeyDigestSuite"
     },
     "class eyes4s.plan.TrialLoss": {
       "classification": "data-sum",
-      "instance": "eyes4s/plan/TrialLoss$$anon$1",
+      "instance": "eyes4s/plan/TrialLoss$$anon$2",
       "suite": "planJVM/eyes4s.plan.StudyFormSuite"
     },
     "class eyes4s.plan.UncheckedAspect": {
       "classification": "data-sum",
       "instance": "eyes4s/plan/UncheckedAspect$$anon$5",
       "suite": "planJVM/eyes4s.plan.StudyCursorSuite"
+    },
+    "class eyes4s.plan.UnlistedTrial": {
+      "classification": "behavior-or-sealed-data",
+      "instance": "eyes4s/plan/UnlistedTrial$$anon$10",
+      "suite": "planJVM/eyes4s.plan.InventoryLedgerSuite"
     },
     "class eyes4s.plan.UnmatchedFocalPolicy": {
       "classification": "data-sum",
@@ -14276,6 +14835,11 @@
       "instance": "eyes4s/plan/UnmatchedKind$$anon$1",
       "suite": "planJVM/eyes4s.plan.UnmatchedReasonsSuite"
     },
+    "class eyes4s.plan.WindowTally": {
+      "classification": "behavior-or-sealed-data",
+      "instance": "eyes4s/plan/WindowTally$$anon$3",
+      "suite": "ioJVM/docconsumer.DocumentationExamplesSuite"
+    },
     "class eyes4s.plan.WorkStep": {
       "classification": "data-sum",
       "instance": "eyes4s/plan/WorkStep$Done",
@@ -14286,6 +14850,26 @@
       "instance": "eyes4s/results/Absence$Undefined",
       "suite": "resultsJVM/eyes4s.results.ReportNavigationSuite"
     },
+    "class eyes4s.results.Accounting": {
+      "classification": "behavior-or-sealed-data",
+      "instance": "eyes4s/results/Accounting$$anon$3",
+      "suite": "resultsJVM/eyes4s.results.ReportNavigationSuite"
+    },
+    "class eyes4s.results.Bin": {
+      "classification": "behavior-or-sealed-data",
+      "instance": "eyes4s/results/Bin$$anon$7",
+      "suite": "resultsJVM/eyes4s.results.ReportSuite"
+    },
+    "class eyes4s.results.BindingDigest": {
+      "classification": "behavior-or-sealed-data",
+      "instance": "eyes4s/results/BindingDigest$$anon$1",
+      "suite": "resultsJVM/eyes4s.results.ReportNavigationSuite"
+    },
+    "class eyes4s.results.Bins": {
+      "classification": "behavior-or-sealed-data",
+      "instance": "eyes4s/results/Bins$$anon$8",
+      "suite": "resultsJVM/eyes4s.results.ReportSuite"
+    },
     "class eyes4s.results.Comparison": {
       "classification": "data-sum",
       "instance": "eyes4s/results/Comparison$$anon$4",
@@ -14295,6 +14879,21 @@
       "classification": "data-sum",
       "instance": "eyes4s/results/CovariateError$BlankName",
       "suite": "resultsJVM/eyes4s.results.ResultsDiagnosticCatalogSuite"
+    },
+    "class eyes4s.results.CovariateName": {
+      "classification": "behavior-or-sealed-data",
+      "instance": "eyes4s/results/CovariateName$$anon$1",
+      "suite": "resultsJVM/eyes4s.results.ReportFactsSuite"
+    },
+    "class eyes4s.results.CovariateRow": {
+      "classification": "behavior-or-sealed-data",
+      "instance": "eyes4s/results/CovariateRow$$anon$8",
+      "suite": "resultsJVM/eyes4s.results.CovariateSuite"
+    },
+    "class eyes4s.results.CovariateSchema": {
+      "classification": "behavior-or-sealed-data",
+      "instance": "eyes4s/results/CovariateSchema$$anon$6",
+      "suite": "resultsJVM/eyes4s.results.ReportNavigationSuite"
     },
     "class eyes4s.results.CovariateType": {
       "classification": "data-sum",
@@ -14326,19 +14925,39 @@
       "instance": "eyes4s/results/LevelTerm$Layout",
       "suite": "resultsJVM/eyes4s.results.ReportNavigationSuite"
     },
+    "class eyes4s.results.Levels": {
+      "classification": "behavior-or-sealed-data",
+      "instance": "eyes4s/results/Levels$$anon$2",
+      "suite": "resultsJVM/eyes4s.results.ReportFactsSuite"
+    },
+    "class eyes4s.results.MinimumQueries": {
+      "classification": "behavior-or-sealed-data",
+      "instance": "eyes4s/results/MinimumQueries$$anon$4",
+      "suite": "resultsJVM/eyes4s.results.ReportNavigationSuite"
+    },
     "class eyes4s.results.NumericTerm": {
       "classification": "data-sum",
       "instance": "eyes4s/results/NumericTerm$$anon$3",
       "suite": "resultsJVM/eyes4s.results.ReportNavigationSuite"
+    },
+    "class eyes4s.results.NumericUnit": {
+      "classification": "behavior-or-sealed-data",
+      "instance": "eyes4s/results/NumericUnit$$anon$3",
+      "suite": "resultsJVM/eyes4s.results.CovariateSuite"
     },
     "class eyes4s.results.Predicate": {
       "classification": "data-sum",
       "instance": "eyes4s/results/Predicate$AtLeast",
       "suite": "resultsJVM/eyes4s.results.ReportSuite"
     },
+    "class eyes4s.results.Query": {
+      "classification": "behavior-or-sealed-data",
+      "instance": "eyes4s/results/Query$$anon$4",
+      "suite": "resultsJVM/eyes4s.results.ReportNavigationSuite"
+    },
     "class eyes4s.results.ReducePolicy": {
       "classification": "data-sum",
-      "instance": "eyes4s/results/ReducePolicy$$anon$2",
+      "instance": "eyes4s/results/ReducePolicy$$anon$5",
       "suite": "resultsJVM/eyes4s.results.ReportNavigationSuite"
     },
     "class eyes4s.results.ReportError": {
@@ -14351,6 +14970,11 @@
       "instance": "eyes4s/results/ReportFinding$BelowMinimum",
       "suite": "resultsJVM/eyes4s.results.ReportFactsSuite"
     },
+    "class eyes4s.results.ReportId": {
+      "classification": "behavior-or-sealed-data",
+      "instance": "eyes4s/results/ReportId$$anon$1",
+      "suite": "resultsJVM/eyes4s.results.ReportNavigationSuite"
+    },
     "class eyes4s.results.ReportNavigationError": {
       "classification": "data-sum",
       "instance": "eyes4s/results/ReportNavigationError$BlankComponent",
@@ -14358,7 +14982,27 @@
     },
     "class eyes4s.results.ReportRef": {
       "classification": "behavior-or-sealed-data",
-      "instance": "eyes4s/results/ReportRef$Cell",
+      "instance": "eyes4s/results/ReportRef$Cell$$anon$1",
+      "suite": "resultsJVM/eyes4s.results.ReportNavigationSuite"
+    },
+    "class eyes4s.results.ReportRef$.Cell": {
+      "classification": "behavior-or-sealed-data",
+      "instance": "eyes4s/results/ReportRef$Cell$$anon$1",
+      "suite": "resultsJVM/eyes4s.results.ReportNavigationSuite"
+    },
+    "class eyes4s.results.ReportRef$.Participant": {
+      "classification": "behavior-or-sealed-data",
+      "instance": "eyes4s/results/ReportRef$Participant$$anon$2",
+      "suite": "resultsJVM/eyes4s.results.ReportNavigationSuite"
+    },
+    "class eyes4s.results.ReportSelection": {
+      "classification": "behavior-or-sealed-data",
+      "instance": "eyes4s/results/ReportSelection$$anon$3",
+      "suite": "resultsJVM/eyes4s.results.ReportNavigationSuite"
+    },
+    "class eyes4s.results.ReportSpec": {
+      "classification": "behavior-or-sealed-data",
+      "instance": "eyes4s/results/ReportSpec$$anon$7",
       "suite": "resultsJVM/eyes4s.results.ReportNavigationSuite"
     },
     "class eyes4s.results.ResultCell": {
@@ -14383,7 +15027,7 @@
     },
     "class eyes4s.results.Role": {
       "classification": "data-sum",
-      "instance": "eyes4s/results/Role$$anon$1",
+      "instance": "eyes4s/results/Role$$anon$2",
       "suite": "resultsJVM/eyes4s.results.ReportNavigationSuite"
     },
     "class eyes4s.results.RoleOutcome": {
@@ -14398,12 +15042,17 @@
     },
     "class eyes4s.results.Spread": {
       "classification": "data-sum",
-      "instance": "eyes4s/results/Spread$$anon$3",
+      "instance": "eyes4s/results/Spread$$anon$6",
       "suite": "resultsJVM/eyes4s.results.ReportNavigationSuite"
     },
     "class eyes4s.results.TableJson": {
       "classification": "behavior-or-sealed-data",
       "instance": "eyes4s/results/TableJson$Arr",
+      "suite": "ioJVM/docconsumer.DocumentationExamplesSuite"
+    },
+    "class eyes4s.results.TableJson$.Number": {
+      "classification": "behavior-or-sealed-data",
+      "instance": "eyes4s/results/TableJson$Number$$anon$2",
       "suite": "ioJVM/docconsumer.DocumentationExamplesSuite"
     },
     "class eyes4s.results.Term": {
@@ -14511,6 +15160,11 @@
       "instance": "eyes4s/surface/OutsideLattice$$anon$2",
       "suite": "surfaceJVM/eyes4s.surface.FixationEntropySuite"
     },
+    "class eyes4s.surface.ScaleEntropy": {
+      "classification": "behavior-or-sealed-data",
+      "instance": "eyes4s/surface/ScaleEntropy$$anon$5",
+      "suite": "surfaceJVM/eyes4s.surface.FixationEntropySuite"
+    },
     "class eyes4s.surface.ScaleReduction": {
       "classification": "data-sum",
       "instance": "eyes4s/surface/ScaleReduction$Mean",
@@ -14520,6 +15174,11 @@
       "classification": "behavior-or-sealed-data",
       "instance": "eyes4s/surface/Smoother$$anon$4",
       "suite": "surfaceJVM/eyes4s.surface.SmootherSuite"
+    },
+    "class eyes4s.surface.SmootherCard": {
+      "classification": "behavior-or-sealed-data",
+      "instance": "eyes4s/surface/SmootherCard$$anon$2",
+      "suite": "surfaceJVM/consumer.PublicSurfaceSuite"
     },
     "class eyes4s.surface.SmootherCardError": {
       "classification": "data-sum",
@@ -14632,7 +15291,7 @@
     "method eyes4s.codec.ByteSource$.inMemory(scala.collection.immutable.Map,scala.collection.immutable.Map):eyes4s.codec.ByteSource": "codecJVM/eyes4s.repetitionconsumer.RepetitionPlanSuite",
     "method eyes4s.codec.CanonicalDigest$.parse(1,java.lang.String):scala.util.Either": "codecJVM/eyes4s.repetitionconsumer.RepetitionPlanSuite",
     "method eyes4s.codec.CanonicalDigest.display():": "codecJVM/eyes4s.repetitionconsumer.RepetitionPlanSuite",
-    "method eyes4s.codec.CanonicalDigest.equals(java.lang.Object):scala.Boolean": "codecJVM/eyes4s.codec.CanonicalDigestSuite",
+    "method eyes4s.codec.CanonicalDigest.equals(java.lang.Object):scala.Boolean": "codecJVM/eyes4s.codec.ArchiveMemorySuite",
     "method eyes4s.codec.CanonicalDigest.hashCode():": "codecJVM/eyes4s.codec.CanonicalDigestSuite",
     "method eyes4s.codec.CanonicalDigest.sameAs(eyes4s.codec.CanonicalDigest):scala.Boolean": "codecJVM/eyes4s.repetitionconsumer.RepetitionPlanSuite",
     "method eyes4s.codec.CanonicalDigest.toString():": "codecJVM/eyes4s.codec.CanonicalDigestSuite",
@@ -15265,18 +15924,18 @@
     "method eyes4s.design.FailurePolicy$.successfulOnly(scala.Int):scala.util.Either": "designJVM/eyes4s.repetitionconsumer.RepetitionMethodsSuite",
     "method eyes4s.design.FailurePolicy.render():": "designJVM/consumer.PublicDesignSuite",
     "method eyes4s.design.FittedTemplate.evaluate(eyes4s.design.TemplateHeldOut):scala.util.Either": "designJVM/eyes4s.templateconsumer.NativeTemplateSuite",
-    "method eyes4s.design.KeyDigest$.apply(1,eyes4s.design.KeyDigest):eyes4s.design.KeyDigest": "codecJVM/eyes4s.pointcodecconsumer.PointSamplingCodecSuite",
-    "method eyes4s.design.KeyDigest$.derived(1,scala.deriving.Mirror$.Product,eyes4s.design.KeyDigest$.ProductDigest):eyes4s.design.KeyDigest": "lawsJVM/consumer.PublicLawsSuite",
+    "method eyes4s.design.KeyDigest$.apply(1,eyes4s.design.KeyDigest):eyes4s.design.KeyDigest": "planJVM/consumer.ValidatedKeyDigestSuite",
+    "method eyes4s.design.KeyDigest$.derived(1,scala.deriving.Mirror$.Product,eyes4s.design.KeyDigest$.ProductDigest):eyes4s.design.KeyDigest": "planJVM/consumer.ValidatedKeyDigestSuite",
     "method eyes4s.design.KeyDigest$.given_KeyDigest_Boolean$.digest(scala.Boolean):scala.Long": "designJVM/eyes4s.design.CrossPlatformDeterminismSuite",
     "method eyes4s.design.KeyDigest$.given_KeyDigest_Double$.digest(scala.Double):scala.Long": "designJVM/eyes4s.design.CrossPlatformDeterminismSuite",
-    "method eyes4s.design.KeyDigest$.given_KeyDigest_Int$.digest(scala.Int):scala.Long": "codecJVM/eyes4s.repetitionconsumer.RepetitionPlanSuite",
+    "method eyes4s.design.KeyDigest$.given_KeyDigest_Int$.digest(scala.Int):scala.Long": "planJVM/consumer.ValidatedKeyDigestSuite",
     "method eyes4s.design.KeyDigest$.given_KeyDigest_Long$.digest(scala.Long):scala.Long": "designJVM/eyes4s.design.CrossPlatformDeterminismSuite",
     "method eyes4s.design.KeyDigest$.given_KeyDigest_Option(1,eyes4s.design.KeyDigest):eyes4s.design.KeyDigest$.given_KeyDigest_Option": "designJVM/eyes4s.design.SeedDigestSuite",
     "method eyes4s.design.KeyDigest$.given_KeyDigest_Option.digest(scala.Option):scala.Long": "designJVM/eyes4s.design.SeedDigestSuite",
     "method eyes4s.design.KeyDigest$.given_KeyDigest_String$.digest(java.lang.String):scala.Long": "designJVM/eyes4s.templateconsumer.NativeTemplateSuite",
-    "method eyes4s.design.KeyDigest$.productCons(2,eyes4s.design.KeyDigest,eyes4s.design.KeyDigest$.ProductDigest):eyes4s.design.KeyDigest$.productCons": "lawsJVM/consumer.PublicLawsSuite",
-    "method eyes4s.design.KeyDigest$.productCons.digest(scala.Product,scala.Int):scala.collection.immutable.Vector": "codecJVM/eyes4s.pointcodecconsumer.PointSamplingCodecSuite",
-    "method eyes4s.design.KeyDigest$.productEmpty$.digest(scala.Tuple$package$.EmptyTuple$,scala.Int):scala.collection.immutable.Vector": "codecJVM/eyes4s.pointcodecconsumer.PointSamplingCodecSuite",
+    "method eyes4s.design.KeyDigest$.productCons(2,eyes4s.design.KeyDigest,eyes4s.design.KeyDigest$.ProductDigest):eyes4s.design.KeyDigest$.productCons": "planJVM/consumer.ValidatedKeyDigestSuite",
+    "method eyes4s.design.KeyDigest$.productCons.digest(scala.Product,scala.Int):scala.collection.immutable.Vector": "planJVM/consumer.ValidatedKeyDigestSuite",
+    "method eyes4s.design.KeyDigest$.productEmpty$.digest(scala.Tuple$package$.EmptyTuple$,scala.Int):scala.collection.immutable.Vector": "planJVM/consumer.ValidatedKeyDigestSuite",
     "method eyes4s.design.LeastSquares$.fit(scala.collection.immutable.Vector,scala.collection.immutable.Vector,eyes4s.design.RelativeRankTolerance):scala.util.Either": "designJVM/eyes4s.templateconsumer.NativeTemplateSuite",
     "method eyes4s.design.LeastSquaresError.message():": "designJVM/eyes4s.templateconsumer.NativeTemplateSuite",
     "method eyes4s.design.PairCursor.advance(eyes4s.design.PairQuantum):scala.util.Either": "ioJVM/docconsumer.DocumentationExamplesSuite",
@@ -15814,7 +16473,7 @@
     "method eyes4s.kernel.Agreement$.grids(1,eyes4s.kernel.Grid,eyes4s.kernel.Grid):scala.util.Either": "lawsJVM/consumer.KernelConformanceSuite",
     "method eyes4s.kernel.Agreement$.grids(eyes4s.kernel.GridId,eyes4s.kernel.GridSpec,eyes4s.kernel.GridId,eyes4s.kernel.GridSpec):scala.util.Either": "lawsJVM/consumer.KernelConformanceSuite",
     "method eyes4s.kernel.Bounds$.centred(1,scala.Double,scala.Double):scala.util.Either": "ioJVM/docconsumer.DocumentationExamplesSuite",
-    "method eyes4s.kernel.Bounds$.of(1,scala.Double,scala.Double,scala.Double,scala.Double):scala.util.Either": "kernelJVM/consumer.PublicKernelSuite",
+    "method eyes4s.kernel.Bounds$.of(1,scala.Double,scala.Double,scala.Double,scala.Double):scala.util.Either": "kernelJVM/consumer.DomainInvariantSuite",
     "method eyes4s.kernel.Bounds$.sized(1,scala.Double,scala.Double):scala.util.Either": "kernelJVM/consumer.PublicKernelSuite",
     "method eyes4s.kernel.Bounds.area():": "kernelJVM/eyes4s.kernel.GeometrySuite",
     "method eyes4s.kernel.Bounds.centre():": "kernelJVM/consumer.PublicKernelSuite",
@@ -15844,13 +16503,13 @@
     "method eyes4s.kernel.Entropy$.ofWeights(scala.Double[],eyes4s.kernel.LogBase):scala.util.Either": "kernelJVM/eyes4s.kernel.EntropyWeightsSuite",
     "method eyes4s.kernel.Entropy$.relative(eyes4s.kernel.Entropy,scala.Int):scala.Double": "kernelJVM/eyes4s.kernel.EntropyWeightsSuite",
     "method eyes4s.kernel.Entropy.render():": "kernelJVM/consumer.PublicKernelSuite",
-    "method eyes4s.kernel.Extent$.of(1,scala.Double,scala.Double):scala.util.Either": "kernelJVM/consumer.PublicKernelSuite",
+    "method eyes4s.kernel.Extent$.of(1,scala.Double,scala.Double):scala.util.Either": "kernelJVM/consumer.DomainInvariantSuite",
     "method eyes4s.kernel.Extent$.square(1,scala.Double):scala.util.Either": "lawsJVM/eyes4s.laws.DetectorMetamorphicLawsSuite",
     "method eyes4s.kernel.Extent.area():": "kernelJVM/consumer.PublicKernelSuite",
     "method eyes4s.kernel.Extent.diagonal():": "kernelJVM/consumer.PublicKernelSuite",
     "method eyes4s.kernel.Extent.render(eyes4s.kernel.UnitLabel):java.lang.String": "kernelJVM/consumer.PublicKernelSuite",
     "method eyes4s.kernel.Frame$.angular(java.lang.String,scala.Double,scala.Double):scala.util.Either": "ioJVM/docconsumer.DocumentationExamplesSuite",
-    "method eyes4s.kernel.Frame$.of(1,eyes4s.kernel.FrameId,eyes4s.kernel.Bounds,eyes4s.kernel.YAxis):eyes4s.kernel.Frame": "lawsJVM/consumer.PublicLawsSuite",
+    "method eyes4s.kernel.Frame$.of(1,eyes4s.kernel.FrameId,eyes4s.kernel.Bounds,eyes4s.kernel.YAxis):eyes4s.kernel.Frame": "kernelJVM/consumer.DomainInvariantSuite",
     "method eyes4s.kernel.Frame$.screen(java.lang.String,scala.Int,scala.Int):scala.util.Either": "kernelJVM/consumer.PublicKernelSuite",
     "method eyes4s.kernel.Frame$.unitSquare(java.lang.String):scala.util.Either": "lawsJVM/consumer.KernelConformanceSuite",
     "method eyes4s.kernel.Frame.centre():": "kernelJVM/eyes4s.kernel.MovingSuite",
@@ -15858,9 +16517,9 @@
     "method eyes4s.kernel.Frame.diagonal():": "compareJVM/eyes4s.scanpathconsumer.ScanpathReferenceSuite",
     "method eyes4s.kernel.Frame.height():": "kernelJVM/eyes4s.kernel.WarpSuite",
     "method eyes4s.kernel.Frame.render(eyes4s.kernel.UnitLabel):java.lang.String": "kernelJVM/consumer.PublicKernelSuite",
-    "method eyes4s.kernel.Frame.spec():": "lawsJVM/consumer.KernelConformanceSuite",
+    "method eyes4s.kernel.Frame.spec():": "kernelJVM/consumer.DomainInvariantSuite",
     "method eyes4s.kernel.Frame.width():": "kernelJVM/eyes4s.kernel.WarpSuite",
-    "method eyes4s.kernel.Frame.withId(eyes4s.kernel.FrameId):eyes4s.kernel.Frame": "kernelJVM/eyes4s.kernel.GeometrySuite",
+    "method eyes4s.kernel.Frame.withId(eyes4s.kernel.FrameId):eyes4s.kernel.Frame": "kernelJVM/consumer.DomainInvariantSuite",
     "method eyes4s.kernel.FrameId.toString():": "kernelJVM/consumer.PublicKernelSuite",
     "method eyes4s.kernel.FrameSpec.render():": "designJVM/eyes4s.sessionconsumer.SessionSuite",
     "method eyes4s.kernel.GeometryError.message():": "designJVM/eyes4s.sessionconsumer.SessionSuite",
@@ -16667,6 +17326,7 @@
     "method eyes4s.plan.ListingOffset$.of(scala.Int):scala.util.Either": "planJVM/eyes4s.plan.ResultNavigationSuite",
     "method eyes4s.plan.Locus.mapKeys(1,scala.Function1):eyes4s.plan.Locus": "planJVM/eyes4s.plan.DiagnosticCatalogSuite",
     "method eyes4s.plan.Locus.trialKeys():": "planJVM/eyes4s.plan.AnalysisReportSuite",
+    "method eyes4s.plan.MarkSelector.resolve(1,java.lang.Object,eyes4s.kernel.ObservedTimeline,eyes4s.kernel.ClockId,cats.kernel.Eq):scala.util.Either": "planJVM/eyes4s.plan.EpochPlanSuite",
     "method eyes4s.plan.MatchedCardinality.blocking():": "planJVM/eyes4s.plan.OccurrencePairingSuite",
     "method eyes4s.plan.MatchedCardinality.blockingReferences():": "planJVM/eyes4s.plan.CountedStudyCursorSuite",
     "method eyes4s.plan.MatchedCardinality.refusal(eyes4s.plan.StudyLayout):scala.Option": "planJVM/eyes4s.plan.CountedStudyCursorSuite",
@@ -16797,6 +17457,14 @@
     "method eyes4s.plan.PreparedTemporalStudy.trials():": "ioJVM/docconsumer.DocumentationExamplesSuite",
     "method eyes4s.plan.PreparedTemporalStudy.windows():": "ioJVM/docconsumer.DocumentationExamplesSuite",
     "method eyes4s.plan.PreparedTemporalStudy.work(eyes4s.compare.ComparisonBudget):scala.util.Either": "ioJVM/docconsumer.DocumentationExamplesSuite",
+    "method eyes4s.plan.ProjectAnalysisAvailability.availability():": "planJVM/eyes4s.plan.ProjectPrerequisitesSuite",
+    "method eyes4s.plan.ProjectAnalysisAvailability.available():": "planJVM/eyes4s.plan.ProjectPrerequisitesSuite",
+    "method eyes4s.plan.ProjectAnalysisAvailability.diagnostics():": "planJVM/eyes4s.plan.ProjectPrerequisitesSuite",
+    "method eyes4s.plan.ProjectAvailability.available():": "planJVM/eyes4s.plan.ProjectPrerequisitesSuite",
+    "method eyes4s.plan.ProjectAvailability.unavailable():": "planJVM/eyes4s.plan.ProjectPrerequisitesSuite",
+    "method eyes4s.plan.ProjectFinding$.diagnose(2):eyes4s.plan.Diagnose": "planJVM/eyes4s.plan.UnmatchedReasonsSuite",
+    "method eyes4s.plan.ProjectFinding.message():": "planJVM/eyes4s.plan.UnmatchedReasonsSuite",
+    "method eyes4s.plan.ProjectPrerequisites$.query(3,eyes4s.design.Session,eyes4s.plan.ProjectEvidence,scala.collection.immutable.Vector,cats.kernel.Eq):eyes4s.plan.ProjectAvailability": "planJVM/eyes4s.plan.ProjectPrerequisitesSuite",
     "method eyes4s.plan.ProvenanceError$.diagnose(1):eyes4s.plan.Diagnose": "planJVM/eyes4s.plan.UnmatchedReasonsSuite",
     "method eyes4s.plan.ProvenanceError.message():": "planJVM/eyes4s.plan.CoordinateProvenanceSuite",
     "method eyes4s.plan.Quantity.isNumeric():": "codecJVM/eyes4s.repetitionconsumer.RepetitionPlanSuite",
@@ -16994,8 +17662,8 @@
     "method eyes4s.plan.SourceRecordListing.page(eyes4s.plan.DataRecord,eyes4s.plan.PageSize):scala.util.Either": "lawsJVM/eyes4s.laws.CoordinateProvenanceLawsSuite",
     "method eyes4s.plan.SourceRecordListing.source():": "planJVM/eyes4s.plan.CoordinateProvenanceSuite",
     "method eyes4s.plan.SourceRecordListing.total():": "planJVM/eyes4s.plan.CoordinateProvenanceSuite",
-    "method eyes4s.plan.SourceRef$.digest(scala.collection.immutable.Vector,scala.collection.immutable.Vector):scala.Long": "planJVM/eyes4s.plan.AdmissionLedgerSuite",
-    "method eyes4s.plan.SourceRef$.of(java.lang.String,scala.collection.immutable.Vector,scala.collection.immutable.Vector):eyes4s.plan.SourceRef": "planJVM/eyes4s.plan.AdmissionLedgerSuite",
+    "method eyes4s.plan.SourceRef$.digest(scala.collection.immutable.Vector,scala.collection.immutable.Vector):scala.Long": "planJVM/eyes4s.plan.DiagnosticSourceRefSuite",
+    "method eyes4s.plan.SourceRef$.of(java.lang.String,scala.collection.immutable.Vector,scala.collection.immutable.Vector):eyes4s.plan.SourceRef": "planJVM/eyes4s.plan.DiagnosticSourceRefSuite",
     "method eyes4s.plan.SourceRef.identity():": "planJVM/eyes4s.plan.SourceIdentitySuite",
     "method eyes4s.plan.StageMeter$.of(eyes4s.plan.StageKind,eyes4s.plan.CountUnit,scala.Long,eyes4s.plan.SegmentTotal):scala.util.Either": "planJVM/eyes4s.plan.CountedStudyCursorSuite",
     "method eyes4s.plan.StageMeter.advanceTo(scala.Long,eyes4s.plan.SegmentTotal):scala.util.Either": "planJVM/eyes4s.plan.StageMeterSuite",
@@ -17138,7 +17806,7 @@
     "method eyes4s.plan.StudyMethod.<init>(4,eyes4s.plan.DefinitionId,java.lang.String,scala.Function1,eyes4s.plan.MethodExecution,scala.Option,eyes4s.design.ScoreMean,eyes4s.design.Contrastable):eyes4s.plan.StudyMethod": "lawsJVM/consumer.PublicLawsSuite",
     "method eyes4s.plan.StudyMethod.<init>(4,eyes4s.plan.DefinitionId,java.lang.String,scala.Function1,scala.Function1,scala.Option,eyes4s.design.ScoreMean,eyes4s.design.Contrastable):eyes4s.plan.StudyMethod": "planJVM/eyes4s.plan.StudyCursorSuite",
     "method eyes4s.plan.StudyMethod.capability():": "ioJVM/docconsumer.DocumentationExamplesSuite",
-    "method eyes4s.plan.StudyPairing$package$.TrialOccurrence$.of(scala.Int):scala.util.Either": "planJVM/eyes4s.plan.UnmatchedReasonsSuite",
+    "method eyes4s.plan.StudyPairing$package$.TrialOccurrence$.of(scala.Int):scala.util.Either": "planJVM/consumer.ValidatedKeyDigestSuite",
     "method eyes4s.plan.StudyPairing$package$.TrialOccurrence$.value(scala.Int):scala.Int": "planJVM/eyes4s.plan.StudyQueryPairCountsSuite",
     "method eyes4s.plan.StudyPairing.canRefuse():": "ioJVM/docconsumer.DocumentationExamplesSuite",
     "method eyes4s.plan.StudyPairing.description():": "planJVM/eyes4s.plan.StudyQueryPairCountsSuite",
@@ -17256,13 +17924,13 @@
     "method eyes4s.plan.TrialConflictRow$.of(eyes4s.plan.TrialIdentity,java.lang.String,eyes4s.plan.CsvRecord):scala.util.Either": "planJVM/eyes4s.plan.TrialConflictGroupingSuite",
     "method eyes4s.plan.TrialConflictRow.identity():": "planJVM/eyes4s.plan.TrialConflictGroupingSuite",
     "method eyes4s.plan.TrialDisposition.label():": "planJVM/eyes4s.plan.UnmatchedReasonsSuite",
-    "method eyes4s.plan.TrialIdentity$.of(eyes4s.plan.TrialKey):eyes4s.plan.TrialIdentity": "planJVM/eyes4s.plan.ExpectedUnmatchedSuite",
+    "method eyes4s.plan.TrialIdentity$.of(eyes4s.plan.TrialKey):eyes4s.plan.TrialIdentity": "planJVM/consumer.ValidatedKeyDigestSuite",
     "method eyes4s.plan.TrialIdentity$.of(java.lang.String,java.lang.String,java.lang.String,scala.Int):scala.util.Either": "planJVM/eyes4s.plan.UnmatchedReasonsSuite",
     "method eyes4s.plan.TrialIdentity$.projection(1,eyes4s.plan.StudyLayout):scala.Option": "lawsJVM/consumer.PublicLawsSuite",
     "method eyes4s.plan.TrialIdentity.render():": "planJVM/eyes4s.plan.UnmatchedReasonsSuite",
     "method eyes4s.plan.TrialIdentity.withItem(java.lang.String):scala.util.Either": "planJVM/eyes4s.plan.UnmatchedReasonsSuite",
     "method eyes4s.plan.TrialKey$.layout(eyes4s.plan.DefinitionId):eyes4s.plan.StudyLayout": "planJVM/eyes4s.plan.StudyQueryPairCountsSuite",
-    "method eyes4s.plan.TrialKey$.of(java.lang.String,java.lang.String,java.lang.String,scala.Int,java.lang.String):scala.util.Either": "planJVM/eyes4s.plan.StudyQueryPairCountsSuite",
+    "method eyes4s.plan.TrialKey$.of(java.lang.String,java.lang.String,java.lang.String,scala.Int,java.lang.String):scala.util.Either": "planJVM/consumer.ValidatedKeyDigestSuite",
     "method eyes4s.plan.TrialLoss$.of(eyes4s.plan.TrialDisposition):scala.Option": "planJVM/eyes4s.plan.StudyFormSuite",
     "method eyes4s.plan.TrialLoss.label():": "planJVM/eyes4s.plan.StudyFormSuite",
     "method eyes4s.plan.TrialSources.records():": "planJVM/eyes4s.plan.ResultInspectionSuite",
@@ -17878,7 +18546,7 @@
     "value eyes4s.plan.DefinitionId$.studyResult": "codecJVM/consumer.PublicCodecSuite",
     "value eyes4s.plan.DefinitionId$.temporalResult": "lawsJVM/eyes4s.laws.TemporalResultCodecLawSuite",
     "value eyes4s.plan.DefinitionId$.temporalStudyInput": "lawsJVM/eyes4s.laws.ManifestLawSuite",
-    "value eyes4s.plan.DefinitionId$.timeline": "lawsJVM/eyes4s.laws.SchemaRegistryJvmSuite",
+    "value eyes4s.plan.DefinitionId$.timeline": "planJVM/eyes4s.plan.UnmatchedReasonsSuite",
     "value eyes4s.plan.DefinitionId$.trials": "lawsJVM/consumer.PublicLawsSuite",
     "value eyes4s.plan.DefinitionId$.unit": "lawsJVM/consumer.PublicLawsSuite",
     "value eyes4s.plan.Diagnose$.admission": "planJVM/eyes4s.plan.UnmatchedReasonsSuite",
@@ -18025,6 +18693,7 @@
     "value eyes4s.plan.DiagnosticCatalog$.plan": "planJVM/consumer.PublicPlanSuite",
     "value eyes4s.plan.DiagnosticCatalog$.pointSampling": "planJVM/consumer.PublicPlanSuite",
     "value eyes4s.plan.DiagnosticCatalog$.preflight": "planJVM/consumer.PublicPlanSuite",
+    "value eyes4s.plan.DiagnosticCatalog$.projectPrerequisite": "planJVM/consumer.PublicPlanSuite",
     "value eyes4s.plan.DiagnosticCatalog$.quarantine": "planJVM/consumer.PublicPlanSuite",
     "value eyes4s.plan.DiagnosticCatalog$.recipeParameter": "planJVM/consumer.PublicPlanSuite",
     "value eyes4s.plan.DiagnosticCatalog$.reconstruction": "planJVM/consumer.PublicPlanSuite",
@@ -18210,7 +18879,7 @@
     "value eyes4s.plan.StudyPairing$.default": "planJVM/eyes4s.plan.StudyQueryPairCountsSuite",
     "value eyes4s.plan.StudyPairing$.version1": "ioJVM/docconsumer.DocumentationExamplesSuite",
     "value eyes4s.plan.StudyPairing$package$.TrialOccurrence$.first": "planJVM/eyes4s.plan.StudyQueryPairCountsSuite",
-    "value eyes4s.plan.StudyPairing$package$.TrialOccurrence$.given_KeyDigest_TrialOccurrence": "planJVM/eyes4s.plan.StudyQueryPairCountsSuite",
+    "value eyes4s.plan.StudyPairing$package$.TrialOccurrence$.given_KeyDigest_TrialOccurrence": "planJVM/consumer.ValidatedKeyDigestSuite",
     "value eyes4s.plan.StudyPreview.matchedCardinality": "planJVM/eyes4s.plan.OccurrencePairingSuite",
     "value eyes4s.plan.StudyPreview.reductionOrientation": "planJVM/eyes4s.plan.StudyPreviewSuite",
     "value eyes4s.plan.StudyReport.family": "planJVM/eyes4s.plan.PreflightSuite",
@@ -18220,9 +18889,9 @@
     "value eyes4s.plan.TemporalForm.repetitions": "planJVM/eyes4s.plan.RecipeFormAccessorsSuite",
     "value eyes4s.plan.TemporalForm.windows": "planJVM/eyes4s.plan.RecipeFormAccessorsSuite",
     "value eyes4s.plan.TemporalReport.family": "planJVM/eyes4s.plan.PreflightSuite",
-    "value eyes4s.plan.TrialIdentity$.given_KeyDigest_TrialIdentity": "ioJVM/eyes4s.io.SourceAdmissionSuite",
+    "value eyes4s.plan.TrialIdentity$.given_KeyDigest_TrialIdentity": "planJVM/consumer.ValidatedKeyDigestSuite",
     "value eyes4s.plan.TrialIdentity$.given_Ordering_TrialIdentity": "planJVM/eyes4s.plan.ExpectedUnmatchedSuite",
-    "value eyes4s.plan.TrialKey$.given_KeyDigest_TrialKey": "planJVM/eyes4s.plan.StudyQueryPairCountsSuite",
+    "value eyes4s.plan.TrialKey$.given_KeyDigest_TrialKey": "planJVM/consumer.ValidatedKeyDigestSuite",
     "value eyes4s.plan.TrialKey$.given_Ordering_TrialKey": "planJVM/eyes4s.plan.StudyQueryPairCountsSuite",
     "value eyes4s.plan.TrialKeyDefinitions$.trialKey": "lawsJVM/eyes4s.laws.CodecLawsSuite",
     "value eyes4s.plan.TrialKeyDefinitions$.trialLayout": "planJVM/eyes4s.plan.StudyQueryPairCountsSuite",
@@ -18248,6 +18917,9 @@
     "value eyes4s.surface.SmootherCards$.gaussian": "surfaceJVM/consumer.PublicSurfaceSuite"
   },
   "jsSuites": {
+    "aoiJS/consumer.AoiDomainProductMirrorSuite": [
+      "eyes4s.aoi.SampleMembership.Areas rejects constructing mirrors"
+    ],
     "aoiJS/consumer.PublicAoiSuite": [
       "equal independently constructed areas hash consistently and sets preserve cardinality"
     ],
@@ -18271,6 +18943,12 @@
       "overlap policies preserve ordered membership and account for every duplicate duration",
       "smallest-area ties preserve set priority and a singleton starts one visit",
       "visits survive saccades and blinks; only fixation time contributes dwell"
+    ],
+    "codecJS/consumer.CodecDomainProductMirrorSuite": [
+      "eyes4s.codec.ArtifactName rejects constructing mirrors",
+      "eyes4s.codec.ManifestEntry rejects constructing mirrors",
+      "eyes4s.codec.PayloadLayout rejects constructing mirrors",
+      "eyes4s.codec.ScientificManifest rejects constructing mirrors"
     ],
     "codecJS/consumer.PublicCodecSuite": [
       "byte digests render the independent empty SHA256 and custom registrations declare absence"
@@ -18297,6 +18975,14 @@
       "recording and temporal plans and results resolve, related to their inputs",
       "recording plans register only where the manifest unit is display pixels",
       "without registrations, every recording and temporal plan and result is refused by schema"
+    ],
+    "codecJS/eyes4s.codec.ArchiveMemorySuite": [
+      "metadata writer preserves the ordinary document except inline density cells",
+      "packed and recomputable bytes retain the legacy writer's complete metadata",
+      "typed reconstruction cannot omit a successful density",
+      "typed reconstruction checks archived geometry and provenance",
+      "typed reconstruction preserves the full result and source-free packed restore",
+      "typed reconstruction rejects missing scales and rows"
     ],
     "codecJS/eyes4s.codec.ArchiveReconstructionSuite": [
       "a plan area with padded names reconstructs: the run trims them as the AOI does",
@@ -18762,6 +19448,10 @@
       "the repetition form restores every field and rebuilds the plan's description",
       "unknown schemas, projections, rules, method revisions, seeds and forged digests fail as values"
     ],
+    "compareJS/consumer.CompareDomainProductMirrorSuite": [
+      "eyes4s.compare.CrqaMetrics rejects constructing mirrors",
+      "eyes4s.compare.CrqaResult[eyes4s.kernel.Unit2D.Px] rejects constructing mirrors"
+    ],
     "compareJS/consumer.PublicCompareSuite": [
       "comparison conveniences preserve metric meaning score units and structural identity",
       "comparison failures name the failed parameters sources and component",
@@ -18960,6 +19650,12 @@
       "transport work is bounded in total, not only per iteration",
       "two-point analytic entropic bias, duration weighting and convergence refusal"
     ],
+    "coreJS/consumer.CoreDomainProductMirrorSuite": [
+      "eyes4s.core.EdgeSupport.Fixed rejects constructing mirrors",
+      "eyes4s.core.MaximumSupportGap.AtMost rejects constructing mirrors",
+      "eyes4s.core.SamplingEvidence.Fixed rejects constructing mirrors",
+      "eyes4s.core.TemporalSupport.Fixed rejects constructing mirrors"
+    ],
     "coreJS/consumer.PublicCoreSuite": [
       "error widening preserves successful values and the exact lower-layer error",
       "event convenience measures retain displacement speed support and absent locations",
@@ -19080,6 +19776,20 @@
       "reconstruction refuses a ledger its window, boundary or measure contradicts",
       "unobserved and empty-fixation windows are distinct, and neither invents samples",
       "whole-fixation policy excludes straddlers including a fixation crossing a coverage gap"
+    ],
+    "designJS/consumer.DesignDomainProductMirrorSuite": [
+      "eyes4s.design.DirectedPaired[Unit, Unit, Unit, Unit, Unit, Unit] rejects constructing mirrors",
+      "eyes4s.design.DirectedPairwiseAnalysis[Unit, Unit, Unit, Unit] rejects constructing mirrors",
+      "eyes4s.design.DuplicateTrials[String, Unit, Unit] rejects constructing mirrors",
+      "eyes4s.design.IndexedTrial[String, Unit, Unit] rejects constructing mirrors",
+      "eyes4s.design.Pairing.Between[Unit, Unit] rejects constructing mirrors",
+      "eyes4s.design.Pairing.Within[String] rejects constructing mirrors",
+      "eyes4s.design.PairingReport[Unit, Unit] rejects constructing mirrors",
+      "eyes4s.design.ReductionReport[String] rejects constructing mirrors",
+      "eyes4s.design.ReductionRow[String, Unit] rejects constructing mirrors",
+      "eyes4s.design.ScheduledPair[Unit, Unit] rejects constructing mirrors",
+      "eyes4s.design.UndirectedPaired[String, Unit, Unit] rejects constructing mirrors",
+      "eyes4s.design.UndirectedPairwiseAnalysis[String, Unit, Unit] rejects constructing mirrors"
     ],
     "designJS/consumer.PublicDesignSuite": [
       "failed transformations keep metadata and values while identities hash structurally",
@@ -19517,6 +20227,17 @@
       "segments are per-cell with exact preparation totals and the repetition's study totals",
       "start commits the pure result once and cancelling afterwards changes nothing",
       "the runner reproduces the exact temporal ledgers and contrast targets of the designated fixture"
+    ],
+    "ioJS/consumer.IoDomainProductMirrorSuite": [
+      "eyes4s.io.AdmittedFixationRow[String] rejects constructing mirrors",
+      "eyes4s.io.FixationColumns rejects constructing mirrors",
+      "eyes4s.io.FixationPlacementTally rejects constructing mirrors",
+      "eyes4s.io.FixationPosition[eyes4s.kernel.Unit2D.Px] rejects constructing mirrors",
+      "eyes4s.io.PlacedFixationPosition[eyes4s.kernel.Unit2D.Px] rejects constructing mirrors",
+      "eyes4s.io.RejectedFixationRow[String] rejects constructing mirrors",
+      "eyes4s.io.SampleOriginCounts rejects constructing mirrors",
+      "eyes4s.io.TrialColumns rejects constructing mirrors",
+      "eyes4s.io.UnplacedFixationPosition rejects constructing mirrors"
     ],
     "ioJS/consumer.PublicIoSuite": [
       "IO convenience views preserve identity and independent hash and score values",
@@ -20062,6 +20783,45 @@
       "a window tally is counted or checked, never assembled",
       "a windowed geometry is built only by StudyGeometry.windowed",
       "windows, scales, corrections and tallies render, compare and summarise"
+    ],
+    "kernelJS/consumer.DomainInvariantSuite": [
+      "consumer cannot bypass checks through copy or direct construction",
+      "consumer cannot summon a constructing product mirror for Bounds[eyes4s.kernel.Unit2D.Px]",
+      "consumer cannot summon a constructing product mirror for Extent[eyes4s.kernel.Unit2D.Px]",
+      "consumer cannot summon a constructing product mirror for FrameSpec",
+      "consumer cannot summon a constructing product mirror for Frame[eyes4s.kernel.Unit2D.Px]",
+      "external consumer cannot use package-trusted region constructors or factories",
+      "positive consumer compilation proves the rejection probes name real public types",
+      "validated geometry retains equality, hashing and read-only extractors"
+    ],
+    "kernelJS/consumer.DomainProductMirrorSuite": [
+      "eyes4s.kernel.Bounds[eyes4s.kernel.Unit2D.Px] has no public constructing product mirror",
+      "eyes4s.kernel.Correction.Translate has no public constructing product mirror",
+      "eyes4s.kernel.Extent[eyes4s.kernel.Unit2D.Px] has no public constructing product mirror",
+      "eyes4s.kernel.FrameSpec has no public constructing product mirror",
+      "eyes4s.kernel.Frame[eyes4s.kernel.Unit2D.Px] has no public constructing product mirror",
+      "eyes4s.kernel.GridSpec has no public constructing product mirror",
+      "eyes4s.kernel.Grid[eyes4s.kernel.Unit2D.Px] has no public constructing product mirror",
+      "eyes4s.kernel.Interval has no public constructing product mirror",
+      "eyes4s.kernel.Moving[eyes4s.kernel.Unit2D.Px, eyes4s.kernel.Unit2D.Px] has no public constructing product mirror",
+      "eyes4s.kernel.Perspective has no public constructing product mirror",
+      "eyes4s.kernel.Region.Complement[eyes4s.kernel.Unit2D.Px] has no public constructing product mirror",
+      "eyes4s.kernel.Region.Ellipse[eyes4s.kernel.Unit2D.Px] has no public constructing product mirror",
+      "eyes4s.kernel.Region.Empty[eyes4s.kernel.Unit2D.Px] has no public constructing product mirror",
+      "eyes4s.kernel.Region.Everything[eyes4s.kernel.Unit2D.Px] has no public constructing product mirror",
+      "eyes4s.kernel.Region.Intersect[eyes4s.kernel.Unit2D.Px] has no public constructing product mirror",
+      "eyes4s.kernel.Region.Polygon[eyes4s.kernel.Unit2D.Px] has no public constructing product mirror",
+      "eyes4s.kernel.Region.Rect[eyes4s.kernel.Unit2D.Px] has no public constructing product mirror",
+      "eyes4s.kernel.Region.Union[eyes4s.kernel.Unit2D.Px] has no public constructing product mirror",
+      "eyes4s.kernel.RejectedSyncMark has no public constructing product mirror",
+      "eyes4s.kernel.Sync has no public constructing product mirror",
+      "eyes4s.kernel.SyncResidual has no public constructing product mirror",
+      "eyes4s.kernel.Warp.Affine[eyes4s.kernel.Unit2D.Px, eyes4s.kernel.Unit2D.Px] has no public constructing product mirror",
+      "eyes4s.kernel.Warp.Homography[eyes4s.kernel.Unit2D.Px, eyes4s.kernel.Unit2D.Px] has no public constructing product mirror",
+      "eyes4s.kernel.Warp.Id[eyes4s.kernel.Unit2D.Px] has no public constructing product mirror",
+      "eyes4s.kernel.Warp.Tangent[eyes4s.kernel.Unit2D.Px, eyes4s.kernel.Unit2D.Px] has no public constructing product mirror",
+      "eyes4s.kernel.Warp.Then[eyes4s.kernel.Unit2D.Px, eyes4s.kernel.Unit2D.Px, eyes4s.kernel.Unit2D.Px] has no public constructing product mirror",
+      "eyes4s.kernel.Window has no public constructing product mirror"
     ],
     "kernelJS/consumer.PublicKernelSuite": [
       "angle algebra matrix composition and inverse warps agree on independent landmarks",
@@ -21534,10 +22294,58 @@
       "WindowTally: windowTally.each fixation is classified by the screen first, then the window",
       "WindowTally: windowTally.inside, outside the window and outside the screen partition the trial"
     ],
+    "planJS/consumer.PlanDomainProductMirrorSuite": [
+      "eyes4s.plan.AdmissionLedger[String] rejects constructing mirrors",
+      "eyes4s.plan.AngularReference[eyes4s.kernel.Unit2D.Px] rejects constructing mirrors",
+      "eyes4s.plan.ArtifactRef[Unit] rejects constructing mirrors",
+      "eyes4s.plan.Attributes rejects constructing mirrors",
+      "eyes4s.plan.CoordinateTrail[eyes4s.kernel.Unit2D.Px] rejects constructing mirrors",
+      "eyes4s.plan.CsvRecord rejects constructing mirrors",
+      "eyes4s.plan.DataRecord rejects constructing mirrors",
+      "eyes4s.plan.DefaultValue rejects constructing mirrors",
+      "eyes4s.plan.DefinitionId rejects constructing mirrors",
+      "eyes4s.plan.DiagnosticCode rejects constructing mirrors",
+      "eyes4s.plan.ExpectedUnmatched rejects constructing mirrors",
+      "eyes4s.plan.ExpectedUnmatchedRule rejects constructing mirrors",
+      "eyes4s.plan.Fact rejects constructing mirrors",
+      "eyes4s.plan.FactCode rejects constructing mirrors",
+      "eyes4s.plan.FieldId rejects constructing mirrors",
+      "eyes4s.plan.FixationNumber rejects constructing mirrors",
+      "eyes4s.plan.FormValues rejects constructing mirrors",
+      "eyes4s.plan.GridCells rejects constructing mirrors",
+      "eyes4s.plan.IdentityChanges rejects constructing mirrors",
+      "eyes4s.plan.InitialFixationPolicy.DropLeadingInClosedDisc[eyes4s.kernel.Unit2D.Px] rejects constructing mirrors",
+      "eyes4s.plan.InitialFixationTally rejects constructing mirrors",
+      "eyes4s.plan.InventoryImportSpec rejects constructing mirrors",
+      "eyes4s.plan.InventoryLedger rejects constructing mirrors",
+      "eyes4s.plan.InventoryTrial rejects constructing mirrors",
+      "eyes4s.plan.LineSpan rejects constructing mirrors",
+      "eyes4s.plan.ListingOffset rejects constructing mirrors",
+      "eyes4s.plan.MethodsFacts rejects constructing mirrors",
+      "eyes4s.plan.NumericBounds rejects constructing mirrors",
+      "eyes4s.plan.PageSize rejects constructing mirrors",
+      "eyes4s.plan.RecordAttributes rejects constructing mirrors",
+      "eyes4s.plan.RecordedPosition[eyes4s.kernel.Unit2D.Px] rejects constructing mirrors",
+      "eyes4s.plan.ScanpathPosition rejects constructing mirrors",
+      "eyes4s.plan.SourceFixationColumns rejects constructing mirrors",
+      "eyes4s.plan.SourceIdentity rejects constructing mirrors",
+      "eyes4s.plan.SourceLine rejects constructing mirrors",
+      "eyes4s.plan.StudyGeometry.Windowed[eyes4s.kernel.Unit2D.Px] rejects constructing mirrors",
+      "eyes4s.plan.StudyPhases rejects constructing mirrors",
+      "eyes4s.plan.TrialConflictGroup[Unit] rejects constructing mirrors",
+      "eyes4s.plan.TrialConflictRow[Unit] rejects constructing mirrors",
+      "eyes4s.plan.TrialIdentity rejects constructing mirrors",
+      "eyes4s.plan.TrialKey rejects constructing mirrors",
+      "eyes4s.plan.UnlistedTrial rejects constructing mirrors",
+      "eyes4s.plan.WindowTally rejects constructing mirrors"
+    ],
     "planJS/consumer.PublicPlanSuite": [
       "a bound parameter field returns the selected domain value as well as its encoding",
       "diagnostic helpers preserve operands and prepend contextual subjects",
       "recording channels retain sample counts and the public stepwise summoner returns its instance"
+    ],
+    "planJS/consumer.ValidatedKeyDigestSuite": [
+      "validated trial keys retain the exact former product-derived sampling digest"
     ],
     "planJS/eyes4s.plan.AdmissionLedgerSuite": [
       "a quarantine scope naming an admitted record is refused",
@@ -21605,6 +22413,9 @@
       "samples give same-typed fields distinct values, so a swapped operand is detected",
       "the alignment check kills swapped, dropped and mis-coded projection mutants",
       "the rendered code table is pinned and so identical on the JVM and Scala.js"
+    ],
+    "planJS/eyes4s.plan.DiagnosticSourceRefSuite": [
+      "validated artifact references keep their former read-only diagnostic structure"
     ],
     "planJS/eyes4s.plan.EpochPlanSuite": [
       "all final-bin policies preserve the exact half-open partition",
@@ -21709,6 +22520,18 @@
       "study and temporal findings coincide with constructor/run refusals and trial failures",
       "temporal table: artifact, anchors, coverage, windows, method and repetition design",
       "the shipped recipe families are listable"
+    ],
+    "planJS/eyes4s.plan.ProjectPrerequisitesSuite": [
+      "a foreign observed clock is refused before any synchronization claim",
+      "common diagnostics retain analysis context typed trial keys and nested anchor causes",
+      "direction and nominal clocks constrain synchronization; reverse evidence is insufficient",
+      "missing and ambiguous observed anchors retain the trial selector and count",
+      "occurrence policies agree with epoch execution including equal-time order",
+      "one query retains the catalogue and names every absent project resource",
+      "only checked Session members and actual Viewing satisfy spatial prerequisites",
+      "planned timing cannot be supplied as observed evidence",
+      "schema versions are exact and installed alternatives are named",
+      "uncertainty acceptance is inclusive and chooses any adequate clock-matched evidence"
     ],
     "planJS/eyes4s.plan.RecipeFormAccessorsSuite": [
       "temporal and recording fields validate on their own; labels and empty forms"
@@ -21899,6 +22722,25 @@
       "point bins preserve adjacent microseconds above the double integer limit and reject invalid boundaries",
       "public static workflow agrees with independently checked R values for every normalization and exhaustive/disabled controls"
     ],
+    "resultsJS/consumer.ResultsDomainProductMirrorSuite": [
+      "eyes4s.results.Accounting rejects constructing mirrors",
+      "eyes4s.results.Bin rejects constructing mirrors",
+      "eyes4s.results.BindingDigest rejects constructing mirrors",
+      "eyes4s.results.Bins rejects constructing mirrors",
+      "eyes4s.results.CovariateName rejects constructing mirrors",
+      "eyes4s.results.CovariateRow[String] rejects constructing mirrors",
+      "eyes4s.results.CovariateSchema rejects constructing mirrors",
+      "eyes4s.results.Levels rejects constructing mirrors",
+      "eyes4s.results.MinimumQueries rejects constructing mirrors",
+      "eyes4s.results.NumericUnit rejects constructing mirrors",
+      "eyes4s.results.Query[String] rejects constructing mirrors",
+      "eyes4s.results.ReportId rejects constructing mirrors",
+      "eyes4s.results.ReportRef.Cell rejects constructing mirrors",
+      "eyes4s.results.ReportRef.Participant rejects constructing mirrors",
+      "eyes4s.results.ReportSelection rejects constructing mirrors",
+      "eyes4s.results.ReportSpec rejects constructing mirrors",
+      "eyes4s.results.TableJson.Number rejects constructing mirrors"
+    ],
     "resultsJS/eyes4s.results.AdmissionFactsSuite": [
       "a ledger with its inventory: every trial's disposition, tallies and the policy",
       "fixations without duration leave the share undefined, so it is not stated",
@@ -21978,6 +22820,10 @@
     "surfaceJS/consumer.PublicSurfaceSuite": [
       "density and bandwidth errors preserve scientific operands and underlying failures",
       "pyramid and smoother descriptions retain scales conventions and parameter units"
+    ],
+    "surfaceJS/consumer.SurfaceDomainProductMirrorSuite": [
+      "eyes4s.surface.ScaleEntropy[eyes4s.kernel.Unit2D.Px] rejects constructing mirrors",
+      "eyes4s.surface.SmootherCard rejects constructing mirrors"
     ],
     "surfaceJS/eyes4s.surface.AnisotropicSuite": [
       "both widths and the edge convention affect provenance",
@@ -22085,6 +22931,9 @@
     ]
   },
   "suites": {
+    "aoiJVM/consumer.AoiDomainProductMirrorSuite": [
+      "eyes4s.aoi.SampleMembership.Areas rejects constructing mirrors"
+    ],
     "aoiJVM/consumer.PublicAoiSuite": [
       "equal independently constructed areas hash consistently and sets preserve cardinality"
     ],
@@ -22108,6 +22957,12 @@
       "overlap policies preserve ordered membership and account for every duplicate duration",
       "smallest-area ties preserve set priority and a singleton starts one visit",
       "visits survive saccades and blinks; only fixation time contributes dwell"
+    ],
+    "codecJVM/consumer.CodecDomainProductMirrorSuite": [
+      "eyes4s.codec.ArtifactName rejects constructing mirrors",
+      "eyes4s.codec.ManifestEntry rejects constructing mirrors",
+      "eyes4s.codec.PayloadLayout rejects constructing mirrors",
+      "eyes4s.codec.ScientificManifest rejects constructing mirrors"
     ],
     "codecJVM/consumer.PublicCodecSuite": [
       "byte digests render the independent empty SHA256 and custom registrations declare absence"
@@ -22134,6 +22989,14 @@
       "recording and temporal plans and results resolve, related to their inputs",
       "recording plans register only where the manifest unit is display pixels",
       "without registrations, every recording and temporal plan and result is refused by schema"
+    ],
+    "codecJVM/eyes4s.codec.ArchiveMemorySuite": [
+      "metadata writer preserves the ordinary document except inline density cells",
+      "packed and recomputable bytes retain the legacy writer's complete metadata",
+      "typed reconstruction cannot omit a successful density",
+      "typed reconstruction checks archived geometry and provenance",
+      "typed reconstruction preserves the full result and source-free packed restore",
+      "typed reconstruction rejects missing scales and rows"
     ],
     "codecJVM/eyes4s.codec.ArchiveReconstructionSuite": [
       "a plan area with padded names reconstructs: the run trims them as the AOI does",
@@ -22678,6 +23541,10 @@
       "the repetition form restores every field and rebuilds the plan's description",
       "unknown schemas, projections, rules, method revisions, seeds and forged digests fail as values"
     ],
+    "compareJVM/consumer.CompareDomainProductMirrorSuite": [
+      "eyes4s.compare.CrqaMetrics rejects constructing mirrors",
+      "eyes4s.compare.CrqaResult[eyes4s.kernel.Unit2D.Px] rejects constructing mirrors"
+    ],
     "compareJVM/consumer.PublicCompareSuite": [
       "comparison conveniences preserve metric meaning score units and structural identity",
       "comparison failures name the failed parameters sources and component",
@@ -22876,6 +23743,12 @@
       "transport work is bounded in total, not only per iteration",
       "two-point analytic entropic bias, duration weighting and convergence refusal"
     ],
+    "coreJVM/consumer.CoreDomainProductMirrorSuite": [
+      "eyes4s.core.EdgeSupport.Fixed rejects constructing mirrors",
+      "eyes4s.core.MaximumSupportGap.AtMost rejects constructing mirrors",
+      "eyes4s.core.SamplingEvidence.Fixed rejects constructing mirrors",
+      "eyes4s.core.TemporalSupport.Fixed rejects constructing mirrors"
+    ],
     "coreJVM/consumer.PublicCoreSuite": [
       "error widening preserves successful values and the exact lower-layer error",
       "event convenience measures retain displacement speed support and absent locations",
@@ -22996,6 +23869,20 @@
       "reconstruction refuses a ledger its window, boundary or measure contradicts",
       "unobserved and empty-fixation windows are distinct, and neither invents samples",
       "whole-fixation policy excludes straddlers including a fixation crossing a coverage gap"
+    ],
+    "designJVM/consumer.DesignDomainProductMirrorSuite": [
+      "eyes4s.design.DirectedPaired[Unit, Unit, Unit, Unit, Unit, Unit] rejects constructing mirrors",
+      "eyes4s.design.DirectedPairwiseAnalysis[Unit, Unit, Unit, Unit] rejects constructing mirrors",
+      "eyes4s.design.DuplicateTrials[String, Unit, Unit] rejects constructing mirrors",
+      "eyes4s.design.IndexedTrial[String, Unit, Unit] rejects constructing mirrors",
+      "eyes4s.design.Pairing.Between[Unit, Unit] rejects constructing mirrors",
+      "eyes4s.design.Pairing.Within[String] rejects constructing mirrors",
+      "eyes4s.design.PairingReport[Unit, Unit] rejects constructing mirrors",
+      "eyes4s.design.ReductionReport[String] rejects constructing mirrors",
+      "eyes4s.design.ReductionRow[String, Unit] rejects constructing mirrors",
+      "eyes4s.design.ScheduledPair[Unit, Unit] rejects constructing mirrors",
+      "eyes4s.design.UndirectedPaired[String, Unit, Unit] rejects constructing mirrors",
+      "eyes4s.design.UndirectedPairwiseAnalysis[String, Unit, Unit] rejects constructing mirrors"
     ],
     "designJVM/consumer.PublicDesignSuite": [
       "failed transformations keep metadata and values while identities hash structurally",
@@ -23433,6 +24320,17 @@
       "segments are per-cell with exact preparation totals and the repetition's study totals",
       "start commits the pure result once and cancelling afterwards changes nothing",
       "the runner reproduces the exact temporal ledgers and contrast targets of the designated fixture"
+    ],
+    "ioJVM/consumer.IoDomainProductMirrorSuite": [
+      "eyes4s.io.AdmittedFixationRow[String] rejects constructing mirrors",
+      "eyes4s.io.FixationColumns rejects constructing mirrors",
+      "eyes4s.io.FixationPlacementTally rejects constructing mirrors",
+      "eyes4s.io.FixationPosition[eyes4s.kernel.Unit2D.Px] rejects constructing mirrors",
+      "eyes4s.io.PlacedFixationPosition[eyes4s.kernel.Unit2D.Px] rejects constructing mirrors",
+      "eyes4s.io.RejectedFixationRow[String] rejects constructing mirrors",
+      "eyes4s.io.SampleOriginCounts rejects constructing mirrors",
+      "eyes4s.io.TrialColumns rejects constructing mirrors",
+      "eyes4s.io.UnplacedFixationPosition rejects constructing mirrors"
     ],
     "ioJVM/consumer.PublicIoSuite": [
       "IO convenience views preserve identity and independent hash and score values",
@@ -24086,6 +24984,45 @@
       "a window tally is counted or checked, never assembled",
       "a windowed geometry is built only by StudyGeometry.windowed",
       "windows, scales, corrections and tallies render, compare and summarise"
+    ],
+    "kernelJVM/consumer.DomainInvariantSuite": [
+      "consumer cannot bypass checks through copy or direct construction",
+      "consumer cannot summon a constructing product mirror for Bounds[eyes4s.kernel.Unit2D.Px]",
+      "consumer cannot summon a constructing product mirror for Extent[eyes4s.kernel.Unit2D.Px]",
+      "consumer cannot summon a constructing product mirror for FrameSpec",
+      "consumer cannot summon a constructing product mirror for Frame[eyes4s.kernel.Unit2D.Px]",
+      "external consumer cannot use package-trusted region constructors or factories",
+      "positive consumer compilation proves the rejection probes name real public types",
+      "validated geometry retains equality, hashing and read-only extractors"
+    ],
+    "kernelJVM/consumer.DomainProductMirrorSuite": [
+      "eyes4s.kernel.Bounds[eyes4s.kernel.Unit2D.Px] has no public constructing product mirror",
+      "eyes4s.kernel.Correction.Translate has no public constructing product mirror",
+      "eyes4s.kernel.Extent[eyes4s.kernel.Unit2D.Px] has no public constructing product mirror",
+      "eyes4s.kernel.FrameSpec has no public constructing product mirror",
+      "eyes4s.kernel.Frame[eyes4s.kernel.Unit2D.Px] has no public constructing product mirror",
+      "eyes4s.kernel.GridSpec has no public constructing product mirror",
+      "eyes4s.kernel.Grid[eyes4s.kernel.Unit2D.Px] has no public constructing product mirror",
+      "eyes4s.kernel.Interval has no public constructing product mirror",
+      "eyes4s.kernel.Moving[eyes4s.kernel.Unit2D.Px, eyes4s.kernel.Unit2D.Px] has no public constructing product mirror",
+      "eyes4s.kernel.Perspective has no public constructing product mirror",
+      "eyes4s.kernel.Region.Complement[eyes4s.kernel.Unit2D.Px] has no public constructing product mirror",
+      "eyes4s.kernel.Region.Ellipse[eyes4s.kernel.Unit2D.Px] has no public constructing product mirror",
+      "eyes4s.kernel.Region.Empty[eyes4s.kernel.Unit2D.Px] has no public constructing product mirror",
+      "eyes4s.kernel.Region.Everything[eyes4s.kernel.Unit2D.Px] has no public constructing product mirror",
+      "eyes4s.kernel.Region.Intersect[eyes4s.kernel.Unit2D.Px] has no public constructing product mirror",
+      "eyes4s.kernel.Region.Polygon[eyes4s.kernel.Unit2D.Px] has no public constructing product mirror",
+      "eyes4s.kernel.Region.Rect[eyes4s.kernel.Unit2D.Px] has no public constructing product mirror",
+      "eyes4s.kernel.Region.Union[eyes4s.kernel.Unit2D.Px] has no public constructing product mirror",
+      "eyes4s.kernel.RejectedSyncMark has no public constructing product mirror",
+      "eyes4s.kernel.Sync has no public constructing product mirror",
+      "eyes4s.kernel.SyncResidual has no public constructing product mirror",
+      "eyes4s.kernel.Warp.Affine[eyes4s.kernel.Unit2D.Px, eyes4s.kernel.Unit2D.Px] has no public constructing product mirror",
+      "eyes4s.kernel.Warp.Homography[eyes4s.kernel.Unit2D.Px, eyes4s.kernel.Unit2D.Px] has no public constructing product mirror",
+      "eyes4s.kernel.Warp.Id[eyes4s.kernel.Unit2D.Px] has no public constructing product mirror",
+      "eyes4s.kernel.Warp.Tangent[eyes4s.kernel.Unit2D.Px, eyes4s.kernel.Unit2D.Px] has no public constructing product mirror",
+      "eyes4s.kernel.Warp.Then[eyes4s.kernel.Unit2D.Px, eyes4s.kernel.Unit2D.Px, eyes4s.kernel.Unit2D.Px] has no public constructing product mirror",
+      "eyes4s.kernel.Window has no public constructing product mirror"
     ],
     "kernelJVM/consumer.PublicKernelSuite": [
       "angle algebra matrix composition and inverse warps agree on independent landmarks",
@@ -25590,10 +26527,58 @@
       "WindowTally: windowTally.each fixation is classified by the screen first, then the window",
       "WindowTally: windowTally.inside, outside the window and outside the screen partition the trial"
     ],
+    "planJVM/consumer.PlanDomainProductMirrorSuite": [
+      "eyes4s.plan.AdmissionLedger[String] rejects constructing mirrors",
+      "eyes4s.plan.AngularReference[eyes4s.kernel.Unit2D.Px] rejects constructing mirrors",
+      "eyes4s.plan.ArtifactRef[Unit] rejects constructing mirrors",
+      "eyes4s.plan.Attributes rejects constructing mirrors",
+      "eyes4s.plan.CoordinateTrail[eyes4s.kernel.Unit2D.Px] rejects constructing mirrors",
+      "eyes4s.plan.CsvRecord rejects constructing mirrors",
+      "eyes4s.plan.DataRecord rejects constructing mirrors",
+      "eyes4s.plan.DefaultValue rejects constructing mirrors",
+      "eyes4s.plan.DefinitionId rejects constructing mirrors",
+      "eyes4s.plan.DiagnosticCode rejects constructing mirrors",
+      "eyes4s.plan.ExpectedUnmatched rejects constructing mirrors",
+      "eyes4s.plan.ExpectedUnmatchedRule rejects constructing mirrors",
+      "eyes4s.plan.Fact rejects constructing mirrors",
+      "eyes4s.plan.FactCode rejects constructing mirrors",
+      "eyes4s.plan.FieldId rejects constructing mirrors",
+      "eyes4s.plan.FixationNumber rejects constructing mirrors",
+      "eyes4s.plan.FormValues rejects constructing mirrors",
+      "eyes4s.plan.GridCells rejects constructing mirrors",
+      "eyes4s.plan.IdentityChanges rejects constructing mirrors",
+      "eyes4s.plan.InitialFixationPolicy.DropLeadingInClosedDisc[eyes4s.kernel.Unit2D.Px] rejects constructing mirrors",
+      "eyes4s.plan.InitialFixationTally rejects constructing mirrors",
+      "eyes4s.plan.InventoryImportSpec rejects constructing mirrors",
+      "eyes4s.plan.InventoryLedger rejects constructing mirrors",
+      "eyes4s.plan.InventoryTrial rejects constructing mirrors",
+      "eyes4s.plan.LineSpan rejects constructing mirrors",
+      "eyes4s.plan.ListingOffset rejects constructing mirrors",
+      "eyes4s.plan.MethodsFacts rejects constructing mirrors",
+      "eyes4s.plan.NumericBounds rejects constructing mirrors",
+      "eyes4s.plan.PageSize rejects constructing mirrors",
+      "eyes4s.plan.RecordAttributes rejects constructing mirrors",
+      "eyes4s.plan.RecordedPosition[eyes4s.kernel.Unit2D.Px] rejects constructing mirrors",
+      "eyes4s.plan.ScanpathPosition rejects constructing mirrors",
+      "eyes4s.plan.SourceFixationColumns rejects constructing mirrors",
+      "eyes4s.plan.SourceIdentity rejects constructing mirrors",
+      "eyes4s.plan.SourceLine rejects constructing mirrors",
+      "eyes4s.plan.StudyGeometry.Windowed[eyes4s.kernel.Unit2D.Px] rejects constructing mirrors",
+      "eyes4s.plan.StudyPhases rejects constructing mirrors",
+      "eyes4s.plan.TrialConflictGroup[Unit] rejects constructing mirrors",
+      "eyes4s.plan.TrialConflictRow[Unit] rejects constructing mirrors",
+      "eyes4s.plan.TrialIdentity rejects constructing mirrors",
+      "eyes4s.plan.TrialKey rejects constructing mirrors",
+      "eyes4s.plan.UnlistedTrial rejects constructing mirrors",
+      "eyes4s.plan.WindowTally rejects constructing mirrors"
+    ],
     "planJVM/consumer.PublicPlanSuite": [
       "a bound parameter field returns the selected domain value as well as its encoding",
       "diagnostic helpers preserve operands and prepend contextual subjects",
       "recording channels retain sample counts and the public stepwise summoner returns its instance"
+    ],
+    "planJVM/consumer.ValidatedKeyDigestSuite": [
+      "validated trial keys retain the exact former product-derived sampling digest"
     ],
     "planJVM/eyes4s.plan.AdmissionLedgerSuite": [
       "a quarantine scope naming an admitted record is refused",
@@ -25661,6 +26646,9 @@
       "samples give same-typed fields distinct values, so a swapped operand is detected",
       "the alignment check kills swapped, dropped and mis-coded projection mutants",
       "the rendered code table is pinned and so identical on the JVM and Scala.js"
+    ],
+    "planJVM/eyes4s.plan.DiagnosticSourceRefSuite": [
+      "validated artifact references keep their former read-only diagnostic structure"
     ],
     "planJVM/eyes4s.plan.EpochPlanSuite": [
       "all final-bin policies preserve the exact half-open partition",
@@ -25765,6 +26753,18 @@
       "study and temporal findings coincide with constructor/run refusals and trial failures",
       "temporal table: artifact, anchors, coverage, windows, method and repetition design",
       "the shipped recipe families are listable"
+    ],
+    "planJVM/eyes4s.plan.ProjectPrerequisitesSuite": [
+      "a foreign observed clock is refused before any synchronization claim",
+      "common diagnostics retain analysis context typed trial keys and nested anchor causes",
+      "direction and nominal clocks constrain synchronization; reverse evidence is insufficient",
+      "missing and ambiguous observed anchors retain the trial selector and count",
+      "occurrence policies agree with epoch execution including equal-time order",
+      "one query retains the catalogue and names every absent project resource",
+      "only checked Session members and actual Viewing satisfy spatial prerequisites",
+      "planned timing cannot be supplied as observed evidence",
+      "schema versions are exact and installed alternatives are named",
+      "uncertainty acceptance is inclusive and chooses any adequate clock-matched evidence"
     ],
     "planJVM/eyes4s.plan.RecipeFormAccessorsSuite": [
       "temporal and recording fields validate on their own; labels and empty forms"
@@ -25955,6 +26955,25 @@
       "point bins preserve adjacent microseconds above the double integer limit and reject invalid boundaries",
       "public static workflow agrees with independently checked R values for every normalization and exhaustive/disabled controls"
     ],
+    "resultsJVM/consumer.ResultsDomainProductMirrorSuite": [
+      "eyes4s.results.Accounting rejects constructing mirrors",
+      "eyes4s.results.Bin rejects constructing mirrors",
+      "eyes4s.results.BindingDigest rejects constructing mirrors",
+      "eyes4s.results.Bins rejects constructing mirrors",
+      "eyes4s.results.CovariateName rejects constructing mirrors",
+      "eyes4s.results.CovariateRow[String] rejects constructing mirrors",
+      "eyes4s.results.CovariateSchema rejects constructing mirrors",
+      "eyes4s.results.Levels rejects constructing mirrors",
+      "eyes4s.results.MinimumQueries rejects constructing mirrors",
+      "eyes4s.results.NumericUnit rejects constructing mirrors",
+      "eyes4s.results.Query[String] rejects constructing mirrors",
+      "eyes4s.results.ReportId rejects constructing mirrors",
+      "eyes4s.results.ReportRef.Cell rejects constructing mirrors",
+      "eyes4s.results.ReportRef.Participant rejects constructing mirrors",
+      "eyes4s.results.ReportSelection rejects constructing mirrors",
+      "eyes4s.results.ReportSpec rejects constructing mirrors",
+      "eyes4s.results.TableJson.Number rejects constructing mirrors"
+    ],
     "resultsJVM/eyes4s.results.AdmissionFactsSuite": [
       "a ledger with its inventory: every trial's disposition, tallies and the policy",
       "fixations without duration leave the share undefined, so it is not stated",
@@ -26034,6 +27053,10 @@
     "surfaceJVM/consumer.PublicSurfaceSuite": [
       "density and bandwidth errors preserve scientific operands and underlying failures",
       "pyramid and smoother descriptions retain scales conventions and parameter units"
+    ],
+    "surfaceJVM/consumer.SurfaceDomainProductMirrorSuite": [
+      "eyes4s.surface.ScaleEntropy[eyes4s.kernel.Unit2D.Px] rejects constructing mirrors",
+      "eyes4s.surface.SmootherCard rejects constructing mirrors"
     ],
     "surfaceJVM/eyes4s.surface.AnisotropicSuite": [
       "both widths and the edge convention affect provenance",
