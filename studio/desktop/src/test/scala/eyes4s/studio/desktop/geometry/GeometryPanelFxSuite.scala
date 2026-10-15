@@ -371,9 +371,11 @@ class GeometryPanelFxSuite extends StudioFxSuite:
       )
     }
     assertEquals(runOnFx(rig.host.state.marked), Some(p05))
-    // Thumbnail styling follows the asynchronously rebuilt pictures.
+    // Rebuilding the pictures can move the marked trial to another slot.
     redraw(fx, rig, 1)
-    assert(runOnFx(v.thumbnails(at).picture.getStyleClass.contains("marked")))
+    val markedAt = runOnFx(v.thumbnails.indexWhere(t => drawn(t.name) == "P05 · ret_04"))
+    assert(markedAt >= 0)
+    assert(runOnFx(v.thumbnails(markedAt).picture.getStyleClass.contains("marked")))
     runOnFx(v.mark.fire())
     fx.awaitLayout()
     assertEquals(drawn(v.orientationTitle), "Mark P05 · ret_04 as wrong orientation")
