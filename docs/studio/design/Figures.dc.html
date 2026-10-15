@@ -532,18 +532,16 @@ class Component extends DCLogic {
       A: ['Encoding · enc_03 · beach-042', 'Displayed: image.', '13 fixations in scanpath order; marker area shows duration.'],
       B: ['Retrieval · ret_07', 'Displayed: blank + fixation cross. The remembered image was not shown.', '12 fixations in scanpath order; marker area shows duration.']
     };
-    // Panel C small multiples: one title row (role glyph + title), the map, then fixed caption rows (title continuation, then the label).
-    // Wording is FigurePanels.densityMaps (studio/app figures/FigurePanels.scala ~255-276), verbatim:
-    //   titles "Query ret_07" / "Matched enc_03" / "Highest of 19 controls · street-112" (HighestControl.rank),
+    // Panel C small multiples: one title row (role glyph + title), the map, then two fixed caption rows (the subtitle, then the label).
+    // Wording is FigurePanels.densityMaps (studio/app figures/FigurePanels.scala, MapTileVM), verbatim:
+    //   titles "Query ret_07" / "Matched enc_03" / "Highest of 19" (HighestControl.rank), subtitles "" / "" / "controls · street-112",
     //   labels "P17 · σ 2°" / "0.73" / "0.61".
-    // Each title is wrapped as FigurePage.wrap does at the tile's inner width (23.67 mm at 7 pt: perLine 18), so the
-    // control's title breaks "Highest of 19" / "controls ·" / "street-112". Line 1 sits in the title row; continuation
-    // lines fill the caption rows above the label, and the label takes the LAST caption row on every tile, so the
-    // values share one baseline.
+    // As FigurePage.tiles lays them out, each sits on one fixed row: the title in the title row, the subtitle in the first
+    // caption row (blank when empty), and the label in the second on every tile, so the values share one baseline.
     const tileDefs = [
-      { role: 'query', title: 'Query ret_07', label: 'P17 · σ 2°', fx: B },
-      { role: 'match', title: 'Matched enc_03', label: '0.73', fx: A },
-      { role: 'control', title: 'Highest of 19 controls · street-112', label: '0.61', fx: S }];
+      { role: 'query', title: 'Query ret_07', sub: '', label: 'P17 · σ 2°', fx: B },
+      { role: 'match', title: 'Matched enc_03', sub: '', label: '0.73', fx: A },
+      { role: 'control', title: 'Highest of 19', sub: 'controls · street-112', label: '0.61', fx: S }];
     const cTexts = ['Matched 0.73 · highest of 19 controls street-112 0.61 · control mean B 0.35 · D +0.38',
       'Magenta: fixation duration mass per cell, shared limits; lines: 50% and 90% mass.'];
     const dNotes = ['n = 24 each · paired n = 24', 'bars: grand mean of participant means, equal weight',
@@ -557,9 +555,8 @@ class Component extends DCLogic {
       { l: 'E', title: 'Scale profile by retrieval response', w: 84, kind: 'plot', texts: eNotes }];
     const nLines = (texts, w) => texts.reduce((n, t) => n + wrapText(t, w, PT).length, 0);
     const tileW = w => (w - 2 * PAD) / 3, tileMapW = w => tileW(w) - 2 * PAD, tileMapH = w => tileMapW(w) * 768 / 1024;
-    const tileLines = w => tileDefs.map(t => wrapText(t.title, tileMapW(w), PT));
-    const CONT_ROWS = w => Math.max(...tileLines(w).map(ls => ls.length - 1)); // continuation rows the longest title needs
-    const TILE_ROWS = w => 1 + CONT_ROWS(w) + 1; // title row + continuation rows + label row, fixed for every tile so maps and values share baselines
+    const CONT_ROWS = w => 1; // the subtitle row, blank on a tile without one (FigurePage.tiles)
+    const TILE_ROWS = w => 1 + CONT_ROWS(w) + 1; // title row + subtitle row + label row, fixed for every tile so maps and values share baselines
     const tileH = w => TILE_ROWS(w) * lineMm(PT) + tileMapH(w) + 3 * PAD;
     const drawH = p => p.kind === 'gaze' ? p.w * p.ex[3] / p.ex[2] : p.kind === 'plot' ? p.w * 0.62 : tileH(p.w);
     const bodyH = p => drawH(p) + nLines(p.kind === 'maps' ? cTexts : p.texts, p.w) * lineMm(PT);
@@ -626,9 +623,9 @@ class Component extends DCLogic {
     const tiles = tileDefs.map((t, i) => {
       const x = pC.x + i * (tw + PAD), titleTop = pC.body + PAD, mapTop = titleTop + lineMm(PT), capTop = mapTop + mh + PAD;
       const gr = 0.36 * fsT, gx = px(x + PAD) + gr + 0.5, gy = px(titleTop) + 0.62 * fsT; // glyph: one text-height, on the title's x-height centre
-      const tl = wrapText(t.title, mw, PT), tx = gx + gr + 0.45 * fsT, nc = CONT_ROWS(pC.w);
-      T(tl[0], 0, titleTop, { xPx: tx, fw: 600 });
-      tl.slice(1).forEach((ln, j) => T(ln, x + PAD, capTop + j * lineMm(PT), { fw: 600 }));
+      const tx = gx + gr + 0.45 * fsT, nc = CONT_ROWS(pC.w);
+      T(t.title, 0, titleTop, { xPx: tx });
+      if (t.sub) T(t.sub, x + PAD, capTop);
       T(t.label, x + PAD, capTop + nc * lineMm(PT));
       const m = massMap(inF(t.fx), 70, mwPx, mhPx, 64, 48, gmax), hd = gr * Math.sqrt(Math.PI / 2);
       return { x: f1(px(x)), y: f1(px(pC.body)), w: f1(px(tw)), h: f1(px(th)), mx: f1(px(x + PAD)), my: f1(px(mapTop)), mw: f1(mwPx), mh: f1(mhPx),
