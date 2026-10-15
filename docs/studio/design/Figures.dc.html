@@ -640,8 +640,10 @@ class Component extends DCLogic {
     const pD = panels[3], DX = px(pD.x), DY = px(pD.body), DW = px(pD.w), DH = DW * 0.62;
     const fx0 = DX + 0.10 * DW, fx1 = DX + 0.97 * DW, fy0 = DY + 0.10 * DH, fy1 = DY + 0.78 * DH;
     const dy = v => fy0 + (0.5 - v) / 0.8 * (fy1 - fy0), lx = i => fx0 + (i === 0 ? 0.25 : 0.75) * (fx1 - fx0);
-    const rem  = [.26,.27,.38,.36,-.03,.30,.32,.31,.34,.45,.28,.34,.17,.29,.18,.45,.38,.42,.29,.26,.32,.27,.34,.36];
-    const forg = [.06,.12,.15,.18,-.23,.17,.10,.15,.24,.33,.11,.19,.03,.22,-.08,.28,.32,.37,.06,.12,.27,.06,.21,.17];
+    // P01–P24 participant means at σ 2°; the four rounding-boundary cells (REPORTING.md) carry the app's evaluated
+    // half-up display: P05 forg −.24, P13 forg .02, P16 rem .44, P24 forg .18.
+    const rem  = [.26,.27,.38,.36,-.03,.30,.32,.31,.34,.45,.28,.34,.17,.29,.18,.44,.38,.42,.29,.26,.32,.27,.34,.36];
+    const forg = [.06,.12,.15,.18,-.24,.17,.10,.15,.24,.33,.11,.19,.02,.22,-.08,.28,.32,.37,.06,.12,.27,.06,.21,.18];
     const jit = k => ((k * 7) % 9 - 4) * 2.6;
     const dp = {
       grid: [-0.2, 0.2, 0.4].map(v => `M${f1(fx0)} ${f1(dy(v))}H${f1(fx1)}`).join(''), zero: `M${f1(fx0)} ${f1(dy(0))}H${f1(fx1)}`,
