@@ -539,7 +539,15 @@ class ColumnMappingPaneFxSuite extends ShellFxSuite:
       loaded(fx, w, r3)
       val geometryPane = runOnFx(w.host.node(StudioLayouts.dataGeometry))
         .getOrElse(fail("no Geometry dock pane"))
-      assert(runOnFx(w.columnMapping.geometry.node.getParent eq geometryPane))
+      // The form is in the Geometry pane, inside the geometry panel (S26).
+      assert(
+        runOnFx(
+          Iterator
+            .iterate[javafx.scene.Node](w.columnMapping.geometry.node)(_.getParent)
+            .takeWhile(_ != null)
+            .contains(geometryPane)
+        )
+      )
       val before = runOnFx(w.runtime.model)
       val width  = w.columnMapping.wizard.view.geometryFields(GeometryField.ImageWidth)
       fx.robot.click(width)

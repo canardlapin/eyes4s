@@ -65,11 +65,19 @@ class A11yRenderSuite extends ShellFxSuite:
     fx.awaitLayout()
 
   /** The window as the boards show it: Analysis once the design is checked
-    * (its preflight follows the check, as in A11yTreeSuite).
+    * (its preflight follows the check, as in A11yTreeSuite), Data once its
+    * geometry panel has drawn its pictures and read its counts.
     */
   private def settled(fx: FxStage, w: StudioWindow): StudioWindow =
-    if runOnFx(w.runtime.model.perspective) == eyes4s.studio.core.document.Perspective.Analysis
+    val perspective = runOnFx(w.runtime.model.perspective)
+    if perspective == eyes4s.studio.core.document.Perspective.Analysis
     then eventually(fx, "the design's check")(w.resolvedDesign.state.preview.receipt.isDefined)
+    if perspective == eyes4s.studio.core.document.Perspective.Data &&
+      runOnFx(w.geometry.state.shown.isDefined)
+    then
+      eventually(fx, "the geometry panel's pictures and counts") {
+        w.geometry.shownPictures.isDefined && w.geometry.state.counts.toOption.isDefined
+      }
     w
 
   private def fx(c: eyes4s.studio.app.tokens.Colour): Color =

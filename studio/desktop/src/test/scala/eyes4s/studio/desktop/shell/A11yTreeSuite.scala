@@ -148,6 +148,12 @@ class A11yTreeSuite extends ShellFxSuite:
           eventually(fx, "the design and recipe fields are served")(
             w.resolvedDesign.state.preview.receipt.isDefined && w.recipe.editor.ready
           )
+        // Data's geometry panel adds its thumbnails once the placement is
+        // drawn and its counts' buttons once they are read.
+        if runOnFx(w.runtime.model.perspective) == Perspective.Data then
+          eventually(fx, "the geometry panel's pictures and counts") {
+            w.geometry.shownPictures.isDefined && w.geometry.state.counts.toOption.isDefined
+          }
         // Explore's inspector rebuilds its links when any of its reads arrives.
         // Wait for all reads before deriving stops or starting the Tab walk.
         if runOnFx(w.runtime.model.perspective) == Perspective.Explore then

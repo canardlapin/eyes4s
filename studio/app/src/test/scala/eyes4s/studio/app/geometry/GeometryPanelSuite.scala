@@ -853,3 +853,58 @@ class GeometryPanelSuite extends munit.FunSuite:
     )
     assertEquals(moving.placement, Loading.Waiting)
   }
+
+  test("the panel's focus stops: none without a revision, then its controls in Tab order") {
+    import eyes4s.studio.app.vm.{A11yRole, FocusStop}
+    val nothing = GeometryPanel.sync(GeometryPanel.empty, StoryModels.firstRun)._1
+    assertEquals(
+      GeometryPanelVM.focusStops(GeometryPanelVM.of(nothing, StoryModels.firstRun, None), true),
+      Vector.empty
+    )
+    val (panel, _) = synced(t1)
+    val counted    =
+      GeometryPanel.update(panel, t1, GeometryIntent.CountsRead(r3, Right(summary)))._1
+    val marked = GeometryPanel.update(counted, t1, GeometryIntent.MarkTrial(p05ret04))._1
+    val vm     = GeometryPanelVM.of(marked, t1, None)
+    val tail   = Vector(
+      FocusStop(A11yRole.RadioButton, "Exclude the record (default)"),
+      FocusStop(A11yRole.Button, "Outside image frame: 543 of 11,520 records · 409 trials"),
+      FocusStop(A11yRole.Button, "Outside screen: 0 of 11,520 records · 0 trials")
+    )
+    val density = FocusStop(A11yRole.Plot, vm.densityAccessible)
+    val mark    = FocusStop(A11yRole.Button, "Mark trial as wrong orientation…")
+    // The window's draft form edits the fields: the panel's own are no stops.
+    assertEquals(GeometryPanelVM.focusStops(vm, fields = false), Vector(density, mark) ++ tail)
+    assertEquals(
+      GeometryPanelVM.focusStops(vm, fields = true),
+      vm.fields.map(f => FocusStop(A11yRole.TextField, f.label)) ++ Vector(
+        density,
+        mark
+      ) ++ tail
+    )
+    // The open marking form: its chosen fix and scope, then its buttons.
+    val opened = GeometryPanel.update(marked, t1, GeometryIntent.OpenOrientation)._1
+    assertEquals(
+      GeometryPanelVM.focusStops(GeometryPanelVM.of(opened, t1, None), fields = false),
+      Vector(
+        density,
+        FocusStop(A11yRole.RadioButton, "Flip horizontally (x)"),
+        FocusStop(A11yRole.RadioButton, "This trial"),
+        FocusStop(A11yRole.Button, "Record correction"),
+        FocusStop(A11yRole.Button, "Cancel")
+      ) ++ tail
+    )
+  }
+
+  test("each drawn thumbnail is a stop before the density, in the order drawn") {
+    import eyes4s.studio.app.vm.{A11yRole, FocusStop}
+    val panel = loaded(small)
+    val vm    = GeometryPanelVM.of(panel, small, Some(picture(panel, small)))
+    assert(vm.thumbnails.nonEmpty)
+    val stops = GeometryPanelVM.focusStops(vm, fields = false)
+    assertEquals(
+      stops.take(vm.thumbnails.size + 1),
+      vm.thumbnails.map(t => FocusStop(A11yRole.ToggleButton, t.accessible)) :+
+        FocusStop(A11yRole.Plot, vm.densityAccessible)
+    )
+  }

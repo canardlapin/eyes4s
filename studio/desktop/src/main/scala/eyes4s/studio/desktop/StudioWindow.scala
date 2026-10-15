@@ -48,6 +48,7 @@ import eyes4s.studio.desktop.explore.{
 }
 import eyes4s.studio.desktop.trial.StimulusSource
 import eyes4s.studio.desktop.figures.{FigureInputs, FiguresHost}
+import eyes4s.studio.desktop.geometry.{GeometryInputs, GeometryPaneHost}
 import eyes4s.studio.desktop.dock.{DockGesture, DockLayouts, PerspectiveHost}
 import eyes4s.studio.desktop.runtime.{
   DesktopEffects,
@@ -85,6 +86,8 @@ final class StudioWindow private (
     val effects: DesktopEffects,
     val project: Option[ProjectPort],
     val columnMapping: ColumnMappingPaneHost,
+    val geometry: GeometryPaneHost,
+    geometryListener: AppModel => Unit,
     val admission: AdmissionLedgerHost,
     val summary: CompareSummaryHost,
     summaryListener: AppModel => Unit,
@@ -125,7 +128,8 @@ final class StudioWindow private (
   /** The controls a pane shows inside its own focus stop, in Tab order. */
   def paneStops(pane: PaneId): Vector[FocusStop] =
     if pane == StudioLayouts.columnMapping then columnMapping.focusStops
-    else if pane == StudioLayouts.dataGeometry then columnMapping.geometryStops
+    else if pane == StudioLayouts.dataGeometry then
+      columnMapping.geometryStops ++ geometry.focusStops
     else if pane == StudioLayouts.trialMetadata then columnMapping.trialMetadataStops
     else if pane == StudioLayouts.dataIssues then columnMapping.issuesStops
     else if pane == StudioLayouts.admission then admission.focusStops
@@ -195,6 +199,8 @@ final class StudioWindow private (
     deactivate()
     unbind()
     columnMapping.dispose()
+    runtime.unlisten(geometryListener)
+    geometry.dispose()
     runtime.unlisten(summaryListener)
     runtime.unlisten(navigatorListener)
     runtime.unlisten(sourcesListener)
@@ -529,10 +535,22 @@ object StudioWindow:
     val mapping = ColumnMappingPaneHost(() => r.model, dispatch, importServices, project)
     mapping.loadPresets()
     host.host(StudioLayouts.columnMapping, mapping.node)
-    host.host(StudioLayouts.dataGeometry, mapping.geometry.node)
     host.host(StudioLayouts.trialMetadata, mapping.trialMetadata.node)
     host.host(StudioLayouts.dataIssues, mapping.issues.node)
     r.listen(mapping.sync)
+    // The Geometry pane (Data.dc.html, geometry): one pane, the geometry
+    // panel (the declared frame, the worked example, the placement check,
+    // corrections, the off-screen policy and the counts) with the import
+    // draft's geometry form after its declared facts, the one editor of the
+    // geometry; both follow the selected revision.
+    val geometry =
+      GeometryPaneHost(() => r.model, dispatch, GeometryInputs.of(session, displays))
+    mapping.geometry.inline()
+    geometry.view.embed(mapping.geometry.node)
+    host.host(StudioLayouts.dataGeometry, geometry.node)
+    val geometryListener: AppModel => Unit = geometry.sync
+    r.listen(geometryListener)
+    geometry.sync(r.model)
     // The admission ledger (Data): the selected revision's counts, and Admit.
     val admission = AdmissionLedgerHost(() => r.model, dispatch, LedgerInputs.of(session))
     ledger = Some(admission)
@@ -702,6 +720,8 @@ object StudioWindow:
         effects,
         project,
         mapping,
+        geometry,
+        geometryListener,
         admission,
         summary,
         summaryListener,

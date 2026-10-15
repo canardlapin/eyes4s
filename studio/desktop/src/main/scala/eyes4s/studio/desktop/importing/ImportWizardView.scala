@@ -605,6 +605,18 @@ final class DataWizardPage(
   private var opened                       = false
   private var shownProblem: Option[String] = None
   private var shownStatus: Option[String]  = None
+  private var body: Region                 = scroll
+
+  /** Show the page's content without its own scroller or margin, for a host
+    * that scrolls it with more of its own (the Geometry pane's panel).
+    */
+  def inline(): Unit = if body ne content then
+    scroll.setContent(null)
+    node.getChildren.set(node.getChildren.indexOf(scroll), content)
+    content.setPadding(javafx.geometry.Insets.EMPTY)
+    content.setVisible(opened)
+    content.setManaged(opened)
+    body = content
 
   private def showMessages(): Unit =
     Vector(problem -> shownProblem, status -> shownStatus).foreach { (l, text) =>
@@ -620,7 +632,7 @@ final class DataWizardPage(
       l.setVisible(text.isDefined)
       l.setManaged(text.isDefined)
     }
-    Vector(scroll, footer).foreach { n =>
+    Vector(body, footer).foreach { n =>
       n.setVisible(opened)
       n.setManaged(opened)
     }

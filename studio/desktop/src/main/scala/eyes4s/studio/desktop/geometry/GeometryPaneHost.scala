@@ -19,6 +19,7 @@ package eyes4s.studio.desktop.geometry
 import eyes4s.studio.app.explore.DisplaySource
 import eyes4s.studio.app.geometry.*
 import eyes4s.studio.app.tokens.{StageVariant, Theme}
+import eyes4s.studio.app.vm.FocusStop
 import eyes4s.studio.app.{AppModel, Intent}
 import eyes4s.studio.core.backend.{AdmissionSummary, DatasetRevision, PlacementPreview}
 import eyes4s.studio.core.document.{DatasetRevisionSpec, Perspective, StageAppearance}
@@ -99,12 +100,20 @@ final class GeometryPaneHost(
   private var changedAt                          = System.nanoTime()
   private var receiptLog                         = Vector.empty[RedrawReceipt]
   private var started                            = false
+  private var disposed                           = false
 
   val view: GeometryPanelView = GeometryPanelView(dispatch)
   def node: javafx.scene.Node = view.node
 
   /** The panel's state now. */
   def state: GeometryPanel = panel
+
+  /** The panel's controls inside its pane's focus stop, in Tab order. */
+  def focusStops: Vector[FocusStop] =
+    GeometryPanelVM.focusStops(
+      GeometryPanelVM.of(panel, model(), pictures),
+      fields = view.editsFields
+    )
 
   /** Every redraw so far, oldest first. */
   def receipts: Vector[RedrawReceipt] = receiptLog
@@ -115,7 +124,7 @@ final class GeometryPaneHost(
   /** Follow the model. Nothing is read until the Data perspective has been
     * shown.
     */
-  def sync(m: AppModel): Unit =
+  def sync(m: AppModel): Unit = if !disposed then
     started = started || m.perspective == Perspective.Data || panel.shown.isDefined
     if started then
       val (next, effects) = GeometryPanel.sync(panel, m)
@@ -124,7 +133,7 @@ final class GeometryPaneHost(
       refresh()
 
   /** A user action on the panel. */
-  def dispatch(intent: GeometryIntent): Unit =
+  def dispatch(intent: GeometryIntent): Unit = if !disposed then
     val (next, effects) = GeometryPanel.update(panel, model(), intent)
     panel = next
     perform(effects)
@@ -199,7 +208,7 @@ final class GeometryPaneHost(
       current: Long,
       built: Either[String, (GeometryPictures, Vector[PlotScene], PlotScene)]
   ): Unit =
-    if current == generation then
+    if current == generation && !disposed then
       built match
         case Left(reason) =>
           pictures = None
@@ -221,7 +230,10 @@ final class GeometryPaneHost(
               )
           )
 
-  def dispose(): Unit = view.dispose()
+  /** Stop following the model; reads that answer later are dropped. */
+  def dispose(): Unit = if !disposed then
+    disposed = true
+    view.dispose()
 
 object GeometryPaneHost:
 
