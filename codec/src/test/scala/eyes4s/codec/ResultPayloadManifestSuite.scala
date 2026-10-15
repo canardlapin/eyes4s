@@ -66,6 +66,33 @@ class ResultPayloadManifestSuite extends munit.FunSuite:
     assertEquals(loaded.payloads.map(_._1), packed.payloads.map(_.name))
   }
 
+  test("external resolution snapshots bytes; owned resolution preserves every trust check") {
+    val saved    = save()
+    val payload  = packed.payloads.head
+    val mutable  = IArray.genericWrapArray(payload.bytes).toArray
+    val expected = mutable.toVector
+    val source   = ByteSource {
+      case ByteRequest.Entry(entry) if entry.name == payload.name =>
+        Right(IArray.unsafeFromArray(mutable))
+      case request => saved.source.read(request)
+    }
+    val external = get(ArtifactResolver.resolve(saved.address, source, decoders))
+    val owned    = get(ArtifactResolver.resolveOwned(saved.address, saved.source, decoders))
+    assertEquals(owned.results.map(_._2.encode), external.results.map(_._2.encode))
+    assertEquals(
+      owned.payloads.map(_._2.bytes.toVector),
+      external.payloads.map(_._2.bytes.toVector)
+    )
+    mutable(0) = (mutable(0) ^ 1).toByte
+    assertEquals(external.payloads.find(_._1 == payload.name).get._2.bytes.toVector, expected)
+    val refusal = ArtifactResolver.resolve(saved.address, source, decoders).left.map(_.toVector)
+    assert(refusal.isLeft)
+    assertEquals(
+      ArtifactResolver.resolveOwned(saved.address, source, decoders).left.map(_.toVector),
+      refusal
+    )
+  }
+
   test("verified metadata reconstructs every completed field with the retained masses") {
     val inline   = get(results.registration.decode(get(results.codec.encode(result))))
     val restored = get(resolve(save())).results.head._2

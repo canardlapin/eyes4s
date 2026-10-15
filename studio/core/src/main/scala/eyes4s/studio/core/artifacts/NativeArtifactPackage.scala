@@ -193,7 +193,7 @@ object NativeArtifactPackage:
       )
       decoders <- layout("native decoders")(ArtifactDecoders.trial[Px])
       resolved <- ArtifactResolver
-        .resolve(address, source, decoders)
+        .resolveOwned(address, source, decoders)
         .leftMap(errors =>
           NativeArtifactError
             .Package(facts.run, "resolve", errors.toVector.map(_.message).mkString("; "))

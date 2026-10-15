@@ -807,15 +807,39 @@ object ArtifactResolver:
       .leftMap(NonEmptyVector.one)
       .flatMap(resolveManifest(_, source, decoders))
 
+  /** Internal storage owners may share their private immutable snapshots.
+    * Lengths, digests, schemas, values and relations are still checked in full.
+    * The source must expose only bytes whose mutable aliases it does not release.
+    */
+  private[eyes4s] def resolveOwned[K, U <: Unit2D](
+      address: ByteDigest,
+      source: ByteSource,
+      decoders: ArtifactDecoders[K, U]
+  ): Resolution[ResolvedManifest[K, U]] =
+    manifest(address, source)
+      .leftMap(NonEmptyVector.one)
+      .flatMap(resolveManifestIn(_, source, decoders, ByteOwnership.ShareOwned))
+
+  private enum ByteOwnership:
+    case SnapshotExternal, ShareOwned
+
   /** Resolve an already decoded manifest's graph. */
   def resolveManifest[K, U <: Unit2D](
       manifest: ScientificManifest,
       source: ByteSource,
       decoders: ArtifactDecoders[K, U]
   ): Resolution[ResolvedManifest[K, U]] =
+    resolveManifestIn(manifest, source, decoders, ByteOwnership.SnapshotExternal)
+
+  private def resolveManifestIn[K, U <: Unit2D](
+      manifest: ScientificManifest,
+      source: ByteSource,
+      decoders: ArtifactDecoders[K, U],
+      ownership: ByteOwnership
+  ): Resolution[ResolvedManifest[K, U]] =
     for
       verified <- accumulate(
-        manifest.entries.map(entry => verify(entry, source).map(entry -> _))
+        manifest.entries.map(entry => verify(entry, source, ownership).map(entry -> _))
       )
       decoded <- decode(manifest, verified, decoders)
       _       <- relations(manifest, decoded, verified, decoders)
@@ -832,7 +856,8 @@ object ArtifactResolver:
 
   private def verify(
       entry: ManifestEntry,
-      source: ByteSource
+      source: ByteSource,
+      ownership: ByteOwnership
   ): Either[ResolveError, IArray[Byte]] =
     read(source, ByteRequest.Entry(entry)) match
       case Left(SourceFailure.Missing)            => Left(ResolveError.Missing(entry.name))
@@ -843,7 +868,9 @@ object ArtifactResolver:
         if raw.length.toLong != entry.length then
           Left(ResolveError.Length(entry.name, entry.length, raw.length))
         else
-          val bytes  = Bytes.copy(raw)
+          val bytes = ownership match
+            case ByteOwnership.SnapshotExternal => Bytes.copy(raw)
+            case ByteOwnership.ShareOwned       => raw
           val actual = ByteDigest.sha256(bytes)
           Either.cond(
             actual == entry.sha256,
