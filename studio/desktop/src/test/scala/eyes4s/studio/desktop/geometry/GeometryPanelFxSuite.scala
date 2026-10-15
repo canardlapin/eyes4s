@@ -33,7 +33,7 @@ import eyes4s.studio.desktop.StudioStyles
 import eyes4s.studio.desktop.explore.NavigatorDisplays
 import eyes4s.studio.desktop.harness.{FxStage, StageSize, StudioFxSuite, StudioTheme}
 import eyes4s.studio.desktop.plot.PlotHostStatus
-import eyes4s.studio.desktop.shell.KeyboardFocus
+import eyes4s.studio.desktop.shell.{A11yChecks, KeyboardFocus}
 import eyes4s.studio.desktop.trial.GoldenTrials
 import eyes4s.studio.desktop.typography.StudioFonts
 import javafx.event.ActionEvent
@@ -492,6 +492,8 @@ class GeometryPanelFxSuite extends StudioFxSuite:
     assertEquals(framed, Vector.fill(4)(false))
     assertEquals(picked, (List(selFill -> -2.0), false, MonoMedium, SansSemibold))
     assertEquals(runOnFx(fills(items(1))), Nil)
+    // The selected thumbnail's caption stays legible over the selection fill.
+    assertEquals(runOnFx(A11yChecks.lowContrast(strip)), Vector.empty[String])
   }
 
   fxStage.test("the thumbnails' home: a focused strip with no cursor frames the marked trial") {
