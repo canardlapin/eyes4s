@@ -227,7 +227,9 @@ class ParticipantPlotSuite extends FunSuite:
     assert(written.contains("+0.30") && written.contains("+0.15"), written)
   }
 
-  test("a group's n is the count its cell names: the inverse of the cell's text, nothing else") {
+  test(
+    "a group's n is the count its cell names: the inverse of the cell's text, nothing else"
+  ) {
     assertEquals(ParticipantText.participantCount("24 participants"), Some("24"))
     assertEquals(ParticipantText.participantCount("1 participant"), Some("1"))
     assertEquals(ParticipantText.participantCount("1,024 participants"), Some("1,024"))
