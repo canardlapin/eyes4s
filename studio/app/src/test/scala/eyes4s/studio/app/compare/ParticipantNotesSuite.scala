@@ -90,20 +90,18 @@ class ParticipantNotesSuite extends munit.FunSuite:
     notes.blocks.map(_.lines.map(_.text))
 
   // The board's participant D plot notes (Results.dc.html, the annotation
-  // column), but for one value: P05's Forgotten mean is served as −0.235,
-  // which rounds half up to −0.24, as the participant table writes it
-  // (CompareSummaryFxSuite); the board's −0.23 is its illustrative summary,
-  // rounded before storage.
+  // column): the served group means of SCORES.json's query scores, rounded
+  // half up as the participant table writes them (CompareSummaryFxSuite).
   private val boardP17 = Vector(
     "P17 · selected",
     "19 of 20 contributing",
-    "Rem +0.38 (n 17)",
-    "Forg +0.32 (n 2)"
+    "Rem +0.40 (n 17)",
+    "Forg +0.22 (n 2)"
   )
   private val boardP05 = Vector(
     "P05 · 17 of 20 contributing",
-    "Rem −0.03 (n 13)",
-    "Forg −0.24 (n 4)",
+    "Rem +0.39 (n 13)",
+    "Forg +0.22 (n 4)",
     "3 failed queries:",
     "2 Remembered, 1 Forgotten",
     "no value, not zero"
@@ -146,7 +144,7 @@ class ParticipantNotesSuite extends munit.FunSuite:
       // The groups are spoken by their whole names.
       assertEquals(
         notes.blocks.head.lines.map(_.spoken).drop(2),
-        Vector("Remembered +0.38, n 17", "Forgotten +0.32, n 2")
+        Vector("Remembered +0.40, n 17", "Forgotten +0.22, n 2")
       )
     }
   }
@@ -165,7 +163,7 @@ class ParticipantNotesSuite extends munit.FunSuite:
         assert(said.exists(_.contains(s"$con of $req contributing")), said)
         val rem  = cells(cells.size - 2)
         val forg = cells(cells.size - 1)
-        // "+0.38 (17)" in the table is "Rem +0.38 (n 17)" in the notes.
+        // "+0.40 (17)" in the table is "Rem +0.40 (n 17)" in the notes.
         def note(short: String, cell: String) =
           s"$short ${cell.replace(" (", " (n ")}"
         assert(said.contains(note("Rem", rem)), s"$said vs $rem")

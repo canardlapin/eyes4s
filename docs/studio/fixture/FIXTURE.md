@@ -61,7 +61,7 @@ Focus query: P17 · ret_07 · beach-042 (Remembered). Matched reference: P17 · 
 - Matched cardinality: every eligible query has exactly 1 matched reference (0 duplicates, checked). The 9 no-match queries are reported under the persisted policy 'Queries without a matched reference: report as no match'.
 - Records by admission (golden fixations.csv): 11,311 in admitted trials, 209 in the 17 quarantined trials; outside-window records in quarantined trials: 0.
 - Methods: of 11,311 fixation records in admitted trials, 543 lay outside the analysis window (159,142 / 3,282,108 ms = 4.85% of those trials' fixation duration). Records outside the screen: 0 (SCORES.json counts.recordsOutsideScreen).
-- Paired Δ Remembered − Forgotten (σ 2°, status ok, differences of the 6-place participant group means): mean 0.184178; min P15 0.038114, max P11 0.343853; higher in 24 of 24 paired participants; missing pairs 0.
+- Paired Δ Remembered − Forgotten (σ 2°, status ok, computed before rounding participant means): mean 0.184178 (SCORES.json rememberedMinusForgotten 0.184178); min P15 0.038114, max P11 0.343853; higher in 24 of 24 paired participants; missing pairs 0.
 - Focus fixation lists (fixture.json focus_fixations, from the golden fixations.csv): 21 trials, P17 ret_07, enc_03 and its 19 controls.
 
 ## Story moments (boards are snapshots in one timeline)

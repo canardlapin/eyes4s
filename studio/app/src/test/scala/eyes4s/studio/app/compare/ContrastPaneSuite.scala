@@ -68,18 +68,19 @@ class ContrastPaneSuite extends munit.FunSuite:
     val focus = TrialPanels.focusOf(m)
     ContrastPane.vm(p, focus, focus.flatMap(_.reference), columns)
 
-  private val fixtureM = Vector(0.41, 0.58, 0.73, 0.86)
-  private val fixtureB = Vector(0.22, 0.29, 0.35, 0.63)
-  private val fixtureD = Vector(0.19, 0.29, 0.38, 0.23)
+  // SCORES.json's P17 ret_07, which fixture.json copies.
+  private val fixtureM = Vector(0.463138, 0.823414, 0.936849, 0.974504)
+  private val fixtureB = Vector(0.044608, 0.128756, 0.321456, 0.635355)
+  private val fixtureD = Vector(0.41853, 0.694658, 0.615394, 0.339148)
 
-  test("the focus readout at 2° is M 0.73, B 0.35 of 19 controls, D +0.38, with refs") {
+  test("the focus readout at 2° is M 0.94, B 0.32 of 19 controls, D +0.62, with refs") {
     loaded(t2Compare).map { p =>
       val vm = vmAt(p, t2Compare)
       assertEquals(vm.status, None)
       assertEquals(vm.caption, "ret_07 contrast · σ 2°")
-      assertEquals(vm.hero.map(h => (h.label, h.value, h.ref)), Some(("D", "+0.38", query)))
-      assertEquals(vm.m.map(v => (v.label, v.value, v.ref)), Some(("M matched", "0.73", pair)))
-      assertEquals(vm.b.map(v => (v.label, v.value)), Some(("B mean of 19 controls", "0.35")))
+      assertEquals(vm.hero.map(h => (h.label, h.value, h.ref)), Some(("D", "+0.62", query)))
+      assertEquals(vm.m.map(v => (v.label, v.value, v.ref)), Some(("M matched", "0.94", pair)))
+      assertEquals(vm.b.map(v => (v.label, v.value)), Some(("B mean of 19 controls", "0.32")))
       assertEquals(
         vm.confound,
         "Spatial correspondence, not replay. D does not separate participant-specific " +
@@ -130,13 +131,14 @@ class ContrastPaneSuite extends munit.FunSuite:
         val cosines = s.controls.flatMap(_.cosine)
         if s.label == "2°" then
           assertEquals(cosines.size, s.members)
-          // The backend's B is the pairwise mean, to the fixture's two decimals.
-          assertEqualsDouble(s.b, cosines.sum / cosines.size, 0.005)
+          // The backend's B is the pairwise mean, each side stored to six
+          // places (SCORES.json): half a unit in the last place from each.
+          assertEqualsDouble(s.b, cosines.sum / cosines.size, 1e-6)
         else assertEquals(cosines, Vector.empty, s.label)
       }
       val at2 = ladder.scales(2)
       assertEquals(at2.members, 19)
-      assertEquals(Format.decimal(at2.controls.flatMap(_.cosine).max, 2), "0.61")
+      assertEquals(Format.decimal(at2.controls.flatMap(_.cosine).max, 2), "0.72")
     }
   }
 
@@ -145,7 +147,7 @@ class ContrastPaneSuite extends munit.FunSuite:
       val vm = vmAt(p, t2Compare)
       val i  = vm.inspected.getOrElse(fail("no inspected pair"))
       assertEquals(i.heading, "Matched · beach-042")
-      assertEquals((i.score.value, i.score.ref), ("0.73", pair))
+      assertEquals((i.score.value, i.score.ref), ("0.94", pair))
       assertEquals(i.note, "The matched pair. Its cosine is M.")
       assertEquals(i.rank, "matched · then 19 controls")
       assertEquals(i.prev, None)
@@ -155,12 +157,12 @@ class ContrastPaneSuite extends munit.FunSuite:
         ContrastPane.focusStops(vm),
         Vector(FocusStop(A11yRole.Button, "Next →, next reference"))
       )
-      // Next: the highest control, street-112 (enc_01) at 0.61.
+      // Next: the highest control, harbor-231 (enc_11) at 0.72.
       val next    = i.next.getOrElse(fail("no next"))
       val first   = AppModel.run(t2Compare, Vector(next))._1
       val onFirst = vmAt(p, first).inspected.get
-      assertEquals(onFirst.heading, "Control · street-112")
-      assertEquals(onFirst.score.value, "0.61")
+      assertEquals(onFirst.heading, "Control · harbor-231")
+      assertEquals(onFirst.score.value, "0.72")
       assertEquals(onFirst.note, "One of 19 controls. It enters B; it is not M.")
       assertEquals(onFirst.rank, "control 1 of 19 by cosine")
       assertEquals(onFirst.prev, Some(Intent.Explain(Place.At(pair))))
@@ -225,8 +227,8 @@ class ContrastPaneSuite extends munit.FunSuite:
 
   test("a control served without a cosine is said so, ranked last, with one count of B") {
     loaded(t2Compare).map { p0 =>
-      // enc_01 (street-112) has the highest cosine; served without one, it goes last.
-      val p  = unscored(p0, "enc_01")
+      // enc_11 (harbor-231) has the highest cosine; served without one, it goes last.
+      val p  = unscored(p0, "enc_11")
       val vm = vmAt(p, t2Compare)
       assertEquals(vm.b.map(_.label), Some("B mean of 18 controls"))
       val i = vm.inspected.get
@@ -249,7 +251,7 @@ class ContrastPaneSuite extends munit.FunSuite:
       assertEquals(walked.head.note, "One of 18 controls. It enters B; it is not M.")
       assertEquals(walked.head.rank, "control 1 of 18 by cosine")
       val last = walked.last
-      assertEquals(last.heading, "Control · enc_01")
+      assertEquals(last.heading, "Control · enc_11")
       assertEquals(last.score.value, "not served")
       assertEquals(
         last.note,

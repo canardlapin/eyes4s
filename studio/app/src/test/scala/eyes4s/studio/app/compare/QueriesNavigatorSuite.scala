@@ -116,10 +116,10 @@ class QueriesNavigatorSuite extends munit.FunSuite:
       val p17 = vm.groups.find(_.key == "participant:P17").getOrElse(fail("no P17"))
       assertEquals(p17.summary, "19 of 20 · +0.38")
       val p05 = vm.groups.find(_.key == "participant:P05").get
-      assertEquals(ascii(p05.summary), "17 of 20 · -0.08")
+      assertEquals(ascii(p05.summary), "17 of 20 · +0.35")
       def entry(trial: String) = p17.entries.find(_.trial == trial).getOrElse(fail(trial))
       val ret07                = entry("ret_07")
-      assertEquals((ret07.item, ret07.said, ret07.scored), ("beach-042", "+0.38", true))
+      assertEquals((ret07.item, ret07.said, ret07.scored), ("beach-042", "+0.62", true))
       // Zero-centred: the bar runs from zero to D over the run's largest |D|.
       val ends   = vm.groups.flatMap(_.entries).flatMap(_.bar).map(_.fromZeroTo)
       val extent = ends.map(math.abs).max
@@ -127,7 +127,12 @@ class QueriesNavigatorSuite extends munit.FunSuite:
       assert(ends.exists(_ < 0.0), "some D is negative")
       assert(ret07.bar.exists(b => b.fromZeroTo > 0.0 && b.fromZeroTo < 1.0), ret07.bar)
       val ret06 = entry("ret_06")
-      assertEqualsDouble(ret06.bar.get.fromZeroTo / ret07.bar.get.fromZeroTo, 0.50 / 0.38, 0.03)
+      // SCORES.json's D at 2°: ret_06 0.349746, ret_07 0.615394.
+      assertEqualsDouble(
+        ret06.bar.get.fromZeroTo / ret07.bar.get.fromZeroTo,
+        0.349746 / 0.615394,
+        1e-12
+      )
       // A query with no score says why, and has no bar.
       val ret09 = entry("ret_09")
       assertEquals((ret09.said, ret09.scored, ret09.bar), ("not admitted", false, None))

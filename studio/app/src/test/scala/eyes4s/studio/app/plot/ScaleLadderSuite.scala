@@ -237,16 +237,16 @@ class ScaleLadderSuite extends munit.FunSuite:
       assertEquals(source.caption, LadderText(LadderTextId.Caption, "P17 · ret_07"))
       assertEquals(
         cells(at2.matched),
-        Vector("2°", "M matched", "enc_03", "beach-042", "0.73", "—")
+        Vector("2°", "M matched", "enc_03", "beach-042", "0.94", "—")
       )
       assertEquals(
         cells(at2.mean),
-        Vector("2°", "B control mean", "mean of 19 controls", "—", "0.35", "—")
+        Vector("2°", "B control mean", "mean of 19 controls", "—", "0.32", "—")
       )
-      assertEquals(cells(at2.contrast), Vector("2°", "D", "M − B", "—", "—", "+0.38"))
+      assertEquals(cells(at2.contrast), Vector("2°", "D", "M − B", "—", "—", "+0.62"))
       assertEquals(
         cells(at2.controls.head.ref),
-        Vector("2°", "Control", "enc_01", "street-112", "0.61", "—")
+        Vector("2°", "Control", "enc_01", "street-112", "0.12", "—")
       )
       // A control the backend does not score at 0.5° is missing, not zero.
       assertEquals(cells(ladder.scales(0).controls.head.ref).drop(3), Vector("—", "—", "—"))

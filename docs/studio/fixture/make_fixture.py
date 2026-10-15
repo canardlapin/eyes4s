@@ -414,28 +414,34 @@ S["grand_D_by_scale_Remembered"] = [by_response(s, "Remembered")["estimate"] for
 S["grand_D_by_scale_Forgotten"] = [by_response(s, "Forgotten")["estimate"] for s in GOLDEN_SCALES]
 
 # Paired descriptive (Results "Δ Remembered − Forgotten"), σ 2°, status ok. The mean is
-# eyes4s's contrast (SCORES.json rememberedMinusForgotten). Each participant's difference
-# is the difference of its two SCORES.json group means, so it carries their 6-place
-# rounding: within 1e-6 of eyes4s's unrounded difference.
+# eyes4s's contrast (SCORES.json rememberedMinusForgotten). SCORES.json holds no
+# per-participant difference, so each one is described here as the app computes it: mean
+# Remembered D − mean Forgotten D over the participant's SCORES.json query D values,
+# before rounding participant means. It agrees with the difference of SCORES.json's group
+# means to their 6-place rounding (half a unit from each of the four 6-place values). These
+# descriptive values are written to 9 places: a difference of means of 6-place values can
+# fall exactly on a 6-place rounding boundary (P01: 0.1185755).
 contrast = golden_summary[FOCUS_SCALE]["rememberedMinusForgotten"]
-diffs = {
-    r["id"]: round(r["Remembered"]["D"] - r["Forgotten"]["D"], 6)
-    for r in rows
-    if r["Remembered"] and r["Forgotten"]
-}
-assert abs(st.mean(diffs.values()) - contrast["estimate"]) <= 1e-6
+diffs = {}
+for P, r in zip(study["participants"], rows):
+    ok = [q for q in P["queries"] if q["status"] == "ok"]
+    g = {k: [q["D"][2] for q in ok if q["response"] == k] for k in ("Remembered", "Forgotten")}
+    if g["Remembered"] and g["Forgotten"]:
+        diffs[P["id"]] = st.mean(g["Remembered"]) - st.mean(g["Forgotten"])
+        assert abs(diffs[P["id"]] - (r["Remembered"]["D"] - r["Forgotten"]["D"])) <= 2e-6, P["id"]
+assert round(st.mean(diffs.values()), 6) == contrast["estimate"]
 lo, hi = min(diffs, key=diffs.get), max(diffs, key=diffs.get)
 S["paired_D_diff"] = {
     "scale": "2°",
     "status": "ok",
-    "rounding": "differences of the 6-place participant group means",
-    "mean": contrast["estimate"],
-    "min": {"participant": lo, "value": round(diffs[lo], 6)},
-    "max": {"participant": hi, "value": round(diffs[hi], 6)},
+    "rounding": "computed before rounding participant means",
+    "mean": round(st.mean(diffs.values()), 9),
+    "min": {"participant": lo, "value": round(diffs[lo], 9)},
+    "max": {"participant": hi, "value": round(diffs[hi], 9)},
     "positive_k": sum(v > 0 for v in diffs.values()),
     "paired_n": len(diffs),
     "missing_pairs": len(parts) - len(diffs),
-    "by_participant": {p: round(v, 6) for p, v in sorted(diffs.items())},
+    "by_participant": {p: round(v, 9) for p, v in sorted(diffs.items())},
 }
 assert S["paired_D_diff"]["paired_n"] == S["n_paired"] == contrast["paired"]
 assert contrast["unpaired"] == S["paired_D_diff"]["missing_pairs"]
@@ -477,7 +483,7 @@ with open("FIXTURE.md", "a") as f:
     f.write(f"- Records by admission (golden fixations.csv): {S['records_in_admitted_trials']:,} in admitted trials, {S['records_in_quarantined_trials']} in the 17 quarantined trials; outside-window records in quarantined trials: {S['outside_window_records_in_quarantined_trials']}.\n")
     f.write(f"- Methods: of {S['records_in_admitted_trials']:,} fixation records in admitted trials, {S['outside_window_records']} lay outside the analysis window ({S['outside_window_duration_ms']:,} / {S['admitted_fixation_duration_ms']:,} ms = {100 * S['outside_window_duration_share']:.2f}% of those trials' fixation duration). Records outside the screen: {S['outside_screen_records']} (SCORES.json counts.recordsOutsideScreen).\n")
     pd = S["paired_D_diff"]
-    f.write(f"- Paired Δ Remembered − Forgotten (σ 2°, status ok, {pd['rounding']}): mean {pd['mean']}; min {pd['min']['participant']} {pd['min']['value']}, max {pd['max']['participant']} {pd['max']['value']}; higher in {pd['positive_k']} of {pd['paired_n']} paired participants; missing pairs {pd['missing_pairs']}.\n")
+    f.write(f"- Paired Δ Remembered − Forgotten (σ 2°, status ok, {pd['rounding']}): mean {pd['mean']:.6f} (SCORES.json rememberedMinusForgotten {contrast['estimate']}); min {pd['min']['participant']} {pd['min']['value']:.6f}, max {pd['max']['participant']} {pd['max']['value']:.6f}; higher in {pd['positive_k']} of {pd['paired_n']} paired participants; missing pairs {pd['missing_pairs']}.\n")
     f.write(f"- Focus fixation lists (fixture.json focus_fixations, from the golden fixations.csv): {len(study['focus_fixations']['trials'])} trials, P17 ret_07, enc_03 and its 19 controls.\n")
     f.write("\n## Story moments (boards are snapshots in one timeline)\n")
     f.write("- t1 Data · verify: dataset r3 draft (re-import of r2). Run 5 (rev 3, data r2) exists and becomes stale when r3 is admitted. No run on r3 yet.\n")

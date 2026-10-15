@@ -238,8 +238,8 @@ class FigureComposerSuite extends munit.ScalaCheckSuite:
         c.tiles.map(t => (t.heading, t.label)),
         Vector(
           "Query ret_07"                        -> "P17 · σ 2°",
-          "Matched enc_03"                      -> "0.73",
-          "Highest of 19 controls · street-112" -> "0.61"
+          "Matched enc_03"                      -> "0.94",
+          "Highest of 19 controls · harbor-231" -> "0.72"
         )
       )
       // Each tile's rows: the title over the map, then the subtitle and the label.
@@ -247,18 +247,18 @@ class FigureComposerSuite extends munit.ScalaCheckSuite:
         c.tiles.map(t => (t.title, t.subtitle, t.label)),
         Vector(
           ("Query ret_07", "", "P17 · σ 2°"),
-          ("Matched enc_03", "", "0.73"),
-          ("Highest of 19", "controls · street-112", "0.61")
+          ("Matched enc_03", "", "0.94"),
+          ("Highest of 19", "controls · harbor-231", "0.72")
         )
       )
       assertEquals(
         c.caption,
-        "Matched 0.73 · highest of 19 controls street-112 0.61 · control mean B 0.35 · D +0.38"
+        "Matched 0.94 · highest of 19 controls harbor-231 0.72 · control mean B 0.32 · D +0.62"
       )
       // B is said only as the control mean; the control's score only with its rank.
       val said = c.tiles.flatMap(t => Vector(t.title, t.subtitle, t.label)) :+ c.caption
-      assert(said.forall(s => !s.contains("0.35") || s.contains("control mean B 0.35")), said)
-      assert(c.tiles.forall(t => !t.label.contains("0.35")))
+      assert(said.forall(s => !s.contains("0.32") || s.contains("control mean B 0.32")), said)
+      assert(c.tiles.forall(t => !t.label.contains("0.32")))
     }
   }
 

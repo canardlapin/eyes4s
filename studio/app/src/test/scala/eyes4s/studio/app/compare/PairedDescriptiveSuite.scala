@@ -27,7 +27,7 @@ import eyes4s.studio.core.selection.{ReportGroup, ScaleIndex, StudioRef}
 import scala.concurrent.{ExecutionContext, Future}
 
 /** The Results headline's paired descriptive (design review ticket 27):
-  * "Δ Remembered − Forgotten +0.16", range +0.05 P21 to +0.26 P15, higher in
+  * "Δ Remembered − Forgotten +0.18", range +0.04 P15 to +0.34 P11, higher in
   * 24 of 24, computed from the unrounded participant means the native report
   * serves and only then rounded. The oracle is fixture.json's
   * `summary.paired_D_diff`, typed in below.
@@ -36,8 +36,8 @@ class PairedDescriptiveSuite extends munit.FunSuite:
   private given ExecutionContext           = ExecutionContext.global
   private def ok[E, A](e: Either[E, A]): A = e.fold(x => fail(x.toString), identity)
 
-  /** fixture.json stores the oracle's values at 6 decimals. */
-  private val FixtureRounding = 5e-7
+  /** fixture.json stores the oracle's values at 9 decimals. */
+  private val FixtureRounding = 5e-10
 
   /** The native report's contrast and this mean differ only by summation
     * order.
@@ -45,32 +45,32 @@ class PairedDescriptiveSuite extends munit.FunSuite:
   private val ArithmeticTolerance = 1e-12
 
   // fixture.json summary.paired_D_diff (σ 2°, status ok).
-  private val oracleMean = 0.155667
+  private val oracleMean = 0.184177735
   private val oracle     = Vector(
-    "P01" -> 0.205,
-    "P02" -> 0.15,
-    "P03" -> 0.228167,
-    "P04" -> 0.181667,
-    "P05" -> 0.208846,
-    "P06" -> 0.130568,
-    "P07" -> 0.218,
-    "P08" -> 0.157143,
-    "P09" -> 0.096167,
-    "P10" -> 0.123125,
-    "P11" -> 0.163718,
-    "P12" -> 0.154524,
-    "P13" -> 0.146818,
-    "P14" -> 0.072857,
-    "P15" -> 0.261282,
-    "P16" -> 0.165,
-    "P17" -> 0.062353,
-    "P18" -> 0.054583,
-    "P19" -> 0.2305,
-    "P20" -> 0.147571,
-    "P21" -> 0.05,
-    "P22" -> 0.213452,
-    "P23" -> 0.130429,
-    "P24" -> 0.184231
+    "P01" -> 0.1185755,
+    "P02" -> 0.118450321,
+    "P03" -> 0.125684583,
+    "P04" -> 0.241430881,
+    "P05" -> 0.171319904,
+    "P06" -> 0.158529511,
+    "P07" -> 0.172950217,
+    "P08" -> 0.148038679,
+    "P09" -> 0.201267083,
+    "P10" -> 0.106758375,
+    "P11" -> 0.343853141,
+    "P12" -> 0.191700357,
+    "P13" -> 0.145609466,
+    "P14" -> 0.2315059,
+    "P15" -> 0.038113782,
+    "P16" -> 0.198776048,
+    "P17" -> 0.181007059,
+    "P18" -> 0.285991458,
+    "P19" -> 0.1933331,
+    "P20" -> 0.243329486,
+    "P21" -> 0.154597735,
+    "P22" -> 0.306785452,
+    "P23" -> 0.127614771,
+    "P24" -> 0.215042821
   )
 
   /** A mean rounded for display first, as the board's 2-decimal tables print it. */
@@ -91,7 +91,7 @@ class PairedDescriptiveSuite extends munit.FunSuite:
         .transformWith(result => session.close.transform(_ => result))
     }
 
-  test("the fixture's paired difference: 0.15567 → +0.16, P21 to P15, 24 of 24") {
+  test("the fixture's paired difference: 0.18418 → +0.18, P15 to P11, 24 of 24") {
     native(contrasted).map { report =>
       val paired = PairedDescriptive.of(report).getOrElse(fail("no D contrast served"))
       assertEquals(
@@ -113,25 +113,25 @@ class PairedDescriptiveSuite extends munit.FunSuite:
       )
       assertEquals(paired.pairedN, served.pairedN)
       assertEquals(paired.unpaired, served.unpaired.map(_.participant))
-      assertEquals(paired.lowest.map(_.participant), Some("P21"))
-      assertEquals(paired.highest.map(_.participant), Some("P15"))
+      assertEquals(paired.lowest.map(_.participant), Some("P15"))
+      assertEquals(paired.highest.map(_.participant), Some("P11"))
       assertEquals((paired.higher, paired.pairedN), (24, 24))
 
       val vm = PairedDescriptiveVM.of(paired)
       assertEquals(vm.heading, "Δ Remembered − Forgotten · paired n 24")
-      assertEquals(vm.value, Some("+0.16"))
+      assertEquals(vm.value, Some("+0.18"))
       assertEquals(vm.higher, Some("higher in 24 of 24"))
       assertEquals(
         vm.note,
-        "Range +0.05 P21 to +0.26 P15 · computed before rounding participant means · " +
+        "Range +0.04 P15 to +0.34 P11 · computed before rounding participant means · " +
           "Descriptive only, no intervals or tests"
       )
-      assert(vm.spoken.contains("mean difference +0.16"), vm.spoken)
-      assert(vm.spoken.contains("range +0.05 P21 to +0.26 P15"), vm.spoken)
+      assert(vm.spoken.contains("mean difference +0.18"), vm.spoken)
+      assert(vm.spoken.contains("range +0.04 P15 to +0.34 P11"), vm.spoken)
     }
   }
 
-  test("rounding the fixture's participant means first would read +0.15, not +0.16") {
+  test("rounding the fixture's participant means first would give 0.1825, not 0.18418") {
     native(contrasted).map { report =>
       val paired  = PairedDescriptive.of(report).getOrElse(fail("no D contrast served"))
       val rounded = PairedDescriptive.of(
@@ -139,8 +139,11 @@ class PairedDescriptiveSuite extends munit.FunSuite:
           report.participants.map(p => p.copy(value = p.value.map(two)))
         )
       )
-      assertEquals(PairedDescriptiveVM.of(paired).value, Some("+0.16"))
-      assertEquals(rounded.map(PairedDescriptiveVM.of(_).value), Some(Some("+0.15")))
+      assertEqualsDouble(paired.mean.get, oracleMean, FixtureRounding)
+      // Rounded first, the 24 differences are of 2-place means: their mean is
+      // 0.1825, which still reads +0.18 at the board's two places.
+      assertEqualsDouble(rounded.flatMap(_.mean).get, 0.1825, ArithmeticTolerance)
+      assertEquals(PairedDescriptiveVM.of(paired).value, Some("+0.18"))
     }
   }
 

@@ -425,8 +425,8 @@ object GoldenJourney:
                 _ <- expect("M", focus.m.map(_(2)), Some(m))
                 _ <- expect("B", focus.b.map(_(2)), Some(b))
                 _ <- expect("D", focus.d.map(_(2)), Some(dd))
-                // FIXTURE.md: M 0.73, B 0.35, D 0.38 at 2°.
-                _ <- expect("FIXTURE.md", (0.73, 0.35, 0.38), (m, b, dd))
+                // SCORES.json (FIXTURE.md: M 0.94, B 0.32, D 0.62 at 2°).
+                _ <- expect("SCORES.json", (0.936849, 0.321456, 0.615394), (m, b, dd))
               yield d
             case other => fail("inspect", "a contrast", other)
           })
@@ -520,14 +520,15 @@ object GoldenJourney:
                 )
                 _ <- expect(
                   "grand D by scale",
-                  fixture.grandDByScale,
+                  // fixture.json holds SCORES.json's six places; both sides at two.
+                  fixture.grandDByScale.map(v => math.rint(v * 100) / 100),
                   ws.map(_.cell(None, ReportRole.Difference).get.estimate.get)
                     .map(v => math.rint(v * 100) / 100)
                 )
                 _ <- fixture.groups.traverse_ { expected =>
                   expect(
                     expected.label.label + " by scale",
-                    expected.dByScale,
+                    expected.dByScale.map(v => math.rint(v * 100) / 100),
                     gs.map(_.cell(Some(expected.label), ReportRole.Difference).get.estimate.get)
                       .map(v => math.rint(v * 100) / 100)
                   )

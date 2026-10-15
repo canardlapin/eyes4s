@@ -139,7 +139,7 @@ class TrialPanelsSuite extends munit.FunSuite:
           val vm = TrialPanels.vm(panels, Some(shown), scales)
           val q  = vm.query.getOrElse(fail("no query panel"))
           assertEquals((q.role, q.title), (PanelRole.Query, "P17 · ret_07 · beach-042"))
-          assertEquals(q.readout, PanelReadout("Query contrast D · σ 2°: +0.38", query))
+          assertEquals(q.readout, PanelReadout("Query contrast D · σ 2°: +0.62", query))
           val r = vm.reference.getOrElse(fail("no reference panel"))
           assertEquals(
             (r.role, r.title, r.trial),

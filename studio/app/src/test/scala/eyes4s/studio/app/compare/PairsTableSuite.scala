@@ -132,7 +132,7 @@ class PairsTableSuite extends munit.FunSuite:
               "P17 · enc_03",
               "beach-042",
               "2°",
-              "0.73",
+              "0.94",
               "scored"
             )
           )
@@ -186,9 +186,9 @@ class PairsTableSuite extends munit.FunSuite:
         )
         assertEquals(cosine(at1, control), None)
         assertEquals(scoreText(at1, control), Some("not served"))
-        // The matched pair at 1° is served: M 0.58 (FIXTURE.md).
+        // The matched pair at 1° is served: M 0.823414 (SCORES.json).
         val matched = StudioRef.Pair(run7, sigma1, PairDesign.Matched, p17ret07, p17enc03)
-        assertEquals(cosine(at1, matched), Some(0.58))
+        assertEquals(cosine(at1, matched), Some(0.823414))
     )
   }
 
@@ -284,11 +284,8 @@ class PairsTableSuite extends munit.FunSuite:
             )
           )
         val points = profile.groups.flatMap(_.points)
-        // FIXTURE.md: D by scale [0.19, 0.29, 0.38, 0.23].
-        assertEquals(
-          points.flatMap(_.d).map(d => math.round(d * 100) / 100.0),
-          Vector(0.19, 0.29, 0.38, 0.23)
-        )
+        // SCORES.json's D by scale (FIXTURE.md: [0.42, 0.69, 0.62, 0.34]).
+        assertEquals(points.flatMap(_.d), Vector(0.41853, 0.694658, 0.615394, 0.339148))
         assertEquals(
           points.head.ref,
           StudioRef.QueryContrast(run7, right(ScaleIndex.of(0)), p17ret07)
