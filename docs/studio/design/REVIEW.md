@@ -17,9 +17,9 @@ from the desktop are listed at the end of `../PARITY_CHECKLIST.md`.
 Status key: **[approved]** owner-approved · **[bug]** a pure bug, landable without sign-off · **[board]** board-only edit (done before landing). Every ticket below is owner-approved (2026-10-11) as amended in DESIGN_SPEC §15; items marked *Decision* record how an open option was settled.
 
 **A. Board edits before landing (no code)**
-1. [board] Figures panel C: control caption as "controls ·" / "street-112" / "0.61" (three rows), or record F2's explicit split. Data: caption "Missing asset · forest-044.png".
-2. [board] Explore: drop the chip text "Map: preview · σ 2° · not a result".
-3. [board] Main "Edit in Analysis ⌘3" weight 400. Data thumbnail dash `82 55`, width 14 (6/4 px at 0.073×).
+1. [board] Figures panel C: control caption as "controls ·" / "street-112" / "0.61" (three rows), or record F2's explicit split. Data: caption "Missing asset · forest-044.png". **Done** (F2's split: title "Highest of 19", caption rows "controls · street-112" and "0.61", as ticket 21 draws it; tile titles regular weight, owner decision 2026-10-15).
+2. [board] Explore: drop the chip text "Map: preview · σ 2° · not a result". **Done.**
+3. [board] Main "Edit in Analysis ⌘3" weight 400. Data thumbnail dash `82 55`, width 14 (6/4 px at 0.073×). **Done.**
 
 **B. Pure bugs (code; land first, small PRs)**
 4. [bug] Mono SmBld → "IBM Plex Mono Medm" at `studio-navigator.css:131` and `studio-ledger.css:99`. Test: a TypeCss/font-family lint that every family named in CSS is loaded. **Fixed.**
@@ -101,7 +101,7 @@ Status key: **[approved]** owner-approved · **[bug]** a pure bug, landable with
     - Tests: a `GeometrySceneSuite` test that a missing frame draws a hatch + X; a `GeometryPanelSuite` caption test.
 
 **I. Plots and Results **
-26. **H1, ParticipantPlot annotations** (split into slices of at most half a day): an `Annotations` API and `ParticipantTextId`s. Tests: a new suite, plus a Results FX snapshot. **Fixed** (slice a: the `Annotations` API; slice b: text ids, the app builder, Results wiring, accessible summary).
+26. **H1, ParticipantPlot annotations** (split into slices of at most half a day): an `Annotations` API and `ParticipantTextId`s. Tests: a new suite, plus a Results FX snapshot. **Fixed** (slice a: the `Annotations` API; slice b: text ids, the app builder, Results wiring, accessible summary; each group's label reads "n = 24" in Results and Figures, the unit kept in the cell and its readout, owner decision 2026-10-15).
 27. **H2, Results paired descriptive**: an app VM plus text. Test: a fixture value test of **0.15567 → "+0.16"**, range +0.05 (P21) to +0.26 (P15), 24 of 24, computed before rounding participant means. The fixture field is added in this landing (`docs/studio/fixture`). **Fixed** (the t3 story spec declares Remembered − Forgotten).
 
 **J. Parity harness **

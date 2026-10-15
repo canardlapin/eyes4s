@@ -98,7 +98,7 @@ other boards' pending tags remain unchanged. Full qualification is recorded with
 
 ## Results (moment t3)
 - [ ] Jobs chip is running. The banner says the results will not replace this view until Show.
-- [ ] Participant plot shows 24 participants with grand means +0.30 and +0.15, paired n = 24, n range 2–17. P05 has participant means (D −0.08); its 3 failed queries show as "no value".
+- [ ] Participant plot shows 24 participants with grand means +0.30 and +0.15, each group labelled "n = 24", paired n = 24, n range 2–17. P05 has participant means (D −0.08); its 3 failed queries show as "no value".
 - [ ] Paired descriptive "Δ Remembered − Forgotten +0.16" (range +0.05 P21 to +0.26 P15; higher in 24 of 24), computed before rounding participant means, with the rounding note.
 - [ ] Scale profile on a log-spaced x axis. Participant table matches FIXTURE.md exactly.
 - [ ] Reporting inspector:
@@ -120,14 +120,21 @@ other boards' pending tags remain unchanged. Full qualification is recorded with
 
 ## Open deviations from the 2026-10-11 boards
 
-The boards were revised ahead of the code (DESIGN_SPEC §15). Until each ticket lands, a parity check records
-the deviation below instead of failing. Tickets are numbered as in the design review's landing list.
+Every ticket of the design review's landing list has landed (`design/REVIEW.md`, tickets 4–28 Fixed or Closed;
+the board edits 1–3 are done). The differences below remain between the boards and the desktop; a parity check
+records each one instead of failing. Each names its ticket and why it stands.
 
-- Shared: the slider's track is drawn whole; the board's range fills it to the thumb (16).
-- Shared: the boards' resting focus (`.kf`) is shown by real keyboard focus in the parity moments (`RestingFocus`).
-  Data's mapping row and DataEmpty's preset radio have no desktop Tab stop to carry it (28). On Explore and
-  Results the stage or pane edge rings together with the canvas cursor; the boards ring only the cursor.
-- Maps: figure tiles fade in but do not hatch cells without coverage (8).
+- Shared: the boards' resting focus (`.kf`) is shown by real keyboard focus in the parity moments (`RestingFocus`),
+  not drawn at rest (ticket 28's exemption). Data's mapping row and DataEmpty's preset radio have no desktop Tab
+  stop to carry it, and stay non-stops (owner decision 2026-10-15).
+- Shared: on Explore and Results, keyboard focus in the stage or plot pane rings the pane's edge (`:keyboard-within`,
+  set by `MarkInputAdapter.showFocus`) together with the canvas cursor; the boards ring only the cursor. A click
+  rings neither (14, 28).
+- Shared: the slider's track is drawn whole; the board's range fills it to the thumb. The board's fill is the
+  browser's native `accent-color` range, and JavaFX's `Slider` has no filled-range part (16).
+- Maps: figure tiles fade in by the alpha floor but do not hatch cells without coverage, which show the stage:
+  `MapTileScene` draws without an app theme, so it has no warn tokens (8). The Figures board's tiles have no
+  uncovered cells, so it draws no hatch to compare.
 - Data: each placement thumbnail is its own Tab stop (board: one listbox stop), and the off-screen policy sits after
   the corrections (board: in the facts list). At 1440 × 900 the density and thumbnails are below the fold, because
-  the editable geometry form replaces the board's facts list (S26).
+  the import draft's editable geometry form, the one geometry editor, replaces the board's facts list (S26).
