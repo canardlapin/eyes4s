@@ -561,7 +561,17 @@ sealed abstract case class MarkInputState[R <: StudioRef] private (
   def pointerRings(targets: RovingTargets[R, ?]): Vector[OverlayRing] =
     def at(ref: Option[R], kind: RingKind) =
       ref.flatMap(targets.target).map(ring(targets, kind, _)).toVector
-    at(hover, RingKind.Hover) ++ (if focused then at(focus, RingKind.Focus) else Vector.empty)
+    at(hover, RingKind.Hover) ++
+      (if ringsCursor(targets) then at(focus, RingKind.Focus) else Vector.empty)
+
+  /** Whether [[pointerRings]] draws the focus ring on the cursor: the view
+    * has keyboard focus and the cursor is on a mark of `targets`. A view
+    * whose cursor is on no mark (none yet, or no marks) has no item to ring,
+    * so its container draws the focus ring instead (DESIGN_SPEC section 15,
+    * composite focus).
+    */
+  def ringsCursor(targets: RovingTargets[R, ?]): Boolean =
+    focused && focus.flatMap(targets.target).nonEmpty
 
   /** How much of the mark of `target` is selected. */
   def share(target: RovingTarget[?]): SelectionShare =

@@ -99,8 +99,10 @@ trait MarkLayer[R <: StudioRef, E, T <: RovingTargets[R, E]]:
   * Feedback is an overlay on the host ([[PlotOverlay]]): hover, the selection
   * as [[project]]ed from the bus, and a 2 px accent focus ring (DESIGN_SPEC
   * sections 10 and 14), shown only for the keyboard ([[showFocus]]), which
-  * also sets [[KeyboardWithin]] on the host and what encloses it.
-  * Redrawing it never compiles or redraws the scene.
+  * also sets [[KeyboardWithin]] on the host and what encloses it, and
+  * [[KeyboardWithin.noCursorRing]] with it while the canvas has no cursor
+  * mark to ring ([[ringsCursor]]). Redrawing it never compiles or redraws
+  * the scene.
   *
   * FX thread only. [[dispose]] removes every handler and listener it added
   * and restores what it changed on the host.
@@ -140,8 +142,11 @@ final class MarkInputAdapter[R <: StudioRef, E, T <: RovingTargets[R, E]] privat
   private var spoken: Option[String]                        = None
   private val frameListener: ChangeListener[PlotHostStatus] = (_, _, status) =>
     status match
-      case PlotHostStatus.Drawn(_) => targets.foreach(t => commit(current.retarget(t)))
-      case _                       => describe()
+      case PlotHostStatus.Drawn(_) =>
+        targets.fold(markCursor())(t => commit(current.retarget(t)))
+      case _ =>
+        describe()
+        markCursor()
 
   host.addEventHandler(MouseEvent.ANY, mouseHandler)
   host.addEventHandler(KeyEvent.KEY_PRESSED, keyHandler)
@@ -191,6 +196,7 @@ final class MarkInputAdapter[R <: StudioRef, E, T <: RovingTargets[R, E]] privat
       if step.redraw then
         host.repaintOverlay(under = true)
         describe()
+        markCursor()
 
   /** Whether a brush owns the view's drags ([[PlotBrushAdapter]]): while
     * it does, a click that ends a moved press is not a pick.
@@ -217,6 +223,16 @@ final class MarkInputAdapter[R <: StudioRef, E, T <: RovingTargets[R, E]] privat
         case None    =>
           host.repaintOverlay(under = true)
           describe()
+          markCursor()
+
+  /** Whether the canvas draws the focus ring on its cursor mark: the view
+    * shows its focus ring, the cursor is on a mark of the drawn frame
+    * ([[MarkInputState.ringsCursor]]) and the view is showing something to
+    * draw it in. While it does not, a pane that draws the canvas's ring on
+    * its edge draws it there ([[KeyboardWithin.noCursorRing]]).
+    */
+  def ringsCursor: Boolean =
+    layer.palette.nonEmpty && targets.exists(current.ringsCursor)
 
   /** Whether the view shows its focus ring: the input [[showFocus]] drives
     * from the host's focus, and a test drives directly.
@@ -232,15 +248,36 @@ final class MarkInputAdapter[R <: StudioRef, E, T <: RovingTargets[R, E]] privat
     * hover rings are the pointer's and do not depend on it.
     */
   private def showFocus(): Unit =
-    val shown = host.isFocused && (host.isFocusVisible || keyed)
+    showFocusAs(host.isFocused && (host.isFocusVisible || keyed))
+
+  /** Draws the view as keyboard focus would (`true`) or as no focus would
+    * (`false`): the focus ring and the pseudo-classes [[showFocus]] sets.
+    * An accessibility check reads a canvas stop both ways through it
+    * without moving the focus, then calls [[followFocus]].
+    */
+  private[desktop] def showFocusAs(shown: Boolean): Unit =
     focusChanged(shown)
     markWithin(shown)
 
+  /** Draws the view as the host's focus now says, after [[showFocusAs]]. */
+  private[desktop] def followFocus(): Unit = if !disposed then showFocus()
+
   // Moves `:keyboard-within` to the host's chain as it is now, or off it.
   private def markWithin(on: Boolean): Unit =
-    within.foreach(_.pseudoClassStateChanged(KeyboardWithin.pseudoClass, false))
+    within.foreach { n =>
+      n.pseudoClassStateChanged(KeyboardWithin.pseudoClass, false)
+      n.pseudoClassStateChanged(KeyboardWithin.noCursorRing, false)
+    }
     within = if on && !disposed then KeyboardWithin.chain(host) else Vector.empty
     within.foreach(_.pseudoClassStateChanged(KeyboardWithin.pseudoClass, true))
+    markCursor()
+
+  // While `:keyboard-within` is set, whether the canvas has no cursor mark
+  // to ring: after every change of the state, the targets or the frame.
+  private def markCursor(): Unit =
+    if within.nonEmpty then
+      val none = !ringsCursor
+      within.foreach(_.pseudoClassStateChanged(KeyboardWithin.noCursorRing, none))
 
   /** Removes the adapter's handlers, listeners and overlay. Idempotent. */
   def dispose(): Unit =
@@ -345,6 +382,7 @@ final class MarkInputAdapter[R <: StudioRef, E, T <: RovingTargets[R, E]] privat
       step.intents.foreach(dispatch)
       if step.redraw then host.repaintOverlay()
       describe()
+      markCursor()
 
   private def describe(): Unit =
     if !disposed then
@@ -368,10 +406,21 @@ final class MarkInputAdapter[R <: StudioRef, E, T <: RovingTargets[R, E]] privat
   * that keyboard traversal brought, or that a key has operated since. A pane
   * that draws a canvas's focus ring on its edge does so under it, so a click
   * on the canvas draws no ring (DESIGN_SPEC section 15).
+  *
+  * Like a composite's rows (`CompositeFocus`), a canvas's cursor mark
+  * carries the focus ring while it has one, and the pane draws none: the
+  * pane rings its edge only under [[noCursorRing]] too, which the adapter
+  * sets on the same nodes while the canvas has no cursor mark to ring
+  * (none yet, no marks, or nothing drawn).
   */
 object KeyboardWithin:
 
   val pseudoClass: PseudoClass = PseudoClass.getPseudoClass("keyboard-within")
+
+  /** Set with [[pseudoClass]] while the canvas draws no focus ring on a
+    * cursor mark ([[MarkInputAdapter.ringsCursor]]).
+    */
+  val noCursorRing: PseudoClass = PseudoClass.getPseudoClass("no-cursor-ring")
 
   /** `n` and every node that encloses it, innermost first. */
   def chain(n: Node): Vector[Node] =

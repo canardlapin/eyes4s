@@ -548,24 +548,77 @@ class PlotKitFxSuite extends StudioFxSuite:
       .exists(_.getTopStroke == accent)
   }
 
-  fxStage.test("the pane's ring is the keyboard's: a click draws none; Tab or a key draws it") {
+  /** Whether the canvas draws the accent focus ring around the cursor mark:
+    * the accent band, sampled on its circle (device px at 1x).
+    */
+  private def cursorRinged(w: Wired, t: PlotTargets): Boolean =
+    runOnFx(w.twin.input.state.overlay(t)).find(_.kind == RingKind.Focus).exists { ring =>
+      val image  = snapshotHost(w, 1)
+      val accent = Tokens.themed(Theme.Light, ThemedToken.Accent)
+      val around = (0 until 24).count { i =>
+        val a = 2.0 * math.Pi * i / 24.0
+        val r = ring.radius + 2.0
+        near(
+          image,
+          DevicePoint(ring.centre.x + r * math.cos(a), ring.centre.y + r * math.sin(a)),
+          accent,
+          48
+        )
+      }
+      around >= 12
+    }
+
+  fxStage.test("under keyboard focus the cursor mark carries the ring and the pane none") {
     fx =>
       val w = Wired(fx)
       val t = showAndDraw(w, 1.0)
       assume(runOnFx(fx.stage.isFocused), "the test window did not receive OS focus")
-      // A click focuses the plot (DESIGN_SPEC section 15: no ring for it).
+      // Tab brings the table's cursor, its home row, to the plot: that mark
+      // carries the ring, and the pane draws none (as a composite's row does).
+      runOnFx(eyes4s.studio.desktop.shell.KeyboardFocus.byKeyboard(w.host))
+      assertEquals(runOnFx(w.twin.input.state.focus), Some(source.rows.head.ref))
+      assert(runOnFx(w.twin.input.ringsCursor))
+      assert(cursorRinged(w, t), "Tab drew no ring on the cursor mark")
+      assert(!paneRinged(w), "the pane rang its edge beside the cursor mark")
+      // A key moves the cursor, and the ring with it; the pane still draws none.
+      fx.robot.press(KeyCode.RIGHT)
+      assert(cursorRinged(w, t), "a key drew no ring on the cursor mark")
+      assert(!paneRinged(w), "the pane rang its edge beside the cursor mark")
+      runOnFx(eyes4s.studio.desktop.shell.KeyboardFocus.away(w.host))
+      assert(!cursorRinged(w, t) && !paneRinged(w), "the ring outlived the focus")
+      // A click focuses the plot and draws neither (DESIGN_SPEC section 15).
       clickMark(w, t, t.targets.head)
       assert(runOnFx(w.host.isFocused), "a click focuses the plot")
       assert(!paneRinged(w), "a click drew the pane's ring")
+      assert(!cursorRinged(w, t), "a click drew the cursor's ring")
       // A key after the click operates the plot by keyboard.
       fx.robot.press(KeyCode.RIGHT)
-      assert(paneRinged(w), "a key after the click drew no ring")
+      assert(cursorRinged(w, t), "a key after the click drew no ring on the cursor mark")
+      assert(!paneRinged(w), "a key after the click rang the pane's edge")
+      // Tab brings the focus back to the cursor mark: its ring, and the pane none.
       runOnFx(eyes4s.studio.desktop.shell.KeyboardFocus.away(w.host))
-      assert(!paneRinged(w), "the ring outlived the focus")
-      // Tab brings the focus: the ring, with no key pressed on the plot.
       runOnFx(eyes4s.studio.desktop.shell.KeyboardFocus.byKeyboard(w.host))
-      assert(paneRinged(w), "Tab drew no ring")
+      assert(cursorRinged(w, t), "Tab drew no ring on the cursor mark")
+      assert(!paneRinged(w), "Tab rang the pane's edge beside the cursor mark")
       dispose(w)
+  }
+
+  fxStage.test("a plot with no marks rings the pane's edge for Tab, never for a click") { fx =>
+    val w = Wired(fx, builder = DotPlot(right(ColumnId.of("participant")), d.id, "bad"))
+    runOnFx(w.twin.show(source, Theme.Light))
+    assert(runOnFx(w.twin.status.get).isInstanceOf[PlotTwinStatus.Refused])
+    assertEquals(runOnFx(w.twin.input.targets), None)
+    assume(runOnFx(fx.stage.isFocused), "the test window did not receive OS focus")
+    runOnFx(eyes4s.studio.desktop.shell.KeyboardFocus.byPointer(w.host))
+    assert(runOnFx(w.host.isFocused), "a click focuses the refused plot")
+    assert(!paneRinged(w), "a click drew the pane's ring")
+    runOnFx(eyes4s.studio.desktop.shell.KeyboardFocus.away(w.host))
+    runOnFx(eyes4s.studio.desktop.shell.KeyboardFocus.byKeyboard(w.host))
+    assert(!runOnFx(w.twin.input.ringsCursor))
+    assert(paneRinged(w), "Tab onto a plot with no marks drew no ring")
+    runOnFx(eyes4s.studio.desktop.shell.KeyboardFocus.away(w.host))
+    assert(!paneRinged(w), "the ring outlived the focus")
+    dispose(w)
   }
 
   /** Sixty rows, so the table scrolls: the fixture's rows five times over. */

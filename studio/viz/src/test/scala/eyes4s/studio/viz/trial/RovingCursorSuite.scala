@@ -530,8 +530,10 @@ class RovingCursorSuite extends ScalaCheckSuite:
     )
     assertEquals(s.focus, Some(target.ref))
     assertEquals(s.overlay(t), Vector.empty)
+    assert(!s.ringsCursor(t))
     val focused = s.focusChanged(true)
     assert(focused.redraw)
+    assert(focused.state.ringsCursor(t))
     val ring = focused.state.overlay(t) match
       case Vector(r) => r
       case other     => fail(s"unexpected $other")
@@ -556,6 +558,24 @@ class RovingCursorSuite extends ScalaCheckSuite:
       2.0 * OverlayRings.SelectedBandPx * 2.0,
       1e-9
     )
+  }
+
+  test("a focused view with no cursor mark rings no cursor, so its container rings") {
+    val t     = targets(scale = 1.0)
+    val fresh = MarkInputState.initial[StudioRef.Fixation](view, SelectionState.empty)
+    // Focused before any key: no cursor yet, so no mark to ring.
+    val focused = fresh.focusChanged(true).state
+    assert(!focused.ringsCursor(t))
+    assertEquals(focused.pointerRings(t), Vector.empty)
+    // A key puts the cursor on a mark, which then carries the ring.
+    val (keyed, _) = run(focused, t, key(RovingKey.Move(RovingMove.First)))
+    assert(keyed.ringsCursor(t))
+    assertEquals(keyed.pointerRings(t).map(_.kind), Vector(RingKind.Focus))
+    // A scene with no marks has none to ring, wherever the cursor was.
+    val none = targets(fixations = Vector.empty)
+    assertEquals(none.targets, Vector.empty)
+    assert(!keyed.ringsCursor(none))
+    assert(!keyed.retarget(none).state.ringsCursor(none))
   }
 
   test("on a stage the focus ring wears the inner casing inside the halo") {
