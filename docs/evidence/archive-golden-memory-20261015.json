@@ -1,0 +1,104 @@
+{
+  "schema": 1,
+  "date": "2026-10-15",
+  "scope": "Exact golden native archive heap regression and focused trust checks; complete branch gate recorded separately",
+  "source_sha": "458babe861bd6de1a02deb280696a8fe88f1f74f",
+  "source_tree": "90582c09b84f206ecb703c4750b2df652927b46e",
+  "jvm": "Temurin25.0.4.1+1 arm64; ActiveProcessorCount=2",
+  "command": "sbt 'studioDesktop/testOnly *NativeCommandJourneySuite'",
+  "requested_heap_mib": 950,
+  "observed_max_heap_bytes": 998244352,
+  "workload": {
+    "entries": 30,
+    "archive_bytes": 153410332,
+    "density_cells": 11476992,
+    "changed": false
+  },
+  "case_seconds": 97.448,
+  "deadline_seconds": 600,
+  "stages_ms": {
+    "fixture-load": 52,
+    "initial-execution-readback-save": 50136,
+    "direct-prepare": 977,
+    "direct-execution": 837,
+    "project-bundle-open": 37,
+    "load-native-artifacts": 14429,
+    "verify-stored-digests": 694,
+    "restored-result": 14577,
+    "restored-readback-capture": 6188,
+    "raw-source-fallback-reexecution": 5451
+  },
+  "assertions": [
+    "All saved entry SHA-256 digests and lengths verified",
+    "Cold restored result reads no raw source bytes or assets",
+    "No restoration jobs submitted",
+    "Original/restored canonical document and science, query rows, report, source and exports equal",
+    "Stored restoration provenance and explicit raw-source recomputation provenance remain distinct"
+  ],
+  "implementation": [
+    "Reuse small schema/stamp/payload-reference evidence from first result decode",
+    "Reuse checked structural result metadata for native typed reconstruction",
+    "Save readback compares exact bytes with the already verified package, after index/length/SHA checks",
+    "Full resolver verification shares only native-owned private immutable byte snapshots; public resolution still copies external bytes",
+    "Cold loading snapshots each checked store entry before reading the next"
+  ],
+  "focused_tests": {
+    "manifest_archive_jvm": 107,
+    "manifest_archive_js": 95,
+    "native_storage_jvm": 70,
+    "native_storage_js": 70
+  },
+  "regressions": [
+    "Full-field and canonical result reconstruction from inline and packed metadata",
+    "Public source-array mutation isolation",
+    "Owned/external resolution yield identical complete values and tampering refusals",
+    "Same-length saved-byte corruption refuses before storage acknowledgement"
+  ],
+  "limits": [
+    "Bounds Java heap; not RSS, native allocation, or a largest-supported-workload claim",
+    "Single-run stage timings; no throughput speedup claim",
+    "All other owned builds idle during native qualification; no physical FX windows"
+  ],
+  "log": {
+    "path": "/private/tmp/eyes4s-final-golden-950m-attempt6.log",
+    "sha256": "9bacfb3a320d8d7c24d5c36fd842b3212b824aab1200cf86a4b67dd4fe74145e"
+  },
+  "failed_attempts": [
+    {
+      "path": "/private/tmp/eyes4s-final-golden-950m-attempt2.log",
+      "sha256": "ddad8766da72d598b4fa80676d7307935f61f01588314136ad1a6e5854a764ba"
+    },
+    {
+      "path": "/private/tmp/eyes4s-final-golden-950m-attempt3.log",
+      "sha256": "a0a81d1f0b60362e8807a9f9b0ec63c4639001064264366ee7e0fffe773f462b"
+    },
+    {
+      "path": "/private/tmp/eyes4s-final-golden-950m-attempt4.log",
+      "sha256": "08fa2af17d57eb9df55781d0c9b7e8f023f9830dbea6fd79dd291518b89cd99d"
+    },
+    {
+      "path": "/private/tmp/eyes4s-final-golden-950m-attempt5.log",
+      "sha256": "bc739121633420440e4205b2a9ba24884cd952027a0f5dc4ef1fcd3aa7632607"
+    },
+    {
+      "path": "/private/tmp/eyes4s-final-golden-950m-profile.log",
+      "sha256": "a8a00a294941ef5f25dc00581a5748cf087201feebed3d2788937925793963ad"
+    },
+    {
+      "path": "/private/tmp/eyes4s-final-golden-950m-profile2.log",
+      "sha256": "b1fa324f2913ab092bb34f5450b436797c589dd071bf5b7d61fe58ff325da3ac"
+    },
+    {
+      "path": "/private/tmp/eyes4s-final-golden-950m-profile3.log",
+      "sha256": "16d0158b812d0114b9a509282b411a16948464cad23463a529355a59ff020f5e"
+    },
+    {
+      "path": "/private/tmp/eyes4s-final-golden-950m-profile4.log",
+      "sha256": "a478e23125e76570b87c1f3b6ffae9d82fd50c56a5c92402143d8eb27569f8cb"
+    },
+    {
+      "path": "/private/tmp/eyes4s-final-golden-950m.log",
+      "sha256": "003b6df5166781fd0f327b1d7e7fb1a3320457b34419112762e046f79b514481"
+    }
+  ]
+}

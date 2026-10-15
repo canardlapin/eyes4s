@@ -38,6 +38,20 @@ After explicit GC, the writer retains about 482 MiB after package creation and t
 
 The saved recipe records the computed semantic input binding and preserves the exact admitted dataset definition. Setup probes deliberately retained in the receipt show that cold restoration refuses an unbound recipe or a changed dataset definition. The final workload passes those existing checks; no production refusal was weakened.
 
+## Exact golden desktop journey
+
+The unchanged `NativeCommandJourneySuite` now runs in its own JVM with `-Xmx950m` and asserts an actual maximum heap below 1,000,000,000 bytes. On JDK 25 the observed cap was 998,244,352 bytes. The complete 30-entry, 153,410,332-byte archive contains 11,476,992 density cells. The journey passes execution, save, digest verification, cold restoration without raw-source reads, complete readback and exports under that cap. It also checks the separate raw-source recomputation route. No workload, source-free assertion or 600-second deadline was reduced.
+
+The first capped run exposed additional retention beyond the earlier courts. Result relation checks now reuse the small reference list and saved stamp from the first decode. Native typed reconstruction reuses the checked structural metadata. Save readback compares exact bytes with the verified package after checking the stored index, lengths and SHA-256 digests. Cold reads still perform complete package verification, sharing only private immutable byte snapshots and taking each store-entry snapshot before reading the next. Public resolver calls retain defensive copies of external arrays.
+
+The isolated successful journey took 97.4 seconds: initial execution/readback/save took 50.1 seconds, cold archive loading 14.4 seconds, restored-result reading 14.6 seconds, and restored readback/export capture 6.2 seconds. These are single-run stage timings. The bounded JVM establishes a Java-heap limit for this workload; it does not measure total process memory or establish a maximum supported study size. Exact stage values, revisions, failed probes and log hashes are in [the golden memory receipt](evidence/archive-golden-memory-20261015.json). The existing macOS archive-suite skip is absent.
+
+Reproduce the full golden court with JDK 25:
+
+```sh
+sbt 'studioDesktop/testOnly *NativeCommandJourneySuite'
+```
+
 ## Reproduction
 
 Use JDK 25 and a fresh directory. The test mains require a forked JVM whose maximum heap is at most 1 GiB:
