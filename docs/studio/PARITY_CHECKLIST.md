@@ -123,11 +123,11 @@ other boards' pending tags remain unchanged. Full qualification is recorded with
 The boards were revised ahead of the code (DESIGN_SPEC §15). Until each ticket lands, a parity check records
 the deviation below instead of failing. Tickets are numbered as in the design review's landing list.
 
-- Shared: a clicked canvas's pane still draws its accent border (`:focus-within` has no keyboard-only form; 14, slice S24).
-  The slider's track is drawn whole; the board's range fills it to the thumb (16).
-- Shared: the board's one resting focus ring (`.kf`) is shown in tests by putting real keyboard focus on that
-  node, not drawn at rest (28).
-- Maps: figure tiles fade in but do not hatch cells without coverage (8). The missing-cell hatch renders partly
-  transparent at some drawing sizes (bd-01M4TCR2EWPSX1NG4R686MY3M7).
-- Data: the geometry panel (density and key, thumbnails, the all-trials overlay) is built but not yet mounted in
-  the window (23–25; slice S26, bd-01M4TCYAVJ45D2F11C1A9NWD0H).
+- Shared: the slider's track is drawn whole; the board's range fills it to the thumb (16).
+- Shared: the boards' resting focus (`.kf`) is shown by real keyboard focus in the parity moments (`RestingFocus`).
+  Data's mapping row and DataEmpty's preset radio have no desktop Tab stop to carry it (28). On Explore and
+  Results the stage or pane edge rings together with the canvas cursor; the boards ring only the cursor.
+- Maps: figure tiles fade in but do not hatch cells without coverage (8).
+- Data: each placement thumbnail is its own Tab stop (board: one listbox stop), and the off-screen policy sits after
+  the corrections (board: in the facts list). At 1440 × 900 the density and thumbnails are below the fold, because
+  the editable geometry form replaces the board's facts list (S26).

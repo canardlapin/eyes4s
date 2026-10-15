@@ -28,7 +28,7 @@ Status key: **[approved]** owner-approved · **[bug]** a pure bug, landable with
 7. [bug] Plural: "1 records inside" (`GeometryText.scala:105`; `GeometryPanelSuite:461`). Add a singular form. **Fixed.**
 
 **C. Owner-approved**
-8. [approved] Map alpha floor (SPEC-AMENDMENTS #1, #10). **Fixed** (figure tiles fade in but do not hatch).
+8. [approved] Map alpha floor (SPEC-AMENDMENTS #1, #10). **Fixed** (uncovered cells are one compound shape, so row seams are opaque at every size and scale, bd-01M4TCR2EWPSX1NG4R686MY3M7; figure tiles fade in but do not hatch).
    - `MapColours.argb` (`MapPalette.scala:164`): alpha = min(1, t/0.10), for mass maps only.
    - Missing cells draw the missing-asset hatch (never transparent, never a ramp colour), with a "{n} cells without coverage" TrialText id in the caption.
    - Tests: `PaletteSuite` (~:36-59, :150), `TrialMapSceneSuite:118, :295-320`, `MapTileSceneSuite:81-96`, `TrialViewMapFxSuite`.
@@ -53,7 +53,7 @@ Status key: **[approved]** owner-approved · **[bug]** a pure bug, landable with
     - `-fx-selection-bar[-non-focused]: -es-sel-fill`, `-fx-cell-hover-color: -es-surface-2` (`studio-shell.css:41-44`), and `.list-cell:filled:hover`.
     - Fold the accent-soft fills (`studio-navigator.css:89`, `studio-ledger.css:66,162`, `studio-explore.css:49,58`, `studio-timeline.css:44`, `studio-design.css:53`, `studio-figures.css:43-45`) and `.table-twin-row:selected` ink rules (`studio-plot.css:108-111`) into sel-fill + SmBld.
     - Tests: FX snapshot re-baseline.
-14. **D3, focus-visible.** **Fixed** (slice b: canvas focus rings show only after Tab or a roving key since focus arrived, `MarkInputAdapter.showFocus`; slice a: `:focus-visible` on every control rule and composite cursor; primary ring accent / on-accent / accent at 0, 2, 4; `:armed` → hairline; a composite pane draws no ring while its rows carry the cursor; a focused table puts its cursor on its home row, the first selected, else the first; only a composite with no rows rings its container (`CompositeFocus`); the clicked canvas pane border remains, S24).
+14. **D3, focus-visible.** **Fixed** (slice b: canvas focus rings show only after Tab or a roving key since focus arrived, `MarkInputAdapter.showFocus`; slice a: `:focus-visible` on every control rule and composite cursor; primary ring accent / on-accent / accent at 0, 2, 4; `:armed` → hairline; a composite pane draws no ring while its rows carry the cursor; a focused table puts its cursor on its home row, the first selected, else the first; only a composite with no rows rings its container (`CompositeFocus`); a canvas pane rings only for keyboard focus, `:keyboard-within` set by `MarkInputAdapter.showFocus`).
     - `:focused` → `:focus-visible` on ~32 control rules.
     - Canvas rings gated on focusVisible OR keyboard-since-focus (Issue 1): `MarkInputAdapter.scala:137` listens on `focusedProperty`, and `TrialInputAdapter.focusChanged` is at `:75`.
     - Primary focus `-es-accent, -es-on-accent, -es-accent` at insets 0, 2, 4 (`studio-plot.css:316`, `studio-geometry.css:154`, `studio-ledger.css:216`, `studio-import.css:192`).
@@ -95,7 +95,7 @@ Status key: **[approved]** owner-approved · **[bug]** a pure bug, landable with
     - The thumbnail caption split (`ThumbTrial` + count ids), the singular form, and `ThumbMissing`.
     - At `GeometryText.scala:40, 105-107`.
     - Tests: `GeometryPanelSuite:451-462`.
-25. **G3, missing-asset thumbnail.** *Decision:* thumbnails stay the grey placement frame plus marks (`GeometryScene.scala:63`), except a missing-asset trial, which is hatched with an X and never blank (DESIGN_SPEC §9), as the Data board draws it. Image frame art in thumbnails would be a separate feature. **Fixed** (hatch and X from the served asset registry; mounted in the window by S26).
+25. **G3, missing-asset thumbnail.** *Decision:* thumbnails stay the grey placement frame plus marks (`GeometryScene.scala:63`), except a missing-asset trial, which is hatched with an X and never blank (DESIGN_SPEC §9), as the Data board draws it. Image frame art in thumbnails would be a separate feature. **Fixed** (hatch and X from the served asset registry; mounted in the Data Geometry pane by S26, with the import draft's geometry form inside the panel and the panel's own field editor hidden).
     - `ThumbnailPicture` (`GeometryPictures.scala:72-78`) carries the trial's frame state (Present / Missing(file) / Unreadable).
     - `GeometryScene.thumbnail`/`layers` (`:84, :142`) draws `TrialScene.hatched` as a shared helper (`TrialScene.scala:793-818`), with a thumbnail-scale hatch and X.
     - Tests: a `GeometrySceneSuite` test that a missing frame draws a hatch + X; a `GeometryPanelSuite` caption test.
@@ -105,6 +105,6 @@ Status key: **[approved]** owner-approved · **[bug]** a pure bug, landable with
 27. **H2, Results paired descriptive**: an app VM plus text. Test: a fixture value test of **0.15567 → "+0.16"**, range +0.05 (P21) to +0.26 (P15), 24 of 24, computed before rounding participant means. The fixture field is added in this landing (`docs/studio/fixture`). **Fixed** (the t3 story spec declares Remembered − Forgotten).
 
 **J. Parity harness **
-28. The board's resting depicted focus (`.kf`) gets a desktop counterpart only in tests. Moments put visible focus on the depicted node via `requestFocusTraversal`/Tab (`ShellMomentsFxSuite`, `AppShellFxSuite`), or `PARITY_CHECKLIST.md` exempts resting focus rings. No runtime change.
+28. The board's resting depicted focus (`.kf`) gets a desktop counterpart only in tests. Moments put visible focus on the depicted node via `requestFocusTraversal`/Tab (`ShellMomentsFxSuite`, `AppShellFxSuite`), or `PARITY_CHECKLIST.md` exempts resting focus rings. No runtime change. **Fixed** (`RestingFocus` puts real keyboard focus on each board's `.kf` node in AppShellFxSuite and ShellMomentsFxSuite; Data's mapping row and DataEmpty's preset have no desktop stop; MainDark depicts none).
 
 **Settled 2026-10-11:** methods denominator (DESIGN_SPEC §15); dark-stage casing (ticket 17); D4 (ticket 15); NeutralMark (11); density levels (23, rule to write); figure cross arm (22); Data thumbnails stay the grey placement frame plus marks (`GeometryScene.scala:63`), missing assets hatched (25); image frame art would be a separate feature. The mock fixture's science scores are reconciled to the golden fixture in their own ticket, since every board and many studio tests read them. Stage selection keeps the two-band ring with the focus ring outside it; add parity tests for selection only, focus only, both on one mark, and both on different marks (fallback: focus as corner brackets).
