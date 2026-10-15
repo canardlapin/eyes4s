@@ -856,12 +856,21 @@ object ArtifactResolver:
       case Some(errors) => Left(errors)
       case None         => Right(results.collect { case Right(a) => a })
 
+  /** Small relation evidence extracted while the result document is decoded.
+    * Keeping these fields avoids parsing its potentially large row ledger again.
+    */
+  private final case class ResultDocumentFacts(
+      schema: DefinitionId,
+      stamp: Option[Json],
+      references: Either[CodecError, Vector[PayloadRef]]
+  )
+
   /** Decoded values keyed by entry name. */
   private enum Decoded[K, U <: Unit2D]:
     case Plan(value: LoadedStudy[K, U])
     case Input(value: StudyInput[K, U])
     case Ledger(value: AdmissionLedger[K])
-    case Result(value: LoadedResult[K, U])
+    case Result(value: LoadedResult[K, U], facts: ResultDocumentFacts)
     case Channels(value: RecordingChannels[U], references: Vector[PayloadRef])
     case Recorded(value: RecordingInput[U])
     case Temporal(value: TemporalStudyInput[K, U])
@@ -982,8 +991,13 @@ object ArtifactResolver:
       case ArtifactRole.AdmissionLedger =>
         attempt(entry, decoders.ledger(json)).map(Decoded.Ledger(_))
       case ArtifactRole.StudyResult =>
-        if entry.schema != DensityArchiveDefinitions.studyResultV2 then
-          attempt(entry, decoders.result(json)).map(Decoded.Result(_))
+        val facts = ResultDocumentFacts(
+          entry.schema,
+          json.hcursor.downField("value").downField("runStamp").focus,
+          ResultManifest.references(json)
+        )
+        val loaded = if entry.schema != DensityArchiveDefinitions.studyResultV2 then
+          attempt(entry, decoders.result(json))
         else
           val related = manifest.relations
             .collect {
@@ -992,7 +1006,7 @@ object ArtifactResolver:
             }
             .flatMap(payloads.get)
           attempt(entry, decoders.resultWithPayloads(json, ref => related.find(_.ref == ref)))
-            .map(Decoded.Result(_))
+        loaded.map(value => Decoded.Result(value, facts))
       case ArtifactRole.RecordingInput =>
         attempt(entry, decoders.recordingInput(json)).flatMap(value =>
           checkIdentity(entry, value.hash).as(Decoded.Recorded(value))
@@ -1067,17 +1081,10 @@ object ArtifactResolver:
         .toRight(ResolveError.Missing(name))
         .flatMap((entry, bytes) => document(entry, bytes))
 
-    // Participant chunks share one result document. Retain its reference list
-    // between relation checks, so each edge does not parse that document again.
-    val resultReferences = manifest.relations
-      .collect { case ManifestRelation.ResultPayloadOf(result, _) => result }
-      .distinct
-      .map { name =>
-        name -> stored(name).flatMap(
-          ResultManifest.references(_).left.map(ResolveError.Decode(name, _))
-        )
-      }
-      .toMap
+    // Reuse the evidence extracted at decode time; no result JSON is retained.
+    val resultReferences = decoded.collect { case (name, Decoded.Result(_, facts)) =>
+      name -> facts.references.left.map(ResolveError.Decode(name, _))
+    }
 
     def stampMismatch(
         resultName: ArtifactName,
@@ -1086,24 +1093,19 @@ object ArtifactResolver:
         plan: LoadedStudy[K, U],
         input: StudyInput[K, U],
         description: Vector[(String, Vector[Provenance.Param])],
-        relation: ManifestRelation
+        relation: ManifestRelation,
+        facts: ResultDocumentFacts
     ): Option[ResolveError] =
-      val checked = for
-        document <- stored(resultName)
-        mismatch <- document.hcursor.downField("value").downField("runStamp").focus match
+      val checked = for mismatch <- facts.stamp match
           case None        => Right(None)
           case Some(claim) =>
             for
-              schema <- Wire
-                .definition(document, "schema")
-                .left
-                .map(ResolveError.Decode(resultName, _))
               _ <- Either.cond(
-                schema == DensityArchiveDefinitions.studyResultV2,
+                facts.schema == DensityArchiveDefinitions.studyResultV2,
                 (),
                 ResolveError.Decode(
                   resultName,
-                  CodecError.Schema(DensityArchiveDefinitions.studyResultV2, schema)
+                  CodecError.Schema(DensityArchiveDefinitions.studyResultV2, facts.schema)
                 )
               )
               saved <- RunStampWire
@@ -1154,7 +1156,7 @@ object ArtifactResolver:
         case (
               relation @ ManifestRelation.ResultOf(resultName, planName, inputName),
               Vector(
-                Some(Decoded.Result(result)),
+                Some(Decoded.Result(result, facts)),
                 Some(Decoded.Plan(plan)),
                 Some(Decoded.Input(input))
               )
@@ -1166,7 +1168,8 @@ object ArtifactResolver:
             plan,
             input,
             result.result.description,
-            relation
+            relation,
+            facts
           ).orElse {
             if result.result.input != input.reference then
               fail(
@@ -1215,7 +1218,7 @@ object ArtifactResolver:
             )
         case (
               relation @ ManifestRelation.ResultPayloadOf(result, _),
-              Vector(Some(Decoded.Result(_)), Some(Decoded.Payload(payload)))
+              Vector(Some(Decoded.Result(_, _)), Some(Decoded.Payload(payload)))
             ) =>
           val references = resultReferences.get(result)
           references match
@@ -1334,7 +1337,7 @@ object ArtifactResolver:
             case (
                   Some(Decoded.Reported(value)),
                   Some(Decoded.Spec(stored)),
-                  Some(Decoded.Result(loaded)),
+                  Some(Decoded.Result(loaded, _)),
                   Some(Decoded.Input(_)),
                   covariates
                 ) if covariates.forall(_.exists(_.isInstanceOf[Decoded.Ledger[?, ?]])) =>
@@ -1515,7 +1518,7 @@ object ArtifactResolver:
       ordered.collect { case (n, Decoded.Plan(v)) => n -> v },
       ordered.collect { case (n, Decoded.Input(v)) => n -> v },
       ordered.collect { case (n, Decoded.Ledger(v)) => n -> v },
-      ordered.collect { case (n, Decoded.Result(v)) => n -> v },
+      ordered.collect { case (n, Decoded.Result(v, _)) => n -> v },
       ordered.collect { case (n, Decoded.Channels(v, _)) => n -> v },
       ordered.collect { case (n, Decoded.Recorded(v)) => n -> v },
       ordered.collect { case (n, Decoded.Temporal(v)) => n -> v },
