@@ -80,13 +80,13 @@ object TokenUsage:
   )
 
   /** A figure tile's hatch stripes are drawn only over their ground (the
-    * missing-asset hatch on paper): `--fig-hatch` alone is below 3:1 on the
-    * dark stage.
+    * missing-asset hatch on paper): `--fig-hatch` alone is 2.44:1 on the
+    * dark stage and 1.57:1 on the mid.
     */
   val FigureHatchGround: CasingRule = CasingRule(
     p(FigHatch),
     p(FigHatchGround),
-    "--fig-hatch alone is below 3:1 on the dark stage"
+    "--fig-hatch alone is below 3:1 on the dark and mid stages"
   )
 
   /** A role mark on the stage is cased in `--halo` (DESIGN_SPEC section 12). */
