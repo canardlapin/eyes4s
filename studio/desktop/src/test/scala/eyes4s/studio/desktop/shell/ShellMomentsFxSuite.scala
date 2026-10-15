@@ -26,7 +26,9 @@ import eyes4s.studio.desktop.harness.StudioTheme
 /** The finished shell chrome (S1.6–S1.9, S1.11) at every perspective of the
   * three story moments (the S0.8 seeds): the drawn texts equal the
   * view-models', and each state is snapshotted in light, plus dark for
-  * Compare, to `target/studio-snapshots/ShellMomentsFxSuite/<test>/`.
+  * Compare, to `target/studio-snapshots/ShellMomentsFxSuite/<test>/`. A
+  * moment a board depicts is snapshotted with that board's resting focus
+  * ring ([[RestingFocus]]); the dark ones with none.
   */
 class ShellMomentsFxSuite extends ShellFxSuite:
 
@@ -43,8 +45,11 @@ class ShellMomentsFxSuite extends ShellFxSuite:
       val w     = boot(fx, model, story)
       assertEquals(runOnFx(w.runtime.model.perspective), p)
       assertNoDiff(texts(w).mkString("\n"), expected(w).mkString("\n"))
+      // The board's resting focus ring, by keyboard (REVIEW ticket 28).
+      RestingFocus.moment(story, p).foreach(RestingFocus.show(fx, w, _))
       fx.snapshot(StudioTheme.Light)
       if p == Perspective.Compare then
+        RestingFocus.clear(fx, w)
         val sheets = StudioStyles.stylesheets(Theme.Dark).fold(e => fail(e.message), identity)
         runOnFx(w.root.getStylesheets.setAll(sheets*))
         fx.snapshot(StudioTheme.Dark)
