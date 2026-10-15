@@ -465,6 +465,11 @@ class FocusVisibleFxSuite extends ShellFxSuite:
       runOnFx(KeyboardFocus.byKeyboard(host))
       assert(cursor, "Tab drew no ring on the cursor fixation")
       assert(!ring, "Tab rang the stage's edge beside the cursor fixation")
+      // The accessibility check still finds the canvas stop drawn differently
+      // when focused, though only its pixels show the ring now.
+      runOnFx(KeyboardFocus.away(host))
+      assert(runOnFx(input.state.focus).nonEmpty)
+      assertEquals(runOnFx(A11yChecks.unmarked(w.root)), Vector.empty[String])
   }
 
   fxStage.test("a trial canvas with no fixations drawn rings the stage's edge for Tab only") {
