@@ -160,7 +160,10 @@ class PointSamplingFamilySuite extends munit.FunSuite:
     assert(form.validate(form.bins.view.id, invalidBins).isLeft)
     assert(form.validate(form.controlSelection.view.id, invalidSelection).isLeft)
     val unknown = get(FieldId.of("unregistered-point-field"))
-    assertEquals(form.validate(unknown, RawValue.Absent), Left(FieldError.UnknownField(unknown)))
+    assertEquals(
+      form.validate(unknown, RawValue.Absent),
+      Left(FieldError.UnknownField(unknown))
+    )
     assertEquals(form.parse(values).left.toOption.get.toVector.size, 2)
   }
 
