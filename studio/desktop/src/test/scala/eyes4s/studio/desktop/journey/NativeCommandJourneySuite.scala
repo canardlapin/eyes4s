@@ -58,6 +58,12 @@ class NativeCommandJourneySuite extends munit.CatsEffectSuite:
     TempDirs.resource("eyes4s-native-command-").use { directory =>
       val path = directory.resolve("command.eyes")
       for
+        maximumHeap <- IO(Runtime.getRuntime.maxMemory())
+        _ = assert(
+          maximumHeap < 1000000000L,
+          s"The golden archive regression guard requires maxHeap<1000000000 bytes, found=$maximumHeap"
+        )
+        _      <- IO.println(s"Native archive heap guard: maxHeap=$maximumHeap bytes")
         inputs <- phase("fixture-load")(load)
         first  <- phase("initial-execution-readback-save")(
           NativeCommandJourneyScenario.run(inputs, path)
