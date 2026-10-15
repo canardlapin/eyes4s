@@ -880,7 +880,7 @@ t(
     "Descriptor-driven recipe form and sentence",
     0,
     "Analysis.dc.html (recipe fields)",
-    "Render RecipeInspection fields (id, version, units, bounds, defaults, allowed values, meaning) as controls; recipe sentence with role-coloured tokens; fields not yet in eyes4s show 'pending UI-A/UI-F'.",
+    "Render RecipeInspection fields (id, version, units, bounds, defaults, allowed values, meaning) as controls; recipe sentence with role-coloured tokens; the window, grid and initial-fixation fields are now served by eyes4s, replacing their 'pending UI-A/UI-F' tags.",
     [
         "No hard-coded field table: adding a descriptor field in eyes4s shows up without studio changes (test with a synthetic descriptor)."
     ],
@@ -907,7 +907,7 @@ t(
     "Scales editor with cell size and warnings",
     1,
     "Analysis.dc.html (scales)",
-    "Chips for σ in degrees; grid 64×48 cell 0.46°; warnings σ < 2 cells and near-uniform σ; protocol scales vs exploratory labelled.",
+    "Chips for σ in degrees; grid 64×48 cell 0.46°; warnings σ < 2 cells and near-uniform σ; draft-added scales carry the board’s “new” marker. Protocol/exploratory labels are omitted: neither the board nor DESIGN_SPEC defines them (owner coordination, 2026-10-13).",
     ["Warnings fire for 0.5° and 8° on the fixture geometry."],
     ["ScalesEditorSuite"],
     deps=["S7.2", "UI-A"],
