@@ -394,6 +394,34 @@ object SchemaRegistry:
       Kind.Document,
       Vector("report-v1.json"),
       codecLaw(reports, "study report")
+    ),
+    Entry(
+      ScanpathMethodCodecDefinitions.method,
+      Kind.Document,
+      Vector(
+        "scanpath-method-multimatch-v1.json",
+        "scanpath-method-overlap-v1.json",
+        "scanpath-method-transport-v1.json"
+      ),
+      codecLaw(() => new ScanpathMethodCodecLawSuite, "scanpath method")
+    ),
+    Entry(
+      ScanpathMethodDefinitions.multiMatch,
+      Kind.Definition,
+      Vector("scanpath-method-multimatch-v1.json"),
+      codecLaw(() => new ScanpathMethodCodecLawSuite, "scanpath method")
+    ),
+    Entry(
+      ScanpathMethodDefinitions.overlap,
+      Kind.Definition,
+      Vector("scanpath-method-overlap-v1.json"),
+      codecLaw(() => new ScanpathMethodCodecLawSuite, "scanpath method")
+    ),
+    Entry(
+      ScanpathMethodDefinitions.transport,
+      Kind.Definition,
+      Vector("scanpath-method-transport-v1.json"),
+      codecLaw(() => new ScanpathMethodCodecLawSuite, "scanpath method")
     )
   ) ++ methodPlans.map((id, fixture) =>
     Entry(
@@ -1008,9 +1036,10 @@ private object Decoders:
     def study: VersionedCodec[?] =
       method.fold(StudyCodecs.cosine[Px].codec)(StudyCodecs.similarity[Px](_).codec)
     id match
-      case DefinitionId.study           => Some(study)
-      case DefinitionId.studyInput      => Some(StudyInputCodecs.study[Px].input)
-      case DefinitionId.admissionLedger => Some(StudyInputCodecs.study[Px].ledger)
+      case ScanpathMethodCodecDefinitions.method => Some(ScanpathMethodLawFixture.codec)
+      case DefinitionId.study                    => Some(study)
+      case DefinitionId.studyInput               => Some(StudyInputCodecs.study[Px].input)
+      case DefinitionId.admissionLedger          => Some(StudyInputCodecs.study[Px].ledger)
       case StudyCodecDefinitions.studyV2 | StudyCodecDefinitions.studyV3 |
           StudyCodecDefinitions.studyV4
           if document.hcursor

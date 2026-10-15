@@ -1,0 +1,1 @@
+{"schema":{"name":"eyes4s.scanpath-method","version":1},"value":{"unit":"px","method":{"name":"eyes4s.scanpath-multimatch","version":1},"parameters":{"cardinality":"BaselineThreeFixations","maximumAlignmentCells":"1234567","alignmentConvention":"CanonicalOperandsExactCostTracebackV1"}}}

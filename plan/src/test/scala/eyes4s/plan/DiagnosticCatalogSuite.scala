@@ -28,8 +28,8 @@ class DiagnosticCatalogSuite extends munit.FunSuite:
   private val all = DiagnosticSamples.all
 
   /** Every issued code, one per line, pinned by count and portable digest. */
-  private val PinnedCount  = 753
-  private val PinnedDigest = "0d07fb2fbfd17fcb"
+  private val PinnedCount  = 757
+  private val PinnedDigest = "e03024cfd72cd293"
 
   private val TrialEstimateCodes = Set(
     "study-failure.trial-cardinality",
@@ -219,7 +219,8 @@ class DiagnosticCatalogSuite extends munit.FunSuite:
             code
           ) ||
           code == "aoi.observed-fixation-overlap" ||
-          DiagnosticCatalog.projectPrerequisite.codes.map(_.render).contains(code)
+          DiagnosticCatalog.projectPrerequisite.codes.map(_.render).contains(code) ||
+          ScanpathMethodDiagnostics.comparison.codes.map(_.render).contains(code)
       )
     assertEquals(stable.size, StableCount)
     assertEquals(ContentHash.ofString(stable.mkString("\n")).render, StableDigest)

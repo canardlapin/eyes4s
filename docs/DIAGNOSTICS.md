@@ -1552,6 +1552,15 @@ fails after rewriting, so review the change and run it again.
 | `project-prerequisite.imprecise-synchronization` | `ImpreciseSynchronization` | `trial`, `selector`, `source`, `target`, `maximum`, `best` |
 | `project-prerequisite.missing-schema` | `MissingSchema` | `id`, `availableVersions` |
 
+### `scanpath-comparison` — `ScanpathComparisonError`
+
+| Code | Case | Operands |
+|---|---|---|
+| `scanpath-comparison.parameter` | `Parameter` | `name`, `value` |
+| `scanpath-comparison.alignment-size` | `AlignmentSize` | `leftFixations`, `rightFixations`, `cells`, `maximum` |
+| `scanpath-comparison.alignment` | `Alignment` | `underlying` |
+| `scanpath-comparison.fixations` | `Fixations` | `underlying` |
+
 ### `codec` — `CodecError`
 
 | Code | Case | Operands |

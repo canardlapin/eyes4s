@@ -1,0 +1,46 @@
+{
+  "date": "2026-10-15",
+  "scope": "CR4 S6 typed methods and saved method component; study family not yet qualified",
+  "base": "a97ea8319b98f0b608ee67050ed9c15ef48d1076",
+  "runtimes": [
+    "JVM JDK25",
+    "Scala.js Node"
+  ],
+  "checks": {
+    "root_werror": [
+      "rootJVM Test/compile",
+      "rootJS Test/compile"
+    ],
+    "method_and_diagnostics_per_runtime": 23,
+    "codec_per_runtime": 6,
+    "codec_laws_per_runtime": 2,
+    "schema_registry_jvm": 10,
+    "diagnostic_document_jvm": 3,
+    "fixture_regeneration": "three method documents and portable fixture source byte-identical"
+  },
+  "mutation": {
+    "mutation": "drop repeated overlap query times when restoring the method",
+    "original_sha256": "19b814f130ce5c9a1b5a45fd57d14dfc9385accc6b0c8ea9c8a4df2b8672673c",
+    "runs": [
+      {
+        "platform": "JVM",
+        "failed_tests": 2,
+        "log": "/private/tmp/eyes4s-s6-query-ledger-mutant-JVM.log",
+        "log_sha256": "1248e222c5a3e3ffeef6ba1a6042244ce92dd81ab5f6363e6065f9b987943127"
+      },
+      {
+        "platform": "JS",
+        "failed_tests": 2,
+        "log": "/private/tmp/eyes4s-s6-query-ledger-mutant-JS.log",
+        "log_sha256": "57e8f02c9a6495ab664d1d42ae80e36dbebfe028c785a6ce6b7d64a9233372af"
+      }
+    ],
+    "restored_sha256": "19b814f130ce5c9a1b5a45fd57d14dfc9385accc6b0c8ea9c8a4df2b8672673c"
+  },
+  "limits": "whole-pair comparisons; no finite-budget transport symmetry claim; no exact-EMD method",
+  "fixture_sha256": {
+    "scanpath-method-multimatch-v1.json": "11926597f15e8145e309efabb59f24b35c3b2c44f27f78ce67b705b488dedfc1",
+    "scanpath-method-overlap-v1.json": "51d4dd2a514fd4cbed6fe453b7e2b09314c9a9d39f8d616ccb630a7980d6e3eb",
+    "scanpath-method-transport-v1.json": "6b8fee1113d3736c779cbc11a6407cafd54af34886bb4f0b60d81f10c197cf8c"
+  }
+}

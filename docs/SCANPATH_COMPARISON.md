@@ -113,3 +113,30 @@ regeneration is:
 python3 tools/r-parity/generate_scanpath.py --eyesim /path/to/eyesim --check
 sbt 'compareJVM/testOnly *ScanpathReferenceSuite' 'compareJS/testOnly *ScanpathReferenceSuite'
 ```
+
+## Typed saved method parameters
+
+`ScanpathMethod[U]` registers MultiMatch, latest-onset fixation overlap and duration-weighted
+fixation transport. `kind`, `id`, `info`, `description`, `inspect`, `parameters` and
+`componentNames` let applications explain the exact comparison. The declared execution
+capability is `SynchronousWholeOperation`: cancellation can separate pair evaluations but
+cannot interrupt alignment or a transport iteration inside a pair.
+
+MultiMatch selects `NativeTwoFixations` or `BaselineThreeFixations` explicitly. Its checked
+`AlignmentCellLimit` admits the transition lattice before alignment allocation; the named
+canonical exact-cost alignment convention is persisted. Overlap retains the ordered query
+ledger, including repeated times, its nominal clock, strict threshold, distance, endpoint
+and missing-support policy. Under `RequireComplete`, the ledger remains available even when
+its scalar similarity is refused. Finite-iteration transport does not advertise symmetry;
+its scales, duration scale, regularization, tolerance and allocation/work limits are saved.
+
+`ScanpathMethodCodec[U].codec` writes `eyes4s.scanpath-method@1`. All signed 64-bit query
+times and work limits use decimal strings, so values outside JavaScript's exact-number range
+survive. Decoding checks the unit, method/version, parameter field set and alignment
+convention before constructing a method. Pinned documents cover all three methods on JVM
+and Scala.js. Regeneration is `python3 tools/codec-fixtures/scanpath-method.py --write`;
+without `--write` the command checks byte identity.
+
+This method document is a reusable component. A complete saved scanpath study still needs
+the study-level input, layout, pairing, result and table contracts; the method document alone
+does not constitute that archive.

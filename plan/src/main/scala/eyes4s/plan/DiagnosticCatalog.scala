@@ -1121,7 +1121,8 @@ object DiagnosticCatalog:
     studyAdvisory,
     methodsFact,
     navigation,
-    projectPrerequisite
+    projectPrerequisite,
+    ScanpathMethodDiagnostics.comparison
   )
 
   /** Every live family, grouped as documented. */
