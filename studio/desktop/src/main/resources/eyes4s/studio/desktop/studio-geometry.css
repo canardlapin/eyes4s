@@ -200,12 +200,7 @@
 .geometry-swatch-fill.level-2 { -fx-background-color: -es-ramp-2; }
 .geometry-swatch-fill.level-3 { -fx-background-color: -es-ramp-3; }
 
-/* The thumbnail chosen for marking, and the focused density: a 2 px accent ring. */
-.geometry-picture.marked {
-  -fx-border-color: -es-accent;
-  -fx-border-width: 2;
-}
-
+/* The focused density: a 2 px accent ring. */
 .geometry-picture:focus-visible {
   -fx-border-color: -es-accent;
   -fx-border-width: 2;
@@ -220,6 +215,28 @@
   -fx-background-color: -es-accent, -es-surface;
   -fx-background-insets: -2, 0;
   -fx-background-radius: 4, 2;
+}
+
+/* The thumbnail chosen for marking is selected: the selection fill behind
+ * picture and caption, in the same gap as the cursor frame, its trial in Mono
+ * 500 and its count at weight 600 (DESIGN_SPEC 15: selection is a fill; the
+ * accent is focus's). Under the cursor it keeps the fill inside the frame. */
+.geometry-thumb:selected {
+  -fx-background-color: -es-sel-fill;
+  -fx-background-insets: -2;
+  -fx-background-radius: 4;
+}
+
+.geometry-thumb:selected .geometry-value {
+  -fx-font-family: "IBM Plex Mono Medm";
+}
+
+.geometry-thumb:selected .geometry-caption {
+  -fx-font-family: "IBM Plex Sans SmBld";
+}
+
+.geometry-thumbs:focus-visible > .geometry-thumb:cursor:selected {
+  -fx-background-color: -es-accent, -es-sel-fill;
 }
 
 .geometry-thumbs:focus-visible:no-cursor {

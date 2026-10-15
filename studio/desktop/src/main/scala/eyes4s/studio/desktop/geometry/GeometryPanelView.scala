@@ -521,6 +521,12 @@ object GeometryPanelView:
     */
   val Cursor: PseudoClass = PseudoClass.getPseudoClass("cursor")
 
+  /** The thumbnail of the trial chosen for marking: drawn with the selection
+    * fill, never the accent (DESIGN_SPEC section 15: selection is a fill,
+    * focus is a ring).
+    */
+  val Selected: PseudoClass = PseudoClass.getPseudoClass("selected")
+
   /** The cursor move a press of `code` is, if any: the arrows, Home and End. */
   def keyMove(code: KeyCode): Option[RovingMove] = code match
     case KeyCode.LEFT | KeyCode.KP_LEFT   => Some(RovingMove.Left)
@@ -569,9 +575,7 @@ object GeometryPanelView:
       name.setText(vm.fold("")(_.name))
       count.setText(vm.fold("")(_.count))
       node.setAccessibleText(vm.fold("")(_.accessible))
-      val classes = picture.getStyleClass
-      classes.remove("marked")
-      if marked then classes.add("marked"): Unit
+      node.pseudoClassStateChanged(Selected, marked)
       // A missing asset's caption is in the warning ink, as the board draws it.
       count.getStyleClass.remove("geometry-warn")
       if vm.exists(_.assetMissing) then count.getStyleClass.add("geometry-warn"): Unit

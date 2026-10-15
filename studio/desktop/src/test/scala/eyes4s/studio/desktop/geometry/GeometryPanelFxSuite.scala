@@ -364,6 +364,9 @@ class GeometryPanelFxSuite extends StudioFxSuite:
       _.getFills.asScala.toList.map(f => (f.getFill.asInstanceOf[Color], f.getInsets.getTop))
     )
 
+  private val SansSemibold = "IBM Plex Sans SmBld"
+  private val MonoMedium   = "IBM Plex Mono Medm"
+
   private def light(t: eyes4s.studio.app.tokens.ThemedToken): Color =
     val c = eyes4s.studio.app.tokens.Tokens.themed(Theme.Light, t)
     Color.rgb(c.red, c.green, c.blue, c.alphaPercent / 100.0)
@@ -454,7 +457,25 @@ class GeometryPanelFxSuite extends StudioFxSuite:
     val third = runOnFx(v.thumbnails(2).trial).getOrElse(fail("no third thumbnail"))
     runOnFx(press(strip, KeyCode.ENTER))
     assertEquals(runOnFx(rig.host.state.marked), Some(third))
-    assert(runOnFx(v.thumbnails(2).picture.getStyleClass.contains("marked")))
+    // The marked trial is selected: the selection fill inside the cursor
+    // frame, its trial in Mono 500 and its count at weight 600, and no
+    // accent ring of its own (DESIGN_SPEC section 15).
+    val selFill = light(eyes4s.studio.app.tokens.ThemedToken.SelFill)
+    def picked  = runOnFx {
+      strip.getScene.getRoot.applyCss()
+      val t = v.thumbnails(2)
+      (
+        fills(t.node),
+        Option(t.picture.getBorder).exists(!_.getStrokes.isEmpty),
+        t.name.getFont.getFamily,
+        t.count.getFont.getFamily
+      )
+    }
+    assertEquals(
+      picked,
+      (List(accent -> -2.0, selFill -> 0.0), false, MonoMedium, SansSemibold)
+    )
+    assertEquals(runOnFx(v.thumbnails(1).name.getFont.getFamily) == MonoMedium, false)
     assertEquals(
       runOnFx(
         strip
@@ -466,9 +487,11 @@ class GeometryPanelFxSuite extends StudioFxSuite:
       ),
       Vector(true)
     )
-    // Off the strip, no frame.
+    // Off the strip, no frame: the selection fill alone, and no accent.
     runOnFx(KeyboardFocus.away(strip))
     assertEquals(framed, Vector.fill(4)(false))
+    assertEquals(picked, (List(selFill -> -2.0), false, MonoMedium, SansSemibold))
+    assertEquals(runOnFx(fills(items(1))), Nil)
   }
 
   fxStage.test("the thumbnails' home: a focused strip with no cursor frames the marked trial") {
@@ -551,7 +574,11 @@ class GeometryPanelFxSuite extends StudioFxSuite:
     redraw(fx, rig, 1)
     val markedAt = runOnFx(v.thumbnails.indexWhere(t => drawn(t.name) == "P05 · ret_04"))
     assert(markedAt >= 0)
-    assert(runOnFx(v.thumbnails(markedAt).picture.getStyleClass.contains("marked")))
+    assert(
+      runOnFx(
+        v.thumbnails(markedAt).node.getPseudoClassStates.contains(GeometryPanelView.Selected)
+      )
+    )
     runOnFx(v.mark.fire())
     fx.awaitLayout()
     assertEquals(drawn(v.orientationTitle), "Mark P05 · ret_04 as wrong orientation")
