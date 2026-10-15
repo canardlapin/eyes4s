@@ -18,6 +18,7 @@ package eyes4s.studio.app.geometry
 
 import eyes4s.studio.app.AppModel
 import eyes4s.studio.app.text.{Format, GeometryText, GeometryTextId}
+import eyes4s.studio.app.vm.{A11yRole, FocusStop}
 import eyes4s.studio.core.backend.{AdmissionSummary, TrialKey}
 import eyes4s.studio.core.command.ChangeKind
 import eyes4s.studio.core.document.*
@@ -78,7 +79,9 @@ final case class CountVM(
     value: Option[String],
     note: String,
     ref: Option[StudioRef]
-) derives CanEqual
+) derives CanEqual:
+  /** The count's accessible name: its title and its value ("—" before it loads). */
+  def accessible: String = s"$title: ${value.getOrElse("—")}"
 
 /** Everything the geometry panel shows, in the board's order. */
 final case class GeometryPanelVM(
@@ -420,6 +423,45 @@ object GeometryPanelVM:
       countsSource = from,
       problem = panel.problem
     )
+
+  /** The panel's focus stops inside its pane, in the order Tab visits them
+    * (S1.11; they follow the pane's stop): the typed fields when the panel
+    * edits them itself (`fields`; in the window the import draft's geometry
+    * form takes their place, with stops of its own), each shown thumbnail,
+    * the all-trials
+    * density, the marking button when it can mark, the open marking form (its
+    * chosen fix and scope, then its two buttons), each recorded rule's
+    * Remove, the chosen off-screen policy, and each count that opens its
+    * tally. None while no revision is shown. The viewing distance and screen
+    * width are not recorded anywhere, so they are never stops.
+    */
+  def focusStops(vm: GeometryPanelVM, fields: Boolean): Vector[FocusStop] =
+    // Tab enters a radio group at its chosen radio.
+    def chosen[A](choices: Vector[ChoiceVM[A]]): Vector[FocusStop] =
+      choices
+        .find(_.selected)
+        .orElse(choices.headOption)
+        .map(c => FocusStop(A11yRole.RadioButton, c.label))
+        .toVector
+    def button(name: String) = FocusStop(A11yRole.Button, name)
+    if vm.empty.isDefined then Vector.empty
+    else
+      val typed =
+        if fields then vm.fields.map(f => FocusStop(A11yRole.TextField, f.label))
+        else Vector.empty
+      val form = vm.orientation.toVector.flatMap(o =>
+        chosen(o.fixes) ++ chosen(o.scopes) ++ Vector(button(o.record), button(o.cancel))
+      )
+      typed ++
+        vm.thumbnails.map(t => FocusStop(A11yRole.ToggleButton, t.accessible)) ++
+        Vector(FocusStop(A11yRole.Plot, vm.densityAccessible)) ++
+        Option.when(vm.canMark)(button(vm.mark)) ++
+        form ++
+        vm.rules.map(r => button(r.remove)) ++
+        chosen(vm.policies) ++
+        Vector(vm.outsideWindow, vm.outsideScreen)
+          .filter(_.ref.isDefined)
+          .map(c => button(c.accessible))
 
   /** "543 of 11,520 records · 409 trials": eyes4s's window totals, outside
     * the image frame and outside the screen apart, over its count of source

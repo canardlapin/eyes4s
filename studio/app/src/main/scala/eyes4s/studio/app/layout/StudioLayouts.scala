@@ -54,6 +54,22 @@ object StudioLayouts:
   private def columns(nav: LayoutNode, centre: LayoutNode, right: LayoutNode): LayoutNode =
     split(Axis.Horizontal, nav -> 0.18, centre -> 0.6, right -> 0.22)
 
+  /** The three columns at a board's widths in pixels: its navigator and its
+    * right column, of its 1440 px window; the centre takes the rest.
+    */
+  private def boardColumns(
+      nav: (LayoutNode, Double),
+      centre: LayoutNode,
+      right: (LayoutNode, Double)
+  ): LayoutNode =
+    val board = 1440.0
+    split(
+      Axis.Horizontal,
+      nav._1   -> nav._2 / board,
+      centre   -> (board - nav._2 - right._2) / board,
+      right._1 -> right._2 / board
+    )
+
   private def layout(id: String, perspective: Perspective, root: LayoutNode, hint: MessageId) =
     PerspectiveLayout(new LayoutId(id), perspective, root, hint)
 
@@ -109,12 +125,15 @@ object StudioLayouts:
     MessageId.HintDataFirstRun
   )
 
-  /** Data.dc.html: verify an import. */
+  /** Data.dc.html: verify an import. The board's columns: Sources 252 px and
+    * Geometry 372 px, which the geometry panel's two thumbnails and its counts
+    * need.
+    */
   val dataVerify: PerspectiveLayout = layout(
     "data.verify",
     Perspective.Data,
-    columns(
-      navigator(sourcesPane),
+    boardColumns(
+      navigator(sourcesPane) -> 252.0,
       split(
         Axis.Vertical,
         group(
@@ -127,7 +146,7 @@ object StudioLayouts:
           PaneDecl(dataIssues, PaneTitle.Fixed("Data issues"), Form)
         ) -> 0.45
       ),
-      group(PaneDecl(dataGeometry, PaneTitle.Fixed("Geometry"), Form))
+      group(PaneDecl(dataGeometry, PaneTitle.Fixed("Geometry"), Form)) -> 372.0
     ),
     MessageId.HintDataVerify
   )
