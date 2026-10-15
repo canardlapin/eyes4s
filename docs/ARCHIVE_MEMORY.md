@@ -52,10 +52,10 @@ sbt 'project codecJVM' \
 
 The workload is synthetic and deterministic. Its size represents a moderate multi-participant analysis with four full-resolution map stacks; it is not a real-participant scientific validation dataset. The native package budget remains a separate bound. Passing the codec court alone does not qualify Studio's complete save/cold-open path.
 
-Run the native court independently:
+Run the native court independently. This JVM-only filesystem harness lives in `studio-desktop` test sources; the portable Studio modules contain no filesystem imports:
 
 ```sh
-sbt 'project studioCoreJVM' \
+sbt 'project studioDesktop' \
   'set Test / run / fork := true' \
   'set Test / run / javaOptions += "-Xmx1g"' \
   'Test/runMain eyes4s.studio.core.real.NativeMemoryCourt write /tmp/native-court 5 10 256 128' \
