@@ -1,0 +1,1 @@
+{"actor":"codex-core-completion-20261014","entity":"cr4-template-evaluation-cursor","kind":"reserve_open","mode":"exclusive","op":"20261015T005645.377015Z-p2683-c0000-rd4e9-h4f5e21","paths":["laws/src/test/scala/eyes4s/laws/TemplateEvaluationRegressionSuite.scala"],"reservation_id":"rv-01M4YGZGJ1QBZXVFZS8FMQBEN2","ts":"2026-10-15T00:56:45.377015Z","ttl_s":28800,"v":2}
