@@ -1,0 +1,67 @@
+{
+  "schema": 1,
+  "date": "2026-10-15",
+  "issue": "cr4-template-validation-cursor",
+  "parent": "bd-01M3F9JD5C32MGBMJSS7PG5B9B",
+  "base_sha": "72f4845093fbf326e49725a674276ed1f4e7ad6c",
+  "scope": "Native fitting and held-out evaluation work only; full TemplateFit/decomposition saved-family protocols remain open.",
+  "contract": {
+    "fitting": "FittingWholeTraining is one indivisible native fit; no bound on training cells, feature extraction or solver iterations.",
+    "evaluation": "EvaluatingWholeRows uses the existing immutable evaluation cursor, bounded by PairQuantum held-out keys.",
+    "results": "Template.crossValidate delegates to complete, preserving training-only fitting, row order, hashes, excluded matching groups, numerical refusals, and failed-prediction denominator behavior.",
+    "imported_lm": "Historical imported-lm designs retain explicit native-fit Route refusal. Importing externally computed fits remains its existing separate route.",
+    "ownership": "Immutable ordinary final class with private design constructor; external naming/constructor probes."
+  },
+  "verification": {
+    "restored_matrix_totals": [
+      30,
+      1,
+      30,
+      1
+    ],
+    "jvm_total": 31,
+    "js_total": 31,
+    "strict_root_test_compile_jvm_js": "passed",
+    "cases": [
+      "Multiple row counts and quanta including Int.MaxValue",
+      "Exactly one fitting step before bounded evaluation pages",
+      "Independent identity-basis coefficients2/3 and prediction2x+3z",
+      "Immutable original state and eager/work equality",
+      "Failed predictions retained and MSE refused",
+      "Rank-deficient fit refuses before evaluation with identical operands",
+      "Imported-lm native fit refuses",
+      "External constructor rejection"
+    ],
+    "mutation": {
+      "mutation": "ignore a one-row quantum during held-out evaluation",
+      "original_sha256": "7120297a946d9a2d685afad7e6fbdca11e26eea7f19a481181a73b00bb4fbc87",
+      "runs": [
+        {
+          "platform": "JVM",
+          "failed_tests": 1,
+          "log_sha256": "3201087cbd9d54e368c862dea420aae727ca3edebae9219df8929043df8303c3"
+        },
+        {
+          "platform": "JS",
+          "failed_tests": 1,
+          "log_sha256": "8051e0f1b27b6405efa3dec1a64ff83d54fe3ab53a57d1de4a27b3a0e5acb85d"
+        }
+      ],
+      "restored_sha256": "7120297a946d9a2d685afad7e6fbdca11e26eea7f19a481181a73b00bb4fbc87"
+    },
+    "development_note": "Mutation driver initially rejected a nonunique search anchor before changing source; rerun used the unique evaluation dispatch anchor."
+  },
+  "source_sha256": {
+    "design/src/main/scala/eyes4s/design/Template.scala": "ce9aa8bc4b31af4e08c1b7c74639a6575bac9aa758380068c7c0340e9809aa84",
+    "design/src/main/scala/eyes4s/design/TemplateValidationWork.scala": "7120297a946d9a2d685afad7e6fbdca11e26eea7f19a481181a73b00bb4fbc87",
+    "design/src/test/scala/eyes4s/design/TemplateValidationWorkSuite.scala": "138c4f6b06251d92eb942db47724c9b1757a9b518712d684700a4bc0df04af99"
+  },
+  "logs_sha256": {
+    "eyes4s-template-validation-initial.log": "c457a09141408d88fc470cc7bb90a936fb94b7cc705ff0b730b387fd5fd334ba",
+    "eyes4s-cr4-template-validation-mutant-JVM.log": "3201087cbd9d54e368c862dea420aae727ca3edebae9219df8929043df8303c3",
+    "eyes4s-cr4-template-validation-mutant-JS.log": "8051e0f1b27b6405efa3dec1a64ff83d54fe3ab53a57d1de4a27b3a0e5acb85d",
+    "eyes4s-cr4-template-validation-restored.log": "85affdf2f3a7df82693f5d83969b5814193332d8fae81cde7fb9c9f6f0870888",
+    "eyes4s-cr4-template-validation-root-werror.log": "5b73d4db6d9bc7a431d33fa78aeed313aee57bb8d28ad3cf8fd176883df1943e"
+  },
+  "landing_status": "Reviewed execution slice awaiting combined qualification and landing; parent remains open."
+}
