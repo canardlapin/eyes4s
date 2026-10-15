@@ -318,18 +318,13 @@ final class ProjectSession[F[_]: Concurrent] private (
             NativeArtifactError
               .Budget(run, "archive bytes", bytes, BigInt(budget.maxTotalBytes))
           )
-          loaded <- EitherT(runs.load(index)).leftMap(e =>
-            failure("load archive entries", e.message)
-          )
-          verified <- EitherT.fromEither[F](
-            NativeArtifactPackage.verify(
-              loaded.files.map((entry, bytes) =>
-                entry.name -> NativeArtifactBytes.copyOf(bytes)
-              ),
-              budget
+          files <- EitherT(
+            runs.readEntries(index)((entry, bytes) =>
+              entry.name -> NativeArtifactBytes.copyOf(bytes)
             )
-          )
-          _ <- EitherT.cond[F](
+          ).leftMap(e => failure("load archive entries", e.message))
+          verified <- EitherT.fromEither[F](NativeArtifactPackage.verify(files, budget))
+          _        <- EitherT.cond[F](
             verified.facts.run == run,
             (),
             NativeArtifactError.WrongFacts(run, verified.facts)
