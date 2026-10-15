@@ -84,16 +84,20 @@
   -fx-text-fill: -es-ink-2;
 }
 
-/* The trial view is one focus stop: the ring is drawn inside the stage's
+/* The trial view is one focus stop. While it has keyboard focus its cursor
+ * fixation carries the focus ring, drawn on the canvas, and the stage draws
+ * none (as a composite's cursor row does). With no fixation under the
+ * cursor (none yet, or none drawn) the ring is drawn inside the stage's
  * edge, which keeps its 2 px whether or not the plot has focus (S10.5). It
  * is the keyboard's (REVIEW ticket 14): the trial's input sets
- * :keyboard-within while its canvas shows its focus ring, never for a click. */
+ * :keyboard-within while its canvas shows its focus ring, never for a
+ * click, and :no-cursor-ring with it while no cursor mark carries the ring. */
 .explore-stage {
   -fx-border-color: transparent;
   -fx-border-width: 2;
 }
 
-.explore-stage:keyboard-within {
+.explore-stage:keyboard-within:no-cursor-ring {
   -fx-border-color: -es-accent;
 }
 

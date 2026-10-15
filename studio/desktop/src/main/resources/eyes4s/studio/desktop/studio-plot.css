@@ -25,11 +25,15 @@
   -fx-border-width: 2;
 }
 
-/* A plot is one focus stop: the ring is drawn inside the pane's edge, which
+/* A plot is one focus stop. While it has keyboard focus its cursor mark
+ * carries the focus ring, drawn on the canvas, and the pane draws none (as a
+ * composite's cursor row does). With no mark under the cursor (none yet, no
+ * marks, or a refused plot) the ring is drawn inside the pane's edge, which
  * keeps its 2 px whether or not the plot has focus. It is the keyboard's
  * (REVIEW ticket 14): the plot's input sets :keyboard-within while its
- * canvas shows its focus ring, never for a click. */
-.plot-pane:keyboard-within {
+ * canvas shows its focus ring, never for a click, and :no-cursor-ring with
+ * it while no cursor mark carries the ring. */
+.plot-pane:keyboard-within:no-cursor-ring {
   -fx-border-color: -es-accent;
 }
 

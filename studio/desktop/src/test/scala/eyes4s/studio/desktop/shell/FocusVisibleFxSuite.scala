@@ -17,6 +17,7 @@
 package eyes4s.studio.desktop.shell
 
 import eyes4s.studio.app.StoryModels
+import eyes4s.studio.app.explore.TrialToggle
 import eyes4s.studio.app.layout.StudioLayouts
 import eyes4s.studio.app.plot.{
   ColumnFormat,
@@ -42,7 +43,12 @@ import eyes4s.studio.desktop.explore.{
 import eyes4s.studio.desktop.figures.FiguresHost
 import eyes4s.studio.desktop.geometry.GeometryPanelView
 import eyes4s.studio.desktop.importing.{ImportWizardView, TrialKeyView}
-import eyes4s.studio.desktop.plot.{KeyboardWithin, TableTwinView}
+import eyes4s.studio.desktop.plot.{
+  CanvasPlotHost,
+  KeyboardWithin,
+  MarkInputAdapter,
+  TableTwinView
+}
 import javafx.collections.FXCollections
 import javafx.scene.Node
 import javafx.scene.control.{
@@ -419,31 +425,73 @@ class FocusVisibleFxSuite extends ShellFxSuite:
     assert(!pointed(pane)(ringed(pane)))
   }
 
-  fxStage.test("a clicked trial canvas draws no stage ring; Tab, or a key after it, does") {
+  /** The trial canvas of `w`, its input and the Explore stage around it. */
+  private def trialStage(
+      w: eyes4s.studio.desktop.StudioWindow
+  ): (CanvasPlotHost, MarkInputAdapter[?, ?, ?], Region) =
+    runOnFx {
+      val host  = w.explore.trialView.plotHost
+      val input = host.overlayPainter
+        .collect { case a: MarkInputAdapter[?, ?, ?] => a }
+        .getOrElse(fail("the trial canvas has no input"))
+      val stage = KeyboardWithin
+        .chain(host)
+        .collectFirst { case r: Region if r.getStyleClass.contains("explore-stage") => r }
+        .getOrElse(fail("the trial canvas is not on the explore stage"))
+      (host, input, stage)
+    }
+
+  fxStage.test("a trial's cursor fixation carries the keyboard's ring, and the stage none") {
     fx =>
       val w = boot(fx, StoryModels.t2Explore, StoryMoment.T2)
-      eventually(fx, "the trial is drawn")(w.explore.input.targets.nonEmpty)
-      val host  = runOnFx(w.explore.trialView.plotHost)
-      val stage = runOnFx(
-        KeyboardWithin
-          .chain(host)
-          .collectFirst { case r: Region if r.getStyleClass.contains("explore-stage") => r }
-          .getOrElse(fail("the trial canvas is not on the explore stage"))
-      )
-      def ring: Boolean = after(stage)(())(strokes(stage).contains(accent))
+      eventually(fx, "the trial is drawn")(w.explore.input.targets.exists(_.targets.nonEmpty))
+      val (host, input, stage) = trialStage(w)
+      def ring: Boolean        = after(stage)(())(strokes(stage).contains(accent))
+      def cursor: Boolean      = runOnFx(input.ringsCursor)
       assume(runOnFx(fx.stage.isFocused), "the test window does not hold OS focus")
-      // A click focuses the canvas and draws no ring (DESIGN_SPEC section 15).
+      // A click focuses the canvas and draws neither ring (DESIGN_SPEC section 15).
       fx.robot.click(host)
       assert(runOnFx(host.isFocused), "a click focuses the trial canvas")
       assert(!ring, "a click drew the stage's ring")
-      // A key after the click operates the canvas by keyboard.
+      assert(!cursor, "a click drew the cursor's ring")
+      // A key after the click operates the canvas by keyboard: the cursor
+      // fixation carries the ring, and the stage draws none.
       fx.robot.press(KeyCode.RIGHT)
-      assert(ring, "a key after the click drew no ring")
+      assert(cursor, "a key after the click drew no ring on the cursor fixation")
+      assert(!ring, "the stage rang its edge beside the cursor fixation")
+      runOnFx(KeyboardFocus.away(host))
+      assert(!ring && !cursor, "the ring outlived the focus")
+      // Tab brings the focus back to the cursor fixation: its ring, no key pressed.
+      runOnFx(KeyboardFocus.byKeyboard(host))
+      assert(cursor, "Tab drew no ring on the cursor fixation")
+      assert(!ring, "Tab rang the stage's edge beside the cursor fixation")
+  }
+
+  fxStage.test("a trial canvas with no fixations drawn rings the stage's edge for Tab only") {
+    fx =>
+      val w = boot(fx, StoryModels.t2Explore, StoryMoment.T2)
+      eventually(fx, "the trial is drawn")(w.explore.input.targets.exists(_.targets.nonEmpty))
+      val (host, input, stage) = trialStage(w)
+      def ring: Boolean        = after(stage)(())(strokes(stage).contains(accent))
+      assume(runOnFx(fx.stage.isFocused), "the test window does not hold OS focus")
+      // The cursor is on a fixation, then the Points toggle draws none.
+      fx.robot.click(host)
+      fx.robot.press(KeyCode.RIGHT)
+      assert(runOnFx(input.ringsCursor))
+      runOnFx(KeyboardFocus.away(host))
+      runOnFx(w.explore.pane.toggles(TrialToggle.Points).fire())
+      eventually(fx, "the trial is drawn without its fixations")(
+        w.explore.input.targets.exists(_.targets.isEmpty)
+      )
+      runOnFx(KeyboardFocus.byPointer(host))
+      assert(!ring, "a click drew the stage's ring")
+      runOnFx(KeyboardFocus.away(host))
+      // Tab: no fixation to ring, so the stage rings its edge.
+      runOnFx(KeyboardFocus.byKeyboard(host))
+      assert(!runOnFx(input.ringsCursor))
+      assert(ring, "Tab onto a trial with no fixations drawn drew no ring")
       runOnFx(KeyboardFocus.away(host))
       assert(!ring, "the ring outlived the focus")
-      // Tab brings the focus: the ring, with no key pressed on the canvas.
-      runOnFx(KeyboardFocus.byKeyboard(host))
-      assert(ring, "Tab drew no ring")
   }
 
   /** `(selector, declarations)` of every rule in `css`, comments removed. */

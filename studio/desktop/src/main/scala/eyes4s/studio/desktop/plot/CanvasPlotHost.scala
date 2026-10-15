@@ -260,6 +260,9 @@ final class CanvasPlotHost private[plot] (
       painter = next
       repaintOverlay(under = true)
 
+  /** What draws over the scene, if anything ([[setOverlay]]). */
+  private[desktop] def overlayPainter: Option[PlotOverlay] = painter
+
   /** Redraws the top overlay layer, and with `under` the selection layer, over
     * the frame on the canvas; the scene is untouched.
     */
