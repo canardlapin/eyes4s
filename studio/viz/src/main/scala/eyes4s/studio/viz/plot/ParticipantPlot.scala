@@ -75,7 +75,9 @@ import intaglio.{
   * Each participant's dots are spread across their column by a fixed pixel
   * nudge, the same for the participant in every group. Every number the
   * plot writes is a row's cell as the table writes it: a grand mean beside
-  * its tick and each group's n (its participants) under its column. The D
+  * its tick and each group's n under its column, its count of participants
+  * without the unit ("n = 24", the board's label; the cell's "24
+  * participants" stays in the table and the tick's readout). The D
   * axis labels zero and each grid rule ([[ParticipantPlot.Frame]]), signed.
   *
   * Marks are ordered, and drawn, column by column: the participants in row
@@ -422,7 +424,10 @@ final case class ParticipantPlot(
             .fold[Either[GraphicsError, Vector[Grob]]](Right(Vector.empty))(n =>
               Grob
                 .text(
-                  ParticipantText(ParticipantTextId.GroupN, n),
+                  ParticipantText(
+                    ParticipantTextId.GroupN,
+                    ParticipantText.participantCount(n).getOrElse(n)
+                  ),
                   Point(x, nY),
                   Anchor(HJust.Center, VJust.Top),
                   gp = nGp

@@ -80,7 +80,7 @@ class AnnotationsSuite extends FunSuite:
       cellRef("P17", "Forgotten"),
       Vector(
         Line(Label(ParticipantTextId.Title, Vector.empty), Role.Heading),
-        Line(Label(ParticipantTextId.GroupN, "24")),
+        Line(Label(ParticipantTextId.Participants, "24")),
         Line(Label(ParticipantTextId.Queries, "17"))
       )
     )

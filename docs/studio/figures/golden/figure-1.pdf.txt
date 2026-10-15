@@ -27,9 +27,9 @@ D Participant D by response
 +0.30
 +0.15
 Remembered
-n = 24 participants
+n = 24
 Forgotten
-n = 24 participants
+n = 24
 −0.2
 −0.1
 0

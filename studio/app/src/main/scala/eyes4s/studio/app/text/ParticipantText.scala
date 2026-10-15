@@ -120,6 +120,20 @@ object ParticipantText:
     if n == 1 then apply(ParticipantTextId.OneParticipant)
     else apply(ParticipantTextId.Participants, Format.count(n.toLong))
 
+  /** "24" for "24 participants": the count a grand mean's n cell names, as
+    * the participant plot writes it under the group ("n = 24"; the unit
+    * stays in the cell and its readout). The inverse of [[participants]],
+    * checked by writing the count back, so any other text, a participant's
+    * "2 queries", names none.
+    */
+  def participantCount(written: String): Option[String] =
+    val count = written.takeWhile(c => c.isDigit || c == ',')
+    count
+      .filterNot(_ == ',')
+      .toIntOption
+      .filter(participants(_) == written)
+      .map(_ => count)
+
   /** `id`'s English template with `args` filled in. */
   def apply(id: ParticipantTextId, args: String*): String =
     Messages.fill(english(id), args.toVector)

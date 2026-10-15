@@ -218,14 +218,21 @@ class ParticipantPlotSuite extends FunSuite:
     val p17 =
       right(plot.readout(mark(plot, cell(board, "P17", "Forgotten").ref)).toRight("P17"))
     assertEquals(p17, "Group Forgotten, Mean of P17, D +0.32, n 2 queries")
-    // Each column writes its group's n under it.
+    // Each column writes its group's n under it, as the board writes it:
+    // "n = 24", the unit left to the readout above.
     val written = grobs(plot).collect { case t: Grob.Text => t.label }
-    assertEquals(
-      written.count(_ == ParticipantText(ParticipantTextId.GroupN, "24 participants")),
-      2
-    )
+    assertEquals(written.count(_ == "n = 24"), 2, written)
+    assert(!written.exists(_.startsWith("n = 24 ")), written)
     // And each grand mean beside its tick, as the table writes it.
     assert(written.contains("+0.30") && written.contains("+0.15"), written)
+  }
+
+  test("a group's n is the count its cell names: the inverse of the cell's text, nothing else") {
+    assertEquals(ParticipantText.participantCount("24 participants"), Some("24"))
+    assertEquals(ParticipantText.participantCount("1 participant"), Some("1"))
+    assertEquals(ParticipantText.participantCount("1,024 participants"), Some("1,024"))
+    Vector("2 queries", "1 query", "24", "24 participant", "1 participants", "")
+      .foreach(t => assertEquals(ParticipantText.participantCount(t), None, t))
   }
 
   test("the D axis labels zero and every grid rule, signed, at its value") {
@@ -286,7 +293,7 @@ class ParticipantPlotSuite extends FunSuite:
       right(plot.readout(mark(plot, cell(means, "P03", "Remembered").ref)).toRight("P03"))
     assert(one.endsWith("n 6 queries"), one)
     val written = grobs(plot).collect { case t: Grob.Text => t.label }
-    Vector("3 participants", "2 participants").foreach(n =>
+    Vector("3", "2").foreach(n =>
       assertEquals(written.count(_ == ParticipantText(ParticipantTextId.GroupN, n)), 1, n)
     )
   }
