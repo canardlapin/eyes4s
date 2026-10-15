@@ -79,6 +79,16 @@ object TokenUsage:
     "--fig-control-fill alone is 2.76:1 on paper"
   )
 
+  /** A figure tile's hatch stripes are drawn only over their ground (the
+    * missing-asset hatch on paper): `--fig-hatch` alone is 2.44:1 on the
+    * dark stage and 1.57:1 on the mid.
+    */
+  val FigureHatchGround: CasingRule = CasingRule(
+    p(FigHatch),
+    p(FigHatchGround),
+    "--fig-hatch alone is below 3:1 on the dark and mid stages"
+  )
+
   /** A role mark on the stage is cased in `--halo` (DESIGN_SPEC section 12). */
   val StageMarkHalo: List[CasingRule] =
     List(Query, Match, Control, NeutralMark).map { m =>
@@ -130,8 +140,13 @@ object TokenUsage:
 
   /** Every drawing rule. */
   val casingRules: List[CasingRule] =
-    List(ControlFillOutline, FigureControlFillOutline, StageFocusRingHalo, IsolineCasing) ++
-      StageMarkHalo
+    List(
+      ControlFillOutline,
+      FigureControlFillOutline,
+      FigureHatchGround,
+      StageFocusRingHalo,
+      IsolineCasing
+    ) ++ StageMarkHalo
 
   private def cased(rule: CasingRule, background: TokenRef, where: String): MarkUse =
     MarkUse(rule.mark, background, Some(rule.casing), where)
@@ -218,8 +233,12 @@ object TokenUsage:
         MarkUse(p(FigMatch), p(Paper), None, "figure matched mark"),
         MarkUse(p(FigControl), p(Paper), None, "figure control mark (hollow circle)"),
         cased(FigureControlFillOutline, p(Paper), "figure filled control mark"),
-        MarkUse(p(PaperInk), p(Paper), None, "figure zero rule and D bars")
-      )
+        MarkUse(p(PaperInk), p(Paper), None, "figure zero rule and D bars"),
+        MarkUse(p(FigHatch), p(FigHatchGround), None, "figure tile hatch stripes"),
+        cased(FigureHatchGround, s(Stage), "figure tile hatch on the stage")
+      ) ++ List(Ramp0, Ramp1, Ramp2, Ramp3).map { stop =>
+        cased(FigureHatchGround, p(stop), s"figure tile hatch beside a --${stop.cssName} cell")
+      }
     onChrome ++ onStage ++ onMaps ++ onPaper
 
   /** Tokens that no check measures, and why: fills behind text, decorative

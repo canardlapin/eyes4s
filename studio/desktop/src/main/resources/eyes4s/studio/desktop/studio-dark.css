@@ -68,6 +68,8 @@
   -es-fig-match: #2F6DB5;
   -es-fig-control: #B86E0E;
   -es-fig-control-fill: #D98A1C;
+  -es-fig-hatch: #7A4F00;
+  -es-fig-hatch-ground: #FBF1D9;
 }
 
 /* Stage variants: set one of these style classes on the stage node. */

@@ -82,6 +82,17 @@ class GreyscaleSuite extends munit.FunSuite:
     assert(fraction(before) < DistinctGreyStep, before)
   }
 
+  test("a figure tile's hatch prints as two distinct greys, stripes darker") {
+    // The hatch is legible in the greyscale proof only while its stripes and
+    // their ground print apart (slice S27).
+    val stripes = Greyscale.grey(Tokens.palette(PaletteToken.FigHatch))
+    val ground  = Greyscale.grey(Tokens.palette(PaletteToken.FigHatchGround))
+    assert(
+      fraction(ground) - fraction(stripes) >= DistinctGreyStep,
+      s"stripes print as $stripes, their ground as $ground"
+    )
+  }
+
   test("a pixel keeps its alpha and takes its grey in every channel") {
     val c = Tokens.palette(PaletteToken.FigMatch)
     val g = Greyscale.grey(c)

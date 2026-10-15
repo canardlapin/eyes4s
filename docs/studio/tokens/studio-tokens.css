@@ -69,6 +69,8 @@
   --fig-match: #2F6DB5;
   --fig-control: #B86E0E;
   --fig-control-fill: #D98A1C;
+  --fig-hatch: #7A4F00;
+  --fig-hatch-ground: #FBF1D9;
 }
 
 .es.dark {

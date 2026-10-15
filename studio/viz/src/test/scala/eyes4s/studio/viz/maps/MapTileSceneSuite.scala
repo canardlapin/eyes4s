@@ -20,7 +20,7 @@ import eyes4s.studio.app.maps.*
 import eyes4s.studio.app.tokens.{PaletteToken, StageToken, StageVariant, Tokens}
 import eyes4s.studio.core.backend.{Phase, RunId, ScreenRegion, TrialKey}
 import eyes4s.studio.core.selection.ScaleIndex
-import eyes4s.studio.viz.plot.IntaglioColours
+import eyes4s.studio.viz.plot.{IntaglioColours, MissingAssetHatch}
 import intaglio.svg.SvgRenderer
 import intaglio.{Grob, alpha, blue, green, red, value}
 
@@ -156,5 +156,93 @@ class MapTileSceneSuite extends munit.FunSuite:
     // No levels, no isolines: studio derives none.
     assertEquals(named(MapTileScene.IsolinesName, grid(Vector.empty)), None)
     // The tile exports as the figure's other panels do.
+    assert(right(SvgRenderer.render(scene(g).scene)).value.nonEmpty)
+  }
+
+  // --- Cells without coverage (slice S27; DESIGN_SPEC section 15) ------------
+
+  private def uncovered(g: MapGrid): Vector[Grob.CompoundPolygon] = grobs(g).collect {
+    case c: Grob.CompoundPolygon if c.name.exists(_.value == MapTileScene.UncoveredName) => c
+  }
+
+  // `cells` with the cells at `missing` (indices, top row first) uncovered.
+  private def holed(missing: Set[Int]): MapGrid =
+    right(
+      MapGrid.of(
+        MapId(RunId(7), ret07, right(ScaleIndex.of(2))),
+        Columns,
+        Rows,
+        RowOrder.TopFirst,
+        cells.zipWithIndex.map((c, i) => if missing(i) then None else c),
+        Vector(0.5, 0.2)
+      )
+    )
+
+  // The ring of the cells from column `from` up to `to` in row `y` of the
+  // region: its corners clockwise on the screen from the top left.
+  private def ring(from: Int, to: Int, y: Int): Vector[intaglio.Point] =
+    val (cw, ch) = (region.width / Columns, region.height / Rows)
+    val (x0, x1) = (region.left + from * cw, region.left + to * cw)
+    val (y0, y1) = (region.top + y * ch, region.top + (y + 1) * ch)
+    Vector((x0, y0), (x1, y0), (x1, y1), (x0, y1)).map((x, y) =>
+      right(intaglio.Point.native(x, y))
+    )
+
+  // Row 3: columns 4-6 missing, then 9 (inside the bump, under its isolines);
+  // row 4: columns 4-6 again; row 11: column 0.
+  private val holes = Set(
+    3 * Columns + 4,
+    3 * Columns + 5,
+    3 * Columns + 6,
+    3 * Columns + 9,
+    4 * Columns + 4,
+    4 * Columns + 5,
+    4 * Columns + 6,
+    11 * Columns
+  )
+
+  test("cells without coverage are one hatched shape, a ring per run along a row") {
+    val g      = holed(holes)
+    val shapes = uncovered(g)
+    // One shape, so the rows' shared edges are filled once (separate rects
+    // let the stage show through a seam that crosses a device pixel).
+    assertEquals(shapes.size, 1, "the uncovered cells are not one shape")
+    assertEquals(
+      shapes.head.rings,
+      Vector(ring(4, 7, 3), ring(9, 10, 3), ring(4, 7, 4), ring(0, 1, 11))
+    )
+    // A full grid draws none.
+    assertEquals(uncovered(grid()), Vector.empty)
+  }
+
+  test("the tile's hatch is the paper hatch: fig-hatch stripes over fig-hatch-ground") {
+    val hatch  = uncovered(holed(holes)).headOption.getOrElse(fail("no hatch"))
+    val ground = IntaglioColours.toIntaglio(Tokens.palette(PaletteToken.FigHatchGround))
+    val ink    = IntaglioColours.toIntaglio(Tokens.palette(PaletteToken.FigHatch))
+    // Opaque: the pattern's own ground fills under the stripes, never the stage.
+    assertEquals(hatch.gp.fillPattern.map(_.ink), Some(ink))
+    assertEquals(hatch.gp.fillPattern.flatMap(_.background), Some(ground))
+    assertEquals(Tokens.palette(PaletteToken.FigHatchGround).alphaPercent, 100)
+    // The missing-asset hatch's paper form, at the trial view's stripe.
+    assertEquals(
+      Some(hatch.gp),
+      MissingAssetHatch.paper(MissingAssetHatch.Trial).toOption
+    )
+  }
+
+  test("the hatch lies over the raster and under the isolines") {
+    val g     = holed(holes)
+    val order = grobs(g)
+    val at    = (n: String) =>
+      order.indexWhere {
+        case i: Grob.Image           => i.name.exists(_.value == n)
+        case l: Grob.Segments        => l.name.exists(_.value == n)
+        case c: Grob.CompoundPolygon => c.name.exists(_.value == n)
+        case _                       => false
+      }
+    assert(at(MapTileScene.MapName) >= 0)
+    assert(at(MapTileScene.MapName) < at(MapTileScene.UncoveredName))
+    assert(at(MapTileScene.UncoveredName) < at(MapTileScene.IsolinesName))
+    // The holed tile exports as the figure's other panels do.
     assert(right(SvgRenderer.render(scene(g).scene)).value.nonEmpty)
   }

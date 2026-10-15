@@ -183,11 +183,14 @@ class TokenFilesSuite extends munit.FunSuite:
     yield s"$block --$name: board $value, tokens ${ours.getOrElse(name, "absent")}"
     assert(mismatches.isEmpty, mismatches.mkString("\n", "\n", ""))
 
-    // Every token the boards do not name is a recorded addition.
+    // Every token the boards do not name is a recorded addition: the inner
+    // selection band, and the paper hatch of a figure tile's cells without
+    // coverage (slice S27), which the Figures board never draws because its
+    // tiles have none.
     val named = boards.flatMap(_._2.keySet).toSet
     assertEquals(
       Tokens.all.map(_.cssName).filterNot(named),
-      List("sel-ring-inner")
+      List("sel-ring-inner", "fig-hatch", "fig-hatch-ground")
     )
     // The deviations are real: the boards still say otherwise.
     deviations.keys.foreach { case (block, name) =>

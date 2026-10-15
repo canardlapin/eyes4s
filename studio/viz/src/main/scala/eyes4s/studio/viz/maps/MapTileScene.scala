@@ -19,7 +19,14 @@ package eyes4s.studio.viz.maps
 import eyes4s.studio.app.maps.{GridPoint, Isolines, MapGrid, MapRaster, MapStyle}
 import eyes4s.studio.app.tokens.{PaletteToken, StageToken, StageVariant, Tokens}
 import eyes4s.studio.core.backend.ScreenRegion
-import eyes4s.studio.viz.plot.{DataPanel, IntaglioColours, PlotScene, PlotSceneError, SceneId}
+import eyes4s.studio.viz.plot.{
+  DataPanel,
+  IntaglioColours,
+  MissingAssetHatch,
+  PlotScene,
+  PlotSceneError,
+  SceneId
+}
 import intaglio.{
   CasingWidth,
   Clip,
@@ -47,15 +54,19 @@ import intaglio.{
   * screen pixels with y down, on its stage; the map's raster in its style,
   * cell for cell, with no global opacity (a mass cell still fades in below
   * the alpha floor, [[eyes4s.studio.app.maps.MapColours.MassAlphaFloor]]);
-  * and its isolines at the served levels, cased as on the trial view
-  * (`--isoline-ink` inside `--isoline-case`). Every colour is a token's or
-  * the map palette's; nothing here derives a value or a level.
+  * its cells without coverage in the missing-asset hatch on paper, opaque
+  * and one shape as on the trial view ([[UncoveredCells]]; DESIGN_SPEC
+  * section 15: never transparent); and its isolines at the served levels,
+  * cased as on the trial view (`--isoline-ink` inside `--isoline-case`).
+  * Every colour is a token's or the map palette's; nothing here derives a
+  * value or a level.
   */
 object MapTileScene:
 
-  val StageName: String    = "map-tile-stage"
-  val MapName: String      = "map-tile-map"
-  val IsolinesName: String = "map-tile-isolines"
+  val StageName: String     = "map-tile-stage"
+  val MapName: String       = "map-tile-map"
+  val UncoveredName: String = "map-tile-uncovered"
+  val IsolinesName: String  = "map-tile-isolines"
 
   /** A tile's isoline ink and its casing, in screen pixels of the tile. */
   val IsolinePx: Double       = 1.0
@@ -92,9 +103,8 @@ object MapTileScene:
       stage: StageVariant
   ): Either[GraphicsError, (Vector[Grob], Viewport)] =
     // Cell for cell and without the global opacity: a figure tile is the map
-    // alone, not an overlay. Missing cells are not hatched here yet: a tile
-    // is drawn without an app theme, so it has no warn tokens (review
-    // ticket 8 leaves tiles as a known gap); they show the stage.
+    // alone, not an overlay. A tile is drawn without an app theme, so its
+    // missing cells wear the paper hatch, at the trial view's stripe.
     val raster = MapRaster.render(grid, style)
     for
       xs      <- Interval(region.left, region.right)
@@ -119,8 +129,22 @@ object MapTileScene:
         interpolation = RasterInterpolation.Nearest,
         name = Some(mapName)
       )
+      hatch   <- MissingAssetHatch.paper(MissingAssetHatch.Trial)
+      unName  <- name(UncoveredName)
+      missing <- UncoveredCells.shape(
+        grid,
+        region.left,
+        region.top,
+        region.width,
+        region.height,
+        hatch,
+        unName
+      )
       lines <- isolines(grid, region)
-    yield (Vector(Grob.group(Vector(field, map) ++ lines, viewport = Some(vp))), vp)
+    yield (
+      Vector(Grob.group(Vector(field, map) ++ missing ++ lines, viewport = Some(vp))),
+      vp
+    )
 
   private def isolines(
       grid: MapGrid,
