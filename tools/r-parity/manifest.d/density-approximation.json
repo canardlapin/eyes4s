@@ -1,0 +1,55 @@
+{
+  "schema": 1,
+  "ticket": "density-approximation",
+  "fixtures": {
+    "density-approximation-input": {
+      "path": "tools/r-parity/fixtures/cases/density-approximation.json",
+      "sha256": "fe59b0dbbcf3cc7710425034cf34a7b2c75a321e4ebab31dade4f0e26f1ebe85",
+      "license": "Apache-2.0; synthetic inputs authored for eyes4s",
+      "role": "Public independently authored weighted synthetic cohort"
+    },
+    "density-approximation-input-scala": {
+      "path": "plan/src/test/scala/eyes4s/plan/DensityApproximationInputs.scala",
+      "sha256": "42ecc33909b6e1b9cd3c38f1493abf25c71533d48c4a5669790fca03e5becc1b",
+      "license": "Apache-2.0; synthetic inputs authored for eyes4s",
+      "role": "Portable public cohort"
+    },
+    "density-approximation-oracle-scala": {
+      "path": "plan/src/test/scala/eyes4s/plan/DensityApproximationReference.scala",
+      "sha256": "92e03023cd30fcebce287064cb51a42063d676d9482487625cd004e1f0138c95",
+      "license": "Apache-2.0; synthetic inputs authored for eyes4s",
+      "role": "Independent direct-sum score oracle"
+    },
+    "density-approximation-reference": {
+      "path": "tools/r-parity/fixtures/density-approximation.json",
+      "sha256": "7b4a27023e61cb6aa1eb4a5da684c71ecc593d46f72c8c1be681b176d6aa82a9",
+      "license": "Apache-2.0; synthetic inputs authored for eyes4s",
+      "role": "Actual pinned R public calls with audited runtime and independent map checks"
+    }
+  },
+  "regeneration": {
+    "density-approximation-input": {
+      "command": "python3 tools/density-approximation/generate_inputs.py --check",
+      "requires_eyesim": false,
+      "outputs": [
+        "density-approximation-input",
+        "density-approximation-input-scala"
+      ]
+    },
+    "density-approximation-oracle": {
+      "command": "python3 tools/density-approximation/generate_regression.py --check",
+      "requires_eyesim": false,
+      "outputs": [
+        "density-approximation-oracle-scala"
+      ]
+    },
+    "density-approximation-reference": {
+      "command": "python3 tools/density-approximation/reference.py --eyesim {eyesim} --check",
+      "requires_eyesim": true,
+      "outputs": [
+        "density-approximation-reference"
+      ]
+    }
+  },
+  "cases": []
+}

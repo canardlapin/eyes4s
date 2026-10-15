@@ -23,6 +23,7 @@ import eyes4s.studio.app.plot.{
   ColumnId,
   ParticipantColumns,
   ParticipantMeans,
+  ParticipantNotes,
   PlotColumn,
   PlotRow,
   PlotSource,
@@ -70,6 +71,10 @@ final case class ExplainVM(label: String, keeps: String, intents: Vector[Intent]
 final case class CompareSummaryVM(
     status: Option[String],
     participantPlot: Option[Either[String, PlotSource]],
+    /** The participant plot's annotation column: the selected participant
+      * and every participant with failed queries (review ticket 26).
+      */
+    plotNotes: ParticipantNotes,
     /** The headline's paired descriptive of the shown σ's contrast, when the
       * shown report has one (design review ticket 27).
       */
@@ -118,6 +123,7 @@ object CompareSummaryVM:
     CompareSummaryVM(
       status,
       None,
+      ParticipantNotes.empty,
       None,
       None,
       None,
@@ -160,20 +166,31 @@ object CompareSummaryVM:
     def displayed(scale: ScaleIndex) = s.reports.get((scale, false)).collect {
       case ReportAnswer.Answered(view) => view
     }
-    val reporting       = s.reporting
-    val participantPlot = for
+    val reporting = s.reporting
+    val means     = for
       scale <- shown
       view  <- displayed(scale)
     yield ParticipantMeans
       .of(view, r.scaleLabels.lift(scale.value).getOrElse(scale.value.toString))
       .left
       .map(_.message)
-      .flatMap(means =>
+    val participantPlot = means.map(
+      _.flatMap(means =>
         ParticipantColumns.standard
           .flatMap(ParticipantMeans.source(means, _))
           .left
           .map(_.message)
       )
+    )
+    val plotNotes = means.flatMap(_.toOption).fold(ParticipantNotes.empty) { ms =>
+      ParticipantNotes.of(
+        ms,
+        r.participants,
+        s.queries.collect { case QueriesAnswer.Answered(rows) => rows },
+        ParticipantNotes.selectedParticipant(m.selection.selected, run),
+        ParticipantNotes.BoardSlots
+      )
+    }
     val paired = for
       scale <- shown
       view  <- displayed(scale)
@@ -223,6 +240,7 @@ object CompareSummaryVM:
     CompareSummaryVM(
       None,
       participantPlot,
+      plotNotes,
       paired,
       profile,
       participants,

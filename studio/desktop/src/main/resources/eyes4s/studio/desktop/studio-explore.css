@@ -46,17 +46,25 @@
   -fx-text-fill: -es-ink-2;
 }
 
+/* Selected: the selection fill and weight 600; the accent is only focus's. */
 .explore-toggle:selected {
-  -fx-background-color: -es-hairline, -es-accent-soft;
+  -fx-background-color: -es-hairline, -es-sel-fill;
   -fx-text-fill: -es-ink;
+  -fx-font-family: "IBM Plex Sans SmBld";
 }
 
-.explore-toggle:focused {
+/* Pressed: the hairline fill, one step past hover. */
+.explore-toggle:armed {
+  -fx-background-color: -es-hairline;
+  -fx-background-insets: 0;
+}
+
+.explore-toggle:focus-visible {
   -fx-background-color: -es-accent, -es-surface;
 }
 
-.explore-toggle:selected:focused {
-  -fx-background-color: -es-accent, -es-accent-soft;
+.explore-toggle:selected:focus-visible {
+  -fx-background-color: -es-accent, -es-sel-fill;
 }
 
 /* The preview label's dashed frame says the map is not a result. */
@@ -101,7 +109,13 @@
   -fx-text-fill: -es-ink;
 }
 
-.explore-button:focused {
+/* Pressed: the hairline fill, one step past hover. */
+.explore-button:armed {
+  -fx-background-color: -es-hairline;
+  -fx-background-insets: 0;
+}
+
+.explore-button:focus-visible {
   -fx-background-color: -es-accent, -es-surface;
 }
 

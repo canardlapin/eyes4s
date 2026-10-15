@@ -28,8 +28,23 @@ a decimal string, preserving signed 64-bit times beyond JavaScript's exact-numbe
 Unknown policies/versions, negative indices, nonpositive widths and reversed windows
 are rejected. The key codec retains its own nested schema envelope.
 
+`EpochCodecs.of(keyCodec)` selects the built-in `eyes4s.epoch-plan@1` envelope and
+retains that same payload, including `nth-zero-based` occurrence encoding. Its
+registered codec laws and pinned fixture cover the conditional mark schema and
+exact microsecond strings.
+
+`EpochComponent.inspect(plan, keyCodec.schema)` returns the component's complete
+`RecipeInspection`: mark schema, mark key, occurrence, window, bin width and final-bin
+policy. Numeric description values retain exact integer text. Epochs is an
+`AnalysisComponent` carried by other analyses; resolution receives the actual
+observed timeline, expected clock and allocation budget.
+
 `EpochPlanSuite` checks the partition against independent microsecond enumeration,
 all selection/tail policies, large timestamps and named failures. `EpochCodecSuite`
 pins a v1 JSON recipe and its executable meaning on JVM and Scala.js. This adds the
 selector/binning boundary; it does not assert eyesim point-density sampling parity or
 silently add epoch resolution to existing saved temporal recipes.
+
+The [component evidence receipt](evidence/epoch-component-20261015.json) records the
+JVM/Scala.js conformance checks, conditional schema fixture, exact legacy payload
+preservation and a policy-loss mutant killed by the codec law on both runtimes.

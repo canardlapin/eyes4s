@@ -16,161 +16,171 @@
 
 package eyes4s.studio.desktop.analysis
 
+import eyes4s.plan.{FieldId, FormValues, FormView, RawValue}
 import eyes4s.studio.app.{AppModel, Intent}
-import eyes4s.studio.app.analysis.{AnalysesNavigator, PresetPicker, RecipeEditor, RecipeInput}
+import eyes4s.studio.app.analysis.{AnalysisSelection, DescriptorEditor, RecipeRead}
+import eyes4s.studio.app.text.{RecipeText, RecipeTextId as T}
 import eyes4s.studio.app.vm.{A11yRole, FocusStop}
-import eyes4s.studio.core.document.*
-import javafx.scene.control.{Button, ComboBox, Label, TextField}
-import javafx.scene.layout.{GridPane, VBox}
-import javafx.util.StringConverter
-import scala.jdk.CollectionConverters.*
+import eyes4s.studio.core.backend.{RecipeEditRequest, RecipeFormResult}
+import eyes4s.studio.core.document.Perspective
+import eyes4s.studio.desktop.runtime.StudioSession
+import eyes4s.studio.desktop.shell.DisabledReason
+import javafx.application.Platform
+import javafx.scene.control.{Button, Label}
+import javafx.scene.layout.VBox
+import javafx.scene.text.{Text, TextFlow}
 
-/** An explicit apply step keeps incomplete numeric text out of the document. */
-final class RecipeForm(model: () => AppModel, app: Intent => Unit):
-  private var shown: Option[Recipe]                                         = None
-  private var revision: Option[eyes4s.studio.core.backend.AnalysisRevision] = None
-  private var binding                                                       = false
-  private var disposed                                                      = false
-  private val labels                                                        = Vector(
-    "focal"           -> "Query phase",
-    "reference"       -> "Reference phase",
-    "columns"         -> "Grid columns",
-    "rows"            -> "Grid rows",
-    "scales"          -> "Gaussian σ (degrees, comma separated)",
-    "pixelsPerDegree" -> "Pixels per degree (blank = undeclared)",
-    "xMin"            -> "Window x minimum (px)",
-    "yMin"            -> "Window y minimum (px)",
-    "xMax"            -> "Window x maximum (exclusive, px)",
-    "yMax"            -> "Window y maximum (exclusive, px)"
+trait RecipeInputs:
+  def read(request: RecipeEditRequest, done: Either[String, RecipeFormResult] => Unit): Unit
+
+object RecipeInputs:
+  def of(session: StudioSession): RecipeInputs = new RecipeInputs:
+    def read(request: RecipeEditRequest, done: Either[String, RecipeFormResult] => Unit): Unit =
+      session.run(session.backend.recipeForm(request)) {
+        case Left(error)   => done(Left(Option(error.getMessage).getOrElse(error.toString)))
+        case Right(result) => done(result.left.map(_.message))
+      }
+
+/** The native recipe form, served and parsed by the backend. */
+final class RecipeForm(model: () => AppModel, app: Intent => Unit, inputs: RecipeInputs):
+  private var panel                                     = DescriptorEditor()
+  private var disposed                                  = false
+  private var rendered: Option[FormView]                = None
+  private var renderedTarget: Option[RecipeEditRequest] = None
+  private var scaleId: Option[FieldId]                  = None
+  private var scalesRaw: RawValue                       = RawValue.Absent
+  private var lock                                      = false
+  private var shown                                     = true
+  private var observers                                 = Vector.empty[Option[String] => Unit]
+  def followEditing(f: Option[String] => Unit): Unit    =
+    observers :+= f
+    f(editingReason)
+  def editingReason: Option[String] =
+    Option.when(
+      panel.target.nonEmpty && (panel.pending || panel.error.nonEmpty ||
+        panel.result.exists(r => r.problems.nonEmpty) || panel.command(model()).nonEmpty)
+    )(problem.getText)
+  def setShown(value: Boolean): Unit =
+    shown = value
+    node.setVisible(shown && panel.target.nonEmpty)
+    node.setManaged(node.isVisible)
+  val descriptor =
+    DescriptorForm(raw => edit(scaleId.fold(raw)(id => raw.updated(id, scalesRaw))))
+  val scales = ScaleChips(raw =>
+    scalesRaw = raw
+    scaleId.foreach(id => edit(descriptor.values.updated(id, raw)))
   )
-  val fields: Map[String, TextField] = labels.map { (key, label) =>
-    val f = TextField()
-    f.setId(s"recipe-$key")
-    f.setAccessibleText(label)
-    f.getStyleClass.addAll("t12", "mono")
-    f.textProperty.addListener((_, _, _) => changed())
-    key -> f
-  }.toMap
-  private def choices[A](values: Vector[A], label: String)(show: A => String): ComboBox[A] =
-    val box = ComboBox[A]()
-    box.getItems.setAll(values.asJava)
-    box.setAccessibleText(label)
-    box.setConverter(new StringConverter[A]:
-      def toString(a: A): String   = Option(a).fold("")(show)
-      def fromString(s: String): A = box.getValue)
-    box.setOnAction(_ => changed())
-    box
-  val weighting: ComboBox[WeightChoice] =
-    choices(WeightChoice.values.toVector, "Fixation weighting")(_.render)
-  val unmatched: ComboBox[UnmatchedChoice] =
-    choices(UnmatchedChoice.values.toVector, "Queries without a match")(_.render)
-  val apply: Button = Button("Apply settings")
+  val apply: Button = Button(RecipeText(T.Apply))
+  apply.getStyleClass.add("studio-button")
   apply.setId("recipe-apply")
-  apply.setAccessibleText("Apply settings")
-  val problem: Label = Label()
+  apply.setAccessibleText(RecipeText(T.Apply))
+  val problem = Label()
   problem.setWrapText(true)
+  problem.getStyleClass.add("t11")
+  DisabledReason.attach(apply, problem)
+  DisabledReason.attach(descriptor.node, problem)
+  DisabledReason.attach(scales.node, problem)
+  private val sentence = TextFlow()
+  sentence.getStyleClass.add("recipe-sentence")
   private val conventions = Label()
   conventions.setWrapText(true)
-  private val form = GridPane()
-  form.setHgap(8)
-  form.setVgap(6)
-  labels.zipWithIndex.foreach { case ((key, title), row) =>
-    val label = Label(title)
-    label.setWrapText(true)
-    label.setLabelFor(fields(key))
-    form.add(label, 0, row)
-    form.add(fields(key), 1, row)
+  conventions.getStyleClass.add("t11")
+  val node = VBox(8, sentence, scales.node, descriptor.node, conventions, problem, apply)
+  node.getStyleClass.add("recipe-form")
+  Option(getClass.getClassLoader.getResource("eyes4s/studio/desktop/studio-recipe.css"))
+    .foreach(url => node.getStylesheets.add(url.toExternalForm))
+  def state: DescriptorEditor             = panel
+  def ready: Boolean                      = panel.form.nonEmpty && !panel.pending
+  private def edit(raw: FormValues): Unit = if !disposed && !lock then
+    val (next, request) = panel.edit(raw)
+    panel = next
+    render(rebuild = false)
+    perform(request)
+
+  /** Change raw fields through the same validation path as individual controls. */
+  def editValues(raw: FormValues): Unit                  = edit(raw)
+  private def perform(request: Option[RecipeRead]): Unit = request.foreach { read =>
+    inputs.read(
+      read.request,
+      answer =>
+        Platform.runLater(() =>
+          if !disposed then
+            val before = panel
+            panel = panel.read(read, answer)
+            if panel != before then
+              render(rebuild = rendered != panel.form || renderedTarget != panel.target)
+        )
+    )
   }
-  Vector("Fixation weighting" -> weighting, "Queries without a match" -> unmatched).zipWithIndex
-    .foreach { case ((title, control), index) =>
-      val label = Label(title)
-      label.setLabelFor(control)
-      form.add(label, 0, labels.size + index)
-      form.add(control, 1, labels.size + index)
-    }
-  val node: VBox                        = VBox(8, conventions, form, problem, apply)
-  private def text(key: String): String = fields(key).getText
-  def input: RecipeInput                = RecipeInput(
-    text("focal"),
-    text("reference"),
-    text("columns"),
-    text("rows"),
-    text("scales"),
-    text("pixelsPerDegree"),
-    text("xMin"),
-    text("yMin"),
-    text("xMax"),
-    text("yMax"),
-    weighting.getValue,
-    unmatched.getValue
-  )
-  private def changed(): Unit = if !binding && !disposed && shown.isDefined then
-    RecipeEditor.parse(shown.get, input) match
-      case Left(error) =>
-        problem.setText(error.message)
-        apply.setDisable(true)
-      case Right(next) =>
-        val dirty = !shown.contains(next)
-        problem.setText(if dirty then "Apply these changes before Save & run."
-        else "Settings applied.")
-        apply.setDisable(!dirty || node.isDisabled)
   apply.setOnAction { _ =>
-    if !disposed && !node.isDisabled then
-      RecipeEditor.command(model().document, input, revision) match
-        case Left(error)    => problem.setText(error.message)
-        case Right(command) =>
-          val before = model().document
-          command.foreach(c => app(Intent.Dispatch(c)))
-          val after = model().document
-          if before != after && after.draft.nonEmpty then
-            app(
-              Intent.Navigate(
-                eyes4s.studio.app.nav.Location(Perspective.Analysis, AppModel.draftTrail(after))
-              )
+    if !disposed && !lock then
+      panel.command(model()).foreach { command =>
+        app(Intent.Dispatch(command))
+        if model().document.draft.nonEmpty then
+          app(
+            Intent.Navigate(
+              eyes4s.studio.app.nav
+                .Location(Perspective.Analysis, AppModel.draftTrail(model().document))
             )
+          )
+      }
   }
   def sync(value: AppModel, editable: Boolean): Unit = if !disposed then
-    val selected = AnalysesNavigator.selected(value)
-    val current  = PresetPicker.edited(value.document, selected).map(_._2)
-    node.setVisible(current.isDefined)
-    node.setManaged(current.isDefined)
-    node.setDisable(!editable)
-    if current != shown || selected != revision then
-      shown = current
-      revision = selected
-      binding = true
-      try
-        current.foreach { r =>
-          val f      = RecipeEditor.input(r)
-          val values = Vector(
-            f.focal,
-            f.reference,
-            f.columns,
-            f.rows,
-            f.scales,
-            f.pixelsPerDegree,
-            f.xMin,
-            f.yMin,
-            f.xMax,
-            f.yMax
-          )
-          labels.map(_._1).zip(values).foreach((k, v) => fields(k).setText(v))
-          weighting.setValue(f.weighting)
-          unmatched.setValue(f.unmatched)
-          conventions.setText(
-            s"${r.method.render}; ${r.matched.render}; controls: ${r.controls.render}; " +
-              s"${r.failurePolicy.render}; ${r.initialFixations.render}. Window is half-open; clear all four bounds for the full frame."
-          )
-          problem.setText("Settings applied.")
-          apply.setDisable(true)
-        }
-      finally binding = false
-    else if !editable then apply.setDisable(true)
+    lock = !editable
+    val (next, request) = panel.sync(value)
+    val changed         = next.target != panel.target
+    panel = next
+    render(rebuild = changed)
+    perform(request)
+  private def render(rebuild: Boolean): Unit =
+    node.setVisible(shown && panel.target.nonEmpty)
+    node.setManaged(node.isVisible)
+    descriptor.node.setDisable(lock || panel.form.isEmpty)
+    scales.node.setDisable(lock || panel.form.isEmpty)
+    panel.form.zip(panel.values).foreach { (form, values) =>
+      scaleId = form.fields.find(_.id.value == "scales").map(_.id)
+      scalesRaw = scaleId.fold[RawValue](RawValue.Absent)(values.get)
+      val baseline = AnalysisSelection
+        .selected(model())
+        .toVector
+        .flatMap(_.seedRecipe.scales.values.map(_.degrees))
+        .toSet
+      val chips = scales.show(scalesRaw, baseline, panel.result)
+      if rebuild || rendered.isEmpty then
+        descriptor.show(form, values, if chips then Set("scales") else Set.empty)
+        rendered = Some(form)
+        renderedTarget = panel.target
+    }
+    if panel.target.isEmpty || (panel.form.isEmpty && rebuild) then
+      descriptor.node.getChildren.clear()
+      rendered = None
+      sentence.getChildren.clear()
+    panel.result.foreach { served =>
+      sentence.getChildren.setAll(served.sentence.map { token =>
+        val text = Text(RecipeText(T.Served, token.text))
+        text.getStyleClass.add("t12")
+        token.role.foreach(role => text.getStyleClass.add(s"recipe-token-${role.toLowerCase}"))
+        text
+      }*)
+      sentence.setAccessibleText(served.sentence.map(_.text).mkString)
+      conventions.setText(served.conventions.map(s => RecipeText(T.Served, s)).mkString(" · "))
+    }
+    val message =
+      if lock then RecipeText(T.Locked)
+      else if panel.pending then
+        RecipeText(if panel.form.isEmpty then T.Loading else T.Checking)
+      else
+        panel.error.getOrElse(panel.result.fold(RecipeText(T.Loading)) { result =>
+          if result.problems.nonEmpty then
+            result.problems.map(p => RecipeText(T.Served, p.message)).mkString("\n")
+          else RecipeText(if panel.command(model()).nonEmpty then T.Unapplied else T.Applied)
+        })
+    problem.setText(message)
+    apply.setDisable(lock || panel.command(model()).isEmpty)
+    observers.foreach(_(editingReason))
   def focusStops: Vector[FocusStop] =
-    if node.isDisabled || !node.isVisible then Vector.empty
+    if !node.isVisible then Vector.empty
     else
-      labels.map((_, title) => FocusStop(A11yRole.TextField, title)) ++ Vector(
-        FocusStop(A11yRole.ComboBox, "Fixation weighting"),
-        FocusStop(A11yRole.ComboBox, "Queries without a match")
-      ) ++ Option.when(!apply.isDisabled)(FocusStop(A11yRole.Button, "Apply settings"))
+      scales.focusStops ++ descriptor.focusStops ++
+        Option.when(!apply.isDisabled)(FocusStop(A11yRole.Button, apply.getAccessibleText))
   def dispose(): Unit = disposed = true

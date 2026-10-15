@@ -192,7 +192,7 @@ final class StudyInputCodec[K, U <: Unit2D](
     )
   yield value
 
-  private def scanpaths(table: DocumentIdentities): VersionedCodec[Scanpath[U]] =
+  private[codec] def scanpaths(table: DocumentIdentities): VersionedCodec[Scanpath[U]] =
     VersionedCodec.checked[Scanpath[U]](StudyInputCodecs.scanpath)(path =>
       for
         fixations <- path.fixations.toVector.zipWithIndex

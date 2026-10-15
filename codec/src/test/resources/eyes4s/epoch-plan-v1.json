@@ -1,0 +1,23 @@
+{
+  "schema": {
+    "name": "eyes4s.epoch-plan",
+    "version": 1
+  },
+  "value": {
+    "anchor": {
+      "schema": {
+        "name": "example.marker",
+        "version": 1
+      },
+      "value": "start"
+    },
+    "occurrence": {
+      "kind": "nth-zero-based",
+      "index": "1"
+    },
+    "fromMicros": "-9007199254740993",
+    "untilMicros": "9007199254740993",
+    "binWidthMicros": "9007199254740993",
+    "finalBin": "ExcludeAndReport"
+  }
+}

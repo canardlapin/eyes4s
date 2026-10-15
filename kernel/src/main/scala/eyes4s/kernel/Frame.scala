@@ -21,13 +21,20 @@ package eyes4s.kernel
   * Distinct from [[Bounds]], which is a size *and* a position. A dispersion
   * threshold, a stimulus size or a tolerance box has extent but no location,
   * and giving it one would invite the question of where it is.
+  *
+  * Sealed abstract products preserve inspection without a constructing mirror
+  * that could bypass [[Extent.of]] (bead q-domain-constructing-mirrors).
   */
-final case class Extent[U <: Unit2D] private (width: Double, height: Double) derives CanEqual:
+sealed abstract case class Extent[U <: Unit2D] private (width: Double, height: Double)
+    derives CanEqual:
   def area: Double                          = width * height
   def diagonal: Double                      = math.hypot(width, height)
   def render(using u: UnitLabel[U]): String = f"$width%.3g x $height%.3g${u.symbol}"
 
 object Extent:
+  private def apply[U <: Unit2D](width: Double, height: Double): Extent[U] =
+    new Extent[U](width, height) {}
+
   def of[U <: Unit2D](width: Double, height: Double): Either[GeometryError, Extent[U]] =
     if !(width.isFinite && height.isFinite) then
       Left(GeometryError.NonFiniteBounds(0, 0, width, height))
@@ -49,7 +56,7 @@ object Extent:
   * `c(0, 1000)` default and a pair of denominators -- none derived from any
   * other.
   */
-final case class Bounds[U <: Unit2D] private (
+sealed abstract case class Bounds[U <: Unit2D] private (
     xMin: Double,
     yMin: Double,
     xMax: Double,
@@ -89,6 +96,13 @@ final case class Bounds[U <: Unit2D] private (
 end Bounds
 
 object Bounds:
+  private def apply[U <: Unit2D](
+      xMin: Double,
+      yMin: Double,
+      xMax: Double,
+      yMax: Double
+  ): Bounds[U] =
+    new Bounds[U](xMin, yMin, xMax, yMax) {}
 
   def of[U <: Unit2D](
       xMin: Double,
@@ -146,7 +160,7 @@ final case class FrameId(name: String) derives CanEqual:
   * This keeps identity nominal while allowing [[Agreement]] to detect the
   * corrupt-metadata case in which one identity names two geometries.
   */
-final case class FrameSpec private (
+sealed abstract case class FrameSpec private (
     xMin: Double,
     yMin: Double,
     xMax: Double,
@@ -156,6 +170,15 @@ final case class FrameSpec private (
   def render: String = s"[$xMin, $xMax) x [$yMin, $yMax), y-$yAxis"
 
 object FrameSpec:
+  private def apply(
+      xMin: Double,
+      yMin: Double,
+      xMax: Double,
+      yMax: Double,
+      yAxis: YAxis
+  ): FrameSpec =
+    new FrameSpec(xMin, yMin, xMax, yMax, yAxis) {}
+
   private[kernel] def from[U <: Unit2D](frame: Frame[U]): FrameSpec =
     FrameSpec(
       frame.bounds.xMin,
@@ -172,7 +195,7 @@ object FrameSpec:
   * shares a coordinate system, and it is why the geometry cannot be forgotten
   * partway through an analysis the way it is when bounds are merely an argument.
   */
-final case class Frame[U <: Unit2D] private (
+sealed abstract case class Frame[U <: Unit2D] private (
     id: FrameId,
     bounds: Bounds[U],
     yAxis: YAxis
@@ -197,6 +220,8 @@ final case class Frame[U <: Unit2D] private (
 end Frame
 
 object Frame:
+  private def apply[U <: Unit2D](id: FrameId, bounds: Bounds[U], yAxis: YAxis): Frame[U] =
+    new Frame[U](id, bounds, yAxis) {}
 
   def of[U <: Unit2D](id: FrameId, bounds: Bounds[U], yAxis: YAxis): Frame[U] =
     Frame(id, bounds, yAxis)

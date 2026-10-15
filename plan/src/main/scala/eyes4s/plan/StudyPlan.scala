@@ -24,32 +24,35 @@ import eyes4s.kernel.*
 import eyes4s.surface.*
 
 /** Stable identity of a registered behavior, separate from its parameter schema. */
-final case class DefinitionId private (name: String, version: Int) derives CanEqual
+sealed abstract case class DefinitionId private (name: String, version: Int) derives CanEqual
 object DefinitionId:
-  val cosine: DefinitionId          = new DefinitionId("eyes4s.cosine", 1)
-  val study: DefinitionId           = new DefinitionId("eyes4s.study", 1)
-  val studyKey: DefinitionId        = new DefinitionId("eyes4s.study-key", 1)
-  val studyLayout: DefinitionId     = new DefinitionId("eyes4s.participant-stimulus-phase", 1)
-  val unit: DefinitionId            = new DefinitionId("eyes4s.unit", 1)
-  val studyInput: DefinitionId      = new DefinitionId("eyes4s.study-input", 1)
-  val trials: DefinitionId          = new DefinitionId("eyes4s.trials", 1)
-  val scanpath: DefinitionId        = new DefinitionId("eyes4s.scanpath", 1)
-  val admissionLedger: DefinitionId = new DefinitionId("eyes4s.admission-ledger", 1)
+  private def apply(name: String, version: Int): DefinitionId =
+    new DefinitionId(name, version) {}
+
+  val cosine: DefinitionId          = DefinitionId("eyes4s.cosine", 1)
+  val study: DefinitionId           = DefinitionId("eyes4s.study", 1)
+  val studyKey: DefinitionId        = DefinitionId("eyes4s.study-key", 1)
+  val studyLayout: DefinitionId     = DefinitionId("eyes4s.participant-stimulus-phase", 1)
+  val unit: DefinitionId            = DefinitionId("eyes4s.unit", 1)
+  val studyInput: DefinitionId      = DefinitionId("eyes4s.study-input", 1)
+  val trials: DefinitionId          = DefinitionId("eyes4s.trials", 1)
+  val scanpath: DefinitionId        = DefinitionId("eyes4s.scanpath", 1)
+  val admissionLedger: DefinitionId = DefinitionId("eyes4s.admission-ledger", 1)
   // UI-S3: recording and temporal input payload schemas.
-  val recording: DefinitionId          = new DefinitionId("eyes4s.recording", 1)
-  val binocularRecording: DefinitionId = new DefinitionId("eyes4s.binocular-recording", 1)
-  val recordingInput: DefinitionId     = new DefinitionId("eyes4s.recording-input", 1)
-  val temporalStudyInput: DefinitionId = new DefinitionId("eyes4s.temporal-study-input", 1)
-  val timeline: DefinitionId           = new DefinitionId("eyes4s.timeline", 1)
+  val recording: DefinitionId          = DefinitionId("eyes4s.recording", 1)
+  val binocularRecording: DefinitionId = DefinitionId("eyes4s.binocular-recording", 1)
+  val recordingInput: DefinitionId     = DefinitionId("eyes4s.recording-input", 1)
+  val temporalStudyInput: DefinitionId = DefinitionId("eyes4s.temporal-study-input", 1)
+  val timeline: DefinitionId           = DefinitionId("eyes4s.timeline", 1)
   // UI-S4: result archive and score schemas.
-  val studyResult: DefinitionId      = new DefinitionId("eyes4s.study-result", 1)
-  val similarity: DefinitionId       = new DefinitionId("eyes4s.similarity", 1)
-  val measureDistance: DefinitionId  = new DefinitionId("eyes4s.measure-distance", 1)
-  val scalar: DefinitionId           = new DefinitionId("eyes4s.scalar", 1)
-  val signedDifference: DefinitionId = new DefinitionId("eyes4s.signed-difference", 1)
+  val studyResult: DefinitionId      = DefinitionId("eyes4s.study-result", 1)
+  val similarity: DefinitionId       = DefinitionId("eyes4s.similarity", 1)
+  val measureDistance: DefinitionId  = DefinitionId("eyes4s.measure-distance", 1)
+  val scalar: DefinitionId           = DefinitionId("eyes4s.scalar", 1)
+  val signedDifference: DefinitionId = DefinitionId("eyes4s.signed-difference", 1)
   def of(name: String, version: Int): Either[PlanError, DefinitionId] =
     if name.trim.isEmpty || version < 1 then Left(PlanError.InvalidDefinition(name, version))
-    else Right(new DefinitionId(name, version))
+    else Right(DefinitionId(name, version))
 
   /** A built-in identity declared outside this companion.
     *
@@ -63,22 +66,25 @@ object DefinitionId:
     * stay where they are.
     */
   private[eyes4s] def builtIn(name: String, version: Int): DefinitionId =
-    new DefinitionId(name, version)
+    DefinitionId(name, version)
   // UI-S5: artifact manifests and typed payload references.
-  val manifest: DefinitionId        = new DefinitionId("eyes4s.manifest", 1)
-  val packedRecording: DefinitionId = new DefinitionId("eyes4s.packed-recording", 1)
-  val packedArray: DefinitionId     = new DefinitionId("eyes4s.packed-array", 1)
+  val manifest: DefinitionId        = DefinitionId("eyes4s.manifest", 1)
+  val packedRecording: DefinitionId = DefinitionId("eyes4s.packed-recording", 1)
+  val packedArray: DefinitionId     = DefinitionId("eyes4s.packed-array", 1)
   // recording and temporal archives
-  val recordingResult: DefinitionId = new DefinitionId("eyes4s.recording-result", 1)
-  val temporalResult: DefinitionId  = new DefinitionId("eyes4s.temporal-result", 1)
+  val recordingResult: DefinitionId = DefinitionId("eyes4s.recording-result", 1)
+  val temporalResult: DefinitionId  = DefinitionId("eyes4s.temporal-result", 1)
 
 /** A typed reference to separately stored input; no file access occurs in plan. */
-final case class ArtifactRef[A] private (digest: String) derives CanEqual
+sealed abstract case class ArtifactRef[A] private (digest: String) derives CanEqual
 object ArtifactRef:
-  def of[A](hash: ContentHash): ArtifactRef[A]                    = new ArtifactRef(hash.render)
+  private def apply[A](digest: String): ArtifactRef[A] =
+    new ArtifactRef[A](digest) {}
+
+  def of[A](hash: ContentHash): ArtifactRef[A]                    = ArtifactRef(hash.render)
   def parse[A](digest: String): Either[PlanError, ArtifactRef[A]] =
     if digest.length == 16 && digest.forall(c => "0123456789abcdef".contains(c)) then
-      Right(new ArtifactRef(digest))
+      Right(ArtifactRef(digest))
     else Left(PlanError.InvalidArtifact(digest))
 
 /** Why a study plan could not be built, restored or run. Cases name their operands, for
@@ -126,6 +132,7 @@ enum PlanError derives CanEqual:
   )
   case UnmatchedFocalRefused(focalDigests: Vector[String])
   case InitialFixations(underlying: InitialFixationError)
+  case ExpectedUnmatchedSelection(column: String, value: String, reason: String)
 
   def message: String = this match
     case InvalidDefinition(n, v) =>
@@ -175,7 +182,9 @@ enum PlanError derives CanEqual:
       s"Under ${matched.render}, ${parts.mkString(", and ")}; choose an occurrence."
     case UnmatchedFocalRefused(focal) =>
       s"Focal trials $focal have no matched reference, and the plan refuses unmatched focal trials."
-    case InitialFixations(e) => e.message
+    case InitialFixations(e)                               => e.message
+    case ExpectedUnmatchedSelection(column, value, reason) =>
+      s"Expected-unmatched selection on '$column' for '$value': $reason."
 
 /** A registered interpretation of user keys. Identity and matching stay in K.
   *
@@ -882,7 +891,8 @@ final class StudyPlan[K, U <: Unit2D, P, S, D] private (
     val method: StudyMethod[P, U, S, D],
     val parameters: P,
     val pairing: StudyPairing,
-    val initialFixationRule: InitialFixationRule[U]
+    val initialFixationRule: InitialFixationRule[U],
+    val expectedUnmatched: Option[ExpectedUnmatched]
 )(using unit: UnitLabel[U]):
   /** The grid every density lies on. */
   def grid: Grid[U] = geometry.grid
@@ -902,7 +912,7 @@ final class StudyPlan[K, U <: Unit2D, P, S, D] private (
     * matched reference averaged and every fixation kept.
     */
   def isVersion1: Boolean =
-    keepsAllFixations &&
+    expectedUnmatched.isEmpty && keepsAllFixations &&
       pairing.isVersion1 && geometry.isInstanceOf[StudyGeometry.WholeFrame[?]] &&
       angularScale.isEmpty &&
       scales.forall {
@@ -961,7 +971,7 @@ final class StudyPlan[K, U <: Unit2D, P, S, D] private (
       (if pairing.isVersion1 then Vector.empty else pairing.description) ++
       Option
         .unless(keepsAllFixations)("initialFixations" -> initialFixations.parameters)
-        .toVector
+        .toVector ++ expectedUnmatched.toVector.map(s => "expectedUnmatched" -> s.description)
 
   override def equals(other: Any): Boolean = other match
     case that: StudyPlan[?, ?, ?, ?, ?] => description == that.description
@@ -1067,7 +1077,8 @@ final class StudyPlan[K, U <: Unit2D, P, S, D] private (
       method,
       parameters,
       pairing,
-      initialFixations
+      initialFixations,
+      expectedUnmatched
     )
 
   /** One scale's method specification; identical for pure and resumable execution. */
@@ -1219,7 +1230,8 @@ object StudyPlan:
       method: StudyMethod[P, U, S, D],
       parameters: P,
       pairing: StudyPairing = StudyPairing.default,
-      initialFixations: InitialFixationPolicy[U] = InitialFixationPolicy.keepAll[U]
+      initialFixations: InitialFixationPolicy[U] = InitialFixationPolicy.keepAll[U],
+      expectedUnmatched: Option[ExpectedUnmatched] = None
   )(using UnitLabel[U]): Either[PlanError, StudyPlan[K, U, P, S, D]] =
     val needsOccurrence = pairing.matched match
       case MatchedReferences.SameOccurrence | MatchedReferences.Select(_) => true
@@ -1281,5 +1293,6 @@ object StudyPlan:
       method,
       parameters,
       pairing,
-      initial
+      initial,
+      expectedUnmatched
     )

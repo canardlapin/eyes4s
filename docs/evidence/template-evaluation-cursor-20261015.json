@@ -1,0 +1,65 @@
+{
+  "schema": 1,
+  "date": "2026-10-15",
+  "issue": "cr4-template-evaluation-cursor",
+  "parent": "bd-01M3F9JD5C32MGBMJSS7PG5B9B",
+  "base_sha": "25a22b37f5854b8efdda64ec166d9052b578684b",
+  "scope": "Already-fitted held-out evaluation only. TemplateFit/decomposition family descriptors, saved schemas, fs2 routes and family witnesses remain open.",
+  "contract": {
+    "work_unit": "One held-out row key; complete feature extraction and prediction are indivisible.",
+    "bound": "PairQuantum caps visited keys, with overflow-safe end computation.",
+    "identity": "Training identity checked before constructing work; both training and held-out hashes preserved.",
+    "cardinality": "Every held-out row retained in input order, including failed predictions; failed predictions still refuse MSE without silently reducing the denominator.",
+    "eager_compatibility": "FittedTemplate.evaluate delegates to the same work. Prediction arithmetic is extracted unchanged; existing template suites pass.",
+    "ownership": "Immutable cursor, private design constructor, no public construction mirror."
+  },
+  "verification": {
+    "restored_matrix_totals": [
+      25,
+      1,
+      25,
+      1
+    ],
+    "jvm_total": 26,
+    "js_total": 26,
+    "structural_cases": "Multiple row counts/quanta, Int.MaxValue after partial progress, immutable original state, failed prediction retention, training mismatch and external constructor rejection.",
+    "independent_numeric_oracle": "Identity training basis with known coefficients2 and3; expected held-out prediction2x+3z and residual from observation.",
+    "numeric_tolerance": {
+      "name": "ExactIntegerPredictionTolerance",
+      "absolute": 0.0,
+      "relative": 0.0
+    },
+    "root_jvm_and_js_test_compile_werror": "passed",
+    "mutation": {
+      "mutation": "drop the first predicted row of each page while retaining reported work count",
+      "original_sha256": "ad2d33c4c2bdda6911d6755ddf03df8b7755b6d9e1039bb0f6a14907b981b86b",
+      "runs": [
+        {
+          "platform": "JVM",
+          "failed_tests": 3,
+          "log_sha256": "da96aa3cbefe4d37b68ebd87e3004900e6d80004e77f823f045a95a95a81695f"
+        },
+        {
+          "platform": "JS",
+          "failed_tests": 3,
+          "log_sha256": "7789b3556ab42595c9dc248e9500e8e40c600aaa55b292f1e9b6659a2977e255"
+        }
+      ],
+      "restored_sha256": "ad2d33c4c2bdda6911d6755ddf03df8b7755b6d9e1039bb0f6a14907b981b86b"
+    }
+  },
+  "source_sha256": {
+    "design/src/main/scala/eyes4s/design/Template.scala": "96a963caf77508db38836523058e8c4f2ba156a49568d3fe98ef8036a35ecaba",
+    "design/src/main/scala/eyes4s/design/TemplateEvaluationWork.scala": "ad2d33c4c2bdda6911d6755ddf03df8b7755b6d9e1039bb0f6a14907b981b86b",
+    "design/src/test/scala/eyes4s/design/TemplateEvaluationWorkSuite.scala": "46c9d547698137f07f472ba1fd6ba21290c3879d7ef028b331d66d7fd6dc77cf",
+    "laws/src/test/scala/eyes4s/laws/TemplateEvaluationRegressionSuite.scala": "ab612158c3263dae7b40075483270370c73e929a88b33b7700a7088c3ada8790"
+  },
+  "logs_sha256": {
+    "eyes4s-cr4-template-evaluation-initial.log": "f2a4a1433ea18b01e3edaddda25b5410f8106c972e67f2163c1daa29951558cc",
+    "eyes4s-cr4-template-evaluation-mutant-JVM.log": "da96aa3cbefe4d37b68ebd87e3004900e6d80004e77f823f045a95a95a81695f",
+    "eyes4s-cr4-template-evaluation-mutant-JS.log": "7789b3556ab42595c9dc248e9500e8e40c600aaa55b292f1e9b6659a2977e255",
+    "eyes4s-cr4-template-evaluation-restored.log": "1f1169f0564080507c51975601b000e0b8236c419ce90d4671745514353c9040",
+    "eyes4s-cr4-template-evaluation-root-werror.log": "d48f2eb0d01fd02421bc3083bc010a6c24a61fce3f5b149a6bc2f5116a5e50b1"
+  },
+  "landing_status": "Reviewed execution slice awaiting combined qualification and landing; parent S4 remains open."
+}

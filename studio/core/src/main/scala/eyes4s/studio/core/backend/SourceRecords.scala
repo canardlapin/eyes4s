@@ -99,9 +99,12 @@ enum ScaleSource derives CanEqual, Codec.AsObject:
   case Recipe, Dataset
 
 /** A finite point in a plane, in the unit its holder states. */
-final case class PlanePoint private (x: Double, y: Double) derives CanEqual
+sealed abstract case class PlanePoint private (x: Double, y: Double) derives CanEqual
 
 object PlanePoint:
+  private def apply(x: Double, y: Double): PlanePoint =
+    new PlanePoint(x, y) {}
+
   def of(
       record: Int,
       field: String,
@@ -140,7 +143,7 @@ final case class ImagePosition(at: PlanePoint, insideImage: Boolean) derives Can
   *     line end. A record may span several physical lines (a quoted field
   *     can hold a line end), so this is the record's text, not one line.
   */
-final case class SourceRecordRow private (
+sealed abstract case class SourceRecordRow private (
     ref: StudioRef.SourceRecord,
     ordinal: Option[Int],
     onsetMs: Option[Double],
@@ -157,6 +160,31 @@ final case class SourceRecordRow private (
   def fixation: Option[StudioRef.Fixation] = ref.fixation.map(StudioRef.Fixation(ref.trial, _))
 
 object SourceRecordRow:
+  private def apply(
+      ref: StudioRef.SourceRecord,
+      ordinal: Option[Int],
+      onsetMs: Option[Double],
+      durationMs: Option[Double],
+      samples: Option[Int],
+      screen: Option[PlanePoint],
+      image: Option[ImagePosition],
+      degrees: Option[PlanePoint],
+      placement: Option[MapPlacement],
+      line: String
+  ): SourceRecordRow =
+    new SourceRecordRow(
+      ref,
+      ordinal,
+      onsetMs,
+      durationMs,
+      samples,
+      screen,
+      image,
+      degrees,
+      placement,
+      line
+    ) {}
+
   def of(
       ref: StudioRef.SourceRecord,
       ordinal: Option[Int],
@@ -291,7 +319,7 @@ object SourceRecordRow:
   * belong to the study. An empty file has no page: every request is
   * `PastEnd(from, 0)`. Built only through [[SourceRecordPage.of]].
   */
-final case class SourceRecordPage private (
+sealed abstract case class SourceRecordPage private (
     revision: AnalysisRevision,
     dataset: DatasetRevision,
     source: Source,
@@ -304,6 +332,29 @@ final case class SourceRecordPage private (
 ) derives CanEqual
 
 object SourceRecordPage:
+
+  private def apply(
+      revision: AnalysisRevision,
+      dataset: DatasetRevision,
+      source: Source,
+      pixelsPerDegree: Double,
+      scaleSource: ScaleSource,
+      total: Int,
+      from: Int,
+      count: Int,
+      rows: Vector[SourceRecordRow]
+  ): SourceRecordPage =
+    new SourceRecordPage(
+      revision,
+      dataset,
+      source,
+      pixelsPerDegree,
+      scaleSource,
+      total,
+      from,
+      count,
+      rows
+    ) {}
 
   /** The most records one page holds. */
   val Limit: Int = 500

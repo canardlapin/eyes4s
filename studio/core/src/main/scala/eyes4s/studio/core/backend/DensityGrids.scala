@@ -94,7 +94,7 @@ final case class DensityLevel(coverage: Double, threshold: Double)
   * value. `levels` are the backend's highest-density regions, computed on
   * read, in the order it states them.
   */
-final case class DensityGrid private (
+sealed abstract case class DensityGrid private (
     run: RunId,
     scale: Int,
     trial: TrialKey,
@@ -116,6 +116,33 @@ final case class DensityGrid private (
   def cellHeightPx: Double = region.height / rows
 
 object DensityGrid:
+  private def apply(
+      run: RunId,
+      scale: Int,
+      trial: TrialKey,
+      sigmaDegrees: Double,
+      region: ScreenRegion,
+      columns: Int,
+      rows: Int,
+      order: RowOrder,
+      cellDegrees: Option[CellDegrees],
+      cells: Vector[Double],
+      levels: Vector[DensityLevel]
+  ): DensityGrid =
+    new DensityGrid(
+      run,
+      scale,
+      trial,
+      sigmaDegrees,
+      region,
+      columns,
+      rows,
+      order,
+      cellDegrees,
+      cells,
+      levels
+    ) {}
+
   def of(
       run: RunId,
       scale: Int,

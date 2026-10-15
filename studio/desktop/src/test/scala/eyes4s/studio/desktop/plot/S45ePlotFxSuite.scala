@@ -253,6 +253,25 @@ class S45ePlotFxSuite extends StudioFxSuite:
       math.abs(((argb >> 8) & 0xff) - c.green) <= tol && math.abs((argb & 0xff) - c.blue) <= tol
     }
 
+  // `mark` laid over the opaque `ground` (straight alpha), as the canvas draws it.
+  private def over(mark: Colour, ground: Colour): (Int, Int, Int) =
+    val a                       = mark.alphaPercent / 100.0
+    def channel(m: Int, g: Int) = math.round(a * m + (1.0 - a) * g).toInt
+    (
+      channel(mark.red, ground.red),
+      channel(mark.green, ground.green),
+      channel(mark.blue, ground.blue)
+    )
+
+  private def nearRgb(image: WritableImage, p: DevicePoint, rgb: (Int, Int, Int), tol: Int) =
+    val px = math.floor(p.x).toInt
+    val py = math.floor(p.y).toInt
+    px >= 0 && py >= 0 && px < image.getWidth.toInt && py < image.getHeight.toInt && {
+      val argb = image.getPixelReader.getArgb(px, py)
+      math.abs(((argb >> 16) & 0xff) - rgb._1) <= tol &&
+      math.abs(((argb >> 8) & 0xff) - rgb._2) <= tol && math.abs((argb & 0xff) - rgb._3) <= tol
+    }
+
   private def rowTexts(w: Wired): Vector[Vector[String]] =
     assert(runOnFx(w.twin.table.onScreen), "the table draws no rows")
     runOnFx(w.twin.table.rowTexts)
@@ -360,12 +379,22 @@ class S45ePlotFxSuite extends StudioFxSuite:
     // Above the bars, in the gap between 4 and 5, inside the span; over 8, outside it.
     assertEquals(shaded(t2, 1700.0), (true, false))
     assertEquals(shaded(t2, 3000.0), (false, true))
+    // Bars the brush does not pick are dimmed to the neutral mark; 6 keeps its ink.
+    val ink3   = Tokens.themed(Theme.Light, ThemedToken.Ink3)
+    val dimmed = over(Tokens.themed(Theme.Light, ThemedToken.NeutralMark), surface)
+    def bar(t: PlotTargets, ms: Double) = right(t.transform.dataToDevice(DataPoint(ms, 100.0)))
+    val brushedImage                    = snapshot(w)
+    assert(near(brushedImage, bar(t2, 2366.0), ink3, 12), "6 is not at full ink")
+    assert(nearRgb(brushedImage, bar(t2, 3107.0), dimmed, 12), "8 is not dimmed")
+    assert(!near(brushedImage, bar(t2, 3107.0), ink3, 40), "8 is at full ink")
     fx.snapshot(StudioTheme.Light)
     // A kept span is drawn again on restore, and none clears it.
     val before = runOnFx(w.twin.plot)
     runOnFx(w.brush.restore(None))
     val t3 = redrawn(w, before)
     assertEquals(shaded(t3, 1700.0), (false, true))
+    // Without the brush, 8 is at full ink again.
+    assert(near(snapshot(w), bar(t3, 3107.0), ink3, 12), "8 is still dimmed")
     assertEquals(w.selected, expected)
 
     // Dragged backwards over 0.30 to 1.00 s: fixations 2 and 3.

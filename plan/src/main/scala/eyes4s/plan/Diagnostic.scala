@@ -24,11 +24,15 @@ import eyes4s.kernel.Provenance
   * on every platform and run, and never derived from message text. A consumer
   * localises from the code and the named operands.
   */
-final case class DiagnosticCode private[eyes4s] (family: String, name: String) derives CanEqual:
+sealed abstract case class DiagnosticCode private[eyes4s] (family: String, name: String)
+    derives CanEqual:
   def render: String            = s"$family.$name"
   override def toString: String = render
 
 object DiagnosticCode:
+  private[eyes4s] def apply(family: String, name: String): DiagnosticCode =
+    new DiagnosticCode(family, name) {}
+
   private val Slug = "[a-z][a-z0-9]*(-[a-z0-9]+)*".r
 
   /** A code for a host application's own check, which it reports with

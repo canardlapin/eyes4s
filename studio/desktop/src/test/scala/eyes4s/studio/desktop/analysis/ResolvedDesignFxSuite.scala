@@ -28,8 +28,7 @@ import eyes4s.studio.core.fixture.{StoryMoment, StoryMoments}
 import eyes4s.studio.core.selection.StudioRef
 import eyes4s.studio.desktop.StudioWindow
 import eyes4s.studio.desktop.harness.{FxStage, StudioTheme}
-import eyes4s.studio.desktop.shell.ShellFxSuite
-import javafx.css.PseudoClass
+import eyes4s.studio.desktop.shell.{KeyboardFocus, ShellFxSuite}
 import javafx.scene.control.ToggleButton
 import javafx.scene.input.KeyCode
 import javafx.scene.paint.Color
@@ -191,17 +190,37 @@ class ResolvedDesignFxSuite extends ShellFxSuite:
     )
   }
 
+  fxStage.test("the table takes focus with its cursor on the first row, or where it was") {
+    fx =>
+      val w = boot(fx, StoryModels.t2Analysis, StoryMoment.T2)
+      ready(fx, w)
+      val table = runOnFx(w.resolvedDesign.view.table)
+      val chips = runOnFx(chip(w, DesignFilter.Eligible).button)
+      runOnFx(chips.requestFocus())
+      fx.awaitLayout()
+      assertEquals(runOnFx(w.resolvedDesign.state.cursor), None)
+      val visible = runOnFx(w.resolvedDesign.state.visible.map(_.query))
+      runOnFx(table.requestFocus())
+      fx.awaitLayout()
+      assertEquals(runOnFx(w.resolvedDesign.state.cursor), visible.headOption)
+      // A cursor it already has stays where it is.
+      fx.robot.press(KeyCode.DOWN)
+      runOnFx(chips.requestFocus())
+      runOnFx(table.requestFocus())
+      fx.awaitLayout()
+      assertEquals(runOnFx(w.resolvedDesign.state.cursor), visible.lift(1))
+  }
+
   fxStage.test("a focused chip keeps its selected fill inside the focus ring") { fx =>
     val w = boot(fx, StoryModels.t2Analysis, StoryMoment.T2)
     ready(fx, w)
     def colour(t: ThemedToken): Color =
       val c = Tokens.themed(Theme.Light, t)
       Color.rgb(c.red, c.green, c.blue, c.alphaPercent / 100.0)
-    // As in A11yTreeSuite: :focused is set explicitly, since JavaFX shows it
-    // only while the window has focus, which a headless run cannot guarantee.
-    val Focused = PseudoClass.getPseudoClass("focused")
+    // Focus is keyboard focus, reached by traversal: the ring is drawn only
+    // under :focus-visible (REVIEW ticket 14).
     def fills(b: ToggleButton, focused: Boolean): List[(Color, Double)] = runOnFx {
-      b.pseudoClassStateChanged(Focused, focused)
+      if focused then KeyboardFocus.byKeyboard(b) else KeyboardFocus.away(b)
       b.applyCss()
       b.getBackground.getFills.asScala.toList.map(f =>
         (f.getFill.asInstanceOf[Color], f.getInsets.getTop)
@@ -212,11 +231,15 @@ class ResolvedDesignFxSuite extends ShellFxSuite:
     val selected   = runOnFx(chip(w, DesignFilter.Eligible).button)
     val unselected = runOnFx(chip(w, DesignFilter.NoMatch).button)
     assert(runOnFx(selected.isSelected) && !runOnFx(unselected.isSelected))
-    val accent = colour(ThemedToken.Accent)
-    val soft   = colour(ThemedToken.AccentSoft)
-    assertEquals(fills(selected, focused = false), List(accent -> 0.0, soft -> 1.0))
+    val accent  = colour(ThemedToken.Accent)
+    val selFill = colour(ThemedToken.SelFill)
+    // Selected is the selection fill inside the hairline; the accent is focus's.
+    assertEquals(
+      fills(selected, focused = false),
+      List(colour(ThemedToken.Hairline) -> 0.0, selFill -> 1.0)
+    )
     // The ring grows outward (-1) and the selected fill stays inside it.
-    assertEquals(fills(selected, focused = true), List(accent -> -1.0, soft -> 1.0))
+    assertEquals(fills(selected, focused = true), List(accent -> -1.0, selFill -> 1.0))
     assertEquals(
       fills(unselected, focused = true),
       List(accent -> -1.0, colour(ThemedToken.Surface) -> 1.0)

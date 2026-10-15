@@ -35,7 +35,7 @@ FIXTURES = (
 )
 # The facade journey's AdSERP excerpt and tidy export, as the library's own suite pins them.
 FACADE_SOURCE_SHA256 = "57dc3230c1e2a701017011a9652e215fcb09b7f1b63a16fe00ca0ed1ca9639d0"
-FACADE_CSV_SHA256 = "c9a2ec351a09d94533305ef2bdb7743ee4773f41a6c1d2d21c068a13927b9f76"
+FACADE_CSV_SHA256 = "0f595b81da5a772ffa53cc64f90c4054ed9ccc6bf7eb8b9c2d7ba5dc2159f390"
 # Degrees: the recording route's angular warp is trigonometric.
 ANGULAR_TOLERANCE = 1e-9
 # The named tolerance of the Gaussian and temporal cosine oracles.
@@ -190,9 +190,15 @@ def main():
             f"Expected actual JVM and Scala.js results, found {len(evidence)}"
         )
     left, right = evidence
-    for exact in ("plan", "input", "binned_bits"):
+    for exact in ("plan", "input", "binned_bits", "gaussian_bits", "automatic_gaussian"):
         if left[exact] != right[exact]:
             raise RuntimeError(f"JVM/Scala.js exact disagreement in {exact}")
+    if len(left["gaussian_bits"]) != 18 or len(right["gaussian_bits"]) != 18:
+        raise RuntimeError("Missing exact Gaussian contrast bits")
+    if not left["automatic_gaussian"]["pipeline_bits"] or any(
+        value is None for value in left["automatic_gaussian"]["pipeline_bits"]
+    ):
+        raise RuntimeError("Automatic-bandwidth Gaussian pipeline contains absent outcomes")
     if len(left["gaussian"]) != 18 or len(right["gaussian"]) != 18:
         raise RuntimeError("Missing Gaussian contrasts in cross-runtime evidence")
     if not all(
@@ -279,8 +285,8 @@ def main():
             ],
         },
         "cross_runtime": {
-            "exact": ["plan", "input", "binned_bits"],
-            "gaussian_absolute_tolerance": 1e-12,
+            "exact": ["plan", "input", "binned_bits", "gaussian_bits", "automatic_gaussian"],
+            "reference_oracle_absolute_tolerance": 1e-12,
         },
         "runtime_evidence": evidence,
         "detector_runtime_evidence": detector_evidence,
@@ -293,8 +299,9 @@ def main():
                 "segments",
                 "cancelled",
                 "fingerprint_size",
+                "Gaussian density/pair/reduction/contrast pipeline bits",
             ],
-            "gaussian_absolute_tolerance": 1e-12,
+            "reference_oracle_absolute_tolerance": 1e-12,
             "oracles": [
                 "tools/r-parity/fixtures/exact.json",
                 "tools/r-parity/fixtures/multiscale.json",
@@ -734,6 +741,7 @@ def check_journey(log):
             "cancelled",
             "fingerprint_size",
             "multiplier",
+            "pipeline_bits",
         ):
             if left[field] != right[field]:
                 raise RuntimeError(
@@ -744,7 +752,7 @@ def check_journey(log):
         if len(left["gaussian"]) != 18 or len(right["gaussian"]) != 18:
             raise RuntimeError(f"Missing Gaussian contrasts in the {route} journey")
         for a, b in zip(left["gaussian"], right["gaussian"]):
-            if (a["sigma"], a["key"]) != (b["sigma"], b["key"]) or not math.isclose(
+            if (a["sigma"], a["key"], a["bits"]) != (b["sigma"], b["key"], b["bits"]) or not math.isclose(
                 a["value"], b["value"], abs_tol=1e-12, rel_tol=0
             ):
                 raise RuntimeError(f"JVM/Scala.js Gaussian disagreement for {route}")

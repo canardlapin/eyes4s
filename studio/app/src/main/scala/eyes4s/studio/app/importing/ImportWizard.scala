@@ -198,7 +198,7 @@ object WizardEffect:
   * presets, and the app applies the document commands it emits, every one a
   * "Dataset · re-admit" change.
   */
-final case class ImportWizard private (
+sealed abstract case class ImportWizard private (
     target: WizardTarget,
     fixations: Option[(SniffedSource, MappingDraft)],
     trials: Option[(SniffedSource, TrialMetadataDraft)],
@@ -208,11 +208,42 @@ final case class ImportWizard private (
     tab: WizardTab,
     problem: Option[WizardProblem],
     note: Option[WizardNote],
-    keys: KeyChecks = KeyChecks.none,
-    dropTrials: Boolean = false,
-    setAside: Option[(SniffedSource, TrialMetadataDraft)] = None,
-    inventoryDurationUnit: Option[TimeUnit] = None
+    keys: KeyChecks,
+    dropTrials: Boolean,
+    setAside: Option[(SniffedSource, TrialMetadataDraft)],
+    inventoryDurationUnit: Option[TimeUnit]
 ) derives CanEqual:
+
+  private def copy(
+      target: WizardTarget = this.target,
+      fixations: Option[(SniffedSource, MappingDraft)] = this.fixations,
+      trials: Option[(SniffedSource, TrialMetadataDraft)] = this.trials,
+      geometry: GeometryFields = this.geometry,
+      presets: ImportPresets = this.presets,
+      presetName: String = this.presetName,
+      tab: WizardTab = this.tab,
+      problem: Option[WizardProblem] = this.problem,
+      note: Option[WizardNote] = this.note,
+      keys: KeyChecks = this.keys,
+      dropTrials: Boolean = this.dropTrials,
+      setAside: Option[(SniffedSource, TrialMetadataDraft)] = this.setAside,
+      inventoryDurationUnit: Option[TimeUnit] = this.inventoryDurationUnit
+  ): ImportWizard =
+    ImportWizard(
+      target,
+      fixations,
+      trials,
+      geometry,
+      presets,
+      presetName,
+      tab,
+      problem,
+      note,
+      keys,
+      dropTrials,
+      setAside,
+      inventoryDurationUnit
+    )
 
   /** Every issue that blocks the commit: the fixation mapping's, then the
     * trial inventory's (S5.4: the document records the inventory mapping,
@@ -237,6 +268,37 @@ final case class ImportWizard private (
       geometry != baseline.geometry || inventoryDurationUnit != baseline.inventoryDurationUnit
 
 object ImportWizard:
+
+  private def apply(
+      target: WizardTarget,
+      fixations: Option[(SniffedSource, MappingDraft)],
+      trials: Option[(SniffedSource, TrialMetadataDraft)],
+      geometry: GeometryFields,
+      presets: ImportPresets,
+      presetName: String,
+      tab: WizardTab,
+      problem: Option[WizardProblem],
+      note: Option[WizardNote],
+      keys: KeyChecks = KeyChecks.none,
+      dropTrials: Boolean = false,
+      setAside: Option[(SniffedSource, TrialMetadataDraft)] = None,
+      inventoryDurationUnit: Option[TimeUnit] = None
+  ): ImportWizard =
+    new ImportWizard(
+      target,
+      fixations,
+      trials,
+      geometry,
+      presets,
+      presetName,
+      tab,
+      problem,
+      note,
+      keys,
+      dropTrials,
+      setAside,
+      inventoryDurationUnit
+    ) {}
 
   private val none: Vector[WizardEffect] = Vector.empty
 

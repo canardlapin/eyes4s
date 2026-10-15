@@ -19,6 +19,7 @@ package eyes4s.studio.desktop.shell
 import cats.effect.IO
 import cats.effect.unsafe.implicits.global
 import eyes4s.studio.app.appearance.Appearance
+import eyes4s.studio.app.geometry.Loading
 import eyes4s.studio.app.tokens.{ThemedToken, Tokens, Wcag, WcagError}
 import eyes4s.studio.app.{AppModel, Intent, StoryModels}
 import eyes4s.studio.core.bundle.{
@@ -137,8 +138,16 @@ class ThemeFxSuite extends ShellFxSuite:
         (own ++ said).filter(s => s != null && s.nonEmpty) ++ children
     walk(root)
 
-  // The window's values once its asynchronous reads have answered: the same
-  // on two reads half a second apart.
+  // A pending inspector can show stable placeholders for several pulses.
+  // Establish its read precondition before comparing text across themes.
+  private def inspectorReady(w: StudioWindow): Boolean =
+    val inspector = w.inspector.current
+    inspector.focus.isEmpty ||
+    (inspector.fixations.isInstanceOf[Loading.Ready[?]] &&
+      inspector.record.isInstanceOf[Loading.Ready[?]] &&
+      inspector.usedBy != Loading.Waiting && inspector.displays != Loading.Waiting)
+
+  // The ready window's values on two reads half a second apart.
   private def settled(fx: eyes4s.studio.desktop.harness.FxStage, w: StudioWindow) =
     var last     = runOnFx(values(w.root))
     var stable   = false
@@ -147,8 +156,8 @@ class ThemeFxSuite extends ShellFxSuite:
       if System.nanoTime > deadline then fail("the window's values did not settle")
       Thread.sleep(500)
       fx.awaitLayout()
-      val now = runOnFx(values(w.root))
-      stable = now == last
+      val (now, ready) = runOnFx((values(w.root), inspectorReady(w)))
+      stable = ready && now == last
       last = now
     last
 

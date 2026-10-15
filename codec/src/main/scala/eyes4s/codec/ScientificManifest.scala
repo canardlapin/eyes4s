@@ -27,15 +27,18 @@ import io.circe.Json
   * whitespace or control characters, and representable in strict UTF-8.
   * It names an entry; where the bytes live is the application's decision.
   */
-final case class ArtifactName private (value: String) derives CanEqual:
+sealed abstract case class ArtifactName private (value: String) derives CanEqual:
   override def toString: String = value
 
 object ArtifactName:
+  private def apply(value: String): ArtifactName =
+    new ArtifactName(value) {}
+
   def of(value: String): Either[ManifestError, ArtifactName] =
     Either.cond(
       value.nonEmpty && value == value.trim && !value.exists(_.isControl) &&
         Utf8.encode(value).isRight,
-      new ArtifactName(value),
+      ArtifactName(value),
       ManifestError.InvalidName(value)
     )
 
@@ -108,7 +111,7 @@ enum LedgerSourceRole(val wire: String) derives CanEqual:
   * re-formatted JSON document has new bytes and therefore a new digest, but
   * the same scientific identity.
   */
-final case class ManifestEntry private (
+sealed abstract case class ManifestEntry private (
     name: ArtifactName,
     role: ArtifactRole,
     schema: DefinitionId,
@@ -120,6 +123,18 @@ final case class ManifestEntry private (
 ) derives CanEqual
 
 object ManifestEntry:
+  private def apply(
+      name: ArtifactName,
+      role: ArtifactRole,
+      schema: DefinitionId,
+      media: MediaKind,
+      length: Long,
+      sha256: ByteDigest,
+      identity: Option[ContentHash],
+      layout: Option[PayloadLayout]
+  ): ManifestEntry =
+    new ManifestEntry(name, role, schema, media, length, sha256, identity, layout) {}
+
   /** Refuses a media kind other than the role's, a negative length, an
     * identity on a role without one (or none on a role with one), and a
     * payload without the packed-array schema and a layout of its exact length.
@@ -155,7 +170,7 @@ object ManifestEntry:
           ManifestError.LayoutLength(name, length, l.byteLength)
         )
       )
-    yield new ManifestEntry(name, role, schema, media, length, sha256, identity, layout)
+    yield ManifestEntry(name, role, schema, media, length, sha256, identity, layout)
 
 /** A typed edge of the scientific object graph. The resolver checks every
   * relation against the decoded values, never against names or labels.
@@ -469,13 +484,19 @@ enum ManifestError derives CanEqual:
   * the writer stores. It contains no floating-point numbers, so that form is
   * byte-identical on the JVM and Scala.js.
   */
-final case class ScientificManifest private (
+sealed abstract case class ScientificManifest private (
     entries: Vector[ManifestEntry],
     relations: Vector[ManifestRelation]
 ) derives CanEqual:
   def entry(name: ArtifactName): Option[ManifestEntry] = entries.find(_.name == name)
 
 object ScientificManifest:
+  private def apply(
+      entries: Vector[ManifestEntry],
+      relations: Vector[ManifestRelation]
+  ): ScientificManifest =
+    new ScientificManifest(entries, relations) {}
+
   val schema: DefinitionId = DefinitionId.manifest
 
   /** The wire form of [[AnalysisInputs.EmbeddedInPlan]]. */
@@ -609,7 +630,7 @@ object ScientificManifest:
       .orElse(duplicateRelation)
       .orElse(counts)
       .orElse(sourceCounts)
-      .toLeft(new ScientificManifest(entries, relations))
+      .toLeft(ScientificManifest(entries, relations))
 
   val codec: VersionedCodec[ScientificManifest] =
     VersionedCodec.checked[ScientificManifest](schema)(m => Right(write(m)))(read)

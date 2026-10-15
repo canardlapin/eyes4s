@@ -435,6 +435,7 @@ class ExecutionServiceSuite extends CatsEffectSuite:
 /** The fake with a subscription that ends at once: a lost job. */
 private final class Silent(fake: FakeStudyBackend[IO]) extends StudyBackend[IO]:
   export fake.{
+    recipeForm,
     admission,
     verify,
     placement,
@@ -474,6 +475,7 @@ private final class Gated(
     gate: Deferred[IO, Unit]
 ) extends StudyBackend[IO]:
   export fake.{
+    recipeForm,
     admission,
     verify,
     placement,

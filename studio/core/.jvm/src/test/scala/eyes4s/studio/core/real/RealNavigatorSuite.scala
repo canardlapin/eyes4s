@@ -22,7 +22,7 @@ import eyes4s.studio.core.backend.*
 import eyes4s.studio.core.document.{ReportingId, ReportingSpec, ReportingWeight}
 import eyes4s.studio.core.fixture.StoryMoments
 import eyes4s.studio.core.headless.NativeReads
-import eyes4s.studio.core.navigation.{NavigationError, ReportRef, UsedByRole}
+import eyes4s.studio.core.navigation.{MissingSource, NavigationError, ReportRef, UsedByRole}
 import eyes4s.studio.core.selection.{FixationIndex, ScaleIndex, StudioRef}
 import munit.CatsEffectSuite
 import scala.concurrent.duration.*
@@ -142,6 +142,35 @@ class RealNavigatorSuite extends CatsEffectSuite:
                 assertEquals(number.value, source.value)
               case other => fail(s"unexpected source $other")
         }
+      }
+      .timeout(navigationTimeout)
+  }
+
+  test("a retained native source context refuses an out-of-range fixation by its operands") {
+    RealStudyBackend
+      .resource[IO](document, RealBackendConformanceSuite.golden)
+      .use { backend =>
+        val revision = document.analyses.last.id
+        val trial    = TrialKey("P17", Phase.Encoding, "enc_03", 1)
+        val beyond   = StudioRef.Fixation(trial, get(FixationIndex.of(10000)))
+        for
+          served  <- backend.trialFixations(revision, trial).map(get)
+          unbound <- backend.navigator.record(beyond)
+          // Publicly unserved refs have no context. Exercise the native context
+          // boundary separately: even a retained bad ref cannot invent a source.
+          _       <- backend.navigator.rememberTrial(revision, Vector(beyond)).map(get)
+          missing <- backend.navigator.record(beyond)
+        yield
+          assertEquals(unbound, Left(NavigationError.UnboundFixation(beyond)))
+          assertEquals(
+            missing,
+            Left(
+              NavigationError.Source(
+                beyond,
+                MissingSource.FixationOutOfRange(trial, 10000, served.fixations.size)
+              )
+            )
+          )
       }
       .timeout(navigationTimeout)
   }

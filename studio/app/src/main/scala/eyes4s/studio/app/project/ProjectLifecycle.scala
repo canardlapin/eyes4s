@@ -47,10 +47,13 @@ final case class ProjectCloseFacts(
 enum ProjectCloseChoice derives CanEqual:
   case KeepOpen, CloseWithoutSaving, SaveAndClose
 
-final case class ProjectOperationId private (value: BigInt) derives CanEqual
+sealed abstract case class ProjectOperationId private (value: BigInt) derives CanEqual
 
 object ProjectOperationId:
-  private[project] def next(value: BigInt): ProjectOperationId = new ProjectOperationId(value)
+  private def apply(value: BigInt): ProjectOperationId =
+    new ProjectOperationId(value) {}
+
+  private[project] def next(value: BigInt): ProjectOperationId = ProjectOperationId(value)
 
 enum ProjectLifecyclePhase derives CanEqual:
   case Preparing
@@ -63,11 +66,18 @@ enum ProjectLifecycleAction derives CanEqual:
   case Ignored, Save, Commit, KeepOpen
   case Ask(facts: ProjectCloseFacts)
 
-final case class ProjectLifecycle private (
+sealed abstract case class ProjectLifecycle private (
     generation: BigInt,
     operation: Option[(ProjectOperationId, ProjectOperation, ProjectLifecyclePhase)],
     stopped: Boolean
 ) derives CanEqual:
+
+  private def copy(
+      generation: BigInt = this.generation,
+      operation: Option[(ProjectOperationId, ProjectOperation, ProjectLifecyclePhase)],
+      stopped: Boolean = this.stopped
+  ): ProjectLifecycle =
+    ProjectLifecycle(generation, operation, stopped)
   def owns(id: ProjectOperationId): Boolean = !stopped && operation.exists(_._1 == id)
   def busy: Boolean                         = operation.isDefined
 
@@ -160,6 +170,13 @@ final case class ProjectLifecycle private (
   def shutdown: ProjectLifecycle = copy(operation = None, stopped = true)
 
 object ProjectLifecycle:
+  private def apply(
+      generation: BigInt,
+      operation: Option[(ProjectOperationId, ProjectOperation, ProjectLifecyclePhase)],
+      stopped: Boolean
+  ): ProjectLifecycle =
+    new ProjectLifecycle(generation, operation, stopped) {}
+
   val empty: ProjectLifecycle = ProjectLifecycle(BigInt(0), None, false)
 
 /** Text used by the native close admission; no storage details leak into the title. */

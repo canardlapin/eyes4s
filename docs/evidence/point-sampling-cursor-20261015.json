@@ -1,0 +1,59 @@
+{
+  "schema": 1,
+  "date": "2026-10-15",
+  "issue": "cr4-point-evaluation-cursor",
+  "parent": "bd-01M3F9JDW47XHXFEAXPCR26CEW",
+  "base_sha": "7a3acd826ddf5a4f81c21f1fd5dcf875f7c5cf50",
+  "scope": "Point-sampling immutable work and Stepwise instance; full S5 descriptor/form/preflight/saved-family schema/fs2/result-table witness remain open.",
+  "contract": {
+    "preparation": "One whole operation: resolve membership, admit and normalize template lookups, select controls and assign query bins.",
+    "sampling": "One complete focal-trial key per unit, including all queries, controls and reductions; WorkQuanta.pairs caps visited trial keys. No intra-preparation or intra-trial cancellation guarantee.",
+    "progress": "PreparingWholeStudy then SamplingWholeTrials; empty study completes as one preparation unit.",
+    "cardinality": "Every focal row retained in input order, including typed failures. Overflow-safe count/min end arithmetic.",
+    "compatibility": "Eager run delegates to complete; selected controls, scalar arithmetic, method and content hashes unchanged. New cursor output compared to committed legacy v1 result JSON, not only another execution path.",
+    "ownership": "Immutable cursor with private plan constructor, external positive type witness and constructor rejection."
+  },
+  "verification": {
+    "restored_matrix_totals": [
+      13,
+      9,
+      13,
+      9
+    ],
+    "jvm_total": 22,
+    "js_total": 22,
+    "root_jvm_js_test_compile_werror": "passed",
+    "mutation": {
+      "mutation": "drop the first predicted row of each page while retaining reported work count",
+      "original_sha256": "6c86d16a3b7aa73d1f470c1d7c9f8b8dd98a84d6c048358aa27134cb6b0796f8",
+      "runs": [
+        {
+          "platform": "JVM",
+          "failed_tests": 2,
+          "log_sha256": "a8d8bd37a2237057329d445dcf3f0b800247f0fd2f103a0d12d833b0a91eca3e"
+        },
+        {
+          "platform": "JS",
+          "failed_tests": 2,
+          "log_sha256": "d32461633496db92ae074c074a58e04f3e095c6dd053dc7c002ad6c1d41980cf"
+        }
+      ],
+      "restored_sha256": "6c86d16a3b7aa73d1f470c1d7c9f8b8dd98a84d6c048358aa27134cb6b0796f8"
+    },
+    "development_failure": "Initial new test omitted ComparisonQuantum import; fixed before passing matrix. Initial sandboxed mutation launch could not access sbt boot lock; no tests ran, source restored; approved retry qualified both platforms."
+  },
+  "source_sha256": {
+    "plan/src/main/scala/eyes4s/plan/PointSampling.scala": "194cf099ce89240712a8b701d37ea89e91d25d778560bf1f874b4ea8d702eeeb",
+    "plan/src/main/scala/eyes4s/plan/PointSamplingCursor.scala": "6c86d16a3b7aa73d1f470c1d7c9f8b8dd98a84d6c048358aa27134cb6b0796f8",
+    "codec/src/main/scala/eyes4s/codec/PointSamplingCodec.scala": "8dd7dc0544712f9d512ed6403a3fd6adfbf8ad0452bc2d40d72f4ead460d1413",
+    "codec/src/test/scala/eyes4s/codec/PointSamplingCursorSuite.scala": "4708ec5adc48b7887800cee946a2653f7c47487a4cb6394ac0b492302c098a97"
+  },
+  "logs_sha256": {
+    "eyes4s-cr4-point-cursor-attempt2.log": "67a226bdfddf9aad1028f11cb8a62f2b03e1e9500c1e6fc3d0549b537d84128c",
+    "eyes4s-cr4-point-cursor-mutant-JVM.log": "a8d8bd37a2237057329d445dcf3f0b800247f0fd2f103a0d12d833b0a91eca3e",
+    "eyes4s-cr4-point-cursor-mutant-JS.log": "d32461633496db92ae074c074a58e04f3e095c6dd053dc7c002ad6c1d41980cf",
+    "eyes4s-cr4-point-cursor-restored.log": "bc445b2bed2804dd3c8af1c129216d51cfa974fc16629612ac8ad4aa0391e9a8",
+    "eyes4s-cr4-point-cursor-root-werror.log": "34d890ec2f407bfbaa653970f474a7a2a4b7b7f11452824c07fbe088aba4116f"
+  },
+  "landing_status": "Reviewed slice awaiting combined qualification and landing; S5 remains open."
+}

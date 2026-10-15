@@ -131,15 +131,34 @@ with covariate identities and provenance. An undefined association is a missing 
 with an explicit status. These tables use the shared CSV transport and JVM Arrow IPC
 writer; they are result views rather than replayable recipes.
 
-## Persistence scope
+## Complete saved decomposition recipes
 
-OLS, NNLS and simplex decompositions and partial association are direct computations over maps
-already in memory. No saved study plan or codec can store or replay them: no `DefinitionId`,
-schema or recipe names these operations. The only supported form is the direct call, so there
-is no saved form for the direct result to disagree with. Rerunning a decomposition from saved
-inputs means saving the input maps through their own archives and calling the operation again.
-A saved decomposition recipe would need its own definition, codec, law and pinned fixture
-(`docs/DOMAIN_CODECS.md`).
+`DecompositionPlan.of(response, predictors, spec)` binds the checked maps and ordered
+predictor IDs to a method-specific `DecompositionSpec`: `Ols`, `NonNegative` or
+`Mixture`. Each specifies its rank tolerance; constrained methods also specify dual
+tolerance. NNLS has no intercept field. The input identity includes grid and frame
+identity, geometry, units, actual cell values and provenance. Reordering predictors
+or changing solver settings changes the plan identity.
+
+`DecompositionForm`, `description`, `inspect`, `diff` and `preflight` expose that
+same recipe. Preflight checks its combined input artifact; solving is explicitly
+unchecked until execution. The cursor has one `SolvingWholeSurface` operation.
+`DecompositionExecution` publishes one completed unit through the shared execution
+protocol. Cancellation is observed before solving or after it completes; no
+per-cell, per-iteration or elapsed-time bound is promised by `WorkQuanta`.
+
+`DecompositionCodec` supplies the built-in `eyes4s.decomposition-plan@1` and
+`eyes4s.decomposition-result@1` schemas and a generic analysis registration.
+`DecompositionArchive.completed` binds a completed result without solving again.
+The saved plan retains all response and predictor maps and solver settings; the
+result carries a canonical `RunStamp`, coefficients or weights, fitted and residual
+cells and complete diagnostics. Restore checks the stamp before solving the saved
+recipe and comparing its result. The decoder rejects an intercept field on NNLS.
+
+`ResultExports.decomposition(archive, codec)` produces the existing coefficient,
+diagnostic and cell tables with the same stamped archive context on every table.
+Partial association remains a direct computation with its existing result export;
+it is not a decomposition recipe variant.
 
 ## Evidence
 

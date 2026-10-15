@@ -62,8 +62,10 @@
   -fx-padding: 0 14 0 30;
 }
 
+/* The opened count is the selected row: the selection fill, its label and
+ * number at weight 600 (Mono 500 for the number; DESIGN_SPEC 15). */
 .ledger-row.opened {
-  -fx-background-color: -es-surface-3, -es-accent-soft;
+  -fx-background-color: -es-surface-3, -es-sel-fill;
 }
 
 .ledger-label {
@@ -76,6 +78,16 @@
 
 .ledger-row.cause .ledger-label {
   -fx-text-fill: -es-ink-2;
+}
+
+/* After the cause's ink-2: an opened row's label is ink, like any selection. */
+.ledger-row.opened .ledger-label {
+  -fx-text-fill: -es-ink;
+  -fx-font-family: "IBM Plex Sans SmBld";
+}
+
+.ledger-row.opened .ledger-count {
+  -fx-font-family: "IBM Plex Mono Medm";
 }
 
 .ledger-detail, .ledger-note, .ledger-definitions, .ledger-hint {
@@ -103,7 +115,12 @@
   -fx-background-color: -es-surface-3;
 }
 
-.ledger-count:focused {
+/* Pressed: the hairline fill, one step past hover. */
+.ledger-count:armed {
+  -fx-background-color: -es-hairline;
+}
+
+.ledger-count:focus-visible {
   -fx-background-color: -es-accent, -es-surface;
   -fx-background-insets: 0, 2;
 }
@@ -153,15 +170,21 @@
   -fx-padding: 1;
 }
 
+/* Surface at rest, surface-2 hovered, and the selection fill, hovered or
+ * not, at weight 600 (DESIGN_SPEC 15). */
 .ledger-trials .list-cell {
   -fx-background-color: -es-surface;
   -fx-text-fill: -es-ink;
   -fx-padding: 3 8 3 8;
 }
 
-.ledger-trials .list-cell:selected {
-  -fx-background-color: -es-accent-soft;
-  -fx-text-fill: -es-ink;
+.ledger-trials .list-cell:filled:hover {
+  -fx-background-color: -es-surface-2;
+}
+
+.ledger-trials .list-cell:filled:selected {
+  -fx-background-color: -es-sel-fill;
+  -fx-font-family: "IBM Plex Sans SmBld";
 }
 
 /* ---- the decision column --------------------------------------------------------------- */
@@ -202,20 +225,30 @@
   -fx-font-family: "IBM Plex Sans Medm";
 }
 
+/* Pressed: the hairline fill, one step past hover. A primary action is drawn
+ * pressed as at rest: its rule comes later. */
+.ledger-button:armed {
+  -fx-background-color: -es-hairline;
+  -fx-background-insets: 0;
+}
+
 .ledger-button.primary {
   -fx-background-color: -es-accent;
   -fx-background-insets: 0;
   -fx-text-fill: -es-on-accent;
 }
 
-.ledger-button:focused {
+.ledger-button:focus-visible {
   -fx-background-color: -es-accent, -es-surface;
   -fx-background-insets: 0, 2;
 }
 
-.ledger-button.primary:focused {
-  -fx-background-color: -es-ink, -es-accent;
-  -fx-background-insets: 0, 2;
+/* A focused primary action: the accent ring, an on-accent gap, then its own
+ * accent fill, so the ring reads against the button and the ground alike. */
+.ledger-button.primary:focus-visible {
+  -fx-background-color: -es-accent, -es-on-accent, -es-accent;
+  -fx-background-insets: 0, 2, 4;
+  -fx-background-radius: 4, 3, 2;
 }
 
 /* No workflow meaning: Admit, which has one, carries its reason (has-reason). */

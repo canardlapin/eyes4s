@@ -343,19 +343,23 @@ end PairDesign
   */
 object Pairing:
 
-  final case class Between[L, R] private[design] (relation: Relation[L, R]):
+  object Between:
+    private[design] def apply[L, R](relation: Relation[L, R]): Between[L, R] =
+      new Between[L, R](relation) {}
+
+  sealed abstract case class Between[L, R] private[design] (relation: Relation[L, R]):
 
     def sameOn[V](
         left: Projection[L, V],
         right: Projection[R, V]
     ): Between[L, R] =
-      copy(relation = relation.and(Relation.SameOn(left, right)))
+      Between(relation.and(Relation.SameOn(left, right)))
 
     def differentOn[V](
         left: Projection[L, V],
         right: Projection[R, V]
     ): Between[L, R] =
-      copy(relation = relation.and(Relation.DifferentOn(left, right)))
+      Between(relation.and(Relation.DifferentOn(left, right)))
 
     /** Retain every eligible directed pair. */
     def all: PairDesign.BetweenDirected[L, R] =
@@ -373,19 +377,23 @@ object Pairing:
           PairDesign.BetweenDirected(relation, Selection.BottomK(limit, seed, sampleId))
         )
 
-  final case class Within[K] private[design] (
+  object Within:
+    private[design] def apply[K](relation: Relation[K, K], self: SelfPolicy): Within[K] =
+      new Within[K](relation, self) {}
+
+  sealed abstract case class Within[K] private[design] (
       relation: Relation[K, K],
       self: SelfPolicy
   ):
 
     def sameOn[V](projection: Projection[K, V]): Within[K] =
-      copy(relation = relation.and(Relation.sameOn(projection)))
+      Within(relation.and(Relation.sameOn(projection)), self)
 
     def differentOn[V](projection: Projection[K, V]): Within[K] =
-      copy(relation = relation.and(Relation.differentOn(projection)))
+      Within(relation.and(Relation.differentOn(projection)), self)
 
-    def excludingSelf: Within[K] = copy(self = SelfPolicy.Exclude)
-    def includingSelf: Within[K] = copy(self = SelfPolicy.Include)
+    def excludingSelf: Within[K] = Within(relation, SelfPolicy.Exclude)
+    def includingSelf: Within[K] = Within(relation, SelfPolicy.Include)
 
     /** Retain orientation and every eligible pair. */
     def directed: PairDesign.WithinDirected[K] =

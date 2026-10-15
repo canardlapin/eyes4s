@@ -1,0 +1,146 @@
+{
+  "date": "2026-10-15",
+  "scope": "CR4 S6 complete scanpath/fixation comparison saved family; pending combined main gate",
+  "base": "4032829e5c95cbc4541c1cc911a0a55252384ae9",
+  "methods": [
+    "native/baseline MultiMatch",
+    "latest-onset fixation overlap",
+    "duration-weighted finite entropic fixation transport"
+  ],
+  "contracts": [
+    "StudyLayout/StudyPairing/StudyInput reuse",
+    "ConservativeRawPairsV1 admission before pairing allocation",
+    "whole preparation and reduction; quantum-bounded whole pair comparisons",
+    "exact stage progress and cancellation without partial returned result",
+    "both pair keys and catalogued diagnostics including strict scalar refusals",
+    "complete query and transport ledgers plus matched/control reduction counts",
+    "complete canonical stamped plans and results; exact replay or typed refusal",
+    "six table families with one shared archive context; exact64/null/boolean CSV/Arrow",
+    "full family conformance witness; no new gap"
+  ],
+  "qualification": {
+    "root_werror": [
+      "rootJVM Test/compile",
+      "rootJS Test/compile"
+    ],
+    "studio_werror_clients": [
+      "studioCoreJVM",
+      "studioCoreJS",
+      "studioAppJVM",
+      "studioAppJS",
+      "studioVizJVM",
+      "studioVizJS",
+      "studioDesktop"
+    ],
+    "kernel_tests": {
+      "JVM": 2,
+      "JS": 1
+    },
+    "comparison_reference_and_MultiMatch_per_runtime": 32,
+    "methods_study_forms_and_diagnostics_per_runtime": 34,
+    "method_and_archive_codecs_per_runtime": 16,
+    "fs2_per_runtime": 5,
+    "exports_frozen_baseline_and_family_witness_per_runtime": 57,
+    "method_and_study_codec_laws_per_runtime": 6,
+    "arrow_and_diagnostics_doc_jvm": 8,
+    "schema_registry_jvm": 10,
+    "studioStyleCheck": "passed",
+    "checkBoundaries": "passed",
+    "byte_identical_regeneration": "three method and six full study documents, their portable sources, and1024independent norm references"
+  },
+  "mutations": [
+    {
+      "mutation": "study-budget-loss",
+      "source": "codec/src/main/scala/eyes4s/codec/ScanpathStudyCodec.scala",
+      "original_sha256": "8a46cfe9672359e4d77e72693dd00f26abd96cb0131244bb7123b0388d9ac47a",
+      "runs": [
+        {
+          "platform": "JVM",
+          "failed_tests": 4,
+          "log": "/private/tmp/eyes4s-s6-study-budget-loss-JVM.log",
+          "log_sha256": "0be4e9a4c2dbd8621206241b6b3689734e0aca8c069d6cd1113f18f75d9830d8"
+        },
+        {
+          "platform": "JS",
+          "failed_tests": 4,
+          "log": "/private/tmp/eyes4s-s6-study-budget-loss-JS.log",
+          "log_sha256": "c69708ee92ae9b566d94ca14b88a23b89cd647035f6205e66c0130b510474641"
+        }
+      ],
+      "restored_sha256": "8a46cfe9672359e4d77e72693dd00f26abd96cb0131244bb7123b0388d9ac47a",
+      "qualified_source_sha256": "8a46cfe9672359e4d77e72693dd00f26abd96cb0131244bb7123b0388d9ac47a"
+    },
+    {
+      "mutation": "unmatched-control-scope",
+      "source": "plan/src/main/scala/eyes4s/plan/ScanpathStudyPlan.scala",
+      "original_sha256": "011e869c3b593001c845db59f3e700962a660131853f61b985decbeba4794827",
+      "runs": [
+        {
+          "platform": "JVM",
+          "failed_tests": 1,
+          "log": "/private/tmp/eyes4s-s6-unmatched-control-scope-JVM.log",
+          "log_sha256": "c04fdca322e0713f10a2d679f14eb045a017df3ebeb51d606b6e921d5dfdec49"
+        },
+        {
+          "platform": "JS",
+          "failed_tests": 1,
+          "log": "/private/tmp/eyes4s-s6-unmatched-control-scope-JS.log",
+          "log_sha256": "c18584703a2c160a465c4a229bb7c5272f66671c0e39f0843fa8bf9246bc2a78"
+        }
+      ],
+      "restored_sha256": "011e869c3b593001c845db59f3e700962a660131853f61b985decbeba4794827",
+      "qualified_source_sha256": "011e869c3b593001c845db59f3e700962a660131853f61b985decbeba4794827"
+    },
+    {
+      "mutation": "kernel-hypot-scale",
+      "source": "kernel/src/main/scala/eyes4s/kernel/FdlibmHypot.scala",
+      "original_sha256": "fd205fe1a4255ffbc46f72aa010989fb6fa08d2199fa63f9d0fccd92883c7941",
+      "runs": [
+        {
+          "platform": "JVM",
+          "failed_tests": 1,
+          "log": "/private/tmp/eyes4s-s6-kernel-hypot-scale-JVM.log",
+          "log_sha256": "2a9cad37736aa2e5d386e473058fa16aa6268e8b12c362ecea2cf9554cb0d80a"
+        },
+        {
+          "platform": "JS",
+          "failed_tests": 1,
+          "log": "/private/tmp/eyes4s-s6-kernel-hypot-scale-JS.log",
+          "log_sha256": "8669e768ec22b039908c14c422c9f30fb6c25026152169b0cdb624b04077ef7e"
+        }
+      ],
+      "restored_sha256": "fd205fe1a4255ffbc46f72aa010989fb6fa08d2199fa63f9d0fccd92883c7941",
+      "qualified_source_sha256": "fd205fe1a4255ffbc46f72aa010989fb6fa08d2199fa63f9d0fccd92883c7941"
+    }
+  ],
+  "numerical_contract": {
+    "observed_gap": "native hypot(24,4): JVM24.331050121192877, Scala.js24.331050121192874 in full overlap query replay",
+    "solution": "shared neutral-kernel fdlibm hypot; named FdlibmHypotV1/AbsoluteAxisSumV1 convention encoded and checked",
+    "jvm_reference_pairs": 120000,
+    "portable_reference_pairs": 1024,
+    "reference_rows_sha256": "3e7f6f86895e3c33397f9cca5844ac4630ce6781c3d1ed3f33a028b5b2f63ab9",
+    "public_regression": "exact24,4distance on both runtimes",
+    "cross_runtime_fixtures": "all three full methods replay exactly; transport needed no speculative elementary-function change",
+    "limits": "exact structured replay or refusal; no universal bit identity claim for all native operations/inputs; no exact EMD or finite transport symmetry claim; reference tolerances unchanged"
+  },
+  "diagnostics": {
+    "count": 758,
+    "digest": "45012640afa31d29",
+    "stable_count": 445,
+    "stable_digest": "fb7ffbd3d3db7f63",
+    "note": "Before combining point-sampling and template/decomposition additions; preserve landed ordinal order and re-observe combined digest."
+  },
+  "fixture_sha256": {
+    "scanpath-study-multimatch-plan-v1.json": "d13a6c2ac20159e2c6b051a9634c63778b960a9e3e495d133da86ceecd0a8123",
+    "scanpath-study-multimatch-result-v1.json": "56aee309227121e2684bc957177f7c8c610ed854916e8fb6858fea35697f3f37",
+    "scanpath-study-overlap-plan-v1.json": "1396d9be33ec60519ed203a9a8ebc15d611bc14bee74b4dca59f05110a2543c1",
+    "scanpath-study-overlap-result-v1.json": "1d36b60476277f1ac9846059f37c80760122108535c4453e10a72b1c3d1c9f80",
+    "scanpath-study-transport-plan-v1.json": "4034d8126a684d9beabb279b702cc0224cfcea4ebae9d7f95977f3847d3badc0",
+    "scanpath-study-transport-result-v1.json": "3f2dc1a61a6f917e55785ab88135113bf81812c400feef79baf686518277d33c"
+  },
+  "logs_sha256": {
+    "eyes4s-s6-restored-complete-strict.log": "5cd680345a7844bed09edd930c362f3900a80830d8e79330c50556e1f8c58624",
+    "eyes4s-s6-runtime-pinned-check.log": "fd968a7035990b427c5ac4c854e062ed500802d3ea6897e4722f5501c67266c3",
+    "eyes4s-s6-shared-hypot-regression.log": "33366e96431a9a18d9327aa4c32817fec585dfb05b22933d609a0ab7fbe23f45"
+  }
+}

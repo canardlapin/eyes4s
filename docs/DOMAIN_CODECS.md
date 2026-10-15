@@ -17,6 +17,9 @@ synchronization diagnostics belong to the completed-result archive work in S4.
 and `ObservedTimeline[A]` codecs given a codec for the mark values.
 `EpochCodecs.plan(schema, keyCodec)` similarly persists the selector, checked bin width
 and final-bin policy of an [epoch plan](EPOCH_PLANS.md), under explicit caller-supplied identities.
+`EpochCodecs.of(keyCodec)` supplies the registered `eyes4s.epoch-plan@1` envelope with the
+same version-one payload and conditional mark-key codec. The key's exact schema travels
+inside the anchor envelope; decoding requires that schema and version.
 
 ## Numeric policy
 
@@ -147,7 +150,7 @@ binocular recording, recording input, temporal input, timeline, manifest, the fo
 difference schemas, the recording and temporal result archives, the covariate schema, report
 specification and report of [reducing study results](REDUCING_RESULTS.md), and the conventional
 `eyes4s.recording-plan@1` and `eyes4s.temporal-study@1` plan schemas), plus a pinned v2 document
-of the study plan and admission ledger and a pinned v3 document of each, with a test that fails if a pinned schema version is
+of the study plan and admission ledger and a pinned v3 document of each and a pinned v4 study plan, with a test that fails if a pinned schema version is
 missing, and the packed recording,
 whose decoder also takes its payloads. The schema registry described under
 [Evidence](#evidence) checks the same fixtures on the JVM.
@@ -173,7 +176,11 @@ meaning, in every later release. The study plan and the admission ledger have a 
 `admission-ledger-v2.json`), and both a version 3: `eyes4s.admission-ledger@3` (declared in
 `InventoryDefinitions` and pinned by `admission-ledger-v3.json`) adds the trial inventory, and
 `eyes4s.study@3` (declared in `StudyCodecDefinitions` and pinned by `study-v3.json`) adds the
-initial-fixation policy. A version-1 document decodes with its version-1 meaning (the whole frame,
+initial-fixation policy. `eyes4s.study@4` (also in `StudyCodecDefinitions`, pinned by
+`study-v4.json`) adds the expected-unmatched selection: a declared text column, its selected
+values, and assignments keyed by participant, phase, trial and occurrence. Selected trials
+remain counted but receive neither matched nor control pairs, even when item IDs collide.
+Older plan versions refuse that field rather than dropping its meaning. A version-1 document decodes with its version-1 meaning (the whole frame,
 scales in frame units, every matched reference averaged, every fixation kept, and the admission
 policy that quarantines off-screen records), a version-2 plan keeps every fixation, and a document
 older than the version that introduced a cause may not name it. For every other schema, version 1 is the first version, so every current decoder reads exactly
@@ -190,7 +197,8 @@ from a payload of the previous version to a payload of the new version with the 
 version cannot exist without its upcast, and `ladder.codec` is the `VersionedCodec` the schema
 ships. The upcasts state what an earlier version left implicit: the study plan's v1 to v2 upcast
 turns `estimates` into native `scales` and writes the whole-frame geometry, the version-1 pairing
-and no angular scale, and its v2 to v3 upcast writes `"initialFixations": {"kind": "keepAll"}`;
+and no angular scale, its v2 to v3 upcast writes `"initialFixations": {"kind": "keepAll"}`, and its v3 to v4
+upcast writes `"expectedUnmatched": null`;
 the ledger's v1 to v2 upcast writes the version-1 admission policy and no records outside the
 frame, and its v2 to v3 upcast writes `"inventory": null`.
 
@@ -379,3 +387,57 @@ of study keys, with equal instants beyond 2^53 kept in order), `score-codecs-v1.
 envelope of each score and difference schema, the only fixture of `measure-distance@1` and
 `scalar@1`), and the standalone, binocular and packed recordings with their payloads listed under
 [artifact manifests](SAVED_STUDIES.md#artifact-manifests-and-verified-resolution).
+
+The point-sampling family ships `eyes4s.point-sampling-plan@1` and
+`eyes4s.point-sampling-result@1` through `PointSamplingFamilyCodec`. Conditional
+layout/key identities remain explicit. The pinned
+[plan](../codec/src/test/resources/eyes4s/point-sampling-plan-v1.json) and
+[result](../codec/src/test/resources/eyes4s/point-sampling-result-v1.json)
+fixtures are registered with `PointSamplingFamilyCodecLawSuite`. The result
+checks its canonical embedded-plan stamp before deterministic replay; the
+legacy caller-defined codec retains its original wire shape. See
+[point sampling](POINT_SAMPLING.md#saved-analysis-family).
+
+## Template fitting and decomposition families
+
+`TemplateFitCodecDefinitions` declares the existing template recipe ladder at
+`eyes4s.template-recipe@1` and `@2`, plus `eyes4s.fixed-template-plan@1`,
+`eyes4s.fixed-template-result@1`, `eyes4s.mean-map-template-plan@1` and
+`eyes4s.mean-map-template-result@1`. The complete plan wraps the unchanged split
+recipe and an explicit fitting route. Fixed-feature plans admit native fitting or
+a checked imported-lm receipt; learned-map plans admit native fitting. Result
+restoration verifies the canonical stamp before replay and compares all retained
+fit and prediction metadata. Completed-result binding retains the full source
+identity, including excluded rows.
+
+`DecompositionCodecDefinitions` declares `eyes4s.decomposition-plan@1` and
+`eyes4s.decomposition-result@1`. The plan contains response/predictor maps and
+method-specific OLS, NNLS or simplex settings. Results retain the canonical stamp,
+solver diagnostics and all fitted/residual cells. NNLS cannot acquire an intercept
+through decoding. Both families use the generic analysis roles and
+`AnalysisInputs.EmbeddedInPlan`; neither requires a manifest schema bump.
+
+The schema registry pins fixtures for both template split versions, all template
+fitting routes and all three decomposition variants. Codec law suites vary splits,
+ordered predictors, tolerances and responses. Portable fixtures are regenerated by
+`tools/codec-fixtures/template-fit.py --write` and
+`tools/codec-fixtures/decomposition.py --write`; without `--write` the commands
+check the committed documents and their portable test sources.
+
+
+### Scanpath study family
+
+`ScanpathStudyCodec[K, U](layout, keys)` registers the complete
+`eyes4s.scanpath-study-plan@1` and `eyes4s.scanpath-study-result@1` documents.
+The plan embeds `StudyInput`, its frame and typed key codec, the registered scanpath method,
+phases, `StudyPairing`, exact control seed and work ceilings. The saved method's
+Euclidean/Manhattan norm convention is explicit and checked. The complete plan is the input
+to both sides of its canonical `RunStamp`; the stamp is checked before replay.
+
+Results retain complete keyed pair outcomes, pairing reports, query failures and exact times,
+transport convergence diagnostics, reductions and excluded phases. Reading requires exact
+structured equality after replay; any runtime deviation is refused rather than tolerated or
+silently substituted. Encoding an already completed archive does not rerun the method.
+Generic manifest roles use `AnalysisInputs.EmbeddedInPlan`. The schema registry requires the
+six pinned documents, generated plan/result codec laws, and a re-encoding check on each runtime.
+See [scanpath comparison](SCANPATH_COMPARISON.md) for execution and numerical conventions.

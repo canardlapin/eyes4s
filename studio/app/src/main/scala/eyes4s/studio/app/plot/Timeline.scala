@@ -55,7 +55,7 @@ final case class TimelineFixation(index: FixationIndex, onsetMs: Long, durationM
     derives CanEqual
 
 /** A trial's fixation intervals in onset order (ticket S4.5e). */
-final case class Timeline private (
+sealed abstract case class Timeline private (
     trial: TrialKey,
     fixations: Vector[TimelineFixation],
     extent: TrialTemporalExtent
@@ -65,6 +65,13 @@ final case class Timeline private (
   def refs: Vector[StudioRef] = fixations.map(f => StudioRef.Fixation(trial, f.index))
 
 object Timeline:
+
+  private def apply(
+      trial: TrialKey,
+      fixations: Vector[TimelineFixation],
+      extent: TrialTemporalExtent
+  ): Timeline =
+    new Timeline(trial, fixations, extent) {}
 
   /** The timeline of `trial`: onsets not before zero and in order, positive
     * durations, each fixation once.
@@ -159,12 +166,15 @@ object TimelineColumns:
   * either order, as a drag gives them; a zero-length drag is no span, so
   * it selects nothing.
   */
-final case class HalfOpenSpan private (from: Double, until: Double) derives CanEqual:
+sealed abstract case class HalfOpenSpan private (from: Double, until: Double) derives CanEqual:
 
   /** Whether `value` lies in the span. */
   def holds(value: Double): Boolean = from <= value && value < until
 
 object HalfOpenSpan:
+
+  private def apply(from: Double, until: Double): HalfOpenSpan =
+    new HalfOpenSpan(from, until) {}
 
   /** The span between `a` and `b`, whichever is first; none when they are
     * equal or either is not finite.

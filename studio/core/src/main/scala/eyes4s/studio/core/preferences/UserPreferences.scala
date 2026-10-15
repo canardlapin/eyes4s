@@ -37,7 +37,7 @@ enum AppearanceChoice derives CanEqual, Codec.AsObject:
 /** The projects the user opened last, most recent first: distinct, at most
   * [[RecentProjects.Max]].
   */
-final case class RecentProjects private (paths: Vector[HostPath]) derives CanEqual:
+sealed abstract case class RecentProjects private (paths: Vector[HostPath]) derives CanEqual:
 
   /** `path` opened now: first, and once. */
   def opened(path: HostPath): RecentProjects = RecentProjects.of(path +: paths)
@@ -46,19 +46,22 @@ final case class RecentProjects private (paths: Vector[HostPath]) derives CanEqu
     * lifecycle calls it when an open finds a recent project gone.
     */
   def forget(path: HostPath): RecentProjects =
-    new RecentProjects(paths.filterNot(_ == RecentProjects.normalise(path)))
+    RecentProjects(paths.filterNot(_ == RecentProjects.normalise(path)))
 
 object RecentProjects:
+  private def apply(paths: Vector[HostPath]): RecentProjects =
+    new RecentProjects(paths) {}
+
   val Max: Int = 10
 
-  val empty: RecentProjects = new RecentProjects(Vector.empty)
+  val empty: RecentProjects = RecentProjects(Vector.empty)
 
   /** `paths` in order, each normalised (no trailing separator), repeats and
     * those past [[Max]] dropped. Symbolic links and case-insensitive file
     * systems are not resolved: that needs the host (S2.9).
     */
   def of(paths: Vector[HostPath]): RecentProjects =
-    new RecentProjects(paths.map(normalise).distinct.take(Max))
+    RecentProjects(paths.map(normalise).distinct.take(Max))
 
   /** `path` without trailing separators, the root kept as it is. */
   def normalise(path: HostPath): HostPath =
@@ -73,13 +76,22 @@ object RecentProjects:
   * document, never here. `layouts` holds at most one layout per
   * perspective, in perspective order.
   */
-final case class UserPreferences private (
+sealed abstract case class UserPreferences private (
     appearance: AppearanceChoice,
     stage: StageAppearance,
     recent: RecentProjects,
     layouts: Vector[SavedLayout],
     exportDirectory: Option[HostPath]
 ) derives CanEqual:
+
+  private def copy(
+      appearance: AppearanceChoice = this.appearance,
+      stage: StageAppearance = this.stage,
+      recent: RecentProjects = this.recent,
+      layouts: Vector[SavedLayout] = this.layouts,
+      exportDirectory: Option[HostPath] = this.exportDirectory
+  ): UserPreferences =
+    UserPreferences(appearance, stage, recent, layouts, exportDirectory)
 
   def withAppearance(a: AppearanceChoice): UserPreferences      = copy(appearance = a)
   def withStage(s: StageAppearance): UserPreferences            = copy(stage = s)
@@ -98,6 +110,15 @@ final case class UserPreferences private (
 
 object UserPreferences:
 
+  private def apply(
+      appearance: AppearanceChoice,
+      stage: StageAppearance,
+      recent: RecentProjects,
+      layouts: Vector[SavedLayout],
+      exportDirectory: Option[HostPath]
+  ): UserPreferences =
+    new UserPreferences(appearance, stage, recent, layouts, exportDirectory) {}
+
   /** The schema version this build writes and reads. */
   val Version: Int = 1
 
@@ -105,7 +126,7 @@ object UserPreferences:
     * layouts, no export directory.
     */
   val defaults: UserPreferences =
-    new UserPreferences(
+    UserPreferences(
       AppearanceChoice.Light,
       StageAppearance.Dark,
       RecentProjects.empty,
@@ -128,7 +149,7 @@ object UserPreferences:
     val repeated     = perspectives.diff(perspectives.distinct).distinct
     Either.cond(
       repeated.isEmpty,
-      new UserPreferences(appearance, stage, recent, ordered(layouts), exportDirectory),
+      UserPreferences(appearance, stage, recent, ordered(layouts), exportDirectory),
       PreferencesError.DuplicateLayouts(repeated)
     )
 

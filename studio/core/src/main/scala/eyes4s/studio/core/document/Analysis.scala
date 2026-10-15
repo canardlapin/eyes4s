@@ -22,6 +22,7 @@ import eyes4s.design.FailurePolicy
 import eyes4s.studio.core.preset.RecipePresets
 import eyes4s.plan.{
   ControlReferences,
+  ExpectedUnmatchedRule,
   DefinitionId,
   MatchedReferences,
   OccurrenceChoice,
@@ -31,6 +32,7 @@ import eyes4s.plan.{
 }
 import eyes4s.studio.core.backend.{AnalysisRevision, DatasetRevision, Phase}
 import io.circe.{Codec, Decoder, Encoder}
+import Recipe.given
 
 // ---------------------------------------------------------------------------
 // Recipe values
@@ -43,39 +45,48 @@ private[document] object Degrees:
     else value.toString
 
 /** One smoothing scale: the kernel's standard deviation, in degrees. */
-final case class Sigma private (degrees: Double) derives CanEqual:
+sealed abstract case class Sigma private (degrees: Double) derives CanEqual:
   def label: String  = s"${Degrees.render(degrees)}°"
   def render: String = s"σ $label"
 
 object Sigma:
+  private def apply(degrees: Double): Sigma =
+    new Sigma(degrees) {}
+
   def of(degrees: Double): Either[DocumentError, Sigma] =
-    Checks.positive("sigma (degrees)", degrees).map(new Sigma(_))
+    Checks.positive("sigma (degrees)", degrees).map(Sigma(_))
 
   given Codec[Sigma] = DocumentCodecs.validated(of, _.degrees)
 
 /** The declared scales, in order: at least one, none repeated. */
-final case class ScaleSet private (values: Vector[Sigma]) derives CanEqual:
+sealed abstract case class ScaleSet private (values: Vector[Sigma]) derives CanEqual:
   def render: String = values.map(s => Degrees.render(s.degrees)).mkString(", ") + "°"
 
   def contains(sigma: Sigma): Boolean = values.contains(sigma)
 
 object ScaleSet:
+  private def apply(values: Vector[Sigma]): ScaleSet =
+    new ScaleSet(values) {}
+
   def of(values: Vector[Sigma]): Either[DocumentError, ScaleSet] =
     if values.isEmpty then Left(DocumentError.EmptyScales)
     else if values.distinct.size != values.size then
       Left(DocumentError.DuplicateScales(values.map(_.degrees)))
-    else Right(new ScaleSet(values))
+    else Right(ScaleSet(values))
 
   given Codec[ScaleSet] = DocumentCodecs.validated(of, _.values)
 
 /** The density grid on the image frame, in cells. */
-final case class GridSize private (columns: Int, rows: Int) derives CanEqual:
+sealed abstract case class GridSize private (columns: Int, rows: Int) derives CanEqual:
   def render: String = s"$columns×$rows"
 
 object GridSize:
+  private def apply(columns: Int, rows: Int): GridSize =
+    new GridSize(columns, rows) {}
+
   def of(columns: Int, rows: Int): Either[DocumentError, GridSize] =
     (Checks.positive("grid columns", columns), Checks.positive("grid rows", rows))
-      .mapN(new GridSize(_, _))
+      .mapN(GridSize(_, _))
 
   given Encoder.AsObject[GridSize] =
     Encoder.forProduct2("columns", "rows")(g => (g.columns, g.rows))
@@ -87,13 +98,31 @@ final case class PhasePair(focal: Phase, reference: Phase) derives CanEqual, Cod
   def render: String = s"${focal.label} vs ${reference.label}"
 
 /** The radius of the disc around the fixation cross, in degrees. */
-final case class CrossRadius private (degrees: Double) derives CanEqual
+sealed abstract case class CrossRadius private (degrees: Double) derives CanEqual
 
 object CrossRadius:
+  private def apply(degrees: Double): CrossRadius =
+    new CrossRadius(degrees) {}
+
   def of(degrees: Double): Either[DocumentError, CrossRadius] =
-    Checks.positive("cross radius (degrees)", degrees).map(new CrossRadius(_))
+    Checks.positive("cross radius (degrees)", degrees).map(CrossRadius(_))
 
   given Codec[CrossRadius] = DocumentCodecs.validated(of, _.degrees)
+
+/** An explicitly declared fixation-cross position in admission-screen pixels. */
+sealed abstract case class ScreenCross private (x: Double, y: Double) derives CanEqual
+
+object ScreenCross:
+  private def apply(x: Double, y: Double): ScreenCross =
+    new ScreenCross(x, y) {}
+
+  def of(x: Double, y: Double): Either[DocumentError, ScreenCross] =
+    for
+      a <- Checks.finite("fixation cross x (screen px)", x)
+      b <- Checks.finite("fixation cross y (screen px)", y)
+    yield ScreenCross(a, b)
+  given Encoder.AsObject[ScreenCross] = Encoder.forProduct2("x", "y")(p => (p.x, p.y))
+  given Decoder[ScreenCross] = Decoder.forProduct2("x", "y")(of).emap(_.left.map(_.message))
 
 /** eyes4s `InitialFixationPolicy` (UI-F), applied to queries and references
   * alike.
@@ -101,19 +130,25 @@ object CrossRadius:
 enum InitialFixationChoice derives CanEqual, Codec.AsObject:
   case KeepAll, DropFirst
   case DropLeadingNearCross(radius: CrossRadius)
+  case DropLeadingAtScreenCross(cross: ScreenCross, radius: CrossRadius)
 
   def render: String = this match
     case KeepAll                 => "keep all"
     case DropFirst               => "drop first fixation"
     case DropLeadingNearCross(r) =>
       s"drop fixations within ${Degrees.render(r.degrees)}° of the cross before first saccade"
+    case DropLeadingAtScreenCross(cross, r) =>
+      s"drop leading fixations within ${Degrees.render(r.degrees)}° of the cross at (${cross.x}, ${cross.y}) screen px"
 
 /** An occurrence number, 1 for an item's first presentation. */
-final case class Occurrence private (value: Int) derives CanEqual
+sealed abstract case class Occurrence private (value: Int) derives CanEqual
 
 object Occurrence:
+  private def apply(value: Int): Occurrence =
+    new Occurrence(value) {}
+
   def of(value: Int): Either[DocumentError, Occurrence] =
-    Checks.positive("occurrence", value).map(new Occurrence(_))
+    Checks.positive("occurrence", value).map(Occurrence(_))
 
   given Codec[Occurrence] = DocumentCodecs.validated(of, _.value)
 
@@ -183,19 +218,22 @@ object UnmatchedChoice:
 /** A registered eyes4s definition, by name and version (a layout or a
   * method). Validated by the public `DefinitionId.of`.
   */
-final case class DefinitionRef private (name: String, version: Int) derives CanEqual:
+sealed abstract case class DefinitionRef private (name: String, version: Int) derives CanEqual:
   def render: String = s"$name@$version"
 
 object DefinitionRef:
+  private def apply(name: String, version: Int): DefinitionRef =
+    new DefinitionRef(name, version) {}
+
   def of(name: String, version: Int): Either[DocumentError, DefinitionRef] =
     DefinitionId
       .of(name, version)
       .bimap(
         _ => DocumentError.BadDefinition(name, version),
-        d => new DefinitionRef(d.name, d.version)
+        d => DefinitionRef(d.name, d.version)
       )
 
-  def fromCore(id: DefinitionId): DefinitionRef = new DefinitionRef(id.name, id.version)
+  def fromCore(id: DefinitionId): DefinitionRef = DefinitionRef(id.name, id.version)
 
   given Encoder.AsObject[DefinitionRef] =
     Encoder.forProduct2("name", "version")(d => (d.name, d.version))
@@ -228,11 +266,14 @@ object WeightChoice:
     case Weight.Duration => Duration
 
 /** The fewest successful scores a reduction needs. */
-final case class MinimumSuccessful private (value: Int) derives CanEqual
+sealed abstract case class MinimumSuccessful private (value: Int) derives CanEqual
 
 object MinimumSuccessful:
+  private def apply(value: Int): MinimumSuccessful =
+    new MinimumSuccessful(value) {}
+
   def of(value: Int): Either[DocumentError, MinimumSuccessful] =
-    Checks.positive("minimum successful scores", value).map(new MinimumSuccessful(_))
+    Checks.positive("minimum successful scores", value).map(MinimumSuccessful(_))
 
   given Codec[MinimumSuccessful] = DocumentCodecs.validated(of, _.value)
 
@@ -253,13 +294,20 @@ object FailureChoice:
 /** The analysis window in admission-frame units (screen px, y down): the
   * half-open box [xMin, xMax) × [yMin, yMax), non-empty and finite.
   */
-final case class AnalysisWindow private (xMin: Double, yMin: Double, xMax: Double, yMax: Double)
-    derives CanEqual:
+sealed abstract case class AnalysisWindow private (
+    xMin: Double,
+    yMin: Double,
+    xMax: Double,
+    yMax: Double
+) derives CanEqual:
   def render: String =
     s"[${Degrees.render(xMin)}, ${Degrees.render(xMax)}) × " +
       s"[${Degrees.render(yMin)}, ${Degrees.render(yMax)}) px"
 
 object AnalysisWindow:
+  private def apply(xMin: Double, yMin: Double, xMax: Double, yMax: Double): AnalysisWindow =
+    new AnalysisWindow(xMin, yMin, xMax, yMax) {}
+
   def of(
       xMin: Double,
       yMin: Double,
@@ -275,7 +323,7 @@ object AnalysisWindow:
         (),
         DocumentError.EmptyWindow(xMin, yMin, xMax, yMax)
       )
-    yield new AnalysisWindow(xMin, yMin, xMax, yMax)
+    yield AnalysisWindow(xMin, yMin, xMax, yMax)
 
   given Encoder.AsObject[AnalysisWindow] =
     Encoder.forProduct4("xMin", "yMin", "xMax", "yMax")(w => (w.xMin, w.yMin, w.xMax, w.yMax))
@@ -325,9 +373,27 @@ final case class Recipe(
     matched: MatchedChoice,
     controls: ControlChoice,
     unmatched: UnmatchedChoice,
-    initialFixations: InitialFixationChoice
-) derives CanEqual,
-      Codec.AsObject
+    initialFixations: InitialFixationChoice,
+    expectedUnmatched: Option[ExpectedUnmatchedRule] = None
+) derives CanEqual
+
+object Recipe:
+  given Codec.AsObject[ExpectedUnmatchedRule] = Codec.AsObject.from(
+    Decoder
+      .forProduct2("column", "values")((c: String, v: Vector[String]) => (c, v))
+      .emap((c, v) => ExpectedUnmatchedRule.of(c, v).left.map(_.message)),
+    Encoder.forProduct2[ExpectedUnmatchedRule, String, Vector[String]]("column", "values")(s =>
+      (s.column, s.values)
+    )
+  )
+  private val derived: Codec.AsObject[Recipe] = Codec.AsObject.derived[Recipe]
+  given Codec.AsObject[Recipe]                = Codec.AsObject.from(
+    derived,
+    Encoder.AsObject.instance(r =>
+      val json = derived.encodeObject(r)
+      if r.expectedUnmatched.isEmpty then json.remove("expectedUnmatched") else json
+    )
+  )
 
 // ---------------------------------------------------------------------------
 // Drafts
@@ -336,7 +402,8 @@ final case class Recipe(
 /** The recipe fields a draft changes: every eyes4s `StudyField`, in its order. */
 enum RecipeField derives CanEqual, Codec.AsObject:
   case Input, Layout, Method, Phases, Weighting, FailurePolicy, Grid, Window, OffWindow, Scales,
-    AngularScale, MatchedReferences, ControlReferences, UnmatchedFocal, InitialFixations
+    AngularScale, MatchedReferences, ControlReferences, UnmatchedFocal, InitialFixations,
+    ExpectedUnmatched
 
   def core: StudyField = this match
     case Input             => StudyField.Input
@@ -354,6 +421,7 @@ enum RecipeField derives CanEqual, Codec.AsObject:
     case ControlReferences => StudyField.ControlReferences
     case UnmatchedFocal    => StudyField.UnmatchedFocal
     case InitialFixations  => StudyField.InitialFixations
+    case ExpectedUnmatched => StudyField.ExpectedUnmatched
 
   def label: String = core.label
 
@@ -375,6 +443,7 @@ object RecipeField:
     case StudyField.ControlReferences => ControlReferences
     case StudyField.UnmatchedFocal    => UnmatchedFocal
     case StudyField.InitialFixations  => InitialFixations
+    case StudyField.ExpectedUnmatched => ExpectedUnmatched
 
 /** One field's typed values and how a recipe holds it. */
 private[document] final class FieldPart[A](
@@ -412,6 +481,10 @@ enum RecipeChange derives CanEqual, Codec.AsObject:
   case Controls(before: ControlChoice, after: ControlChoice)
   case Unmatched(before: UnmatchedChoice, after: UnmatchedChoice)
   case InitialFixations(before: InitialFixationChoice, after: InitialFixationChoice)
+  case ExpectedUnmatched(
+      before: Option[ExpectedUnmatchedRule],
+      after: Option[ExpectedUnmatchedRule]
+  )
 
   private def part: FieldPart[?] = this match
     case Input(b, a) =>
@@ -453,43 +526,55 @@ enum RecipeChange derives CanEqual, Codec.AsObject:
     case Controls(b, a) => FieldPart(b, a, _.controls, (r, v) => r.copy(controls = v), _.render)
     case Unmatched(b, a) =>
       FieldPart(b, a, _.unmatched, (r, v) => r.copy(unmatched = v), _.render)
+    case ExpectedUnmatched(b, a) =>
+      FieldPart(
+        b,
+        a,
+        _.expectedUnmatched,
+        (r, v) => r.copy(expectedUnmatched = v),
+        OptionalRender[ExpectedUnmatchedRule]("none")(s =>
+          s"${s.column}: ${s.values.mkString(", ")}"
+        )
+      )
     case InitialFixations(b, a) =>
       FieldPart(b, a, _.initialFixations, (r, v) => r.copy(initialFixations = v), _.render)
 
   def field: RecipeField = this match
-    case Input(_, _)            => RecipeField.Input
-    case Layout(_, _)           => RecipeField.Layout
-    case Method(_, _)           => RecipeField.Method
-    case Phases(_, _)           => RecipeField.Phases
-    case Weighting(_, _)        => RecipeField.Weighting
-    case Failures(_, _)         => RecipeField.FailurePolicy
-    case Grid(_, _)             => RecipeField.Grid
-    case Window(_, _)           => RecipeField.Window
-    case OffWindow(_, _)        => RecipeField.OffWindow
-    case Scales(_, _)           => RecipeField.Scales
-    case AngularScale(_, _)     => RecipeField.AngularScale
-    case Matched(_, _)          => RecipeField.MatchedReferences
-    case Controls(_, _)         => RecipeField.ControlReferences
-    case Unmatched(_, _)        => RecipeField.UnmatchedFocal
-    case InitialFixations(_, _) => RecipeField.InitialFixations
+    case Input(_, _)             => RecipeField.Input
+    case Layout(_, _)            => RecipeField.Layout
+    case Method(_, _)            => RecipeField.Method
+    case Phases(_, _)            => RecipeField.Phases
+    case Weighting(_, _)         => RecipeField.Weighting
+    case Failures(_, _)          => RecipeField.FailurePolicy
+    case Grid(_, _)              => RecipeField.Grid
+    case Window(_, _)            => RecipeField.Window
+    case OffWindow(_, _)         => RecipeField.OffWindow
+    case Scales(_, _)            => RecipeField.Scales
+    case AngularScale(_, _)      => RecipeField.AngularScale
+    case Matched(_, _)           => RecipeField.MatchedReferences
+    case Controls(_, _)          => RecipeField.ControlReferences
+    case Unmatched(_, _)         => RecipeField.UnmatchedFocal
+    case InitialFixations(_, _)  => RecipeField.InitialFixations
+    case ExpectedUnmatched(_, _) => RecipeField.ExpectedUnmatched
 
   /** The same change in the other direction. */
   def inverse: RecipeChange = this match
-    case Input(b, a)            => Input(a, b)
-    case Layout(b, a)           => Layout(a, b)
-    case Method(b, a)           => Method(a, b)
-    case Phases(b, a)           => Phases(a, b)
-    case Weighting(b, a)        => Weighting(a, b)
-    case Failures(b, a)         => Failures(a, b)
-    case Grid(b, a)             => Grid(a, b)
-    case Window(b, a)           => Window(a, b)
-    case OffWindow(b, a)        => OffWindow(a, b)
-    case Scales(b, a)           => Scales(a, b)
-    case AngularScale(b, a)     => AngularScale(a, b)
-    case Matched(b, a)          => Matched(a, b)
-    case Controls(b, a)         => Controls(a, b)
-    case Unmatched(b, a)        => Unmatched(a, b)
-    case InitialFixations(b, a) => InitialFixations(a, b)
+    case Input(b, a)             => Input(a, b)
+    case Layout(b, a)            => Layout(a, b)
+    case Method(b, a)            => Method(a, b)
+    case Phases(b, a)            => Phases(a, b)
+    case Weighting(b, a)         => Weighting(a, b)
+    case Failures(b, a)          => Failures(a, b)
+    case Grid(b, a)              => Grid(a, b)
+    case Window(b, a)            => Window(a, b)
+    case OffWindow(b, a)         => OffWindow(a, b)
+    case Scales(b, a)            => Scales(a, b)
+    case AngularScale(b, a)      => AngularScale(a, b)
+    case Matched(b, a)           => Matched(a, b)
+    case Controls(b, a)          => Controls(a, b)
+    case Unmatched(b, a)         => Unmatched(a, b)
+    case InitialFixations(b, a)  => InitialFixations(a, b)
+    case ExpectedUnmatched(b, a) => ExpectedUnmatched(a, b)
 
   /** The rendered values before and after. */
   def renderedValues: (String, String) = part.rendered
@@ -534,7 +619,8 @@ object RecipeChange:
       Matched(before.matched, after.matched),
       Controls(before.controls, after.controls),
       Unmatched(before.unmatched, after.unmatched),
-      InitialFixations(before.initialFixations, after.initialFixations)
+      InitialFixations(before.initialFixations, after.initialFixations),
+      ExpectedUnmatched(before.expectedUnmatched, after.expectedUnmatched)
     ).filterNot(_.isIdentity)
 
 /** Seeded working recipes have no synthetic saved base revision. The first
@@ -552,7 +638,7 @@ enum DraftOrigin derives CanEqual, Codec.AsObject:
   )
 
 /** The checked effective working recipe, without a synthetic saved revision. */
-final case class DraftContext private[document] (
+sealed abstract case class DraftContext private[document] (
     id: AnalysisRevision,
     origin: DraftOrigin,
     savedBase: Option[AnalysisRevisionSpec],
@@ -564,6 +650,18 @@ final case class DraftContext private[document] (
 ) derives CanEqual
 
 object DraftContext:
+  private[document] def apply(
+      id: AnalysisRevision,
+      origin: DraftOrigin,
+      savedBase: Option[AnalysisRevisionSpec],
+      seedDataset: DatasetRevision,
+      seedRecipe: Recipe,
+      dataset: DatasetRevision,
+      recipe: Recipe,
+      studio: StudioFields
+  ): DraftContext =
+    new DraftContext(id, origin, savedBase, seedDataset, seedRecipe, dataset, recipe, studio) {}
+
   def saved(id: AnalysisRevision, base: AnalysisRevisionSpec): DraftContext =
     DraftContext(
       id,
@@ -842,11 +940,14 @@ enum Preset derives CanEqual, Codec.AsObject:
   case PerceptionImagery
 
 /** A non-blank name. */
-final case class RevisionName private (value: String) derives CanEqual
+sealed abstract case class RevisionName private (value: String) derives CanEqual
 
 object RevisionName:
+  private def apply(value: String): RevisionName =
+    new RevisionName(value) {}
+
   def of(value: String): Either[DocumentError, RevisionName] =
-    Checks.nonBlank("analysis name", value).map(new RevisionName(_))
+    Checks.nonBlank("analysis name", value).map(RevisionName(_))
 
   given Codec[RevisionName] = DocumentCodecs.validated(of, _.value)
 

@@ -223,12 +223,20 @@ object RoleProposals:
   * declared kind of attribute columns that are not text (from a re-mapped
   * revision; a new attribute is text, kept as written).
   */
-final case class MappingDraft private (
+sealed abstract case class MappingDraft private (
     preview: CsvPreview,
     choices: Vector[ColumnChoice],
     time: Option[TimeUnit],
-    kinds: Map[ColumnName, AttributeKindChoice] = Map.empty
+    kinds: Map[ColumnName, AttributeKindChoice]
 ) derives CanEqual:
+
+  private def copy(
+      preview: CsvPreview = this.preview,
+      choices: Vector[ColumnChoice] = this.choices,
+      time: Option[TimeUnit] = this.time,
+      kinds: Map[ColumnName, AttributeKindChoice] = this.kinds
+  ): MappingDraft =
+    MappingDraft(preview, choices, time, kinds)
 
   def file: String = preview.file
 
@@ -300,6 +308,14 @@ final case class MappingDraft private (
     )
 
 object MappingDraft:
+
+  private def apply(
+      preview: CsvPreview,
+      choices: Vector[ColumnChoice],
+      time: Option[TimeUnit],
+      kinds: Map[ColumnName, AttributeKindChoice] = Map.empty
+  ): MappingDraft =
+    new MappingDraft(preview, choices, time, kinds) {}
 
   /** A new file's draft: suggested roles, no time unit declared. */
   def proposed(preview: CsvPreview): MappingDraft =
@@ -384,13 +400,22 @@ private[importing] object RoleChecks:
   * document's [[InventoryMapping]] (S5.4), which eyes4s joins fixation
   * records to.
   */
-final case class TrialMetadataDraft private (
+sealed abstract case class TrialMetadataDraft private (
     preview: CsvPreview,
     choices: Vector[ColumnChoice],
-    kinds: Map[ColumnName, AttributeKindChoice] = Map.empty,
-    displays: Option[DisplayColumns] = None,
-    duration: Option[InventoryDurationColumn] = None
+    kinds: Map[ColumnName, AttributeKindChoice],
+    displays: Option[DisplayColumns],
+    duration: Option[InventoryDurationColumn]
 ) derives CanEqual:
+
+  private def copy(
+      preview: CsvPreview = this.preview,
+      choices: Vector[ColumnChoice] = this.choices,
+      kinds: Map[ColumnName, AttributeKindChoice] = this.kinds,
+      displays: Option[DisplayColumns] = this.displays,
+      duration: Option[InventoryDurationColumn] = this.duration
+  ): TrialMetadataDraft =
+    TrialMetadataDraft(preview, choices, kinds, displays, duration)
 
   def file: String = preview.file
 
@@ -489,6 +514,15 @@ final case class TrialMetadataDraft private (
           .map(e => NonEmptyVector.one(MappingError.Refused(file, e)))
 
 object TrialMetadataDraft:
+  private def apply(
+      preview: CsvPreview,
+      choices: Vector[ColumnChoice],
+      kinds: Map[ColumnName, AttributeKindChoice] = Map.empty,
+      displays: Option[DisplayColumns] = None,
+      duration: Option[InventoryDurationColumn] = None
+  ): TrialMetadataDraft =
+    new TrialMetadataDraft(preview, choices, kinds, displays, duration) {}
+
   val required: Vector[ColumnRole] = InventoryMapping.required
 
   val offered: Vector[ColumnRole] = InventoryMapping.offered

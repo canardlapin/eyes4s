@@ -1,0 +1,1015 @@
+{
+  "schema": 1,
+  "license": "Apache-2.0; synthetic inputs authored for eyes4s",
+  "cases": [
+    {
+      "name": "all-contained-gaps-multiple",
+      "frame": {
+        "id": "cr7-fixation-oracle",
+        "width": 100,
+        "height": 100
+      },
+      "areas": [
+        {
+          "id": "left",
+          "label": "Left",
+          "rect": [
+            0,
+            0,
+            50,
+            60
+          ]
+        },
+        {
+          "id": "right",
+          "label": "Right",
+          "rect": [
+            50,
+            0,
+            100,
+            60
+          ]
+        }
+      ],
+      "policy": "multiple",
+      "resolution": [
+        10,
+        10
+      ],
+      "fixations": [
+        {
+          "onset_us": 100,
+          "duration_us": 10,
+          "x": 10,
+          "y": 10
+        },
+        {
+          "onset_us": 210,
+          "duration_us": 20,
+          "x": 20,
+          "y": 10
+        },
+        {
+          "onset_us": 430,
+          "duration_us": 30,
+          "x": 10,
+          "y": 10
+        }
+      ]
+    },
+    {
+      "name": "interrupted-visits-multiple",
+      "frame": {
+        "id": "cr7-fixation-oracle",
+        "width": 100,
+        "height": 100
+      },
+      "areas": [
+        {
+          "id": "left",
+          "label": "Left",
+          "rect": [
+            0,
+            0,
+            50,
+            60
+          ]
+        },
+        {
+          "id": "right",
+          "label": "Right",
+          "rect": [
+            50,
+            0,
+            100,
+            60
+          ]
+        }
+      ],
+      "policy": "multiple",
+      "resolution": [
+        10,
+        10
+      ],
+      "fixations": [
+        {
+          "onset_us": 1000,
+          "duration_us": 10,
+          "x": 90,
+          "y": 90
+        },
+        {
+          "onset_us": 1020,
+          "duration_us": 20,
+          "x": 10,
+          "y": 10
+        },
+        {
+          "onset_us": 1100,
+          "duration_us": 30,
+          "x": 20,
+          "y": 10
+        },
+        {
+          "onset_us": 1200,
+          "duration_us": 40,
+          "x": 70,
+          "y": 10
+        },
+        {
+          "onset_us": 1300,
+          "duration_us": 50,
+          "x": 10,
+          "y": 10
+        },
+        {
+          "onset_us": 1400,
+          "duration_us": 60,
+          "x": 110,
+          "y": 10
+        },
+        {
+          "onset_us": 1500,
+          "duration_us": 70,
+          "x": 10,
+          "y": 10
+        }
+      ]
+    },
+    {
+      "name": "all-contained-gaps-exclusive",
+      "frame": {
+        "id": "cr7-fixation-oracle",
+        "width": 100,
+        "height": 100
+      },
+      "areas": [
+        {
+          "id": "left",
+          "label": "Left",
+          "rect": [
+            0,
+            0,
+            50,
+            60
+          ]
+        },
+        {
+          "id": "right",
+          "label": "Right",
+          "rect": [
+            50,
+            0,
+            100,
+            60
+          ]
+        }
+      ],
+      "policy": "exclusive",
+      "resolution": [
+        10,
+        10
+      ],
+      "fixations": [
+        {
+          "onset_us": 100,
+          "duration_us": 10,
+          "x": 10,
+          "y": 10
+        },
+        {
+          "onset_us": 210,
+          "duration_us": 20,
+          "x": 20,
+          "y": 10
+        },
+        {
+          "onset_us": 430,
+          "duration_us": 30,
+          "x": 10,
+          "y": 10
+        }
+      ]
+    },
+    {
+      "name": "interrupted-visits-exclusive",
+      "frame": {
+        "id": "cr7-fixation-oracle",
+        "width": 100,
+        "height": 100
+      },
+      "areas": [
+        {
+          "id": "left",
+          "label": "Left",
+          "rect": [
+            0,
+            0,
+            50,
+            60
+          ]
+        },
+        {
+          "id": "right",
+          "label": "Right",
+          "rect": [
+            50,
+            0,
+            100,
+            60
+          ]
+        }
+      ],
+      "policy": "exclusive",
+      "resolution": [
+        10,
+        10
+      ],
+      "fixations": [
+        {
+          "onset_us": 1000,
+          "duration_us": 10,
+          "x": 90,
+          "y": 90
+        },
+        {
+          "onset_us": 1020,
+          "duration_us": 20,
+          "x": 10,
+          "y": 10
+        },
+        {
+          "onset_us": 1100,
+          "duration_us": 30,
+          "x": 20,
+          "y": 10
+        },
+        {
+          "onset_us": 1200,
+          "duration_us": 40,
+          "x": 70,
+          "y": 10
+        },
+        {
+          "onset_us": 1300,
+          "duration_us": 50,
+          "x": 10,
+          "y": 10
+        },
+        {
+          "onset_us": 1400,
+          "duration_us": 60,
+          "x": 110,
+          "y": 10
+        },
+        {
+          "onset_us": 1500,
+          "duration_us": 70,
+          "x": 10,
+          "y": 10
+        }
+      ]
+    },
+    {
+      "name": "all-contained-gaps-smallest",
+      "frame": {
+        "id": "cr7-fixation-oracle",
+        "width": 100,
+        "height": 100
+      },
+      "areas": [
+        {
+          "id": "left",
+          "label": "Left",
+          "rect": [
+            0,
+            0,
+            50,
+            60
+          ]
+        },
+        {
+          "id": "right",
+          "label": "Right",
+          "rect": [
+            50,
+            0,
+            100,
+            60
+          ]
+        }
+      ],
+      "policy": "smallest",
+      "resolution": [
+        10,
+        10
+      ],
+      "fixations": [
+        {
+          "onset_us": 100,
+          "duration_us": 10,
+          "x": 10,
+          "y": 10
+        },
+        {
+          "onset_us": 210,
+          "duration_us": 20,
+          "x": 20,
+          "y": 10
+        },
+        {
+          "onset_us": 430,
+          "duration_us": 30,
+          "x": 10,
+          "y": 10
+        }
+      ]
+    },
+    {
+      "name": "interrupted-visits-smallest",
+      "frame": {
+        "id": "cr7-fixation-oracle",
+        "width": 100,
+        "height": 100
+      },
+      "areas": [
+        {
+          "id": "left",
+          "label": "Left",
+          "rect": [
+            0,
+            0,
+            50,
+            60
+          ]
+        },
+        {
+          "id": "right",
+          "label": "Right",
+          "rect": [
+            50,
+            0,
+            100,
+            60
+          ]
+        }
+      ],
+      "policy": "smallest",
+      "resolution": [
+        10,
+        10
+      ],
+      "fixations": [
+        {
+          "onset_us": 1000,
+          "duration_us": 10,
+          "x": 90,
+          "y": 90
+        },
+        {
+          "onset_us": 1020,
+          "duration_us": 20,
+          "x": 10,
+          "y": 10
+        },
+        {
+          "onset_us": 1100,
+          "duration_us": 30,
+          "x": 20,
+          "y": 10
+        },
+        {
+          "onset_us": 1200,
+          "duration_us": 40,
+          "x": 70,
+          "y": 10
+        },
+        {
+          "onset_us": 1300,
+          "duration_us": 50,
+          "x": 10,
+          "y": 10
+        },
+        {
+          "onset_us": 1400,
+          "duration_us": 60,
+          "x": 110,
+          "y": 10
+        },
+        {
+          "onset_us": 1500,
+          "duration_us": 70,
+          "x": 10,
+          "y": 10
+        }
+      ]
+    },
+    {
+      "name": "all-contained-gaps-reject",
+      "frame": {
+        "id": "cr7-fixation-oracle",
+        "width": 100,
+        "height": 100
+      },
+      "areas": [
+        {
+          "id": "left",
+          "label": "Left",
+          "rect": [
+            0,
+            0,
+            50,
+            60
+          ]
+        },
+        {
+          "id": "right",
+          "label": "Right",
+          "rect": [
+            50,
+            0,
+            100,
+            60
+          ]
+        }
+      ],
+      "policy": "reject",
+      "resolution": [
+        10,
+        10
+      ],
+      "fixations": [
+        {
+          "onset_us": 100,
+          "duration_us": 10,
+          "x": 10,
+          "y": 10
+        },
+        {
+          "onset_us": 210,
+          "duration_us": 20,
+          "x": 20,
+          "y": 10
+        },
+        {
+          "onset_us": 430,
+          "duration_us": 30,
+          "x": 10,
+          "y": 10
+        }
+      ]
+    },
+    {
+      "name": "interrupted-visits-reject",
+      "frame": {
+        "id": "cr7-fixation-oracle",
+        "width": 100,
+        "height": 100
+      },
+      "areas": [
+        {
+          "id": "left",
+          "label": "Left",
+          "rect": [
+            0,
+            0,
+            50,
+            60
+          ]
+        },
+        {
+          "id": "right",
+          "label": "Right",
+          "rect": [
+            50,
+            0,
+            100,
+            60
+          ]
+        }
+      ],
+      "policy": "reject",
+      "resolution": [
+        10,
+        10
+      ],
+      "fixations": [
+        {
+          "onset_us": 1000,
+          "duration_us": 10,
+          "x": 90,
+          "y": 90
+        },
+        {
+          "onset_us": 1020,
+          "duration_us": 20,
+          "x": 10,
+          "y": 10
+        },
+        {
+          "onset_us": 1100,
+          "duration_us": 30,
+          "x": 20,
+          "y": 10
+        },
+        {
+          "onset_us": 1200,
+          "duration_us": 40,
+          "x": 70,
+          "y": 10
+        },
+        {
+          "onset_us": 1300,
+          "duration_us": 50,
+          "x": 10,
+          "y": 10
+        },
+        {
+          "onset_us": 1400,
+          "duration_us": 60,
+          "x": 110,
+          "y": 10
+        },
+        {
+          "onset_us": 1500,
+          "duration_us": 70,
+          "x": 10,
+          "y": 10
+        }
+      ]
+    },
+    {
+      "name": "three-way-overlap-multiple",
+      "frame": {
+        "id": "cr7-fixation-oracle",
+        "width": 100,
+        "height": 100
+      },
+      "areas": [
+        {
+          "id": "wide",
+          "label": "Wide",
+          "rect": [
+            0,
+            0,
+            80,
+            60
+          ]
+        },
+        {
+          "id": "middle",
+          "label": "Middle",
+          "rect": [
+            20,
+            0,
+            70,
+            60
+          ]
+        },
+        {
+          "id": "small",
+          "label": "Small",
+          "rect": [
+            40,
+            0,
+            60,
+            60
+          ]
+        }
+      ],
+      "policy": "multiple",
+      "resolution": [
+        10,
+        10
+      ],
+      "fixations": [
+        {
+          "onset_us": 0,
+          "duration_us": 10,
+          "x": 10,
+          "y": 10
+        },
+        {
+          "onset_us": 100,
+          "duration_us": 20,
+          "x": 50,
+          "y": 10
+        },
+        {
+          "onset_us": 200,
+          "duration_us": 30,
+          "x": 60,
+          "y": 10
+        },
+        {
+          "onset_us": 300,
+          "duration_us": 40,
+          "x": 90,
+          "y": 90
+        },
+        {
+          "onset_us": 400,
+          "duration_us": 50,
+          "x": 50,
+          "y": 10
+        }
+      ]
+    },
+    {
+      "name": "three-way-overlap-exclusive",
+      "frame": {
+        "id": "cr7-fixation-oracle",
+        "width": 100,
+        "height": 100
+      },
+      "areas": [
+        {
+          "id": "wide",
+          "label": "Wide",
+          "rect": [
+            0,
+            0,
+            80,
+            60
+          ]
+        },
+        {
+          "id": "middle",
+          "label": "Middle",
+          "rect": [
+            20,
+            0,
+            70,
+            60
+          ]
+        },
+        {
+          "id": "small",
+          "label": "Small",
+          "rect": [
+            40,
+            0,
+            60,
+            60
+          ]
+        }
+      ],
+      "policy": "exclusive",
+      "resolution": [
+        10,
+        10
+      ],
+      "fixations": [
+        {
+          "onset_us": 0,
+          "duration_us": 10,
+          "x": 10,
+          "y": 10
+        },
+        {
+          "onset_us": 100,
+          "duration_us": 20,
+          "x": 50,
+          "y": 10
+        },
+        {
+          "onset_us": 200,
+          "duration_us": 30,
+          "x": 60,
+          "y": 10
+        },
+        {
+          "onset_us": 300,
+          "duration_us": 40,
+          "x": 90,
+          "y": 90
+        },
+        {
+          "onset_us": 400,
+          "duration_us": 50,
+          "x": 50,
+          "y": 10
+        }
+      ]
+    },
+    {
+      "name": "three-way-overlap-smallest",
+      "frame": {
+        "id": "cr7-fixation-oracle",
+        "width": 100,
+        "height": 100
+      },
+      "areas": [
+        {
+          "id": "wide",
+          "label": "Wide",
+          "rect": [
+            0,
+            0,
+            80,
+            60
+          ]
+        },
+        {
+          "id": "middle",
+          "label": "Middle",
+          "rect": [
+            20,
+            0,
+            70,
+            60
+          ]
+        },
+        {
+          "id": "small",
+          "label": "Small",
+          "rect": [
+            40,
+            0,
+            60,
+            60
+          ]
+        }
+      ],
+      "policy": "smallest",
+      "resolution": [
+        10,
+        10
+      ],
+      "fixations": [
+        {
+          "onset_us": 0,
+          "duration_us": 10,
+          "x": 10,
+          "y": 10
+        },
+        {
+          "onset_us": 100,
+          "duration_us": 20,
+          "x": 50,
+          "y": 10
+        },
+        {
+          "onset_us": 200,
+          "duration_us": 30,
+          "x": 60,
+          "y": 10
+        },
+        {
+          "onset_us": 300,
+          "duration_us": 40,
+          "x": 90,
+          "y": 90
+        },
+        {
+          "onset_us": 400,
+          "duration_us": 50,
+          "x": 50,
+          "y": 10
+        }
+      ]
+    },
+    {
+      "name": "three-way-overlap-reject",
+      "frame": {
+        "id": "cr7-fixation-oracle",
+        "width": 100,
+        "height": 100
+      },
+      "areas": [
+        {
+          "id": "wide",
+          "label": "Wide",
+          "rect": [
+            0,
+            0,
+            80,
+            60
+          ]
+        },
+        {
+          "id": "middle",
+          "label": "Middle",
+          "rect": [
+            20,
+            0,
+            70,
+            60
+          ]
+        },
+        {
+          "id": "small",
+          "label": "Small",
+          "rect": [
+            40,
+            0,
+            60,
+            60
+          ]
+        }
+      ],
+      "policy": "reject",
+      "resolution": [
+        10,
+        10
+      ],
+      "fixations": [
+        {
+          "onset_us": 0,
+          "duration_us": 10,
+          "x": 10,
+          "y": 10
+        },
+        {
+          "onset_us": 100,
+          "duration_us": 20,
+          "x": 50,
+          "y": 10
+        },
+        {
+          "onset_us": 200,
+          "duration_us": 30,
+          "x": 60,
+          "y": 10
+        },
+        {
+          "onset_us": 300,
+          "duration_us": 40,
+          "x": 90,
+          "y": 90
+        },
+        {
+          "onset_us": 400,
+          "duration_us": 50,
+          "x": 50,
+          "y": 10
+        }
+      ]
+    },
+    {
+      "name": "all-off-surface",
+      "frame": {
+        "id": "cr7-fixation-oracle",
+        "width": 100,
+        "height": 100
+      },
+      "areas": [
+        {
+          "id": "left",
+          "label": "Left",
+          "rect": [
+            0,
+            0,
+            50,
+            60
+          ]
+        },
+        {
+          "id": "right",
+          "label": "Right",
+          "rect": [
+            50,
+            0,
+            100,
+            60
+          ]
+        }
+      ],
+      "policy": "multiple",
+      "resolution": [
+        10,
+        10
+      ],
+      "fixations": [
+        {
+          "onset_us": 10,
+          "duration_us": 20,
+          "x": 110,
+          "y": 10
+        },
+        {
+          "onset_us": 50,
+          "duration_us": 30,
+          "x": -10,
+          "y": 10
+        }
+      ]
+    },
+    {
+      "name": "half-open-edges-and-large-clock",
+      "frame": {
+        "id": "cr7-fixation-oracle",
+        "width": 100,
+        "height": 100
+      },
+      "areas": [
+        {
+          "id": "left",
+          "label": "Left",
+          "rect": [
+            0,
+            0,
+            50,
+            60
+          ]
+        },
+        {
+          "id": "right",
+          "label": "Right",
+          "rect": [
+            50,
+            0,
+            100,
+            60
+          ]
+        }
+      ],
+      "policy": "multiple",
+      "resolution": [
+        10,
+        10
+      ],
+      "fixations": [
+        {
+          "onset_us": 9007199254740993,
+          "duration_us": 17,
+          "x": 50,
+          "y": 10
+        },
+        {
+          "onset_us": 9007199254741023,
+          "duration_us": 29,
+          "x": 100,
+          "y": 10
+        },
+        {
+          "onset_us": 9007199254741093,
+          "duration_us": 31,
+          "x": 10,
+          "y": 60
+        },
+        {
+          "onset_us": 9007199254741133,
+          "duration_us": 7,
+          "x": 10,
+          "y": 10
+        }
+      ]
+    },
+    {
+      "name": "abutting-contained-fixations",
+      "frame": {
+        "id": "cr7-fixation-oracle",
+        "width": 100,
+        "height": 100
+      },
+      "areas": [
+        {
+          "id": "left",
+          "label": "Left",
+          "rect": [
+            0,
+            0,
+            50,
+            60
+          ]
+        },
+        {
+          "id": "right",
+          "label": "Right",
+          "rect": [
+            50,
+            0,
+            100,
+            60
+          ]
+        }
+      ],
+      "policy": "multiple",
+      "resolution": [
+        10,
+        10
+      ],
+      "fixations": [
+        {
+          "onset_us": 0,
+          "duration_us": 10,
+          "x": 10,
+          "y": 10
+        },
+        {
+          "onset_us": 10,
+          "duration_us": 20,
+          "x": 20,
+          "y": 10
+        },
+        {
+          "onset_us": 30,
+          "duration_us": 30,
+          "x": 10,
+          "y": 10
+        }
+      ]
+    }
+  ]
+}

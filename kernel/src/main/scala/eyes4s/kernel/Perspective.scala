@@ -83,7 +83,7 @@ end Length
   * @param surfaceWidth  physical width of the whole surface
   * @param surfaceHeight physical height of the whole surface
   */
-final case class Perspective private (
+sealed abstract case class Perspective private (
     distance: Length,
     surfaceWidth: Length,
     surfaceHeight: Length
@@ -103,6 +103,13 @@ final case class Perspective private (
 end Perspective
 
 object Perspective:
+
+  private def apply(
+      distance: Length,
+      surfaceWidth: Length,
+      surfaceHeight: Length
+  ): Perspective =
+    new Perspective(distance, surfaceWidth, surfaceHeight) {}
 
   def of(
       distance: Length,

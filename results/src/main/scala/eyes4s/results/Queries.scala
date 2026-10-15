@@ -36,7 +36,7 @@ enum RoleOutcome derives CanEqual:
   * window values a report may read, and each role's stored outcome. A query
   * is built from stored result rows; nothing is recomputed.
   */
-final case class Query[K] private (
+sealed abstract case class Query[K] private (
     key: K,
     participant: String,
     item: String,
@@ -63,10 +63,36 @@ final case class Query[K] private (
     window.collectFirst { case (`m`, v) => v }.getOrElse(Value.Missing(Absence.NotRecorded))
 
   /** The same query under another participant label. */
-  def relabel(participant: String): Query[K] = copy(participant = participant)
+  def relabel(participant: String): Query[K] =
+    Query(
+      key,
+      participant,
+      item,
+      phase,
+      occurrence,
+      covariates,
+      unparsed,
+      window,
+      matched,
+      control,
+      difference
+    )
 
   /** The same query under another key. */
-  def rekey[K2](key: K2): Query[K2] = copy(key = key)
+  def rekey[K2](key: K2): Query[K2] =
+    Query(
+      key,
+      participant,
+      item,
+      phase,
+      occurrence,
+      covariates,
+      unparsed,
+      window,
+      matched,
+      control,
+      difference
+    )
 
   /** The address of this query's `role` row in scale `scale`. */
   def ref(role: Role, scale: Int): ResultRef[K] = role match
@@ -75,6 +101,33 @@ final case class Query[K] private (
     case Role.Difference => ResultRef.ContrastRow(scale, key)
 
 object Query:
+  private def apply[K](
+      key: K,
+      participant: String,
+      item: String,
+      phase: String,
+      occurrence: Int,
+      covariates: Vector[(CovariateName, Value[CovariateValue])],
+      unparsed: Vector[(CovariateName, String)],
+      window: Vector[(WindowMeasure, Value[Double])],
+      matched: RoleOutcome,
+      control: RoleOutcome,
+      difference: RoleOutcome
+  ): Query[K] =
+    new Query[K](
+      key,
+      participant,
+      item,
+      phase,
+      occurrence,
+      covariates,
+      unparsed,
+      window,
+      matched,
+      control,
+      difference
+    ) {}
+
   /** A query with a non-blank participant, a positive occurrence, finite
     * scored components and finite present window values.
     */
@@ -103,7 +156,7 @@ object Query:
       Left(ReportError.InvalidQuery(key, "a non-finite value"))
     else
       Right(
-        new Query(
+        Query(
           key,
           participant,
           item,

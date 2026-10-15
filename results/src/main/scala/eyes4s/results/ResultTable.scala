@@ -46,6 +46,13 @@ enum ResultFamily derives CanEqual:
   /** Pearson or Spearman partial associations, with explicit undefined estimates. */
   case PartialAssociations
 
+  /** Fixation-time AOI metrics and transitions, qualified independently of the frozen baseline. */
+  case FixationAoiMetrics, FixationAoiTransitions
+
+  /** Complete scanpath study pair, query, transport, reduction and exclusion ledgers. */
+  case ScanpathPairs, ScanpathQueries, ScanpathTransportDiagnostics
+  case ScanpathReductions, ScanpathContrasts, ScanpathExclusions
+
 enum ResultColumnType derives CanEqual:
   case Utf8, JsonUtf8, Int64, Float64, Boolean
 

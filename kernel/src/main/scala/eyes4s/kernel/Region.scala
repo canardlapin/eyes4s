@@ -69,13 +69,22 @@ end Region
 
 object Region:
 
-  final case class Rect[U <: Unit2D] private[kernel] (lo: Pt[U], hi: Pt[U]) extends Region[U]:
+  object Rect:
+    private[kernel] def apply[U <: Unit2D](lo: Pt[U], hi: Pt[U]): Rect[U] =
+      new Rect[U](lo, hi) {}
+
+  sealed abstract case class Rect[U <: Unit2D] private[kernel] (lo: Pt[U], hi: Pt[U])
+      extends Region[U]:
     def contains(p: Pt[U]): Boolean =
       p.x >= lo.x && p.x < hi.x && p.y >= lo.y && p.y < hi.y
     override def area(g: Grid[U]): Double = (hi.x - lo.x) * (hi.y - lo.y)
     def render: String = f"rect(${lo.x}%.2f,${lo.y}%.2f -> ${hi.x}%.2f,${hi.y}%.2f)"
 
-  final case class Ellipse[U <: Unit2D] private[kernel] (
+  object Ellipse:
+    private[kernel] def apply[U <: Unit2D](centre: Pt[U], rx: Double, ry: Double): Ellipse[U] =
+      new Ellipse[U](centre, rx, ry) {}
+
+  sealed abstract case class Ellipse[U <: Unit2D] private[kernel] (
       centre: Pt[U],
       rx: Double,
       ry: Double
@@ -87,13 +96,17 @@ object Region:
     override def area(g: Grid[U]): Double = math.Pi * rx * ry
     def render: String = f"ellipse(${centre.x}%.2f,${centre.y}%.2f r=$rx%.2f,$ry%.2f)"
 
+  object Polygon:
+    private[kernel] def apply[U <: Unit2D](vertices: Vector[Pt[U]]): Polygon[U] =
+      new Polygon[U](vertices) {}
+
   /** A simple polygon, by even-odd ray casting.
     *
     * Even-odd rather than winding number: for the self-intersecting shapes a
     * hand-drawn area of interest can produce, the two disagree, and even-odd
     * matches what a user drawing an outline sees on screen.
     */
-  final case class Polygon[U <: Unit2D] private[kernel] (vertices: Vector[Pt[U]])
+  sealed abstract case class Polygon[U <: Unit2D] private[kernel] (vertices: Vector[Pt[U]])
       extends Region[U]:
     def contains(p: Pt[U]): Boolean =
       var inside = false
@@ -110,26 +123,47 @@ object Region:
       inside
     def render: String = s"polygon(${vertices.length} vertices)"
 
-  final case class Union[U <: Unit2D] private[kernel] (a: Region[U], b: Region[U])
+  object Union:
+    private[kernel] def apply[U <: Unit2D](a: Region[U], b: Region[U]): Union[U] =
+      new Union[U](a, b) {}
+
+  sealed abstract case class Union[U <: Unit2D] private[kernel] (a: Region[U], b: Region[U])
       extends Region[U]:
     def contains(p: Pt[U]): Boolean = a.contains(p) || b.contains(p)
     def render: String              = s"(${a.render} or ${b.render})"
 
-  final case class Intersect[U <: Unit2D] private[kernel] (a: Region[U], b: Region[U])
+  object Intersect:
+    private[kernel] def apply[U <: Unit2D](a: Region[U], b: Region[U]): Intersect[U] =
+      new Intersect[U](a, b) {}
+
+  sealed abstract case class Intersect[U <: Unit2D] private[kernel] (a: Region[U], b: Region[U])
       extends Region[U]:
     def contains(p: Pt[U]): Boolean = a.contains(p) && b.contains(p)
     def render: String              = s"(${a.render} and ${b.render})"
 
-  final case class Complement[U <: Unit2D] private[kernel] (a: Region[U]) extends Region[U]:
+  object Complement:
+    private[kernel] def apply[U <: Unit2D](a: Region[U]): Complement[U] =
+      new Complement[U](a) {}
+
+  sealed abstract case class Complement[U <: Unit2D] private[kernel] (a: Region[U])
+      extends Region[U]:
     def contains(p: Pt[U]): Boolean = !a.contains(p)
     def render: String              = s"not(${a.render})"
 
-  final case class Empty[U <: Unit2D] private[kernel] () extends Region[U]:
+  object Empty:
+    private[kernel] def apply[U <: Unit2D](): Empty[U] =
+      new Empty[U]() {}
+
+  sealed abstract case class Empty[U <: Unit2D] private[kernel] () extends Region[U]:
     def contains(p: Pt[U]): Boolean       = false
     override def area(g: Grid[U]): Double = 0.0
     def render: String                    = "empty"
 
-  final case class Everything[U <: Unit2D] private[kernel] () extends Region[U]:
+  object Everything:
+    private[kernel] def apply[U <: Unit2D](): Everything[U] =
+      new Everything[U]() {}
+
+  sealed abstract case class Everything[U <: Unit2D] private[kernel] () extends Region[U]:
     def contains(p: Pt[U]): Boolean = true
     def render: String              = "everything"
 

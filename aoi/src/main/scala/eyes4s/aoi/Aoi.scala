@@ -120,10 +120,14 @@ enum ExclusionReason derives CanEqual:
 sealed trait SampleMembership derives CanEqual
 
 object SampleMembership:
+  object Areas:
+    private[aoi] def apply(ids: Vector[AoiId]): Areas =
+      new Areas(ids) {}
+
   /** The containing areas, non-empty and in set order; more than one only under
     * `MembershipPolicy.Multiple`. Only assignment constructs it.
     */
-  final case class Areas private[aoi] (ids: Vector[AoiId]) extends SampleMembership
+  sealed abstract case class Areas private[aoi] (ids: Vector[AoiId]) extends SampleMembership
 
   /** A tracked sample inside the frame but outside every area. */
   case object Background extends SampleMembership
@@ -138,6 +142,19 @@ final class AoiSet[U <: Unit2D] private (
 ):
   def size: Int          = areas.length
   def ids: Vector[AoiId] = areas.map(_.id)
+
+  /** Assign fixation centres without inventing samples or attributing intervening
+    * non-fixation time to dwell. Visits follow consecutive fixation membership.
+    */
+  def assign(
+      scanpath: Scanpath[U],
+      policy: MembershipPolicy
+  ): Either[AoiError, FixationAoiAssignment[U]] =
+    for
+      _        <- Agreement.frames(frame, scanpath.frame).left.map(AoiError.FrameConflict.apply)
+      prepared <- prepare(policy)
+      result   <- FixationAoiAssignment.build(this, scanpath, policy, select(_, prepared))
+    yield result
 
   def assign(
       recording: Recording[U],
@@ -184,33 +201,11 @@ final class AoiSet[U <: Unit2D] private (
         case Gaze.Tracked(point, _) if !frame.contains(point) =>
           assignments(index) = SampleMembership.Excluded(ExclusionReason.OffSurface)
         case Gaze.Tracked(point, _) =>
-          val containing = areas.filter(_.region.contains(point))
-          containing.headOption match
-            case None => assignments(index) = SampleMembership.Background
-            case Some(first) if containing.length == 1 =>
-              assignments(index) = SampleMembership.Areas(Vector(first.id))
-            case Some(first) =>
-              prepared match
-                case PreparedMembershipPolicy.Multiple(_) =>
-                  assignments(index) = SampleMembership.Areas(containing.map(_.id))
-                case PreparedMembershipPolicy.Exclusive(_) =>
-                  assignments(index) = SampleMembership.Areas(Vector(first.id))
-                case PreparedMembershipPolicy.Smallest(grid) =>
-                  val chosen = containing.tail.foldLeft(first) { (smallest, candidate) =>
-                    if candidate.region.area(grid) < smallest.region.area(grid) then candidate
-                    else smallest
-                  }
-                  assignments(index) = SampleMembership.Areas(Vector(chosen.id))
-                case PreparedMembershipPolicy.RejectOverlap(_) =>
-                  failure = Some(
-                    AoiError.ObservedOverlap(
-                      frame.id,
-                      index,
-                      point.x,
-                      point.y,
-                      containing.map(_.id)
-                    )
-                  )
+          val ids = select(point, prepared)
+          if ids.isEmpty then assignments(index) = SampleMembership.Background
+          else if policy == MembershipPolicy.RejectOverlap && ids.size > 1 then
+            failure = Some(AoiError.ObservedOverlap(frame.id, index, point.x, point.y, ids))
+          else assignments(index) = SampleMembership.Areas(ids)
       index += 1
 
     failure match
@@ -227,6 +222,25 @@ final class AoiSet[U <: Unit2D] private (
             AoiAssignment.report(memberships, support)
           )
         )
+
+  private def select(
+      point: Pt[U],
+      prepared: PreparedMembershipPolicy[U]
+  ): Vector[AoiId] =
+    val containing = areas.filter(_.region.contains(point))
+    prepared match
+      case PreparedMembershipPolicy.Multiple(_) | PreparedMembershipPolicy.RejectOverlap(_) =>
+        containing.map(_.id)
+      case PreparedMembershipPolicy.Exclusive(_)   => containing.take(1).map(_.id)
+      case PreparedMembershipPolicy.Smallest(grid) =>
+        containing.headOption.toVector.map { first =>
+          containing.tail
+            .foldLeft(first) { (smallest, candidate) =>
+              if candidate.region.area(grid) < smallest.region.area(grid) then candidate
+              else smallest
+            }
+            .id
+        }
 
   private def prepare(
       policy: MembershipPolicy
@@ -383,7 +397,7 @@ object AoiAssignment:
   * `dwellProportion` divides by the analysable time (areas plus background, excluding
   * exclusions and policy censoring) and is `None` when that time is zero.
   * `firstEntryLatency` runs from the recording's first sample to the first sample in the
-  * area, `None` if it is never entered. `runCount` counts maximal runs of consecutive
+  * area, `None` if it is never entered. `sampleRunCount` counts maximal runs of consecutive
   * samples in the area.
   */
 final case class AoiMetric(
@@ -392,7 +406,7 @@ final case class AoiMetric(
     dwell: Span,
     dwellProportion: Option[Double],
     firstEntryLatency: Option[Span],
-    runCount: Int
+    sampleRunCount: Int
 ) derives CanEqual
 
 /** How many times membership moved from `from` to a different area `to` between adjacent
@@ -437,6 +451,13 @@ enum AoiError derives CanEqual:
       y: Double,
       areas: Vector[AoiId]
   )
+  case ObservedFixationOverlap(
+      frame: FrameId,
+      fixationIndex: Int,
+      x: Double,
+      y: Double,
+      areas: Vector[AoiId]
+  )
 
   def message: String = this match
     case BlankId(value)        => s"An AOI requires a non-empty id, got value='$value'."
@@ -453,5 +474,7 @@ enum AoiError derives CanEqual:
         s"resolution=${nx}x$ny: ${underlying.message}"
     case ObservedOverlap(frame, sample, x, y, areas) =>
       s"Reject-overlap assignment in frame='$frame' found sample[$sample]=($x,$y) in AOIs=${areas.mkString("[", ",", "]")}."
+    case ObservedFixationOverlap(frame, fixation, x, y, areas) =>
+      s"Reject-overlap assignment in frame='$frame' found fixation[$fixation]=($x,$y) in AOIs=${areas.mkString("[", ",", "]")}."
 
 end AoiError

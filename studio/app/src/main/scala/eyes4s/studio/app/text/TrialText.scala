@@ -64,6 +64,13 @@ enum TrialTextId derives CanEqual:
     */
   case MapUncovered, MapUncoveredOne
 
+  /** The legend under a mass map (review ticket 17; Main.dc.html): the ramp's
+    * ends and what it measures, where it fades out, the isolines' key, a note
+    * when panels share their limits, and its accessible name and description.
+    */
+  case MapLegendZero, MapLegendRamp, MapLegendFades, MapLegendIsolines, MapLegendShared
+  case MapLegendTitle, MapLegendDescription, MapLegendDescriptionShared
+
 /** The trial view's strings in the boards' wording. */
 object TrialText:
 
@@ -103,10 +110,20 @@ object TrialText:
       case MarkOutsideWindowFailsTrial => "{0} · outside window, trial fails"
       case MarkInWindowTrialFails      =>
         "{0} · in window, trial fails: {1} of {2} fixations outside window"
-      case RememberedShown  => "Reference image — not displayed during this trial"
-      case RememberedHidden => "Remembered image not shown"
-      case MapUncovered     => "{0} cells without coverage"
-      case MapUncoveredOne  => "1 cell without coverage"
+      case RememberedShown      => "Reference image — not displayed during this trial"
+      case RememberedHidden     => "Remembered image not shown"
+      case MapUncovered         => "{0} cells without coverage"
+      case MapUncoveredOne      => "1 cell without coverage"
+      case MapLegendZero        => "0"
+      case MapLegendRamp        => "max · fixation duration mass per cell"
+      case MapLegendFades       => "fades below {0} of max"
+      case MapLegendIsolines    => "50% · 90% of mass"
+      case MapLegendShared      => "shared limits"
+      case MapLegendTitle       => "Map legend"
+      case MapLegendDescription =>
+        "Map legend: fixation duration mass per cell from 0 to max, fading out below {0} " +
+          "percent of max{1}; isolines enclose 50 and 90 percent of mass"
+      case MapLegendDescriptionShared => ", shared colour limits across panels"
 
   /** `id`'s English template with `args` filled in. */
   def apply(id: TrialTextId, args: String*): String =

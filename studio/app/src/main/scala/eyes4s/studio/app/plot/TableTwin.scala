@@ -76,12 +76,22 @@ final case class TableTwinStep(state: TableTwinState, intents: Vector[Intent], c
   * numbered in that shown order: the cursor moves through it, and row 0 is
   * the first pinned row. Deselecting returns a row to its place.
   */
-final case class TableTwinState private (
+sealed abstract case class TableTwinState private (
     selection: ViewSelection,
     cursor: Option[StudioRef],
     focused: Boolean,
-    pinsSelected: Boolean
+    pinsSelected: Boolean,
+    placedByFocus: Boolean
 ) derives CanEqual:
+
+  private def copy(
+      selection: ViewSelection = this.selection,
+      cursor: Option[StudioRef] = this.cursor,
+      focused: Boolean = this.focused,
+      pinsSelected: Boolean = this.pinsSelected,
+      placedByFocus: Boolean = this.placedByFocus
+  ): TableTwinState =
+    TableTwinState(selection, cursor, focused, pinsSelected, placedByFocus)
 
   def view: ViewId = selection.view
 
@@ -90,7 +100,7 @@ final case class TableTwinState private (
     key match
       case RovingKey.Move(move) =>
         step(source, move).fold(unchanged)(ref =>
-          TableTwinStep(copy(cursor = Some(ref)), Vector.empty, true)
+          TableTwinStep(copy(cursor = Some(ref), placedByFocus = false), Vector.empty, true)
         )
       case RovingKey.Activate(toggle) =>
         cursor
@@ -104,7 +114,8 @@ final case class TableTwinState private (
   def click(ref: StudioRef, toggle: Boolean, source: PlotSource): TableTwinStep =
     if source.rowOf(ref).isEmpty then unchanged
     else
-      val step = copy(cursor = Some(ref)).choose(ref, toggle, InputCause.Pointer)
+      val step =
+        copy(cursor = Some(ref), placedByFocus = false).choose(ref, toggle, InputCause.Pointer)
       step.copy(changed = !cursor.contains(ref))
 
   /** Puts the cursor on `ref` without selecting, as when the plot's focused
@@ -113,7 +124,7 @@ final case class TableTwinState private (
   def moveCursor(ref: Option[StudioRef], source: PlotSource): TableTwinStep =
     val next = ref.filter(source.rowOf(_).isDefined)
     if next.isEmpty || next == cursor then unchanged
-    else TableTwinStep(copy(cursor = next), Vector.empty, true)
+    else TableTwinStep(copy(cursor = next, placedByFocus = false), Vector.empty, true)
 
   /** Carries the plot's focused mark to the table: the cursor stays when it
     * is already on one of the mark's rows `refs`, and otherwise goes to the
@@ -123,9 +134,34 @@ final case class TableTwinState private (
     if cursor.exists(refs.contains) && cursor.flatMap(source.rowOf).isDefined then unchanged
     else moveCursor(refs.headOption, source)
 
-  /** The table gained or lost keyboard focus. */
-  def focusChanged(now: Boolean): TableTwinStep =
-    TableTwinStep(copy(focused = now), Vector.empty, now != focused)
+  /** The table gained or lost keyboard focus. A table that gains it with no
+    * cursor puts the cursor on its [[home]] row of `source`, selecting
+    * nothing: a focused composite always shows its cursor item (DESIGN_SPEC
+    * section 15). A cursor it already has stays where it is. Until that
+    * cursor is moved, the table is still announced by how to use it
+    * ([[spoken]]); its row is the focus item.
+    */
+  def focusChanged(now: Boolean, source: Option[PlotSource]): TableTwinStep =
+    val placed = now && cursor.isEmpty
+    val next   = if placed then source.flatMap(home) else cursor
+    TableTwinStep(
+      copy(
+        focused = now,
+        cursor = next,
+        placedByFocus = if placed then next.isDefined else placedByFocus
+      ),
+      Vector.empty,
+      now != focused || next != cursor
+    )
+
+  /** Where the cursor goes when the table takes focus without one: the
+    * first selected row shown, else the first row shown.
+    */
+  def home(source: PlotSource): Option[StudioRef] =
+    selection.selected
+      .filter(source.rowOf(_).isDefined)
+      .minByOption(shownIndex(source, _).getOrElse(Int.MaxValue))
+      .orElse(sourceIndex(source, 0).map(source.rows(_).ref))
 
   /** The selection as the bus now holds it: emits nothing. */
   def project(selection: SelectionState): TableTwinStep =
@@ -135,7 +171,11 @@ final case class TableTwinState private (
   /** The same state on another source: a cursor on a row it lacks is dropped. */
   def retarget(source: PlotSource): TableTwinStep =
     val kept = cursor.filter(source.rowOf(_).isDefined)
-    TableTwinStep(copy(cursor = kept), Vector.empty, kept != cursor)
+    TableTwinStep(
+      copy(cursor = kept, placedByFocus = placedByFocus && kept.isDefined),
+      Vector.empty,
+      kept != cursor
+    )
 
   /** The view-model of `source` under this state, its rows in shown order. */
   def vm(source: PlotSource): TableTwinVM =
@@ -196,9 +236,14 @@ final case class TableTwinState private (
       )
     }
 
-  /** What a reader hears: the cursor's row, or how to use the table. */
+  /** What a reader hears: the cursor's row, or how to use the table while
+    * it has no cursor or only the one focus placed.
+    */
   def spoken(source: PlotSource): String =
-    cursor.flatMap(shownIndex(source, _)).flatMap(rowVM(source, _)) match
+    cursor
+      .filterNot(_ => placedByFocus)
+      .flatMap(shownIndex(source, _))
+      .flatMap(rowVM(source, _)) match
       case Some(r) => r.accessibleText
       case None    =>
         if source.rows.isEmpty then PlotText(PlotTextId.TableEmpty, source.caption)
@@ -235,6 +280,15 @@ final case class TableTwinState private (
 
 object TableTwinState:
 
+  private def apply(
+      selection: ViewSelection,
+      cursor: Option[StudioRef],
+      focused: Boolean,
+      pinsSelected: Boolean,
+      placedByFocus: Boolean
+  ): TableTwinState =
+    new TableTwinState(selection, cursor, focused, pinsSelected, placedByFocus) {}
+
   /** A table with no cursor, showing `selection`; `pinsSelected` pins its
     * selected rows at the top.
     */
@@ -243,7 +297,7 @@ object TableTwinState:
       selection: SelectionState,
       pinsSelected: Boolean = false
   ): TableTwinState =
-    TableTwinState(ViewSelection.initial(view, selection), None, false, pinsSelected)
+    TableTwinState(ViewSelection.initial(view, selection), None, false, pinsSelected, false)
 
 /** How a TableTwin divides its width among its columns (bead
   * bd-01M3JD4G5D3GF9NHPWANXFS3PX; the boards size columns to their content):

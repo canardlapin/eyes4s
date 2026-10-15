@@ -35,7 +35,7 @@ final case class CanvasPoint(x: Double, y: Double) derives CanEqual
   * pixels, so a 2x display gets twice the pixels in each direction. Physical
   * lengths (points) resolve at 96 logical pixels per inch.
   */
-final case class PlotSurface private (
+sealed abstract case class PlotSurface private (
     logicalWidth: Double,
     logicalHeight: Double,
     deviceScale: Double
@@ -61,6 +61,13 @@ final case class PlotSurface private (
     ).left.map(PlotSceneError.Graphics(sceneId.value, "the surface's render context", _))
 
 object PlotSurface:
+
+  private def build(
+      logicalWidth: Double,
+      logicalHeight: Double,
+      deviceScale: Double
+  ): PlotSurface =
+    new PlotSurface(logicalWidth, logicalHeight, deviceScale) {}
 
   /** Physical units resolve at this many logical pixels per inch (CSS and JavaFX). */
   val LogicalPixelsPerInch: Double = 96.0
@@ -95,7 +102,7 @@ object PlotSurface:
     if valid(logicalWidth) && valid(logicalHeight) && valid(deviceScale) &&
       fits(logicalWidth) && fits(logicalHeight)
     then
-      val surface = new PlotSurface(logicalWidth, logicalHeight, deviceScale)
+      val surface = build(logicalWidth, logicalHeight, deviceScale)
       if surface.canvasTextureBytes <= MaxCanvasTextureBytes then Right(surface)
       else
         Left(

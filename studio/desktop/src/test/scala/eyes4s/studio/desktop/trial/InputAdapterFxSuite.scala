@@ -41,6 +41,7 @@ import eyes4s.studio.core.selection.{
 import eyes4s.studio.desktop.harness.{FxStage, StageSize, StudioFxSuite}
 import eyes4s.studio.desktop.plot.{CanvasPlotHost, PlotFrame, PlotHostProfile, PlotHostStatus}
 import eyes4s.studio.desktop.runtime.{EffectPerformer, StudioRuntime}
+import eyes4s.studio.desktop.shell.KeyboardFocus
 import eyes4s.studio.desktop.typography.StudioFonts
 import eyes4s.studio.app.plot.RovingMove
 import eyes4s.studio.viz.plot.{OverlayRings, RingKind}
@@ -63,7 +64,8 @@ import scala.concurrent.duration.Duration
 /** The JavaFX input adapter (S4.2), on real JavaFX with synthetic events:
   * pointer picks at 1x and 2x resolve to the right fixation, keyboard alone
   * selects any mark, Escape clears, a selection projected from the bus draws
-  * without emitting, the focus ring is accent cased by the halo, input never
+  * without emitting, the focus ring is accent cased by the halo and shows
+  * only for the keyboard (Tab, or a key since a click), input never
   * recompiles or redraws the scene, 1,000 attach/dispose cycles leak nothing,
   * and selection feedback on 11,520 marks is measured and recorded.
   */
@@ -414,24 +416,85 @@ class InputAdapterFxSuite extends StudioFxSuite:
     runOnFx(w.view.dispose())
   }
 
-  fxStage.test("with OS window focus, the host's focused property shows the focus ring") { fx =>
-    val w      = Wired(viewIn(fx))
-    val (_, t) = showAndDraw(w, input(ret07, ret07Fix), 1.0)
+  // --- The keyboard's focus ring (REVIEW ticket 14) ---------------------------------
+  //
+  // The focus ring shows only when the keyboard brought the focus (Tab) or a
+  // key has operated the view since it came: never for a click or the program.
+
+  /** Gives the test window the OS focus a node's `focused` needs, or skips. */
+  private def windowFocus(fx: FxStage): Unit =
     runOnFx {
       fx.stage.toFront()
       fx.stage.requestFocus()
-      w.host.requestFocus()
     }
     fx.awaitLayout()
     assume(runOnFx(fx.stage.isFocused), "the test window did not receive OS focus")
-    fx.robot.press(KeyCode.HOME)
-    assert(runOnFx(w.host.isFocused))
-    assertEquals(
-      runOnFx(w.adapter.state.overlay(t)).map(r => (r.kind, r.ref)),
-      Vector((RingKind.Focus, t.targets.head.ref))
-    )
-    runOnFx(w.adapter.dispose())
-    runOnFx(w.view.dispose())
+
+  /** The marks the overlay draws a focus ring on. */
+  private def focusRinged(w: Wired, t: TrialTargets): Vector[StudioRef] =
+    runOnFx(w.adapter.state.overlay(t)).collect { case r if r.kind == RingKind.Focus => r.ref }
+
+  fxStage.test("Tab shows the focus ring with no key pressed; losing the focus clears it") {
+    fx =>
+      val w      = Wired(viewIn(fx))
+      val (f, t) = showAndDraw(w, input(ret07, ret07Fix), 2.0)
+      windowFocus(fx)
+      // A click puts the cursor on a mark; the focus then leaves and comes
+      // back by Tab, with no key pressed on the view.
+      val target = t.targets(4)
+      runOnFx(click(w, local(f, target.anchor)))
+      runOnFx(KeyboardFocus.away(w.host))
+      runOnFx(KeyboardFocus.byKeyboard(w.host))
+      fx.awaitLayout()
+      assertEquals(focusRinged(w, t), Vector(target.ref))
+      val ring   = runOnFx(w.adapter.state.overlay(t)).find(_.kind == RingKind.Focus).get
+      val accent = Tokens.themed(Theme.Light, ThemedToken.Accent)
+      // The accent band, as the ring test below probes it (device px at 2x).
+      def accentAround = onCircle(snapshotHost(w, 2), ring.centre, ring.radius + 4.0, accent)
+      assert(accentAround >= 16, "Tab drew no focus ring on the canvas")
+      runOnFx(KeyboardFocus.away(w.host))
+      fx.awaitLayout()
+      assertEquals(focusRinged(w, t), Vector.empty)
+      assert(accentAround < 16, "the focus ring outlived the focus")
+      runOnFx(w.adapter.dispose())
+      runOnFx(w.view.dispose())
+  }
+
+  fxStage.test("a click or the program focuses the view without a ring; a key then shows it") {
+    fx =>
+      val w      = Wired(viewIn(fx))
+      val (f, t) = showAndDraw(w, input(ret07, ret07Fix), 2.0)
+      windowFocus(fx)
+      val target = t.targets(4)
+      runOnFx(click(w, local(f, target.anchor)))
+      assert(runOnFx(w.host.isFocused), "a click focuses the view")
+      assertEquals(runOnFx(w.adapter.state.focus), Some(target.ref))
+      assertEquals(focusRinged(w, t), Vector.empty, "a click drew a focus ring")
+      // The selection ring is the pointer's: unaffected.
+      assertEquals(
+        runOnFx(w.adapter.state.overlay(t)).map(r => (r.kind, r.ref)),
+        Vector((RingKind.Selected, target.ref))
+      )
+      // An arrow key after the click operates the view by keyboard: the ring
+      // shows on the mark it moved to.
+      fx.robot.press(KeyCode.RIGHT)
+      val moved = runOnFx(w.adapter.state.focus)
+      assert(moved.isDefined)
+      assertEquals(focusRinged(w, t), moved.toVector)
+      // The key counts only for the focus it was pressed in. The focus leaves
+      // as a click elsewhere takes it, with no traversal (so `focusVisible`
+      // never changes), and the ring goes with it; focus that comes back from
+      // the program shows no ring until a key is pressed again.
+      runOnFx(w.host.getScene.getRoot.requestFocus())
+      assert(!runOnFx(w.host.isFocused), "the view kept the focus")
+      assertEquals(focusRinged(w, t), Vector.empty, "the ring outlived the focus")
+      runOnFx(KeyboardFocus.byPointer(w.host))
+      assert(runOnFx(w.host.isFocused))
+      assertEquals(focusRinged(w, t), Vector.empty, "requestFocus() drew a focus ring")
+      fx.robot.press(KeyCode.HOME)
+      assertEquals(focusRinged(w, t), Vector(t.targets.head.ref))
+      runOnFx(w.adapter.dispose())
+      runOnFx(w.view.dispose())
   }
 
   // --- Projection -----------------------------------------------------------------

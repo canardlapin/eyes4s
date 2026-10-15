@@ -265,7 +265,7 @@ class StudyCodecSuite extends munit.FunSuite:
     val old  = json.mapObject(
       _.add(
         "schema",
-        Json.obj("name" -> Json.fromString("eyes4s.study"), "version" -> Json.fromInt(4))
+        Json.obj("name" -> Json.fromString("eyes4s.study"), "version" -> Json.fromInt(5))
       )
     )
     assertEquals(
@@ -273,8 +273,13 @@ class StudyCodecSuite extends munit.FunSuite:
       Some(
         CodecError.UnsupportedSchema(
           "study plan",
-          id("eyes4s.study", 4),
-          Vector(DefinitionId.study, persistence.schemaV2, persistence.schemaV3)
+          id("eyes4s.study", 5),
+          Vector(
+            DefinitionId.study,
+            persistence.schemaV2,
+            persistence.schemaV3,
+            persistence.schemaV4
+          )
         )
       )
     )

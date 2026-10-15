@@ -66,6 +66,44 @@ class ResultPayloadManifestSuite extends munit.FunSuite:
     assertEquals(loaded.payloads.map(_._1), packed.payloads.map(_.name))
   }
 
+  test("external resolution snapshots bytes; owned resolution preserves every trust check") {
+    val saved    = save()
+    val payload  = packed.payloads.head
+    val mutable  = IArray.genericWrapArray(payload.bytes).toArray
+    val expected = mutable.toVector
+    val source   = ByteSource {
+      case ByteRequest.Entry(entry) if entry.name == payload.name =>
+        Right(IArray.unsafeFromArray(mutable))
+      case request => saved.source.read(request)
+    }
+    val external = get(ArtifactResolver.resolve(saved.address, source, decoders))
+    val owned    = get(ArtifactResolver.resolveOwned(saved.address, saved.source, decoders))
+    assertEquals(owned.results.map(_._2.encode), external.results.map(_._2.encode))
+    assertEquals(
+      owned.payloads.map(_._2.bytes.toVector),
+      external.payloads.map(_._2.bytes.toVector)
+    )
+    mutable(0) = (mutable(0) ^ 1).toByte
+    assertEquals(external.payloads.find(_._1 == payload.name).get._2.bytes.toVector, expected)
+    val refusal = ArtifactResolver.resolve(saved.address, source, decoders).left.map(_.toVector)
+    assert(refusal.isLeft)
+    assertEquals(
+      ArtifactResolver.resolveOwned(saved.address, source, decoders).left.map(_.toVector),
+      refusal
+    )
+  }
+
+  test("verified metadata reconstructs every completed field with the retained masses") {
+    val inline   = get(results.registration.decode(get(results.codec.encode(result))))
+    val restored = get(resolve(save())).results.head._2
+    val masses   = result.scales.map(_.estimation.map(_._2.toOption))
+    Vector(inline, restored).foreach { loaded =>
+      val rebuilt = get(results.restoreDensities(get(loaded.reconstructionMetadata), masses))
+      assertEquals(get(results.codec.encode(rebuilt)), get(results.codec.encode(result)))
+      assertEquals(get(results.codec.digest(rebuilt)), get(results.codec.digest(result)))
+    }
+  }
+
   test("unknown role and relation remain typed refusals in manifest@1") {
     val document = get(ScientificManifest.codec.encode(save().manifest))
     val body     = get(document.hcursor.get[Json]("value"))
@@ -186,6 +224,49 @@ class ResultPayloadManifestSuite extends munit.FunSuite:
         case _ => false
       })
     )
+  }
+
+  test("result reference checks stay scoped by result and retain every relation refusal") {
+    val codec  = new DensityArchiveCodec(results)
+    val bundle = get(codec.encode(result, DensityStorage.Inline))
+    val inline = get(
+      StoredArtifact.document(
+        "inline-result",
+        ArtifactRole.StudyResult,
+        Json.obj(
+          "schema" -> Wire.id(codec.ladder.latest),
+          "value"  -> get(codec.ladder.writeAt(codec.ladder.latest, bundle.archive))
+        ),
+        None
+      )
+    )
+    val layout =
+      get(PayloadLayout.of(ElementKind.Float64, Vector(1, 1, 1), ArrayOrder.RowMajor))
+    val chunk        = get(PackedArrays.pack(layout, IArray(0.5)))
+    val extra        = get(StoredArtifact.resultPayload("extra", chunk))
+    val first        = ManifestRelation.ResultPayloadOf(inline.name, packed.payloads.head.name)
+    val second       = ManifestRelation.ResultPayloadOf(packed.result.name, extra.name)
+    val third        = ManifestRelation.ResultPayloadOf(inline.name, extra.name)
+    val owned        = packed.payloads.head.entry
+    val firstRefusal = ResolveError.Relation(
+      first,
+      RelationMismatch.UnreferencedPayload(PayloadRef(owned.sha256, owned.layout.get))
+    )
+    val extraRefusal =
+      ResolveError.Relation(second, RelationMismatch.UnreferencedPayload(chunk.ref))
+    val thirdRefusal =
+      ResolveError.Relation(third, RelationMismatch.UnreferencedPayload(chunk.ref))
+    val base =
+      relations :+ ManifestRelation.ResultOf(inline.name, planArtifact.name, inputArtifact.name)
+    Vector(
+      Vector(first, second, third) -> Vector(firstRefusal, extraRefusal, thirdRefusal),
+      Vector(second, third, first) -> Vector(extraRefusal, thirdRefusal, firstRefusal)
+    ).foreach { (edges, errors) =>
+      assertEquals(
+        resolve(save(artifacts ++ Vector(inline, extra), base ++ edges)),
+        Left(errors)
+      )
+    }
   }
 
   test("same bytes with a different layout cannot satisfy an archive chunk reference") {

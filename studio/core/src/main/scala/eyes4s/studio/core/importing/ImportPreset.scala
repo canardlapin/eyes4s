@@ -54,11 +54,14 @@ enum PresetError derives CanEqual:
         }."
 
 /** A preset's name as the analyst typed it, trimmed. */
-final case class PresetName private (value: String) derives CanEqual
+sealed abstract case class PresetName private (value: String) derives CanEqual
 
 object PresetName:
+  private def apply(value: String): PresetName =
+    new PresetName(value) {}
+
   def of(value: String): Either[PresetError, PresetName] =
-    Either.cond(value.trim.nonEmpty, new PresetName(value.trim), PresetError.BlankName)
+    Either.cond(value.trim.nonEmpty, PresetName(value.trim), PresetError.BlankName)
 
   given Encoder[PresetName] = Encoder[String].contramap(_.value)
   given Decoder[PresetName] = Decoder[String].emap(of(_).left.map(_.message))
@@ -67,7 +70,7 @@ object PresetName:
   * and the declared time unit, re-applied to another file by column name.
   * It records declarations only; nothing in it is inferred from a file.
   */
-final case class ImportPreset private (
+sealed abstract case class ImportPreset private (
     name: PresetName,
     bindings: Vector[ColumnBinding],
     time: Option[TimeUnit]
@@ -78,6 +81,13 @@ final case class ImportPreset private (
     MappingDraft.reapply(preview, MappingOrigin.Preset(name), bindings, time)
 
 object ImportPreset:
+
+  private def apply(
+      name: PresetName,
+      bindings: Vector[ColumnBinding],
+      time: Option[TimeUnit]
+  ): ImportPreset =
+    new ImportPreset(name, bindings, time) {}
 
   /** A preset binds each role to at most one column and each column to at
     * most one role; anything else would lose a binding when re-applied.
@@ -99,7 +109,7 @@ object ImportPreset:
         Left(PresetError.RepeatedRole(name.value, role.label, bs.map(_.column.value)))
       case (_, Some((column, bs))) =>
         Left(PresetError.RepeatedColumn(name.value, column.value, bs.map(_.role.label)))
-      case _ => Right(new ImportPreset(name, bindings, time))
+      case _ => Right(ImportPreset(name, bindings, time))
 
   /** The stored format's name and version. */
   val format: String = "studio.import-preset"
@@ -135,7 +145,7 @@ object ImportPreset:
   }
 
 /** The presets the analyst has saved, by distinct name, in save order. */
-final case class ImportPresets private (all: Vector[ImportPreset]) derives CanEqual:
+sealed abstract case class ImportPresets private (all: Vector[ImportPreset]) derives CanEqual:
   def names: Vector[PresetName] = all.map(_.name)
 
   def find(name: String): Either[PresetError, ImportPreset] =
@@ -147,12 +157,15 @@ final case class ImportPresets private (all: Vector[ImportPreset]) derives CanEq
   def add(preset: ImportPreset): Either[PresetError, ImportPresets] =
     Either.cond(
       !all.exists(_.name == preset.name),
-      new ImportPresets(all :+ preset),
+      ImportPresets(all :+ preset),
       PresetError.RepeatedName(preset.name.value)
     )
 
 object ImportPresets:
-  val empty: ImportPresets = new ImportPresets(Vector.empty)
+  private def apply(all: Vector[ImportPreset]): ImportPresets =
+    new ImportPresets(all) {}
+
+  val empty: ImportPresets = ImportPresets(Vector.empty)
 
   def of(presets: Vector[ImportPreset]): Either[PresetError, ImportPresets] =
     presets.foldLeft[Either[PresetError, ImportPresets]](Right(empty))((acc, p) =>

@@ -101,25 +101,14 @@ class DistanceCorrelationLimitSuite extends munit.FunSuite:
     assert(message.contains(s"limit=${pairs - 1}"), clue(message))
   }
 
-  test("the default admits 23,170 cells and refuses 23,171 before visiting a pair") {
-    val most = DistanceCorrelationLimit.DefaultMaximumPairs
-    assertEquals(DistanceCorrelationLimit.default.maximumPairs, most)
-    assert(DistanceCorrelationLimit.pairs(23170) <= most)
-    assert(DistanceCorrelationLimit.pairs(23171) > most)
-    val big = grid(1363, 17) // 23,171 cells
-    val a   = mass(big, i => (i % 97).toDouble + 1)
-    val b   = mass(big, i => (i % 89).toDouble + 1)
-    assertEquals(
-      Distribution.distanceCorrelation[Px].compare(a, b),
-      Left(
-        CompareError.WorkLimitExceeded(
-          "distance correlation",
-          23171,
-          DistanceCorrelationLimit.pairs(23171),
-          most
-        )
-      )
-    )
+  test("the sorted estimator admits grids beyond the former quadratic default bound") {
+    assertEquals(DistanceCorrelationLimit.default.maximumPairs, Long.MaxValue)
+    val big   = grid(1363, 17)
+    val a     = mass(big, i => (i % 97).toDouble + 1)
+    val b     = mass(big, i => (i % 89).toDouble + 1)
+    val value = get(Distribution.distanceCorrelation[Px].compare(a, b)).value
+    assert(value.isFinite && value >= 0 && value <= 1)
+    assertEquals(get(Distribution.distanceCorrelation[Px].compare(b, a)).value, value)
   }
 
   test("grid disagreement precedes the bound, and the bound precedes the constancy check") {

@@ -114,9 +114,9 @@ class AoiSuite extends munit.FunSuite:
     assertEqualsDouble(byId("a").dwellProportion.get, 0.375, 0.0)
     assertEquals(byId("b").firstEntryLatency, Some(Span.millis(100)))
     assertEquals(byId("c").firstEntryLatency, Some(Span.millis(300)))
-    assertEquals(byId("a").runCount, 2)
-    assertEquals(byId("b").runCount, 2)
-    assertEquals(byId("c").runCount, 1)
+    assertEquals(byId("a").sampleRunCount, 2)
+    assertEquals(byId("b").sampleRunCount, 2)
+    assertEquals(byId("c").sampleRunCount, 1)
     assertEquals(
       measured.transitions,
       Vector(AoiTransition(id("a"), id("b"), 3), AoiTransition(id("b"), id("c"), 1))

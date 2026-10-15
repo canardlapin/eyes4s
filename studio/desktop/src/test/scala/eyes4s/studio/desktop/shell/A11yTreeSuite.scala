@@ -145,7 +145,9 @@ class A11yTreeSuite extends ShellFxSuite:
         // The preflight pane's controls follow the backend's check of the
         // design, so the stops are derived once it has answered.
         if runOnFx(w.runtime.model.perspective) == Perspective.Analysis then
-          eventually(fx, "the design's check")(w.resolvedDesign.state.preview.receipt.isDefined)
+          eventually(fx, "the design and recipe fields are served")(
+            w.resolvedDesign.state.preview.receipt.isDefined && w.recipe.editor.ready
+          )
         // Data's geometry panel adds its thumbnails once the placement is
         // drawn and its counts' buttons once they are read.
         if runOnFx(w.runtime.model.perspective) == Perspective.Data then
@@ -164,7 +166,10 @@ class A11yTreeSuite extends ShellFxSuite:
               inspector.usedBy,
               inspector.displays,
               nav.entries,
-              nav.displays
+              nav.displays,
+              w.explore.state.fixations,
+              w.explore.state.preview,
+              w.explore.state.displays
             ).forall(_.toOption.nonEmpty)
           }
         // Derive the served Compare stops after the navigator and contrast
@@ -351,26 +356,30 @@ class A11yTreeSuite extends ShellFxSuite:
   fxStage.test("focus is drawn in the accent: a crumb, a toggle and a pane") { stage =>
     val w      = boot(stage, StoryModels.t2Compare)
     val accent = fx(Tokens.themed(Theme.Light, ThemedToken.Accent))
-    // Keyboard focus is real: each node becomes the scene's focus owner.
-    // JavaFX shows :focused only while the window itself has focus, which a
-    // headless run cannot guarantee, so the focus state is rendered
-    // explicitly: the node's :focused pseudo-class is set, CSS applied, and
-    // its first background fill read. The check always runs.
-    val Focused                = javafx.css.PseudoClass.getPseudoClass("focused")
+    // Keyboard focus is real: Tab brings it to each node, which becomes the
+    // scene's focus owner with :focus-visible, and its first background fill
+    // is read. Focus a click or the program gives draws no ring (ticket 14).
     def ring(r: Region): Color = runOnFx {
-      r.requestFocus()
+      KeyboardFocus.byKeyboard(r)
       assert(stage.scene.getFocusOwner eq r, s"$r is not the focus owner")
-      r.pseudoClassStateChanged(Focused, true)
       r.applyCss()
       r.getBackground.getFills.get(0).getFill.asInstanceOf[Color]
     }
+    def pointed(r: Region): Vector[Color] = runOnFx {
+      KeyboardFocus.byPointer(r)
+      r.applyCss()
+      Option(r.getBackground).toVector
+        .flatMap(_.getFills.asScala.map(_.getFill.asInstanceOf[Color]))
+    }
     val crumb  = runOnFx(w.shell.contextStrip.crumbs.head)
-    val toggle = runOnFx(w.shell.appBar.switcher(eyes4s.studio.core.document.Perspective.Data))
-    val pane   =
+    val toggle =
+      runOnFx(w.shell.appBar.switcher(eyes4s.studio.core.document.Perspective.Compare))
+    val pane =
       runOnFx(w.host.node(runOnFx(w.runtime.model.focusedPane)).get.asInstanceOf[Region])
     assertEquals(ring(crumb), accent)
     assertEquals(ring(toggle), accent)
     assertEquals(ring(pane), accent)
+    Vector(crumb, toggle, pane).foreach(r => assert(!pointed(r).contains(accent), r))
     assertEquals(runOnFx(pane.getAccessibleRole), StudioPanes.accessibleRole(A11yRole.Plot))
     // The rendered focus state, for a human to compare with the boards.
     stage.snapshot(eyes4s.studio.desktop.harness.StudioTheme.Light)

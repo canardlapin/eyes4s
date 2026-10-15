@@ -40,12 +40,20 @@ enum AscNativeEventPhase derives CanEqual:
   case End
   case Update
 
-/** Exact tracker-time interval from an EyeLink end-event record. */
+/** The relation between the exported endpoint and exported duration. */
+enum AscNativeIntervalConvention:
+  case EndpointDifference
+  case InclusiveFinalSample(rateHz: BigDecimal)
+
+/** Exact exported fields, with the endpoint convention retained separately. */
 final class AscNativeInterval private[io] (
     val start: BigDecimal,
     val end: BigDecimal,
-    val duration: BigDecimal
-)
+    val duration: BigDecimal,
+    val convention: AscNativeIntervalConvention
+):
+  /** Half-open offset derived from the exported duration; `end` stays unchanged. */
+  def halfOpenOffset: BigDecimal = start + duration
 
 /** One fixation summary in one coordinate representation. HREF end events
   * contain both an HREF summary and a GAZE summary.
@@ -449,7 +457,8 @@ object EyeLinkAscNative:
       )
       new AscNativeParseResult(line, None, diagnostics.result())
     else
-      val cursor = new EventCursor(source, blockNumber, values, diagnostics)
+      val cursor =
+        new EventCursor(source, blockNumber, values, layout.rateHz.map(_.value), diagnostics)
       val eye    = cursor.eye(layout.eyeLayout)
       val record = kind match
         case AscNativeEventKind.FixationStart =>
@@ -676,6 +685,7 @@ object EyeLinkAscNative:
       source: AscSourceLine,
       block: Long,
       values: Vector[String],
+      rateHz: Option[BigDecimal],
       diagnostics: scala.collection.mutable.Builder[AscNativeDiagnostic, Vector[
         AscNativeDiagnostic
       ]]
@@ -736,7 +746,9 @@ object EyeLinkAscNative:
             AscDiagnosticText.bounded(until.toString)
           )
           None
-        case (Some(from), Some(until), Some(span)) if until - from != span =>
+        case (Some(from), Some(until), Some(span))
+            if until - from != span &&
+              !rateHz.exists(rate => (span - (until - from)) * rate == BigDecimal(1000)) =>
           diagnostics += AscNativeDiagnostic.DurationMismatch(
             source.source,
             source.number,
@@ -747,7 +759,10 @@ object EyeLinkAscNative:
           )
           None
         case (Some(from), Some(until), Some(span)) =>
-          Some(new AscNativeInterval(from, until, span))
+          val convention =
+            if until - from == span then Some(AscNativeIntervalConvention.EndpointDifference)
+            else rateHz.map(AscNativeIntervalConvention.InclusiveFinalSample.apply)
+          convention.map(new AscNativeInterval(from, until, span, _))
         case _ => None
 
     def fixation(prefix: String): Option[AscNativeFixationSummary] =

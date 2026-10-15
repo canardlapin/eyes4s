@@ -56,10 +56,6 @@
   -fx-border-width: 2;
 }
 
-.table-twin:focused {
-  -fx-border-color: -es-accent;
-}
-
 .table-twin .list-view,
 .table-twin .list-view > .virtual-flow > .clipped-container > .sheet {
   -fx-background-color: -es-surface;
@@ -104,10 +100,24 @@
   -fx-alignment: center-right;
 }
 
-/* The selected row: surface-2 between 2 px ink rules (the board's tr.sel). */
+/* A hovered row takes surface-2; the selected row, hovered or not, the
+ * selection fill, its cells at weight 600 and its mono numerals in Mono 500,
+ * the heaviest Mono face (the board's tr.sel; DESIGN_SPEC 15). Both keep the
+ * row's bottom rule. */
+.table-twin-row:hover {
+  -fx-background-color: -es-surface-3, -es-surface-2;
+}
+
 .table-twin-row:selected {
-  -fx-background-color: -es-ink, -es-surface-2;
-  -fx-background-insets: 0, 2 0 2 0;
+  -fx-background-color: -es-surface-3, -es-sel-fill;
+}
+
+.table-twin-row:selected .table-twin-cell {
+  -fx-font-family: "IBM Plex Sans SmBld";
+}
+
+.table-twin-row:selected .table-twin-cell.mono {
+  -fx-font-family: "IBM Plex Mono Medm";
 }
 
 /* A selected row pinned at the top: its annotation (Results board). */
@@ -120,10 +130,22 @@
   -fx-font-family: "IBM Plex Sans SmBld";
 }
 
-/* The row cursor, while the table has focus: a 2 px accent rule on the left. */
-.table-twin:focused .table-twin-row:cursor {
+/* The row cursor, while the keyboard holds the table's focus: a 2 px accent
+ * frame around the row's fill; the table itself draws no ring (DESIGN_SPEC 15,
+ * composite focus). A selected cursor row keeps the selection fill inside the
+ * frame. With no row under the cursor (none yet, or no rows) the ring is
+ * drawn on the table's edge, in the border it keeps for it. */
+.table-twin:focus-visible .table-twin-row:cursor {
+  -fx-background-color: -es-accent, -es-surface;
+  -fx-background-insets: 0, 2;
+}
+
+.table-twin:focus-visible .table-twin-row:cursor:selected {
+  -fx-background-color: -es-accent, -es-sel-fill;
+}
+
+.table-twin:focus-visible:no-cursor {
   -fx-border-color: -es-accent;
-  -fx-border-width: 0 0 0 2;
 }
 
 /* ---- Compare's Queries and Items navigators (S8.1; Main.dc.html, left) ---------- */
@@ -240,13 +262,30 @@
   -fx-background-color: transparent;
 }
 
-.records-row:selected {
+/* Hover is surface-2; a selected record, hovered or not, the selection fill
+ * with its mono cells in Mono 500. */
+.records-row:hover {
   -fx-background-color: -es-surface-2;
 }
 
-.records-row:cursor {
-  -fx-background-color: -es-ink, -es-surface-2;
+.records-row:selected {
+  -fx-background-color: -es-sel-fill;
+}
+
+.records-row:selected .records-cell {
+  -fx-font-family: "IBM Plex Mono Medm";
+}
+
+/* The row cursor, while the keyboard holds the records' pane stop: a 2 px
+ * accent frame around the row's fill (the pane hosting the records is their
+ * focus stop, and draws no ring of its own while a row is under the cursor). */
+.pane-placeholder:focus-visible .records-row:cursor {
+  -fx-background-color: -es-accent, -es-surface;
   -fx-background-insets: 0, 2;
+}
+
+.pane-placeholder:focus-visible .records-row:cursor:selected {
+  -fx-background-color: -es-accent, -es-sel-fill;
 }
 
 .records-raw {
@@ -313,9 +352,13 @@
   -fx-font-family: "IBM Plex Sans Medm";
 }
 
-.preflight-run:focused {
-  -fx-background-color: -es-ink, -es-accent;
-  -fx-background-insets: 0, 2;
+/* Focused: the accent ring, an on-accent gap, then its own accent fill, so
+ * the ring reads against the button and the ground alike. Pressed, it is
+ * drawn as at rest. */
+.preflight-run:focus-visible {
+  -fx-background-color: -es-accent, -es-on-accent, -es-accent;
+  -fx-background-insets: 0, 2, 4;
+  -fx-background-radius: 4, 3, 2;
 }
 
 /* Pending/blocked actions keep their copy readable while CSS catches up

@@ -32,6 +32,7 @@ import eyes4s.studio.desktop.harness.{
 import eyes4s.studio.desktop.maps.MapRasterStore
 import eyes4s.studio.desktop.plot.{PlotFrame, PlotHostStatus}
 import eyes4s.studio.desktop.typography.StudioFonts
+import eyes4s.studio.viz.maps.MapLegendScene
 import eyes4s.studio.viz.plot.DataPoint
 import eyes4s.studio.viz.trial.*
 import intaglio.{Grob, value}
@@ -328,20 +329,24 @@ class TrialViewMapFxSuite extends StudioFxSuite:
       val w          = Wired(fx)
       val holedStyle = ColourLimits.spanning(MapPalette.Mass, Vector(holed))
       runOnFx {
-        w.view.plotHost.setOutputScaleOverride(Some(1.0))
+        // At scale 2: the hatch's period, scaled with the trial (the map's
+        // legend takes room under it), keeps whole pixels of ground.
+        w.view.plotHost.setOutputScaleOverride(Some(2.0))
         w.view.show(input(blank))
         w.view.showMap(Some(MapRequest(holed, holedStyle)))
       }
-      val (scene, frame) = drawn(w, 1.0)(_.map.contains(holed.map))
+      val (scene, frame) = drawn(w, 2.0)(_.map.contains(holed.map))
       assert(scene.caption.endsWith(" · 256 cells without coverage"), scene.caption)
-      val img = snapshot(fx, SnapshotScale.X1)
-      // A row across the hole: the hatch's stripes and ground, never the
-      // blank screen showing through and never a ramp colour.
-      val y   = frameTop + 16.0 * cell
-      val row = (0 until 24).map(k =>
-        rgb(img, pixelAt(w, frame, frameLeft + (9.0 + 0.6 * k) * cell, y, 1))
-      )
-      val screen = Tokens.palette(PaletteToken.Screen)
+      val img = snapshot(fx, SnapshotScale.X2)
+      // A row across the hole, every device pixel of it (so no sampling
+      // step aliases with the hatch's period at any canvas size): the
+      // hatch's stripes and ground, never the blank screen showing through
+      // and never a ramp colour.
+      val y        = frameTop + 16.0 * cell
+      val (x0, py) = pixelAt(w, frame, frameLeft + 9.0 * cell, y, 2)
+      val (x1, _)  = pixelAt(w, frame, frameLeft + 23.0 * cell, y, 2)
+      val row      = (x0 to x1).map(px => rgb(img, (px, py)))
+      val screen   = Tokens.palette(PaletteToken.Screen)
       def near(c: (Int, Int, Int), t: eyes4s.studio.app.tokens.Colour, tol: Int) =
         math.abs(c._1 - t.red) <= tol && math.abs(c._2 - t.green) <= tol &&
           math.abs(c._3 - t.blue) <= tol
@@ -426,4 +431,159 @@ class TrialViewMapFxSuite extends StudioFxSuite:
     runOnFx(w.view.dispose())
     assertEquals(runOnFx(w.view.mapRefused), None)
     assertEquals(seen.lastOption, Some(None))
+  }
+
+  // --- The map legend (review ticket 17) ------------------------------------------
+
+  /** How far, per channel, a snapshot pixel may lie from the colour composited
+    * by hand: the canvas's own rounding of a translucent fill.
+    */
+  private val CompositeTolerance = 10
+
+  /** Waits until the legend host shows `legend`'s scene at scale 1. */
+  private def legendDrawn(w: Wired): (MapLegendScene, PlotFrame) =
+    val deadline = System.currentTimeMillis + TimeoutMillis
+    def settled  = runOnFx {
+      w.view.getScene.getRoot.applyCss()
+      w.view.getScene.getRoot.layout()
+      val host = w.view.legendPlotHost
+      (w.view.legend, host.status.get) match
+        case (Some(l), PlotHostStatus.Drawn(frame))
+            if (frame.plan.scene eq l.plot.scene) && frame.surface.deviceScale == 1.0 &&
+              frame.surface.logicalWidth == host.getWidth &&
+              frame.surface.logicalHeight == host.getHeight =>
+          Some((l, frame))
+        case _ => None
+    }
+    var result = settled
+    while result.isEmpty do
+      if System.currentTimeMillis > deadline then
+        fail(s"legend not drawn within $TimeoutMillis ms: ${runOnFx(w.view.legend)}")
+      Thread.sleep(5)
+      result = settled
+    result.get
+
+  fxStage.test(
+    "a mass map's legend is drawn under the trial's caption: ramp strip, floor, isoline key"
+  ) { fx =>
+    val w = Wired(fx)
+    runOnFx {
+      w.view.plotHost.setOutputScaleOverride(Some(1.0))
+      w.view.legendPlotHost.setOutputScaleOverride(Some(1.0))
+      w.view.show(input(blank))
+      w.view.showMap(Some(MapRequest(grid, style)))
+    }
+    drawn(w, 1.0)(_.map.contains(grid.map))
+    val (legend, _) = legendDrawn(w)
+    // Directly under the trial canvas (its caption band is the canvas's
+    // foot), as wide as the trial, the legend's height.
+    val (trialBox, legendBox, shown) = runOnFx {
+      val t = w.view.plotHost
+      val l = w.view.legendPlotHost
+      (
+        (t.getLayoutX, t.getLayoutY, t.getWidth, t.getHeight),
+        (l.getLayoutX, l.getLayoutY, l.getWidth, l.getHeight),
+        l.isVisible
+      )
+    }
+    assert(shown, "the legend is hidden")
+    assertEquals(legendBox._1, trialBox._1)
+    assertEquals(legendBox._2, trialBox._2 + trialBox._4)
+    assertEquals(legendBox._3, trialBox._3)
+    assertEquals(legendBox._4, MapLegendScene.HeightPx)
+    assert(runOnFx(w.view.getHeight) >= trialBox._2 + trialBox._4 + legendBox._4)
+    // On screen: the zero swatch is see-through (the stage shows), the last
+    // is the ramp's darkest stop at 0.6 over the stage.
+    val img                                  = snapshot(fx, SnapshotScale.X1)
+    def swatchPixel(k: Int): (Int, Int, Int) =
+      val p = runOnFx(
+        w.view.legendPlotHost.localToScene(
+          Point2D(MapLegendScene.StripLeftPx + 10.0 * k + 5.0, MapLegendScene.FirstRowPx)
+        )
+      )
+      rgb(img, (math.floor(p.getX).toInt, math.floor(p.getY).toInt))
+    val stage   = Tokens.staged(StageVariant.Dark, eyes4s.studio.app.tokens.StageToken.Stage)
+    val darkest = Tokens.massRamp.stops.last
+    def near(c: (Int, Int, Int), want: (Int, Int, Int)) =
+      (0 to 2).forall(i =>
+        math.abs(
+          c.productElement(i).asInstanceOf[Int] - want.productElement(i).asInstanceOf[Int]
+        ) <= CompositeTolerance
+      )
+    def over(a: Double)(c: Int, s: Int) = math.round(c * a + s * (1.0 - a)).toInt
+    val zero                            = swatchPixel(0)
+    assert(near(zero, (stage.red, stage.green, stage.blue)), s"zero swatch $zero")
+    val full = swatchPixel(MapLegendScene.Swatches - 1)
+    val want = (
+      over(0.6)(darkest.red, stage.red),
+      over(0.6)(darkest.green, stage.green),
+      over(0.6)(darkest.blue, stage.blue)
+    )
+    assert(near(full, want), s"max swatch $full, expected about $want")
+    // Its words are the catalogue's, the floor's included.
+    val words = legend.plot.scene.grobs
+      .flatMap(g => g +: g.children)
+      .collect { case t: Grob.Text => t.label }
+    assert(words.contains(MapLegendScene.rampText), words)
+    assert(MapLegendScene.rampText.endsWith("fades below 10% of max"), MapLegendScene.rampText)
+    w.dispose()
+  }
+
+  fxStage.test("no map, or a difference map, draws no legend; another trial drops it") { fx =>
+    val w = Wired(fx)
+    runOnFx {
+      w.view.plotHost.setOutputScaleOverride(Some(1.0))
+      w.view.show(input(blank))
+    }
+    drawn(w, 1.0)(_.map.isEmpty)
+    def none(): Unit =
+      runOnFx {
+        assertEquals(w.view.legend, None)
+        assert(!w.view.legendPlotHost.isVisible, "a legend is shown")
+      }
+    none()
+    // A difference map: no board draws a legend for one on a trial.
+    val difference = ColourLimits.spanning(MapPalette.Difference, Vector(grid))
+    runOnFx(w.view.showMap(Some(MapRequest(grid, difference))))
+    drawn(w, 1.0)(_.map.contains(grid.map))
+    none()
+    assertEquals(runOnFx(w.view.legendRefused), None)
+    // A mass map draws one; removing the map removes it.
+    runOnFx(w.view.showMap(Some(MapRequest(grid, style))))
+    drawn(w, 1.0)(s => s.map.contains(grid.map) && runOnFx(w.view.legend).nonEmpty)
+    runOnFx(w.view.showMap(None))
+    drawn(w, 1.0)(_.map.isEmpty)
+    none()
+    w.dispose()
+  }
+
+  fxStage.test("the trial view's accessible description ends with the legend's") { fx =>
+    val w = Wired(fx)
+    runOnFx {
+      w.view.plotHost.setOutputScaleOverride(Some(1.0))
+      w.view.legendPlotHost.setOutputScaleOverride(Some(1.0))
+      w.view.show(input(blank))
+      w.view.showMap(Some(MapRequest(grid, style, limits = LimitsScope.Shared)))
+    }
+    drawn(w, 1.0)(_.map.contains(grid.map))
+    val (legend, _) = legendDrawn(w)
+    val said        =
+      "Map legend: fixation duration mass per cell from 0 to max, fading out below 10 " +
+        "percent of max, shared colour limits across panels; isolines enclose 50 and 90 " +
+        "percent of mass"
+    assertEquals(legend.description, said)
+    val (trialHelp, legendHelp) = runOnFx(
+      (
+        Option(w.view.plotHost.getAccessibleHelp),
+        Option(w.view.legendPlotHost.getAccessibleHelp)
+      )
+    )
+    assert(trialHelp.exists(_.endsWith(" " + said)), s"trial view help: $trialHelp")
+    assertEquals(legendHelp, Some(said))
+    // Without the map, the trial's description says nothing of a legend.
+    runOnFx(w.view.showMap(None))
+    drawn(w, 1.0)(_.map.isEmpty)
+    val bare = runOnFx(Option(w.view.plotHost.getAccessibleHelp))
+    assert(bare.exists(h => !h.contains("Map legend")), s"trial view help: $bare")
+    w.dispose()
   }

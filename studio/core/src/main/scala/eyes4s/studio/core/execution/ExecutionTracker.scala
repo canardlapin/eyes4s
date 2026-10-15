@@ -49,11 +49,18 @@ final case class Requested(stamp: RunStamp, generation: Long) derives CanEqual
   *   - Every live job is kept; of the settled ones, only the latest
   *     [[ExecutionTracker.RetainedPerRevision]] of each analysis revision.
   */
-final case class ExecutionTracker private (
+sealed abstract case class ExecutionTracker private (
     jobs: Vector[ExecutionJob],
     requested: Option[Requested],
     generation: Long
 ) derives CanEqual:
+
+  private def copy(
+      jobs: Vector[ExecutionJob] = this.jobs,
+      requested: Option[Requested] = this.requested,
+      generation: Long = this.generation
+  ): ExecutionTracker =
+    ExecutionTracker(jobs, requested, generation)
   import ExecutionTracker.{RetainedPerRevision, Step}
 
   def job(id: JobId): Either[ExecutionError, ExecutionJob] =
@@ -188,6 +195,13 @@ final case class ExecutionTracker private (
         changed(j.copy(phase = JobPhase.Failed(stated, latest(j, last))))
 
 object ExecutionTracker:
+  private def apply(
+      jobs: Vector[ExecutionJob],
+      requested: Option[Requested],
+      generation: Long
+  ): ExecutionTracker =
+    new ExecutionTracker(jobs, requested, generation) {}
+
   /** A transition's next state, the events it publishes in order, and the
     * job it concerned.
     */

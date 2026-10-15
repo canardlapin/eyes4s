@@ -44,6 +44,9 @@ final case class FamilySamples(
   * so a new case appears in `labels` before anyone writes a code for it.
   */
 object DiagnosticSamples:
+  given DiagnosticExample[PointSamplingError[Nothing]] = DiagnosticExample.of(seed =>
+    PointSamplingError.NonFinite("sample", seed, Double.PositiveInfinity)
+  )
   given DiagnosticExample[SourceKeyColumns[?]] = DiagnosticExample.of(seed =>
     SourceKeyColumns.Study(s"participant-$seed", s"item-$seed", s"phase-$seed")
   )
@@ -184,7 +187,12 @@ object DiagnosticSamples:
           Vector(Vector(digest2))
         ),
       PlanError.UnmatchedFocalRefused(Vector(digest)),
-      PlanError.InitialFixations(InitialFixationError.MissingAngularScale(1.5))
+      PlanError.InitialFixations(InitialFixationError.MissingAngularScale(1.5)),
+      PlanError.ExpectedUnmatchedSelection(
+        "old_new",
+        "p1/recognition/r1#1",
+        "missing declaration"
+      )
     ),
     family[StudyFailure[StudyKey]]("StudyFailure")(
       StudyFailure.Frame(k1, frameError),
@@ -631,7 +639,8 @@ object DiagnosticSamples:
       AoiError.DuplicateId(aoiA, 0, 2),
       AoiError.FrameConflict(frameError),
       AoiError.ResolutionGridFailure(fid, 0, 1, GeometryError.DegenerateGrid(0, 1)),
-      AoiError.ObservedOverlap(fid, 3, 1, 2, Vector(aoiA, aoiB))
+      AoiError.ObservedOverlap(fid, 3, 1, 2, Vector(aoiA, aoiB)),
+      AoiError.ObservedFixationOverlap(fid, 3, 1, 2, Vector(aoiA, aoiB))
     ),
     family[DescriptorError]("DescriptorError")(
       DescriptorError.InvalidField("sigma", 0, " "),
@@ -879,7 +888,7 @@ object DiagnosticSamples:
     generated[LeastSquaresError]("LeastSquaresError"),
     generated[RngError]("RngError"),
     generated[EpochError[StudyKey, String]]("EpochError"),
-    generated[PointSamplingError]("PointSamplingError"),
+    generated[PointSamplingError[StudyKey]]("PointSamplingError"),
     generated[RecipeParameterError]("RecipeParameterError"),
     generated[RepetitionPlanError]("RepetitionPlanError"),
     generated[DiagnosticCodeError]("DiagnosticCodeError"),
@@ -956,5 +965,37 @@ object DiagnosticSamples:
     generated[StudyRecipeError]("StudyRecipeError"),
     generated[StudyAdvisory]("StudyAdvisory"),
     generated[FactError]("FactError"),
-    generated[NavigationError[StudyKey]]("NavigationError")
+    generated[NavigationError[StudyKey]]("NavigationError"),
+    family[ProjectFinding[StudyKey, String]]("ProjectFinding")(
+      ProjectFinding.MissingRecording(get(SessionKey.of("recording"))),
+      ProjectFinding.MissingViewing(),
+      ProjectFinding.MissingAreas(get(SessionKey.of("areas"))),
+      ProjectFinding.MissingGrid(get(SessionKey.of("grid"))),
+      ProjectFinding.MissingObservedTimeline(
+        k1,
+        MarkSelector("start", Occurrence.RequireUnique),
+        ClockId("observed")
+      ),
+      ProjectFinding.Anchor(
+        EpochError.AnchorMatches(k1, MarkSelector("start", Occurrence.RequireUnique), 2)
+      ),
+      ProjectFinding.MissingSynchronization(
+        k1,
+        MarkSelector("start", Occurrence.RequireUnique),
+        ClockId("observed"),
+        ClockId("tracker"),
+        SyncErrorMagnitude.zero,
+        Vector(ClockId("other") -> ClockId("tracker"))
+      ),
+      ProjectFinding.ImpreciseSynchronization(
+        k1,
+        MarkSelector("start", Occurrence.RequireUnique),
+        ClockId("observed"),
+        ClockId("tracker"),
+        SyncErrorMagnitude.zero,
+        get(SyncErrorMagnitude.of(Span.micros(2)))
+      ),
+      ProjectFinding.MissingSchema(DefinitionId.timeline, Vector(2))
+    ),
+    generated[ScanpathComparisonError]("ScanpathComparisonError")
   )

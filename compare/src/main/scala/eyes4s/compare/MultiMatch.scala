@@ -90,6 +90,10 @@ object MultiMatchScore:
       durationScore
     )
 
+/** Versioned correspondence selection; see bead q-multimatch-canonical-ties. */
+enum MultiMatchAlignmentConvention derives CanEqual:
+  case CanonicalOperandsExactCostTracebackV1
+
 /** MultiMatch scanpath comparison (Jarodzka et al. 2010; Dewhurst et al. 2012).
   *
   * ==What it is==
@@ -102,8 +106,9 @@ object MultiMatchScore:
   *
   * ==Symmetric, and not a metric==
   *
-  * Symmetric: the cost matrix transposes and the medians run over the same
-  * pairs. Not a metric, and this is worth stating plainly because the values
+  * Symmetric: operands are put in a canonical content order before alignment
+  * and reduction, so both call orders use the same tie-selected correspondence.
+  * Not a metric, and this is worth stating plainly because the values
   * look like similarities and invite being treated as one: a median of
   * differences does not satisfy the triangle inequality, so it ships as
   * [[SymmetricCompare]] and nothing stronger (PRD C-3).
@@ -125,12 +130,64 @@ object MultiMatchScore:
   */
 object MultiMatch:
 
+  val alignmentConvention: MultiMatchAlignmentConvention =
+    MultiMatchAlignmentConvention.CanonicalOperandsExactCostTracebackV1
+
+  /** The selected movement correspondence, indexed in the caller's operand order.
+    * Costs exclude the origin cell. Exact predecessor-cost ties prefer diagonal,
+    * then vertical, then horizontal in canonical operand order; near ties retain
+    * the smaller binary64 cost with no tolerance band.
+    */
+  def alignment[U <: Unit2D](
+      a: Scanpath[U],
+      b: Scanpath[U]
+  ): Either[CompareError, AlignmentPath] =
+    canonicalAlignment(a, b).map { (_, _, path, swapped) =>
+      if !swapped then path
+      else AlignmentPath(path.matches.map((i, j) => AlignmentStep.Match(j, i)), path.cost)
+    }
+
+  private def canonicalAlignment[U <: Unit2D](
+      a: Scanpath[U],
+      b: Scanpath[U]
+  ): Either[CompareError, (Scanpath[U], Scanpath[U], AlignmentPath, Boolean)] =
+    for
+      _ <- Agreement.frames(a.frame, b.frame).left.map(CompareError.Frames.apply)
+      _ <- Either.cond(a.transitions.nonEmpty, (), CompareError.TooShort("a scanpath", a.n, 2))
+      _ <- Either.cond(b.transitions.nonEmpty, (), CompareError.TooShort("b scanpath", b.n, 2))
+      swapped = contentOrder(a, b) > 0
+      left    = if swapped then b else a
+      right   = if swapped then a else b
+      path <- Alignment.monotoneLattice.align(left.transitions, right.transitions) { (x, y) =>
+        val dx = x.displacement.dx - y.displacement.dx
+        val dy = x.displacement.dy - y.displacement.dy
+        math.hypot(dx, dy)
+      }
+      _ <- MeasureDistance.computed("MultiMatch alignment", path.cost)
+    yield (left, right, path, swapped)
+
+  /** Only fixation geometry and durations enter the order; clocks, absolute
+    * onsets, source names and object identity cannot select a different tie.
+    */
+  private def contentOrder[U <: Unit2D](a: Scanpath[U], b: Scanpath[U]): Int =
+    var result = java.lang.Integer.compare(a.n, b.n)
+    var index  = 0
+    while result == 0 && index < a.n do
+      val left  = a.fixations(index)
+      val right = b.fixations(index)
+      result = java.lang.Double.compare(left.centre.x, right.centre.x)
+      if result == 0 then result = java.lang.Double.compare(left.centre.y, right.centre.y)
+      if result == 0 then
+        result = java.lang.Long.compare(left.duration.toMicros, right.duration.toMicros)
+      index += 1
+    result
+
   def apply[U <: Unit2D]: SymmetricCompare[Scanpath[U], MultiMatchScore] =
     new SymmetricCompare[Scanpath[U], MultiMatchScore]:
 
       val info = MeasureInfo(
         "MultiMatch",
-        "five-dimensional scanpath comparison; symmetric, and NOT a metric",
+        s"five-dimensional scanpath comparison; symmetric, and NOT a metric; alignment=$alignmentConvention",
         MeasureScale.Bounded(0.0, 1.0),
         Some("Jarodzka, Holmqvist & Nystrom (2010); Dewhurst et al. (2012)")
       )
@@ -139,22 +196,9 @@ object MultiMatch:
           a: Scanpath[U],
           b: Scanpath[U]
       ): Either[CompareError, MultiMatchScore] =
-        for
-          _ <- Agreement.frames(a.frame, b.frame).left.map(CompareError.Frames.apply)
-          sa = a.transitions
-          sb = b.transitions
-          _    <- Either.cond(sa.nonEmpty, (), CompareError.TooShort("a scanpath", a.n, 2))
-          _    <- Either.cond(sb.nonEmpty, (), CompareError.TooShort("a scanpath", b.n, 2))
-          path <- Alignment.monotoneLattice.align(sa, sb) { (x, y) =>
-            // Aligned on the SHAPE dimension alone -- the difference between
-            // the two movement vectors -- and the other four dimensions are
-            // then read off the correspondence it produces.
-            val dx = x.displacement.dx - y.displacement.dx
-            val dy = x.displacement.dy - y.displacement.dy
-            math.hypot(dx, dy)
-          }
-          result <- score(a, b, sa, sb, path)
-        yield result
+        canonicalAlignment(a, b).flatMap { (left, right, path, _) =>
+          score(left, right, left.transitions, right.transitions, path)
+        }
 
       private def score(
           left: Scanpath[U],

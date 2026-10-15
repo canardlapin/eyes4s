@@ -60,6 +60,56 @@ class EyeLinkAscSessionSuite extends munit.FunSuite:
       EyeLinkAscFraming.whole(settings, sourceBytes)
     )
 
+  test(
+    "preserving unconfirmed native pairs is explicit and never confirms the abandoned start"
+  ) {
+    val source = """|START 0 LEFT SAMPLES EVENTS
+      |PUPIL AREA
+      |SAMPLES GAZE LEFT RATE 1000
+      |EVENTS GAZE LEFT RATE 1000
+      |SFIX L 0
+      |0 10 20 100
+      |1 10 20 100
+      |SFIX L 2
+      |2 10 20 100
+      |3 10 20 100
+      |4 10 20 100
+      |EFIX L 2 4 3 10 20 100
+      |END 5
+      |""".stripMargin
+    val strict = materialize(source)
+    assert(strict.trusted.isLeft)
+    assert(strict.errors.exists {
+      case EyeLinkAscSessionDiagnostic.Pairing(_: AscNativePairingDiagnostic.DuplicateStart) =>
+        true
+      case _ => false
+    })
+    val preserving = EyeLinkAscSessionConfig
+      .of(
+        frame,
+        clock,
+        ConversionEvidencePolicy.Exploratory,
+        AscBlinkReconciliationPolicy.ConfirmedNativeIntervals,
+        AscUnspecifiedPupilPolicy.RejectMeasuredValues,
+        nativePairing = AscNativePairingPolicy.PreserveUnconfirmedEvents
+      )
+      .fold(error => fail(error.message), identity)
+    val result  = materialize(source, preserving)
+    val session = result.trusted.fold(errors => fail(errors.head.message), identity)
+    assertEquals(result.report.materializedSamples, 5)
+    assertEquals(session.nativeEvents.events.length, 3)
+    assertEquals(session.nativeEvents.confirmedEnds.length, 1)
+    assertEquals(session.nativeEvents.confirmedEnds.head.onset, BigDecimal(2))
+    assertEquals(session.nativeEvents.diagnostics.length, 1)
+    assertEquals(
+      result.warnings.count {
+        case EyeLinkAscSessionDiagnostic.UnconfirmedPairing(_) => true
+        case _                                                 => false
+      },
+      1
+    )
+  }
+
   test("multiple mono and binocular blocks retain native evidence and exact source support") {
     val result = materialize(
       """

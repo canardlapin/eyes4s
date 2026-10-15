@@ -17,11 +17,14 @@
 package eyes4s.results
 
 /** A report's name, chosen by its author. */
-final case class ReportId private (value: String) derives CanEqual
+sealed abstract case class ReportId private (value: String) derives CanEqual
 
 object ReportId:
+  private def apply(value: String): ReportId =
+    new ReportId(value) {}
+
   def of(value: String): Either[SpecError, ReportId] =
-    Either.cond(value.trim.nonEmpty, new ReportId(value), SpecError.BlankId(value))
+    Either.cond(value.trim.nonEmpty, ReportId(value), SpecError.BlankId(value))
 
 /** Which stored per-query value a report reduces: the matched reduction, the
   * control reduction, or their contrast (matched minus control).
@@ -32,27 +35,35 @@ enum Role derives CanEqual:
 /** The roles and score components a report reads, both non-empty and
   * distinct, in the order the report lists them.
   */
-final case class ReportSelection private (roles: Vector[Role], components: Vector[String])
-    derives CanEqual
+sealed abstract case class ReportSelection private (
+    roles: Vector[Role],
+    components: Vector[String]
+) derives CanEqual
 
 object ReportSelection:
+  private def apply(roles: Vector[Role], components: Vector[String]): ReportSelection =
+    new ReportSelection(roles, components) {}
+
   def of(roles: Vector[Role], components: Vector[String]): Either[SpecError, ReportSelection] =
     val valid =
       roles.nonEmpty && components.nonEmpty && roles.distinct.size == roles.size &&
         components.distinct.size == components.size && components.forall(_.trim.nonEmpty)
     Either.cond(
       valid,
-      new ReportSelection(roles, components),
+      ReportSelection(roles, components),
       SpecError.InvalidSelection(roles, components)
     )
 
 /** The fewest queries a participant needs in a group to contribute to it. */
-final case class MinimumQueries private (value: Int) derives CanEqual
+sealed abstract case class MinimumQueries private (value: Int) derives CanEqual
 
 object MinimumQueries:
-  val one: MinimumQueries                               = new MinimumQueries(1)
+  private def apply(value: Int): MinimumQueries =
+    new MinimumQueries(value) {}
+
+  val one: MinimumQueries                               = MinimumQueries(1)
   def of(value: Int): Either[SpecError, MinimumQueries] =
-    Either.cond(value >= 1, new MinimumQueries(value), SpecError.InvalidMinimum(value))
+    Either.cond(value >= 1, MinimumQueries(value), SpecError.InvalidMinimum(value))
 
 /** How a group's queries become its estimate. */
 enum ReducePolicy derives CanEqual:
@@ -98,7 +109,7 @@ final case class LevelContrast(term: Term, minuend: String, subtrahend: String) 
   * term); how to reduce them (participant means by default); an optional
   * within-participant level contrast; and the spread to report.
   */
-final case class ReportSpec private (
+sealed abstract case class ReportSpec private (
     id: ReportId,
     scale: Int,
     selection: ReportSelection,
@@ -115,6 +126,18 @@ final case class ReportSpec private (
   def covariates: Vector[Covariate] = terms.flatMap(_.covariate).distinct
 
 object ReportSpec:
+  private def apply(
+      id: ReportId,
+      scale: Int,
+      selection: ReportSelection,
+      filter: Option[Predicate],
+      groupBy: Vector[Grouping],
+      reduce: ReducePolicy,
+      contrast: Option[LevelContrast],
+      spread: Spread
+  ): ReportSpec =
+    new ReportSpec(id, scale, selection, filter, groupBy, reduce, contrast, spread) {}
+
   /** A checked specification: a non-negative scale; comparison thresholds
     * finite; `In` and `AtLeast` levels declared by their terms; grouping
     * terms distinct; one declaration per covariate across all terms; and a
@@ -130,8 +153,8 @@ object ReportSpec:
       contrast: Option[LevelContrast] = None,
       spread: Spread = Spread.StandardDeviation
   ): Either[SpecError, ReportSpec] =
-    val spec = new ReportSpec(id, scale, selection, filter, groupBy, reduce, contrast, spread)
-    val grouped                                    = groupBy.map(_.on)
+    val spec    = ReportSpec(id, scale, selection, filter, groupBy, reduce, contrast, spread)
+    val grouped = groupBy.map(_.on)
     def predicate(p: Predicate): Option[SpecError] = p match
       case Predicate.Cmp(term, _, threshold) =>
         Option.when(!threshold.isFinite)(SpecError.NonFiniteThreshold(term.render, threshold))

@@ -34,10 +34,10 @@ object StudioLayouts:
 
   // Literal ids, checked through PaneId.of and LayoutId.of by LayoutSpecSuite.
   private def pane(id: String, title: String, kind: PaneKind): PaneDecl =
-    PaneDecl(new PaneId(id), PaneTitle.Fixed(title), kind)
+    PaneDecl(PaneId(id), PaneTitle.Fixed(title), kind)
 
   private def dynamic(id: String, generic: String, kind: PaneKind): PaneDecl =
-    PaneDecl(new PaneId(id), PaneTitle.Dynamic(generic), kind)
+    PaneDecl(PaneId(id), PaneTitle.Dynamic(generic), kind)
 
   private def table(of: String): PaneDecl = pane(s"$of.table", "Table", Table)
 
@@ -71,47 +71,47 @@ object StudioLayouts:
     )
 
   private def layout(id: String, perspective: Perspective, root: LayoutNode, hint: MessageId) =
-    PerspectiveLayout(new LayoutId(id), perspective, root, hint)
+    PerspectiveLayout(LayoutId(id), perspective, root, hint)
 
   // --- Data -------------------------------------------------------------------
 
   /** The pane that hosts the Sources navigator: sources, displays, repairs (S5.7). */
-  val sources: PaneId               = new PaneId("data.sources")
+  val sources: PaneId               = PaneId("data.sources")
   private val sourcesPane: PaneDecl = PaneDecl(sources, PaneTitle.Fixed("Sources"), Navigator)
 
   /** The pane that hosts the import wizard on the selected dataset revision. */
-  val columnMapping: PaneId = new PaneId("data.column-mapping")
+  val columnMapping: PaneId = PaneId("data.column-mapping")
 
   /** The selected import draft's geometry, coordinated with column mapping. */
-  val dataGeometry: PaneId = new PaneId("data.geometry")
+  val dataGeometry: PaneId = PaneId("data.geometry")
 
   /** The trial metadata and issue pages of that same selected import draft. */
-  val trialMetadata: PaneId = new PaneId("data.trial-metadata")
-  val dataIssues: PaneId    = new PaneId("data.issues")
+  val trialMetadata: PaneId = PaneId("data.trial-metadata")
+  val dataIssues: PaneId    = PaneId("data.issues")
 
   /** The pane that hosts the admission ledger of the selected revision. */
-  val admission: PaneId = new PaneId("data.admission")
+  val admission: PaneId = PaneId("data.admission")
 
   /** The Figures perspective's methods.md text and its diff (S9.4). */
-  val methods: PaneId     = new PaneId("figures.methods")
-  val methodsDiff: PaneId = new PaneId("figures.methods-diff")
+  val methods: PaneId     = PaneId("figures.methods")
+  val methodsDiff: PaneId = PaneId("figures.methods-diff")
 
   /** The panes that host Compare's Queries and Items navigators (S8.1). */
-  val compareQueries: PaneId = new PaneId("compare.queries")
-  val compareItems: PaneId   = new PaneId("compare.items")
+  val compareQueries: PaneId = PaneId("compare.queries")
+  val compareItems: PaneId   = PaneId("compare.items")
 
   /** The panes that host Compare's query and reference trial panels (S8.2). */
-  val queryTrial: PaneId     = new PaneId("compare.query-trial")
-  val referenceTrial: PaneId = new PaneId("compare.reference-trial")
+  val queryTrial: PaneId     = PaneId("compare.query-trial")
+  val referenceTrial: PaneId = PaneId("compare.reference-trial")
 
   /** The pane that hosts Compare's scale ladder and contrast readout (S8.3). */
-  val contrast: PaneId = new PaneId("compare.contrast")
+  val contrast: PaneId = PaneId("compare.contrast")
 
   /** The pane that hosts Compare's why-this-reference inspector (S8.4). */
-  val compareInspector: PaneId = new PaneId("compare.inspector")
+  val compareInspector: PaneId = PaneId("compare.inspector")
 
   /** The pane that hosts Compare's reporting editor (S8.7). */
-  val compareReporting: PaneId = new PaneId("compare.reporting")
+  val compareReporting: PaneId = PaneId("compare.reporting")
 
   /** DataEmpty.dc.html: no dataset yet. */
   val dataFirstRun: PerspectiveLayout = layout(
@@ -154,21 +154,21 @@ object StudioLayouts:
   // --- Explore ------------------------------------------------------------------
 
   /** The panes that host the trials navigator (S6.1): its tree, and its items. */
-  val trials: PaneId = new PaneId("explore.trials")
-  val items: PaneId  = new PaneId("explore.items")
+  val trials: PaneId = PaneId("explore.trials")
+  val items: PaneId  = PaneId("explore.items")
 
   /** The pane that hosts Explore's trial view (S6.2). */
-  val trialView: PaneId = new PaneId("explore.trial-view")
+  val trialView: PaneId = PaneId("explore.trial-view")
 
   /** The pane that hosts Explore's source records table (S6.4). */
-  val sourceRecords: PaneId = new PaneId("explore.source-records")
+  val sourceRecords: PaneId = PaneId("explore.source-records")
 
   /** The pane that hosts Explore's fixation inspector (S6.5). */
-  val exploreInspector: PaneId = new PaneId("explore.inspector")
+  val exploreInspector: PaneId = PaneId("explore.inspector")
 
   /** The panes that host Explore's timeline and its table (S6.3). */
-  val timeline: PaneId      = new PaneId("explore.timeline")
-  val timelineTable: PaneId = new PaneId("explore.timeline.table")
+  val timeline: PaneId      = PaneId("explore.timeline")
+  val timelineTable: PaneId = PaneId("explore.timeline.table")
 
   /** Explore.dc.html. */
   val explore: PerspectiveLayout = layout(
@@ -204,18 +204,20 @@ object StudioLayouts:
   // --- Analysis -----------------------------------------------------------------
 
   /** Where the failed jobs chip leads (S1.4). */
-  val diagnostics: PaneId = new PaneId("analysis.diagnostics")
+  val diagnostics: PaneId = PaneId("analysis.diagnostics")
 
   /** The preset and first-analysis controls. */
-  val recipe: PaneId = new PaneId("analysis.recipe")
+  val recipe: PaneId            = PaneId("analysis.recipe")
+  val recipeDiff: PaneId        = PaneId("analysis.diff")
+  val recipeDescription: PaneId = PaneId("analysis.description")
 
   /** The resolved-design table (S7.5). */
-  val resolvedDesign: PaneId = new PaneId("analysis.resolved-design")
+  val resolvedDesign: PaneId = PaneId("analysis.resolved-design")
 
   /** The pane that hosts the preflight findings and the run card (S7.6). */
-  val preflight: PaneId = new PaneId("analysis.preflight")
+  val preflight: PaneId = PaneId("analysis.preflight")
 
-  val analyses: PaneId = new PaneId("analysis.analyses")
+  val analyses: PaneId = PaneId("analysis.analyses")
 
   /** Analysis.dc.html. */
   val analysis: PerspectiveLayout = layout(
@@ -227,8 +229,8 @@ object StudioLayouts:
         Axis.Vertical,
         group(
           dynamic(recipe.value, "Recipe", Form),
-          dynamic("analysis.diff", "Diff", Text),
-          pane("analysis.description", "Description", Text)
+          dynamic(recipeDiff.value, "Diff", Text),
+          pane(recipeDescription.value, "Description", Form)
         ) -> 0.6,
         group(
           // A region (the board's section) holding the table's own focus stop.

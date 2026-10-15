@@ -32,11 +32,11 @@ final class NativeArtifactPackage private (
     val manifest: ScientificManifest,
     val manifestAddress: ByteDigest,
     val budget: NativeArtifactBudget,
-    val files: Vector[(ArtifactName, Vector[Byte])],
+    val files: Vector[(ArtifactName, IndexedSeq[Byte])],
     val archive: RunArchive,
     private[core] val checked: CheckedNativeSnapshot
 ):
-  def bytes(name: ArtifactName): Option[Vector[Byte]] = files.collectFirst {
+  def bytes(name: ArtifactName): Option[IndexedSeq[Byte]] = files.collectFirst {
     case (`name`, data) => data
   }
 
@@ -52,11 +52,12 @@ object NativeArtifactPackage:
     value.leftMap(e => NativeArtifactError.Layout(operation, e.message))
   private def decoded(
       operation: String,
-      data: Vector[Byte]
+      data: IndexedSeq[Byte]
   ): Either[NativeArtifactError, io.circe.Json] =
-    val text = String(data.toArray, UTF_8)
-    if text.getBytes(UTF_8).toVector != data then
-      Left(NativeArtifactError.Layout(operation, "Invalid UTF-8 bytes."))
+    val text      = String(data.toArray, UTF_8)
+    val roundTrip = text.getBytes(UTF_8)
+    if roundTrip.length != data.length || roundTrip.indices.exists(i => roundTrip(i) != data(i))
+    then Left(NativeArtifactError.Layout(operation, "Invalid UTF-8 bytes."))
     else
       io.circe.parser.parse(text).leftMap(e => NativeArtifactError.Layout(operation, e.message))
   private def limit(
@@ -85,11 +86,13 @@ object NativeArtifactPackage:
     * identities after storage. Unlisted files and incomplete closures refuse.
     */
   def verify(
-      files: Vector[(ArtifactName, Vector[Byte])],
+      files: Vector[(ArtifactName, IndexedSeq[Byte])],
       budget: NativeArtifactBudget = NativeArtifactBudget.Default
   ): Either[NativeArtifactError, NativeArtifactPackage] =
-    val names                    = files.map(_._1)
-    val byName                   = files.toMap
+    val names = files.map(_._1)
+    // The budget and name checks run before copying any supplied body.
+    lazy val owned  = files.map((name, bytes) => name -> NativeArtifactBytes.copyOf(bytes))
+    lazy val byName = owned.toMap
     def need(name: ArtifactName) =
       byName.get(name).toRight(NativeArtifactError.Layout("entry", s"Missing $name."))
     for
@@ -169,22 +172,28 @@ object NativeArtifactPackage:
         graph.entries.flatMap(_.layout).foldLeft(BigInt(0))((n, layout) => n + layout.count),
         BigInt(budget.maxDensityCells)
       )
-      documents <- graph.entries
+      structuralRows <- graph.entries
         .filter(_.media == MediaKind.JsonText)
-        .traverse(e => need(e.name).flatMap(decoded(e.name.value, _)))
+        .foldLeft[Either[NativeArtifactError, BigInt]](Right(BigInt(0))) { (total, entry) =>
+          total.flatMap(n =>
+            need(entry.name)
+              .flatMap(decoded(entry.name.value, _))
+              .map(doc => n + fieldRows(doc))
+          )
+        }
       _ <- limit(
         "structural rows",
-        documents.foldLeft(BigInt(0))((n, doc) => n + fieldRows(doc)),
+        structuralRows,
         BigInt(budget.maxRows)
       )
-      address = ByteDigest.sha256(IArray.from(manifestBytes))
+      address = ByteDigest.sha256(NativeArtifactBytes.view(manifestBytes))
       source  = ByteSource.inMemory(
-        Map(address -> IArray.from(manifestBytes)),
-        graph.entries.map(e => e.name -> IArray.from(byName(e.name))).toMap
+        Map(address -> NativeArtifactBytes.view(manifestBytes)),
+        graph.entries.map(e => e.name -> NativeArtifactBytes.view(byName(e.name))).toMap
       )
       decoders <- layout("native decoders")(ArtifactDecoders.trial[Px])
       resolved <- ArtifactResolver
-        .resolve(address, source, decoders)
+        .resolveOwned(address, source, decoders)
         .leftMap(errors =>
           NativeArtifactError
             .Package(facts.run, "resolve", errors.toVector.map(_.message).mkString("; "))
@@ -232,8 +241,13 @@ object NativeArtifactPackage:
           "This native package exports plain retained results, not stamped archives."
         )
       )
-      resultJson   <- layout("decoded result encode")(result.encode)
-      nativeResult <- layout("native result decode")(nativeResults.codec.decode(resultJson))
+      resultPayload <- layout("stored result metadata")(result.reconstructionMetadata)
+      nativeResult  <- layout("native result reconstruction")(
+        nativeResults.restoreDensities(
+          resultPayload,
+          result.result.scales.map(_.estimation.map(_._2.toOption))
+        )
+      )
       resultDigest <- layout("decoded result canonical digest")(
         nativeResults.codec.digest(nativeResult)
       )
@@ -274,7 +288,7 @@ object NativeArtifactPackage:
             RunLifecycle.Completed,
             CoreBinding.Bound(facts.result)
           ),
-          files.map((name, data) => name -> IArray.from(data))
+          owned.map((name, data) => name -> NativeArtifactBytes.view(data))
         )
         .leftMap(e => NativeArtifactError.Package(facts.run, "archive", e.message))
     yield new NativeArtifactPackage(
@@ -282,7 +296,7 @@ object NativeArtifactPackage:
       graph,
       address,
       budget,
-      files,
+      owned,
       archive,
       new CheckedNativeSnapshot(nativePlan, expected._2, input, ledger, nativeResult)
     )

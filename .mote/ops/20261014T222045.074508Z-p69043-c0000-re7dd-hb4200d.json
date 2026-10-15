@@ -1,0 +1,1 @@
+{"actor":"codex-core-completion-20261014","entity":"app-prereq","kind":"reserve_open","mode":"exclusive","op":"20261014T222045.074508Z-p69043-c0000-re7dd-hb4200d","paths":["plan/src/main/scala/eyes4s/plan/EpochPlan.scala"],"reservation_id":"rv-01M4Y81VMJ1W32D13819V17ZXC","ts":"2026-10-14T22:20:45.074508Z","ttl_s":28800,"v":2}

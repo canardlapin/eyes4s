@@ -179,7 +179,12 @@ class TableTwinViewFxSuite extends StudioFxSuite:
   ) { fx =>
     val src              = source(300)
     val (table, intents) = shown(fx, src)
-    assertEquals(ask(table, AccessibleAttribute.FOCUS_ITEM), null)
+    // A table that took the scene's focus when shown has its cursor on the
+    // first row (DESIGN_SPEC section 15); one without focus has no cursor.
+    val start = ask(table, AccessibleAttribute.FOCUS_ITEM)
+    if runOnFx(table.isFocused) then
+      assertEquals(int(start.asInstanceOf[Node], AccessibleAttribute.ROW_INDEX), 0)
+    else assertEquals(start, null)
     val focusNews     = runOnFx(table.focusNotified)
     val selectionNews = runOnFx(table.selectionNotified)
     runOnFx(table.moveCursor(Some(src.rows(250).ref)))

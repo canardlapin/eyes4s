@@ -233,7 +233,7 @@ enum ReductionError[K] derives CanEqual:
       s"Key $key could not be averaged: ${underlying.message}"
 
 /** Realized pair- and reduction-level counts. */
-final case class ReductionReport[K] private[design] (
+sealed abstract case class ReductionReport[K] private[design] (
     orientation: ReductionOrientation,
     policy: FailurePolicy,
     eligiblePairCount: Long,
@@ -257,7 +257,7 @@ final class Analysis[K, S] private[design] (
   def evaluation: EvaluationInfo = source.evaluation
 
 /** Selected contributions and effective denominator for one focal key. */
-final case class ReductionRow[K, S] private[design] (
+sealed abstract case class ReductionRow[K, S] private[design] (
     key: K,
     result: Either[ReductionError[K], S],
     successful: Int,
@@ -1120,6 +1120,15 @@ enum ReconstructionError[K] derives CanEqual:
       s"Key $key stores outcome ${found.map(_.message).getOrElse("a score")}; its source pairs and policy give ${expected.map(_.message).getOrElse("a score or a mean failure")}."
 
 object ReductionRow:
+  private[design] def apply[K, S](
+      key: K,
+      result: Either[ReductionError[K], S],
+      successful: Int,
+      failed: Int,
+      contributing: Int
+  ): ReductionRow[K, S] =
+    new ReductionRow[K, S](key, result, successful, failed, contributing) {}
+
   /** Checked reconstruction: the denominator follows from the outcome, and a
     * failed outcome's own counts agree with the row's.
     */
@@ -1157,6 +1166,29 @@ object ReductionRow:
       case ReductionError.MeanFailure(_, _)                  => true
 
 object ReductionReport:
+  private[design] def apply[K](
+      orientation: ReductionOrientation,
+      policy: FailurePolicy,
+      eligiblePairCount: Long,
+      selectedPairCount: Int,
+      successfulPairCount: Int,
+      failedPairCount: Int,
+      contributionCount: Int,
+      reducedKeyCount: Int,
+      failedKeys: Vector[K]
+  ): ReductionReport[K] =
+    new ReductionReport[K](
+      orientation,
+      policy,
+      eligiblePairCount,
+      selectedPairCount,
+      successfulPairCount,
+      failedPairCount,
+      contributionCount,
+      reducedKeyCount,
+      failedKeys
+    ) {}
+
   /** Checked reconstruction of the realized counts alone; [[eyes4s.design.Analysis$ Analysis]] reconstruction
     * cross-checks them against the stored rows.
     */

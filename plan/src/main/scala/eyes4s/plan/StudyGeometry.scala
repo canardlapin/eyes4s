@@ -66,7 +66,7 @@ object CentrePlacement:
   * and [[WindowTally.window]]; duration shares are of the trial's total
   * fixation duration.
   */
-final case class WindowTally private (
+sealed abstract case class WindowTally private (
     outsideScreen: Int,
     outsideWindow: Int,
     total: Int,
@@ -100,6 +100,23 @@ final case class WindowTally private (
       s"(${outsideScreenDuration.render})"
 
 object WindowTally:
+  private def apply(
+      outsideScreen: Int,
+      outsideWindow: Int,
+      total: Int,
+      outsideScreenDuration: Span,
+      outsideWindowDuration: Span,
+      totalDuration: Span
+  ): WindowTally =
+    new WindowTally(
+      outsideScreen,
+      outsideWindow,
+      total,
+      outsideScreenDuration,
+      outsideWindowDuration,
+      totalDuration
+    ) {}
+
   /** Rebuild a stored tally; the counts and durations must partition the trial. */
   def of(
       outsideScreen: Int,
@@ -118,7 +135,7 @@ object WindowTally:
         totalDuration.toMicros
     if counts && durations then
       Right(
-        new WindowTally(
+        WindowTally(
           outsideScreen,
           outsideWindow,
           total,
@@ -141,7 +158,7 @@ object WindowTally:
 
   /** The tally of a trial with no fixation left to count. */
   private[plan] val none: WindowTally =
-    new WindowTally(0, 0, 0, Span.zero, Span.zero, Span.zero)
+    WindowTally(0, 0, 0, Span.zero, Span.zero, Span.zero)
 
   /** Count a scanpath's fixations against its admission frame alone. */
   def screen[U <: Unit2D](
@@ -183,7 +200,7 @@ object WindowTally:
           windowDuration = windowDuration + fixation.duration
         case CentrePlacement.Inside => ()
       i += 1
-    new WindowTally(screen, window, path.n, screenDuration, windowDuration, totalDuration)
+    WindowTally(screen, window, path.n, screenDuration, windowDuration, totalDuration)
 
 /** Totals over a study's per-trial tallies: fixation records outside the
   * window and outside the screen, all tallied fixations, the trials with any
@@ -250,11 +267,19 @@ object StudyGeometry:
   final case class WholeFrame[U <: Unit2D](grid: Grid[U]) extends StudyGeometry[U]:
     def admission: Frame[U] = grid.frame
 
+  object Windowed:
+    private[plan] def apply[U <: Unit2D](
+        window: Subframe[U],
+        grid: Grid[U],
+        offWindow: OffWindowPolicy
+    ): Windowed[U] =
+      new Windowed[U](window, grid, offWindow) {}
+
   /** Maps a window of the admission frame on a grid over the window's frame, with an explicit
     * policy for fixations off the window. Built only by `windowed`, which checks through
     * `Agreement.frames` that the grid lies on the window's frame.
     */
-  final case class Windowed[U <: Unit2D] private[plan] (
+  sealed abstract case class Windowed[U <: Unit2D] private[plan] (
       window: Subframe[U],
       grid: Grid[U],
       offWindow: OffWindowPolicy

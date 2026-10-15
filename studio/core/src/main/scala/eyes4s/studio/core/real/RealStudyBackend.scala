@@ -200,6 +200,18 @@ final class RealStudyBackend[F[_]] private (
             case Right(_) => admission(dataset)
     }
 
+  def recipeForm(request: RecipeEditRequest): F[Either[BackendError, RecipeFormResult]] =
+    admission0(request.dataset).map(
+      _.flatMap(admitted =>
+        RealRecipeForm.serve(
+          request,
+          admitted.screen,
+          admitted.input,
+          admitted.evidence.inventory
+        )
+      )
+    )
+
   def placement(spec: DatasetRevisionSpec): F[Either[BackendError, PlacementPreview]] =
     spec.sources.fixations match
       case None =>

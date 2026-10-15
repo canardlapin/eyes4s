@@ -23,6 +23,7 @@ import cats.effect.{Concurrent, Ref}
 import cats.syntax.all.*
 import eyes4s.codec.ByteDigest
 import eyes4s.studio.core.artifacts.{
+  NativeArtifactBytes,
   NativeArtifactBudget,
   NativeArtifactError,
   NativeArtifactPackage,
@@ -252,18 +253,25 @@ final class ProjectSession[F[_]: Concurrent] private (
           loaded <- EitherT(runs.load(index)).leftMap(e =>
             failure("read stored archive", e.message)
           )
-          verified <- EitherT.fromEither[F](
-            NativeArtifactPackage.verify(
-              loaded.files.map((entry, bytes) => entry.name -> Vector.from(bytes)),
-              artifacts.budget
-            )
-          )
+          // The supplied package is already fully verified. Check storage against
+          // those exact bytes; decoding a second package would retain two complete
+          // result graphs during save. Cold loading still performs full verification.
+          changed = loaded.files.collectFirst {
+            case (entry, bytes)
+                if !artifacts
+                  .bytes(entry.name)
+                  .exists(expected =>
+                    expected.length == bytes.length && bytes.indices
+                      .forall(i => bytes(i) == expected(i))
+                  ) =>
+              entry.name
+          }
           _ <- EitherT.cond[F](
-            verified.facts == facts,
+            changed.isEmpty,
             (),
-            failure("verify stored facts", s"Expected $facts, read ${verified.facts}.")
+            failure("verify stored archive bytes", s"Read-back differs for $changed.")
           )
-        yield verified.facts).value
+        yield facts).value
       }
     })
 
@@ -310,16 +318,13 @@ final class ProjectSession[F[_]: Concurrent] private (
             NativeArtifactError
               .Budget(run, "archive bytes", bytes, BigInt(budget.maxTotalBytes))
           )
-          loaded <- EitherT(runs.load(index)).leftMap(e =>
-            failure("load archive entries", e.message)
-          )
-          verified <- EitherT.fromEither[F](
-            NativeArtifactPackage.verify(
-              loaded.files.map((entry, bytes) => entry.name -> Vector.from(bytes)),
-              budget
+          files <- EitherT(
+            runs.readEntries(index)((entry, bytes) =>
+              entry.name -> NativeArtifactBytes.copyOf(bytes)
             )
-          )
-          _ <- EitherT.cond[F](
+          ).leftMap(e => failure("load archive entries", e.message))
+          verified <- EitherT.fromEither[F](NativeArtifactPackage.verify(files, budget))
+          _        <- EitherT.cond[F](
             verified.facts.run == run,
             (),
             NativeArtifactError.WrongFacts(run, verified.facts)

@@ -18,6 +18,7 @@ package eyes4s.studio.desktop.analysis
 
 import eyes4s.studio.app.analysis.*
 import eyes4s.studio.core.backend.TrialKey
+import eyes4s.studio.desktop.shell.CompositeFocus
 import eyes4s.studio.desktop.tokens.TokenFiles
 import javafx.css.PseudoClass
 import javafx.geometry.Pos
@@ -80,6 +81,12 @@ final class ResolvedDesignView(dispatch: DesignIntent => Unit):
   table.setFocusTraversable(true)
   table.setAccessibleRole(AccessibleRole.TABLE_VIEW)
   VBox.setVgrow(table, Priority.ALWAYS)
+  // A focused composite always shows its cursor item (DESIGN_SPEC section 15):
+  // taking focus with no cursor puts it on the first row.
+  table.focusedProperty.addListener((_, _, now) =>
+    if now && !hasCursor then
+      shownRows.headOption.foreach(r => fire(DesignIntent.FocusRow(r.query)))
+  )
   table.addEventHandler(
     KeyEvent.KEY_PRESSED,
     (e: KeyEvent) =>
@@ -106,6 +113,7 @@ final class ResolvedDesignView(dispatch: DesignIntent => Unit):
 
   private var shownRows: Vector[DesignRowVM] = Vector.empty
   private var rowNodes: Vector[HBox]         = Vector.empty
+  private var hasCursor: Boolean             = false
 
   /** The row nodes now drawn, in order. */
   def rows: Vector[HBox] = rowNodes
@@ -142,7 +150,15 @@ final class ResolvedDesignView(dispatch: DesignIntent => Unit):
         shownRows = unfocused
         rowNodes = vm.rows.map(rowNode)
         rowBox.getChildren.setAll(rowNodes*): Unit
-      rowNodes.zip(vm.rows).foreach((n, r) => n.pseudoClassStateChanged(Cursor, r.focused))
+      // With no cursor, the first row (where focus puts it) is marked already;
+      // the stylesheet draws :cursor only while the table has focus.
+      hasCursor = vm.cursor.isDefined
+      rowNodes.zipWithIndex.foreach((n, i) =>
+        n.pseudoClassStateChanged(Cursor, vm.cursor.fold(i == 0)(_ == i))
+      )
+      // Only a table with no rows has no row to draw the cursor on, so only
+      // then does the table draw the focus ring.
+      CompositeFocus.noCursor(table, rowNodes.isEmpty)
       vm.cursor.foreach(reveal)
       shown(rowsNote, vm.rowsNote)
       notes.getChildren.setAll(vm.notes.map { n =>

@@ -242,8 +242,18 @@ final class RunStore[F[_]: Monad](store: ProjectStore[F]):
     * cannot be bypassed by rereading a changed index before loading entries.
     */
   def load(index: ArchiveIndex): F[Either[RunStoreError, RunArchive]] =
-    (for contents <- index.entries.traverse(e => read(index.run, e).map(e.name.value -> _))
-    yield RunArchive.stored(index, contents.toMap)).value
+    readEntries(index)((entry, bytes) => entry.name.value -> bytes)
+      .map(_.map(contents => RunArchive.stored(index, contents.toMap)))
+
+  /** Snapshot each verified entry before reading the next. Callers taking an
+    * owned copy need not retain a second complete archive of store buffers.
+    */
+  private[core] def readEntries[A](index: ArchiveIndex)(
+      snapshot: (ArchiveEntry, IArray[Byte]) => A
+  ): F[Either[RunStoreError, Vector[A]]] =
+    index.entries
+      .traverse(entry => read(index.run, entry).map(bytes => snapshot(entry, bytes)))
+      .value
 
   /** The archive a figure renders from: that of the run it binds, never the
     * latest.

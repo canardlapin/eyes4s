@@ -61,7 +61,13 @@ object RealPrepared:
       admitted: AdmittedDataset
   ): Either[BackendError, RealConfigured] =
     for
-      planned <- RealPlan.plan(revision, recipe, admitted.screen, admitted.input)
+      planned <- RealPlan.plan(
+        revision,
+        recipe,
+        admitted.screen,
+        admitted.input,
+        admitted.evidence.inventory
+      )
       (plan, method) = planned
       work    <- plan.prepare(admitted.input).leftMap(refused(revision, "preparation"))
       preview <- work.preview.leftMap(refused(revision, "preview"))

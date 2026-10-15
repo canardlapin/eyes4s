@@ -1135,7 +1135,7 @@ Three presets over one engine; preset defines query/reference phases, match key 
 
 *Board:* Analysis.dc.html (recipe fields)
 
-Render RecipeInspection fields (id, version, units, bounds, defaults, allowed values, meaning) as controls; recipe sentence with role-coloured tokens; fields not yet in eyes4s show 'pending UI-A/UI-F'. Analysis description field.
+Render RecipeInspection fields (id, version, units, bounds, defaults, allowed values, meaning) as controls; recipe sentence with role-coloured tokens; the window, grid and initial-fixation fields are now served by eyes4s, replacing their 'pending UI-A/UI-F' tags. Analysis description field.
 
 **Acceptance criteria**
 
@@ -1160,7 +1160,7 @@ Edits create a draft; draft diff from plan.diff ('scales +8°'); Save & run crea
 
 *Board:* Analysis.dc.html (scales)
 
-Chips for σ in degrees; grid 64×48 cell 0.46°; warnings σ < 2 cells and near-uniform σ; protocol scales vs exploratory labelled.
+Chips for σ in degrees; grid 64×48 cell 0.46°; warnings σ < 2 cells and near-uniform σ; draft-added scales carry the board’s “new” marker. Protocol/exploratory labels are omitted: neither the board nor DESIGN_SPEC defines them (owner coordination, 2026-10-13).
 
 **Acceptance criteria**
 

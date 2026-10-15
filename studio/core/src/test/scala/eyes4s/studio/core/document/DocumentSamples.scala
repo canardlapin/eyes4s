@@ -124,6 +124,11 @@ object DocumentSamples:
     Sample("initial.KeepAll", InitialFixationChoice.KeepAll),
     Sample("initial.DropFirst", InitialFixationChoice.DropFirst),
     Sample("initial.DropLeadingNearCross", drop),
+    Sample(
+      "initial.DropLeadingAtScreenCross",
+      InitialFixationChoice
+        .DropLeadingAtScreenCross(right(ScreenCross.of(960, 540)), right(CrossRadius.of(1.5)))
+    ),
     Sample("matched.RequireOne", MatchedChoice.RequireOne),
     Sample("matched.SameOccurrence", MatchedChoice.SameOccurrence),
     Sample("matched.Select.First", MatchedChoice.Select(OccurrencePick.First)),
@@ -136,6 +141,13 @@ object DocumentSamples:
     Sample(
       "change.Phases",
       RecipeChange.Phases(base.phases, PhasePair(Phase.Encoding, Phase.Encoding))
+    ),
+    Sample(
+      "change.ExpectedUnmatched",
+      RecipeChange.ExpectedUnmatched(
+        None,
+        Some(eyes4s.plan.ExpectedUnmatchedRule.of("old_new", Vector("new")).toOption.get)
+      )
     ),
     Sample("change.Grid", RecipeChange.Grid(base.grid, otherGrid)),
     Sample("change.Scales", draft.changes(0)),

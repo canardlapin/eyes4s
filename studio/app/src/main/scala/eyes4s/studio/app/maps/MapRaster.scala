@@ -27,7 +27,12 @@ final case class RasterKey(map: MapId, style: MapStyle) derives CanEqual
 /** A map's cells as ARGB pixels, one per cell, x fastest, the map's top
   * row first whatever its grid's [[RowOrder]].
   */
-final case class MapRaster private (key: RasterKey, width: Int, height: Int, argb: IArray[Int]):
+sealed abstract case class MapRaster private (
+    key: RasterKey,
+    width: Int,
+    height: Int,
+    argb: IArray[Int]
+):
 
   /** The ARGB of the cell at column `x` and row `y`. */
   def pixel(x: Int, y: Int): Int = argb(y * width + x)
@@ -41,6 +46,9 @@ final case class MapRaster private (key: RasterKey, width: Int, height: Int, arg
   def bytes: Long = argb.length.toLong * 4L
 
 object MapRaster:
+
+  private def apply(key: RasterKey, width: Int, height: Int, argb: IArray[Int]): MapRaster =
+    new MapRaster(key, width, height, argb) {}
 
   /** The raster of `grid` in `style`: each cell's colour
     * ([[MapColours.argb]]). Nothing in the grid changes.
@@ -56,9 +64,12 @@ object MapRaster:
     )
 
 /** A byte budget for cached rasters, at least one byte. */
-final case class RasterBudget private (bytes: Long) derives CanEqual
+sealed abstract case class RasterBudget private (bytes: Long) derives CanEqual
 
 object RasterBudget:
+
+  private def apply(bytes: Long): RasterBudget =
+    new RasterBudget(bytes) {}
 
   /** 64 MiB: about 5,000 rasters of the fixture's 64 × 48 grid. */
   val Default: RasterBudget = RasterBudget(64L * 1024 * 1024)
@@ -71,13 +82,22 @@ object RasterBudget:
   * raster larger than the whole budget is not kept. Looking a raster up
   * makes it the most recently used.
   */
-final case class RasterCache private (
+sealed abstract case class RasterCache private (
     budget: RasterBudget,
     entries: Map[RasterKey, (MapRaster, Long)],
     order: TreeMap[Long, RasterKey],
     tick: Long,
     bytes: Long
 ):
+
+  private def copy(
+      budget: RasterBudget = this.budget,
+      entries: Map[RasterKey, (MapRaster, Long)],
+      order: TreeMap[Long, RasterKey],
+      tick: Long = this.tick,
+      bytes: Long = this.bytes
+  ): RasterCache =
+    RasterCache(budget, entries, order, tick, bytes)
 
   /** How many rasters the cache holds. */
   def size: Int = entries.size
@@ -151,6 +171,15 @@ final case class RasterCache private (
       ).evict(evicted :+ key)
 
 object RasterCache:
+
+  private def apply(
+      budget: RasterBudget,
+      entries: Map[RasterKey, (MapRaster, Long)],
+      order: TreeMap[Long, RasterKey],
+      tick: Long,
+      bytes: Long
+  ): RasterCache =
+    new RasterCache(budget, entries, order, tick, bytes) {}
 
   /** An empty cache within `budget`. */
   def empty(budget: RasterBudget): RasterCache =

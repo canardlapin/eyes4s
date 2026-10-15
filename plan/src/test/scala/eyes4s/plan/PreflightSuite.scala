@@ -268,7 +268,11 @@ class PreflightSuite extends munit.FunSuite:
         RecipeFamily.FixationStudy,
         RecipeFamily.EventRecording,
         RecipeFamily.TemporalStudy,
-        RecipeFamily.Repetition
+        RecipeFamily.Repetition,
+        RecipeFamily.PointSampling,
+        RecipeFamily.TemplateFit,
+        RecipeFamily.Decomposition,
+        RecipeFamily.ScanpathComparison
       )
     )
   }

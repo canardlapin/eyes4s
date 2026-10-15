@@ -66,7 +66,7 @@ enum Interp derives CanEqual:
   * defect that survives for years because it only shows up as a few misassigned
   * samples.
   */
-final case class Moving[A <: Unit2D, B <: Unit2D] private (
+sealed abstract case class Moving[A <: Unit2D, B <: Unit2D] private (
     from: Frame[A],
     to: Frame[B],
     clock: ClockId,
@@ -128,6 +128,15 @@ final case class Moving[A <: Unit2D, B <: Unit2D] private (
 end Moving
 
 object Moving:
+
+  private def apply[A <: Unit2D, B <: Unit2D](
+      from: Frame[A],
+      to: Frame[B],
+      clock: ClockId,
+      segments: Vector[Moving.Segment[A, B]],
+      interp: Interp
+  ): Moving[A, B] =
+    new Moving[A, B](from, to, clock, segments, interp) {}
 
   final case class Segment[A <: Unit2D, B <: Unit2D](interval: Interval, warp: Warp[A, B])
 

@@ -1,0 +1,84 @@
+{
+  "schema": 1,
+  "date": "2026-10-15",
+  "issue": "cr4-epoch-component",
+  "parent": "bd-01M3F9JDW47XHXFEAXPCR26CEW",
+  "base_sha": "d9c4885cd73a2e113351bb0ff22eed937db42ecc",
+  "scope": "Epoch descriptor and conditional built-in schema only; epochs remain an AnalysisComponent, with no RecipeFamily, execution cursor or archive role. Point-sampling family completion remains open.",
+  "built_in": {
+    "name": "eyes4s.epoch-plan",
+    "version": 1,
+    "mark_schema": "Caller-supplied exact nested key codec identity"
+  },
+  "compatibility": {
+    "legacy_codec_body_bytes_unchanged": true,
+    "legacy_codec_suite_bytes_unchanged": true,
+    "v1_occurrence_tag": "nth-zero-based",
+    "signed_64bit_microseconds": "decimal strings",
+    "inspection_values": "exact text for signed offsets, widths and Nth indices"
+  },
+  "verification": {
+    "restored_matrix_totals_in_project_order": [
+      10,
+      10,
+      12,
+      37,
+      10,
+      10,
+      2,
+      37
+    ],
+    "jvm_total": 69,
+    "js_total": 59,
+    "projects": [
+      "planJVM",
+      "codecJVM",
+      "lawsJVM (codec laws plus schema registry)",
+      "ioJVM (family conformance)",
+      "planJS",
+      "codecJS",
+      "lawsJS (codec laws)",
+      "ioJS (family conformance)"
+    ],
+    "root_jvm_and_js_test_compile_werror": "passed",
+    "new_codec_law_properties": 2,
+    "law_generator": "All occurrence/final-bin choices, empty and Unicode mark keys, signed offsets and widths beyond2^53, zero windows, Long.MaxValue widths and Nth indices.",
+    "mutation": {
+      "mutation": "encode every final-bin policy as RequireExactDivision",
+      "original_sha256": "908bc5f406ddff9782ca16fdcfdd1b0ab37d68731b3c9cd4f52480c2c8d5ae95",
+      "runs": [
+        {
+          "platform": "JVM",
+          "failed_properties": 1,
+          "log_sha256": "1f455d415bdb5dfc622eb2a19661bd127a670e50e4e22c52eba336dc046135b9"
+        },
+        {
+          "platform": "JS",
+          "failed_properties": 1,
+          "log_sha256": "18f0c3fa489d46a342acc70cebda39a4badf1522ab71efdc3dfd6a0f73860bfd"
+        }
+      ],
+      "restored_sha256": "908bc5f406ddff9782ca16fdcfdd1b0ab37d68731b3c9cd4f52480c2c8d5ae95"
+    }
+  },
+  "development_failure": "Initial conformance test lacked its local get helper; fixed before the complete restored JVM/JS matrix. Earlier codec rewrite was discarded; the original codec implementation and legacy suite are byte-identical.",
+  "source_sha256": {
+    "plan/src/main/scala/eyes4s/plan/EpochComponent.scala": "7645f6a3804408e4c9a439dd681e19d1c2416bad46088a240b88d009123c47e9",
+    "plan/src/test/scala/eyes4s/plan/EpochComponentSuite.scala": "8c917b1ac203c2da823a10d1097532447cd1672852140244bb5df9ffd80af015",
+    "codec/src/main/scala/eyes4s/codec/EpochCodecs.scala": "908bc5f406ddff9782ca16fdcfdd1b0ab37d68731b3c9cd4f52480c2c8d5ae95",
+    "codec/src/test/scala/eyes4s/codec/EpochComponentCodecSuite.scala": "d8ecb29f6776b463f17285f63a2144a4d6b68b6f84d38a9111c3a1fe403108ec",
+    "codec/src/test/resources/eyes4s/epoch-plan-v1.json": "b04b78cc494aae92cd42b6067558e70fa4ff14badd44363409a411063e31d1a7",
+    "laws/src/test/scala/eyes4s/laws/EpochCodecLawSuite.scala": "ed8421980a2c429b82c44f58d452f0498b022d5ab2f4fe86f84d217fe918a75a",
+    "laws/.jvm/src/test/scala/eyes4s/laws/SchemaRegistryJvmSuite.scala": "3a149076beccd0a8c0000cdbb40735ab5252c28c29b6d6cbf853326e42a3678f",
+    "io/src/test/scala/eyes4s/io/FamilyConformanceSuite.scala": "5b3c40b24d6a6d8660db6b79963bb78c5dc898ab28d6391c843257b9dfd88366"
+  },
+  "logs_sha256": {
+    "eyes4s-cr4-epoch-component-initial.log": "5b5fd11ce49453c716ab2657e031c86ef9bd5f5bd5b7471f49476b64c40cc872",
+    "eyes4s-cr4-epoch-component-attempt2.log": "6ce47a19cc4981662b0c18122a95bb8bc911ff9e0881b4b2aba26edcfbd9db99",
+    "eyes4s-cr4-epoch-mutant-JVM.log": "1f455d415bdb5dfc622eb2a19661bd127a670e50e4e22c52eba336dc046135b9",
+    "eyes4s-cr4-epoch-mutant-JS.log": "18f0c3fa489d46a342acc70cebda39a4badf1522ab71efdc3dfd6a0f73860bfd",
+    "eyes4s-cr4-epoch-restored.log": "b488e2e07b09e81469b4c3182f2dbf56f94272697dda1909091ecf4b3c42f914",
+    "eyes4s-cr4-epoch-root-werror.log": "d2dcfa6cd12592f63563ba1efef5be883f434db7d234cbf6d8ccd5dd18787078"
+  },
+  "landing_status": "Reviewed slice awaiting combined frozen-tree qualification and landing; no closure of parent S5."
+}

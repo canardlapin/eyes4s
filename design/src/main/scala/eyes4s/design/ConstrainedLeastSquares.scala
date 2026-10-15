@@ -106,8 +106,8 @@ object ConstrainedLeastSquares:
       val limit = limitOverride.getOrElse(iterationLimit(p))
       val y     = response.toArray
       val cols  = Array.tabulate(p, n)((j, i) => rows(i)(j))
-      val norms = cols.map(c => c.foldLeft(0.0)(math.hypot))
-      val yNorm = y.foldLeft(0.0)(math.hypot)
+      val norms = cols.map(c => c.foldLeft(0.0)(ReproducibleHypot.apply))
+      val yNorm = y.foldLeft(0.0)(ReproducibleHypot.apply)
 
       // A subproblem's column c is the design column columns(c).
       def inDesign(columns: Vector[Int])(e: LeastSquaresError): LeastSquaresError = e match

@@ -39,7 +39,7 @@ Status key: **[approved]** owner-approved · **[bug]** a pure bug, landable with
 11. NeutralMark: *Decision* — token alpha .35 (the Explore board is aligned); was opaque ink-3 vs alpha 35 (`Tokens.scala:269, :300`); `HaloPx` 2.0 vs spec 1.5 (`TrialScene.scala:411`); DESIGN_SPEC.md:78. Tests: `TokenContrastSuite`, `TrialSceneSuite` neutral marks, `GeometrySceneSuite:41`. **Fixed** (the 1.5 px halo applies to neutral marks only; role marks keep 2 px, DESIGN_SPEC §13).
 
 **E. Desktop CSS sweep (desktop; one PR) **
-12. **D1, composite cursor.**
+12. **D1, composite cursor.** **Fixed** (row-level accent frame at `:focused` until ticket 14; the design table's container ring also removed; the pane-placeholder ring is unchanged).
     - Remove the container rings: `.nav-rows:focused` (`studio-navigator.css:78-81`), `.table-twin:focused` (`studio-plot.css:59-61`), and modena `.list-view:focused`/`.tree-view:focused` (override in `studio-shell.css`).
     - Cursor = row-level layered background `-es-accent, <fill>` at insets 0, 2:
       - `.table-twin:focus-visible .table-twin-row:cursor` replaces `studio-plot.css:124-127`;
@@ -49,35 +49,35 @@ Status key: **[approved]** owner-approved · **[bug]** a pure bug, landable with
       - compound `:cursor:selected` → `-es-accent, -es-sel-fill`.
     - Not per-cell (no `:first-child` in JavaFX).
     - Tests: re-baseline `AppShellFxSuite`/`ShellMomentsFxSuite`; `TableTwinViewFxSuite`, `SourceRecordsFxSuite` (cursor state unchanged); `A11yTreeSuite`.
-13. **D2, selection and hover.**
+13. **D2, selection and hover.** **Fixed.**
     - `-fx-selection-bar[-non-focused]: -es-sel-fill`, `-fx-cell-hover-color: -es-surface-2` (`studio-shell.css:41-44`), and `.list-cell:filled:hover`.
     - Fold the accent-soft fills (`studio-navigator.css:89`, `studio-ledger.css:66,162`, `studio-explore.css:49,58`, `studio-timeline.css:44`, `studio-design.css:53`, `studio-figures.css:43-45`) and `.table-twin-row:selected` ink rules (`studio-plot.css:108-111`) into sel-fill + SmBld.
     - Tests: FX snapshot re-baseline.
-14. **D3, focus-visible.**
+14. **D3, focus-visible.** **Fixed** (slice b: canvas focus rings show only after Tab or a roving key since focus arrived, `MarkInputAdapter.showFocus`; slice a: `:focus-visible` on every control rule and composite cursor; primary ring accent / on-accent / accent at 0, 2, 4; `:armed` → hairline; a composite pane draws no ring while its rows carry the cursor; a focused table puts its cursor on its home row, the first selected, else the first; only a composite with no rows rings its container (`CompositeFocus`); the clicked canvas pane border remains, S24).
     - `:focused` → `:focus-visible` on ~32 control rules.
     - Canvas rings gated on focusVisible OR keyboard-since-focus (Issue 1): `MarkInputAdapter.scala:137` listens on `focusedProperty`, and `TrialInputAdapter.focusChanged` is at `:75`.
     - Primary focus `-es-accent, -es-on-accent, -es-accent` at insets 0, 2, 4 (`studio-plot.css:316`, `studio-geometry.css:154`, `studio-ledger.css:216`, `studio-import.css:192`).
     - `:armed` → `-es-hairline`.
     - Tests: FX focus tests use `requestFocusTraversal(TraversalDirection.NEXT)` or a robot Tab, not `requestFocus()` (verified: focusVisible = false). This touches `InputAdapterFxSuite:402` and any ring assertion.
 15. **D4, disabled.** *Decision:* keep the desktop rule — pending and blocked actions are disabled but fully readable (`PreflightFxSuite:55-100`, the readable overrides stay); the boards were amended to match. Remaining code: attach each visible reason to its control for assistive technology (accessible help text), with an `A11yTreeSuite` check. Only controls with no workflow meaning fade to 0.4. **Fixed** (`DisabledReason.attach`; `A11yTreeSuite`).
-16. **D5, controls** (split into slices of at most half a day: the controls CSS, then the `SegmentedBar`). `studio-controls.css` for radio, checkbox and slider, and a `SegmentedBar` replacing the RadioButtons at `CompareInspectorHost.scala:114-116`. Test: a new FX snapshot.
+16. **D5, controls** (split into slices of at most half a day: the controls CSS, then the `SegmentedBar`). `studio-controls.css` for radio, checkbox and slider, and a `SegmentedBar` replacing the RadioButtons at `CompareInspectorHost.scala:114-116`. Test: a new FX snapshot. **Fixed** (`studio-controls.css` for radio, check box and slider; the `SegmentedBar` replaces the Compare inspector radios).
 
 **F. Scenes (viz) **
-17. **E1, TrialScene.**
+17. **E1, TrialScene.** **Fixed** (S10: cross above the map, cased; inner casing only where 3:1 needs it, derived by `StageCasing`; round isoline caps. S11: `MapLegendScene` under the trial, Explore's keys in its legend row; difference maps have no legend).
     - Cross after the map, 2 px halo with a 4 px casing (`TrialScene.scala:828-841`, layer order ~:1129-1141). *Decision:* `--halo` stays stage-keyed; where a focus or role mark is below 3:1, it gets its own inner casing (`OverlayPalette` already separates focus paint from casing, `MarkInput.scala:218`). Test both themes × three stages over map and image grounds (`TokenContrastSuite:64` rule).
     - Isoline `LineCap.Round`.
     - A `MapLegendScene` with the legend text "fades below 10% of max" as a TrialText/ExploreText id.
     - Tests: `TrialMapSceneSuite` (cross after map); `TrialViewFxSuite` goldens.
-18. **E2, timeline.** **Slice a fixed.**
+18. **E2, timeline.** **Fixed.**
     - `OverlayRing` rectangle geometry (`MarkInput.scala:207, 253-325, 474-487`) and an outside-window bar style (Custom dash, no fill) in `TimelinePlot` (`:187-191`).
     - Fill and height already match.
     - Tests: `TimelinePlotSuite:62` (unchanged), `OverlaySelectionsSuite`, `RovingCursorSuite`.
-    - The board dims bars outside the brush (`--neutral-mark`); `TimelinePlot` only shades the brush. Add the dimming here.
+    - Bars outside the brush (no half-open overlap, the brush rule) take `--neutral-mark`; outside-window outlines dim too; rings stay at full strength. A dimmed bar is de-emphasis by design and below 3:1 on purpose; its values are in the table twin.
 19. **E3, Explore mark halo.** The board draws the halo outside r = `radiusPx` (`:438`), so no code change, only a board tweak. **Closed as code.**
 
 **G. Figures (viz/app; regenerate the golden figure once) **
 20. **F1, y ticks and signed values**: `ParticipantPlot` (`:416-421`, value labels `:368-371`) and `ScaleProfilePlot` (`:379-384`). Tests: `ParticipantPlotSuite:231`, `ScaleProfilePlotSuite:216`, `PlotTableParitySuite`, `FigurePageMapSuite`. **Fixed.**
-21. **F2, tile rows.**
+21. **F2, tile rows.** **Fixed** (`MapTileVM.subtitle`; fixed title row, map and two caption rows, elided, not wrapped; role glyphs drawn as shapes because Plex lacks U+25CF/25C6/25CB).
     - `MapTileVM` gains `subtitle` (`FigurePanels.scala:114, 255-276`).
     - `FigurePage` uses a fixed title row, a map, and a fixed two-row caption drawn without `wrap` (`:161-166, :183, :348, :398`).
     - A Points role glyph (Plex coverage of ● ◆ ○ is unverified).
@@ -95,13 +95,13 @@ Status key: **[approved]** owner-approved · **[bug]** a pure bug, landable with
     - The thumbnail caption split (`ThumbTrial` + count ids), the singular form, and `ThumbMissing`.
     - At `GeometryText.scala:40, 105-107`.
     - Tests: `GeometryPanelSuite:451-462`.
-25. **G3, missing-asset thumbnail.** *Decision:* thumbnails stay the grey placement frame plus marks (`GeometryScene.scala:63`), except a missing-asset trial, which is hatched with an X and never blank (DESIGN_SPEC §9), as the Data board draws it. Image frame art in thumbnails would be a separate feature.
+25. **G3, missing-asset thumbnail.** *Decision:* thumbnails stay the grey placement frame plus marks (`GeometryScene.scala:63`), except a missing-asset trial, which is hatched with an X and never blank (DESIGN_SPEC §9), as the Data board draws it. Image frame art in thumbnails would be a separate feature. **Fixed** (hatch and X from the served asset registry; mounted in the window by S26).
     - `ThumbnailPicture` (`GeometryPictures.scala:72-78`) carries the trial's frame state (Present / Missing(file) / Unreadable).
     - `GeometryScene.thumbnail`/`layers` (`:84, :142`) draws `TrialScene.hatched` as a shared helper (`TrialScene.scala:793-818`), with a thumbnail-scale hatch and X.
     - Tests: a `GeometrySceneSuite` test that a missing frame draws a hatch + X; a `GeometryPanelSuite` caption test.
 
 **I. Plots and Results **
-26. **H1, ParticipantPlot annotations** (split into slices of at most half a day): an `Annotations` API and `ParticipantTextId`s. Tests: a new suite, plus a Results FX snapshot. **Slice a fixed** (`Annotations` API in viz; the text ids, Results wiring and snapshot remain).
+26. **H1, ParticipantPlot annotations** (split into slices of at most half a day): an `Annotations` API and `ParticipantTextId`s. Tests: a new suite, plus a Results FX snapshot. **Fixed** (slice a: the `Annotations` API; slice b: text ids, the app builder, Results wiring, accessible summary).
 27. **H2, Results paired descriptive**: an app VM plus text. Test: a fixture value test of **0.15567 → "+0.16"**, range +0.05 (P21) to +0.26 (P15), 24 of 24, computed before rounding participant means. The fixture field is added in this landing (`docs/studio/fixture`). **Fixed** (the t3 story spec declares Remembered − Forgotten).
 
 **J. Parity harness **

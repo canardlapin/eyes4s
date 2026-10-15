@@ -28,7 +28,7 @@ import eyes4s.fs2.{RepetitionExecution, TemporalExecution}
 import eyes4s.kernel.*
 import eyes4s.kernel.Unit2D.{Deg, Px}
 import eyes4s.plan.*
-import eyes4s.surface.EdgePolicy
+import eyes4s.surface.*
 import io.circe.Json
 import scala.compiletime.summonAll
 import scala.compiletime.testing.typeCheckErrors
@@ -45,11 +45,11 @@ import scala.deriving.Mirror
   *     fixture and blocked without its input, and every diagnostic it projects
   *     (causes included) carries a catalogued code;
   *   - `Stepwise.complete` at the finest and the default quanta equals `run`,
-  *     and the finest cut takes more steps than the default (the cursor
-  *     honours its quanta);
+  *     paged cursors take more steps at the finest cut, while a declared
+  *     whole operation takes exactly one step at every quantum;
   *   - the shared `Execution` runner completes with `run`'s result and, when
-  *     cancelled while parked between two steps, settles `Cancelled` after
-  *     exactly the steps the cursor took;
+  *     cancelled at a supported boundary, settles `Cancelled` after exactly
+  *     the steps the cursor took (before work for a whole operation);
   *   - the plan and result codecs round-trip, re-encoding to the same bytes;
   *   - the result projects to a `ResultTable`.
   *
@@ -144,12 +144,7 @@ class FamilyConformanceSuite extends munit.FunSuite:
     )
     assertEquals(
       AnalysisKind.withoutFamily.toSet,
-      Set(
-        AnalysisKind.PointSampling,
-        AnalysisKind.TemplateFit,
-        AnalysisKind.Decomposition,
-        AnalysisKind.ScanpathComparison
-      )
+      Set.empty[AnalysisKind]
     )
     RecipeFamily.values.foreach { family =>
       assertEquals(
@@ -160,6 +155,34 @@ class FamilyConformanceSuite extends munit.FunSuite:
       )
     }
     assertEquals(AnalysisComponent.values.toVector, Vector(AnalysisComponent.Epochs))
+  }
+
+  test("the epoch component has a complete descriptor and conditional built-in schema") {
+    def get[E, A](value: Either[E, A]): A = value.fold(e => fail(e.toString), identity)
+    val markerSchema                      = get(DefinitionId.of("example.marker", 1))
+    val codec                             = EpochCodecs.of(VersionedCodec.string(markerSchema))
+    val plan                              = get(
+      EpochPlan.of(
+        MarkSelector("start", Occurrence.RequireUnique),
+        get(Window.of(Span.micros(-5), Span.micros(8))),
+        get(PositiveSpan.of(Span.micros(4))),
+        FinalBin.IncludeShortFinal
+      )
+    )
+    val inspected = get(EpochComponent.inspect(plan, markerSchema))
+    assertEquals(EpochComponent.component, AnalysisComponent.Epochs)
+    assertEquals(inspected.description, EpochComponent.description(plan, markerSchema))
+    assertEquals(inspected.fields.size, inspected.description.size)
+    assertEquals(codec.schema, EpochCodecDefinitions.plan)
+    val decoded  = get(codec.decode(get(codec.encode(plan))))
+    val timeline = get(
+      ObservedTimeline.of(ClockId("experiment"), Vector(Mark(Instant.micros(100), "start")))
+    )
+    val budget   = get(NonNegativeLong.of(4))
+    val original = get(plan.resolve("trial", timeline, timeline.clock, budget))
+    val restored = get(decoded.resolve("trial", timeline, timeline.clock, budget))
+    assertEquals(restored.bins, original.bins)
+    assertEquals(restored.excludedTail, original.excludedTail)
   }
 
   test("the named gaps are exactly the pinned ones") {
@@ -234,6 +257,8 @@ abstract class FamilyWitness[F](val family: F & RecipeFamily):
   type Segment
   type Error
   type Result
+
+  def cursorContract: CursorContract = CursorContract.Paged
 
   def description: Vector[(String, Vector[Provenance.Param])]
   def inspection: Either[DescriptorError, RecipeInspection]
@@ -335,11 +360,17 @@ abstract class FamilyWitness[F](val family: F & RecipeFamily):
         s"Stepwise.complete at $quanta differs from run"
       )
     }
-    // The cursor honours its quanta: the finest cut takes more, smaller steps.
-    check(
-      steps(Finest) > steps(WorkQuanta.default),
-      s"${steps(Finest)} finest steps against ${steps(WorkQuanta.default)} default steps"
-    )
+    cursorContract match
+      case CursorContract.Paged =>
+        check(
+          steps(Finest) > steps(WorkQuanta.default),
+          s"${steps(Finest)} finest steps against ${steps(WorkQuanta.default)} default steps"
+        )
+      case CursorContract.WholeOperation =>
+        check(
+          steps(Finest) == 1 && steps(WorkQuanta.default) == 1,
+          "a declared whole operation must complete in exactly one step at every quantum"
+        )
 
   /** Steps the runner takes at `quanta`, from a pure trace. */
   private def steps(quanta: WorkQuanta): Int =
@@ -362,7 +393,17 @@ abstract class FamilyWitness[F](val family: F & RecipeFamily):
   /** Park the runner at its between-step hook after `completed` steps, cancel
     * it there, and count the advances the cursor took.
     */
-  final def cancels(): IO[Unit] =
+  final def cancels(): IO[Unit] = cursorContract match
+    case CursorContract.WholeOperation =>
+      Execution[IO].start(submission(Finest), IO.never).use { run =>
+        run.cancel >> run.outcome.map {
+          case RunOutcome.Cancelled(_, None) => ()
+          case other => check(false, s"whole operation did not cancel before work: $other")
+        }
+      }
+    case CursorContract.Paged => cancelsPaged()
+
+  private def cancelsPaged(): IO[Unit] =
     val total     = steps
     val completed = total / 2
     check(total >= 2, s"the fixture takes only $total step")
@@ -403,6 +444,9 @@ abstract class FamilyWitness[F](val family: F & RecipeFamily):
     tables(get(run)).map(get)
 
 object FamilyWitness:
+  enum CursorContract:
+    case Paged, WholeOperation
+
   /** An obligation of the definition of done. */
   enum Obligation derives CanEqual:
     case Inspect, Preflight, Stepwise, Execution, Archive, Table, Form
@@ -965,4 +1009,409 @@ object FamilyWitnesses:
             "failurePolicy"    -> "failurePolicy"
           ),
           Set("repetition.input", "layout", "grid", "pairing")
+        )
+
+  private val pointClock = ClockId("conformance-point-clock")
+  private val pointPath  = get(
+    Scanpath.of(
+      frame,
+      pointClock,
+      IArray(
+        get(
+          Event.Fixation.withoutDispersion(
+            get(Interval.of(pointClock, Instant.micros(0), Instant.micros(10))),
+            Pt[Px](0.5, 0.5),
+            1
+          )
+        )
+      )
+    )
+  )
+  private val pointSource = StudyInput(
+    Trials(
+      Vector("a", "b").map(stimulus =>
+        Trial(StudyKey("person", stimulus, "source"), (), pointPath)
+      )
+    )
+  )
+  private val pointTemplates = Trials(Vector("a" -> 1.0, "b" -> 3.0).map { (stimulus, base) =>
+    val values = IArray(base, base + 1, base + 2, base + 3)
+    Trial(
+      StudyKey("person", stimulus, "template"),
+      (),
+      get(Surface.signed(grid, values, Provenance.raw(ContentHash.of(values))))
+    )
+  })
+  private val pointSpec = get(
+    PointSamplingSpec.of(
+      pointClock,
+      Vector(0L, 5L, 10L).map(Instant.micros),
+      Some(
+        get(
+          PointBins.of(
+            pointClock,
+            Vector(0L, 5L, 10L).map(Instant.micros),
+            PointBinEndpoint.IncludeFinalEndpoint
+          )
+        )
+      ),
+      DensityNormalization.None,
+      DensityLookupPolicy.NearestClampedRIndex,
+      TrajectoryEndpoint.HoldLastOnset,
+      PointControlSelection.Candidates(
+        Selection.BottomK(
+          get(PairLimit.of(1)),
+          Seed(Long.MinValue + 7),
+          SampleId("conformance-points")
+        )
+      ),
+      FailurePolicy.RequireAll,
+      FailurePolicy.RequireAll
+    )
+  )
+  private val pointLayout = StudyKey.layout(definition("conformance.point-layout"))
+  private val pointPlan   =
+    PointSamplingPlan.of(pointLayout, pointSource, pointTemplates, pointSpec)
+  private val pointCodecs = new PointSamplingFamilyCodec[StudyKey, Px](
+    pointLayout,
+    StudyCodecs.key(definition("conformance.point-key"))
+  )
+
+  given pointSampling: FamilyWitness[RecipeFamily.PointSampling.type] =
+    new FamilyWitness[RecipeFamily.PointSampling.type](RecipeFamily.PointSampling):
+      type Id      = eyes4s.fs2.PointSamplingRunId
+      type Cursor  = PointSamplingCursor[StudyKey, Px]
+      type Stage   = PointSamplingStage
+      type Segment = PointSamplingStage
+      type Error   = Nothing
+      type Result  = PointSamplingResult[StudyKey, Px]
+      def description = pointPlan.description
+      def inspection  = pointPlan.inspect
+      def ready       =
+        val report = pointPlan.preflight(Some(pointPlan.inputRef))
+        Preflighted.of(report, report.diagnostics)
+      def unavailable =
+        val report = pointPlan.preflight(None)
+        Preflighted.of(report, report.diagnostics)
+      def run                            = Right(pointPlan.run)
+      def cursor                         = Right(pointPlan.work)
+      def submission(quanta: WorkQuanta) =
+        eyes4s.fs2.PointSamplingExecution.submission(pointPlan, quanta)
+      given stepping: Stepwise[Cursor, Stage, Error, Result] = PointSamplingCursor.stepwise
+      def archived(result: Result)                           =
+        PointSamplingArchive.completed(pointPlan, result).flatMap(pointCodecs.results.encode)
+      def rearchived(document: Json) =
+        pointCodecs.results.decode(document).flatMap(pointCodecs.results.encode)
+      def savedPlan                    = pointCodecs.plans.encode(pointPlan)
+      def reloadedPlan(document: Json) = pointCodecs.plans
+        .decode(document)
+        .flatMap(p => pointCodecs.plans.encode(p).map(p.description -> _))
+      def tables(result: Result) = Right(
+        PointSamplingArchive
+          .completed(pointPlan, result)
+          .left
+          .map(ResultExportError.Codec.apply)
+          .flatMap { archive =>
+            ResultExports.points(archive, pointCodecs).map { tables =>
+              val counts = Vector(
+                result.rows.size,
+                result.rows.map(r => r.controls.map(_.values.size).sum).sum,
+                result.rows.map(r => r.points.map(p => 1 + p.control.size).sum).sum,
+                result.rows
+                  .map(r => r.bins.map(b => 1 + b.control.size + b.difference.size).sum)
+                  .sum
+              )
+              tables.zip(counts).map((table, rows) => Tabulated(table, rows, None))
+            }
+          }
+      )
+      def form =
+        val f = new PointSamplingForm(pointClock)
+        FormEvidence(
+          f.fields,
+          f.values(pointPlan),
+          Some(
+            f.parse(f.values(pointPlan))
+              .left
+              .map(_.toVector.map(_.message).mkString("; "))
+              .flatMap(_.plan(pointPlan).left.map(_.message))
+              .map(_.description)
+          ),
+          PointSamplingViews.fields.map(v => v.id.value -> v.id.value).toMap,
+          Set("input", "layout", "method", "clock")
+        )
+
+  private val templateBasis = get(
+    TemplateBasis.of("conformance-template", Vector("x", "z"), "score")
+  )
+  private val templateRows = Vector(
+    get(TemplateObservation.of("x", "train", Vector(1.0, 0.0), 2.0, Some("x"))),
+    get(TemplateObservation.of("z", "train", Vector(0.0, 1.0), 3.0, Some("z"))),
+    get(TemplateObservation.of("excluded", "train", Vector(4.0, 5.0), 99.0, Some("held-item"))),
+    get(TemplateObservation.of("held", "held", Vector(2.0, 1.0), 8.0, Some("held-item"))),
+    get(TemplateObservation.of("held-2", "held", Vector(1.0, 2.0), 9.0, Some("held-item-2"))),
+    get(TemplateObservation.of("held-3", "held", Vector(2.0, 2.0), 11.0, Some("held-item-3")))
+  )
+  private val templatePlan = get(
+    TemplateFitPlan.of(
+      get(TemplateSplit.of(TemplateDesign.fixed(templateBasis), templateRows, Set("held")))
+    )
+  )
+  private val templateCodecs =
+    TemplateFitCodec.fixed(VersionedCodec.string(definition("conformance.template-key")))
+
+  given templateFit: FamilyWitness[RecipeFamily.TemplateFit.type] =
+    new FamilyWitness[RecipeFamily.TemplateFit.type](RecipeFamily.TemplateFit):
+      type Id      = eyes4s.fs2.TemplateFitRunId
+      type Cursor  = TemplateFitCursor[String, Vector[Double]]
+      type Stage   = TemplateValidationStage
+      type Segment = TemplateValidationStage
+      type Error   = TemplateError
+      type Result  = TemplateFitResult[String, Vector[Double]]
+      def description = templatePlan.description
+      def inspection  = templatePlan.inspect
+      def ready       =
+        val report = templatePlan.preflight(Some(templatePlan.inputRef))
+        Preflighted.of(report, report.diagnostics)
+      def unavailable =
+        val report = templatePlan.preflight(None)
+        Preflighted.of(report, report.diagnostics)
+      def run                            = templatePlan.run
+      def cursor                         = Right(templatePlan.work)
+      def submission(quanta: WorkQuanta) =
+        eyes4s.fs2.TemplateFitExecution.submission(templatePlan, quanta)
+      given stepping: Stepwise[Cursor, Stage, Error, Result] = TemplateFitCursor.stepwise
+      def archived(result: Result)                           = TemplateFitArchive
+        .completed(templatePlan, result)
+        .flatMap(templateCodecs.results.encode)
+      def rearchived(document: Json) =
+        templateCodecs.results.decode(document).flatMap(templateCodecs.results.encode)
+      def savedPlan                    = templateCodecs.plans.encode(templatePlan)
+      def reloadedPlan(document: Json) = templateCodecs.plans
+        .decode(document)
+        .flatMap(p => templateCodecs.plans.encode(p).map(p.description -> _))
+      def tables(result: Result) = Right(
+        TemplateFitArchive
+          .completed(templatePlan, result)
+          .left
+          .map(ResultExportError.Codec.apply)
+          .flatMap { archive =>
+            ResultExports
+              .fixedTemplate(archive, templateCodecs)
+              .map(
+                _.zip(
+                  Vector(
+                    templateBasis.columns.size,
+                    templatePlan.split.heldOut.rows.size,
+                    templatePlan.split.excluded.size
+                  )
+                )
+                  .map((table, rows) => Tabulated(table, rows, None))
+              )
+          }
+      )
+      def form =
+        val f = new TemplateFitForm(templatePlan)
+        FormEvidence(
+          f.fields,
+          f.values,
+          Some(
+            f.parse(f.values)
+              .left
+              .map(_.message)
+              .flatMap(_.plan(templatePlan).left.map(_.message))
+              .map(_.description)
+          ),
+          Map("heldOutGroups" -> "heldOutGroups"),
+          Set(
+            "template.input",
+            "design",
+            "fittingRoute",
+            "normConvention",
+            "receipt",
+            "method",
+            "features",
+            "responseUnit",
+            "training",
+            "heldOut",
+            "excluded"
+          )
+        )
+
+  private val decompositionFrame = get(Frame.screen("conformance-decomposition", 3, 1))
+  private val decompositionGrid  = get(Grid.over(decompositionFrame, 3, 1))
+  private def decompositionMass(a: Double, b: Double, c: Double): Mass[Px] =
+    val values = IArray(a, b, c)
+    get(
+      Surface
+        .intensity(decompositionGrid, values, Provenance.raw(ContentHash.of(values)))
+        .flatMap(_.normalised)
+    )
+  private val decompositionPredictors = get(
+    PredictorSet.of(
+      Vector(
+        get(PredictorId.of("a")) -> decompositionMass(1, 0, 0),
+        get(PredictorId.of("b")) -> decompositionMass(0, 1, 0)
+      )
+    )
+  )
+  private val decompositionPlan = get(
+    DecompositionPlan.of(
+      decompositionMass(1, 3, 0),
+      decompositionPredictors,
+      DecompositionSpec.Ols(Intercept.Exclude, RelativeRankTolerance.default)
+    )
+  )
+  private val decompositionCodecs = new DecompositionCodec[Px]
+  given decomposition: FamilyWitness[RecipeFamily.Decomposition.type] =
+    new FamilyWitness[RecipeFamily.Decomposition.type](RecipeFamily.Decomposition):
+      type Id      = eyes4s.fs2.DecompositionRunId
+      type Cursor  = DecompositionCursor[Px]
+      type Stage   = DecompositionStage
+      type Segment = DecompositionStage
+      type Error   = DecompositionError
+      type Result  = DecompositionResult[Px]
+      override def cursorContract = CursorContract.WholeOperation
+      def description             = decompositionPlan.description
+      def inspection              = decompositionPlan.inspect
+      def ready                   =
+        val report = decompositionPlan.preflight(Some(decompositionPlan.inputRef))
+        Preflighted.of(report, report.diagnostics)
+      def unavailable =
+        val report = decompositionPlan.preflight(None)
+        Preflighted.of(report, report.diagnostics)
+      def run                            = decompositionPlan.run
+      def cursor                         = Right(decompositionPlan.work)
+      def submission(quanta: WorkQuanta) =
+        eyes4s.fs2.DecompositionExecution.submission(decompositionPlan, quanta)
+      given stepping: Stepwise[Cursor, Stage, Error, Result] = DecompositionCursor.stepwise
+      def archived(result: Result)                           = DecompositionArchive
+        .completed(decompositionPlan, result)
+        .flatMap(decompositionCodecs.results.encode)
+      def rearchived(document: Json) =
+        decompositionCodecs.results.decode(document).flatMap(decompositionCodecs.results.encode)
+      def savedPlan                    = decompositionCodecs.plans.encode(decompositionPlan)
+      def reloadedPlan(document: Json) = decompositionCodecs.plans
+        .decode(document)
+        .flatMap(p => decompositionCodecs.plans.encode(p).map(p.description -> _))
+      def tables(result: Result) = Right(
+        DecompositionArchive
+          .completed(decompositionPlan, result)
+          .left
+          .map(ResultExportError.Codec.apply)
+          .flatMap { archive =>
+            ResultExports
+              .decomposition(archive, decompositionCodecs)
+              .map(_.zip(Vector(2, 1, 3)).map((table, rows) => Tabulated(table, rows, None)))
+          }
+      )
+      def form =
+        val f = new DecompositionForm
+        FormEvidence(
+          f.fields,
+          f.values(decompositionPlan),
+          Some(
+            f.parse(f.values(decompositionPlan))
+              .left
+              .map(_.message)
+              .flatMap(_.plan(decompositionPlan).left.map(_.message))
+              .map(_.description)
+          ),
+          Map("spec" -> "spec"),
+          Set("decomposition.input", "normConvention", "grid", "predictors")
+        )
+
+  private lazy val scanpathPlan =
+    ScanpathExportFixtures.archive(ScanpathExportFixtures.methods.head).plan
+  private val scanpathCodec = ScanpathExportFixtures.codec
+  given scanpathComparison: FamilyWitness[RecipeFamily.ScanpathComparison.type] =
+    new FamilyWitness[RecipeFamily.ScanpathComparison.type](RecipeFamily.ScanpathComparison):
+      type Id      = eyes4s.fs2.ScanpathStudyRunId
+      type Cursor  = ScanpathStudyCursor[StudyKey, Px]
+      type Stage   = ScanpathStudyStage
+      type Segment = ScanpathStudyStage
+      type Error   = PlanError
+      type Result  = ScanpathStudyResult[StudyKey, Px]
+      def description = scanpathPlan.description
+      def inspection  = scanpathPlan.inspect
+      def ready       =
+        val report = scanpathPlan.preflight(Some(scanpathPlan.inputRef))
+        Preflighted.of(report, report.diagnostics)
+      def unavailable =
+        val report = scanpathPlan.preflight(None)
+        Preflighted.of(report, report.diagnostics)
+      def run                            = scanpathPlan.run
+      def cursor                         = Right(scanpathPlan.work)
+      def submission(quanta: WorkQuanta) =
+        eyes4s.fs2.ScanpathStudyExecution.submission(scanpathPlan, quanta)
+      given stepping: Stepwise[Cursor, Stage, Error, Result] = ScanpathStudyCursor.stepwise
+      def archived(result: Result)                           = ScanpathStudyArchive
+        .completed(scanpathPlan, result)
+        .flatMap(scanpathCodec.results.encode)
+      def rearchived(document: Json) =
+        scanpathCodec.results.decode(document).flatMap(scanpathCodec.results.encode)
+      def savedPlan                    = scanpathCodec.plans.encode(scanpathPlan)
+      def reloadedPlan(document: Json) = scanpathCodec.plans
+        .decode(document)
+        .flatMap(plan => scanpathCodec.plans.encode(plan).map(plan.description -> _))
+      def tables(result: Result) = Right(
+        ScanpathStudyArchive
+          .completed(scanpathPlan, result)
+          .left
+          .map(ResultExportError.Codec.apply)
+          .flatMap(archive => ResultExports.scanpaths(archive, scanpathCodec))
+          .map { tables =>
+            tables.map { table =>
+              val componentCount = scanpathPlan.method.componentNames.size
+              val pairs          = result.matched.rows ++ result.controls.rows
+              val expected       = table.family match
+                case ResultFamily.ScanpathPairs   => pairs.size * componentCount
+                case ResultFamily.ScanpathQueries =>
+                  pairs
+                    .flatMap(_.result.toOption)
+                    .map {
+                      case ScanpathMethodOutput.Overlap(value) => value.rows.size
+                      case _                                   => 0
+                    }
+                    .sum
+                case ResultFamily.ScanpathTransportDiagnostics =>
+                  pairs.count(_.result.exists {
+                    case ScanpathMethodOutput.Transport(_) => true
+                    case _                                 => false
+                  })
+                case ResultFamily.ScanpathReductions => result.contrasts.size * 2
+                case ResultFamily.ScanpathContrasts  => result.contrasts.size
+                case ResultFamily.ScanpathExclusions => result.excludedPhases.size
+                case _                               => -1
+              val differences = Option.when(table.family == ResultFamily.ScanpathContrasts)(
+                result.contrasts.flatMap(_.difference.toOption)
+              )
+              Tabulated(table, expected, differences)
+            }
+          }
+      )
+      def form =
+        val form = new ScanpathStudyForm[Px](ScanpathExportFixtures.clock)
+        FormEvidence(
+          form.fields,
+          form.values(scanpathPlan),
+          Some(
+            form
+              .parse(form.values(scanpathPlan))
+              .left
+              .map(_.toVector.map(_.message).mkString("; "))
+              .flatMap(_.plan(scanpathPlan).left.map(_.message))
+              .map(_.description)
+          ),
+          Map(
+            "focalPhase"       -> "phases",
+            "referencePhase"   -> "phases",
+            "method"           -> "method",
+            "method.*"         -> "method",
+            "pairing"          -> "pairing",
+            "controlSelection" -> "controlSelection",
+            "failurePolicy"    -> "failurePolicy",
+            "budget"           -> "budget"
+          ),
+          Set("input", "layout", "unit", "frame", "preparationAdmission")
         )

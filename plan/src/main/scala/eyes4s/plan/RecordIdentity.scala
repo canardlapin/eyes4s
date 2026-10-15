@@ -80,20 +80,23 @@ object RecordIdentityError:
   * counted from 1. "fixations.csv record 7,214" is `DataRecord` 7,214. The
   * header is never a data record; it is [[CsvRecord.header]].
   */
-final case class DataRecord private[plan] (value: Int) derives CanEqual:
+sealed abstract case class DataRecord private[plan] (value: Int) derives CanEqual:
   /** The same record as a CSV record ordinal, which counts the header as
     * record 1: always this record's value plus one.
     */
-  def csv: CsvRecord = new CsvRecord(value + 1)
+  def csv: CsvRecord = CsvRecord(value + 1)
 
 object DataRecord:
+  private[plan] def apply(value: Int): DataRecord =
+    new DataRecord(value) {}
+
   /** The largest data record, so that its CSV record ordinal is an `Int`. */
   val maximum: Int = Int.MaxValue - 1
 
   def of(value: Int): Either[RecordIdentityError, DataRecord] =
     Either.cond(
       value >= 1 && value <= maximum,
-      new DataRecord(value),
+      DataRecord(value),
       RecordIdentityError.DataRecordOutOfRange(value, maximum)
     )
 
@@ -109,10 +112,10 @@ object DataRecord:
   * links store record numbers in this convention; [[role]] converts one to a
   * data record or identifies the header.
   */
-final case class CsvRecord private[plan] (value: Int) derives CanEqual:
+sealed abstract case class CsvRecord private[plan] (value: Int) derives CanEqual:
   /** The header, or the data record this is: always this value minus one. */
   def role: RecordRole =
-    if value == 1 then RecordRole.Header else RecordRole.Data(new DataRecord(value - 1))
+    if value == 1 then RecordRole.Header else RecordRole.Data(DataRecord(value - 1))
 
   /** The data record this is; the header is refused. */
   def dataRecord: Either[RecordIdentityError, DataRecord] = role match
@@ -120,8 +123,11 @@ final case class CsvRecord private[plan] (value: Int) derives CanEqual:
     case RecordRole.Data(record) => Right(record)
 
 object CsvRecord:
+  private[plan] def apply(value: Int): CsvRecord =
+    new CsvRecord(value) {}
+
   /** The header record. */
-  val header: CsvRecord = new CsvRecord(1)
+  val header: CsvRecord = CsvRecord(1)
 
   given Ordering[CsvRecord] = Ordering.by(_.value)
 
@@ -133,7 +139,7 @@ object CsvRecord:
   def of(value: Int): Either[RecordIdentityError, CsvRecord] =
     Either.cond(
       value >= 1,
-      new CsvRecord(value),
+      CsvRecord(value),
       RecordIdentityError.CsvRecordNotPositive(value)
     )
 
@@ -162,9 +168,12 @@ enum LineBreak derives CanEqual:
   * occupies more than one line, so a line number is not a record number (see
   * [[RecordLines]]).
   */
-final case class SourceLine private[plan] (value: Long) derives CanEqual
+sealed abstract case class SourceLine private[plan] (value: Long) derives CanEqual
 
 object SourceLine:
+  private[plan] def apply(value: Long): SourceLine =
+    new SourceLine(value) {}
+
   private[eyes4s] given DiagnosticOperand[SourceLine, Nothing] =
     DiagnosticOperand.of(l =>
       Operand.Fields(Vector("value" -> Operand.Integer(BigInt(l.value))))
@@ -173,12 +182,13 @@ object SourceLine:
   def of(value: Long): Either[RecordIdentityError, SourceLine] =
     Either.cond(
       value >= 1,
-      new SourceLine(value),
+      SourceLine(value),
       RecordIdentityError.SourceLineNotPositive(value)
     )
 
 /** The lines a record occupies, both ends included. */
-final case class LineSpan private[plan] (first: SourceLine, last: SourceLine) derives CanEqual:
+sealed abstract case class LineSpan private[plan] (first: SourceLine, last: SourceLine)
+    derives CanEqual:
   /** The number of lines, at least one. */
   def count: Long = last.value - first.value + 1
 
@@ -186,21 +196,27 @@ final case class LineSpan private[plan] (first: SourceLine, last: SourceLine) de
     line.value >= first.value && line.value <= last.value
 
 object LineSpan:
+  private[plan] def apply(first: SourceLine, last: SourceLine): LineSpan =
+    new LineSpan(first, last) {}
+
   def of(first: SourceLine, last: SourceLine): Either[RecordIdentityError, LineSpan] =
     Either.cond(
       last.value >= first.value,
-      new LineSpan(first, last),
+      LineSpan(first, last),
       RecordIdentityError.LineSpanOrder(first, last)
     )
 
 /** A fixation's position in its trial's scanpath, counted from 0. Its display
   * form is [[FixationNumber]].
   */
-final case class ScanpathPosition private[plan] (value: Int) derives CanEqual:
+sealed abstract case class ScanpathPosition private[plan] (value: Int) derives CanEqual:
   /** The same fixation counted from 1: always this position plus one. */
-  def number: FixationNumber = new FixationNumber(value + 1)
+  def number: FixationNumber = FixationNumber(value + 1)
 
 object ScanpathPosition:
+  private[plan] def apply(value: Int): ScanpathPosition =
+    new ScanpathPosition(value) {}
+
   private[eyes4s] given DiagnosticOperand[ScanpathPosition, Nothing] =
     DiagnosticOperand.of(p =>
       Operand.Fields(Vector("value" -> Operand.Integer(BigInt(p.value))))
@@ -212,22 +228,25 @@ object ScanpathPosition:
   def of(value: Int): Either[RecordIdentityError, ScanpathPosition] =
     Either.cond(
       value >= 0 && value <= maximum,
-      new ScanpathPosition(value),
+      ScanpathPosition(value),
       RecordIdentityError.ScanpathPositionOutOfRange(value, maximum)
     )
 
 /** A fixation of a trial counted from 1, as a reader says it: "fixation 6" is
   * [[ScanpathPosition]] 5.
   */
-final case class FixationNumber private[plan] (value: Int) derives CanEqual:
+sealed abstract case class FixationNumber private[plan] (value: Int) derives CanEqual:
   /** The same fixation counted from 0: always this number minus one. */
-  def position: ScanpathPosition = new ScanpathPosition(value - 1)
+  def position: ScanpathPosition = ScanpathPosition(value - 1)
 
 object FixationNumber:
+  private[plan] def apply(value: Int): FixationNumber =
+    new FixationNumber(value) {}
+
   def of(value: Int): Either[RecordIdentityError, FixationNumber] =
     Either.cond(
       value >= 1,
-      new FixationNumber(value),
+      FixationNumber(value),
       RecordIdentityError.FixationNumberNotPositive(value)
     )
 
@@ -269,7 +288,7 @@ final class RecordLines private (
     val i     = rank(c)
     val first = c.toLong + before(i)
     val more  = if i < multi.length && multi(i) == c then extra(i) else 0L
-    new LineSpan(new SourceLine(first), new SourceLine(first + more))
+    LineSpan(SourceLine(first), SourceLine(first + more))
 
   /** The lines of the text's records: the last line of its last record. */
   def lines: Long = csvRecords.toLong + before(multi.length)
@@ -306,7 +325,7 @@ final class RecordLines private (
         else
           val mid = lo + (hi - lo + 1) / 2
           if firstLine(mid) <= line.value then go(mid, hi) else go(lo, mid - 1)
-      Right(new CsvRecord(go(1, csvRecords)).role)
+      Right(CsvRecord(go(1, csvRecords)).role)
 
   override def equals(other: Any): Boolean = other match
     case that: RecordLines =>
@@ -333,7 +352,7 @@ object RecordLines:
     if lineCounts.isEmpty then Left(RecordIdentityError.NoHeaderRecord)
     else
       lineCounts.zipWithIndex.collectFirst {
-        case (n, i) if n < 1 => RecordIdentityError.RecordLineCount(new CsvRecord(i + 1), n)
+        case (n, i) if n < 1 => RecordIdentityError.RecordLineCount(CsvRecord(i + 1), n)
       } match
         case Some(error) => Left(error)
         case None        =>

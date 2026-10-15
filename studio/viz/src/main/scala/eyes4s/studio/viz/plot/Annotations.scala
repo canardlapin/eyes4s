@@ -16,6 +16,7 @@
 
 package eyes4s.studio.viz.plot
 
+import eyes4s.studio.app.plot.{NoteRole, NoteTone, ParticipantNotes}
 import eyes4s.studio.app.text.{ParticipantText, ParticipantTextId}
 import eyes4s.studio.app.tokens.{FontFace, ThemedToken, TypeSize}
 import eyes4s.studio.core.selection.StudioRef
@@ -49,15 +50,48 @@ import eyes4s.studio.core.selection.StudioRef
   * A block's anchor must be a participant row the plot draws; the plot
   * refuses one that is not ([[PlotBuildError.Unanchored]]).
   */
-final case class Annotations private (blocks: Vector[Annotations.Block]):
+sealed abstract case class Annotations private (blocks: Vector[Annotations.Block]):
 
   /** True when there is nothing to write: the plot draws no column. */
   def isEmpty: Boolean = blocks.isEmpty
 
+  /** Every block's lines as spoken, in the order the blocks were given, for
+    * the plot's accessible summary; `None` without blocks.
+    */
+  def spoken: Option[String] =
+    Option.when(blocks.nonEmpty)(
+      blocks
+        .map(
+          _.lines.map(_.spokenText).mkString(ParticipantText(ParticipantTextId.NoteSeparator))
+        )
+        .mkString(ParticipantText(ParticipantTextId.NoteBlockSeparator))
+    )
+
 object Annotations:
+
+  private def apply(blocks: Vector[Annotations.Block]): Annotations =
+    new Annotations(blocks) {}
 
   /** No annotations. */
   val empty: Annotations = Annotations(Vector.empty)
+
+  /** The app's notes ([[ParticipantNotes.of]]) as the column draws them:
+    * every block and line in order, each line with its role, tone and
+    * spoken form.
+    */
+  def from(notes: ParticipantNotes): Either[AnnotationError, Annotations] =
+    notes.blocks
+      .foldLeft[Either[AnnotationError, Vector[Block]]](Right(Vector.empty)) { (acc, b) =>
+        acc.flatMap(bs =>
+          Block
+            .of(
+              b.anchor,
+              b.lines.map(l => Line(Label(l.id, l.args), l.role, Some(l.tone), Some(l.spoken)))
+            )
+            .map(bs :+ _)
+        )
+      }
+      .flatMap(of)
 
   /** `blocks`, each anchored to its own row. */
   def of(blocks: Vector[Block]): Either[AnnotationError, Annotations] =
@@ -76,25 +110,28 @@ object Annotations:
   object Label:
     def apply(id: ParticipantTextId, args: String*): Label = Label(id, args.toVector)
 
-  /** What a line is to its block: the heading names the participant, a fact
-    * follows it. A heading is set in the medium mono face, a fact in the
-    * regular one.
+  /** What a line is to its block ([[NoteRole]]): the heading names the
+    * participant, a fact follows it.
     */
-  enum Role derives CanEqual:
-    case Heading, Fact
+  type Role = NoteRole
+  val Role: NoteRole.type = NoteRole
 
-  /** A line's colour, by what it says rather than by a colour: `Primary`
-    * (ink) for what the block is about, `Secondary` (ink-2) for the numbers
-    * that back it, `Failure` (the fail colour) for a participant or a value
-    * that failed.
-    */
-  enum Tone derives CanEqual:
-    case Primary, Secondary, Failure
+  /** A line's colour, by what it says ([[NoteTone]]). */
+  type Tone = NoteTone
+  val Tone: NoteTone.type = NoteTone
 
   /** One line of a block. Without a `tone`, a heading is `Primary` and a
-    * fact `Secondary`.
+    * fact `Secondary`; without a `spoken` form, it is spoken as written.
     */
-  final case class Line(label: Label, role: Role = Role.Fact, tone: Option[Tone] = None):
+  final case class Line(
+      label: Label,
+      role: Role = Role.Fact,
+      tone: Option[Tone] = None,
+      spoken: Option[String] = None
+  ):
+
+    /** The line as the plot's accessible summary speaks it. */
+    def spokenText: String = spoken.getOrElse(label.text)
 
     /** The tone the line is drawn in. */
     def drawnTone: Tone = tone.getOrElse(role match
@@ -102,9 +139,12 @@ object Annotations:
       case Role.Fact    => Tone.Secondary)
 
   /** One participant's lines, top to bottom, and the row they annotate. */
-  final case class Block private (anchor: StudioRef, lines: Vector[Line])
+  sealed abstract case class Block private (anchor: StudioRef, lines: Vector[Line])
 
   object Block:
+    private def apply(anchor: StudioRef, lines: Vector[Line]): Block =
+      new Block(anchor, lines) {}
+
     def of(anchor: StudioRef, lines: Vector[Line]): Either[AnnotationError, Block] =
       Either.cond(lines.nonEmpty, Block(anchor, lines), AnnotationError.NoLines(anchor))
 

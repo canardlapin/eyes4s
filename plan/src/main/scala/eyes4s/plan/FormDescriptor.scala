@@ -22,18 +22,21 @@ import eyes4s.kernel.*
 /** The stable identity of a descriptor field: `sigma`, `method.sigma`,
   * `estimate.0`. Non-empty and without whitespace.
   */
-final case class FieldId private (value: String) derives CanEqual:
-  def prefixed(prefix: String): FieldId = new FieldId(prefix + value)
+sealed abstract case class FieldId private (value: String) derives CanEqual:
+  def prefixed(prefix: String): FieldId = FieldId(prefix + value)
   override def toString: String         = value
 
 object FieldId:
+  private def apply(value: String): FieldId =
+    new FieldId(value) {}
+
   def of(value: String): Either[DescriptorError, FieldId] =
     Either.cond(
       value.nonEmpty && !value.exists(_.isWhitespace),
-      new FieldId(value),
+      FieldId(value),
       DescriptorError.InvalidFieldId(value)
     )
-  private[plan] def literal(value: String): FieldId = new FieldId(value)
+  private[plan] def literal(value: String): FieldId = FieldId(value)
 
 /** What a descriptor value counts. */
 enum Counted derives CanEqual:
@@ -270,8 +273,10 @@ enum Endpoint derives CanEqual:
   * missing endpoint leaves that side bounded only by what the number's shape
   * can represent.
   */
-final case class NumericBounds private (lower: Option[Endpoint], upper: Option[Endpoint])
-    derives CanEqual:
+sealed abstract case class NumericBounds private (
+    lower: Option[Endpoint],
+    upper: Option[Endpoint]
+) derives CanEqual:
 
   /** The endpoint `x` violates, if any, lower first. */
   def violation(x: Double): Option[(Side, Endpoint)] =
@@ -295,16 +300,22 @@ final case class NumericBounds private (lower: Option[Endpoint], upper: Option[E
     s"${lower.fold("(-∞")(_.render(Side.Lower))}, ${upper.fold("∞)")(_.render(Side.Upper))}"
 
 object NumericBounds:
-  val unbounded: NumericBounds = new NumericBounds(None, None)
+  private def apply(lower: Option[Endpoint], upper: Option[Endpoint]): NumericBounds =
+    new NumericBounds(lower, upper) {}
+
+  val unbounded: NumericBounds = NumericBounds(None, None)
 
   /** Strictly positive: `(0, ∞)`. */
-  val positive: NumericBounds = new NumericBounds(Some(Endpoint.Open(0)), None)
+  val positive: NumericBounds = NumericBounds(Some(Endpoint.Open(0)), None)
+
+  /** Strictly between zero and one: `(0, 1)`. */
+  val openUnit: NumericBounds = NumericBounds(Some(Endpoint.Open(0)), Some(Endpoint.Open(1)))
 
   /** Zero or more: `[0, ∞)`. */
-  val nonNegative: NumericBounds = new NumericBounds(Some(Endpoint.Closed(0)), None)
+  val nonNegative: NumericBounds = NumericBounds(Some(Endpoint.Closed(0)), None)
 
   /** One or more: `[1, ∞)`. */
-  val atLeastOne: NumericBounds = new NumericBounds(Some(Endpoint.Closed(1)), None)
+  val atLeastOne: NumericBounds = NumericBounds(Some(Endpoint.Closed(1)), None)
 
   /** At least `v`: `[v, ∞)`. */
   def atLeast(v: Double): Either[DescriptorError, NumericBounds] =
@@ -321,7 +332,7 @@ object NumericBounds:
       case _                  => true
     Either.cond(
       finite && ordered,
-      new NumericBounds(lower, upper),
+      NumericBounds(lower, upper),
       DescriptorError.InvalidBounds(lower, upper)
     )
 
@@ -421,17 +432,20 @@ object FieldKind:
       case _                                           => Quantity.Composite
 
 /** A default a field starts from, with the reason it is the default. */
-final case class DefaultValue private (raw: RawValue, reason: String) derives CanEqual
+sealed abstract case class DefaultValue private (raw: RawValue, reason: String) derives CanEqual
 
 object DefaultValue:
+  private def apply(raw: RawValue, reason: String): DefaultValue =
+    new DefaultValue(raw, reason) {}
+
   def of(raw: RawValue, reason: String): Either[DescriptorError, DefaultValue] =
     Either.cond(
       reason.trim.nonEmpty,
-      new DefaultValue(raw, reason),
+      DefaultValue(raw, reason),
       DescriptorError.InvalidDefault(raw.toString, reason)
     )
   private[plan] def literal(raw: RawValue, reason: String): DefaultValue =
-    new DefaultValue(raw, reason)
+    DefaultValue(raw, reason)
 
 /** A descriptor field as a host sees it: plain data, no type members and no
   * functions, so a host (or a codec) can render and store it.

@@ -50,9 +50,12 @@
   -fx-cursor: hand;
 }
 
+/* Selected: the selection fill inside the chip's hairline, at weight 600;
+ * the accent ring is focus's alone (DESIGN_SPEC 15). */
 .design-chip:selected {
-  -fx-background-color: -es-accent, -es-accent-soft;
+  -fx-background-color: -es-hairline, -es-sel-fill;
   -fx-text-fill: -es-ink;
+  -fx-font-family: "IBM Plex Sans SmBld";
 }
 
 .design-chip:disabled {
@@ -60,15 +63,21 @@
   -fx-text-fill: -es-ink-3;
 }
 
-.design-chip:focused {
+/* Pressed: the hairline fill, one step past hover. */
+.design-chip:armed {
+  -fx-background-color: -es-hairline;
+  -fx-background-insets: 0;
+}
+
+.design-chip:focus-visible {
   -fx-background-color: -es-accent, -es-surface;
   -fx-background-insets: -1, 1;
 }
 
 /* A focused chip that is also selected keeps the selected fill inside the ring:
- * -fx-background-color is one property, so :focused alone would replace it. */
-.design-chip:selected:focused {
-  -fx-background-color: -es-accent, -es-accent-soft;
+ * -fx-background-color is one property, so :focus-visible alone would replace it. */
+.design-chip:selected:focus-visible {
+  -fx-background-color: -es-accent, -es-sel-fill;
   -fx-background-insets: -1, 1;
 }
 
@@ -126,11 +135,6 @@
   -fx-background-color: -es-surface;
 }
 
-.design-table:focused {
-  -fx-background-color: -es-accent, -es-surface;
-  -fx-background-insets: 0, 1;
-}
-
 .design-row {
   -fx-min-height: 22px;
   -fx-alignment: center-left;
@@ -155,8 +159,18 @@
   -fx-text-fill: -es-warn-text;
 }
 
-.design-row:cursor {
-  -fx-background-color: -es-accent-soft;
+/* The row cursor, while the keyboard holds the table's focus: a 2 px accent
+ * frame around the row's fill; the table itself draws no ring (DESIGN_SPEC 15,
+ * composite focus). With no row under the cursor (none yet, or no rows) the
+ * ring is the table's edge. */
+.design-table:focus-visible .design-row:cursor {
+  -fx-background-color: -es-accent, -es-surface;
+  -fx-background-insets: 0, 2;
+}
+
+.design-table:focus-visible:no-cursor {
+  -fx-border-color: -es-accent;
+  -fx-border-width: 2;
 }
 
 /* ---- notes under the table ---------------------------------------------------- */

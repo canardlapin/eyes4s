@@ -3,6 +3,9 @@ args <- commandArgs(trailingOnly = TRUE)
 .libPaths(c(args[[1L]], .libPaths()))
 library(eyesim)
 library(jsonlite)
+script_path <- sub("^--file=", "", grep("^--file=", commandArgs(), value = TRUE))
+stopifnot(length(script_path) == 1L)
+source(file.path(dirname(normalizePath(script_path)), "evidence_json.R"))
 request <- fromJSON(args[[2L]], simplifyVector = FALSE)
 out <- args[[3L]]
 stopifnot(request$schema_version == 1L, length(request$templates) > 1L,
@@ -63,7 +66,7 @@ result <- list(nx = request$nx, ny = request$ny,
     id = src$id[[i]], participant = src$participant[[i]], template = src$template[[i]],
     values = map_values(source_maps[[i]]), observed = scores$eye_sim[[i]],
     baseline = scores$perm_sim[[i]], difference = scores$eye_sim_diff[[i]], n_perm = scores$n_perm[[i]])))
-write_json(result, file.path(out, "shared.json"), auto_unbox = TRUE, digits = NA)
+write_evidence_json(result, file.path(out, "shared.json"))
 writeLines(capture.output(sessionInfo()), file.path(out, "R-session.txt"))
 
 # The opt-in end-to-end runner additionally checks the estimator against an
@@ -80,6 +83,5 @@ if (isTRUE(request$end_to_end)) {
          values = as.numeric(d$z), exact = as.numeric(exact$z),
          exact_x = exact$x, exact_y = exact$y)
   })
-  write_json(list(maps = details), file.path(out, "eyesim-maps.json"),
-             auto_unbox = TRUE, digits = NA)
+  write_evidence_json(list(maps = details), file.path(out, "eyesim-maps.json"))
 }

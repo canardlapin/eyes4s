@@ -104,7 +104,7 @@ enum PlacementError derives CanEqual:
 /** One trial's records and how many eyes4s places outside the image frame
   * and outside the screen: eyes4s's `WindowTally` of the trial.
   */
-final case class TrialPlacement private (
+sealed abstract case class TrialPlacement private (
     trial: TrialKey,
     records: Int,
     outsideWindow: Int,
@@ -112,6 +112,14 @@ final case class TrialPlacement private (
 ) derives CanEqual
 
 object TrialPlacement:
+  private def apply(
+      trial: TrialKey,
+      records: Int,
+      outsideWindow: Int,
+      outsideScreen: Int
+  ): TrialPlacement =
+    new TrialPlacement(trial, records, outsideWindow, outsideScreen) {}
+
   /** A tally of non-negative counts, no more records outside than it has. */
   def of(
       trial: TrialKey,
@@ -146,7 +154,7 @@ object TrialPlacement:
   * cell, row-major with row 0 at the top. A position off the screen falls in
   * no cell.
   */
-final case class PlacementDensityGrid private (
+sealed abstract case class PlacementDensityGrid private (
     columns: Int,
     rows: Int,
     counts: Vector[Double],
@@ -154,6 +162,14 @@ final case class PlacementDensityGrid private (
 ) derives CanEqual
 
 object PlacementDensityGrid:
+  private def apply(
+      columns: Int,
+      rows: Int,
+      counts: Vector[Double],
+      placed: Int
+  ): PlacementDensityGrid =
+    new PlacementDensityGrid(columns, rows, counts, placed) {}
+
   /** `columns × rows` finite, non-negative counts of `placed` records. */
   def of(
       columns: Int,
@@ -192,7 +208,7 @@ object PlacementDensityGrid:
   * recorded corrections (a draft's included), each trial's window tally in
   * source order, and the all-trials density.
   */
-final case class PlacementPreview private (
+sealed abstract case class PlacementPreview private (
     dataset: DatasetRevision,
     records: Vector[PlacedRecord],
     unplaced: Vector[UnplacedSourceRecord],
@@ -206,6 +222,15 @@ final case class PlacementPreview private (
   def record(n: Int): Option[PlacedRecord] = records.find(_.record == n)
 
 object PlacementPreview:
+  private def apply(
+      dataset: DatasetRevision,
+      records: Vector[PlacedRecord],
+      unplaced: Vector[UnplacedSourceRecord],
+      trials: Vector[TrialPlacement],
+      density: PlacementDensityGrid
+  ): PlacementPreview =
+    new PlacementPreview(dataset, records, unplaced, trials, density) {}
+
   /** A preview whose tallies are its records': one tally per trial, each
     * counting that trial's records and where they lie, and a density that
     * binned every record placed.

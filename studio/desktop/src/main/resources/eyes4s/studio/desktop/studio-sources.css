@@ -120,7 +120,13 @@
   -fx-text-fill: -es-ink;
 }
 
-.sources-button:focused {
+/* Pressed: the hairline fill, one step past hover. */
+.sources-button:armed {
+  -fx-background-color: -es-hairline;
+  -fx-background-insets: 0;
+}
+
+.sources-button:focus-visible {
   -fx-background-color: -es-accent, -es-surface;
 }
 

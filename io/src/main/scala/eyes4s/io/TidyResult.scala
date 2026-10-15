@@ -91,7 +91,7 @@ final case class ResultClockSpec(
   * a measured sample that is smoothed and projected contributes to all three
   * corresponding fields. `derived` counts samples with any derived value.
   */
-final case class SampleOriginCounts private[io] (
+sealed abstract case class SampleOriginCounts private[io] (
     sampleCount: Int,
     measured: Int,
     interpolated: Int,
@@ -101,6 +101,16 @@ final case class SampleOriginCounts private[io] (
 ) derives CanEqual
 
 object SampleOriginCounts:
+  private[io] def apply(
+      sampleCount: Int,
+      measured: Int,
+      interpolated: Int,
+      smoothed: Int,
+      projected: Int,
+      derived: Int
+  ): SampleOriginCounts =
+    new SampleOriginCounts(sampleCount, measured, interpolated, smoothed, projected, derived) {}
+
   def from[U <: Unit2D](recording: Recording[U]): SampleOriginCounts =
     val lineages = recording.samples.iterator.map(_.lineage).toVector
     SampleOriginCounts(
@@ -117,7 +127,7 @@ enum AoiEstimand(val label: String) derives CanEqual:
   case Dwell             extends AoiEstimand("dwell")
   case DwellProportion   extends AoiEstimand("dwell_proportion")
   case FirstEntryLatency extends AoiEstimand("first_entry_latency")
-  case RunCount          extends AoiEstimand("run_count")
+  case SampleRunCount    extends AoiEstimand("sample_run_count")
   case TransitionCount   extends AoiEstimand("transition_count")
 
 /** Unit of the value cell, including missing values whose intended unit remains known. */
@@ -452,8 +462,8 @@ object TidyAoiResult:
         row(
           study,
           TidyTarget.Area(area.id, area.label),
-          AoiEstimand.RunCount,
-          TidyValue.Count(area.runCount),
+          AoiEstimand.SampleRunCount,
+          TidyValue.Count(area.sampleRunCount),
           ResultUnit.Count,
           evidence
         )
@@ -679,9 +689,9 @@ object TidyCsv:
       unit: ResultUnit
   ): Either[TidyCsvError, TidyValue] =
     val expectedUnit = estimand match
-      case AoiEstimand.Dwell | AoiEstimand.FirstEntryLatency  => ResultUnit.Microseconds
-      case AoiEstimand.DwellProportion                        => ResultUnit.Proportion
-      case AoiEstimand.RunCount | AoiEstimand.TransitionCount => ResultUnit.Count
+      case AoiEstimand.Dwell | AoiEstimand.FirstEntryLatency        => ResultUnit.Microseconds
+      case AoiEstimand.DwellProportion                              => ResultUnit.Proportion
+      case AoiEstimand.SampleRunCount | AoiEstimand.TransitionCount => ResultUnit.Count
     if unit != expectedUnit then
       Left(
         invalid(

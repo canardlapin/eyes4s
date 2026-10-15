@@ -103,6 +103,22 @@ final class ScienceContent private (
     val figures: Vector[FigureSpec],
     val analysisFamilies: Option[AnalysisFamilyRegistry]
 ) derives CanEqual:
+  private[document] def hasRecipeEditingFields: Boolean =
+    def cross(choice: InitialFixationChoice): Boolean = choice match
+      case _: InitialFixationChoice.DropLeadingAtScreenCross => true
+      case _                                                 => false
+    def extended(recipe: Recipe): Boolean =
+      recipe.expectedUnmatched.nonEmpty || cross(recipe.initialFixations)
+    analyses.exists(a => extended(a.recipe)) || draft.exists(d =>
+      d.changes.exists {
+        case _: RecipeChange.ExpectedUnmatched            => true
+        case RecipeChange.InitialFixations(before, after) => cross(before) || cross(after)
+        case _                                            => false
+      } || (d.origin match
+        case DraftOrigin.Existing(_)                => false
+        case DraftOrigin.Initial(_, recipe, _)      => extended(recipe)
+        case DraftOrigin.NewFamily(_, _, recipe, _) => extended(recipe))
+    )
   private def fields = (datasets, analyses, draft, runs, reporting, figures, analysisFamilies)
   override def equals(other: Any): Boolean = other match
     case that: ScienceContent => fields == that.fields
@@ -153,9 +169,13 @@ object ScienceContent:
           .bimap(f => CodecError.Field("science", json, f.getMessage), _.science)
       def beforeNewFamily(s: ScienceContent): Either[CodecError, ScienceContent] =
         Either.cond(
-          !s.draft.exists(_.isNewFamily),
+          !s.hasRecipeEditingFields && !s.draft.exists(_.isNewFamily),
           s,
-          CodecError.Unsupported("studio science", "new-family drafts need version 7")
+          CodecError.Unsupported(
+            "studio science",
+            if s.hasRecipeEditingFields then "recipe editing fields need version 8"
+            else "new-family drafts need version 7"
+          )
         )
       def beforeFamilies(s: ScienceContent): Either[CodecError, ScienceContent] =
         beforeNewFamily(s).flatMap(v =>
@@ -209,7 +229,9 @@ object ScienceContent:
         )
         .next(
           s =>
-            !s.draft.exists(_.isNewFamily) && s.analysisFamilies.isEmpty && s.datasets.forall(
+            !s.hasRecipeEditingFields && !s.draft.exists(
+              _.isNewFamily
+            ) && s.analysisFamilies.isEmpty && s.datasets.forall(
               _.inventory.forall(_.duration.isEmpty)
             ) && s.figures.forall(
               _.methods.isEmpty
@@ -219,7 +241,9 @@ object ScienceContent:
         )(s => beforeInitial(s).flatMap(write))(json => read(json).flatMap(beforeInitial))
         .next(
           s =>
-            !s.draft.exists(_.isNewFamily) && s.analysisFamilies.isEmpty && s.datasets.forall(
+            !s.hasRecipeEditingFields && !s.draft.exists(
+              _.isNewFamily
+            ) && s.analysisFamilies.isEmpty && s.datasets.forall(
               _.inventory.forall(_.duration.isEmpty)
             ) && s.figures.forall(
               _.methods.isEmpty
@@ -228,7 +252,9 @@ object ScienceContent:
         )(s => beforeMethods(s).flatMap(write))(json => read(json).flatMap(beforeMethods))
         .next(
           s =>
-            !s.draft.exists(_.isNewFamily) && s.analysisFamilies.isEmpty && s.datasets.forall(
+            !s.hasRecipeEditingFields && !s.draft.exists(
+              _.isNewFamily
+            ) && s.analysisFamilies.isEmpty && s.datasets.forall(
               _.inventory.forall(_.duration.isEmpty)
             ) && s.figures
               .forall(_.methods.isEmpty),
@@ -236,14 +262,43 @@ object ScienceContent:
         )(s => beforeDuration(s).flatMap(write))(json => read(json).flatMap(beforeDuration))
         .next(
           s =>
-            !s.draft.exists(_.isNewFamily) && s.analysisFamilies.isEmpty && s.datasets
+            !s.hasRecipeEditingFields && !s.draft.exists(
+              _.isNewFamily
+            ) && s.analysisFamilies.isEmpty && s.datasets
               .forall(_.inventory.forall(_.duration.isEmpty)),
           identity
         )(s => beforeFamilies(s).flatMap(write))(json => read(json).flatMap(beforeFamilies))
-        .next(s => !s.draft.exists(_.isNewFamily) && s.analysisFamilies.isEmpty, identity)(s =>
-          beforeNewFamily(s).flatMap(write)
-        )(json => read(json).flatMap(beforeNewFamily))
-        .next(s => !s.draft.exists(_.isNewFamily), identity)(write)(read)
+        .next(
+          s =>
+            !s.hasRecipeEditingFields && !s.draft.exists(
+              _.isNewFamily
+            ) && s.analysisFamilies.isEmpty,
+          identity
+        )(s => beforeNewFamily(s).flatMap(write))(json => read(json).flatMap(beforeNewFamily))
+        .next(s => !s.hasRecipeEditingFields && !s.draft.exists(_.isNewFamily), identity)(s =>
+          Either
+            .cond(
+              !s.hasRecipeEditingFields,
+              s,
+              CodecError.Unsupported(
+                "studio science",
+                "expected-unmatched selection or a declared fixation cross needs version 8"
+              )
+            )
+            .flatMap(write)
+        )(json =>
+          read(json).flatMap(s =>
+            Either.cond(
+              !s.hasRecipeEditingFields,
+              s,
+              CodecError.Unsupported(
+                "studio science",
+                "expected-unmatched selection or a declared fixation cross needs version 8"
+              )
+            )
+          )
+        )
+        .next(s => !s.hasRecipeEditingFields, identity)(write)(read)
     }
 
   val codec: Either[CodecError, VersionedCodec[ScienceContent]] = ladder.map(_.codec)
@@ -619,12 +674,16 @@ object StudioDocument:
 
   /** Version 11 first records provisional independent-family drafts. */
   private def expressedByV10(document: StudioDocument): Boolean =
-    !document.draft.exists(_.isNewFamily)
+    !document.science.hasRecipeEditingFields && !document.draft.exists(_.isNewFamily)
   private def beforeV11(document: StudioDocument): Either[CodecError, StudioDocument] =
     Either.cond(
       expressedByV10(document),
       document,
-      CodecError.Unsupported("studio document", "new-family drafts need version 11")
+      CodecError.Unsupported(
+        "studio document",
+        if document.science.hasRecipeEditingFields then "recipe editing fields need version 12"
+        else "new-family drafts need version 11"
+      )
     )
   private def expressedByV9(document: StudioDocument): Boolean =
     expressedByV10(document) && document.analysisFamilies.isEmpty
@@ -830,7 +889,30 @@ object StudioDocument:
         .next(expressedByV9, identity)(d => beforeV11(d).map(v => CanonicalJson(v.asJson)))(
           json => read(json).flatMap(beforeV11)
         )
-        .next(expressedByV10, identity)(d => Right(CanonicalJson(d.asJson)))(read)
+        .next(expressedByV10, identity)(d =>
+          Either.cond(
+            !d.science.hasRecipeEditingFields,
+            CanonicalJson(d.asJson),
+            CodecError.Unsupported(
+              "studio document",
+              "expected-unmatched selection or a declared fixation cross needs version 12"
+            )
+          )
+        )(json =>
+          read(json).flatMap(d =>
+            Either.cond(
+              !d.science.hasRecipeEditingFields,
+              d,
+              CodecError.Unsupported(
+                "studio document",
+                "expected-unmatched selection or a declared fixation cross needs version 12"
+              )
+            )
+          )
+        )
+        .next(d => !d.science.hasRecipeEditingFields, identity)(d =>
+          Right(CanonicalJson(d.asJson))
+        )(read)
     }
 
   /** The versioned, canonical document codec. */

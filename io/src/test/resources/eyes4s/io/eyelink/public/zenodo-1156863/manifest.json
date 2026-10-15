@@ -1,0 +1,146 @@
+{
+  "version": 1,
+  "fixture": "C023.asc",
+  "source": {
+    "record": "https://zenodo.org/records/1156863",
+    "doi": "10.5281/zenodo.1156863",
+    "title": "Data on eye movements in people with glaucoma and peers with normal vision",
+    "published": "2018-04-12",
+    "creators": [
+      "Daniel S. Asfaw",
+      "Pete R. Jones",
+      "Nicholas D. Smith",
+      "David P. Crabb"
+    ],
+    "license": "CC-BY-ND-4.0",
+    "license_url": "https://creativecommons.org/licenses/by-nd/4.0/",
+    "archive_url": "https://zenodo.org/api/records/1156863/files/EyeMovementsGlaucomaDataset.zip/content",
+    "archive_entry": "EyeMovementsGlaucomaDataset/Data/Gaze/Raw/Controls/C023.asc",
+    "published_archive_checksum": "md5:f0cb8ea424c6fb3ed9c60bcaac01f0a1",
+    "archive_checksum_observed": false
+  },
+  "bytes": {
+    "size": 8794652,
+    "sha256": "c23a7fb86d2fa4d7dcd8578a06f82911214073f1b6d36536bc9bc39316d70b19",
+    "zip_entry_crc32": "73c74f12",
+    "unmodified": true,
+    "line_endings": "CRLF"
+  },
+  "conversion": {
+    "evidence": "observed source header; not a complete Edf2AscReceipt",
+    "header": [
+      "** CONVERTED FROM \\\\tsclient\\D\\gffd\\video\\Controls\\C30V.EDF using edfapi 3.1 Win32 Nov 24 2009 on Mon Oct 10 12:41:37 2011",
+      "** DATE: Sat Aug 14 00:18:46 2010",
+      "** TYPE: EDF_FILE BINARY EVENT SAMPLE TAGGED",
+      "** VERSION: EYELINK II 1",
+      "** SOURCE: EYELINK CL",
+      "** EYELINK II CL v4.40 Mar 24 2009",
+      "** CAMERA: EyeLink CL Version 1.4 Sensor=BJF",
+      "** SERIAL NUMBER: CL1-AAB14",
+      "** CAMERA_CONFIG: AAB14140.SCD",
+      "** RECORDED BY Video display application",
+      "**",
+      ""
+    ],
+    "converter_executable_sha256": null,
+    "converter_arguments": null,
+    "recovery_mode": null,
+    "original_edf_sha256": null
+  },
+  "geometry": {
+    "coordinate_messages": "DISPLAY_COORDS and GAZE_COORDS",
+    "x_min": 0,
+    "y_min": 0,
+    "x_max_inclusive": 1599,
+    "y_max_inclusive": 1199,
+    "width_pixels": 1600,
+    "height_pixels": 1200,
+    "physical_viewing_geometry": null
+  },
+  "layout": {
+    "eyes": "LEFT monocular",
+    "coordinate_mode": "GAZE",
+    "rate_hz": "250.00",
+    "pupil": "AREA",
+    "tracking": "CR",
+    "filter": "2",
+    "sample_columns": 5,
+    "trailing_cr_warning_flags": "..."
+  },
+  "lexical_accounting": {
+    "sha256": "c23a7fb86d2fa4d7dcd8578a06f82911214073f1b6d36536bc9bc39316d70b19",
+    "source_lines": 247992,
+    "line_kinds": {
+      "EBLINK": 778,
+      "EFIX": 2174,
+      "END": 3,
+      "ESACC": 2174,
+      "EVENTS": 3,
+      "MSG": 42,
+      "PRESCALER": 3,
+      "PUPIL": 3,
+      "SAMPLES": 3,
+      "SBLINK": 778,
+      "SFIX": 2175,
+      "SSACC": 2174,
+      "START": 3,
+      "VPRESCALER": 3,
+      "blank": 1,
+      "header": 11,
+      "sample": 237664
+    },
+    "sample_widths": {
+      "5": 237664
+    },
+    "sample_first_timestamp": "8534553",
+    "sample_last_timestamp": "9517203",
+    "layouts": [
+      [
+        "START\t8534553 \tLEFT\tSAMPLES\tEVENTS",
+        1
+      ],
+      [
+        "EVENTS\tGAZE\tLEFT\tRATE\t 250.00\tTRACKING\tCR\tFILTER\t2",
+        3
+      ],
+      [
+        "SAMPLES\tGAZE\tLEFT\tRATE\t 250.00\tTRACKING\tCR\tFILTER\t2",
+        3
+      ],
+      [
+        "END\t8844990 \tSAMPLES\tEVENTS\tRES\t  41.46\t  41.82",
+        1
+      ],
+      [
+        "START\t8872251 \tLEFT\tSAMPLES\tEVENTS",
+        1
+      ],
+      [
+        "END\t9073584 \tSAMPLES\tEVENTS\tRES\t  41.74\t  41.99",
+        1
+      ],
+      [
+        "START\t9078327 \tLEFT\tSAMPLES\tEVENTS",
+        1
+      ],
+      [
+        "END\t9517204 \tSAMPLES\tEVENTS\tRES\t  41.73\t  42.02",
+        1
+      ]
+    ],
+    "scope": "independent raw lexical accounting; not eyes4s admission or end-to-end qualification"
+  },
+  "cr_warning_accounting": {
+    "source_sha256": "c23a7fb86d2fa4d7dcd8578a06f82911214073f1b6d36536bc9bc39316d70b19",
+    "native_cr_flags": {
+      "...": 237664
+    },
+    "interpolated_samples": 0,
+    "cr_missing_samples": 0,
+    "cr_recovery_samples": 0,
+    "specification": "SR Research EyeLink II User Manual v2.14 section4.9.2.1 page81 (PDF page88)",
+    "manual_url": "https://www.bjbrainvision.com/uploads/20201202/c28e58251454de21de1c86b8a6fb0a8d.pdf"
+  },
+  "qualification": "complete byte-verified import, native ledger, observed timeline and source-supported pixel IDT Scanpaths passed on JVM and Scala.js; receipt scopes portable acceptance separately from the branch landing gate; no complete converter or device-matrix claim",
+  "portable_workflow_evidence": "docs/evidence/public-asc-20261014.json"
+}

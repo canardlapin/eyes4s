@@ -104,9 +104,12 @@ enum SourceRole derives CanEqual, Codec.AsObject:
   * `ProjectBundle.inputPath` maps a source to its one stored path,
   * `inputs/<sha256>/<last segment of this path>` (S2.3).
   */
-final case class SourcePath private (value: String) derives CanEqual
+sealed abstract case class SourcePath private (value: String) derives CanEqual
 
 object SourcePath:
+  private def apply(value: String): SourcePath =
+    new SourcePath(value) {}
+
   def of(value: String): Either[DocumentError, SourcePath] =
     if value.trim.isEmpty then Left(DocumentError.Blank("source path"))
     else if value.startsWith("/") then
@@ -115,7 +118,7 @@ object SourcePath:
       Left(DocumentError.BadPath(value, "it contains a backslash; the separator is '/'"))
     else if value.split("/", -1).exists(s => s.isEmpty || s == "." || s == "..") then
       Left(DocumentError.BadPath(value, "it has an empty, '.' or '..' segment"))
-    else Right(new SourcePath(value))
+    else Right(SourcePath(value))
 
   given Codec[SourcePath] = DocumentCodecs.validated(of, _.value)
 
@@ -124,16 +127,19 @@ object SourcePath:
   * change detector, not a cryptographic identity; the source's bytes carry
   * that.
   */
-final case class SemanticIdentity private (value: String) derives CanEqual
+sealed abstract case class SemanticIdentity private (value: String) derives CanEqual
 
 object SemanticIdentity:
+  private def apply(value: String): SemanticIdentity =
+    new SemanticIdentity(value) {}
+
   def of(value: String): Either[DocumentError, SemanticIdentity] =
     ArtifactRef
       .parse[Vector[Vector[String]]](value)
-      .bimap(_ => DocumentError.BadSemanticIdentity(value), r => new SemanticIdentity(r.digest))
+      .bimap(_ => DocumentError.BadSemanticIdentity(value), r => SemanticIdentity(r.digest))
 
   def fromCore(ref: ArtifactRef[Vector[Vector[String]]]): SemanticIdentity =
-    new SemanticIdentity(ref.digest)
+    SemanticIdentity(ref.digest)
 
   given Codec[SemanticIdentity] = DocumentCodecs.validated(of, _.value)
 
@@ -167,11 +173,14 @@ object Source:
 /** The files one dataset revision was imported from, one per role, in role
   * order. A fixation source is required; a trial inventory is optional.
   */
-final case class Sources private (entries: Vector[Source]) derives CanEqual:
+sealed abstract case class Sources private (entries: Vector[Source]) derives CanEqual:
   def fixations: Option[Source] = entries.find(_.role == SourceRole.Fixations)
   def trials: Option[Source]    = entries.find(_.role == SourceRole.Trials)
 
 object Sources:
+  private def apply(entries: Vector[Source]): Sources =
+    new Sources(entries) {}
+
   def of(entries: Vector[Source]): Either[DocumentError, Sources] =
     val roles = entries.map(_.role)
     for
@@ -191,7 +200,7 @@ object Sources:
         (),
         DocumentError.MissingSource(SourceRole.Fixations, roles)
       )
-    yield new Sources(entries.sortBy(_.role.ordinal))
+    yield Sources(entries.sortBy(_.role.ordinal))
 
   given Codec[Sources] = DocumentCodecs.validated(of, _.entries)
 
@@ -226,11 +235,14 @@ object ColumnRole:
     Vector(Participant, Trial, Ordinal, SampleCount, X, Y, Onset, Duration)
 
 /** A column name as it appears in the source header. */
-final case class ColumnName private (value: String) derives CanEqual
+sealed abstract case class ColumnName private (value: String) derives CanEqual
 
 object ColumnName:
+  private def apply(value: String): ColumnName =
+    new ColumnName(value) {}
+
   def of(value: String): Either[DocumentError, ColumnName] =
-    Either.cond(value.trim.nonEmpty, new ColumnName(value), DocumentError.Blank("column name"))
+    Either.cond(value.trim.nonEmpty, ColumnName(value), DocumentError.Blank("column name"))
 
   given Codec[ColumnName] = DocumentCodecs.validated(of, _.value)
 
@@ -243,7 +255,8 @@ final case class ColumnBinding(role: ColumnRole, column: ColumnName)
   * ([[ColumnRole.required]]) loads, but only [[ColumnMapping.admissible]]
   * mappings are committed or admitted.
   */
-final case class ColumnMapping private (bindings: Vector[ColumnBinding]) derives CanEqual:
+sealed abstract case class ColumnMapping private (bindings: Vector[ColumnBinding])
+    derives CanEqual:
   def column(role: ColumnRole): Option[ColumnName] = bindings.find(_.role == role).map(_.column)
 
   /** The roles import requires that no column plays (a mapping stored
@@ -253,6 +266,9 @@ final case class ColumnMapping private (bindings: Vector[ColumnBinding]) derives
     ColumnRole.required.filterNot(r => bindings.exists(_.role == r))
 
 object ColumnMapping:
+  private def apply(bindings: Vector[ColumnBinding]): ColumnMapping =
+    new ColumnMapping(bindings) {}
+
   def of(bindings: Vector[ColumnBinding]): Either[DocumentError, ColumnMapping] =
     for
       _ <- ColumnRole.values.toVector.traverse_ { role =>
@@ -264,7 +280,7 @@ object ColumnMapping:
       }
       missing = ColumnRole.stored.filterNot(r => bindings.exists(_.role == r))
       _ <- Either.cond(missing.isEmpty, (), DocumentError.MissingColumnRoles(missing))
-    yield new ColumnMapping(bindings.sortBy(_.role.ordinal))
+    yield ColumnMapping(bindings.sortBy(_.role.ordinal))
 
   /** The commit and admission check (S5.3): every role import requires has a
     * column, or the error names the missing ones. The import wizard's commit,
@@ -301,14 +317,17 @@ final case class AttributeBinding(column: ColumnName, kind: AttributeKindChoice)
   def core: AttributeColumn = AttributeColumn(column.value, kind.core)
 
 /** The attribute columns of a source, in header order, each named once. */
-final case class DeclaredAttributes private (bindings: Vector[AttributeBinding])
+sealed abstract case class DeclaredAttributes private (bindings: Vector[AttributeBinding])
     derives CanEqual:
   def isEmpty: Boolean              = bindings.isEmpty
   def columns: Vector[ColumnName]   = bindings.map(_.column)
   def core: Vector[AttributeColumn] = bindings.map(_.core)
 
 object DeclaredAttributes:
-  val empty: DeclaredAttributes = new DeclaredAttributes(Vector.empty)
+  private def apply(bindings: Vector[AttributeBinding]): DeclaredAttributes =
+    new DeclaredAttributes(bindings) {}
+
+  val empty: DeclaredAttributes = DeclaredAttributes(Vector.empty)
 
   def of(bindings: Vector[AttributeBinding]): Either[DocumentError, DeclaredAttributes] =
     bindings
@@ -317,7 +336,7 @@ object DeclaredAttributes:
       .collectFirst {
         case c if bindings.count(_.column == c) > 1 => DocumentError.RepeatedAttribute(c.value)
       }
-      .toLeft(new DeclaredAttributes(bindings))
+      .toLeft(DeclaredAttributes(bindings))
 
   given Encoder[DeclaredAttributes] = Encoder[Vector[AttributeBinding]].contramap(_.bindings)
 
@@ -375,13 +394,16 @@ private[document] object Checks:
     Either.cond(value.trim.nonEmpty, value, DocumentError.Blank(field))
 
 /** The screen in pixels; its frame is the admission frame. */
-final case class ScreenSize private (width: Int, height: Int) derives CanEqual:
+sealed abstract case class ScreenSize private (width: Int, height: Int) derives CanEqual:
   def render: String = s"${width}×$height px"
 
 object ScreenSize:
+  private def apply(width: Int, height: Int): ScreenSize =
+    new ScreenSize(width, height) {}
+
   def of(width: Int, height: Int): Either[DocumentError, ScreenSize] =
     (Checks.positive("screen width", width), Checks.positive("screen height", height))
-      .mapN(new ScreenSize(_, _))
+      .mapN(ScreenSize(_, _))
 
   given Encoder.AsObject[ScreenSize] =
     Encoder.forProduct2("width", "height")(s => (s.width, s.height))
@@ -391,14 +413,17 @@ object ScreenSize:
 /** Where the stimulus image lies on the screen, in screen pixels (y down,
   * from the top-left corner); the analysis window is this image frame.
   */
-final case class ImagePlacement private (left: Int, top: Int, width: Int, height: Int)
+sealed abstract case class ImagePlacement private (left: Int, top: Int, width: Int, height: Int)
     derives CanEqual:
   def render: String = s"${width}×$height px at ($left, $top)"
 
 object ImagePlacement:
+  private def apply(left: Int, top: Int, width: Int, height: Int): ImagePlacement =
+    new ImagePlacement(left, top, width, height) {}
+
   def of(left: Int, top: Int, width: Int, height: Int): Either[DocumentError, ImagePlacement] =
     (Checks.positive("image width", width), Checks.positive("image height", height))
-      .mapN((w, h) => new ImagePlacement(left, top, w, h))
+      .mapN((w, h) => ImagePlacement(left, top, w, h))
 
   given Encoder.AsObject[ImagePlacement] =
     Encoder.forProduct4("left", "top", "width", "height")(p =>
@@ -410,22 +435,32 @@ object ImagePlacement:
 /** Pixels per degree of visual angle as the analyst DECLARED it: a linear
   * conversion, not a calibration (DESIGN_SPEC section 9).
   */
-final case class DeclaredPixelsPerDegree private (value: Double) derives CanEqual
+sealed abstract case class DeclaredPixelsPerDegree private (value: Double) derives CanEqual
 
 object DeclaredPixelsPerDegree:
+  private def apply(value: Double): DeclaredPixelsPerDegree =
+    new DeclaredPixelsPerDegree(value) {}
+
   def of(value: Double): Either[DocumentError, DeclaredPixelsPerDegree] =
-    Checks.positive("pixels per degree", value).map(new DeclaredPixelsPerDegree(_))
+    Checks.positive("pixels per degree", value).map(DeclaredPixelsPerDegree(_))
 
   given Codec[DeclaredPixelsPerDegree] = DocumentCodecs.validated(of, _.value)
 
 /** The display geometry of a dataset: the image lies inside the screen. */
-final case class Geometry private (
+sealed abstract case class Geometry private (
     screen: ScreenSize,
     image: ImagePlacement,
     pixelsPerDegree: DeclaredPixelsPerDegree
 ) derives CanEqual
 
 object Geometry:
+  private def apply(
+      screen: ScreenSize,
+      image: ImagePlacement,
+      pixelsPerDegree: DeclaredPixelsPerDegree
+  ): Geometry =
+    new Geometry(screen, image, pixelsPerDegree) {}
+
   def of(
       screen: ScreenSize,
       image: ImagePlacement,
@@ -436,7 +471,7 @@ object Geometry:
       image.top.toLong + image.height <= screen.height
     Either.cond(
       inside,
-      new Geometry(screen, image, pixelsPerDegree),
+      Geometry(screen, image, pixelsPerDegree),
       DocumentError.PlacementOffScreen(image, screen)
     )
 
@@ -465,11 +500,14 @@ object OffScreenChoice:
     case OffScreenPolicy.QuarantineTrial => QuarantineTrial
 
 /** A finite displacement in screen pixels. */
-final case class Offset private (dx: Double, dy: Double) derives CanEqual
+sealed abstract case class Offset private (dx: Double, dy: Double) derives CanEqual
 
 object Offset:
+  private def apply(dx: Double, dy: Double): Offset =
+    new Offset(dx, dy) {}
+
   def of(dx: Double, dy: Double): Either[DocumentError, Offset] =
-    (Checks.finite("offset dx", dx), Checks.finite("offset dy", dy)).mapN(new Offset(_, _))
+    (Checks.finite("offset dx", dx), Checks.finite("offset dy", dy)).mapN(Offset(_, _))
 
   given Encoder.AsObject[Offset] = Encoder.forProduct2("dx", "dy")(o => (o.dx, o.dy))
   given Decoder[Offset] = Decoder.forProduct2("dx", "dy")(of).emap(_.left.map(_.message))
@@ -487,11 +525,14 @@ object CoordinateCorrection:
       case Correction.Translate(dx, dy) => Offset.of(dx, dy).map(Translate(_))
 
 /** Participant names a participant; the key of a trial is studio's typed key. */
-final case class ParticipantId private (value: String) derives CanEqual
+sealed abstract case class ParticipantId private (value: String) derives CanEqual
 
 object ParticipantId:
+  private def apply(value: String): ParticipantId =
+    new ParticipantId(value) {}
+
   def of(value: String): Either[DocumentError, ParticipantId] =
-    Checks.nonBlank("participant", value).map(new ParticipantId(_))
+    Checks.nonBlank("participant", value).map(ParticipantId(_))
 
   given Codec[ParticipantId] = DocumentCodecs.validated(of, _.value)
 

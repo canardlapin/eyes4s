@@ -177,14 +177,13 @@ final class StudyResultArchive[K, U <: Unit2D, P, S, D] private[codec] (
     rows.zipWithIndex
       .traverse { (entries, scale) =>
         entries.zipWithIndex.traverse { case ((_, outcome), index) =>
-          if outcome.hcursor.get[String]("kind").contains("failure") then Right(outcome)
-          else reader.massAt(scale, index).map(DensityWire.inline)
+          if outcome.hcursor.get[String]("kind").contains("failure") then Right(None)
+          else reader.massAt(scale, index).map(Some(_))
         }
       }
       .flatMap { outcomes =>
-        val restored = DensityWire.replaceOutcomes(payload, outcomes)
-        owner.result.codec
-          .decode(Json.obj("schema" -> Wire.id(owner.result.schema), "value" -> restored))
+        owner.result
+          .restoreDensities(payload, outcomes)
           .left
           .map(DensityError.Materialize(_))
       }
@@ -373,8 +372,7 @@ final class DensityArchiveCodec[K, U <: Unit2D, P, S, D](
       storage: DensityStorage = DensityStorage.Recomputable
   ): Either[CodecError, DensityArchiveBundle[K, U, P, S, D]] =
     for
-      document <- result.codec.encode(value)
-      payload  <- Wire.field[Json](document, "value")
+      payload <- result.storageMetadata(value)
       maps = value.scales.zipWithIndex.flatMap { (scale, s) =>
         scale.estimation.zipWithIndex.collect { case ((key, Right(mass)), i) =>
           (s, i, key, mass)
@@ -388,10 +386,17 @@ final class DensityArchiveCodec[K, U <: Unit2D, P, S, D](
               val first = members.head._4.grid
               for
                 _ <- members.traverse_(m =>
-                  Agreement
-                    .grids(first, m._4.grid)
-                    .left
-                    .map(e => CodecError.Field("chunk.grid", payload, e.message))
+                  Agreement.grids(first, m._4.grid) match
+                    case Right(_)    => Right(())
+                    case Left(error) =>
+                      // Keep the existing complete error operand on this rare
+                      // refusal path, without allocating it for successful saves.
+                      result.codec
+                        .encode(value)
+                        .flatMap(document => Wire.field[Json](document, "value"))
+                        .flatMap(full =>
+                          Left(CodecError.Field("chunk.grid", full, error.message))
+                        )
                 )
                 shape <- PayloadLayout
                   .of(
@@ -402,7 +407,7 @@ final class DensityArchiveCodec[K, U <: Unit2D, P, S, D](
                   .left
                   .map(CodecError.Payload("density chunk", _))
                 packed <- PackedArrays
-                  .pack(shape, IArray.from(members.flatMap(_._4.values)))
+                  .pack(shape, IArray.from(members.iterator.flatMap(_._4.values.iterator)))
                   .left
                   .map(CodecError.Payload("density chunk", _))
               yield participant -> packed
@@ -455,8 +460,8 @@ final class DensityArchiveCodec[K, U <: Unit2D, P, S, D](
                     case DensityStorage.Inline =>
                       Left(CodecError.Unsupported("storage", "unexpected inline route"))
                 yield DensityWire
-                  .inline(mass)
-                  .mapObject(_.remove("values").add("storage", location))
+                  .metadata(mass)
+                  .mapObject(_.add("storage", location))
         }
       }
       saved = DensityWire.replaceOutcomes(payload, outcomes)
@@ -685,6 +690,12 @@ final class DensityArchiveCodec[K, U <: Unit2D, P, S, D](
       )
 
 private[codec] object DensityWire:
+  def metadata[U <: Unit2D](mass: Mass[U]): Json = ResultWire.tagged(
+    "mass",
+    "grid"       -> Json.fromString(mass.grid.id.name),
+    "provenance" -> ResultWire.provenance(mass.provenance)
+  )
+
   def inline[U <: Unit2D](mass: Mass[U]): Json = ResultWire.tagged(
     "mass",
     "grid"       -> Json.fromString(mass.grid.id.name),

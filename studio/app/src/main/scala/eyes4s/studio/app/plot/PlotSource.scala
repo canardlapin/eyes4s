@@ -52,13 +52,16 @@ enum PlotSourceError derives CanEqual:
       s"row $r, column '$c': count $v is beyond ±${PlotSource.MaxCount}, where counts stay exact"
 
 /** A column's identity within its source, such as "d" or "participant". */
-final case class ColumnId private (value: String) derives CanEqual
+sealed abstract case class ColumnId private (value: String) derives CanEqual
 
 object ColumnId:
+  private def apply(value: String): ColumnId =
+    new ColumnId(value) {}
+
   def of(value: String): Either[PlotSourceError, ColumnId] =
     Either.cond(
       value.trim.nonEmpty,
-      new ColumnId(value.trim),
+      ColumnId(value.trim),
       PlotSourceError.BlankColumnId(value)
     )
 
@@ -111,7 +114,7 @@ final case class PlotRow(ref: StudioRef, values: Vector[PlotValue]) derives CanE
   * column holds numbers or missing values, every number is finite, and a
   * count is whole, so what the table writes is what the plot places.
   */
-final case class PlotSource private (
+sealed abstract case class PlotSource private (
     caption: String,
     columns: Vector[PlotColumn],
     rows: Vector[PlotRow]
@@ -167,6 +170,13 @@ final case class PlotSource private (
       .mkString(PlotText(PlotTextId.CellSeparator))
 
 object PlotSource:
+
+  private def build(
+      caption: String,
+      columns: Vector[PlotColumn],
+      rows: Vector[PlotRow]
+  ): PlotSource =
+    new PlotSource(caption, columns, rows) {}
 
   /** What the table writes for a missing value. */
   val MissingText: String = "—"
@@ -241,4 +251,4 @@ object PlotSource:
         )
       )
       _ <- each(rows)(r => each(columns.zip(r.values))((c, v) => cell(r.ref, c, v)))
-    yield new PlotSource(caption, columns, rows)
+    yield build(caption, columns, rows)

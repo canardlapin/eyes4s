@@ -44,8 +44,14 @@ enum JobHeadline derives CanEqual:
   * the shelf changes only through its own `receive`, `require`, `show` and
   * `dismiss`.
   */
-final case class JobBoard private (jobs: Vector[ExecutionJob], shelf: RunShelf)
+sealed abstract case class JobBoard private (jobs: Vector[ExecutionJob], shelf: RunShelf)
     derives CanEqual:
+
+  private def copy(
+      jobs: Vector[ExecutionJob] = this.jobs,
+      shelf: RunShelf = this.shelf
+  ): JobBoard =
+    JobBoard(jobs, shelf)
 
   /** Jobs newest first by job id. */
   private def newestFirst: Vector[ExecutionJob] = jobs.sortBy(-_.id.number)
@@ -91,6 +97,9 @@ final case class JobBoard private (jobs: Vector[ExecutionJob], shelf: RunShelf)
   def dismiss(run: RunId): JobBoard = copy(shelf = shelf.dismiss(run))
 
 object JobBoard:
+
+  private def apply(jobs: Vector[ExecutionJob], shelf: RunShelf): JobBoard =
+    new JobBoard(jobs, shelf) {}
 
   /** The board of `jobs` (the last state of each job id wins) and `shelf`. */
   def from(jobs: Vector[ExecutionJob], shelf: RunShelf): JobBoard =

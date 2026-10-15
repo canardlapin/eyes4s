@@ -27,7 +27,9 @@ class BaselineExportsSuite extends munit.FunSuite:
   private val reportFamilies                = Set(
     ResultFamily.ReportCells,
     ResultFamily.ReportParticipants,
-    ResultFamily.ReportContrasts
+    ResultFamily.ReportContrasts,
+    ResultFamily.FixationAoiMetrics,
+    ResultFamily.FixationAoiTransitions
   )
   private def cells(t: ResultTable, name: String) =
     t.rows.map(_(t.columns.indexWhere(_.name == name)))
@@ -38,9 +40,11 @@ class BaselineExportsSuite extends munit.FunSuite:
   test(
     "compiled public workflows cover every frozen result family and emit portable typed CSV"
   ) {
-    // The report families have their own workflow (the report test below).
+    // Reports have their own workflow below; fixation AOI families are qualified by
+    // FixationAoiExportSuite without changing the frozen baseline matrix.
     assertEquals(
-      tables.values.map(_.family).toSet ++ ConstrainedExportFixtures.tables.map(_.family),
+      tables.values.map(_.family).toSet ++ ConstrainedExportFixtures.tables.map(_.family) ++
+        ScanpathExportFixtures.tables.map(_.family),
       ResultFamily.values.toSet -- reportFamilies
     )
     tables.foreach { (name, t) =>

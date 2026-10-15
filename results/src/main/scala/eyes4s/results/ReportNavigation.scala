@@ -26,15 +26,28 @@ import eyes4s.plan.*
 sealed trait ReportRef derives CanEqual
 
 object ReportRef:
-  final case class Cell private[results] (
+  object Cell:
+    private[results] def apply(
+        scale: Int,
+        group: GroupKey,
+        role: Role,
+        component: String
+    ): Cell =
+      new Cell(scale, group, role, component) {}
+
+  sealed abstract case class Cell private[results] (
       scale: Int,
       group: GroupKey,
       role: Role,
       component: String
   ) extends ReportRef
 
+  object Participant:
+    private[results] def apply(cell: Cell, participant: String): Participant =
+      new Participant(cell, participant) {}
+
   /** One participant of a cell. Its parent is `cell`. */
-  final case class Participant private[results] (cell: Cell, participant: String)
+  sealed abstract case class Participant private[results] (cell: Cell, participant: String)
       extends ReportRef
 
   def cell(
@@ -45,7 +58,7 @@ object ReportRef:
   ): Either[ReportNavigationError[Nothing], Cell] =
     if scale < 0 then Left(ReportNavigationError.NegativeScale(scale))
     else if component.trim.isEmpty then Left(ReportNavigationError.BlankComponent(component))
-    else Right(new Cell(scale, group, role, component))
+    else Right(Cell(scale, group, role, component))
 
   def participant(
       cell: Cell,
@@ -53,7 +66,7 @@ object ReportRef:
   ): Either[ReportNavigationError[Nothing], Participant] =
     Either.cond(
       participant.trim.nonEmpty,
-      new Participant(cell, participant),
+      Participant(cell, participant),
       ReportNavigationError.BlankParticipant(participant)
     )
 
@@ -148,7 +161,7 @@ object ReportNavigation:
 
   /** The summary level: one reference per cell, in the report's order. */
   def cells[K](report: Report[K]): Vector[ReportRef.Cell] =
-    report.cells.map(c => new ReportRef.Cell(report.spec.scale, c.group, c.role, c.component))
+    report.cells.map(c => ReportRef.Cell(report.spec.scale, c.group, c.role, c.component))
 
   /** The participants whose values the cell averages, in its order. */
   def participants[K](
@@ -156,7 +169,7 @@ object ReportNavigation:
       cell: ReportRef.Cell
   ): Either[ReportNavigationError[K], Vector[ReportRef.Participant]] =
     cellOf(report, cell).map(
-      _.perParticipant.map(v => new ReportRef.Participant(cell, v.participant))
+      _.perParticipant.map(v => ReportRef.Participant(cell, v.participant))
     )
 
   /** A participant's query contrasts in the cell: the contrast row of each
@@ -214,6 +227,6 @@ object ReportNavigation:
             ReportNavigationError
               .UnlistedParticipant(key, name, cell.group, cell.role, cell.component)
           )
-        yield new ReportRef.Participant(cell, name)
+        yield ReportRef.Participant(cell, name)
       case other =>
         Left(ReportNavigationError.WrongLevel(other, NavigationLevel.QueryContrast))

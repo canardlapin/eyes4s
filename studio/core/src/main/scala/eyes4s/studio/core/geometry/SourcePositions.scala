@@ -37,7 +37,7 @@ final case class UnplacedRecord(record: Int, reason: String) derives CanEqual
   * record order, and the records whose position is not a finite number
   * (eyes4s rejects those at admission; here they are counted, never placed).
   */
-final case class SourcePositions private (
+sealed abstract case class SourcePositions private (
     dataset: DatasetRevision,
     source: ByteDigest,
     positions: Vector[SourcePosition],
@@ -55,6 +55,14 @@ final case class SourcePositions private (
   lazy val byTrial: Map[TrialKey, Vector[SourcePosition]] = positions.groupBy(_.trial)
 
 object SourcePositions:
+
+  private def apply(
+      dataset: DatasetRevision,
+      source: ByteDigest,
+      positions: Vector[SourcePosition],
+      unplaced: Vector[UnplacedRecord]
+  ): SourcePositions =
+    new SourcePositions(dataset, source, positions, unplaced) {}
 
   /** Read `bytes`, which must be `spec`'s fixation source, under its column
     * mapping. An unmapped phase reads as blank and an unmapped occurrence as
@@ -131,4 +139,4 @@ object SourcePositions:
           case Right(p)     => placed += p
           case Left(reason) => unplaced += UnplacedRecord(i + 1, reason)
       }
-      new SourcePositions(id, digest, placed.result(), unplaced.result())
+      SourcePositions(id, digest, placed.result(), unplaced.result())

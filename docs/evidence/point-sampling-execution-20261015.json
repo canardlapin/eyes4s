@@ -1,0 +1,55 @@
+{
+  "schema": 1,
+  "date": "2026-10-15",
+  "issue": "cr4-point-execution",
+  "parent": "bd-01M3F9JDW47XHXFEAXPCR26CEW",
+  "base_sha": "d3363ae8b0ceb65dbbb021456b1aaa26af02dbdf",
+  "scope": "Shared execution runner over point-sampling work. Full S5 saved-family/form/descriptor/preflight/result-table witness remains open.",
+  "contract": {
+    "submission_identity": "Input and plan content hashes plus pair quantum; comparison/sample quanta do not subdivide indivisible preparation or trial sampling.",
+    "segments": "PreparingWholeStudy has exactly one unit; SamplingWholeTrials has exactly the number of focal rows. Empty studies finish in preparation without a fabricated sampling segment.",
+    "cancellation": "Shared runner cancellation before first step and between whole preparation/trial pages; preserves last committed progress, including a late observer. No intra-operation latency promise.",
+    "result": "Same result as pure completion; independent 1x1 constant-map oracle checks exact observed2/control5 and observed5/control2 values."
+  },
+  "verification": {
+    "focused_tests_each_runtime": 4,
+    "restored_full_fs2_tests_each_runtime": 67,
+    "strict_compile": "Both platform test commands ran with GITHUB_ACTIONS=true; complete root qualification remains for combined landing.",
+    "cases": [
+      "Pure step-sequence equality across pair quanta1,3,Int.MaxValue",
+      "Exact stages, totals, segment units and final progress",
+      "Empty input has one preparation unit",
+      "Identity changes with input or trial quantum",
+      "Completed fiber and cancellation before work",
+      "Barrier-controlled cancellation after preparation and each nonfinal trial page",
+      "Late progress observer sees final committed cancellation progress"
+    ],
+    "mutation": {
+      "mutation": "overstate the sampling segment total by one trial",
+      "original_sha256": "ccf7ab02f59a1f9c7518edb3cd992d42fcc97564cbbf96272ee64805f5c5b1ee",
+      "runs": [
+        {
+          "platform": "JVM",
+          "failed_tests": 1,
+          "log_sha256": "6a4df9bd0465e5f2d9ec454650a2ae988e725e0128364fa21cc6fac294e38f02"
+        },
+        {
+          "platform": "JS",
+          "failed_tests": 1,
+          "log_sha256": "09f441bec9011b24da38301bba38bc6885f281d32d52ce1f4d7e1aaa2ae61ab5"
+        }
+      ],
+      "restored_sha256": "ccf7ab02f59a1f9c7518edb3cd992d42fcc97564cbbf96272ee64805f5c5b1ee"
+    },
+    "development_failure": "Initial command used fs2JVM instead of repository project fs2ModuleJVM; corrected project names before successful JVM/JS checks."
+  },
+  "source_sha256": {
+    "fs2/src/main/scala/eyes4s/fs2/PointSamplingExecution.scala": "ccf7ab02f59a1f9c7518edb3cd992d42fcc97564cbbf96272ee64805f5c5b1ee",
+    "fs2/src/test/scala/eyes4s/fs2/PointSamplingExecutionSuite.scala": "8ee9bbbcdb98a3e07e67049f166a38dce3b4208f052156c34ffa7b39a717f1c5"
+  },
+  "logs_sha256": {
+    "eyes4s-point-execution-attempt2.log": "b4ae67a3643af25796ee79d3a15250423c10a750bb48428c131e41d5101a2f94",
+    "eyes4s-point-execution-restored.log": "4266cee280ca087c0dbcebf4622f64de779e10a89dd03ec6f2501e2fdde6553e"
+  },
+  "landing_status": "Reviewed execution slice awaiting combined qualification and landing; parent remains open."
+}

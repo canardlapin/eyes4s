@@ -27,7 +27,8 @@ import eyes4s.surface.EdgePolicy
   */
 enum StudyField derives CanEqual:
   case Input, Layout, Method, Phases, Weighting, FailurePolicy, Grid, Window, OffWindow, Scales,
-    AngularScale, MatchedReferences, ControlReferences, UnmatchedFocal, InitialFixations
+    AngularScale, MatchedReferences, ControlReferences, UnmatchedFocal, InitialFixations,
+    ExpectedUnmatched
 
   /** The field's name in a review panel's sentence. */
   def label: String = this match
@@ -46,6 +47,7 @@ enum StudyField derives CanEqual:
     case ControlReferences => "control references"
     case UnmatchedFocal    => "queries without a matched reference"
     case InitialFixations  => "initial fixations"
+    case ExpectedUnmatched => "expected-unmatched selection"
 
 /** One field of a study plan that differs between two plans, with its typed
   * value before and after. `inverse` exchanges them, so the diff of two plans
@@ -260,6 +262,17 @@ object StudyChange:
     def render(using UnitLabel[U]): String       =
       s"initial fixations ${before.render} → ${after.render}"
 
+  final case class ExpectedUnmatched[K, U <: Unit2D, P, S, D](
+      before: Option[eyes4s.plan.ExpectedUnmatched],
+      after: Option[eyes4s.plan.ExpectedUnmatched]
+  ) extends StudyChange[K, U, P, S, D]:
+    def field: StudyField                  = StudyField.ExpectedUnmatched
+    def stated(using UnitLabel[U]): String =
+      before.fold("none")(s => s"${s.column}: ${s.values.mkString(", ")}")
+    def inverse: ExpectedUnmatched[K, U, P, S, D] = ExpectedUnmatched(after, before)
+    def render(using UnitLabel[U]): String        =
+      s"expected-unmatched selection $stated → ${inverse.stated}"
+
 /** Default English renderings of the typed values a change carries. */
 private[plan] object StudyRender:
   def num(value: Double): String = Provenance.Param.Num(value).render
@@ -395,6 +408,9 @@ object StudyDiff:
       ),
       Option.when(before.initialFixations != after.initialFixations)(
         C.InitialFixations(before.initialFixations, after.initialFixations)
+      ),
+      Option.when(before.expectedUnmatched != after.expectedUnmatched)(
+        C.ExpectedUnmatched(before.expectedUnmatched, after.expectedUnmatched)
       )
     ).flatten
 
@@ -432,7 +448,8 @@ object StudyDiff:
         scales: Vector[StudyScale[U]],
         angular: Option[LinearAngularScale[U]],
         pairing: StudyPairing,
-        initial: InitialFixationPolicy[U]
+        initial: InitialFixationPolicy[U],
+        expected: Option[ExpectedUnmatched]
     )
     val start = Draft(
       plan.input,
@@ -449,7 +466,8 @@ object StudyDiff:
       plan.scales,
       plan.angularScale,
       plan.pairing,
-      plan.initialFixations
+      plan.initialFixations,
+      plan.expectedUnmatched
     )
     def stale(change: StudyChange[K, U, P, S, D], current: StudyChange[K, U, P, S, D]) =
       Left(Stale(change.field, change.stated, current.stated))
@@ -505,6 +523,9 @@ object StudyDiff:
         if b == plan.pairing.unmatched then
           Right(draft.copy(pairing = draft.pairing.copy(unmatched = a)))
         else stale(c, C.Unmatched(plan.pairing.unmatched, a))
+      case c @ C.ExpectedUnmatched(b, a) =>
+        if b == plan.expectedUnmatched then Right(draft.copy(expected = a))
+        else stale(c, C.ExpectedUnmatched(plan.expectedUnmatched, a))
       case c @ C.InitialFixations(b, a) =>
         if b == plan.initialFixations then Right(draft.copy(initial = a))
         else stale(c, C.InitialFixations(plan.initialFixations, a))
@@ -538,7 +559,8 @@ object StudyDiff:
           draft.method,
           draft.parameters,
           draft.pairing,
-          draft.initial
+          draft.initial,
+          draft.expected
         )
         .left
         .map(Plan(_))

@@ -161,11 +161,9 @@ finalization up to 46 ms (smallest quanta) and assignment 14–18 ms; by linear 
 largest passes 100 ms at roughly 1.3 million samples. Custom machine
 steps and flushes and irregular-recording setup are not bounded by assembly quanta.
 
-## Bounded synchronous measures
+## Historical quadratic distance-correlation measurements
 
-Some measures run as one synchronous, uncancellable call with no cursor, so a
-typed work limit, checked before any work, is what keeps one call short. Each row
-is the current default and the measured cost of its largest admitted input.
+The 2026-09-25 implementation used a pair-domain bound to limit its quadratic synchronous call. The measurements below describe that implementation, retained as historical evidence. The current exact sorted estimator is O(n log n); see [Distance correlation](DISTANCE_CORRELATION.md) for its admission policy and qualification.
 
 | Measure | Work unit | Default limit | Largest admitted input | Measured at that input | Refusal |
 |---|---|---:|---|---:|---|
@@ -176,7 +174,7 @@ distance-matrix row sums and once for the centred products. It holds O(cells)
 state. Measured 2026-09-25 on the pinned M3 Max, OpenJDK 25.0.1, in sbt's test JVM
 with uniform random maps, one warm-up call per size:
 
-| Grid | Cells | Pairs | Current ms | Previous full-matrix ms |
+| Grid | Cells | Pairs | Historical two-pass ms | Historical full-matrix ms |
 |---|---:|---:|---:|---:|
 | 64×64 | 4,096 | 8,386,560 | 15 | 47 |
 | 96×96 | 9,216 | 42,462,720 | 72 | 205 |
@@ -186,13 +184,12 @@ with uniform random maps, one warm-up call per size:
 | 256×256 | 65,536 | 2,147,450,880 | 3,575 | 10,981 |
 
 That is about 1.7 ns per pair. The previous formulation visited all n² ordered
-pairs three times; the current one visits n(n-1)/2 pairs twice. The two agree to
+pairs three times; the historical two-pass implementation visits n(n-1)/2 pairs twice. The two agree to
 rounding: the largest relative difference observed was 2.8e-12, and the pinned
-eyesim fixtures still pass at `MapTolerance = 1e-12`. A 256×256 grid is refused by
-default; a caller that accepts a call of several seconds passes
-`DistanceCorrelationLimit.of(n)` to `Distribution.distanceCorrelationWithin`,
-`MapSimilarityMethod.similarityWithin` or `MapComparison.scales`. Repetition plans
-use the default limit, and the limit is not on the plan wire.
+eyesim fixtures still pass at `MapTolerance = 1e-12`. At that time, a 256×256 grid was refused by
+default; callers could raise the limit with
+`DistanceCorrelationLimit.of(n)` through `Distribution.distanceCorrelationWithin`,
+`MapSimilarityMethod.similarityWithin` or `MapComparison.scales`. The current default removes that quadratic-domain restriction. Explicit limits remain honored, and the limit is not on the plan wire.
 
 ## Reproduce
 

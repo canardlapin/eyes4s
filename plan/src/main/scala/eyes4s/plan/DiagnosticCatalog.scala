@@ -53,7 +53,8 @@ object DiagnosticCatalog:
     "MatchItemConflict",
     "MatchedCardinality",
     "UnmatchedFocalRefused",
-    "InitialFixations"
+    "InitialFixations",
+    "ExpectedUnmatchedSelection"
   )
   val studyFailure: DiagnosticFamily =
     error("study-failure")(
@@ -418,7 +419,8 @@ object DiagnosticCatalog:
     "DuplicateId",
     "FrameConflict",
     "ResolutionGridFailure",
-    "ObservedOverlap"
+    "ObservedOverlap",
+    "ObservedFixationOverlap"
   )
 
   // ---------------------------------------------------------------- descriptors and preflight
@@ -799,7 +801,8 @@ object DiagnosticCatalog:
     "Density",
     "Point",
     "Insufficient",
-    "NonFinite"
+    "NonFinite",
+    "AtTrial"
   )
   val recipeParameter: DiagnosticFamily = error("recipe-parameter")(
     "Geometry",
@@ -816,7 +819,10 @@ object DiagnosticCatalog:
     "UnknownToken",
     "UndeclaredWindowFrame",
     // appended by CR4 S3: a pair design refusal (a repetition control cap)
-    "Pairing"
+    "Pairing",
+    "PointSampling",
+    "LeastSquares",
+    "Scanpath"
   )
   val repetitionPlan: DiagnosticFamily = error("repetition-plan")(
     "ProjectionIds",
@@ -875,7 +881,8 @@ object DiagnosticCatalog:
     "Receipt",
     "Numerical",
     "Evaluation",
-    "Aggregate"
+    "Aggregate",
+    "SplitGroups"
   )
 
   // ---------------------------------------------------------------- appended by CR4
@@ -1001,6 +1008,18 @@ object DiagnosticCatalog:
 
   val studyRun: DiagnosticFamily = error("study-run")("Plan", "Meter", "UnexpectedCompletion")
 
+  val projectPrerequisite: DiagnosticFamily = error("project-prerequisite")(
+    "MissingRecording",
+    "MissingViewing",
+    "MissingAreas",
+    "MissingGrid",
+    "MissingObservedTimeline",
+    "Anchor",
+    "MissingSynchronization",
+    "ImpreciseSynchronization",
+    "MissingSchema"
+  )
+
   /** Every family ever issued, in issue order: families are only appended,
     * and a retired family keeps its place.
     */
@@ -1106,7 +1125,9 @@ object DiagnosticCatalog:
     studyRecipe,
     studyAdvisory,
     methodsFact,
-    navigation
+    navigation,
+    projectPrerequisite,
+    ScanpathMethodDiagnostics.comparison
   )
 
   /** Every live family, grouped as documented. */

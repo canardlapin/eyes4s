@@ -63,13 +63,27 @@ private[figures] enum MethodsStatus derives CanEqual:
 /** The methods text of every figure: the facts read per run, the author's
   * drafts per figure, and the pane's last message.
   */
-final case class FigureMethods private (
+sealed abstract case class FigureMethods private (
     facts: Map[RunId, Either[String, MethodsFacts]],
     drafts: Map[FigureId, MethodsDraft],
     private[figures] val status: Option[MethodsStatus]
-) derives CanEqual
+) derives CanEqual:
+
+  private def copy(
+      facts: Map[RunId, Either[String, MethodsFacts]] = this.facts,
+      drafts: Map[FigureId, MethodsDraft] = this.drafts,
+      status: Option[MethodsStatus] = this.status
+  ): FigureMethods =
+    FigureMethods(facts, drafts, status)
 
 object FigureMethods:
+  private def apply(
+      facts: Map[RunId, Either[String, MethodsFacts]],
+      drafts: Map[FigureId, MethodsDraft],
+      status: Option[MethodsStatus]
+  ): FigureMethods =
+    new FigureMethods(facts, drafts, status) {}
+
   val empty: FigureMethods = FigureMethods(Map.empty, Map.empty, None)
 
   /** The document is the authority for author state; reads remain session-local. */

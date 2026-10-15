@@ -58,6 +58,12 @@ class NativeCommandJourneySuite extends munit.CatsEffectSuite:
     TempDirs.resource("eyes4s-native-command-").use { directory =>
       val path = directory.resolve("command.eyes")
       for
+        maximumHeap <- IO(Runtime.getRuntime.maxMemory())
+        _ = assert(
+          maximumHeap < 1000000000L,
+          s"The golden archive regression guard requires maxHeap<1000000000 bytes, found=$maximumHeap"
+        )
+        _      <- IO.println(s"Native archive heap guard: maxHeap=$maximumHeap bytes")
         inputs <- phase("fixture-load")(load)
         first  <- phase("initial-execution-readback-save")(
           NativeCommandJourneyScenario.run(inputs, path)
@@ -201,6 +207,10 @@ class NativeCommandJourneySuite extends munit.CatsEffectSuite:
           methods,
           Files.readString(golden, java.nio.charset.StandardCharsets.UTF_8)
         )
+        assertEquals(methods.trim, second.methods.text)
+        assertEquals(second.methods, first.methods)
+        qualifyMethods(first)
+        qualifyMethods(second)
         Vector(
           "937 admitted",
           "543 of the 11,311",
@@ -212,6 +222,89 @@ class NativeCommandJourneySuite extends munit.CatsEffectSuite:
         ).foreach(n => assert(methods.contains(n), s"methods.md does not state $n:\n$methods"))
     }
   }
+
+  /** Every numeric token in the actual native text has a field-derived oracle.
+    * Unknown slots and missing slots both fail; numbers in fixed prose fail too.
+    */
+  private def qualifyMethods(output: NativeCommandJourneyReadback.Output): Unit =
+    import eyes4s.studio.app.figures.{MethodsSlot as S, MethodsToken}
+    val source = get(
+      eyes4s.studio.core.figures.FigureSource
+        .of(output.document, get(eyes4s.studio.core.document.FigureId.of(1)))
+    )
+    val admission                             = output.methodsFacts.admission
+    val totals                                = admission.window
+    val geometry                              = source.bound.dataset.geometry
+    val recipe                                = source.bound.analysis.recipe
+    val summary                               = output.summary
+    val report                                = output.report
+    def numbers(text: String): Vector[Double] =
+      "[0-9]+(?:\\.[0-9]+)?".r.findAllIn(text.replace(",", "")).map(_.toDouble).toVector
+    def rounded(value: Double, places: Int): Double =
+      eyes4s.studio.app.text.Format.decimal(value, places).toDouble
+    val controls      = output.methodsFacts.controls
+    val mode          = controls.mode.getOrElse(fail("no native control tally"))
+    val otherControls = controls.entries.filter(_._1 != mode)
+    val groups        = report.cells.filter(_.role == ReportRole.Difference)
+    assertEquals(groups.map(_.participants).distinct.size, 1)
+    val range =
+      report.queryRange(ReportRole.Difference).getOrElse(fail("no native group range"))
+    val smallest = report.participants.filter(p =>
+      p.role == ReportRole.Difference && p.queries == range.fewest
+    )
+    val window     = recipe.window.getOrElse(fail("no native analysis window"))
+    val ppd        = recipe.angularScale.getOrElse(fail("no native angular scale")).value
+    val cellWidth  = (window.xMax - window.xMin) / recipe.grid.columns / ppd
+    val cellHeight = (window.yMax - window.yMin) / recipe.grid.rows / ppd
+    assertEquals(rounded(cellWidth, 2), rounded(cellHeight, 2))
+    val expected: Map[S, Vector[Double]] = Map(
+      S.Dataset         -> numbers(source.bound.dataset.id.label),
+      S.FixationRecords -> Vector(admission.fixationRecords.toDouble),
+      S.InventoryTrials -> Vector(admission.inventoryTrials.get.toDouble),
+      S.Admitted        -> Vector(admission.admitted.toDouble),
+      S.Quarantined     -> Vector(admission.quarantinedTrials.toDouble),
+      S.NoFixations     -> Vector(admission.noFixations.toDouble),
+      S.Absent          -> Vector(admission.absent.get.toDouble),
+      S.ImageFrame -> Vector(geometry.image.width.toDouble, geometry.image.height.toDouble),
+      S.Screen     -> Vector(geometry.screen.width.toDouble, geometry.screen.height.toDouble),
+      S.OutsideWindow      -> Vector(totals.outsideWindow.toDouble),
+      S.TalliedRecords     -> Vector(totals.total.toDouble),
+      S.OutsideWindowShare -> Vector(
+        rounded(100.0 * totals.outsideWindowMicros / totals.totalMicros, 1)
+      ),
+      S.OutsideWindowTrials -> Vector(totals.trialsOutsideWindow.toDouble),
+      S.PixelsPerDegree     -> Vector(ppd),
+      S.Grid                -> Vector(recipe.grid.columns.toDouble, recipe.grid.rows.toDouble),
+      S.Cell                -> Vector(rounded(cellWidth, 2)),
+      S.Scales              -> recipe.scales.values.map(_.degrees),
+      S.Queries             -> Vector(summary.contrasts.requested.toDouble),
+      S.Eligible            -> Vector(summary.eligibleQueries.toDouble),
+      S.Controls            -> (Vector(mode.toDouble) ++ otherControls.map(_._1.toDouble)),
+      S.ControlQueries      -> otherControls.map(_._2.toDouble),
+      S.Contributing        -> Vector(summary.contrasts.contributing.toDouble),
+      S.Failed              -> Vector(summary.contrasts.failed.toDouble),
+      S.NoMatch             -> Vector(summary.contrasts.noMatch.toDouble),
+      S.NotAdmitted         -> Vector(summary.contrasts.queryNotAdmitted.toDouble),
+      S.GroupN              -> Vector(groups.head.participants.toDouble),
+      S.PairedN    -> Vector(report.contrast(ReportRole.Difference).get.pairedN.toDouble),
+      S.GroupRange -> Vector(range.fewest.toDouble, range.most.toDouble, range.fewest.toDouble),
+      S.SmallestGroups -> smallest.flatMap(p => numbers(p.participant)),
+      S.ReportScale    -> numbers(summary.scaleLabels(report.scale)),
+      S.Analysis       -> numbers(source.bound.analysis.id.label),
+      S.Run            -> numbers(source.run.id.label),
+      S.Build -> numbers(s"eyes4s ${eyes4s.studio.core.engine.StudioBuild.eyes4sBaseVersion}")
+    ) ++ admission.quarantined.map(q => S.QuarantineCause(q.code) -> Vector(q.trials.toDouble))
+    val actual = output.methods.tokens
+      .flatMap {
+        case MethodsToken.Words(words) =>
+          assert(!words.exists(_.isDigit), s"unattributed number in methods prose: $words")
+          Vector.empty
+        case MethodsToken.Fact(slot, shown) =>
+          val found = numbers(shown)
+          Option.when(found.nonEmpty)(slot -> found).toVector
+      }
+      .groupMapReduce(_._1)(_._2)(_ ++ _)
+    assertEquals(actual, expected)
 
   private def qualifyBindings(
       facts: NativeBindingFacts,

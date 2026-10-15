@@ -96,12 +96,20 @@ enum DriverError derives CanEqual:
   * [[StudioServices]]; the driver itself is a pure value, so the same
   * scenario can validate any future shell.
   */
-final case class StudioDriver private (
+sealed abstract case class StudioDriver private (
     model: AppModel,
     queued: Vector[AppEffect],
     records: Vector[DriverRecord],
     messages: Messages
 ) derives CanEqual:
+
+  private def copy(
+      model: AppModel = this.model,
+      queued: Vector[AppEffect] = this.queued,
+      records: Vector[DriverRecord] = this.records,
+      messages: Messages = this.messages
+  ): StudioDriver =
+    StudioDriver(model, queued, records, messages)
 
   /** Apply one intent; its effects are queued. */
   def dispatch(intent: Intent): StudioDriver =
@@ -199,6 +207,14 @@ final case class StudioDriver private (
     )).leftMap(DriverError.Bundle(_))
 
 object StudioDriver:
+
+  private def apply(
+      model: AppModel,
+      queued: Vector[AppEffect],
+      records: Vector[DriverRecord],
+      messages: Messages
+  ): StudioDriver =
+    new StudioDriver(model, queued, records, messages) {}
 
   /** A driver on `model`, with nothing queued. */
   def open(model: AppModel, messages: Messages = Messages.english): StudioDriver =

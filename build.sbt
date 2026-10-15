@@ -1424,7 +1424,15 @@ lazy val studioDesktop = project
       // Large archive journeys get fresh heaps. A timed-out asynchronous journey
       // also cannot keep running in the JVM that measures later FX frames.
       native.sortBy(_.name).map { test =>
-        new Tests.Group(test.name, Seq(test), Tests.SubProcess(options))
+        // The exact 153 MB golden save/reopen path is the archive heap guard.
+        // 950 MiB is below 1,000,000,000 bytes, even without a full-GC sample.
+        val bounded =
+          if (test.name.endsWith(".NativeCommandJourneySuite"))
+            options.withRunJVMOptions(
+              options.runJVMOptions.filterNot(_.startsWith("-Xmx")) :+ "-Xmx950m"
+            )
+          else options
+        new Tests.Group(test.name, Seq(test), Tests.SubProcess(bounded))
       } ++ Seq(new Tests.Group("studio-desktop", ordinary, Tests.SubProcess(options)))
     },
     Test / parallelExecution := false

@@ -1,0 +1,46 @@
+{
+  "date": "2026-10-15",
+  "scope": "APP-13 typed project resource catalogue; pending combined landing gate",
+  "base": "a97ea8319b98f0b608ee67050ed9c15ef48d1076",
+  "catalogue": "all eight AnalysisKind cases and the Epochs AnalysisComponent witnessed against enum values",
+  "checks": {
+    "initial_catalogue_and_query_per_runtime": 17,
+    "restored_catalogue_query_epoch_and_diagnostics_per_runtime": 42,
+    "root_werror": [
+      "rootJVM Test/compile",
+      "rootJS Test/compile"
+    ],
+    "library_boundaries": "passed"
+  },
+  "mutation": {
+    "mutation": "omit the viewing prerequisite for pixel-to-degree conversion",
+    "original_sha256": "d83422562cb2172ce39befe53bf3415380ad621f571f4414c07a76b526384fac",
+    "runs": [
+      {
+        "platform": "JVM",
+        "failed_tests": 2,
+        "log": "/private/tmp/eyes4s-project-catalogue-geometry-mutant-JVM.log",
+        "log_sha256": "ddfde22d17694bbfb25e81d88850b4828f577b1a0f5e65584f39613a5c81bdb8"
+      },
+      {
+        "platform": "JS",
+        "failed_tests": 2,
+        "log": "/private/tmp/eyes4s-project-catalogue-geometry-mutant-JS.log",
+        "log_sha256": "10a504bdf73c479bb6c61c4d517d9ef8b83cfb76540515d43c332966f30d0705"
+      }
+    ],
+    "restored_sha256": "d83422562cb2172ce39befe53bf3415380ad621f571f4414c07a76b526384fac",
+    "qualified_source_sha256": "d83422562cb2172ce39befe53bf3415380ad621f571f4414c07a76b526384fac"
+  },
+  "behaviors": [
+    "missing physical viewing geometry for pixel-to-degree conversion",
+    "exact recording/AOI/grid keys",
+    "supplied maps and scanpaths do not require original recordings",
+    "fixed features do not require viewing or grid",
+    "supplied windows distinguished from observed-anchor resolution",
+    "missing or ambiguous observed selector names trial/clock/selector and matching count",
+    "directed synchronization and inclusive uncertainty use shared foundation query",
+    "schema versions exact; repeated configured catalogue entries retained"
+  ],
+  "limits": "resource availability does not certify numerical success; checked supplied input and method-specific parameter/budget/input preflight remain required"
+}

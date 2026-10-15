@@ -1,0 +1,434 @@
+{
+  "schema": 1,
+  "date": "2026-10-14",
+  "scope": "Focused regression and bounded-heap workload evidence; full landing gate recorded separately.",
+  "baseline_sha": "d3c64bec02a0d276e5e1fa5353badb0c6aa70cc9",
+  "density_harness_sha256": "92aaaf833d400673b6f1605a204041e32091618e79707c8f95df7edf329e57ac",
+  "same_baseline_and_updated_harness": true,
+  "workload": {
+    "participants": 5,
+    "items": 10,
+    "phases": 3,
+    "trials": 150,
+    "fixations_per_trial": 32,
+    "scales": 4,
+    "grid": [
+      256,
+      128
+    ],
+    "maps": 600,
+    "density_cells": 19660800,
+    "packed_bytes": 157286400,
+    "max_heap_bytes": 1073741824
+  },
+  "density_baseline": {
+    "log": "eyes4s-density-memory-baseline-attempt2.log",
+    "sha256": "7d77fc69de8e8e7671f310aaf5b48fd117862e5f6428a248b6a5e63d2bc56f8f",
+    "events": [
+      {
+        "phase": "input",
+        "elapsed_ms": 264,
+        "live_heap_bytes": 5033416,
+        "heap_with_garbage_bytes": 14481352,
+        "max_heap_bytes": 1073741824,
+        "process_id": 49496
+      },
+      {
+        "phase": "analysis",
+        "elapsed_ms": 5801,
+        "live_heap_bytes": 164076216,
+        "heap_with_garbage_bytes": 217564352,
+        "max_heap_bytes": 1073741824,
+        "process_id": 49496
+      },
+      {
+        "phase": "result-identity",
+        "elapsed_ms": 19324,
+        "live_heap_bytes": 164373784,
+        "heap_with_garbage_bytes": 429668544,
+        "max_heap_bytes": 1073741824,
+        "process_id": 49496
+      }
+    ],
+    "summaries": [],
+    "heap_oom": true
+  },
+  "density_updated_initial": {
+    "log": "eyes4s-density-memory-large.log",
+    "sha256": "936028e7f20741041fcd364b14d342ab0d66b88ac94765ba10a5758ab6cf6bbe",
+    "events": [
+      {
+        "phase": "input",
+        "elapsed_ms": 367,
+        "live_heap_bytes": 5034952,
+        "heap_with_garbage_bytes": 14483144,
+        "max_heap_bytes": 1073741824,
+        "process_id": 58446
+      },
+      {
+        "phase": "analysis",
+        "elapsed_ms": 9717,
+        "live_heap_bytes": 164073920,
+        "heap_with_garbage_bytes": 252971512,
+        "max_heap_bytes": 1073741824,
+        "process_id": 58446
+      },
+      {
+        "phase": "result-identity",
+        "elapsed_ms": 23154,
+        "live_heap_bytes": 164377520,
+        "heap_with_garbage_bytes": 430902496,
+        "max_heap_bytes": 1073741824,
+        "process_id": 58446
+      },
+      {
+        "phase": "pack",
+        "elapsed_ms": 58185,
+        "live_heap_bytes": 336501624,
+        "heap_with_garbage_bytes": 569379912,
+        "max_heap_bytes": 1073741824,
+        "process_id": 58446
+      },
+      {
+        "phase": "save",
+        "elapsed_ms": 643,
+        "live_heap_bytes": 337185280,
+        "heap_with_garbage_bytes": 345449072,
+        "max_heap_bytes": 1073741824,
+        "process_id": 58446
+      },
+      {
+        "phase": "retained-result-identity",
+        "elapsed_ms": 31364,
+        "live_heap_bytes": 337187616,
+        "heap_with_garbage_bytes": 355370424,
+        "max_heap_bytes": 1073741824,
+        "process_id": 58446
+      },
+      {
+        "phase": "open",
+        "elapsed_ms": 529,
+        "live_heap_bytes": 19567688,
+        "heap_with_garbage_bytes": 23357696,
+        "max_heap_bytes": 1073741824,
+        "process_id": 67354
+      },
+      {
+        "phase": "verify-payloads",
+        "elapsed_ms": 6549,
+        "live_heap_bytes": 182457264,
+        "heap_with_garbage_bytes": 508601000,
+        "max_heap_bytes": 1073741824,
+        "process_id": 67354
+      },
+      {
+        "phase": "archive",
+        "elapsed_ms": 1010,
+        "live_heap_bytes": 182930560,
+        "heap_with_garbage_bytes": 210769704,
+        "max_heap_bytes": 1073741824,
+        "process_id": 67354
+      },
+      {
+        "phase": "restore",
+        "elapsed_ms": 42972,
+        "live_heap_bytes": 342049856,
+        "heap_with_garbage_bytes": 460270376,
+        "max_heap_bytes": 1073741824,
+        "process_id": 67354
+      },
+      {
+        "phase": "restored-identity",
+        "elapsed_ms": 25806,
+        "live_heap_bytes": 342128920,
+        "heap_with_garbage_bytes": 361710440,
+        "max_heap_bytes": 1073741824,
+        "process_id": 67354
+      }
+    ],
+    "summaries": [
+      {
+        "mode": "write",
+        "trials": 150,
+        "fixations_per_trial": 32,
+        "scales": 4,
+        "nx": 256,
+        "ny": 128,
+        "packed_bytes": 157286400,
+        "document_bytes": 1273448,
+        "expected": "f0e6663da0180435426d3a0f7a62b93e1fdddc35880047afd0d105f762b3da75"
+      },
+      {
+        "mode": "read",
+        "source_free": true,
+        "maps": 600,
+        "packed_bytes": 31457280,
+        "expected": "f0e6663da0180435426d3a0f7a62b93e1fdddc35880047afd0d105f762b3da75"
+      }
+    ],
+    "heap_oom": false
+  },
+  "density_updated_final_read": {
+    "log": "eyes4s-density-memory-large-read-final.log",
+    "sha256": "c16351cd57f475f3f7243955dab63563011723464aa96182aa953878b4b14fe3",
+    "events": [
+      {
+        "phase": "open",
+        "elapsed_ms": 595,
+        "live_heap_bytes": 19527008,
+        "heap_with_garbage_bytes": 22833408,
+        "max_heap_bytes": 1073741824,
+        "process_id": 95426
+      },
+      {
+        "phase": "verify-payloads",
+        "elapsed_ms": 3706,
+        "live_heap_bytes": 182411824,
+        "heap_with_garbage_bytes": 507592912,
+        "max_heap_bytes": 1073741824,
+        "process_id": 95426
+      },
+      {
+        "phase": "archive",
+        "elapsed_ms": 590,
+        "live_heap_bytes": 182885904,
+        "heap_with_garbage_bytes": 210724240,
+        "max_heap_bytes": 1073741824,
+        "process_id": 95426
+      },
+      {
+        "phase": "restore",
+        "elapsed_ms": 24442,
+        "live_heap_bytes": 341944568,
+        "heap_with_garbage_bytes": 443219368,
+        "max_heap_bytes": 1073741824,
+        "process_id": 95426
+      },
+      {
+        "phase": "restored-identity",
+        "elapsed_ms": 13405,
+        "live_heap_bytes": 342024584,
+        "heap_with_garbage_bytes": 498933168,
+        "max_heap_bytes": 1073741824,
+        "process_id": 95426
+      }
+    ],
+    "summaries": [
+      {
+        "mode": "read",
+        "source_free": true,
+        "maps": 600,
+        "packed_bytes": 157286400,
+        "expected": "f0e6663da0180435426d3a0f7a62b93e1fdddc35880047afd0d105f762b3da75"
+      }
+    ],
+    "heap_oom": false
+  },
+  "native_updated": {
+    "log": "eyes4s-native-memory-large.log",
+    "sha256": "499d96b12d23676caf6dda38b2ad728e70041ee351e8c72d19974779c4985872",
+    "events": [
+      {
+        "phase": "sources",
+        "elapsed_ms": 56,
+        "live_heap_bytes": 5376432,
+        "heap_with_garbage_bytes": 7278576,
+        "max_heap_bytes": 1073741824,
+        "process_id": 83098
+      },
+      {
+        "phase": "admission",
+        "elapsed_ms": 2315,
+        "live_heap_bytes": 10504520,
+        "heap_with_garbage_bytes": 81592384,
+        "max_heap_bytes": 1073741824,
+        "process_id": 83098
+      },
+      {
+        "phase": "analysis",
+        "elapsed_ms": 7176,
+        "live_heap_bytes": 169326560,
+        "heap_with_garbage_bytes": 289636800,
+        "max_heap_bytes": 1073741824,
+        "process_id": 83098
+      },
+      {
+        "phase": "native-package",
+        "elapsed_ms": 87196,
+        "live_heap_bytes": 505702696,
+        "heap_with_garbage_bytes": 986356600,
+        "max_heap_bytes": 1073741824,
+        "process_id": 83098
+      },
+      {
+        "phase": "save",
+        "elapsed_ms": 512,
+        "live_heap_bytes": 505814000,
+        "heap_with_garbage_bytes": 509896728,
+        "max_heap_bytes": 1073741824,
+        "process_id": 83098
+      },
+      {
+        "phase": "open",
+        "elapsed_ms": 352,
+        "live_heap_bytes": 5151160,
+        "heap_with_garbage_bytes": 6304048,
+        "max_heap_bytes": 1073741824,
+        "process_id": 84526
+      },
+      {
+        "phase": "files",
+        "elapsed_ms": 177,
+        "live_heap_bytes": 178615264,
+        "heap_with_garbage_bytes": 211143688,
+        "max_heap_bytes": 1073741824,
+        "process_id": 84526
+      },
+      {
+        "phase": "verify-native-package",
+        "elapsed_ms": 46637,
+        "live_heap_bytes": 343705248,
+        "heap_with_garbage_bytes": 661510936,
+        "max_heap_bytes": 1073741824,
+        "process_id": 84526
+      },
+      {
+        "phase": "source-free-restore",
+        "elapsed_ms": 120,
+        "live_heap_bytes": 344120728,
+        "heap_with_garbage_bytes": 359434256,
+        "max_heap_bytes": 1073741824,
+        "process_id": 84526
+      }
+    ],
+    "summaries": [
+      {
+        "mode": "write",
+        "trials": 150,
+        "nx": 256,
+        "ny": 128,
+        "maps": 600,
+        "archive_bytes": 164945432,
+        "result": "sha256:8163316fa28e7eac4760aa8076a5a55346579f7347e7aee8e75996b686677d2f"
+      },
+      {
+        "mode": "read",
+        "source_free": true,
+        "maps": 600,
+        "archive_bytes": 164945432,
+        "result": "sha256:8163316fa28e7eac4760aa8076a5a55346579f7347e7aee8e75996b686677d2f"
+      }
+    ],
+    "heap_oom": false
+  },
+  "caveats": [
+    "Explicit-GC live-heap and heap-with-garbage checkpoints are samples, not peaks or total process memory.",
+    "Single-run times with other isolated builds running; no throughput speedup inference.",
+    "Initial density read summary deduplicated equal chunk sizes; final fresh read corrects the summary only.",
+    "Deterministic synthetic workload, not a real-participant scientific validation dataset.",
+    "Codec and complete native package courts are distinct; native workload uses its unchanged default budget."
+  ],
+  "source_sha256": {
+    "codec/.jvm/src/test/scala/eyes4s/codec/DensityMemoryCourt.scala": "92aaaf833d400673b6f1605a204041e32091618e79707c8f95df7edf329e57ac",
+    "codec/src/main/scala/eyes4s/codec/ArtifactResolution.scala": "dda89e1d6f04d538638bff88584bd16cdbb52964e3da53530b4152379f5312dc",
+    "codec/src/main/scala/eyes4s/codec/DensityArchive.scala": "d12998cd3add36d51e1c36f4919866254ead3ec80145fe33c05b4acea15f0022",
+    "codec/src/main/scala/eyes4s/codec/ResultCodecs.scala": "ee874ed84bea165b7897560dc40caa9b91d2e47889ee0f038b6a8c623c953f6b",
+    "studio/core/src/main/scala/eyes4s/studio/core/artifacts/NativeArtifactBytes.scala": "c14410d56c996288159287ced7f037190241cd2e43d3d8cbb63a7a34a22d3269",
+    "studio/core/src/main/scala/eyes4s/studio/core/artifacts/NativeArtifactPackage.scala": "3b69b96992826b7fe9cb25148f34369c3f3c39815cbfe7afb2ecec45fb915612",
+    "studio/core/src/main/scala/eyes4s/studio/core/real/NativeArtifacts.scala": "02e3cf87d1e1d781d230975f60addf1f2c3400a8e533f6a65faff7247d09a069",
+    "studio/core/src/main/scala/eyes4s/studio/core/session/ProjectSession.scala": "f7eeba59da986a29044cd1b049835066a6279dc6eec8684fa67e7dce0446bde1",
+    "studio/desktop/src/test/scala/eyes4s/studio/core/real/NativeMemoryCourt.scala": "1ec43e11fa95c3b82f8f75ab3cc9dc85dc8c9a9e34941d78b586bd506d6fdf8f"
+  },
+  "focused_logs_sha256": {
+    "eyes4s-archive-memory-attempt2.log": "76963102d223ce3c0cd62d2aa489c4e6b229e502900627e52e02dbacc7667e0b",
+    "eyes4s-archive-memory-js-explicit.log": "e90d5cc306ef37623452fb315ee2ed22d10d22e056e7bd1cb8e9932975f10dba",
+    "eyes4s-native-memory-attempt2.log": "eb73e4bfd0124bb4abffa9429afaa1429ebf4c4e717c9d0fcc2504cf48026f00",
+    "eyes4s-native-memory-court-smoke-qualified.log": "83fdc601b0336778f96374e5bb60cc736c7fb45979c8fe1366ae3334610a4c14"
+  },
+  "failed_setup_probes": [
+    {
+      "log": "eyes4s-native-memory-court-smoke.log",
+      "sha256": "839f2856a68f12f581e4da9fd6fe23a1b2185cc703d2c7f34ce4a07c13b8aa89",
+      "reason": "Saved benchmark recipe omitted the computed semantic input binding; cold restore correctly refused unbound input."
+    },
+    {
+      "log": "eyes4s-native-memory-court-smoke-final.log",
+      "sha256": "f8488994715d361d3d022fc83a0c755688ba716719f4f53d6da41e3ba7e94551",
+      "reason": "Binding the source declaration did not fill the missing recipe input binding; cold restore correctly refused unbound input."
+    },
+    {
+      "log": "eyes4s-native-memory-court-smoke-bound.log",
+      "sha256": "e9dd414166d2bb0e934c02042f8158ce7f6b51d2ccd3aac37114fe1cfddee17e",
+      "reason": "Adding a source-declaration semantic field changed the dataset definition after computation; cold restore correctly refused the changed definition. Final harness preserves the exact admitted dataset and binds only the computed recipe input. No production gates changed."
+    }
+  ],
+  "post_commit_compile": {
+    "source_sha": "25ec0dc25cdca52dacd68640f9e48f58cd10479d",
+    "source_tree": "355637820561b8ee305264ff488e75583977cd51",
+    "full_root_jvm_js_werror": true,
+    "studio_clients_test_compile": [
+      "studioAppJVM",
+      "studioVizJVM",
+      "studioDesktop",
+      "studioAppJS",
+      "studioVizJS"
+    ],
+    "log": "eyes4s-archive-full-client-compile.log",
+    "log_sha256": "5743e22b8ff9cdfb02e646ad02fa5714a5a616c55ddc8ffcbec14e13492e8a6f",
+    "scope": "Compile qualification only; complete frozen library and Studio gates remain required before landing."
+  },
+  "harness_relocation": {
+    "reason": "Studio boundary check scans all portable-module test sources, including .jvm, and correctly refuses java.nio.file there.",
+    "from": "studio/core/.jvm/src/test/scala/eyes4s/studio/core/real/NativeMemoryCourt.scala",
+    "to": "studio/desktop/src/test/scala/eyes4s/studio/core/real/NativeMemoryCourt.scala",
+    "program_bytes_unchanged": true,
+    "program_sha256": "1ec43e11fa95c3b82f8f75ab3cc9dc85dc8c9a9e34941d78b586bd506d6fdf8f",
+    "studio_test_candidate": "33f89e5c79092da1fae9c6e234b944ff93a5085d",
+    "studio_test_tree": "b2c3cc1df8b12e43fb2df23749181a74902431b6",
+    "studio_test_totals_in_project_order": [
+      1092,
+      1004,
+      705,
+      705,
+      287,
+      287,
+      732
+    ],
+    "original_gate_log_sha256": "bd29692e113a376673b3887ae235d2b9db893644b3f8fa1e2b10e1f24686176d",
+    "original_gate_outcome": "All seven Studio test projects and style checks passed; final checkBoundaries rejected only the filesystem harness location.",
+    "required_recheck": "Strict portable/desktop test-client compilation, Studio style/boundary checks, and a fresh-JVM desktop-harness write/read smoke court. Official full library gate reruns on the new committed tree.",
+    "recheck": {
+      "status": "passed",
+      "log": "eyes4s-native-memory-relocation-check.log",
+      "log_sha256": "38d59cfa1ccde38d3933d11dfcbaa28e72523e5c3e86785a722cf1ae3db24054",
+      "strict_clients": [
+        "studioCoreJVM/Test/compile",
+        "studioCoreJS/Test/compile",
+        "studioDesktop/Test/compile"
+      ],
+      "checks": [
+        "studioStyleCheck",
+        "checkBoundaries"
+      ],
+      "fresh_jvm_heap_limit_bytes": 1073741824,
+      "summaries": [
+        {
+          "mode": "write",
+          "trials": 6,
+          "nx": 16,
+          "ny": 8,
+          "maps": 24,
+          "archive_bytes": 407410,
+          "result": "sha256:2d06bb3c37da616779d68c43ec7aa64f96b6a24b56764a5467e6c81c669714b1"
+        },
+        {
+          "mode": "read",
+          "source_free": true,
+          "maps": 24,
+          "archive_bytes": 407410,
+          "result": "sha256:2d06bb3c37da616779d68c43ec7aa64f96b6a24b56764a5467e6c81c669714b1"
+        }
+      ]
+    }
+  }
+}

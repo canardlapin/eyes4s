@@ -43,7 +43,7 @@ package eyes4s.kernel
   * start and a length invites the two to drift apart under transformation, and
   * makes "does this straddle the boundary?" depend on which field you trust.
   */
-final case class Interval private (clock: ClockId, onset: Instant, offset: Instant)
+sealed abstract case class Interval private (clock: ClockId, onset: Instant, offset: Instant)
     derives CanEqual:
 
   def duration: Span = onset.until(offset)
@@ -85,6 +85,9 @@ end Interval
 
 object Interval:
 
+  private def apply(clock: ClockId, onset: Instant, offset: Instant): Interval =
+    new Interval(clock, onset, offset) {}
+
   /** The only public route in. Rejects a reversed extent rather than silently
     * normalising it, because a reversed interval is nearly always a sign that
     * two timestamps were subtracted in the wrong order upstream.
@@ -110,7 +113,7 @@ end Interval
   * change -- is domain vocabulary, and this module is the trajectory-and-measure
   * kernel. Callers in `eyes4s-core` supply the instant.
   */
-final case class Window private (from: Span, until: Span) derives CanEqual:
+sealed abstract case class Window private (from: Span, until: Span) derives CanEqual:
 
   def width: Span = until - from
 
@@ -125,6 +128,9 @@ final case class Window private (from: Span, until: Span) derives CanEqual:
 end Window
 
 object Window:
+
+  private def apply(from: Span, until: Span): Window =
+    new Window(from, until) {}
 
   def of(from: Span, until: Span): Either[TimeError, Window] =
     if until.toMicros >= from.toMicros then Right(Window(from, until))

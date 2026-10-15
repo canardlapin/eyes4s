@@ -280,8 +280,23 @@ object ResultExports:
   def points[K, U <: Unit2D: UnitLabel](
       archive: PointSamplingArchive[K, U],
       codec: PointSamplingCodec[K, U]
+  ): Either[ResultExportError, Vector[ResultTable]] =
+    pointTables(archive, codec.keys, codec.archive.encode(archive), codec.error)
+
+  /** The uniform family route retains the stamped archive in table context. */
+  def points[K, U <: Unit2D: UnitLabel](
+      archive: PointSamplingArchive[K, U],
+      codec: PointSamplingFamilyCodec[K, U]
+  ): Either[ResultExportError, Vector[ResultTable]] =
+    pointTables(archive, codec.keys, codec.results.encode(archive), codec.error)
+
+  private def pointTables[K, U <: Unit2D: UnitLabel](
+      archive: PointSamplingArchive[K, U],
+      keys: VersionedCodec[K],
+      document: Either[CodecError, Json],
+      error: PointSamplingError[K] => Json
   ): Either[ResultExportError, Vector[ResultTable]] = for
-    saved <- encoded(codec.archive.encode(archive))
+    saved <- encoded(document)
     result  = archive.result
     context = Json.obj(
       "archive"         -> saved,
@@ -291,14 +306,14 @@ object ResultExports:
     )
     keyed <- result.rows.traverse { row =>
       for
-        k        <- key(row.key, codec.keys)
-        template <- row.template.traverse(k => encoded(codec.keys.encode(k)))
+        k        <- key(row.key, keys)
+        template <- row.template.traverse(k => encoded(keys.encode(k)))
       yield (row, k, template)
     }
     sourceRows = keyed.map { (row, k, template) =>
       Vector(I(row.index.toLong), k) ++ (template match
         case Right(t) => Vector(T(t.noSpaces), T("success"), M)
-        case Left(e)  => Vector(M, T("failure"), T(codec.error(e).noSpaces))) ++ Vector(
+        case Left(e)  => Vector(M, T("failure"), T(error(e).noSpaces))) ++ Vector(
         I(row.eligibleControls.toLong),
         I(row.controls.size.toLong)
       )
@@ -316,8 +331,7 @@ object ResultExports:
     controlRows <- keyed.traverse { (row, k, _) =>
       row.controls.zipWithIndex
         .traverse { (c, ci) =>
-          for
-            occurrence <- key(c.occurrence, codec.keys); template <- key(c.template, codec.keys)
+          for occurrence <- key(c.occurrence, keys); template <- key(c.template, keys)
           yield c.values.zipWithIndex.map((v, i) =>
             Vector(
               I(row.index.toLong),
@@ -327,7 +341,7 @@ object ResultExports:
               template,
               I(i.toLong),
               I(archive.plan.spec.queries(i).toMicros)
-            ) ++ scalar(v.left.map(codec.error))
+            ) ++ scalar(v.left.map(error))
           )
         }
         .map(_.flatten)
@@ -359,13 +373,13 @@ object ResultExports:
           p.point.fold[ResultCell](M)(v => N(v.y))
         )
         val observed =
-          prefix ++ Vector(T("observed")) ++ scalar(p.value.left.map(codec.error)) ++ Vector(
+          prefix ++ Vector(T("observed")) ++ scalar(p.value.left.map(error)) ++ Vector(
             I(1),
             I(if p.value.isRight then 1 else 0),
             I(if p.value.isRight then 1 else 0)
           )
         Vector(observed) ++ p.control.toVector.map(c =>
-          prefix ++ Vector(T("control")) ++ scalar(c.result.left.map(codec.error)) ++ Vector(
+          prefix ++ Vector(T("control")) ++ scalar(c.result.left.map(error)) ++ Vector(
             I(c.requested.toLong),
             I(c.successful.toLong),
             I(c.contributing.toLong)
@@ -400,13 +414,13 @@ object ResultExports:
           B(b.includesFinalEndpoint),
           T(b.queries.mkString("[", ",", "]"))
         )
-        def mean(role: String, m: PointMean) = prefix ++ Vector(T(role)) ++ scalar(
-          m.result.left.map(codec.error)
+        def mean(role: String, m: PointMean[K]) = prefix ++ Vector(T(role)) ++ scalar(
+          m.result.left.map(error)
         ) ++ Vector(I(m.requested.toLong), I(m.successful.toLong), I(m.contributing.toLong))
         Vector(mean("observed", b.observed)) ++ b.control.toVector.map(
           mean("control", _)
         ) ++ b.difference.toVector.map(d =>
-          prefix ++ Vector(T("difference")) ++ scalar(d.left.map(codec.error)) ++ Vector(
+          prefix ++ Vector(T("difference")) ++ scalar(d.left.map(error)) ++ Vector(
             M,
             M,
             M
@@ -446,8 +460,37 @@ object ResultExports:
       .evaluate(split.heldOut)
       .left
       .map(e => ResultExportError.Context("template evaluation", e.message))
-    context = Json.obj(
-      "recipe"        -> saved,
+    tables <- fixedTemplateTables(split, fitted, evaluation, saved, keys, "recipe", false)
+  yield tables
+
+  /** Project a completed fixed-feature fit without fitting it again. */
+  def fixedTemplate[K](
+      archive: TemplateFitArchive[K, Vector[Double]],
+      codec: TemplateFitCodec[K, Vector[Double]]
+  ): Either[ResultExportError, Vector[ResultTable]] =
+    encoded(codec.results.encode(archive)).flatMap(saved =>
+      fixedTemplateTables(
+        archive.plan.split,
+        archive.validation.fitted,
+        archive.validation.evaluation,
+        saved,
+        codec.keys,
+        "archive",
+        true
+      )
+    )
+
+  private def fixedTemplateTables[K](
+      split: TemplateSplit[K, Vector[Double]],
+      fitted: FittedTemplate[K, Vector[Double]],
+      evaluation: TemplateEvaluation[K],
+      saved: Json,
+      keys: VersionedCodec[K],
+      documentField: String,
+      includeExclusions: Boolean
+  ): Either[ResultExportError, Vector[ResultTable]] =
+    val context = Json.obj(
+      documentField   -> saved,
       "method"        -> Json.fromString(fitted.method),
       "backend"       -> Json.fromString(fitted.backend),
       "training_hash" -> Json.fromString(evaluation.trainingHash.render),
@@ -456,42 +499,46 @@ object ResultExports:
       "response_unit" -> Json.fromString(split.design.responseUnit),
       "residual_sign" -> Json.fromString("observed minus predicted")
     )
-    coefficients <- ResultTable.of(
-      ResultFamily.TemplateCoefficients,
-      Vector(
-        text("feature"),
-        number("coefficient", split.design.responseUnit + " / feature unit", false)
-      ),
-      split.design.featureNames
-        .zip(fitted.coefficients)
-        .map((name, v) => Vector(T(name), N(v))),
-      context
-    )
-    rows <- evaluation.rows.traverse { r =>
-      key(r.key, keys).map { k =>
-        val result = r.result.left.map(e =>
-          Json.obj(
-            "kind"    -> Json.fromString(e.productPrefix),
-            "message" -> Json.fromString(e.message)
+    for
+      coefficients <- ResultTable.of(
+        ResultFamily.TemplateCoefficients,
+        Vector(
+          text("feature"),
+          number("coefficient", split.design.responseUnit + " / feature unit", false)
+        ),
+        split.design.featureNames
+          .zip(fitted.coefficients)
+          .map((name, v) => Vector(T(name), N(v))),
+        context
+      )
+      rows <- evaluation.rows.traverse { r =>
+        key(r.key, keys).map { k =>
+          val result = r.result.left.map(e =>
+            Json.obj(
+              "kind"    -> Json.fromString(e.productPrefix),
+              "message" -> Json.fromString(e.message)
+            )
           )
-        )
-        Vector(k, T(r.splitGroup), N(r.observed)) ++ scalar(result.map(_._1)) ++ Vector(
-          result.fold(_ => M, p => N(p._2))
-        )
+          Vector(k, T(r.splitGroup), N(r.observed)) ++ scalar(result.map(_._1)) ++ Vector(
+            result.fold(_ => M, p => N(p._2))
+          )
+        }
       }
-    }
-    predictions <- ResultTable.of(
-      ResultFamily.TemplatePredictions,
-      Vector(
-        text("key_json"),
-        text("fold"),
-        number("observed", split.design.responseUnit, false),
-        number("predicted", split.design.responseUnit)
-      ) ++ outcome ++ Vector(number("residual", split.design.responseUnit)),
-      rows,
-      context
-    )
-  yield Vector(coefficients, predictions)
+      predictions <- ResultTable.of(
+        ResultFamily.TemplatePredictions,
+        Vector(
+          text("key_json"),
+          text("fold"),
+          number("observed", split.design.responseUnit, false),
+          number("predicted", split.design.responseUnit)
+        ) ++ outcome ++ Vector(number("residual", split.design.responseUnit)),
+        rows,
+        context
+      )
+      exclusions <-
+        if includeExclusions then templateExclusions(split, keys, context).map(Vector(_))
+        else Right(Vector.empty)
+    yield Vector(coefficients, predictions) ++ exclusions
 
   def learnedTemplate[K: KeyDigest, U <: Unit2D: UnitLabel](
       split: TemplateSplit[K, Mass[U]],
@@ -507,9 +554,36 @@ object ResultExports:
       .evaluate(split.heldOut)
       .left
       .map(e => ResultExportError.Context("learned template evaluation", e.message))
-    unit    = split.design.responseUnit
-    context = Json.obj(
-      "recipe"         -> saved,
+    tables <- learnedTemplateTables(split, fitted, evaluation, saved, keys, "recipe")
+  yield tables
+
+  /** Project a completed learned-map fit without fitting it again. */
+  def learnedTemplate[K, U <: Unit2D](
+      archive: TemplateFitArchive[K, Mass[U]],
+      codec: TemplateFitCodec[K, Mass[U]]
+  ): Either[ResultExportError, Vector[ResultTable]] =
+    encoded(codec.results.encode(archive)).flatMap(saved =>
+      learnedTemplateTables(
+        archive.plan.split,
+        archive.validation.fitted,
+        archive.validation.evaluation,
+        saved,
+        codec.keys,
+        "archive"
+      )
+    )
+
+  private def learnedTemplateTables[K, U <: Unit2D](
+      split: TemplateSplit[K, Mass[U]],
+      fitted: FittedTemplate[K, Mass[U]],
+      evaluation: TemplateEvaluation[K],
+      saved: Json,
+      keys: VersionedCodec[K],
+      documentField: String
+  ): Either[ResultExportError, Vector[ResultTable]] =
+    val unit    = split.design.responseUnit
+    val context = Json.obj(
+      documentField    -> saved,
       "method"         -> Json.fromString(fitted.method),
       "training_hash"  -> Json.fromString(evaluation.trainingHash.render),
       "held_out_hash"  -> Json.fromString(evaluation.heldOutHash.render),
@@ -520,39 +594,48 @@ object ResultExports:
       "held_out_count" -> Json.fromString(split.heldOut.rows.size.toString),
       "excluded_count" -> Json.fromString(split.excluded.size.toString)
     )
-    coefficients <- ResultTable.of(
-      ResultFamily.TemplateCoefficients,
-      Vector(text("feature"), number("coefficient", unit + " / cosine similarity", false)),
-      split.design.featureNames
-        .zip(fitted.coefficients)
-        .map((name, v) => Vector(T(name), N(v))),
-      context
-    )
-    rows <- evaluation.rows.traverse { r =>
-      key(r.key, keys).map { k =>
-        val result = r.result.left.map(e =>
-          Json.obj(
-            "kind"    -> Json.fromString(e.productPrefix),
-            "message" -> Json.fromString(e.message)
+    for
+      coefficients <- ResultTable.of(
+        ResultFamily.TemplateCoefficients,
+        Vector(text("feature"), number("coefficient", unit + " / cosine similarity", false)),
+        split.design.featureNames
+          .zip(fitted.coefficients)
+          .map((name, v) => Vector(T(name), N(v))),
+        context
+      )
+      rows <- evaluation.rows.traverse { r =>
+        key(r.key, keys).map { k =>
+          val result = r.result.left.map(e =>
+            Json.obj(
+              "kind"    -> Json.fromString(e.productPrefix),
+              "message" -> Json.fromString(e.message)
+            )
           )
-        )
-        Vector(k, T(r.splitGroup), r.matchGroup.fold(M)(T(_)), N(r.observed)) ++ scalar(
-          result.map(_._1)
-        ) ++ Vector(result.fold(_ => M, p => N(p._2)))
+          Vector(k, T(r.splitGroup), r.matchGroup.fold(M)(T(_)), N(r.observed)) ++ scalar(
+            result.map(_._1)
+          ) ++ Vector(result.fold(_ => M, p => N(p._2)))
+        }
       }
-    }
-    predictions <- ResultTable.of(
-      ResultFamily.TemplatePredictions,
-      Vector(
-        text("key_json"),
-        text("split_group"),
-        text("match_group"),
-        number("observed", unit, false),
-        number("predicted", unit)
-      ) ++ outcome ++ Vector(number("residual", unit)),
-      rows,
-      context
-    )
+      predictions <- ResultTable.of(
+        ResultFamily.TemplatePredictions,
+        Vector(
+          text("key_json"),
+          text("split_group"),
+          text("match_group"),
+          number("observed", unit, false),
+          number("predicted", unit)
+        ) ++ outcome ++ Vector(number("residual", unit)),
+        rows,
+        context
+      )
+      excluded <- templateExclusions(split, keys, context)
+    yield Vector(coefficients, predictions, excluded)
+
+  private def templateExclusions[K, X](
+      split: TemplateSplit[K, X],
+      keys: VersionedCodec[K],
+      context: Json
+  ): Either[ResultExportError, ResultTable] = for
     excludedRows <- split.excluded.traverse(e =>
       key(e.row.key, keys).map(k =>
         Vector(
@@ -576,7 +659,42 @@ object ResultExports:
       excludedRows,
       context
     )
-  yield Vector(coefficients, predictions, excluded)
+  yield excluded
+
+  /** Existing OLS/NNLS/mixture tables, with the completed stamped archive
+    * shared in their context. No fitting is repeated during projection.
+    */
+  def decomposition[U <: Unit2D: UnitLabel](
+      archive: DecompositionArchive[U],
+      codec: DecompositionCodec[U]
+  ): Either[ResultExportError, Vector[ResultTable]] = for
+    saved  <- encoded(codec.results.encode(archive))
+    tables <- archive.result.fit match
+      case DecompositionFit.Ols(value)         => ols(value)
+      case DecompositionFit.NonNegative(value) => nnls(value)
+      case DecompositionFit.Mixture(value)     => mixture(value)
+    stored = ResultTableJson.of(saved)
+    projected <- tables.traverse { table =>
+      table.context match
+        case eyes4s.results.TableJson.Obj(fields) =>
+          eyes4s.results.ResultTable
+            .of(
+              table.family,
+              table.columns,
+              table.rows,
+              eyes4s.results.TableJson.Obj(fields :+ ("archive" -> stored))
+            )
+            .left
+            .map(ResultExportError.of)
+        case other =>
+          Left(
+            ResultExportError.Context(
+              "decomposition table",
+              s"Expected object context, found=${other.canonical}"
+            )
+          )
+    }
+  yield projected
 
   def ols[U <: Unit2D: UnitLabel](
       fit: SurfaceOlsFit[U]
@@ -923,3 +1041,9 @@ object ResultExports:
         )
       )
     )
+
+  /** Project an already completed scanpath archive into the common table layer. */
+  def scanpaths[K, U <: Unit2D: UnitLabel](
+      archive: ScanpathStudyArchive[K, U],
+      codec: ScanpathStudyCodec[K, U]
+  ): Either[ResultExportError, Vector[ResultTable]] = ScanpathResultExports(archive, codec)

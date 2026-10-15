@@ -21,7 +21,7 @@ import cats.syntax.all.*
 import eyes4s.examples.BaselineExportGuide
 import org.apache.arrow.memory.RootAllocator
 import org.apache.arrow.vector.ipc.ArrowStreamReader
-import org.apache.arrow.vector.BigIntVector
+import org.apache.arrow.vector.{BigIntVector, BitVector}
 import java.io.{IOException, OutputStream}
 import java.nio.file.Files
 import scala.jdk.CollectionConverters.*
@@ -73,9 +73,9 @@ class ArrowResultExportJvmSuite extends munit.CatsEffectSuite:
       }(p => IO.blocking(Files.deleteIfExists(p)).void)
   }
   test(
-    "all constrained-fit and association tables preserve values, nulls and schemas in Arrow IPC"
+    "all constrained-fit, association and scanpath tables preserve values, nulls and schemas in Arrow IPC"
   ) {
-    ConstrainedExportFixtures.tables.traverse_ { table =>
+    (ConstrainedExportFixtures.tables ++ ScanpathExportFixtures.tables).traverse_ { table =>
       IO.blocking(Files.createTempFile("eyes4s-constrained-", ".arrow"))
         .bracket { path =>
           ArrowResultExport.write[IO](table, path, batchRows = 2).flatMap { result =>
@@ -123,7 +123,11 @@ class ArrowResultExportJvmSuite extends munit.CatsEffectSuite:
                             )
                           case ResultCell.Text(value) =>
                             assertEquals(vector.getObject(i).toString, value)
-                          case other => fail(s"unexpected $other")
+                          case ResultCell.Flag(value) =>
+                            assertEquals(
+                              vector.asInstanceOf[BitVector].get(i),
+                              if value then 1 else 0
+                            )
                       }
                       seen += 1
                   assertEquals(seen, table.rows.size)

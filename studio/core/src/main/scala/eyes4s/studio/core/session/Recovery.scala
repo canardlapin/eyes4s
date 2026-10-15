@@ -189,15 +189,18 @@ final case class SaveReceipt(
 /** How a session autosaves: a checkpoint (the science digest) after every
   * `checkpointEvery` journaled entries; at least 1.
   */
-final case class SessionOptions private (checkpointEvery: Int) derives CanEqual
+sealed abstract case class SessionOptions private (checkpointEvery: Int) derives CanEqual
 
 object SessionOptions:
-  val default: SessionOptions = new SessionOptions(16)
+  private def apply(checkpointEvery: Int): SessionOptions =
+    new SessionOptions(checkpointEvery) {}
+
+  val default: SessionOptions = SessionOptions(16)
 
   def of(checkpointEvery: Int): Either[SessionError, SessionOptions] =
     Either.cond(
       checkpointEvery >= 1,
-      new SessionOptions(checkpointEvery),
+      SessionOptions(checkpointEvery),
       SessionError.CheckpointInterval(checkpointEvery)
     )
 

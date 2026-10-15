@@ -1,0 +1,133 @@
+{
+  "date": "2026-10-15",
+  "scope": "CR4 S4 template/decomposition saved families; pending combined landing gate",
+  "base": "ba01f76b50fef51b4b1c1182d8ce5ba6eb955950",
+  "routes": [
+    "native fixed-feature template",
+    "native mean-map template",
+    "checked imported fixed-feature receipt",
+    "OLS",
+    "NNLS",
+    "mixture"
+  ],
+  "runtimes": [
+    "JVM JDK25",
+    "Scala.js Node"
+  ],
+  "qualification": {
+    "root_werror": [
+      "rootJVM Test/compile",
+      "rootJS Test/compile"
+    ],
+    "design_tests": {
+      "JVM": 35,
+      "JS": 34
+    },
+    "final_plan_and_field_validation_per_runtime": 11,
+    "diagnostic_catalog_per_runtime": 19,
+    "codec_per_runtime": 17,
+    "fs2_per_runtime": 9,
+    "exports_family_witness_and_existing_R_receipt_per_runtime": 65,
+    "codec_and_native_solver_laws_per_runtime": 48,
+    "schema_registry_jvm": 10,
+    "diagnostic_document_jvm": 3,
+    "fixtures": "twelve documents and two portable fixture objects regenerate byte-identically"
+  },
+  "mutations": [
+    {
+      "mutation": "imported-coefficient-order",
+      "source": "codec/src/main/scala/eyes4s/codec/TemplateFitCodec.scala",
+      "original_sha256": "502645bafb0250e995d012a89b9fe0ce16900cdc6d7d5947585beb5d042fae06",
+      "runs": [
+        {
+          "platform": "JVM",
+          "failed_tests": 4,
+          "log": "/private/tmp/eyes4s-s4-imported-coefficient-order-JVM.log",
+          "log_sha256": "27e7c01911b688e1ead1657932d6fee39199346b87ba778367525fc87ac592d6"
+        },
+        {
+          "platform": "JS",
+          "failed_tests": 4,
+          "log": "/private/tmp/eyes4s-s4-imported-coefficient-order-JS.log",
+          "log_sha256": "1233248777ba534b999eb4e7a99b794715b803d47026643801a12fdd4914b89c"
+        }
+      ],
+      "restored_sha256": "502645bafb0250e995d012a89b9fe0ce16900cdc6d7d5947585beb5d042fae06",
+      "qualified_source_sha256": "502645bafb0250e995d012a89b9fe0ce16900cdc6d7d5947585beb5d042fae06"
+    },
+    {
+      "mutation": "rank-tolerance-loss",
+      "source": "codec/src/main/scala/eyes4s/codec/DecompositionCodec.scala",
+      "original_sha256": "e9908c5a961c04552676c5b29d8045a1c0938572a4bd19fed0cbe7f072cbd37d",
+      "runs": [
+        {
+          "platform": "JVM",
+          "failed_tests": 4,
+          "log": "/private/tmp/eyes4s-s4-rank-tolerance-loss-JVM.log",
+          "log_sha256": "37c49764a5d2862f38ba99bea094372fe7358cbe6c626b4525d8bfcbbac7b773"
+        },
+        {
+          "platform": "JS",
+          "failed_tests": 4,
+          "log": "/private/tmp/eyes4s-s4-rank-tolerance-loss-JS.log",
+          "log_sha256": "0d5a909ad495d127a39ddbd034abeb91b66e4077147ec464b0f595373317070e"
+        }
+      ],
+      "restored_sha256": "e9908c5a961c04552676c5b29d8045a1c0938572a4bd19fed0cbe7f072cbd37d",
+      "qualified_source_sha256": "e9908c5a961c04552676c5b29d8045a1c0938572a4bd19fed0cbe7f072cbd37d"
+    },
+    {
+      "mutation": "hypot-rescale-direction",
+      "source": "design/src/main/scala/eyes4s/design/ReproducibleHypot.scala",
+      "original_sha256": "65fd0d4e3921565bf13bcc33dadfe0405784e0605eefad760fa6bcb1620722cb",
+      "runs": [
+        {
+          "platform": "JVM",
+          "failed_tests": 1,
+          "log": "/private/tmp/eyes4s-s4-hypot-rescale-direction-JVM.log",
+          "log_sha256": "273e0eaa94f08c3c66bdfeeadf957c5dcab5b77af0d6a36b15130b06ed9f7af6"
+        },
+        {
+          "platform": "JS",
+          "failed_tests": 1,
+          "log": "/private/tmp/eyes4s-s4-hypot-rescale-direction-JS.log",
+          "log_sha256": "f7088617bc38371a2cab6a6b376e06e2d512eccfbbd67cfe83c70f0c43a52f76"
+        }
+      ],
+      "restored_sha256": "65fd0d4e3921565bf13bcc33dadfe0405784e0605eefad760fa6bcb1620722cb",
+      "qualified_source_sha256": "65fd0d4e3921565bf13bcc33dadfe0405784e0605eefad760fa6bcb1620722cb"
+    }
+  ],
+  "numerical_contract": {
+    "norm_convention": "FdlibmHypotV1",
+    "source": "https://netlib.org/fdlibm/e_hypot.c",
+    "runtime_gap_log": "/private/tmp/eyes4s-s4-evidence/runtime-gap/native-runtime-replay-gap.log",
+    "jvm_reference_pairs": 120000,
+    "portable_reference_pairs": 1024,
+    "reference_rows_sha256": "3e7f6f86895e3c33397f9cca5844ac4630ce6781c3d1ed3f33a028b5b2f63ab9",
+    "scope": "QR and constrained solver norms; no blanket native-hypot/IQR pipeline exactness promise"
+  },
+  "diagnostics": {
+    "count": 755,
+    "digest": "21cd64b391657614",
+    "stable_count": 445,
+    "stable_digest": "fb7ffbd3d3db7f63",
+    "note": "Before merging the independently added point-sampling and scanpath diagnostic cases; regenerate in landing order."
+  },
+  "fixture_sha256": {
+    "fixed-template-imported-plan-v1.json": "b9f3b44964be4855bbf18e3db8c5b2c9a974d0b80208d34f6f6e480c07257ff1",
+    "fixed-template-imported-result-v1.json": "af9871fa6122b54a841bf04766612993b19bd90cb0e8ecd0baae470e3be5aa92",
+    "fixed-template-plan-v1.json": "c7bbf62f03df8c174a0fb29c5bb89d57b269da80cfbed951b90ed7919f8a802d",
+    "fixed-template-result-v1.json": "6e9142d9634daa06394537a4e966ae01763c5f7c0a9f382ff1e3007cf7f54c38",
+    "mean-map-template-plan-v1.json": "6fa639412d6f35f6c91cd718918fc29ba522283dc79c7b2849419e19392fb61c",
+    "mean-map-template-result-v1.json": "ca843d66fea1ea79639b7e4404bf5644ad1a6d0f083f852745af09cd9ec59a3e",
+    "decomposition-mixture-plan-v1.json": "34f85b044f71ce8cfefd9aa6ad95bc262703b80df61740440ae7d94729da8f56",
+    "decomposition-mixture-result-v1.json": "bc0d7c29b9adb91b9f1cfb4277fb85768c5b54c6ac326175593fb86ca9e90446",
+    "decomposition-nnls-plan-v1.json": "0144359d2d191cc46355dbedeeb2f06f28f55d6ff0d09ad725a8d5fe11aaa328",
+    "decomposition-nnls-result-v1.json": "4cd5a95ac8b9e27e10d71a1951f69d9da8b74b8e41bfa7790ae55572c4401c2e",
+    "decomposition-ols-plan-v1.json": "400b93aafb612d33ae1a6d67e35df635135366bbe3d2ed610cd8db0772ea4e55",
+    "decomposition-ols-result-v1.json": "4332056833913c8c71da2725da8beddf17c2ba739f34ed0018bfb1fb0aaaddd7"
+  },
+  "execution": "one whole native fit or imported-receipt check followed by held-out row pages; decomposition is one whole surface solve; cancellation only between these operations",
+  "saved_results": "complete input/plan binding, RunStamp checked before replay, full learned cells/provenance and prediction ledger; completed archive/table projection does not refit; existing measured R receipt coefficients and backend preserved exactly"
+}

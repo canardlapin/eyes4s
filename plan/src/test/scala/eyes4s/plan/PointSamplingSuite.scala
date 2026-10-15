@@ -213,7 +213,7 @@ class PointSamplingSuite extends munit.FunSuite:
     assertEquals(missing.rows.size, 6);
     assert(
       missing.rows.last.template.left.toOption
-        .exists(_.isInstanceOf[PointSamplingError.MissingTemplate])
+        .exists(_.reason.isInstanceOf[PointSamplingError.MissingTemplate])
     )
     assertEquals(missing.rows.last.points.size, 7);
     assert(missing.rows.last.points.forall(_.value.isLeft))
@@ -224,12 +224,12 @@ class PointSamplingSuite extends munit.FunSuite:
       )
     )
     assertEquals(
-      ambiguous.rows.take(2).map(_.template.left.toOption),
+      ambiguous.rows.take(2).map(_.template.left.toOption.map(_.reason)),
       Vector.fill(2)(Some(PointSamplingError.AmbiguousTemplate("p1", "A", Vector(0, 4))))
     )
     val duplicate = run(source = StudyInput(Trials(input.trials.rows :+ a)))
     assertEquals(
-      duplicate.rows.head.template,
+      duplicate.rows.head.template.left.map(_.reason),
       Left(PointSamplingError.DuplicateSource(Vector(0, 5)))
     )
     assertEquals(duplicate.rows.last.template, duplicate.rows.head.template)
@@ -245,7 +245,9 @@ class PointSamplingSuite extends munit.FunSuite:
     val wrong = run(spec(queryClock = ClockId("different")))
     assert(
       wrong.rows.forall(
-        _.points.forall(_.value.left.toOption.exists(_.isInstanceOf[PointSamplingError.Clock]))
+        _.points.forall(
+          _.value.left.toOption.exists(_.reason.isInstanceOf[PointSamplingError.Clock])
+        )
       )
     )
     val foreign = get(Grid.over(get(Frame.screen("foreign", 2, 2)), 2, 2))
@@ -259,7 +261,9 @@ class PointSamplingSuite extends munit.FunSuite:
     )
     assert(
       run(refs = refs).rows.forall(
-        _.points.forall(_.value.left.toOption.exists(_.isInstanceOf[PointSamplingError.Frames]))
+        _.points.forall(
+          _.value.left.toOption.exists(_.reason.isInstanceOf[PointSamplingError.Frames])
+        )
       )
     )
     assert(
@@ -341,7 +345,61 @@ class PointSamplingSuite extends munit.FunSuite:
     )
     assert(
       typeCheckErrors(
-        "new eyes4s.plan.PointMean(0,0,eyes4s.design.FailurePolicy.RequireAll,Right(1.0))"
+        "new eyes4s.plan.PointMean[String](0,0,eyes4s.design.FailurePolicy.RequireAll,Right(1.0))"
       ).nonEmpty
     )
+  }
+
+  test("point and control failures retain the focal and actual template keys") {
+    val result = run(spec(queryClock = ClockId("wrong-point-clock")))
+    result.rows.foreach { row =>
+      val matched = row.template.toOption.get
+      row.points.foreach { observation =>
+        val failure: PointSamplingError[StudyKey] = observation.value.swap.toOption.get
+        failure match
+          case PointSamplingError.AtTrial(source, template, reason) =>
+            assertEquals(source, row.key)
+            assertEquals(template, Some(matched))
+            assert(reason.isInstanceOf[PointSamplingError.Clock])
+          case other => fail(other.toString)
+        val diagnostic: Diagnostic[StudyKey] = Diagnostic.of(failure)
+        assertEquals(diagnostic.affectedTrials, Vector(row.key, matched).distinct)
+        assert(diagnostic.subject.contains(Locus.Pair(row.key, matched)))
+      }
+      row.controls.foreach { control =>
+        control.values.foreach {
+          case Left(PointSamplingError.AtTrial(source, template, _)) =>
+            assertEquals(source, row.key)
+            assertEquals(template, Some(control.template))
+          case other => fail(other.toString)
+        }
+      }
+    }
+  }
+
+  test("matching and aggregate refusals retain the exact typed focal key") {
+    val first      = input.trials.rows.head
+    val missingKey = first.key.copy(stimulus = "missing")
+    val missing    =
+      run(source = StudyInput(Trials(Vector(first.copy(key = missingKey))))).rows.head
+    val refusal = missing.template.swap.toOption.get
+    assertEquals(
+      refusal,
+      PointSamplingError.AtTrial(
+        missingKey,
+        None,
+        PointSamplingError.MissingTemplate(missingKey.participant, missingKey.stimulus)
+      )
+    )
+    assertEquals(Diagnostic.of(refusal).affectedTrials, Vector(missingKey))
+    run(spec(times = Vector.empty)).rows.foreach { row =>
+      row.bins.foreach { bin =>
+        assertEquals(bin.source, row.key)
+        val failure = bin.observed.result.swap.toOption.get
+        assertEquals(Diagnostic.of(failure).affectedTrials, Vector(row.key))
+      }
+    }
+    val standalone: PointMean[Nothing] = PointSamplingMean("standalone", Vector.empty, policy)
+    val unkeyed: Diagnostic[Nothing]   = Diagnostic.of(standalone.result.swap.toOption.get)
+    assertEquals(unkeyed.affectedTrials, Vector.empty)
   }

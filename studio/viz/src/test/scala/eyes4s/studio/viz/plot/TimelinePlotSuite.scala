@@ -29,7 +29,7 @@ import eyes4s.studio.core.selection.{
   ViewId
 }
 import eyes4s.studio.app.Intent
-import intaglio.{DashPattern, DevicePoint, Grob, LineType, Point, value}
+import intaglio.{DashPattern, DevicePoint, GraphicParams, Grob, LineType, Point, value}
 import intaglio.interaction.NamedPicking
 import munit.FunSuite
 
@@ -220,6 +220,124 @@ class TimelinePlotSuite extends FunSuite:
     assertEquals(right(t.pick(mid, 0.0)).map(_.ref), Some(outside))
     // Every other mark is drawn as before.
     assertEquals(plot.marks, built(board).marks)
+  }
+
+  // Each bar's paint, by row.
+  private def paints(plot: BuiltPlot): Map[Int, GraphicParams] =
+    grobs(plot).collect {
+      case r: Grob.Rect if r.name.exists(_.value.startsWith(TimelinePlot.MarkPrefix)) =>
+        r.name.get.value.stripPrefix(TimelinePlot.MarkPrefix).toInt -> r.gp
+    }.toMap
+
+  private def span(from: Double, until: Double): HalfOpenSpan =
+    right(HalfOpenSpan.between(from, until).toRight(s"$from to $until"))
+
+  private def brushed(s: HalfOpenSpan, outside: Set[StudioRef] = Set.empty): BuiltPlot =
+    built(board, TimelinePlot(columns, Some(s), outsideWindow = outside))
+
+  test("without a brush no bar is dimmed, in either theme") {
+    Theme.values.foreach { theme =>
+      val plot = right(TimelinePlot(columns).build(source(board), theme))
+      val ink3 = IntaglioColours.themed(theme, ThemedToken.Ink3)
+      assertEquals(paints(plot).size, 13)
+      paints(plot).foreach((i, gp) =>
+        assertEquals((gp.fill, gp.stroke), (Some(ink3), None), s"$theme $i")
+      )
+    }
+  }
+
+  test("a brush dims to the neutral mark exactly the bars it does not pick") {
+    Theme.values.foreach { theme =>
+      val b    = span(1200.0, 2800.0)
+      val plot = right(TimelinePlot(columns, Some(b)).build(source(board), theme))
+      val ink3 = IntaglioColours.themed(theme, ThemedToken.Ink3)
+      val dim  = IntaglioColours.themed(theme, ThemedToken.NeutralMark)
+      assertNotEquals(ink3, dim)
+      // The board's brush, 1.20 to 2.80 s, picks fixations 4 to 7.
+      val picked = PlotBrush.rows(plot.source, rule, b)
+      assertEquals(picked, board.refs.slice(3, 7))
+      board.refs.zipWithIndex.foreach { (ref, i) =>
+        val gp   = paints(plot)(i)
+        val fill = if picked.contains(ref) then ink3 else dim
+        assertEquals((gp.fill, gp.stroke), (Some(fill), None), s"$theme $ref")
+      }
+      // Dimming moves no mark.
+      assertEquals(plot.marks, right(TimelinePlot(columns).build(source(board), theme)).marks)
+    }
+  }
+
+  test("a bar is inside the brush iff its half-open interval overlaps the span") {
+    val ink3 = IntaglioColours.themed(Theme.Light, ThemedToken.Ink3)
+    def undimmed(s: HalfOpenSpan): Set[Int] =
+      paints(brushed(s)).collect { case (i, gp) if gp.fill.contains(ink3) => i }.toSet
+    // [1072, 2932): fixation 3 ends at 1072 and fixation 8 begins at 2932;
+    // touching an end of the span is not overlap, so both are dimmed.
+    assertEquals(undimmed(span(1072.0, 2932.0)), Set(3, 4, 5, 6))
+    // One millisecond wider on each side, both cross an edge and are inside.
+    assertEquals(undimmed(span(1071.0, 2933.0)), Set(2, 3, 4, 5, 6, 7))
+    // A span inside one bar keeps that bar, though no fixation begins in it.
+    assertEquals(undimmed(span(1500.0, 1580.0)), Set(3))
+    // A span in a gap picks nothing, so every bar is dimmed.
+    assertEquals(undimmed(span(2870.0, 2910.0)), Set.empty[Int])
+    // Always the rows the brush selects.
+    Vector(span(1072.0, 2932.0), span(1071.0, 2933.0), span(1500.0, 1580.0)).foreach { s =>
+      val plot = brushed(s)
+      assertEquals(
+        undimmed(s).toVector.sorted.map(board.refs),
+        PlotBrush.rows(plot.source, rule, s)
+      )
+    }
+  }
+
+  test("outside the window and the brush, a bar is a dashed outline in the neutral mark") {
+    val ink3 = IntaglioColours.themed(Theme.Light, ThemedToken.Ink3)
+    val dim  = IntaglioColours.themed(Theme.Light, ThemedToken.NeutralMark)
+    val dash = LineType.Custom(right(DashPattern(TimelinePlot.OutsideDashPx)))
+    // Fixation 5 is in the brush, 12 is not; both are outside the window.
+    val plot = brushed(span(1200.0, 2800.0), Set(board.refs(4), board.refs(11)))
+    val in   = paints(plot)(4)
+    assertEquals((in.fill, in.stroke, in.lineType), (None, Some(ink3), dash), "5: in the brush")
+    val out = paints(plot)(11)
+    assertEquals((out.fill, out.stroke, out.lineType), (None, Some(dim), dash), "12: dimmed")
+    assertEquals(out.lineWidth, in.lineWidth)
+    // A bar in the window and outside the brush is a dimmed fill.
+    assertEquals((paints(plot)(10).fill, paints(plot)(10).stroke), (Some(dim), None))
+  }
+
+  test("a dimmed bar's selection and focus rings are drawn at full strength") {
+    val view                   = right(ViewId.of("explore.timeline"))
+    val ref                    = board.refs(11)
+    def rings(plot: BuiltPlot) =
+      val t   = targetsOn(plot)
+      val bus = right(
+        SelectionState.empty.submit(
+          SelectionInput(
+            InputStamp(ContextRevision(0), view, 0L, InputCause.Pointer),
+            SelectionMode.Replace,
+            Vector(ref)
+          )
+        )
+      )
+      val state = MarkInputState
+        .initial[StudioRef](view, bus)
+        .moveFocus(Some(ref), t)
+        .state
+        .focusChanged(true)
+        .state
+      val overlay = state.overlay(t)
+      val scene   = right(
+        OverlayRings.scene(overlay, OverlayPalette.onSurface(Theme.Light), 800, 150, 1.0)
+      )
+      def all(g: Grob): Vector[Grob] = g +: g.children.flatMap(all)
+      (overlay, scene.grobs.flatMap(all).collect { case p: Grob.Polygon => p.gp })
+    val dimmed = brushed(span(1200.0, 2800.0))
+    val dim    = IntaglioColours.themed(Theme.Light, ThemedToken.NeutralMark)
+    assertEquals(paints(dimmed)(11).fill, Some(dim))
+    val (overlay, gps) = rings(dimmed)
+    assertEquals(overlay.map(_.kind), Vector(RingKind.Selected, RingKind.Focus))
+    // The same rings, in the same paint, as on the undimmed bar.
+    assertEquals((overlay, gps), rings(built(board)))
+    assert(!gps.exists(gp => gp.stroke.contains(dim) || gp.fill.contains(dim)), s"$gps")
   }
 
   test("a bar's selection and focus rings are rectangles round the bar, not circles") {

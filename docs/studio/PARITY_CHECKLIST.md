@@ -67,16 +67,24 @@ by token name, never by hex value.
 - [ ] Inspector for fixation 6: onset 2160 ms, duration 412 ms, screen (1148, 456), image (700, 300), (+5.4°, +2.4°). "Used by" lists ret_07 (matched) and 18 other queries.
 
 ## Analysis (moment t2)
-- [ ] Three presets. Recognition shows its "by design" category.
-- [ ] Recipe sentence with role-coloured tokens. Descriptor fields show "pending UI-A / UI-F" tags.
-- [ ] Scales 0.5 / 1 / 2 / 4 (+8° in the draft), cell 0.46°, and the 0.5° and 8° warnings.
-- [ ] "Queries without a matched reference: Report as no match".
+- [x] Three presets. Recognition shows its "by design" category and asks for an explicit inventory column/value selection. `ExpectedUnmatchedSuite` and `RealPreviewCursorSuite` prove that item collisions, including a dropped studied item, cannot create pairs.
+- [x] Recipe sentence with role-coloured tokens. Window, grid and initial-fixation controls use served descriptors; their board tags now read "served UI-A / UI-F". `DescriptorFormSuite` adds a synthetic field without changing the Studio renderer.
+- [x] Scales 0.5 / 1 / 2 / 4 (+8° in the draft), cell 0.46°, and the 0.5° and 8° warnings. Values and warnings are served by eyes4s; `ScalesEditorSuite` checks the drawn warnings, one Tab stop and keyboard removal.
+- [x] The served pairing control persists “Report as no match”; the generic field label is “Focal trials without a matched reference”.
+- [x] Draft settings apply as one undoable command; Diff uses the library plan diff and Description is saved with the revision. `DraftLifecycleSuite` checks invalid-input blocking, immutable revisions, run attachments and discard.
+- Presentation differences recorded for this tranche: the generic form scrolls and shows the library's field metadata; Apply commits a valid group of inputs to the draft. Presets and scale selection use the shared segmented control. The cell label shows both axes, and the large-scale warning displays the served extent ratio. No protocol/exploratory scale classification is added.
 - [ ] Resolved design:
   - [ ] 219,486 Cartesian candidates before paging (466 admitted retrieval × 471 admitted encoding), then 8,969 after.
   - [ ] 480 = 454 + 3 + 9 + 14.
   - [ ] Input digest plus plan revision.
 - [ ] Preflight keeps eyes4s findings separate from Studio checks ("0 queries with >1 matched reference · checked"). "Save & run rev 5 · 44,845 pairs" is enabled.
 - [ ] Preflight budget row: a recorded deviation. The board's "Budget: pairs ≤ 50,000 · cells ≤ 20M" is omitted because the real backend prepares with eyes4s's default `PairScheduleBudget`, which sets no limit, and eyes4s has no cell budget. The row returns, from the served value, when an analysis applies a budget (decision on `bd-01M437FHJSCPPAZ8PMZ3WD7EGH`).
+
+Analysis tranche evidence (2026-10-13): `DescriptorFormSuite`, `ScalesEditorSuite`,
+`DraftLifecycleSuite`, `PresetSuite`, `RecipeFormServiceSuite`, and the Analysis/Explore
+walks in `A11yTreeSuite`. Light and dark native snapshots were reviewed. The Analysis board's
+window/grid/initial-fixation “pending UI-A / UI-F” tags are replaced by served descriptors;
+other boards' pending tags remain unchanged. Full qualification is recorded with the landing.
 
 ## Main and MainDark (moment t2)
 - [ ] Queries navigator with the count strip, including "by design".
@@ -115,13 +123,11 @@ by token name, never by hex value.
 The boards were revised ahead of the code (DESIGN_SPEC §15). Until each ticket lands, a parity check records
 the deviation below instead of failing. Tickets are numbered as in the design review's landing list.
 
-- Shared: selected rows and items drawn with `--sel-fill` and weight 600 (ticket 13); composite cursor and
-  `:focus-visible` gating (12, 14); radio, checkbox and slider styling and the segmented bar (16).
+- Shared: a clicked canvas's pane still draws its accent border (`:focus-within` has no keyboard-only form; 14, slice S24).
+  The slider's track is drawn whole; the board's range fills it to the thumb (16).
 - Shared: the board's one resting focus ring (`.kf`) is shown in tests by putting real keyboard focus on that
   node, not drawn at rest (28).
-- Maps: fixation cross above the map and cased, round isoline caps, map legend (17). Figure tiles fade in but do
-  not hatch cells without coverage (8).
-- Explore: timeline bars outside the brush dimmed (18).
-- Results: annotation column (26).
-- Figures: tile rows and wrapping (21).
-- Data: the missing-asset thumbnail hatch and X, with its "Missing asset · forest-044.png" caption (25).
+- Maps: figure tiles fade in but do not hatch cells without coverage (8). The missing-cell hatch renders partly
+  transparent at some drawing sizes (bd-01M4TCR2EWPSX1NG4R686MY3M7).
+- Data: the geometry panel (density and key, thumbnails, the all-trials overlay) is built but not yet mounted in
+  the window (23–25; slice S26, bd-01M4TCYAVJ45D2F11C1A9NWD0H).

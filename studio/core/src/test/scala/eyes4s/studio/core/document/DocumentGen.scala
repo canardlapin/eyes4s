@@ -258,7 +258,13 @@ object DocumentGen:
     Gen.const(InitialFixationChoice.DropFirst),
     Gen
       .oneOf(0.5, 1.5, 2.0)
-      .map(r => InitialFixationChoice.DropLeadingNearCross(right(CrossRadius.of(r))))
+      .map(r => InitialFixationChoice.DropLeadingNearCross(right(CrossRadius.of(r)))),
+    Gen
+      .zip(Gen.choose(-100.0, 2000.0), Gen.choose(-100.0, 1200.0))
+      .map((x, y) =>
+        InitialFixationChoice
+          .DropLeadingAtScreenCross(right(ScreenCross.of(x, y)), right(CrossRadius.of(12)))
+      )
   )
   val pick: Gen[OccurrencePick] = Gen.oneOf(
     Gen.const(OccurrencePick.First),

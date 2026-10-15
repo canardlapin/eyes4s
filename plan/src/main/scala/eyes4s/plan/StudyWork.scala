@@ -118,8 +118,15 @@ final class PreparedStudy[K, U <: Unit2D, P, S, D] private[plan] (
       unmatched: Vector[K],
       inventory: Option[InventoryLedger]
   ): UnmatchedReasons[K] =
-    inventory.fold(UnmatchedReasons.undetermined(unmatched))(
-      UnmatchedReasons.of(plan.layout, plan.pairing, plan.referencePhase, unmatched, _)
+    inventory.fold(UnmatchedReasons.declared(plan.layout, unmatched, plan.expectedUnmatched))(
+      UnmatchedReasons.of(
+        plan.layout,
+        plan.pairing,
+        plan.referencePhase,
+        unmatched,
+        _,
+        plan.expectedUnmatched
+      )
     )
 
   /** Begin the exact-count traversal without performing any pair visits. */
@@ -282,9 +289,12 @@ object PreparedStudy:
         .checkCounts(input.trials.rows.size.toLong, 0L)
         .left
         .map(PlanError.Schedule.apply)
-      phases          = input.trials.rows.map(t => plan.layout.phase(t.key))
-      focal           = phases.indices.filter(i => phases(i) == plan.focalPhase).toVector
-      reference       = phases.indices.filter(i => phases(i) == plan.referencePhase).toVector
+      phases    = input.trials.rows.map(t => plan.layout.phase(t.key))
+      focal     = phases.indices.filter(i => phases(i) == plan.focalPhase).toVector
+      reference = phases.indices.filter(i => phases(i) == plan.referencePhase).toVector
+      _ <- plan.expectedUnmatched.fold[Either[PlanError, Unit]](Right(()))(
+        _.check(plan.layout, focal.map(i => input.trials.rows(i).key))
+      )
       candidateVisits = BigInt(focal.size) * reference.size * 2 * plan.estimates.size
       _ <- Either.cond(
         candidateVisits <= budget.maxCandidatePairs,
@@ -308,10 +318,25 @@ object PreparedStudy:
       kept = frames.zip(input.trials.rows).map { case (frame, t) =>
         frame.flatMap(_ => plan.initialFixationRule.kept(t.key, t.value))
       }
-      relations    = StudyPairingWork.relations(plan.layout, plan.pairing, right)
-      controlFocal = focal.filter(i => relations.matchable(input.trials.rows(i).key))
+      relations = StudyPairingWork.relations(plan.layout, plan.pairing, right)
+      expected  = left
+        .filter(key => plan.expectedUnmatched.exists(_.contains(plan.layout, key)))
+        .toSet
+      permitted = Relation.SameOn(
+        Projection.named[K, Boolean]("not expected unmatched")(k => !expected(k)),
+        Projection.named[K, Boolean]("reference")(_ => true)
+      )
+      controlFocal = focal.filter(i =>
+        !expected(input.trials.rows(i).key) && relations.matchable(input.trials.rows(i).key)
+      )
       matched <- DirectedPairSchedule
-        .exhaustive(left, right, relations.matched, budget)
+        .exhaustive(
+          left,
+          right,
+          if plan.expectedUnmatched.isEmpty then relations.matched
+          else relations.matched.and(permitted),
+          budget
+        )
         .left
         .map(PlanError.Schedule.apply)
       controls <- DirectedPairSchedule

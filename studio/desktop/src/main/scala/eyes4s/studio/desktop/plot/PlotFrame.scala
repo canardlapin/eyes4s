@@ -72,7 +72,7 @@ enum CanvasPlotError derives CanEqual:
   * same scene and context (S4.2): input resolves against exactly what is
   * drawn. Both are built off the FX thread with the program.
   */
-final case class PlotFrame private (
+sealed abstract case class PlotFrame private (
     sceneId: SceneId,
     surface: PlotSurface,
     transform: PlotTransform,
@@ -83,6 +83,17 @@ final case class PlotFrame private (
 )
 
 object PlotFrame:
+
+  private def apply(
+      sceneId: SceneId,
+      surface: PlotSurface,
+      transform: PlotTransform,
+      plan: RenderPlan,
+      program: JavaFxProgram,
+      device: DeviceScene,
+      picking: NamedPickingPlan
+  ): PlotFrame =
+    new PlotFrame(sceneId, surface, transform, plan, program, device, picking) {}
 
   /** Lays `scene` out on `surface` and compiles it. Pure and thread-free. */
   def compile(scene: PlotScene, surface: PlotSurface): Either[CanvasPlotError, PlotFrame] =

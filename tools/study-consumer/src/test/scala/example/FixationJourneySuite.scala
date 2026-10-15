@@ -909,7 +909,9 @@ class FixationJourneySuite extends munit.CatsEffectSuite:
         (result, saved) <- j.saved
         cancelled       <- j.cancelAfter(14)
       yield
-        val progress = events.collect { case StudyEvent.Advanced(p) => p }
+        val progress     = events.collect { case StudyEvent.Advanced(p) => p }
+        val pipelineBits = j.bits(result)
+        assert(pipelineBits.nonEmpty && pipelineBits.forall(_.isDefined))
         // Onsets as they come back from the stored archive, not the fixture.
         val reloaded = get(j.reload(j.storage(saved)))
         val late     = reloaded.input.trials.rows
@@ -957,7 +959,10 @@ class FixationJourneySuite extends munit.CatsEffectSuite:
               Json.obj(
                 "sigma" -> Json.fromDoubleOrNull(sigmas(i)),
                 "key"   -> Json.fromString(label),
-                "value" -> Json.fromDoubleOrNull(value)
+                "value" -> Json.fromDoubleOrNull(value),
+                "bits"  -> Json.fromString(
+                  java.lang.Long.toHexString(java.lang.Double.doubleToRawLongBits(value))
+                )
               )
             )
         )
@@ -982,7 +987,13 @@ class FixationJourneySuite extends munit.CatsEffectSuite:
               "gaussian"          -> Json.arr(gaussian*),
               "segments"          -> Json.arr(segments*),
               "cancelled"         -> stopped.getOrElse(Json.Null),
-              "fingerprint_size"  -> Json.fromInt(j.bits(result).size)
+              "fingerprint_size"  -> Json.fromInt(j.bits(result).size),
+              "pipeline_bits"     -> Json.arr(
+                pipelineBits
+                  .map(
+                    _.fold[Json](Json.Null)(b => Json.fromString(java.lang.Long.toHexString(b)))
+                  )*
+              )
             )
             .noSpaces
         )

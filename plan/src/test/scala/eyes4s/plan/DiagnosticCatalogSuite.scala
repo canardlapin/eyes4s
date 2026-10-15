@@ -28,8 +28,8 @@ class DiagnosticCatalogSuite extends munit.FunSuite:
   private val all = DiagnosticSamples.all
 
   /** Every issued code, one per line, pinned by count and portable digest. */
-  private val PinnedCount  = 742
-  private val PinnedDigest = "469d9a3c400f0e42"
+  private val PinnedCount  = 762
+  private val PinnedDigest = "fa0b030fa08a1e60"
 
   private val TrialEstimateCodes = Set(
     "study-failure.trial-cardinality",
@@ -211,10 +211,16 @@ class DiagnosticCatalogSuite extends munit.FunSuite:
     val rendered = DiagnosticCatalog.issued.map(_.render)
     val stable   =
       rendered.filterNot(code =>
-        Cr5Codes(code) || Cr2Codes(code) || Cr4Codes(code) || SourceCodes(code) || UiECodes(
-          code
-        ) || UiGCodes(code) || UiDCodes(code) || Cr6Codes(code) || Cr6bCodes(code) ||
-          ActiveSetCodes(code) || Cr6dCodes(code) || S07bCodes(code) || TrialEstimateCodes(code)
+        code == "plan.expected-unmatched-selection" ||
+          Cr5Codes(code) || Cr2Codes(code) || Cr4Codes(code) || SourceCodes(code) || UiECodes(
+            code
+          ) || UiGCodes(code) || UiDCodes(code) || Cr6Codes(code) || Cr6bCodes(code) ||
+          ActiveSetCodes(code) || Cr6dCodes(code) || S07bCodes(code) || TrialEstimateCodes(
+            code
+          ) ||
+          code == "aoi.observed-fixation-overlap" ||
+          DiagnosticCatalog.projectPrerequisite.codes.map(_.render).contains(code) ||
+          ScanpathMethodDiagnostics.comparison.codes.map(_.render).contains(code)
       )
     assertEquals(stable.size, StableCount)
     assertEquals(ContentHash.ofString(stable.mkString("\n")).render, StableDigest)

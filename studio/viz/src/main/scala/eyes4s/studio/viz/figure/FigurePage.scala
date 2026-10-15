@@ -21,6 +21,8 @@ import eyes4s.studio.app.plot.{ParticipantColumns, PlotSourceError, ProfileColum
 import cats.syntax.all.*
 import eyes4s.studio.app.tokens.{FontFace, PaletteToken, StageVariant, Theme, Tokens}
 import eyes4s.studio.core.assets.AssetRef
+import eyes4s.studio.core.backend.PairDesign
+import eyes4s.studio.core.selection.StudioRef
 import eyes4s.studio.viz.maps.MapTileScene
 import eyes4s.studio.viz.trial.{StimulusRaster, TrialScene, TrialSceneError}
 import eyes4s.studio.viz.plot.{
@@ -29,6 +31,7 @@ import eyes4s.studio.viz.plot.{
   PlotBuildError,
   PlotBuilder,
   PlotSceneError,
+  ReferenceRole,
   ScaleProfilePlot
 }
 import intaglio.{
@@ -38,6 +41,7 @@ import intaglio.{
   GraphicsError,
   Grob,
   GrobMeta,
+  GraphicsName,
   DataKey,
   PlotSemantics,
   SceneSemantics,
@@ -87,7 +91,7 @@ enum FigurePageError derives CanEqual:
   * the whole page in millimetres, rebuilt from the page's view-model, never
   * a screenshot. Its plots are the Compare plots, built light on paper.
   */
-final case class FigurePage private (scene: Scene, widthMm: Double, heightMm: Double):
+sealed abstract case class FigurePage private (scene: Scene, widthMm: Double, heightMm: Double):
 
   /** The page rendered at `pixelsPerInch`: its size in whole device pixels. */
   def context(pixelsPerInch: Double): Either[FigurePageError, RenderContext] =
@@ -101,6 +105,9 @@ final case class FigurePage private (scene: Scene, widthMm: Double, heightMm: Do
     context(pixelsPerInch).map(RenderPlan(scene, _))
 
 object FigurePage:
+  private def apply(scene: Scene, widthMm: Double, heightMm: Double): FigurePage =
+    new FigurePage(scene, widthMm, heightMm) {}
+
   val MillimetresPerInch: Double = 25.4
 
   /** A line of text is this many times its size apart from the next. */
@@ -112,6 +119,41 @@ object FigurePage:
   /** The space inside a panel C tile, in millimetres. */
   val TilePaddingMm: Double = 1.0
 
+  /** A panel C tile's rows below its map: the subtitle, then the score label.
+    * With the one title row above the map, every tile has the same rows, so
+    * every map in a row shares one top and every label one baseline.
+    */
+  val TileCaptionRows: Int = 2
+
+  /** What ends a tile's row that was cut to fit. */
+  val Elision: String = "…"
+
+  /** The role glyph's diameter, in ems of the body face. IBM Plex has no
+    * ● ◆ ○ (U+25CF, U+25C6, U+25CB), so the glyph is drawn as a shape.
+    */
+  val GlyphEm: Double = 0.72
+
+  /** The space between the role glyph and the title, in ems. */
+  val GlyphGapEm: Double = 0.45
+
+  /** The control glyph's ring width, in points. */
+  val GlyphRingPt: Double = 1.0
+
+  /** The name of the role glyph a tile of `role` draws. */
+  def glyphName(role: ReferenceRole): String = role match
+    case ReferenceRole.Query   => "figure-tile-glyph-query"
+    case ReferenceRole.Match   => "figure-tile-glyph-matched"
+    case ReferenceRole.Control => "figure-tile-glyph-control"
+
+  /** The role of a panel C tile, read from what it refers to: the query
+    * contrast, its matched pair or a control pair.
+    */
+  def roleOf(tile: MapTileVM): Option[ReferenceRole] = tile.ref match
+    case StudioRef.QueryContrast(_, _, _)               => Some(ReferenceRole.Query)
+    case StudioRef.Pair(_, _, PairDesign.Matched, _, _) => Some(ReferenceRole.Match)
+    case StudioRef.Pair(_, _, PairDesign.Control, _, _) => Some(ReferenceRole.Control)
+    case _                                              => None
+
   def pixels(mm: Double, pixelsPerInch: Double): Int =
     math.max(1, math.ceil(mm / MillimetresPerInch * pixelsPerInch - 1e-9).toInt)
 
@@ -119,11 +161,25 @@ object FigurePage:
 
   private def lineMm(pt: Double): Double = ptMm(pt) * LineSpacing
 
+  /** How many glyphs of the body face fit in `widthMm` at `pt`, at least one. */
+  private def perLine(widthMm: Double, pt: Double): Int =
+    math.max(1, (widthMm / (ptMm(pt) * AverageAdvanceEm)).toInt)
+
+  /** `text` on one row no wider than `widthMm` at `pt`, never wrapped: as it
+    * is when its code points fit the row's glyphs (as [[wrap]] counts them),
+    * otherwise its first glyphs − 1 code points and [[Elision]]. Code points,
+    * so a "·", "σ" or "−" counts one glyph.
+    */
+  def fit(text: String, widthMm: Double, pt: Double): String =
+    val n = perLine(widthMm, pt)
+    if text.codePointCount(0, text.length) <= n then text
+    else text.substring(0, text.offsetByCodePoints(0, n - 1)) + Elision
+
   /** `text` broken into lines no wider than `widthMm` at `pt`, at word
     * boundaries (a word longer than a line is its own line).
     */
   def wrap(text: String, widthMm: Double, pt: Double): Vector[String] =
-    val perLine = math.max(1, (widthMm / (ptMm(pt) * AverageAdvanceEm)).toInt)
+    val perLine = this.perLine(widthMm, pt)
     text.split(" ").toVector.filter(_.nonEmpty).foldLeft(Vector.empty[String]) {
       (lines, word) =>
         lines.lastOption match
@@ -153,17 +209,10 @@ object FigurePage:
       case PanelBody.Waiting(why)     => lines(Vector(why))
       case PanelBody.Unavailable(why) => lines(Vector(why))
 
-  /** Panel C's tiles share the panel's width; each tile's title wraps inside it. */
+  /** Panel C's tiles share the panel's width. */
   private def tileWidth(vm: DensityMapsVM, panelMm: Double): Double =
     val count = math.max(1, vm.tiles.size)
     (panelMm - (count - 1) * TilePaddingMm) / count
-
-  private def tileLines(
-      vm: DensityMapsVM,
-      panelMm: Double,
-      pt: Double
-  ): Vector[Vector[String]] =
-    vm.tiles.map(t => wrap(t.title, tileWidth(vm, panelMm) - 2 * TilePaddingMm, pt) :+ t.label)
 
   private def tileMapWidth(vm: DensityMapsVM, panelMm: Double): Double =
     tileWidth(vm, panelMm) - 2 * TilePaddingMm
@@ -179,11 +228,11 @@ object FigurePage:
     val mapWidth = tileMapWidth(vm, panelMm)
     vm.tiles.map(tileMapHeight(_, mapWidth)).maxOption.getOrElse(0.0)
 
-  /** As tall as the tile with the most text, plus its served map row. */
+  /** The title row, the map row and the caption rows, padded above the
+    * title, between the map and its caption, and below the caption.
+    */
   private def tileHeight(vm: DensityMapsVM, panelMm: Double, pt: Double): Double =
-    tileLines(vm, panelMm, pt).map(_.size).maxOption.getOrElse(0) * lineMm(
-      pt
-    ) + tileMapHeight(vm, panelMm) + 2 * TilePaddingMm
+    (1 + TileCaptionRows) * lineMm(pt) + tileMapHeight(vm, panelMm) + 3 * TilePaddingMm
 
   private def panelHeight(panel: PanelVM, pt: Double): Double =
     lineMm(FigureType.LetterPt) + bodyHeight(panel, pt)
@@ -294,7 +343,7 @@ object FigurePage:
     def bodyText(body: PanelBody): Vector[String] = body match
       case PanelBody.Plot(vm) => vm.notes
       case PanelBody.Maps(vm) =>
-        vm.tiles.flatMap(t => Vector(t.title, t.label)) ++ Vector(vm.caption, vm.maps)
+        vm.tiles.flatMap(t => Vector(t.heading, t.label)) ++ Vector(vm.caption, vm.maps)
       case PanelBody.Gaze(vm)         => Vector(vm.heading, vm.displayed, vm.gaze)
       case PanelBody.Waiting(why)     => Vector(why)
       case PanelBody.Unavailable(why) => Vector(why)
@@ -329,6 +378,48 @@ object FigurePage:
           )
         )
       yield embedded(built.plot.scene, FigureGaze.panelOnly(built), port)
+    // The role glyph centred on the title row, the title after it.
+    def glyph(role: ReferenceRole, x: Double, rowTop: Double): Either[FigurePageError, Grob] =
+      val r        = GlyphEm * ptMm(pt) / 2
+      val (cx, cy) = (x + r, rowTop + lineMm(pt) / 2)
+      val during   = s"the ${role.toString.toLowerCase} glyph"
+      for
+        n     <- g(during)(GraphicsName(glyphName(role), "figure tile glyph"))
+        drawn <- role match
+          case ReferenceRole.Query =>
+            g(during)(
+              GraphicParams
+                .checked(stroke = None, fill = Some(colour(PaletteToken.FigQuery)))
+                .flatMap(Grob.circle(at(cx, cy), extent(r), _, name = Some(n)))
+            )
+          case ReferenceRole.Match =>
+            // As much ink as the query's disc: half-diagonal r·√(π/2).
+            val d = r * math.sqrt(math.Pi / 2)
+            g(during)(
+              GraphicParams
+                .checked(stroke = None, fill = Some(colour(PaletteToken.FigMatch)))
+                .flatMap(gp =>
+                  Grob.polygon(
+                    Vector(at(cx, cy - d), at(cx + d, cy), at(cx, cy + d), at(cx - d, cy)),
+                    gp,
+                    name = Some(n)
+                  )
+                )
+            )
+          case ReferenceRole.Control =>
+            // The ring's outer edge is the disc's edge.
+            val ring = ptMm(GlyphRingPt)
+            g(during)(
+              GraphicParams
+                .checked(
+                  stroke = Some(colour(PaletteToken.FigControl)),
+                  fill = None,
+                  lineWidth = GlyphRingPt,
+                  lineWidthUnit = StrokeUnit.Point
+                )
+                .flatMap(Grob.circle(at(cx, cy), extent(r - ring / 2), _, name = Some(n)))
+            )
+      yield drawn
     def tiles(
         p: Placed,
         vm: DensityMapsVM,
@@ -337,15 +428,20 @@ object FigurePage:
       val w     = p.panel.widthMm.toDouble
       val tileW = tileWidth(vm, w)
       val h     = tileHeight(vm, w, pt)
-      val texts = tileLines(vm, w, pt)
       val mapW  = tileMapWidth(vm, w)
+      // Fixed rows: every tile's title, map and caption start at the same
+      // heights, whatever its text or its map's aspect.
+      val titleTop   = top + TilePaddingMm
+      val mapTop     = titleTop + lineMm(pt)
+      val captionTop = mapTop + tileMapHeight(vm, w) + TilePaddingMm
+      val glyphMm    = (GlyphEm + GlyphGapEm) * ptMm(pt)
       vm.tiles.zipWithIndex.foldLeft[Either[FigurePageError, Vector[Grob]]](
         Right(Vector.empty)
       ) { case (acc, (tile, i)) =>
         val x      = p.x + i * (tileW + TilePaddingMm)
-        val title  = texts(i).dropRight(1)
-        val label  = texts(i).lastOption.toVector
-        val mapTop = top + TilePaddingMm + title.size * lineMm(pt)
+        val role   = roleOf(tile)
+        val indent = role.fold(0.0)(_ => glyphMm)
+        val title  = fit(tile.title, mapW - indent, pt)
         for
           gs   <- acc
           rule <- g("a tile's rule")(
@@ -364,10 +460,11 @@ object FigurePage:
               gp = rule
             )
           )
+          mark    <- role.toVector.traverse(glyph(_, x + TilePaddingMm, titleTop))
           heading <- lines(
-            title,
-            x + TilePaddingMm,
-            top + TilePaddingMm,
+            Vector(title).filter(_.nonEmpty),
+            x + TilePaddingMm + indent,
+            titleTop,
             PaletteToken.PaperInk
           )
           map <- tile.map match
@@ -392,13 +489,17 @@ object FigurePage:
                 )
               yield Vector(embedded(built.scene, built.scene.grobs, port))
             case _ => Right(Vector.empty)
-          score <- lines(
-            label,
-            x + TilePaddingMm,
-            mapTop + tileMapHeight(tile, mapW),
-            PaletteToken.PaperInk
-          )
-        yield (gs :+ box) ++ heading ++ map ++ score
+          rows <- Vector(tile.subtitle, tile.label).zipWithIndex
+            .filter(_._1.nonEmpty)
+            .traverse((text, row) =>
+              lines(
+                Vector(fit(text, mapW, pt)),
+                x + TilePaddingMm,
+                captionTop + row * lineMm(pt),
+                PaletteToken.PaperInk
+              )
+            )
+        yield (gs :+ box) ++ mark ++ heading ++ map ++ rows.flatten
       }
     def panel(p: Placed): Either[FigurePageError, Vector[Grob]] =
       val w    = p.panel.widthMm.toDouble

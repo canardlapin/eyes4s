@@ -61,7 +61,7 @@ sealed abstract class MapSimilarityMethod private[compare] (val token: String) d
   /** The method's scores as a symmetric similarity. */
   def similarity[U <: Unit2D]: SymmetricCompare[Mass[U], Similarity]
 
-  /** As [[similarity]], with an explicit pair limit for a quadratic method.
+  /** As [[similarity]], with an explicit pair-domain admission limit for distance correlation.
     * Every method that is linear in grid cells ignores it.
     */
   def similarityWithin[U <: Unit2D](
@@ -156,7 +156,7 @@ object MapSimilarityMethod:
     def similarity[U <: Unit2D]: SymmetricCompare[Mass[U], Similarity] =
       Distribution.extendedJaccard[U]
 
-  /** Biased distance correlation of the cell values, in [0, 1], quadratic in cells. */
+  /** Exact biased distance correlation of the cell values, in [0, 1], O(n log n). */
   case object DistanceCorrelation extends SymmetricMethod("DistanceCorrelation"):
     def similarity[U <: Unit2D]: SymmetricCompare[Mass[U], Similarity] =
       Distribution.distanceCorrelation[U]

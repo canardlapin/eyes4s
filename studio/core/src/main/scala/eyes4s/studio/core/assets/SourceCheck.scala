@@ -86,7 +86,7 @@ enum SourceBlock derives CanEqual:
   * revision, which runs once admitted. Stimulus images are listed apart:
   * they do not block.
   */
-final case class SourceCheck private (
+sealed abstract case class SourceCheck private (
     check: InputCheck,
     findings: Vector[SourceFinding],
     images: Vector[InputStatus]
@@ -119,6 +119,13 @@ final case class SourceCheck private (
     images.filter(s => digests.contains(s.entry.sha256))
 
 object SourceCheck:
+
+  private def apply(
+      check: InputCheck,
+      findings: Vector[SourceFinding],
+      images: Vector[InputStatus]
+  ): SourceCheck =
+    new SourceCheck(check, findings, images) {}
 
   def of(document: StudioDocument, check: InputCheck): SourceCheck =
     of(document, check, outstanding = false)

@@ -30,7 +30,7 @@ import scala.compiletime.error
   * rather than a `Double` so that the CSS the token source generates is exact
   * and stable (`.35`, never `0.35000000000000003`).
   */
-final case class Colour private (red: Int, green: Int, blue: Int, alphaPercent: Int)
+sealed abstract case class Colour private (red: Int, green: Int, blue: Int, alphaPercent: Int)
     derives CanEqual:
 
   /** True when the colour covers what lies beneath it completely. */
@@ -52,6 +52,9 @@ final case class Colour private (red: Int, green: Int, blue: Int, alphaPercent: 
     if isOpaque then hexRgb else s"rgba($red,$green,$blue,${Colour.fxAlpha(alphaPercent)})"
 
 object Colour:
+
+  private def apply(red: Int, green: Int, blue: Int, alphaPercent: Int): Colour =
+    new Colour(red, green, blue, alphaPercent) {}
 
   /** The alpha of an opaque colour, in percent. */
   val OpaquePercent: Int = 100
@@ -81,7 +84,7 @@ object Colour:
   // Reached only from the inline constructors above, after their compile-time
   // range checks; public in binary so that the inlined call sites can link it.
   @publicInBinary private[Colour] def fromChecked(rgb: Int, alphaPercent: Int): Colour =
-    new Colour((rgb >> 16) & 0xff, (rgb >> 8) & 0xff, rgb & 0xff, alphaPercent)
+    Colour((rgb >> 16) & 0xff, (rgb >> 8) & 0xff, rgb & 0xff, alphaPercent)
 
   // `.35` as the boards write it; `1` and `0` stay whole.
   private def webAlpha(percent: Int): String =

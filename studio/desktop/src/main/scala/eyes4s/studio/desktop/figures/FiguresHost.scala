@@ -797,18 +797,19 @@ final class FiguresHost(
       case PanelBody.Maps(maps) =>
         val tileW = (w - 8) / 3
         val drawn = maps.tiles.zipWithIndex.collect {
-          case (MapTileVM(_, _, _, _, TileMap.Drawn(_, _, _)), i) => i
+          case (MapTileVM(_, _, _, _, _, TileMap.Drawn(_, _, _)), i) => i
         }.toSet
         retireTiles(k => k._1 != figure || k._2 != p.letter || drawn.contains(k._3))
         val tiles = HBox(
           4.0,
           maps.tiles.zipWithIndex.map { (t, i) =>
             val head  = paperLabel(t.title, text)
+            val sub   = paperLabel(t.subtitle, text)
             val score = paperLabel(t.label, text); score.getStyleClass.add("figures-score")
-            val tile  = VBox(2.0, mapNode(figure, p.letter, i, t, tileW, text), head, score)
+            val tile = VBox(2.0, mapNode(figure, p.letter, i, t, tileW, text), head, sub, score)
             tile.getStyleClass.add("figures-tile")
             tile.setPrefWidth(tileW)
-            tile.setAccessibleText(s"${t.title}, ${t.label}")
+            tile.setAccessibleText(s"${t.heading}, ${t.label}")
             tile
           }*
         )
@@ -1253,7 +1254,7 @@ final class FiguresHost(
 
 object FiguresHost:
   val MapReading: String            = "Reading the map…"
-  def mapName(t: MapTileVM): String = s"Density map, ${t.title}"
+  def mapName(t: MapTileVM): String = s"Density map, ${t.heading}"
 
   /** A gaze panel drawing's accessible name. */
   def gazeName(p: PanelVM, d: GazeTrialVM): String =

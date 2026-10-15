@@ -38,10 +38,12 @@
   -fx-mid-text-color: -es-ink-2;
   -fx-light-text-color: -es-surface;
   -fx-prompt-text-fill: -es-ink-3;
-  -fx-selection-bar: -es-accent-soft;
-  -fx-selection-bar-non-focused: -es-surface-3;
+  /* Selection is a fill, the same with or without focus; hover is lighter
+   * than selection so it never reads as one (DESIGN_SPEC section 15). */
+  -fx-selection-bar: -es-sel-fill;
+  -fx-selection-bar-non-focused: -es-sel-fill;
   -fx-selection-bar-text: -es-ink;
-  -fx-cell-hover-color: -es-surface-3;
+  -fx-cell-hover-color: -es-surface-2;
   -fx-mark-color: -es-ink-2;
 }
 
@@ -58,34 +60,68 @@
   -fx-prompt-text-fill: -es-ink-3;
 }
 
-/* ---- keyboard focus: a 2 px accent ring on every control (S1.11) -------- */
-
-.crumb:focused, .icon-button:focused, .bar-button:focused {
-  -fx-background-color: -es-accent, -es-surface;
-  -fx-background-insets: 0, 2;
-  -fx-background-radius: 4, 3;
+/* ---- selection and hover: a fill, never the accent (DESIGN_SPEC 15) ----- */
+/* Modena defines -fx-cell-hover-color but draws no hover on cells. A hovered
+ * row takes surface-2; a selected row keeps the selection fill when hovered
+ * (the rule comes later at the same specificity) and sets its text in ink
+ * at weight 600, the semibold face. */
+.list-cell:filled:hover,
+.tree-cell:filled:hover,
+.table-row-cell:filled:hover {
+  -fx-background: -fx-cell-hover-color;
 }
 
-.chip:focused {
-  -fx-background-color: -es-accent, -es-surface;
-  -fx-background-insets: 0, 2;
-  -fx-background-radius: 6, 5;
+.list-cell:filled:selected,
+.tree-cell:filled:selected,
+.table-row-cell:filled:selected {
+  -fx-background: -fx-selection-bar-non-focused;
+  -fx-text-fill: -fx-selection-bar-text;
+  -fx-font-family: "IBM Plex Sans SmBld";
 }
 
-.perspective:focused {
-  -fx-background-color: -es-accent, -es-surface-3;
-  -fx-background-insets: 0, 2;
-  -fx-background-radius: 5, 4;
+.table-row-cell:filled:selected > .table-cell {
+  -fx-text-fill: -fx-selection-bar-text;
+  -fx-font-family: "IBM Plex Sans SmBld";
 }
 
-.perspective:selected:focused {
-  -fx-background-color: -es-accent, -es-surface;
+/* ---- composite focus: the cursor row carries the ring (DESIGN_SPEC 15) -- */
+/* A list or a tree is one focus stop whose container draws no ring: modena's
+ * focused box is drawn as its unfocused one. While the keyboard holds the
+ * focus (:focus-visible) the cursor row (the focus model's focused cell)
+ * takes a 2 px accent frame around its own fill; focused by a click or by
+ * the program, the row keeps its fill and modena's cell frame is not drawn.
+ * A cursor row that is also selected keeps the selection fill inside the
+ * frame: -fx-background-color is one property, so that is a compound rule.
+ * A list with no row under the cursor (none yet, or no rows) draws the ring
+ * on the container: the focus is never hidden. */
+.list-view:focused,
+.tree-view:focused {
+  -fx-background-color: -fx-box-border, -fx-control-inner-background;
+  -fx-background-insets: 0, 1;
+  -fx-background-radius: 0;
 }
 
-/* A pane is one focus stop: the ring is drawn inside its edge. */
-.pane-placeholder:focused {
-  -fx-background-color: -es-accent, -es-surface;
+.list-view:focused > .virtual-flow > .clipped-container > .sheet > .list-cell:focused,
+.tree-view:focused > .virtual-flow > .clipped-container > .sheet > .tree-cell:focused {
+  -fx-background-color: -fx-background;
+  -fx-background-insets: 0;
+}
+
+.list-view:focus-visible > .virtual-flow > .clipped-container > .sheet > .list-cell:focused,
+.tree-view:focus-visible > .virtual-flow > .clipped-container > .sheet > .tree-cell:focused {
+  -fx-background-color: -es-accent, -fx-background;
   -fx-background-insets: 0, 2;
+}
+
+.list-view:focus-visible > .virtual-flow > .clipped-container > .sheet > .list-cell:focused:selected,
+.tree-view:focus-visible > .virtual-flow > .clipped-container > .sheet > .tree-cell:focused:selected {
+  -fx-background-color: -es-accent, -es-sel-fill;
+}
+
+.list-view:focus-visible:no-cursor,
+.tree-view:focus-visible:no-cursor {
+  -fx-border-color: -es-accent;
+  -fx-border-width: 2;
 }
 
 /* ---- shared pieces ------------------------------------------------------ */
@@ -489,4 +525,59 @@
 
 .about-box {
   -fx-background-color: -es-surface;
+}
+
+/* ---- pressed, then keyboard focus (DESIGN_SPEC 15) ---------------------- */
+/* These come after every control rule above, hover and selection included,
+ * so a pressed control shows it and a focused one is never hidden. A pressed
+ * control takes the hairline fill, one step past hover. Keyboard focus is a
+ * 2 px accent ring, drawn only while the keyboard brought the focus
+ * (:focus-visible): a click or a programmatic focus draws none. A focused
+ * control that is also selected keeps its fill inside the ring: that is a
+ * compound rule, as -fx-background-color is one property. */
+.crumb:armed, .icon-button:armed, .bar-button:armed, .chip:armed, .perspective:armed {
+  -fx-background-color: -es-hairline;
+  -fx-background-insets: 0;
+}
+
+.crumb:focus-visible, .icon-button:focus-visible, .bar-button:focus-visible {
+  -fx-background-color: -es-accent, -es-surface;
+  -fx-background-insets: 0, 2;
+  -fx-background-radius: 4, 3;
+}
+
+.chip:focus-visible {
+  -fx-background-color: -es-accent, -es-surface;
+  -fx-background-insets: 0, 2;
+  -fx-background-radius: 6, 5;
+}
+
+.perspective:focus-visible {
+  -fx-background-color: -es-accent, -es-surface-3;
+  -fx-background-insets: 0, 2;
+  -fx-background-radius: 5, 4;
+}
+
+.perspective:selected:focus-visible {
+  -fx-background-color: -es-accent, -es-surface;
+}
+
+/* A pane is one focus stop: the ring is drawn inside its edge. A composite
+ * pane, whose content's rows carry its focus (Explore's source records),
+ * draws none: its cursor row is the one focus indicator. With no row under
+ * the cursor (none yet, or no rows) it draws the ring on its edge, outside
+ * its content (DESIGN_SPEC 15, composite focus). */
+.pane-placeholder:focus-visible {
+  -fx-background-color: -es-accent, -es-surface;
+  -fx-background-insets: 0, 2;
+}
+
+.pane-placeholder.pane-composite:focus-visible {
+  -fx-background-color: -es-surface;
+  -fx-background-insets: 0;
+}
+
+.pane-placeholder.pane-composite:focus-visible:no-cursor {
+  -fx-border-color: -es-accent;
+  -fx-border-width: 2;
 }

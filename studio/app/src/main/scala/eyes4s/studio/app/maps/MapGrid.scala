@@ -83,7 +83,7 @@ val RowOrder: eyes4s.studio.core.backend.RowOrder.type = eyes4s.studio.core.back
   * of mass), kept exactly as served; studio never derives a level, it only
   * contours the ones it is given (S4.3b).
   */
-final case class MapGrid private (
+sealed abstract case class MapGrid private (
     map: MapId,
     columns: Int,
     rows: Int,
@@ -123,6 +123,16 @@ final case class MapGrid private (
     )
 
 object MapGrid:
+
+  private def apply(
+      map: MapId,
+      columns: Int,
+      rows: Int,
+      order: RowOrder,
+      cells: Vector[Option[Double]],
+      levels: Vector[Double]
+  ): MapGrid =
+    new MapGrid(map, columns, rows, order, cells, levels) {}
 
   /** A grid of `columns × rows` cells of `map`, rows in `order`, refusing an empty shape, a
     * wrong number of cells, and a non-finite value or level.

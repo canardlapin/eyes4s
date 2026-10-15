@@ -175,6 +175,12 @@ object SchemaRegistry:
       codecLaw(plans, "initial-fixation study plan")
     ),
     Entry(
+      StudyCodecDefinitions.studyV4,
+      Kind.Document,
+      Vector("study-v4.json"),
+      codecLaw(plans, "expected-unmatched study plan")
+    ),
+    Entry(
       TrialKeyDefinitions.trialKey,
       Kind.Nested,
       Vector("study-trial-v2.json"),
@@ -388,6 +394,133 @@ object SchemaRegistry:
       Kind.Document,
       Vector("report-v1.json"),
       codecLaw(reports, "study report")
+    ),
+    Entry(
+      ScanpathStudyDefinitions.plan,
+      Kind.Document,
+      Vector(
+        "scanpath-study-multimatch-plan-v1.json",
+        "scanpath-study-overlap-plan-v1.json",
+        "scanpath-study-transport-plan-v1.json"
+      ),
+      codecLaw(() => new ScanpathStudyCodecLawSuite, "scanpath study plan")
+    ),
+    Entry(
+      ScanpathStudyDefinitions.result,
+      Kind.Document,
+      Vector(
+        "scanpath-study-multimatch-result-v1.json",
+        "scanpath-study-overlap-result-v1.json",
+        "scanpath-study-transport-result-v1.json"
+      ),
+      codecLaw(() => new ScanpathStudyCodecLawSuite, "scanpath study result")
+    ),
+    Entry(
+      ScanpathMethodCodecDefinitions.method,
+      Kind.Document,
+      Vector(
+        "scanpath-method-multimatch-v1.json",
+        "scanpath-method-overlap-v1.json",
+        "scanpath-method-transport-v1.json"
+      ),
+      codecLaw(() => new ScanpathMethodCodecLawSuite, "scanpath method")
+    ),
+    Entry(
+      ScanpathMethodDefinitions.multiMatch,
+      Kind.Definition,
+      Vector("scanpath-method-multimatch-v1.json"),
+      codecLaw(() => new ScanpathMethodCodecLawSuite, "scanpath method")
+    ),
+    Entry(
+      ScanpathMethodDefinitions.overlap,
+      Kind.Definition,
+      Vector("scanpath-method-overlap-v1.json"),
+      codecLaw(() => new ScanpathMethodCodecLawSuite, "scanpath method")
+    ),
+    Entry(
+      ScanpathMethodDefinitions.transport,
+      Kind.Definition,
+      Vector("scanpath-method-transport-v1.json"),
+      codecLaw(() => new ScanpathMethodCodecLawSuite, "scanpath method")
+    ),
+    Entry(
+      PointSamplingFamilyDefinitions.plan,
+      Kind.Document,
+      Vector("point-sampling-plan-v1.json"),
+      codecLaw(() => new PointSamplingFamilyCodecLawSuite, "point-sampling plan")
+    ),
+    Entry(
+      PointSamplingFamilyDefinitions.result,
+      Kind.Document,
+      Vector("point-sampling-result-v1.json"),
+      codecLaw(() => new PointSamplingFamilyCodecLawSuite, "point-sampling result")
+    ),
+    Entry(
+      EpochCodecDefinitions.plan,
+      Kind.Document,
+      Vector("epoch-plan-v1.json"),
+      codecLaw(() => new EpochCodecLawSuite, "epoch plan")
+    ),
+    Entry(
+      TemplateFitCodecDefinitions.fixedPlan,
+      Kind.Document,
+      Vector("fixed-template-plan-v1.json", "fixed-template-imported-plan-v1.json"),
+      codecLaw(() => new TemplateFitCodecLawSuite, "fixed template plan")
+    ),
+    Entry(
+      TemplateFitCodecDefinitions.fixedResult,
+      Kind.Document,
+      Vector("fixed-template-result-v1.json", "fixed-template-imported-result-v1.json"),
+      codecLaw(() => new TemplateFitCodecLawSuite, "fixed template result")
+    ),
+    Entry(
+      TemplateFitCodecDefinitions.meanMapPlan,
+      Kind.Document,
+      Vector("mean-map-template-plan-v1.json"),
+      codecLaw(() => new TemplateFitCodecLawSuite, "mean-map template plan")
+    ),
+    Entry(
+      TemplateFitCodecDefinitions.meanMapResult,
+      Kind.Document,
+      Vector("mean-map-template-result-v1.json"),
+      codecLaw(() => new TemplateFitCodecLawSuite, "mean-map template result")
+    ),
+    Entry(
+      TemplateRecipeCodecs.schema,
+      Kind.Document,
+      Vector(
+        "template-recipe-v1.json",
+        "template-recipe-lm-v1.json",
+        "template-recipe-maps-v1.json"
+      ),
+      codecLaw(templates, "fixed template recipe") ++
+        codecLaw(templates, "map template recipe")
+    ),
+    Entry(
+      get(DefinitionId.of("eyes4s.template-recipe", 2)),
+      Kind.Document,
+      Vector("template-recipe-grouped-v2.json"),
+      codecLaw(templates, "grouped template recipe")
+    ),
+    Entry(
+      DecompositionCodecDefinitions.plan,
+      Kind.Document,
+      Vector(
+        "decomposition-ols-plan-v1.json",
+        "decomposition-nnls-plan-v1.json",
+        "decomposition-mixture-plan-v1.json"
+      ),
+      codecLaw(() => new DecompositionCodecLawSuite, "decomposition plan")
+    ),
+    Entry(
+      DecompositionCodecDefinitions.result,
+      Kind.Document,
+      Vector(
+        "decomposition-ols-result-v1.json",
+        "decomposition-nnls-result-v1.json",
+        "decomposition-mixture-result-v1.json"
+      ),
+      codecLaw(() => new DecompositionCodecLawSuite, "decomposition result")
     )
   ) ++ methodPlans.map((id, fixture) =>
     Entry(
@@ -429,23 +562,6 @@ object SchemaRegistry:
       Kind.Document,
       Vector("temporal-study-v1.json"),
       codecLaw(plans, "temporal study plan")
-    ),
-    Entry(
-      TemplateRecipeCodecs.schema,
-      Kind.Document,
-      Vector(
-        "template-recipe-v1.json",
-        "template-recipe-lm-v1.json",
-        "template-recipe-maps-v1.json"
-      ),
-      codecLaw(templates, "fixed template recipe") ++
-        codecLaw(templates, "map template recipe")
-    ),
-    Entry(
-      get(DefinitionId.of("eyes4s.template-recipe", 2)),
-      Kind.Document,
-      Vector("template-recipe-grouped-v2.json"),
-      codecLaw(templates, "grouped template recipe")
     )
   )
 
@@ -775,32 +891,32 @@ class SchemaRegistryJvmSuite extends munit.FunSuite:
     // A shipped codec with a second rung whose version was never registered:
     // the ladder is found from the codec, not from a list.
     val onlyV1 = entries.filterNot(e =>
-      e.id == StudyCodecDefinitions.studyV2 || e.id == StudyCodecDefinitions.studyV3
+      e.id == StudyCodecDefinitions.studyV2 || e.id == StudyCodecDefinitions.studyV3 || e.id == StudyCodecDefinitions.studyV4
     )
     assert(
       versionProblems(onlyV1, SchemaRegistry.versioned(onlyV1, resource)).exists(
         _.startsWith(
-          "eyes4s.study ladder has versions Vector(1, 2, 3), but Vector(1) are registered"
+          "eyes4s.study ladder has versions Vector(1, 2, 3, 4), but Vector(1) are registered"
         )
       )
     )
     // A schema with two registered versions and no ladder.
     assertEquals(
       versionProblems(entries, versioned.filterNot(_ == study)),
-      Vector("eyes4s.study has versions Vector(1, 2, 3) but no registered ladder")
+      Vector("eyes4s.study has versions Vector(1, 2, 3, 4) but no registered ladder")
     )
     // A version declared and registered without extending the ladder.
-    val v4 = Entry(DefinitionId.builtIn("eyes4s.study", 4), Kind.Document, Vector(), Vector())
+    val v5 = Entry(DefinitionId.builtIn("eyes4s.study", 5), Kind.Document, Vector(), Vector())
     assert(
-      versionProblems(entries :+ v4, versioned)
+      versionProblems(entries :+ v5, versioned)
         .exists(
           _.startsWith(
-            "eyes4s.study ladder has versions Vector(1, 2, 3), but Vector(1, 2, 3, 4)"
+            "eyes4s.study ladder has versions Vector(1, 2, 3, 4), but Vector(1, 2, 3, 4, 5)"
           )
         )
     )
     assert(
-      versionProblems(entries :+ v4, versioned).contains("eyes4s.study@4 has no pinned fixture")
+      versionProblems(entries :+ v5, versioned).contains("eyes4s.study@5 has no pinned fixture")
     )
     // A version whose fixtures are all withdrawn.
     val withoutV1 = study.copy(ladders =
@@ -827,10 +943,17 @@ class SchemaRegistryJvmSuite extends munit.FunSuite:
       .next(
         p => cosine.earliest(p).version <= 2,
         json => cosine.upcast(v2, json).fold(_ => json, _._2)
+      )(cosine.writeAt(cosine.versions(2), _))(cosine.readAt(cosine.versions(2), _))
+      .next(
+        _.expectedUnmatched.isEmpty,
+        json => cosine.upcast(cosine.versions(2), json).fold(_ => json, _._2)
       )(cosine.writeAt(cosine.latest, _))(cosine.readAt(cosine.latest, _))
     val broken =
       study.copy(ladders =
-        Vector(Rungs(dropped, Vector("study-v1.json", "study-v2.json", "study-v3.json")))
+        Vector(
+          Rungs(dropped, Vector("study-v1.json", "study-v2.json", "study-v3.json")),
+          Rungs(StudyCodecs.trialCosine[Px].ladder, Vector("study-v4.json"))
+        )
       )
     assertEquals(
       versionProblems(entries, versioned.map(v => if v == study then broken else v))
@@ -995,10 +1118,28 @@ private object Decoders:
     def study: VersionedCodec[?] =
       method.fold(StudyCodecs.cosine[Px].codec)(StudyCodecs.similarity[Px](_).codec)
     id match
-      case DefinitionId.study           => Some(study)
-      case DefinitionId.studyInput      => Some(StudyInputCodecs.study[Px].input)
-      case DefinitionId.admissionLedger => Some(StudyInputCodecs.study[Px].ledger)
-      case StudyCodecDefinitions.studyV2
+      case ScanpathStudyDefinitions.plan         => Some(ScanpathStudyLawFixture.codec.plans)
+      case ScanpathStudyDefinitions.result       => Some(ScanpathStudyLawFixture.codec.results)
+      case ScanpathMethodCodecDefinitions.method => Some(ScanpathMethodLawFixture.codec)
+      case PointSamplingFamilyDefinitions.plan   => Some(PointFamilyCodecFixture.codec.plans)
+      case PointSamplingFamilyDefinitions.result => Some(PointFamilyCodecFixture.codec.results)
+      case EpochCodecDefinitions.plan            => Some(EpochCodecFixture.codec)
+      case DefinitionId.study                    => Some(study)
+      case DefinitionId.studyInput               => Some(StudyInputCodecs.study[Px].input)
+      case DefinitionId.admissionLedger          => Some(StudyInputCodecs.study[Px].ledger)
+      case DecompositionCodecDefinitions.plan    =>
+        Some(DecompositionFamilyCodecFixture.codec.plans)
+      case DecompositionCodecDefinitions.result =>
+        Some(DecompositionFamilyCodecFixture.codec.results)
+      case TemplateFitCodecDefinitions.fixedPlan => Some(TemplateFamilyCodecFixture.fixed.plans)
+      case TemplateFitCodecDefinitions.fixedResult =>
+        Some(TemplateFamilyCodecFixture.fixed.results)
+      case TemplateFitCodecDefinitions.meanMapPlan =>
+        Some(TemplateFamilyCodecFixture.meanMap.plans)
+      case TemplateFitCodecDefinitions.meanMapResult =>
+        Some(TemplateFamilyCodecFixture.meanMap.results)
+      case StudyCodecDefinitions.studyV2 | StudyCodecDefinitions.studyV3 |
+          StudyCodecDefinitions.studyV4
           if document.hcursor
             .downField("value")
             .downField("layout")
@@ -1009,8 +1150,9 @@ private object Decoders:
             StudyCodecs.trialSimilarity[Px](_).codec
           )
         )
-      case StudyCodecDefinitions.studyV2           => Some(StudyCodecs.cosine[Px].codec)
-      case StudyCodecDefinitions.studyV3           => Some(StudyCodecs.cosine[Px].codec)
+      case StudyCodecDefinitions.studyV2 => Some(StudyCodecs.cosine[Px].codec)
+      case StudyCodecDefinitions.studyV3 | StudyCodecDefinitions.studyV4 =>
+        Some(StudyCodecs.cosine[Px].codec)
       case StudyInputDefinitions.admissionLedgerV2 =>
         Some(StudyInputCodecs.study[Px].ledger)
       case InventoryDefinitions.admissionLedgerV3 =>

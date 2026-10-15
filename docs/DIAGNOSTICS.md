@@ -21,7 +21,7 @@ the key type of the trials the diagnostic names: `Nothing` for a family that
 names none, the study key for a keyed family. `Diagnose` is contravariant in
 the error, so a case type such as `CodecError.Entry` projects through its
 enum's instance. The instances of the plan and every pure module below it are
-in `Diagnose`'s companion and need no import. The codec's families
+available through implicit companion search and need no import. The codec's families
 (`CodecError`, `ResolveError`, `SourceFailure`, `RelationMismatch`,
 `ManifestError`, `PayloadError`, `ByteDigestError`) project through
 `CodecDiagnostics`, the results module's (report findings and refusals,
@@ -346,6 +346,7 @@ fails after rewriting, so review the change and run it again.
 | `plan.matched-cardinality` | `MatchedCardinality` | `matched`, `focalDigests`, `referenceGroups` |
 | `plan.unmatched-focal-refused` | `UnmatchedFocalRefused` | `focalDigests` |
 | `plan.initial-fixations` | `InitialFixations` | `underlying` |
+| `plan.expected-unmatched-selection` | `ExpectedUnmatchedSelection` | `column`, `value`, `reason` |
 
 ### `study-failure` — `StudyFailure`
 
@@ -839,6 +840,7 @@ fails after rewriting, so review the change and run it again.
 | `aoi.frame-conflict` | `FrameConflict` | `underlying` |
 | `aoi.resolution-grid-failure` | `ResolutionGridFailure` | `frame`, `nx`, `ny`, `underlying` |
 | `aoi.observed-overlap` | `ObservedOverlap` | `frame`, `sampleIndex`, `x`, `y`, `areas` |
+| `aoi.observed-fixation-overlap` | `ObservedFixationOverlap` | `frame`, `fixationIndex`, `x`, `y`, `areas` |
 
 ### `descriptor` — `DescriptorError`
 
@@ -1307,6 +1309,7 @@ fails after rewriting, so review the change and run it again.
 | `point-sampling.point` | `Point` | `error` |
 | `point-sampling.insufficient` | `Insufficient` | `level`, `requested`, `successful`, `minimum` |
 | `point-sampling.non-finite` | `NonFinite` | `level`, `index`, `value` |
+| `point-sampling.at-trial` | `AtTrial` | `source`, `template`, `underlying` |
 
 ### `recipe-parameter` — `RecipeParameterError`
 
@@ -1325,6 +1328,9 @@ fails after rewriting, so review the change and run it again.
 | `recipe-parameter.unknown-token` | `UnknownToken` | `field`, `token`, `options` |
 | `recipe-parameter.undeclared-window-frame` | `UndeclaredWindowFrame` | `admission` |
 | `recipe-parameter.pairing` | `Pairing` | `error` |
+| `recipe-parameter.point-sampling` | `PointSampling` | `error` |
+| `recipe-parameter.least-squares` | `LeastSquares` | `error` |
+| `recipe-parameter.scanpath` | `Scanpath` | `error` |
 
 ### `repetition-plan` — `RepetitionPlanError`
 
@@ -1390,6 +1396,7 @@ fails after rewriting, so review the change and run it again.
 | `template.numerical` | `Numerical` | `key`, `prediction`, `response` |
 | `template.evaluation` | `Evaluation` | `failed`, `total` |
 | `template.aggregate` | `Aggregate` | `operation`, `value` |
+| `template.split-groups` | `SplitGroups` | `values` |
 
 ### `analysis-finding` — `AnalysisFinding`
 
@@ -1535,6 +1542,29 @@ fails after rewriting, so review the change and run it again.
 | `navigation.no-record` | `NoRecord` | `key`, `position`, `reason` |
 | `navigation.unknown-record` | `UnknownRecord` | `record` |
 | `navigation.not-admitted` | `NotAdmitted` | `record` |
+
+### `project-prerequisite` — `ProjectFinding`
+
+| Code | Case | Operands |
+|---|---|---|
+| `project-prerequisite.missing-recording` | `MissingRecording` | `key` |
+| `project-prerequisite.missing-viewing` | `MissingViewing` |  |
+| `project-prerequisite.missing-areas` | `MissingAreas` | `key` |
+| `project-prerequisite.missing-grid` | `MissingGrid` | `key` |
+| `project-prerequisite.missing-observed-timeline` | `MissingObservedTimeline` | `trial`, `selector`, `expected` |
+| `project-prerequisite.anchor` | `Anchor` | `underlying` |
+| `project-prerequisite.missing-synchronization` | `MissingSynchronization` | `trial`, `selector`, `source`, `target`, `maximum`, `available` |
+| `project-prerequisite.imprecise-synchronization` | `ImpreciseSynchronization` | `trial`, `selector`, `source`, `target`, `maximum`, `best` |
+| `project-prerequisite.missing-schema` | `MissingSchema` | `id`, `availableVersions` |
+
+### `scanpath-comparison` — `ScanpathComparisonError`
+
+| Code | Case | Operands |
+|---|---|---|
+| `scanpath-comparison.parameter` | `Parameter` | `name`, `value` |
+| `scanpath-comparison.alignment-size` | `AlignmentSize` | `leftFixations`, `rightFixations`, `cells`, `maximum` |
+| `scanpath-comparison.alignment` | `Alignment` | `underlying` |
+| `scanpath-comparison.fixations` | `Fixations` | `underlying` |
 
 ### `codec` — `CodecError`
 
