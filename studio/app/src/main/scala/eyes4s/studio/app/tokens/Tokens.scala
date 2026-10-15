@@ -129,6 +129,14 @@ enum PaletteToken(val cssName: String) derives CanEqual:
   /** Filled control marks on paper: only inside a [[FigControl]] outline. */
   case FigControlFill extends PaletteToken("fig-control-fill")
 
+  /** The missing-asset hatch on paper (DESIGN_SPEC section 15): a figure
+    * map tile's cells without coverage. A figure is drawn without an app
+    * theme, so it wears the light theme's warn pair under paper names:
+    * [[FigHatch]] stripes, always over [[FigHatchGround]].
+    */
+  case FigHatch       extends PaletteToken("fig-hatch")
+  case FigHatchGround extends PaletteToken("fig-hatch-ground")
+
 /** Any token, for code that treats the three families alike. */
 enum TokenRef derives CanEqual:
   case Themed(token: ThemedToken)
@@ -165,7 +173,10 @@ final case class DivergingRamp(negative: Colour, zero: Colour, positive: Colour)
   *   - `fig-control` is the figure-safe `#B86E0E` (3.98:1 on paper); the
   *     board's `#D98A1C` (2.76:1) becomes `fig-control-fill`, drawn only inside
   *     a `fig-control` outline;
-  *   - `isoline-ink` and `isoline-case` are new (DESIGN_SPEC section 12).
+  *   - `isoline-ink` and `isoline-case` are new (DESIGN_SPEC section 12);
+  *   - `fig-hatch` and `fig-hatch-ground` are new: the light theme's
+  *     `warn-text` and `warn-soft`, the missing-asset hatch of a figure's map
+  *     tile (DESIGN_SPEC section 15; slice S27).
   *
   * Everything else is generated from here: the JavaFX looked-up colours
   * (`studio.css`, `studio-dark.css`), the web custom properties
@@ -218,6 +229,8 @@ object Tokens:
       case PaletteToken.FigMatch       => Colour.srgb(0x2f6db5)
       case PaletteToken.FigControl     => Colour.srgb(0xb86e0e)
       case PaletteToken.FigControlFill => Colour.srgb(0xd98a1c)
+      case PaletteToken.FigHatch       => Colour.srgb(0x7a4f00)
+      case PaletteToken.FigHatchGround => Colour.srgb(0xfbf1d9)
 
   /** Any token's value in a theme, on a stage. */
   def resolve(ref: TokenRef, theme: Theme, stage: StageVariant): Colour =
