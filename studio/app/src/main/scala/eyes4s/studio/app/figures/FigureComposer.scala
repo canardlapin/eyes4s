@@ -58,7 +58,7 @@ object PageLayout:
     (width.mm - GutterMm * (width.columns - 1)) / width.columns
 
 /** The page zoom: a percentage of the board's 3.5 px per millimetre. */
-final case class Zoom private (percent: Int) derives CanEqual:
+sealed abstract case class Zoom private (percent: Int) derives CanEqual:
   def pxPerMm: Double = Zoom.BasePxPerMm * percent / 100.0
 
   /** "100% · 3.5 px/mm". */
@@ -68,6 +68,9 @@ final case class Zoom private (percent: Int) derives CanEqual:
   def out: Zoom = Zoom.Levels.findLast(_ < percent).fold(this)(Zoom(_))
 
 object Zoom:
+  private def apply(percent: Int): Zoom =
+    new Zoom(percent) {}
+
   val BasePxPerMm: Double = 3.5
   val Levels: Vector[Int] = Vector(50, 75, 100, 150, 200)
   val Default: Zoom       = Zoom(100)
@@ -276,7 +279,7 @@ final case class ComposerVM(
   * a panel shows is the backend's, read for the figure's bound run (never
   * the shown or latest one). Pure; a host performs the effects.
   */
-final case class FigureComposer private (
+sealed abstract case class FigureComposer private (
     binding: FigureBinding,
     width: PageWidth,
     zoom: Zoom,
@@ -295,8 +298,54 @@ final case class FigureComposer private (
     bundle: Set[BundleItem],
     bundled: Option[String],
     fixations: Map[(AnalysisRevision, TrialKey), Either[String, TrialFixations]],
-    reports: Map[(RunId, ReportingSpec, ScaleIndex), Either[String, ReportView]] = Map.empty
+    reports: Map[(RunId, ReportingSpec, ScaleIndex), Either[String, ReportView]]
 ) derives CanEqual:
+
+  private def copy(
+      binding: FigureBinding = this.binding,
+      width: PageWidth = this.width,
+      zoom: Zoom = this.zoom,
+      tab: ComposerTab = this.tab,
+      summaries: Map[RunId, SummaryAnswer] = this.summaries,
+      references: Map[(RunId, ScaleIndex, TrialKey), Either[String, ReferenceScores]] =
+        this.references,
+      displays: Map[DatasetRevision, Either[String, DisplaySource]] = this.displays,
+      maps: Map[(RunId, ScaleIndex, TrialKey), Either[String, DensityGrid]] = this.maps,
+      asked: Set[ComposerRead] = this.asked,
+      problem: Option[String] = this.problem,
+      appearance: Map[FigureId, FigureAppearance] = this.appearance,
+      greyscale: Boolean = this.greyscale,
+      format: ExportFormat = this.format,
+      exported: Option[String] = this.exported,
+      methods: FigureMethods = this.methods,
+      bundle: Set[BundleItem] = this.bundle,
+      bundled: Option[String] = this.bundled,
+      fixations: Map[(AnalysisRevision, TrialKey), Either[String, TrialFixations]] =
+        this.fixations,
+      reports: Map[(RunId, ReportingSpec, ScaleIndex), Either[String, ReportView]] =
+        this.reports
+  ): FigureComposer =
+    FigureComposer(
+      binding,
+      width,
+      zoom,
+      tab,
+      summaries,
+      references,
+      displays,
+      maps,
+      asked,
+      problem,
+      appearance,
+      greyscale,
+      format,
+      exported,
+      methods,
+      bundle,
+      bundled,
+      fixations,
+      reports
+    )
   def appearanceOf(figure: FigureId): FigureAppearance =
     appearance.getOrElse(figure, FigureAppearance.default)
 
@@ -305,6 +354,49 @@ final case class FigureComposer private (
     if failed then copy(asked = asked - read) else this
 
 object FigureComposer:
+  private def apply(
+      binding: FigureBinding,
+      width: PageWidth,
+      zoom: Zoom,
+      tab: ComposerTab,
+      summaries: Map[RunId, SummaryAnswer],
+      references: Map[(RunId, ScaleIndex, TrialKey), Either[String, ReferenceScores]],
+      displays: Map[DatasetRevision, Either[String, DisplaySource]],
+      maps: Map[(RunId, ScaleIndex, TrialKey), Either[String, DensityGrid]],
+      asked: Set[ComposerRead],
+      problem: Option[String],
+      appearance: Map[FigureId, FigureAppearance],
+      greyscale: Boolean,
+      format: ExportFormat,
+      exported: Option[String],
+      methods: FigureMethods,
+      bundle: Set[BundleItem],
+      bundled: Option[String],
+      fixations: Map[(AnalysisRevision, TrialKey), Either[String, TrialFixations]],
+      reports: Map[(RunId, ReportingSpec, ScaleIndex), Either[String, ReportView]] = Map.empty
+  ): FigureComposer =
+    new FigureComposer(
+      binding,
+      width,
+      zoom,
+      tab,
+      summaries,
+      references,
+      displays,
+      maps,
+      asked,
+      problem,
+      appearance,
+      greyscale,
+      format,
+      exported,
+      methods,
+      bundle,
+      bundled,
+      fixations,
+      reports
+    ) {}
+
   /** Methods counts and participants.csv follow the first participant panel's declared scale,
     * or the first estimation scale when the figure has no participant panel.
     */

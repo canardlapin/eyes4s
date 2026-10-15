@@ -1,0 +1,160 @@
+{
+  "schema": 1,
+  "date": "2026-10-15",
+  "issue": "invariants-studio-ui",
+  "parent": "bd-01M3FKPR5ZWQR82670WCDEV1Q8",
+  "base_sha": "12071c9cd8d5ce78856d37efcf9f21ba439a637f",
+  "scope": {
+    "public_private_constructor_products": 50,
+    "by_module": {
+      "app": 35,
+      "viz": 14,
+      "desktop": 1
+    },
+    "constructing_mirror_probes": 50,
+    "private_copy_probes": 15,
+    "positive_field_witnesses_for_mandatory_copy_arguments": 4,
+    "all_house_products_including_prior_slices": 279
+  },
+  "representation": "Sealed abstract private-constructor case products with same-visibility private concrete factories; checked public apply methods remain distinct from private build factories. No constructing mirrors or public unchecked copies. Fields, extractors, equality/hash and read-only Product behavior are preserved.",
+  "verification": {
+    "strict_test_client_compile": [
+      "studioAppJVM",
+      "studioVizJVM",
+      "studioDesktop",
+      "studioAppJS",
+      "studioVizJS"
+    ],
+    "baseline_probe_totals": [
+      47,
+      17,
+      1,
+      47,
+      17
+    ],
+    "restored_affected_test_totals": [
+      752,
+      752,
+      304,
+      304,
+      65
+    ],
+    "restored_affected_total": 2177,
+    "existing_ignored_tests": "One app test per runtime; unchanged.",
+    "desktop_affected_suites": [
+      "consumer.StudioDesktopDomainProductMirrorSuite",
+      "CanvasPlotHostFxSuite",
+      "InputAdapterFxSuite",
+      "TrialViewFxSuite",
+      "TrialViewMapFxSuite"
+    ],
+    "style_and_boundaries": "passed",
+    "headless": "Default Monocle, visible=false, FxRunLock preserved.",
+    "mutation": {
+      "mutants": [
+        {
+          "mutation": "representation",
+          "source": "studio/app/src/main/scala/eyes4s/studio/app/maps/MapPalette.scala",
+          "original_sha256": "27061223c619bc058d2280a65c6fd74fb3df6d4d83664c56f4bae19484c443c4",
+          "mutant_sha256": "ee4d699b61c9ded5fbe26e18fde294f93254424af212179e0964f03faa974a75",
+          "runs": [
+            {
+              "platform": "JVM",
+              "failed_tests": 1,
+              "test_classes_recompiled": true,
+              "log_sha256": "bb0b70afa626820dfdeff07407a3d08ea35fb3711726bf4d73c65a5768a3c83a"
+            },
+            {
+              "platform": "JS",
+              "failed_tests": 1,
+              "test_classes_recompiled": true,
+              "log_sha256": "6fe0000ec2e034e4a94e6001289ba13d76d8c92bdedb9bfb5e42a3b268633970"
+            }
+          ],
+          "restored_sha256": "27061223c619bc058d2280a65c6fd74fb3df6d4d83664c56f4bae19484c443c4"
+        },
+        {
+          "mutation": "copy-visibility",
+          "source": "studio/app/src/main/scala/eyes4s/studio/app/maps/MapRaster.scala",
+          "original_sha256": "bffad9cccd0f206af34815e903fbb20bd66387faef2137c308b009d968d20204",
+          "mutant_sha256": "945b9e9ec28fb63b77981a3e78ef5fadbd77ddaddd7d283580742212c90ff58b",
+          "runs": [
+            {
+              "platform": "JVM",
+              "failed_tests": 1,
+              "test_classes_recompiled": true,
+              "log_sha256": "f3896a98776ce3bc0603b91530c83c07a6bf8f1ac74f8c840aec7554337c92f4"
+            },
+            {
+              "platform": "JS",
+              "failed_tests": 1,
+              "test_classes_recompiled": true,
+              "log_sha256": "8747eac47a530545494d35edcb94af37293fbe8310036bb11a33454a9c93d94b"
+            }
+          ],
+          "restored_sha256": "bffad9cccd0f206af34815e903fbb20bd66387faef2137c308b009d968d20204"
+        }
+      ]
+    }
+  },
+  "development_corrections": [
+    "Preserved multiline derives clause placement in JobBoard.",
+    "Separated four checked public apply methods from private construction factories (PlotSource, SceneId, PlotScene, PlotSurface).",
+    "Removed unused abstract-constructor defaults and defaults always supplied to private copy helpers; trusted factory/smart defaults preserved.",
+    "Updated package-trusted layout constructor callers and strengthened every private-copy probe with required arguments."
+  ],
+  "source_sha256": {
+    "studio/app/src/main/scala/eyes4s/studio/app/AppModel.scala": "e57f93b8e48e0a2ad9aa73d5c2155860b5d623c041879a8254751abf0192504e",
+    "studio/app/src/main/scala/eyes4s/studio/app/driver/StudioDriver.scala": "863125acc736d457fae715edecb6aa4cd6094122642973e418c7aa70695ffe48",
+    "studio/app/src/main/scala/eyes4s/studio/app/figures/FigureBinding.scala": "d7d394758e3c91a06a4508b87c374a6f0a6101a1fd6e33620e18e595ad2f1364",
+    "studio/app/src/main/scala/eyes4s/studio/app/figures/FigureComposer.scala": "1a2540040ee514744194fb9a7552ed39057bb9f87d5b81e827719d879ab28d71",
+    "studio/app/src/main/scala/eyes4s/studio/app/figures/FigureMethods.scala": "f9630307864b652b9ba35c7e1f5312727f81975b78932f9e8522f3aa9f81fa2a",
+    "studio/app/src/main/scala/eyes4s/studio/app/figures/FigurePanels.scala": "8c4525f60d6a91ffe0d3b8fc50d014c9b2c35f6e9298d206d8eaad2fa950c478",
+    "studio/app/src/main/scala/eyes4s/studio/app/geometry/GeometryPictures.scala": "164e090e8612af255f83a726368e6d1515bd0ca1fffa041ff4e43553f8097682",
+    "studio/app/src/main/scala/eyes4s/studio/app/icons/SvgPath.scala": "dd22418ac9c336e46cc0d68c84731b47e9f9c814f5dd9475cc0d5a8285171d3a",
+    "studio/app/src/main/scala/eyes4s/studio/app/importing/ImportWizard.scala": "b350f647a27da779076277103b3d79e8fa13e1b81cc06a1e7a872a4fd791e330",
+    "studio/app/src/main/scala/eyes4s/studio/app/jobs/JobBoard.scala": "20d5b6fde73c19ff46266de14fd8505cb30cf1a99bf29177ca0ae85f01d03c5d",
+    "studio/app/src/main/scala/eyes4s/studio/app/keys/CommandRegistry.scala": "357717c9c1f3da04658f496b814a8dd4c9a913e4f8200cb1615405baaac2d19b",
+    "studio/app/src/main/scala/eyes4s/studio/app/layout/LayoutSpec.scala": "e374bcaf6be67dbde42c71bf26ad1ca952bac121ed7b59340725f83f4d5f9810",
+    "studio/app/src/main/scala/eyes4s/studio/app/layout/StudioLayouts.scala": "3c7fa491fa846ebda0c1b95a4e24e26a2df9a7525552298d9bd4ae829057a6c9",
+    "studio/app/src/main/scala/eyes4s/studio/app/maps/MapGrid.scala": "1080827d65e80f7ec77a6d164dd4bda2ff68e00cd9d02ba71829b9fa697dcb70",
+    "studio/app/src/main/scala/eyes4s/studio/app/maps/MapPalette.scala": "27061223c619bc058d2280a65c6fd74fb3df6d4d83664c56f4bae19484c443c4",
+    "studio/app/src/main/scala/eyes4s/studio/app/maps/MapRaster.scala": "bffad9cccd0f206af34815e903fbb20bd66387faef2137c308b009d968d20204",
+    "studio/app/src/main/scala/eyes4s/studio/app/nav/Navigation.scala": "7d2e46bc676966173d45d5852b73dde0581d7be626efbca3179db9eccf102fa4",
+    "studio/app/src/main/scala/eyes4s/studio/app/plot/PlotSource.scala": "daf049f0625f0c2bd55b363804dae178b83464f329e8ebcf554bcb2232fe4526",
+    "studio/app/src/main/scala/eyes4s/studio/app/plot/Roving.scala": "d6427a59f1d1b67714fcf7dca590529bfdb98aef9bac85770823a989e6f2c2f6",
+    "studio/app/src/main/scala/eyes4s/studio/app/plot/TableTwin.scala": "25fc987f7a9f9e0fa3bfcf9fd9b242f69ef99899dc6d4fc6a35c18cc0a9c468e",
+    "studio/app/src/main/scala/eyes4s/studio/app/plot/Timeline.scala": "8bfa6096775170b33b4dfa14b168aead9cd6bf8ba050aaeeb1eae7525f35f5db",
+    "studio/app/src/main/scala/eyes4s/studio/app/project/ProjectLifecycle.scala": "9ecac792fa23e20502258bff5ec19f411606ea28c3c17bb856a4426893ece50d",
+    "studio/app/src/main/scala/eyes4s/studio/app/runs/RunStoragePanel.scala": "e21b7e6dfdb427a606cc897fef5fae57f8c7b9bcceb1bdb7bf94ce4c9738ab7d",
+    "studio/app/src/main/scala/eyes4s/studio/app/tokens/Colour.scala": "df2dd9a36b473cb6f3db1d84f68484a84fd223a5f73841b040ab47bff104ffc1",
+    "studio/app/src/test/scala/consumer/StudioAppDomainProductMirrorSuite.scala": "13a0237f0ce12c47cf70effc846f678eb9175f75d4fce92b73a9080ba6257472",
+    "studio/app/src/test/scala/eyes4s/studio/app/layout/TableTwinSuite.scala": "0ccb8f67877c935b3f7bb7b8ed87b0c4e0c976e2c3734c8beaa903fa4c7d9166",
+    "studio/desktop/src/main/scala/eyes4s/studio/desktop/plot/PlotFrame.scala": "6c06f44400b565c3229046439dcaab770a18273143c921c0ea82b0066614a9d3",
+    "studio/desktop/src/test/scala/consumer/StudioDesktopDomainProductMirrorSuite.scala": "edd0a8722b77822ef99686ba3dad7516ea0b47256d42e892b090ebd417e3f0b6",
+    "studio/viz/src/main/scala/eyes4s/studio/viz/figure/FigurePage.scala": "e5c8d021185fbc72add57fa58eb6bef897466109ea2213b7f199e48f473d8fca",
+    "studio/viz/src/main/scala/eyes4s/studio/viz/plot/Annotations.scala": "dcfee7d7e891a93743c8a9b66753b6f9c3f6b39217e02107cfcf48a31c11eb31",
+    "studio/viz/src/main/scala/eyes4s/studio/viz/plot/MarkInput.scala": "263b26e0c5ac0c196edd183e742307e52d69dcc0bd04fe18629f2e6cde72191d",
+    "studio/viz/src/main/scala/eyes4s/studio/viz/plot/PlotKit.scala": "d49fe64b986983e764739fc4c6261e4ea9b8a1cbd7745982a2c6d3677a1e8d90",
+    "studio/viz/src/main/scala/eyes4s/studio/viz/plot/PlotScene.scala": "02a789d4181cf930e96234093dd8512d1ea83e7ecf3791cbdae7f6de86554241",
+    "studio/viz/src/main/scala/eyes4s/studio/viz/plot/PlotTransform.scala": "44efdfa89f1ddf8b25df11ecd5794ee2fcdd9a39b3c75db5924e5f2ff79a3eee",
+    "studio/viz/src/main/scala/eyes4s/studio/viz/trial/TrialScene.scala": "50449cb9bf52a74b69642033e7a3e5d16c2144358077a4c1ada781b16e0529db",
+    "studio/viz/src/test/scala/consumer/StudioVizDomainProductMirrorSuite.scala": "bc594b14d596504ce0ae2aaad40451acce167274c071a609768860a5a23a1fae"
+  },
+  "logs_sha256": {
+    "eyes4s-invariants-studio-ui-initial.log": "12142066fed09adf2a64540433aa6f2bd71ec1388f356855a6c33770e1606a98",
+    "eyes4s-invariants-studio-ui-compile-attempt2.log": "c7b27a8a4c9e3010a92cf2a155b2fd7610b44cbc0a11065afee9a121ab96be70",
+    "eyes4s-invariants-studio-ui-compile-attempt3.log": "fb02bc5359ab250eba06ffbc2483a95b48f7cdca6685702e74c6059a1d11065b",
+    "eyes4s-invariants-studio-ui-compile-attempt4.log": "16710126fea37b635d18e5f24f4a457db89560e6ffb07bd312f8e7fa17292e26",
+    "eyes4s-invariants-studio-ui-compile-attempt5.log": "a3ab1ec630a65fe1625c073a90b8be954e50ab5200672d2fae4266f8a2d915bf",
+    "eyes4s-invariants-studio-ui-compile-attempt6.log": "58032f9ec3aff470640fa69d6036e4b46103c052c6f2e998c957dc85351e20f7",
+    "eyes4s-invariants-studio-ui-probes.log": "a4bad62faf00d21f47fb107d4db4a6124c18bd6d00d742286488ff9084e890fd",
+    "eyes4s-invariants-studio-ui-restored.log": "14bd71ab08a75d285220c1b79996c8bb5d2809a313b53889bcda28d4d150b675",
+    "eyes4s-invariants-studio-ui-style-boundaries.log": "5972338929e11c9d6d9be4dafb9c466156638b958b040f4c0c2a1ffa440f8de9",
+    "eyes4s-invariants-studio-ui-mutant-representation-JVM.log": "bb0b70afa626820dfdeff07407a3d08ea35fb3711726bf4d73c65a5768a3c83a",
+    "eyes4s-invariants-studio-ui-mutant-representation-JS.log": "6fe0000ec2e034e4a94e6001289ba13d76d8c92bdedb9bfb5e42a3b268633970",
+    "eyes4s-invariants-studio-ui-mutant-copy-visibility-JVM.log": "f3896a98776ce3bc0603b91530c83c07a6bf8f1ac74f8c840aec7554337c92f4",
+    "eyes4s-invariants-studio-ui-mutant-copy-visibility-JS.log": "8747eac47a530545494d35edcb94af37293fbe8310036bb11a33454a9c93d94b"
+  },
+  "landing_status": "Reviewed final source slice awaiting combined qualification and landing. Parent invariant ticket closes only after all library/Core/UI slices land."
+}

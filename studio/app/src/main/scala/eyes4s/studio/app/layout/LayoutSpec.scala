@@ -54,17 +54,23 @@ private[layout] object Ids:
 /** A pane's identity, stable across layouts: a pane that appears in two
   * layouts of one perspective (Compare's scale profile) is one live view.
   */
-final case class PaneId private[layout] (value: String) derives CanEqual
+sealed abstract case class PaneId private[layout] (value: String) derives CanEqual
 
 object PaneId:
-  def of(value: String): Either[LayoutError, PaneId] =
-    Either.cond(Ids.valid(value), new PaneId(value), LayoutError.BadId(value))
+  private[layout] def apply(value: String): PaneId =
+    new PaneId(value) {}
 
-final case class LayoutId private[layout] (value: String) derives CanEqual
+  def of(value: String): Either[LayoutError, PaneId] =
+    Either.cond(Ids.valid(value), PaneId(value), LayoutError.BadId(value))
+
+sealed abstract case class LayoutId private[layout] (value: String) derives CanEqual
 
 object LayoutId:
+  private[layout] def apply(value: String): LayoutId =
+    new LayoutId(value) {}
+
   def of(value: String): Either[LayoutError, LayoutId] =
-    Either.cond(Ids.valid(value), new LayoutId(value), LayoutError.BadId(value))
+    Either.cond(Ids.valid(value), LayoutId(value), LayoutError.BadId(value))
 
 /** What a pane is, which fixes its keyboard contract (DESIGN_SPEC section
   * 10): a plot is one focus stop with a roving cursor and always has a

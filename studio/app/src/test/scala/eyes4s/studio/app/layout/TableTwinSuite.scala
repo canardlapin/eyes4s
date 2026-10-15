@@ -74,7 +74,7 @@ class TableTwinSuite extends munit.FunSuite:
 
   test("a twin is a sibling in the same group, by convention or by name, never across groups") {
     import cats.data.NonEmptyVector
-    def decl(id: String, kind: PaneKind) = PaneDecl(new PaneId(id), PaneTitle.Fixed(id), kind)
+    def decl(id: String, kind: PaneKind) = PaneDecl(PaneId(id), PaneTitle.Fixed(id), kind)
     def grp(ds: PaneDecl*)               =
       LayoutNode.Group(NonEmptyVector.fromVectorUnsafe(ds.toVector), 0, false)
     val (a, aTable) = (decl("t.a", PaneKind.Plot), decl("t.a.table", PaneKind.Table))
@@ -84,7 +84,7 @@ class TableTwinSuite extends munit.FunSuite:
       NonEmptyVector.of(grp(a, aTable, b) -> 0.5, grp(bTable) -> 0.5)
     )
     val layout = PerspectiveLayout(
-      new LayoutId("t"),
+      LayoutId("t"),
       eyes4s.studio.core.document.Perspective.Explore,
       root,
       eyes4s.studio.app.text.MessageId.TabShowTable
@@ -95,9 +95,9 @@ class TableTwinSuite extends munit.FunSuite:
     assertEquals(StudioLayouts.twin(layout, b.id), None)
     assertEquals(StudioLayouts.twin(layout, bTable.id), None)
     // The scale ladder's table is the Pairs table, by name.
-    val compare = StudioLayouts.spec.layout(new LayoutId("compare.query")).get
+    val compare = StudioLayouts.spec.layout(LayoutId("compare.query")).get
     assertEquals(
-      StudioLayouts.twin(compare, new PaneId("compare.contrast")).map(_.id.value),
+      StudioLayouts.twin(compare, PaneId("compare.contrast")).map(_.id.value),
       Some("compare.pairs")
     )
   }

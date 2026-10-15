@@ -75,13 +75,16 @@ enum PlotSceneError derives CanEqual:
   * same scene re-laid out at another size, and an input adapter (S4.2) can key
   * a picking plan to the scene it was compiled from.
   */
-final case class SceneId private (value: String) derives CanEqual
+sealed abstract case class SceneId private (value: String) derives CanEqual
 
 object SceneId:
+  private def build(value: String): SceneId =
+    new SceneId(value) {}
+
   def apply(value: String): Either[PlotSceneError, SceneId] =
     val trimmed = value.trim
     if trimmed.isEmpty then Left(PlotSceneError.BlankSceneId(value))
-    else Right(new SceneId(trimmed))
+    else Right(build(trimmed))
 
 /** A position in a scene's data coordinates, the units of its panel's scales. */
 final case class DataPoint(x: Double, y: Double) derives CanEqual
@@ -93,7 +96,7 @@ final case class DataPoint(x: Double, y: Double) derives CanEqual
   * its marks and any picking resolve positions through the same frame. The
   * panel is axis-aligned and both of its domains have positive width.
   */
-final case class DataPanel private (viewport: Viewport):
+sealed abstract case class DataPanel private (viewport: Viewport):
 
   /** The data range across the panel, left to right. */
   def xDomain: Interval = viewport.xScale
@@ -105,6 +108,9 @@ final case class DataPanel private (viewport: Viewport):
   def yDirection: YDirection = viewport.yDirection
 
 object DataPanel:
+  private def apply(viewport: Viewport): DataPanel =
+    new DataPanel(viewport) {}
+
   def apply(sceneId: SceneId, viewport: Viewport): Either[PlotSceneError, DataPanel] =
     def domain(axis: String, interval: Interval): Either[PlotSceneError, Unit] =
       Either.cond(
@@ -120,7 +126,7 @@ object DataPanel:
       )
       _ <- domain("x", viewport.xScale)
       _ <- domain("y", viewport.yScale)
-    yield new DataPanel(viewport)
+    yield DataPanel(viewport)
 
 /** A scene built in studio-viz, ready for a canvas host.
   *
@@ -130,7 +136,14 @@ object DataPanel:
   * resolution-independent: a host lays it out again for each surface without
   * changing its data geometry.
   */
-final case class PlotScene private (id: SceneId, scene: Scene, panel: DataPanel):
+sealed abstract case class PlotScene private (id: SceneId, scene: Scene, panel: DataPanel):
+
+  private def copy(
+      id: SceneId = this.id,
+      scene: Scene,
+      panel: DataPanel = this.panel
+  ): PlotScene =
+    PlotScene.build(id, scene, panel)
 
   /** The same scene carrying `semantics` (S4.6): its title, alt text and
     * summary, which an SVG export and a host's accessible text read.
@@ -139,9 +152,12 @@ final case class PlotScene private (id: SceneId, scene: Scene, panel: DataPanel)
     copy(scene = scene.withSemantics(semantics))
 
 object PlotScene:
+  private def build(id: SceneId, scene: Scene, panel: DataPanel): PlotScene =
+    new PlotScene(id, scene, panel) {}
+
   def apply(id: SceneId, scene: Scene, panel: DataPanel): Either[PlotSceneError, PlotScene] =
     Either.cond(
       scene.grobs.exists(_.viewport.contains(panel.viewport)),
-      new PlotScene(id, scene, panel),
+      PlotScene.build(id, scene, panel),
       PlotSceneError.PanelNotInScene(id.value, scene.grobs.size)
     )

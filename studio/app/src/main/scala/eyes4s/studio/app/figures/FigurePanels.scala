@@ -89,7 +89,7 @@ object PanelTemplate:
   * the backend scored fewer), so a single control's score is never read as
   * the control mean B.
   */
-final case class HighestControl private (pair: PairScore, scored: Int, members: Int)
+sealed abstract case class HighestControl private (pair: PairScore, scored: Int, members: Int)
     derives CanEqual:
   /** "highest of 19 controls", "highest of 12 scored of 19 controls". */
   def rank: String = s"$rankHead $rankTail"
@@ -106,6 +106,9 @@ final case class HighestControl private (pair: PairScore, scored: Int, members: 
   def rankTail: String = if scored == members then "controls" else s"of $members controls"
 
 object HighestControl:
+  private def apply(pair: PairScore, scored: Int, members: Int): HighestControl =
+    new HighestControl(pair, scored, members) {}
+
   /** The highest of `controls`, of `members` in all, when there is one. */
   def of(controls: Vector[PairScore], members: Int): Option[HighestControl] =
     controls

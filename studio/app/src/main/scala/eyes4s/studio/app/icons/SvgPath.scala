@@ -44,9 +44,12 @@ enum SvgPathError derives CanEqual:
 /** Parsed SVG path data (SVG 1.1 section 8.3): the grammar JavaFX `SVGPath`
   * reads. A value exists only for data that parses.
   */
-final case class SvgPath private (text: String, commands: List[PathCommand])
+sealed abstract case class SvgPath private (text: String, commands: List[PathCommand])
 
 object SvgPath:
+
+  private def apply(text: String, commands: List[PathCommand]): SvgPath =
+    new SvgPath(text, commands) {}
 
   private val arity: Map[Char, Int] =
     Map(

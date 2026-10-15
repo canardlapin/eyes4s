@@ -250,9 +250,12 @@ enum RowMarking derives CanEqual:
 final case class MarkedRow(ref: StudioRef, row: Int, marking: RowMarking) derives CanEqual
 
 /** A finite offset in logical pixels on the device axes (y down). */
-final case class PixelOffset private (dxPx: Double, dyPx: Double) derives CanEqual
+sealed abstract case class PixelOffset private (dxPx: Double, dyPx: Double) derives CanEqual
 
 object PixelOffset:
+  private def apply(dxPx: Double, dyPx: Double): PixelOffset =
+    new PixelOffset(dxPx, dyPx) {}
+
   val Zero: PixelOffset = PixelOffset(0.0, 0.0)
 
   /** The offset, if both parts are finite. */
@@ -277,7 +280,7 @@ object PixelOffset:
   * Every mark is its own named grob, so a named picking plan resolves a hit
   * to one mark, as a trial's fixation marks do (S4.2).
   */
-final case class PlotMark private (
+sealed abstract case class PlotMark private (
     first: MarkedRow,
     rest: Vector[MarkedRow],
     at: DataPoint,
@@ -285,10 +288,24 @@ final case class PlotMark private (
     order: Int,
     name: GraphicsName,
     nudgePx: PixelOffset,
-    summary: Option[String] = None,
-    lineRuns: Vector[Vector[DataPoint]] = Vector.empty,
-    box: Option[(DataPoint, DataPoint)] = None
+    summary: Option[String],
+    lineRuns: Vector[Vector[DataPoint]],
+    box: Option[(DataPoint, DataPoint)]
 ) derives CanEqual:
+
+  private def copy(
+      first: MarkedRow = this.first,
+      rest: Vector[MarkedRow] = this.rest,
+      at: DataPoint = this.at,
+      reachPx: Double = this.reachPx,
+      order: Int = this.order,
+      name: GraphicsName = this.name,
+      nudgePx: PixelOffset = this.nudgePx,
+      summary: Option[String] = this.summary,
+      lineRuns: Vector[Vector[DataPoint]] = this.lineRuns,
+      box: Option[(DataPoint, DataPoint)] = this.box
+  ): PlotMark =
+    PlotMark(first, rest, at, reachPx, order, name, nudgePx, summary, lineRuns, box)
 
   /** Every row the mark accounts for, first row first. */
   def rows: Vector[MarkedRow] = first +: rest
@@ -340,6 +357,20 @@ final case class PlotMark private (
     else Right(copy(summary = Some(text)))
 
 object PlotMark:
+
+  private def apply(
+      first: MarkedRow,
+      rest: Vector[MarkedRow],
+      at: DataPoint,
+      reachPx: Double,
+      order: Int,
+      name: GraphicsName,
+      nudgePx: PixelOffset,
+      summary: Option[String] = None,
+      lineRuns: Vector[Vector[DataPoint]] = Vector.empty,
+      box: Option[(DataPoint, DataPoint)] = None
+  ): PlotMark =
+    new PlotMark(first, rest, at, reachPx, order, name, nudgePx, summary, lineRuns, box) {}
 
   /** A mark of one row, placed at the row's values `at`. */
   def placed(
@@ -416,7 +447,7 @@ final case class Unplotted(ref: StudioRef, row: Int, reason: NoPosition) derives
   *
   * `title` names the plot's tab; `description` is its accessible summary.
   */
-final case class BuiltPlot private (
+sealed abstract case class BuiltPlot private (
     source: PlotSource,
     plot: PlotScene,
     title: String,
@@ -548,6 +579,17 @@ final case class BuiltPlot private (
 
 object BuiltPlot:
 
+  private def apply(
+      source: PlotSource,
+      plot: PlotScene,
+      title: String,
+      description: String,
+      encoding: PositionEncoding,
+      marks: Vector[PlotMark],
+      unplotted: Vector[Unplotted]
+  ): BuiltPlot =
+    new BuiltPlot(source, plot, title, description, encoding, marks, unplotted) {}
+
   /** How many undrawn rows a text summary names before "and N more". */
   val SummaryNamed: Int = 3
 
@@ -634,9 +676,9 @@ object BuiltPlot:
         .map((m, i) => PlotBuildError.MarkOrder(kind, i, m.order))
         .toLeft(())
     yield
-      val built = new BuiltPlot(source, plot, title, description, encoding, marks, unplotted)
+      val built = BuiltPlot(source, plot, title, description, encoding, marks, unplotted)
       // The scene carries the plot's semantics (S4.6).
-      new BuiltPlot(
+      BuiltPlot(
         source,
         plot.withSemantics(SceneSemantics.single(built.semantics)),
         title,

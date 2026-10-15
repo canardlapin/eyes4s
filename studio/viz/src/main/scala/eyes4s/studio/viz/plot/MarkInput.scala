@@ -439,12 +439,20 @@ object OverlayRings:
   * Hover is the view's own: it is never a selection input
   * ([[Intent.HoverOver]] reports it to the status bar).
   */
-final case class MarkInputState[R <: StudioRef] private (
+sealed abstract case class MarkInputState[R <: StudioRef] private (
     selection: ViewSelection,
     focus: Option[R],
     hover: Option[R],
     focused: Boolean
 ) derives CanEqual:
+
+  private def copy(
+      selection: ViewSelection = this.selection,
+      focus: Option[R] = this.focus,
+      hover: Option[R] = this.hover,
+      focused: Boolean = this.focused
+  ): MarkInputState[R] =
+    MarkInputState(selection, focus, hover, focused)
 
   def view: ViewId                = selection.view
   def selected: Vector[StudioRef] = selection.selected
@@ -636,6 +644,14 @@ final case class MarkInputState[R <: StudioRef] private (
     MarkInputStep(copy(selection = next), Vector(intent), redraw)
 
 object MarkInputState:
+
+  private def apply[R <: StudioRef](
+      selection: ViewSelection,
+      focus: Option[R],
+      hover: Option[R],
+      focused: Boolean
+  ): MarkInputState[R] =
+    new MarkInputState[R](selection, focus, hover, focused) {}
 
   /** A view with nothing focused or hovered, showing `selection`. */
   def initial[R <: StudioRef](view: ViewId, selection: SelectionState): MarkInputState[R] =

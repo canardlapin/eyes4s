@@ -102,7 +102,7 @@ final case class Location(perspective: Perspective, trail: Vector[Place]) derive
   * perspective last showed. The current location is the document's
   * perspective with its trail; the history holds the locations left.
   */
-final case class Navigation private (
+sealed abstract case class Navigation private (
     back: List[Location],
     trails: Map[Perspective, Vector[Place]],
     forward: List[Location]
@@ -143,6 +143,13 @@ final case class Navigation private (
   private def remember(to: Location) = trails.updated(to.perspective, to.trail)
 
 object Navigation:
+  private def apply(
+      back: List[Location],
+      trails: Map[Perspective, Vector[Place]],
+      forward: List[Location]
+  ): Navigation =
+    new Navigation(back, trails, forward) {}
+
   /** History steps kept in each direction. */
   val Depth: Int = 100
 

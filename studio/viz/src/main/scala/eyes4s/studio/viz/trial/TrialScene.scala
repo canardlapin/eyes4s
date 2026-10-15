@@ -151,7 +151,7 @@ enum TrialSceneError derives CanEqual:
   * over `OutsideScreen`, and an outside-window fixation retains the plan's
   * Exclude or FailTrial policy.
   */
-final case class TrialFixation private (
+sealed abstract case class TrialFixation private (
     index: FixationIndex,
     screenX: Double,
     screenY: Double,
@@ -162,6 +162,15 @@ final case class TrialFixation private (
   def contributesToMap: Boolean = placement == MapPlacement.InWindow
 
 object TrialFixation:
+  private def apply(
+      index: FixationIndex,
+      screenX: Double,
+      screenY: Double,
+      durationMs: Int,
+      placement: MapPlacement
+  ): TrialFixation =
+    new TrialFixation(index, screenX, screenY, durationMs, placement) {}
+
   def of(
       trial: TrialKey,
       index: FixationIndex,
@@ -174,7 +183,7 @@ object TrialFixation:
       Left(TrialSceneError.NonFinitePosition(trial, index.value, screenX, screenY))
     else if durationMs <= 0 then
       Left(TrialSceneError.DurationNotPositive(trial, index.value, durationMs))
-    else Right(new TrialFixation(index, screenX, screenY, durationMs, placement))
+    else Right(TrialFixation(index, screenX, screenY, durationMs, placement))
 
 /** The role a trial plays in a comparison (DESIGN_SPEC section 5). */
 enum TrialRole derives CanEqual:
@@ -206,20 +215,27 @@ enum StimulusRaster derives CanEqual:
   case Unreadable(reason: String)
 
 /** A rectangle of the screen frame in screen pixels (y down), with area. */
-final case class ScreenRect private (left: Double, top: Double, right: Double, bottom: Double)
-    derives CanEqual:
+sealed abstract case class ScreenRect private (
+    left: Double,
+    top: Double,
+    right: Double,
+    bottom: Double
+) derives CanEqual:
   def width: Double  = right - left
   def height: Double = bottom - top
 
   /** The smallest rectangle covering this one and `(x, y)`. */
   def including(x: Double, y: Double): ScreenRect =
-    new ScreenRect(left.min(x), top.min(y), right.max(x), bottom.max(y))
+    ScreenRect(left.min(x), top.min(y), right.max(x), bottom.max(y))
 
   /** This rectangle grown by `margin` on every side. */
   def grown(margin: Double): ScreenRect =
-    new ScreenRect(left - margin, top - margin, right + margin, bottom + margin)
+    ScreenRect(left - margin, top - margin, right + margin, bottom + margin)
 
 object ScreenRect:
+  private def apply(left: Double, top: Double, right: Double, bottom: Double): ScreenRect =
+    new ScreenRect(left, top, right, bottom) {}
+
   def of(
       left: Double,
       top: Double,
@@ -228,13 +244,13 @@ object ScreenRect:
   ): Either[TrialSceneError, ScreenRect] =
     Either.cond(
       List(left, top, right, bottom).forall(_.isFinite) && right > left && bottom > top,
-      new ScreenRect(left, top, right, bottom),
+      ScreenRect(left, top, right, bottom),
       TrialSceneError.EmptyExtent(left, top, right, bottom)
     )
 
   /** The whole screen. */
   def screen(size: ScreenSize): ScreenRect =
-    new ScreenRect(0.0, 0.0, size.width.toDouble, size.height.toDouble)
+    ScreenRect(0.0, 0.0, size.width.toDouble, size.height.toDouble)
 
 /** How much of the screen frame the trial view shows. */
 enum TrialExtent derives CanEqual:
@@ -354,7 +370,7 @@ enum FrameArt derives CanEqual:
   * the marks and a picking plan compiled from the same scene all resolve
   * through one [[eyes4s.studio.viz.plot.PlotTransform]].
   */
-final case class TrialScene private (
+sealed abstract case class TrialScene private (
     plot: PlotScene,
     extent: ScreenRect,
     frameArt: FrameArt,
@@ -377,6 +393,17 @@ final case class TrialScene private (
   def aspect: Double = TrialScene.aspectOf(extent)
 
 object TrialScene:
+
+  private def apply(
+      plot: PlotScene,
+      extent: ScreenRect,
+      frameArt: FrameArt,
+      caption: String,
+      marks: Vector[TrialMark],
+      map: Option[MapId],
+      disclosure: Option[String]
+  ): TrialScene =
+    new TrialScene(plot, extent, frameArt, caption, marks, map, disclosure) {}
 
   // --- Names of the scene's grobs (the op log and the tests find them) -----
   val StageName: String     = "trial-stage"
@@ -583,7 +610,7 @@ object TrialScene:
       (grobs, viewport, extent, art, caption, marks) = built
       panel <- DataPanel(id, viewport).left.map(TrialSceneError.Plot(trial, _))
       plot  <- PlotScene(id, Scene(grobs), panel).left.map(TrialSceneError.Plot(trial, _))
-    yield new TrialScene(
+    yield TrialScene(
       // The scene carries its semantics (S4.6): the caption is its alt text,
       // and its summary ends with the map legend's description when the map
       // has a legend (review ticket 17).

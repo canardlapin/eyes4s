@@ -91,7 +91,7 @@ enum FigurePageError derives CanEqual:
   * the whole page in millimetres, rebuilt from the page's view-model, never
   * a screenshot. Its plots are the Compare plots, built light on paper.
   */
-final case class FigurePage private (scene: Scene, widthMm: Double, heightMm: Double):
+sealed abstract case class FigurePage private (scene: Scene, widthMm: Double, heightMm: Double):
 
   /** The page rendered at `pixelsPerInch`: its size in whole device pixels. */
   def context(pixelsPerInch: Double): Either[FigurePageError, RenderContext] =
@@ -105,6 +105,9 @@ final case class FigurePage private (scene: Scene, widthMm: Double, heightMm: Do
     context(pixelsPerInch).map(RenderPlan(scene, _))
 
 object FigurePage:
+  private def apply(scene: Scene, widthMm: Double, heightMm: Double): FigurePage =
+    new FigurePage(scene, widthMm, heightMm) {}
+
   val MillimetresPerInch: Double = 25.4
 
   /** A line of text is this many times its size apart from the next. */

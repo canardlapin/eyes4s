@@ -18,4 +18,17 @@ The Studio core slice protects a further 108 products, including saved dataset d
 
 Complete Studio core qualification passes 1,089 JVM tests and 1,001 Scala.js tests with strict compiler warnings, a 4 GiB sbt heap and six active processors. The existing test timeouts remain unchanged. An earlier run under competing builds hit three asynchronous backend timeouts; those suites passed in isolation, followed by the complete passing matrix. Both runs are retained in the evidence receipt.
 
-The remaining 50 private products in Studio app, visualization and desktop are a separate unfinished slice under the parent invariant-enforcement ticket. These library and Studio core slices do not claim house-wide completion.
+The final Studio UI slice protects the remaining 50 private products: 35 in app,
+14 in visualization and one in desktop. Its 65 consumer checks cover constructing
+mirrors and the 15 private copy helpers; mandatory copy arguments have positive
+field-access witnesses before the negative access check. Restoring the old
+`MapOpacity` representation and making `RasterCache.copy` public each fails a
+consumer test on JVM and Scala.js after rebuilding test classes. The sources are
+restored byte-for-byte before the complete affected UI matrix passes, including
+headless desktop plot clients. Style and architectural boundary checks pass.
+
+This completes source coverage of the 279 public private-constructor products in
+the library and Studio. The [UI evidence receipt](evidence/domain-invariants-studio-ui-20261014.json)
+records the inventory, checks, mutation results and source hashes. The parent
+invariant-enforcement ticket closes only after qualification and landing of all
+slices.

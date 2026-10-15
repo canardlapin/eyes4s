@@ -50,7 +50,7 @@ import eyes4s.studio.core.selection.StudioRef
   * A block's anchor must be a participant row the plot draws; the plot
   * refuses one that is not ([[PlotBuildError.Unanchored]]).
   */
-final case class Annotations private (blocks: Vector[Annotations.Block]):
+sealed abstract case class Annotations private (blocks: Vector[Annotations.Block]):
 
   /** True when there is nothing to write: the plot draws no column. */
   def isEmpty: Boolean = blocks.isEmpty
@@ -68,6 +68,9 @@ final case class Annotations private (blocks: Vector[Annotations.Block]):
     )
 
 object Annotations:
+
+  private def apply(blocks: Vector[Annotations.Block]): Annotations =
+    new Annotations(blocks) {}
 
   /** No annotations. */
   val empty: Annotations = Annotations(Vector.empty)
@@ -136,9 +139,12 @@ object Annotations:
       case Role.Fact    => Tone.Secondary)
 
   /** One participant's lines, top to bottom, and the row they annotate. */
-  final case class Block private (anchor: StudioRef, lines: Vector[Line])
+  sealed abstract case class Block private (anchor: StudioRef, lines: Vector[Line])
 
   object Block:
+    private def apply(anchor: StudioRef, lines: Vector[Line]): Block =
+      new Block(anchor, lines) {}
+
     def of(anchor: StudioRef, lines: Vector[Line]): Either[AnnotationError, Block] =
       Either.cond(lines.nonEmpty, Block(anchor, lines), AnnotationError.NoLines(anchor))
 
