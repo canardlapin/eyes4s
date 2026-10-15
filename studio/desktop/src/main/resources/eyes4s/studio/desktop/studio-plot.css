@@ -26,8 +26,10 @@
 }
 
 /* A plot is one focus stop: the ring is drawn inside the pane's edge, which
- * keeps its 2 px whether or not the plot has focus. */
-.plot-pane:focus-within {
+ * keeps its 2 px whether or not the plot has focus. It is the keyboard's
+ * (REVIEW ticket 14): the plot's input sets :keyboard-within while its
+ * canvas shows its focus ring, never for a click. */
+.plot-pane:keyboard-within {
   -fx-border-color: -es-accent;
 }
 

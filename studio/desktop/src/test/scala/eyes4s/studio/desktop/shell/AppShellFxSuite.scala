@@ -42,7 +42,8 @@ import scala.jdk.CollectionConverters.*
   * the S1.0 view-models; the perspective host shows one retained dock.
   *
   * Snapshots go to `target/studio-snapshots/AppShellFxSuite/<test>/` for a
-  * human to compare with docs/studio/design/.
+  * human to compare with docs/studio/design/, each light one with its
+  * board's resting focus ring ([[RestingFocus]]).
   */
 class AppShellFxSuite extends ShellFxSuite:
 
@@ -75,9 +76,12 @@ class AppShellFxSuite extends ShellFxSuite:
       assertEquals(runOnFx(w.host.active), Some(layout))
       assertNoDiff(texts(w).mkString("\n"), expected(w).mkString("\n"))
       assertEquals(runOnFx(fx.stage.getTitle), runOnFx(Menus.windowTitle(w.runtime.model)))
+      // The board's resting focus ring, by keyboard (REVIEW ticket 28).
+      RestingFocus.appShell(board).foreach(RestingFocus.show(fx, w, _))
       val files = fx.snapshot(StudioTheme.Light)
       assertEquals(files.map(_.getFileName.toString), List("light-1x.png", "light-2x.png"))
       if dark then
+        RestingFocus.clear(fx, w)
         val sheets =
           StudioStyles.stylesheets(Theme.Dark).fold(e => fail(e.message), identity)
         runOnFx(w.root.getStylesheets.setAll(sheets*))

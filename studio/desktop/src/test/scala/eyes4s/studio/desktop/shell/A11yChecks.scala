@@ -17,6 +17,7 @@
 package eyes4s.studio.desktop.shell
 
 import eyes4s.studio.app.tokens.Wcag
+import eyes4s.studio.desktop.plot.{CanvasPlotHost, KeyboardWithin}
 import javafx.scene.control.Labeled
 import javafx.scene.layout.Region
 import javafx.scene.paint.Color
@@ -219,6 +220,12 @@ object A11yChecks:
   private val FocusVisible = javafx.css.PseudoClass.getPseudoClass("focus-visible")
   private val FocusWithin  = javafx.css.PseudoClass.getPseudoClass("focus-within")
 
+  /** Whether Tab onto `n` sets `:keyboard-within` on it and what encloses
+    * it: a Tab stop that is a canvas host is one whose marks take keys, and
+    * its input shows the ring whenever traversal brings the focus.
+    */
+  private def ringsWithin(n: Node): Boolean = n.isInstanceOf[CanvasPlotHost]
+
   /** How `n`, what it draws and what encloses it are drawn: background fills
     * and border strokes, under CSS as it stands.
     */
@@ -234,7 +241,10 @@ object A11yChecks:
   /** `n` drawn with keyboard focus or without: `:focused` and
     * `:focus-visible` on it and `:focus-within` on it and what encloses it,
     * as JavaFX sets them when Tab brings the focus (a ring is drawn only
-    * under `:focus-visible`). They are set directly rather than by moving
+    * under `:focus-visible`), and `:keyboard-within` the same way for a
+    * canvas host, as its input sets it ([[KeyboardWithin]]; a click sets
+    * none, so a pane's ring drawn under it is the keyboard's). They are set
+    * directly rather than by moving
     * the focus to every stop in turn, which would move the composites'
     * cursors between the two readings; KeyboardFocus reaches real keyboard
     * focus where a test reads one stop.
@@ -243,16 +253,23 @@ object A11yChecks:
     n.pseudoClassStateChanged(Focused, focused)
     n.pseudoClassStateChanged(FocusVisible, focused)
     ancestors(n).foreach(_.pseudoClassStateChanged(FocusWithin, focused))
+    if ringsWithin(n) then
+      ancestors(n).foreach(_.pseudoClassStateChanged(KeyboardWithin.pseudoClass, focused))
     drawn(n)
 
   /** The Tab stops drawn the same focused and not. */
   def unmarked(root: Parent): Vector[String] =
     focusable(root).flatMap { n =>
+      val within =
+        ancestors(n).filter(_.getPseudoClassStates.contains(KeyboardWithin.pseudoClass)).toSet
       val (before, after) = (as(n, false), as(n, true))
       // Back to the state JavaFX holds.
       n.pseudoClassStateChanged(Focused, n.isFocused)
       n.pseudoClassStateChanged(FocusVisible, n.isFocusVisible)
       ancestors(n).foreach(a => a.pseudoClassStateChanged(FocusWithin, a.isFocusWithin))
+      ancestors(n).foreach(a =>
+        a.pseudoClassStateChanged(KeyboardWithin.pseudoClass, within.contains(a))
+      )
       Option.when(before == after)(
         s"${n.getAccessibleRole}: ${Option(n.getAccessibleText).getOrElse("").take(60)} at ${path(n)}"
       )

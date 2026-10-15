@@ -85,13 +85,15 @@
 }
 
 /* The trial view is one focus stop: the ring is drawn inside the stage's
- * edge, which keeps its 2 px whether or not the plot has focus (S10.5). */
+ * edge, which keeps its 2 px whether or not the plot has focus (S10.5). It
+ * is the keyboard's (REVIEW ticket 14): the trial's input sets
+ * :keyboard-within while its canvas shows its focus ring, never for a click. */
 .explore-stage {
   -fx-border-color: transparent;
   -fx-border-width: 2;
 }
 
-.explore-stage:focus-within {
+.explore-stage:keyboard-within {
   -fx-border-color: -es-accent;
 }
 
