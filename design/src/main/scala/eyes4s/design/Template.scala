@@ -595,10 +595,11 @@ object Template:
   def crossValidate[K, X](
       split: TemplateSplit[K, X]
   ): Either[TemplateError, TemplateValidation[K, X]] =
-    for
-      fitted     <- fit(split.training)
-      evaluation <- fitted.evaluate(split.heldOut)
-    yield new TemplateValidation(fitted, evaluation)
+    crossValidationWork(split).complete()
+
+  /** Native fitting as a whole operation followed by row-paged evaluation. */
+  def crossValidationWork[K, X](split: TemplateSplit[K, X]): TemplateValidationWork[K, X] =
+    new TemplateValidationWork(split, None)
 
   /** Import only a full-rank `lm` fit with exactly the requested ordered
     * feature names, for a fixed-feature design whose route is the imported fit.

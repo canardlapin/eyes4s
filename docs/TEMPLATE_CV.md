@@ -108,3 +108,17 @@ original mean-squared-error accounting. The [evidence receipt](evidence/template
 records independent exact-prediction checks, work bounds, the partial-progress
 integer-overflow case and a row-loss mutant caught on both runtimes. This is the
 evaluation building block for CR4 S4; the complete family contract remains open.
+
+### Native fitting and evaluation work
+
+`Template.crossValidationWork(split)` starts at `FittingWholeTraining`. One
+advance fits all training rows as a whole operation and prepares held-out work.
+Subsequent `EvaluatingWholeRows` advances visit at most `PairQuantum` held-out
+keys. Fitting and a row's feature extraction have no internal cancellation
+guarantee. `Template.crossValidate` delegates to `complete`, retaining the
+existing fit, exclusions, evaluation failures and denominator rules.
+
+Native work preserves the explicit refusal for historical imported-`lm` designs;
+externally computed fits still use their existing receipt-checked import route.
+The [validation-work receipt](evidence/template-validation-cursor-20261015.json)
+records both-runtime checks and a quantum-violation mutant killed on both.
