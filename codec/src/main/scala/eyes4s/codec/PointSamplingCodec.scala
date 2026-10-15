@@ -294,7 +294,7 @@ final class PointSamplingCodec[K, U <: Unit2D: UnitLabel](
   private def keyed(v: Either[PointSamplingError[K], K]): Either[CodecError, Json] = v match
     case Right(k) => keys.encode(k).map(j => ResultWire.tagged("success", "key" -> j))
     case Left(e)  => Right(ResultWire.tagged("failure", "error" -> error(e)))
-  private def resultJson(r: PointSamplingResult[K, U]): Either[CodecError, Json] = for
+  private[codec] def resultJson(r: PointSamplingResult[K, U]): Either[CodecError, Json] = for
     rows <- r.rows.traverse { row =>
       for
         key      <- keys.encode(row.key)

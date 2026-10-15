@@ -126,3 +126,18 @@ accepts an independently supplied failure context.
 The [typed failure evidence receipt](evidence/point-sampling-keyed-errors-20261014.json)
 records nominal-key compilation checks, preserved archive fixtures, unchanged R
 reference checks and key-loss mutants killed on both runtimes.
+
+## Incremental point sampling
+
+`plan.work` returns immutable `PointSamplingCursor` work; `run` delegates to
+`work.complete()`. Its first step is `PreparingWholeStudy`, one whole operation
+that resolves matching, admits template lookups and selects controls. Subsequent
+`SamplingWholeTrials` steps evaluate at most `WorkQuanta.pairs` complete focal
+trials each. A trial includes all queries, selected controls and reductions.
+These are explicit operation boundaries; preparation and an individual trial
+have no internal cancellation guarantee. Empty studies complete in preparation.
+
+The cursor preserves every row and failure in input order. Its `Stepwise` instance
+uses the same operations. The [cursor evidence](evidence/point-sampling-cursor-20261015.json)
+records pinned legacy-payload comparisons across quanta, overflow and immutability
+checks, JVM/Scala.js validation, and a dropped-row mutant rejected on both runtimes.

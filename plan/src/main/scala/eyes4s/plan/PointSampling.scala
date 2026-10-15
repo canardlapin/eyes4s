@@ -310,7 +310,13 @@ final class PointSamplingPlan[K, U <: Unit2D] private (
     val inputHash: ContentHash,
     val planHash: ContentHash
 ):
-  def run: PointSamplingResult[K, U] =
+  /** Unstarted work: preparation and each trial's complete sampling are whole operations. */
+  def work: PointSamplingCursor[K, U] =
+    new PointSamplingCursor(this, None, 0, Vector.empty)
+
+  def run: PointSamplingResult[K, U] = work.complete()
+
+  private[plan] def prepareWork: PreparedPointSampling[K, U] =
     given KeyDigest[K] = layout.digest
     val sources        = source.trials.rows
     val duplicates = sources.zipWithIndex.groupBy(_._1.key).view.mapValues(_.map(_._2)).toMap
@@ -372,8 +378,10 @@ final class PointSamplingPlan[K, U <: Unit2D] private (
         .left
         .map(PointSamplingError.Density(i, _))
     }
-    val binIndices = spec.binIndices
-    val results    = sources.zip(resolved).zipWithIndex.map { case ((row, target), rowIndex) =>
+    val binIndices                                   = spec.binIndices
+    def trial(rowIndex: Int): PointTrialResult[K, U] =
+      val row        = sources(rowIndex)
+      val target     = resolved(rowIndex)
       val trajectory = FixationTrajectory
         .fromScanpath(row.value)
         .sample(spec.clock, spec.queries, spec.endpoint)
@@ -470,28 +478,30 @@ final class PointSamplingPlan[K, U <: Unit2D] private (
         points,
         bins
       )
-    }
-    val provenance = Provenance(
-      inputHash,
-      Vector(
-        Provenance.Step(
-          PointSamplingSpec.method,
-          Vector(
-            "plan"             -> Provenance.Param.Text(planHash.render),
-            "sourceRows"       -> Provenance.Param.Num(results.size.toDouble),
-            "queriesPerSource" -> Provenance.Param.Num(spec.queries.size.toDouble)
+    def result(results: Vector[PointTrialResult[K, U]]): PointSamplingResult[K, U] =
+      val provenance = Provenance(
+        inputHash,
+        Vector(
+          Provenance.Step(
+            PointSamplingSpec.method,
+            Vector(
+              "plan"             -> Provenance.Param.Text(planHash.render),
+              "sourceRows"       -> Provenance.Param.Num(results.size.toDouble),
+              "queriesPerSource" -> Provenance.Param.Num(spec.queries.size.toDouble)
+            )
           )
         )
       )
-    )
-    new PointSamplingResult(
-      results,
-      paired.map(_.diagnostics),
-      spec.unbinned,
-      inputHash,
-      planHash,
-      provenance
-    )
+      new PointSamplingResult(
+        results,
+        paired.map(_.diagnostics),
+        spec.unbinned,
+        inputHash,
+        planHash,
+        provenance
+      )
+
+    new PreparedPointSampling(sources.size, trial, result)
 
 object PointSamplingPlan:
   /** Inputs are checked domain values; scientific matching/lookup failures remain per-source data. */
