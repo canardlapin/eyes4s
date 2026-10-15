@@ -371,9 +371,9 @@ class GeometryPanelFxSuite extends StudioFxSuite:
       )
     }
     assertEquals(runOnFx(rig.host.state.marked), Some(p05))
-    assert(runOnFx(v.thumbnails(at).picture.getStyleClass.contains("marked")))
-    // Choosing the trial redraws too (the worked example follows it).
+    // Thumbnail styling follows the asynchronously rebuilt pictures.
     redraw(fx, rig, 1)
+    assert(runOnFx(v.thumbnails(at).picture.getStyleClass.contains("marked")))
     runOnFx(v.mark.fire())
     fx.awaitLayout()
     assertEquals(drawn(v.orientationTitle), "Mark P05 · ret_04 as wrong orientation")
