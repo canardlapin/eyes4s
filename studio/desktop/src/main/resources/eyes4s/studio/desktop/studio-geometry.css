@@ -200,13 +200,29 @@
 .geometry-swatch-fill.level-2 { -fx-background-color: -es-ramp-2; }
 .geometry-swatch-fill.level-3 { -fx-background-color: -es-ramp-3; }
 
-/* The thumbnail chosen for marking, and the focused one: a 2 px accent ring. */
+/* The thumbnail chosen for marking, and the focused density: a 2 px accent ring. */
 .geometry-picture.marked {
   -fx-border-color: -es-accent;
   -fx-border-width: 2;
 }
 
 .geometry-picture:focus-visible {
+  -fx-border-color: -es-accent;
+  -fx-border-width: 2;
+}
+
+/* The thumbnails are one focus stop (DESIGN_SPEC 15, composite focus): while
+ * the keyboard holds it, the cursor's thumbnail, picture and caption, draws a
+ * 2 px accent frame around its own fill, in the gap around it so the layout
+ * never moves; the strip draws no ring. With no thumbnail under the cursor
+ * the ring is the strip's edge. */
+.geometry-thumbs:focus-visible > .geometry-thumb:cursor {
+  -fx-background-color: -es-accent, -es-surface;
+  -fx-background-insets: -2, 0;
+  -fx-background-radius: 4, 2;
+}
+
+.geometry-thumbs:focus-visible:no-cursor {
   -fx-border-color: -es-accent;
   -fx-border-width: 2;
 }

@@ -29,10 +29,7 @@ text-field: Image width (px)
 text-field: Image height (px)
 text-field: Pixels per degree (declared)
 button: Geometry · Revert
-toggle-button: P01 · enc_01: 11 records, 1 outside the image frame, 0 outside the screen
-toggle-button: P01 · enc_08: missing asset, forest-044.png not found, field drawn hatched; 12 records, 0 outside the image frame, 0 outside the screen
-toggle-button: P05 · ret_04: 11 records, 11 outside the image frame, 0 outside the screen
-toggle-button: P05 · ret_11: 11 records, 11 outside the image frame, 0 outside the screen
+list: Placement check, 4 trials; arrow keys move, Enter or Space chooses the trial to mark
 plot: Density of all 11,520 fixation records overlaid, screen coordinates
 radio-button: Exclude the record (default)
 button: Outside image frame: 543 of 11,520 records · 409 trials

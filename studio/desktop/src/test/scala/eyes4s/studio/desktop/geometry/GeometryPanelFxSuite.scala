@@ -33,12 +33,15 @@ import eyes4s.studio.desktop.StudioStyles
 import eyes4s.studio.desktop.explore.NavigatorDisplays
 import eyes4s.studio.desktop.harness.{FxStage, StageSize, StudioFxSuite, StudioTheme}
 import eyes4s.studio.desktop.plot.PlotHostStatus
+import eyes4s.studio.desktop.shell.KeyboardFocus
 import eyes4s.studio.desktop.trial.GoldenTrials
 import eyes4s.studio.desktop.typography.StudioFonts
 import javafx.event.ActionEvent
 import javafx.scene.control.Labeled
 import javafx.scene.input.{KeyCode, KeyEvent}
-import javafx.scene.layout.StackPane
+import javafx.scene.layout.{Region, StackPane}
+import javafx.scene.paint.Color
+import javafx.scene.{AccessibleAttribute, AccessibleRole}
 import javafx.scene.text.Text
 
 import java.nio.file.Files
@@ -145,6 +148,10 @@ class GeometryPanelFxSuite extends StudioFxSuite:
       .getOrElse(l.getText)
   }
 
+  /** A press of `code` on `n`, as the keyboard delivers it to the focus owner. */
+  def press(n: javafx.scene.Node, code: KeyCode): Unit =
+    n.fireEvent(KeyEvent(KeyEvent.KEY_PRESSED, "", "", code, false, false, false, false))
+
   def texts(fx: FxStage): Vector[String] = runOnFx {
     fx.scene.getRoot
       .lookupAll(".label")
@@ -236,7 +243,7 @@ class GeometryPanelFxSuite extends StudioFxSuite:
       )
       assertEquals(warned, Vector("P01 · enc_08"))
       val missingThumb = runOnFx(
-        v.thumbnails.find(_.name.getText == "P01 · enc_08").map(_.picture.getAccessibleText)
+        v.thumbnails.find(_.name.getText == "P01 · enc_08").map(_.node.getAccessibleText)
       )
       assert(
         missingThumb.exists(
@@ -351,6 +358,172 @@ class GeometryPanelFxSuite extends StudioFxSuite:
     )
   }
 
+  /** The background fills of `r` as (colour, top inset). */
+  private def fills(r: Region): List[(Color, Double)] =
+    Option(r.getBackground).toList.flatMap(
+      _.getFills.asScala.toList.map(f => (f.getFill.asInstanceOf[Color], f.getInsets.getTop))
+    )
+
+  private def light(t: eyes4s.studio.app.tokens.ThemedToken): Color =
+    val c = eyes4s.studio.app.tokens.Tokens.themed(Theme.Light, t)
+    Color.rgb(c.red, c.green, c.blue, c.alphaPercent / 100.0)
+
+  fxStage.test(
+    "the thumbnails are one listbox stop: a cursor framed under keyboard focus, keys, Enter marks"
+  ) { fx =>
+    assumeFullStage(fx)
+    val rig = mount(fx, t1, StoryMoment.T1)
+    loaded(fx, rig)
+    redraw(fx, rig, 0)
+    val v      = rig.host.view
+    val strip  = v.strip
+    val items  = v.thumbnails.map(_.node)
+    val accent = light(eyes4s.studio.app.tokens.ThemedToken.Accent)
+    val frame = List(accent -> -2.0, light(eyes4s.studio.app.tokens.ThemedToken.Surface) -> 0.0)
+    def framed: Vector[Boolean] = runOnFx {
+      strip.getScene.getRoot.applyCss()
+      items.map(n => fills(n).exists(_._1 == accent))
+    }
+    def focusItem = runOnFx(strip.queryAccessibleAttribute(AccessibleAttribute.FOCUS_ITEM))
+
+    // A listbox named as the board names it; its items read as the thumbnails.
+    assertEquals(runOnFx(strip.getAccessibleRole), AccessibleRole.LIST_VIEW)
+    assertEquals(
+      runOnFx(strip.getAccessibleText),
+      "Placement check, 4 trials; arrow keys move, Enter or Space chooses the trial to mark"
+    )
+    assertEquals(
+      runOnFx(strip.queryAccessibleAttribute(AccessibleAttribute.ITEM_COUNT)),
+      Integer.valueOf(4)
+    )
+    runOnFx(v.thumbnails.zipWithIndex.foreach { (t, i) =>
+      assertEquals(t.node.getAccessibleRole, AccessibleRole.LIST_ITEM)
+      assert(
+        t.node.getAccessibleText.startsWith(s"${t.name.getText}: "),
+        t.node.getAccessibleText
+      )
+      assert(
+        strip.queryAccessibleAttribute(AccessibleAttribute.ITEM_AT_INDEX, Integer.valueOf(i)) eq
+          t.node
+      )
+    })
+
+    // One Tab stop: nothing inside the strip takes the focus, and Tab
+    // leaves the strip for the density.
+    val inside = runOnFx {
+      def all(n: javafx.scene.Node): Vector[javafx.scene.Node] = n +: (n match
+        case p: javafx.scene.Parent => p.getChildrenUnmodifiable.asScala.toVector.flatMap(all)
+        case _                      => Vector.empty)
+      all(strip).filter(_.isFocusTraversable)
+    }
+    assertEquals(inside.map(_.toString), Vector(strip.toString))
+    runOnFx {
+      KeyboardFocus.byKeyboard(strip)
+      strip.requestFocusTraversal(javafx.scene.TraversalDirection.NEXT)
+    }
+    assertEquals(
+      runOnFx(fx.scene.getFocusOwner.getAccessibleText),
+      runOnFx(v.density.getParent.getAccessibleText)
+    )
+
+    // A click or the program focuses it with no frame; the keyboard frames
+    // the home thumbnail (none is marked: the first), and only it.
+    runOnFx(KeyboardFocus.byPointer(strip))
+    assertEquals(framed, Vector.fill(4)(false))
+    runOnFx(KeyboardFocus.byKeyboard(strip))
+    assertEquals(framed, Vector(true, false, false, false))
+    assertEquals(runOnFx(fills(items(0))), frame)
+    assert(focusItem eq items(0))
+    // The strip itself draws no ring.
+    assert(runOnFx(!fills(strip).exists(_._1 == accent)))
+
+    // Right steps, Down moves a row, Home and End go to the ends.
+    def at(code: KeyCode): Vector[Boolean] =
+      runOnFx(press(strip, code))
+      framed
+    assertEquals(at(KeyCode.RIGHT), Vector(false, true, false, false))
+    assertEquals(at(KeyCode.DOWN), Vector(false, false, false, true))
+    assertEquals(at(KeyCode.LEFT), Vector(false, false, true, false))
+    assertEquals(at(KeyCode.UP), Vector(true, false, false, false))
+    assertEquals(at(KeyCode.END), Vector(false, false, false, true))
+    assertEquals(at(KeyCode.HOME), Vector(true, false, false, false))
+    assertEquals(at(KeyCode.DOWN), Vector(false, false, true, false))
+    assert(focusItem eq items(2))
+
+    // Enter marks the cursor's trial, as a click on its thumbnail does.
+    val third = runOnFx(v.thumbnails(2).trial).getOrElse(fail("no third thumbnail"))
+    runOnFx(press(strip, KeyCode.ENTER))
+    assertEquals(runOnFx(rig.host.state.marked), Some(third))
+    assert(runOnFx(v.thumbnails(2).picture.getStyleClass.contains("marked")))
+    assertEquals(
+      runOnFx(
+        strip
+          .queryAccessibleAttribute(AccessibleAttribute.SELECTED_ITEMS)
+          .asInstanceOf[java.util.List[?]]
+          .asScala
+          .toVector
+          .map(n => n.asInstanceOf[AnyRef] eq items(2))
+      ),
+      Vector(true)
+    )
+    // Off the strip, no frame.
+    runOnFx(KeyboardFocus.away(strip))
+    assertEquals(framed, Vector.fill(4)(false))
+  }
+
+  fxStage.test("the thumbnails' home: a focused strip with no cursor frames the marked trial") {
+    fx =>
+      assumeFullStage(fx)
+      val rig = mount(fx, t1, StoryMoment.T1)
+      loaded(fx, rig)
+      redraw(fx, rig, 0)
+      val v     = rig.host.view
+      val third = runOnFx(v.thumbnails(2).trial).getOrElse(fail("no third thumbnail"))
+      runOnFx(rig.host.dispatch(GeometryIntent.MarkTrial(third)))
+      fx.awaitLayout()
+      val accent = light(eyes4s.studio.app.tokens.ThemedToken.Accent)
+      runOnFx(KeyboardFocus.byKeyboard(v.strip))
+      val framed = runOnFx {
+        v.strip.getScene.getRoot.applyCss()
+        v.thumbnails.map(t => fills(t.node).exists(_._1 == accent))
+      }
+      assertEquals(framed, Vector(false, false, true, false))
+      assertEquals(runOnFx(v.strip.cursor), Some(2))
+      // Space marks it, as Enter does: the mark stays on the cursor's trial.
+      runOnFx(press(v.strip, KeyCode.SPACE))
+      assertEquals(runOnFx(rig.host.state.marked), Some(third))
+      // A click moves the cursor to its thumbnail and marks it.
+      val first = runOnFx(v.thumbnails(0).trial).getOrElse(fail("no first thumbnail"))
+      runOnFx(
+        v.thumbnails(0)
+          .node
+          .fireEvent(
+            javafx.scene.input.MouseEvent(
+              javafx.scene.input.MouseEvent.MOUSE_CLICKED,
+              1,
+              1,
+              1,
+              1,
+              javafx.scene.input.MouseButton.PRIMARY,
+              1,
+              false,
+              false,
+              false,
+              false,
+              true,
+              false,
+              false,
+              true,
+              false,
+              false,
+              null
+            )
+          )
+      )
+      assertEquals(runOnFx(rig.host.state.marked), Some(first))
+      assertEquals(runOnFx(v.strip.cursor), Some(0))
+  }
+
   fxStage.test(
     "a marked wrong orientation is a recorded rule; the source coordinates never change"
   ) { fx =>
@@ -364,11 +537,12 @@ class GeometryPanelFxSuite extends StudioFxSuite:
     val at     = runOnFx(v.thumbnails.indexWhere(t => drawn(t.name) == "P05 · ret_04"))
     assert(at >= 0)
     assertEquals(runOnFx(v.mark.isDisabled), true)
+    // The strip's cursor to P05's thumbnail, then Enter (S29).
     runOnFx {
-      val picture = v.thumbnails(at).picture
-      picture.fireEvent(
-        KeyEvent(KeyEvent.KEY_PRESSED, "", "", KeyCode.ENTER, false, false, false, false)
-      )
+      KeyboardFocus.byKeyboard(v.strip)
+      press(v.strip, KeyCode.HOME)
+      (0 until at).foreach(_ => press(v.strip, KeyCode.RIGHT))
+      press(v.strip, KeyCode.ENTER)
     }
     assertEquals(runOnFx(rig.host.state.marked), Some(p05))
     // Rebuilding the pictures can move the marked trial to another slot.

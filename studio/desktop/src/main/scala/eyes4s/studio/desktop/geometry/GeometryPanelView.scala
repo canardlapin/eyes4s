@@ -17,16 +17,20 @@
 package eyes4s.studio.desktop.geometry
 
 import eyes4s.studio.app.geometry.*
+import eyes4s.studio.app.plot.RovingMove
 import eyes4s.studio.core.document.OffScreenChoice
 import eyes4s.studio.core.importing.GeometryField
 import eyes4s.studio.core.selection.StudioRef
 import eyes4s.studio.desktop.plot.{CanvasPlotHost, PlotHostStatus}
+import eyes4s.studio.desktop.shell.CompositeFocus
 import eyes4s.studio.desktop.tokens.TokenFiles
 import eyes4s.studio.viz.plot.PlotScene
+import javafx.collections.FXCollections
+import javafx.css.PseudoClass
 import javafx.geometry.Pos
-import javafx.scene.AccessibleRole
+import javafx.scene.{AccessibleAttribute, AccessibleRole, Node}
 import javafx.scene.control.*
-import javafx.scene.input.{KeyCode, MouseEvent}
+import javafx.scene.input.{KeyCode, KeyEvent, MouseEvent}
 import javafx.scene.layout.*
 
 import scala.jdk.CollectionConverters.*
@@ -116,11 +120,11 @@ final class GeometryPanelView(dispatch: GeometryIntent => Unit):
   placementHead.setAlignment(Pos.BASELINE_LEFT)
 
   /** The four thumbnails: a plot host each, with its label. */
-  val thumbnails: Vector[Thumbnail] = Vector.tabulate(ThumbnailCount)(_ => Thumbnail(fire))
-  private val thumbGrid             = GridPane()
-  thumbGrid.getStyleClass.add("geometry-thumbs")
-  thumbnails.zipWithIndex.foreach((t, i) => thumbGrid.add(t.node, i % 2, i / 2))
-  val positionsNote: Label = label("geometry-note", "t11")
+  val thumbnails: Vector[Thumbnail] = Vector.tabulate(ThumbnailCount)(Thumbnail(_))
+
+  /** The thumbnails' strip: one list stop with a cursor ([[ThumbnailStrip]]). */
+  val strip: ThumbnailStrip = ThumbnailStrip(thumbnails, fire)
+  val positionsNote: Label  = label("geometry-note", "t11")
 
   val density: CanvasPlotHost = plotHost()
   private val densityBox      = sized(density)
@@ -227,7 +231,7 @@ final class GeometryPanelView(dispatch: GeometryIntent => Unit):
   )
   private val placement = section(
     placementHead,
-    thumbGrid,
+    strip,
     positionsNote,
     densityRow,
     keyRow,
@@ -346,7 +350,7 @@ final class GeometryPanelView(dispatch: GeometryIntent => Unit):
 
       placementTitle.setText(vm.placementTitle)
       placementNote.setText(vm.placementNote)
-      thumbnails.zipWithIndex.foreach { (t, i) => t.render(vm.thumbnails.lift(i)) }
+      strip.render(vm.thumbnails, vm.thumbnailsAccessible)
       show(positionsNote, vm.positionsNote)
       densityTitle.setText(vm.densityTitle)
       densityCaption.setText(vm.densityCaption)
@@ -509,43 +513,179 @@ object GeometryPanelView:
     n.setVisible(on)
     n.setManaged(on)
 
-  /** One representative trial: a focusable picture that marks its trial
-    * for correction (click, Enter or Space), and its caption on two lines,
-    * the trial and then its count, so it never wraps mid-phrase.
+  /** The style class of a thumbnail, an item of the strip. */
+  val ThumbStyle: String = "geometry-thumb"
+
+  /** The thumbnail under the strip's cursor (drawn only while the keyboard
+    * holds the strip's focus).
     */
-  final class Thumbnail(fire: GeometryIntent => Unit):
+  val Cursor: PseudoClass = PseudoClass.getPseudoClass("cursor")
+
+  /** The cursor move a press of `code` is, if any: the arrows, Home and End. */
+  def keyMove(code: KeyCode): Option[RovingMove] = code match
+    case KeyCode.LEFT | KeyCode.KP_LEFT   => Some(RovingMove.Left)
+    case KeyCode.RIGHT | KeyCode.KP_RIGHT => Some(RovingMove.Right)
+    case KeyCode.UP | KeyCode.KP_UP       => Some(RovingMove.Up)
+    case KeyCode.DOWN | KeyCode.KP_DOWN   => Some(RovingMove.Down)
+    case KeyCode.HOME                     => Some(RovingMove.First)
+    case KeyCode.END                      => Some(RovingMove.Last)
+    case _                                => None
+
+  /** One representative trial, item `index` of the strip: its picture and
+    * its caption on two lines, the trial and then its count, so it never
+    * wraps mid-phrase. The item reads as its thumbnail's accessible name.
+    */
+  final class Thumbnail(val index: Int):
     val host: CanvasPlotHost = plotHost()
     val picture: StackPane   = sized(host)
     val name: Label          = label("geometry-value", "mono", "t11")
     val count: Label         = label("geometry-caption", "t11")
     Vector(name, count).foreach(_.setMaxWidth(ThumbWidth))
-    private var trial: Option[eyes4s.studio.core.backend.TrialKey] = None
-    picture.setFocusTraversable(true)
-    picture.setAccessibleRole(AccessibleRole.TOGGLE_BUTTON)
-    picture.addEventHandler(MouseEvent.MOUSE_CLICKED, _ => mark())
-    picture.setOnKeyPressed(e =>
-      if e.getCode == KeyCode.ENTER || e.getCode == KeyCode.SPACE then
-        mark()
-        e.consume()
-    )
-    private val caption = VBox(name, count)
-    val node: VBox      = VBox(picture, caption)
-    node.getStyleClass.addAll("geometry-thumb", "geometry-stack")
+    private var shown: Option[ThumbnailVM] = None
+    private val caption                    = VBox(name, count)
 
-    private def mark(): Unit = trial.foreach(t => fire(GeometryIntent.MarkTrial(t)))
+    /** The item: a list item that answers its index and whether it is the
+      * trial chosen for marking.
+      */
+    val node: VBox = new VBox(picture, caption):
+      override def queryAccessibleAttribute(
+          attribute: AccessibleAttribute,
+          parameters: AnyRef*
+      ): AnyRef = attribute match
+        case AccessibleAttribute.INDEX    => Integer.valueOf(index)
+        case AccessibleAttribute.SELECTED => java.lang.Boolean.valueOf(marked)
+        case _ => super.queryAccessibleAttribute(attribute, parameters*)
+    node.getStyleClass.addAll(ThumbStyle, "geometry-stack")
+    node.setAccessibleRole(AccessibleRole.LIST_ITEM)
+
+    /** The trial this thumbnail shows, if it shows one. */
+    def trial: Option[eyes4s.studio.core.backend.TrialKey] = shown.map(_.trial)
+
+    /** Whether it shows the trial chosen for marking. */
+    def marked: Boolean = shown.exists(_.marked)
 
     def render(vm: Option[ThumbnailVM]): Unit =
-      trial = vm.map(_.trial)
+      shown = vm
       name.setText(vm.fold("")(_.name))
       count.setText(vm.fold("")(_.count))
-      picture.setAccessibleText(vm.fold("")(_.accessible))
+      node.setAccessibleText(vm.fold("")(_.accessible))
       val classes = picture.getStyleClass
       classes.remove("marked")
-      if vm.exists(_.marked) then classes.add("marked"): Unit
+      if marked then classes.add("marked"): Unit
       // A missing asset's caption is in the warning ink, as the board draws it.
       count.getStyleClass.remove("geometry-warn")
       if vm.exists(_.assetMissing) then count.getStyleClass.add("geometry-warn"): Unit
       node.setVisible(vm.isDefined)
+
+  /** The placement thumbnails as the board's listbox (Data.dc.html, check
+    * placement; DESIGN_SPEC section 15, composite focus): one focus stop
+    * while any thumbnail is shown, with a cursor on one thumbnail. Focus
+    * puts the cursor on its home thumbnail when it has none (the trial chosen
+    * for marking, else the first; [[GeometryPanelVM.thumbnailHome]]); the
+    * arrows, Home and End move it ([[GeometryPanelVM.thumbnailMove]]); Enter
+    * or Space marks its trial for correction, as a click on a thumbnail does
+    * (a click also puts the cursor there). The cursor's thumbnail draws the
+    * accent frame only while the keyboard holds the strip's focus; the strip
+    * draws none. A reader hears a list of trials, the cursor's as its focus
+    * item and the marked one as selected.
+    */
+  final class ThumbnailStrip(items: Vector[Thumbnail], fire: GeometryIntent => Unit)
+      extends GridPane:
+    getStyleClass.add("geometry-thumbs")
+    setAccessibleRole(AccessibleRole.LIST_VIEW)
+    setFocusTraversable(false)
+    items.foreach { t =>
+      add(
+        t.node,
+        t.index % GeometryPanelVM.ThumbnailColumns,
+        t.index / GeometryPanelVM.ThumbnailColumns
+      )
+      t.node.addEventHandler(
+        MouseEvent.MOUSE_CLICKED,
+        (_: MouseEvent) =>
+          if t.trial.isDefined then
+            requestFocus()
+            moveTo(t.index)
+            activate()
+      )
+    }
+    private var shown: Vector[ThumbnailVM]                         = Vector.empty
+    private var under: Option[eyes4s.studio.core.backend.TrialKey] = None
+
+    /** The index of the thumbnail under the cursor, if the cursor is on one. */
+    def cursor: Option[Int] = under.map(k => shown.indexWhere(_.trial == k)).filter(_ >= 0)
+
+    /** The thumbnail the cursor frame is drawn on: the cursor's, else the
+      * home one, where focus puts the cursor.
+      */
+    def cursorItem: Option[Int] = cursor.orElse(GeometryPanelVM.thumbnailHome(shown))
+
+    focusedProperty.addListener((_, _, now) =>
+      if now && cursor.isEmpty then cursorItem.foreach(moveTo)
+    )
+    addEventHandler(
+      KeyEvent.KEY_PRESSED,
+      (e: KeyEvent) =>
+        keyMove(e.getCode) match
+          case Some(move) =>
+            e.consume()
+            cursorItem.foreach(at =>
+              moveTo(GeometryPanelVM.thumbnailMove(at, move, shown.size))
+            )
+          case None if e.getCode == KeyCode.ENTER || e.getCode == KeyCode.SPACE =>
+            e.consume()
+            if cursor.isEmpty then cursorItem.foreach(moveTo)
+            activate()
+          case None => ()
+    )
+
+    private def moveTo(i: Int): Unit =
+      shown.lift(i).foreach { t =>
+        if !under.contains(t.trial) then
+          under = Some(t.trial)
+          mark()
+          notifyAccessibleAttributeChanged(AccessibleAttribute.FOCUS_ITEM)
+      }
+
+    // Marks the cursor's trial for correction.
+    private def activate(): Unit =
+      cursor.flatMap(shown.lift).foreach(t => fire(GeometryIntent.MarkTrial(t.trial)))
+
+    private def mark(): Unit =
+      val at = cursorItem
+      items.foreach(t => t.node.pseudoClassStateChanged(Cursor, at.contains(t.index)))
+      CompositeFocus.noCursor(this, at.isEmpty)
+
+    /** Shows `thumbnails` (fewer hide the rest), the strip named `accessible`.
+      * The cursor stays on its trial while it is shown.
+      */
+    def render(thumbnails: Vector[ThumbnailVM], accessible: String): Unit =
+      val selected = shown.indexWhere(_.marked)
+      shown = thumbnails.take(items.size)
+      items.foreach(t => t.render(shown.lift(t.index)))
+      setAccessibleText(accessible)
+      setFocusTraversable(shown.nonEmpty)
+      if isFocused && cursor.isEmpty then cursorItem.foreach(moveTo)
+      mark()
+      if shown.indexWhere(_.marked) != selected then
+        notifyAccessibleAttributeChanged(AccessibleAttribute.SELECTED_ITEMS)
+
+    override def queryAccessibleAttribute(
+        attribute: AccessibleAttribute,
+        parameters: AnyRef*
+    ): AnyRef =
+      def item(i: Int): Option[Node] = items.lift(i).filter(_ => i < shown.size).map(_.node)
+      attribute match
+        case AccessibleAttribute.ITEM_COUNT    => Integer.valueOf(shown.size)
+        case AccessibleAttribute.ITEM_AT_INDEX =>
+          parameters.headOption.collect { case i: Integer => i.intValue }.flatMap(item).orNull
+        case AccessibleAttribute.FOCUS_ITEM         => cursorItem.flatMap(item).orNull
+        case AccessibleAttribute.MULTIPLE_SELECTION => java.lang.Boolean.FALSE
+        case AccessibleAttribute.SELECTED_ITEMS     =>
+          FXCollections.observableArrayList[Node](
+            items.filter(t => t.index < shown.size && t.marked).map(_.node)*
+          )
+        case _ => super.queryAccessibleAttribute(attribute, parameters*)
 
   /** A count of records outside a frame, with what it means. */
   final class CountView(fire: GeometryIntent => Unit):
