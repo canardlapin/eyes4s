@@ -506,6 +506,18 @@ object ParticipantPlot:
   /** The width of an annotation's leader. */
   val LeaderPx: Double = 1.0
 
+  /** The frame's height, as a fraction of the plot's ([[frameSize]]). */
+  val FrameHeightNpc: Double = 0.74
+
+  /** The frame's drawn height in a plot `plotHeightPx` logical pixels tall. */
+  def frameHeightPx(plotHeightPx: Double): Double = FrameHeightNpc * plotHeightPx.max(0.0)
+
+  /** How many annotation lines fit beside the frame of a plot `plotHeightPx`
+    * logical pixels tall ([[Annotations.capacity]] of its frame's height):
+    * the `slots` the app composes its notes in.
+    */
+  def noteSlots(plotHeightPx: Double): Int = Annotations.capacity(frameHeightPx(plotHeightPx))
+
   /** The zero rule's width, and the opacity of a participant's link. */
   val ZeroRulePx: Double = 1.5
   val LinkAlpha: Double  = 0.45
@@ -657,17 +669,17 @@ object ParticipantPlot:
         )
     )
 
-  /** The frame's size: 86% by 74% of the plot, less the annotation column's
-    * [[Annotations.ColumnPx]] across when there is one.
+  /** The frame's size: 86% by [[FrameHeightNpc]] of the plot, less the
+    * annotation column's [[Annotations.ColumnPx]] across when there is one.
     */
   private def frameSize(annotated: Boolean): Either[GraphicsError, Size] =
-    if !annotated then Size.npc(0.86, 0.74)
+    if !annotated then Size.npc(0.86, FrameHeightNpc)
     else
       for
         across <- LengthExpr.npc(0.86)
         column <- Length.points(px(Annotations.ColumnPx))
         width  <- ExtentExpr.fromExpr(across - LengthExpr(column))
-        height <- ExtentExpr.npc(0.74)
+        height <- ExtentExpr.npc(FrameHeightNpc)
       yield Size.fromExtents(width, height)
 
   /** The annotation column, in the frame's viewport: each block's leader,

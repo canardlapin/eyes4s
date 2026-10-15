@@ -179,6 +179,27 @@ class AnnotationsSuite extends FunSuite:
     }
   }
 
+  test("the column holds the frame's drawn height in whole slots, never a line below it") {
+    // The Results board's 216 px frame: 15 lines.
+    assertEquals(Annotations.capacity(216.0), 15)
+    assertEquals(Annotations.capacity(Annotations.SlotPx), 1)
+    assertEquals(Annotations.capacity(Annotations.SlotPx - 0.5), 0)
+    Vector(0.0, -14.0, Double.NaN).foreach(h => assertEquals(Annotations.capacity(h), 0, h))
+    // The plot's frame is FrameHeightNpc of its height, as it is drawn.
+    assertEquals(
+      built(Annotations.empty).plot.panel.viewport.size,
+      right(Size.npc(0.86, ParticipantPlot.FrameHeightNpc))
+    )
+    assertEquals(ParticipantPlot.frameHeightPx(200.0), ParticipantPlot.FrameHeightNpc * 200.0)
+    Vector(60.0, 120.0, 151.0, 300.0, 900.0).foreach { h =>
+      val slots = ParticipantPlot.noteSlots(h)
+      val frame = ParticipantPlot.frameHeightPx(h)
+      // The last slot ends inside the frame, and one more would not.
+      assert(slots * Annotations.SlotPx <= frame, s"$h px: $slots slots in $frame px")
+      assert((slots + 1) * Annotations.SlotPx > frame, s"$h px: $slots slots in $frame px")
+    }
+  }
+
   test("a line's role sets its face and its tone its colour; a leader takes its heading's") {
     val plot                       = built(right(Annotations.of(Vector(p05, p17))))
     def colour(token: ThemedToken) = Some(IntaglioColours.themed(Theme.Light, token))

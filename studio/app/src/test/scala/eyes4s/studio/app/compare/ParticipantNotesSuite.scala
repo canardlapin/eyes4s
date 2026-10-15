@@ -184,6 +184,28 @@ class ParticipantNotesSuite extends munit.FunSuite:
     }
   }
 
+  test(
+    "t3 in a short frame: the view-model's slots keep the selected block and say what is left"
+  ) {
+    loaded(StoryModels.t3Summary).map { s =>
+      def at(slots: Int) =
+        CompareSummaryVM.of(s, StoryModels.t3Summary, noteSlots = slots).plotNotes
+      // Both blocks and the gap between them: 4 + 1 + 6 = 11 slots.
+      assertEquals(lines(at(11)), Vector(boardP17, boardP05))
+      assertEquals(at(11).omitted, 0)
+      // One slot fewer: P17 is first though P05 has the failures, and its
+      // block ends with the line for the block left out.
+      Vector(10, 5).foreach { slots =>
+        assertEquals(lines(at(slots)), Vector(boardP17 :+ "+1 more"), s"$slots slots")
+        assertEquals(at(slots).omitted, 1)
+      }
+      assertEquals(at(10).blocks.head.lines.last.spoken, "1 more participant not annotated")
+      // Not even P17 with its "+1 more" fits: no notes at all.
+      assertEquals(at(4), ParticipantNotes.empty)
+      assertEquals(at(0), ParticipantNotes.empty)
+    }
+  }
+
   test("failures by group are written only when the query rows add up to the served count") {
     loaded(StoryModels.t3Summary).map { s =>
       val summary =
@@ -299,6 +321,29 @@ class ParticipantNotesSuite extends munit.FunSuite:
     assert(slotsOf(tighter) <= 16)
     // Not even the selected block with its "+n more" fits: no notes.
     assertEquals(ParticipantNotes.of(ms, cs, None, Some("P01"), 4), ParticipantNotes.empty)
+  }
+
+  test("at every capacity the notes take at most the slots they are given") {
+    val ms = means(
+      "P01" -> Some(0.1),
+      "P02" -> Some(0.3),
+      "P03" -> Some(0.2),
+      "P04" -> Some(0.4),
+      "P05" -> Some(0.5)
+    )
+    val cs = counts("P01" -> 0, "P02" -> 1, "P03" -> 4, "P04" -> 2, "P05" -> 1)
+    (0 to 30).foreach { slots =>
+      val n = ParticipantNotes.of(ms, cs, None, Some("P01"), slots)
+      assert(n.isEmpty || slotsOf(n) <= slots, s"$slots slots: ${lines(n)}")
+      // The selected participant leads whatever fits, and a block left out is counted.
+      assert(n.isEmpty || n.blocks.head.participant == "P01", s"$slots slots: ${lines(n)}")
+      assertEquals(n.blocks.size + n.omitted, if n.isEmpty then 0 else 5, s"$slots slots")
+    }
+    // The fewest slots any notes take: P01's 4 lines and "+4 more".
+    assertEquals(ParticipantNotes.of(ms, cs, None, Some("P01"), 4), ParticipantNotes.empty)
+    val five = ParticipantNotes.of(ms, cs, None, Some("P01"), 5)
+    assertEquals(five.blocks.map(_.participant), Vector("P01"))
+    assertEquals(five.blocks.head.lines.map(_.text).last, "+4 more")
   }
 
   test("a missing mean is drawn lowest, so it takes the '+n more' line") {

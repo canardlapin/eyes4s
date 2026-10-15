@@ -53,7 +53,7 @@ enum ParticipantTextId derives CanEqual:
   case NoteGroupMean, NoteGroupMeanSpoken, NoteGroupNoValue
   case NoteFailed, NoteOneFailed, NoteFailedSpoken, NoteOneFailedSpoken, NoteFailedInGroup,
     NoteFailedByGroup, NoteNoValue
-  case NoteMore, NoteMoreSpoken
+  case NoteMore, NoteMoreSpoken, NoteOneMoreSpoken
 
   /** How the column's parts are joined: the parts of one line ("2
     * Remembered, 1 Forgotten") and, when spoken, the lines of a block and
@@ -106,6 +106,7 @@ object ParticipantText:
       case NoteNoValue         => "no value, not zero"
       case NoteMore            => "+{0} more"
       case NoteMoreSpoken      => "{0} more participants not annotated"
+      case NoteOneMoreSpoken   => "1 more participant not annotated"
       case NoteSeparator       => ", "
       case NoteBlockSeparator  => "; "
       case AnnotatedSummary    => "{0}. Annotations: {1}"

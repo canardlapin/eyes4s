@@ -35,12 +35,13 @@ import eyes4s.studio.core.headless.HeadlessSession
 import eyes4s.studio.desktop.StudioStyles
 import eyes4s.studio.desktop.compare.{CompareSummaryHost, SummaryInputs}
 import eyes4s.studio.desktop.runtime.{EffectPerformer, StudioRuntime}
-import eyes4s.studio.viz.plot.{DataPoint, RowMarking}
+import eyes4s.studio.app.plot.ParticipantNotes
+import eyes4s.studio.viz.plot.{Annotations, DataPoint, ParticipantPlot, RowMarking}
 import javafx.scene.control.{Label, ToggleButton}
 import javafx.event.Event
 import javafx.geometry.Point2D
 import javafx.scene.input.{MouseButton, MouseEvent, PickResult}
-import javafx.scene.layout.HBox
+import javafx.scene.layout.{HBox, Region}
 
 import scala.collection.mutable
 import scala.concurrent.duration.Duration
@@ -244,6 +245,64 @@ class CompareSummaryFxSuite extends ShellFxSuite:
       assert(plot.description.contains(said), plot.description)
       assert(Option(spoken).exists(_.contains(said)), s"accessible text: $spoken")
       fx.snapshot(StudioTheme.Light)
+  }
+
+  fxStage.test("a short participant plot writes only the notes its frame holds; taller, more") {
+    fx =>
+      val w    = boot(fx, StoryModels.t3Summary, StoryMoment.T3)
+      val twin = w.summary.participantPlot
+      loaded(fx, w)
+      val p17 = Vector(
+        "P17 · selected",
+        "19 of 20 contributing",
+        "Rem +0.38 (n 17)",
+        "Forg +0.32 (n 2)"
+      )
+      val p05 = Vector(
+        "P05 · 17 of 20 contributing",
+        "Rem −0.03 (n 13)",
+        "Forg −0.24 (n 4)",
+        "3 failed queries:",
+        "2 Remembered, 1 Forgotten",
+        "no value, not zero"
+      )
+      val written                                      = (p17 ++ p05 :+ "+1 more").toSet
+      def all(g: intaglio.Grob): Vector[intaglio.Grob] = g +: g.children.flatMap(all)
+      // The note lines the plot now draws, and its host's height.
+      def drawn(): (Vector[String], Double) = runOnFx(
+        (
+          twin.plot.toVector
+            .flatMap(_.plot.scene.grobs.flatMap(all))
+            .collect { case t: intaglio.Grob.Text if written(t.label) => t.label },
+          twin.plotHost.getHeight
+        )
+      )
+      // Both blocks and the gap between them take 11 slots.
+      val both = p17.size + ParticipantNotes.BlockGapSlots + p05.size
+      // A pane 120 px tall: its frame holds 6 slots, fewer than both blocks,
+      // so the board's constant 15 slots would have written below it.
+      val short = 120.0
+      runOnFx(twin.plotNode.setMaxHeight(short))
+      eventually(fx, "the short plot draws P17 and what is left")(
+        drawn()._1 == (p17 :+ "+1 more")
+      )
+      val (_, height) = drawn()
+      val frame       = ParticipantPlot.frameHeightPx(height)
+      // The canvas sits inside the pane's padding.
+      assert(height > 0.0 && height <= short, s"$height px")
+      assert(both * Annotations.SlotPx > frame, s"$both slots fit a $frame px frame")
+      assert((p17.size + 1) * Annotations.SlotPx <= frame, s"$frame px frame")
+      assertEquals(runOnFx(w.summary.vm.plotNotes.omitted), 1)
+      val said = runOnFx(twin.plot.map(_.description)).getOrElse(fail("no plot"))
+      assert(said.contains("1 more participant not annotated"), said)
+      assert(!said.contains("P05 · 17 of 20 contributing"), said)
+      fx.snapshot(StudioTheme.Light)
+      // Taller again: the column has room for both blocks.
+      runOnFx(twin.plotNode.setMaxHeight(Region.USE_COMPUTED_SIZE))
+      eventually(fx, "the taller plot draws both blocks")(drawn()._1 == p17 ++ p05)
+      val (_, tall) = drawn()
+      assert(both * Annotations.SlotPx <= ParticipantPlot.frameHeightPx(tall), s"$tall px")
+      assertEquals(runOnFx(w.summary.vm.plotNotes.omitted), 0)
   }
 
   fxStage.test("Explain P17 carries the spec and the group into the query layout") { fx =>
