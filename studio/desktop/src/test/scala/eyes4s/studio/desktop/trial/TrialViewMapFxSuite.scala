@@ -18,7 +18,7 @@ package eyes4s.studio.desktop.trial
 
 import eyes4s.studio.app.maps.*
 import eyes4s.studio.app.text.{TrialText, TrialTextId}
-import eyes4s.studio.app.tokens.{PaletteToken, StageVariant, Theme, Tokens}
+import eyes4s.studio.app.tokens.{Colour, PaletteToken, StageVariant, Theme, ThemedToken, Tokens}
 import eyes4s.studio.core.assets.{AssetLink, AssetRef, Display, TrialDisplay}
 import eyes4s.studio.core.backend.RunId
 import eyes4s.studio.core.selection.ScaleIndex
@@ -124,9 +124,15 @@ class TrialViewMapFxSuite extends StudioFxSuite:
       remembered = remembered
     )
 
-  private final class Wired(fx: FxStage, made: => MapRasterStore = MapRasterStore()):
+  // `size` holds the view to that layout size, centred on the stage.
+  private final class Wired(
+      fx: FxStage,
+      made: => MapRasterStore = MapRasterStore(),
+      size: Option[(Double, Double)] = None
+  ):
     val store = made
     val view  = runOnFx(TrialView(golden, TrialView.sharedLoader, store))
+    size.foreach((w, h) => runOnFx(view.setMaxSize(w, h)))
     fx.show(runOnFx(StackPane(view)))
     def dispose(): Unit =
       runOnFx(view.dispose())
@@ -324,39 +330,68 @@ class TrialViewMapFxSuite extends StudioFxSuite:
       )
     )
 
+  /** How far, per channel, a pixel of the hatch may lie from an opaque mix
+    * of its two inks: the canvas's rounding of an antialiased stripe edge. A
+    * hatch the screen shows through lies about 25 off it.
+    */
+  private val InkMixTolerance = 6
+
+  // How far `c` lies from the nearest opaque mix of `a` and `b`, per channel.
+  private def offMix(c: (Int, Int, Int), a: Colour, b: Colour): Double =
+    val (p, q, r) =
+      (Vector(c._1, c._2, c._3), Vector(a.red, a.green, a.blue), Vector(b.red, b.green, b.blue))
+    val d = q.zip(r).map((u, v) => (v - u).toDouble)
+    val t =
+      (p.zip(q).zip(d).map { case ((x, u), e) => (x - u) * e }.sum / d.map(e => e * e).sum)
+        .max(0.0)
+        .min(1.0)
+    p.zip(q).zip(d).map { case ((x, u), e) => math.abs(x - (u + t * e)) }.max
+
   fxStage.test("cells without coverage are hatched on screen and counted in the caption") {
     fx =>
-      val w          = Wired(fx)
       val holedStyle = ColourLimits.spanning(MapPalette.Mass, Vector(holed))
-      runOnFx {
-        // At scale 2: the hatch's period, scaled with the trial (the map's
-        // legend takes room under it), keeps whole pixels of ground.
-        w.view.plotHost.setOutputScaleOverride(Some(2.0))
-        w.view.show(input(blank))
-        w.view.showMap(Some(MapRequest(holed, holedStyle)))
-      }
-      val (scene, frame) = drawn(w, 2.0)(_.map.contains(holed.map))
-      assert(scene.caption.endsWith(" · 256 cells without coverage"), scene.caption)
-      val img = snapshot(fx, SnapshotScale.X2)
-      // A row across the hole, every device pixel of it (so no sampling
-      // step aliases with the hatch's period at any canvas size): the
-      // hatch's stripes and ground, never the blank screen showing through
-      // and never a ramp colour.
-      val y        = frameTop + 16.0 * cell
-      val (x0, py) = pixelAt(w, frame, frameLeft + 9.0 * cell, y, 2)
-      val (x1, _)  = pixelAt(w, frame, frameLeft + 23.0 * cell, y, 2)
-      val row      = (x0 to x1).map(px => rgb(img, (px, py)))
-      val screen   = Tokens.palette(PaletteToken.Screen)
-      def near(c: (Int, Int, Int), t: eyes4s.studio.app.tokens.Colour, tol: Int) =
-        math.abs(c._1 - t.red) <= tol && math.abs(c._2 - t.green) <= tol &&
-          math.abs(c._3 - t.blue) <= tol
-      val warnText = Tokens.themed(Theme.Light, eyes4s.studio.app.tokens.ThemedToken.WarnText)
-      val warnSoft = Tokens.themed(Theme.Light, eyes4s.studio.app.tokens.ThemedToken.WarnSoft)
-      assert(!row.exists(near(_, screen, 6)), s"the screen shows through: ${row.distinct}")
-      assert(row.exists(near(_, warnText, 40)), s"no hatch stroke: ${row.distinct}")
-      assert(row.exists(near(_, warnSoft, 24)), s"no hatch ground: ${row.distinct}")
-      w.dispose()
+      val warnText   = Tokens.themed(Theme.Light, ThemedToken.WarnText)
+      val warnSoft   = Tokens.themed(Theme.Light, ThemedToken.WarnSoft)
+      // The trial drawn at several sizes (the stage's, a smaller one, each
+      // with and without the map's legend taking room under it) and output
+      // scales 1 and 2, so the rows' shared edges cross device pixels at
+      // many offsets.
+      for
+        size  <- Vector(None, Some((611.0, 383.0)))
+        place <- Vector(MapLegendPlacement.UnderTrial, MapLegendPlacement.InHostLegend)
+        k     <- Vector(1, 2)
+      do
+        val w = Wired(fx, size = size)
+        runOnFx {
+          w.view.placeLegend(place)
+          w.view.plotHost.setOutputScaleOverride(Some(k.toDouble))
+          w.view.show(input(blank))
+          w.view.showMap(Some(MapRequest(holed, holedStyle)))
+        }
+        val (scene, frame) = drawn(w, k.toDouble)(_.map.contains(holed.map))
+        assert(scene.caption.endsWith(" · 256 cells without coverage"), scene.caption)
+        val img = snapshot(fx, if k == 1 then SnapshotScale.X1 else SnapshotScale.X2)
+        // Every device pixel inside the hole: the hatch's stripes and ground,
+        // opaque, never the blank screen showing through and never a ramp
+        // colour.
+        val (x0, y0) = pixelAt(w, frame, frameLeft + 9.0 * cell, frameTop + 9.0 * cell, k)
+        val (x1, y1) = pixelAt(w, frame, frameLeft + 23.0 * cell, frameTop + 23.0 * cell, k)
+        val hole     = for
+          py <- y0 to y1
+          px <- x0 to x1
+        yield (px, py) -> rgb(img, (px, py))
+        val at   = s"${size.getOrElse("stage")}, $place, scale $k"
+        val seen = hole.map(_._2).distinct
+        val off  = hole.filter((_, c) => offMix(c, warnSoft, warnText) > InkMixTolerance)
+        assert(off.isEmpty, s"$at: the hatch is not opaque at ${off.take(8)}")
+        assert(seen.exists(near(_, warnText, 40)), s"$at: no hatch stroke: $seen")
+        assert(seen.exists(near(_, warnSoft, 24)), s"$at: no hatch ground: $seen")
+        w.dispose()
   }
+
+  private def near(c: (Int, Int, Int), t: Colour, tol: Int) =
+    math.abs(c._1 - t.red) <= tol && math.abs(c._2 - t.green) <= tol &&
+      math.abs(c._3 - t.blue) <= tol
 
   // --- Another trial ---------------------------------------------------------------
 
