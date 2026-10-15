@@ -192,14 +192,19 @@ class NativeArtifactPersistenceSuite extends CatsEffectSuite:
       inner: ProjectStore[IO],
       failIndex: Ref[IO, Boolean],
       reads: Ref[IO, Vector[BundlePath]],
-      corruptPath: Option[BundlePath] = None
+      corruptPath: Option[BundlePath] = None,
+      sameLengthCorruption: Boolean = false
   ) extends ProjectStore[IO]:
     def read(path: BundlePath) = reads
       .update(_ :+ path)
       .flatMap(_ => inner.read(path))
       .map(
         _.map(bytes =>
-          if corruptPath.contains(path) then IArray.from(Vector.from(bytes) :+ 0.toByte)
+          if corruptPath.contains(path) then
+            if sameLengthCorruption then
+              IArray
+                .tabulate(bytes.length)(i => if i == 0 then (bytes(i) ^ 1).toByte else bytes(i))
+            else IArray.from(Vector.from(bytes) :+ 0.toByte)
           else bytes
         )
       )
@@ -473,6 +478,24 @@ class NativeArtifactPersistenceSuite extends CatsEffectSuite:
           clues(found)
         )
     )
+  }
+
+  test("save readback refuses same-length corruption before acknowledging facts") {
+    val entry = exported.archive.index.entry(NativeArtifactPackage.ResultName).get
+    val path  = get(ArchivePaths.content(run, entry.sha256))
+    for
+      inner     <- InMemoryProjectStore.create[IO]
+      failIndex <- Ref.of[IO, Boolean](false)
+      reads     <- Ref.of[IO, Vector[BundlePath]](Vector.empty)
+      store = new ControlledStore(inner, failIndex, reads, Some(path), true)
+      session <- create(store)
+      initial <- session.history
+      refused <- session.storeNativeArtifacts(exported)
+      after   <- session.history
+      _       <- ok(session.close)
+    yield
+      assert(refused.left.toOption.exists(_.message.contains("SHA-256")), clues(refused))
+      assertEquals(after, initial)
   }
 
   test("cold optional finder refuses corrupt native entry bytes and changes no history") {
