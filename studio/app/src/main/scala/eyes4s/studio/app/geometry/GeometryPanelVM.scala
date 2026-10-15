@@ -17,6 +17,7 @@
 package eyes4s.studio.app.geometry
 
 import eyes4s.studio.app.AppModel
+import eyes4s.studio.app.plot.RovingMove
 import eyes4s.studio.app.text.{Format, GeometryText, GeometryTextId}
 import eyes4s.studio.app.vm.{A11yRole, FocusStop}
 import eyes4s.studio.core.backend.{AdmissionSummary, TrialKey}
@@ -98,6 +99,7 @@ final case class GeometryPanelVM(
     placementTitle: String,
     placementNote: String,
     thumbnails: Vector[ThumbnailVM],
+    thumbnailsAccessible: String,
     positionsNote: Option[String],
     densityTitle: String,
     densityCaption: String,
@@ -386,6 +388,9 @@ object GeometryPanelVM:
       placementTitle = t(CheckPlacement),
       placementNote = t(CheckPlacementNote),
       thumbnails = thumbnails,
+      thumbnailsAccessible =
+        if thumbnails.size == 1 then t(ThumbListOne)
+        else t(ThumbList, Format.count(thumbnails.size.toLong)),
       positionsNote = positionsNote,
       densityTitle = t(AllTrials),
       densityCaption = caption,
@@ -427,9 +432,9 @@ object GeometryPanelVM:
   /** The panel's focus stops inside its pane, in the order Tab visits them
     * (S1.11; they follow the pane's stop): the typed fields when the panel
     * edits them itself (`fields`; in the window the import draft's geometry
-    * form takes their place, with stops of its own), each shown thumbnail,
-    * the all-trials
-    * density, the marking button when it can mark, the open marking form (its
+    * form takes their place, with stops of its own), the thumbnails (one
+    * list stop with a cursor, while any is shown; [[thumbnailHome]]), the
+    * all-trials density, the marking button when it can mark, the open marking form (its
     * chosen fix and scope, then its two buttons), each recorded rule's
     * Remove, the chosen off-screen policy, and each count that opens its
     * tally. None while no revision is shown. The viewing distance and screen
@@ -453,7 +458,9 @@ object GeometryPanelVM:
         chosen(o.fixes) ++ chosen(o.scopes) ++ Vector(button(o.record), button(o.cancel))
       )
       typed ++
-        vm.thumbnails.map(t => FocusStop(A11yRole.ToggleButton, t.accessible)) ++
+        Option.when(vm.thumbnails.nonEmpty)(
+          FocusStop(A11yRole.List, vm.thumbnailsAccessible)
+        ) ++
         Vector(FocusStop(A11yRole.Plot, vm.densityAccessible)) ++
         Option.when(vm.canMark)(button(vm.mark)) ++
         form ++
@@ -462,6 +469,38 @@ object GeometryPanelVM:
         Vector(vm.outsideWindow, vm.outsideScreen)
           .filter(_.ref.isDefined)
           .map(c => button(c.accessible))
+
+  /** The thumbnails' columns, as the board lays them out. */
+  val ThumbnailColumns: Int = 2
+
+  /** The thumbnail a focused strip puts its cursor on when it has none
+    * (DESIGN_SPEC section 15, composite focus): the one chosen for marking,
+    * else the first; none while no thumbnail is shown.
+    */
+  def thumbnailHome(thumbnails: Vector[ThumbnailVM]): Option[Int] =
+    thumbnails.indexWhere(_.marked) match
+      case -1 => Option.when(thumbnails.nonEmpty)(0)
+      case i  => Some(i)
+
+  /** Where `move` takes the strip's cursor from thumbnail `at` of `count`,
+    * laid out in [[ThumbnailColumns]] columns in reading order: Left and
+    * Right (and Previous and Next) step to the neighbour in that order, Up
+    * and Down to the thumbnail a row above or below, which stays put when
+    * there is none, Home and End to the first and the last. It never wraps.
+    */
+  def thumbnailMove(at: Int, move: RovingMove, count: Int): Int =
+    if count <= 0 then at
+    else
+      val last       = count - 1
+      val from       = at.max(0).min(last)
+      def to(i: Int) = if i >= 0 && i <= last then i else from
+      move match
+        case RovingMove.Left | RovingMove.Previous => (from - 1).max(0)
+        case RovingMove.Right | RovingMove.Next    => (from + 1).min(last)
+        case RovingMove.Up                         => to(from - ThumbnailColumns)
+        case RovingMove.Down                       => to(from + ThumbnailColumns)
+        case RovingMove.First                      => 0
+        case RovingMove.Last                       => last
 
   /** "543 of 11,520 records · 409 trials": eyes4s's window totals, outside
     * the image frame and outside the screen apart, over its count of source
