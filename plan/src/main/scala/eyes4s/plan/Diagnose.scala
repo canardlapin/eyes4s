@@ -243,8 +243,8 @@ object Diagnose:
     derived(C.leastSquares)(_.message)
   given template: Diagnose[TemplateError, Nothing]           = derived(C.template)(_.message)
   given rng: Diagnose[RngError, Nothing]                     = derived(C.rng)(_.message)
-  given pointSampling: Diagnose[PointSamplingError, Nothing] =
-    derived(C.pointSampling)(_.message)
+  given pointSampling[K]: Diagnose[PointSamplingError[K], K] =
+    instance(C.pointSampling)(PointSamplingDiagnostics.apply[K])
   given recipeParameter: Diagnose[RecipeParameterError, Nothing] =
     derived(C.recipeParameter)(_.message)
   given repetitionPlan: Diagnose[RepetitionPlanError, Nothing] =

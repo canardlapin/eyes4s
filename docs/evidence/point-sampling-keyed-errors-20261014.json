@@ -1,0 +1,107 @@
+{
+  "schema": 1,
+  "date": "2026-10-15",
+  "issue": "cr4-point-keyed-errors",
+  "parent": "bd-01M3F9JDW47XHXFEAXPCR26CEW",
+  "base_sha": "0c89590df0937f7f2857bdbed312a5ab4e696111",
+  "scope": "Typed point-sampling error operands only; the CR4 point family descriptor, schemas, cursor, fs2 and family witness remain open.",
+  "contract": {
+    "error": "PointSamplingError[K] with AtTrial(source, optional actual template key, original key-free reason)",
+    "independent_operations": "PointBins, PointSamplingSpec and PointSamplingMean retain PointSamplingError[Nothing].",
+    "per_trial_outputs": "Observations, controls, bin reductions and differences retain the focal key; actual lookup failures also retain the sampled template key.",
+    "diagnostics": "Typed source/pair loci and named operands, with the original reason as a nested cause.",
+    "legacy_v1_payload": "Unchanged. Row/control keys already bind context; deterministic replay reconstructs typed failures and refuses any saved result that differs. Existing pinned fixture re-encodes unchanged.",
+    "source_compatibility": "Error, mean, observation and bin result annotations now carry their key type."
+  },
+  "verification": {
+    "restored_matrix_totals": [
+      32,
+      6,
+      32,
+      6,
+      3
+    ],
+    "jvm_total_including_document": 41,
+    "js_total": 38,
+    "root_jvm_and_js_test_compile_werror": "passed",
+    "catalogue": {
+      "issued_count": 754,
+      "issued_digest": "418c667ab691b6f7",
+      "original_stable_count": 445,
+      "original_stable_digest": "fb7ffbd3d3db7f63",
+      "added_code": "point-sampling.at-trial"
+    },
+    "mutation": {
+      "source": "plan/src/main/scala/eyes4s/plan/PointSampling.scala",
+      "original_sha256": "20011572141aacb1da0289128a1d6a9598b12fc2a84ea6d9cf27cb4f94113daf",
+      "mutants": [
+        {
+          "mutation": "drop-template-keys",
+          "mutant_sha256": "e2f86833b8b232a24433eedf808e05e5b1d5ca872e53acd95b51cba47abdde97",
+          "runs": [
+            {
+              "platform": "JVM",
+              "failed_tests": 1,
+              "log_sha256": "84781e323740cd8626e12d9cafe400043ebb600ec78b037fa7e0990b25e44277"
+            },
+            {
+              "platform": "JS",
+              "failed_tests": 1,
+              "log_sha256": "99ebe2cfc5af082e75c0a6971d0f05b0d0d95dad1e9ad5a98289c3e7ec7cb0da"
+            }
+          ],
+          "restored_sha256": "20011572141aacb1da0289128a1d6a9598b12fc2a84ea6d9cf27cb4f94113daf"
+        },
+        {
+          "mutation": "drop-aggregate-key",
+          "mutant_sha256": "172f2b9080f00d18596f0d5e07b970035aa16d391ebbc328a7472d2ad3aa4f30",
+          "runs": [
+            {
+              "platform": "JVM",
+              "failed_tests": 1,
+              "log_sha256": "532c773d8b6db4648faf5104ce28a431434362dc7cff22983a2a8ccc0061d854"
+            },
+            {
+              "platform": "JS",
+              "failed_tests": 1,
+              "log_sha256": "b81b607cf3f94bf6bee71f34ef0be4496fd9c13afbce9c7b516ae3e7ba3d9d71"
+            }
+          ],
+          "restored_sha256": "20011572141aacb1da0289128a1d6a9598b12fc2a84ea6d9cf27cb4f94113daf"
+        }
+      ]
+    },
+    "independent_reference": "Existing R point-sampling fixtures and the independent reduction/control reference remain unchanged; all public workflow assertions pass."
+  },
+  "development_corrections": [
+    "Catalogue alignment fixture was initially instantiated with String keys; changed to the standard StudyKey fixture without weakening alignment checks.",
+    "Pinned issued digest updated for the single appended code; stable original table unchanged.",
+    "Generated diagnostics document intentionally failed once after rewriting, then passed its ordinary checks."
+  ],
+  "source_sha256": {
+    "codec/src/main/scala/eyes4s/codec/PointSamplingCodec.scala": "1afc445df077066665749317d4d08f33abaad0aabe84eb0198cfb41e99496dc1",
+    "codec/src/test/scala/eyes4s/codec/PointSamplingCodecSuite.scala": "c7eea270ccdc169e1dbead6daf6afe2fb1e040f97ca0b4f7064be5d3dc2968b9",
+    "io/src/main/scala/eyes4s/io/BaselineExports.scala": "f2628d30340ce5d07ba886c28fd61ef8216b279aff07c29838a8a0235dcc84ad",
+    "plan/src/main/scala/eyes4s/plan/Diagnose.scala": "481612e42a296a3ba60a54700b3c01cfdbaf220e9e24b66656fabf2643798756",
+    "plan/src/main/scala/eyes4s/plan/DiagnosticCatalog.scala": "05da850b149842eb7aa326037b2647aab3466b061a856a2e0bf7f1584921cc72",
+    "plan/src/main/scala/eyes4s/plan/PointSampling.scala": "20011572141aacb1da0289128a1d6a9598b12fc2a84ea6d9cf27cb4f94113daf",
+    "plan/src/main/scala/eyes4s/plan/PointSamplingDiagnostics.scala": "68a9b84a39adeeca7494d633f9308c39ab6368592063967639b5607749398afa",
+    "plan/src/test/scala/eyes4s/plan/DiagnosticCatalogSuite.scala": "e6c8ed3b61105ace8bf9fe7208c9edef52a27c0ead7eb242e218b03afaf22301",
+    "plan/src/test/scala/eyes4s/plan/DiagnosticSamples.scala": "0487e120aa037269d28e1cb69099b2f0d90a9cd9a2c5f36c35add6b6bdd42147",
+    "plan/src/test/scala/eyes4s/plan/PointSamplingKeyedErrorSuite.scala": "79ad8a8d3e4cf331cd73b294be2793860810015ee4152bb2cc757c61e697ea79",
+    "plan/src/test/scala/eyes4s/plan/PointSamplingSuite.scala": "451b2087f4d33d8f81bd6fbb9e9babba11cae1b1ff8a79f049f1374470bc7c68"
+  },
+  "logs_sha256": {
+    "eyes4s-cr4-point-keyed-initial.log": "aef41dfa9faee5714113635c3f98621ee70d6d0fd6ed2d5f12edf28c4d9842d9",
+    "eyes4s-cr4-point-keyed-matrix-attempt2.log": "a2635e5ce5bb1c186c1b5417091664f197dcbac28c657628bd8f7e925cccf8fc",
+    "eyes4s-cr4-point-diagnostics-regeneration.log": "fb6beb5b2b35be6acfb4fe2923bfc87c2ddf6514674226006c23fdfec90884ea",
+    "eyes4s-cr4-point-diagnostics-verified.log": "0df9eb64646e9216cc8cb2c3666489daf7d47a5b0ed6b8223d62deca8892a3f3",
+    "eyes4s-cr4-point-keyed-restored.log": "47e4eab6f986786f19202f3f6c6278bd3b86655467fd5a8d8972ca1a0b52ca39",
+    "eyes4s-cr4-point-keyed-root-werror.log": "fd30fbe9d28139be5ae774add551f4045c31914a733d2442b6f2bd865833f3ff",
+    "eyes4s-cr4-point-keyed-mutant-drop-template-keys-JVM.log": "84781e323740cd8626e12d9cafe400043ebb600ec78b037fa7e0990b25e44277",
+    "eyes4s-cr4-point-keyed-mutant-drop-template-keys-JS.log": "99ebe2cfc5af082e75c0a6971d0f05b0d0d95dad1e9ad5a98289c3e7ec7cb0da",
+    "eyes4s-cr4-point-keyed-mutant-drop-aggregate-key-JVM.log": "532c773d8b6db4648faf5104ce28a431434362dc7cff22983a2a8ccc0061d854",
+    "eyes4s-cr4-point-keyed-mutant-drop-aggregate-key-JS.log": "b81b607cf3f94bf6bee71f34ef0be4496fd9c13afbce9c7b516ae3e7ba3d9d71"
+  },
+  "landing_status": "Reviewed slice awaiting combined frozen-tree qualification and landing; parent S5 remains open."
+}

@@ -801,7 +801,8 @@ object DiagnosticCatalog:
     "Density",
     "Point",
     "Insufficient",
-    "NonFinite"
+    "NonFinite",
+    "AtTrial"
   )
   val recipeParameter: DiagnosticFamily = error("recipe-parameter")(
     "Geometry",
