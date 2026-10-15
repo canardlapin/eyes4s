@@ -347,13 +347,15 @@ class S45dPlotFxSuite extends StudioFxSuite:
       assertEquals(w.hover, Some(HoverAt(plotView, rem.ref)))
       assertEquals(
         w.readout,
-        Some("Mean of Remembered, Scale 2°, σ (°) 2.00, D +0.30, n 24 participants")
+        Some("Mean of Remembered, Scale 2°, σ (°) 2.00, D +0.43, n 24 participants")
       )
 
       // Clicking a participant's line selects all its rows.
-      val p17 = profile.participants.find(_.name == "P17").getOrElse(fail("P17"))
-      click(w, t, anchor(t, p17.points.head.ref))
-      assertEquals(w.selected, p17.points.map(_.ref))
+      // P03's point at 1° is the highest on the plot, 0.04 in D from any other
+      // point at that scale; P17's lie within 0.006 of another participant's.
+      val p03 = profile.participants.find(_.name == "P03").getOrElse(fail("P03"))
+      click(w, t, anchor(t, p03.points(1).ref))
+      assertEquals(w.selected, p03.points.map(_.ref))
       val selected = runOnFx(w.twin.input.state.selectionLines(t))
       assertEquals(selected.size, 1)
       assertEquals(selected.head.points.size, 4)

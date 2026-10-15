@@ -195,7 +195,7 @@ class FigureExportSuite extends munit.FunSuite:
       // Every panel is drawn from its template, with its letter, not captured.
       val drawn = unescape(text(svgOf(two)))
       Vector("A", "B", "C", "D", "E").foreach(l => assert(drawn.contains(l)))
-      assert(drawn.contains("Matched 0.73 · highest of 19 controls street-112 0.61"), drawn)
+      assert(drawn.contains("Matched 0.94 · highest of 19 controls harbor-231 0.72"), drawn)
   }
 
   test("the imagery disclosure survives export (E2E-10)") {

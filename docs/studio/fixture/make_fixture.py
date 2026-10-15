@@ -268,12 +268,11 @@ S = study["summary"]
 
 
 def fmt(value, signed=False):
-    """2 places, half-up on the shortest decimal of the double, U+2212 for a minus:
-    the app's Format.decimal / Format.signed, so a board cell reads as the app."""
+    """2 places, half-up on the shortest decimal of the double: the app's
+    Format.decimal / Format.signed, so a cell reads as the app's (FIXTURE.md keeps an
+    ASCII '-' where the app draws U+2212)."""
     text = str(Decimal(repr(value)).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP))
-    if text.startswith("-"):
-        return "−" + text[1:]
-    return "+" + text if signed and text != "0.00" else text
+    return "+" + text if signed and not text.startswith("-") and text != "0.00" else text
 
 
 fmts = lambda vs: "[" + ", ".join(fmt(v) for v in vs) + "]"

@@ -61,34 +61,34 @@ class CompareSummaryFxSuite extends ShellFxSuite:
   override val munitTimeout: Duration = Duration(180, "s")
 
   /** Participant values independently averaged from fixture.json's stored
-    * contributing queries at 2°. P24 Forgotten rounds to .18 from these
-    * stored values; the older illustrative summary rounds before storage.
+    * contributing queries at 2° (SCORES.json's), rounded half up; they read
+    * as FIXTURE.md's table of SCORES.json's participant means.
     */
   private val fixtureTable: Vector[Vector[String]] = Vector(
-    "P01 | 20 | 19 | 0 | 0 | 1 | 0.52 | 0.35 | +0.17 | +0.26 (11) | +0.06 (8)",
-    "P02 | 20 | 19 | 0 | 0 | 1 | 0.58 | 0.36 | +0.22 | +0.27 (13) | +0.12 (6)",
-    "P03 | 20 | 19 | 0 | 1 | 0 | 0.68 | 0.35 | +0.33 | +0.38 (15) | +0.15 (4)",
-    "P04 | 20 | 19 | 0 | 0 | 1 | 0.65 | 0.36 | +0.29 | +0.36 (12) | +0.18 (7)",
-    "P05 | 20 | 17 | 3 | 0 | 0 | 0.27 | 0.34 | -0.08 | -0.03 (13) | -0.24 (4)",
-    "P06 | 20 | 19 | 0 | 0 | 1 | 0.59 | 0.34 | +0.25 | +0.30 (11) | +0.17 (8)",
-    "P07 | 20 | 19 | 0 | 1 | 0 | 0.62 | 0.35 | +0.27 | +0.32 (15) | +0.10 (4)",
-    "P08 | 20 | 19 | 0 | 1 | 0 | 0.61 | 0.35 | +0.25 | +0.31 (12) | +0.15 (7)",
-    "P09 | 20 | 19 | 0 | 0 | 1 | 0.67 | 0.35 | +0.32 | +0.34 (15) | +0.24 (4)",
-    "P10 | 20 | 19 | 0 | 1 | 0 | 0.78 | 0.35 | +0.43 | +0.45 (16) | +0.33 (3)",
-    "P11 | 20 | 19 | 0 | 1 | 0 | 0.57 | 0.35 | +0.22 | +0.28 (13) | +0.11 (6)",
-    "P12 | 20 | 19 | 0 | 0 | 1 | 0.64 | 0.35 | +0.28 | +0.34 (12) | +0.19 (7)",
-    "P13 | 20 | 19 | 0 | 0 | 1 | 0.47 | 0.36 | +0.11 | +0.17 (11) | +0.02 (8)",
-    "P14 | 20 | 19 | 0 | 1 | 0 | 0.62 | 0.35 | +0.27 | +0.29 (14) | +0.22 (5)",
-    "P15 | 20 | 19 | 0 | 1 | 0 | 0.45 | 0.35 | +0.10 | +0.18 (13) | -0.08 (6)",
-    "P16 | 20 | 19 | 0 | 0 | 1 | 0.74 | 0.35 | +0.38 | +0.44 (12) | +0.28 (7)",
-    "P17 | 20 | 19 | 0 | 0 | 1 | 0.73 | 0.35 | +0.38 | +0.38 (17) | +0.32 (2)",
-    "P18 | 20 | 19 | 0 | 1 | 0 | 0.76 | 0.35 | +0.41 | +0.42 (16) | +0.37 (3)",
-    "P19 | 20 | 19 | 0 | 0 | 1 | 0.59 | 0.35 | +0.24 | +0.29 (15) | +0.06 (4)",
-    "P20 | 20 | 19 | 0 | 0 | 1 | 0.59 | 0.37 | +0.22 | +0.26 (14) | +0.12 (5)",
-    "P21 | 20 | 19 | 0 | 1 | 0 | 0.67 | 0.35 | +0.31 | +0.32 (17) | +0.27 (2)",
-    "P22 | 20 | 19 | 0 | 0 | 1 | 0.54 | 0.35 | +0.19 | +0.27 (12) | +0.06 (7)",
-    "P23 | 20 | 19 | 0 | 0 | 1 | 0.64 | 0.34 | +0.30 | +0.34 (14) | +0.21 (5)",
-    "P24 | 20 | 19 | 0 | 0 | 1 | 0.65 | 0.34 | +0.30 | +0.36 (13) | +0.18 (6)"
+    "P01 | 20 | 19 | 0 | 0 | 1 | 0.73 | 0.31 | +0.42 | +0.47 (11) | +0.35 (8)",
+    "P02 | 20 | 19 | 0 | 0 | 1 | 0.71 | 0.29 | +0.43 | +0.46 (13) | +0.35 (6)",
+    "P03 | 20 | 19 | 0 | 1 | 0 | 0.80 | 0.33 | +0.47 | +0.49 (15) | +0.37 (4)",
+    "P04 | 20 | 19 | 0 | 0 | 1 | 0.71 | 0.36 | +0.35 | +0.44 (12) | +0.20 (7)",
+    "P05 | 20 | 17 | 3 | 0 | 0 | 0.70 | 0.35 | +0.35 | +0.39 (13) | +0.22 (4)",
+    "P06 | 20 | 19 | 0 | 0 | 1 | 0.69 | 0.38 | +0.31 | +0.38 (11) | +0.22 (8)",
+    "P07 | 20 | 19 | 0 | 1 | 0 | 0.69 | 0.35 | +0.34 | +0.38 (15) | +0.21 (4)",
+    "P08 | 20 | 19 | 0 | 1 | 0 | 0.75 | 0.41 | +0.34 | +0.40 (12) | +0.25 (7)",
+    "P09 | 20 | 19 | 0 | 0 | 1 | 0.72 | 0.35 | +0.37 | +0.41 (15) | +0.21 (4)",
+    "P10 | 20 | 19 | 0 | 1 | 0 | 0.80 | 0.37 | +0.43 | +0.44 (16) | +0.34 (3)",
+    "P11 | 20 | 19 | 0 | 1 | 0 | 0.70 | 0.34 | +0.36 | +0.47 (13) | +0.12 (6)",
+    "P12 | 20 | 19 | 0 | 0 | 1 | 0.75 | 0.34 | +0.41 | +0.48 (12) | +0.29 (7)",
+    "P13 | 20 | 19 | 0 | 0 | 1 | 0.69 | 0.39 | +0.30 | +0.36 (11) | +0.22 (8)",
+    "P14 | 20 | 19 | 0 | 1 | 0 | 0.72 | 0.38 | +0.34 | +0.40 (14) | +0.17 (5)",
+    "P15 | 20 | 19 | 0 | 1 | 0 | 0.73 | 0.35 | +0.38 | +0.39 (13) | +0.36 (6)",
+    "P16 | 20 | 19 | 0 | 0 | 1 | 0.73 | 0.33 | +0.40 | +0.47 (12) | +0.27 (7)",
+    "P17 | 20 | 19 | 0 | 0 | 1 | 0.72 | 0.34 | +0.38 | +0.40 (17) | +0.22 (2)",
+    "P18 | 20 | 19 | 0 | 1 | 0 | 0.76 | 0.38 | +0.38 | +0.43 (16) | +0.14 (3)",
+    "P19 | 20 | 19 | 0 | 0 | 1 | 0.73 | 0.35 | +0.37 | +0.41 (15) | +0.22 (4)",
+    "P20 | 20 | 19 | 0 | 0 | 1 | 0.75 | 0.38 | +0.37 | +0.44 (14) | +0.20 (5)",
+    "P21 | 20 | 19 | 0 | 1 | 0 | 0.76 | 0.40 | +0.36 | +0.38 (17) | +0.23 (2)",
+    "P22 | 20 | 19 | 0 | 0 | 1 | 0.74 | 0.36 | +0.38 | +0.50 (12) | +0.19 (7)",
+    "P23 | 20 | 19 | 0 | 0 | 1 | 0.77 | 0.40 | +0.37 | +0.41 (14) | +0.28 (5)",
+    "P24 | 20 | 19 | 0 | 0 | 1 | 0.77 | 0.38 | +0.39 | +0.46 (13) | +0.25 (6)"
   ).map(_.split('|').toVector.map(_.trim))
 
   private def ascii(s: String): String = s.replace(Format.Minus, "-")
@@ -143,8 +143,8 @@ class CompareSummaryFxSuite extends ShellFxSuite:
     assertEquals(
       grand,
       Vector(
-        "Group Remembered, Mean of all participants, D +0.30, n 24 participants",
-        "Group Forgotten, Mean of all participants, D +0.15, n 24 participants"
+        "Group Remembered, Mean of all participants, D +0.43, n 24 participants",
+        "Group Forgotten, Mean of all participants, D +0.24, n 24 participants"
       )
     )
     // The notes, the newer run's freshness and the σ selector.
@@ -178,7 +178,7 @@ class CompareSummaryFxSuite extends ShellFxSuite:
     fx.snapshot(StudioTheme.Light)
   }
 
-  fxStage.test("the headline's paired descriptive reads +0.16, P21 to P15, 24 of 24") { fx =>
+  fxStage.test("the headline's paired descriptive reads +0.18, P15 to P11, 24 of 24") { fx =>
     val w = boot(fx, StoryModels.t3Summary, StoryMoment.T3)
     loaded(fx, w)
     eventually(fx, "the paired headline is shown")(w.summary.headline.isVisible)
@@ -194,14 +194,14 @@ class CompareSummaryFxSuite extends ShellFxSuite:
       texts,
       Vector(
         "Δ Remembered − Forgotten · paired n 24",
-        "+0.16",
+        "+0.18",
         "higher in 24 of 24",
-        "Range +0.05 P21 to +0.26 P15 · computed before rounding participant means · " +
+        "Range +0.04 P15 to +0.34 P11 · computed before rounding participant means · " +
           "Descriptive only, no intervals or tests"
       )
     )
     assert(inScene, "the headline sits over the participant plot in the window")
-    assert(spoken.contains("mean difference +0.16"), spoken)
+    assert(spoken.contains("mean difference +0.18"), spoken)
     fx.snapshot(StudioTheme.Light)
   }
 
@@ -222,15 +222,15 @@ class CompareSummaryFxSuite extends ShellFxSuite:
       val drawn = plot.plot.scene.grobs.flatMap(all).collect { case t: intaglio.Grob.Text =>
         t.label
       }
-      // The board's ten lines, P05's Forgotten mean as served (−0.235 → −0.24).
+      // The board's ten lines, the group means as served.
       val notes = Vector(
         "P17 · selected",
         "19 of 20 contributing",
-        "Rem +0.38 (n 17)",
-        "Forg +0.32 (n 2)",
+        "Rem +0.40 (n 17)",
+        "Forg +0.22 (n 2)",
         "P05 · 17 of 20 contributing",
-        "Rem −0.03 (n 13)",
-        "Forg −0.24 (n 4)",
+        "Rem +0.39 (n 13)",
+        "Forg +0.22 (n 4)",
         "3 failed queries:",
         "2 Remembered, 1 Forgotten",
         "no value, not zero"
@@ -239,9 +239,9 @@ class CompareSummaryFxSuite extends ShellFxSuite:
       // The marks are unchanged by the column: 24 participants twice, two grand means.
       assertEquals(plot.marks.size, 50)
       val said =
-        "Annotations: P17 · selected, 19 of 20 contributing, Remembered +0.38, n 17, " +
-          "Forgotten +0.32, n 2; P05 · 17 of 20 contributing, Remembered −0.03, n 13, " +
-          "Forgotten −0.24, n 4, 3 failed queries, 2 Remembered, 1 Forgotten, no value, not zero"
+        "Annotations: P17 · selected, 19 of 20 contributing, Remembered +0.40, n 17, " +
+          "Forgotten +0.22, n 2; P05 · 17 of 20 contributing, Remembered +0.39, n 13, " +
+          "Forgotten +0.22, n 4, 3 failed queries, 2 Remembered, 1 Forgotten, no value, not zero"
       assert(plot.description.contains(said), plot.description)
       assert(Option(spoken).exists(_.contains(said)), s"accessible text: $spoken")
       fx.snapshot(StudioTheme.Light)
@@ -255,13 +255,13 @@ class CompareSummaryFxSuite extends ShellFxSuite:
       val p17 = Vector(
         "P17 · selected",
         "19 of 20 contributing",
-        "Rem +0.38 (n 17)",
-        "Forg +0.32 (n 2)"
+        "Rem +0.40 (n 17)",
+        "Forg +0.22 (n 2)"
       )
       val p05 = Vector(
         "P05 · 17 of 20 contributing",
-        "Rem −0.03 (n 13)",
-        "Forg −0.24 (n 4)",
+        "Rem +0.39 (n 13)",
+        "Forg +0.22 (n 4)",
         "3 failed queries:",
         "2 Remembered, 1 Forgotten",
         "no value, not zero"
@@ -379,8 +379,8 @@ class CompareSummaryFxSuite extends ShellFxSuite:
       val forgotten           = position(Response.Forgotten)
       assertEquals(remembered.x, 0.0)
       assertEquals(forgotten.x, 1.0)
-      assertEqualsDouble(remembered.y, -0.34 / 13, ReportMeanTolerance)
-      assertEqualsDouble(forgotten.y, -0.94 / 4, ReportMeanTolerance)
+      assertEqualsDouble(remembered.y, 5.033771 / 13, ReportMeanTolerance)
+      assertEqualsDouble(forgotten.y, 0.863573 / 4, ReportMeanTolerance)
       assert(!plot.marks.exists(_.rows.exists(_.marking.isInstanceOf[RowMarking.Positionless])))
   }
 

@@ -352,7 +352,7 @@ object GoldenRoute:
     )
 
     private val controls: S = Step(
-      "19 controls at 2°, highest street-112 (enc_01) 0.61, mean 0.35",
+      "19 controls at 2°, highest harbor-231 (enc_11) 0.72, mean 0.32",
       d =>
         val nav = s.navigator
         for
@@ -372,8 +372,8 @@ object GoldenRoute:
             _ <- all(
               stated(
                 "controls",
-                "19 controls at 2°, highest street-112 (enc_01) 0.61, mean 0.35.",
-                (19, "street-112", "enc_01", round(0.61), round(0.35)),
+                "19 controls at 2°, highest harbor-231 (enc_11) 0.72, mean 0.32.",
+                (19, "harbor-231", "enc_11", round(0.72), round(0.32)),
                 (r.controlMembers, top.item, top.reference.trial, round(top.score), round(r.b))
               ),
               stated(
@@ -491,15 +491,12 @@ object GoldenRoute:
             _ <- all(
               expect("participant rows", 24, doc.participants.size),
               expect(
-                "frozen participant metadata",
+                "fixture participant summary",
                 doc.participants,
-                StoredQueryExpectations.legacyParticipants
+                StoredQueryExpectations.fixtureParticipants
               ),
-              expect(
-                "evaluated participant display",
-                StoredQueryExpectations.evaluatedParticipants,
-                served
-              ),
+              // The app's rounding of its served means reads as FIXTURE.md.
+              expect("evaluated participant display", doc.participants, served),
               expect(
                 "grand D by scale",
                 doc.list("By scale:"),
@@ -940,10 +937,10 @@ object GoldenRoute:
         expect("participants.csv rows", 24 * 2, participants.size - 1),
         listed(
           "panel C",
-          "Panel C reads \"Matched 0.73 · highest of 19 controls street-112 0.61 · control mean B 0.35 · D +0.38\".",
+          "Panel C reads \"Matched 0.94 · highest of 19 controls harbor-231 0.72 · control mean B 0.32 · D +0.62\".",
           panelC.exists(
             _.contains(
-              "Matched 0.73 · highest of 19 controls street-112 0.61 · control mean B 0.35 · D +0.38"
+              "Matched 0.94 · highest of 19 controls harbor-231 0.72 · control mean B 0.32 · D +0.62"
             )
           ),
           panelC.toString

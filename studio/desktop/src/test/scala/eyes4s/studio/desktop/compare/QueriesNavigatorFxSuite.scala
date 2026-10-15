@@ -98,11 +98,12 @@ class QueriesNavigatorFxSuite extends ShellFxSuite:
     // 24 participant headers; P17 is open, holding the trail's query.
     assertEquals(rows.count(r => r.size == 1), 24)
     assert(rows.contains(Vector("P17  19 of 20 · +0.38")), rows.take(3))
-    assert(rows.contains(Vector("ret_07", "beach-042", "+0.38")), rows)
+    assert(rows.contains(Vector("ret_07", "beach-042", "+0.62")), rows)
     assert(rows.contains(Vector("ret_09", "market-066", "not admitted")), rows)
     // Zero-centred ink bars: positive D starts at the zero line and runs right,
     // in proportion to D; negative D runs left and ends at it; no D, no bar.
-    runOnFx(w.summary.queries.press("P05"))
+    // P11 holds the two most negative D at 2° (ret_15, ret_19).
+    runOnFx(w.summary.queries.press("P11"))
     fx.awaitLayout()
     val shown = runOnFx {
       // A report can replace the rows after awaitLayout returns. Lay out and
@@ -116,10 +117,10 @@ class QueriesNavigatorFxSuite extends ShellFxSuite:
         b
       }
       .getOrElse(fail(s"no $trial at $d"))
-    val (zero, ink) = bar("ret_07", "+0.38")
+    val (zero, ink) = bar("ret_07", "+0.62")
     val (x07, w07)  = ink.getOrElse(fail("ret_07 has no bar"))
     assert(x07 > zero && w07 > 0.0, (zero, x07, w07))
-    assertEqualsDouble(bar("ret_06", "+0.50")._2.get._2 / w07, 0.50 / 0.38, 0.05)
+    assertEqualsDouble(bar("ret_06", "+0.35")._2.get._2 / w07, 0.349746 / 0.615394, 0.05)
     assertEquals(bar("ret_09", "not admitted")._2, None)
     val negative = shown.filter(_._1(2).startsWith("−"))
     assert(negative.nonEmpty, shown.map(_._1))

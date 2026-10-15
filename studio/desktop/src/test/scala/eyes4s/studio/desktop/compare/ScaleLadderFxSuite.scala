@@ -30,7 +30,7 @@ import scala.concurrent.duration.Duration
 
 /** Compare's contrast pane in the studio window (ticket S8.3; Main.dc.html,
   * contrast) at t2: the scale ladder is drawn and the readout is FIXTURE.md's
-  * focus (2° M 0.73, B 0.35 of 19 controls, D +0.38) with the confound
+  * focus (2° M 0.94, B 0.32 of 19 controls, D +0.62) with the confound
   * sentence verbatim; Next and Prev walk the references by cosine and the
   * reference panel follows; picking a control in the ladder switches the
   * reference panel to it.
@@ -62,14 +62,14 @@ class ScaleLadderFxSuite extends ShellFxSuite:
         runOnFx(w.summary.readout.lines),
         Vector(
           "ret_07 contrast · σ 2°",
-          "+0.38 D",
-          "M matched 0.73",
-          "B mean of 19 controls 0.35",
+          "+0.62 D",
+          "M matched 0.94",
+          "B mean of 19 controls 0.32",
           "Spatial correspondence, not replay. D does not separate participant-specific " +
             "reinstatement from item-driven salience common to all viewers of that image, " +
             "and may retain residual centre bias.",
           "Matched · beach-042",
-          "0.73",
+          "0.94",
           "The matched pair. Its cosine is M.",
           "matched · then 19 controls"
         )
@@ -84,14 +84,14 @@ class ScaleLadderFxSuite extends ShellFxSuite:
       ready(fx, w)
       runOnFx(w.summary.readout.pressNext())
       eventually(fx, "the reference panel shows the first control") {
-        reference(w) == ("Control", "P17 · enc_01 · street-112")
+        reference(w) == ("Control", "P17 · enc_11 · harbor-231")
       }
       val lines = runOnFx(w.summary.readout.lines)
       assertEquals(
         lines.takeRight(4),
         Vector(
-          "Control · street-112",
-          "0.61",
+          "Control · harbor-231",
+          "0.72",
           "One of 19 controls. It enters B; it is not M.",
           "control 1 of 19 by cosine"
         )
@@ -99,7 +99,7 @@ class ScaleLadderFxSuite extends ShellFxSuite:
       // D, M and B are the query's; they do not move with the inspected pair.
       assertEquals(
         lines.take(4).drop(1),
-        Vector("+0.38 D", "M matched 0.73", "B mean of 19 controls 0.35")
+        Vector("+0.62 D", "M matched 0.94", "B mean of 19 controls 0.32")
       )
       runOnFx(w.summary.readout.pressPrev())
       eventually(fx, "the reference panel is back on the matched reference") {

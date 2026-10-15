@@ -62,7 +62,7 @@ object FixtureDoc:
 
   private def number(cell: String): BigDecimal = BigDecimal(cell.trim.stripPrefix("+"))
 
-  // "+0.26 (11)": a mean and its n.
+  // "+0.47 (11)": a mean and its n.
   private def meanN(cell: String): (BigDecimal, Int) =
     cell.trim.split("[ ()]+").toList match
       case List(m, n) => (number(m), n.toInt)
@@ -93,7 +93,7 @@ object FixtureDoc:
       }
       .toVector
 
-  /** A bracketed list after `label` on one line: "M [0.41, 0.58, 0.73, 0.86]". */
+  /** A bracketed list after `label` on one line: "M [0.46, 0.82, 0.94, 0.97]". */
   def list(label: String): Vector[BigDecimal] =
     val at = text.indexOf(label)
     if at < 0 then throw IllegalStateException(s"FIXTURE.md has no '$label'")
@@ -102,7 +102,7 @@ object FixtureDoc:
     text.substring(open + 1, close).split(',').map(number).toVector
 
   /** The list called `name` on FIXTURE.md's one line holding `line`:
-    * `named("M/B/D by scale:", "B")` reads "B [0.22, 0.29, 0.35, 0.63]".
+    * `named("M/B/D by scale:", "B")` reads "B [0.04, 0.13, 0.32, 0.64]".
     */
   def named(line: String, name: String): Vector[BigDecimal] =
     val lines = text.linesIterator.filter(_.contains(line)).toVector
@@ -113,8 +113,8 @@ object FixtureDoc:
       case Some(m) => m.group(1).split(',').map(number).toVector
       case None    => throw IllegalStateException(s"FIXTURE.md: no '$name [..]' after '$line'")
 
-  /** Evaluated report display convention: to `places` decimals, half up.
-    * Frozen Python summary metadata has its own historical boundary values.
+  /** Evaluated report display convention: to `places` decimals, half up,
+    * as make_fixture.py writes FIXTURE.md's values.
     */
   def rounded(value: Double, places: Int = 2): BigDecimal =
     BigDecimal(value).setScale(places, BigDecimal.RoundingMode.HALF_UP)

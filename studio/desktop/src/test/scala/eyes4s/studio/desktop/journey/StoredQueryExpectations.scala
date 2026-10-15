@@ -19,8 +19,8 @@ package eyes4s.studio.desktop.journey
 import eyes4s.studio.core.backend.{ReportRole, Response}
 import eyes4s.studio.core.fixture.MockStudy
 
-/** Independent decimal arithmetic over the stored illustrative query rows.
-  * The old Python summaries rounded twice; those metadata pins remain intact.
+/** Independent decimal arithmetic over the stored query rows, which are
+  * SCORES.json's (make_fixture.py copies them).
   */
 object StoredQueryExpectations:
   private val study     = MockStudy.load.fold(e => throw new AssertionError(e), identity)
@@ -60,13 +60,16 @@ object StoredQueryExpectations:
       study.summary.participants.map(p => decimalMean(p.participant, role, scale, group))
     (values.sum / BigDecimal(values.size)).toDouble
 
-  /** Python's frozen displayed metadata, independently decoded from fixture.json. */
-  val legacyParticipants: Vector[FixtureRow] = study.summary.participants.map { p =>
+  /** fixture.json's participant summary (SCORES.json's means), at
+    * FIXTURE.md's two places, half up, independently decoded from fixture.json.
+    */
+  val fixtureParticipants: Vector[FixtureRow] = study.summary.participants.map { p =>
+    def two(v: Double)         = BigDecimal(v).setScale(2, BigDecimal.RoundingMode.HALF_UP)
     def group(label: Response) =
       val g = p.groups
         .find(_.label == label)
         .getOrElse(throw new AssertionError(s"Missing $label for ${p.participant}"))
-      (BigDecimal(g.d), g.n)
+      (two(g.d), g.n)
     FixtureRow(
       p.participant,
       p.requested,
@@ -74,27 +77,10 @@ object StoredQueryExpectations:
       p.failed,
       p.noMatch,
       p.notAdmitted,
-      BigDecimal(p.all.m),
-      BigDecimal(p.all.b),
-      BigDecimal(p.all.d),
+      two(p.all.m),
+      two(p.all.b),
+      two(p.all.d),
       group(Response.Remembered),
       group(Response.Forgotten)
     )
-  }
-
-  /** Exact decimal query means at the four binary rounding boundaries, and
-    * the report's pinned half-up display after native floating accumulation.
-    */
-  val boundaries: Vector[(String, Response, BigDecimal, BigDecimal)] = Vector(
-    ("P05", Response.Forgotten, BigDecimal("-0.235"), BigDecimal("-0.24")),
-    ("P13", Response.Forgotten, BigDecimal("0.025"), BigDecimal("0.02")),
-    ("P16", Response.Remembered, BigDecimal("0.445"), BigDecimal("0.44")),
-    ("P24", Response.Forgotten, BigDecimal("0.175"), BigDecimal("0.18"))
-  )
-
-  val evaluatedParticipants: Vector[FixtureRow] = legacyParticipants.map { p =>
-    boundaries.filter(_._1 == p.participant).foldLeft(p) { case (row, (_, group, _, shown)) =>
-      if group == Response.Remembered then row.copy(remembered = (shown, row.remembered._2))
-      else row.copy(forgotten = (shown, row.forgotten._2))
-    }
   }

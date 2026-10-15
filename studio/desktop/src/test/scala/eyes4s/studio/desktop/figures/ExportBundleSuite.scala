@@ -291,9 +291,10 @@ class ExportBundleSuite extends munit.FunSuite:
   }
 
   /** results.csv's table digest for the fixture, recorded when its label
-    * domain was settled (S9.5): pair absences must not change it.
+    * domain was settled (S9.5): pair absences must not change it. Re-recorded
+    * when the fixture's scores became SCORES.json's.
     */
-  private val ResultsDigest = "c032718a63e58d745850c70b35f038ab9ecfd9109ce4252c20e3d0834252149f"
+  private val ResultsDigest = "d2e21f7f9a9dcf1707c11798e3f4c7b522476ec62424e116d1a0ecedfffca97a"
 
   test(
     "results.csv pins explicit missing references; comparisons.csv has its own absence labels"

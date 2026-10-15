@@ -120,15 +120,15 @@ class FigureComposerFxSuite extends ShellFxSuite:
       loaded(fx, w)
       val said = texts(panelNode(w, "C"))
       // The control's heading is split over its title row and subtitle row.
-      assert(said.contains("Highest of 19") && said.contains("controls · street-112"), said)
+      assert(said.contains("Highest of 19") && said.contains("controls · harbor-231"), said)
       assert(
         said.contains(
-          "Matched 0.73 · highest of 19 controls street-112 0.61 · control mean B 0.35 · D +0.38"
+          "Matched 0.94 · highest of 19 controls harbor-231 0.72 · control mean B 0.32 · D +0.62"
         ),
         said
       )
-      // B appears only as the control mean; the control's 0.61 only beside its rank.
-      assert(said.filter(_.contains("0.35")).forall(_.contains("control mean B 0.35")), said)
+      // B appears only as the control mean; the control's 0.72 only beside its rank.
+      assert(said.filter(_.contains("0.32")).forall(_.contains("control mean B 0.32")), said)
       val tiles = runOnFx(
         panelNode(w, "C").lookupAll(".figures-tile").asScala.toVector.map(_.getAccessibleText)
       )
@@ -136,8 +136,8 @@ class FigureComposerFxSuite extends ShellFxSuite:
         tiles,
         Vector(
           "Query ret_07, P17 · σ 2°",
-          "Matched enc_03, 0.73",
-          "Highest of 19 controls · street-112, 0.61"
+          "Matched enc_03, 0.94",
+          "Highest of 19 controls · harbor-231, 0.72"
         )
       )
   }

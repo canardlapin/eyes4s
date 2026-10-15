@@ -60,7 +60,7 @@ class TrialPanelsFxSuite extends ShellFxSuite:
     val w = boot(fx, StoryModels.t2Compare, StoryMoment.T2)
     scored(fx, w, "P17 · enc_03 · beach-042")
     val Vector(q, r) = runOnFx(w.summary.panels.shown): @unchecked
-    assertEquals(q, ("Query", "P17 · ret_07 · beach-042", "Query contrast D · σ 2°: +0.38"))
+    assertEquals(q, ("Query", "P17 · ret_07 · beach-042", "Query contrast D · σ 2°: +0.62"))
     assertEquals(r._1, "Matched")
     assert(r._3.startsWith("Inspected pair score · σ 2°: "), r._3)
     assertEquals(runOnFx(w.summary.panels.backOffered), None)

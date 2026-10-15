@@ -363,7 +363,7 @@ class KeyboardJourneySuite extends GoldenWindow:
       fx.robot.press(KeyCode.ENTER)
       eventually(fx, "the contrast readout") {
         val t = shownTexts(w)
-        t.contains("+0.38") && t.exists(_.contains("0.73")) && t.exists(_.contains("0.35"))
+        t.contains("+0.62") && t.exists(_.contains("0.94")) && t.exists(_.contains("0.32"))
       }
       assert(
         model(w).location.trail.exists(_.toString.contains("ret_07")) ||

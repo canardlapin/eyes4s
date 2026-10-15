@@ -307,7 +307,7 @@ class S45cPlotFxSuite extends StudioFxSuite:
       val n = right(fixtureSummary.hcursor.get[Int]("n_Forgotten"))
       assertEquals(
         w.readout,
-        Some(s"Group Forgotten, Mean of all participants, D +0.15, n $n participants")
+        Some(s"Group Forgotten, Mean of all participants, D +0.24, n $n participants")
       )
       assert(runOnFx(w.twin.plotNode.lookup(".plot-readout").isVisible))
 
@@ -317,35 +317,44 @@ class S45cPlotFxSuite extends StudioFxSuite:
         .getOrElse(fail("no P17"))
       hoverAt(w, t, anchor(t, p17.ref))
       assertEquals(w.hover, Some(HoverAt(plotView, p17.ref)))
-      assertEquals(w.readout, Some("Group Forgotten, Mean of P17, D +0.32, n 2 queries"))
+      assertEquals(w.readout, Some("Group Forgotten, Mean of P17, D +0.22, n 2 queries"))
 
       // Selected and no longer hovered, the mark still says its n.
       click(w, t, anchor(t, p17.ref))
       assertEquals(w.selected, Vector(p17.ref))
       fire(w, t, DevicePoint(1.0, 1.0), MouseEvent.MOUSE_EXITED)
       assertEquals(w.hover, None)
-      assertEquals(w.readout, Some("Group Forgotten, Mean of P17, D +0.32, n 2 queries"))
+      assertEquals(w.readout, Some("Group Forgotten, Mean of P17, D +0.22, n 2 queries"))
       fx.snapshot(StudioTheme.Light)
       runOnFx(w.twin.dispose())
   }
 
-  test("frozen metadata and the four evaluated rounding boundaries stay explicit") {
-    assertEquals(StoredQueryExpectations.legacyParticipants, FixtureDoc.participants)
-    StoredQueryExpectations.boundaries.foreach { (id, group, exact, shown) =>
-      assertEquals(
-        StoredQueryExpectations.decimalMean(id, ReportRole.Difference, 2, Some(group)),
-        exact
-      )
+  test("every served participant group mean rounds as FIXTURE.md writes it") {
+    // fixture.json's summary is SCORES.json's; the app shows its own means of
+    // the stored query rows, rounded half up. At no participant do the two
+    // fall either side of a 2-place boundary (the illustrative scores had four).
+    val doc = FixtureDoc.participants
+    assertEquals(StoredQueryExpectations.fixtureParticipants, doc)
+    for
+      row   <- doc
+      group <- Vector(Response.Remembered, Response.Forgotten)
+    do
       val cell = fixtureMeans.cells
-        .find(c => c.participant == id && c.group == group)
-        .getOrElse(fail(s"no $id/$group"))
+        .find(c => c.participant == row.participant && c.group == group)
+        .getOrElse(fail(s"no ${row.participant}/$group"))
+      val exact = StoredQueryExpectations.decimalMean(
+        row.participant,
+        ReportRole.Difference,
+        2,
+        Some(group)
+      )
       assertEqualsDouble(
-        cell.d.getOrElse(fail("missing boundary mean")),
+        cell.d.getOrElse(fail("missing mean")),
         exact.toDouble,
         StoredQueryExpectations.Precision
       )
-      assertEquals(FixtureDoc.rounded(cell.d.get), shown)
-    }
+      val written = if group == Response.Remembered then row.remembered else row.forgotten
+      assertEquals(FixtureDoc.rounded(cell.d.get), written._1, s"${row.participant} $group")
   }
 
   // --- Missing is not zero ------------------------------------------------------------

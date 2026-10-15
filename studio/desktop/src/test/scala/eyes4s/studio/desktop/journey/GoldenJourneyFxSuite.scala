@@ -262,7 +262,7 @@ class GoldenJourneyFxSuite extends GoldenWindow:
       assertEquals(model(w).perspective, Perspective.Compare)
       eventually(fx, "the contrast readout") {
         val t = shown(w)
-        t.contains("+0.38") && t.exists(_.contains("0.73")) && t.exists(_.contains("0.35"))
+        t.contains("+0.62") && t.exists(_.contains("0.94")) && t.exists(_.contains("0.32"))
       }
       fx.snapshot(StudioTheme.Light)
 

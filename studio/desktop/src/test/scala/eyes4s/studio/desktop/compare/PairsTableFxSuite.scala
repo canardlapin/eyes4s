@@ -81,7 +81,7 @@ class PairsTableFxSuite extends ShellFxSuite:
     val src = runOnFx(w.summary.scaleProfile.table.source).get
     assertEquals(
       src.rows.indices.flatMap(src.cells(_)).map(_(3)).toVector,
-      Vector("+0.19", "+0.29", "+0.38", "+0.23")
+      Vector("+0.42", "+0.69", "+0.62", "+0.34")
     )
   }
 
