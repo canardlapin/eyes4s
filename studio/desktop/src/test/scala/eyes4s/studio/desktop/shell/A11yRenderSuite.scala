@@ -66,7 +66,9 @@ class A11yRenderSuite extends ShellFxSuite:
 
   /** The window as the boards show it: Analysis once the design is checked
     * (its preflight follows the check, as in A11yTreeSuite), Data once its
-    * geometry panel has drawn its pictures and read its counts.
+    * geometry panel has drawn its pictures and read its counts, and Explore
+    * once its reads have arrived: until then its bar and timeline controls
+    * are drawn faded, as disabled, and read below their contrast minimum.
     */
   private def settled(fx: FxStage, w: StudioWindow): StudioWindow =
     val perspective = runOnFx(w.runtime.model.perspective)
@@ -78,6 +80,23 @@ class A11yRenderSuite extends ShellFxSuite:
       eventually(fx, "the geometry panel's pictures and counts") {
         w.geometry.shownPictures.isDefined && w.geometry.state.counts.toOption.isDefined
       }
+    if perspective == eyes4s.studio.core.document.Perspective.Explore then
+      eventually(fx, "Explore inspector and navigation are served") {
+        val inspector = w.inspector.current
+        val nav       = w.navigator.state
+        Vector(
+          inspector.fixations,
+          inspector.record,
+          inspector.usedBy,
+          inspector.displays,
+          nav.entries,
+          nav.displays,
+          w.explore.state.fixations,
+          w.explore.state.preview,
+          w.explore.state.displays
+        ).forall(_.toOption.nonEmpty)
+      }
+      fx.awaitLayout()
     w
 
   private def fx(c: eyes4s.studio.app.tokens.Colour): Color =

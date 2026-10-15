@@ -28,7 +28,7 @@ Status key: **[approved]** owner-approved · **[bug]** a pure bug, landable with
 7. [bug] Plural: "1 records inside" (`GeometryText.scala:105`; `GeometryPanelSuite:461`). Add a singular form. **Fixed.**
 
 **C. Owner-approved**
-8. [approved] Map alpha floor (SPEC-AMENDMENTS #1, #10). **Fixed** (uncovered cells are one compound shape, so row seams are opaque at every size and scale, bd-01M4TCR2EWPSX1NG4R686MY3M7; figure tiles fade in but do not hatch).
+8. [approved] Map alpha floor (SPEC-AMENDMENTS #1, #10). **Fixed** (uncovered cells are one compound shape, so row seams are opaque at every size and scale, bd-01M4TCR2EWPSX1NG4R686MY3M7; figure tiles hatch theirs in the paper hatch, `--fig-hatch` over `--fig-hatch-ground`, as one shape, S27; served figure grids are always fully covered, so panel C carries no count).
    - `MapColours.argb` (`MapPalette.scala:164`): alpha = min(1, t/0.10), for mass maps only.
    - Missing cells draw the missing-asset hatch (never transparent, never a ramp colour), with a "{n} cells without coverage" TrialText id in the caption.
    - Tests: `PaletteSuite` (~:36-59, :150), `TrialMapSceneSuite:118, :295-320`, `MapTileSceneSuite:81-96`, `TrialViewMapFxSuite`.
@@ -53,7 +53,7 @@ Status key: **[approved]** owner-approved · **[bug]** a pure bug, landable with
     - `-fx-selection-bar[-non-focused]: -es-sel-fill`, `-fx-cell-hover-color: -es-surface-2` (`studio-shell.css:41-44`), and `.list-cell:filled:hover`.
     - Fold the accent-soft fills (`studio-navigator.css:89`, `studio-ledger.css:66,162`, `studio-explore.css:49,58`, `studio-timeline.css:44`, `studio-design.css:53`, `studio-figures.css:43-45`) and `.table-twin-row:selected` ink rules (`studio-plot.css:108-111`) into sel-fill + SmBld.
     - Tests: FX snapshot re-baseline.
-14. **D3, focus-visible.** **Fixed** (slice b: canvas focus rings show only after Tab or a roving key since focus arrived, `MarkInputAdapter.showFocus`; slice a: `:focus-visible` on every control rule and composite cursor; primary ring accent / on-accent / accent at 0, 2, 4; `:armed` → hairline; a composite pane draws no ring while its rows carry the cursor; a focused table puts its cursor on its home row, the first selected, else the first; only a composite with no rows rings its container (`CompositeFocus`); a canvas pane rings only for keyboard focus, `:keyboard-within` set by `MarkInputAdapter.showFocus`).
+14. **D3, focus-visible.** **Fixed** (slice b: canvas focus rings show only after Tab or a roving key since focus arrived, `MarkInputAdapter.showFocus`; slice a: `:focus-visible` on every control rule and composite cursor; primary ring accent / on-accent / accent at 0, 2, 4; `:armed` → hairline; a composite pane draws no ring while its rows carry the cursor; a focused table puts its cursor on its home row, the first selected, else the first; only a composite with no rows rings its container (`CompositeFocus`); a canvas pane rings only for keyboard focus, `:keyboard-within` set by `MarkInputAdapter.showFocus`; S28: a keyboard-focused canvas rings only its cursor mark, and its pane or stage rings its edge only while the canvas has no cursor mark, `:no-cursor-ring` from `MarkInputState.ringsCursor`).
     - `:focused` → `:focus-visible` on ~32 control rules.
     - Canvas rings gated on focusVisible OR keyboard-since-focus (Issue 1): `MarkInputAdapter.scala:137` listens on `focusedProperty`, and `TrialInputAdapter.focusChanged` is at `:75`.
     - Primary focus `-es-accent, -es-on-accent, -es-accent` at insets 0, 2, 4 (`studio-plot.css:316`, `studio-geometry.css:154`, `studio-ledger.css:216`, `studio-import.css:192`).
@@ -101,7 +101,7 @@ Status key: **[approved]** owner-approved · **[bug]** a pure bug, landable with
     - Tests: a `GeometrySceneSuite` test that a missing frame draws a hatch + X; a `GeometryPanelSuite` caption test.
 
 **I. Plots and Results **
-26. **H1, ParticipantPlot annotations** (split into slices of at most half a day): an `Annotations` API and `ParticipantTextId`s. Tests: a new suite, plus a Results FX snapshot. **Fixed** (slice a: the `Annotations` API; slice b: text ids, the app builder, Results wiring, accessible summary; each group's label reads "n = 24" in Results and Figures, the unit kept in the cell and its readout, owner decision 2026-10-15).
+26. **H1, ParticipantPlot annotations** (split into slices of at most half a day): an `Annotations` API and `ParticipantTextId`s. Tests: a new suite, plus a Results FX snapshot. **Fixed** (slice a: the `Annotations` API; slice b: text ids, the app builder, Results wiring, accessible summary; each group's label reads "n = 24" in Results and Figures, the unit kept in the cell and its readout, owner decision 2026-10-15). Capacity follows the plot frame's height (`Annotations.capacity`, S30).
 27. **H2, Results paired descriptive**: an app VM plus text. Test: a fixture value test of **0.15567 → "+0.16"**, range +0.05 (P21) to +0.26 (P15), 24 of 24, computed before rounding participant means. The fixture field is added in this landing (`docs/studio/fixture`). **Fixed** (the t3 story spec declares Remembered − Forgotten).
 
 **J. Parity harness **
