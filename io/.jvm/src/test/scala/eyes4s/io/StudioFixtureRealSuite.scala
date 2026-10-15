@@ -165,6 +165,38 @@ class StudioFixtureRealSuite extends munit.FunSuite:
     )
   }
 
+  /** A mean of values each rounded to 6 places, against its own 6-place
+    * rounding: half a unit from the operands, half from the stored mean.
+    */
+  private val RoundedMean = 1e-6
+
+  test("the focus query's control pairs are its 19 controls, their mean its B") {
+    val focus = queries(body)
+      .find(q => str(q, "participant") == "P17" && str(q, "trial") == "ret_07")
+      .getOrElse(fail("no P17 ret_07"))
+    val pairs = body.hcursor.downField("focusQuery")
+    assertEquals(pairs.get[String]("participant"), Right("P17"))
+    assertEquals(pairs.get[String]("trial"), Right("ret_07"))
+    // The other P17 encoding trials, every one admitted (FIXTURE.md).
+    val references = (1 to 20).map(i => f"enc_$i%02d").filterNot(_ == "enc_03").toVector
+    Vector("0.5", "1", "2", "4").foreach { s =>
+      val rows = pairs
+        .downField("controlPairs")
+        .downField(s)
+        .as[Vector[Json]]
+        .getOrElse(fail(s"no control pairs at $s"))
+      assertEquals(rows.map(str(_, "reference")), references, s)
+      val scores = rows.map(_.hcursor.get[Double]("score").getOrElse(fail(s"unscored at $s")))
+      val b      = focus.hcursor
+        .downField("scales")
+        .downField(s)
+        .get[Double]("B")
+        .getOrElse(fail(s"no B at $s"))
+      // B is the control reduction, ReducePolicy.default: the plain mean.
+      assertEqualsDouble(scores.sum / scores.size, b, RoundedMean, s)
+    }
+  }
+
   test("the stored file names its inputs, recipe and the JVM it was generated on") {
     val c = stored.hcursor
     assertEquals(c.downField("format").as[String], Right(StudioScores.Format))

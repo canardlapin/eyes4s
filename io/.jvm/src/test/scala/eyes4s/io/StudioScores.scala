@@ -62,6 +62,11 @@ object StudioScores:
 
   val Groups: Vector[String] = Vector("Remembered", "Forgotten")
 
+  /** The studio's focus query (FIXTURE.md), whose every control pair score
+    * SCORES.json lists at each scale.
+    */
+  val FocusQuery: (String, String) = ("P17", "ret_07")
+
   def directory: Path =
     Iterator
       .iterate(Paths.get("").toAbsolutePath)(_.getParent)
@@ -215,6 +220,11 @@ object StudioScores:
         )
       )
     )
+
+    // The result read back through eyes4s-plan's inspection, for the focus
+    // query's individual control pair scores.
+    lazy val inspection =
+      get("inspection")(ResultInspection.study(plan, result, input, Some(ledger)))
 
     def pairs(s: DirectedPairSchedule[K, K]): Vector[(K, K)] =
       @annotation.tailrec
@@ -426,15 +436,17 @@ object StudioScores:
             _.perParticipant.map(p => p.participant -> p).toMap
           )
         }.toMap
-        val byGroup = Groups.map { g =>
+        def perGroup(role: Role) = Groups.map { g =>
           g -> grouped.groups
             .find(_.levels.exists(_._2 == g))
-            .flatMap(gk => cell(grouped, gk, Role.Difference))
+            .flatMap(gk => cell(grouped, gk, role))
             .fold(Map.empty[String, ParticipantValue])(
               _.perParticipant.map(p => p.participant -> p).toMap
             )
         }.toMap
-        val names = (per.values.flatMap(_.keys) ++ byGroup.values.flatMap(
+        val byGroup      = perGroup(Role.Difference)
+        val byGroupOther = roles.take(2).map((role, name) => name -> perGroup(role)).toMap
+        val names        = (per.values.flatMap(_.keys) ++ byGroup.values.flatMap(
           _.keys
         )).toVector.distinct.sorted
         Json.fromFields(names.map { p =>
@@ -449,6 +461,10 @@ object StudioScores:
                 .fold(Json.obj("D" -> Json.Null, "queries" -> Json.fromInt(0)))(v =>
                   Json.obj("D" -> value(v.value), "queries" -> Json.fromInt(v.queries))
                 )
+                // M and B of the same group, beside its D.
+                .deepMerge(Json.fromFields(byGroupOther.toVector.sortBy(_._1).map { (name, m) =>
+                  name -> m(g).get(p).fold(Json.Null)(v => value(v.value))
+                }))
             })
           )
         })
@@ -480,6 +496,30 @@ object StudioScores:
       )
     }
 
+    // The focus query's control pairs at every scale, in eyes4s's pair
+    // order, each with its reference trial, item and score. Their mean over
+    // the contributing pairs is the query's B (ReducePolicy.default).
+    val (focusParticipant, focusTrial) = FocusQuery
+    val focusKey                       = focal
+      .find(k => k.participant == focusParticipant && trialLabel(k) == focusTrial)
+      .getOrElse(throw new IllegalStateException(s"focus query $FocusQuery is not a query"))
+    val focusQuery = Json.obj(
+      "participant"  -> Json.fromString(focusParticipant),
+      "trial"        -> Json.fromString(focusTrial),
+      "controlPairs" -> Json.fromFields(s.inspection.scales.map { scale =>
+        val listing = scale.pairs(StudyDesign.Control)
+        sigmaKey(Sigmas(scale.index)) -> Json.fromValues(
+          scale.pairsOfQuery(StudyDesign.Control, focusKey).flatMap(listing.get).map { p =>
+            Json.obj(
+              "reference" -> Json.fromString(trialLabel(p.reference)),
+              "item"      -> Json.fromString(p.reference.item),
+              "score"     -> p.outcome.fold(_ => Json.Null, v => number(v.value.value))
+            )
+          }
+        )
+      })
+    )
+
     Json.obj(
       "format"    -> Json.fromString(Format),
       "version"   -> Json.fromInt(Version),
@@ -508,6 +548,7 @@ object StudioScores:
       "counts"      -> counts,
       "queries"     -> Json.fromValues(queries),
       "notAdmitted" -> Json.fromValues(notAdmitted),
+      "focusQuery"  -> focusQuery,
       "summaries"   -> Json.fromFields(summaries)
     )
 
