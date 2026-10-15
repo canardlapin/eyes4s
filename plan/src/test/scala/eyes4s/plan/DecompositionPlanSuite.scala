@@ -71,6 +71,29 @@ class DecompositionPlanSuite extends munit.FunSuite:
     }
   }
 
+  test("plan review names the exact changed solver setting") {
+    import Provenance.Param.*
+    val before = get(DecompositionPlan.of(response, predictors, specs.head))
+    val after  = get(
+      DecompositionPlan.of(response, predictors, DecompositionSpec.Ols(Intercept.Include, rank))
+    )
+    assertEquals(before.diff(before), Vector.empty)
+    assertEquals(
+      before.diff(after),
+      Vector(
+        PlanChange(
+          "spec",
+          Vector(Text("ols"), Text("Exclude"), Num(rank.value)),
+          Vector(Text("ols"), Text("Include"), Num(rank.value))
+        )
+      )
+    )
+    assertEquals(
+      after.diff(before),
+      before.diff(after).map(change => PlanChange(change.field, change.after, change.before))
+    )
+  }
+
   test("all typed variant fields restore and rebuild the scientific description") {
     val form = new DecompositionForm
     assertEquals(form.views, form.fields.map(_.view))

@@ -50,6 +50,40 @@ class TemplateFitPlanSuite extends munit.FunSuite:
   }
 
   test(
+    "processed row counts advance at committed evaluation pages and preserve prior snapshots"
+  ) {
+    val original = split()
+    val extra    = Vector(
+      get(TemplateObservation.of("held-2", "held", Vector(1.0, 2.0), 8.0, Some("held-item-2"))),
+      get(TemplateObservation.of("held-3", "held", Vector(2.0, 2.0), 10.0, Some("held-item-3")))
+    )
+    val p = get(
+      TemplateFitPlan.of(
+        get(TemplateSplit.of(original.design, original.rows ++ extra, Set("held")))
+      )
+    )
+    val quanta = WorkQuanta(get(PairQuantum.of(1)), ComparisonQuantum.default)
+    def more(cursor: TemplateFitCursor[String, Vector[Double]]) =
+      get(cursor.advance(quanta)) match
+        case WorkStep.More(_, 1, next) => next
+        case other                     => fail(s"Expected one committed page, found $other")
+    val start = p.work
+    assertEquals(start.totalRows, 3)
+    assertEquals(start.processedRows, 0)
+    val fitted = more(start)
+    assertEquals(fitted.processedRows, 0)
+    val first = more(fitted)
+    assertEquals(first.processedRows, 1)
+    val second = more(first)
+    assertEquals(second.processedRows, 2)
+    get(second.advance(quanta)) match
+      case WorkStep.Done(1, result) => assertEquals(result.validation.evaluation.rows.size, 3)
+      case other                    => fail(s"Expected the final committed row, found $other")
+    assertEquals(start.processedRows, 0)
+    assertEquals(first.processedRows, 1)
+  }
+
+  test(
     "input identity includes excluded rows even when training and evaluation identities agree"
   ) {
     val a = get(TemplateFitPlan.of(split(99.0)))
