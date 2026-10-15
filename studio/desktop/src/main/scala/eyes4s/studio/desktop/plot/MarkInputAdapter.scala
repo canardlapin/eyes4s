@@ -34,8 +34,9 @@ import intaglio.javafx.{JavaFxCanvasContext, JavaFxRenderer}
 import intaglio.{DevicePoint, IntaglioError, RenderPlan}
 import javafx.application.Platform
 import javafx.beans.value.ChangeListener
+import javafx.css.PseudoClass
 import javafx.event.EventHandler
-import javafx.scene.{AccessibleAttribute, AccessibleRole}
+import javafx.scene.{AccessibleAttribute, AccessibleRole, Node}
 import javafx.scene.canvas.GraphicsContext
 import javafx.scene.input.{KeyCode, KeyEvent, MouseButton, MouseEvent}
 
@@ -97,7 +98,8 @@ trait MarkLayer[R <: StudioRef, E, T <: RovingTargets[R, E]]:
   *
   * Feedback is an overlay on the host ([[PlotOverlay]]): hover, the selection
   * as [[project]]ed from the bus, and a 2 px accent focus ring (DESIGN_SPEC
-  * sections 10 and 14), shown only for the keyboard ([[showFocus]]).
+  * sections 10 and 14), shown only for the keyboard ([[showFocus]]), which
+  * also sets [[KeyboardWithin]] on the host and what encloses it.
   * Redrawing it never compiles or redraws the scene.
   *
   * FX thread only. [[dispose]] removes every handler and listener it added
@@ -126,6 +128,9 @@ final class MarkInputAdapter[R <: StudioRef, E, T <: RovingTargets[R, E]] privat
     keyed = false
     showFocus()
   private val focusVisibleListener: ChangeListener[java.lang.Boolean] = (_, _, _) => showFocus()
+
+  // The nodes `:keyboard-within` is set on while the ring shows.
+  private var within: Vector[Node] = Vector.empty
 
   // What attach changed on the host, restored by dispose.
   private val priorRole                                     = host.getAccessibleRole
@@ -227,12 +232,21 @@ final class MarkInputAdapter[R <: StudioRef, E, T <: RovingTargets[R, E]] privat
     * hover rings are the pointer's and do not depend on it.
     */
   private def showFocus(): Unit =
-    focusChanged(host.isFocused && (host.isFocusVisible || keyed))
+    val shown = host.isFocused && (host.isFocusVisible || keyed)
+    focusChanged(shown)
+    markWithin(shown)
+
+  // Moves `:keyboard-within` to the host's chain as it is now, or off it.
+  private def markWithin(on: Boolean): Unit =
+    within.foreach(_.pseudoClassStateChanged(KeyboardWithin.pseudoClass, false))
+    within = if on && !disposed then KeyboardWithin.chain(host) else Vector.empty
+    within.foreach(_.pseudoClassStateChanged(KeyboardWithin.pseudoClass, true))
 
   /** Removes the adapter's handlers, listeners and overlay. Idempotent. */
   def dispose(): Unit =
     onFxThread("dispose")
     if !disposed then
+      markWithin(false)
       disposed = true
       host.removeEventHandler(MouseEvent.ANY, mouseHandler)
       host.removeEventHandler(KeyEvent.KEY_PRESSED, keyHandler)
@@ -347,3 +361,18 @@ final class MarkInputAdapter[R <: StudioRef, E, T <: RovingTargets[R, E]] privat
         s"MarkInputAdapter.$operation must run on the JavaFX application thread, " +
           s"not ${Thread.currentThread.getName}"
       )
+
+/** `:keyboard-within` (REVIEW ticket 14): the keyboard-only form of
+  * `:focus-within`. A [[MarkInputAdapter]] sets it on its host and on every
+  * node that encloses the host while the host shows its focus ring: focus
+  * that keyboard traversal brought, or that a key has operated since. A pane
+  * that draws a canvas's focus ring on its edge does so under it, so a click
+  * on the canvas draws no ring (DESIGN_SPEC section 15).
+  */
+object KeyboardWithin:
+
+  val pseudoClass: PseudoClass = PseudoClass.getPseudoClass("keyboard-within")
+
+  /** `n` and every node that encloses it, innermost first. */
+  def chain(n: Node): Vector[Node] =
+    Iterator.iterate(n)(_.getParent).takeWhile(_ != null).toVector

@@ -538,6 +538,36 @@ class PlotKitFxSuite extends StudioFxSuite:
     dispose(w)
   }
 
+  /** Whether the plot pane draws its accent edge, the plot's focus ring. */
+  private def paneRinged(w: Wired): Boolean = runOnFx {
+    val c      = Tokens.themed(Theme.Light, ThemedToken.Accent)
+    val accent = javafx.scene.paint.Color.rgb(c.red, c.green, c.blue, c.alphaPercent / 100.0)
+    w.root.applyCss()
+    Option(w.twin.plotNode.getBorder).toVector
+      .flatMap(_.getStrokes.asScala)
+      .exists(_.getTopStroke == accent)
+  }
+
+  fxStage.test("the pane's ring is the keyboard's: a click draws none; Tab or a key draws it") {
+    fx =>
+      val w = Wired(fx)
+      val t = showAndDraw(w, 1.0)
+      assume(runOnFx(fx.stage.isFocused), "the test window did not receive OS focus")
+      // A click focuses the plot (DESIGN_SPEC section 15: no ring for it).
+      clickMark(w, t, t.targets.head)
+      assert(runOnFx(w.host.isFocused), "a click focuses the plot")
+      assert(!paneRinged(w), "a click drew the pane's ring")
+      // A key after the click operates the plot by keyboard.
+      fx.robot.press(KeyCode.RIGHT)
+      assert(paneRinged(w), "a key after the click drew no ring")
+      runOnFx(eyes4s.studio.desktop.shell.KeyboardFocus.away(w.host))
+      assert(!paneRinged(w), "the ring outlived the focus")
+      // Tab brings the focus: the ring, with no key pressed on the plot.
+      runOnFx(eyes4s.studio.desktop.shell.KeyboardFocus.byKeyboard(w.host))
+      assert(paneRinged(w), "Tab drew no ring")
+      dispose(w)
+  }
+
   /** Sixty rows, so the table scrolls: the fixture's rows five times over. */
   private lazy val long: PlotSource = right(
     PlotSource(

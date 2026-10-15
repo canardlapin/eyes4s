@@ -42,7 +42,7 @@ import eyes4s.studio.desktop.explore.{
 import eyes4s.studio.desktop.figures.FiguresHost
 import eyes4s.studio.desktop.geometry.GeometryPanelView
 import eyes4s.studio.desktop.importing.{ImportWizardView, TrialKeyView}
-import eyes4s.studio.desktop.plot.TableTwinView
+import eyes4s.studio.desktop.plot.{KeyboardWithin, TableTwinView}
 import javafx.collections.FXCollections
 import javafx.scene.Node
 import javafx.scene.control.{
@@ -54,6 +54,7 @@ import javafx.scene.control.{
   TextField,
   ToggleButton
 }
+import javafx.scene.input.KeyCode
 import javafx.scene.layout.{HBox, Region, StackPane, VBox}
 import javafx.scene.paint.Color
 
@@ -67,7 +68,9 @@ import scala.jdk.CollectionConverters.*
   * insets 0, 2, 4. A pressed control takes the hairline fill; a pressed
   * primary action is drawn as at rest. A composite pane draws no ring while
   * its rows carry the cursor, and a composite with no row under its cursor
-  * (none yet, or no rows) draws the ring on the container.
+  * (none yet, or no rows) draws the ring on the container. A pane that
+  * draws a canvas's ring on its edge draws it only while the canvas shows
+  * its own (`:keyboard-within`), never for a click.
   *
   * Focus is reached as a person reaches it ([[KeyboardFocus]]): by traversal
   * for the keyboard, by `requestFocus()` for a click or the program. Each
@@ -416,6 +419,33 @@ class FocusVisibleFxSuite extends ShellFxSuite:
     assert(!pointed(pane)(ringed(pane)))
   }
 
+  fxStage.test("a clicked trial canvas draws no stage ring; Tab, or a key after it, does") {
+    fx =>
+      val w = boot(fx, StoryModels.t2Explore, StoryMoment.T2)
+      eventually(fx, "the trial is drawn")(w.explore.input.targets.nonEmpty)
+      val host  = runOnFx(w.explore.trialView.plotHost)
+      val stage = runOnFx(
+        KeyboardWithin
+          .chain(host)
+          .collectFirst { case r: Region if r.getStyleClass.contains("explore-stage") => r }
+          .getOrElse(fail("the trial canvas is not on the explore stage"))
+      )
+      def ring: Boolean = after(stage)(())(strokes(stage).contains(accent))
+      assume(runOnFx(fx.stage.isFocused), "the test window does not hold OS focus")
+      // A click focuses the canvas and draws no ring (DESIGN_SPEC section 15).
+      fx.robot.click(host)
+      assert(runOnFx(host.isFocused), "a click focuses the trial canvas")
+      assert(!ring, "a click drew the stage's ring")
+      // A key after the click operates the canvas by keyboard.
+      fx.robot.press(KeyCode.RIGHT)
+      assert(ring, "a key after the click drew no ring")
+      runOnFx(KeyboardFocus.away(host))
+      assert(!ring, "the ring outlived the focus")
+      // Tab brings the focus: the ring, with no key pressed on the canvas.
+      runOnFx(KeyboardFocus.byKeyboard(host))
+      assert(ring, "Tab drew no ring")
+  }
+
   /** `(selector, declarations)` of every rule in `css`, comments removed. */
   private def rules(css: String): Vector[(String, String)] =
     css
@@ -447,6 +477,27 @@ class FocusVisibleFxSuite extends ShellFxSuite:
       if body.contains("-es-accent")
       selector <- selectors.split(",").toVector.map(_.trim)
       if focused.findFirstIn(selector).nonEmpty
+    yield s"${sheet.getFileName}: $selector"
+    assertEquals(offends, Vector.empty)
+  }
+
+  test("no stylesheet draws the accent under :focus-within, which a click sets") {
+    val shell =
+      Option(getClass.getClassLoader.getResource(StudioStyles.shellStylesheetResource))
+        .getOrElse(fail(s"no ${StudioStyles.shellStylesheetResource} on the classpath"))
+    val sheets = Files
+      .list(Paths.get(shell.toURI).getParent)
+      .iterator
+      .asScala
+      .toVector
+      .filter(_.getFileName.toString.endsWith(".css"))
+    // A pane that draws a canvas's ring on its edge uses :keyboard-within.
+    val offends = for
+      sheet             <- sheets
+      (selectors, body) <- rules(Files.readString(sheet))
+      if body.contains("-es-accent")
+      selector <- selectors.split(",").toVector.map(_.trim)
+      if selector.contains(":focus-within")
     yield s"${sheet.getFileName}: $selector"
     assertEquals(offends, Vector.empty)
   }
