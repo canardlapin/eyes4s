@@ -72,8 +72,10 @@ object ParticipantNotes:
 
   val empty: ParticipantNotes = ParticipantNotes(Vector.empty, 0)
 
-  /** The slots of the board's frame: 216 px tall in 14 px slots (the
-    * column's `SlotPx`), so 15 whole lines.
+  /** The slots of the Results board's frame: 216 px tall in 14 px slots
+    * (the column's `SlotPx`), so 15 whole lines. A drawn plot does not use
+    * it: its host measures its own frame (the viz plot's `noteSlots`) and
+    * passes those slots, so a short pane never writes below its frame.
     */
   val BoardSlots: Int = 15
 
@@ -251,7 +253,8 @@ object ParticipantNotes:
         Vector(Format.count(left.toLong)),
         NoteRole.Fact,
         NoteTone.Secondary,
-        ParticipantText(NoteMoreSpoken, Format.count(left.toLong))
+        if left == 1 then ParticipantText(NoteOneMoreSpoken)
+        else ParticipantText(NoteMoreSpoken, Format.count(left.toLong))
       )
       ParticipantNotes(
         kept.updated(lowest, kept(lowest).copy(lines = kept(lowest).lines :+ more)),

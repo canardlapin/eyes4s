@@ -37,6 +37,7 @@ import eyes4s.studio.desktop.runtime.StudioSession
 import eyes4s.studio.desktop.tokens.TokenFiles
 import eyes4s.studio.viz.plot.{Annotations, ParticipantPlot, ScaleLadderPlot, ScaleProfilePlot}
 import javafx.application.Platform
+import javafx.beans.value.ChangeListener
 import javafx.geometry.Pos
 import javafx.scene.input.{KeyCode, KeyEvent}
 import javafx.scene.control.{Button, Label, ToggleButton, ToggleGroup, Tooltip}
@@ -192,6 +193,16 @@ final class CompareSummaryHost(
       app
     )
     .fold(e => throw IllegalStateException(e.message), identity)
+
+  // The lines the annotation column has room for: the participant plot's
+  // frame as drawn now. A resize re-renders only when that count changes.
+  private var noteSlots: Int = ParticipantPlot.noteSlots(participantPlot.plotHost.getHeight)
+  private val plotResized: ChangeListener[Number] = (_, _, height) =>
+    val slots = ParticipantPlot.noteSlots(height.doubleValue)
+    if !disposed && slots != noteSlots then
+      noteSlots = slots
+      render(model())
+  participantPlot.plotHost.heightProperty.addListener(plotResized)
 
   // The headline's paired descriptive (design review ticket 27): the key,
   // the rounded mean difference with how many are higher, then the note.
@@ -546,7 +557,7 @@ final class CompareSummaryHost(
   def summary: CompareSummary = state
 
   /** The view-model now shown. */
-  def vm: CompareSummaryVM = CompareSummaryVM.of(state, model())
+  def vm: CompareSummaryVM = CompareSummaryVM.of(state, model(), noteSlots = noteSlots)
 
   /** Follows the model: a newly shown run is read; the views show the bus's selection. */
   def sync(m: AppModel): Unit = if !disposed then
@@ -606,7 +617,7 @@ final class CompareSummaryHost(
       val navigators = navigatorVMOf(m)
       queries.render(navigators)
       items.render(navigators)
-      val v     = CompareSummaryVM.of(state, m)
+      val v     = CompareSummaryVM.of(state, m, noteSlots = noteSlots)
       val theme = m.theme match
         case eyes4s.studio.core.document.Theme.Light => Theme.Light
         case eyes4s.studio.core.document.Theme.Dark  => Theme.Dark
@@ -675,7 +686,8 @@ final class CompareSummaryHost(
           explain.setVisible(false); keeps.setVisible(false)
       renderPaired(v.paired)
       // New notes rebuild the plot with its annotation column; the notes
-      // come from the same served means as the plot's source.
+      // come from the same served means as the plot's source, in the lines
+      // its frame has room for now.
       if v.plotNotes != plotNotes then
         plotNotes = v.plotNotes
         participantPlot.rebuild(
@@ -760,6 +772,7 @@ final class CompareSummaryHost(
   def dispose(): Unit =
     if !disposed then
       disposed = true
+      participantPlot.plotHost.heightProperty.removeListener(plotResized)
       participantPlot.dispose()
       scaleProfile.dispose()
       participantTable.dispose()

@@ -98,10 +98,15 @@ object CompareSummaryVM:
     val derived = !s.spec.exists(_.groupBy.isEmpty)
     s.reports.get((scale, derived)).collect { case ReportAnswer.Answered(view) => view }
 
+  /** The layout's view-model. `noteSlots` is how many lines the
+    * participant plot's annotation column has room for: the drawn plot's
+    * frame measured by its host, or the Results board's frame.
+    */
   def of(
       s: CompareSummary,
       m: AppModel,
-      messages: Messages = Messages.english
+      messages: Messages = Messages.english,
+      noteSlots: Int = ParticipantNotes.BoardSlots
   ): CompareSummaryVM =
     val freshness = Shell.context(m, messages).newer.map(_.text)
     (s.run, s.summary) match
@@ -117,7 +122,7 @@ object CompareSummaryVM:
       case (Some(run), Some(SummaryAnswer.Failed(why))) =>
         empty(Some(SummaryText(SummaryTextId.Unreadable, run.number.toString, why)), freshness)
       case (Some(run), Some(SummaryAnswer.Answered(r))) =>
-        answered(s, m, run, r, freshness, messages)
+        answered(s, m, run, r, freshness, messages, noteSlots)
 
   private def empty(status: Option[String], freshness: Option[String]) =
     CompareSummaryVM(
@@ -140,7 +145,8 @@ object CompareSummaryVM:
       run: RunId,
       r: ResultSummary,
       freshness: Option[String],
-      messages: Messages
+      messages: Messages,
+      noteSlots: Int
   ): CompareSummaryVM =
     val available = s.available
     val shown     = s.shown
@@ -188,7 +194,7 @@ object CompareSummaryVM:
         r.participants,
         s.queries.collect { case QueriesAnswer.Answered(rows) => rows },
         ParticipantNotes.selectedParticipant(m.selection.selected, run),
-        ParticipantNotes.BoardSlots
+        noteSlots
       )
     }
     val paired = for

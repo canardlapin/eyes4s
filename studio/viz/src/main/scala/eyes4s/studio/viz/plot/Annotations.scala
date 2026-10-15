@@ -46,6 +46,10 @@ import eyes4s.studio.core.selection.StudioRef
   *     (so leaders do not cross), with [[BlockGapSlots]] empty slot between
   *     two blocks. A block's leader meets the frame's edge at the middle of
   *     its first line.
+  *   - Capacity: the frame holds as many whole slots as its drawn height
+  *     has [[SlotPx]] ([[capacity]]). The app composes its notes in that
+  *     many lines ([[ParticipantNotes.of]]), so no line is drawn below the
+  *     frame's bottom however short the plot is.
   *
   * A block's anchor must be a participant row the plot draws; the plot
   * refuses one that is not ([[PlotBuildError.Unanchored]]).
@@ -173,6 +177,13 @@ object Annotations:
 
   /** The empty slots between two blocks. */
   val BlockGapSlots: Int = 1
+
+  /** The whole slots in a frame `frameHeightPx` logical pixels tall; none
+    * when it has no height.
+    */
+  def capacity(frameHeightPx: Double): Int =
+    if frameHeightPx.isNaN || frameHeightPx <= 0.0 then 0
+    else math.floor(frameHeightPx / SlotPx).min(Int.MaxValue.toDouble).toInt
 
   /** What ends a line that was cut to fit. */
   val Elision: String = "…"
