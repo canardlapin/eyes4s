@@ -129,12 +129,14 @@ records each one instead of failing. Each names its ticket and why it stands.
   stop to carry it, and stay non-stops (owner decision 2026-10-15).
 - Shared: on Explore and Results, keyboard focus in the stage or plot pane rings the pane's edge (`:keyboard-within`,
   set by `MarkInputAdapter.showFocus`) together with the canvas cursor; the boards ring only the cursor. A click
-  rings neither (14, 28).
+  rings neither (14, 28). Open: slice S28, bd-01M500YB37A0PEBR3ZVS4QACSY.
 - Shared: the slider's track is drawn whole; the board's range fills it to the thumb. The board's fill is the
-  browser's native `accent-color` range, and JavaFX's `Slider` has no filled-range part (16).
+  browser's native `accent-color` range, and JavaFX's `Slider` has no filled-range part (16). Accepted as a
+  platform difference (owner decision 2026-10-15).
 - Maps: figure tiles fade in by the alpha floor but do not hatch cells without coverage, which show the stage:
   `MapTileScene` draws without an app theme, so it has no warn tokens (8). The Figures board's tiles have no
-  uncovered cells, so it draws no hatch to compare.
-- Data: each placement thumbnail is its own Tab stop (board: one listbox stop), and the off-screen policy sits after
+  uncovered cells, so it draws no hatch to compare. Open: slice S27, bd-01M500Y9Z7FPN4ZXY03XAS270Z.
+- Data: each placement thumbnail is its own Tab stop (board: one listbox stop; open: slice S29,
+  bd-01M500YC2RZD9N7RXEJ4DCSZWT), and the off-screen policy sits after
   the corrections (board: in the facts list). At 1440 × 900 the density and thumbnails are below the fold, because
   the import draft's editable geometry form, the one geometry editor, replaces the board's facts list (S26).
