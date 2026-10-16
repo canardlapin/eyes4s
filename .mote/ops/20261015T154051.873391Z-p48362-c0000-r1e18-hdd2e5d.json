@@ -1,0 +1,1 @@
+{"actor":"codex-pcmri-prediction-20261015","entity":"bd-01M3DPG3KTRQNN6HKWRHYQTT0C","kind":"reserve_open","mode":"exclusive","op":"20261015T154051.873391Z-p48362-c0000-r1e18-hdd2e5d","paths":["fixtures/private/pcmri/runs/20261015-prediction-followup/"],"reservation_id":"rv-01M503JBS16X26RH5C7D1JGDN5","ts":"2026-10-15T15:40:51.873391Z","ttl_s":28800,"v":2}

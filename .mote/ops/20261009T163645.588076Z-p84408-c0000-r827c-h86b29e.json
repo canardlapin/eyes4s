@@ -1,0 +1,1 @@
+{"actor":"claude-v1-triage","entity":"bd-01M3J4MG7X41XQBSEVHMZYE61S","expect":{"priority":"20260927T191426.685653Z-p30698-c0000-rbfa6-h01b392"},"kind":"patch","op":"20261009T163645.588076Z-p84408-c0000-r827c-h86b29e","set":{"priority":2},"ts":"2026-10-09T16:36:45.588076Z","v":1}

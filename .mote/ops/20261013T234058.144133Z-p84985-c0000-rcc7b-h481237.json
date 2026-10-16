@@ -1,0 +1,1 @@
+{"actor":"codex-discrepancy-trace","entity":"bd-01M3DPG3KTRQNN6HKWRHYQTT0C","kind":"reserve_open","mode":"exclusive","op":"20261013T234058.144133Z-p84985-c0000-rcc7b-h481237","paths":["fixtures/private/discrepancy-tracking/","fixtures/private/dashboard/"],"reservation_id":"rv-01M4VT80X0JRG3DHFBQFGRQ11J","ts":"2026-10-13T23:40:58.144133Z","ttl_s":3600,"v":2}
