@@ -319,7 +319,7 @@ Light stages. The levels are:
   owner chose this anchored step over fixed steps of 1, 4, 16 and 64 for every study (2026-10-12).
 - **Thresholds.** Four levels start at 1, `s`, `4s` and `16s` records. A cell's level is the
   highest level whose start it reaches. Level 4 is the overflow level and has no upper bound. The
-  levels use ramp stops 0 to 3 (§6) at the density opacity (0.6). Because the lowest start is
+  levels use ramp stops 0 to 3 (§6), drawn opaque (see "Contrast"). Because the lowest start is
   always 1 and `s ≥ 4`, a cell holding one record is always at level 1. A singleton is never
   hidden, never merged with empty cells, and never shares a level with a cell of `s` or more
   records.
@@ -330,15 +330,32 @@ Light stages. The levels are:
   read the same numbers. A new revision (a geometry, mapping or admission change, §8) gets its own
   levels, and its key shows them.
 - **Key.** The key is the caption "Records per cell, log steps · {c} × {r} screen cells" and four
-  swatches, ramp-0 to ramp-3 at the density opacity over the stage. They are labelled with closed
+  swatches, ramp-0 to ramp-3, opaque, over the current stage. A swatch whose level is cased on that
+  stage (see "Contrast") wears the same two bands as its border, 1 px each outside the swatch:
+  `--halo` outermost and the inner casing next to the fill. The view-model carries the stage and
+  one casing flag per level (`DensityKeyVM`), so the swatches change with the stage, and a stage
+  change redraws the density. They are labelled with closed
   count ranges, `1–(s−1)`, `s–(4s−1)`, `4s–(16s−1)`, and the overflow as `≥16s`. Counts use
   thousands separators. For s = 4 the labels are "1–3", "4–15", "16–63", "≥64". The key always
   shows all four swatches, including a level that holds no cell. The owner chose these closed
   ranges over lower bounds ("≥1, ≥4, ≥16, ≥64") on 2026-10-12, and the Data board was edited to match.
-- **Contrast.** Level 1 keeps ramp-0 on every stage (owner, 2026-10-12). At the density opacity,
-  ramp-0 over the stage measures 5.57:1 on Dark, 2.25:1 on Mid and 1.09:1 on Light;
-  `GeometrySceneSuite` pins these values. Colours that depend on the stage are a separate proposal
-  (mote bd-01M4SJ6T6MMGAW1PRGREGVSX50).
+- **Contrast.** Every level, singletons included, reaches 3:1 non-text contrast on every stage and
+  on the image frame's blank screen field (owner, 2026-10-15: option B of mote
+  bd-01M4SJ6T6MMGAW1PRGREGVSX50). The density keeps one ramp for every stage: level 1 keeps ramp-0
+  (owner, 2026-10-12), and the cells are drawn opaque. The 0.6 density opacity is retired for this
+  picture; the mass maps keep 0.6 (§12). Where a level's opaque fill is below 3:1 on some ground of
+  its stage (the stage or `--screen`), its cells wear the two-band stage casing, the same pair and
+  the same "only where needed" rule as a stage mark (§15, "Stage casing"): `--halo` outside and
+  the inner casing (`TokenUsage.innerCasing`) inside it, 1 px each, outside the cells. Only the
+  edges between a cased level's cells and empty cells are cased. Edges between two occupied cells
+  are level against level and are not cased, and the screen's border is not a ground. The casing
+  is stroked under the fills, so 1 px of each band shows. `DensityCasing` derives where the casing
+  goes from the contrast computation, so a token change re-derives it. With today's tokens every
+  level is cased on Dark and Mid, and every level but ≥64 on Light: ramp-3 there is 10.38:1 on the
+  stage and 4.12:1 on the screen. Opaque, ramp-0 measures 13.38:1 on Dark, 3.49:1 on Mid and
+  1.16:1 on Light, and 2.17:1 on the screen. Adjacent levels are at least 1.80:1 apart (1.80, 2.19
+  and 2.27), and their luminance falls with the level, so the order survives greyscale.
+  `TokenContrastSuite` and `GeometrySceneSuite` pin these values.
 - **Semantics.** "{n} cells drawn at four log-spaced levels: 1–3, 4–15, 16–63 and at least 64
   records per cell." The ranges are the key's.
 - **Empty and single-cell studies.** If no record falls on the screen (no placed records, or all

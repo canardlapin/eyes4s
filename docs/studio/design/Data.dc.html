@@ -310,7 +310,8 @@ body{margin:0}
 <desc>11,520 records binned into 64 × 36 cells. {{binsDrawn}} cells drawn at four log-spaced levels: 1–3, 4–15, 16–63 and at least 64 records per cell.</desc>
 <rect width="1920" height="1080" fill="var(--stage)"></rect>
 <rect x="448" y="156" width="1024" height="768" fill="var(--screen)"></rect>
-<g shape-rendering="crispEdges"><sc-for list="{{bins}}" as="c" hint-placeholder-count="1"><rect x="{{c.x}}" y="{{c.y}}" width="30" height="30" fill="{{c.fill}}" fill-opacity="0.6"></rect></sc-for></g>
+<g fill="none" stroke-linecap="square"><path d="{{binCasing}}" stroke="var(--halo)" stroke-width="54.9"></path><path d="{{binCasing}}" stroke="var(--isoline-ink)" stroke-width="27.4"></path></g>
+<g shape-rendering="crispEdges"><sc-for list="{{bins}}" as="c" hint-placeholder-count="1"><rect x="{{c.x}}" y="{{c.y}}" width="30" height="30" fill="{{c.fill}}"></rect></sc-for></g>
 <rect x="448" y="156" width="1024" height="768" fill="none" stroke="var(--on-stage)" stroke-width="14" stroke-dasharray="82 55"></rect>
 </svg>
 <div class="t11" style="display:flex;flex-direction:column;gap:4px;min-width:0">
@@ -319,7 +320,7 @@ body{margin:0}
 </div>
 </div>
 <div class="row t11" style="gap:6px">
-<sc-for list="{{binKey}}" as="k" hint-placeholder-count="4"><span class="row" style="gap:2px"><svg width="12" height="10" viewBox="0 0 12 10" aria-hidden="true" style="flex:none"><rect width="12" height="10" fill="var(--stage)"></rect><rect width="12" height="10" fill="{{k.fill}}" fill-opacity="0.6"></rect></svg><span style="color:var(--ink-2)">{{k.label}}</span></span></sc-for>
+<sc-for list="{{binKey}}" as="k" hint-placeholder-count="4"><span class="row" style="gap:2px"><svg width="12" height="10" viewBox="0 0 12 10" aria-hidden="true" style="flex:none;{{k.casing}}"><rect width="12" height="10" fill="var(--stage)"></rect><rect width="12" height="10" fill="{{k.fill}}"></rect></svg><span style="color:var(--ink-2)">{{k.label}}</span></span></sc-for>
 <div style="flex:1"></div>
 <button class="btn" style="height:22px" aria-label="Mark a trial as wrong orientation…">Mark wrong orientation…</button>
 </div>
@@ -354,9 +355,16 @@ body{margin:0}
 //    rows = round(64 x 1080 / 1920) = 36), counts per cell, no smoothing, no duration weight;
 //  - PROPOSED (v3, SPEC-AMENDMENTS 15): every non-zero cell is drawn (DensityPicture.Floor 5% -> one
 //    record); v3b extends 15 with LOG-SPACED levels by count: >=1, >=4, >=16, >=64 records -> ramp-0..3
-//    (was linear share of the fullest cell, which put 1-19 records in one step),
-//    each rect at alpha 0.6. The desktop today still drops cells under 5% of the fullest;
-//  - no isolines. Stage, then the image frame in --screen, then cells, then the dashed outline.
+//    (was linear share of the fullest cell, which put 1-19 records in one step);
+//  - each rect opaque (DESIGN_SPEC 15.1 "Contrast", option B, 2026-10-15; the 0.6 density opacity
+//    is retired). A level whose fill is below 3:1 on the stage or the screen field (DensityCasing)
+//    wears the two-band stage casing on its edges against empty cells: --halo stroked 4 px and the
+//    inner casing (--isoline-ink on the Dark and Mid stages, --isoline-case on Light) 2 px, square
+//    caps, under the fills, so 1 px of each shows. Edges between two occupied cells are not cased.
+//    The board's stage is Dark, where every level is cased (on Light, all but >=64). 1 px is
+//    1920 / 140 = 13.7 viewBox units. The key's swatches are opaque, with the same bands as a border;
+//  - no isolines. Stage, then the image frame in --screen, then the casing, the cells, then the
+//    dashed outline.
 // The records binned here are an illustrative stand-in (the fixture has no positions for all
 // 11,520 records): 10,977 inside the frame and 543 outside it, as the fixture counts them.
 function rng(seed) { return () => { seed |= 0; seed = seed + 0x6D2B79F5 | 0; let t = Math.imul(seed ^ seed >>> 15, 1 | seed); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
@@ -368,15 +376,26 @@ function binnedLevels(points, screenW, screenH, columns) {
     counts[Math.floor(p.y / ch) * columns + Math.floor(p.x / cw)] += 1;
   }
   const max = Math.max(...counts), ramp = ['var(--ramp-0)', 'var(--ramp-1)', 'var(--ramp-2)', 'var(--ramp-3)'];
-  const cells = [];
+  const cells = [], levels = new Array(columns * rows).fill(0);
   counts.forEach((c, i) => {
     if (c <= 0) return;
     // log-spaced count levels (extends SPEC-AMENDMENTS 15): >=1, >=4, >=16, >=64 records per cell,
     // so a dense off-frame cluster no longer shares the lowest step with scattered single records
     const level = c >= 64 ? 4 : c >= 16 ? 3 : c >= 4 ? 2 : 1;
+    levels[i] = level;
     cells.push({ x: (i % columns) * cw, y: Math.floor(i / columns) * ch, fill: ramp[level - 1] });
   });
-  return { cells, rows };
+  // DensityCasing on the Dark stage: every level is cased.
+  const cased = [true, true, true, true];
+  const at = (col, row) => col < 0 || row < 0 || col >= columns || row >= rows ? -1 : levels[row * columns + col];
+  const isCased = (col, row) => at(col, row) > 0 && cased[at(col, row) - 1];
+  const edge = (a, b) => (isCased(...a) && at(...b) === 0) || (isCased(...b) && at(...a) === 0);
+  let casing = '';
+  // One run per stretch of cased edges along a grid line, so each line is stroked once.
+  const runs = (n, test, seg) => { let from = -1; for (let i = 0; i <= n; i++) { if (i < n && test(i)) { if (from < 0) from = i; } else if (from >= 0) { casing += seg(from, i); from = -1; } } };
+  for (let r = 1; r < rows; r++) runs(columns, c => edge([c, r - 1], [c, r]), (a, b) => `M${a * cw} ${r * ch}H${b * cw}`);
+  for (let c = 1; c < columns; c++) runs(rows, r => edge([c - 1, r], [c, r]), (a, b) => `M${c * cw} ${a * ch}V${b * ch}`);
+  return { cells, rows, casing };
 }
 function standInRecords() {
   const r = rng(20261010), out = [];
@@ -435,8 +454,9 @@ class Component extends DCLogic {
     ];
     const thumbs = thumbs0.map((t, i) => Object.assign({ cc: 'var(--ink-2)', missing: false }, t, { domId: 'th-' + i, cursor: i === 0 ? 'true' : null }));
     const binned = binnedLevels(standInRecords(), 1920, 1080, 64);
-    const binKey = ['1–3', '4–15', '16–63', '≥64'].map((label, i) => ({ label, fill: 'var(--ramp-' + i + ')' }));
-    return { rootClass: this.props.dark ? 'es dark' : 'es', cols, causes, thumbs, bins: binned.cells, binsDrawn: String(binned.cells.length), binKey };
+    // Opaque swatches; a cased level's swatch wears the two bands outside it (Dark stage: every level).
+    const binKey = ['1–3', '4–15', '16–63', '≥64'].map((label, i) => ({ label, fill: 'var(--ramp-' + i + ')', casing: 'box-shadow:0 0 0 1px var(--isoline-ink),0 0 0 2px var(--halo)' }));
+    return { rootClass: this.props.dark ? 'es dark' : 'es', cols, causes, thumbs, bins: binned.cells, binsDrawn: String(binned.cells.length), binCasing: binned.casing, binKey };
   }
 }
 </script>
