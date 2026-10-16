@@ -17,7 +17,7 @@
 package eyes4s.studio.app.geometry
 
 import eyes4s.studio.app.AppModel
-import eyes4s.studio.app.maps.DensityCasing
+import eyes4s.studio.app.maps.{DensityBand, DensityCasing, DensityGround}
 import eyes4s.studio.app.plot.RovingMove
 import eyes4s.studio.app.text.{Format, GeometryText, GeometryTextId}
 import eyes4s.studio.app.tokens.StageVariant
@@ -56,15 +56,15 @@ final case class ThumbnailVM(
 
 /** The all-trials density's key (DESIGN_SPEC section 15.1): its caption,
   * the four swatch labels, lowest level first, the stage the density is
-  * drawn on, and whether each level wears the two-band stage casing there
-  * ([[DensityCasing]]). Swatch `i` is ramp stop `i`, opaque, over `stage`,
-  * bordered by the casing when `cased(i)`.
+  * drawn on, and the band each level's swatch wears there. Swatch `i` is
+  * ramp stop `i`, opaque, over `stage`, so it takes the stage ground's rule
+  * ([[DensityCasing]]): bordered 1 px by `bands(i)`, if any.
   */
 final case class DensityKeyVM(
     caption: String,
     labels: Vector[String],
     stage: StageVariant,
-    cased: Vector[Boolean]
+    bands: Vector[Option[DensityBand]]
 ) derives CanEqual
 
 /** A recorded correction rule and its Remove button's accessible name. */
@@ -194,7 +194,12 @@ object GeometryPanelVM:
   ): DensityKeyVM =
     val (c, r) =
       grid.fold(("—", "—"))((c, r) => (Format.count(c.toLong), Format.count(r.toLong)))
-    DensityKeyVM(t(DensityKey, c, r), densityLabels(steps), stage, DensityCasing.levels(stage))
+    DensityKeyVM(
+      t(DensityKey, c, r),
+      densityLabels(steps),
+      stage,
+      DensityCasing.levels(stage, DensityGround.Stage)
+    )
 
   /** The document's stage as the renderer's token variant. */
   def stageOf(model: AppModel): StageVariant =

@@ -22,8 +22,8 @@ import eyes4s.codec.ByteDigest
 import eyes4s.studio.app.explore.DisplaySource
 import eyes4s.studio.app.geometry.*
 import eyes4s.studio.app.nav.{Location, Place}
-import eyes4s.studio.app.maps.DensityCasing
-import eyes4s.studio.app.tokens.{StageToken, StageVariant, Theme, TokenUsage, Tokens}
+import eyes4s.studio.app.maps.{DensityCasing, DensityGround}
+import eyes4s.studio.app.tokens.{StageToken, StageVariant, Theme, Tokens}
 import eyes4s.studio.app.{AppModel, Intent, StoryModels}
 import eyes4s.studio.core.backend.*
 import eyes4s.studio.core.command.Command
@@ -267,7 +267,7 @@ class GeometryPanelFxSuite extends StudioFxSuite:
   }
 
   fxStage.test(
-    "the density key follows the stage: opaque swatches, cased where DensityCasing cases"
+    "the density key follows the stage: opaque swatches, each with its stage-ground band"
   ) { fx =>
     assumeFullStage(fx)
     val rig = mount(fx, t1, StoryMoment.T1)
@@ -301,24 +301,24 @@ class GeometryPanelFxSuite extends StudioFxSuite:
         )
         (fill.getOpacity, ground, strokes)
       })
-      val halo  = fxColour(Tokens.staged(stage, StageToken.Halo))
-      val inner =
-        fxColour(Tokens.resolve(TokenUsage.innerCasing(stage), Theme.Light, stage))
       swatches.zipWithIndex.foreach { case ((opacity, ground, strokes), level) =>
         val what = s"${stage.cssName} stage, swatch ${level + 1}"
         assertEquals(opacity, 1.0, what)
         assertEquals(ground, Vector(fxColour(Tokens.staged(stage, StageToken.Stage))), what)
-        val expected =
-          if DensityCasing.needed(level + 1, stage) then
-            Vector((halo, 1.0, -2.0), (inner, 1.0, -1.0))
-          else Vector.empty
+        // A swatch sits on the stage: the stage ground's band, 1 px outside.
+        val expected = DensityCasing
+          .band(level + 1, stage, DensityGround.Stage)
+          .map(b => (fxColour(b.colour(stage)), 1.0, -1.0))
+          .toVector
         assertEquals(strokes, expected, what)
       }
-      // Every level is cased on Dark and Mid; on Light, >=64 is not.
+      // >=64 on Dark; 4-15 to >=64 on Mid; 1-3 and 4-15 on Light.
       assertEquals(
         swatches.map(_._3.nonEmpty),
-        if stage == StageVariant.Light then Vector(true, true, true, false)
-        else Vector(true, true, true, true)
+        stage match
+          case StageVariant.Dark  => Vector(false, false, false, true)
+          case StageVariant.Mid   => Vector(false, true, true, true)
+          case StageVariant.Light => Vector(true, true, false, false)
       )
       fx.snapshot(StudioTheme.Light).foreach { p =>
         Files.copy(

@@ -19,6 +19,7 @@ package eyes4s.studio.app.geometry
 import eyes4s.codec.ByteDigest
 import eyes4s.studio.app.explore.DisplaySource
 import eyes4s.studio.app.nav.{Location, Place}
+import eyes4s.studio.app.maps.DensityBand
 import eyes4s.studio.app.tokens.StageVariant
 import eyes4s.studio.app.{AppModel, Intent, StoryModels}
 import eyes4s.studio.core.assets.AssetFile
@@ -524,7 +525,7 @@ class GeometryPanelSuite extends munit.FunSuite:
         "Records per cell, log steps · 64 × 36 screen cells",
         Vector("1–3", "4–15", "16–63", "≥64"),
         StageVariant.Dark,
-        Vector(true, true, true, true)
+        Vector(None, None, None, Some(DensityBand.Halo))
       )
     )
     // The labels follow the drawn picture's own steps: s = 256, with
@@ -541,28 +542,30 @@ class GeometryPanelSuite extends munit.FunSuite:
         "Records per cell, log steps · 64 × 36 screen cells",
         Vector("1–3", "4–15", "16–63", "≥64"),
         StageVariant.Dark,
-        Vector(true, true, true, true)
+        Vector(None, None, None, Some(DensityBand.Halo))
       )
     )
   }
 
-  test("the density key's swatches follow the stage and are cased where DensityCasing cases") {
+  test("the density key's swatches follow the stage and take its stage-ground bands") {
     val panel                                       = loaded(small)
     val pics                                        = picture(panel, small)
     def keyOn(stage: StageAppearance): DensityKeyVM =
       val model = AppModel.update(small, Intent.Dispatch(Command.SetStage(stage)))._1
       assertEquals(model.document.presentation.stage, stage)
       GeometryPanelVM.of(panel, model, Some(pics)).densityKey
-    // On Light, >=64 reads without its casing (10.38:1 and 4.12:1).
+    // A swatch sits on the stage: >=64 on Dark (1.50:1); 4-15 to >=64 on Mid;
+    // 1-3 and 4-15 on Light. Always the halo.
+    val halo = Some(DensityBand.Halo)
     assertEquals(
       Vector(StageAppearance.Dark, StageAppearance.Mid, StageAppearance.Light).map { s =>
         val key = keyOn(s)
-        (key.stage, key.cased)
+        (key.stage, key.bands)
       },
       Vector(
-        StageVariant.Dark  -> Vector(true, true, true, true),
-        StageVariant.Mid   -> Vector(true, true, true, true),
-        StageVariant.Light -> Vector(true, true, true, false)
+        StageVariant.Dark  -> Vector(None, None, None, halo),
+        StageVariant.Mid   -> Vector(None, halo, halo, halo),
+        StageVariant.Light -> Vector(halo, halo, None, None)
       )
     )
   }
@@ -579,7 +582,7 @@ class GeometryPanelSuite extends munit.FunSuite:
         "Records per cell, log steps · 64 × 36 screen cells",
         Vector("1–3", "4–15", "16–63", "≥64"),
         StageVariant.Dark,
-        Vector(true, true, true, true)
+        Vector(None, None, None, Some(DensityBand.Halo))
       )
     )
     // No placed records at all: dashes for the grid, still the default key.
@@ -589,7 +592,7 @@ class GeometryPanelSuite extends munit.FunSuite:
         "Records per cell, log steps · — × — screen cells",
         Vector("1–3", "4–15", "16–63", "≥64"),
         StageVariant.Dark,
-        Vector(true, true, true, true)
+        Vector(None, None, None, Some(DensityBand.Halo))
       )
     )
   }

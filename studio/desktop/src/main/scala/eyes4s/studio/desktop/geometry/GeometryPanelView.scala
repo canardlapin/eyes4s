@@ -18,7 +18,8 @@ package eyes4s.studio.desktop.geometry
 
 import eyes4s.studio.app.geometry.*
 import eyes4s.studio.app.plot.RovingMove
-import eyes4s.studio.app.tokens.{StageToken, StageVariant, Theme, TokenUsage, Tokens}
+import eyes4s.studio.app.maps.DensityBand
+import eyes4s.studio.app.tokens.{StageToken, StageVariant, Tokens}
 import eyes4s.studio.core.document.OffScreenChoice
 import eyes4s.studio.core.importing.GeometryField
 import eyes4s.studio.core.selection.StudioRef
@@ -359,8 +360,8 @@ final class GeometryPanelView(dispatch: GeometryIntent => Unit):
       densityBox.setAccessibleText(vm.densityAccessible)
       densitySwatches.zip(vm.densityKey.labels).foreach((l, text) => l.setText(text))
       densitySwatches
-        .zip(vm.densityKey.cased)
-        .foreach((l, cased) => dressSwatch(l, vm.densityKey.stage, cased))
+        .zip(vm.densityKey.bands)
+        .foreach((l, band) => dressSwatch(l, vm.densityKey.stage, band))
       densityKey.setText(vm.densityKey.caption)
       mark.setText(vm.mark)
       mark.setAccessibleText(vm.mark)
@@ -496,27 +497,21 @@ object GeometryPanelView:
     l.setMinWidth(Region.USE_PREF_SIZE)
     l
 
-  /** The width of each band of a cased swatch's border, in logical pixels:
-    * the density's own band ([[GeometryScene.DensityBandPx]]).
+  /** The width of a cased swatch's border, in logical pixels: the
+    * density's own band ([[GeometryScene.DensityBandPx]]).
     */
   val SwatchBandPx: Double = GeometryScene.DensityBandPx
 
-  /** Put `swatch`'s chip on `stage` and, when its level is `cased` there
-    * ([[DensityKeyVM.cased]]), border it outside the chip with the two-band
-    * stage casing as the density draws it (DESIGN_SPEC section 15.1, "Key"):
-    * the stage halo outermost and [[TokenUsage.innerCasing]] next to the fill.
+  /** Put `swatch`'s chip on `stage` and, when its level wears `band` there
+    * ([[DensityKeyVM.bands]]), border it with that band outside the chip, as
+    * the density draws its cells' edges (DESIGN_SPEC section 15.1, "Key").
     */
-  def dressSwatch(swatch: Label, stage: StageVariant, cased: Boolean): Unit =
+  def dressSwatch(swatch: Label, stage: StageVariant, band: Option[DensityBand]): Unit =
     val ground = s"-fx-background-color: ${Tokens.staged(stage, StageToken.Stage).javaFxCss};"
-    val border =
-      if !cased then ""
-      else
-        val halo = Tokens.staged(stage, StageToken.Halo).javaFxCss
-        // The inner casing is a palette token: every theme resolves it alike.
-        val inner = Tokens.resolve(TokenUsage.innerCasing(stage), Theme.Light, stage).javaFxCss
-        val band  = SwatchBandPx
-        s" -fx-border-color: $halo, $inner; -fx-border-width: $band, $band;" +
-          s" -fx-border-insets: ${-2 * band}, ${-band};"
+    val border = band.fold("") { b =>
+      s" -fx-border-color: ${b.colour(stage).javaFxCss}; -fx-border-width: $SwatchBandPx;" +
+        s" -fx-border-insets: ${-SwatchBandPx};"
+    }
     swatch.getGraphic.setStyle(ground + border)
 
   /** `host` in a box of the thumbnail size. */

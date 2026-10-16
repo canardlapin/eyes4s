@@ -17,14 +17,13 @@
 package eyes4s.studio.viz.geometry
 
 import eyes4s.studio.app.geometry.*
-import eyes4s.studio.app.maps.DensityCasing
+import eyes4s.studio.app.maps.{DensityBand, DensityCasing, DensityGround}
 import eyes4s.studio.app.tokens.{
   PaletteToken,
   StageToken,
   StageVariant,
   Theme,
   ThemedToken,
-  TokenUsage,
   Tokens,
   Wcag
 }
@@ -237,11 +236,23 @@ class GeometrySceneSuite extends munit.FunSuite:
     )
   }
 
-  test("a cased level's edges against empty cells wear the halo, then the inner casing") {
-    // 1920 / 64 = 30 px cells. A singleton in the corner cell (0, 0) and a
-    // ≥64 cell at column 38, row 15: on Dark every level is cased.
-    val picture = gridOf(0 -> 1, (15 * 64 + 38) -> 4)
-    val scene   = get(GeometryScene.density("d", StageVariant.Dark, frame, picture))
+  private def pt(x: Double, y: Double) =
+    Point.native(x, y).fold(e => fail(e.toString), identity)
+
+  private def bandStroke(stage: StageVariant, band: DensityBand) =
+    Some(IntaglioColours.toIntaglio(band.colour(stage)))
+
+  test("an edge is cased by its level against its own ground, with one band under the fills") {
+    // 1920 / 64 = 30 px cells; the image frame spans x 448-1472, y 156-924.
+    // On Dark: a singleton outside the frame reads on the stage (13.38) and
+    // is not cased; >=64 outside it is (1.50), in the halo; a singleton
+    // inside the frame is cased against the screen (2.17), in the inner
+    // casing (white --halo is 2.82 there).
+    val outside1 = 0
+    val outside4 = 30 * 64 + 2  // (60, 900): below the frame's left
+    val inside1  = 15 * 64 + 30 // (900, 450)
+    val picture  = gridOf(outside1 -> 1, outside4 -> 4, inside1 -> 1)
+    val scene    = get(GeometryScene.density("d", StageVariant.Dark, frame, picture))
     // The casing is stroked before (under) the fills.
     assertEquals(
       densityLayers(scene).flatMap(_.name.map(_.value)),
@@ -253,90 +264,111 @@ class GeometrySceneSuite extends munit.FunSuite:
         "window-outline"
       )
     )
-    val halo                     = densityStrokes(scene, GeometryScene.DensityHaloName).head
-    val inner                    = densityStrokes(scene, GeometryScene.DensityCasingName).head
-    def pt(x: Double, y: Double) = Point.native(x, y).fold(e => fail(e.toString), identity)
-    // The corner cell: its right and bottom edges only (the screen's border
-    // is not a ground); the interior cell: all four.
-    val expected = Set(
-      pt(0, 30)     -> pt(30, 30),
-      pt(1140, 450) -> pt(1170, 450),
-      pt(1140, 480) -> pt(1170, 480),
-      pt(30, 0)     -> pt(30, 30),
-      pt(1140, 450) -> pt(1140, 480),
-      pt(1170, 450) -> pt(1170, 480)
+    val halo  = densityStrokes(scene, GeometryScene.DensityHaloName).head
+    val inner = densityStrokes(scene, GeometryScene.DensityCasingName).head
+    assertEquals(
+      halo.segments.toSet,
+      Set(
+        pt(60, 900) -> pt(90, 900),
+        pt(60, 930) -> pt(90, 930),
+        pt(60, 900) -> pt(60, 930),
+        pt(90, 900) -> pt(90, 930)
+      )
     )
-    assertEquals(halo.segments.toSet, expected)
-    assertEquals(halo.segments.size, expected.size)
-    assertEquals(inner.segments, halo.segments)
-    // Two bands of 1 px outside the cell: the halo is stroked 4 px wide, the
-    // inner casing 2 px, centred on the edge; square caps close the corners.
+    assertEquals(
+      inner.segments.toSet,
+      Set(
+        pt(900, 450) -> pt(930, 450),
+        pt(900, 480) -> pt(930, 480),
+        pt(900, 450) -> pt(900, 480),
+        pt(930, 450) -> pt(930, 480)
+      )
+    )
+    // One band of 1 px outside the cell: stroked 2 px wide, centred on the
+    // edge, square caps; each in the band DensityCasing derives.
     val pointsPerPixel = 72.0 / 96.0
-    assertEqualsDouble(
-      halo.gp.lineWidth,
-      4.0 * GeometryScene.DensityBandPx * pointsPerPixel,
-      1e-12
-    )
-    assertEqualsDouble(
-      inner.gp.lineWidth,
-      2.0 * GeometryScene.DensityBandPx * pointsPerPixel,
-      1e-12
-    )
-    assertEquals((halo.gp.lineCap, inner.gp.lineCap), (LineCap.Square, LineCap.Square))
+    List(halo, inner).foreach { s =>
+      assertEqualsDouble(
+        s.gp.lineWidth,
+        2.0 * GeometryScene.DensityBandPx * pointsPerPixel,
+        1e-12
+      )
+      assertEquals(s.gp.lineCap, LineCap.Square)
+    }
     assertEquals(
-      halo.gp.stroke,
-      Some(IntaglioColours.staged(StageVariant.Dark, StageToken.Halo))
+      DensityCasing.band(4, StageVariant.Dark, DensityGround.Stage),
+      Some(DensityBand.Halo)
     )
     assertEquals(
-      inner.gp.stroke,
-      Some(
-        IntaglioColours.toIntaglio(
-          Tokens.resolve(
-            TokenUsage.innerCasing(StageVariant.Dark),
-            Theme.Light,
-            StageVariant.Dark
-          )
-        )
+      DensityCasing.band(1, StageVariant.Dark, DensityGround.Screen),
+      Some(DensityBand.InnerCasing)
+    )
+    assertEquals(halo.gp.stroke, bandStroke(StageVariant.Dark, DensityBand.Halo))
+    assertEquals(inner.gp.stroke, bandStroke(StageVariant.Dark, DensityBand.InnerCasing))
+  }
+
+  test("an edge is split where the image frame's boundary crosses it") {
+    // Cell (14, 6) spans x 420-450, y 180-210; the frame's left edge, x 448,
+    // crosses its top and bottom neighbours. On Dark, a singleton is cased
+    // only on the screen side; >=64 only on the stage side.
+    val cell = 6 * 64 + 14
+    val one  = get(GeometryScene.density("d", StageVariant.Dark, frame, gridOf(cell -> 1)))
+    assertEquals(densityStrokes(one, GeometryScene.DensityHaloName), Vector.empty)
+    assertEquals(
+      densityStrokes(one, GeometryScene.DensityCasingName).head.segments.toSet,
+      Set(
+        pt(448, 180) -> pt(450, 180),
+        pt(448, 210) -> pt(450, 210),
+        pt(450, 180) -> pt(450, 210)
+      )
+    )
+    val dense = get(GeometryScene.density("d", StageVariant.Dark, frame, gridOf(cell -> 4)))
+    assertEquals(densityStrokes(dense, GeometryScene.DensityCasingName), Vector.empty)
+    assertEquals(
+      densityStrokes(dense, GeometryScene.DensityHaloName).head.segments.toSet,
+      Set(
+        pt(420, 180) -> pt(448, 180),
+        pt(420, 210) -> pt(448, 210),
+        pt(420, 180) -> pt(420, 210)
       )
     )
   }
 
   test("edges between two occupied cells are not cased, and a line is stroked once") {
-    // Cells (10, 5), (11, 5) and (10, 6): an L of three levels. The shared
-    // edges are level against level; each outer line is one run.
-    val picture = gridOf((5 * 64 + 10) -> 1, (5 * 64 + 11) -> 2, (6 * 64 + 10) -> 3)
+    // Cells (20, 10), (21, 10) and (20, 11), inside the frame: an L of three
+    // levels, each cased against the screen on Mid. The shared edges are
+    // level against level; each outer line is one run.
+    val picture = gridOf((10 * 64 + 20) -> 1, (10 * 64 + 21) -> 2, (11 * 64 + 20) -> 3)
     val scene   = get(GeometryScene.density("d", StageVariant.Mid, frame, picture))
-    val halo    = densityStrokes(scene, GeometryScene.DensityHaloName).head
-    def pt(x: Double, y: Double) = Point.native(x, y).fold(e => fail(e.toString), identity)
+    assertEquals(densityStrokes(scene, GeometryScene.DensityHaloName), Vector.empty)
+    val inner = densityStrokes(scene, GeometryScene.DensityCasingName).head
     assertEquals(
-      halo.segments.toSet,
+      inner.segments.toSet,
       Set(
-        pt(300, 150) -> pt(360, 150), // the top of (10, 5) and (11, 5), one run
-        pt(330, 180) -> pt(360, 180), // the bottom of (11, 5)
-        pt(300, 210) -> pt(330, 210), // the bottom of (10, 6)
-        pt(300, 150) -> pt(300, 210), // the left of (10, 5) and (10, 6), one run
-        pt(360, 150) -> pt(360, 180), // the right of (11, 5)
-        pt(330, 180) -> pt(330, 210)  // the right of (10, 6)
+        pt(600, 300) -> pt(660, 300), // the top of (20, 10) and (21, 10), one run
+        pt(630, 330) -> pt(660, 330), // the bottom of (21, 10)
+        pt(600, 360) -> pt(630, 360), // the bottom of (20, 11)
+        pt(600, 300) -> pt(600, 360), // the left of (20, 10) and (20, 11), one run
+        pt(660, 300) -> pt(660, 330), // the right of (21, 10)
+        pt(630, 330) -> pt(630, 360)  // the right of (20, 11)
       )
     )
-    assertEquals(halo.segments.size, 6)
+    assertEquals(inner.segments.size, 6)
   }
 
-  test("a level the stage does not case has no casing; Light >=64 reads on its own") {
-    val dense = gridOf((15 * 64 + 38) -> 4)
-    val light = get(GeometryScene.density("d", StageVariant.Light, frame, dense))
-    assert(!DensityCasing.needed(4, StageVariant.Light))
+  test("on Light, a fill that reads on its ground has no casing; others wear the halo") {
+    // Outside the frame: >=64 (10.38) and 16-63 (4.58) read on the stage.
+    val light = get(
+      GeometryScene.density("d", StageVariant.Light, frame, gridOf(100 -> 4, 104 -> 3))
+    )
     assertEquals(densityStrokes(light, GeometryScene.DensityHaloName), Vector.empty)
     assertEquals(densityStrokes(light, GeometryScene.DensityCasingName), Vector.empty)
-    // A singleton on Light is cased, with the stage's own bands.
+    // A singleton on the Light stage is cased, in the stage's ink halo.
     val single = get(GeometryScene.density("d", StageVariant.Light, frame, gridOf(100 -> 1)))
     val halo   = densityStrokes(single, GeometryScene.DensityHaloName)
     assertEquals(halo.map(_.segments.size), Vector(4))
-    assertEquals(
-      halo.head.gp.stroke,
-      Some(IntaglioColours.staged(StageVariant.Light, StageToken.Halo))
-    )
-    // An uncased ≥64 next to a cased level: only the cased cell's outer edges.
+    assertEquals(halo.head.gp.stroke, bandStroke(StageVariant.Light, DensityBand.Halo))
+    // A singleton next to an uncased >=64: only its own outer edges.
     val mixed = get(
       GeometryScene.density("d", StageVariant.Light, frame, gridOf(100 -> 1, 101 -> 4))
     )
@@ -347,6 +379,7 @@ class GeometrySceneSuite extends munit.FunSuite:
     // No occupied cell: no casing at all.
     val none = get(GeometryScene.density("d", StageVariant.Dark, frame, gridOf()))
     assertEquals(densityStrokes(none, GeometryScene.DensityHaloName), Vector.empty)
+    assertEquals(densityStrokes(none, GeometryScene.DensityCasingName), Vector.empty)
   }
 
   test("the density's semantics name its cells and its four level ranges") {

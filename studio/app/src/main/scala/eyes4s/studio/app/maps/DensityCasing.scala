@@ -17,21 +17,57 @@
 package eyes4s.studio.app.maps
 
 import eyes4s.studio.app.geometry.DensityPicture
-import eyes4s.studio.app.tokens.{Ground, PaletteToken, StageToken, StageVariant, Tokens, Wcag}
+import eyes4s.studio.app.tokens.{
+  Colour,
+  Ground,
+  PaletteToken,
+  StageToken,
+  StageVariant,
+  Theme,
+  TokenUsage,
+  Tokens,
+  Wcag
+}
 
-/** Where the placement density's cells wear the two-band stage casing
-  * (DESIGN_SPEC section 15.1, "Contrast"; owner decision 2026-10-15, option
-  * B of mote bd-01M4SJ6T6MMGAW1PRGREGVSX50): the stage `--halo` outside and
-  * the inner casing ([[eyes4s.studio.app.tokens.TokenUsage.innerCasing]])
-  * inside it, around the boundary between a level's occupied cells and empty
-  * ones, only where it is needed.
+/** What a placement density cell's edge lies on: the stage outside the image
+  * frame, or the frame's blank screen field (`--screen`) inside it. The
+  * density picture draws no stimulus and no map under its cells.
+  */
+enum DensityGround(val where: String) derives CanEqual:
+  case Stage  extends DensityGround("the stage")
+  case Screen extends DensityGround("the blank screen")
+
+  /** This ground's colour on `stage`. */
+  def colour(stage: StageVariant): Colour = this match
+    case Stage  => Tokens.staged(stage, StageToken.Stage)
+    case Screen => Tokens.palette(PaletteToken.Screen)
+
+/** The one band a cased density edge wears: the stage `--halo`, or the inner
+  * casing ([[TokenUsage.innerCasing]]).
+  */
+enum DensityBand derives CanEqual:
+  case Halo, InnerCasing
+
+  /** This band's colour on `stage`. */
+  def colour(stage: StageVariant): Colour = this match
+    case Halo => Tokens.staged(stage, StageToken.Halo)
+    // The inner casing is a palette token: every theme resolves it alike.
+    case InnerCasing => Tokens.resolve(TokenUsage.innerCasing(stage), Theme.Light, stage)
+
+/** Where the placement density's cells wear a casing band, and which
+  * (DESIGN_SPEC section 15.1, "Contrast"; owner decisions 2026-10-15 and
+  * 2026-10-16, option B of mote bd-01M4SJ6T6MMGAW1PRGREGVSX50, quiet
+  * variant).
   *
   * Density level `level` (1 to [[DensityPicture.Levels]]) is ramp stop
-  * `level − 1`, drawn opaque. Its cells lie on the stage or on the image
-  * frame's blank screen field ([[grounds]]). The rule is derived the same
-  * way as [[StageCasing]], from the contrast computation and not tabulated,
-  * so a token change re-derives it: a level on a stage is cased when its
-  * fill falls below the 3:1 non-text minimum on some ground of that stage.
+  * `level − 1`, drawn opaque. An edge between a level's occupied cell and an
+  * empty one lies on one [[DensityGround]]. It is cased only where the
+  * level's fill is below the 3:1 non-text minimum against that ground, and
+  * then with one band, 1 px outside the cell: the band of [[DensityBand]]
+  * that reaches 3:1 against the ground, the higher contrast if both do.
+  *
+  * The rule is derived from the contrast computation, the same way as
+  * [[StageCasing]], and not tabulated, so a token change re-derives it.
   */
 object DensityCasing:
 
@@ -44,36 +80,41 @@ object DensityCasing:
   private val Ramp: Vector[PaletteToken] =
     Vector(PaletteToken.Ramp0, PaletteToken.Ramp1, PaletteToken.Ramp2, PaletteToken.Ramp3)
 
-  /** What a density cell on `stage` is drawn over: the stage around the image
-    * frame, and the blank screen field inside it. The density picture draws
-    * no stimulus and no map under its cells.
-    */
-  def grounds(stage: StageVariant): Vector[(String, Ground)] =
-    Vector(
-      "the stage"        -> Tokens.staged(stage, StageToken.Stage),
-      "the blank screen" -> Tokens.palette(PaletteToken.Screen)
-    ).flatMap((where, colour) => Ground.of(colour).map(where -> _))
+  private def on(colour: Colour, stage: StageVariant, ground: DensityGround): Double =
+    Ground.of(ground.colour(stage)).fold(1.0)(Wcag.contrastOn(colour, _))
 
-  /** The first ground, if any, on which level `level`'s opaque fill on
-    * `stage` falls below 3:1.
-    */
-  def failingGround(level: Int, stage: StageVariant): Option[String] =
-    val colour = Tokens.palette(fill(level))
-    grounds(stage).collectFirst {
-      case (where, ground) if Wcag.contrastOn(colour, ground) < Wcag.NonTextMinimum => where
-    }
+  /** The contrast of level `level`'s opaque fill against `ground` on `stage`. */
+  def fillContrast(level: Int, stage: StageVariant, ground: DensityGround): Double =
+    on(Tokens.palette(fill(level)), stage, ground)
 
-  // Every level's answer on every stage, computed once.
-  private lazy val table: Map[(Int, StageVariant), Boolean] =
+  /** The contrast of `band` against `ground` on `stage`. */
+  def bandContrast(band: DensityBand, stage: StageVariant, ground: DensityGround): Double =
+    on(band.colour(stage), stage, ground)
+
+  // The band of a level whose fill fails against a ground: the one that
+  // carries the contrast, the higher if both do; if neither does, the higher
+  // still (TokenContrastSuite rejects that).
+  private def derive(
+      level: Int,
+      stage: StageVariant,
+      ground: DensityGround
+  ): Option[DensityBand] =
+    Option.when(fillContrast(level, stage, ground) < Wcag.NonTextMinimum)(
+      DensityBand.values.maxBy(bandContrast(_, stage, ground))
+    )
+
+  // Every answer, computed once.
+  private lazy val table: Map[(Int, StageVariant, DensityGround), Option[DensityBand]] =
     (for
-      level <- (1 to DensityPicture.Levels).toList
-      stage <- StageVariant.values.toList
-    yield (level, stage) -> failingGround(level, stage).nonEmpty).toMap
+      level  <- (1 to DensityPicture.Levels).toList
+      stage  <- StageVariant.values.toList
+      ground <- DensityGround.values.toList
+    yield (level, stage, ground) -> derive(level, stage, ground)).toMap
 
-  /** Whether level `level`'s cells on `stage` wear the two-band casing. */
-  def needed(level: Int, stage: StageVariant): Boolean =
-    table.getOrElse((level, stage), failingGround(level, stage).nonEmpty)
+  /** The band level `level`'s edges against `ground` on `stage` wear, if any. */
+  def band(level: Int, stage: StageVariant, ground: DensityGround): Option[DensityBand] =
+    table.getOrElse((level, stage, ground), derive(level, stage, ground))
 
-  /** Every level's answer on `stage`, lowest level first. */
-  def levels(stage: StageVariant): Vector[Boolean] =
-    Vector.tabulate(DensityPicture.Levels)(i => needed(i + 1, stage))
+  /** Every level's band against `ground` on `stage`, lowest level first. */
+  def levels(stage: StageVariant, ground: DensityGround): Vector[Option[DensityBand]] =
+    Vector.tabulate(DensityPicture.Levels)(i => band(i + 1, stage, ground))

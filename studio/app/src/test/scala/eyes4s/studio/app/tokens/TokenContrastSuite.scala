@@ -17,7 +17,7 @@
 package eyes4s.studio.app.tokens
 
 import eyes4s.studio.app.geometry.DensityPicture
-import eyes4s.studio.app.maps.{DensityCasing, StageCasing}
+import eyes4s.studio.app.maps.{DensityBand, DensityCasing, DensityGround, StageCasing}
 
 /** WCAG contrast of every token pair the design draws, in both themes and on
   * every stage (ticket S1.1). Runs on the JVM and on Scala.js.
@@ -279,95 +279,140 @@ class TokenContrastSuite extends munit.FunSuite:
 
   private def densityFill(level: Int): Colour = Tokens.palette(DensityCasing.fill(level))
 
-  // A density level over each ground of its stage: the opaque fill, and the
-  // stage halo and the inner casing where DensityCasing cases the level. The
-  // fill is opaque, so a theme does not change it. `cased = false` measures
-  // the fill alone.
+  private def densityCases =
+    for
+      stage  <- StageVariant.values.toList
+      ground <- DensityGround.values.toList
+      level  <- densityLevels
+    yield (stage, ground, level)
+
+  // A density level against one ground of its stage: its opaque fill, and
+  // the one band DensityCasing gives its edges there. The fill is opaque, so
+  // a theme does not change it. `cased = false` measures the fill alone.
   private def densityFailures(cased: Boolean): List[String] =
     for
-      stage           <- StageVariant.values.toList
-      level           <- densityLevels
-      (where, ground) <- DensityCasing.grounds(stage).toList
-      halo  = Tokens.staged(stage, StageToken.Halo)
-      inner = Tokens.resolve(TokenUsage.innerCasing(stage), Theme.Light, stage)
-      fill  = Wcag.contrastOn(densityFill(level), ground)
-      bands =
-        if cased && DensityCasing.needed(level, stage) then
-          List(Wcag.contrastOn(halo, ground), Wcag.contrastOn(inner, ground))
-        else Nil
-      best = (fill :: bands).max
+      (stage, ground, level) <- densityCases
+      fill = DensityCasing.fillContrast(level, stage, ground)
+      band =
+        if cased then DensityCasing.band(level, stage, ground)
+        else None
+      best = (fill :: band.map(DensityCasing.bandContrast(_, stage, ground)).toList).max
       if best < Wcag.NonTextMinimum
     yield f"${stage.cssName} stage: level $level (--${DensityCasing.fill(level).cssName}) " +
-      f"on $where: fill $fill%.2f, best $best%.2f < ${Wcag.NonTextMinimum}%.1f"
+      f"on ${ground.where}: fill $fill%.2f, best $best%.2f < ${Wcag.NonTextMinimum}%.1f"
 
   test("every density level reaches 3:1 on every stage and on the screen, as cased") {
-    StageVariant.values.foreach { stage =>
-      assertEquals(
-        DensityCasing.grounds(stage).map(_._1),
-        Vector("the stage", "the blank screen"),
-        stage.cssName
-      )
-    }
     val failures = densityFailures(cased = true)
     assert(failures.isEmpty, failures.mkString("\n", "\n", ""))
+    // The band itself carries the contrast against its ground.
+    for
+      (stage, ground, level) <- densityCases
+      band                   <- DensityCasing.band(level, stage, ground)
+    do
+      assert(
+        DensityCasing.bandContrast(band, stage, ground) >= Wcag.NonTextMinimum,
+        s"${stage.cssName} stage, level $level on ${ground.where}: $band"
+      )
   }
 
-  test("the density casing is needed exactly where a level's fill is below 3:1") {
-    // Derived, not tabulated: cased iff the opaque fill fails on some ground.
-    for
-      stage <- StageVariant.values.toList
-      level <- densityLevels
-    do
-      val fails = DensityCasing
-        .grounds(stage)
-        .exists((_, g) => Wcag.contrastOn(densityFill(level), g) < Wcag.NonTextMinimum)
-      assertEquals(DensityCasing.needed(level, stage), fails, s"${stage.cssName} level $level")
-    // Every level is cased on Dark and Mid; on Light, every level but >=64.
+  test("a density edge is cased only where its level's fill is below 3:1 on its ground") {
+    // Derived, not tabulated: cased iff the opaque fill fails on that ground,
+    // with the band of higher contrast against it.
+    densityCases.foreach { (stage, ground, level) =>
+      val fails = DensityCasing.fillContrast(level, stage, ground) < Wcag.NonTextMinimum
+      val best  = DensityBand.values.maxBy(DensityCasing.bandContrast(_, stage, ground))
+      assertEquals(
+        DensityCasing.band(level, stage, ground),
+        Option.when(fails)(best),
+        s"${stage.cssName} stage, level $level on ${ground.where}"
+      )
+    }
+    // What today's tokens give, lowest level first. Halo on every stage
+    // ground; on the screen, the inner casing on Dark and Mid (white --halo
+    // is 2.82:1 there) and the halo on Light.
+    import DensityBand.{Halo, InnerCasing}
+    val table = densityCases
+      .groupMap((stage, ground, _) => (stage, ground))((stage, ground, level) =>
+        DensityCasing.band(level, stage, ground)
+      )
+      .view
+      .mapValues(_.toVector)
+      .toMap
     assertEquals(
-      StageVariant.values.toList.map(v => v -> DensityCasing.levels(v)).toMap,
+      table,
       Map(
-        StageVariant.Dark  -> Vector(true, true, true, true),
-        StageVariant.Mid   -> Vector(true, true, true, true),
-        StageVariant.Light -> Vector(true, true, true, false)
+        (StageVariant.Dark, DensityGround.Stage)  -> Vector(None, None, None, Some(Halo)),
+        (StageVariant.Dark, DensityGround.Screen) -> Vector.fill(3)(Some(InnerCasing)).:+(None),
+        (StageVariant.Mid, DensityGround.Stage)   -> (None +: Vector.fill(3)(Some(Halo))),
+        (StageVariant.Mid, DensityGround.Screen)  -> Vector.fill(3)(Some(InnerCasing)).:+(None),
+        (StageVariant.Light, DensityGround.Stage) -> Vector(Some(Halo), Some(Halo), None, None),
+        (StageVariant.Light, DensityGround.Screen) -> Vector.fill(3)(Some(Halo)).:+(None)
       )
     )
-    // Without its casing, a level falls below 3:1: a Dark-stage singleton over
-    // the blank screen (2.17) and a Light-stage singleton on the stage (1.16).
+    // Without its band, a level falls below 3:1: a Dark-stage singleton over
+    // the blank screen (2.17), >=64 on the Dark stage (1.50), a Light-stage
+    // singleton on the stage (1.16).
     val bare = densityFailures(cased = false)
     assert(
       bare.exists(_.startsWith("dark stage: level 1 (--ramp-0) on the blank screen")),
       bare
     )
+    assert(bare.exists(_.startsWith("dark stage: level 4 (--ramp-3) on the stage")), bare)
     assert(bare.exists(_.startsWith("light stage: level 1 (--ramp-0) on the stage")), bare)
-    val ground =
-      (stage: StageVariant, where: String) => DensityCasing.grounds(stage).toMap.apply(where)
-    assertEqualsDouble(
-      Wcag.contrastOn(densityFill(1), ground(StageVariant.Dark, "the blank screen")),
-      2.17,
-      QuotedPlaces
+    val pinned = List(
+      (StageVariant.Dark, DensityGround.Screen, 1, 2.17),
+      (StageVariant.Dark, DensityGround.Stage, 4, 1.50),
+      (StageVariant.Light, DensityGround.Stage, 1, 1.16)
     )
-    assertEqualsDouble(
-      Wcag.contrastOn(densityFill(1), ground(StageVariant.Light, "the stage")),
-      1.16,
-      QuotedPlaces
-    )
-    assertEquals(DensityCasing.failingGround(1, StageVariant.Dark), Some("the blank screen"))
+    pinned.foreach { (stage, ground, level, expected) =>
+      assertEqualsDouble(
+        DensityCasing.fillContrast(level, stage, ground),
+        expected,
+        QuotedPlaces
+      )
+    }
   }
 
-  test("the density casing is not needed for >=64 on the Light stage") {
-    assert(!DensityCasing.needed(4, StageVariant.Light))
-    assertEquals(DensityCasing.failingGround(4, StageVariant.Light), None)
-    val grounds = DensityCasing.grounds(StageVariant.Light).toMap
-    assertEqualsDouble(
-      Wcag.contrastOn(densityFill(4), grounds("the stage")),
-      10.38,
-      QuotedPlaces
-    )
-    assertEqualsDouble(
-      Wcag.contrastOn(densityFill(4), grounds("the blank screen")),
-      4.12,
-      QuotedPlaces
-    )
+  test("a density level whose fill reads on its ground is not cased there") {
+    // Dark 1-3 on the stage (13.38), Mid 1-3 on the stage (3.49), Light 16-63
+    // and >=64 on the stage (4.58, 10.38), Light >=64 on the screen (4.12).
+    List(
+      (StageVariant.Dark, DensityGround.Stage, 1, 13.38),
+      (StageVariant.Mid, DensityGround.Stage, 1, 3.49),
+      (StageVariant.Light, DensityGround.Stage, 3, 4.58),
+      (StageVariant.Light, DensityGround.Stage, 4, 10.38),
+      (StageVariant.Light, DensityGround.Screen, 4, 4.12)
+    ).foreach { (stage, ground, level, expected) =>
+      assertEquals(DensityCasing.band(level, stage, ground), None, s"${stage.cssName} $level")
+      assertEqualsDouble(
+        DensityCasing.fillContrast(level, stage, ground),
+        expected,
+        QuotedPlaces
+      )
+    }
+  }
+
+  test("a density band's contrast against its ground is pinned") {
+    // Halo on the stages: 17.40 (Dark), 4.54 (Mid), 14.92 (Light); on the
+    // screen, the inner casing 5.07 (Dark, Mid) beats white --halo 2.82, and
+    // ink --halo 5.92 (Light) beats the white inner casing 2.59.
+    List(
+      (StageVariant.Dark, DensityGround.Stage, DensityBand.Halo, 17.40),
+      (StageVariant.Mid, DensityGround.Stage, DensityBand.Halo, 4.54),
+      (StageVariant.Light, DensityGround.Stage, DensityBand.Halo, 14.92),
+      (StageVariant.Dark, DensityGround.Screen, DensityBand.InnerCasing, 5.07),
+      (StageVariant.Dark, DensityGround.Screen, DensityBand.Halo, 2.82),
+      (StageVariant.Mid, DensityGround.Screen, DensityBand.InnerCasing, 5.07),
+      (StageVariant.Light, DensityGround.Screen, DensityBand.Halo, 5.92),
+      (StageVariant.Light, DensityGround.Screen, DensityBand.InnerCasing, 2.59)
+    ).foreach { (stage, ground, band, expected) =>
+      assertEqualsDouble(
+        DensityCasing.bandContrast(band, stage, ground),
+        expected,
+        QuotedPlaces,
+        s"${stage.cssName} $band on ${ground.where}"
+      )
+    }
   }
 
   test("adjacent opaque density levels stay apart and ordered by luminance") {
