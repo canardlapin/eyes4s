@@ -1,0 +1,1 @@
+{"actor":"claude-s30","entity":"bd-01M500YDAK0KF3Z1HZP9BRA7HY","kind":"reserve_open","mode":"exclusive","op":"20261015T153103.760416Z-p21506-c0000-r5c13-ha866eb","paths":["studio/app/src/main/scala/eyes4s/studio/app/text/ParticipantText.scala"],"reservation_id":"rv-01M5030DEGBHYKQC1SQC00XWSG","ts":"2026-10-15T15:31:03.760416Z","ttl_s":3600,"v":2}

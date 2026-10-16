@@ -1,0 +1,1 @@
+{"actor":"claude-s12","entity":"bd-01M4R9D7YPY61S229HTKC2G9JK","kind":"reserve_open","mode":"exclusive","op":"20261012T152606.960544Z-p64293-c0000-rd089-he0f92e","paths":["studio/viz/src/test/scala/eyes4s/studio/viz/plot/PlotTableParitySuite.scala"],"reservation_id":"rv-01M4RBH6KGVYYZCV1QXTMZ7BGN","ts":"2026-10-12T15:26:06.960544Z","ttl_s":3600,"v":2}
