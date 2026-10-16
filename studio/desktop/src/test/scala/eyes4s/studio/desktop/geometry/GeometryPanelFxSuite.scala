@@ -22,9 +22,11 @@ import eyes4s.codec.ByteDigest
 import eyes4s.studio.app.explore.DisplaySource
 import eyes4s.studio.app.geometry.*
 import eyes4s.studio.app.nav.{Location, Place}
-import eyes4s.studio.app.tokens.Theme
+import eyes4s.studio.app.maps.DensityCasing
+import eyes4s.studio.app.tokens.{StageToken, StageVariant, Theme, TokenUsage, Tokens}
 import eyes4s.studio.app.{AppModel, Intent, StoryModels}
 import eyes4s.studio.core.backend.*
+import eyes4s.studio.core.command.Command
 import eyes4s.studio.core.document.*
 import eyes4s.studio.core.fixture.{FakeStudyBackend, StoryMoment, StoryMoments}
 import eyes4s.studio.core.geometry.{CorrectionLedger, Placement, SourcePositions}
@@ -44,7 +46,7 @@ import javafx.scene.paint.Color
 import javafx.scene.{AccessibleAttribute, AccessibleRole}
 import javafx.scene.text.Text
 
-import java.nio.file.Files
+import java.nio.file.{Files, StandardCopyOption}
 import scala.jdk.CollectionConverters.*
 
 /** The geometry panel's JavaFX view (ticket S5.5; Data.dc.html, geometry)
@@ -262,6 +264,70 @@ class GeometryPanelFxSuite extends StudioFxSuite:
         "Records per cell, log steps · 64 × 36 screen cells"
       )
       fx.snapshot(StudioTheme.Light)
+  }
+
+  fxStage.test(
+    "the density key follows the stage: opaque swatches, cased where DensityCasing cases"
+  ) { fx =>
+    assumeFullStage(fx)
+    val rig = mount(fx, t1, StoryMoment.T1)
+    loaded(fx, rig)
+    redraw(fx, rig, 0)
+    val v                                                   = rig.host.view
+    def fxColour(c: eyes4s.studio.app.tokens.Colour): Color = Color.web(c.javaFxCss)
+    val stages                                              = Vector(
+      StageAppearance.Dark  -> StageVariant.Dark,
+      StageAppearance.Mid   -> StageVariant.Mid,
+      StageAppearance.Light -> StageVariant.Light
+    )
+    stages.foreach { (appearance, stage) =>
+      val seen   = rig.host.receipts.size
+      val before = rig.model.document.presentation.stage
+      runOnFx(rig.dispatch(Intent.Dispatch(Command.SetStage(appearance))))
+      assertEquals(rig.model.document.presentation.stage, appearance)
+      // A stage change redraws the density, so that its cells and casing
+      // match the key.
+      if before != appearance then redraw(fx, rig, seen): Unit
+      fx.awaitLayout()
+      val swatches = runOnFx(v.densitySwatches.map { l =>
+        val chip = l.getGraphic.asInstanceOf[Region]
+        chip.applyCss()
+        val fill    = chip.getChildrenUnmodifiable.get(0).asInstanceOf[Region]
+        val ground  = chip.getBackground.getFills.asScala.map(_.getFill).toVector
+        val strokes = Option(chip.getBorder).toVector.flatMap(
+          _.getStrokes.asScala.map(b =>
+            (b.getTopStroke, b.getWidths.getTop, b.getInsets.getTop)
+          )
+        )
+        (fill.getOpacity, ground, strokes)
+      })
+      val halo  = fxColour(Tokens.staged(stage, StageToken.Halo))
+      val inner =
+        fxColour(Tokens.resolve(TokenUsage.innerCasing(stage), Theme.Light, stage))
+      swatches.zipWithIndex.foreach { case ((opacity, ground, strokes), level) =>
+        val what = s"${stage.cssName} stage, swatch ${level + 1}"
+        assertEquals(opacity, 1.0, what)
+        assertEquals(ground, Vector(fxColour(Tokens.staged(stage, StageToken.Stage))), what)
+        val expected =
+          if DensityCasing.needed(level + 1, stage) then
+            Vector((halo, 1.0, -2.0), (inner, 1.0, -1.0))
+          else Vector.empty
+        assertEquals(strokes, expected, what)
+      }
+      // Every level is cased on Dark and Mid; on Light, >=64 is not.
+      assertEquals(
+        swatches.map(_._3.nonEmpty),
+        if stage == StageVariant.Light then Vector(true, true, true, false)
+        else Vector(true, true, true, true)
+      )
+      fx.snapshot(StudioTheme.Light).foreach { p =>
+        Files.copy(
+          p,
+          p.resolveSibling(s"density-${stage.cssName}-${p.getFileName}"),
+          StandardCopyOption.REPLACE_EXISTING
+        )
+      }
+    }
   }
 
   fxStage.test(

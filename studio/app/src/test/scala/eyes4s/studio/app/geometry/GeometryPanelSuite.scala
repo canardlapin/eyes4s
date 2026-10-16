@@ -19,6 +19,7 @@ package eyes4s.studio.app.geometry
 import eyes4s.codec.ByteDigest
 import eyes4s.studio.app.explore.DisplaySource
 import eyes4s.studio.app.nav.{Location, Place}
+import eyes4s.studio.app.tokens.StageVariant
 import eyes4s.studio.app.{AppModel, Intent, StoryModels}
 import eyes4s.studio.core.assets.AssetFile
 import eyes4s.studio.core.backend.*
@@ -521,7 +522,9 @@ class GeometryPanelSuite extends munit.FunSuite:
       GeometryPanelVM.of(panel, small, Some(pics)).densityKey,
       DensityKeyVM(
         "Records per cell, log steps · 64 × 36 screen cells",
-        Vector("1–3", "4–15", "16–63", "≥64")
+        Vector("1–3", "4–15", "16–63", "≥64"),
+        StageVariant.Dark,
+        Vector(true, true, true, true)
       )
     )
     // The labels follow the drawn picture's own steps: s = 256, with
@@ -536,7 +539,30 @@ class GeometryPanelSuite extends munit.FunSuite:
       GeometryPanelVM.of(panel, small, None).densityKey,
       DensityKeyVM(
         "Records per cell, log steps · 64 × 36 screen cells",
-        Vector("1–3", "4–15", "16–63", "≥64")
+        Vector("1–3", "4–15", "16–63", "≥64"),
+        StageVariant.Dark,
+        Vector(true, true, true, true)
+      )
+    )
+  }
+
+  test("the density key's swatches follow the stage and are cased where DensityCasing cases") {
+    val panel                                       = loaded(small)
+    val pics                                        = picture(panel, small)
+    def keyOn(stage: StageAppearance): DensityKeyVM =
+      val model = AppModel.update(small, Intent.Dispatch(Command.SetStage(stage)))._1
+      assertEquals(model.document.presentation.stage, stage)
+      GeometryPanelVM.of(panel, model, Some(pics)).densityKey
+    // On Light, >=64 reads without its casing (10.38:1 and 4.12:1).
+    assertEquals(
+      Vector(StageAppearance.Dark, StageAppearance.Mid, StageAppearance.Light).map { s =>
+        val key = keyOn(s)
+        (key.stage, key.cased)
+      },
+      Vector(
+        StageVariant.Dark  -> Vector(true, true, true, true),
+        StageVariant.Mid   -> Vector(true, true, true, true),
+        StageVariant.Light -> Vector(true, true, true, false)
       )
     )
   }
@@ -551,15 +577,19 @@ class GeometryPanelSuite extends munit.FunSuite:
       GeometryPanelVM.of(panel, small, Some(empty)).densityKey,
       DensityKeyVM(
         "Records per cell, log steps · 64 × 36 screen cells",
-        Vector("1–3", "4–15", "16–63", "≥64")
+        Vector("1–3", "4–15", "16–63", "≥64"),
+        StageVariant.Dark,
+        Vector(true, true, true, true)
       )
     )
     // No placed records at all: dashes for the grid, still the default key.
     assertEquals(
-      GeometryPanelVM.densityKey(None, DensitySteps.Default),
+      GeometryPanelVM.densityKey(None, DensitySteps.Default, StageVariant.Dark),
       DensityKeyVM(
         "Records per cell, log steps · — × — screen cells",
-        Vector("1–3", "4–15", "16–63", "≥64")
+        Vector("1–3", "4–15", "16–63", "≥64"),
+        StageVariant.Dark,
+        Vector(true, true, true, true)
       )
     )
   }

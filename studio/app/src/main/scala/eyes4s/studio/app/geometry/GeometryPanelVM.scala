@@ -17,8 +17,10 @@
 package eyes4s.studio.app.geometry
 
 import eyes4s.studio.app.AppModel
+import eyes4s.studio.app.maps.DensityCasing
 import eyes4s.studio.app.plot.RovingMove
 import eyes4s.studio.app.text.{Format, GeometryText, GeometryTextId}
+import eyes4s.studio.app.tokens.StageVariant
 import eyes4s.studio.app.vm.{A11yRole, FocusStop}
 import eyes4s.studio.core.backend.{AdmissionSummary, TrialKey}
 import eyes4s.studio.core.command.ChangeKind
@@ -52,11 +54,18 @@ final case class ThumbnailVM(
     assetMissing: Boolean
 ) derives CanEqual
 
-/** The all-trials density's key (DESIGN_SPEC section 15.1): its caption and
-  * the four swatch labels, lowest level first. Swatch `i` is ramp stop `i`
-  * at the density opacity.
+/** The all-trials density's key (DESIGN_SPEC section 15.1): its caption,
+  * the four swatch labels, lowest level first, the stage the density is
+  * drawn on, and whether each level wears the two-band stage casing there
+  * ([[DensityCasing]]). Swatch `i` is ramp stop `i`, opaque, over `stage`,
+  * bordered by the casing when `cased(i)`.
   */
-final case class DensityKeyVM(caption: String, labels: Vector[String]) derives CanEqual
+final case class DensityKeyVM(
+    caption: String,
+    labels: Vector[String],
+    stage: StageVariant,
+    cased: Vector[Boolean]
+) derives CanEqual
 
 /** A recorded correction rule and its Remove button's accessible name. */
 final case class RuleVM(index: Int, text: String, remove: String) derives CanEqual
@@ -176,12 +185,23 @@ object GeometryPanelVM:
       t(DensityOverflow, Format.count(starts.last))
 
   /** The key of a density of `columns × rows` screen cells (dashes before
-    * the grid is known) at `steps`.
+    * the grid is known) at `steps`, drawn on `stage`.
     */
-  def densityKey(grid: Option[(Int, Int)], steps: DensitySteps): DensityKeyVM =
+  def densityKey(
+      grid: Option[(Int, Int)],
+      steps: DensitySteps,
+      stage: StageVariant
+  ): DensityKeyVM =
     val (c, r) =
       grid.fold(("—", "—"))((c, r) => (Format.count(c.toLong), Format.count(r.toLong)))
-    DensityKeyVM(t(DensityKey, c, r), densityLabels(steps))
+    DensityKeyVM(t(DensityKey, c, r), densityLabels(steps), stage, DensityCasing.levels(stage))
+
+  /** The document's stage as the renderer's token variant. */
+  def stageOf(model: AppModel): StageVariant =
+    model.document.presentation.stage match
+      case StageAppearance.Dark  => StageVariant.Dark
+      case StageAppearance.Mid   => StageVariant.Mid
+      case StageAppearance.Light => StageVariant.Light
 
   /** A thumbnail's count line: a missing or unreadable asset first ("Missing
     * asset · forest-044.png", the Data board's caption), then off screen
@@ -346,7 +366,8 @@ object GeometryPanelVM:
       drawnDensity
         .map(d => d.columns -> d.rows)
         .orElse(panel.placement.toOption.map(p => p.density.columns -> p.density.rows)),
-      drawnDensity.fold(DensitySteps.Default)(_.steps)
+      drawnDensity.fold(DensitySteps.Default)(_.steps),
+      stageOf(model)
     )
     val policy      = spec.map(_.admission.offScreen).getOrElse(OffScreenChoice.ExcludeRecord)
     val orientation = panel.orientation.map { f =>

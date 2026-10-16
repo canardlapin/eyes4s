@@ -18,11 +18,11 @@ package eyes4s.studio.desktop.geometry
 
 import eyes4s.studio.app.explore.DisplaySource
 import eyes4s.studio.app.geometry.*
-import eyes4s.studio.app.tokens.{StageVariant, Theme}
+import eyes4s.studio.app.tokens.{StageVariant, Theme, Tokens}
 import eyes4s.studio.app.vm.FocusStop
 import eyes4s.studio.app.{AppModel, Intent}
 import eyes4s.studio.core.backend.{AdmissionSummary, DatasetRevision, PlacementPreview}
-import eyes4s.studio.core.document.{DatasetRevisionSpec, Perspective, StageAppearance}
+import eyes4s.studio.core.document.{DatasetRevisionSpec, Perspective}
 import eyes4s.studio.desktop.explore.NavigatorDisplays
 import eyes4s.studio.desktop.runtime.StudioSession
 import eyes4s.studio.viz.geometry.GeometryScene
@@ -96,6 +96,7 @@ final class GeometryPaneHost(
   private var panel                              = GeometryPanel.empty
   private var pictures: Option[GeometryPictures] = None
   private var requested: Option[PicturesKey]     = None
+  private var requestedStage: StageVariant       = Tokens.defaultStage
   private var generation                         = 0L
   private var changedAt                          = System.nanoTime()
   private var receiptLog                         = Vector.empty[RedrawReceipt]
@@ -173,9 +174,13 @@ final class GeometryPaneHost(
   private def refresh(): Unit =
     val m = model()
     view.render(GeometryPanelVM.of(panel, m, pictures))
-    val key = GeometryPictures.keyOf(panel, m)
-    if key != requested then
+    val key   = GeometryPictures.keyOf(panel, m)
+    val stage = GeometryPanelVM.stageOf(m)
+    // A changed stage redraws the pictures too, so that the density's cells
+    // and casing agree with the key's swatches, which follow the stage.
+    if key != requested || (key.isDefined && stage != requestedStage) then
       requested = key
+      requestedStage = stage
       generation += 1
       changedAt = System.nanoTime()
       key match
@@ -190,10 +195,7 @@ final class GeometryPaneHost(
     val theme     = m.theme match
       case eyes4s.studio.core.document.Theme.Light => Theme.Light
       case eyes4s.studio.core.document.Theme.Dark  => Theme.Dark
-    val stage = m.document.presentation.stage match
-      case StageAppearance.Dark  => StageVariant.Dark
-      case StageAppearance.Mid   => StageVariant.Mid
-      case StageAppearance.Light => StageVariant.Light
+    val stage = GeometryPanelVM.stageOf(m)
     (spec, positions) match
       case (Some(s), Some(ps)) =>
         try

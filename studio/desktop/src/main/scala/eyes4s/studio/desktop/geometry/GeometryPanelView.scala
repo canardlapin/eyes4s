@@ -18,12 +18,14 @@ package eyes4s.studio.desktop.geometry
 
 import eyes4s.studio.app.geometry.*
 import eyes4s.studio.app.plot.RovingMove
+import eyes4s.studio.app.tokens.{StageToken, StageVariant, Theme, TokenUsage, Tokens}
 import eyes4s.studio.core.document.OffScreenChoice
 import eyes4s.studio.core.importing.GeometryField
 import eyes4s.studio.core.selection.StudioRef
 import eyes4s.studio.desktop.plot.{CanvasPlotHost, PlotHostStatus}
 import eyes4s.studio.desktop.shell.CompositeFocus
 import eyes4s.studio.desktop.tokens.TokenFiles
+import eyes4s.studio.viz.geometry.GeometryScene
 import eyes4s.studio.viz.plot.PlotScene
 import javafx.collections.FXCollections
 import javafx.css.PseudoClass
@@ -356,6 +358,9 @@ final class GeometryPanelView(dispatch: GeometryIntent => Unit):
       densityCaption.setText(vm.densityCaption)
       densityBox.setAccessibleText(vm.densityAccessible)
       densitySwatches.zip(vm.densityKey.labels).foreach((l, text) => l.setText(text))
+      densitySwatches
+        .zip(vm.densityKey.cased)
+        .foreach((l, cased) => dressSwatch(l, vm.densityKey.stage, cased))
       densityKey.setText(vm.densityKey.caption)
       mark.setText(vm.mark)
       mark.setAccessibleText(vm.mark)
@@ -473,13 +478,13 @@ object GeometryPanelView:
   val SwatchWidth: Double  = 12.0
   val SwatchHeight: Double = 10.0
 
-  /** The key swatch of density level `i` (0 is the lowest): ramp stop `i`
-    * at the density opacity over the stage, as the density draws its cells.
+  /** The key swatch of density level `i` (0 is the lowest): ramp stop `i`,
+    * opaque, over the stage, as the density draws its cells. [[dressSwatch]]
+    * sets its stage and its casing.
     */
   def swatch(i: Int): Label =
     val fill = Region()
     fill.getStyleClass.addAll("geometry-swatch-fill", s"level-$i")
-    fill.setOpacity(eyes4s.studio.viz.geometry.GeometryScene.DensityOpacity)
     val chip = StackPane(fill)
     chip.getStyleClass.add("geometry-swatch")
     chip.setMinSize(SwatchWidth, SwatchHeight)
@@ -490,6 +495,29 @@ object GeometryPanelView:
     // A range is never elided.
     l.setMinWidth(Region.USE_PREF_SIZE)
     l
+
+  /** The width of each band of a cased swatch's border, in logical pixels:
+    * the density's own band ([[GeometryScene.DensityBandPx]]).
+    */
+  val SwatchBandPx: Double = GeometryScene.DensityBandPx
+
+  /** Put `swatch`'s chip on `stage` and, when its level is `cased` there
+    * ([[DensityKeyVM.cased]]), border it outside the chip with the two-band
+    * stage casing as the density draws it (DESIGN_SPEC section 15.1, "Key"):
+    * the stage halo outermost and [[TokenUsage.innerCasing]] next to the fill.
+    */
+  def dressSwatch(swatch: Label, stage: StageVariant, cased: Boolean): Unit =
+    val ground = s"-fx-background-color: ${Tokens.staged(stage, StageToken.Stage).javaFxCss};"
+    val border =
+      if !cased then ""
+      else
+        val halo = Tokens.staged(stage, StageToken.Halo).javaFxCss
+        // The inner casing is a palette token: every theme resolves it alike.
+        val inner = Tokens.resolve(TokenUsage.innerCasing(stage), Theme.Light, stage).javaFxCss
+        val band  = SwatchBandPx
+        s" -fx-border-color: $halo, $inner; -fx-border-width: $band, $band;" +
+          s" -fx-border-insets: ${-2 * band}, ${-band};"
+    swatch.getGraphic.setStyle(ground + border)
 
   /** `host` in a box of the thumbnail size. */
   def sized(host: CanvasPlotHost): StackPane =

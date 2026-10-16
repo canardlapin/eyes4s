@@ -189,8 +189,9 @@
   -fx-graphic-text-gap: 2;
 }
 
-/* A swatch: its ramp stop (at the density opacity, set by the view) over
- * the stage, as the density draws its cells. */
+/* A swatch: its ramp stop, opaque, over the stage, as the density draws its
+ * cells. The view sets the swatch's stage and, where its level is cased on
+ * that stage, the two-band stage casing as its border (DESIGN_SPEC 15.1). */
 .geometry-swatch {
   -fx-background-color: -es-stage;
 }
