@@ -310,7 +310,7 @@ body{margin:0}
 <desc>11,520 records binned into 64 × 36 cells. {{binsDrawn}} cells drawn at four log-spaced levels: 1–3, 4–15, 16–63 and at least 64 records per cell.</desc>
 <rect width="1920" height="1080" fill="var(--stage)"></rect>
 <rect x="448" y="156" width="1024" height="768" fill="var(--screen)"></rect>
-<g fill="none" stroke-linecap="square"><path d="{{binCasing}}" stroke="var(--halo)" stroke-width="54.9"></path><path d="{{binCasing}}" stroke="var(--isoline-ink)" stroke-width="27.4"></path></g>
+<g fill="none" stroke-linecap="square" stroke-width="27.4"><path d="{{binHalo}}" stroke="var(--halo)"></path><path d="{{binInner}}" stroke="var(--isoline-ink)"></path></g>
 <g shape-rendering="crispEdges"><sc-for list="{{bins}}" as="c" hint-placeholder-count="1"><rect x="{{c.x}}" y="{{c.y}}" width="30" height="30" fill="{{c.fill}}"></rect></sc-for></g>
 <rect x="448" y="156" width="1024" height="768" fill="none" stroke="var(--on-stage)" stroke-width="14" stroke-dasharray="82 55"></rect>
 </svg>
@@ -356,13 +356,16 @@ body{margin:0}
 //  - PROPOSED (v3, SPEC-AMENDMENTS 15): every non-zero cell is drawn (DensityPicture.Floor 5% -> one
 //    record); v3b extends 15 with LOG-SPACED levels by count: >=1, >=4, >=16, >=64 records -> ramp-0..3
 //    (was linear share of the fullest cell, which put 1-19 records in one step);
-//  - each rect opaque (DESIGN_SPEC 15.1 "Contrast", option B, 2026-10-15; the 0.6 density opacity
-//    is retired). A level whose fill is below 3:1 on the stage or the screen field (DensityCasing)
-//    wears the two-band stage casing on its edges against empty cells: --halo stroked 4 px and the
-//    inner casing (--isoline-ink on the Dark and Mid stages, --isoline-case on Light) 2 px, square
-//    caps, under the fills, so 1 px of each shows. Edges between two occupied cells are not cased.
-//    The board's stage is Dark, where every level is cased (on Light, all but >=64). 1 px is
-//    1920 / 140 = 13.7 viewBox units. The key's swatches are opaque, with the same bands as a border;
+//  - each rect opaque (DESIGN_SPEC 15.1 "Contrast", option B quiet variant, 2026-10-16; the 0.6
+//    density opacity is retired). An edge between an occupied cell and an empty one is cased only
+//    where its level's fill is below 3:1 on the ground the edge lies on (the stage outside the image
+//    frame, --screen inside it; edges are split at the frame's boundary), with ONE band, 1 px outside
+//    the cell: whichever of --halo and the inner casing reaches 3:1 there (DensityCasing.band).
+//    The board's stage is Dark: on the stage only >=64 is cased, in --halo (ramp-3 is 1.50:1 there);
+//    on the screen 1-3, 4-15 and 16-63 are cased, in --isoline-ink (white --halo is 2.82:1 there).
+//    Stroked 2 px (27.4 viewBox units; 1 px is 1920 / 140 = 13.7) under the fills, square caps.
+//    Edges between two occupied cells are not cased. A key swatch sits on the stage, so it takes the
+//    stage ground's band: on Dark only the >=64 swatch, bordered 1 px in --halo;
 //  - no isolines. Stage, then the image frame in --screen, then the casing, the cells, then the
 //    dashed outline.
 // The records binned here are an illustrative stand-in (the fixture has no positions for all
@@ -385,17 +388,30 @@ function binnedLevels(points, screenW, screenH, columns) {
     levels[i] = level;
     cells.push({ x: (i % columns) * cw, y: Math.floor(i / columns) * ch, fill: ramp[level - 1] });
   });
-  // DensityCasing on the Dark stage: every level is cased.
-  const cased = [true, true, true, true];
-  const at = (col, row) => col < 0 || row < 0 || col >= columns || row >= rows ? -1 : levels[row * columns + col];
-  const isCased = (col, row) => at(col, row) > 0 && cased[at(col, row) - 1];
-  const edge = (a, b) => (isCased(...a) && at(...b) === 0) || (isCased(...b) && at(...a) === 0);
-  let casing = '';
-  // One run per stretch of cased edges along a grid line, so each line is stroked once.
-  const runs = (n, test, seg) => { let from = -1; for (let i = 0; i <= n; i++) { if (i < n && test(i)) { if (from < 0) from = i; } else if (from >= 0) { casing += seg(from, i); from = -1; } } };
-  for (let r = 1; r < rows; r++) runs(columns, c => edge([c, r - 1], [c, r]), (a, b) => `M${a * cw} ${r * ch}H${b * cw}`);
-  for (let c = 1; c < columns; c++) runs(rows, r => edge([c - 1, r], [c, r]), (a, b) => `M${c * cw} ${a * ch}V${b * ch}`);
-  return { cells, rows, casing };
+  // DensityCasing.band on the Dark stage, per ground, lowest level first.
+  const band = { stage: [null, null, null, 'halo'], screen: ['inner', 'inner', 'inner', null] };
+  const frame = { left: 448, top: 156, right: 1472, bottom: 924 };
+  const inFrame = (x, y) => x >= frame.left && x < frame.right && y >= frame.top && y < frame.bottom;
+  const at = (col, row) => levels[row * columns + col];
+  const paths = { halo: '', inner: '' };
+  // One edge between an occupied cell (level lv) and an empty one, split at the frame's boundary;
+  // each part cased by the ground just off the line on the empty side (side = +1 below or right).
+  const edge = (horizontal, line, from, to, lv, side) => {
+    const [lo, hi] = horizontal ? [frame.left, frame.right] : [frame.top, frame.bottom];
+    const cuts = [from, ...[lo, hi].filter(c => c > from && c < to), to].sort((a, b) => a - b);
+    for (let i = 0; i + 1 < cuts.length; i++) {
+      const mid = (cuts[i] + cuts[i + 1]) / 2, off = line + side * 0.5;
+      const ground = (horizontal ? inFrame(mid, off) : inFrame(off, mid)) ? 'screen' : 'stage';
+      const b = band[ground][lv - 1];
+      if (b) paths[b] += horizontal ? `M${cuts[i]} ${line}H${cuts[i + 1]}` : `M${line} ${cuts[i]}V${cuts[i + 1]}`;
+    }
+  };
+  const pair = (a, b, f) => { if (a > 0 && b === 0) f(a, 1); else if (b > 0 && a === 0) f(b, -1); };
+  for (let r = 1; r < rows; r++) for (let c = 0; c < columns; c++)
+    pair(at(c, r - 1), at(c, r), (lv, side) => edge(true, r * ch, c * cw, (c + 1) * cw, lv, side));
+  for (let c = 1; c < columns; c++) for (let r = 0; r < rows; r++)
+    pair(at(c - 1, r), at(c, r), (lv, side) => edge(false, c * cw, r * ch, (r + 1) * ch, lv, side));
+  return { cells, rows, halo: paths.halo, inner: paths.inner };
 }
 function standInRecords() {
   const r = rng(20261010), out = [];
@@ -454,9 +470,9 @@ class Component extends DCLogic {
     ];
     const thumbs = thumbs0.map((t, i) => Object.assign({ cc: 'var(--ink-2)', missing: false }, t, { domId: 'th-' + i, cursor: i === 0 ? 'true' : null }));
     const binned = binnedLevels(standInRecords(), 1920, 1080, 64);
-    // Opaque swatches; a cased level's swatch wears the two bands outside it (Dark stage: every level).
-    const binKey = ['1–3', '4–15', '16–63', '≥64'].map((label, i) => ({ label, fill: 'var(--ramp-' + i + ')', casing: 'box-shadow:0 0 0 1px var(--isoline-ink),0 0 0 2px var(--halo)' }));
-    return { rootClass: this.props.dark ? 'es dark' : 'es', cols, causes, thumbs, bins: binned.cells, binsDrawn: String(binned.cells.length), binCasing: binned.casing, binKey };
+    // Opaque swatches on the stage, each with its stage-ground band 1 px outside it: on Dark, only >=64.
+    const binKey = ['1–3', '4–15', '16–63', '≥64'].map((label, i) => ({ label, fill: 'var(--ramp-' + i + ')', casing: i === 3 ? 'box-shadow:0 0 0 1px var(--halo)' : '' }));
+    return { rootClass: this.props.dark ? 'es dark' : 'es', cols, causes, thumbs, bins: binned.cells, binsDrawn: String(binned.cells.length), binHalo: binned.halo, binInner: binned.inner, binKey };
   }
 }
 </script>

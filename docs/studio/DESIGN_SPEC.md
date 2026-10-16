@@ -330,32 +330,43 @@ Light stages. The levels are:
   read the same numbers. A new revision (a geometry, mapping or admission change, §8) gets its own
   levels, and its key shows them.
 - **Key.** The key is the caption "Records per cell, log steps · {c} × {r} screen cells" and four
-  swatches, ramp-0 to ramp-3, opaque, over the current stage. A swatch whose level is cased on that
-  stage (see "Contrast") wears the same two bands as its border, 1 px each outside the swatch:
-  `--halo` outermost and the inner casing next to the fill. The view-model carries the stage and
-  one casing flag per level (`DensityKeyVM`), so the swatches change with the stage, and a stage
-  change redraws the density. They are labelled with closed
+  swatches, ramp-0 to ramp-3, opaque, over the current stage. A swatch sits on the stage, so it
+  takes the stage ground's rule (see "Contrast"): where its level is cased against the stage, the
+  swatch wears that band as a 1 px border outside it. The view-model carries the stage and each
+  level's band (`DensityKeyVM`), so the swatches change with the stage, and a stage change redraws
+  the density. They are labelled with closed
   count ranges, `1–(s−1)`, `s–(4s−1)`, `4s–(16s−1)`, and the overflow as `≥16s`. Counts use
   thousands separators. For s = 4 the labels are "1–3", "4–15", "16–63", "≥64". The key always
   shows all four swatches, including a level that holds no cell. The owner chose these closed
   ranges over lower bounds ("≥1, ≥4, ≥16, ≥64") on 2026-10-12, and the Data board was edited to match.
 - **Contrast.** Every level, singletons included, reaches 3:1 non-text contrast on every stage and
   on the image frame's blank screen field (owner, 2026-10-15: option B of mote
-  bd-01M4SJ6T6MMGAW1PRGREGVSX50). The density keeps one ramp for every stage: level 1 keeps ramp-0
-  (owner, 2026-10-12), and the cells are drawn opaque. The 0.6 density opacity is retired for this
-  picture; the mass maps keep 0.6 (§12). Where a level's opaque fill is below 3:1 on some ground of
-  its stage (the stage or `--screen`), its cells wear the two-band stage casing, the same pair and
-  the same "only where needed" rule as a stage mark (§15, "Stage casing"): `--halo` outside and
-  the inner casing (`TokenUsage.innerCasing`) inside it, 1 px each, outside the cells. Only the
-  edges between a cased level's cells and empty cells are cased. Edges between two occupied cells
-  are level against level and are not cased, and the screen's border is not a ground. The casing
-  is stroked under the fills, so 1 px of each band shows. `DensityCasing` derives where the casing
-  goes from the contrast computation, so a token change re-derives it. With today's tokens every
-  level is cased on Dark and Mid, and every level but ≥64 on Light: ramp-3 there is 10.38:1 on the
-  stage and 4.12:1 on the screen. Opaque, ramp-0 measures 13.38:1 on Dark, 3.49:1 on Mid and
-  1.16:1 on Light, and 2.17:1 on the screen. Adjacent levels are at least 1.80:1 apart (1.80, 2.19
-  and 2.27), and their luminance falls with the level, so the order survives greyscale.
-  `TokenContrastSuite` and `GeometrySceneSuite` pin these values.
+  bd-01M4SJ6T6MMGAW1PRGREGVSX50; quiet variant, 2026-10-16). The density keeps one ramp for every
+  stage: level 1 keeps ramp-0 (owner, 2026-10-12), and the cells are drawn opaque. The 0.6 density
+  opacity is retired for this picture; the mass maps keep 0.6 (§12).
+  - **Where.** Casing is decided per level and per ground, not per stage. An edge between an
+    occupied cell and an empty cell lies on one ground: the stage outside the image frame, or
+    `--screen` inside it. Edges are split where the frame's boundary crosses them. A part is cased
+    only where its level's opaque fill is below 3:1 against that ground. Edges between two occupied
+    cells are level against level and are never cased, and the screen's border is not a ground.
+  - **Band.** A cased edge wears one band, 1 logical px wide, outside the cell: the stage `--halo` or
+    the inner casing (`TokenUsage.innerCasing`), whichever reaches 3:1 against that ground, and the
+    higher contrast if both do. It is stroked under the fills, so only the outside half shows.
+  - **Derived.** `DensityCasing.band(level, stage, ground)` computes both choices from the tokens, so
+    a token change re-derives them. With today's tokens:
+
+    | stage | on the stage | on the screen |
+    |---|---|---|
+    | Dark | ≥64 (1.50:1), halo 17.40 | 1–3, 4–15, 16–63 (2.17, 1.20, 1.82), inner casing 5.07 |
+    | Mid | 4–15, 16–63, ≥64 (1.94, 1.13, 2.56), halo 4.54 | 1–3, 4–15, 16–63, inner casing 5.07 |
+    | Light | 1–3, 4–15 (1.16, 2.09), halo 14.92 | 1–3, 4–15, 16–63, halo 5.92 |
+
+    Every other pair reads on its own: on the stage, Dark 1–3 to 16–63 (13.38, 7.43, 3.39), Mid
+    1–3 (3.49) and Light 16–63 and ≥64 (4.58, 10.38); on the screen, ≥64 (4.12). On the screen,
+    white `--halo` is only 2.82:1, which is why Dark and Mid use the inner casing there.
+  - **Order.** Adjacent levels are at least 1.80:1 apart (1.80, 2.19 and 2.27), and their luminance
+    falls with the level, so the order survives greyscale. `TokenContrastSuite` and
+    `GeometrySceneSuite` pin these values.
 - **Semantics.** "{n} cells drawn at four log-spaced levels: 1–3, 4–15, 16–63 and at least 64
   records per cell." The ranges are the key's.
 - **Empty and single-cell studies.** If no record falls on the screen (no placed records, or all
