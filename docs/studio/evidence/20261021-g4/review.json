@@ -47,7 +47,7 @@
     "tools/studio-e2e/check.py": "248d5ed1e4054f4ca3a9c8d1178e153a88270e21ec5e5cd3263b8e4d073daa6e",
     "tools/studio-e2e/manifest.json": "8b1429a88202e7bba03eac4a8fa8a5b9b73e31a6365a0007a7e9235185ea9ee4",
     "tools/studio-e2e/test_check.py": "a31db6f5d85a4c279ea49e71e5316b1748257c5fb5109e7156b6d41890da761a",
-    "build.sbt": "5fb3d5b1c1027d0ac939bc6bd7d48d1ab3b5c3445c3522634b4b2292639f4c9c",
+    "build.sbt": "20ec51537d13c93ca1552e650bcbbf8f6fc5affcaaa64fc1a7f65295b3b06b28",
     "studio/app/src/main/scala/eyes4s/studio/app/AppModel.scala": "17bd69103ababe5916cda7e5132aa57c52af0938f46120e4f656be17316931d3",
     "studio/app/src/main/scala/eyes4s/studio/app/layout/StudioLayouts.scala": "ab19ef88bac14775b3edc32838ce43e18bbf6d8cbada07ebc084d3e287d93caa",
     "studio/app/src/main/scala/eyes4s/studio/app/project/ProjectLifecycle.scala": "65a32956732b7f80efb2e9cc68f6c287c67d53afe92d85e84be6eb1daa192672",
@@ -84,5 +84,6 @@
     "Import cards use existing shared import buttons, explicit file-kind labels, a 40-pixel horizontal inset and stacked drop guidance. The image-folder row is unboxed. These differ from the board’s compact card decoration.",
     "The board’s example focus ring is shown by actual keyboard focus, not drawn at rest. The preset group now has a CompositeFocus stop through the shared segmented control."
   ],
-  "qualification": "Focused tests passed; final frozen-source, CI and E2E qualification recorded separately."
+  "qualification": "Focused tests passed; final frozen-source, CI and E2E qualification recorded separately.",
+  "review_followup": "The post-review build change includes hidden cross-project XML reports in the scoped Studio artifact upload. UI source and captures are unchanged; final qualification covers the revised build."
 }

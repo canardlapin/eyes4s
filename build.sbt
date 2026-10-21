@@ -1717,7 +1717,8 @@ lazy val studioLinuxJob = WorkflowJob(
       params = Map(
         "name" -> "studio-snapshots-linux-${{ github.sha }}",
         "path" -> "target/studio-snapshots/\ntarget/studio-e2e/\nstudio/**/target/test-reports/",
-        "if-no-files-found" -> "warn"
+        "include-hidden-files" -> "true",
+        "if-no-files-found"    -> "warn"
       )
     ),
     WorkflowStep.Run(
