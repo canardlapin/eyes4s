@@ -54,7 +54,7 @@ application parity is qualified separately below.
 - [ ] "Dataset r3 · draft · no run on r3 yet", plus "Run 5 (rev 3) used r2 · becomes stale when r3 is admitted".
 - [ ] Column mapping includes Ordinal and Sample count, with time units declared in ms. Mapping and geometry are tagged "Dataset · re-admit".
 - [ ] Trial identity builder with the duplicate-key warning.
-- [ ] Ledger: 960 = 937 + 17 (by cause) + 6 absent. The inventory origin of absent trials is noted. Every count is a button.
+- [x] Ledger: 960 = 937 + 17 (by cause) + 6 absent. The inventory origin of absent trials is noted. Every count is a button. The bounded [inventory review](evidence/20261021-inventory-review/review.json) records the served source, exact native counts and count navigation; unrelated Data panels remain separately qualified.
 - [ ] Geometry:
   - [ ] Frame and placement.
   - [ ] "35 px/° declared · not calibrated".
@@ -75,7 +75,7 @@ application parity is qualified separately below.
 
 ## Analysis (moment t2)
 - [x] Three presets and an explicit inventory column/value selection for expected-unmatched trials. Library tests prove that item collisions, including a dropped studied item, cannot create pairs.
-- [ ] Native by-design projection is implemented and passes focused JVM/JS checks; full qualification and landing remain pending (`bd-01M5E637J24JYT6FHQW336E01P`). `RealPreviewCursorSuite` now checks service receipts, rows, acceptance and completed native results, including an item-ID collision and a mixed four-status cohort. See [the bounded evidence receipt](evidence/20261021-by-design/review.json).
+- [x] Native by-design projection passed full library and strict Studio qualification (`bd-01M5E637J24JYT6FHQW336E01P`); see [the final qualification receipt](evidence/20261021-final-qualification/qualification.json). `RealPreviewCursorSuite` now checks service receipts, rows, acceptance and completed native results, including an item-ID collision and a mixed four-status cohort. See [the bounded evidence receipt](evidence/20261021-by-design/review.json).
 - [x] Recipe sentence with role-coloured tokens. Window, grid and initial-fixation controls use served descriptors; their board tags now read "served UI-A / UI-F". `DescriptorFormSuite` adds a synthetic field without changing the Studio renderer.
 - [x] Scales 0.5 / 1 / 2 / 4 (+8° in the draft), cell 0.46°, and the 0.5° and 8° warnings. Values and warnings are served by eyes4s; `ScalesEditorSuite` checks the drawn warnings, one Tab stop and keyboard removal.
 - [x] The served pairing control persists “Report as no match”; the generic field label is “Focal trials without a matched reference”.
@@ -168,8 +168,8 @@ The 2026-10-20 captures show the separately tracked trial-caption overlap at nor
 pane sizes (`bd-01M4ZQJ91DP721J9XEM9TV9862`). The bounded 2026-10-21 follow-up
 uses Intaglio's aspect-preserving data viewport while keeping the caption and
 legend at pane width; actual-font bounds and public 680×370 before/after captures
-are in `evidence/20261021-trial-layout/review.json`. Focused checks passed; full
-qualification and landing remain pending. This does not sign every Main/Explore
+are in `evidence/20261021-trial-layout/review.json`. Focused checks and the final
+full library/strict Studio gate passed; see `evidence/20261021-final-qualification/qualification.json`. This does not sign every Main/Explore
 difference off. Final qualification and landing are recorded on the motes.
 
 
@@ -195,4 +195,17 @@ keeps missing matches separate from reference declarations, and never claims tha
 uncomputed scores will contribute. Complete reasons are available through the row's
 accessible name and tooltip when a narrow status column elides them. The new source
 reference metadata also activates the formerly pending Compare-inspector test.
-Native by-design classification remains the separate G3 blocker cited above.
+Native by-design classification is now qualified by the final gate cited above. The optional declaration remains distinct from an explicit zero, including the board’s n/a caption.
+
+
+## Native output-scale qualification, 2026-10-21
+
+Hosted Studio run [39556719934](https://github.com/canardlapin/eyes4s/actions/runs/39556719934)
+passed Linux native scale 1, actual GTK native scale 2, macOS and clean-clone pins.
+The scale-2 artifact reports observed Stage scales 2×2, no host override, exact
+one-device-pixel feedback lines and zero mismatch against the independent analytic
+raster. The [downloaded receipt and reviewed PNG](evidence/20261021-native-output-scale/hosted-review.json)
+record 779 applicable desktop tests passed; private-density acceptance was opt-in
+and the Monocle-only smoke assertion does not apply to GTK. This qualifies the
+common rendering path and the desktop suites at actual output scale 2. Whole-board
+parity, physical macOS Retina review and VoiceOver remain separate.
