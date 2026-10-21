@@ -39,7 +39,12 @@ import eyes4s.studio.desktop.platform.{
   PreferenceWrites
 }
 import eyes4s.studio.core.preferences.RecentProjects
-import eyes4s.studio.desktop.runtime.{DatasetSourceHosts, PlatformDialogs, SessionPort}
+import eyes4s.studio.desktop.runtime.{
+  DatasetSourceHosts,
+  DesktopEffects,
+  PlatformDialogs,
+  SessionPort
+}
 import eyes4s.studio.desktop.trial.{StimulusError, StimulusSource}
 import javafx.application.Platform as FxPlatform
 import javafx.scene.Scene
@@ -215,13 +220,34 @@ final class ProjectLifecycleHost(
           nativeSources =
             Some(project.fold(unavailableSources)(p => DatasetSourceHosts.stored(p.port))),
           lifecycle = Some(this),
-          hostPlatform = Some(platform)
+          hostPlatform = Some(platform),
+          clock = DesktopEffects.clockFrom(platform.scheduler),
+          revealProject = Some(() => revealCurrentProject())
         )
       )
       .toEither
       .left
       .map(_.getMessage)
       .flatMap(_.left.map(_.message))
+
+  /** Capture the clicked project's path before dispatching external IO. */
+  private def revealCurrentProject(): Unit =
+    current.flatMap(_.project).foreach { project =>
+      val operation = eyes4s.studio.app.text.Messages.english(
+        eyes4s.studio.app.text.MessageId.CommandRevealProject
+      )
+      platform.external
+        .open(eyes4s.studio.core.platform.ExternalTarget.Reveal(project.path))
+        .unsafeRunAsync { result =>
+          later {
+            if !stopped.get && current.flatMap(_.project).exists(_ eq project) then
+              result match
+                case Right(Right(()))   => ()
+                case Right(Left(error)) => prompts.failed(operation, error.message)
+                case Left(error)        => defect(operation, error)
+          }
+        }
+    }
 
   private def install(live: Live): Unit =
     val old = current

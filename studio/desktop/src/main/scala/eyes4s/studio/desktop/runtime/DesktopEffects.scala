@@ -25,6 +25,9 @@ import eyes4s.studio.desktop.admission.LedgerInputs
 import eyes4s.studio.core.execution.{ExecutionEffect, ExecutionError}
 
 import cats.effect.IO
+import cats.effect.unsafe.IORuntime
+import cats.effect.unsafe.implicits.global
+import eyes4s.studio.core.platform.Scheduler
 
 import scala.collection.mutable
 
@@ -85,7 +88,8 @@ final class DesktopEffects(
       (_, _, _) => (),
     defect: (String, Throwable) => Unit = (_, _) => (),
     // The execution service's handling of an effect; tests plant a defect.
-    execute: Option[ExecutionEffect => IO[Either[ExecutionError, Unit]]] = None
+    execute: Option[ExecutionEffect => IO[Either[ExecutionError, Unit]]] = None,
+    revealProject: Option[() => Unit] = None
 ) extends EffectPerformer:
 
   private val found = mutable.ArrayBuffer.empty[EffectProblem]
@@ -139,7 +143,8 @@ final class DesktopEffects(
               )
             }
           }
-    case e @ AppEffect.RevealProject => report(EffectProblem.NotWired(e, "S2.9"))
+    case e @ AppEffect.RevealProject =>
+      revealProject.fold(report(EffectProblem.NotWired(e, "S2.9")))(_.apply())
     case e @ AppEffect.Persist(mark) =>
       project.fold {
         report(EffectProblem.NotWired(e, "S2.9"))
@@ -169,6 +174,10 @@ object DesktopEffects:
   private val log = org.slf4j.LoggerFactory.getLogger("eyes4s.studio.effects")
 
   /** The local wall-clock time now, as the status bar shows it. */
-  val wallClock: () => Option[ClockTime] = () =>
-    val now = java.time.LocalTime.now()
-    ClockTime.of(now.getHour, now.getMinute).toOption
+  val wallClock: () => Option[ClockTime] =
+    clockFrom(eyes4s.studio.desktop.platform.DesktopPlatform.scheduler)
+
+  /** Read the injected host's clock when the save completes, including its zone. */
+  def clockFrom(scheduler: Scheduler[IO])(using IORuntime): () => Option[ClockTime] = () =>
+    val now = scheduler.now.unsafeRunSync()
+    ClockTime.of(now.localHour, now.localMinute).toOption
