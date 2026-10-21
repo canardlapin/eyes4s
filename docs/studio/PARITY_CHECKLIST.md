@@ -61,7 +61,8 @@ the illustrated radio cards; recent entries show actual paths without invented a
 file/folder glyphs, numbered circles and badge decoration are simplified. Import buttons
 use the shared import style with explicit file-kind labels, stacked drop guidance and a
 40 px inset; the images row is unboxed. The native menu row differs from the board's
-drawn macOS title bar. These differences preserve the board's content and normal import,
+drawn macOS title bar. Interactive dock headers also expose pop-out/maximize controls
+where the t0 board illustrates fewer controls (approved S1.5b behavior). These differences preserve the board's content and normal import,
 example-copy and recent-project routes. The review records them individually.
 
 ## Data (moment t1)

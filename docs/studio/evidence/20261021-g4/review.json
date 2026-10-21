@@ -67,7 +67,8 @@
     "studio/desktop/src/main/scala/eyes4s/studio/desktop/runtime/DesktopEffects.scala": "e7a31687e83ca666c429dfe5d32e926a9d8f075de964131ca994c00e8a350462",
     "studio/desktop/src/main/scala/eyes4s/studio/desktop/scanpath/ScanpathWorkbench.scala": "4f902545e72beaca61d1a597ea3de4455d184762b1183bcd6427b0fb677a785f",
     "studio/desktop/src/main/scala/eyes4s/studio/desktop/shell/AppShell.scala": "41992dbf97aeba53e5f63c8aabe11109dff7ea98167d2c2686cc9cac6f4f22d1",
-    "studio/desktop/src/test/scala/eyes4s/studio/desktop/project/ProjectLifecycleFxSuite.scala": "063e680420335976e247b7dfb2bb16acb8c50f1214c8137cdd2090b8a90902bd"
+    "studio/desktop/src/test/scala/eyes4s/studio/desktop/project/ProjectLifecycleFxSuite.scala": "063e680420335976e247b7dfb2bb16acb8c50f1214c8137cdd2090b8a90902bd",
+    "studio/desktop/src/test/scala/eyes4s/studio/desktop/dock/DockLayoutsSuite.scala": "8f6bdd3f70d7680cd2986cb11617531ba73957033e78ce60aa5bb7d460f1e046"
   },
   "findings": [
     "No clipped or overlapping first-run content at the review size. Both themes keep primary action, descriptions and checklist readable.",
@@ -82,8 +83,9 @@
     "Recent projects show actual saved paths and an honest empty state. Preference storage contains no last-open timestamp, so the board’s illustrative ages are omitted. No projects are fabricated for the t0 capture.",
     "Decorative file/folder icons, numbered circles, required/recommended badge fills, and the checklist divider/re-admit pill are simplified to text. The same content and re-admission guidance remain visible.",
     "Import cards use existing shared import buttons, explicit file-kind labels, a 40-pixel horizontal inset and stacked drop guidance. The image-folder row is unboxed. These differ from the board’s compact card decoration.",
-    "The board’s example focus ring is shown by actual keyboard focus, not drawn at rest. The preset group now has a CompositeFocus stop through the shared segmented control."
+    "The board’s example focus ring is shown by actual keyboard focus, not drawn at rest. The preset group now has a CompositeFocus stop through the shared segmented control.",
+    "Interactive Scaladock headers expose pop-out/maximize controls; the t0 board illustrates fewer header controls. Pop-outs are the approved S1.5b behavior; singleton panes remain non-closable."
   ],
   "qualification": "Focused tests passed; final frozen-source, CI and E2E qualification recorded separately.",
-  "review_followup": "The post-review build change includes hidden cross-project XML reports in the scoped Studio artifact upload. UI source and captures are unchanged; final qualification covers the revised build."
+  "review_followup": "The post-review build change includes hidden cross-project XML reports in the scoped Studio artifact upload. UI source and captures are unchanged; final qualification covers the revised build. The legacy DockLayoutsSuite expectation was updated to require approved pop-outs while preserving singleton non-closure; all ten desktop.dock tests passed under warnings-as-errors."
 }

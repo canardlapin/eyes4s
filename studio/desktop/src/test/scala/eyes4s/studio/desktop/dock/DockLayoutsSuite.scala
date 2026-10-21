@@ -68,7 +68,9 @@ class DockLayoutsSuite extends munit.FunSuite:
     )
   }
 
-  test("28 px tab headers; navigators may minimize to a strip; nothing closes or pops out") {
+  test(
+    "28 px tab headers; navigators minimize; singleton panes cannot close; pop-outs enabled"
+  ) {
     assertEquals(DockLayouts.settings.headerPx, 28.0)
     spec.all.foreach { l =>
       val s = DockLayouts.state(l)
@@ -78,7 +80,9 @@ class DockLayoutsSuite extends munit.FunSuite:
         assertEquals(dock.header, Header.Shown(expected), l.id)
       }
     }
-    assert(!DockLayouts.defaultHeader.close && !DockLayouts.defaultHeader.popOut)
+    assert(!DockLayouts.defaultHeader.close)
+    assert(DockLayouts.defaultHeader.popOut)
+    assert(DockLayouts.navigatorHeader.popOut)
     assert(DockLayouts.navigatorHeader.minimize)
   }
 
