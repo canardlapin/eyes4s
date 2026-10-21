@@ -65,7 +65,14 @@
     "site-docs/summaries.md": "executed mdoc site",
     "docs/plans/CR4_PLAN.md": "internal decision or historical evidence",
     "docs/DENSITY_ARCHIVES.md": "public guide",
-    "docs/RESULT_PAYLOAD_MANIFEST.md": "public guide"
+    "docs/RESULT_PAYLOAD_MANIFEST.md": "public guide",
+    "docs/NUMERICAL_REPRODUCIBILITY.md": "public guide",
+    "docs/DENSITY_APPROXIMATION.md": "public guide",
+    "docs/DISTANCE_CORRELATION.md": "public guide",
+    "docs/ARCHIVE_MEMORY.md": "public guide",
+    "docs/DOMAIN_CONSTRUCTORS.md": "public guide",
+    "docs/MULTIMATCH_ALIGNMENT.md": "public guide",
+    "docs/PROJECT_PREREQUISITES.md": "public guide"
   },
   "fences": {
     "README.md": {

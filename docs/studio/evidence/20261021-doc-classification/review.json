@@ -1,0 +1,31 @@
+{
+  "schema": 1,
+  "date": "2026-10-21",
+  "issue": "bd-01M5EMRMHVTM8VP7QKJ1VAF912",
+  "base_commit": "b57d06d16d93c7d5f6740f6758a1d8d2a5adfca4",
+  "failure": "Checks39556719904 rootJS completed its tests, then failed the strict documentation classification inventory. JVM21 and site generation passed; JVM17 was cancelled by fail-fast.",
+  "preexisting": "All seven guides exist on origin/main e1e6c95e and are missing from its pages map.",
+  "change": "Register the seven existing numerical/domain/project contract pages as public guide. No checker condition, page content, fence mapping, linked example, compiler source, test or build change. No classification as internal to bypass checks.",
+  "reviewed_guides": {
+    "docs/NUMERICAL_REPRODUCIBILITY.md": "d075707e39af4cde37652cfa0da8e5578578ce9f604d1b4dc8d456bc94108bd9",
+    "docs/DENSITY_APPROXIMATION.md": "b40f6188a29bd37f2514d55d65c9028862eb1e2eebdde9f337242cbdcfaf194a",
+    "docs/DISTANCE_CORRELATION.md": "8928a7502a461b44f00a18bbbe6b249576613ef11afc74c2000b27c03a7740a8",
+    "docs/ARCHIVE_MEMORY.md": "a6b658ce237d838d2dfdfa566f0764fc73dd906b521e0fb81807eccf36e277a2",
+    "docs/DOMAIN_CONSTRUCTORS.md": "b6f1836c11c4192983e7f60c422dc0c182b6437c82c5faa9cfa9d7e897f7af99",
+    "docs/MULTIMATCH_ALIGNMENT.md": "3b35ce9c60be13151736b99c1b8e2586ba6529eb777a887a065ca775150621ab",
+    "docs/PROJECT_PREREQUISITES.md": "69372c0c4bceab5c6168341bc3928c45a58e592833b74a4f23f254e9c3e9d142"
+  },
+  "static_validation": "tools/check-docs.py --platform none --skip-consumer passed with no unexplained gaps. This mode makes no platform execution or artifact-consumer claim.",
+  "runtime_evidence": "Hosted rootJS/JVM checks are being rerun. Existing executed example mappings stay unchanged; these seven guides contain no Scala fences or linked Scala examples.",
+  "audit_fingerprint_unchanged": "304d01ddc72f6ed1a8a54db61a2f4912d75650181287023c3d916b2b62f3283a",
+  "ci_failure_url": "https://github.com/canardlapin/eyes4s/actions/runs/39556719904",
+  "logs": {
+    "/private/tmp/eyes4s-ci-39556719904-failed-20261021.log": "729f6e3457ea21b3ec06f2aa6680d3d348b0bb9e598de7079fcf1e38fb7ed09c",
+    "/private/tmp/eyes4s-doc-classification-static-20261021.log": "ffcbb5a29d15f5998750dea3c5938c5e31fd43acc01787fbee150536d75c2b3d"
+  },
+  "manifest_sha256": "0eb344a93e8b669433942d7fe4a3d5b1f6c0749e40176c74ba62713b7ba5ced7",
+  "limits": [
+    "Metadata-only follow-up to the frozen final source tree. Fold after its gate, preserving exact compiled sources/tests/build; run post-merge strict compilation, boundaries and documentation validation.",
+    "No new numerical, empirical, performance or release availability claim from classifying a page."
+  ]
+}
