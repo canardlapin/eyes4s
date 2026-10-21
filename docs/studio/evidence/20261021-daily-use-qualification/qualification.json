@@ -1,0 +1,66 @@
+{
+  "schema": 1,
+  "source_commit": "d4ff3c225fbe0125476ae1173ee94982c81170fb",
+  "source_tree": "fee7dcbcf3708b36c835c5883c68dbd6d0d82af0",
+  "tree_with_recorded_audit": "20defd32a6821af8c2e58c98143c639394258c5b",
+  "runner": {
+    "candidate": "d4ff3c225fbe0125476ae1173ee94982c81170fb",
+    "tree": "fee7dcbcf3708b36c835c5883c68dbd6d0d82af0",
+    "started_utc": "2026-10-21T05:14:40Z",
+    "checks": [
+      {
+        "name": "canonical",
+        "exit_code": 0,
+        "seconds": 1859.050453791,
+        "log": "/private/tmp/eyes4s-daily-use-qualification-20261021-canonical.log"
+      },
+      {
+        "name": "studio",
+        "exit_code": 0,
+        "seconds": 1251.3448640420002,
+        "log": "/private/tmp/eyes4s-daily-use-qualification-20261021-studio.log"
+      }
+    ]
+  },
+  "checks": "Full canonical landing gate followed by strict studioAll studioStyleCheck studioBoundaries, all passed. JDK Temurin25.0.4.1; canonical Python3.9.6. No source/test/build/extra-sbt change during qualification.",
+  "studio_passed": {
+    "coreJVM": 1120,
+    "coreJS": 1027,
+    "appJVM": 778,
+    "appJS": 778,
+    "vizJVM": 315,
+    "vizJS": 315,
+    "desktop": 769
+  },
+  "ignored": "One opt-in private-density test; no G2 acquisition or private-study admission claim.",
+  "scope": [
+    "Native expected-unmatched classification and indexed declaration lookup, including the board n/a caption repair.",
+    "Save As immutable copy, source preservation, writer/history handoff and native menu flows.",
+    "Locked field-specific desktop preferences and ordered shutdown.",
+    "Open Recent native routes with normal admission and missing/corrupt distinctions.",
+    "JDK21 portable analytic codec golden and small-screen CI FX guards."
+  ],
+  "limits": [
+    "Later6089 native appearance/trial-layout/Python-lock changes are not covered by this source receipt; they have their own full gate.",
+    "No whole-board parity, physical HiDPI, VoiceOver, packaging or human-usability acceptance.",
+    "The later three newly added platform tests had invalid intermediate green runs and are excluded from this candidate; their corrected executed evidence lives in the native-platform review."
+  ],
+  "audit_files": {
+    "tools/api-audit/inventory.json": "782b484408deec90f49009f51afc30959d8327f358b62850a5b64538d56dda6c",
+    "tools/api-audit/evidence.json": "f0ed3efb5a76fb7cf3c2408bd2b3332f6669281b047bdbf70c150a1d686c9e84",
+    "tools/api-audit/inventory-provenance.json": "70a677ae1cd21a0f38f21cabb33dc04ae9f71d7dc63f226b85a9f6969c883ddb"
+  },
+  "logs": {
+    "/private/tmp/eyes4s-daily-use-qualification-20261021-canonical.log": "f16c1b5ebf1ccdd866a79e55b8c5218332eb64fead4c842d9680827c42446f6d",
+    "/private/tmp/eyes4s-daily-use-qualification-20261021-studio.log": "5e1f268e8dd8f5130ee158b566e83e5d7d56cc4b0898f8592fc01183d6b6fc9b",
+    "/private/tmp/eyes4s-daily-use-qualification-20261021/target/landing-gate/werror.log": "2750798bf26b19c1a58b7fefe41bec024db1fb99e73eec26031e0880ec890e30",
+    "/private/tmp/eyes4s-daily-use-qualification-20261021/target/landing-gate/audit.log": "db5665abc00966f8918f6b6062977eb8737e87eae5829586d2558be3e27edcb7",
+    "/private/tmp/eyes4s-daily-use-qualification-20261021/target/landing-gate/tests.log": "4aee17ecb558b5080571ad09866e508e07a21a81738df603b5d6e7b3f16ef89f",
+    "/private/tmp/eyes4s-daily-use-qualification-20261021/target/landing-gate/hygiene.log": "d5a8f41ffed50f842744ad8669401d2525ed4d49f6cbff31861a357647e4d5a1",
+    "/private/tmp/eyes4s-daily-use-qualification-20261021/target/landing-gate/consumer.log": "163dd706835b55b5736decc841ddf078e4d436e0e27d299ec340415b1c8426a2"
+  },
+  "preserved_outputs": {
+    "archive": "/private/tmp/eyes4s-daily-use-qualification-20261021-preserved/qualification-outputs.tar.gz",
+    "sha256": "6e100eae01da19a2f5429c7deca745573115cf9c0d881f657b264a71668a5a73"
+  }
+}

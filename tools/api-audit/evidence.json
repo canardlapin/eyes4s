@@ -9807,7 +9807,6 @@
           "ioJVM/eyes4s.io.DiagnosticCoverageJvmSuite",
           "ioJVM/eyes4s.io.DiagnosticsDocJvmSuite",
           "ioJVM/eyes4s.io.IoDiagnosticCatalogSuite",
-          "lawsJVM/eyes4s.laws.FormLawSuite",
           "planJVM/eyes4s.plan.DiagnosticCatalogSuite",
           "planJVM/eyes4s.plan.FormDescriptorSuite",
           "planJVM/eyes4s.plan.UnmatchedReasonsSuite",
@@ -15162,7 +15161,7 @@
     "class eyes4s.plan.OccurrenceChoice": {
       "classification": "data-sum",
       "instance": "eyes4s/plan/OccurrenceChoice$$anon$1",
-      "suite": "planJVM/eyes4s.plan.UnmatchedReasonsSuite"
+      "suite": "planJVM/eyes4s.plan.OccurrencePairingSuite"
     },
     "class eyes4s.plan.OffScreenPolicy": {
       "classification": "data-sum",
@@ -15606,8 +15605,8 @@
     },
     "class eyes4s.plan.StudyResultError": {
       "classification": "data-sum",
-      "instance": "eyes4s/plan/StudyResultError$ContrastAnalyses",
-      "suite": "planJVM/eyes4s.plan.UnmatchedReasonsSuite"
+      "instance": "eyes4s/plan/StudyResultError$UnmatchedControl",
+      "suite": "planJVM/eyes4s.plan.StudyCountsSuite"
     },
     "class eyes4s.plan.StudyRevisionError": {
       "classification": "data-sum",
@@ -18182,7 +18181,7 @@
     "method eyes4s.plan.Diagnose$.analysisFinding(1):eyes4s.plan.Diagnose": "planJVM/eyes4s.pointfamilyconsumer.PointSamplingFamilySuite",
     "method eyes4s.plan.Diagnose$.contrast(1):eyes4s.plan.Diagnose": "planJVM/eyes4s.plan.UnmatchedReasonsSuite",
     "method eyes4s.plan.Diagnose$.contrastRow(1):eyes4s.plan.Diagnose": "planJVM/eyes4s.plan.UnmatchedReasonsSuite",
-    "method eyes4s.plan.Diagnose$.epoch(2):eyes4s.plan.Diagnose": "planJVM/eyes4s.plan.UnmatchedReasonsSuite",
+    "method eyes4s.plan.Diagnose$.epoch(2):eyes4s.plan.Diagnose": "planJVM/eyes4s.plan.ProjectPrerequisitesSuite",
     "method eyes4s.plan.Diagnose$.formField(2,eyes4s.plan.Diagnose):eyes4s.plan.Diagnose": "planJVM/eyes4s.plan.UnmatchedReasonsSuite",
     "method eyes4s.plan.Diagnose$.inspection(1):eyes4s.plan.Diagnose": "planJVM/eyes4s.plan.UnmatchedReasonsSuite",
     "method eyes4s.plan.Diagnose$.ledgerRefusal(1):eyes4s.plan.Diagnose": "planJVM/eyes4s.plan.UnmatchedReasonsSuite",
@@ -18192,7 +18191,7 @@
     "method eyes4s.plan.Diagnose$.reduction(1):eyes4s.plan.Diagnose": "planJVM/eyes4s.scanpathstudyconsumer.ScanpathStudyPlanSuite",
     "method eyes4s.plan.Diagnose$.studyFailure(1):eyes4s.plan.Diagnose": "planJVM/eyes4s.plan.InitialFixationSuite",
     "method eyes4s.plan.Diagnose$.studyFinding(2):eyes4s.plan.Diagnose": "planJVM/eyes4s.plan.AnalysisReportSuite",
-    "method eyes4s.plan.Diagnose$.studyResult(1):eyes4s.plan.Diagnose": "planJVM/eyes4s.plan.UnmatchedReasonsSuite",
+    "method eyes4s.plan.Diagnose$.studyResult(1):eyes4s.plan.Diagnose": "planJVM/eyes4s.plan.StudyCountsSuite",
     "method eyes4s.plan.Diagnose$.temporalFinding(2):eyes4s.plan.Diagnose": "planJVM/eyes4s.plan.UnmatchedReasonsSuite",
     "method eyes4s.plan.Diagnose$.temporalResult(1):eyes4s.plan.Diagnose": "planJVM/eyes4s.plan.UnmatchedReasonsSuite",
     "method eyes4s.plan.Diagnostic$.host(1,eyes4s.plan.DiagnosticCode,eyes4s.plan.DiagnosticSeverity,scala.collection.immutable.Vector,scala.collection.immutable.Vector,java.lang.String):eyes4s.plan.Diagnostic": "planJVM/eyes4s.plan.DiagnosticCatalogSuite",
@@ -18388,7 +18387,7 @@
     "method eyes4s.plan.NumericField.parse(eyes4s.plan.RawValue):scala.util.Either": "planJVM/eyes4s.plan.RecipeFormAccessorsSuite",
     "method eyes4s.plan.NumericField.raw(java.lang.Object):eyes4s.plan.RawValue": "planJVM/eyes4s.plan.FormDescriptorSuite",
     "method eyes4s.plan.ObservedSynchronization.fit(eyes4s.kernel.ClockId):scala.util.Either": "lawsJVM/eyes4s.laws.SchemaRegistryJvmSuite",
-    "method eyes4s.plan.OccurrenceChoice.render():": "planJVM/eyes4s.plan.UnmatchedReasonsSuite",
+    "method eyes4s.plan.OccurrenceChoice.render():": "planJVM/eyes4s.plan.OccurrencePairingSuite",
     "method eyes4s.plan.Operand.mapKeys(1,scala.Function1):eyes4s.plan.Operand": "planJVM/eyes4s.scanpathstudyconsumer.ScanpathStudyPlanSuite",
     "method eyes4s.plan.Operand.trialKeys():": "planJVM/consumer.PointSamplingKeyedErrorSuite",
     "method eyes4s.plan.PageSize$.of(scala.Int):scala.util.Either": "planJVM/eyes4s.plan.CoordinateProvenanceSuite",
@@ -18496,8 +18495,8 @@
     "method eyes4s.plan.ProjectAvailability.available():": "planJVM/eyes4s.plan.ProjectCatalogueSuite",
     "method eyes4s.plan.ProjectAvailability.unavailable():": "planJVM/eyes4s.plan.ProjectPrerequisitesSuite",
     "method eyes4s.plan.ProjectCatalogue$.query(3,eyes4s.design.Session,eyes4s.plan.ProjectEvidence,scala.collection.immutable.Vector,cats.kernel.Eq):eyes4s.plan.ProjectAvailability": "planJVM/eyes4s.plan.ProjectCatalogueSuite",
-    "method eyes4s.plan.ProjectFinding$.diagnose(2):eyes4s.plan.Diagnose": "planJVM/eyes4s.plan.UnmatchedReasonsSuite",
-    "method eyes4s.plan.ProjectFinding.message():": "planJVM/eyes4s.plan.UnmatchedReasonsSuite",
+    "method eyes4s.plan.ProjectFinding$.diagnose(2):eyes4s.plan.Diagnose": "planJVM/eyes4s.plan.ProjectPrerequisitesSuite",
+    "method eyes4s.plan.ProjectFinding.message():": "planJVM/eyes4s.plan.ProjectPrerequisitesSuite",
     "method eyes4s.plan.ProjectPrerequisites$.query(3,eyes4s.design.Session,eyes4s.plan.ProjectEvidence,scala.collection.immutable.Vector,cats.kernel.Eq):eyes4s.plan.ProjectAvailability": "planJVM/eyes4s.plan.ProjectCatalogueSuite",
     "method eyes4s.plan.ProjectWorkflow.analysis(eyes4s.plan.DefinitionId,scala.collection.immutable.Vector):eyes4s.plan.ProjectAnalysis": "planJVM/eyes4s.plan.ProjectCatalogueSuite",
     "method eyes4s.plan.ProjectWorkflow.kind():": "planJVM/eyes4s.plan.ProjectCatalogueSuite",
@@ -18927,7 +18926,7 @@
     "method eyes4s.plan.StudyReport.prepare(3,eyes4s.plan.StudyPlan,eyes4s.plan.StudyInput,eyes4s.design.PairScheduleBudget):scala.util.Either": "planJVM/eyes4s.plan.PreflightSuite",
     "method eyes4s.plan.StudyResult$.reconstruct(4,eyes4s.plan.ArtifactRef,eyes4s.plan.StudyLayout,scala.collection.immutable.Vector,scala.collection.immutable.Vector):scala.util.Either": "codecJVM/eyes4s.codec.ResultCodecSuite",
     "method eyes4s.plan.StudyResult$.reconstruct(4,eyes4s.plan.ArtifactRef,eyes4s.plan.StudyLayout,scala.collection.immutable.Vector,scala.collection.immutable.Vector,scala.collection.immutable.Vector):scala.util.Either": "lawsJVM/eyes4s.laws.StudyResultCodecLawSuite",
-    "method eyes4s.plan.StudyResultError.message():": "planJVM/eyes4s.plan.UnmatchedReasonsSuite",
+    "method eyes4s.plan.StudyResultError.message():": "planJVM/eyes4s.plan.StudyCountsSuite",
     "method eyes4s.plan.StudyRevisionError.message():": "planJVM/eyes4s.plan.InitialFixationSuite",
     "method eyes4s.plan.StudyRunError.message():": "planJVM/eyes4s.plan.UnmatchedReasonsSuite",
     "method eyes4s.plan.StudyRunSegment$.of(eyes4s.plan.StudyRunStage):eyes4s.plan.StudyRunSegment": "ioJVM/eyes4s.io.StampedStudyExecutionSuite",
@@ -19043,6 +19042,7 @@
     "method eyes4s.plan.UnlistedTrial$.of(eyes4s.plan.TrialIdentity,scala.collection.immutable.Vector,scala.collection.immutable.Vector):scala.util.Either": "planJVM/eyes4s.plan.InventoryLedgerSuite",
     "method eyes4s.plan.UnmatchedFocalPolicy.name():": "planJVM/eyes4s.scanpathstudyconsumer.ScanpathStudyPlanSuite",
     "method eyes4s.plan.UnmatchedKind.code():": "planJVM/eyes4s.plan.UnmatchedReasonsSuite",
+    "method eyes4s.plan.UnmatchedReasons$.byDesignKeys(1,eyes4s.plan.StudyLayout,eyes4s.plan.StudyPairing,java.lang.String,scala.collection.immutable.Vector,eyes4s.plan.InventoryLedger,scala.Option):scala.collection.immutable.Vector": "planJVM/eyes4s.plan.UnmatchedReasonsSuite",
     "method eyes4s.plan.UnmatchedReasons$.declared(1,eyes4s.plan.StudyLayout,scala.collection.immutable.Vector,scala.Option):eyes4s.plan.UnmatchedReasons": "planJVM/eyes4s.plan.StudyCursorSuite",
     "method eyes4s.plan.UnmatchedReasons$.of(1,eyes4s.plan.StudyLayout,eyes4s.plan.StudyPairing,java.lang.String,scala.collection.immutable.Vector,eyes4s.plan.InventoryLedger,scala.Option):eyes4s.plan.UnmatchedReasons": "planJVM/eyes4s.plan.UnmatchedReasonsSuite",
     "method eyes4s.plan.UnmatchedReasons$.undetermined(1,scala.collection.immutable.Vector):eyes4s.plan.UnmatchedReasons": "planJVM/eyes4s.plan.ExpectedUnmatchedSuite",
@@ -20555,6 +20555,7 @@
       "nominal frame failures and duplicate source keys retain their keyed results",
       "overlap pinned complete plan and result replay on this runtime",
       "plan wires retain exact work limits and refuse unknown admission conventions",
+      "portable transport wire oracle uses exact single-fixation couplings and rejects one changed bit",
       "run-stamp refusal precedes replay and forged complete results are rejected",
       "strict missing-support summaries preserve every original exact64 query row",
       "three method plans and complete keyed result ledgers round-trip",
@@ -24110,11 +24111,14 @@
     ],
     "planJS/eyes4s.plan.UnmatchedReasonsSuite": [
       "an admitted reference the pairing cannot use is not pairable, not by design",
+      "by-design candidates before pair counting agree with completed library reasons",
       "control admission facts use other items and preserve declared dispositions",
       "control admission respects occurrence selection and AllOccurrences overrides it",
       "every kind projects under the catalog's conventions, a quarantine cause as its cause",
       "every unmatched focal trial has exactly one reason, and the counts partition them",
+      "indexed by-design metadata agrees with occurrence and reference-selection rules",
       "lures and novel probes have no reference by design; dropped study trials are named",
+      "many repeated studied references stay present in initial metadata",
       "preflight carries the reasons when given the inventory, and says undetermined without it",
       "under SameOccurrence the occurrence is part of the key the inventory is searched by",
       "under Select(At(n)) only occurrence n is searched: a dropped n is not admitted"
@@ -24905,6 +24909,7 @@
       "nominal frame failures and duplicate source keys retain their keyed results",
       "overlap pinned complete plan and result replay on this runtime",
       "plan wires retain exact work limits and refuse unknown admission conventions",
+      "portable transport wire oracle uses exact single-fixation couplings and rejects one changed bit",
       "run-stamp refusal precedes replay and forged complete results are rejected",
       "strict missing-support summaries preserve every original exact64 query row",
       "three method plans and complete keyed result ledgers round-trip",
@@ -28622,11 +28627,14 @@
     ],
     "planJVM/eyes4s.plan.UnmatchedReasonsSuite": [
       "an admitted reference the pairing cannot use is not pairable, not by design",
+      "by-design candidates before pair counting agree with completed library reasons",
       "control admission facts use other items and preserve declared dispositions",
       "control admission respects occurrence selection and AllOccurrences overrides it",
       "every kind projects under the catalog's conventions, a quarantine cause as its cause",
       "every unmatched focal trial has exactly one reason, and the counts partition them",
+      "indexed by-design metadata agrees with occurrence and reference-selection rules",
       "lures and novel probes have no reference by design; dropped study trials are named",
+      "many repeated studied references stay present in initial metadata",
       "preflight carries the reasons when given the inventory, and says undetermined without it",
       "under SameOccurrence the occurrence is part of the key the inventory is searched by",
       "under Select(At(n)) only occurrence n is searched: a dropped n is not admitted"
