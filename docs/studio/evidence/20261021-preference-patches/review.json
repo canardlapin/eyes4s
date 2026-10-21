@@ -1,0 +1,37 @@
+{
+  "schema": 1,
+  "review_date": "2026-10-21",
+  "mote": "bd-01M5EC8AZV4FFJ3RTHQ51PRGSC",
+  "source_base": "893eaab472865fec58c6ef95b904939663a1260d",
+  "state": "focused strict desktop checks passed; combined full qualification and landing pending",
+  "scope": "Locked desktop preference patches and appearance writer integration; Open Recent UI follows separately",
+  "checks": {
+    "DesktopPreferencesSuite": 4,
+    "AppearancePreferenceHostSuite": 4,
+    "AppearancePreferenceFxSuite": 2,
+    "PreferencesFileSuite": 6,
+    "studioStyleCheck": "passed",
+    "flags": "GITHUB_ACTIONS=true; JDK25.0.4.1; headless FX; all files under temporary directories"
+  },
+  "findings": [
+    "Fourteen concurrent independent repository instances patch the same file; all ten recent paths, appearance, stage, layout and export directory survive.",
+    "A separate JVM holds the actual OS file lock: a patch times out as a typed failure without changing bytes, and succeeds after the child releases its lock.",
+    "Cancelling a waiting patch completes promptly and releases its channel; a later patch acquires the writer.",
+    "An unusable preference file is retained with its exact bytes before replacement; its finding and backup path remain in the returned receipt.",
+    "A stale appearance host patches only appearance. Newer recent paths and layouts are retained, and those unrelated fields do not cause an endless resave loop.",
+    "Production StudioMain constructs the locked repository for appearance saves. Atomic file replacement remains JvmFileSystem.write; schema and existing corrupt-file handling remain unchanged."
+  ],
+  "limits": [
+    "Open Recent menus and lifecycle recording are not implemented by this foundation.",
+    "Cross-process locking coordinates writers using the desktop repository; external tools that replace preferences without taking its lock are outside that protocol."
+  ],
+  "source_sha256": {
+    "studio/desktop/src/main/scala/eyes4s/studio/desktop/StudioMain.scala": "ab3cd15f56a28205d668caae034e2d2ad42cbc526ab8a7059cdf6273f905a446",
+    "studio/desktop/src/main/scala/eyes4s/studio/desktop/platform/AppearancePreferenceHost.scala": "52021d33ca4775b109854a063f47615a620d75fe552035bf9966a3ce099252f8",
+    "studio/desktop/src/main/scala/eyes4s/studio/desktop/platform/PreferencesLocation.scala": "e11573d7d3012e70979b7c0260a2ef6e7fcbe2f462925db954ae6592207455b0",
+    "studio/desktop/src/test/scala/eyes4s/studio/desktop/platform/AppearancePreferenceFxSuite.scala": "556b3c5e0b7b8f04010ad2f3b798144f6ab1a213494c5dab9d36e47ed76adc13",
+    "studio/desktop/src/test/scala/eyes4s/studio/desktop/platform/AppearancePreferenceHostSuite.scala": "39aed7de3cac00ebec501217b2a7a8d9821c4c34c1e5675ce3d7143be77e1e96",
+    "studio/desktop/src/main/scala/eyes4s/studio/desktop/platform/DesktopPreferences.scala": "245cec165ff45076625d6982d6f194aa3e70d4ac15c42ea8c519595c6fe4cdc4",
+    "studio/desktop/src/test/scala/eyes4s/studio/desktop/platform/DesktopPreferencesSuite.scala": "22f47dc91a928cf009ba3434844bcf7a76d5bccf392bbfc053c0b82e47224106"
+  }
+}

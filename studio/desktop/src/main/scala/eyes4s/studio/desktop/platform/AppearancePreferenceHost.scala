@@ -16,10 +16,9 @@
 
 package eyes4s.studio.desktop.platform
 
-import cats.effect.IO
 import cats.effect.unsafe.IORuntime
 import eyes4s.studio.app.appearance.AppearancePreference
-import eyes4s.studio.core.preferences.{PreferencesStore, UserPreferences}
+import eyes4s.studio.core.preferences.UserPreferences
 import eyes4s.studio.desktop.runtime.StudioRuntime
 
 /** The appearance preference on the desktop (tickets S2.8, S1.10): applies
@@ -34,7 +33,7 @@ import eyes4s.studio.desktop.runtime.StudioRuntime
   * a save's completion on the JavaFX thread. Use on the JavaFX thread.
   */
 final class AppearancePreferenceHost(
-    store: Option[PreferencesStore[IO]],
+    store: Option[DesktopPreferences],
     initial: UserPreferences,
     log: String => Unit,
     onFx: (() => Unit) => Unit = f => javafx.application.Platform.runLater(() => f())
@@ -58,9 +57,12 @@ final class AppearancePreferenceHost(
 
   // A choice the file already holds needs no save; any other is written,
   // after the save running, if any.
+  private def sameChoice(a: UserPreferences, b: UserPreferences): Boolean =
+    a.appearance == b.appearance
+
   private def choose(p: UserPreferences): Unit =
     wanted = p
-    pending = Option.when(p != stored)(p)
+    pending = Option.when(!sameChoice(p, stored))(p)
     next()
 
   private def next(): Unit =
@@ -68,15 +70,16 @@ final class AppearancePreferenceHost(
       case (Some(s), Some(p)) if !saving =>
         saving = true
         pending = None
-        s.save(p).unsafeRunAsync { result =>
+        s.update(_.withAppearance(p.appearance)).unsafeRunAsync { result =>
           onFx { () =>
             saving = false
             result match
-              case Right(Right(_)) =>
-                stored = p
+              case Right(Right(written)) =>
+                stored = written.preferences
+                written.problems.foreach(problem => log(problem.message))
                 // A choice made during the save, back to what the file held
                 // before it, must now be written too.
-                if wanted != stored && pending.isEmpty then pending = Some(wanted)
+                if !sameChoice(wanted, stored) && pending.isEmpty then pending = Some(wanted)
               // `stored` stays: the next choice writes again.
               case Right(Left(problem)) => log(problem.message)
               case Left(e) => log(s"Preferences could not be saved: ${e.getMessage}")

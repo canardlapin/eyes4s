@@ -55,7 +55,7 @@ class AppearancePreferenceHostSuite extends munit.FunSuite:
       IO.pure(1L)
     )
     val host = AppearancePreferenceHost(
-      Some(store),
+      Some(DesktopPreferences(store)),
       initial,
       logged.add(_): Unit,
       completions.add(_): Unit
@@ -114,5 +114,34 @@ class AppearancePreferenceHostSuite extends munit.FunSuite:
       h.drain()
       assertEquals(h.host.saved.appearance, AppearanceChoice.Dark)
       assertEquals(h.store.load.unsafeRunSync()._1.appearance, AppearanceChoice.Dark)
+    }
+  }
+
+  test(
+    "a stale appearance host patches only its choice and cannot overwrite newer recent paths or layouts"
+  ) {
+    withDirectory { dir =>
+      val file    = dir.resolve("preferences.json")
+      val h       = Harness(file, UserPreferences.defaults)
+      val project =
+        HostPath.of(dir.resolve("recent.eyes").toString).fold(e => fail(e.message), identity)
+      val layout = eyes4s.studio.core.document.SavedLayout(
+        eyes4s.studio.core.document.Perspective.Compare,
+        eyes4s.studio.core.document.LayoutBlob("{\"retained\":true}")
+      )
+      val latest = UserPreferences.defaults
+        .withRecent(UserPreferences.defaults.recent.opened(project))
+        .withLayout(layout)
+      assert(h.store.save(latest).unsafeRunSync().isRight)
+      h.choose(Appearance.Dark)
+      h.drain()
+      val actual = h.store.load.unsafeRunSync()._1
+      assertEquals(actual, latest.withAppearance(AppearanceChoice.Dark))
+      assertEquals(h.host.saved, actual)
+      assert(
+        h.completions.isEmpty,
+        "unrelated preference fields must not create an endless resave"
+      )
+      assertEquals(h.logged.asScala.toVector, Vector.empty)
     }
   }

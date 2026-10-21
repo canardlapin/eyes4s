@@ -77,7 +77,7 @@ final class StudioApplication extends Application:
     )
     reporter.install(): Unit
     val appearance = AppearancePreferenceHost(
-      PreferencesLocation.store.toOption,
+      PreferencesLocation.repository.toOption,
       preferences,
       m => System.err.println(PreferencesLocation.redact(m))
     )

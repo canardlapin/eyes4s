@@ -68,6 +68,9 @@ object PreferencesLocation:
   def store: Either[PlatformError, PreferencesStore[IO]] =
     default.map(PreferencesStore[IO](JvmFileSystem, _, IO.realTime.map(_.toMillis)))
 
+  /** The shared-lock patching writer for desktop preferences. */
+  def repository: Either[PlatformError, DesktopPreferences] = store.map(DesktopPreferences(_))
+
   /** `message` with the user's home directory written `~`, for the log. */
   def redact(message: String, home: String = sys.props.getOrElse("user.home", "")): String =
     if home.isEmpty then message else message.replace(home, "~")

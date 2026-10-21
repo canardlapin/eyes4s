@@ -43,7 +43,7 @@ class AppearancePreferenceFxSuite extends ShellFxSuite:
     try
       val w    = boot(fx, StoryModels.t2Compare)
       val host = AppearancePreferenceHost(
-        Some(store),
+        Some(DesktopPreferences(store)),
         UserPreferences.defaults.withAppearance(AppearanceChoice.System),
         m => fail(m)
       )
@@ -73,7 +73,7 @@ class AppearancePreferenceFxSuite extends ShellFxSuite:
       try
         val w    = boot(fx, StoryModels.t2Compare)
         val dark = UserPreferences.defaults.withAppearance(AppearanceChoice.Dark)
-        val host = AppearancePreferenceHost(Some(store), dark, m => fail(m))
+        val host = AppearancePreferenceHost(Some(DesktopPreferences(store)), dark, m => fail(m))
         runOnFx(host.attach(w.runtime))
         // The project keeps its Light theme; nothing is written at boot.
         assertEquals(
