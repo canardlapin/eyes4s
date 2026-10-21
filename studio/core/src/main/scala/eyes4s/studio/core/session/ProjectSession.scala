@@ -455,6 +455,171 @@ final class ProjectSession[F[_]: Concurrent] private (
       }
     )
 
+  /** Save the current edited graph into an empty destination and keep its writer.
+    * The source's saved document, journal and undo history are unchanged. The
+    * new session keeps the live undo history and every immutable entry (including
+    * older archives), but starts its own journal at the copied document. Current
+    * bound archives, where present, and stored input digests are checked before
+    * publishing the destination manifest. Older runs' genuine archive absence is
+    * retained; orphan archive bytes are refused. No numerical method is rerun.
+    *
+    * The receipt retains any journal-reset warning. A failed copy releases the
+    * destination writer; unfinished immutable entries may remain there. The
+    * manifest is published last. Copying while runs are running is refused.
+    */
+  def saveAs(to: ProjectStore[F]): F[Either[SessionError, (ProjectSession[F], SaveReceipt)]] =
+    Ref.of[F, Option[ProjectSession[F]]](None).flatMap { acquired =>
+      val operation =
+        exclusive { s =>
+          val running =
+            s.history.document.runs.filter(_.state == RunLifecycle.Running).map(_.id)
+          val admitted = writable(s).flatMap(_ =>
+            Either.cond(running.isEmpty, (), SessionError.CopyWhileRunning(running))
+          )
+          admitted match
+            case Left(error) => Concurrent[F].pure(Left(error))
+            case Right(_)    =>
+              locked(to, owner) { lock =>
+                (for
+                  manifest <- EitherT(to.readManifest.map {
+                    case Left(StoreError.NoManifest) => Right(false)
+                    case Left(error)                 =>
+                      Left(SessionError.Store("inspect the copy destination", error))
+                    case Right(_) => Right(true)
+                  })
+                  entries <- EitherT(to.list).leftMap(
+                    SessionError.Store("list the copy destination", _)
+                  )
+                  _ <- EitherT.cond[F](
+                    !manifest && entries.isEmpty,
+                    (),
+                    SessionError
+                      .Bundle("save a copy", BundleError.TargetNotEmpty(manifest, entries))
+                  )
+                  sidecars <- Sidecar.values.toVector.traverse { file =>
+                    EitherT(to.readSidecar(file).map {
+                      case Left(_: StoreError.NoSidecar) => Right(Option.empty[Sidecar])
+                      case Left(error)                   =>
+                        Left(SessionError.Store("inspect copy recovery state", error))
+                      case Right(_) => Right(Some(file))
+                    })
+                  }
+                  retained = sidecars.flatten
+                  _ <- EitherT.cond[F](
+                    retained.isEmpty,
+                    (),
+                    SessionError.CopyDestinationState(retained)
+                  )
+                  document = stripped(s.history.document)
+                  encoded <- EitherT.fromEither[F](
+                    ProjectBundle
+                      .encode(document, s.saved.manifest.sharing, s.inputs)
+                      .leftMap(SessionError.Bundle("encode the current copy", _))
+                  )
+                  _ <- s.inputs.filter(_.stored).traverse_ { entry =>
+                    entry.path.traverse_ { path =>
+                      for
+                        bytes <- EitherT(store.read(path)).leftMap(e =>
+                          SessionError.Bundle(
+                            "verify a copied input",
+                            BundleError.InputUnavailable(entry, e)
+                          )
+                        )
+                        found = ByteDigest.sha256(bytes)
+                        _ <- EitherT.cond[F](
+                          found == entry.sha256,
+                          (),
+                          SessionError.Bundle(
+                            "verify a copied input",
+                            BundleError.InputChanged(entry, found)
+                          )
+                        )
+                      yield ()
+                    }
+                  }
+                  paths <- EitherT(store.list).leftMap(
+                    SessionError.Store("list the source graph", _)
+                  )
+                  _ <- document.runs.traverse_ { run =>
+                    run.archive match
+                      case eyes4s.studio.core.document.CoreBinding.Unbound() =>
+                        EitherT.pure[F, SessionError](())
+                      case eyes4s.studio.core.document.CoreBinding.Bound(_) =>
+                        val archives = RunStore(store)
+                        EitherT(archives.index(run).flatMap {
+                          case Left(_: RunStoreError.NoArchive)
+                              if !paths
+                                .exists(path => ArchivePaths.owner(path).contains(run.id)) =>
+                            Concurrent[F].pure(Right(()): Either[SessionError, Unit])
+                          case Left(error) =>
+                            Concurrent[F].pure(
+                              Left(SessionError.Archive("verify a copied archive", error))
+                            )
+                          case Right(index) =>
+                            archives
+                              .load(index)
+                              .map(
+                                _.leftMap(
+                                  SessionError.Archive("verify a copied archive", _)
+                                ).void
+                              )
+                        })
+                  }
+                  _ <- paths.traverse_ { path =>
+                    for
+                      bytes <- EitherT(store.read(path)).leftMap(
+                        SessionError.Store(s"read copied entry $path", _)
+                      )
+                      _ <- EitherT(ProjectBundle.writeImmutable(to, lock, path, bytes))
+                        .leftMap(SessionError.Bundle("write a copied entry", _))
+                      back <- EitherT(to.read(path)).leftMap(
+                        SessionError.Store(s"verify copied entry $path", _)
+                      )
+                      expected = ByteDigest.sha256(bytes)
+                      actual   = ByteDigest.sha256(back)
+                      _ <- EitherT.cond[F](
+                        expected == actual,
+                        (),
+                        SessionError.Bundle(
+                          "verify a copied entry",
+                          BundleError.PartDigest(path, expected, actual)
+                        )
+                      )
+                    yield ()
+                  }
+                  start <- EitherT.fromEither[F](
+                    CommandJournal
+                      .start(document)
+                      .leftMap(SessionError.Journal("start the copy journal", _))
+                  )
+                  copied <- EitherT.liftF(
+                    build(
+                      to,
+                      owner,
+                      options,
+                      State(
+                        s.history,
+                        Saved(document, encoded.manifest, None, None),
+                        s.inputs,
+                        JournalState(Vector(start), 0, 0, History.start(document)),
+                        None,
+                        Some(lock)
+                      )
+                    )
+                  )
+                  receipt <- EitherT(copied.save)
+                yield (copied, receipt)).value
+              }.flatTap {
+                case Right((copied, _)) => acquired.set(Some(copied))
+                case Left(_)            => Concurrent[F].unit
+              }.map(_.map(s -> _))
+        }
+      val release = acquired.get.flatMap(_.traverse_(_.close.void))
+      // Observe pending cancellation before handing the newly owned writer
+      // to the caller; this scope can still release it at that boundary.
+      operation.flatTap(_ => Concurrent[F].cede).onCancel(release).onError { case _ => release }
+    }
+
   /** Copy an input's bytes into the bundle and list it at the next save. */
   def importInput(
       kind: InputKind,

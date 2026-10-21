@@ -28,6 +28,7 @@ import eyes4s.studio.core.command.{
   TornLine
 }
 import eyes4s.studio.core.document.StudioDocument
+import eyes4s.studio.core.runs.RunStoreError
 
 /** One journal entry the recovery screen lists: its number in the journal
   * (from 1) and the entry.
@@ -215,6 +216,13 @@ enum SessionError derives CanEqual:
   /** `create` found a bundle that already has a manifest. */
   case ProjectExists
 
+  /** A copy cannot transfer live backend work to another writer. */
+  case CopyWhileRunning(runs: Vector[RunId])
+
+  /** Recovery files make a destination nonempty even without its manifest. */
+  case CopyDestinationState(files: Vector[eyes4s.studio.core.bundle.Sidecar])
+
+  case Archive(operation: String, error: RunStoreError)
   case Store(operation: String, error: StoreError)
   case Bundle(operation: String, error: BundleError)
   case Journal(operation: String, error: JournalError)
@@ -247,8 +255,13 @@ enum SessionError derives CanEqual:
     case WriterRefused(requester, holder) =>
       s"${requester.description} cannot open the project for writing: it is open in " +
         s"${holder.fold("another writer")(_.description)}. Close it there, or open a copy."
-    case NoProject             => "The bundle has no project.json to open."
-    case ProjectExists         => "The bundle already holds a project; open it instead."
+    case NoProject              => "The bundle has no project.json to open."
+    case ProjectExists          => "The bundle already holds a project; open it instead."
+    case CopyWhileRunning(runs) =>
+      s"Cannot save a copy while ${runs.map(_.label).mkString(", ")} are running; finish or cancel them first."
+    case CopyDestinationState(files) =>
+      s"The copy destination already contains project state: ${files.map(_.fileName).mkString(", ")}."
+    case Archive(operation, e) => s"Cannot $operation: ${e.message}"
     case Store(operation, e)   => s"Cannot $operation: ${e.message}"
     case Bundle(operation, e)  => s"Cannot $operation: ${e.message}"
     case Journal(operation, e) => s"Cannot $operation: ${e.message}"

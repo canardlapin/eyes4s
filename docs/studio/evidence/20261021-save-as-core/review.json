@@ -1,0 +1,32 @@
+{
+  "schema": 1,
+  "scope": "Save As server foundation; native File menu/window handoff and Open Recent are not implemented by this slice",
+  "source_base": "96a4fbc4a7bd6584a353ec60cbe4d93517f6e675",
+  "state": "targeted JVM/JS checks passed; full qualification and landing pending",
+  "mote": "bd-01M5E8JS1DZCCKCX78PMWW71V2",
+  "checks_each_platform": {
+    "save_as": 7,
+    "native_artifact_persistence": 18,
+    "existing_share": 4
+  },
+  "findings": [
+    "Copies current edited science and presentation plus the live undo history, including inputs imported since the last save. The source saved document, journal and edited state are unchanged.",
+    "Copies every immutable entry, including retained older archives; current bound archives and stored input digests are checked before the destination manifest is published.",
+    "Genuine archive absence in older bound projects is preserved. Corrupt bound archives and active runs are refused before writing destination entries.",
+    "A destination with a manifest, entries or recovery sidecars is refused. The source cannot be its own destination.",
+    "Copied native artifacts reopen with identical facts and every artifact byte, including an unsaved source binding. No analysis is rerun by Save As.",
+    "Journal-write warnings remain in the returned SaveReceipt. A failed copy releases its destination writer.",
+    "A cancellation regression first reproduced an inaccessible held writer; the handoff now observes pending cancellation while the new writer remains owned by this scope, and closes it."
+  ],
+  "limits": [
+    "Unfinished immutable destination entries can remain after a write failure; the source remains unchanged.",
+    "No native Save As menu or production-host window switch is claimed yet.",
+    "No copying or publication of private study data in these tests."
+  ],
+  "source_sha256": {
+    "studio/core/src/main/scala/eyes4s/studio/core/session/ProjectSession.scala": "8713edc539ff6a8a1ba1df859aafeee94ffecc45d81f8d533240be1c863f0dae",
+    "studio/core/src/main/scala/eyes4s/studio/core/session/Recovery.scala": "56f1ebad06f29b6f06bbb18423f7a7f96db3ac892de4d45c16af5302337d63a8",
+    "studio/core/src/test/scala/eyes4s/studio/core/real/NativeArtifactPersistenceSuite.scala": "20139c99cd18daca201a4035d3876587b1bc4ab88e28e1b31176566f8c26ab8d",
+    "studio/core/src/test/scala/eyes4s/studio/core/session/SessionSaveAsSuite.scala": "55527a7ff435a24c910d3aa106715fec54c5bd3f96e15198b0b09af9452c919a"
+  }
+}

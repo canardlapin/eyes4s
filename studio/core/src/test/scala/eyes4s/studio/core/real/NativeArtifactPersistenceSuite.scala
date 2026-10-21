@@ -263,6 +263,101 @@ class NativeArtifactPersistenceSuite extends CatsEffectSuite:
       assertEquals(optional.map(_.facts), Some(facts))
   }
 
+  test("Save As copies an unsaved native binding and every archive byte for a cold reopen") {
+    for
+      source         <- InMemoryProjectStore.create[IO]
+      session        <- create(source)
+      _              <- session.storeNativeArtifacts(exported).map(get)
+      _              <- bind(session)
+      before         <- ok(source.readManifest)
+      priorSaved     <- session.saved
+      edited         <- session.document
+      target         <- InMemoryProjectStore.create[IO]
+      copied         <- session.saveAs(target).map(get).map(_._1)
+      _              <- ok(copied.close)
+      reopened       <- ok(ProjectSession.open(target, owner))
+      loaded         <- reopened.session.loadNativeArtifacts(run).map(get)
+      copiedDocument <- reopened.session.document
+      _              <- ok(reopened.session.close)
+      after          <- ok(source.readManifest)
+      stillSaved     <- session.saved
+      stillEdited    <- session.unsaved
+      _              <- ok(session.close)
+    yield
+      assertEquals(copiedDocument, edited)
+      assertEquals(loaded.facts, exported.facts)
+      assertEquals(loaded.files.sortBy(_._1.value), exported.files.sortBy(_._1.value))
+      assertEquals(before.toVector, after.toVector)
+      assertEquals(stillSaved, priorSaved)
+      assert(stillEdited)
+  }
+
+  test("Save As preserves genuine archive absence in an older bound project") {
+    for
+      source  <- InMemoryProjectStore.create[IO]
+      session <- create(source)
+      _       <- bind(session)
+      target  <- InMemoryProjectStore.create[IO]
+      copied  <- session.saveAs(target).map(get).map(_._1)
+      doc     <- copied.document
+      absent  <- copied.findNativeArtifacts(doc.run(run).get).map(get)
+      _       <- ok(copied.close)
+      _       <- ok(session.close)
+    yield assertEquals(absent, None)
+  }
+
+  test("Save As refuses a running run before writing the destination") {
+    for
+      source  <- InMemoryProjectStore.create[IO]
+      session <- create(source, RunLifecycle.Running)
+      target  <- InMemoryProjectStore.create[IO]
+      refused <- session.saveAs(target)
+      entries <- ok(target.list)
+      _       <- ok(session.close)
+    yield
+      assertEquals(
+        refused.left.toOption,
+        Some(eyes4s.studio.core.session.SessionError.CopyWhileRunning(Vector(run)))
+      )
+      assertEquals(entries, Vector.empty)
+  }
+
+  test("Save As refuses a corrupt bound archive before copying any destination entry") {
+    for
+      source    <- InMemoryProjectStore.create[IO]
+      session   <- create(source)
+      _         <- session.storeNativeArtifacts(exported).map(get)
+      _         <- bind(session)
+      _         <- ok(session.save)
+      _         <- ok(session.close)
+      failIndex <- Ref.of[IO, Boolean](false)
+      reads     <- Ref.of[IO, Vector[BundlePath]](Vector.empty)
+      path      = get(ArchivePaths.content(run, exported.archive.index.entries.head.sha256))
+      corrupted = new ControlledStore(
+        source,
+        failIndex,
+        reads,
+        Some(path),
+        sameLengthCorruption = true
+      )
+      opened  <- ok(ProjectSession.open(corrupted, owner))
+      target  <- InMemoryProjectStore.create[IO]
+      refused <- opened.session.saveAs(target)
+      entries <- ok(target.list)
+      _       <- ok(opened.session.close)
+    yield
+      assert(
+        refused.left.toOption.exists {
+          case eyes4s.studio.core.session.SessionError
+                .Archive(_, _: RunStoreError.EntryDigest) =>
+            true
+          case _ => false
+        },
+        refused.toString
+      )
+      assertEquals(entries, Vector.empty)
+  }
+
   test("unknown and failed targets refuse before writing any archive bytes") {
     for
       store   <- InMemoryProjectStore.create[IO]
