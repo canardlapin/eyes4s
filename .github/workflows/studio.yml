@@ -111,6 +111,68 @@ jobs:
             exit 1
           fi
 
+  studio-linux-hidpi:
+    name: Studio (Linux, native output scale 2)
+    strategy:
+      matrix:
+        os: [ubuntu-22.04]
+        java: [temurin@25]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 90
+    steps:
+      - name: Checkout current branch (full)
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Setup sbt
+        uses: sbt/setup-sbt@v1
+
+      - name: Setup Java (temurin@25)
+        id: setup-java-temurin-25
+        if: matrix.java == 'temurin@25'
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: 25
+          cache: sbt
+
+      - name: sbt update
+        if: matrix.java == 'temurin@25' && steps.setup-java-temurin-25.outputs.cache-hit == 'false'
+        run: sbt +update
+
+      - name: Publish the scaladock and Intaglio pins
+        run: bash studio/publish-pins.sh
+
+      - name: Run all desktop tests on native GTK at scale 2
+        run: |
+          sbt -J-Xmx2g -Djavafx.platform=linux studioDesktop/Test/compile
+          xvfb-run -a -s '-screen 0 3840x2400x24' sbt -J-Xmx1g -Djavafx.platform=linux -Deyes4s.studio.test.heap=4g -Deyes4s.studio.fx.visible=true -Dglass.gtk.uiScale=2 -Deyes4s.studio.fx.expectedOutputScale=2 studioDesktop/test
+
+      - name: Require native scale, sharpness and raster receipt
+        run: |
+          python3 - <<'PY'
+          import json, pathlib
+          files = list(pathlib.Path('target/studio-snapshots/NativeOutputScaleFxSuite').rglob('native-output-scale.json'))
+          assert len(files) == 1, 'native scale test did not write exactly one receipt'
+          r = json.loads(files[0].read_text())
+          assert r['nativeScaleX'] == r['nativeScaleY'] == r['requiredScale'] == 2, r
+          assert r['hostOverride'] is False and r['stripeWidthDevicePixels'] == 1, r
+          assert r['rasterDifferenceFraction'] <= r['maximumDifferenceFraction'] <= 0.005, r
+          assert (files[0].parent / 'light-2x.png').is_file(), 'native scale snapshot missing'
+          print('Verified native output-scale-2 raster receipt:', r)
+          PY
+
+      - name: Upload native HiDPI snapshots and test reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: studio-snapshots-linux-hidpi-${{ github.sha }}
+          path: |
+            target/studio-snapshots/
+            studio/desktop/target/test-reports/
+          if-no-files-found: warn
+
   studio-macos:
     name: Studio (macOS, functional JavaFX)
     strategy:
