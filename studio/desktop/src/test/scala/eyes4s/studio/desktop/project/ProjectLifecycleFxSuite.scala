@@ -104,7 +104,8 @@ class ProjectLifecycleFxSuite extends ShellFxSuite:
       directory: Path,
       files: FileSystem[IO] = JvmFileSystem,
       preferences: Option[DesktopPreferences] = None,
-      initialRecent: RecentProjects = RecentProjects.empty
+      initialRecent: RecentProjects = RecentProjects.empty,
+      newProjectTheme: () => Theme = () => Theme.Light
   ): (InMemoryPlatform[IO], ProjectLifecycleHost) =
     val memory   = InMemoryPlatform.create[IO]().unsafeRunSync()
     val platform = memory.platform.copy(files = files)
@@ -114,7 +115,8 @@ class ProjectLifecycleFxSuite extends ShellFxSuite:
         platform,
         presets = FilePresetStore(directory.resolve("presets")),
         preferences = preferences,
-        initialRecent = initialRecent
+        initialRecent = initialRecent,
+        newProjectTheme = newProjectTheme
       )
     )
     runOnFx(host.start())
@@ -861,6 +863,63 @@ class ProjectLifecycleFxSuite extends ShellFxSuite:
             assertEquals(runOnFx(old.runtime.model.recent), initial)
           finally runOnFx(host.shutdown())
           assertEquals(store.load.unsafeRunSync()._1.recent, initial)
+        }
+      }
+      .unsafeRunSync()
+  }
+
+  fxStage.test(
+    "fresh projects use the desired appearance without edits; existing projects keep their saved theme"
+  ) { fx =>
+    TempDirs
+      .resource("eyes4s-lifecycle-new-theme-")
+      .use { directory =>
+        IO.blocking {
+          val savedLight = directory.resolve("saved-light.eyes")
+          val newDark    = directory.resolve("new-dark.eyes")
+          create(savedLight)
+          val (platform, host) = setup(
+            fx,
+            directory,
+            newProjectTheme = () => {
+              assert(
+                javafx.application.Platform.isFxApplicationThread,
+                "read preferences on FX before asynchronous acquisition"
+              )
+              Theme.Dark
+            }
+          )
+          def freshDark(): Unit = runOnFx {
+            val model = host.window.get.runtime.model
+            assertEquals(model.document.presentation.theme, Theme.Dark)
+            assert(!model.save.edited)
+            assert(!model.history.presentation.canUndo)
+          }
+          try
+            freshDark()
+            platform.answer(Some(path(newDark))).unsafeRunSync()
+            invoke(host, CommandRegistry.newProject.id)
+            eventually(fx, "new Dark project created")(
+              !host.busy && host.window
+                .exists(_.runtime.model.project.exists(_.value == "new-dark"))
+            )
+            freshDark()
+            invoke(host, CommandRegistry.closeProject.id)
+            eventually(fx, "fresh untitled uses preferred Dark")(
+              !host.busy && host.window.exists(_.runtime.model.project.isEmpty)
+            )
+            freshDark()
+            platform.answer(Some(path(savedLight))).unsafeRunSync()
+            invoke(host, CommandRegistry.openProject.id)
+            eventually(fx, "saved Light project opens")(
+              !host.busy && host.window
+                .exists(_.runtime.model.project.exists(_.value == "saved-light"))
+            )
+            assertEquals(
+              runOnFx(host.window.get.runtime.model.document.presentation.theme),
+              Theme.Light
+            )
+          finally runOnFx(host.shutdown())
         }
       }
       .unsafeRunSync()

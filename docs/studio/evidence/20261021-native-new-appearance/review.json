@@ -1,0 +1,29 @@
+{
+  "schema": 1,
+  "review_date": "2026-10-21",
+  "mote": "bd-01M5EE9VQE5XNW4TDKJG7WFYFT",
+  "source_base": "d4ff3c225fbe0125476ae1173ee94982c81170fb",
+  "state": "focused checks passed; separate follow-up, not part of frozen daily-use candidate",
+  "checks": {
+    "ProjectLifecycleFxSuite": 17,
+    "AppearancePreferenceHostSuite": 5,
+    "AppearancePreferenceFxSuite": 2,
+    "studioStyleCheck": "passed",
+    "flags": "GITHUB_ACTIONS=true; JDK25.0.4.1; headless Monocle"
+  },
+  "findings": [
+    "StudioMain supplies the existing AppearancePreference.newProjectTheme policy for fresh native documents. Fixed preferences seed fresh projects; an opened project retains its saved theme.",
+    "The desired theme is captured on the FX thread before asynchronous project creation; a native test asserts callback thread ownership.",
+    "Fresh untitled, File New and the untitled replacement after File Close start without edit marks or presentation undo entries.",
+    "The first focused run exposed a refused no-op SetTheme on the already-correct default Light document. The factory now returns that valid default directly and resets history only for an actual initial theme change."
+  ],
+  "limits": [
+    "The in-progress d4ff3c22 qualification clone is unchanged and does not contain this follow-up.",
+    "Initial System theme retains the existing platform-report lifecycle; these native fixture assertions cover fixed Dark versus a saved Light project."
+  ],
+  "source_sha256": {
+    "studio/desktop/src/main/scala/eyes4s/studio/desktop/StudioMain.scala": "1249eee0e55674e6320da0a60b7fb2010e6b54d788f0370c49e9022d70cf043e",
+    "studio/desktop/src/main/scala/eyes4s/studio/desktop/project/ProjectLifecycleHost.scala": "8edd11dd38cec5fbddddeefa3ed3c81ec9a5cc44f79f1d2142135b8e9d242f55",
+    "studio/desktop/src/test/scala/eyes4s/studio/desktop/project/ProjectLifecycleFxSuite.scala": "fc7f4edef653b474d9db2503b95482beedeb9723da91b4a208bd95f242d70a00"
+  }
+}

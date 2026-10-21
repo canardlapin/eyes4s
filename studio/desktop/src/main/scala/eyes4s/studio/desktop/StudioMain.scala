@@ -20,6 +20,8 @@ import cats.effect.unsafe.implicits.global
 import eyes4s.studio.app.{AppModel, Intent, ProjectName, TrialItems}
 import eyes4s.studio.core.fixture.{MockStudy, StoryMoments}
 import eyes4s.studio.core.preferences.UserPreferences
+import eyes4s.studio.core.document.Theme
+import eyes4s.studio.app.appearance.AppearancePreference
 import eyes4s.studio.desktop.platform.{
   AppearancePreferenceHost,
   PreferencesLocation,
@@ -98,7 +100,12 @@ final class StudioApplication extends Application:
       defect = reporter.jobFailed,
       preferences = preferenceStore,
       initialRecent = preferences.recent,
-      preferencesLog = message => System.err.println(PreferencesLocation.redact(message))
+      preferencesLog = message => System.err.println(PreferencesLocation.redact(message)),
+      newProjectTheme = () =>
+        AppearancePreference.newProjectTheme(
+          appearance.current,
+          window.map(_.runtime.model.appearance.system).getOrElse(Theme.Light)
+        )
     )
     lifecycle = Some(projects)
     projects.start()

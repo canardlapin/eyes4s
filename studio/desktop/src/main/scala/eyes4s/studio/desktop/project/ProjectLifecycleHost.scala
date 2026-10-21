@@ -23,7 +23,7 @@ import eyes4s.studio.app.{AppModel, ClockTime, Intent, PlatformDialog, ProjectNa
 import eyes4s.studio.app.project.*
 import eyes4s.studio.app.vm.Menus
 import eyes4s.studio.core.bundle.{LockOwner, ProjectStore, SharingOptions}
-import eyes4s.studio.core.document.{DatasetRevisionSpec, Source}
+import eyes4s.studio.core.document.{DatasetRevisionSpec, Source, Theme}
 import eyes4s.studio.core.platform.{FileKind, FileRequest, HostPath, Platform as HostPlatform}
 import eyes4s.studio.core.real.DatasetSources
 import eyes4s.studio.core.assets.AssetRegistry
@@ -62,7 +62,8 @@ final class ProjectLifecycleHost(
       DesktopPlatform.fileName,
     preferences: Option[DesktopPreferences] = None,
     initialRecent: RecentProjects = RecentProjects.empty,
-    preferencesLog: String => Unit = message => System.err.println(message)
+    preferencesLog: String => Unit = message => System.err.println(message),
+    newProjectTheme: () => Theme = () => Theme.Light
 )(using runtime: IORuntime)
     extends PlatformDialogs:
   private final class Candidate(
@@ -161,9 +162,20 @@ final class ProjectLifecycleHost(
     staged = None
     recoveryChoice = None
 
+  private def freshProject(theme: Theme): Either[String, AppModel] =
+    AppModel.newProject.left.map(_.message).flatMap { empty =>
+      if empty.document.presentation.theme == theme then Right(empty)
+      else
+        empty.history
+          .apply(eyes4s.studio.core.command.Command.SetTheme(theme))
+          .left
+          .map(_.message)
+          .map(step => AppModel.open(step.history.document, None))
+    }
+
   /** The actual launcher starts empty on the native backend. */
   def start(): Unit =
-    val model = AppModel.newProject.left.map(_.message)
+    val model = freshProject(newProjectTheme())
     model.flatMap(make(_, None)) match
       case Left(reason) => prompts.failed("Start Eyes Studio", reason)
       case Right(w)     => install(Live(w, None))
@@ -240,7 +252,8 @@ final class ProjectLifecycleHost(
   private def acquire(
       action: ProjectOperation,
       path: HostPath,
-      source: Option[(AppModel, Option[Candidate])]
+      source: Option[(AppModel, Option[Candidate])],
+      freshTheme: Theme
   ): IO[Either[String, Candidate]] =
     def warnings(receipt: SaveReceipt): Vector[String] =
       (receipt.journalReconcile.toVector ++ receipt.journalReset.toVector).map(_.message)
@@ -266,10 +279,8 @@ final class ProjectLifecycleHost(
       )
       loaded <- cats.data.EitherT(action match
         case ProjectOperation.New =>
-          AppModel.newProject
+          freshProject(freshTheme)
             .map(_.document)
-            .left
-            .map(_.message)
             .fold(
               e => IO.pure(Left(e)),
               d =>
@@ -334,7 +345,8 @@ final class ProjectLifecycleHost(
     if action == ProjectOperation.SaveAs && context.activeWork then
       prompts.failed(ProjectLifecycleText.operation(action), ProjectLifecycleText.activeCopy)
       return
-    val source = current.map(live => (live.window.runtime.model, live.project))
+    val source     = current.map(live => (live.window.runtime.model, live.project))
+    val freshTheme = newProjectTheme()
     if action == ProjectOperation.Quit && state.busy then
       replaceState(state.operation.fold(state)(o => state.cancel(o._1)))
       clearCandidate()
@@ -370,7 +382,8 @@ final class ProjectLifecycleHost(
                     else IO.pure(Right(()))
                   present.flatMap {
                     case Left(reason) => IO.pure(Left(reason))
-                    case Right(_)     => acquire(action, path, source).map(_.map(Some(_)))
+                    case Right(_)     =>
+                      acquire(action, path, source, freshTheme).map(_.map(Some(_)))
                   }
               }
               .unsafeRunAsync {
@@ -472,7 +485,7 @@ final class ProjectLifecycleHost(
           shutdown()
           stage.hide()
         case ProjectOperation.Close =>
-          AppModel.newProject.left.map(_.message).flatMap(make(_, None)) match
+          freshProject(newProjectTheme()).flatMap(make(_, None)) match
             case Left(reason) => failed(id, action, reason)
             case Right(w)     =>
               current.foreach(_.window.captureLayouts())
