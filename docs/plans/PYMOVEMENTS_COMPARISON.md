@@ -31,7 +31,7 @@ install or execute it. The [stable documentation](https://pymovements.readthedoc
 helps navigation but is not an immutable evidence pin.
 
 The eyes4s source snapshot is
-`6089ed345b1bdc64bbd49d6c04e7441f56cf66bb`. The source hashes are checked against
+`bf388f1dd51717b7f35f007bbe85d597d6e9f6ef`. The source hashes are checked against
 the local checkout. They must be refreshed by reviewing changed entry points,
 not by blindly rehashing to make a check pass. No absence claim here is a proof
 that no private or experimental implementation exists elsewhere.

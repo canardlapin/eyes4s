@@ -1,0 +1,10 @@
+{
+  "schema": 1,
+  "source_snapshot": "bf388f1dd51717b7f35f007bbe85d597d6e9f6ef",
+  "previous_snapshot": "6089ed345b1bdc64bbd49d6c04e7441f56cf66bb",
+  "changed_sources": [
+    "studio-entry"
+  ],
+  "reason": "StudioMain now registers fonts through the platform and uses the same native entry path. This source change was reviewed and executed in the native-platform slice; qualification dimensions stay pending. No other source fingerprint changed.",
+  "source_sha256": "92a2ecbf13f4ec450ea7bd4d2fc2051f5fd6c3239632cb3645608f4b9c0d61f1"
+}
