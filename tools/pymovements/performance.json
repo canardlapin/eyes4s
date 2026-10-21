@@ -65,7 +65,7 @@
       "numpy": "2.4.3",
       "packaging": "26.3",
       "pandas": "3.0.6",
-      "pillow": "12.3.0",
+      "pillow": "13.0.0",
       "polars": "1.44.2",
       "polars-runtime-32": "1.44.2",
       "pyarrow": "25.0.1",
@@ -98,11 +98,11 @@
     },
     "dependency_lock": {
       "path": "tools/pymovements/performance-requirements.txt",
-      "sha256": "be4a37abcad5e941c7972f2579ca282a748c9e255c749c28fd89be5eb2341601"
+      "sha256": "f1786360019864e79fc54398d725f0f7c124642b52089035b2e9b24c20ea2c3a"
     },
     "studio_fixture_generator": {
       "path": "tools/studio-fixture/generate.py",
-      "sha256": "5fc28a6132446ded8eb2ca4d624eaebeeaf79dac1309406fd66245c8448bf155"
+      "sha256": "78e436361eaa6b437db027460c17b582ed68e23fc30e627a3b2bf9cfd6df50eb"
     },
     "corpus_manifest": {
       "path": "tools/detector-benchmark/corpus.json",
