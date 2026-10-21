@@ -2,7 +2,7 @@
   "schema_version": 1,
   "epic": "bd-01M3HYEG72WCCNE6P84PWKBGCV",
   "snapshot_date": "2026-10-21",
-  "eyes4s_commit": "bf388f1dd51717b7f35f007bbe85d597d6e9f6ef",
+  "eyes4s_commit": "0d79f927c15efe03c67a8869627be0b4fbc72653",
   "protocol": "docs/plans/PYMOVEMENTS_COMPARISON.md",
   "comparator": {
     "package": "pymovements",
@@ -604,7 +604,7 @@
       "repository": "eyes4s",
       "kind": "api",
       "path": "studio/desktop/src/main/scala/eyes4s/studio/desktop/StudioMain.scala",
-      "sha256": "92a2ecbf13f4ec450ea7bd4d2fc2051f5fd6c3239632cb3645608f4b9c0d61f1",
+      "sha256": "7c2d039b104944e0632f2eff71b9a6418872042e0999a597a3b456e5c5f32bc4",
       "anchors": [
         "object StudioMain:",
         "val backend: SessionBackend = SessionBackend.Real"
