@@ -32,6 +32,7 @@ import eyes4s.studio.desktop.platform.{
 }
 import eyes4s.studio.desktop.harness.FxStage
 import eyes4s.studio.desktop.shell.ShellFxSuite
+import eyes4s.studio.desktop.harness.StudioTheme
 import javafx.event.Event
 import javafx.scene.control.{Button, Menu, MenuItem}
 import javafx.stage.{Window, WindowEvent}
@@ -454,4 +455,223 @@ class ProjectLifecycleFxSuite extends ShellFxSuite:
         }
       }
       .unsafeRunSync()
+  }
+
+  fxStage.test(
+    "Save As switches to a real copy, retains undo, and releases only the source writer"
+  ) { fx =>
+    TempDirs
+      .resource("eyes4s-lifecycle-copy-")
+      .use { directory =>
+        IO.blocking {
+          val source = directory.resolve("source.eyes")
+          val target = directory.resolve("copy.eyes")
+          create(source)
+          val (platform, host) = setup(fx, directory)
+          try
+            platform.answer(Some(path(source))).unsafeRunSync()
+            invoke(host, CommandRegistry.openProject.id)
+            eventually(fx, "source opened")(
+              !host.busy && host.window.exists(_.runtime.model.project.isDefined)
+            )
+            val old     = runOnFx(host.window.get)
+            val initial = runOnFx(old.runtime.model.document.presentation.theme)
+            val theme   = if initial == Theme.Light then Theme.Dark else Theme.Light
+            runOnFx(
+              old.runtime
+                .dispatch(Intent.Dispatch(eyes4s.studio.core.command.Command.SetTheme(theme)))
+            )
+            eventually(fx, "source edit saved")(!old.runtime.model.save.edited)
+            val history  = runOnFx(old.runtime.model.history)
+            val manifest =
+              Files.readAllBytes(source.resolve(ProjectStore.ManifestName)).toVector
+            platform.answer(Some(path(target))).unsafeRunSync()
+            invoke(host, CommandRegistry.saveProjectAs.id)
+            eventually(fx, "copy becomes current")(
+              !host.busy && host.window
+                .exists(_.runtime.model.project.exists(_.value == "copy"))
+            )
+            val copied = runOnFx(host.window.get)
+            assert(runOnFx(old.isClosed))
+            assert(runOnFx(fx.stage.getScene eq fx.scene))
+            assertEquals(runOnFx(fx.stage.getTitle), "copy.eyes")
+            assertEquals(runOnFx(copied.runtime.model.history), history)
+            assert(!runOnFx(copied.runtime.model.save.edited))
+            assertEquals(
+              Files.readAllBytes(source.resolve(ProjectStore.ManifestName)).toVector,
+              manifest
+            )
+            assert(usable(source))
+            assert(!usable(target), "the current copy keeps its writer")
+            fx.snapshot(StudioTheme.Dark): Unit
+            runOnFx(
+              copied.runtime
+                .dispatch(Intent.Undo(eyes4s.studio.core.command.HistoryStack.Presentation))
+            )
+            eventually(fx, "copied undo saved")(
+              !copied.runtime.model.save.edited && copied.runtime.model.document.presentation.theme == initial
+            )
+            platform.answer(None).unsafeRunSync()
+            invoke(host, CommandRegistry.saveProjectAs.id)
+            eventually(fx, "cancelled chooser")(!host.busy)
+            assert(runOnFx(host.window.contains(copied)))
+          finally runOnFx(host.shutdown())
+          assert(usable(target))
+        }
+      }
+      .unsafeRunSync()
+  }
+
+  fxStage.test(
+    "Save As gives an edited untitled project its first bundle without losing undo"
+  ) { fx =>
+    TempDirs
+      .resource("eyes4s-lifecycle-first-copy-")
+      .use { directory =>
+        IO.blocking {
+          val target           = directory.resolve("first.eyes")
+          val (platform, host) = setup(fx, directory)
+          try
+            val old     = runOnFx(host.window.get)
+            val initial = runOnFx(old.runtime.model.document.presentation.theme)
+            val theme   = if initial == Theme.Light then Theme.Dark else Theme.Light
+            runOnFx(
+              old.runtime
+                .dispatch(Intent.Dispatch(eyes4s.studio.core.command.Command.SetTheme(theme)))
+            )
+            assert(runOnFx(old.runtime.model.save.edited))
+            val history = runOnFx(old.runtime.model.history)
+            platform.answer(Some(path(target))).unsafeRunSync()
+            invoke(host, CommandRegistry.saveProjectAs.id)
+            eventually(fx, "untitled saved as first")(
+              !host.busy && host.window
+                .exists(_.runtime.model.project.exists(_.value == "first"))
+            )
+            val copied = runOnFx(host.window.get)
+            assertEquals(runOnFx(copied.runtime.model.history), history)
+            assert(!runOnFx(copied.runtime.model.save.edited))
+            runOnFx(
+              copied.runtime
+                .dispatch(Intent.Undo(eyes4s.studio.core.command.HistoryStack.Presentation))
+            )
+            eventually(fx, "first bundle undo saved")(
+              !copied.runtime.model.save.edited && copied.runtime.model.document.presentation.theme == initial
+            )
+          finally runOnFx(host.shutdown())
+          val store  = FileProjectStore.at[IO](target).unsafeRunSync()
+          val opened = get(
+            ProjectSession.open[IO](store, get(LockOwner.of("cold copy check"))).unsafeRunSync()
+          )
+          try
+            assertEquals(
+              opened.session.document.unsafeRunSync().presentation.theme,
+              Theme.Light
+            )
+          finally get(opened.session.close.unsafeRunSync())
+        }
+      }
+      .unsafeRunSync()
+  }
+
+  fxStage.test("edits during Save As keep the source even when the document ends unchanged") {
+    fx =>
+      TempDirs
+        .resource("eyes4s-lifecycle-copy-race-")
+        .use { directory =>
+          IO.blocking {
+            val source = directory.resolve("source.eyes")
+            val target = directory.resolve("copy.eyes")
+            create(source)
+            val entered = Deferred[IO, Unit].unsafeRunSync()
+            val finish  = Deferred[IO, Unit].unsafeRunSync()
+            val files   = new FileSystem[IO]:
+              export JvmFileSystem.{child, read, readStream, write, list}
+              def project(p: HostPath): IO[Either[PlatformError, ProjectStore[IO]]] =
+                JvmFileSystem
+                  .project(p)
+                  .map(
+                    _.map { delegate =>
+                      if p != path(target) then delegate
+                      else
+                        new ProjectStore[IO]:
+                          export delegate.{
+                            read,
+                            list,
+                            write,
+                            delete,
+                            swapManifest,
+                            acquire,
+                            release,
+                            readSidecar,
+                            appendSidecar,
+                            replaceSidecar,
+                            removeSidecar
+                          }
+                          def readManifest = delegate.readManifest
+                            .flatTap(_ => entered.complete(()).void >> finish.get)
+                    }
+                  )
+            val (platform, host) = setup(fx, directory, files)
+            try
+              platform.answer(Some(path(source))).unsafeRunSync()
+              invoke(host, CommandRegistry.openProject.id)
+              eventually(fx, "race source opened")(
+                !host.busy && host.window.exists(_.runtime.model.project.isDefined)
+              )
+              val old    = runOnFx(host.window.get)
+              val before = runOnFx(old.runtime.model.history)
+              platform.answer(Some(path(target))).unsafeRunSync()
+              invoke(host, CommandRegistry.saveProjectAs.id)
+              entered.get.timeout(10.seconds).unsafeRunSync()
+              runOnFx {
+                val theme = before.document.presentation.theme
+                val other = if theme == Theme.Light then Theme.Dark else Theme.Light
+                old.runtime.dispatch(
+                  Intent.Dispatch(eyes4s.studio.core.command.Command.SetTheme(other))
+                )
+                old.runtime.dispatch(
+                  Intent.Dispatch(eyes4s.studio.core.command.Command.SetTheme(theme))
+                )
+              }
+              assertEquals(runOnFx(old.runtime.model.document), before.document)
+              assert(runOnFx(old.runtime.model.history != before))
+              finish.complete(()).unsafeRunSync()
+              press(fx, "OK")
+              eventually(fx, "copy rejected and writer released")(!host.busy && usable(target))
+              assert(runOnFx(host.window.contains(old)))
+              assert(!runOnFx(old.isClosed))
+              assert(!usable(source))
+            finally
+              finish.complete(()).unsafeRunSync()
+              runOnFx(host.shutdown())
+          }
+        }
+        .unsafeRunSync()
+  }
+
+  fxStage.test("Save As refuses a nonempty destination without replacing the live project") {
+    fx =>
+      TempDirs
+        .resource("eyes4s-lifecycle-copy-nonempty-")
+        .use { directory =>
+          IO.blocking {
+            val target = directory.resolve("occupied.eyes")
+            Files.createDirectories(target)
+            val sentinel = target.resolve("keep.txt")
+            Files.writeString(sentinel, "existing content")
+            val (platform, host) = setup(fx, directory)
+            try
+              val old = runOnFx(host.window.get)
+              platform.answer(Some(path(target))).unsafeRunSync()
+              invoke(host, CommandRegistry.saveProjectAs.id)
+              press(fx, "OK")
+              assert(!runOnFx(host.busy))
+              assert(runOnFx(host.window.contains(old)))
+              assert(!runOnFx(old.isClosed))
+              assertEquals(Files.readString(sentinel), "existing content")
+              assert(!Files.exists(target.resolve(ProjectStore.ManifestName)))
+            finally runOnFx(host.shutdown())
+          }
+        }
+        .unsafeRunSync()
   }

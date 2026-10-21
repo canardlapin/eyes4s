@@ -178,9 +178,9 @@ A port is accepted when all of the following hold. None of them may be weakened 
 
 ## Known gaps
 
-- The desktop constructs `DesktopPlatform` for project New/Open/Close, import choosers and
+- The desktop constructs `DesktopPlatform` for project New/Open/Save As/Close, import choosers and
   source streams, preset files, and source/asset repair. Fonts still load through
-  `StudioFonts.loadAll`, and `AppEffect.RevealProject` is not performed. Save As, Open Recent
+  `StudioFonts.loadAll`, and `AppEffect.RevealProject` is not performed. Open Recent
   and the remaining runtime/platform wiring stay on S2.9.
 - `RemoteStudyBackend` opens one exchange per request. A shell that holds one long-lived
   connection demultiplexes frames by id itself (rule 5 above). No such client ships yet.

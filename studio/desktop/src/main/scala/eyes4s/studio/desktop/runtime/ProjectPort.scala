@@ -289,6 +289,16 @@ final class SessionPort private (
       Some(reason => done(Left(reason)))
     )
 
+  def saveAs(
+      to: eyes4s.studio.core.bundle.ProjectStore[IO],
+      done: Either[String, (ProjectSession[IO], SaveReceipt)] => Unit
+  ): Unit =
+    enqueue(
+      answering(session.saveAs(to).map(_.left.map(_.message)), done),
+      "save project as",
+      Some(reason => done(Left(reason)))
+    )
+
   def save(done: Either[String, SaveReceipt] => Unit): Unit =
     enqueue(
       answering(session.save.map(_.left.map(_.message)), done),

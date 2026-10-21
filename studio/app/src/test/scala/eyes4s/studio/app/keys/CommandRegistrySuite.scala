@@ -49,7 +49,8 @@ class CommandRegistrySuite extends munit.ScalaCheckSuite:
         "pane.previous"        -> "⇧F6",
         "tab.next"             -> "⌃⇥",
         "tab.previous"         -> "⌃⇧⇥",
-        "pane.maximize"        -> "⌘⇧↩"
+        "pane.maximize"        -> "⌘⇧↩",
+        "file.save-project-as" -> "⌘⇧S"
       )
     )
   }

@@ -11,8 +11,11 @@ Cancelling a chooser, refusing an invalid project, or keeping the current projec
 open leaves its window and resources intact. Open also offers the existing autosave
 recovery choice. **Close project** returns to the untitled state; closing the
 application uses the same admission for unsaved edits and active work. Named
-projects can Save and Close. Untitled edits can be kept open or closed without
-saving; Save As and Open Recent belong to the remaining lifecycle work.
+projects can Save and Close. **Save project as…** (⌘⇧S; Ctrl+Shift+S off macOS)
+saves current edits to a new empty location, switches this window to the copy,
+and keeps its undo history. It also gives an edited untitled project its first
+bundle. Running work must finish or be cancelled first; edits arriving during a
+copy keep the source window open. Open Recent remains lifecycle work.
 
 Import choosers, streamed source reads and per-user preset files use the injected
 platform services. Source previews decode UTF-8 strictly across chunk boundaries

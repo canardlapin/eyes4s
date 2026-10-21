@@ -312,3 +312,27 @@ class SessionPortSuite extends munit.FunSuite:
       port.close()
       s.close.unsafeRunSync(): Unit
   }
+
+  test("Save As is queued after edits and retains their undo history") {
+    val empty  = eyes4s.studio.app.AppModel.newProject.fold(e => fail(e.message), _.document)
+    val s      = session(raising = false, doc = empty)
+    val port   = SessionPort.start(s)
+    val target = InMemoryProjectStore.create[IO].unsafeRunSync()
+    val done   = CompletableFuture[
+      Either[String, (ProjectSession[IO], eyes4s.studio.core.session.SaveReceipt)]
+    ]()
+    var copied = Option.empty[ProjectSession[IO]]
+    try
+      port.journal(JournalEntry.Apply(Command.SetTheme(Theme.Dark)))
+      port.saveAs(target, answer => done.complete(answer): Unit)
+      val (copy, _) = done.get(10, TimeUnit.SECONDS).fold(e => fail(e), identity)
+      copied = Some(copy)
+      assertEquals(copy.document.unsafeRunSync().presentation.theme, Theme.Dark)
+      assertEquals(copy.history.unsafeRunSync(), s.history.unsafeRunSync())
+      assert(copy.perform(JournalEntry.UndoView).unsafeRunSync().isRight)
+      assertEquals(copy.document.unsafeRunSync(), empty)
+    finally
+      port.close()
+      copied.foreach(copy => assert(copy.close.unsafeRunSync().isRight))
+      assert(s.close.unsafeRunSync().isRight)
+  }

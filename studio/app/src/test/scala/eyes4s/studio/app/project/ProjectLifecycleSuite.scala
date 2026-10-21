@@ -107,9 +107,10 @@ class ProjectLifecycleSuite extends munit.FunSuite:
     import eyes4s.studio.app.vm.Menus
     val model = AppModel.newProject.fold(e => fail(e.message), identity)
     Vector(
-      CommandRegistry.newProject   -> PlatformDialog.NewProject,
-      CommandRegistry.openProject  -> PlatformDialog.OpenProject,
-      CommandRegistry.closeProject -> PlatformDialog.CloseProject
+      CommandRegistry.newProject    -> PlatformDialog.NewProject,
+      CommandRegistry.openProject   -> PlatformDialog.OpenProject,
+      CommandRegistry.closeProject  -> PlatformDialog.CloseProject,
+      CommandRegistry.saveProjectAs -> PlatformDialog.SaveProjectAs
     ).foreach { (command, dialog) =>
       val intent          = command.intent(model).getOrElse(fail("disabled lifecycle command"))
       val (same, effects) = AppModel.update(model, intent)
@@ -117,7 +118,7 @@ class ProjectLifecycleSuite extends munit.FunSuite:
       assertEquals(effects, Vector(AppEffect.OpenDialog(dialog)))
     }
     assertEquals(
-      Menus.bar(model).find(_.title == "File").get.items.take(3).map(_.label),
-      Vector("New project…", "Open project…", "Close project")
+      Menus.bar(model).find(_.title == "File").get.items.take(4).map(_.label),
+      Vector("New project…", "Open project…", "Save project as…", "Close project")
     )
   }

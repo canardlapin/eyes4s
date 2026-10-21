@@ -73,7 +73,11 @@ enum MessageId derives CanEqual:
   case CommandUndo, CommandRedo, CommandUndoView, CommandRedoView, CommandNextPane
   case CommandMaximize, CommandCancelRun, CommandShowRun, CommandReviewDraft
   case CommandDiscardDraft, CommandImport
-  case CommandNewProject, CommandOpenProject, CommandCloseProject
+  case CommandNewProject, CommandOpenProject, CommandCloseProject, CommandSaveProjectAs,
+    SaveProjectAsTitle
+  case CopyChanged, CopyActive, CopyEmptyLocation, CopyNoWindow, CopyWarnings,
+    CopyClockUnavailable
+  case NewEmptyLocation
   case CommandRenameProject, CommandRevealProject, CommandProjectInfo
   case CommandResetPerspective, MenuView, WindowEdited
   case MenuAppearance, AppearanceLight, AppearanceDark, AppearanceSystem
@@ -242,18 +246,30 @@ object Catalogue:
       case HintCompareQuery   => "Prev / Next steps controls · F6 next pane"
       case HintFigures        => "Arrow keys move between panels · Enter opens the binding"
 
-      case CommandUndo         => "Undo"
-      case CommandRedo         => "Redo"
-      case CommandUndoView     => "Undo view change"
-      case CommandRedoView     => "Redo view change"
-      case CommandNextPane     => "Next pane"
-      case CommandMaximize     => "Maximize the focused group"
-      case CommandCancelRun    => "Cancel run"
-      case CommandShowRun      => "Show the finished run"
-      case CommandReviewDraft  => "Review draft in Analysis"
-      case CommandDiscardDraft => "Discard draft"
-      case CommandNewProject   => "New project…"
-      case CommandOpenProject  => "Open project…"
+      case CommandUndo          => "Undo"
+      case CommandRedo          => "Redo"
+      case CommandUndoView      => "Undo view change"
+      case CommandRedoView      => "Redo view change"
+      case CommandNextPane      => "Next pane"
+      case CommandMaximize      => "Maximize the focused group"
+      case CommandCancelRun     => "Cancel run"
+      case CommandShowRun       => "Show the finished run"
+      case CommandReviewDraft   => "Review draft in Analysis"
+      case CommandDiscardDraft  => "Discard draft"
+      case CommandNewProject    => "New project…"
+      case CommandOpenProject   => "Open project…"
+      case CommandSaveProjectAs => "Save project as…"
+      case SaveProjectAsTitle   => "Save project as"
+      case CopyChanged          =>
+        "The project changed while the copy was being saved. Your current window is kept; the copy contains the earlier snapshot. Choose another location to try again."
+      case CopyActive           => "Finish or cancel running work before saving a project copy."
+      case CopyEmptyLocation    => "Choose a new, empty project location for the copy."
+      case CopyNoWindow         => "There is no project window to copy."
+      case CopyWarnings         => "Project saved; autosave needs attention"
+      case CopyClockUnavailable =>
+        "The copy could not be attached to this window. The current project stays open."
+      case NewEmptyLocation => "Choose a new, empty project location."
+
       case CommandCloseProject => "Close project"
       case CommandImport       => "Import sources…"
 

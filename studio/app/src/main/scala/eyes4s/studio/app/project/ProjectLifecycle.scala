@@ -20,7 +20,7 @@ import eyes4s.studio.core.backend.{JobId, RunId}
 
 /** A request made from File, or by closing the native window. */
 enum ProjectOperation derives CanEqual:
-  case New, Open, Close, Quit
+  case New, Open, Close, Quit, SaveAs
 
 /** Close admission uses the current window, including work still running. */
 final case class ProjectWork(run: RunId, job: Option[JobId]) derives CanEqual
@@ -102,7 +102,7 @@ sealed abstract case class ProjectLifecycle private (
   ): (ProjectLifecycle, ProjectLifecycleAction) =
     operation match
       case Some((`id`, request, ProjectLifecyclePhase.Preparing)) if !stopped =>
-        if facts.needsAdmission then
+        if facts.needsAdmission && request != ProjectOperation.SaveAs then
           (
             copy(operation = Some((id, request, ProjectLifecyclePhase.Confirming(facts)))),
             ProjectLifecycleAction.Ask(facts)
@@ -182,10 +182,21 @@ object ProjectLifecycle:
 /** Text used by the native close admission; no storage details leak into the title. */
 object ProjectLifecycleText:
   def operation(value: ProjectOperation): String = value match
-    case ProjectOperation.New   => "New project"
-    case ProjectOperation.Open  => "Open project"
-    case ProjectOperation.Close => "Close project"
-    case ProjectOperation.Quit  => "Close Eyes Studio"
+    case ProjectOperation.New    => "New project"
+    case ProjectOperation.Open   => "Open project"
+    case ProjectOperation.SaveAs => text(eyes4s.studio.app.text.MessageId.SaveProjectAsTitle)
+    case ProjectOperation.Close  => "Close project"
+    case ProjectOperation.Quit   => "Close Eyes Studio"
+
+  private def text(id: eyes4s.studio.app.text.MessageId): String =
+    eyes4s.studio.app.text.Messages.english(id)
+  val changedDuringCopy: String = text(eyes4s.studio.app.text.MessageId.CopyChanged)
+  val nothingToCopy: String     = text(eyes4s.studio.app.text.MessageId.CopyNoWindow)
+  val copyWarnings: String      = text(eyes4s.studio.app.text.MessageId.CopyWarnings)
+  val activeCopy: String        = text(eyes4s.studio.app.text.MessageId.CopyActive)
+  val emptyCopyLocation: String = text(eyes4s.studio.app.text.MessageId.CopyEmptyLocation)
+  val clockUnavailable: String  = text(eyes4s.studio.app.text.MessageId.CopyClockUnavailable)
+  val emptyNewLocation: String  = text(eyes4s.studio.app.text.MessageId.NewEmptyLocation)
 
   def admission(facts: ProjectCloseFacts): String =
     val edits = if facts.edited then

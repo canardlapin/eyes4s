@@ -34,6 +34,7 @@ object ShellKeys:
     case KeyCode.DIGIT4 | KeyCode.NUMPAD4 => Some(Key.Digit4)
     case KeyCode.DIGIT5 | KeyCode.NUMPAD5 => Some(Key.Digit5)
     case KeyCode.Z                        => Some(Key.Z)
+    case KeyCode.S                        => Some(Key.S)
     case KeyCode.OPEN_BRACKET             => Some(Key.BracketLeft)
     case KeyCode.CLOSE_BRACKET            => Some(Key.BracketRight)
     case KeyCode.ENTER                    => Some(Key.Enter)
@@ -50,6 +51,7 @@ object ShellKeys:
     case Key.Digit4       => KeyCode.DIGIT4
     case Key.Digit5       => KeyCode.DIGIT5
     case Key.Z            => KeyCode.Z
+    case Key.S            => KeyCode.S
     case Key.BracketLeft  => KeyCode.OPEN_BRACKET
     case Key.BracketRight => KeyCode.CLOSE_BRACKET
     case Key.Enter        => KeyCode.ENTER

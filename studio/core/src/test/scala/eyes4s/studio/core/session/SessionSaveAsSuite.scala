@@ -222,3 +222,58 @@ class SessionSaveAsSuite extends SessionConformance:
       )
       assertEquals(after.toVector, prior.toVector)
   }
+
+  test("the first Save As retains an untitled project's undo history") {
+    val base    = withoutJobs(DocumentSamples.t1)
+    val history = (
+      eyes4s.studio.core.command.History
+        .start(base)
+        .perform(JournalEntry.Apply(Command.SetTheme(Theme.Dark)))
+      )
+      .fold(e => fail(e.message), identity)
+      .history
+    for
+      target <- InMemoryProjectStore.create[IO]
+      copied <- ok(
+        ProjectSession.createWithHistory(
+          target,
+          alice,
+          history,
+          SharingOptions.complete,
+          BundleSamples.inputsFor(base)
+        )
+      ).map(_._1)
+      before <- copied.document
+      _      <- ok(copied.perform(JournalEntry.UndoView))
+      after  <- copied.document
+      _      <- ok(copied.close)
+    yield
+      assertEquals(before, history.document)
+      assertEquals(after, base)
+  }
+
+  test("the first Save As refuses retained recovery bytes and releases its writer") {
+    val history  = eyes4s.studio.core.command.History.start(withoutJobs(DocumentSamples.t1))
+    val recovery = bytes("existing recovery evidence")
+    for
+      target <- InMemoryProjectStore.create[IO]
+      lock   <- ok(target.acquire(alice))
+      _      <- ok(target.replaceSidecar(lock, Sidecar.Journal, recovery))
+      _      <- ok(target.release(lock))
+      answer <- ProjectSession.createWithHistory(
+        target,
+        alice,
+        history,
+        SharingOptions.complete,
+        BundleSamples.inputsFor(history.document)
+      )
+      after    <- ok(target.readSidecar(Sidecar.Journal))
+      released <- ok(target.acquire(alice))
+      _        <- ok(target.release(released))
+    yield
+      assertEquals(
+        answer.left.toOption,
+        Some(SessionError.CopyDestinationState(Vector(Sidecar.Journal)))
+      )
+      assertEquals(after.toVector, recovery.toVector)
+  }

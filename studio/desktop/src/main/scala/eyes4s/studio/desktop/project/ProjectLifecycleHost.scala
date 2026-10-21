@@ -27,7 +27,8 @@ import eyes4s.studio.core.document.{DatasetRevisionSpec, Source}
 import eyes4s.studio.core.platform.{FileKind, FileRequest, HostPath, Platform as HostPlatform}
 import eyes4s.studio.core.real.DatasetSources
 import eyes4s.studio.core.assets.AssetRegistry
-import eyes4s.studio.core.session.{ProjectSession, Recovery}
+import eyes4s.studio.core.session.{ProjectSession, Recovery, SaveReceipt}
+import eyes4s.studio.core.command.History
 import eyes4s.studio.core.fixture.StoryMoment
 import eyes4s.studio.desktop.StudioWindow
 import eyes4s.studio.desktop.explore.NavigatorDisplays
@@ -61,7 +62,9 @@ final class ProjectLifecycleHost(
       val session: ProjectSession[IO],
       val port: SessionPort,
       val name: ProjectName,
-      val recovery: Option[Recovery]
+      val recovery: Option[Recovery],
+      val copyHistory: Option[History] = None,
+      val warnings: Vector[String] = Vector.empty
   ):
     private val released  = AtomicBoolean(false)
     def release: IO[Unit] = IO.defer {
@@ -137,9 +140,10 @@ final class ProjectLifecycleHost(
     )
 
   def open(dialog: PlatformDialog, dispatch: Intent => Unit): Unit = dialog match
-    case PlatformDialog.NewProject   => request(ProjectOperation.New)
-    case PlatformDialog.OpenProject  => request(ProjectOperation.Open)
-    case PlatformDialog.CloseProject => request(ProjectOperation.Close)
+    case PlatformDialog.NewProject    => request(ProjectOperation.New)
+    case PlatformDialog.OpenProject   => request(ProjectOperation.Open)
+    case PlatformDialog.CloseProject  => request(ProjectOperation.Close)
+    case PlatformDialog.SaveProjectAs => request(ProjectOperation.SaveAs)
     case _ => () // StudioWindow routes its other dialogs to the existing host.
 
   private val unavailableSources: DatasetSources[IO] = new DatasetSources[IO]:
@@ -195,59 +199,104 @@ final class ProjectLifecycleHost(
       .map(_.message)
       .flatMap(n => ProjectName.of(n.stripSuffix(".eyes")).left.map(_.message))
 
-  private def acquire(action: ProjectOperation, path: HostPath): IO[Either[String, Candidate]] =
+  private def acquire(
+      action: ProjectOperation,
+      path: HostPath,
+      source: Option[(AppModel, Option[Candidate])]
+  ): IO[Either[String, Candidate]] =
+    def warnings(receipt: SaveReceipt): Vector[String] =
+      (receipt.journalReconcile.toVector ++ receipt.journalReset.toVector).map(_.message)
     (for
       label <- cats.data.EitherT.fromEither[IO](name(path))
-      _     <- cats.data.EitherT(if action == ProjectOperation.New then
-        platform.files.list(path).map {
-          case Left(_: eyes4s.studio.core.platform.PlatformError.Missing) => Right(())
-          case Left(error)                                                => Left(error.message)
-          case Right(entries) if entries.isEmpty                          => Right(())
-          case Right(_) => Left(s"${path.value} is not empty; choose a new project location.")
-        }
-      else IO.pure(Right(()): Either[String, Unit]))
+      _     <- cats.data.EitherT(
+        if action == ProjectOperation.New || action == ProjectOperation.SaveAs then
+          platform.files.list(path).map {
+            case Left(_: eyes4s.studio.core.platform.PlatformError.Missing) => Right(())
+            case Left(error)                       => Left(error.message)
+            case Right(entries) if entries.isEmpty => Right(())
+            case Right(_)                          =>
+              val reason =
+                if action == ProjectOperation.SaveAs then ProjectLifecycleText.emptyCopyLocation
+                else ProjectLifecycleText.emptyNewLocation
+              Left(s"${path.value}: $reason")
+          }
+        else IO.pure(Right(()): Either[String, Unit])
+      )
       store <- cats.data.EitherT(platform.files.project(path).map(_.left.map(_.message)))
       owner <- cats.data.EitherT.fromEither[IO](
         LockOwner.of("Eyes Studio project lifecycle").left.map(_.message)
       )
       loaded <- cats.data.EitherT(action match
         case ProjectOperation.New =>
-          val document = AppModel.newProject.map(_.document).left.map(_.message)
-          document.fold(
-            e => IO.pure(Left(e)),
-            d =>
+          AppModel.newProject
+            .map(_.document)
+            .left
+            .map(_.message)
+            .fold(
+              e => IO.pure(Left(e)),
+              d =>
+                ProjectSession
+                  .create[IO](store, owner, d, SharingOptions.complete, Vector.empty)
+                  .map(
+                    _.left
+                      .map(_.message)
+                      .map(session => (session, Option.empty[Recovery], Vector.empty[String]))
+                  )
+            )
+        case ProjectOperation.SaveAs =>
+          val copied: IO[Either[String, (ProjectSession[IO], SaveReceipt)]] = source match
+            case Some((_, Some(project))) =>
+              IO.async_[Either[String, (ProjectSession[IO], SaveReceipt)]](done =>
+                project.port.saveAs(store, answer => done(Right(answer)))
+              )
+            case Some((model, None)) =>
               ProjectSession
-                .create[IO](store, owner, d, SharingOptions.complete, Vector.empty)
-                .map(_.left.map(_.message).map(_ -> Option.empty[Recovery]))
-          )
+                .createWithHistory[IO](
+                  store,
+                  owner,
+                  model.history,
+                  SharingOptions.complete,
+                  Vector.empty
+                )
+                .map(_.left.map(_.message))
+            case None => IO.pure(Left(ProjectLifecycleText.nothingToCopy))
+          copied.map(_.map { (session, receipt) =>
+            (session, Option.empty[Recovery], warnings(receipt))
+          })
         case _ =>
           ProjectSession
             .open[IO](store, owner)
-            .map(
-              _.left
-                .map(_.message)
-                .map(o =>
-                  o.session -> (o.report.journal match
-                    case eyes4s.studio.core.session.JournalFinding.Pending(recovery) =>
-                      Some(recovery)
-                    case _ => None)
-                )
-            ))
-      (session, recovery) = loaded
+            .map(_.left.map(_.message).map { o =>
+              val recovery = o.report.journal match
+                case eyes4s.studio.core.session.JournalFinding.Pending(value) => Some(value)
+                case _                                                        => None
+              (o.session, recovery, Vector.empty[String])
+            }))
+      (session, recovery, notes) = loaded
       port <- cats.data.EitherT(IO.blocking(SessionPort.start(session)).attempt.flatMap {
         case Right(p) => IO.pure(Right(p))
         case Left(e)  => session.close.as(Left(e.getMessage))
       })
-    yield Candidate(path, store, session, port, label, recovery)).value
+      history <-
+        if action == ProjectOperation.SaveAs then
+          cats.data.EitherT.liftF[IO, String, Option[History]](session.history.map(Some(_)))
+        else cats.data.EitherT.pure[IO, String](Option.empty[History])
+    yield Candidate(path, store, session, port, label, recovery, history, notes)).value
 
   private def choose(action: ProjectOperation): IO[Option[HostPath]] = action match
-    case ProjectOperation.New =>
+    case ProjectOperation.New | ProjectOperation.SaveAs =>
       val kind = FileKind.of("Eyes Studio project", Vector("eyes")).toOption.toVector
-      platform.dialogs.chooseSave(FileRequest("New project", kind, Some("Untitled.eyes")))
+      platform.dialogs.chooseSave(
+        FileRequest(ProjectLifecycleText.operation(action), kind, Some("Untitled.eyes"))
+      )
     case _ => platform.dialogs.chooseDirectory("Open project")
 
   /** Close requests may cancel a still-loading replacement, keeping ownership clear. */
   def request(action: ProjectOperation): Unit =
+    if action == ProjectOperation.SaveAs && context.activeWork then
+      prompts.failed(ProjectLifecycleText.operation(action), ProjectLifecycleText.activeCopy)
+      return
+    val source = current.map(live => (live.window.runtime.model, live.project))
     if action == ProjectOperation.Quit && state.busy then
       replaceState(state.operation.fold(state)(o => state.cancel(o._1)))
       clearCandidate()
@@ -267,7 +316,7 @@ final class ProjectLifecycleHost(
             choose(action)
               .flatMap {
                 case None       => IO.pure(Right(None))
-                case Some(path) => acquire(action, path).map(_.map(Some(_)))
+                case Some(path) => acquire(action, path, source).map(_.map(Some(_)))
               }
               .unsafeRunAsync {
                 case Right(Right(Some(project))) =>
@@ -391,20 +440,48 @@ final class ProjectLifecycleHost(
               .flatMap {
                 case Left(reason) => IO.pure(Left(reason))
                 case Right(_)     =>
-                  project.session.document.map(d => Right(AppModel.open(d, Some(project.name))))
+                  project.copyHistory match
+                    case None =>
+                      project.session.document.map(d => Right((d, Option.empty[ClockTime])))
+                    case Some(history) =>
+                      platform.scheduler.now.map(t =>
+                        ClockTime
+                          .of(t.localHour, t.localMinute)
+                          .left
+                          .map(_.message)
+                          .map(at => (history.document, Some(at)))
+                      )
               }
               .unsafeRunAsync {
-                case Right(Right(model)) =>
+                case Right(Right((document, at))) =>
                   later {
                     if state.owns(id) then
-                      make(model, Some(project)) match
+                      val model: Either[String, AppModel] = (project.copyHistory, at) match
+                        case (Some(history), Some(time)) =>
+                          current
+                            .filter(live =>
+                              live.window.runtime.model.history == history && !context.activeWork
+                            )
+                            .toRight(ProjectLifecycleText.changedDuringCopy)
+                            .map(live =>
+                              AppModel.savedCopy(live.window.runtime.model, project.name, time)
+                            )
+                        case (None, _) => Right(AppModel.open(document, Some(project.name)))
+                        case _         => Left(ProjectLifecycleText.clockUnavailable)
+                      model.flatMap(make(_, Some(project))) match
                         case Left(reason) => failed(id, action, reason)
                         case Right(w)     =>
-                          current.foreach(_.window.captureLayouts())
+                          if action != ProjectOperation.SaveAs then
+                            current.foreach(_.window.captureLayouts())
                           staged = None
                           recoveryChoice = None
                           install(Live(w, Some(project)))
                           replaceState(state.finished(id))
+                          if project.warnings.nonEmpty then
+                            prompts.warning(
+                              ProjectLifecycleText.operation(action),
+                              project.warnings.mkString("\n")
+                            )
                   }
                 case Right(Left(reason)) => later(failed(id, action, reason))
                 case Left(error)         => later(failed(id, action, error.getMessage))

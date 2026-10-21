@@ -994,6 +994,41 @@ object ProjectSession:
       inputs: Vector[InputEntry],
       options: SessionOptions = SessionOptions.default
   ): F[Either[SessionError, ProjectSession[F]]] =
+    createHistory(
+      store,
+      owner,
+      History.start(stripped(document)),
+      sharing,
+      inputs,
+      options,
+      false
+    )
+      .map(_.map(_._1))
+
+  /** Create the first bundle for an edited untitled project without dropping
+    * its undo stacks. Live run handles cannot move into a new writer.
+    */
+  def createWithHistory[F[_]: Concurrent](
+      store: ProjectStore[F],
+      owner: LockOwner,
+      history: History,
+      sharing: SharingOptions,
+      inputs: Vector[InputEntry],
+      options: SessionOptions = SessionOptions.default
+  ): F[Either[SessionError, (ProjectSession[F], SaveReceipt)]] =
+    val running = history.document.running.map(_.id)
+    if running.nonEmpty then Concurrent[F].pure(Left(SessionError.CopyWhileRunning(running)))
+    else createHistory(store, owner, history, sharing, inputs, options, true)
+
+  private def createHistory[F[_]: Concurrent](
+      store: ProjectStore[F],
+      owner: LockOwner,
+      history: History,
+      sharing: SharingOptions,
+      inputs: Vector[InputEntry],
+      options: SessionOptions,
+      requireEmpty: Boolean
+  ): F[Either[SessionError, (ProjectSession[F], SaveReceipt)]] =
     locked(store, owner)(lock =>
       (for
         _ <- EitherT(store.readManifest.map {
@@ -1001,7 +1036,33 @@ object ProjectSession:
           case Left(e)  => Left(SessionError.Store(s"read ${ProjectStore.ManifestName}", e))
           case Right(_) => Left(SessionError.ProjectExists)
         })
-        base = stripped(document)
+        _ <-
+          if requireEmpty then
+            for
+              entries <- EitherT(store.list)
+                .leftMap(SessionError.Store("inspect first Save As destination", _))
+              _ <- EitherT.cond[F](
+                entries.isEmpty,
+                (),
+                SessionError
+                  .Bundle("save the first copy", BundleError.TargetNotEmpty(false, entries))
+              )
+              sidecars <- Sidecar.values.toVector.traverse { file =>
+                EitherT(store.readSidecar(file).map {
+                  case Left(_: StoreError.NoSidecar) => Right(Option.empty[Sidecar])
+                  case Left(error)                   =>
+                    Left(SessionError.Store("inspect first copy recovery state", error))
+                  case Right(_) => Right(Some(file))
+                })
+              }
+              _ <- EitherT.cond[F](
+                sidecars.flatten.isEmpty,
+                (),
+                SessionError.CopyDestinationState(sidecars.flatten)
+              )
+            yield ()
+          else EitherT.pure[F, SessionError](())
+        base = stripped(history.document)
         encoded <- EitherT.fromEither[F](
           ProjectBundle
             .encode(base, sharing, inputs)
@@ -1016,7 +1077,7 @@ object ProjectSession:
             owner,
             options,
             State(
-              History.start(base),
+              history,
               Saved(base, encoded.manifest, None, None),
               inputs,
               JournalState(Vector(start), 0, 0, History.start(base)),
@@ -1026,8 +1087,8 @@ object ProjectSession:
           )
         )
         // The first save writes everything; the session is then at `base`.
-        _ <- EitherT(session.save)
-      yield session).value
+        receipt <- EitherT(session.save)
+      yield (session, receipt)).value
     )
 
   private def build[F[_]: Concurrent](

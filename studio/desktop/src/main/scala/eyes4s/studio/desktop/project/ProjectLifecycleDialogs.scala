@@ -63,6 +63,14 @@ final class ProjectLifecycleDialogs(owner: () => Option[Window]):
     )
     alert.show()
 
+  def warning(operation: String, reason: String): Unit =
+    val alert = Alert(Alert.AlertType.WARNING)
+    alert.setTitle(operation)
+    alert.setHeaderText(eyes4s.studio.app.project.ProjectLifecycleText.copyWarnings)
+    alert.setContentText(reason)
+    owner().foreach(alert.initOwner)
+    alert.show()
+
   def failed(operation: String, reason: String): Unit =
     val alert = Alert(Alert.AlertType.ERROR)
     alert.setTitle(operation)

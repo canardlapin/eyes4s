@@ -268,7 +268,7 @@ enum DockCommand derives CanEqual:
   case NextTab, PreviousTab
 
 enum PlatformDialog derives CanEqual:
-  case ImportSources, NewProject, OpenProject, CloseProject
+  case ImportSources, NewProject, OpenProject, CloseProject, SaveProjectAs
 
   /** Ask for the project's new name; the answer is [[Intent.RenameProject]]. */
   case RenameProject
@@ -500,7 +500,7 @@ enum Intent derives CanEqual:
 
   // --- Project and layouts (S1.4, S1.5a) -------------------------------------------------------
   /** The project chip's Rename…: the platform asks for the name. */
-  case RequestNewProject, RequestOpenProject, RequestCloseProject
+  case RequestNewProject, RequestOpenProject, RequestCloseProject, RequestSaveProjectAs
   case RequestRename
   case RenameProject(name: ProjectName)
 
@@ -741,6 +741,20 @@ object AppModel:
       AppearanceState.initial,
       InputCheck.NoProject,
       InputChecks.none
+    )
+
+  /** A verified saved copy keeps the user's view and undo stacks, while
+    * backend-owned receipts, live job handles and input checks start fresh.
+    */
+  def savedCopy(m: AppModel, name: ProjectName, at: ClockTime): AppModel =
+    open(m.document, Some(name)).copy(
+      history = m.history,
+      navigation = m.navigation,
+      selection = m.selection,
+      items = m.items,
+      panes = m.panes,
+      appearance = m.appearance,
+      save = m.save.saved(at, m.save.edits)
     )
 
   /** The Analysis trail of the current draft, or of the latest revision. */
@@ -1049,6 +1063,8 @@ object AppModel:
       (m, Vector(AppEffect.OpenDialog(PlatformDialog.OpenProject)))
     case Intent.RequestCloseProject =>
       (m, Vector(AppEffect.OpenDialog(PlatformDialog.CloseProject)))
+    case Intent.RequestSaveProjectAs =>
+      (m, Vector(AppEffect.OpenDialog(PlatformDialog.SaveProjectAs)))
     case Intent.RequestRename =>
       (m, Vector(AppEffect.OpenDialog(PlatformDialog.RenameProject)))
     case Intent.RenameProject(name) =>

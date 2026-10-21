@@ -31,7 +31,7 @@ enum Modifier derives CanEqual:
   */
 enum Key derives CanEqual:
   case Digit1, Digit2, Digit3, Digit4, Digit5, Z, BracketLeft, BracketRight, Enter, Escape, F6
-  case Tab
+  case Tab, S
 
   def symbol: String = this match
     case Digit1       => "1"
@@ -40,6 +40,7 @@ enum Key derives CanEqual:
     case Digit4       => "4"
     case Digit5       => "5"
     case Z            => "Z"
+    case S            => "S"
     case BracketLeft  => "["
     case BracketRight => "]"
     case Enter        => "↩"

@@ -261,6 +261,13 @@ object CommandRegistry:
     None,
     always(Intent.RequestOpenProject)
   )
+  val saveProjectAs: AppCommand = AppCommand(
+    CommandId.declared("file.save-project-as"),
+    MessageId.CommandSaveProjectAs,
+    MenuSection.File,
+    Some(KeyChord.commandShift(Key.S)),
+    always(Intent.RequestSaveProjectAs)
+  )
   val closeProject: AppCommand = AppCommand(
     CommandId.declared("file.close-project"),
     MessageId.CommandCloseProject,
@@ -363,6 +370,7 @@ object CommandRegistry:
     discardDraft,
     newProject,
     openProject,
+    saveProjectAs,
     closeProject,
     importSources,
     renameProject,

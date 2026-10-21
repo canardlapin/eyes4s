@@ -595,6 +595,12 @@ File › New / Open / Save As / Close / Open Recent; untitled → named; dirty m
 
 **Tests:** ProjectLifecycleFxSuite
 
+**2026-10-21 slice:** Native Save As adds an empty-destination copy and staged writer
+handoff, first save of edited untitled documents, queued journals, retained undo
+and view context, and rejection of concurrent edits. Focused evidence is in
+`evidence/20261021-native-save-as/review.json`; full qualification/landing is
+recorded there separately. Open Recent remains unfinished, so S2.9 stays open.
+
 ### Studio S3: execution, selection and navigation services
 
 ExecutionService over eyes4s-fs2 (jobs, progress, cancel, stale rejection), preview paging, SelectionBus with typed StudioRef, navigation history and the provenance trail, diagnostics presentation and StudioChecks.

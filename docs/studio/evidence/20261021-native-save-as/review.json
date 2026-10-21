@@ -1,0 +1,70 @@
+{
+  "schema": 1,
+  "review_date": "2026-10-21",
+  "reviewer": "codex-release-session-20261020",
+  "mote": "bd-01M5EAR4D7RV71SJA8FA1XS4GC",
+  "source_base": "30261d60a3eab71062a7a71cfb1996b1bef173f0",
+  "state": "focused JVM, JS and headless native checks passed; full qualification and landing pending",
+  "scope": "Native File Save As, first save of an edited untitled document, staged writer handoff and current-view preservation",
+  "checks": {
+    "SessionSaveAsSuite_each_platform": 9,
+    "app_lifecycle_copy_registry_each_platform": 17,
+    "ProjectLifecycleFxSuite": 13,
+    "SessionPortSuite": 7,
+    "KeymapFxSuite": 13,
+    "studioStyleCheck": "passed",
+    "flags": "GITHUB_ACTIONS=true; JDK25.0.4.1; headless Monocle"
+  },
+  "findings": [
+    "File Save project as and Command/Control Shift S open the injected chooser and copy to an empty location. The operation drains preceding source journals through SessionPort.",
+    "Native named and untitled copies retain the full undo history and view context; backend receipts, job handles and input checks are recreated for the new writer. A cold reopen verifies the first copy after undo/save.",
+    "Source manifest bytes remain identical after a successful copy. The old writer is released only after the new window is installed; the current destination remains writer-locked.",
+    "Chooser cancellation, a nonempty destination and edits during copying preserve the current window. The race test ends with the same document but a different history, proving the handoff compares more than document equality.",
+    "First Save As refuses existing recovery sidecars under the destination lock and retains their bytes.",
+    "Reviewed the dark native copy screenshot: copy name and saved state are visible; no clipping observed in this bounded empty-project capture.",
+    "Regenerated SHORTCUTS.md from CommandRegistry after the shortcut-reference test caught the missing row."
+  ],
+  "limits": [
+    "Full qualification and landing are pending. Open Recent remains unfinished.",
+    "Native handoff fixtures use empty/public synthetic bundles. Bound native archive byte copying is covered separately by NativeArtifactPersistenceSuite in the server foundation.",
+    "These 1x/2x snapshots use transforms at physical output scale1 and do not qualify output scale2, whole-board parity, VoiceOver or G2 real-study acquisition.",
+    "A rejected concurrent copy can remain at its destination as the earlier snapshot; the user-facing reason explains this."
+  ],
+  "captures": [
+    {
+      "path": "docs/studio/evidence/20261021-native-save-as/native-copy-dark-1x.png",
+      "sha256": "112797d2d314bd224bdc5db2a879f720e7c4ebe43d631714472683399db8be20",
+      "snapshot_transform": 1,
+      "output_scale": 1
+    },
+    {
+      "path": "docs/studio/evidence/20261021-native-save-as/native-copy-dark-2x.png",
+      "sha256": "6dc73892b128c3b5a097e9e20591ca6a141a29d05acff716a02a178a8bbc33e5",
+      "snapshot_transform": 2,
+      "output_scale": 1
+    }
+  ],
+  "source_sha256": {
+    "docs/studio/IMPLEMENTATION_PLAN.md": "d51542ee8b1ad84ef12cccc3453a0f48e7b846399d290256ae36f9f16c61b347",
+    "docs/studio/PORTING.md": "c40f12613c3127a2cd6b4561527aa6dfc8bea2aae8516676ef32fe7c72d7ee99",
+    "docs/studio/README.md": "8fe331e98dfc370cfe57270a317ebb68f4f1dd9b4badf5b398e5551c6db56b3a",
+    "docs/studio/SHORTCUTS.md": "75fb13d97d52ce29a076e34939818d348b7c76185b6bd23d91884185f02a81d7",
+    "studio/app/src/main/scala/eyes4s/studio/app/AppModel.scala": "2cd369055cbc460304da09fba8d2bbf7eb34a4ea87ff86fc2089f65cdc4ac506",
+    "studio/app/src/main/scala/eyes4s/studio/app/keys/CommandRegistry.scala": "dbb27f880f3c63c2b3ee5782768dea14db0081713894ac5bc3efae5a84b770a1",
+    "studio/app/src/main/scala/eyes4s/studio/app/keys/Keymap.scala": "3cf65388830dffa706d11cfc150cf1bcc0152f6fb81e833eb0cd96f304e013e5",
+    "studio/app/src/main/scala/eyes4s/studio/app/project/ProjectLifecycle.scala": "e94e51c3f8dd1030e59017d44a5cf7d1403bda9f5617f15824c636249516b8ba",
+    "studio/app/src/main/scala/eyes4s/studio/app/text/Messages.scala": "3193bb2b25d4b0f336c06308dcbe366c8ad8c60b746e95b8222a2c8444971e25",
+    "studio/app/src/test/scala/eyes4s/studio/app/keys/CommandRegistrySuite.scala": "ba09e8ee193dceb5d7352ddaeaeebfdab4dc975e8da8bcc813759b780bf078fa",
+    "studio/app/src/test/scala/eyes4s/studio/app/project/ProjectLifecycleSuite.scala": "0d06acc8617b3c2a0758c2f76d5883bbafcd530b8076059cdbe76a5374e02724",
+    "studio/core/src/main/scala/eyes4s/studio/core/session/ProjectSession.scala": "9108653750dcce461fd6fe98299b62b13a2852aa5f836718ac06110be7f6a9ef",
+    "studio/core/src/test/scala/eyes4s/studio/core/session/SessionSaveAsSuite.scala": "9ccb63b6a6156b1832ab3b0fb379f428cf11d1d2e1ddac1364364c134f0c6512",
+    "studio/desktop/src/main/scala/eyes4s/studio/desktop/StudioWindow.scala": "1e02b2ed2fc0f0461c9ea0ed0bcb4044770fee16488f251e15e8773d55e42bf8",
+    "studio/desktop/src/main/scala/eyes4s/studio/desktop/project/ProjectLifecycleDialogs.scala": "4dfcfa6312cc4f315ef698c7cc92fcc64977e54f1e6fe89e594d4584d0d3617d",
+    "studio/desktop/src/main/scala/eyes4s/studio/desktop/project/ProjectLifecycleHost.scala": "431d2826c76a518f61f9595a83f91eea291260f6be9795bb0610e355a9a927db",
+    "studio/desktop/src/main/scala/eyes4s/studio/desktop/runtime/ProjectPort.scala": "795f999a60f1a865e1ce93c8373a1a4a665ec6fcd6b44d3e858496435029afbb",
+    "studio/desktop/src/main/scala/eyes4s/studio/desktop/shell/ShellKeys.scala": "202c290400573f76ae0fb9328068be0428fc176104613ccd89313598e9491183",
+    "studio/desktop/src/test/scala/eyes4s/studio/desktop/project/ProjectLifecycleFxSuite.scala": "e446422ef92fbb51e7dc12eb424260d8d67dd01b8b7284837f3c9b6f4562ed16",
+    "studio/desktop/src/test/scala/eyes4s/studio/desktop/runtime/SessionPortSuite.scala": "8b9d5798c5f10abd1f6b7caa439b00afc21e1e50935005cc6ec30ad9fee2383c",
+    "studio/app/src/test/scala/eyes4s/studio/app/project/ProjectCopyModelSuite.scala": "57b1f3d93a530421b590091c5323d763a648764befa7d2be46a5d17ded7e9f47"
+  }
+}
