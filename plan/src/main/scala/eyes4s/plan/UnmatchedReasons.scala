@@ -131,8 +131,35 @@ object UnmatchedReasons:
       inventory: InventoryLedger,
       expected: Option[ExpectedUnmatched] = None
   ): Vector[K] =
-    of(layout, pairing, referencePhase, focal, inventory, expected).reasons.collect {
-      case (key, UnmatchedKind.NoReferenceInDesign) => key
+    val sameOccurrence =
+      pairing.matched == MatchedReferences.SameOccurrence && layout.occurrence.isDefined
+    val selected = pairing.matched match
+      case MatchedReferences.Select(OccurrenceChoice.At(n)) if layout.occurrence.isDefined =>
+        Some(n.value)
+      case _ => None
+    // Presence, not cardinality or admission: one index keeps initial metadata
+    // linear even when many repeated references share a participant/item key.
+    val declared = inventory.trials.iterator
+      .filter(_.identity.phase == referencePhase)
+      .filter(t => selected.forall(_ == t.identity.occurrence.value))
+      .flatMap(t =>
+        t.keyItem.iterator.map(item =>
+          (
+            t.identity.participant,
+            item,
+            Option.when(sameOccurrence)(t.identity.occurrence.value)
+          )
+        )
+      )
+      .toSet
+    focal.filter { key =>
+      expected.exists(_.contains(layout, key)) || !declared(
+        (
+          layout.participant(key),
+          layout.stimulus(key),
+          if sameOccurrence then layout.occurrence.map(_(key).value) else None
+        )
+      )
     }
 
   /** Declared expected-unmatched trials need no admission inference. */

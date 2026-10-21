@@ -1,0 +1,20 @@
+{
+  "schema": 1,
+  "source_base": "3ba7d304d5c46f34fb6eca4c00a9b6c9a26083c4",
+  "state": "focused checks passed; full qualification and landing pending",
+  "scope": "Initial by-design query metadata indexes declared reference presence instead of rescanning reference groups per query.",
+  "checks_each_platform": {
+    "unmatched_reasons": 12,
+    "native_preview_acceptance_and_results": 9
+  },
+  "findings": [
+    "Presence includes unadmitted declared references, so a dropped study trial remains a data-error no-match rather than becoming by-design.",
+    "RequireOne, SameOccurrence and Select First/Last/At rules agree with completed library reasons, including a second query occurrence.",
+    "A cohort with2048 repeated references and2048 queries keeps every studied key present and identifies only the novel probe as by-design.",
+    "The implementation builds one set of declared pairing keys, then performs one membership lookup per focal key; no pair schedule is visited."
+  ],
+  "source_sha256": {
+    "plan/src/main/scala/eyes4s/plan/UnmatchedReasons.scala": "6f2d2ee848b368b376d9586d493c2d0fb1caa532e95af74f127970d285a0c776",
+    "plan/src/test/scala/eyes4s/plan/UnmatchedReasonsSuite.scala": "737d62c3449a9d1542e530b2051a4d6735a1e0303b56fcf6e9398d76b2c4931d"
+  }
+}

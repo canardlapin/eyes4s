@@ -245,6 +245,59 @@ class UnmatchedReasonsSuite extends munit.FunSuite:
     )
   }
 
+  test("indexed by-design metadata agrees with occurrence and reference-selection rules") {
+    val secondQuery =
+      Declared("recognition", "r_second", "beach", TrialDisposition.Admitted, Vector(20), 2)
+    val extended = inventory(declared :+ secondQuery)
+    val focal    = declared.filter(_.phase == "recognition").map(_.key) :+ secondQuery.key
+    val layout   = TrialKey.layout(TrialKeyDefinitions.trialLayout)
+    val policies = Vector(
+      MatchedReferences.RequireOne,
+      MatchedReferences.SameOccurrence,
+      MatchedReferences.Select(OccurrenceChoice.First),
+      MatchedReferences.Select(OccurrenceChoice.Last),
+      MatchedReferences.Select(OccurrenceChoice.At(TrialOccurrence.first)),
+      MatchedReferences.Select(OccurrenceChoice.At(get(TrialOccurrence.of(2))))
+    )
+    policies.foreach { matched =>
+      val pairing  = StudyPairing.default.copy(matched = matched)
+      val expected =
+        UnmatchedReasons.of(layout, pairing, "study", focal, extended).reasons.collect {
+          case (key, UnmatchedKind.NoReferenceInDesign) => key
+        }
+      assertEquals(
+        UnmatchedReasons.byDesignKeys(layout, pairing, "study", focal, extended),
+        expected
+      )
+    }
+  }
+
+  test("many repeated studied references stay present in initial metadata") {
+    val references = Vector.tabulate(2048)(i =>
+      Declared("study", s"dense_s$i", "beach", TrialDisposition.Admitted, Vector(i + 2))
+    )
+    val queries = Vector.tabulate(2048)(i =>
+      Declared(
+        "recognition",
+        s"dense_q$i",
+        "beach",
+        TrialDisposition.Admitted,
+        Vector(i + 2050)
+      )
+    )
+    val ledger = inventory(references ++ queries :+ novel.copy(records = Vector(5000)))
+    assertEquals(
+      UnmatchedReasons.byDesignKeys(
+        TrialKey.layout(TrialKeyDefinitions.trialLayout),
+        StudyPairing.default,
+        "study",
+        queries.map(_.key) :+ novel.key,
+        ledger
+      ),
+      Vector(novel.key)
+    )
+  }
+
   test(
     "preflight carries the reasons when given the inventory, and says undetermined without it"
   ) {
