@@ -1,0 +1,104 @@
+{
+  "upstream": "https://github.com/canardlapin/scaladock",
+  "revision": "4a7a61bb397a68d5048f809a6ea1c30ce8b45223",
+  "eyes4s_base": "ed33e4b73aedd37d9b48426f934a76a0662f7c22",
+  "command": "sbt -batch 'fx/testOnly scaladock.fx.RestoreTypeRegressionSuite scaladock.fx.PerspectivesSuite'",
+  "java": "25.0.4.1",
+  "javafx": "24.0.1",
+  "headless": "Monocle 21.0.2",
+  "shared_fx_lock": true,
+  "exit": 1,
+  "passed": 13,
+  "failed": 2,
+  "results": [
+    {
+      "suite": "RestoreTypeRegressionSuite",
+      "name": "live same-ID type replacement must create placeholder and preserve payload",
+      "outcome": "failed"
+    },
+    {
+      "suite": "RestoreTypeRegressionSuite",
+      "name": "inactive unknown layout must not be overwritten by active known same-ID pane",
+      "outcome": "failed"
+    },
+    {
+      "suite": "RestoreTypeRegressionSuite",
+      "name": "control: detaching before restore preserves placeholder and payload",
+      "outcome": "passed"
+    },
+    {
+      "suite": "RestoreTypeRegressionSuite",
+      "name": "control: per-layout capture preserves inactive unknown payload",
+      "outcome": "passed"
+    },
+    {
+      "suite": "PerspectivesSuite",
+      "name": "a retaining switch keeps leaving panes alive and gives the same view back",
+      "outcome": "passed"
+    },
+    {
+      "suite": "PerspectivesSuite",
+      "name": "an ordinary update still disposes panes that leave (retention is opt-in)",
+      "outcome": "passed"
+    },
+    {
+      "suite": "PerspectivesSuite",
+      "name": "releasing a retained pane goes through close admission and disposes it",
+      "outcome": "passed"
+    },
+    {
+      "suite": "PerspectivesSuite",
+      "name": "load with retainPanes keeps views alive; save captures live state of retained panes",
+      "outcome": "passed"
+    },
+    {
+      "suite": "PerspectivesSuite",
+      "name": "perspectives: shared panes are one live view; each remembers its last arrangement",
+      "outcome": "passed"
+    },
+    {
+      "suite": "PerspectivesSuite",
+      "name": "perspectives: a floating window closes on leaving and returns at its bounds",
+      "outcome": "passed"
+    },
+    {
+      "suite": "PerspectivesSuite",
+      "name": "perspectives: reset restores the default and releases views no perspective uses",
+      "outcome": "passed"
+    },
+    {
+      "suite": "PerspectivesSuite",
+      "name": "perspectives: save and load round-trip every arrangement and the active one",
+      "outcome": "passed"
+    },
+    {
+      "suite": "PerspectivesSuite",
+      "name": "releaseUnused also releases non-closable retained panes",
+      "outcome": "passed"
+    },
+    {
+      "suite": "PerspectivesSuite",
+      "name": "perspectives: a malformed file is rejected, not half-applied",
+      "outcome": "passed"
+    },
+    {
+      "suite": "PerspectivesSuite",
+      "name": "a retained view is rebuilt if the pane comes back as another type",
+      "outcome": "passed"
+    }
+  ],
+  "source_changes": "No provider production source changes. Only test sources and headless test settings added in isolated clone. No Eyes Studio production source or pin changes.",
+  "scope": "Focused reproduction, not full dependency-upgrade qualification. Two actual regression failures; both positive workaround controls and all eleven existing perspective tests pass.",
+  "files": {
+    "TEST-scaladock.fx.RestoreTypeRegressionSuite.xml.gz": "fb5ec462e34c6f0d0585c019337828a7815d13cb1da2fdef624fceee926ff78b",
+    "probe.log": "50ef5b9398daf725e8d093fe75f5dcc2ea2ad855dd72786fb7cc507750c266fe",
+    "RestoreTypeRegressionSuite.scala.txt": "0a4672881780a70ff1fb92784d7dd8e08c4a6744ad5997fb22cf8c25cf2849c7",
+    "TEST-scaladock.fx.PerspectivesSuite.xml.gz": "5952e32c2184747ac5d5375c5b9eb5a40dbff9d312a04aaacc6cde5270d8ca36",
+    "probe.sbt.txt": "8a49f40aaede7b89f3e7c26dbd74973515fbd54c9f51abd6f18f36710a4b3285",
+    "EyesStudioFxRunLock.scala.txt": "4ebef6d26325b2f3c21e7c4957b9bcfd40cb92ee3cff6af2c21351e962273643"
+  },
+  "raw_xml_sha256": {
+    "TEST-scaladock.fx.PerspectivesSuite.xml": "fc13400ad294a133b1f586b8ae03e09b77e0c49c09050e1a202813215fb12ada",
+    "TEST-scaladock.fx.RestoreTypeRegressionSuite.xml": "0700f9142f3cceb97e9b30ab4ee80ee0ab059d88998902444dfd97a0ab4531a0"
+  }
+}

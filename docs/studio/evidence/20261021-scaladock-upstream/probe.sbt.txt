@@ -1,0 +1,2 @@
+LocalProject("fx") / libraryDependencies += "org.testfx" % "openjfx-monocle" % "21.0.2" % Test
+LocalProject("fx") / Test / javaOptions ++= Seq("-Dglass.platform=Monocle", "-Dmonocle.platform=Headless", "-Dheadless.geometry=1920x1200-32", "-Dprism.order=sw", "-Djava.awt.headless=true")

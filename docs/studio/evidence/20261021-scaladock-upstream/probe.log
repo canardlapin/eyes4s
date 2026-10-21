@@ -1,0 +1,54 @@
+[info] welcome to sbt 1.12.14 (Eclipse Adoptium Java 25.0.4.1)
+[info] loading settings for project scaladock-upstream-check-20261021-build from plugins.sbt...
+[info] loading project definition from /private/tmp/scaladock-upstream-check-20261021/project
+[info] loading settings for project root from build.sbt, probe.sbt...
+[info] set current project to scaladock (in build file:/private/tmp/scaladock-upstream-check-20261021/)
+[info] compiling 23 Scala sources to /private/tmp/scaladock-upstream-check-20261021/modules/fx/target/scala-3.7.4/test-classes ...
+[info] done compiling
+WARNING: A terminally deprecated method in sun.misc.Unsafe has been called
+WARNING: sun.misc.Unsafe::objectFieldOffset has been called by scala.runtime.LazyVals$ (file:/Users/bbuchsbaum/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/scala-lang/scala3-library_3/3.7.4/scala3-library_3-3.7.4.jar)
+WARNING: Please consider reporting this to the maintainers of class scala.runtime.LazyVals$
+WARNING: sun.misc.Unsafe::objectFieldOffset will be removed in a future release
+Oct 21, 2026 5:33:55 P.M. com.sun.javafx.application.PlatformImpl startup
+WARNING: Unsupported JavaFX configuration: classes were loaded from 'unnamed module @378a610b'
+WARNING: A restricted method in java.lang.System has been called
+WARNING: java.lang.System::load has been called by com.sun.glass.utils.NativeLibLoader in an unnamed module (file:/Users/bbuchsbaum/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/openjfx/javafx-graphics/24.0.1/javafx-graphics-24.0.1-mac-aarch64.jar)
+WARNING: Use --enable-native-access=ALL-UNNAMED to avoid a warning for callers in this module
+WARNING: Restricted methods will be blocked in a future release unless native access is enabled
+
+RUNTIME_PROBE {"java":"25.0.4.1","javafx":"24.0.1+4","modules":[{"name":"unnamed","location":"file:/Users/bbuchsbaum/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/openjfx/javafx-base/24.0.1/javafx-base-24.0.1-mac-aarch64.jar"},{"name":"unnamed","location":"file:/Users/bbuchsbaum/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/openjfx/javafx-graphics/24.0.1/javafx-graphics-24.0.1-mac-aarch64.jar"},{"name":"unnamed","location":"file:/Users/bbuchsbaum/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/openjfx/javafx-controls/24.0.1/javafx-controls-24.0.1-mac-aarch64.jar"}]}
+scaladock.fx.RestoreTypeRegressionSuite:
+==> X scaladock.fx.RestoreTypeRegressionSuite.live same-ID type replacement must create placeholder and preserve payload  0.302s munit.FailException: modules/fx/src/test/scala/scaladock/fx/RestoreTypeRegressionSuite.scala:53 Expected unresolved placeholder; old live view was reused
+52:        assertEquals(dock.load(LayoutCodec.encode(unknownLayout), retainPanes = true), Right(()))
+53:        assert(!dock.view.lookupAll(".dock-unresolved").isEmpty, "Expected unresolved placeholder; old live view was reused")
+54:        assertUnknown(dock.save())
+    at munit.FunSuite.assert(FunSuite.scala:13)
+    at scaladock.fx.RestoreTypeRegressionSuite.$init$$$anonfun$2$$anonfun$1(RestoreTypeRegressionSuite.scala:53)
+    at scaladock.fx.RestoreTypeRegressionSuite.$init$$$anonfun$2$$anonfun$adapted$1(RestoreTypeRegressionSuite.scala:55)
+==> X scaladock.fx.RestoreTypeRegressionSuite.inactive unknown layout must not be overwritten by active known same-ID pane  0.023s munit.FailException: modules/fx/src/test/scala/scaladock/fx/RestoreTypeRegressionSuite.scala:45 Unknown type lost: {"version":1,"root":{"group":{"id":"75c61e1c-979f-4f02-a9e0-140dde267384","active":"dce2d80a-6da5-41e6-8bb6-614a72c30144","header":"inherit","tabs":[{"id":"dce2d80a-6da5-41e6-8bb6-614a72c30144","title":"probe","closable":true,"type":"eyesstudio.probe.known","state":{"text":"original"}}]}},"floating":[],"maximized":null,"minimized":[],"focused":null}
+44:    val text = ujson.write(layout)
+45:    assert(text.contains(unknownName), s"Unknown type lost: $text")
+46:    assert(text.contains("\"keep\":42"), s"Unknown payload lost: $text")
+    at munit.FunSuite.assert(FunSuite.scala:13)
+    at scaladock.fx.RestoreTypeRegressionSuite.assertUnknown(RestoreTypeRegressionSuite.scala:45)
+    at scaladock.fx.RestoreTypeRegressionSuite.$init$$$anonfun$3$$anonfun$1(RestoreTypeRegressionSuite.scala:65)
+    at scaladock.fx.RestoreTypeRegressionSuite.$init$$$anonfun$3$$anonfun$adapted$1(RestoreTypeRegressionSuite.scala:66)
+  + control: detaching before restore preserves placeholder and payload 0.018s
+  + control: per-layout capture preserves inactive unknown payload 0.007s
+scaladock.fx.PerspectivesSuite:
+  + a retaining switch keeps leaving panes alive and gives the same view back 0.036s
+  + an ordinary update still disposes panes that leave (retention is opt-in) 0.012s
+  + releasing a retained pane goes through close admission and disposes it 0.014s
+  + load with retainPanes keeps views alive; save captures live state of retained panes 0.017s
+  + perspectives: shared panes are one live view; each remembers its last arrangement 0.012s
+  + perspectives: a floating window closes on leaving and returns at its bounds 0.22s
+  + perspectives: reset restores the default and releases views no perspective uses 0.008s
+  + perspectives: save and load round-trip every arrangement and the active one 0.009s
+  + releaseUnused also releases non-closable retained panes 0.005s
+  + perspectives: a malformed file is rejected, not half-applied 0.002s
+  + a retained view is rebuilt if the pane comes back as another type 0.007s
+[error] Failed: Total 15, Failed 2, Errors 0, Passed 13
+[error] Failed tests:
+[error] 	scaladock.fx.RestoreTypeRegressionSuite
+[error] (fx / Test / testOnly) sbt.TestsFailedException: Tests unsuccessful
+[error] Total time: 11 s, completed Oct 21, 2026, 5:33:56 p.m.
