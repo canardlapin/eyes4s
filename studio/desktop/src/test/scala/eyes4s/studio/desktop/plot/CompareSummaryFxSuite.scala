@@ -207,6 +207,7 @@ class CompareSummaryFxSuite extends ShellFxSuite:
 
   fxStage.test("the participant plot's annotation column: P17 selected and P05's failures") {
     fx =>
+      assumeFullStage(fx)
       val w = boot(fx, StoryModels.t3Summary, StoryMoment.T3)
       loaded(fx, w)
       eventually(fx, "the plot is drawn with its notes")(
@@ -249,6 +250,7 @@ class CompareSummaryFxSuite extends ShellFxSuite:
 
   fxStage.test("a short participant plot writes only the notes its frame holds; taller, more") {
     fx =>
+      assumeFullStage(fx)
       val w    = boot(fx, StoryModels.t3Summary, StoryMoment.T3)
       val twin = w.summary.participantPlot
       loaded(fx, w)

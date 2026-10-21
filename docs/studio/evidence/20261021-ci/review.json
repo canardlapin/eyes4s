@@ -1,0 +1,38 @@
+{
+  "schema": 1,
+  "source_base": "224d6ee854d1d17457fe0869031d0c57474b40ec",
+  "state": "targeted checks passed; combined gate, landing and remote CI confirmation pending",
+  "original_failures": {
+    "checks": "https://github.com/canardlapin/eyes4s/actions/runs/39532811034",
+    "studio": "https://github.com/canardlapin/eyes4s/actions/runs/39532553641"
+  },
+  "changes": [
+    "The exact transport wire oracle now uses analytic single-fixation couplings. General multi-fixation runtime codec tests are retained. No production numerical implementation or codec comparison changed.",
+    "A changed result bit is still refused as CodecError.Derived. Strict replay can still reject nontrivial archives across runtimes; docs state this limitation.",
+    "Two native plot tests require a full board through the existing assumeFullStage helper. The hosted macOS display is1024x768 and already opts into the helper skip policy. All such tests still run on the full-size headless display.",
+    "The canvas cursor-focus test checks its canvas after exercising pointer and keyboard focus; whole-window accessibility is covered separately at a full-size stage."
+  ],
+  "checks": {
+    "JDK25_codec": 11,
+    "JavaScript_codec": 11,
+    "JDK21_codec": 11,
+    "JDK21_schema_registry": 10,
+    "headless_native_plot_and_focus": 19,
+    "studioStyleCheck": "passed"
+  },
+  "not_claimed": [
+    "Successful native Mac CI after this change; remote confirmation pending.",
+    "Universal bitwise portability of arbitrary transport archives.",
+    "Real output-scale2 or VoiceOver qualification."
+  ],
+  "sha256": {
+    "codec/.jvm/src/test/scala/eyes4s/codec/PrintScanpathStudyFixtures.scala": "02f5dabfd247c4db365bdb35b77ae766841bdeb8331f022f639645ad7118587e",
+    "codec/src/test/resources/eyes4s/scanpath-study-transport-plan-v1.json": "8049ab912a1e991cbd78fce51bcccd4a1c409fa2a8b0301358fa76d6e36d6ece",
+    "codec/src/test/resources/eyes4s/scanpath-study-transport-result-v1.json": "813fdc1fc990fcd114903698d64348195b1cd4fbbbd1546c45655fe27dc72fbb",
+    "codec/src/test/scala/eyes4s/codec/ScanpathStudyCodecSuite.scala": "28b72017bf9618e3cd038701f7dda18e71d8e098f750a26cc43110155473ad0c",
+    "codec/src/test/scala/eyes4s/codec/ScanpathStudyFixtures.scala": "df1230bb697dd75ba8cae422bcc1f6990bab0501a1333ac480c31592168bba43",
+    "docs/DOMAIN_CODECS.md": "ea070676bbc7ad2ad562b5952d4bc0d7b3c53dc8e7b1f100e11480720ea7bef9",
+    "studio/desktop/src/test/scala/eyes4s/studio/desktop/plot/CompareSummaryFxSuite.scala": "8bb7fa839b5e22e231532f781cb1c148a6144942f0ebe7af431cf561a2eb4e18",
+    "studio/desktop/src/test/scala/eyes4s/studio/desktop/shell/FocusVisibleFxSuite.scala": "5471d9adee95ead87228dd4899b3dc9d1cdc59620cc45a0cf9dd9a93f5652308"
+  }
+}

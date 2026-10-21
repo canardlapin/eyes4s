@@ -63,6 +63,14 @@ private[codec] object ScanpathStudyCodecExamples:
       )
     }
   }
+
+  /** Analytically solved 1×1 couplings: exp(0), log(1), unit marginals.
+    * The portable wire oracle does not depend on last-bit libm differences.
+    * The multi-fixation `rows` still exercise ordinary runtime codec laws.
+    */
+  val portableTransportRows =
+    rows.map(row => row.copy(value = get(Scanpath.of(frame, clock, IArray(row.value.first)))))
+
   val queries = Vector(Long.MinValue, 0L, 1000L, 1000L, Long.MaxValue).map(Instant.micros)
   def overlap(policy: MissingOverlapPolicy): ScanpathMethod[Px] =
     ScanpathMethod.Overlap(
@@ -137,6 +145,34 @@ class ScanpathStudyCodecSuite extends munit.FunSuite:
       assertEquals(decoded.result.controls.rows.size, 6)
       assertEquals(decoded.result.contrasts.size, 3 * method.componentNames.size)
     }
+  }
+
+  test(
+    "portable transport wire oracle uses exact single-fixation couplings and rejects one changed bit"
+  ) {
+    val p       = plan(methods.last, portableTransportRows)
+    val archive = get(ScanpathStudyArchive.run(p))
+    archive.result.matched.rows.foreach { row =>
+      get(row.result) match
+        case ScanpathMethodOutput.Transport(value) =>
+          assertEquals(value.squaredCost, 0.04000000000000001)
+          assertEquals(value.marginalResidual, 0.0)
+        case other => fail(s"$other")
+    }
+    val saved   = get(codec.results.encode(archive))
+    val altered = updateAt(saved, List("value", "result", "matched", "rows"))(
+      _.mapArray(rows =>
+        rows.updated(
+          0,
+          updateAt(rows.head, List("result", "value", "squaredCost")) { value =>
+            Json.fromDoubleOrNull(java.lang.Math.nextUp(value.asNumber.map(_.toDouble).get))
+          }
+        )
+      )
+    )
+    assert(
+      codec.results.decode(altered).left.toOption.exists(_.isInstanceOf[CodecError.Derived])
+    )
   }
 
   test("strict missing-support summaries preserve every original exact64 query row") {

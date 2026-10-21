@@ -21,8 +21,8 @@ object PrintScanpathStudyFixtures:
     import ScanpathStudyCodecExamples.*
     def get[E, A](value: Either[E, A]): A = value.toOption.get
     Vector("multimatch", "overlap", "transport").zip(methods).foreach { (name, method) =>
-      val p           = plan(method)
-      val savedPlan   = get(codec.plans.encode(p))
+      val p         = plan(method, if name == "transport" then portableTransportRows else rows)
+      val savedPlan = get(codec.plans.encode(p))
       val savedResult = get(codec.results.encode(get(ScanpathStudyArchive.run(p))))
       println(s"SCANPATH_STUDY_FIXTURE scanpath-study-$name-plan-v1.json ${savedPlan.noSpaces}")
       println(

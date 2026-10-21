@@ -437,7 +437,12 @@ to both sides of its canonical `RunStamp`; the stamp is checked before replay.
 Results retain complete keyed pair outcomes, pairing reports, query failures and exact times,
 transport convergence diagnostics, reductions and excluded phases. Reading requires exact
 structured equality after replay; any runtime deviation is refused rather than tolerated or
-silently substituted. Encoding an already completed archive does not rerun the method.
+silently substituted. Encoding an already completed archive does not rerun the method. The portable transport wire fixture uses analytically
+solved single-fixation couplings, so its exact stored bits do not depend on a platform's
+transcendental functions. Multi-fixation plans and result ledgers still round-trip in the
+runtime codec tests. Their stored results can be refused on another runtime when its solver
+replays different last bits; this remains an explicit limitation of strict replay, not a
+numerical tolerance or a guarantee of universal archive portability.
 Generic manifest roles use `AnalysisInputs.EmbeddedInPlan`. The schema registry requires the
 six pinned documents, generated plan/result codec laws, and a re-encoding check on each runtime.
 See [scanpath comparison](SCANPATH_COMPARISON.md) for execution and numerical conventions.
