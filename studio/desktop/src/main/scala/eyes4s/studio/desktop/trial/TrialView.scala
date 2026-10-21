@@ -89,8 +89,9 @@ final case class MapRequest(
   * A failed read keeps its typed [[StimulusError]] ([[stimulusFailures]]),
   * and [[retry]] reads the failed assets again.
   *
-  * The host keeps the scene's aspect ([[TrialScene.fit]]), centred; the rest
-  * of the view is the stage colour. The view handles no input itself:
+  * The data viewport keeps the native screen-pixel aspect inside the canvas.
+  * The caption and legend retain the whole pane width; the unused data area
+  * is the stage colour. The view handles no input itself:
   * [[TrialInputAdapter]] adds picking, the roving cursor and the selection
   * overlay (S4.2). It is used on the FX thread only.
   *
@@ -364,15 +365,14 @@ final class TrialView(source: StimulusSource, loader: Executor, maps: MapRasterS
     val w = getWidth
     val h = getHeight
     aspect match
-      case Some(a) =>
-        // The legend, when there is one, sits under the trial's caption; the
-        // trial and its legend are centred together.
-        val below    = if legendUnderTrial then MapLegendScene.HeightPx else 0.0
-        val (fw, fh) = TrialScene.fit(w, math.max(0.0, h - below), a)
-        val left     = math.floor((w - fw) / 2.0)
-        val top      = math.floor((h - fh - below) / 2.0)
-        host.resizeRelocate(left, top, math.floor(fw), math.floor(fh))
-        legendHost.resizeRelocate(left, top + math.floor(fh), math.floor(fw), below)
+      case Some(_) =>
+        // Intaglio fits the data frame, including its picking transform. The
+        // caption and legend need the pane's width, not the narrower image's.
+        val below  = if legendUnderTrial then MapLegendScene.HeightPx else 0.0
+        val width  = math.floor(w)
+        val height = math.floor(math.max(0.0, h - below))
+        host.resizeRelocate(0.0, 0.0, width, height)
+        legendHost.resizeRelocate(0.0, height, width, below)
       case None =>
         host.resizeRelocate(0.0, 0.0, w, h)
         legendHost.resizeRelocate(0.0, h, w, 0.0)

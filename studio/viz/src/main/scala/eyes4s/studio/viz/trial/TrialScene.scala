@@ -89,6 +89,7 @@ import intaglio.{
   StrokeWidth,
   VJust,
   Viewport,
+  ViewportAspect,
   YDirection
 }
 
@@ -387,8 +388,8 @@ sealed abstract case class TrialScene private (
   /** The fixation the grob named `name` shows, if it is a fixation mark. */
   def refOf(name: GraphicsName): Option[StudioRef.Fixation] = markNamed(name).map(_.ref)
 
-  /** Width over height of the canvas this scene is laid out for; a host
-    * keeps it so the image is not distorted ([[TrialScene.fit]]).
+  /** Preferred canvas width over height ([[TrialScene.fit]]). The data
+    * viewport also preserves its native-pixel aspect on other canvas shapes.
     */
   def aspect: Double = TrialScene.aspectOf(extent)
 
@@ -1265,6 +1266,7 @@ object TrialScene:
           for
             xs     <- Interval(extent.left, extent.right)
             ys     <- Interval(extent.top, extent.bottom)
+            aspect <- ViewportAspect.ofScales(xs, ys)
             origin <- Point.npc(0.0, CaptionFraction)
             size   <- Size.npc(1.0, 1.0 - CaptionFraction)
             vp     <- Viewport.checked(
@@ -1275,7 +1277,7 @@ object TrialScene:
               Clip.Off,
               yDirection = YDirection.Down
             )
-          yield vp
+          yield vp.withAspect(aspect)
         )
         stage <- part("stage surround")(
           for

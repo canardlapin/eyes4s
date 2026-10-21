@@ -1,0 +1,57 @@
+{
+  "schema": 1,
+  "review_date": "2026-10-21",
+  "reviewer": "codex-release-session-20261020",
+  "mote": "bd-01M4ZQJ91DP721J9XEM9TV9862",
+  "source_base": "e69476879c1c107404b77a2695d29256260ec7ae",
+  "state": "focused JVM/JS/native checks passed; later follow-up, qualification and landing pending",
+  "scope": "Original public 680x370 unknown-display reproduction; aspect-preserving trial data viewport and full-pane caption/legend",
+  "checks": {
+    "trial_and_legend_each_platform": 126,
+    "native_trial_map": 11,
+    "native_trial_view": 26,
+    "native_explore": 4,
+    "native_trial_cache": 2,
+    "studioStyleCheck": "passed",
+    "flags": "GITHUB_ACTIONS=true; JDK25.0.4.1; headless Monocle; physical output1; snapshot transforms1/2 are not physical output2"
+  },
+  "cause": "The native host fit the entire canvas, including fixed-size caption and legend text, to the data aspect. In a 680x370 pane the canvas shrank to376px; measured caption ink ended at328.518 while the marker explanation began at254.898, overlapping by73.620px.",
+  "correction": "Intaglio ViewportAspect.ofScales preserves the data frame and its resolved picking/inverse frame. The native caption and legend retain the pane width. Image, map, marks and picking still resolve through the same PlotTransform; no custom text-width estimate or scientific map redraw is introduced.",
+  "regressions": [
+    "The native reproduction first failed on actual JavaFxCanvasContext text bounds. It now checks both caption rows for overlap and every caption/legend glyph box for clipping.",
+    "A wide/tall canvas conformance test failed before the data viewport fix and now passes on JVM/JS at device scales1/2, including inverse mapping.",
+    "The existing native image/mark/picking test retains all position and inverse assertions; its incidental whole-canvas aspect assertion now checks the actual data-frame aspect.",
+    "Existing native map pixel, contour, legend placement, accessibility and cache checks pass."
+  ],
+  "visual_review": "After capture reviewed: both caption rows and the complete legend are readable; image/data aspect is preserved and the legend remains below the trial.",
+  "limits": [
+    "This bounded public fixture review is not whole-board sign-off, G2 real-study qualification, VoiceOver or true output-scale2 testing.",
+    "The currently frozen d4ff3c22 candidate is unchanged and does not contain this later follow-up."
+  ],
+  "captures": [
+    {
+      "path": "docs/studio/evidence/20261021-trial-layout/after-light-1x.png",
+      "sha256": "bd529a7fd7a981932f12bc7f25c31559b8efe9353c5140da3254db9253891417"
+    },
+    {
+      "path": "docs/studio/evidence/20261021-trial-layout/after-light-2x.png",
+      "sha256": "7298f834dcb43b3006bd5f202c663010fa163678f2b85b919611d084ed60f2b0"
+    },
+    {
+      "path": "docs/studio/evidence/20261021-trial-layout/before-light-1x.png",
+      "sha256": "37cd3fe7bcfcc02777d68faded20ebf193e4eb676c95b06fd60ceb5b27b11052"
+    },
+    {
+      "path": "docs/studio/evidence/20261021-trial-layout/before-light-2x.png",
+      "sha256": "3c11d49cdda0d437c8090f64fb6ea2d0227a352fb76eca4e52326f2de7101634"
+    }
+  ],
+  "source_sha256": {
+    "docs/studio/PARITY_CHECKLIST.md": "580e50cadab7e2ef5e8b18f92d5fce4f1f009eaedd900cd52415e40ed8de0c5e",
+    "studio/desktop/src/main/scala/eyes4s/studio/desktop/trial/TrialView.scala": "45c2ab7a1249f434c843969702592ee2e7f222a857ff4b6861ee16fa18085e9a",
+    "studio/desktop/src/test/scala/eyes4s/studio/desktop/trial/TrialViewFxSuite.scala": "7a6602f0d73914406c97ab4cf4100a07a9ed47fa187ce41797ac40c9b715338a",
+    "studio/desktop/src/test/scala/eyes4s/studio/desktop/trial/TrialViewMapFxSuite.scala": "0db0625cad89e1210571cf504db83663a7e96da182fd1265ea7d2ed349fca02b",
+    "studio/viz/src/main/scala/eyes4s/studio/viz/trial/TrialScene.scala": "9c0e359942e9245874eeb83c165a1e073cff2734d2b0e8efafa1e2fbba92de47",
+    "studio/viz/src/test/scala/eyes4s/studio/viz/trial/TrialSceneSuite.scala": "160e149b18dcf69f1515bcbc2dec2e5d4cda204705e5e85fbfe4874e0632eb44"
+  }
+}
