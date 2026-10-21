@@ -1,0 +1,241 @@
+{
+  "schema": 1,
+  "candidate": "356db27ef368112341b6f9bff62f154e5de4b1f5",
+  "tree": "6b59ebe32edf4952bf44a4a75888e2b91b63f0ac",
+  "gate_owner": "codex-g4-session-20261021",
+  "canonical": {
+    "outcome": "passed",
+    "driver_log_sha256": "4f351b2a7f052eb204c1e7c29b3d03eb8be591858769aa134433d8c2adcf9972",
+    "steps": {
+      "hygiene": {
+        "path": "target/landing-gate/hygiene.log",
+        "sha256": "75b936eda45dcf37e39cbb96356cbccb116ce8b2b94cac1a47fdeecdfd0ccf35"
+      },
+      "werror": {
+        "path": "target/landing-gate/werror.log",
+        "sha256": "d30b5b42d9452ac70a4ab9a3acd47b21cf9b90ad5ea4e4e27882d1c51368d245"
+      },
+      "audit": {
+        "path": "target/landing-gate/audit.log",
+        "sha256": "d46b2af0e61f990ed950393c8cf485d340a0d96d1300e164f4e0404f97bda7a5"
+      },
+      "tests": {
+        "path": "target/landing-gate/tests.log",
+        "sha256": "b0f586be3f658c4235badec465c73100137ca5beb8ecc871d80dba4807c8a188"
+      },
+      "consumer": {
+        "path": "target/landing-gate/consumer.log",
+        "sha256": "3bf2ac09048f5f1ab0f3b4e2c79b7f72bdb3003c3dac0bb506effb7c8db8d212"
+      }
+    },
+    "runtime_entries": 3984,
+    "abstractions": 691,
+    "explicit_jvm_only": 34,
+    "uncovered": 0
+  },
+  "supplemental": {
+    "candidate": "356db27ef368112341b6f9bff62f154e5de4b1f5",
+    "tree": "6b59ebe32edf4952bf44a4a75888e2b91b63f0ac",
+    "started": "2026-10-21T17:21:33.854453+00:00",
+    "steps": [
+      {
+        "name": "studio",
+        "command": [
+          "sbt",
+          "-batch",
+          "-J-Xmx6g",
+          "studioAll",
+          "studioStyleCheck",
+          "studioBoundaries"
+        ],
+        "environment": {
+          "GITHUB_ACTIONS": "true"
+        },
+        "started": "2026-10-21T17:21:33.911903+00:00",
+        "finished": "2026-10-21T17:40:51.004457+00:00",
+        "exit": 0,
+        "log": "target/g4-qualification/studio.log",
+        "log_sha256": "a9e55cdc95e8c48772924b0f9294372778226c6442d7dc397130f4638c179107"
+      },
+      {
+        "name": "catalogue-tests",
+        "command": [
+          "python3.13",
+          "-m",
+          "unittest",
+          "discover",
+          "-s",
+          "tools/studio-e2e",
+          "-p",
+          "test_*.py"
+        ],
+        "environment": {},
+        "started": "2026-10-21T17:40:51.080611+00:00",
+        "finished": "2026-10-21T17:40:51.201723+00:00",
+        "exit": 0,
+        "log": "target/g4-qualification/catalogue-tests.log",
+        "log_sha256": "0f7e4b97443e54aca647179972594d13bb587afcbf151fab8228148587ea844a"
+      },
+      {
+        "name": "catalogue",
+        "command": [
+          "python3.13",
+          "tools/studio-e2e/check.py"
+        ],
+        "environment": {},
+        "started": "2026-10-21T17:40:51.255301+00:00",
+        "finished": "2026-10-21T17:40:51.361478+00:00",
+        "exit": 0,
+        "log": "target/g4-qualification/catalogue.log",
+        "log_sha256": "6ebe9bf976d00e76023c29ee1260854f3607d03a005649176f2df59557a88353"
+      },
+      {
+        "name": "python-tests",
+        "command": [
+          "/private/tmp/eyes4s-python-pins-20261021/performance/bin/python",
+          "-m",
+          "unittest",
+          "discover",
+          "-s",
+          "tools/pymovements",
+          "-p",
+          "test_*.py"
+        ],
+        "environment": {
+          "MPLCONFIGDIR": "/private/tmp/eyes4s-g4-mpl-cache-20261021"
+        },
+        "started": "2026-10-21T17:40:51.407238+00:00",
+        "finished": "2026-10-21T17:41:14.583520+00:00",
+        "exit": 0,
+        "log": "target/g4-qualification/python-tests.log",
+        "log_sha256": "9a6b5b05315a5dc0a725a5372d4c513277045e5bb53d66880f11dc9b090dca64"
+      },
+      {
+        "name": "comparison-inventory",
+        "command": [
+          "/private/tmp/eyes4s-python-pins-20261021/performance/bin/python",
+          "tools/pymovements/check.py",
+          "--wheel",
+          "/private/tmp/eyes4s-pymovements-inventory-20261021/pymovements-0.28.0-py3-none-any.whl",
+          "--mote-store",
+          "/Users/bbuchsbaum/code/scala/eyes4s/.mote"
+        ],
+        "environment": {},
+        "started": "2026-10-21T17:41:14.653798+00:00",
+        "finished": "2026-10-21T17:41:15.926327+00:00",
+        "exit": 0,
+        "log": "target/g4-qualification/comparison-inventory.log",
+        "log_sha256": "89f378f97fa388a9588f54483548bfdc8bfe2b1f9f091c34f3d69c20a9b4c39b"
+      },
+      {
+        "name": "fixture",
+        "command": [
+          "python3.13",
+          "tools/studio-fixture/generate.py",
+          "--check"
+        ],
+        "environment": {},
+        "started": "2026-10-21T17:41:15.989026+00:00",
+        "finished": "2026-10-21T17:41:20.308524+00:00",
+        "exit": 0,
+        "log": "target/g4-qualification/fixture.log",
+        "log_sha256": "065c75f279e4fdb0564c44e0e257a60ffb2455b6141c27ee490b579602c3f075"
+      },
+      {
+        "name": "fixture-counts",
+        "command": [
+          "python3.13",
+          "tools/studio-fixture/verify_counts.py"
+        ],
+        "environment": {},
+        "started": "2026-10-21T17:41:20.371377+00:00",
+        "finished": "2026-10-21T17:41:20.614359+00:00",
+        "exit": 0,
+        "log": "target/g4-qualification/fixture-counts.log",
+        "log_sha256": "b13c59187c0b6dda24e9ab45e36b6fb6013f263696ca2a5e99780d9103e45217"
+      },
+      {
+        "name": "site",
+        "command": [
+          "sbt",
+          "-batch",
+          "-J-Xmx6g",
+          "docs/tlSite"
+        ],
+        "environment": {},
+        "started": "2026-10-21T17:41:20.674290+00:00",
+        "finished": "2026-10-21T17:42:09.096730+00:00",
+        "exit": 0,
+        "log": "target/g4-qualification/site.log",
+        "log_sha256": "f7de6fc353318f46544800586ee9ff5b91cf88d9b83095d43c137718ce2a636c"
+      },
+      {
+        "name": "documentation",
+        "command": [
+          "python3.13",
+          "tools/check-docs.py",
+          "--run-consumer"
+        ],
+        "environment": {},
+        "started": "2026-10-21T17:42:09.157234+00:00",
+        "finished": "2026-10-21T17:46:43.710254+00:00",
+        "exit": 0,
+        "log": "target/g4-qualification/documentation.log",
+        "log_sha256": "241fb6c3e59c5154e5dd142b0967864cb9588b3e408f8ff66889971bbf0acb28"
+      }
+    ],
+    "finished": "2026-10-21T17:46:43.771884+00:00"
+  },
+  "studio_tests": {
+    "portable_passed": 4343,
+    "desktop_passed": 797,
+    "private_opt_in_ignored": 1
+  },
+  "catalogue": {
+    "scenarios": 24,
+    "ids": "E2E02-25",
+    "local_receipt": "e2e-receipt.json",
+    "hosted_receipt": "hosted-e2e-receipt.json"
+  },
+  "python_tests": 56,
+  "fixture_checks": 43,
+  "hosted": "hosted-review.json",
+  "generated_api_outputs": {
+    "tools/api-audit/inventory.json": "782b484408deec90f49009f51afc30959d8327f358b62850a5b64538d56dda6c",
+    "tools/api-audit/evidence.json": "f0ed3efb5a76fb7cf3c2408bd2b3332f6669281b047bdbf70c150a1d686c9e84",
+    "tools/api-audit/inventory-provenance.json": "e50cbf8d193ae840f754b7fb45359ac8696f3a350a7259e12c8171909e8dbdc0"
+  },
+  "review": "review.json",
+  "prior_attempts": [
+    {
+      "candidate": "d9dbe21e",
+      "canonical": "passed; archived separately",
+      "hosted_findings": [
+        "Semantic input integration case timed out at31s once; unchanged case passed in22.617s on next hosted run. No timeout changed.",
+        "Cancelled first macOS log exposed legacy popOut=false assertion; corrected to require approved pop-outs while retaining singleton non-closure."
+      ]
+    },
+    {
+      "candidate": "6eb6a748",
+      "hosted_findings": [
+        "Scala.js Locale.ROOT linkage refused. Replaced with explicit ASCII folding; parser passes on JVM+JS.",
+        "GTK2 status update110ms exceeded unchanged100ms budget. Final GTK2 and local suite pass with no threshold change.",
+        "Hidden portable XML upload fixed and verified by downloading114 core JVM and94 core JS reports."
+      ]
+    },
+    {
+      "candidate": "e3dcf622",
+      "studio": "complete strict Studio and24-scenario receipt passed",
+      "canonical": "stopped during warning compile, before audit, to correct Recent focus; no full pass claimed.",
+      "correction": "Recent list now has one CompositeFocus stop, a home cursor and arrow/Enter activation."
+    }
+  ],
+  "remaining": [
+    "G2 real-study geometry/timing provenance",
+    "Other whole-board parity reviews",
+    "VoiceOver and physical macOS Retina review",
+    "Performance court, packaged-app acceptance and researcher usability",
+    "Scaladock upstream follow-up bd-01M5FGA2BND8FVYZ9ZM8NDREG1; Studio workaround is tested; provider pin unchanged."
+  ],
+  "scope": "Software qualification only; no private-data admission, numerical study result, eyesim or pymovements empirical acceptance claimed."
+}

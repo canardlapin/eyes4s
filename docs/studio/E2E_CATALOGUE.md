@@ -44,6 +44,10 @@ item-ID collisions, blank displays and distinct controls; they contain no privat
 The Linux Studio workflow runs the catalogue checker and its refusal tests after Studio tests,
 and uploads the resulting receipt alongside the screenshots and reports.
 
-Qualification is recorded in `evidence/20261021-g4/` after the frozen-source gate and catalogue checker pass.
+Qualification passed on 2026-10-21 for `356db27e` (tree `6b59ebe3`). The
+[qualification receipt](evidence/20261021-g4/qualification.json) binds the full canonical and
+strict Studio gates, local/hosted catalogue reports, documentation consumer and native output-scale-2 evidence.
+All 24 scenarios passed on their required platforms; 4,343 portable and 797 local desktop tests passed,
+with one private-data test opt-in and ignored. Hosted Linux, GTK2, macOS and clean-clone jobs passed.
 A source reference alone does not qualify a case. G2 acquisition/timing, all-board visual sign-off,
 VoiceOver, the performance court, packaging and researcher usability remain separate acceptance obligations.

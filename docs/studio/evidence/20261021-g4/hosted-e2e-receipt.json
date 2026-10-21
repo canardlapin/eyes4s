@@ -1,0 +1,1070 @@
+{
+  "schema": 1,
+  "candidate": "356db27ef368112341b6f9bff62f154e5de4b1f5",
+  "tree": "6b59ebe32edf4952bf44a4a75888e2b91b63f0ac",
+  "manifest_sha256": "8b1429a88202e7bba03eac4a8fa8a5b9b73e31a6365a0007a7e9235185ea9ee4",
+  "scenarios": [
+    {
+      "id": "E2E-02",
+      "title": "First run and bundled example",
+      "checks": [
+        {
+          "module": "desktop",
+          "suite": "eyes4s.studio.desktop.data.DataFirstRunFxSuite",
+          "case_contains": "",
+          "source": "studio/desktop/src/test/scala/eyes4s/studio/desktop/data/DataFirstRunFxSuite.scala",
+          "scope": "native shell",
+          "source_sha256": "572e05b646be5820116403ea3deaa51f6bbf6a1314bb69ee0518dcdb0d28290a",
+          "executed": [
+            {
+              "platform": "desktop",
+              "report": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.data.DataFirstRunFxSuite.xml",
+              "report_sha256": "5ef911d509ce0d1a9daa1bd972f067ae2628cb0195015cc81e44023c3edaebfe",
+              "cases": [
+                "DataEmpty draws its required/recommended inputs, presets, checklist and both themes",
+                "DataEmpty Recent projects renders in the native shell in both themes",
+                "Recent projects is one Tab stop with a home cursor and keyboard activation",
+                "E2E02 first run opens a verified independent classpath example copy",
+                "canceling first import leaves untitled untouched; dropped tables retain both roles",
+                "ambiguous or unsupported drops refuse the whole set without starting a lifecycle",
+                "the first-run stimulus folder stores validated image bytes under the filename"
+              ]
+            }
+          ]
+        },
+        {
+          "module": "desktop",
+          "suite": "eyes4s.studio.desktop.shell.ParityChecklistSuite",
+          "case_contains": "DataEmpty",
+          "source": "studio/desktop/src/test/scala/eyes4s/studio/desktop/shell/ParityChecklistSuite.scala",
+          "scope": "native shell",
+          "source_sha256": "4440b6de8eabffd3fb8367bdf26513c290a7032e2a93f476068e3eb8c80ad3d2",
+          "executed": [
+            {
+              "platform": "desktop",
+              "report": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.shell.ParityChecklistSuite.xml",
+              "report_sha256": "620cd9bcc079c24071a075dc51b2382cab5dabb67733318549b30d5e89c36d7c",
+              "cases": [
+                "DataEmpty t0 shell bounds and texts match the board"
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "E2E-03",
+      "title": "Linked selection",
+      "checks": [
+        {
+          "module": "desktop",
+          "suite": "eyes4s.studio.desktop.explore.ExploreLinkedSelectionFxSuite",
+          "case_contains": "E2E-03:",
+          "source": "studio/desktop/src/test/scala/eyes4s/studio/desktop/explore/ExploreLinkedSelectionFxSuite.scala",
+          "scope": "native shell",
+          "source_sha256": "aefd624e6ea9c8325bec5989f64cd6e36c2b13072280e5a5557d6c8c60f401a0",
+          "executed": [
+            {
+              "platform": "desktop",
+              "report": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.explore.ExploreLinkedSelectionFxSuite.xml",
+              "report_sha256": "8bac13a1064bb50a70c054f83505fd382c6bfd322f8a22d0ea47fc2ee4f886ef",
+              "cases": [
+                "E2E-03: a mark, a timeline bar, a record and Prev/Next select one fixation everywhere"
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "E2E-04",
+      "title": "Draft → Save & run → stale bindings",
+      "checks": [
+        {
+          "module": "desktop",
+          "suite": "eyes4s.studio.desktop.analysis.DraftLifecycleSuite",
+          "case_contains": "served edits stay in the draft",
+          "source": "studio/desktop/src/test/scala/eyes4s/studio/desktop/analysis/DraftLifecycleSuite.scala",
+          "scope": "native shell",
+          "source_sha256": "75f095c70c4499cdae6ae5362c4dee16c51e65611c6d7c46938913e3ba6afacc",
+          "executed": [
+            {
+              "platform": "desktop",
+              "report": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.analysis.DraftLifecycleSuite.xml",
+              "report_sha256": "806f84af73d00993a689cb75ca54ead750771d25aa31257cab54120b1721b90e",
+              "cases": [
+                "served edits stay in the draft until Save and run, with earlier run bindings preserved"
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "E2E-05",
+      "title": "Executed design equals prepared preview",
+      "checks": [
+        {
+          "module": "desktop",
+          "suite": "eyes4s.studio.desktop.analysis.ResolvedDesignFxSuite",
+          "case_contains": "E2E-05:",
+          "source": "studio/desktop/src/test/scala/eyes4s/studio/desktop/analysis/ResolvedDesignFxSuite.scala",
+          "scope": "native shell",
+          "source_sha256": "44a0d5554928aa105504b56b07da2d6684f3d16ce39d99ee420123f78f27cc2b",
+          "executed": [
+            {
+              "platform": "desktop",
+              "report": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.analysis.ResolvedDesignFxSuite.xml",
+              "report_sha256": "f98b23306e4af94d37a4f5a26748c050f7472fd70fa9d6c3838a00d343fb3098",
+              "cases": [
+                "E2E-05: Save & run submits the design the preview prepared"
+              ]
+            }
+          ]
+        },
+        {
+          "module": "core",
+          "suite": "eyes4s.studio.core.fixture.PreviewSnapshotSuite",
+          "case_contains": "SubmitPreview runs the retained snapshot",
+          "source": "studio/core/src/test/scala/eyes4s/studio/core/fixture/PreviewSnapshotSuite.scala",
+          "scope": "portable core JVM+JS",
+          "source_sha256": "746fb6098ecf3137f2ccc81b1d92d4b9f7d42cc469a65629b022965fd3b89bcb",
+          "executed": [
+            {
+              "platform": ".jvm",
+              "report": "studio/core/.jvm/target/test-reports/TEST-eyes4s.studio.core.fixture.PreviewSnapshotSuite.xml",
+              "report_sha256": "38aa6a6095fe1ea792f5e3a629b72e7b18f6393a0103618eebbc7a060f04785c",
+              "cases": [
+                "ExecutionEffect.SubmitPreview runs the retained snapshot, not a rebuilt one (E2E-05)"
+              ]
+            },
+            {
+              "platform": ".js",
+              "report": "studio/core/.js/target/test-reports/TEST-eyes4s.studio.core.fixture.PreviewSnapshotSuite.xml",
+              "report_sha256": "2c367bf6673ba605a9dfb88064365d13c4992abdacfc5cedd945ccb8f1d8e53f",
+              "cases": [
+                "ExecutionEffect.SubmitPreview runs the retained snapshot, not a rebuilt one (E2E-05)"
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "E2E-06",
+      "title": "Cancel mid-run",
+      "checks": [
+        {
+          "module": "core",
+          "suite": "eyes4s.studio.core.execution.ExecutionServiceSuite",
+          "case_contains": "E2E-06:",
+          "source": "studio/core/src/test/scala/eyes4s/studio/core/execution/ExecutionServiceSuite.scala",
+          "scope": "portable core JVM+JS",
+          "source_sha256": "45db69e46b176977e7232c66b58ded8fd78fe9777330bbf26834402009cdb02c",
+          "executed": [
+            {
+              "platform": ".jvm",
+              "report": "studio/core/.jvm/target/test-reports/TEST-eyes4s.studio.core.execution.ExecutionServiceSuite.xml",
+              "report_sha256": "31f881a37765a55e647306ef24541226eda581fb91b71c0c2e723f3141673260",
+              "cases": [
+                "E2E-06: cancel stops after the in-flight chunk, within 500 ms; run 7 stays current"
+              ]
+            },
+            {
+              "platform": ".js",
+              "report": "studio/core/.js/target/test-reports/TEST-eyes4s.studio.core.execution.ExecutionServiceSuite.xml",
+              "report_sha256": "e58beb207de07eeb8f4b5a1119e8a3a5b954cf083f63a7a80b3896d77d25110d",
+              "cases": [
+                "E2E-06: cancel stops after the in-flight chunk, within 500 ms; run 7 stays current"
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "E2E-07",
+      "title": "Reject stale completion",
+      "checks": [
+        {
+          "module": "core",
+          "suite": "eyes4s.studio.core.execution.ExecutionServiceSuite",
+          "case_contains": "E2E-07:",
+          "source": "studio/core/src/test/scala/eyes4s/studio/core/execution/ExecutionServiceSuite.scala",
+          "scope": "portable core JVM+JS",
+          "source_sha256": "45db69e46b176977e7232c66b58ded8fd78fe9777330bbf26834402009cdb02c",
+          "executed": [
+            {
+              "platform": ".jvm",
+              "report": "studio/core/.jvm/target/test-reports/TEST-eyes4s.studio.core.execution.ExecutionServiceSuite.xml",
+              "report_sha256": "31f881a37765a55e647306ef24541226eda581fb91b71c0c2e723f3141673260",
+              "cases": [
+                "E2E-07: a completion whose input changed meanwhile is Superseded, never Ready",
+                "E2E-07: a completion of an older revision is Superseded once a newer one is requested"
+              ]
+            },
+            {
+              "platform": ".js",
+              "report": "studio/core/.js/target/test-reports/TEST-eyes4s.studio.core.execution.ExecutionServiceSuite.xml",
+              "report_sha256": "e58beb207de07eeb8f4b5a1119e8a3a5b954cf083f63a7a80b3896d77d25110d",
+              "cases": [
+                "E2E-07: a completion whose input changed meanwhile is Superseded, never Ready",
+                "E2E-07: a completion of an older revision is Superseded once a newer one is requested"
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "E2E-08",
+      "title": "Running results never replace shown results",
+      "checks": [
+        {
+          "module": "desktop",
+          "suite": "eyes4s.studio.desktop.shell.RunInProgressFxSuite",
+          "case_contains": "completion stays on run 7",
+          "source": "studio/desktop/src/test/scala/eyes4s/studio/desktop/shell/RunInProgressFxSuite.scala",
+          "scope": "native shell",
+          "source_sha256": "653b3058a73b89a2f944eeb3754b4caa3685724a50286391eb07c074ff284ccc",
+          "executed": [
+            {
+              "platform": "desktop",
+              "report": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.shell.RunInProgressFxSuite.xml",
+              "report_sha256": "13fdf63edc4f51afa070ead2d33a6b28ab7e3edfa0067b1799081913df056543",
+              "cases": [
+                "completion stays on run 7; Show promotes run 8 and preserves stable selection"
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "E2E-09",
+      "title": "Reporting reuses scores and keeps control pool",
+      "checks": [
+        {
+          "module": "app",
+          "suite": "eyes4s.studio.app.compare.ReportingEditorSuite",
+          "case_contains": "every edit is one PutReporting",
+          "source": "studio/app/src/test/scala/eyes4s/studio/app/compare/ReportingEditorSuite.scala",
+          "scope": "portable app JVM+JS",
+          "source_sha256": "1a510e34c5363ad1f56f35483b9810fb050c7abe9589fbadd750c1f03aa4b644",
+          "executed": [
+            {
+              "platform": ".jvm",
+              "report": "studio/app/.jvm/target/test-reports/TEST-eyes4s.studio.app.compare.ReportingEditorSuite.xml",
+              "report_sha256": "47a6539a3dae1cc97930f87f3165089dd919e6c43d6b0c0899b4bf08c47fb359",
+              "cases": [
+                "every edit is one PutReporting: no job, no run or analysis change, no score re-read"
+              ]
+            },
+            {
+              "platform": ".js",
+              "report": "studio/app/.js/target/test-reports/TEST-eyes4s.studio.app.compare.ReportingEditorSuite.xml",
+              "report_sha256": "fc59055ba52bc15f47d31cd8af4cf31b0461c82d695d353182fddebea2cb9b49",
+              "cases": [
+                "every edit is one PutReporting: no job, no run or analysis change, no score re-read"
+              ]
+            }
+          ]
+        },
+        {
+          "module": "app",
+          "suite": "eyes4s.studio.app.compare.ReportingEditorSuite",
+          "case_contains": "a hit-only filter keeps the control pool",
+          "source": "studio/app/src/test/scala/eyes4s/studio/app/compare/ReportingEditorSuite.scala",
+          "scope": "portable app JVM+JS",
+          "source_sha256": "1a510e34c5363ad1f56f35483b9810fb050c7abe9589fbadd750c1f03aa4b644",
+          "executed": [
+            {
+              "platform": ".jvm",
+              "report": "studio/app/.jvm/target/test-reports/TEST-eyes4s.studio.app.compare.ReportingEditorSuite.xml",
+              "report_sha256": "47a6539a3dae1cc97930f87f3165089dd919e6c43d6b0c0899b4bf08c47fb359",
+              "cases": [
+                "a hit-only filter keeps the control pool: same controls, Forgotten items included"
+              ]
+            },
+            {
+              "platform": ".js",
+              "report": "studio/app/.js/target/test-reports/TEST-eyes4s.studio.app.compare.ReportingEditorSuite.xml",
+              "report_sha256": "fc59055ba52bc15f47d31cd8af4cf31b0461c82d695d353182fddebea2cb9b49",
+              "cases": [
+                "a hit-only filter keeps the control pool: same controls, Forgotten items included"
+              ]
+            }
+          ]
+        },
+        {
+          "module": "core",
+          "suite": "eyes4s.studio.core.real.RealStudyBackendSuite",
+          "case_contains": "a hit-only reporting filter keeps",
+          "source": "studio/core/.jvm/src/test/scala/eyes4s/studio/core/real/RealStudyBackendSuite.scala",
+          "scope": "native backend JVM",
+          "source_sha256": "72a2b5019fc687efbf6e4b050a0616fee26d89f0430eabb582383f7363d26d82",
+          "executed": [
+            {
+              "platform": ".jvm",
+              "report": "studio/core/.jvm/target/test-reports/TEST-eyes4s.studio.core.real.RealStudyBackendSuite.xml",
+              "report_sha256": "53db05af627eaf1a10f3da903dc2f2d9e674e5960105f6be6242960a5942e085",
+              "cases": [
+                "a hit-only reporting filter keeps P17 ret_07's control pool, Forgotten items included"
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "E2E-10",
+      "title": "Underlay disclosure survives export",
+      "checks": [
+        {
+          "module": "desktop",
+          "suite": "eyes4s.studio.desktop.figures.FigureExportSuite",
+          "case_contains": "the imagery disclosure survives export",
+          "source": "studio/desktop/src/test/scala/eyes4s/studio/desktop/figures/FigureExportSuite.scala",
+          "scope": "native shell",
+          "source_sha256": "e5e795f31e3d2a57ea396eb56576482372557850f9d186eb8a5399585a2a9d53",
+          "executed": [
+            {
+              "platform": "desktop",
+              "report": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.figures.FigureExportSuite.xml",
+              "report_sha256": "67673cd8ce0fb072f387f489c8c73d5c314504431d9773aacadb8aa07e7f3364",
+              "cases": [
+                "the imagery disclosure survives export (E2E-10)"
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "E2E-11",
+      "title": "Missing asset repair",
+      "checks": [
+        {
+          "module": "desktop",
+          "suite": "eyes4s.studio.desktop.data.SourcesFxSuite",
+          "case_contains": "Repair… stores the chosen image",
+          "source": "studio/desktop/src/test/scala/eyes4s/studio/desktop/data/SourcesFxSuite.scala",
+          "scope": "native shell",
+          "source_sha256": "ec3088eef762344c9072886ba664d747b8db9357e79376e37c5ed4f34dd2f646",
+          "executed": [
+            {
+              "platform": "desktop",
+              "report": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.data.SourcesFxSuite.xml",
+              "report_sha256": "955aac550bddef909dc729a1453198c64edd3802daa6f79d124f2c0426208489",
+              "cases": [
+                "Repair… stores the chosen image and relinks forest-044; the counts move"
+              ]
+            }
+          ]
+        },
+        {
+          "module": "desktop",
+          "suite": "eyes4s.studio.desktop.data.SourceRepairFileSuite",
+          "case_contains": "replacement bytes create a pending immutable revision",
+          "source": "studio/desktop/src/test/scala/eyes4s/studio/desktop/data/SourceRepairFileSuite.scala",
+          "scope": "native shell",
+          "source_sha256": "77771a05ea15c8dc887dac16fcee62d2e972098591c15d5598eedfc36f0c7da7",
+          "executed": [
+            {
+              "platform": "desktop",
+              "report": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.data.SourceRepairFileSuite.xml",
+              "report_sha256": "8801ae047581f0644592088a728747ff467fb0bb87bd7626230f81e46bff998b",
+              "cases": [
+                "replacement bytes create a pending immutable revision, re-admit natively and reopen"
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "E2E-12",
+      "title": "Crash recovery",
+      "checks": [
+        {
+          "module": "core",
+          "suite": "eyes4s.studio.core.session.RecoverySuite",
+          "case_contains": "E2E-12:",
+          "source": "studio/core/src/test/scala/eyes4s/studio/core/session/RecoverySuite.scala",
+          "scope": "portable core JVM+JS",
+          "source_sha256": "c4bae4c127d2c8e53010ee99b665bfe39aee7ade2b51586de2145be034b94a2c",
+          "executed": [
+            {
+              "platform": ".jvm",
+              "report": "studio/core/.jvm/target/test-reports/TEST-eyes4s.studio.core.session.RecoverySuite.xml",
+              "report_sha256": "22fd1811ed96eda6d0b252e7126ce5d6ff177fda36f8d6dbdb8ff75074092e66",
+              "cases": [
+                "E2E-12: a crash after 1 generated entries (seed 1) recovers the pre-crash document exactly",
+                "E2E-12: a crash after 1 generated entries (seed 2) recovers the pre-crash document exactly",
+                "E2E-12: a crash after 1 generated entries (seed 3) recovers the pre-crash document exactly",
+                "E2E-12: a crash after 1 generated entries (seed 4) recovers the pre-crash document exactly",
+                "E2E-12: a crash after 5 generated entries (seed 1) recovers the pre-crash document exactly",
+                "E2E-12: a crash after 5 generated entries (seed 2) recovers the pre-crash document exactly",
+                "E2E-12: a crash after 5 generated entries (seed 3) recovers the pre-crash document exactly",
+                "E2E-12: a crash after 5 generated entries (seed 4) recovers the pre-crash document exactly",
+                "E2E-12: a crash after 17 generated entries (seed 1) recovers the pre-crash document exactly",
+                "E2E-12: a crash after 17 generated entries (seed 2) recovers the pre-crash document exactly",
+                "E2E-12: a crash after 17 generated entries (seed 3) recovers the pre-crash document exactly",
+                "E2E-12: a crash after 17 generated entries (seed 4) recovers the pre-crash document exactly",
+                "E2E-12: a crash after 40 generated entries (seed 1) recovers the pre-crash document exactly",
+                "E2E-12: a crash after 40 generated entries (seed 2) recovers the pre-crash document exactly",
+                "E2E-12: a crash after 40 generated entries (seed 3) recovers the pre-crash document exactly",
+                "E2E-12: a crash after 40 generated entries (seed 4) recovers the pre-crash document exactly",
+                "E2E-12: a crash after 40 generated entries (seed 1, saving every 7) recovers the pre-crash document exactly",
+                "E2E-12: a crash after 40 generated entries (seed 2, saving every 7) recovers the pre-crash document exactly",
+                "E2E-12: a crash after 40 generated entries (seed 3, saving every 7) recovers the pre-crash document exactly",
+                "E2E-12: a crash after 40 generated entries (seed 4, saving every 7) recovers the pre-crash document exactly"
+              ]
+            },
+            {
+              "platform": ".js",
+              "report": "studio/core/.js/target/test-reports/TEST-eyes4s.studio.core.session.RecoverySuite.xml",
+              "report_sha256": "570383523d167a98cea8a76e89c126f5b94516a312bf70e290c4474c034283a7",
+              "cases": [
+                "E2E-12: a crash after 1 generated entries (seed 1) recovers the pre-crash document exactly",
+                "E2E-12: a crash after 1 generated entries (seed 2) recovers the pre-crash document exactly",
+                "E2E-12: a crash after 1 generated entries (seed 3) recovers the pre-crash document exactly",
+                "E2E-12: a crash after 1 generated entries (seed 4) recovers the pre-crash document exactly",
+                "E2E-12: a crash after 5 generated entries (seed 1) recovers the pre-crash document exactly",
+                "E2E-12: a crash after 5 generated entries (seed 2) recovers the pre-crash document exactly",
+                "E2E-12: a crash after 5 generated entries (seed 3) recovers the pre-crash document exactly",
+                "E2E-12: a crash after 5 generated entries (seed 4) recovers the pre-crash document exactly",
+                "E2E-12: a crash after 17 generated entries (seed 1) recovers the pre-crash document exactly",
+                "E2E-12: a crash after 17 generated entries (seed 2) recovers the pre-crash document exactly",
+                "E2E-12: a crash after 17 generated entries (seed 3) recovers the pre-crash document exactly",
+                "E2E-12: a crash after 17 generated entries (seed 4) recovers the pre-crash document exactly",
+                "E2E-12: a crash after 40 generated entries (seed 1) recovers the pre-crash document exactly",
+                "E2E-12: a crash after 40 generated entries (seed 2) recovers the pre-crash document exactly",
+                "E2E-12: a crash after 40 generated entries (seed 3) recovers the pre-crash document exactly",
+                "E2E-12: a crash after 40 generated entries (seed 4) recovers the pre-crash document exactly",
+                "E2E-12: a crash after 40 generated entries (seed 1, saving every 7) recovers the pre-crash document exactly",
+                "E2E-12: a crash after 40 generated entries (seed 2, saving every 7) recovers the pre-crash document exactly",
+                "E2E-12: a crash after 40 generated entries (seed 3, saving every 7) recovers the pre-crash document exactly",
+                "E2E-12: a crash after 40 generated entries (seed 4, saving every 7) recovers the pre-crash document exactly"
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "E2E-13",
+      "title": "Failed run exposes diagnostics",
+      "checks": [
+        {
+          "module": "core",
+          "suite": "eyes4s.studio.core.execution.ExecutionServiceSuite",
+          "case_contains": "E2E-13:",
+          "source": "studio/core/src/test/scala/eyes4s/studio/core/execution/ExecutionServiceSuite.scala",
+          "scope": "portable core JVM+JS",
+          "source_sha256": "45db69e46b176977e7232c66b58ded8fd78fe9777330bbf26834402009cdb02c",
+          "executed": [
+            {
+              "platform": ".jvm",
+              "report": "studio/core/.jvm/target/test-reports/TEST-eyes4s.studio.core.execution.ExecutionServiceSuite.xml",
+              "report_sha256": "31f881a37765a55e647306ef24541226eda581fb91b71c0c2e723f3141673260",
+              "cases": [
+                "E2E-13: a failed run exposes its diagnostics with stable codes"
+              ]
+            },
+            {
+              "platform": ".js",
+              "report": "studio/core/.js/target/test-reports/TEST-eyes4s.studio.core.execution.ExecutionServiceSuite.xml",
+              "report_sha256": "e58beb207de07eeb8f4b5a1119e8a3a5b954cf083f63a7a80b3896d77d25110d",
+              "cases": [
+                "E2E-13: a failed run exposes its diagnostics with stable codes"
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "E2E-14",
+      "title": "Blocked preflight and occurrence remedy",
+      "checks": [
+        {
+          "module": "desktop",
+          "suite": "eyes4s.studio.desktop.analysis.PreflightFxSuite",
+          "case_contains": "a blocker disables Save & run",
+          "source": "studio/desktop/src/test/scala/eyes4s/studio/desktop/analysis/PreflightFxSuite.scala",
+          "scope": "native shell",
+          "source_sha256": "22ed2ab249ac578abb51b68156a7cdfd9ba4d17f79e514fa73a7c1ec57bb9469",
+          "executed": [
+            {
+              "platform": "desktop",
+              "report": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.analysis.PreflightFxSuite.xml",
+              "report_sha256": "322289a15fe5d4594d89af4d498198ada118dc7b15da7bffa07f3e4d3f8fd9d7",
+              "cases": [
+                "a blocker disables Save & run with its reason; its remedy opens exactly its trials"
+              ]
+            }
+          ]
+        },
+        {
+          "module": "desktop",
+          "suite": "eyes4s.studio.desktop.runtime.AdversarialScienceSuite",
+          "case_contains": "duplicate matched references block",
+          "source": "studio/desktop/src/test/scala/eyes4s/studio/desktop/runtime/AdversarialScienceSuite.scala",
+          "scope": "native shell",
+          "source_sha256": "10fd6af1cafa19fc076a9c40813f4df297ea1c4c34da78881013d968097b93dd",
+          "executed": [
+            {
+              "platform": "desktop",
+              "report": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.runtime.AdversarialScienceSuite.xml",
+              "report_sha256": "a732166018aa46b16046815ce585a7b2a73a556feeb3a0081cbfd890470ed448",
+              "cases": [
+                "duplicate matched references block the native command and the direct plan"
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "E2E-15",
+      "title": "Discard draft",
+      "checks": [
+        {
+          "module": "desktop",
+          "suite": "eyes4s.studio.desktop.analysis.DraftLifecycleSuite",
+          "case_contains": "discarding a draft leaves saved recipes",
+          "source": "studio/desktop/src/test/scala/eyes4s/studio/desktop/analysis/DraftLifecycleSuite.scala",
+          "scope": "native shell",
+          "source_sha256": "75f095c70c4499cdae6ae5362c4dee16c51e65611c6d7c46938913e3ba6afacc",
+          "executed": [
+            {
+              "platform": "desktop",
+              "report": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.analysis.DraftLifecycleSuite.xml",
+              "report_sha256": "806f84af73d00993a689cb75ca54ead750771d25aa31257cab54120b1721b90e",
+              "cases": [
+                "discarding a draft leaves saved recipes and runs unchanged"
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "E2E-16",
+      "title": "Rebind or keep stale figure",
+      "checks": [
+        {
+          "module": "app",
+          "suite": "eyes4s.studio.app.figures.FigureBindingSuite",
+          "case_contains": "Keep as rev 3",
+          "source": "studio/app/src/test/scala/eyes4s/studio/app/figures/FigureBindingSuite.scala",
+          "scope": "portable app JVM+JS",
+          "source_sha256": "0aa7ae0c688cdbea207bdf79186abc0f415b54b1747c47f9115e532e75272104",
+          "executed": [
+            {
+              "platform": ".jvm",
+              "report": "studio/app/.jvm/target/test-reports/TEST-eyes4s.studio.app.figures.FigureBindingSuite.xml",
+              "report_sha256": "22c873c28346665ecf65f8a1318d1b48bd7f5d5af1adef2da37db5cbe1b0c794",
+              "cases": [
+                "Keep as rev 3 puts the notice away; the figure stays bound and stale"
+              ]
+            },
+            {
+              "platform": ".js",
+              "report": "studio/app/.js/target/test-reports/TEST-eyes4s.studio.app.figures.FigureBindingSuite.xml",
+              "report_sha256": "9ab4375a98613d04f85422f324bee68d29865510c1e366f49488189eb6cf3fcb",
+              "cases": [
+                "Keep as rev 3 puts the notice away; the figure stays bound and stale"
+              ]
+            }
+          ]
+        },
+        {
+          "module": "app",
+          "suite": "eyes4s.studio.app.figures.FigureBindingSuite",
+          "case_contains": "only Rebind dispatches BindFigure",
+          "source": "studio/app/src/test/scala/eyes4s/studio/app/figures/FigureBindingSuite.scala",
+          "scope": "portable app JVM+JS",
+          "source_sha256": "0aa7ae0c688cdbea207bdf79186abc0f415b54b1747c47f9115e532e75272104",
+          "executed": [
+            {
+              "platform": ".jvm",
+              "report": "studio/app/.jvm/target/test-reports/TEST-eyes4s.studio.app.figures.FigureBindingSuite.xml",
+              "report_sha256": "22c873c28346665ecf65f8a1318d1b48bd7f5d5af1adef2da37db5cbe1b0c794",
+              "cases": [
+                "Rebind… shows the plan and data diff first; only Rebind dispatches BindFigure"
+              ]
+            },
+            {
+              "platform": ".js",
+              "report": "studio/app/.js/target/test-reports/TEST-eyes4s.studio.app.figures.FigureBindingSuite.xml",
+              "report_sha256": "9ab4375a98613d04f85422f324bee68d29865510c1e366f49488189eb6cf3fcb",
+              "cases": [
+                "Rebind… shows the plan and data diff first; only Rebind dispatches BindFigure"
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "E2E-17",
+      "title": "Crumb round-trip into Explore and back",
+      "checks": [
+        {
+          "module": "desktop",
+          "suite": "eyes4s.studio.desktop.shell.ContextStripFxSuite",
+          "case_contains": "E2E-17:",
+          "source": "studio/desktop/src/test/scala/eyes4s/studio/desktop/shell/ContextStripFxSuite.scala",
+          "scope": "native shell",
+          "source_sha256": "7ae49f879e982f268bf970ff8fd1613e5c7239ce0fda77586f7d589f0f641b8d",
+          "executed": [
+            {
+              "platform": "desktop",
+              "report": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.shell.ContextStripFxSuite.xml",
+              "report_sha256": "8b7c16a193f2a5b8332d75a2c28ccff6ba6cfed338d63c679e111014a535c0e8",
+              "cases": [
+                "E2E-17: fixation and record crumbs cross into Explore and back, by click and key"
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "E2E-18",
+      "title": "Layout persistence and pop-out retention",
+      "checks": [
+        {
+          "module": "desktop",
+          "suite": "eyes4s.studio.desktop.dock.LayoutPersistenceFxSuite",
+          "case_contains": "E2E18 pop-outs",
+          "source": "studio/desktop/src/test/scala/eyes4s/studio/desktop/dock/LayoutPersistenceFxSuite.scala",
+          "scope": "native shell",
+          "source_sha256": "99b745343c8b1a0c7ea797dccea677fc81068187e89341b6814248308af6f01b",
+          "executed": [
+            {
+              "platform": "desktop",
+              "report": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.dock.LayoutPersistenceFxSuite.xml",
+              "report_sha256": "60e3c2310c9f4136d57d721ff2f2258a49ac2afb98b601b79ad08abb37098af1",
+              "cases": [
+                "E2E18 pop-outs retain one live pane across perspective switches and close"
+              ]
+            }
+          ]
+        },
+        {
+          "module": "desktop",
+          "suite": "eyes4s.studio.desktop.dock.LayoutPersistenceFxSuite",
+          "case_contains": "floating layouts round-trip",
+          "source": "studio/desktop/src/test/scala/eyes4s/studio/desktop/dock/LayoutPersistenceFxSuite.scala",
+          "scope": "native shell",
+          "source_sha256": "99b745343c8b1a0c7ea797dccea677fc81068187e89341b6814248308af6f01b",
+          "executed": [
+            {
+              "platform": "desktop",
+              "report": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.dock.LayoutPersistenceFxSuite.xml",
+              "report_sha256": "60e3c2310c9f4136d57d721ff2f2258a49ac2afb98b601b79ad08abb37098af1",
+              "cases": [
+                "floating layouts round-trip, reset removes saved override and keeps live panes"
+              ]
+            }
+          ]
+        },
+        {
+          "module": "desktop",
+          "suite": "eyes4s.studio.desktop.dock.LayoutPersistenceFxSuite",
+          "case_contains": "unknown saved pane types",
+          "source": "studio/desktop/src/test/scala/eyes4s/studio/desktop/dock/LayoutPersistenceFxSuite.scala",
+          "scope": "native shell",
+          "source_sha256": "99b745343c8b1a0c7ea797dccea677fc81068187e89341b6814248308af6f01b",
+          "executed": [
+            {
+              "platform": "desktop",
+              "report": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.dock.LayoutPersistenceFxSuite.xml",
+              "report_sha256": "60e3c2310c9f4136d57d721ff2f2258a49ac2afb98b601b79ad08abb37098af1",
+              "cases": [
+                "unknown saved pane types load as placeholders and preserve their payload"
+              ]
+            }
+          ]
+        },
+        {
+          "module": "desktop",
+          "suite": "eyes4s.studio.desktop.project.ProjectLifecycleFxSuite",
+          "case_contains": "user layout defaults persist",
+          "source": "studio/desktop/src/test/scala/eyes4s/studio/desktop/project/ProjectLifecycleFxSuite.scala",
+          "scope": "native shell",
+          "source_sha256": "063e680420335976e247b7dfb2bb16acb8c50f1214c8137cdd2090b8a90902bd",
+          "executed": [
+            {
+              "platform": "desktop",
+              "report": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.project.ProjectLifecycleFxSuite.xml",
+              "report_sha256": "1c82b980e1cceac8955a161eee45db64f7e0f2da67e0cef58bbdfb6fb2cabc46",
+              "cases": [
+                "user layout defaults persist on shutdown and Reset clears only the layouts field"
+              ]
+            }
+          ]
+        },
+        {
+          "module": "desktop",
+          "suite": "eyes4s.studio.desktop.project.ProjectLifecycleFxSuite",
+          "case_contains": "a saved project's explicit layout overrides user defaults",
+          "source": "studio/desktop/src/test/scala/eyes4s/studio/desktop/project/ProjectLifecycleFxSuite.scala",
+          "scope": "native shell",
+          "source_sha256": "063e680420335976e247b7dfb2bb16acb8c50f1214c8137cdd2090b8a90902bd",
+          "executed": [
+            {
+              "platform": "desktop",
+              "report": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.project.ProjectLifecycleFxSuite.xml",
+              "report_sha256": "1c82b980e1cceac8955a161eee45db64f7e0f2da67e0cef58bbdfb6fb2cabc46",
+              "cases": [
+                "a saved project's explicit layout overrides user defaults"
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "E2E-19",
+      "title": "Second writer refusal",
+      "checks": [
+        {
+          "module": "core",
+          "suite": "eyes4s.studio.core.session.AtomicSaveFaultSuite",
+          "case_contains": "a second writer is refused",
+          "source": "studio/core/src/test/scala/eyes4s/studio/core/session/AtomicSaveFaultSuite.scala",
+          "scope": "portable core JVM+JS",
+          "source_sha256": "6c8589ea8db0ec92091f58c6257a1b5da06deaae08a56f9e8b3b249759f817a6",
+          "executed": [
+            {
+              "platform": ".jvm",
+              "report": "studio/core/.jvm/target/test-reports/TEST-eyes4s.studio.core.session.AtomicSaveFaultSuite.xml",
+              "report_sha256": "d4612582a4ce88e2463e3bd4f62f79377b701b18e4ba04c160d8f3bfe0ad89ad",
+              "cases": [
+                "a second writer is refused with a message naming the holder (E2E-19)"
+              ]
+            },
+            {
+              "platform": ".js",
+              "report": "studio/core/.js/target/test-reports/TEST-eyes4s.studio.core.session.AtomicSaveFaultSuite.xml",
+              "report_sha256": "8c6f506721b15dd4e2483e93c37e4fa7d60a53449252e06a1a838271d72defb1",
+              "cases": [
+                "a second writer is refused with a message naming the holder (E2E-19)"
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "E2E-20",
+      "title": "Changed source blocks use and can be repaired",
+      "checks": [
+        {
+          "module": "desktop",
+          "suite": "eyes4s.studio.desktop.shell.SourceChecksFxSuite",
+          "case_contains": "focus return rechecks changed",
+          "source": "studio/desktop/src/test/scala/eyes4s/studio/desktop/shell/SourceChecksFxSuite.scala",
+          "scope": "native shell",
+          "source_sha256": "c315bef42117122cf8a465e830e73266d445157ce53886d9e677b647e5672786",
+          "executed": [
+            {
+              "platform": "desktop",
+              "report": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.shell.SourceChecksFxSuite.xml",
+              "report_sha256": "1467bcd2e4282a6f1372cdec5b93069c6c10694dbe25c463330ea964901a0963",
+              "cases": [
+                "focus return rechecks changed, missing and restored sources/assets; old answers stay ignored"
+              ]
+            }
+          ]
+        },
+        {
+          "module": "desktop",
+          "suite": "eyes4s.studio.desktop.data.SourceRepairFileSuite",
+          "case_contains": "replacement bytes create a pending immutable revision",
+          "source": "studio/desktop/src/test/scala/eyes4s/studio/desktop/data/SourceRepairFileSuite.scala",
+          "scope": "native shell",
+          "source_sha256": "77771a05ea15c8dc887dac16fcee62d2e972098591c15d5598eedfc36f0c7da7",
+          "executed": [
+            {
+              "platform": "desktop",
+              "report": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.data.SourceRepairFileSuite.xml",
+              "report_sha256": "8801ae047581f0644592088a728747ff467fb0bb87bd7626230f81e46bff998b",
+              "cases": [
+                "replacement bytes create a pending immutable revision, re-admit natively and reopen"
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "E2E-21",
+      "title": "Recognition by-design category",
+      "checks": [
+        {
+          "module": "app",
+          "suite": "eyes4s.studio.app.analysis.PresetSuite",
+          "case_contains": "under the Recognition preset",
+          "source": "studio/app/src/test/scala/eyes4s/studio/app/analysis/PresetSuite.scala",
+          "scope": "portable app JVM+JS",
+          "source_sha256": "db42fab8bbb06be9fc0c1985bdb9348ab4cf5e76f461eb6e067f5380974387aa",
+          "executed": [
+            {
+              "platform": ".jvm",
+              "report": "studio/app/.jvm/target/test-reports/TEST-eyes4s.studio.app.analysis.PresetSuite.xml",
+              "report_sha256": "46b3e6159eb73f7a9fa318adf289434802f36769e6bdb1bbdce3e553a9980485",
+              "cases": [
+                "under the Recognition preset eyes4s matches old probes only; lures stay unmatched"
+              ]
+            },
+            {
+              "platform": ".js",
+              "report": "studio/app/.js/target/test-reports/TEST-eyes4s.studio.app.analysis.PresetSuite.xml",
+              "report_sha256": "9794236ebb116a9127edc6127f1df452e91bd01cd55bf2d985f4a9cae6097a88",
+              "cases": [
+                "under the Recognition preset eyes4s matches old probes only; lures stay unmatched"
+              ]
+            }
+          ]
+        },
+        {
+          "module": "core",
+          "suite": "eyes4s.studio.core.real.RealPreviewCursorSuite",
+          "case_contains": "declared unmatched query keeps by-design",
+          "source": "studio/core/src/test/scala/eyes4s/studio/core/real/RealPreviewCursorSuite.scala",
+          "scope": "portable core JVM+JS",
+          "source_sha256": "47a5c5ce36b80179f70ca0074ea9fc19450575b3af1767209f35467b403027d5",
+          "executed": [
+            {
+              "platform": ".jvm",
+              "report": "studio/core/.jvm/target/test-reports/TEST-eyes4s.studio.core.real.RealPreviewCursorSuite.xml",
+              "report_sha256": "c873822ed42ef6fc5b648e8eb20f4f18b4a1168b97f2b4e76737c850a29c93dc",
+              "cases": [
+                "declared unmatched query keeps by-design classification with reference admitted=true",
+                "declared unmatched query keeps by-design classification with reference admitted=false"
+              ]
+            },
+            {
+              "platform": ".js",
+              "report": "studio/core/.js/target/test-reports/TEST-eyes4s.studio.core.real.RealPreviewCursorSuite.xml",
+              "report_sha256": "5cf56af184a33185a9fccc5ce33f10f92d1064ecbd0fd9e77c9c46259693e026",
+              "cases": [
+                "declared unmatched query keeps by-design classification with reference admitted=true",
+                "declared unmatched query keeps by-design classification with reference admitted=false"
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "E2E-22",
+      "title": "Perception → Imagery blank display",
+      "checks": [
+        {
+          "module": "desktop",
+          "suite": "eyes4s.studio.desktop.runtime.AdversarialScienceSuite",
+          "case_contains": "blank display imagery retains item-specific",
+          "source": "studio/desktop/src/test/scala/eyes4s/studio/desktop/runtime/AdversarialScienceSuite.scala",
+          "scope": "native shell",
+          "source_sha256": "10fd6af1cafa19fc076a9c40813f4df297ea1c4c34da78881013d968097b93dd",
+          "executed": [
+            {
+              "platform": "desktop",
+              "report": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.runtime.AdversarialScienceSuite.xml",
+              "report_sha256": "a732166018aa46b16046815ce585a7b2a73a556feeb3a0081cbfd890470ed448",
+              "cases": [
+                "blank display imagery retains item-specific matches and distinct control references"
+              ]
+            }
+          ]
+        },
+        {
+          "module": "desktop",
+          "suite": "eyes4s.studio.desktop.figures.FigureExportSuite",
+          "case_contains": "the imagery disclosure survives export",
+          "source": "studio/desktop/src/test/scala/eyes4s/studio/desktop/figures/FigureExportSuite.scala",
+          "scope": "native shell",
+          "source_sha256": "e5e795f31e3d2a57ea396eb56576482372557850f9d186eb8a5399585a2a9d53",
+          "executed": [
+            {
+              "platform": "desktop",
+              "report": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.figures.FigureExportSuite.xml",
+              "report_sha256": "67673cd8ce0fb072f387f489c8c73d5c314504431d9773aacadb8aa07e7f3364",
+              "cases": [
+                "the imagery disclosure survives export (E2E-10)"
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "E2E-23",
+      "title": "Minimum-query toggle discloses dropped cells",
+      "checks": [
+        {
+          "module": "app",
+          "suite": "eyes4s.studio.app.compare.ReportingEditorSuite",
+          "case_contains": "the minimum reads native dropped cells",
+          "source": "studio/app/src/test/scala/eyes4s/studio/app/compare/ReportingEditorSuite.scala",
+          "scope": "portable app JVM+JS",
+          "source_sha256": "1a510e34c5363ad1f56f35483b9810fb050c7abe9589fbadd750c1f03aa4b644",
+          "executed": [
+            {
+              "platform": ".jvm",
+              "report": "studio/app/.jvm/target/test-reports/TEST-eyes4s.studio.app.compare.ReportingEditorSuite.xml",
+              "report_sha256": "47a6539a3dae1cc97930f87f3165089dd919e6c43d6b0c0899b4bf08c47fb359",
+              "cases": [
+                "the minimum reads native dropped cells when on; off removes it"
+              ]
+            },
+            {
+              "platform": ".js",
+              "report": "studio/app/.js/target/test-reports/TEST-eyes4s.studio.app.compare.ReportingEditorSuite.xml",
+              "report_sha256": "fc59055ba52bc15f47d31cd8af4cf31b0461c82d695d353182fddebea2cb9b49",
+              "cases": [
+                "the minimum reads native dropped cells when on; off removes it"
+              ]
+            }
+          ]
+        },
+        {
+          "module": "core",
+          "suite": "eyes4s.studio.core.real.RealStudyBackendSuite",
+          "case_contains": "grouping, explicit direction, filtering, minimums",
+          "source": "studio/core/.jvm/src/test/scala/eyes4s/studio/core/real/RealStudyBackendSuite.scala",
+          "scope": "native backend JVM",
+          "source_sha256": "72a2b5019fc687efbf6e4b050a0616fee26d89f0430eabb582383f7363d26d82",
+          "executed": [
+            {
+              "platform": ".jvm",
+              "report": "studio/core/.jvm/target/test-reports/TEST-eyes4s.studio.core.real.RealStudyBackendSuite.xml",
+              "report_sha256": "53db05af627eaf1a10f3da903dc2f2d9e674e5960105f6be6242960a5942e085",
+              "cases": [
+                "grouping, explicit direction, filtering, minimums and weighting agree with native reports"
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "E2E-24",
+      "title": "Dark theme journey",
+      "checks": [
+        {
+          "module": "desktop",
+          "suite": "eyes4s.studio.desktop.shell.ThemeFxSuite",
+          "case_contains": "Dark restyles the window and its dock",
+          "source": "studio/desktop/src/test/scala/eyes4s/studio/desktop/shell/ThemeFxSuite.scala",
+          "scope": "native shell",
+          "source_sha256": "d02ed79b12ee0d40098c5efc69879c423444cf09af3713730e6df966dfef1c93",
+          "executed": [
+            {
+              "platform": "desktop",
+              "report": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.shell.ThemeFxSuite.xml",
+              "report_sha256": "78148685eaba7e5fba9b8967c7cb2a46d011eb2f74f5dc0a796d66f957d67cef",
+              "cases": [
+                "Data: Dark restyles the window and its dock; no shown value changes",
+                "Explore: Dark restyles the window and its dock; no shown value changes",
+                "Analysis: Dark restyles the window and its dock; no shown value changes",
+                "Compare: Dark restyles the window and its dock; no shown value changes",
+                "Figures: Dark restyles the window and its dock; no shown value changes"
+              ]
+            }
+          ]
+        },
+        {
+          "module": "desktop",
+          "suite": "eyes4s.studio.desktop.shell.ThemeFxSuite",
+          "case_contains": "a popped-out dock window follows the theme",
+          "source": "studio/desktop/src/test/scala/eyes4s/studio/desktop/shell/ThemeFxSuite.scala",
+          "scope": "native shell",
+          "source_sha256": "d02ed79b12ee0d40098c5efc69879c423444cf09af3713730e6df966dfef1c93",
+          "executed": [
+            {
+              "platform": "desktop",
+              "report": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.shell.ThemeFxSuite.xml",
+              "report_sha256": "78148685eaba7e5fba9b8967c7cb2a46d011eb2f74f5dc0a796d66f957d67cef",
+              "cases": [
+                "a popped-out dock window follows the theme, with the studio's tokens"
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "E2E-25",
+      "title": "Keyboard-only golden journey",
+      "checks": [
+        {
+          "module": "desktop",
+          "suite": "eyes4s.studio.desktop.journey.KeyboardJourneySuite",
+          "case_contains": "E2E-01-keyboard:",
+          "source": "studio/desktop/src/test/scala/eyes4s/studio/desktop/journey/KeyboardJourneySuite.scala",
+          "scope": "native shell",
+          "source_sha256": "cfb2207922dfa40b033172854cd4d5509a2030d12d76e1a21f9b655b9c3f50a0",
+          "executed": [
+            {
+              "platform": "desktop",
+              "report": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.journey.KeyboardJourneySuite.xml",
+              "report_sha256": "82f33613b7d92d273965d4ea100d83ffe924f63faaa759571637e89a291fef88",
+              "cases": [
+                "E2E-01-keyboard: the golden journey from the keyboard alone"
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "native_regression": [
+    {
+      "module": "desktop",
+      "suite": "eyes4s.studio.desktop.journey.NativeCommandJourneySuite",
+      "case_contains": "new project imports, admits, previews, executes",
+      "source": "studio/desktop/src/test/scala/eyes4s/studio/desktop/journey/NativeCommandJourneySuite.scala",
+      "scope": "native shell",
+      "source_sha256": "9a20b3e5eec8b4753c251149fa7a823b49c2076961615c1d6b6fbb017e3e2c72",
+      "executed": [
+        {
+          "platform": "desktop",
+          "report": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.journey.NativeCommandJourneySuite.xml",
+          "report_sha256": "206d85e03104d0cdf04d63b916cc0eb6310e31f2b61a90781f009dba271806b2",
+          "cases": [
+            "new project imports, admits, previews, executes, inspects, saves, reopens and exports native science"
+          ]
+        }
+      ]
+    },
+    {
+      "module": "desktop",
+      "suite": "eyes4s.studio.desktop.journey.NativeGoldenCommandFxSuite",
+      "case_contains": "",
+      "source": "studio/desktop/src/test/scala/eyes4s/studio/desktop/journey/NativeGoldenCommandFxSuite.scala",
+      "scope": "native shell",
+      "source_sha256": "b607d7939e7967acfef9df295fdc88db384611edeaf8525b0ac7646401593015",
+      "executed": [
+        {
+          "platform": "desktop",
+          "report": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.journey.NativeGoldenCommandFxSuite.xml",
+          "report_sha256": "faeb3302bed4878beb07dfbf48f110c3963e0927b4b8a71d6eeb40dbd4dcf6b7",
+          "cases": [
+            "first native analysis admits, saves and runs through the window, then reopens identically"
+          ]
+        }
+      ]
+    }
+  ],
+  "limits": [
+    "G2 acquisition/timing, whole-board parity, VoiceOver, performance and packaging are separate gates.",
+    "Recognition and imagery mini-fixtures are committed executable specimens in PresetSuite, RealPreviewCursorSuite and AdversarialScienceSuite, not private research exports."
+  ]
+}

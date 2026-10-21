@@ -1,0 +1,79 @@
+{
+  "candidate": "356db27ef368112341b6f9bff62f154e5de4b1f5",
+  "tree": "6b59ebe32edf4952bf44a4a75888e2b91b63f0ac",
+  "studio_url": "https://github.com/canardlapin/eyes4s/actions/runs/39638627779",
+  "checks_url": "https://github.com/canardlapin/eyes4s/actions/runs/39638627376",
+  "studio_jobs": [
+    {
+      "name": "Studio (macOS, functional JavaFX) (macos-15, temurin@25)",
+      "conclusion": "success",
+      "url": "https://github.com/canardlapin/eyes4s/actions/runs/39638627779/job/119358583396"
+    },
+    {
+      "name": "Studio (Linux, native output scale 2) (ubuntu-22.04, temurin@25)",
+      "conclusion": "success",
+      "url": "https://github.com/canardlapin/eyes4s/actions/runs/39638627779/job/119358583803"
+    },
+    {
+      "name": "Studio pins from a clean clone (ubuntu-22.04, temurin@25)",
+      "conclusion": "success",
+      "url": "https://github.com/canardlapin/eyes4s/actions/runs/39638627779/job/119358583849"
+    },
+    {
+      "name": "Studio (Linux, headless JavaFX) (ubuntu-22.04, temurin@25)",
+      "conclusion": "success",
+      "url": "https://github.com/canardlapin/eyes4s/actions/runs/39638627779/job/119358583939"
+    }
+  ],
+  "checks_jobs": [
+    {
+      "name": "Test (ubuntu-22.04, 3, temurin@17, rootJS)",
+      "conclusion": "success",
+      "url": "https://github.com/canardlapin/eyes4s/actions/runs/39638627376/job/119356473669"
+    },
+    {
+      "name": "Test (ubuntu-22.04, 3, temurin@17, rootJVM)",
+      "conclusion": "success",
+      "url": "https://github.com/canardlapin/eyes4s/actions/runs/39638627376/job/119356473670"
+    },
+    {
+      "name": "Generate Site (ubuntu-22.04, temurin@17)",
+      "conclusion": "success",
+      "url": "https://github.com/canardlapin/eyes4s/actions/runs/39638627376/job/119356473672"
+    },
+    {
+      "name": "Test (ubuntu-22.04, 3, temurin@21, rootJVM)",
+      "conclusion": "success",
+      "url": "https://github.com/canardlapin/eyes4s/actions/runs/39638627376/job/119356474043"
+    }
+  ],
+  "artifacts": [
+    {
+      "id": 12366771635,
+      "name": "studio-snapshots-linux-356db27ef368112341b6f9bff62f154e5de4b1f5",
+      "bytes": 64334728
+    },
+    {
+      "id": 12365039629,
+      "name": "studio-snapshots-linux-hidpi-356db27ef368112341b6f9bff62f154e5de4b1f5",
+      "bytes": 61509305
+    }
+  ],
+  "native_output_scale": {
+    "nativeScaleX": 2.0,
+    "nativeScaleY": 2.0,
+    "requiredScale": 2,
+    "hostOverride": false,
+    "deviceWidth": 512,
+    "deviceHeight": 384,
+    "stripeWidthDevicePixels": 1,
+    "rasterDifferenceFraction": 0.0,
+    "maximumDifferenceFraction": 0.005
+  },
+  "native_tests": {
+    "passed": 796,
+    "platform_skipped": 1,
+    "private_opt_in_ignored": 1
+  },
+  "native_limit": "Monocle-only smoke assertion does not apply to GTK; physical macOS Retina and VoiceOver remain unqualified."
+}

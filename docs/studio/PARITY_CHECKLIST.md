@@ -224,3 +224,23 @@ record 779 applicable desktop tests passed; private-density acceptance was opt-i
 and the Monocle-only smoke assertion does not apply to GTK. This qualifies the
 common rendering path and the desktop suites at actual output scale 2. Whole-board
 parity, physical macOS Retina review and VoiceOver remain separate.
+
+
+## Daily-use and DataEmpty qualification, 2026-10-21
+
+The [final qualification receipt](evidence/20261021-g4/qualification.json) covers frozen
+source `356db27e`, tree `6b59ebe3`: full canonical gate, strict Studio, all E2E02–25
+scenario bindings, current comparison inventory, fixture checks and complete documentation
+consumers. Local Studio passed 4,343 portable and 797 desktop tests; private-density
+acceptance remained opt-in and ignored.
+
+Hosted Studio [39638627779](https://github.com/canardlapin/eyes4s/actions/runs/39638627779)
+passed Linux headless, actual GTK native scale 2, macOS functional and clean-clone jobs.
+The [downloaded review](evidence/20261021-g4/hosted-review.json) verifies Stage 2×2,
+no host override, an exact one-device-pixel feedback line and zero analytic raster mismatch.
+GTK2 passed 796 applicable desktop tests; its Monocle-only assertion and private-data
+opt-in did not run. The 100 ms status-update budget was unchanged.
+
+This signs the bounded DataEmpty review and its recorded presentation deviations; it
+does not sign other boards, real-study admission, physical macOS Retina review or VoiceOver.
+Prior failed and stopped attempts are retained in the qualification history.
