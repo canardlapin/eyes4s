@@ -18,6 +18,7 @@ package eyes4s.studio.app.text
 
 enum RecipeTextId derives CanEqual:
   case Apply, Loading, Checking, Applied, Unapplied, Locked, Field, Metadata, Default, Optional
+  case ScanpathFileKind, ScanpathWorkspaceTitle
   case Add, Remove, ReadOnly, Scanpaths, Cell, CellUnknown, BelowCells, NearUniform, Scale,
     NewScale
   case Scales, AddScale, RemoveScale, ScaleEntry, ScaleHelp, InvalidScale, Diff, NoDiff, Recipe,
@@ -29,11 +30,13 @@ object RecipeText:
   def english(id: RecipeTextId): String =
     import RecipeTextId.*
     id match
-      case Apply         => "Apply settings"
-      case Loading       => "Loading recipe fields…"
-      case Checking      => "Checking settings…"
-      case Applied       => "Settings applied."
-      case Unapplied     => "Apply these changes before Save & run."
+      case ScanpathFileKind       => "Scanpath JSON"
+      case ScanpathWorkspaceTitle => "Eyes Studio — MultiMatch scanpath workspace"
+      case Apply                  => "Apply settings"
+      case Loading                => "Loading recipe fields…"
+      case Checking               => "Checking settings…"
+      case Applied                => "Settings applied."
+      case Unapplied              => "Apply these changes before Save & run."
       case Locked        => "Finish or discard the other draft before editing this revision."
       case Field         => "{0}"
       case Metadata      => "{0} · v{1} · {2}"

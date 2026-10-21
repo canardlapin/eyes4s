@@ -20,7 +20,7 @@ import eyes4s.studio.core.backend.{JobId, RunId}
 
 /** A request made from File, or by closing the native window. */
 enum ProjectOperation derives CanEqual:
-  case New, Open, Close, Quit, SaveAs
+  case New, Open, Close, Quit, SaveAs, OpenExample
 
 /** Close admission uses the current window, including work still running. */
 final case class ProjectWork(run: RunId, job: Option[JobId]) derives CanEqual
@@ -182,8 +182,11 @@ object ProjectLifecycle:
 /** Text used by the native close admission; no storage details leak into the title. */
 object ProjectLifecycleText:
   def operation(value: ProjectOperation): String = value match
-    case ProjectOperation.New    => "New project"
-    case ProjectOperation.Open   => "Open project"
+    case ProjectOperation.New         => "New project"
+    case ProjectOperation.Open        => "Open project"
+    case ProjectOperation.OpenExample =>
+      eyes4s.studio.app.text
+        .FirstRunText(eyes4s.studio.app.text.FirstRunTextId.ExampleOperation)
     case ProjectOperation.SaveAs => text(eyes4s.studio.app.text.MessageId.SaveProjectAsTitle)
     case ProjectOperation.Close  => "Close project"
     case ProjectOperation.Quit   => "Close Eyes Studio"

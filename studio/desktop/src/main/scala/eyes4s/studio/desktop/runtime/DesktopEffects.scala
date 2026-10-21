@@ -89,7 +89,8 @@ final class DesktopEffects(
     defect: (String, Throwable) => Unit = (_, _) => (),
     // The execution service's handling of an effect; tests plant a defect.
     execute: Option[ExecutionEffect => IO[Either[ExecutionError, Unit]]] = None,
-    revealProject: Option[() => Unit] = None
+    revealProject: Option[() => Unit] = None,
+    deferUntitledSave: () => Boolean = () => false
 ) extends EffectPerformer:
 
   private val found = mutable.ArrayBuffer.empty[EffectProblem]
@@ -148,11 +149,13 @@ final class DesktopEffects(
     case e @ AppEffect.Persist(mark) =>
       project.fold {
         report(EffectProblem.NotWired(e, "S2.9"))
-        dispatch(
-          Intent.SaveFailed(
-            "This window has no project save location. Use File New project… before importing or saving work."
+        // Untitled history is copied by Save As; autosave has no target yet.
+        if !deferUntitledSave() then
+          dispatch(
+            Intent.SaveFailed(
+              "This window has no project save location. Use File New project… before importing or saving work."
+            )
           )
-        )
       } {
         _.save { outcome =>
           ui { () =>

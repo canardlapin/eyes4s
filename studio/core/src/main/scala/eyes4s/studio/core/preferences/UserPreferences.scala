@@ -104,6 +104,9 @@ sealed abstract case class UserPreferences private (
       UserPreferences.ordered(layouts.filterNot(_.perspective == layout.perspective) :+ layout)
     )
 
+  /** Clear saved arrangements after returning them to their defaults. */
+  def withoutLayouts: UserPreferences = copy(layouts = Vector.empty)
+
   /** The user's layout of `perspective`, if one is saved. */
   def layout(perspective: Perspective): Option[SavedLayout] =
     layouts.find(_.perspective == perspective)

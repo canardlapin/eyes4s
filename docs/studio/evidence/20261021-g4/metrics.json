@@ -1,0 +1,19 @@
+{
+  "heights": {
+    "appBar": 44,
+    "contextStrip": 32,
+    "statusBar": 24
+  },
+  "tabHeaders": [
+    28,
+    28,
+    28
+  ],
+  "widths": {
+    "sources": 252,
+    "checklist": 300
+  },
+  "toleranceLogicalPixels": 1,
+  "nativeOutputScaleX": 1,
+  "nativeOutputScaleY": 1
+}

@@ -21,7 +21,7 @@ package eyes4s.studio.app.text
   */
 enum ReportTextId derives CanEqual:
   case Title, Heading, Summary, WhereUi, WhereJob, WhereBackground, Logged, NotLogged, Copy,
-    Copied, Close, DetailsAccessible
+    Copied, CopyFailed, Close, DetailsAccessible
 
 object ReportText:
 
@@ -40,6 +40,7 @@ object ReportText:
       case NotLogged         => "The log could not be written: {0}"
       case Copy              => "Copy report"
       case Copied            => "Copied"
+      case CopyFailed        => "Could not copy the report: {0}"
       case Close             => "Close"
       case DetailsAccessible => "Error report text"
 

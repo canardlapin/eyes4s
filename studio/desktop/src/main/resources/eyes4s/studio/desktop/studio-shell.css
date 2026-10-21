@@ -581,3 +581,12 @@
   -fx-border-color: -es-accent;
   -fx-border-width: 2;
 }
+
+/* First-run source cards share the shell's tokens and stock controls. */
+.first-run-card {
+  -fx-background-color: -es-surface;
+  -fx-border-color: -es-hairline;
+  -fx-border-style: segments(4, 4);
+  -fx-border-radius: 8;
+  -fx-background-radius: 8;
+}

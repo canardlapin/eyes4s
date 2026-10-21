@@ -26,7 +26,12 @@ import javafx.scene.control.{Button, Label, ScrollPane}
 import javafx.scene.layout.VBox
 
 /** Presets share the studio's one-stop segmented control and its selection styles. */
-final class RecipePaneHost(model: () => AppModel, app: Intent => Unit, inputs: RecipeInputs):
+final class RecipePaneHost(
+    model: () => AppModel,
+    app: Intent => Unit,
+    inputs: RecipeInputs,
+    platform: Option[eyes4s.studio.core.platform.Platform[cats.effect.IO]] = None
+):
   private var disposed    = false
   private var reasonNodes = Vector.empty[javafx.scene.control.ToggleButton]
   private val heading     = Label()
@@ -73,7 +78,7 @@ final class RecipePaneHost(model: () => AppModel, app: Intent => Unit, inputs: R
   scanpaths.setOnAction { _ =>
     if !disposed then
       val window =
-        eyes4s.studio.desktop.scanpath.ScanpathWorkbench.open(node.getScene.getWindow)
+        eyes4s.studio.desktop.scanpath.ScanpathWorkbench.open(node.getScene.getWindow, platform)
       scanpathWindows = scanpathWindows.filter(_.isShowing) :+ window
   }
   private val content = VBox(8, heading, presets.node, details, note, editor.node, scanpaths)

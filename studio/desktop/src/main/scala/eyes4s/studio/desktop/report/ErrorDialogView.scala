@@ -26,6 +26,7 @@ import javafx.stage.Window
   * non-modal alert whose report text can be selected and copied.
   */
 object ErrorDialogView:
+  import cats.effect.unsafe.implicits.global
 
   /** The dialog pane's id, for tests and styling. */
   val PaneId: String = "error-report"
@@ -33,7 +34,12 @@ object ErrorDialogView:
   /** Show `vm` without waiting; `closed` runs when the dialog is hidden.
     * Call on the JavaFX thread.
     */
-  def show(vm: ErrorDialogVM, closed: () => Unit, owner: Option[Window] = None): Alert =
+  def show(
+      vm: ErrorDialogVM,
+      closed: () => Unit,
+      owner: Option[Window] = None,
+      clipboard: Option[eyes4s.studio.core.platform.Clipboard[cats.effect.IO]] = None
+  ): Alert =
     val close  = ButtonType(vm.close, ButtonType.CLOSE.getButtonData)
     val alert  = Alert(Alert.AlertType.ERROR, "", close)
     val report = TextArea(vm.report)
@@ -44,16 +50,37 @@ object ErrorDialogView:
     report.setId("error-report-text")
     val copy = Button(vm.copy)
     copy.setId("error-report-copy")
+    val log = Label(vm.log)
+    log.setWrapText(true)
     copy.setOnAction { _ =>
-      val content = ClipboardContent()
-      content.putString(vm.report)
-      Clipboard.getSystemClipboard.setContent(content)
-      copy.setText(vm.copied)
+      def finish(answer: Either[String, Unit]): Unit =
+        if alert.isShowing then
+          answer match
+            case Right(_)     => copy.setText(vm.copied)
+            case Left(reason) =>
+              log.setText(
+                eyes4s.studio.app.text
+                  .ReportText(eyes4s.studio.app.text.ReportTextId.CopyFailed, reason)
+              )
+      clipboard match
+        case Some(host) =>
+          host.writeText(vm.report).unsafeRunAsync { result =>
+            val answer = result.left.map(_.toString).flatMap(_.left.map(_.message))
+            javafx.application.Platform.runLater(() => finish(answer))
+          }
+        case None =>
+          val content = ClipboardContent()
+          content.putString(vm.report)
+          finish(
+            Either.cond(
+              Clipboard.getSystemClipboard.setContent(content),
+              (),
+              "Clipboard refused the report."
+            )
+          )
     }
     val summary = Label(vm.summary)
     summary.setWrapText(true)
-    val log = Label(vm.log)
-    log.setWrapText(true)
     alert.setTitle(vm.title)
     alert.setHeaderText(vm.heading)
     alert.getDialogPane.setId(PaneId)

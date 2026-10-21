@@ -272,6 +272,8 @@ enum DockCommand derives CanEqual:
 enum PlatformDialog derives CanEqual:
   case ImportSources, NewProject, OpenProject, CloseProject, SaveProjectAs, RecentProjects
   case OpenProjectAt(path: HostPath)
+  case OpenExample
+  case FirstImport(request: eyes4s.studio.app.data.FirstRunImport)
 
   /** Ask for the project's new name; the answer is [[Intent.RenameProject]]. */
   case RenameProject

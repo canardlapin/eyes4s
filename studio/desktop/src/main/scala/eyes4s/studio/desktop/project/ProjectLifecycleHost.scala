@@ -22,7 +22,7 @@ import cats.syntax.all.*
 import eyes4s.studio.app.{AppModel, ClockTime, Intent, PlatformDialog, ProjectName}
 import eyes4s.studio.app.project.*
 import eyes4s.studio.app.vm.Menus
-import eyes4s.studio.core.bundle.{LockOwner, ProjectStore, SharingOptions}
+import eyes4s.studio.core.bundle.{InputKind, LockOwner, ProjectStore, SharingOptions}
 import eyes4s.studio.core.document.{DatasetRevisionSpec, Source, Theme}
 import eyes4s.studio.core.platform.{FileKind, FileRequest, HostPath, Platform as HostPlatform}
 import eyes4s.studio.core.real.DatasetSources
@@ -68,7 +68,8 @@ final class ProjectLifecycleHost(
     preferences: Option[DesktopPreferences] = None,
     initialRecent: RecentProjects = RecentProjects.empty,
     preferencesLog: String => Unit = message => System.err.println(message),
-    newProjectTheme: () => Theme = () => Theme.Light
+    newProjectTheme: () => Theme = () => Theme.Light,
+    initialLayouts: Vector[eyes4s.studio.core.document.SavedLayout] = Vector.empty
 )(using runtime: IORuntime)
     extends PlatformDialogs:
   private final class Candidate(
@@ -93,9 +94,11 @@ final class ProjectLifecycleHost(
     }
 
   private final case class Live(window: StudioWindow, project: Option[Candidate])
-  private val prompts        = admission.getOrElse(ProjectLifecycleDialogs(() => Some(stage)))
-  private var state          = ProjectLifecycle.empty
-  private var current        = Option.empty[Live]
+  private val prompts          = admission.getOrElse(ProjectLifecycleDialogs(() => Some(stage)))
+  private var state            = ProjectLifecycle.empty
+  private var current          = Option.empty[Live]
+  private val installedActions =
+    scala.collection.mutable.Map.empty[ProjectOperationId, StudioWindow => Unit]
   private var staged         = Option.empty[Candidate]
   private var recoveryChoice = Option.empty[Boolean]
   private val ticket         = AtomicReference[Option[ProjectOperationId]](None)
@@ -125,6 +128,22 @@ final class ProjectLifecycleHost(
               publishRecent()
           }
     })
+
+  private def layoutsOf(window: StudioWindow): Vector[eyes4s.studio.core.document.SavedLayout] =
+    window.host.capture().collect { case (perspective, Some(blob)) =>
+      eyes4s.studio.core.document.SavedLayout(perspective, blob)
+    }
+
+  private def rememberLayouts(window: StudioWindow): Unit =
+    val saved = layoutsOf(window)
+    recentWrites.foreach(
+      _.submit(p =>
+        saved.foldLeft(p.withoutLayouts)((next, layout) => next.withLayout(layout))
+      ) {
+        case Left(error)    => preferencesLog(error.message)
+        case Right(written) => written.problems.foreach(p => preferencesLog(p.message))
+      }
+    )
 
   private val arriving = ConcurrentHashMap[ProjectOperationId, Candidate]()
 
@@ -190,18 +209,121 @@ final class ProjectLifecycleHost(
     )
 
   def open(dialog: PlatformDialog, dispatch: Intent => Unit): Unit = dialog match
-    case PlatformDialog.NewProject          => request(ProjectOperation.New)
-    case PlatformDialog.OpenProject         => request(ProjectOperation.Open)
-    case PlatformDialog.CloseProject        => request(ProjectOperation.Close)
-    case PlatformDialog.SaveProjectAs       => request(ProjectOperation.SaveAs)
-    case PlatformDialog.RecentProjects      => current.foreach(_.window.shell.showRecent())
-    case PlatformDialog.OpenProjectAt(path) => request(ProjectOperation.Open, Some(path))
+    case PlatformDialog.NewProject           => request(ProjectOperation.New)
+    case PlatformDialog.OpenProject          => request(ProjectOperation.Open)
+    case PlatformDialog.CloseProject         => request(ProjectOperation.Close)
+    case PlatformDialog.SaveProjectAs        => request(ProjectOperation.SaveAs)
+    case PlatformDialog.RecentProjects       => current.foreach(_.window.shell.showRecent())
+    case PlatformDialog.OpenProjectAt(path)  => request(ProjectOperation.Open, Some(path))
+    case PlatformDialog.OpenExample          => request(ProjectOperation.OpenExample)
+    case PlatformDialog.FirstImport(request) =>
+      current match
+        case Some(live) if live.project.isDefined => beginImport(live.window, request)
+        case _                                    =>
+          this.request(ProjectOperation.New, installed = window => beginImport(window, request))
     case _ => () // StudioWindow routes its other dialogs to the existing host.
 
   private val unavailableSources: DatasetSources[IO] = new DatasetSources[IO]:
     def bytes(dataset: DatasetRevisionSpec, source: Source): IO[Option[IArray[Byte]]] =
       IO.pure(None)
     def assets(dataset: DatasetRevisionSpec): IO[Option[AssetRegistry]] = IO.pure(None)
+
+  private def beginImport(
+      window: StudioWindow,
+      request: eyes4s.studio.app.data.FirstRunImport
+  ): Unit =
+    import eyes4s.studio.app.text.{FirstRunText as Text, FirstRunTextId as T}
+    import eyes4s.studio.core.document.Preset
+    val (stage, host) = eyes4s.studio.desktop.importing.ImportWizardHost.openWindow(
+      () => window.runtime.model.document,
+      StudioWindow.followImports(() => window.runtime.model, window.runtime.dispatch),
+      presets,
+      eyes4s.studio.desktop.StudioStyles
+        .stylesheets(eyes4s.studio.desktop.ThemeHost.tokenTheme(window.runtime.model.theme))
+        .getOrElse(Nil),
+      window.project,
+      Some(platform)
+    )
+    window.ownDialog(stage)
+    val guidance = request.preset match
+      case Preset.PerceptionImagery => (T.Imagery, T.ImageryHelp)
+      case Preset.Recognition       => (T.Recognition, T.RecognitionHelp)
+      case _                        => (T.Encoding, T.EncodingHelp)
+    val hint =
+      javafx.scene.control.Label(Text(T.WizardGuidance, Text(guidance._1), Text(guidance._2)))
+    hint.setWrapText(true)
+    hint.getStyleClass.add("t12")
+    val content = stage.getScene.getRoot
+    stage.getScene.setRoot(javafx.scene.layout.Pane())
+    val root = javafx.scene.layout.BorderPane(content)
+    root.setTop(hint)
+    stage.getScene.setRoot(root)
+    request.files.foreach((role, path) => host.read(role, path): Unit)
+    request.choose.foreach(role =>
+      host.dispatch(eyes4s.studio.app.importing.WizardIntent.RequestFile(role))
+    )
+    val images = request.imageFolder.fold(
+      if request.chooseImages then platform.dialogs.chooseDirectory(Text(T.ChooseImages))
+      else IO.pure(Option.empty[HostPath])
+    )(path => IO.pure(Some(path)))
+    images
+      .flatMap {
+        case None            => IO.pure(Right(0): Either[String, Int])
+        case Some(directory) =>
+          (for
+            files <- cats.data.EitherT(
+              platform.files.list(directory).map(_.left.map(_.message))
+            )
+            selected = files.filter(p =>
+              Vector(".png", ".jpg", ".jpeg", ".bmp", ".gif")
+                .exists(p.value.toLowerCase.endsWith)
+            )
+            _ <- selected.traverse_ { path =>
+              for
+                stream <- cats.data.EitherT(
+                  platform.files.readStream(path, 65536).map(_.left.map(_.message))
+                )
+                bytes <- cats.data.EitherT.liftF[IO, String, Array[Byte]](
+                  stream
+                    .take(eyes4s.studio.desktop.data.AssetFiles.MaxBytes + 1)
+                    .compile
+                    .to(Array)
+                )
+                imageName <- cats.data.EitherT.fromEither[IO](
+                  DesktopPlatform.fileName(path).left.map(_.message)
+                )
+                checked <- cats.data.EitherT.fromEither[IO](
+                  eyes4s.studio.desktop.data.AssetFiles
+                    .check(imageName, IArray.unsafeFromArray(bytes))
+                    .left
+                    .map(_.message)
+                )
+                _ <- cats.data.EitherT(
+                  IO.async_[Either[String, Unit]](done =>
+                    window.project.fold(done(Right(Left("No project open"))))(
+                      _.importInput(
+                        InputKind.StimulusImage,
+                        checked._1.value,
+                        checked._2,
+                        answer => done(Right(answer))
+                      )
+                    )
+                  )
+                )
+              yield ()
+            }
+          yield selected.size).value
+      }
+      .unsafeRunAsync(answer =>
+        later {
+          if current.exists(_.window eq window) && stage.isShowing then
+            answer match
+              case Right(Right(n)) if n > 0 => hint.setText(Text(T.ImagesStored, n.toString))
+              case Right(Left(reason))      => hint.setText(Text(T.ImageFailure, reason))
+              case Left(error) => hint.setText(Text(T.ImageFailure, error.toString))
+              case _           => ()
+        }
+      )
 
   private def make(model: AppModel, project: Option[Candidate]): Either[String, StudioWindow] =
     val stimuli: StimulusSource = project.fold[StimulusSource](asset =>
@@ -229,6 +351,22 @@ final class ProjectLifecycleHost(
       .left
       .map(_.getMessage)
       .flatMap(_.left.map(_.message))
+      .map { window =>
+        val defaults       = current.fold(initialLayouts)(live => layoutsOf(live.window))
+        val projectLayouts = model.document.presentation.layouts
+        val saved          = defaults.filterNot(d =>
+          projectLayouts.exists(_.perspective == d.perspective)
+        ) ++ projectLayouts
+        val unreadable = window.host.restore(saved, window.runtime.model)
+        if unreadable.nonEmpty then
+          window.runtime.dispatch(
+            Intent.LayoutsUnreadable(
+              unreadable.map(_.perspective),
+              unreadable.map(_.reason).distinct.mkString("; ")
+            )
+          )
+        window
+      }
 
   /** Capture the clicked project's path before dispatching external IO. */
   private def revealCurrentProject(): Unit =
@@ -265,6 +403,7 @@ final class ProjectLifecycleHost(
       case None          => publishRecent()
 
   private def dispose(live: Live): Unit =
+    rememberLayouts(live.window)
     live.window.close()
     // These operations perform only FIFO/file-system cleanup, never marshal
     // to FX. Finish releasing the writer before an immediate reopen.
@@ -286,7 +425,8 @@ final class ProjectLifecycleHost(
     (for
       label <- cats.data.EitherT.fromEither[IO](name(path))
       _     <- cats.data.EitherT(
-        if action == ProjectOperation.New || action == ProjectOperation.SaveAs then
+        if action == ProjectOperation.New || action == ProjectOperation.SaveAs || action == ProjectOperation.OpenExample
+        then
           platform.files.list(path).map {
             case Left(_: eyes4s.studio.core.platform.PlatformError.Missing) => Right(())
             case Left(error)                       => Left(error.message)
@@ -304,6 +444,20 @@ final class ProjectLifecycleHost(
         LockOwner.of("Eyes Studio project lifecycle").left.map(_.message)
       )
       loaded <- cats.data.EitherT(action match
+        case ProjectOperation.OpenExample =>
+          (for
+            example <- cats.data.EitherT(eyes4s.studio.desktop.platform.BundledExample.source)
+            lock    <- cats.data.EitherT(store.acquire(owner).map(_.left.map(_.message)))
+            _       <- cats.data.EitherT(
+              eyes4s.studio.core.fixture.ExampleProject
+                .openCopy(example, store, lock)
+                .map(_.left.map(_.message))
+                .guarantee(store.release(lock).void)
+            )
+            opened <- cats.data.EitherT(
+              ProjectSession.open[IO](store, owner).map(_.left.map(_.message))
+            )
+          yield (opened.session, Option.empty[Recovery], Vector.empty[String])).value
         case ProjectOperation.New =>
           freshProject(freshTheme)
             .map(_.document)
@@ -359,15 +513,23 @@ final class ProjectLifecycleHost(
     yield Candidate(path, store, session, port, label, recovery, history, notes)).value
 
   private def choose(action: ProjectOperation): IO[Option[HostPath]] = action match
-    case ProjectOperation.New | ProjectOperation.SaveAs =>
+    case ProjectOperation.New | ProjectOperation.SaveAs | ProjectOperation.OpenExample =>
       val kind = FileKind.of("Eyes Studio project", Vector("eyes")).toOption.toVector
+      val name =
+        if action == ProjectOperation.OpenExample then
+          eyes4s.studio.core.fixture.ExampleProject.copyName + ".eyes"
+        else "Untitled.eyes"
       platform.dialogs.chooseSave(
-        FileRequest(ProjectLifecycleText.operation(action), kind, Some("Untitled.eyes"))
+        FileRequest(ProjectLifecycleText.operation(action), kind, Some(name))
       )
     case _ => platform.dialogs.chooseDirectory("Open project")
 
   /** Close requests may cancel a still-loading replacement, keeping ownership clear. */
-  def request(action: ProjectOperation, chosen: Option[HostPath] = None): Unit =
+  def request(
+      action: ProjectOperation,
+      chosen: Option[HostPath] = None,
+      installed: StudioWindow => Unit = _ => ()
+  ): Unit =
     if action == ProjectOperation.SaveAs && context.activeWork then
       prompts.failed(ProjectLifecycleText.operation(action), ProjectLifecycleText.activeCopy)
       return
@@ -386,6 +548,7 @@ final class ProjectLifecycleHost(
             "Finish the current project operation first."
           )
       case Some(operationId) =>
+        installedActions.update(operationId, installed)
         action match
           case ProjectOperation.Close | ProjectOperation.Quit => admit(operationId)
           case _                                              =>
@@ -452,6 +615,7 @@ final class ProjectLifecycleHost(
   private def cancel(id: ProjectOperationId): Unit =
     if state.owns(id) then
       replaceState(state.cancel(id))
+      installedActions.remove(id): Unit
       clearCandidate()
 
   private def admit(id: ProjectOperationId): Unit =
@@ -461,8 +625,10 @@ final class ProjectLifecycleHost(
 
   private def perform(id: ProjectOperationId, action: ProjectLifecycleAction): Unit =
     action match
-      case ProjectLifecycleAction.Ignored    => ()
-      case ProjectLifecycleAction.KeepOpen   => clearCandidate()
+      case ProjectLifecycleAction.Ignored  => ()
+      case ProjectLifecycleAction.KeepOpen =>
+        installedActions.remove(id): Unit
+        clearCandidate()
       case ProjectLifecycleAction.Ask(facts) =>
         prompts.close(
           facts,
@@ -517,6 +683,7 @@ final class ProjectLifecycleHost(
               current.foreach(_.window.captureLayouts())
               install(Live(w, None))
               replaceState(state.finished(id))
+              installedActions.remove(id): Unit
         case _ =>
           staged.foreach { project =>
             val settle = recoveryChoice match
@@ -571,6 +738,7 @@ final class ProjectLifecycleHost(
                           recoveryChoice = None
                           install(Live(w, Some(project)))
                           replaceState(state.finished(id))
+                          installedActions.remove(id).foreach(_(w))
                           if project.warnings.nonEmpty then
                             prompts.warning(
                               ProjectLifecycleText.operation(action),
@@ -590,6 +758,7 @@ final class ProjectLifecycleHost(
       clearCandidate()
       arriving.values.asScala.foreach(release)
       arriving.clear()
+      installedActions.clear()
       current.foreach(dispose)
       current = None
       recentWrites.foreach(_.close.unsafeRunSync())

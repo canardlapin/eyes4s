@@ -18,7 +18,7 @@ package eyes4s.studio.desktop.project
 
 import cats.effect.{Deferred, IO}
 import cats.effect.unsafe.implicits.global
-import eyes4s.studio.app.{AppModel, Intent, ProjectName}
+import eyes4s.studio.app.{AppModel, Intent, PlatformDialog, ProjectName}
 import eyes4s.studio.app.keys.{CommandId, CommandRegistry}
 import eyes4s.studio.core.bundle.*
 import eyes4s.studio.core.document.Theme
@@ -106,6 +106,7 @@ class ProjectLifecycleFxSuite extends ShellFxSuite:
       preferences: Option[DesktopPreferences] = None,
       initialRecent: RecentProjects = RecentProjects.empty,
       newProjectTheme: () => Theme = () => Theme.Light,
+      initialLayouts: Vector[eyes4s.studio.core.document.SavedLayout] = Vector.empty,
       transform: Platform[IO] => Platform[IO] = identity
   ): (InMemoryPlatform[IO], ProjectLifecycleHost) =
     val memory   = InMemoryPlatform.create[IO]().unsafeRunSync()
@@ -117,7 +118,8 @@ class ProjectLifecycleFxSuite extends ShellFxSuite:
         presets = FilePresetStore(directory.resolve("presets")),
         preferences = preferences,
         initialRecent = initialRecent,
-        newProjectTheme = newProjectTheme
+        newProjectTheme = newProjectTheme,
+        initialLayouts = initialLayouts
       )
     )
     runOnFx(host.start())
@@ -1069,4 +1071,105 @@ class ProjectLifecycleFxSuite extends ShellFxSuite:
           }
         }
         .unsafeRunSync()
+  }
+
+  fxStage.test(
+    "user layout defaults persist on shutdown and Reset clears only the layouts field"
+  ) { fx =>
+    TempDirs
+      .resource("eyes4s-layout-defaults-")
+      .use { directory =>
+        IO.blocking {
+          import eyes4s.studio.core.document.Perspective
+          import eyes4s.studio.app.layout.PaneId
+          val pref = DesktopPreferences(
+            PreferencesStore[IO](
+              JvmFileSystem,
+              path(directory.resolve("preferences.json")),
+              IO.pure(1L)
+            )
+          )
+          val (_, host) = setup(fx, directory, preferences = Some(pref))
+          try
+            runOnFx {
+              val w  = host.window.get
+              val id = PaneId.of("data.checklist").toOption.get
+              w.host.dock.popOut(w.host.dock.state.groupOf(w.host.dockId(id)).get.id)
+              host.shutdown()
+            }
+            val saved = pref.load.unsafeRunSync()._1
+            assert(saved.layout(Perspective.Data).isDefined)
+            assert(saved.recent.paths.isEmpty)
+            val (_, again) =
+              setup(fx, directory, preferences = Some(pref), initialLayouts = saved.layouts)
+            try
+              runOnFx {
+                val w = again.window.get
+                assertEquals(w.host.dock.state.floating.size, 1)
+                w.host.reset(Perspective.Data)
+                again.shutdown()
+              }
+            finally runOnFx(again.shutdown())
+            val reset = pref.load.unsafeRunSync()._1
+            assertEquals(reset.layouts, Vector.empty)
+            assertEquals(reset.appearance, saved.appearance)
+            assertEquals(reset.recent, saved.recent)
+          finally runOnFx(host.shutdown())
+        }
+      }
+      .unsafeRunSync()
+  }
+
+  fxStage.test("a saved project's explicit layout overrides user defaults") { fx =>
+    TempDirs
+      .resource("eyes4s-layout-precedence-")
+      .use { directory =>
+        IO.blocking {
+          import eyes4s.studio.core.document.{LayoutBlob, Perspective, SavedLayout}
+          import eyes4s.studio.app.layout.StudioLayouts
+          import eyes4s.studio.desktop.dock.DockLayouts
+          val defaultState = DockLayouts.state(StudioLayouts.dataFirstRun)
+          val imported     = scaladock.edit.popOut(
+            defaultState,
+            defaultState.groupOf(DockLayouts.paneId(StudioLayouts.firstRunChecklist)).get.id,
+            scaladock.Rect(120, 120, 400, 300)
+          )
+          def blob(state: scaladock.LayoutState) = LayoutBlob(
+            ujson.write(ujson.Obj("data.first-run" -> scaladock.LayoutCodec.encode(state)))
+          )
+          val preferred = SavedLayout(Perspective.Data, blob(imported))
+          val doc       = get(
+            get(AppModel.newProject).history.apply(
+              eyes4s.studio.core.command.Command
+                .SaveLayout(Perspective.Data, Some(blob(defaultState)))
+            )
+          ).history.document
+          val target  = directory.resolve("OwnLayout.eyes")
+          val store   = FileProjectStore.at[IO](target).unsafeRunSync()
+          val session = get(
+            ProjectSession
+              .create[IO](
+                store,
+                get(LockOwner.of("layout precedence")),
+                doc,
+                SharingOptions.complete,
+                Vector.empty
+              )
+              .unsafeRunSync()
+          )
+          get(session.close.unsafeRunSync())
+          val (_, host) = setup(fx, directory, initialLayouts = Vector(preferred))
+          try
+            runOnFx {
+              assertEquals(host.window.get.host.dock.state.floating.size, 1)
+              host.open(PlatformDialog.OpenProjectAt(path(target)), _ => ())
+            }
+            eventually(fx, "project-specific layout installed")(
+              !host.busy && host.window.exists(_.project.isDefined)
+            )
+            runOnFx(assertEquals(host.window.get.host.dock.state.floating.size, 0))
+          finally runOnFx(host.shutdown())
+        }
+      }
+      .unsafeRunSync()
   }

@@ -116,14 +116,17 @@ object StudioLayouts:
   /** The pane that hosts Compare's reporting editor (S8.7). */
   val compareReporting: PaneId = PaneId("compare.reporting")
 
+  val firstRunImport: PaneId    = PaneId("data.import")
+  val firstRunChecklist: PaneId = PaneId("data.checklist")
+
   /** DataEmpty.dc.html: no dataset yet. */
   val dataFirstRun: PerspectiveLayout = layout(
     "data.first-run",
     Perspective.Data,
-    columns(
-      navigator(sourcesPane),
+    boardColumns(
+      navigator(sourcesPane) -> 252.0,
       group(pane("data.import", "Import", Start)),
-      group(pane("data.checklist", "Checklist", Inspector))
+      group(pane("data.checklist", "Checklist", Inspector)) -> 300.0
     ),
     MessageId.HintDataFirstRun
   )

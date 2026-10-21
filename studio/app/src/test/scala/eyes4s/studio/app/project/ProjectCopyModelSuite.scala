@@ -62,3 +62,13 @@ class ProjectCopyModelSuite extends munit.FunSuite:
     val facts         = ProjectCloseFacts("Untitled", false, true, false)
     assertEquals(started.prepared(id.get, facts)._2, ProjectLifecycleAction.Commit)
   }
+
+  test("untitled presentation edits retain undo history and their persistence request") {
+    val original          = get(AppModel.newProject)
+    val (edited, effects) =
+      AppModel.update(original, Intent.Dispatch(Command.SetTheme(Theme.Dark)))
+    assertEquals(edited.document.presentation.theme, Theme.Dark)
+    assert(edited.save.edited)
+    assert(effects.exists { case AppEffect.Persist(_) => true; case _ => false })
+    assertEquals(get(edited.history.undoView).history.document, original.document)
+  }

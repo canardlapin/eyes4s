@@ -58,11 +58,9 @@ object DockLayouts:
   /** The dock's metrics: 28 px tab headers (DESIGN_SPEC section 3). */
   val settings: LayoutSettings = LayoutSettings(headerPx = 28)
 
-  /** Studio panes are singletons the user cannot close; nothing pops out
-    * until S1.5b.
-    */
+  /** Studio panes are singletons the user cannot close; groups may pop out. */
   val defaultHeader: HeaderButtons =
-    HeaderButtons(close = false, maximize = true, popOut = false, minimize = false)
+    HeaderButtons(close = false, maximize = true, popOut = true, minimize = false)
 
   /** A navigator group may also be minimized to a strip (DESIGN_SPEC section 3). */
   val navigatorHeader: HeaderButtons = defaultHeader.copy(minimize = true)

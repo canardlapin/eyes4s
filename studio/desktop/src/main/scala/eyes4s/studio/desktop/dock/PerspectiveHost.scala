@@ -103,6 +103,26 @@ final class PerspectiveHost(spec: LayoutSpec, theme: DockTheme, report: DockGest
       case _                          => ()
     }: Unit
 
+  /** Observe scenes when retained panes enter a floating window. The scene
+    * owns its handlers; a weak set avoids retaining windows that have closed.
+    */
+  def floatingScenes(register: javafx.scene.Scene => Unit): Unit =
+    val seen          = java.util.WeakHashMap[javafx.scene.Scene, java.lang.Boolean]()
+    val watched       = scala.collection.mutable.Set.empty[javafx.scene.Node]
+    def visit(): Unit =
+      spec.all.flatMap(_.panes).foreach { p =>
+        node(p.id).foreach { n =>
+          def check(scene: javafx.scene.Scene): Unit =
+            if scene != null && (scene ne dock.view.getScene) && !seen.containsKey(scene) then
+              seen.put(scene, java.lang.Boolean.TRUE): Unit
+              register(scene)
+          if watched.add(n) then n.sceneProperty.addListener((_, _, scene) => check(scene))
+          check(n.getScene)
+        }
+      }
+    dock.events.subscribe(_ => visit()): Unit
+    visit()
+
   /** The layout name the dock shows. */
   def active: Option[String] = perspectives.active
 
@@ -138,9 +158,11 @@ final class PerspectiveHost(spec: LayoutSpec, theme: DockTheme, report: DockGest
     * at its default.
     */
   def capture(): Vector[(Perspective, Option[LayoutBlob])] =
-    val saved = perspectives.save().obj("perspectives").obj
-    val now   = saved.toVector.flatMap { (name, json) =>
-      LayoutCodec.decode(json, dock.paneTypes).toOption.map(s => name -> normal(s))
+    // Inactive layouts already hold their own pane snapshots. The pin's save()
+    // refreshes them from any live binding of the same id, even another type.
+    val now = spec.all.flatMap { layout =>
+      val name = DockLayouts.name(layout)
+      perspectives.layoutOf(name).map(state => name -> normal(state))
     }.toMap
     Perspective.values.toVector.map { p =>
       val layouts = spec.layouts(p).map(DockLayouts.name)
@@ -203,6 +225,10 @@ final class PerspectiveHost(spec: LayoutSpec, theme: DockTheme, report: DockGest
     val refused    =
       if entries.isEmpty then Vector.empty
       else
+        // The pin reuses an attached view solely by id on load. Detaching first
+        // makes its type-aware reattachment path preserve unknown-type payloads.
+        perspectives.save(): Unit
+        dock.switchTo(LayoutState.empty)
         perspectives
           .load(
             ujson.Obj(

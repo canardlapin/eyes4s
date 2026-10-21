@@ -113,6 +113,7 @@ final class StudioWindow private (
     inspectorListener: AppModel => Unit,
     val preflight: PreflightHost,
     preflightListener: AppModel => Unit,
+    val firstRun: eyes4s.studio.desktop.data.DataFirstRunView,
     val figures: FiguresHost,
     figuresListener: AppModel => Unit,
     val themes: ThemeHost,
@@ -168,6 +169,15 @@ final class StudioWindow private (
         case "figures.methods-diff" => figures.methodsDiffStops
         case _                      => Vector.empty
 
+  private var ownedDialogs                       = Vector.empty[javafx.stage.Stage]
+  def ownDialog(stage: javafx.stage.Stage): Unit =
+    ownedDialogs :+= stage
+    themes.register(stage.getScene)
+    stage.addEventHandler(
+      javafx.stage.WindowEvent.WINDOW_HIDDEN,
+      (_: javafx.stage.WindowEvent) => ownedDialogs = ownedDialogs.filterNot(_ eq stage)
+    )
+
   /** Store each perspective's arrangement in the document (view-only). */
   def captureLayouts(): Unit = runtime.dispatch(Intent.LayoutsCaptured(host.capture()))
 
@@ -201,6 +211,8 @@ final class StudioWindow private (
   def close(): Unit = if !closed then
     closed = true
     deactivate()
+    ownedDialogs.foreach(_.close())
+    ownedDialogs = Vector.empty
     unbind()
     columnMapping.dispose()
     runtime.unlisten(geometryListener)
@@ -230,6 +242,7 @@ final class StudioWindow private (
     figures.dispose()
     runtime.unlisten(themeListener)
     themes.dispose()
+    host.dock.dispose()
     project.foreach(_.close())
     session.close()
 
@@ -344,7 +357,8 @@ object StudioWindow:
           stage.show()
         case PlatformDialog.NewProject | PlatformDialog.OpenProject |
             PlatformDialog.CloseProject | PlatformDialog.SaveProjectAs |
-            PlatformDialog.RecentProjects | PlatformDialog.OpenProjectAt(_) =>
+            PlatformDialog.RecentProjects | PlatformDialog.OpenProjectAt(_) |
+            PlatformDialog.OpenExample | PlatformDialog.FirstImport(_) =>
           System.err.println(s"$dialog requires the application project lifecycle host.")
 
   /** Open a window on `initial`, served by the fake backend at `moment`.
@@ -479,7 +493,8 @@ object StudioWindow:
       dialog match
         case PlatformDialog.NewProject | PlatformDialog.OpenProject |
             PlatformDialog.CloseProject | PlatformDialog.SaveProjectAs |
-            PlatformDialog.RecentProjects | PlatformDialog.OpenProjectAt(_) =>
+            PlatformDialog.RecentProjects | PlatformDialog.OpenProjectAt(_) |
+            PlatformDialog.OpenExample | PlatformDialog.FirstImport(_) =>
           lifecycle.getOrElse(defaults).open(dialog, dispatch)
         case _ => defaults.open(dialog, dispatch)
     val effects = DesktopEffects(
@@ -503,7 +518,9 @@ object StudioWindow:
       clock,
       (dataset, content, answer) => ledger.foreach(_.verified(dataset, content, answer)),
       defect,
-      revealProject = revealProject
+      revealProject = revealProject,
+      deferUntitledSave =
+        () => project.isEmpty && runtime.fold(initial)(_.model).project.isEmpty
     )
     val adopted = session.adopt(initial.document)
     adopted.collect { case Left(e) => e }.foreach(e => System.err.println(e.message))
@@ -533,6 +550,10 @@ object StudioWindow:
     r.listen(themeListener)
     themes.sync(r.model)
     themes.start()
+    host.floatingScenes { scene =>
+      themes.register(scene)
+      shell.floatingScene(scene)
+    }
     // The column-mapping pane (Data): the import wizard on the selected
     // revision. Saved presets are read once, off the JavaFX thread.
     val importServices = hostPlatform.fold(
@@ -626,9 +647,21 @@ object StudioWindow:
       project
     )
     host.host(StudioLayouts.sources, sources.node)
-    val sourcesListener: AppModel => Unit = sources.sync
+    val firstRun =
+      eyes4s.studio.desktop.data.DataFirstRunView(dialog => routed.open(dialog, dispatch))
+    host.host(StudioLayouts.firstRunImport, firstRun.node)
+    host.host(StudioLayouts.firstRunChecklist, firstRun.checklist)
+    firstRun.installDrops(shell.root, () => r.model.document.datasets.isEmpty)
+    var emptySources: Option[Boolean]     = None
+    val sourcesListener: AppModel => Unit = model =>
+      val empty = model.document.datasets.isEmpty
+      if !emptySources.contains(empty) then
+        host.host(StudioLayouts.sources, if empty then firstRun.sources else sources.node)
+        emptySources = Some(empty)
+      sources.sync(model)
+      firstRun.sync(model)
     r.listen(sourcesListener)
-    sources.sync(r.model)
+    sourcesListener(r.model)
     // Explore's trial view: the explored trial under the shown run's revision.
     val explore =
       ExploreTrialViewHost(
@@ -657,7 +690,8 @@ object StudioWindow:
     val recipe = eyes4s.studio.desktop.analysis.RecipePaneHost(
       () => r.model,
       dispatch,
-      eyes4s.studio.desktop.analysis.RecipeInputs.of(session)
+      eyes4s.studio.desktop.analysis.RecipeInputs.of(session),
+      hostPlatform
     )
     host.host(StudioLayouts.recipe, recipe.node)
     host.host(StudioLayouts.recipeDiff, recipe.diffNode)
@@ -708,7 +742,8 @@ object StudioWindow:
         () => Option(shell.root.getScene).map(_.getWindow),
         project,
         stimuli,
-        chooseFolder
+        chooseFolder,
+        hostPlatform
       )
     )
     Vector(
@@ -758,6 +793,7 @@ object StudioWindow:
         inspectorListener,
         preflight,
         preflightListener,
+        firstRun,
         figures,
         figuresListener,
         themes,

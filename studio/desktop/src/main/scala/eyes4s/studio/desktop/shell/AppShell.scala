@@ -131,6 +131,19 @@ final class AppShell(
       }
   )
 
+  /** A floating window has no menu accelerators, so it handles every app
+    * chord after the focused control has had the first opportunity.
+    */
+  def floatingScene(scene: javafx.scene.Scene): Unit =
+    scene.addEventHandler(
+      KeyEvent.KEY_PRESSED,
+      (e: KeyEvent) =>
+        ShellKeys.chords(e).find(CommandRegistry.keymap.contains).foreach { chord =>
+          e.consume()
+          dispatch(Intent.KeyPressed(chord))
+        }
+    )
+
   /** A tab's context menu (S1.9, scaladock's `setTabMenu` hook): the dock's
     * own items, then the studio's for the model as it is when it opens.
     */

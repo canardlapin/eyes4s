@@ -45,10 +45,24 @@ application parity is qualified separately below.
 - [ ] The four kinds of change, the display-kind glyphs, the shell anatomy, the keyboard model, and the module map keyed to UI-A…UI-H.
 
 ## DataEmpty (moment t0)
-- [ ] "Untitled project"; the trail reads "New project"; freshness reads "No dataset · no analysis"; status reads "Not saved".
-- [ ] Drop targets for fixations.csv (required) and trials.csv (recommended, with the stated reason). The whole window accepts drops.
-- [ ] Stimuli folder, preset radios, the bundled example, recent projects, and the local-only statement.
-- [ ] "What Eyes Studio will ask you" checklist.
+- [x] "Untitled project"; the trail reads "New project"; freshness reads "No dataset · no analysis"; status reads "Not saved".
+- [x] Drop targets for fixations.csv (required) and trials.csv (recommended, with the stated reason). The whole window accepts drops; unsupported or ambiguous sets are refused together.
+- [x] Stimuli folder, three presets, the bundled example, actual recent projects, and the local-only statement.
+- [x] "What Eyes Studio will ask you" checklist.
+
+The [signed side-by-side](evidence/20261021-g4/index.html) and
+[hashed review](evidence/20261021-g4/review.json) cover DataEmpty t0 at 1440×900,
+light and dark. `ParityChecklistSuite` measures app/context/status rows at 44/32/24,
+tabs at 28 and sidebars at 252/300 logical pixels. The local 2× PNGs are snapshot
+transforms at native output scale 1, not a new native HiDPI qualification.
+
+Recorded deviations: shared one-stop segmented presets with a selected description replace
+the illustrated radio cards; recent entries show actual paths without invented ages;
+file/folder glyphs, numbered circles and badge decoration are simplified. Import buttons
+use the shared import style with explicit file-kind labels, stacked drop guidance and a
+40 px inset; the images row is unboxed. The native menu row differs from the board's
+drawn macOS title bar. These differences preserve the board's content and normal import,
+example-copy and recent-project routes. The review records them individually.
 
 ## Data (moment t1)
 - [ ] "Dataset r3 · draft · no run on r3 yet", plus "Run 5 (rev 3) used r2 · becomes stale when r3 is admitted".
@@ -133,8 +147,8 @@ the board edits 1–3 are done). The differences below remain between the boards
 records each one instead of failing. Each names its ticket and why it stands.
 
 - Shared: the boards' resting focus (`.kf`) is shown by real keyboard focus in the parity moments (`RestingFocus`),
-  not drawn at rest (ticket 28's exemption). Data's mapping row and DataEmpty's preset radio have no desktop Tab
-  stop to carry it, and stay non-stops (owner decision 2026-10-15).
+  not drawn at rest (ticket 28's exemption). Data's mapping row stays a non-stop (owner decision 2026-10-15). DataEmpty now uses
+  the shared segmented control with one Tab stop; its focus ring follows actual keyboard focus.
 - Shared: the slider's track is drawn whole; the board's range fills it to the thumb. The board's fill is the
   browser's native `accent-color` range, and JavaFX's `Slider` has no filled-range part (16). Accepted as a
   platform difference (owner decision 2026-10-15).

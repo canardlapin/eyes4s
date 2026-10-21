@@ -153,7 +153,8 @@ object FigureInputs:
       owner: () => Option[Window],
       project: Option[ProjectPort] = None,
       images: StimulusSource = FigureInputs.NoStimuli,
-      chooseFolder: ChooseFolder = directoryChooser
+      chooseFolder: ChooseFolder = directoryChooser,
+      platform: Option[eyes4s.studio.core.platform.Platform[IO]] = None
   ): FigureInputs =
     new FigureInputs:
       def stimuli: StimulusSource = images
@@ -253,74 +254,101 @@ object FigureInputs:
           bytes: IArray[Byte],
           done: Either[String, String] => Unit
       ): Unit =
-        val chooser = FileChooser()
-        chooser.setInitialFileName(name)
-        chooser.getExtensionFilters.add(
-          FileChooser.ExtensionFilter(s"${format.label} figure", s"*.${format.extension}")
-        )
-        Option(chooser.showSaveDialog(owner().orNull)) match
-          case None       => done(Left("no file was chosen"))
-          case Some(file) =>
-            try
-              Files.write(file.toPath, Array.from(bytes)): Unit
-              done(Right(file.toString))
-            catch case NonFatal(e) => done(Left(reason(e)))
-
+        platform match
+          case Some(host) =>
+            import eyes4s.studio.core.platform.{FileKind, FileRequest}
+            val kind = FileKind.of(s"${format.label} figure", Vector(format.extension))
+            session.run(kind match
+              case Left(error) => IO.pure(Left(error.message): Either[String, String])
+              case Right(k)    =>
+                host.dialogs.chooseSave(FileRequest(name, Vector(k), Some(name))).flatMap {
+                  case None       => IO.pure(Left("no file was chosen"))
+                  case Some(path) =>
+                    host.files
+                      .write(path, bytes)
+                      .map(_.left.map(_.message).map(_ => path.value))
+                }) {
+              case Left(error)   => done(Left(reason(error)))
+              case Right(answer) => done(answer)
+            }
+          case None =>
+            val chooser = FileChooser()
+            chooser.setInitialFileName(name)
+            chooser.getExtensionFilters.add(
+              FileChooser.ExtensionFilter(s"${format.label} figure", s"*.${format.extension}")
+            )
+            Option(chooser.showSaveDialog(owner().orNull)) match
+              case None       => done(Left("no file was chosen"))
+              case Some(file) =>
+                try
+                  Files.write(file.toPath, Array.from(bytes)): Unit
+                  done(Right(file.toString))
+                catch case NonFatal(e) => done(Left(reason(e)))
       def bundle(request: BundleRequest, done: Either[String, String] => Unit): Unit =
-        chooseFolder(s"Export ${request.folder}", owner()) match
-          case None         => done(Left("no folder was chosen"))
-          case Some(parent) =>
-            val target = parent.resolve(request.folder)
-            val run    = request.source.run.id
-            // The pair rows are read only when comparisons.csv is chosen.
-            val comparisons = request.items.contains(BundleItem.Comparisons)
-            val read        = (for
-              summary <- EitherT(session.reads.result(run)).leftMap(_.message)
-              report  <-
-                if !request.items.contains(BundleItem.Participants) then
-                  EitherT.rightT[IO, String](Option.empty[ReportView])
-                else
-                  for
-                    scale <- EitherT.fromEither[IO](
-                      request.participantScale
-                        .toRight("participants.csv has no declared reporting scale")
-                    )
-                    report <- EitherT(
-                      session.reads.report(run, request.source.reporting, scale.value)
-                    )
-                      .leftMap(_.message)
-                  yield Some(report)
-              rows <- EitherT(MethodsReads.queryRows(session.reads.queries, run))
-                .leftMap(_.message)
-              pairs <-
-                if !comparisons then EitherT.rightT[IO, String](Vector.empty[PairRowPage])
-                else
-                  EitherT(
-                    MethodsReads.pairRows(session.reads.pairRows, run, summary.scales.size)
-                  ).leftMap(_.message)
-            yield (summary, rows, pairs, report)).value
-            session.run(read) {
-              case Left(e)                                      => done(Left(reason(e)))
-              case Right(Left(why))                             => done(Left(why))
-              case Right(Right((summary, rows, pairs, report))) =>
-                BundleFiles.assemble(
-                  request,
-                  summary,
-                  rows,
-                  pairs,
-                  FigureExport.rasters(request.page, images),
-                  report
-                ) match
-                  case Left(why)   => done(Left(why))
-                  case Right(file) =>
-                    val snapshot = Option.when(request.items.contains(BundleItem.Snapshot))(
-                      project.fold[BundleWriter.Snapshot]((_, answer) =>
-                        answer(Left("this project is not saved in a bundle"))
-                      )(port =>
-                        (to, answer) => port.snapshot(to, request.includeImages, answer)
-                      )
-                    )
-                    BundleWriter.write(target, file, snapshot, done)
+        def write(parent: java.nio.file.Path): Unit =
+          val target = parent.resolve(request.folder)
+          val run    = request.source.run.id
+          // The pair rows are read only when comparisons.csv is chosen.
+          val comparisons = request.items.contains(BundleItem.Comparisons)
+          val read        = (for
+            summary <- EitherT(session.reads.result(run)).leftMap(_.message)
+            report  <-
+              if !request.items.contains(BundleItem.Participants) then
+                EitherT.rightT[IO, String](Option.empty[ReportView])
+              else
+                for
+                  scale <- EitherT.fromEither[IO](
+                    request.participantScale
+                      .toRight("participants.csv has no declared reporting scale")
+                  )
+                  report <- EitherT(
+                    session.reads.report(run, request.source.reporting, scale.value)
+                  )
+                    .leftMap(_.message)
+                yield Some(report)
+            rows <- EitherT(MethodsReads.queryRows(session.reads.queries, run))
+              .leftMap(_.message)
+            pairs <-
+              if !comparisons then EitherT.rightT[IO, String](Vector.empty[PairRowPage])
+              else
+                EitherT(
+                  MethodsReads.pairRows(session.reads.pairRows, run, summary.scales.size)
+                ).leftMap(_.message)
+          yield (summary, rows, pairs, report)).value
+          session.run(read) {
+            case Left(e)                                      => done(Left(reason(e)))
+            case Right(Left(why))                             => done(Left(why))
+            case Right(Right((summary, rows, pairs, report))) =>
+              BundleFiles.assemble(
+                request,
+                summary,
+                rows,
+                pairs,
+                FigureExport.rasters(request.page, images),
+                report
+              ) match
+                case Left(why)   => done(Left(why))
+                case Right(file) =>
+                  val snapshot = Option.when(request.items.contains(BundleItem.Snapshot))(
+                    project.fold[BundleWriter.Snapshot]((_, answer) =>
+                      answer(Left("this project is not saved in a bundle"))
+                    )(port => (to, answer) => port.snapshot(to, request.includeImages, answer))
+                  )
+                  BundleWriter.write(target, file, snapshot, done)
+          }
+        platform match
+          case None =>
+            chooseFolder(s"Export ${request.folder}", owner()) match
+              case None         => done(Left("no folder was chosen"))
+              case Some(parent) => write(parent)
+          case Some(host) =>
+            session.run(host.dialogs.chooseDirectory(s"Export ${request.folder}")) {
+              case Left(error)       => done(Left(reason(error)))
+              case Right(None)       => done(Left("no folder was chosen"))
+              case Right(Some(path)) =>
+                scala.util.Try(java.nio.file.Paths.get(path.value)).toEither match
+                  case Left(error)   => done(Left(reason(error)))
+                  case Right(parent) => write(parent)
             }
 
   private def reason(e: Throwable): String = Option(e.getMessage).getOrElse(e.toString)

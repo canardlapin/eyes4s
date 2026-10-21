@@ -1353,7 +1353,29 @@ lazy val studioDesktop = project
   .dependsOn(studioLocalRefs(scaladockLocal, "core", "fx"): _*)
   .settings(commonSettings)
   .settings(
-    name         := "eyes4s-studio-desktop",
+    name := "eyes4s-studio-desktop",
+    Compile / resourceGenerators += Def.task {
+      val source =
+        (LocalRootProject / baseDirectory).value / "fixtures" / "studio-bundles" / "example.eyes"
+      val output =
+        (Compile / resourceManaged).value / "eyes4s" / "studio" / "desktop" / "example.zip"
+      val inputs = (source ** "*").get
+        .filter(f => f.isFile && f.getName != ".lock")
+        .sortBy(_.getAbsolutePath)
+      IO.createDirectory(output.getParentFile)
+      val zip = new java.util.zip.ZipOutputStream(new java.io.FileOutputStream(output))
+      try
+        inputs.foreach { file =>
+          val entry =
+            new java.util.zip.ZipEntry(IO.relativize(source, file).get.replace('\\', '/'))
+          entry.setTime(0L)
+          zip.putNextEntry(entry)
+          zip.write(IO.readBytes(file))
+          zip.closeEntry()
+        }
+      finally zip.close()
+      Seq(output)
+    }.taskValue,
     tlJdkRelease := Some(studioDesktopJdkV),
     libraryDependencies ++= Seq("javafx-base", "javafx-graphics", "javafx-controls").map(
       "org.openjfx" % _ % javaFxV classifier javaFxClassifier
@@ -1681,13 +1703,20 @@ lazy val studioLinuxJob = WorkflowJob(
       List("sbt -J-Xmx4g -Djavafx.platform=linux studioBoundaries"),
       name = Some("Check studio resolved-graph boundaries")
     ),
+    WorkflowStep.Run(
+      List(
+        "python3 -m unittest discover -s tools/studio-e2e -p 'test_*.py'",
+        "python3 tools/studio-e2e/check.py"
+      ),
+      name = Some("Qualify the E2E02–25 catalogue from executed reports")
+    ),
     WorkflowStep.Use(
       UseRef.Public("actions", "upload-artifact", "v4"),
       name = Some("Upload studio snapshots"),
       cond = Some("always()"),
       params = Map(
-        "name"              -> "studio-snapshots-linux-${{ github.sha }}",
-        "path"              -> "target/studio-snapshots/",
+        "name" -> "studio-snapshots-linux-${{ github.sha }}",
+        "path" -> "target/studio-snapshots/\ntarget/studio-e2e/\nstudio/**/target/test-reports/",
         "if-no-files-found" -> "warn"
       )
     ),
@@ -1790,6 +1819,7 @@ lazy val studioWorkflowPaths = List(
   "fixtures/studio-golden/**",
   "fixtures/studio-bundles/**",
   "tools/studio-fixture/**",
+  "tools/studio-e2e/**",
   "docs/studio/fixture/**",
   "build.sbt",
   "project/**",

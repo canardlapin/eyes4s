@@ -87,7 +87,14 @@ final class StudioApplication extends Application:
       log.toOption.map(_.logger("eyes4s.studio")),
       log.fold(e => LogState.Unavailable(e.message), _.state),
       (vm, closed) =>
-        ErrorDialogView.show(vm, closed, Option(stage.getScene).map(_.getWindow)): Unit
+        ErrorDialogView.show(
+          vm,
+          closed,
+          Option(stage.getScene).map(_.getWindow),
+          Some(platform.clipboard)
+        ): Unit,
+      clock =
+        () => java.time.Instant.ofEpochMilli(platform.scheduler.now.unsafeRunSync().epochMillis)
     )
     reporter.install(): Unit
     val preferenceStore = PreferencesLocation.repository.toOption
@@ -107,6 +114,7 @@ final class StudioApplication extends Application:
       defect = reporter.jobFailed,
       preferences = preferenceStore,
       initialRecent = preferences.recent,
+      initialLayouts = preferences.layouts,
       preferencesLog = message => System.err.println(PreferencesLocation.redact(message)),
       newProjectTheme = () =>
         AppearancePreference.newProjectTheme(

@@ -32,7 +32,11 @@ import scala.util.Try
   * normalization, five components and RequireAll accounting. Saved workspaces
   * carry both the input and the exact result, verified on reopening.
   */
-final class ScanpathWorkbench(openFile: () => Option[Path], saveFile: () => Option[Path]):
+final class ScanpathWorkbench(
+    openFile: () => Option[Path],
+    saveFile: () => Option[Path],
+    choose: Option[(Boolean, Option[Path] => Unit) => Unit] = None
+):
   val open  = Button("Open scanpath request or workspace…")
   val run   = Button("Run MultiMatch")
   val save  = Button("Save workspace…")
@@ -88,9 +92,10 @@ final class ScanpathWorkbench(openFile: () => Option[Path], saveFile: () => Opti
   private var study: Option[ScanpathStudy]               = None
   private var completed: Option[Json]                    = None
   private var active: Option[Task[Either[String, Unit]]] = None
+  private var choosing                                   = false
   private var closed                                     = false
   def result: Option[Json]                               = completed
-  def busy: Boolean                                      = active.nonEmpty
+  def busy: Boolean                                      = active.nonEmpty || choosing
   def queryTexts: Vector[Vector[String]]                 = queryTable.getItems.asScala.toVector
   private def controls(): Unit                           =
     open.setDisable(busy)
@@ -153,8 +158,25 @@ final class ScanpathWorkbench(openFile: () => Option[Path], saveFile: () => Opti
     val worker = Thread(task, "studio-scanpath")
     worker.setDaemon(true)
     worker.start()
+  private def choosePath(save: Boolean)(use: Path => Unit): Unit =
+    if !closed && !busy then
+      choosing = true
+      controls()
+      def selected(path: Option[Path]): Unit =
+        choosing = false
+        if !closed then
+          controls()
+          path.foreach(use)
+      choose match
+        case None       => selected(if save then saveFile() else openFile())
+        case Some(pick) =>
+          Try(pick(save, selected)).failed.foreach { error =>
+            selected(None)
+            status.setText(error.toString)
+          }
+
   open.setOnAction { _ =>
-    openFile().foreach { path =>
+    choosePath(false) { path =>
       var loaded: Option[(ScanpathStudy, Option[Json], String)] = None
       background {
         for
@@ -220,20 +242,22 @@ final class ScanpathWorkbench(openFile: () => Option[Path], saveFile: () => Opti
     }
   }
   save.setOnAction { _ =>
-    for input <- study; output <- completed; path <- saveFile() do
-      val document = Json.obj(
-        "scanpath_workspace_version" -> Json.fromInt(1),
-        "request"                    -> input.request,
-        "result"                     -> output
-      )
-      background {
-        Try(
-          Files.writeString(path, document.noSpaces, StandardOpenOption.CREATE_NEW)
-        ).toEither.left.map(_.toString).map(_ => ())
-      } {
-        status.setText(
-          "Workspace saved with its input, exact pair scores and all five components."
+    for input <- study; output <- completed do
+      choosePath(true) { path =>
+        val document = Json.obj(
+          "scanpath_workspace_version" -> Json.fromInt(1),
+          "request"                    -> input.request,
+          "result"                     -> output
         )
+        background {
+          Try(
+            Files.writeString(path, document.noSpaces, StandardOpenOption.CREATE_NEW)
+          ).toEither.left.map(_.toString).map(_ => ())
+        } {
+          status.setText(
+            "Workspace saved with its input, exact pair scores and all five components."
+          )
+        }
       }
   }
   component.setOnAction(_ => show())
@@ -247,23 +271,65 @@ final class ScanpathWorkbench(openFile: () => Option[Path], saveFile: () => Opti
   controls()
   def dispose(): Unit =
     closed = true
+    choosing = false
     active.foreach(_.cancel())
     active = None
 
 object ScanpathWorkbench:
   def display(value: Double): String =
     java.lang.String.format(java.util.Locale.ROOT, "%.6f", Double.box(value))
-  def open(owner: Window): Stage =
+  def open(
+      owner: Window,
+      platform: Option[eyes4s.studio.core.platform.Platform[cats.effect.IO]] = None
+  ): Stage =
+    import cats.effect.unsafe.implicits.global
+    import eyes4s.studio.app.text.{RecipeText, RecipeTextId}
+    import eyes4s.studio.core.platform.{FileKind, FileRequest}
     val stage = Stage()
     stage.initOwner(owner)
-    stage.setTitle("Eyes Studio — MultiMatch scanpath workspace")
+    stage.setTitle(RecipeText(RecipeTextId.ScanpathWorkspaceTitle))
     val chooser = FileChooser()
-    chooser.getExtensionFilters.add(FileChooser.ExtensionFilter("Scanpath JSON", "*.json"))
-    val view = ScanpathWorkbench(
-      () => Option(chooser.showOpenDialog(stage)).map(_.toPath),
-      () => Option(chooser.showSaveDialog(stage)).map(_.toPath)
+    chooser.getExtensionFilters.add(
+      FileChooser.ExtensionFilter(RecipeText(RecipeTextId.ScanpathFileKind), "*.json")
     )
-    stage.setScene(Scene(view.node, 1150, 850))
-    stage.setOnHidden(_ => view.dispose())
+    var view: Option[ScanpathWorkbench] = None
+    val choose                          = platform.map(host =>
+      (save: Boolean, answer: Option[Path] => Unit) =>
+        val request = FileRequest(
+          RecipeText(RecipeTextId.ScanpathFileKind),
+          FileKind
+            .of(RecipeText(RecipeTextId.ScanpathFileKind), Vector("json"))
+            .toOption
+            .toVector,
+          None
+        )
+        val selected =
+          if save then host.dialogs.chooseSave(request) else host.dialogs.chooseOpen(request)
+        selected.unsafeRunAsync(result =>
+          javafx.application.Platform.runLater { () =>
+            if stage.isShowing then
+              result match
+                case Left(error) =>
+                  answer(None)
+                  view.foreach(_.status.setText(error.toString))
+                case Right(path) =>
+                  val decoded =
+                    scala.util.Try(path.map(p => java.nio.file.Paths.get(p.value))).toEither
+                  decoded match
+                    case Left(error) =>
+                      answer(None)
+                      view.foreach(_.status.setText(error.toString))
+                    case Right(value) => answer(value)
+          }
+        )
+    )
+    val content = ScanpathWorkbench(
+      () => Option(chooser.showOpenDialog(stage)).map(_.toPath),
+      () => Option(chooser.showSaveDialog(stage)).map(_.toPath),
+      choose
+    )
+    view = Some(content)
+    stage.setScene(Scene(content.node, 1150, 850))
+    stage.setOnHidden(_ => content.dispose())
     stage.show()
     stage

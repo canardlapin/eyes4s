@@ -1,0 +1,450 @@
+{
+  "schema": 1,
+  "scope": "E2E02–25 feature-boundary acceptance; core/app tests run on JVM+JS, native backend tests are explicit. No duplicate full-UI claim for every backend.",
+  "scenarios": [
+    {
+      "id": "E2E-02",
+      "title": "First run and bundled example",
+      "checks": [
+        {
+          "module": "desktop",
+          "suite": "eyes4s.studio.desktop.data.DataFirstRunFxSuite",
+          "case_contains": "",
+          "source": "studio/desktop/src/test/scala/eyes4s/studio/desktop/data/DataFirstRunFxSuite.scala",
+          "scope": "native shell"
+        },
+        {
+          "module": "desktop",
+          "suite": "eyes4s.studio.desktop.shell.ParityChecklistSuite",
+          "case_contains": "DataEmpty",
+          "source": "studio/desktop/src/test/scala/eyes4s/studio/desktop/shell/ParityChecklistSuite.scala",
+          "scope": "native shell"
+        }
+      ]
+    },
+    {
+      "id": "E2E-03",
+      "title": "Linked selection",
+      "checks": [
+        {
+          "module": "desktop",
+          "suite": "eyes4s.studio.desktop.explore.ExploreLinkedSelectionFxSuite",
+          "case_contains": "E2E-03:",
+          "source": "studio/desktop/src/test/scala/eyes4s/studio/desktop/explore/ExploreLinkedSelectionFxSuite.scala",
+          "scope": "native shell"
+        }
+      ]
+    },
+    {
+      "id": "E2E-04",
+      "title": "Draft → Save & run → stale bindings",
+      "checks": [
+        {
+          "module": "desktop",
+          "suite": "eyes4s.studio.desktop.analysis.DraftLifecycleSuite",
+          "case_contains": "served edits stay in the draft",
+          "source": "studio/desktop/src/test/scala/eyes4s/studio/desktop/analysis/DraftLifecycleSuite.scala",
+          "scope": "native shell"
+        }
+      ]
+    },
+    {
+      "id": "E2E-05",
+      "title": "Executed design equals prepared preview",
+      "checks": [
+        {
+          "module": "desktop",
+          "suite": "eyes4s.studio.desktop.analysis.ResolvedDesignFxSuite",
+          "case_contains": "E2E-05:",
+          "source": "studio/desktop/src/test/scala/eyes4s/studio/desktop/analysis/ResolvedDesignFxSuite.scala",
+          "scope": "native shell"
+        },
+        {
+          "module": "core",
+          "suite": "eyes4s.studio.core.fixture.PreviewSnapshotSuite",
+          "case_contains": "SubmitPreview runs the retained snapshot",
+          "source": "studio/core/src/test/scala/eyes4s/studio/core/fixture/PreviewSnapshotSuite.scala",
+          "scope": "portable core JVM+JS"
+        }
+      ]
+    },
+    {
+      "id": "E2E-06",
+      "title": "Cancel mid-run",
+      "checks": [
+        {
+          "module": "core",
+          "suite": "eyes4s.studio.core.execution.ExecutionServiceSuite",
+          "case_contains": "E2E-06:",
+          "source": "studio/core/src/test/scala/eyes4s/studio/core/execution/ExecutionServiceSuite.scala",
+          "scope": "portable core JVM+JS"
+        }
+      ]
+    },
+    {
+      "id": "E2E-07",
+      "title": "Reject stale completion",
+      "checks": [
+        {
+          "module": "core",
+          "suite": "eyes4s.studio.core.execution.ExecutionServiceSuite",
+          "case_contains": "E2E-07:",
+          "source": "studio/core/src/test/scala/eyes4s/studio/core/execution/ExecutionServiceSuite.scala",
+          "scope": "portable core JVM+JS"
+        }
+      ]
+    },
+    {
+      "id": "E2E-08",
+      "title": "Running results never replace shown results",
+      "checks": [
+        {
+          "module": "desktop",
+          "suite": "eyes4s.studio.desktop.shell.RunInProgressFxSuite",
+          "case_contains": "completion stays on run 7",
+          "source": "studio/desktop/src/test/scala/eyes4s/studio/desktop/shell/RunInProgressFxSuite.scala",
+          "scope": "native shell"
+        }
+      ]
+    },
+    {
+      "id": "E2E-09",
+      "title": "Reporting reuses scores and keeps control pool",
+      "checks": [
+        {
+          "module": "app",
+          "suite": "eyes4s.studio.app.compare.ReportingEditorSuite",
+          "case_contains": "every edit is one PutReporting",
+          "source": "studio/app/src/test/scala/eyes4s/studio/app/compare/ReportingEditorSuite.scala",
+          "scope": "portable app JVM+JS"
+        },
+        {
+          "module": "app",
+          "suite": "eyes4s.studio.app.compare.ReportingEditorSuite",
+          "case_contains": "a hit-only filter keeps the control pool",
+          "source": "studio/app/src/test/scala/eyes4s/studio/app/compare/ReportingEditorSuite.scala",
+          "scope": "portable app JVM+JS"
+        },
+        {
+          "module": "core",
+          "suite": "eyes4s.studio.core.real.RealStudyBackendSuite",
+          "case_contains": "a hit-only reporting filter keeps",
+          "source": "studio/core/.jvm/src/test/scala/eyes4s/studio/core/real/RealStudyBackendSuite.scala",
+          "scope": "native backend JVM"
+        }
+      ]
+    },
+    {
+      "id": "E2E-10",
+      "title": "Underlay disclosure survives export",
+      "checks": [
+        {
+          "module": "desktop",
+          "suite": "eyes4s.studio.desktop.figures.FigureExportSuite",
+          "case_contains": "the imagery disclosure survives export",
+          "source": "studio/desktop/src/test/scala/eyes4s/studio/desktop/figures/FigureExportSuite.scala",
+          "scope": "native shell"
+        }
+      ]
+    },
+    {
+      "id": "E2E-11",
+      "title": "Missing asset repair",
+      "checks": [
+        {
+          "module": "desktop",
+          "suite": "eyes4s.studio.desktop.data.SourcesFxSuite",
+          "case_contains": "Repair… stores the chosen image",
+          "source": "studio/desktop/src/test/scala/eyes4s/studio/desktop/data/SourcesFxSuite.scala",
+          "scope": "native shell"
+        },
+        {
+          "module": "desktop",
+          "suite": "eyes4s.studio.desktop.data.SourceRepairFileSuite",
+          "case_contains": "replacement bytes create a pending immutable revision",
+          "source": "studio/desktop/src/test/scala/eyes4s/studio/desktop/data/SourceRepairFileSuite.scala",
+          "scope": "native shell"
+        }
+      ]
+    },
+    {
+      "id": "E2E-12",
+      "title": "Crash recovery",
+      "checks": [
+        {
+          "module": "core",
+          "suite": "eyes4s.studio.core.session.RecoverySuite",
+          "case_contains": "E2E-12:",
+          "source": "studio/core/src/test/scala/eyes4s/studio/core/session/RecoverySuite.scala",
+          "scope": "portable core JVM+JS"
+        }
+      ]
+    },
+    {
+      "id": "E2E-13",
+      "title": "Failed run exposes diagnostics",
+      "checks": [
+        {
+          "module": "core",
+          "suite": "eyes4s.studio.core.execution.ExecutionServiceSuite",
+          "case_contains": "E2E-13:",
+          "source": "studio/core/src/test/scala/eyes4s/studio/core/execution/ExecutionServiceSuite.scala",
+          "scope": "portable core JVM+JS"
+        }
+      ]
+    },
+    {
+      "id": "E2E-14",
+      "title": "Blocked preflight and occurrence remedy",
+      "checks": [
+        {
+          "module": "desktop",
+          "suite": "eyes4s.studio.desktop.analysis.PreflightFxSuite",
+          "case_contains": "a blocker disables Save & run",
+          "source": "studio/desktop/src/test/scala/eyes4s/studio/desktop/analysis/PreflightFxSuite.scala",
+          "scope": "native shell"
+        },
+        {
+          "module": "desktop",
+          "suite": "eyes4s.studio.desktop.runtime.AdversarialScienceSuite",
+          "case_contains": "duplicate matched references block",
+          "source": "studio/desktop/src/test/scala/eyes4s/studio/desktop/runtime/AdversarialScienceSuite.scala",
+          "scope": "native shell"
+        }
+      ]
+    },
+    {
+      "id": "E2E-15",
+      "title": "Discard draft",
+      "checks": [
+        {
+          "module": "desktop",
+          "suite": "eyes4s.studio.desktop.analysis.DraftLifecycleSuite",
+          "case_contains": "discarding a draft leaves saved recipes",
+          "source": "studio/desktop/src/test/scala/eyes4s/studio/desktop/analysis/DraftLifecycleSuite.scala",
+          "scope": "native shell"
+        }
+      ]
+    },
+    {
+      "id": "E2E-16",
+      "title": "Rebind or keep stale figure",
+      "checks": [
+        {
+          "module": "app",
+          "suite": "eyes4s.studio.app.figures.FigureBindingSuite",
+          "case_contains": "Keep as rev 3",
+          "source": "studio/app/src/test/scala/eyes4s/studio/app/figures/FigureBindingSuite.scala",
+          "scope": "portable app JVM+JS"
+        },
+        {
+          "module": "app",
+          "suite": "eyes4s.studio.app.figures.FigureBindingSuite",
+          "case_contains": "only Rebind dispatches BindFigure",
+          "source": "studio/app/src/test/scala/eyes4s/studio/app/figures/FigureBindingSuite.scala",
+          "scope": "portable app JVM+JS"
+        }
+      ]
+    },
+    {
+      "id": "E2E-17",
+      "title": "Crumb round-trip into Explore and back",
+      "checks": [
+        {
+          "module": "desktop",
+          "suite": "eyes4s.studio.desktop.shell.ContextStripFxSuite",
+          "case_contains": "E2E-17:",
+          "source": "studio/desktop/src/test/scala/eyes4s/studio/desktop/shell/ContextStripFxSuite.scala",
+          "scope": "native shell"
+        }
+      ]
+    },
+    {
+      "id": "E2E-18",
+      "title": "Layout persistence and pop-out retention",
+      "checks": [
+        {
+          "module": "desktop",
+          "suite": "eyes4s.studio.desktop.dock.LayoutPersistenceFxSuite",
+          "case_contains": "E2E18 pop-outs",
+          "source": "studio/desktop/src/test/scala/eyes4s/studio/desktop/dock/LayoutPersistenceFxSuite.scala",
+          "scope": "native shell"
+        },
+        {
+          "module": "desktop",
+          "suite": "eyes4s.studio.desktop.dock.LayoutPersistenceFxSuite",
+          "case_contains": "floating layouts round-trip",
+          "source": "studio/desktop/src/test/scala/eyes4s/studio/desktop/dock/LayoutPersistenceFxSuite.scala",
+          "scope": "native shell"
+        },
+        {
+          "module": "desktop",
+          "suite": "eyes4s.studio.desktop.dock.LayoutPersistenceFxSuite",
+          "case_contains": "unknown saved pane types",
+          "source": "studio/desktop/src/test/scala/eyes4s/studio/desktop/dock/LayoutPersistenceFxSuite.scala",
+          "scope": "native shell"
+        },
+        {
+          "module": "desktop",
+          "suite": "eyes4s.studio.desktop.project.ProjectLifecycleFxSuite",
+          "case_contains": "user layout defaults persist",
+          "source": "studio/desktop/src/test/scala/eyes4s/studio/desktop/project/ProjectLifecycleFxSuite.scala",
+          "scope": "native shell"
+        },
+        {
+          "module": "desktop",
+          "suite": "eyes4s.studio.desktop.project.ProjectLifecycleFxSuite",
+          "case_contains": "a saved project's explicit layout overrides user defaults",
+          "source": "studio/desktop/src/test/scala/eyes4s/studio/desktop/project/ProjectLifecycleFxSuite.scala",
+          "scope": "native shell"
+        }
+      ]
+    },
+    {
+      "id": "E2E-19",
+      "title": "Second writer refusal",
+      "checks": [
+        {
+          "module": "core",
+          "suite": "eyes4s.studio.core.session.AtomicSaveFaultSuite",
+          "case_contains": "a second writer is refused",
+          "source": "studio/core/src/test/scala/eyes4s/studio/core/session/AtomicSaveFaultSuite.scala",
+          "scope": "portable core JVM+JS"
+        }
+      ]
+    },
+    {
+      "id": "E2E-20",
+      "title": "Changed source blocks use and can be repaired",
+      "checks": [
+        {
+          "module": "desktop",
+          "suite": "eyes4s.studio.desktop.shell.SourceChecksFxSuite",
+          "case_contains": "focus return rechecks changed",
+          "source": "studio/desktop/src/test/scala/eyes4s/studio/desktop/shell/SourceChecksFxSuite.scala",
+          "scope": "native shell"
+        },
+        {
+          "module": "desktop",
+          "suite": "eyes4s.studio.desktop.data.SourceRepairFileSuite",
+          "case_contains": "replacement bytes create a pending immutable revision",
+          "source": "studio/desktop/src/test/scala/eyes4s/studio/desktop/data/SourceRepairFileSuite.scala",
+          "scope": "native shell"
+        }
+      ]
+    },
+    {
+      "id": "E2E-21",
+      "title": "Recognition by-design category",
+      "checks": [
+        {
+          "module": "app",
+          "suite": "eyes4s.studio.app.analysis.PresetSuite",
+          "case_contains": "under the Recognition preset",
+          "source": "studio/app/src/test/scala/eyes4s/studio/app/analysis/PresetSuite.scala",
+          "scope": "portable app JVM+JS"
+        },
+        {
+          "module": "core",
+          "suite": "eyes4s.studio.core.real.RealPreviewCursorSuite",
+          "case_contains": "declared unmatched query keeps by-design",
+          "source": "studio/core/src/test/scala/eyes4s/studio/core/real/RealPreviewCursorSuite.scala",
+          "scope": "portable core JVM+JS"
+        }
+      ]
+    },
+    {
+      "id": "E2E-22",
+      "title": "Perception → Imagery blank display",
+      "checks": [
+        {
+          "module": "desktop",
+          "suite": "eyes4s.studio.desktop.runtime.AdversarialScienceSuite",
+          "case_contains": "blank display imagery retains item-specific",
+          "source": "studio/desktop/src/test/scala/eyes4s/studio/desktop/runtime/AdversarialScienceSuite.scala",
+          "scope": "native shell"
+        },
+        {
+          "module": "desktop",
+          "suite": "eyes4s.studio.desktop.figures.FigureExportSuite",
+          "case_contains": "the imagery disclosure survives export",
+          "source": "studio/desktop/src/test/scala/eyes4s/studio/desktop/figures/FigureExportSuite.scala",
+          "scope": "native shell"
+        }
+      ]
+    },
+    {
+      "id": "E2E-23",
+      "title": "Minimum-query toggle discloses dropped cells",
+      "checks": [
+        {
+          "module": "app",
+          "suite": "eyes4s.studio.app.compare.ReportingEditorSuite",
+          "case_contains": "the minimum reads native dropped cells",
+          "source": "studio/app/src/test/scala/eyes4s/studio/app/compare/ReportingEditorSuite.scala",
+          "scope": "portable app JVM+JS"
+        },
+        {
+          "module": "core",
+          "suite": "eyes4s.studio.core.real.RealStudyBackendSuite",
+          "case_contains": "grouping, explicit direction, filtering, minimums",
+          "source": "studio/core/.jvm/src/test/scala/eyes4s/studio/core/real/RealStudyBackendSuite.scala",
+          "scope": "native backend JVM"
+        }
+      ]
+    },
+    {
+      "id": "E2E-24",
+      "title": "Dark theme journey",
+      "checks": [
+        {
+          "module": "desktop",
+          "suite": "eyes4s.studio.desktop.shell.ThemeFxSuite",
+          "case_contains": "Dark restyles the window and its dock",
+          "source": "studio/desktop/src/test/scala/eyes4s/studio/desktop/shell/ThemeFxSuite.scala",
+          "scope": "native shell"
+        },
+        {
+          "module": "desktop",
+          "suite": "eyes4s.studio.desktop.shell.ThemeFxSuite",
+          "case_contains": "a popped-out dock window follows the theme",
+          "source": "studio/desktop/src/test/scala/eyes4s/studio/desktop/shell/ThemeFxSuite.scala",
+          "scope": "native shell"
+        }
+      ]
+    },
+    {
+      "id": "E2E-25",
+      "title": "Keyboard-only golden journey",
+      "checks": [
+        {
+          "module": "desktop",
+          "suite": "eyes4s.studio.desktop.journey.KeyboardJourneySuite",
+          "case_contains": "E2E-01-keyboard:",
+          "source": "studio/desktop/src/test/scala/eyes4s/studio/desktop/journey/KeyboardJourneySuite.scala",
+          "scope": "native shell"
+        }
+      ]
+    }
+  ],
+  "native_regression": [
+    {
+      "module": "desktop",
+      "suite": "eyes4s.studio.desktop.journey.NativeCommandJourneySuite",
+      "case_contains": "new project imports, admits, previews, executes",
+      "source": "studio/desktop/src/test/scala/eyes4s/studio/desktop/journey/NativeCommandJourneySuite.scala",
+      "scope": "native shell"
+    },
+    {
+      "module": "desktop",
+      "suite": "eyes4s.studio.desktop.journey.NativeGoldenCommandFxSuite",
+      "case_contains": "",
+      "source": "studio/desktop/src/test/scala/eyes4s/studio/desktop/journey/NativeGoldenCommandFxSuite.scala",
+      "scope": "native shell"
+    }
+  ],
+  "limits": [
+    "G2 acquisition/timing, whole-board parity, VoiceOver, performance and packaging are separate gates.",
+    "Recognition and imagery mini-fixtures are committed executable specimens in PresetSuite, RealPreviewCursorSuite and AdversarialScienceSuite, not private research exports."
+  ]
+}
