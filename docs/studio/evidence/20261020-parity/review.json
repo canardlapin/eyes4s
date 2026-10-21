@@ -1,0 +1,96 @@
+{
+  "schema": 1,
+  "review_date": "2026-10-20",
+  "reviewer": "codex-release-session-20261020",
+  "base": "b7ff9935a61d1ccf957a5f3e679319291653e129",
+  "state": "bounded visual review complete; full gate and landing pending",
+  "scope": [
+    "S8.5 Main contrast-group tabs and actual selected-query profile rendering",
+    "Data column-mapping host header, role rows, declared units and remap controls"
+  ],
+  "not_signing_off": [
+    "entire Main board",
+    "entire Data board",
+    "G2 real-study admission",
+    "VoiceOver/usability/release package"
+  ],
+  "tests": {
+    "profile_JVM": 11,
+    "profile_JS": 11,
+    "native_pairs": 6,
+    "native_mapping": 12,
+    "flags": "GITHUB_ACTIONS=true; JDK25; headless Monocle; output scale1 with snapshot transforms1x/2x; this is not actual output-scale2 qualification"
+  },
+  "findings": [
+    "Pre-fix profile regression reproduced UnexpectedRow on QueryContrast; original10 tests passed while new regression failed. Fixed builder accepts query series and preserves result identities/missing line gaps. Mounted FX test now requires Drawn.",
+    "Pairs screenshots remain in full shell, with 44/32/24px shell metrics checked to1px; standalone table tests retain root styles.",
+    "Main retains the accessibility Table twin tab already accepted in PARITY_CHECKLIST.",
+    "Data reusable form includes explicit global time units, scrolling rows, presets and apply/revert. Fixture has10 columns; optional sample count role appears when provided, never fabricated.",
+    "Separate current-main trial-caption overlap is visible and remains tracked under bd-01M4ZQJ91DP721J9XEM9TV9862."
+  ],
+  "source_sha256": {
+    "studio/app/src/main/scala/eyes4s/studio/app/text/ProfileText.scala": "cb6ada5bf2ffda5c412ee32f4a49aa9acd70358fdaec875fa613d8c9168d81b4",
+    "studio/viz/src/main/scala/eyes4s/studio/viz/plot/ScaleProfilePlot.scala": "0930cf72223ea7464766010e9a79ad97860299275b6afb069eef30540747307e",
+    "studio/viz/src/test/scala/eyes4s/studio/viz/plot/ScaleProfilePlotSuite.scala": "60b695c0abde26fb0d282963174730c3c1510c6c06f8120471433fb81011cc08",
+    "studio/desktop/src/test/scala/eyes4s/studio/desktop/compare/PairsTableFxSuite.scala": "7adfb9fad90628f170560ac10ebd0ecb0c738d156b8058445eddffd2a797d18e",
+    "studio/desktop/src/test/scala/eyes4s/studio/desktop/importing/ColumnMappingPaneFxSuite.scala": "7ca1b8643f222a7b9a205aced705df57864aafe95f4739f1439a5c8273a6d2bc"
+  },
+  "captures": [
+    {
+      "label": "Main Contrast",
+      "scale": 1,
+      "file": "main-contrast-1x.png",
+      "sha256": "7152a98525c3e2f099deec711f6a0e4b1dedb17090638c1a3d3e0c067de9f54f",
+      "reference": "../../design/reference/Main-1x.png"
+    },
+    {
+      "label": "Main Contrast",
+      "scale": 2,
+      "file": "main-contrast-2x.png",
+      "sha256": "c04d308bfce0396b9b8d41c250694d2b4ea8db0fe5673975e6562adaf1c05dc5",
+      "reference": "../../design/reference/Main-2x.png"
+    },
+    {
+      "label": "Main Pairs table",
+      "scale": 1,
+      "file": "main-pairs-table-1x.png",
+      "sha256": "7f8d8192aafc7e98902e364c5ec75bf7c048db4523b88e8a58d0c186a93484f8",
+      "reference": "../../design/reference/Main-1x.png"
+    },
+    {
+      "label": "Main Pairs table",
+      "scale": 2,
+      "file": "main-pairs-table-2x.png",
+      "sha256": "3a909e4ba6034e362e4c647d43689d84a767adc461c1ef4b411b5319603f880b",
+      "reference": "../../design/reference/Main-2x.png"
+    },
+    {
+      "label": "Main Scale profile",
+      "scale": 1,
+      "file": "main-scale-profile-1x.png",
+      "sha256": "2d047f58d3d896ed23412e30b298e71fde7935e13412a911f6e07523db67780a",
+      "reference": "../../design/reference/Main-1x.png"
+    },
+    {
+      "label": "Main Scale profile",
+      "scale": 2,
+      "file": "main-scale-profile-2x.png",
+      "sha256": "99668618d0151aef474edbd900052c076f332997745cd3bdcdc91e0f6657e2dc",
+      "reference": "../../design/reference/Main-2x.png"
+    },
+    {
+      "label": "Data Column mapping",
+      "scale": 1,
+      "file": "data-column-mapping-1x.png",
+      "sha256": "7fa4193d9eed2664de0bccd555d33527d2ce462196c565a671eeac3d03184488",
+      "reference": "../../design/reference/Data-1x.png"
+    },
+    {
+      "label": "Data Column mapping",
+      "scale": 2,
+      "file": "data-column-mapping-2x.png",
+      "sha256": "fd2218313066f9bc008c806a578e70e59debb3a4e9ac08719745099ce952047e",
+      "reference": "../../design/reference/Data-2x.png"
+    }
+  ]
+}

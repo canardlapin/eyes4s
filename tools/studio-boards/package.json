@@ -1,0 +1,13 @@
+{
+  "name": "eyes4s-studio-board-references",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Offline design reference renderer, not an application dependency",
+  "scripts": {
+    "render": "node render.cjs",
+    "verify": "node render.cjs --verify"
+  },
+  "devDependencies": {
+    "playwright-core": "1.49.1"
+  }
+}

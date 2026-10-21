@@ -128,7 +128,9 @@ final case class ScaleProfilePlot(columns: ProfileColumns) extends PlotBuilder:
         PlotText(
           PlotTextId.PlotKeys,
           ProfileText(
-            if series.contains(Series.WholeReport) then ProfileTextId.OverallSummary
+            if series.exists { case Series.Query(_) => true; case _ => false } then
+              ProfileTextId.QuerySummary
+            else if series.contains(Series.WholeReport) then ProfileTextId.OverallSummary
             else ProfileTextId.Summary,
             source.caption,
             levelsOf(source, columns.scale).size.toString
@@ -163,8 +165,8 @@ final case class ScaleProfilePlot(columns: ProfileColumns) extends PlotBuilder:
         case _                                     => NoPosition.MissingValue(columns.sigma)
     val order            = series.distinct
     val (groups, people) = order.partition {
-      case Series.Group(_) | Series.WholeReport => true
-      case _                                    => false
+      case Series.Group(_) | Series.WholeReport | Series.Query(_) => true
+      case _                                                      => false
     }
     val lines = people.map { s =>
       val members = rows.filter(series(_) == s)
@@ -453,12 +455,14 @@ object ScaleProfilePlot:
   enum Series derives CanEqual:
     case WholeReport
     case Group(label: String)
+    case Query(query: eyes4s.studio.core.backend.TrialKey)
     case Participant(participant: String, group: Option[String])
 
   /** The series of the row of `ref`: a group's grand means or one
     * participant's means.
     */
   def seriesOf(ref: StudioRef): Option[Series] = ref match
+    case StudioRef.QueryContrast(_, _, query)        => Some(Series.Query(query))
     case StudioRef.GroupCell(_, _, _, g)             => Some(Series.Group(g.label))
     case StudioRef.ParticipantSummary(_, _, _, g, p) =>
       Some(Series.Participant(p, g.map(_.label)))

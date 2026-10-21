@@ -7,6 +7,13 @@ reference PNG. The PNGs are rendered from `design/` (S10.4-render).
 Shell metrics are checked from JavaFX node bounds to ±1 px. Texts are checked verbatim. Colours are checked
 by token name, never by hex value.
 
+Reference rendering (2026-10-20): `tools/studio-boards` pins Chromium 131.0.6778.33 /
+Playwright Core 1.49.1, uses the seven bundled font faces and the vendored local board
+resolver, and refuses external requests. All nine boards at 1440 × 900 logical pixels
+have committed 1×/2× references under `design/reference/`, with input/environment hashes.
+A second process reproduced all eighteen PNGs byte-for-byte. These are design references;
+application parity is qualified separately below.
+
 ## Shared shell (every board except System)
 
 - [ ] Title bar: native and system-drawn. The app does not tint it.
@@ -132,3 +139,31 @@ records each one instead of failing. Each names its ticket and why it stands.
   platform difference (owner decision 2026-10-15).
 - Data: the off-screen policy sits after the corrections (board: in the facts list). At 1440 × 900 the density and thumbnails are below the fold, because
   the import draft's editable geometry form, the one geometry editor, replaces the board's facts list (S26).
+
+
+## Bounded review evidence, 2026-10-20
+
+The Main tabs (S8.5) and Data column-mapping host reviews have a side-by-side
+record at `evidence/20261020-parity/index.html`, with capture/source hashes in
+`evidence/20261020-parity/review.json`. The record reviews those bounded features;
+it does not sign off either entire board.
+
+The mounted Scale profile capture exposed a real rendering refusal: the builder
+accepted report series but rejected the query's `QueryContrast` result refs. The
+query series now draws selectable points and its line, preserves those refs, and
+breaks the line at missing values. `ScaleProfilePlotSuite` reproduced the original
+refusal before the fix, then passed on JVM and Scala.js. `PairsTableFxSuite` now
+requires the full mounted profile to reach `Drawn`, alongside the table-value checks.
+The additional Table tab remains the recorded accessibility deviation above.
+
+The Data host uses the reusable import form: declared units have an explicit global
+control, rows scroll, and preset/apply controls remain available. The fixture input
+has ten source columns; the board's illustrative eleven-column export includes an
+optional Sample count. The role is available when that source column is present.
+The actual served form, not a fabricated extra column, is reviewed. The geometry
+editor replaces the board's compact facts list as already recorded under S26.
+
+Current captures still show the separately tracked trial-caption overlap at normal
+pane sizes (`bd-01M4ZQJ91DP721J9XEM9TV9862`). That issue remains open; the fixed
+profile is not evidence that every Main/Explore difference is resolved. Final
+qualification and landing are recorded on the corresponding motes.

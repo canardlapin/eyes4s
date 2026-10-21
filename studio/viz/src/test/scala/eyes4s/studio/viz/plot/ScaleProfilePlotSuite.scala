@@ -49,6 +49,29 @@ class ScaleProfilePlotSuite extends FunSuite:
   private def mark(plot: BuiltPlot, ref: StudioRef): PlotMark =
     right(plot.markOf(ref).toRight(s"no mark for $ref"))
 
+  test("one query's contrast refs draw four selectable profile points") {
+    val query  = eyes4s.studio.core.fixture.MockStudy.key("P17", "ret_07")
+    val points = board.groups.head.points.map(p =>
+      p.copy(ref = StudioRef.QueryContrast(run, p.scale, query))
+    )
+    val profile = board.copy(
+      groups = Vector(ProfileSeries("P17 ret_07", "1 query", points)),
+      participants = Vector.empty
+    )
+    val plot = built(profile)
+    assertEquals(plot.marks.map(_.ref), points.map(_.ref))
+    assertEquals(plot.marks.map(_.at.y), points.flatMap(_.d))
+    assertEquals(bold(plot).map(_.points.size), Vector(4))
+    assertEquals(plot.unplotted, Vector.empty)
+    val missing = profile.copy(groups =
+      profile.groups.map(s => s.copy(points = s.points.updated(1, s.points(1).copy(d = None))))
+    )
+    val gappy = built(missing)
+    assertEquals(gappy.marks.map(_.ref), points.patch(1, Vector.empty, 1).map(_.ref))
+    assertEquals(gappy.unplotted.map(_.ref), Vector(points(1).ref))
+    assertEquals(bold(gappy).map(_.points.size), Vector(2))
+  }
+
   test("served report refs keep grouped and overall profile series") {
     import eyes4s.studio.core.backend.ReportRole
     import eyes4s.studio.core.selection.ReportGroup

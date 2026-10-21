@@ -16,10 +16,13 @@
 
 package eyes4s.studio.desktop.compare
 
-import eyes4s.studio.app.StoryModels
+import eyes4s.studio.app.{Intent, StoryModels}
+import eyes4s.studio.app.layout.PaneId
 import eyes4s.studio.core.fixture.StoryMoment
 import eyes4s.studio.desktop.harness.StudioTheme
 import eyes4s.studio.desktop.shell.ShellFxSuite
+import eyes4s.studio.desktop.plot.PlotHostStatus
+import eyes4s.studio.desktop.trial.{GoldenTrials, StimulusSource}
 import javafx.scene.input.KeyCode
 import javafx.scene.layout.StackPane
 
@@ -47,7 +50,12 @@ class PairsTableFxSuite extends ShellFxSuite:
     val table = w.summary.pairsTable
     eventually(fx, "run 7's pair rows")(table.source.exists(_.rows.size == 8969))
     // The table is shown on its own here, so the list lays out its rows.
-    val holder = runOnFx(StackPane(w.summary.pairsNode))
+    val holder = runOnFx {
+      val root = StackPane(w.summary.pairsNode)
+      root.getStyleClass.setAll(w.root.getStyleClass)
+      root.getStylesheets.setAll(w.root.getStylesheets)
+      root
+    }
     runOnFx(fx.scene.setRoot(holder))
     fx.awaitLayout()
     val built = runOnFx(table.builtRows)
@@ -68,6 +76,49 @@ class PairsTableFxSuite extends ShellFxSuite:
     fx.robot.press(KeyCode.ENTER)
     eventually(fx, "the pair selected") {
       w.runtime.model.selection.isSelected(StoryModels.pair)
+    }
+  }
+
+  Vector(
+    "contrast"      -> "compare.contrast",
+    "pairs"         -> "compare.pairs",
+    "scale-profile" -> "compare.scale-profile"
+  ).foreach { (label, id) =>
+    fxStage.test(s"board tabs: $label stays in the full Compare layout") { fx =>
+      assumeFullStage(fx)
+      val w = boot(
+        fx,
+        StoryModels.t2Compare,
+        StoryMoment.T2,
+        panels = PanelSources(
+          GoldenTrials.contentSource,
+          StimulusSource.directory(GoldenTrials.stimuli)
+        )
+      )
+      eventually(fx, "pair rows and focused-query profile") {
+        w.summary.pairsTable.source.exists(_.rows.size == 8969) &&
+        w.summary.scaleProfile.table.source.exists(_.rows.size == 4)
+      }
+      val pane = PaneId.of(id).fold(e => fail(e.toString), identity)
+      dispatch(fx, w, Intent.FocusPane(pane))
+      assertEquals(
+        runOnFx(w.host.dock.state.groupOf(w.host.dockId(pane)).map(_.active)),
+        Some(w.host.dockId(pane))
+      )
+      val content = runOnFx(w.host.node(pane)).getOrElse(fail(s"no $id pane"))
+      val bounds  = runOnFx(content.localToScene(content.getBoundsInLocal))
+      assert(bounds.getWidth > 600, s"$id width ${bounds.getWidth}")
+      assert(bounds.getHeight > 200, s"$id height ${bounds.getHeight}")
+      assertEqualsDouble(runOnFx(w.shell.appBar.node.getHeight), 44.0, 1.0)
+      assertEqualsDouble(runOnFx(w.shell.contextStrip.node.getHeight), 32.0, 1.0)
+      assertEqualsDouble(runOnFx(w.shell.statusBar.node.getHeight), 24.0, 1.0)
+      if label == "scale-profile" then
+        eventually(fx, "the profile actually draws, not just its table values") {
+          w.summary.scaleProfile.plotHost.status.get match
+            case PlotHostStatus.Drawn(_) => true
+            case _                       => false
+        }
+      fx.snapshot(StudioTheme.Light): Unit
     }
   }
 
@@ -105,7 +156,12 @@ class PairsTableFxSuite extends ShellFxSuite:
       val w     = boot(fx, StoryModels.t2Compare, StoryMoment.T2)
       val table = w.summary.pairsTable
       eventually(fx, "run 7's pair rows")(table.source.exists(_.rows.size == 8969))
-      runOnFx(fx.scene.setRoot(StackPane(w.summary.pairsNode)))
+      runOnFx {
+        val root = StackPane(w.summary.pairsNode)
+        root.getStyleClass.setAll(w.root.getStyleClass)
+        root.getStylesheets.setAll(w.root.getStylesheets)
+        fx.scene.setRoot(root)
+      }
       fx.awaitLayout()
       runOnFx(table.requestFocus())
       fx.awaitLayout()

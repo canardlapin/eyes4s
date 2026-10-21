@@ -1,0 +1,870 @@
+{
+  "schema": 1,
+  "purpose": "Design references only; no JavaFX parity sign-off implied",
+  "browser": {
+    "playwrightCore": "1.49.1",
+    "chromium": "131.0.6778.33",
+    "revision": 1148
+  },
+  "platform": {
+    "os": "darwin",
+    "arch": "arm64",
+    "node": "v24.21.0"
+  },
+  "viewport": {
+    "width": 1440,
+    "height": 900
+  },
+  "network": "loopback only; external requests refused",
+  "inputs": {
+    "docs/studio/design/System.dc.html": "a3e0c114db01f3a197e9116a596f6f6987bf92f4bc10c53d13d5d573a961e910",
+    "docs/studio/design/DataEmpty.dc.html": "039073f1f9389e31f04c48609633b3b1e8104b081419ef729c8222c441b5a70c",
+    "docs/studio/design/Data.dc.html": "0d2928993b74cd87f000a422f6cb0781fcd770b87bc215db6d93d0fe51229d5c",
+    "docs/studio/design/Explore.dc.html": "01106e9891ca9a50bd672616d6df47294e3f69273b0d7a37ef6a1b59833b864a",
+    "docs/studio/design/Analysis.dc.html": "574a5f9b43c82a553165b5fb802e74ad803a05bd1c9b7892559905cc803a29c5",
+    "docs/studio/design/Main.dc.html": "db89c4c5a89a3552dcd1edb4768c736b93451c2a66af34dcd02e2cc2ae9f7d92",
+    "docs/studio/design/MainDark.dc.html": "ac9fb77428240c9b4d42e130e2388e847acfea61f0dd596c7020dc3eef4e2e79",
+    "docs/studio/design/Results.dc.html": "2bd61274ff39744203c178e34c760c7f9d80662ee061cc8b9a1fa82c4b816bf1",
+    "docs/studio/design/Figures.dc.html": "e939163b915737077cc04ce96d059312c976be9c41298874f24eaca0ac9b9f6b",
+    "docs/studio/design/support.js": "a9b2d91d89096d94af44a2838633e5157dd681f857be7c8a1b191a3120e29862",
+    "tools/studio-boards/render.cjs": "d84d12c9b024016fca1661c19c431259f574b199ae50eaa0a7dc5b057cde3005",
+    "tools/studio-boards/package-lock.json": "f91d0db961669e1af020637975650a999ce71d1bb75d3989e6fd3f91c9d7fe0b",
+    "studio/desktop/src/main/resources/eyes4s/studio/desktop/fonts/IBMPlexSans-Regular.ttf": "975dcda37d80f038dcd143c22e33ca2d97a0cc5a929aace1c749153b0fe1afa5",
+    "studio/desktop/src/main/resources/eyes4s/studio/desktop/fonts/IBMPlexSans-Medium.ttf": "331c8639d7598b2cde62a911a71db195e30cb655cd6bdf2e324a7e984955f907",
+    "studio/desktop/src/main/resources/eyes4s/studio/desktop/fonts/IBMPlexSans-SemiBold.ttf": "a20caf8286023a6a7a85e40b1d2a4ae9fc3e3b1f9eda8f4c542dd4986af67bb1",
+    "studio/desktop/src/main/resources/eyes4s/studio/desktop/fonts/IBMPlexMono-Regular.ttf": "7c6fbddca4b700be918f5f6183d9bd4464fa427fe435f0b480d77fe2bb8c5a43",
+    "studio/desktop/src/main/resources/eyes4s/studio/desktop/fonts/IBMPlexMono-Medium.ttf": "98fbd727aae340b236955879dabed4d991aac9e8e90b3b2a67ce4a59221cc97c",
+    "studio/desktop/src/main/resources/eyes4s/studio/desktop/fonts/SourceSerif4-Regular.ttf": "e5a4ee6a3d87bb9024796be390c6771e2a0eb1883dae25effaf57ca01668e24b",
+    "studio/desktop/src/main/resources/eyes4s/studio/desktop/fonts/SourceSerif4-Semibold.ttf": "36db62940cb5728b12b1802476dc7fcf4c6c519a7bdd476ba23a4e555fc4655f"
+  },
+  "entries": [
+    {
+      "name": "System",
+      "scale": 1,
+      "png": "System-1x.png",
+      "width": 1440,
+      "height": 900,
+      "sha256": "e9080306b2502158d6bc7e7a75b4a471396eb376cda15743f5a054ad30926eca",
+      "text_sha256": "250dc065c2b52a7c4c39c061b332b316cd0fba390aadf3d90d042823fead5fc3",
+      "fonts": [
+        {
+          "family": "IBM Plex Sans",
+          "weight": "400",
+          "status": "loaded"
+        },
+        {
+          "family": "IBM Plex Sans",
+          "weight": "500",
+          "status": "loaded"
+        },
+        {
+          "family": "IBM Plex Sans",
+          "weight": "600",
+          "status": "loaded"
+        },
+        {
+          "family": "IBM Plex Mono",
+          "weight": "400",
+          "status": "loaded"
+        },
+        {
+          "family": "IBM Plex Mono",
+          "weight": "500",
+          "status": "loaded"
+        },
+        {
+          "family": "Source Serif 4",
+          "weight": "400",
+          "status": "loaded"
+        },
+        {
+          "family": "Source Serif 4",
+          "weight": "600",
+          "status": "loaded"
+        }
+      ]
+    },
+    {
+      "name": "DataEmpty",
+      "scale": 1,
+      "png": "DataEmpty-1x.png",
+      "width": 1440,
+      "height": 900,
+      "sha256": "5c8cd946322c37730bdbc4af41b2e47a59dc80ec5d1ff37dadebcacec8223bff",
+      "text_sha256": "9449f43185d161ba1a4bc3e5d89ed3e467496fb0fcc131828b0203ec8d10b53b",
+      "fonts": [
+        {
+          "family": "IBM Plex Sans",
+          "weight": "400",
+          "status": "loaded"
+        },
+        {
+          "family": "IBM Plex Sans",
+          "weight": "500",
+          "status": "loaded"
+        },
+        {
+          "family": "IBM Plex Sans",
+          "weight": "600",
+          "status": "loaded"
+        },
+        {
+          "family": "IBM Plex Mono",
+          "weight": "400",
+          "status": "loaded"
+        },
+        {
+          "family": "IBM Plex Mono",
+          "weight": "500",
+          "status": "loaded"
+        },
+        {
+          "family": "Source Serif 4",
+          "weight": "400",
+          "status": "loaded"
+        },
+        {
+          "family": "Source Serif 4",
+          "weight": "600",
+          "status": "loaded"
+        }
+      ]
+    },
+    {
+      "name": "Data",
+      "scale": 1,
+      "png": "Data-1x.png",
+      "width": 1440,
+      "height": 900,
+      "sha256": "251a4ed7997073fdff84004245fbcd684dd110669bcd5439a748850c6ac79049",
+      "text_sha256": "1117f74ce9dd3080c4e135c261d89d7d1016913e1e8538bab4c70ac3ac19cfc2",
+      "fonts": [
+        {
+          "family": "IBM Plex Sans",
+          "weight": "400",
+          "status": "loaded"
+        },
+        {
+          "family": "IBM Plex Sans",
+          "weight": "500",
+          "status": "loaded"
+        },
+        {
+          "family": "IBM Plex Sans",
+          "weight": "600",
+          "status": "loaded"
+        },
+        {
+          "family": "IBM Plex Mono",
+          "weight": "400",
+          "status": "loaded"
+        },
+        {
+          "family": "IBM Plex Mono",
+          "weight": "500",
+          "status": "loaded"
+        },
+        {
+          "family": "Source Serif 4",
+          "weight": "400",
+          "status": "loaded"
+        },
+        {
+          "family": "Source Serif 4",
+          "weight": "600",
+          "status": "loaded"
+        }
+      ]
+    },
+    {
+      "name": "Explore",
+      "scale": 1,
+      "png": "Explore-1x.png",
+      "width": 1440,
+      "height": 900,
+      "sha256": "83361cf41de9df9e4a7999f9efa6f9f03c687bbb0aeaf3f58e158381a22d5a80",
+      "text_sha256": "50bb67ad9442220cb9ca8aaa1a4edbfe83a3fe831f04841c97ac468a13ef480f",
+      "fonts": [
+        {
+          "family": "IBM Plex Sans",
+          "weight": "400",
+          "status": "loaded"
+        },
+        {
+          "family": "IBM Plex Sans",
+          "weight": "500",
+          "status": "loaded"
+        },
+        {
+          "family": "IBM Plex Sans",
+          "weight": "600",
+          "status": "loaded"
+        },
+        {
+          "family": "IBM Plex Mono",
+          "weight": "400",
+          "status": "loaded"
+        },
+        {
+          "family": "IBM Plex Mono",
+          "weight": "500",
+          "status": "loaded"
+        },
+        {
+          "family": "Source Serif 4",
+          "weight": "400",
+          "status": "loaded"
+        },
+        {
+          "family": "Source Serif 4",
+          "weight": "600",
+          "status": "loaded"
+        }
+      ]
+    },
+    {
+      "name": "Analysis",
+      "scale": 1,
+      "png": "Analysis-1x.png",
+      "width": 1440,
+      "height": 900,
+      "sha256": "961936e80c154133a71a992f654278adebd3f4485d2b6ad41b0214715bc2782c",
+      "text_sha256": "399fa0fcfe0a48a394072413d62efda792e34d8f68adf7877f2f6e5b8d7f97da",
+      "fonts": [
+        {
+          "family": "IBM Plex Sans",
+          "weight": "400",
+          "status": "loaded"
+        },
+        {
+          "family": "IBM Plex Sans",
+          "weight": "500",
+          "status": "loaded"
+        },
+        {
+          "family": "IBM Plex Sans",
+          "weight": "600",
+          "status": "loaded"
+        },
+        {
+          "family": "IBM Plex Mono",
+          "weight": "400",
+          "status": "loaded"
+        },
+        {
+          "family": "IBM Plex Mono",
+          "weight": "500",
+          "status": "loaded"
+        },
+        {
+          "family": "Source Serif 4",
+          "weight": "400",
+          "status": "loaded"
+        },
+        {
+          "family": "Source Serif 4",
+          "weight": "600",
+          "status": "loaded"
+        }
+      ]
+    },
+    {
+      "name": "Main",
+      "scale": 1,
+      "png": "Main-1x.png",
+      "width": 1440,
+      "height": 900,
+      "sha256": "9557ababc474b67ccde640d824f40ce6d831198500049703db7a0c904192deb3",
+      "text_sha256": "084f8aeb7f81b3ee14354b5af81b975558716eda4dc21997f63e4c5364d9b7f2",
+      "fonts": [
+        {
+          "family": "IBM Plex Sans",
+          "weight": "400",
+          "status": "loaded"
+        },
+        {
+          "family": "IBM Plex Sans",
+          "weight": "500",
+          "status": "loaded"
+        },
+        {
+          "family": "IBM Plex Sans",
+          "weight": "600",
+          "status": "loaded"
+        },
+        {
+          "family": "IBM Plex Mono",
+          "weight": "400",
+          "status": "loaded"
+        },
+        {
+          "family": "IBM Plex Mono",
+          "weight": "500",
+          "status": "loaded"
+        },
+        {
+          "family": "Source Serif 4",
+          "weight": "400",
+          "status": "loaded"
+        },
+        {
+          "family": "Source Serif 4",
+          "weight": "600",
+          "status": "loaded"
+        }
+      ]
+    },
+    {
+      "name": "MainDark",
+      "scale": 1,
+      "png": "MainDark-1x.png",
+      "width": 1440,
+      "height": 900,
+      "sha256": "a639c90b58f6a019308f171ed1a796536917df1596e9cf3254c19912f6bc9e8a",
+      "text_sha256": "084f8aeb7f81b3ee14354b5af81b975558716eda4dc21997f63e4c5364d9b7f2",
+      "fonts": [
+        {
+          "family": "IBM Plex Sans",
+          "weight": "400",
+          "status": "loaded"
+        },
+        {
+          "family": "IBM Plex Sans",
+          "weight": "500",
+          "status": "loaded"
+        },
+        {
+          "family": "IBM Plex Sans",
+          "weight": "600",
+          "status": "loaded"
+        },
+        {
+          "family": "IBM Plex Mono",
+          "weight": "400",
+          "status": "loaded"
+        },
+        {
+          "family": "IBM Plex Mono",
+          "weight": "500",
+          "status": "loaded"
+        },
+        {
+          "family": "Source Serif 4",
+          "weight": "400",
+          "status": "loaded"
+        },
+        {
+          "family": "Source Serif 4",
+          "weight": "600",
+          "status": "loaded"
+        }
+      ]
+    },
+    {
+      "name": "Results",
+      "scale": 1,
+      "png": "Results-1x.png",
+      "width": 1440,
+      "height": 900,
+      "sha256": "318c9d86d4ce9b286a45e9191216565998abcf0ddfc5051def80603ed1a95814",
+      "text_sha256": "5e7d9361ded053d099954749a3f529fa7a382994c6c6d6fd6f4c607489495592",
+      "fonts": [
+        {
+          "family": "IBM Plex Sans",
+          "weight": "400",
+          "status": "loaded"
+        },
+        {
+          "family": "IBM Plex Sans",
+          "weight": "500",
+          "status": "loaded"
+        },
+        {
+          "family": "IBM Plex Sans",
+          "weight": "600",
+          "status": "loaded"
+        },
+        {
+          "family": "IBM Plex Mono",
+          "weight": "400",
+          "status": "loaded"
+        },
+        {
+          "family": "IBM Plex Mono",
+          "weight": "500",
+          "status": "loaded"
+        },
+        {
+          "family": "Source Serif 4",
+          "weight": "400",
+          "status": "loaded"
+        },
+        {
+          "family": "Source Serif 4",
+          "weight": "600",
+          "status": "loaded"
+        }
+      ]
+    },
+    {
+      "name": "Figures",
+      "scale": 1,
+      "png": "Figures-1x.png",
+      "width": 1440,
+      "height": 900,
+      "sha256": "dc11b7440bda1f5c87580b0267d3e9677639ccac292ef8fd1ec3345479426232",
+      "text_sha256": "7a150243b599e2882f18960e1486b324b7d0595db574e66623bb2a4334c630b2",
+      "fonts": [
+        {
+          "family": "IBM Plex Sans",
+          "weight": "400",
+          "status": "loaded"
+        },
+        {
+          "family": "IBM Plex Sans",
+          "weight": "500",
+          "status": "loaded"
+        },
+        {
+          "family": "IBM Plex Sans",
+          "weight": "600",
+          "status": "loaded"
+        },
+        {
+          "family": "IBM Plex Mono",
+          "weight": "400",
+          "status": "loaded"
+        },
+        {
+          "family": "IBM Plex Mono",
+          "weight": "500",
+          "status": "loaded"
+        },
+        {
+          "family": "Source Serif 4",
+          "weight": "400",
+          "status": "loaded"
+        },
+        {
+          "family": "Source Serif 4",
+          "weight": "600",
+          "status": "loaded"
+        }
+      ]
+    },
+    {
+      "name": "System",
+      "scale": 2,
+      "png": "System-2x.png",
+      "width": 2880,
+      "height": 1800,
+      "sha256": "634c0c97905320b3a5702741196edcbd5de872ca95b64e85526b4cb84e18cf67",
+      "text_sha256": "250dc065c2b52a7c4c39c061b332b316cd0fba390aadf3d90d042823fead5fc3",
+      "fonts": [
+        {
+          "family": "IBM Plex Sans",
+          "weight": "400",
+          "status": "loaded"
+        },
+        {
+          "family": "IBM Plex Sans",
+          "weight": "500",
+          "status": "loaded"
+        },
+        {
+          "family": "IBM Plex Sans",
+          "weight": "600",
+          "status": "loaded"
+        },
+        {
+          "family": "IBM Plex Mono",
+          "weight": "400",
+          "status": "loaded"
+        },
+        {
+          "family": "IBM Plex Mono",
+          "weight": "500",
+          "status": "loaded"
+        },
+        {
+          "family": "Source Serif 4",
+          "weight": "400",
+          "status": "loaded"
+        },
+        {
+          "family": "Source Serif 4",
+          "weight": "600",
+          "status": "loaded"
+        }
+      ]
+    },
+    {
+      "name": "DataEmpty",
+      "scale": 2,
+      "png": "DataEmpty-2x.png",
+      "width": 2880,
+      "height": 1800,
+      "sha256": "fb66f9478f5e0ccc10e34ba52660d0d814e5e9809d519b0e445b160231923d58",
+      "text_sha256": "9449f43185d161ba1a4bc3e5d89ed3e467496fb0fcc131828b0203ec8d10b53b",
+      "fonts": [
+        {
+          "family": "IBM Plex Sans",
+          "weight": "400",
+          "status": "loaded"
+        },
+        {
+          "family": "IBM Plex Sans",
+          "weight": "500",
+          "status": "loaded"
+        },
+        {
+          "family": "IBM Plex Sans",
+          "weight": "600",
+          "status": "loaded"
+        },
+        {
+          "family": "IBM Plex Mono",
+          "weight": "400",
+          "status": "loaded"
+        },
+        {
+          "family": "IBM Plex Mono",
+          "weight": "500",
+          "status": "loaded"
+        },
+        {
+          "family": "Source Serif 4",
+          "weight": "400",
+          "status": "loaded"
+        },
+        {
+          "family": "Source Serif 4",
+          "weight": "600",
+          "status": "loaded"
+        }
+      ]
+    },
+    {
+      "name": "Data",
+      "scale": 2,
+      "png": "Data-2x.png",
+      "width": 2880,
+      "height": 1800,
+      "sha256": "0631e155ae4d51bcc1d5ddcd4e73084c2c34587db00b20354f68222dae9a9717",
+      "text_sha256": "1117f74ce9dd3080c4e135c261d89d7d1016913e1e8538bab4c70ac3ac19cfc2",
+      "fonts": [
+        {
+          "family": "IBM Plex Sans",
+          "weight": "400",
+          "status": "loaded"
+        },
+        {
+          "family": "IBM Plex Sans",
+          "weight": "500",
+          "status": "loaded"
+        },
+        {
+          "family": "IBM Plex Sans",
+          "weight": "600",
+          "status": "loaded"
+        },
+        {
+          "family": "IBM Plex Mono",
+          "weight": "400",
+          "status": "loaded"
+        },
+        {
+          "family": "IBM Plex Mono",
+          "weight": "500",
+          "status": "loaded"
+        },
+        {
+          "family": "Source Serif 4",
+          "weight": "400",
+          "status": "loaded"
+        },
+        {
+          "family": "Source Serif 4",
+          "weight": "600",
+          "status": "loaded"
+        }
+      ]
+    },
+    {
+      "name": "Explore",
+      "scale": 2,
+      "png": "Explore-2x.png",
+      "width": 2880,
+      "height": 1800,
+      "sha256": "fc99363dd06756a102c67b986154aaf129f7f17a41f345199b8516dc4f7b54c2",
+      "text_sha256": "50bb67ad9442220cb9ca8aaa1a4edbfe83a3fe831f04841c97ac468a13ef480f",
+      "fonts": [
+        {
+          "family": "IBM Plex Sans",
+          "weight": "400",
+          "status": "loaded"
+        },
+        {
+          "family": "IBM Plex Sans",
+          "weight": "500",
+          "status": "loaded"
+        },
+        {
+          "family": "IBM Plex Sans",
+          "weight": "600",
+          "status": "loaded"
+        },
+        {
+          "family": "IBM Plex Mono",
+          "weight": "400",
+          "status": "loaded"
+        },
+        {
+          "family": "IBM Plex Mono",
+          "weight": "500",
+          "status": "loaded"
+        },
+        {
+          "family": "Source Serif 4",
+          "weight": "400",
+          "status": "loaded"
+        },
+        {
+          "family": "Source Serif 4",
+          "weight": "600",
+          "status": "loaded"
+        }
+      ]
+    },
+    {
+      "name": "Analysis",
+      "scale": 2,
+      "png": "Analysis-2x.png",
+      "width": 2880,
+      "height": 1800,
+      "sha256": "aac2a9b0c085a49217045b2b27541d93367f7d8448f2c8efe46489104b870bfe",
+      "text_sha256": "399fa0fcfe0a48a394072413d62efda792e34d8f68adf7877f2f6e5b8d7f97da",
+      "fonts": [
+        {
+          "family": "IBM Plex Sans",
+          "weight": "400",
+          "status": "loaded"
+        },
+        {
+          "family": "IBM Plex Sans",
+          "weight": "500",
+          "status": "loaded"
+        },
+        {
+          "family": "IBM Plex Sans",
+          "weight": "600",
+          "status": "loaded"
+        },
+        {
+          "family": "IBM Plex Mono",
+          "weight": "400",
+          "status": "loaded"
+        },
+        {
+          "family": "IBM Plex Mono",
+          "weight": "500",
+          "status": "loaded"
+        },
+        {
+          "family": "Source Serif 4",
+          "weight": "400",
+          "status": "loaded"
+        },
+        {
+          "family": "Source Serif 4",
+          "weight": "600",
+          "status": "loaded"
+        }
+      ]
+    },
+    {
+      "name": "Main",
+      "scale": 2,
+      "png": "Main-2x.png",
+      "width": 2880,
+      "height": 1800,
+      "sha256": "2eb74e6b914be27945c3a46f3be555c494f12b88183ba17d32a9f7ec8ac296c6",
+      "text_sha256": "084f8aeb7f81b3ee14354b5af81b975558716eda4dc21997f63e4c5364d9b7f2",
+      "fonts": [
+        {
+          "family": "IBM Plex Sans",
+          "weight": "400",
+          "status": "loaded"
+        },
+        {
+          "family": "IBM Plex Sans",
+          "weight": "500",
+          "status": "loaded"
+        },
+        {
+          "family": "IBM Plex Sans",
+          "weight": "600",
+          "status": "loaded"
+        },
+        {
+          "family": "IBM Plex Mono",
+          "weight": "400",
+          "status": "loaded"
+        },
+        {
+          "family": "IBM Plex Mono",
+          "weight": "500",
+          "status": "loaded"
+        },
+        {
+          "family": "Source Serif 4",
+          "weight": "400",
+          "status": "loaded"
+        },
+        {
+          "family": "Source Serif 4",
+          "weight": "600",
+          "status": "loaded"
+        }
+      ]
+    },
+    {
+      "name": "MainDark",
+      "scale": 2,
+      "png": "MainDark-2x.png",
+      "width": 2880,
+      "height": 1800,
+      "sha256": "7396afb2034dbec134f457ef208100ef8ce3290d18ab484f9b7e86985f329e44",
+      "text_sha256": "084f8aeb7f81b3ee14354b5af81b975558716eda4dc21997f63e4c5364d9b7f2",
+      "fonts": [
+        {
+          "family": "IBM Plex Sans",
+          "weight": "400",
+          "status": "loaded"
+        },
+        {
+          "family": "IBM Plex Sans",
+          "weight": "500",
+          "status": "loaded"
+        },
+        {
+          "family": "IBM Plex Sans",
+          "weight": "600",
+          "status": "loaded"
+        },
+        {
+          "family": "IBM Plex Mono",
+          "weight": "400",
+          "status": "loaded"
+        },
+        {
+          "family": "IBM Plex Mono",
+          "weight": "500",
+          "status": "loaded"
+        },
+        {
+          "family": "Source Serif 4",
+          "weight": "400",
+          "status": "loaded"
+        },
+        {
+          "family": "Source Serif 4",
+          "weight": "600",
+          "status": "loaded"
+        }
+      ]
+    },
+    {
+      "name": "Results",
+      "scale": 2,
+      "png": "Results-2x.png",
+      "width": 2880,
+      "height": 1800,
+      "sha256": "e2d9d6a36ba51c804d678ad7646c2d3dabf4fe9da12a212cc5b2ae56f6f03206",
+      "text_sha256": "5e7d9361ded053d099954749a3f529fa7a382994c6c6d6fd6f4c607489495592",
+      "fonts": [
+        {
+          "family": "IBM Plex Sans",
+          "weight": "400",
+          "status": "loaded"
+        },
+        {
+          "family": "IBM Plex Sans",
+          "weight": "500",
+          "status": "loaded"
+        },
+        {
+          "family": "IBM Plex Sans",
+          "weight": "600",
+          "status": "loaded"
+        },
+        {
+          "family": "IBM Plex Mono",
+          "weight": "400",
+          "status": "loaded"
+        },
+        {
+          "family": "IBM Plex Mono",
+          "weight": "500",
+          "status": "loaded"
+        },
+        {
+          "family": "Source Serif 4",
+          "weight": "400",
+          "status": "loaded"
+        },
+        {
+          "family": "Source Serif 4",
+          "weight": "600",
+          "status": "loaded"
+        }
+      ]
+    },
+    {
+      "name": "Figures",
+      "scale": 2,
+      "png": "Figures-2x.png",
+      "width": 2880,
+      "height": 1800,
+      "sha256": "df4d1f85d0a09d7b49bfc471eaf91b4ea278c9c9029e79dadd38b53370168aa2",
+      "text_sha256": "7a150243b599e2882f18960e1486b324b7d0595db574e66623bb2a4334c630b2",
+      "fonts": [
+        {
+          "family": "IBM Plex Sans",
+          "weight": "400",
+          "status": "loaded"
+        },
+        {
+          "family": "IBM Plex Sans",
+          "weight": "500",
+          "status": "loaded"
+        },
+        {
+          "family": "IBM Plex Sans",
+          "weight": "600",
+          "status": "loaded"
+        },
+        {
+          "family": "IBM Plex Mono",
+          "weight": "400",
+          "status": "loaded"
+        },
+        {
+          "family": "IBM Plex Mono",
+          "weight": "500",
+          "status": "loaded"
+        },
+        {
+          "family": "Source Serif 4",
+          "weight": "400",
+          "status": "loaded"
+        },
+        {
+          "family": "Source Serif 4",
+          "weight": "600",
+          "status": "loaded"
+        }
+      ]
+    }
+  ]
+}
