@@ -9770,7 +9770,6 @@
           "ioJVM/eyes4s.io.DiagnosticCoverageJvmSuite",
           "ioJVM/eyes4s.io.DiagnosticsDocJvmSuite",
           "ioJVM/eyes4s.io.IoDiagnosticCatalogSuite",
-          "lawsJVM/eyes4s.laws.FormLawSuite",
           "planJVM/eyes4s.plan.DiagnosticCatalogSuite",
           "planJVM/eyes4s.plan.FormDescriptorSuite",
           "planJVM/eyes4s.plan.UnmatchedReasonsSuite",
@@ -26521,6 +26520,7 @@
       "every FIXTURE.md count reproduces through eyes4s",
       "group, paired and per-group n agree with FIXTURE.md",
       "the focus query P17 ret_07 x enc_03 is scored at all four scales",
+      "the focus query's control pairs are its 19 controls, their mean its B",
       "the stored file names its inputs, recipe and the JVM it was generated on",
       "window figures and enc_03's role agree with FIXTURE.md"
     ],
