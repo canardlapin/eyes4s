@@ -22,16 +22,16 @@ import cats.syntax.all.*
 import eyes4s.studio.app.text.{FirstRunText as Text, FirstRunTextId as T}
 import eyes4s.studio.core.document.{Preset, SourceRole}
 import eyes4s.studio.core.platform.HostPath
-import eyes4s.studio.desktop.shell.SegmentedBar
-import javafx.scene.control.{Button, Label, ScrollPane}
+import eyes4s.studio.desktop.shell.{CompositeFocus, SegmentedBar}
+import javafx.scene.control.{Button, Label, ListCell, ListView, ScrollPane, Tooltip}
 import javafx.scene.layout.{HBox, VBox, Priority}
-import javafx.scene.input.TransferMode
+import javafx.scene.input.{KeyCode, MouseButton, TransferMode}
 import scala.jdk.CollectionConverters.*
 
 /** First-run choices route to the normal lifecycle and import wizard. */
 final class DataFirstRunView(open: PlatformDialog => Unit):
   private var selected                                          = Preset.EncodingRetrieval
-  private var recent                                            = Vector.empty[HostPath]
+  private var recent                                            = Option.empty[Vector[HostPath]]
   private def label(text: String, style: String = "t12"): Label =
     val l = Label(text)
     l.getStyleClass.add(style)
@@ -90,8 +90,40 @@ final class DataFirstRunView(open: PlatformDialog => Unit):
   )
   sources.setPadding(javafx.geometry.Insets(20))
   sources.setAlignment(javafx.geometry.Pos.CENTER_LEFT)
-  val notice              = label("")
-  private val recentNodes = VBox(6)
+  val notice     = label("")
+  val recentList = ListView[HostPath]()
+  recentList.setAccessibleText(Text(T.Recent))
+  recentList.setFixedCellSize(30)
+  CompositeFocus.track(recentList)
+  recentList.setCellFactory(_ =>
+    new ListCell[HostPath]:
+      private val hint = Tooltip()
+      setTooltip(hint)
+      setMnemonicParsing(false)
+      override def updateItem(item: HostPath, empty: Boolean): Unit =
+        super.updateItem(item, empty)
+        val text = Option(item).filter(_ => !empty).fold("")(_.value)
+        setText(text)
+        setAccessibleText(text)
+        hint.setText(text)
+      setOnMouseClicked(e =>
+        if !isEmpty && e.getButton == MouseButton.PRIMARY && e.getClickCount == 1 then
+          Option(getItem).foreach(path => open(PlatformDialog.OpenProjectAt(path)))
+          e.consume()
+      )
+  )
+  recentList.focusedProperty.addListener { (_, _, focused) =>
+    if focused && !recentList.getItems.isEmpty && recentList.getFocusModel.getFocusedIndex < 0
+    then recentList.getFocusModel.focus(0)
+  }
+  recentList.setOnKeyPressed(e =>
+    if e.getCode == KeyCode.ENTER && !e.isControlDown && !e.isMetaDown && !e.isAltDown then
+      Option(recentList.getFocusModel.getFocusedItem)
+        .foreach(path => open(PlatformDialog.OpenProjectAt(path)))
+      e.consume()
+  )
+  private val noRecent    = label(Text(T.NoRecent), "t11")
+  private val recentNodes = VBox(6, noRecent, recentList)
   private val cards       = HBox(
     14,
     card(T.Fixations, T.Required, T.FixationsHelp, fixations),
@@ -152,18 +184,15 @@ final class DataFirstRunView(open: PlatformDialog => Unit):
 
   def sync(model: AppModel): Unit =
     val paths = model.recent.paths
-    if recent != paths || recentNodes.getChildren.isEmpty then
-      recent = paths
-      recentNodes.getChildren.clear()
-      if paths.isEmpty then recentNodes.getChildren.add(label(Text(T.NoRecent), "t11")): Unit
-      else
-        paths.foreach { path =>
-          val b = Button(path.value)
-          b.setMnemonicParsing(false)
-          b.setWrapText(true)
-          b.setOnAction(_ => open(PlatformDialog.OpenProjectAt(path)))
-          recentNodes.getChildren.add(b): Unit
-        }
+    if !recent.contains(paths) then
+      recent = Some(paths)
+      recentList.getItems.setAll(paths.asJava)
+      recentList.setVisible(paths.nonEmpty)
+      recentList.setManaged(paths.nonEmpty)
+      recentList.setPrefHeight(paths.size.min(4) * 30 + 2)
+      recentList.setMaxHeight(recentList.getPrefHeight)
+      noRecent.setVisible(paths.isEmpty)
+      noRecent.setManaged(paths.isEmpty)
 
   /** Validate the whole drop before starting a project operation. */
   def dropFiles(files: Vector[java.io.File]): Boolean =

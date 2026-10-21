@@ -55,6 +55,52 @@ class DataFirstRunFxSuite extends ShellFxSuite:
     fx.snapshot(StudioTheme.Dark)
   }
 
+  fxStage.test("DataEmpty Recent projects renders in the native shell in both themes") { fx =>
+    val recent = eyes4s.studio.core.preferences.RecentProjects.of(
+      Vector("/Projects/memory-study.eyes", "/Projects/imagery-pilot.eyes")
+        .map(p => get(HostPath.of(p)))
+    )
+    val model = at(get(AppModel.newProject), Intent.RecentProjectsLoaded(recent))
+    val w     = boot(fx, model)
+    assertEquals(runOnFx(w.firstRun.recentList.getItems.asScala.toVector), recent.paths)
+    fx.snapshot(StudioTheme.Light)
+    dispatch(fx, w, Intent.Invoke(CommandRegistry.appearanceDark.id))
+    fx.snapshot(StudioTheme.Dark)
+  }
+
+  fxStage.test("Recent projects is one Tab stop with a home cursor and keyboard activation") {
+    fx =>
+      val paths = Vector("/recent/one.eyes", "/recent/two.eyes").map(p => get(HostPath.of(p)))
+      val asked = scala.collection.mutable.ArrayBuffer.empty[PlatformDialog]
+      val model = at(
+        get(AppModel.newProject),
+        Intent.RecentProjectsLoaded(eyes4s.studio.core.preferences.RecentProjects.of(paths))
+      )
+      val view = runOnFx {
+        val view = eyes4s.studio.desktop.data.DataFirstRunView(dialog => {
+          asked += dialog; ()
+        })
+        view.sync(model)
+        view
+      }
+      fx.show(view.node)
+      val list = view.recentList
+      runOnFx(list.requestFocus())
+      fx.awaitLayout()
+      runOnFx {
+        assert(list.isFocusTraversable)
+        assertEquals(list.getFocusModel.getFocusedIndex, 0)
+        assert(!eyes4s.studio.desktop.shell.CompositeFocus.hasNoCursor(list))
+        assert(list.lookupAll(".list-cell").asScala.forall(!_.isFocusTraversable))
+      }
+      fx.robot.press(javafx.scene.input.KeyCode.DOWN)
+      assertEquals(runOnFx(list.getFocusModel.getFocusedIndex), 1)
+      fx.robot.press(javafx.scene.input.KeyCode.ENTER, shortcut.copy(shift = true))
+      assertEquals(asked.toVector, Vector.empty)
+      fx.robot.press(javafx.scene.input.KeyCode.ENTER)
+      assertEquals(asked.toVector, Vector(PlatformDialog.OpenProjectAt(paths(1))))
+  }
+
   fxStage.test("E2E02 first run opens a verified independent classpath example copy") { fx =>
     TempDirs
       .resource("eyes4s-first-example-")
@@ -100,18 +146,15 @@ class DataFirstRunFxSuite extends ShellFxSuite:
             eventually(fx, "example closed to first run")(
               !host.busy && host.window.exists(_.project.isEmpty)
             )
-            val recent = runOnFx(
-              host.window.get.firstRun.node
-                .lookupAll(".button")
-                .asScala
-                .collectFirst {
-                  case button: javafx.scene.control.Button
-                      if button.getText == target.toString =>
-                    button
-                }
-                .getOrElse(fail("first-run recent project missing"))
-            )
-            runOnFx(recent.fire())
+            runOnFx {
+              val recent = host.window.get.firstRun.recentList
+              assert(recent.getItems.asScala.contains(path(target)))
+              recent.getSelectionModel.select(path(target))
+              recent.getFocusModel.focus(recent.getSelectionModel.getSelectedIndex)
+              recent.requestFocus()
+            }
+            fx.awaitLayout()
+            fx.robot.press(javafx.scene.input.KeyCode.ENTER)
             eventually(fx, "first-run recent project reopened")(
               !host.busy && host.window.exists(_.project.isDefined)
             )

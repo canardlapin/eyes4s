@@ -12,7 +12,11 @@
     "DataEmpty-dark-2x.png": "42914ee22c700a0517d0d9f97265e36c4f3dd03057bc058f43c9662e85f1ce40",
     "DataEmpty-light-2x.png": "cc3e7320bb222d6771b35a3bd10457d392690efb0e816eacfd41a80fccdf5d2d",
     "DataEmpty-light-1x.png": "bdd4e141deeda1fe82645880193f88c478c32f456113f6779d08f525c5c9625f",
-    "DataEmpty-dark-1x.png": "09455b3dfd1986bb45a947f6187c812dbe307336032c5bd050a72372be47be78"
+    "DataEmpty-dark-1x.png": "09455b3dfd1986bb45a947f6187c812dbe307336032c5bd050a72372be47be78",
+    "Recent-light-1x.png": "57d08b4d0cfa06779129cae2e5aabad9663966c4c49f09bf10dfe7b0bcd8f29e",
+    "Recent-dark-2x.png": "34aa2db0e8bd11576fbf9c813daed7191a6c97c4030c1fbc3ca95b7515856961",
+    "Recent-light-2x.png": "c7eec04c3e9c90fd51780e1b7aaa7eef80fb1f1e450e9b99c4585360dce0d8d2",
+    "Recent-dark-1x.png": "d19057e9823dfce7b882ded09b7568b4aa4b2a766d1e48aaa591778b4c44db72"
   },
   "metrics": {
     "heights": {
@@ -38,9 +42,9 @@
     "studio/app/src/main/scala/eyes4s/studio/app/data/FirstRunImport.scala": "3c3377244596b9541febacf6f596f077130ca5e06352445f00c7d4bb55d4f28b",
     "studio/app/src/main/scala/eyes4s/studio/app/text/FirstRunText.scala": "9cce5cb027b5061980125e0ba40149abb6ca2aee76a0ff49b0f5dc5bc9cc4f63",
     "studio/app/src/test/scala/eyes4s/studio/app/data/FirstRunImportSuite.scala": "0ea36ea5d23d0b9383105ded8d3dc637dbf25cae09b2c4b41d58610c9d11b706",
-    "studio/desktop/src/main/scala/eyes4s/studio/desktop/data/DataFirstRunView.scala": "2b07a750b65004350a1329c7d3bede6b550193e7b416972040df7fe93756cea2",
+    "studio/desktop/src/main/scala/eyes4s/studio/desktop/data/DataFirstRunView.scala": "001bffd95cd2936e80a8a484a1632dccf5f45d6a4e982d88472881fa869ab44a",
     "studio/desktop/src/main/scala/eyes4s/studio/desktop/platform/BundledExample.scala": "25cabdf1f66b3394f6f54a4034687e461656b8929b09230fd8e62d285a692a57",
-    "studio/desktop/src/test/scala/eyes4s/studio/desktop/data/DataFirstRunFxSuite.scala": "7c3d2c2be52ebe428894eb576c55d9bef5df6e79ed7478b276f481dde975ccc7",
+    "studio/desktop/src/test/scala/eyes4s/studio/desktop/data/DataFirstRunFxSuite.scala": "572e05b646be5820116403ea3deaa51f6bbf6a1314bb69ee0518dcdb0d28290a",
     "studio/desktop/src/test/scala/eyes4s/studio/desktop/dock/LayoutPersistenceFxSuite.scala": "99b745343c8b1a0c7ea797dccea677fc81068187e89341b6814248308af6f01b",
     "studio/desktop/src/test/scala/eyes4s/studio/desktop/platform/PlatformRoutesFxSuite.scala": "a17ebbc49e1ac02f28c7c43c4badb5dad36e5ed1608cb75ddfdfcc17aeab5eae",
     "studio/desktop/src/test/scala/eyes4s/studio/desktop/shell/ParityChecklistSuite.scala": "4440b6de8eabffd3fb8367bdf26513c290a7032e2a93f476068e3eb8c80ad3d2",
@@ -87,5 +91,5 @@
     "Interactive Scaladock headers expose pop-out/maximize controls; the t0 board illustrates fewer header controls. Pop-outs are the approved S1.5b behavior; singleton panes remain non-closable."
   ],
   "qualification": "Focused tests passed; final frozen-source, CI and E2E qualification recorded separately.",
-  "review_followup": "The post-review build change includes hidden cross-project XML reports in the scoped Studio artifact upload. UI source and captures are unchanged; final qualification covers the revised build. The legacy DockLayoutsSuite expectation was updated to require approved pop-outs while preserving singleton non-closure; all ten desktop.dock tests passed under warnings-as-errors. Full Studio linking exposed java.util.Locale.ROOT as unsupported in Scala.js; explicit ASCII folding now passes all three parser cases on JVM and JS, preserving original paths. Pending scanpath chooser controls now attach the visible localized status through DisabledReason; cancellation restores the prior status and six focused native checks passed."
+  "review_followup": "The post-review build change includes hidden cross-project XML reports in the scoped Studio artifact upload. UI source and captures are unchanged; final qualification covers the revised build. The legacy DockLayoutsSuite expectation was updated to require approved pop-outs while preserving singleton non-closure; all ten desktop.dock tests passed under warnings-as-errors. Full Studio linking exposed java.util.Locale.ROOT as unsupported in Scala.js; explicit ASCII folding now passes all three parser cases on JVM and JS, preserving original paths. Pending scanpath chooser controls now attach the visible localized status through DisabledReason; cancellation restores the prior status and six focused native checks passed. Final keyboard review replaced individual Recent buttons with one shared CompositeFocus list, a home cursor, arrow/Enter activation and a guard for global modified-Enter shortcuts. The real example Recent reopen uses keyboard. Eight first-run/parity checks pass; light/dark populated-list captures reviewed without clipping. The two /Projects paths are synthetic visual fixtures only; production reads actual preferences."
 }

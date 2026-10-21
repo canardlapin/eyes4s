@@ -47,7 +47,7 @@ application parity is qualified separately below.
 ## DataEmpty (moment t0)
 - [x] "Untitled project"; the trail reads "New project"; freshness reads "No dataset · no analysis"; status reads "Not saved".
 - [x] Drop targets for fixations.csv (required) and trials.csv (recommended, with the stated reason). The whole window accepts drops; unsupported or ambiguous sets are refused together.
-- [x] Stimuli folder, three presets, the bundled example, actual recent projects, and the local-only statement.
+- [x] Stimuli folder, three presets, the bundled example, actual recent projects, and the local-only statement. Recent uses one composite-list Tab stop, a home cursor, arrow navigation and Enter-to-open.
 - [x] "What Eyes Studio will ask you" checklist.
 
 The [signed side-by-side](evidence/20261021-g4/index.html) and
