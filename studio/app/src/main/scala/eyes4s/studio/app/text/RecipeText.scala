@@ -18,7 +18,7 @@ package eyes4s.studio.app.text
 
 enum RecipeTextId derives CanEqual:
   case Apply, Loading, Checking, Applied, Unapplied, Locked, Field, Metadata, Default, Optional
-  case ScanpathFileKind, ScanpathWorkspaceTitle
+  case ScanpathFileKind, ScanpathWorkspaceTitle, ScanpathChoosing
   case Add, Remove, ReadOnly, Scanpaths, Cell, CellUnknown, BelowCells, NearUniform, Scale,
     NewScale
   case Scales, AddScale, RemoveScale, ScaleEntry, ScaleHelp, InvalidScale, Diff, NoDiff, Recipe,
@@ -32,6 +32,7 @@ object RecipeText:
     id match
       case ScanpathFileKind       => "Scanpath JSON"
       case ScanpathWorkspaceTitle => "Eyes Studio — MultiMatch scanpath workspace"
+      case ScanpathChoosing       => "Finish or cancel the open file chooser to continue."
       case Apply                  => "Apply settings"
       case Loading                => "Loading recipe fields…"
       case Checking               => "Checking settings…"

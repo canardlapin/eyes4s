@@ -47,13 +47,15 @@ enum FirstRunDropProblem derives CanEqual:
 object FirstRunImport:
   /** Admit the whole drop, never pick one source and discard another. */
   def dropped(files: Vector[FirstRunFile]): Either[FirstRunDropProblem, FirstRunImport] =
-    def lower(name: String): String = name.toLowerCase(java.util.Locale.ROOT)
-    val directories                 = files.filter(_.directory)
-    val tables                      = files.filterNot(_.directory)
-    val unsupported                 =
-      tables.filterNot(f => Vector(".csv", ".tsv").exists(lower(f.name).endsWith))
+    def asciiLower(name: String): String = name.map { c =>
+      if c >= 'A' && c <= 'Z' then (c + ('a' - 'A')).toChar else c
+    }
+    val directories = files.filter(_.directory)
+    val tables      = files.filterNot(_.directory)
+    val unsupported =
+      tables.filterNot(f => Vector(".csv", ".tsv").exists(asciiLower(f.name).endsWith))
     val roles = tables.map(f =>
-      (if lower(f.name).startsWith("trials") then SourceRole.Trials
+      (if asciiLower(f.name).startsWith("trials") then SourceRole.Trials
        else SourceRole.Fixations) -> f
     )
     val repeated = SourceRole.values.toVector.flatMap { role =>

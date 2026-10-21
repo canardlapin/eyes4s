@@ -35,14 +35,14 @@
   },
   "capture_convention": "1440x900 logical pixels, Monocle Headless, software pipeline, native output scale 1; 2x files are snapshot transforms, not native HiDPI qualification",
   "source_sha256": {
-    "studio/app/src/main/scala/eyes4s/studio/app/data/FirstRunImport.scala": "6e9c515bb9fcd2919cfb4f506d8d974d1815da6b7e6a0801f0ce79d7cf33a94b",
+    "studio/app/src/main/scala/eyes4s/studio/app/data/FirstRunImport.scala": "3c3377244596b9541febacf6f596f077130ca5e06352445f00c7d4bb55d4f28b",
     "studio/app/src/main/scala/eyes4s/studio/app/text/FirstRunText.scala": "9cce5cb027b5061980125e0ba40149abb6ca2aee76a0ff49b0f5dc5bc9cc4f63",
     "studio/app/src/test/scala/eyes4s/studio/app/data/FirstRunImportSuite.scala": "0ea36ea5d23d0b9383105ded8d3dc637dbf25cae09b2c4b41d58610c9d11b706",
     "studio/desktop/src/main/scala/eyes4s/studio/desktop/data/DataFirstRunView.scala": "2b07a750b65004350a1329c7d3bede6b550193e7b416972040df7fe93756cea2",
     "studio/desktop/src/main/scala/eyes4s/studio/desktop/platform/BundledExample.scala": "25cabdf1f66b3394f6f54a4034687e461656b8929b09230fd8e62d285a692a57",
     "studio/desktop/src/test/scala/eyes4s/studio/desktop/data/DataFirstRunFxSuite.scala": "7c3d2c2be52ebe428894eb576c55d9bef5df6e79ed7478b276f481dde975ccc7",
     "studio/desktop/src/test/scala/eyes4s/studio/desktop/dock/LayoutPersistenceFxSuite.scala": "99b745343c8b1a0c7ea797dccea677fc81068187e89341b6814248308af6f01b",
-    "studio/desktop/src/test/scala/eyes4s/studio/desktop/platform/PlatformRoutesFxSuite.scala": "5d750fc8720970c30e98b922691ec1130b5edfa666227811433e049efb16bd59",
+    "studio/desktop/src/test/scala/eyes4s/studio/desktop/platform/PlatformRoutesFxSuite.scala": "a17ebbc49e1ac02f28c7c43c4badb5dad36e5ed1608cb75ddfdfcc17aeab5eae",
     "studio/desktop/src/test/scala/eyes4s/studio/desktop/shell/ParityChecklistSuite.scala": "4440b6de8eabffd3fb8367bdf26513c290a7032e2a93f476068e3eb8c80ad3d2",
     "tools/studio-e2e/check.py": "248d5ed1e4054f4ca3a9c8d1178e153a88270e21ec5e5cd3263b8e4d073daa6e",
     "tools/studio-e2e/manifest.json": "8b1429a88202e7bba03eac4a8fa8a5b9b73e31a6365a0007a7e9235185ea9ee4",
@@ -51,7 +51,7 @@
     "studio/app/src/main/scala/eyes4s/studio/app/AppModel.scala": "17bd69103ababe5916cda7e5132aa57c52af0938f46120e4f656be17316931d3",
     "studio/app/src/main/scala/eyes4s/studio/app/layout/StudioLayouts.scala": "ab19ef88bac14775b3edc32838ce43e18bbf6d8cbada07ebc084d3e287d93caa",
     "studio/app/src/main/scala/eyes4s/studio/app/project/ProjectLifecycle.scala": "65a32956732b7f80efb2e9cc68f6c287c67d53afe92d85e84be6eb1daa192672",
-    "studio/app/src/main/scala/eyes4s/studio/app/text/RecipeText.scala": "0dfd4285f4142d1f7a6850b5d225df82aea14ec8f2f3f56fb9745fab8033ff50",
+    "studio/app/src/main/scala/eyes4s/studio/app/text/RecipeText.scala": "2d736039893e0fc2674eb6dafd37f558fe4c0963487475ca93ed637a81153715",
     "studio/app/src/main/scala/eyes4s/studio/app/text/ReportText.scala": "7b8fca0830158238a1f59273dabfa42e132181a424134d4b2856742a1c54697f",
     "studio/app/src/test/scala/eyes4s/studio/app/project/ProjectCopyModelSuite.scala": "2abcd7b82be3e1c6cb88e5027098dbb99bf3eb370f2179a22e8e778ca13f765a",
     "studio/core/src/main/scala/eyes4s/studio/core/preferences/UserPreferences.scala": "04039e04e989f1e160e103f026a033c5d8d0502de6a2040536adf6d3cb06a0fd",
@@ -65,7 +65,7 @@
     "studio/desktop/src/main/scala/eyes4s/studio/desktop/project/ProjectLifecycleHost.scala": "d743d74a0cec856b2c3c92fcc1cb3894e9f15cb43db19aaad7d2dbdc31ef46b4",
     "studio/desktop/src/main/scala/eyes4s/studio/desktop/report/ErrorDialogView.scala": "b1f01b23fc598a38e51ede41c46ffc1546ea3ee2d4f771a13be6331287ab2d20",
     "studio/desktop/src/main/scala/eyes4s/studio/desktop/runtime/DesktopEffects.scala": "e7a31687e83ca666c429dfe5d32e926a9d8f075de964131ca994c00e8a350462",
-    "studio/desktop/src/main/scala/eyes4s/studio/desktop/scanpath/ScanpathWorkbench.scala": "4f902545e72beaca61d1a597ea3de4455d184762b1183bcd6427b0fb677a785f",
+    "studio/desktop/src/main/scala/eyes4s/studio/desktop/scanpath/ScanpathWorkbench.scala": "1ff6312077eaf76de41ee506902e3c5109ff66e8ff18e66e30b27c6b670e0f50",
     "studio/desktop/src/main/scala/eyes4s/studio/desktop/shell/AppShell.scala": "41992dbf97aeba53e5f63c8aabe11109dff7ea98167d2c2686cc9cac6f4f22d1",
     "studio/desktop/src/test/scala/eyes4s/studio/desktop/project/ProjectLifecycleFxSuite.scala": "063e680420335976e247b7dfb2bb16acb8c50f1214c8137cdd2090b8a90902bd",
     "studio/desktop/src/test/scala/eyes4s/studio/desktop/dock/DockLayoutsSuite.scala": "8f6bdd3f70d7680cd2986cb11617531ba73957033e78ce60aa5bb7d460f1e046"
@@ -87,5 +87,5 @@
     "Interactive Scaladock headers expose pop-out/maximize controls; the t0 board illustrates fewer header controls. Pop-outs are the approved S1.5b behavior; singleton panes remain non-closable."
   ],
   "qualification": "Focused tests passed; final frozen-source, CI and E2E qualification recorded separately.",
-  "review_followup": "The post-review build change includes hidden cross-project XML reports in the scoped Studio artifact upload. UI source and captures are unchanged; final qualification covers the revised build. The legacy DockLayoutsSuite expectation was updated to require approved pop-outs while preserving singleton non-closure; all ten desktop.dock tests passed under warnings-as-errors."
+  "review_followup": "The post-review build change includes hidden cross-project XML reports in the scoped Studio artifact upload. UI source and captures are unchanged; final qualification covers the revised build. The legacy DockLayoutsSuite expectation was updated to require approved pop-outs while preserving singleton non-closure; all ten desktop.dock tests passed under warnings-as-errors. Full Studio linking exposed java.util.Locale.ROOT as unsupported in Scala.js; explicit ASCII folding now passes all three parser cases on JVM and JS, preserving original paths. Pending scanpath chooser controls now attach the visible localized status through DisabledReason; cancellation restores the prior status and six focused native checks passed."
 }

@@ -49,6 +49,9 @@ final class ScanpathWorkbench(
   val inputLabel = Label("No scanpath input loaded")
   val status     = Label("Open a scanpath request to begin.")
   status.setWrapText(true)
+  Vector(open, run, phase, save).foreach(control =>
+    eyes4s.studio.desktop.shell.DisabledReason.attach(control, status)
+  )
   val queryTable = TableView[Vector[String]]()
   Vector(
     "Query",
@@ -160,11 +163,18 @@ final class ScanpathWorkbench(
     worker.start()
   private def choosePath(save: Boolean)(use: Path => Unit): Unit =
     if !closed && !busy then
+      val previousStatus = status.getText
       choosing = true
+      status.setText(
+        eyes4s.studio.app.text.RecipeText(
+          eyes4s.studio.app.text.RecipeTextId.ScanpathChoosing
+        )
+      )
       controls()
       def selected(path: Option[Path]): Unit =
         choosing = false
         if !closed then
+          status.setText(previousStatus)
           controls()
           path.foreach(use)
       choose match

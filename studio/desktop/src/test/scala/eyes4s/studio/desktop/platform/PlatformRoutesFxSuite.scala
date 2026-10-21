@@ -163,14 +163,23 @@ class PlatformRoutesFxSuite extends ShellFxSuite:
     fx.show(view.node)
     try
       runOnFx {
+        val before = view.status.getText
         view.open.fire()
         assert(view.busy)
         assert(view.open.isDisabled)
+        assertEquals(
+          view.open.getAccessibleHelp,
+          eyes4s.studio.app.text.RecipeText(
+            eyes4s.studio.app.text.RecipeTextId.ScanpathChoosing
+          )
+        )
+        assertEquals(view.status.getText, view.open.getAccessibleHelp)
         view.open.fire()
         assertEquals(answers.size, 1)
         answers.head(None)
         assert(!view.busy)
         assert(!view.open.isDisabled)
+        assertEquals(view.status.getText, before)
         view.open.fire()
         assertEquals(answers.size, 2)
         view.dispose()
