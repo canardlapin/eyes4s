@@ -33,6 +33,7 @@ Verified by hand on macOS: pending. The hand check covers:
 |---|---|---|---|
 | File | New project… | — | `file.new-project` |
 | File | Open project… | — | `file.open-project` |
+| File | Open recent | — | `file.open-recent` |
 | File | Save project as… | `⌘⇧S` | `file.save-project-as` |
 | File | Close project | — | `file.close-project` |
 | File | Import sources… | — | `data.import` |

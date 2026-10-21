@@ -261,6 +261,13 @@ object CommandRegistry:
     None,
     always(Intent.RequestOpenProject)
   )
+  val openRecent: AppCommand = AppCommand(
+    CommandId.declared("file.open-recent"),
+    MessageId.CommandOpenRecent,
+    MenuSection.File,
+    None,
+    always(Intent.RequestOpenRecent)
+  )
   val saveProjectAs: AppCommand = AppCommand(
     CommandId.declared("file.save-project-as"),
     MessageId.CommandSaveProjectAs,
@@ -370,6 +377,7 @@ object CommandRegistry:
     discardDraft,
     newProject,
     openProject,
+    openRecent,
     saveProjectAs,
     closeProject,
     importSources,

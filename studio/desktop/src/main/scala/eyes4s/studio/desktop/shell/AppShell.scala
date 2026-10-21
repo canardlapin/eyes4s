@@ -156,18 +156,41 @@ final class AppShell(
     host.sync(model)
 
   private def menuItem(i: MenuItemVM): MenuItem =
-    val item = i.checked match
-      case Some(on) =>
-        val r = RadioMenuItem(i.label)
-        r.setSelected(on)
-        r.setMnemonicParsing(false)
-        r.setDisable(!i.enabled)
-        r.setOnAction(_ => dispatch(i.intent))
-        r
-      case None => AppShell.item(i.label, i.enabled, () => dispatch(i.intent))
+    val item = i.children match
+      case Some(actions) =>
+        val menu = Menu(i.label)
+        menu.setDisable(!i.enabled)
+        menu.setMnemonicParsing(false)
+        menu.getItems.setAll(actions.zipWithIndex.map { (action, index) =>
+          val child = AppShell.item(action.label, action.enabled, () => dispatch(action.intent))
+          child.setId(s"${i.command.value}.$index")
+          child
+        }*)
+        menu
+      case None =>
+        i.checked match
+          case Some(on) =>
+            val r = RadioMenuItem(i.label)
+            r.setSelected(on)
+            r.setMnemonicParsing(false)
+            r.setDisable(!i.enabled)
+            r.setOnAction(_ => dispatch(i.intent))
+            r
+          case None => AppShell.item(i.label, i.enabled, () => dispatch(i.intent))
     item.setId(i.command.value)
     i.shortcut.map(ShellKeys.combination).foreach(item.setAccelerator)
     item
+
+  /** Scripted invocation of File Open Recent follows the same submenu path. */
+  def showRecent(): Unit =
+    import scala.jdk.CollectionConverters.*
+    menus.foreach { parent =>
+      parent.getItems.asScala
+        .collectFirst {
+          case menu: Menu if menu.getId == CommandRegistry.openRecent.id.value => menu
+        }
+        .foreach { recent => parent.show(); recent.show() }
+    }
 
   private var shownMenus: Vector[BarMenuVM] = Vector.empty
 

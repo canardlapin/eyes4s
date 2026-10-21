@@ -24,7 +24,9 @@ import eyes4s.studio.core.bundle.*
 import eyes4s.studio.core.document.Theme
 import eyes4s.studio.core.platform.*
 import eyes4s.studio.core.session.ProjectSession
+import eyes4s.studio.core.preferences.{PreferencesStore, RecentProjects, UserPreferences}
 import eyes4s.studio.desktop.platform.{
+  DesktopPreferences,
   FilePresetStore,
   FileProjectStore,
   JvmFileSystem,
@@ -100,7 +102,9 @@ class ProjectLifecycleFxSuite extends ShellFxSuite:
   private def setup(
       fx: FxStage,
       directory: Path,
-      files: FileSystem[IO] = JvmFileSystem
+      files: FileSystem[IO] = JvmFileSystem,
+      preferences: Option[DesktopPreferences] = None,
+      initialRecent: RecentProjects = RecentProjects.empty
   ): (InMemoryPlatform[IO], ProjectLifecycleHost) =
     val memory   = InMemoryPlatform.create[IO]().unsafeRunSync()
     val platform = memory.platform.copy(files = files)
@@ -108,7 +112,9 @@ class ProjectLifecycleFxSuite extends ShellFxSuite:
       ProjectLifecycleHost(
         fx.stage,
         platform,
-        presets = FilePresetStore(directory.resolve("presets"))
+        presets = FilePresetStore(directory.resolve("presets")),
+        preferences = preferences,
+        initialRecent = initialRecent
       )
     )
     runOnFx(host.start())
@@ -674,4 +680,188 @@ class ProjectLifecycleFxSuite extends ShellFxSuite:
           }
         }
         .unsafeRunSync()
+  }
+
+  private def chooseRecent(host: ProjectLifecycleHost, target: Path): Unit = runOnFx {
+    val menu = host.window.get.shell.menus
+      .flatMap(_.getItems.asScala)
+      .collectFirst {
+        case m: Menu if m.getId == CommandRegistry.openRecent.id.value => m
+      }
+      .getOrElse(fail("no recent submenu"))
+    val item = menu.getItems.asScala
+      .find(_.getText == target.toString)
+      .getOrElse(fail("recent path missing"))
+    assert(!item.isDisable)
+    item.fire()
+  }
+
+  private def preferenceStore(directory: Path): PreferencesStore[IO] =
+    PreferencesStore[IO](
+      JvmFileSystem,
+      path(directory.resolve("preferences.json")),
+      IO.pure(1L)
+    )
+
+  fxStage.test(
+    "Open Recent persists successful Open and Save As in order, survives close and cold boot"
+  ) { fx =>
+    TempDirs
+      .resource("eyes4s-lifecycle-recent-")
+      .use { directory =>
+        IO.blocking {
+          val first  = directory.resolve("first.eyes")
+          val copied = directory.resolve("copy.eyes")
+          create(first)
+          val store            = preferenceStore(directory)
+          val (platform, host) =
+            setup(fx, directory, preferences = Some(DesktopPreferences(store)))
+          try
+            platform.answer(Some(path(first))).unsafeRunSync()
+            invoke(host, CommandRegistry.openProject.id)
+            eventually(fx, "first recent project")(
+              !host.busy && host.window
+                .exists(_.runtime.model.recent.paths == Vector(path(first)))
+            )
+            platform.answer(Some(path(copied))).unsafeRunSync()
+            invoke(host, CommandRegistry.saveProjectAs.id)
+            eventually(fx, "copy is most recent")(
+              !host.busy && host.window
+                .exists(_.runtime.model.recent.paths == Vector(path(copied), path(first)))
+            )
+            invoke(host, CommandRegistry.closeProject.id)
+            eventually(fx, "close retains recent menu")(
+              !host.busy && host.window.exists(_.runtime.model.project.isEmpty)
+            )
+            chooseRecent(host, first)
+            eventually(fx, "recent item reopens without a chooser")(
+              !host.busy && host.window
+                .exists(_.runtime.model.project.exists(_.value == "first"))
+            )
+            assertEquals(
+              runOnFx(host.window.get.runtime.model.recent.paths),
+              Vector(path(first), path(copied))
+            )
+            assert(!usable(first))
+            assert(usable(copied))
+          finally runOnFx(host.shutdown())
+          val recent = store.load.unsafeRunSync()._1.recent
+          assertEquals(recent.paths, Vector(path(first), path(copied)))
+          val (_, cold) = setup(
+            fx,
+            directory,
+            preferences = Some(DesktopPreferences(store)),
+            initialRecent = recent
+          )
+          try
+            assertEquals(runOnFx(cold.window.get.runtime.model.recent), recent)
+            chooseRecent(cold, copied)
+            eventually(fx, "cold recent selection opens")(
+              !cold.busy && cold.window
+                .exists(_.runtime.model.project.exists(_.value == "copy"))
+            )
+          finally runOnFx(cold.shutdown())
+          assertEquals(
+            store.load.unsafeRunSync()._1.recent.paths,
+            Vector(path(copied), path(first))
+          )
+        }
+      }
+      .unsafeRunSync()
+  }
+
+  fxStage.test(
+    "only definitely missing recent projects are forgotten; failed opens keep the live writer"
+  ) { fx =>
+    TempDirs
+      .resource("eyes4s-lifecycle-recent-missing-")
+      .use { directory =>
+        IO.blocking {
+          val live    = directory.resolve("live.eyes")
+          val missing = directory.resolve("missing.eyes")
+          val broken  = directory.resolve("broken.eyes")
+          create(live)
+          Files.createDirectories(broken)
+          val manifest = broken.resolve(ProjectStore.ManifestName)
+          Files.writeString(manifest, "broken manifest evidence")
+          val initial = RecentProjects.of(Vector(path(missing), path(broken), path(live)))
+          val store   = preferenceStore(directory)
+          get(store.save(UserPreferences.defaults.withRecent(initial)).unsafeRunSync())
+          val (platform, host) = setup(
+            fx,
+            directory,
+            preferences = Some(DesktopPreferences(store)),
+            initialRecent = initial
+          )
+          try
+            platform.answer(Some(path(live))).unsafeRunSync()
+            invoke(host, CommandRegistry.openProject.id)
+            eventually(fx, "live opened before refusal")(
+              !host.busy && host.window
+                .exists(_.runtime.model.project.exists(_.value == "live"))
+            )
+            val old = runOnFx(host.window.get)
+            chooseRecent(host, missing)
+            press(fx, "OK")
+            assert(runOnFx(host.window.contains(old)))
+            assert(
+              !Files.exists(missing),
+              "a missing recent entry must not create a phantom directory"
+            )
+            assert(!runOnFx(old.runtime.model.recent.paths.contains(path(missing))))
+            chooseRecent(host, broken)
+            press(fx, "OK")
+            assert(runOnFx(host.window.contains(old)))
+            assert(runOnFx(old.runtime.model.recent.paths.contains(path(broken))))
+            assertEquals(Files.readString(manifest), "broken manifest evidence")
+            assert(!usable(live))
+          finally runOnFx(host.shutdown())
+          assertEquals(
+            store.load.unsafeRunSync()._1.recent.paths,
+            Vector(path(live), path(broken))
+          )
+        }
+      }
+      .unsafeRunSync()
+  }
+
+  fxStage.test(
+    "cancelling admission of a recent project preserves untitled edits and recent order"
+  ) { fx =>
+    TempDirs
+      .resource("eyes4s-lifecycle-recent-cancel-")
+      .use { directory =>
+        IO.blocking {
+          val first = directory.resolve("first.eyes")
+          val other = directory.resolve("other.eyes")
+          create(first)
+          create(other)
+          val initial = RecentProjects.of(Vector(path(other), path(first)))
+          val store   = preferenceStore(directory)
+          get(store.save(UserPreferences.defaults.withRecent(initial)).unsafeRunSync())
+          val (_, host) = setup(
+            fx,
+            directory,
+            preferences = Some(DesktopPreferences(store)),
+            initialRecent = initial
+          )
+          try
+            val old = runOnFx(host.window.get)
+            runOnFx(
+              old.runtime.dispatch(
+                Intent.Dispatch(eyes4s.studio.core.command.Command.SetTheme(Theme.Dark))
+              )
+            )
+            assert(runOnFx(old.runtime.model.save.edited))
+            chooseRecent(host, first)
+            press(fx, "Keep open")
+            eventually(fx, "recent candidate released")(!host.busy && usable(first))
+            assert(runOnFx(host.window.contains(old)))
+            assert(runOnFx(old.runtime.model.save.edited))
+            assertEquals(runOnFx(old.runtime.model.recent), initial)
+          finally runOnFx(host.shutdown())
+          assertEquals(store.load.unsafeRunSync()._1.recent, initial)
+        }
+      }
+      .unsafeRunSync()
   }

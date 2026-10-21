@@ -40,8 +40,9 @@ import javafx.stage.Stage
   */
 final class StudioApplication extends Application:
 
-  private var window: Option[StudioWindow]            = None
-  private var lifecycle: Option[ProjectLifecycleHost] = None
+  private var window: Option[StudioWindow]                            = None
+  private var lifecycle: Option[ProjectLifecycleHost]                 = None
+  private var appearancePreferences: Option[AppearancePreferenceHost] = None
 
   /** The user's preferences (S2.8), read before the first window opens. */
   private var preferences: UserPreferences = UserPreferences.defaults
@@ -76,11 +77,13 @@ final class StudioApplication extends Application:
         ErrorDialogView.show(vm, closed, Option(stage.getScene).map(_.getWindow)): Unit
     )
     reporter.install(): Unit
-    val appearance = AppearancePreferenceHost(
-      PreferencesLocation.repository.toOption,
+    val preferenceStore = PreferencesLocation.repository.toOption
+    val appearance      = AppearancePreferenceHost(
+      preferenceStore,
       preferences,
       m => System.err.println(PreferencesLocation.redact(m))
     )
+    appearancePreferences = Some(appearance)
     val platform = DesktopPlatform.create(
       getHostServices.showDocument,
       () => Some(stage)
@@ -92,7 +95,10 @@ final class StudioApplication extends Application:
         window = Some(w)
         appearance.attach(w.runtime)
       ,
-      defect = reporter.jobFailed
+      defect = reporter.jobFailed,
+      preferences = preferenceStore,
+      initialRecent = preferences.recent,
+      preferencesLog = message => System.err.println(PreferencesLocation.redact(message))
     )
     lifecycle = Some(projects)
     projects.start()
@@ -101,6 +107,8 @@ final class StudioApplication extends Application:
   override def stop(): Unit =
     lifecycle.foreach(_.shutdown())
     lifecycle = None
+    appearancePreferences.foreach(_.close.unsafeRunSync())
+    appearancePreferences = None
     window = None
     Platform.exit()
 

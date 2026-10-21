@@ -15,7 +15,11 @@ projects can Save and Close. **Save project as…** (⌘⇧S; Ctrl+Shift+S off m
 saves current edits to a new empty location, switches this window to the copy,
 and keeps its undo history. It also gives an edited untitled project its first
 bundle. Running work must finish or be cancelled first; edits arriving during a
-copy keep the source window open. Open Recent remains lifecycle work.
+copy keep the source window open. **File → Open recent** lists up to ten recent
+project locations and uses the same open, recovery and unsaved-work admission.
+A definitely missing location is removed; a corrupt or unreadable project stays
+in the list with its open failure. Recent locations and explicit appearance
+choices are drained to local preferences at application shutdown.
 
 Import choosers, streamed source reads and per-user preset files use the injected
 platform services. Source previews decode UTF-8 strictly across chunk boundaries

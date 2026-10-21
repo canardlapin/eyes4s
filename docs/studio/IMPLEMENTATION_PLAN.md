@@ -599,7 +599,11 @@ File › New / Open / Save As / Close / Open Recent; untitled → named; dirty m
 handoff, first save of edited untitled documents, queued journals, retained undo
 and view context, and rejection of concurrent edits. Focused evidence is in
 `evidence/20261021-native-save-as/review.json`; full qualification/landing is
-recorded there separately. Open Recent remains unfinished, so S2.9 stays open.
+recorded there separately. The following Open Recent slice adds a File submenu,
+ordered preference patches, normal open/recovery admission, definite-missing
+removal and shutdown draining. Its focused evidence is in
+`evidence/20261021-open-recent/review.json`. S2.9 stays open pending qualification
+and its remaining first-run/runtime acceptance.
 
 ### Studio S3: execution, selection and navigation services
 

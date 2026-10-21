@@ -32,7 +32,13 @@ import eyes4s.studio.core.command.History
 import eyes4s.studio.core.fixture.StoryMoment
 import eyes4s.studio.desktop.StudioWindow
 import eyes4s.studio.desktop.explore.NavigatorDisplays
-import eyes4s.studio.desktop.platform.{FilePresetStore, DesktopPlatform}
+import eyes4s.studio.desktop.platform.{
+  FilePresetStore,
+  DesktopPlatform,
+  DesktopPreferences,
+  PreferenceWrites
+}
+import eyes4s.studio.core.preferences.RecentProjects
 import eyes4s.studio.desktop.runtime.{DatasetSourceHosts, PlatformDialogs, SessionPort}
 import eyes4s.studio.desktop.trial.{StimulusError, StimulusSource}
 import javafx.application.Platform as FxPlatform
@@ -53,7 +59,10 @@ final class ProjectLifecycleHost(
     defect: (String, Throwable) => Unit = (_, _) => (),
     admission: Option[ProjectLifecycleDialogs] = None,
     displayName: HostPath => Either[eyes4s.studio.core.platform.PlatformError, String] =
-      DesktopPlatform.fileName
+      DesktopPlatform.fileName,
+    preferences: Option[DesktopPreferences] = None,
+    initialRecent: RecentProjects = RecentProjects.empty,
+    preferencesLog: String => Unit = message => System.err.println(message)
 )(using runtime: IORuntime)
     extends PlatformDialogs:
   private final class Candidate(
@@ -87,6 +96,30 @@ final class ProjectLifecycleHost(
   private val stopped        = AtomicBoolean(false)
   // Registered before a callback is queued, so shutdown can release a loaded
   // project even when JavaFX no longer accepts queued work.
+  private val recentWrites     = preferences.map(PreferenceWrites(_))
+  private var recent           = initialRecent
+  private var recentGeneration = BigInt(0)
+
+  private def publishRecent(): Unit =
+    current.foreach(_.window.runtime.dispatch(Intent.RecentProjectsLoaded(recent)))
+
+  private def changeRecent(change: RecentProjects => RecentProjects): Unit =
+    recent = change(recent)
+    recentGeneration += 1
+    val generation = recentGeneration
+    publishRecent()
+    recentWrites.foreach(_.submit(p => p.withRecent(change(p.recent))) {
+      case Left(error)    => preferencesLog(error.message)
+      case Right(written) =>
+        written.problems.foreach(problem => preferencesLog(problem.message))
+        if !stopped.get then
+          later {
+            if !stopped.get && generation == recentGeneration then
+              recent = written.preferences.recent
+              publishRecent()
+          }
+    })
+
   private val arriving = ConcurrentHashMap[ProjectOperationId, Candidate]()
 
   def window: Option[StudioWindow] = current.map(_.window)
@@ -140,10 +173,12 @@ final class ProjectLifecycleHost(
     )
 
   def open(dialog: PlatformDialog, dispatch: Intent => Unit): Unit = dialog match
-    case PlatformDialog.NewProject    => request(ProjectOperation.New)
-    case PlatformDialog.OpenProject   => request(ProjectOperation.Open)
-    case PlatformDialog.CloseProject  => request(ProjectOperation.Close)
-    case PlatformDialog.SaveProjectAs => request(ProjectOperation.SaveAs)
+    case PlatformDialog.NewProject          => request(ProjectOperation.New)
+    case PlatformDialog.OpenProject         => request(ProjectOperation.Open)
+    case PlatformDialog.CloseProject        => request(ProjectOperation.Close)
+    case PlatformDialog.SaveProjectAs       => request(ProjectOperation.SaveAs)
+    case PlatformDialog.RecentProjects      => current.foreach(_.window.shell.showRecent())
+    case PlatformDialog.OpenProjectAt(path) => request(ProjectOperation.Open, Some(path))
     case _ => () // StudioWindow routes its other dialogs to the existing host.
 
   private val unavailableSources: DatasetSources[IO] = new DatasetSources[IO]:
@@ -187,6 +222,9 @@ final class ProjectLifecycleHost(
     live.window.bind(stage)
     replaced(live.window)
     old.foreach(dispose)
+    live.project match
+      case Some(project) => changeRecent(_.opened(project.path))
+      case None          => publishRecent()
 
   private def dispose(live: Live): Unit =
     live.window.close()
@@ -292,7 +330,7 @@ final class ProjectLifecycleHost(
     case _ => platform.dialogs.chooseDirectory("Open project")
 
   /** Close requests may cancel a still-loading replacement, keeping ownership clear. */
-  def request(action: ProjectOperation): Unit =
+  def request(action: ProjectOperation, chosen: Option[HostPath] = None): Unit =
     if action == ProjectOperation.SaveAs && context.activeWork then
       prompts.failed(ProjectLifecycleText.operation(action), ProjectLifecycleText.activeCopy)
       return
@@ -313,10 +351,27 @@ final class ProjectLifecycleHost(
         action match
           case ProjectOperation.Close | ProjectOperation.Quit => admit(operationId)
           case _                                              =>
-            choose(action)
+            chosen
+              .fold(choose(action))(path => IO.pure(Some(path)))
               .flatMap {
                 case None       => IO.pure(Right(None))
-                case Some(path) => acquire(action, path, source).map(_.map(Some(_)))
+                case Some(path) =>
+                  val present: IO[Either[String, Unit]] =
+                    if action == ProjectOperation.Open then
+                      platform.files.list(path).flatMap {
+                        case Left(error: eyes4s.studio.core.platform.PlatformError.Missing) =>
+                          IO(later {
+                            if state.owns(operationId) && chosen.isDefined then
+                              changeRecent(_.forget(path))
+                          }).as(Left(error.message))
+                        case Left(error) => IO.pure(Left(error.message))
+                        case Right(_)    => IO.pure(Right(()))
+                      }
+                    else IO.pure(Right(()))
+                  present.flatMap {
+                    case Left(reason) => IO.pure(Left(reason))
+                    case Right(_)     => acquire(action, path, source).map(_.map(Some(_)))
+                  }
               }
               .unsafeRunAsync {
                 case Right(Right(Some(project))) =>
@@ -498,3 +553,4 @@ final class ProjectLifecycleHost(
       arriving.clear()
       current.foreach(dispose)
       current = None
+      recentWrites.foreach(_.close.unsafeRunSync())

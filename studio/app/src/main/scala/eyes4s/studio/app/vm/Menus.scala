@@ -34,7 +34,8 @@ final case class MenuItemVM(
     enabled: Boolean,
     intent: Intent,
     submenu: Option[String] = None,
-    checked: Option[Boolean] = None
+    checked: Option[Boolean] = None,
+    children: Option[Vector[ActionVM]] = None
 ) derives CanEqual
 
 /** One menu of the system menu bar. */
@@ -82,7 +83,21 @@ object Menus:
             a.enabled,
             a.intent,
             c.submenu.map(messages(_)),
-            c.checked(model)
+            c.checked(model),
+            Option.when(c.id == CommandRegistry.openRecent.id)(
+              if model.recent.paths.isEmpty then
+                Vector(
+                  ActionVM(
+                    messages(MessageId.NoRecentProjects),
+                    false,
+                    Intent.RequestOpenRecent
+                  )
+                )
+              else
+                model.recent.paths.map(path =>
+                  ActionVM(path.value, true, Intent.OpenRecent(path))
+                )
+            )
           )
         }
       )

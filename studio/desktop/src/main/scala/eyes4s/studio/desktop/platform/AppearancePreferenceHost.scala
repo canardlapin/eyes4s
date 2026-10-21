@@ -16,7 +16,9 @@
 
 package eyes4s.studio.desktop.platform
 
+import cats.effect.IO
 import cats.effect.unsafe.IORuntime
+import java.util.concurrent.atomic.AtomicBoolean
 import eyes4s.studio.app.appearance.AppearancePreference
 import eyes4s.studio.core.preferences.UserPreferences
 import eyes4s.studio.desktop.runtime.StudioRuntime
@@ -44,6 +46,8 @@ final class AppearancePreferenceHost(
   private var stored  = initial
   private var pending = Option.empty[UserPreferences]
   private var saving  = false
+  private val writes  = store.map(PreferenceWrites(_))
+  private val stopped = AtomicBoolean(false)
 
   /** The preferences as the user last chose them. */
   def current: UserPreferences = wanted
@@ -61,29 +65,48 @@ final class AppearancePreferenceHost(
     a.appearance == b.appearance
 
   private def choose(p: UserPreferences): Unit =
-    wanted = p
-    pending = Option.when(!sameChoice(p, stored))(p)
-    next()
+    if !stopped.get then
+      wanted = p
+      pending = Option.when(!sameChoice(p, stored))(p)
+      next()
+
+  /** Drain the last explicit choice without waiting for queued FX completions. */
+  def close: IO[Unit] =
+    val finalChoice = wanted.appearance
+    val unfinished  = saving || !sameChoice(wanted, stored)
+    IO(stopped.getAndSet(true)).flatMap { alreadyClosed =>
+      writes.fold(IO.unit) { queue =>
+        val last = if unfinished && !alreadyClosed then
+          IO(queue.submit(_.withAppearance(finalChoice)) {
+            case Left(problem)  => log(problem.message)
+            case Right(written) => written.problems.foreach(p => log(p.message))
+          })
+        else IO.unit
+        last >> queue.close
+      }
+    }
 
   private def next(): Unit =
-    (store, pending) match
-      case (Some(s), Some(p)) if !saving =>
+    (writes, pending) match
+      case (Some(queue), Some(p)) if !saving && !stopped.get =>
         saving = true
         pending = None
-        s.update(_.withAppearance(p.appearance)).unsafeRunAsync { result =>
-          onFx { () =>
-            saving = false
-            result match
-              case Right(Right(written)) =>
-                stored = written.preferences
-                written.problems.foreach(problem => log(problem.message))
-                // A choice made during the save, back to what the file held
-                // before it, must now be written too.
-                if !sameChoice(wanted, stored) && pending.isEmpty then pending = Some(wanted)
-              // `stored` stays: the next choice writes again.
-              case Right(Left(problem)) => log(problem.message)
-              case Left(e) => log(s"Preferences could not be saved: ${e.getMessage}")
-            next()
-          }
+        queue.submit(_.withAppearance(p.appearance)) { result =>
+          if !stopped.get then
+            onFx { () =>
+              if !stopped.get then
+                saving = false
+                result match
+                  case Right(written) =>
+                    stored = written.preferences
+                    written.problems.foreach(problem => log(problem.message))
+                    // A choice made during the save, back to what the file held
+                    // before it, must now be written too.
+                    if !sameChoice(wanted, stored) && pending.isEmpty then
+                      pending = Some(wanted)
+                  // `stored` stays: the next choice writes again.
+                  case Left(problem) => log(problem.message)
+                next()
+            }
         }
       case _ => ()

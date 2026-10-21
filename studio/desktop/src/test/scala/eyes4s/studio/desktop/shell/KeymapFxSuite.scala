@@ -74,6 +74,9 @@ class KeymapFxSuite extends ShellFxSuite:
       // A submenu (View › Appearance) lists its commands in place.
       def flat(i: javafx.scene.control.MenuItem): Vector[javafx.scene.control.MenuItem] =
         i match
+          case m: javafx.scene.control.Menu
+              if CommandRegistry.all.exists(_.id.value == m.getId) =>
+            Vector(m)
           case m: javafx.scene.control.Menu => m.getItems.asScala.toVector.flatMap(flat)
           case other                        => Vector(other)
       val items = runOnFx(menus.flatMap(_.getItems.asScala).flatMap(flat))
@@ -375,8 +378,9 @@ class KeymapFxSuite extends ShellFxSuite:
         val w = boot(fx, StoryModels.t2Compare, nativeMenu = native)
         def flat(item: javafx.scene.control.MenuItem): Vector[javafx.scene.control.MenuItem] =
           item match
-            case menu: javafx.scene.control.Menu => menu.getItems.asScala.toVector.flatMap(flat)
-            case other                           => Vector(other)
+            case menu: javafx.scene.control.Menu =>
+              Vector(menu) ++ menu.getItems.asScala.toVector.flatMap(flat)
+            case other => Vector(other)
         val items = runOnFx(w.shell.menus.flatMap(_.getItems.asScala).flatMap(flat))
         CommandRegistry.all.foreach { command =>
           assertEquals(

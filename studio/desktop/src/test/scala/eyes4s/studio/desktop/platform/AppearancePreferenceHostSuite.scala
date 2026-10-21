@@ -145,3 +145,18 @@ class AppearancePreferenceHostSuite extends munit.FunSuite:
       assertEquals(h.logged.asScala.toVector, Vector.empty)
     }
   }
+
+  test("shutdown saves the final explicit choice without draining FX completions") {
+    withDirectory { dir =>
+      val file = dir.resolve("preferences.json")
+      val h    = Harness(file, UserPreferences.defaults)
+      h.choose(Appearance.Dark)
+      h.choose(Appearance.System)
+      h.host.close.unsafeRunSync()
+      h.host.close.unsafeRunSync()
+      assertEquals(h.store.load.unsafeRunSync()._1.appearance, AppearanceChoice.System)
+      h.drain()
+      assertEquals(h.store.load.unsafeRunSync()._1.appearance, AppearanceChoice.System)
+      assertEquals(h.logged.asScala.toVector, Vector.empty)
+    }
+  }

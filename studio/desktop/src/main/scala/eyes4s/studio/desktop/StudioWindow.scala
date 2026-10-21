@@ -343,7 +343,8 @@ object StudioWindow:
           themed(scene)
           stage.show()
         case PlatformDialog.NewProject | PlatformDialog.OpenProject |
-            PlatformDialog.CloseProject | PlatformDialog.SaveProjectAs =>
+            PlatformDialog.CloseProject | PlatformDialog.SaveProjectAs |
+            PlatformDialog.RecentProjects | PlatformDialog.OpenProjectAt(_) =>
           System.err.println(s"$dialog requires the application project lifecycle host.")
 
   /** Open a window on `initial`, served by the fake backend at `moment`.
@@ -474,7 +475,8 @@ object StudioWindow:
     val routed: PlatformDialogs = (dialog, dispatch) =>
       dialog match
         case PlatformDialog.NewProject | PlatformDialog.OpenProject |
-            PlatformDialog.CloseProject | PlatformDialog.SaveProjectAs =>
+            PlatformDialog.CloseProject | PlatformDialog.SaveProjectAs |
+            PlatformDialog.RecentProjects | PlatformDialog.OpenProjectAt(_) =>
           lifecycle.getOrElse(defaults).open(dialog, dispatch)
         case _ => defaults.open(dialog, dispatch)
     val effects = DesktopEffects(

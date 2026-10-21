@@ -16,6 +16,8 @@
 
 package eyes4s.studio.app
 
+import eyes4s.studio.core.platform.HostPath
+import eyes4s.studio.core.preferences.RecentProjects
 import eyes4s.codec.CanonicalDigest
 import eyes4s.studio.app.analysis.PresetPicker
 import eyes4s.studio.app.appearance.{Appearance, AppearanceState}
@@ -268,7 +270,8 @@ enum DockCommand derives CanEqual:
   case NextTab, PreviousTab
 
 enum PlatformDialog derives CanEqual:
-  case ImportSources, NewProject, OpenProject, CloseProject, SaveProjectAs
+  case ImportSources, NewProject, OpenProject, CloseProject, SaveProjectAs, RecentProjects
+  case OpenProjectAt(path: HostPath)
 
   /** Ask for the project's new name; the answer is [[Intent.RenameProject]]. */
   case RenameProject
@@ -500,7 +503,10 @@ enum Intent derives CanEqual:
 
   // --- Project and layouts (S1.4, S1.5a) -------------------------------------------------------
   /** The project chip's Rename…: the platform asks for the name. */
-  case RequestNewProject, RequestOpenProject, RequestCloseProject, RequestSaveProjectAs
+  case RequestNewProject, RequestOpenProject, RequestCloseProject, RequestSaveProjectAs,
+    RequestOpenRecent
+  case OpenRecent(path: HostPath)
+  case RecentProjectsLoaded(recent: RecentProjects)
   case RequestRename
   case RenameProject(name: ProjectName)
 
@@ -559,7 +565,8 @@ sealed abstract case class AppModel private (
     prepared: Option[PreparedDesign],
     appearance: AppearanceState,
     inputs: InputCheck,
-    checks: InputChecks
+    checks: InputChecks,
+    recent: RecentProjects
 ) derives CanEqual:
 
   private def copy(
@@ -578,7 +585,8 @@ sealed abstract case class AppModel private (
       prepared: Option[PreparedDesign] = this.prepared,
       appearance: AppearanceState = this.appearance,
       inputs: InputCheck = this.inputs,
-      checks: InputChecks = this.checks
+      checks: InputChecks = this.checks,
+      recent: RecentProjects = this.recent
   ): AppModel =
     AppModel(
       project,
@@ -596,7 +604,8 @@ sealed abstract case class AppModel private (
       prepared,
       appearance,
       inputs,
-      checks
+      checks,
+      recent
     )
 
   def document: StudioDocument = history.document
@@ -664,7 +673,8 @@ object AppModel:
       prepared: Option[PreparedDesign],
       appearance: AppearanceState,
       inputs: InputCheck,
-      checks: InputChecks
+      checks: InputChecks,
+      recent: RecentProjects
   ): AppModel =
     new AppModel(
       project,
@@ -682,7 +692,8 @@ object AppModel:
       prepared,
       appearance,
       inputs,
-      checks
+      checks,
+      recent
     ) {}
 
   private val none: Vector[AppEffect] = Vector.empty
@@ -740,7 +751,8 @@ object AppModel:
       None,
       AppearanceState.initial,
       InputCheck.NoProject,
-      InputChecks.none
+      InputChecks.none,
+      RecentProjects.empty
     )
 
   /** A verified saved copy keeps the user's view and undo stacks, while
@@ -754,6 +766,7 @@ object AppModel:
       items = m.items,
       panes = m.panes,
       appearance = m.appearance,
+      recent = m.recent,
       save = m.save.saved(at, m.save.edits)
     )
 
@@ -1061,7 +1074,12 @@ object AppModel:
       (m, Vector(AppEffect.OpenDialog(PlatformDialog.NewProject)))
     case Intent.RequestOpenProject =>
       (m, Vector(AppEffect.OpenDialog(PlatformDialog.OpenProject)))
-    case Intent.RequestCloseProject =>
+    case Intent.RequestOpenRecent =>
+      (m, Vector(AppEffect.OpenDialog(PlatformDialog.RecentProjects)))
+    case Intent.OpenRecent(path) =>
+      (m, Vector(AppEffect.OpenDialog(PlatformDialog.OpenProjectAt(path))))
+    case Intent.RecentProjectsLoaded(recent) => (m.copy(recent = recent), none)
+    case Intent.RequestCloseProject          =>
       (m, Vector(AppEffect.OpenDialog(PlatformDialog.CloseProject)))
     case Intent.RequestSaveProjectAs =>
       (m, Vector(AppEffect.OpenDialog(PlatformDialog.SaveProjectAs)))

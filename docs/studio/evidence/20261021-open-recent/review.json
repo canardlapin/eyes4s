@@ -1,0 +1,57 @@
+{
+  "schema": 1,
+  "review_date": "2026-10-21",
+  "reviewer": "codex-release-session-20261020",
+  "mote": "bd-01M5ECQ3BWWSRW2A702ST0HSEA",
+  "source_base": "4718288054c6cab029999ee53ab4367656b8f971",
+  "state": "focused strict JVM/JS and native checks passed; full combined qualification and landing pending",
+  "scope": "File Open Recent and normal native admission, ordered local metadata writes and shutdown draining",
+  "checks": {
+    "app_lifecycle_copy_recent_registry_each_platform": 19,
+    "PreferenceWritesSuite": 1,
+    "AppearancePreferenceHostSuite": 5,
+    "ProjectLifecycleFxSuite": 16,
+    "AppearancePreferenceFxSuite": 2,
+    "KeymapFxSuite": 13,
+    "studioStyleCheck": "passed",
+    "flags": "GITHUB_ACTIONS=true; JDK25.0.4.1; headless Monocle; native tests waited on the enabled FX lock"
+  },
+  "findings": [
+    "The File menu renders registered Open Recent as a submenu of actual path intents; the empty informational row explains that no recent projects exist. No new local control CSS is introduced.",
+    "Recent paths live outside the project document, science/presentation history and edit marks. Save As retains the user view and receives the current recent list.",
+    "Only successful installed New/Open/Save As operations promote a recent path. FIFO patches read the latest preferences under the shared OS lock, retaining other fields and other writers recent entries.",
+    "Choosing a recent path uses the existing open/recovery and unsaved/active-work admission. Cancelled admission releases the staged writer and leaves edits and recent order unchanged.",
+    "A definitely missing path is forgotten and is not turned into a phantom directory. A corrupt project is retained in recents; its manifest and the live project writer are unchanged.",
+    "Native tests verify Open/Save As ordering, close-to-untitled, cold preference loading and reopening from the actual submenu without a chooser.",
+    "Ordered writes drain without processing UI callbacks. Application shutdown also drains the final explicit appearance choice, and repeated appearance close is harmless.",
+    "The shortcut/menu registry test was updated to count a registered submenu container once, while its dynamic path actions remain children. SHORTCUTS.md is generated from the registry."
+  ],
+  "limits": [
+    "Full qualification/landing remains pending, and the previous classification candidate failed its caption regression before repair.",
+    "S2.9 is not closed: complete first-run parity and remaining runtime acceptance are separate.",
+    "Recent path identity retains the existing lexical normalization contract; filesystem aliases are not resolved by this slice.",
+    "These native tests use temporary public/synthetic projects, not a calibrated G2 real study."
+  ],
+  "source_sha256": {
+    "docs/studio/IMPLEMENTATION_PLAN.md": "ca3a7e02bef2c87dfc26ae53ba7926d9e679225b7ab44372de8339ffea0bb5ac",
+    "docs/studio/PORTING.md": "f6059ac55d474aa872e05a6f6b3fa8c1d9907d0b9226a80b2bc50f10e8312023",
+    "docs/studio/README.md": "e75ec27ce977ba54f891c9bab6cab4a2c02275b5906bf3a2c38de139d17bac35",
+    "docs/studio/SHORTCUTS.md": "48cb5f54b2b5e5c886df40a3236f17ed1f6911282e1e69040c375e1ce1793b3b",
+    "studio/app/src/main/scala/eyes4s/studio/app/AppModel.scala": "7453f0865d009bd72c54f6cb0610a4810cee2cd7a14ec8756c3b421c8af9bd95",
+    "studio/app/src/main/scala/eyes4s/studio/app/keys/CommandRegistry.scala": "2ffbe0957c754103fea733a45fd0ab6b31655acba1174956f434f5aa23a16784",
+    "studio/app/src/main/scala/eyes4s/studio/app/text/Messages.scala": "0503ee23f685a525b2c0e7bb1fea1e9524da273a37e1de0dc3a7ccad13c50f50",
+    "studio/app/src/main/scala/eyes4s/studio/app/vm/Menus.scala": "ce940360612a603fed42171d4f24605ce280ddfaab965679037d715e2953280f",
+    "studio/app/src/test/scala/eyes4s/studio/app/project/ProjectLifecycleSuite.scala": "048bb913ae3d25ba3f887fca8aff8718452c910b24b0fa70cdec62e92c7cd19f",
+    "studio/desktop/src/main/scala/eyes4s/studio/desktop/StudioMain.scala": "16edb92a139278c4d647ab0db3c7a1df439c2409468d55b8dd8dd02c2c4763d7",
+    "studio/desktop/src/main/scala/eyes4s/studio/desktop/StudioWindow.scala": "db5f730c563d13a3bb98437bb31330a76837507a319092b85311763ee1bcb60c",
+    "studio/desktop/src/main/scala/eyes4s/studio/desktop/platform/AppearancePreferenceHost.scala": "e064382b135d35d490d5f5317658dd1eda876330fc8a8173c25e6c365aaba6b7",
+    "studio/desktop/src/main/scala/eyes4s/studio/desktop/project/ProjectLifecycleHost.scala": "cf31dd6ab628871d0a5c06f5ecbe00b311fe26a80c1ae72bd8902ea449d29341",
+    "studio/desktop/src/main/scala/eyes4s/studio/desktop/shell/AppShell.scala": "f807a9c5c47086260cd169b07f796fb1b3ca4e050d6716e2a6a64b56a71e736f",
+    "studio/desktop/src/test/scala/eyes4s/studio/desktop/platform/AppearancePreferenceHostSuite.scala": "471a5a616319c0401c8cd5b1a7a32a0b2e99aca510f0a87e199cc04519b5af95",
+    "studio/desktop/src/test/scala/eyes4s/studio/desktop/project/ProjectLifecycleFxSuite.scala": "292184ed11050fc047c886555a3f40c296d304776a59e3dabdda3e3138f5d2b3",
+    "studio/desktop/src/test/scala/eyes4s/studio/desktop/shell/KeymapFxSuite.scala": "b5b44bcd45fd67c35bf2c5f96b5796da9f55a8231aba9ee0d718d8e3768d88d9",
+    "studio/app/src/test/scala/eyes4s/studio/app/project/RecentProjectsModelSuite.scala": "7614228d15d72ac5d05f2181eac565f1699fd89ea2937ee7b895c85429155392",
+    "studio/desktop/src/main/scala/eyes4s/studio/desktop/platform/PreferenceWrites.scala": "ea6a7cda50405ac24d8374ebb077cf0be029055f4e017fce5021ad76d88d61b9",
+    "studio/desktop/src/test/scala/eyes4s/studio/desktop/platform/PreferenceWritesSuite.scala": "ab7fe6d92ae4cfe1253d156ac2ea0caad2faf48c35d90db6b480e210d9e93988"
+  }
+}

@@ -110,7 +110,8 @@ class ProjectLifecycleSuite extends munit.FunSuite:
       CommandRegistry.newProject    -> PlatformDialog.NewProject,
       CommandRegistry.openProject   -> PlatformDialog.OpenProject,
       CommandRegistry.closeProject  -> PlatformDialog.CloseProject,
-      CommandRegistry.saveProjectAs -> PlatformDialog.SaveProjectAs
+      CommandRegistry.saveProjectAs -> PlatformDialog.SaveProjectAs,
+      CommandRegistry.openRecent    -> PlatformDialog.RecentProjects
     ).foreach { (command, dialog) =>
       val intent          = command.intent(model).getOrElse(fail("disabled lifecycle command"))
       val (same, effects) = AppModel.update(model, intent)
@@ -118,7 +119,13 @@ class ProjectLifecycleSuite extends munit.FunSuite:
       assertEquals(effects, Vector(AppEffect.OpenDialog(dialog)))
     }
     assertEquals(
-      Menus.bar(model).find(_.title == "File").get.items.take(4).map(_.label),
-      Vector("New project…", "Open project…", "Save project as…", "Close project")
+      Menus.bar(model).find(_.title == "File").get.items.take(5).map(_.label),
+      Vector(
+        "New project…",
+        "Open project…",
+        "Open recent",
+        "Save project as…",
+        "Close project"
+      )
     )
   }

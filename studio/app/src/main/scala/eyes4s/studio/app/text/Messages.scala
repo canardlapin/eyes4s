@@ -77,6 +77,7 @@ enum MessageId derives CanEqual:
     SaveProjectAsTitle
   case CopyChanged, CopyActive, CopyEmptyLocation, CopyNoWindow, CopyWarnings,
     CopyClockUnavailable
+  case CommandOpenRecent, NoRecentProjects
   case NewEmptyLocation
   case CommandRenameProject, CommandRevealProject, CommandProjectInfo
   case CommandResetPerspective, MenuView, WindowEdited
@@ -258,6 +259,8 @@ object Catalogue:
       case CommandDiscardDraft  => "Discard draft"
       case CommandNewProject    => "New project…"
       case CommandOpenProject   => "Open project…"
+      case CommandOpenRecent    => "Open recent"
+      case NoRecentProjects     => "No recent projects"
       case CommandSaveProjectAs => "Save project as…"
       case SaveProjectAsTitle   => "Save project as"
       case CopyChanged          =>
