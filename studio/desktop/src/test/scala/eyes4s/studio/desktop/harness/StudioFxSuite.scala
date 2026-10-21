@@ -80,6 +80,19 @@ enum SnapshotScale(val factor: Int):
   */
 abstract class StudioFxSuite extends munit.FunSuite:
 
+  /** FunSuite cannot execute lazy IO values; refuse a false green explicitly. */
+  override def munitValueTransforms: List[ValueTransform] =
+    super.munitValueTransforms :+ new ValueTransform(
+      "reject-unevaluated-io",
+      { case _: cats.effect.IO[?] =>
+        Future.failed(
+          AssertionError(
+            "FX test returned unevaluated IO; execute it before returning or return a Future so fixture cleanup waits for its assertions."
+          )
+        )
+      }
+    )
+
   /** The scene size of each test stage. */
   protected def stageSize: StageSize = StageSize.Board
 
