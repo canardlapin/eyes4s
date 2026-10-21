@@ -1,0 +1,35 @@
+{
+  "schema": 1,
+  "date": "2026-10-21",
+  "issue": "bd-01M3G7MFV0SHYJM1TJWN4REPZ6",
+  "base_commit": "7290cfd78ed82f40fabc889216e7ebb90b6658df",
+  "implementation": [
+    "A separate generated studio-linux-hidpi job uses actual GTK under3840x2400 Xvfb, requests native output scale2 and runs the entire desktop test suite. Existing Linux scale1, macOS and clean-pin jobs remain.",
+    "Forward glass.gtk.uiScale and required observed scale from the sbt launcher to every test fork. No host scale override is used.",
+    "NativeOutputScaleFxSuite checks the actual Stage X/Y scales, compiled frame and texture dimensions, exact one-device-pixel feedback stripe widths/neighbours, and a\u22640.5% strict pixel mismatch against an independent analytic raster. It writes actual PNG and numeric receipt.",
+    "CI requires the actual2/no-override/sharpness/raster receipt and uploads snapshots plus test reports even on failure."
+  ],
+  "local_validation": {
+    "positive": "Local Monocle native scale1: all16 probe/canvas tests and studioStyleCheck pass; stripe width1, pixel mismatch0.0. githubWorkflowCheck passes after generation.",
+    "negative": "Request required native scale2 while leaving Monocle at actual1: probe fails on observed Stage scale(1,1) vs(2,2). A larger snapshot cannot satisfy this gate.",
+    "scope": "Local1 is not a HiDPI qualification. Hosted actual2 must pass before ticket closure."
+  },
+  "primary_sources": [
+    "https://raw.githubusercontent.com/openjdk/jfx/jfx24/modules/javafx.graphics/src/main/java/com/sun/glass/ui/gtk/GtkApplication.java"
+  ],
+  "files": {
+    "build.sbt": "29452d32655033260f861540c5961e9f637a350d2ad7c129e7eb714034561bb9",
+    ".github/workflows/studio.yml": "29faf8481e1b9458e470f3c3bf479cf8d9253d0a840c50a95b2f2e1dbccde1fc",
+    "studio/desktop/src/test/scala/eyes4s/studio/desktop/plot/NativeOutputScaleFxSuite.scala": "bfd234bd48c306d20eb434a086c9c972b4258761ad6c243cc7ddde24afdd9879"
+  },
+  "logs": {
+    "/private/tmp/eyes4s-native-output-scale-focused2-20261021.log": "057fdaa635c481e9c76a4f9b363a1b47e45958d2dfb5b3a3673efdbcc59acae9",
+    "/private/tmp/eyes4s-native-output-scale-required2-negative-20261021.log": "56d98ee6f89c07134b764162808136f544ae908e375883a2d1599ad30e74a94f"
+  },
+  "limits": [
+    "Hosted scale2 result pending at this commit.",
+    "The analytic reference probes the common canvas feedback/device-pixel path; it is not a whole-board JavaFX pixel golden. Existing reference-scene/canvas suites also run in the new actual2 lane.",
+    "No physical macOS Retina, VoiceOver, packaging, human usability or scientific-data acceptance.",
+    "No new scientific plot or private input published."
+  ]
+}

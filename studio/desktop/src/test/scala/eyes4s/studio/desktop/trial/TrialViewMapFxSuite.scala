@@ -21,7 +21,9 @@ import eyes4s.studio.app.text.{TrialText, TrialTextId}
 import eyes4s.studio.app.tokens.{Colour, PaletteToken, StageVariant, Theme, ThemedToken, Tokens}
 import eyes4s.studio.core.assets.{AssetLink, AssetRef, Display, TrialDisplay}
 import eyes4s.studio.core.backend.RunId
-import eyes4s.studio.core.selection.ScaleIndex
+import eyes4s.studio.core.selection.{ScaleIndex, FixationIndex}
+import eyes4s.studio.core.document.{ScreenSize, ImagePlacement}
+import eyes4s.plan.MapPlacement
 import eyes4s.studio.desktop.harness.{
   FxStage,
   SnapshotScale,
@@ -33,9 +35,11 @@ import eyes4s.studio.desktop.maps.MapRasterStore
 import eyes4s.studio.desktop.plot.{PlotFrame, PlotHostStatus}
 import eyes4s.studio.desktop.typography.StudioFonts
 import eyes4s.studio.viz.maps.MapLegendScene
-import eyes4s.studio.viz.plot.DataPoint
+import eyes4s.studio.viz.plot.{DataPoint, PlotScene}
 import eyes4s.studio.viz.trial.*
-import intaglio.{Grob, value}
+import intaglio.{Grob, DeviceElement, DevicePrimitive, RenderPlan, value}
+import intaglio.javafx.JavaFxCanvasContext
+import javafx.scene.canvas.Canvas
 import javafx.geometry.Point2D
 import javafx.scene.layout.StackPane
 
@@ -621,4 +625,129 @@ class TrialViewMapFxSuite extends StudioFxSuite:
     val bare = runOnFx(Option(w.view.plotHost.getAccessibleHelp))
     assert(bare.exists(h => !h.contains("Map legend")), s"trial view help: $bare")
     w.dispose()
+  }
+
+  private final case class Ink(
+      label: String,
+      left: Double,
+      top: Double,
+      right: Double,
+      bottom: Double
+  )
+
+  private def textInk(plot: PlotScene, frame: PlotFrame): Vector[Ink] = runOnFx {
+    def flatten(elements: Vector[DeviceElement]): Vector[DevicePrimitive] = elements.flatMap {
+      case DeviceElement.Mark(primitive)          => Vector(primitive)
+      case DeviceElement.Group(_, _, _, children) => flatten(children)
+      case DeviceElement.Annotated(_, children)   => flatten(children)
+    }
+    val device  = right(RenderPlan(plot.scene, frame.transform.renderContext).deviceScene)
+    val metrics = JavaFxCanvasContext(Canvas().getGraphicsContext2D)
+    flatten(device.elements).collect {
+      case DevicePrimitive.TextRun(
+            label,
+            x,
+            y,
+            horizontal,
+            vertical,
+            rotation,
+            fontPx,
+            family,
+            gp,
+            _
+          ) =>
+        assertEquals(rotation, 0.0)
+        val box = metrics
+          .measureText(label, family, fontPx, gp.fontWeight, horizontal, vertical)
+          .getOrElse(fail("the actual JavaFX context did not measure caption text"))
+        Ink(
+          label,
+          x + box.left,
+          y + box.top,
+          x + box.left + box.width,
+          y + box.top + box.height
+        )
+    }
+  }
+
+  fxStage.test(
+    "normal pane keeps caption and legend words clear without stretching image coordinates"
+  ) { fx =>
+    val w       = Wired(fx, size = Some(680.0 -> 370.0))
+    val display = ret07.copy(
+      display = Display.Unknown(None),
+      placement = right(ImagePlacement.of(112, 84, 800, 600))
+    )
+    val fixations = Vector(400.0 -> 300.0, 600.0 -> 400.0).zipWithIndex.map {
+      case ((x, y), i) =>
+        right(
+          TrialFixation.of(
+            display.trial,
+            right(FixationIndex.of(i + 1)),
+            x,
+            y,
+            200 + 100 * i,
+            MapPlacement.InWindow
+          )
+        )
+    }
+    val content = input(display, RememberedImage.Hidden(beach)).copy(
+      screen = right(ScreenSize.of(1024, 768)),
+      fixations = fixations,
+      options = TrialSceneOptions(order = true),
+      marks = MarkStyle.Neutral
+    )
+    try
+      runOnFx {
+        w.view.plotHost.setOutputScaleOverride(Some(1.0))
+        w.view.legendPlotHost.setOutputScaleOverride(Some(1.0))
+        w.view.show(content)
+        w.view.showMap(Some(MapRequest(grid, style, limits = LimitsScope.Shared)))
+      }
+      val (scene, frame)        = drawn(w, 1.0)(_.map.contains(grid.map))
+      val (legend, legendFrame) = legendDrawn(w)
+      fx.snapshot(StudioTheme.Light): Unit
+      val trial   = textInk(scene.plot, frame)
+      val caption = trial.find(_.label == scene.caption).get
+      val area    = trial.find(_.label == TrialText(TrialTextId.MarkerArea)).get
+      assert(
+        caption.right + 8.0 <= area.left,
+        s"caption and marker explanation overlap: $caption / $area; canvas ${frame.surface.logicalWidth}"
+      )
+      val order      = trial.find(_.label == TrialText(TrialTextId.OrderNote)).get
+      val remembered = trial.find(_.label == scene.disclosure.get).get
+      assert(
+        order.right + 8.0 <= remembered.left,
+        s"order and remembered-image explanations overlap: $order / $remembered"
+      )
+      val boundsTolerancePx = 1e-6
+      trial.foreach { ink =>
+        assert(
+          ink.left >= -boundsTolerancePx && ink.right <= frame.surface.deviceWidth + boundsTolerancePx,
+          ink
+        )
+        assert(
+          ink.top >= -boundsTolerancePx && ink.bottom <= frame.surface.deviceHeight + boundsTolerancePx,
+          ink
+        )
+      }
+      textInk(legend.plot, legendFrame).foreach { ink =>
+        assert(
+          ink.left >= -boundsTolerancePx && ink.right <= legendFrame.surface.deviceWidth + boundsTolerancePx,
+          ink
+        )
+        assert(
+          ink.top >= -boundsTolerancePx && ink.bottom <= legendFrame.surface.deviceHeight + boundsTolerancePx,
+          ink
+        )
+      }
+      val start  = right(frame.transform.dataToCanvas(DataPoint(112.0, 84.0)))
+      val across = right(frame.transform.dataToCanvas(DataPoint(912.0, 84.0)))
+      val down   = right(frame.transform.dataToCanvas(DataPoint(112.0, 684.0)))
+      assertEqualsDouble(
+        (across.x - start.x) / 800.0,
+        (down.y - start.y) / 600.0,
+        boundsTolerancePx
+      )
+    finally w.dispose()
   }

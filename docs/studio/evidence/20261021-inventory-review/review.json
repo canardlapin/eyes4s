@@ -1,0 +1,42 @@
+{
+  "schema": 1,
+  "date": "2026-10-21",
+  "issue": "bd-01M3JH34N04N3C1G8CHFE3KQA0",
+  "scope": "Review six old S5.4 findings against existing implementation; no source change. Bounded Data inventory parity, not whole-board acceptance.",
+  "capture_commit": "d4ff3c225fbe0125476ae1173ee94982c81170fb",
+  "capture_tree": "fee7dcbcf3708b36c835c5883c68dbd6d0d82af0",
+  "capture_suite": "ShellMomentsFxSuite, t1 Data shell story; all17 tests passed in the current strict Studio gate. AdmissionLedgerFxSuite independently checks exact header/counts, every-count drilldown and absent-trial navigation.",
+  "findings": {
+    "1": "AdmissionLedger.inventory produces InventoryAnswer from admission completion/refusal; AdmissionLedgerVM.of consumes InventorySource.vm, renders source header and count/issues. Native capture shows trials.csv Inventory960 and ledger Absent6; origin is stated.",
+    "2": "DatasetRevisionSpec.keysAgree refuses occurrence roles present in only one file during admission; both required keys remain parsed. Draft mapping can be incomplete until verified.",
+    "3": "ImportWizard.inventoryProblem explains missing/disagreeing trial mapping; DropTrials removes/reinstates trials for re-import. ImportWizardSuite covers the legacy missing-phase path and new pending revision without inventory.",
+    "4": "Command encoding omits absent inventory just as DatasetRevisionSpec does; CommandJournalSuite proves old null-bearing lines still read and rewrite without null.",
+    "5": "FakeStudyBackend.serveInventory supports per-dataset Undeclared and Refused; FakeStudyBackendSuite verifies absent counts stay unknown and no fabricated absent ledger rows appear.",
+    "6": "RealAdmission.inventoryColumns is the shared native translation; library-only InventoryJoinJvmSuite is no longer its sole implementation."
+  },
+  "visual_review": [
+    "trials.csv source is labelled Inventory and960 trials in the left source list.",
+    "Ledger source header says Counted from the trials.csv inventory. Inventory960, admitted937, quarantined17 and absent6 appear with separate buttons and origin text.",
+    "The extra outside-screen count is present; lower explanatory text scrolls inside its pane.",
+    "Other story-only mapping/geometry host errors are visibly present because this fixture shell has no open native project. The review makes no mapping, geometry-editor or production-source admission claim."
+  ],
+  "limits": [
+    "Public synthetic story fixture only.",
+    "Actual output scale1; raster transforms1x/2x do not establish a physical HiDPI display.",
+    "Full combined qualification and landing are recorded separately; do not close from this receipt alone."
+  ],
+  "source_sha256": {
+    "studio/app/src/main/scala/eyes4s/studio/app/admission/AdmissionLedger.scala": "e71d68cb26b3e3e78f26bb6c7823e01f9391e954411519f5ef2df11e456ff3d2",
+    "studio/app/src/main/scala/eyes4s/studio/app/admission/AdmissionLedgerVM.scala": "af2079387903a720b5804337517cb331097d20122f520d70376ff7a7b1e431d7",
+    "studio/desktop/src/main/scala/eyes4s/studio/desktop/admission/AdmissionLedgerView.scala": "ffdb1fde257a6beac21b1329db8ba6152a6f44929a04fea3bc111e9f6910b09f",
+    "studio/core/src/main/scala/eyes4s/studio/core/document/Dataset.scala": "595f834eceb4925ffb97ac6c4d644961517c04fcef0dc07b9d090951fe3f0a33",
+    "studio/app/src/main/scala/eyes4s/studio/app/importing/ImportWizard.scala": "b350f647a27da779076277103b3d79e8fa13e1b81cc06a1e7a872a4fd791e330",
+    "studio/core/src/main/scala/eyes4s/studio/core/command/Command.scala": "5ab5699d98fad12483279a99a57372e9f40595f97a708a8f7d5b091b26c884e4",
+    "studio/core/src/main/scala/eyes4s/studio/core/fixture/FakeStudyBackend.scala": "3a4b5e3ad8a59cf4559cb32352418af6bcfdca0d6284350e6245caf5f4ba8276",
+    "studio/core/src/main/scala/eyes4s/studio/core/real/RealAdmission.scala": "ce75c8e5900cecf6fd2a98184a1102895726e27ddc86526089ad503e281c376b"
+  },
+  "images": {
+    "data-inventory-1x.png": "3d8057b2c9a0055c83de233482f8c93448818bbff4213ceeb35512eda0c77af3",
+    "data-inventory-2x.png": "0cc6e903f24a59c369f7c81ace3cbf8b6f632fde40f4b45336f78b5a1fb9d295"
+  }
+}

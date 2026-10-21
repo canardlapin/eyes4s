@@ -1,0 +1,45 @@
+{
+  "schema": 1,
+  "date": "2026-10-21",
+  "issue": "bd-01M5EGZKH0Q0XHXWRFC4WS6NB3",
+  "base_commit": "922f6ebeca8dc2c16e574e1ce0306a701d860773",
+  "changes": [
+    "Startup registers every bundled font through the actual platform Fonts service and reports all individual refusals.",
+    "File Reveal passes the current immutable bundle path to platform ExternalOpen; typed refusal shows the existing native error dialog without changing the document or releasing its writer.",
+    "Asynchronous reveal callbacks are checked against the current Candidate object, including close/reopen of the same path.",
+    "Native normal-save timestamps read the injected platform Scheduler at completion, retaining its offset. The fallback clock uses the same native scheduler instead of direct java.time in runtime."
+  ],
+  "validation": {
+    "strict_JDK": "Temurin25.0.4.1",
+    "tests": {
+      "NativePlatformSuite": 3,
+      "ProjectLifecycleFxSuite": 20,
+      "KeymapFxSuite": 13
+    },
+    "style": "studioStyleCheck passed",
+    "mutation": "The executed close/reopen-same-path test failed with two visible windows under a path-only callback guard, then passed under live-owner identity.",
+    "test_execution_correction": "Three newly added native resource tests initially returned unevaluated IO under FunSuite. Those intermediate green runs are invalid for the three new cases. Explicit outer unsafeRunSync now executes them; the red regression and final36 results are from executed tests. The older17 lifecycle tests already executed their IO.",
+    "side_effects": "External opening and fonts are injected/recorded; temporary real bundles and actual native menu/error dialog used headlessly. No OS Finder/browser opened."
+  },
+  "sources": {
+    "MUnit_lazy_test_behavior": "https://scalameta.org/munit/docs/tests.html"
+  },
+  "logs": {
+    "/private/tmp/eyes4s-native-platform-final-20261021.log": "1b28b026fb39c8fa1a0b9029060259940ab8c4836cc242d5cb503d3b01ca029d",
+    "/private/tmp/eyes4s-native-platform-stale-reveal-executed-red-20261021.log": "e210af718b344037d9ee73f9b63d62b57c6466d7a5b0bd440f55a11c266848bc"
+  },
+  "files": {
+    "studio/desktop/src/main/scala/eyes4s/studio/desktop/StudioMain.scala": "92a2ecbf13f4ec450ea7bd4d2fc2051f5fd6c3239632cb3645608f4b9c0d61f1",
+    "studio/desktop/src/main/scala/eyes4s/studio/desktop/StudioWindow.scala": "c15728c8f9edf5eca1a025f422ffc1e0c6a8ed75af072b59c0532181e5b349b2",
+    "studio/desktop/src/main/scala/eyes4s/studio/desktop/platform/DesktopPlatform.scala": "a6c1768233974fce8e906d2ef84f455afbfb25ae4cdc088cd148f327836f21ac",
+    "studio/desktop/src/main/scala/eyes4s/studio/desktop/project/ProjectLifecycleHost.scala": "6a44314f0eb2c01798473a7283a4f793bb941cb168d48e358d3e084002123b1c",
+    "studio/desktop/src/main/scala/eyes4s/studio/desktop/runtime/DesktopEffects.scala": "d49720e5d4700912be25e1b5a31863dab9ee70ac866ff09111bb573f4426ef60",
+    "studio/desktop/src/test/scala/eyes4s/studio/desktop/project/ProjectLifecycleFxSuite.scala": "efb73dfe005fba2e6b42674d2a603f6477ec3375305af51f5d793e33ea564c69",
+    "studio/desktop/src/test/scala/eyes4s/studio/desktop/runtime/NativePlatformSuite.scala": "2df15cd93edb863469a92d0eb2302f50c038947ad8fedbdf764abfb931fe29fb"
+  },
+  "limits": [
+    "Focused qualification only; requires the next combined full gate and landing.",
+    "S2.9 remains open for remaining chooser/error-report platform routes and independent DataEmpty whole-board parity.",
+    "No new scientific run, plotting implementation or data change."
+  ]
+}

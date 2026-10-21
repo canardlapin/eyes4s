@@ -16,14 +16,19 @@
 
 package eyes4s.studio.desktop
 
+import cats.effect.IO
+import cats.syntax.all.*
 import cats.effect.unsafe.implicits.global
 import eyes4s.studio.app.{AppModel, Intent, ProjectName, TrialItems}
 import eyes4s.studio.core.fixture.{MockStudy, StoryMoments}
 import eyes4s.studio.core.preferences.UserPreferences
+import eyes4s.studio.core.document.Theme
+import eyes4s.studio.app.appearance.AppearancePreference
 import eyes4s.studio.desktop.platform.{
   AppearancePreferenceHost,
   PreferencesLocation,
-  DesktopPlatform
+  DesktopPlatform,
+  JavaFxFonts
 }
 import eyes4s.studio.desktop.project.ProjectLifecycleHost
 import javafx.application.{Application, Platform}
@@ -44,6 +49,12 @@ final class StudioApplication extends Application:
   private var lifecycle: Option[ProjectLifecycleHost]                 = None
   private var appearancePreferences: Option[AppearancePreferenceHost] = None
 
+  private var owner: Option[Stage] = None
+  private lazy val platform        = DesktopPlatform.create(
+    getHostServices.showDocument,
+    () => owner
+  )
+
   /** The user's preferences (S2.8), read before the first window opens. */
   private var preferences: UserPreferences = UserPreferences.defaults
 
@@ -56,14 +67,16 @@ final class StudioApplication extends Application:
   // face that fails to load falls back to the platform font; say which.
   // S2.8: read the preferences; an unusable file is the defaults, logged.
   override def init(): Unit =
-    eyes4s.studio.desktop.typography.StudioFonts
-      .loadAll()
+    StudioMain
+      .loadFonts(platform.fonts)
+      .unsafeRunSync()
       .foreach(p => System.err.println(p.message))
     val (loaded, problems) = StudioMain.loadPreferences()
     preferences = loaded
     problems.foreach(m => System.err.println(PreferencesLocation.redact(m)))
 
   override def start(stage: Stage): Unit =
+    owner = Some(stage)
     stage.setTitle(StudioMain.title)
     // S1.12: the log, then the error reporter, before anything can fail.
     val log = StudioLog.open()
@@ -84,10 +97,6 @@ final class StudioApplication extends Application:
       m => System.err.println(PreferencesLocation.redact(m))
     )
     appearancePreferences = Some(appearance)
-    val platform = DesktopPlatform.create(
-      getHostServices.showDocument,
-      () => Some(stage)
-    )
     val projects = ProjectLifecycleHost(
       stage,
       platform,
@@ -98,7 +107,12 @@ final class StudioApplication extends Application:
       defect = reporter.jobFailed,
       preferences = preferenceStore,
       initialRecent = preferences.recent,
-      preferencesLog = message => System.err.println(PreferencesLocation.redact(message))
+      preferencesLog = message => System.err.println(PreferencesLocation.redact(message)),
+      newProjectTheme = () =>
+        AppearancePreference.newProjectTheme(
+          appearance.current,
+          window.map(_.runtime.model.appearance.system).getOrElse(Theme.Light)
+        )
     )
     lifecycle = Some(projects)
     projects.start()
@@ -110,6 +124,7 @@ final class StudioApplication extends Application:
     appearancePreferences.foreach(_.close.unsafeRunSync())
     appearancePreferences = None
     window = None
+    owner = None
     Platform.exit()
 
 /** Entry point for the desktop shell. Tests never launch it. */
@@ -136,6 +151,12 @@ object StudioMain:
     StimulusSource.directory(
       java.nio.file.Paths.get(sys.props("user.dir"), "fixtures", "studio-golden", "stimuli")
     )
+
+  /** Register every bundled face, retaining each refusal for startup reporting. */
+  def loadFonts(
+      fonts: eyes4s.studio.core.platform.Fonts[IO]
+  ): IO[Vector[eyes4s.studio.core.platform.PlatformError]] =
+    JavaFxFonts.bundled.traverse(fonts.register).map(_.collect { case Left(error) => error })
 
   /** The user's preferences from their file, and what to log about it. */
   def loadPreferences(): (UserPreferences, Vector[String]) =

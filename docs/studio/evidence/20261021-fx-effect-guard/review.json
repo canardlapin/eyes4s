@@ -1,0 +1,28 @@
+{
+  "schema": 1,
+  "date": "2026-10-21",
+  "issue": "bd-01M5EHTGFKW7FXTMQX4GDYD3MS",
+  "base_commit": "4e025af8b675fef96f4a52a5af9366e4d647e583",
+  "change": "StudioFxSuite refuses returned lazy cats.effect.IO through MUnit ValueTransform, instead of accepting a false green or starting an action after fixture cleanup. Existing explicit IO execution and returned Futures remain supported.",
+  "reason": "Three newly authored native resource tests returned IO under FunSuite without executing it; corrected in the native-platform slice. MUnit documents lazy effect handling as an opt-in; this is a local harness guard, not an upstream defect.",
+  "primary_source": "https://scalameta.org/munit/docs/tests.html",
+  "tests": {
+    "canaries": 2,
+    "existing_render_failure_capture": 4,
+    "existing_lifecycle_with_guard": 20,
+    "mutation": "Change the IO match to Promise so IO is no longer rejected: both canaries fail. Restore the IO match: both pass. Actual FX fixture canary uses the expected-failure tag; if an IO result is ignored, that canary fails.",
+    "no_execution": "The direct transformer test also proves the rejected IO did not run. MUnit wraps the assertion; the test checks the complete causal reason."
+  },
+  "logs": {
+    "/private/tmp/eyes4s-fx-effect-guard-mutant-20261021.log": "5cdd0c2ecfc43e9ad140c456c2b33b79561df7c02985f49baf45036eb7fb07c6",
+    "/private/tmp/eyes4s-fx-effect-guard-final-20261021.log": "3cd0d23fca923a011a155df87f7ba224b6f580342fdb405a496d09ebd05e4863"
+  },
+  "source_sha256": {
+    "studio/desktop/src/test/scala/eyes4s/studio/desktop/harness/StudioFxSuite.scala": "827aee47b5c79959ebe512cfb7e811fca450893d95ae84bedb7b6a21449618ca",
+    "studio/desktop/src/test/scala/eyes4s/studio/desktop/harness/UnevaluatedEffectsFxSuite.scala": "184605889a89fc3e95e15a8104223fc510a4c783ed3668d859870ad61e123242"
+  },
+  "limits": [
+    "Focused validation only; the complete native suite must run with this guard in the combined qualification.",
+    "No scientific data, plot output, runtime backend or public library API changed."
+  ]
+}

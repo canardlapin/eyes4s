@@ -344,11 +344,12 @@ class TrialViewFxSuite extends StudioFxSuite:
       val topLeft = right(frame.transform.dataToDevice(DataPoint(448.0, 156.0)))
       assertEqualsDouble(images.head.x, topLeft.x, 1e-9)
       assertEqualsDouble(images.head.y, topLeft.y, 1e-9)
-      // The host canvas keeps the scene's aspect.
+      // The data frame keeps native-pixel aspect; caption width is independent.
+      val nativeAspectTolerance = 1e-9
       assertEqualsDouble(
-        frame.surface.logicalWidth / frame.surface.logicalHeight,
-        scene.aspect,
-        0.01
+        frame.transform.panelFrame.width / frame.transform.panelFrame.height,
+        scene.extent.width / scene.extent.height,
+        nativeAspectTolerance
       )
     }
     runOnFx(view.dispose())

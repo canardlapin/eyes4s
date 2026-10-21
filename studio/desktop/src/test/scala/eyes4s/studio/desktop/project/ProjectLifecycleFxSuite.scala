@@ -104,17 +104,20 @@ class ProjectLifecycleFxSuite extends ShellFxSuite:
       directory: Path,
       files: FileSystem[IO] = JvmFileSystem,
       preferences: Option[DesktopPreferences] = None,
-      initialRecent: RecentProjects = RecentProjects.empty
+      initialRecent: RecentProjects = RecentProjects.empty,
+      newProjectTheme: () => Theme = () => Theme.Light,
+      transform: Platform[IO] => Platform[IO] = identity
   ): (InMemoryPlatform[IO], ProjectLifecycleHost) =
     val memory   = InMemoryPlatform.create[IO]().unsafeRunSync()
-    val platform = memory.platform.copy(files = files)
+    val platform = transform(memory.platform.copy(files = files))
     val host     = runOnFx(
       ProjectLifecycleHost(
         fx.stage,
         platform,
         presets = FilePresetStore(directory.resolve("presets")),
         preferences = preferences,
-        initialRecent = initialRecent
+        initialRecent = initialRecent,
+        newProjectTheme = newProjectTheme
       )
     )
     runOnFx(host.start())
@@ -864,4 +867,206 @@ class ProjectLifecycleFxSuite extends ShellFxSuite:
         }
       }
       .unsafeRunSync()
+  }
+
+  fxStage.test(
+    "fresh projects use the desired appearance without edits; existing projects keep their saved theme"
+  ) { fx =>
+    TempDirs
+      .resource("eyes4s-lifecycle-new-theme-")
+      .use { directory =>
+        IO.blocking {
+          val savedLight = directory.resolve("saved-light.eyes")
+          val newDark    = directory.resolve("new-dark.eyes")
+          create(savedLight)
+          val (platform, host) = setup(
+            fx,
+            directory,
+            newProjectTheme = () => {
+              assert(
+                javafx.application.Platform.isFxApplicationThread,
+                "read preferences on FX before asynchronous acquisition"
+              )
+              Theme.Dark
+            }
+          )
+          def freshDark(): Unit = runOnFx {
+            val model = host.window.get.runtime.model
+            assertEquals(model.document.presentation.theme, Theme.Dark)
+            assert(!model.save.edited)
+            assert(!model.history.presentation.canUndo)
+          }
+          try
+            freshDark()
+            platform.answer(Some(path(newDark))).unsafeRunSync()
+            invoke(host, CommandRegistry.newProject.id)
+            eventually(fx, "new Dark project created")(
+              !host.busy && host.window
+                .exists(_.runtime.model.project.exists(_.value == "new-dark"))
+            )
+            freshDark()
+            invoke(host, CommandRegistry.closeProject.id)
+            eventually(fx, "fresh untitled uses preferred Dark")(
+              !host.busy && host.window.exists(_.runtime.model.project.isEmpty)
+            )
+            freshDark()
+            platform.answer(Some(path(savedLight))).unsafeRunSync()
+            invoke(host, CommandRegistry.openProject.id)
+            eventually(fx, "saved Light project opens")(
+              !host.busy && host.window
+                .exists(_.runtime.model.project.exists(_.value == "saved-light"))
+            )
+            assertEquals(
+              runOnFx(host.window.get.runtime.model.document.presentation.theme),
+              Theme.Light
+            )
+          finally runOnFx(host.shutdown())
+        }
+      }
+      .unsafeRunSync()
+  }
+
+  fxStage.test("File Reveal uses the current native bundle; saves use the injected clock") {
+    fx =>
+      TempDirs
+        .resource("eyes4s-lifecycle-reveal-")
+        .use { directory =>
+          IO.blocking {
+            val project = directory.resolve("study.eyes")
+            create(project)
+            val (memory, host) = setup(fx, directory)
+            try
+              memory.answer(Some(path(project))).unsafeRunSync()
+              invoke(host, CommandRegistry.openProject.id)
+              eventually(fx, "native project opened")(
+                !host.busy && host.window.exists(_.runtime.model.project.isDefined)
+              )
+              val w      = runOnFx(host.window.get)
+              val before = runOnFx(w.runtime.model.history)
+              invoke(host, CommandRegistry.revealProject.id)
+              eventually(fx, "external reveal recorded")(memory.opened.unsafeRunSync().nonEmpty)
+              assertEquals(
+                memory.opened.unsafeRunSync(),
+                Vector(ExternalTarget.Reveal(path(project)))
+              )
+              assertEquals(runOnFx(w.runtime.model.history), before)
+              memory.advance(8.hours + 25.minutes).unsafeRunSync()
+              runOnFx(
+                w.runtime.dispatch(
+                  Intent.Dispatch(eyes4s.studio.core.command.Command.SetTheme(Theme.Dark))
+                )
+              )
+              eventually(fx, "saved at the injected host time")(
+                !w.runtime.model.save.edited && w.runtime.model.save.last
+                  .exists(t => t.hour == 8 && t.minute == 25)
+              )
+              assert(!usable(project), "reveal released the current writer")
+            finally runOnFx(host.shutdown())
+            assert(usable(project))
+          }
+        }
+        .unsafeRunSync()
+  }
+
+  fxStage.test("a refused native reveal explains the error and keeps the project and writer") {
+    fx =>
+      TempDirs
+        .resource("eyes4s-lifecycle-reveal-refused-")
+        .use { directory =>
+          IO.blocking {
+            val project = directory.resolve("study.eyes")
+            create(project)
+            val (_, host) = setup(
+              fx,
+              directory,
+              transform = p =>
+                p.copy(external = new ExternalOpen[IO]:
+                  def open(target: ExternalTarget): IO[Either[PlatformError, Unit]] =
+                    IO.pure(Left(PlatformError.OpenFailed(target, "synthetic reveal refusal"))))
+            )
+            try
+              // Only chooser answers and external opening are substituted.
+              // The real File menu and native error dialog remain in the route.
+              runOnFx(
+                host
+                  .open(eyes4s.studio.app.PlatformDialog.OpenProjectAt(path(project)), _ => ())
+              )
+              eventually(fx, "native project opened")(
+                !host.busy && host.window.exists(_.runtime.model.project.isDefined)
+              )
+              val before = runOnFx(host.window.get)
+              invoke(host, CommandRegistry.revealProject.id)
+              eventually(fx, "visible reveal refusal")(
+                Window.getWindows.asScala.exists(w =>
+                  Option(w.getScene).exists(_.getRoot.lookupAll(".label").asScala.exists {
+                    case label: javafx.scene.control.Label =>
+                      label.getText.contains("synthetic reveal refusal")
+                    case _ => false
+                  })
+                )
+              )
+              press(fx, "OK")
+              assert(runOnFx(host.window.contains(before)))
+              assert(!usable(project))
+            finally runOnFx(host.shutdown())
+            assert(usable(project))
+          }
+        }
+        .unsafeRunSync()
+  }
+
+  fxStage.test("a late reveal refusal cannot open a dialog over the replacement project") {
+    fx =>
+      TempDirs
+        .resource("eyes4s-lifecycle-reveal-late-")
+        .use { directory =>
+          IO.blocking {
+            val project = directory.resolve("study.eyes")
+            create(project)
+            val entered   = Deferred[IO, ExternalTarget].unsafeRunSync()
+            val finish    = Deferred[IO, Either[PlatformError, Unit]].unsafeRunSync()
+            val (_, host) = setup(
+              fx,
+              directory,
+              transform = p =>
+                p.copy(external = new ExternalOpen[IO]:
+                  def open(target: ExternalTarget): IO[Either[PlatformError, Unit]] =
+                    entered.complete(target).void >> finish.get)
+            )
+            try
+              runOnFx(
+                host
+                  .open(eyes4s.studio.app.PlatformDialog.OpenProjectAt(path(project)), _ => ())
+              )
+              eventually(fx, "native project opened")(
+                !host.busy && host.window.exists(_.runtime.model.project.isDefined)
+              )
+              invoke(host, CommandRegistry.revealProject.id)
+              val target = entered.get.timeout(10.seconds).unsafeRunSync()
+              invoke(host, CommandRegistry.closeProject.id)
+              eventually(fx, "closed to untitled")(
+                !host.busy && host.window.exists(_.runtime.model.project.isEmpty)
+              )
+              runOnFx(
+                host
+                  .open(eyes4s.studio.app.PlatformDialog.OpenProjectAt(path(project)), _ => ())
+              )
+              eventually(fx, "the same path reopened with a new owner")(
+                !host.busy && host.window.exists(_.runtime.model.project.isDefined)
+              )
+              finish
+                .complete(Left(PlatformError.OpenFailed(target, "late synthetic refusal")))
+                .unsafeRunSync()
+              // Let the IO completion and its queued FX callback settle before checking
+              // absence; otherwise shutdown can suppress the callback being tested.
+              IO.sleep(500.millis).unsafeRunSync()
+              fx.awaitLayout()
+              assertEquals(runOnFx(Window.getWindows.asScala.count(_.isShowing)), 1)
+              assert(!usable(project))
+            finally
+              finish.complete(Right(())).unsafeRunSync()
+              runOnFx(host.shutdown())
+          }
+        }
+        .unsafeRunSync()
   }

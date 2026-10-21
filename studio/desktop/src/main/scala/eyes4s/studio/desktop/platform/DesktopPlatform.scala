@@ -39,6 +39,9 @@ import scala.util.control.NonFatal
   */
 object DesktopPlatform:
 
+  /** The native clock; shells use the same scheduler interface as other hosts. */
+  val scheduler: Scheduler[IO] = Scheduler.temporal[IO](JvmZone.offsetMinutes)
+
   /** The services of this JVM.
     *
     * @param show the application's `HostServices.showDocument`
@@ -56,7 +59,7 @@ object DesktopPlatform:
       JavaFxDialogs(owner),
       JavaFxClipboard,
       JavaFxFonts,
-      Scheduler.temporal[IO](JvmZone.offsetMinutes),
+      scheduler,
       DesktopExternalOpen(show),
       JvmPreferences(preferences)
     )

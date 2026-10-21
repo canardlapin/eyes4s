@@ -1550,6 +1550,9 @@ def studioFxVisible: Boolean =
 
 def studioFxTestOptions(buildRoot: File): Seq[String] = {
   val software = Seq("-Dprism.order=sw", "-Dprism.lcdtext=false")
+  // Native GTK scaling must reach the test fork, not just the sbt launcher.
+  val outputScale = Seq("glass.gtk.uiScale", "eyes4s.studio.fx.expectedOutputScale")
+    .flatMap(key => sys.props.get(key).map(value => s"-D$key=$value"))
   val headless = Seq(
     "-Deyes4s.studio.fx.headless=true",
     "-Dglass.platform=Monocle",
@@ -1564,7 +1567,7 @@ def studioFxTestOptions(buildRoot: File): Seq[String] = {
     s"-Deyes4s.studio.snapshots=${(buildRoot / "target" / "studio-snapshots").getAbsolutePath}",
     "-Djava.awt.headless=true"
   ) ++ (if (studioFxVisible) Nil else headless) ++
-    (if (!studioFxVisible || sys.env.contains("CI")) software else Nil)
+    (if (!studioFxVisible || sys.env.contains("CI")) software else Nil) ++ outputScale
 }
 
 lazy val studioCrossModules = Seq("studioCore", "studioApp", "studioViz")
@@ -1706,6 +1709,56 @@ lazy val studioLinuxJob = WorkflowJob(
   timeoutMinutes = Some(60)
 )
 
+// A real GTK window under Xvfb reports output scale 2. Monocle and snapshot
+// transforms are deliberately insufficient for the native scale assertion.
+lazy val studioLinuxHiDpiJob = WorkflowJob(
+  "studio-linux-hidpi",
+  "Studio (Linux, native output scale 2)",
+  studioJobSetup ::: List(
+    WorkflowStep.Run(
+      List(
+        "sbt -J-Xmx2g -Djavafx.platform=linux studioDesktop/Test/compile",
+        "xvfb-run -a -s '-screen 0 3840x2400x24' sbt -J-Xmx1g" +
+          " -Djavafx.platform=linux -Deyes4s.studio.test.heap=4g" +
+          " -Deyes4s.studio.fx.visible=true -Dglass.gtk.uiScale=2" +
+          " -Deyes4s.studio.fx.expectedOutputScale=2 studioDesktop/test"
+      ),
+      name = Some("Run all desktop tests on native GTK at scale 2")
+    ),
+    WorkflowStep.Run(
+      List(
+        "python3 - <<'PY'",
+        "import json, pathlib",
+        "files = list(pathlib.Path('target/studio-snapshots/NativeOutputScaleFxSuite').rglob('native-output-scale.json'))",
+        "assert len(files) == 1, 'native scale test did not write exactly one receipt'",
+        "r = json.loads(files[0].read_text())",
+        "assert r['nativeScaleX'] == r['nativeScaleY'] == r['requiredScale'] == 2, r",
+        "assert r['hostOverride'] is False and r['stripeWidthDevicePixels'] == 1, r",
+        "assert r['rasterDifferenceFraction'] <= r['maximumDifferenceFraction'] <= 0.005, r",
+        "assert (files[0].parent / 'light-2x.png').is_file(), 'native scale snapshot missing'",
+        "print('Verified native output-scale-2 raster receipt:', r)",
+        "PY"
+      ),
+      name = Some("Require native scale, sharpness and raster receipt")
+    ),
+    WorkflowStep.Use(
+      UseRef.Public("actions", "upload-artifact", "v4"),
+      name = Some("Upload native HiDPI snapshots and test reports"),
+      cond = Some("always()"),
+      params = Map(
+        "name"              -> "studio-snapshots-linux-hidpi-${{ github.sha }}",
+        "path"              -> "target/studio-snapshots/\nstudio/desktop/target/test-reports/",
+        "if-no-files-found" -> "warn"
+      )
+    )
+  ),
+  sbtStepPreamble = Nil,
+  oses = List("ubuntu-22.04"),
+  scalas = Nil,
+  javas = List(studioJdk),
+  timeoutMinutes = Some(90)
+)
+
 lazy val studioMacosJob = WorkflowJob(
   "studio-macos",
   "Studio (macOS, functional JavaFX)",
@@ -1767,7 +1820,7 @@ studioWorkflowContents := GenerativePlugin.compileWorkflow(
   Some(Permissions.Specify.defaultRestrictive.withPackages(PermissionValue.None)),
   githubWorkflowEnv.value,
   githubWorkflowConcurrency.value,
-  List(studioLinuxJob, studioMacosJob, studioCleanCloneJob),
+  List(studioLinuxJob, studioLinuxHiDpiJob, studioMacosJob, studioCleanCloneJob),
   githubWorkflowSbtCommand.value
 )
 

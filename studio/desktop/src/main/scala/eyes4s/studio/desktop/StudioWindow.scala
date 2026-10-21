@@ -373,7 +373,8 @@ object StudioWindow:
       chooseFolder: FigureInputs.ChooseFolder = FigureInputs.directoryChooser,
       nativeSources: Option[eyes4s.studio.core.real.DatasetSources[cats.effect.IO]] = None,
       lifecycle: Option[PlatformDialogs] = None,
-      hostPlatform: Option[eyes4s.studio.core.platform.Platform[cats.effect.IO]] = None
+      hostPlatform: Option[eyes4s.studio.core.platform.Platform[cats.effect.IO]] = None,
+      revealProject: Option[() => Unit] = None
   )(using IORuntime): Either[WindowError, StudioWindow] =
     // The window starts in the document's theme and follows it (S1.10).
     val theme = initial.theme
@@ -399,7 +400,8 @@ object StudioWindow:
         chooseFolder,
         nativeSources,
         lifecycle,
-        hostPlatform
+        hostPlatform,
+        revealProject
       )
     yield window
 
@@ -422,7 +424,8 @@ object StudioWindow:
       chooseFolder: FigureInputs.ChooseFolder,
       nativeSources: Option[eyes4s.studio.core.real.DatasetSources[cats.effect.IO]],
       lifecycle: Option[PlatformDialogs],
-      hostPlatform: Option[eyes4s.studio.core.platform.Platform[cats.effect.IO]]
+      hostPlatform: Option[eyes4s.studio.core.platform.Platform[cats.effect.IO]],
+      revealProject: Option[() => Unit]
   )(using IORuntime): Either[WindowError, StudioWindow] =
     // Late-bound: the runtime, the host and the effects refer to each other.
     var runtime: Option[StudioRuntime] = None
@@ -499,7 +502,8 @@ object StudioWindow:
       project,
       clock,
       (dataset, content, answer) => ledger.foreach(_.verified(dataset, content, answer)),
-      defect
+      defect,
+      revealProject = revealProject
     )
     val adopted = session.adopt(initial.document)
     adopted.collect { case Left(e) => e }.foreach(e => System.err.println(e.message))

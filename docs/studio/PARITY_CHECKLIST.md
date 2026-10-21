@@ -164,10 +164,13 @@ optional Sample count. The role is available when that source column is present.
 The actual served form, not a fabricated extra column, is reviewed. The geometry
 editor replaces the board's compact facts list as already recorded under S26.
 
-Current captures still show the separately tracked trial-caption overlap at normal
-pane sizes (`bd-01M4ZQJ91DP721J9XEM9TV9862`). That issue remains open; the fixed
-profile is not evidence that every Main/Explore difference is resolved. Final
-qualification and landing are recorded on the corresponding motes.
+The 2026-10-20 captures show the separately tracked trial-caption overlap at normal
+pane sizes (`bd-01M4ZQJ91DP721J9XEM9TV9862`). The bounded 2026-10-21 follow-up
+uses Intaglio's aspect-preserving data viewport while keeping the caption and
+legend at pane width; actual-font bounds and public 680×370 before/after captures
+are in `evidence/20261021-trial-layout/review.json`. Focused checks passed; full
+qualification and landing remain pending. This does not sign every Main/Explore
+difference off. Final qualification and landing are recorded on the motes.
 
 
 ## Bounded count/provenance review, 2026-10-20

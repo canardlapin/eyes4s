@@ -859,3 +859,21 @@ class TrialSceneSuite extends ScalaCheckSuite:
     )
     assert(gaze.left < -60.0 && gaze.top < -30.0 && gaze.right > 2000.0 && gaze.bottom > 1150.0)
   }
+
+  test("native screen pixels keep equal x and y scale on wide and tall canvases") {
+    val scene = right(TrialScene(input(Display.Blank)))
+    for
+      (width, height) <- Vector(1200.0 -> 300.0, 320.0 -> 900.0)
+      scale           <- Vector(1.0, 2.0)
+    do
+      val (transform, _) = lower(scene, right(PlotSurface(width, height, scale)))
+      val origin         = right(transform.dataToDevice(DataPoint(0.0, 0.0)))
+      val across         = right(transform.dataToDevice(DataPoint(100.0, 0.0)))
+      val down           = right(transform.dataToDevice(DataPoint(0.0, 100.0)))
+      assertEqualsDouble(across.x - origin.x, down.y - origin.y, Tolerance)
+      val point    = DataPoint(448.0, 156.0)
+      val rendered = right(transform.dataToCanvas(point))
+      val back     = transform.canvasToData(rendered)
+      assertEqualsDouble(back.x, point.x, Tolerance)
+      assertEqualsDouble(back.y, point.y, Tolerance)
+  }

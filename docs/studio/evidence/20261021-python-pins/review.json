@@ -1,0 +1,66 @@
+{
+  "schema": 1,
+  "date": "2026-10-21",
+  "issue": "bd-01M5EFXZJM1Q5KH2C24787KEGN",
+  "base_commit": "217de27e284aeebc2bc4b8d63df2937393263965",
+  "change": "Pillow 12.3.0 to 13.0.0 in both tool environments; all other package versions unchanged. uv regenerated wheel hashes. No plotting implementation or scientific output changed.",
+  "sources": [
+    "https://pillow.readthedocs.io/en/stable/releasenotes/13.0.0.html",
+    "https://pypi.org/pypi/Pillow/13.0.0/json",
+    "https://github.com/advisories/GHSA-462x-pgg6-55fp",
+    "https://github.com/advisories/GHSA-58r4-6rv3-gfh8",
+    "https://github.com/advisories/GHSA-65qm-jvmh-6pqg",
+    "https://github.com/advisories/GHSA-8g5g-8vmr-9782",
+    "https://github.com/advisories/GHSA-c6hw-5grf-ff96",
+    "https://github.com/advisories/GHSA-p4wg-p73j-c528",
+    "https://github.com/advisories/GHSA-pchr-8j38-3x4p",
+    "https://github.com/advisories/GHSA-q45j-58j2-45rg",
+    "https://github.com/advisories/GHSA-vx6w-vv9f-6gvg"
+  ],
+  "advisory_observation": {
+    "open_alerts": 18,
+    "distinct_advisories": 9,
+    "first_patched_version": "13.0.0",
+    "status": "Remote alerts remain open until push and GitHub dependency rescan; no alert dismissed."
+  },
+  "validation": {
+    "performance_python": "3.14.7",
+    "density_python": "3.12.13",
+    "performance_protocol_tests": 23,
+    "collector_lifecycle_tests": 8,
+    "pinned_asc_adapter_and_parser_tests": 2,
+    "environment_sync": "38 hash-locked performance packages; 11 density packages; both installed in disposable venvs",
+    "imports_and_png": "Both Pillow 13 environments round-trip actual RGB PNG bytes; pymovements 0.28.0 and Matplotlib 3.10.3 import successfully. No Matplotlib plot generated.",
+    "studio_fixture_generator": "--check byte-compared all 260 generated public files (3.08 MB), unchanged."
+  },
+  "protocol_binding_review": {
+    "commit_reviewed": "84500eb67d92a9b73642b3fdb5d2be050eda26e2",
+    "finding": "Generator drift is the SCORES.json check allowlist and documentation change; no change to fixture rows or images. Bound current generator after byte-for-byte fixture check.",
+    "new_protocol_sha256": "afd142442b12a26cb1c2e688deb7791e993d0e52e1ba5044112af30300c7046f",
+    "historical_receipts": "Untouched. Old dependency/protocol identities cannot qualify a new measurement. No new benchmark or superiority verdict."
+  },
+  "known_validation_gap": {
+    "issue": "bd-01M5EG5CQAFMPQWNYCA5K085TQ",
+    "unchanged_baseline": "56 tests: 97 failures and 8 errors; same 105 failed/error test names before the generator-binding repair. Root causes stale comparison source fingerprints and stale performance generator binding.",
+    "current": "Performance protocol repaired and 23 tests pass. Broader comparison inventory remains stale and unqualified; manifest and historical comparison receipts not changed."
+  },
+  "files": {
+    "tools/density-approximation/requirements.txt": "c2a6c8238ba4cd0a65a0c3f7dca651a46953ae6834f08bbd9add5f89f09ccaed",
+    "tools/pymovements/performance-requirements.txt": "f1786360019864e79fc54398d725f0f7c124642b52089035b2e9b24c20ea2c3a",
+    "tools/pymovements/performance.json": "13cbb0b7d656f0b867a3e1f6fe92dde949d4ddca503caf2afc64e3967cd39c43"
+  },
+  "logs": {
+    "/private/tmp/eyes4s-python-pins-compile-20261021.log": "bd9ea76acb54cd271ea2c389eeec09720a3925e85b1ff6dd7bf0e415e761a912",
+    "/private/tmp/eyes4s-python-pins-performance-tests-20261021.log": "1bb198b6ae227fcabb97c5f5de9af4e2694e949ae043d64a55d5fbb228afbc69",
+    "/private/tmp/eyes4s-python-pins-protocol-20261021.log": "8a113d32b8532ca3d65114ca22e2d1705373503dc7b0036c2427ef18162c789e",
+    "/private/tmp/eyes4s-python-pins-csv-tests-20261021.log": "cb35393ced85207b3845bf6c34351465f5d5ef51034f3eb99ec35c1bab86a14f",
+    "/private/tmp/eyes4s-python-pins-imports-20261021.log": "bc4132cb83f90005d6d1fa6b578409c82f6e8f288e46e1d32555df07526767cc",
+    "/private/tmp/eyes4s-python-pins-baseline-tests-20261021.log": "7810764d497f3ccfa44ca80e28624692446948f2fcd48b2bb70be8572486911d",
+    "/private/tmp/eyes4s-python-pins-verify3-20261021.log": "946bd14333cd045098aa48c56fe6ddb4289c34ceca1e79e277af21bdd45bdf98"
+  },
+  "limits": [
+    "No new numerical analysis or performance run.",
+    "Synthetic performance inputs were not regenerated in this slice.",
+    "Focused dependency validation only; requires the combined follow-up qualification before landing."
+  ]
+}
