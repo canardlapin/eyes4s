@@ -42,6 +42,19 @@ final class RealPrepared private (
   /** The native pairing refusal retained with these exact counts, if any. */
   val pairingRefusal: Option[eyes4s.plan.PlanError] = counts.cardinality.refusal(plan.layout)
 
+  /** Trial-local preflight findings read from the retained preparation. No
+    * schedules are visited and no maps or scores are calculated here.
+    */
+  private[real] lazy val trialFindings      = eyes4s.plan.Preflight.trialFindings(work)
+  private[real] lazy val trialFindingsByKey =
+    trialFindings.flatMap(f => f.keys.map(_ -> f)).groupMap(_._1)(_._2)
+
+  private[real] lazy val knownFailingFocalQueries: Int =
+    counts.queryPairs.count { (key, pairs) =>
+      pairs.matchedPairs > 0 &&
+      trialFindingsByKey.getOrElse(key, Vector.empty).exists(_.failsTrialPreparation)
+    }
+
   /** eyes4s's codecs for this study: the trial-keyed route of its method. */
   def plans   = StudyCodecs.trialSimilarity[Unit2D.Px](method)
   def inputs  = StudyInputCodecs.trial[Unit2D.Px]

@@ -42,7 +42,7 @@ class ResolvedDesignSuite extends munit.FunSuite:
   private val id              = PreviewId(1L)
 
   private val candidates = ok(PreviewCandidates.of(466, 471, 24, 219486L, 480, 14, None))
-  private val counts     = ok(PreviewCounts.of(8969L, 44845L, 457, 9, 0))
+  private val counts     = ok(PreviewCounts.of(8969L, 44845L, 457, 9, 0, Some(3)))
   private val ready      = ok(PreviewReady.of(id, stamp, candidates, counts, Vector.empty))
 
   private val ret07 = MockStudy.key("P17", "ret_07")
@@ -120,6 +120,51 @@ class ResolvedDesignSuite extends munit.FunSuite:
 
   private def chip(vm: ResolvedDesignVM, f: DesignFilter): ChipVM =
     vm.chips.find(_.filter == f).getOrElse(fail(s"no chip $f"))
+
+  test("preparation failures remain pair-eligible and expose their served reason") {
+    val reason = noMatch.copy(
+      code = "study-finding.no-fixation-in-window",
+      message = "0 of 11 fixations inside window"
+    )
+    val failed = rows.head.copy(focalFailures = Vector(reason))
+    val vm     = ResolvedDesignVM.row(failed, false)
+    assertEquals(vm.matched, Some("enc_03"))
+    assertEquals(vm.controls, Some("19"))
+    assertEquals(vm.tone, StatusTone.Warning)
+    assertEquals(vm.status, "Eligible · focal trial will fail: 0 of 11 fixations inside window")
+    val notes = ResolvedDesignVM.of(counted).notes.map(_.text)
+    assert(
+      notes.exists(
+        _.startsWith("Eligible queries: 454 without a known focal preparation failure; 3")
+      )
+    )
+    assert(notes.exists(_.contains("Scores pending")))
+  }
+
+  test("a smaller control pool names source admission facts rather than inferred lost pairs") {
+    val row = rows.head.copy(unadmittedControlReferences =
+      Vector(
+        DeclaredReferenceAdmission(MockStudy.key("P17", "enc_11"), TrialDisposition.NoFixations)
+      )
+    )
+    val vm = ResolvedDesignVM.row(row, false)
+    assertEquals(
+      vm.status,
+      "Eligible · declared control candidates not admitted (1): enc_11 (no fixations)"
+    )
+    assertEquals(vm.controls, Some("19"))
+    assertEquals(vm.tone, StatusTone.Warning)
+  }
+
+  test("no-match rows name only source-declared rejected references") {
+    val declaration =
+      DeclaredReferenceAdmission(MockStudy.key("P03", "enc_11"), TrialDisposition.NoFixations)
+    val row = rows(2).copy(declaredReferences = Vector(declaration))
+    val vm  = ResolvedDesignVM.row(row, false)
+    assertEquals(vm.status, "No match · enc_11 (no fixations)")
+    assertEquals(vm.matched, None)
+    assertEquals(vm.controls, None)
+  }
 
   test("t2's draft starts bounded preparation before any row reads") {
     val (panel, effects) = synced
@@ -236,6 +281,11 @@ class ResolvedDesignSuite extends munit.FunSuite:
         (
           "Exact eligible after paging 8,969 per scale.",
           Vector(StudioRef.DesignTally(rev5, DesignCount.EligiblePairsPerScale))
+        ),
+        (
+          "Eligible queries: 454 without a known focal preparation failure; 3 focal trials will fail " +
+            "at every scale. Scores pending; other failures remain possible.",
+          Vector(StudioRef.DesignTally(rev5, DesignCount.EligibleQueries))
         ),
         ("Preview and run use this same prepared design.", Vector.empty),
         ("input digest unbound · plan unbound · rev 5 · data r3", Vector.empty)

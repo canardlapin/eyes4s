@@ -74,7 +74,8 @@ application parity is qualified separately below.
 - [ ] Inspector for fixation 6: onset 2160 ms, duration 412 ms, screen (1148, 456), image (700, 300), (+5.4°, +2.4°). "Used by" lists ret_07 (matched) and 18 other queries.
 
 ## Analysis (moment t2)
-- [x] Three presets. Recognition shows its "by design" category and asks for an explicit inventory column/value selection. `ExpectedUnmatchedSuite` and `RealPreviewCursorSuite` prove that item collisions, including a dropped studied item, cannot create pairs.
+- [x] Three presets and an explicit inventory column/value selection for expected-unmatched trials. Library tests prove that item collisions, including a dropped studied item, cannot create pairs.
+- [ ] The native preview/result projection must also carry the library's by-design classification into count strips and filters (`bd-01M5E637J24JYT6FHQW336E01P`). Existing `RealPreviewCursorSuite` classification tests inspect library work; they do not yet qualify the service receipt/rows.
 - [x] Recipe sentence with role-coloured tokens. Window, grid and initial-fixation controls use served descriptors; their board tags now read "served UI-A / UI-F". `DescriptorFormSuite` adds a synthetic field without changing the Studio renderer.
 - [x] Scales 0.5 / 1 / 2 / 4 (+8° in the draft), cell 0.46°, and the 0.5° and 8° warnings. Values and warnings are served by eyes4s; `ScalesEditorSuite` checks the drawn warnings, one Tab stop and keyboard removal.
 - [x] The served pairing control persists “Report as no match”; the generic field label is “Focal trials without a matched reference”.
@@ -82,7 +83,7 @@ application parity is qualified separately below.
 - Presentation differences recorded for this tranche: the generic form scrolls and shows the library's field metadata; Apply commits a valid group of inputs to the draft. Presets and scale selection use the shared segmented control. The cell label shows both axes, and the large-scale warning displays the served extent ratio. No protocol/exploratory scale classification is added.
 - [ ] Resolved design:
   - [ ] 219,486 Cartesian candidates before paging (466 admitted retrieval × 471 admitted encoding), then 8,969 after.
-  - [ ] 480 = 454 + 3 + 9 + 14.
+  - [ ] 480 = 454 without a known focal preparation failure + 3 known focal failures + 9 no match + 14 not admitted. Successful contributing contrasts are known only after execution.
   - [ ] Input digest plus plan revision.
 - [ ] Preflight keeps eyes4s findings separate from Studio checks ("0 queries with >1 matched reference · checked"). "Save & run rev 5 · 44,845 pairs" is enabled.
 - [ ] Preflight budget row: a recorded deviation. The board's "Budget: pairs ≤ 50,000 · cells ≤ 20M" is omitted because the real backend prepares with eyes4s's default `PairScheduleBudget`, which sets no limit, and eyes4s has no cell budget. The row returns, from the served value, when an analysis applies a budget (decision on `bd-01M437FHJSCPPAZ8PMZ3WD7EGH`).
@@ -167,3 +168,27 @@ Current captures still show the separately tracked trial-caption overlap at norm
 pane sizes (`bd-01M4ZQJ91DP721J9XEM9TV9862`). That issue remains open; the fixed
 profile is not evidence that every Main/Explore difference is resolved. Final
 qualification and landing are recorded on the corresponding motes.
+
+
+## Bounded count/provenance review, 2026-10-20
+
+The current-draft placement counts, matching trial drill-down, eligible/failing split,
+and served unmatched-reference declarations are captured at
+`evidence/20261020-counts/index.html`, with source and capture hashes in `review.json`.
+Focused JVM/JS and native checks and Studio style checks passed; full qualification
+and landing are pending. This does not sign off the whole Data or Analysis board.
+
+Placement counts include unadmitted trials and explicitly report unplaced source rows;
+they are distinct from admission-only counts. A changed geometry under the same draft
+id hides previous counts, and a late response for an older key cannot replace them.
+Count clicks open the matching served per-trial tallies, including occurrence.
+The shared TableTwin renderer reserves actual cell insets before assigning text width;
+a native regression reproduced clipped trial identities before the fix.
+
+The resolved design shows 457 pair-eligible queries: 454 without a known focal
+preparation failure and 3 that will fail. It names the library's source causes,
+keeps missing matches separate from reference declarations, and never claims that
+uncomputed scores will contribute. Complete reasons are available through the row's
+accessible name and tooltip when a narrow status column elides them. The new source
+reference metadata also activates the formerly pending Compare-inspector test.
+Native by-design classification remains the separate G3 blocker cited above.

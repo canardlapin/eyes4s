@@ -132,6 +132,10 @@ final class StudioWindow private (
       columnMapping.geometryStops ++ geometry.focusStops
     else if pane == StudioLayouts.trialMetadata then columnMapping.trialMetadataStops
     else if pane == StudioLayouts.dataIssues then columnMapping.issuesStops
+    else if pane == StudioLayouts.outsideFrame then
+      Vector(
+        FocusStop(eyes4s.studio.app.vm.A11yRole.Table, geometry.placementRows.getAccessibleText)
+      )
     else if pane == StudioLayouts.admission then admission.focusStops
     else if pane == StudioLayouts.sources then sources.focusStops
     else if pane == StudioLayouts.compareQueries || pane == StudioLayouts.compareItems then
@@ -548,6 +552,7 @@ object StudioWindow:
     mapping.geometry.inline()
     geometry.view.embed(mapping.geometry.node)
     host.host(StudioLayouts.dataGeometry, geometry.node)
+    host.host(StudioLayouts.outsideFrame, geometry.recordsNode)
     val geometryListener: AppModel => Unit = geometry.sync
     r.listen(geometryListener)
     geometry.sync(r.model)

@@ -55,7 +55,13 @@ enum GeometryTextId derives CanEqual:
   case PolicyTitle, PolicyExclude, PolicyQuarantine, PolicyExcludeNote, PolicyQuarantineNote
   case OutsideWindowTitle, OutsideScreenTitle, CountValue, OutsideWindowNote
   case OutsideScreenExcluded, OutsideScreenQuarantined, CountsFrom, CountsPending
-  case CountsWaiting, CountsFailed
+  case CountsWaiting, CountsFailed, CountsPlacement, CountsPlacementWaiting,
+    CountsPlacementFailed
+  case PlacementPath, PlacementRecordsPath, PlacementWindowPath, PlacementScreenPath
+  case PlacementRecordsCaption, PlacementRecordsWaiting, PlacementRecordsFailed
+  case RecordsParticipant, RecordsPhase, RecordsTrial, RecordsOccurrence, RecordsTotal,
+    RecordsWindow, RecordsScreen
+  case PlacementExcludeNote, PlacementQuarantineNote
 
 /** The geometry panel's strings in the board's wording. */
 object GeometryText:
@@ -189,7 +195,32 @@ object GeometryText:
       "Excluded record by record and reported under its own cause; not a quarantine."
     case OutsideScreenQuarantined =>
       "Under Quarantine trial, each trial with such a record is quarantined."
-    case CountsFrom    => "Counts: eyes4s admission of {0}."
+    case CountsFrom      => "Counts: eyes4s admission of {0}."
+    case CountsPlacement =>
+      "Counts: eyes4s placement of {0}, including unadmitted trials. {1} source records could not be placed."
+    case CountsPlacementWaiting =>
+      "Waiting for the current placement of {0}; earlier counts are not shown."
+    case CountsPlacementFailed   => "Placement counts for {0} unavailable: {1}"
+    case PlacementPath           => "{0} · source placement · {1}"
+    case PlacementRecordsPath    => "placed records"
+    case PlacementWindowPath     => "outside image frame"
+    case PlacementScreenPath     => "outside screen"
+    case PlacementRecordsCaption =>
+      "{0}: trials with {1} · {2} unplaced source records are not classified."
+    case PlacementRecordsWaiting =>
+      "Waiting for the current placement; no earlier rows are shown."
+    case PlacementRecordsFailed => "Placement records unavailable: {0}"
+    case RecordsParticipant     => "Participant"
+    case RecordsPhase           => "Phase"
+    case RecordsTrial           => "Trial"
+    case RecordsOccurrence      => "Occurrence"
+    case RecordsTotal           => "Placed records"
+    case RecordsWindow          => "Outside image frame"
+    case RecordsScreen          => "Outside screen"
+    case PlacementExcludeNote   =>
+      "On admission, a record outside the screen will be excluded from maps and reported."
+    case PlacementQuarantineNote =>
+      "On admission, a record outside the screen will quarantine its trial."
     case CountsPending =>
       "Counts: eyes4s admission of {0}. {1} is pending; its own counts follow its verification."
     case CountsWaiting => "Counting records outside the frame…"
@@ -198,3 +229,15 @@ object GeometryText:
   /** `id`'s English template with its arguments filled. */
   def apply(id: GeometryTextId, args: String*): String =
     Messages.fill(english(id), args.toVector)
+
+  def placementCount(count: eyes4s.studio.core.selection.PlacementCount): String =
+    import eyes4s.studio.core.selection.PlacementCount
+    apply(count match
+      case PlacementCount.PlacedRecords => PlacementRecordsPath
+      case PlacementCount.OutsideWindow => PlacementWindowPath
+      case PlacementCount.OutsideScreen => PlacementScreenPath)
+
+  def placementTally(
+      dataset: eyes4s.studio.core.backend.DatasetRevision,
+      count: eyes4s.studio.core.selection.PlacementCount
+  ): String = apply(PlacementPath, dataset.label, placementCount(count))

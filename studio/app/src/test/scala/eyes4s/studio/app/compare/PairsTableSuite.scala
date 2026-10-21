@@ -164,7 +164,7 @@ class PairsTableSuite extends munit.FunSuite:
         (one, _, _)  <- tableAt(s, right(ScaleIndex.of(1)))
       yield
         val src    = two.source.getOrElse(fail("no table"))
-        val failed = qs.collect { case QueryRow(q, _, _, m, _, QueryStatus.Failed(d)) =>
+        val failed = qs.collect { case QueryRow(q, _, _, m, _, QueryStatus.Failed(d), _) =>
           (q, m, d)
         }
         assertEquals(failed.size, 3)

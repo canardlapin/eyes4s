@@ -3,7 +3,7 @@
   "review_date": "2026-10-20",
   "reviewer": "codex-release-session-20261020",
   "base": "b7ff9935a61d1ccf957a5f3e679319291653e129",
-  "state": "bounded visual review complete; full gate and landing pending",
+  "state": "bounded review qualified and landed at 869e9368; tracker-only record328b646a",
   "scope": [
     "S8.5 Main contrast-group tabs and actual selected-query profile rendering",
     "Data column-mapping host header, role rows, declared units and remap controls"
@@ -92,5 +92,8 @@
       "sha256": "fd2218313066f9bc008c806a578e70e59debb3a4e9ac08719745099ce952047e",
       "reference": "../../design/reference/Data-2x.png"
     }
-  ]
+  ],
+  "qualified_source": "bfdfc7a1be4bbbe4f340ee06ff6661311c16f317",
+  "qualified_source_tree": "8968971ba7ee15413feeeaed4795b01ce30b0999",
+  "landed_source_evidence_tree": "94a2c19a80b32e7610954cdcd145c0e2056a5165"
 }

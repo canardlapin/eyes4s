@@ -215,6 +215,15 @@ sealed abstract case class PlacementPreview private (
     trials: Vector[TrialPlacement],
     density: PlacementDensityGrid
 ) derives CanEqual:
+  /** Source rows include records whose coordinates could not be placed. */
+  lazy val sourceRecords: Long = records.size.toLong + unplaced.size.toLong
+
+  /** Counts of the served placement, before any trial admission decision. */
+  lazy val outsideWindowRecords: Long = trials.iterator.map(_.outsideWindow.toLong).sum
+  lazy val outsideScreenRecords: Long = trials.iterator.map(_.outsideScreen.toLong).sum
+  lazy val trialsOutsideWindow: Int   = trials.count(_.outsideWindow > 0)
+  lazy val trialsOutsideScreen: Int   = trials.count(_.outsideScreen > 0)
+
   /** Each trial's records, in source order. */
   lazy val byTrial: Map[TrialKey, Vector[PlacedRecord]] = records.groupBy(_.trial)
 

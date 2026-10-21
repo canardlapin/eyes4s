@@ -92,8 +92,6 @@ class GeometryPanelFxSuite extends StudioFxSuite:
     ): Unit =
       placements += 1
       backend.placement(spec).map(r => done(r.left.map(_.message))).unsafeRunAndForget()
-    def admission(d: DatasetRevision, done: Either[String, AdmissionSummary] => Unit): Unit =
-      backend.admission(d).map(r => done(r.left.map(_.message))).unsafeRunAndForget()
     def displays(spec: DatasetRevisionSpec, done: Either[String, DisplaySource] => Unit): Unit =
       NavigatorDisplays.golden.read(spec, done)
 
@@ -133,7 +131,7 @@ class GeometryPanelFxSuite extends StudioFxSuite:
 
   def loaded(fx: FxStage, rig: Rig): Unit =
     await(fx, "records, counts and displays") {
-      rig.host.state.placement.toOption.isDefined && rig.host.state.counts.toOption.isDefined &&
+      rig.host.state.placement.toOption.isDefined &&
       rig.host.state.displays.toOption.isDefined
     }
 
@@ -397,7 +395,7 @@ class GeometryPanelFxSuite extends StudioFxSuite:
     redraw(fx, rig, 0)
     val v = rig.host.view
     assertEquals(runOnFx(v.policies(OffScreenChoice.ExcludeRecord).isSelected), true)
-    assert(drawn(v.outsideScreen.note).contains("not a quarantine"))
+    assert(drawn(v.outsideScreen.note).contains("On admission"))
     runOnFx(v.policies(OffScreenChoice.QuarantineTrial).fire())
     val receipt = redraw(fx, rig, 1)
     val draft   = rig.model.document.dataset(r4).getOrElse(fail("no draft r4"))
@@ -409,18 +407,20 @@ class GeometryPanelFxSuite extends StudioFxSuite:
     )
     assertEquals(receipt.key.admission.offScreen, OffScreenChoice.QuarantineTrial)
     assert(receipt.millis <= RedrawBound, s"redraw took ${receipt.millis} ms")
-    await(fx, "the parent's counts")(rig.host.state.counts.toOption.exists(_.dataset == r3))
+    await(fx, "the draft's own placement counts")(
+      rig.host.state.placement.toOption.exists(_.dataset == r4)
+    )
     assertEquals(runOnFx(v.policies(OffScreenChoice.QuarantineTrial).isSelected), true)
     assertEquals(drawn(v.outsideWindow.value), "543 of 11,520 records · 409 trials")
     assertEquals(drawn(v.outsideScreen.value), "0 of 11,520 records · 0 trials")
-    // The counts are r3's, admitted under ExcludeRecord: the note says so.
+    // These are r4's placements, under its pending QuarantineTrial choice.
     assert(
-      drawn(v.outsideScreen.note).contains("not a quarantine"),
+      drawn(v.outsideScreen.note).contains("quarantine"),
       drawn(v.outsideScreen.note)
     )
     assertEquals(
       drawn(v.countsSource),
-      "Counts: eyes4s admission of r3. r4 is pending; its own counts follow its verification."
+      "Counts: eyes4s placement of r4, including unadmitted trials. 0 source records could not be placed."
     )
   }
 

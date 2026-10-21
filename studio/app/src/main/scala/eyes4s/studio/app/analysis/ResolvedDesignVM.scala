@@ -198,6 +198,20 @@ object ResolvedDesignVM:
         mono = false
       )
     }
+    val preparationNote = ready.flatMap(r =>
+      r.counts.knownFailingFocalQueries.zip(r.counts.withoutKnownFocalFailure).map {
+        (failures, without) =>
+          DesignNoteVM(
+            t(
+              PreparationNote,
+              Format.count(without.toLong),
+              Format.count(failures.value.toLong)
+            ),
+            tally(DesignCount.EligibleQueries).toVector,
+            mono = false
+          )
+      }
+    )
     val stamp = panel.preview match
       case DesignPreview.Counting(_, s, _, _) => Some(s)
       case DesignPreview.Ready(r)             => Some(r.stamp)
@@ -235,7 +249,8 @@ object ResolvedDesignVM:
       cursor = cursor,
       rowsNote = rowsNote,
       counting = counting,
-      notes = (candidateNote ++ exactNote ++ countingNote ++ same ++ stampNote).toVector,
+      notes =
+        (candidateNote ++ exactNote ++ preparationNote ++ countingNote ++ same ++ stampNote).toVector,
       problem = problem,
       accessible = revision.fold(t(NoRevision))(r => t(Accessible, r.label)),
       accessibleHelp = t(AccessibleHelp, chips.head.count)
@@ -245,16 +260,52 @@ object ResolvedDesignVM:
     * the comparisons, and its status in the board's words.
     */
   def row(r: PreviewRow, focused: Boolean): DesignRowVM =
-    val eligible       = r.eligibility == Eligibility.Eligible
-    val (status, tone) = r.eligibility match
+    val eligible               = r.eligibility == Eligibility.Eligible
+    val (baseStatus, baseTone) = r.eligibility match
+      case Eligibility.Eligible if r.focalFailures.nonEmpty =>
+        (
+          t(StatusFocalFailure, r.focalFailures.map(_.message).mkString("; ")),
+          StatusTone.Warning
+        )
+      case Eligibility.Eligible if r.preparationNotes.nonEmpty =>
+        (
+          t(StatusPreparationNote, r.preparationNotes.map(_.message).mkString("; ")),
+          StatusTone.Warning
+        )
       case Eligibility.Eligible            => (t(StatusEligible), StatusTone.Plain)
       case Eligibility.NoMatch(diagnostic) =>
-        val text =
-          if diagnostic.message.isEmpty then t(StatusNoMatch)
+        val declarations = r.declaredReferences
+        val text         =
+          if declarations.nonEmpty && declarations.forall(
+              _.disposition != TrialDisposition.Admitted
+            )
+          then
+            t(
+              StatusNoMatchBecause,
+              declarations
+                .map(a => t(ReferenceDisposition, a.trial.trial, disposition(a.disposition)))
+                .mkString("; ")
+            )
+          else if diagnostic.message.isEmpty then t(StatusNoMatch)
           else t(StatusNoMatchBecause, diagnostic.message)
         (text, StatusTone.Warning)
       case Eligibility.QueryNotAdmitted(d) =>
         (t(StatusNotAdmitted, disposition(d)), StatusTone.Warning)
+    val omitted        = r.unadmittedControlReferences
+    val (status, tone) =
+      if eligible && omitted.nonEmpty then
+        (
+          t(
+            StatusControlAdmission,
+            baseStatus,
+            Format.count(omitted.size.toLong),
+            omitted
+              .map(a => t(ReferenceDisposition, a.trial.trial, disposition(a.disposition)))
+              .mkString("; ")
+          ),
+          StatusTone.Warning
+        )
+      else (baseStatus, baseTone)
     DesignRowVM(
       query = r.query,
       participant = r.query.participant,

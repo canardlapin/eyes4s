@@ -1,0 +1,163 @@
+{
+  "schema": 1,
+  "review_date": "2026-10-20",
+  "reviewer": "codex-release-session-20261020",
+  "state": "bounded visual review and focused checks complete; full gate and landing pending",
+  "base": "869e9368c3a47bbb576c35d7c5ade494505b9420",
+  "scope": [
+    "Current-draft source placement counts and matching per-trial drill-down, including occurrence.",
+    "Pairing eligibility versus library-known focal preparation failures.",
+    "Native unmatched-reference declarations in Analysis and Compare inspector.",
+    "Shared TableTwin cell insets reserved before text-content shares."
+  ],
+  "checks": {
+    "plan_each_platform": 24,
+    "core_each_platform": 78,
+    "app_each_platform": 70,
+    "initial_native_subset": 77,
+    "shared_table_native": 16,
+    "final_geometry_analysis_native": 9,
+    "studioStyleCheck": "passed",
+    "jdk": "25.0.4.1",
+    "flags": "GITHUB_ACTIONS=true; headless Monocle; output scale1; 1x/2x snapshot transforms are not output-scale2 qualification"
+  },
+  "findings": [
+    "Each placement count opens exactly its positive per-trial tally rows; 409 trials sum to543 outside-window records. Pending/changed geometry hides older counts; late old-key responses are ignored.",
+    "Placement refs are distinct from admission-only WindowTally refs; unplaced source rows remain explicitly reported.",
+    "Fixture457 eligible queries split454 without a known focal preparation failure plus3 that will fail. This is not a claim of454 scored/contributing contrasts.",
+    "Declared source references remain separate from a usable matched reference; nine no-match queries retain matched=None and expose trial-linked admission facts.",
+    "A native width regression first failed: enc_01 had58px while text plus insets needed63.2px. Shared renderer now reserves actual CSS insets. Header/body and mounted pairs tests pass.",
+    "The geometry fixture uses a real temporary project with stored and verified golden input bytes; the count is reached by scrolling and an actual mouse click.",
+    "Source reason text can elide at narrow widths; each status has a full tooltip and accessible row text."
+  ],
+  "not_signing_off": [
+    "Whole Analysis or Data board parity; existing generic-form/S26 deviations remain.",
+    "G2 real-study acquisition provenance and production-host journey.",
+    "G3: native by-design classification remains bd-01M5E637J24JYT6FHQW336E01P.",
+    "Real output-scale2, VoiceOver, usability and packaging."
+  ],
+  "source_sha256": {
+    "plan/src/main/scala/eyes4s/plan/ControlPoolAdmission.scala": "9111c4046e85ac73fc389bbbdcc8dc79a96b3efa3b417094566ebf87330c8a7a",
+    "plan/src/main/scala/eyes4s/plan/Preflight.scala": "066f8410fc955eee03f3f4d81649a3a4ec81e5c26c0091c962c6ac30419552e3",
+    "plan/src/test/scala/eyes4s/plan/PreflightSuite.scala": "842deabe3d17e75df658719c3fd185c1f0110c47c41e344358ffa41fa1e758e0",
+    "plan/src/test/scala/eyes4s/plan/UnmatchedReasonsSuite.scala": "1d41c1ad746bb1513134869e79fd51449dd01e8a4df500fcfeb9ff16c293c801",
+    "studio/app/src/main/scala/eyes4s/studio/app/analysis/ResolvedDesignVM.scala": "f4ca0c7dd2a76ea468480efbe16b4deda7cb58f43edf60a9a863b33b55cc4c50",
+    "studio/app/src/main/scala/eyes4s/studio/app/compare/WhyReference.scala": "6942b262d040e9cb5978e08a8378d37a564dcd3e316634415b0a9856f19ed70c",
+    "studio/app/src/main/scala/eyes4s/studio/app/geometry/GeometryPanel.scala": "6583c6a65b7b83a7b16dbe44cfe78c4e1cd29f5b924ec0429b08982d5690a3c8",
+    "studio/app/src/main/scala/eyes4s/studio/app/geometry/GeometryPanelVM.scala": "88835059f50bfcf9779c35892e30d164f937147e7e598c8d339a83b6c62df5af",
+    "studio/app/src/main/scala/eyes4s/studio/app/geometry/GeometryPlacementRows.scala": "cbfb199ebf42db63ee6e28f3ead3ab8801ea84c23e4092ddbe72170a6b5e613a",
+    "studio/app/src/main/scala/eyes4s/studio/app/layout/StudioLayouts.scala": "d4281b935a5f6c2caf10805ffd7e07362c1c59d7d86f20ee18c484e22632e142",
+    "studio/app/src/main/scala/eyes4s/studio/app/nav/Navigation.scala": "24c5e76de057928097cfe942c69827b4f05d07b8196a69c4473b48ea00a89d10",
+    "studio/app/src/main/scala/eyes4s/studio/app/nav/Provenance.scala": "544e001f0444aba80bda97e15ff6a5db188402044cb8cf05e162066901c90a02",
+    "studio/app/src/main/scala/eyes4s/studio/app/plot/TableTwin.scala": "ae4499ae45ccfdbadbb4381dc04ee8187426b6884c821527215ee8cb57ee5cda",
+    "studio/app/src/main/scala/eyes4s/studio/app/text/DesignText.scala": "368bd7ebf400e160ee3d63edc9ad4971e2dd3871d5ace9296e6457f5fa44dfaa",
+    "studio/app/src/main/scala/eyes4s/studio/app/text/GeometryText.scala": "4606b8c3d9d600a4386c473a77dee22d7d1dd4f7d862ea8217b1f8ca505c01f4",
+    "studio/app/src/main/scala/eyes4s/studio/app/text/WhyText.scala": "7391faa72d224e8dbc4295ecdc2d4a6ce0816c9d896dc66180904663844ea125",
+    "studio/app/src/main/scala/eyes4s/studio/app/vm/Labels.scala": "c420ff8e4c7ab3f0bfb0e9e7d98f35f7cd3d81d057b290615c83925272f92c40",
+    "studio/app/src/test/scala/eyes4s/studio/app/analysis/ResolvedDesignSuite.scala": "4e2f9ea5febea54a33a439f12fc845b2466dfe65869760076c2dd0ad30f9e419",
+    "studio/app/src/test/scala/eyes4s/studio/app/compare/PairsTableSuite.scala": "8dac5785f3391b598e452dc472414d8627febef040155a35798e8e81c34ecb75",
+    "studio/app/src/test/scala/eyes4s/studio/app/compare/WhyReferenceSuite.scala": "8b5bdbea9d3e9707dd84b0793bea5a88fecd64c0dc673de6a0729a9b0c19ed87",
+    "studio/app/src/test/scala/eyes4s/studio/app/geometry/GeometryPanelSuite.scala": "d302f90296ce5399b1e47f927bc0f2d6a950dc2f941bb4908e9174eb5fa49d25",
+    "studio/core/src/main/scala/eyes4s/studio/core/backend/PlacementPreview.scala": "12b8743d842df0002db9dcfd2c2cc14184ac57fe09984efae4c9b85027c18014",
+    "studio/core/src/main/scala/eyes4s/studio/core/backend/StudyBackend.scala": "a971fcebde2964e177a3478f8407e8697fab54845733c40726d03dc915439054",
+    "studio/core/src/main/scala/eyes4s/studio/core/backend/Views.scala": "e8dd66b7fca97957a7ec778aff5b7b959f3ded58ebb19b8420418f41f6009cf9",
+    "studio/core/src/main/scala/eyes4s/studio/core/figures/BundleTables.scala": "e0bdbaa02513becc4248d8e0a5acf24bec3033681f1f7782281f9cc925274bd2",
+    "studio/core/src/main/scala/eyes4s/studio/core/fixture/FakeStudyBackend.scala": "3a4b5e3ad8a59cf4559cb32352418af6bcfdca0d6284350e6245caf5f4ba8276",
+    "studio/core/src/main/scala/eyes4s/studio/core/preview/Preview.scala": "0182dc784cfaf3d69fb04802849454f05a2b86d2f5e75b7841c6deb3c80b3953",
+    "studio/core/src/main/scala/eyes4s/studio/core/real/RealPrepared.scala": "8ec221140e54c499ed0b90df1cc0bfe36fb61910e5fdea6e1e1a83c1ad0d6f95",
+    "studio/core/src/main/scala/eyes4s/studio/core/real/RealPreview.scala": "4a9c3dfc7f654fc4b1e7beb0587c919fce8ec2cc3d5d3bd35e8970a5ee1394a5",
+    "studio/core/src/main/scala/eyes4s/studio/core/real/RealResults.scala": "8d291f0b1700b4f7fdb2eeb710a5009d5e3b5570f4efc3eb19f254fad11c03d4",
+    "studio/core/src/main/scala/eyes4s/studio/core/selection/StudioRef.scala": "e3e6e0e488aace6c45ca78df8f0594a8b98df68b7c758a9e45d90c23f47f8fe8",
+    "studio/core/src/test/scala/eyes4s/studio/core/backend/ProtocolCodecSuite.scala": "213d6371c854c7c0d813f94c2cf60bb00b377c0cb20c2fd6e058eedf9d57accb",
+    "studio/core/src/test/scala/eyes4s/studio/core/backend/ProtocolLongSuite.scala": "92ef96e14913a47e1306b80daf72f2186d4d04ca49095d9c2a0707cd6056294e",
+    "studio/core/src/test/scala/eyes4s/studio/core/backend/ProtocolPins.scala": "39523054d7b7a1e02fd1e360e2b9eed9c780bf370046375bbd3299e4a00d1b7d",
+    "studio/core/src/test/scala/eyes4s/studio/core/fixture/ReportsSuite.scala": "9c1314eda81c7e1cf7b3eb4ea370e7f17b11d4d015e9289d43c107ef28ef5e0e",
+    "studio/core/src/test/scala/eyes4s/studio/core/preview/PreviewPagingSuite.scala": "0ccf530571273c08f5f66c3523d8f1c5a92c6b23bbacdd8c7322be7413345840",
+    "studio/core/src/test/scala/eyes4s/studio/core/real/RealPreviewCursorSuite.scala": "5736ece087661bf434b22f9651217a68a4728c4d8fc06b8b3783413246c41211",
+    "studio/core/src/test/scala/eyes4s/studio/core/real/RealReferenceDeclarationsSuite.scala": "c4ff2d9796097219ecb61808fd0ec5f85e491c1537b636710c5b726b84b81be4",
+    "studio/core/src/test/scala/eyes4s/studio/core/selection/SelectionBusSuite.scala": "19e812f352aa71e9780dc8872d58b96ec4f21f2c31ce8e696214d048655f99a0",
+    "studio/desktop/src/main/scala/eyes4s/studio/desktop/StudioWindow.scala": "fa22ce0129f10a7bed2cf6e0dabf1ea63d3c7c80ca1003802260004472d03d30",
+    "studio/desktop/src/main/scala/eyes4s/studio/desktop/analysis/ResolvedDesignView.scala": "4e2a43f2ef6c30a4f9f1483410030f32398c7ab64b9e0de21d0d444308f5908b",
+    "studio/desktop/src/main/scala/eyes4s/studio/desktop/geometry/GeometryPaneHost.scala": "c3d66a30eb4272f3bed965876d4ba4af1095e13004ea23f163dcf5e85e86dcd5",
+    "studio/desktop/src/main/scala/eyes4s/studio/desktop/geometry/GeometryPanelView.scala": "b7f1685f4494284dbdb4a26d8550736cbbe5efadf04de0b53fe3cfaad9057bb5",
+    "studio/desktop/src/main/scala/eyes4s/studio/desktop/plot/TableTwinView.scala": "89354ae4affa67ceabfe935cb4a9835d8d51f18f48467589b1d2f74057cefd5f",
+    "studio/desktop/src/test/scala/eyes4s/studio/desktop/analysis/ResolvedDesignFxSuite.scala": "44a0d5554928aa105504b56b07da2d6684f3d16ce39d99ee420123f78f27cc2b",
+    "studio/desktop/src/test/scala/eyes4s/studio/desktop/geometry/GeometryCountsFxSuite.scala": "9817457498f1f94bdfdc84ea962dd570835907af6138d1fefd1fb462b5fbc151",
+    "studio/desktop/src/test/scala/eyes4s/studio/desktop/geometry/GeometryPanelFxSuite.scala": "fd4b952c01b892dec0c680ebdf2780457cb9b2d56f8954b850265ad2a1da83d3",
+    "studio/desktop/src/test/scala/eyes4s/studio/desktop/plot/TableTwinViewFxSuite.scala": "cf6050fe468597607903f07103530ccbd0d4241ed32db55a3242a70995e8e391",
+    "studio/desktop/src/test/scala/eyes4s/studio/desktop/shell/A11yRenderSuite.scala": "31dba30919e119886a230f9d0cf5ef1ea47a3872839d429193a095a2130eddb6",
+    "studio/desktop/src/test/scala/eyes4s/studio/desktop/shell/A11yTreeSuite.scala": "70022d933627570fa0063e6af2fe624cf9d215fe308b9ad7c2d18998f61568f3"
+  },
+  "captures": [
+    {
+      "label": "Data: current placement trials",
+      "file": "data-placement-trials-1x.png",
+      "scale": 1,
+      "sha256": "af5a505014b434807b63215983b2db3d4305afd83ca438237a6b24d87e4f825a",
+      "reference": "../../design/reference/Data-1x.png"
+    },
+    {
+      "label": "Data: current placement trials",
+      "file": "data-placement-trials-2x.png",
+      "scale": 2,
+      "sha256": "19af5308d8329023de9c6cc35d0ff0cff3500b5d8c440fd33ddff1ad372ff3c8",
+      "reference": "../../design/reference/Data-2x.png"
+    },
+    {
+      "label": "Analysis: exact pairing and preparation counts",
+      "file": "analysis-counts-1x.png",
+      "scale": 1,
+      "sha256": "0cc851448a81defa2a6b6d366f1fd34032a9c7461957ccec2b473734a1a1c7cc",
+      "reference": "../../design/reference/Analysis-1x.png"
+    },
+    {
+      "label": "Analysis: exact pairing and preparation counts",
+      "file": "analysis-counts-2x.png",
+      "scale": 2,
+      "sha256": "df23c194459e7db272963f6b8ef57ed037622fc1e4fe18f8e7462e6d33bd9af6",
+      "reference": "../../design/reference/Analysis-2x.png"
+    },
+    {
+      "label": "Analysis: declared unmatched references",
+      "file": "analysis-no-match-1x.png",
+      "scale": 1,
+      "sha256": "f26e58cad7779d95d50d3532a8d8a798fb73a58442555973d414daee8fa925f8",
+      "reference": "../../design/reference/Analysis-1x.png"
+    },
+    {
+      "label": "Analysis: declared unmatched references",
+      "file": "analysis-no-match-2x.png",
+      "scale": 2,
+      "sha256": "55e58ff668ddcb9617d36710266824a03692b05e44a633c6bf77155116a7e2d8",
+      "reference": "../../design/reference/Analysis-2x.png"
+    },
+    {
+      "label": "Analysis: eligible focal preparation failure",
+      "file": "analysis-focal-failure-1x.png",
+      "scale": 1,
+      "sha256": "65504f42b79403afe0f44ed839ed62f490b2d55dabab8bc91bcdc5fb69267fc4",
+      "reference": "../../design/reference/Analysis-1x.png"
+    },
+    {
+      "label": "Analysis: eligible focal preparation failure",
+      "file": "analysis-focal-failure-2x.png",
+      "scale": 2,
+      "sha256": "675d2148213b7869ce25c206c53ede96ea6492fa90fc1d0d4a8f23fe83d0f60f",
+      "reference": "../../design/reference/Analysis-2x.png"
+    },
+    {
+      "label": "Main: shared table insets",
+      "file": "main-pairs-1x.png",
+      "scale": 1,
+      "sha256": "15c3a803b4f65540bbecc8429e8a487b6736656a62cfab8a78c66174f4edf2d5",
+      "reference": "../../design/reference/Main-1x.png"
+    },
+    {
+      "label": "Main: shared table insets",
+      "file": "main-pairs-2x.png",
+      "scale": 2,
+      "sha256": "57c34a0376fe674c946024e297d4342ff4340b19d6b9a02887de878d66053821",
+      "reference": "../../design/reference/Main-2x.png"
+    }
+  ]
+}

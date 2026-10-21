@@ -186,8 +186,9 @@ final class Labels(model: AppModel, messages: Messages):
         eyes4s.studio.app.text.SummaryTextId.ReportQueryRangeCrumb,
         SummaryText.roleName(role)
       )
-    case StudioRef.FigurePanel(_, letter)              => messages(CrumbPanel, letter.value)
-    case StudioRef.WindowTally(dataset, region)        => tally(dataset, region)
+    case StudioRef.FigurePanel(_, letter)         => messages(CrumbPanel, letter.value)
+    case StudioRef.WindowTally(dataset, region)   => tally(dataset, region)
+    case StudioRef.PlacementTally(dataset, count) => GeometryText.placementTally(dataset, count)
     case StudioRef.TrialPlacementTally(dataset, trial) =>
       s"${dataset.label} · ${trial.label} · ${GeometryText(GeometryTextId.PlacementTally)}"
     case StudioRef.DesignTally(revision, count) => DesignText.tally(revision, count)
@@ -273,8 +274,10 @@ final class Labels(model: AppModel, messages: Messages):
       case StudioRef.TrialPlacementTally(dataset, trial) =>
         s"${dataset.label} · ${trial.label} · ${GeometryText(GeometryTextId.PlacementTally)}"
 
-      case StudioRef.FigurePanel(figure, letter)  => panel(figure, letter)
-      case StudioRef.WindowTally(dataset, region) => tally(dataset, region)
+      case StudioRef.FigurePanel(figure, letter)    => panel(figure, letter)
+      case StudioRef.WindowTally(dataset, region)   => tally(dataset, region)
+      case StudioRef.PlacementTally(dataset, count) =>
+        GeometryText.placementTally(dataset, count)
       case StudioRef.DesignTally(revision, count) => DesignText.tally(revision, count)
       case StudioRef.DisplayTally(dataset, count) => SourcesText.tally(dataset, count)
       case StudioRef.QueryTally(run, count)       => SummaryText.tally(run, count)

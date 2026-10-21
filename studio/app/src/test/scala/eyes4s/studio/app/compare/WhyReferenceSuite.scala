@@ -403,20 +403,22 @@ class WhyReferenceSuite extends munit.FunSuite:
       t2Compare.document,
       InspectorInputs(
         TrialPanels.empty.copy(focus = Some(PanelFocus(run7, sigma2, row.query, None))),
-        Some(r.shown),
+        Some(
+          r.shown.copy(rows = r.shown.rows.map(q => if q.query == row.query then row else q))
+        ),
         Some(r.summary),
         Some(reporting)
       )
     )
 
-  test("a no-match query shows no reference facts, only the served reason") {
+  test("a no-match query without served declarations never guesses one from the ledger") {
     withSession(s =>
       read(s).map { r =>
         val row = r.shown.rows
           .find(q => q.query == MockStudy.key("P03", "ret_11"))
           .getOrElse(fail("P03 ret_11 is a no-match query of the fixture"))
         assert(row.status.isInstanceOf[QueryStatus.NoMatch], row.status.toString)
-        val vm     = queryVM(r, row)
+        val vm     = queryVM(r, row.copy(declaredReferences = Vector.empty))
         val labels = vm.why.toVector.flatMap(_.facts.map(_.label))
         assertEquals(
           labels,
@@ -454,18 +456,31 @@ class WhyReferenceSuite extends munit.FunSuite:
     )
   }
 
-  // Not yet served: eyes4s's ReferenceNotAdmitted(refs, disposition)
-  // (bd-01M3DPFRZDVYGNYMV6890SDN20). When it is, each ref becomes a Trial fact
-  // with its disposition, traced to that trial, beside the served reason; the
-  // test then asserts that mapping on the fixture's 9 no-match queries.
-  test(
-    munit
-      .TestOptions(
-        "a no-match query names its non-admitted references from ReferenceNotAdmitted"
-      )
-      .pending("not yet served by eyes4s")
-  ) {
-    ()
+  test("a no-match query names only its served non-admitted reference declarations") {
+    withSession(s =>
+      read(s).map { r =>
+        val unmatched = r.shown.rows.filter(_.status.isInstanceOf[QueryStatus.NoMatch])
+        assertEquals(unmatched.size, 9)
+        unmatched.foreach { row =>
+          assertEquals(row.matched, None)
+          assert(row.declaredReferences.nonEmpty, row.toString)
+          val facts = queryVM(r, row).why.toVector
+            .flatMap(_.facts)
+            .filter(_.label == "Declared reference")
+          assertEquals(facts.size, row.declaredReferences.size)
+          row.declaredReferences.zip(facts).foreach { (declaration, fact) =>
+            assertEquals(fact.ref, Some(StudioRef.Trial(declaration.trial)))
+            assert(fact.value.contains(declaration.trial.trial), fact.value)
+            assertNotEquals(declaration.disposition, TrialDisposition.Admitted)
+            assert(
+              r.ledger.exists(e =>
+                e.trial == declaration.trial && e.disposition == declaration.disposition
+              )
+            )
+          }
+        }
+      }
+    )
   }
 
   test("a query that was not admitted shows no reference facts") {
@@ -495,7 +510,7 @@ class WhyReferenceSuite extends munit.FunSuite:
     withSession(s =>
       read(s).map { r =>
         val failed =
-          r.shown.rows.collect { case q @ QueryRow(_, _, _, _, _, QueryStatus.Failed(d)) =>
+          r.shown.rows.collect { case q @ QueryRow(_, _, _, _, _, QueryStatus.Failed(d), _) =>
             (q, d)
           }
         assertEquals(failed.size, 3)

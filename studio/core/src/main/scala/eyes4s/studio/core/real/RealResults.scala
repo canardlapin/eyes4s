@@ -103,7 +103,8 @@ final class RealResults private (
                           response,
                           None,
                           None,
-                          QueryStatus.NoMatch(d)
+                          QueryStatus.NoMatch(d),
+                          declaredReferences(reason)
                         )
                       )
                     case None =>
@@ -481,6 +482,21 @@ object RealResults:
   /** A studio key of an eyes4s trial key (the item is carried separately). */
   def key(k: CoreKey): TrialKey =
     TrialKey(k.participant, Phase(k.phase), k.trial, k.occurrence.value)
+
+  private[real] def declaredReferences(
+      reason: eyes4s.plan.UnmatchedKind
+  ): Vector[DeclaredReferenceAdmission] =
+    def reference(t: eyes4s.plan.TrialIdentity, disposition: TrialDisposition) =
+      DeclaredReferenceAdmission(
+        TrialKey(t.participant, Phase(t.phase), t.trial, t.occurrence.value),
+        disposition
+      )
+    reason match
+      case eyes4s.plan.UnmatchedKind.ReferenceNotAdmitted(refs) =>
+        refs.map(r => reference(r.trial, TrialDisposition.of(r.disposition)))
+      case eyes4s.plan.UnmatchedKind.ReferenceNotPairable(refs) =>
+        refs.map(t => reference(t, TrialDisposition.Admitted))
+      case _ => Vector.empty
 
   def studyDesign(design: PairDesign): StudyDesign = design match
     case PairDesign.Matched => StudyDesign.Matched

@@ -22,11 +22,11 @@ import eyes4s.studio.app.plot.RovingMove
 import eyes4s.studio.app.text.{Format, GeometryText, GeometryTextId}
 import eyes4s.studio.app.tokens.StageVariant
 import eyes4s.studio.app.vm.{A11yRole, FocusStop}
-import eyes4s.studio.core.backend.{AdmissionSummary, TrialKey}
+import eyes4s.studio.core.backend.TrialKey
 import eyes4s.studio.core.command.ChangeKind
 import eyes4s.studio.core.document.*
 import eyes4s.studio.core.importing.GeometryField
-import eyes4s.studio.core.selection.{RecordNumber, StudioRef, TallyRegion}
+import eyes4s.studio.core.selection.{PlacementCount, RecordNumber, StudioRef}
 
 /** One fact of the declared geometry ("Screen", "1920 × 1080 px"). */
 final case class FactVM(label: String, value: String, mono: Boolean, note: Option[String])
@@ -398,7 +398,7 @@ object GeometryPanelVM:
         t(Cancel)
       )
     }
-    val (window, screen, from) = counts(panel, model, spec)
+    val (window, screen, from) = counts(panel, spec)
     GeometryPanelVM(
       title = t(Title),
       kind = ChangeKind.DatasetReadmit.label,
@@ -528,60 +528,37 @@ object GeometryPanelVM:
         case RovingMove.First                      => 0
         case RovingMove.Last                       => last
 
-  /** "543 of 11,520 records · 409 trials": eyes4s's window totals, outside
-    * the image frame and outside the screen apart, over its count of source
-    * records.
+  /** Placement counts describe the shown source and geometry, including
+    * unadmitted trials. Admission totals remain in the separate ledger.
     */
   private def counts(
       panel: GeometryPanel,
-      model: AppModel,
       spec: Option[DatasetRevisionSpec]
   ): (CountVM, CountVM, String) =
-    val summary: Option[AdmissionSummary] = panel.counts.toOption
-    // The note describes the counts shown, so it takes the policy of the
-    // revision they were admitted under (a draft's parent, until the draft's own).
-    val counted    = summary.flatMap(s => model.document.dataset(s.dataset)).orElse(spec)
-    val policy     = counted.map(_.admission.offScreen).getOrElse(OffScreenChoice.ExcludeRecord)
+    val placed     = GeometryPlacementRows.current(panel)
+    val policy     = spec.map(_.admission.offScreen).getOrElse(OffScreenChoice.ExcludeRecord)
     val screenNote = policy match
-      case OffScreenChoice.ExcludeRecord   => t(OutsideScreenExcluded)
-      case OffScreenChoice.QuarantineTrial => t(OutsideScreenQuarantined)
-    def value(n: Int, of: Int, trials: Int) =
-      t(
-        CountValue,
-        Format.count(n.toLong),
-        Format.count(of.toLong),
-        Format.count(trials.toLong)
-      )
+      case OffScreenChoice.ExcludeRecord   => t(PlacementExcludeNote)
+      case OffScreenChoice.QuarantineTrial => t(PlacementQuarantineNote)
+    def value(n: Long, of: Long, trials: Int) =
+      t(CountValue, Format.count(n), Format.count(of), Format.count(trials.toLong))
+    val label = spec.fold("")(_.id.label)
+    val from  = placed match
+      case Some(p) => t(CountsPlacement, p.dataset.label, Format.count(p.unplaced.size.toLong))
+      case None    =>
+        panel.placement match
+          case Loading.Failed(why) => t(CountsPlacementFailed, label, why)
+          case _                   => t(CountsPlacementWaiting, label)
     val window = CountVM(
       t(OutsideWindowTitle),
-      summary.map { s =>
-        value(
-          s.window.outsideWindow,
-          s.window.sourceRecords.getOrElse(s.window.total),
-          s.window.trialsOutsideWindow
-        )
-      },
-      t(OutsideWindowNote),
-      summary.map(s => StudioRef.WindowTally(s.dataset, TallyRegion.OutsideWindow))
+      placed.map(p => value(p.outsideWindowRecords, p.sourceRecords, p.trialsOutsideWindow)),
+      if placed.isDefined then t(OutsideWindowNote) else from,
+      placed.map(p => StudioRef.PlacementTally(p.dataset, PlacementCount.OutsideWindow))
     )
     val screen = CountVM(
       t(OutsideScreenTitle),
-      summary.map { s =>
-        value(
-          s.window.outsideScreen,
-          s.window.sourceRecords.getOrElse(s.window.total),
-          s.window.trialsOutsideScreen
-        )
-      },
-      screenNote,
-      summary.map(s => StudioRef.WindowTally(s.dataset, TallyRegion.OutsideScreen))
+      placed.map(p => value(p.outsideScreenRecords, p.sourceRecords, p.trialsOutsideScreen)),
+      if placed.isDefined then screenNote else from,
+      placed.map(p => StudioRef.PlacementTally(p.dataset, PlacementCount.OutsideScreen))
     )
-    val label = spec.fold("")(_.id.label)
-    val from  = panel.counts match
-      case Loading.Ready(s) =>
-        if spec.exists(d => d.id != s.dataset && !d.decision.isAdmitted) then
-          t(CountsPending, s.dataset.label, label)
-        else t(CountsFrom, s.dataset.label)
-      case Loading.Failed(why) => t(CountsFailed, label, why)
-      case _                   => t(CountsWaiting)
     (window, screen, from)

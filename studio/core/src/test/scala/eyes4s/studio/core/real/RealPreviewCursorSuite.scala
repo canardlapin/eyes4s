@@ -34,7 +34,10 @@ class RealPreviewCursorSuite extends CatsEffectSuite:
   private lazy val recipe                       =
     get(document.analysis(StoryMoments.rev4).toRight("no analysis")).recipe
       .copy(layout = DefinitionRef.fromCore(eyes4s.plan.TrialKeyDefinitions.trialLayout))
-  private def admitPair(withReference: Boolean): AdmittedDataset =
+  private def admitPair(
+      withReference: Boolean,
+      focalOutsideWindow: Boolean = false
+  ): AdmittedDataset =
     val original = get(document.dataset(StoryMoments.r3).toRight("no dataset"))
     val displays = get(GoldenAssets.rows)
     val focal    = displays
@@ -54,9 +57,10 @@ class RealPreviewCursorSuite extends CatsEffectSuite:
       "participant,phase,trial,occurrence,ordinal,onset_ms,duration_ms,x,y,sample_count\n" +
         selected
           .filter(row => withReference || row == focal)
-          .map(row =>
-            s"${row.trial.participant},${row.trial.phase.label},${row.trial.trial},${row.trial.occurrence},1,0,100,600,300,1"
-          )
+          .map { row =>
+            val x = if focalOutsideWindow && row == focal then 100 else 600
+            s"${row.trial.participant},${row.trial.phase.label},${row.trial.trial},${row.trial.occurrence},1,0,100,$x,300,1"
+          }
           .mkString("\n") + "\n"
     val inventory =
       "participant,phase,trial,occurrence,item,response,display_kind,image_file\n" +
@@ -130,6 +134,38 @@ class RealPreviewCursorSuite extends CatsEffectSuite:
       // A tiny count traverses cardinality assembly between the two schedules.
       // Its work units exceed schedule work; that assembly must not inflate visits.
       assert(progress.map(_.workUnits.toLong).sum >= progress.last.visitedScheduleWork)
+  }
+
+  test(
+    "known focal failures come from native preparation without changing pairing eligibility"
+  ) {
+    val outside  = admitPair(true, focalOutsideWindow = true)
+    val prepared =
+      get(RealPrepared.configure(StoryMoments.rev4, StoryMoments.r3, recipe, outside))
+    for
+      service <- RealPreview.create[IO]
+      opening <- service.begin(prepared, onePage).take(1).compile.toVector
+      id = get(opening.head) match
+        case PreviewEvent.Initial(id, _, _) => id
+        case other                          => fail(s"expected Initial, got $other")
+      events <- finish(service, id)
+      ready = events
+        .collectFirst { case PreviewEvent.Ready(r) => r }
+        .getOrElse(fail("no ready"))
+      rows <- service.rows(StoryMoments.rev4, get(PageRequest.of(0, 10)))
+    yield
+      assertEquals(ready.counts.eligibleQueries.value, 1)
+      assertEquals(ready.counts.knownFailingFocalQueries.map(_.value), Some(1))
+      assertEquals(ready.counts.withoutKnownFocalFailure, Some(0))
+      val row = get(rows).rows.head
+      assertEquals(row.eligibility, Eligibility.Eligible)
+      assert(row.matched.nonEmpty)
+      assert(row.focalFailures.exists(_.code == "study-finding.no-fixation-in-window"))
+      assert(row.focalFailures.forall(_.subject.contains(DiagnosticLocus.Trial(row.query))))
+      val scored = get(prepared.plan.run(outside.input))
+      assert(scored.scales.forall(_.estimation.exists { (key, outcome) =>
+        RealResults.key(key) == row.query && outcome.isLeft
+      }))
   }
 
   test("cardinality diagnostics spend work without claiming schedule visits") {
@@ -315,6 +351,11 @@ class RealPreviewCursorSuite extends CatsEffectSuite:
         .collectFirst { case PreviewEvent.Ready(value) => value }
         .getOrElse(fail("no fresh Ready"))
       assertEquals(receipt.recipe, Some(changed.recipe))
+      assertEquals(receipt.counts.knownFailingFocalQueries.map(_.value), Some(1))
+      assertEquals(receipt.counts.withoutKnownFocalFailure, Some(0))
+      assert(
+        get(current).rows.head.focalFailures.exists(_.code == "study-finding.no-fixation-kept")
+      )
   }
 
   Vector(true, false).foreach { withReference =>

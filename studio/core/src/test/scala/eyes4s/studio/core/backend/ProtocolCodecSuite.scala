@@ -35,6 +35,64 @@ import io.circe.syntax.*
 class ProtocolCodecSuite extends munit.FunSuite:
   import ProtocolSamples.*
 
+  test("source placement tallies round-trip distinctly from admitted window tallies") {
+    import eyes4s.studio.core.selection.{PlacementCount, StudioRef, TallyRegion}
+    PlacementCount.values.foreach { count =>
+      val ref: StudioRef = StudioRef.PlacementTally(DatasetRevision(4), count)
+      assertEquals(ref.asJson.as[StudioRef], Right(ref))
+      assert(ref.isAggregate)
+      assertNotEquals(ref, StudioRef.WindowTally(DatasetRevision(4), TallyRegion.OutsideWindow))
+    }
+  }
+
+  test("1.21 serves preparation and admission facts without conflating pairing eligibility") {
+    val row = PreviewRow(
+      query,
+      "beach-042",
+      Response("Remembered"),
+      Some(matched),
+      Some(19),
+      Eligibility.Eligible,
+      Vector(diagnostic),
+      Vector(diagnostic),
+      Vector(DeclaredReferenceAdmission(matched, TrialDisposition.NoFixations))
+    )
+    assertEquals(row.asJson.as[PreviewRow], Right(row))
+    assertEquals(row.eligibility, Eligibility.Eligible)
+    val declared = Vector(DeclaredReferenceAdmission(matched, TrialDisposition.NoFixations))
+    val noMatch  = row.copy(
+      matched = None,
+      controls = None,
+      eligibility = Eligibility.NoMatch(diagnostic),
+      focalFailures = Vector.empty,
+      declaredReferences = declared
+    )
+    assertEquals(noMatch.asJson.as[PreviewRow], Right(noMatch))
+    val queryRow = QueryRow(
+      query,
+      "beach-042",
+      Response("Remembered"),
+      None,
+      None,
+      QueryStatus.NoMatch(diagnostic),
+      declared
+    )
+    assertEquals(queryRow.asJson.as[QueryRow], Right(queryRow))
+    val old = Json.obj(
+      "version" -> ProtocolVersion(1, 20).asJson,
+      "id"      -> Json.fromInt(101),
+      "body"    -> Json.fromString("unreadable old body")
+    )
+    assertEquals(
+      WireFormat.parseCurrent[ServerFrame](old.noSpaces),
+      Left(TransportError.Incompatible(ProtocolVersion(1, 20), ProtocolVersion.Current))
+    )
+    assertEquals(
+      WireFormat.parseCurrent[BackendRequest](old.noSpaces),
+      Left(TransportError.Incompatible(ProtocolVersion(1, 20), ProtocolVersion.Current))
+    )
+  }
+
   test("every message kind and case is sampled") {
     assertEquals(requests.map(_.ordinal), requests.indices.toVector)
     assertEquals(requests.size, 28)
@@ -351,7 +409,7 @@ class ProtocolCodecSuite extends munit.FunSuite:
   }
 
   test("protocol 1.2 Counting requires coordinated peers, not a relabelled 1.1 frame") {
-    assertEquals(ProtocolVersion.Current, ProtocolVersion(1, 20))
+    assertEquals(ProtocolVersion.Current, ProtocolVersion(1, 21))
     val previous = Envelope(RequestId(41), ServerFrame.Event(JobEvent.Advanced(progress)))
     assertEquals(legacyMeterTotal(previous.asJson), Right(Protocol11Total.Exact(8512L)))
     val counting = progress.asJson

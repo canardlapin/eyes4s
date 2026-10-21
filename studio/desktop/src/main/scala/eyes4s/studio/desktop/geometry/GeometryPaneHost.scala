@@ -21,10 +21,14 @@ import eyes4s.studio.app.geometry.*
 import eyes4s.studio.app.tokens.{StageVariant, Theme, Tokens}
 import eyes4s.studio.app.vm.FocusStop
 import eyes4s.studio.app.{AppModel, Intent}
-import eyes4s.studio.core.backend.{AdmissionSummary, DatasetRevision, PlacementPreview}
+import eyes4s.studio.core.backend.PlacementPreview
 import eyes4s.studio.core.document.{DatasetRevisionSpec, Perspective}
+import eyes4s.studio.core.selection.{PlacementCount, ViewId}
 import eyes4s.studio.desktop.explore.NavigatorDisplays
 import eyes4s.studio.desktop.runtime.StudioSession
+import eyes4s.studio.desktop.plot.TableTwinView
+import javafx.scene.control.Label
+import javafx.scene.layout.{Priority, VBox}
 import eyes4s.studio.viz.geometry.GeometryScene
 import eyes4s.studio.viz.plot.PlotScene
 import javafx.application.Platform
@@ -32,14 +36,12 @@ import javafx.application.Platform
 import java.util.concurrent.{Executor, ExecutorService, Executors, RejectedExecutionException}
 import scala.util.control.NonFatal
 
-/** Where the geometry panel reads a revision's fixation source, asks for
-  * its admission counts and reads its trial displays. `done` may be called
-  * on any thread.
+/** Where the geometry panel reads the backend's source placement and trial
+  * displays. `done` may be called on any thread.
   */
 trait GeometryInputs:
   /** The backend's placement preview of `spec` (S5.5); `done` on any thread. */
   def placement(spec: DatasetRevisionSpec, done: Either[String, PlacementPreview] => Unit): Unit
-  def admission(dataset: DatasetRevision, done: Either[String, AdmissionSummary] => Unit): Unit
 
   /** `spec`'s trial displays, which say whose image is missing. */
   def displays(spec: DatasetRevisionSpec, done: Either[String, DisplaySource] => Unit): Unit
@@ -61,15 +63,6 @@ object GeometryInputs:
           case Right(Left(err)) => done(Left(err.message))
           case Right(Right(p))  => done(Right(p))
         }
-      def admission(
-          dataset: DatasetRevision,
-          done: Either[String, AdmissionSummary] => Unit
-      ): Unit =
-        session.run(session.backend.admission(dataset)) {
-          case Left(e)          => done(Left(Option(e.getMessage).getOrElse(e.toString)))
-          case Right(Left(err)) => done(Left(err.message))
-          case Right(Right(s))  => done(Right(s))
-        }
 
 /** A redraw of the placement pictures: which key they were drawn for, and
   * how long after the change that asked for them they were all on their
@@ -79,9 +72,8 @@ final case class RedrawReceipt(generation: Long, key: PicturesKey, millis: Doubl
 
 /** The Data perspective's geometry pane on the desktop (Data.dc.html,
   * geometry; see [[GeometryPanel]]). It follows the model's selected dataset
-  * revision, reads that revision's fixation source through `inputs` and
-  * parses it off the JavaFX thread, asks the backend for its counts, and
-  * draws the placement pictures, also derived off the JavaFX thread, each
+  * revision, requests its placement through `inputs`, and draws its placement
+  * pictures off the JavaFX thread each
   * time the revision's geometry, corrections, policy or the chosen trial
   * change. The panel's commands go to the app through `app`; a change that
   * creates a revision moves the Data selection to it. Use on the JavaFX
@@ -102,9 +94,27 @@ final class GeometryPaneHost(
   private var receiptLog                         = Vector.empty[RedrawReceipt]
   private var started                            = false
   private var disposed                           = false
+  private var rowsKey
+      : Option[(Option[PlacementKey], Loading[PlacementPreview], PlacementCount)] = None
 
   val view: GeometryPanelView = GeometryPanelView(dispatch)
   def node: javafx.scene.Node = view.node
+
+  val placementRows: TableTwinView = TableTwinView.attach(
+    ViewId
+      .of("data.placement-records")
+      .fold(e => throw IllegalStateException(e.message), identity),
+    model().selection,
+    app
+  )
+  private val rowsCaption = Label()
+  rowsCaption.getStyleClass.add("t11")
+  rowsCaption.setWrapText(true)
+  val recordsNode: VBox = VBox(rowsCaption, placementRows)
+  recordsNode.getStyleClass.add("geometry-stack")
+  Option(getClass.getClassLoader.getResource(GeometryPanelView.stylesheetResource))
+    .foreach(url => recordsNode.getStylesheets.add(url.toExternalForm))
+  VBox.setVgrow(placementRows, Priority.ALWAYS)
 
   /** The panel's state now. */
   def state: GeometryPanel = panel
@@ -146,7 +156,6 @@ final class GeometryPaneHost(
     effects.foreach {
       case GeometryEffect.App(i)                   => app(i)
       case GeometryEffect.RequestPlacement(key, s) => place(key, s)
-      case GeometryEffect.RequestCounts(d)         => counts(d)
       case GeometryEffect.RequestDisplays(s)       => displays(s)
     }
     if changes.nonEmpty then GeometryPanel.follow(before, model().document).foreach(app)
@@ -156,12 +165,6 @@ final class GeometryPaneHost(
     inputs.placement(
       spec,
       result => Platform.runLater(() => dispatch(GeometryIntent.PlacementRead(key, result)))
-    )
-
-  private def counts(dataset: DatasetRevision): Unit =
-    inputs.admission(
-      dataset,
-      result => Platform.runLater(() => dispatch(GeometryIntent.CountsRead(dataset, result)))
     )
 
   private def displays(spec: DatasetRevisionSpec): Unit =
@@ -174,6 +177,21 @@ final class GeometryPaneHost(
   private def refresh(): Unit =
     val m = model()
     view.render(GeometryPanelVM.of(panel, m, pictures))
+    val nextRows = (panel.placementKey, panel.placement, GeometryPlacementRows.count(panel, m))
+    if !rowsKey.contains(nextRows) then
+      rowsKey = Some(nextRows)
+      rowsCaption.setText(GeometryPlacementRows.caption(panel, m))
+      GeometryPlacementRows.source(panel, m) match
+        case Right(source) => placementRows.show(source)
+        case Left(error)   =>
+          placementRows.clear()
+          rowsCaption.setText(
+            eyes4s.studio.app.text.GeometryText(
+              eyes4s.studio.app.text.GeometryTextId.PlacementRecordsFailed,
+              error.message
+            )
+          )
+    placementRows.project(m.selection)
     val key   = GeometryPictures.keyOf(panel, m)
     val stage = GeometryPanelVM.stageOf(m)
     // A changed stage redraws the pictures too, so that the density's cells
@@ -235,6 +253,7 @@ final class GeometryPaneHost(
   /** Stop following the model; reads that answer later are dropped. */
   def dispose(): Unit = if !disposed then
     disposed = true
+    placementRows.dispose()
     view.dispose()
 
 object GeometryPaneHost:

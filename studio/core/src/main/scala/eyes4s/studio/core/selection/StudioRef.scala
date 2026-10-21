@@ -211,6 +211,11 @@ enum StudioRef derives CanEqual, Codec.AsObject:
     */
   case WindowTally(dataset: DatasetRevision, region: TallyRegion)
 
+  /** A source-placement count, including unadmitted trials. It is distinct
+    * from the admission-only [[WindowTally]] and can name a pending draft.
+    */
+  case PlacementTally(dataset: DatasetRevision, count: PlacementCount)
+
   /** One trial's window tally in a dataset revision's placement preview:
     * its records and how many eyes4s places outside the image frame and the
     * screen (ticket S5.5; the geometry thumbnails' counts).
@@ -269,8 +274,9 @@ enum StudioRef derives CanEqual, Codec.AsObject:
     case ParticipantSummary(_, _, _, _, _) | GroupCell(_, _, _, _) | ReportCell(_, _, _, _, _) |
         ReportParticipant(_, _, _, _, _, _) | ReportContrast(_, _, _, _, _, _) |
         ReportQueryRange(_, _, _, _) | FigurePanel(_, _) | WindowTally(_, _) |
-        DesignTally(_, _) | InventoryCount(_, _) | TrialGroup(_, _) | DisplayTally(_, _) |
-        TrialPlacementTally(_, _) | QueryTally(_, _) | ReportTally(_, _, _, _, _) =>
+        PlacementTally(_, _) | DesignTally(_, _) | InventoryCount(_, _) | TrialGroup(_, _) |
+        DisplayTally(_, _) | TrialPlacementTally(_, _) | QueryTally(_, _) |
+        ReportTally(_, _, _, _, _) =>
       RefKind.Aggregate
 
   def isAggregate: Boolean = kind == RefKind.Aggregate
@@ -319,9 +325,13 @@ enum StudioRef derives CanEqual, Codec.AsObject:
     case ReportQueryRange(_, _, _, _)     => None
     case FigurePanel(_, _)                => None
     case WindowTally(_, _)                => None
+    case PlacementTally(dataset, count)   =>
+      Option.when(count != PlacementCount.PlacedRecords)(
+        PlacementTally(dataset, PlacementCount.PlacedRecords)
+      )
     // A trial's tally is part of the revision's outside-the-frame count.
     case TrialPlacementTally(dataset, _) =>
-      Some(WindowTally(dataset, TallyRegion.OutsideWindow))
+      Some(PlacementTally(dataset, PlacementCount.PlacedRecords))
     case DesignTally(_, _)      => None
     case QueryTally(run, tally) =>
       Option.when(tally != QueryCount.Requested)(QueryTally(run, QueryCount.Requested))
@@ -395,6 +405,10 @@ enum TrialGrouping derives CanEqual, Codec.AsObject:
   */
 enum TallyRegion derives CanEqual, Codec.AsObject:
   case OutsideWindow, OutsideScreen
+
+/** A count over classified source placements, before trial admission. */
+enum PlacementCount derives CanEqual, Codec.AsObject:
+  case PlacedRecords, OutsideWindow, OutsideScreen
 
 /** Which count of a resolved design a [[StudioRef.DesignTally]] names: the
   * focal trials by status, the trials the candidate pairs cross, or the pairs

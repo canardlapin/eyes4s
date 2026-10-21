@@ -82,6 +82,8 @@ class ResolvedDesignFxSuite extends ShellFxSuite:
         "Candidate pairs before paging 219,486 per scale (466 queries × 471 references, " +
           "Cartesian · eyes4s candidatePairCount).",
         "Exact eligible after paging 8,969 per scale.",
+        "Eligible queries: 454 without a known focal preparation failure; 3 focal trials will fail " +
+          "at every scale. Scores pending; other failures remain possible.",
         "Preview and run use this same prepared design.",
         "input digest unbound · plan unbound · rev 5 · data r3"
       )
@@ -122,6 +124,45 @@ class ResolvedDesignFxSuite extends ShellFxSuite:
       )
     )
     fx.snapshot(StudioTheme.Light)
+  }
+
+  fxStage.test(
+    "no-match rows show source-declared references without inventing a matched pair"
+  ) { fx =>
+    val w = boot(fx, StoryModels.t2Analysis, StoryMoment.T2)
+    ready(fx, w)
+    fx.robot.click(runOnFx(chip(w, DesignFilter.NoMatch).button))
+    fx.awaitLayout()
+    val first = runOnFx(w.resolvedDesign.state.visible.head)
+    assert(first.declaredReferences.nonEmpty)
+    assertEquals(first.matched, None)
+    val node   = runOnFx(w.resolvedDesign.view.rows.head)
+    val labels =
+      runOnFx(node.getChildren.asScala.toVector.map(_.asInstanceOf[javafx.scene.control.Label]))
+    assertEquals(runOnFx(labels(3).getText), "—")
+    assert(runOnFx(labels(5).getText).contains(first.declaredReferences.head.trial.trial))
+    fx.snapshot(StudioTheme.Light)
+  }
+
+  fxStage.test("known focal preparation failures stay eligible and expose their source cause") {
+    fx =>
+      val w = boot(fx, StoryModels.t2Analysis, StoryMoment.T2)
+      ready(fx, w)
+      val failed = runOnFx(w.resolvedDesign.state.rows.find(_.focalFailures.nonEmpty))
+        .getOrElse(fail("no known failed focal trial"))
+      fx.robot.click(runOnFx(chip(w, DesignFilter.Eligible).button))
+      runOnFx(w.resolvedDesign.dispatch(DesignIntent.FocusRow(failed.query)))
+      fx.awaitLayout()
+      assertEquals(failed.eligibility, Eligibility.Eligible)
+      val row = runOnFx(
+        w.resolvedDesign.view.rows.find(n =>
+          w.resolvedDesign.view.queryOf(n).contains(failed.query)
+        )
+      ).getOrElse(fail("no failed row"))
+      val status = runOnFx(row.getChildren.get(5).asInstanceOf[javafx.scene.control.Label])
+      assert(runOnFx(status.getText).contains("0 of 11"))
+      assertEquals(runOnFx(status.getTooltip.getText), runOnFx(status.getText))
+      fx.snapshot(StudioTheme.Light)
   }
 
   fxStage.test("every status row opens its trial: a click and the keyboard row cursor") { fx =>

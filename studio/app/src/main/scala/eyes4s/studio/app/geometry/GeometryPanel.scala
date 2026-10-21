@@ -22,17 +22,12 @@ import eyes4s.studio.app.nav.{Location, Place}
 import eyes4s.studio.app.text.{GeometryText, GeometryTextId}
 import eyes4s.studio.app.{AppModel, Intent}
 import eyes4s.studio.core.assets.AssetRegistry
-import eyes4s.studio.core.backend.{
-  AdmissionSummary,
-  DatasetRevision,
-  PlacementPreview,
-  TrialKey
-}
+import eyes4s.studio.core.backend.{DatasetRevision, PlacementPreview, TrialKey}
 import eyes4s.studio.core.command.Command
 import eyes4s.studio.core.document.*
 import eyes4s.studio.core.geometry.CorrectionLedger
 import eyes4s.studio.core.importing.{GeometryField, GeometryFields}
-import eyes4s.studio.core.selection.StudioRef
+import eyes4s.studio.core.selection.{PlacementCount, StudioRef}
 
 /** Something the panel loads for the revision it shows. */
 enum Loading[+A] derives CanEqual:
@@ -135,9 +130,7 @@ enum GeometryIntent derives CanEqual:
   /** A thumbnail was chosen: the trial "Mark trial as wrong orientation…" acts on. */
   case MarkTrial(trial: TrialKey)
 
-  /** Open a count's records (S5.5 follow-up): explain `ref`, the eyes4s
-    * tally it shows, as the admission ledger's counts do.
-    */
+  /** Open the served placement tally and its matching trial rows. */
   case OpenCount(ref: StudioRef)
   case OpenOrientation
   case ChooseFix(fix: OrientationFix)
@@ -148,9 +141,6 @@ enum GeometryIntent derives CanEqual:
 
   /** The backend's placement preview asked for `key`. */
   case PlacementRead(key: PlacementKey, result: Either[String, PlacementPreview])
-
-  /** The backend's admission summary asked for `dataset`. */
-  case CountsRead(dataset: DatasetRevision, result: Either[String, AdmissionSummary])
 
   /** The platform's trial displays asked for `dataset`. */
   case DisplaysRead(dataset: DatasetRevision, result: Either[String, DisplaySource])
@@ -165,11 +155,6 @@ enum GeometryEffect derives CanEqual:
     * studio.
     */
   case RequestPlacement(key: PlacementKey, spec: DatasetRevisionSpec)
-
-  /** Ask the backend for `dataset`'s admission summary; the answer is
-    * [[GeometryIntent.CountsRead]].
-    */
-  case RequestCounts(dataset: DatasetRevision)
 
   /** Ask the platform for `spec`'s trial displays (its asset registry), for
     * which thumbnails' frames are missing; the answer is
@@ -199,7 +184,6 @@ final case class GeometryPanel(
     fields: GeometryFields,
     placementKey: Option[PlacementKey],
     placement: Loading[PlacementPreview],
-    counts: Loading[AdmissionSummary],
     displays: Loading[DisplaySource],
     marked: Option[TrialKey],
     orientation: Option[OrientationForm],
@@ -220,7 +204,6 @@ object GeometryPanel:
       None,
       Loading.Idle,
       Loading.Idle,
-      Loading.Idle,
       None,
       None,
       None
@@ -236,7 +219,12 @@ object GeometryPanel:
     model.navigation
       .trail(Perspective.Data)
       .reverseIterator
-      .collectFirst { case Place.Dataset(id) if document.dataset(id).isDefined => id }
+      .collectFirst {
+        case Place.Dataset(id) if document.dataset(id).isDefined                         => id
+        case Place.At(StudioRef.PlacementTally(id, _)) if document.dataset(id).isDefined => id
+        case Place.At(StudioRef.TrialPlacementTally(id, _)) if document.dataset(id).isDefined =>
+          id
+      }
       .flatMap(document.dataset)
       .orElse(document.datasets.lastOption)
 
@@ -248,13 +236,15 @@ object GeometryPanel:
         case StudioRef.SourceRecord(t, _, _, _)                    => (Some(t), None)
         case StudioRef.Fixation(t, _)                              => (Some(t), None)
         case StudioRef.Trial(t)                                    => (Some(t), None)
+        case StudioRef.TrialPlacementTally(dataset, t)
+            if selected(model).exists(_.id == dataset) =>
+          (Some(t), None)
       }
       .getOrElse((None, None))
 
   /** Follow the model: a newly selected or changed revision resets the
-    * typed fields and asks for what it lacks (its records, when its source
-    * or mapping differs from those read, and its counts, when its id
-    * differs).
+    * typed fields and requests its own placement. Even a change under the
+    * same draft id invalidates the old geometry's counts and rows.
     */
   def sync(panel: GeometryPanel, model: AppModel): (GeometryPanel, Vector[GeometryEffect]) =
     val now = selected(model)
@@ -269,15 +259,11 @@ object GeometryPanel:
               case (Some(a), Some(b)) => p(a, b)
               case _                  => false
           val (placement, read) =
-            if both(PlacementKey.same) then (panel.placement, none)
+            if key.isDefined && panel.placementKey == key then (panel.placement, none)
             else
               key.fold[(Loading[PlacementPreview], Vector[GeometryEffect])](
                 (Loading.Failed("the revision has no fixation source"), none)
               )(k => (Loading.Waiting, Vector(GeometryEffect.RequestPlacement(k, spec))))
-          val sameId          = panel.shown.exists(_.id == spec.id)
-          val (counts, count) =
-            if sameId then (panel.counts, none)
-            else (Loading.Waiting, Vector(GeometryEffect.RequestCounts(spec.id)))
           // The displays are the revision's: read again for another revision
           // or another trial inventory.
           val sameDisplays = panel.shown.exists(s =>
@@ -294,13 +280,12 @@ object GeometryPanel:
               GeometryFields.of(spec.geometry),
               key,
               placement,
-              counts,
               displays,
               panel.marked.filter(_ => sameTrials),
               panel.orientation.filter(_ => sameTrials),
               None
             ),
-            read ++ count ++ display
+            read ++ display
           )
 
   /** The Elm-style update: pure; effects are data. */
@@ -321,7 +306,19 @@ object GeometryPanel:
             else change(panel, model, GeometryChange.SetGeometry(g))
       case ChooseOffScreen(policy) => change(panel, model, GeometryChange.SetOffScreen(policy))
       case OpenCount(ref)          =>
-        (panel, Vector(GeometryEffect.App(Intent.Explain(Place.At(ref)))))
+        val open  = Vector(GeometryEffect.App(Intent.Explain(Place.At(ref))))
+        val focus = ref match
+          case StudioRef.PlacementTally(
+                _,
+                PlacementCount.OutsideWindow | PlacementCount.OutsideScreen
+              ) =>
+            Vector(
+              GeometryEffect.App(
+                Intent.FocusPane(eyes4s.studio.app.layout.StudioLayouts.outsideFrame)
+              )
+            )
+          case _ => none
+        (panel, open ++ focus)
       case MarkTrial(trial) =>
         (
           panel.copy(
@@ -367,18 +364,6 @@ object GeometryPanel:
             )
             .fold(Loading.Failed(_), Loading.Ready(_))
           (panel.copy(placement = loaded), none)
-      case CountsRead(dataset, result) =>
-        panel.shown match
-          case Some(spec) if dataset == spec.id || spec.parent.contains(dataset) =>
-            result match
-              case Right(summary) => (panel.copy(counts = Loading.Ready(summary)), none)
-              // A draft the backend has not admitted: its parent's counts,
-              // labelled as the parent's.
-              case Left(_)
-                  if dataset == spec.id && spec.parent.isDefined && !spec.decision.isAdmitted =>
-                (panel, spec.parent.map(GeometryEffect.RequestCounts(_)).toVector)
-              case Left(reason) => (panel.copy(counts = Loading.Failed(reason)), none)
-          case _ => (panel, none)
       case DisplaysRead(dataset, result) =>
         if !panel.shown.exists(_.id == dataset) then (panel, none)
         else (panel.copy(displays = result.fold(Loading.Failed(_), Loading.Ready(_))), none)

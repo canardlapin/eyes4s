@@ -322,7 +322,9 @@ object TableColumns:
     if n <= Sample then Vector.range(0, n)
     else Vector.tabulate(Sample)(k => (k.toLong * (n - 1) / (Sample - 1)).toInt)
 
-  /** Each column's share of the width, in column order; they sum to 1. */
+  /** Each column's share of text-content width, in column order; they sum
+    * to 1. The host renderer separately reserves each cell's actual insets.
+    */
   def shares(source: PlotSource): Vector[Double] =
     val rows   = sampled(source)
     val widths = source.columns.indices.toVector.map { c =>

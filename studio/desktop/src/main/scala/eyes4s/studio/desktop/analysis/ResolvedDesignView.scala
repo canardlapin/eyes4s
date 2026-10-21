@@ -178,6 +178,7 @@ final class ResolvedDesignView(dispatch: DesignIntent => Unit):
       5,
       if r.tone == StatusTone.Warning then "design-warn" else "design-status"
     )
+    status.setTooltip(new javafx.scene.control.Tooltip(r.status))
     val n = HBox(
       cell(r.participant, 0),
       cell(r.trial, 1, "mono"),

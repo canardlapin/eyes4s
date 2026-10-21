@@ -26,9 +26,9 @@ import eyes4s.studio.core.assets.AssetFile
 import eyes4s.studio.core.backend.*
 import eyes4s.studio.core.command.{Command, HistoryStack}
 import eyes4s.studio.core.document.*
-import eyes4s.studio.core.fixture.{FakePlacement, GoldenAssets, MockStudy, StoryMoments}
+import eyes4s.studio.core.fixture.{FakePlacement, GoldenAssets, StoryMoments}
 import eyes4s.studio.core.importing.GeometryField
-import eyes4s.studio.core.selection.{RecordNumber, StudioRef, TallyRegion}
+import eyes4s.studio.core.selection.{PlacementCount, RecordNumber, StudioRef}
 
 import java.nio.charset.StandardCharsets.UTF_8
 
@@ -65,38 +65,10 @@ class GeometryPanelSuite extends munit.FunSuite:
   private def commandsOf(effects: Vector[GeometryEffect]): Vector[Command] =
     effects.collect { case GeometryEffect.App(Intent.Dispatch(c)) => c }
 
-  /** eyes4s's window totals as the fake backend serves them for r3. */
-  private lazy val summary: AdmissionSummary =
-    val s = ok(MockStudy.load).summary
-    AdmissionSummary(
-      r3,
-      DatasetState.Draft,
-      // The geometry panel reads only the window totals.
-      InventoryJoin.Undeclared,
-      s.admitted,
-      Vector.empty,
-      0,
-      s.fixationRecords,
-      WindowTotals(
-        outsideWindow = s.outsideWindowRecords,
-        outsideScreen = 0,
-        total = 11311,
-        trialsOutsideWindow = s.outsideWindowTrials,
-        trialsOutsideScreen = 0,
-        trials = s.admitted,
-        untallied = 0,
-        sourceRecords = Some(s.fixationRecords),
-        outsideWindowMicros = 0L,
-        outsideScreenMicros = 0L,
-        totalMicros = 1L
-      ),
-      s.itemsInPool,
-      s.imagesFound,
-      Vector.empty,
-      "",
-      0,
-      None
-    )
+  private def placed(panel: GeometryPanel, model: AppModel): GeometryPanel =
+    val key     = panel.placementKey.getOrElse(fail("no placement key"))
+    val preview = ok(FakePlacement.of(panel.shown.getOrElse(fail("no dataset"))))
+    GeometryPanel.update(panel, model, GeometryIntent.PlacementRead(key, Right(preview)))._1
 
   test("the panel follows the Data selection and asks for its records and counts") {
     val (panel, effects) = synced(t1)
@@ -104,9 +76,8 @@ class GeometryPanelSuite extends munit.FunSuite:
     assertEquals(panel.fields.field(GeometryField.ImageLeft), "448")
     assertEquals(
       effects.map(_.productPrefix),
-      Vector("RequestPlacement", "RequestCounts", "RequestDisplays")
+      Vector("RequestPlacement", "RequestDisplays")
     )
-    assertEquals(effects(1), GeometryEffect.RequestCounts(r3))
     assertEquals(effects.last, GeometryEffect.RequestDisplays(panel.shown.get))
     // r2 shares r3's source file but not its mapping: its records are read again.
     val onR2 =
@@ -115,7 +86,7 @@ class GeometryPanelSuite extends munit.FunSuite:
     assertEquals(moved.shown.map(_.id), Some(r2))
     assertEquals(
       again.map(_.productPrefix),
-      Vector("RequestPlacement", "RequestCounts", "RequestDisplays")
+      Vector("RequestPlacement", "RequestDisplays")
     )
   }
 
@@ -123,22 +94,24 @@ class GeometryPanelSuite extends munit.FunSuite:
     "outside window and outside screen are counted apart: 543 of 11,520 records · 409 trials"
   ) {
     val (panel, _) = synced(t1)
-    val loaded     =
-      GeometryPanel.update(panel, t1, GeometryIntent.CountsRead(r3, Right(summary)))._1
-    val vm = GeometryPanelVM.of(loaded, t1, None)
+    val loaded     = placed(panel, t1)
+    val vm         = GeometryPanelVM.of(loaded, t1, None)
     assertEquals(vm.outsideWindow.title, "Outside image frame")
     assertEquals(vm.outsideWindow.value, Some("543 of 11,520 records · 409 trials"))
     assertEquals(vm.outsideScreen.title, "Outside screen")
     assertEquals(vm.outsideScreen.value, Some("0 of 11,520 records · 0 trials"))
-    assert(vm.outsideScreen.note.contains("not a quarantine"), vm.outsideScreen.note)
-    assertEquals(vm.countsSource, "Counts: eyes4s admission of r3.")
+    assert(vm.outsideScreen.note.contains("On admission"), vm.outsideScreen.note)
+    assertEquals(
+      vm.countsSource,
+      "Counts: eyes4s placement of r3, including unadmitted trials. 0 source records could not be placed."
+    )
     assertEquals(vm.kind, "Dataset · re-admit")
     // Each count traces to the eyes4s tally it shows.
     assertEquals(
       (vm.outsideWindow.ref, vm.outsideScreen.ref),
       (
-        Some(StudioRef.WindowTally(r3, TallyRegion.OutsideWindow)),
-        Some(StudioRef.WindowTally(r3, TallyRegion.OutsideScreen))
+        Some(StudioRef.PlacementTally(r3, PlacementCount.OutsideWindow)),
+        Some(StudioRef.PlacementTally(r3, PlacementCount.OutsideScreen))
       )
     )
     assertEquals(GeometryPanelVM.of(panel, t1, None).outsideWindow.ref, None)
@@ -146,12 +119,71 @@ class GeometryPanelSuite extends munit.FunSuite:
 
   test("a count opens the eyes4s tally it shows, as the admission ledger's counts do") {
     val (panel, _)      = synced(t1)
-    val ref             = StudioRef.WindowTally(r3, TallyRegion.OutsideWindow)
+    val ref             = StudioRef.PlacementTally(r3, PlacementCount.OutsideWindow)
     val (same, effects) = GeometryPanel.update(panel, t1, GeometryIntent.OpenCount(ref))
     assertEquals(same, panel)
-    assertEquals(effects, Vector(GeometryEffect.App(Intent.Explain(Place.At(ref)))))
+    assertEquals(
+      effects,
+      Vector(
+        GeometryEffect.App(Intent.Explain(Place.At(ref))),
+        GeometryEffect.App(
+          Intent.FocusPane(eyes4s.studio.app.layout.StudioLayouts.outsideFrame)
+        )
+      )
+    )
     val opened = perform(t1, effects)
     assertEquals(opened.location.trail.lastOption, Some(Place.At(ref)))
+    assertEquals(opened.focusedPane, eyes4s.studio.app.layout.StudioLayouts.outsideFrame)
+  }
+
+  test("count drilldown lists precisely the trials in the current served placement") {
+    val panel  = placed(synced(t1)._1, t1)
+    val ref    = StudioRef.PlacementTally(r3, PlacementCount.OutsideWindow)
+    val opened = perform(t1, GeometryPanel.update(panel, t1, GeometryIntent.OpenCount(ref))._2)
+    val source = ok(GeometryPlacementRows.source(panel, opened))
+    assertEquals(source.rows.size, 409)
+    val counts = source.rows.map(_.values(5)).collect {
+      case eyes4s.studio.app.plot.PlotValue.Number(n) => n
+    }
+    assertEquals(counts.sum, 543.0)
+    assert(counts.forall(_ > 0))
+    assert(source.rows.forall(_.ref.isInstanceOf[StudioRef.TrialPlacementTally]))
+    val screen = StudioRef.PlacementTally(r3, PlacementCount.OutsideScreen)
+    val none   =
+      perform(opened, GeometryPanel.update(panel, opened, GeometryIntent.OpenCount(screen))._2)
+    assertEquals(ok(GeometryPlacementRows.source(panel, none)).rows, Vector.empty)
+  }
+
+  test(
+    "a geometry change under the same draft id hides earlier counts and ignores its late response"
+  ) {
+    val panel      = placed(synced(t1)._1, t1)
+    val oldKey     = panel.placementKey.get
+    val oldPreview = panel.placement.toOption.get
+    val edited     =
+      GeometryPanel.update(panel, t1, GeometryIntent.EditField(GeometryField.ImageLeft, "0"))._1
+    val effects = GeometryPanel.update(edited, t1, GeometryIntent.CommitFields)._2
+    val changed = perform(t1, effects)
+    val next    = GeometryPanel.sync(panel, changed)._1
+    assertEquals(next.shown.map(_.id), Some(r3))
+    assertEquals(next.placement, Loading.Waiting)
+    assertEquals(GeometryPanelVM.of(next, changed, None).outsideWindow.value, None)
+    assertEquals(ok(GeometryPlacementRows.source(next, changed)).rows, Vector.empty)
+    val stale = GeometryPanel
+      .update(next, changed, GeometryIntent.PlacementRead(oldKey, Right(oldPreview)))
+      ._1
+    assertEquals(stale, next)
+    val fresh = placed(next, changed)
+    assertNotEquals(
+      GeometryPanelVM.of(fresh, changed, None).outsideWindow.value,
+      GeometryPanelVM.of(panel, t1, None).outsideWindow.value
+    )
+  }
+
+  test("a placement count of an older dataset never falls back to the latest revision") {
+    val ref    = StudioRef.PlacementTally(r2, PlacementCount.OutsideWindow)
+    val opened = AppModel.update(t2, Intent.Explain(Place.At(ref)))._1
+    assertEquals(GeometryPanel.selected(opened).map(_.id), Some(r2))
   }
 
   test("switching the off-screen policy edits the pending draft r3 in one undoable step") {
@@ -174,12 +206,16 @@ class GeometryPanelSuite extends munit.FunSuite:
     assertEquals(model.document.datasets.map(_.id), Vector(r2, r3))
     // The policy note and the outside-screen note follow the policy.
     val (shown, _) = GeometryPanel.sync(after, model)
-    val vm         = GeometryPanelVM.of(shown, model, None)
+    assertEquals(GeometryPanelVM.of(shown, model, None).outsideScreen.value, None)
+    val vm = GeometryPanelVM.of(placed(shown, model), model, None)
     assertEquals(
       vm.policies.filter(_.selected).map(_.value),
       Vector(OffScreenChoice.QuarantineTrial)
     )
-    assert(vm.outsideScreen.note.contains("quarantined"), vm.outsideScreen.note)
+    assertEquals(
+      vm.outsideScreen.note,
+      "On admission, a record outside the screen will quarantine its trial."
+    )
     val undone = AppModel.update(model, Intent.Undo(HistoryStack.Science))._1
     assertEquals(undone.document, t1.document)
     // Choosing the policy the revision has is not a change.
@@ -233,38 +269,32 @@ class GeometryPanelSuite extends munit.FunSuite:
     )
     val followed = AppModel.update(model, follow.get)._1
     assertEquals(GeometryPanel.selected(followed).map(_.id), Some(r4))
-    // The new draft shares r3's records; only its counts and its own
-    // displays are asked for.
+    // Another revision needs its own served placement, even with the same coordinates.
     val (onR4, asks) = GeometryPanel.sync(panel, followed)
+    val key          = onR4.placementKey.getOrElse(fail("no r4 key"))
     assertEquals(
       asks,
       Vector(
-        GeometryEffect.RequestCounts(r4),
-        GeometryEffect.RequestDisplays(followed.document.dataset(r4).get)
+        GeometryEffect.RequestPlacement(key, draft),
+        GeometryEffect.RequestDisplays(draft)
       )
     )
-    // The fake backend has no r4: the panel falls back to its parent's counts, labelled.
-    val refused =
-      GeometryPanel.update(onR4, followed, GeometryIntent.CountsRead(r4, Left("No dataset r4")))
-    assertEquals(refused._2, Vector(GeometryEffect.RequestCounts(r3)))
-    val parent = GeometryPanel
-      .update(refused._1, followed, GeometryIntent.CountsRead(r3, Right(summary)))
-      ._1
-    val vm = GeometryPanelVM.of(parent, followed, None)
+    val waiting = GeometryPanelVM.of(onR4, followed, None)
+    assertEquals(waiting.outsideWindow.value, None)
+    assertEquals(waiting.outsideWindow.ref, None)
+    val own = placed(onR4, followed)
+    val vm  = GeometryPanelVM.of(own, followed, None)
     assertEquals(vm.outsideWindow.value, Some("543 of 11,520 records · 409 trials"))
     assertEquals(
-      vm.countsSource,
-      "Counts: eyes4s admission of r3. r4 is pending; its own counts follow its verification."
-    )
-    // The outside-screen note describes r3's counts, admitted under ExcludeRecord,
-    // not the draft's QuarantineTrial.
-    assert(vm.outsideScreen.note.contains("not a quarantine"), vm.outsideScreen.note)
-    assert(vm.policyNote.contains("quarantin"), vm.policyNote)
-    // The parent's counts trace to the parent, not to the draft.
-    assertEquals(
       vm.outsideWindow.ref,
-      Some(StudioRef.WindowTally(r3, TallyRegion.OutsideWindow))
+      Some(StudioRef.PlacementTally(r4, PlacementCount.OutsideWindow))
     )
+    assertEquals(
+      vm.countsSource,
+      "Counts: eyes4s placement of r4, including unadmitted trials. 0 source records could not be placed."
+    )
+    assert(vm.outsideScreen.note.contains("quarantine"), vm.outsideScreen.note)
+    assert(vm.policyNote.contains("quarantin"), vm.policyNote)
   }
 
   test("a geometry edit of pending r3 is S5.2's one ReviseDataset; one undo restores it") {
@@ -895,11 +925,10 @@ class GeometryPanelSuite extends munit.FunSuite:
       Vector.empty
     )
     val (panel, _) = synced(t1)
-    val counted    =
-      GeometryPanel.update(panel, t1, GeometryIntent.CountsRead(r3, Right(summary)))._1
-    val marked = GeometryPanel.update(counted, t1, GeometryIntent.MarkTrial(p05ret04))._1
-    val vm     = GeometryPanelVM.of(marked, t1, None)
-    val tail   = Vector(
+    val counted    = placed(panel, t1)
+    val marked     = GeometryPanel.update(counted, t1, GeometryIntent.MarkTrial(p05ret04))._1
+    val vm         = GeometryPanelVM.of(marked, t1, None)
+    val tail       = Vector(
       FocusStop(A11yRole.RadioButton, "Exclude the record (default)"),
       FocusStop(A11yRole.Button, "Outside image frame: 543 of 11,520 records · 409 trials"),
       FocusStop(A11yRole.Button, "Outside screen: 0 of 11,520 records · 0 trials")

@@ -92,6 +92,9 @@ object StudioLayouts:
   /** The pane that hosts the admission ledger of the selected revision. */
   val admission: PaneId = PaneId("data.admission")
 
+  /** Trials whose source records a geometry count opens. */
+  val outsideFrame: PaneId = PaneId("data.outside-frame")
+
   /** The Figures perspective's methods.md text and its diff (S9.4). */
   val methods: PaneId     = PaneId("figures.methods")
   val methodsDiff: PaneId = PaneId("figures.methods-diff")

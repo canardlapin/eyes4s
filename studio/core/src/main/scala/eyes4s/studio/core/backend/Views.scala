@@ -323,13 +323,29 @@ enum Eligibility derives CanEqual, Codec.AsObject:
   /** Admitted, but without a matched reference (`study-finding.unmatched-focal`). */
   case NoMatch(diagnostic: StudioDiagnostic)
 
+/** An inventory-declared reference and its source admission disposition.
+  * A declaration is distinct from an actual selected pair.
+  */
+final case class DeclaredReferenceAdmission(trial: TrialKey, disposition: TrialDisposition)
+    derives CanEqual,
+      Codec.AsObject
+
 final case class PreviewRow(
     query: TrialKey,
     item: String,
     response: Response,
     matched: Option[TrialKey],
     controls: Option[Int],
-    eligibility: Eligibility
+    eligibility: Eligibility,
+    /** Guaranteed focal trial-preparation failures served by eyes4s. Pairing
+      * eligibility is retained: a trial can be eligible and still fail.
+      */
+    focalFailures: Vector[StudioDiagnostic] = Vector.empty,
+    /** Other preparation findings for the focal or its matched reference. */
+    preparationNotes: Vector[StudioDiagnostic] = Vector.empty,
+    unadmittedControlReferences: Vector[DeclaredReferenceAdmission] = Vector.empty,
+    /** Reference declarations carried by the library's unmatched reason. */
+    declaredReferences: Vector[DeclaredReferenceAdmission] = Vector.empty
 ) derives CanEqual,
       Codec.AsObject
 
@@ -476,7 +492,11 @@ final case class QueryRow(
     response: Response,
     matched: Option[TrialKey],
     controls: Option[Int],
-    status: QueryStatus
+    status: QueryStatus,
+    /** Inventory references named by eyes4s's unmatched reason. They are
+      * declarations, never an invented usable matched reference.
+      */
+    declaredReferences: Vector[DeclaredReferenceAdmission] = Vector.empty
 ) derives CanEqual,
       Codec.AsObject
 

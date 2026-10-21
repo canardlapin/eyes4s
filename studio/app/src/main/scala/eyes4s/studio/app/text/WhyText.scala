@@ -38,6 +38,7 @@ enum WhyTextId derives CanEqual:
   case NoMatchReport, NoMatchRefuse, QueryNotAdmitted, QueryFailed
 
   case Participant, SameParticipant, OtherParticipant
+  case DeclaredReference, DeclaredReferenceDisposition
   case PhaseOccurrence, OccurrenceOf, OccurrenceOnly
   case Item, Controls, ControlsValue, ControlsUnknown, ControlsUnscored, Reason, NoReason
   case NotAdmittedOf, ExcludedNone, ExcludedSome, ExcludedTrial, ExcludedReading,
@@ -131,10 +132,12 @@ object WhyText:
     case OutsideReading     => "reading…"
     case OutsideUnknown     => "—"
 
-    case DispositionAbsent      => "absent from fixations.csv"
-    case DispositionNoFixations => "no fixations"
-    case DispositionQuarantined => "quarantined, {0}"
-    case DispositionAdmitted    => "admitted"
+    case DeclaredReference            => "Declared reference"
+    case DeclaredReferenceDisposition => "{0} · {1}"
+    case DispositionAbsent            => "absent from fixations.csv"
+    case DispositionNoFixations       => "no fixations"
+    case DispositionQuarantined       => "quarantined, {0}"
+    case DispositionAdmitted          => "admitted"
 
     case AnalysisTitle        => "Analysis {0}"
     case AnalysisKind         => "Analysis · rerun"

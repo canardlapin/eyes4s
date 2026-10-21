@@ -135,6 +135,67 @@ class UnmatchedReasonsSuite extends munit.FunSuite:
     )
   )
 
+  test("control admission facts use other items and preserve declared dispositions") {
+    val actual = ControlPoolAdmission.of(
+      TrialKey.layout(TrialKeyDefinitions.trialLayout),
+      StudyPairing.default,
+      "study",
+      Vector(oldBeach.key, oldDog.key),
+      ledger
+    )
+    assertEquals(actual.map(_._1), Vector(oldBeach.key, oldDog.key))
+    assertEquals(
+      actual.head._2,
+      Vector(
+        DeclaredReference(dog.id, TrialDisposition.Absent),
+        DeclaredReference(cat.id, TrialDisposition.NoFixations)
+      )
+    )
+    assertEquals(actual(1)._2, Vector(DeclaredReference(cat.id, TrialDisposition.NoFixations)))
+  }
+
+  test("control admission respects occurrence selection and AllOccurrences overrides it") {
+    val second  = Declared("study", "s9", "kite", TrialDisposition.Absent, Vector.empty, 2)
+    val ledger2 = inventory(declared :+ second)
+    val layout  = TrialKey.layout(TrialKeyDefinitions.trialLayout)
+    val same    = StudyPairing.default.copy(matched = MatchedReferences.SameOccurrence)
+    assertEquals(
+      ControlPoolAdmission
+        .of(layout, same, "study", Vector(oldBeach.key), ledger2)
+        .head
+        ._2
+        .size,
+      2
+    )
+    val at2 = same.copy(matched =
+      MatchedReferences.Select(OccurrenceChoice.At(get(TrialOccurrence.of(2))))
+    )
+    assertEquals(
+      ControlPoolAdmission.of(layout, at2, "study", Vector(oldBeach.key), ledger2).head._2,
+      Vector(DeclaredReference(second.id, TrialDisposition.Absent))
+    )
+    assertEquals(
+      ControlPoolAdmission
+        .of(
+          layout,
+          at2.copy(controls = ControlReferences.AllOccurrences),
+          "study",
+          Vector(oldBeach.key),
+          ledger2
+        )
+        .head
+        ._2
+        .size,
+      3
+    )
+    val otherParticipant =
+      get(TrialKey.of("p2", "recognition", "r1", TrialOccurrence.first, "beach"))
+    assertEquals(
+      ControlPoolAdmission.of(layout, same, "study", Vector(otherParticipant), ledger2).head._2,
+      Vector.empty
+    )
+  }
+
   test("lures and novel probes have no reference by design; dropped study trials are named") {
     val work    = get(plan(input, StudyPairing.default).prepare(input))
     val reasons = get(work.unmatchedReasons(ledger))

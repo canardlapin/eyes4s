@@ -78,6 +78,9 @@ object SelectionGen:
       .zip(Gen.choose(2, 3), Gen.oneOf(TallyRegion.values.toSeq))
       .map((d, r) => StudioRef.WindowTally(DatasetRevision(d), r)),
     Gen
+      .zip(Gen.choose(2, 3), Gen.oneOf(PlacementCount.values.toSeq))
+      .map((d, r) => StudioRef.PlacementTally(DatasetRevision(d), r)),
+    Gen
       .zip(
         Gen.choose(2, 3),
         Gen.oneOf(

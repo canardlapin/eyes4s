@@ -510,8 +510,9 @@ class ReportsSuite extends CatsEffectSuite:
         .map(ok)
       means <- b.report(run7, spec(groupBy = None), scale2).map(ok)
     yield
-      val ds = rows.collect { case QueryRow(_, _, _, _, _, QueryStatus.Contributing(_, _, d)) =>
-        d(scale2)
+      val ds = rows.collect {
+        case QueryRow(_, _, _, _, _, QueryStatus.Contributing(_, _, d), _) =>
+          d(scale2)
       }
       val all = pooled.cell(None, ReportRole.Difference).get
       assertEquals(all.queries, ds.size)

@@ -166,7 +166,7 @@ object BundleTables:
     if summary.run != run then Left(BundleTableError.OtherRun("results", run, summary.run))
     else
       val invalid = rows.collectFirst {
-        case row @ QueryRow(_, _, _, _, _, QueryStatus.FailedAtScales(diagnostics))
+        case row @ QueryRow(_, _, _, _, _, QueryStatus.FailedAtScales(diagnostics), _)
             if diagnostics.size != summary.scaleLabels.size =>
           BundleTableError.FailureScales(
             run,

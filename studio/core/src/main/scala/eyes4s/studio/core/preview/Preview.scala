@@ -286,8 +286,14 @@ sealed abstract case class PreviewCounts private (
     eligiblePairs: Long,
     eligibleQueries: QueryCount,
     unmatchedQueries: QueryCount,
-    ambiguousMatches: Int
-) derives CanEqual
+    ambiguousMatches: Int,
+    knownFailingFocalQueries: Option[QueryCount]
+) derives CanEqual:
+  /** Pair-eligible queries without a known focal preparation failure.
+    * This is not a count of successful, scored contrasts.
+    */
+  def withoutKnownFocalFailure: Option[Int] =
+    knownFailingFocalQueries.map(n => eligibleQueries.value - n.value)
 
 object PreviewCounts:
   private def apply(
@@ -295,14 +301,16 @@ object PreviewCounts:
       eligiblePairs: Long,
       eligibleQueries: QueryCount,
       unmatchedQueries: QueryCount,
-      ambiguousMatches: Int
+      ambiguousMatches: Int,
+      knownFailingFocalQueries: Option[QueryCount]
   ): PreviewCounts =
     new PreviewCounts(
       eligiblePairsPerScale,
       eligiblePairs,
       eligibleQueries,
       unmatchedQueries,
-      ambiguousMatches
+      ambiguousMatches,
+      knownFailingFocalQueries
     ) {}
 
   def of(
@@ -310,7 +318,8 @@ object PreviewCounts:
       eligiblePairs: Long,
       eligibleQueries: Int,
       unmatchedQueries: Int,
-      ambiguousMatches: Int
+      ambiguousMatches: Int,
+      knownFailingFocalQueries: Option[Int] = None
   ): Either[PreviewError, PreviewCounts] =
     for
       _ <- PreviewCount.nonNegative("eligiblePairsPerScale", eligiblePairsPerScale)
@@ -318,39 +327,55 @@ object PreviewCounts:
       _ <- PreviewCount.nonNegative("eligibleQueries", eligibleQueries)
       _ <- PreviewCount.nonNegative("unmatchedQueries", unmatchedQueries)
       _ <- PreviewCount.nonNegative("ambiguousMatches", ambiguousMatches)
+      _ <- knownFailingFocalQueries.fold[Either[PreviewError, Unit]](Right(())) { n =>
+        PreviewCount
+          .nonNegative("knownFailingFocalQueries", n)
+          .flatMap(_ =>
+            Either.cond(
+              n <= eligibleQueries,
+              (),
+              PreviewError.BeyondTotal("knownFailingFocalQueries", n, eligibleQueries)
+            )
+          )
+      }
     yield PreviewCounts(
       eligiblePairsPerScale,
       eligiblePairs,
       QueryCount(eligibleQueries),
       QueryCount(unmatchedQueries),
-      ambiguousMatches
+      ambiguousMatches,
+      knownFailingFocalQueries.map(QueryCount(_))
     )
 
   given Encoder.AsObject[PreviewCounts] =
-    Encoder.forProduct5(
+    Encoder.forProduct6(
       "eligiblePairsPerScale",
       "eligiblePairs",
       "eligibleQueries",
       "unmatchedQueries",
-      "ambiguousMatches"
+      "ambiguousMatches",
+      "knownFailingFocalQueries"
     )(c =>
       (
         c.eligiblePairsPerScale,
         c.eligiblePairs,
         c.eligibleQueries.value,
         c.unmatchedQueries.value,
-        c.ambiguousMatches
+        c.ambiguousMatches,
+        c.knownFailingFocalQueries.map(_.value)
       )
     )
 
   given Decoder[PreviewCounts] = PreviewCount.decoder(
-    Decoder.forProduct5[Either[PreviewError, PreviewCounts], Long, Long, Int, Int, Int](
-      "eligiblePairsPerScale",
-      "eligiblePairs",
-      "eligibleQueries",
-      "unmatchedQueries",
-      "ambiguousMatches"
-    )(of)
+    Decoder
+      .forProduct6[Either[PreviewError, PreviewCounts], Long, Long, Int, Int, Int, Option[Int]](
+        "eligiblePairsPerScale",
+        "eligiblePairs",
+        "eligibleQueries",
+        "unmatchedQueries",
+        "ambiguousMatches",
+        "knownFailingFocalQueries"
+      )(of)
   )
 
 /** Receipt of a ready backend-owned preview. A caller may carry this receipt,

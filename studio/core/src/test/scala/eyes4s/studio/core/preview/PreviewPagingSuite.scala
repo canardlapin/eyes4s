@@ -62,7 +62,7 @@ class PreviewPagingSuite extends CatsEffectSuite:
         .collectFirst { case PreviewEvent.Ready(value) => value }
         .getOrElse(fail("not ready"))
       assertEquals(ready.candidates.candidatePairsPerScale, 219486L)
-      assertEquals(ready.counts, right(PreviewCounts.of(8969L, 44845L, 457, 9, 0)))
+      assertEquals(ready.counts, right(PreviewCounts.of(8969L, 44845L, 457, 9, 0, Some(3))))
       assertEquals(
         rest.collect { case PreviewEvent.Counting(_, p) => p }.last,
         progress(24, 24)
@@ -333,6 +333,27 @@ class PreviewPagingSuite extends CatsEffectSuite:
     val bad  =
       wire.hcursor.downField("counts").downField("eligibleQueries").withFocus(_ => 456.asJson)
     assert(bad.top.exists(_.as[PreviewReady].isLeft))
+  }
+
+  test(
+    "known failing focal queries partition eligible preparation status and refuse invalid counts"
+  ) {
+    import io.circe.syntax.*
+    val checked = right(PreviewCounts.of(8969L, 44845L, 457, 9, 0, Some(3)))
+    assertEquals(checked.withoutKnownFocalFailure, Some(454))
+    assertEquals(checked.asJson.as[PreviewCounts], Right(checked))
+    assertEquals(right(PreviewCounts.of(1L, 1L, 1, 0, 0)).withoutKnownFocalFailure, None)
+    assertEquals(
+      PreviewCounts.of(1L, 1L, 1, 0, 0, Some(-1)),
+      Left(PreviewError.Negative("knownFailingFocalQueries", -1L))
+    )
+    assertEquals(
+      PreviewCounts.of(1L, 1L, 1, 0, 0, Some(2)),
+      Left(PreviewError.BeyondTotal("knownFailingFocalQueries", 2L, 1L))
+    )
+    val bad =
+      checked.asJson.hcursor.downField("knownFailingFocalQueries").withFocus(_ => 458.asJson)
+    assert(bad.top.exists(_.as[PreviewCounts].isLeft))
   }
 
   test("preview decoders refuse what the constructors refuse") {

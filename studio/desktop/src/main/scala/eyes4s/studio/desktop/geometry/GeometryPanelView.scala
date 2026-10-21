@@ -726,6 +726,7 @@ object GeometryPanelView:
     value.setOnAction(_ => ref.foreach(r => fire(GeometryIntent.OpenCount(r))))
     val note: Label = label("geometry-note", "t11")
     note.setWrapText(true)
+    eyes4s.studio.desktop.shell.DisabledReason.attach(value, note)
     private val head = HBox(title, spacer(), value)
     head.setAlignment(Pos.CENTER_LEFT)
     val node: VBox = VBox(head, note)

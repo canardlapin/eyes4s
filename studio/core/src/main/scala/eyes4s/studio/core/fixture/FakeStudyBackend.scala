@@ -420,7 +420,29 @@ final class FakeStudyBackend[F[_]] private[fixture] (
   ): F[Either[BackendError, PreviewPage]] =
     revision(r).map(_.map { _ =>
       val rows = slice(study.queries, page).map { q =>
-        PreviewRow(q.key, q.item, q.response, q.matchedKey, q.controls, eligibility(q))
+        PreviewRow(
+          q.key,
+          q.item,
+          q.response,
+          Option.when(eligibility(q) == Eligibility.Eligible)(q.matchedKey),
+          q.controls,
+          eligibility(q),
+          if q.status == FailedStatus then Vector(offWindow(q)) else Vector.empty,
+          unadmittedControlReferences = study.inventory.collect {
+            case e
+                if e.trial.participant == q.participant &&
+                  e.trial.phase == Phase.Encoding && e.item != q.item &&
+                  e.disposition != TrialDisposition.Admitted =>
+              DeclaredReferenceAdmission(e.trial, e.disposition)
+          },
+          declaredReferences =
+            if q.status == NoMatchStatus then
+              ledgerOf
+                .get(q.matchedKey)
+                .toVector
+                .map(e => DeclaredReferenceAdmission(e.trial, e.disposition))
+            else Vector.empty
+        )
       }
       PreviewPage(r, PageInfo.of(page, study.queries.size, rows.size), rows)
     })
@@ -435,7 +457,8 @@ final class FakeStudyBackend[F[_]] private[fixture] (
         pairRowsOf(r),
         summary.eligibleQueries,
         summary.contrasts.noMatch,
-        ambiguousMatches = 0
+        ambiguousMatches = 0,
+        knownFailingFocalQueries = Some(study.queries.count(_.status == FailedStatus))
       )
     for
       candidates <- PreviewCandidates.of(
@@ -976,7 +999,20 @@ final class FakeStudyBackend[F[_]] private[fixture] (
   def queries(run: RunId, page: PageRequest): F[Either[BackendError, QueryPage]] =
     scored(run).map(_.map { _ =>
       val rows = slice(study.queries, page).map { q =>
-        QueryRow(q.key, q.item, q.response, q.matchedKey, q.controls, status(q))
+        QueryRow(
+          q.key,
+          q.item,
+          q.response,
+          Option.when(q.status != NoMatchStatus && q.status != QueryNotAdmitted)(q.matchedKey),
+          q.controls,
+          status(q),
+          if q.status == NoMatchStatus then
+            ledgerOf
+              .get(q.matchedKey)
+              .toVector
+              .map(e => DeclaredReferenceAdmission(e.trial, e.disposition))
+          else Vector.empty
+        )
       }
       QueryPage(run, PageInfo.of(page, study.queries.size, rows.size), rows)
     })

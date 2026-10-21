@@ -632,9 +632,11 @@ object ProtocolVersion:
     * totals/equations. 1.19 adds declared trial-relative extents with explicit
     * missing provenance and refuses every earlier peer before body decoding.
     * 1.20 serves recipe descriptors, field validation and scale advice.
+    * 1.21 distinguishes source-placement tallies from admission-only tallies
+    * and serves focal preparation failures and control admission facts.
     * Deploy client and backend together.
     */
-  val Current: ProtocolVersion = ProtocolVersion(1, 20)
+  val Current: ProtocolVersion = ProtocolVersion(1, 21)
 
 /** A client's correlation id; every frame answering a request carries it. */
 final case class RequestId(value: Long) derives CanEqual

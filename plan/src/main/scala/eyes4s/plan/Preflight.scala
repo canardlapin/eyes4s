@@ -179,6 +179,15 @@ enum StudyFinding[K, U <: Unit2D] extends PreflightFinding[K] derives CanEqual:
     */
   case NoFixationKept(key: K, tally: InitialFixationTally)
 
+  /** Whether this finding guarantees failure of the named trial before
+    * estimation at every scale. Other warnings may still affect its result;
+    * this predicate makes no claim about successful numerical scoring.
+    */
+  def failsTrialPreparation: Boolean = this match
+    case FrameMismatch(_, _) | NoFixationKept(_, _) | NoFixationInWindow(_, _) => true
+    case OffWindowFixations(_, _, policy) => policy == OffWindowPolicy.FailTrial
+    case _                                => false
+
   def keys: Vector[K] = this match
     case FrameMismatch(k, _)          => Vector(k)
     case DuplicateTrial(k, _, _)      => Vector(k)
@@ -622,8 +631,7 @@ object Preflight:
           prepared(plan, input, budget).fold(
             e => Vector(e),
             work =>
-              frames(work) ++ emptied(work) ++ windows(work) ++
-                schedule(work, inventory).fold(e => Vector(e), identity)
+              trialFindings(work) ++ schedule(work, inventory).fold(e => Vector(e), identity)
           )
         }
     new StudyReport(
@@ -633,6 +641,17 @@ object Preflight:
       describe(plan) ++ rest,
       studyUnchecked
     )
+
+  /** Trial-local findings of an already prepared study, in the same order as
+    * [[study]]: frame agreement, initial-fixation retention, then window
+    * occupancy. Reads only preparation tallies; it does not enumerate pair
+    * schedules, construct estimates or compare maps. Absence of a finding
+    * does not guarantee that later numerical scoring will succeed.
+    */
+  def trialFindings[K, U <: Unit2D, P, S, D](
+      work: PreparedStudy[K, U, P, S, D]
+  ): Vector[StudyFinding[K, U]] =
+    frames(work) ++ emptied(work) ++ windows(work)
 
   def recording[P](plan: RecordingPlan[P], available: Option[Recording[Px]]): RecordingReport =
     val actual    = available.map(r => ArtifactRef.of[Recording[Px]](r.contentHash))

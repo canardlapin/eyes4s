@@ -344,10 +344,9 @@ object WhyReference:
           Vector(participant, notAdmitted, queryOutside)
         )
       case QueryStatus.NoMatch(diagnostic) =>
-        // The served reason, never studio's own pairing: which reference
-        // trial would have matched depends on the layout and the occurrence
-        // rule, which only eyes4s applies (until ReferenceNotAdmitted is
-        // served, bd-01M3DPFRZDVYGNYMV6890SDN20).
+        // The library's reason and declared references, never a pairing
+        // inferred from the ledger. A declaration remains distinct from a
+        // usable matched reference; row.matched stays empty here.
         val why      = reason(diagnostic)
         val sentence = recipe.unmatched match
           case UnmatchedChoice.ReportNoMatch => WhyText(NoMatchReport, why)
@@ -359,7 +358,17 @@ object WhyReference:
             StudioRef.Trial(t)
           }
         )
-        WhyVM(sentence, Vector(participant, served, notAdmitted, queryOutside))
+        val declared = row.declaredReferences.map(r =>
+          InspectorFact(
+            WhyText(DeclaredReference),
+            WhyText(DeclaredReferenceDisposition, r.trial.label, disposition(r.disposition)),
+            Some(StudioRef.Trial(r.trial))
+          )
+        )
+        WhyVM(
+          sentence,
+          Vector(participant, served) ++ declared ++ Vector(notAdmitted, queryOutside)
+        )
       case status @ (QueryStatus.Failed(_) | QueryStatus.FailedAtScales(_)) =>
         val message = status
           .diagnosticAt(f.scale.value)

@@ -33,6 +33,8 @@ enum DesignTextId derives CanEqual:
   // --- Columns and rows ----------------------------------------------------------------------
   case ColParticipant, ColQuery, ColItem, ColMatched, ColControls, ColStatus, NoValue
   case StatusEligible, StatusNoMatch, StatusNoMatchBecause, StatusNotAdmitted
+  case StatusFocalFailure, StatusPreparationNote, PreparationNote
+  case StatusControlAdmission, ReferenceDisposition
   case DispositionAdmitted, DispositionAbsent, DispositionNoFixations, DispositionQuarantined
   case RowAccessible
 
@@ -77,7 +79,14 @@ object DesignText:
     case ColControls            => "Controls"
     case ColStatus              => "Status"
     case NoValue                => "—"
+    case StatusControlAdmission => "{0} · declared control candidates not admitted ({1}): {2}"
+    case ReferenceDisposition   => "{0} ({1})"
     case StatusEligible         => "Eligible"
+    case StatusFocalFailure     => "Eligible · focal trial will fail: {0}"
+    case StatusPreparationNote  => "Eligible · {0}"
+    case PreparationNote        =>
+      "Eligible queries: {0} without a known focal preparation failure; {1} focal trials will fail " +
+        "at every scale. Scores pending; other failures remain possible."
     case StatusNoMatch          => "No match"
     case StatusNoMatchBecause   => "No match · {0}"
     case StatusNotAdmitted      => "Query not admitted · {0}"

@@ -21,7 +21,7 @@
     "docs/studio/design/DataEmpty.dc.html": "039073f1f9389e31f04c48609633b3b1e8104b081419ef729c8222c441b5a70c",
     "docs/studio/design/Data.dc.html": "0d2928993b74cd87f000a422f6cb0781fcd770b87bc215db6d93d0fe51229d5c",
     "docs/studio/design/Explore.dc.html": "01106e9891ca9a50bd672616d6df47294e3f69273b0d7a37ef6a1b59833b864a",
-    "docs/studio/design/Analysis.dc.html": "574a5f9b43c82a553165b5fb802e74ad803a05bd1c9b7892559905cc803a29c5",
+    "docs/studio/design/Analysis.dc.html": "3f5b60cf4189a62b5b421cb68ba22c276d2de456a4673e5c4d296b267ad445f3",
     "docs/studio/design/Main.dc.html": "db89c4c5a89a3552dcd1edb4768c736b93451c2a66af34dcd02e2cc2ae9f7d92",
     "docs/studio/design/MainDark.dc.html": "ac9fb77428240c9b4d42e130e2388e847acfea61f0dd596c7020dc3eef4e2e79",
     "docs/studio/design/Results.dc.html": "2bd61274ff39744203c178e34c760c7f9d80662ee061cc8b9a1fa82c4b816bf1",
@@ -228,8 +228,8 @@
       "png": "Analysis-1x.png",
       "width": 1440,
       "height": 900,
-      "sha256": "961936e80c154133a71a992f654278adebd3f4485d2b6ad41b0214715bc2782c",
-      "text_sha256": "399fa0fcfe0a48a394072413d62efda792e34d8f68adf7877f2f6e5b8d7f97da",
+      "sha256": "bd6a3a52edca978b838d42eb29daf1c86b504198c58820ec53ad699cd0bd50f7",
+      "text_sha256": "dfe506d8591b10a5a2f2918630566d0b2d8fd0f602a9e5ed6e4f6de9012f15e1",
       "fonts": [
         {
           "family": "IBM Plex Sans",
@@ -642,8 +642,8 @@
       "png": "Analysis-2x.png",
       "width": 2880,
       "height": 1800,
-      "sha256": "aac2a9b0c085a49217045b2b27541d93367f7d8448f2c8efe46489104b870bfe",
-      "text_sha256": "399fa0fcfe0a48a394072413d62efda792e34d8f68adf7877f2f6e5b8d7f97da",
+      "sha256": "052462a37f75ea957d034840a53cc1019ef4e209eeed21feb9ccd25b3e880052",
+      "text_sha256": "dfe506d8591b10a5a2f2918630566d0b2d8fd0f602a9e5ed6e4f6de9012f15e1",
       "fonts": [
         {
           "family": "IBM Plex Sans",

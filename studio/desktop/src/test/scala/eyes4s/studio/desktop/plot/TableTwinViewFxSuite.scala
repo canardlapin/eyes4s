@@ -317,9 +317,22 @@ class TableTwinViewFxSuite extends StudioFxSuite:
       runOnFx(table.rowNode(2).get.getGraphic)
     )
     assertEquals(head.size, 3)
-    val total = head.map(_._2).sum
-    head.zip(shares).foreach { case ((_, w), share) =>
-      assertEqualsDouble(w / total, share, 0.01)
+    val total   = head.map(_._2).sum
+    val padding = runOnFx(
+      ask(table, AccessibleAttribute.HEADER)
+        .asInstanceOf[javafx.scene.Parent]
+        .getChildrenUnmodifiable
+        .asScala
+        .toVector
+        .map { n =>
+          val in = n.asInstanceOf[javafx.scene.layout.Region].getInsets
+          in.getLeft + in.getRight
+        }
+    )
+    assertEquals(padding, Vector(20.0, 20.0, 20.0))
+    val contentWidth = total - padding.sum
+    head.zip(shares).zip(padding).foreach { case (((_, w), share), inset) =>
+      assertEqualsDouble((w - inset) / contentWidth, share, 0.01)
     }
     // Five rows need no scroll bar: the columns line up to the pixel.
     head.zip(row).foreach { case ((hx, hw), (rx, rw)) =>

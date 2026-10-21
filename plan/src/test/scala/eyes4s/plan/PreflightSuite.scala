@@ -1036,6 +1036,34 @@ class PreflightSuite extends munit.FunSuite:
     assert(scale.estimation.forall(_._2.isLeft))
   }
 
+  test("retained trial findings agree with preflight without constructing comparisons") {
+    val sentinel = new Sentinel
+    val source   = StudyInput(Trials(rows.map(t => if t.key == a then trial(a, 3.0) else t)))
+    val p        = plan(source = source, method = sentinel.method)
+    val work     = get(p.prepare(source))
+    val actual   = Preflight.trialFindings(work)
+    val report   = Preflight.study(p, Some(source))
+    assert(actual.exists {
+      case StudyFinding.NoFixationInWindow(key, _) => key == a; case _ => false
+    })
+    assertEquals(actual, report.findings)
+    assertEquals(sentinel.factory, 0)
+    assertEquals(sentinel.comparisons, 0)
+  }
+
+  test("a trial failure is distinct from a warning about excluded off-window fixations") {
+    val source = StudyInput(Trials(rows.updated(0, trial(a, 3.0))))
+    val tally  = get(WindowTally.screen(frame, source.trials.rows.head.value))
+    assert(StudyFinding.NoFixationInWindow(a, tally).failsTrialPreparation)
+    assert(
+      !StudyFinding.OffWindowFixations(a, tally, OffWindowPolicy.Exclude).failsTrialPreparation
+    )
+    assert(
+      StudyFinding.OffWindowFixations(a, tally, OffWindowPolicy.FailTrial).failsTrialPreparation
+    )
+    assert(!StudyFinding.UncontrolledFocal[StudyKey, Px](a).failsTrialPreparation)
+  }
+
   test("a trial entirely off the screen is reported before running and fails as off-window") {
     val outside = StudyInput(
       Trials(Vector(trial(a, 5.0, y = 5.0), trial(b, 1.5), trial(ar, 0.5), trial(br, 1.5)))

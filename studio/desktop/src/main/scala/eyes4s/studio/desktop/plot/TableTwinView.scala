@@ -38,7 +38,7 @@ import javafx.event.EventHandler
 import javafx.scene.{AccessibleAction, AccessibleAttribute, AccessibleRole, Node}
 import javafx.scene.control.{ContentDisplay, Label, ListCell, ListView}
 import javafx.scene.input.{KeyEvent, MouseButton, MouseEvent}
-import javafx.scene.layout.{Pane, Priority, VBox}
+import javafx.scene.layout.{Pane, Priority, Region, VBox}
 
 import scala.jdk.CollectionConverters.*
 
@@ -214,7 +214,7 @@ final class TableTwinView private (initial: TableTwinState, dispatch: Intent => 
   /** How many rows the table lists. */
   def rowCount: Int = shown.fold(0)(_.rows.size)
 
-  /** The columns' shares of the width ([[TableColumns.shares]]). */
+  /** Text-content shares before the cells' actual insets ([[TableColumns.shares]]). */
   def columnShares: Vector[Double] = shares
 
   /** Lists `source`; a cursor on a row it lacks is dropped. */
@@ -583,14 +583,21 @@ object TableTwinView:
     */
   private[plot] final class ColumnRow(shares: () => Vector[Double]) extends Pane:
     override protected def layoutChildren(): Unit =
-      val in    = getInsets
-      val width = (getWidth - in.getLeft - in.getRight).max(0.0)
-      val h     = (getHeight - in.getTop - in.getBottom).max(0.0)
-      val kids  = getManagedChildren[Node].asScala.toVector
-      val fs    = shares()
-      val each  = if kids.isEmpty then 0.0 else 1.0 / kids.size
+      val in      = getInsets
+      val width   = (getWidth - in.getLeft - in.getRight).max(0.0)
+      val h       = (getHeight - in.getTop - in.getBottom).max(0.0)
+      val kids    = getManagedChildren[Node].asScala.toVector
+      val fs      = shares()
+      val each    = if kids.isEmpty then 0.0 else 1.0 / kids.size
+      val padding = kids.map {
+        case r: Region => r.getInsets.getLeft + r.getInsets.getRight
+        case _         => 0.0
+      }
+      val totalPadding = padding.sum
+      val contentWidth = (width - totalPadding).max(0.0)
+      val paddingScale = if totalPadding > width then width / totalPadding else 1.0
       kids.zipWithIndex.foldLeft(in.getLeft) { case (x, (k, i)) =>
-        val w = width * fs.lift(i).getOrElse(each)
+        val w = contentWidth * fs.lift(i).getOrElse(each) + padding(i) * paddingScale
         k.resizeRelocate(snapPositionX(x), in.getTop, snapSizeX(w), h)
         x + w
       }: Unit

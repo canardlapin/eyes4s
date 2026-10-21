@@ -78,7 +78,7 @@ class A11yRenderSuite extends ShellFxSuite:
       runOnFx(w.geometry.state.shown.isDefined)
     then
       eventually(fx, "the geometry panel's pictures and counts") {
-        w.geometry.shownPictures.isDefined && w.geometry.state.counts.toOption.isDefined
+        w.geometry.shownPictures.isDefined && w.geometry.state.placement.toOption.isDefined
       }
     if perspective == eyes4s.studio.core.document.Perspective.Explore then
       eventually(fx, "Explore inspector and navigation are served") {

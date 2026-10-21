@@ -124,6 +124,17 @@ stale) · "Analysis · rerun" (draft → Save & run) · "Reporting · no rerun" 
   "Matched cardinality ≠ 1 for 5 queries — choose occurrence".
 - Exact eligible counts exist only after paging the design (PairPage.Done): show "counting…" with
   a progress state until then; before paging show only the candidate pair count.
+- Pairing eligibility does not promise a scored contrast. The resolved-design preview separately
+  reports eligible focal trials with a library-known preparation failure (frame disagreement,
+  no fixation kept, no fixation in the window, or a failing off-window policy) and those without
+  one. Show their served per-trial reasons. Before execution, call the latter "without a known
+  focal preparation failure", not "contributing": reference failures and later numerical failures
+  are still possible. The fixture's 457 eligible queries split 454 + 3; its 454 contributing
+  contrasts are an execution result, even though the fixture's totals happen to agree.
+- For a smaller control pool, name declared reference candidates that admission did not admit,
+  with their dispositions, as served by the library for the pairing's participant/item/occurrence
+  rules. Do not call their count a number of lost pairs: another admitted occurrence can substitute
+  under First/Last, and sampling can omit a reference independently of admission.
 - Identity: show "input digest sha256:9f2c…e41 · plan rev 5", never an invented fingerprint.
 - Reporting: participant means, equal weight; per-group n; paired n; the unit is the query trial.
 - Say "record" (fixations.csv record 7,214), not "row". Show raw and transformed coordinates.

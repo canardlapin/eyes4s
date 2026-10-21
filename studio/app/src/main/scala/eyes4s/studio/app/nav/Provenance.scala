@@ -153,7 +153,13 @@ object Provenance:
         // A found or missing count lies under the count it is part of.
         case StudioRef.DisplayTally(_, _) => ref.parent.map(Place.At(_))
         // A trial's placement tally lies under the revision's window tally.
-        case StudioRef.TrialPlacementTally(_, _) => ref.parent.map(Place.At(_))
+        case StudioRef.TrialPlacementTally(dataset, _) =>
+          trail.reverseIterator
+            .collectFirst {
+              case p @ Place.At(StudioRef.PlacementTally(d, _)) if d == dataset => p
+            }
+            .orElse(ref.parent.map(Place.At(_)))
+        case StudioRef.PlacementTally(_, _) => ref.parent.map(Place.At(_))
         // An outcome's tally lies under the requested queries' tally.
         case StudioRef.QueryTally(_, _) => ref.parent.map(Place.At(_))
         // A report count lies under its role's eligible queries.

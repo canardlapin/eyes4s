@@ -335,7 +335,8 @@ object RealPreview:
           counts.totalPairs,
           counts.eligibleQueries.toInt,
           unmatched.reasons.size,
-          counts.cardinality.multiple.size + counts.cardinality.ambiguousReferences.size
+          counts.cardinality.multiple.size + counts.cardinality.ambiguousReferences.size,
+          Some(prepared.knownFailingFocalQueries)
         )
         .leftMap(e => refused(configured, "preview counts")(e.message))
       diagnostics = unmatched.reasons.map { (key, reason) =>
@@ -345,6 +346,7 @@ object RealPreview:
           )
         )
       } ++ cardinality(counts).map(finding => RealResults.diagnostic(Diagnostic.of(finding))) ++
+        prepared.trialFindings.map(finding => RealResults.diagnostic(Diagnostic.of(finding))) ++
         prepared.pairingRefusal.toVector.collect {
           case error: eyes4s.plan.PlanError.UnmatchedFocalRefused =>
             RealResults.diagnostic(Diagnostic.of(error))
@@ -411,7 +413,9 @@ object RealPreview:
   private def allRows(prepared: RealPrepared): Either[BackendError, Vector[PreviewRow]] =
     val requested =
       prepared.admitted.ledger.filter(_.trial.phase == prepared.recipe.phases.focal)
-    val keys = prepared.preview.focalKeys.map(key => RealResults.key(key) -> key).toMap
+    val keys       = prepared.preview.focalKeys.map(key => RealResults.key(key) -> key).toMap
+    val references =
+      prepared.preview.referenceKeys.map(key => RealResults.key(key) -> key).toMap
     for
       inventory <- prepared.admitted.evidence.inventory.toRight(
         BackendError.Unavailable(
@@ -428,6 +432,28 @@ object RealPreview:
         inventory,
         prepared.plan.expectedUnmatched
       )
+      controlAdmission = eyes4s.plan.ControlPoolAdmission
+        .of(
+          prepared.plan.layout,
+          prepared.plan.pairing,
+          prepared.plan.referencePhase,
+          prepared.preview.focalKeys,
+          inventory
+        )
+        .map { (key, references) =>
+          RealResults.key(key) -> references.map { r =>
+            DeclaredReferenceAdmission(
+              TrialKey(
+                r.trial.participant,
+                Phase(r.trial.phase),
+                r.trial.trial,
+                r.trial.occurrence.value
+              ),
+              TrialDisposition.of(r.disposition)
+            )
+          }
+        }
+        .toMap
       rows <- requested.traverse { entry =>
         val membership: Either[BackendError, (Option[TrialKey], Option[Int], Eligibility)] =
           entry.disposition match
@@ -505,6 +531,34 @@ object RealPreview:
               DiagnosticLocus.Artifact(s"${entry.trial.label} response is not declared.")
             )
           )
-        yield PreviewRow(entry.trial, entry.item, response, reference, controls, eligibility)
+        yield
+          val focalFindings = keys
+            .get(entry.trial)
+            .toVector
+            .flatMap(k => prepared.trialFindingsByKey.getOrElse(k, Vector.empty))
+          val referenceFindings = reference.toVector.flatMap { ref =>
+            references
+              .get(ref)
+              .toVector
+              .flatMap(k => prepared.trialFindingsByKey.getOrElse(k, Vector.empty))
+          }
+          def diagnostic(f: StudyFinding[CoreKey, eyes4s.kernel.Unit2D.Px]) =
+            RealResults.diagnostic(Diagnostic.of(f))
+          PreviewRow(
+            entry.trial,
+            entry.item,
+            response,
+            reference,
+            controls,
+            eligibility,
+            focalFindings.filter(_.failsTrialPreparation).map(diagnostic),
+            (focalFindings.filterNot(_.failsTrialPreparation) ++ referenceFindings)
+              .map(diagnostic),
+            controlAdmission.getOrElse(entry.trial, Vector.empty),
+            keys
+              .get(entry.trial)
+              .flatMap(unmatched.reason)
+              .fold(Vector.empty[DeclaredReferenceAdmission])(RealResults.declaredReferences)
+          )
       }
     yield rows
