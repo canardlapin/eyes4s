@@ -1,0 +1,28 @@
+{
+  "schema": 1,
+  "source_commit": "c50e5b5d5c7c91a28a49966a530aba94667026fc",
+  "workflow": "https://github.com/canardlapin/eyes4s/actions/runs/39560428048",
+  "jobs": [
+    {
+      "id": 119090095045,
+      "name": "Test (ubuntu-22.04, 3, temurin@17, rootJVM)",
+      "conclusion": "success"
+    },
+    {
+      "id": 119090095425,
+      "name": "Test (ubuntu-22.04, 3, temurin@21, rootJVM)",
+      "conclusion": "success"
+    },
+    {
+      "id": 119090095480,
+      "name": "Test (ubuntu-22.04, 3, temurin@17, rootJS)",
+      "conclusion": "success"
+    },
+    {
+      "id": 119090095504,
+      "name": "Generate Site (ubuntu-22.04, temurin@17)",
+      "conclusion": "success"
+    }
+  ],
+  "scope": "All general Checks jobs green after adding seven existing public guides to documentation coverage. Code/tests/build are identical to b57d06d1 and frozen final candidate a6219568; metadata-only followups are independently checked."
+}

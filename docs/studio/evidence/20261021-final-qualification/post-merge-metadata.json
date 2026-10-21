@@ -1,0 +1,40 @@
+{
+  "schema": 1,
+  "candidate": "d3ef982d3e6c007e32b1c0d2d969b22058a0ccbc",
+  "tree": "fb05c92d151614f5fa05417cd65df7f9aba06ff5",
+  "source_fingerprint": "304d01ddc72f6ed1a8a54db61a2f4912d75650181287023c3d916b2b62f3283a",
+  "metadata_only_files": [
+    "docs/studio/PARITY_CHECKLIST.md",
+    "docs/studio/evidence/20261021-doc-classification/review.json",
+    "docs/studio/evidence/20261021-final-qualification/qualification.json",
+    "docs/studio/evidence/20261021-native-output-scale/hosted-light-2x.png",
+    "docs/studio/evidence/20261021-native-output-scale/hosted-native-output-scale.json",
+    "docs/studio/evidence/20261021-native-output-scale/hosted-review.json",
+    "tools/api-audit/evidence.json",
+    "tools/api-audit/inventory-provenance.json",
+    "tools/doc-examples.json"
+  ],
+  "checks": [
+    {
+      "name": "werror",
+      "exit_code": 0,
+      "seconds": 84.03268091706559,
+      "log": "/private/tmp/eyes4s-post-metadata-werror-20261021.log",
+      "sha256": "773692bc7367e89075c2a0f01ea876fd675917b21036a7558dad0c4cc5c89b45"
+    },
+    {
+      "name": "boundaries-site",
+      "exit_code": 0,
+      "seconds": 52.483781249728054,
+      "log": "/private/tmp/eyes4s-post-metadata-boundaries-site-20261021.log",
+      "sha256": "9e3fabb9ae7ce73f5b9e2120b11122aeead0416272fbf57a77e46e85b9f59026"
+    },
+    {
+      "name": "documentation",
+      "exit_code": 0,
+      "seconds": 298.3582734996453,
+      "log": "/private/tmp/eyes4s-post-metadata-documentation-20261021.log",
+      "sha256": "8ac5231a20fd9d71ce6ed202bda5c8251692a14958a9af2d86a913c1f2825cb2"
+    }
+  ]
+}
