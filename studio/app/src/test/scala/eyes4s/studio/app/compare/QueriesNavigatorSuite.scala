@@ -96,7 +96,7 @@ class QueriesNavigatorSuite extends munit.FunSuite:
           ("Contributing", "454"),
           ("Failed (empty map)", "3"),
           ("No match · query not admitted", "9 · 14"),
-          ("No study trial, by design", "n/a")
+          ("By design (n/a for this preset)", "n/a")
         )
       )
       assertEquals(vm.strip.map(_.failure), Vector(false, false, true, false, false))
@@ -112,7 +112,15 @@ class QueriesNavigatorSuite extends munit.FunSuite:
     assertEquals(line.refs, Vector(StudioRef.QueryTally(run7, QueryCount.ByDesign)))
     assert(!line.failure)
     assertEquals(QueriesNavigator.strip(run7, counts.copy(byDesign = Some(0))).last.count, "0")
-    assertEquals(QueriesNavigator.strip(run7, counts.copy(byDesign = None)).last.count, "n/a")
+    val unavailable = QueriesNavigator.strip(run7, counts.copy(byDesign = None)).last
+    assertEquals(unavailable.count, "n/a")
+    assertEquals(unavailable.label, "By design (n/a for this preset)")
+    assertEquals(unavailable.refs, Vector.empty)
+    assertEquals(line.label, "No study trial, by design")
+    assertEquals(
+      QueriesNavigator.strip(run7, counts.copy(byDesign = Some(0))).last.label,
+      line.label
+    )
   }
 
   test(

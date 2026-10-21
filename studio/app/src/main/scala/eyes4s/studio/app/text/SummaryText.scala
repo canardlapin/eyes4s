@@ -56,7 +56,8 @@ enum SummaryTextId derives CanEqual:
     * header, a query's status, and the count strip.
     */
   case ParticipantHeader, DColumn, Filter
-  case StripRequested, StripContributing, StripFailed, StripNoMatchNotAdmitted, StripByDesign
+  case StripRequested, StripContributing, StripFailed, StripNoMatchNotAdmitted, StripByDesign,
+    StripByDesignNotApplicable
   case StripPair, NotApplicable, ItemHeader
 
   /** A run's query tally (StudioRef.QueryTally) as a path, the outcomes'
@@ -123,6 +124,7 @@ object SummaryText:
       case StripFailed                => "Failed (empty map)"
       case StripNoMatchNotAdmitted    => "No match · query not admitted"
       case StripByDesign              => "No study trial, by design"
+      case StripByDesignNotApplicable => "By design (n/a for this preset)"
       case StripPair                  => "{0} · {1}"
       case NotApplicable              => "n/a"
       case ItemHeader                 => "{0} queries"

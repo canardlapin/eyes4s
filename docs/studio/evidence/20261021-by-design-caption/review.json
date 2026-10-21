@@ -1,0 +1,25 @@
+{
+  "schema": 1,
+  "review_date": "2026-10-21",
+  "mote": "bd-01M5E637J24JYT6FHQW336E01P",
+  "state": "focused correction passed; combined full qualification pending",
+  "failed_candidate": "30261d60a3eab71062a7a71cfb1996b1bef173f0",
+  "failed_tree": "bf17f5b8d2ea3716fdaa8ebc644cc13420b2ddc7",
+  "failed_phase": "strict Studio: one QueriesNavigatorFxSuite caption expectation failed; 752 desktop tests passed and one opt-in private test was ignored",
+  "cause": "A generic new by-design label was used even when the backend served no by-design category. The existing native board fixture required the unavailable qualifier.",
+  "correction": "None retains By design (n/a for this preset), value n/a, and no tally refs. Some(0) and positive counts use No study trial, by design, a numerical value and the real tally ref.",
+  "checks": {
+    "QueriesNavigatorSuite_each_platform": 15,
+    "QueriesNavigatorFxSuite": 4,
+    "studioStyleCheck": "passed"
+  },
+  "limits": [
+    "The original failed gate and its canonical pass remain separate evidence. This correction does not by itself qualify or land the combined candidate."
+  ],
+  "source_sha256": {
+    "studio/app/src/main/scala/eyes4s/studio/app/compare/QueriesNavigator.scala": "8c788e99b9d997d31210ce0f86e64d9f8bb7756578d8b353d8edd23c9a5189ac",
+    "studio/app/src/main/scala/eyes4s/studio/app/text/SummaryText.scala": "7c1579f320decd35e881a6c7f154accf3dd3de69033ba69c14dde137398e115c",
+    "studio/app/src/test/scala/eyes4s/studio/app/compare/QueriesNavigatorSuite.scala": "4f281533c13184fb3ea49183b0dd0225aa392721c567b67477ea575d43a1d041"
+  },
+  "failed_gate_log_sha256": "344f038f71d7f096256c897fe2da6a99826d82eafedc55941d4bc906d2b6b10b"
+}

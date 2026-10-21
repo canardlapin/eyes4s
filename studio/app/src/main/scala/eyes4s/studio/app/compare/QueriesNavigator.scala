@@ -314,7 +314,7 @@ object QueriesNavigator:
         tally(QueryCount.NoMatch) ++ tally(QueryCount.QueryNotAdmitted)
       ),
       StripLine(
-        SummaryText(StripByDesign),
+        SummaryText(if c.byDesign.isDefined then StripByDesign else StripByDesignNotApplicable),
         c.byDesign.fold(SummaryText(NotApplicable))(n => Format.count(n.toLong)),
         false,
         c.byDesign.fold(Vector.empty[StudioRef])(_ => tally(QueryCount.ByDesign))
