@@ -1,0 +1,36 @@
+{
+  "schema": 1,
+  "date": "2026-10-21",
+  "source_commit": "b57d06d16d93c7d5f6740f6758a1d8d2a5adfca4",
+  "workflow": "https://github.com/canardlapin/eyes4s/actions/runs/39556719934",
+  "all_jobs": "success",
+  "artifact_id": 12327601071,
+  "desktop_reports": 127,
+  "desktop_totals": {
+    "tests": 781,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 2
+  },
+  "observed": {
+    "nativeScaleX": 2.0,
+    "nativeScaleY": 2.0,
+    "requiredScale": 2,
+    "hostOverride": false,
+    "deviceWidth": 512,
+    "deviceHeight": 384,
+    "stripeWidthDevicePixels": 1,
+    "rasterDifferenceFraction": 0.0,
+    "maximumDifferenceFraction": 0.005
+  },
+  "files": {
+    "hosted-native-output-scale.json": "cfc39a4ab7d0b27bfa3f6cc6b20ca27dba96a2988c110a5ab72362ab947e33dc",
+    "hosted-light-2x.png": "2d0cdc2f857a5fae86f23a1d676e5ec8b3ec0c5504505d62277c42a4b4a857f4"
+  },
+  "review": "Viewed actual 512x384 PNG; three sharp black vertical feedback lines. Full desktop tests passed under actual GTK output2. This is no whole-board or physical macOS Retina qualification.",
+  "skips": [
+    "PrivateDensityFxSuite is explicitly opt-in and no private fixture acceptance is claimed.",
+    "HarnessSmokeSuite Monocle-only assertion is inapplicable to this real GTK job."
+  ],
+  "desktop_passed": 779
+}
