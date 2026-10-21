@@ -127,6 +127,9 @@ abstract class BackendConformanceSuite extends CatsEffectSuite:
           case Eligibility.NoMatch(d) =>
             assertEquals(d.code, "study-finding.unmatched-focal")
             assert(d.subject.contains(DiagnosticLocus.Trial(row.query)), d)
+          case Eligibility.ByDesign(d) =>
+            assertEquals(d.code, "study-finding.unmatched-focal")
+            assert(d.subject.contains(DiagnosticLocus.Trial(row.query)), d)
           case Eligibility.QueryNotAdmitted(disposition) =>
             assertNotEquals(disposition, TrialDisposition.Admitted)
           case Eligibility.Eligible => ()

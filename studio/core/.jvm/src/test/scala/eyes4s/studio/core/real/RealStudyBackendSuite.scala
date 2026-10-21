@@ -668,6 +668,7 @@ class RealStudyBackendSuite extends CatsEffectSuite:
           val expected = scores._1.map(q => q.key -> q).toMap
           rows.foreach { row =>
             row.status match
+              case QueryStatus.ByDesign(_) => fail("golden fixture has no by-design query")
               case QueryStatus.Contributing(ms, bs, ds) =>
                 val pinned = expected(row.query)
                 assertEquals(pinned.status, "contributing")

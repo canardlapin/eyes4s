@@ -75,7 +75,7 @@ application parity is qualified separately below.
 
 ## Analysis (moment t2)
 - [x] Three presets and an explicit inventory column/value selection for expected-unmatched trials. Library tests prove that item collisions, including a dropped studied item, cannot create pairs.
-- [ ] The native preview/result projection must also carry the library's by-design classification into count strips and filters (`bd-01M5E637J24JYT6FHQW336E01P`). Existing `RealPreviewCursorSuite` classification tests inspect library work; they do not yet qualify the service receipt/rows.
+- [ ] Native by-design projection is implemented and passes focused JVM/JS checks; full qualification and landing remain pending (`bd-01M5E637J24JYT6FHQW336E01P`). `RealPreviewCursorSuite` now checks service receipts, rows, acceptance and completed native results, including an item-ID collision and a mixed four-status cohort. See [the bounded evidence receipt](evidence/20261021-by-design/review.json).
 - [x] Recipe sentence with role-coloured tokens. Window, grid and initial-fixation controls use served descriptors; their board tags now read "served UI-A / UI-F". `DescriptorFormSuite` adds a synthetic field without changing the Studio renderer.
 - [x] Scales 0.5 / 1 / 2 / 4 (+8° in the draft), cell 0.46°, and the 0.5° and 8° warnings. Values and warnings are served by eyes4s; `ScalesEditorSuite` checks the drawn warnings, one Tab stop and keyboard removal.
 - [x] The served pairing control persists “Report as no match”; the generic field label is “Focal trials without a matched reference”.

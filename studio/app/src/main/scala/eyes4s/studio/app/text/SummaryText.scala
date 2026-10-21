@@ -38,7 +38,7 @@ enum SummaryTextId derives CanEqual:
   case Query, Item, Response, Status, M, B, D
 
   /** A query's status when it has no scores. */
-  case StatusFailed, StatusNoMatch, StatusNotAdmitted, StatusContributing
+  case StatusFailed, StatusNoMatch, StatusNotAdmitted, StatusContributing, StatusByDesign
 
   /** The notes beside the participant plot (Results board). */
   case PairedN, WeightingParticipantMeans, WeightingPooledQueries, Unit, GroupRange
@@ -99,6 +99,7 @@ object SummaryText:
       case B                          => "B"
       case D                          => "D"
       case StatusFailed               => "failed"
+      case StatusByDesign             => "no study trial, by design"
       case StatusNoMatch              => "no match"
       case StatusNotAdmitted          => "not admitted"
       case StatusContributing         => "contributing"
@@ -121,7 +122,7 @@ object SummaryText:
       case StripContributing          => "Contributing"
       case StripFailed                => "Failed (empty map)"
       case StripNoMatchNotAdmitted    => "No match · query not admitted"
-      case StripByDesign              => "By design (n/a for this preset)"
+      case StripByDesign              => "No study trial, by design"
       case StripPair                  => "{0} · {1}"
       case NotApplicable              => "n/a"
       case ItemHeader                 => "{0} queries"
@@ -164,6 +165,7 @@ object SummaryText:
       case QueryCount.Requested        => StripRequested
       case QueryCount.Contributing     => StripContributing
       case QueryCount.Failed           => StripFailed
+      case QueryCount.ByDesign         => StripByDesign
       case QueryCount.NoMatch          => TallyNoMatch
       case QueryCount.QueryNotAdmitted => TallyNotAdmitted
     apply(TallyOf, apply(what), run.number.toString)

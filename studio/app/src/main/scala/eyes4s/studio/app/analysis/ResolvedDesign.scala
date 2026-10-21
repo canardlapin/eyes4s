@@ -51,14 +51,12 @@ final case class DesignTarget(
 enum DesignFilter derives CanEqual:
   case All, Eligible, NoMatch, NotAdmitted, ByDesign
 
-  /** Whether a row of `eligibility` passes. No backend row is by design yet:
-    * a recipe without that category has none, and one with it (S7.1) adds
-    * its own eligibility.
-    */
+  /** Whether a row of backend-served `eligibility` passes. */
   def admits(eligibility: Eligibility): Boolean = (this, eligibility) match
     case (All, _)                                       => true
     case (Eligible, Eligibility.Eligible)               => true
     case (NoMatch, Eligibility.NoMatch(_))              => true
+    case (ByDesign, Eligibility.ByDesign(_))            => true
     case (NotAdmitted, Eligibility.QueryNotAdmitted(_)) => true
     case _                                              => false
 

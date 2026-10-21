@@ -36,7 +36,8 @@ class RealPreviewCursorSuite extends CatsEffectSuite:
       .copy(layout = DefinitionRef.fromCore(eyes4s.plan.TrialKeyDefinitions.trialLayout))
   private def admitPair(
       withReference: Boolean,
-      focalOutsideWindow: Boolean = false
+      focalOutsideWindow: Boolean = false,
+      mixed: Boolean = false
   ): AdmittedDataset =
     val original = get(document.dataset(StoryMoments.r3).toRight("no dataset"))
     val displays = get(GoldenAssets.rows)
@@ -52,11 +53,21 @@ class RealPreviewCursorSuite extends CatsEffectSuite:
         row.trial.participant == focal.trial.participant && row.item == focal.item && row.trial.phase == recipe.phases.reference
       )
       .getOrElse(fail("no reference"))
-    val selected  = Vector(focal, reference)
+    val lure    = focal.copy(trial = focal.trial.copy(trial = "lure_collision"))
+    val missing =
+      focal.copy(trial = focal.trial.copy(trial = "old_missing"), item = "missing-item")
+    val missingRef =
+      reference.copy(trial = reference.trial.copy(trial = "missing_ref"), item = "missing-item")
+    val absent   = focal.copy(trial = focal.trial.copy(trial = "absent_lure"))
+    val selected = if mixed then Vector(focal, reference, lure, missing, missingRef, absent)
+    else Vector(focal, reference)
     val fixations =
       "participant,phase,trial,occurrence,ordinal,onset_ms,duration_ms,x,y,sample_count\n" +
         selected
-          .filter(row => withReference || row == focal)
+          .filter(row =>
+            (withReference || row == focal) &&
+              (!mixed || (row != missingRef && row != absent))
+          )
           .map { row =>
             val x = if focalOutsideWindow && row == focal then 100 else 600
             s"${row.trial.participant},${row.trial.phase.label},${row.trial.trial},${row.trial.occurrence},1,0,100,$x,300,1"
@@ -65,9 +76,11 @@ class RealPreviewCursorSuite extends CatsEffectSuite:
     val inventory =
       "participant,phase,trial,occurrence,item,response,display_kind,image_file\n" +
         selected
-          .map(row =>
-            s"${row.trial.participant},${row.trial.phase.label},${row.trial.trial},${row.trial.occurrence},${row.item},Remembered,${row.kind},${row.file}"
-          )
+          .map { row =>
+            val response =
+              if mixed && (row == lure || row == absent) then "Lure" else "Remembered"
+            s"${row.trial.participant},${row.trial.phase.label},${row.trial.trial},${row.trial.occurrence},${row.item},$response,${row.kind},${row.file}"
+          }
           .mkString("\n") + "\n"
     val texts   = Map(SourceRole.Fixations -> fixations, SourceRole.Trials -> inventory)
     val sources = get(
@@ -79,8 +92,15 @@ class RealPreviewCursorSuite extends CatsEffectSuite:
         )
       )
     )
-    val spec = original.copy(sources = sources)
-    get(RealAdmission.admit(spec, fixations, inventory, get(GoldenAssets.registry(spec))))
+    val spec     = original.copy(sources = sources)
+    val registry = get(
+      eyes4s.studio.core.assets.AssetRegistry.fromRows(
+        spec,
+        selected,
+        get(GoldenAssets.stimuli).map(_.asset)
+      )
+    )
+    get(RealAdmission.admit(spec, fixations, inventory, registry))
   private lazy val admitted   = admitPair(true)
   private lazy val configured =
     get(RealPrepared.configure(StoryMoments.rev4, StoryMoments.r3, recipe, admitted))
@@ -388,5 +408,110 @@ class RealPreviewCursorSuite extends CatsEffectSuite:
         get(RealPrepared.configure(StoryMoments.rev4, StoryMoments.r3, recipe, data))
       if withReference then assertEquals(get(original.work.counts).matched.eligiblePairs, 1L)
       else assertEquals(get(original.work.unmatchedReasons(inventory)).notAdmitted, 1)
+      for
+        service <- RealPreview.create[IO]
+        opening <- service.begin(configured, onePage).take(1).compile.toVector
+        initial = get(opening.head) match
+          case event: PreviewEvent.Initial => event
+          case other                       => fail(s"expected Initial, got $other")
+        events <- finish(service, initial.id)
+        rows   <- service.rows(configured.revision, get(PageRequest.of(0, 10)))
+        ready = events.collectFirst { case PreviewEvent.Ready(r) => r }.get
+        accepted <- service.accept(ready)(_ => IO.pure(Right(ready.stamp)))
+      yield
+        assertEquals(initial.candidates.byDesignQueries.map(_.value), Some(1))
+        assertEquals(ready.counts.unmatchedQueries.value, 0)
+        assertEquals(ready.counts.eligibleQueries.value, 0)
+        val row = get(rows).rows.head
+        assert(row.eligibility.isInstanceOf[Eligibility.ByDesign])
+        assertEquals(row.matched, None)
+        assertEquals(row.controls, None)
+        assertEquals(row.declaredReferences, Vector.empty)
+        val prepared = get(accepted)
+        assert(prepared.work eq configured.work)
+        val held = RealStudyBackend.RealRun(
+          prepared,
+          get(prepared.work.run),
+          RealStudyBackend.RunOrigin.Computed
+        )
+        val result = get(RealResults.of(RunId(91), held))
+        val query  = get(result.queryRows).head
+        assert(query.status.isInstanceOf[QueryStatus.ByDesign])
+        assertEquals(query.matched, None)
+        val address = ResultAddress.ContrastRow(0, query.query)
+        assertEquals(get(result.inspect(address)), Inspection.Unscored(address, query.status))
+        val summary = get(result.summary)
+        assertEquals(summary.contrasts.byDesign, Some(1))
+        assertEquals(summary.contrasts.noMatch, 0)
+        assertEquals(summary.participants.head.byDesign, 1)
+    }
+  }
+
+  test(
+    "mixed native query accounting separates eligible, missing reference, by-design and unadmitted"
+  ) {
+    val data       = admitPair(true, mixed = true)
+    val rule       = get(eyes4s.plan.ExpectedUnmatchedRule.of("response", Vector("Lure")))
+    val configured = get(
+      RealPrepared.configure(
+        StoryMoments.rev4,
+        StoryMoments.r3,
+        recipe.copy(expectedUnmatched = Some(rule)),
+        data
+      )
+    )
+    for
+      service <- RealPreview.create[IO]
+      opening <- service.begin(configured, onePage).take(1).compile.toVector
+      initial = get(opening.head) match
+        case event: PreviewEvent.Initial => event
+        case other                       => fail(s"expected Initial, got $other")
+      events <- finish(service, initial.id)
+      page   <- service.rows(configured.revision, get(PageRequest.of(0, 10)))
+      ready = events.collectFirst { case PreviewEvent.Ready(r) => r }.get
+      accepted <- service.accept(ready)(_ => IO.pure(Right(ready.stamp)))
+    yield
+      assertEquals(initial.candidates.requestedQueries.value, 4)
+      assertEquals(initial.candidates.queriesNotAdmitted.value, 1)
+      assertEquals(initial.candidates.byDesignQueries.map(_.value), Some(1))
+      assertEquals(ready.counts.eligibleQueries.value, 1)
+      assertEquals(ready.counts.unmatchedQueries.value, 1)
+      val rows = get(page).rows
+      assertEquals(rows.map(_.eligibility).count(_ == Eligibility.Eligible), 1)
+      assertEquals(rows.count(_.eligibility.isInstanceOf[Eligibility.ByDesign]), 1)
+      assertEquals(rows.count(_.eligibility.isInstanceOf[Eligibility.NoMatch]), 1)
+      assertEquals(rows.count(_.eligibility.isInstanceOf[Eligibility.QueryNotAdmitted]), 1)
+      val prepared = get(accepted)
+      assert(prepared.work eq configured.work)
+      val held = RealStudyBackend.RealRun(
+        prepared,
+        get(prepared.work.run),
+        RealStudyBackend.RunOrigin.Computed
+      )
+      val result = get(RealResults.of(RunId(92), held))
+      val c      = get(result.summary).contrasts
+      assertEquals(c.requested, 4)
+      assertEquals(c.queryNotAdmitted, 1)
+      assertEquals(c.byDesign, Some(1))
+      assertEquals(c.noMatch, 1)
+      assertEquals(c.contributing + c.failed, 1)
+  }
+
+  test("an explicit unmatched category with no admitted members serves zero rather than n/a") {
+    val rule       = get(eyes4s.plan.ExpectedUnmatchedRule.of("response", Vector("Lure")))
+    val configured = get(
+      RealPrepared.configure(
+        StoryMoments.rev4,
+        StoryMoments.r3,
+        recipe.copy(expectedUnmatched = Some(rule)),
+        admitted
+      )
+    )
+    RealPreview.create[IO].flatMap(_.begin(configured, onePage).take(1).compile.toVector).map {
+      events =>
+        get(events.head) match
+          case PreviewEvent.Initial(_, _, candidates) =>
+            assertEquals(candidates.byDesignQueries.map(_.value), Some(0))
+          case other => fail(s"expected Initial, got $other")
     }
   }

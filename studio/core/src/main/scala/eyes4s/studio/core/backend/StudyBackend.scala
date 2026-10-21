@@ -634,9 +634,10 @@ object ProtocolVersion:
     * 1.20 serves recipe descriptors, field validation and scale advice.
     * 1.21 distinguishes source-placement tallies from admission-only tallies
     * and serves focal preparation failures and control admission facts.
+    * 1.22 carries native by-design preview/result statuses and distinct counts.
     * Deploy client and backend together.
     */
-  val Current: ProtocolVersion = ProtocolVersion(1, 21)
+  val Current: ProtocolVersion = ProtocolVersion(1, 22)
 
 /** A client's correlation id; every frame answering a request carries it. */
 final case class RequestId(value: Long) derives CanEqual

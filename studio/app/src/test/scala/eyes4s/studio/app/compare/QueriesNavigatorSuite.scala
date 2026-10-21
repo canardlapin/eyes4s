@@ -96,13 +96,23 @@ class QueriesNavigatorSuite extends munit.FunSuite:
           ("Contributing", "454"),
           ("Failed (empty map)", "3"),
           ("No match · query not admitted", "9 · 14"),
-          ("By design (n/a for this preset)", "n/a")
+          ("No study trial, by design", "n/a")
         )
       )
       assertEquals(vm.strip.map(_.failure), Vector(false, false, true, false, false))
       val c = s.answered.get.contrasts
       assertEquals(c.requested, c.contributing + c.failed + c.noMatch + c.queryNotAdmitted)
     }
+  }
+
+  test("the completed-run by-design strip carries its served count and provenance") {
+    val counts = eyes4s.studio.core.backend.QueryContrasts(4, 1, 1, 0, 1, Some(1))
+    val line   = QueriesNavigator.strip(run7, counts).last
+    assertEquals(line.count, "1")
+    assertEquals(line.refs, Vector(StudioRef.QueryTally(run7, QueryCount.ByDesign)))
+    assert(!line.failure)
+    assertEquals(QueriesNavigator.strip(run7, counts.copy(byDesign = Some(0))).last.count, "0")
+    assertEquals(QueriesNavigator.strip(run7, counts.copy(byDesign = None)).last.count, "n/a")
   }
 
   test(

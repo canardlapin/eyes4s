@@ -35,7 +35,7 @@ enum WhyTextId derives CanEqual:
   case SelectionCounted, SelectionUncounted
 
   /** A query that has no reference, by its status and the recipe's policy. */
-  case NoMatchReport, NoMatchRefuse, QueryNotAdmitted, QueryFailed
+  case NoMatchReport, NoMatchRefuse, QueryNotAdmitted, QueryFailed, QueryByDesign
 
   case Participant, SameParticipant, OtherParticipant
   case DeclaredReference, DeclaredReferenceDisposition
@@ -102,6 +102,7 @@ object WhyText:
     case NoMatchReport => "No matched reference: {0}. The query is reported as no match."
     case NoMatchRefuse =>
       "No matched reference: {0}. The recipe refuses a study with such a query."
+    case QueryByDesign => "No corresponding study trial, by design: {0}. No contrast is scored."
     case QueryNotAdmitted => "The query was not admitted ({0}), so it has no reference."
     case QueryFailed      =>
       "The query failed ({0}), so it has no M, B or D. Its reference is shown as the " +

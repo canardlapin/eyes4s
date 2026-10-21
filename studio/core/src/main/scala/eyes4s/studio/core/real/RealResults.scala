@@ -103,7 +103,9 @@ final class RealResults private (
                           response,
                           None,
                           None,
-                          QueryStatus.NoMatch(d),
+                          if reason == eyes4s.plan.UnmatchedKind.NoReferenceInDesign then
+                            QueryStatus.ByDesign(d)
+                          else QueryStatus.NoMatch(d),
                           declaredReferences(reason)
                         )
                       )
@@ -193,7 +195,12 @@ final class RealResults private (
         source.count(_.status.isInstanceOf[QueryStatus.NotAdmitted]),
         source.count(_.status.isInstanceOf[QueryStatus.NoMatch]),
         source.count(_.status.isFailed),
-        source.count(_.status.isInstanceOf[QueryStatus.Contributing])
+        source.count(_.status.isInstanceOf[QueryStatus.Contributing]),
+        Option.when(
+          prepared.plan.expectedUnmatched.isDefined || rows.exists(
+            _.status.isInstanceOf[QueryStatus.ByDesign]
+          )
+        )(source.count(_.status.isInstanceOf[QueryStatus.ByDesign]))
       )
     val participants =
       rows.groupBy(_.query.participant).toVector.sortBy(_._1).map { (participant, entries) =>
@@ -204,7 +211,8 @@ final class RealResults private (
           c.contributing,
           c.failed,
           c.noMatch,
-          c.queryNotAdmitted
+          c.queryNotAdmitted,
+          c.byDesign.getOrElse(0)
         )
       }
     ResultSummary(
@@ -342,7 +350,9 @@ final class RealResults private (
                 .reason(key)
                 .toRight(queryRefusal(trial, "no retained unmatched reason"))
             yield Some(
-              QueryStatus.NoMatch(
+              (if reason == eyes4s.plan.UnmatchedKind.NoReferenceInDesign then
+                 QueryStatus.ByDesign.apply
+               else QueryStatus.NoMatch.apply) (
                 diagnostic(
                   eyes4s.plan.Diagnostic.of(
                     eyes4s.plan.StudyFinding.UnmatchedFocal[CoreKey, Unit2D.Px](key, reason)

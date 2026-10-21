@@ -145,6 +145,7 @@ object BundleTables:
     case QueryStatus.Failed(d)                   => ("failed", Some(s"${d.code}: ${d.message}"))
     case QueryStatus.FailedAtScales(diagnostics) =>
       ("failed", diagnostics.lift(scale).map(d => s"${d.code}: ${d.message}"))
+    case QueryStatus.ByDesign(d)    => ("by-design", Some(s"${d.code}: ${d.message}"))
     case QueryStatus.NoMatch(d)     => ("no-match", Some(s"${d.code}: ${d.message}"))
     case QueryStatus.NotAdmitted(t) =>
       (

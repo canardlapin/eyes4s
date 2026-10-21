@@ -118,7 +118,9 @@ stale) · "Analysis · rerun" (draft → Save & run) · "Reporting · no rerun" 
   Retrieval here = "Blank + fixation cross". Remembered-image underlay off by default and, when on,
   labelled "Reference image — not displayed during this trial".
 - Recognition preset: lures/novel probes get "No corresponding study trial (by design)", a
-  category separate from data-error "no match", in every count strip.
+  category separate from data-error "no match", in every count strip. A known category with no
+  admitted members shows 0; an unavailable category shows n/a. An unadmitted focal trial
+  belongs to the unadmitted count, so the four query categories remain a partition.
 - Duplicate references: eyes4s preflight reports DuplicateTrial as a Warning; ByLeft reduction
   would AVERAGE two matched pairs. A "Studio check" (labelled as such, not eyes4s) blocks the run:
   "Matched cardinality ≠ 1 for 5 queries — choose occurrence".

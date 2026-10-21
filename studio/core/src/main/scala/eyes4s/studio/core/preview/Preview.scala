@@ -279,7 +279,8 @@ object PreviewProgress:
 
 /** Exact result of a retained preview. These are counts, not a scientific
   * result, and none is negative. `eligibleQueries` focal trials enter the
-  * comparisons; `unmatchedQueries` were admitted without a matched reference.
+  * comparisons; `unmatchedQueries` were admitted without a usable declared
+  * reference. By-design queries are counted separately in the candidates.
   */
 sealed abstract case class PreviewCounts private (
     eligiblePairsPerScale: Long,

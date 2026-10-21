@@ -280,7 +280,9 @@ object MockStudy:
         qc.get[Int]("no_match"),
         qc.get[Int]("failed"),
         qc.get[Int]("contributing")
-      ).mapN(QueryContrasts.apply)
+      ).mapN((requested, notAdmitted, noMatch, failed, contributing) =>
+        QueryContrasts(requested, notAdmitted, noMatch, failed, contributing)
+      )
       participants <- c
         .get[Vector[Json]]("participants")
         .flatMap(_.traverse(participant(_, labels)))

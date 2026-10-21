@@ -217,6 +217,34 @@ class UnmatchedReasonsSuite extends munit.FunSuite:
     assertEquals(reasons.reason(oldBeach.key), None)
   }
 
+  test("by-design candidates before pair counting agree with completed library reasons") {
+    val p          = plan(input, StudyPairing.default)
+    val focal      = declared.filter(_.phase == "recognition").map(_.key)
+    val candidates = UnmatchedReasons.byDesignKeys(p.layout, p.pairing, "study", focal, ledger)
+    assertEquals(candidates, Vector(lure.key, novel.key))
+    val completed = get(get(p.prepare(input)).unmatchedReasons(ledger))
+    assertEquals(
+      candidates,
+      completed.reasons.collect { case (key, UnmatchedKind.NoReferenceInDesign) =>
+        key
+      }
+    )
+    val selected =
+      get(ExpectedUnmatched.of("probe", Vector("lure"), Vector(oldBeach.id -> "lure")))
+    assertEquals(
+      UnmatchedReasons
+        .byDesignKeys(p.layout, p.pairing, "study", focal, ledger, Some(selected)),
+      Vector(oldBeach.key, lure.key, novel.key)
+    )
+    val occurrence2 = get(TrialOccurrence.of(2))
+    val select2     =
+      p.pairing.copy(matched = MatchedReferences.Select(OccurrenceChoice.At(occurrence2)))
+    assertEquals(
+      UnmatchedReasons.byDesignKeys(p.layout, select2, "study", focal, ledger),
+      focal
+    )
+  }
+
   test(
     "preflight carries the reasons when given the inventory, and says undetermined without it"
   ) {

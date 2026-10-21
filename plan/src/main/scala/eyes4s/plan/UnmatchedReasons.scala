@@ -117,6 +117,24 @@ object UnmatchedReasons:
       )
     })
 
+  /** Focal keys which cannot have a reference under the declared design.
+    * Unlike `of`, this accepts every admitted focal key, before pair counting.
+    * Explicit selections and absent inventory references use the same pairing
+    * key and occurrence rules as completed unmatched reasons. Other reasons
+    * are deliberately not exposed for keys that may still pair.
+    */
+  def byDesignKeys[K](
+      layout: StudyLayout[K],
+      pairing: StudyPairing,
+      referencePhase: String,
+      focal: Vector[K],
+      inventory: InventoryLedger,
+      expected: Option[ExpectedUnmatched] = None
+  ): Vector[K] =
+    of(layout, pairing, referencePhase, focal, inventory, expected).reasons.collect {
+      case (key, UnmatchedKind.NoReferenceInDesign) => key
+    }
+
   /** Declared expected-unmatched trials need no admission inference. */
   def declared[K](
       layout: StudyLayout[K],

@@ -303,6 +303,21 @@ class ResolvedDesignSuite extends munit.FunSuite:
     assertEquals(byDesign.ref, Some(StudioRef.DesignTally(rev5, DesignCount.ByDesignQueries)))
   }
 
+  test(
+    "by-design rows have their own filter and never expose a matched reference or controls"
+  ) {
+    val lure =
+      rows(2).copy(matched = None, controls = None, eligibility = Eligibility.ByDesign(noMatch))
+    assert(DesignFilter.ByDesign.admits(lure.eligibility))
+    assert(!DesignFilter.NoMatch.admits(lure.eligibility))
+    assert(!DesignFilter.Eligible.admits(lure.eligibility))
+    val vm = ResolvedDesignVM.row(lure, focused = false)
+    assertEquals(vm.status, "No corresponding study trial (by design)")
+    assertEquals(vm.matched, None)
+    assertEquals(vm.controls, None)
+    assertEquals(vm.tone, StatusTone.Plain)
+  }
+
   test("answers of an older generation or another stamp never prepare a design") {
     val g           = synced._1.generation
     val other       = stamp.copy(dataset = DatasetRevision(2))

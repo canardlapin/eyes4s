@@ -280,10 +280,7 @@ object QueriesNavigator:
           s.answered.fold(Vector.empty)(r => strip(run, r.contrasts))
         )
 
-  /** The count strip (Main.dc.html): requested, contributing, failed, no
-    * match and query not admitted, and by design, which this summary does
-    * not count (n/a).
-    */
+  /** Native query accounting; an absent by-design category remains n/a. */
   def strip(run: RunId, c: QueryContrasts): Vector[StripLine] =
     import SummaryTextId.*
     def tally(count: QueryCount) = Vector(StudioRef.QueryTally(run, count))
@@ -316,7 +313,12 @@ object QueriesNavigator:
         false,
         tally(QueryCount.NoMatch) ++ tally(QueryCount.QueryNotAdmitted)
       ),
-      StripLine(SummaryText(StripByDesign), SummaryText(NotApplicable), false, Vector.empty)
+      StripLine(
+        SummaryText(StripByDesign),
+        c.byDesign.fold(SummaryText(NotApplicable))(n => Format.count(n.toLong)),
+        false,
+        c.byDesign.fold(Vector.empty[StudioRef])(_ => tally(QueryCount.ByDesign))
+      )
     )
 
   /** The controls inside a navigator's own focus stop: its filter, unless
@@ -444,5 +446,6 @@ object QueriesNavigator:
     case QueryStatus.Contributing(_, _, _) => SummaryText(SummaryTextId.NotApplicable)
     case QueryStatus.Failed(_) | QueryStatus.FailedAtScales(_) =>
       SummaryText(SummaryTextId.StatusFailed)
+    case QueryStatus.ByDesign(_)    => SummaryText(SummaryTextId.StatusByDesign)
     case QueryStatus.NoMatch(_)     => SummaryText(SummaryTextId.StatusNoMatch)
     case QueryStatus.NotAdmitted(_) => SummaryText(SummaryTextId.StatusNotAdmitted)

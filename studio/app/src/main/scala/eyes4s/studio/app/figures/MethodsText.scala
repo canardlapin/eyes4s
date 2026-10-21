@@ -39,7 +39,7 @@ enum MethodsSlot derives CanEqual:
   case PixelsPerDegree, InitialFixations, Weighting, Grid, Cell, Scales
   case Phases, Method, MatchedRule, ControlRule
   case Queries, Eligible, Controls, ControlQueries
-  case FailurePolicy, Contributing, Failed, NoMatch, NotAdmitted
+  case FailurePolicy, Contributing, Failed, NoMatch, NotAdmitted, ByDesign
   case FailureCause(code: String)
   case ReportingWeight, GroupBy, Filter, GroupN, PairedN, GroupRange
   case MinimumPerGroup, SmallestGroups
@@ -517,7 +517,15 @@ object MethodsText:
       ) ++ why ++ Vector[Part](
         ", ",
         n(S.NoMatch, c.noMatch),
-        " had no matched trial and ",
+        " had no matched trial"
+      ) ++ c.byDesign.toVector.flatMap(k =>
+        Vector[Part](
+          ", ",
+          n(S.ByDesign, k),
+          " had no study trial by design"
+        )
+      ) ++ Vector[Part](
+        " and ",
         n(S.NotAdmitted, c.queryNotAdmitted),
         " queries were not admitted."
       ))*

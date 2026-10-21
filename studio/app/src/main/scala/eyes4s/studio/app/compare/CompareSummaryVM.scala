@@ -396,6 +396,8 @@ object CompareSummaryVM:
           (SummaryText(StatusContributing), Vector(at(m), at(b), at(d)))
         case QueryStatus.Failed(_) | QueryStatus.FailedAtScales(_) =>
           (SummaryText(StatusFailed), Vector.fill(3)(PlotValue.Missing))
+        case QueryStatus.ByDesign(_) =>
+          (SummaryText(StatusByDesign), Vector.fill(3)(PlotValue.Missing))
         case QueryStatus.NoMatch(_) =>
           (SummaryText(StatusNoMatch), Vector.fill(3)(PlotValue.Missing))
         case QueryStatus.NotAdmitted(_) =>

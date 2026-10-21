@@ -289,6 +289,7 @@ object ResolvedDesignVM:
           else if diagnostic.message.isEmpty then t(StatusNoMatch)
           else t(StatusNoMatchBecause, diagnostic.message)
         (text, StatusTone.Warning)
+      case Eligibility.ByDesign(_)         => (t(StatusByDesign), StatusTone.Plain)
       case Eligibility.QueryNotAdmitted(d) =>
         (t(StatusNotAdmitted, disposition(d)), StatusTone.Warning)
     val omitted        = r.unadmittedControlReferences

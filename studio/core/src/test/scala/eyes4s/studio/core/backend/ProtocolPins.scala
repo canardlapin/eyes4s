@@ -275,6 +275,8 @@ object ProtocolPins:
       """{"FailedAtScales":{"diagnostics":[{"code":"study-failure.off-window","level":{"Error":{}},"origin":{"EyesCore":{}},"subject":[{"Trial":{"key":{"participant":"P17","phase":"Retrieval","trial":"ret_07","occurrence":1}}}],"message":"empty map","affected":[{"participant":"P17","phase":"Retrieval","trial":"ret_07","occurrence":1},{"participant":"P17","phase":"Encoding","trial":"enc_03","occurrence":1}],"category":"DataDependent","remedy":"ReviewAnalysisWindow"},{"code":"study-failure.off-window","level":{"Error":{}},"origin":{"EyesCore":{}},"subject":[{"Trial":{"key":{"participant":"P17","phase":"Retrieval","trial":"ret_07","occurrence":1}}}],"message":"failed at the second scale","affected":[{"participant":"P17","phase":"Retrieval","trial":"ret_07","occurrence":1},{"participant":"P17","phase":"Encoding","trial":"enc_03","occurrence":1}],"category":"DataDependent","remedy":"ReviewAnalysisWindow"}]}}""",
     "query-status.Failed" ->
       """{"Failed":{"diagnostic":{"code":"study-failure.off-window","level":{"Error":{}},"origin":{"EyesCore":{}},"subject":[{"Trial":{"key":{"participant":"P17","phase":"Retrieval","trial":"ret_07","occurrence":1}}}],"message":"empty map","affected":[{"participant":"P17","phase":"Retrieval","trial":"ret_07","occurrence":1},{"participant":"P17","phase":"Encoding","trial":"enc_03","occurrence":1}],"category":"DataDependent","remedy":"ReviewAnalysisWindow"}}}""",
+    "query-status.ByDesign" ->
+      """{"ByDesign":{"diagnostic":{"code":"study-finding.unmatched-focal","level":{"Error":{}},"origin":{"EyesCore":{}},"subject":[{"Trial":{"key":{"participant":"P17","phase":"Retrieval","trial":"ret_07","occurrence":1}}}],"message":"empty map","affected":[{"participant":"P17","phase":"Retrieval","trial":"ret_07","occurrence":1},{"participant":"P17","phase":"Encoding","trial":"enc_03","occurrence":1}],"category":"DataDependent","remedy":"ReviewAnalysisWindow"}}}""",
     "query-status.NoMatch" ->
       """{"NoMatch":{"diagnostic":{"code":"study-finding.unmatched-focal","level":{"Error":{}},"origin":{"EyesCore":{}},"subject":[{"Trial":{"key":{"participant":"P17","phase":"Retrieval","trial":"ret_07","occurrence":1}}}],"message":"empty map","affected":[{"participant":"P17","phase":"Retrieval","trial":"ret_07","occurrence":1},{"participant":"P17","phase":"Encoding","trial":"enc_03","occurrence":1}],"category":"DataDependent","remedy":"ReviewAnalysisWindow"}}}""",
     "query-status.NotAdmitted" ->
@@ -332,7 +334,7 @@ object ProtocolPins:
     "response.Refused" ->
       """{"Refused":{"error":{"UnknownRun":{"run":9,"known":[7]}}}}""",
     "response.Result" ->
-      """{"Result":{"summary":{"run":7,"revision":4,"dataset":3,"scales":[2],"pairRowsPerScale":8969,"pairRows":35876,"eligibleQueries":457,"contrasts":{"requested":480,"queryNotAdmitted":14,"noMatch":9,"failed":3,"contributing":454},"participants":[{"participant":"P17","requested":20,"contributing":19,"failed":0,"noMatch":0,"notAdmitted":1}]}}}""",
+      """{"Result":{"summary":{"run":7,"revision":4,"dataset":3,"scales":[2],"pairRowsPerScale":8969,"pairRows":35876,"eligibleQueries":457,"contrasts":{"requested":480,"queryNotAdmitted":14,"noMatch":9,"failed":3,"contributing":454,"byDesign":null},"participants":[{"participant":"P17","requested":20,"contributing":19,"failed":0,"noMatch":0,"notAdmitted":1,"byDesign":0}]}}}""",
     "response.Runs" ->
       """{"Runs":{"runs":[{"run":7,"revision":4,"dataset":3,"state":{"Current":{}}}]}}""",
     "run-state.Cancelled" ->
@@ -370,7 +372,7 @@ object ProtocolPins:
     "total.Unknown" ->
       """{"Unknown":{}}""",
     "envelope.restored" ->
-      """{"version":{"major":1,"minor":21},"id":42,"body":{"Response":{"response":{"ProvenanceOf":{"provenance":{"address":{"PairRow":{"scale":2,"design":{"Control":{}},"focal":{"participant":"P17","phase":"Retrieval","trial":"ret_07","occurrence":1},"reference":{"participant":"P17","phase":"Encoding","trial":"enc_03","occurrence":1}}},"trail":[{"Run":{"run":8}},{"Restored":{"manifest":"abababababababababababababababababababababababababababababababab"}}]}}}}}}""",
+      """{"version":{"major":1,"minor":22},"id":42,"body":{"Response":{"response":{"ProvenanceOf":{"provenance":{"address":{"PairRow":{"scale":2,"design":{"Control":{}},"focal":{"participant":"P17","phase":"Retrieval","trial":"ret_07","occurrence":1},"reference":{"participant":"P17","phase":"Encoding","trial":"enc_03","occurrence":1}}},"trail":[{"Run":{"run":8}},{"Restored":{"manifest":"abababababababababababababababababababababababababababababababab"}}]}}}}}}""",
     "error.ArchiveRestoreRefused" ->
       """{"ArchiveRestoreRefused":{"run":8,"cause":{"code":"study-failure.off-window","level":{"Error":{}},"origin":{"EyesCore":{}},"subject":[{"Trial":{"key":{"participant":"P17","phase":"Retrieval","trial":"ret_07","occurrence":1}}}],"message":"empty map","affected":[{"participant":"P17","phase":"Retrieval","trial":"ret_07","occurrence":1},{"participant":"P17","phase":"Encoding","trial":"enc_03","occurrence":1}],"category":"DataDependent","remedy":"ReviewAnalysisWindow"}}}""",
     "error.ResultRestoring" ->

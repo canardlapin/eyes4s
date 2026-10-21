@@ -35,6 +35,25 @@ import io.circe.syntax.*
 class ProtocolCodecSuite extends munit.FunSuite:
   import ProtocolSamples.*
 
+  test("by-design statuses and result accounting round-trip with coordinated peers") {
+    val diagnostic               = ProtocolSamples.diagnostic
+    val eligibility: Eligibility = Eligibility.ByDesign(diagnostic)
+    val status: QueryStatus      = QueryStatus.ByDesign(diagnostic)
+    assertEquals(eligibility.asJson.as[Eligibility], Right(eligibility))
+    assertEquals(status.asJson.as[QueryStatus], Right(status))
+    val counts = QueryContrasts(4, 1, 1, 0, 1, Some(1))
+    assertEquals(counts.asJson.as[QueryContrasts], Right(counts))
+    val old = Json.obj(
+      "version" -> ProtocolVersion(1, 21).asJson,
+      "id"      -> Json.fromInt(101),
+      "body"    -> Json.fromString("unreadable previous body")
+    )
+    assertEquals(
+      WireFormat.parseCurrent[ServerFrame](old.noSpaces),
+      Left(TransportError.Incompatible(ProtocolVersion(1, 21), ProtocolVersion.Current))
+    )
+  }
+
   test("source placement tallies round-trip distinctly from admitted window tallies") {
     import eyes4s.studio.core.selection.{PlacementCount, StudioRef, TallyRegion}
     PlacementCount.values.foreach { count =>
@@ -409,7 +428,7 @@ class ProtocolCodecSuite extends munit.FunSuite:
   }
 
   test("protocol 1.2 Counting requires coordinated peers, not a relabelled 1.1 frame") {
-    assertEquals(ProtocolVersion.Current, ProtocolVersion(1, 21))
+    assertEquals(ProtocolVersion.Current, ProtocolVersion(1, 22))
     val previous = Envelope(RequestId(41), ServerFrame.Event(JobEvent.Advanced(progress)))
     assertEquals(legacyMeterTotal(previous.asJson), Right(Protocol11Total.Exact(8512L)))
     val counting = progress.asJson

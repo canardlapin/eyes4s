@@ -1,0 +1,58 @@
+{
+  "schema": 1,
+  "reviewer": "codex-release-session-20261020",
+  "state": "focused checks passed; full qualification and landing pending",
+  "source_base": "224d6ee854d1d17457fe0869031d0c57474b40ec",
+  "protocol": "1.22; coordinated client/backend only",
+  "checks": {
+    "plan_each_platform": 10,
+    "protocol_each_platform": 36,
+    "native_preview_acceptance_and_results_each_platform": 9,
+    "app_each_platform": 99,
+    "jvm_fake_and_real_backend_conformance_each": 12,
+    "studioStyleCheck": "passed before the final acceptance-only test addition"
+  },
+  "findings": [
+    "Native preview and completed results serve the library NoReferenceInDesign reason as a separate by-design status. NoMatch retains admitted-but-unusable declared references.",
+    "A mixed cohort partitions four requested trials into one eligible, one no-match, one by-design and one unadmitted. A selected unadmitted lure remains unadmitted.",
+    "Expected-unmatched selection wins even when a lure item ID collides with an admitted studied item; missing references do not overwrite the explicit classification.",
+    "Receipt acceptance reuses the retained native preparation; completed query rows and contrast inspections retain no invented matched reference or score.",
+    "An explicit category with zero admitted members serves zero; absence of a category remains n/a.",
+    "Application filters, navigator count provenance, inspector wording, query tables and exported methods account for the distinct status."
+  ],
+  "limits": [
+    "No new whole-board visual sign-off or real output-scale2 claim.",
+    "Full canonical and Studio gate still required before closing G3 or the slice."
+  ],
+  "source_sha256": {
+    "plan/src/main/scala/eyes4s/plan/UnmatchedReasons.scala": "95a642182e10d1bd1776e2ef7f3fcc4ea2801a30f9b0d0c78abc91a330d4a285",
+    "plan/src/test/scala/eyes4s/plan/UnmatchedReasonsSuite.scala": "ef33d81739f53b65a7660b3a4085ef557d4b6610319c84cb163a9e19d3091c37",
+    "studio/app/src/main/scala/eyes4s/studio/app/analysis/ResolvedDesign.scala": "b99973ee7a44d39e7fa8d067be3f169857d570c7bbbe7f88e214e4d70dfaf1b0",
+    "studio/app/src/main/scala/eyes4s/studio/app/analysis/ResolvedDesignVM.scala": "b97bd690d58fdea61a18500d85c0b7ab119617d453233c8f1477c1fd8c24afe6",
+    "studio/app/src/main/scala/eyes4s/studio/app/compare/CompareSummaryVM.scala": "0e652338c68618cf98bb63b27a21b748b460ec66cbc6176ac1383dbe6dba574b",
+    "studio/app/src/main/scala/eyes4s/studio/app/compare/QueriesNavigator.scala": "c40f792d451cf879e9429d12cf4f3ace3578559372e3b1bb82088485d76ce733",
+    "studio/app/src/main/scala/eyes4s/studio/app/compare/TrialPanels.scala": "fe6fe0b720ed2093371cddba82d11094afb878c0876a8d1c2fc97603a4ed6669",
+    "studio/app/src/main/scala/eyes4s/studio/app/compare/WhyReference.scala": "c4a761bdffd3edace64c30c3d512bed193c62b493a171d75049a3357b106a9cc",
+    "studio/app/src/main/scala/eyes4s/studio/app/figures/MethodsText.scala": "cec30e6ce613aace1673601ce5b44c7d0bd8de054de4d90a7efc465a169136be",
+    "studio/app/src/main/scala/eyes4s/studio/app/text/DesignText.scala": "f41431203aca27cc6368a2b661ddb241e2ad4eb06165094b9b5dde7e9ef771b4",
+    "studio/app/src/main/scala/eyes4s/studio/app/text/SummaryText.scala": "8fa1a6fbd138661438d26a847e28a4a9252caa4a58ad5e865001befbd501e72e",
+    "studio/app/src/main/scala/eyes4s/studio/app/text/WhyText.scala": "15738f6f576c2a79cfd65b1fceffd9317f150f307e30166429985a53de809fb6",
+    "studio/app/src/test/scala/eyes4s/studio/app/analysis/ResolvedDesignSuite.scala": "28eb364cd2d81324716498529b7da8fd93d3d77ed123cd8906f896b8755d0992",
+    "studio/app/src/test/scala/eyes4s/studio/app/compare/QueriesNavigatorSuite.scala": "61255a1482396d778c5d863975294e632ded7e9f72590f47c33826663ca99e54",
+    "studio/core/.jvm/src/test/scala/eyes4s/studio/core/real/RealStudyBackendSuite.scala": "72a2b5019fc687efbf6e4b050a0616fee26d89f0430eabb582383f7363d26d82",
+    "studio/core/src/main/scala/eyes4s/studio/core/backend/StudyBackend.scala": "a7d8749d54c2c5dcce8b4e70580bf090c03ca6b39cd94e1f9ba62da0ba134bd8",
+    "studio/core/src/main/scala/eyes4s/studio/core/backend/Views.scala": "cfe4d3bc78f5981224a8cd2013f187df676f77944ea56fb3f6a30b36c88de212",
+    "studio/core/src/main/scala/eyes4s/studio/core/figures/BundleTables.scala": "19c3e3862a2dfcbaae7c4d75ba6b66224a0ee231cc2c4c9300f2bbbe59d673dc",
+    "studio/core/src/main/scala/eyes4s/studio/core/fixture/MockStudy.scala": "d51e951f7d63f73e7ee4a45e36a95d21edd835301f428a24ece9ac860addd7e0",
+    "studio/core/src/main/scala/eyes4s/studio/core/preview/Preview.scala": "9a65f5480ca588fa6ed90f358fae3c8e64b019f34cb0cf1853ccac7fb60ec9e1",
+    "studio/core/src/main/scala/eyes4s/studio/core/real/RealPreview.scala": "06ba07a104d2b77057db04812d8c378c04c05f62be20449a39f45dd5a54c29fd",
+    "studio/core/src/main/scala/eyes4s/studio/core/real/RealResults.scala": "1c7d3da01e5ce37951e13cee47612799d743a0d33ff0ae787ad34c914f1c1830",
+    "studio/core/src/main/scala/eyes4s/studio/core/selection/StudioRef.scala": "d6c68badb81284bb47577de1b628d410c8bd11d7482de96978f972db381b85a8",
+    "studio/core/src/test/scala/eyes4s/studio/core/backend/BackendConformanceSuite.scala": "f18fe06620724dc75d13e392cdda7a0299f9e4164159e4b497f48a90df7088c2",
+    "studio/core/src/test/scala/eyes4s/studio/core/backend/ProtocolCodecSuite.scala": "f369cc758778335dbf3333483901eeaa654b7641196856ae3ba134913dcd9dd7",
+    "studio/core/src/test/scala/eyes4s/studio/core/backend/ProtocolLongSuite.scala": "6e946da7768e2e523a7f3f271588977d911ca406708ee1a57912ff78ee13ecd1",
+    "studio/core/src/test/scala/eyes4s/studio/core/backend/ProtocolPins.scala": "a0174eb5bd166cfcad86f08e7970d47cfbcc1071000c31d4a9c5bc4a5033dc33",
+    "studio/core/src/test/scala/eyes4s/studio/core/backend/ProtocolSamples.scala": "fc4f06b6e793bd27f88e78e3e51282536f904f5e7c3976572492cf81da8f70be",
+    "studio/core/src/test/scala/eyes4s/studio/core/real/RealPreviewCursorSuite.scala": "47a5c5ce36b80179f70ca0074ea9fc19450575b3af1767209f35467b403027d5"
+  }
+}

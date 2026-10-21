@@ -343,6 +343,11 @@ object WhyReference:
           WhyText(QueryNotAdmitted, disposition(d)),
           Vector(participant, notAdmitted, queryOutside)
         )
+      case QueryStatus.ByDesign(diagnostic) =>
+        WhyVM(
+          WhyText(QueryByDesign, reason(diagnostic)),
+          Vector(participant, InspectorFact(WhyText(Reason), diagnostic.message, None))
+        )
       case QueryStatus.NoMatch(diagnostic) =>
         // The library's reason and declared references, never a pairing
         // inferred from the ledger. A declaration remains distinct from a

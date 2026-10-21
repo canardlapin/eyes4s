@@ -391,7 +391,7 @@ enum ReportGroup derives CanEqual, Codec.AsObject:
   * requested).
   */
 enum QueryCount derives CanEqual, Codec.AsObject:
-  case Requested, Contributing, Failed, NoMatch, QueryNotAdmitted
+  case Requested, Contributing, Failed, NoMatch, QueryNotAdmitted, ByDesign
 
 /** Which trials a [[StudioRef.TrialGroup]] holds: one participant's trials
   * of one phase, or every trial matched on one item.

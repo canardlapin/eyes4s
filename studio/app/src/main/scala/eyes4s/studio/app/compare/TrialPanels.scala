@@ -449,6 +449,7 @@ object TrialPanels:
     case QueryStatus.Contributing(_, _, _) => SummaryText(SummaryTextId.StatusContributing)
     case QueryStatus.Failed(_) | QueryStatus.FailedAtScales(_) =>
       SummaryText(SummaryTextId.StatusFailed)
+    case QueryStatus.ByDesign(_)    => SummaryText(SummaryTextId.StatusByDesign)
     case QueryStatus.NoMatch(_)     => SummaryText(SummaryTextId.StatusNoMatch)
     case QueryStatus.NotAdmitted(_) => SummaryText(SummaryTextId.StatusNotAdmitted)
 

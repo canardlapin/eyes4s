@@ -286,7 +286,20 @@ object RealPreview:
     val requested =
       configured.admitted.ledger.filter(_.trial.phase == configured.recipe.phases.focal)
     for
-      identity   <- stamp(configured)
+      identity  <- stamp(configured)
+      inventory <- configured.admitted.evidence.inventory.toRight(
+        refused(configured, "inventory")("No admitted trial inventory is retained.")
+      )
+      byDesign = UnmatchedReasons
+        .byDesignKeys(
+          configured.plan.layout,
+          configured.plan.pairing,
+          configured.plan.referencePhase,
+          configured.preview.focalKeys,
+          inventory,
+          configured.plan.expectedUnmatched
+        )
+        .size
       candidates <- PreviewCandidates
         .of(
           configured.preview.focalKeys.size,
@@ -295,7 +308,7 @@ object RealPreview:
           configured.preview.matched.candidatePairCount,
           requested.size,
           requested.count(_.disposition != TrialDisposition.Admitted),
-          None
+          Option.when(configured.plan.expectedUnmatched.isDefined || byDesign > 0)(byDesign)
         )
         .leftMap(e => refused(configured, "preview candidates")(e.message))
       cursor <- configured.work.countWork.leftMap(
@@ -334,7 +347,7 @@ object RealPreview:
           counts.pairRowsPerScale,
           counts.totalPairs,
           counts.eligibleQueries.toInt,
-          unmatched.reasons.size,
+          unmatched.reasons.size - unmatched.byDesign,
           counts.cardinality.multiple.size + counts.cardinality.ambiguousReferences.size,
           Some(prepared.knownFailingFocalQueries)
         )
@@ -509,7 +522,9 @@ object RealPreview:
                             (
                               None,
                               None,
-                              Eligibility.NoMatch(
+                              (if reason == eyes4s.plan.UnmatchedKind.NoReferenceInDesign then
+                                 Eligibility.ByDesign.apply
+                               else Eligibility.NoMatch.apply) (
                                 RealResults.diagnostic(
                                   Diagnostic.of(
                                     StudyFinding

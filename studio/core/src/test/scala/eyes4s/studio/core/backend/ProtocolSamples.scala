@@ -308,6 +308,7 @@ object ProtocolSamples:
     QueryStatus.Contributing(Vector(0.41), Vector(0.22), Vector(0.19)),
     QueryStatus.Failed(diagnostic),
     QueryStatus.NoMatch(diagnostic.copy(code = "study-finding.unmatched-focal")),
+    QueryStatus.ByDesign(diagnostic.copy(code = "study-finding.unmatched-focal")),
     QueryStatus.NotAdmitted(TrialDisposition.Absent),
     QueryStatus.FailedAtScales(
       Vector(diagnostic, diagnostic.copy(message = "failed at the second scale"))
@@ -347,7 +348,10 @@ object ProtocolSamples:
     Inspection.Contrast(ResultAddress.ContrastRow(2, query), 0.73, 0.35, 0.38),
     Inspection.Reduction(ResultAddress.Reduction(2, PairDesign.Control, query), 0.35, 19),
     Inspection.Pair(address, "street-112", 0.61),
-    Inspection.Unscored(ResultAddress.Estimation(0, query), queryStatuses(3))
+    Inspection.Unscored(
+      ResultAddress.Estimation(0, query),
+      QueryStatus.NotAdmitted(TrialDisposition.Absent)
+    )
   )
 
   private def fixation(

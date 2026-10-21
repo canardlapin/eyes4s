@@ -323,6 +323,9 @@ enum Eligibility derives CanEqual, Codec.AsObject:
   /** Admitted, but without a matched reference (`study-finding.unmatched-focal`). */
   case NoMatch(diagnostic: StudioDiagnostic)
 
+  /** No reference exists under the declared design, including selected lures. */
+  case ByDesign(diagnostic: StudioDiagnostic)
+
 /** An inventory-declared reference and its source admission disposition.
   * A declaration is distinct from an actual selected pair.
   */
@@ -418,7 +421,8 @@ final case class ParticipantCounts(
     contributing: Int,
     failed: Int,
     noMatch: Int,
-    notAdmitted: Int
+    notAdmitted: Int,
+    byDesign: Int = 0
 ) derives CanEqual,
       Codec.AsObject
 
@@ -428,7 +432,8 @@ final case class QueryContrasts(
     queryNotAdmitted: Int,
     noMatch: Int,
     failed: Int,
-    contributing: Int
+    contributing: Int,
+    byDesign: Option[Int] = None
 ) derives CanEqual,
       Codec.AsObject
 
@@ -469,6 +474,9 @@ enum QueryStatus derives CanEqual, Codec.AsObject:
   case Contributing(m: Vector[Double], b: Vector[Double], d: Vector[Double])
   case Failed(diagnostic: StudioDiagnostic)
   case NoMatch(diagnostic: StudioDiagnostic)
+
+  /** No reference exists under the declared design, including selected lures. */
+  case ByDesign(diagnostic: StudioDiagnostic)
   case NotAdmitted(disposition: TrialDisposition)
 
   /** Every scale failed; diagnostics retain the run's declared scale order. */
@@ -511,8 +519,8 @@ object QueryRow:
       status: QueryStatus
   ): QueryRow =
     val reference = status match
-      case QueryStatus.NoMatch(_) | QueryStatus.NotAdmitted(_) => None
-      case _                                                   => Some(matched)
+      case QueryStatus.NoMatch(_) | QueryStatus.ByDesign(_) | QueryStatus.NotAdmitted(_) => None
+      case _ => Some(matched)
     new QueryRow(query, item, response, reference, controls, status)
 
 final case class QueryPage(run: RunId, page: PageInfo, rows: Vector[QueryRow])
