@@ -1,0 +1,226 @@
+{
+  "schema": 1,
+  "date": "2026-10-21",
+  "issue": "bd-01M5EG5CQAFMPQWNYCA5K085TQ",
+  "source_snapshot": "6089ed345b1bdc64bbd49d6c04e7441f56cf66bb",
+  "previous_snapshot": "cba9edd54e48275e4db9aec8d8f09e93636e46c5",
+  "reviewed_changes": [
+    {
+      "id": "frame",
+      "path": "kernel/src/main/scala/eyes4s/kernel/Frame.scala",
+      "sha256": "d7e1f9c4139f3dd28b67877db38b0822c9b6236f1932384694ecaf7bd7f37cb2",
+      "anchors": [
+        "object Frame:"
+      ]
+    },
+    {
+      "id": "gaze",
+      "path": "core/src/main/scala/eyes4s/core/Gaze.scala",
+      "sha256": "edda426d3238445f1d77843a079cfef7afe1e4cdfbafba6341c1fc4ba8bf6b53",
+      "anchors": [
+        "enum Gaze"
+      ]
+    },
+    {
+      "id": "export",
+      "path": "io/src/main/scala/eyes4s/io/BaselineExports.scala",
+      "sha256": "5096dc7c5d8e35b2ab97b7687c3131b7454467ec55f3db42a201a864b830612c",
+      "anchors": [
+        "object ResultExports:"
+      ]
+    },
+    {
+      "id": "detectors",
+      "path": "detect/src/main/scala/eyes4s/detect/Detectors.scala",
+      "sha256": "3f2d167c0212fee0f007fa3a9ed83f9a7a69a885a047e8df45806cfba3d831dd",
+      "anchors": [
+        "def ivt(",
+        "def idt["
+      ]
+    },
+    {
+      "id": "micro",
+      "path": "detect/src/main/scala/eyes4s/detect/Microsaccades.scala",
+      "sha256": "268fd45c44adc98c53c621f3d997d2f1023e67951f81ba3dff9b4ee10c10093a",
+      "anchors": [
+        "def engbertKliegl(",
+        "object Kinematics:"
+      ]
+    },
+    {
+      "id": "filters",
+      "path": "detect/src/main/scala/eyes4s/detect/Filters.scala",
+      "sha256": "eaf68bd4484888dad3d406530bb4dd738dceccf615c4f60a7aa75d97d4029d9f",
+      "anchors": [
+        "object Filter:",
+        "def interpolateGaps",
+        "def savitzkyGolay"
+      ]
+    },
+    {
+      "id": "aoi",
+      "path": "aoi/src/main/scala/eyes4s/aoi/Aoi.scala",
+      "sha256": "8c887308fbeeb7c5af006d0ff9ce15f7554111ae6f12d33f975f21526d904338",
+      "anchors": [
+        "object AoiSet:",
+        "def assign("
+      ]
+    },
+    {
+      "id": "plan",
+      "path": "plan/src/main/scala/eyes4s/plan/StudyPlan.scala",
+      "sha256": "34990001c1bc72244d43d28630361cb162e7e969a9f5c3a3bbd4ea8293705ca6",
+      "anchors": [
+        "object StudyPlan:"
+      ]
+    },
+    {
+      "id": "smooth",
+      "path": "surface/src/main/scala/eyes4s/surface/Smoother.scala",
+      "sha256": "5e3dc8c960cab8fe9d39d638c9c123dfbe8bcb83bc79769e12df9d96ef91babb",
+      "anchors": [
+        "object Smoother:"
+      ]
+    },
+    {
+      "id": "multimatch",
+      "path": "compare/src/main/scala/eyes4s/compare/MultiMatch.scala",
+      "sha256": "2d53fb5f39275bd0ff28a18a547aa552920d98b33eda4a8817082a6df583c6c3",
+      "anchors": [
+        "object MultiMatch:"
+      ]
+    },
+    {
+      "id": "codec",
+      "path": "codec/src/main/scala/eyes4s/codec/StudyCodec.scala",
+      "sha256": "d478784e0b07d56fd0f5c62965143b65efa45e6222a969868c0267c8dce5926a",
+      "anchors": [
+        "final class StudyCodec["
+      ]
+    },
+    {
+      "id": "execution",
+      "path": "fs2/src/main/scala/eyes4s/fs2/Execution.scala",
+      "sha256": "74e6be41ca255f6f01d7dbbda6d0f595bc5b3fcb6e3baae677230cf1a1b896ab",
+      "anchors": [
+        "object Execution:"
+      ]
+    },
+    {
+      "id": "workflow-test",
+      "path": "io/src/test/scala/eyes4s/io/PsychologyWorkflowSuite.scala",
+      "sha256": "8475f395f5d237ab9c072271f6c60b461ffdb4c8a38e259313e78310066e265b",
+      "anchors": [
+        "class PsychologyWorkflowSuite"
+      ]
+    },
+    {
+      "id": "aoi-test",
+      "path": "aoi/src/test/scala/eyes4s/aoi/AoiSuite.scala",
+      "sha256": "249e5afd9a5a11efd040c27f587157761a5b040c5e8cb2a921d9df1c938a18c6",
+      "anchors": [
+        "class AoiSuite"
+      ]
+    },
+    {
+      "id": "codec-test",
+      "path": "codec/src/test/scala/eyes4s/codec/StudyCodecSuite.scala",
+      "sha256": "5a5eb46f40dd74eca3d8cc0784890e9ab4de0fd38610f13cdca75d3e08bf2a9a",
+      "anchors": [
+        "class StudyCodecSuite"
+      ]
+    },
+    {
+      "id": "export-test",
+      "path": "io/src/test/scala/eyes4s/io/BaselineExportsSuite.scala",
+      "sha256": "6d66e91571ef6a17da40e5eb82bc4b9cff7b597fb39f8e3bd021cb194e84e03c",
+      "anchors": [
+        "class BaselineExportsSuite"
+      ]
+    },
+    {
+      "id": "trial",
+      "path": "studio/viz/src/main/scala/eyes4s/studio/viz/trial/TrialScene.scala",
+      "sha256": "9c0e359942e9245874eeb83c165a1e073cff2734d2b0e8efafa1e2fbba92de47",
+      "anchors": [
+        "object TrialScene:"
+      ]
+    },
+    {
+      "id": "trial-test",
+      "path": "studio/viz/src/test/scala/eyes4s/studio/viz/trial/TrialSceneSuite.scala",
+      "sha256": "160e149b18dcf69f1515bcbc2dec2e5d4cda204705e5e85fbfe4874e0632eb44",
+      "anchors": [
+        "class TrialSceneSuite"
+      ]
+    },
+    {
+      "id": "session",
+      "path": "studio/desktop/src/main/scala/eyes4s/studio/desktop/runtime/StudioSession.scala",
+      "sha256": "c59624dd912c8ec8ae8e49aa813c09ca229330768a02115826330e8cc70856e2",
+      "anchors": [
+        "object StudioSession:",
+        "RealStudyBackend",
+        "def start("
+      ]
+    },
+    {
+      "id": "consumer",
+      "path": "tools/study-consumer/verify.py",
+      "sha256": "75079e7a9c599b6b8d2dbc5471f23d77d0c7c1a283a7b268cdbbd7c4157c1a49",
+      "anchors": [
+        "def main("
+      ]
+    },
+    {
+      "id": "studio-entry",
+      "path": "studio/desktop/src/main/scala/eyes4s/studio/desktop/StudioMain.scala",
+      "sha256": "1249eee0e55674e6320da0a60b7fb2010e6b54d788f0370c49e9022d70cf043e",
+      "anchors": [
+        "object StudioMain:",
+        "val backend: SessionBackend = SessionBackend.Real"
+      ]
+    }
+  ],
+  "review": {
+    "domain_types": "Private constructing mirrors sealed; Frame, gaze and detector/filter APIs remain under their existing smart constructors.",
+    "library_routes": "ResultExports adds uniform-family/archive routes; AOI adds fixation assignment; StudyPlan/StudyCodec retain explicit expected-unmatched declarations. Existing inventory claims remain conservative and pending.",
+    "comparison": "MultiMatch correspondence now names CanonicalOperandsExactCostTracebackV1; recorded as a required comparison convention, with no new parity claim.",
+    "visualization": "TrialScene adds map/legend metadata and a common fitted viewport; fixation/order-mark source claim remains supported.",
+    "runtime": "RealStudyBackend resource path and native entry point inspected. Corrected fake-only claim and anchored both paths explicitly.",
+    "ownership": "Closed workload-definition owner replaced with its open PM3 qualification target. Closed backend implementation owner replaced with the open PM1 workflow target for persistence and existing G2 admission owner for Studio. No ticket reopened or gap marked finished."
+  },
+  "qualification_states": "All 28 capability gates remain open and all 84 workflow/empirical/release states remain pending, with no success receipts. Historical receipts and pinned comparator unchanged.",
+  "tests": {
+    "unittest_count": 56,
+    "result": "passed",
+    "wheel": "Exact 0.28.0 public wheel downloaded from the pinned URL, SHA256 verified, every comparator source member hash/anchor checked without executing the downloaded wheel.",
+    "live_mote_ownership": "verified",
+    "test_fixture_change": "Keep direct owners open and distinct when testing aggregate PM3/epic closure; existing separate closed/missing-owner checks remain. No validation condition relaxed."
+  },
+  "pinned_wheel": {
+    "package": "pymovements",
+    "version": "0.28.0",
+    "source_commit": "fe333f3afa862ae3fc7056047a1a929798cfe18b",
+    "source_url": "https://github.com/pymovements/pymovements/tree/fe333f3afa862ae3fc7056047a1a929798cfe18b",
+    "wheel_url": "https://files.pythonhosted.org/packages/78/98/261a493fa402579715da8c8ca57c913b68fb9d852a100e68331c66edbfb4/pymovements-0.28.0-py3-none-any.whl",
+    "wheel_filename": "pymovements-0.28.0-py3-none-any.whl",
+    "wheel_sha256": "4600f990173faeb9cccfdfc4da627ac81981eca6f1d4c511056294a5b96054ff",
+    "published": "2026-09-08T10:32:22.707117Z",
+    "requires_python": ">=3.10"
+  },
+  "library_audit_fingerprint_unchanged": "63c0f599f4b389a3d6f0ea434696c0f93f8522c7e795ce6fb8c7a36070fb0f41",
+  "files": {
+    "tools/pymovements/manifest.json": "6745f38541087a2543932ff36c25393e1a39e5b5311e2f4cb9b9fe0c20c6fe31",
+    "tools/pymovements/test_check.py": "c3a632da9887ddff3c166d06efca581d7a47d3a33bc0e238d02c3608356efef3",
+    "docs/plans/PYMOVEMENTS_COMPARISON.md": "61d1834b9b37f4efefc29012b1c18db333faa306ca027b85f84f72c79d955f59"
+  },
+  "logs": {
+    "/private/tmp/eyes4s-comparison-inventory-final2-tests-20261021.log": "03bf8dc6e95ae67cfbcce9555cfa5a68747831629ecef794e3bb979fe1c5358a",
+    "/private/tmp/eyes4s-comparison-inventory-wheel-20261021.log": "89f378f97fa388a9588f54483548bfdc8bfe2b1f9f091c34f3d69c20a9b4c39b"
+  },
+  "limits": [
+    "Metadata and adversarial checker repair, no new benchmark, empirical scoring, visual parity or published release qualification.",
+    "Combined compiled-source candidate6089ed34 remains frozen in its separate full gate; this change does not alter compiled sources, tests, build settings, pins or the API audit fingerprint."
+  ]
+}

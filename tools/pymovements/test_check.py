@@ -104,6 +104,12 @@ class ComparisonContractTests(unittest.TestCase):
 
     def test_closed_target_and_epic_cannot_hide_open_rows(self):
         target = self.manifest["targets"]["PM3"]["issue"]
+        # Keep direct gap owners open to test aggregate gate closure independently.
+        # A target may also own a gap, whose refusal has separate coverage above.
+        owner = self.row()["owners"][0]
+        for row in self.manifest["capabilities"]:
+            row["owners"] = list(dict.fromkeys(
+                owner if item == target else item for item in row["owners"]))
         self.issues[target] = "closed"
         self.reject("closed PM3 gate")
         self.issues[target] = "open"
