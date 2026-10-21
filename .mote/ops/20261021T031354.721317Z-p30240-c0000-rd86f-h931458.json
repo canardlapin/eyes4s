@@ -1,0 +1,1 @@
+{"actor":"codex-release-session-20261020","entity":"bd-01M5E637J24JYT6FHQW336E01P","kind":"reserve_open","mode":"exclusive","op":"20261021T031354.721317Z-p30240-c0000-rd86f-h931458","paths":["studio/core/src/test/scala/eyes4s/studio/core/backend/ProtocolCodecSuite.scala"],"reservation_id":"rv-01M5E76Z11HTP7VZTZR03H04KM","ts":"2026-10-21T03:13:54.721317Z","ttl_s":28800,"v":2}

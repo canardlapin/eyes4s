@@ -61,7 +61,7 @@ application parity is qualified separately below.
   - [ ] Viewing distance and screen size.
   - [ ] Degrees measured from the image centre, x right, y up.
   - [ ] Off-screen policy (ExcludeRecord by default).
-  - [ ] "543 of 11,520 source records outside the window in 409 trials".
+  - [x] "543 of 11,520 source records outside the window in 409 trials".
   - [ ] Thumbnails and the all-trials overlay.
   - [ ] "Mark trial as wrong orientation…".
 - [ ] 257 of 259 images; forest-044 and kitchen-081 shown missing (hatched), never blank.
@@ -82,9 +82,9 @@ application parity is qualified separately below.
 - [x] Draft settings apply as one undoable command; Diff uses the library plan diff and Description is saved with the revision. `DraftLifecycleSuite` checks invalid-input blocking, immutable revisions, run attachments and discard.
 - Presentation differences recorded for this tranche: the generic form scrolls and shows the library's field metadata; Apply commits a valid group of inputs to the draft. Presets and scale selection use the shared segmented control. The cell label shows both axes, and the large-scale warning displays the served extent ratio. No protocol/exploratory scale classification is added.
 - [ ] Resolved design:
-  - [ ] 219,486 Cartesian candidates before paging (466 admitted retrieval × 471 admitted encoding), then 8,969 after.
-  - [ ] 480 = 454 without a known focal preparation failure + 3 known focal failures + 9 no match + 14 not admitted. Successful contributing contrasts are known only after execution.
-  - [ ] Input digest plus plan revision.
+  - [x] 219,486 Cartesian candidates before paging (466 admitted retrieval × 471 admitted encoding), then 8,969 after.
+  - [x] 480 = 454 without a known focal preparation failure + 3 known focal failures + 9 no match + 14 not admitted. Successful contributing contrasts are known only after execution.
+  - [x] Input digest plus plan revision.
 - [ ] Preflight keeps eyes4s findings separate from Studio checks ("0 queries with >1 matched reference · checked"). "Save & run rev 5 · 44,845 pairs" is enabled.
 - [ ] Preflight budget row: a recorded deviation. The board's "Budget: pairs ≤ 50,000 · cells ≤ 20M" is omitted because the real backend prepares with eyes4s's default `PairScheduleBudget`, which sets no limit, and eyes4s has no cell budget. The row returns, from the served value, when an analysis applies a budget (decision on `bd-01M437FHJSCPPAZ8PMZ3WD7EGH`).
 
@@ -175,8 +175,9 @@ qualification and landing are recorded on the corresponding motes.
 The current-draft placement counts, matching trial drill-down, eligible/failing split,
 and served unmatched-reference declarations are captured at
 `evidence/20261020-counts/index.html`, with source and capture hashes in `review.json`.
-Focused JVM/JS and native checks and Studio style checks passed; full qualification
-and landing are pending. This does not sign off the whole Data or Analysis board.
+Full canonical and strict Studio qualification passed for source `224d6ee8`
+(tree `96fc89eb`); source and generated audit evidence landed as `e1e6c95e`
+(tree `62a94219`). The opt-in private-density test was skipped; this is no G2 claim. This does not sign off the whole Data or Analysis board.
 
 Placement counts include unadmitted trials and explicitly report unplaced source rows;
 they are distinct from admission-only counts. A changed geometry under the same draft

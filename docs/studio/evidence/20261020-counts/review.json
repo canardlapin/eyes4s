@@ -2,7 +2,7 @@
   "schema": 1,
   "review_date": "2026-10-20",
   "reviewer": "codex-release-session-20261020",
-  "state": "bounded visual review and focused checks complete; full gate and landing pending",
+  "state": "qualified and landed on origin/main; bounded review only",
   "base": "869e9368c3a47bbb576c35d7c5ade494505b9420",
   "scope": [
     "Current-draft source placement counts and matching per-trial drill-down, including occurrence.",
@@ -159,5 +159,20 @@
       "sha256": "57c34a0376fe674c946024e297d4342ff4340b19d6b9a02887de878d66053821",
       "reference": "../../design/reference/Main-2x.png"
     }
-  ]
+  ],
+  "qualified_source": "224d6ee854d1d17457fe0869031d0c57474b40ec",
+  "qualified_source_tree": "96fc89eb9995bd100c85f9ed802f2aceea190f60",
+  "landed_source_evidence_commit": "e1e6c95e9f36db14dc2e76bbe28cfe57c547a8d9",
+  "landed_source_evidence_tree": "62a942191aa6b4d8bfab24c2f173499fa18504d6",
+  "full_gate": {
+    "canonical": "passed",
+    "strict_studio": "passed",
+    "core_jvm": 1104,
+    "core_js": 1011,
+    "app_each": 772,
+    "viz_each": 315,
+    "desktop_passed": 754,
+    "desktop_ignored": 1,
+    "ignored_reason": "opt-in private-density fixture absent; no G2 claim"
+  }
 }
