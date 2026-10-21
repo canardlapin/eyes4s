@@ -1,0 +1,124 @@
+{
+  "schema": 1,
+  "source_commit": "a62195681aa9d4e48dc29e635349d51b01dcc63b",
+  "source_tree": "632177ccbf0c957cc87440ed1f7eecd618a081ad",
+  "tree_with_recorded_audit": "b511e9c6f272ea74ddf2e107674e40e8a07f03ff",
+  "finished_utc": "2026-10-21T07:29:45.012831+00:00",
+  "runner": {
+    "candidate": "a62195681aa9d4e48dc29e635349d51b01dcc63b",
+    "tree": "632177ccbf0c957cc87440ed1f7eecd618a081ad",
+    "started_utc": "2026-10-21T06:42:21Z",
+    "python": "3.13.4 (main, Jun  3 2025, 15:34:24) [Clang 16.0.0 (clang-1600.0.26.4)]",
+    "jdk": "/Users/bbuchsbaum/Library/Java/JavaVirtualMachines/temurin-25.0.4.1+1.jdk/Contents/Home",
+    "checks": [
+      {
+        "name": "canonical",
+        "exit_code": 0,
+        "seconds": 1797.862375708297,
+        "log": "/private/tmp/eyes4s-final-qualification-20261021-canonical.log"
+      },
+      {
+        "name": "studio",
+        "exit_code": 0,
+        "seconds": 1029.6355476253666,
+        "log": "/private/tmp/eyes4s-final-qualification-20261021-studio.log"
+      },
+      {
+        "name": "python-tests",
+        "exit_code": 0,
+        "seconds": 8.867396207991987,
+        "log": "/private/tmp/eyes4s-final-qualification-20261021-python-tests.log"
+      },
+      {
+        "name": "comparison-inventory",
+        "exit_code": 0,
+        "seconds": 0.9816640829667449,
+        "log": "/private/tmp/eyes4s-final-qualification-20261021-comparison-inventory.log"
+      },
+      {
+        "name": "performance-protocol",
+        "exit_code": 0,
+        "seconds": 0.09964387491345406,
+        "log": "/private/tmp/eyes4s-final-qualification-20261021-performance-protocol.log"
+      }
+    ]
+  },
+  "studio_totals": {
+    "coreJVM": {
+      "tests": 1120,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "passed": 1120
+    },
+    "coreJS": {
+      "tests": 1027,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "passed": 1027
+    },
+    "appJVM": {
+      "tests": 778,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "passed": 778
+    },
+    "appJS": {
+      "tests": 778,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "passed": 778
+    },
+    "vizJVM": {
+      "tests": 316,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "passed": 316
+    },
+    "vizJS": {
+      "tests": 316,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "passed": 316
+    },
+    "desktop": {
+      "tests": 781,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 1,
+      "passed": 780
+    }
+  },
+  "audit_files": {
+    "tools/api-audit/inventory.json": "782b484408deec90f49009f51afc30959d8327f358b62850a5b64538d56dda6c",
+    "tools/api-audit/evidence.json": "ab63fc585a9f360c9a2ba8f0915ae87dd83be758513a06d0366d2d0fba62a2b0",
+    "tools/api-audit/inventory-provenance.json": "1266075ce5f8d358c7e57042b915ff7744c04ff8af2d0721d9fee9236535de5d"
+  },
+  "logs": {
+    "/private/tmp/eyes4s-final-qualification-20261021-canonical.log": "16115b8fc096443a1587dbb08efe1909234bc82c72aadbec8c9acd5992a17106",
+    "/private/tmp/eyes4s-final-qualification-20261021-studio.log": "53978cb7a8c1a305185178bf5c3483b700aa9db68feeb381ef04097034f514b1",
+    "/private/tmp/eyes4s-final-qualification-20261021-python-tests.log": "a66d1665153ef8e1b9d1020e36aa2b3c43a5de8cf0471b2dd27127469eee9e40",
+    "/private/tmp/eyes4s-final-qualification-20261021-comparison-inventory.log": "89f378f97fa388a9588f54483548bfdc8bfe2b1f9f091c34f3d69c20a9b4c39b",
+    "/private/tmp/eyes4s-final-qualification-20261021-performance-protocol.log": "8a113d32b8532ca3d65114ca22e2d1705373503dc7b0036c2427ef18162c789e",
+    "/private/tmp/eyes4s-daily-use-qualification-20261021/target/landing-gate/werror.log": "54e2f48a616f7a3742f7539aab76e29c4920696f34b9647dd57b4b3b62ffdd65",
+    "/private/tmp/eyes4s-daily-use-qualification-20261021/target/landing-gate/audit.log": "1d32c5a1a9bd652daf9475efbce57f9620f0e0573f96cecb5140afc5fe41bac5",
+    "/private/tmp/eyes4s-daily-use-qualification-20261021/target/landing-gate/tests.log": "e893ba977b0225ea113899bc27511ffb08d7eaa17b701be6907c45c9387b2043",
+    "/private/tmp/eyes4s-daily-use-qualification-20261021/target/landing-gate/hygiene.log": "e9f0b1c846c5ec9aed108c71ecb67cf58fdf2b8612905f4a1b9a977d86e1fbb3",
+    "/private/tmp/eyes4s-daily-use-qualification-20261021/target/landing-gate/consumer.log": "163dd706835b55b5736decc841ddf078e4d436e0e27d299ec340415b1c8426a2"
+  },
+  "scope": [
+    "Full canonical landing gate, strict Studio cross-platform/native gate,56 Python comparator tests, current pinned-wheel/live-Mote inventory and performance-protocol validation.",
+    "Sources/tests/build/HEAD were frozen throughout.",
+    "Hosted actual output2 separately qualified identical compiled source on b57d06d1; hosted-review.json records the observed Stage scales and PNG."
+  ],
+  "limits": [
+    "Private-density fixture was opt-in and skipped. No G2 acquisition/timing or private-study acceptance claim.",
+    "No whole-nine-board, VoiceOver, packaging, human-usability or performance-court qualification.",
+    "Metadata-only documentation classification and hosted receipts are incorporated after this gate, with post-merge compile/boundaries/documentation checks."
+  ]
+}
