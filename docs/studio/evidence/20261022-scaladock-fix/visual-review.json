@@ -1,0 +1,28 @@
+{
+  "candidate": "58ee62cd08ae062c1e3ab1edbd9f7951dd5e3133",
+  "reviewed": [
+    {
+      "path": "DataFirstRunFxSuite/DataEmpty-draws-its-required-recommended-inputs-presets-checklist-and-both-themes/light-1x.png",
+      "sha256": "f9a8deadff7439b9935847202d7fb2e8b46f98acc300ae43b369d7fc9436bdfe",
+      "matches_prior_qualified_pixels": true,
+      "dimensions": [
+        1440,
+        900
+      ]
+    },
+    {
+      "path": "DataFirstRunFxSuite/DataEmpty-draws-its-required-recommended-inputs-presets-checklist-and-both-themes/dark-1x.png",
+      "sha256": "30ee4db536c0bccb64d21755862810867d8b2f74f7982d74a6ac9365b32b86ce",
+      "matches_prior_qualified_pixels": true,
+      "dimensions": [
+        1440,
+        900
+      ]
+    }
+  ],
+  "notes": [
+    "DataEmpty light/dark native application snapshots reviewed for text, header layout and controls.",
+    "GoldenJourney figure fixture reviewed; missing-map panels are explicitly marked by the fake backend, not fabricated. This does not qualify remaining whole-board parity items.",
+    "Actual GTK scale2 probe independently verifies Stage2, no host override, one-device-pixel feedback and zero analytic raster mismatch."
+  ]
+}

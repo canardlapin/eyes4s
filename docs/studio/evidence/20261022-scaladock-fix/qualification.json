@@ -1,0 +1,203 @@
+{
+  "candidate": "58ee62cd08ae062c1e3ab1edbd9f7951dd5e3133",
+  "tree": "fe3dd5e20740895bba07fc78b9e2f1ddd6c5acd9",
+  "canonical": {
+    "outcome": "passed",
+    "logs": {
+      "hygiene": {
+        "path": "target/landing-gate/hygiene.log",
+        "sha256": "fe3df896bbe8ca47986721d649a6e4590ce98cd5f364e8c05676e19994722cc1"
+      },
+      "werror": {
+        "path": "target/landing-gate/werror.log",
+        "sha256": "d0774e6be9a644e1ce6a7ae7378ac625abd4d39418d45c6008c173d32b1377c4"
+      },
+      "audit": {
+        "path": "target/landing-gate/audit.log",
+        "sha256": "d1c6301956ecc54587cb7f4c40939c5a661ad12266a54c875e9e6e4c89b04c0d"
+      },
+      "tests": {
+        "path": "target/landing-gate/tests.log",
+        "sha256": "e6f037d018b3ff936ed1e8f0c424d3ff48554a40ded59be20dfef692cb3b3dc8"
+      },
+      "consumer": {
+        "path": "target/landing-gate/consumer.log",
+        "sha256": "e70d097feb3a01f49f5d39586fb1330aeb00ac982af0164585a7c4f35a234357"
+      }
+    },
+    "api_summary": "API audit passed: 3984 runtime entries, 691 abstractions, 34 explicit JVM-only declarations; zero uncovered entries."
+  },
+  "supplemental": {
+    "candidate": "58ee62cd08ae062c1e3ab1edbd9f7951dd5e3133",
+    "tree": "fe3dd5e20740895bba07fc78b9e2f1ddd6c5acd9",
+    "steps": [
+      {
+        "name": "canonical",
+        "command": [
+          "python3.13",
+          "tools/landing-gate/gate.py"
+        ],
+        "environment": {},
+        "started": "2026-10-23T02:17:38.049509+00:00",
+        "exit": 0,
+        "finished": "2026-10-23T02:46:38.052455+00:00",
+        "log": "target/scaladock-qualification/canonical.log",
+        "log_sha256": "8614c7daf36c7a97bd070162f701766f1456b99e1bb57520c1237684b8747780"
+      },
+      {
+        "name": "studio",
+        "command": [
+          "sbt",
+          "-batch",
+          "-J-Xmx6g",
+          "studioAll",
+          "studioStyleCheck",
+          "studioBoundaries"
+        ],
+        "environment": {
+          "GITHUB_ACTIONS": "true"
+        },
+        "started": "2026-10-23T02:46:38.077308+00:00",
+        "exit": 0,
+        "finished": "2026-10-23T03:05:35.838885+00:00",
+        "log": "target/scaladock-qualification/studio.log",
+        "log_sha256": "dd3dc88ce6515670f62985abfb5fabbee4d66b2e3bfd239972935dd84d8426f4"
+      },
+      {
+        "name": "catalogue-checker-tests",
+        "command": [
+          "python3.13",
+          "-m",
+          "unittest",
+          "discover",
+          "-s",
+          "tools/studio-e2e",
+          "-p",
+          "test_*.py"
+        ],
+        "environment": {},
+        "started": "2026-10-23T03:05:35.868901+00:00",
+        "exit": 0,
+        "finished": "2026-10-23T03:05:36.001960+00:00",
+        "log": "target/scaladock-qualification/catalogue-checker-tests.log",
+        "log_sha256": "0f7e4b97443e54aca647179972594d13bb587afcbf151fab8228148587ea844a"
+      },
+      {
+        "name": "catalogue",
+        "command": [
+          "python3.13",
+          "tools/studio-e2e/check.py"
+        ],
+        "environment": {},
+        "started": "2026-10-23T03:05:36.030419+00:00",
+        "exit": 0,
+        "finished": "2026-10-23T03:05:36.162702+00:00",
+        "log": "target/scaladock-qualification/catalogue.log",
+        "log_sha256": "ee8c699bf2c636f875a77e7734501e764400fb36f0efda058597e73b61f4ccd3"
+      },
+      {
+        "name": "site",
+        "command": [
+          "sbt",
+          "-batch",
+          "-J-Xmx6g",
+          "docs/tlSite"
+        ],
+        "environment": {},
+        "started": "2026-10-23T03:05:36.186855+00:00",
+        "exit": 0,
+        "finished": "2026-10-23T03:06:23.212141+00:00",
+        "log": "target/scaladock-qualification/site.log",
+        "log_sha256": "3b11ed41b0d3a8f4ac965a076fa39075302fa38714a9fa725080f87b4186b5bd"
+      },
+      {
+        "name": "documentation",
+        "command": [
+          "python3.13",
+          "tools/check-docs.py",
+          "--run-consumer"
+        ],
+        "environment": {},
+        "started": "2026-10-23T03:06:23.244566+00:00",
+        "exit": 0,
+        "finished": "2026-10-23T03:11:01.613716+00:00",
+        "log": "target/scaladock-qualification/documentation.log",
+        "log_sha256": "5ff02135793e48cabcb3d1df15d819ad7602063064caa32d20e600f3fc5cb21a"
+      }
+    ]
+  },
+  "studio_reports": {
+    "core.jvm": {
+      "passed": 1120,
+      "failed": 0,
+      "errored": 0,
+      "skipped": 0
+    },
+    "core.js": {
+      "passed": 1027,
+      "failed": 0,
+      "errored": 0,
+      "skipped": 0
+    },
+    "app.jvm": {
+      "passed": 782,
+      "failed": 0,
+      "errored": 0,
+      "skipped": 0
+    },
+    "app.js": {
+      "passed": 782,
+      "failed": 0,
+      "errored": 0,
+      "skipped": 0
+    },
+    "viz.jvm": {
+      "passed": 316,
+      "failed": 0,
+      "errored": 0,
+      "skipped": 0
+    },
+    "viz.js": {
+      "passed": 316,
+      "failed": 0,
+      "errored": 0,
+      "skipped": 0
+    },
+    "desktop": {
+      "passed": 797,
+      "failed": 0,
+      "errored": 0,
+      "skipped": 1
+    }
+  },
+  "portable_passed": 4343,
+  "catalogue_scenarios": 24,
+  "hosted_case_platform_bindings_verified": 107,
+  "hosted_studio_url": "https://github.com/canardlapin/eyes4s/actions/runs/39888781232",
+  "hosted_checks_url": "https://github.com/canardlapin/eyes4s/actions/runs/39888781308",
+  "native_output_scale": {
+    "nativeScaleX": 2.0,
+    "nativeScaleY": 2.0,
+    "requiredScale": 2,
+    "hostOverride": false,
+    "deviceWidth": 512,
+    "deviceHeight": 384,
+    "stripeWidthDevicePixels": 1,
+    "rasterDifferenceFraction": 0.0,
+    "maximumDifferenceFraction": 0.005
+  },
+  "generated_api_outputs": {
+    "tools/api-audit/inventory.json": "782b484408deec90f49009f51afc30959d8327f358b62850a5b64538d56dda6c",
+    "tools/api-audit/evidence.json": "ab63fc585a9f360c9a2ba8f0915ae87dd83be758513a06d0366d2d0fba62a2b0",
+    "tools/api-audit/inventory-provenance.json": "475da1ad5a12bf8400c6c5a73467337ca31bb24c4db5f7b2fb10676fefdd9548"
+  },
+  "provider_pin": "b83a7ecb90529184bd75eb1ad0b322af73ec065f",
+  "provider_mainline_pr": "https://github.com/canardlapin/scaladock/pull/4",
+  "provider_backport_pr": "https://github.com/canardlapin/scaladock/pull/5",
+  "broader_upgrade_follow_up": "bd-01M5K8EKNNXPCZJ2PZ198CTDVV",
+  "limits": [
+    "Focused restore repair only; broader current-upstream keyboard/accessibility adoption remains open.",
+    "Native GTK2 is verified; this does not qualify physical macOS Retina or VoiceOver.",
+    "No study geometry/timing provenance or scientific result changed."
+  ]
+}
