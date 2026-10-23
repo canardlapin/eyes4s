@@ -8,8 +8,9 @@ explicit deviations; it is not a claim that every illustrated control is present
 
 The concrete repairs are selected-result scale following, served Compare maps and
 independent overlay controls, captions that wrap at ordinary pane widths, physical
-figure columns and tiles, caption-free figure gaze viewports, and explicit Analysis
-`n/a`/`no value` states. Map reading, identity checks, display limits and overlay
+figure columns and tiles, caption-free figure gaze viewports, explicit Analysis
+`n/a`/`no value` states, content-aware raster-cache reuse and visible/retryable
+Compare raster failures. Map reading, identity checks, display limits and overlay
 choices live in portable studio-app; the JavaFX adapter performs reads and binds
 view-models. No density or comparison is computed by Studio.
 
@@ -56,3 +57,11 @@ skipped or ambiguous named tests. It does not substitute for visual inspection.
 
 [qualification.json](qualification.json) records source/tree identity and full-gate
 results. Motes close only after the qualifying source/evidence lands.
+
+Candidate `24ad6d55` was deliberately stopped during its API audit when review
+found a pre-existing cached-raster correctness gap. Pending requests checked grid
+content; cache hits did not. A failing regression requested different cells under
+one nominal key and received the old cached image. The corrected store checks the
+same content fingerprint on held rasters and renders changed contents anew, pruning
+fingerprints with evictions/invalidation. A native refusal/Retry regression checks
+visible reasons and unchanged source cells. This stopped attempt is not qualification.

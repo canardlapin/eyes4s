@@ -96,11 +96,15 @@
     },
     {
       "path": "studio/desktop/src/main/scala/eyes4s/studio/desktop/compare/TrialPanelsView.scala",
-      "sha256": "d7a973472d9852bc3187f9499caeade0c13a95e5868e1ab4cc38e7963a92a19f"
+      "sha256": "244bcf1d51f0202e780219607fe47b07f90ed2f955c31d25a5ea98fb5736a923"
     },
     {
       "path": "studio/desktop/src/main/scala/eyes4s/studio/desktop/figures/FiguresHost.scala",
       "sha256": "7559779115d8bb7426f6abb7cc179aca6ac14ead83afb9df405a1e3b37025042"
+    },
+    {
+      "path": "studio/desktop/src/main/scala/eyes4s/studio/desktop/maps/MapRasterStore.scala",
+      "sha256": "8d1d9a55266192700fe6a3907105afb7615987d530982affc2f9f2b99cdba63a"
     },
     {
       "path": "studio/desktop/src/main/scala/eyes4s/studio/desktop/trial/TrialCaptions.scala",
@@ -108,7 +112,7 @@
     },
     {
       "path": "studio/desktop/src/main/scala/eyes4s/studio/desktop/trial/TrialView.scala",
-      "sha256": "c909d9d934abe554efd10692db7a202937f3a87e4ab8d30878b5b1404277271f"
+      "sha256": "27e427997549ac89a68a124a18425eeeaea43467cf9a5462c8f0e2c50330c249"
     },
     {
       "path": "studio/desktop/src/test/scala/eyes4s/studio/desktop/analysis/ResolvedDesignFxSuite.scala",
@@ -116,7 +120,7 @@
     },
     {
       "path": "studio/desktop/src/test/scala/eyes4s/studio/desktop/compare/CompareMapHostFxSuite.scala",
-      "sha256": "22bc299205cf8100230077938345fa4d108f216dce016e72a29074aca253ebd6"
+      "sha256": "886dc92b98086235dc53c72d93129cffe46101a815b4d2f4516cc36fc0c5bd90"
     },
     {
       "path": "studio/desktop/src/test/scala/eyes4s/studio/desktop/figures/FigureComposerFxSuite.scala",
@@ -125,6 +129,10 @@
     {
       "path": "studio/desktop/src/test/scala/eyes4s/studio/desktop/figures/FigureGazeFxSuite.scala",
       "sha256": "b87b3957b3a63bcb8e499bee19dde6509273117aff1b99499ff2f6d4670de7f2"
+    },
+    {
+      "path": "studio/desktop/src/test/scala/eyes4s/studio/desktop/maps/MapRasterStoreSuite.scala",
+      "sha256": "64c09edcf021d57dab04c366f9d13f9f574d5e740b3d4484a84f6c651ad855af"
     },
     {
       "path": "studio/desktop/src/test/scala/eyes4s/studio/desktop/shell/BoardParityCaptureFxSuite.scala",
@@ -178,7 +186,7 @@
     },
     {
       "path": "docs/studio/evidence/20261023-parity/MainDark/dark-2x.png",
-      "sha256": "1b82e1898f0f5119483290c264d85ff7dfb7d1e873448142ddcd35502d847072"
+      "sha256": "224e63fd4d8a1269eb9072780cd0fefb9df3f7d047eebdef94cec215e94e44c1"
     }
   ],
   "checks": [
@@ -197,7 +205,7 @@
     {
       "id": "panels",
       "disposition": "accepted deviation",
-      "evidence": "Query circles and matched diamonds, actual stored maps at selectedσ2; Points/Order/Map toggle independently per side. Shared/per-panel limits and opacity preserve original cells, row order, region and thresholds. Blank+cross is explicit; underlay discloses remembered image not shown. Control picking changes the reference and Back to matched remains available.",
+      "evidence": "Query circles and matched diamonds, actual stored maps at selectedσ2; Points/Order/Map toggle independently per side. Shared/per-panel limits and opacity preserve original cells, row order, region and thresholds. Cached raster reuse also checks content; changed cells under a document-local identity render anew. Raster failure reasons are visible and Retry keeps the same served cells. Blank+cross is explicit; underlay discloses remembered image not shown. Control picking changes the reference and Back to matched remains available.",
       "basis": "Golden stimulus/fixation/map shapes replace illustrative art. Missing full trial extent is not guessed as4.8/5.0s. Captions wrap at normal432px pane width; extra analysis-window/marker/order disclosures use more vertical space. The reference pane’s keyboard edge is focused; Compare has no fixation cursor for the mock’s fixation6 tooltip."
     },
     {
@@ -239,6 +247,14 @@
     {
       "report": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.compare.ScaleLadderFxSuite.xml",
       "case": "the readout is FIXTURE.md's focus at 2°, with the confound sentence verbatim"
+    },
+    {
+      "report": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.maps.MapRasterStoreSuite.xml",
+      "case": "a cached key with other cells renders those cells rather than returning the old image"
+    },
+    {
+      "report": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.compare.CompareMapHostFxSuite.xml",
+      "case": "a raster failure is visible and Retry redraws the same served cells"
     },
     {
       "report": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.shell.ParityChecklistSuite.xml",

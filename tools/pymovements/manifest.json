@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
   "epic": "bd-01M3HYEG72WCCNE6P84PWKBGCV",
-  "snapshot_date": "2026-10-21",
-  "eyes4s_commit": "0d79f927c15efe03c67a8869627be0b4fbc72653",
+  "snapshot_date": "2026-10-23",
+  "eyes4s_commit": "24ad6d55224fcd3ea8b721767fda78770ed32ff8",
   "protocol": "docs/plans/PYMOVEMENTS_COMPARISON.md",
   "comparator": {
     "package": "pymovements",
@@ -312,7 +312,7 @@
       "repository": "eyes4s",
       "kind": "api",
       "path": "studio/viz/src/main/scala/eyes4s/studio/viz/trial/TrialScene.scala",
-      "sha256": "9c0e359942e9245874eeb83c165a1e073cff2734d2b0e8efafa1e2fbba92de47",
+      "sha256": "27fac02de7b34a4ab36dfe127d9dcdfabe62917d57a714af12b3ba18bf951381",
       "anchors": [
         "object TrialScene:"
       ]

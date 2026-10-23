@@ -164,6 +164,11 @@ final class TrialView(source: StimulusSource, loader: Executor, maps: MapRasterS
       recency = recency.filterNot(failed)
       requested --= failed
       current.foreach(i => needed(i).foreach(request))
+      val failedMap = Option.when(refusalWrapper.get.nonEmpty)(mapRequest).flatten
+      failedMap.foreach { m =>
+        showMap(None)
+        showMap(Some(m))
+      }
       render()
 
   /** The canvas host, for the input adapter (S4.2) and tests. */

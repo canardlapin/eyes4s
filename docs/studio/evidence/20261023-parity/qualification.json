@@ -4,5 +4,10 @@
   "base": "ab557587a03077c2f3b16a225a1e038fceb417eb",
   "reviews": 8,
   "check_dispositions": 51,
-  "limits": ["synthetic fixture only", "physical Retina and VoiceOver separate", "Results Participants navigator follow-up bd-01M5N6CCJ42414CZSEX6B2CMTR remains open"]
+  "limits": [
+    "synthetic fixture only",
+    "physical Retina and VoiceOver separate",
+    "Results Participants navigator follow-up bd-01M5N6CCJ42414CZSEX6B2CMTR remains open"
+  ],
+  "previous_attempt": "regressions/qualification-24ad6d55-stopped.json"
 }

@@ -29,6 +29,7 @@ import eyes4s.studio.app.text.{PanelText, PanelTextId}
 import eyes4s.studio.app.compare.{ContentFixation, PanelContent}
 import eyes4s.studio.app.tokens.{StageVariant, Theme}
 import eyes4s.studio.desktop.plot.TableTwinView
+import eyes4s.studio.desktop.maps.MapRasterStore
 import eyes4s.studio.desktop.trial.{MapRequest, StimulusSource, TrialView}
 import eyes4s.studio.viz.trial.{
   MarkStyle,
@@ -55,14 +56,15 @@ final class TrialPanelsView(
     underlay: Boolean => Unit,
     retried: () => Unit,
     stimuli: StimulusSource,
-    overlayChanged: (PanelSide, PanelOverlay, Boolean) => Unit = (_, _, _) => ()
+    overlayChanged: (PanelSide, PanelOverlay, Boolean) => Unit = (_, _, _) => (),
+    maps: MapRasterStore = TrialView.sharedMaps
 ):
 
   private final class Panel(styleClass: String, side: PanelSide):
     private val controlContext =
       if side == PanelSide.Query then PanelTextId.Query else PanelTextId.Reference
     private var overlays  = PanelOverlays()
-    val view              = TrialView(stimuli)
+    val view              = TrialView(stimuli, TrialView.sharedLoader, maps)
     val said              = Label()
     var drawn             = Option.empty[TrialSceneInput]
     val pill              = Label()
@@ -93,9 +95,19 @@ final class TrialPanelsView(
     private def refresh(): Unit =
       drawn.foreach(view.show)
       view.showMap(if overlays.map then request else None)
-      mapStatus.setText(if overlays.map then mapReason.getOrElse("") else "")
+      refreshMapStatus()
+
+    private def refreshMapStatus(): Unit =
+      val reason = mapReason.orElse(
+        view.mapRefused.map(e => PanelText(PanelTextId.MapUnavailable, e.message))
+      )
+      mapStatus.setText(if overlays.map then reason.getOrElse("") else "")
       mapStatus.setVisible(mapStatus.getText.nonEmpty)
       mapStatus.setManaged(mapStatus.isVisible)
+    view.mapRefusedProperty.addListener((_, _, _) =>
+      refreshMapStatus()
+      offerRetry()
+    )
 
     def showMap(value: (Option[MapRequest], Option[String])): Unit =
       request = value._1
@@ -209,6 +221,7 @@ final class TrialPanelsView(
 
   private def offerRetry(): Unit =
     val show = failed || mapsFailed ||
+      Vector(query, reference).exists(_.view.mapRefused.nonEmpty) ||
       Vector(query, reference).exists(!_.view.stimulusFailures.get.isEmpty)
     retry.setVisible(show)
     retry.setManaged(show)

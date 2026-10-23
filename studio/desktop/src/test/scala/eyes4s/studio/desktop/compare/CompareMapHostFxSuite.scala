@@ -18,15 +18,18 @@ package eyes4s.studio.desktop.compare
 
 import eyes4s.studio.app.StoryModels
 import eyes4s.studio.app.compare.*
-import eyes4s.studio.app.maps.{ColourLimits, LimitsScope, MapId}
+import eyes4s.studio.app.maps.{ColourLimits, LimitsScope, MapId, MapRaster, RasterBudget}
 import eyes4s.studio.app.tokens.Theme
 import eyes4s.studio.core.backend.*
 import eyes4s.studio.core.fixture.{StoryMoment, StoryMoments}
 import eyes4s.studio.core.selection.ScaleIndex
 import eyes4s.studio.desktop.shell.ShellFxSuite
 import eyes4s.studio.desktop.StudioStyles
+import eyes4s.studio.desktop.maps.MapRasterStore
 import eyes4s.studio.desktop.trial.{GoldenTrials, StimulusSource, TrialViewStatus}
 import javafx.scene.layout.HBox
+import javafx.scene.control.Label
+import scala.jdk.CollectionConverters.*
 
 class CompareMapHostFxSuite extends ShellFxSuite:
   private def ok[E, A](e: Either[E, A]): A = e.fold(x => fail(x.toString), identity)
@@ -181,4 +184,76 @@ class CompareMapHostFxSuite extends ShellFxSuite:
       fx.awaitLayout()
       assertEquals(runOnFx(panels.referenceView.requestedMap), None)
     finally runOnFx { host.dispose(); panels.dispose() }
+  }
+
+  fxStage.test("a raster failure is visible and Retry redraws the same served cells") { fx =>
+    val w = boot(
+      fx,
+      StoryModels.t2Compare,
+      panels = PanelSources(GoldenTrials.contentSource, stimuli)
+    )
+    eventually(fx, "both served trial contents") {
+      Vector(w.summary.panelsVM.query, w.summary.panelsVM.reference)
+        .forall(_.exists(_.content.isInstanceOf[PanelContent.Shown]))
+    }
+    var broken = true
+    val store  = MapRasterStore.on(
+      RasterBudget.Default,
+      _.run(),
+      _.run(),
+      (g, s) =>
+        if broken then throw IllegalStateException("intentional raster failure")
+        else MapRaster.render(g, s)
+    )
+    val vm     = runOnFx(w.summary.panelsVM)
+    val panels = runOnFx(TrialPanelsView(_ => (), _ => (), () => (), stimuli, maps = store))
+    val held   = Held()
+    val host   = runOnFx(CompareMapHost(held, panels))
+    fx.show(runOnFx {
+      val root = HBox(panels.queryNode, panels.referenceNode)
+      root.getStyleClass.add("studio-shell")
+      root.getStylesheets.setAll(ok(StudioStyles.stylesheets(Theme.Light))*)
+      root
+    })
+    def failures = Vector(panels.queryNode, panels.referenceNode).flatMap(
+      _.lookupAll(".label").asScala.collect {
+        case l: Label if l.isVisible && l.getText.contains("intentional raster failure") =>
+          l.getText
+      }
+    )
+    try
+      runOnFx {
+        panels.render(vm, Theme.Light)
+        host.sync(TrialPanels.focusOf(StoryModels.t2Compare), vm, 0.6)
+        held.answer(MapId.Result(run, q, two), grid(q, two, 1.0))
+        held.answer(MapId.Result(run, r, two), grid(r, two, 2.0))
+      }
+      eventually(fx, "both refusals have visible reasons and a Retry control") {
+        failures.size == 2 && panels.retryOffered
+      }
+      val before = runOnFx(
+        Vector(
+          panels.queryView.requestedMap.get.grid,
+          panels.referenceView.requestedMap.get.grid
+        )
+      )
+      val renderedBeforeRetry = store.renderCount
+      runOnFx { broken = false; panels.pressRetry() }
+      eventually(fx, "both raster retries draw") {
+        Vector(panels.queryView, panels.referenceView).forall(_.status.get match
+          case TrialViewStatus.Shown(scene) => scene.map.nonEmpty
+          case _ => false) && failures.isEmpty && !panels.retryOffered
+      }
+      assertEquals(held.reads.size, 2)
+      assertEquals(
+        runOnFx(
+          Vector(
+            panels.queryView.requestedMap.get.grid,
+            panels.referenceView.requestedMap.get.grid
+          )
+        ),
+        before
+      )
+      assertEquals(store.renderCount, renderedBeforeRetry + 2L)
+    finally runOnFx { host.dispose(); panels.dispose(); store.close() }
   }

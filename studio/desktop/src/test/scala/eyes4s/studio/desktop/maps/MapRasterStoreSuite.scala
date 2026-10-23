@@ -140,6 +140,27 @@ class MapRasterStoreSuite extends munit.FunSuite:
     assertEquals(store.renderCount, 3L)
   }
 
+  test(
+    "a cached key with other cells renders those cells rather than returning the old image"
+  ) {
+    val held   = Held()
+    val store  = MapRasterStore.on(RasterBudget.Default, held, _.run())
+    val first  = grid("ret_01")
+    val second = grid("ret_01", scale = 0.25)
+    val got    = answers()
+    store.request(first, style)(got += _)
+    held.runAll()
+    store.request(second, style)(got += _)
+    held.runAll()
+    assertEquals(store.renderCount, 2L)
+    assertEquals(right(got(1)).argb.toVector, MapRaster.render(second, style).argb.toVector)
+    assertNotEquals(right(got(0)).argb.toVector, right(got(1)).argb.toVector)
+    store.request(first, style)(got += _)
+    held.runAll()
+    assertEquals(store.renderCount, 3L)
+    assertEquals(right(got(2)).argb.toVector, MapRaster.render(first, style).argb.toVector)
+  }
+
   test("a failed render is refused to every asker and leaves nothing pending") {
     val held   = Held()
     var broken = true

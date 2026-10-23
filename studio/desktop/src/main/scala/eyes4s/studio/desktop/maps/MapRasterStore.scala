@@ -74,7 +74,8 @@ final class MapRasterStore private (
 ):
   private type Answer = Either[RasterRefusal, MapRaster] => Unit
 
-  private var cache: RasterCache = RasterCache.empty(budget)
+  private var cache: RasterCache                  = RasterCache.empty(budget)
+  private var cachedContent: Map[RasterKey, Long] = Map.empty
   // Each key being rendered: the content of the grid it is rendered from
   // and everyone waiting for it.
   private var pending: Map[RasterKey, (Long, Vector[Answer])] = Map.empty
@@ -91,8 +92,15 @@ final class MapRasterStore private (
     val step: Either[RasterRefusal, Option[Either[RasterRefusal, MapRaster]]] = synchronized {
       if closed then Left(RasterRefusal.Closed(key))
       else
-        val (hit, next) = cache.get(key)
+        val (found, next) = cache.get(key)
         cache = next
+        val hit = found.filter(_ => cachedContent.get(key).contains(content))
+        // A shared store can see the same document-local run/trial identity
+        // in another project. A held raster must match its cells too.
+        if found.nonEmpty && hit.isEmpty then
+          val (without, removed) = cache.invalidate(grid.map)
+          cache = without
+          cachedContent --= removed
         hit match
           case Some(raster) => Right(Some(Right(raster)))
           case None         =>
@@ -117,7 +125,9 @@ final class MapRasterStore private (
 
   /** Drops every raster of `map`, as when its run's result is dropped. */
   def invalidate(map: MapId): Unit = synchronized {
-    cache = cache.invalidate(map)._1
+    val (next, removed) = cache.invalidate(map)
+    cache = next
+    cachedContent --= removed
   }
 
   /** The cache as it stands. */
@@ -149,7 +159,14 @@ final class MapRasterStore private (
       pending = pending.removed(key)
       if closed then Vector.empty
       else
-        result.foreach(r => cache = cache.put(r)._1)
+        result.foreach { r =>
+          val (next, evicted) = cache.put(r)
+          cache = next
+          cachedContent --= evicted
+          cachedContent = if cache.contains(key) then
+            cachedContent.updated(key, grid.contentHash)
+          else cachedContent.removed(key)
+        }
         w
     }
     waiting.foreach(send(_, result))

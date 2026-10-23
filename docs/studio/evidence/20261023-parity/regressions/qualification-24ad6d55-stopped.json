@@ -1,0 +1,21 @@
+{
+  "candidate": "24ad6d55224fcd3ea8b721767fda78770ed32ff8",
+  "tree": "58e819a964132bd625342e82144f6807c4262687",
+  "status": "deliberately stopped; not qualification",
+  "completed": [
+    "hygiene",
+    "strict rootJVM and rootJS compile"
+  ],
+  "stopped_at": "API audit",
+  "reason": "Cached raster hits did not compare content. Pending reads did; cache-hit regression reproduced old-image reuse. Correctness fix and visible raster refusal/Retry added before freezing a new combined candidate.",
+  "logs": [
+    {
+      "path": "docs/studio/evidence/20261023-parity/regressions/qualification-24ad6d55-driver.log",
+      "sha256": "2973f2ab9d7a10c174dfe6212e7560c5c3216f71217a2665ac2c3839e8a5d920"
+    },
+    {
+      "path": "docs/studio/evidence/20261023-parity/regressions/qualification-24ad6d55-audit.log",
+      "sha256": "9fcf74a550445d6239db8a5d024466b0d5925c202f7ad3eecb42774ad57e448e"
+    }
+  ]
+}
