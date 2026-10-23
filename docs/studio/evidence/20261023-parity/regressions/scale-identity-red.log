@@ -1,0 +1,74 @@
+[info] welcome to sbt 1.11.7 (Eclipse Adoptium Java 25.0.4.1)
+[info] loading settings for project eyes4s-board-parity-20261023-build from plugins.sbt...
+[info] loading project definition from /private/tmp/eyes4s-board-parity-20261023/project
+[info] loading settings for project root from build.sbt...
+[info] resolving key references (37727 settings) ...
+[info] set scmInfo to https://github.com/canardlapin/eyes4s
+[info] set current project to root (in build file:/private/tmp/eyes4s-board-parity-20261023/)
+[info] compiling 30 Scala sources to /private/tmp/eyes4s-board-parity-20261023/kernel/.jvm/target/scala-3.7.4/classes ...
+[info] done compiling
+[info] compiling 10 Scala sources to /private/tmp/eyes4s-board-parity-20261023/core/.jvm/target/scala-3.7.4/classes ...
+[info] done compiling
+[info] compiling 2 Scala sources to /private/tmp/eyes4s-board-parity-20261023/aoi/.jvm/target/scala-3.7.4/classes ...
+[info] compiling 7 Scala sources to /private/tmp/eyes4s-board-parity-20261023/surface/.jvm/target/scala-3.7.4/classes ...
+[info] compiling 6 Scala sources to /private/tmp/eyes4s-board-parity-20261023/detect/.jvm/target/scala-3.7.4/classes ...
+[info] done compiling
+[info] done compiling
+[info] compiling 15 Scala sources to /private/tmp/eyes4s-board-parity-20261023/compare/.jvm/target/scala-3.7.4/classes ...
+[info] done compiling
+[info] done compiling
+[info] compiling 21 Scala sources to /private/tmp/eyes4s-board-parity-20261023/design/.jvm/target/scala-3.7.4/classes ...
+[info] done compiling
+[info] compiling 79 Scala sources to /private/tmp/eyes4s-board-parity-20261023/plan/.jvm/target/scala-3.7.4/classes ...
+[info] done compiling
+[info] compiling 11 Scala sources to /private/tmp/eyes4s-board-parity-20261023/fs2/.jvm/target/scala-3.7.4/classes ...
+[info] compiling 19 Scala sources to /private/tmp/eyes4s-board-parity-20261023/results/.jvm/target/scala-3.7.4/classes ...
+[info] done compiling
+[info] done compiling
+[info] compiling 46 Scala sources to /private/tmp/eyes4s-board-parity-20261023/codec/.jvm/target/scala-3.7.4/classes ...
+[info] done compiling
+[info] compiling 44 Scala sources to /private/tmp/eyes4s-board-parity-20261023/io/.jvm/target/scala-3.7.4/classes ...
+[info] done compiling
+[info] compiling 128 Scala sources to /private/tmp/eyes4s-board-parity-20261023/studio/core/.jvm/target/scala-3.7.4/classes ...
+[info] done compiling
+[info] compiling 133 Scala sources to /private/tmp/eyes4s-board-parity-20261023/studio/core/.jvm/target/scala-3.7.4/test-classes ...
+[info] compiling 130 Scala sources to /private/tmp/eyes4s-board-parity-20261023/studio/app/.jvm/target/scala-3.7.4/classes ...
+[info] done compiling
+[info] done compiling
+[info] compiling 86 Scala sources to /private/tmp/eyes4s-board-parity-20261023/studio/app/.jvm/target/scala-3.7.4/test-classes ...
+[info] done compiling
+[warn] javaOptions will be ignored, fork is set to false
+Test run eyes4s.studio.app.compare.CompareSummarySuite started
+==> X eyes4s.studio.app.compare.CompareSummarySuite.an explicit scale survives unrelated sync; a new result scale follows its identity 1.64s munit.ComparisonFailException: studio/app/src/test/scala/eyes4s/studio/app/compare/CompareSummarySuite.scala:73
+72:          StudioRef.QueryContrast(run7, sigma2, p17ret07))))._1
+73:      assertEquals(CompareSummary.sync(chosen, sameScaleResult)._1.shown, Some(sigma2))
+74:    }
+values are not the same
+=> Obtained
+Some(
+  value = ScaleIndex(
+    value = 0
+  )
+)
+=> Diff (- expected, + obtained)
+   value = ScaleIndex(
+-    value = 2
++    value = 0
+   )
+    at munit.FunSuite.assertEquals(FunSuite.scala:12)
+    at eyes4s.studio.app.compare.CompareSummarySuite.$init$$$anonfun$2$$anonfun$1(CompareSummarySuite.scala:73)
+    at scala.concurrent.impl.Promise$Transformation.run(Promise.scala:467)
+    at java.util.concurrent.ForkJoinTask$RunnableExecuteAction.compute(ForkJoinTask.java:1753)
+    at java.util.concurrent.ForkJoinTask$RunnableExecuteAction.compute(ForkJoinTask.java:1745)
+    at java.util.concurrent.ForkJoinTask$InterruptibleTask.exec(ForkJoinTask.java:1662)
+    at java.util.concurrent.ForkJoinTask.doExec(ForkJoinTask.java:511)
+    at java.util.concurrent.ForkJoinPool$WorkQueue.topLevelExec(ForkJoinPool.java:1450)
+    at java.util.concurrent.ForkJoinPool.runWorker(ForkJoinPool.java:2019)
+    at java.util.concurrent.ForkJoinWorkerThread.run(ForkJoinWorkerThread.java:187)
+eyes4s.studio.app.compare.CompareSummarySuite: finished 1.654s
+Test run eyes4s.studio.app.compare.CompareSummarySuite finished: 1 failed, 0 ignored, 1 total 1.659s
+[error] Failed: Total 1, Failed 1, Errors 0, Passed 0
+[error] Failed tests:
+[error] 	eyes4s.studio.app.compare.CompareSummarySuite
+[error] (studioAppJVM / Test / testOnly) sbt.TestsFailedException: Tests unsuccessful
+[error] Total time: 77 s (0:01:17.0), completed Oct 23, 2026, 3:15:35 p.m.

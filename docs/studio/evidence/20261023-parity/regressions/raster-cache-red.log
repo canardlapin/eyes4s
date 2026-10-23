@@ -1,0 +1,40 @@
+[info] welcome to sbt 1.11.7 (Eclipse Adoptium Java 25.0.4.1)
+[info] loading settings for project eyes4s-board-parity-20261023-build from plugins.sbt...
+[info] loading project definition from /private/tmp/eyes4s-board-parity-20261023/project
+[info] loading settings for project root from build.sbt...
+[info] resolving key references (37727 settings) ...
+[info] set scmInfo to https://github.com/canardlapin/eyes4s
+[info] set current project to root (in build file:/private/tmp/eyes4s-board-parity-20261023/)
+[info] scalafmt: Formatting 1 Scala sources (/private/tmp/eyes4s-board-parity-20261023/studio/desktop)...
+[info] scalafmt: Reformatted 1 Scala sources
+[success] Total time: 1 s, completed Oct 23, 2026, 4:29:24 p.m.
+[info] compiling 1 Scala source to /private/tmp/eyes4s-board-parity-20261023/studio/core/.jvm/target/scala-3.7.4/classes ...
+[info] done compiling
+[info] compiling 1 Scala source to /private/tmp/eyes4s-board-parity-20261023/studio/desktop/target/scala-3.7.4/classes ...
+[info] done compiling
+[info] compiling 1 Scala source to /private/tmp/eyes4s-board-parity-20261023/studio/desktop/target/scala-3.7.4/test-classes ...
+[info] done compiling
+WARNING: A terminally deprecated method in sun.misc.Unsafe has been called
+WARNING: sun.misc.Unsafe::objectFieldOffset has been called by scala.runtime.LazyVals$ (file:/Users/bbuchsbaum/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/scala-lang/scala3-library_3/3.7.4/scala3-library_3-3.7.4.jar)
+WARNING: Please consider reporting this to the maintainers of class scala.runtime.LazyVals$
+WARNING: sun.misc.Unsafe::objectFieldOffset will be removed in a future release
+Test run eyes4s.studio.desktop.maps.MapRasterStoreSuite started
+==> X eyes4s.studio.desktop.maps.MapRasterStoreSuite.a cached key with other cells renders those cells rather than returning the old image 0.026s munit.ComparisonFailException: studio/desktop/src/test/scala/eyes4s/studio/desktop/maps/MapRasterStoreSuite.scala:155
+154:    held.runAll()
+155:    assertEquals(store.renderCount, 2L)
+156:    assertEquals(right(got(1)).argb.toVector, MapRaster.render(second, style).argb.toVector)
+values are not the same
+=> Obtained
+1
+=> Diff (- expected, + obtained)
+-2
++1
+    at munit.FunSuite.assertEquals(FunSuite.scala:12)
+    at eyes4s.studio.desktop.maps.MapRasterStoreSuite.$init$$$anonfun$5(MapRasterStoreSuite.scala:155)
+eyes4s.studio.desktop.maps.MapRasterStoreSuite: finished 0.139s
+Test run eyes4s.studio.desktop.maps.MapRasterStoreSuite finished: 1 failed, 0 ignored, 9 total 0.149s
+[error] Failed: Total 9, Failed 1, Errors 0, Passed 8
+[error] Failed tests:
+[error] 	eyes4s.studio.desktop.maps.MapRasterStoreSuite
+[error] (studioDesktop / Test / testOnly) sbt.TestsFailedException: Tests unsuccessful
+[error] Total time: 8 s, completed Oct 23, 2026, 4:29:32 p.m.

@@ -1,0 +1,5 @@
+[hygiene] sbt -batch -J-Xmx6g headerCheckAll scalafmtCheckAll scalafmtSbtCheck githubWorkflowCheck
+[hygiene] ok in 0.4 min
+[werror] GITHUB_ACTIONS=true sbt -batch -J-Xmx6g project rootJVM Test/compile project rootJS Test/compile
+[werror] ok in 1.4 min
+[audit] /Users/bbuchsbaum/homebrew/opt/python@3.13/bin/python3.13 tools/api-audit/run.py --record

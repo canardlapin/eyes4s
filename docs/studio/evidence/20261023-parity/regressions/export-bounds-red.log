@@ -1,0 +1,27 @@
+[info] welcome to sbt 1.11.7 (Eclipse Adoptium Java 25.0.4.1)
+[info] loading settings for project eyes4s-board-parity-20261023-build from plugins.sbt...
+[info] loading project definition from /private/tmp/eyes4s-board-parity-20261023/project
+[info] loading settings for project root from build.sbt...
+[info] resolving key references (37727 settings) ...
+[info] set scmInfo to https://github.com/canardlapin/eyes4s
+[info] set current project to root (in build file:/private/tmp/eyes4s-board-parity-20261023/)
+[info] scalafmt: Formatting 1 Scala sources (/private/tmp/eyes4s-board-parity-20261023/studio/viz/.jvm)...
+[info] scalafmt: Reformatted 1 Scala sources
+[success] Total time: 1 s, completed Oct 23, 2026, 4:08:04 p.m.
+[info] compiling 1 Scala source to /private/tmp/eyes4s-board-parity-20261023/studio/viz/.jvm/target/scala-3.7.4/test-classes ...
+[info] done compiling
+[warn] javaOptions will be ignored, fork is set to false
+Test run eyes4s.studio.viz.figure.FigureGazeSuite started
+==> X eyes4s.studio.viz.figure.FigureGazeSuite.the exported gaze viewport ends where its separate caption begins 0.04s munit.ComparisonFailException: studio/viz/src/test/scala/eyes4s/studio/viz/figure/FigureGazeSuite.scala:193 values are not the same expected: 20.43402777777778 but was: 16.280833038818393
+192:      .getOrElse(fail("no gaze caption"))
+193:    assertEqualsDouble(mm(port.origin.y), mm(caption.at.y), Tolerance)
+194:    assertEqualsDouble(
+    at munit.FunSuite.assertEqualsDouble(FunSuite.scala:12)
+    at eyes4s.studio.viz.figure.FigureGazeSuite.$init$$$anonfun$3(FigureGazeSuite.scala:193)
+eyes4s.studio.viz.figure.FigureGazeSuite: finished 0.172s
+Test run eyes4s.studio.viz.figure.FigureGazeSuite finished: 1 failed, 0 ignored, 5 total 0.181s
+[error] Failed: Total 5, Failed 1, Errors 0, Passed 4
+[error] Failed tests:
+[error] 	eyes4s.studio.viz.figure.FigureGazeSuite
+[error] (studioVizJVM / Test / testOnly) sbt.TestsFailedException: Tests unsuccessful
+[error] Total time: 7 s, completed Oct 23, 2026, 4:08:11 p.m.
