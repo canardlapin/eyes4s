@@ -148,7 +148,7 @@
     },
     {
       "path": "studio/desktop/src/test/scala/eyes4s/studio/desktop/trial/TrialViewMapFxSuite.scala",
-      "sha256": "6bd148fab92cd52fee8bc22092e4677cf33dfd8b855a606f9dff80a364cb5081"
+      "sha256": "da9650fbb368c5dd0c11a1ed4e3aa6d6b5ad7a716e08f4657f402c0c8b10fb10"
     },
     {
       "path": "studio/viz/src/main/scala/eyes4s/studio/viz/figure/FigureGaze.scala",
@@ -255,6 +255,10 @@
     {
       "report": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.compare.CompareMapHostFxSuite.xml",
       "case": "a raster failure is visible and Retry redraws the same served cells"
+    },
+    {
+      "report": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.trial.TrialViewMapFxSuite.xml",
+      "case": "Main's 432 px trial pane keeps all caption wording clear"
     },
     {
       "report": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.shell.ParityChecklistSuite.xml",

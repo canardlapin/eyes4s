@@ -680,26 +680,34 @@ class TrialViewMapFxSuite extends StudioFxSuite:
         )
         w.view.showMap(Some(MapRequest(grid, style, limits = LimitsScope.Shared)))
       }
-      val (scene, frame) = drawn(w, 1.0)(_.map.contains(grid.map))
-      val ink            = textInk(scene.plot, frame)
-      val joined         = ink.map(_.label).mkString(" ")
-      Vector(
-        scene.caption,
-        TrialText(TrialTextId.MarkerArea),
-        TrialText(TrialTextId.OrderNote),
-        scene.disclosure.get
-      ).foreach(s => assert(joined.contains(s), s"missing caption wording: $s"))
-      ink.foreach { i =>
-        assert(i.left >= 0 && i.right <= frame.surface.deviceWidth + 0.001, i)
-        assert(i.top >= 0 && i.bottom <= frame.surface.deviceHeight + 0.001, i)
-      }
-      ink.combinations(2).foreach { pair =>
-        val a = pair(0); val b = pair(1)
-        assert(
-          a.right <= b.left || b.right <= a.left || a.bottom <= b.top || b.bottom <= a.top,
-          s"overlapping text: $a / $b"
+      val nativeScale = runOnFx(fx.stage.getOutputScaleX)
+      Vector(nativeScale, 1.0, 2.0).distinct.foreach { scale =>
+        runOnFx(
+          w.view.plotHost.setOutputScaleOverride(Option.when(scale != nativeScale)(scale))
         )
+        val (scene, frame) = drawn(w, scale)(_.map.contains(grid.map))
+        val ink            = textInk(scene.plot, frame)
+        val joined         = ink.map(_.label).mkString(" ")
+        Vector(
+          scene.caption,
+          TrialText(TrialTextId.MarkerArea),
+          TrialText(TrialTextId.OrderNote),
+          scene.disclosure.get
+        ).foreach(s => assert(joined.contains(s), s"missing caption wording: $s"))
+        ink.foreach { i =>
+          assert(i.left >= 0 && i.right <= frame.surface.deviceWidth + 0.001, i)
+          assert(i.top >= 0 && i.bottom <= frame.surface.deviceHeight + 0.001, i)
+        }
+        ink.combinations(2).foreach { pair =>
+          val a = pair(0); val b = pair(1)
+          assert(
+            a.right <= b.left || b.right <= a.left || a.bottom <= b.top || b.bottom <= a.top,
+            s"overlapping text: $a / $b"
+          )
+        }
       }
+      runOnFx(w.view.plotHost.setOutputScaleOverride(None))
+      drawn(w, nativeScale)(_.map.contains(grid.map))
       fx.snapshot(StudioTheme.Light): Unit
     finally w.dispose()
   }

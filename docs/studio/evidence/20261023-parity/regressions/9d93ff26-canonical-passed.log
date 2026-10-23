@@ -1,0 +1,11 @@
+[hygiene] sbt -batch -J-Xmx6g headerCheckAll scalafmtCheckAll scalafmtSbtCheck githubWorkflowCheck
+[hygiene] ok in 0.1 min
+[werror] GITHUB_ACTIONS=true sbt -batch -J-Xmx6g project rootJVM Test/compile project rootJS Test/compile
+[werror] ok in 1.5 min
+[audit] /Users/bbuchsbaum/homebrew/opt/python@3.13/bin/python3.13 tools/api-audit/run.py --record
+[audit] ok in 17.0 min
+[tests] sbt -batch -J-Xmx6g testAll checkBoundaries
+[tests] ok in 5.0 min
+[consumer] /Users/bbuchsbaum/homebrew/opt/python@3.13/bin/python3.13 tools/study-consumer/verify.py
+[consumer] ok in 3.3 min
+Gate passed for 9d93ff268a3a7f2ed8207d0549c2efa197e59be5 (tree fe981627b29d56a3e70be749a58dfd266a8dcda4).

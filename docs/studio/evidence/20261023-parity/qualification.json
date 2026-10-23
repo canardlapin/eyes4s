@@ -9,5 +9,13 @@
     "physical Retina and VoiceOver separate",
     "Results Participants navigator follow-up bd-01M5N6CCJ42414CZSEX6B2CMTR remains open"
   ],
-  "previous_attempt": "regressions/qualification-24ad6d55-stopped.json"
+  "previous_attempt": "regressions/qualification-24ad6d55-stopped.json",
+  "previous_hosted_failure": "regressions/9d93ff26-native2-test-failure.json",
+  "previous_canonical_pass": {
+    "candidate": "9d93ff268a3a7f2ed8207d0549c2efa197e59be5",
+    "tree": "fe981627b29d56a3e70be749a58dfd266a8dcda4",
+    "log": "regressions/9d93ff26-canonical-passed.log",
+    "sha256": "5ef35b565a559fcca657b8c49c2e92a14d12caa62358abea1830c9c94523d956",
+    "final_qualification": false
+  }
 }

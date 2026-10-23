@@ -65,3 +65,15 @@ one nominal key and received the old cached image. The corrected store checks th
 same content fingerprint on held rasters and renders changed contents anew, pruning
 fingerprints with evictions/invalidation. A native refusal/Retry regression checks
 visible reasons and unchanged source cells. This stopped attempt is not qualification.
+
+The hosted native-GTK2 run for `9d93ff26` failed the new narrow-caption test’s
+readiness wait: it required a1× frame despite the actual2× Stage. The artifact
+showed a drawn map and the independent scale receipt recorded2×2, no override,
+a one-device-pixel line and zero raster mismatch. The test now follows the actual
+native scale and also checks explicit1×/2× render contexts, retaining every text,
+bounds and non-overlap assertion. Local focused cases pass; a fresh combined gate
+and hosted run are required for the corrected test. No production code changed.
+
+The S10.4 parent remains open for its additional complete light/dark JavaFX
+regression-golden matrix; these per-board semantic reviews do not claim that
+unimplemented acceptance criterion.

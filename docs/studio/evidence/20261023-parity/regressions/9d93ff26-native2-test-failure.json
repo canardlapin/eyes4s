@@ -1,0 +1,29 @@
+{
+  "candidate": "9d93ff268a3a7f2ed8207d0549c2efa197e59be5",
+  "tree": "fe981627b29d56a3e70be749a58dfd266a8dcda4",
+  "run": "https://github.com/canardlapin/eyes4s/actions/runs/40020462864",
+  "job": 120645573835,
+  "status": "hosted native-GTK2 failed; not final qualification",
+  "suite": "TrialViewMapFxSuite",
+  "case": "Main's 432 px trial pane keeps all caption wording clear",
+  "reason": "Test readiness required frame.deviceScale==1.0; the correctly drawn window had native scale2.0. The test now follows the actual Stage scale and retains all wording/bounds/overlap assertions at native and explicit1x/2x contexts.",
+  "junit_sha256": "ee496385e43babc6045e89360416df138bbc5ac8821fea6ab3cdca63d363d25d",
+  "native_output_scale": {
+    "nativeScaleX": 2.0,
+    "nativeScaleY": 2.0,
+    "requiredScale": 2,
+    "hostOverride": false,
+    "deviceWidth": 512,
+    "deviceHeight": 384,
+    "stripeWidthDevicePixels": 1,
+    "rasterDifferenceFraction": 0.0,
+    "maximumDifferenceFraction": 0.005
+  },
+  "counts": {
+    "passed": 810,
+    "failed": 1,
+    "platform_skipped": 1,
+    "private_opt_in_ignored": 1
+  },
+  "production_change": false
+}
