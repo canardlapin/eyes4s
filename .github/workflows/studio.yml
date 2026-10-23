@@ -256,4 +256,4 @@ jobs:
         run: bash studio/publish-pins.sh
 
       - name: Build studio through the local-checkout override
-        run: sbt -J-Xmx6g -Djavafx.platform=linux -Dstudio.intaglio.local=target/studio-pins/intaglio-edcdfd5ffaf010e8205da04a85a7f8b6b2fd0d92 -Dstudio.scaladock.local=target/studio-pins/scaladock-085740fc03d935e6945f8f3a595abc291bcdcb13 studioVizJVM/test studioVizJS/test studioDesktop/Test/compile studioDesktop/checkModuleBoundaries
+        run: sbt -J-Xmx6g -Djavafx.platform=linux -Dstudio.intaglio.local=target/studio-pins/intaglio-edcdfd5ffaf010e8205da04a85a7f8b6b2fd0d92 -Dstudio.scaladock.local=target/studio-pins/scaladock-b83a7ecb90529184bd75eb1ad0b322af73ec065f studioVizJVM/test studioVizJS/test studioDesktop/Test/compile studioDesktop/checkModuleBoundaries

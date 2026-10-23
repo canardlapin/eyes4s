@@ -66,7 +66,7 @@ published artifacts. Each is pinned to one full Git SHA in
 | Provider | Revision | Modules used | Coordinates |
 |---|---|---|---|
 | Intaglio | `edcdfd5ffaf010e8205da04a85a7f8b6b2fd0d92` | core, interaction, svg (JVM+JS); javafx, pdf, java2d (JVM) | `io.github.canardlapin::intaglio-*` |
-| scaladock | `085740fc03d935e6945f8f3a595abc291bcdcb13` | core, fx (JVM) | `io.github.canardlapin::scaladock-*` |
+| scaladock | `b83a7ecb90529184bd75eb1ad0b322af73ec065f` | core, fx (JVM) | `io.github.canardlapin::scaladock-*` |
 
 The build resolves each as the ordinary library version `0.0.0-<full SHA>`.
 [`publish-pins.sh`](publish-pins.sh) produces those artifacts: it fetches the
@@ -112,11 +112,15 @@ header button glyphs are CSS shapes (`.dock-icon.close`, `.minimize`,
 remappable keyboard actions (`setKeyBindings`, `perform(DockAction)`), a tab-menu hook
 (`setTabMenu`) and accessible tab and button roles.
 
-The `085740f` pin also includes generic theme/metrics lifecycle hooks, expanded keyboard
-accessibility, reduced-motion support and delayed native-focus recovery. Pane restoration
-checks nominal type identity for attached and retained views; unknown placeholders retain
-their raw type/state record. Inactive perspective saves refresh only compatible live bindings.
-Studio uses the provider's normal save/load path without detaching all panes before restore.
+The `b83a7ec` pin backports the restore fix from upstream PR 4 onto the previously
+qualified `628c46f` base. Pane restoration checks nominal type identity for attached
+and retained views; unknown placeholders retain their raw type/state record. Inactive
+perspective saves refresh only compatible live bindings. Studio uses the provider's
+normal save/load path without detaching all panes before restore.
+
+The broader current-upstream keyboard/accessibility migration remains tracked by
+mote `bd-01M5K8EKNNXPCZJ2PZ198CTDVV`: its new dock-header Tab stops differ from Studio's
+derived focus order, and some group actions need unambiguous accessible names.
 
 ## Local-checkout override
 

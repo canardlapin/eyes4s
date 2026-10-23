@@ -1,0 +1,67 @@
+{
+  "source": "b83a7ecb90529184bd75eb1ad0b322af73ec065f",
+  "tree": "8fb00bcc0e9cfc5824dab6b878fd103d416889a8",
+  "base": "628c46fce92c4d31b0b08459ac0f18777b5ba527",
+  "mainline_fix": "085740fc03d935e6945f8f3a595abc291bcdcb13",
+  "tests": "Full local and hosted Linux/macOS/JDK22+JavaFX24 provider qualification passed; exact same13 regression tests and production patch cherry-picked without conflicts.",
+  "prior_candidate": "03f1162f864f22c8f5b85948310452e7c83b1eec",
+  "prior_candidate_result": "Seven macOS a11y failures; canonical audit passed zero gaps, gate stopped during testAll before consumer/Studio. No full qualification or landing claimed.",
+  "follow_up": "bd-01M5K8EKNNXPCZJ2PZ198CTDVV",
+  "upstream_merge": "a0c90445a21e55c04cdcc9965ed69d8a7cc42936",
+  "pull_request": "https://github.com/canardlapin/scaladock/pull/5",
+  "core_passed": 66,
+  "fx_passed": 65,
+  "studio_focused_passed": 87,
+  "hosted_checks": [
+    {
+      "__typename": "CheckRun",
+      "completedAt": "2026-10-23T02:14:12Z",
+      "conclusion": "SUCCESS",
+      "detailsUrl": "https://github.com/canardlapin/scaladock/actions/runs/39888308110/job/120201657014",
+      "name": "build (ubuntu-latest)",
+      "startedAt": "2026-10-23T02:12:35Z",
+      "status": "COMPLETED",
+      "workflowName": "CI"
+    },
+    {
+      "__typename": "CheckRun",
+      "completedAt": "2026-10-23T02:13:50Z",
+      "conclusion": "SUCCESS",
+      "detailsUrl": "https://github.com/canardlapin/scaladock/actions/runs/39888308110/job/120201656647",
+      "name": "build (macos-latest)",
+      "startedAt": "2026-10-23T02:12:35Z",
+      "status": "COMPLETED",
+      "workflowName": "CI"
+    },
+    {
+      "__typename": "CheckRun",
+      "completedAt": "2026-10-23T02:13:50Z",
+      "conclusion": "SUCCESS",
+      "detailsUrl": "https://github.com/canardlapin/scaladock/actions/runs/39888308110/job/120201656852",
+      "name": "library-floor",
+      "startedAt": "2026-10-23T02:12:35Z",
+      "status": "COMPLETED",
+      "workflowName": "CI"
+    },
+    {
+      "__typename": "CheckRun",
+      "completedAt": "2026-10-23T02:12:32Z",
+      "conclusion": "NEUTRAL",
+      "detailsUrl": "https://cursor.com/agents/bc-be1f091f-e29f-4a65-bb1a-b8c84a67a71b",
+      "name": "Cursor Approval Agent: Pull Request Router and Approver",
+      "startedAt": "2026-10-23T02:12:32Z",
+      "status": "COMPLETED",
+      "workflowName": ""
+    },
+    {
+      "__typename": "CheckRun",
+      "completedAt": "2026-10-23T02:12:33Z",
+      "conclusion": "NEUTRAL",
+      "detailsUrl": "https://cursor.com/agents/bc-27af51fa-5fc7-4f85-9eb0-b7f7494ca0a5",
+      "name": "Cursor Security Agent: Security Reviewer",
+      "startedAt": "2026-10-23T02:12:32Z",
+      "status": "COMPLETED",
+      "workflowName": ""
+    }
+  ]
+}
