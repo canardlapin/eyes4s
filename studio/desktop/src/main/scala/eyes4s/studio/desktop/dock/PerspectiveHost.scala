@@ -52,7 +52,7 @@ enum DockGesture derives CanEqual:
 
 /** The perspective host (ticket S1.5a): ONE scaladock `Dock` whose named
   * perspectives are the layouts of the studio's [[LayoutSpec]], managed by
-  * scaladock's `Perspectives` (628c46f). Switching perspectives retains every
+  * scaladock's `Perspectives`. Switching perspectives retains every
   * pane that leaves, so a pane is built once and a pane id shared by two
   * layouts is one live view; the dock never disposes a studio pane.
   *
@@ -158,11 +158,9 @@ final class PerspectiveHost(spec: LayoutSpec, theme: DockTheme, report: DockGest
     * at its default.
     */
   def capture(): Vector[(Perspective, Option[LayoutBlob])] =
-    // Inactive layouts already hold their own pane snapshots. The pin's save()
-    // refreshes them from any live binding of the same id, even another type.
-    val now = spec.all.flatMap { layout =>
-      val name = DockLayouts.name(layout)
-      perspectives.layoutOf(name).map(state => name -> normal(state))
+    val saved = perspectives.save().obj("perspectives").obj
+    val now   = saved.toVector.flatMap { (name, json) =>
+      LayoutCodec.decode(json, dock.paneTypes).toOption.map(s => name -> normal(s))
     }.toMap
     Perspective.values.toVector.map { p =>
       val layouts = spec.layouts(p).map(DockLayouts.name)
@@ -225,10 +223,6 @@ final class PerspectiveHost(spec: LayoutSpec, theme: DockTheme, report: DockGest
     val refused    =
       if entries.isEmpty then Vector.empty
       else
-        // The pin reuses an attached view solely by id on load. Detaching first
-        // makes its type-aware reattachment path preserve unknown-type payloads.
-        perspectives.save(): Unit
-        dock.switchTo(LayoutState.empty)
         perspectives
           .load(
             ujson.Obj(

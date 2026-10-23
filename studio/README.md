@@ -66,7 +66,7 @@ published artifacts. Each is pinned to one full Git SHA in
 | Provider | Revision | Modules used | Coordinates |
 |---|---|---|---|
 | Intaglio | `edcdfd5ffaf010e8205da04a85a7f8b6b2fd0d92` | core, interaction, svg (JVM+JS); javafx, pdf, java2d (JVM) | `io.github.canardlapin::intaglio-*` |
-| scaladock | `628c46fce92c4d31b0b08459ac0f18777b5ba527` | core, fx (JVM) | `io.github.canardlapin::scaladock-*` |
+| scaladock | `085740fc03d935e6945f8f3a595abc291bcdcb13` | core, fx (JVM) | `io.github.canardlapin::scaladock-*` |
 
 The build resolves each as the ordinary library version `0.0.0-<full SHA>`.
 [`publish-pins.sh`](publish-pins.sh) produces those artifacts: it fetches the
@@ -111,6 +111,12 @@ header button glyphs are CSS shapes (`.dock-icon.close`, `.minimize`,
 `DockTheme.Custom` stylesheet can redefine. Since `628c46f` it also has retained panes and `Perspectives(dock)` (see its docs/workspaces.md),
 remappable keyboard actions (`setKeyBindings`, `perform(DockAction)`), a tab-menu hook
 (`setTabMenu`) and accessible tab and button roles.
+
+The `085740f` pin also includes generic theme/metrics lifecycle hooks, expanded keyboard
+accessibility, reduced-motion support and delayed native-focus recovery. Pane restoration
+checks nominal type identity for attached and retained views; unknown placeholders retain
+their raw type/state record. Inactive perspective saves refresh only compatible live bindings.
+Studio uses the provider's normal save/load path without detaching all panes before restore.
 
 ## Local-checkout override
 

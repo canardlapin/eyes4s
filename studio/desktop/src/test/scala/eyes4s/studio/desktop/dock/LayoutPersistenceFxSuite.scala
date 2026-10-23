@@ -139,4 +139,29 @@ class LayoutPersistenceFxSuite extends ShellFxSuite:
         assert(saved.text.contains("\"keep\":42"))
         assert(!w.host.dock.view.lookupAll(".dock-unresolved").isEmpty)
       }
+      dispatch(fx, w, Intent.SwitchPerspective(Perspective.Analysis))
+      runOnFx {
+        val inactive = w.host.capture().toMap.apply(Perspective.Figures).get
+        assert(inactive.text.contains("future.studio.pane"))
+        assert(inactive.text.contains("\"keep\":42"))
+      }
+      dispatch(fx, w, Intent.SwitchPerspective(Perspective.Figures))
+      runOnFx {
+        assert(!w.host.dock.view.lookupAll(".dock-unresolved").isEmpty)
+        val known = LayoutBlob(
+          ujson.write(
+            ujson.Obj(
+              w.host.active.get ->
+                scaladock.LayoutCodec.encode(
+                  DockLayouts.state(eyes4s.studio.app.layout.StudioLayouts.figures)
+                )
+            )
+          )
+        )
+        assertEquals(
+          w.host.restore(Vector(SavedLayout(Perspective.Figures, known)), w.runtime.model),
+          Vector.empty
+        )
+        assert(w.host.dock.view.lookupAll(".dock-unresolved").isEmpty)
+      }
   }

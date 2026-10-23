@@ -1414,7 +1414,7 @@ lazy val studioDesktop = project
          else Seq(scaladockPinned("core"), scaladockPinned("fx"))),
     // One JavaFX for the shell and both providers. Intaglio and scaladock
     // declare it `Provided` (21.0.5 and 24.0.1), which does not reach us; since
-    // scaladock 3ed443e (still at 628c46f) ScalaFX is demo-only. No override: a clash must reach the
+    // scaladock ScalaFX is demo-only. No override: a clash must reach the
     // guard below, which requires exactly base, graphics and controls at javaFxV.
     checkModuleBoundaries := {
       val log       = streams.value.log

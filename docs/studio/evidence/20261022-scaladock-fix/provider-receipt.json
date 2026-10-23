@@ -1,0 +1,35 @@
+{
+  "provider_source": "085740fc03d935e6945f8f3a595abc291bcdcb13",
+  "provider_tree": "0422bfa4b501ea106d76e7ed81de716af2921560",
+  "upstream_merge": "857d8db36c675513f30deaf981d579b20ed443e2",
+  "pull_request": "https://github.com/canardlapin/scaladock/pull/4",
+  "red": {
+    "total": 24,
+    "failed": 10,
+    "passed": 14
+  },
+  "green": {
+    "focused": 24,
+    "core": 70,
+    "fx": 117
+  },
+  "hosted_url": "https://github.com/canardlapin/scaladock/actions/runs/39885582196",
+  "named_runtime_manifest_candidate": "2681f59307722139c76737ce0cb7da58252e8e6c",
+  "named_runtime_manifest_tree": "0422bfa4b501ea106d76e7ed81de716af2921560",
+  "studio_focused": {
+    "passed": 14,
+    "failed": 0
+  },
+  "files": {
+    "provider-red.log.gz": "e2dd3331f4026ec3f4fd4cca357c2c2f6c174706c75fd24ab7406385064ec13f",
+    "studio-focused.log.gz": "a543412f5cbea997b716a037bf3b92fc6af8580ae1e8f0c480a61dbddde7e429",
+    "provider-full.log.gz": "16a84344fb912c1f234c802ed7cbb8e3068a55e3d993a68d07fe4e281094fbc1",
+    "provider-current-runtime.zip": "21e671ea17f06f1ed9b0e1906f43ce905f96a059c9bd5f05f94ac8d6784a57b3",
+    "provider-hosted.json": "9155e86fa2f31a72f25c77183bb3ea59bcd97714e546349da85c5e118891232d",
+    "red-TEST-scaladock.fx.RestoreTypeRegressionSuite.xml.gz": "858304bfea10cfbe95a087ef4d4f4d2aa907c84ef31779b01abe73ce929781f0",
+    "red-TEST-scaladock.fx.PerspectivesSuite.xml.gz": "e0d4d8aeb5bd521b521c6e973d8acb6aeefb52fe90d1482065f407d4c18a245e",
+    "green-TEST-scaladock.fx.PerspectivesSuite.xml.gz": "fe421d02fccdceb278687d7992c5dde0552aef54a68b711a5329908e4266d7fd",
+    "green-TEST-scaladock.fx.RestoreTypeRegressionSuite.xml.gz": "a2080b0e6b93d9a895e30f8dadd0cbad137bb8a81d279a05fbac99c65dcae2fe",
+    "provider-focused-green.log.gz": "6bc03c8c761d77770f2c7be32c873f449a3250766fae6e04595f304a47e93053"
+  }
+}
