@@ -190,19 +190,22 @@ class TrialPanelsSuite extends munit.FunSuite:
             TrialPanels.vm(again, Some(shown), scales).reference.map(_.role),
             Some(PanelRole.Matched)
           )
-          // Inside the panels' stops: the underlay toggle, and Back while a control shows.
+          // Each panel exposes Points/Order/Map; query also has Underlay,
+          // and a control reference offers Back to matched.
           import eyes4s.studio.app.vm.{A11yRole, FocusStop}
+          def overlays(context: String) = Vector("Points", "Order", "Map")
+            .map(t => FocusStop(A11yRole.ToggleButton, s"$context trial: $t"))
           assertEquals(
             TrialPanels.queryStops(vm),
-            Vector(FocusStop(A11yRole.ToggleButton, "Underlay remembered image"))
+            overlays("Query") :+ FocusStop(A11yRole.ToggleButton, "Underlay remembered image")
           )
           assertEquals(
             TrialPanels.referenceStops(vm),
-            Vector(FocusStop(A11yRole.Button, "Back to matched reference"))
+            overlays("Reference") :+ FocusStop(A11yRole.Button, "Back to matched reference")
           )
           assertEquals(
             TrialPanels.referenceStops(TrialPanels.vm(matched, Some(shown), scales)),
-            Vector.empty
+            overlays("Reference")
           )
           // The query panel did not move.
           assertEquals(vm.query, TrialPanels.vm(matched, Some(shown), scales).query)

@@ -273,7 +273,9 @@ final case class TrialSceneOptions(
     points: Boolean = true,
     order: Boolean = true,
     windowOutline: Boolean = true,
-    extent: TrialExtent = TrialExtent.Gaze
+    extent: TrialExtent = TrialExtent.Gaze,
+    captionLines: Option[Vector[String]] = None,
+    captionBand: Boolean = true
 ) derives CanEqual
 
 /** A result map drawn over the trial (ticket S4.3b): the run's grid, its
@@ -378,7 +380,8 @@ sealed abstract case class TrialScene private (
     caption: String,
     marks: Vector[TrialMark],
     map: Option[MapId],
-    disclosure: Option[String]
+    disclosure: Option[String],
+    captionBand: Boolean
 ):
   private lazy val byName: Map[GraphicsName, TrialMark] = marks.map(m => m.name -> m).toMap
 
@@ -391,7 +394,8 @@ sealed abstract case class TrialScene private (
   /** Preferred canvas width over height ([[TrialScene.fit]]). The data
     * viewport also preserves its native-pixel aspect on other canvas shapes.
     */
-  def aspect: Double = TrialScene.aspectOf(extent)
+  def aspect: Double =
+    if captionBand then TrialScene.aspectOf(extent) else extent.width / extent.height
 
 object TrialScene:
 
@@ -402,9 +406,10 @@ object TrialScene:
       caption: String,
       marks: Vector[TrialMark],
       map: Option[MapId],
-      disclosure: Option[String]
+      disclosure: Option[String],
+      captionBand: Boolean
   ): TrialScene =
-    new TrialScene(plot, extent, frameArt, caption, marks, map, disclosure) {}
+    new TrialScene(plot, extent, frameArt, caption, marks, map, disclosure, captionBand) {}
 
   // --- Names of the scene's grobs (the op log and the tests find them) -----
   val StageName: String     = "trial-stage"
@@ -631,7 +636,8 @@ object TrialScene:
       caption,
       marks,
       input.map.map(_.grid.map),
-      disclosureOf(input)
+      disclosureOf(input),
+      input.options.captionBand
     )
 
   /** What the legend of `input`'s map says, when its map has a legend. */
@@ -1015,7 +1021,9 @@ object TrialScene:
               Anchor(HJust.Right, VJust.Bottom),
               gp = tgp
             )
-          yield Vector(rect, label)
+          yield
+            if input.options.captionLines.exists(_.nonEmpty) then Vector(rect)
+            else Vector(rect, label)
         )
 
     // The token a mark style fills or outlines its marks with.
@@ -1198,7 +1206,43 @@ object TrialScene:
           yield Vector(lines)
         )
 
+    private def captionTop: Either[GraphicsError, LengthExpr] =
+      if !input.options.captionBand then Right(points(0.0))
+      else
+        input.options.captionLines match
+          case Some(lines) if lines.nonEmpty => Right(points(lines.size * 16.0 + 12.0))
+          case _                             => LengthExpr.npc(CaptionFraction)
+
     private def captions(caption: String): R[Vector[Grob]] =
+      if !input.options.captionBand then Right(Vector.empty)
+      else
+        input.options.captionLines match
+          case Some(lines) if lines.nonEmpty =>
+            part("wrapped caption")(
+              for
+                gp    <- font(staged(StageToken.OnStage), FontFace.SansRegular, TypeSize.T11)
+                top   <- captionTop
+                left  <- LengthExpr.npc(0.0)
+                drawn <- lines.zipWithIndex.foldLeft[Either[GraphicsError, Vector[Grob]]](
+                  Right(Vector.empty)
+                ) { case (acc, (line, i)) =>
+                  for
+                    got  <- acc
+                    n    <- name(s"$CaptionName-line-$i")
+                    text <- Grob.text(
+                      line,
+                      Point(left + points(8.0), top - points(6.0 + i * 16.0)),
+                      Anchor(HJust.Left, VJust.Top),
+                      gp = gp,
+                      name = Some(n)
+                    )
+                  yield got :+ text
+                }
+              yield drawn
+            )
+          case _ => wideCaptions(caption)
+
+    private def wideCaptions(caption: String): R[Vector[Grob]] =
       import TrialTextId.*
       val onStage = staged(StageToken.OnStage)
       part("caption")(
@@ -1267,9 +1311,14 @@ object TrialScene:
             xs     <- Interval(extent.left, extent.right)
             ys     <- Interval(extent.top, extent.bottom)
             aspect <- ViewportAspect.ofScales(xs, ys)
-            origin <- Point.npc(0.0, CaptionFraction)
-            size   <- Size.npc(1.0, 1.0 - CaptionFraction)
-            vp     <- Viewport.checked(
+            bottom <- captionTop
+            left   <- LengthExpr.npc(0.0)
+            whole  <- LengthExpr.npc(1.0)
+            origin = Point(left, bottom)
+            width  <- ExtentExpr.fromExpr(whole)
+            height <- ExtentExpr.fromExpr(whole - bottom)
+            size = Size.fromExtents(width, height)
+            vp <- Viewport.checked(
               origin,
               size,
               xs,

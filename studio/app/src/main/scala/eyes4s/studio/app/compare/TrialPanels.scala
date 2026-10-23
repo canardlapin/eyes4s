@@ -69,6 +69,22 @@ object PanelRole:
     case PairDesign.Matched => Matched
     case PairDesign.Control => Control
 
+enum PanelSide derives CanEqual:
+  case Query, Reference
+
+enum PanelOverlay derives CanEqual:
+  case Points, Order, Map
+
+final case class PanelOverlays(
+    points: Boolean = true,
+    order: Boolean = true,
+    map: Boolean = true
+) derives CanEqual:
+  def changed(which: PanelOverlay, on: Boolean): PanelOverlays = which match
+    case PanelOverlay.Points => copy(points = on)
+    case PanelOverlay.Order  => copy(order = on)
+    case PanelOverlay.Map    => copy(map = on)
+
 /** What Compare's trail points the panels at: a query of a run at a scale,
   * and the reference the trail names, if it names one.
   */
@@ -105,6 +121,7 @@ enum PanelsIntent derives CanEqual:
   case PairRead(pair: StudioRef, answer: PairAnswer)
   case ContentRead(key: ContentKey, answer: Either[ContentError, TrialContent])
   case Underlay(on: Boolean)
+  case Overlay(side: PanelSide, which: PanelOverlay, on: Boolean)
 
   /** Ask again for what failed: the pair's score and unreadable content. */
   case Retry
@@ -133,7 +150,9 @@ final case class TrialPanels(
     focus: Option[PanelFocus],
     inspected: Option[(StudioRef, Option[PairAnswer])],
     underlay: Boolean,
-    contents: Map[ContentKey, Option[Either[ContentError, TrialContent]]]
+    contents: Map[ContentKey, Option[Either[ContentError, TrialContent]]],
+    queryOverlays: PanelOverlays = PanelOverlays(),
+    referenceOverlays: PanelOverlays = PanelOverlays()
 ) derives CanEqual
 
 /** One panel's readout: what it reports, its value, and the ref it traces to. */
@@ -148,7 +167,8 @@ final case class TrialPanelVM(
     trial: TrialKey,
     readout: PanelReadout,
     content: PanelContent,
-    count: String
+    count: String,
+    overlays: PanelOverlays = PanelOverlays()
 ) derives CanEqual
 
 /** The reference panel's extras: the way back to the matched reference when
@@ -247,7 +267,7 @@ object TrialPanels:
     val missing  = needed.filterNot(kept.contains)
     val reads    = missing.map(PanelsEffect.ReadContent(_))
     val contents = kept ++ missing.map(_ -> None)
-    (TrialPanels(focus, inspected, s.underlay, contents), inspect ++ reads)
+    (s.copy(focus = focus, inspected = inspected, contents = contents), inspect ++ reads)
 
   /** A backend answer or a user action. An answer is kept only while the
     * panels still wait on it; any other is stale. Retry forgets what failed,
@@ -261,8 +281,12 @@ object TrialPanels:
       if s.contents.get(key).contains(None) then
         s.copy(contents = s.contents.updated(key, Some(answer)))
       else s
-    case PanelsIntent.Underlay(on) => s.copy(underlay = on)
-    case PanelsIntent.Retry        =>
+    case PanelsIntent.Underlay(on)                        => s.copy(underlay = on)
+    case PanelsIntent.Overlay(PanelSide.Query, which, on) =>
+      s.copy(queryOverlays = s.queryOverlays.changed(which, on))
+    case PanelsIntent.Overlay(PanelSide.Reference, which, on) =>
+      s.copy(referenceOverlays = s.referenceOverlays.changed(which, on))
+    case PanelsIntent.Retry =>
       s.copy(
         inspected = s.inspected.filterNot((_, a) => a.exists(failed)),
         contents = s.contents.filterNot((_, a) => a.exists(unreadable))
@@ -318,7 +342,8 @@ object TrialPanels:
         f.contrast
       ),
       contentOf(s, contentKey(f.query)),
-      countOf(s, contentKey(f.query))
+      countOf(s, contentKey(f.query)),
+      s.queryOverlays
     )
     val reference = referenceOf(f, rows).map { (design, key) =>
       val ref    = f.pair(design, key)
@@ -333,7 +358,8 @@ object TrialPanels:
         key,
         PanelReadout(PanelText(PanelTextId.PairReadout, sigma, scoreOf(answer)), ref),
         contentOf(s, contentKey(key)),
-        countOf(s, contentKey(key))
+        countOf(s, contentKey(key)),
+        s.referenceOverlays
       )
     }
     val extras = row.flatMap { r =>
@@ -367,19 +393,30 @@ object TrialPanels:
       Option.when(failure)(PanelText(PanelTextId.Retry))
     )
 
-  /** The controls inside the query panel's own focus stop: its underlay
-    * toggle, while it shows a query.
+  /** The query's overlay controls and underlay toggle, while it shows a query.
     */
   def queryStops(vm: TrialPanelsVM): Vector[FocusStop] =
-    vm.query.toVector.map(_ =>
-      FocusStop(A11yRole.ToggleButton, PanelText(PanelTextId.Underlay))
+    vm.query.toVector.flatMap(_ =>
+      overlayStops(PanelTextId.Query) :+ FocusStop(
+        A11yRole.ToggleButton,
+        PanelText(PanelTextId.Underlay)
+      )
     )
 
-  /** The controls inside the reference panel's own focus stop: the way back
-    * to the matched reference, while a control is shown.
+  private def overlayStops(context: PanelTextId): Vector[FocusStop] =
+    Vector(PanelTextId.Points, PanelTextId.Order, PanelTextId.Map)
+      .map(id =>
+        FocusStop(
+          A11yRole.ToggleButton,
+          PanelText(PanelTextId.OverlayControl, PanelText(context), PanelText(id))
+        )
+      )
+
+  /** The reference's overlay controls, plus Back while a control is shown.
     */
   def referenceStops(vm: TrialPanelsVM): Vector[FocusStop] =
-    vm.extras.flatMap(_.back).toVector.map((label, _) => FocusStop(A11yRole.Button, label))
+    vm.reference.toVector.flatMap(_ => overlayStops(PanelTextId.Reference)) ++
+      vm.extras.flatMap(_.back).toVector.map((label, _) => FocusStop(A11yRole.Button, label))
 
   /** A trial's fixations as its Table tab lists them, each row the
     * fixation's ref; every value as the content source served it.

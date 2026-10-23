@@ -1,0 +1,1742 @@
+{
+  "board": "Data",
+  "moment": "T1",
+  "width": 1440,
+  "height": 900,
+  "heights": {
+    "appBar": 44,
+    "contextStrip": 32,
+    "statusBar": 24
+  },
+  "tabHeaders": [
+    28,
+    28,
+    28,
+    28
+  ],
+  "toleranceLogicalPixels": 1,
+  "nativeOutputScaleX": 1,
+  "nativeOutputScaleY": 1,
+  "scale2Capture": "snapshot transform; native output scale recorded separately",
+  "shellText": [
+    "app.name: Eyes Studio",
+    "app.project: memory-study",
+    "app.perspectives: Data ⌘1 (current) | Explore ⌘2 | Analysis ⌘3 | Compare ⌘4 | Figures ⌘5",
+    "app.jobs: No jobs",
+    "context.nav: Back (⌘[) | [Forward (⌘])]",
+    "context.trail: Dataset r3 (draft) › *Admission*",
+    "context.freshness: Dataset r3 · draft · no run on r3 yet",
+    "context.note: Run 5 (rev 3) used r2 · becomes stale when r3 is admitted",
+    "status: Selected: fixations.csv › Admission | Mapping and geometry changes apply when r3 is admitted | No jobs | Saved 10:24"
+  ],
+  "labels": [
+    {
+      "text": "_File",
+      "x": 8,
+      "y": 0,
+      "width": 36,
+      "height": 25
+    },
+    {
+      "text": "File",
+      "x": 16,
+      "y": 4,
+      "width": 20,
+      "height": 17
+    },
+    {
+      "text": "_Edit",
+      "x": 46,
+      "y": 0,
+      "width": 38,
+      "height": 25
+    },
+    {
+      "text": "Edit",
+      "x": 54,
+      "y": 4,
+      "width": 22,
+      "height": 17
+    },
+    {
+      "text": "_View",
+      "x": 86,
+      "y": 0,
+      "width": 43,
+      "height": 25
+    },
+    {
+      "text": "View",
+      "x": 94,
+      "y": 4,
+      "width": 27,
+      "height": 17
+    },
+    {
+      "text": "_Go",
+      "x": 131,
+      "y": 0,
+      "width": 32,
+      "height": 25
+    },
+    {
+      "text": "Go",
+      "x": 139,
+      "y": 4,
+      "width": 16,
+      "height": 17
+    },
+    {
+      "text": "_Run",
+      "x": 165,
+      "y": 0,
+      "width": 38,
+      "height": 25
+    },
+    {
+      "text": "Run",
+      "x": 173,
+      "y": 4,
+      "width": 22,
+      "height": 17
+    },
+    {
+      "text": "_Window",
+      "x": 205,
+      "y": 0,
+      "width": 60,
+      "height": 25
+    },
+    {
+      "text": "Window",
+      "x": 213,
+      "y": 4,
+      "width": 44,
+      "height": 17
+    },
+    {
+      "text": "_Help",
+      "x": 267,
+      "y": 0,
+      "width": 42,
+      "height": 25
+    },
+    {
+      "text": "Help",
+      "x": 275,
+      "y": 4,
+      "width": 26,
+      "height": 17
+    },
+    {
+      "text": "Eyes Studio",
+      "x": 41,
+      "y": 38,
+      "width": 71,
+      "height": 19
+    },
+    {
+      "text": "memory-study",
+      "x": 126,
+      "y": 35,
+      "width": 130,
+      "height": 24
+    },
+    {
+      "text": "memory-study",
+      "x": 135,
+      "y": 35,
+      "width": 96,
+      "height": 24
+    },
+    {
+      "text": "Data",
+      "x": 585,
+      "y": 33,
+      "width": 70,
+      "height": 28
+    },
+    {
+      "text": "⌘1",
+      "x": 630,
+      "y": 39,
+      "width": 13.2225341796875,
+      "height": 16
+    },
+    {
+      "text": "Explore",
+      "x": 657,
+      "y": 33,
+      "width": 87,
+      "height": 29
+    },
+    {
+      "text": "⌘2",
+      "x": 719,
+      "y": 39,
+      "width": 13.2225341796875,
+      "height": 16
+    },
+    {
+      "text": "Analysis",
+      "x": 746,
+      "y": 33,
+      "width": 91,
+      "height": 29
+    },
+    {
+      "text": "⌘3",
+      "x": 812,
+      "y": 39,
+      "width": 13.2225341796875,
+      "height": 16
+    },
+    {
+      "text": "Compare",
+      "x": 839,
+      "y": 33,
+      "width": 95,
+      "height": 29
+    },
+    {
+      "text": "⌘4",
+      "x": 908,
+      "y": 39,
+      "width": 13.2225341796875,
+      "height": 16
+    },
+    {
+      "text": "Figures",
+      "x": 936,
+      "y": 33,
+      "width": 85,
+      "height": 29
+    },
+    {
+      "text": "⌘5",
+      "x": 996,
+      "y": 39,
+      "width": 13.2225341796875,
+      "height": 16
+    },
+    {
+      "text": "No jobs",
+      "x": 1378,
+      "y": 39,
+      "width": 41,
+      "height": 17
+    },
+    {
+      "text": "Dataset r3 (draft)",
+      "x": 66,
+      "y": 74,
+      "width": 105,
+      "height": 23
+    },
+    {
+      "text": "›",
+      "x": 173,
+      "y": 77,
+      "width": 4,
+      "height": 17
+    },
+    {
+      "text": "Admission",
+      "x": 179,
+      "y": 74,
+      "width": 71,
+      "height": 23
+    },
+    {
+      "text": "Dataset r3 · draft · no run on r3 yet",
+      "x": 897,
+      "y": 74,
+      "width": 218,
+      "height": 22
+    },
+    {
+      "text": "Run 5 (rev 3) used r2 · becomes stale when r3 is admitted",
+      "x": 1119,
+      "y": 77,
+      "width": 311,
+      "height": 17
+    },
+    {
+      "text": "Sources",
+      "x": 12,
+      "y": 101,
+      "width": 45,
+      "height": 28
+    },
+    {
+      "text": "fixations.csv",
+      "x": 12,
+      "y": 137,
+      "width": 94,
+      "height": 17
+    },
+    {
+      "text": "Fixations",
+      "x": 195,
+      "y": 138,
+      "width": 45,
+      "height": 16
+    },
+    {
+      "text": "byte digest recorded · copied i...",
+      "x": 12,
+      "y": 156,
+      "width": 228,
+      "height": 16
+    },
+    {
+      "text": "trials.csv",
+      "x": 12,
+      "y": 188,
+      "width": 72,
+      "height": 17
+    },
+    {
+      "text": "Inventory",
+      "x": 192,
+      "y": 189,
+      "width": 48,
+      "height": 16
+    },
+    {
+      "text": "960 trials · inventory",
+      "x": 12,
+      "y": 207,
+      "width": 146,
+      "height": 16
+    },
+    {
+      "text": "byte digest recorded · copied i...",
+      "x": 12,
+      "y": 225,
+      "width": 228,
+      "height": 16
+    },
+    {
+      "text": "stimuli/",
+      "x": 12,
+      "y": 257,
+      "width": 58,
+      "height": 17
+    },
+    {
+      "text": "Images",
+      "x": 202,
+      "y": 258,
+      "width": 38,
+      "height": 16
+    },
+    {
+      "text": "257 of 259 images found",
+      "x": 12,
+      "y": 276,
+      "width": 152,
+      "height": 16
+    },
+    {
+      "text": "byte digest recorded · copied i...",
+      "x": 12,
+      "y": 294,
+      "width": 228,
+      "height": 16
+    },
+    {
+      "text": "What each trial displayed",
+      "x": 0,
+      "y": 324,
+      "width": 160,
+      "height": 23
+    },
+    {
+      "text": "Image · Encoding",
+      "x": 32,
+      "y": 353,
+      "width": 87,
+      "height": 16
+    },
+    {
+      "text": "476",
+      "x": 197,
+      "y": 353,
+      "width": 20,
+      "height": 16
+    },
+    {
+      "text": "Blank + fixation cross · Retrieval",
+      "x": 32,
+      "y": 374,
+      "width": 159,
+      "height": 16
+    },
+    {
+      "text": "480",
+      "x": 197,
+      "y": 374,
+      "width": 20,
+      "height": 16
+    },
+    {
+      "text": "Blank · Cue · Unknown",
+      "x": 32,
+      "y": 395,
+      "width": 112,
+      "height": 16
+    },
+    {
+      "text": "0",
+      "x": 197,
+      "y": 395,
+      "width": 7,
+      "height": 16
+    },
+    {
+      "text": "2 image files missing",
+      "x": 30,
+      "y": 427,
+      "width": 117,
+      "height": 17
+    },
+    {
+      "text": "forest-044.png, kitchen-081.png. Their 4 Encoding trials (P01 enc_08, enc_15; P24 enc_05, enc_18) are drawn as missing asset, never as blank. Gaze and scores are unaffected.",
+      "x": 10,
+      "y": 450,
+      "width": 232,
+      "height": 80
+    },
+    {
+      "text": "Repair…",
+      "x": 10,
+      "y": 536,
+      "width": 57,
+      "height": 22
+    },
+    {
+      "text": "Show 4 trials",
+      "x": 73,
+      "y": 536,
+      "width": 80,
+      "height": 22
+    },
+    {
+      "text": "Sources",
+      "x": -8,
+      "y": 117,
+      "width": 17,
+      "height": 45.1875
+    },
+    {
+      "text": "Column mapping",
+      "x": 265,
+      "y": 101,
+      "width": 95,
+      "height": 28
+    },
+    {
+      "text": "Trial metadata",
+      "x": 385,
+      "y": 101,
+      "width": 79,
+      "height": 28
+    },
+    {
+      "text": "Dataset · re-admit",
+      "x": 954,
+      "y": 134,
+      "width": 106,
+      "height": 18
+    },
+    {
+      "text": "fixations.csv · 11,520 records · 10 columns · comma-separated",
+      "x": 267,
+      "y": 164,
+      "width": 403,
+      "height": 16
+    },
+    {
+      "text": "Time unit (declared)",
+      "x": 823,
+      "y": 164,
+      "width": 103,
+      "height": 16
+    },
+    {
+      "text": "ms",
+      "x": 934,
+      "y": 161,
+      "width": 96,
+      "height": 22
+    },
+    {
+      "text": "fixations.csv column",
+      "x": 267,
+      "y": 193,
+      "width": 105,
+      "height": 16
+    },
+    {
+      "text": "First records",
+      "x": 397,
+      "y": 193,
+      "width": 65,
+      "height": 16
+    },
+    {
+      "text": "Role",
+      "x": 798,
+      "y": 193,
+      "width": 23,
+      "height": 16
+    },
+    {
+      "text": "Units (declared)",
+      "x": 958,
+      "y": 193,
+      "width": 82,
+      "height": 16
+    },
+    {
+      "text": "participant",
+      "x": 267,
+      "y": 220,
+      "width": 80,
+      "height": 17
+    },
+    {
+      "text": "P01, P01, P01, P01",
+      "x": 397,
+      "y": 220,
+      "width": 119,
+      "height": 16
+    },
+    {
+      "text": "Participant",
+      "x": 784,
+      "y": 217,
+      "width": 124,
+      "height": 22
+    },
+    {
+      "text": "—",
+      "x": 944,
+      "y": 220,
+      "width": 7,
+      "height": 16
+    },
+    {
+      "text": "phase",
+      "x": 267,
+      "y": 248,
+      "width": 36,
+      "height": 17
+    },
+    {
+      "text": "Encoding, Encoding, Encoding, Encoding",
+      "x": 397,
+      "y": 248,
+      "width": 251,
+      "height": 16
+    },
+    {
+      "text": "Phase",
+      "x": 784,
+      "y": 245,
+      "width": 124,
+      "height": 22
+    },
+    {
+      "text": "—",
+      "x": 944,
+      "y": 248,
+      "width": 7,
+      "height": 16
+    },
+    {
+      "text": "trial",
+      "x": 267,
+      "y": 276,
+      "width": 36,
+      "height": 17
+    },
+    {
+      "text": "enc_01, enc_01, enc_01, enc_01",
+      "x": 397,
+      "y": 276,
+      "width": 199,
+      "height": 16
+    },
+    {
+      "text": "Trial",
+      "x": 784,
+      "y": 273,
+      "width": 124,
+      "height": 22
+    },
+    {
+      "text": "—",
+      "x": 944,
+      "y": 276,
+      "width": 7,
+      "height": 16
+    },
+    {
+      "text": "occurrence",
+      "x": 267,
+      "y": 304,
+      "width": 72,
+      "height": 17
+    },
+    {
+      "text": "1, 1, 1, 1",
+      "x": 397,
+      "y": 304,
+      "width": 66,
+      "height": 16
+    },
+    {
+      "text": "Occurrence",
+      "x": 784,
+      "y": 301,
+      "width": 124,
+      "height": 22
+    },
+    {
+      "text": "—",
+      "x": 944,
+      "y": 304,
+      "width": 7,
+      "height": 16
+    },
+    {
+      "text": "ordinal",
+      "x": 267,
+      "y": 332,
+      "width": 51,
+      "height": 17
+    },
+    {
+      "text": "1, 2, 3, 4",
+      "x": 397,
+      "y": 332,
+      "width": 66,
+      "height": 16
+    },
+    {
+      "text": "Ordinal",
+      "x": 784,
+      "y": 329,
+      "width": 124,
+      "height": 22
+    },
+    {
+      "text": "—",
+      "x": 944,
+      "y": 332,
+      "width": 7,
+      "height": 16
+    },
+    {
+      "text": "x",
+      "x": 267,
+      "y": 360,
+      "width": 8,
+      "height": 17
+    },
+    {
+      "text": "570.4, 571.8, 1153.5, 1289.6",
+      "x": 397,
+      "y": 360,
+      "width": 185,
+      "height": 16
+    },
+    {
+      "text": "x",
+      "x": 784,
+      "y": 357,
+      "width": 124,
+      "height": 22
+    },
+    {
+      "text": "screen px",
+      "x": 944,
+      "y": 360,
+      "width": 60,
+      "height": 16
+    },
+    {
+      "text": "y",
+      "x": 267,
+      "y": 388,
+      "width": 8,
+      "height": 17
+    },
+    {
+      "text": "609.3, 835.1, 188.3, 704.7",
+      "x": 397,
+      "y": 388,
+      "width": 172,
+      "height": 16
+    },
+    {
+      "text": "y",
+      "x": 784,
+      "y": 385,
+      "width": 124,
+      "height": 22
+    },
+    {
+      "text": "screen px",
+      "x": 944,
+      "y": 388,
+      "width": 60,
+      "height": 16
+    },
+    {
+      "text": "onset_ms",
+      "x": 267,
+      "y": 416,
+      "width": 58,
+      "height": 17
+    },
+    {
+      "text": "70, 178, 520, 667",
+      "x": 397,
+      "y": 416,
+      "width": 113,
+      "height": 16
+    },
+    {
+      "text": "Onset",
+      "x": 784,
+      "y": 413,
+      "width": 124,
+      "height": 22
+    },
+    {
+      "text": "ms",
+      "x": 944,
+      "y": 416,
+      "width": 14,
+      "height": 16
+    },
+    {
+      "text": "duration_ms",
+      "x": 267,
+      "y": 444,
+      "width": 80,
+      "height": 17
+    },
+    {
+      "text": "80, 314, 80, 298",
+      "x": 397,
+      "y": 444,
+      "width": 106,
+      "height": 16
+    },
+    {
+      "text": "Duration",
+      "x": 784,
+      "y": 441,
+      "width": 124,
+      "height": 22
+    },
+    {
+      "text": "ms",
+      "x": 944,
+      "y": 444,
+      "width": 14,
+      "height": 16
+    },
+    {
+      "text": "sample_count",
+      "x": 267,
+      "y": 472,
+      "width": 87,
+      "height": 17
+    },
+    {
+      "text": "40, 157, 40, 149",
+      "x": 397,
+      "y": 472,
+      "width": 106,
+      "height": 16
+    },
+    {
+      "text": "Sample count",
+      "x": 784,
+      "y": 469,
+      "width": 124,
+      "height": 22
+    },
+    {
+      "text": "samples",
+      "x": 944,
+      "y": 472,
+      "width": 47,
+      "height": 16
+    },
+    {
+      "text": "Onset and duration units are declared here; Eyes Studio never infers them.",
+      "x": 267,
+      "y": 318,
+      "width": 367,
+      "height": 16
+    },
+    {
+      "text": "Columns without a role pass through as attributes, kept as written.",
+      "x": 267,
+      "y": 338,
+      "width": 328,
+      "height": 16
+    },
+    {
+      "text": "Import preset",
+      "x": 267,
+      "y": 369,
+      "width": 72,
+      "height": 16
+    },
+    {
+      "text": "No presets saved",
+      "x": 347,
+      "y": 366,
+      "width": 104,
+      "height": 22
+    },
+    {
+      "text": "Apply preset",
+      "x": 485,
+      "y": 364,
+      "width": 90,
+      "height": 26
+    },
+    {
+      "text": "Preset name",
+      "x": 731,
+      "y": 369,
+      "width": 65,
+      "height": 16
+    },
+    {
+      "text": "Save as preset",
+      "x": 953,
+      "y": 364,
+      "width": 101,
+      "height": 26
+    },
+    {
+      "text": "Trial identity",
+      "x": 267,
+      "y": 402,
+      "width": 77,
+      "height": 19
+    },
+    {
+      "text": "Every record and every inventory entry must resolve to exactly one key.",
+      "x": 703,
+      "y": 404,
+      "width": 351,
+      "height": 16
+    },
+    {
+      "text": "Participant",
+      "x": 267,
+      "y": 428,
+      "width": 81,
+      "height": 26
+    },
+    {
+      "text": "+",
+      "x": 354,
+      "y": 433,
+      "width": 8,
+      "height": 17
+    },
+    {
+      "text": "Phase",
+      "x": 368,
+      "y": 428,
+      "width": 54,
+      "height": 26
+    },
+    {
+      "text": "+",
+      "x": 428,
+      "y": 433,
+      "width": 8,
+      "height": 17
+    },
+    {
+      "text": "Trial",
+      "x": 442,
+      "y": 428,
+      "width": 45,
+      "height": 26
+    },
+    {
+      "text": "+",
+      "x": 493,
+      "y": 433,
+      "width": 8,
+      "height": 17
+    },
+    {
+      "text": "Occurrence",
+      "x": 507,
+      "y": 428,
+      "width": 84,
+      "height": 26
+    },
+    {
+      "text": "=",
+      "x": 597,
+      "y": 433,
+      "width": 8,
+      "height": 17
+    },
+    {
+      "text": "960 unique keys",
+      "x": 611,
+      "y": 433,
+      "width": 108,
+      "height": 17
+    },
+    {
+      "text": "· 0 duplicates · Occurrence is 1 for every trial",
+      "x": 725,
+      "y": 433,
+      "width": 221,
+      "height": 16
+    },
+    {
+      "text": "fixations.csv: 954 unique keys · 0 duplicates · Occurrence is 1 for every trial",
+      "x": 267,
+      "y": 461,
+      "width": 373,
+      "height": 16
+    },
+    {
+      "text": "Revert",
+      "x": 908,
+      "y": 494,
+      "width": 57,
+      "height": 26
+    },
+    {
+      "text": "Apply to r3",
+      "x": 973,
+      "y": 494,
+      "width": 81,
+      "height": 26
+    },
+    {
+      "text": "Column mapping",
+      "x": 245,
+      "y": 117,
+      "width": 17,
+      "height": 95.13749694824219
+    },
+    {
+      "text": "Admission",
+      "x": 265,
+      "y": 528,
+      "width": 59,
+      "height": 28
+    },
+    {
+      "text": "Records outside frame",
+      "x": 349,
+      "y": 528,
+      "width": 122,
+      "height": 28
+    },
+    {
+      "text": "Data issues",
+      "x": 496,
+      "y": 528,
+      "width": 62,
+      "height": 28
+    },
+    {
+      "text": "Counted from the trials.csv inventory",
+      "x": 267,
+      "y": 562,
+      "width": 190,
+      "height": 16
+    },
+    {
+      "text": "Trials",
+      "x": 711,
+      "y": 562,
+      "width": 29,
+      "height": 16
+    },
+    {
+      "text": "Inventory",
+      "x": 267,
+      "y": 588,
+      "width": 55,
+      "height": 17
+    },
+    {
+      "text": "960",
+      "x": 696,
+      "y": 585,
+      "width": 44,
+      "height": 23
+    },
+    {
+      "text": "Admitted",
+      "x": 267,
+      "y": 614,
+      "width": 51,
+      "height": 17
+    },
+    {
+      "text": "937",
+      "x": 696,
+      "y": 611,
+      "width": 44,
+      "height": 23
+    },
+    {
+      "text": "Quarantined — whole trial held back when any record is invalid",
+      "x": 267,
+      "y": 640,
+      "width": 336,
+      "height": 17
+    },
+    {
+      "text": "17",
+      "x": 696,
+      "y": 637,
+      "width": 44,
+      "height": 23
+    },
+    {
+      "text": "duplicate-ordinals",
+      "x": 283,
+      "y": 666,
+      "width": 99,
+      "height": 17
+    },
+    {
+      "text": "4",
+      "x": 696,
+      "y": 663,
+      "width": 44,
+      "height": 23
+    },
+    {
+      "text": "no-fixations",
+      "x": 283,
+      "y": 692,
+      "width": 65,
+      "height": 17
+    },
+    {
+      "text": "5",
+      "x": 696,
+      "y": 689,
+      "width": 44,
+      "height": 23
+    },
+    {
+      "text": "overlap",
+      "x": 283,
+      "y": 718,
+      "width": 41,
+      "height": 17
+    },
+    {
+      "text": "6",
+      "x": 696,
+      "y": 715,
+      "width": 44,
+      "height": 23
+    },
+    {
+      "text": "rejected-records",
+      "x": 283,
+      "y": 744,
+      "width": 91,
+      "height": 17
+    },
+    {
+      "text": "2",
+      "x": 696,
+      "y": 741,
+      "width": 44,
+      "height": 23
+    },
+    {
+      "text": "Absent — in trials.csv, no fixation records at all",
+      "x": 267,
+      "y": 770,
+      "width": 250,
+      "height": 17
+    },
+    {
+      "text": "6",
+      "x": 696,
+      "y": 767,
+      "width": 44,
+      "height": 23
+    },
+    {
+      "text": "Outside screen — excluded from maps and reported, not quarantined",
+      "x": 267,
+      "y": 791,
+      "width": 371,
+      "height": 17
+    },
+    {
+      "text": "0 records",
+      "x": 267,
+      "y": 808,
+      "width": 47,
+      "height": 16
+    },
+    {
+      "text": "0",
+      "x": 696,
+      "y": 797,
+      "width": 44,
+      "height": 23
+    },
+    {
+      "text": "937 + 17 + 6 = 960.",
+      "x": 267,
+      "y": 831,
+      "width": 98,
+      "height": 16
+    },
+    {
+      "text": "no-fixations",
+      "x": 267,
+      "y": 851,
+      "width": 62,
+      "height": 16
+    },
+    {
+      "text": ": the trial has records but none is admissible.",
+      "x": 329,
+      "y": 851,
+      "width": 221,
+      "height": 16
+    },
+    {
+      "text": "Absent",
+      "x": 267,
+      "y": 867,
+      "width": 37,
+      "height": 16
+    },
+    {
+      "text": ": listed in the inventory, no records in fixations.csv.",
+      "x": 304,
+      "y": 867,
+      "width": 250,
+      "height": 16
+    },
+    {
+      "text": "Each count opens its trials and records.",
+      "x": 267,
+      "y": 887,
+      "width": 194,
+      "height": 16
+    },
+    {
+      "text": "Admit dataset r3",
+      "x": 782,
+      "y": 568,
+      "width": 102,
+      "height": 19
+    },
+    {
+      "text": "Require complete",
+      "x": 782,
+      "y": 596,
+      "width": 130,
+      "height": 22
+    },
+    {
+      "text": "Refuses r3 while 17 trials are quarantined (eyes4s admission). The 6 absent trials are counted by the inventory join.",
+      "x": 782,
+      "y": 622,
+      "width": 272,
+      "height": 48
+    },
+    {
+      "text": "Review exclusions",
+      "x": 782,
+      "y": 674,
+      "width": 134,
+      "height": 22
+    },
+    {
+      "text": "Admits 937 trials; 17 quarantined and 6 absent are recorded with their causes in r3.",
+      "x": 782,
+      "y": 700,
+      "width": 272,
+      "height": 32
+    },
+    {
+      "text": "Changes from r2: onset declared ms; occurrence → occurrence; trial status vs r2 unavailable.",
+      "x": 782,
+      "y": 741,
+      "width": 272,
+      "height": 32
+    },
+    {
+      "text": "Admitting creates dataset r3. Run 5 stays on r2 and is marked stale.",
+      "x": 782,
+      "y": 782,
+      "width": 272,
+      "height": 32
+    },
+    {
+      "text": "Admit as r3",
+      "x": 782,
+      "y": 823,
+      "width": 84,
+      "height": 24
+    },
+    {
+      "text": "Counts: eyes4s admission of r3.",
+      "x": 782,
+      "y": 856,
+      "width": 158,
+      "height": 16
+    },
+    {
+      "text": "Admission",
+      "x": 245,
+      "y": 544,
+      "width": 17,
+      "height": 58.70001220703125
+    },
+    {
+      "text": "Geometry",
+      "x": 1081,
+      "y": 101,
+      "width": 55,
+      "height": 28
+    },
+    {
+      "text": "Dataset · re-admit",
+      "x": 1326,
+      "y": 134,
+      "width": 106,
+      "height": 18
+    },
+    {
+      "text": "Changes edit r3, which is not admitted yet.",
+      "x": 1083,
+      "y": 167,
+      "width": 210,
+      "height": 16
+    },
+    {
+      "text": "Gaze coordinates",
+      "x": 1083,
+      "y": 190,
+      "width": 86,
+      "height": 16
+    },
+    {
+      "text": "Screen px · origin top-left · y down",
+      "x": 1180,
+      "y": 189,
+      "width": 185,
+      "height": 17
+    },
+    {
+      "text": "Screen",
+      "x": 1083,
+      "y": 210,
+      "width": 35,
+      "height": 16
+    },
+    {
+      "text": "1920 × 1080 px",
+      "x": 1180,
+      "y": 209,
+      "width": 101,
+      "height": 17
+    },
+    {
+      "text": "Image placement",
+      "x": 1083,
+      "y": 230,
+      "width": 87,
+      "height": 16
+    },
+    {
+      "text": "1024 × 768 at (448, 156)",
+      "x": 1180,
+      "y": 229,
+      "width": 173,
+      "height": 17
+    },
+    {
+      "text": "Analysis window",
+      "x": 1083,
+      "y": 250,
+      "width": 83,
+      "height": 16
+    },
+    {
+      "text": "Image frame",
+      "x": 1180,
+      "y": 249,
+      "width": 70,
+      "height": 17
+    },
+    {
+      "text": "Pixels per degree",
+      "x": 1083,
+      "y": 270,
+      "width": 86,
+      "height": 16
+    },
+    {
+      "text": "35",
+      "x": 1180,
+      "y": 269,
+      "width": 15,
+      "height": 17
+    },
+    {
+      "text": "· declared, not calibrated",
+      "x": 1203,
+      "y": 270,
+      "width": 124,
+      "height": 16
+    },
+    {
+      "text": "Declared, not calibrated: screen px, image frame = analysis window, linear px/°.",
+      "x": 1083,
+      "y": 292,
+      "width": 338,
+      "height": 32
+    },
+    {
+      "text": "Screen width (px)",
+      "x": 1083,
+      "y": 337,
+      "width": 90,
+      "height": 16
+    },
+    {
+      "text": "Screen height (px)",
+      "x": 1083,
+      "y": 365,
+      "width": 93,
+      "height": 16
+    },
+    {
+      "text": "Image left (px)",
+      "x": 1083,
+      "y": 393,
+      "width": 76,
+      "height": 16
+    },
+    {
+      "text": "Image top (px)",
+      "x": 1083,
+      "y": 421,
+      "width": 75,
+      "height": 16
+    },
+    {
+      "text": "Image width (px)",
+      "x": 1083,
+      "y": 449,
+      "width": 88,
+      "height": 16
+    },
+    {
+      "text": "Image height (px)",
+      "x": 1083,
+      "y": 477,
+      "width": 91,
+      "height": 16
+    },
+    {
+      "text": "Pixels per degree (declared)",
+      "x": 1083,
+      "y": 505,
+      "width": 144,
+      "height": 16
+    },
+    {
+      "text": "Revert",
+      "x": 1261,
+      "y": 531,
+      "width": 57,
+      "height": 26
+    },
+    {
+      "text": "Apply to r3",
+      "x": 1326,
+      "y": 531,
+      "width": 81,
+      "height": 26
+    },
+    {
+      "text": "Viewing distance",
+      "x": 1251,
+      "y": 582,
+      "width": 84,
+      "height": 16
+    },
+    {
+      "text": "Physical width",
+      "x": 1083,
+      "y": 607,
+      "width": 72,
+      "height": 16
+    },
+    {
+      "text": "Pixels per degree is declared: eyes4s does not derive it from a viewing distance or a physical screen size, and neither is recorded.",
+      "x": 1083,
+      "y": 632,
+      "width": 338,
+      "height": 32
+    },
+    {
+      "text": "Record 1 raw",
+      "x": 1091,
+      "y": 676,
+      "width": 66,
+      "height": 16
+    },
+    {
+      "text": "screen (570.4, 609.3) px",
+      "x": 1175,
+      "y": 676,
+      "width": 159,
+      "height": 16
+    },
+    {
+      "text": "→ image frame",
+      "x": 1091,
+      "y": 695,
+      "width": 74,
+      "height": 16
+    },
+    {
+      "text": "(122.4, 453.3) px · (−11.1°, −2.0°)",
+      "x": 1175,
+      "y": 695,
+      "width": 232,
+      "height": 16
+    },
+    {
+      "text": "Degrees",
+      "x": 1091,
+      "y": 714,
+      "width": 41,
+      "height": 16
+    },
+    {
+      "text": "from image centre · x right · y up",
+      "x": 1175,
+      "y": 714,
+      "width": 225,
+      "height": 16
+    },
+    {
+      "text": "Check placement",
+      "x": 1083,
+      "y": 756,
+      "width": 105,
+      "height": 19
+    },
+    {
+      "text": "screen outline · image frame",
+      "x": 1280,
+      "y": 758,
+      "width": 141,
+      "height": 16
+    },
+    {
+      "text": "P01 · enc_01",
+      "x": 1083,
+      "y": 879,
+      "width": 164,
+      "height": 16
+    },
+    {
+      "text": "1 of 11 outside",
+      "x": 1083,
+      "y": 895,
+      "width": 164,
+      "height": 16
+    },
+    {
+      "text": "P01 · enc_08",
+      "x": 1257,
+      "y": 879,
+      "width": 164,
+      "height": 16
+    },
+    {
+      "text": "Missing asset · forest-044.png",
+      "x": 1257,
+      "y": 895,
+      "width": 164,
+      "height": 16
+    },
+    {
+      "text": "P05 · ret_04",
+      "x": 1083,
+      "y": 1019,
+      "width": 164,
+      "height": 16
+    },
+    {
+      "text": "11 of 11 outside",
+      "x": 1083,
+      "y": 1035,
+      "width": 164,
+      "height": 16
+    },
+    {
+      "text": "P05 · ret_11",
+      "x": 1257,
+      "y": 1019,
+      "width": 164,
+      "height": 16
+    },
+    {
+      "text": "11 of 11 outside",
+      "x": 1257,
+      "y": 1035,
+      "width": 164,
+      "height": 16
+    },
+    {
+      "text": "All trials overlaid",
+      "x": 1255,
+      "y": 1057,
+      "width": 87,
+      "height": 16
+    },
+    {
+      "text": "11,520 records, screen coordinates. A flipped or shifted participant shows up as mass away from the image frame.",
+      "x": 1255,
+      "y": 1079,
+      "width": 166,
+      "height": 64
+    },
+    {
+      "text": "1–3",
+      "x": 1083,
+      "y": 1155,
+      "width": 34,
+      "height": 16
+    },
+    {
+      "text": "4–15",
+      "x": 1123,
+      "y": 1155,
+      "width": 41,
+      "height": 16
+    },
+    {
+      "text": "16–63",
+      "x": 1170,
+      "y": 1155,
+      "width": 47,
+      "height": 16
+    },
+    {
+      "text": "≥64",
+      "x": 1222,
+      "y": 1155,
+      "width": 35,
+      "height": 16
+    },
+    {
+      "text": "Records per cell, log steps · 64 × 36 screen cells",
+      "x": 1083,
+      "y": 1177,
+      "width": 239,
+      "height": 16
+    },
+    {
+      "text": "Mark trial as wrong orientation…",
+      "x": 1083,
+      "y": 1199,
+      "width": 195,
+      "height": 22
+    },
+    {
+      "text": "Choose a trial above to mark.",
+      "x": 1083,
+      "y": 1227,
+      "width": 144,
+      "height": 16
+    },
+    {
+      "text": "Recorded corrections",
+      "x": 1083,
+      "y": 1263,
+      "width": 120,
+      "height": 17
+    },
+    {
+      "text": "Recorded in the admission ledger and applied by eyes4s at admission; source coordinates are never rewritten.",
+      "x": 1083,
+      "y": 1286,
+      "width": 338,
+      "height": 32
+    },
+    {
+      "text": "No corrections recorded.",
+      "x": 1083,
+      "y": 1330,
+      "width": 123,
+      "height": 16
+    },
+    {
+      "text": "Records outside the screen",
+      "x": 1083,
+      "y": 1366,
+      "width": 152,
+      "height": 17
+    },
+    {
+      "text": "Exclude the record (default)",
+      "x": 1083,
+      "y": 1389,
+      "width": 187,
+      "height": 22
+    },
+    {
+      "text": "Quarantine its trial",
+      "x": 1083,
+      "y": 1417,
+      "width": 131,
+      "height": 22
+    },
+    {
+      "text": "A finite record outside the screen is kept, left out of every map and reported.",
+      "x": 1083,
+      "y": 1445,
+      "width": 338,
+      "height": 32
+    },
+    {
+      "text": "Outside im...",
+      "x": 1083,
+      "y": 1501,
+      "width": 77,
+      "height": 17
+    },
+    {
+      "text": "543 of 11,520 records · 409 trials",
+      "x": 1160,
+      "y": 1497,
+      "width": 261,
+      "height": 26
+    },
+    {
+      "text": "Reported, not dropped from the data. Excluded from maps because the analysis window is the image frame; each trial lists its own count.",
+      "x": 1083,
+      "y": 1528,
+      "width": 338,
+      "height": 48
+    },
+    {
+      "text": "Outside screen",
+      "x": 1083,
+      "y": 1586,
+      "width": 84,
+      "height": 17
+    },
+    {
+      "text": "0 of 11,520 records · 0 trials",
+      "x": 1189,
+      "y": 1582,
+      "width": 232,
+      "height": 26
+    },
+    {
+      "text": "On admission, a record outside the screen will be excluded from maps and reported.",
+      "x": 1083,
+      "y": 1613,
+      "width": 338,
+      "height": 32
+    },
+    {
+      "text": "Counts: eyes4s placement of r3, including unadmitted trials. 0 source records could not be placed.",
+      "x": 1083,
+      "y": 1651,
+      "width": 338,
+      "height": 32
+    },
+    {
+      "text": "Geometry",
+      "x": 1060,
+      "y": 117,
+      "width": 17,
+      "height": 55.537506103515625
+    },
+    {
+      "text": "No open panels",
+      "x": 668,
+      "y": 483,
+      "width": 105,
+      "height": 29
+    },
+    {
+      "text": "Drag a tab here, or open a panel",
+      "x": 631,
+      "y": 520,
+      "width": 179,
+      "height": 17
+    },
+    {
+      "text": "Selected:",
+      "x": 24,
+      "y": 880,
+      "width": 47,
+      "height": 16
+    },
+    {
+      "text": "fixations.csv › Admission",
+      "x": 77,
+      "y": 880,
+      "width": 166,
+      "height": 16
+    },
+    {
+      "text": "Mapping and geometry changes apply when r3 is admitted",
+      "x": 268,
+      "y": 880,
+      "width": 288,
+      "height": 16
+    },
+    {
+      "text": "No jobs",
+      "x": 1302,
+      "y": 880,
+      "width": 38,
+      "height": 16
+    },
+    {
+      "text": "Saved 10:24",
+      "x": 1365,
+      "y": 880,
+      "width": 63,
+      "height": 16
+    }
+  ]
+}

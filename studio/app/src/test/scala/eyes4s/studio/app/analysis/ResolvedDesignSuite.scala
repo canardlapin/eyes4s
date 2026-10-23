@@ -211,7 +211,7 @@ class ResolvedDesignSuite extends munit.FunSuite:
         ("Eligible", "…", true),
         ("No match", "…", true),
         ("Query not admitted", "14", true),
-        ("No study trial, by design", "—", false)
+        ("No study trial, by design", "n/a", false)
       )
     )
     assertEquals(
@@ -256,7 +256,7 @@ class ResolvedDesignSuite extends munit.FunSuite:
     val vm = ResolvedDesignVM.of(p)
     assertEquals(vm.mode, "paged · exact")
     assertEquals(vm.counting, None)
-    assertEquals(vm.chips.map(_.count), Vector("480", "457", "9", "14", "—"))
+    assertEquals(vm.chips.map(_.count), Vector("480", "457", "9", "14", "n/a"))
     assertEquals(
       vm.chips.flatMap(_.ref),
       Vector(

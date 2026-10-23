@@ -50,4 +50,8 @@ class FigureGazeFxSuite extends ShellFxSuite:
       assertEquals((b.display.trial.trial, b.fixations.size), ("ret_07", 12))
       assertEquals(a.marks, MarkStyle.Role(TrialRole.Matched))
       assertEquals(b.marks, MarkStyle.Role(TrialRole.Query))
+      assert(
+        !a.options.captionBand && !b.options.captionBand,
+        "native figure gaze panels must use the same caption-free data viewport as export"
+      )
   }

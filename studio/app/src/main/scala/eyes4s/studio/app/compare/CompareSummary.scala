@@ -20,7 +20,7 @@ import eyes4s.studio.app.{AppModel, Intent}
 import eyes4s.studio.app.nav.Place
 import eyes4s.studio.core.backend.{BackendError, QueryRow, ReportView, ResultSummary, RunId}
 import eyes4s.studio.core.document.{Perspective, ReportingId, ReportingSpec}
-import eyes4s.studio.core.selection.ScaleIndex
+import eyes4s.studio.core.selection.{ScaleIndex, StudioRef}
 
 /** What the backend answered for a run's summary. */
 enum SummaryAnswer derives CanEqual:
@@ -76,7 +76,8 @@ final case class CompareSummary(
     queries: Option[QueriesAnswer],
     scale: Option[ScaleIndex],
     spec: Option[ReportingSpec] = None,
-    reports: Map[(ScaleIndex, Boolean), ReportAnswer] = Map.empty
+    reports: Map[(ScaleIndex, Boolean), ReportAnswer] = Map.empty,
+    followedResult: Option[StudioRef] = None
 ) derives CanEqual
 
 object CompareSummary:
@@ -147,17 +148,41 @@ object CompareSummary:
     val run  = shownRun(m)
     val rep  = reporting(m)
     val spec = rep.flatMap(id => reportingSpec(m.document, id))
-    if run == s.run && spec == s.spec then (s.copy(reporting = rep), Vector.empty)
+    val refs = m.navigation.trail(Perspective.Compare).reverseIterator.collect {
+      case Place.At(ref) => ref
+    } ++ m.selection.selected.reverseIterator
+    val context = refs.flatMap(ref => selectedScale(ref, run).map(ref -> _)).nextOption()
+    val focus   = context.map(_._2)
+    val result  = context.map(_._1)
+    // A result carries its scale even while its report is still loading.
+    // Remember the last followed identity so an unrelated model update does
+    // not undo an explicit choice in the summary's scale selector.
+    val following = if result == s.followedResult then s
+    else s.copy(scale = focus.orElse(s.scale), followedResult = result)
+    if run == s.run && spec == s.spec then (following.copy(reporting = rep), Vector.empty)
     else if run == s.run then
-      val next = s.copy(reporting = rep, spec = spec, reports = Map.empty)
+      val next = following.copy(reporting = rep, spec = spec, reports = Map.empty)
       (next, reportEffects(next))
     else
       (
-        CompareSummary(run, rep, None, None, None, spec),
+        CompareSummary(run, rep, None, None, focus, spec, followedResult = result),
         run.toVector.flatMap(r =>
           Vector(SummaryEffect.RequestSummary(r), SummaryEffect.RequestQueries(r))
         )
       )
+
+  private def selectedScale(ref: StudioRef, shown: Option[RunId]): Option[ScaleIndex] =
+    val identity = ref match
+      case StudioRef.Result(run, address)                      => Some(run -> address.scale)
+      case StudioRef.ParticipantSummary(run, _, scale, _, _)   => Some(run -> scale)
+      case StudioRef.GroupCell(run, _, scale, _)               => Some(run -> scale)
+      case StudioRef.ReportCell(run, _, scale, _, _)           => Some(run -> scale)
+      case StudioRef.ReportParticipant(run, _, scale, _, _, _) => Some(run -> scale)
+      case StudioRef.ReportContrast(run, _, scale, _, _, _)    => Some(run -> scale)
+      case StudioRef.ReportQueryRange(run, _, scale, _)        => Some(run -> scale)
+      case StudioRef.ReportTally(run, _, scale, _, _)          => Some(run -> scale)
+      case _                                                   => None
+    identity.collect { case (run, scale) if shown.contains(run) => scale }
 
   /** A backend answer or a user action. An answer for a run no longer shown
     * is dropped; only a scale the participant means are served at can be

@@ -71,7 +71,7 @@ class ResolvedDesignFxSuite extends ShellFxSuite:
         ("Eligible", "457", false),
         ("No match", "9", false),
         ("Query not admitted", "14", false),
-        ("No study trial, by design", "—", true)
+        ("No study trial, by design", "n/a", true)
       )
     )
     assertEquals(runOnFx(view.mode.getText), "paged · exact")
@@ -139,7 +139,7 @@ class ResolvedDesignFxSuite extends ShellFxSuite:
     val node   = runOnFx(w.resolvedDesign.view.rows.head)
     val labels =
       runOnFx(node.getChildren.asScala.toVector.map(_.asInstanceOf[javafx.scene.control.Label]))
-    assertEquals(runOnFx(labels(3).getText), "—")
+    assertEquals(runOnFx(labels(3).getText), "no value")
     assert(runOnFx(labels(5).getText).contains(first.declaredReferences.head.trial.trial))
     fx.snapshot(StudioTheme.Light)
   }

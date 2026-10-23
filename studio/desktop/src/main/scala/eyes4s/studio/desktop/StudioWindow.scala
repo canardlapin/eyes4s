@@ -612,7 +612,8 @@ object StudioWindow:
       () => r.model,
       dispatch,
       LedgerSource.of(session),
-      () => summary.inspectorInputs
+      () => summary.inspectorInputs,
+      summary.chooseLimits
     )
     host.host(StudioLayouts.compareInspector, compareInspector.node)
     summary.onRendered(() => compareInspector.refresh())

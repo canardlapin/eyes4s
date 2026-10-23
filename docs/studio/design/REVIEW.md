@@ -102,9 +102,16 @@ Status key: **[approved]** owner-approved · **[bug]** a pure bug, landable with
 
 **I. Plots and Results **
 26. **H1, ParticipantPlot annotations** (split into slices of at most half a day): an `Annotations` API and `ParticipantTextId`s. Tests: a new suite, plus a Results FX snapshot. **Fixed** (slice a: the `Annotations` API; slice b: text ids, the app builder, Results wiring, accessible summary; each group's label reads "n = 24" in Results and Figures, the unit kept in the cell and its readout, owner decision 2026-10-15). Capacity follows the plot frame's height (`Annotations.capacity`, S30).
-27. **H2, Results paired descriptive**: an app VM plus text. Test: a fixture value test of **0.15567 → "+0.16"**, range +0.05 (P21) to +0.26 (P15), 24 of 24, computed before rounding participant means. The fixture field is added in this landing (`docs/studio/fixture`). **Fixed** (the t3 story spec declares Remembered − Forgotten).
+27. **H2, Results paired descriptive**: an app VM plus text. Test: a fixture value test of **0.184177735 → "+0.18"**, range +0.04 (P15) to +0.34 (P11), 24 of 24, computed before rounding participant means. The fixture field is added in this landing (`docs/studio/fixture`). **Fixed** (the t3 story spec declares Remembered − Forgotten).
 
 **J. Parity harness **
 28. The board's resting depicted focus (`.kf`) gets a desktop counterpart only in tests. Moments put visible focus on the depicted node via `requestFocusTraversal`/Tab (`ShellMomentsFxSuite`, `AppShellFxSuite`), or `PARITY_CHECKLIST.md` exempts resting focus rings. No runtime change. **Fixed** (`RestingFocus` puts real keyboard focus on each board's `.kf` node in AppShellFxSuite and ShellMomentsFxSuite; Data's mapping row and DataEmpty's preset have no desktop stop; MainDark depicts none).
 
 **Settled 2026-10-11:** methods denominator (DESIGN_SPEC §15); dark-stage casing (ticket 17); D4 (ticket 15); NeutralMark (11); density levels (23, rule to write); figure cross arm (22); Data thumbnails stay the grey placement frame plus marks (`GeometryScene.scala:63`), missing assets hatched (25); image frame art would be a separate feature. The mock fixture's science scores are reconciled to the golden fixture in their own ticket, since every board and many studio tests read them. Stage selection keeps the two-band ring with the focus ring outside it; add parity tests for selection only, focus only, both on one mark, and both on different marks (fallback: focus as corner brackets).
+
+
+2026-10-23 whole-board review correction: ticket 27 above now names the current
+reconciled fixture (`fixture.json` and `PairedDescriptiveSuite`); the older +0.16
+review prose predated the science-score reconciliation. The fixture and Results
+board were already correct. System now marks the served UI-A/UI-B and Intaglio
+input interfaces, and names the single Dock with per-perspective layouts.

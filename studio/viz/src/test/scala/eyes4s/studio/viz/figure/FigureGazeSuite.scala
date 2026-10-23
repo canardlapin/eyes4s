@@ -23,7 +23,17 @@ import eyes4s.studio.core.document.{FigureId, PanelLetter}
 import eyes4s.studio.core.selection.StudioRef
 import eyes4s.studio.viz.plot.{PlotSurface, PlotTransform}
 import eyes4s.studio.viz.trial.{TrialScene, TrialSamples}
-import intaglio.{DeviceElement, DevicePoint, DevicePrimitive, RenderPlan, value}
+import intaglio.{
+  DeviceElement,
+  DevicePoint,
+  DevicePrimitive,
+  ExtentExpr,
+  Grob,
+  LengthExpr,
+  LengthUnit,
+  RenderPlan,
+  value
+}
 
 /** Figure cross arm (review ticket 22, DESIGN_SPEC section 15): a gaze
   * panel's fixation cross is the trial view's, a half-arm of
@@ -49,6 +59,16 @@ class FigureGazeSuite extends munit.FunSuite:
   )
 
   private val panelMm = 47
+
+  test("a figure gaze scene has no trial-caption band and keeps the panel's native aspect") {
+    val input = FigureGaze.input(gaze, Map.empty)
+    val scene = right(TrialScene(input))
+    assert(!scene.captionBand)
+    assertEqualsDouble(scene.aspect, scene.extent.width / scene.extent.height, Tolerance)
+    assert(
+      !scene.plot.scene.grobs.exists(_.name.exists(_.value.startsWith(TrialScene.CaptionName)))
+    )
+  }
 
   private val page =
     PageVM(
@@ -143,6 +163,40 @@ class FigureGazeSuite extends munit.FunSuite:
   private def figureDrawn: Drawn =
     val built = right(FigurePage.build(page))
     drawn(primitives(right(right(built.plan(FigureSvg.PixelsPerInch)).deviceScene).elements))
+
+  test("the exported gaze viewport ends where its separate caption begins") {
+    def grobs(g: Grob): Vector[Grob] = g +: g.children.flatMap(grobs)
+    def mm(e: LengthExpr): Double    = e match
+      case LengthExpr.Const(length) if length.unit == LengthUnit.Mm => length.value
+      case other => fail(s"not a millimetre length: $other")
+    val built = right(FigurePage.build(page))
+    val all   = built.scene.grobs.flatMap(grobs)
+    val ports = all
+      .collect {
+        case g: Grob.Group
+            if g.children
+              .flatMap(grobs)
+              .exists(_.name.exists(_.value == TrialScene.PanelName)) =>
+          g.viewport
+      }
+      .flatten
+      .filter(_.size.height match
+        case ExtentExpr(LengthExpr.Const(length)) => length.unit == LengthUnit.Mm
+        case _                                    => false)
+    assertEquals(ports.size, 1)
+    val port    = ports.head
+    val caption = all
+      .collectFirst {
+        case t: Grob.Text if t.label == "Retrieval · ret_07" => t
+      }
+      .getOrElse(fail("no gaze caption"))
+    assertEqualsDouble(mm(port.origin.y), mm(caption.at.y), Tolerance)
+    assertEqualsDouble(
+      mm(port.size.height.expr),
+      panelMm * FigureGaze.heightRatio(gaze),
+      Tolerance
+    )
+  }
 
   test("the settled half-arm is 20 native screen pixels") {
     assertEquals(TrialScene.CrossArmPx, 20.0)

@@ -172,7 +172,13 @@ final class ResolvedDesignView(dispatch: DesignIntent => Unit):
 
   private def rowNode(r: DesignRowVM): HBox =
     def none(text: Option[String], style: String, index: Int) =
-      text.fold(cell("—", index, "design-none"))(t => cell(t, index, style))
+      text.fold(
+        cell(
+          eyes4s.studio.app.text.DesignText(eyes4s.studio.app.text.DesignTextId.NoValue),
+          index,
+          "design-none"
+        )
+      )(t => cell(t, index, style))
     val status = cell(
       r.status,
       5,

@@ -56,7 +56,8 @@ final class CompareInspectorHost(
     model: () => AppModel,
     app: Intent => Unit,
     source: LedgerSource,
-    inputs: () => InspectorInputs
+    inputs: () => InspectorInputs,
+    limitsChanged: LimitsScope => Unit = _ => ()
 ):
   private var state    = WhyReference.empty
   private var disposed = false
@@ -252,6 +253,7 @@ final class CompareInspectorHost(
         )
       bind(stages, a.stages, a.stageLabel)
       bind(limits, a.limits, a.limitsLabel)
+      limits.chosen.foreach(limitsChanged)
       if !opacity.isValueChanging then opacity.setValue(a.opacity)
       opacity.setAccessibleText(a.opacityLabel)
     finally binding = false

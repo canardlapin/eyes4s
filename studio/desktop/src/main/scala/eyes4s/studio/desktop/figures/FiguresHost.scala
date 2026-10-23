@@ -451,6 +451,9 @@ final class FiguresHost(
   /** The page's panels, laid out in its columns. */
   val paper: FlowPane = FlowPane()
   paper.getStyleClass.add("figures-paper")
+  // Panel widths and gutters are physical dimensions. Rounding each one
+  // separately can make two columns wider than their declared page.
+  paper.setSnapToPixel(false)
 
   /** The greyscale check, drawn over the paper while it is on. */
   val greyscaleProof: GreyscaleProof = GreyscaleProof(paper)
@@ -462,6 +465,7 @@ final class FiguresHost(
     bar.setAlignment(Pos.CENTER_LEFT)
     bar.getStyleClass.add("figures-toolbar")
     val sheetOfPaper = StackPane(paper, greyscaleProof.node)
+    sheetOfPaper.getStyleClass.add("figures-sheet")
     sheetOfPaper.setAlignment(Pos.TOP_LEFT)
     val scroll = ScrollPane(sheetOfPaper)
     scroll.setFitToWidth(false)
@@ -834,9 +838,20 @@ final class FiguresHost(
             val head  = paperLabel(t.title, text)
             val sub   = paperLabel(t.subtitle, text)
             val score = paperLabel(t.label, text); score.getStyleClass.add("figures-score")
-            val tile = VBox(2.0, mapNode(figure, p.letter, i, t, tileW, text), head, sub, score)
+            Vector(head, sub, score).foreach { line =>
+              line.setWrapText(false)
+              line.setMinWidth(0)
+              line.setMaxWidth(tileW)
+              val height = math.ceil(text * 1.3)
+              line.setMinHeight(height)
+              line.setPrefHeight(height)
+              line.setMaxHeight(height)
+            }
+            val tile = VBox(2.0, head, mapNode(figure, p.letter, i, t, tileW, text), sub, score)
             tile.getStyleClass.add("figures-tile")
             tile.setPrefWidth(tileW)
+            tile.setMinWidth(tileW)
+            tile.setMaxWidth(tileW)
             tile.setAccessibleText(s"${t.heading}, ${t.label}")
             tile
           }*

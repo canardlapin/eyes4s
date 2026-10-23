@@ -21,7 +21,7 @@ import eyes4s.studio.app.vm.{A11yRole, FocusStop}
 import eyes4s.studio.core.backend.{Eligibility, PreviewRow, TrialDisposition, TrialKey}
 import eyes4s.studio.core.selection.{DesignCount, StudioRef}
 
-/** A filter chip: its label, the backend count it shows ("—" when the
+/** A filter chip: its label, the backend count it shows ("n/a" when the
   * recipe has no such category, "…" before the count arrives), `ref`, the
   * count's [[StudioRef.DesignTally]], and whether it can be chosen.
   */

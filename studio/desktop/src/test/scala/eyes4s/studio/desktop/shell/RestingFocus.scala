@@ -37,12 +37,11 @@ import javafx.scene.{AccessibleRole, Node}
   * a resting focus for them:
   *  - Data.dc.html: the column mapping's FixStart row, which carries the
   *    row cursor; the desktop's mapping rows are not Tab stops.
-  *  - DataEmpty.dc.html: the first run's "Encoding → Retrieval" preset; no
-  *    parity moment boots the first run, and its Import pane offers no
-  *    preset stop.
   *  - MainDark.dc.html: depicts none (the dark Compare snapshots take none).
   *  - System.dc.html: a specimen sheet; FocusVisibleFxSuite and
   *    ControlsFxSuite check the rings it draws.
+  * DataEmpty's shared preset group now has a composite Tab stop; its own
+  * first-run suites cover it rather than this populated-story helper.
   * And Main.dc.html's ring is the reference trial's fixation cursor: the
   * desktop's Compare trial panels carry no cursor, so its counterpart is
   * the Reference trial pane's own ring, on the pane's edge.

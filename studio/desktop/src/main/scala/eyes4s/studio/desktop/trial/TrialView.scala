@@ -194,6 +194,11 @@ final class TrialView(source: StimulusSource, loader: Executor, maps: MapRasterS
   /** The input the view shows, if any (its theme, stage and trial, for S4.2). */
   def input: Option[TrialSceneInput] = current
 
+  /** The exact requested grid and display style; independent of whether
+    * its asynchronous raster has arrived yet.
+    */
+  def requestedMap: Option[MapRequest] = mapRequest
+
   /** Shows `input`; its `rasters` are replaced by the ones this view loaded. */
   def show(input: TrialSceneInput): Unit =
     onFxThread("show")
@@ -323,7 +328,9 @@ final class TrialView(source: StimulusSource, loader: Executor, maps: MapRasterS
   private def render(): Unit =
     current.foreach { input =>
       needed(input).filter(rasters.contains).foreach(touch)
-      TrialScene(input.copy(rasters = rasters, map = mapLayer)) match
+      val ready   = input.copy(rasters = rasters, map = mapLayer)
+      val wrapped = TrialCaptions.lines(ready, getWidth)
+      TrialScene(ready.copy(options = ready.options.copy(captionLines = wrapped))) match
         case Right(scene) =>
           if !aspect.contains(scene.aspect) then
             aspect = Some(scene.aspect)
@@ -361,6 +368,8 @@ final class TrialView(source: StimulusSource, loader: Executor, maps: MapRasterS
     legendHost.setVisible(legendUnderTrial)
     if was != legendUnderTrial then requestLayout()
 
+  private var captionSize = Option.empty[(Double, Double)]
+
   override protected def layoutChildren(): Unit =
     val w = getWidth
     val h = getHeight
@@ -376,6 +385,9 @@ final class TrialView(source: StimulusSource, loader: Executor, maps: MapRasterS
       case None =>
         host.resizeRelocate(0.0, 0.0, w, h)
         legendHost.resizeRelocate(0.0, h, w, 0.0)
+    if !captionSize.contains((w, h)) then
+      captionSize = Some((w, h))
+      render()
 
   private def onFxThread(operation: String): Unit =
     if !Platform.isFxApplicationThread then

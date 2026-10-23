@@ -1,0 +1,1774 @@
+{
+  "board": "MainDark",
+  "moment": "T2",
+  "width": 1440,
+  "height": 900,
+  "heights": {
+    "appBar": 44,
+    "contextStrip": 32,
+    "statusBar": 24
+  },
+  "tabHeaders": [
+    28,
+    28,
+    28,
+    28,
+    28
+  ],
+  "toleranceLogicalPixels": 1,
+  "nativeOutputScaleX": 1,
+  "nativeOutputScaleY": 1,
+  "scale2Capture": "snapshot transform; native output scale recorded separately",
+  "shellText": [
+    "app.name: Eyes Studio",
+    "app.project: memory-study",
+    "app.perspectives: Data ⌘1 | Explore ⌘2 | Analysis ⌘3 | Compare ⌘4 (current) | Figures ⌘5",
+    "app.jobs: No jobs",
+    "context.nav: Back (⌘[) | [Forward (⌘])]",
+    "context.trail: Summary · by retrieval response › Remembered › P17 › ret_07 · beach-042 › *pair ret_07 × enc_03 · matched*",
+    "context.freshness: Analysis rev 4 · run 7 · data r3 · current",
+    "context.draft: Draft rev 5 · 1 change · ready",
+    "banner.lead: Showing run 7 (analysis rev 4).",
+    "banner.detail: Draft rev 5 adds σ 8° and has not been run.",
+    "banner.actions: Review in Analysis | Discard draft",
+    "status: Selected: P17 › ret_07 × enc_03 (matched) · σ 2° | Prev / Next steps controls · F6 next pane | No jobs | Saved 10:24"
+  ],
+  "labels": [
+    {
+      "text": "_File",
+      "x": 8,
+      "y": 0,
+      "width": 36,
+      "height": 25
+    },
+    {
+      "text": "File",
+      "x": 16,
+      "y": 4,
+      "width": 20,
+      "height": 17
+    },
+    {
+      "text": "_Edit",
+      "x": 46,
+      "y": 0,
+      "width": 38,
+      "height": 25
+    },
+    {
+      "text": "Edit",
+      "x": 54,
+      "y": 4,
+      "width": 22,
+      "height": 17
+    },
+    {
+      "text": "_View",
+      "x": 86,
+      "y": 0,
+      "width": 43,
+      "height": 25
+    },
+    {
+      "text": "View",
+      "x": 94,
+      "y": 4,
+      "width": 27,
+      "height": 17
+    },
+    {
+      "text": "_Go",
+      "x": 131,
+      "y": 0,
+      "width": 32,
+      "height": 25
+    },
+    {
+      "text": "Go",
+      "x": 139,
+      "y": 4,
+      "width": 16,
+      "height": 17
+    },
+    {
+      "text": "_Run",
+      "x": 165,
+      "y": 0,
+      "width": 38,
+      "height": 25
+    },
+    {
+      "text": "Run",
+      "x": 173,
+      "y": 4,
+      "width": 22,
+      "height": 17
+    },
+    {
+      "text": "_Window",
+      "x": 205,
+      "y": 0,
+      "width": 60,
+      "height": 25
+    },
+    {
+      "text": "Window",
+      "x": 213,
+      "y": 4,
+      "width": 44,
+      "height": 17
+    },
+    {
+      "text": "_Help",
+      "x": 267,
+      "y": 0,
+      "width": 42,
+      "height": 25
+    },
+    {
+      "text": "Help",
+      "x": 275,
+      "y": 4,
+      "width": 26,
+      "height": 17
+    },
+    {
+      "text": "Eyes Studio",
+      "x": 41,
+      "y": 38,
+      "width": 71,
+      "height": 19
+    },
+    {
+      "text": "memory-study",
+      "x": 126,
+      "y": 35,
+      "width": 130,
+      "height": 24
+    },
+    {
+      "text": "memory-study",
+      "x": 135,
+      "y": 35,
+      "width": 96,
+      "height": 24
+    },
+    {
+      "text": "Data",
+      "x": 585,
+      "y": 33,
+      "width": 70,
+      "height": 29
+    },
+    {
+      "text": "⌘1",
+      "x": 630,
+      "y": 39,
+      "width": 13.2225341796875,
+      "height": 16
+    },
+    {
+      "text": "Explore",
+      "x": 657,
+      "y": 33,
+      "width": 87,
+      "height": 29
+    },
+    {
+      "text": "⌘2",
+      "x": 719,
+      "y": 39,
+      "width": 13.2225341796875,
+      "height": 16
+    },
+    {
+      "text": "Analysis",
+      "x": 746,
+      "y": 33,
+      "width": 91,
+      "height": 29
+    },
+    {
+      "text": "⌘3",
+      "x": 812,
+      "y": 39,
+      "width": 13.2225341796875,
+      "height": 16
+    },
+    {
+      "text": "Compare",
+      "x": 839,
+      "y": 33,
+      "width": 95,
+      "height": 28
+    },
+    {
+      "text": "⌘4",
+      "x": 908,
+      "y": 39,
+      "width": 13.2225341796875,
+      "height": 16
+    },
+    {
+      "text": "Figures",
+      "x": 936,
+      "y": 33,
+      "width": 85,
+      "height": 29
+    },
+    {
+      "text": "⌘5",
+      "x": 996,
+      "y": 39,
+      "width": 13.2225341796875,
+      "height": 16
+    },
+    {
+      "text": "No jobs",
+      "x": 1378,
+      "y": 39,
+      "width": 41,
+      "height": 17
+    },
+    {
+      "text": "Summary · by retrieval response",
+      "x": 66,
+      "y": 74,
+      "width": 187,
+      "height": 23
+    },
+    {
+      "text": "›",
+      "x": 255,
+      "y": 77,
+      "width": 4,
+      "height": 17
+    },
+    {
+      "text": "Remembered",
+      "x": 261,
+      "y": 74,
+      "width": 86,
+      "height": 23
+    },
+    {
+      "text": "›",
+      "x": 349,
+      "y": 77,
+      "width": 4,
+      "height": 17
+    },
+    {
+      "text": "P17",
+      "x": 355,
+      "y": 74,
+      "width": 34,
+      "height": 23
+    },
+    {
+      "text": "›",
+      "x": 391,
+      "y": 77,
+      "width": 4,
+      "height": 17
+    },
+    {
+      "text": "ret_07 · beach-042",
+      "x": 397,
+      "y": 74,
+      "width": 118,
+      "height": 23
+    },
+    {
+      "text": "›",
+      "x": 517,
+      "y": 77,
+      "width": 4,
+      "height": 17
+    },
+    {
+      "text": "pair ret_07 × enc_03 · matched",
+      "x": 523,
+      "y": 74,
+      "width": 187,
+      "height": 23
+    },
+    {
+      "text": "Analysis rev 4 · run 7 · data r3 · current",
+      "x": 1009,
+      "y": 74,
+      "width": 241,
+      "height": 22
+    },
+    {
+      "text": "Draft rev 5 · 1 change · ready",
+      "x": 1254,
+      "y": 74,
+      "width": 176,
+      "height": 22
+    },
+    {
+      "text": "Showing run 7 (analysis rev 4).",
+      "x": 12,
+      "y": 107,
+      "width": 171,
+      "height": 17
+    },
+    {
+      "text": "Draft rev 5 adds σ 8° and has not been run.",
+      "x": 193,
+      "y": 107,
+      "width": 231,
+      "height": 17
+    },
+    {
+      "text": "Review in Analysis",
+      "x": 1203,
+      "y": 105,
+      "width": 123,
+      "height": 22
+    },
+    {
+      "text": "Discard draft",
+      "x": 1336,
+      "y": 105,
+      "width": 92,
+      "height": 22
+    },
+    {
+      "text": "Queries",
+      "x": 12,
+      "y": 131,
+      "width": 44,
+      "height": 28
+    },
+    {
+      "text": "Items",
+      "x": 81,
+      "y": 131,
+      "width": 32,
+      "height": 28
+    },
+    {
+      "text": "Query",
+      "x": 0,
+      "y": 180,
+      "width": 30,
+      "height": 16
+    },
+    {
+      "text": "D · 2°",
+      "x": 231,
+      "y": 180,
+      "width": 28,
+      "height": 16
+    },
+    {
+      "text": "P01  19 of 20 · +0.42",
+      "x": 1,
+      "y": 201,
+      "width": 244,
+      "height": 26
+    },
+    {
+      "text": "P02  19 of 20 · +0.43",
+      "x": 1,
+      "y": 226,
+      "width": 244,
+      "height": 26
+    },
+    {
+      "text": "P03  19 of 20 · +0.47",
+      "x": 1,
+      "y": 251,
+      "width": 244,
+      "height": 26
+    },
+    {
+      "text": "P04  19 of 20 · +0.35",
+      "x": 1,
+      "y": 276,
+      "width": 244,
+      "height": 26
+    },
+    {
+      "text": "P05  17 of 20 · +0.35",
+      "x": 1,
+      "y": 301,
+      "width": 244,
+      "height": 26
+    },
+    {
+      "text": "P06  19 of 20 · +0.31",
+      "x": 1,
+      "y": 326,
+      "width": 244,
+      "height": 26
+    },
+    {
+      "text": "P07  19 of 20 · +0.34",
+      "x": 1,
+      "y": 351,
+      "width": 244,
+      "height": 26
+    },
+    {
+      "text": "P08  19 of 20 · +0.34",
+      "x": 1,
+      "y": 376,
+      "width": 244,
+      "height": 26
+    },
+    {
+      "text": "P09  19 of 20 · +0.37",
+      "x": 1,
+      "y": 401,
+      "width": 244,
+      "height": 26
+    },
+    {
+      "text": "P10  19 of 20 · +0.43",
+      "x": 1,
+      "y": 426,
+      "width": 244,
+      "height": 26
+    },
+    {
+      "text": "P11  19 of 20 · +0.36",
+      "x": 1,
+      "y": 451,
+      "width": 244,
+      "height": 26
+    },
+    {
+      "text": "P12  19 of 20 · +0.41",
+      "x": 1,
+      "y": 476,
+      "width": 244,
+      "height": 26
+    },
+    {
+      "text": "P13  19 of 20 · +0.30",
+      "x": 1,
+      "y": 501,
+      "width": 244,
+      "height": 26
+    },
+    {
+      "text": "P14  19 of 20 · +0.34",
+      "x": 1,
+      "y": 526,
+      "width": 244,
+      "height": 26
+    },
+    {
+      "text": "P15  19 of 20 · +0.38",
+      "x": 1,
+      "y": 551,
+      "width": 244,
+      "height": 26
+    },
+    {
+      "text": "P16  19 of 20 · +0.40",
+      "x": 1,
+      "y": 576,
+      "width": 244,
+      "height": 26
+    },
+    {
+      "text": "P17  19 of 20 · +0.38",
+      "x": 1,
+      "y": 601,
+      "width": 244,
+      "height": 26
+    },
+    {
+      "text": "ret_01",
+      "x": 21,
+      "y": 628,
+      "width": 50,
+      "height": 17
+    },
+    {
+      "text": "street-112",
+      "x": 77,
+      "y": 628,
+      "width": 65,
+      "height": 17
+    },
+    {
+      "text": "+0.38",
+      "x": 148,
+      "y": 628,
+      "width": 44,
+      "height": 17
+    },
+    {
+      "text": "ret_02",
+      "x": 21,
+      "y": 649,
+      "width": 50,
+      "height": 17
+    },
+    {
+      "text": "dog-077",
+      "x": 77,
+      "y": 649,
+      "width": 65,
+      "height": 17
+    },
+    {
+      "text": "+0.34",
+      "x": 148,
+      "y": 649,
+      "width": 44,
+      "height": 17
+    },
+    {
+      "text": "ret_03",
+      "x": 21,
+      "y": 670,
+      "width": 50,
+      "height": 17
+    },
+    {
+      "text": "office-203",
+      "x": 77,
+      "y": 670,
+      "width": 65,
+      "height": 17
+    },
+    {
+      "text": "+0.38",
+      "x": 148,
+      "y": 670,
+      "width": 44,
+      "height": 17
+    },
+    {
+      "text": "ret_04",
+      "x": 21,
+      "y": 691,
+      "width": 50,
+      "height": 17
+    },
+    {
+      "text": "kitchen-0...",
+      "x": 77,
+      "y": 691,
+      "width": 65,
+      "height": 17
+    },
+    {
+      "text": "+0.25",
+      "x": 148,
+      "y": 691,
+      "width": 44,
+      "height": 17
+    },
+    {
+      "text": "ret_05",
+      "x": 21,
+      "y": 712,
+      "width": 50,
+      "height": 17
+    },
+    {
+      "text": "forest-008",
+      "x": 77,
+      "y": 712,
+      "width": 65,
+      "height": 17
+    },
+    {
+      "text": "+0.29",
+      "x": 148,
+      "y": 712,
+      "width": 44,
+      "height": 17
+    },
+    {
+      "text": "ret_06",
+      "x": 21,
+      "y": 733,
+      "width": 50,
+      "height": 17
+    },
+    {
+      "text": "garden-054",
+      "x": 77,
+      "y": 733,
+      "width": 65,
+      "height": 17
+    },
+    {
+      "text": "+0.35",
+      "x": 148,
+      "y": 733,
+      "width": 44,
+      "height": 17
+    },
+    {
+      "text": "ret_07",
+      "x": 21,
+      "y": 754,
+      "width": 50,
+      "height": 17
+    },
+    {
+      "text": "beach-042",
+      "x": 77,
+      "y": 754,
+      "width": 65,
+      "height": 17
+    },
+    {
+      "text": "+0.62",
+      "x": 148,
+      "y": 754,
+      "width": 44,
+      "height": 17
+    },
+    {
+      "text": "ret_08",
+      "x": 21,
+      "y": 775,
+      "width": 50,
+      "height": 17
+    },
+    {
+      "text": "bridge-019",
+      "x": 77,
+      "y": 775,
+      "width": 65,
+      "height": 17
+    },
+    {
+      "text": "+0.37",
+      "x": 148,
+      "y": 775,
+      "width": 44,
+      "height": 17
+    },
+    {
+      "text": "ret_09",
+      "x": 21,
+      "y": 796,
+      "width": 50,
+      "height": 17
+    },
+    {
+      "text": "market-066",
+      "x": 77,
+      "y": 796,
+      "width": 65,
+      "height": 17
+    },
+    {
+      "text": "no...",
+      "x": 148,
+      "y": 796,
+      "width": 44,
+      "height": 17
+    },
+    {
+      "text": "ret_10",
+      "x": 21,
+      "y": 817,
+      "width": 50,
+      "height": 17
+    },
+    {
+      "text": "tower-150",
+      "x": 77,
+      "y": 817,
+      "width": 65,
+      "height": 17
+    },
+    {
+      "text": "+0.52",
+      "x": 148,
+      "y": 817,
+      "width": 44,
+      "height": 17
+    },
+    {
+      "text": "ret_11",
+      "x": 21,
+      "y": 838,
+      "width": 50,
+      "height": 17
+    },
+    {
+      "text": "harbor-231",
+      "x": 77,
+      "y": 838,
+      "width": 65,
+      "height": 17
+    },
+    {
+      "text": "+0.43",
+      "x": 148,
+      "y": 838,
+      "width": 44,
+      "height": 17
+    },
+    {
+      "text": "ret_12",
+      "x": 21,
+      "y": 859,
+      "width": 50,
+      "height": 17
+    },
+    {
+      "text": "library-388",
+      "x": 77,
+      "y": 859,
+      "width": 65,
+      "height": 17
+    },
+    {
+      "text": "+0.41",
+      "x": 148,
+      "y": 859,
+      "width": 44,
+      "height": 17
+    },
+    {
+      "text": "ret_13",
+      "x": 21,
+      "y": 880,
+      "width": 50,
+      "height": 17
+    },
+    {
+      "text": "desert-305",
+      "x": 77,
+      "y": 880,
+      "width": 65,
+      "height": 17
+    },
+    {
+      "text": "+0.23",
+      "x": 148,
+      "y": 880,
+      "width": 44,
+      "height": 17
+    },
+    {
+      "text": "ret_14",
+      "x": 21,
+      "y": 901,
+      "width": 50,
+      "height": 17
+    },
+    {
+      "text": "church-417",
+      "x": 77,
+      "y": 901,
+      "width": 65,
+      "height": 17
+    },
+    {
+      "text": "+0.29",
+      "x": 148,
+      "y": 901,
+      "width": 44,
+      "height": 17
+    },
+    {
+      "text": "ret_15",
+      "x": 21,
+      "y": 922,
+      "width": 50,
+      "height": 17
+    },
+    {
+      "text": "station-529",
+      "x": 77,
+      "y": 922,
+      "width": 65,
+      "height": 17
+    },
+    {
+      "text": "+0.45",
+      "x": 148,
+      "y": 922,
+      "width": 44,
+      "height": 17
+    },
+    {
+      "text": "ret_16",
+      "x": 21,
+      "y": 943,
+      "width": 50,
+      "height": 17
+    },
+    {
+      "text": "field-613",
+      "x": 77,
+      "y": 943,
+      "width": 65,
+      "height": 17
+    },
+    {
+      "text": "+0.36",
+      "x": 148,
+      "y": 943,
+      "width": 44,
+      "height": 17
+    },
+    {
+      "text": "ret_17",
+      "x": 21,
+      "y": 964,
+      "width": 50,
+      "height": 17
+    },
+    {
+      "text": "cafe-702",
+      "x": 77,
+      "y": 964,
+      "width": 65,
+      "height": 17
+    },
+    {
+      "text": "+0.15",
+      "x": 148,
+      "y": 964,
+      "width": 44,
+      "height": 17
+    },
+    {
+      "text": "ret_18",
+      "x": 21,
+      "y": 985,
+      "width": 50,
+      "height": 17
+    },
+    {
+      "text": "museum-...",
+      "x": 77,
+      "y": 985,
+      "width": 65,
+      "height": 17
+    },
+    {
+      "text": "+0.57",
+      "x": 148,
+      "y": 985,
+      "width": 44,
+      "height": 17
+    },
+    {
+      "text": "ret_19",
+      "x": 21,
+      "y": 1006,
+      "width": 50,
+      "height": 17
+    },
+    {
+      "text": "canyon-1...",
+      "x": 77,
+      "y": 1006,
+      "width": 65,
+      "height": 17
+    },
+    {
+      "text": "+0.45",
+      "x": 148,
+      "y": 1006,
+      "width": 44,
+      "height": 17
+    },
+    {
+      "text": "ret_20",
+      "x": 21,
+      "y": 1027,
+      "width": 50,
+      "height": 17
+    },
+    {
+      "text": "bakery-240",
+      "x": 77,
+      "y": 1027,
+      "width": 65,
+      "height": 17
+    },
+    {
+      "text": "+0.43",
+      "x": 148,
+      "y": 1027,
+      "width": 44,
+      "height": 17
+    },
+    {
+      "text": "P18  19 of 20 · +0.38",
+      "x": 1,
+      "y": 1046,
+      "width": 244,
+      "height": 26
+    },
+    {
+      "text": "P19  19 of 20 · +0.37",
+      "x": 1,
+      "y": 1071,
+      "width": 244,
+      "height": 26
+    },
+    {
+      "text": "P20  19 of 20 · +0.37",
+      "x": 1,
+      "y": 1096,
+      "width": 244,
+      "height": 26
+    },
+    {
+      "text": "P21  19 of 20 · +0.36",
+      "x": 1,
+      "y": 1121,
+      "width": 244,
+      "height": 26
+    },
+    {
+      "text": "P22  19 of 20 · +0.38",
+      "x": 1,
+      "y": 1146,
+      "width": 244,
+      "height": 26
+    },
+    {
+      "text": "P23  19 of 20 · +0.37",
+      "x": 1,
+      "y": 1171,
+      "width": 244,
+      "height": 26
+    },
+    {
+      "text": "P24  19 of 20 · +0.39",
+      "x": 1,
+      "y": 1196,
+      "width": 244,
+      "height": 26
+    },
+    {
+      "text": "Query contrasts requested",
+      "x": 0,
+      "y": 784,
+      "width": 132,
+      "height": 16
+    },
+    {
+      "text": "480",
+      "x": 159,
+      "y": 784,
+      "width": 20,
+      "height": 16
+    },
+    {
+      "text": "Contributing",
+      "x": 0,
+      "y": 803,
+      "width": 62,
+      "height": 16
+    },
+    {
+      "text": "454",
+      "x": 159,
+      "y": 803,
+      "width": 20,
+      "height": 16
+    },
+    {
+      "text": "Failed (empty map)",
+      "x": 0,
+      "y": 822,
+      "width": 96,
+      "height": 16
+    },
+    {
+      "text": "3",
+      "x": 159,
+      "y": 822,
+      "width": 7,
+      "height": 16
+    },
+    {
+      "text": "No match · query not admitted",
+      "x": 0,
+      "y": 841,
+      "width": 151,
+      "height": 16
+    },
+    {
+      "text": "9 · 14",
+      "x": 159,
+      "y": 841,
+      "width": 40,
+      "height": 16
+    },
+    {
+      "text": "By design (n/a for this preset)",
+      "x": 0,
+      "y": 860,
+      "width": 146,
+      "height": 16
+    },
+    {
+      "text": "n/a",
+      "x": 159,
+      "y": 860,
+      "width": 20,
+      "height": 16
+    },
+    {
+      "text": "Queries",
+      "x": -8,
+      "y": 147,
+      "width": 17,
+      "height": 43.475006103515625
+    },
+    {
+      "text": "Query trial",
+      "x": 272,
+      "y": 131,
+      "width": 59,
+      "height": 28
+    },
+    {
+      "text": "Table",
+      "x": 356,
+      "y": 131,
+      "width": 31,
+      "height": 28
+    },
+    {
+      "text": "Query",
+      "x": 260,
+      "y": 159,
+      "width": 43,
+      "height": 18
+    },
+    {
+      "text": "P17 · ret_07 · beach-042",
+      "x": 309,
+      "y": 160,
+      "width": 137,
+      "height": 17
+    },
+    {
+      "text": "Points",
+      "x": 270,
+      "y": 181,
+      "width": 50,
+      "height": 26
+    },
+    {
+      "text": "Order",
+      "x": 324,
+      "y": 181,
+      "width": 47,
+      "height": 26
+    },
+    {
+      "text": "Map",
+      "x": 375,
+      "y": 181,
+      "width": 40,
+      "height": 26
+    },
+    {
+      "text": "Underlay",
+      "x": 419,
+      "y": 181,
+      "width": 65,
+      "height": 26
+    },
+    {
+      "text": "12 fix",
+      "x": 637,
+      "y": 185,
+      "width": 44,
+      "height": 17
+    },
+    {
+      "text": "Query contrast D · σ 2°: +0.62",
+      "x": 260,
+      "y": 210,
+      "width": 219,
+      "height": 16
+    },
+    {
+      "text": "Query trial",
+      "x": 252,
+      "y": 147,
+      "width": 17,
+      "height": 58.76251220703125
+    },
+    {
+      "text": "Reference trial",
+      "x": 704,
+      "y": 131,
+      "width": 83,
+      "height": 28
+    },
+    {
+      "text": "Table",
+      "x": 812,
+      "y": 131,
+      "width": 31,
+      "height": 28
+    },
+    {
+      "text": "Matched",
+      "x": 692,
+      "y": 159,
+      "width": 57,
+      "height": 18
+    },
+    {
+      "text": "P17 · enc_03 · beach-042",
+      "x": 755,
+      "y": 160,
+      "width": 141,
+      "height": 17
+    },
+    {
+      "text": "Points",
+      "x": 702,
+      "y": 181,
+      "width": 50,
+      "height": 26
+    },
+    {
+      "text": "Order",
+      "x": 756,
+      "y": 181,
+      "width": 47,
+      "height": 26
+    },
+    {
+      "text": "Map",
+      "x": 807,
+      "y": 181,
+      "width": 40,
+      "height": 26
+    },
+    {
+      "text": "13 fix",
+      "x": 1069,
+      "y": 185,
+      "width": 44,
+      "height": 17
+    },
+    {
+      "text": "Inspected pair score · σ 2°: 0.94",
+      "x": 692,
+      "y": 210,
+      "width": 238,
+      "height": 16
+    },
+    {
+      "text": "Matched reference: P17 · enc_03 · beach-042",
+      "x": 692,
+      "y": 230,
+      "width": 248,
+      "height": 16
+    },
+    {
+      "text": "Reference trial",
+      "x": 684,
+      "y": 147,
+      "width": 17,
+      "height": 82.60000610351562
+    },
+    {
+      "text": "Contrast",
+      "x": 272,
+      "y": 578,
+      "width": 48,
+      "height": 28
+    },
+    {
+      "text": "Pairs table",
+      "x": 345,
+      "y": 578,
+      "width": 58,
+      "height": 28
+    },
+    {
+      "text": "Scale profile",
+      "x": 428,
+      "y": 578,
+      "width": 67,
+      "height": 28
+    },
+    {
+      "text": "Table",
+      "x": 520,
+      "y": 578,
+      "width": 31,
+      "height": 28
+    },
+    {
+      "text": "Scale σ 2°, Role M matched, Reference enc_03, Item beach-042, Cosine 0.94, D = M − B —",
+      "x": 400,
+      "y": 614,
+      "width": 463,
+      "height": 22
+    },
+    {
+      "text": "ret_07 contrast · σ 2°",
+      "x": 887,
+      "y": 617,
+      "width": 117,
+      "height": 17
+    },
+    {
+      "text": "+0.62",
+      "x": 887,
+      "y": 640,
+      "width": 84,
+      "height": 38
+    },
+    {
+      "text": "D",
+      "x": 979,
+      "y": 656,
+      "width": 9,
+      "height": 17
+    },
+    {
+      "text": "M matched",
+      "x": 887,
+      "y": 684,
+      "width": 65,
+      "height": 17
+    },
+    {
+      "text": "0.94",
+      "x": 1047,
+      "y": 684,
+      "width": 29,
+      "height": 17
+    },
+    {
+      "text": "B mean of 19 controls",
+      "x": 887,
+      "y": 703,
+      "width": 152,
+      "height": 17
+    },
+    {
+      "text": "0.32",
+      "x": 1047,
+      "y": 703,
+      "width": 29,
+      "height": 17
+    },
+    {
+      "text": "Spatial correspondence, not replay. D does not separate participant-specific reinstatement from item-driven salience common to all viewers of that image, and may retain residual centre bias.",
+      "x": 887,
+      "y": 726,
+      "width": 221,
+      "height": 80
+    },
+    {
+      "text": "Inspected pair",
+      "x": 887,
+      "y": 819,
+      "width": 79,
+      "height": 17
+    },
+    {
+      "text": "Matched · beach-042",
+      "x": 887,
+      "y": 842,
+      "width": 116,
+      "height": 17
+    },
+    {
+      "text": "0.94",
+      "x": 1069,
+      "y": 839,
+      "width": 39,
+      "height": 23
+    },
+    {
+      "text": "The matched pair. Its cosine is M.",
+      "x": 887,
+      "y": 865,
+      "width": 166,
+      "height": 16
+    },
+    {
+      "text": "← Prev",
+      "x": 887,
+      "y": 884,
+      "width": 53,
+      "height": 26
+    },
+    {
+      "text": "Next →",
+      "x": 944,
+      "y": 884,
+      "width": 55,
+      "height": 26
+    },
+    {
+      "text": "matched · then 19 controls",
+      "x": 887,
+      "y": 912,
+      "width": 172,
+      "height": 16
+    },
+    {
+      "text": "Contrast",
+      "x": 252,
+      "y": 594,
+      "width": 17,
+      "height": 47.98748779296875
+    },
+    {
+      "text": "Inspector",
+      "x": 1136,
+      "y": 131,
+      "width": 55,
+      "height": 28
+    },
+    {
+      "text": "Why this reference?",
+      "x": 1139,
+      "y": 172,
+      "width": 121,
+      "height": 19
+    },
+    {
+      "text": "Matched reference: the only admitted Encoding trial of P17 whose match item is beach-042, the item this retrieval trial cued.",
+      "x": 1139,
+      "y": 199,
+      "width": 273,
+      "height": 51
+    },
+    {
+      "text": "Participant",
+      "x": 1139,
+      "y": 267,
+      "width": 59,
+      "height": 17
+    },
+    {
+      "text": "P17, same as query",
+      "x": 1289,
+      "y": 258,
+      "width": 123,
+      "height": 34
+    },
+    {
+      "text": "Phase · occurrence",
+      "x": 1139,
+      "y": 297,
+      "width": 103,
+      "height": 17
+    },
+    {
+      "text": "Encoding · 1 of 1",
+      "x": 1289,
+      "y": 297,
+      "width": 123,
+      "height": 17
+    },
+    {
+      "text": "Item",
+      "x": 1139,
+      "y": 319,
+      "width": 27,
+      "height": 17
+    },
+    {
+      "text": "beach-042",
+      "x": 1289,
+      "y": 319,
+      "width": 65,
+      "height": 17
+    },
+    {
+      "text": "Controls",
+      "x": 1139,
+      "y": 341,
+      "width": 46,
+      "height": 17
+    },
+    {
+      "text": "19 used",
+      "x": 1289,
+      "y": 341,
+      "width": 51,
+      "height": 17
+    },
+    {
+      "text": "Not admitted (P17 · Enc...",
+      "x": 1139,
+      "y": 363,
+      "width": 142,
+      "height": 17
+    },
+    {
+      "text": "none of 20 trials",
+      "x": 1289,
+      "y": 363,
+      "width": 123,
+      "height": 17
+    },
+    {
+      "text": "Outside window",
+      "x": 1139,
+      "y": 394,
+      "width": 87,
+      "height": 17
+    },
+    {
+      "text": "1 of 13 fix · 3% dur",
+      "x": 1289,
+      "y": 385,
+      "width": 123,
+      "height": 34
+    },
+    {
+      "text": "Query outside",
+      "x": 1139,
+      "y": 433,
+      "width": 76,
+      "height": 17
+    },
+    {
+      "text": "1 of 12 fix · 4% dur",
+      "x": 1289,
+      "y": 424,
+      "width": 123,
+      "height": 34
+    },
+    {
+      "text": "Analysis rev 4",
+      "x": 1139,
+      "y": 481,
+      "width": 84,
+      "height": 19
+    },
+    {
+      "text": "Analysis · rerun",
+      "x": 1328,
+      "y": 482,
+      "width": 84,
+      "height": 17
+    },
+    {
+      "text": "Representation",
+      "x": 1139,
+      "y": 517,
+      "width": 83,
+      "height": 17
+    },
+    {
+      "text": "Duration-weighted fixation density",
+      "x": 1230,
+      "y": 508,
+      "width": 182,
+      "height": 34
+    },
+    {
+      "text": "Window",
+      "x": 1139,
+      "y": 547,
+      "width": 44,
+      "height": 17
+    },
+    {
+      "text": "Image frame 1024×768",
+      "x": 1230,
+      "y": 547,
+      "width": 130,
+      "height": 17
+    },
+    {
+      "text": "Initial fixation",
+      "x": 1139,
+      "y": 569,
+      "width": 75,
+      "height": 17
+    },
+    {
+      "text": "Keep all",
+      "x": 1230,
+      "y": 569,
+      "width": 44,
+      "height": 17
+    },
+    {
+      "text": "Smoother",
+      "x": 1139,
+      "y": 591,
+      "width": 53,
+      "height": 17
+    },
+    {
+      "text": "Gaussian, σ 0.5°, 1°, 2°, 4°",
+      "x": 1230,
+      "y": 591,
+      "width": 146,
+      "height": 17
+    },
+    {
+      "text": "Grid",
+      "x": 1139,
+      "y": 613,
+      "width": 23,
+      "height": 17
+    },
+    {
+      "text": "64×48 · cell 0.46°",
+      "x": 1230,
+      "y": 613,
+      "width": 99,
+      "height": 17
+    },
+    {
+      "text": "Metric · cont...",
+      "x": 1139,
+      "y": 635,
+      "width": 83,
+      "height": 17
+    },
+    {
+      "text": "Cosine · all eligible",
+      "x": 1230,
+      "y": 635,
+      "width": 101,
+      "height": 17
+    },
+    {
+      "text": "Edit in Analysis ⌘3",
+      "x": 1139,
+      "y": 660,
+      "width": 120,
+      "height": 26
+    },
+    {
+      "text": "Reporting",
+      "x": 1139,
+      "y": 708,
+      "width": 60,
+      "height": 19
+    },
+    {
+      "text": "Reporting · no rerun",
+      "x": 1304,
+      "y": 709,
+      "width": 108,
+      "height": 17
+    },
+    {
+      "text": "Spec",
+      "x": 1139,
+      "y": 735,
+      "width": 27,
+      "height": 17
+    },
+    {
+      "text": "By retrieval response",
+      "x": 1252,
+      "y": 735,
+      "width": 115,
+      "height": 17
+    },
+    {
+      "text": "Group by",
+      "x": 1139,
+      "y": 757,
+      "width": 50,
+      "height": 17
+    },
+    {
+      "text": "response",
+      "x": 1252,
+      "y": 757,
+      "width": 50,
+      "height": 17
+    },
+    {
+      "text": "Filters",
+      "x": 1139,
+      "y": 779,
+      "width": 35,
+      "height": 17
+    },
+    {
+      "text": "None",
+      "x": 1252,
+      "y": 779,
+      "width": 29,
+      "height": 17
+    },
+    {
+      "text": "Min queries per g...",
+      "x": 1139,
+      "y": 801,
+      "width": 105,
+      "height": 17
+    },
+    {
+      "text": "Off · n per group 2–17",
+      "x": 1252,
+      "y": 801,
+      "width": 159,
+      "height": 17
+    },
+    {
+      "text": "Summary",
+      "x": 1139,
+      "y": 832,
+      "width": 52,
+      "height": 17
+    },
+    {
+      "text": "Participant means, equal weight",
+      "x": 1252,
+      "y": 823,
+      "width": 160,
+      "height": 34
+    },
+    {
+      "text": "Appearance",
+      "x": 1139,
+      "y": 880,
+      "width": 73,
+      "height": 19
+    },
+    {
+      "text": "View only",
+      "x": 1360,
+      "y": 881,
+      "width": 52,
+      "height": 17
+    },
+    {
+      "text": "Stage",
+      "x": 1139,
+      "y": 911,
+      "width": 31,
+      "height": 17
+    },
+    {
+      "text": "Dark",
+      "x": 1288,
+      "y": 909,
+      "width": 41,
+      "height": 20
+    },
+    {
+      "text": "Mid",
+      "x": 1331,
+      "y": 909,
+      "width": 35,
+      "height": 20
+    },
+    {
+      "text": "Light",
+      "x": 1368,
+      "y": 909,
+      "width": 42,
+      "height": 20
+    },
+    {
+      "text": "Colour limits",
+      "x": 1139,
+      "y": 943,
+      "width": 69,
+      "height": 17
+    },
+    {
+      "text": "Shared",
+      "x": 1287,
+      "y": 941,
+      "width": 54,
+      "height": 20
+    },
+    {
+      "text": "Per panel",
+      "x": 1343,
+      "y": 941,
+      "width": 67,
+      "height": 20
+    },
+    {
+      "text": "Map opacity",
+      "x": 1139,
+      "y": 974,
+      "width": 66,
+      "height": 17
+    },
+    {
+      "text": "0.60",
+      "x": 1385,
+      "y": 974,
+      "width": 27,
+      "height": 16
+    },
+    {
+      "text": "Inspector",
+      "x": 1116,
+      "y": 147,
+      "width": 17,
+      "height": 54.5625
+    },
+    {
+      "text": "No open panels",
+      "x": 668,
+      "y": 498,
+      "width": 105,
+      "height": 29
+    },
+    {
+      "text": "Drag a tab here, or open a panel",
+      "x": 631,
+      "y": 535,
+      "width": 179,
+      "height": 17
+    },
+    {
+      "text": "Selected:",
+      "x": 24,
+      "y": 880,
+      "width": 47,
+      "height": 16
+    },
+    {
+      "text": "P17 › ret_07 × enc_03 (matched) · σ 2°",
+      "x": 77,
+      "y": 880,
+      "width": 251,
+      "height": 16
+    },
+    {
+      "text": "Prev / Next steps controls · F6 next pane",
+      "x": 353,
+      "y": 880,
+      "width": 201,
+      "height": 16
+    },
+    {
+      "text": "No jobs",
+      "x": 1302,
+      "y": 880,
+      "width": 38,
+      "height": 16
+    },
+    {
+      "text": "Saved 10:24",
+      "x": 1365,
+      "y": 880,
+      "width": 63,
+      "height": 16
+    }
+  ]
+}

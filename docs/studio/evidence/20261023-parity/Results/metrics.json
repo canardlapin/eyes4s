@@ -1,0 +1,1530 @@
+{
+  "board": "Results",
+  "moment": "T3",
+  "width": 1440,
+  "height": 900,
+  "heights": {
+    "appBar": 44,
+    "contextStrip": 32,
+    "statusBar": 24
+  },
+  "tabHeaders": [
+    28,
+    28,
+    28,
+    28,
+    28
+  ],
+  "toleranceLogicalPixels": 1,
+  "nativeOutputScaleX": 1,
+  "nativeOutputScaleY": 1,
+  "scale2Capture": "snapshot transform; native output scale recorded separately",
+  "shellText": [
+    "app.name: Eyes Studio",
+    "app.project: memory-study",
+    "app.perspectives: Data ⌘1 | Explore ⌘2 | Analysis ⌘3 | Compare ⌘4 (current) | Figures ⌘5",
+    "app.jobs: Run 8 · Comparing · 21,400 / 44,845 pairs | Cancel",
+    "app.jobs.progress: 48%",
+    "context.nav: [Back (⌘[)] | [Forward (⌘])]",
+    "context.trail: *Summary · by retrieval response*",
+    "context.freshness: Showing analysis rev 4 · run 7 · data r3",
+    "context.newer: Rev 5 · run 8 running · 48%",
+    "banner.lead: Showing run 7 (rev 4).",
+    "banner.detail: Run 8 (rev 5, adds σ 8°) is running — results will not replace this view until you choose Show.",
+    "banner.actions: [Show run 8 · when finished]",
+    "status: Selected: P17 · by retrieval response · σ 2° | Enter on a participant opens its queries · F6 next pane | Run 8 · Comparing 21,400 / 44,845 Cancel | Saved 10:24"
+  ],
+  "labels": [
+    {
+      "text": "_File",
+      "x": 8,
+      "y": 0,
+      "width": 36,
+      "height": 25
+    },
+    {
+      "text": "File",
+      "x": 16,
+      "y": 4,
+      "width": 20,
+      "height": 17
+    },
+    {
+      "text": "_Edit",
+      "x": 46,
+      "y": 0,
+      "width": 38,
+      "height": 25
+    },
+    {
+      "text": "Edit",
+      "x": 54,
+      "y": 4,
+      "width": 22,
+      "height": 17
+    },
+    {
+      "text": "_View",
+      "x": 86,
+      "y": 0,
+      "width": 43,
+      "height": 25
+    },
+    {
+      "text": "View",
+      "x": 94,
+      "y": 4,
+      "width": 27,
+      "height": 17
+    },
+    {
+      "text": "_Go",
+      "x": 131,
+      "y": 0,
+      "width": 32,
+      "height": 25
+    },
+    {
+      "text": "Go",
+      "x": 139,
+      "y": 4,
+      "width": 16,
+      "height": 17
+    },
+    {
+      "text": "_Run",
+      "x": 165,
+      "y": 0,
+      "width": 38,
+      "height": 25
+    },
+    {
+      "text": "Run",
+      "x": 173,
+      "y": 4,
+      "width": 22,
+      "height": 17
+    },
+    {
+      "text": "_Window",
+      "x": 205,
+      "y": 0,
+      "width": 60,
+      "height": 25
+    },
+    {
+      "text": "Window",
+      "x": 213,
+      "y": 4,
+      "width": 44,
+      "height": 17
+    },
+    {
+      "text": "_Help",
+      "x": 267,
+      "y": 0,
+      "width": 42,
+      "height": 25
+    },
+    {
+      "text": "Help",
+      "x": 275,
+      "y": 4,
+      "width": 26,
+      "height": 17
+    },
+    {
+      "text": "Eyes Studio",
+      "x": 41,
+      "y": 38,
+      "width": 71,
+      "height": 19
+    },
+    {
+      "text": "memory-study",
+      "x": 126,
+      "y": 35,
+      "width": 130,
+      "height": 24
+    },
+    {
+      "text": "memory-study",
+      "x": 135,
+      "y": 35,
+      "width": 96,
+      "height": 24
+    },
+    {
+      "text": "Data",
+      "x": 400,
+      "y": 33,
+      "width": 70,
+      "height": 29
+    },
+    {
+      "text": "⌘1",
+      "x": 445,
+      "y": 39,
+      "width": 13.222564697265625,
+      "height": 16
+    },
+    {
+      "text": "Explore",
+      "x": 472,
+      "y": 33,
+      "width": 87,
+      "height": 29
+    },
+    {
+      "text": "⌘2",
+      "x": 534,
+      "y": 39,
+      "width": 13.2225341796875,
+      "height": 16
+    },
+    {
+      "text": "Analysis",
+      "x": 561,
+      "y": 33,
+      "width": 91,
+      "height": 29
+    },
+    {
+      "text": "⌘3",
+      "x": 627,
+      "y": 39,
+      "width": 13.2225341796875,
+      "height": 16
+    },
+    {
+      "text": "Compare",
+      "x": 654,
+      "y": 33,
+      "width": 95,
+      "height": 28
+    },
+    {
+      "text": "⌘4",
+      "x": 723,
+      "y": 39,
+      "width": 13.2225341796875,
+      "height": 16
+    },
+    {
+      "text": "Figures",
+      "x": 751,
+      "y": 33,
+      "width": 85,
+      "height": 29
+    },
+    {
+      "text": "⌘5",
+      "x": 811,
+      "y": 39,
+      "width": 13.2225341796875,
+      "height": 16
+    },
+    {
+      "text": "Run 8",
+      "x": 1009,
+      "y": 39,
+      "width": 33,
+      "height": 17
+    },
+    {
+      "text": "·",
+      "x": 1048,
+      "y": 39,
+      "width": 4,
+      "height": 17
+    },
+    {
+      "text": "Comparing",
+      "x": 1058,
+      "y": 39,
+      "width": 59,
+      "height": 17
+    },
+    {
+      "text": "·",
+      "x": 1123,
+      "y": 39,
+      "width": 4,
+      "height": 17
+    },
+    {
+      "text": "21,400 / 44,845 pairs",
+      "x": 1133,
+      "y": 39,
+      "width": 152,
+      "height": 17
+    },
+    {
+      "text": "Cancel",
+      "x": 1370,
+      "y": 36,
+      "width": 58,
+      "height": 22
+    },
+    {
+      "text": "Summary · by retrieval response",
+      "x": 66,
+      "y": 74,
+      "width": 193,
+      "height": 23
+    },
+    {
+      "text": "Showing analysis rev 4 · run 7 · data r3",
+      "x": 1009,
+      "y": 74,
+      "width": 239,
+      "height": 22
+    },
+    {
+      "text": "Rev 5 · run 8 running · 48%",
+      "x": 1252,
+      "y": 74,
+      "width": 178,
+      "height": 22
+    },
+    {
+      "text": "Showing run 7 (rev 4).",
+      "x": 12,
+      "y": 107,
+      "width": 122,
+      "height": 17
+    },
+    {
+      "text": "Run 8 (rev 5, adds σ 8°) is running — results will not replace this view until you choose Show.",
+      "x": 144,
+      "y": 107,
+      "width": 497,
+      "height": 17
+    },
+    {
+      "text": "Show run 8 · when finished",
+      "x": 1259,
+      "y": 105,
+      "width": 169,
+      "height": 22
+    },
+    {
+      "text": "Participants",
+      "x": 12,
+      "y": 131,
+      "width": 68,
+      "height": 28
+    },
+    {
+      "text": "Participants",
+      "x": 14,
+      "y": 171,
+      "width": 74,
+      "height": 19
+    },
+    {
+      "text": "Participants",
+      "x": -8,
+      "y": 147,
+      "width": 17,
+      "height": 67.26249694824219
+    },
+    {
+      "text": "Participant plot",
+      "x": 272,
+      "y": 131,
+      "width": 87,
+      "height": 28
+    },
+    {
+      "text": "Table",
+      "x": 384,
+      "y": 131,
+      "width": 31,
+      "height": 28
+    },
+    {
+      "text": "Δ Remembered − Forgotten · paired n 24",
+      "x": 272,
+      "y": 165,
+      "width": 202,
+      "height": 16
+    },
+    {
+      "text": "+0.18",
+      "x": 272,
+      "y": 181,
+      "width": 84,
+      "height": 38
+    },
+    {
+      "text": "higher in 24 of 24",
+      "x": 364,
+      "y": 198,
+      "width": 87,
+      "height": 16
+    },
+    {
+      "text": "Range +0.04 P15 to +0.34 P11 · computed before rounding participant means · Descriptive only, no intervals or tests",
+      "x": 272,
+      "y": 221,
+      "width": 493,
+      "height": 32
+    },
+    {
+      "text": "Participant plot",
+      "x": 252,
+      "y": 147,
+      "width": 17,
+      "height": 86.16249084472656
+    },
+    {
+      "text": "Scale profile",
+      "x": 790,
+      "y": 131,
+      "width": 70,
+      "height": 28
+    },
+    {
+      "text": "Table",
+      "x": 885,
+      "y": 131,
+      "width": 31,
+      "height": 28
+    },
+    {
+      "text": "Scale profile",
+      "x": 770,
+      "y": 147,
+      "width": 17,
+      "height": 69.71249389648438
+    },
+    {
+      "text": "Participant table",
+      "x": 272,
+      "y": 541,
+      "width": 94,
+      "height": 28
+    },
+    {
+      "text": "Query table",
+      "x": 391,
+      "y": 541,
+      "width": 63,
+      "height": 28
+    },
+    {
+      "text": "σ 0.5°",
+      "x": 260,
+      "y": 569,
+      "width": 50,
+      "height": 26
+    },
+    {
+      "text": "σ 1°",
+      "x": 314,
+      "y": 569,
+      "width": 39,
+      "height": 26
+    },
+    {
+      "text": "σ 2°",
+      "x": 357,
+      "y": 569,
+      "width": 39,
+      "height": 26
+    },
+    {
+      "text": "σ 4°",
+      "x": 400,
+      "y": 569,
+      "width": 39,
+      "height": 26
+    },
+    {
+      "text": "Rev 5 · run 8 running · 48%",
+      "x": 988,
+      "y": 574,
+      "width": 135,
+      "height": 16
+    },
+    {
+      "text": "Means: equal participant weight",
+      "x": 260,
+      "y": 598,
+      "width": 158,
+      "height": 16
+    },
+    {
+      "text": "Unit below each dot: query trial",
+      "x": 260,
+      "y": 616,
+      "width": 155,
+      "height": 16
+    },
+    {
+      "text": "Paired n = 24 participants",
+      "x": 260,
+      "y": 634,
+      "width": 128,
+      "height": 16
+    },
+    {
+      "text": "Per-group n: 2–17 queries per participant",
+      "x": 260,
+      "y": 652,
+      "width": 206,
+      "height": 16
+    },
+    {
+      "text": "Explain P17 →",
+      "x": 260,
+      "y": 672,
+      "width": 93,
+      "height": 26
+    },
+    {
+      "text": "keeps: by retrieval response › P17",
+      "x": 361,
+      "y": 677,
+      "width": 168,
+      "height": 16
+    },
+    {
+      "text": "Participant",
+      "x": 262,
+      "y": 703,
+      "width": 86,
+      "height": 26
+    },
+    {
+      "text": "Reques...",
+      "x": 348,
+      "y": 703,
+      "width": 74,
+      "height": 26
+    },
+    {
+      "text": "Contributing",
+      "x": 421,
+      "y": 703,
+      "width": 92,
+      "height": 26
+    },
+    {
+      "text": "Failed",
+      "x": 513,
+      "y": 703,
+      "width": 56,
+      "height": 26
+    },
+    {
+      "text": "No ma...",
+      "x": 569,
+      "y": 703,
+      "width": 68,
+      "height": 26
+    },
+    {
+      "text": "Not admitted",
+      "x": 637,
+      "y": 703,
+      "width": 92,
+      "height": 26
+    },
+    {
+      "text": "Mea...",
+      "x": 728,
+      "y": 703,
+      "width": 56,
+      "height": 26
+    },
+    {
+      "text": "Mea...",
+      "x": 784,
+      "y": 703,
+      "width": 56,
+      "height": 26
+    },
+    {
+      "text": "Mea...",
+      "x": 840,
+      "y": 703,
+      "width": 56,
+      "height": 26
+    },
+    {
+      "text": "Remembered D (n)",
+      "x": 896,
+      "y": 703,
+      "width": 116,
+      "height": 26
+    },
+    {
+      "text": "Forgotten D (n)",
+      "x": 1011,
+      "y": 703,
+      "width": 110,
+      "height": 26
+    },
+    {
+      "text": "P01",
+      "x": 262,
+      "y": 729,
+      "width": 85,
+      "height": 24
+    },
+    {
+      "text": "20",
+      "x": 346,
+      "y": 729,
+      "width": 73,
+      "height": 24
+    },
+    {
+      "text": "19",
+      "x": 419,
+      "y": 729,
+      "width": 91,
+      "height": 24
+    },
+    {
+      "text": "0",
+      "x": 509,
+      "y": 729,
+      "width": 56,
+      "height": 24
+    },
+    {
+      "text": "0",
+      "x": 564,
+      "y": 729,
+      "width": 67,
+      "height": 24
+    },
+    {
+      "text": "1",
+      "x": 631,
+      "y": 729,
+      "width": 91,
+      "height": 24
+    },
+    {
+      "text": "0.73",
+      "x": 721,
+      "y": 729,
+      "width": 56,
+      "height": 24
+    },
+    {
+      "text": "0.31",
+      "x": 776,
+      "y": 729,
+      "width": 56,
+      "height": 24
+    },
+    {
+      "text": "+0.42",
+      "x": 832,
+      "y": 729,
+      "width": 56,
+      "height": 24
+    },
+    {
+      "text": "+0.47 (11)",
+      "x": 887,
+      "y": 729,
+      "width": 114,
+      "height": 24
+    },
+    {
+      "text": "+0.35 (8)",
+      "x": 1000,
+      "y": 729,
+      "width": 108,
+      "height": 24
+    },
+    {
+      "text": "P02",
+      "x": 262,
+      "y": 753,
+      "width": 85,
+      "height": 24
+    },
+    {
+      "text": "20",
+      "x": 346,
+      "y": 753,
+      "width": 73,
+      "height": 24
+    },
+    {
+      "text": "19",
+      "x": 419,
+      "y": 753,
+      "width": 91,
+      "height": 24
+    },
+    {
+      "text": "0",
+      "x": 509,
+      "y": 753,
+      "width": 56,
+      "height": 24
+    },
+    {
+      "text": "0",
+      "x": 564,
+      "y": 753,
+      "width": 67,
+      "height": 24
+    },
+    {
+      "text": "1",
+      "x": 631,
+      "y": 753,
+      "width": 91,
+      "height": 24
+    },
+    {
+      "text": "0.71",
+      "x": 721,
+      "y": 753,
+      "width": 56,
+      "height": 24
+    },
+    {
+      "text": "0.29",
+      "x": 776,
+      "y": 753,
+      "width": 56,
+      "height": 24
+    },
+    {
+      "text": "+0.43",
+      "x": 832,
+      "y": 753,
+      "width": 56,
+      "height": 24
+    },
+    {
+      "text": "+0.46 (13)",
+      "x": 887,
+      "y": 753,
+      "width": 114,
+      "height": 24
+    },
+    {
+      "text": "+0.35 (6)",
+      "x": 1000,
+      "y": 753,
+      "width": 108,
+      "height": 24
+    },
+    {
+      "text": "P03",
+      "x": 262,
+      "y": 777,
+      "width": 85,
+      "height": 24
+    },
+    {
+      "text": "20",
+      "x": 346,
+      "y": 777,
+      "width": 73,
+      "height": 24
+    },
+    {
+      "text": "19",
+      "x": 419,
+      "y": 777,
+      "width": 91,
+      "height": 24
+    },
+    {
+      "text": "0",
+      "x": 509,
+      "y": 777,
+      "width": 56,
+      "height": 24
+    },
+    {
+      "text": "1",
+      "x": 564,
+      "y": 777,
+      "width": 67,
+      "height": 24
+    },
+    {
+      "text": "0",
+      "x": 631,
+      "y": 777,
+      "width": 91,
+      "height": 24
+    },
+    {
+      "text": "0.80",
+      "x": 721,
+      "y": 777,
+      "width": 56,
+      "height": 24
+    },
+    {
+      "text": "0.33",
+      "x": 776,
+      "y": 777,
+      "width": 56,
+      "height": 24
+    },
+    {
+      "text": "+0.47",
+      "x": 832,
+      "y": 777,
+      "width": 56,
+      "height": 24
+    },
+    {
+      "text": "+0.49 (15)",
+      "x": 887,
+      "y": 777,
+      "width": 114,
+      "height": 24
+    },
+    {
+      "text": "+0.37 (4)",
+      "x": 1000,
+      "y": 777,
+      "width": 108,
+      "height": 24
+    },
+    {
+      "text": "P04",
+      "x": 262,
+      "y": 801,
+      "width": 85,
+      "height": 24
+    },
+    {
+      "text": "20",
+      "x": 346,
+      "y": 801,
+      "width": 73,
+      "height": 24
+    },
+    {
+      "text": "19",
+      "x": 419,
+      "y": 801,
+      "width": 91,
+      "height": 24
+    },
+    {
+      "text": "0",
+      "x": 509,
+      "y": 801,
+      "width": 56,
+      "height": 24
+    },
+    {
+      "text": "0",
+      "x": 564,
+      "y": 801,
+      "width": 67,
+      "height": 24
+    },
+    {
+      "text": "1",
+      "x": 631,
+      "y": 801,
+      "width": 91,
+      "height": 24
+    },
+    {
+      "text": "0.71",
+      "x": 721,
+      "y": 801,
+      "width": 56,
+      "height": 24
+    },
+    {
+      "text": "0.36",
+      "x": 776,
+      "y": 801,
+      "width": 56,
+      "height": 24
+    },
+    {
+      "text": "+0.35",
+      "x": 832,
+      "y": 801,
+      "width": 56,
+      "height": 24
+    },
+    {
+      "text": "+0.44 (12)",
+      "x": 887,
+      "y": 801,
+      "width": 114,
+      "height": 24
+    },
+    {
+      "text": "+0.20 (7)",
+      "x": 1000,
+      "y": 801,
+      "width": 108,
+      "height": 24
+    },
+    {
+      "text": "P05",
+      "x": 262,
+      "y": 825,
+      "width": 85,
+      "height": 24
+    },
+    {
+      "text": "20",
+      "x": 346,
+      "y": 825,
+      "width": 73,
+      "height": 24
+    },
+    {
+      "text": "17",
+      "x": 419,
+      "y": 825,
+      "width": 91,
+      "height": 24
+    },
+    {
+      "text": "3",
+      "x": 509,
+      "y": 825,
+      "width": 56,
+      "height": 24
+    },
+    {
+      "text": "0",
+      "x": 564,
+      "y": 825,
+      "width": 67,
+      "height": 24
+    },
+    {
+      "text": "0",
+      "x": 631,
+      "y": 825,
+      "width": 91,
+      "height": 24
+    },
+    {
+      "text": "0.70",
+      "x": 721,
+      "y": 825,
+      "width": 56,
+      "height": 24
+    },
+    {
+      "text": "0.35",
+      "x": 776,
+      "y": 825,
+      "width": 56,
+      "height": 24
+    },
+    {
+      "text": "+0.35",
+      "x": 832,
+      "y": 825,
+      "width": 56,
+      "height": 24
+    },
+    {
+      "text": "+0.39 (13)",
+      "x": 887,
+      "y": 825,
+      "width": 114,
+      "height": 24
+    },
+    {
+      "text": "+0.22 (4)",
+      "x": 1000,
+      "y": 825,
+      "width": 108,
+      "height": 24
+    },
+    {
+      "text": "P06",
+      "x": 262,
+      "y": 849,
+      "width": 85,
+      "height": 24
+    },
+    {
+      "text": "20",
+      "x": 346,
+      "y": 849,
+      "width": 73,
+      "height": 24
+    },
+    {
+      "text": "19",
+      "x": 419,
+      "y": 849,
+      "width": 91,
+      "height": 24
+    },
+    {
+      "text": "0",
+      "x": 509,
+      "y": 849,
+      "width": 56,
+      "height": 24
+    },
+    {
+      "text": "0",
+      "x": 564,
+      "y": 849,
+      "width": 67,
+      "height": 24
+    },
+    {
+      "text": "1",
+      "x": 631,
+      "y": 849,
+      "width": 91,
+      "height": 24
+    },
+    {
+      "text": "0.69",
+      "x": 721,
+      "y": 849,
+      "width": 56,
+      "height": 24
+    },
+    {
+      "text": "0.38",
+      "x": 776,
+      "y": 849,
+      "width": 56,
+      "height": 24
+    },
+    {
+      "text": "+0.31",
+      "x": 832,
+      "y": 849,
+      "width": 56,
+      "height": 24
+    },
+    {
+      "text": "+0.38 (11)",
+      "x": 887,
+      "y": 849,
+      "width": 114,
+      "height": 24
+    },
+    {
+      "text": "+0.22 (8)",
+      "x": 1000,
+      "y": 849,
+      "width": 108,
+      "height": 24
+    },
+    {
+      "text": "P07",
+      "x": 262,
+      "y": 873,
+      "width": 85,
+      "height": 24
+    },
+    {
+      "text": "20",
+      "x": 346,
+      "y": 873,
+      "width": 73,
+      "height": 24
+    },
+    {
+      "text": "19",
+      "x": 419,
+      "y": 873,
+      "width": 91,
+      "height": 24
+    },
+    {
+      "text": "0",
+      "x": 509,
+      "y": 873,
+      "width": 56,
+      "height": 24
+    },
+    {
+      "text": "1",
+      "x": 564,
+      "y": 873,
+      "width": 67,
+      "height": 24
+    },
+    {
+      "text": "0",
+      "x": 631,
+      "y": 873,
+      "width": 91,
+      "height": 24
+    },
+    {
+      "text": "0.69",
+      "x": 721,
+      "y": 873,
+      "width": 56,
+      "height": 24
+    },
+    {
+      "text": "0.35",
+      "x": 776,
+      "y": 873,
+      "width": 56,
+      "height": 24
+    },
+    {
+      "text": "+0.34",
+      "x": 832,
+      "y": 873,
+      "width": 56,
+      "height": 24
+    },
+    {
+      "text": "+0.38 (15)",
+      "x": 887,
+      "y": 873,
+      "width": 114,
+      "height": 24
+    },
+    {
+      "text": "+0.21 (4)",
+      "x": 1000,
+      "y": 873,
+      "width": 108,
+      "height": 24
+    },
+    {
+      "text": "P08",
+      "x": 262,
+      "y": 897,
+      "width": 85,
+      "height": 24
+    },
+    {
+      "text": "20",
+      "x": 346,
+      "y": 897,
+      "width": 73,
+      "height": 24
+    },
+    {
+      "text": "19",
+      "x": 419,
+      "y": 897,
+      "width": 91,
+      "height": 24
+    },
+    {
+      "text": "0",
+      "x": 509,
+      "y": 897,
+      "width": 56,
+      "height": 24
+    },
+    {
+      "text": "1",
+      "x": 564,
+      "y": 897,
+      "width": 67,
+      "height": 24
+    },
+    {
+      "text": "0",
+      "x": 631,
+      "y": 897,
+      "width": 91,
+      "height": 24
+    },
+    {
+      "text": "0.75",
+      "x": 721,
+      "y": 897,
+      "width": 56,
+      "height": 24
+    },
+    {
+      "text": "0.41",
+      "x": 776,
+      "y": 897,
+      "width": 56,
+      "height": 24
+    },
+    {
+      "text": "+0.34",
+      "x": 832,
+      "y": 897,
+      "width": 56,
+      "height": 24
+    },
+    {
+      "text": "+0.40 (12)",
+      "x": 887,
+      "y": 897,
+      "width": 114,
+      "height": 24
+    },
+    {
+      "text": "+0.25 (7)",
+      "x": 1000,
+      "y": 897,
+      "width": 108,
+      "height": 24
+    },
+    {
+      "text": "P09",
+      "x": 262,
+      "y": 921,
+      "width": 85,
+      "height": 24
+    },
+    {
+      "text": "20",
+      "x": 346,
+      "y": 921,
+      "width": 73,
+      "height": 24
+    },
+    {
+      "text": "19",
+      "x": 419,
+      "y": 921,
+      "width": 91,
+      "height": 24
+    },
+    {
+      "text": "0",
+      "x": 509,
+      "y": 921,
+      "width": 56,
+      "height": 24
+    },
+    {
+      "text": "0",
+      "x": 564,
+      "y": 921,
+      "width": 67,
+      "height": 24
+    },
+    {
+      "text": "1",
+      "x": 631,
+      "y": 921,
+      "width": 91,
+      "height": 24
+    },
+    {
+      "text": "0.72",
+      "x": 721,
+      "y": 921,
+      "width": 56,
+      "height": 24
+    },
+    {
+      "text": "0.35",
+      "x": 776,
+      "y": 921,
+      "width": 56,
+      "height": 24
+    },
+    {
+      "text": "+0.37",
+      "x": 832,
+      "y": 921,
+      "width": 56,
+      "height": 24
+    },
+    {
+      "text": "+0.41 (15)",
+      "x": 887,
+      "y": 921,
+      "width": 114,
+      "height": 24
+    },
+    {
+      "text": "+0.21 (4)",
+      "x": 1000,
+      "y": 921,
+      "width": 108,
+      "height": 24
+    },
+    {
+      "text": "Participant table",
+      "x": 252,
+      "y": 557,
+      "width": 17,
+      "height": 92.70001220703125
+    },
+    {
+      "text": "Reporting",
+      "x": 1136,
+      "y": 131,
+      "width": 55,
+      "height": 28
+    },
+    {
+      "text": "By retrieval response",
+      "x": 1139,
+      "y": 172,
+      "width": 128,
+      "height": 19
+    },
+    {
+      "text": "Reporting · no rerun",
+      "x": 1304,
+      "y": 173,
+      "width": 108,
+      "height": 17
+    },
+    {
+      "text": "Reuses run 7's 35,876 pair scores. Grouping, filtering and weighting never change a pair score or a control set.",
+      "x": 1139,
+      "y": 201,
+      "width": 273,
+      "height": 48
+    },
+    {
+      "text": "Group by",
+      "x": 1139,
+      "y": 259,
+      "width": 50,
+      "height": 17
+    },
+    {
+      "text": "response",
+      "x": 1139,
+      "y": 280,
+      "width": 83,
+      "height": 22
+    },
+    {
+      "text": "None",
+      "x": 1139,
+      "y": 306,
+      "width": 60,
+      "height": 22
+    },
+    {
+      "text": "Remembered · Forgotten",
+      "x": 1139,
+      "y": 332,
+      "width": 125,
+      "height": 16
+    },
+    {
+      "text": "Within-participant level contrast",
+      "x": 1139,
+      "y": 358,
+      "width": 174,
+      "height": 17
+    },
+    {
+      "text": "−",
+      "x": 1139,
+      "y": 408,
+      "width": 8,
+      "height": 17
+    },
+    {
+      "text": "Apply contrast",
+      "x": 1139,
+      "y": 458,
+      "width": 95,
+      "height": 26
+    },
+    {
+      "text": "Clear contrast",
+      "x": 1238,
+      "y": 458,
+      "width": 92,
+      "height": 26
+    },
+    {
+      "text": "Filter queries",
+      "x": 1139,
+      "y": 493,
+      "width": 72,
+      "height": 17
+    },
+    {
+      "text": "All contributing retrieval queries (454)",
+      "x": 1139,
+      "y": 515,
+      "width": 206,
+      "height": 17
+    },
+    {
+      "text": "Exclude queries with >25% of fixation duration outside the analysis window",
+      "x": 1139,
+      "y": 537,
+      "width": 273,
+      "height": 38
+    },
+    {
+      "text": "count shown when applied",
+      "x": 1139,
+      "y": 580,
+      "width": 133,
+      "height": 16
+    },
+    {
+      "text": "Minimum queries per group: 3",
+      "x": 1139,
+      "y": 606,
+      "width": 193,
+      "height": 22
+    },
+    {
+      "text": "off · the report will name excluded participant-group cells when applied",
+      "x": 1139,
+      "y": 633,
+      "width": 273,
+      "height": 32
+    },
+    {
+      "text": "Summary unit and weighting",
+      "x": 1139,
+      "y": 675,
+      "width": 154,
+      "height": 17
+    },
+    {
+      "text": "Query trial → participant mean → grand mean",
+      "x": 1139,
+      "y": 697,
+      "width": 223,
+      "height": 16
+    },
+    {
+      "text": "Equal weight per participant",
+      "x": 1139,
+      "y": 718,
+      "width": 190,
+      "height": 22
+    },
+    {
+      "text": "Weight by contributing queries",
+      "x": 1139,
+      "y": 745,
+      "width": 196,
+      "height": 22
+    },
+    {
+      "text": "What D measures",
+      "x": 1139,
+      "y": 790,
+      "width": 95,
+      "height": 17
+    },
+    {
+      "text": "D is the matched-minus-control spatial similarity of duration-weighted fixation density. It reflects spatial correspondence, not sequential replay. D does not separate participant-specific reinstatement from item-driven salience common to all viewers of that image, and may retain residual centre bias.",
+      "x": 1139,
+      "y": 813,
+      "width": 273,
+      "height": 119
+    },
+    {
+      "text": "Saved reporting specs",
+      "x": 1139,
+      "y": 959,
+      "width": 120,
+      "height": 17
+    },
+    {
+      "text": "Save as…",
+      "x": 1345,
+      "y": 955,
+      "width": 67,
+      "height": 26
+    },
+    {
+      "text": "By retrieval response\nrun 7 · current view · used by Figure 1, Figure 2",
+      "x": 1139,
+      "y": 986,
+      "width": 253,
+      "height": 34
+    },
+    {
+      "text": "Reporting",
+      "x": 1116,
+      "y": 147,
+      "width": 17,
+      "height": 54.912506103515625
+    },
+    {
+      "text": "No open panels",
+      "x": 668,
+      "y": 498,
+      "width": 105,
+      "height": 29
+    },
+    {
+      "text": "Drag a tab here, or open a panel",
+      "x": 631,
+      "y": 535,
+      "width": 179,
+      "height": 17
+    },
+    {
+      "text": "Selected:",
+      "x": 24,
+      "y": 880,
+      "width": 47,
+      "height": 16
+    },
+    {
+      "text": "P17 · by retrieval response · σ 2°",
+      "x": 77,
+      "y": 880,
+      "width": 225,
+      "height": 16
+    },
+    {
+      "text": "Enter on a participant opens its queries · F6 next pane",
+      "x": 327,
+      "y": 880,
+      "width": 266,
+      "height": 16
+    },
+    {
+      "text": "Run 8 · Comparing",
+      "x": 1090,
+      "y": 880,
+      "width": 92,
+      "height": 16
+    },
+    {
+      "text": "21,400 / 44,845",
+      "x": 1188,
+      "y": 880,
+      "width": 99,
+      "height": 16
+    },
+    {
+      "text": "Cancel",
+      "x": 1293,
+      "y": 879,
+      "width": 47,
+      "height": 18
+    },
+    {
+      "text": "Saved 10:24",
+      "x": 1365,
+      "y": 880,
+      "width": 63,
+      "height": 16
+    }
+  ]
+}

@@ -1,0 +1,1994 @@
+{
+  "board": "Explore",
+  "moment": "T2",
+  "width": 1440,
+  "height": 900,
+  "heights": {
+    "appBar": 44,
+    "contextStrip": 32,
+    "statusBar": 24
+  },
+  "tabHeaders": [
+    28,
+    28,
+    28,
+    28,
+    28
+  ],
+  "toleranceLogicalPixels": 1,
+  "nativeOutputScaleX": 1,
+  "nativeOutputScaleY": 1,
+  "scale2Capture": "snapshot transform; native output scale recorded separately",
+  "shellText": [
+    "app.name: Eyes Studio",
+    "app.project: memory-study",
+    "app.perspectives: Data ⌘1 | Explore ⌘2 (current) | Analysis ⌘3 | Compare ⌘4 | Figures ⌘5",
+    "app.jobs: No jobs",
+    "context.nav: Back (⌘[) | [Forward (⌘])]",
+    "context.trail: Summary · by retrieval response › Remembered › P17 › ret_07 · beach-042 › pair ret_07 × enc_03 › enc_03 · fixation 6 › *fixations.csv record 7,214*",
+    "context.freshness: Analysis rev 4 · run 7 · data r3 · current",
+    "status: Selected: P17 › enc_03 › fixation 6 · fixations.csv record 7,214 | View state only · no analysis changed | No jobs | Saved 10:24"
+  ],
+  "labels": [
+    {
+      "text": "_File",
+      "x": 8,
+      "y": 0,
+      "width": 36,
+      "height": 25
+    },
+    {
+      "text": "File",
+      "x": 16,
+      "y": 4,
+      "width": 20,
+      "height": 17
+    },
+    {
+      "text": "_Edit",
+      "x": 46,
+      "y": 0,
+      "width": 38,
+      "height": 25
+    },
+    {
+      "text": "Edit",
+      "x": 54,
+      "y": 4,
+      "width": 22,
+      "height": 17
+    },
+    {
+      "text": "_View",
+      "x": 86,
+      "y": 0,
+      "width": 43,
+      "height": 25
+    },
+    {
+      "text": "View",
+      "x": 94,
+      "y": 4,
+      "width": 27,
+      "height": 17
+    },
+    {
+      "text": "_Go",
+      "x": 131,
+      "y": 0,
+      "width": 32,
+      "height": 25
+    },
+    {
+      "text": "Go",
+      "x": 139,
+      "y": 4,
+      "width": 16,
+      "height": 17
+    },
+    {
+      "text": "_Run",
+      "x": 165,
+      "y": 0,
+      "width": 38,
+      "height": 25
+    },
+    {
+      "text": "Run",
+      "x": 173,
+      "y": 4,
+      "width": 22,
+      "height": 17
+    },
+    {
+      "text": "_Window",
+      "x": 205,
+      "y": 0,
+      "width": 60,
+      "height": 25
+    },
+    {
+      "text": "Window",
+      "x": 213,
+      "y": 4,
+      "width": 44,
+      "height": 17
+    },
+    {
+      "text": "_Help",
+      "x": 267,
+      "y": 0,
+      "width": 42,
+      "height": 25
+    },
+    {
+      "text": "Help",
+      "x": 275,
+      "y": 4,
+      "width": 26,
+      "height": 17
+    },
+    {
+      "text": "Eyes Studio",
+      "x": 41,
+      "y": 38,
+      "width": 71,
+      "height": 19
+    },
+    {
+      "text": "memory-study",
+      "x": 126,
+      "y": 35,
+      "width": 130,
+      "height": 24
+    },
+    {
+      "text": "memory-study",
+      "x": 135,
+      "y": 35,
+      "width": 96,
+      "height": 24
+    },
+    {
+      "text": "Data",
+      "x": 585,
+      "y": 33,
+      "width": 70,
+      "height": 29
+    },
+    {
+      "text": "⌘1",
+      "x": 630,
+      "y": 39,
+      "width": 13.2225341796875,
+      "height": 16
+    },
+    {
+      "text": "Explore",
+      "x": 657,
+      "y": 33,
+      "width": 87,
+      "height": 28
+    },
+    {
+      "text": "⌘2",
+      "x": 719,
+      "y": 39,
+      "width": 13.2225341796875,
+      "height": 16
+    },
+    {
+      "text": "Analysis",
+      "x": 746,
+      "y": 33,
+      "width": 91,
+      "height": 29
+    },
+    {
+      "text": "⌘3",
+      "x": 812,
+      "y": 39,
+      "width": 13.2225341796875,
+      "height": 16
+    },
+    {
+      "text": "Compare",
+      "x": 839,
+      "y": 33,
+      "width": 95,
+      "height": 29
+    },
+    {
+      "text": "⌘4",
+      "x": 908,
+      "y": 39,
+      "width": 13.2225341796875,
+      "height": 16
+    },
+    {
+      "text": "Figures",
+      "x": 936,
+      "y": 33,
+      "width": 85,
+      "height": 29
+    },
+    {
+      "text": "⌘5",
+      "x": 996,
+      "y": 39,
+      "width": 13.2225341796875,
+      "height": 16
+    },
+    {
+      "text": "No jobs",
+      "x": 1378,
+      "y": 39,
+      "width": 41,
+      "height": 17
+    },
+    {
+      "text": "Summary · by retrieval response",
+      "x": 66,
+      "y": 74,
+      "width": 187,
+      "height": 23
+    },
+    {
+      "text": "›",
+      "x": 255,
+      "y": 77,
+      "width": 4,
+      "height": 17
+    },
+    {
+      "text": "Remembered",
+      "x": 261,
+      "y": 74,
+      "width": 86,
+      "height": 23
+    },
+    {
+      "text": "›",
+      "x": 349,
+      "y": 77,
+      "width": 4,
+      "height": 17
+    },
+    {
+      "text": "P17",
+      "x": 355,
+      "y": 74,
+      "width": 34,
+      "height": 23
+    },
+    {
+      "text": "›",
+      "x": 391,
+      "y": 77,
+      "width": 4,
+      "height": 17
+    },
+    {
+      "text": "ret_07 · beach-042",
+      "x": 397,
+      "y": 74,
+      "width": 118,
+      "height": 23
+    },
+    {
+      "text": "›",
+      "x": 517,
+      "y": 77,
+      "width": 4,
+      "height": 17
+    },
+    {
+      "text": "pair ret_07 × enc_03",
+      "x": 523,
+      "y": 74,
+      "width": 126,
+      "height": 23
+    },
+    {
+      "text": "›",
+      "x": 651,
+      "y": 77,
+      "width": 4,
+      "height": 17
+    },
+    {
+      "text": "enc_03 · fixation 6",
+      "x": 657,
+      "y": 74,
+      "width": 113,
+      "height": 23
+    },
+    {
+      "text": "›",
+      "x": 772,
+      "y": 77,
+      "width": 4,
+      "height": 17
+    },
+    {
+      "text": "fixations.csv record 7,214",
+      "x": 778,
+      "y": 74,
+      "width": 157,
+      "height": 23
+    },
+    {
+      "text": "Analysis rev 4 · run 7 · data r3 · current",
+      "x": 1189,
+      "y": 74,
+      "width": 241,
+      "height": 22
+    },
+    {
+      "text": "Trials",
+      "x": 12,
+      "y": 101,
+      "width": 32,
+      "height": 28
+    },
+    {
+      "text": "Items",
+      "x": 69,
+      "y": 101,
+      "width": 32,
+      "height": 28
+    },
+    {
+      "text": "▸",
+      "x": 16,
+      "y": 166,
+      "width": 10,
+      "height": 16
+    },
+    {
+      "text": "P01",
+      "x": 52,
+      "y": 165,
+      "width": 50,
+      "height": 17
+    },
+    {
+      "text": "40 · 1 absent · 2 images missing",
+      "x": 114,
+      "y": 166,
+      "width": 159,
+      "height": 16
+    },
+    {
+      "text": "▸",
+      "x": 16,
+      "y": 187,
+      "width": 10,
+      "height": 16
+    },
+    {
+      "text": "P02",
+      "x": 52,
+      "y": 186,
+      "width": 50,
+      "height": 17
+    },
+    {
+      "text": "40 · 1 no-fixations",
+      "x": 182,
+      "y": 187,
+      "width": 91,
+      "height": 16
+    },
+    {
+      "text": "▸",
+      "x": 16,
+      "y": 208,
+      "width": 10,
+      "height": 16
+    },
+    {
+      "text": "P03",
+      "x": 52,
+      "y": 207,
+      "width": 50,
+      "height": 17
+    },
+    {
+      "text": "40 · 1 quar.",
+      "x": 216,
+      "y": 208,
+      "width": 57,
+      "height": 16
+    },
+    {
+      "text": "▸",
+      "x": 16,
+      "y": 229,
+      "width": 10,
+      "height": 16
+    },
+    {
+      "text": "P04",
+      "x": 52,
+      "y": 228,
+      "width": 50,
+      "height": 17
+    },
+    {
+      "text": "40 · 1 quar.",
+      "x": 216,
+      "y": 229,
+      "width": 57,
+      "height": 16
+    },
+    {
+      "text": "▸",
+      "x": 16,
+      "y": 250,
+      "width": 10,
+      "height": 16
+    },
+    {
+      "text": "P05",
+      "x": 52,
+      "y": 249,
+      "width": 50,
+      "height": 17
+    },
+    {
+      "text": "40",
+      "x": 259,
+      "y": 250,
+      "width": 14,
+      "height": 16
+    },
+    {
+      "text": "▸",
+      "x": 16,
+      "y": 271,
+      "width": 10,
+      "height": 16
+    },
+    {
+      "text": "P06",
+      "x": 52,
+      "y": 270,
+      "width": 50,
+      "height": 17
+    },
+    {
+      "text": "40 · 1 no-fixations",
+      "x": 182,
+      "y": 271,
+      "width": 91,
+      "height": 16
+    },
+    {
+      "text": "▸",
+      "x": 16,
+      "y": 292,
+      "width": 10,
+      "height": 16
+    },
+    {
+      "text": "P07",
+      "x": 52,
+      "y": 291,
+      "width": 50,
+      "height": 17
+    },
+    {
+      "text": "40 · 1 absent",
+      "x": 208,
+      "y": 292,
+      "width": 65,
+      "height": 16
+    },
+    {
+      "text": "▸",
+      "x": 16,
+      "y": 313,
+      "width": 10,
+      "height": 16
+    },
+    {
+      "text": "P08",
+      "x": 52,
+      "y": 312,
+      "width": 50,
+      "height": 17
+    },
+    {
+      "text": "40 · 1 no-fixations",
+      "x": 182,
+      "y": 313,
+      "width": 91,
+      "height": 16
+    },
+    {
+      "text": "▸",
+      "x": 16,
+      "y": 334,
+      "width": 10,
+      "height": 16
+    },
+    {
+      "text": "P09",
+      "x": 52,
+      "y": 333,
+      "width": 50,
+      "height": 17
+    },
+    {
+      "text": "40 · 1 quar.",
+      "x": 216,
+      "y": 334,
+      "width": 57,
+      "height": 16
+    },
+    {
+      "text": "▸",
+      "x": 16,
+      "y": 355,
+      "width": 10,
+      "height": 16
+    },
+    {
+      "text": "P10",
+      "x": 52,
+      "y": 354,
+      "width": 50,
+      "height": 17
+    },
+    {
+      "text": "40 · 1 absent",
+      "x": 208,
+      "y": 355,
+      "width": 65,
+      "height": 16
+    },
+    {
+      "text": "▸",
+      "x": 16,
+      "y": 376,
+      "width": 10,
+      "height": 16
+    },
+    {
+      "text": "P11",
+      "x": 52,
+      "y": 375,
+      "width": 50,
+      "height": 17
+    },
+    {
+      "text": "40 · 1 quar.",
+      "x": 216,
+      "y": 376,
+      "width": 57,
+      "height": 16
+    },
+    {
+      "text": "▸",
+      "x": 16,
+      "y": 397,
+      "width": 10,
+      "height": 16
+    },
+    {
+      "text": "P12",
+      "x": 52,
+      "y": 396,
+      "width": 50,
+      "height": 17
+    },
+    {
+      "text": "40 · 1 quar.",
+      "x": 216,
+      "y": 397,
+      "width": 57,
+      "height": 16
+    },
+    {
+      "text": "▸",
+      "x": 16,
+      "y": 418,
+      "width": 10,
+      "height": 16
+    },
+    {
+      "text": "P13",
+      "x": 52,
+      "y": 417,
+      "width": 50,
+      "height": 17
+    },
+    {
+      "text": "40 · 1 no-fixations",
+      "x": 182,
+      "y": 418,
+      "width": 91,
+      "height": 16
+    },
+    {
+      "text": "▸",
+      "x": 16,
+      "y": 439,
+      "width": 10,
+      "height": 16
+    },
+    {
+      "text": "P14",
+      "x": 52,
+      "y": 438,
+      "width": 50,
+      "height": 17
+    },
+    {
+      "text": "40 · 1 quar.",
+      "x": 216,
+      "y": 439,
+      "width": 57,
+      "height": 16
+    },
+    {
+      "text": "▸",
+      "x": 16,
+      "y": 460,
+      "width": 10,
+      "height": 16
+    },
+    {
+      "text": "P15",
+      "x": 52,
+      "y": 459,
+      "width": 50,
+      "height": 17
+    },
+    {
+      "text": "40 · 1 absent",
+      "x": 208,
+      "y": 460,
+      "width": 65,
+      "height": 16
+    },
+    {
+      "text": "▸",
+      "x": 16,
+      "y": 481,
+      "width": 10,
+      "height": 16
+    },
+    {
+      "text": "P16",
+      "x": 52,
+      "y": 480,
+      "width": 50,
+      "height": 17
+    },
+    {
+      "text": "40 · 1 quar.",
+      "x": 216,
+      "y": 481,
+      "width": 57,
+      "height": 16
+    },
+    {
+      "text": "▾",
+      "x": 16,
+      "y": 502,
+      "width": 10,
+      "height": 16
+    },
+    {
+      "text": "P17",
+      "x": 52,
+      "y": 501,
+      "width": 50,
+      "height": 17
+    },
+    {
+      "text": "40 · 1 absent",
+      "x": 208,
+      "y": 502,
+      "width": 65,
+      "height": 16
+    },
+    {
+      "text": "▾",
+      "x": 30,
+      "y": 523,
+      "width": 10,
+      "height": 16
+    },
+    {
+      "text": "Encoding · 20 · image",
+      "x": 66,
+      "y": 522,
+      "width": 120,
+      "height": 17
+    },
+    {
+      "text": "enc_01",
+      "x": 80,
+      "y": 543,
+      "width": 50,
+      "height": 17
+    },
+    {
+      "text": "street-112",
+      "x": 136,
+      "y": 543,
+      "width": 131,
+      "height": 17
+    },
+    {
+      "text": "enc_02",
+      "x": 80,
+      "y": 564,
+      "width": 50,
+      "height": 17
+    },
+    {
+      "text": "kitchen-017",
+      "x": 136,
+      "y": 564,
+      "width": 131,
+      "height": 17
+    },
+    {
+      "text": "enc_03",
+      "x": 80,
+      "y": 585,
+      "width": 50,
+      "height": 17
+    },
+    {
+      "text": "beach-042",
+      "x": 136,
+      "y": 585,
+      "width": 131,
+      "height": 17
+    },
+    {
+      "text": "enc_04",
+      "x": 80,
+      "y": 606,
+      "width": 50,
+      "height": 17
+    },
+    {
+      "text": "tower-150",
+      "x": 136,
+      "y": 606,
+      "width": 131,
+      "height": 17
+    },
+    {
+      "text": "enc_05",
+      "x": 80,
+      "y": 627,
+      "width": 50,
+      "height": 17
+    },
+    {
+      "text": "desert-305",
+      "x": 136,
+      "y": 627,
+      "width": 131,
+      "height": 17
+    },
+    {
+      "text": "enc_06",
+      "x": 80,
+      "y": 648,
+      "width": 50,
+      "height": 17
+    },
+    {
+      "text": "field-613",
+      "x": 136,
+      "y": 648,
+      "width": 131,
+      "height": 17
+    },
+    {
+      "text": "enc_07",
+      "x": 80,
+      "y": 669,
+      "width": 50,
+      "height": 17
+    },
+    {
+      "text": "canyon-126",
+      "x": 136,
+      "y": 669,
+      "width": 131,
+      "height": 17
+    },
+    {
+      "text": "enc_08",
+      "x": 80,
+      "y": 690,
+      "width": 50,
+      "height": 17
+    },
+    {
+      "text": "dog-077",
+      "x": 136,
+      "y": 690,
+      "width": 131,
+      "height": 17
+    },
+    {
+      "text": "enc_09",
+      "x": 80,
+      "y": 711,
+      "width": 50,
+      "height": 17
+    },
+    {
+      "text": "forest-008",
+      "x": 136,
+      "y": 711,
+      "width": 131,
+      "height": 17
+    },
+    {
+      "text": "enc_10",
+      "x": 80,
+      "y": 732,
+      "width": 50,
+      "height": 17
+    },
+    {
+      "text": "bridge-019",
+      "x": 136,
+      "y": 732,
+      "width": 131,
+      "height": 17
+    },
+    {
+      "text": "enc_11",
+      "x": 80,
+      "y": 753,
+      "width": 50,
+      "height": 17
+    },
+    {
+      "text": "harbor-231",
+      "x": 136,
+      "y": 753,
+      "width": 131,
+      "height": 17
+    },
+    {
+      "text": "enc_12",
+      "x": 80,
+      "y": 774,
+      "width": 50,
+      "height": 17
+    },
+    {
+      "text": "church-417",
+      "x": 136,
+      "y": 774,
+      "width": 131,
+      "height": 17
+    },
+    {
+      "text": "Image",
+      "x": 28,
+      "y": 799,
+      "width": 32,
+      "height": 16
+    },
+    {
+      "text": "Blank + cross",
+      "x": 86,
+      "y": 799,
+      "width": 67,
+      "height": 16
+    },
+    {
+      "text": "Image missing",
+      "x": 28,
+      "y": 817,
+      "width": 73,
+      "height": 16
+    },
+    {
+      "text": "Not admitted",
+      "x": 127,
+      "y": 817,
+      "width": 66,
+      "height": 16
+    },
+    {
+      "text": "Explore is view-only. Nothing here changes an analysis.",
+      "x": 12,
+      "y": 836,
+      "width": 235,
+      "height": 32
+    },
+    {
+      "text": "Trials",
+      "x": -8,
+      "y": 117,
+      "width": 17,
+      "height": 31.024993896484375
+    },
+    {
+      "text": "Trial view",
+      "x": 272,
+      "y": 101,
+      "width": 55,
+      "height": 28
+    },
+    {
+      "text": "Table",
+      "x": 352,
+      "y": 101,
+      "width": 31,
+      "height": 28
+    },
+    {
+      "text": "Small multiples",
+      "x": 408,
+      "y": 101,
+      "width": 84,
+      "height": 28
+    },
+    {
+      "text": "P17 · enc_03 · beach-042",
+      "x": 268,
+      "y": 136,
+      "width": 152,
+      "height": 17
+    },
+    {
+      "text": "Points",
+      "x": 424,
+      "y": 133,
+      "width": 52,
+      "height": 22
+    },
+    {
+      "text": "Order",
+      "x": 480,
+      "y": 133,
+      "width": 48,
+      "height": 22
+    },
+    {
+      "text": "Map",
+      "x": 532,
+      "y": 133,
+      "width": 40,
+      "height": 22
+    },
+    {
+      "text": "Map: preview · σ 2° · not a result",
+      "x": 576,
+      "y": 133,
+      "width": 179,
+      "height": 22
+    },
+    {
+      "text": "Canvas focused · arrows move · Enter selects · Esc clears",
+      "x": 777,
+      "y": 136,
+      "width": 282,
+      "height": 16
+    },
+    {
+      "text": "‹",
+      "x": 1073,
+      "y": 136,
+      "width": 3.64794921875,
+      "height": 17
+    },
+    {
+      "text": "›",
+      "x": 1101,
+      "y": 136,
+      "width": 3.64794921875,
+      "height": 17
+    },
+    {
+      "text": "Legend",
+      "x": 270,
+      "y": 495,
+      "width": 38,
+      "height": 16
+    },
+    {
+      "text": "Fixation · marker area ∝ duration",
+      "x": 334,
+      "y": 486,
+      "width": 162,
+      "height": 16
+    },
+    {
+      "text": "Outside the analysis window · excluded from the map",
+      "x": 524,
+      "y": 486,
+      "width": 264,
+      "height": 16
+    },
+    {
+      "text": "Order between fixation centres, not measured saccades",
+      "x": 816,
+      "y": 486,
+      "width": 276,
+      "height": 16
+    },
+    {
+      "text": "Image",
+      "x": 334,
+      "y": 504,
+      "width": 32,
+      "height": 16
+    },
+    {
+      "text": "Preview density · σ 2° · not a result",
+      "x": 394,
+      "y": 504,
+      "width": 173,
+      "height": 16
+    },
+    {
+      "text": "0",
+      "x": 579,
+      "y": 504,
+      "width": 7,
+      "height": 16
+    },
+    {
+      "text": "max · fixation duration mass per cell",
+      "x": 674,
+      "y": 504,
+      "width": 179,
+      "height": 16
+    },
+    {
+      "text": "50% · 90% of mass",
+      "x": 885,
+      "y": 504,
+      "width": 97,
+      "height": 16
+    },
+    {
+      "text": "Trial view",
+      "x": 252,
+      "y": 117,
+      "width": 17,
+      "height": 53.625
+    },
+    {
+      "text": "Timeline",
+      "x": 272,
+      "y": 527,
+      "width": 49,
+      "height": 28
+    },
+    {
+      "text": "Table",
+      "x": 346,
+      "y": 527,
+      "width": 31,
+      "height": 28
+    },
+    {
+      "text": "Play",
+      "x": 268,
+      "y": 559,
+      "width": 38,
+      "height": 20
+    },
+    {
+      "text": "Step back",
+      "x": 310,
+      "y": 559,
+      "width": 65,
+      "height": 20
+    },
+    {
+      "text": "Step forward",
+      "x": 379,
+      "y": 559,
+      "width": 80,
+      "height": 20
+    },
+    {
+      "text": "0.5×",
+      "x": 463,
+      "y": 559,
+      "width": 43,
+      "height": 20
+    },
+    {
+      "text": "1×",
+      "x": 510,
+      "y": 559,
+      "width": 30,
+      "height": 20
+    },
+    {
+      "text": "2×",
+      "x": 544,
+      "y": 559,
+      "width": 30,
+      "height": 20
+    },
+    {
+      "text": "playhead 2.16 s · brush 1.20–2.80 s",
+      "x": 578,
+      "y": 561,
+      "width": 238,
+      "height": 16
+    },
+    {
+      "text": "Brushing highlights; it does not crop the analysis",
+      "x": 870,
+      "y": 561,
+      "width": 245,
+      "height": 16
+    },
+    {
+      "text": "Trial extent not declared; playback covers the fixation intervals.",
+      "x": 260,
+      "y": 583,
+      "width": 319,
+      "height": 16
+    },
+    {
+      "text": "Timeline",
+      "x": 252,
+      "y": 543,
+      "width": 17,
+      "height": 48.5374755859375
+    },
+    {
+      "text": "Source records",
+      "x": 272,
+      "y": 683,
+      "width": 84,
+      "height": 28
+    },
+    {
+      "text": "Trial inventory",
+      "x": 381,
+      "y": 683,
+      "width": 78,
+      "height": 28
+    },
+    {
+      "text": "Show raw record",
+      "x": 1000,
+      "y": 713,
+      "width": 107,
+      "height": 26
+    },
+    {
+      "text": "Record",
+      "x": 276,
+      "y": 744,
+      "width": 70,
+      "height": 16
+    },
+    {
+      "text": "Trial",
+      "x": 354,
+      "y": 744,
+      "width": 50,
+      "height": 16
+    },
+    {
+      "text": "Ordinal",
+      "x": 412,
+      "y": 744,
+      "width": 50,
+      "height": 16
+    },
+    {
+      "text": "Onset ms",
+      "x": 470,
+      "y": 744,
+      "width": 64,
+      "height": 16
+    },
+    {
+      "text": "Dur ms",
+      "x": 542,
+      "y": 744,
+      "width": 56,
+      "height": 16
+    },
+    {
+      "text": "Screen x,y",
+      "x": 606,
+      "y": 744,
+      "width": 104,
+      "height": 16
+    },
+    {
+      "text": "Image x,y",
+      "x": 718,
+      "y": 744,
+      "width": 74,
+      "height": 16
+    },
+    {
+      "text": "Degrees x,y",
+      "x": 800,
+      "y": 744,
+      "width": 100,
+      "height": 16
+    },
+    {
+      "text": "Samples",
+      "x": 908,
+      "y": 744,
+      "width": 60,
+      "height": 16
+    },
+    {
+      "text": "Window",
+      "x": 976,
+      "y": 744,
+      "width": 80,
+      "height": 16
+    },
+    {
+      "text": "7,210",
+      "x": 277,
+      "y": 749,
+      "width": 70,
+      "height": 16
+    },
+    {
+      "text": "enc_03",
+      "x": 355,
+      "y": 749,
+      "width": 50,
+      "height": 16
+    },
+    {
+      "text": "2",
+      "x": 413,
+      "y": 749,
+      "width": 50,
+      "height": 16
+    },
+    {
+      "text": "440",
+      "x": 471,
+      "y": 749,
+      "width": 64,
+      "height": 16
+    },
+    {
+      "text": "380",
+      "x": 543,
+      "y": 749,
+      "width": 56,
+      "height": 16
+    },
+    {
+      "text": "1111.3,740.7",
+      "x": 607,
+      "y": 749,
+      "width": 104,
+      "height": 16
+    },
+    {
+      "text": "663,585",
+      "x": 719,
+      "y": 749,
+      "width": 74,
+      "height": 16
+    },
+    {
+      "text": "+4.3°,−5.7°",
+      "x": 801,
+      "y": 749,
+      "width": 100,
+      "height": 16
+    },
+    {
+      "text": "190",
+      "x": 909,
+      "y": 749,
+      "width": 60,
+      "height": 16
+    },
+    {
+      "text": "inside",
+      "x": 977,
+      "y": 749,
+      "width": 80,
+      "height": 16
+    },
+    {
+      "text": "7,211",
+      "x": 277,
+      "y": 771,
+      "width": 70,
+      "height": 16
+    },
+    {
+      "text": "enc_03",
+      "x": 355,
+      "y": 771,
+      "width": 50,
+      "height": 16
+    },
+    {
+      "text": "3",
+      "x": 413,
+      "y": 771,
+      "width": 50,
+      "height": 16
+    },
+    {
+      "text": "870",
+      "x": 471,
+      "y": 771,
+      "width": 64,
+      "height": 16
+    },
+    {
+      "text": "350",
+      "x": 543,
+      "y": 771,
+      "width": 56,
+      "height": 16
+    },
+    {
+      "text": "672.4,393.5",
+      "x": 607,
+      "y": 771,
+      "width": 104,
+      "height": 16
+    },
+    {
+      "text": "224,238",
+      "x": 719,
+      "y": 771,
+      "width": 74,
+      "height": 16
+    },
+    {
+      "text": "−8.2°,+4.2°",
+      "x": 801,
+      "y": 771,
+      "width": 100,
+      "height": 16
+    },
+    {
+      "text": "175",
+      "x": 909,
+      "y": 771,
+      "width": 60,
+      "height": 16
+    },
+    {
+      "text": "inside",
+      "x": 977,
+      "y": 771,
+      "width": 80,
+      "height": 16
+    },
+    {
+      "text": "7,212",
+      "x": 277,
+      "y": 793,
+      "width": 70,
+      "height": 16
+    },
+    {
+      "text": "enc_03",
+      "x": 355,
+      "y": 793,
+      "width": 50,
+      "height": 16
+    },
+    {
+      "text": "4",
+      "x": 413,
+      "y": 793,
+      "width": 50,
+      "height": 16
+    },
+    {
+      "text": "1,270",
+      "x": 471,
+      "y": 793,
+      "width": 64,
+      "height": 16
+    },
+    {
+      "text": "420",
+      "x": 543,
+      "y": 793,
+      "width": 56,
+      "height": 16
+    },
+    {
+      "text": "1300.9,364.4",
+      "x": 607,
+      "y": 793,
+      "width": 104,
+      "height": 16
+    },
+    {
+      "text": "853,208",
+      "x": 719,
+      "y": 793,
+      "width": 74,
+      "height": 16
+    },
+    {
+      "text": "+9.7°,+5.0°",
+      "x": 801,
+      "y": 793,
+      "width": 100,
+      "height": 16
+    },
+    {
+      "text": "210",
+      "x": 909,
+      "y": 793,
+      "width": 60,
+      "height": 16
+    },
+    {
+      "text": "inside",
+      "x": 977,
+      "y": 793,
+      "width": 80,
+      "height": 16
+    },
+    {
+      "text": "7,213",
+      "x": 277,
+      "y": 815,
+      "width": 70,
+      "height": 16
+    },
+    {
+      "text": "enc_03",
+      "x": 355,
+      "y": 815,
+      "width": 50,
+      "height": 16
+    },
+    {
+      "text": "5",
+      "x": 413,
+      "y": 815,
+      "width": 50,
+      "height": 16
+    },
+    {
+      "text": "1,740",
+      "x": 471,
+      "y": 815,
+      "width": 64,
+      "height": 16
+    },
+    {
+      "text": "370",
+      "x": 543,
+      "y": 815,
+      "width": 56,
+      "height": 16
+    },
+    {
+      "text": "603.0,440.8",
+      "x": 607,
+      "y": 815,
+      "width": 104,
+      "height": 16
+    },
+    {
+      "text": "155,285",
+      "x": 719,
+      "y": 815,
+      "width": 74,
+      "height": 16
+    },
+    {
+      "text": "−10.2°,+2.8°",
+      "x": 801,
+      "y": 815,
+      "width": 100,
+      "height": 16
+    },
+    {
+      "text": "185",
+      "x": 909,
+      "y": 815,
+      "width": 60,
+      "height": 16
+    },
+    {
+      "text": "inside",
+      "x": 977,
+      "y": 815,
+      "width": 80,
+      "height": 16
+    },
+    {
+      "text": "7,214",
+      "x": 277,
+      "y": 837,
+      "width": 70,
+      "height": 16
+    },
+    {
+      "text": "enc_03",
+      "x": 355,
+      "y": 837,
+      "width": 50,
+      "height": 16
+    },
+    {
+      "text": "6",
+      "x": 413,
+      "y": 837,
+      "width": 50,
+      "height": 16
+    },
+    {
+      "text": "2,160",
+      "x": 471,
+      "y": 837,
+      "width": 64,
+      "height": 16
+    },
+    {
+      "text": "412",
+      "x": 543,
+      "y": 837,
+      "width": 56,
+      "height": 16
+    },
+    {
+      "text": "1148.0,456.0",
+      "x": 607,
+      "y": 837,
+      "width": 104,
+      "height": 16
+    },
+    {
+      "text": "700,300",
+      "x": 719,
+      "y": 837,
+      "width": 74,
+      "height": 16
+    },
+    {
+      "text": "+5.4°,+2.4°",
+      "x": 801,
+      "y": 837,
+      "width": 100,
+      "height": 16
+    },
+    {
+      "text": "206",
+      "x": 909,
+      "y": 837,
+      "width": 60,
+      "height": 16
+    },
+    {
+      "text": "inside",
+      "x": 977,
+      "y": 837,
+      "width": 80,
+      "height": 16
+    },
+    {
+      "text": "7,215",
+      "x": 277,
+      "y": 859,
+      "width": 70,
+      "height": 16
+    },
+    {
+      "text": "enc_03",
+      "x": 355,
+      "y": 859,
+      "width": 50,
+      "height": 16
+    },
+    {
+      "text": "7",
+      "x": 413,
+      "y": 859,
+      "width": 50,
+      "height": 16
+    },
+    {
+      "text": "2,622",
+      "x": 471,
+      "y": 859,
+      "width": 64,
+      "height": 16
+    },
+    {
+      "text": "340",
+      "x": 543,
+      "y": 859,
+      "width": 56,
+      "height": 16
+    },
+    {
+      "text": "747.3,595.4",
+      "x": 607,
+      "y": 859,
+      "width": 104,
+      "height": 16
+    },
+    {
+      "text": "299,439",
+      "x": 719,
+      "y": 859,
+      "width": 74,
+      "height": 16
+    },
+    {
+      "text": "−6.1°,−1.6°",
+      "x": 801,
+      "y": 859,
+      "width": 100,
+      "height": 16
+    },
+    {
+      "text": "170",
+      "x": 909,
+      "y": 859,
+      "width": 60,
+      "height": 16
+    },
+    {
+      "text": "inside",
+      "x": 977,
+      "y": 859,
+      "width": 80,
+      "height": 16
+    },
+    {
+      "text": "Source records",
+      "x": 252,
+      "y": 699,
+      "width": 17,
+      "height": 84.7125244140625
+    },
+    {
+      "text": "Inspector",
+      "x": 1136,
+      "y": 101,
+      "width": 55,
+      "height": 28
+    },
+    {
+      "text": "Fixation 6 of 13",
+      "x": 1139,
+      "y": 142,
+      "width": 94,
+      "height": 19
+    },
+    {
+      "text": "View only",
+      "x": 1373,
+      "y": 143,
+      "width": 52,
+      "height": 17
+    },
+    {
+      "text": "Onset · duration",
+      "x": 1139,
+      "y": 169,
+      "width": 118,
+      "height": 17
+    },
+    {
+      "text": "2,160 ms · 412 ms",
+      "x": 1265,
+      "y": 169,
+      "width": 123,
+      "height": 17
+    },
+    {
+      "text": "Image frame px",
+      "x": 1139,
+      "y": 191,
+      "width": 118,
+      "height": 17
+    },
+    {
+      "text": "700, 300",
+      "x": 1265,
+      "y": 191,
+      "width": 58,
+      "height": 17
+    },
+    {
+      "text": "Screen px (raw)",
+      "x": 1139,
+      "y": 213,
+      "width": 118,
+      "height": 17
+    },
+    {
+      "text": "1148.0, 456.0",
+      "x": 1265,
+      "y": 213,
+      "width": 94,
+      "height": 17
+    },
+    {
+      "text": "Degrees from centre",
+      "x": 1139,
+      "y": 235,
+      "width": 118,
+      "height": 17
+    },
+    {
+      "text": "+5.4°, +2.4°",
+      "x": 1265,
+      "y": 235,
+      "width": 87,
+      "height": 17
+    },
+    {
+      "text": "Analysis window",
+      "x": 1139,
+      "y": 257,
+      "width": 118,
+      "height": 17
+    },
+    {
+      "text": "Inside",
+      "x": 1265,
+      "y": 257,
+      "width": 44,
+      "height": 17
+    },
+    {
+      "text": "Degrees from image centre, x right, y up; 35 px/°, the recipe's scale.",
+      "x": 1139,
+      "y": 282,
+      "width": 286,
+      "height": 32
+    },
+    {
+      "text": "Source",
+      "x": 1139,
+      "y": 337,
+      "width": 42,
+      "height": 19
+    },
+    {
+      "text": "File",
+      "x": 1139,
+      "y": 364,
+      "width": 118,
+      "height": 17
+    },
+    {
+      "text": "inputs/fixations.csv",
+      "x": 1265,
+      "y": 364,
+      "width": 144,
+      "height": 17
+    },
+    {
+      "text": "Record",
+      "x": 1139,
+      "y": 386,
+      "width": 118,
+      "height": 17
+    },
+    {
+      "text": "7,214 of 11,520",
+      "x": 1265,
+      "y": 386,
+      "width": 108,
+      "height": 17
+    },
+    {
+      "text": "Digest",
+      "x": 1139,
+      "y": 408,
+      "width": 118,
+      "height": 17
+    },
+    {
+      "text": "sha256:1934…2f2",
+      "x": 1265,
+      "y": 408,
+      "width": 108,
+      "height": 17
+    },
+    {
+      "text": "Ledger",
+      "x": 1139,
+      "y": 430,
+      "width": 118,
+      "height": 17
+    },
+    {
+      "text": "Admitted · dataset r3",
+      "x": 1265,
+      "y": 430,
+      "width": 152,
+      "height": 17
+    },
+    {
+      "text": "Show raw record",
+      "x": 1139,
+      "y": 455,
+      "width": 107,
+      "height": 26
+    },
+    {
+      "text": "Used by (run 7, σ 2°)",
+      "x": 1139,
+      "y": 503,
+      "width": 123,
+      "height": 19
+    },
+    {
+      "text": "ret_07 contrast (matched reference)",
+      "x": 1139,
+      "y": 530,
+      "width": 205,
+      "height": 23
+    },
+    {
+      "text": "18 pairs (as a control)",
+      "x": 1139,
+      "y": 555,
+      "width": 126,
+      "height": 23
+    },
+    {
+      "text": "Trial",
+      "x": 1139,
+      "y": 601,
+      "width": 28,
+      "height": 19
+    },
+    {
+      "text": "Key",
+      "x": 1139,
+      "y": 637,
+      "width": 118,
+      "height": 17
+    },
+    {
+      "text": "P17 · Encoding · enc_03 · occ 1",
+      "x": 1265,
+      "y": 628,
+      "width": 160,
+      "height": 34
+    },
+    {
+      "text": "Display",
+      "x": 1139,
+      "y": 667,
+      "width": 118,
+      "height": 17
+    },
+    {
+      "text": "Image · beach-042.png",
+      "x": 1265,
+      "y": 667,
+      "width": 152,
+      "height": 17
+    },
+    {
+      "text": "Match item",
+      "x": 1139,
+      "y": 689,
+      "width": 118,
+      "height": 17
+    },
+    {
+      "text": "beach-042",
+      "x": 1265,
+      "y": 689,
+      "width": 65,
+      "height": 17
+    },
+    {
+      "text": "Extent",
+      "x": 1139,
+      "y": 711,
+      "width": 118,
+      "height": 17
+    },
+    {
+      "text": "Not declared",
+      "x": 1265,
+      "y": 711,
+      "width": 87,
+      "height": 17
+    },
+    {
+      "text": "Fixations",
+      "x": 1139,
+      "y": 733,
+      "width": 118,
+      "height": 17
+    },
+    {
+      "text": "13 · 1 outside",
+      "x": 1265,
+      "y": 733,
+      "width": 101,
+      "height": 17
+    },
+    {
+      "text": "Inspector",
+      "x": 1116,
+      "y": 117,
+      "width": 17,
+      "height": 54.5625
+    },
+    {
+      "text": "No open panels",
+      "x": 668,
+      "y": 483,
+      "width": 105,
+      "height": 29
+    },
+    {
+      "text": "Drag a tab here, or open a panel",
+      "x": 631,
+      "y": 520,
+      "width": 179,
+      "height": 17
+    },
+    {
+      "text": "Selected:",
+      "x": 24,
+      "y": 880,
+      "width": 47,
+      "height": 16
+    },
+    {
+      "text": "P17 › enc_03 › fixation 6 · fixations.csv record 7,214",
+      "x": 77,
+      "y": 880,
+      "width": 357,
+      "height": 16
+    },
+    {
+      "text": "View state only · no analysis changed",
+      "x": 459,
+      "y": 880,
+      "width": 184,
+      "height": 16
+    },
+    {
+      "text": "No jobs",
+      "x": 1302,
+      "y": 880,
+      "width": 38,
+      "height": 16
+    },
+    {
+      "text": "Saved 10:24",
+      "x": 1365,
+      "y": 880,
+      "width": 63,
+      "height": 16
+    }
+  ]
+}

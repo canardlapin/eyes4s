@@ -45,6 +45,41 @@ class CompareSummarySuite extends munit.FunSuite:
   private val remembered = Response.Remembered
 
   test(
+    "opening a result follows its scale before reports arrive, in query and summary layouts"
+  ) {
+    Vector(t2Compare, t3Summary).foreach { model =>
+      val state = CompareSummary.sync(CompareSummary.empty, model)._1
+      assertEquals(state.scale, Some(sigma2))
+    }
+  }
+
+  test("an explicit scale survives unrelated sync; a new result scale follows its identity") {
+    loaded(t3Summary).map { state =>
+      val first  = right(ScaleIndex.of(0))
+      val chosen = CompareSummary.update(state, SummaryIntent.ChooseScale(first))._1
+      assertEquals(CompareSummary.sync(chosen, t3Summary)._1.shown, Some(first))
+      val one   = right(ScaleIndex.of(1))
+      val ref   = StudioRef.QueryContrast(run7, one, p17ret07)
+      val moved = AppModel
+        .update(
+          t3Summary,
+          eyes4s.studio.app.Intent.Explain(eyes4s.studio.app.nav.Place.At(ref))
+        )
+        ._1
+      assertEquals(CompareSummary.sync(chosen, moved)._1.shown, Some(one))
+      val sameScaleResult = AppModel
+        .update(
+          t3Summary,
+          eyes4s.studio.app.Intent.Explain(
+            eyes4s.studio.app.nav.Place.At(StudioRef.QueryContrast(run7, sigma2, p17ret07))
+          )
+        )
+        ._1
+      assertEquals(CompareSummary.sync(chosen, sameScaleResult)._1.shown, Some(sigma2))
+    }
+  }
+
+  test(
     "an overall report cell resolves its exact derived spec without changing saved reporting"
   ) {
     val model   = StoryModels.t2Compare

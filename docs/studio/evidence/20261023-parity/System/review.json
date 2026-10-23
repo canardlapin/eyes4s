@@ -1,0 +1,245 @@
+{
+  "schema": 1,
+  "board": "System",
+  "reviewed": true,
+  "reviewer": "codex-board-parity-20261023",
+  "review_kind": "visual + measured + native/component tests; semantic parity with individually recorded deviations",
+  "findings": "Reviewed the pinned board beside the actual JavaFX capture and supplemental states. Concrete scale selection, served Compare maps, narrow captions and physical figure-column defects were repaired. Remaining differences below are explicit; this is not pixel identity or real-study acceptance.",
+  "inputs": [
+    {
+      "path": "build.sbt",
+      "sha256": "a995a40a0071a8d89ea1ebd21a45b607a9d2621d60f6ba2ac1497e5c6a05116b"
+    },
+    {
+      "path": "docs/studio/DESIGN_SPEC.md",
+      "sha256": "d8b97505cbaa6a3bdffc26dc2d614fbfb29a0d40b37f2b049d198b8938abe3f4"
+    },
+    {
+      "path": "docs/studio/fixture/FIXTURE.md",
+      "sha256": "650edcdf98419cfb55c7ac7b21b9724b1f2482f0de6c99d3d9b17bdba0a3ba77"
+    },
+    {
+      "path": "fixtures/studio-golden/fixations.csv",
+      "sha256": "19342ecedb6e089a190b4784a248907b27fedbef03ca3e6d4bc251702fbbc2f2"
+    },
+    {
+      "path": "fixtures/studio-golden/trials.csv",
+      "sha256": "0668bccf6c672b706c0a138268f632fb5a768170578a01c58ee752176f0f8b99"
+    },
+    {
+      "path": "docs/studio/design/reference/manifest.json",
+      "sha256": "a9d10efb4b1187ade7aa2b00db3fb5558350deb23d4019e2cf4395e29f7c2aa6"
+    },
+    {
+      "path": "studio/app/src/main/scala/eyes4s/studio/app/analysis/ResolvedDesignVM.scala",
+      "sha256": "4a6a98a180ffe4de7b0fff5c520c1576fe48cd3886d572ee5afafcba5e6013fd"
+    },
+    {
+      "path": "studio/app/src/main/scala/eyes4s/studio/app/compare/CompareMaps.scala",
+      "sha256": "2be8ffd53002366002a64dc05d964932b783afe2c11323d2b79f0ea8f3fe1de4"
+    },
+    {
+      "path": "studio/app/src/main/scala/eyes4s/studio/app/compare/CompareSummary.scala",
+      "sha256": "84fa49a0b59677bf940e1554c4cfa81d6f8b03f5f216d72d42fb17003d2058fe"
+    },
+    {
+      "path": "studio/app/src/main/scala/eyes4s/studio/app/compare/TrialPanels.scala",
+      "sha256": "3a93b49c09e1bf9d9a3b73dbc09fe991b2d0febb15b9a6c797fbfbe121cd613e"
+    },
+    {
+      "path": "studio/app/src/main/scala/eyes4s/studio/app/text/DesignText.scala",
+      "sha256": "10828ab63ac30543234ef7989602a8d06b0254ab5bc0b998dbeeda7ab524bdbc"
+    },
+    {
+      "path": "studio/app/src/main/scala/eyes4s/studio/app/text/PanelText.scala",
+      "sha256": "4f28b3ba88f3250c3d830b55f0072d58639bb831459d279f4bacff9afbf90bfb"
+    },
+    {
+      "path": "studio/app/src/test/scala/eyes4s/studio/app/analysis/ResolvedDesignSuite.scala",
+      "sha256": "10357265aa7ca0ceb0194ecc61ac79eb7130cfe249d7b8bd5bd36a5462aae081"
+    },
+    {
+      "path": "studio/app/src/test/scala/eyes4s/studio/app/compare/CompareMapsSuite.scala",
+      "sha256": "310ab1a90f321e1ba8c0143dd8a1aa5f066a81e20058c660532f2d28d1ef97da"
+    },
+    {
+      "path": "studio/app/src/test/scala/eyes4s/studio/app/compare/CompareSummarySuite.scala",
+      "sha256": "6ef047be44bf46ca1f443f04676d3847dc6423a95b260a5aaadb3623bdfe2b4a"
+    },
+    {
+      "path": "studio/app/src/test/scala/eyes4s/studio/app/compare/TrialPanelsSuite.scala",
+      "sha256": "5149beaf76e95ecabe2168b4ce71024b2ff77bc3d373061ae83690fb467b8bc3"
+    },
+    {
+      "path": "studio/desktop/src/main/resources/eyes4s/studio/desktop/studio-figures.css",
+      "sha256": "a31fbded0cdaae2e4d062376ca33770b71255ffedd2e81978eb02c34cb5b957c"
+    },
+    {
+      "path": "studio/desktop/src/main/scala/eyes4s/studio/desktop/StudioWindow.scala",
+      "sha256": "ac378006d31706771ce07f1ae6dd72b1e0391450dee3dd9b7426a0774ea41201"
+    },
+    {
+      "path": "studio/desktop/src/main/scala/eyes4s/studio/desktop/analysis/ResolvedDesignView.scala",
+      "sha256": "6ccd68b4af18526cb6485115f7185ec2bf7f2071500e9bb7c92c8b55987fb76b"
+    },
+    {
+      "path": "studio/desktop/src/main/scala/eyes4s/studio/desktop/compare/CompareInspectorHost.scala",
+      "sha256": "a46f680eff5acb2053aa27fd3b2bd5c483d219416d4965ecfafa6538deff37c1"
+    },
+    {
+      "path": "studio/desktop/src/main/scala/eyes4s/studio/desktop/compare/CompareMapHost.scala",
+      "sha256": "bb1cbe020ac31bf4c7d8e739ac2886f25e811b26291473387926ec7b2aa5ca58"
+    },
+    {
+      "path": "studio/desktop/src/main/scala/eyes4s/studio/desktop/compare/CompareSummaryHost.scala",
+      "sha256": "d7b443b0af6e4794774f9fa3e623a31d8a964ab2a13e9d8bfe855b9d072c9c08"
+    },
+    {
+      "path": "studio/desktop/src/main/scala/eyes4s/studio/desktop/compare/TrialPanelsView.scala",
+      "sha256": "d7a973472d9852bc3187f9499caeade0c13a95e5868e1ab4cc38e7963a92a19f"
+    },
+    {
+      "path": "studio/desktop/src/main/scala/eyes4s/studio/desktop/figures/FiguresHost.scala",
+      "sha256": "7559779115d8bb7426f6abb7cc179aca6ac14ead83afb9df405a1e3b37025042"
+    },
+    {
+      "path": "studio/desktop/src/main/scala/eyes4s/studio/desktop/trial/TrialCaptions.scala",
+      "sha256": "de86c35d42e8feeb406257fa9cd72f895a87c4d57e90a25b58d424a4b70d8658"
+    },
+    {
+      "path": "studio/desktop/src/main/scala/eyes4s/studio/desktop/trial/TrialView.scala",
+      "sha256": "c909d9d934abe554efd10692db7a202937f3a87e4ab8d30878b5b1404277271f"
+    },
+    {
+      "path": "studio/desktop/src/test/scala/eyes4s/studio/desktop/analysis/ResolvedDesignFxSuite.scala",
+      "sha256": "5453517b8212d827c0a05409da05d46e66fb20b73acb742057563bb82ee60c64"
+    },
+    {
+      "path": "studio/desktop/src/test/scala/eyes4s/studio/desktop/compare/CompareMapHostFxSuite.scala",
+      "sha256": "22bc299205cf8100230077938345fa4d108f216dce016e72a29074aca253ebd6"
+    },
+    {
+      "path": "studio/desktop/src/test/scala/eyes4s/studio/desktop/figures/FigureComposerFxSuite.scala",
+      "sha256": "7c91d32b87038fb43b2ba94ce00a2e2ed35221f3145278408ae4d98d792e7e3f"
+    },
+    {
+      "path": "studio/desktop/src/test/scala/eyes4s/studio/desktop/figures/FigureGazeFxSuite.scala",
+      "sha256": "b87b3957b3a63bcb8e499bee19dde6509273117aff1b99499ff2f6d4670de7f2"
+    },
+    {
+      "path": "studio/desktop/src/test/scala/eyes4s/studio/desktop/shell/BoardParityCaptureFxSuite.scala",
+      "sha256": "a37cb86b6900fe2e15b37ae4da3f7e46506c199cb4540a773ee78a6d03fd4c5f"
+    },
+    {
+      "path": "studio/desktop/src/test/scala/eyes4s/studio/desktop/shell/RestingFocus.scala",
+      "sha256": "6d29a090364c68202970e15d642ae08f299496da928baaaf1c87e2136b1b59cb"
+    },
+    {
+      "path": "studio/desktop/src/test/scala/eyes4s/studio/desktop/shell/SystemSpecimenFxSuite.scala",
+      "sha256": "d322348213e7abf127f390d0a7eaab1424a961550aeb14cbb532afdf5fc22de3"
+    },
+    {
+      "path": "studio/desktop/src/test/scala/eyes4s/studio/desktop/trial/TrialViewMapFxSuite.scala",
+      "sha256": "6bd148fab92cd52fee8bc22092e4677cf33dfd8b855a606f9dff80a364cb5081"
+    },
+    {
+      "path": "studio/viz/src/main/scala/eyes4s/studio/viz/figure/FigureGaze.scala",
+      "sha256": "0289dd57845be19058b77a97b6b385981ce99e92677d2ad0b1525efb53c831f2"
+    },
+    {
+      "path": "studio/viz/src/main/scala/eyes4s/studio/viz/figure/FigurePage.scala",
+      "sha256": "a698be17cc5a702f73376fd0718af43e5f398eac9e1a28f76574e4187d35530b"
+    },
+    {
+      "path": "studio/viz/src/main/scala/eyes4s/studio/viz/trial/TrialScene.scala",
+      "sha256": "27fac02de7b34a4ab36dfe127d9dcdfabe62917d57a714af12b3ba18bf951381"
+    },
+    {
+      "path": "studio/viz/src/test/scala/eyes4s/studio/viz/figure/FigureGazeSuite.scala",
+      "sha256": "bd7465cddaa7a7447ee4c0b292dcc86454954f9f802f749faf8c88b6fde894fc"
+    },
+    {
+      "path": "docs/studio/design/System.dc.html",
+      "sha256": "16ed841cd4b68361bd330b0f134bc4e11e1970ae105f103f9a16a54401b7fe34"
+    },
+    {
+      "path": "docs/studio/design/reference/System-1x.png",
+      "sha256": "1399ad884e458d3ff95395c99e017852dce172653a1849a9e0e98e4b88ed2136"
+    },
+    {
+      "path": "docs/studio/design/reference/System-2x.png",
+      "sha256": "92b2f238fd55b9264b2be3cda2ee10128b926447a37aa325538ed10209196fa5"
+    }
+  ],
+  "captures": [
+    {
+      "path": "docs/studio/evidence/20261023-parity/System/dark-1x.png",
+      "sha256": "85e055214992647cc382d0378a088feebf842773b0e3dce7ac9fbada0c2d70a6"
+    },
+    {
+      "path": "docs/studio/evidence/20261023-parity/System/dark-2x.png",
+      "sha256": "caf004c5f19e1a912fb603d2e75e7fd889fd3c51b29389cbb5f31590069338f6"
+    },
+    {
+      "path": "docs/studio/evidence/20261023-parity/System/light-1x.png",
+      "sha256": "3f4eda58830ee6d6a0a1700edfbf7311058ee9a5173e740014d033bebff446a1"
+    },
+    {
+      "path": "docs/studio/evidence/20261023-parity/System/light-2x.png",
+      "sha256": "437bbb134ead664b9c0ea519aa26c04416ac3f0d03ab5e75a9b63762b7c51d05"
+    }
+  ],
+  "checks": [
+    {
+      "id": "tokens",
+      "disposition": "match",
+      "evidence": "Light/dark native specimens use Tokens/ThemedToken/StageToken and the same served MapColours as the application. Swatches, selection fill and role colours reviewed in both themes."
+    },
+    {
+      "id": "roles",
+      "disposition": "match",
+      "evidence": "Nine actual Intaglio trial scenes per theme: query circle, matched diamond, control hollow circle on dark/mid/light stages. Casing and the light/dark role distinction are preserved."
+    },
+    {
+      "id": "maps",
+      "disposition": "accepted deviation",
+      "evidence": "Native specimens show the served mass and zero-centred difference ramps; actual maps with cased isolines are reviewed in Main, Explore and Figures. Missing/zero/refused states have component tests.",
+      "basis": "System is a specification sheet, not an application perspective. A test-only component sheet plus actual map captures replaces a separately hand-drawn native replica of the board."
+    },
+    {
+      "id": "type-states",
+      "disposition": "accepted deviation",
+      "evidence": "Plex Sans/Mono faces, five UI sizes, selected weight and shared radio/checkbox/slider/segmented controls reviewed. Application moments and component tests cover current/draft/running/stale/failed/blocked/no-run states.",
+      "basis": "The specimen is not an exhaustive static state matrix. The real controls are tested through their native hover, press, keyboard and disabled transitions. Slider whole-track appearance is the owner-accepted platform difference of 2026-10-15."
+    },
+    {
+      "id": "architecture-keyboard",
+      "disposition": "documentation only",
+      "evidence": "DESIGN_SPEC §13/15, module boundaries and keyboard model reviewed; studio-core/app/viz stay JavaFX-free and app/viz effect-free. One Dock carries perspective layouts. Four change kinds remain dataset/re-admit, analysis/rerun, reporting/no-rerun and view-only. Served UI-A…H and Intaglio FX-input interfaces no longer carry obsolete blocker labels."
+    }
+  ],
+  "tests": [
+    {
+      "report": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.shell.SystemSpecimenFxSuite.xml",
+      "case": "System Light"
+    },
+    {
+      "report": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.shell.SystemSpecimenFxSuite.xml",
+      "case": "System Dark"
+    },
+    {
+      "report": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.shell.ControlsFxSuite.xml",
+      "case": "keyboard focus draws the accent ring on the row; a click draws no accent"
+    },
+    {
+      "report": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.shell.ParityChecklistSuite.xml",
+      "case": "DataEmpty t0 shell bounds and texts match the board"
+    }
+  ],
+  "limits": [
+    "Synthetic golden backend; no private G2 admission",
+    "Local output scale1;2x files are snapshot transforms",
+    "No physical macOS Retina or VoiceOver acceptance",
+    "Source review precedes full qualification; qualification.json is authoritative for landing"
+  ]
+}

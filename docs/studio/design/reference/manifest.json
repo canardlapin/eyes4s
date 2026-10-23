@@ -17,11 +17,11 @@
   },
   "network": "loopback only; external requests refused",
   "inputs": {
-    "docs/studio/design/System.dc.html": "a3e0c114db01f3a197e9116a596f6f6987bf92f4bc10c53d13d5d573a961e910",
+    "docs/studio/design/System.dc.html": "16ed841cd4b68361bd330b0f134bc4e11e1970ae105f103f9a16a54401b7fe34",
     "docs/studio/design/DataEmpty.dc.html": "039073f1f9389e31f04c48609633b3b1e8104b081419ef729c8222c441b5a70c",
-    "docs/studio/design/Data.dc.html": "0d2928993b74cd87f000a422f6cb0781fcd770b87bc215db6d93d0fe51229d5c",
+    "docs/studio/design/Data.dc.html": "cab8f747814fdaf6d6603c6744e530d5f0bd0740f7de8066156fd4e490b64955",
     "docs/studio/design/Explore.dc.html": "01106e9891ca9a50bd672616d6df47294e3f69273b0d7a37ef6a1b59833b864a",
-    "docs/studio/design/Analysis.dc.html": "3f5b60cf4189a62b5b421cb68ba22c276d2de456a4673e5c4d296b267ad445f3",
+    "docs/studio/design/Analysis.dc.html": "743161b7915a4d095109dcb504b48eccdc2bd7256271ae4188eec54f988e757c",
     "docs/studio/design/Main.dc.html": "db89c4c5a89a3552dcd1edb4768c736b93451c2a66af34dcd02e2cc2ae9f7d92",
     "docs/studio/design/MainDark.dc.html": "ac9fb77428240c9b4d42e130e2388e847acfea61f0dd596c7020dc3eef4e2e79",
     "docs/studio/design/Results.dc.html": "2bd61274ff39744203c178e34c760c7f9d80662ee061cc8b9a1fa82c4b816bf1",
@@ -44,8 +44,8 @@
       "png": "System-1x.png",
       "width": 1440,
       "height": 900,
-      "sha256": "e9080306b2502158d6bc7e7a75b4a471396eb376cda15743f5a054ad30926eca",
-      "text_sha256": "250dc065c2b52a7c4c39c061b332b316cd0fba390aadf3d90d042823fead5fc3",
+      "sha256": "1399ad884e458d3ff95395c99e017852dce172653a1849a9e0e98e4b88ed2136",
+      "text_sha256": "4c21a722a396d7b11d4beafc7d65ba453089d1fe0b6c0be707ba125667ff1867",
       "fonts": [
         {
           "family": "IBM Plex Sans",
@@ -136,8 +136,8 @@
       "png": "Data-1x.png",
       "width": 1440,
       "height": 900,
-      "sha256": "251a4ed7997073fdff84004245fbcd684dd110669bcd5439a748850c6ac79049",
-      "text_sha256": "1117f74ce9dd3080c4e135c261d89d7d1016913e1e8538bab4c70ac3ac19cfc2",
+      "sha256": "e57355fbfd6e40dfc0184c164808ff63ff93b3d84114009e2c330a96747203b0",
+      "text_sha256": "4fb0d2fdaad5d96c1ed5296a6f6b8efd6ec6e18ec16205980deb939629686b59",
       "fonts": [
         {
           "family": "IBM Plex Sans",
@@ -228,8 +228,8 @@
       "png": "Analysis-1x.png",
       "width": 1440,
       "height": 900,
-      "sha256": "bd6a3a52edca978b838d42eb29daf1c86b504198c58820ec53ad699cd0bd50f7",
-      "text_sha256": "dfe506d8591b10a5a2f2918630566d0b2d8fd0f602a9e5ed6e4f6de9012f15e1",
+      "sha256": "706353747e3b1925877411f63b8bdfc88413de63f6653c130f88145f705d9bf1",
+      "text_sha256": "083d3c0d82e1e835a8d028056557586c6cd72221b42d2b06430b93a65e6a1453",
       "fonts": [
         {
           "family": "IBM Plex Sans",
@@ -458,8 +458,8 @@
       "png": "System-2x.png",
       "width": 2880,
       "height": 1800,
-      "sha256": "634c0c97905320b3a5702741196edcbd5de872ca95b64e85526b4cb84e18cf67",
-      "text_sha256": "250dc065c2b52a7c4c39c061b332b316cd0fba390aadf3d90d042823fead5fc3",
+      "sha256": "92b2f238fd55b9264b2be3cda2ee10128b926447a37aa325538ed10209196fa5",
+      "text_sha256": "4c21a722a396d7b11d4beafc7d65ba453089d1fe0b6c0be707ba125667ff1867",
       "fonts": [
         {
           "family": "IBM Plex Sans",
@@ -550,8 +550,8 @@
       "png": "Data-2x.png",
       "width": 2880,
       "height": 1800,
-      "sha256": "0631e155ae4d51bcc1d5ddcd4e73084c2c34587db00b20354f68222dae9a9717",
-      "text_sha256": "1117f74ce9dd3080c4e135c261d89d7d1016913e1e8538bab4c70ac3ac19cfc2",
+      "sha256": "a0a0fac1a9514ab531666be0c2c1349dafd51a6c9c541b5a40ba943fa7a701c9",
+      "text_sha256": "4fb0d2fdaad5d96c1ed5296a6f6b8efd6ec6e18ec16205980deb939629686b59",
       "fonts": [
         {
           "family": "IBM Plex Sans",
@@ -642,8 +642,8 @@
       "png": "Analysis-2x.png",
       "width": 2880,
       "height": 1800,
-      "sha256": "052462a37f75ea957d034840a53cc1019ef4e209eeed21feb9ccd25b3e880052",
-      "text_sha256": "dfe506d8591b10a5a2f2918630566d0b2d8fd0f602a9e5ed6e4f6de9012f15e1",
+      "sha256": "9f464e7248648131057bdbc934db472efef3a168cd8932df508d0ee533f81759",
+      "text_sha256": "083d3c0d82e1e835a8d028056557586c6cd72221b42d2b06430b93a65e6a1453",
       "fonts": [
         {
           "family": "IBM Plex Sans",

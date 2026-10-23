@@ -17,12 +17,19 @@
 package eyes4s.studio.desktop.compare
 
 import eyes4s.studio.app.Intent
-import eyes4s.studio.app.compare.{PanelRole, TrialPanelVM, TrialPanelsVM}
+import eyes4s.studio.app.compare.{
+  PanelRole,
+  PanelSide,
+  PanelOverlay,
+  PanelOverlays,
+  TrialPanelVM,
+  TrialPanelsVM
+}
 import eyes4s.studio.app.text.{PanelText, PanelTextId}
 import eyes4s.studio.app.compare.{ContentFixation, PanelContent}
 import eyes4s.studio.app.tokens.{StageVariant, Theme}
 import eyes4s.studio.desktop.plot.TableTwinView
-import eyes4s.studio.desktop.trial.{StimulusSource, TrialView}
+import eyes4s.studio.desktop.trial.{MapRequest, StimulusSource, TrialView}
 import eyes4s.studio.viz.trial.{
   MarkStyle,
   RememberedImage,
@@ -47,20 +54,53 @@ final class TrialPanelsView(
     app: Intent => Unit,
     underlay: Boolean => Unit,
     retried: () => Unit,
-    stimuli: StimulusSource
+    stimuli: StimulusSource,
+    overlayChanged: (PanelSide, PanelOverlay, Boolean) => Unit = (_, _, _) => ()
 ):
 
-  private final class Panel(styleClass: String):
-    val view    = TrialView(stimuli)
-    val said    = Label()
-    var drawn   = Option.empty[TrialSceneInput]
-    val pill    = Label()
-    val title   = Label()
-    val readout = Label()
-    val count   = Label()
-    val note    = Label()
-    val tools   = HBox(4.0)
-    val stage   = StackPane()
+  private final class Panel(styleClass: String, side: PanelSide):
+    private val controlContext =
+      if side == PanelSide.Query then PanelTextId.Query else PanelTextId.Reference
+    private var overlays  = PanelOverlays()
+    val view              = TrialView(stimuli)
+    val said              = Label()
+    var drawn             = Option.empty[TrialSceneInput]
+    val pill              = Label()
+    val title             = Label()
+    val readout           = Label()
+    val count             = Label()
+    val note              = Label()
+    val tools             = HBox(4.0)
+    val stage             = StackPane()
+    val points            = ToggleButton(PanelText(PanelTextId.Points))
+    val order             = ToggleButton(PanelText(PanelTextId.Order))
+    val map               = ToggleButton(PanelText(PanelTextId.Map))
+    private val mapStatus = Label()
+    private var request   = Option.empty[MapRequest]
+    private var mapReason = Option.empty[String]
+    Vector(points -> PanelOverlay.Points, order -> PanelOverlay.Order, map -> PanelOverlay.Map)
+      .foreach { (b, which) =>
+        b.getStyleClass.add("tog")
+        b.setSelected(true)
+        b.setAccessibleText(
+          PanelText(PanelTextId.OverlayControl, PanelText(controlContext), b.getText)
+        )
+        b.setOnAction(_ => overlayChanged(side, which, b.isSelected))
+        tools.getChildren.add(b)
+      }
+    mapStatus.getStyleClass.addAll("panel-note", "t11")
+    mapStatus.setWrapText(true)
+    private def refresh(): Unit =
+      drawn.foreach(view.show)
+      view.showMap(if overlays.map then request else None)
+      mapStatus.setText(if overlays.map then mapReason.getOrElse("") else "")
+      mapStatus.setVisible(mapStatus.getText.nonEmpty)
+      mapStatus.setManaged(mapStatus.isVisible)
+
+    def showMap(value: (Option[MapRequest], Option[String])): Unit =
+      request = value._1
+      mapReason = value._2
+      refresh()
     pill.getStyleClass.add("panel-pill")
     title.getStyleClass.addAll("panel-title", "t12")
     readout.getStyleClass.addAll("panel-readout", "mono", "t11")
@@ -79,7 +119,7 @@ final class TrialPanelsView(
     bar.setAlignment(Pos.CENTER_LEFT)
     bar.getStyleClass.add("panel-toolbar")
     readout.getStyleClass.add("panel-toolbar")
-    val node: VBox = VBox(4.0, head, bar, readout, note, stage)
+    val node: VBox = VBox(4.0, head, bar, readout, note, mapStatus, stage)
     node.getStyleClass.addAll("trial-panel", styleClass)
     Option(getClass.getClassLoader.getResource(TableTwinView.stylesheetResource))
       .foreach(url => node.getStylesheets.add(url.toExternalForm))
@@ -91,7 +131,7 @@ final class TrialPanelsView(
         case Right(in) =>
           if !drawn.contains(in) then
             drawn = Some(in)
-            view.show(in)
+            refresh()
           said.setText("")
         case Left(why) =>
           if drawn.nonEmpty then
@@ -103,6 +143,12 @@ final class TrialPanelsView(
     def show(vm: Option[TrialPanelVM], empty: Option[String]): Unit =
       vm match
         case Some(p) =>
+          val changed = overlays != p.overlays
+          overlays = p.overlays
+          points.setSelected(overlays.points)
+          order.setSelected(overlays.order)
+          map.setSelected(overlays.map)
+          if changed then refresh()
           pill.setText(p.role.label)
           pill.getStyleClass.setAll("panel-pill", pillClass(p.role))
           title.setText(p.title)
@@ -119,16 +165,20 @@ final class TrialPanelsView(
           node.setAccessibleText(empty.orNull)
       pill.setVisible(vm.isDefined)
       pill.setManaged(vm.isDefined)
+      Vector(points, order, map).foreach { b =>
+        b.setVisible(vm.isDefined)
+        b.setManaged(vm.isDefined)
+      }
 
   private def pillClass(role: PanelRole): String = role match
     case PanelRole.Query   => "pill-query"
     case PanelRole.Matched => "pill-matched"
     case PanelRole.Control => "pill-control"
 
-  private val query     = Panel("query-panel")
-  private val reference = Panel("reference-panel")
+  private val query     = Panel("query-panel", PanelSide.Query)
+  private val reference = Panel("reference-panel", PanelSide.Reference)
 
-  private val underlayToggle = ToggleButton(PanelText(PanelTextId.Underlay))
+  private val underlayToggle = ToggleButton(PanelText(PanelTextId.UnderlayShort))
   underlayToggle.getStyleClass.add("tog")
   underlayToggle.setAccessibleText(PanelText(PanelTextId.Underlay))
   underlayToggle.setOnAction(_ => underlay(underlayToggle.isSelected))
@@ -148,13 +198,17 @@ final class TrialPanelsView(
     reference.view.retry()
   }
   query.tools.getChildren.add(retry)
-  private var failed = false
+  private var failed               = false
+  private var mapsFailed           = false
+  def mapFailed(on: Boolean): Unit =
+    mapsFailed = on
+    offerRetry()
   Vector(query, reference).foreach(
     _.view.stimulusFailures.addListener((_, _, _) => offerRetry())
   )
 
   private def offerRetry(): Unit =
-    val show = failed ||
+    val show = failed || mapsFailed ||
       Vector(query, reference).exists(!_.view.stimulusFailures.get.isEmpty)
     retry.setVisible(show)
     retry.setManaged(show)
@@ -178,6 +232,19 @@ final class TrialPanelsView(
 
   /** Toggles the underlay, as the user clicks it. */
   def toggleUnderlay(): Unit = underlayToggle.fire()
+
+  /** Map replies are bound to each panel by CompareMapHost. */
+  def showMaps(
+      q: (Option[MapRequest], Option[String]),
+      r: (Option[MapRequest], Option[String])
+  ): Unit =
+    query.showMap(q)
+    reference.showMap(r)
+
+  /** The actual panel toolbar controls, for keyboard routes and native checks. */
+  def queryToggles: Vector[ToggleButton]     = Vector(query.points, query.order, query.map)
+  def referenceToggles: Vector[ToggleButton] =
+    Vector(reference.points, reference.order, reference.map)
 
   /** Why a panel's stage draws nothing, if it says so. */
   def stageNotes: (String, String) = (query.said.getText, reference.said.getText)
@@ -271,6 +338,8 @@ object TrialPanelsView:
             MarkStyle.Role(roleOf(p.role)),
             theme,
             stage,
+            options = eyes4s.studio.viz.trial
+              .TrialSceneOptions(points = p.overlays.points, order = p.overlays.order),
             remembered = remembered
           )
         )

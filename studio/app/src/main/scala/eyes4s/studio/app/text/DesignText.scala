@@ -69,7 +69,7 @@ object DesignText:
     case ChipNoMatch     => "No match"
     case ChipNotAdmitted => "Query not admitted"
     case ChipByDesign    => "No study trial, by design"
-    case NotApplicable   => "—"
+    case NotApplicable   => "n/a"
     case Pending         => "…"
 
     case ColParticipant         => "P"
@@ -78,7 +78,7 @@ object DesignText:
     case ColMatched             => "Matched"
     case ColControls            => "Controls"
     case ColStatus              => "Status"
-    case NoValue                => "—"
+    case NoValue                => "no value"
     case StatusControlAdmission => "{0} · declared control candidates not admitted ({1}): {2}"
     case ReferenceDisposition   => "{0} ({1})"
     case StatusEligible         => "Eligible"

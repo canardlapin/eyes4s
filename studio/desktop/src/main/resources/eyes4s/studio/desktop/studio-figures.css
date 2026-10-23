@@ -98,6 +98,11 @@
 
 .figures-paper {
   -fx-background-color: -es-paper;
+}
+
+/* The sheet's outside margin must not consume the page's physical width. */
+.figures-sheet {
+  -fx-background-color: -es-paper;
   -fx-padding: 12;
 }
 

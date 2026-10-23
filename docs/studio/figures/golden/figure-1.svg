@@ -2446,10 +2446,10 @@ Scale profile: 32 marks for 104 rows. Every row is drawn.</desc>
   <text fill="#1c1e21" stroke="none" font-family="IBM Plex Sans" font-size="9.3333" x="0" y="865.3333" text-anchor="start" dominant-baseline="text-before-edge">Analysis rev 4 · run 7 (archive unbound) · data r3 · reporting “By retrieval response” (sha256:3a0e…5dd) · studio build eyes4s 0.1</text>
   <defs>
     <clipPath id="clip-0">
-      <rect x="0" y="13.9889" width="336.378" height="266.1471" />
+      <rect x="0" y="13.9889" width="336.378" height="234.2095" />
     </clipPath>
     <clipPath id="clip-1">
-      <rect x="355.2756" y="13.9889" width="336.378" height="247.7027" />
+      <rect x="355.2756" y="13.9889" width="336.378" height="217.9784" />
     </clipPath>
     <clipPath id="clip-2">
       <rect x="3.7795" y="330.8756" width="102.0472" height="76.5354" />

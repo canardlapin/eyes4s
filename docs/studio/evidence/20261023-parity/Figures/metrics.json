@@ -1,0 +1,1115 @@
+{
+  "board": "Figures",
+  "moment": "T2",
+  "width": 1440,
+  "height": 900,
+  "heights": {
+    "appBar": 44,
+    "contextStrip": 32,
+    "statusBar": 24
+  },
+  "tabHeaders": [
+    28,
+    28,
+    28,
+    28
+  ],
+  "toleranceLogicalPixels": 1,
+  "nativeOutputScaleX": 1,
+  "nativeOutputScaleY": 1,
+  "scale2Capture": "snapshot transform; native output scale recorded separately",
+  "shellText": [
+    "app.name: Eyes Studio",
+    "app.project: memory-study",
+    "app.perspectives: Data ⌘1 | Explore ⌘2 | Analysis ⌘3 | Compare ⌘4 | Figures ⌘5 (current)",
+    "app.jobs: No jobs",
+    "context.nav: Back (⌘[) | [Forward (⌘])]",
+    "context.trail: Figures › Figure 1 › *Panel D*",
+    "context.freshness: Analysis rev 4 · run 7 · data r3 · current",
+    "context.draft: Draft rev 5 · 1 change · ready",
+    "banner.lead: Figure 1 shows run 7 (analysis rev 4).",
+    "banner.detail: Draft rev 5 adds σ 8° and has not been run. Figures never follow a draft.",
+    "banner.actions: Review in Analysis | Discard draft",
+    "status: Selected: Figure 1 › Panel D (run 7 · σ 2°) | Arrow keys move between panels · Enter opens the binding | No jobs | Saved 10:24"
+  ],
+  "labels": [
+    {
+      "text": "_File",
+      "x": 8,
+      "y": 0,
+      "width": 36,
+      "height": 25
+    },
+    {
+      "text": "File",
+      "x": 16,
+      "y": 4,
+      "width": 20,
+      "height": 17
+    },
+    {
+      "text": "_Edit",
+      "x": 46,
+      "y": 0,
+      "width": 38,
+      "height": 25
+    },
+    {
+      "text": "Edit",
+      "x": 54,
+      "y": 4,
+      "width": 22,
+      "height": 17
+    },
+    {
+      "text": "_View",
+      "x": 86,
+      "y": 0,
+      "width": 43,
+      "height": 25
+    },
+    {
+      "text": "View",
+      "x": 94,
+      "y": 4,
+      "width": 27,
+      "height": 17
+    },
+    {
+      "text": "_Go",
+      "x": 131,
+      "y": 0,
+      "width": 32,
+      "height": 25
+    },
+    {
+      "text": "Go",
+      "x": 139,
+      "y": 4,
+      "width": 16,
+      "height": 17
+    },
+    {
+      "text": "_Run",
+      "x": 165,
+      "y": 0,
+      "width": 38,
+      "height": 25
+    },
+    {
+      "text": "Run",
+      "x": 173,
+      "y": 4,
+      "width": 22,
+      "height": 17
+    },
+    {
+      "text": "_Window",
+      "x": 205,
+      "y": 0,
+      "width": 60,
+      "height": 25
+    },
+    {
+      "text": "Window",
+      "x": 213,
+      "y": 4,
+      "width": 44,
+      "height": 17
+    },
+    {
+      "text": "_Help",
+      "x": 267,
+      "y": 0,
+      "width": 42,
+      "height": 25
+    },
+    {
+      "text": "Help",
+      "x": 275,
+      "y": 4,
+      "width": 26,
+      "height": 17
+    },
+    {
+      "text": "Eyes Studio",
+      "x": 41,
+      "y": 38,
+      "width": 71,
+      "height": 19
+    },
+    {
+      "text": "memory-study",
+      "x": 126,
+      "y": 35,
+      "width": 130,
+      "height": 24
+    },
+    {
+      "text": "memory-study",
+      "x": 135,
+      "y": 35,
+      "width": 96,
+      "height": 24
+    },
+    {
+      "text": "Data",
+      "x": 585,
+      "y": 33,
+      "width": 70,
+      "height": 29
+    },
+    {
+      "text": "⌘1",
+      "x": 630,
+      "y": 39,
+      "width": 13.2225341796875,
+      "height": 16
+    },
+    {
+      "text": "Explore",
+      "x": 657,
+      "y": 33,
+      "width": 87,
+      "height": 29
+    },
+    {
+      "text": "⌘2",
+      "x": 719,
+      "y": 39,
+      "width": 13.2225341796875,
+      "height": 16
+    },
+    {
+      "text": "Analysis",
+      "x": 746,
+      "y": 33,
+      "width": 91,
+      "height": 29
+    },
+    {
+      "text": "⌘3",
+      "x": 812,
+      "y": 39,
+      "width": 13.2225341796875,
+      "height": 16
+    },
+    {
+      "text": "Compare",
+      "x": 839,
+      "y": 33,
+      "width": 95,
+      "height": 29
+    },
+    {
+      "text": "⌘4",
+      "x": 908,
+      "y": 39,
+      "width": 13.2225341796875,
+      "height": 16
+    },
+    {
+      "text": "Figures",
+      "x": 936,
+      "y": 33,
+      "width": 85,
+      "height": 28
+    },
+    {
+      "text": "⌘5",
+      "x": 996,
+      "y": 39,
+      "width": 13.2225341796875,
+      "height": 16
+    },
+    {
+      "text": "No jobs",
+      "x": 1378,
+      "y": 39,
+      "width": 41,
+      "height": 17
+    },
+    {
+      "text": "Figures",
+      "x": 66,
+      "y": 74,
+      "width": 52,
+      "height": 23
+    },
+    {
+      "text": "›",
+      "x": 120,
+      "y": 77,
+      "width": 4,
+      "height": 17
+    },
+    {
+      "text": "Figure 1",
+      "x": 126,
+      "y": 74,
+      "width": 56,
+      "height": 23
+    },
+    {
+      "text": "›",
+      "x": 184,
+      "y": 77,
+      "width": 4,
+      "height": 17
+    },
+    {
+      "text": "Panel D",
+      "x": 190,
+      "y": 74,
+      "width": 55,
+      "height": 23
+    },
+    {
+      "text": "Analysis rev 4 · run 7 · data r3 · current",
+      "x": 1009,
+      "y": 74,
+      "width": 241,
+      "height": 22
+    },
+    {
+      "text": "Draft rev 5 · 1 change · ready",
+      "x": 1254,
+      "y": 74,
+      "width": 176,
+      "height": 22
+    },
+    {
+      "text": "Figure 1 shows run 7 (analysis rev 4).",
+      "x": 12,
+      "y": 107,
+      "width": 207,
+      "height": 17
+    },
+    {
+      "text": "Draft rev 5 adds σ 8° and has not been run. Figures never follow a draft.",
+      "x": 229,
+      "y": 107,
+      "width": 384,
+      "height": 17
+    },
+    {
+      "text": "Review in Analysis",
+      "x": 1203,
+      "y": 105,
+      "width": 123,
+      "height": 22
+    },
+    {
+      "text": "Discard draft",
+      "x": 1336,
+      "y": 105,
+      "width": 92,
+      "height": 22
+    },
+    {
+      "text": "Figures",
+      "x": 12,
+      "y": 131,
+      "width": 42,
+      "height": 28
+    },
+    {
+      "text": "New fi...",
+      "x": 12,
+      "y": 167,
+      "width": 66,
+      "height": 26
+    },
+    {
+      "text": "Start figure with",
+      "x": 86,
+      "y": 167,
+      "width": 110,
+      "height": 26
+    },
+    {
+      "text": "Start figure ...",
+      "x": 86,
+      "y": 167,
+      "width": 94,
+      "height": 25
+    },
+    {
+      "text": "2 fig...",
+      "x": 212,
+      "y": 172,
+      "width": 35,
+      "height": 16
+    },
+    {
+      "text": "Figure 1",
+      "x": 20,
+      "y": 204,
+      "width": 46,
+      "height": 17
+    },
+    {
+      "text": "current",
+      "x": 72,
+      "y": 204,
+      "width": 37,
+      "height": 16
+    },
+    {
+      "text": "run 7 · rev 4 · data r3",
+      "x": 20,
+      "y": 223,
+      "width": 104,
+      "height": 16
+    },
+    {
+      "text": "Reporting: By retrieval response",
+      "x": 20,
+      "y": 241,
+      "width": 159,
+      "height": 16
+    },
+    {
+      "text": "Figure 2",
+      "x": 20,
+      "y": 269,
+      "width": 44,
+      "height": 17
+    },
+    {
+      "text": "Stale",
+      "x": 70,
+      "y": 269,
+      "width": 26,
+      "height": 16
+    },
+    {
+      "text": "run 5 · rev 3 · data r2",
+      "x": 20,
+      "y": 288,
+      "width": 104,
+      "height": 16
+    },
+    {
+      "text": "Reporting: By retrieval response",
+      "x": 20,
+      "y": 306,
+      "width": 159,
+      "height": 16
+    },
+    {
+      "text": "Figures",
+      "x": -8,
+      "y": 147,
+      "width": 17,
+      "height": 41.350006103515625
+    },
+    {
+      "text": "Figure",
+      "x": 272,
+      "y": 131,
+      "width": 36,
+      "height": 28
+    },
+    {
+      "text": "Table",
+      "x": 333,
+      "y": 131,
+      "width": 31,
+      "height": 28
+    },
+    {
+      "text": "Figur...",
+      "x": 272,
+      "y": 168,
+      "width": 47,
+      "height": 19
+    },
+    {
+      "text": "Page 183 mm · two-colu...",
+      "x": 327,
+      "y": 170,
+      "width": 135,
+      "height": 16
+    },
+    {
+      "text": "89 mm · one-colu...",
+      "x": 470,
+      "y": 165,
+      "width": 127,
+      "height": 26
+    },
+    {
+      "text": "183 mm · two-colu...",
+      "x": 601,
+      "y": 165,
+      "width": 136,
+      "height": 26
+    },
+    {
+      "text": "Greyscale ch...",
+      "x": 753,
+      "y": 165,
+      "width": 102,
+      "height": 26
+    },
+    {
+      "text": "−",
+      "x": 863,
+      "y": 165,
+      "width": 24,
+      "height": 26
+    },
+    {
+      "text": "100% · 3.5 px/...",
+      "x": 895,
+      "y": 170,
+      "width": 91,
+      "height": 16
+    },
+    {
+      "text": "+",
+      "x": 994,
+      "y": 165,
+      "width": 24,
+      "height": 26
+    },
+    {
+      "text": "Add panel",
+      "x": 1026,
+      "y": 165,
+      "width": 85,
+      "height": 26
+    },
+    {
+      "text": "Add pa...",
+      "x": 1026,
+      "y": 165,
+      "width": 69,
+      "height": 25
+    },
+    {
+      "text": "Move panel earlier",
+      "x": 272,
+      "y": 202,
+      "width": 116,
+      "height": 26
+    },
+    {
+      "text": "Move panel later",
+      "x": 396,
+      "y": 202,
+      "width": 106,
+      "height": 26
+    },
+    {
+      "text": "Remove panel",
+      "x": 510,
+      "y": 202,
+      "width": 93,
+      "height": 26
+    },
+    {
+      "text": "A",
+      "x": 274,
+      "y": 247,
+      "width": 21,
+      "height": 20
+    },
+    {
+      "text": "Encoding gaze",
+      "x": 301,
+      "y": 247,
+      "width": 56,
+      "height": 12
+    },
+    {
+      "text": "Encoding · enc_03 · beach-042",
+      "x": 274,
+      "y": 489,
+      "width": 122,
+      "height": 12
+    },
+    {
+      "text": "Displayed: image.",
+      "x": 274,
+      "y": 503,
+      "width": 69,
+      "height": 12
+    },
+    {
+      "text": "13 fixations in scanpath order; marker area shows duration.",
+      "x": 274,
+      "y": 517,
+      "width": 231,
+      "height": 12
+    },
+    {
+      "text": "B",
+      "x": 603,
+      "y": 247,
+      "width": 21,
+      "height": 20
+    },
+    {
+      "text": "Retrieval gaze",
+      "x": 630,
+      "y": 247,
+      "width": 55,
+      "height": 12
+    },
+    {
+      "text": "Retrieval · ret_07",
+      "x": 603,
+      "y": 474,
+      "width": 68,
+      "height": 12
+    },
+    {
+      "text": "Displayed: blank + fixation cross. The remembered image was not shown.",
+      "x": 603,
+      "y": 488,
+      "width": 285,
+      "height": 12
+    },
+    {
+      "text": "12 fixations in scanpath order; marker area shows duration.",
+      "x": 603,
+      "y": 502,
+      "width": 231,
+      "height": 12
+    },
+    {
+      "text": "C",
+      "x": 274,
+      "y": 548.5,
+      "width": 21,
+      "height": 20
+    },
+    {
+      "text": "Density maps",
+      "x": 301,
+      "y": 548.5,
+      "width": 53,
+      "height": 12
+    },
+    {
+      "text": "Query ret_07",
+      "x": 279,
+      "y": 576.5,
+      "width": 92,
+      "height": 12
+    },
+    {
+      "text": "P17 · σ 2°",
+      "x": 279,
+      "y": 682.5,
+      "width": 92,
+      "height": 12
+    },
+    {
+      "text": "Matched enc_03",
+      "x": 385,
+      "y": 576.5,
+      "width": 92,
+      "height": 12
+    },
+    {
+      "text": "0.94",
+      "x": 385,
+      "y": 682.5,
+      "width": 92,
+      "height": 12
+    },
+    {
+      "text": "Highest of 19",
+      "x": 491,
+      "y": 576.5,
+      "width": 92,
+      "height": 12
+    },
+    {
+      "text": "controls · harbor-231",
+      "x": 491,
+      "y": 668.5,
+      "width": 92,
+      "height": 12
+    },
+    {
+      "text": "0.72",
+      "x": 491,
+      "y": 682.5,
+      "width": 92,
+      "height": 12
+    },
+    {
+      "text": "Matched 0.94 · highest of 19 controls harbor-231 0.72 · control mean B 0.32 · D +0.62",
+      "x": 274,
+      "y": 703.5,
+      "width": 314,
+      "height": 24
+    },
+    {
+      "text": "Magenta: fixation duration mass per cell, shared limits; lines: 50% and 90% mass.",
+      "x": 274,
+      "y": 731.5,
+      "width": 314,
+      "height": 24
+    },
+    {
+      "text": "D",
+      "x": 601.5999755859375,
+      "y": 547.0999755859375,
+      "width": 23.800048828125,
+      "height": 21.800048828125
+    },
+    {
+      "text": "Participant D by response",
+      "x": 630,
+      "y": 548.5,
+      "width": 100,
+      "height": 12
+    },
+    {
+      "text": "n = 24 each",
+      "x": 603,
+      "y": 767.5,
+      "width": 46,
+      "height": 12
+    },
+    {
+      "text": "bars: grand mean of participant means, equal weight",
+      "x": 603,
+      "y": 781.5,
+      "width": 204,
+      "height": 12
+    },
+    {
+      "text": "Each pair of dots is one participant; per participant, 2–17 queries per group. Descriptive only: no intervals or tests.",
+      "x": 603,
+      "y": 795.5,
+      "width": 310,
+      "height": 24
+    },
+    {
+      "text": "E",
+      "x": 274,
+      "y": 839,
+      "width": 20,
+      "height": 20
+    },
+    {
+      "text": "Scale profile by response",
+      "x": 300,
+      "y": 839,
+      "width": 98,
+      "height": 12
+    },
+    {
+      "text": "Each scale computed separately.",
+      "x": 274,
+      "y": 1058,
+      "width": 128,
+      "height": 12
+    },
+    {
+      "text": "Figure 1. Matched-minus-control spatial similarity of retrieval gaze (dataset r3, analysis rev 4, run 7). Spatial correspondence, not sequential replay.",
+      "x": 273,
+      "y": 1088.5,
+      "width": 572,
+      "height": 12
+    },
+    {
+      "text": "Analysis rev 4 · run 7 (archive unbound) · data r3 · reporting “By retrieval response” (sha256:3a0e…5dd) · studio build eyes4s 0.1",
+      "x": 273,
+      "y": 1102.5,
+      "width": 502,
+      "height": 12
+    },
+    {
+      "text": "Figure",
+      "x": 252,
+      "y": 147,
+      "width": 17,
+      "height": 35.26249694824219
+    },
+    {
+      "text": "methods.md",
+      "x": 272,
+      "y": 653,
+      "width": 71,
+      "height": 28
+    },
+    {
+      "text": "Diff vs generated",
+      "x": 368,
+      "y": 653,
+      "width": 92,
+      "height": 28
+    },
+    {
+      "text": "Generated from run 7 and reporting spec “By retrieval response”",
+      "x": 266,
+      "y": 692,
+      "width": 319,
+      "height": 16
+    },
+    {
+      "text": "Show diff",
+      "x": 965,
+      "y": 687,
+      "width": 67,
+      "height": 26
+    },
+    {
+      "text": "Regenerate",
+      "x": 1038,
+      "y": 687,
+      "width": 79,
+      "height": 26
+    },
+    {
+      "text": "methods.md",
+      "x": 252,
+      "y": 669,
+      "width": 17,
+      "height": 71.1624755859375
+    },
+    {
+      "text": "Panel",
+      "x": 1136,
+      "y": 131,
+      "width": 32,
+      "height": 28
+    },
+    {
+      "text": "Figure 1 binding",
+      "x": 1136,
+      "y": 167,
+      "width": 87,
+      "height": 17
+    },
+    {
+      "text": "Locked · scientific",
+      "x": 1229,
+      "y": 167,
+      "width": 89,
+      "height": 16
+    },
+    {
+      "text": "Run",
+      "x": 1136,
+      "y": 188,
+      "width": 20,
+      "height": 16
+    },
+    {
+      "text": "run 7 · rev 4 · data r3",
+      "x": 1162,
+      "y": 188,
+      "width": 104,
+      "height": 16
+    },
+    {
+      "text": "Reporting spec",
+      "x": 1136,
+      "y": 208,
+      "width": 75,
+      "height": 16
+    },
+    {
+      "text": "By retrieval response",
+      "x": 1217,
+      "y": 208,
+      "width": 105,
+      "height": 16
+    },
+    {
+      "text": "Unit",
+      "x": 1136,
+      "y": 228,
+      "width": 21,
+      "height": 16
+    },
+    {
+      "text": "Participant means, equal weight",
+      "x": 1163,
+      "y": 228,
+      "width": 159,
+      "height": 16
+    },
+    {
+      "text": "Open in Compare",
+      "x": 1136,
+      "y": 248,
+      "width": 110,
+      "height": 26
+    },
+    {
+      "text": "Rebind figure…",
+      "x": 1252,
+      "y": 248,
+      "width": 98,
+      "height": 26
+    },
+    {
+      "text": "One run and one reporting spec for the whole figure; methods.md cites them once. Rebinding replaces the binding in place; Undo restores the previous one.",
+      "x": 1136,
+      "y": 277,
+      "width": 292,
+      "height": 48
+    },
+    {
+      "text": "Appearance",
+      "x": 1136,
+      "y": 329,
+      "width": 65,
+      "height": 17
+    },
+    {
+      "text": "View only",
+      "x": 1207,
+      "y": 329,
+      "width": 48,
+      "height": 16
+    },
+    {
+      "text": "Text size",
+      "x": 1136,
+      "y": 350,
+      "width": 44,
+      "height": 16
+    },
+    {
+      "text": "6 pt",
+      "x": 1186,
+      "y": 350,
+      "width": 38,
+      "height": 26
+    },
+    {
+      "text": "7 pt",
+      "x": 1230,
+      "y": 350,
+      "width": 38,
+      "height": 26
+    },
+    {
+      "text": "8 pt",
+      "x": 1274,
+      "y": 350,
+      "width": 38,
+      "height": 26
+    },
+    {
+      "text": "Participant lines",
+      "x": 1136,
+      "y": 379,
+      "width": 80,
+      "height": 16
+    },
+    {
+      "text": "Show",
+      "x": 1222,
+      "y": 379,
+      "width": 46,
+      "height": 26
+    },
+    {
+      "text": "Hide",
+      "x": 1274,
+      "y": 379,
+      "width": 42,
+      "height": 26
+    },
+    {
+      "text": "Panel width",
+      "x": 1136,
+      "y": 408,
+      "width": 59,
+      "height": 16
+    },
+    {
+      "text": "−",
+      "x": 1201,
+      "y": 408,
+      "width": 24,
+      "height": 26
+    },
+    {
+      "text": "89 mm",
+      "x": 1231,
+      "y": 408,
+      "width": 36,
+      "height": 16
+    },
+    {
+      "text": "+",
+      "x": 1273,
+      "y": 408,
+      "width": 24,
+      "height": 26
+    },
+    {
+      "text": "Export",
+      "x": 1136,
+      "y": 437,
+      "width": 36,
+      "height": 17
+    },
+    {
+      "text": "Figure format",
+      "x": 1136,
+      "y": 458,
+      "width": 67,
+      "height": 16
+    },
+    {
+      "text": "SVG",
+      "x": 1209,
+      "y": 458,
+      "width": 39,
+      "height": 26
+    },
+    {
+      "text": "PDF",
+      "x": 1254,
+      "y": 458,
+      "width": 39,
+      "height": 26
+    },
+    {
+      "text": "PNG",
+      "x": 1299,
+      "y": 458,
+      "width": 41,
+      "height": 26
+    },
+    {
+      "text": "project snapshot includes images",
+      "x": 1136,
+      "y": 487,
+      "width": 197,
+      "height": 26
+    },
+    {
+      "text": "Export figure…",
+      "x": 1136,
+      "y": 516,
+      "width": 95,
+      "height": 26
+    },
+    {
+      "text": "Bundle",
+      "x": 1136,
+      "y": 545,
+      "width": 39,
+      "height": 17
+    },
+    {
+      "text": "figure-1.svg",
+      "x": 1136,
+      "y": 566,
+      "width": 81,
+      "height": 26
+    },
+    {
+      "text": "results.csv · 480 queries × 4 σ",
+      "x": 1136,
+      "y": 595,
+      "width": 179,
+      "height": 26
+    },
+    {
+      "text": "comparisons.csv · 35,876 pair rows",
+      "x": 1136,
+      "y": 624,
+      "width": 208,
+      "height": 26
+    },
+    {
+      "text": "participants.csv · 24 × 2 groups at 2°",
+      "x": 1136,
+      "y": 653,
+      "width": 215,
+      "height": 26
+    },
+    {
+      "text": "methods.md",
+      "x": 1136,
+      "y": 682,
+      "width": 85,
+      "height": 26
+    },
+    {
+      "text": "project snapshot · includes images",
+      "x": 1136,
+      "y": 711,
+      "width": 203,
+      "height": 26
+    },
+    {
+      "text": "Export bundle…",
+      "x": 1136,
+      "y": 740,
+      "width": 102,
+      "height": 26
+    },
+    {
+      "text": "Panel",
+      "x": 1116,
+      "y": 147,
+      "width": 17,
+      "height": 31.612503051757812
+    },
+    {
+      "text": "No open panels",
+      "x": 668,
+      "y": 498,
+      "width": 105,
+      "height": 29
+    },
+    {
+      "text": "Drag a tab here, or open a panel",
+      "x": 631,
+      "y": 535,
+      "width": 179,
+      "height": 17
+    },
+    {
+      "text": "Selected:",
+      "x": 24,
+      "y": 880,
+      "width": 47,
+      "height": 16
+    },
+    {
+      "text": "Figure 1 › Panel D (run 7 · σ 2°)",
+      "x": 77,
+      "y": 880,
+      "width": 218,
+      "height": 16
+    },
+    {
+      "text": "Arrow keys move between panels · Enter opens the binding",
+      "x": 320,
+      "y": 880,
+      "width": 293,
+      "height": 16
+    },
+    {
+      "text": "No jobs",
+      "x": 1302,
+      "y": 880,
+      "width": 38,
+      "height": 16
+    },
+    {
+      "text": "Saved 10:24",
+      "x": 1365,
+      "y": 880,
+      "width": 63,
+      "height": 16
+    }
+  ]
+}

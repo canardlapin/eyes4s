@@ -83,6 +83,31 @@ class FigureComposerFxSuite extends ShellFxSuite:
         .exists(_.status.get.isInstanceOf[PlotTwinStatus.Shown])
     }
 
+  fxStage.test("183 mm paper places two 89 mm panels beside one another with a 5 mm gutter") {
+    fx =>
+      val w = boot(fx, StoryModels.t2Figures, StoryMoment.T2)
+      loaded(fx, w)
+      fx.awaitLayout()
+      val (a, b) = runOnFx {
+        (panelNode(w, "A").getBoundsInParent, panelNode(w, "B").getBoundsInParent)
+      }
+      assertEqualsDouble(a.getMinY, b.getMinY, 1.0)
+      assertEqualsDouble(a.getWidth, 89 * 3.5, 1.0)
+      assertEqualsDouble(b.getWidth, 89 * 3.5, 1.0)
+      assertEqualsDouble(b.getMinX - a.getMaxX, 5 * 3.5, 1.0)
+      val c = panelNode(w, "C")
+      runOnFx {
+        val bounds = c.localToScene(c.getBoundsInLocal)
+        c.lookupAll(".figures-tile").asScala.foreach { tile =>
+          val box = tile.localToScene(tile.getBoundsInLocal)
+          assert(
+            box.getMinX >= bounds.getMinX - 1 && box.getMaxX <= bounds.getMaxX + 1,
+            s"map tile escapes its panel: $box / $bounds"
+          )
+        }
+      }
+  }
+
   fxStage.test("panel D draws all 24 participants in each group and the per-group n range") {
     fx =>
       val w = boot(fx, StoryModels.t2Figures, StoryMoment.T2)

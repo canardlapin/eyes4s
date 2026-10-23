@@ -29,7 +29,16 @@ import eyes4s.studio.app.plot.{
 }
 import eyes4s.studio.app.tokens.Theme
 import eyes4s.studio.app.{AppModel, Intent}
-import eyes4s.studio.core.backend.{PageRequest, QueryRow, ResultAddress, RunId, TrialKey}
+import eyes4s.studio.core.backend.{
+  DensityGrid,
+  PageRequest,
+  QueryRow,
+  ResultAddress,
+  RunId,
+  TrialKey
+}
+import eyes4s.studio.app.maps.{LimitsScope, MapId}
+import eyes4s.studio.app.text.{PanelText, PanelTextId}
 import eyes4s.studio.core.document.ReportingSpec
 import eyes4s.studio.core.selection.{ScaleIndex, ViewId}
 import eyes4s.studio.desktop.plot.{PlotTwin, TableTwinView}
@@ -47,6 +56,8 @@ import javafx.scene.layout.{HBox, Priority, Region, VBox}
   * may be called on any thread.
   */
 trait SummaryInputs:
+  def mapGrid(id: MapId.Result, done: Either[String, DensityGrid] => Unit): Unit =
+    done(Left(PanelText(PanelTextId.MapNotServed, id.trial.label, id.scale.value.toString)))
   def summary(run: RunId, done: SummaryAnswer => Unit): Unit
   def queries(run: RunId, done: QueriesAnswer => Unit): Unit
   def report(
@@ -80,6 +91,11 @@ object SummaryInputs:
   /** The window's backend: the summary, and every page of the queries. */
   def of(session: StudioSession): SummaryInputs =
     new SummaryInputs:
+      override def mapGrid(id: MapId.Result, done: Either[String, DensityGrid] => Unit): Unit =
+        session.run(session.reads.mapGrid(id.run, id.scale.value, id.trial)) {
+          case Left(e)       => done(Left(reason(e)))
+          case Right(answer) => done(answer.left.map(_.message))
+        }
       def summary(run: RunId, done: SummaryAnswer => Unit): Unit =
         session.run(session.reads.result(run)) {
           case Left(e)          => done(SummaryAnswer.Failed(reason(e)))
@@ -320,9 +336,16 @@ final class CompareSummaryHost(
     TrialPanelsView(
       app,
       on => panelIntent(PanelsIntent.Underlay(on)),
-      () => panelIntent(PanelsIntent.Retry),
-      sources.stimuli
+      () =>
+        maps.retry()
+        panelIntent(PanelsIntent.Retry)
+      ,
+      sources.stimuli,
+      (side, which, on) => panelIntent(PanelsIntent.Overlay(side, which, on))
     )
+
+  private val maps                           = CompareMapHost(inputs, panels)
+  def chooseLimits(scope: LimitsScope): Unit = maps.chooseLimits(scope)
 
   /** What Compare's inspector reads of these views (S8.4). */
   def inspectorInputs: InspectorInputs =
@@ -731,6 +754,7 @@ final class CompareSummaryHost(
       show("ladder", cv.ladder.map(Right(_)), theme)(ladder.show(_, theme), ladder.clear())
       val pv = panelsVM
       panels.render(pv, theme, eyes4s.studio.app.explore.ExploreTrialViewVM.appearance(m)._2)
+      maps.sync(panelState.focus, pv, m.document.presentation.mapOpacity.value)
       def table(p: Option[TrialPanelVM]) = p.map(_.content).collect {
         case PanelContent.Shown(c) => TrialPanels.fixationTable(c).left.map(_.message)
       }
@@ -783,4 +807,5 @@ final class CompareSummaryHost(
       queryTrialTable.dispose()
       referenceTrialTable.dispose()
       panels.dispose()
+      maps.dispose()
       pairsTable.dispose()

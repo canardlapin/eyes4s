@@ -37,6 +37,8 @@ enum PanelTextId derives CanEqual:
 
   /** The query panel's underlay toggle. */
   case Underlay
+  case UnderlayShort, Points, Order, Map, MapReading, MapUnavailable, MapNotServed, MapIdentity
+  case Reference, OverlayControl
 
   /** Nothing to show yet. */
   case NoQuery
@@ -81,6 +83,16 @@ object PanelText:
       case BackToMatched      => "Back to matched reference"
       case MatchedIs          => "Matched reference: {0}"
       case Underlay           => "Underlay remembered image"
+      case UnderlayShort      => "Underlay"
+      case Points             => "Points"
+      case Order              => "Order"
+      case Map                => "Map"
+      case MapReading         => "Reading result map…"
+      case MapUnavailable     => "Result map unavailable: {0}"
+      case MapNotServed       => "Result map for {0} at scale {1} is not served"
+      case MapIdentity        => "Requested {0}; backend answered {1}"
+      case Reference          => "Reference"
+      case OverlayControl     => "{0} trial: {1}"
       case NoQuery            => "Choose a query in the Queries navigator"
       case Fixations          => "{0} fix"
       case ReadingTrial       => "Reading the trial…"

@@ -365,16 +365,13 @@ object FigurePage:
     def trial(p: Placed, vm: GazeTrialVM, top: Double): Either[FigurePageError, Grob] =
       val w = p.panel.widthMm.toDouble
       val h = w * FigureGaze.heightRatio(vm)
-      // The trial panel fills all but the scene's caption band, which is
-      // left empty below the drawing.
-      val whole = h / (1.0 - TrialScene.CaptionFraction)
       for
         built <- TrialScene(FigureGaze.input(vm, rasters)).left
           .map(FigurePageError.Trial(p.panel.letter.value, _))
         port <- g("the trial's viewport")(
           Viewport.checked(
-            origin = at(p.x, top + whole),
-            size = Size.fromExtents(extent(w), extent(whole))
+            origin = at(p.x, top + h),
+            size = Size.fromExtents(extent(w), extent(h))
           )
         )
       yield embedded(built.plot.scene, FigureGaze.panelOnly(built), port)

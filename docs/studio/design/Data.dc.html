@@ -245,7 +245,7 @@ body{margin:0}
 <sc-for list="{{causes}}" as="q" hint-placeholder-count="4">
 <div class="led" role="row" style="padding-left:30px"><span role="rowheader" class="mono t11" style="color:var(--ink-2)">{{q.c}}</span><span role="gridcell" style="text-align:right"><button class="cnt" tabindex="-1" aria-label="{{q.aria}}">{{q.n}}</button></span></div>
 </sc-for>
-<div class="led" role="row"><span role="rowheader">Absent — in trials.csv, no fixation records at all <span class="kind">pending UI-H</span></span><span role="gridcell" style="text-align:right"><button class="cnt" tabindex="-1" aria-label="6 absent trials">6</button></span></div>
+<div class="led" role="row"><span role="rowheader">Absent — in trials.csv, no fixation records at all <span class="kind">served UI-H</span></span><span role="gridcell" style="text-align:right"><button class="cnt" tabindex="-1" aria-label="6 absent trials">6</button></span></div>
 </div>
 <div class="t11" style="padding:7px 14px;color:var(--ink-2)">937 + 17 + 6 = 960. <strong>no-fixations</strong>: the trial has records but none is admissible. <strong>Absent</strong>: listed in the inventory, no records in fixations.csv. Each count opens its trials and records.</div>
 </div>
@@ -253,7 +253,7 @@ body{margin:0}
 <span class="t13">Admit dataset r3</span>
 <fieldset style="border:0;margin:0;padding:0;display:flex;flex-direction:column;gap:8px">
 <legend style="position:absolute;left:-9999px">Admission decision</legend>
-<label class="row" style="align-items:flex-start;gap:8px"><input type="radio" name="adm" style="margin:2px 0 0;accent-color:var(--ink)"><span><strong>Require complete</strong><br><span class="t11" style="color:var(--ink-2)">Refuses r3 while 17 trials are quarantined (eyes4s admission). The 6 absent trials are counted by the inventory join (pending UI-H).</span></span></label>
+<label class="row" style="align-items:flex-start;gap:8px"><input type="radio" name="adm" style="margin:2px 0 0;accent-color:var(--ink)"><span><strong>Require complete</strong><br><span class="t11" style="color:var(--ink-2)">Refuses r3 while 17 trials are quarantined (eyes4s admission). The 6 absent trials are counted by the inventory join (served UI-H).</span></span></label>
 <label class="row" style="align-items:flex-start;gap:8px"><input type="radio" name="adm" checked style="margin:2px 0 0;accent-color:var(--ink)"><span><strong>Review exclusions</strong><br><span class="t11" style="color:var(--ink-2)">Admits 937 trials; 17 quarantined and 6 absent are recorded with their causes in r3.</span></span></label>
 </fieldset>
 <div class="t11" style="color:var(--ink-2)">Changes from r2: onset declared in ms; Block mapped to occurrence; 4 trials change status. Admitting creates dataset r3. Run 5 stays on r2 and is marked stale.</div>

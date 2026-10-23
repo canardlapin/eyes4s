@@ -63,7 +63,7 @@ object FigureGaze:
       Theme.Light,
       StageVariant.Light,
       rasters,
-      TrialSceneOptions(windowOutline = false)
+      TrialSceneOptions(windowOutline = false, captionBand = false)
     )
 
   /** Height over width of a gaze panel's drawing: the trial panel alone,
