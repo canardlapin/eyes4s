@@ -199,7 +199,7 @@
     {
       "id": "presets",
       "disposition": "accepted deviation",
-      "evidence": "Three presets, including Study → Recognition and its explicit no-study-trial-by-design selection. Tests preserve lure collisions and dropped-study-item refusal.",
+      "evidence": "Three presets, including Study \u2192 Recognition and its explicit no-study-trial-by-design selection. Tests preserve lure collisions and dropped-study-item refusal.",
       "basis": "Shared one-stop segmented presets replace illustrated radio cards; each selected description remains visible. This follows the shared control and keyboard rules."
     },
     {
@@ -211,7 +211,7 @@
     {
       "id": "scales",
       "disposition": "match",
-      "evidence": "0.5/1/2/4 plus new draft 8 degrees; cell 0.46×0.46 degrees. Served 0.5-degree grid warning and 8-degree extent-ratio warning shown. One-stop segmented selection/removal. No unsourced protocol/exploratory labels added."
+      "evidence": "0.5/1/2/4 plus new draft 8 degrees; cell 0.46\u00d70.46 degrees. Served 0.5-degree grid warning and 8-degree extent-ratio warning shown. One-stop segmented selection/removal. No unsourced protocol/exploratory labels added."
     },
     {
       "id": "draft",
@@ -222,7 +222,7 @@
       "id": "resolved",
       "disposition": "accepted deviation",
       "evidence": "480 requested: 457 pair-eligible = 454 without known focal failure + 3 known focal failures; 9 no-match; 14 not admitted. Candidate pairs 219486 before paging and 8969 after per scale. No-study-trial absent is n/a, distinct from explicit zero.",
-      "basis": "Backend-order rows replace the board’s curated sample. Fake receipts honestly show input/plan digest unbound; production cursor tests qualify real digest binding. Eligible is not misreported as known successful contribution."
+      "basis": "Backend-order rows replace the board\u2019s curated sample. Fake receipts honestly show input/plan digest unbound; production cursor tests qualify real digest binding. Eligible is not misreported as known successful contribution."
     },
     {
       "id": "preflight",
@@ -258,5 +258,11 @@
   "metrics": {
     "path": "docs/studio/evidence/20261023-parity/Analysis/metrics.json",
     "sha256": "4e532dabb2fb3156a3c9957f4c02e408077c627fa500b2320b695dcaf5ae463b"
+  },
+  "capture_run": {
+    "candidate": "2753627d887cac61191b82af28e6b26f1a51fc3d",
+    "tree": "064afa2dc657e510c132239cf77424e9e086f030",
+    "phase": "complete strict studioAll gate",
+    "visual_review": "Final full-suite captures reviewed; Explore and Results antialiasing variations preserve the reviewed values, selection and layout."
   }
 }

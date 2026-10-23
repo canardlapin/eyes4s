@@ -1,0 +1,40 @@
+{
+  "candidate": "2753627d887cac61191b82af28e6b26f1a51fc3d",
+  "comparison": "Focused vs complete strict Studio captures; previously inspected visually",
+  "method": "Chromium decoded canvas RGBA, per-pixel maximum absolute channel difference",
+  "policy": "Descriptive measurement only; not a general tolerance or replacement for visual review",
+  "captures": [
+    {
+      "board": "Explore",
+      "width": 1440,
+      "height": 900,
+      "changed_pixels": 344,
+      "max_channel_delta_out_of_255": 1,
+      "bbox_half_open": [
+        257,
+        163,
+        1121,
+        875
+      ],
+      "focused_sha256": "b037aa543d057120c018df35d5d4368fe73469496b17759458f5c9758cd8b169",
+      "complete_gate_sha256": "1b970db447e9c1d9d58c0d18b049ae929ed1799d22a3a416f04eaf48e4633bd2",
+      "finding": "No changed value, selection or layout in visual review."
+    },
+    {
+      "board": "Results",
+      "width": 1440,
+      "height": 900,
+      "changed_pixels": 115,
+      "max_channel_delta_out_of_255": 1,
+      "bbox_half_open": [
+        1118,
+        729,
+        1119,
+        874
+      ],
+      "focused_sha256": "055d7d2ca2d2d8446968d65d2204caa73c15f8d3be135cafdcff4a452d3bf137",
+      "complete_gate_sha256": "0e7aed3b24bbedfb865a4ed849220db2242e2bcbb083d6094bc187dc7324336b",
+      "finding": "No changed value, selection or layout in visual review."
+    }
+  ]
+}

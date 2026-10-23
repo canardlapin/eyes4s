@@ -220,7 +220,7 @@
     {
       "id": "mapping",
       "disposition": "accepted deviation",
-      "evidence": "Actual ten-column fixture, onset/duration declared in ms; Ordinal and optional Sample count roles are available. Mapping and geometry carry Dataset · re-admit. Mapping-bottom capture exposes the lower roles.",
+      "evidence": "Actual ten-column fixture, onset/duration declared in ms; Ordinal and optional Sample count roles are available. Mapping and geometry carry Dataset \u00b7 re-admit. Mapping-bottom capture exposes the lower roles.",
       "basis": "Reusable served import form scrolls, with explicit global time units and Apply controls. The illustrated eleventh source column is absent from the actual CSV; an extra source field is never fabricated."
     },
     {
@@ -237,8 +237,8 @@
     {
       "id": "geometry",
       "disposition": "accepted deviation",
-      "evidence": "Editable screen 1920×1080, image 1024×768 at (448,156), 35 px/degree declared/not calibrated. Physical size and viewing distance are explicitly unrecorded. Image-centred degrees are x right/y up. Geometry-bottom includes policy, counts, overlay and orientation controls. Component tests pin record 7214 and 543/11520 outside-window records in 409 trials.",
-      "basis": "S26 mounts the real editable geometry form in place of the compact board facts. Lower controls require scrolling at 1440×900. The initial worked example is the first served record rather than the board’s selected record 7214. No geometry/calibration or timing is inferred."
+      "evidence": "Editable screen 1920\u00d71080, image 1024\u00d7768 at (448,156), 35 px/degree declared/not calibrated. Physical size and viewing distance are explicitly unrecorded. Image-centred degrees are x right/y up. Geometry-bottom includes policy, counts, overlay and orientation controls. Component tests pin record 7214 and 543/11520 outside-window records in 409 trials.",
+      "basis": "S26 mounts the real editable geometry form in place of the compact board facts. Lower controls require scrolling at 1440\u00d7900. The initial worked example is the first served record rather than the board\u2019s selected record 7214. No geometry/calibration or timing is inferred."
     },
     {
       "id": "assets",
@@ -272,6 +272,12 @@
   ],
   "metrics": {
     "path": "docs/studio/evidence/20261023-parity/Data/metrics.json",
-    "sha256": "49e56a025fa0016da85553a94be21b42af32433bc8d45be9fe31020a8e574190"
+    "sha256": "27b7d9f8f5e6abf2a0201cc3368dba3413b69fafe6033dc9fdc6748316ee605d"
+  },
+  "capture_run": {
+    "candidate": "2753627d887cac61191b82af28e6b26f1a51fc3d",
+    "tree": "064afa2dc657e510c132239cf77424e9e086f030",
+    "phase": "complete strict studioAll gate",
+    "visual_review": "Final full-suite captures reviewed; Explore and Results antialiasing variations preserve the reviewed values, selection and layout."
   }
 }

@@ -257,3 +257,29 @@ opt-in did not run. The 100 ms status-update budget was unchanged.
 This signs the bounded DataEmpty review and its recorded presentation deviations; it
 does not sign other boards, real-study admission, physical macOS Retina review or VoiceOver.
 Prior failed and stopped attempts are retained in the qualification history.
+
+
+## Remaining eight board reviews, 2026-10-23
+
+The [side-by-side gallery](evidence/20261023-parity/index.html) records all51 checklist
+dispositions across System, Data, Analysis, Explore, Results, Figures, Main and
+MainDark, with source/capture hashes and explicit reasons for deviations.
+The [qualification receipt](evidence/20261023-parity/qualification.json) covers
+frozen source `2753627d`, tree `064afa2d`: full canonical and strict Studio gates,
+4,363 portable /812 desktop cases, all24 E2E catalogue scenarios, fixture and
+comparison inventory checks, site/documentation consumers and final strict
+compilation/boundaries/API consistency. The private-data test remains opt-in.
+
+[Hosted Studio](https://github.com/canardlapin/eyes4s/actions/runs/40024842869) passed
+macOS, clean-clone pins, native GTK2 and the second headless attempt. The first
+headless attempt skipped Figures after transient window-focus loss; its evidence
+is retained and is not counted as a pass. Exact artifact IDs and executed named
+cases are verified in the [hosted review](evidence/20261023-parity/hosted-review.json).
+Actual GTK2 reports Stage2×2, no override, a one-device-pixel feedback stripe and
+zero analytic raster mismatch.
+
+This accepts the per-board reviews and their individual deviations. It leaves
+Results' empty Participants navigator open as `bd-01M5N6CCJ42414CZSEX6B2CMTR`, and
+the S10.4 parent open for the complete light/dark t1/t2/t3 JavaFX pixel-golden matrix.
+It does not qualify private-study G2, physical macOS Retina or VoiceOver. Mote
+closure notes identify the landed source/evidence commit.

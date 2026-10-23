@@ -199,20 +199,20 @@
     {
       "id": "navigator",
       "disposition": "accepted deviation",
-      "evidence": "Queries and Items use one-stop cursors; counts480requested/454contributing/3failed/9no-match/14notadmitted/by-design n/a. Query D at selectedσ2 and actual overall participant means.",
-      "basis": "The native navigator displays all query statuses and overall participant means (P17+0.38;19of20) with header D·2°. The board illustrates Remembered-only means (P17+0.40,n17). The native label does not claim Remembered-only; grouped cells remain available in Results. Tree headers/collapsed participants replace the mock’s curated P17-only view."
+      "evidence": "Queries and Items use one-stop cursors; counts480requested/454contributing/3failed/9no-match/14notadmitted/by-design n/a. Query D at selected\u03c32 and actual overall participant means.",
+      "basis": "The native navigator displays all query statuses and overall participant means (P17+0.38;19of20) with header D\u00b72\u00b0. The board illustrates Remembered-only means (P17+0.40,n17). The native label does not claim Remembered-only; grouped cells remain available in Results. Tree headers/collapsed participants replace the mock\u2019s curated P17-only view."
     },
     {
       "id": "panels",
       "disposition": "accepted deviation",
-      "evidence": "Query circles and matched diamonds, actual stored maps at selectedσ2; Points/Order/Map toggle independently per side. Shared/per-panel limits and opacity preserve original cells, row order, region and thresholds. Cached raster reuse also checks content; changed cells under a document-local identity render anew. Raster failure reasons are visible and Retry keeps the same served cells. Blank+cross is explicit; underlay discloses remembered image not shown. Control picking changes the reference and Back to matched remains available.",
-      "basis": "Golden stimulus/fixation/map shapes replace illustrative art. Missing full trial extent is not guessed as4.8/5.0s. Captions wrap at normal432px pane width; extra analysis-window/marker/order disclosures use more vertical space. The reference pane’s keyboard edge is focused; Compare has no fixation cursor for the mock’s fixation6 tooltip."
+      "evidence": "Query circles and matched diamonds, actual stored maps at selected\u03c32; Points/Order/Map toggle independently per side. Shared/per-panel limits and opacity preserve original cells, row order, region and thresholds. Cached raster reuse also checks content; changed cells under a document-local identity render anew. Raster failure reasons are visible and Retry keeps the same served cells. Blank+cross is explicit; underlay discloses remembered image not shown. Control picking changes the reference and Back to matched remains available.",
+      "basis": "Golden stimulus/fixation/map shapes replace illustrative art. Missing full trial extent is not guessed as4.8/5.0s. Captions wrap at normal432px pane width; extra analysis-window/marker/order disclosures use more vertical space. The reference pane\u2019s keyboard edge is focused; Compare has no fixation cursor for the mock\u2019s fixation6 tooltip."
     },
     {
       "id": "ladder",
       "disposition": "accepted deviation",
-      "evidence": "Atσ2:19served control dots, Btick,Mdiamond,Dbar;M0.94,B0.32,D+0.62. Picking controls follows exact pair identity.",
-      "basis": "The backend serves control distributions only atσ2; the board explicitly calls other-scale spreads illustrative. Other rows draw served M/B/D without invented control dots. Accessible profile/Table twin is an extra tab (DESIGN_SPEC§10)."
+      "evidence": "At\u03c32:19served control dots, Btick,Mdiamond,Dbar;M0.94,B0.32,D+0.62. Picking controls follows exact pair identity.",
+      "basis": "The backend serves control distributions only at\u03c32; the board explicitly calls other-scale spreads illustrative. Other rows draw served M/B/D without invented control dots. Accessible profile/Table twin is an extra tab (DESIGN_SPEC\u00a710)."
     },
     {
       "id": "readout",
@@ -222,13 +222,13 @@
     {
       "id": "inspector",
       "disposition": "accepted deviation",
-      "evidence": "Why this reference names the sole same-item encoding trial, P17/occurrence,19controls, reference1/13outside3%duration,query1/12outside4%. Reporting response grouping/minimumoff/n2–17; actual stage/limits/opacity controls.",
+      "evidence": "Why this reference names the sole same-item encoding trial, P17/occurrence,19controls, reference1/13outside3%duration,query1/12outside4%. Reporting response grouping/minimumoff/n2\u201317; actual stage/limits/opacity controls.",
       "basis": "The normal-width inspector scrolls; some longer field labels elide with full accessible text. Native controls use shared styling instead of local mock control geometry."
     },
     {
       "id": "theme",
       "disposition": "match",
-      "evidence": "Light and dark native Compare reviewed. Dark query/matched roles remain distinct; token/contrast suites enforce role-pill4.5:1 and L*spread≥20. Only keyboard focus draws accent."
+      "evidence": "Light and dark native Compare reviewed. Dark query/matched roles remain distinct; token/contrast suites enforce role-pill4.5:1 and L*spread\u226520. Only keyboard focus draws accent."
     }
   ],
   "tests": [
@@ -246,7 +246,7 @@
     },
     {
       "report": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.compare.ScaleLadderFxSuite.xml",
-      "case": "the readout is FIXTURE.md's focus at 2°, with the confound sentence verbatim"
+      "case": "the readout is FIXTURE.md's focus at 2\u00b0, with the confound sentence verbatim"
     },
     {
       "report": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.maps.MapRasterStoreSuite.xml",
@@ -274,5 +274,11 @@
   "metrics": {
     "path": "docs/studio/evidence/20261023-parity/Main/metrics.json",
     "sha256": "af5f2d9c0d6b010b42fb986f34af1e721b8fcf499beb50dfc101aec2be9b1130"
+  },
+  "capture_run": {
+    "candidate": "2753627d887cac61191b82af28e6b26f1a51fc3d",
+    "tree": "064afa2dc657e510c132239cf77424e9e086f030",
+    "phase": "complete strict studioAll gate",
+    "visual_review": "Final full-suite captures reviewed; Explore and Results antialiasing variations preserve the reviewed values, selection and layout."
   }
 }

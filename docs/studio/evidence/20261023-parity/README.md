@@ -71,9 +71,28 @@ readiness wait: it required a1× frame despite the actual2× Stage. The artifact
 showed a drawn map and the independent scale receipt recorded2×2, no override,
 a one-device-pixel line and zero raster mismatch. The test now follows the actual
 native scale and also checks explicit1×/2× render contexts, retaining every text,
-bounds and non-overlap assertion. Local focused cases pass; a fresh combined gate
-and hosted run are required for the corrected test. No production code changed.
+bounds and non-overlap assertion. The corrected test passed the fresh complete canonical/strict Studio gate and hosted nativeGTK2 run. No production code changed.
 
 The S10.4 parent remains open for its additional complete light/dark JavaFX
 regression-golden matrix; these per-board semantic reviews do not claim that
 unimplemented acceptance criterion.
+
+Final qualification covers source `2753627d887cac61191b82af28e6b26f1a51fc3d`,
+tree `064afa2dc657e510c132239cf77424e9e086f030`. The full canonical gate, strict
+Studio, all nine supplemental checks and final strict compilation/boundaries/API
+consistency passed. Studio passed 4,363 portable and 812 desktop cases; the private
+acceptance case remained opt-in. All 24 E2E catalogue scenarios have executed
+passing bindings. The API audit found zero uncovered entries.
+
+Hosted run [40024842869](https://github.com/canardlapin/eyes4s/actions/runs/40024842869)
+passed macOS, clean-clone pins, native GTK2 and headless checks. The first headless
+attempt skipped Figures after transient window-focus loss; its receipt is retained
+and it is not counted as a pass. The same-source second headless attempt was
+downloaded by its exact artifact ID and every required board case was verified as
+executed and passed. The original artifact is retained separately.
+
+The [hosted review](hosted-review.json) records artifact IDs and XML hashes, actual
+Stage scale 2×2 without a host override, a one-device-pixel feedback stripe, and zero
+analytic raster mismatch. [Main at actual GTK2](Main/hosted-native2.png) and the
+[independent stripe](System/hosted-native2-stripe.png) were visually inspected. These
+are distinct from the local 2× snapshot transforms.

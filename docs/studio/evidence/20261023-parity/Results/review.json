@@ -182,7 +182,7 @@
   "captures": [
     {
       "path": "docs/studio/evidence/20261023-parity/Results/light-1x.png",
-      "sha256": "055d7d2ca2d2d8446968d65d2204caa73c15f8d3be135cafdcff4a452d3bf137"
+      "sha256": "0e7aed3b24bbedfb865a4ed849220db2242e2bcbb083d6094bc187dc7324336b"
     },
     {
       "path": "docs/studio/evidence/20261023-parity/Results/light-2x.png",
@@ -204,19 +204,19 @@
     {
       "id": "participants",
       "disposition": "accepted deviation",
-      "evidence": "24 participants per group, means +0.43/+0.24, paired n24 and per-group range2–17. P17 annotation +0.40(n17)/+0.22(n2). P05 +0.35 overall; three failed queries have no value, not zero.",
-      "basis": "Grand means are annotated on the plot rather than repeated as two large headline tiles. The native Participants navigator is not populated in this summary layout; all participants remain accessible through plot/Table twins and the participant table. The board’s dedicated left-hand list is not claimed as implemented; functional follow-up bd-01M5N6CCJ42414CZSEX6B2CMTR remains open."
+      "evidence": "24 participants per group, means +0.43/+0.24, paired n24 and per-group range2\u201317. P17 annotation +0.40(n17)/+0.22(n2). P05 +0.35 overall; three failed queries have no value, not zero.",
+      "basis": "Grand means are annotated on the plot rather than repeated as two large headline tiles. The native Participants navigator is not populated in this summary layout; all participants remain accessible through plot/Table twins and the participant table. The board\u2019s dedicated left-hand list is not claimed as implemented; functional follow-up bd-01M5N6CCJ42414CZSEX6B2CMTR remains open."
     },
     {
       "id": "paired",
       "disposition": "match",
-      "evidence": "At the selected σ2, paired descriptive +0.18; exact mean difference0.184177735 rounded only after within-participant subtraction. Range+0.04P15 to+0.34P11; higher in24/24. Explicitly descriptive, no interval/test claim."
+      "evidence": "At the selected \u03c32, paired descriptive +0.18; exact mean difference0.184177735 rounded only after within-participant subtraction. Range+0.04P15 to+0.34P11; higher in24/24. Explicitly descriptive, no interval/test claim."
     },
     {
       "id": "profile-table",
       "disposition": "accepted deviation",
-      "evidence": "Log-spaced scale profile and exact fixture participant cells at σ2. Initial selected scale now follows the actual result, rather than silently using σ0.5.",
-      "basis": "Profile/Table twin adds a tab for accessibility. Overall participant cells and grouped report cells retain distinct typed references: selecting P17’s grouped mark does not falsely pin a different overall cell. Backend-order table starts P01 and scrolls. Per-scale plot points use the served report, not the illustrative SVG coordinates."
+      "evidence": "Log-spaced scale profile and exact fixture participant cells at \u03c32. Initial selected scale now follows the actual result, rather than silently using \u03c30.5.",
+      "basis": "Profile/Table twin adds a tab for accessibility. Overall participant cells and grouped report cells retain distinct typed references: selecting P17\u2019s grouped mark does not falsely pin a different overall cell. Backend-order table starts P01 and scrolls. Per-scale plot points use the served report, not the illustrative SVG coordinates."
     },
     {
       "id": "reporting",
@@ -251,6 +251,12 @@
   ],
   "metrics": {
     "path": "docs/studio/evidence/20261023-parity/Results/metrics.json",
-    "sha256": "343d85e2a409297ad0f14993e7828ace0cd46813c2e2f27cf0a19b0b42c0fca6"
+    "sha256": "136030f5a276ed07c5d57f35bc181604143605c2881b51783df12257f8ff9491"
+  },
+  "capture_run": {
+    "candidate": "2753627d887cac61191b82af28e6b26f1a51fc3d",
+    "tree": "064afa2dc657e510c132239cf77424e9e086f030",
+    "phase": "complete strict studioAll gate",
+    "visual_review": "Final full-suite captures reviewed; Explore and Results antialiasing variations preserve the reviewed values, selection and layout."
   }
 }

@@ -1,21 +1,412 @@
 {
   "schema": 1,
-  "status": "pending combined qualification; no landing claim",
-  "base": "ab557587a03077c2f3b16a225a1e038fceb417eb",
-  "reviews": 8,
-  "check_dispositions": 51,
-  "limits": [
-    "synthetic fixture only",
-    "physical Retina and VoiceOver separate",
-    "Results Participants navigator follow-up bd-01M5N6CCJ42414CZSEX6B2CMTR remains open"
+  "status": "qualification passed; landing recorded on the motes",
+  "candidate": "2753627d887cac61191b82af28e6b26f1a51fc3d",
+  "tree": "064afa2dc657e510c132239cf77424e9e086f030",
+  "gate_owner": "codex-board-parity-20261023",
+  "jdk": "Temurin25.0.4.1+1 (registered macOS installation)",
+  "gate_environment": {
+    "GITHUB_ACTIONS": "true throughout canonical and Studio gates"
+  },
+  "canonical": {
+    "outcome": "passed",
+    "driver": {
+      "path": "/private/tmp/eyes4s-board-canonical-2753627d.log",
+      "sha256": "08ef4f1a87cbbf29e3e2ad3c91da15d4f09d9b6c2da4f7f1f4d4a95e802dbcd8",
+      "bytes": 773
+    },
+    "steps": {
+      "hygiene": {
+        "path": "target/landing-gate/hygiene.log",
+        "sha256": "70758f65d19d68d189a35232d73375a35d5190d9c35b1e8f2636454131155329",
+        "bytes": 982
+      },
+      "werror": {
+        "path": "target/landing-gate/werror.log",
+        "sha256": "bfb4f4cd18411cdcee22f79d0c5caccc4695e60187a1ca3d779ee9ea340130fb",
+        "bytes": 7134
+      },
+      "audit": {
+        "path": "target/landing-gate/audit.log",
+        "sha256": "fa59b75bfde47efecca4e609a126526c7c5ca9c1c81609431c54c4f33082f70d",
+        "bytes": 381339
+      },
+      "tests": {
+        "path": "target/landing-gate/tests.log",
+        "sha256": "7b71ecf3606ce28bee9931e07bf41e0489ce9d40f52fc96de75f62cfe64b9893",
+        "bytes": 193582
+      },
+      "consumer": {
+        "path": "target/landing-gate/consumer.log",
+        "sha256": "27e7b61828427c4184656db47305a9779e7d939b6ee91a88b0845d54a344fe2c",
+        "bytes": 179
+      }
+    },
+    "runtime_entries": 3984,
+    "abstractions": 691,
+    "explicit_jvm_only": 34,
+    "uncovered": 0,
+    "inventory": [
+      {
+        "path": "tools/api-audit/inventory.json",
+        "sha256": "782b484408deec90f49009f51afc30959d8327f358b62850a5b64538d56dda6c",
+        "bytes": 5506944
+      },
+      {
+        "path": "tools/api-audit/evidence.json",
+        "sha256": "5a9bd41639d156666130b0f27ba416c179afd29a06188cd3f9f59dc8fde66321",
+        "bytes": 1914891
+      },
+      {
+        "path": "tools/api-audit/inventory-provenance.json",
+        "sha256": "475da1ad5a12bf8400c6c5a73467337ca31bb24c4db5f7b2fb10676fefdd9548",
+        "bytes": 217
+      }
+    ]
+  },
+  "studio": {
+    "outcome": "passed",
+    "log": {
+      "path": "/private/tmp/eyes4s-board-studio-2753627d.log",
+      "sha256": "d71ffdec37b28ede5003546b205b72957d396a9cb56d1ffc9fd314a453d8d07b",
+      "bytes": 558546
+    },
+    "portable_by_module": {
+      "core.jvm": {
+        "passed": 1120,
+        "failed": 0,
+        "skipped": 0,
+        "reports": 114
+      },
+      "core.js": {
+        "passed": 1027,
+        "failed": 0,
+        "skipped": 0,
+        "reports": 94
+      },
+      "app.jvm": {
+        "passed": 790,
+        "failed": 0,
+        "skipped": 0,
+        "reports": 82
+      },
+      "app.js": {
+        "passed": 790,
+        "failed": 0,
+        "skipped": 0,
+        "reports": 82
+      },
+      "viz.jvm": {
+        "passed": 318,
+        "failed": 0,
+        "skipped": 0,
+        "reports": 23
+      },
+      "viz.js": {
+        "passed": 318,
+        "failed": 0,
+        "skipped": 0,
+        "reports": 23
+      }
+    },
+    "portable_passed": 4363,
+    "desktop": {
+      "passed": 812,
+      "failed": 0,
+      "skipped": 1,
+      "reports": 134
+    }
+  },
+  "post_record": {
+    "candidate": "2753627d887cac61191b82af28e6b26f1a51fc3d",
+    "tree": "064afa2dc657e510c132239cf77424e9e086f030",
+    "outcome": "passed",
+    "checks": [
+      "GITHUB_ACTIONS=true rootJVM Test/compile",
+      "GITHUB_ACTIONS=true rootJS Test/compile",
+      "checkBoundaries",
+      "tools/api-audit/check.py"
+    ],
+    "log": {
+      "path": "/private/tmp/eyes4s-board-post-record-2753627d.log",
+      "sha256": "ad78fb9d11e9b065b0c4a9187df268503e4c3a7061fa9010262c7d3a01de39b4"
+    },
+    "source_frozen": true
+  },
+  "browser_review": {
+    "browser": "131.0.6778.33",
+    "reports": [
+      {
+        "width": 1440,
+        "scrollWidth": 1440,
+        "sections": 8,
+        "checks": 51,
+        "images": 23,
+        "broken": []
+      },
+      {
+        "width": 414,
+        "scrollWidth": 414,
+        "sections": 8,
+        "checks": 51,
+        "images": 23,
+        "broken": []
+      }
+    ]
+  },
+  "supplemental": {
+    "started": "2026-10-23T21:59:43.695414+00:00",
+    "steps": [
+      {
+        "name": "parity-refusals",
+        "command": [
+          "/Users/bbuchsbaum/homebrew/opt/python@3.13/bin/python3.13",
+          "tools/studio-parity/test_check.py"
+        ],
+        "exit": 0,
+        "seconds": 0.09,
+        "log": "target/board-qualification/parity-refusals.log",
+        "sha256": "35e173770e8b2ae664bb6a561f29ed51afa8d5f7cc9761dbdfa594317be439b2"
+      },
+      {
+        "name": "board-reviews",
+        "command": [
+          "/Users/bbuchsbaum/homebrew/opt/python@3.13/bin/python3.13",
+          "tools/studio-parity/check.py",
+          "docs/studio/evidence/20261023-parity",
+          "--output",
+          "target/studio-parity/receipt.json"
+        ],
+        "exit": 0,
+        "seconds": 0.11,
+        "log": "target/board-qualification/board-reviews.log",
+        "sha256": "47ec027e072f2e47e3076db81d909f9bfa3951a2542feed59f5562be2cdd81fc"
+      },
+      {
+        "name": "catalogue-tests",
+        "command": [
+          "/Users/bbuchsbaum/homebrew/opt/python@3.13/bin/python3.13",
+          "-m",
+          "unittest",
+          "discover",
+          "-s",
+          "tools/studio-e2e",
+          "-p",
+          "test_*.py"
+        ],
+        "exit": 0,
+        "seconds": 0.07,
+        "log": "target/board-qualification/catalogue-tests.log",
+        "sha256": "0f7e4b97443e54aca647179972594d13bb587afcbf151fab8228148587ea844a"
+      },
+      {
+        "name": "catalogue",
+        "command": [
+          "/Users/bbuchsbaum/homebrew/opt/python@3.13/bin/python3.13",
+          "tools/studio-e2e/check.py"
+        ],
+        "exit": 0,
+        "seconds": 0.12,
+        "log": "target/board-qualification/catalogue.log",
+        "sha256": "e343c77bb69fa890d47bf85d0ab141973c97cc9a0c405a083acbd127f6a27293"
+      },
+      {
+        "name": "fixture",
+        "command": [
+          "/Users/bbuchsbaum/homebrew/opt/python@3.13/bin/python3.13",
+          "tools/studio-fixture/generate.py",
+          "--check"
+        ],
+        "exit": 0,
+        "seconds": 4.28,
+        "log": "target/board-qualification/fixture.log",
+        "sha256": "065c75f279e4fdb0564c44e0e257a60ffb2455b6141c27ee490b579602c3f075"
+      },
+      {
+        "name": "fixture-counts",
+        "command": [
+          "/Users/bbuchsbaum/homebrew/opt/python@3.13/bin/python3.13",
+          "tools/studio-fixture/verify_counts.py"
+        ],
+        "exit": 0,
+        "seconds": 0.25,
+        "log": "target/board-qualification/fixture-counts.log",
+        "sha256": "b13c59187c0b6dda24e9ab45e36b6fb6013f263696ca2a5e99780d9103e45217"
+      },
+      {
+        "name": "comparison-inventory",
+        "command": [
+          "/private/tmp/eyes4s-python-pins-20261021/performance/bin/python",
+          "tools/pymovements/check.py",
+          "--wheel",
+          "/private/tmp/eyes4s-pymovements-inventory-20261021/pymovements-0.28.0-py3-none-any.whl",
+          "--mote-store",
+          "/Users/bbuchsbaum/code/scala/eyes4s/.mote"
+        ],
+        "exit": 0,
+        "seconds": 1.24,
+        "log": "target/board-qualification/comparison-inventory.log",
+        "sha256": "89f378f97fa388a9588f54483548bfdc8bfe2b1f9f091c34f3d69c20a9b4c39b"
+      },
+      {
+        "name": "site",
+        "command": [
+          "sbt",
+          "-batch",
+          "-J-Xmx6g",
+          "docs/tlSite"
+        ],
+        "exit": 0,
+        "seconds": 17.34,
+        "log": "target/board-qualification/site.log",
+        "sha256": "c7a6a498da0ffc6af4f470fc1b56f6d2d7689e0e0740dcb2dbcee404bcc3b6ea"
+      },
+      {
+        "name": "documentation",
+        "command": [
+          "/Users/bbuchsbaum/homebrew/opt/python@3.13/bin/python3.13",
+          "tools/check-docs.py",
+          "--run-consumer"
+        ],
+        "exit": 0,
+        "seconds": 88.86,
+        "log": "target/board-qualification/documentation.log",
+        "sha256": "bcc05a6bf182cd8f703267456e4204d6d9398e213a9a59f73973ef2687f7674e"
+      }
+    ],
+    "finished": "2026-10-23T22:01:36.052418+00:00"
+  },
+  "board_reviews": {
+    "boards": 8,
+    "dispositions": 51,
+    "receipt": {
+      "path": "target/studio-parity/receipt.json",
+      "sha256": "05434a9cb2a2c8061f2b1d9f01a191dc9060c2b943c28afedeef20ac3318c2bf",
+      "bytes": 13383
+    },
+    "reviews": [
+      {
+        "path": "docs/studio/evidence/20261023-parity/Analysis/review.json",
+        "sha256": "1364db98106739707c16760094f2547b9c3ee1602684391810eb5450ce11403d",
+        "bytes": 13604
+      },
+      {
+        "path": "docs/studio/evidence/20261023-parity/Data/review.json",
+        "sha256": "0006d6635b36f5560e6a685fe9c36ef91304de94934a7641eccc8bc891d798e2",
+        "bytes": 14260
+      },
+      {
+        "path": "docs/studio/evidence/20261023-parity/Explore/review.json",
+        "sha256": "6db917f0eb5b7fb075e12bf61a1e64a9f9d65a6a03f44b1ab22269f7b4e4763c",
+        "bytes": 12760
+      },
+      {
+        "path": "docs/studio/evidence/20261023-parity/Figures/review.json",
+        "sha256": "020bc96c7f519a34bbd859d5c3e0e33e1dd90f196ff6e573cd61a720ba624e74",
+        "bytes": 14295
+      },
+      {
+        "path": "docs/studio/evidence/20261023-parity/Main/review.json",
+        "sha256": "62de86c69619b5ecdd5408497b92dc688da38c3cf5c678855b833301a9fbd66e",
+        "bytes": 14925
+      },
+      {
+        "path": "docs/studio/evidence/20261023-parity/MainDark/review.json",
+        "sha256": "163ecc1a98a56d5553c43967eab5761c57058bcd70331ae6cfb9280bc481850b",
+        "bytes": 14955
+      },
+      {
+        "path": "docs/studio/evidence/20261023-parity/Results/review.json",
+        "sha256": "fdf3fce6ef9f24c2ab38eb5b1bf89008a798c9f8e6583814c2ad8d8cde01eb95",
+        "bytes": 13273
+      },
+      {
+        "path": "docs/studio/evidence/20261023-parity/System/review.json",
+        "sha256": "326f08922f1ca4e4fa53379c6bdf7a4eb67744bbaf67a94cfd7325b2992f4866",
+        "bytes": 12158
+      }
+    ]
+  },
+  "catalogue": {
+    "scenarios": 24,
+    "receipt": {
+      "path": "target/studio-e2e/receipt.json",
+      "sha256": "64deba5c306d09e997994a8270d0271d94fe1deb0ded3b6ed2ce1d891f64ca35",
+      "bytes": 50885
+    }
+  },
+  "hosted": {
+    "checks": "https://github.com/canardlapin/eyes4s/actions/runs/40024842877",
+    "studio": "https://github.com/canardlapin/eyes4s/actions/runs/40024842869",
+    "checks_jobs": [
+      {
+        "name": "Generate Site (ubuntu-22.04, temurin@17)",
+        "conclusion": "success",
+        "url": "https://github.com/canardlapin/eyes4s/actions/runs/40024842877/job/120658321025"
+      },
+      {
+        "name": "Test (ubuntu-22.04, 3, temurin@17, rootJVM)",
+        "conclusion": "success",
+        "url": "https://github.com/canardlapin/eyes4s/actions/runs/40024842877/job/120658321160"
+      },
+      {
+        "name": "Test (ubuntu-22.04, 3, temurin@17, rootJS)",
+        "conclusion": "success",
+        "url": "https://github.com/canardlapin/eyes4s/actions/runs/40024842877/job/120658321247"
+      },
+      {
+        "name": "Test (ubuntu-22.04, 3, temurin@21, rootJVM)",
+        "conclusion": "success",
+        "url": "https://github.com/canardlapin/eyes4s/actions/runs/40024842877/job/120658321322"
+      }
+    ],
+    "studio_jobs": [
+      {
+        "name": "Studio (Linux, headless JavaFX) (ubuntu-22.04, temurin@25)",
+        "conclusion": "success",
+        "url": "https://github.com/canardlapin/eyes4s/actions/runs/40024842869/job/120677803326"
+      },
+      {
+        "name": "Studio pins from a clean clone (ubuntu-22.04, temurin@25)",
+        "conclusion": "success",
+        "url": "https://github.com/canardlapin/eyes4s/actions/runs/40024842869/job/120677804782"
+      },
+      {
+        "name": "Studio (Linux, native output scale 2) (ubuntu-22.04, temurin@25)",
+        "conclusion": "success",
+        "url": "https://github.com/canardlapin/eyes4s/actions/runs/40024842869/job/120677805250"
+      },
+      {
+        "name": "Studio (macOS, functional JavaFX) (macos-15, temurin@25)",
+        "conclusion": "success",
+        "url": "https://github.com/canardlapin/eyes4s/actions/runs/40024842869/job/120677839061"
+      }
+    ],
+    "studio_attempt": 2,
+    "artifact_review": "hosted-review.json",
+    "native_output_scale": {
+      "nativeScaleX": 2.0,
+      "nativeScaleY": 2.0,
+      "requiredScale": 2,
+      "hostOverride": false,
+      "deviceWidth": 512,
+      "deviceHeight": 384,
+      "stripeWidthDevicePixels": 1,
+      "rasterDifferenceFraction": 0.0,
+      "maximumDifferenceFraction": 0.005
+    }
+  },
+  "previous_attempts": [
+    "regressions/qualification-24ad6d55-stopped.json",
+    "regressions/9d93ff26-native2-test-failure.json",
+    "regressions/9d93ff26-canonical-passed.log",
+    "regressions/2753627d-headless-capture-skip-attempt1.json"
   ],
-  "previous_attempt": "regressions/qualification-24ad6d55-stopped.json",
-  "previous_hosted_failure": "regressions/9d93ff26-native2-test-failure.json",
-  "previous_canonical_pass": {
-    "candidate": "9d93ff268a3a7f2ed8207d0549c2efa197e59be5",
-    "tree": "fe981627b29d56a3e70be749a58dfd266a8dcda4",
-    "log": "regressions/9d93ff26-canonical-passed.log",
-    "sha256": "5ef35b565a559fcca657b8c49c2e92a14d12caa62358abea1830c9c94523d956",
-    "final_qualification": false
-  }
+  "remaining": {
+    "results_participants_navigator": "bd-01M5N6CCJ42414CZSEX6B2CMTR",
+    "complete_visual_regression_matrix": "bd-01M3DPG1MEF94707268STJG56X",
+    "private_data_G2": "not qualified by synthetic fixtures",
+    "physical_macOS_Retina_and_VoiceOver": "separate acceptance"
+  },
+  "local_capture_limit": "Native output scale1. Local2x files are snapshot transforms; actual GTK2 acceptance is from the hosted receipt."
 }

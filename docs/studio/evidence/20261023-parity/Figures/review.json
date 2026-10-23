@@ -221,7 +221,7 @@
       "id": "panels",
       "disposition": "accepted deviation",
       "evidence": "Native physical page183mm now fits two89mm panels with5mm gutter. A/B are actual Intaglio trial scenes without duplicated captions; export viewport ends before separate caption. C retains served grids/regions/limits, M0.94, highest control harbor-2310.72, B0.32,D+0.62. D has zero rule and all24paired participants; E uses log scale; body text7pt.",
-      "basis": "Physical panel widths and editable panel order replace the board’s hand-tuned A/B/C first row and94mm D. The native paper scrolls; page-bottom captures E and the provenance footer. Figure export is rebuilt from the same Intaglio inputs at its target, never a screenshot."
+      "basis": "Physical panel widths and editable panel order replace the board\u2019s hand-tuned A/B/C first row and94mm D. The native paper scrolls; page-bottom captures E and the provenance footer. Figure export is rebuilt from the same Intaglio inputs at its target, never a screenshot."
     },
     {
       "id": "stale",
@@ -272,5 +272,11 @@
   "metrics": {
     "path": "docs/studio/evidence/20261023-parity/Figures/metrics.json",
     "sha256": "897f4665fe6e9d73df5ac12638d48b229f8f3d70dd3061868254bf9edbeedf00"
+  },
+  "capture_run": {
+    "candidate": "2753627d887cac61191b82af28e6b26f1a51fc3d",
+    "tree": "064afa2dc657e510c132239cf77424e9e086f030",
+    "phase": "complete strict studioAll gate",
+    "visual_review": "Final full-suite captures reviewed; Explore and Results antialiasing variations preserve the reviewed values, selection and layout."
   }
 }

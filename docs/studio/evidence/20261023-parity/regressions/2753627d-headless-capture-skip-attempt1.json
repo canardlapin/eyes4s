@@ -1,0 +1,11 @@
+{
+  "candidate": "2753627d887cac61191b82af28e6b26f1a51fc3d",
+  "run": 40024842869,
+  "attempt": 1,
+  "job": 120658490531,
+  "artifact": 12534063303,
+  "case": "BoardParityCaptureFxSuite.Figures",
+  "outcome": "skipped; not counted as an executed pass",
+  "reason": "KeyboardFocus.byKeyboard assumes the test window holds focus. The window lost focus after the capture harness requested it. All seven cases passed locally and on nativeGTK2; a same-source headless rerun is requested for complete positive CI coverage.",
+  "xml_sha256": "3087f7404c99ac9c5eed3ff5dfd33ec98048b6023fc4fdbbf3a6eae865784a92"
+}

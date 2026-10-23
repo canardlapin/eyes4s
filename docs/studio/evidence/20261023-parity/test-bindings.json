@@ -1,0 +1,258 @@
+{
+  "schema": 1,
+  "reviews": [
+    {
+      "board": "Analysis",
+      "checks": 7,
+      "tests": [
+        {
+          "report": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.shell.BoardParityCaptureFxSuite.xml",
+          "case": "Analysis",
+          "report_sha256": "f685336899c7142d86ef9ca3a4e5622c8836e3781be975f0517e2171703c0536"
+        },
+        {
+          "report": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.analysis.ResolvedDesignFxSuite.xml",
+          "case": "the chips, counts and stamp are the backend's preview of rev 5",
+          "report_sha256": "81b4aa88c3d9fe4446e4dc81c3a48575215666f7a1d929264e559e0af260d9aa"
+        },
+        {
+          "report": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.analysis.PreflightFxSuite.xml",
+          "case": "the fixture draft rev 5: Save & run enabled for 44,845 pairs, and it runs",
+          "report_sha256": "dbed3efb86edf54d8e6d2e6c843370782bcbc19e72b20ecf60896e4dae109af6"
+        },
+        {
+          "report": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.shell.ParityChecklistSuite.xml",
+          "case": "DataEmpty t0 shell bounds and texts match the board",
+          "report_sha256": "16e94d9b6d7a7b5a6dee7c0f3a7af9a132e802d588297665ce1c19850018fcef"
+        }
+      ]
+    },
+    {
+      "board": "Data",
+      "checks": 7,
+      "tests": [
+        {
+          "report": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.shell.BoardParityCaptureFxSuite.xml",
+          "case": "Data",
+          "report_sha256": "f685336899c7142d86ef9ca3a4e5622c8836e3781be975f0517e2171703c0536"
+        },
+        {
+          "report": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.geometry.GeometryPanelFxSuite.xml",
+          "case": "t1: the board's geometry, the worked example of record 7,214 and the counts",
+          "report_sha256": "6ecfd1fd4f377551db06af4a5f136a906886baf841f41ecc204df2a82c09fdc8"
+        },
+        {
+          "report": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.admission.AdmissionLedgerFxSuite.xml",
+          "case": "every count opens exactly its trials, and opens them again closed",
+          "report_sha256": "6f1d6696c4e2bd931cc0309f264f18f8a8528d9afea31e4cb39c1cf6987e9e35"
+        },
+        {
+          "report": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.shell.ParityChecklistSuite.xml",
+          "case": "DataEmpty t0 shell bounds and texts match the board",
+          "report_sha256": "16e94d9b6d7a7b5a6dee7c0f3a7af9a132e802d588297665ce1c19850018fcef"
+        }
+      ]
+    },
+    {
+      "board": "Explore",
+      "checks": 6,
+      "tests": [
+        {
+          "report": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.shell.BoardParityCaptureFxSuite.xml",
+          "case": "Explore",
+          "report_sha256": "f685336899c7142d86ef9ca3a4e5622c8836e3781be975f0517e2171703c0536"
+        },
+        {
+          "report": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.explore.FixationInspectorFxSuite.xml",
+          "case": "the fixture fixation: record 7,214, 2,160 ms, 412 ms, (1148, 456), (700, 300), (+5.4\u00b0, +2.4\u00b0)",
+          "report_sha256": "50e834613edbf8162a1b30a9612ecdfcadaa793f9a88e986217cedaf11714308"
+        },
+        {
+          "report": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.explore.ExploreTrialViewFxSuite.xml",
+          "case": "the preview map's legend keys are in the legend row, none under the stage",
+          "report_sha256": "e13713210e8d1a2a485e913284720c8fa64821c8f4fe4899a978814ddf31c6e5"
+        },
+        {
+          "report": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.shell.ParityChecklistSuite.xml",
+          "case": "DataEmpty t0 shell bounds and texts match the board",
+          "report_sha256": "16e94d9b6d7a7b5a6dee7c0f3a7af9a132e802d588297665ce1c19850018fcef"
+        }
+      ]
+    },
+    {
+      "board": "Figures",
+      "checks": 6,
+      "tests": [
+        {
+          "report": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.shell.BoardParityCaptureFxSuite.xml",
+          "case": "Figures",
+          "report_sha256": "f685336899c7142d86ef9ca3a4e5622c8836e3781be975f0517e2171703c0536"
+        },
+        {
+          "report": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.figures.FigureComposerFxSuite.xml",
+          "case": "183 mm paper places two 89 mm panels beside one another with a 5 mm gutter",
+          "report_sha256": "3c90a732319dc66575e3c1ab0284df401eca1a0525ff45e7efd84523c4b6a340"
+        },
+        {
+          "report": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.figures.FigureExportSuite.xml",
+          "case": "the exported SVG matches its golden (fonts aside)",
+          "report_sha256": "daf10e1db70d087190737f35284f356768a28f50bae6d8870b40f4d3a032ee10"
+        },
+        {
+          "report": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.figures.FigureExportSuite.xml",
+          "case": "the exported PDF matches its golden: page size, embedded fonts and text",
+          "report_sha256": "daf10e1db70d087190737f35284f356768a28f50bae6d8870b40f4d3a032ee10"
+        },
+        {
+          "report": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.shell.ParityChecklistSuite.xml",
+          "case": "DataEmpty t0 shell bounds and texts match the board",
+          "report_sha256": "16e94d9b6d7a7b5a6dee7c0f3a7af9a132e802d588297665ce1c19850018fcef"
+        }
+      ]
+    },
+    {
+      "board": "Main",
+      "checks": 7,
+      "tests": [
+        {
+          "report": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.shell.BoardParityCaptureFxSuite.xml",
+          "case": "Main",
+          "report_sha256": "f685336899c7142d86ef9ca3a4e5622c8836e3781be975f0517e2171703c0536"
+        },
+        {
+          "report": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.compare.CompareMapHostFxSuite.xml",
+          "case": "Compare uses served cells, row order, region and thresholds; styles and toggles change no score",
+          "report_sha256": "44a1d49d582b2daf6aab5dbb8d81b0edf6fb20bfce35006ecc2407efa8dc104d"
+        },
+        {
+          "report": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.compare.CompareMapHostFxSuite.xml",
+          "case": "late and wrong-identity map answers cannot replace the selected scale; refusals retry",
+          "report_sha256": "44a1d49d582b2daf6aab5dbb8d81b0edf6fb20bfce35006ecc2407efa8dc104d"
+        },
+        {
+          "report": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.compare.ScaleLadderFxSuite.xml",
+          "case": "the readout is FIXTURE.md's focus at 2\u00b0, with the confound sentence verbatim",
+          "report_sha256": "764b9f09f296e084f8f0b64d14ece941b33c5fec6163f6fbf69eb591e18ca5e0"
+        },
+        {
+          "report": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.maps.MapRasterStoreSuite.xml",
+          "case": "a cached key with other cells renders those cells rather than returning the old image",
+          "report_sha256": "00a23188061b0d951d15be03c95e3247c562a61b3bf6f0b7064cd4ed29d30ecb"
+        },
+        {
+          "report": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.compare.CompareMapHostFxSuite.xml",
+          "case": "a raster failure is visible and Retry redraws the same served cells",
+          "report_sha256": "44a1d49d582b2daf6aab5dbb8d81b0edf6fb20bfce35006ecc2407efa8dc104d"
+        },
+        {
+          "report": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.trial.TrialViewMapFxSuite.xml",
+          "case": "Main's 432 px trial pane keeps all caption wording clear",
+          "report_sha256": "20fabd12b747d70df8c22ddba3cbf49b6b4862260686f7edee888b98ec135c9e"
+        },
+        {
+          "report": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.shell.ParityChecklistSuite.xml",
+          "case": "DataEmpty t0 shell bounds and texts match the board",
+          "report_sha256": "16e94d9b6d7a7b5a6dee7c0f3a7af9a132e802d588297665ce1c19850018fcef"
+        }
+      ]
+    },
+    {
+      "board": "MainDark",
+      "checks": 7,
+      "tests": [
+        {
+          "report": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.shell.BoardParityCaptureFxSuite.xml",
+          "case": "MainDark",
+          "report_sha256": "f685336899c7142d86ef9ca3a4e5622c8836e3781be975f0517e2171703c0536"
+        },
+        {
+          "report": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.compare.CompareMapHostFxSuite.xml",
+          "case": "Compare uses served cells, row order, region and thresholds; styles and toggles change no score",
+          "report_sha256": "44a1d49d582b2daf6aab5dbb8d81b0edf6fb20bfce35006ecc2407efa8dc104d"
+        },
+        {
+          "report": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.compare.CompareMapHostFxSuite.xml",
+          "case": "late and wrong-identity map answers cannot replace the selected scale; refusals retry",
+          "report_sha256": "44a1d49d582b2daf6aab5dbb8d81b0edf6fb20bfce35006ecc2407efa8dc104d"
+        },
+        {
+          "report": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.compare.ScaleLadderFxSuite.xml",
+          "case": "the readout is FIXTURE.md's focus at 2\u00b0, with the confound sentence verbatim",
+          "report_sha256": "764b9f09f296e084f8f0b64d14ece941b33c5fec6163f6fbf69eb591e18ca5e0"
+        },
+        {
+          "report": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.maps.MapRasterStoreSuite.xml",
+          "case": "a cached key with other cells renders those cells rather than returning the old image",
+          "report_sha256": "00a23188061b0d951d15be03c95e3247c562a61b3bf6f0b7064cd4ed29d30ecb"
+        },
+        {
+          "report": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.compare.CompareMapHostFxSuite.xml",
+          "case": "a raster failure is visible and Retry redraws the same served cells",
+          "report_sha256": "44a1d49d582b2daf6aab5dbb8d81b0edf6fb20bfce35006ecc2407efa8dc104d"
+        },
+        {
+          "report": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.trial.TrialViewMapFxSuite.xml",
+          "case": "Main's 432 px trial pane keeps all caption wording clear",
+          "report_sha256": "20fabd12b747d70df8c22ddba3cbf49b6b4862260686f7edee888b98ec135c9e"
+        },
+        {
+          "report": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.shell.ParityChecklistSuite.xml",
+          "case": "DataEmpty t0 shell bounds and texts match the board",
+          "report_sha256": "16e94d9b6d7a7b5a6dee7c0f3a7af9a132e802d588297665ce1c19850018fcef"
+        }
+      ]
+    },
+    {
+      "board": "Results",
+      "checks": 6,
+      "tests": [
+        {
+          "report": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.shell.BoardParityCaptureFxSuite.xml",
+          "case": "Results",
+          "report_sha256": "f685336899c7142d86ef9ca3a4e5622c8836e3781be975f0517e2171703c0536"
+        },
+        {
+          "report": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.plot.CompareSummaryFxSuite.xml",
+          "case": "the headline's paired descriptive reads +0.18, P15 to P11, 24 of 24",
+          "report_sha256": "b1fb23524199ccb4224075fde0293665003d60114be6bba017a02ceb738fea56"
+        },
+        {
+          "report": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.plot.CompareSummaryFxSuite.xml",
+          "case": "participant table and plot match the stored query values",
+          "report_sha256": "b1fb23524199ccb4224075fde0293665003d60114be6bba017a02ceb738fea56"
+        },
+        {
+          "report": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.shell.ParityChecklistSuite.xml",
+          "case": "DataEmpty t0 shell bounds and texts match the board",
+          "report_sha256": "16e94d9b6d7a7b5a6dee7c0f3a7af9a132e802d588297665ce1c19850018fcef"
+        }
+      ]
+    },
+    {
+      "board": "System",
+      "checks": 5,
+      "tests": [
+        {
+          "report": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.shell.SystemSpecimenFxSuite.xml",
+          "case": "System Light",
+          "report_sha256": "0c753c1651a97163695852e0d1e82499a50749265be1ec8d25d6df9e99dbeb9e"
+        },
+        {
+          "report": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.shell.SystemSpecimenFxSuite.xml",
+          "case": "System Dark",
+          "report_sha256": "0c753c1651a97163695852e0d1e82499a50749265be1ec8d25d6df9e99dbeb9e"
+        },
+        {
+          "report": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.shell.ControlsFxSuite.xml",
+          "case": "keyboard focus draws the accent ring on the row; a click draws no accent",
+          "report_sha256": "71cde77c4032f25457b6c348b061943eeab2bda611d0f06b7f97c00b282a2a8a"
+        },
+        {
+          "report": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.shell.ParityChecklistSuite.xml",
+          "case": "DataEmpty t0 shell bounds and texts match the board",
+          "report_sha256": "16e94d9b6d7a7b5a6dee7c0f3a7af9a132e802d588297665ce1c19850018fcef"
+        }
+      ]
+    }
+  ]
+}

@@ -182,7 +182,7 @@
   "captures": [
     {
       "path": "docs/studio/evidence/20261023-parity/Explore/light-1x.png",
-      "sha256": "b037aa543d057120c018df35d5d4368fe73469496b17759458f5c9758cd8b169"
+      "sha256": "1b970db447e9c1d9d58c0d18b049ae929ed1799d22a3a416f04eaf48e4633bd2"
     },
     {
       "path": "docs/studio/evidence/20261023-parity/Explore/light-2x.png",
@@ -199,19 +199,19 @@
     {
       "id": "trail",
       "disposition": "match",
-      "evidence": "t2 trail retains Summary → retrieval response → Remembered → P17 → ret_07 → pair → enc_03 → fixation 6 → source record 7214."
+      "evidence": "t2 trail retains Summary \u2192 retrieval response \u2192 Remembered \u2192 P17 \u2192 ret_07 \u2192 pair \u2192 enc_03 \u2192 fixation 6 \u2192 source record 7214."
     },
     {
       "id": "marks-preview",
       "disposition": "accepted deviation",
-      "evidence": "Actual Intaglio neutral marks/halo, cased isolines and preview σ2 not-a-result label; map legend in its row with no extra legend beneath the stage.",
-      "basis": "Actual golden stimulus pixels, fixation locations and stored preview cells replace the board’s illustrative beach and contours. The dashed preview badge identifies its status; no result is fabricated."
+      "evidence": "Actual Intaglio neutral marks/halo, cased isolines and preview \u03c32 not-a-result label; map legend in its row with no extra legend beneath the stage.",
+      "basis": "Actual golden stimulus pixels, fixation locations and stored preview cells replace the board\u2019s illustrative beach and contours. The dashed preview badge identifies its status; no result is fabricated."
     },
     {
       "id": "timeline",
       "disposition": "accepted deviation",
-      "evidence": "Real TimelineIntent play/tick/pause/brush seeds playhead 2.16 s and brush 1.20–2.80 s. Brush highlights without cropping the analysis.",
-      "basis": "Actual CSV declares fixation intervals but no full trial extent. Native view says this explicitly and plays those intervals; the board’s 5.0 s trial duration is not inferred."
+      "evidence": "Real TimelineIntent play/tick/pause/brush seeds playhead 2.16 s and brush 1.20\u20132.80 s. Brush highlights without cropping the analysis.",
+      "basis": "Actual CSV declares fixation intervals but no full trial extent. Native view says this explicitly and plays those intervals; the board\u2019s 5.0 s trial duration is not inferred."
     },
     {
       "id": "records",
@@ -232,7 +232,7 @@
     },
     {
       "report": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.explore.FixationInspectorFxSuite.xml",
-      "case": "the fixture fixation: record 7,214, 2,160 ms, 412 ms, (1148, 456), (700, 300), (+5.4°, +2.4°)"
+      "case": "the fixture fixation: record 7,214, 2,160 ms, 412 ms, (1148, 456), (700, 300), (+5.4\u00b0, +2.4\u00b0)"
     },
     {
       "report": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.explore.ExploreTrialViewFxSuite.xml",
@@ -252,5 +252,11 @@
   "metrics": {
     "path": "docs/studio/evidence/20261023-parity/Explore/metrics.json",
     "sha256": "edc2d88ad6d6675bbe0da2ae69083fcf3f0ac153ab56f63ea44a3982915900cf"
+  },
+  "capture_run": {
+    "candidate": "2753627d887cac61191b82af28e6b26f1a51fc3d",
+    "tree": "064afa2dc657e510c132239cf77424e9e086f030",
+    "phase": "complete strict studioAll gate",
+    "visual_review": "Final full-suite captures reviewed; Explore and Results antialiasing variations preserve the reviewed values, selection and layout."
   }
 }
