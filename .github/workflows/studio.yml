@@ -242,6 +242,7 @@ jobs:
           path: |
             target/studio-snapshots/VisualParitySuite/
             target/studio-snapshots/ParticipantsNavigatorFxSuite/
+            target/studio-snapshots/CanvasBoundaryFxSuite/
             target/studio-visual-parity/
             studio/desktop/target/test-reports/
           include-hidden-files: true

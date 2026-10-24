@@ -89,7 +89,8 @@ final case class PlotHostProfile(
   * `compiler`, off the FX thread, and draws the compiled program on a canvas on
   * the FX thread.
   *
-  * '''HiDPI.''' The canvas texture has one pixel per device pixel: its raster
+  * '''HiDPI.''' The painted raster has one pixel per device pixel; its texture
+  * also reserves a cleared sampling guard at the right and bottom edges. The raster
   * is the surface's device size, so a 2x display gets a 2x raster rather than
   * an upscaled 1x one. JavaFX already backs every canvas with a texture
   * [[CanvasPlotHost.canvasPixelScale]] times its size (the highest output scale
@@ -276,7 +277,7 @@ final class CanvasPlotHost private[plot] (
           frame <- shown
           paint <- painter
         do
-          inDevicePixels(ugc)(paint.paintUnder(ugc, frame))
+          inDevicePixels(ugc, frame)(paint.paintUnder(ugc, frame))
           underDraws += 1
       val gc = overlay.getGraphicsContext2D
       gc.clearRect(0.0, 0.0, overlay.getWidth, overlay.getHeight)
@@ -284,11 +285,12 @@ final class CanvasPlotHost private[plot] (
         frame <- shown
         paint <- painter
       do
-        inDevicePixels(gc)(paint.paint(gc, frame))
+        inDevicePixels(gc, frame)(paint.paint(gc, frame))
         overlayDraws += 1
 
   /** The texture JavaFX backs each of the host's canvases with, in pixels: the
-    * canvas size times the texture scale the canvases were created for.
+    * canvas size times the texture scale the canvases were created for, including
+    * the cleared sampling guard.
     */
   private[plot] def canvasTexture: (Int, Int) =
     val k = layers.pixelScale
@@ -464,9 +466,11 @@ final class CanvasPlotHost private[plot] (
 
   private def draw(frame: PlotFrame): Unit =
     replaceStaleLayers(): Unit
-    val k      = layers.pixelScale
-    val width  = frame.surface.deviceWidth.toDouble / k
-    val height = frame.surface.deviceHeight.toDouble / k
+    val k = layers.pixelScale
+    // A defined transparent texel outside the painted frame keeps transformed
+    // snapshots from sampling retained texture padding after a resize.
+    val width  = frame.surface.canvasTextureWidth.toDouble / k
+    val height = frame.surface.canvasTextureHeight.toDouble / k
     val back   = k / frame.surface.deviceScale
     layers.all.foreach { layer =>
       val c = layer.canvas
@@ -481,15 +485,18 @@ final class CanvasPlotHost private[plot] (
     gc.clearRect(0.0, 0.0, width, height)
     val context = drawing.getOrElse(renderer(gc))
     drawing = Some(context)
-    inDevicePixels(gc)(JavaFxRenderer.draw(frame.program, context))
+    inDevicePixels(gc, frame)(JavaFxRenderer.draw(frame.program, context))
     baseDraws += 1
 
-  // Runs `f` with `gc` drawing in device pixels, whatever the texture scale.
-  private def inDevicePixels(gc: GraphicsContext)(f: => Unit): Unit =
+  // Paint only the declared frame; the surrounding texture guard remains clear.
+  private def inDevicePixels(gc: GraphicsContext, frame: PlotFrame)(f: => Unit): Unit =
     val k = layers.pixelScale
     gc.save()
     try
       gc.scale(1.0 / k, 1.0 / k)
+      gc.beginPath()
+      gc.rect(0.0, 0.0, frame.surface.deviceWidth.toDouble, frame.surface.deviceHeight.toDouble)
+      gc.clip()
       f
     finally gc.restore()
 

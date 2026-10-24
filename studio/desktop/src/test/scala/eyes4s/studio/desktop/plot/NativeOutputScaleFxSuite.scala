@@ -91,7 +91,7 @@ class NativeOutputScaleFxSuite extends StudioFxSuite:
       assertEquals(runOnFx(host.outputScale), Some(native._1))
       assertEquals(
         runOnFx(host.canvasTexture),
-        (frame.surface.deviceWidth, frame.surface.deviceHeight)
+        (frame.surface.canvasTextureWidth, frame.surface.canvasTextureHeight)
       )
       val origin = runOnFx(host.localToScene(0.0, 0.0))
       assertEquals((origin.getX, origin.getY), (0.0, 0.0))

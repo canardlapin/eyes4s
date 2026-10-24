@@ -47,9 +47,13 @@ sealed abstract case class PlotSurface private (
   /** The raster height in device pixels. */
   def deviceHeight: Int = PlotSurface.devicePixels(logicalHeight, deviceScale)
 
+  /** Storage includes a transparent sampling guard after the painted raster. */
+  def canvasTextureWidth: Int  = deviceWidth + PlotSurface.TextureGuardPixels
+  def canvasTextureHeight: Int = deviceHeight + PlotSurface.TextureGuardPixels
+
   /** Maximum RGBA texture bytes reserved by the scene, selection and pointer layers. */
   def canvasTextureBytes: Long =
-    deviceWidth.toLong * deviceHeight * PlotSurface.CanvasLayerCount * PlotSurface.BytesPerTexel
+    canvasTextureWidth.toLong * canvasTextureHeight * PlotSurface.CanvasLayerCount * PlotSurface.BytesPerTexel
 
   /** The Intaglio render context for this surface. */
   def renderContext(sceneId: SceneId): Either[PlotSceneError, RenderContext] =
@@ -76,12 +80,16 @@ object PlotSurface:
   // pixel, so 480 x 1.25 is 600 pixels even when the product rounds up.
   private val SnapEpsilon = 1e-6
 
-  /** The largest raster edge accepted, in device pixels. It is a conservative
-    * bound chosen to stay within the texture size JavaFX pipelines commonly
-    * support; it is not a limit JavaFX guarantees, and a pipeline with a
-    * smaller maximum texture can still fail to draw an accepted surface.
+  /** One cleared device pixel at the right and bottom edges defines samples
+    * outside the painted frame during bilinear texture filtering.
     */
-  val MaxDevicePixels: Int = 8192
+  val TextureGuardPixels: Int = 1
+
+  /** The largest painted raster edge. Its backing storage, including the
+    * sampling guard, stays within a conservative 8192-device-pixel edge.
+    * A pipeline with a smaller maximum texture can still refuse this surface.
+    */
+  val MaxDevicePixels: Int = 8192 - TextureGuardPixels
 
   /** Three full-size RGBA layers are reserved even when feedback is empty
     * (bead q-canvas-texture-budget).

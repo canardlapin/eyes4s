@@ -157,31 +157,40 @@ class PlotTransformSuite extends munit.FunSuite:
     )
   }
 
+  test("texture storage includes a transparent guard without changing the painted raster") {
+    val one = right(PlotSurface(1, 1, 1))
+    assertEquals((one.deviceWidth, one.deviceHeight), (1, 1))
+    assertEquals((one.canvasTextureWidth, one.canvasTextureHeight), (2, 2))
+    assertEquals(one.canvasTextureBytes, 48L)
+    assertEquals(right(PlotSurface(8191, 1, 1)).canvasTextureWidth, 8192)
+    assertEquals(PlotSurface(8192, 1, 1), Left(PlotSceneError.InvalidSurface(8192, 1, 1)))
+  }
+
   test("three RGBA layers obey the byte budget, including raster rounding and HiDPI") {
-    val accepted = right(PlotSurface(4096, 2730, 1))
-    assertEquals(accepted.canvasTextureBytes, 4096L * 2730 * 3 * 4)
+    val accepted = right(PlotSurface(4096, 2729, 1))
+    assertEquals(accepted.canvasTextureBytes, 4097L * 2730 * 3 * 4)
     assertEquals(
-      right(PlotSurface(2048, 1365, 2)).canvasTextureBytes,
+      right(PlotSurface(2048, 1364.5, 2)).canvasTextureBytes,
       accepted.canvasTextureBytes
     )
     assertEquals(
-      PlotSurface(4096, 2731, 1),
+      PlotSurface(4096, 2730, 1),
       Left(
         PlotSceneError.CanvasTextureBudget(
           4096,
-          2731,
+          2730,
           1,
-          4096L * 2731 * 12,
+          4097L * 2731 * 12,
           PlotSurface.MaxCanvasTextureBytes
         )
       )
     )
     assertEquals(
-      PlotSurface(8192, 8192, 1),
+      PlotSurface(8191, 8191, 1),
       Left(
         PlotSceneError.CanvasTextureBudget(
-          8192,
-          8192,
+          8191,
+          8191,
           1,
           805306368L,
           PlotSurface.MaxCanvasTextureBytes
@@ -189,10 +198,10 @@ class PlotTransformSuite extends munit.FunSuite:
       )
     )
     val rounded =
-      PlotSurface(4096, 2730.1, 1).left.toOption.getOrElse(fail("rounding escaped the cap"))
+      PlotSurface(4096, 2729.1, 1).left.toOption.getOrElse(fail("rounding escaped the cap"))
     assert(rounded.message.contains("budget is 134217728 bytes"), rounded.message)
     assert(
-      rounded.message.contains("4096") && rounded.message.contains("2730.1"),
+      rounded.message.contains("4096") && rounded.message.contains("2729.1"),
       rounded.message
     )
   }

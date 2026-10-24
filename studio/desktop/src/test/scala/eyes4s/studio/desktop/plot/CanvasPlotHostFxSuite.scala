@@ -189,10 +189,10 @@ class CanvasPlotHostFxSuite extends StudioFxSuite:
               (frame.surface.deviceWidth, frame.surface.deviceHeight),
               (math.ceil(size._1 * k).toInt, math.ceil(size._2 * k).toInt)
             )
-            // One texture pixel per device pixel, whatever the screen's scale.
+            // One texture pixel per device pixel, plus the explicit sampling guard.
             assertEquals(
               runOnFx(host.canvasTexture),
-              (frame.surface.deviceWidth, frame.surface.deviceHeight)
+              (frame.surface.canvasTextureWidth, frame.surface.canvasTextureHeight)
             )
             val file  = fx.snapshot(studioTheme, List(scale)).head
             val image = ImageIO.read(file.toFile)
@@ -266,7 +266,7 @@ class CanvasPlotHostFxSuite extends StudioFxSuite:
         host.show(reference(Theme.Light))
       }
       val frame  = awaitFrame(host, 2.0)
-      val device = (frame.surface.deviceWidth, frame.surface.deviceHeight)
+      val device = (frame.surface.canvasTextureWidth, frame.surface.canvasTextureHeight)
       def state  = runOnFx(
         (
           host.getChildrenUnmodifiable.asScala.toList,
@@ -608,7 +608,7 @@ class CanvasPlotHostFxSuite extends StudioFxSuite:
       val h = CanvasPlotHost()
       h.setManaged(false)
       h.setOutputScaleOverride(Some(1.0))
-      h.resize(4096, 2730)
+      h.resize(4096, 2729)
       h
     }
     fx.show(runOnFx(StackPane(host)))
@@ -625,9 +625,9 @@ class CanvasPlotHostFxSuite extends StudioFxSuite:
       assertEquals(image.getPixelReader.getArgb(point.x.toInt, point.y.toInt), expected)
     val frame = awaitFrame(host, 1.0)
     assertRendered(frame)
-    assertEquals(frame.surface.canvasTextureBytes, 4096L * 2730 * 12)
+    assertEquals(frame.surface.canvasTextureBytes, 4097L * 2730 * 12)
     val compiled = runOnFx(host.profile.compiles)
-    runOnFx(host.resize(8192, 8192))
+    runOnFx(host.resize(8191, 8191))
     awaitStatus(host)(_.isInstanceOf[PlotHostStatus.Failed]) match
       case PlotHostStatus.Failed(
             CanvasPlotError.Surface(error: PlotSceneError.CanvasTextureBudget)
@@ -642,3 +642,37 @@ class CanvasPlotHostFxSuite extends StudioFxSuite:
     assertRendered(awaitFrame(host, 1.0))
     runOnFx(host.dispose())
   }
+
+  for scale <- List(1.0, 2.0) do
+    fxStage.test(
+      s"feedback ends at the painted frame and leaves its guard transparent at${scale}x"
+    ) { fx =>
+      val (host, _) = hostIn(fx, pad = 24.0)
+      runOnFx {
+        host.setOutputScaleOverride(Some(scale))
+        host.show(reference(Theme.Light))
+      }
+      val frame = awaitFrame(host, scale)
+      runOnFx(host.setOverlay(Some(new PlotOverlay:
+        def paint(gc: javafx.scene.canvas.GraphicsContext, f: PlotFrame): Unit =
+          gc.setFill(javafx.scene.paint.Color.RED)
+          gc.fillRect(f.surface.deviceWidth - 1.0, 0.0, 2.0, f.surface.deviceHeight + 1.0)
+          gc.fillRect(0.0, f.surface.deviceHeight - 1.0, f.surface.deviceWidth + 1.0, 2.0))))
+      val image = runOnFx {
+        val overlay = host.getChildrenUnmodifiable.asScala.collect { case c: Canvas => c }.last
+        val parameters = SnapshotParameters()
+        parameters.setFill(javafx.scene.paint.Color.TRANSPARENT)
+        parameters.setTransform(javafx.scene.transform.Transform.scale(scale, scale))
+        overlay.snapshot(parameters, null)
+      }
+      assertEquals(image.getWidth, frame.surface.canvasTextureWidth.toDouble)
+      assertEquals(image.getHeight, frame.surface.canvasTextureHeight.toDouble)
+      val pixels = image.getPixelReader
+      val w      = frame.surface.deviceWidth
+      val h      = frame.surface.deviceHeight
+      assertEquals(pixels.getArgb(w - 1, h / 2), 0xffff0000)
+      assertEquals(pixels.getArgb(w / 2, h - 1), 0xffff0000)
+      for y <- 0 until frame.surface.canvasTextureHeight do
+        assertEquals(pixels.getArgb(w, y), 0)
+      for x <- 0 until frame.surface.canvasTextureWidth do assertEquals(pixels.getArgb(x, h), 0)
+    }
