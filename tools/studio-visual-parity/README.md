@@ -29,6 +29,11 @@ python3 -m unittest discover -s tools/studio-visual-parity -p 'test_*.py'
 python3 tools/studio-visual-parity/check.py
 ```
 
+Native macOS may clamp the scene to its runner screen. Functional receipts record
+the actual logical size and require both PNG sizes to match it; the Linux golden
+court still requires exactly1440×900 logical pixels. Rendering readiness and
+repeat checks remain mandatory in both modes.
+
 On macOS, explicitly use `check.py --allow-functional-only`; its receipt says that
 Linux pixel qualification was not performed. CI's headless Linux job requires
 all30 cases executed (no failures, skips or duplicates), all60 captures, source and

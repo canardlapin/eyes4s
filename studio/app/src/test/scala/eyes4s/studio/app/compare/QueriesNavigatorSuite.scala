@@ -86,6 +86,45 @@ class QueriesNavigatorSuite extends munit.FunSuite:
       ).transformWith(result => session.close.transform(_ => result))
     }
 
+  test(
+    "participant activation reveals its 20 query rows while retaining exact overall provenance"
+  ) {
+    loaded(t3Summary).map { summary =>
+      val participants =
+        ParticipantsNavigator.vm(ParticipantsNavigator.empty, summary, t3Summary)
+      Vector("P17", "P24").foreach { participant =>
+        val row      = participants.rows.find(_.participant == participant).get
+        val moved    = AppModel.update(t3Summary, row.open)._1
+        val selected = QueriesNavigator.selection(moved)
+        val vm       = QueriesNavigator.vm(QueriesNavigator.initial, summary, selected)
+        val group    = vm.groups.find(_.label == participant).get
+        assert(group.open, "activating a participant left its query group collapsed")
+        assertEquals(group.entries.size, 20)
+        assertEquals(group.summaryRef, Some(row.ref))
+        assert(group.entries.forall(_.ref match
+          case StudioRef.QueryContrast(`run7`, _, query) => query.participant == participant
+          case _                                         => false))
+        assertEquals(
+          ParticipantsNavigator
+            .vm(ParticipantsNavigator.empty, summary, moved)
+            .rows
+            .filter(_.selected)
+            .map(_.participant),
+          Vector(participant)
+        )
+        val closed = QueriesNavigator.toggle(QueriesNavigator.initial, group.key, open = true)
+        assert(
+          !QueriesNavigator
+            .vm(closed, summary, selected)
+            .groups
+            .find(_.label == participant)
+            .get
+            .open
+        )
+      }
+    }
+  }
+
   test("the count strip is FIXTURE.md's: 480 = 454 + 3 + 9 + 14, by design n/a") {
     loaded(t2Compare).map { s =>
       val vm = QueriesNavigator.vm(QueriesNavigator.initial, s, Vector.empty)

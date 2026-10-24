@@ -167,18 +167,18 @@ class VisualParitySuite extends StoryCaptureFixture:
         project = Some(fixtureProject),
         clock = () => None
       )
-      assertEquals(fx.sceneSize, (1440.0, 900.0))
+      val logicalSize = fx.sceneSize
+      val nativeScale = runOnFx(fx.stage.getOutputScaleX)
+      val compare     = System.getProperty("os.name").toLowerCase.contains("linux") &&
+        StudioFxSuite.headless && nativeScale == 1.0
+      if compare then assertEquals(logicalSize, (1440.0, 900.0))
+      else assert(logicalSize._1 > 0 && logicalSize._2 > 0)
       ready(fx, w, moment, p)
       val first        = fx.snapshot(theme)
       val before       = first.map(VisualPixels.read)
       val beforeHashes = first.map(hash)
       assertEquals(takeRenderFailures().map(_.toString), Vector.empty[String])
-      val actual      = fx.snapshot(theme)
-      val nativeScale = runOnFx(fx.stage.getOutputScaleX)
-      val compare     = System
-        .getProperty("os.name")
-        .toLowerCase
-        .contains("linux") && StudioFxSuite.headless && nativeScale == 1.0
+      val actual   = fx.snapshot(theme)
       val problems = Vector.newBuilder[String]
       val captures = actual.zipWithIndex.map { (file, index) =>
         val image  = VisualPixels.read(file)
@@ -231,6 +231,8 @@ class VisualParitySuite extends StoryCaptureFixture:
         "moment"               -> tag,
         "perspective"          -> p.label,
         "theme"                -> theme.id,
+        "logicalWidth"         -> logicalSize._1,
+        "logicalHeight"        -> logicalSize._2,
         "nativeScaleX"         -> nativeScale,
         "nativeScaleY"         -> runOnFx(fx.stage.getOutputScaleY),
         "mode"  -> (if compare then "linux-monocle-goldens" else "functional-only"),

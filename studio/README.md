@@ -163,3 +163,10 @@ repeat checks. The coverage verifier requires every named case to execute and
 refuses missing, skipped or stale evidence. The Results Participants navigator
 uses served overall cells and separately labelled run accounting; its full Tab
 traversal is recorded in [tab-order-results.txt](../docs/studio/a11y/tab-order-results.txt).
+
+The Results Tab transcript compares stable stop order and names; responsive plot
+annotation slots are recorded in full, together with the actual scene size, at
+`target/studio-snapshots/ParticipantsNavigatorFxSuite/tab-order.json`. The
+structural golden is `docs/studio/a11y/tab-order-results.txt`. Participant activation
+opens its query group unless the user explicitly closed it, and retains the exact
+overall report reference.

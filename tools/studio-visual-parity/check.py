@@ -4,6 +4,7 @@ import importlib.util
 import argparse
 import hashlib
 import json
+import math
 from pathlib import Path
 import struct
 import subprocess
@@ -70,6 +71,11 @@ def verify(root, manifest, allow_functional=False):
             raise ValueError(f'{state}: wrong golden rendering environment')
         if goldens and (value['nativeScaleX'], value['nativeScaleY']) != (1, 1):
             raise ValueError(f'{state}: golden environment must use native1x')
+        logical = (value.get('logicalWidth'), value.get('logicalHeight'))
+        if not all(isinstance(n, (int, float)) and math.isfinite(n) and n > 0 for n in logical):
+            raise ValueError(f'{state}: invalid logical scene dimensions')
+        if goldens and logical != (1440, 900):
+            raise ValueError(f'{state}: golden scene dimensions must be1440x900')
         theme = state.rsplit('-', 1)[1]
         captures = value['captures']
         names = {Path(c['actual']).name for c in captures}
@@ -80,7 +86,7 @@ def verify(root, manifest, allow_functional=False):
             if actual.parent != path.parent or sha(actual) != capture['actualSha256']:
                 raise ValueError(f'{state}: changed actual capture')
             scale = int(actual.stem[-2])
-            size = (1440 * scale, 900 * scale)
+            size = tuple(math.ceil(n * scale) for n in logical)
             if png_size(actual) != size or (capture['width'], capture['height']) != size:
                 raise ValueError(f'{state}: wrong capture dimensions')
             for kind in ['repeat'] + (['comparison'] if goldens else []):

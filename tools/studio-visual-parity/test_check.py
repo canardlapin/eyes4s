@@ -27,6 +27,7 @@ class CoverageRefusals(unittest.TestCase):
             t, p, theme = state.split('-')
             value = dict(schema=1, state=state, moment=t, perspective=p, theme=theme,
                          mode='linux-monocle-goldens', nativeScaleX=1, nativeScaleY=1,
+                         logicalWidth=1440, logicalHeight=900,
                          maximumChannelDelta=1, maximumChangedFraction=.001,
                          sourceSha256=check.sha(source), candidateFingerprint=check.candidate.fingerprint(self.root),
                          osName='Linux', glassPlatform='Monocle', prismOrder='sw', problems=[], captures=[])
@@ -108,6 +109,27 @@ class CoverageRefusals(unittest.TestCase):
         self.edit(lambda v: v.update(maximumChannelDelta=10))
         with self.assertRaisesRegex(ValueError, 'changed pixel policy'):
             check.verify(self.root, self.manifest)
+
+    def test_golden_geometry_cannot_be_weakened(self):
+        self.edit(lambda v: v.update(logicalWidth=1024, logicalHeight=656))
+        with self.assertRaisesRegex(ValueError, 'golden scene dimensions'):
+            check.verify(self.root, self.manifest)
+
+    def test_native_functional_geometry_is_recorded_and_checked(self):
+        value = json.loads(self.receipt.read_text())
+        value.update(mode='functional-only', logicalWidth=1024, logicalHeight=656,
+                     osName='Mac OS X', glassPlatform='platform-default')
+        for scale, capture in enumerate(value['captures'], 1):
+            actual = self.root / capture['actual']
+            data = actual.read_bytes()
+            actual.write_bytes(data[:16] + struct.pack('>II', 1024*scale, 656*scale) + data[24:])
+            capture.update(width=1024*scale, height=656*scale, actualSha256=check.sha(actual))
+            capture['repeat'].update(width=1024*scale, height=656*scale)
+        self.receipt.write_text(json.dumps(value))
+        self.assertEqual(len(check.verify(self.root, self.manifest, True)['states']), 30)
+        self.edit(lambda v: v.update(logicalHeight=655))
+        with self.assertRaisesRegex(ValueError, 'wrong capture dimensions'):
+            check.verify(self.root, self.manifest, True)
 
     def test_functional_only_is_explicit(self):
         self.edit(lambda v: v.update(mode='functional-only'))

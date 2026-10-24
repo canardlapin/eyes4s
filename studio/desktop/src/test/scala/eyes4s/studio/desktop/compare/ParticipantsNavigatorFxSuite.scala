@@ -71,6 +71,11 @@ class ParticipantsNavigatorFxSuite extends ShellFxSuite:
         Place.Summary(StoryModels.reporting)
       )
       assert(runOnFx(w.summary.participants.rows.find(_.ref == p17.ref).exists(_.selected)))
+      eventually(fx, "participant query group opens with all20queries") {
+        w.summary.navigatorVM.groups.exists(g =>
+          g.label == "P17" && g.open && g.entries.size == 20
+        )
+      }
   }
 
   fxStage.test(
@@ -108,7 +113,13 @@ class ParticipantsNavigatorFxSuite extends ShellFxSuite:
     assert(runOnFx(w.summary.participants.stopText).exists(_.contains(last.spoken)))
     fx.robot.press(KeyCode.ENTER)
     eventually(fx, "activated last participant") {
-      w.runtime.model.location.trail.lastOption.contains(Place.At(last.ref))
+      w.runtime.model.location.trail.lastOption.contains(Place.At(last.ref)) &&
+      w.summary.participants.rows.filter(_.selected).map(_.participant) == Vector(
+        last.participant
+      ) &&
+      w.summary.navigatorVM.groups.exists(g =>
+        g.label == last.participant && g.open && g.entries.size == 20
+      )
     }
   }
 
@@ -172,7 +183,40 @@ class ParticipantsNavigatorFxSuite extends ShellFxSuite:
         .get(String(in.readAllBytes(), java.nio.charset.StandardCharsets.UTF_8).trim)
     finally in.close()
     val file = root.resolve("docs/studio/a11y/tab-order-results.txt")
-    val text = stops.map((role, name) => s"$role: $name").mkString("", "\n", "\n")
+    // Annotation slots depend on the actual native window size. Keep the complete
+    // spoken text as runtime evidence; compare stable stop order and descriptions.
+    val evidence =
+      root.resolve("target/studio-snapshots/ParticipantsNavigatorFxSuite/tab-order.json")
+    java.nio.file.Files.createDirectories(evidence.getParent)
+    java.nio.file.Files.writeString(
+      evidence,
+      ujson.write(
+        ujson.Obj(
+          "logicalWidth"  -> fx.sceneSize._1,
+          "logicalHeight" -> fx.sceneSize._2,
+          "stops"         -> ujson.Arr.from(
+            stops.map((role, name) => ujson.Obj("role" -> role.toString, "name" -> name))
+          )
+        ),
+        indent = 2
+      ) + "\n"
+    )
+    val text = stops
+      .map { (role, name) =>
+        val stable =
+          if role == javafx.scene.AccessibleRole.PARENT && name.startsWith(
+              "Participant plot of "
+            )
+          then
+            assert(name.contains(". Annotations: ") && name.contains(". One focus stop;"))
+            name.take(
+              name.indexOf(". Annotations: ")
+            ) + ". Annotations: [responsive annotations recorded in tab-order.json]" + name
+              .substring(name.indexOf(". One focus stop;"))
+          else name
+        s"$role: $stable"
+      }
+      .mkString("", "\n", "\n")
     if sys.env.get("EYES4S_UPDATE_GOLDENS").contains("1") then
       java.nio.file.Files.writeString(file, text): Unit
     assert(java.nio.file.Files.isRegularFile(file), s"Missing $file")

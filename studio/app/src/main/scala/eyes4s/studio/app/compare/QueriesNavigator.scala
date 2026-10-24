@@ -156,14 +156,13 @@ object QueriesNavigator:
   def follow(nav: QueriesNavigator, run: Option[RunId]): QueriesNavigator =
     if run == nav.run then nav else initial.copy(run = run, filter = nav.filter)
 
-  /** What the navigators show as selected: the bus's selection and the refs
-    * Compare's trail is at (a query is selected when the trail ends at it).
+  /** The current inspection refs, most specific first, then the bus's selection.
+    * Explicit participant navigation takes precedence over an older plot selection.
     */
   def selection(m: AppModel): Vector[StudioRef] =
-    m.selection.selected ++ m.navigation.trail(Perspective.Compare).collect {
-      case Place.At(ref) =>
-        ref
-    }
+    m.navigation.trail(Perspective.Compare).reverse.collect { case Place.At(ref) =>
+      ref
+    } ++ m.selection.selected.reverse
 
   /** The view-model of `nav` over the summary layout's state `s`, with
     * `selected` the bus's selection: participants in the backend's order,
@@ -238,7 +237,18 @@ object QueriesNavigator:
             .collect { case ReportAnswer.Answered(view) => view }
             .flatMap(_.participant(None, eyes4s.studio.core.backend.ReportRole.Difference, p))
             .map(_.ref)
-          group(nav, NavigatorKind.Queries, s"participant:$p", p, summary, ref, es)
+          group(
+            nav,
+            NavigatorKind.Queries,
+            s"participant:$p",
+            p,
+            summary,
+            ref,
+            es,
+            eyes4s.studio.app.plot.ParticipantNotes
+              .selectedParticipant(selected, run)
+              .contains(p)
+          )
         }
         val byItem = shown.zip(entries).groupBy(_._1.item)
         val items  = shown.map(_.item).distinct.sorted.map { item =>
@@ -383,7 +393,8 @@ object QueriesNavigator:
       label: String,
       summary: String,
       summaryRef: Option[StudioRef],
-      entries: Vector[QueryEntry]
+      entries: Vector[QueryEntry],
+      participantContext: Boolean = false
   ): QueryGroup =
     val cursor = nav.cursors.get(kind)
     QueryGroup(
@@ -391,7 +402,7 @@ object QueriesNavigator:
       label,
       summary,
       summaryRef,
-      !nav.closed(key) && (nav.opened(key) || entries.exists(_.selected)),
+      !nav.closed(key) && (nav.opened(key) || participantContext || entries.exists(_.selected)),
       cursor.contains(NavigatorRow.Header(key)),
       entries.map(e => e.copy(cursor = cursor.contains(NavigatorRow.Query(e.ref))))
     )
