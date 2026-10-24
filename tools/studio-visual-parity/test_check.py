@@ -28,7 +28,8 @@ class CoverageRefusals(unittest.TestCase):
             value = dict(schema=1, state=state, moment=t, perspective=p, theme=theme,
                          mode='linux-monocle-goldens', nativeScaleX=1, nativeScaleY=1,
                          maximumChannelDelta=1, maximumChangedFraction=.001,
-                         sourceSha256=check.sha(source), problems=[], captures=[])
+                         sourceSha256=check.sha(source), candidateFingerprint=check.candidate.fingerprint(self.root),
+                         osName='Linux', glassPlatform='Monocle', prismOrder='sw', problems=[], captures=[])
             for scale in [1, 2]:
                 name = f'{theme}-{scale}x.png'
                 actual = self.root / 'target/studio-snapshots/VisualParitySuite' / state / name
@@ -57,6 +58,13 @@ class CoverageRefusals(unittest.TestCase):
 
     def test_complete_matrix(self):
         self.assertEqual(len(check.verify(self.root, self.manifest)['states']), 30)
+
+    def test_changed_production_input_is_stale_even_with_unchanged_capture_suite(self):
+        source = self.root / 'studio/app/src/main/scala/Changed.scala'
+        source.parent.mkdir(parents=True)
+        source.write_text('changed production input')
+        with self.assertRaisesRegex(ValueError, 'changed source/resource/build'):
+            check.verify(self.root, self.manifest)
 
     def test_missing_state(self):
         self.receipt.unlink()

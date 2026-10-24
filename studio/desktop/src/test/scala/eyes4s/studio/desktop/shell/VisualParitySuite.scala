@@ -44,6 +44,19 @@ class VisualParitySuite extends StoryCaptureFixture:
     val in = getClass.getClassLoader.getResourceAsStream("eyes4s/studio/desktop/build-root.txt")
     try Paths.get(String(in.readAllBytes(), UTF_8).trim)
     finally in.close()
+  private val candidateFingerprint: String =
+    val process = new ProcessBuilder(
+      "python3",
+      buildRoot.resolve("tools/studio-visual-parity/candidate.py").toString,
+      buildRoot.toString
+    )
+      .directory(buildRoot.toFile)
+      .redirectError(ProcessBuilder.Redirect.INHERIT)
+      .start()
+    val output = String(process.getInputStream.readAllBytes(), UTF_8).trim
+    assertEquals(process.waitFor(), 0)
+    assert(output.matches("[0-9a-f]{64}"), s"Invalid visual candidate fingerprint: $output")
+    output
   private def hash(p: Path): String = MessageDigest
     .getInstance("SHA-256")
     .digest(Files.readAllBytes(p))
@@ -206,15 +219,22 @@ class VisualParitySuite extends StoryCaptureFixture:
       }
       val errors  = problems.result()
       val receipt = ujson.Obj(
-        "schema"       -> 1,
-        "state"        -> name,
-        "moment"       -> tag,
-        "perspective"  -> p.label,
-        "theme"        -> theme.id,
-        "nativeScaleX" -> nativeScale,
-        "nativeScaleY" -> runOnFx(fx.stage.getOutputScaleY),
-        "mode"         -> (if compare then "linux-monocle-goldens" else "functional-only"),
-        "focus"        -> "programmatic scene root; no keyboard ring; no active text caret",
+        "candidateFingerprint" -> candidateFingerprint,
+        "osName"               -> System.getProperty("os.name"),
+        "osArch"               -> System.getProperty("os.arch"),
+        "javaVersion"          -> System.getProperty("java.version"),
+        "javaFxVersion"        -> System.getProperty("javafx.runtime.version", "unknown"),
+        "glassPlatform"        -> System.getProperty("glass.platform", "platform-default"),
+        "prismOrder"           -> System.getProperty("prism.order", "default"),
+        "schema"               -> 1,
+        "state"                -> name,
+        "moment"               -> tag,
+        "perspective"          -> p.label,
+        "theme"                -> theme.id,
+        "nativeScaleX"         -> nativeScale,
+        "nativeScaleY"         -> runOnFx(fx.stage.getOutputScaleY),
+        "mode"  -> (if compare then "linux-monocle-goldens" else "functional-only"),
+        "focus" -> "programmatic scene root; no keyboard ring; no active text caret",
         "maximumChannelDelta"    -> VisualPixels.MaximumChannelDelta,
         "maximumChangedFraction" -> VisualPixels.MaximumChangedFraction,
         "sourceSha256"           -> hash(

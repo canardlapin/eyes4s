@@ -17,6 +17,6 @@
 .participants-navigator { -fx-padding: 4; }
 .participants-navigator .scroll-pane { -fx-background-color: transparent; -fx-padding: 0; }
 .participants-navigator .viewport { -fx-background-color: -es-surface; }
-.participants-row { -fx-padding: 4 6; -fx-border-width: 2; -fx-border-color: transparent; }
+.participants-row { -fx-padding: 2 6; -fx-border-width: 2; -fx-border-color: transparent; }
 .participants-selected { -fx-background-color: -es-sel-fill; }
 .pane-composite:focus-visible .participants-cursor { -fx-border-color: -es-accent; }

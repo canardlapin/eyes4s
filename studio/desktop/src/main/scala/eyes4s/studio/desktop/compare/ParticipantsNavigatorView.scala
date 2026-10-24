@@ -100,7 +100,8 @@ final class ParticipantsNavigatorView(
 
   private def row(r: ParticipantNavRow): VBox =
     val name = Label(r.participant)
-    name.getStyleClass.add(if r.selected then "t12-strong" else "t12-label")
+    name.getStyleClass.addAll("mono", "t12")
+    if r.selected then name.getStyleClass.add("mono-500"): Unit
     val value = Label(
       eyes4s.studio.app.text.ParticipantsNavText(
         eyes4s.studio.app.text.ParticipantsNavTextId.Mean,
@@ -113,7 +114,8 @@ final class ParticipantsNavigatorView(
     HBox.setHgrow(name, Priority.ALWAYS)
     name.setMaxWidth(Double.MaxValue)
     val count = Label(r.accounting)
-    count.getStyleClass.add(if r.selected then "t11-strong" else "t11")
+    count.getStyleClass.addAll("mono", "t11")
+    if r.selected then count.getStyleClass.add("mono-500"): Unit
     val box = VBox(2.0, HBox(6.0, name, value), count)
     box.getStyleClass.add("participants-row")
     if r.selected then box.getStyleClass.add("participants-selected"): Unit

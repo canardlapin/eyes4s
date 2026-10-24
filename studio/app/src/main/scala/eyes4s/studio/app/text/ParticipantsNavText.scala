@@ -17,6 +17,7 @@
 package eyes4s.studio.app.text
 
 enum ParticipantsNavTextId derives CanEqual:
+  case NoReport
   case Heading, Accounting, Row, Mean, Spoken, Reading, NoRun, Empty, Invalid, MissingCounts,
     MissingValue
 
@@ -31,10 +32,11 @@ object ParticipantsNavText:
       case Row        => "{0} / {1} · {2} failed"
       case Spoken     =>
         "{0}, overall D {1}, n {2}; run queries {3} contributing of {4}, {5} failed"
-      case Reading => "Reading overall participant values for {0}."
-      case NoRun   => "No run shown."
-      case Empty   => "No overall participant values in {0}."
-      case Invalid =>
+      case Reading  => "Reading overall participant values for {0}."
+      case NoReport => "No reporting specification for {0}."
+      case NoRun    => "No run shown."
+      case Empty    => "No overall participant values in {0}."
+      case Invalid  =>
         "{0}, reporting {1}, scale {2}: the served participant context is inconsistent."
       case MissingCounts => "{0}: no query accounting was served for participant {1}."
       case MissingValue  => "no value"

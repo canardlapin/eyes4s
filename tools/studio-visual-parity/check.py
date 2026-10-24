@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 """Require every state, both scales, reviewed baseline hashes and executed tests."""
+import importlib.util
 import argparse
 import hashlib
 import json
@@ -10,8 +11,12 @@ import xml.etree.ElementTree as ET
 
 ROOT = Path(__file__).resolve().parents[2]
 HERE = Path(__file__).parent
+_spec = importlib.util.spec_from_file_location('visual_candidate', HERE / 'candidate.py')
+candidate = importlib.util.module_from_spec(_spec)
+_spec.loader.exec_module(candidate)
 SOURCE = 'studio/desktop/src/test/scala/eyes4s/studio/desktop/shell/VisualParitySuite.scala'
 REPORT = 'studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.shell.VisualParitySuite.xml'
+PIXEL_ACCOUNTING_ABS_TOLERANCE = 1e-15
 
 def sha(path):
     return hashlib.sha256(path.read_bytes()).hexdigest()
@@ -38,6 +43,7 @@ def verify(root, manifest, allow_functional=False):
     states = manifest['states']
     if set(states) != expected or len(states) != 30:
         raise ValueError('Manifest must name exactly all30 matrix states')
+    fingerprint = candidate.fingerprint(root)
     reports = ET.parse(root / REPORT).getroot()
     receipts = list((root / 'target/studio-snapshots/VisualParitySuite').glob('*/review.json'))
     if {p.parent.name for p in receipts} != expected or len(receipts) != 30:
@@ -51,6 +57,8 @@ def verify(root, manifest, allow_functional=False):
         value = json.loads(path.read_text())
         if value.get('schema') != 1 or (value.get('moment'), value.get('perspective'), value.get('theme')) != tuple(state.split('-')):
             raise ValueError(f'{state}: wrong state identity')
+        if value.get('candidateFingerprint') != fingerprint:
+            raise ValueError(f'{state}: changed source/resource/build candidate')
         if value['state'] != state or value['sourceSha256'] != sha(root / SOURCE) or value['problems']:
             raise ValueError(f'{state}: changed source or failed receipt')
         if (value['maximumChannelDelta'], value['maximumChangedFraction']) != (1, .001):
@@ -58,6 +66,8 @@ def verify(root, manifest, allow_functional=False):
         goldens = value['mode'] == 'linux-monocle-goldens'
         if not goldens and (not allow_functional or value['mode'] != 'functional-only'):
             raise ValueError(f'{state}: Linux golden comparisons required')
+        if goldens and (not value.get('osName', '').lower().startswith('linux') or value.get('glassPlatform') != 'Monocle' or value.get('prismOrder') != 'sw'):
+            raise ValueError(f'{state}: wrong golden rendering environment')
         if goldens and (value['nativeScaleX'], value['nativeScaleY']) != (1, 1):
             raise ValueError(f'{state}: golden environment must use native1x')
         theme = state.rsplit('-', 1)[1]
@@ -79,7 +89,7 @@ def verify(root, manifest, allow_functional=False):
                     raise ValueError(f'{state}: failed {kind} comparison')
                 if not 0 <= diff['changedPixels'] <= size[0] * size[1] or not 0 <= diff['maximumChannelDelta'] <= 1 or not 0 <= diff['changedFraction'] <= .001:
                     raise ValueError(f'{state}: {kind} exceeds pixel policy')
-                if abs(diff['changedPixels'] / (size[0] * size[1]) - diff['changedFraction']) > 1e-15:
+                if abs(diff['changedPixels'] / (size[0] * size[1]) - diff['changedFraction']) > PIXEL_ACCOUNTING_ABS_TOLERANCE:
                     raise ValueError(f'{state}: inconsistent {kind} pixel accounting')
             if goldens:
                 baseline = resolve(root, capture['baseline'])
@@ -88,7 +98,7 @@ def verify(root, manifest, allow_functional=False):
                     raise ValueError(f'{state}: changed or invalid reviewed baseline')
         result.append({'state': state, 'mode': value['mode'], 'reviewSha256': sha(path),
                        'captures': captures})
-    return {'states': result, 'xmlSha256': sha(root / REPORT), 'sourceSha256': sha(root / SOURCE)}
+    return {'candidateFingerprint': fingerprint, 'states': result, 'xmlSha256': sha(root / REPORT), 'sourceSha256': sha(root / SOURCE)}
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)

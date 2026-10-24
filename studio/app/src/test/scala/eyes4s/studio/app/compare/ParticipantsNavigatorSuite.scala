@@ -99,7 +99,8 @@ class ParticipantsNavigatorSuite extends munit.FunSuite:
         Vector(Place.Summary(s.spec.get.id), Place.At(row.ref))
       )
       assert(vm(s, moved).rows.find(_.participant == "P17").get.selected)
-      assertEquals(vm(s).rows.count(_.selected), 0)
+      assertEquals(vm(s).rows.filter(_.selected).map(_.participant), Vector("P17"))
+      assert(!model.selection.selected.contains(row.ref))
       row.ref match
         case StudioRef.ReportParticipant(run, rep, k, group, role, p) =>
           assertEquals(
@@ -145,6 +146,12 @@ class ParticipantsNavigatorSuite extends munit.FunSuite:
     assertEquals(vm(CompareSummary.empty).status, Some("No run shown."))
     loaded.map { s =>
       assert(vm(s.copy(reports = Map.empty)).status.exists(_.startsWith("Reading")))
+      assert(vm(s.copy(spec = None)).status.exists(_.contains("No reporting specification")))
+      val noScale = s.copy(
+        scale = None,
+        reports = Map((scale, false) -> ReportAnswer.Failed("no served scale"))
+      )
+      assertEquals(vm(noScale).status, Some("no served scale"))
       assertEquals(
         vm(
           s.copy(reports =

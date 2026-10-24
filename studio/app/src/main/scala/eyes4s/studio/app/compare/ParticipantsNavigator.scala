@@ -63,7 +63,8 @@ object ParticipantsNavigator:
     import ParticipantsNavTextId.*
     def result(status: String) = ParticipantsNavigatorVM("", "", Some(status), Vector.empty)
     (s.run, s.spec, s.shown, s.answered) match
-      case (None, _, _, _) => result(ParticipantsNavText(NoRun))
+      case (None, _, _, _)         => result(ParticipantsNavText(NoRun))
+      case (Some(run), None, _, _) => result(ParticipantsNavText(NoReport, run.label))
       case (Some(run), Some(spec), Some(scale), Some(summary)) =>
         val whole     = spec.groupBy.nonEmpty
         val requested = if whole then CompareSummary.overall(spec) else Some(spec)
@@ -92,8 +93,10 @@ object ParticipantsNavigator:
                 ParticipantsNavText(Invalid, run.label, spec.id.value, scale.value.toString)
               )
             else
-              val selected = QueriesNavigator.selection(m)
-              val home     = nav.cursor
+              val selected    = QueriesNavigator.selection(m)
+              val participant =
+                eyes4s.studio.app.plot.ParticipantNotes.selectedParticipant(selected, run)
+              val home = nav.cursor
                 .filter(ref => cells.exists(_.ref == ref))
                 .orElse(cells.find(p => selected.contains(p.ref)).map(_.ref))
                 .orElse(cells.headOption.map(_.ref))
@@ -123,7 +126,7 @@ object ParticipantsNavigator:
                         requested,
                         failed
                       ),
-                      selected.contains(p.ref),
+                      participant.contains(p.participant),
                       home.contains(p.ref),
                       Intent.Navigate(
                         Location(
@@ -151,7 +154,12 @@ object ParticipantsNavigator:
         s.summary match
           case Some(SummaryAnswer.Refused(e))  => result(e.message)
           case Some(SummaryAnswer.Failed(why)) => result(why)
-          case _ => result(ParticipantsNavText(Reading, run.label))
+          case _                               =>
+            val reason = s.reports.values.collectFirst {
+              case ReportAnswer.Refused(e)  => e.message
+              case ReportAnswer.Failed(why) => why
+            }
+            result(reason.getOrElse(ParticipantsNavText(Reading, run.label)))
 
   def key(
       nav: ParticipantsNavigator,

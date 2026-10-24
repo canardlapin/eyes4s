@@ -33,5 +33,10 @@ On macOS, explicitly use `check.py --allow-functional-only`; its receipt says th
 Linux pixel qualification was not performed. CI's headless Linux job requires
 all30 cases executed (no failures, skips or duplicates), all60 captures, source and
 reviewed baseline hashes, exact dimensions and both repeat/baseline comparisons.
+The source fingerprint includes library/Studio sources and tests, resources/fonts,
+public fixture inputs, project/root build settings and the court tools; pixel
+baselines are hashed separately. Each state records its JDK, JavaFX, OS, Glass
+and software-pipeline properties. Editing another production file cannot reuse
+old captures even if the capture suite is unchanged.
 Diff PNGs are retained on pixel failure. Changing thresholds requires new evidence
 and review; CI never accepts a changed image merely because it can capture it.
