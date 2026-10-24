@@ -19,9 +19,11 @@ package eyes4s.studio.desktop.shell
 import eyes4s.studio.app.{AppModel, Intent, StoryModels}
 import eyes4s.studio.app.appearance.Appearance
 import eyes4s.studio.core.fixture.StoryMoment
-import eyes4s.studio.desktop.harness.{StudioTheme, VisualPixels}
-import eyes4s.studio.desktop.plot.{CanvasPlotHost, PlotHostStatus}
+import eyes4s.studio.desktop.harness.{StageSize, StudioTheme, VisualPixels}
+import eyes4s.studio.desktop.plot.{CanvasPlotError, CanvasPlotHost, PlotHostStatus}
 import eyes4s.studio.desktop.trial.TrialViewStatus
+import eyes4s.studio.viz.plot.PlotSceneError
+import intaglio.GraphicsError
 import javafx.geometry.Bounds
 import javafx.scene.canvas.Canvas
 import java.nio.file.{Files, Path}
@@ -99,8 +101,61 @@ class CanvasBoundaryFxSuite extends StoryCaptureFixture:
       }
       RestingFocus.clear(fx, w)
       drawn()
-      val phases    = Vector.newBuilder[ujson.Value]
-      var directory = Option.empty[Path]
+      var phases                           = Vector.empty[ujson.Value]
+      var directory                        = Option.empty[Path]
+      def record(value: ujson.Value): Unit =
+        phases :+= value
+        directory.foreach(p =>
+          Files.writeString(
+            p.resolve("canvas-boundary.json"),
+            ujson.write(
+              ujson.Obj(
+                "theme"  -> theme.id,
+                "os"     -> System.getProperty("os.name"),
+                "java"   -> System.getProperty("java.version"),
+                "scene"  -> ujson.Arr(fx.sceneSize._1, fx.sceneSize._2),
+                "phases" -> ujson.Arr.from(phases)
+              ),
+              indent = 2
+            ) + "\n"
+          ): Unit
+        )
+      def resized(label: String): Unit =
+        try
+          // Deliberately undersized intermediate surfaces may refuse the caption's
+          // panel extent. Only that typed size refusal (or zero-area Waiting) is
+          // allowed here; the baseline and every restored surface must be Drawn.
+          eventually(fx, "resized frames settle with an explicit surface-size outcome") {
+            hosts.forall { (_, host) =>
+              host.status.get match
+                case PlotHostStatus.Drawn(_)   => true
+                case PlotHostStatus.Waiting(_) => host.getWidth <= 0.0 || host.getHeight <= 0.0
+                case PlotHostStatus.Failed(
+                      CanvasPlotError.Scene(
+                        PlotSceneError.Graphics(
+                          _,
+                          "the data panel's frame",
+                          GraphicsError.InvalidExtent(_)
+                        )
+                      )
+                    ) =>
+                  true
+                case PlotHostStatus.Failed(
+                      CanvasPlotError.Scene(PlotSceneError.EmptyPanel(_, width, height))
+                    ) =>
+                  width <= 0.0 || height <= 0.0
+                case _ => false
+            }
+          }
+        finally
+          record(
+            ujson.Obj(
+              "phase" -> label,
+              "hosts" -> runOnFx(
+                ujson.Arr.from(hosts.map((name, host) => describe(name, host)))
+              )
+            )
+          )
       def capture(label: String): List[java.awt.image.BufferedImage] =
         val before = runOnFx(ujson.Arr.from(hosts.map((name, host) => describe(name, host))))
         val files  = fx.snapshot(theme)
@@ -114,7 +169,7 @@ class CanvasBoundaryFxSuite extends StoryCaptureFixture:
           )
         )
         val after = runOnFx(ujson.Arr.from(hosts.map((name, host) => describe(name, host))))
-        phases += ujson.Obj("phase" -> label, "before" -> before, "after" -> after)
+        record(ujson.Obj("phase" -> label, "before" -> before, "after" -> after))
         images
       val viewport = runOnFx {
         val bounds = trials.map(t => t.localToScene(t.getLayoutBounds))
@@ -142,10 +197,12 @@ class CanvasBoundaryFxSuite extends StoryCaptureFixture:
           val diff = VisualPixels
             .compare(trialPixels(b, i + 1), trialPixels(a, i + 1))
             .fold(e => fail(e), identity)
-          phases += ujson.Obj(
-            "phase"         -> label,
-            "snapshotScale" -> (i + 1),
-            "difference"    -> diff.json
+          record(
+            ujson.Obj(
+              "phase"         -> label,
+              "snapshotScale" -> (i + 1),
+              "difference"    -> diff.json
+            )
           )
           if !diff.accepted then differences += s"$label at${i + 1}x: $diff"
         }
@@ -157,7 +214,7 @@ class CanvasBoundaryFxSuite extends StoryCaptureFixture:
         runOnFx(
           trials.zip(originalSizes).foreach { (t, size) => t.setMaxHeight(size._2 - reduction) }
         )
-        fx.awaitLayout(); drawn()
+        fx.awaitLayout(); resized("shrunk-height-" + reduction.toString)
         runOnFx(trials.zip(originalLimits).foreach { (t, limit) => t.setMaxHeight(limit._2) })
         fx.awaitLayout(); drawn()
         compare("height-" + reduction.toString)
@@ -165,28 +222,30 @@ class CanvasBoundaryFxSuite extends StoryCaptureFixture:
         runOnFx(
           trials.zip(originalSizes).foreach { (t, size) => t.setMaxWidth(size._1 - reduction) }
         )
-        fx.awaitLayout(); drawn()
+        fx.awaitLayout(); resized("shrunk-width-" + reduction.toString)
         runOnFx(trials.zip(originalLimits).foreach { (t, limit) => t.setMaxWidth(limit._1) })
         fx.awaitLayout(); drawn()
         compare("width-" + reduction.toString)
+      // A small native screen may collapse the canvas while captions stay visible.
+      // Exercise that legitimate Waiting state explicitly, then demand the original pixels.
+      runOnFx(trials.foreach(_.setMaxHeight(1.0)))
+      fx.awaitLayout(); resized("collapsed-height")
+      assert(runOnFx(hosts.exists { (_, host) =>
+        host.status.get.isInstanceOf[PlotHostStatus.Waiting] &&
+        (host.getWidth <= 0.0 || host.getHeight <= 0.0)
+      }))
+      runOnFx(trials.zip(originalLimits).foreach { (t, limit) => t.setMaxHeight(limit._2) })
+      fx.awaitLayout(); drawn()
+      compare("restored-collapsed-height")
       runOnFx(hosts.foreach(_._2.setOutputScaleOverride(Some(2.0))))
       fx.awaitLayout(); drawn()
       runOnFx(hosts.foreach(_._2.setOutputScaleOverride(None)))
       fx.awaitLayout(); drawn()
       compare("restored-native-scale")
-      Files.writeString(
-        directory.get.resolve("canvas-boundary.json"),
-        ujson.write(
-          ujson.Obj(
-            "theme"  -> theme.id,
-            "os"     -> System.getProperty("os.name"),
-            "java"   -> System.getProperty("java.version"),
-            "scene"  -> ujson.Arr(fx.sceneSize._1, fx.sceneSize._2),
-            "phases" -> ujson.Arr.from(phases.result())
-          ),
-          indent = 2
-        ) + "\n"
-      )
       val errors = differences.result()
       assert(errors.isEmpty, errors.mkString("\n"))
     }
+
+/** The same raster invariant at the native Mac runner's constrained scene size. */
+class SmallCanvasBoundaryFxSuite extends CanvasBoundaryFxSuite:
+  override protected def stageSize: StageSize = StageSize(1024, 656)
