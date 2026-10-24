@@ -187,11 +187,12 @@ final class CompareSummaryHost(
   private def view(id: String): ViewId =
     ViewId.of(id).fold(e => throw IllegalStateException(e.message), identity)
 
-  private val selection  = model().selection
-  private var navigator  = QueriesNavigator.initial
-  private var panelState = TrialPanels.empty
-  private var contrast   = ContrastPane.empty
-  private var pairsState = PairsTable.empty
+  private val selection         = model().selection
+  private var navigator         = QueriesNavigator.initial
+  private var participantsState = eyes4s.studio.app.compare.ParticipantsNavigator.empty
+  private var panelState        = TrialPanels.empty
+  private var contrast          = ContrastPane.empty
+  private var pairsState        = PairsTable.empty
 
   private val participantColumns: ParticipantColumns =
     ParticipantColumns.standard.fold(e => throw IllegalStateException(e.message), identity)
@@ -316,6 +317,23 @@ final class CompareSummaryHost(
       filterQueries,
       app
     )
+
+  val participants: ParticipantsNavigatorView = ParticipantsNavigatorView(
+    key =>
+      if !disposed then {
+        val nav            = eyes4s.studio.app.compare.ParticipantsNavigator
+        val current        = nav.vm(participantsState, state, model())
+        val (next, intent) = nav.key(participantsState, current, key)
+        participantsState = next
+        render(model())
+        intent.foreach(app)
+      },
+    row =>
+      if !disposed then {
+        participantsState = participantsState.copy(cursor = Some(row.ref))
+        app(row.open)
+      }
+  )
 
   private def toggle(key: String, open: Boolean): Unit = if !disposed then
     navigator = QueriesNavigator.toggle(navigator, key, open)
@@ -637,6 +655,11 @@ final class CompareSummaryHost(
 
   private def render(m: AppModel): Unit =
     if !disposed then
+      participantsState =
+        eyes4s.studio.app.compare.ParticipantsNavigator.follow(participantsState, state)
+      participants.render(
+        eyes4s.studio.app.compare.ParticipantsNavigator.vm(participantsState, state, m)
+      )
       val navigators = navigatorVMOf(m)
       queries.render(navigators)
       items.render(navigators)
@@ -802,6 +825,7 @@ final class CompareSummaryHost(
       participantTable.dispose()
       queryTable.dispose()
       ladder.dispose()
+      participants.dispose()
       queries.dispose()
       items.dispose()
       queryTrialTable.dispose()

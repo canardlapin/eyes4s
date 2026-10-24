@@ -1,0 +1,45 @@
+{
+  "schema": 1,
+  "states": [
+    "t1-Data-light",
+    "t1-Data-dark",
+    "t1-Explore-light",
+    "t1-Explore-dark",
+    "t1-Analysis-light",
+    "t1-Analysis-dark",
+    "t1-Compare-light",
+    "t1-Compare-dark",
+    "t1-Figures-light",
+    "t1-Figures-dark",
+    "t2-Data-light",
+    "t2-Data-dark",
+    "t2-Explore-light",
+    "t2-Explore-dark",
+    "t2-Analysis-light",
+    "t2-Analysis-dark",
+    "t2-Compare-light",
+    "t2-Compare-dark",
+    "t2-Figures-light",
+    "t2-Figures-dark",
+    "t3-Data-light",
+    "t3-Data-dark",
+    "t3-Explore-light",
+    "t3-Explore-dark",
+    "t3-Analysis-light",
+    "t3-Analysis-dark",
+    "t3-Compare-light",
+    "t3-Compare-dark",
+    "t3-Figures-light",
+    "t3-Figures-dark"
+  ],
+  "pixel_policy": {
+    "maximum_channel_delta": 1,
+    "maximum_changed_fraction": 0.001
+  },
+  "limits": [
+    "JavaFX-to-JavaFX, Linux Monocle native1x only",
+    "Snapshot scales1x/2x; actual GTK2 remains separate",
+    "Missing baselines fail; no automatic acceptance",
+    "Public synthetic fixtures; no private-data G2 acceptance"
+  ]
+}

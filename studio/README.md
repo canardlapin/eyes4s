@@ -155,3 +155,11 @@ publishes the pins from their remotes before sbt runs. The
 `studio-clean-clone` job then builds studio through the override properties,
 pointed at the pinned checkouts, which proves the override on every push and
 pull request that touches studio.
+
+The [JavaFX regression matrix](../tools/studio-visual-parity/README.md) captures
+all five perspectives at t1/t2/t3 in both themes, with two snapshot scales per
+state. Linux Monocle owns pixel goldens; macOS/native GTK2 run functional and
+repeat checks. The coverage verifier requires every named case to execute and
+refuses missing, skipped or stale evidence. The Results Participants navigator
+uses served overall cells and separately labelled run accounting; its full Tab
+traversal is recorded in [tab-order-results.txt](../docs/studio/a11y/tab-order-results.txt).

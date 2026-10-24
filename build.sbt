@@ -1623,7 +1623,7 @@ addCommandAlias(
 
 // Studio CI (S0.4): its own workflow, studio.yml, on JDK 25, never in the
 // library matrix or checks.yml. Linux runs everything under a virtual display and owns
-// snapshots (and, later, goldens); macOS runs the functional FX tests only.
+// snapshots and JavaFX regression goldens; macOS runs the functional FX tests only.
 // OpenJFX natives are named per runner with -Djavafx.platform.
 lazy val studioJdk = JavaSpec.temurin("25")
 
@@ -1705,6 +1705,13 @@ lazy val studioLinuxJob = WorkflowJob(
     ),
     WorkflowStep.Run(
       List(
+        "python3 -m unittest discover -s tools/studio-visual-parity -p 'test_*.py'",
+        "python3 tools/studio-visual-parity/check.py"
+      ),
+      name = Some("Require all30 JavaFX golden states and executed cases")
+    ),
+    WorkflowStep.Run(
+      List(
         "python3 -m unittest discover -s tools/studio-e2e -p 'test_*.py'",
         "python3 tools/studio-e2e/check.py"
       ),
@@ -1716,7 +1723,7 @@ lazy val studioLinuxJob = WorkflowJob(
       cond = Some("always()"),
       params = Map(
         "name" -> "studio-snapshots-linux-${{ github.sha }}",
-        "path" -> "target/studio-snapshots/\ntarget/studio-e2e/\nstudio/**/target/test-reports/",
+        "path" -> "target/studio-snapshots/\ntarget/studio-e2e/\ntarget/studio-visual-parity/\nstudio/**/target/test-reports/",
         "include-hidden-files" -> "true",
         "if-no-files-found"    -> "warn"
       )
@@ -1821,6 +1828,7 @@ lazy val studioWorkflowPaths = List(
   "fixtures/studio-bundles/**",
   "tools/studio-fixture/**",
   "tools/studio-e2e/**",
+  "tools/studio-visual-parity/**",
   "docs/studio/fixture/**",
   "build.sbt",
   "project/**",

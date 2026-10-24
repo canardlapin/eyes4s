@@ -10,10 +10,10 @@ name: Studio
 on:
   pull_request:
     branches: ['**', '!update/**', '!pr/**']
-    paths: [studio/**, fixtures/studio-golden/**, fixtures/studio-bundles/**, tools/studio-fixture/**, tools/studio-e2e/**, docs/studio/fixture/**, build.sbt, project/**, .github/workflows/studio.yml, kernel/**, core/**, detect/**, surface/**, aoi/**, compare/**, design/**, plan/**, results/**, codec/**, fs2/**]
+    paths: [studio/**, fixtures/studio-golden/**, fixtures/studio-bundles/**, tools/studio-fixture/**, tools/studio-e2e/**, tools/studio-visual-parity/**, docs/studio/fixture/**, build.sbt, project/**, .github/workflows/studio.yml, kernel/**, core/**, detect/**, surface/**, aoi/**, compare/**, design/**, plan/**, results/**, codec/**, fs2/**]
   push:
     branches: ['**', '!update/**', '!pr/**']
-    paths: [studio/**, fixtures/studio-golden/**, fixtures/studio-bundles/**, tools/studio-fixture/**, tools/studio-e2e/**, docs/studio/fixture/**, build.sbt, project/**, .github/workflows/studio.yml, kernel/**, core/**, detect/**, surface/**, aoi/**, compare/**, design/**, plan/**, results/**, codec/**, fs2/**]
+    paths: [studio/**, fixtures/studio-golden/**, fixtures/studio-bundles/**, tools/studio-fixture/**, tools/studio-e2e/**, tools/studio-visual-parity/**, docs/studio/fixture/**, build.sbt, project/**, .github/workflows/studio.yml, kernel/**, core/**, detect/**, surface/**, aoi/**, compare/**, design/**, plan/**, results/**, codec/**, fs2/**]
 
 permissions:
   actions: none
@@ -95,6 +95,11 @@ jobs:
       - name: Check studio resolved-graph boundaries
         run: sbt -J-Xmx4g -Djavafx.platform=linux studioBoundaries
 
+      - name: Require all30 JavaFX golden states and executed cases
+        run: |
+          python3 -m unittest discover -s tools/studio-visual-parity -p 'test_*.py'
+          python3 tools/studio-visual-parity/check.py
+
       - name: Qualify the E2E02–25 catalogue from executed reports
         run: |
           python3 -m unittest discover -s tools/studio-e2e -p 'test_*.py'
@@ -108,6 +113,7 @@ jobs:
           path: |
             target/studio-snapshots/
             target/studio-e2e/
+            target/studio-visual-parity/
             studio/**/target/test-reports/
           include-hidden-files: true
           if-no-files-found: warn

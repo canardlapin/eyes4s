@@ -20,18 +20,12 @@ import eyes4s.studio.app.{AppModel, Intent, StoryModels}
 import eyes4s.studio.app.appearance.Appearance
 import eyes4s.studio.core.document.{FigureId, PanelLetter}
 import eyes4s.studio.core.fixture.StoryMoment
-import eyes4s.studio.desktop.compare.PanelSources
 import eyes4s.studio.desktop.harness.StudioTheme
 import eyes4s.studio.desktop.plot.PlotTwinStatus
-import eyes4s.studio.desktop.trial.{GoldenTrials, StimulusSource, TrialViewStatus}
+import eyes4s.studio.desktop.trial.TrialViewStatus
 import eyes4s.studio.viz.trial.FrameArt
 import eyes4s.studio.app.explore.TimelineIntent
 import eyes4s.studio.app.plot.HalfOpenSpan
-import eyes4s.studio.desktop.runtime.ProjectPort
-import eyes4s.studio.core.document.Source
-import eyes4s.studio.core.document.SourceRole
-import eyes4s.studio.core.bundle.{InputEntry, InputKind, InputStatus}
-import eyes4s.codec.ByteDigest
 import javafx.scene.control.{Labeled, ScrollPane}
 
 import java.nio.file.Files
@@ -42,64 +36,9 @@ import scala.jdk.CollectionConverters.*
   * rather than replace, the human comparison with the pinned HTML boards.
   * Each board boots its own story moment and waits for its served content.
   */
-class BoardParityCaptureFxSuite extends ShellFxSuite:
+class BoardParityCaptureFxSuite extends StoryCaptureFixture:
 
   override val munitTimeout: Duration = Duration(180, "s")
-
-  private val golden = PanelSources(
-    GoldenTrials.contentSource,
-    StimulusSource.directory(GoldenTrials.stimuli)
-  )
-
-  /** Real source bytes behind the same host port as an open project. A
-    * story model alone has no filesystem project and cannot populate Data.
-    */
-  private def fixtureProject: ProjectPort = new ProjectPort:
-    private val paths = Vector(
-      InputKind.Source(SourceRole.Fixations) -> GoldenTrials.golden.resolve("fixations.csv"),
-      InputKind.Source(SourceRole.Trials)    -> GoldenTrials.golden.resolve("trials.csv")
-    ) ++ {
-      val listed = Files.list(GoldenTrials.stimuli)
-      try
-        listed.iterator.asScala.toVector
-          .filter(Files.isRegularFile(_))
-          .map(InputKind.StimulusImage -> _)
-      finally listed.close()
-    }
-    private val entries = paths.map { (kind, path) =>
-      val bytes  = Files.readAllBytes(path)
-      val digest = ByteDigest.sha256(IArray.unsafeFromArray(bytes))
-      val entry  = InputEntry
-        .of(kind, path.getFileName.toString, digest, bytes.length.toLong)
-        .fold(e => fail(e.message), identity)
-      entry -> path
-    }
-    override def storedInputs(done: Either[String, Vector[InputEntry]] => Unit): Unit =
-      done(Right(entries.map(_._1)))
-    override def checkInputs(done: Either[String, Vector[InputStatus]] => Unit): Unit =
-      val checked = entries.foldLeft[Either[String, Vector[InputStatus]]](Right(Vector.empty)) {
-        case (acc, (entry, path)) =>
-          for
-            got   <- acc
-            bytes <- scala.util.Try(Files.readAllBytes(path)).toEither.left.map(_.toString)
-            digest = ByteDigest.sha256(IArray.unsafeFromArray(bytes))
-          yield got :+ (if digest == entry.sha256 then InputStatus.Present(entry)
-                        else InputStatus.Changed(entry, digest))
-      }
-      done(checked)
-    def journal(entry: eyes4s.studio.core.command.JournalEntry): Unit                    = ()
-    def save(done: Either[String, eyes4s.studio.core.session.SaveReceipt] => Unit): Unit =
-      done(Left("Capture fixture is read-only"))
-    def close(): Unit = ()
-    override def readInput(source: Source, done: Either[String, IArray[Byte]] => Unit): Unit =
-      val file   = source.path.value.split('/').last
-      val answer = scala.util
-        .Try(Files.readAllBytes(GoldenTrials.golden.resolve(file)))
-        .toEither
-        .left
-        .map(_.toString)
-        .map(IArray.unsafeFromArray(_))
-      done(answer)
 
   private final case class Board(
       name: String,

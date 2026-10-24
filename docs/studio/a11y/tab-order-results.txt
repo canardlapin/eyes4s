@@ -1,0 +1,24 @@
+MENU_BUTTON: Project memory-study
+TOGGLE_BUTTON: Compare (⌘4)
+BUTTON: Cancel Run 8 (job 1)
+BUTTON: Summary · by retrieval response, current location
+LIST_VIEW: Participants, P01, overall D +0.42, n 19; run queries 19 contributing of 20, 0 failed
+IMAGE_VIEW: Participant plot
+PARENT: Participant plot of Participant D at 2°: each participant's mean D in 2 groups, lines join a participant's means, a tick marks each group's grand mean. Annotations: P17 · selected, 19 of 20 contributing, Remembered +0.40, n 17, Forgotten +0.22, n 2; P05 · 17 of 20 contributing, Remembered +0.39, n 13, Forgotten +0.22, n 4, 3 failed queries, 2 Remembered, 1 Forgotten, no value, not zero. One focus stop; arrow keys move to the nearest mark, Page Up and Page Down step in order, Enter selects, Escape clears the selection.
+IMAGE_VIEW: Scale profile
+PARENT: Scale profile of run 7: the whole-report grand mean D at 4 scales, bold, over each participant's mean D, faint. One focus stop; arrow keys move to the nearest mark, Page Up and Page Down step in order, Enter selects, Escape clears the selection.
+TABLE_VIEW: Participant table
+TOGGLE_BUTTON: σ 2°
+BUTTON: Explain P17 → keeps: by retrieval response › P17
+TABLE_VIEW: Participant summary at σ 2°, run 7. One focus stop; arrow keys move the row cursor, Enter selects, Escape clears the selection.
+PARENT: Reporting
+RADIO_BUTTON: Group by: response
+TEXT_FIELD: First level (minuend)
+TEXT_FIELD: Subtract level (subtrahend)
+BUTTON: Apply contrast
+BUTTON: Clear contrast
+CHECK_BOX: Exclude queries with >25% of fixation duration outside the analysis window
+CHECK_BOX: Minimum queries per group: 3
+RADIO_BUTTON: Summary unit and weighting: Equal weight per participant
+BUTTON: Save as…
+BUTTON: Cancel Run 8 (job 1)
