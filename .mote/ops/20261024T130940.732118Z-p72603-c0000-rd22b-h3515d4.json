@@ -1,0 +1,1 @@
+{"actor":"codex-v1-reconcile-20261024","entity":"bd-01M44PBGT3KAFQ160QTEV3G3HK","expect":{"priority":"20261005T001026.499137Z-p63600-c0000-r09bf-h7f51ca"},"kind":"patch","op":"20261024T130940.732118Z-p72603-c0000-rd22b-h3515d4","set":{"priority":2},"ts":"2026-10-24T13:09:40.732118Z","v":1}

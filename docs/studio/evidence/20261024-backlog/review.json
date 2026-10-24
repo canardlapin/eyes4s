@@ -1,0 +1,472 @@
+{
+  "schema": 1,
+  "date": "2026-10-24",
+  "reviewedCommit": "360a326b7e4f5173be08879a7ab0e380485029f6",
+  "scope": "Tracker-only reassessment of all37 non-post-v1 open entries against current code and landed qualification. No new application/source/build changes, test execution, or manual/scientific acceptance claim.",
+  "authorization": "Owner requested consolidation/reorganization and re-evaluation against the current codebase; Meridian integration deferred. Joint1.0 scope/cuts remain the accepted2026-10-09 decision bd-01M4GMYCF5V682M7GJDJH1HTPH.",
+  "before": {
+    "open": 104,
+    "postV1": 67,
+    "releaseEntries": 37,
+    "releaseEpics": 14,
+    "releaseTasksAndGates": 23
+  },
+  "after": {
+    "open": 92,
+    "postV1": 71,
+    "releaseEntries": 21,
+    "releaseEpics": 5,
+    "releaseTasksAndGates": 16
+  },
+  "dispositionCounts": {
+    "retain-root": 1,
+    "consolidate-group": 4,
+    "retain-required": 15,
+    "merge-provenance-into-gate": 1,
+    "defer-post-v1": 4,
+    "close-completed-scope": 5,
+    "close-consolidated": 7
+  },
+  "groups": {
+    "A": {
+      "id": "bd-01M4GMY9B0WS55XNXJ32JQ27DA",
+      "title": "1.0 A: application hardening and final usability fixes",
+      "members": [
+        {
+          "id": "bd-01M5NWGK8E9SW3JRKJ69QHMG9B",
+          "title": "Results: reconcile complete Tab-order derivation with live plot/table contents",
+          "status": "open",
+          "priority": 1
+        },
+        {
+          "id": "bd-01M5P3EJ0NC4PXQH0CKQY4WHV2",
+          "title": "Studio: preserve map and plot readability at the supported minimum window size",
+          "status": "open",
+          "priority": 1
+        },
+        {
+          "id": "bd-01M3GA04MZM3K946VJBBQNSMHH",
+          "title": "Studio FX harness: consume OS pointer events not fired by the test robot, suite-wide",
+          "status": "open",
+          "priority": 2
+        },
+        {
+          "id": "bd-01M3GESYRNVGBHGZJQZQ15AVKA",
+          "title": "Deterministic render-thread fault for the FX render-failure capture test",
+          "status": "open",
+          "priority": 2
+        },
+        {
+          "id": "bd-01M3HHR5QV9W9SS9AMM1RR1SM0",
+          "title": "Qualify the default fork-handshake fix with five consecutive gate receipts",
+          "status": "open",
+          "priority": 2
+        },
+        {
+          "id": "bd-01M44PBGT3KAFQ160QTEV3G3HK",
+          "title": "Project store: implement and qualify safe saved-part retention",
+          "status": "open",
+          "priority": 2
+        }
+      ]
+    },
+    "B": {
+      "id": "bd-01M4GMY8M40PE6RQC7S55T8K91",
+      "title": "1.0 B: real-study production acceptance (G2)",
+      "members": [
+        {
+          "id": "bd-01M3DPG3KTRQNN6HKWRHYQTT0C",
+          "title": "Studio gate G2: real-study admission",
+          "status": "open",
+          "priority": 1
+        }
+      ]
+    },
+    "C": {
+      "id": "bd-01M4GMYAFYXKYKSDNQP343MX1T",
+      "title": "1.0 C: Studio release candidate and qualification (G5)",
+      "members": [
+        {
+          "id": "bd-01M3DPG1XBKAVXA1CDT1T1RPMA",
+          "title": "S10.5 Accessibility audit",
+          "status": "open",
+          "priority": 1
+        },
+        {
+          "id": "bd-01M3DPG25V0DGFR2BPANBDWMQF",
+          "title": "S10.6 Performance qualification",
+          "status": "open",
+          "priority": 1
+        },
+        {
+          "id": "bd-01M3DPG2F2QKHRCJ82HZANS9W2",
+          "title": "S10.7 macOS packaging",
+          "status": "open",
+          "priority": 1
+        },
+        {
+          "id": "bd-01M3DPG4C7D6CCFY5KAZ05KSZ2",
+          "title": "Studio gate G5: release — the approved design, shipped",
+          "status": "open",
+          "priority": 1
+        },
+        {
+          "id": "bd-01M3DPG2QAGTGQT5GYX2HHKRD5",
+          "title": "S10.8 Researcher usability qualification",
+          "status": "open",
+          "priority": 2
+        }
+      ]
+    },
+    "D": {
+      "id": "bd-01M4GMY9X1DY2BAP79Z48W177W",
+      "title": "1.0 D: library acceptance and publication",
+      "members": [
+        {
+          "id": "rel-mima",
+          "title": "MiMa and a published binary-compatibility policy",
+          "status": "open",
+          "priority": 1
+        },
+        {
+          "id": "rel-publish",
+          "title": "Publish to Maven Central for JVM and Scala.js",
+          "status": "open",
+          "priority": 1
+        },
+        {
+          "id": "bd-01M3EE1CZ6B7VE87N1HVK9MK5C",
+          "title": "Scaladoc NullPointerException in ioJVM when building all module docs together",
+          "status": "open",
+          "priority": 2
+        },
+        {
+          "id": "rel-audit",
+          "title": "Library: consolidated pre-publication acceptance (M6, PRD A-1–A-27)",
+          "status": "open",
+          "priority": 2
+        }
+      ]
+    }
+  },
+  "dispositions": {
+    "bd-01M4GMXH32DF8TCVFGM1KTPRYR": {
+      "title": "eyes4s 1.0: library 1.0 on Maven Central and Eyes Studio 1.0 (gate G5)",
+      "before": "open",
+      "action": "retain-root",
+      "canonical": "bd-01M4GMXH32DF8TCVFGM1KTPRYR",
+      "reason": "One release root replaces parallel umbrella status narratives."
+    },
+    "bd-01M4GMY9B0WS55XNXJ32JQ27DA": {
+      "title": "1.0 wave 3: durable daily use (G4) and project lifecycle",
+      "before": "open",
+      "action": "consolidate-group",
+      "canonical": "bd-01M4GMY9B0WS55XNXJ32JQ27DA",
+      "reason": "G4 is closed; do not repeat project lifecycle implementation. Complete the six named residuals below on bounded branches, preserving their existing acceptance.\n- bd-01M5P3EJ0NC4PXQH0CKQY4WHV2: Studio: preserve map and plot readability at the supported minimum window size\n- bd-01M5NWGK8E9SW3JRKJ69QHMG9B: Results: reconcile complete Tab-order derivation with live plot/table contents\n- bd-01M44PBGT3KAFQ160QTEV3G3HK: Project store: retention of parts from earlier saves\n- bd-01M3GA04MZM3K946VJBBQNSMHH: Studio FX harness: consume OS pointer events not fired by the test robot, suite-wide\n- bd-01M3GESYRNVGBHGZJQZQ15AVKA: Deterministic render-thread fault for the FX render-failure capture test\n- bd-01M3HHR5QV9W9SS9AMM1RR1SM0: Make the IPv6 fork-handshake workaround the default for local gates\nExit: all six closed with source-bound evidence; source changes batch-qualified. This group absorbs the unfinished operational work from old wave0 and wave3. Protocol field retirement is deferred to a breaking protocol revision; it is not a 1.0 feature."
+    },
+    "bd-01M4GMY8M40PE6RQC7S55T8K91": {
+      "title": "1.0 wave 2: qualified analysis workflow (G3) and real-study admission (G2)",
+      "before": "open",
+      "action": "consolidate-group",
+      "canonical": "bd-01M4GMY8M40PE6RQC7S55T8K91",
+      "reason": "G3 is closed. The single remaining delivery is bd-01M3DPG3KTRQNN6HKWRHYQTT0C: provenance/declarations, standard production-host admission, run, inspection, save/reopen and export/API agreement on an owner-permitted existing study. No source-specific application edits or fabricated geometry/timing. Exit: G2 evidence accepted. Private paper replication and parameter experiments remain separate research work. The bounded public ASC A-11 workflow already landed under v-asc-e2e; full vendor certification remains post-v1."
+    },
+    "bd-01M4GMYAFYXKYKSDNQP343MX1T": {
+      "title": "1.0 wave 5: Studio qualification and release (G5)",
+      "before": "open",
+      "action": "consolidate-group",
+      "canonical": "bd-01M4GMYAFYXKYKSDNQP343MX1T",
+      "reason": "Visual parity S10.4, G1/G3/G4 and the E2E catalogue are closed. Finish bd-01M3DPG1XBKAVXA1CDT1T1RPMA accessibility/VoiceOver, bd-01M3DPG25V0DGFR2BPANBDWMQF named-machine performance, bd-01M3DPG2F2QKHRCJ82HZANS9W2 bundled macOS app and clean no-JDK smoke, and bd-01M3DPG2QAGTGQT5GYX2HHKRD5 independent-researcher qualification. G5 bd-01M3DPG4C7D6CCFY5KAZ05KSZ2 also requires G2 and application hardening. Signing/notarization is an explicit packaging decision. Human/physical acceptance cannot be replaced by headless tests. Exit: G5 closes on the frozen distributable and its documented supported environment."
+    },
+    "bd-01M4GMY9X1DY2BAP79Z48W177W": {
+      "title": "1.0 wave 4: library 1.0 release track (parallel)",
+      "before": "open",
+      "action": "consolidate-group",
+      "canonical": "bd-01M4GMY9X1DY2BAP79Z48W177W",
+      "reason": "Canonical pre-publication acceptance is rel-audit, absorbing foundation M6 and the ms-v10 alias. Resolve/document the supported all-module Scaladoc runtime (bd-01M3EE1CZ6B7VE87N1HVK9MK5C); audit PRD A-1..A-27 and foundation criteria on the release candidate. Then rel-publish publishes JVM+Scala.js and verifies independent consumers against Central, including A-16 publication evidence; rel-mima records the published policy and usable first-release baseline. Exit: all four tickets closed. Existing v-asc-e2e evidence satisfies its bounded A-11 workflow; unknown converter/EDF fields remain explicit and broader EyeLink certification stays post-v1."
+    },
+    "bd-01M5P3EJ0NC4PXQH0CKQY4WHV2": {
+      "title": "Studio: preserve map and plot readability at the supported minimum window size",
+      "before": "open",
+      "action": "retain-required",
+      "canonical": "bd-01M4GMY9B0WS55XNXJ32JQ27DA",
+      "reason": "Distinct residual acceptance survives; batch scheduling does not merge away its proof."
+    },
+    "bd-01M5NWGK8E9SW3JRKJ69QHMG9B": {
+      "title": "Results: reconcile complete Tab-order derivation with live plot/table contents",
+      "before": "open",
+      "action": "retain-required",
+      "canonical": "bd-01M4GMY9B0WS55XNXJ32JQ27DA",
+      "reason": "Distinct residual acceptance survives; batch scheduling does not merge away its proof."
+    },
+    "bd-01M44PBGT3KAFQ160QTEV3G3HK": {
+      "title": "Project store: retention of parts from earlier saves",
+      "before": "review",
+      "action": "retain-required",
+      "canonical": "bd-01M4GMY9B0WS55XNXJ32JQ27DA",
+      "reason": "Distinct residual acceptance survives; batch scheduling does not merge away its proof."
+    },
+    "bd-01M3GA04MZM3K946VJBBQNSMHH": {
+      "title": "Studio FX harness: consume OS pointer events not fired by the test robot, suite-wide",
+      "before": "open",
+      "action": "retain-required",
+      "canonical": "bd-01M4GMY9B0WS55XNXJ32JQ27DA",
+      "reason": "Distinct residual acceptance survives; batch scheduling does not merge away its proof."
+    },
+    "bd-01M3GESYRNVGBHGZJQZQ15AVKA": {
+      "title": "Deterministic render-thread fault for the FX render-failure capture test",
+      "before": "open",
+      "action": "retain-required",
+      "canonical": "bd-01M4GMY9B0WS55XNXJ32JQ27DA",
+      "reason": "Distinct residual acceptance survives; batch scheduling does not merge away its proof."
+    },
+    "bd-01M3HHR5QV9W9SS9AMM1RR1SM0": {
+      "title": "Make the IPv6 fork-handshake workaround the default for local gates",
+      "before": "open",
+      "action": "retain-required",
+      "canonical": "bd-01M4GMY9B0WS55XNXJ32JQ27DA",
+      "reason": "Distinct residual acceptance survives; batch scheduling does not merge away its proof."
+    },
+    "bd-01M3DPG1XBKAVXA1CDT1T1RPMA": {
+      "title": "S10.5 Accessibility audit",
+      "before": "open",
+      "action": "retain-required",
+      "canonical": "bd-01M4GMYAFYXKYKSDNQP343MX1T",
+      "reason": "Separate release acceptance obligation; not proved by the software matrix."
+    },
+    "bd-01M3DPG25V0DGFR2BPANBDWMQF": {
+      "title": "S10.6 Performance qualification",
+      "before": "open",
+      "action": "retain-required",
+      "canonical": "bd-01M4GMYAFYXKYKSDNQP343MX1T",
+      "reason": "Separate release acceptance obligation; not proved by the software matrix."
+    },
+    "bd-01M3DPG2F2QKHRCJ82HZANS9W2": {
+      "title": "S10.7 macOS packaging",
+      "before": "open",
+      "action": "retain-required",
+      "canonical": "bd-01M4GMYAFYXKYKSDNQP343MX1T",
+      "reason": "Separate release acceptance obligation; not proved by the software matrix."
+    },
+    "bd-01M3DPG2QAGTGQT5GYX2HHKRD5": {
+      "title": "S10.8 Researcher usability qualification",
+      "before": "open",
+      "action": "retain-required",
+      "canonical": "bd-01M4GMYAFYXKYKSDNQP343MX1T",
+      "reason": "Separate release acceptance obligation; not proved by the software matrix."
+    },
+    "bd-01M3DPG4C7D6CCFY5KAZ05KSZ2": {
+      "title": "Studio gate G5: release — the approved design, shipped",
+      "before": "open",
+      "action": "retain-required",
+      "canonical": "bd-01M4GMYAFYXKYKSDNQP343MX1T",
+      "reason": "Separate release acceptance obligation; not proved by the software matrix."
+    },
+    "rel-audit": {
+      "title": "Acceptance audit against PRD A-1 through A-27",
+      "before": "open",
+      "action": "retain-required",
+      "canonical": "bd-01M4GMY9X1DY2BAP79Z48W177W",
+      "reason": "Retains library release evidence with explicit pre-publication and published-artifact phases."
+    },
+    "bd-01M3EE1CZ6B7VE87N1HVK9MK5C": {
+      "title": "Scaladoc NullPointerException in ioJVM when building all module docs together",
+      "before": "open",
+      "action": "retain-required",
+      "canonical": "bd-01M4GMY9X1DY2BAP79Z48W177W",
+      "reason": "Retains library release evidence with explicit pre-publication and published-artifact phases."
+    },
+    "rel-publish": {
+      "title": "Publish to Maven Central for JVM and Scala.js",
+      "before": "open",
+      "action": "retain-required",
+      "canonical": "bd-01M4GMY9X1DY2BAP79Z48W177W",
+      "reason": "Retains library release evidence with explicit pre-publication and published-artifact phases."
+    },
+    "rel-mima": {
+      "title": "MiMa and a published binary-compatibility policy",
+      "before": "open",
+      "action": "retain-required",
+      "canonical": "bd-01M4GMY9X1DY2BAP79Z48W177W",
+      "reason": "Retains library release evidence with explicit pre-publication and published-artifact phases."
+    },
+    "bd-01M3DPG3KTRQNN6HKWRHYQTT0C": {
+      "title": "Studio gate G2: real-study admission",
+      "before": "open",
+      "action": "merge-provenance-into-gate",
+      "canonical": "bd-01M4GMY8M40PE6RQC7S55T8K91",
+      "reason": "The gate now owns the external declarations and complete real-study journey together."
+    },
+    "bd-01M4VQBWASJMA89X53756YKVM4": {
+      "title": "Studio: bring the separate MultiMatch workspace under the shared design system",
+      "before": "open",
+      "action": "defer-post-v1",
+      "canonical": "bd-01M4GMYB467Q1TEVTQTZY3DT0W",
+      "reason": "The separate MultiMatch workspace is outside the owner-approved fixation-study-only Studio1.0 scope. Source now already attaches DisabledReason to its main controls (the original note is partly stale), but literal strings and separate layout still need design work. Preserve that residual as post-v1; no numerical qualification is withdrawn."
+    },
+    "bd-01M4W1PRMBAB5CWNVFPA3XZQEC": {
+      "title": "Pic_sequences: cross-validated encoding-to-imagery alignment and paper replication contract",
+      "before": "open",
+      "action": "defer-post-v1",
+      "canonical": "bd-01M4GMYB467Q1TEVTQTZY3DT0W",
+      "reason": "Cross-validated Procrustes/paper replication is research follow-up, not the G2 admission criterion. Keep timing/calibration/cohort concerns and private results intact; required study-provenance facts remain explicitly on G2. Defer the extra analysis contract from application1.0."
+    },
+    "bd-01M5K8EKNNXPCZJ2PZ198CTDVV": {
+      "title": "Adopt current Scaladock keyboard and accessibility contracts in Studio",
+      "before": "open",
+      "action": "defer-post-v1",
+      "canonical": "bd-01M4GMYB467Q1TEVTQTZY3DT0W",
+      "reason": "The restore fix has landed on the qualified narrow Scaladock pin. Full-current upstream adoption introduces a separate dock keyboard/accessibility migration with seven reproduced failures; it is unnecessary to qualify the pinned1.0 application. Defer the migration, preserve its negative receipts, and revisit only after1.0 or a concrete blocking defect."
+    },
+    "bd-01M42HNNHAJV75VR7Q7G0GMCK0": {
+      "title": "Retire InventorySummary.history (backend prose) at the next protocol bump",
+      "before": "open",
+      "action": "defer-post-v1",
+      "canonical": "bd-01M4GMYB467Q1TEVTQTZY3DT0W",
+      "reason": "Current Views.scala:AdmissionSummary.history is explicitly deprecated and retained on the wire; the app uses typed DatasetDiff. Removal requires a deliberate breaking protocol revision and gives no missing1.0 user capability. Retain compatibility for1.0; schedule removal with the next breaking protocol migration, preserving its codec/pin obligations."
+    },
+    "bd-01M3DPF6S453KW0S1R31M09XFX": {
+      "title": "Studio S1: design system and application shell",
+      "before": "open",
+      "action": "close-completed-scope",
+      "canonical": "bd-01M4GMXH32DF8TCVFGM1KTPRYR",
+      "reason": "All in-scope shell children closed; the only open child S1.13 was explicitly cut from1.0 by owner decision2026-10-09 and now lives directly under post-v1. Latest shell/visual qualification is in20261024-results-matrix. Remaining native accessibility stays in S10.5."
+    },
+    "bd-01M3DPF70C07MT65K1VAF4YVXR": {
+      "title": "Studio S2: project document, revisions and persistence",
+      "before": "open",
+      "action": "close-completed-scope",
+      "canonical": "bd-01M4GMXH32DF8TCVFGM1KTPRYR",
+      "reason": "All project/document children closed; G4 and20261021-g4 qualification cover save/reopen/recovery/repair/lifecycle. Safe part collection remains open in application hardening; it is not falsely included in this implementation-epic completion."
+    },
+    "bd-01M3DPF7KV5PKRSP25FQBKASN0": {
+      "title": "Studio S5: Data perspective",
+      "before": "open",
+      "action": "close-completed-scope",
+      "canonical": "bd-01M4GMXH32DF8TCVFGM1KTPRYR",
+      "reason": "All Data feature children closed and Data board review is signed; native import/identity/inventory/geometry/admission/repair are implemented. G2 remains the separate real-study empirical acceptance gate."
+    },
+    "bd-01M3DPF7VK24RY484J4BQTJ6V7": {
+      "title": "Studio S6: Explore perspective",
+      "before": "open",
+      "action": "close-completed-scope",
+      "canonical": "bd-01M4GMXH32DF8TCVFGM1KTPRYR",
+      "reason": "All in-scope Explore feature children closed and Explore board review is signed. S6.7 small multiples was explicitly cut from1.0 by owner decision2026-10-09 and now lives directly under post-v1; the former note claiming native previews unavailable is obsolete."
+    },
+    "bd-01M3DPF8A9XZEY9K45S9DYMBHS": {
+      "title": "Studio S8: Compare perspective",
+      "before": "open",
+      "action": "close-completed-scope",
+      "canonical": "bd-01M4GMXH32DF8TCVFGM1KTPRYR",
+      "reason": "All Compare feature children closed, G3 and S10.4 qualified, and the served Participants navigator landed. Native query/report serving is implemented. The remaining generic Results focus-model reconciliation and small-window quality are separately retained as v1 hardening blockers."
+    },
+    "bd-01M02N4AVNKKTEV3SA5PR0H4S8": {
+      "title": "Roadmap: coherent analysis core, excellent APIs, and modular development",
+      "before": "open",
+      "action": "close-consolidated",
+      "canonical": "bd-01M4GMXH32DF8TCVFGM1KTPRYR",
+      "reason": "Historical construction roadmap superseded for release tracking by the joint1.0 root. Its open future-science/platform children remain under the existing post-v1 programme. This closure retires a duplicate planning umbrella; it does not claim those programmes completed."
+    },
+    "bd-01M3DPF67YSVP5WH8Z71Y9CVQ2": {
+      "title": "Eyes Studio: from core to the approved design (docs/studio/IMPLEMENTATION_PLAN.md)",
+      "before": "open",
+      "action": "close-consolidated",
+      "canonical": "bd-01M4GMXH32DF8TCVFGM1KTPRYR",
+      "reason": "The implementation-era Studio umbrella duplicates the joint1.0 root and G5. G1/G3/G4/native serving are complete; real-study and release proofs remain on the four active groups. No shipped-app claim."
+    },
+    "bd-01M3DPF8T24PKS3GA1H5J4X47N": {
+      "title": "Studio S10: qualification and release",
+      "before": "open",
+      "action": "close-consolidated",
+      "canonical": "bd-01M4GMYAFYXKYKSDNQP343MX1T",
+      "reason": "S10.4 and software/E2E qualification are done; S10.5-8 and G5 are reparented to the canonical Studio release group. Closing this duplicate container does not close any release proof."
+    },
+    "bd-01M4GMY79MD0M9BS3TYWSQ2RF2": {
+      "title": "1.0 wave 0: stabilize CI, land in-flight work, take owner decisions",
+      "before": "open",
+      "action": "close-consolidated",
+      "canonical": "bd-01M4GMY9B0WS55XNXJ32JQ27DA",
+      "reason": "The accepted scope decision and hosted stabilization are closed. Handshake receipt reconciliation and part retention move to application hardening. The obsolete combined external request moves into G2. Old bootstrap-wave container is superseded; residuals stay open."
+    },
+    "bd-01M214CXGNS6HJQG8AM4EQXXF8": {
+      "title": "Accept the coherent analysis foundation for core release",
+      "before": "open",
+      "action": "close-consolidated",
+      "canonical": "rel-audit",
+      "reason": "All M6 acceptance criteria, prerequisite edges, representative workload, numerical/consumer/persistence checks and policy requirements are preserved in the consolidated pre-publication audit. This is an alias consolidation, not a declaration that M6 acceptance passed."
+    },
+    "ms-v10": {
+      "title": "v1.0 — Stability",
+      "before": "open",
+      "action": "close-consolidated",
+      "canonical": "bd-01M4GMY9X1DY2BAP79Z48W177W",
+      "reason": "The milestone duplicated foundation/release acceptance. The library release group now directly requires rel-audit, documentation resolution, rel-publish and rel-mima; the v1.1 milestone is redirected to that full group. No initial1.0 release is claimed."
+    },
+    "bd-01M4GMYD06NJ8PP3SNGXBH27E4": {
+      "title": "Complete real-study provenance/admission (G2) and obtain redistributable EDF-derived ASC (A-11)",
+      "before": "open",
+      "action": "close-consolidated",
+      "canonical": "bd-01M3DPG3KTRQNN6HKWRHYQTT0C",
+      "reason": "Private acquisition declarations and the full standard-host journey are preserved on G2. The public ASC input already landed under v-asc-e2e, asc-public-fixture and asc-public-e2e with explicit unknown converter fields. Broader vendor certification stays post-v1. Close the duplicate mixed-input request, not G2."
+    }
+  },
+  "verification": [
+    "all21 active entries root-reachable",
+    "exact5epics and16tasks/gates",
+    "no active dependency cycles",
+    "no post-v1 release blocker",
+    "no live task blocked by a closed consolidated alias",
+    "every task belongs to a delivery group",
+    "all12 intended closures verified",
+    "four deferrals remain open",
+    "all history retained as append-only operations",
+    "committable clone matches shared canonical release fields and graph",
+    "all150 own tracker operations copied byte-for-byte",
+    "nine pre-existing other-actor primary-only operations left untouched"
+  ],
+  "sourceEvidence": {
+    "studio/desktop/src/main/scala/eyes4s/studio/desktop/StudioMain.scala": "7c2d039b104944e0632f2eff71b9a6418872042e0999a597a3b456e5c5f32bc4",
+    "studio/desktop/src/main/scala/eyes4s/studio/desktop/project/ProjectLifecycleHost.scala": "d743d74a0cec856b2c3c92fcc1cb3894e9f15cb43db19aaad7d2dbdc31ef46b4",
+    "studio/app/src/main/scala/eyes4s/studio/app/vm/A11y.scala": "7bd2cf00e9b2aedcf70887516e614f871b701f03437e856c8b6ae0c80b81ede3",
+    "studio/desktop/src/test/scala/eyes4s/studio/desktop/shell/A11yTreeSuite.scala": "70022d933627570fa0063e6af2fe624cf9d215fe308b9ad7c2d18998f61568f3",
+    "studio/core/src/main/scala/eyes4s/studio/core/session/ProjectSession.scala": "9108653750dcce461fd6fe98299b62b13a2852aa5f836718ac06110be7f6a9ef",
+    "studio/desktop/src/main/scala/eyes4s/studio/desktop/platform/FileProjectStore.scala": "9164b8d34e59228adb8204abcd43e92b39c51054b53bfdb0fce979c3498a4c01",
+    "studio/desktop/src/test/scala/eyes4s/studio/desktop/harness/StudioRobot.scala": "cd14d621c1204e926a3d54e45e1c9e7d846e8a64fabf9c5bb0efd6dc83f92abb",
+    "studio/desktop/src/test/scala/eyes4s/studio/desktop/trial/InputAdapterFxSuite.scala": "24cb84b1b41a6e2c9a82381878745aa4accf2ad00040985bfef94d5b3e8f3174",
+    "studio/desktop/src/test/scala/eyes4s/studio/desktop/harness/RenderFailureCaptureFxSuite.scala": "a75ab4dc6693004645e95ecd4723633c5871b3bb4ae3f5744ae9370d5d21e127",
+    "studio/core/src/main/scala/eyes4s/studio/core/backend/Views.scala": "cfe4d3bc78f5981224a8cd2013f187df676f77944ea56fb3f6a30b36c88de212",
+    "studio/desktop/src/main/scala/eyes4s/studio/desktop/scanpath/ScanpathWorkbench.scala": "1ff6312077eaf76de41ee506902e3c5109ff66e8ff18e66e30b27c6b670e0f50",
+    "tools/study-consumer/verify.py": "75079e7a9c599b6b8d2dbc5471f23d77d0c7c1a283a7b268cdbbd7c4157c1a49",
+    "docs/studio/A11Y_AUDIT.md": "139db94807cd76efe7d0bafe813f92d5549cc17c4b2b7dc0cda03ec54a5c4887",
+    "docs/DEVELOPMENT_PLAN.md": "0c9815d2fbb1b0cb5f4f2760c352456d19366611a6bcd5f23b61c0ddd37b12c3",
+    "PRD.md": "e8117d2b176938ec475059d3edd866a961b1affaf3f8a8e041764be8088fb626",
+    "docs/studio/evidence/20261024-results-matrix/qualification.json": "5649014f56b7c6f509d74cbedd9e12539cabfb240dd5dfd1123ededbf52b7683",
+    "docs/studio/evidence/20261021-g4/qualification.json": "37ea53658f2fd035d947b0260d7c48e8882f4b0e13e144003074753e3a3e0332",
+    "docs/evidence/public-asc-20261014.json": "b868db9961e2f2575af16da43da7a179a4f0bda87af5b6f9fc3bcbfdf5fa2662"
+  },
+  "limitations": [
+    "Historical completed receipts qualify their pinned source trees; this reconciliation creates no replacement qualification.",
+    "G2 remains open for required acquisition declarations and a complete production-host journey.",
+    "VoiceOver, physical Retina, named-machine Studio latency/memory, clean no-JDK packaged smoke and independent-researcher usability remain unqualified.",
+    "No current default-JDK all-module Scaladoc rerun was performed; the existing scoped workaround and hosted evidence are retained.",
+    "The recorded retention implementation is unavailable and cannot be counted as landed.",
+    "The other71 post-v1 entries are outside this release reassessment; no claim is made that every research backlog item was re-audited."
+  ],
+  "trackerFsck": {
+    "bad_filename": [],
+    "bad_hash": [],
+    "bad_json": [],
+    "bad_op_shape": [],
+    "ops_checked": 11394,
+    "tmp_cleaned": 0,
+    "tmp_total": 0
+  },
+  "applicationNote": "One initial CLI tag-removal command rejected multiple tag arguments before writing. Resumed with one tag per operation; no successful note/closure was replayed. Final live state and graph were read back and checked.",
+  "ownOperationCount": 150,
+  "priorityChanges": {
+    "bd-01M5P3EJ0NC4PXQH0CKQY4WHV2": 1,
+    "bd-01M5NWGK8E9SW3JRKJ69QHMG9B": 1,
+    "bd-01M44PBGT3KAFQ160QTEV3G3HK": 2,
+    "bd-01M3HHR5QV9W9SS9AMM1RR1SM0": 2
+  }
+}

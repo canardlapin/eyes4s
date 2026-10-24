@@ -1,0 +1,1 @@
+{"actor":"codex-v1-reconcile-20261024","entity":"bd-01M3HHR5QV9W9SS9AMM1RR1SM0","expect":{"title":"20260927T134424.059881Z-p66133-c0000-r8c47-h40ed3c"},"kind":"patch","op":"20261024T131144.504658Z-p79237-c0000-r8343-h685f06","set":{"title":"Qualify the default fork-handshake fix with five consecutive gate receipts"},"ts":"2026-10-24T13:11:44.504658Z","v":1}
