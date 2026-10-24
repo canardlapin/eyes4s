@@ -1,0 +1,44 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<testsuite hostname="0307c122c62e" name="eyes4s.studio.desktop.plot.CanvasPlotHostFxSuite" tests="17" errors="0" failures="0" skipped="0" time="13.186" timestamp="2026-10-24T06:20:55">
+          <properties>
+      <property name="java.specification.version" value="25"/><property name="sun.jnu.encoding" value="UTF-8"/><property name="java.class.path" value="/opt/sbt/sbt-launch.jar"/><property name="java.vm.vendor" value="Eclipse Adoptium"/><property name="sun.arch.data.model" value="64"/><property name="sbt.supershell" value="false"/><property name="jline.shutdownhook" value="false"/><property name="java.vendor.url" value="https://adoptium.net/"/><property name="user.timezone" value="Etc/UTC"/><property name="java.vm.specification.version" value="25"/><property name="os.name" value="Linux"/><property name="sun.java.launcher" value="SUN_STANDARD"/><property name="user.country" value="US"/><property name="sun.boot.library.path" value="/opt/java/openjdk/lib"/><property name="sun.java.command" value="/opt/sbt/sbt-launch.jar scalafmtAll scalafmtSbt githubWorkflowGenerate studioVizJVM/testOnly *PlotTransformSuite studioDesktop/testOnly *CanvasBoundaryFxSuite *CanvasPlotHostFxSuite *NativeOutputScaleFxSuite *VisualPixelsSuite studioStyleCheck"/><property name="jdk.debug" value="release"/><property name="sun.cpu.endian" value="little"/><property name="user.home" value="/root"/><property name="user.language" value="en"/><property name="java.specification.vendor" value="Oracle Corporation"/><property name="sbt.ipcsocket.tmpdir" value="/tmp/.sbt82f575fe/ipcsocket"/><property name="swoval.tmpdir" value="/tmp/.sbt82f575fe/swoval"/><property name="java.version.date" value="2026-08-18"/><property name="java.home" value="/opt/java/openjdk"/><property name="file.separator" value="/"/><property name="java.vm.compressedOopsMode" value="Zero based"/><property name="line.separator" value="
+"/><property name="java.vm.specification.vendor" value="Oracle Corporation"/><property name="java.specification.name" value="Java Platform API Specification"/><property name="jline.esc.timeout" value="0"/><property name="sun.management.compiler" value="HotSpot 64-Bit Tiered Compilers"/><property name="java.runtime.version" value="25.0.4.1+1-LTS"/><property name="user.name" value="root"/><property name="stdout.encoding" value="UTF-8"/><property name="path.separator" value=":"/><property name="os.version" value="6.10.14-linuxkit"/><property name="jna.nosys" value="true"/><property name="java.runtime.name" value="OpenJDK Runtime Environment"/><property name="sbt.log.noformat" value="true"/><property name="log4j.ignoreTCL" value="true"/><property name="file.encoding" value="UTF-8"/><property name="jnidispatch.path" value="/root/.cache/JNA/temp/jna9553568069914585783.tmp"/><property name="java.vm.name" value="OpenJDK 64-Bit Server VM"/><property name="jna.platform.library.path" value="/usr/lib:/lib:/lib/aarch64-linux-gnu:/opt/java/openjdk/lib:/opt/java/openjdk/lib/server"/><property name="java.vendor.version" value="Temurin-25.0.4.1+1"/><property name="jna.loaded" value="true"/><property name="java.vendor.url.bug" value="https://github.com/adoptium/adoptium-support/issues"/><property name="java.io.tmpdir" value="/tmp"/><property name="java.version" value="25.0.4.1"/><property name="user.dir" value="/work"/><property name="os.arch" value="aarch64"/><property name="java.vm.specification.name" value="Java Virtual Machine Specification"/><property name="native.encoding" value="UTF-8"/><property name="java.library.path" value="/usr/java/packages/lib:/usr/lib64:/lib64:/lib:/usr/lib"/><property name="java.vm.info" value="mixed mode, sharing"/><property name="stderr.encoding" value="UTF-8"/><property name="java.vendor" value="Eclipse Adoptium"/><property name="java.vm.version" value="25.0.4.1+1-LTS"/><property name="stdin.encoding" value="UTF-8"/><property name="eyes4s.studio.test.heap" value="2g"/><property name="sun.io.unicode.encoding" value="UnicodeLittle"/><property name="java.class.version" value="69.0"/>
+    </properties>
+          <testcase classname="eyes4s.studio.desktop.plot.CanvasPlotHostFxSuite" name="the reference scene's op log equals its golden" time="0.067">
+                      
+                    </testcase><testcase classname="eyes4s.studio.desktop.plot.CanvasPlotHostFxSuite" name="draws the reference scene at 1x and 2x (light)" time="0.48">
+                      
+                    </testcase><testcase classname="eyes4s.studio.desktop.plot.CanvasPlotHostFxSuite" name="draws the reference scene at 1x and 2x (dark)" time="0.463">
+                      
+                    </testcase><testcase classname="eyes4s.studio.desktop.plot.CanvasPlotHostFxSuite" name="without an override the host lays out for its window's output scale" time="0.045">
+                      
+                    </testcase><testcase classname="eyes4s.studio.desktop.plot.CanvasPlotHostFxSuite" name="the host's accessible help is the scene's text summary, and none without one" time="0.046">
+                      
+                    </testcase><testcase classname="eyes4s.studio.desktop.plot.CanvasPlotHostFxSuite" name="a texture-scale change replaces the canvases and redraws without compiling" time="0.439">
+                      
+                    </testcase><testcase classname="eyes4s.studio.desktop.plot.CanvasPlotHostFxSuite" name="resize re-lays out the scene without changing its data geometry" time="0.088">
+                      
+                    </testcase><testcase classname="eyes4s.studio.desktop.plot.CanvasPlotHostFxSuite" name="compiles off the FX thread and draws on it" time="0.049">
+                      
+                    </testcase><testcase classname="eyes4s.studio.desktop.plot.CanvasPlotHostFxSuite" name="a scene that cannot be laid out fails with a typed error and a blank canvas" time="0.049">
+                      
+                    </testcase><testcase classname="eyes4s.studio.desktop.plot.CanvasPlotHostFxSuite" name="dispose detaches the host, releases the canvas and ignores later scenes" time="0.047">
+                      
+                    </testcase><testcase classname="eyes4s.studio.desktop.plot.CanvasPlotHostFxSuite" name="a superseded compile is not drawn; the shown frame stays until the next" time="0.048">
+                      
+                    </testcase><testcase classname="eyes4s.studio.desktop.plot.CanvasPlotHostFxSuite" name="a surface too large to draw fails with a typed error, not Waiting" time="0.05">
+                      
+                    </testcase><testcase classname="eyes4s.studio.desktop.plot.CanvasPlotHostFxSuite" name="a new scene value under the same id gets fresh renderer caches" time="0.048">
+                      
+                    </testcase><testcase classname="eyes4s.studio.desktop.plot.CanvasPlotHostFxSuite" name="1,000 open/close cycles retain no host, canvas or listener" time="10.819">
+                      
+                    </testcase><testcase classname="eyes4s.studio.desktop.plot.CanvasPlotHostFxSuite" name="the software renderer accepts the byte boundary and refuses 8192-square before allocation" time="0.316">
+                      
+                    </testcase><testcase classname="eyes4s.studio.desktop.plot.CanvasPlotHostFxSuite" name="feedback ends at the painted frame and leaves its guard transparent at1.0x" time="0.083">
+                      
+                    </testcase><testcase classname="eyes4s.studio.desktop.plot.CanvasPlotHostFxSuite" name="feedback ends at the painted frame and leaves its guard transparent at2.0x" time="0.049">
+                      
+                    </testcase>
+          <system-out><![CDATA[]]></system-out>
+          <system-err><![CDATA[]]></system-err>
+        </testsuite>

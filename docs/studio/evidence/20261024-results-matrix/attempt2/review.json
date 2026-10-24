@@ -1,0 +1,8 @@
+{
+  "candidate": "42369cf506fceaf4b6fec079fa28f36d6d94fcbe",
+  "run": 40060539127,
+  "attempt": 2,
+  "artifact": 12549690261,
+  "archiveSha256": "0234d7e3d68ea5784a734c4cc97e0a7f1f4accb3335f9259b4e6086e7fd2e989",
+  "qualification": "Retained negative controlled same-source run: light44/max36 and dark64/max34 transformed2x bottom-edge differences; immediate repeats all passed; no baseline or tolerance changed."
+}

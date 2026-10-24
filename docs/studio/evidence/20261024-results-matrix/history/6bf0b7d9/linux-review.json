@@ -1,0 +1,11 @@
+{
+  "candidate": "6bf0b7d9ed3df9a0a30cc87dc2f1243e4604edd9",
+  "qualification": "Independent hosted AMD64 strict matrix passed. Aggregate6bf remains negative due Mac boundary-test assumption; final779 qualification pending.",
+  "artifact": 12551219441,
+  "archiveSha256": "f86c63d8102bb72e2cbe24a5570ea68a1ec62fab354b4839663c3309242f369f",
+  "states": 30,
+  "captures": 60,
+  "immediateRepeatsExact": 60,
+  "baselineComparisonsExact": 55,
+  "baselineComparisonsAccepted": 60
+}

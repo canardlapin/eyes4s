@@ -1,0 +1,76 @@
+{
+  "candidateFingerprint": "1597e94afec6332e4e5b3d221b5282c51d712b9b93cea50739ce38b368d3b08c",
+  "osName": "Linux",
+  "osArch": "aarch64",
+  "javaVersion": "25.0.4.1",
+  "javaFxVersion": "24.0.1+4",
+  "glassPlatform": "Monocle",
+  "prismOrder": "sw",
+  "schema": 1,
+  "state": "t3-Data-light",
+  "moment": "t3",
+  "perspective": "Data",
+  "theme": "light",
+  "logicalWidth": 1440,
+  "logicalHeight": 900,
+  "nativeScaleX": 1,
+  "nativeScaleY": 1,
+  "mode": "linux-monocle-goldens",
+  "focus": "programmatic scene root; no keyboard ring; no active text caret",
+  "maximumChannelDelta": 1,
+  "maximumChangedFraction": 0.001,
+  "sourceSha256": "559210037096f0c4ba29054f449c59ae251c2c5a31ded747f8b32547a5f5c519",
+  "captures": [
+    {
+      "actual": "target/studio-snapshots/VisualParitySuite/t3-Data-light/light-1x.png",
+      "actualSha256": "6716ffd9bc15c4d21708c207b8e7193e60b0dc0889e56cbd2447f176d999dbcf",
+      "width": 1440,
+      "height": 900,
+      "baseline": "studio/desktop/src/test/resources/eyes4s/studio/desktop/visual-parity/t3-Data-light/light-1x.png",
+      "baselineSha256": "6716ffd9bc15c4d21708c207b8e7193e60b0dc0889e56cbd2447f176d999dbcf",
+      "comparison": {
+        "width": 1440,
+        "height": 900,
+        "changedPixels": 0,
+        "maximumChannelDelta": 0,
+        "changedFraction": 0,
+        "accepted": true
+      },
+      "repeatFirstSha256": "6716ffd9bc15c4d21708c207b8e7193e60b0dc0889e56cbd2447f176d999dbcf",
+      "repeat": {
+        "width": 1440,
+        "height": 900,
+        "changedPixels": 0,
+        "maximumChannelDelta": 0,
+        "changedFraction": 0,
+        "accepted": true
+      }
+    },
+    {
+      "actual": "target/studio-snapshots/VisualParitySuite/t3-Data-light/light-2x.png",
+      "actualSha256": "3cf51511e628854fe3dc7c08820693fe4e5bfd2ebdb7b981f7edce19de18f184",
+      "width": 2880,
+      "height": 1800,
+      "baseline": "studio/desktop/src/test/resources/eyes4s/studio/desktop/visual-parity/t3-Data-light/light-2x.png",
+      "baselineSha256": "3cf51511e628854fe3dc7c08820693fe4e5bfd2ebdb7b981f7edce19de18f184",
+      "comparison": {
+        "width": 2880,
+        "height": 1800,
+        "changedPixels": 0,
+        "maximumChannelDelta": 0,
+        "changedFraction": 0,
+        "accepted": true
+      },
+      "repeatFirstSha256": "3cf51511e628854fe3dc7c08820693fe4e5bfd2ebdb7b981f7edce19de18f184",
+      "repeat": {
+        "width": 2880,
+        "height": 1800,
+        "changedPixels": 0,
+        "maximumChannelDelta": 0,
+        "changedFraction": 0,
+        "accepted": true
+      }
+    }
+  ],
+  "problems": []
+}

@@ -1,0 +1,386 @@
+{
+  "source": "75a18821342b1e671d48b9cff29fd6b1f1a7c001",
+  "tree": "b2d6739c5749367bb7c0c0a55f106e86d73cf7a6",
+  "court": "isolated Linux aarch64 Monocle1x; Temurin25.0.4.1/JavaFX24.0.1; diagnostic and focused proof, not aggregate qualification",
+  "positiveReports": [
+    {
+      "suite": "TEST-eyes4s.studio.viz.plot.PlotTransformSuite",
+      "passed": 8,
+      "sha256": "0bbd4f6c7cf495c8e8da74d54ddb59a7c7917d2502521bdb07278af4501c0d9d"
+    },
+    {
+      "suite": "TEST-eyes4s.studio.desktop.shell.CanvasBoundaryFxSuite",
+      "passed": 2,
+      "sha256": "8cd283c195d548f9c96cb70dc8148a0dae3415ab39de4ad457094b66b39edd79"
+    },
+    {
+      "suite": "TEST-eyes4s.studio.desktop.plot.CanvasPlotHostFxSuite",
+      "passed": 17,
+      "sha256": "78913fc2be60c29f25f2cd7f60067b4f9f812779cf697e4f5fb69911b6bc6c9e"
+    },
+    {
+      "suite": "TEST-eyes4s.studio.desktop.plot.NativeOutputScaleFxSuite",
+      "passed": 1,
+      "sha256": "dc941c553ad8ebcb459145af8170e0a5a7f51758f5654364ab226ada5aaa1863"
+    },
+    {
+      "suite": "TEST-eyes4s.studio.desktop.harness.VisualPixelsSuite",
+      "passed": 3,
+      "sha256": "21e80aaa5e9302f010f28f6e7be770fc495cba6f957bdb35f36e44a2707439a1"
+    }
+  ],
+  "mutationResults": {
+    "guardRemoved": "both themes fail restored-native-scale at2x",
+    "clippingRemoved": "both1x/2x transparency checks fail;15other host cases pass"
+  },
+  "phases": [
+    {
+      "theme": "dark",
+      "comparisons": [
+        {
+          "phase": "height-1.0",
+          "snapshotScale": 1,
+          "difference": {
+            "width": 863,
+            "height": 327,
+            "changedPixels": 0,
+            "maximumChannelDelta": 0,
+            "changedFraction": 0,
+            "accepted": true
+          }
+        },
+        {
+          "phase": "height-1.0",
+          "snapshotScale": 2,
+          "difference": {
+            "width": 1726,
+            "height": 654,
+            "changedPixels": 0,
+            "maximumChannelDelta": 0,
+            "changedFraction": 0,
+            "accepted": true
+          }
+        },
+        {
+          "phase": "height-17.0",
+          "snapshotScale": 1,
+          "difference": {
+            "width": 863,
+            "height": 327,
+            "changedPixels": 0,
+            "maximumChannelDelta": 0,
+            "changedFraction": 0,
+            "accepted": true
+          }
+        },
+        {
+          "phase": "height-17.0",
+          "snapshotScale": 2,
+          "difference": {
+            "width": 1726,
+            "height": 654,
+            "changedPixels": 0,
+            "maximumChannelDelta": 0,
+            "changedFraction": 0,
+            "accepted": true
+          }
+        },
+        {
+          "phase": "height-33.0",
+          "snapshotScale": 1,
+          "difference": {
+            "width": 863,
+            "height": 327,
+            "changedPixels": 0,
+            "maximumChannelDelta": 0,
+            "changedFraction": 0,
+            "accepted": true
+          }
+        },
+        {
+          "phase": "height-33.0",
+          "snapshotScale": 2,
+          "difference": {
+            "width": 1726,
+            "height": 654,
+            "changedPixels": 0,
+            "maximumChannelDelta": 0,
+            "changedFraction": 0,
+            "accepted": true
+          }
+        },
+        {
+          "phase": "width-1.0",
+          "snapshotScale": 1,
+          "difference": {
+            "width": 863,
+            "height": 327,
+            "changedPixels": 0,
+            "maximumChannelDelta": 0,
+            "changedFraction": 0,
+            "accepted": true
+          }
+        },
+        {
+          "phase": "width-1.0",
+          "snapshotScale": 2,
+          "difference": {
+            "width": 1726,
+            "height": 654,
+            "changedPixels": 0,
+            "maximumChannelDelta": 0,
+            "changedFraction": 0,
+            "accepted": true
+          }
+        },
+        {
+          "phase": "width-17.0",
+          "snapshotScale": 1,
+          "difference": {
+            "width": 863,
+            "height": 327,
+            "changedPixels": 0,
+            "maximumChannelDelta": 0,
+            "changedFraction": 0,
+            "accepted": true
+          }
+        },
+        {
+          "phase": "width-17.0",
+          "snapshotScale": 2,
+          "difference": {
+            "width": 1726,
+            "height": 654,
+            "changedPixels": 0,
+            "maximumChannelDelta": 0,
+            "changedFraction": 0,
+            "accepted": true
+          }
+        },
+        {
+          "phase": "width-33.0",
+          "snapshotScale": 1,
+          "difference": {
+            "width": 863,
+            "height": 327,
+            "changedPixels": 0,
+            "maximumChannelDelta": 0,
+            "changedFraction": 0,
+            "accepted": true
+          }
+        },
+        {
+          "phase": "width-33.0",
+          "snapshotScale": 2,
+          "difference": {
+            "width": 1726,
+            "height": 654,
+            "changedPixels": 0,
+            "maximumChannelDelta": 0,
+            "changedFraction": 0,
+            "accepted": true
+          }
+        },
+        {
+          "phase": "restored-native-scale",
+          "snapshotScale": 1,
+          "difference": {
+            "width": 863,
+            "height": 327,
+            "changedPixels": 0,
+            "maximumChannelDelta": 0,
+            "changedFraction": 0,
+            "accepted": true
+          }
+        },
+        {
+          "phase": "restored-native-scale",
+          "snapshotScale": 2,
+          "difference": {
+            "width": 1726,
+            "height": 654,
+            "changedPixels": 0,
+            "maximumChannelDelta": 0,
+            "changedFraction": 0,
+            "accepted": true
+          }
+        }
+      ]
+    },
+    {
+      "theme": "light",
+      "comparisons": [
+        {
+          "phase": "height-1.0",
+          "snapshotScale": 1,
+          "difference": {
+            "width": 863,
+            "height": 327,
+            "changedPixels": 0,
+            "maximumChannelDelta": 0,
+            "changedFraction": 0,
+            "accepted": true
+          }
+        },
+        {
+          "phase": "height-1.0",
+          "snapshotScale": 2,
+          "difference": {
+            "width": 1726,
+            "height": 654,
+            "changedPixels": 0,
+            "maximumChannelDelta": 0,
+            "changedFraction": 0,
+            "accepted": true
+          }
+        },
+        {
+          "phase": "height-17.0",
+          "snapshotScale": 1,
+          "difference": {
+            "width": 863,
+            "height": 327,
+            "changedPixels": 0,
+            "maximumChannelDelta": 0,
+            "changedFraction": 0,
+            "accepted": true
+          }
+        },
+        {
+          "phase": "height-17.0",
+          "snapshotScale": 2,
+          "difference": {
+            "width": 1726,
+            "height": 654,
+            "changedPixels": 0,
+            "maximumChannelDelta": 0,
+            "changedFraction": 0,
+            "accepted": true
+          }
+        },
+        {
+          "phase": "height-33.0",
+          "snapshotScale": 1,
+          "difference": {
+            "width": 863,
+            "height": 327,
+            "changedPixels": 0,
+            "maximumChannelDelta": 0,
+            "changedFraction": 0,
+            "accepted": true
+          }
+        },
+        {
+          "phase": "height-33.0",
+          "snapshotScale": 2,
+          "difference": {
+            "width": 1726,
+            "height": 654,
+            "changedPixels": 0,
+            "maximumChannelDelta": 0,
+            "changedFraction": 0,
+            "accepted": true
+          }
+        },
+        {
+          "phase": "width-1.0",
+          "snapshotScale": 1,
+          "difference": {
+            "width": 863,
+            "height": 327,
+            "changedPixels": 0,
+            "maximumChannelDelta": 0,
+            "changedFraction": 0,
+            "accepted": true
+          }
+        },
+        {
+          "phase": "width-1.0",
+          "snapshotScale": 2,
+          "difference": {
+            "width": 1726,
+            "height": 654,
+            "changedPixels": 0,
+            "maximumChannelDelta": 0,
+            "changedFraction": 0,
+            "accepted": true
+          }
+        },
+        {
+          "phase": "width-17.0",
+          "snapshotScale": 1,
+          "difference": {
+            "width": 863,
+            "height": 327,
+            "changedPixels": 0,
+            "maximumChannelDelta": 0,
+            "changedFraction": 0,
+            "accepted": true
+          }
+        },
+        {
+          "phase": "width-17.0",
+          "snapshotScale": 2,
+          "difference": {
+            "width": 1726,
+            "height": 654,
+            "changedPixels": 0,
+            "maximumChannelDelta": 0,
+            "changedFraction": 0,
+            "accepted": true
+          }
+        },
+        {
+          "phase": "width-33.0",
+          "snapshotScale": 1,
+          "difference": {
+            "width": 863,
+            "height": 327,
+            "changedPixels": 0,
+            "maximumChannelDelta": 0,
+            "changedFraction": 0,
+            "accepted": true
+          }
+        },
+        {
+          "phase": "width-33.0",
+          "snapshotScale": 2,
+          "difference": {
+            "width": 1726,
+            "height": 654,
+            "changedPixels": 0,
+            "maximumChannelDelta": 0,
+            "changedFraction": 0,
+            "accepted": true
+          }
+        },
+        {
+          "phase": "restored-native-scale",
+          "snapshotScale": 1,
+          "difference": {
+            "width": 863,
+            "height": 327,
+            "changedPixels": 0,
+            "maximumChannelDelta": 0,
+            "changedFraction": 0,
+            "accepted": true
+          }
+        },
+        {
+          "phase": "restored-native-scale",
+          "snapshotScale": 2,
+          "difference": {
+            "width": 1726,
+            "height": 654,
+            "changedPixels": 0,
+            "maximumChannelDelta": 0,
+            "changedFraction": 0,
+            "accepted": true
+          }
+        }
+      ]
+    }
+  ],
+  "screenshotDimensionsChanged": false,
+  "toleranceChanged": false
+}

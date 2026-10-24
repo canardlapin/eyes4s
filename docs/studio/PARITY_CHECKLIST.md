@@ -20,9 +20,10 @@ criteria. They do not mean pixel identity or implementation of every illustrated
 control. The [eight-board side-by-side](evidence/20261023-parity/index.html) and
 per-board `review.json` files record all 51 dispositions, source/capture hashes and
 named native cases. [Qualification](evidence/20261023-parity/qualification.json)
-records the frozen candidate and completed gates separately. The empty Results
-Participants navigator is explicitly unfinished and tracked by
-`bd-01M5N6CCJ42414CZSEX6B2CMTR`; participants remain available in the plots and tables.
+records the frozen candidate and completed gates separately. At that review the Results
+Participants navigator was unfinished. Its served implementation and the complete
+JavaFX matrix are now qualified in the [2026-10-24 receipt](evidence/20261024-results-matrix/qualification.json),
+with a [signed navigator review](evidence/20261024-results-matrix/navigator-review.json).
 
 ## Shared shell (every board except System)
 
@@ -131,6 +132,7 @@ records served interfaces rather than obsolete blockers. Full qualification is r
 - Deviation (S10.5 F3, accessibility): the contrast group also has the scale profile's Table tab after "Scale profile", which the board does not show. Every plot has its Table twin (DESIGN_SPEC §10).
 
 ## Results (moment t3)
+- [x] Served overall Participants navigator at the selected scale, with exact refs, each mean's own n and separate run-level query accounting. One composite stop supports pointer/keyboard activation into the participant query context. Two-line scrolling rows are the recorded presentation deviation; see the [review](evidence/20261024-results-matrix/navigator-review.json).
 - [x] Jobs chip is running. The banner says the results will not replace this view until Show.
 - [x] Participant plot shows 24 participants with grand means +0.43 and +0.24, each group labelled "n = 24", paired n = 24, n range 2–17. P05 has participant means (D +0.35); its 3 failed queries show as "no value".
 - [x] Paired descriptive "Δ Remembered − Forgotten +0.18" (range +0.04 P15 to +0.34 P11; higher in 24 of 24), computed before rounding participant means, with the rounding note.
@@ -266,7 +268,7 @@ dispositions across System, Data, Analysis, Explore, Results, Figures, Main and
 MainDark, with source/capture hashes and explicit reasons for deviations.
 The [qualification receipt](evidence/20261023-parity/qualification.json) covers
 frozen source `2753627d`, tree `064afa2d`: full canonical and strict Studio gates,
-4,363 portable /812 desktop cases, all24 E2E catalogue scenarios, fixture and
+4,363 portable /812 desktop cases, all 24 E2E catalogue scenarios, fixture and
 comparison inventory checks, site/documentation consumers and final strict
 compilation/boundaries/API consistency. The private-data test remains opt-in.
 
@@ -278,8 +280,35 @@ cases are verified in the [hosted review](evidence/20261023-parity/hosted-review
 Actual GTK2 reports Stage2×2, no override, a one-device-pixel feedback stripe and
 zero analytic raster mismatch.
 
-This accepts the per-board reviews and their individual deviations. It leaves
-Results' empty Participants navigator open as `bd-01M5N6CCJ42414CZSEX6B2CMTR`, and
-the S10.4 parent open for the complete light/dark t1/t2/t3 JavaFX pixel-golden matrix.
+That qualification accepted the per-board reviews and their individual deviations. It
+left the Participants navigator and full regression matrix for the follow-up below.
 It does not qualify private-study G2, physical macOS Retina or VoiceOver. Mote
 closure notes identify the landed source/evidence commit.
+
+
+## Results navigator and complete regression matrix, 2026-10-24
+
+The [review](evidence/20261024-results-matrix/index.html) and
+[qualification receipt](evidence/20261024-results-matrix/qualification.json) cover frozen
+source `779fb468`, tree `7c11aa66`: full canonical gate, 5,234 Studio passes,
+style/boundary checks, all 24 E2E catalogue scenarios and complete documentation consumers.
+The sole local Studio skip is the opt-in private-density test. MiMa had no previous artifacts.
+
+[Hosted Studio](https://github.com/canardlapin/eyes4s/actions/runs/40072699064) passed all
+four jobs. Independently verified artifacts contain all 30 states / 60 captures per court:
+Linux Monocle owns strict pixel goldens; native Mac and GTK2 own functional/repeat
+checks. All courts retain the full 24-stop Results transcript and both board/small
+restoration suites. GTK2 separately verifies native 2× geometry and the analytic raster.
+
+Two negative 42369cf5 runs exposed canvas-edge sampling history. A cleared texture
+guard and explicit clipping correct it, without changing data coordinates, PNG sizes
+or the fixed delta 1 / fraction 0.001 comparator. Eight 2× baselines were deliberately reviewed;
+the other 52 originals remain. The original failures, corrected positive evidence and
+meaningful guard/clipping mutations are retained. The superseded 6bf0b7d9 Mac failure
+was an intermediate undersize assumption: the corrected test records the named
+panel-extent refusal and still demands Drawn plus pixels within the unchanged strict comparator after restore.
+
+The Participants navigator and S10.4 matrix are complete within this recorded scope.
+Small-window readability (`bd-01M5P3EJ0NC4PXQH0CKQY4WHV2`) and the generic Results
+focus model (`bd-01M5NWGK8E9SW3JRKJ69QHMG9B`) remain open. This does not qualify
+private-study G2, physical Mac Retina or VoiceOver, nor erase earlier board deviations.

@@ -349,3 +349,9 @@ bd-01M3DPFHY9YW5BPSJQ8VBBXHVN). The board's split of the
 457 eligible queries into 454 contributing and 3 failing in the window, and the
 per-row reasons ("1 control fewer", "0 of 11 fixations inside window"), need fields
 `PreviewRow` does not carry yet.
+
+
+The complete perspective regression matrix and served Results Participants navigator
+are qualified in the [2026-10-24 review](evidence/20261024-results-matrix/index.html).
+Its receipt distinguishes Linux pixel goldens, native functional courts, retained
+negative/mutation evidence and the remaining small-window/focus-model follow-ups.

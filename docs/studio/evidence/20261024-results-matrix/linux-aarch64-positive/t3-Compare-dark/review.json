@@ -1,0 +1,76 @@
+{
+  "candidateFingerprint": "1597e94afec6332e4e5b3d221b5282c51d712b9b93cea50739ce38b368d3b08c",
+  "osName": "Linux",
+  "osArch": "aarch64",
+  "javaVersion": "25.0.4.1",
+  "javaFxVersion": "24.0.1+4",
+  "glassPlatform": "Monocle",
+  "prismOrder": "sw",
+  "schema": 1,
+  "state": "t3-Compare-dark",
+  "moment": "t3",
+  "perspective": "Compare",
+  "theme": "dark",
+  "logicalWidth": 1440,
+  "logicalHeight": 900,
+  "nativeScaleX": 1,
+  "nativeScaleY": 1,
+  "mode": "linux-monocle-goldens",
+  "focus": "programmatic scene root; no keyboard ring; no active text caret",
+  "maximumChannelDelta": 1,
+  "maximumChangedFraction": 0.001,
+  "sourceSha256": "559210037096f0c4ba29054f449c59ae251c2c5a31ded747f8b32547a5f5c519",
+  "captures": [
+    {
+      "actual": "target/studio-snapshots/VisualParitySuite/t3-Compare-dark/dark-1x.png",
+      "actualSha256": "c8f3ed2c6079991b80cf4c5eb82a7a0f8bf922bd4343d4b675d40c37ba1def2f",
+      "width": 1440,
+      "height": 900,
+      "baseline": "studio/desktop/src/test/resources/eyes4s/studio/desktop/visual-parity/t3-Compare-dark/dark-1x.png",
+      "baselineSha256": "d7ab4e2e306489d211f1b1b66a7673027721492dd81aabacd0cba5dd237e7409",
+      "comparison": {
+        "width": 1440,
+        "height": 900,
+        "changedPixels": 117,
+        "maximumChannelDelta": 1,
+        "changedFraction": 9.027777777777777E-5,
+        "accepted": true
+      },
+      "repeatFirstSha256": "c8f3ed2c6079991b80cf4c5eb82a7a0f8bf922bd4343d4b675d40c37ba1def2f",
+      "repeat": {
+        "width": 1440,
+        "height": 900,
+        "changedPixels": 0,
+        "maximumChannelDelta": 0,
+        "changedFraction": 0,
+        "accepted": true
+      }
+    },
+    {
+      "actual": "target/studio-snapshots/VisualParitySuite/t3-Compare-dark/dark-2x.png",
+      "actualSha256": "315045811a962fa913610b72f1b10df720c78185c16dbaa77c7cc63be4d904e9",
+      "width": 2880,
+      "height": 1800,
+      "baseline": "studio/desktop/src/test/resources/eyes4s/studio/desktop/visual-parity/t3-Compare-dark/dark-2x.png",
+      "baselineSha256": "9843904550bee05f3e89d34071fe4cb1b15f8c03abf3bc5924df711314c6e9ad",
+      "comparison": {
+        "width": 2880,
+        "height": 1800,
+        "changedPixels": 3014,
+        "maximumChannelDelta": 1,
+        "changedFraction": 5.814043209876543E-4,
+        "accepted": true
+      },
+      "repeatFirstSha256": "315045811a962fa913610b72f1b10df720c78185c16dbaa77c7cc63be4d904e9",
+      "repeat": {
+        "width": 2880,
+        "height": 1800,
+        "changedPixels": 0,
+        "maximumChannelDelta": 0,
+        "changedFraction": 0,
+        "accepted": true
+      }
+    }
+  ],
+  "problems": []
+}

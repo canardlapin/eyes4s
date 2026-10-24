@@ -1,0 +1,6301 @@
+{
+  "theme": "dark",
+  "os": "Mac OS X",
+  "java": "25.0.4.1",
+  "scene": [
+    1024,
+    656
+  ],
+  "phases": [
+    {
+      "phase": "baseline",
+      "before": [
+        {
+          "name": "query",
+          "status": "Drawn",
+          "sceneBounds": [
+            185,
+            250,
+            306,
+            143
+          ],
+          "layoutBounds": [
+            0,
+            0,
+            306,
+            143
+          ],
+          "clip": [
+            0,
+            0,
+            306,
+            143
+          ],
+          "surface": "PlotSurface(306.0,143.0,1.0)",
+          "transform": "eyes4s.studio.viz.plot.PlotTransform@19a78054",
+          "profile": "PlotHostProfile(1,1,0,0)",
+          "canvases": [
+            {
+              "width": 307,
+              "height": 144,
+              "sceneBounds": [
+                185,
+                250,
+                307,
+                144
+              ],
+              "transforms": "[Scale [x=1.0, y=1.0, z=1.0, pivotX=0.0, pivotY=0.0, pivotZ=0.0]]"
+            },
+            {
+              "width": 307,
+              "height": 144,
+              "sceneBounds": [
+                185,
+                250,
+                307,
+                144
+              ],
+              "transforms": "[Scale [x=1.0, y=1.0, z=1.0, pivotX=0.0, pivotY=0.0, pivotZ=0.0]]"
+            },
+            {
+              "width": 307,
+              "height": 144,
+              "sceneBounds": [
+                185,
+                250,
+                307,
+                144
+              ],
+              "transforms": "[Scale [x=1.0, y=1.0, z=1.0, pivotX=0.0, pivotY=0.0, pivotZ=0.0]]"
+            }
+          ]
+        },
+        {
+          "name": "query-legend",
+          "status": "Drawn",
+          "sceneBounds": [
+            185,
+            393,
+            306,
+            38
+          ],
+          "layoutBounds": [
+            0,
+            0,
+            306,
+            38
+          ],
+          "clip": [
+            0,
+            0,
+            306,
+            38
+          ],
+          "surface": "PlotSurface(306.0,38.0,1.0)",
+          "transform": "eyes4s.studio.viz.plot.PlotTransform@406115b9",
+          "profile": "PlotHostProfile(1,1,0,0)",
+          "canvases": [
+            {
+              "width": 307,
+              "height": 39,
+              "sceneBounds": [
+                185,
+                393,
+                307,
+                39
+              ],
+              "transforms": "[Scale [x=1.0, y=1.0, z=1.0, pivotX=0.0, pivotY=0.0, pivotZ=0.0]]"
+            },
+            {
+              "width": 307,
+              "height": 39,
+              "sceneBounds": [
+                185,
+                393,
+                307,
+                39
+              ],
+              "transforms": "[Scale [x=1.0, y=1.0, z=1.0, pivotX=0.0, pivotY=0.0, pivotZ=0.0]]"
+            },
+            {
+              "width": 307,
+              "height": 39,
+              "sceneBounds": [
+                185,
+                393,
+                307,
+                39
+              ],
+              "transforms": "[Scale [x=1.0, y=1.0, z=1.0, pivotX=0.0, pivotY=0.0, pivotZ=0.0]]"
+            }
+          ]
+        },
+        {
+          "name": "reference",
+          "status": "Drawn",
+          "sceneBounds": [
+            492,
+            250,
+            306,
+            143
+          ],
+          "layoutBounds": [
+            0,
+            0,
+            306,
+            143
+          ],
+          "clip": [
+            0,
+            0,
+            306,
+            143
+          ],
+          "surface": "PlotSurface(306.0,143.0,1.0)",
+          "transform": "eyes4s.studio.viz.plot.PlotTransform@73a71400",
+          "profile": "PlotHostProfile(1,1,0,0)",
+          "canvases": [
+            {
+              "width": 307,
+              "height": 144,
+              "sceneBounds": [
+                492,
+                250,
+                307,
+                144
+              ],
+              "transforms": "[Scale [x=1.0, y=1.0, z=1.0, pivotX=0.0, pivotY=0.0, pivotZ=0.0]]"
+            },
+            {
+              "width": 307,
+              "height": 144,
+              "sceneBounds": [
+                492,
+                250,
+                307,
+                144
+              ],
+              "transforms": "[Scale [x=1.0, y=1.0, z=1.0, pivotX=0.0, pivotY=0.0, pivotZ=0.0]]"
+            },
+            {
+              "width": 307,
+              "height": 144,
+              "sceneBounds": [
+                492,
+                250,
+                307,
+                144
+              ],
+              "transforms": "[Scale [x=1.0, y=1.0, z=1.0, pivotX=0.0, pivotY=0.0, pivotZ=0.0]]"
+            }
+          ]
+        },
+        {
+          "name": "reference-legend",
+          "status": "Drawn",
+          "sceneBounds": [
+            492,
+            393,
+            306,
+            38
+          ],
+          "layoutBounds": [
+            0,
+            0,
+            306,
+            38
+          ],
+          "clip": [
+            0,
+            0,
+            306,
+            38
+          ],
+          "surface": "PlotSurface(306.0,38.0,1.0)",
+          "transform": "eyes4s.studio.viz.plot.PlotTransform@345d22e5",
+          "profile": "PlotHostProfile(1,1,0,0)",
+          "canvases": [
+            {
+              "width": 307,
+              "height": 39,
+              "sceneBounds": [
+                492,
+                393,
+                307,
+                39
+              ],
+              "transforms": "[Scale [x=1.0, y=1.0, z=1.0, pivotX=0.0, pivotY=0.0, pivotZ=0.0]]"
+            },
+            {
+              "width": 307,
+              "height": 39,
+              "sceneBounds": [
+                492,
+                393,
+                307,
+                39
+              ],
+              "transforms": "[Scale [x=1.0, y=1.0, z=1.0, pivotX=0.0, pivotY=0.0, pivotZ=0.0]]"
+            },
+            {
+              "width": 307,
+              "height": 39,
+              "sceneBounds": [
+                492,
+                393,
+                307,
+                39
+              ],
+              "transforms": "[Scale [x=1.0, y=1.0, z=1.0, pivotX=0.0, pivotY=0.0, pivotZ=0.0]]"
+            }
+          ]
+        }
+      ],
+      "after": [
+        {
+          "name": "query",
+          "status": "Drawn",
+          "sceneBounds": [
+            185,
+            250,
+            306,
+            143
+          ],
+          "layoutBounds": [
+            0,
+            0,
+            306,
+            143
+          ],
+          "clip": [
+            0,
+            0,
+            306,
+            143
+          ],
+          "surface": "PlotSurface(306.0,143.0,1.0)",
+          "transform": "eyes4s.studio.viz.plot.PlotTransform@19a78054",
+          "profile": "PlotHostProfile(1,1,0,0)",
+          "canvases": [
+            {
+              "width": 307,
+              "height": 144,
+              "sceneBounds": [
+                185,
+                250,
+                307,
+                144
+              ],
+              "transforms": "[Scale [x=1.0, y=1.0, z=1.0, pivotX=0.0, pivotY=0.0, pivotZ=0.0]]"
+            },
+            {
+              "width": 307,
+              "height": 144,
+              "sceneBounds": [
+                185,
+                250,
+                307,
+                144
+              ],
+              "transforms": "[Scale [x=1.0, y=1.0, z=1.0, pivotX=0.0, pivotY=0.0, pivotZ=0.0]]"
+            },
+            {
+              "width": 307,
+              "height": 144,
+              "sceneBounds": [
+                185,
+                250,
+                307,
+                144
+              ],
+              "transforms": "[Scale [x=1.0, y=1.0, z=1.0, pivotX=0.0, pivotY=0.0, pivotZ=0.0]]"
+            }
+          ]
+        },
+        {
+          "name": "query-legend",
+          "status": "Drawn",
+          "sceneBounds": [
+            185,
+            393,
+            306,
+            38
+          ],
+          "layoutBounds": [
+            0,
+            0,
+            306,
+            38
+          ],
+          "clip": [
+            0,
+            0,
+            306,
+            38
+          ],
+          "surface": "PlotSurface(306.0,38.0,1.0)",
+          "transform": "eyes4s.studio.viz.plot.PlotTransform@406115b9",
+          "profile": "PlotHostProfile(1,1,0,0)",
+          "canvases": [
+            {
+              "width": 307,
+              "height": 39,
+              "sceneBounds": [
+                185,
+                393,
+                307,
+                39
+              ],
+              "transforms": "[Scale [x=1.0, y=1.0, z=1.0, pivotX=0.0, pivotY=0.0, pivotZ=0.0]]"
+            },
+            {
+              "width": 307,
+              "height": 39,
+              "sceneBounds": [
+                185,
+                393,
+                307,
+                39
+              ],
+              "transforms": "[Scale [x=1.0, y=1.0, z=1.0, pivotX=0.0, pivotY=0.0, pivotZ=0.0]]"
+            },
+            {
+              "width": 307,
+              "height": 39,
+              "sceneBounds": [
+                185,
+                393,
+                307,
+                39
+              ],
+              "transforms": "[Scale [x=1.0, y=1.0, z=1.0, pivotX=0.0, pivotY=0.0, pivotZ=0.0]]"
+            }
+          ]
+        },
+        {
+          "name": "reference",
+          "status": "Drawn",
+          "sceneBounds": [
+            492,
+            250,
+            306,
+            143
+          ],
+          "layoutBounds": [
+            0,
+            0,
+            306,
+            143
+          ],
+          "clip": [
+            0,
+            0,
+            306,
+            143
+          ],
+          "surface": "PlotSurface(306.0,143.0,1.0)",
+          "transform": "eyes4s.studio.viz.plot.PlotTransform@73a71400",
+          "profile": "PlotHostProfile(1,1,0,0)",
+          "canvases": [
+            {
+              "width": 307,
+              "height": 144,
+              "sceneBounds": [
+                492,
+                250,
+                307,
+                144
+              ],
+              "transforms": "[Scale [x=1.0, y=1.0, z=1.0, pivotX=0.0, pivotY=0.0, pivotZ=0.0]]"
+            },
+            {
+              "width": 307,
+              "height": 144,
+              "sceneBounds": [
+                492,
+                250,
+                307,
+                144
+              ],
+              "transforms": "[Scale [x=1.0, y=1.0, z=1.0, pivotX=0.0, pivotY=0.0, pivotZ=0.0]]"
+            },
+            {
+              "width": 307,
+              "height": 144,
+              "sceneBounds": [
+                492,
+                250,
+                307,
+                144
+              ],
+              "transforms": "[Scale [x=1.0, y=1.0, z=1.0, pivotX=0.0, pivotY=0.0, pivotZ=0.0]]"
+            }
+          ]
+        },
+        {
+          "name": "reference-legend",
+          "status": "Drawn",
+          "sceneBounds": [
+            492,
+            393,
+            306,
+            38
+          ],
+          "layoutBounds": [
+            0,
+            0,
+            306,
+            38
+          ],
+          "clip": [
+            0,
+            0,
+            306,
+            38
+          ],
+          "surface": "PlotSurface(306.0,38.0,1.0)",
+          "transform": "eyes4s.studio.viz.plot.PlotTransform@345d22e5",
+          "profile": "PlotHostProfile(1,1,0,0)",
+          "canvases": [
+            {
+              "width": 307,
+              "height": 39,
+              "sceneBounds": [
+                492,
+                393,
+                307,
+                39
+              ],
+              "transforms": "[Scale [x=1.0, y=1.0, z=1.0, pivotX=0.0, pivotY=0.0, pivotZ=0.0]]"
+            },
+            {
+              "width": 307,
+              "height": 39,
+              "sceneBounds": [
+                492,
+                393,
+                307,
+                39
+              ],
+              "transforms": "[Scale [x=1.0, y=1.0, z=1.0, pivotX=0.0, pivotY=0.0, pivotZ=0.0]]"
+            },
+            {
+              "width": 307,
+              "height": 39,
+              "sceneBounds": [
+                492,
+                393,
+                307,
+                39
+              ],
+              "transforms": "[Scale [x=1.0, y=1.0, z=1.0, pivotX=0.0, pivotY=0.0, pivotZ=0.0]]"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "phase": "shrunk-height-1.0",
+      "hosts": [
+        {
+          "name": "query",
+          "status": "Drawn",
+          "sceneBounds": [
+            185,
+            251,
+            306,
+            142
+          ],
+          "layoutBounds": [
+            0,
+            0,
+            306,
+            142
+          ],
+          "clip": [
+            0,
+            0,
+            306,
+            142
+          ],
+          "surface": "PlotSurface(306.0,142.0,1.0)",
+          "transform": "eyes4s.studio.viz.plot.PlotTransform@639410b4",
+          "profile": "PlotHostProfile(2,2,0,0)",
+          "canvases": [
+            {
+              "width": 307,
+              "height": 143,
+              "sceneBounds": [
+                185,
+                251,
+                307,
+                143
+              ],
+              "transforms": "[Scale [x=1.0, y=1.0, z=1.0, pivotX=0.0, pivotY=0.0, pivotZ=0.0]]"
+            },
+            {
+              "width": 307,
+              "height": 143,
+              "sceneBounds": [
+                185,
+                251,
+                307,
+                143
+              ],
+              "transforms": "[Scale [x=1.0, y=1.0, z=1.0, pivotX=0.0, pivotY=0.0, pivotZ=0.0]]"
+            },
+            {
+              "width": 307,
+              "height": 143,
+              "sceneBounds": [
+                185,
+                251,
+                307,
+                143
+              ],
+              "transforms": "[Scale [x=1.0, y=1.0, z=1.0, pivotX=0.0, pivotY=0.0, pivotZ=0.0]]"
+            }
+          ]
+        },
+        {
+          "name": "query-legend",
+          "status": "Drawn",
+          "sceneBounds": [
+            185,
+            393,
+            306,
+            38
+          ],
+          "layoutBounds": [
+            0,
+            0,
+            306,
+            38
+          ],
+          "clip": [
+            0,
+            0,
+            306,
+            38
+          ],
+          "surface": "PlotSurface(306.0,38.0,1.0)",
+          "transform": "eyes4s.studio.viz.plot.PlotTransform@4fb9a4a5",
+          "profile": "PlotHostProfile(2,2,0,0)",
+          "canvases": [
+            {
+              "width": 307,
+              "height": 39,
+              "sceneBounds": [
+                185,
+                393,
+                307,
+                39
+              ],
+              "transforms": "[Scale [x=1.0, y=1.0, z=1.0, pivotX=0.0, pivotY=0.0, pivotZ=0.0]]"
+            },
+            {
+              "width": 307,
+              "height": 39,
+              "sceneBounds": [
+                185,
+                393,
+                307,
+                39
+              ],
+              "transforms": "[Scale [x=1.0, y=1.0, z=1.0, pivotX=0.0, pivotY=0.0, pivotZ=0.0]]"
+            },
+            {
+              "width": 307,
+              "height": 39,
+              "sceneBounds": [
+                185,
+                393,
+                307,
+                39
+              ],
+              "transforms": "[Scale [x=1.0, y=1.0, z=1.0, pivotX=0.0, pivotY=0.0, pivotZ=0.0]]"
+            }
+          ]
+        },
+        {
+          "name": "reference",
+          "status": "Drawn",
+          "sceneBounds": [
+            492,
+            251,
+            306,
+            142
+          ],
+          "layoutBounds": [
+            0,
+            0,
+            306,
+            142
+          ],
+          "clip": [
+            0,
+            0,
+            306,
+            142
+          ],
+          "surface": "PlotSurface(306.0,142.0,1.0)",
+          "transform": "eyes4s.studio.viz.plot.PlotTransform@2de4811d",
+          "profile": "PlotHostProfile(2,2,0,0)",
+          "canvases": [
+            {
+              "width": 307,
+              "height": 143,
+              "sceneBounds": [
+                492,
+                251,
+                307,
+                143
+              ],
+              "transforms": "[Scale [x=1.0, y=1.0, z=1.0, pivotX=0.0, pivotY=0.0, pivotZ=0.0]]"
+            },
+            {
+              "width": 307,
+              "height": 143,
+              "sceneBounds": [
+                492,
+                251,
+                307,
+                143
+              ],
+              "transforms": "[Scale [x=1.0, y=1.0, z=1.0, pivotX=0.0, pivotY=0.0, pivotZ=0.0]]"
+            },
+            {
+              "width": 307,
+              "height": 143,
+              "sceneBounds": [
+                492,
+                251,
+                307,
+                143
+              ],
+              "transforms": "[Scale [x=1.0, y=1.0, z=1.0, pivotX=0.0, pivotY=0.0, pivotZ=0.0]]"
+            }
+          ]
+        },
+        {
+          "name": "reference-legend",
+          "status": "Drawn",
+          "sceneBounds": [
+            492,
+            393,
+            306,
+            38
+          ],
+          "layoutBounds": [
+            0,
+            0,
+            306,
+            38
+          ],
+          "clip": [
+            0,
+            0,
+            306,
+            38
+          ],
+          "surface": "PlotSurface(306.0,38.0,1.0)",
+          "transform": "eyes4s.studio.viz.plot.PlotTransform@3aa5208e",
+          "profile": "PlotHostProfile(2,2,0,0)",
+          "canvases": [
+            {
+              "width": 307,
+              "height": 39,
+              "sceneBounds": [
+                492,
+                393,
+                307,
+                39
+              ],
+              "transforms": "[Scale [x=1.0, y=1.0, z=1.0, pivotX=0.0, pivotY=0.0, pivotZ=0.0]]"
+            },
+            {
+              "width": 307,
+              "height": 39,
+              "sceneBounds": [
+                492,
+                393,
+                307,
+                39
+              ],
+              "transforms": "[Scale [x=1.0, y=1.0, z=1.0, pivotX=0.0, pivotY=0.0, pivotZ=0.0]]"
+            },
+            {
+              "width": 307,
+              "height": 39,
+              "sceneBounds": [
+                492,
+                393,
+                307,
+                39
+              ],
+              "transforms": "[Scale [x=1.0, y=1.0, z=1.0, pivotX=0.0, pivotY=0.0, pivotZ=0.0]]"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "phase": "height-1.0",
+      "before": [
+        {
+          "name": "query",
+          "status": "Drawn",
+          "sceneBounds": [
+            185,
+            250,
+            306,
+            143
+          ],
+          "layoutBounds": [
+            0,
+            0,
+            306,
+            143
+          ],
+          "clip": [
+            0,
+            0,
+            306,
+            143
+          ],
+          "surface": "PlotSurface(306.0,143.0,1.0)",
+          "transform": "eyes4s.studio.viz.plot.PlotTransform@797796de",
+          "profile": "PlotHostProfile(3,3,0,0)",
+          "canvases": [
+            {
+              "width": 307,
+              "height": 144,
+              "sceneBounds": [
+                185,
+                250,
+                307,
+                144
+              ],
+              "transforms": "[Scale [x=1.0, y=1.0, z=1.0, pivotX=0.0, pivotY=0.0, pivotZ=0.0]]"
+            },
+            {
+              "width": 307,
+              "height": 144,
+              "sceneBounds": [
+                185,
+                250,
+                307,
+                144
+              ],
+              "transforms": "[Scale [x=1.0, y=1.0, z=1.0, pivotX=0.0, pivotY=0.0, pivotZ=0.0]]"
+            },
+            {
+              "width": 307,
+              "height": 144,
+              "sceneBounds": [
+                185,
+                250,
+                307,
+                144
+              ],
+              "transforms": "[Scale [x=1.0, y=1.0, z=1.0, pivotX=0.0, pivotY=0.0, pivotZ=0.0]]"
+            }
+          ]
+        },
+        {
+          "name": "query-legend",
+          "status": "Drawn",
+          "sceneBounds": [
+            185,
+            393,
+            306,
+            38
+          ],
+          "layoutBounds": [
+            0,
+            0,
+            306,
+            38
+          ],
+          "clip": [
+            0,
+            0,
+            306,
+            38
+          ],
+          "surface": "PlotSurface(306.0,38.0,1.0)",
+          "transform": "eyes4s.studio.viz.plot.PlotTransform@7b6989d9",
+          "profile": "PlotHostProfile(3,3,0,0)",
+          "canvases": [
+            {
+              "width": 307,
+              "height": 39,
+              "sceneBounds": [
+                185,
+                393,
+                307,
+                39
+              ],
+              "transforms": "[Scale [x=1.0, y=1.0, z=1.0, pivotX=0.0, pivotY=0.0, pivotZ=0.0]]"
+            },
+            {
+              "width": 307,
+              "height": 39,
+              "sceneBounds": [
+                185,
+                393,
+                307,
+                39
+              ],
+              "transforms": "[Scale [x=1.0, y=1.0, z=1.0, pivotX=0.0, pivotY=0.0, pivotZ=0.0]]"
+            },
+            {
+              "width": 307,
+              "height": 39,
+              "sceneBounds": [
+                185,
+                393,
+                307,
+                39
+              ],
+              "transforms": "[Scale [x=1.0, y=1.0, z=1.0, pivotX=0.0, pivotY=0.0, pivotZ=0.0]]"
+            }
+          ]
+        },
+        {
+          "name": "reference",
+          "status": "Drawn",
+          "sceneBounds": [
+            492,
+            250,
+            306,
+            143
+          ],
+          "layoutBounds": [
+            0,
+            0,
+            306,
+            143
+          ],
+          "clip": [
+            0,
+            0,
+            306,
+            143
+          ],
+          "surface": "PlotSurface(306.0,143.0,1.0)",
+          "transform": "eyes4s.studio.viz.plot.PlotTransform@720c13c0",
+          "profile": "PlotHostProfile(3,3,0,0)",
+          "canvases": [
+            {
+              "width": 307,
+              "height": 144,
+              "sceneBounds": [
+                492,
+                250,
+                307,
+                144
+              ],
+              "transforms": "[Scale [x=1.0, y=1.0, z=1.0, pivotX=0.0, pivotY=0.0, pivotZ=0.0]]"
+            },
+            {
+              "width": 307,
+              "height": 144,
+              "sceneBounds": [
+                492,
+                250,
+                307,
+                144
+              ],
+              "transforms": "[Scale [x=1.0, y=1.0, z=1.0, pivotX=0.0, pivotY=0.0, pivotZ=0.0]]"
+            },
+            {
+              "width": 307,
+              "height": 144,
+              "sceneBounds": [
+                492,
+                250,
+                307,
+                144
+              ],
+              "transforms": "[Scale [x=1.0, y=1.0, z=1.0, pivotX=0.0, pivotY=0.0, pivotZ=0.0]]"
+            }
+          ]
+        },
+        {
+          "name": "reference-legend",
+          "status": "Drawn",
+          "sceneBounds": [
+            492,
+            393,
+            306,
+            38
+          ],
+          "layoutBounds": [
+            0,
+            0,
+            306,
+            38
+          ],
+          "clip": [
+            0,
+            0,
+            306,
+            38
+          ],
+          "surface": "PlotSurface(306.0,38.0,1.0)",
+          "transform": "eyes4s.studio.viz.plot.PlotTransform@613eec5f",
+          "profile": "PlotHostProfile(3,3,0,0)",
+          "canvases": [
+            {
+              "width": 307,
+              "height": 39,
+              "sceneBounds": [
+                492,
+                393,
+                307,
+                39
+              ],
+              "transforms": "[Scale [x=1.0, y=1.0, z=1.0, pivotX=0.0, pivotY=0.0, pivotZ=0.0]]"
+            },
+            {
+              "width": 307,
+              "height": 39,
+              "sceneBounds": [
+                492,
+                393,
+                307,
+                39
+              ],
+              "transforms": "[Scale [x=1.0, y=1.0, z=1.0, pivotX=0.0, pivotY=0.0, pivotZ=0.0]]"
+            },
+            {
+              "width": 307,
+              "height": 39,
+              "sceneBounds": [
+                492,
+                393,
+                307,
+                39
+              ],
+              "transforms": "[Scale [x=1.0, y=1.0, z=1.0, pivotX=0.0, pivotY=0.0, pivotZ=0.0]]"
+            }
+          ]
+        }
+      ],
+      "after": [
+        {
+          "name": "query",
+          "status": "Drawn",
+          "sceneBounds": [
+            185,
+            250,
+            306,
+            143
+          ],
+          "layoutBounds": [
+            0,
+            0,
+            306,
+            143
+          ],
+          "clip": [
+            0,
+            0,
+            306,
+            143
+          ],
+          "surface": "PlotSurface(306.0,143.0,1.0)",
+          "transform": "eyes4s.studio.viz.plot.PlotTransform@797796de",
+          "profile": "PlotHostProfile(3,3,0,0)",
+          "canvases": [
+            {
+              "width": 307,
+              "height": 144,
+              "sceneBounds": [
+                185,
+                250,
+                307,
+                144
+              ],
+              "transforms": "[Scale [x=1.0, y=1.0, z=1.0, pivotX=0.0, pivotY=0.0, pivotZ=0.0]]"
+            },
+            {
+              "width": 307,
+              "height": 144,
+              "sceneBounds": [
+                185,
+                250,
+                307,
+                144
+              ],
+              "transforms": "[Scale [x=1.0, y=1.0, z=1.0, pivotX=0.0, pivotY=0.0, pivotZ=0.0]]"
+            },
+            {
+              "width": 307,
+              "height": 144,
+              "sceneBounds": [
+                185,
+                250,
+                307,
+                144
+              ],
+              "transforms": "[Scale [x=1.0, y=1.0, z=1.0, pivotX=0.0, pivotY=0.0, pivotZ=0.0]]"
+            }
+          ]
+        },
+        {
+          "name": "query-legend",
+          "status": "Drawn",
+          "sceneBounds": [
+            185,
+            393,
+            306,
+            38
+          ],
+          "layoutBounds": [
+            0,
+            0,
+            306,
+            38
+          ],
+          "clip": [
+            0,
+            0,
+            306,
+            38
+          ],
+          "surface": "PlotSurface(306.0,38.0,1.0)",
+          "transform": "eyes4s.studio.viz.plot.PlotTransform@7b6989d9",
+          "profile": "PlotHostProfile(3,3,0,0)",
+          "canvases": [
+            {
+              "width": 307,
+              "height": 39,
+              "sceneBounds": [
+                185,
+                393,
+                307,
+                39
+              ],
+              "transforms": "[Scale [x=1.0, y=1.0, z=1.0, pivotX=0.0, pivotY=0.0, pivotZ=0.0]]"
+            },
+            {
+              "width": 307,
+              "height": 39,
+              "sceneBounds": [
+                185,
+                393,
+                307,
+                39
+              ],
+              "transforms": "[Scale [x=1.0, y=1.0, z=1.0, pivotX=0.0, pivotY=0.0, pivotZ=0.0]]"
+            },
+            {
+              "width": 307,
+              "height": 39,
+              "sceneBounds": [
+                185,
+                393,
+                307,
+                39
+              ],
+              "transforms": "[Scale [x=1.0, y=1.0, z=1.0, pivotX=0.0, pivotY=0.0, pivotZ=0.0]]"
+            }
+          ]
+        },
+        {
+          "name": "reference",
+          "status": "Drawn",
+          "sceneBounds": [
+            492,
+            250,
+            306,
+            143
+          ],
+          "layoutBounds": [
+            0,
+            0,
+            306,
+            143
+          ],
+          "clip": [
+            0,
+            0,
+            306,
+            143
+          ],
+          "surface": "PlotSurface(306.0,143.0,1.0)",
+          "transform": "eyes4s.studio.viz.plot.PlotTransform@720c13c0",
+          "profile": "PlotHostProfile(3,3,0,0)",
+          "canvases": [
+            {
+              "width": 307,
+              "height": 144,
+              "sceneBounds": [
+                492,
+                250,
+                307,
+                144
+              ],
+              "transforms": "[Scale [x=1.0, y=1.0, z=1.0, pivotX=0.0, pivotY=0.0, pivotZ=0.0]]"
+            },
+            {
+              "width": 307,
+              "height": 144,
+              "sceneBounds": [
+                492,
+                250,
+                307,
+                144
+              ],
+              "transforms": "[Scale [x=1.0, y=1.0, z=1.0, pivotX=0.0, pivotY=0.0, pivotZ=0.0]]"
+            },
+            {
+              "width": 307,
+              "height": 144,
+              "sceneBounds": [
+                492,
+                250,
+                307,
+                144
+              ],
+              "transforms": "[Scale [x=1.0, y=1.0, z=1.0, pivotX=0.0, pivotY=0.0, pivotZ=0.0]]"
+            }
+          ]
+        },
+        {
+          "name": "reference-legend",
+          "status": "Drawn",
+          "sceneBounds": [
+            492,
+            393,
+            306,
+            38
+          ],
+          "layoutBounds": [
+            0,
+            0,
+            306,
+            38
+          ],
+          "clip": [
+            0,
+            0,
+            306,
+            38
+          ],
+          "surface": "PlotSurface(306.0,38.0,1.0)",
+          "transform": "eyes4s.studio.viz.plot.PlotTransform@613eec5f",
+          "profile": "PlotHostProfile(3,3,0,0)",
+          "canvases": [
+            {
+              "width": 307,
+              "height": 39,
+              "sceneBounds": [
+                492,
+                393,
+                307,
+                39
+              ],
+              "transforms": "[Scale [x=1.0, y=1.0, z=1.0, pivotX=0.0, pivotY=0.0, pivotZ=0.0]]"
+            },
+            {
+              "width": 307,
+              "height": 39,
+              "sceneBounds": [
+                492,
+                393,
+                307,
+                39
+              ],
+              "transforms": "[Scale [x=1.0, y=1.0, z=1.0, pivotX=0.0, pivotY=0.0, pivotZ=0.0]]"
+            },
+            {
+              "width": 307,
+              "height": 39,
+              "sceneBounds": [
+                492,
+                393,
+                307,
+                39
+              ],
+              "transforms": "[Scale [x=1.0, y=1.0, z=1.0, pivotX=0.0, pivotY=0.0, pivotZ=0.0]]"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "phase": "height-1.0",
+      "snapshotScale": 1,
+      "difference": {
+        "width": 613,
+        "height": 181,
+        "changedPixels": 0,
+        "maximumChannelDelta": 0,
+        "changedFraction": 0,
+        "accepted": true
+      }
+    },
+    {
+      "phase": "height-1.0",
+      "snapshotScale": 2,
+      "difference": {
+        "width": 1226,
+        "height": 362,
+        "changedPixels": 0,
+        "maximumChannelDelta": 0,
+        "changedFraction": 0,
+        "accepted": true
+      }
+    },
+    {
+      "phase": "shrunk-height-17.0",
+      "hosts": [
+        {
+          "name": "query",
+          "status": "Drawn",
+          "sceneBounds": [
+            185,
+            259,
+            306,
+            126
+          ],
+          "layoutBounds": [
+            0,
+            0,
+            306,
+            126
+          ],
+          "clip": [
+            0,
+            0,
+            306,
+            126
+          ],
+          "surface": "PlotSurface(306.0,126.0,1.0)",
+          "transform": "eyes4s.studio.viz.plot.PlotTransform@243a57c0",
+          "profile": "PlotHostProfile(4,4,0,0)",
+          "canvases": [
+            {
+              "width": 307,
+              "height": 127,
+              "sceneBounds": [
+                185,
+                259,
+                307,
+                127
+              ],
+              "transforms": "[Scale [x=1.0, y=1.0, z=1.0, pivotX=0.0, pivotY=0.0, pivotZ=0.0]]"
+            },
+            {
+              "width": 307,
+              "height": 127,
+              "sceneBounds": [
+                185,
+                259,
+                307,
+                127
+              ],
+              "transforms": "[Scale [x=1.0, y=1.0, z=1.0, pivotX=0.0, pivotY=0.0, pivotZ=0.0]]"
+            },
+            {
+              "width": 307,
+              "height": 127,
+              "sceneBounds": [
+                185,
+                259,
+                307,
+                127
+              ],
+              "transforms": "[Scale [x=1.0, y=1.0, z=1.0, pivotX=0.0, pivotY=0.0, pivotZ=0.0]]"
+            }
+          ]
+        },
+        {
+          "name": "query-legend",
+          "status": "Drawn",
+          "sceneBounds": [
+            185,
+            385,
+            306,
+            38
+          ],
+          "layoutBounds": [
+            0,
+            0,
+            306,
+            38
+          ],
+          "clip": [
+            0,
+            0,
+            306,
+            38
+          ],
+          "surface": "PlotSurface(306.0,38.0,1.0)",
+          "transform": "eyes4s.studio.viz.plot.PlotTransform@13aa35df",
+          "profile": "PlotHostProfile(4,4,0,0)",
+          "canvases": [
+            {
+              "width": 307,
+              "height": 39,
+              "sceneBounds": [
+                185,
+                385,
+                307,
+                39
+              ],
+              "transforms": "[Scale [x=1.0, y=1.0, z=1.0, pivotX=0.0, pivotY=0.0, pivotZ=0.0]]"
+            },
+            {
+              "width": 307,
+              "height": 39,
+              "sceneBounds": [
+                185,
+                385,
+                307,
+                39
+              ],
+              "transforms": "[Scale [x=1.0, y=1.0, z=1.0, pivotX=0.0, pivotY=0.0, pivotZ=0.0]]"
+            },
+            {
+              "width": 307,
+              "height": 39,
+              "sceneBounds": [
+                185,
+                385,
+                307,
+                39
+              ],
+              "transforms": "[Scale [x=1.0, y=1.0, z=1.0, pivotX=0.0, pivotY=0.0, pivotZ=0.0]]"
+            }
+          ]
+        },
+        {
+          "name": "reference",
+          "status": "Drawn",
+          "sceneBounds": [
+            492,
+            259,
+            306,
+            126
+          ],
+          "layoutBounds": [
+            0,
+            0,
+            306,
+            126
+          ],
+          "clip": [
+            0,
+            0,
+            306,
+            126
+          ],
+          "surface": "PlotSurface(306.0,126.0,1.0)",
+          "transform": "eyes4s.studio.viz.plot.PlotTransform@12aa679",
+          "profile": "PlotHostProfile(4,4,0,0)",
+          "canvases": [
+            {
+              "width": 307,
+              "height": 127,
+              "sceneBounds": [
+                492,
+                259,
+                307,
+                127
+              ],
+              "transforms": "[Scale [x=1.0, y=1.0, z=1.0, pivotX=0.0, pivotY=0.0, pivotZ=0.0]]"
+            },
+            {
+              "width": 307,
+              "height": 127,
+              "sceneBounds": [
+                492,
+                259,
+                307,
+                127
+              ],
+              "transforms": "[Scale [x=1.0, y=1.0, z=1.0, pivotX=0.0, pivotY=0.0, pivotZ=0.0]]"
+            },
+            {
+              "width": 307,
+              "height": 127,
+              "sceneBounds": [
+                492,
+                259,
+                307,
+                127
+              ],
+              "transforms": "[Scale [x=1.0, y=1.0, z=1.0, pivotX=0.0, pivotY=0.0, pivotZ=0.0]]"
+            }
+          ]
+        },
+        {
+          "name": "reference-legend",
+          "status": "Drawn",
+          "sceneBounds": [
+            492,
+            385,
+            306,
+            38
+          ],
+          "layoutBounds": [
+            0,
+            0,
+            306,
+            38
+          ],
+          "clip": [
+            0,
+            0,
+            306,
+            38
+          ],
+          "surface": "PlotSurface(306.0,38.0,1.0)",
+          "transform": "eyes4s.studio.viz.plot.PlotTransform@1760fe17",
+          "profile": "PlotHostProfile(4,4,0,0)",
+          "canvases": [
+            {
+              "width": 307,
+              "height": 39,
+              "sceneBounds": [
+                492,
+                385,
+                307,
+                39
+              ],
+              "transforms": "[Scale [x=1.0, y=1.0, z=1.0, pivotX=0.0, pivotY=0.0, pivotZ=0.0]]"
+            },
+            {
+              "width": 307,
+              "height": 39,
+              "sceneBounds": [
+                492,
+                385,
+                307,
+                39
+              ],
+              "transforms": "[Scale [x=1.0, y=1.0, z=1.0, pivotX=0.0, pivotY=0.0, pivotZ=0.0]]"
+            },
+            {
+              "width": 307,
+              "height": 39,
+              "sceneBounds": [
+                492,
+                385,
+                307,
+                39
+              ],
+              "transforms": "[Scale [x=1.0, y=1.0, z=1.0, pivotX=0.0, pivotY=0.0, pivotZ=0.0]]"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "phase": "height-17.0",
+      "before": [
+        {
+          "name": "query",
+          "status": "Drawn",
+          "sceneBounds": [
+            185,
+            250,
+            306,
+            143
+          ],
+          "layoutBounds": [
+            0,
+            0,
+            306,
+            143
+          ],
+          "clip": [
+            0,
+            0,
+            306,
+            143
+          ],
+          "surface": "PlotSurface(306.0,143.0,1.0)",
+          "transform": "eyes4s.studio.viz.plot.PlotTransform@61123f6c",
+          "profile": "PlotHostProfile(5,5,0,0)",
+          "canvases": [
+            {
+              "width": 307,
+              "height": 144,
+              "sceneBounds": [
+                185,
+                250,
+                307,
+                144
+              ],
+              "transforms": "[Scale [x=1.0, y=1.0, z=1.0, pivotX=0.0, pivotY=0.0, pivotZ=0.0]]"
+            },
+            {
+              "width": 307,
+              "height": 144,
+              "sceneBounds": [
+                185,
+                250,
+                307,
+                144
+              ],
+              "transforms": "[Scale [x=1.0, y=1.0, z=1.0, pivotX=0.0, pivotY=0.0, pivotZ=0.0]]"
+            },
+            {
+              "width": 307,
+              "height": 144,
+              "sceneBounds": [
+                185,
+                250,
+                307,
+                144
+              ],
+              "transforms": "[Scale [x=1.0, y=1.0, z=1.0, pivotX=0.0, pivotY=0.0, pivotZ=0.0]]"
+            }
+          ]
+        },
+        {
+          "name": "query-legend",
+          "status": "Drawn",
+          "sceneBounds": [
+            185,
+            393,
+            306,
+            38
+          ],
+          "layoutBounds": [
+            0,
+            0,
+            306,
+            38
+          ],
+          "clip": [
+            0,
+            0,
+            306,
+            38
+          ],
+          "surface": "PlotSurface(306.0,38.0,1.0)",
+          "transform": "eyes4s.studio.viz.plot.PlotTransform@23d4fa5c",
+          "profile": "PlotHostProfile(5,5,0,0)",
+          "canvases": [
+            {
+              "width": 307,
+              "height": 39,
+              "sceneBounds": [
+                185,
+                393,
+                307,
+                39
+              ],
+              "transforms": "[Scale [x=1.0, y=1.0, z=1.0, pivotX=0.0, pivotY=0.0, pivotZ=0.0]]"
+            },
+            {
+              "width": 307,
+              "height": 39,
+              "sceneBounds": [
+                185,
+                393,
+                307,
+                39
+              ],
+              "transforms": "[Scale [x=1.0, y=1.0, z=1.0, pivotX=0.0, pivotY=0.0, pivotZ=0.0]]"
+            },
+            {
+              "width": 307,
+              "height": 39,
+              "sceneBounds": [
+                185,
+                393,
+                307,
+                39
+              ],
+              "transforms": "[Scale [x=1.0, y=1.0, z=1.0, pivotX=0.0, pivotY=0.0, pivotZ=0.0]]"
+            }
+          ]
+        },
+        {
+          "name": "reference",
+          "status": "Drawn",
+          "sceneBounds": [
+            492,
+            250,
+            306,
+            143
+          ],
+          "layoutBounds": [
+            0,
+            0,
+            306,
+            143
+          ],
+          "clip": [
+            0,
+            0,
+            306,
+            143
+          ],
+          "surface": "PlotSurface(306.0,143.0,1.0)",
+          "transform": "eyes4s.studio.viz.plot.PlotTransform@77199931",
+          "profile": "PlotHostProfile(5,5,0,0)",
+          "canvases": [
+            {
+              "width": 307,
+              "height": 144,
+              "sceneBounds": [
+                492,
+                250,
+                307,
+                144
+              ],
+              "transforms": "[Scale [x=1.0, y=1.0, z=1.0, pivotX=0.0, pivotY=0.0, pivotZ=0.0]]"
+            },
+            {
+              "width": 307,
+              "height": 144,
+              "sceneBounds": [
+                492,
+                250,
+                307,
+                144
+              ],
+              "transforms": "[Scale [x=1.0, y=1.0, z=1.0, pivotX=0.0, pivotY=0.0, pivotZ=0.0]]"
+            },
+            {
+              "width": 307,
+              "height": 144,
+              "sceneBounds": [
+                492,
+                250,
+                307,
+                144
+              ],
+              "transforms": "[Scale [x=1.0, y=1.0, z=1.0, pivotX=0.0, pivotY=0.0, pivotZ=0.0]]"
+            }
+          ]
+        },
+        {
+          "name": "reference-legend",
+          "status": "Drawn",
+          "sceneBounds": [
+            492,
+            393,
+            306,
+            38
+          ],
+          "layoutBounds": [
+            0,
+            0,
+            306,
+            38
+          ],
+          "clip": [
+            0,
+            0,
+            306,
+            38
+          ],
+          "surface": "PlotSurface(306.0,38.0,1.0)",
+          "transform": "eyes4s.studio.viz.plot.PlotTransform@67194183",
+          "profile": "PlotHostProfile(5,5,0,0)",
+          "canvases": [
+            {
+              "width": 307,
+              "height": 39,
+              "sceneBounds": [
+                492,
+                393,
+                307,
+                39
+              ],
+              "transforms": "[Scale [x=1.0, y=1.0, z=1.0, pivotX=0.0, pivotY=0.0, pivotZ=0.0]]"
+            },
+            {
+              "width": 307,
+              "height": 39,
+              "sceneBounds": [
+                492,
+                393,
+                307,
+                39
+              ],
+              "transforms": "[Scale [x=1.0, y=1.0, z=1.0, pivotX=0.0, pivotY=0.0, pivotZ=0.0]]"
+            },
+            {
+              "width": 307,
+              "height": 39,
+              "sceneBounds": [
+                492,
+                393,
+                307,
+                39
+              ],
+              "transforms": "[Scale [x=1.0, y=1.0, z=1.0, pivotX=0.0, pivotY=0.0, pivotZ=0.0]]"
+            }
+          ]
+        }
+      ],
+      "after": [
+        {
+          "name": "query",
+          "status": "Drawn",
+          "sceneBounds": [
+            185,
+            250,
+            306,
+            143
+          ],
+          "layoutBounds": [
+            0,
+            0,
+            306,
+            143
+          ],
+          "clip": [
+            0,
+            0,
+            306,
+            143
+          ],
+          "surface": "PlotSurface(306.0,143.0,1.0)",
+          "transform": "eyes4s.studio.viz.plot.PlotTransform@61123f6c",
+          "profile": "PlotHostProfile(5,5,0,0)",
+          "canvases": [
+            {
+              "width": 307,
+              "height": 144,
+              "sceneBounds": [
+                185,
+                250,
+                307,
+                144
+              ],
+              "transforms": "[Scale [x=1.0, y=1.0, z=1.0, pivotX=0.0, pivotY=0.0, pivotZ=0.0]]"
+            },
+            {
+              "width": 307,
+              "height": 144,
+              "sceneBounds": [
+                185,
+                250,
+                307,
+                144
+              ],
+              "transforms": "[Scale [x=1.0, y=1.0, z=1.0, pivotX=0.0, pivotY=0.0, pivotZ=0.0]]"
+            },
+            {
+              "width": 307,
+              "height": 144,
+              "sceneBounds": [
+                185,
+                250,
+                307,
+                144
+              ],
+              "transforms": "[Scale [x=1.0, y=1.0, z=1.0, pivotX=0.0, pivotY=0.0, pivotZ=0.0]]"
+            }
+          ]
+        },
+        {
+          "name": "query-legend",
+          "status": "Drawn",
+          "sceneBounds": [
+            185,
+            393,
+            306,
+            38
+          ],
+          "layoutBounds": [
+            0,
+            0,
+            306,
+            38
+          ],
+          "clip": [
+            0,
+            0,
+            306,
+            38
+          ],
+          "surface": "PlotSurface(306.0,38.0,1.0)",
+          "transform": "eyes4s.studio.viz.plot.PlotTransform@23d4fa5c",
+          "profile": "PlotHostProfile(5,5,0,0)",
+          "canvases": [
+            {
+              "width": 307,
+              "height": 39,
+              "sceneBounds": [
+                185,
+                393,
+                307,
+                39
+              ],
+              "transforms": "[Scale [x=1.0, y=1.0, z=1.0, pivotX=0.0, pivotY=0.0, pivotZ=0.0]]"
+            },
+            {
+              "width": 307,
+              "height": 39,
+              "sceneBounds": [
+                185,
+                393,
+                307,
+                39
+              ],
+              "transforms": "[Scale [x=1.0, y=1.0, z=1.0, pivotX=0.0, pivotY=0.0, pivotZ=0.0]]"
+            },
+            {
+              "width": 307,
+              "height": 39,
+              "sceneBounds": [
+                185,
+                393,
+                307,
+                39
+              ],
+              "transforms": "[Scale [x=1.0, y=1.0, z=1.0, pivotX=0.0, pivotY=0.0, pivotZ=0.0]]"
+            }
+          ]
+        },
+        {
+          "name": "reference",
+          "status": "Drawn",
+          "sceneBounds": [
+            492,
+            250,
+            306,
+            143
+          ],
+          "layoutBounds": [
+            0,
+            0,
+            306,
+            143
+          ],
+          "clip": [
+            0,
+            0,
+            306,
+            143
+          ],
+          "surface": "PlotSurface(306.0,143.0,1.0)",
+          "transform": "eyes4s.studio.viz.plot.PlotTransform@77199931",
+          "profile": "PlotHostProfile(5,5,0,0)",
+          "canvases": [
+            {
+              "width": 307,
+              "height": 144,
+              "sceneBounds": [
+                492,
+                250,
+                307,
+                144
+              ],
+              "transforms": "[Scale [x=1.0, y=1.0, z=1.0, pivotX=0.0, pivotY=0.0, pivotZ=0.0]]"
+            },
+            {
+              "width": 307,
+              "height": 144,
+              "sceneBounds": [
+                492,
+                250,
+                307,
+                144
+              ],
+              "transforms": "[Scale [x=1.0, y=1.0, z=1.0, pivotX=0.0, pivotY=0.0, pivotZ=0.0]]"
+            },
+            {
+              "width": 307,
+              "height": 144,
+              "sceneBounds": [
+                492,
+                250,
+                307,
+                144
+              ],
+              "transforms": "[Scale [x=1.0, y=1.0, z=1.0, pivotX=0.0, pivotY=0.0, pivotZ=0.0]]"
+            }
+          ]
+        },
+        {
+          "name": "reference-legend",
+          "status": "Drawn",
+          "sceneBounds": [
+            492,
+            393,
+            306,
+            38
+          ],
+          "layoutBounds": [
+            0,
+            0,
+            306,
+            38
+          ],
+          "clip": [
+            0,
+            0,
+            306,
+            38
+          ],
+          "surface": "PlotSurface(306.0,38.0,1.0)",
+          "transform": "eyes4s.studio.viz.plot.PlotTransform@67194183",
+          "profile": "PlotHostProfile(5,5,0,0)",
+          "canvases": [
+            {
+              "width": 307,
+              "height": 39,
+              "sceneBounds": [
+                492,
+                393,
+                307,
+                39
+              ],
+              "transforms": "[Scale [x=1.0, y=1.0, z=1.0, pivotX=0.0, pivotY=0.0, pivotZ=0.0]]"
+            },
+            {
+              "width": 307,
+              "height": 39,
+              "sceneBounds": [
+                492,
+                393,
+                307,
+                39
+              ],
+              "transforms": "[Scale [x=1.0, y=1.0, z=1.0, pivotX=0.0, pivotY=0.0, pivotZ=0.0]]"
+            },
+            {
+              "width": 307,
+              "height": 39,
+              "sceneBounds": [
+                492,
+                393,
+                307,
+                39
+              ],
+              "transforms": "[Scale [x=1.0, y=1.0, z=1.0, pivotX=0.0, pivotY=0.0, pivotZ=0.0]]"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "phase": "height-17.0",
+      "snapshotScale": 1,
+      "difference": {
+        "width": 613,
+        "height": 181,
+        "changedPixels": 0,
+        "maximumChannelDelta": 0,
+        "changedFraction": 0,
+        "accepted": true
+      }
+    },
+    {
+      "phase": "height-17.0",
+      "snapshotScale": 2,
+      "difference": {
+        "width": 1226,
+        "height": 362,
+        "changedPixels": 0,
+        "maximumChannelDelta": 0,
+        "changedFraction": 0,
+        "accepted": true
+      }
+    },
+    {
+      "phase": "shrunk-height-33.0",
+      "hosts": [
+        {
+          "name": "query",
+          "status": "Failed: scene studio.trial.P17.Retrieval.ret_07.1.query: Intaglio refused the data panel's frame: extent must be non-negative: npc(1) - pt(93) resolved to -14 px",
+          "sceneBounds": [
+            185,
+            267,
+            306,
+            110
+          ],
+          "layoutBounds": [
+            0,
+            0,
+            306,
+            110
+          ],
+          "clip": [
+            0,
+            0,
+            306,
+            110
+          ],
+          "surface": "",
+          "transform": "",
+          "profile": "PlotHostProfile(5,5,0,0)",
+          "canvases": [
+            {
+              "width": 307,
+              "height": 144,
+              "sceneBounds": [
+                185,
+                267,
+                307,
+                144
+              ],
+              "transforms": "[Scale [x=1.0, y=1.0, z=1.0, pivotX=0.0, pivotY=0.0, pivotZ=0.0]]"
+            },
+            {
+              "width": 307,
+              "height": 144,
+              "sceneBounds": [
+                185,
+                267,
+                307,
+                144
+              ],
+              "transforms": "[Scale [x=1.0, y=1.0, z=1.0, pivotX=0.0, pivotY=0.0, pivotZ=0.0]]"
+            },
+            {
+              "width": 307,
+              "height": 144,
+              "sceneBounds": [
+                185,
+                267,
+                307,
+                144
+              ],
+              "transforms": "[Scale [x=1.0, y=1.0, z=1.0, pivotX=0.0, pivotY=0.0, pivotZ=0.0]]"
+            }
+          ]
+        },
+        {
+          "name": "query-legend",
+          "status": "Drawn",
+          "sceneBounds": [
+            185,
+            377,
+            306,
+            38
+          ],
+          "layoutBounds": [
+            0,
+            0,
+            306,
+            38
+          ],
+          "clip": [
+            0,
+            0,
+            306,
+            38
+          ],
+          "surface": "PlotSurface(306.0,38.0,1.0)",
+          "transform": "eyes4s.studio.viz.plot.PlotTransform@1700eb53",
+          "profile": "PlotHostProfile(6,6,0,0)",
+          "canvases": [
+            {
+              "width": 307,
+              "height": 39,
+              "sceneBounds": [
+                185,
+                377,
+                307,
+                39
+              ],
+              "transforms": "[Scale [x=1.0, y=1.0, z=1.0, pivotX=0.0, pivotY=0.0, pivotZ=0.0]]"
+            },
+            {
+              "width": 307,
+              "height": 39,
+              "sceneBounds": [
+                185,
+                377,
+                307,
+                39
+              ],
+              "transforms": "[Scale [x=1.0, y=1.0, z=1.0, pivotX=0.0, pivotY=0.0, pivotZ=0.0]]"
+            },
+            {
+              "width": 307,
+              "height": 39,
+              "sceneBounds": [
+                185,
+                377,
+                307,
+                39
+              ],
+              "transforms": "[Scale [x=1.0, y=1.0, z=1.0, pivotX=0.0, pivotY=0.0, pivotZ=0.0]]"
+            }
+          ]
+        },
+        {
+          "name": "reference",
+          "status": "Drawn",
+          "sceneBounds": [
+            492,
+            267,
+            306,
+            110
+          ],
+          "layoutBounds": [
+            0,
+            0,
+            306,
+            110
+          ],
+          "clip": [
+            0,
+            0,
+            306,
+            110
+          ],
+          "surface": "PlotSurface(306.0,110.0,1.0)",
+          "transform": "eyes4s.studio.viz.plot.PlotTransform@1302f5f5",
+          "profile": "PlotHostProfile(6,6,0,0)",
+          "canvases": [
+            {
+              "width": 307,
+              "height": 111,
+              "sceneBounds": [
+                492,
+                267,
+                307,
+                111
+              ],
+              "transforms": "[Scale [x=1.0, y=1.0, z=1.0, pivotX=0.0, pivotY=0.0, pivotZ=0.0]]"
+            },
+            {
+              "width": 307,
+              "height": 111,
+              "sceneBounds": [
+                492,
+                267,
+                307,
+                111
+              ],
+              "transforms": "[Scale [x=1.0, y=1.0, z=1.0, pivotX=0.0, pivotY=0.0, pivotZ=0.0]]"
+            },
+            {
+              "width": 307,
+              "height": 111,
+              "sceneBounds": [
+                492,
+                267,
+                307,
+                111
+              ],
+              "transforms": "[Scale [x=1.0, y=1.0, z=1.0, pivotX=0.0, pivotY=0.0, pivotZ=0.0]]"
+            }
+          ]
+        },
+        {
+          "name": "reference-legend",
+          "status": "Drawn",
+          "sceneBounds": [
+            492,
+            377,
+            306,
+            38
+          ],
+          "layoutBounds": [
+            0,
+            0,
+            306,
+            38
+          ],
+          "clip": [
+            0,
+            0,
+            306,
+            38
+          ],
+          "surface": "PlotSurface(306.0,38.0,1.0)",
+          "transform": "eyes4s.studio.viz.plot.PlotTransform@286936b5",
+          "profile": "PlotHostProfile(6,6,0,0)",
+          "canvases": [
+            {
+              "width": 307,
+              "height": 39,
+              "sceneBounds": [
+                492,
+                377,
+                307,
+                39
+              ],
+              "transforms": "[Scale [x=1.0, y=1.0, z=1.0, pivotX=0.0, pivotY=0.0, pivotZ=0.0]]"
+            },
+            {
+              "width": 307,
+              "height": 39,
+              "sceneBounds": [
+                492,
+                377,
+                307,
+                39
+              ],
+              "transforms": "[Scale [x=1.0, y=1.0, z=1.0, pivotX=0.0, pivotY=0.0, pivotZ=0.0]]"
+            },
+            {
+              "width": 307,
+              "height": 39,
+              "sceneBounds": [
+                492,
+                377,
+                307,
+                39
+              ],
+              "transforms": "[Scale [x=1.0, y=1.0, z=1.0, pivotX=0.0, pivotY=0.0, pivotZ=0.0]]"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "phase": "height-33.0",
+      "before": [
+        {
+          "name": "query",
+          "status": "Drawn",
+          "sceneBounds": [
+            185,
+            250,
+            306,
+            143
+          ],
+          "layoutBounds": [
+            0,
+            0,
+            306,
+            143
+          ],
+          "clip": [
+            0,
+            0,
+            306,
+            143
+          ],
+          "surface": "PlotSurface(306.0,143.0,1.0)",
+          "transform": "eyes4s.studio.viz.plot.PlotTransform@5516f62",
+          "profile": "PlotHostProfile(6,6,0,0)",
+          "canvases": [
+            {
+              "width": 307,
+              "height": 144,
+              "sceneBounds": [
+                185,
+                250,
+                307,
+                144
+              ],
+              "transforms": "[Scale [x=1.0, y=1.0, z=1.0, pivotX=0.0, pivotY=0.0, pivotZ=0.0]]"
+            },
+            {
+              "width": 307,
+              "height": 144,
+              "sceneBounds": [
+                185,
+                250,
+                307,
+                144
+              ],
+              "transforms": "[Scale [x=1.0, y=1.0, z=1.0, pivotX=0.0, pivotY=0.0, pivotZ=0.0]]"
+            },
+            {
+              "width": 307,
+              "height": 144,
+              "sceneBounds": [
+                185,
+                250,
+                307,
+                144
+              ],
+              "transforms": "[Scale [x=1.0, y=1.0, z=1.0, pivotX=0.0, pivotY=0.0, pivotZ=0.0]]"
+            }
+          ]
+        },
+        {
+          "name": "query-legend",
+          "status": "Drawn",
+          "sceneBounds": [
+            185,
+            393,
+            306,
+            38
+          ],
+          "layoutBounds": [
+            0,
+            0,
+            306,
+            38
+          ],
+          "clip": [
+            0,
+            0,
+            306,
+            38
+          ],
+          "surface": "PlotSurface(306.0,38.0,1.0)",
+          "transform": "eyes4s.studio.viz.plot.PlotTransform@151b56e8",
+          "profile": "PlotHostProfile(7,7,0,0)",
+          "canvases": [
+            {
+              "width": 307,
+              "height": 39,
+              "sceneBounds": [
+                185,
+                393,
+                307,
+                39
+              ],
+              "transforms": "[Scale [x=1.0, y=1.0, z=1.0, pivotX=0.0, pivotY=0.0, pivotZ=0.0]]"
+            },
+            {
+              "width": 307,
+              "height": 39,
+              "sceneBounds": [
+                185,
+                393,
+                307,
+                39
+              ],
+              "transforms": "[Scale [x=1.0, y=1.0, z=1.0, pivotX=0.0, pivotY=0.0, pivotZ=0.0]]"
+            },
+            {
+              "width": 307,
+              "height": 39,
+              "sceneBounds": [
+                185,
+                393,
+                307,
+                39
+              ],
+              "transforms": "[Scale [x=1.0, y=1.0, z=1.0, pivotX=0.0, pivotY=0.0, pivotZ=0.0]]"
+            }
+          ]
+        },
+        {
+          "name": "reference",
+          "status": "Drawn",
+          "sceneBounds": [
+            492,
+            250,
+            306,
+            143
+          ],
+          "layoutBounds": [
+            0,
+            0,
+            306,
+            143
+          ],
+          "clip": [
+            0,
+            0,
+            306,
+            143
+          ],
+          "surface": "PlotSurface(306.0,143.0,1.0)",
+          "transform": "eyes4s.studio.viz.plot.PlotTransform@11b2b4e3",
+          "profile": "PlotHostProfile(7,7,0,0)",
+          "canvases": [
+            {
+              "width": 307,
+              "height": 144,
+              "sceneBounds": [
+                492,
+                250,
+                307,
+                144
+              ],
+              "transforms": "[Scale [x=1.0, y=1.0, z=1.0, pivotX=0.0, pivotY=0.0, pivotZ=0.0]]"
+            },
+            {
+              "width": 307,
+              "height": 144,
+              "sceneBounds": [
+                492,
+                250,
+                307,
+                144
+              ],
+              "transforms": "[Scale [x=1.0, y=1.0, z=1.0, pivotX=0.0, pivotY=0.0, pivotZ=0.0]]"
+            },
+            {
+              "width": 307,
+              "height": 144,
+              "sceneBounds": [
+                492,
+                250,
+                307,
+                144
+              ],
+              "transforms": "[Scale [x=1.0, y=1.0, z=1.0, pivotX=0.0, pivotY=0.0, pivotZ=0.0]]"
+            }
+          ]
+        },
+        {
+          "name": "reference-legend",
+          "status": "Drawn",
+          "sceneBounds": [
+            492,
+            393,
+            306,
+            38
+          ],
+          "layoutBounds": [
+            0,
+            0,
+            306,
+            38
+          ],
+          "clip": [
+            0,
+            0,
+            306,
+            38
+          ],
+          "surface": "PlotSurface(306.0,38.0,1.0)",
+          "transform": "eyes4s.studio.viz.plot.PlotTransform@708fe4fe",
+          "profile": "PlotHostProfile(7,7,0,0)",
+          "canvases": [
+            {
+              "width": 307,
+              "height": 39,
+              "sceneBounds": [
+                492,
+                393,
+                307,
+                39
+              ],
+              "transforms": "[Scale [x=1.0, y=1.0, z=1.0, pivotX=0.0, pivotY=0.0, pivotZ=0.0]]"
+            },
+            {
+              "width": 307,
+              "height": 39,
+              "sceneBounds": [
+                492,
+                393,
+                307,
+                39
+              ],
+              "transforms": "[Scale [x=1.0, y=1.0, z=1.0, pivotX=0.0, pivotY=0.0, pivotZ=0.0]]"
+            },
+            {
+              "width": 307,
+              "height": 39,
+              "sceneBounds": [
+                492,
+                393,
+                307,
+                39
+              ],
+              "transforms": "[Scale [x=1.0, y=1.0, z=1.0, pivotX=0.0, pivotY=0.0, pivotZ=0.0]]"
+            }
+          ]
+        }
+      ],
+      "after": [
+        {
+          "name": "query",
+          "status": "Drawn",
+          "sceneBounds": [
+            185,
+            250,
+            306,
+            143
+          ],
+          "layoutBounds": [
+            0,
+            0,
+            306,
+            143
+          ],
+          "clip": [
+            0,
+            0,
+            306,
+            143
+          ],
+          "surface": "PlotSurface(306.0,143.0,1.0)",
+          "transform": "eyes4s.studio.viz.plot.PlotTransform@5516f62",
+          "profile": "PlotHostProfile(6,6,0,0)",
+          "canvases": [
+            {
+              "width": 307,
+              "height": 144,
+              "sceneBounds": [
+                185,
+                250,
+                307,
+                144
+              ],
+              "transforms": "[Scale [x=1.0, y=1.0, z=1.0, pivotX=0.0, pivotY=0.0, pivotZ=0.0]]"
+            },
+            {
+              "width": 307,
+              "height": 144,
+              "sceneBounds": [
+                185,
+                250,
+                307,
+                144
+              ],
+              "transforms": "[Scale [x=1.0, y=1.0, z=1.0, pivotX=0.0, pivotY=0.0, pivotZ=0.0]]"
+            },
+            {
+              "width": 307,
+              "height": 144,
+              "sceneBounds": [
+                185,
+                250,
+                307,
+                144
+              ],
+              "transforms": "[Scale [x=1.0, y=1.0, z=1.0, pivotX=0.0, pivotY=0.0, pivotZ=0.0]]"
+            }
+          ]
+        },
+        {
+          "name": "query-legend",
+          "status": "Drawn",
+          "sceneBounds": [
+            185,
+            393,
+            306,
+            38
+          ],
+          "layoutBounds": [
+            0,
+            0,
+            306,
+            38
+          ],
+          "clip": [
+            0,
+            0,
+            306,
+            38
+          ],
+          "surface": "PlotSurface(306.0,38.0,1.0)",
+          "transform": "eyes4s.studio.viz.plot.PlotTransform@151b56e8",
+          "profile": "PlotHostProfile(7,7,0,0)",
+          "canvases": [
+            {
+              "width": 307,
+              "height": 39,
+              "sceneBounds": [
+                185,
+                393,
+                307,
+                39
+              ],
+              "transforms": "[Scale [x=1.0, y=1.0, z=1.0, pivotX=0.0, pivotY=0.0, pivotZ=0.0]]"
+            },
+            {
+              "width": 307,
+              "height": 39,
+              "sceneBounds": [
+                185,
+                393,
+                307,
+                39
+              ],
+              "transforms": "[Scale [x=1.0, y=1.0, z=1.0, pivotX=0.0, pivotY=0.0, pivotZ=0.0]]"
+            },
+            {
+              "width": 307,
+              "height": 39,
+              "sceneBounds": [
+                185,
+                393,
+                307,
+                39
+              ],
+              "transforms": "[Scale [x=1.0, y=1.0, z=1.0, pivotX=0.0, pivotY=0.0, pivotZ=0.0]]"
+            }
+          ]
+        },
+        {
+          "name": "reference",
+          "status": "Drawn",
+          "sceneBounds": [
+            492,
+            250,
+            306,
+            143
+          ],
+          "layoutBounds": [
+            0,
+            0,
+            306,
+            143
+          ],
+          "clip": [
+            0,
+            0,
+            306,
+            143
+          ],
+          "surface": "PlotSurface(306.0,143.0,1.0)",
+          "transform": "eyes4s.studio.viz.plot.PlotTransform@11b2b4e3",
+          "profile": "PlotHostProfile(7,7,0,0)",
+          "canvases": [
+            {
+              "width": 307,
+              "height": 144,
+              "sceneBounds": [
+                492,
+                250,
+                307,
+                144
+              ],
+              "transforms": "[Scale [x=1.0, y=1.0, z=1.0, pivotX=0.0, pivotY=0.0, pivotZ=0.0]]"
+            },
+            {
+              "width": 307,
+              "height": 144,
+              "sceneBounds": [
+                492,
+                250,
+                307,
+                144
+              ],
+              "transforms": "[Scale [x=1.0, y=1.0, z=1.0, pivotX=0.0, pivotY=0.0, pivotZ=0.0]]"
+            },
+            {
+              "width": 307,
+              "height": 144,
+              "sceneBounds": [
+                492,
+                250,
+                307,
+                144
+              ],
+              "transforms": "[Scale [x=1.0, y=1.0, z=1.0, pivotX=0.0, pivotY=0.0, pivotZ=0.0]]"
+            }
+          ]
+        },
+        {
+          "name": "reference-legend",
+          "status": "Drawn",
+          "sceneBounds": [
+            492,
+            393,
+            306,
+            38
+          ],
+          "layoutBounds": [
+            0,
+            0,
+            306,
+            38
+          ],
+          "clip": [
+            0,
+            0,
+            306,
+            38
+          ],
+          "surface": "PlotSurface(306.0,38.0,1.0)",
+          "transform": "eyes4s.studio.viz.plot.PlotTransform@708fe4fe",
+          "profile": "PlotHostProfile(7,7,0,0)",
+          "canvases": [
+            {
+              "width": 307,
+              "height": 39,
+              "sceneBounds": [
+                492,
+                393,
+                307,
+                39
+              ],
+              "transforms": "[Scale [x=1.0, y=1.0, z=1.0, pivotX=0.0, pivotY=0.0, pivotZ=0.0]]"
+            },
+            {
+              "width": 307,
+              "height": 39,
+              "sceneBounds": [
+                492,
+                393,
+                307,
+                39
+              ],
+              "transforms": "[Scale [x=1.0, y=1.0, z=1.0, pivotX=0.0, pivotY=0.0, pivotZ=0.0]]"
+            },
+            {
+              "width": 307,
+              "height": 39,
+              "sceneBounds": [
+                492,
+                393,
+                307,
+                39
+              ],
+              "transforms": "[Scale [x=1.0, y=1.0, z=1.0, pivotX=0.0, pivotY=0.0, pivotZ=0.0]]"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "phase": "height-33.0",
+      "snapshotScale": 1,
+      "difference": {
+        "width": 613,
+        "height": 181,
+        "changedPixels": 0,
+        "maximumChannelDelta": 0,
+        "changedFraction": 0,
+        "accepted": true
+      }
+    },
+    {
+      "phase": "height-33.0",
+      "snapshotScale": 2,
+      "difference": {
+        "width": 1226,
+        "height": 362,
+        "changedPixels": 0,
+        "maximumChannelDelta": 0,
+        "changedFraction": 0,
+        "accepted": true
+      }
+    },
+    {
+      "phase": "shrunk-width-1.0",
+      "hosts": [
+        {
+          "name": "query",
+          "status": "Drawn",
+          "sceneBounds": [
+            186,
+            250,
+            305,
+            143
+          ],
+          "layoutBounds": [
+            0,
+            0,
+            305,
+            143
+          ],
+          "clip": [
+            0,
+            0,
+            305,
+            143
+          ],
+          "surface": "PlotSurface(305.0,143.0,1.0)",
+          "transform": "eyes4s.studio.viz.plot.PlotTransform@7eabbff2",
+          "profile": "PlotHostProfile(7,7,0,0)",
+          "canvases": [
+            {
+              "width": 306,
+              "height": 144,
+              "sceneBounds": [
+                186,
+                250,
+                306,
+                144
+              ],
+              "transforms": "[Scale [x=1.0, y=1.0, z=1.0, pivotX=0.0, pivotY=0.0, pivotZ=0.0]]"
+            },
+            {
+              "width": 306,
+              "height": 144,
+              "sceneBounds": [
+                186,
+                250,
+                306,
+                144
+              ],
+              "transforms": "[Scale [x=1.0, y=1.0, z=1.0, pivotX=0.0, pivotY=0.0, pivotZ=0.0]]"
+            },
+            {
+              "width": 306,
+              "height": 144,
+              "sceneBounds": [
+                186,
+                250,
+                306,
+                144
+              ],
+              "transforms": "[Scale [x=1.0, y=1.0, z=1.0, pivotX=0.0, pivotY=0.0, pivotZ=0.0]]"
+            }
+          ]
+        },
+        {
+          "name": "query-legend",
+          "status": "Drawn",
+          "sceneBounds": [
+            186,
+            393,
+            305,
+            38
+          ],
+          "layoutBounds": [
+            0,
+            0,
+            305,
+            38
+          ],
+          "clip": [
+            0,
+            0,
+            305,
+            38
+          ],
+          "surface": "PlotSurface(305.0,38.0,1.0)",
+          "transform": "eyes4s.studio.viz.plot.PlotTransform@31480ad9",
+          "profile": "PlotHostProfile(8,8,0,0)",
+          "canvases": [
+            {
+              "width": 306,
+              "height": 39,
+              "sceneBounds": [
+                186,
+                393,
+                306,
+                39
+              ],
+              "transforms": "[Scale [x=1.0, y=1.0, z=1.0, pivotX=0.0, pivotY=0.0, pivotZ=0.0]]"
+            },
+            {
+              "width": 306,
+              "height": 39,
+              "sceneBounds": [
+                186,
+                393,
+                306,
+                39
+              ],
+              "transforms": "[Scale [x=1.0, y=1.0, z=1.0, pivotX=0.0, pivotY=0.0, pivotZ=0.0]]"
+            },
+            {
+              "width": 306,
+              "height": 39,
+              "sceneBounds": [
+                186,
+                393,
+                306,
+                39
+              ],
+              "transforms": "[Scale [x=1.0, y=1.0, z=1.0, pivotX=0.0, pivotY=0.0, pivotZ=0.0]]"
+            }
+          ]
+        },
+        {
+          "name": "reference",
+          "status": "Drawn",
+          "sceneBounds": [
+            493,
+            250,
+            305,
+            143
+          ],
+          "layoutBounds": [
+            0,
+            0,
+            305,
+            143
+          ],
+          "clip": [
+            0,
+            0,
+            305,
+            143
+          ],
+          "surface": "PlotSurface(305.0,143.0,1.0)",
+          "transform": "eyes4s.studio.viz.plot.PlotTransform@3559b5bf",
+          "profile": "PlotHostProfile(8,8,0,0)",
+          "canvases": [
+            {
+              "width": 306,
+              "height": 144,
+              "sceneBounds": [
+                493,
+                250,
+                306,
+                144
+              ],
+              "transforms": "[Scale [x=1.0, y=1.0, z=1.0, pivotX=0.0, pivotY=0.0, pivotZ=0.0]]"
+            },
+            {
+              "width": 306,
+              "height": 144,
+              "sceneBounds": [
+                493,
+                250,
+                306,
+                144
+              ],
+              "transforms": "[Scale [x=1.0, y=1.0, z=1.0, pivotX=0.0, pivotY=0.0, pivotZ=0.0]]"
+            },
+            {
+              "width": 306,
+              "height": 144,
+              "sceneBounds": [
+                493,
+                250,
+                306,
+                144
+              ],
+              "transforms": "[Scale [x=1.0, y=1.0, z=1.0, pivotX=0.0, pivotY=0.0, pivotZ=0.0]]"
+            }
+          ]
+        },
+        {
+          "name": "reference-legend",
+          "status": "Drawn",
+          "sceneBounds": [
+            493,
+            393,
+            305,
+            38
+          ],
+          "layoutBounds": [
+            0,
+            0,
+            305,
+            38
+          ],
+          "clip": [
+            0,
+            0,
+            305,
+            38
+          ],
+          "surface": "PlotSurface(305.0,38.0,1.0)",
+          "transform": "eyes4s.studio.viz.plot.PlotTransform@3afe0ffe",
+          "profile": "PlotHostProfile(8,8,0,0)",
+          "canvases": [
+            {
+              "width": 306,
+              "height": 39,
+              "sceneBounds": [
+                493,
+                393,
+                306,
+                39
+              ],
+              "transforms": "[Scale [x=1.0, y=1.0, z=1.0, pivotX=0.0, pivotY=0.0, pivotZ=0.0]]"
+            },
+            {
+              "width": 306,
+              "height": 39,
+              "sceneBounds": [
+                493,
+                393,
+                306,
+                39
+              ],
+              "transforms": "[Scale [x=1.0, y=1.0, z=1.0, pivotX=0.0, pivotY=0.0, pivotZ=0.0]]"
+            },
+            {
+              "width": 306,
+              "height": 39,
+              "sceneBounds": [
+                493,
+                393,
+                306,
+                39
+              ],
+              "transforms": "[Scale [x=1.0, y=1.0, z=1.0, pivotX=0.0, pivotY=0.0, pivotZ=0.0]]"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "phase": "width-1.0",
+      "before": [
+        {
+          "name": "query",
+          "status": "Drawn",
+          "sceneBounds": [
+            185,
+            250,
+            306,
+            143
+          ],
+          "layoutBounds": [
+            0,
+            0,
+            306,
+            143
+          ],
+          "clip": [
+            0,
+            0,
+            306,
+            143
+          ],
+          "surface": "PlotSurface(306.0,143.0,1.0)",
+          "transform": "eyes4s.studio.viz.plot.PlotTransform@1989737c",
+          "profile": "PlotHostProfile(8,8,0,0)",
+          "canvases": [
+            {
+              "width": 307,
+              "height": 144,
+              "sceneBounds": [
+                185,
+                250,
+                307,
+                144
+              ],
+              "transforms": "[Scale [x=1.0, y=1.0, z=1.0, pivotX=0.0, pivotY=0.0, pivotZ=0.0]]"
+            },
+            {
+              "width": 307,
+              "height": 144,
+              "sceneBounds": [
+                185,
+                250,
+                307,
+                144
+              ],
+              "transforms": "[Scale [x=1.0, y=1.0, z=1.0, pivotX=0.0, pivotY=0.0, pivotZ=0.0]]"
+            },
+            {
+              "width": 307,
+              "height": 144,
+              "sceneBounds": [
+                185,
+                250,
+                307,
+                144
+              ],
+              "transforms": "[Scale [x=1.0, y=1.0, z=1.0, pivotX=0.0, pivotY=0.0, pivotZ=0.0]]"
+            }
+          ]
+        },
+        {
+          "name": "query-legend",
+          "status": "Drawn",
+          "sceneBounds": [
+            185,
+            393,
+            306,
+            38
+          ],
+          "layoutBounds": [
+            0,
+            0,
+            306,
+            38
+          ],
+          "clip": [
+            0,
+            0,
+            306,
+            38
+          ],
+          "surface": "PlotSurface(306.0,38.0,1.0)",
+          "transform": "eyes4s.studio.viz.plot.PlotTransform@68e6ac56",
+          "profile": "PlotHostProfile(9,9,0,0)",
+          "canvases": [
+            {
+              "width": 307,
+              "height": 39,
+              "sceneBounds": [
+                185,
+                393,
+                307,
+                39
+              ],
+              "transforms": "[Scale [x=1.0, y=1.0, z=1.0, pivotX=0.0, pivotY=0.0, pivotZ=0.0]]"
+            },
+            {
+              "width": 307,
+              "height": 39,
+              "sceneBounds": [
+                185,
+                393,
+                307,
+                39
+              ],
+              "transforms": "[Scale [x=1.0, y=1.0, z=1.0, pivotX=0.0, pivotY=0.0, pivotZ=0.0]]"
+            },
+            {
+              "width": 307,
+              "height": 39,
+              "sceneBounds": [
+                185,
+                393,
+                307,
+                39
+              ],
+              "transforms": "[Scale [x=1.0, y=1.0, z=1.0, pivotX=0.0, pivotY=0.0, pivotZ=0.0]]"
+            }
+          ]
+        },
+        {
+          "name": "reference",
+          "status": "Drawn",
+          "sceneBounds": [
+            492,
+            250,
+            306,
+            143
+          ],
+          "layoutBounds": [
+            0,
+            0,
+            306,
+            143
+          ],
+          "clip": [
+            0,
+            0,
+            306,
+            143
+          ],
+          "surface": "PlotSurface(306.0,143.0,1.0)",
+          "transform": "eyes4s.studio.viz.plot.PlotTransform@10ea18b8",
+          "profile": "PlotHostProfile(9,9,0,0)",
+          "canvases": [
+            {
+              "width": 307,
+              "height": 144,
+              "sceneBounds": [
+                492,
+                250,
+                307,
+                144
+              ],
+              "transforms": "[Scale [x=1.0, y=1.0, z=1.0, pivotX=0.0, pivotY=0.0, pivotZ=0.0]]"
+            },
+            {
+              "width": 307,
+              "height": 144,
+              "sceneBounds": [
+                492,
+                250,
+                307,
+                144
+              ],
+              "transforms": "[Scale [x=1.0, y=1.0, z=1.0, pivotX=0.0, pivotY=0.0, pivotZ=0.0]]"
+            },
+            {
+              "width": 307,
+              "height": 144,
+              "sceneBounds": [
+                492,
+                250,
+                307,
+                144
+              ],
+              "transforms": "[Scale [x=1.0, y=1.0, z=1.0, pivotX=0.0, pivotY=0.0, pivotZ=0.0]]"
+            }
+          ]
+        },
+        {
+          "name": "reference-legend",
+          "status": "Drawn",
+          "sceneBounds": [
+            492,
+            393,
+            306,
+            38
+          ],
+          "layoutBounds": [
+            0,
+            0,
+            306,
+            38
+          ],
+          "clip": [
+            0,
+            0,
+            306,
+            38
+          ],
+          "surface": "PlotSurface(306.0,38.0,1.0)",
+          "transform": "eyes4s.studio.viz.plot.PlotTransform@5aa174a4",
+          "profile": "PlotHostProfile(9,9,0,0)",
+          "canvases": [
+            {
+              "width": 307,
+              "height": 39,
+              "sceneBounds": [
+                492,
+                393,
+                307,
+                39
+              ],
+              "transforms": "[Scale [x=1.0, y=1.0, z=1.0, pivotX=0.0, pivotY=0.0, pivotZ=0.0]]"
+            },
+            {
+              "width": 307,
+              "height": 39,
+              "sceneBounds": [
+                492,
+                393,
+                307,
+                39
+              ],
+              "transforms": "[Scale [x=1.0, y=1.0, z=1.0, pivotX=0.0, pivotY=0.0, pivotZ=0.0]]"
+            },
+            {
+              "width": 307,
+              "height": 39,
+              "sceneBounds": [
+                492,
+                393,
+                307,
+                39
+              ],
+              "transforms": "[Scale [x=1.0, y=1.0, z=1.0, pivotX=0.0, pivotY=0.0, pivotZ=0.0]]"
+            }
+          ]
+        }
+      ],
+      "after": [
+        {
+          "name": "query",
+          "status": "Drawn",
+          "sceneBounds": [
+            185,
+            250,
+            306,
+            143
+          ],
+          "layoutBounds": [
+            0,
+            0,
+            306,
+            143
+          ],
+          "clip": [
+            0,
+            0,
+            306,
+            143
+          ],
+          "surface": "PlotSurface(306.0,143.0,1.0)",
+          "transform": "eyes4s.studio.viz.plot.PlotTransform@1989737c",
+          "profile": "PlotHostProfile(8,8,0,0)",
+          "canvases": [
+            {
+              "width": 307,
+              "height": 144,
+              "sceneBounds": [
+                185,
+                250,
+                307,
+                144
+              ],
+              "transforms": "[Scale [x=1.0, y=1.0, z=1.0, pivotX=0.0, pivotY=0.0, pivotZ=0.0]]"
+            },
+            {
+              "width": 307,
+              "height": 144,
+              "sceneBounds": [
+                185,
+                250,
+                307,
+                144
+              ],
+              "transforms": "[Scale [x=1.0, y=1.0, z=1.0, pivotX=0.0, pivotY=0.0, pivotZ=0.0]]"
+            },
+            {
+              "width": 307,
+              "height": 144,
+              "sceneBounds": [
+                185,
+                250,
+                307,
+                144
+              ],
+              "transforms": "[Scale [x=1.0, y=1.0, z=1.0, pivotX=0.0, pivotY=0.0, pivotZ=0.0]]"
+            }
+          ]
+        },
+        {
+          "name": "query-legend",
+          "status": "Drawn",
+          "sceneBounds": [
+            185,
+            393,
+            306,
+            38
+          ],
+          "layoutBounds": [
+            0,
+            0,
+            306,
+            38
+          ],
+          "clip": [
+            0,
+            0,
+            306,
+            38
+          ],
+          "surface": "PlotSurface(306.0,38.0,1.0)",
+          "transform": "eyes4s.studio.viz.plot.PlotTransform@68e6ac56",
+          "profile": "PlotHostProfile(9,9,0,0)",
+          "canvases": [
+            {
+              "width": 307,
+              "height": 39,
+              "sceneBounds": [
+                185,
+                393,
+                307,
+                39
+              ],
+              "transforms": "[Scale [x=1.0, y=1.0, z=1.0, pivotX=0.0, pivotY=0.0, pivotZ=0.0]]"
+            },
+            {
+              "width": 307,
+              "height": 39,
+              "sceneBounds": [
+                185,
+                393,
+                307,
+                39
+              ],
+              "transforms": "[Scale [x=1.0, y=1.0, z=1.0, pivotX=0.0, pivotY=0.0, pivotZ=0.0]]"
+            },
+            {
+              "width": 307,
+              "height": 39,
+              "sceneBounds": [
+                185,
+                393,
+                307,
+                39
+              ],
+              "transforms": "[Scale [x=1.0, y=1.0, z=1.0, pivotX=0.0, pivotY=0.0, pivotZ=0.0]]"
+            }
+          ]
+        },
+        {
+          "name": "reference",
+          "status": "Drawn",
+          "sceneBounds": [
+            492,
+            250,
+            306,
+            143
+          ],
+          "layoutBounds": [
+            0,
+            0,
+            306,
+            143
+          ],
+          "clip": [
+            0,
+            0,
+            306,
+            143
+          ],
+          "surface": "PlotSurface(306.0,143.0,1.0)",
+          "transform": "eyes4s.studio.viz.plot.PlotTransform@10ea18b8",
+          "profile": "PlotHostProfile(9,9,0,0)",
+          "canvases": [
+            {
+              "width": 307,
+              "height": 144,
+              "sceneBounds": [
+                492,
+                250,
+                307,
+                144
+              ],
+              "transforms": "[Scale [x=1.0, y=1.0, z=1.0, pivotX=0.0, pivotY=0.0, pivotZ=0.0]]"
+            },
+            {
+              "width": 307,
+              "height": 144,
+              "sceneBounds": [
+                492,
+                250,
+                307,
+                144
+              ],
+              "transforms": "[Scale [x=1.0, y=1.0, z=1.0, pivotX=0.0, pivotY=0.0, pivotZ=0.0]]"
+            },
+            {
+              "width": 307,
+              "height": 144,
+              "sceneBounds": [
+                492,
+                250,
+                307,
+                144
+              ],
+              "transforms": "[Scale [x=1.0, y=1.0, z=1.0, pivotX=0.0, pivotY=0.0, pivotZ=0.0]]"
+            }
+          ]
+        },
+        {
+          "name": "reference-legend",
+          "status": "Drawn",
+          "sceneBounds": [
+            492,
+            393,
+            306,
+            38
+          ],
+          "layoutBounds": [
+            0,
+            0,
+            306,
+            38
+          ],
+          "clip": [
+            0,
+            0,
+            306,
+            38
+          ],
+          "surface": "PlotSurface(306.0,38.0,1.0)",
+          "transform": "eyes4s.studio.viz.plot.PlotTransform@5aa174a4",
+          "profile": "PlotHostProfile(9,9,0,0)",
+          "canvases": [
+            {
+              "width": 307,
+              "height": 39,
+              "sceneBounds": [
+                492,
+                393,
+                307,
+                39
+              ],
+              "transforms": "[Scale [x=1.0, y=1.0, z=1.0, pivotX=0.0, pivotY=0.0, pivotZ=0.0]]"
+            },
+            {
+              "width": 307,
+              "height": 39,
+              "sceneBounds": [
+                492,
+                393,
+                307,
+                39
+              ],
+              "transforms": "[Scale [x=1.0, y=1.0, z=1.0, pivotX=0.0, pivotY=0.0, pivotZ=0.0]]"
+            },
+            {
+              "width": 307,
+              "height": 39,
+              "sceneBounds": [
+                492,
+                393,
+                307,
+                39
+              ],
+              "transforms": "[Scale [x=1.0, y=1.0, z=1.0, pivotX=0.0, pivotY=0.0, pivotZ=0.0]]"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "phase": "width-1.0",
+      "snapshotScale": 1,
+      "difference": {
+        "width": 613,
+        "height": 181,
+        "changedPixels": 0,
+        "maximumChannelDelta": 0,
+        "changedFraction": 0,
+        "accepted": true
+      }
+    },
+    {
+      "phase": "width-1.0",
+      "snapshotScale": 2,
+      "difference": {
+        "width": 1226,
+        "height": 362,
+        "changedPixels": 0,
+        "maximumChannelDelta": 0,
+        "changedFraction": 0,
+        "accepted": true
+      }
+    },
+    {
+      "phase": "shrunk-width-17.0",
+      "hosts": [
+        {
+          "name": "query",
+          "status": "Drawn",
+          "sceneBounds": [
+            194,
+            250,
+            289,
+            143
+          ],
+          "layoutBounds": [
+            0,
+            0,
+            289,
+            143
+          ],
+          "clip": [
+            0,
+            0,
+            289,
+            143
+          ],
+          "surface": "PlotSurface(289.0,143.0,1.0)",
+          "transform": "eyes4s.studio.viz.plot.PlotTransform@8e1fe1f",
+          "profile": "PlotHostProfile(9,9,0,0)",
+          "canvases": [
+            {
+              "width": 290,
+              "height": 144,
+              "sceneBounds": [
+                194,
+                250,
+                290,
+                144
+              ],
+              "transforms": "[Scale [x=1.0, y=1.0, z=1.0, pivotX=0.0, pivotY=0.0, pivotZ=0.0]]"
+            },
+            {
+              "width": 290,
+              "height": 144,
+              "sceneBounds": [
+                194,
+                250,
+                290,
+                144
+              ],
+              "transforms": "[Scale [x=1.0, y=1.0, z=1.0, pivotX=0.0, pivotY=0.0, pivotZ=0.0]]"
+            },
+            {
+              "width": 290,
+              "height": 144,
+              "sceneBounds": [
+                194,
+                250,
+                290,
+                144
+              ],
+              "transforms": "[Scale [x=1.0, y=1.0, z=1.0, pivotX=0.0, pivotY=0.0, pivotZ=0.0]]"
+            }
+          ]
+        },
+        {
+          "name": "query-legend",
+          "status": "Drawn",
+          "sceneBounds": [
+            194,
+            393,
+            289,
+            38
+          ],
+          "layoutBounds": [
+            0,
+            0,
+            289,
+            38
+          ],
+          "clip": [
+            0,
+            0,
+            289,
+            38
+          ],
+          "surface": "PlotSurface(289.0,38.0,1.0)",
+          "transform": "eyes4s.studio.viz.plot.PlotTransform@55386749",
+          "profile": "PlotHostProfile(10,10,0,0)",
+          "canvases": [
+            {
+              "width": 290,
+              "height": 39,
+              "sceneBounds": [
+                194,
+                393,
+                290,
+                39
+              ],
+              "transforms": "[Scale [x=1.0, y=1.0, z=1.0, pivotX=0.0, pivotY=0.0, pivotZ=0.0]]"
+            },
+            {
+              "width": 290,
+              "height": 39,
+              "sceneBounds": [
+                194,
+                393,
+                290,
+                39
+              ],
+              "transforms": "[Scale [x=1.0, y=1.0, z=1.0, pivotX=0.0, pivotY=0.0, pivotZ=0.0]]"
+            },
+            {
+              "width": 290,
+              "height": 39,
+              "sceneBounds": [
+                194,
+                393,
+                290,
+                39
+              ],
+              "transforms": "[Scale [x=1.0, y=1.0, z=1.0, pivotX=0.0, pivotY=0.0, pivotZ=0.0]]"
+            }
+          ]
+        },
+        {
+          "name": "reference",
+          "status": "Drawn",
+          "sceneBounds": [
+            501,
+            250,
+            289,
+            143
+          ],
+          "layoutBounds": [
+            0,
+            0,
+            289,
+            143
+          ],
+          "clip": [
+            0,
+            0,
+            289,
+            143
+          ],
+          "surface": "PlotSurface(289.0,143.0,1.0)",
+          "transform": "eyes4s.studio.viz.plot.PlotTransform@15d79a8e",
+          "profile": "PlotHostProfile(10,10,0,0)",
+          "canvases": [
+            {
+              "width": 290,
+              "height": 144,
+              "sceneBounds": [
+                501,
+                250,
+                290,
+                144
+              ],
+              "transforms": "[Scale [x=1.0, y=1.0, z=1.0, pivotX=0.0, pivotY=0.0, pivotZ=0.0]]"
+            },
+            {
+              "width": 290,
+              "height": 144,
+              "sceneBounds": [
+                501,
+                250,
+                290,
+                144
+              ],
+              "transforms": "[Scale [x=1.0, y=1.0, z=1.0, pivotX=0.0, pivotY=0.0, pivotZ=0.0]]"
+            },
+            {
+              "width": 290,
+              "height": 144,
+              "sceneBounds": [
+                501,
+                250,
+                290,
+                144
+              ],
+              "transforms": "[Scale [x=1.0, y=1.0, z=1.0, pivotX=0.0, pivotY=0.0, pivotZ=0.0]]"
+            }
+          ]
+        },
+        {
+          "name": "reference-legend",
+          "status": "Drawn",
+          "sceneBounds": [
+            501,
+            393,
+            289,
+            38
+          ],
+          "layoutBounds": [
+            0,
+            0,
+            289,
+            38
+          ],
+          "clip": [
+            0,
+            0,
+            289,
+            38
+          ],
+          "surface": "PlotSurface(289.0,38.0,1.0)",
+          "transform": "eyes4s.studio.viz.plot.PlotTransform@4482d8c4",
+          "profile": "PlotHostProfile(10,10,0,0)",
+          "canvases": [
+            {
+              "width": 290,
+              "height": 39,
+              "sceneBounds": [
+                501,
+                393,
+                290,
+                39
+              ],
+              "transforms": "[Scale [x=1.0, y=1.0, z=1.0, pivotX=0.0, pivotY=0.0, pivotZ=0.0]]"
+            },
+            {
+              "width": 290,
+              "height": 39,
+              "sceneBounds": [
+                501,
+                393,
+                290,
+                39
+              ],
+              "transforms": "[Scale [x=1.0, y=1.0, z=1.0, pivotX=0.0, pivotY=0.0, pivotZ=0.0]]"
+            },
+            {
+              "width": 290,
+              "height": 39,
+              "sceneBounds": [
+                501,
+                393,
+                290,
+                39
+              ],
+              "transforms": "[Scale [x=1.0, y=1.0, z=1.0, pivotX=0.0, pivotY=0.0, pivotZ=0.0]]"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "phase": "width-17.0",
+      "before": [
+        {
+          "name": "query",
+          "status": "Drawn",
+          "sceneBounds": [
+            185,
+            250,
+            306,
+            143
+          ],
+          "layoutBounds": [
+            0,
+            0,
+            306,
+            143
+          ],
+          "clip": [
+            0,
+            0,
+            306,
+            143
+          ],
+          "surface": "PlotSurface(306.0,143.0,1.0)",
+          "transform": "eyes4s.studio.viz.plot.PlotTransform@4394d74d",
+          "profile": "PlotHostProfile(10,10,0,0)",
+          "canvases": [
+            {
+              "width": 307,
+              "height": 144,
+              "sceneBounds": [
+                185,
+                250,
+                307,
+                144
+              ],
+              "transforms": "[Scale [x=1.0, y=1.0, z=1.0, pivotX=0.0, pivotY=0.0, pivotZ=0.0]]"
+            },
+            {
+              "width": 307,
+              "height": 144,
+              "sceneBounds": [
+                185,
+                250,
+                307,
+                144
+              ],
+              "transforms": "[Scale [x=1.0, y=1.0, z=1.0, pivotX=0.0, pivotY=0.0, pivotZ=0.0]]"
+            },
+            {
+              "width": 307,
+              "height": 144,
+              "sceneBounds": [
+                185,
+                250,
+                307,
+                144
+              ],
+              "transforms": "[Scale [x=1.0, y=1.0, z=1.0, pivotX=0.0, pivotY=0.0, pivotZ=0.0]]"
+            }
+          ]
+        },
+        {
+          "name": "query-legend",
+          "status": "Drawn",
+          "sceneBounds": [
+            185,
+            393,
+            306,
+            38
+          ],
+          "layoutBounds": [
+            0,
+            0,
+            306,
+            38
+          ],
+          "clip": [
+            0,
+            0,
+            306,
+            38
+          ],
+          "surface": "PlotSurface(306.0,38.0,1.0)",
+          "transform": "eyes4s.studio.viz.plot.PlotTransform@5500e259",
+          "profile": "PlotHostProfile(11,11,0,0)",
+          "canvases": [
+            {
+              "width": 307,
+              "height": 39,
+              "sceneBounds": [
+                185,
+                393,
+                307,
+                39
+              ],
+              "transforms": "[Scale [x=1.0, y=1.0, z=1.0, pivotX=0.0, pivotY=0.0, pivotZ=0.0]]"
+            },
+            {
+              "width": 307,
+              "height": 39,
+              "sceneBounds": [
+                185,
+                393,
+                307,
+                39
+              ],
+              "transforms": "[Scale [x=1.0, y=1.0, z=1.0, pivotX=0.0, pivotY=0.0, pivotZ=0.0]]"
+            },
+            {
+              "width": 307,
+              "height": 39,
+              "sceneBounds": [
+                185,
+                393,
+                307,
+                39
+              ],
+              "transforms": "[Scale [x=1.0, y=1.0, z=1.0, pivotX=0.0, pivotY=0.0, pivotZ=0.0]]"
+            }
+          ]
+        },
+        {
+          "name": "reference",
+          "status": "Drawn",
+          "sceneBounds": [
+            492,
+            250,
+            306,
+            143
+          ],
+          "layoutBounds": [
+            0,
+            0,
+            306,
+            143
+          ],
+          "clip": [
+            0,
+            0,
+            306,
+            143
+          ],
+          "surface": "PlotSurface(306.0,143.0,1.0)",
+          "transform": "eyes4s.studio.viz.plot.PlotTransform@7c2a019d",
+          "profile": "PlotHostProfile(11,11,0,0)",
+          "canvases": [
+            {
+              "width": 307,
+              "height": 144,
+              "sceneBounds": [
+                492,
+                250,
+                307,
+                144
+              ],
+              "transforms": "[Scale [x=1.0, y=1.0, z=1.0, pivotX=0.0, pivotY=0.0, pivotZ=0.0]]"
+            },
+            {
+              "width": 307,
+              "height": 144,
+              "sceneBounds": [
+                492,
+                250,
+                307,
+                144
+              ],
+              "transforms": "[Scale [x=1.0, y=1.0, z=1.0, pivotX=0.0, pivotY=0.0, pivotZ=0.0]]"
+            },
+            {
+              "width": 307,
+              "height": 144,
+              "sceneBounds": [
+                492,
+                250,
+                307,
+                144
+              ],
+              "transforms": "[Scale [x=1.0, y=1.0, z=1.0, pivotX=0.0, pivotY=0.0, pivotZ=0.0]]"
+            }
+          ]
+        },
+        {
+          "name": "reference-legend",
+          "status": "Drawn",
+          "sceneBounds": [
+            492,
+            393,
+            306,
+            38
+          ],
+          "layoutBounds": [
+            0,
+            0,
+            306,
+            38
+          ],
+          "clip": [
+            0,
+            0,
+            306,
+            38
+          ],
+          "surface": "PlotSurface(306.0,38.0,1.0)",
+          "transform": "eyes4s.studio.viz.plot.PlotTransform@2ebcb224",
+          "profile": "PlotHostProfile(11,11,0,0)",
+          "canvases": [
+            {
+              "width": 307,
+              "height": 39,
+              "sceneBounds": [
+                492,
+                393,
+                307,
+                39
+              ],
+              "transforms": "[Scale [x=1.0, y=1.0, z=1.0, pivotX=0.0, pivotY=0.0, pivotZ=0.0]]"
+            },
+            {
+              "width": 307,
+              "height": 39,
+              "sceneBounds": [
+                492,
+                393,
+                307,
+                39
+              ],
+              "transforms": "[Scale [x=1.0, y=1.0, z=1.0, pivotX=0.0, pivotY=0.0, pivotZ=0.0]]"
+            },
+            {
+              "width": 307,
+              "height": 39,
+              "sceneBounds": [
+                492,
+                393,
+                307,
+                39
+              ],
+              "transforms": "[Scale [x=1.0, y=1.0, z=1.0, pivotX=0.0, pivotY=0.0, pivotZ=0.0]]"
+            }
+          ]
+        }
+      ],
+      "after": [
+        {
+          "name": "query",
+          "status": "Drawn",
+          "sceneBounds": [
+            185,
+            250,
+            306,
+            143
+          ],
+          "layoutBounds": [
+            0,
+            0,
+            306,
+            143
+          ],
+          "clip": [
+            0,
+            0,
+            306,
+            143
+          ],
+          "surface": "PlotSurface(306.0,143.0,1.0)",
+          "transform": "eyes4s.studio.viz.plot.PlotTransform@4394d74d",
+          "profile": "PlotHostProfile(10,10,0,0)",
+          "canvases": [
+            {
+              "width": 307,
+              "height": 144,
+              "sceneBounds": [
+                185,
+                250,
+                307,
+                144
+              ],
+              "transforms": "[Scale [x=1.0, y=1.0, z=1.0, pivotX=0.0, pivotY=0.0, pivotZ=0.0]]"
+            },
+            {
+              "width": 307,
+              "height": 144,
+              "sceneBounds": [
+                185,
+                250,
+                307,
+                144
+              ],
+              "transforms": "[Scale [x=1.0, y=1.0, z=1.0, pivotX=0.0, pivotY=0.0, pivotZ=0.0]]"
+            },
+            {
+              "width": 307,
+              "height": 144,
+              "sceneBounds": [
+                185,
+                250,
+                307,
+                144
+              ],
+              "transforms": "[Scale [x=1.0, y=1.0, z=1.0, pivotX=0.0, pivotY=0.0, pivotZ=0.0]]"
+            }
+          ]
+        },
+        {
+          "name": "query-legend",
+          "status": "Drawn",
+          "sceneBounds": [
+            185,
+            393,
+            306,
+            38
+          ],
+          "layoutBounds": [
+            0,
+            0,
+            306,
+            38
+          ],
+          "clip": [
+            0,
+            0,
+            306,
+            38
+          ],
+          "surface": "PlotSurface(306.0,38.0,1.0)",
+          "transform": "eyes4s.studio.viz.plot.PlotTransform@5500e259",
+          "profile": "PlotHostProfile(11,11,0,0)",
+          "canvases": [
+            {
+              "width": 307,
+              "height": 39,
+              "sceneBounds": [
+                185,
+                393,
+                307,
+                39
+              ],
+              "transforms": "[Scale [x=1.0, y=1.0, z=1.0, pivotX=0.0, pivotY=0.0, pivotZ=0.0]]"
+            },
+            {
+              "width": 307,
+              "height": 39,
+              "sceneBounds": [
+                185,
+                393,
+                307,
+                39
+              ],
+              "transforms": "[Scale [x=1.0, y=1.0, z=1.0, pivotX=0.0, pivotY=0.0, pivotZ=0.0]]"
+            },
+            {
+              "width": 307,
+              "height": 39,
+              "sceneBounds": [
+                185,
+                393,
+                307,
+                39
+              ],
+              "transforms": "[Scale [x=1.0, y=1.0, z=1.0, pivotX=0.0, pivotY=0.0, pivotZ=0.0]]"
+            }
+          ]
+        },
+        {
+          "name": "reference",
+          "status": "Drawn",
+          "sceneBounds": [
+            492,
+            250,
+            306,
+            143
+          ],
+          "layoutBounds": [
+            0,
+            0,
+            306,
+            143
+          ],
+          "clip": [
+            0,
+            0,
+            306,
+            143
+          ],
+          "surface": "PlotSurface(306.0,143.0,1.0)",
+          "transform": "eyes4s.studio.viz.plot.PlotTransform@7c2a019d",
+          "profile": "PlotHostProfile(11,11,0,0)",
+          "canvases": [
+            {
+              "width": 307,
+              "height": 144,
+              "sceneBounds": [
+                492,
+                250,
+                307,
+                144
+              ],
+              "transforms": "[Scale [x=1.0, y=1.0, z=1.0, pivotX=0.0, pivotY=0.0, pivotZ=0.0]]"
+            },
+            {
+              "width": 307,
+              "height": 144,
+              "sceneBounds": [
+                492,
+                250,
+                307,
+                144
+              ],
+              "transforms": "[Scale [x=1.0, y=1.0, z=1.0, pivotX=0.0, pivotY=0.0, pivotZ=0.0]]"
+            },
+            {
+              "width": 307,
+              "height": 144,
+              "sceneBounds": [
+                492,
+                250,
+                307,
+                144
+              ],
+              "transforms": "[Scale [x=1.0, y=1.0, z=1.0, pivotX=0.0, pivotY=0.0, pivotZ=0.0]]"
+            }
+          ]
+        },
+        {
+          "name": "reference-legend",
+          "status": "Drawn",
+          "sceneBounds": [
+            492,
+            393,
+            306,
+            38
+          ],
+          "layoutBounds": [
+            0,
+            0,
+            306,
+            38
+          ],
+          "clip": [
+            0,
+            0,
+            306,
+            38
+          ],
+          "surface": "PlotSurface(306.0,38.0,1.0)",
+          "transform": "eyes4s.studio.viz.plot.PlotTransform@2ebcb224",
+          "profile": "PlotHostProfile(11,11,0,0)",
+          "canvases": [
+            {
+              "width": 307,
+              "height": 39,
+              "sceneBounds": [
+                492,
+                393,
+                307,
+                39
+              ],
+              "transforms": "[Scale [x=1.0, y=1.0, z=1.0, pivotX=0.0, pivotY=0.0, pivotZ=0.0]]"
+            },
+            {
+              "width": 307,
+              "height": 39,
+              "sceneBounds": [
+                492,
+                393,
+                307,
+                39
+              ],
+              "transforms": "[Scale [x=1.0, y=1.0, z=1.0, pivotX=0.0, pivotY=0.0, pivotZ=0.0]]"
+            },
+            {
+              "width": 307,
+              "height": 39,
+              "sceneBounds": [
+                492,
+                393,
+                307,
+                39
+              ],
+              "transforms": "[Scale [x=1.0, y=1.0, z=1.0, pivotX=0.0, pivotY=0.0, pivotZ=0.0]]"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "phase": "width-17.0",
+      "snapshotScale": 1,
+      "difference": {
+        "width": 613,
+        "height": 181,
+        "changedPixels": 0,
+        "maximumChannelDelta": 0,
+        "changedFraction": 0,
+        "accepted": true
+      }
+    },
+    {
+      "phase": "width-17.0",
+      "snapshotScale": 2,
+      "difference": {
+        "width": 1226,
+        "height": 362,
+        "changedPixels": 0,
+        "maximumChannelDelta": 0,
+        "changedFraction": 0,
+        "accepted": true
+      }
+    },
+    {
+      "phase": "shrunk-width-33.0",
+      "hosts": [
+        {
+          "name": "query",
+          "status": "Drawn",
+          "sceneBounds": [
+            202,
+            250,
+            273,
+            143
+          ],
+          "layoutBounds": [
+            0,
+            0,
+            273,
+            143
+          ],
+          "clip": [
+            0,
+            0,
+            273,
+            143
+          ],
+          "surface": "PlotSurface(273.0,143.0,1.0)",
+          "transform": "eyes4s.studio.viz.plot.PlotTransform@4bf73601",
+          "profile": "PlotHostProfile(11,11,0,0)",
+          "canvases": [
+            {
+              "width": 274,
+              "height": 144,
+              "sceneBounds": [
+                202,
+                250,
+                274,
+                144
+              ],
+              "transforms": "[Scale [x=1.0, y=1.0, z=1.0, pivotX=0.0, pivotY=0.0, pivotZ=0.0]]"
+            },
+            {
+              "width": 274,
+              "height": 144,
+              "sceneBounds": [
+                202,
+                250,
+                274,
+                144
+              ],
+              "transforms": "[Scale [x=1.0, y=1.0, z=1.0, pivotX=0.0, pivotY=0.0, pivotZ=0.0]]"
+            },
+            {
+              "width": 274,
+              "height": 144,
+              "sceneBounds": [
+                202,
+                250,
+                274,
+                144
+              ],
+              "transforms": "[Scale [x=1.0, y=1.0, z=1.0, pivotX=0.0, pivotY=0.0, pivotZ=0.0]]"
+            }
+          ]
+        },
+        {
+          "name": "query-legend",
+          "status": "Drawn",
+          "sceneBounds": [
+            202,
+            393,
+            273,
+            38
+          ],
+          "layoutBounds": [
+            0,
+            0,
+            273,
+            38
+          ],
+          "clip": [
+            0,
+            0,
+            273,
+            38
+          ],
+          "surface": "PlotSurface(273.0,38.0,1.0)",
+          "transform": "eyes4s.studio.viz.plot.PlotTransform@19b7170c",
+          "profile": "PlotHostProfile(12,12,0,0)",
+          "canvases": [
+            {
+              "width": 274,
+              "height": 39,
+              "sceneBounds": [
+                202,
+                393,
+                274,
+                39
+              ],
+              "transforms": "[Scale [x=1.0, y=1.0, z=1.0, pivotX=0.0, pivotY=0.0, pivotZ=0.0]]"
+            },
+            {
+              "width": 274,
+              "height": 39,
+              "sceneBounds": [
+                202,
+                393,
+                274,
+                39
+              ],
+              "transforms": "[Scale [x=1.0, y=1.0, z=1.0, pivotX=0.0, pivotY=0.0, pivotZ=0.0]]"
+            },
+            {
+              "width": 274,
+              "height": 39,
+              "sceneBounds": [
+                202,
+                393,
+                274,
+                39
+              ],
+              "transforms": "[Scale [x=1.0, y=1.0, z=1.0, pivotX=0.0, pivotY=0.0, pivotZ=0.0]]"
+            }
+          ]
+        },
+        {
+          "name": "reference",
+          "status": "Drawn",
+          "sceneBounds": [
+            509,
+            250,
+            273,
+            143
+          ],
+          "layoutBounds": [
+            0,
+            0,
+            273,
+            143
+          ],
+          "clip": [
+            0,
+            0,
+            273,
+            143
+          ],
+          "surface": "PlotSurface(273.0,143.0,1.0)",
+          "transform": "eyes4s.studio.viz.plot.PlotTransform@35bdcb4e",
+          "profile": "PlotHostProfile(12,12,0,0)",
+          "canvases": [
+            {
+              "width": 274,
+              "height": 144,
+              "sceneBounds": [
+                509,
+                250,
+                274,
+                144
+              ],
+              "transforms": "[Scale [x=1.0, y=1.0, z=1.0, pivotX=0.0, pivotY=0.0, pivotZ=0.0]]"
+            },
+            {
+              "width": 274,
+              "height": 144,
+              "sceneBounds": [
+                509,
+                250,
+                274,
+                144
+              ],
+              "transforms": "[Scale [x=1.0, y=1.0, z=1.0, pivotX=0.0, pivotY=0.0, pivotZ=0.0]]"
+            },
+            {
+              "width": 274,
+              "height": 144,
+              "sceneBounds": [
+                509,
+                250,
+                274,
+                144
+              ],
+              "transforms": "[Scale [x=1.0, y=1.0, z=1.0, pivotX=0.0, pivotY=0.0, pivotZ=0.0]]"
+            }
+          ]
+        },
+        {
+          "name": "reference-legend",
+          "status": "Drawn",
+          "sceneBounds": [
+            509,
+            393,
+            273,
+            38
+          ],
+          "layoutBounds": [
+            0,
+            0,
+            273,
+            38
+          ],
+          "clip": [
+            0,
+            0,
+            273,
+            38
+          ],
+          "surface": "PlotSurface(273.0,38.0,1.0)",
+          "transform": "eyes4s.studio.viz.plot.PlotTransform@7edb624f",
+          "profile": "PlotHostProfile(12,12,0,0)",
+          "canvases": [
+            {
+              "width": 274,
+              "height": 39,
+              "sceneBounds": [
+                509,
+                393,
+                274,
+                39
+              ],
+              "transforms": "[Scale [x=1.0, y=1.0, z=1.0, pivotX=0.0, pivotY=0.0, pivotZ=0.0]]"
+            },
+            {
+              "width": 274,
+              "height": 39,
+              "sceneBounds": [
+                509,
+                393,
+                274,
+                39
+              ],
+              "transforms": "[Scale [x=1.0, y=1.0, z=1.0, pivotX=0.0, pivotY=0.0, pivotZ=0.0]]"
+            },
+            {
+              "width": 274,
+              "height": 39,
+              "sceneBounds": [
+                509,
+                393,
+                274,
+                39
+              ],
+              "transforms": "[Scale [x=1.0, y=1.0, z=1.0, pivotX=0.0, pivotY=0.0, pivotZ=0.0]]"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "phase": "width-33.0",
+      "before": [
+        {
+          "name": "query",
+          "status": "Drawn",
+          "sceneBounds": [
+            185,
+            250,
+            306,
+            143
+          ],
+          "layoutBounds": [
+            0,
+            0,
+            306,
+            143
+          ],
+          "clip": [
+            0,
+            0,
+            306,
+            143
+          ],
+          "surface": "PlotSurface(306.0,143.0,1.0)",
+          "transform": "eyes4s.studio.viz.plot.PlotTransform@cee04ab",
+          "profile": "PlotHostProfile(12,12,0,0)",
+          "canvases": [
+            {
+              "width": 307,
+              "height": 144,
+              "sceneBounds": [
+                185,
+                250,
+                307,
+                144
+              ],
+              "transforms": "[Scale [x=1.0, y=1.0, z=1.0, pivotX=0.0, pivotY=0.0, pivotZ=0.0]]"
+            },
+            {
+              "width": 307,
+              "height": 144,
+              "sceneBounds": [
+                185,
+                250,
+                307,
+                144
+              ],
+              "transforms": "[Scale [x=1.0, y=1.0, z=1.0, pivotX=0.0, pivotY=0.0, pivotZ=0.0]]"
+            },
+            {
+              "width": 307,
+              "height": 144,
+              "sceneBounds": [
+                185,
+                250,
+                307,
+                144
+              ],
+              "transforms": "[Scale [x=1.0, y=1.0, z=1.0, pivotX=0.0, pivotY=0.0, pivotZ=0.0]]"
+            }
+          ]
+        },
+        {
+          "name": "query-legend",
+          "status": "Drawn",
+          "sceneBounds": [
+            185,
+            393,
+            306,
+            38
+          ],
+          "layoutBounds": [
+            0,
+            0,
+            306,
+            38
+          ],
+          "clip": [
+            0,
+            0,
+            306,
+            38
+          ],
+          "surface": "PlotSurface(306.0,38.0,1.0)",
+          "transform": "eyes4s.studio.viz.plot.PlotTransform@2dc06d4d",
+          "profile": "PlotHostProfile(13,13,0,0)",
+          "canvases": [
+            {
+              "width": 307,
+              "height": 39,
+              "sceneBounds": [
+                185,
+                393,
+                307,
+                39
+              ],
+              "transforms": "[Scale [x=1.0, y=1.0, z=1.0, pivotX=0.0, pivotY=0.0, pivotZ=0.0]]"
+            },
+            {
+              "width": 307,
+              "height": 39,
+              "sceneBounds": [
+                185,
+                393,
+                307,
+                39
+              ],
+              "transforms": "[Scale [x=1.0, y=1.0, z=1.0, pivotX=0.0, pivotY=0.0, pivotZ=0.0]]"
+            },
+            {
+              "width": 307,
+              "height": 39,
+              "sceneBounds": [
+                185,
+                393,
+                307,
+                39
+              ],
+              "transforms": "[Scale [x=1.0, y=1.0, z=1.0, pivotX=0.0, pivotY=0.0, pivotZ=0.0]]"
+            }
+          ]
+        },
+        {
+          "name": "reference",
+          "status": "Drawn",
+          "sceneBounds": [
+            492,
+            250,
+            306,
+            143
+          ],
+          "layoutBounds": [
+            0,
+            0,
+            306,
+            143
+          ],
+          "clip": [
+            0,
+            0,
+            306,
+            143
+          ],
+          "surface": "PlotSurface(306.0,143.0,1.0)",
+          "transform": "eyes4s.studio.viz.plot.PlotTransform@767c2400",
+          "profile": "PlotHostProfile(13,13,0,0)",
+          "canvases": [
+            {
+              "width": 307,
+              "height": 144,
+              "sceneBounds": [
+                492,
+                250,
+                307,
+                144
+              ],
+              "transforms": "[Scale [x=1.0, y=1.0, z=1.0, pivotX=0.0, pivotY=0.0, pivotZ=0.0]]"
+            },
+            {
+              "width": 307,
+              "height": 144,
+              "sceneBounds": [
+                492,
+                250,
+                307,
+                144
+              ],
+              "transforms": "[Scale [x=1.0, y=1.0, z=1.0, pivotX=0.0, pivotY=0.0, pivotZ=0.0]]"
+            },
+            {
+              "width": 307,
+              "height": 144,
+              "sceneBounds": [
+                492,
+                250,
+                307,
+                144
+              ],
+              "transforms": "[Scale [x=1.0, y=1.0, z=1.0, pivotX=0.0, pivotY=0.0, pivotZ=0.0]]"
+            }
+          ]
+        },
+        {
+          "name": "reference-legend",
+          "status": "Drawn",
+          "sceneBounds": [
+            492,
+            393,
+            306,
+            38
+          ],
+          "layoutBounds": [
+            0,
+            0,
+            306,
+            38
+          ],
+          "clip": [
+            0,
+            0,
+            306,
+            38
+          ],
+          "surface": "PlotSurface(306.0,38.0,1.0)",
+          "transform": "eyes4s.studio.viz.plot.PlotTransform@5390e99a",
+          "profile": "PlotHostProfile(13,13,0,0)",
+          "canvases": [
+            {
+              "width": 307,
+              "height": 39,
+              "sceneBounds": [
+                492,
+                393,
+                307,
+                39
+              ],
+              "transforms": "[Scale [x=1.0, y=1.0, z=1.0, pivotX=0.0, pivotY=0.0, pivotZ=0.0]]"
+            },
+            {
+              "width": 307,
+              "height": 39,
+              "sceneBounds": [
+                492,
+                393,
+                307,
+                39
+              ],
+              "transforms": "[Scale [x=1.0, y=1.0, z=1.0, pivotX=0.0, pivotY=0.0, pivotZ=0.0]]"
+            },
+            {
+              "width": 307,
+              "height": 39,
+              "sceneBounds": [
+                492,
+                393,
+                307,
+                39
+              ],
+              "transforms": "[Scale [x=1.0, y=1.0, z=1.0, pivotX=0.0, pivotY=0.0, pivotZ=0.0]]"
+            }
+          ]
+        }
+      ],
+      "after": [
+        {
+          "name": "query",
+          "status": "Drawn",
+          "sceneBounds": [
+            185,
+            250,
+            306,
+            143
+          ],
+          "layoutBounds": [
+            0,
+            0,
+            306,
+            143
+          ],
+          "clip": [
+            0,
+            0,
+            306,
+            143
+          ],
+          "surface": "PlotSurface(306.0,143.0,1.0)",
+          "transform": "eyes4s.studio.viz.plot.PlotTransform@cee04ab",
+          "profile": "PlotHostProfile(12,12,0,0)",
+          "canvases": [
+            {
+              "width": 307,
+              "height": 144,
+              "sceneBounds": [
+                185,
+                250,
+                307,
+                144
+              ],
+              "transforms": "[Scale [x=1.0, y=1.0, z=1.0, pivotX=0.0, pivotY=0.0, pivotZ=0.0]]"
+            },
+            {
+              "width": 307,
+              "height": 144,
+              "sceneBounds": [
+                185,
+                250,
+                307,
+                144
+              ],
+              "transforms": "[Scale [x=1.0, y=1.0, z=1.0, pivotX=0.0, pivotY=0.0, pivotZ=0.0]]"
+            },
+            {
+              "width": 307,
+              "height": 144,
+              "sceneBounds": [
+                185,
+                250,
+                307,
+                144
+              ],
+              "transforms": "[Scale [x=1.0, y=1.0, z=1.0, pivotX=0.0, pivotY=0.0, pivotZ=0.0]]"
+            }
+          ]
+        },
+        {
+          "name": "query-legend",
+          "status": "Drawn",
+          "sceneBounds": [
+            185,
+            393,
+            306,
+            38
+          ],
+          "layoutBounds": [
+            0,
+            0,
+            306,
+            38
+          ],
+          "clip": [
+            0,
+            0,
+            306,
+            38
+          ],
+          "surface": "PlotSurface(306.0,38.0,1.0)",
+          "transform": "eyes4s.studio.viz.plot.PlotTransform@2dc06d4d",
+          "profile": "PlotHostProfile(13,13,0,0)",
+          "canvases": [
+            {
+              "width": 307,
+              "height": 39,
+              "sceneBounds": [
+                185,
+                393,
+                307,
+                39
+              ],
+              "transforms": "[Scale [x=1.0, y=1.0, z=1.0, pivotX=0.0, pivotY=0.0, pivotZ=0.0]]"
+            },
+            {
+              "width": 307,
+              "height": 39,
+              "sceneBounds": [
+                185,
+                393,
+                307,
+                39
+              ],
+              "transforms": "[Scale [x=1.0, y=1.0, z=1.0, pivotX=0.0, pivotY=0.0, pivotZ=0.0]]"
+            },
+            {
+              "width": 307,
+              "height": 39,
+              "sceneBounds": [
+                185,
+                393,
+                307,
+                39
+              ],
+              "transforms": "[Scale [x=1.0, y=1.0, z=1.0, pivotX=0.0, pivotY=0.0, pivotZ=0.0]]"
+            }
+          ]
+        },
+        {
+          "name": "reference",
+          "status": "Drawn",
+          "sceneBounds": [
+            492,
+            250,
+            306,
+            143
+          ],
+          "layoutBounds": [
+            0,
+            0,
+            306,
+            143
+          ],
+          "clip": [
+            0,
+            0,
+            306,
+            143
+          ],
+          "surface": "PlotSurface(306.0,143.0,1.0)",
+          "transform": "eyes4s.studio.viz.plot.PlotTransform@767c2400",
+          "profile": "PlotHostProfile(13,13,0,0)",
+          "canvases": [
+            {
+              "width": 307,
+              "height": 144,
+              "sceneBounds": [
+                492,
+                250,
+                307,
+                144
+              ],
+              "transforms": "[Scale [x=1.0, y=1.0, z=1.0, pivotX=0.0, pivotY=0.0, pivotZ=0.0]]"
+            },
+            {
+              "width": 307,
+              "height": 144,
+              "sceneBounds": [
+                492,
+                250,
+                307,
+                144
+              ],
+              "transforms": "[Scale [x=1.0, y=1.0, z=1.0, pivotX=0.0, pivotY=0.0, pivotZ=0.0]]"
+            },
+            {
+              "width": 307,
+              "height": 144,
+              "sceneBounds": [
+                492,
+                250,
+                307,
+                144
+              ],
+              "transforms": "[Scale [x=1.0, y=1.0, z=1.0, pivotX=0.0, pivotY=0.0, pivotZ=0.0]]"
+            }
+          ]
+        },
+        {
+          "name": "reference-legend",
+          "status": "Drawn",
+          "sceneBounds": [
+            492,
+            393,
+            306,
+            38
+          ],
+          "layoutBounds": [
+            0,
+            0,
+            306,
+            38
+          ],
+          "clip": [
+            0,
+            0,
+            306,
+            38
+          ],
+          "surface": "PlotSurface(306.0,38.0,1.0)",
+          "transform": "eyes4s.studio.viz.plot.PlotTransform@5390e99a",
+          "profile": "PlotHostProfile(13,13,0,0)",
+          "canvases": [
+            {
+              "width": 307,
+              "height": 39,
+              "sceneBounds": [
+                492,
+                393,
+                307,
+                39
+              ],
+              "transforms": "[Scale [x=1.0, y=1.0, z=1.0, pivotX=0.0, pivotY=0.0, pivotZ=0.0]]"
+            },
+            {
+              "width": 307,
+              "height": 39,
+              "sceneBounds": [
+                492,
+                393,
+                307,
+                39
+              ],
+              "transforms": "[Scale [x=1.0, y=1.0, z=1.0, pivotX=0.0, pivotY=0.0, pivotZ=0.0]]"
+            },
+            {
+              "width": 307,
+              "height": 39,
+              "sceneBounds": [
+                492,
+                393,
+                307,
+                39
+              ],
+              "transforms": "[Scale [x=1.0, y=1.0, z=1.0, pivotX=0.0, pivotY=0.0, pivotZ=0.0]]"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "phase": "width-33.0",
+      "snapshotScale": 1,
+      "difference": {
+        "width": 613,
+        "height": 181,
+        "changedPixels": 0,
+        "maximumChannelDelta": 0,
+        "changedFraction": 0,
+        "accepted": true
+      }
+    },
+    {
+      "phase": "width-33.0",
+      "snapshotScale": 2,
+      "difference": {
+        "width": 1226,
+        "height": 362,
+        "changedPixels": 0,
+        "maximumChannelDelta": 0,
+        "changedFraction": 0,
+        "accepted": true
+      }
+    },
+    {
+      "phase": "collapsed-height",
+      "hosts": [
+        {
+          "name": "query",
+          "status": "Waiting",
+          "sceneBounds": [
+            185,
+            340,
+            306,
+            0
+          ],
+          "layoutBounds": [
+            0,
+            0,
+            306,
+            0
+          ],
+          "clip": [
+            0,
+            0,
+            306,
+            0
+          ],
+          "surface": "",
+          "transform": "",
+          "profile": "PlotHostProfile(12,12,0,0)",
+          "canvases": [
+            {
+              "width": 307,
+              "height": 144,
+              "sceneBounds": [
+                185,
+                340,
+                307,
+                144
+              ],
+              "transforms": "[Scale [x=1.0, y=1.0, z=1.0, pivotX=0.0, pivotY=0.0, pivotZ=0.0]]"
+            },
+            {
+              "width": 307,
+              "height": 144,
+              "sceneBounds": [
+                185,
+                340,
+                307,
+                144
+              ],
+              "transforms": "[Scale [x=1.0, y=1.0, z=1.0, pivotX=0.0, pivotY=0.0, pivotZ=0.0]]"
+            },
+            {
+              "width": 307,
+              "height": 144,
+              "sceneBounds": [
+                185,
+                340,
+                307,
+                144
+              ],
+              "transforms": "[Scale [x=1.0, y=1.0, z=1.0, pivotX=0.0, pivotY=0.0, pivotZ=0.0]]"
+            }
+          ]
+        },
+        {
+          "name": "query-legend",
+          "status": "Drawn",
+          "sceneBounds": [
+            185,
+            340,
+            306,
+            38
+          ],
+          "layoutBounds": [
+            0,
+            0,
+            306,
+            38
+          ],
+          "clip": [
+            0,
+            0,
+            306,
+            38
+          ],
+          "surface": "PlotSurface(306.0,38.0,1.0)",
+          "transform": "eyes4s.studio.viz.plot.PlotTransform@2fa7641f",
+          "profile": "PlotHostProfile(14,14,0,0)",
+          "canvases": [
+            {
+              "width": 307,
+              "height": 39,
+              "sceneBounds": [
+                185,
+                340,
+                307,
+                39
+              ],
+              "transforms": "[Scale [x=1.0, y=1.0, z=1.0, pivotX=0.0, pivotY=0.0, pivotZ=0.0]]"
+            },
+            {
+              "width": 307,
+              "height": 39,
+              "sceneBounds": [
+                185,
+                340,
+                307,
+                39
+              ],
+              "transforms": "[Scale [x=1.0, y=1.0, z=1.0, pivotX=0.0, pivotY=0.0, pivotZ=0.0]]"
+            },
+            {
+              "width": 307,
+              "height": 39,
+              "sceneBounds": [
+                185,
+                340,
+                307,
+                39
+              ],
+              "transforms": "[Scale [x=1.0, y=1.0, z=1.0, pivotX=0.0, pivotY=0.0, pivotZ=0.0]]"
+            }
+          ]
+        },
+        {
+          "name": "reference",
+          "status": "Waiting",
+          "sceneBounds": [
+            492,
+            340,
+            306,
+            0
+          ],
+          "layoutBounds": [
+            0,
+            0,
+            306,
+            0
+          ],
+          "clip": [
+            0,
+            0,
+            306,
+            0
+          ],
+          "surface": "",
+          "transform": "",
+          "profile": "PlotHostProfile(13,13,0,0)",
+          "canvases": [
+            {
+              "width": 307,
+              "height": 144,
+              "sceneBounds": [
+                492,
+                340,
+                307,
+                144
+              ],
+              "transforms": "[Scale [x=1.0, y=1.0, z=1.0, pivotX=0.0, pivotY=0.0, pivotZ=0.0]]"
+            },
+            {
+              "width": 307,
+              "height": 144,
+              "sceneBounds": [
+                492,
+                340,
+                307,
+                144
+              ],
+              "transforms": "[Scale [x=1.0, y=1.0, z=1.0, pivotX=0.0, pivotY=0.0, pivotZ=0.0]]"
+            },
+            {
+              "width": 307,
+              "height": 144,
+              "sceneBounds": [
+                492,
+                340,
+                307,
+                144
+              ],
+              "transforms": "[Scale [x=1.0, y=1.0, z=1.0, pivotX=0.0, pivotY=0.0, pivotZ=0.0]]"
+            }
+          ]
+        },
+        {
+          "name": "reference-legend",
+          "status": "Drawn",
+          "sceneBounds": [
+            492,
+            340,
+            306,
+            38
+          ],
+          "layoutBounds": [
+            0,
+            0,
+            306,
+            38
+          ],
+          "clip": [
+            0,
+            0,
+            306,
+            38
+          ],
+          "surface": "PlotSurface(306.0,38.0,1.0)",
+          "transform": "eyes4s.studio.viz.plot.PlotTransform@1a3cea3",
+          "profile": "PlotHostProfile(14,14,0,0)",
+          "canvases": [
+            {
+              "width": 307,
+              "height": 39,
+              "sceneBounds": [
+                492,
+                340,
+                307,
+                39
+              ],
+              "transforms": "[Scale [x=1.0, y=1.0, z=1.0, pivotX=0.0, pivotY=0.0, pivotZ=0.0]]"
+            },
+            {
+              "width": 307,
+              "height": 39,
+              "sceneBounds": [
+                492,
+                340,
+                307,
+                39
+              ],
+              "transforms": "[Scale [x=1.0, y=1.0, z=1.0, pivotX=0.0, pivotY=0.0, pivotZ=0.0]]"
+            },
+            {
+              "width": 307,
+              "height": 39,
+              "sceneBounds": [
+                492,
+                340,
+                307,
+                39
+              ],
+              "transforms": "[Scale [x=1.0, y=1.0, z=1.0, pivotX=0.0, pivotY=0.0, pivotZ=0.0]]"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "phase": "restored-collapsed-height",
+      "before": [
+        {
+          "name": "query",
+          "status": "Drawn",
+          "sceneBounds": [
+            185,
+            250,
+            306,
+            143
+          ],
+          "layoutBounds": [
+            0,
+            0,
+            306,
+            143
+          ],
+          "clip": [
+            0,
+            0,
+            306,
+            143
+          ],
+          "surface": "PlotSurface(306.0,143.0,1.0)",
+          "transform": "eyes4s.studio.viz.plot.PlotTransform@16e8a6b3",
+          "profile": "PlotHostProfile(13,13,0,0)",
+          "canvases": [
+            {
+              "width": 307,
+              "height": 144,
+              "sceneBounds": [
+                185,
+                250,
+                307,
+                144
+              ],
+              "transforms": "[Scale [x=1.0, y=1.0, z=1.0, pivotX=0.0, pivotY=0.0, pivotZ=0.0]]"
+            },
+            {
+              "width": 307,
+              "height": 144,
+              "sceneBounds": [
+                185,
+                250,
+                307,
+                144
+              ],
+              "transforms": "[Scale [x=1.0, y=1.0, z=1.0, pivotX=0.0, pivotY=0.0, pivotZ=0.0]]"
+            },
+            {
+              "width": 307,
+              "height": 144,
+              "sceneBounds": [
+                185,
+                250,
+                307,
+                144
+              ],
+              "transforms": "[Scale [x=1.0, y=1.0, z=1.0, pivotX=0.0, pivotY=0.0, pivotZ=0.0]]"
+            }
+          ]
+        },
+        {
+          "name": "query-legend",
+          "status": "Drawn",
+          "sceneBounds": [
+            185,
+            393,
+            306,
+            38
+          ],
+          "layoutBounds": [
+            0,
+            0,
+            306,
+            38
+          ],
+          "clip": [
+            0,
+            0,
+            306,
+            38
+          ],
+          "surface": "PlotSurface(306.0,38.0,1.0)",
+          "transform": "eyes4s.studio.viz.plot.PlotTransform@426051cd",
+          "profile": "PlotHostProfile(15,15,0,0)",
+          "canvases": [
+            {
+              "width": 307,
+              "height": 39,
+              "sceneBounds": [
+                185,
+                393,
+                307,
+                39
+              ],
+              "transforms": "[Scale [x=1.0, y=1.0, z=1.0, pivotX=0.0, pivotY=0.0, pivotZ=0.0]]"
+            },
+            {
+              "width": 307,
+              "height": 39,
+              "sceneBounds": [
+                185,
+                393,
+                307,
+                39
+              ],
+              "transforms": "[Scale [x=1.0, y=1.0, z=1.0, pivotX=0.0, pivotY=0.0, pivotZ=0.0]]"
+            },
+            {
+              "width": 307,
+              "height": 39,
+              "sceneBounds": [
+                185,
+                393,
+                307,
+                39
+              ],
+              "transforms": "[Scale [x=1.0, y=1.0, z=1.0, pivotX=0.0, pivotY=0.0, pivotZ=0.0]]"
+            }
+          ]
+        },
+        {
+          "name": "reference",
+          "status": "Drawn",
+          "sceneBounds": [
+            492,
+            250,
+            306,
+            143
+          ],
+          "layoutBounds": [
+            0,
+            0,
+            306,
+            143
+          ],
+          "clip": [
+            0,
+            0,
+            306,
+            143
+          ],
+          "surface": "PlotSurface(306.0,143.0,1.0)",
+          "transform": "eyes4s.studio.viz.plot.PlotTransform@56f35202",
+          "profile": "PlotHostProfile(14,14,0,0)",
+          "canvases": [
+            {
+              "width": 307,
+              "height": 144,
+              "sceneBounds": [
+                492,
+                250,
+                307,
+                144
+              ],
+              "transforms": "[Scale [x=1.0, y=1.0, z=1.0, pivotX=0.0, pivotY=0.0, pivotZ=0.0]]"
+            },
+            {
+              "width": 307,
+              "height": 144,
+              "sceneBounds": [
+                492,
+                250,
+                307,
+                144
+              ],
+              "transforms": "[Scale [x=1.0, y=1.0, z=1.0, pivotX=0.0, pivotY=0.0, pivotZ=0.0]]"
+            },
+            {
+              "width": 307,
+              "height": 144,
+              "sceneBounds": [
+                492,
+                250,
+                307,
+                144
+              ],
+              "transforms": "[Scale [x=1.0, y=1.0, z=1.0, pivotX=0.0, pivotY=0.0, pivotZ=0.0]]"
+            }
+          ]
+        },
+        {
+          "name": "reference-legend",
+          "status": "Drawn",
+          "sceneBounds": [
+            492,
+            393,
+            306,
+            38
+          ],
+          "layoutBounds": [
+            0,
+            0,
+            306,
+            38
+          ],
+          "clip": [
+            0,
+            0,
+            306,
+            38
+          ],
+          "surface": "PlotSurface(306.0,38.0,1.0)",
+          "transform": "eyes4s.studio.viz.plot.PlotTransform@49ba48a9",
+          "profile": "PlotHostProfile(15,15,0,0)",
+          "canvases": [
+            {
+              "width": 307,
+              "height": 39,
+              "sceneBounds": [
+                492,
+                393,
+                307,
+                39
+              ],
+              "transforms": "[Scale [x=1.0, y=1.0, z=1.0, pivotX=0.0, pivotY=0.0, pivotZ=0.0]]"
+            },
+            {
+              "width": 307,
+              "height": 39,
+              "sceneBounds": [
+                492,
+                393,
+                307,
+                39
+              ],
+              "transforms": "[Scale [x=1.0, y=1.0, z=1.0, pivotX=0.0, pivotY=0.0, pivotZ=0.0]]"
+            },
+            {
+              "width": 307,
+              "height": 39,
+              "sceneBounds": [
+                492,
+                393,
+                307,
+                39
+              ],
+              "transforms": "[Scale [x=1.0, y=1.0, z=1.0, pivotX=0.0, pivotY=0.0, pivotZ=0.0]]"
+            }
+          ]
+        }
+      ],
+      "after": [
+        {
+          "name": "query",
+          "status": "Drawn",
+          "sceneBounds": [
+            185,
+            250,
+            306,
+            143
+          ],
+          "layoutBounds": [
+            0,
+            0,
+            306,
+            143
+          ],
+          "clip": [
+            0,
+            0,
+            306,
+            143
+          ],
+          "surface": "PlotSurface(306.0,143.0,1.0)",
+          "transform": "eyes4s.studio.viz.plot.PlotTransform@16e8a6b3",
+          "profile": "PlotHostProfile(13,13,0,0)",
+          "canvases": [
+            {
+              "width": 307,
+              "height": 144,
+              "sceneBounds": [
+                185,
+                250,
+                307,
+                144
+              ],
+              "transforms": "[Scale [x=1.0, y=1.0, z=1.0, pivotX=0.0, pivotY=0.0, pivotZ=0.0]]"
+            },
+            {
+              "width": 307,
+              "height": 144,
+              "sceneBounds": [
+                185,
+                250,
+                307,
+                144
+              ],
+              "transforms": "[Scale [x=1.0, y=1.0, z=1.0, pivotX=0.0, pivotY=0.0, pivotZ=0.0]]"
+            },
+            {
+              "width": 307,
+              "height": 144,
+              "sceneBounds": [
+                185,
+                250,
+                307,
+                144
+              ],
+              "transforms": "[Scale [x=1.0, y=1.0, z=1.0, pivotX=0.0, pivotY=0.0, pivotZ=0.0]]"
+            }
+          ]
+        },
+        {
+          "name": "query-legend",
+          "status": "Drawn",
+          "sceneBounds": [
+            185,
+            393,
+            306,
+            38
+          ],
+          "layoutBounds": [
+            0,
+            0,
+            306,
+            38
+          ],
+          "clip": [
+            0,
+            0,
+            306,
+            38
+          ],
+          "surface": "PlotSurface(306.0,38.0,1.0)",
+          "transform": "eyes4s.studio.viz.plot.PlotTransform@426051cd",
+          "profile": "PlotHostProfile(15,15,0,0)",
+          "canvases": [
+            {
+              "width": 307,
+              "height": 39,
+              "sceneBounds": [
+                185,
+                393,
+                307,
+                39
+              ],
+              "transforms": "[Scale [x=1.0, y=1.0, z=1.0, pivotX=0.0, pivotY=0.0, pivotZ=0.0]]"
+            },
+            {
+              "width": 307,
+              "height": 39,
+              "sceneBounds": [
+                185,
+                393,
+                307,
+                39
+              ],
+              "transforms": "[Scale [x=1.0, y=1.0, z=1.0, pivotX=0.0, pivotY=0.0, pivotZ=0.0]]"
+            },
+            {
+              "width": 307,
+              "height": 39,
+              "sceneBounds": [
+                185,
+                393,
+                307,
+                39
+              ],
+              "transforms": "[Scale [x=1.0, y=1.0, z=1.0, pivotX=0.0, pivotY=0.0, pivotZ=0.0]]"
+            }
+          ]
+        },
+        {
+          "name": "reference",
+          "status": "Drawn",
+          "sceneBounds": [
+            492,
+            250,
+            306,
+            143
+          ],
+          "layoutBounds": [
+            0,
+            0,
+            306,
+            143
+          ],
+          "clip": [
+            0,
+            0,
+            306,
+            143
+          ],
+          "surface": "PlotSurface(306.0,143.0,1.0)",
+          "transform": "eyes4s.studio.viz.plot.PlotTransform@56f35202",
+          "profile": "PlotHostProfile(14,14,0,0)",
+          "canvases": [
+            {
+              "width": 307,
+              "height": 144,
+              "sceneBounds": [
+                492,
+                250,
+                307,
+                144
+              ],
+              "transforms": "[Scale [x=1.0, y=1.0, z=1.0, pivotX=0.0, pivotY=0.0, pivotZ=0.0]]"
+            },
+            {
+              "width": 307,
+              "height": 144,
+              "sceneBounds": [
+                492,
+                250,
+                307,
+                144
+              ],
+              "transforms": "[Scale [x=1.0, y=1.0, z=1.0, pivotX=0.0, pivotY=0.0, pivotZ=0.0]]"
+            },
+            {
+              "width": 307,
+              "height": 144,
+              "sceneBounds": [
+                492,
+                250,
+                307,
+                144
+              ],
+              "transforms": "[Scale [x=1.0, y=1.0, z=1.0, pivotX=0.0, pivotY=0.0, pivotZ=0.0]]"
+            }
+          ]
+        },
+        {
+          "name": "reference-legend",
+          "status": "Drawn",
+          "sceneBounds": [
+            492,
+            393,
+            306,
+            38
+          ],
+          "layoutBounds": [
+            0,
+            0,
+            306,
+            38
+          ],
+          "clip": [
+            0,
+            0,
+            306,
+            38
+          ],
+          "surface": "PlotSurface(306.0,38.0,1.0)",
+          "transform": "eyes4s.studio.viz.plot.PlotTransform@49ba48a9",
+          "profile": "PlotHostProfile(15,15,0,0)",
+          "canvases": [
+            {
+              "width": 307,
+              "height": 39,
+              "sceneBounds": [
+                492,
+                393,
+                307,
+                39
+              ],
+              "transforms": "[Scale [x=1.0, y=1.0, z=1.0, pivotX=0.0, pivotY=0.0, pivotZ=0.0]]"
+            },
+            {
+              "width": 307,
+              "height": 39,
+              "sceneBounds": [
+                492,
+                393,
+                307,
+                39
+              ],
+              "transforms": "[Scale [x=1.0, y=1.0, z=1.0, pivotX=0.0, pivotY=0.0, pivotZ=0.0]]"
+            },
+            {
+              "width": 307,
+              "height": 39,
+              "sceneBounds": [
+                492,
+                393,
+                307,
+                39
+              ],
+              "transforms": "[Scale [x=1.0, y=1.0, z=1.0, pivotX=0.0, pivotY=0.0, pivotZ=0.0]]"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "phase": "restored-collapsed-height",
+      "snapshotScale": 1,
+      "difference": {
+        "width": 613,
+        "height": 181,
+        "changedPixels": 0,
+        "maximumChannelDelta": 0,
+        "changedFraction": 0,
+        "accepted": true
+      }
+    },
+    {
+      "phase": "restored-collapsed-height",
+      "snapshotScale": 2,
+      "difference": {
+        "width": 1226,
+        "height": 362,
+        "changedPixels": 0,
+        "maximumChannelDelta": 0,
+        "changedFraction": 0,
+        "accepted": true
+      }
+    },
+    {
+      "phase": "restored-native-scale",
+      "before": [
+        {
+          "name": "query",
+          "status": "Drawn",
+          "sceneBounds": [
+            185,
+            250,
+            306,
+            143
+          ],
+          "layoutBounds": [
+            0,
+            0,
+            306,
+            143
+          ],
+          "clip": [
+            0,
+            0,
+            306,
+            143
+          ],
+          "surface": "PlotSurface(306.0,143.0,1.0)",
+          "transform": "eyes4s.studio.viz.plot.PlotTransform@1ab4a213",
+          "profile": "PlotHostProfile(15,15,0,0)",
+          "canvases": [
+            {
+              "width": 307,
+              "height": 144,
+              "sceneBounds": [
+                185,
+                250,
+                307,
+                144
+              ],
+              "transforms": "[Scale [x=1.0, y=1.0, z=1.0, pivotX=0.0, pivotY=0.0, pivotZ=0.0]]"
+            },
+            {
+              "width": 307,
+              "height": 144,
+              "sceneBounds": [
+                185,
+                250,
+                307,
+                144
+              ],
+              "transforms": "[Scale [x=1.0, y=1.0, z=1.0, pivotX=0.0, pivotY=0.0, pivotZ=0.0]]"
+            },
+            {
+              "width": 307,
+              "height": 144,
+              "sceneBounds": [
+                185,
+                250,
+                307,
+                144
+              ],
+              "transforms": "[Scale [x=1.0, y=1.0, z=1.0, pivotX=0.0, pivotY=0.0, pivotZ=0.0]]"
+            }
+          ]
+        },
+        {
+          "name": "query-legend",
+          "status": "Drawn",
+          "sceneBounds": [
+            185,
+            393,
+            306,
+            38
+          ],
+          "layoutBounds": [
+            0,
+            0,
+            306,
+            38
+          ],
+          "clip": [
+            0,
+            0,
+            306,
+            38
+          ],
+          "surface": "PlotSurface(306.0,38.0,1.0)",
+          "transform": "eyes4s.studio.viz.plot.PlotTransform@5a9a66b1",
+          "profile": "PlotHostProfile(17,17,0,0)",
+          "canvases": [
+            {
+              "width": 307,
+              "height": 39,
+              "sceneBounds": [
+                185,
+                393,
+                307,
+                39
+              ],
+              "transforms": "[Scale [x=1.0, y=1.0, z=1.0, pivotX=0.0, pivotY=0.0, pivotZ=0.0]]"
+            },
+            {
+              "width": 307,
+              "height": 39,
+              "sceneBounds": [
+                185,
+                393,
+                307,
+                39
+              ],
+              "transforms": "[Scale [x=1.0, y=1.0, z=1.0, pivotX=0.0, pivotY=0.0, pivotZ=0.0]]"
+            },
+            {
+              "width": 307,
+              "height": 39,
+              "sceneBounds": [
+                185,
+                393,
+                307,
+                39
+              ],
+              "transforms": "[Scale [x=1.0, y=1.0, z=1.0, pivotX=0.0, pivotY=0.0, pivotZ=0.0]]"
+            }
+          ]
+        },
+        {
+          "name": "reference",
+          "status": "Drawn",
+          "sceneBounds": [
+            492,
+            250,
+            306,
+            143
+          ],
+          "layoutBounds": [
+            0,
+            0,
+            306,
+            143
+          ],
+          "clip": [
+            0,
+            0,
+            306,
+            143
+          ],
+          "surface": "PlotSurface(306.0,143.0,1.0)",
+          "transform": "eyes4s.studio.viz.plot.PlotTransform@16b54ca2",
+          "profile": "PlotHostProfile(16,16,0,0)",
+          "canvases": [
+            {
+              "width": 307,
+              "height": 144,
+              "sceneBounds": [
+                492,
+                250,
+                307,
+                144
+              ],
+              "transforms": "[Scale [x=1.0, y=1.0, z=1.0, pivotX=0.0, pivotY=0.0, pivotZ=0.0]]"
+            },
+            {
+              "width": 307,
+              "height": 144,
+              "sceneBounds": [
+                492,
+                250,
+                307,
+                144
+              ],
+              "transforms": "[Scale [x=1.0, y=1.0, z=1.0, pivotX=0.0, pivotY=0.0, pivotZ=0.0]]"
+            },
+            {
+              "width": 307,
+              "height": 144,
+              "sceneBounds": [
+                492,
+                250,
+                307,
+                144
+              ],
+              "transforms": "[Scale [x=1.0, y=1.0, z=1.0, pivotX=0.0, pivotY=0.0, pivotZ=0.0]]"
+            }
+          ]
+        },
+        {
+          "name": "reference-legend",
+          "status": "Drawn",
+          "sceneBounds": [
+            492,
+            393,
+            306,
+            38
+          ],
+          "layoutBounds": [
+            0,
+            0,
+            306,
+            38
+          ],
+          "clip": [
+            0,
+            0,
+            306,
+            38
+          ],
+          "surface": "PlotSurface(306.0,38.0,1.0)",
+          "transform": "eyes4s.studio.viz.plot.PlotTransform@dd1b1dd",
+          "profile": "PlotHostProfile(17,17,0,0)",
+          "canvases": [
+            {
+              "width": 307,
+              "height": 39,
+              "sceneBounds": [
+                492,
+                393,
+                307,
+                39
+              ],
+              "transforms": "[Scale [x=1.0, y=1.0, z=1.0, pivotX=0.0, pivotY=0.0, pivotZ=0.0]]"
+            },
+            {
+              "width": 307,
+              "height": 39,
+              "sceneBounds": [
+                492,
+                393,
+                307,
+                39
+              ],
+              "transforms": "[Scale [x=1.0, y=1.0, z=1.0, pivotX=0.0, pivotY=0.0, pivotZ=0.0]]"
+            },
+            {
+              "width": 307,
+              "height": 39,
+              "sceneBounds": [
+                492,
+                393,
+                307,
+                39
+              ],
+              "transforms": "[Scale [x=1.0, y=1.0, z=1.0, pivotX=0.0, pivotY=0.0, pivotZ=0.0]]"
+            }
+          ]
+        }
+      ],
+      "after": [
+        {
+          "name": "query",
+          "status": "Drawn",
+          "sceneBounds": [
+            185,
+            250,
+            306,
+            143
+          ],
+          "layoutBounds": [
+            0,
+            0,
+            306,
+            143
+          ],
+          "clip": [
+            0,
+            0,
+            306,
+            143
+          ],
+          "surface": "PlotSurface(306.0,143.0,1.0)",
+          "transform": "eyes4s.studio.viz.plot.PlotTransform@1ab4a213",
+          "profile": "PlotHostProfile(15,15,0,0)",
+          "canvases": [
+            {
+              "width": 307,
+              "height": 144,
+              "sceneBounds": [
+                185,
+                250,
+                307,
+                144
+              ],
+              "transforms": "[Scale [x=1.0, y=1.0, z=1.0, pivotX=0.0, pivotY=0.0, pivotZ=0.0]]"
+            },
+            {
+              "width": 307,
+              "height": 144,
+              "sceneBounds": [
+                185,
+                250,
+                307,
+                144
+              ],
+              "transforms": "[Scale [x=1.0, y=1.0, z=1.0, pivotX=0.0, pivotY=0.0, pivotZ=0.0]]"
+            },
+            {
+              "width": 307,
+              "height": 144,
+              "sceneBounds": [
+                185,
+                250,
+                307,
+                144
+              ],
+              "transforms": "[Scale [x=1.0, y=1.0, z=1.0, pivotX=0.0, pivotY=0.0, pivotZ=0.0]]"
+            }
+          ]
+        },
+        {
+          "name": "query-legend",
+          "status": "Drawn",
+          "sceneBounds": [
+            185,
+            393,
+            306,
+            38
+          ],
+          "layoutBounds": [
+            0,
+            0,
+            306,
+            38
+          ],
+          "clip": [
+            0,
+            0,
+            306,
+            38
+          ],
+          "surface": "PlotSurface(306.0,38.0,1.0)",
+          "transform": "eyes4s.studio.viz.plot.PlotTransform@5a9a66b1",
+          "profile": "PlotHostProfile(17,17,0,0)",
+          "canvases": [
+            {
+              "width": 307,
+              "height": 39,
+              "sceneBounds": [
+                185,
+                393,
+                307,
+                39
+              ],
+              "transforms": "[Scale [x=1.0, y=1.0, z=1.0, pivotX=0.0, pivotY=0.0, pivotZ=0.0]]"
+            },
+            {
+              "width": 307,
+              "height": 39,
+              "sceneBounds": [
+                185,
+                393,
+                307,
+                39
+              ],
+              "transforms": "[Scale [x=1.0, y=1.0, z=1.0, pivotX=0.0, pivotY=0.0, pivotZ=0.0]]"
+            },
+            {
+              "width": 307,
+              "height": 39,
+              "sceneBounds": [
+                185,
+                393,
+                307,
+                39
+              ],
+              "transforms": "[Scale [x=1.0, y=1.0, z=1.0, pivotX=0.0, pivotY=0.0, pivotZ=0.0]]"
+            }
+          ]
+        },
+        {
+          "name": "reference",
+          "status": "Drawn",
+          "sceneBounds": [
+            492,
+            250,
+            306,
+            143
+          ],
+          "layoutBounds": [
+            0,
+            0,
+            306,
+            143
+          ],
+          "clip": [
+            0,
+            0,
+            306,
+            143
+          ],
+          "surface": "PlotSurface(306.0,143.0,1.0)",
+          "transform": "eyes4s.studio.viz.plot.PlotTransform@16b54ca2",
+          "profile": "PlotHostProfile(16,16,0,0)",
+          "canvases": [
+            {
+              "width": 307,
+              "height": 144,
+              "sceneBounds": [
+                492,
+                250,
+                307,
+                144
+              ],
+              "transforms": "[Scale [x=1.0, y=1.0, z=1.0, pivotX=0.0, pivotY=0.0, pivotZ=0.0]]"
+            },
+            {
+              "width": 307,
+              "height": 144,
+              "sceneBounds": [
+                492,
+                250,
+                307,
+                144
+              ],
+              "transforms": "[Scale [x=1.0, y=1.0, z=1.0, pivotX=0.0, pivotY=0.0, pivotZ=0.0]]"
+            },
+            {
+              "width": 307,
+              "height": 144,
+              "sceneBounds": [
+                492,
+                250,
+                307,
+                144
+              ],
+              "transforms": "[Scale [x=1.0, y=1.0, z=1.0, pivotX=0.0, pivotY=0.0, pivotZ=0.0]]"
+            }
+          ]
+        },
+        {
+          "name": "reference-legend",
+          "status": "Drawn",
+          "sceneBounds": [
+            492,
+            393,
+            306,
+            38
+          ],
+          "layoutBounds": [
+            0,
+            0,
+            306,
+            38
+          ],
+          "clip": [
+            0,
+            0,
+            306,
+            38
+          ],
+          "surface": "PlotSurface(306.0,38.0,1.0)",
+          "transform": "eyes4s.studio.viz.plot.PlotTransform@dd1b1dd",
+          "profile": "PlotHostProfile(17,17,0,0)",
+          "canvases": [
+            {
+              "width": 307,
+              "height": 39,
+              "sceneBounds": [
+                492,
+                393,
+                307,
+                39
+              ],
+              "transforms": "[Scale [x=1.0, y=1.0, z=1.0, pivotX=0.0, pivotY=0.0, pivotZ=0.0]]"
+            },
+            {
+              "width": 307,
+              "height": 39,
+              "sceneBounds": [
+                492,
+                393,
+                307,
+                39
+              ],
+              "transforms": "[Scale [x=1.0, y=1.0, z=1.0, pivotX=0.0, pivotY=0.0, pivotZ=0.0]]"
+            },
+            {
+              "width": 307,
+              "height": 39,
+              "sceneBounds": [
+                492,
+                393,
+                307,
+                39
+              ],
+              "transforms": "[Scale [x=1.0, y=1.0, z=1.0, pivotX=0.0, pivotY=0.0, pivotZ=0.0]]"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "phase": "restored-native-scale",
+      "snapshotScale": 1,
+      "difference": {
+        "width": 613,
+        "height": 181,
+        "changedPixels": 0,
+        "maximumChannelDelta": 0,
+        "changedFraction": 0,
+        "accepted": true
+      }
+    },
+    {
+      "phase": "restored-native-scale",
+      "snapshotScale": 2,
+      "difference": {
+        "width": 1226,
+        "height": 362,
+        "changedPixels": 0,
+        "maximumChannelDelta": 0,
+        "changedFraction": 0,
+        "accepted": true
+      }
+    }
+  ]
+}

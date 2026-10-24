@@ -1,0 +1,550 @@
+{
+  "schema": 1,
+  "candidate": "779fb4681aa218db2e57c656078774e732675dc6",
+  "tree": "7c11aa665e3517c25d030e40dea19de4a05e07b3",
+  "studioRun": 40072699064,
+  "workflowAttempt": 1,
+  "courts": [
+    {
+      "court": "linux",
+      "artifact": 12552298837,
+      "artifactName": "studio-snapshots-linux-779fb4681aa218db2e57c656078774e732675dc6",
+      "archiveSha256": "cd98fc58e40aa374da461a11e808fcab709a050ea5fe2ee83b68f85fc8a89614",
+      "matrixReceiptSha256": "187f7ed4f5a3322b6f06f319c3157f64a292dfee3489e0fe621e18e007045641",
+      "runtime": {
+        "osName": [
+          "Linux"
+        ],
+        "osArch": [
+          "amd64"
+        ],
+        "javaVersion": [
+          "25.0.4.1"
+        ],
+        "javaFxVersion": [
+          "24.0.1+4"
+        ],
+        "glassPlatform": [
+          "Monocle"
+        ],
+        "prismOrder": [
+          "sw"
+        ],
+        "logicalWidth": [
+          "1440"
+        ],
+        "logicalHeight": [
+          "900"
+        ],
+        "nativeScaleX": [
+          "1"
+        ],
+        "nativeScaleY": [
+          "1"
+        ]
+      },
+      "namedCases": [
+        {
+          "suite": "compare.ParticipantsNavigatorFxSuite",
+          "cases": [
+            "Results mounts24served participants with exact refs and separate run counts",
+            "one pane Tab stop carries the row cursor; arrows and Enter activate exact cells",
+            "changing scale clears old cells while refused reports expose their reason",
+            "Results Tab order has one Participants stop and is recorded from actual traversal"
+          ],
+          "xmlSha256": "68abe88f97f6bcfaf5c0b559dfce7ee82b50a00f56d4a52b1252cad5839d045e",
+          "notApplicable": []
+        },
+        {
+          "suite": "harness.VisualPixelsSuite",
+          "cases": [
+            "identical rasters pass and a deliberate visible changed pixel is rejected",
+            "bounded one-level rounding passes; a broad one-level change fails",
+            "a missing or differently sized baseline cannot be a match"
+          ],
+          "xmlSha256": "4253a450e70837c13675a68ab92b0d9b20a28556ed763f5043a67cf014bbaaf0",
+          "notApplicable": []
+        },
+        {
+          "suite": "shell.VisualParitySuite",
+          "cases": [
+            "t1-Data-light",
+            "t1-Data-dark",
+            "t1-Explore-light",
+            "t1-Explore-dark",
+            "t1-Analysis-light",
+            "t1-Analysis-dark",
+            "t1-Compare-light",
+            "t1-Compare-dark",
+            "t1-Figures-light",
+            "t1-Figures-dark",
+            "t2-Data-light",
+            "t2-Data-dark",
+            "t2-Explore-light",
+            "t2-Explore-dark",
+            "t2-Analysis-light",
+            "t2-Analysis-dark",
+            "t2-Compare-light",
+            "t2-Compare-dark",
+            "t2-Figures-light",
+            "t2-Figures-dark",
+            "t3-Data-light",
+            "t3-Data-dark",
+            "t3-Explore-light",
+            "t3-Explore-dark",
+            "t3-Analysis-light",
+            "t3-Analysis-dark",
+            "t3-Compare-light",
+            "t3-Compare-dark",
+            "t3-Figures-light",
+            "t3-Figures-dark"
+          ],
+          "xmlSha256": "2aaac1175cecf149d250b9a9f1cd8f42b190796a232e55f2429b7ea363eb8942",
+          "notApplicable": []
+        },
+        {
+          "suite": "shell.CanvasBoundaryFxSuite",
+          "cases": [
+            "trial pixels survive restored size and scale light",
+            "trial pixels survive restored size and scale dark"
+          ],
+          "xmlSha256": "8434f8e21cc59264f0170de56e18340d28ea941554eb2e326919a3222cd826d6",
+          "notApplicable": []
+        },
+        {
+          "suite": "shell.SmallCanvasBoundaryFxSuite",
+          "cases": [
+            "trial pixels survive restored size and scale light",
+            "trial pixels survive restored size and scale dark"
+          ],
+          "xmlSha256": "34113a232dba83e2106dc5e43ff31b762f8f02fe647db9df667cddc32e66f7b6",
+          "notApplicable": []
+        },
+        {
+          "suite": "plot.CanvasPlotHostFxSuite",
+          "cases": [
+            "the reference scene's op log equals its golden",
+            "draws the reference scene at 1x and 2x (light)",
+            "draws the reference scene at 1x and 2x (dark)",
+            "without an override the host lays out for its window's output scale",
+            "the host's accessible help is the scene's text summary, and none without one",
+            "a texture-scale change replaces the canvases and redraws without compiling",
+            "resize re-lays out the scene without changing its data geometry",
+            "compiles off the FX thread and draws on it",
+            "a scene that cannot be laid out fails with a typed error and a blank canvas",
+            "dispose detaches the host, releases the canvas and ignores later scenes",
+            "a superseded compile is not drawn; the shown frame stays until the next",
+            "a surface too large to draw fails with a typed error, not Waiting",
+            "a new scene value under the same id gets fresh renderer caches",
+            "1,000 open/close cycles retain no host, canvas or listener",
+            "the software renderer accepts the byte boundary and refuses 8192-square before allocation",
+            "feedback ends at the painted frame and leaves its guard transparent at1.0x",
+            "feedback ends at the painted frame and leaves its guard transparent at2.0x"
+          ],
+          "xmlSha256": "b84b0f4cd37896659f771abf8b3d494b12f39e23440487d2eea0b16948d8dcf1",
+          "notApplicable": []
+        },
+        {
+          "suite": "plot.NativeOutputScaleFxSuite",
+          "cases": [
+            "native output scale keeps one-device-pixel feedback sharp"
+          ],
+          "xmlSha256": "86b1122fbbc6cccb500b073119759f2d17cdf85bcb593e07edfbf14075aadfbc",
+          "notApplicable": []
+        },
+        {
+          "suite": "app/.jvm/ParticipantsNavigatorSuite",
+          "cases": [
+            "24 overall cells keep exact refs, signed means and separately labelled run accounting",
+            "activation keeps the saved reporting root and exact overall cell, distinct from a grouped selection",
+            "one cursor moves to both ends without activating; changed scale and edited spec reset it",
+            "no run, loading, refusal, missing values and absent accounting stay explicit",
+            "wrong run, reporting, scale, duplicate participant or row ref refuses the entire context",
+            "an old report reply cannot repopulate a newly shown run"
+          ],
+          "xmlSha256": "46dff1f691ed94a6cd781cbe5b3ba1eddfee468bb638bc2b9e4c509b8565c9b0"
+        },
+        {
+          "suite": "app/.jvm/QueriesNavigatorSuite",
+          "cases": [
+            "participant activation reveals its 20 query rows while retaining exact overall provenance",
+            "the count strip is FIXTURE.md's: 480 = 454 + 3 + 9 + 14, by design n/a",
+            "the completed-run by-design strip carries its served count and provenance",
+            "participants carry their contributing count and mean D; queries their D at 2\u00b0 or status",
+            "the selection opens its group; the filter narrows by participant or item",
+            "opening a query walks the trail to it, keeping the spec and the query's group",
+            "with no run, the navigator says so; while reading, it says that",
+            "the row cursor walks headers and open queries; Enter opens a query or a group",
+            "the filter is the one control inside the navigator's stop, unless it is empty",
+            "every number of the strip and the participant headers names its ref",
+            "one filter: the view-model carries it for both navigators",
+            "a query picked at another \u03c3 is still selected, and opens its group",
+            "the row cursor is announced: a header with its summary, or a query with its D",
+            "answered without a \u03c3 of participant means: the navigator says why, not 'Reading'",
+            "a participant header's mean D is at the shown \u03c3",
+            "the selection includes the Compare trail; a new run resets open, closed and cursors"
+          ],
+          "xmlSha256": "31aa14c58dd00443098b5aa5e8fe5034a95ae7f2e279deecfe5e532d52887bff"
+        },
+        {
+          "suite": "app/.js/ParticipantsNavigatorSuite",
+          "cases": [
+            "24 overall cells keep exact refs, signed means and separately labelled run accounting",
+            "activation keeps the saved reporting root and exact overall cell, distinct from a grouped selection",
+            "one cursor moves to both ends without activating; changed scale and edited spec reset it",
+            "no run, loading, refusal, missing values and absent accounting stay explicit",
+            "wrong run, reporting, scale, duplicate participant or row ref refuses the entire context",
+            "an old report reply cannot repopulate a newly shown run"
+          ],
+          "xmlSha256": "3f47eb909ea0e9e4b22d6f6e5cd8f9634cc922fe8cb265a5a1d3dab75220b435"
+        },
+        {
+          "suite": "app/.js/QueriesNavigatorSuite",
+          "cases": [
+            "participant activation reveals its 20 query rows while retaining exact overall provenance",
+            "the count strip is FIXTURE.md's: 480 = 454 + 3 + 9 + 14, by design n/a",
+            "the completed-run by-design strip carries its served count and provenance",
+            "participants carry their contributing count and mean D; queries their D at 2\u00b0 or status",
+            "the selection opens its group; the filter narrows by participant or item",
+            "opening a query walks the trail to it, keeping the spec and the query's group",
+            "with no run, the navigator says so; while reading, it says that",
+            "the row cursor walks headers and open queries; Enter opens a query or a group",
+            "the filter is the one control inside the navigator's stop, unless it is empty",
+            "every number of the strip and the participant headers names its ref",
+            "one filter: the view-model carries it for both navigators",
+            "a query picked at another \u03c3 is still selected, and opens its group",
+            "the row cursor is announced: a header with its summary, or a query with its D",
+            "answered without a \u03c3 of participant means: the navigator says why, not 'Reading'",
+            "a participant header's mean D is at the shown \u03c3",
+            "the selection includes the Compare trail; a new run resets open, closed and cursors"
+          ],
+          "xmlSha256": "d907018b40620183a5fc6d088a9c9b87a26b2e7a16f910ae8abe8fce87ad7151"
+        }
+      ],
+      "tabTranscriptSha256": "596ef2d1d4c8341681adcca4d2d0261139107c8810c8c60704ce59ba008b5418",
+      "tabStops": 24,
+      "tabScene": {
+        "logicalWidth": 1440,
+        "logicalHeight": 900
+      }
+    },
+    {
+      "court": "linux-hidpi",
+      "artifact": 12552771427,
+      "artifactName": "studio-snapshots-linux-hidpi-779fb4681aa218db2e57c656078774e732675dc6",
+      "archiveSha256": "84cf0073633bea4f3c8fcd02e8d68de7e1dbdc3f3895c55937a2f596f256c5a0",
+      "matrixReceiptSha256": "be7db0da3dff36253becb96f1ae2f7421049fcc483d36ba2d1dd9b8371c1afbf",
+      "runtime": {
+        "osName": [
+          "Linux"
+        ],
+        "osArch": [
+          "amd64"
+        ],
+        "javaVersion": [
+          "25.0.4.1"
+        ],
+        "javaFxVersion": [
+          "24.0.1+4"
+        ],
+        "glassPlatform": [
+          "platform-default"
+        ],
+        "prismOrder": [
+          "sw"
+        ],
+        "logicalWidth": [
+          "1440"
+        ],
+        "logicalHeight": [
+          "900"
+        ],
+        "nativeScaleX": [
+          "2"
+        ],
+        "nativeScaleY": [
+          "2"
+        ]
+      },
+      "namedCases": [
+        {
+          "suite": "compare.ParticipantsNavigatorFxSuite",
+          "cases": [
+            "Results mounts24served participants with exact refs and separate run counts",
+            "one pane Tab stop carries the row cursor; arrows and Enter activate exact cells",
+            "changing scale clears old cells while refused reports expose their reason",
+            "Results Tab order has one Participants stop and is recorded from actual traversal"
+          ],
+          "xmlSha256": "c508bdc7193eebc3b75103915c937d17f845cc3d80bfdc79dded961feae93e6c",
+          "notApplicable": []
+        },
+        {
+          "suite": "harness.VisualPixelsSuite",
+          "cases": [
+            "identical rasters pass and a deliberate visible changed pixel is rejected",
+            "bounded one-level rounding passes; a broad one-level change fails",
+            "a missing or differently sized baseline cannot be a match"
+          ],
+          "xmlSha256": "f46de45d3a30930376405c988a76f892a8eace98c79351b896e795efc5425a76",
+          "notApplicable": []
+        },
+        {
+          "suite": "shell.VisualParitySuite",
+          "cases": [
+            "t1-Data-light",
+            "t1-Data-dark",
+            "t1-Explore-light",
+            "t1-Explore-dark",
+            "t1-Analysis-light",
+            "t1-Analysis-dark",
+            "t1-Compare-light",
+            "t1-Compare-dark",
+            "t1-Figures-light",
+            "t1-Figures-dark",
+            "t2-Data-light",
+            "t2-Data-dark",
+            "t2-Explore-light",
+            "t2-Explore-dark",
+            "t2-Analysis-light",
+            "t2-Analysis-dark",
+            "t2-Compare-light",
+            "t2-Compare-dark",
+            "t2-Figures-light",
+            "t2-Figures-dark",
+            "t3-Data-light",
+            "t3-Data-dark",
+            "t3-Explore-light",
+            "t3-Explore-dark",
+            "t3-Analysis-light",
+            "t3-Analysis-dark",
+            "t3-Compare-light",
+            "t3-Compare-dark",
+            "t3-Figures-light",
+            "t3-Figures-dark"
+          ],
+          "xmlSha256": "2ef3becdc77f266394a29950fe0721abb4fea81f30f38b19187751f7f49b8fe0",
+          "notApplicable": []
+        },
+        {
+          "suite": "shell.CanvasBoundaryFxSuite",
+          "cases": [
+            "trial pixels survive restored size and scale light",
+            "trial pixels survive restored size and scale dark"
+          ],
+          "xmlSha256": "77d225f665bd9fdd513c9b040fa6eea853b79a8a7cc151cd797fa2b8fc7b48eb",
+          "notApplicable": []
+        },
+        {
+          "suite": "shell.SmallCanvasBoundaryFxSuite",
+          "cases": [
+            "trial pixels survive restored size and scale light",
+            "trial pixels survive restored size and scale dark"
+          ],
+          "xmlSha256": "5a79465765608a7ca51c8fb52a17accdb000bbca98bfaba52fceae451fa81dd9",
+          "notApplicable": []
+        },
+        {
+          "suite": "plot.CanvasPlotHostFxSuite",
+          "cases": [
+            "the reference scene's op log equals its golden",
+            "draws the reference scene at 1x and 2x (light)",
+            "draws the reference scene at 1x and 2x (dark)",
+            "without an override the host lays out for its window's output scale",
+            "the host's accessible help is the scene's text summary, and none without one",
+            "a texture-scale change replaces the canvases and redraws without compiling",
+            "resize re-lays out the scene without changing its data geometry",
+            "compiles off the FX thread and draws on it",
+            "a scene that cannot be laid out fails with a typed error and a blank canvas",
+            "dispose detaches the host, releases the canvas and ignores later scenes",
+            "a superseded compile is not drawn; the shown frame stays until the next",
+            "a surface too large to draw fails with a typed error, not Waiting",
+            "a new scene value under the same id gets fresh renderer caches",
+            "1,000 open/close cycles retain no host, canvas or listener",
+            "the software renderer accepts the byte boundary and refuses 8192-square before allocation",
+            "feedback ends at the painted frame and leaves its guard transparent at1.0x",
+            "feedback ends at the painted frame and leaves its guard transparent at2.0x"
+          ],
+          "xmlSha256": "56da63d5a858da60f8035acb0db823c5e1a8f2c99130484f4e47bf2019ad106a",
+          "notApplicable": []
+        },
+        {
+          "suite": "plot.NativeOutputScaleFxSuite",
+          "cases": [
+            "native output scale keeps one-device-pixel feedback sharp"
+          ],
+          "xmlSha256": "e40fe0e54e2f566c60a4fa746866e328611b99383024e1b3a492b527a288a2a6",
+          "notApplicable": []
+        }
+      ],
+      "tabTranscriptSha256": "596ef2d1d4c8341681adcca4d2d0261139107c8810c8c60704ce59ba008b5418",
+      "tabStops": 24,
+      "tabScene": {
+        "logicalWidth": 1440,
+        "logicalHeight": 900
+      }
+    },
+    {
+      "court": "macos",
+      "artifact": 12552353882,
+      "artifactName": "studio-snapshots-macos-779fb4681aa218db2e57c656078774e732675dc6",
+      "archiveSha256": "f49854cbb425b099d37d82ab4c4fdfc6d7e179fc450ccd3f6b070be334761faf",
+      "matrixReceiptSha256": "a0c6a2bacccec7474190d64414a4b4cb2fb1e75a256a3334b5dc1f5162ebb89f",
+      "runtime": {
+        "osName": [
+          "Mac OS X"
+        ],
+        "osArch": [
+          "aarch64"
+        ],
+        "javaVersion": [
+          "25.0.4.1"
+        ],
+        "javaFxVersion": [
+          "24.0.1+4"
+        ],
+        "glassPlatform": [
+          "platform-default"
+        ],
+        "prismOrder": [
+          "sw"
+        ],
+        "logicalWidth": [
+          "1024"
+        ],
+        "logicalHeight": [
+          "656"
+        ],
+        "nativeScaleX": [
+          "1"
+        ],
+        "nativeScaleY": [
+          "1"
+        ]
+      },
+      "namedCases": [
+        {
+          "suite": "compare.ParticipantsNavigatorFxSuite",
+          "cases": [
+            "Results mounts24served participants with exact refs and separate run counts",
+            "one pane Tab stop carries the row cursor; arrows and Enter activate exact cells",
+            "changing scale clears old cells while refused reports expose their reason",
+            "Results Tab order has one Participants stop and is recorded from actual traversal"
+          ],
+          "xmlSha256": "ba459f8c781fb64698878ccc03bf997c5a4a520d0568958b5917fb047a04da1b",
+          "notApplicable": []
+        },
+        {
+          "suite": "harness.VisualPixelsSuite",
+          "cases": [
+            "identical rasters pass and a deliberate visible changed pixel is rejected",
+            "bounded one-level rounding passes; a broad one-level change fails",
+            "a missing or differently sized baseline cannot be a match"
+          ],
+          "xmlSha256": "6050236afa9436d61b195127a99398a1bbf82a850412e9670e11f5718388a308",
+          "notApplicable": []
+        },
+        {
+          "suite": "shell.VisualParitySuite",
+          "cases": [
+            "t1-Data-light",
+            "t1-Data-dark",
+            "t1-Explore-light",
+            "t1-Explore-dark",
+            "t1-Analysis-light",
+            "t1-Analysis-dark",
+            "t1-Compare-light",
+            "t1-Compare-dark",
+            "t1-Figures-light",
+            "t1-Figures-dark",
+            "t2-Data-light",
+            "t2-Data-dark",
+            "t2-Explore-light",
+            "t2-Explore-dark",
+            "t2-Analysis-light",
+            "t2-Analysis-dark",
+            "t2-Compare-light",
+            "t2-Compare-dark",
+            "t2-Figures-light",
+            "t2-Figures-dark",
+            "t3-Data-light",
+            "t3-Data-dark",
+            "t3-Explore-light",
+            "t3-Explore-dark",
+            "t3-Analysis-light",
+            "t3-Analysis-dark",
+            "t3-Compare-light",
+            "t3-Compare-dark",
+            "t3-Figures-light",
+            "t3-Figures-dark"
+          ],
+          "xmlSha256": "e74fc78edcf897c2daf38b0a7f2432db869584b6ffa68609af6b708363db777e",
+          "notApplicable": []
+        },
+        {
+          "suite": "shell.CanvasBoundaryFxSuite",
+          "cases": [
+            "trial pixels survive restored size and scale light",
+            "trial pixels survive restored size and scale dark"
+          ],
+          "xmlSha256": "5090f5968ed23fa8ffd6d636de59ec386193a1ecbbbbd45f104c953b96512078",
+          "notApplicable": []
+        },
+        {
+          "suite": "shell.SmallCanvasBoundaryFxSuite",
+          "cases": [
+            "trial pixels survive restored size and scale light",
+            "trial pixels survive restored size and scale dark"
+          ],
+          "xmlSha256": "05f62f9efacb61e2cd90db0ce63a498597cbbef4f44ca5d213e238ce81f4f9ae",
+          "notApplicable": []
+        },
+        {
+          "suite": "plot.CanvasPlotHostFxSuite",
+          "cases": [
+            "the reference scene's op log equals its golden",
+            "draws the reference scene at 1x and 2x (light)",
+            "draws the reference scene at 1x and 2x (dark)",
+            "without an override the host lays out for its window's output scale",
+            "the host's accessible help is the scene's text summary, and none without one",
+            "a texture-scale change replaces the canvases and redraws without compiling",
+            "resize re-lays out the scene without changing its data geometry",
+            "compiles off the FX thread and draws on it",
+            "a scene that cannot be laid out fails with a typed error and a blank canvas",
+            "dispose detaches the host, releases the canvas and ignores later scenes",
+            "a superseded compile is not drawn; the shown frame stays until the next",
+            "a surface too large to draw fails with a typed error, not Waiting",
+            "a new scene value under the same id gets fresh renderer caches",
+            "1,000 open/close cycles retain no host, canvas or listener",
+            "the software renderer accepts the byte boundary and refuses 8192-square before allocation",
+            "feedback ends at the painted frame and leaves its guard transparent at1.0x",
+            "feedback ends at the painted frame and leaves its guard transparent at2.0x"
+          ],
+          "xmlSha256": "74ca3f3bae70c0b9f0abba2cee2de34a6d99bcd071a7b2863880982e70657d1c",
+          "notApplicable": [
+            "a surface too large to draw fails with a typed error, not Waiting"
+          ]
+        },
+        {
+          "suite": "plot.NativeOutputScaleFxSuite",
+          "cases": [
+            "native output scale keeps one-device-pixel feedback sharp"
+          ],
+          "xmlSha256": "36ea6bf38045e9148145cae2b689408074890b13af51b07b4b4b97337427b221",
+          "notApplicable": []
+        }
+      ],
+      "tabTranscriptSha256": "4635e0f0f6ad187fb6473f558b6aee605bd4a2092f0bf42f492c10d7fd9d88b0",
+      "tabStops": 24,
+      "tabScene": {
+        "logicalWidth": 1024,
+        "logicalHeight": 656
+      }
+    }
+  ],
+  "limits": [
+    "Linux Monocle1x owns pixel goldens;2x PNGs are snapshot transforms.",
+    "macOS and nativeGTK2 matrix receipts are functional/repeat only.",
+    "GTK2 native analytic raster acceptance is independently verified.",
+    "No private-data G2, physical macOS Retina or VoiceOver qualification."
+  ]
+}

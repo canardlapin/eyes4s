@@ -1,0 +1,72 @@
+{
+  "candidate": "42369cf506fceaf4b6fec079fa28f36d6d94fcbe",
+  "tree": "b8f8e6247e513946e8febeb6e7c661e64cc5a330",
+  "canonicalGate": "passed",
+  "studioGate": "passed",
+  "studioReports": [
+    {
+      "module": "core",
+      "platform": ".jvm",
+      "cases": 1120,
+      "passed": 1120,
+      "skipped": []
+    },
+    {
+      "module": "core",
+      "platform": ".js",
+      "cases": 1027,
+      "passed": 1027,
+      "skipped": []
+    },
+    {
+      "module": "app",
+      "platform": ".jvm",
+      "cases": 797,
+      "passed": 797,
+      "skipped": []
+    },
+    {
+      "module": "app",
+      "platform": ".js",
+      "cases": 797,
+      "passed": 797,
+      "skipped": []
+    },
+    {
+      "module": "viz",
+      "platform": ".jvm",
+      "cases": 318,
+      "passed": 318,
+      "skipped": []
+    },
+    {
+      "module": "viz",
+      "platform": ".js",
+      "cases": 318,
+      "passed": 318,
+      "skipped": []
+    },
+    {
+      "module": "desktop",
+      "platform": "desktop",
+      "cases": 850,
+      "passed": 849,
+      "skipped": [
+        {
+          "suite": "TEST-eyes4s.studio.desktop.journey.PrivateDensityFxSuite",
+          "name": ""
+        }
+      ]
+    }
+  ],
+  "apiAudit": {
+    "coveredRuntimeEntries": 3984,
+    "uncoveredEntries": 0,
+    "abstractions": 691,
+    "explicitJvmOnlyDeclarations": 34
+  },
+  "documentation": "passed all platforms and isolated consumer; no unexplained gaps",
+  "mima": "tasks completed; previous artifact sets empty, so no binary comparison was performed",
+  "linuxGolden": "attempt1 failed one2x caption boundary comparison; one controlled identical-source repeat pending",
+  "landed": false
+}

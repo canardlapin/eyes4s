@@ -1,0 +1,19 @@
+{
+  "browser": "131.0.6778.33",
+  "reports": [
+    {
+      "width": 1440,
+      "scrollWidth": 1440,
+      "states": 0,
+      "images": 4,
+      "broken": []
+    },
+    {
+      "width": 414,
+      "scrollWidth": 414,
+      "states": 0,
+      "images": 4,
+      "broken": []
+    }
+  ]
+}

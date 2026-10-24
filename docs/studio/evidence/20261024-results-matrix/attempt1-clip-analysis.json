@@ -1,0 +1,109 @@
+{
+  "candidate": "42369cf506fceaf4b6fec079fa28f36d6d94fcbe",
+  "run": 40060539127,
+  "attempt": 1,
+  "artifact": 12548330838,
+  "bootstrapArtifact": 12546832093,
+  "comparedSnapshots": 60,
+  "exactCrossRun": 56,
+  "acceptedOneLevelCrossRun": 3,
+  "rejectedCrossRun": 1,
+  "exactWithinRunRepeats": 60,
+  "runtimePropertiesMatchBootstrap": true,
+  "rejectedDifference": {
+    "state": "t2-Compare-light",
+    "scale": 2,
+    "changedPixels": 64,
+    "maximumChannelDelta": 34,
+    "pixelsAboveOneLevel": 62,
+    "aboveOneLevelBounds": [
+      1401,
+      1077,
+      2038,
+      1077
+    ]
+  },
+  "interpretation": "Differences are confined to one caption boundary row; cause not established. One controlled identical-source repeat was requested. No baseline promotion or tolerance change.",
+  "nonexact": [
+    {
+      "state": "t2-Compare-light",
+      "image": "light-2x.png",
+      "comparison": {
+        "width": 2880,
+        "height": 1800,
+        "changedPixels": 64,
+        "maximumChannelDelta": 34,
+        "changedFraction": 1.2345679012345678e-05,
+        "accepted": false
+      },
+      "repeat": {
+        "width": 2880,
+        "height": 1800,
+        "changedPixels": 0,
+        "maximumChannelDelta": 0,
+        "changedFraction": 0,
+        "accepted": true
+      }
+    },
+    {
+      "state": "t2-Explore-dark",
+      "image": "dark-1x.png",
+      "comparison": {
+        "width": 1440,
+        "height": 900,
+        "changedPixels": 348,
+        "maximumChannelDelta": 1,
+        "changedFraction": 0.0002685185185185185,
+        "accepted": true
+      },
+      "repeat": {
+        "width": 1440,
+        "height": 900,
+        "changedPixels": 0,
+        "maximumChannelDelta": 0,
+        "changedFraction": 0,
+        "accepted": true
+      }
+    },
+    {
+      "state": "t3-Compare-dark",
+      "image": "dark-1x.png",
+      "comparison": {
+        "width": 1440,
+        "height": 900,
+        "changedPixels": 117,
+        "maximumChannelDelta": 1,
+        "changedFraction": 9.027777777777777e-05,
+        "accepted": true
+      },
+      "repeat": {
+        "width": 1440,
+        "height": 900,
+        "changedPixels": 0,
+        "maximumChannelDelta": 0,
+        "changedFraction": 0,
+        "accepted": true
+      }
+    },
+    {
+      "state": "t3-Explore-dark",
+      "image": "dark-1x.png",
+      "comparison": {
+        "width": 1440,
+        "height": 900,
+        "changedPixels": 94,
+        "maximumChannelDelta": 1,
+        "changedFraction": 7.253086419753086e-05,
+        "accepted": true
+      },
+      "repeat": {
+        "width": 1440,
+        "height": 900,
+        "changedPixels": 0,
+        "maximumChannelDelta": 0,
+        "changedFraction": 0,
+        "accepted": true
+      }
+    }
+  ]
+}

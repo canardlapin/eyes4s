@@ -1,0 +1,54 @@
+{
+  "schema": 1,
+  "reviewer": "codex-results-matrix-20261024",
+  "reviewDate": "2026-10-24",
+  "candidate": "779fb4681aa218db2e57c656078774e732675dc6",
+  "tree": "7c11aa665e3517c25d030e40dea19de4a05e07b3",
+  "board": {
+    "path": "docs/studio/design/Results.dc.html",
+    "sha256": "2bd61274ff39744203c178e34c760c7f9d80662ee061cc8b9a1fa82c4b816bf1",
+    "bytes": 51996
+  },
+  "boardReference": {
+    "path": "docs/studio/design/reference/Results-1x.png",
+    "sha256": "318c9d86d4ce9b286a45e9191216565998abcf0ddfc5051def80603ed1a95814",
+    "bytes": 392752
+  },
+  "captures": [
+    {
+      "path": "results/t3-Compare-dark-1x.png",
+      "sha256": "c8f3ed2c6079991b80cf4c5eb82a7a0f8bf922bd4343d4b675d40c37ba1def2f"
+    },
+    {
+      "path": "results/t3-Compare-light-1x.png",
+      "sha256": "a7b7998f34bdcad2fc2d9e6c624bdc8aa0df3f863edf3c42db6eab7e79052dd3"
+    }
+  ],
+  "findings": [
+    {
+      "item": "served values",
+      "status": "matched",
+      "evidence": "All 24 overall Difference refs and backend order; P05 +0.35 (n 17), P17 +0.38; grouped plot means remain separate. Mean n and contributing/requested/failed run-level query accounting are separately named."
+    },
+    {
+      "item": "activation and context",
+      "status": "matched",
+      "evidence": "Actual pointer and End/Enter open exact overall refs and 20 queries for selected participant; P17/P24 precedence tested; explicit collapse preserved."
+    },
+    {
+      "item": "keyboard and selection",
+      "status": "matched",
+      "evidence": "One composite Participants stop in full 24-stop actual Tab cycle; arrow/Home/End row cursor; keyboard-only ring; selected token fill and Mono 500 weight."
+    },
+    {
+      "item": "row presentation",
+      "status": "recorded deviation",
+      "reason": "Two-line rows and scrolling expose each mean own n and separately named run-level query counts. Board illustrates a compact table without per-mean n; actual values/provenance and selection/activation behavior are preserved. At rest the selected participant can be below the fold while the cursor homes on the first row."
+    },
+    {
+      "item": "generic model and minimum window",
+      "status": "open follow-ups",
+      "reason": "Native traversal is captured; generic Results focus model remains separate.1024x656 is functional but visually crowded, and further shrink can return the named panel-extent refusal. Neither is claimed complete."
+    }
+  ]
+}

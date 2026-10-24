@@ -1,0 +1,72 @@
+{
+  "candidate": "779fb4681aa218db2e57c656078774e732675dc6",
+  "tree": "7c11aa665e3517c25d030e40dea19de4a05e07b3",
+  "canonicalGate": "passed",
+  "studioGate": "passed",
+  "studioReports": [
+    {
+      "module": "core",
+      "platform": ".jvm",
+      "cases": 1120,
+      "passed": 1120,
+      "skipped": []
+    },
+    {
+      "module": "core",
+      "platform": ".js",
+      "cases": 1027,
+      "passed": 1027,
+      "skipped": []
+    },
+    {
+      "module": "app",
+      "platform": ".jvm",
+      "cases": 797,
+      "passed": 797,
+      "skipped": []
+    },
+    {
+      "module": "app",
+      "platform": ".js",
+      "cases": 797,
+      "passed": 797,
+      "skipped": []
+    },
+    {
+      "module": "viz",
+      "platform": ".jvm",
+      "cases": 319,
+      "passed": 319,
+      "skipped": []
+    },
+    {
+      "module": "viz",
+      "platform": ".js",
+      "cases": 319,
+      "passed": 319,
+      "skipped": []
+    },
+    {
+      "module": "desktop",
+      "platform": "desktop",
+      "cases": 856,
+      "passed": 855,
+      "skipped": [
+        {
+          "suite": "TEST-eyes4s.studio.desktop.journey.PrivateDensityFxSuite",
+          "name": ""
+        }
+      ]
+    }
+  ],
+  "studioPassed": 5234,
+  "apiAudit": {
+    "coveredRuntimeEntries": 3984,
+    "uncoveredEntries": 0,
+    "abstractions": 691,
+    "explicitJvmOnlyDeclarations": 34
+  },
+  "documentation": "passed all platforms and isolated consumers; no unexplained gaps",
+  "mima": "tasks completed; previous artifact sets empty, so no binary comparison was performed",
+  "linuxGolden": "verified independently in hosted-review.json; local Mac matrix is functional/repeat only"
+}

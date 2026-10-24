@@ -1,0 +1,17 @@
+{
+  "candidate": "6bf0b7d9ed3df9a0a30cc87dc2f1243e4604edd9",
+  "tree": "5315000e7468fbaff226051db85179293fc7b46a",
+  "canonicalGate": "passed hygiene, strict compile, full API audit, testAll/boundaries, packaged consumer",
+  "apiRuntimeEntries": 3984,
+  "apiGaps": 0,
+  "localStudio": "stopped immediately after canonical gate; superseded by regression correction",
+  "hostedMac": {
+    "artifact": 12550719128,
+    "archiveSha256": "fd656c969e431c43b956bbb4b4c5ed155d6121b3b4338307171a252c5fece711",
+    "matrix": "all30cases passed with no skips",
+    "navigator": "all4cases passed",
+    "boundaryRegression": "both themes failed waiting for Drawn during intermediate resize at1024x656; no image comparison failed",
+    "job": 120802131308
+  },
+  "landed": false
+}

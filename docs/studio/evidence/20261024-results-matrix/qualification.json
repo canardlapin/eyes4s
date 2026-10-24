@@ -1,0 +1,182 @@
+{
+  "schema": 1,
+  "status": "qualified",
+  "candidate": "779fb4681aa218db2e57c656078774e732675dc6",
+  "tree": "7c11aa665e3517c25d030e40dea19de4a05e07b3",
+  "gateOwner": "codex-results-matrix-20261024",
+  "sourceFingerprint": "f874fc25ff56ed4fd5b31d6e4c1a207994302ca91dca9f2843df59a2fe2ad27b",
+  "jdk": "registered Temurin25.0.4.1; GITHUB_ACTIONS=true throughout canonical and Studio gates",
+  "canonical": {
+    "status": "passed",
+    "steps": {
+      "hygiene": {
+        "path": "target/landing-gate/hygiene.log",
+        "sha256": "abaf1a1b3b561591edb0c95826e2eb427dd5b3e0b9473165beac42759e6c1278",
+        "bytes": 6478
+      },
+      "werror": {
+        "path": "target/landing-gate/werror.log",
+        "sha256": "f5dba89b81bc46657aa8dcf5831212a81065074cc0d2f07c7cef875db8cf116c",
+        "bytes": 8653
+      },
+      "audit": {
+        "path": "target/landing-gate/audit.log",
+        "sha256": "d5e069d79bd0bd2842710d147d8cf5fe5cd81974b42380609ed35fc2f39e9e90",
+        "bytes": 381353
+      },
+      "tests": {
+        "path": "target/landing-gate/tests.log",
+        "sha256": "07383bf37a29e0816630b1991a340a253cb634f7d5bf2600777ff59044ef0b5d",
+        "bytes": 193377
+      },
+      "consumer": {
+        "path": "target/landing-gate/consumer.log",
+        "sha256": "197b3e133586a7757d52fb4c7aecb5c6668411af2e33df9ffc208a9dd9afb767",
+        "bytes": 174
+      }
+    },
+    "driver": {
+      "path": "eyes4s-results-release-gate.log",
+      "sha256": "73d8b1a56c97f61142e3943674e63909f5555b0621a7b862356a1e368a0814d1",
+      "bytes": 773
+    },
+    "runtimeEntries": 3984,
+    "abstractions": 691,
+    "explicitJvmOnly": 34,
+    "uncovered": 0
+  },
+  "studio": [
+    {
+      "module": "core",
+      "platform": ".jvm",
+      "cases": 1120,
+      "passed": 1120,
+      "skipped": []
+    },
+    {
+      "module": "core",
+      "platform": ".js",
+      "cases": 1027,
+      "passed": 1027,
+      "skipped": []
+    },
+    {
+      "module": "app",
+      "platform": ".jvm",
+      "cases": 797,
+      "passed": 797,
+      "skipped": []
+    },
+    {
+      "module": "app",
+      "platform": ".js",
+      "cases": 797,
+      "passed": 797,
+      "skipped": []
+    },
+    {
+      "module": "viz",
+      "platform": ".jvm",
+      "cases": 319,
+      "passed": 319,
+      "skipped": []
+    },
+    {
+      "module": "viz",
+      "platform": ".js",
+      "cases": 319,
+      "passed": 319,
+      "skipped": []
+    },
+    {
+      "module": "desktop",
+      "platform": "desktop",
+      "cases": 856,
+      "passed": 855,
+      "skipped": [
+        {
+          "suite": "TEST-eyes4s.studio.desktop.journey.PrivateDensityFxSuite",
+          "name": ""
+        }
+      ]
+    }
+  ],
+  "studioPassed": 5234,
+  "studioStyleCheck": "passed",
+  "studioBoundaries": "passed",
+  "pythonVerifierTests": {
+    "visualParity": 10,
+    "e2e": 5
+  },
+  "e2eScenarios": 24,
+  "docs": "Both artifact consumers,73 classified pages,6 verbatim external fences,24 linked programs; no unexplained gaps.",
+  "mima": "Previous artifact sets empty; no binary comparison performed.",
+  "hostedRun": 40072699064,
+  "hostedReview": "hosted-review.json",
+  "matrix": {
+    "statesPerCourt": 30,
+    "capturesPerCourt": 60,
+    "maximumChannelDelta": 1,
+    "maximumChangedFraction": 0.001,
+    "linuxExactComparisons": 55,
+    "linuxExactImmediateRepeats": 60,
+    "courts": {
+      "linux": "strict Linux Monocle native 1x pixel goldens",
+      "gtk": "native GTK2 functional/repeat plus independent analytic raster acceptance",
+      "mac": "native Mac functional/repeat; actual 1024x656 scene"
+    }
+  },
+  "apiOutputs": [
+    {
+      "path": "tools/api-audit/inventory.json",
+      "sha256": "782b484408deec90f49009f51afc30959d8327f358b62850a5b64538d56dda6c",
+      "bytes": 5506944
+    },
+    {
+      "path": "tools/api-audit/evidence.json",
+      "sha256": "ab63fc585a9f360c9a2ba8f0915ae87dd83be758513a06d0366d2d0fba62a2b0",
+      "bytes": 1914891
+    },
+    {
+      "path": "tools/api-audit/inventory-provenance.json",
+      "sha256": "c4003c29322f96aa0961e83b2e67fb8a04e0173df76ea9cca9e8525e737c75c8",
+      "bytes": 217
+    }
+  ],
+  "negativeEvidence": [
+    "attempt1/",
+    "attempt2/",
+    "canvas-correction/guard-removed-negative.log",
+    "canvas-correction/clipping-removed-negative.log",
+    "canvas-correction/expanded-guard-removed-negative.log",
+    "history/6bf0b7d9/"
+  ],
+  "remaining": {
+    "smallWindow": "bd-01M5P3EJ0NC4PXQH0CKQY4WHV2",
+    "resultsFocusModel": "bd-01M5NWGK8E9SW3JRKJ69QHMG9B",
+    "privateG2": "unchanged; real-study provenance/admission remains separate",
+    "physicalMacRetinaVoiceOver": "not qualified by transformed2x or headless/native runner evidence"
+  },
+  "scope": "Completes served Participants navigator and full t1/t2/t3 light/dark perspective regression matrix, alongside the previously signed semantic board reviews. Recorded deviations remain explicit; this does not claim pixel identity with browser boards.",
+  "postRecord": {
+    "status": "passed",
+    "checks": [
+      "strict rootJVM/rootJS test compilation",
+      "all library and Studio boundaries",
+      "API inventory/evidence consistency"
+    ],
+    "log": "post-record-check.log",
+    "sha256": "28af41c447deecb9a2b5d9f11389881f2c1ac0d03328c18b3d8e3922f481dc82",
+    "inputFingerprintUnchanged": true
+  },
+  "browserReview": {
+    "path": "browser-review.json",
+    "sha256": "f8782cde021ace75fb1954815783ad91d963521cecc9b0d6213d000c0c38ca48",
+    "widths": [
+      1440,
+      414
+    ],
+    "brokenImages": 0,
+    "horizontalOverflow": false
+  }
+}

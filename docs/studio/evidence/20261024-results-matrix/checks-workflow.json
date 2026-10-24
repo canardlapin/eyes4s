@@ -1,0 +1,773 @@
+{
+  "conclusion": "success",
+  "databaseId": 40072699066,
+  "headSha": "779fb4681aa218db2e57c656078774e732675dc6",
+  "jobs": [
+    {
+      "completedAt": "2026-10-24T07:16:06Z",
+      "conclusion": "success",
+      "databaseId": 120809372660,
+      "name": "Test (ubuntu-22.04, 3, temurin@17, rootJS)",
+      "startedAt": "2026-10-24T07:04:27Z",
+      "status": "completed",
+      "steps": [
+        {
+          "completedAt": "2026-10-24T07:04:32Z",
+          "conclusion": "success",
+          "name": "Set up job",
+          "number": 1,
+          "startedAt": "2026-10-24T07:04:28Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-10-24T07:04:37Z",
+          "conclusion": "success",
+          "name": "Checkout current branch (full)",
+          "number": 2,
+          "startedAt": "2026-10-24T07:04:32Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-10-24T07:04:45Z",
+          "conclusion": "success",
+          "name": "Setup sbt",
+          "number": 3,
+          "startedAt": "2026-10-24T07:04:37Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-10-24T07:04:46Z",
+          "conclusion": "success",
+          "name": "Setup Java (temurin@17)",
+          "number": 4,
+          "startedAt": "2026-10-24T07:04:45Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-10-24T07:05:47Z",
+          "conclusion": "success",
+          "name": "sbt update",
+          "number": 5,
+          "startedAt": "2026-10-24T07:04:46Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-10-24T07:05:47Z",
+          "conclusion": "skipped",
+          "name": "Setup Java (temurin@21)",
+          "number": 6,
+          "startedAt": "2026-10-24T07:05:47Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-10-24T07:05:47Z",
+          "conclusion": "skipped",
+          "name": "sbt update",
+          "number": 7,
+          "startedAt": "2026-10-24T07:05:47Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-10-24T07:05:47Z",
+          "conclusion": "skipped",
+          "name": "Prepare the compiler API inventory for diagnostic coverage",
+          "number": 8,
+          "startedAt": "2026-10-24T07:05:47Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-10-24T07:05:57Z",
+          "conclusion": "success",
+          "name": "Check that workflows are up to date",
+          "number": 9,
+          "startedAt": "2026-10-24T07:05:47Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-10-24T07:06:31Z",
+          "conclusion": "success",
+          "name": "Check headers and formatting",
+          "number": 10,
+          "startedAt": "2026-10-24T07:05:57Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-10-24T07:10:09Z",
+          "conclusion": "success",
+          "name": "scalaJSLink",
+          "number": 11,
+          "startedAt": "2026-10-24T07:06:31Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-10-24T07:14:16Z",
+          "conclusion": "success",
+          "name": "Test",
+          "number": 12,
+          "startedAt": "2026-10-24T07:10:09Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-10-24T07:14:33Z",
+          "conclusion": "success",
+          "name": "Check binary compatibility",
+          "number": 13,
+          "startedAt": "2026-10-24T07:14:16Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-10-24T07:15:23Z",
+          "conclusion": "success",
+          "name": "Generate API documentation",
+          "number": 14,
+          "startedAt": "2026-10-24T07:14:33Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-10-24T07:15:39Z",
+          "conclusion": "success",
+          "name": "Compile all modules",
+          "number": 15,
+          "startedAt": "2026-10-24T07:15:23Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-10-24T07:15:39Z",
+          "conclusion": "skipped",
+          "name": "Run published law suites",
+          "number": 16,
+          "startedAt": "2026-10-24T07:15:39Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-10-24T07:15:58Z",
+          "conclusion": "success",
+          "name": "Check module and kernel boundaries",
+          "number": 17,
+          "startedAt": "2026-10-24T07:15:39Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-10-24T07:15:58Z",
+          "conclusion": "skipped",
+          "name": "Compile examples and build the public guide",
+          "number": 18,
+          "startedAt": "2026-10-24T07:15:58Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-10-24T07:15:58Z",
+          "conclusion": "skipped",
+          "name": "Check public documentation coverage (JVM evidence)",
+          "number": 19,
+          "startedAt": "2026-10-24T07:15:58Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-10-24T07:15:58Z",
+          "conclusion": "success",
+          "name": "Check public documentation coverage (Scala.js evidence)",
+          "number": 20,
+          "startedAt": "2026-10-24T07:15:58Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-10-24T07:15:58Z",
+          "conclusion": "skipped",
+          "name": "Run EyeLink performance smoke court",
+          "number": 21,
+          "startedAt": "2026-10-24T07:15:58Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-10-24T07:15:58Z",
+          "conclusion": "skipped",
+          "name": "Run execution responsiveness smoke profile",
+          "number": 22,
+          "startedAt": "2026-10-24T07:15:58Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-10-24T07:16:00Z",
+          "conclusion": "success",
+          "name": "Post Setup Java (temurin@17)",
+          "number": 42,
+          "startedAt": "2026-10-24T07:15:58Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-10-24T07:16:03Z",
+          "conclusion": "success",
+          "name": "Post Setup sbt",
+          "number": 43,
+          "startedAt": "2026-10-24T07:16:00Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-10-24T07:16:04Z",
+          "conclusion": "success",
+          "name": "Post Checkout current branch (full)",
+          "number": 44,
+          "startedAt": "2026-10-24T07:16:03Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-10-24T07:16:04Z",
+          "conclusion": "success",
+          "name": "Complete job",
+          "number": 45,
+          "startedAt": "2026-10-24T07:16:04Z",
+          "status": "completed"
+        }
+      ],
+      "url": "https://github.com/canardlapin/eyes4s/actions/runs/40072699066/job/120809372660"
+    },
+    {
+      "completedAt": "2026-10-24T07:25:25Z",
+      "conclusion": "success",
+      "databaseId": 120809372776,
+      "name": "Test (ubuntu-22.04, 3, temurin@17, rootJVM)",
+      "startedAt": "2026-10-24T07:04:27Z",
+      "status": "completed",
+      "steps": [
+        {
+          "completedAt": "2026-10-24T07:04:32Z",
+          "conclusion": "success",
+          "name": "Set up job",
+          "number": 1,
+          "startedAt": "2026-10-24T07:04:28Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-10-24T07:04:38Z",
+          "conclusion": "success",
+          "name": "Checkout current branch (full)",
+          "number": 2,
+          "startedAt": "2026-10-24T07:04:32Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-10-24T07:04:46Z",
+          "conclusion": "success",
+          "name": "Setup sbt",
+          "number": 3,
+          "startedAt": "2026-10-24T07:04:38Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-10-24T07:04:47Z",
+          "conclusion": "success",
+          "name": "Setup Java (temurin@17)",
+          "number": 4,
+          "startedAt": "2026-10-24T07:04:46Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-10-24T07:06:09Z",
+          "conclusion": "success",
+          "name": "sbt update",
+          "number": 5,
+          "startedAt": "2026-10-24T07:04:47Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-10-24T07:06:09Z",
+          "conclusion": "skipped",
+          "name": "Setup Java (temurin@21)",
+          "number": 6,
+          "startedAt": "2026-10-24T07:06:09Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-10-24T07:06:09Z",
+          "conclusion": "skipped",
+          "name": "sbt update",
+          "number": 7,
+          "startedAt": "2026-10-24T07:06:09Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-10-24T07:10:32Z",
+          "conclusion": "success",
+          "name": "Prepare the compiler API inventory for diagnostic coverage",
+          "number": 8,
+          "startedAt": "2026-10-24T07:06:09Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-10-24T07:10:46Z",
+          "conclusion": "success",
+          "name": "Check that workflows are up to date",
+          "number": 9,
+          "startedAt": "2026-10-24T07:10:32Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-10-24T07:11:32Z",
+          "conclusion": "success",
+          "name": "Check headers and formatting",
+          "number": 10,
+          "startedAt": "2026-10-24T07:10:46Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-10-24T07:11:32Z",
+          "conclusion": "skipped",
+          "name": "scalaJSLink",
+          "number": 11,
+          "startedAt": "2026-10-24T07:11:32Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-10-24T07:16:58Z",
+          "conclusion": "success",
+          "name": "Test",
+          "number": 12,
+          "startedAt": "2026-10-24T07:11:32Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-10-24T07:17:18Z",
+          "conclusion": "success",
+          "name": "Check binary compatibility",
+          "number": 13,
+          "startedAt": "2026-10-24T07:16:58Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-10-24T07:18:24Z",
+          "conclusion": "success",
+          "name": "Generate API documentation",
+          "number": 14,
+          "startedAt": "2026-10-24T07:17:18Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-10-24T07:18:44Z",
+          "conclusion": "success",
+          "name": "Compile all modules",
+          "number": 15,
+          "startedAt": "2026-10-24T07:18:24Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-10-24T07:22:45Z",
+          "conclusion": "success",
+          "name": "Run published law suites",
+          "number": 16,
+          "startedAt": "2026-10-24T07:18:44Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-10-24T07:23:09Z",
+          "conclusion": "success",
+          "name": "Check module and kernel boundaries",
+          "number": 17,
+          "startedAt": "2026-10-24T07:22:45Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-10-24T07:23:49Z",
+          "conclusion": "success",
+          "name": "Compile examples and build the public guide",
+          "number": 18,
+          "startedAt": "2026-10-24T07:23:09Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-10-24T07:23:49Z",
+          "conclusion": "success",
+          "name": "Check public documentation coverage (JVM evidence)",
+          "number": 19,
+          "startedAt": "2026-10-24T07:23:49Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-10-24T07:23:49Z",
+          "conclusion": "skipped",
+          "name": "Check public documentation coverage (Scala.js evidence)",
+          "number": 20,
+          "startedAt": "2026-10-24T07:23:49Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-10-24T07:24:12Z",
+          "conclusion": "success",
+          "name": "Run EyeLink performance smoke court",
+          "number": 21,
+          "startedAt": "2026-10-24T07:23:49Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-10-24T07:25:15Z",
+          "conclusion": "success",
+          "name": "Run execution responsiveness smoke profile",
+          "number": 22,
+          "startedAt": "2026-10-24T07:24:12Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-10-24T07:25:17Z",
+          "conclusion": "success",
+          "name": "Post Setup Java (temurin@17)",
+          "number": 42,
+          "startedAt": "2026-10-24T07:25:15Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-10-24T07:25:22Z",
+          "conclusion": "success",
+          "name": "Post Setup sbt",
+          "number": 43,
+          "startedAt": "2026-10-24T07:25:17Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-10-24T07:25:23Z",
+          "conclusion": "success",
+          "name": "Post Checkout current branch (full)",
+          "number": 44,
+          "startedAt": "2026-10-24T07:25:22Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-10-24T07:25:23Z",
+          "conclusion": "success",
+          "name": "Complete job",
+          "number": 45,
+          "startedAt": "2026-10-24T07:25:23Z",
+          "status": "completed"
+        }
+      ],
+      "url": "https://github.com/canardlapin/eyes4s/actions/runs/40072699066/job/120809372776"
+    },
+    {
+      "completedAt": "2026-10-24T07:08:21Z",
+      "conclusion": "success",
+      "databaseId": 120809372833,
+      "name": "Generate Site (ubuntu-22.04, temurin@17)",
+      "startedAt": "2026-10-24T07:04:27Z",
+      "status": "completed",
+      "steps": [
+        {
+          "completedAt": "2026-10-24T07:04:32Z",
+          "conclusion": "success",
+          "name": "Set up job",
+          "number": 1,
+          "startedAt": "2026-10-24T07:04:28Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-10-24T07:04:37Z",
+          "conclusion": "success",
+          "name": "Checkout current branch (full)",
+          "number": 2,
+          "startedAt": "2026-10-24T07:04:32Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-10-24T07:04:43Z",
+          "conclusion": "success",
+          "name": "Setup sbt",
+          "number": 3,
+          "startedAt": "2026-10-24T07:04:37Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-10-24T07:04:45Z",
+          "conclusion": "success",
+          "name": "Setup Java (temurin@17)",
+          "number": 4,
+          "startedAt": "2026-10-24T07:04:43Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-10-24T07:05:56Z",
+          "conclusion": "success",
+          "name": "sbt update",
+          "number": 5,
+          "startedAt": "2026-10-24T07:04:45Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-10-24T07:05:56Z",
+          "conclusion": "skipped",
+          "name": "Setup Java (temurin@21)",
+          "number": 6,
+          "startedAt": "2026-10-24T07:05:56Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-10-24T07:05:56Z",
+          "conclusion": "skipped",
+          "name": "sbt update",
+          "number": 7,
+          "startedAt": "2026-10-24T07:05:56Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-10-24T07:08:12Z",
+          "conclusion": "success",
+          "name": "Generate site",
+          "number": 8,
+          "startedAt": "2026-10-24T07:05:56Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-10-24T07:08:16Z",
+          "conclusion": "success",
+          "name": "Post Setup Java (temurin@17)",
+          "number": 14,
+          "startedAt": "2026-10-24T07:08:12Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-10-24T07:08:19Z",
+          "conclusion": "success",
+          "name": "Post Setup sbt",
+          "number": 15,
+          "startedAt": "2026-10-24T07:08:16Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-10-24T07:08:19Z",
+          "conclusion": "success",
+          "name": "Post Checkout current branch (full)",
+          "number": 16,
+          "startedAt": "2026-10-24T07:08:19Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-10-24T07:08:19Z",
+          "conclusion": "success",
+          "name": "Complete job",
+          "number": 17,
+          "startedAt": "2026-10-24T07:08:19Z",
+          "status": "completed"
+        }
+      ],
+      "url": "https://github.com/canardlapin/eyes4s/actions/runs/40072699066/job/120809372833"
+    },
+    {
+      "completedAt": "2026-10-24T07:16:15Z",
+      "conclusion": "success",
+      "databaseId": 120809372841,
+      "name": "Test (ubuntu-22.04, 3, temurin@21, rootJVM)",
+      "startedAt": "2026-10-24T07:04:27Z",
+      "status": "completed",
+      "steps": [
+        {
+          "completedAt": "2026-10-24T07:04:32Z",
+          "conclusion": "success",
+          "name": "Set up job",
+          "number": 1,
+          "startedAt": "2026-10-24T07:04:28Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-10-24T07:04:39Z",
+          "conclusion": "success",
+          "name": "Checkout current branch (full)",
+          "number": 2,
+          "startedAt": "2026-10-24T07:04:32Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-10-24T07:04:43Z",
+          "conclusion": "success",
+          "name": "Setup sbt",
+          "number": 3,
+          "startedAt": "2026-10-24T07:04:39Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-10-24T07:04:43Z",
+          "conclusion": "skipped",
+          "name": "Setup Java (temurin@17)",
+          "number": 4,
+          "startedAt": "2026-10-24T07:04:43Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-10-24T07:04:43Z",
+          "conclusion": "skipped",
+          "name": "sbt update",
+          "number": 5,
+          "startedAt": "2026-10-24T07:04:43Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-10-24T07:04:44Z",
+          "conclusion": "success",
+          "name": "Setup Java (temurin@21)",
+          "number": 6,
+          "startedAt": "2026-10-24T07:04:43Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-10-24T07:05:56Z",
+          "conclusion": "success",
+          "name": "sbt update",
+          "number": 7,
+          "startedAt": "2026-10-24T07:04:44Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-10-24T07:09:49Z",
+          "conclusion": "success",
+          "name": "Prepare the compiler API inventory for diagnostic coverage",
+          "number": 8,
+          "startedAt": "2026-10-24T07:05:56Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-10-24T07:10:03Z",
+          "conclusion": "success",
+          "name": "Check that workflows are up to date",
+          "number": 9,
+          "startedAt": "2026-10-24T07:09:49Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-10-24T07:10:03Z",
+          "conclusion": "skipped",
+          "name": "Check headers and formatting",
+          "number": 10,
+          "startedAt": "2026-10-24T07:10:03Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-10-24T07:10:03Z",
+          "conclusion": "skipped",
+          "name": "scalaJSLink",
+          "number": 11,
+          "startedAt": "2026-10-24T07:10:03Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-10-24T07:15:23Z",
+          "conclusion": "success",
+          "name": "Test",
+          "number": 12,
+          "startedAt": "2026-10-24T07:10:03Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-10-24T07:15:23Z",
+          "conclusion": "skipped",
+          "name": "Check binary compatibility",
+          "number": 13,
+          "startedAt": "2026-10-24T07:15:23Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-10-24T07:15:23Z",
+          "conclusion": "skipped",
+          "name": "Generate API documentation",
+          "number": 14,
+          "startedAt": "2026-10-24T07:15:23Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-10-24T07:15:42Z",
+          "conclusion": "success",
+          "name": "Compile all modules",
+          "number": 15,
+          "startedAt": "2026-10-24T07:15:23Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-10-24T07:15:42Z",
+          "conclusion": "skipped",
+          "name": "Run published law suites",
+          "number": 16,
+          "startedAt": "2026-10-24T07:15:42Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-10-24T07:16:07Z",
+          "conclusion": "success",
+          "name": "Check module and kernel boundaries",
+          "number": 17,
+          "startedAt": "2026-10-24T07:15:42Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-10-24T07:16:07Z",
+          "conclusion": "skipped",
+          "name": "Compile examples and build the public guide",
+          "number": 18,
+          "startedAt": "2026-10-24T07:16:07Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-10-24T07:16:07Z",
+          "conclusion": "skipped",
+          "name": "Check public documentation coverage (JVM evidence)",
+          "number": 19,
+          "startedAt": "2026-10-24T07:16:07Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-10-24T07:16:07Z",
+          "conclusion": "skipped",
+          "name": "Check public documentation coverage (Scala.js evidence)",
+          "number": 20,
+          "startedAt": "2026-10-24T07:16:07Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-10-24T07:16:07Z",
+          "conclusion": "skipped",
+          "name": "Run EyeLink performance smoke court",
+          "number": 21,
+          "startedAt": "2026-10-24T07:16:07Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-10-24T07:16:07Z",
+          "conclusion": "skipped",
+          "name": "Run execution responsiveness smoke profile",
+          "number": 22,
+          "startedAt": "2026-10-24T07:16:07Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-10-24T07:16:08Z",
+          "conclusion": "success",
+          "name": "Post Setup Java (temurin@21)",
+          "number": 42,
+          "startedAt": "2026-10-24T07:16:07Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-10-24T07:16:12Z",
+          "conclusion": "success",
+          "name": "Post Setup sbt",
+          "number": 43,
+          "startedAt": "2026-10-24T07:16:08Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-10-24T07:16:13Z",
+          "conclusion": "success",
+          "name": "Post Checkout current branch (full)",
+          "number": 44,
+          "startedAt": "2026-10-24T07:16:12Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-10-24T07:16:13Z",
+          "conclusion": "success",
+          "name": "Complete job",
+          "number": 45,
+          "startedAt": "2026-10-24T07:16:13Z",
+          "status": "completed"
+        }
+      ],
+      "url": "https://github.com/canardlapin/eyes4s/actions/runs/40072699066/job/120809372841"
+    }
+  ],
+  "status": "completed",
+  "url": "https://github.com/canardlapin/eyes4s/actions/runs/40072699066"
+}
