@@ -1,0 +1,868 @@
+{
+  "source": "75a18821342b1e671d48b9cff29fd6b1f1a7c001",
+  "tree": "b2d6739c5749367bb7c0c0a55f106e86d73cf7a6",
+  "sourceFingerprint": "1597e94afec6332e4e5b3d221b5282c51d712b9b93cea50739ce38b368d3b08c",
+  "reviewer": "codex-results-matrix-20261024",
+  "intakeCourt": "Linux aarch64 Monocle native1x, transformed2x; NOT GitHub AMD64 captures",
+  "review": "Deliberate eight-image intake after full-screen/edge-crop inspection, negative mutations and exact cross-process repeats. Remaining52PNGs retained:44pixel-exact,8within existing channel-delta1/fraction0.001 tolerance. Hosted AMD64 strict and Mac/GTK functional verification required before landing. No automatic promotion, tolerance change or PNG dimension change.",
+  "records": [
+    {
+      "state": "t2-Compare-dark",
+      "baseline": "studio/desktop/src/test/resources/eyes4s/studio/desktop/visual-parity/t2-Compare-dark/dark-2x.png",
+      "previousSha256": "d92e619cfecb12d8b0f3aedce2803fbd5e2f53532d75d7c69184b9b459fc5111",
+      "acceptedSha256": "1851fd3bac43523d37438ce99600cb73c4571cc73ad964b0382e3631bddae677",
+      "previousComparison": {
+        "width": 2880,
+        "height": 1800,
+        "changedPixels": 1853,
+        "maximumChannelDelta": 36,
+        "changedFraction": 0.000357445987654321,
+        "accepted": false
+      },
+      "changedBounds": [
+        524,
+        1077,
+        2039,
+        1748
+      ],
+      "runtime": {
+        "osName": "Linux",
+        "osArch": "aarch64",
+        "javaVersion": "25.0.4.1",
+        "javaFxVersion": "24.0.1+4",
+        "glassPlatform": "Monocle",
+        "prismOrder": "sw"
+      },
+      "reason": "Reviewed full screen and enlarged boundary; corrected defined texture sampling at canvas edges; identical across two independent corrected Linux processes"
+    },
+    {
+      "state": "t2-Compare-light",
+      "baseline": "studio/desktop/src/test/resources/eyes4s/studio/desktop/visual-parity/t2-Compare-light/light-2x.png",
+      "previousSha256": "854765908ee76888f56498308bb74e1ba949bf922c9afa57342ca1b1b1ca4102",
+      "acceptedSha256": "02d8b7b7af3f1f75161352393ebd205d40014cbdd47e138161630ed14d63bf1e",
+      "previousComparison": {
+        "width": 2880,
+        "height": 1800,
+        "changedPixels": 1788,
+        "maximumChannelDelta": 36,
+        "changedFraction": 0.0003449074074074074,
+        "accepted": false
+      },
+      "changedBounds": [
+        524,
+        1077,
+        1738,
+        1748
+      ],
+      "runtime": {
+        "osName": "Linux",
+        "osArch": "aarch64",
+        "javaVersion": "25.0.4.1",
+        "javaFxVersion": "24.0.1+4",
+        "glassPlatform": "Monocle",
+        "prismOrder": "sw"
+      },
+      "reason": "Reviewed full screen and enlarged boundary; corrected defined texture sampling at canvas edges; identical across two independent corrected Linux processes"
+    },
+    {
+      "state": "t2-Explore-dark",
+      "baseline": "studio/desktop/src/test/resources/eyes4s/studio/desktop/visual-parity/t2-Explore-dark/dark-2x.png",
+      "previousSha256": "7b27a2e7340bcf702a08905cbca96aaf0c5b56ccf37da8514fccbed5ef64746e",
+      "acceptedSha256": "37b9ed0eb756599c185fa199762ea6518b6e9aa17c9c7aaa877af871effea41d",
+      "previousComparison": {
+        "width": 2880,
+        "height": 1800,
+        "changedPixels": 2054,
+        "maximumChannelDelta": 13,
+        "changedFraction": 0.00039621913580246916,
+        "accepted": false
+      },
+      "changedBounds": [
+        526,
+        1014,
+        2244,
+        1360
+      ],
+      "runtime": {
+        "osName": "Linux",
+        "osArch": "aarch64",
+        "javaVersion": "25.0.4.1",
+        "javaFxVersion": "24.0.1+4",
+        "glassPlatform": "Monocle",
+        "prismOrder": "sw"
+      },
+      "reason": "Reviewed full screen and enlarged boundary; corrected defined texture sampling at canvas edges; identical across two independent corrected Linux processes"
+    },
+    {
+      "state": "t2-Explore-light",
+      "baseline": "studio/desktop/src/test/resources/eyes4s/studio/desktop/visual-parity/t2-Explore-light/light-2x.png",
+      "previousSha256": "ac639d6c891c0ef840ba84739a4c5166401c91d365d53591fe24d0cbcf624f76",
+      "acceptedSha256": "0a7ccafe5589560d458fa8f2c7e5d5a63a21ce74c1ff9708cd27acc615d546fe",
+      "previousComparison": {
+        "width": 2880,
+        "height": 1800,
+        "changedPixels": 2053,
+        "maximumChannelDelta": 19,
+        "changedFraction": 0.00039602623456790124,
+        "accepted": false
+      },
+      "changedBounds": [
+        526,
+        1014,
+        2244,
+        1360
+      ],
+      "runtime": {
+        "osName": "Linux",
+        "osArch": "aarch64",
+        "javaVersion": "25.0.4.1",
+        "javaFxVersion": "24.0.1+4",
+        "glassPlatform": "Monocle",
+        "prismOrder": "sw"
+      },
+      "reason": "Reviewed full screen and enlarged boundary; corrected defined texture sampling at canvas edges; identical across two independent corrected Linux processes"
+    },
+    {
+      "state": "t2-Figures-dark",
+      "baseline": "studio/desktop/src/test/resources/eyes4s/studio/desktop/visual-parity/t2-Figures-dark/dark-2x.png",
+      "previousSha256": "bbbe1ce8a23294fe6e6a73c5fb83964e59386197cc2757d921505628ec366466",
+      "acceptedSha256": "43a37dbf0c1a00b6ab687656beb963cf49e07ff35eeb3d2f9f9b5b226d141d7b",
+      "previousComparison": {
+        "width": 2880,
+        "height": 1800,
+        "changedPixels": 278,
+        "maximumChannelDelta": 58,
+        "changedFraction": 5.3626543209876546e-05,
+        "accepted": false
+      },
+      "changedBounds": [
+        1167,
+        943,
+        1826,
+        1302
+      ],
+      "runtime": {
+        "osName": "Linux",
+        "osArch": "aarch64",
+        "javaVersion": "25.0.4.1",
+        "javaFxVersion": "24.0.1+4",
+        "glassPlatform": "Monocle",
+        "prismOrder": "sw"
+      },
+      "reason": "Reviewed full screen and enlarged boundary; corrected defined texture sampling at canvas edges; identical across two independent corrected Linux processes"
+    },
+    {
+      "state": "t2-Figures-light",
+      "baseline": "studio/desktop/src/test/resources/eyes4s/studio/desktop/visual-parity/t2-Figures-light/light-2x.png",
+      "previousSha256": "3ae9abd98e789f31971b546fad8f93810f93d85b3501c693160cc7701dce9b1a",
+      "acceptedSha256": "f5cfab8ccfbad718118e3277af87b97332b3953f8e9eeae5938494efae0bd810",
+      "previousComparison": {
+        "width": 2880,
+        "height": 1800,
+        "changedPixels": 278,
+        "maximumChannelDelta": 58,
+        "changedFraction": 5.3626543209876546e-05,
+        "accepted": false
+      },
+      "changedBounds": [
+        1167,
+        943,
+        1826,
+        1302
+      ],
+      "runtime": {
+        "osName": "Linux",
+        "osArch": "aarch64",
+        "javaVersion": "25.0.4.1",
+        "javaFxVersion": "24.0.1+4",
+        "glassPlatform": "Monocle",
+        "prismOrder": "sw"
+      },
+      "reason": "Reviewed full screen and enlarged boundary; corrected defined texture sampling at canvas edges; identical across two independent corrected Linux processes"
+    },
+    {
+      "state": "t3-Figures-dark",
+      "baseline": "studio/desktop/src/test/resources/eyes4s/studio/desktop/visual-parity/t3-Figures-dark/dark-2x.png",
+      "previousSha256": "85d706f7547f01fb6fbd927566d112ac79b4f35bf822091aef1f8d0e51e6e229",
+      "acceptedSha256": "d80fa24a4d78e2c6a3f42e4697de442893eacca0e9dd175bef45eb80adeef360",
+      "previousComparison": {
+        "width": 2880,
+        "height": 1800,
+        "changedPixels": 278,
+        "maximumChannelDelta": 58,
+        "changedFraction": 5.3626543209876546e-05,
+        "accepted": false
+      },
+      "changedBounds": [
+        1167,
+        943,
+        1826,
+        1302
+      ],
+      "runtime": {
+        "osName": "Linux",
+        "osArch": "aarch64",
+        "javaVersion": "25.0.4.1",
+        "javaFxVersion": "24.0.1+4",
+        "glassPlatform": "Monocle",
+        "prismOrder": "sw"
+      },
+      "reason": "Reviewed full screen and enlarged boundary; corrected defined texture sampling at canvas edges; identical across two independent corrected Linux processes"
+    },
+    {
+      "state": "t3-Figures-light",
+      "baseline": "studio/desktop/src/test/resources/eyes4s/studio/desktop/visual-parity/t3-Figures-light/light-2x.png",
+      "previousSha256": "88aeee69e6b281060418c626bc469c4b84fb69aad5c5b1d386780c8cf59d5d53",
+      "acceptedSha256": "11b8899be0db504465294d7fce6e7e9ad95d5d1cde54e52368e603a76b9b2ee1",
+      "previousComparison": {
+        "width": 2880,
+        "height": 1800,
+        "changedPixels": 278,
+        "maximumChannelDelta": 58,
+        "changedFraction": 5.3626543209876546e-05,
+        "accepted": false
+      },
+      "changedBounds": [
+        1167,
+        943,
+        1826,
+        1302
+      ],
+      "runtime": {
+        "osName": "Linux",
+        "osArch": "aarch64",
+        "javaVersion": "25.0.4.1",
+        "javaFxVersion": "24.0.1+4",
+        "glassPlatform": "Monocle",
+        "prismOrder": "sw"
+      },
+      "reason": "Reviewed full screen and enlarged boundary; corrected defined texture sampling at canvas edges; identical across two independent corrected Linux processes"
+    }
+  ],
+  "retainedBaselineComparisons": [
+    {
+      "state": "t1-Analysis-dark",
+      "actual": "target/studio-snapshots/VisualParitySuite/t1-Analysis-dark/dark-1x.png",
+      "comparison": {
+        "width": 1440,
+        "height": 900,
+        "changedPixels": 0,
+        "maximumChannelDelta": 0,
+        "changedFraction": 0,
+        "accepted": true
+      }
+    },
+    {
+      "state": "t1-Analysis-dark",
+      "actual": "target/studio-snapshots/VisualParitySuite/t1-Analysis-dark/dark-2x.png",
+      "comparison": {
+        "width": 2880,
+        "height": 1800,
+        "changedPixels": 0,
+        "maximumChannelDelta": 0,
+        "changedFraction": 0,
+        "accepted": true
+      }
+    },
+    {
+      "state": "t1-Analysis-light",
+      "actual": "target/studio-snapshots/VisualParitySuite/t1-Analysis-light/light-1x.png",
+      "comparison": {
+        "width": 1440,
+        "height": 900,
+        "changedPixels": 0,
+        "maximumChannelDelta": 0,
+        "changedFraction": 0,
+        "accepted": true
+      }
+    },
+    {
+      "state": "t1-Analysis-light",
+      "actual": "target/studio-snapshots/VisualParitySuite/t1-Analysis-light/light-2x.png",
+      "comparison": {
+        "width": 2880,
+        "height": 1800,
+        "changedPixels": 0,
+        "maximumChannelDelta": 0,
+        "changedFraction": 0,
+        "accepted": true
+      }
+    },
+    {
+      "state": "t1-Compare-dark",
+      "actual": "target/studio-snapshots/VisualParitySuite/t1-Compare-dark/dark-1x.png",
+      "comparison": {
+        "width": 1440,
+        "height": 900,
+        "changedPixels": 0,
+        "maximumChannelDelta": 0,
+        "changedFraction": 0,
+        "accepted": true
+      }
+    },
+    {
+      "state": "t1-Compare-dark",
+      "actual": "target/studio-snapshots/VisualParitySuite/t1-Compare-dark/dark-2x.png",
+      "comparison": {
+        "width": 2880,
+        "height": 1800,
+        "changedPixels": 0,
+        "maximumChannelDelta": 0,
+        "changedFraction": 0,
+        "accepted": true
+      }
+    },
+    {
+      "state": "t1-Compare-light",
+      "actual": "target/studio-snapshots/VisualParitySuite/t1-Compare-light/light-1x.png",
+      "comparison": {
+        "width": 1440,
+        "height": 900,
+        "changedPixels": 0,
+        "maximumChannelDelta": 0,
+        "changedFraction": 0,
+        "accepted": true
+      }
+    },
+    {
+      "state": "t1-Compare-light",
+      "actual": "target/studio-snapshots/VisualParitySuite/t1-Compare-light/light-2x.png",
+      "comparison": {
+        "width": 2880,
+        "height": 1800,
+        "changedPixels": 0,
+        "maximumChannelDelta": 0,
+        "changedFraction": 0,
+        "accepted": true
+      }
+    },
+    {
+      "state": "t1-Data-dark",
+      "actual": "target/studio-snapshots/VisualParitySuite/t1-Data-dark/dark-1x.png",
+      "comparison": {
+        "width": 1440,
+        "height": 900,
+        "changedPixels": 0,
+        "maximumChannelDelta": 0,
+        "changedFraction": 0,
+        "accepted": true
+      }
+    },
+    {
+      "state": "t1-Data-dark",
+      "actual": "target/studio-snapshots/VisualParitySuite/t1-Data-dark/dark-2x.png",
+      "comparison": {
+        "width": 2880,
+        "height": 1800,
+        "changedPixels": 0,
+        "maximumChannelDelta": 0,
+        "changedFraction": 0,
+        "accepted": true
+      }
+    },
+    {
+      "state": "t1-Data-light",
+      "actual": "target/studio-snapshots/VisualParitySuite/t1-Data-light/light-1x.png",
+      "comparison": {
+        "width": 1440,
+        "height": 900,
+        "changedPixels": 0,
+        "maximumChannelDelta": 0,
+        "changedFraction": 0,
+        "accepted": true
+      }
+    },
+    {
+      "state": "t1-Data-light",
+      "actual": "target/studio-snapshots/VisualParitySuite/t1-Data-light/light-2x.png",
+      "comparison": {
+        "width": 2880,
+        "height": 1800,
+        "changedPixels": 0,
+        "maximumChannelDelta": 0,
+        "changedFraction": 0,
+        "accepted": true
+      }
+    },
+    {
+      "state": "t1-Explore-dark",
+      "actual": "target/studio-snapshots/VisualParitySuite/t1-Explore-dark/dark-1x.png",
+      "comparison": {
+        "width": 1440,
+        "height": 900,
+        "changedPixels": 0,
+        "maximumChannelDelta": 0,
+        "changedFraction": 0,
+        "accepted": true
+      }
+    },
+    {
+      "state": "t1-Explore-dark",
+      "actual": "target/studio-snapshots/VisualParitySuite/t1-Explore-dark/dark-2x.png",
+      "comparison": {
+        "width": 2880,
+        "height": 1800,
+        "changedPixels": 0,
+        "maximumChannelDelta": 0,
+        "changedFraction": 0,
+        "accepted": true
+      }
+    },
+    {
+      "state": "t1-Explore-light",
+      "actual": "target/studio-snapshots/VisualParitySuite/t1-Explore-light/light-1x.png",
+      "comparison": {
+        "width": 1440,
+        "height": 900,
+        "changedPixels": 0,
+        "maximumChannelDelta": 0,
+        "changedFraction": 0,
+        "accepted": true
+      }
+    },
+    {
+      "state": "t1-Explore-light",
+      "actual": "target/studio-snapshots/VisualParitySuite/t1-Explore-light/light-2x.png",
+      "comparison": {
+        "width": 2880,
+        "height": 1800,
+        "changedPixels": 0,
+        "maximumChannelDelta": 0,
+        "changedFraction": 0,
+        "accepted": true
+      }
+    },
+    {
+      "state": "t1-Figures-dark",
+      "actual": "target/studio-snapshots/VisualParitySuite/t1-Figures-dark/dark-1x.png",
+      "comparison": {
+        "width": 1440,
+        "height": 900,
+        "changedPixels": 0,
+        "maximumChannelDelta": 0,
+        "changedFraction": 0,
+        "accepted": true
+      }
+    },
+    {
+      "state": "t1-Figures-dark",
+      "actual": "target/studio-snapshots/VisualParitySuite/t1-Figures-dark/dark-2x.png",
+      "comparison": {
+        "width": 2880,
+        "height": 1800,
+        "changedPixels": 0,
+        "maximumChannelDelta": 0,
+        "changedFraction": 0,
+        "accepted": true
+      }
+    },
+    {
+      "state": "t1-Figures-light",
+      "actual": "target/studio-snapshots/VisualParitySuite/t1-Figures-light/light-1x.png",
+      "comparison": {
+        "width": 1440,
+        "height": 900,
+        "changedPixels": 0,
+        "maximumChannelDelta": 0,
+        "changedFraction": 0,
+        "accepted": true
+      }
+    },
+    {
+      "state": "t1-Figures-light",
+      "actual": "target/studio-snapshots/VisualParitySuite/t1-Figures-light/light-2x.png",
+      "comparison": {
+        "width": 2880,
+        "height": 1800,
+        "changedPixels": 0,
+        "maximumChannelDelta": 0,
+        "changedFraction": 0,
+        "accepted": true
+      }
+    },
+    {
+      "state": "t2-Analysis-dark",
+      "actual": "target/studio-snapshots/VisualParitySuite/t2-Analysis-dark/dark-1x.png",
+      "comparison": {
+        "width": 1440,
+        "height": 900,
+        "changedPixels": 0,
+        "maximumChannelDelta": 0,
+        "changedFraction": 0,
+        "accepted": true
+      }
+    },
+    {
+      "state": "t2-Analysis-dark",
+      "actual": "target/studio-snapshots/VisualParitySuite/t2-Analysis-dark/dark-2x.png",
+      "comparison": {
+        "width": 2880,
+        "height": 1800,
+        "changedPixels": 0,
+        "maximumChannelDelta": 0,
+        "changedFraction": 0,
+        "accepted": true
+      }
+    },
+    {
+      "state": "t2-Analysis-light",
+      "actual": "target/studio-snapshots/VisualParitySuite/t2-Analysis-light/light-1x.png",
+      "comparison": {
+        "width": 1440,
+        "height": 900,
+        "changedPixels": 0,
+        "maximumChannelDelta": 0,
+        "changedFraction": 0,
+        "accepted": true
+      }
+    },
+    {
+      "state": "t2-Analysis-light",
+      "actual": "target/studio-snapshots/VisualParitySuite/t2-Analysis-light/light-2x.png",
+      "comparison": {
+        "width": 2880,
+        "height": 1800,
+        "changedPixels": 0,
+        "maximumChannelDelta": 0,
+        "changedFraction": 0,
+        "accepted": true
+      }
+    },
+    {
+      "state": "t2-Compare-dark",
+      "actual": "target/studio-snapshots/VisualParitySuite/t2-Compare-dark/dark-1x.png",
+      "comparison": {
+        "width": 1440,
+        "height": 900,
+        "changedPixels": 0,
+        "maximumChannelDelta": 0,
+        "changedFraction": 0,
+        "accepted": true
+      }
+    },
+    {
+      "state": "t2-Compare-light",
+      "actual": "target/studio-snapshots/VisualParitySuite/t2-Compare-light/light-1x.png",
+      "comparison": {
+        "width": 1440,
+        "height": 900,
+        "changedPixels": 0,
+        "maximumChannelDelta": 0,
+        "changedFraction": 0,
+        "accepted": true
+      }
+    },
+    {
+      "state": "t2-Data-dark",
+      "actual": "target/studio-snapshots/VisualParitySuite/t2-Data-dark/dark-1x.png",
+      "comparison": {
+        "width": 1440,
+        "height": 900,
+        "changedPixels": 0,
+        "maximumChannelDelta": 0,
+        "changedFraction": 0,
+        "accepted": true
+      }
+    },
+    {
+      "state": "t2-Data-dark",
+      "actual": "target/studio-snapshots/VisualParitySuite/t2-Data-dark/dark-2x.png",
+      "comparison": {
+        "width": 2880,
+        "height": 1800,
+        "changedPixels": 0,
+        "maximumChannelDelta": 0,
+        "changedFraction": 0,
+        "accepted": true
+      }
+    },
+    {
+      "state": "t2-Data-light",
+      "actual": "target/studio-snapshots/VisualParitySuite/t2-Data-light/light-1x.png",
+      "comparison": {
+        "width": 1440,
+        "height": 900,
+        "changedPixels": 0,
+        "maximumChannelDelta": 0,
+        "changedFraction": 0,
+        "accepted": true
+      }
+    },
+    {
+      "state": "t2-Data-light",
+      "actual": "target/studio-snapshots/VisualParitySuite/t2-Data-light/light-2x.png",
+      "comparison": {
+        "width": 2880,
+        "height": 1800,
+        "changedPixels": 0,
+        "maximumChannelDelta": 0,
+        "changedFraction": 0,
+        "accepted": true
+      }
+    },
+    {
+      "state": "t2-Explore-dark",
+      "actual": "target/studio-snapshots/VisualParitySuite/t2-Explore-dark/dark-1x.png",
+      "comparison": {
+        "width": 1440,
+        "height": 900,
+        "changedPixels": 348,
+        "maximumChannelDelta": 1,
+        "changedFraction": 0.0002685185185185185,
+        "accepted": true
+      }
+    },
+    {
+      "state": "t2-Explore-light",
+      "actual": "target/studio-snapshots/VisualParitySuite/t2-Explore-light/light-1x.png",
+      "comparison": {
+        "width": 1440,
+        "height": 900,
+        "changedPixels": 344,
+        "maximumChannelDelta": 1,
+        "changedFraction": 0.0002654320987654321,
+        "accepted": true
+      }
+    },
+    {
+      "state": "t2-Figures-dark",
+      "actual": "target/studio-snapshots/VisualParitySuite/t2-Figures-dark/dark-1x.png",
+      "comparison": {
+        "width": 1440,
+        "height": 900,
+        "changedPixels": 0,
+        "maximumChannelDelta": 0,
+        "changedFraction": 0,
+        "accepted": true
+      }
+    },
+    {
+      "state": "t2-Figures-light",
+      "actual": "target/studio-snapshots/VisualParitySuite/t2-Figures-light/light-1x.png",
+      "comparison": {
+        "width": 1440,
+        "height": 900,
+        "changedPixels": 0,
+        "maximumChannelDelta": 0,
+        "changedFraction": 0,
+        "accepted": true
+      }
+    },
+    {
+      "state": "t3-Analysis-dark",
+      "actual": "target/studio-snapshots/VisualParitySuite/t3-Analysis-dark/dark-1x.png",
+      "comparison": {
+        "width": 1440,
+        "height": 900,
+        "changedPixels": 0,
+        "maximumChannelDelta": 0,
+        "changedFraction": 0,
+        "accepted": true
+      }
+    },
+    {
+      "state": "t3-Analysis-dark",
+      "actual": "target/studio-snapshots/VisualParitySuite/t3-Analysis-dark/dark-2x.png",
+      "comparison": {
+        "width": 2880,
+        "height": 1800,
+        "changedPixels": 0,
+        "maximumChannelDelta": 0,
+        "changedFraction": 0,
+        "accepted": true
+      }
+    },
+    {
+      "state": "t3-Analysis-light",
+      "actual": "target/studio-snapshots/VisualParitySuite/t3-Analysis-light/light-1x.png",
+      "comparison": {
+        "width": 1440,
+        "height": 900,
+        "changedPixels": 0,
+        "maximumChannelDelta": 0,
+        "changedFraction": 0,
+        "accepted": true
+      }
+    },
+    {
+      "state": "t3-Analysis-light",
+      "actual": "target/studio-snapshots/VisualParitySuite/t3-Analysis-light/light-2x.png",
+      "comparison": {
+        "width": 2880,
+        "height": 1800,
+        "changedPixels": 0,
+        "maximumChannelDelta": 0,
+        "changedFraction": 0,
+        "accepted": true
+      }
+    },
+    {
+      "state": "t3-Compare-dark",
+      "actual": "target/studio-snapshots/VisualParitySuite/t3-Compare-dark/dark-1x.png",
+      "comparison": {
+        "width": 1440,
+        "height": 900,
+        "changedPixels": 117,
+        "maximumChannelDelta": 1,
+        "changedFraction": 9.027777777777777e-05,
+        "accepted": true
+      }
+    },
+    {
+      "state": "t3-Compare-dark",
+      "actual": "target/studio-snapshots/VisualParitySuite/t3-Compare-dark/dark-2x.png",
+      "comparison": {
+        "width": 2880,
+        "height": 1800,
+        "changedPixels": 3014,
+        "maximumChannelDelta": 1,
+        "changedFraction": 0.0005814043209876543,
+        "accepted": true
+      }
+    },
+    {
+      "state": "t3-Compare-light",
+      "actual": "target/studio-snapshots/VisualParitySuite/t3-Compare-light/light-1x.png",
+      "comparison": {
+        "width": 1440,
+        "height": 900,
+        "changedPixels": 115,
+        "maximumChannelDelta": 1,
+        "changedFraction": 8.873456790123456e-05,
+        "accepted": true
+      }
+    },
+    {
+      "state": "t3-Compare-light",
+      "actual": "target/studio-snapshots/VisualParitySuite/t3-Compare-light/light-2x.png",
+      "comparison": {
+        "width": 2880,
+        "height": 1800,
+        "changedPixels": 3012,
+        "maximumChannelDelta": 1,
+        "changedFraction": 0.0005810185185185185,
+        "accepted": true
+      }
+    },
+    {
+      "state": "t3-Data-dark",
+      "actual": "target/studio-snapshots/VisualParitySuite/t3-Data-dark/dark-1x.png",
+      "comparison": {
+        "width": 1440,
+        "height": 900,
+        "changedPixels": 0,
+        "maximumChannelDelta": 0,
+        "changedFraction": 0,
+        "accepted": true
+      }
+    },
+    {
+      "state": "t3-Data-dark",
+      "actual": "target/studio-snapshots/VisualParitySuite/t3-Data-dark/dark-2x.png",
+      "comparison": {
+        "width": 2880,
+        "height": 1800,
+        "changedPixels": 0,
+        "maximumChannelDelta": 0,
+        "changedFraction": 0,
+        "accepted": true
+      }
+    },
+    {
+      "state": "t3-Data-light",
+      "actual": "target/studio-snapshots/VisualParitySuite/t3-Data-light/light-1x.png",
+      "comparison": {
+        "width": 1440,
+        "height": 900,
+        "changedPixels": 0,
+        "maximumChannelDelta": 0,
+        "changedFraction": 0,
+        "accepted": true
+      }
+    },
+    {
+      "state": "t3-Data-light",
+      "actual": "target/studio-snapshots/VisualParitySuite/t3-Data-light/light-2x.png",
+      "comparison": {
+        "width": 2880,
+        "height": 1800,
+        "changedPixels": 0,
+        "maximumChannelDelta": 0,
+        "changedFraction": 0,
+        "accepted": true
+      }
+    },
+    {
+      "state": "t3-Explore-dark",
+      "actual": "target/studio-snapshots/VisualParitySuite/t3-Explore-dark/dark-1x.png",
+      "comparison": {
+        "width": 1440,
+        "height": 900,
+        "changedPixels": 94,
+        "maximumChannelDelta": 1,
+        "changedFraction": 7.253086419753086e-05,
+        "accepted": true
+      }
+    },
+    {
+      "state": "t3-Explore-dark",
+      "actual": "target/studio-snapshots/VisualParitySuite/t3-Explore-dark/dark-2x.png",
+      "comparison": {
+        "width": 2880,
+        "height": 1800,
+        "changedPixels": 0,
+        "maximumChannelDelta": 0,
+        "changedFraction": 0,
+        "accepted": true
+      }
+    },
+    {
+      "state": "t3-Explore-light",
+      "actual": "target/studio-snapshots/VisualParitySuite/t3-Explore-light/light-1x.png",
+      "comparison": {
+        "width": 1440,
+        "height": 900,
+        "changedPixels": 92,
+        "maximumChannelDelta": 1,
+        "changedFraction": 7.098765432098765e-05,
+        "accepted": true
+      }
+    },
+    {
+      "state": "t3-Explore-light",
+      "actual": "target/studio-snapshots/VisualParitySuite/t3-Explore-light/light-2x.png",
+      "comparison": {
+        "width": 2880,
+        "height": 1800,
+        "changedPixels": 0,
+        "maximumChannelDelta": 0,
+        "changedFraction": 0,
+        "accepted": true
+      }
+    },
+    {
+      "state": "t3-Figures-dark",
+      "actual": "target/studio-snapshots/VisualParitySuite/t3-Figures-dark/dark-1x.png",
+      "comparison": {
+        "width": 1440,
+        "height": 900,
+        "changedPixels": 0,
+        "maximumChannelDelta": 0,
+        "changedFraction": 0,
+        "accepted": true
+      }
+    },
+    {
+      "state": "t3-Figures-light",
+      "actual": "target/studio-snapshots/VisualParitySuite/t3-Figures-light/light-1x.png",
+      "comparison": {
+        "width": 1440,
+        "height": 900,
+        "changedPixels": 0,
+        "maximumChannelDelta": 0,
+        "changedFraction": 0,
+        "accepted": true
+      }
+    }
+  ]
+}
