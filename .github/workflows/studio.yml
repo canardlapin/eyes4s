@@ -178,6 +178,9 @@ jobs:
           print('Verified native output-scale-2 raster receipt:', r)
           PY
 
+      - name: Require all30 native GTK2 functional states
+        run: python3 tools/studio-visual-parity/check.py --allow-functional-only
+
       - name: Upload native HiDPI snapshots and test reports
         if: always()
         uses: actions/upload-artifact@v4
@@ -227,6 +230,22 @@ jobs:
         run: |
           sbt -J-Xmx2g -Djavafx.platform=mac-aarch64 studioDesktop/Test/compile
           sbt -J-Xmx1g -Djavafx.platform=mac-aarch64 -Deyes4s.studio.test.heap=4g -Deyes4s.studio.fx.visible=true studioDesktop/test
+
+      - name: Require all30 native macOS functional states
+        run: python3 tools/studio-visual-parity/check.py --allow-functional-only
+
+      - name: Upload macOS functional matrix and full Tab transcript
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: studio-snapshots-macos-${{ github.sha }}
+          path: |
+            target/studio-snapshots/VisualParitySuite/
+            target/studio-snapshots/ParticipantsNavigatorFxSuite/
+            target/studio-visual-parity/
+            studio/desktop/target/test-reports/
+          include-hidden-files: true
+          if-no-files-found: warn
 
   studio-clean-clone:
     name: Studio pins from a clean clone

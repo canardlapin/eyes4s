@@ -61,19 +61,20 @@ class ParticipantsNavigatorFxSuite extends ShellFxSuite:
         assertEquals(first.getPadding.getLeft, 6.0)
       }
       fx.snapshot(StudioTheme.Light)
-      val p17 = rows.find(_.participant == "P17").get
-      runOnFx(w.summary.participants.open(p17.ref))
+      val picked = rows.find(_.participant == "P05").get
+      val row    = runOnFx(descendants(node).find(n => n.getUserData == picked.ref).get)
+      fx.robot.click(row)
       eventually(fx, "exact overall ref on the trail") {
-        w.runtime.model.location.trail.lastOption.contains(Place.At(p17.ref))
+        w.runtime.model.location.trail.lastOption.contains(Place.At(picked.ref))
       }
       assertEquals(
         runOnFx(w.runtime.model.location.trail.head),
         Place.Summary(StoryModels.reporting)
       )
-      assert(runOnFx(w.summary.participants.rows.find(_.ref == p17.ref).exists(_.selected)))
+      assert(runOnFx(w.summary.participants.rows.find(_.ref == picked.ref).exists(_.selected)))
       eventually(fx, "participant query group opens with all20queries") {
         w.summary.navigatorVM.groups.exists(g =>
-          g.label == "P17" && g.open && g.entries.size == 20
+          g.label == "P05" && g.open && g.entries.size == 20
         )
       }
   }

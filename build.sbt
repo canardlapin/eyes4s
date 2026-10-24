@@ -1778,6 +1778,10 @@ lazy val studioLinuxHiDpiJob = WorkflowJob(
       ),
       name = Some("Require native scale, sharpness and raster receipt")
     ),
+    WorkflowStep.Run(
+      List("python3 tools/studio-visual-parity/check.py --allow-functional-only"),
+      name = Some("Require all30 native GTK2 functional states")
+    ),
     WorkflowStep.Use(
       UseRef.Public("actions", "upload-artifact", "v4"),
       name = Some("Upload native HiDPI snapshots and test reports"),
@@ -1809,8 +1813,24 @@ lazy val studioMacosJob = WorkflowJob(
       ),
       name = Some("Run functional JavaFX tests (no goldens)"),
       // The runner's display is 1024x768, which clamps a 1440x900 stage: tests
-      // that need the full stage skip here and run in the Linux job.
+      // that need the full stage skip here and run in the Linux job. The matrix
+      // itself executes every state at the actual native size and retains receipts.
       env = Map("EYES4S_STUDIO_SMALL_DISPLAY" -> "skip")
+    ),
+    WorkflowStep.Run(
+      List("python3 tools/studio-visual-parity/check.py --allow-functional-only"),
+      name = Some("Require all30 native macOS functional states")
+    ),
+    WorkflowStep.Use(
+      UseRef.Public("actions", "upload-artifact", "v4"),
+      name = Some("Upload macOS functional matrix and full Tab transcript"),
+      cond = Some("always()"),
+      params = Map(
+        "name" -> "studio-snapshots-macos-${{ github.sha }}",
+        "path" -> "target/studio-snapshots/VisualParitySuite/\ntarget/studio-snapshots/ParticipantsNavigatorFxSuite/\ntarget/studio-visual-parity/\nstudio/desktop/target/test-reports/",
+        "include-hidden-files" -> "true",
+        "if-no-files-found"    -> "warn"
+      )
     )
   ),
   sbtStepPreamble = Nil,

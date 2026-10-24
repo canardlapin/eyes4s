@@ -45,3 +45,8 @@ and software-pipeline properties. Editing another production file cannot reuse
 old captures even if the capture suite is unchanged.
 Diff PNGs are retained on pixel failure. Changing thresholds requires new evidence
 and review; CI never accepts a changed image merely because it can capture it.
+
+The macOS and GTK2 jobs also require every matrix XML case to execute and pass,
+using `--allow-functional-only`; they preserve their actual captures, receipts and
+the complete responsive Results Tab transcript as separate artifacts. These
+functional courts cannot substitute for the Linux pixel-golden court.
