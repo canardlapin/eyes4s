@@ -88,14 +88,15 @@ final class RealStudyBackend[F[_]] private (
     archiveSource: Option[NativeArtifactSource[F]],
     restoring: Ref[F, Map[RunId, Deferred[F, Either[BackendError, Boolean]]]],
     supervisor: Supervisor[F],
-    synchronization: Mutex[F]
+    synchronization: Mutex[F],
+    reports: RealReportGate[F]
 )(using F: Concurrent[F])
     extends StudyBackend[F]
     with eyes4s.studio.core.artifacts.NativeArtifactProvider[F]:
   import RealStudyBackend.*
 
   lazy val navigator: RealNavigator[F] =
-    new RealNavigator(initialReporting, held, prepare, navigationState)
+    new RealNavigator(initialReporting, held, prepare, navigationState, reports)
 
   /** Synchronize the authoritative document before host effects and reads.
     * Existing results/jobs/cursors keep their original scientific snapshots.
@@ -924,7 +925,9 @@ final class RealStudyBackend[F[_]] private (
   ): F[Either[BackendError, ReportView]] =
     navigator.requestedReport(run, reporting, scale) >>
       held(run)
-        .map(_.flatMap(done => RealReports.evaluateWithNative(run, reporting, scale, done)))
+        .flatMap(done =>
+          reports.evaluate(done.flatMap(RealReports.evaluateWithNative(run, reporting, scale, _)))
+        )
         .flatTap {
           case Left(_)            => F.unit
           case Right((_, native)) => navigator.evaluatedReport(run, reporting, scale, native)
@@ -1053,7 +1056,8 @@ object RealStudyBackend:
         RealNavigator.empty[F],
         Ref.of[F, RealRegistry](RealRegistry.of(document)),
         Ref.of[F, Map[RunId, Deferred[F, Either[BackendError, Boolean]]]](Map.empty),
-        Mutex[F]
+        Mutex[F],
+        RealReportGate.create[F]
       ).mapN {
         (
             admitted,
@@ -1065,7 +1069,8 @@ object RealStudyBackend:
             navigation,
             registry,
             restoring,
-            synchronization
+            synchronization,
+            reports
         ) =>
           new RealStudyBackend(
             registry,
@@ -1081,7 +1086,8 @@ object RealStudyBackend:
             archiveSource,
             restoring,
             supervisor,
-            synchronization
+            synchronization,
+            reports
           )
       }
     )

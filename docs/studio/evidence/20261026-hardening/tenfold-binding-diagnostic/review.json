@@ -1,0 +1,6 @@
+{
+  "candidate": "0e125fd3",
+  "scope": "Diagnostic only; not qualification. Second run adds readiness fields to failure output.",
+  "finding": "All 4800 preview rows are complete. Trial fixations, map, timeline and source rows are ready, but its picture is not. Nine compute workers are blocked on ReportSources.retainedStudy lazy binding monitor while one computes its canonical digest. Pending image read cannot run.",
+  "fix": "Queue native report evaluations with one shared effect mutex used by backend and navigator. Waiting fibers release compute workers. Canonical digest, scientific inputs and reports unchanged."
+}

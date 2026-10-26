@@ -84,6 +84,7 @@ class FixationContextSuite extends CatsEffectSuite:
     )
     for
       state <- RealNavigator.empty[IO]
+      reports <- RealReportGate.create[IO]
       navigator = new RealNavigator[IO](
         Map.empty,
         run => IO.pure(Left(BackendError.UnknownRun(run, Vector.empty))),
@@ -93,7 +94,8 @@ class FixationContextSuite extends CatsEffectSuite:
               .get(revision)
               .toRight(BackendError.UnknownRevision(revision, preparations.keys.toVector))
           ),
-        state
+        state,
+        reports
       )
       missing    <- navigator.record(fixation)
       _          <- navigator.rememberTrial(first.revision, Vector(fixation)).map(get)

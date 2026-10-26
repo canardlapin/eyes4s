@@ -418,9 +418,13 @@ class InteractionPerformanceFxSuite extends GoldenWindow:
           case error: Throwable =>
             window.foreach(w =>
               println(
-                "[performance] failure context " + runOnFx(
-                  s"designRows=${w.resolvedDesign.state.rows.size}; rowState=${w.resolvedDesign.state.rowState}; preview=${w.resolvedDesign.state.preview.productPrefix}"
-                )
+                "[performance] failure context " + runOnFx {
+                  val drawing = w.explore.trialView.status.get match
+                    case TrialViewStatus.Shown(s) =>
+                      s"Shown(map=${s.map.nonEmpty},picture=${s.frameArt.isInstanceOf[FrameArt.Picture]})"
+                    case other => other.toString
+                  s"designRows=${w.resolvedDesign.state.rows.size}; rowState=${w.resolvedDesign.state.rowState}; preview=${w.resolvedDesign.state.preview.productPrefix}; trial=${w.explore.state.trial}; shown=${w.explore.vm.shown.map(_.trial)}; targets=${w.explore.input.targets.exists(_.targets.nonEmpty)}; timeline=${w.timeline.vm.enabled}; sourceRows=${w.sourceRecords.current.total}; drawing=$drawing"
+                }
               )
             )
             write("failed")

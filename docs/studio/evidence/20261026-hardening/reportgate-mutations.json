@@ -1,0 +1,11 @@
+{
+  "mutations": [
+    {
+      "mutation": "report-monitor-starvation",
+      "exitCode": 1,
+      "log": "/private/tmp/eyes4s-hardening-report-monitor-starvation-mutant.log",
+      "originalSha256": "30c89f1f4cc0ae894d85a38e881739f459e1dcb423c98dace20946853e8315e5"
+    }
+  ],
+  "restoredExitCode": 0
+}

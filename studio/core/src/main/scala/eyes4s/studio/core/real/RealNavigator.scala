@@ -57,7 +57,8 @@ final class RealNavigator[F[_]] private[real] (
     initialReports: Map[ReportingId, ReportingSpec],
     held: RunId => F[Either[BackendError, RealStudyBackend.RealRun]],
     prepared: AnalysisRevision => F[Either[BackendError, RealPrepared]],
-    state: Ref[F, RealNavigator.State]
+    state: Ref[F, RealNavigator.State],
+    reports: RealReportGate[F]
 )(using F: Concurrent[F])
     extends StudyNavigator[F]:
   import RealNavigator.*
@@ -107,7 +108,7 @@ final class RealNavigator[F[_]] private[real] (
             case Some(report) => F.pure(Right(report))
             case None         =>
               held(run)
-                .map(_.flatMap(RealReports.native(run, spec, scale, _)))
+                .flatMap(done => reports.evaluate(done.flatMap(RealReports.native(run, spec, scale, _))))
                 .flatTap {
                   case Left(_)      => F.unit
                   case Right(value) => evaluatedReport(run, spec, scale, value)
