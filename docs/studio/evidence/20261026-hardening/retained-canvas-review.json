@@ -1,0 +1,7 @@
+{
+  "fix": "Keep surface/frame/texture while a retained dock pane is temporarily detached; re-evaluate size and actual window scale on reattachment. Explicit overrides, clear and dispose still invalidate.",
+  "focusedCasesPassed": 26,
+  "mutant": "Restore loss-of-window invalidation; the new real-scene detach/reattach case fails when the frame disappears.",
+  "restoredCase": "Passed; four detach/reattach cycles reuse exact frame with unchanged compile/base-draw counters, then a real scale change rebuilds.",
+  "qualification": "Full application and native scale gates still required."
+}

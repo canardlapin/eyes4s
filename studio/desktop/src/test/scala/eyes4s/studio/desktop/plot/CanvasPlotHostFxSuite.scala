@@ -234,6 +234,30 @@ class CanvasPlotHostFxSuite extends StudioFxSuite:
     runOnFx(host.dispose())
   }
 
+  fxStage.test("retained panes keep their painted frame across a same-surface reattachment") {
+    fx =>
+      val (host, root) = hostIn(fx)
+      val scale        = runOnFx(fx.stage.getOutputScaleX)
+      runOnFx(host.show(reference(Theme.Light)))
+      val frame   = awaitFrame(host, scale)
+      val profile = runOnFx(host.profile)
+      for _ <- 0 until 4 do
+        runOnFx(root.getChildren.remove(host))
+        fx.awaitLayout()
+        assert(runOnFx(host.frame.exists(_ eq frame)))
+        runOnFx(root.getChildren.add(host))
+        fx.awaitLayout()
+        assert(runOnFx(host.frame.exists(_ eq frame)))
+        assertEquals(runOnFx(host.profile.compiles), profile.compiles)
+        assertEquals(runOnFx(host.profile.baseDraws), profile.baseDraws)
+      // A genuine scale change still compiles and paints a new frame.
+      runOnFx(host.setOutputScaleOverride(Some(scale * 2.0)))
+      val changed = awaitFrame(host, scale * 2.0)
+      assert(!(changed eq frame))
+      assert(runOnFx(host.profile.compiles > profile.compiles))
+      runOnFx(host.dispose())
+  }
+
   fxStage.test("the host's accessible help is the scene's text summary, and none without one") {
     fx =>
       val (host, _) = hostIn(fx)

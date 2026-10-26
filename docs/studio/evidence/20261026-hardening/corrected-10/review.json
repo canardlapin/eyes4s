@@ -1,0 +1,5 @@
+{
+  "status": "failed",
+  "note": "1x Analysis153.68ms and10x Compare169.35ms exceed unchanged150ms budget. The 1x interval overlapped this session Java/ImageIO screenshot-difference inspection, so it is not a quiet-machine qualification. All observations retained. The tenfold Compare result remains above budget after those processes ended.",
+  "next": "Preserve canvas frame across temporary dock detach/reattach; verify genuine surface-change invalidation, then run without concurrent image analysis."
+}

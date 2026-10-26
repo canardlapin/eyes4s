@@ -375,14 +375,21 @@ final class CanvasPlotHost private[plot] (
     if !disposed then
       // No area yet (not laid out) is waiting; an area that cannot be a
       // surface is a failure that names its size and scale.
-      val next = squareScale.flatMap {
-        case Some(scale) if getWidth > 0.0 && getHeight > 0.0 =>
-          PlotSurface(getWidth, getHeight, scale)
-            .map(Some(_))
-            .left
-            .map(CanvasPlotError.Surface(_))
-        case _ => Right(None)
-      }
+      // A retained dock pane temporarily has no scene/window. Losing that
+      // window is not a resize: keep its frame and texture until it is attached
+      // again, when the real dimensions and output scale are checked afresh.
+      // Otherwise every perspective switch blanks and repaints every mark.
+      val next =
+        if getScene == null && scaleOverride.isEmpty then surface
+        else
+          squareScale.flatMap {
+            case Some(scale) if getWidth > 0.0 && getHeight > 0.0 =>
+              PlotSurface(getWidth, getHeight, scale)
+                .map(Some(_))
+                .left
+                .map(CanvasPlotError.Surface(_))
+            case _ => Right(None)
+          }
       if next != surface then
         surface = next
         schedule()
