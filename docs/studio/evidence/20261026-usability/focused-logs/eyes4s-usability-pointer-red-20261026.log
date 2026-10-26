@@ -1,0 +1,55 @@
+[info] welcome to sbt 1.11.7 (Eclipse Adoptium Java 25.0.4.1)
+[info] loading settings for project eyes4s-usability-20261026-build from plugins.sbt...
+[info] loading project definition from /private/tmp/eyes4s-usability-20261026/project
+[info] loading settings for project root from build.sbt...
+[info] resolving key references (37727 settings) ...
+[info] set scmInfo to https://github.com/canardlapin/eyes4s
+[info] set current project to root (in build file:/private/tmp/eyes4s-usability-20261026/)
+[info] compiling 1 Scala source to /private/tmp/eyes4s-usability-20261026/studio/core/.jvm/target/scala-3.7.4/classes ...
+[info] done compiling
+[info] compiling 1 Scala source to /private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes ...
+[info] done compiling
+WARNING: A terminally deprecated method in sun.misc.Unsafe has been called
+WARNING: sun.misc.Unsafe::objectFieldOffset has been called by scala.runtime.LazyVals$ (file:/Users/bbuchsbaum/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/scala-lang/scala3-library_3/3.7.4/scala3-library_3-3.7.4.jar)
+WARNING: Please consider reporting this to the maintainers of class scala.runtime.LazyVals$
+WARNING: sun.misc.Unsafe::objectFieldOffset will be removed in a future release
+Oct 26, 2026 9:51:31 A.M. com.sun.javafx.application.PlatformImpl startup
+WARNING: Unsupported JavaFX configuration: classes were loaded from 'unnamed module @3b94ee91'
+WARNING: A restricted method in java.lang.System has been called
+WARNING: java.lang.System::load has been called by com.sun.glass.utils.NativeLibLoader in an unnamed module (file:/Users/bbuchsbaum/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/openjfx/javafx-graphics/24.0.1/javafx-graphics-24.0.1-mac-aarch64.jar)
+WARNING: Use --enable-native-access=ALL-UNNAMED to avoid a warning for callers in this module
+WARNING: Restricted methods will be blocked in a future release unless native access is enabled
+
+Test run eyes4s.studio.desktop.shell.FocusVisibleFxSuite started
+==> X eyes4s.studio.desktop.shell.FocusVisibleFxSuite.a trial's cursor fixation carries the keyboard's ring, and the stage none 0.975s munit.FailException: studio/desktop/src/test/scala/eyes4s/studio/desktop/shell/FocusVisibleFxSuite.scala:454 a click focuses the trial canvas
+453:      fx.robot.click(host)
+454:      assert(runOnFx(host.isFocused), "a click focuses the trial canvas")
+455:      assert(!ring, "a click drew the stage's ring")
+    at munit.FunSuite.assert(FunSuite.scala:12)
+    at eyes4s.studio.desktop.shell.FocusVisibleFxSuite.$init$$$anonfun$7(FocusVisibleFxSuite.scala:454)
+    at munit.FunFixtures.munit$FunFixtures$FunFixture$$_$test$$anonfun$1$$anonfun$1$$anonfun$1(FunFixtures.scala:23)
+==> X eyes4s.studio.desktop.shell.FocusVisibleFxSuite.a trial canvas with no fixations drawn rings the stage's edge for Tab only 0.847s munit.FailException: studio/desktop/src/test/scala/eyes4s/studio/desktop/shell/FocusVisibleFxSuite.scala:486 assertion failed
+485:      fx.robot.press(KeyCode.RIGHT)
+486:      assert(runOnFx(input.ringsCursor))
+487:      runOnFx(KeyboardFocus.away(host))
+    at munit.FunSuite.assert(FunSuite.scala:12)
+    at eyes4s.studio.desktop.shell.FocusVisibleFxSuite.$init$$$anonfun$8(FocusVisibleFxSuite.scala:486)
+    at munit.FunFixtures.munit$FunFixtures$FunFixture$$_$test$$anonfun$1$$anonfun$1$$anonfun$1(FunFixtures.scala:23)
+eyes4s.studio.desktop.shell.FocusVisibleFxSuite: finished 12.011s
+Test run eyes4s.studio.desktop.shell.FocusVisibleFxSuite finished: 2 failed, 0 ignored, 10 total 12.034s
+Test run eyes4s.studio.desktop.shell.AppShellFxSuite started
+==> X eyes4s.studio.desktop.shell.AppShellFxSuite.touring every perspective, focusing and maximizing saves no layout 1.58s munit.FailException: studio/desktop/src/test/scala/eyes4s/studio/desktop/shell/AppShellFxSuite.scala:457 assertion failed
+456:    fx.robot.press(KeyCode.ENTER, shortcut.copy(shift = true))
+457:    assert(runOnFx(w.host.dock.state.maximized).isDefined)
+458:    val captured = runOnFx(w.host.capture())
+    at munit.FunSuite.assert(FunSuite.scala:12)
+    at eyes4s.studio.desktop.shell.AppShellFxSuite.$init$$$anonfun$21(AppShellFxSuite.scala:457)
+    at munit.FunFixtures.munit$FunFixtures$FunFixture$$_$test$$anonfun$1$$anonfun$1$$anonfun$1(FunFixtures.scala:23)
+eyes4s.studio.desktop.shell.AppShellFxSuite: finished 28.215s
+Test run eyes4s.studio.desktop.shell.AppShellFxSuite finished: 1 failed, 0 ignored, 23 total 28.216s
+[error] Failed: Total 33, Failed 3, Errors 0, Passed 30
+[error] Failed tests:
+[error] 	eyes4s.studio.desktop.shell.FocusVisibleFxSuite
+[error] 	eyes4s.studio.desktop.shell.AppShellFxSuite
+[error] (studioDesktop / Test / testOnly) sbt.TestsFailedException: Tests unsuccessful
+[error] Total time: 52 s, completed Oct 26, 2026, 9:52:11 a.m.

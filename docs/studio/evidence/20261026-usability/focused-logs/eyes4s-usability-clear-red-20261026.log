@@ -1,0 +1,121 @@
+[info] welcome to sbt 1.11.7 (Eclipse Adoptium Java 25.0.4.1)
+[info] loading settings for project eyes4s-usability-20261026-build from plugins.sbt...
+[info] loading project definition from /private/tmp/eyes4s-usability-20261026/project
+[info] loading settings for project root from build.sbt...
+[info] resolving key references (37727 settings) ...
+[info] set scmInfo to https://github.com/canardlapin/eyes4s
+[info] set current project to root (in build file:/private/tmp/eyes4s-usability-20261026/)
+[success] Total time: 1 s, completed Oct 26, 2026, 10:39:08 a.m.
+[info] compiling 1 Scala source to /private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes ...
+[info] done compiling
+[info] compiling 1 Scala source to /private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/test-classes ...
+[info] done compiling
+WARNING: A terminally deprecated method in sun.misc.Unsafe has been called
+WARNING: sun.misc.Unsafe::objectFieldOffset has been called by scala.runtime.LazyVals$ (file:/Users/bbuchsbaum/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/scala-lang/scala3-library_3/3.7.4/scala3-library_3-3.7.4.jar)
+WARNING: Please consider reporting this to the maintainers of class scala.runtime.LazyVals$
+WARNING: sun.misc.Unsafe::objectFieldOffset will be removed in a future release
+Oct 26, 2026 10:39:16 A.M. com.sun.javafx.application.PlatformImpl startup
+WARNING: Unsupported JavaFX configuration: classes were loaded from 'unnamed module @51348f01'
+WARNING: A restricted method in java.lang.System has been called
+WARNING: java.lang.System::load has been called by com.sun.glass.utils.NativeLibLoader in an unnamed module (file:/Users/bbuchsbaum/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/openjfx/javafx-graphics/24.0.1/javafx-graphics-24.0.1-mac-aarch64.jar)
+WARNING: Use --enable-native-access=ALL-UNNAMED to avoid a warning for callers in this module
+WARNING: Restricted methods will be blocked in a future release unless native access is enabled
+
+Test run eyes4s.studio.desktop.shell.WorkspaceViewportFxSuite started
+==> X eyes4s.studio.desktop.shell.WorkspaceViewportFxSuite.clearing focus does not reveal unrelated rows or scroll the workspace 2.459s munit.ComparisonFailException: studio/desktop/src/test/scala/eyes4s/studio/desktop/shell/WorkspaceViewportFxSuite.scala:138
+137:    RestingFocus.clear(fx, w)
+138:    assertEquals(runOnFx(panes.map(p => (p.getHvalue, p.getVvalue))), before)
+139:  }
+values are not the same
+=> Obtained
+Vector(
+  Tuple2(
+    _1 = 0.4349442379182156,
+    _2 = 0.8914027149321267
+  ),
+  Tuple2(
+    _1 = 0.0,
+    _2 = 0.0
+  ),
+  Tuple2(
+    _1 = 0.0,
+    _2 = 0.0
+  ),
+  Tuple2(
+    _1 = 0.0,
+    _2 = 0.0
+  ),
+  Tuple2(
+    _1 = 0.0,
+    _2 = 0.0
+  ),
+  Tuple2(
+    _1 = 0.0,
+    _2 = 0.11837655016910936
+  )
+)
+=> Diff (- expected, + obtained)
+   Tuple2(
+-    _1 = 0.0,
+-    _2 = 0.0
++    _1 = 0.4349442379182156,
++    _2 = 0.8914027149321267
+   ),
+     _1 = 0.0,
+-    _2 = 0.0
++    _2 = 0.11837655016910936
+   )
+    at munit.FunSuite.assertEquals(FunSuite.scala:12)
+    at eyes4s.studio.desktop.shell.WorkspaceViewportFxSuite.$init$$$anonfun$1(WorkspaceViewportFxSuite.scala:138)
+    at munit.FunFixtures.munit$FunFixtures$FunFixture$$_$test$$anonfun$1$$anonfun$1$$anonfun$1(FunFixtures.scala:23)
+eyes4s.studio.desktop.shell.WorkspaceViewportFxSuite: finished 2.628s
+Test run eyes4s.studio.desktop.shell.WorkspaceViewportFxSuite finished: 1 failed, 0 ignored, 1 total 2.632s
+Test run eyes4s.studio.desktop.shell.BoardWorkspaceViewportFxSuite started
+==> X eyes4s.studio.desktop.shell.BoardWorkspaceViewportFxSuite.clearing focus does not reveal unrelated rows or scroll the workspace 0.414s munit.ComparisonFailException: studio/desktop/src/test/scala/eyes4s/studio/desktop/shell/WorkspaceViewportFxSuite.scala:138
+137:    RestingFocus.clear(fx, w)
+138:    assertEquals(runOnFx(panes.map(p => (p.getHvalue, p.getVvalue))), before)
+139:  }
+values are not the same
+=> Obtained
+Vector(
+  Tuple2(
+    _1 = 0.0,
+    _2 = 0.0
+  ),
+  Tuple2(
+    _1 = 0.0,
+    _2 = 0.0
+  ),
+  Tuple2(
+    _1 = 0.0,
+    _2 = 0.0
+  ),
+  Tuple2(
+    _1 = 0.0,
+    _2 = 0.0
+  ),
+  Tuple2(
+    _1 = 0.0,
+    _2 = 0.0
+  ),
+  Tuple2(
+    _1 = 0.0,
+    _2 = 0.08108108108108109
+  )
+)
+=> Diff (- expected, + obtained)
+     _1 = 0.0,
+-    _2 = 0.0
++    _2 = 0.08108108108108109
+   )
+    at munit.FunSuite.assertEquals(FunSuite.scala:12)
+    at eyes4s.studio.desktop.shell.WorkspaceViewportFxSuite.$init$$$anonfun$1(WorkspaceViewportFxSuite.scala:138)
+    at munit.FunFixtures.munit$FunFixtures$FunFixture$$_$test$$anonfun$1$$anonfun$1$$anonfun$1(FunFixtures.scala:23)
+eyes4s.studio.desktop.shell.BoardWorkspaceViewportFxSuite: finished 0.424s
+Test run eyes4s.studio.desktop.shell.BoardWorkspaceViewportFxSuite finished: 1 failed, 0 ignored, 1 total 0.424s
+[error] Failed: Total 2, Failed 2, Errors 0, Passed 0
+[error] Failed tests:
+[error] 	eyes4s.studio.desktop.shell.WorkspaceViewportFxSuite
+[error] 	eyes4s.studio.desktop.shell.BoardWorkspaceViewportFxSuite
+[error] (studioDesktop / Test / testOnly) sbt.TestsFailedException: Tests unsuccessful
+[error] Total time: 11 s, completed Oct 26, 2026, 10:39:19 a.m.

@@ -1,6 +1,6 @@
 {
   "schema": 1,
-  "status": "corrected focused checks passed; full qualification pending",
+  "status": "superseded by corrected-review.json; native pointer/shortcut and root-focus scroll regressions corrected",
   "supersedes": "897806be301d484c6e44537a413f6b02b30904bf",
   "sourceFingerprint": "1c9920d121b95b5aaeab4bd63c7b977e13d1e3171ff527be0c05cffda34601d0",
   "reason": "End put the Participants cursor at y634..677 while the outer clip ended at643. The original pane-level visibility assertion did not detect this.",

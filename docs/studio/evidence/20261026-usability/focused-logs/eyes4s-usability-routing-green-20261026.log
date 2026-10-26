@@ -1,0 +1,939 @@
+[info] welcome to sbt 1.11.7 (Eclipse Adoptium Java 25.0.4.1)
+[info] loading settings for project eyes4s-usability-20261026-build from plugins.sbt...
+[info] loading project definition from /private/tmp/eyes4s-usability-20261026/project
+[info] loading settings for project root from build.sbt...
+[info] resolving key references (37727 settings) ...
+[info] set scmInfo to https://github.com/canardlapin/eyes4s
+[info] set current project to root (in build file:/private/tmp/eyes4s-usability-20261026/)
+[info] scalafmt: Formatting 2 Scala sources (/private/tmp/eyes4s-usability-20261026/studio/desktop)...
+[info] scalafmt: Formatting 1 Scala sources (/private/tmp/eyes4s-usability-20261026/studio/desktop)...
+[info] scalafmt: Reformatted 1 Scala sources
+[info] scalafmt: Reformatted 1 Scala sources
+[success] Total time: 1 s, completed Oct 26, 2026, 9:56:51 a.m.
+[info] compiling 3 Scala sources to /private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes ...
+[info] done compiling
+[info] compiling 1 Scala source to /private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/test-classes ...
+[info] done compiling
+WARNING: A terminally deprecated method in sun.misc.Unsafe has been called
+WARNING: sun.misc.Unsafe::objectFieldOffset has been called by scala.runtime.LazyVals$ (file:/Users/bbuchsbaum/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/scala-lang/scala3-library_3/3.7.4/scala3-library_3-3.7.4.jar)
+WARNING: Please consider reporting this to the maintainers of class scala.runtime.LazyVals$
+WARNING: sun.misc.Unsafe::objectFieldOffset will be removed in a future release
+Oct 26, 2026 9:57:00 A.M. com.sun.javafx.application.PlatformImpl startup
+WARNING: Unsupported JavaFX configuration: classes were loaded from 'unnamed module @703b49cd'
+WARNING: A restricted method in java.lang.System has been called
+WARNING: java.lang.System::load has been called by com.sun.glass.utils.NativeLibLoader in an unnamed module (file:/Users/bbuchsbaum/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/openjfx/javafx-graphics/24.0.1/javafx-graphics-24.0.1-mac-aarch64.jar)
+WARNING: Use --enable-native-access=ALL-UNNAMED to avoid a warning for callers in this module
+WARNING: Restricted methods will be blocked in a future release unless native access is enabled
+
+Test run eyes4s.studio.desktop.shell.FocusVisibleFxSuite started
+eyes4s.studio.desktop.shell.FocusVisibleFxSuite: finished 7.75s
+Test run eyes4s.studio.desktop.shell.FocusVisibleFxSuite finished: 0 failed, 0 ignored, 10 total 7.757s
+Test run eyes4s.studio.desktop.shell.AppShellFxSuite started
+eyes4s.studio.desktop.shell.AppShellFxSuite: finished 22.6s
+Test run eyes4s.studio.desktop.shell.AppShellFxSuite finished: 0 failed, 0 ignored, 23 total 22.6s
+Test run eyes4s.studio.desktop.shell.WorkspaceViewportFxSuite started
+eyes4s.studio.desktop.shell.WorkspaceViewportFxSuite: finished 6.885s
+Test run eyes4s.studio.desktop.shell.WorkspaceViewportFxSuite finished: 0 failed, 0 ignored, 4 total 6.885s
+Test run eyes4s.studio.desktop.shell.BoardWorkspaceViewportFxSuite started
+eyes4s.studio.desktop.shell.BoardWorkspaceViewportFxSuite: finished 7.63s
+Test run eyes4s.studio.desktop.shell.BoardWorkspaceViewportFxSuite finished: 0 failed, 0 ignored, 4 total 7.631s
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-fx-text-background-color' while resolving lookups for '-fx-text-fill' from rule '*.list-cell' in stylesheet jar:file:/Users/bbuchsbaum/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/openjfx/javafx-controls/24.0.1/javafx-controls-24.0.1-mac-aarch64.jar!/com/sun/javafx/scene/control/skin/modena/modena.bss
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Caught 'java.lang.ClassCastException: class java.lang.String cannot be cast to class javafx.scene.paint.Paint (java.lang.String is in module java.base of loader 'bootstrap'; javafx.scene.paint.Paint is in unnamed module of loader 'app')' while converting value for '-fx-background-color' from rule '*.table-twin-row' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-fx-text-background-color' while resolving lookups for '-fx-text-fill' from rule '*.list-cell' in stylesheet jar:file:/Users/bbuchsbaum/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/openjfx/javafx-controls/24.0.1/javafx-controls-24.0.1-mac-aarch64.jar!/com/sun/javafx/scene/control/skin/modena/modena.bss
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-fx-text-background-color' while resolving lookups for '-fx-text-fill' from rule '*.list-cell' in stylesheet jar:file:/Users/bbuchsbaum/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/openjfx/javafx-controls/24.0.1/javafx-controls-24.0.1-mac-aarch64.jar!/com/sun/javafx/scene/control/skin/modena/modena.bss
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Caught 'java.lang.ClassCastException: class java.lang.String cannot be cast to class javafx.scene.paint.Paint (java.lang.String is in module java.base of loader 'bootstrap'; javafx.scene.paint.Paint is in unnamed module of loader 'app')' while converting value for '-fx-background-color' from rule '*.table-twin-row' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-fx-text-background-color' while resolving lookups for '-fx-text-fill' from rule '*.list-cell' in stylesheet jar:file:/Users/bbuchsbaum/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/openjfx/javafx-controls/24.0.1/javafx-controls-24.0.1-mac-aarch64.jar!/com/sun/javafx/scene/control/skin/modena/modena.bss
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-fx-text-background-color' while resolving lookups for '-fx-text-fill' from rule '*.list-cell' in stylesheet jar:file:/Users/bbuchsbaum/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/openjfx/javafx-controls/24.0.1/javafx-controls-24.0.1-mac-aarch64.jar!/com/sun/javafx/scene/control/skin/modena/modena.bss
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Caught 'java.lang.ClassCastException: class java.lang.String cannot be cast to class javafx.scene.paint.Paint (java.lang.String is in module java.base of loader 'bootstrap'; javafx.scene.paint.Paint is in unnamed module of loader 'app')' while converting value for '-fx-background-color' from rule '*.table-twin-row' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-fx-text-background-color' while resolving lookups for '-fx-text-fill' from rule '*.list-cell' in stylesheet jar:file:/Users/bbuchsbaum/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/openjfx/javafx-controls/24.0.1/javafx-controls-24.0.1-mac-aarch64.jar!/com/sun/javafx/scene/control/skin/modena/modena.bss
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-fx-text-background-color' while resolving lookups for '-fx-text-fill' from rule '*.list-cell' in stylesheet jar:file:/Users/bbuchsbaum/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/openjfx/javafx-controls/24.0.1/javafx-controls-24.0.1-mac-aarch64.jar!/com/sun/javafx/scene/control/skin/modena/modena.bss
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-fx-text-background-color' while resolving lookups for '-fx-text-fill' from rule '*.list-cell' in stylesheet jar:file:/Users/bbuchsbaum/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/openjfx/javafx-controls/24.0.1/javafx-controls-24.0.1-mac-aarch64.jar!/com/sun/javafx/scene/control/skin/modena/modena.bss
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-fx-text-background-color' while resolving lookups for '-fx-text-fill' from rule '*.list-cell' in stylesheet jar:file:/Users/bbuchsbaum/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/openjfx/javafx-controls/24.0.1/javafx-controls-24.0.1-mac-aarch64.jar!/com/sun/javafx/scene/control/skin/modena/modena.bss
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-fx-text-background-color' while resolving lookups for '-fx-text-fill' from rule '*.list-cell' in stylesheet jar:file:/Users/bbuchsbaum/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/openjfx/javafx-controls/24.0.1/javafx-controls-24.0.1-mac-aarch64.jar!/com/sun/javafx/scene/control/skin/modena/modena.bss
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-fx-text-background-color' while resolving lookups for '-fx-text-fill' from rule '*.list-cell' in stylesheet jar:file:/Users/bbuchsbaum/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/openjfx/javafx-controls/24.0.1/javafx-controls-24.0.1-mac-aarch64.jar!/com/sun/javafx/scene/control/skin/modena/modena.bss
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-fx-text-background-color' while resolving lookups for '-fx-text-fill' from rule '*.list-cell' in stylesheet jar:file:/Users/bbuchsbaum/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/openjfx/javafx-controls/24.0.1/javafx-controls-24.0.1-mac-aarch64.jar!/com/sun/javafx/scene/control/skin/modena/modena.bss
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-fx-text-background-color' while resolving lookups for '-fx-text-fill' from rule '*.label' in stylesheet jar:file:/Users/bbuchsbaum/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/openjfx/javafx-controls/24.0.1/javafx-controls-24.0.1-mac-aarch64.jar!/com/sun/javafx/scene/control/skin/modena/modena.bss
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-fx-text-background-color' while resolving lookups for '-fx-text-fill' from rule '*.label' in stylesheet jar:file:/Users/bbuchsbaum/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/openjfx/javafx-controls/24.0.1/javafx-controls-24.0.1-mac-aarch64.jar!/com/sun/javafx/scene/control/skin/modena/modena.bss
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-fx-text-background-color' while resolving lookups for '-fx-text-fill' from rule '*.label' in stylesheet jar:file:/Users/bbuchsbaum/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/openjfx/javafx-controls/24.0.1/javafx-controls-24.0.1-mac-aarch64.jar!/com/sun/javafx/scene/control/skin/modena/modena.bss
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-fx-text-background-color' while resolving lookups for '-fx-text-fill' from rule '*.label' in stylesheet jar:file:/Users/bbuchsbaum/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/openjfx/javafx-controls/24.0.1/javafx-controls-24.0.1-mac-aarch64.jar!/com/sun/javafx/scene/control/skin/modena/modena.bss
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-fx-text-background-color' while resolving lookups for '-fx-text-fill' from rule '*.list-cell' in stylesheet jar:file:/Users/bbuchsbaum/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/openjfx/javafx-controls/24.0.1/javafx-controls-24.0.1-mac-aarch64.jar!/com/sun/javafx/scene/control/skin/modena/modena.bss
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Caught 'java.lang.ClassCastException: class java.lang.String cannot be cast to class javafx.scene.paint.Paint (java.lang.String is in module java.base of loader 'bootstrap'; javafx.scene.paint.Paint is in unnamed module of loader 'app')' while converting value for '-fx-background-color' from rule '*.table-twin-row' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-fx-text-background-color' while resolving lookups for '-fx-text-fill' from rule '*.label' in stylesheet jar:file:/Users/bbuchsbaum/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/openjfx/javafx-controls/24.0.1/javafx-controls-24.0.1-mac-aarch64.jar!/com/sun/javafx/scene/control/skin/modena/modena.bss
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-fx-text-background-color' while resolving lookups for '-fx-text-fill' from rule '*.label' in stylesheet jar:file:/Users/bbuchsbaum/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/openjfx/javafx-controls/24.0.1/javafx-controls-24.0.1-mac-aarch64.jar!/com/sun/javafx/scene/control/skin/modena/modena.bss
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-fx-text-background-color' while resolving lookups for '-fx-text-fill' from rule '*.label' in stylesheet jar:file:/Users/bbuchsbaum/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/openjfx/javafx-controls/24.0.1/javafx-controls-24.0.1-mac-aarch64.jar!/com/sun/javafx/scene/control/skin/modena/modena.bss
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-fx-text-background-color' while resolving lookups for '-fx-text-fill' from rule '*.label' in stylesheet jar:file:/Users/bbuchsbaum/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/openjfx/javafx-controls/24.0.1/javafx-controls-24.0.1-mac-aarch64.jar!/com/sun/javafx/scene/control/skin/modena/modena.bss
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-fx-text-background-color' while resolving lookups for '-fx-text-fill' from rule '*.label' in stylesheet jar:file:/Users/bbuchsbaum/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/openjfx/javafx-controls/24.0.1/javafx-controls-24.0.1-mac-aarch64.jar!/com/sun/javafx/scene/control/skin/modena/modena.bss
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-fx-text-background-color' while resolving lookups for '-fx-text-fill' from rule '*.label' in stylesheet jar:file:/Users/bbuchsbaum/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/openjfx/javafx-controls/24.0.1/javafx-controls-24.0.1-mac-aarch64.jar!/com/sun/javafx/scene/control/skin/modena/modena.bss
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-fx-text-background-color' while resolving lookups for '-fx-text-fill' from rule '*.label' in stylesheet jar:file:/Users/bbuchsbaum/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/openjfx/javafx-controls/24.0.1/javafx-controls-24.0.1-mac-aarch64.jar!/com/sun/javafx/scene/control/skin/modena/modena.bss
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-fx-text-background-color' while resolving lookups for '-fx-text-fill' from rule '*.label' in stylesheet jar:file:/Users/bbuchsbaum/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/openjfx/javafx-controls/24.0.1/javafx-controls-24.0.1-mac-aarch64.jar!/com/sun/javafx/scene/control/skin/modena/modena.bss
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-fx-text-background-color' while resolving lookups for '-fx-text-fill' from rule '*.label' in stylesheet jar:file:/Users/bbuchsbaum/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/openjfx/javafx-controls/24.0.1/javafx-controls-24.0.1-mac-aarch64.jar!/com/sun/javafx/scene/control/skin/modena/modena.bss
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-fx-text-background-color' while resolving lookups for '-fx-text-fill' from rule '*.label' in stylesheet jar:file:/Users/bbuchsbaum/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/openjfx/javafx-controls/24.0.1/javafx-controls-24.0.1-mac-aarch64.jar!/com/sun/javafx/scene/control/skin/modena/modena.bss
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-fx-text-background-color' while resolving lookups for '-fx-text-fill' from rule '*.label' in stylesheet jar:file:/Users/bbuchsbaum/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/openjfx/javafx-controls/24.0.1/javafx-controls-24.0.1-mac-aarch64.jar!/com/sun/javafx/scene/control/skin/modena/modena.bss
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-fx-text-background-color' while resolving lookups for '-fx-text-fill' from rule '*.label' in stylesheet jar:file:/Users/bbuchsbaum/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/openjfx/javafx-controls/24.0.1/javafx-controls-24.0.1-mac-aarch64.jar!/com/sun/javafx/scene/control/skin/modena/modena.bss
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-fx-text-background-color' while resolving lookups for '-fx-text-fill' from rule '*.label' in stylesheet jar:file:/Users/bbuchsbaum/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/openjfx/javafx-controls/24.0.1/javafx-controls-24.0.1-mac-aarch64.jar!/com/sun/javafx/scene/control/skin/modena/modena.bss
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-fx-text-background-color' while resolving lookups for '-fx-text-fill' from rule '*.label' in stylesheet jar:file:/Users/bbuchsbaum/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/openjfx/javafx-controls/24.0.1/javafx-controls-24.0.1-mac-aarch64.jar!/com/sun/javafx/scene/control/skin/modena/modena.bss
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-fx-text-background-color' while resolving lookups for '-fx-text-fill' from rule '*.label' in stylesheet jar:file:/Users/bbuchsbaum/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/openjfx/javafx-controls/24.0.1/javafx-controls-24.0.1-mac-aarch64.jar!/com/sun/javafx/scene/control/skin/modena/modena.bss
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-fx-text-background-color' while resolving lookups for '-fx-text-fill' from rule '*.label' in stylesheet jar:file:/Users/bbuchsbaum/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/openjfx/javafx-controls/24.0.1/javafx-controls-24.0.1-mac-aarch64.jar!/com/sun/javafx/scene/control/skin/modena/modena.bss
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-fx-text-background-color' while resolving lookups for '-fx-text-fill' from rule '*.label' in stylesheet jar:file:/Users/bbuchsbaum/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/openjfx/javafx-controls/24.0.1/javafx-controls-24.0.1-mac-aarch64.jar!/com/sun/javafx/scene/control/skin/modena/modena.bss
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-fx-text-background-color' while resolving lookups for '-fx-text-fill' from rule '*.label' in stylesheet jar:file:/Users/bbuchsbaum/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/openjfx/javafx-controls/24.0.1/javafx-controls-24.0.1-mac-aarch64.jar!/com/sun/javafx/scene/control/skin/modena/modena.bss
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-fx-text-background-color' while resolving lookups for '-fx-text-fill' from rule '*.label' in stylesheet jar:file:/Users/bbuchsbaum/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/openjfx/javafx-controls/24.0.1/javafx-controls-24.0.1-mac-aarch64.jar!/com/sun/javafx/scene/control/skin/modena/modena.bss
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-fx-text-background-color' while resolving lookups for '-fx-text-fill' from rule '*.label' in stylesheet jar:file:/Users/bbuchsbaum/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/openjfx/javafx-controls/24.0.1/javafx-controls-24.0.1-mac-aarch64.jar!/com/sun/javafx/scene/control/skin/modena/modena.bss
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-fx-text-background-color' while resolving lookups for '-fx-text-fill' from rule '*.label' in stylesheet jar:file:/Users/bbuchsbaum/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/openjfx/javafx-controls/24.0.1/javafx-controls-24.0.1-mac-aarch64.jar!/com/sun/javafx/scene/control/skin/modena/modena.bss
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-fx-text-background-color' while resolving lookups for '-fx-text-fill' from rule '*.label' in stylesheet jar:file:/Users/bbuchsbaum/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/openjfx/javafx-controls/24.0.1/javafx-controls-24.0.1-mac-aarch64.jar!/com/sun/javafx/scene/control/skin/modena/modena.bss
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-fx-text-background-color' while resolving lookups for '-fx-text-fill' from rule '*.label' in stylesheet jar:file:/Users/bbuchsbaum/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/openjfx/javafx-controls/24.0.1/javafx-controls-24.0.1-mac-aarch64.jar!/com/sun/javafx/scene/control/skin/modena/modena.bss
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-fx-text-background-color' while resolving lookups for '-fx-text-fill' from rule '*.label' in stylesheet jar:file:/Users/bbuchsbaum/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/openjfx/javafx-controls/24.0.1/javafx-controls-24.0.1-mac-aarch64.jar!/com/sun/javafx/scene/control/skin/modena/modena.bss
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-fx-text-background-color' while resolving lookups for '-fx-text-fill' from rule '*.label' in stylesheet jar:file:/Users/bbuchsbaum/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/openjfx/javafx-controls/24.0.1/javafx-controls-24.0.1-mac-aarch64.jar!/com/sun/javafx/scene/control/skin/modena/modena.bss
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-fx-text-background-color' while resolving lookups for '-fx-text-fill' from rule '*.label' in stylesheet jar:file:/Users/bbuchsbaum/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/openjfx/javafx-controls/24.0.1/javafx-controls-24.0.1-mac-aarch64.jar!/com/sun/javafx/scene/control/skin/modena/modena.bss
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-fx-text-background-color' while resolving lookups for '-fx-text-fill' from rule '*.label' in stylesheet jar:file:/Users/bbuchsbaum/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/openjfx/javafx-controls/24.0.1/javafx-controls-24.0.1-mac-aarch64.jar!/com/sun/javafx/scene/control/skin/modena/modena.bss
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-fx-text-background-color' while resolving lookups for '-fx-text-fill' from rule '*.label' in stylesheet jar:file:/Users/bbuchsbaum/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/openjfx/javafx-controls/24.0.1/javafx-controls-24.0.1-mac-aarch64.jar!/com/sun/javafx/scene/control/skin/modena/modena.bss
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-fx-text-background-color' while resolving lookups for '-fx-text-fill' from rule '*.label' in stylesheet jar:file:/Users/bbuchsbaum/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/openjfx/javafx-controls/24.0.1/javafx-controls-24.0.1-mac-aarch64.jar!/com/sun/javafx/scene/control/skin/modena/modena.bss
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-fx-text-background-color' while resolving lookups for '-fx-text-fill' from rule '*.label' in stylesheet jar:file:/Users/bbuchsbaum/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/openjfx/javafx-controls/24.0.1/javafx-controls-24.0.1-mac-aarch64.jar!/com/sun/javafx/scene/control/skin/modena/modena.bss
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-fx-text-background-color' while resolving lookups for '-fx-text-fill' from rule '*.label' in stylesheet jar:file:/Users/bbuchsbaum/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/openjfx/javafx-controls/24.0.1/javafx-controls-24.0.1-mac-aarch64.jar!/com/sun/javafx/scene/control/skin/modena/modena.bss
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-fx-text-background-color' while resolving lookups for '-fx-text-fill' from rule '*.label' in stylesheet jar:file:/Users/bbuchsbaum/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/openjfx/javafx-controls/24.0.1/javafx-controls-24.0.1-mac-aarch64.jar!/com/sun/javafx/scene/control/skin/modena/modena.bss
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-fx-text-background-color' while resolving lookups for '-fx-text-fill' from rule '*.label' in stylesheet jar:file:/Users/bbuchsbaum/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/openjfx/javafx-controls/24.0.1/javafx-controls-24.0.1-mac-aarch64.jar!/com/sun/javafx/scene/control/skin/modena/modena.bss
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-fx-text-background-color' while resolving lookups for '-fx-text-fill' from rule '*.label' in stylesheet jar:file:/Users/bbuchsbaum/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/openjfx/javafx-controls/24.0.1/javafx-controls-24.0.1-mac-aarch64.jar!/com/sun/javafx/scene/control/skin/modena/modena.bss
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-fx-text-background-color' while resolving lookups for '-fx-text-fill' from rule '*.label' in stylesheet jar:file:/Users/bbuchsbaum/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/openjfx/javafx-controls/24.0.1/javafx-controls-24.0.1-mac-aarch64.jar!/com/sun/javafx/scene/control/skin/modena/modena.bss
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-fx-text-background-color' while resolving lookups for '-fx-text-fill' from rule '*.label' in stylesheet jar:file:/Users/bbuchsbaum/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/openjfx/javafx-controls/24.0.1/javafx-controls-24.0.1-mac-aarch64.jar!/com/sun/javafx/scene/control/skin/modena/modena.bss
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-fx-text-background-color' while resolving lookups for '-fx-text-fill' from rule '*.label' in stylesheet jar:file:/Users/bbuchsbaum/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/openjfx/javafx-controls/24.0.1/javafx-controls-24.0.1-mac-aarch64.jar!/com/sun/javafx/scene/control/skin/modena/modena.bss
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-fx-text-background-color' while resolving lookups for '-fx-text-fill' from rule '*.label' in stylesheet jar:file:/Users/bbuchsbaum/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/openjfx/javafx-controls/24.0.1/javafx-controls-24.0.1-mac-aarch64.jar!/com/sun/javafx/scene/control/skin/modena/modena.bss
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-fx-text-background-color' while resolving lookups for '-fx-text-fill' from rule '*.label' in stylesheet jar:file:/Users/bbuchsbaum/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/openjfx/javafx-controls/24.0.1/javafx-controls-24.0.1-mac-aarch64.jar!/com/sun/javafx/scene/control/skin/modena/modena.bss
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-fx-text-background-color' while resolving lookups for '-fx-text-fill' from rule '*.label' in stylesheet jar:file:/Users/bbuchsbaum/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/openjfx/javafx-controls/24.0.1/javafx-controls-24.0.1-mac-aarch64.jar!/com/sun/javafx/scene/control/skin/modena/modena.bss
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-fx-text-background-color' while resolving lookups for '-fx-text-fill' from rule '*.label' in stylesheet jar:file:/Users/bbuchsbaum/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/openjfx/javafx-controls/24.0.1/javafx-controls-24.0.1-mac-aarch64.jar!/com/sun/javafx/scene/control/skin/modena/modena.bss
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-fx-text-background-color' while resolving lookups for '-fx-text-fill' from rule '*.label' in stylesheet jar:file:/Users/bbuchsbaum/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/openjfx/javafx-controls/24.0.1/javafx-controls-24.0.1-mac-aarch64.jar!/com/sun/javafx/scene/control/skin/modena/modena.bss
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-fx-text-background-color' while resolving lookups for '-fx-text-fill' from rule '*.label' in stylesheet jar:file:/Users/bbuchsbaum/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/openjfx/javafx-controls/24.0.1/javafx-controls-24.0.1-mac-aarch64.jar!/com/sun/javafx/scene/control/skin/modena/modena.bss
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-fx-text-background-color' while resolving lookups for '-fx-text-fill' from rule '*.label' in stylesheet jar:file:/Users/bbuchsbaum/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/openjfx/javafx-controls/24.0.1/javafx-controls-24.0.1-mac-aarch64.jar!/com/sun/javafx/scene/control/skin/modena/modena.bss
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-fx-text-background-color' while resolving lookups for '-fx-text-fill' from rule '*.label' in stylesheet jar:file:/Users/bbuchsbaum/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/openjfx/javafx-controls/24.0.1/javafx-controls-24.0.1-mac-aarch64.jar!/com/sun/javafx/scene/control/skin/modena/modena.bss
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-fx-text-background-color' while resolving lookups for '-fx-text-fill' from rule '*.label' in stylesheet jar:file:/Users/bbuchsbaum/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/openjfx/javafx-controls/24.0.1/javafx-controls-24.0.1-mac-aarch64.jar!/com/sun/javafx/scene/control/skin/modena/modena.bss
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-fx-text-background-color' while resolving lookups for '-fx-text-fill' from rule '*.label' in stylesheet jar:file:/Users/bbuchsbaum/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/openjfx/javafx-controls/24.0.1/javafx-controls-24.0.1-mac-aarch64.jar!/com/sun/javafx/scene/control/skin/modena/modena.bss
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-fx-text-background-color' while resolving lookups for '-fx-text-fill' from rule '*.label' in stylesheet jar:file:/Users/bbuchsbaum/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/openjfx/javafx-controls/24.0.1/javafx-controls-24.0.1-mac-aarch64.jar!/com/sun/javafx/scene/control/skin/modena/modena.bss
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-fx-text-background-color' while resolving lookups for '-fx-text-fill' from rule '*.label' in stylesheet jar:file:/Users/bbuchsbaum/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/openjfx/javafx-controls/24.0.1/javafx-controls-24.0.1-mac-aarch64.jar!/com/sun/javafx/scene/control/skin/modena/modena.bss
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-fx-text-background-color' while resolving lookups for '-fx-text-fill' from rule '*.label' in stylesheet jar:file:/Users/bbuchsbaum/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/openjfx/javafx-controls/24.0.1/javafx-controls-24.0.1-mac-aarch64.jar!/com/sun/javafx/scene/control/skin/modena/modena.bss
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-fx-text-background-color' while resolving lookups for '-fx-text-fill' from rule '*.label' in stylesheet jar:file:/Users/bbuchsbaum/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/openjfx/javafx-controls/24.0.1/javafx-controls-24.0.1-mac-aarch64.jar!/com/sun/javafx/scene/control/skin/modena/modena.bss
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-fx-text-background-color' while resolving lookups for '-fx-text-fill' from rule '*.label' in stylesheet jar:file:/Users/bbuchsbaum/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/openjfx/javafx-controls/24.0.1/javafx-controls-24.0.1-mac-aarch64.jar!/com/sun/javafx/scene/control/skin/modena/modena.bss
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Caught 'java.lang.ClassCastException: class java.lang.String cannot be cast to class javafx.scene.paint.Paint (java.lang.String is in module java.base of loader 'bootstrap'; javafx.scene.paint.Paint is in unnamed module of loader 'app')' while converting value for '-fx-background-color' from rule '*.participants-selected' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-participants.css
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-fx-text-background-color' while resolving lookups for '-fx-text-fill' from rule '*.label' in stylesheet jar:file:/Users/bbuchsbaum/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/openjfx/javafx-controls/24.0.1/javafx-controls-24.0.1-mac-aarch64.jar!/com/sun/javafx/scene/control/skin/modena/modena.bss
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-fx-text-background-color' while resolving lookups for '-fx-text-fill' from rule '*.label' in stylesheet jar:file:/Users/bbuchsbaum/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/openjfx/javafx-controls/24.0.1/javafx-controls-24.0.1-mac-aarch64.jar!/com/sun/javafx/scene/control/skin/modena/modena.bss
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-fx-text-background-color' while resolving lookups for '-fx-text-fill' from rule '*.label' in stylesheet jar:file:/Users/bbuchsbaum/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/openjfx/javafx-controls/24.0.1/javafx-controls-24.0.1-mac-aarch64.jar!/com/sun/javafx/scene/control/skin/modena/modena.bss
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-fx-text-background-color' while resolving lookups for '-fx-text-fill' from rule '*.label' in stylesheet jar:file:/Users/bbuchsbaum/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/openjfx/javafx-controls/24.0.1/javafx-controls-24.0.1-mac-aarch64.jar!/com/sun/javafx/scene/control/skin/modena/modena.bss
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-fx-text-background-color' while resolving lookups for '-fx-text-fill' from rule '*.label' in stylesheet jar:file:/Users/bbuchsbaum/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/openjfx/javafx-controls/24.0.1/javafx-controls-24.0.1-mac-aarch64.jar!/com/sun/javafx/scene/control/skin/modena/modena.bss
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-fx-text-background-color' while resolving lookups for '-fx-text-fill' from rule '*.label' in stylesheet jar:file:/Users/bbuchsbaum/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/openjfx/javafx-controls/24.0.1/javafx-controls-24.0.1-mac-aarch64.jar!/com/sun/javafx/scene/control/skin/modena/modena.bss
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-fx-text-background-color' while resolving lookups for '-fx-text-fill' from rule '*.label' in stylesheet jar:file:/Users/bbuchsbaum/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/openjfx/javafx-controls/24.0.1/javafx-controls-24.0.1-mac-aarch64.jar!/com/sun/javafx/scene/control/skin/modena/modena.bss
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-fx-text-background-color' while resolving lookups for '-fx-text-fill' from rule '*.label' in stylesheet jar:file:/Users/bbuchsbaum/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/openjfx/javafx-controls/24.0.1/javafx-controls-24.0.1-mac-aarch64.jar!/com/sun/javafx/scene/control/skin/modena/modena.bss
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-fx-text-background-color' while resolving lookups for '-fx-text-fill' from rule '*.label' in stylesheet jar:file:/Users/bbuchsbaum/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/openjfx/javafx-controls/24.0.1/javafx-controls-24.0.1-mac-aarch64.jar!/com/sun/javafx/scene/control/skin/modena/modena.bss
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-fx-text-background-color' while resolving lookups for '-fx-text-fill' from rule '*.label' in stylesheet jar:file:/Users/bbuchsbaum/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/openjfx/javafx-controls/24.0.1/javafx-controls-24.0.1-mac-aarch64.jar!/com/sun/javafx/scene/control/skin/modena/modena.bss
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-fx-text-background-color' while resolving lookups for '-fx-text-fill' from rule '*.label' in stylesheet jar:file:/Users/bbuchsbaum/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/openjfx/javafx-controls/24.0.1/javafx-controls-24.0.1-mac-aarch64.jar!/com/sun/javafx/scene/control/skin/modena/modena.bss
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-fx-text-background-color' while resolving lookups for '-fx-text-fill' from rule '*.label' in stylesheet jar:file:/Users/bbuchsbaum/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/openjfx/javafx-controls/24.0.1/javafx-controls-24.0.1-mac-aarch64.jar!/com/sun/javafx/scene/control/skin/modena/modena.bss
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-fx-text-background-color' while resolving lookups for '-fx-text-fill' from rule '*.label' in stylesheet jar:file:/Users/bbuchsbaum/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/openjfx/javafx-controls/24.0.1/javafx-controls-24.0.1-mac-aarch64.jar!/com/sun/javafx/scene/control/skin/modena/modena.bss
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-fx-text-background-color' while resolving lookups for '-fx-text-fill' from rule '*.label' in stylesheet jar:file:/Users/bbuchsbaum/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/openjfx/javafx-controls/24.0.1/javafx-controls-24.0.1-mac-aarch64.jar!/com/sun/javafx/scene/control/skin/modena/modena.bss
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-fx-text-background-color' while resolving lookups for '-fx-text-fill' from rule '*.label' in stylesheet jar:file:/Users/bbuchsbaum/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/openjfx/javafx-controls/24.0.1/javafx-controls-24.0.1-mac-aarch64.jar!/com/sun/javafx/scene/control/skin/modena/modena.bss
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-fx-text-background-color' while resolving lookups for '-fx-text-fill' from rule '*.label' in stylesheet jar:file:/Users/bbuchsbaum/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/openjfx/javafx-controls/24.0.1/javafx-controls-24.0.1-mac-aarch64.jar!/com/sun/javafx/scene/control/skin/modena/modena.bss
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-fx-text-background-color' while resolving lookups for '-fx-text-fill' from rule '*.label' in stylesheet jar:file:/Users/bbuchsbaum/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/openjfx/javafx-controls/24.0.1/javafx-controls-24.0.1-mac-aarch64.jar!/com/sun/javafx/scene/control/skin/modena/modena.bss
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-fx-text-background-color' while resolving lookups for '-fx-text-fill' from rule '*.label' in stylesheet jar:file:/Users/bbuchsbaum/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/openjfx/javafx-controls/24.0.1/javafx-controls-24.0.1-mac-aarch64.jar!/com/sun/javafx/scene/control/skin/modena/modena.bss
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-fx-text-background-color' while resolving lookups for '-fx-text-fill' from rule '*.label' in stylesheet jar:file:/Users/bbuchsbaum/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/openjfx/javafx-controls/24.0.1/javafx-controls-24.0.1-mac-aarch64.jar!/com/sun/javafx/scene/control/skin/modena/modena.bss
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-fx-text-background-color' while resolving lookups for '-fx-text-fill' from rule '*.label' in stylesheet jar:file:/Users/bbuchsbaum/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/openjfx/javafx-controls/24.0.1/javafx-controls-24.0.1-mac-aarch64.jar!/com/sun/javafx/scene/control/skin/modena/modena.bss
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-fx-text-background-color' while resolving lookups for '-fx-text-fill' from rule '*.label' in stylesheet jar:file:/Users/bbuchsbaum/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/openjfx/javafx-controls/24.0.1/javafx-controls-24.0.1-mac-aarch64.jar!/com/sun/javafx/scene/control/skin/modena/modena.bss
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-fx-text-background-color' while resolving lookups for '-fx-text-fill' from rule '*.label' in stylesheet jar:file:/Users/bbuchsbaum/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/openjfx/javafx-controls/24.0.1/javafx-controls-24.0.1-mac-aarch64.jar!/com/sun/javafx/scene/control/skin/modena/modena.bss
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-fx-text-background-color' while resolving lookups for '-fx-text-fill' from rule '*.label' in stylesheet jar:file:/Users/bbuchsbaum/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/openjfx/javafx-controls/24.0.1/javafx-controls-24.0.1-mac-aarch64.jar!/com/sun/javafx/scene/control/skin/modena/modena.bss
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-fx-text-background-color' while resolving lookups for '-fx-text-fill' from rule '*.label' in stylesheet jar:file:/Users/bbuchsbaum/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/openjfx/javafx-controls/24.0.1/javafx-controls-24.0.1-mac-aarch64.jar!/com/sun/javafx/scene/control/skin/modena/modena.bss
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-fx-text-background-color' while resolving lookups for '-fx-text-fill' from rule '*.label' in stylesheet jar:file:/Users/bbuchsbaum/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/openjfx/javafx-controls/24.0.1/javafx-controls-24.0.1-mac-aarch64.jar!/com/sun/javafx/scene/control/skin/modena/modena.bss
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-fx-text-background-color' while resolving lookups for '-fx-text-fill' from rule '*.label' in stylesheet jar:file:/Users/bbuchsbaum/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/openjfx/javafx-controls/24.0.1/javafx-controls-24.0.1-mac-aarch64.jar!/com/sun/javafx/scene/control/skin/modena/modena.bss
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-fx-text-base-color' while resolving lookups for '-fx-text-fill' from rule '*.toggle-button' in stylesheet jar:file:/Users/bbuchsbaum/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/openjfx/javafx-controls/24.0.1/javafx-controls-24.0.1-mac-aarch64.jar!/com/sun/javafx/scene/control/skin/modena/modena.bss
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Caught 'java.lang.ClassCastException: class java.lang.String cannot be cast to class javafx.scene.paint.Paint (java.lang.String is in module java.base of loader 'bootstrap'; javafx.scene.paint.Paint is in unnamed module of loader 'app')' while converting value for '-fx-background-color' from rule '*.toggle-button' in stylesheet jar:file:/Users/bbuchsbaum/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/openjfx/javafx-controls/24.0.1/javafx-controls-24.0.1-mac-aarch64.jar!/com/sun/javafx/scene/control/skin/modena/modena.bss
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-fx-text-base-color' while resolving lookups for '-fx-text-fill' from rule '*.toggle-button' in stylesheet jar:file:/Users/bbuchsbaum/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/openjfx/javafx-controls/24.0.1/javafx-controls-24.0.1-mac-aarch64.jar!/com/sun/javafx/scene/control/skin/modena/modena.bss
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-fx-text-base-color' while resolving lookups for '-fx-text-fill' from rule '*.toggle-button' in stylesheet jar:file:/Users/bbuchsbaum/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/openjfx/javafx-controls/24.0.1/javafx-controls-24.0.1-mac-aarch64.jar!/com/sun/javafx/scene/control/skin/modena/modena.bss
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Caught 'java.lang.ClassCastException: class java.lang.String cannot be cast to class javafx.scene.paint.Paint (java.lang.String is in module java.base of loader 'bootstrap'; javafx.scene.paint.Paint is in unnamed module of loader 'app')' while converting value for '-fx-background-color' from rule '*.toggle-button' in stylesheet jar:file:/Users/bbuchsbaum/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/openjfx/javafx-controls/24.0.1/javafx-controls-24.0.1-mac-aarch64.jar!/com/sun/javafx/scene/control/skin/modena/modena.bss
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-fx-text-base-color' while resolving lookups for '-fx-text-fill' from rule '*.toggle-button' in stylesheet jar:file:/Users/bbuchsbaum/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/openjfx/javafx-controls/24.0.1/javafx-controls-24.0.1-mac-aarch64.jar!/com/sun/javafx/scene/control/skin/modena/modena.bss
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-fx-text-base-color' while resolving lookups for '-fx-text-fill' from rule '*.toggle-button' in stylesheet jar:file:/Users/bbuchsbaum/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/openjfx/javafx-controls/24.0.1/javafx-controls-24.0.1-mac-aarch64.jar!/com/sun/javafx/scene/control/skin/modena/modena.bss
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Caught 'java.lang.ClassCastException: class java.lang.String cannot be cast to class javafx.scene.paint.Paint (java.lang.String is in module java.base of loader 'bootstrap'; javafx.scene.paint.Paint is in unnamed module of loader 'app')' while converting value for '-fx-background-color' from rule '*.toggle-button:selected' in stylesheet jar:file:/Users/bbuchsbaum/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/openjfx/javafx-controls/24.0.1/javafx-controls-24.0.1-mac-aarch64.jar!/com/sun/javafx/scene/control/skin/modena/modena.bss
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-fx-text-base-color' while resolving lookups for '-fx-text-fill' from rule '*.toggle-button' in stylesheet jar:file:/Users/bbuchsbaum/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/openjfx/javafx-controls/24.0.1/javafx-controls-24.0.1-mac-aarch64.jar!/com/sun/javafx/scene/control/skin/modena/modena.bss
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-fx-text-base-color' while resolving lookups for '-fx-text-fill' from rule '*.toggle-button' in stylesheet jar:file:/Users/bbuchsbaum/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/openjfx/javafx-controls/24.0.1/javafx-controls-24.0.1-mac-aarch64.jar!/com/sun/javafx/scene/control/skin/modena/modena.bss
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-fx-text-background-color' while resolving lookups for '-fx-text-fill' from rule '*.label' in stylesheet jar:file:/Users/bbuchsbaum/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/openjfx/javafx-controls/24.0.1/javafx-controls-24.0.1-mac-aarch64.jar!/com/sun/javafx/scene/control/skin/modena/modena.bss
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-fx-text-background-color' while resolving lookups for '-fx-text-fill' from rule '*.label' in stylesheet jar:file:/Users/bbuchsbaum/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/openjfx/javafx-controls/24.0.1/javafx-controls-24.0.1-mac-aarch64.jar!/com/sun/javafx/scene/control/skin/modena/modena.bss
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-fx-text-background-color' while resolving lookups for '-fx-text-fill' from rule '*.label' in stylesheet jar:file:/Users/bbuchsbaum/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/openjfx/javafx-controls/24.0.1/javafx-controls-24.0.1-mac-aarch64.jar!/com/sun/javafx/scene/control/skin/modena/modena.bss
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-fx-text-background-color' while resolving lookups for '-fx-text-fill' from rule '*.label' in stylesheet jar:file:/Users/bbuchsbaum/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/openjfx/javafx-controls/24.0.1/javafx-controls-24.0.1-mac-aarch64.jar!/com/sun/javafx/scene/control/skin/modena/modena.bss
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-fx-text-background-color' while resolving lookups for '-fx-text-fill' from rule '*.label' in stylesheet jar:file:/Users/bbuchsbaum/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/openjfx/javafx-controls/24.0.1/javafx-controls-24.0.1-mac-aarch64.jar!/com/sun/javafx/scene/control/skin/modena/modena.bss
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink-3' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-head *.label' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink-3' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-head *.label' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink-3' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-head *.label' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink-3' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-head *.label' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink-3' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-head *.label' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink-3' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-head *.label' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink-3' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-head *.label' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink-3' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-head *.label' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink-3' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-head *.label' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink-3' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-head *.label' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink-3' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-head *.label' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink-3' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-head *.label' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink-3' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-head *.label' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-fx-text-background-color' while resolving lookups for '-fx-text-fill' from rule '*.list-cell' in stylesheet jar:file:/Users/bbuchsbaum/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/openjfx/javafx-controls/24.0.1/javafx-controls-24.0.1-mac-aarch64.jar!/com/sun/javafx/scene/control/skin/modena/modena.bss
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Caught 'java.lang.ClassCastException: class java.lang.String cannot be cast to class javafx.scene.paint.Paint (java.lang.String is in module java.base of loader 'bootstrap'; javafx.scene.paint.Paint is in unnamed module of loader 'app')' while converting value for '-fx-background-color' from rule '*.table-twin-row' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-fx-text-background-color' while resolving lookups for '-fx-text-fill' from rule '*.list-cell' in stylesheet jar:file:/Users/bbuchsbaum/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/openjfx/javafx-controls/24.0.1/javafx-controls-24.0.1-mac-aarch64.jar!/com/sun/javafx/scene/control/skin/modena/modena.bss
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Caught 'java.lang.ClassCastException: class java.lang.String cannot be cast to class javafx.scene.paint.Paint (java.lang.String is in module java.base of loader 'bootstrap'; javafx.scene.paint.Paint is in unnamed module of loader 'app')' while converting value for '-fx-background-color' from rule '*.table-twin-row' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-fx-text-background-color' while resolving lookups for '-fx-text-fill' from rule '*.list-cell' in stylesheet jar:file:/Users/bbuchsbaum/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/openjfx/javafx-controls/24.0.1/javafx-controls-24.0.1-mac-aarch64.jar!/com/sun/javafx/scene/control/skin/modena/modena.bss
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Caught 'java.lang.ClassCastException: class java.lang.String cannot be cast to class javafx.scene.paint.Paint (java.lang.String is in module java.base of loader 'bootstrap'; javafx.scene.paint.Paint is in unnamed module of loader 'app')' while converting value for '-fx-background-color' from rule '*.table-twin-row' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-fx-text-background-color' while resolving lookups for '-fx-text-fill' from rule '*.list-cell' in stylesheet jar:file:/Users/bbuchsbaum/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/openjfx/javafx-controls/24.0.1/javafx-controls-24.0.1-mac-aarch64.jar!/com/sun/javafx/scene/control/skin/modena/modena.bss
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-fx-text-background-color' while resolving lookups for '-fx-text-fill' from rule '*.label' in stylesheet jar:file:/Users/bbuchsbaum/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/openjfx/javafx-controls/24.0.1/javafx-controls-24.0.1-mac-aarch64.jar!/com/sun/javafx/scene/control/skin/modena/modena.bss
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-fx-text-background-color' while resolving lookups for '-fx-text-fill' from rule '*.label' in stylesheet jar:file:/Users/bbuchsbaum/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/openjfx/javafx-controls/24.0.1/javafx-controls-24.0.1-mac-aarch64.jar!/com/sun/javafx/scene/control/skin/modena/modena.bss
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-fx-text-background-color' while resolving lookups for '-fx-text-fill' from rule '*.label' in stylesheet jar:file:/Users/bbuchsbaum/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/openjfx/javafx-controls/24.0.1/javafx-controls-24.0.1-mac-aarch64.jar!/com/sun/javafx/scene/control/skin/modena/modena.bss
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-fx-text-background-color' while resolving lookups for '-fx-text-fill' from rule '*.label' in stylesheet jar:file:/Users/bbuchsbaum/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/openjfx/javafx-controls/24.0.1/javafx-controls-24.0.1-mac-aarch64.jar!/com/sun/javafx/scene/control/skin/modena/modena.bss
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-fx-text-background-color' while resolving lookups for '-fx-text-fill' from rule '*.label' in stylesheet jar:file:/Users/bbuchsbaum/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/openjfx/javafx-controls/24.0.1/javafx-controls-24.0.1-mac-aarch64.jar!/com/sun/javafx/scene/control/skin/modena/modena.bss
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-fx-text-background-color' while resolving lookups for '-fx-text-fill' from rule '*.label' in stylesheet jar:file:/Users/bbuchsbaum/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/openjfx/javafx-controls/24.0.1/javafx-controls-24.0.1-mac-aarch64.jar!/com/sun/javafx/scene/control/skin/modena/modena.bss
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-fx-text-background-color' while resolving lookups for '-fx-text-fill' from rule '*.label' in stylesheet jar:file:/Users/bbuchsbaum/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/openjfx/javafx-controls/24.0.1/javafx-controls-24.0.1-mac-aarch64.jar!/com/sun/javafx/scene/control/skin/modena/modena.bss
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-fx-text-background-color' while resolving lookups for '-fx-text-fill' from rule '*.label' in stylesheet jar:file:/Users/bbuchsbaum/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/openjfx/javafx-controls/24.0.1/javafx-controls-24.0.1-mac-aarch64.jar!/com/sun/javafx/scene/control/skin/modena/modena.bss
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-fx-text-background-color' while resolving lookups for '-fx-text-fill' from rule '*.label' in stylesheet jar:file:/Users/bbuchsbaum/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/openjfx/javafx-controls/24.0.1/javafx-controls-24.0.1-mac-aarch64.jar!/com/sun/javafx/scene/control/skin/modena/modena.bss
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-fx-text-background-color' while resolving lookups for '-fx-text-fill' from rule '*.label' in stylesheet jar:file:/Users/bbuchsbaum/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/openjfx/javafx-controls/24.0.1/javafx-controls-24.0.1-mac-aarch64.jar!/com/sun/javafx/scene/control/skin/modena/modena.bss
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-fx-text-background-color' while resolving lookups for '-fx-text-fill' from rule '*.label' in stylesheet jar:file:/Users/bbuchsbaum/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/openjfx/javafx-controls/24.0.1/javafx-controls-24.0.1-mac-aarch64.jar!/com/sun/javafx/scene/control/skin/modena/modena.bss
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-fx-text-background-color' while resolving lookups for '-fx-text-fill' from rule '*.label' in stylesheet jar:file:/Users/bbuchsbaum/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/openjfx/javafx-controls/24.0.1/javafx-controls-24.0.1-mac-aarch64.jar!/com/sun/javafx/scene/control/skin/modena/modena.bss
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-fx-text-background-color' while resolving lookups for '-fx-text-fill' from rule '*.label' in stylesheet jar:file:/Users/bbuchsbaum/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/openjfx/javafx-controls/24.0.1/javafx-controls-24.0.1-mac-aarch64.jar!/com/sun/javafx/scene/control/skin/modena/modena.bss
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-fx-text-background-color' while resolving lookups for '-fx-text-fill' from rule '*.label' in stylesheet jar:file:/Users/bbuchsbaum/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/openjfx/javafx-controls/24.0.1/javafx-controls-24.0.1-mac-aarch64.jar!/com/sun/javafx/scene/control/skin/modena/modena.bss
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-fx-text-background-color' while resolving lookups for '-fx-text-fill' from rule '*.label' in stylesheet jar:file:/Users/bbuchsbaum/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/openjfx/javafx-controls/24.0.1/javafx-controls-24.0.1-mac-aarch64.jar!/com/sun/javafx/scene/control/skin/modena/modena.bss
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-fx-text-background-color' while resolving lookups for '-fx-text-fill' from rule '*.label' in stylesheet jar:file:/Users/bbuchsbaum/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/openjfx/javafx-controls/24.0.1/javafx-controls-24.0.1-mac-aarch64.jar!/com/sun/javafx/scene/control/skin/modena/modena.bss
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-fx-text-background-color' while resolving lookups for '-fx-text-fill' from rule '*.label' in stylesheet jar:file:/Users/bbuchsbaum/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/openjfx/javafx-controls/24.0.1/javafx-controls-24.0.1-mac-aarch64.jar!/com/sun/javafx/scene/control/skin/modena/modena.bss
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-fx-text-background-color' while resolving lookups for '-fx-text-fill' from rule '*.label' in stylesheet jar:file:/Users/bbuchsbaum/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/openjfx/javafx-controls/24.0.1/javafx-controls-24.0.1-mac-aarch64.jar!/com/sun/javafx/scene/control/skin/modena/modena.bss
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-fx-text-background-color' while resolving lookups for '-fx-text-fill' from rule '*.label' in stylesheet jar:file:/Users/bbuchsbaum/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/openjfx/javafx-controls/24.0.1/javafx-controls-24.0.1-mac-aarch64.jar!/com/sun/javafx/scene/control/skin/modena/modena.bss
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-fx-text-background-color' while resolving lookups for '-fx-text-fill' from rule '*.label' in stylesheet jar:file:/Users/bbuchsbaum/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/openjfx/javafx-controls/24.0.1/javafx-controls-24.0.1-mac-aarch64.jar!/com/sun/javafx/scene/control/skin/modena/modena.bss
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-fx-text-background-color' while resolving lookups for '-fx-text-fill' from rule '*.label' in stylesheet jar:file:/Users/bbuchsbaum/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/openjfx/javafx-controls/24.0.1/javafx-controls-24.0.1-mac-aarch64.jar!/com/sun/javafx/scene/control/skin/modena/modena.bss
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-fx-text-background-color' while resolving lookups for '-fx-text-fill' from rule '*.label' in stylesheet jar:file:/Users/bbuchsbaum/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/openjfx/javafx-controls/24.0.1/javafx-controls-24.0.1-mac-aarch64.jar!/com/sun/javafx/scene/control/skin/modena/modena.bss
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-fx-text-background-color' while resolving lookups for '-fx-text-fill' from rule '*.label' in stylesheet jar:file:/Users/bbuchsbaum/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/openjfx/javafx-controls/24.0.1/javafx-controls-24.0.1-mac-aarch64.jar!/com/sun/javafx/scene/control/skin/modena/modena.bss
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-fx-text-background-color' while resolving lookups for '-fx-text-fill' from rule '*.label' in stylesheet jar:file:/Users/bbuchsbaum/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/openjfx/javafx-controls/24.0.1/javafx-controls-24.0.1-mac-aarch64.jar!/com/sun/javafx/scene/control/skin/modena/modena.bss
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-fx-text-background-color' while resolving lookups for '-fx-text-fill' from rule '*.label' in stylesheet jar:file:/Users/bbuchsbaum/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/openjfx/javafx-controls/24.0.1/javafx-controls-24.0.1-mac-aarch64.jar!/com/sun/javafx/scene/control/skin/modena/modena.bss
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-fx-text-background-color' while resolving lookups for '-fx-text-fill' from rule '*.label' in stylesheet jar:file:/Users/bbuchsbaum/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/openjfx/javafx-controls/24.0.1/javafx-controls-24.0.1-mac-aarch64.jar!/com/sun/javafx/scene/control/skin/modena/modena.bss
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-fx-text-background-color' while resolving lookups for '-fx-text-fill' from rule '*.label' in stylesheet jar:file:/Users/bbuchsbaum/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/openjfx/javafx-controls/24.0.1/javafx-controls-24.0.1-mac-aarch64.jar!/com/sun/javafx/scene/control/skin/modena/modena.bss
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-fx-text-background-color' while resolving lookups for '-fx-text-fill' from rule '*.label' in stylesheet jar:file:/Users/bbuchsbaum/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/openjfx/javafx-controls/24.0.1/javafx-controls-24.0.1-mac-aarch64.jar!/com/sun/javafx/scene/control/skin/modena/modena.bss
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-fx-text-background-color' while resolving lookups for '-fx-text-fill' from rule '*.label' in stylesheet jar:file:/Users/bbuchsbaum/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/openjfx/javafx-controls/24.0.1/javafx-controls-24.0.1-mac-aarch64.jar!/com/sun/javafx/scene/control/skin/modena/modena.bss
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-fx-text-background-color' while resolving lookups for '-fx-text-fill' from rule '*.label' in stylesheet jar:file:/Users/bbuchsbaum/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/openjfx/javafx-controls/24.0.1/javafx-controls-24.0.1-mac-aarch64.jar!/com/sun/javafx/scene/control/skin/modena/modena.bss
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-fx-text-background-color' while resolving lookups for '-fx-text-fill' from rule '*.label' in stylesheet jar:file:/Users/bbuchsbaum/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/openjfx/javafx-controls/24.0.1/javafx-controls-24.0.1-mac-aarch64.jar!/com/sun/javafx/scene/control/skin/modena/modena.bss
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-fx-text-background-color' while resolving lookups for '-fx-text-fill' from rule '*.label' in stylesheet jar:file:/Users/bbuchsbaum/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/openjfx/javafx-controls/24.0.1/javafx-controls-24.0.1-mac-aarch64.jar!/com/sun/javafx/scene/control/skin/modena/modena.bss
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-fx-text-background-color' while resolving lookups for '-fx-text-fill' from rule '*.label' in stylesheet jar:file:/Users/bbuchsbaum/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/openjfx/javafx-controls/24.0.1/javafx-controls-24.0.1-mac-aarch64.jar!/com/sun/javafx/scene/control/skin/modena/modena.bss
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-fx-text-background-color' while resolving lookups for '-fx-text-fill' from rule '*.label' in stylesheet jar:file:/Users/bbuchsbaum/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/openjfx/javafx-controls/24.0.1/javafx-controls-24.0.1-mac-aarch64.jar!/com/sun/javafx/scene/control/skin/modena/modena.bss
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-fx-text-background-color' while resolving lookups for '-fx-text-fill' from rule '*.label' in stylesheet jar:file:/Users/bbuchsbaum/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/openjfx/javafx-controls/24.0.1/javafx-controls-24.0.1-mac-aarch64.jar!/com/sun/javafx/scene/control/skin/modena/modena.bss
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-fx-text-background-color' while resolving lookups for '-fx-text-fill' from rule '*.label' in stylesheet jar:file:/Users/bbuchsbaum/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/openjfx/javafx-controls/24.0.1/javafx-controls-24.0.1-mac-aarch64.jar!/com/sun/javafx/scene/control/skin/modena/modena.bss
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-fx-text-background-color' while resolving lookups for '-fx-text-fill' from rule '*.label' in stylesheet jar:file:/Users/bbuchsbaum/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/openjfx/javafx-controls/24.0.1/javafx-controls-24.0.1-mac-aarch64.jar!/com/sun/javafx/scene/control/skin/modena/modena.bss
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-fx-text-background-color' while resolving lookups for '-fx-text-fill' from rule '*.label' in stylesheet jar:file:/Users/bbuchsbaum/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/openjfx/javafx-controls/24.0.1/javafx-controls-24.0.1-mac-aarch64.jar!/com/sun/javafx/scene/control/skin/modena/modena.bss
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-fx-text-background-color' while resolving lookups for '-fx-text-fill' from rule '*.label' in stylesheet jar:file:/Users/bbuchsbaum/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/openjfx/javafx-controls/24.0.1/javafx-controls-24.0.1-mac-aarch64.jar!/com/sun/javafx/scene/control/skin/modena/modena.bss
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-fx-text-background-color' while resolving lookups for '-fx-text-fill' from rule '*.label' in stylesheet jar:file:/Users/bbuchsbaum/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/openjfx/javafx-controls/24.0.1/javafx-controls-24.0.1-mac-aarch64.jar!/com/sun/javafx/scene/control/skin/modena/modena.bss
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-fx-text-background-color' while resolving lookups for '-fx-text-fill' from rule '*.label' in stylesheet jar:file:/Users/bbuchsbaum/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/openjfx/javafx-controls/24.0.1/javafx-controls-24.0.1-mac-aarch64.jar!/com/sun/javafx/scene/control/skin/modena/modena.bss
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-fx-text-background-color' while resolving lookups for '-fx-text-fill' from rule '*.label' in stylesheet jar:file:/Users/bbuchsbaum/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/openjfx/javafx-controls/24.0.1/javafx-controls-24.0.1-mac-aarch64.jar!/com/sun/javafx/scene/control/skin/modena/modena.bss
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-fx-text-background-color' while resolving lookups for '-fx-text-fill' from rule '*.label' in stylesheet jar:file:/Users/bbuchsbaum/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/openjfx/javafx-controls/24.0.1/javafx-controls-24.0.1-mac-aarch64.jar!/com/sun/javafx/scene/control/skin/modena/modena.bss
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-fx-text-background-color' while resolving lookups for '-fx-text-fill' from rule '*.label' in stylesheet jar:file:/Users/bbuchsbaum/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/openjfx/javafx-controls/24.0.1/javafx-controls-24.0.1-mac-aarch64.jar!/com/sun/javafx/scene/control/skin/modena/modena.bss
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-fx-text-background-color' while resolving lookups for '-fx-text-fill' from rule '*.label' in stylesheet jar:file:/Users/bbuchsbaum/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/openjfx/javafx-controls/24.0.1/javafx-controls-24.0.1-mac-aarch64.jar!/com/sun/javafx/scene/control/skin/modena/modena.bss
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-fx-text-background-color' while resolving lookups for '-fx-text-fill' from rule '*.label' in stylesheet jar:file:/Users/bbuchsbaum/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/openjfx/javafx-controls/24.0.1/javafx-controls-24.0.1-mac-aarch64.jar!/com/sun/javafx/scene/control/skin/modena/modena.bss
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-fx-text-background-color' while resolving lookups for '-fx-text-fill' from rule '*.label' in stylesheet jar:file:/Users/bbuchsbaum/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/openjfx/javafx-controls/24.0.1/javafx-controls-24.0.1-mac-aarch64.jar!/com/sun/javafx/scene/control/skin/modena/modena.bss
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-fx-text-background-color' while resolving lookups for '-fx-text-fill' from rule '*.label' in stylesheet jar:file:/Users/bbuchsbaum/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/openjfx/javafx-controls/24.0.1/javafx-controls-24.0.1-mac-aarch64.jar!/com/sun/javafx/scene/control/skin/modena/modena.bss
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-fx-text-background-color' while resolving lookups for '-fx-text-fill' from rule '*.label' in stylesheet jar:file:/Users/bbuchsbaum/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/openjfx/javafx-controls/24.0.1/javafx-controls-24.0.1-mac-aarch64.jar!/com/sun/javafx/scene/control/skin/modena/modena.bss
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-fx-text-background-color' while resolving lookups for '-fx-text-fill' from rule '*.label' in stylesheet jar:file:/Users/bbuchsbaum/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/openjfx/javafx-controls/24.0.1/javafx-controls-24.0.1-mac-aarch64.jar!/com/sun/javafx/scene/control/skin/modena/modena.bss
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-fx-text-background-color' while resolving lookups for '-fx-text-fill' from rule '*.label' in stylesheet jar:file:/Users/bbuchsbaum/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/openjfx/javafx-controls/24.0.1/javafx-controls-24.0.1-mac-aarch64.jar!/com/sun/javafx/scene/control/skin/modena/modena.bss
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-fx-text-background-color' while resolving lookups for '-fx-text-fill' from rule '*.label' in stylesheet jar:file:/Users/bbuchsbaum/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/openjfx/javafx-controls/24.0.1/javafx-controls-24.0.1-mac-aarch64.jar!/com/sun/javafx/scene/control/skin/modena/modena.bss
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-fx-text-background-color' while resolving lookups for '-fx-text-fill' from rule '*.label' in stylesheet jar:file:/Users/bbuchsbaum/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/openjfx/javafx-controls/24.0.1/javafx-controls-24.0.1-mac-aarch64.jar!/com/sun/javafx/scene/control/skin/modena/modena.bss
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-fx-text-background-color' while resolving lookups for '-fx-text-fill' from rule '*.label' in stylesheet jar:file:/Users/bbuchsbaum/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/openjfx/javafx-controls/24.0.1/javafx-controls-24.0.1-mac-aarch64.jar!/com/sun/javafx/scene/control/skin/modena/modena.bss
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-fx-text-background-color' while resolving lookups for '-fx-text-fill' from rule '*.label' in stylesheet jar:file:/Users/bbuchsbaum/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/openjfx/javafx-controls/24.0.1/javafx-controls-24.0.1-mac-aarch64.jar!/com/sun/javafx/scene/control/skin/modena/modena.bss
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-fx-text-background-color' while resolving lookups for '-fx-text-fill' from rule '*.label' in stylesheet jar:file:/Users/bbuchsbaum/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/openjfx/javafx-controls/24.0.1/javafx-controls-24.0.1-mac-aarch64.jar!/com/sun/javafx/scene/control/skin/modena/modena.bss
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-fx-text-background-color' while resolving lookups for '-fx-text-fill' from rule '*.label' in stylesheet jar:file:/Users/bbuchsbaum/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/openjfx/javafx-controls/24.0.1/javafx-controls-24.0.1-mac-aarch64.jar!/com/sun/javafx/scene/control/skin/modena/modena.bss
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-fx-text-background-color' while resolving lookups for '-fx-text-fill' from rule '*.label' in stylesheet jar:file:/Users/bbuchsbaum/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/openjfx/javafx-controls/24.0.1/javafx-controls-24.0.1-mac-aarch64.jar!/com/sun/javafx/scene/control/skin/modena/modena.bss
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-fx-text-background-color' while resolving lookups for '-fx-text-fill' from rule '*.label' in stylesheet jar:file:/Users/bbuchsbaum/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/openjfx/javafx-controls/24.0.1/javafx-controls-24.0.1-mac-aarch64.jar!/com/sun/javafx/scene/control/skin/modena/modena.bss
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-fx-text-background-color' while resolving lookups for '-fx-text-fill' from rule '*.label' in stylesheet jar:file:/Users/bbuchsbaum/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/openjfx/javafx-controls/24.0.1/javafx-controls-24.0.1-mac-aarch64.jar!/com/sun/javafx/scene/control/skin/modena/modena.bss
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-fx-text-background-color' while resolving lookups for '-fx-text-fill' from rule '*.label' in stylesheet jar:file:/Users/bbuchsbaum/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/openjfx/javafx-controls/24.0.1/javafx-controls-24.0.1-mac-aarch64.jar!/com/sun/javafx/scene/control/skin/modena/modena.bss
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-fx-text-background-color' while resolving lookups for '-fx-text-fill' from rule '*.label' in stylesheet jar:file:/Users/bbuchsbaum/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/openjfx/javafx-controls/24.0.1/javafx-controls-24.0.1-mac-aarch64.jar!/com/sun/javafx/scene/control/skin/modena/modena.bss
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-fx-text-background-color' while resolving lookups for '-fx-text-fill' from rule '*.label' in stylesheet jar:file:/Users/bbuchsbaum/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/openjfx/javafx-controls/24.0.1/javafx-controls-24.0.1-mac-aarch64.jar!/com/sun/javafx/scene/control/skin/modena/modena.bss
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-fx-text-background-color' while resolving lookups for '-fx-text-fill' from rule '*.label' in stylesheet jar:file:/Users/bbuchsbaum/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/openjfx/javafx-controls/24.0.1/javafx-controls-24.0.1-mac-aarch64.jar!/com/sun/javafx/scene/control/skin/modena/modena.bss
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-fx-text-background-color' while resolving lookups for '-fx-text-fill' from rule '*.label' in stylesheet jar:file:/Users/bbuchsbaum/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/openjfx/javafx-controls/24.0.1/javafx-controls-24.0.1-mac-aarch64.jar!/com/sun/javafx/scene/control/skin/modena/modena.bss
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-fx-text-background-color' while resolving lookups for '-fx-text-fill' from rule '*.label' in stylesheet jar:file:/Users/bbuchsbaum/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/openjfx/javafx-controls/24.0.1/javafx-controls-24.0.1-mac-aarch64.jar!/com/sun/javafx/scene/control/skin/modena/modena.bss
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-fx-text-background-color' while resolving lookups for '-fx-text-fill' from rule '*.label' in stylesheet jar:file:/Users/bbuchsbaum/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/openjfx/javafx-controls/24.0.1/javafx-controls-24.0.1-mac-aarch64.jar!/com/sun/javafx/scene/control/skin/modena/modena.bss
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-fx-text-background-color' while resolving lookups for '-fx-text-fill' from rule '*.label' in stylesheet jar:file:/Users/bbuchsbaum/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/openjfx/javafx-controls/24.0.1/javafx-controls-24.0.1-mac-aarch64.jar!/com/sun/javafx/scene/control/skin/modena/modena.bss
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-fx-text-background-color' while resolving lookups for '-fx-text-fill' from rule '*.label' in stylesheet jar:file:/Users/bbuchsbaum/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/openjfx/javafx-controls/24.0.1/javafx-controls-24.0.1-mac-aarch64.jar!/com/sun/javafx/scene/control/skin/modena/modena.bss
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-fx-text-background-color' while resolving lookups for '-fx-text-fill' from rule '*.label' in stylesheet jar:file:/Users/bbuchsbaum/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/openjfx/javafx-controls/24.0.1/javafx-controls-24.0.1-mac-aarch64.jar!/com/sun/javafx/scene/control/skin/modena/modena.bss
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-fx-text-background-color' while resolving lookups for '-fx-text-fill' from rule '*.label' in stylesheet jar:file:/Users/bbuchsbaum/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/openjfx/javafx-controls/24.0.1/javafx-controls-24.0.1-mac-aarch64.jar!/com/sun/javafx/scene/control/skin/modena/modena.bss
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-fx-text-background-color' while resolving lookups for '-fx-text-fill' from rule '*.label' in stylesheet jar:file:/Users/bbuchsbaum/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/openjfx/javafx-controls/24.0.1/javafx-controls-24.0.1-mac-aarch64.jar!/com/sun/javafx/scene/control/skin/modena/modena.bss
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-fx-text-base-color' while resolving lookups for '-fx-text-fill' from rule '*.toggle-button' in stylesheet jar:file:/Users/bbuchsbaum/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/openjfx/javafx-controls/24.0.1/javafx-controls-24.0.1-mac-aarch64.jar!/com/sun/javafx/scene/control/skin/modena/modena.bss
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-fx-text-base-color' while resolving lookups for '-fx-text-fill' from rule '*.toggle-button' in stylesheet jar:file:/Users/bbuchsbaum/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/openjfx/javafx-controls/24.0.1/javafx-controls-24.0.1-mac-aarch64.jar!/com/sun/javafx/scene/control/skin/modena/modena.bss
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-fx-text-base-color' while resolving lookups for '-fx-text-fill' from rule '*.toggle-button' in stylesheet jar:file:/Users/bbuchsbaum/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/openjfx/javafx-controls/24.0.1/javafx-controls-24.0.1-mac-aarch64.jar!/com/sun/javafx/scene/control/skin/modena/modena.bss
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-fx-text-base-color' while resolving lookups for '-fx-text-fill' from rule '*.toggle-button' in stylesheet jar:file:/Users/bbuchsbaum/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/openjfx/javafx-controls/24.0.1/javafx-controls-24.0.1-mac-aarch64.jar!/com/sun/javafx/scene/control/skin/modena/modena.bss
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-fx-text-background-color' while resolving lookups for '-fx-text-fill' from rule '*.label' in stylesheet jar:file:/Users/bbuchsbaum/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/openjfx/javafx-controls/24.0.1/javafx-controls-24.0.1-mac-aarch64.jar!/com/sun/javafx/scene/control/skin/modena/modena.bss
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-fx-text-background-color' while resolving lookups for '-fx-text-fill' from rule '*.label' in stylesheet jar:file:/Users/bbuchsbaum/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/openjfx/javafx-controls/24.0.1/javafx-controls-24.0.1-mac-aarch64.jar!/com/sun/javafx/scene/control/skin/modena/modena.bss
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-fx-text-background-color' while resolving lookups for '-fx-text-fill' from rule '*.label' in stylesheet jar:file:/Users/bbuchsbaum/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/openjfx/javafx-controls/24.0.1/javafx-controls-24.0.1-mac-aarch64.jar!/com/sun/javafx/scene/control/skin/modena/modena.bss
+Oct 26, 2026 9:58:04 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-fx-text-background-color' while resolving lookups for '-fx-text-fill' from rule '*.label' in stylesheet jar:file:/Users/bbuchsbaum/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/openjfx/javafx-controls/24.0.1/javafx-controls-24.0.1-mac-aarch64.jar!/com/sun/javafx/scene/control/skin/modena/modena.bss
+Test run eyes4s.studio.desktop.shell.A11yTreeSuite started
+eyes4s.studio.desktop.shell.A11yTreeSuite: finished 28.057s
+Test run eyes4s.studio.desktop.shell.A11yTreeSuite finished: 0 failed, 0 ignored, 26 total 28.057s
+Test run eyes4s.studio.desktop.shell.KeymapFxSuite started
+eyes4s.studio.desktop.shell.KeymapFxSuite: finished 13.819s
+Test run eyes4s.studio.desktop.shell.KeymapFxSuite finished: 0 failed, 0 ignored, 13 total 13.819s
+[info] Passed: Total 80, Failed 0, Errors 0, Passed 80
+[success] Total time: 96 s (0:01:36.0), completed Oct 26, 2026, 9:58:26 a.m.

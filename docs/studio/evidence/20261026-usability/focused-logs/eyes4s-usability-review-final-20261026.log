@@ -1,0 +1,122 @@
+[info] welcome to sbt 1.11.7 (Eclipse Adoptium Java 25.0.4.1)
+[info] loading settings for project eyes4s-usability-20261026-build from plugins.sbt...
+[info] loading project definition from /private/tmp/eyes4s-usability-20261026/project
+[info] loading settings for project root from build.sbt...
+[info] resolving key references (37727 settings) ...
+[info] set scmInfo to https://github.com/canardlapin/eyes4s
+[info] set current project to root (in build file:/private/tmp/eyes4s-usability-20261026/)
+[success] Total time: 1 s, completed Oct 26, 2026, 10:39:57 a.m.
+[info] compiling 30 Scala sources to /private/tmp/eyes4s-usability-20261026/kernel/.jvm/target/scala-3.7.4/classes ...
+[info] done compiling
+[info] compiling 10 Scala sources to /private/tmp/eyes4s-usability-20261026/core/.jvm/target/scala-3.7.4/classes ...
+[info] done compiling
+[info] compiling 2 Scala sources to /private/tmp/eyes4s-usability-20261026/aoi/.jvm/target/scala-3.7.4/classes ...
+[info] compiling 7 Scala sources to /private/tmp/eyes4s-usability-20261026/surface/.jvm/target/scala-3.7.4/classes ...
+[info] compiling 6 Scala sources to /private/tmp/eyes4s-usability-20261026/detect/.jvm/target/scala-3.7.4/classes ...
+[info] done compiling
+[info] done compiling
+[info] compiling 15 Scala sources to /private/tmp/eyes4s-usability-20261026/compare/.jvm/target/scala-3.7.4/classes ...
+[info] done compiling
+[info] done compiling
+[info] compiling 21 Scala sources to /private/tmp/eyes4s-usability-20261026/design/.jvm/target/scala-3.7.4/classes ...
+[info] done compiling
+[info] compiling 79 Scala sources to /private/tmp/eyes4s-usability-20261026/plan/.jvm/target/scala-3.7.4/classes ...
+[info] done compiling
+[info] compiling 11 Scala sources to /private/tmp/eyes4s-usability-20261026/fs2/.jvm/target/scala-3.7.4/classes ...
+[info] compiling 19 Scala sources to /private/tmp/eyes4s-usability-20261026/results/.jvm/target/scala-3.7.4/classes ...
+[info] done compiling
+[info] done compiling
+[info] compiling 46 Scala sources to /private/tmp/eyes4s-usability-20261026/codec/.jvm/target/scala-3.7.4/classes ...
+[info] done compiling
+[info] compiling 44 Scala sources to /private/tmp/eyes4s-usability-20261026/io/.jvm/target/scala-3.7.4/classes ...
+[info] done compiling
+[info] compiling 128 Scala sources to /private/tmp/eyes4s-usability-20261026/studio/core/.jvm/target/scala-3.7.4/classes ...
+[info] done compiling
+[info] compiling 133 Scala sources to /private/tmp/eyes4s-usability-20261026/studio/core/.jvm/target/scala-3.7.4/test-classes ...
+[info] compiling 134 Scala sources to /private/tmp/eyes4s-usability-20261026/studio/app/.jvm/target/scala-3.7.4/classes ...
+[info] done compiling
+[info] done compiling
+[info] compiling 89 Scala sources to /private/tmp/eyes4s-usability-20261026/studio/app/.jvm/target/scala-3.7.4/test-classes ...
+[info] done compiling
+[warn] javaOptions will be ignored, fork is set to false
+Test run eyes4s.studio.app.vm.PaneFocusSuite started
+eyes4s.studio.app.vm.PaneFocusSuite: finished 0.03s
+Test run eyes4s.studio.app.vm.PaneFocusSuite finished: 0 failed, 0 ignored, 3 total 0.038s
+[info] Passed: Total 3, Failed 0, Errors 0, Passed 3
+[success] Total time: 79 s (0:01:19.0), completed Oct 26, 2026, 10:41:16 a.m.
+[warn] javaOptions will be ignored, fork is set to false
+Test run eyes4s.studio.app.vm.PaneFocusSuite started
+eyes4s.studio.app.vm.PaneFocusSuite: finished 0.006s
+Test run eyes4s.studio.app.vm.PaneFocusSuite finished: 0 failed, 0 ignored, 3 total 0.006s
+[info] Passed: Total 3, Failed 0, Errors 0, Passed 3
+[success] Total time: 6 s, completed Oct 26, 2026, 10:41:22 a.m.
+[info] compiling 29 Scala sources to /private/tmp/eyes4s-usability-20261026/studio/viz/.jvm/target/scala-3.7.4/classes ...
+[info] done compiling
+[info] compiling 94 Scala sources to /private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes ...
+[info] done compiling
+[info] compiling 164 Scala sources to /private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/test-classes ...
+[info] done compiling
+WARNING: A terminally deprecated method in sun.misc.Unsafe has been called
+WARNING: sun.misc.Unsafe::objectFieldOffset has been called by scala.runtime.LazyVals$ (file:/Users/bbuchsbaum/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/scala-lang/scala3-library_3/3.7.4/scala3-library_3-3.7.4.jar)
+WARNING: Please consider reporting this to the maintainers of class scala.runtime.LazyVals$
+WARNING: sun.misc.Unsafe::objectFieldOffset will be removed in a future release
+Oct 26, 2026 10:41:37 A.M. com.sun.javafx.application.PlatformImpl startup
+WARNING: Unsupported JavaFX configuration: classes were loaded from 'unnamed module @1c2e3c'
+WARNING: A restricted method in java.lang.System has been called
+WARNING: java.lang.System::load has been called by com.sun.glass.utils.NativeLibLoader in an unnamed module (file:/Users/bbuchsbaum/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/openjfx/javafx-graphics/24.0.1/javafx-graphics-24.0.1-mac-aarch64.jar)
+WARNING: Use --enable-native-access=ALL-UNNAMED to avoid a warning for callers in this module
+WARNING: Restricted methods will be blocked in a future release unless native access is enabled
+
+Test run eyes4s.studio.desktop.shell.BoardWorkspaceViewportFxSuite started
+eyes4s.studio.desktop.shell.BoardWorkspaceViewportFxSuite: finished 13.822s
+Test run eyes4s.studio.desktop.shell.BoardWorkspaceViewportFxSuite finished: 0 failed, 0 ignored, 5 total 13.827s
+Test run eyes4s.studio.desktop.shell.WorkspaceViewportFxSuite started
+eyes4s.studio.desktop.shell.WorkspaceViewportFxSuite: finished 7.518s
+Test run eyes4s.studio.desktop.shell.WorkspaceViewportFxSuite finished: 0 failed, 0 ignored, 5 total 7.518s
+Test run eyes4s.studio.desktop.shell.A11yTreeSuite started
+eyes4s.studio.desktop.shell.A11yTreeSuite: finished 30.033s
+Test run eyes4s.studio.desktop.shell.A11yTreeSuite finished: 0 failed, 0 ignored, 26 total 30.034s
+Test run eyes4s.studio.desktop.shell.KeymapFxSuite started
+eyes4s.studio.desktop.shell.KeymapFxSuite: finished 14.272s
+Test run eyes4s.studio.desktop.shell.KeymapFxSuite finished: 0 failed, 0 ignored, 13 total 14.272s
+Test run eyes4s.studio.desktop.shell.FocusVisibleFxSuite started
+eyes4s.studio.desktop.shell.FocusVisibleFxSuite: finished 2.204s
+Test run eyes4s.studio.desktop.shell.FocusVisibleFxSuite finished: 0 failed, 0 ignored, 10 total 2.204s
+Test run eyes4s.studio.desktop.shell.AppShellFxSuite started
+eyes4s.studio.desktop.shell.AppShellFxSuite: finished 21.518s
+Test run eyes4s.studio.desktop.shell.AppShellFxSuite finished: 0 failed, 0 ignored, 23 total 21.518s
+Test run eyes4s.studio.desktop.compare.ParticipantsNavigatorFxSuite started
+eyes4s.studio.desktop.compare.ParticipantsNavigatorFxSuite: finished 3.154s
+Test run eyes4s.studio.desktop.compare.ParticipantsNavigatorFxSuite finished: 0 failed, 0 ignored, 5 total 3.154s
+Test run eyes4s.studio.desktop.shell.VisualParitySuite started
+eyes4s.studio.desktop.shell.VisualParitySuite: finished 50.666s
+Test run eyes4s.studio.desktop.shell.VisualParitySuite finished: 0 failed, 0 ignored, 30 total 50.666s
+SourceRecordsFxSuite: median 16.0 ms, p99 34.1 ms, worst 34.5 ms (frame 53 of 266)
+Test run eyes4s.studio.desktop.explore.SourceRecordsFxSuite started
+eyes4s.studio.desktop.explore.SourceRecordsFxSuite: finished 7.739s
+Test run eyes4s.studio.desktop.explore.SourceRecordsFxSuite finished: 0 failed, 0 ignored, 7 total 7.739s
+[info] Passed: Total 124, Failed 0, Errors 0, Passed 124
+[success] Total time: 166 s (0:02:46.0), completed Oct 26, 2026, 10:44:08 a.m.
+[info] studio type scale OK (lint self-test passed; only the five sizes in studio sources)
+[success] Total time: 1 s, completed Oct 26, 2026, 10:44:09 a.m.
+[info] studio notices OK: 45 resolved modules, each with a licence and its text
+[success] Total time: 0 s, completed Oct 26, 2026, 10:44:09 a.m.
+[success] Total time: 0 s, completed Oct 26, 2026, 10:44:09 a.m.
+[success] Total time: 0 s, completed Oct 26, 2026, 10:44:09 a.m.
+[success] Total time: 0 s, completed Oct 26, 2026, 10:44:09 a.m.
+[success] Total time: 0 s, completed Oct 26, 2026, 10:44:09 a.m.
+[success] Total time: 0 s, completed Oct 26, 2026, 10:44:09 a.m.
+[success] Total time: 0 s, completed Oct 26, 2026, 10:44:10 a.m.
+[success] Total time: 0 s, completed Oct 26, 2026, 10:44:10 a.m.
+[success] Total time: 0 s, completed Oct 26, 2026, 10:44:10 a.m.
+[success] Total time: 0 s, completed Oct 26, 2026, 10:44:10 a.m.
+[success] Total time: 0 s, completed Oct 26, 2026, 10:44:10 a.m.
+[success] Total time: 0 s, completed Oct 26, 2026, 10:44:10 a.m.
+[success] Total time: 0 s, completed Oct 26, 2026, 10:44:10 a.m.
+[success] Total time: 0 s, completed Oct 26, 2026, 10:44:10 a.m.
+[info] scalafmt: Checking 1 Scala sources (/private/tmp/eyes4s-usability-20261026/studio/desktop)...
+[info] scalafmt: Checking 2 Scala sources (/private/tmp/eyes4s-usability-20261026/studio/desktop)...
+[warn] scalafmt: /private/tmp/eyes4s-usability-20261026/studio/desktop/src/test/scala/eyes4s/studio/desktop/compare/ParticipantsNavigatorFxSuite.scala isn't formatted properly!
+[error] scalafmt: 1 files must be formatted (/private/tmp/eyes4s-usability-20261026/studio/desktop)
+[error] (studioDesktop / Test / scalafmtCheck) scalafmt: 1 files must be formatted (/private/tmp/eyes4s-usability-20261026/studio/desktop)
+[error] Total time: 1 s, completed Oct 26, 2026, 10:44:10 a.m.

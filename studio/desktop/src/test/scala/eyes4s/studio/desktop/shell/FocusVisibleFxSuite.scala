@@ -451,7 +451,10 @@ class FocusVisibleFxSuite extends ShellFxSuite:
       assume(runOnFx(fx.stage.isFocused), "the test window does not hold OS focus")
       // A click focuses the canvas and draws neither ring (DESIGN_SPEC section 15).
       fx.robot.click(host)
-      assert(runOnFx(host.isFocused), "a click focuses the trial canvas")
+      assert(
+        runOnFx(host.isFocused),
+        s"a click focuses the trial canvas; owner=${runOnFx(fx.scene.getFocusOwner)}"
+      )
       assert(!ring, "a click drew the stage's ring")
       assert(!cursor, "a click drew the cursor's ring")
       // A key after the click operates the canvas by keyboard: the cursor

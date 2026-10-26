@@ -49,7 +49,7 @@ import javafx.application.Platform
 import javafx.beans.value.ChangeListener
 import javafx.geometry.Pos
 import javafx.scene.input.{KeyCode, KeyEvent}
-import javafx.scene.control.{Button, Label, ToggleButton, ToggleGroup, Tooltip}
+import javafx.scene.control.{Button, Label, ToggleButton}
 import javafx.scene.layout.{HBox, Priority, Region, VBox}
 
 /** Where the summary layout asks for a run's summary and queries. `done`
@@ -691,7 +691,7 @@ final class CompareSummaryHost(
       // The run's status, then why any part could not be drawn.
       val parts = Vector(v.participantPlot, v.profile, v.participants, v.queries)
         .flatMap(_.flatMap(_.left.toOption))
-      val said = v.status.toVector ++ parts
+      val said = (v.status.toVector ++ parts ++ v.scales.flatMap(_.unavailable)).distinct
       status.setText(said.mkString("\n"))
       status.setVisible(said.nonEmpty)
       status.setManaged(said.nonEmpty)
@@ -702,16 +702,19 @@ final class CompareSummaryHost(
       val focusedScale = (0 until scales.getChildren.size).iterator
         .map(scales.getChildren.get)
         .collectFirst { case b: ToggleButton if b.isFocused => b.getText }
-      val group = ToggleGroup()
+      val scaleEntry = eyes4s.studio.app.vm.ResultsFocus.scaleEntry(v).map(_.scale)
       scales.getChildren.setAll(v.scales.map { c =>
         val b = ToggleButton(c.label)
         // A σ that cannot be chosen says why, to the pointer and to a reader.
         val why = c.unavailable.fold(c.label)(r => s"${c.label}: $r")
         b.setAccessibleText(why)
-        c.unavailable.foreach(r => b.setTooltip(Tooltip(r)))
-        b.setToggleGroup(group)
+        c.unavailable.foreach(_ => eyes4s.studio.desktop.shell.DisabledReason.attach(b, status))
         b.setSelected(c.chosen)
         b.setDisable(!c.available)
+        // Selection follows the shown report; the keyboard entry can differ
+        // while that report is unavailable. A ToggleGroup would make every
+        // available choice unreachable when its selected member is disabled.
+        b.setFocusTraversable(scaleEntry.contains(c.scale))
         b.setOnAction(_ => dispatch(SummaryIntent.ChooseScale(c.scale)))
         b.addEventFilter(
           KeyEvent.KEY_PRESSED,
@@ -741,7 +744,14 @@ final class CompareSummaryHost(
       focusedScale.foreach { label =>
         (0 until scales.getChildren.size).iterator
           .map(scales.getChildren.get)
-          .collectFirst { case b: ToggleButton if b.getText == label => b }
+          .collectFirst { case b: ToggleButton if b.getText == label && !b.isDisabled => b }
+          .orElse(
+            (0 until scales.getChildren.size).iterator
+              .map(scales.getChildren.get)
+              .collectFirst {
+                case b: ToggleButton if b.isFocusTraversable && !b.isDisabled => b
+              }
+          )
           .foreach(_.requestFocus())
       }
       v.explain match

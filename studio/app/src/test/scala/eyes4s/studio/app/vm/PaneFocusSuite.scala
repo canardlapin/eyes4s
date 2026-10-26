@@ -64,6 +64,21 @@ class PaneFocusSuite extends FunSuite:
     )
     val pending = vm.copy(scales = vm.scales.map(_.copy(available = false)), explain = None)
     assertEquals(ResultsFocus.pane(decl, pending, nav, Vector(table)).stops, Vector(table))
+    val recovery = pending.copy(scales =
+      pending.scales :+
+        ScaleChoice(
+          eyes4s.studio.core.selection.ScaleIndex.of(0).toOption.get,
+          "sigma half",
+          true,
+          false,
+          None
+        )
+    )
+    assertEquals(
+      ResultsFocus.pane(decl, recovery, nav, Vector(table)).stops,
+      Vector(FocusStop(A11yRole.ToggleButton, "sigma half"), table)
+    )
+    assert(recovery.scales.head.chosen) // focus entry never changes the shown report
   }
 
   test("the navigator retains exactly one composite stop while its values are pending") {

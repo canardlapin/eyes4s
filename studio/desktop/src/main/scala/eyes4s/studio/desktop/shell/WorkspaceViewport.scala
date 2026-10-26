@@ -21,7 +21,7 @@ import javafx.beans.value.ChangeListener
 import javafx.event.EventHandler
 import javafx.scene.Node
 import javafx.scene.control.ScrollPane
-import javafx.scene.input.KeyEvent
+import javafx.scene.input.{KeyEvent, MouseEvent}
 import javafx.scene.layout.Region
 
 /** Keeps the work area legible on smaller displays, with ordinary scroll bars.
@@ -52,6 +52,11 @@ final class WorkspaceViewport(content: Region, accessibleName: String)
     Option(after).foreach(_.accessibleTextProperty.addListener(textChanged))
     revealLater()
   private val keyed: EventHandler[KeyEvent] = _ => revealLater()
+  // The ScrollPane skin otherwise takes focus after a canvas handles a
+  // press. Stop bubbling only after every content/dock handler has run;
+  // scrollbar presses and drag/scroll gestures retain their normal path.
+  private val pressed: EventHandler[MouseEvent] = _.consume()
+  content.addEventHandler(MouseEvent.MOUSE_PRESSED, pressed)
   addEventFilter(KeyEvent.KEY_PRESSED, keyed)
   focused.addListener(focusChanged)
   viewportBoundsProperty.addListener(sizeChanged)
@@ -66,7 +71,9 @@ final class WorkspaceViewport(content: Region, accessibleName: String)
           // Resolve its actual geometry before revealing it through this clip.
           content.applyCss()
           content.layout()
-          Option(focused.getValue).foreach { node =>
+          // Clearing focus to the scene root must not search its descendants
+          // for an unrelated cursor and change their scroll positions.
+          Option(focused.getValue).filter(contains).foreach { node =>
             val b = node.getBoundsInLocal
             // Row navigation also reveals the row through an inner scroll
             // area when the complete composite fits the outer viewport.
@@ -143,6 +150,7 @@ final class WorkspaceViewport(content: Region, accessibleName: String)
       Option(focused.getValue).foreach(_.boundsInParentProperty.removeListener(sizeChanged))
       Option(focused.getValue).foreach(_.accessibleTextProperty.removeListener(textChanged))
       removeEventFilter(KeyEvent.KEY_PRESSED, keyed)
+      content.removeEventHandler(MouseEvent.MOUSE_PRESSED, pressed)
       focused.removeListener(focusChanged)
       viewportBoundsProperty.removeListener(sizeChanged)
 

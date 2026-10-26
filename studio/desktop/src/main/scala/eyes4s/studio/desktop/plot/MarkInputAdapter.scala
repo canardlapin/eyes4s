@@ -47,6 +47,15 @@ import javafx.scene.input.{KeyCode, KeyEvent, MouseButton, MouseEvent}
   */
 object RovingKeys:
   def of(e: KeyEvent): Option[RovingKey] =
+    if eyes4s.studio.desktop.shell.ShellKeys
+        .chords(e)
+        .exists(eyes4s.studio.app.keys.CommandRegistry.keymap.contains)
+    then None
+    else local(e)
+
+  // In particular, the shell's maximize chord must not become a modified
+  // Enter selection when a served plot/table owns the pane's focus stop.
+  private def local(e: KeyEvent): Option[RovingKey] =
     val toggle = e.isShiftDown || e.isShortcutDown
     e.getCode match
       case KeyCode.LEFT | KeyCode.KP_LEFT   => Some(RovingKey.Move(RovingMove.Left))

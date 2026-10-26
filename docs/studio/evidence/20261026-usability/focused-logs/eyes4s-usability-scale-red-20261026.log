@@ -1,0 +1,37 @@
+[info] welcome to sbt 1.11.7 (Eclipse Adoptium Java 25.0.4.1)
+[info] loading settings for project eyes4s-usability-20261026-build from plugins.sbt...
+[info] loading project definition from /private/tmp/eyes4s-usability-20261026/project
+[info] loading settings for project root from build.sbt...
+[info] resolving key references (37727 settings) ...
+[info] set scmInfo to https://github.com/canardlapin/eyes4s
+[info] set current project to root (in build file:/private/tmp/eyes4s-usability-20261026/)
+[info] compiling 1 Scala source to /private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes ...
+[info] done compiling
+[info] compiling 1 Scala source to /private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/test-classes ...
+[info] done compiling
+WARNING: A terminally deprecated method in sun.misc.Unsafe has been called
+WARNING: sun.misc.Unsafe::objectFieldOffset has been called by scala.runtime.LazyVals$ (file:/Users/bbuchsbaum/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/scala-lang/scala3-library_3/3.7.4/scala3-library_3-3.7.4.jar)
+WARNING: Please consider reporting this to the maintainers of class scala.runtime.LazyVals$
+WARNING: sun.misc.Unsafe::objectFieldOffset will be removed in a future release
+Oct 26, 2026 10:21:20 A.M. com.sun.javafx.application.PlatformImpl startup
+WARNING: Unsupported JavaFX configuration: classes were loaded from 'unnamed module @30a798bd'
+WARNING: A restricted method in java.lang.System has been called
+WARNING: java.lang.System::load has been called by com.sun.glass.utils.NativeLibLoader in an unnamed module (file:/Users/bbuchsbaum/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/openjfx/javafx-graphics/24.0.1/javafx-graphics-24.0.1-mac-aarch64.jar)
+WARNING: Use --enable-native-access=ALL-UNNAMED to avoid a warning for callers in this module
+WARNING: Restricted methods will be blocked in a future release unless native access is enabled
+
+Test run eyes4s.studio.desktop.compare.ParticipantsNavigatorFxSuite started
+==> X eyes4s.studio.desktop.compare.ParticipantsNavigatorFxSuite.a refused selected scale leaves another scale reachable by keyboard 4.598s munit.FailException: studio/desktop/src/test/scala/eyes4s/studio/desktop/compare/ParticipantsNavigatorFxSuite.scala:63 available scale ? 0.5? was unreachable: Vector((MENU_BUTTON,Project memory-study), (TOGGLE_BUTTON,Compare (?4)), (BUTTON,Cancel Run 8 (job 1)), (BUTTON,Summary ? by retrieval response, current location), (LIST_VIEW,Participants, P01, overall D +0.42, n 19; run queries 19 contributing of 20, 0 failed), (IMAGE_VIEW,Participant plot), (PARENT,Scale profile of run 7: the whole-report grand mean D at 4 scales, bold, over each participant's mean D, faint. One focus stop; arrow keys move to the nearest mark, Page Up and Page Down step in order, Enter selects, Escape clears the selection.), (BUTTON,Explain P17 ? keeps: by retrieval response ? P17), (PARENT,Reporting), (RADIO_BUTTON,Group by: response), (TEXT_FIELD,First level (minuend)), (TEXT_FIELD,Subtract level (subtrahend)), (BUTTON,Apply contrast), (BUTTON,Clear contrast), (CHECK_BOX,Exclude queries with >25% of fixation duration outside the analysis window), (CHECK_BOX,Minimum queries per group: 3), (RADIO_BUTTON,Summary unit and weighting: Equal weight per participant), (BUTTON,Save as?), (BUTTON,Cancel Run 8 (job 1)))
+62:      count += 1
+63:    assert(entry.nonEmpty, s"available scale ${choice.label} was unreachable: ${visited.result()}")
+64:    val expected = runOnFx(eyes4s.studio.app.vm.A11y.tabOrder(w.runtime.model,
+    at munit.FunSuite.assert(FunSuite.scala:12)
+    at eyes4s.studio.desktop.compare.ParticipantsNavigatorFxSuite.$init$$$anonfun$1(ParticipantsNavigatorFxSuite.scala:63)
+    at munit.FunFixtures.munit$FunFixtures$FunFixture$$_$test$$anonfun$1$$anonfun$1$$anonfun$1(FunFixtures.scala:23)
+eyes4s.studio.desktop.compare.ParticipantsNavigatorFxSuite: finished 4.751s
+Test run eyes4s.studio.desktop.compare.ParticipantsNavigatorFxSuite finished: 1 failed, 0 ignored, 1 total 4.758s
+[error] Failed: Total 1, Failed 1, Errors 0, Passed 0
+[error] Failed tests:
+[error] 	eyes4s.studio.desktop.compare.ParticipantsNavigatorFxSuite
+[error] (studioDesktop / Test / testOnly) sbt.TestsFailedException: Tests unsuccessful
+[error] Total time: 13 s, completed Oct 26, 2026, 10:21:25 a.m.

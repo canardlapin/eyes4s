@@ -24,10 +24,11 @@ import eyes4s.studio.desktop.StudioWindow
 import eyes4s.studio.desktop.dock.StudioPanes
 import eyes4s.studio.desktop.harness.{FxStage, Modifiers, StageSize, StudioTheme}
 import eyes4s.studio.desktop.plot.PlotHostStatus
-import javafx.scene.Node
+import javafx.scene.{Node, Parent}
 import javafx.scene.control.ScrollPane
 import javafx.scene.input.KeyCode
 import java.nio.file.Files
+import scala.jdk.CollectionConverters.*
 
 /** Small windows must preserve a usable data frame, not just return Drawn. */
 class WorkspaceViewportFxSuite extends StoryCaptureFixture:
@@ -113,6 +114,29 @@ class WorkspaceViewportFxSuite extends StoryCaptureFixture:
             )
           }
       }
+
+  fxStage.test("clearing focus does not reveal unrelated rows or scroll the workspace") { fx =>
+    val w = boot(fx, StoryModels.t1Data, StoryMoment.T1, clock = () => None)
+    runOnFx(w.shell.appBar.project.requestFocus())
+    fx.awaitLayout()
+    def scrolls(node: Node): Vector[ScrollPane] =
+      val own = node match
+        case pane: ScrollPane => Vector(pane)
+        case _                => Vector.empty
+      own ++ (node match
+        case p: Parent => p.getChildrenUnmodifiable.asScala.toVector.flatMap(scrolls)
+        case _         => Vector.empty)
+    val panes = runOnFx(scrolls(w.root))
+    assert(panes.size > 1)
+    runOnFx(panes.foreach { pane =>
+      pane.setHvalue(0.0)
+      pane.setVvalue(0.0)
+    })
+    fx.awaitLayout()
+    val before = runOnFx(panes.map(p => (p.getHvalue, p.getVvalue)))
+    RestingFocus.clear(fx, w)
+    assertEquals(runOnFx(panes.map(p => (p.getHvalue, p.getVvalue))), before)
+  }
 
   for theme <- StudioTheme.values do
     fxStage.test("small query workspace keeps map space " + theme.id) { fx =>

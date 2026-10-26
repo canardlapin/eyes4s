@@ -1,0 +1,84 @@
+{
+  "schema": 1,
+  "status": "focused checks passed; complete qualification pending",
+  "supersedes": "4889cd9c360854e765a5c4ac762986ddb330ceb9",
+  "sourceFingerprint": "be0f010ca23b2b8678da1be6a059093dfc96c41f3400ae82a96506353388ea98",
+  "corrections": [
+    "Preserve canvas focus after content mouse presses, before ScrollPane skin handling.",
+    "Let registered shell chords reach the shell rather than roving mark selection.",
+    "Keep an available scale as the one Tab entry when the shown scale is unavailable; activate explicitly, with a visible attached unavailable reason.",
+    "Reveal only focused content inside the workspace; scene-root focus clear must not scroll unrelated descendant rows."
+  ],
+  "checks": {
+    "affectedDesktop": 124,
+    "portableFocusJvm": 3,
+    "portableFocusJs": 3,
+    "reasonAndAccessibility": 31,
+    "style": "passed after explicit Studio formatting",
+    "earlierCompleteStudioPreflight": 5252,
+    "preflightScope": "before final scale/reveal corrections; not final-tree qualification"
+  },
+  "negativeEvidence": [
+    "Hosted40333197934: pointer/maximize failures on all platforms;10 Linux pixel-state failures, all60 immediate repeats stable; GTK record-scroll median40.3ms over32ms.",
+    "Root-focus clear reproduced geometry scroll0 ->0.081081 at small and board sizes.",
+    "Scale recovery initially skipped because a retained button was detached; corrected test uses live Tab traversal and executes with zero skips.",
+    "Affected124tests passed but initial style check failed; explicit Studio formatting and31affected tests plusstyle subsequently passed."
+  ],
+  "visualReview": {
+    "reviewer": "codex-usability-20261026",
+    "viewed": [
+      "corrected/WorkspaceViewportFxSuite/small-Results-workspace-keeps-space-for-axes-and-annotations-light/light-1x.png",
+      "corrected/WorkspaceViewportFxSuite/small-query-workspace-keeps-map-space-dark/dark-1x.png"
+    ],
+    "findings": [
+      "Readable map area, wrapped disclosures and legend.",
+      "Participant axes and annotations fit the enlarged work area; offscreen content is intentionally scrollable."
+    ],
+    "limits": [
+      "Native Mac/GTK2 and strict Linux qualification still required.",
+      "G2, physical Retina and VoiceOver remain separate."
+    ]
+  },
+  "logs": [
+    {
+      "path": "focused-logs/eyes4s-usability-pointer-red-20261026.log",
+      "sha256": "3ac39770fb379e0dea0cf56fd258fe896fcc870d440c1304ae3ecc2c800eab67"
+    },
+    {
+      "path": "focused-logs/eyes4s-usability-pointer-owner-20261026.log",
+      "sha256": "a14b1aa15ba6c6d3ba198fb9c80567f03b096c5d28cf492d01172dad37888e23"
+    },
+    {
+      "path": "focused-logs/eyes4s-usability-routing-green-20261026.log",
+      "sha256": "372d557a46baa8d4bbe723a45a7012ebb964727f403385dc49f4d5ee636c14c0"
+    },
+    {
+      "path": "focused-logs/eyes4s-usability-studio-preflight-20261026.log",
+      "sha256": "b025d5982a7379a2d901fae6c8e207111c323057d7b9223ce17c6096ff58fbd5"
+    },
+    {
+      "path": "focused-logs/eyes4s-usability-scale-red-20261026.log",
+      "sha256": "4d0fbcaefc5aa306456b7105da9e258c832930efbecfecdcb8d158135cda2a18"
+    },
+    {
+      "path": "focused-logs/eyes4s-usability-final-focused-20261026.log",
+      "sha256": "ca5fccee0660e7639b2be3ec6de4f15170d695831cdddfd39d4927598dc76ff7"
+    },
+    {
+      "path": "focused-logs/eyes4s-usability-scale-live-20261026.log",
+      "sha256": "f57dddc256c08880fd11c75ca262e0a875f8dbd152a92ec105fea9492b45929f"
+    },
+    {
+      "path": "focused-logs/eyes4s-usability-clear-red-20261026.log",
+      "sha256": "a8e40c9f1974e9c30b8a315f7a6c5662357e52c2e63667bc719db2a4af898654"
+    },
+    {
+      "path": "focused-logs/eyes4s-usability-review-final-20261026.log",
+      "sha256": "16f675fd3a9c16d0bc42651a00e96dd133c62ecfcfa071eaba370edb526a6adc"
+    },
+    {
+      "path": "focused-logs/eyes4s-usability-reason-20261026.log",
+      "sha256": "4ac7db0a178b72f4ba3e9e11d62a1c89d84336ce901bda604ee7c4cd1504e3fd"
+    }
+  ]
+}

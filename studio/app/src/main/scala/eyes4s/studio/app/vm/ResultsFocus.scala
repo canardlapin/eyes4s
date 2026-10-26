@@ -16,11 +16,18 @@
 
 package eyes4s.studio.app.vm
 
-import eyes4s.studio.app.compare.{CompareSummaryVM, ParticipantsNavigatorVM}
+import eyes4s.studio.app.compare.{CompareSummaryVM, ParticipantsNavigatorVM, ScaleChoice}
 import eyes4s.studio.app.layout.PaneDecl
 
 /** Results controls and composite names come from served, portable values. */
 object ResultsFocus:
+  /** Keep the shown scale unchanged after a failed report, but let the
+    * keyboard enter the available choices and explicitly choose a recovery.
+    */
+  def scaleEntry(summary: CompareSummaryVM): Option[ScaleChoice] =
+    val available = summary.scales.filter(_.available)
+    available.find(_.chosen).orElse(available.headOption)
+
   def pane(
       decl: PaneDecl,
       summary: CompareSummaryVM,
@@ -32,8 +39,7 @@ object ResultsFocus:
         val name = (Vector(decl.accessibleName) ++ participants.cursorText).mkString(", ")
         PaneFocus(Some(FocusStop(A11yRole.List, name)), Vector.empty)
       case "compare.participant-table" =>
-        val scale = summary.scales
-          .filter(c => c.chosen && c.available)
+        val scale = scaleEntry(summary).toVector
           .map(c => FocusStop(A11yRole.ToggleButton, c.label))
         val explain = summary.explain.toVector.map(e =>
           FocusStop(A11yRole.Button, s"${e.label} ${e.keeps}")
