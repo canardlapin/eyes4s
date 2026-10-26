@@ -1,0 +1,9 @@
+PASS: 30 states /60 snapshots; Linux golden matrix passed
+PASS: 24 scenarios E2E02–25; named cases passed on every required platform. Receipt: /private/tmp/eyes4s-usability-final-proof/e2e-receipt.json
+PASS: 30 states /60 snapshots; functional/repeat only
+PASS: 30 states /60 snapshots; functional/repeat only
+Traceback (most recent call last):
+  File "/private/tmp/eyes4s-usability-final-verify-hosted.py", line 42, in <module>
+    assert all(n in allowed for n in skipped),(label,suite,skipped)
+           ~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: ('macos', 'shell.A11yTreeSuite', ['data: every focusable node has an accessible role and name', 'explore: every focusable node has an accessible role and name', 'analysis: every focusable node has an accessible role and name', 'compare: every focusable node has an accessible role and name', 'compare-results: every focusable node has an accessible role and name', 'compare-results-dark: every focusable node has an accessible role and name', 'figures: every focusable node has an accessible role and name', 'data-empty: every focusable node has an accessible role and name'])

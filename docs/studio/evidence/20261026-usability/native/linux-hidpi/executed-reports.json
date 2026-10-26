@@ -1,0 +1,993 @@
+[
+  {
+    "path": "studio/desktop/target/test-reports/TEST-consumer.StudioDesktopDomainProductMirrorSuite.xml",
+    "cases": 1,
+    "passed": 1,
+    "skipped": [],
+    "sha256": "315ab4a21359861a6d49e39f4849324ba1766f4830fb647015743c4122260520"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.PinnedProvidersSuite.xml",
+    "cases": 4,
+    "passed": 4,
+    "skipped": [],
+    "sha256": "5ba33e0b0a7922843202a6bfe5696516dd342d2e7a54935dd7b1a7aef2acfc77"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.StudioMainSuite.xml",
+    "cases": 2,
+    "passed": 2,
+    "skipped": [],
+    "sha256": "8266f42108fdc0991b16221fc5dca4b1b123d3808fc8ca4c28b0d3b4a2efaf68"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.admission.AdmissionLedgerFxSuite.xml",
+    "cases": 6,
+    "passed": 6,
+    "skipped": [],
+    "sha256": "79cfe4fb43db1bcfd6d8024ee7d524bba1d6f5ddb197f760f3ab44e67cbd9d65"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.analysis.AnalysesNavigatorFxSuite.xml",
+    "cases": 10,
+    "passed": 10,
+    "skipped": [],
+    "sha256": "2110f31c5f2e64bf709edb81aa5df12af1430ed4e2a78d50e33f675db3380337"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.analysis.DescriptorFormSuite.xml",
+    "cases": 2,
+    "passed": 2,
+    "skipped": [],
+    "sha256": "0983a881bced85a74b22cd67f8fea56f57d4c3670011c6894e2a5a5784c53ab1"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.analysis.DraftLifecycleSuite.xml",
+    "cases": 2,
+    "passed": 2,
+    "skipped": [],
+    "sha256": "aad66c6bcaaa71e6f0cd11d1e25afada987e367935643a964d5b029dab9a2c40"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.analysis.PreflightFxSuite.xml",
+    "cases": 4,
+    "passed": 4,
+    "skipped": [],
+    "sha256": "5932ec15a076147b7b5e74b378e05d02f4a3235f9190339d86a96190f8faac09"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.analysis.ResolvedDesignFxSuite.xml",
+    "cases": 7,
+    "passed": 7,
+    "skipped": [],
+    "sha256": "848efedcdfe3272206c62aee1975c8f68c24c4ce9435625354ca7343956a85bd"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.analysis.ScalesEditorSuite.xml",
+    "cases": 1,
+    "passed": 1,
+    "skipped": [],
+    "sha256": "bd1d726e834707bd684881e04feb65fd7c9b3798b38bd6345114a3e17876cac8"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.compare.CompareInspectorFxSuite.xml",
+    "cases": 1,
+    "passed": 1,
+    "skipped": [],
+    "sha256": "539d86f2eb3f21dcf36124f15723a11c27de474d69227aff177ad8594f902fb1"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.compare.CompareMapHostFxSuite.xml",
+    "cases": 3,
+    "passed": 3,
+    "skipped": [],
+    "sha256": "a9c3710eb4ecc858150bc0be73bf1fde1e28df67a35e812a2380026d321dd289"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.compare.PairsTableFxSuite.xml",
+    "cases": 6,
+    "passed": 6,
+    "skipped": [],
+    "sha256": "c202adf1bf662d346ee79a4c25333d0d8e580a0943bdb7647d02b10c74e81c51"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.compare.ParticipantsNavigatorFxSuite.xml",
+    "cases": 5,
+    "passed": 5,
+    "skipped": [],
+    "sha256": "1f249d2dc52eb2d1b8b4ec34e1f66c18d16e5eb4e07ed958c91a9210f3e5cfdc"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.compare.QueriesNavigatorFxSuite.xml",
+    "cases": 4,
+    "passed": 4,
+    "skipped": [],
+    "sha256": "39ea7e0798167425412478b02454666311de9675f72f74f1eff8bce037598da4"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.compare.ReportingEditorFxSuite.xml",
+    "cases": 3,
+    "passed": 3,
+    "skipped": [],
+    "sha256": "73305948e098f89340daa9e1431de5f971d0210478ea95e7beef19a07a8824d2"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.compare.ScaleLadderFxSuite.xml",
+    "cases": 3,
+    "passed": 3,
+    "skipped": [],
+    "sha256": "6c6b3a03d6949244569a4eb6f9cfa7058ae4f4806ea6b1b9558f77eabea57961"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.compare.TrialPanelsFxSuite.xml",
+    "cases": 6,
+    "passed": 6,
+    "skipped": [],
+    "sha256": "b36ffa192d24e926eaf17eb048ea9889bedbd58743f6d8349ba2bfec7421f3a8"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.data.AssetFilesSuite.xml",
+    "cases": 5,
+    "passed": 5,
+    "skipped": [],
+    "sha256": "15789cc1d6cc5546a99e78eca62c200479f067c6b84f637870d668cdbd7a902d"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.data.DataFirstRunFxSuite.xml",
+    "cases": 7,
+    "passed": 7,
+    "skipped": [],
+    "sha256": "fe1b7efb2abaf29f1a02254cd0b4d4cb6c6cb08b2b1c181cdad6e978bf5cf8cb"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.data.PlatformAssetFilesSuite.xml",
+    "cases": 3,
+    "passed": 3,
+    "skipped": [],
+    "sha256": "bb3b00dc96371509391597e51e8d9f98b626f48254cb478ae6602ce36e64fdb7"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.data.SourceRepairFileFxSuite.xml",
+    "cases": 3,
+    "passed": 3,
+    "skipped": [],
+    "sha256": "4a67690a07e681c8fec836f0218cf8bea8529f626a2ddf03e43cca3b841e1e13"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.data.SourceRepairFileSuite.xml",
+    "cases": 3,
+    "passed": 3,
+    "skipped": [],
+    "sha256": "cb539994ebb1c0fc87f1efe8bd396c90d5403dad7a4ae664e7e3ce0dd8f8f617"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.data.SourcesFxSuite.xml",
+    "cases": 4,
+    "passed": 4,
+    "skipped": [],
+    "sha256": "a3732cca36888199f07c88b11a4cf7681b37937c71f3f6754200591d5dab344f"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.dock.DockLayoutsSuite.xml",
+    "cases": 7,
+    "passed": 7,
+    "skipped": [],
+    "sha256": "0c72ff0b490cb1e0d1ba2f2fa0857be86e66504d38ec94f7d0780cd6161c7e97"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.dock.LayoutPersistenceFxSuite.xml",
+    "cases": 3,
+    "passed": 3,
+    "skipped": [],
+    "sha256": "b38cf78bb511113bdc63d7d9885aa5c2b0c0d6e9b17c2c5d91f0136c8a5c8807"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.explore.ExploreLinkedSelectionFxSuite.xml",
+    "cases": 2,
+    "passed": 2,
+    "skipped": [],
+    "sha256": "6ca07e3566eb45ba89414c219c5265183d3be39f0f7f838a42c8a786382ec2f8"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.explore.ExploreTrialViewFxSuite.xml",
+    "cases": 4,
+    "passed": 4,
+    "skipped": [],
+    "sha256": "c13cd2753d44cce92d0241c45e71d9d2554132edc13a69292cbc95c124a4d4df"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.explore.ExploreTrialViewHostSuite.xml",
+    "cases": 2,
+    "passed": 2,
+    "skipped": [],
+    "sha256": "2fc962cf1969e89bd2801ce6a939fd4f2e2f80a45a4b023a7c1f36eb0a106cf6"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.explore.FixationInspectorFxSuite.xml",
+    "cases": 3,
+    "passed": 3,
+    "skipped": [],
+    "sha256": "7f8ec8fc4d650ddae9aad017d1d72980e52bd972774757cb426e4f023fd271e5"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.explore.NavigatorDisplaysSuite.xml",
+    "cases": 4,
+    "passed": 4,
+    "skipped": [],
+    "sha256": "d3ed385388010f2ee33c49707ba993221af8554398d1f8a7054544f03c239e1c"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.explore.SourceRecordsFxSuite.xml",
+    "cases": 7,
+    "passed": 7,
+    "skipped": [],
+    "sha256": "feb62c6c61dfbe6f00cb8cfd5bba3bdaa1a3ef01496ce369a74b8ce290f29f7c"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.explore.TimelineFxSuite.xml",
+    "cases": 8,
+    "passed": 8,
+    "skipped": [],
+    "sha256": "c9f82d39f1d76968232aac79d16441f10d7f625ab953c7c80909235aff1b0dbd"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.explore.TrialExtentFxSuite.xml",
+    "cases": 3,
+    "passed": 3,
+    "skipped": [],
+    "sha256": "272c26e9a935212e69158e3f005e4a5976298a879ce6b0343596a5ab999f9a52"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.explore.TrialsNavigatorFxSuite.xml",
+    "cases": 4,
+    "passed": 4,
+    "skipped": [],
+    "sha256": "73897802054d7ceda6cd4141b8bb67811d3a9960a1de5c6c821cec4fb0a725a0"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.figures.BundleSnapshotSuite.xml",
+    "cases": 1,
+    "passed": 1,
+    "skipped": [],
+    "sha256": "22b5cb7bef9736b015f35d780e30347e007bb96e80507ddab72db79b7cf117e4"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.figures.ExportBundleSuite.xml",
+    "cases": 19,
+    "passed": 19,
+    "skipped": [],
+    "sha256": "4d5bc87846f1231e34f20ed8274c67168f441ce40f0b671c91210547099f6d04"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.figures.FigureAppearanceFxSuite.xml",
+    "cases": 3,
+    "passed": 3,
+    "skipped": [],
+    "sha256": "a303f787c50b0c86d3934621807c1ef67d62209cdf29dedd57e722984c1ec33c"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.figures.FigureComposerFxSuite.xml",
+    "cases": 12,
+    "passed": 12,
+    "skipped": [],
+    "sha256": "fd7f1ed8dcfaabf8897ae403ac32044b964ed9a4a74941296650262a43b2e030"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.figures.FigureExportSuite.xml",
+    "cases": 10,
+    "passed": 10,
+    "skipped": [],
+    "sha256": "b5247e28344ca4dbc75887cf53c6f44458df7d1d1bad84c46968d0de31232ce3"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.figures.FigureGazeFxSuite.xml",
+    "cases": 1,
+    "passed": 1,
+    "skipped": [],
+    "sha256": "42a20e78572cca5fae5990c2d20acad09758998e2cb34e794b9db7df05971fac"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.figures.FigureMethodsFxSuite.xml",
+    "cases": 7,
+    "passed": 7,
+    "skipped": [],
+    "sha256": "d26ebfd92c84f5b36817676346c02a997fe012d85153fe939c6f9bfee891f980"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.figures.MapTileHatchFxSuite.xml",
+    "cases": 1,
+    "passed": 1,
+    "skipped": [],
+    "sha256": "f536d8a508f887a2e6209c3a2cf5f532c4c9c57651ab8c3c07bf95bcbeba040d"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.geometry.GeometryCountsFxSuite.xml",
+    "cases": 2,
+    "passed": 2,
+    "skipped": [],
+    "sha256": "79bddbfad9cb41fb841959703069efe9556f6a7d5acb24da1099c0012e45cb91"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.geometry.GeometryPanelFxSuite.xml",
+    "cases": 9,
+    "passed": 9,
+    "skipped": [],
+    "sha256": "cdac24fc5a77256fcbfa8b4e0bcde38808ca6f482e5a860bbcb823487e8dc9a4"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.geometry.GeometryPicturesTimingSuite.xml",
+    "cases": 1,
+    "passed": 1,
+    "skipped": [],
+    "sha256": "f6eded389389ce1567378d81a74b12076b36dae015a13020165453ab710e3529"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.harness.FxRunLockSuite.xml",
+    "cases": 4,
+    "passed": 4,
+    "skipped": [],
+    "sha256": "2013716306f2e7099b9008be9d0298a4e854bf51560902e8ebe5335cd32666c6"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.harness.HarnessSmokeSuite.xml",
+    "cases": 6,
+    "passed": 5,
+    "skipped": [
+      "a headless run draws on Monocle's virtual screen, not the display"
+    ],
+    "sha256": "61e58f834f226dc0b030cf137010b70fae7a98150bfa1d16e9b2dde287af54d2"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.harness.RenderFailureCaptureFxSuite.xml",
+    "cases": 4,
+    "passed": 4,
+    "skipped": [],
+    "sha256": "f2f98fb0f5e502845230e97fbaa76ff1b563d48cdec16f2fd9bf22ac7ac63d5a"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.harness.UnevaluatedEffectsFxSuite.xml",
+    "cases": 2,
+    "passed": 2,
+    "skipped": [],
+    "sha256": "93ace150f28a7c3dd7d178cacc3ed1b1828934ddb75790583db5e2c6f1ae09f1"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.harness.VisualPixelsSuite.xml",
+    "cases": 3,
+    "passed": 3,
+    "skipped": [],
+    "sha256": "cb1e820dc50ee65274a18c8ab2a2a9c345124471b13fddf1d090c54b80c9a6d5"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.icons.IconCatalogSuite.xml",
+    "cases": 8,
+    "passed": 8,
+    "skipped": [],
+    "sha256": "bd4ff5ec4f69ad0250128d854c821c631531846eb5d22eae4f3eb9827f1b32b8"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.importing.ColumnMappingPaneFxSuite.xml",
+    "cases": 12,
+    "passed": 12,
+    "skipped": [],
+    "sha256": "aa5dc82f4b9626e5d4c640ff83b2c37a56b01acfc3d5354c8b6554a824531a2f"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.importing.ImportAdmissionSuite.xml",
+    "cases": 3,
+    "passed": 3,
+    "skipped": [],
+    "sha256": "4cc46e435df39f03f8e6ef1cd6113eb8e69678c10dfdf894137dba7bda6eeb42"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.importing.ImportFollowSuite.xml",
+    "cases": 2,
+    "passed": 2,
+    "skipped": [],
+    "sha256": "00479f1f758c96c7c57962c75f0d8607ab39c9c172ba06067ab2c6cafde91e47"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.importing.ImportWizardFxSuite.xml",
+    "cases": 19,
+    "passed": 19,
+    "skipped": [],
+    "sha256": "67f245605e5d464d27bbf4616e43c8a5956fd5436e8dfd445767a9929eaeb64a"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.importing.PlatformImportSuite.xml",
+    "cases": 2,
+    "passed": 2,
+    "skipped": [],
+    "sha256": "0b654288556840331a2689b133d96cc62e1ba8d278c1dfa037a4f1e247bcce0d"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.importing.TrialKeyFxSuite.xml",
+    "cases": 4,
+    "passed": 4,
+    "skipped": [],
+    "sha256": "930c3c6230a9de73a00f6e16ac7132ad66248e2eafe2a99b0a34a386c04ebda0"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.journey.GoldenJourneyFxSuite.xml",
+    "cases": 1,
+    "passed": 1,
+    "skipped": [],
+    "sha256": "7b42e4331613b58da672e14c140fa8b33a4cffdfebbf462a3fe35f60aebb708c"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.journey.GoldenJourneySuite.xml",
+    "cases": 1,
+    "passed": 1,
+    "skipped": [],
+    "sha256": "67d75cf841008220f2c6d0854a4ceb0c03eba8ee2cb399067349237e501e6442"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.journey.KeyboardJourneySuite.xml",
+    "cases": 1,
+    "passed": 1,
+    "skipped": [],
+    "sha256": "8b776083e89477380abc022f967239335041bf81bef7c0e2f9b3b51f35ec47f9"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.journey.NativeCommandJourneySuite.xml",
+    "cases": 1,
+    "passed": 1,
+    "skipped": [],
+    "sha256": "f88f6d94c7b2832432acb4acbf7650c6b9ad3f5f983ba211b052737aa4f92545"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.journey.NativeGoldenCommandFxSuite.xml",
+    "cases": 1,
+    "passed": 1,
+    "skipped": [],
+    "sha256": "c2c6517c2b804811620441b4e41705e475ee54dd03a59b5aeb4db994a86017f8"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.journey.NativeGoldenWorkflowSuite.xml",
+    "cases": 1,
+    "passed": 1,
+    "skipped": [],
+    "sha256": "aee8a63a529fcfd6b817706601307181bcf1e95662ca7192ebe6f4bb5977935c"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.journey.PrivateDensityFxSuite.xml",
+    "cases": 1,
+    "passed": 0,
+    "skipped": [
+      ""
+    ],
+    "sha256": "784c5b817911bf62ded83f7e520c87af28a3334f8e9aa16c75cbb7164eca198e"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.journey.ScanpathWorkbenchFxSuite.xml",
+    "cases": 2,
+    "passed": 2,
+    "skipped": [],
+    "sha256": "822273ecb332580443d5b0d8b30c31f3beaeec7b0359a5f442fb0e909977cedc"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.maps.MapRasterStoreSuite.xml",
+    "cases": 9,
+    "passed": 9,
+    "skipped": [],
+    "sha256": "b6221a9587e6a14ba543d8e2a1961a6a67703ed0c7f69716e044d71252eb6acd"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.platform.AppearancePreferenceFxSuite.xml",
+    "cases": 2,
+    "passed": 2,
+    "skipped": [],
+    "sha256": "da264b567dee29abb9067eda70289e7ca10f9e3159abff5f840c61feed0f4cb9"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.platform.AppearancePreferenceHostSuite.xml",
+    "cases": 5,
+    "passed": 5,
+    "skipped": [],
+    "sha256": "9f4d735012cc75a064ecc9530495a3d55c0be4db9da6fd4edabdea7473b1c881"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.platform.DesktopPlatformSuite.xml",
+    "cases": 18,
+    "passed": 18,
+    "skipped": [],
+    "sha256": "e1655743965e64bd7fc6f76575adc201fc6618abd28215ebd282819455084c08"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.platform.DesktopPreferencesSuite.xml",
+    "cases": 4,
+    "passed": 4,
+    "skipped": [],
+    "sha256": "4b4b8fc53b1253aec80919112c409369e291b111630edb30827731cb17d380c1"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.platform.ExampleBundleSuite.xml",
+    "cases": 3,
+    "passed": 3,
+    "skipped": [],
+    "sha256": "55224605933db7df73796e0ce2037bbf1e5dcd431e84ab1f74676b6f6d296c95"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.platform.FileAtomicSaveFaultSuite.xml",
+    "cases": 10,
+    "passed": 10,
+    "skipped": [],
+    "sha256": "ff900853c6f2a65e105d28c3f287a1bc67d29b3b7e27004402ea1de0d54d3d5d"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.platform.FilePresetStoreSuite.xml",
+    "cases": 2,
+    "passed": 2,
+    "skipped": [],
+    "sha256": "cb459857801e10020d2871bce4c1be900a028f208ff0702567391a20ce8456c2"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.platform.FileProjectStoreSuite.xml",
+    "cases": 12,
+    "passed": 12,
+    "skipped": [],
+    "sha256": "989484b53d32f0d3e108617e9cf92722e4aa2936f254ddaab61174ecc480d45c"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.platform.FileRecoveryFaultSuite.xml",
+    "cases": 17,
+    "passed": 17,
+    "skipped": [],
+    "sha256": "cbcf89c4b109d6ad4a89115a373ee3364d37af9c1ec191cf4863b167d04e6f0f"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.platform.FileRecoverySuite.xml",
+    "cases": 33,
+    "passed": 33,
+    "skipped": [],
+    "sha256": "ded24f904354b0824f7236e971afe9cf1526d2c4d19f17813236aa25d35e46fd"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.platform.FileSessionCancellationSuite.xml",
+    "cases": 8,
+    "passed": 8,
+    "skipped": [],
+    "sha256": "6bc2a8216595ba696163bcc7db43bc6e1c24bda70007bdf752514e0cd2f7af9d"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.platform.NoticesSuite.xml",
+    "cases": 5,
+    "passed": 5,
+    "skipped": [],
+    "sha256": "0b702574de59f23f76bb3f47122df5a745f865a7696a68c92bc034b85dd45f9d"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.platform.PlatformPresetStoreSuite.xml",
+    "cases": 4,
+    "passed": 4,
+    "skipped": [],
+    "sha256": "3b9a0f4b43b39c69c8bbdd1afc4892dca60e38f2b70de5d0cbf1c217c81801b6"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.platform.PlatformRoutesFxSuite.xml",
+    "cases": 4,
+    "passed": 4,
+    "skipped": [],
+    "sha256": "2ee4f406b18337b5c95a0b0aece5b957a15c312988cb16b60597fae6e2ff6786"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.platform.PreferenceWritesSuite.xml",
+    "cases": 1,
+    "passed": 1,
+    "skipped": [],
+    "sha256": "2fb2c9882953afabe0870eb8c070aa1bc87f4e5fcaa3a6a5596f07f8070dd352"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.platform.PreferencesFileSuite.xml",
+    "cases": 6,
+    "passed": 6,
+    "skipped": [],
+    "sha256": "fa3d151593d12339bda97bf9ab4278b3ae68b1e1fc1514fb7ef767d40aa57b8a"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.platform.ProjectBundleGoldenSuite.xml",
+    "cases": 3,
+    "passed": 3,
+    "skipped": [],
+    "sha256": "8528010a70f6af32181fa8e54474fe8acd1fa8927da757ce3156cb94968f1e16"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.plot.CanvasPlotHostFxSuite.xml",
+    "cases": 17,
+    "passed": 17,
+    "skipped": [],
+    "sha256": "6c4cc749dc71fdcff1fb1c1918a1e81e239c76a33b0c71e1df8616d3614eb453"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.plot.CompareSummaryFxSuite.xml",
+    "cases": 9,
+    "passed": 9,
+    "skipped": [],
+    "sha256": "ec26d5c01af8aa0e7f2f9b1ab1770834cdb18f3270267a3b79e7b042dbc73357"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.plot.MissingAssetHatchFxSuite.xml",
+    "cases": 2,
+    "passed": 2,
+    "skipped": [],
+    "sha256": "31bb37990c906cd8ec962f417c2ac1cfb3987ec4343d74abdb7c6a5d41ba5925"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.plot.NativeOutputScaleFxSuite.xml",
+    "cases": 1,
+    "passed": 1,
+    "skipped": [],
+    "sha256": "9adaace7e8e635bd6d7481273f660955b08b1f54f5b716bc220d2279df87fccd"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.plot.PlotKitFxSuite.xml",
+    "cases": 16,
+    "passed": 16,
+    "skipped": [],
+    "sha256": "8b773367e204db56867adf63dd3decc91285dfaff4533576dfc436a2804758e1"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.plot.S45bPlotFxSuite.xml",
+    "cases": 2,
+    "passed": 2,
+    "skipped": [],
+    "sha256": "0afd6f6c74c991ac0f3951e43931eeaa14e5502afa9df8fa20e53d004f84e016"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.plot.S45cPlotFxSuite.xml",
+    "cases": 3,
+    "passed": 3,
+    "skipped": [],
+    "sha256": "68c3e6a5eab80a587b7c00a706fdbb143f02a4559e34c9551927ba1ec5b91153"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.plot.S45dPlotFxSuite.xml",
+    "cases": 2,
+    "passed": 2,
+    "skipped": [],
+    "sha256": "87b86759987bd66aa91415dd73674cb3bc644e10514a0d821f938e8ac8778074"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.plot.S45ePlotFxSuite.xml",
+    "cases": 1,
+    "passed": 1,
+    "skipped": [],
+    "sha256": "406e6edbcd03a69c1d481af437ccfba7c8fa90db529799ef5a85feb077376f32"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.plot.TableTwinViewFxSuite.xml",
+    "cases": 8,
+    "passed": 8,
+    "skipped": [],
+    "sha256": "3cf9fb495cbba5d077e36e54500bdf9a96de7d1fd8f52f15a597e06397eaf3a7"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.project.ProjectLifecycleFxSuite.xml",
+    "cases": 22,
+    "passed": 22,
+    "skipped": [],
+    "sha256": "be0b496ff69000fbba218072fabd304c947c133b8861f87d9989286674f77696"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.report.ErrorReporterSuite.xml",
+    "cases": 1,
+    "passed": 1,
+    "skipped": [],
+    "sha256": "4ae5ac6800be502147079ffb4ffa39262c198a682b90b854bfdf5bc47a295d8e"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.report.ErrorReportingSuite.xml",
+    "cases": 6,
+    "passed": 6,
+    "skipped": [],
+    "sha256": "80395331859a2b226338396313f72410248e0986679ae387f7414c2bee696907"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.report.StudioLogSuite.xml",
+    "cases": 3,
+    "passed": 3,
+    "skipped": [],
+    "sha256": "625ba602afaed7705012ff952db655fbaa098210cae58253224f3428cc94cf8f"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.runtime.AdversarialScienceSuite.xml",
+    "cases": 8,
+    "passed": 8,
+    "skipped": [],
+    "sha256": "4b31629d6c3fa908f78333b72a5ad1915382caba889ff6f09011b45e2c7d1b93"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.runtime.DatasetSourceHostsSuite.xml",
+    "cases": 2,
+    "passed": 2,
+    "skipped": [],
+    "sha256": "210b0748dca1ca9a84146d3df6bbbf7e8e48a2d33572e38d9767551b1b01d64e"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.runtime.ExecutionEventDeliverySuite.xml",
+    "cases": 3,
+    "passed": 3,
+    "skipped": [],
+    "sha256": "a03b31271b2b32f99a2a3eff9ba8cc8432cc621c4027e0653e790812e90e6739"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.runtime.NativeAdmissionPolicySuite.xml",
+    "cases": 4,
+    "passed": 4,
+    "skipped": [],
+    "sha256": "59fda0b53f05c55b0a7044c0985cb169a8853013b4c4f372fa071912ba09c6cc"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.runtime.NativeExecutionSafetySuite.xml",
+    "cases": 7,
+    "passed": 7,
+    "skipped": [],
+    "sha256": "c1ef3e89ec8ed167a8422019f46840ff0289421bca6d711a30ed701acb5e3f22"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.runtime.NativePlatformSuite.xml",
+    "cases": 3,
+    "passed": 3,
+    "skipped": [],
+    "sha256": "865764f884ac74b618b7e534be01183d33b5a57be206d1269ad5d67ac8f93070"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.runtime.NativeWindowFxSuite.xml",
+    "cases": 1,
+    "passed": 1,
+    "skipped": [],
+    "sha256": "68a1cc7478eddb2d275d918d158c33d7fb6fc0b65b282028570aeced40e49a97"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.runtime.PreparedRefusalSuite.xml",
+    "cases": 1,
+    "passed": 1,
+    "skipped": [],
+    "sha256": "87df026d25c392d5362d1c634cf26de42986586c6d895d8fbcf4e926517629db"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.runtime.SessionPortSuite.xml",
+    "cases": 7,
+    "passed": 7,
+    "skipped": [],
+    "sha256": "6dd995c5130bcc8668337b244c105093f12474eb701c3fc0d85e561b0e708f8a"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.runtime.StudioRuntimeSuite.xml",
+    "cases": 3,
+    "passed": 3,
+    "skipped": [],
+    "sha256": "de4ac90b8640c6e27b284ec08dbd4a2803664626d4bbe0ceb5a47dee5fc0235c"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.shell.A11yRenderSuite.xml",
+    "cases": 39,
+    "passed": 39,
+    "skipped": [],
+    "sha256": "dbb1f79a8e129f3dfaf726464e7d139ab7600b76836ec681a83f8fa1ddafae9e"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.shell.A11yTreeSuite.xml",
+    "cases": 26,
+    "passed": 26,
+    "skipped": [],
+    "sha256": "938aa638b16e17f65e2093b8b0f442757f3d9e7a39bb6f3febee169c6434955b"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.shell.AboutFxSuite.xml",
+    "cases": 1,
+    "passed": 1,
+    "skipped": [],
+    "sha256": "1590ce00d204d4c8ee38a14a10d48864f946801c5d9de34b442b607bd5b38d2c"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.shell.AppShellFxSuite.xml",
+    "cases": 23,
+    "passed": 23,
+    "skipped": [],
+    "sha256": "e5115af8f9aef16c0a47643ddfae5d24bb6651b1cddf1e749c7ee414b01fd347"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.shell.BoardParityCaptureFxSuite.xml",
+    "cases": 7,
+    "passed": 7,
+    "skipped": [],
+    "sha256": "04ede4cb993ee263dc2e0c320d768f8fb337521113e08a092a47676de3865cad"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.shell.BoardWorkspaceViewportFxSuite.xml",
+    "cases": 6,
+    "passed": 6,
+    "skipped": [],
+    "sha256": "b54e3fd7185ccd615acae71064b52534027b334bedd847712f8b61932ef5880e"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.shell.CanvasBoundaryFxSuite.xml",
+    "cases": 2,
+    "passed": 2,
+    "skipped": [],
+    "sha256": "eda14f3153a4497a1d72ca815b8f26114623da73f2a2c93eec360dfbde1a801d"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.shell.CompositeCursorFxSuite.xml",
+    "cases": 4,
+    "passed": 4,
+    "skipped": [],
+    "sha256": "ddb041ed3ddc6d7789d91c1738384b4eb0795f2aba33ccc434168f2e83d6874a"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.shell.ContextStripFxSuite.xml",
+    "cases": 8,
+    "passed": 8,
+    "skipped": [],
+    "sha256": "77d0f6eedb4092a489abcc0f5ef3e3419b978aca83da906cb7fd03c1afc80c24"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.shell.ControlsFxSuite.xml",
+    "cases": 5,
+    "passed": 5,
+    "skipped": [],
+    "sha256": "86358c094ff8560f2031709ef40782eb991ccef6cb8aef8e27e74a800ad304e2"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.shell.DockFollowSuite.xml",
+    "cases": 5,
+    "passed": 5,
+    "skipped": [],
+    "sha256": "c486947384ffe44875d6abbb6f0af98cf66c803102b9af3f293f4bc6e23034d3"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.shell.DraftBannerFxSuite.xml",
+    "cases": 4,
+    "passed": 4,
+    "skipped": [],
+    "sha256": "99f4e3df7d274c60ff506e4bcbd6495bebfb51bd9d534965a53b90235871f272"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.shell.FocusVisibleFxSuite.xml",
+    "cases": 10,
+    "passed": 10,
+    "skipped": [],
+    "sha256": "6d1d9e6abb0de43797f261e8e9302412a2edb603a25eb0541950bf8813453b03"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.shell.KeymapFxSuite.xml",
+    "cases": 13,
+    "passed": 13,
+    "skipped": [],
+    "sha256": "eba790990d1020c187b2bcd1e110b0e9437a57fbc7915ed122c5a6e04ab22495"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.shell.ParityChecklistSuite.xml",
+    "cases": 1,
+    "passed": 1,
+    "skipped": [],
+    "sha256": "0eca2a7b5ea9c291bbd808997c03a8e66832aba5c705d8177a9ddbffee0b1b3d"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.shell.RunInProgressFxSuite.xml",
+    "cases": 1,
+    "passed": 1,
+    "skipped": [],
+    "sha256": "60d4b24973cfc4b2e42af3735ba0107423e4b2bee1de040cee09210e014c06ce"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.shell.SegmentedBarFxSuite.xml",
+    "cases": 8,
+    "passed": 8,
+    "skipped": [],
+    "sha256": "4cf4cd233f30adedc9279503956587459e88c31a441180bc2c048062b0c208dc"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.shell.SelectionFillFxSuite.xml",
+    "cases": 5,
+    "passed": 5,
+    "skipped": [],
+    "sha256": "cd86b6806efdbc5f988e574950851ef5f3f7498c26f92502d7312d2050c17bf9"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.shell.ShellMomentsFxSuite.xml",
+    "cases": 17,
+    "passed": 17,
+    "skipped": [],
+    "sha256": "45caea3da26f40b38e2f59bd0ba252235d11c997eab49ab270626782e0362a40"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.shell.SmallCanvasBoundaryFxSuite.xml",
+    "cases": 2,
+    "passed": 2,
+    "skipped": [],
+    "sha256": "b39afad6d853dd8af9e3e99036492f8d21fe91e6d24a102a2fec3f51753e0a9a"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.shell.SourceChecksFxSuite.xml",
+    "cases": 1,
+    "passed": 1,
+    "skipped": [],
+    "sha256": "a2f25c1b314b1b1a8c4df43e1ff0bf0969a3f6e750d90b18d686a78b2a0b5cbc"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.shell.StatusBarFxSuite.xml",
+    "cases": 6,
+    "passed": 6,
+    "skipped": [],
+    "sha256": "126a87fcf4f7d995141511dc8ddd1b469f562c743bfb8255f1ab5e5cc7a64e0f"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.shell.SystemSpecimenFxSuite.xml",
+    "cases": 2,
+    "passed": 2,
+    "skipped": [],
+    "sha256": "a22098dd7052021b31b5f76a881a549ae1307bf0a617841a8784e5db328a6920"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.shell.ThemeFxSuite.xml",
+    "cases": 9,
+    "passed": 9,
+    "skipped": [],
+    "sha256": "f51f9ad1f186d5ea3571730abb01b0f07b7c6d6910e07035759e4ccf86e9d50b"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.shell.VisualParitySuite.xml",
+    "cases": 30,
+    "passed": 30,
+    "skipped": [],
+    "sha256": "afd4e36b606ff44fe1cf90168b37b035c32d1cd630ec5c4ef6d68405fda7597d"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.shell.WorkspaceViewportFxSuite.xml",
+    "cases": 5,
+    "passed": 5,
+    "skipped": [],
+    "sha256": "71506e16a07459e58efc0a92b8aa4faf395df2ebd36f23b9d88911a15606c075"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.tokens.TokenFilesSuite.xml",
+    "cases": 6,
+    "passed": 6,
+    "skipped": [],
+    "sha256": "e40c2051720b1ebd92528583609c726cb870b4dad01ef381f0e2116b605d17eb"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.tokens.TokenReferencesSuite.xml",
+    "cases": 2,
+    "passed": 2,
+    "skipped": [],
+    "sha256": "4f0c9dfdbf7649d736432721a035b968804153fae79bce76eb7803b7470f76ff"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.trial.InputAdapterFxSuite.xml",
+    "cases": 13,
+    "passed": 13,
+    "skipped": [],
+    "sha256": "5ce9e50574b18e0028110a6ff001a797e079f430bae814c7017032726705858f"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.trial.TrialViewCacheFxSuite.xml",
+    "cases": 2,
+    "passed": 2,
+    "skipped": [],
+    "sha256": "376f26f900ecb6a2c8f0702a72501763262c297314fa8acef145fcd8c9919926"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.trial.TrialViewFxSuite.xml",
+    "cases": 26,
+    "passed": 26,
+    "skipped": [],
+    "sha256": "1aec8c5e4ac0e5cde22482f1684fcce55ec58ba6e0a8d508fa00414682997e4f"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.trial.TrialViewMapFxSuite.xml",
+    "cases": 12,
+    "passed": 12,
+    "skipped": [],
+    "sha256": "baa9a7c2295e3217b3d5034e44bf41b3567510f510c33ba4dbf925b423c19fa4"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.typography.FontLoadSuite.xml",
+    "cases": 8,
+    "passed": 8,
+    "skipped": [],
+    "sha256": "73a8732379a3c4dba3a58f04f35feb9127ba9a31d4e135241aae2c1f542a469f"
+  }
+]

@@ -1,0 +1,5 @@
+PASS: 30 states /60 snapshots; Linux golden matrix passed
+PASS: 24 scenarios E2E02–25; named cases passed on every required platform. Receipt: /private/tmp/eyes4s-usability-final-proof/e2e-receipt.json
+PASS: 30 states /60 snapshots; functional/repeat only
+PASS: 30 states /60 snapshots; functional/repeat only
+VERIFIED all three source-bound hosted courts, full Results focus and supported-window geometry

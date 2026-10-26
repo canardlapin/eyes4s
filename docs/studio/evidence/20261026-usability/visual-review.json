@@ -1,0 +1,40 @@
+{
+  "schema": 1,
+  "reviewer": "codex-usability-20261026",
+  "source": "ecf67c3f9efaad0a8671f8482018cc8363b68036",
+  "artifact": 12669011148,
+  "archiveSha256": "e44e278cd3a8d36a2171349af4bed9276fbde3b04b908a050794a7dc36486a2b",
+  "viewed": [
+    "t2-Compare-light",
+    "t2-Compare-dark",
+    "t3-Compare-light",
+    "t3-Compare-dark"
+  ],
+  "scene": [
+    1024,
+    656
+  ],
+  "findings": [
+    "Map marks, wrapped display disclosures and legends retain usable space.",
+    "Results axes, group labels and P17/P05 annotation columns fit above the pane edge.",
+    "Horizontal and vertical viewport scrolling is intentional; the whole1280x864 work area is larger than this supported scene."
+  ],
+  "boundsEvidence": {
+    "participantPlotHeight": 257,
+    "mapHeightsObserved": [
+      [
+        176,
+        192
+      ],
+      [
+        194,
+        210
+      ]
+    ],
+    "forwardAndReverseTabStops": 21
+  },
+  "limits": [
+    "The small scene exposes part of the larger work area at a time; keyboard and scroll controls reach the remainder.",
+    "This is native Mac functional/readability evidence, not physical Retina or VoiceOver acceptance."
+  ]
+}

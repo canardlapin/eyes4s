@@ -1,0 +1,11 @@
+{
+  "nativeScaleX": 2.0,
+  "nativeScaleY": 2.0,
+  "requiredScale": 2,
+  "hostOverride": false,
+  "deviceWidth": 512,
+  "deviceHeight": 384,
+  "stripeWidthDevicePixels": 1,
+  "rasterDifferenceFraction": 0.0,
+  "maximumDifferenceFraction": 0.005
+}

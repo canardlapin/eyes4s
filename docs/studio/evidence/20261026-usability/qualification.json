@@ -1,0 +1,339 @@
+{
+  "schema": 1,
+  "status": "qualified checks; evidence recording and landing pending",
+  "candidate": "ecf67c3f9efaad0a8671f8482018cc8363b68036",
+  "tree": "0b6114908728f13f83bd38a3a8de51686fa9584a",
+  "sourceFingerprint": "0e598d850630bbbfb4f644b03ae18d70800327de8161737bb6668a7fcb412367",
+  "gateOwner": "codex-usability-20261026",
+  "jdk": "registered Temurin25.0.4.1; GITHUB_ACTIONS=true throughout",
+  "canonical": {
+    "status": "passed",
+    "steps": {
+      "hygiene": {
+        "path": "qualified-logs/canonical-hygiene.log.gz",
+        "sha256": "c5a25c211f29e4219254f1fa0b8b30b946fb1a4e2f3b73f500e910bb3b4be2c3",
+        "bytes": 701
+      },
+      "werror": {
+        "path": "qualified-logs/canonical-werror.log.gz",
+        "sha256": "21800b0d55a2aa3e38596c1312dd2112eaeeabc1478c3b7871e973ea38d76281",
+        "bytes": 809
+      },
+      "audit": {
+        "path": "qualified-logs/canonical-audit.log.gz",
+        "sha256": "3e9059ef48145296c617c313cf0735026e1d51ca87b45713a9af7c32b6570c0c",
+        "bytes": 28682
+      },
+      "tests": {
+        "path": "qualified-logs/canonical-tests.log.gz",
+        "sha256": "d9e5e9f53cfed907f15e22106dc31fe4aa7035153b08830ff1dd1050a6040322",
+        "bytes": 22812
+      },
+      "consumer": {
+        "path": "qualified-logs/canonical-consumer.log.gz",
+        "sha256": "41fcc69a16f57ec8996d6d888e7ffe12a971a8c291eac05d6444ce0d03e6b539",
+        "bytes": 153
+      }
+    },
+    "runtimeEntries": 3984,
+    "abstractions": 691,
+    "uncovered": 0,
+    "explicitJvmOnly": 34
+  },
+  "pipeline": [
+    {
+      "phase": "canonical",
+      "command": [
+        "python3",
+        "tools/landing-gate/gate.py"
+      ],
+      "started": "2026-10-26T16:17:57.819705+00:00",
+      "log": "/private/tmp/eyes4s-usability4-canonical-20261026.log",
+      "status": "passed",
+      "exitCode": 0,
+      "elapsedSeconds": 1524.84
+    },
+    {
+      "phase": "studio",
+      "command": [
+        "sbt",
+        "studioAll",
+        "studioStyleCheck",
+        "studioBoundaries"
+      ],
+      "started": "2026-10-26T16:43:22.677631+00:00",
+      "log": "/private/tmp/eyes4s-usability4-studio-20261026.log",
+      "status": "passed",
+      "exitCode": 0,
+      "elapsedSeconds": 1262.99
+    },
+    {
+      "phase": "matrix",
+      "command": [
+        "python3",
+        "tools/studio-visual-parity/check.py",
+        "--allow-functional-only"
+      ],
+      "started": "2026-10-26T17:04:25.663540+00:00",
+      "log": "/private/tmp/eyes4s-usability4-matrix-20261026.log",
+      "status": "passed",
+      "exitCode": 0,
+      "elapsedSeconds": 0.4
+    },
+    {
+      "phase": "e2e",
+      "command": [
+        "python3",
+        "tools/studio-e2e/check.py"
+      ],
+      "started": "2026-10-26T17:04:26.063083+00:00",
+      "log": "/private/tmp/eyes4s-usability4-e2e-20261026.log",
+      "status": "passed",
+      "exitCode": 0,
+      "elapsedSeconds": 0.12
+    },
+    {
+      "phase": "matrix-verifier",
+      "command": [
+        "python3",
+        "-m",
+        "unittest",
+        "discover",
+        "-s",
+        "tools/studio-visual-parity",
+        "-p",
+        "test_*.py"
+      ],
+      "started": "2026-10-26T17:04:26.184241+00:00",
+      "log": "/private/tmp/eyes4s-usability4-matrix-verifier-20261026.log",
+      "status": "passed",
+      "exitCode": 0,
+      "elapsedSeconds": 1.41
+    },
+    {
+      "phase": "e2e-verifier",
+      "command": [
+        "python3",
+        "-m",
+        "unittest",
+        "discover",
+        "-s",
+        "tools/studio-e2e",
+        "-p",
+        "test_*.py"
+      ],
+      "started": "2026-10-26T17:04:27.599413+00:00",
+      "log": "/private/tmp/eyes4s-usability4-e2e-verifier-20261026.log",
+      "status": "passed",
+      "exitCode": 0,
+      "elapsedSeconds": 0.09
+    },
+    {
+      "phase": "fixture",
+      "command": [
+        "python3",
+        "tools/studio-fixture/verify_counts.py"
+      ],
+      "started": "2026-10-26T17:04:27.690674+00:00",
+      "log": "/private/tmp/eyes4s-usability4-fixture-20261026.log",
+      "status": "passed",
+      "exitCode": 0,
+      "elapsedSeconds": 0.3
+    },
+    {
+      "phase": "docs-build",
+      "command": [
+        "sbt",
+        "docs/tlSite",
+        "rootJVM/mimaReportBinaryIssues",
+        "rootJS/mimaReportBinaryIssues"
+      ],
+      "started": "2026-10-26T17:04:27.990017+00:00",
+      "log": "/private/tmp/eyes4s-usability4-docs-build-20261026.log",
+      "status": "passed",
+      "exitCode": 0,
+      "elapsedSeconds": 19.69
+    },
+    {
+      "phase": "docs",
+      "command": [
+        "python3",
+        "tools/check-docs.py",
+        "--run-consumer"
+      ],
+      "started": "2026-10-26T17:04:47.676883+00:00",
+      "log": "/private/tmp/eyes4s-usability4-docs-20261026.log",
+      "status": "passed",
+      "exitCode": 0,
+      "elapsedSeconds": 202.41
+    }
+  ],
+  "logs": {
+    "canonical": {
+      "path": "qualified-logs/canonical.log.gz",
+      "sha256": "f2a478cd2838ed7a89ae23cf6cd3ed087c26cc0f292988c25bad3940114e6e9b",
+      "bytes": 388
+    },
+    "studio": {
+      "path": "qualified-logs/studio.log.gz",
+      "sha256": "70b8c8673d8bf0f569ddb6e25994d6fb141254d5bfbc5f612db7eb60c85afd33",
+      "bytes": 26507
+    },
+    "matrix": {
+      "path": "qualified-logs/matrix.log.gz",
+      "sha256": "c803a0dde2d5bf59cb08c83de8548cf2b6ad2153b0e4f289220f60c5d8ef6427",
+      "bytes": 72
+    },
+    "e2e": {
+      "path": "qualified-logs/e2e.log.gz",
+      "sha256": "b93034d5ce095ec972397259be4ccc78227017cc04ffe4a8484809c6b00828c2",
+      "bytes": 161
+    },
+    "matrix-verifier": {
+      "path": "qualified-logs/matrix-verifier.log.gz",
+      "sha256": "87974ed621e72f38c4a6ff285091444a1fbc974c817cf34a78a74d0f72cb42d0",
+      "bytes": 54
+    },
+    "e2e-verifier": {
+      "path": "qualified-logs/e2e-verifier.log.gz",
+      "sha256": "c580ef3e8a1959df085b87418f6a659a63c14e1257d08c69e1e7f5cd0e93e84e",
+      "bytes": 54
+    },
+    "fixture": {
+      "path": "qualified-logs/fixture.log.gz",
+      "sha256": "4e5bd469ee64b219bcacd4dedd7423e05db1e6080e77543f863389d5a81d7b0d",
+      "bytes": 890
+    },
+    "docs-build": {
+      "path": "qualified-logs/docs-build.log.gz",
+      "sha256": "9ca51f97861c7f7cb7f253c069275fc8caa39573c2ed4eea46c8736b5e8a159d",
+      "bytes": 647
+    },
+    "docs": {
+      "path": "qualified-logs/docs.log.gz",
+      "sha256": "b16d2af22fc009af4ffaee57df82e4cac05f9b148428a3f5f53d241586bcefbb",
+      "bytes": 337
+    }
+  },
+  "studio": [
+    {
+      "module": "core",
+      "platform": ".jvm",
+      "cases": 1120,
+      "passed": 1120,
+      "skipped": []
+    },
+    {
+      "module": "core",
+      "platform": ".js",
+      "cases": 1027,
+      "passed": 1027,
+      "skipped": []
+    },
+    {
+      "module": "app",
+      "platform": ".jvm",
+      "cases": 801,
+      "passed": 801,
+      "skipped": []
+    },
+    {
+      "module": "app",
+      "platform": ".js",
+      "cases": 801,
+      "passed": 801,
+      "skipped": []
+    },
+    {
+      "module": "viz",
+      "platform": ".jvm",
+      "cases": 319,
+      "passed": 319,
+      "skipped": []
+    },
+    {
+      "module": "viz",
+      "platform": ".js",
+      "cases": 319,
+      "passed": 319,
+      "skipped": []
+    },
+    {
+      "module": "desktop",
+      "platform": "desktop",
+      "cases": 873,
+      "passed": 872,
+      "skipped": [
+        {
+          "suite": "TEST-eyes4s.studio.desktop.journey.PrivateDensityFxSuite",
+          "name": ""
+        }
+      ]
+    }
+  ],
+  "studioPassed": 5259,
+  "studioStyleCheck": "passed",
+  "studioBoundaries": "passed",
+  "hostedRun": 40357518894,
+  "checksRun": 40357518942,
+  "hostedReview": "hosted-review.json",
+  "matrix": {
+    "statesPerCourt": 30,
+    "capturesPerCourt": 60,
+    "maximumChannelDelta": 1,
+    "maximumChangedFraction": 0.001,
+    "independentPixelExact": 55,
+    "reframedExploreReferences": 8,
+    "referenceReview": "snapshot-framing/review.json"
+  },
+  "e2eScenarios": 24,
+  "apiOutputs": [
+    {
+      "path": "tools/api-audit/inventory.json",
+      "sha256": "782b484408deec90f49009f51afc30959d8327f358b62850a5b64538d56dda6c"
+    },
+    {
+      "path": "tools/api-audit/evidence.json",
+      "sha256": "ab63fc585a9f360c9a2ba8f0915ae87dd83be758513a06d0366d2d0fba62a2b0"
+    },
+    {
+      "path": "tools/api-audit/inventory-provenance.json",
+      "sha256": "5909760cc0d42f69065d93ab9145ccd3973356aafc07b7f7b5904375780458c5"
+    }
+  ],
+  "scope": "Supported1024x656 scene retains1280x864 scrollable work area; keyboard reveal and bounds at small/board sizes; Results portable/live focus including exact full annotations and21Tab stops; unavailable-scale recovery; pointer and shell shortcuts; unchanged strict canvas restoration.",
+  "negativeEvidence": [
+    "focused-review.json",
+    "cursor-review.json",
+    "corrected-review.json",
+    "followup-review.json",
+    "snapshot-framing/review.json"
+  ],
+  "remaining": {
+    "G2": "real-study provenance and admission remain separate",
+    "releaseAcceptance": "VoiceOver, physical Mac Retina, full performance workloads, packaging and researcher usability are unqualified",
+    "applicationHardening": "saved-part retention and the three harness reliability residuals remain open"
+  },
+  "docs": "Both artifact consumers passed;73 classified pages,6 verbatim external fences,24 linked programs and no unexplained gaps.",
+  "mima": "Previous artifact sets empty; no binary compatibility comparison performed.",
+  "pythonVerifierTests": {
+    "visualParity": 10,
+    "e2e": 5
+  },
+  "artifactReviewNote": "The first postprocessing pass rejected8 Mac board-size-only role/name skips. Source inspection confirmed the existing assumeFullStage and EYES4S_STUDIO_SMALL_DISPLAY policy. The corrected verifier explicitly permits only those declared cases and still requires all small-window cases, disabled-reason audits and full Results traversals. No test, threshold or CI policy was changed.",
+  "visualReview": {
+    "path": "visual-review.json",
+    "sha256": "2b817c8ff1c518fa6c4f4179f07d4a655317262119c0b8806826c145cf394932"
+  },
+  "browserReview": {
+    "path": "browser-review.json",
+    "sha256": "8985aa1bb8b689aae79f15e9177633a95f75b2036150301e113e24b469afa218",
+    "widths": [
+      1440,
+      414
+    ],
+    "brokenImages": 0,
+    "brokenLocalLinks": 0,
+    "horizontalOverflow": false
+  }
+}

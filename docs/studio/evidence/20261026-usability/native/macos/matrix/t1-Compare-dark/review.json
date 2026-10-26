@@ -1,0 +1,62 @@
+{
+  "candidateFingerprint": "0e598d850630bbbfb4f644b03ae18d70800327de8161737bb6668a7fcb412367",
+  "osName": "Mac OS X",
+  "osArch": "aarch64",
+  "javaVersion": "25.0.4.1",
+  "javaFxVersion": "24.0.1+4",
+  "glassPlatform": "platform-default",
+  "prismOrder": "sw",
+  "schema": 1,
+  "state": "t1-Compare-dark",
+  "moment": "t1",
+  "perspective": "Compare",
+  "theme": "dark",
+  "logicalWidth": 1024,
+  "logicalHeight": 656,
+  "nativeScaleX": 1,
+  "nativeScaleY": 1,
+  "mode": "functional-only",
+  "focus": "programmatic scene root; no keyboard ring; no active text caret",
+  "maximumChannelDelta": 1,
+  "maximumChangedFraction": 0.001,
+  "sourceSha256": "559210037096f0c4ba29054f449c59ae251c2c5a31ded747f8b32547a5f5c519",
+  "captures": [
+    {
+      "actual": "target/studio-snapshots/VisualParitySuite/t1-Compare-dark/dark-1x.png",
+      "actualSha256": "90a903285eac9147993e982c7c71163c2df68e3debb2ca2c5321551e6ee7b31e",
+      "width": 1024,
+      "height": 656,
+      "baseline": "studio/desktop/src/test/resources/eyes4s/studio/desktop/visual-parity/t1-Compare-dark/dark-1x.png",
+      "baselineSha256": null,
+      "comparison": null,
+      "repeatFirstSha256": "90a903285eac9147993e982c7c71163c2df68e3debb2ca2c5321551e6ee7b31e",
+      "repeat": {
+        "width": 1024,
+        "height": 656,
+        "changedPixels": 0,
+        "maximumChannelDelta": 0,
+        "changedFraction": 0,
+        "accepted": true
+      }
+    },
+    {
+      "actual": "target/studio-snapshots/VisualParitySuite/t1-Compare-dark/dark-2x.png",
+      "actualSha256": "3eac809451b1615fa43849d343c45c7a8f0916cc3847b4d864b085fd0a8ce81f",
+      "width": 2048,
+      "height": 1312,
+      "baseline": "studio/desktop/src/test/resources/eyes4s/studio/desktop/visual-parity/t1-Compare-dark/dark-2x.png",
+      "baselineSha256": null,
+      "comparison": null,
+      "repeatFirstSha256": "3eac809451b1615fa43849d343c45c7a8f0916cc3847b4d864b085fd0a8ce81f",
+      "repeat": {
+        "width": 2048,
+        "height": 1312,
+        "changedPixels": 0,
+        "maximumChannelDelta": 0,
+        "changedFraction": 0,
+        "accepted": true
+      }
+    }
+  ],
+  "problems": []
+}

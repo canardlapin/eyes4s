@@ -1,0 +1,76 @@
+{
+  "candidateFingerprint": "0e598d850630bbbfb4f644b03ae18d70800327de8161737bb6668a7fcb412367",
+  "osName": "Linux",
+  "osArch": "amd64",
+  "javaVersion": "25.0.4.1",
+  "javaFxVersion": "24.0.1+4",
+  "glassPlatform": "Monocle",
+  "prismOrder": "sw",
+  "schema": 1,
+  "state": "t3-Data-dark",
+  "moment": "t3",
+  "perspective": "Data",
+  "theme": "dark",
+  "logicalWidth": 1440,
+  "logicalHeight": 900,
+  "nativeScaleX": 1,
+  "nativeScaleY": 1,
+  "mode": "linux-monocle-goldens",
+  "focus": "programmatic scene root; no keyboard ring; no active text caret",
+  "maximumChannelDelta": 1,
+  "maximumChangedFraction": 0.001,
+  "sourceSha256": "559210037096f0c4ba29054f449c59ae251c2c5a31ded747f8b32547a5f5c519",
+  "captures": [
+    {
+      "actual": "target/studio-snapshots/VisualParitySuite/t3-Data-dark/dark-1x.png",
+      "actualSha256": "9cb1fb4d7e2615b493c9638c14901db73ead3e28f4d884e8759192af34d5c7f0",
+      "width": 1440,
+      "height": 900,
+      "baseline": "studio/desktop/src/test/resources/eyes4s/studio/desktop/visual-parity/t3-Data-dark/dark-1x.png",
+      "baselineSha256": "9cb1fb4d7e2615b493c9638c14901db73ead3e28f4d884e8759192af34d5c7f0",
+      "comparison": {
+        "width": 1440,
+        "height": 900,
+        "changedPixels": 0,
+        "maximumChannelDelta": 0,
+        "changedFraction": 0,
+        "accepted": true
+      },
+      "repeatFirstSha256": "9cb1fb4d7e2615b493c9638c14901db73ead3e28f4d884e8759192af34d5c7f0",
+      "repeat": {
+        "width": 1440,
+        "height": 900,
+        "changedPixels": 0,
+        "maximumChannelDelta": 0,
+        "changedFraction": 0,
+        "accepted": true
+      }
+    },
+    {
+      "actual": "target/studio-snapshots/VisualParitySuite/t3-Data-dark/dark-2x.png",
+      "actualSha256": "792b9b907f7dab20a888432bed5360a8cc1cbc2612890988ed36cf3e27cd5d41",
+      "width": 2880,
+      "height": 1800,
+      "baseline": "studio/desktop/src/test/resources/eyes4s/studio/desktop/visual-parity/t3-Data-dark/dark-2x.png",
+      "baselineSha256": "792b9b907f7dab20a888432bed5360a8cc1cbc2612890988ed36cf3e27cd5d41",
+      "comparison": {
+        "width": 2880,
+        "height": 1800,
+        "changedPixels": 0,
+        "maximumChannelDelta": 0,
+        "changedFraction": 0,
+        "accepted": true
+      },
+      "repeatFirstSha256": "792b9b907f7dab20a888432bed5360a8cc1cbc2612890988ed36cf3e27cd5d41",
+      "repeat": {
+        "width": 2880,
+        "height": 1800,
+        "changedPixels": 0,
+        "maximumChannelDelta": 0,
+        "changedFraction": 0,
+        "accepted": true
+      }
+    }
+  ],
+  "problems": []
+}

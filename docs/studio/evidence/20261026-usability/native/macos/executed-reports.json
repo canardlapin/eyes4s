@@ -1,0 +1,1158 @@
+[
+  {
+    "path": "studio/desktop/target/test-reports/TEST-consumer.StudioDesktopDomainProductMirrorSuite.xml",
+    "cases": 1,
+    "passed": 1,
+    "skipped": [],
+    "sha256": "23de32a0746b149ccfacd50bdb6040e3b1ccdf64ddcf22ac06010deb4ee7920f"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.PinnedProvidersSuite.xml",
+    "cases": 4,
+    "passed": 4,
+    "skipped": [],
+    "sha256": "fccb64d74c03b9305dc4823f5383f2a0167817e4301c015611cb94eff7d5716e"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.StudioMainSuite.xml",
+    "cases": 2,
+    "passed": 2,
+    "skipped": [],
+    "sha256": "077ecfa6cb74f5536de6d7a20a19dbb1960a52f924bf50b5d652b5d87adb691b"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.admission.AdmissionLedgerFxSuite.xml",
+    "cases": 6,
+    "passed": 0,
+    "skipped": [
+      "t1: the board's ledger, 960 = 937 + 17 (by cause) + 6",
+      "every count opens exactly its trials, and opens them again closed",
+      "a trial of an open count opens in Explore on Enter",
+      "the decision's radios choose from the keyboard: \u2193 and \u2191 in the group (S10.5 K3)",
+      "Admit as r3 under Review exclusions admits it; run 5 (r2) becomes stale",
+      "Admit sends the verified content: a backend that holds other content refuses (1.9)"
+    ],
+    "sha256": "b42010bc41da1b6f4a7fadcbd2d184ea08c506e8c139844bca03fc00d4e5fc22"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.analysis.AnalysesNavigatorFxSuite.xml",
+    "cases": 10,
+    "passed": 10,
+    "skipped": [],
+    "sha256": "96c9291b895424708f6bc22742b0670e944d8556ebd5574c446d00a15823007a"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.analysis.DescriptorFormSuite.xml",
+    "cases": 2,
+    "passed": 2,
+    "skipped": [],
+    "sha256": "65d2eb7363e3fe941e2f4bdb1b997795133653770e8dd6b595b8e2f704ba5653"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.analysis.DraftLifecycleSuite.xml",
+    "cases": 2,
+    "passed": 2,
+    "skipped": [],
+    "sha256": "9e2c96878851e679ffc6eaeef8c48c3903c326f995ce27e7d26c1b2995ab20b5"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.analysis.PreflightFxSuite.xml",
+    "cases": 4,
+    "passed": 4,
+    "skipped": [],
+    "sha256": "afdd8e9f8b2baeb6784a6c54997eb810a6878a4795cec0b117fa166e1cefc233"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.analysis.ResolvedDesignFxSuite.xml",
+    "cases": 7,
+    "passed": 7,
+    "skipped": [],
+    "sha256": "81c67974ca31e35f84fdcff1fb238382b279cd26cf3d0251e1098da35a30dea2"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.analysis.ScalesEditorSuite.xml",
+    "cases": 1,
+    "passed": 1,
+    "skipped": [],
+    "sha256": "f9927179386130f213b6ea1069cb4e701781b4517927ea73c1108fccaf0ada97"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.compare.CompareInspectorFxSuite.xml",
+    "cases": 1,
+    "passed": 1,
+    "skipped": [],
+    "sha256": "fa5d4cd600fa61aa4ac60269dfa6f83cf7026212a8fc44bbf2d456c2f6689496"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.compare.CompareMapHostFxSuite.xml",
+    "cases": 3,
+    "passed": 3,
+    "skipped": [],
+    "sha256": "0479d0fdf756cbae79117c49fee57afb71b7db00f17f2bc1ce63e085bfd675ec"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.compare.PairsTableFxSuite.xml",
+    "cases": 6,
+    "passed": 3,
+    "skipped": [
+      "board tabs: contrast stays in the full Compare layout",
+      "board tabs: pairs stays in the full Compare layout",
+      "board tabs: scale-profile stays in the full Compare layout"
+    ],
+    "sha256": "f862253cb86829bf2ba18a08d6660a96cc5d2bba02ba867df86c5173569c7034"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.compare.ParticipantsNavigatorFxSuite.xml",
+    "cases": 5,
+    "passed": 5,
+    "skipped": [],
+    "sha256": "58704e7830c24caab3fa63284e63d504cdf128faa0d00892b0b5ad68aac79170"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.compare.QueriesNavigatorFxSuite.xml",
+    "cases": 4,
+    "passed": 4,
+    "skipped": [],
+    "sha256": "4386c4f2780cd56f65108d02f113cbe0eb9fdb52270a8d89fd71552ec7566046"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.compare.ReportingEditorFxSuite.xml",
+    "cases": 3,
+    "passed": 3,
+    "skipped": [],
+    "sha256": "5ee5a1b9aec3e8b3710e4c46422120dcc5f48d10ab9214172e5c96125cc93183"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.compare.ScaleLadderFxSuite.xml",
+    "cases": 3,
+    "passed": 3,
+    "skipped": [],
+    "sha256": "068e1aed1e9128c8ad27333285315dca9445745a2e38086d6dfaa77f1987d3dc"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.compare.TrialPanelsFxSuite.xml",
+    "cases": 6,
+    "passed": 6,
+    "skipped": [],
+    "sha256": "52c328f8530dfc73b8f2235afc34c3a2d674fe45cdee843750589d2b9b49f76f"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.data.AssetFilesSuite.xml",
+    "cases": 5,
+    "passed": 5,
+    "skipped": [],
+    "sha256": "1bd1c65690d37399dec862fb299deeb058040c8629a43aee30b4f30309c208bd"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.data.DataFirstRunFxSuite.xml",
+    "cases": 7,
+    "passed": 7,
+    "skipped": [],
+    "sha256": "69c62f8a68c4273706d4aef4f2bd6030043f1db1bddf14196947f49e81a4d831"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.data.PlatformAssetFilesSuite.xml",
+    "cases": 3,
+    "passed": 3,
+    "skipped": [],
+    "sha256": "1f7089f7bf095df34a8711ccc692228db730dee2986673289a2ab1d0fac6c33d"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.data.SourceRepairFileFxSuite.xml",
+    "cases": 3,
+    "passed": 3,
+    "skipped": [],
+    "sha256": "61d0a8ba0e3a78911f761a7928b0f0a2ee404aab9108f8209cc57c21e3bcf26a"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.data.SourceRepairFileSuite.xml",
+    "cases": 3,
+    "passed": 3,
+    "skipped": [],
+    "sha256": "6aa88e6caa775f5d6707c70b6037c5047f718d59c07f1156de130ca06d7ac361"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.data.SourcesFxSuite.xml",
+    "cases": 4,
+    "passed": 0,
+    "skipped": [
+      "t1: r3's sources, 257 of 259 images found, what each trial displayed",
+      "Repair\u2026 stores the chosen image and relinks forest-044; the counts move",
+      "Repair\u2026 refuses a file that is not an image, naming it",
+      "S2.5: a fixations file changed in the project is shown with Repair\u2026; other bytes make a pending revision"
+    ],
+    "sha256": "60cf309b6d7e2f49fc3492e512e8dd7140a98a4ee12c75d57cbebae1f30e7bdf"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.dock.DockLayoutsSuite.xml",
+    "cases": 7,
+    "passed": 7,
+    "skipped": [],
+    "sha256": "7cf5d8eec9e1a33bbd6df4e7d572bd17244e61c37f8f553b50c847c3fbf0155d"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.dock.LayoutPersistenceFxSuite.xml",
+    "cases": 3,
+    "passed": 3,
+    "skipped": [],
+    "sha256": "cc37d019c8ea105756111adb48f2296944db288214b08caa7435e0e6d2f9b55f"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.explore.ExploreLinkedSelectionFxSuite.xml",
+    "cases": 2,
+    "passed": 1,
+    "skipped": [
+      "E2E-03: a mark, a timeline bar, a record and Prev/Next select one fixation everywhere"
+    ],
+    "sha256": "4e6af3fe2a9e54f1429d78b4b69f57657796bce547033d51a2f18646a2930367"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.explore.ExploreTrialViewFxSuite.xml",
+    "cases": 4,
+    "passed": 0,
+    "skipped": [
+      "t2: P17 enc_03 with neutral marks and the dashed preview label",
+      "no score node exists in Explore's scene graph",
+      "the toggles turn the marks, the order lines and the preview map off",
+      "the preview map's legend keys are in the legend row, none under the stage"
+    ],
+    "sha256": "1433302842eed81505bc2bd99fa817c9f8c321622c791e6097e220b102ccadfe"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.explore.ExploreTrialViewHostSuite.xml",
+    "cases": 2,
+    "passed": 2,
+    "skipped": [],
+    "sha256": "aff0c43c89c85d04cfd348039fcc79de61ea6b2c9d636d440bcc1435ff992f77"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.explore.FixationInspectorFxSuite.xml",
+    "cases": 3,
+    "passed": 3,
+    "skipped": [],
+    "sha256": "c7f9ad7d5e437b5f668057a950a55898840781535873f9b2af130bfaa215ff07"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.explore.NavigatorDisplaysSuite.xml",
+    "cases": 4,
+    "passed": 4,
+    "skipped": [],
+    "sha256": "33f483981800907873312bd3edc3c2bf3017c14e596a8d35de7f4f149e35b85b"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.explore.SourceRecordsFxSuite.xml",
+    "cases": 7,
+    "passed": 7,
+    "skipped": [],
+    "sha256": "8526dbc1c62fd847324936f2c676a6b84084190b427de2edf50cffb670a46ba9"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.explore.TimelineFxSuite.xml",
+    "cases": 8,
+    "passed": 0,
+    "skipped": [
+      "t2: P17 enc_03's 13 intervals, the playhead and the board's toolbar",
+      "a brush selects the overlapping fixations in the plot and the table; the document is unchanged",
+      "drag motion shades the live span before release without committing selection",
+      "playhead updates retain a live drag until release",
+      "Escape or restoring the view cancels a live drag before its release",
+      "play, step, speed and pause act on the playhead",
+      "the brush ends when the selection moves on: another view's selection, and Escape",
+      "playback stops at the trial's end; a trial change or dispose stops the clock"
+    ],
+    "sha256": "b9a9a8ac94fa70b4437638a67ceebcbb8a01d8ee1c01d11acf58c84b5a938a3b"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.explore.TrialExtentFxSuite.xml",
+    "cases": 3,
+    "passed": 3,
+    "skipped": [],
+    "sha256": "87e6a2ccb8c8d01e39bdfca268443e0fa0ddb186bef643492c4ffdcd21a1b4e5"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.explore.TrialsNavigatorFxSuite.xml",
+    "cases": 4,
+    "passed": 0,
+    "skipped": [
+      "t2: the board's statuses, P17 ret_09 absent, enc_03 selected",
+      "Enter on a trial explores it; Enter on a group opens it",
+      "the user's row keeps the selection: Right twice on P16 stays on P16",
+      "the filter lists matching trials; the Items pane opens an item"
+    ],
+    "sha256": "3b82eed91d086c1ad746f1d13b4c9903012583f650e15ddcfbeca842ac0a45b7"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.figures.BundleSnapshotSuite.xml",
+    "cases": 1,
+    "passed": 1,
+    "skipped": [],
+    "sha256": "9d5194158f3fc27d8914e4fab8df79c0003a5595020760066cf8be98428d0247"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.figures.ExportBundleSuite.xml",
+    "cases": 19,
+    "passed": 19,
+    "skipped": [],
+    "sha256": "89272a9824aa57a19d38b27a4e72eeb81fc7a4f6188a3034c297ab24588a4ee0"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.figures.FigureAppearanceFxSuite.xml",
+    "cases": 3,
+    "passed": 3,
+    "skipped": [],
+    "sha256": "82a256e9eebb9078585f7d1eba2d784b8b4b856d0d0e6fe6eb2cc0e7e422c0aa"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.figures.FigureComposerFxSuite.xml",
+    "cases": 12,
+    "passed": 12,
+    "skipped": [],
+    "sha256": "5b5008791d14ea16980b07a8e1b86913dd3f894856fd50609e9d249092d3fb45"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.figures.FigureExportSuite.xml",
+    "cases": 10,
+    "passed": 10,
+    "skipped": [],
+    "sha256": "ccedc0e806bbc8ed45f55030ae0bf8013086f8c872751c59a756c23938aad573"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.figures.FigureGazeFxSuite.xml",
+    "cases": 1,
+    "passed": 1,
+    "skipped": [],
+    "sha256": "3bbaf775c0653853439a531e5ef0e6fb50eae4cce829ecac31de84264b33b69d"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.figures.FigureMethodsFxSuite.xml",
+    "cases": 7,
+    "passed": 7,
+    "skipped": [],
+    "sha256": "309a4b5e2ba45d3b5823822c03b13b419c983f1d1c8b69cb72e00ed31c8529bb"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.figures.MapTileHatchFxSuite.xml",
+    "cases": 1,
+    "passed": 1,
+    "skipped": [],
+    "sha256": "c5a5dcec37725d52260cdcd21539b3517ebfe57dbf57addc85f631183f6eaca4"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.geometry.GeometryCountsFxSuite.xml",
+    "cases": 2,
+    "passed": 1,
+    "skipped": [
+      "a geometry count opens its matching source-placement trials"
+    ],
+    "sha256": "17c4b6441ff27295979cc6527ad305fc964eeb5c8dc28330fd382d1bcd523a63"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.geometry.GeometryPanelFxSuite.xml",
+    "cases": 9,
+    "passed": 1,
+    "skipped": [
+      "t1: the board's geometry, the worked example of record 7,214 and the counts",
+      "the density key follows the stage: opaque swatches, each with its stage-ground band",
+      "every change redraws the pictures within the bound and creates a dataset draft",
+      "the off-screen policy chooses from the keyboard: \u2193 in its group (S10.5 K3)",
+      "switching the off-screen policy creates a draft; outside screen and outside window apart",
+      "the thumbnails are one listbox stop: a cursor framed under keyboard focus, keys, Enter marks",
+      "the thumbnails' home: a focused strip with no cursor frames the marked trial",
+      "a marked wrong orientation is a recorded rule; the source coordinates never change"
+    ],
+    "sha256": "97d97223f800435f0bb76faaffda1fb646571c4f9ebc9e96d9253c4ef0c38205"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.geometry.GeometryPicturesTimingSuite.xml",
+    "cases": 1,
+    "passed": 1,
+    "skipped": [],
+    "sha256": "88198652b1aa09a81c4acc525da65aa5a1a6903976e6c09a13e31bf6f6ffc5fc"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.harness.FxRunLockSuite.xml",
+    "cases": 4,
+    "passed": 4,
+    "skipped": [],
+    "sha256": "48d0690cf0833666cb3891b4b53747aeab8a21ddf75f766b6d7deefecf3fc725"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.harness.HarnessSmokeSuite.xml",
+    "cases": 6,
+    "passed": 4,
+    "skipped": [
+      "opens a 1440x900 stage, clicks, asserts and writes 1x and 2x snapshots",
+      "a headless run draws on Monocle's virtual screen, not the display"
+    ],
+    "sha256": "ddf56d5e3860189be41118ea3f1601f80a7f53d659f26bc0cd8425e1444c0e78"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.harness.RenderFailureCaptureFxSuite.xml",
+    "cases": 4,
+    "passed": 4,
+    "skipped": [],
+    "sha256": "f2bb0c3f622ddd2dfd459aae3dd2765337a7f71796dde2c6ca2a69f5c6de84ce"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.harness.UnevaluatedEffectsFxSuite.xml",
+    "cases": 2,
+    "passed": 2,
+    "skipped": [],
+    "sha256": "691c3d2e764c1e21a7e0d84455a7c857ebb6a5116e823c1942eaa2f33a9b950d"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.harness.VisualPixelsSuite.xml",
+    "cases": 3,
+    "passed": 3,
+    "skipped": [],
+    "sha256": "b9d5919eeddbd724e08adc36215930ae825256b05c4fe731794d3ca8e9a4692a"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.icons.IconCatalogSuite.xml",
+    "cases": 8,
+    "passed": 8,
+    "skipped": [],
+    "sha256": "4debe82e0689002ef67a2ca2c02410c32fdfcd8aab54ce18076cb90dd72c33fc"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.importing.ColumnMappingPaneFxSuite.xml",
+    "cases": 12,
+    "passed": 4,
+    "skipped": [
+      "Data selection to re-admit through the pane; one undo restores the revision",
+      "re-admitting admitted r2 selects the new r4; a second commit adds nothing",
+      "a read that answers after the selection moved on is dropped",
+      "edits dropped by a change elsewhere, and unreadable presets, are noticed",
+      "board parity: the pane's header, kind, columns and declared units",
+      "Revert drops the pane's edits and reads the revision again",
+      "Geometry is a distinct Data sibling editing and committing the selected shared draft",
+      "Data dock siblings preserve edits, show issues, and apply one shared revision"
+    ],
+    "sha256": "914576bb596c8f3c2ead93e7f42ecf070e5b7cedf2bbfc8f79278232b8b50ccb"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.importing.ImportAdmissionSuite.xml",
+    "cases": 3,
+    "passed": 3,
+    "skipped": [],
+    "sha256": "0024807f36147ca637bb8aaf3b0a5e0d13e8703941fac7d32ade79b4391e4d5d"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.importing.ImportFollowSuite.xml",
+    "cases": 2,
+    "passed": 2,
+    "skipped": [],
+    "sha256": "78ec7ffde3ca442ee45c8f3d829026f7eec1cb424a9fb1c77ae95c5e698f0257"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.importing.ImportWizardFxSuite.xml",
+    "cases": 19,
+    "passed": 19,
+    "skipped": [],
+    "sha256": "c75d483cccfc04353a159732a529ee620aad1275b27acf77d5beed4c06e6aeac"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.importing.PlatformImportSuite.xml",
+    "cases": 2,
+    "passed": 2,
+    "skipped": [],
+    "sha256": "55c7406b1d87446ee2dee7675f70a4b2379b0b99a8869cce0a87bfc296df765d"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.importing.TrialKeyFxSuite.xml",
+    "cases": 4,
+    "passed": 4,
+    "skipped": [],
+    "sha256": "cb60afa2bf5ea9c37e7784e3c2ac449d813ee029b29814860c004b5ca13937b6"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.journey.GoldenJourneyFxSuite.xml",
+    "cases": 1,
+    "passed": 0,
+    "skipped": [
+      "E2E-01-ui: the golden journey in the window equals the headless route"
+    ],
+    "sha256": "fcb4c314f29a6082a3d57ea38d9173e92446627709f069e209ed7264d29ed36c"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.journey.GoldenJourneySuite.xml",
+    "cases": 1,
+    "passed": 1,
+    "skipped": [],
+    "sha256": "fc7c85ef5e3a6db78e3b1f9d739065af6c159a90cf592f06fb0d7895bade91b2"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.journey.KeyboardJourneySuite.xml",
+    "cases": 1,
+    "passed": 0,
+    "skipped": [
+      "E2E-01-keyboard: the golden journey from the keyboard alone"
+    ],
+    "sha256": "85015e04856ab43f048337349293f012281f19ad1ef2d9386930e400be5c92a3"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.journey.NativeCommandJourneySuite.xml",
+    "cases": 1,
+    "passed": 1,
+    "skipped": [],
+    "sha256": "70f3243c71ce00abe015d1c946e715f807efa6d26aa3822a93db54a0805100ec"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.journey.NativeGoldenCommandFxSuite.xml",
+    "cases": 1,
+    "passed": 0,
+    "skipped": [
+      "first native analysis admits, saves and runs through the window, then reopens identically"
+    ],
+    "sha256": "0b4ef7c3f376873dfbc7f51459561df9d2e4f93dc332eccad4cf4899baad9364"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.journey.NativeGoldenWorkflowSuite.xml",
+    "cases": 1,
+    "passed": 1,
+    "skipped": [],
+    "sha256": "440b816e3b0916639340d36d6fef73db9f544217ed08d310d77ea1c6cfd5e89e"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.journey.PrivateDensityFxSuite.xml",
+    "cases": 1,
+    "passed": 0,
+    "skipped": [
+      ""
+    ],
+    "sha256": "ccae5a1a94b4387248f4beec66625383af3a6a86dad95da4d581f9265610c064"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.journey.ScanpathWorkbenchFxSuite.xml",
+    "cases": 2,
+    "passed": 2,
+    "skipped": [],
+    "sha256": "229f408bbcfddb315b25351a47864ec1a333820f78ea64d89cbcc531579ed87a"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.maps.MapRasterStoreSuite.xml",
+    "cases": 9,
+    "passed": 9,
+    "skipped": [],
+    "sha256": "092cd5def7cf221b5c1e73d5950e764e8415662b4ab77a716928af053c684fd0"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.platform.AppearancePreferenceFxSuite.xml",
+    "cases": 2,
+    "passed": 2,
+    "skipped": [],
+    "sha256": "1b31fcc74af0e1bbb0c260eaa541c661c896b7a4d82ddff1c3951610771490bb"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.platform.AppearancePreferenceHostSuite.xml",
+    "cases": 5,
+    "passed": 5,
+    "skipped": [],
+    "sha256": "a4c892c89ee3b338f7ab38bdc8815f5ade11fb6b3ee72cc50cc2082ec577024e"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.platform.DesktopPlatformSuite.xml",
+    "cases": 18,
+    "passed": 18,
+    "skipped": [],
+    "sha256": "e4d04141df2271dae6236610d27586d266d69792f084ce2608b5575bbc53420c"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.platform.DesktopPreferencesSuite.xml",
+    "cases": 4,
+    "passed": 4,
+    "skipped": [],
+    "sha256": "0d0b86e5a3518c17a37b125ec8bfdd20a0e12617600fa3f5977b22df14cb1ca0"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.platform.ExampleBundleSuite.xml",
+    "cases": 3,
+    "passed": 3,
+    "skipped": [],
+    "sha256": "535c436294ec1c1216833025b213413d1c6b63d223fe193f48af3a81c098d059"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.platform.FileAtomicSaveFaultSuite.xml",
+    "cases": 10,
+    "passed": 10,
+    "skipped": [],
+    "sha256": "34701f7d13aaaaf41afdae420dc6a2fcbb729629fd1a4897e289a9a65f31ed96"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.platform.FilePresetStoreSuite.xml",
+    "cases": 2,
+    "passed": 2,
+    "skipped": [],
+    "sha256": "84b19416e43ee97c3431b9193b399008e9bc6cbacf261b97d4be1a88cadc3991"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.platform.FileProjectStoreSuite.xml",
+    "cases": 12,
+    "passed": 12,
+    "skipped": [],
+    "sha256": "0db7a967b74680ea27d4d2aff0f02812741bbaacd9cdfb2f24065bdf9e5b84cd"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.platform.FileRecoveryFaultSuite.xml",
+    "cases": 17,
+    "passed": 17,
+    "skipped": [],
+    "sha256": "f3109ec613991a4e9f3436b1341f80ea951b2d0f54630b5fc48af2f97f0d2766"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.platform.FileRecoverySuite.xml",
+    "cases": 33,
+    "passed": 33,
+    "skipped": [],
+    "sha256": "25e5aaf2e965265949096dc385c9c6fd9c0d47a7326eb9cb812b318212b59a06"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.platform.FileSessionCancellationSuite.xml",
+    "cases": 8,
+    "passed": 8,
+    "skipped": [],
+    "sha256": "d14be48a962f6121fd2f5d77843c26ba674adc12d03ebb0c0a8ebc4850d169fa"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.platform.NoticesSuite.xml",
+    "cases": 5,
+    "passed": 5,
+    "skipped": [],
+    "sha256": "bfcb828a59d4cf2eb9aaff149c14dacf9f1e5945027a4ddc55d93cb9454b6908"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.platform.PlatformPresetStoreSuite.xml",
+    "cases": 4,
+    "passed": 4,
+    "skipped": [],
+    "sha256": "367b9c3b3fe3734effa427b137a77e0615be169f3a47e09b87caea12987c7003"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.platform.PlatformRoutesFxSuite.xml",
+    "cases": 4,
+    "passed": 4,
+    "skipped": [],
+    "sha256": "61ef2cc45e19906996f157a2071e0c3f40d365e5af7d2d802a0a27cbdd1cebec"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.platform.PreferenceWritesSuite.xml",
+    "cases": 1,
+    "passed": 1,
+    "skipped": [],
+    "sha256": "9a1f751e7a174e7ddedaaa7d87d498ef675dc5076d3c0f77e999ef98ea992701"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.platform.PreferencesFileSuite.xml",
+    "cases": 6,
+    "passed": 6,
+    "skipped": [],
+    "sha256": "6738080fee8397f1c174d18808591ff5b0064c5afaf933f5dee007c8fd9f4522"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.platform.ProjectBundleGoldenSuite.xml",
+    "cases": 3,
+    "passed": 3,
+    "skipped": [],
+    "sha256": "9a8b4f5a45b0a8d775e5e5e0a50345d646172a164cc9416639db862a92f59cf1"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.plot.CanvasPlotHostFxSuite.xml",
+    "cases": 17,
+    "passed": 16,
+    "skipped": [
+      "a surface too large to draw fails with a typed error, not Waiting"
+    ],
+    "sha256": "30ef11cf7ccd534f50bd9a749168d3db1d6b2e969002e40afb80c5271c9ab2bf"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.plot.CompareSummaryFxSuite.xml",
+    "cases": 9,
+    "passed": 7,
+    "skipped": [
+      "the participant plot's annotation column: P17 selected and P05's failures",
+      "a short participant plot writes only the notes its frame holds; taller, more"
+    ],
+    "sha256": "942c02f9d01f005eeff4d5fa14104301e77dc43838136769b20a405ab40f631f"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.plot.MissingAssetHatchFxSuite.xml",
+    "cases": 2,
+    "passed": 2,
+    "skipped": [],
+    "sha256": "fd921ca04eb5fbac8f60c9be038ef3bcf6368a8f34424e9f838cace3358e916f"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.plot.NativeOutputScaleFxSuite.xml",
+    "cases": 1,
+    "passed": 1,
+    "skipped": [],
+    "sha256": "5bd54954b4e511f2e1a955bc7441b696b296adf494452c092d2ea11ba7ebb958"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.plot.PlotKitFxSuite.xml",
+    "cases": 16,
+    "passed": 16,
+    "skipped": [],
+    "sha256": "32ff4bb3116817f8b82bbed74d547e3b95794601305db7aeb6ff144ef15e9893"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.plot.S45bPlotFxSuite.xml",
+    "cases": 2,
+    "passed": 2,
+    "skipped": [],
+    "sha256": "be6412262044afd5246c025d8e31e422b696f9b989de9491727f3468c24778e6"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.plot.S45cPlotFxSuite.xml",
+    "cases": 3,
+    "passed": 3,
+    "skipped": [],
+    "sha256": "34815b3b745bce57b28c149fb56970566cdcc31eefb6fc62047c8993e1212ffa"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.plot.S45dPlotFxSuite.xml",
+    "cases": 2,
+    "passed": 2,
+    "skipped": [],
+    "sha256": "315ae850918423af170b97c287543fcb635978c89e24a99b35e5c0b55324c30b"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.plot.S45ePlotFxSuite.xml",
+    "cases": 1,
+    "passed": 1,
+    "skipped": [],
+    "sha256": "e9bac0b695bb6864d500ecfbc464456f8b9f2bf7d35adec6f57301a403c2167e"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.plot.TableTwinViewFxSuite.xml",
+    "cases": 8,
+    "passed": 8,
+    "skipped": [],
+    "sha256": "294397af157bd5824cdb7ecc2aed6f852006684b09cba219c5f144d56614ff40"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.project.ProjectLifecycleFxSuite.xml",
+    "cases": 22,
+    "passed": 22,
+    "skipped": [],
+    "sha256": "43f693edcf28d998097dc2f99a862d35d1bd85f9dd0e46008ad41e2d476f88ab"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.report.ErrorReporterSuite.xml",
+    "cases": 1,
+    "passed": 1,
+    "skipped": [],
+    "sha256": "1c1eab3b1dbd1404023268c3e28084779a496f733fb77dc15360c5dfc8a7c7b4"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.report.ErrorReportingSuite.xml",
+    "cases": 6,
+    "passed": 6,
+    "skipped": [],
+    "sha256": "09037a8c12bbe68d75e9575d7d88acee48add9f1cfdf577597a58ce6d480570f"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.report.StudioLogSuite.xml",
+    "cases": 3,
+    "passed": 3,
+    "skipped": [],
+    "sha256": "874998d2f1ba305aee9e67665d18957408aae407a0f4b80d6a83dc084e4ebd47"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.runtime.AdversarialScienceSuite.xml",
+    "cases": 8,
+    "passed": 8,
+    "skipped": [],
+    "sha256": "b0c2e457fe757c20b1b4d0cb71eb246c591fcab57eceae5d3bcdd6333343ec04"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.runtime.DatasetSourceHostsSuite.xml",
+    "cases": 2,
+    "passed": 2,
+    "skipped": [],
+    "sha256": "e7d0f1d2bf760976fcd9d65675fb1dd1b4ea3bf5edb75445e26eef370c11a286"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.runtime.ExecutionEventDeliverySuite.xml",
+    "cases": 3,
+    "passed": 3,
+    "skipped": [],
+    "sha256": "26286dac07e94e0e7374c93926078862feb764396cfcf21a93fea8b7604ba936"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.runtime.NativeAdmissionPolicySuite.xml",
+    "cases": 4,
+    "passed": 4,
+    "skipped": [],
+    "sha256": "a095b7e5433806df89bb8523ca7a087571ede67ffc940e039a209f3e0e4a4044"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.runtime.NativeExecutionSafetySuite.xml",
+    "cases": 7,
+    "passed": 7,
+    "skipped": [],
+    "sha256": "ec97c526e83fcca960e72b3432edcc9cfc4498d45a3bee77eb637d86f31aad2c"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.runtime.NativePlatformSuite.xml",
+    "cases": 3,
+    "passed": 3,
+    "skipped": [],
+    "sha256": "d342695cd69e7b9d952d76bad788b54f54dc1648e9016959190585a49de5aa22"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.runtime.NativeWindowFxSuite.xml",
+    "cases": 1,
+    "passed": 1,
+    "skipped": [],
+    "sha256": "beb39a33579d93bdfe111c9b4de24a8d3bce52257b1a7535b5911a1ffe88e33b"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.runtime.PreparedRefusalSuite.xml",
+    "cases": 1,
+    "passed": 1,
+    "skipped": [],
+    "sha256": "2859c6c8db51c1807de8f8f1b0a507a76dcd41e80f3a36429b2ef9e675ff72e3"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.runtime.SessionPortSuite.xml",
+    "cases": 7,
+    "passed": 7,
+    "skipped": [],
+    "sha256": "4676a1be6c772c82ec0dd54b4227824a2d4713793392cff576b6f97205c47ddf"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.runtime.StudioRuntimeSuite.xml",
+    "cases": 3,
+    "passed": 3,
+    "skipped": [],
+    "sha256": "f7053f2d40a3e24cead6a58da7fef024c25294c5abb6e479552b48772c6907ec"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.shell.A11yRenderSuite.xml",
+    "cases": 39,
+    "passed": 11,
+    "skipped": [
+      "data, light: every shown text reaches its contrast minimum",
+      "data, dark: every shown text reaches its contrast minimum",
+      "data-empty, light: every shown text reaches its contrast minimum",
+      "data-empty, dark: every shown text reaches its contrast minimum",
+      "explore, light: every shown text reaches its contrast minimum",
+      "explore, dark: every shown text reaches its contrast minimum",
+      "analysis, light: every shown text reaches its contrast minimum",
+      "analysis, dark: every shown text reaches its contrast minimum",
+      "compare, light: every shown text reaches its contrast minimum",
+      "compare, dark: every shown text reaches its contrast minimum",
+      "compare-t3, light: every shown text reaches its contrast minimum",
+      "compare-t3, dark: every shown text reaches its contrast minimum",
+      "figures, light: every shown text reaches its contrast minimum",
+      "figures, dark: every shown text reaches its contrast minimum",
+      "data, light: every Tab stop is drawn differently when focused",
+      "data, dark: every Tab stop is drawn differently when focused",
+      "data-empty, light: every Tab stop is drawn differently when focused",
+      "data-empty, dark: every Tab stop is drawn differently when focused",
+      "explore, light: every Tab stop is drawn differently when focused",
+      "explore, dark: every Tab stop is drawn differently when focused",
+      "analysis, light: every Tab stop is drawn differently when focused",
+      "analysis, dark: every Tab stop is drawn differently when focused",
+      "compare, light: every Tab stop is drawn differently when focused",
+      "compare, dark: every Tab stop is drawn differently when focused",
+      "compare-t3, light: every Tab stop is drawn differently when focused",
+      "compare-t3, dark: every Tab stop is drawn differently when focused",
+      "figures, light: every Tab stop is drawn differently when focused",
+      "figures, dark: every Tab stop is drawn differently when focused"
+    ],
+    "sha256": "8cb1dcbb3e0b4f42ea87b548970e28f29d71f0b917adda908ce2afc7b33ea6dc"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.shell.A11yTreeSuite.xml",
+    "cases": 26,
+    "passed": 18,
+    "skipped": [
+      "data: every focusable node has an accessible role and name",
+      "explore: every focusable node has an accessible role and name",
+      "analysis: every focusable node has an accessible role and name",
+      "compare: every focusable node has an accessible role and name",
+      "compare-results: every focusable node has an accessible role and name",
+      "compare-results-dark: every focusable node has an accessible role and name",
+      "figures: every focusable node has an accessible role and name",
+      "data-empty: every focusable node has an accessible role and name"
+    ],
+    "sha256": "5146fd433aaf8701e07f1f056468533f7a7afffeefa3f3636a9e9c1f0abda4ff"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.shell.AboutFxSuite.xml",
+    "cases": 1,
+    "passed": 1,
+    "skipped": [],
+    "sha256": "a99a2885b75398d65e40108ef9868c23ac755419e5c5cf04a51c1af26b9253de"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.shell.AppShellFxSuite.xml",
+    "cases": 23,
+    "passed": 14,
+    "skipped": [
+      "t2 \u00b7 Data: the shell renders the S1.0 view-models; snapshot",
+      "t2 \u00b7 Explore: the shell renders the S1.0 view-models; snapshot",
+      "t2 \u00b7 Analysis: the shell renders the S1.0 view-models; snapshot",
+      "t2 \u00b7 Compare summary: the shell renders the S1.0 view-models; snapshot",
+      "t2 \u00b7 Compare query: the shell renders the S1.0 view-models; snapshot",
+      "t2 \u00b7 Figures: the shell renders the S1.0 view-models; snapshot",
+      "t2 \u00b7 Main board: app bar, context strip and status bar read as the board",
+      "shell metrics: app bar 44, context strip 32, banner 30, tab headers 28, status bar 24",
+      "jobs chip running at t3: run 8 adopted from the fake backend; Cancel reaches it"
+    ],
+    "sha256": "cd07ad65c13448c50fb3b8e32b88149fa128770f960c29f706f5899ad51d1e56"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.shell.BoardParityCaptureFxSuite.xml",
+    "cases": 7,
+    "passed": 0,
+    "skipped": [
+      "Main",
+      "MainDark",
+      "Data",
+      "Analysis",
+      "Explore",
+      "Results",
+      "Figures"
+    ],
+    "sha256": "33da5c4651241d830c356fc9ef1d7cf2850623800944a36d1e6824f52006c515"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.shell.BoardWorkspaceViewportFxSuite.xml",
+    "cases": 6,
+    "passed": 6,
+    "skipped": [],
+    "sha256": "ac3562a8edf66634e399d87e2502521604d4436c585428050c350bf0f75169ce"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.shell.CanvasBoundaryFxSuite.xml",
+    "cases": 2,
+    "passed": 2,
+    "skipped": [],
+    "sha256": "4b146039183d0f8adf527d45d0a2e9ac0a8de6dcfb6acc57a341990bd5662b4e"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.shell.CompositeCursorFxSuite.xml",
+    "cases": 4,
+    "passed": 4,
+    "skipped": [],
+    "sha256": "49f5f035a7429c2d6d12fcebea61758313f2ee85b6f37ac60e046c010934514d"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.shell.ContextStripFxSuite.xml",
+    "cases": 8,
+    "passed": 0,
+    "skipped": [
+      "every crumb is a live button: a click lands on its prefix, Back returns",
+      "E2E-17: fixation and record crumbs cross into Explore and back, by click and key",
+      "back and forward name their shortcuts and follow the history",
+      "t2: the badge's teal dot, and the dashed draft chip opens Analysis",
+      "t3: the two-chip form: 'Showing \u2026' with a hollow dot, then the running run",
+      "failed: run 8 fails; the badge stays current and a failed chip says so",
+      "stale: showing run 5 on r2 marks the badge stale",
+      "a focused crumb keeps its focus while unrelated updates render"
+    ],
+    "sha256": "72964033ce4a1210fcd60c5f4db1f6f007796066fbd0bc9fb890cb70a82c057a"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.shell.ControlsFxSuite.xml",
+    "cases": 5,
+    "passed": 5,
+    "skipped": [],
+    "sha256": "aa3650b940c1aa270d442934e3cb24d982a43d921b4fa9a594074cd7b1634ff1"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.shell.DockFollowSuite.xml",
+    "cases": 5,
+    "passed": 5,
+    "skipped": [],
+    "sha256": "87b29fedd6e8fc97ead0ceb8b15aed8220bc3b2916ca685fceed2f65e1c4ce21"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.shell.DraftBannerFxSuite.xml",
+    "cases": 4,
+    "passed": 0,
+    "skipped": [
+      "t2: Compare and Figures only; 30 px, dashed; the words of the plan diff",
+      "Review in Analysis opens the draft; the banner hides there",
+      "Discard draft asks first: Keep draft keeps it, Discard draft discards it",
+      "t3: 'Showing run 7 (rev 4).' then the run-8 sentence; Show waits for the run"
+    ],
+    "sha256": "b517c0e107a9a6bee6b3bf52a6a1e14b6bf1275dc43805b9cdf38c0947c4b423"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.shell.FocusVisibleFxSuite.xml",
+    "cases": 10,
+    "passed": 10,
+    "skipped": [],
+    "sha256": "9abfb1f782e37fe65190f1807337021f862675e44e678d1447d81dda38d074f1"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.shell.KeymapFxSuite.xml",
+    "cases": 13,
+    "passed": 13,
+    "skipped": [],
+    "sha256": "7c973587ef60606fb8c6ab02fecbcb2a130edaf7756193e8ad11091231214a9d"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.shell.ParityChecklistSuite.xml",
+    "cases": 1,
+    "passed": 0,
+    "skipped": [
+      "DataEmpty t0 shell bounds and texts match the board"
+    ],
+    "sha256": "1c042911fb4e1df1087d2f16600d24483deccbb413dd0dc9cf5262230d20c1eb"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.shell.RunInProgressFxSuite.xml",
+    "cases": 1,
+    "passed": 0,
+    "skipped": [
+      "completion stays on run 7; Show promotes run 8 and preserves stable selection"
+    ],
+    "sha256": "2b4d6fe8576ce5b2f09d7febfd16d724dbba56146d3b6641c35ecb4962d20852"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.shell.SegmentedBarFxSuite.xml",
+    "cases": 8,
+    "passed": 8,
+    "skipped": [],
+    "sha256": "6da4ad9e8090b67271921f05d3404969f263b05c629889630fb5f379e275d0fe"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.shell.SelectionFillFxSuite.xml",
+    "cases": 5,
+    "passed": 5,
+    "skipped": [],
+    "sha256": "761601b320b3b7d8651f45c7a448123cbcfdac7a5f968953ff9ff668a70c8dc9"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.shell.ShellMomentsFxSuite.xml",
+    "cases": 17,
+    "passed": 0,
+    "skipped": [
+      "t1 \u00b7 Data: the Geometry pane draws the geometry panel under the draft's form, on r3",
+      "t0 \u00b7 Data: a new project shows no geometry panel and reads nothing",
+      "t1 \u00b7 Data: the shell reads as its view-models; snapshot",
+      "t1 \u00b7 Explore: the shell reads as its view-models; snapshot",
+      "t1 \u00b7 Analysis: the shell reads as its view-models; snapshot",
+      "t1 \u00b7 Compare: the shell reads as its view-models; snapshot",
+      "t1 \u00b7 Figures: the shell reads as its view-models; snapshot",
+      "t2 \u00b7 Data: the shell reads as its view-models; snapshot",
+      "t2 \u00b7 Explore: the shell reads as its view-models; snapshot",
+      "t2 \u00b7 Analysis: the shell reads as its view-models; snapshot",
+      "t2 \u00b7 Compare: the shell reads as its view-models; snapshot",
+      "t2 \u00b7 Figures: the shell reads as its view-models; snapshot",
+      "t3 \u00b7 Data: the shell reads as its view-models; snapshot",
+      "t3 \u00b7 Explore: the shell reads as its view-models; snapshot",
+      "t3 \u00b7 Analysis: the shell reads as its view-models; snapshot",
+      "t3 \u00b7 Compare: the shell reads as its view-models; snapshot",
+      "t3 \u00b7 Figures: the shell reads as its view-models; snapshot"
+    ],
+    "sha256": "145364f2e638bf6389e2216adba0392b9b3b77e087ee0cf3ed4f4536c774491c"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.shell.SmallCanvasBoundaryFxSuite.xml",
+    "cases": 2,
+    "passed": 2,
+    "skipped": [],
+    "sha256": "1a9efd1c66869180a881edf5556aef741ee213cf26e2403c343aad706f15d27d"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.shell.SourceChecksFxSuite.xml",
+    "cases": 1,
+    "passed": 1,
+    "skipped": [],
+    "sha256": "e53757cec8256c6fcc59db30ca5c52cccf1ee583e8585e439d2b7c1327d66082"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.shell.StatusBarFxSuite.xml",
+    "cases": 6,
+    "passed": 3,
+    "skipped": [
+      "always four slots, 24 px, with the board's words",
+      "the selection path follows the selection bus within 100 ms",
+      "the job slot mirrors the jobs chip: running, progress, Cancel, failed"
+    ],
+    "sha256": "03fbde9f619d7ef49a4995f088d296bca56c80e82186585748aa2ca50907ccbb"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.shell.SystemSpecimenFxSuite.xml",
+    "cases": 2,
+    "passed": 2,
+    "skipped": [],
+    "sha256": "d9f9069969fe0c4ea3d8da2c178214a4ee5b404108a08d04ef8fec0d12c7e3c8"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.shell.ThemeFxSuite.xml",
+    "cases": 9,
+    "passed": 9,
+    "skipped": [],
+    "sha256": "c69f3758b248a7ced781453bad0ba4c148855d64c1871c8dcdb8e237712357d2"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.shell.VisualParitySuite.xml",
+    "cases": 30,
+    "passed": 30,
+    "skipped": [],
+    "sha256": "35c374aa298e3fb5110747218cb581831fff3998ddee95e3ef27365420286f69"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.shell.WorkspaceViewportFxSuite.xml",
+    "cases": 5,
+    "passed": 5,
+    "skipped": [],
+    "sha256": "ac2c47d455b3a45b0a4b2960d37447ba8f59b627493c1db36d85b80ac8961d92"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.tokens.TokenFilesSuite.xml",
+    "cases": 6,
+    "passed": 6,
+    "skipped": [],
+    "sha256": "b345491e0a48d86de39c12fe135b6bcdefcac21606b887d70e57d257b72e5325"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.tokens.TokenReferencesSuite.xml",
+    "cases": 2,
+    "passed": 2,
+    "skipped": [],
+    "sha256": "74532ac34a961485cd861d6db03aef0612872a08bb313421521b13776dbc9b41"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.trial.InputAdapterFxSuite.xml",
+    "cases": 13,
+    "passed": 13,
+    "skipped": [],
+    "sha256": "f8109498829fb41b31e56672ded15261a67b061535f67057beb2011e77e16368"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.trial.TrialViewCacheFxSuite.xml",
+    "cases": 2,
+    "passed": 2,
+    "skipped": [],
+    "sha256": "a7f4b85ee37f9c5a0acec4b31e8889397a7f42282ac2147370ab65c2a272077a"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.trial.TrialViewFxSuite.xml",
+    "cases": 26,
+    "passed": 26,
+    "skipped": [],
+    "sha256": "cafa09383f2a92b468c34c0d7f2e87039448b039f0789fc7434b5c77f0445684"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.trial.TrialViewMapFxSuite.xml",
+    "cases": 12,
+    "passed": 12,
+    "skipped": [],
+    "sha256": "599ee47ce5dc8e0ea6a0031c99cafe0afc943054ab4028c826b2e646bb04a531"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.typography.FontLoadSuite.xml",
+    "cases": 8,
+    "passed": 8,
+    "skipped": [],
+    "sha256": "5790ff1931714a62766de6d5bd981271ad839338cedc28376add451410ac2801"
+  }
+]

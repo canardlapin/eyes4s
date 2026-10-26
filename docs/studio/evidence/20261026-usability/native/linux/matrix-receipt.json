@@ -1,0 +1,1722 @@
+{
+  "candidateFingerprint": "0e598d850630bbbfb4f644b03ae18d70800327de8161737bb6668a7fcb412367",
+  "states": [
+    {
+      "state": "t1-Data-light",
+      "mode": "linux-monocle-goldens",
+      "reviewSha256": "693ed2fcf762407716babe907a19d726838e3fa06b4ce90e65417600f7b58a2a",
+      "captures": [
+        {
+          "actual": "target/studio-snapshots/VisualParitySuite/t1-Data-light/light-1x.png",
+          "actualSha256": "fd82cb40c1d1ea64bcfdcf17fd82ba9de74e7f15e52cf2f586ce87dea3a3c6e4",
+          "width": 1440,
+          "height": 900,
+          "baseline": "studio/desktop/src/test/resources/eyes4s/studio/desktop/visual-parity/t1-Data-light/light-1x.png",
+          "baselineSha256": "fd82cb40c1d1ea64bcfdcf17fd82ba9de74e7f15e52cf2f586ce87dea3a3c6e4",
+          "comparison": {
+            "width": 1440,
+            "height": 900,
+            "changedPixels": 0,
+            "maximumChannelDelta": 0,
+            "changedFraction": 0,
+            "accepted": true
+          },
+          "repeatFirstSha256": "fd82cb40c1d1ea64bcfdcf17fd82ba9de74e7f15e52cf2f586ce87dea3a3c6e4",
+          "repeat": {
+            "width": 1440,
+            "height": 900,
+            "changedPixels": 0,
+            "maximumChannelDelta": 0,
+            "changedFraction": 0,
+            "accepted": true
+          }
+        },
+        {
+          "actual": "target/studio-snapshots/VisualParitySuite/t1-Data-light/light-2x.png",
+          "actualSha256": "00458aaa271dc78bca5a265fe1ab33505306b5837e98de805f09b18313de4d69",
+          "width": 2880,
+          "height": 1800,
+          "baseline": "studio/desktop/src/test/resources/eyes4s/studio/desktop/visual-parity/t1-Data-light/light-2x.png",
+          "baselineSha256": "00458aaa271dc78bca5a265fe1ab33505306b5837e98de805f09b18313de4d69",
+          "comparison": {
+            "width": 2880,
+            "height": 1800,
+            "changedPixels": 0,
+            "maximumChannelDelta": 0,
+            "changedFraction": 0,
+            "accepted": true
+          },
+          "repeatFirstSha256": "00458aaa271dc78bca5a265fe1ab33505306b5837e98de805f09b18313de4d69",
+          "repeat": {
+            "width": 2880,
+            "height": 1800,
+            "changedPixels": 0,
+            "maximumChannelDelta": 0,
+            "changedFraction": 0,
+            "accepted": true
+          }
+        }
+      ]
+    },
+    {
+      "state": "t1-Data-dark",
+      "mode": "linux-monocle-goldens",
+      "reviewSha256": "2752080fe650af68e076d4914e99017a60669f26aa4bde62590ee3b971ed1f0e",
+      "captures": [
+        {
+          "actual": "target/studio-snapshots/VisualParitySuite/t1-Data-dark/dark-1x.png",
+          "actualSha256": "659684eec8031d5953a26fac02db9f2f5b2e3ebe011615fddaada7579048fd34",
+          "width": 1440,
+          "height": 900,
+          "baseline": "studio/desktop/src/test/resources/eyes4s/studio/desktop/visual-parity/t1-Data-dark/dark-1x.png",
+          "baselineSha256": "659684eec8031d5953a26fac02db9f2f5b2e3ebe011615fddaada7579048fd34",
+          "comparison": {
+            "width": 1440,
+            "height": 900,
+            "changedPixels": 0,
+            "maximumChannelDelta": 0,
+            "changedFraction": 0,
+            "accepted": true
+          },
+          "repeatFirstSha256": "659684eec8031d5953a26fac02db9f2f5b2e3ebe011615fddaada7579048fd34",
+          "repeat": {
+            "width": 1440,
+            "height": 900,
+            "changedPixels": 0,
+            "maximumChannelDelta": 0,
+            "changedFraction": 0,
+            "accepted": true
+          }
+        },
+        {
+          "actual": "target/studio-snapshots/VisualParitySuite/t1-Data-dark/dark-2x.png",
+          "actualSha256": "bedb7b24ab694bc0a6f793e010ab246af178b6c9c18abfac3476d95e18e079b4",
+          "width": 2880,
+          "height": 1800,
+          "baseline": "studio/desktop/src/test/resources/eyes4s/studio/desktop/visual-parity/t1-Data-dark/dark-2x.png",
+          "baselineSha256": "bedb7b24ab694bc0a6f793e010ab246af178b6c9c18abfac3476d95e18e079b4",
+          "comparison": {
+            "width": 2880,
+            "height": 1800,
+            "changedPixels": 0,
+            "maximumChannelDelta": 0,
+            "changedFraction": 0,
+            "accepted": true
+          },
+          "repeatFirstSha256": "bedb7b24ab694bc0a6f793e010ab246af178b6c9c18abfac3476d95e18e079b4",
+          "repeat": {
+            "width": 2880,
+            "height": 1800,
+            "changedPixels": 0,
+            "maximumChannelDelta": 0,
+            "changedFraction": 0,
+            "accepted": true
+          }
+        }
+      ]
+    },
+    {
+      "state": "t1-Explore-light",
+      "mode": "linux-monocle-goldens",
+      "reviewSha256": "4fa560482e0d909f54725008f664e500c4c697d9465666cabcb49a91ee4fcbae",
+      "captures": [
+        {
+          "actual": "target/studio-snapshots/VisualParitySuite/t1-Explore-light/light-1x.png",
+          "actualSha256": "fae0d1781af59dfb1944b46c00fd09924cf63eba471927744008c6753cfbd6ea",
+          "width": 1440,
+          "height": 900,
+          "baseline": "studio/desktop/src/test/resources/eyes4s/studio/desktop/visual-parity/t1-Explore-light/light-1x.png",
+          "baselineSha256": "fae0d1781af59dfb1944b46c00fd09924cf63eba471927744008c6753cfbd6ea",
+          "comparison": {
+            "width": 1440,
+            "height": 900,
+            "changedPixels": 0,
+            "maximumChannelDelta": 0,
+            "changedFraction": 0,
+            "accepted": true
+          },
+          "repeatFirstSha256": "fae0d1781af59dfb1944b46c00fd09924cf63eba471927744008c6753cfbd6ea",
+          "repeat": {
+            "width": 1440,
+            "height": 900,
+            "changedPixels": 0,
+            "maximumChannelDelta": 0,
+            "changedFraction": 0,
+            "accepted": true
+          }
+        },
+        {
+          "actual": "target/studio-snapshots/VisualParitySuite/t1-Explore-light/light-2x.png",
+          "actualSha256": "818612447cfa182152101f081b67e4ef13925f5caee8c8fb3e7a6023e947d1d1",
+          "width": 2880,
+          "height": 1800,
+          "baseline": "studio/desktop/src/test/resources/eyes4s/studio/desktop/visual-parity/t1-Explore-light/light-2x.png",
+          "baselineSha256": "818612447cfa182152101f081b67e4ef13925f5caee8c8fb3e7a6023e947d1d1",
+          "comparison": {
+            "width": 2880,
+            "height": 1800,
+            "changedPixels": 0,
+            "maximumChannelDelta": 0,
+            "changedFraction": 0,
+            "accepted": true
+          },
+          "repeatFirstSha256": "818612447cfa182152101f081b67e4ef13925f5caee8c8fb3e7a6023e947d1d1",
+          "repeat": {
+            "width": 2880,
+            "height": 1800,
+            "changedPixels": 0,
+            "maximumChannelDelta": 0,
+            "changedFraction": 0,
+            "accepted": true
+          }
+        }
+      ]
+    },
+    {
+      "state": "t1-Explore-dark",
+      "mode": "linux-monocle-goldens",
+      "reviewSha256": "7e1914692e2ac975a4ed29d349614b5224af2dbfa801df25e1c2c1b59bbbd25a",
+      "captures": [
+        {
+          "actual": "target/studio-snapshots/VisualParitySuite/t1-Explore-dark/dark-1x.png",
+          "actualSha256": "4485a9f8b584b95a6336d9b1e0e6488eb21085e3a9cbb28747b066946121c492",
+          "width": 1440,
+          "height": 900,
+          "baseline": "studio/desktop/src/test/resources/eyes4s/studio/desktop/visual-parity/t1-Explore-dark/dark-1x.png",
+          "baselineSha256": "4485a9f8b584b95a6336d9b1e0e6488eb21085e3a9cbb28747b066946121c492",
+          "comparison": {
+            "width": 1440,
+            "height": 900,
+            "changedPixels": 0,
+            "maximumChannelDelta": 0,
+            "changedFraction": 0,
+            "accepted": true
+          },
+          "repeatFirstSha256": "4485a9f8b584b95a6336d9b1e0e6488eb21085e3a9cbb28747b066946121c492",
+          "repeat": {
+            "width": 1440,
+            "height": 900,
+            "changedPixels": 0,
+            "maximumChannelDelta": 0,
+            "changedFraction": 0,
+            "accepted": true
+          }
+        },
+        {
+          "actual": "target/studio-snapshots/VisualParitySuite/t1-Explore-dark/dark-2x.png",
+          "actualSha256": "43a40a003685d1a1296afec4231cc85687de767d33cab37809775d61429273e4",
+          "width": 2880,
+          "height": 1800,
+          "baseline": "studio/desktop/src/test/resources/eyes4s/studio/desktop/visual-parity/t1-Explore-dark/dark-2x.png",
+          "baselineSha256": "43a40a003685d1a1296afec4231cc85687de767d33cab37809775d61429273e4",
+          "comparison": {
+            "width": 2880,
+            "height": 1800,
+            "changedPixels": 0,
+            "maximumChannelDelta": 0,
+            "changedFraction": 0,
+            "accepted": true
+          },
+          "repeatFirstSha256": "43a40a003685d1a1296afec4231cc85687de767d33cab37809775d61429273e4",
+          "repeat": {
+            "width": 2880,
+            "height": 1800,
+            "changedPixels": 0,
+            "maximumChannelDelta": 0,
+            "changedFraction": 0,
+            "accepted": true
+          }
+        }
+      ]
+    },
+    {
+      "state": "t1-Analysis-light",
+      "mode": "linux-monocle-goldens",
+      "reviewSha256": "13bde7d614e93f82697cc0adafb6e8235d89bfd9b9f13327dead7c859bcfeb0c",
+      "captures": [
+        {
+          "actual": "target/studio-snapshots/VisualParitySuite/t1-Analysis-light/light-1x.png",
+          "actualSha256": "78994dad796d6e54e938bd3acc7102df8032a870057dde1622dc08d53bdaa998",
+          "width": 1440,
+          "height": 900,
+          "baseline": "studio/desktop/src/test/resources/eyes4s/studio/desktop/visual-parity/t1-Analysis-light/light-1x.png",
+          "baselineSha256": "78994dad796d6e54e938bd3acc7102df8032a870057dde1622dc08d53bdaa998",
+          "comparison": {
+            "width": 1440,
+            "height": 900,
+            "changedPixels": 0,
+            "maximumChannelDelta": 0,
+            "changedFraction": 0,
+            "accepted": true
+          },
+          "repeatFirstSha256": "78994dad796d6e54e938bd3acc7102df8032a870057dde1622dc08d53bdaa998",
+          "repeat": {
+            "width": 1440,
+            "height": 900,
+            "changedPixels": 0,
+            "maximumChannelDelta": 0,
+            "changedFraction": 0,
+            "accepted": true
+          }
+        },
+        {
+          "actual": "target/studio-snapshots/VisualParitySuite/t1-Analysis-light/light-2x.png",
+          "actualSha256": "54d2d51be98c5ed016a5907914c6b432bd0c360e9cf986ebeb6979df5800e9bc",
+          "width": 2880,
+          "height": 1800,
+          "baseline": "studio/desktop/src/test/resources/eyes4s/studio/desktop/visual-parity/t1-Analysis-light/light-2x.png",
+          "baselineSha256": "54d2d51be98c5ed016a5907914c6b432bd0c360e9cf986ebeb6979df5800e9bc",
+          "comparison": {
+            "width": 2880,
+            "height": 1800,
+            "changedPixels": 0,
+            "maximumChannelDelta": 0,
+            "changedFraction": 0,
+            "accepted": true
+          },
+          "repeatFirstSha256": "54d2d51be98c5ed016a5907914c6b432bd0c360e9cf986ebeb6979df5800e9bc",
+          "repeat": {
+            "width": 2880,
+            "height": 1800,
+            "changedPixels": 0,
+            "maximumChannelDelta": 0,
+            "changedFraction": 0,
+            "accepted": true
+          }
+        }
+      ]
+    },
+    {
+      "state": "t1-Analysis-dark",
+      "mode": "linux-monocle-goldens",
+      "reviewSha256": "708dc5b93b97d92bacff82a7d368da87c6fd499591eaf5704a6838372d2d27f7",
+      "captures": [
+        {
+          "actual": "target/studio-snapshots/VisualParitySuite/t1-Analysis-dark/dark-1x.png",
+          "actualSha256": "c9c887298f00d359eabaf89a50a995af257fbe62eb1993ab5dd800fde31edfe3",
+          "width": 1440,
+          "height": 900,
+          "baseline": "studio/desktop/src/test/resources/eyes4s/studio/desktop/visual-parity/t1-Analysis-dark/dark-1x.png",
+          "baselineSha256": "c9c887298f00d359eabaf89a50a995af257fbe62eb1993ab5dd800fde31edfe3",
+          "comparison": {
+            "width": 1440,
+            "height": 900,
+            "changedPixels": 0,
+            "maximumChannelDelta": 0,
+            "changedFraction": 0,
+            "accepted": true
+          },
+          "repeatFirstSha256": "c9c887298f00d359eabaf89a50a995af257fbe62eb1993ab5dd800fde31edfe3",
+          "repeat": {
+            "width": 1440,
+            "height": 900,
+            "changedPixels": 0,
+            "maximumChannelDelta": 0,
+            "changedFraction": 0,
+            "accepted": true
+          }
+        },
+        {
+          "actual": "target/studio-snapshots/VisualParitySuite/t1-Analysis-dark/dark-2x.png",
+          "actualSha256": "95c15265a140cf4bbb01aec93082aebc6b9c99005383b6f28f7bc0c8e2aa00c7",
+          "width": 2880,
+          "height": 1800,
+          "baseline": "studio/desktop/src/test/resources/eyes4s/studio/desktop/visual-parity/t1-Analysis-dark/dark-2x.png",
+          "baselineSha256": "95c15265a140cf4bbb01aec93082aebc6b9c99005383b6f28f7bc0c8e2aa00c7",
+          "comparison": {
+            "width": 2880,
+            "height": 1800,
+            "changedPixels": 0,
+            "maximumChannelDelta": 0,
+            "changedFraction": 0,
+            "accepted": true
+          },
+          "repeatFirstSha256": "95c15265a140cf4bbb01aec93082aebc6b9c99005383b6f28f7bc0c8e2aa00c7",
+          "repeat": {
+            "width": 2880,
+            "height": 1800,
+            "changedPixels": 0,
+            "maximumChannelDelta": 0,
+            "changedFraction": 0,
+            "accepted": true
+          }
+        }
+      ]
+    },
+    {
+      "state": "t1-Compare-light",
+      "mode": "linux-monocle-goldens",
+      "reviewSha256": "670a8923ad7cd4a0fd3e0d0b92f0ebeb3d63a49d770949ae0be0a1a23087b778",
+      "captures": [
+        {
+          "actual": "target/studio-snapshots/VisualParitySuite/t1-Compare-light/light-1x.png",
+          "actualSha256": "32033999060f081be38499083fd9b5b3718c893847a9fdb4aefb17ec3c5cc5e8",
+          "width": 1440,
+          "height": 900,
+          "baseline": "studio/desktop/src/test/resources/eyes4s/studio/desktop/visual-parity/t1-Compare-light/light-1x.png",
+          "baselineSha256": "32033999060f081be38499083fd9b5b3718c893847a9fdb4aefb17ec3c5cc5e8",
+          "comparison": {
+            "width": 1440,
+            "height": 900,
+            "changedPixels": 0,
+            "maximumChannelDelta": 0,
+            "changedFraction": 0,
+            "accepted": true
+          },
+          "repeatFirstSha256": "32033999060f081be38499083fd9b5b3718c893847a9fdb4aefb17ec3c5cc5e8",
+          "repeat": {
+            "width": 1440,
+            "height": 900,
+            "changedPixels": 0,
+            "maximumChannelDelta": 0,
+            "changedFraction": 0,
+            "accepted": true
+          }
+        },
+        {
+          "actual": "target/studio-snapshots/VisualParitySuite/t1-Compare-light/light-2x.png",
+          "actualSha256": "5191446d7101d2452b45184d78597a43da4a20daf3b3ebc04b33c05fe468c6d7",
+          "width": 2880,
+          "height": 1800,
+          "baseline": "studio/desktop/src/test/resources/eyes4s/studio/desktop/visual-parity/t1-Compare-light/light-2x.png",
+          "baselineSha256": "5191446d7101d2452b45184d78597a43da4a20daf3b3ebc04b33c05fe468c6d7",
+          "comparison": {
+            "width": 2880,
+            "height": 1800,
+            "changedPixels": 0,
+            "maximumChannelDelta": 0,
+            "changedFraction": 0,
+            "accepted": true
+          },
+          "repeatFirstSha256": "5191446d7101d2452b45184d78597a43da4a20daf3b3ebc04b33c05fe468c6d7",
+          "repeat": {
+            "width": 2880,
+            "height": 1800,
+            "changedPixels": 0,
+            "maximumChannelDelta": 0,
+            "changedFraction": 0,
+            "accepted": true
+          }
+        }
+      ]
+    },
+    {
+      "state": "t1-Compare-dark",
+      "mode": "linux-monocle-goldens",
+      "reviewSha256": "33a8c4ca5d90eb3b5dd69664e1ffa2199adb487aeb7e7dcf7f569c0683c53548",
+      "captures": [
+        {
+          "actual": "target/studio-snapshots/VisualParitySuite/t1-Compare-dark/dark-1x.png",
+          "actualSha256": "d354c1f732c5115d7c48478178f5797d1949469e57cf5cda5a93c3f49aceda05",
+          "width": 1440,
+          "height": 900,
+          "baseline": "studio/desktop/src/test/resources/eyes4s/studio/desktop/visual-parity/t1-Compare-dark/dark-1x.png",
+          "baselineSha256": "d354c1f732c5115d7c48478178f5797d1949469e57cf5cda5a93c3f49aceda05",
+          "comparison": {
+            "width": 1440,
+            "height": 900,
+            "changedPixels": 0,
+            "maximumChannelDelta": 0,
+            "changedFraction": 0,
+            "accepted": true
+          },
+          "repeatFirstSha256": "d354c1f732c5115d7c48478178f5797d1949469e57cf5cda5a93c3f49aceda05",
+          "repeat": {
+            "width": 1440,
+            "height": 900,
+            "changedPixels": 0,
+            "maximumChannelDelta": 0,
+            "changedFraction": 0,
+            "accepted": true
+          }
+        },
+        {
+          "actual": "target/studio-snapshots/VisualParitySuite/t1-Compare-dark/dark-2x.png",
+          "actualSha256": "9965cd7e8c2a0372526f51fe648ca46b99debe626e07abf1148a8e827b1c1ffa",
+          "width": 2880,
+          "height": 1800,
+          "baseline": "studio/desktop/src/test/resources/eyes4s/studio/desktop/visual-parity/t1-Compare-dark/dark-2x.png",
+          "baselineSha256": "9965cd7e8c2a0372526f51fe648ca46b99debe626e07abf1148a8e827b1c1ffa",
+          "comparison": {
+            "width": 2880,
+            "height": 1800,
+            "changedPixels": 0,
+            "maximumChannelDelta": 0,
+            "changedFraction": 0,
+            "accepted": true
+          },
+          "repeatFirstSha256": "9965cd7e8c2a0372526f51fe648ca46b99debe626e07abf1148a8e827b1c1ffa",
+          "repeat": {
+            "width": 2880,
+            "height": 1800,
+            "changedPixels": 0,
+            "maximumChannelDelta": 0,
+            "changedFraction": 0,
+            "accepted": true
+          }
+        }
+      ]
+    },
+    {
+      "state": "t1-Figures-light",
+      "mode": "linux-monocle-goldens",
+      "reviewSha256": "22fa33706f9d2a5faca93db57c7e5ab9992582b15a5af0d1a4712f7b69514f58",
+      "captures": [
+        {
+          "actual": "target/studio-snapshots/VisualParitySuite/t1-Figures-light/light-1x.png",
+          "actualSha256": "cb1703bb8c51a8d4a59f305ecb1fefdb875fadc9f6b44fa180a1a1ac8617bee6",
+          "width": 1440,
+          "height": 900,
+          "baseline": "studio/desktop/src/test/resources/eyes4s/studio/desktop/visual-parity/t1-Figures-light/light-1x.png",
+          "baselineSha256": "cb1703bb8c51a8d4a59f305ecb1fefdb875fadc9f6b44fa180a1a1ac8617bee6",
+          "comparison": {
+            "width": 1440,
+            "height": 900,
+            "changedPixels": 0,
+            "maximumChannelDelta": 0,
+            "changedFraction": 0,
+            "accepted": true
+          },
+          "repeatFirstSha256": "cb1703bb8c51a8d4a59f305ecb1fefdb875fadc9f6b44fa180a1a1ac8617bee6",
+          "repeat": {
+            "width": 1440,
+            "height": 900,
+            "changedPixels": 0,
+            "maximumChannelDelta": 0,
+            "changedFraction": 0,
+            "accepted": true
+          }
+        },
+        {
+          "actual": "target/studio-snapshots/VisualParitySuite/t1-Figures-light/light-2x.png",
+          "actualSha256": "9f6933c6c2ddb73836bdc92bbffeed3dc47f0f919a7905f09ccb8c83dccbe7d5",
+          "width": 2880,
+          "height": 1800,
+          "baseline": "studio/desktop/src/test/resources/eyes4s/studio/desktop/visual-parity/t1-Figures-light/light-2x.png",
+          "baselineSha256": "9f6933c6c2ddb73836bdc92bbffeed3dc47f0f919a7905f09ccb8c83dccbe7d5",
+          "comparison": {
+            "width": 2880,
+            "height": 1800,
+            "changedPixels": 0,
+            "maximumChannelDelta": 0,
+            "changedFraction": 0,
+            "accepted": true
+          },
+          "repeatFirstSha256": "9f6933c6c2ddb73836bdc92bbffeed3dc47f0f919a7905f09ccb8c83dccbe7d5",
+          "repeat": {
+            "width": 2880,
+            "height": 1800,
+            "changedPixels": 0,
+            "maximumChannelDelta": 0,
+            "changedFraction": 0,
+            "accepted": true
+          }
+        }
+      ]
+    },
+    {
+      "state": "t1-Figures-dark",
+      "mode": "linux-monocle-goldens",
+      "reviewSha256": "24fd12bf27e3a65aeb7b099ca2b0219f170686eef69d83277418c95191eb9454",
+      "captures": [
+        {
+          "actual": "target/studio-snapshots/VisualParitySuite/t1-Figures-dark/dark-1x.png",
+          "actualSha256": "62bdd51786c64a7448018fa1a70ff3a5334f72c66cd096ddc3b8afc6ccb33819",
+          "width": 1440,
+          "height": 900,
+          "baseline": "studio/desktop/src/test/resources/eyes4s/studio/desktop/visual-parity/t1-Figures-dark/dark-1x.png",
+          "baselineSha256": "62bdd51786c64a7448018fa1a70ff3a5334f72c66cd096ddc3b8afc6ccb33819",
+          "comparison": {
+            "width": 1440,
+            "height": 900,
+            "changedPixels": 0,
+            "maximumChannelDelta": 0,
+            "changedFraction": 0,
+            "accepted": true
+          },
+          "repeatFirstSha256": "62bdd51786c64a7448018fa1a70ff3a5334f72c66cd096ddc3b8afc6ccb33819",
+          "repeat": {
+            "width": 1440,
+            "height": 900,
+            "changedPixels": 0,
+            "maximumChannelDelta": 0,
+            "changedFraction": 0,
+            "accepted": true
+          }
+        },
+        {
+          "actual": "target/studio-snapshots/VisualParitySuite/t1-Figures-dark/dark-2x.png",
+          "actualSha256": "28981929133772bd506abb1a173f02d81eea148f487a54e759b660447c51fd7d",
+          "width": 2880,
+          "height": 1800,
+          "baseline": "studio/desktop/src/test/resources/eyes4s/studio/desktop/visual-parity/t1-Figures-dark/dark-2x.png",
+          "baselineSha256": "28981929133772bd506abb1a173f02d81eea148f487a54e759b660447c51fd7d",
+          "comparison": {
+            "width": 2880,
+            "height": 1800,
+            "changedPixels": 0,
+            "maximumChannelDelta": 0,
+            "changedFraction": 0,
+            "accepted": true
+          },
+          "repeatFirstSha256": "28981929133772bd506abb1a173f02d81eea148f487a54e759b660447c51fd7d",
+          "repeat": {
+            "width": 2880,
+            "height": 1800,
+            "changedPixels": 0,
+            "maximumChannelDelta": 0,
+            "changedFraction": 0,
+            "accepted": true
+          }
+        }
+      ]
+    },
+    {
+      "state": "t2-Data-light",
+      "mode": "linux-monocle-goldens",
+      "reviewSha256": "a802920498e0483c89a600ce5667144a48eeb5ca27c6f9b093f91e56fa9e1868",
+      "captures": [
+        {
+          "actual": "target/studio-snapshots/VisualParitySuite/t2-Data-light/light-1x.png",
+          "actualSha256": "80dea03dca9ac10fc35119b8735df96d8bb7d0413ad80c25d490625a2c048ecb",
+          "width": 1440,
+          "height": 900,
+          "baseline": "studio/desktop/src/test/resources/eyes4s/studio/desktop/visual-parity/t2-Data-light/light-1x.png",
+          "baselineSha256": "80dea03dca9ac10fc35119b8735df96d8bb7d0413ad80c25d490625a2c048ecb",
+          "comparison": {
+            "width": 1440,
+            "height": 900,
+            "changedPixels": 0,
+            "maximumChannelDelta": 0,
+            "changedFraction": 0,
+            "accepted": true
+          },
+          "repeatFirstSha256": "80dea03dca9ac10fc35119b8735df96d8bb7d0413ad80c25d490625a2c048ecb",
+          "repeat": {
+            "width": 1440,
+            "height": 900,
+            "changedPixels": 0,
+            "maximumChannelDelta": 0,
+            "changedFraction": 0,
+            "accepted": true
+          }
+        },
+        {
+          "actual": "target/studio-snapshots/VisualParitySuite/t2-Data-light/light-2x.png",
+          "actualSha256": "eaa73a0eb0590c4ab288310b6e730cd985e6c30cc6d466143ff59c7cee9ce473",
+          "width": 2880,
+          "height": 1800,
+          "baseline": "studio/desktop/src/test/resources/eyes4s/studio/desktop/visual-parity/t2-Data-light/light-2x.png",
+          "baselineSha256": "eaa73a0eb0590c4ab288310b6e730cd985e6c30cc6d466143ff59c7cee9ce473",
+          "comparison": {
+            "width": 2880,
+            "height": 1800,
+            "changedPixels": 0,
+            "maximumChannelDelta": 0,
+            "changedFraction": 0,
+            "accepted": true
+          },
+          "repeatFirstSha256": "eaa73a0eb0590c4ab288310b6e730cd985e6c30cc6d466143ff59c7cee9ce473",
+          "repeat": {
+            "width": 2880,
+            "height": 1800,
+            "changedPixels": 0,
+            "maximumChannelDelta": 0,
+            "changedFraction": 0,
+            "accepted": true
+          }
+        }
+      ]
+    },
+    {
+      "state": "t2-Data-dark",
+      "mode": "linux-monocle-goldens",
+      "reviewSha256": "6f34bff0457b0be1fc9ce81bf87fdb2677d699aa9bc72e02c053e1e624f6fe6f",
+      "captures": [
+        {
+          "actual": "target/studio-snapshots/VisualParitySuite/t2-Data-dark/dark-1x.png",
+          "actualSha256": "a1d3b098e7594b02a8595f41a6d680d52621ebe63dfd210fff5303d0ccf9136d",
+          "width": 1440,
+          "height": 900,
+          "baseline": "studio/desktop/src/test/resources/eyes4s/studio/desktop/visual-parity/t2-Data-dark/dark-1x.png",
+          "baselineSha256": "a1d3b098e7594b02a8595f41a6d680d52621ebe63dfd210fff5303d0ccf9136d",
+          "comparison": {
+            "width": 1440,
+            "height": 900,
+            "changedPixels": 0,
+            "maximumChannelDelta": 0,
+            "changedFraction": 0,
+            "accepted": true
+          },
+          "repeatFirstSha256": "a1d3b098e7594b02a8595f41a6d680d52621ebe63dfd210fff5303d0ccf9136d",
+          "repeat": {
+            "width": 1440,
+            "height": 900,
+            "changedPixels": 0,
+            "maximumChannelDelta": 0,
+            "changedFraction": 0,
+            "accepted": true
+          }
+        },
+        {
+          "actual": "target/studio-snapshots/VisualParitySuite/t2-Data-dark/dark-2x.png",
+          "actualSha256": "f7844db8cfc5abe5a6533bdb67b3cb03fb755a6fc2adfad38a71d3d77ad11852",
+          "width": 2880,
+          "height": 1800,
+          "baseline": "studio/desktop/src/test/resources/eyes4s/studio/desktop/visual-parity/t2-Data-dark/dark-2x.png",
+          "baselineSha256": "f7844db8cfc5abe5a6533bdb67b3cb03fb755a6fc2adfad38a71d3d77ad11852",
+          "comparison": {
+            "width": 2880,
+            "height": 1800,
+            "changedPixels": 0,
+            "maximumChannelDelta": 0,
+            "changedFraction": 0,
+            "accepted": true
+          },
+          "repeatFirstSha256": "f7844db8cfc5abe5a6533bdb67b3cb03fb755a6fc2adfad38a71d3d77ad11852",
+          "repeat": {
+            "width": 2880,
+            "height": 1800,
+            "changedPixels": 0,
+            "maximumChannelDelta": 0,
+            "changedFraction": 0,
+            "accepted": true
+          }
+        }
+      ]
+    },
+    {
+      "state": "t2-Explore-light",
+      "mode": "linux-monocle-goldens",
+      "reviewSha256": "700bc61b53d40f982421c34368d6cb4a8777cb3f798b0ac0d43f8c8470448992",
+      "captures": [
+        {
+          "actual": "target/studio-snapshots/VisualParitySuite/t2-Explore-light/light-1x.png",
+          "actualSha256": "449b2f1fea141dbb1ef529bdd1a502fca5975a40b17a8676a9564dcd2964271b",
+          "width": 1440,
+          "height": 900,
+          "baseline": "studio/desktop/src/test/resources/eyes4s/studio/desktop/visual-parity/t2-Explore-light/light-1x.png",
+          "baselineSha256": "cf54614e4a1cc940ba27cc562d56349086e4333c8e05c7700caebbe0e9d8e3ff",
+          "comparison": {
+            "width": 1440,
+            "height": 900,
+            "changedPixels": 344,
+            "maximumChannelDelta": 1,
+            "changedFraction": 0.0002654320987654321,
+            "accepted": true
+          },
+          "repeatFirstSha256": "449b2f1fea141dbb1ef529bdd1a502fca5975a40b17a8676a9564dcd2964271b",
+          "repeat": {
+            "width": 1440,
+            "height": 900,
+            "changedPixels": 0,
+            "maximumChannelDelta": 0,
+            "changedFraction": 0,
+            "accepted": true
+          }
+        },
+        {
+          "actual": "target/studio-snapshots/VisualParitySuite/t2-Explore-light/light-2x.png",
+          "actualSha256": "8ed269355cfdcc873a724d6dc0fa8d22197ad3e828bd9182794eb295bb5704ab",
+          "width": 2880,
+          "height": 1800,
+          "baseline": "studio/desktop/src/test/resources/eyes4s/studio/desktop/visual-parity/t2-Explore-light/light-2x.png",
+          "baselineSha256": "8ed269355cfdcc873a724d6dc0fa8d22197ad3e828bd9182794eb295bb5704ab",
+          "comparison": {
+            "width": 2880,
+            "height": 1800,
+            "changedPixels": 0,
+            "maximumChannelDelta": 0,
+            "changedFraction": 0,
+            "accepted": true
+          },
+          "repeatFirstSha256": "8ed269355cfdcc873a724d6dc0fa8d22197ad3e828bd9182794eb295bb5704ab",
+          "repeat": {
+            "width": 2880,
+            "height": 1800,
+            "changedPixels": 0,
+            "maximumChannelDelta": 0,
+            "changedFraction": 0,
+            "accepted": true
+          }
+        }
+      ]
+    },
+    {
+      "state": "t2-Explore-dark",
+      "mode": "linux-monocle-goldens",
+      "reviewSha256": "4de4cadc6b52304f2a5faefcf7d6ae6ba9ab7ed85091e43691d4ad3ca10ba0e1",
+      "captures": [
+        {
+          "actual": "target/studio-snapshots/VisualParitySuite/t2-Explore-dark/dark-1x.png",
+          "actualSha256": "249a8ca736399b9cbf97a863e2aaf58558921855a6d66d1531a65293119e2038",
+          "width": 1440,
+          "height": 900,
+          "baseline": "studio/desktop/src/test/resources/eyes4s/studio/desktop/visual-parity/t2-Explore-dark/dark-1x.png",
+          "baselineSha256": "249a8ca736399b9cbf97a863e2aaf58558921855a6d66d1531a65293119e2038",
+          "comparison": {
+            "width": 1440,
+            "height": 900,
+            "changedPixels": 0,
+            "maximumChannelDelta": 0,
+            "changedFraction": 0,
+            "accepted": true
+          },
+          "repeatFirstSha256": "249a8ca736399b9cbf97a863e2aaf58558921855a6d66d1531a65293119e2038",
+          "repeat": {
+            "width": 1440,
+            "height": 900,
+            "changedPixels": 0,
+            "maximumChannelDelta": 0,
+            "changedFraction": 0,
+            "accepted": true
+          }
+        },
+        {
+          "actual": "target/studio-snapshots/VisualParitySuite/t2-Explore-dark/dark-2x.png",
+          "actualSha256": "0abc66bbf12eb62d773e4c468a57c1f28de34d01f19d8bdb54da56d4959ab728",
+          "width": 2880,
+          "height": 1800,
+          "baseline": "studio/desktop/src/test/resources/eyes4s/studio/desktop/visual-parity/t2-Explore-dark/dark-2x.png",
+          "baselineSha256": "0abc66bbf12eb62d773e4c468a57c1f28de34d01f19d8bdb54da56d4959ab728",
+          "comparison": {
+            "width": 2880,
+            "height": 1800,
+            "changedPixels": 0,
+            "maximumChannelDelta": 0,
+            "changedFraction": 0,
+            "accepted": true
+          },
+          "repeatFirstSha256": "0abc66bbf12eb62d773e4c468a57c1f28de34d01f19d8bdb54da56d4959ab728",
+          "repeat": {
+            "width": 2880,
+            "height": 1800,
+            "changedPixels": 0,
+            "maximumChannelDelta": 0,
+            "changedFraction": 0,
+            "accepted": true
+          }
+        }
+      ]
+    },
+    {
+      "state": "t2-Analysis-light",
+      "mode": "linux-monocle-goldens",
+      "reviewSha256": "d1e68731de7ac5b860640d79ddb87ac8a65aa59d10d38773b3abffa9b523e4d5",
+      "captures": [
+        {
+          "actual": "target/studio-snapshots/VisualParitySuite/t2-Analysis-light/light-1x.png",
+          "actualSha256": "97e660bf3a558d1cf3803237c071e72ea48ba2eef1f2972cd244a96ea4b7219f",
+          "width": 1440,
+          "height": 900,
+          "baseline": "studio/desktop/src/test/resources/eyes4s/studio/desktop/visual-parity/t2-Analysis-light/light-1x.png",
+          "baselineSha256": "97e660bf3a558d1cf3803237c071e72ea48ba2eef1f2972cd244a96ea4b7219f",
+          "comparison": {
+            "width": 1440,
+            "height": 900,
+            "changedPixels": 0,
+            "maximumChannelDelta": 0,
+            "changedFraction": 0,
+            "accepted": true
+          },
+          "repeatFirstSha256": "97e660bf3a558d1cf3803237c071e72ea48ba2eef1f2972cd244a96ea4b7219f",
+          "repeat": {
+            "width": 1440,
+            "height": 900,
+            "changedPixels": 0,
+            "maximumChannelDelta": 0,
+            "changedFraction": 0,
+            "accepted": true
+          }
+        },
+        {
+          "actual": "target/studio-snapshots/VisualParitySuite/t2-Analysis-light/light-2x.png",
+          "actualSha256": "127a23071a52c8a2a98c3df33dbeeac1e2a39de757a7fb9c34c424f165525017",
+          "width": 2880,
+          "height": 1800,
+          "baseline": "studio/desktop/src/test/resources/eyes4s/studio/desktop/visual-parity/t2-Analysis-light/light-2x.png",
+          "baselineSha256": "127a23071a52c8a2a98c3df33dbeeac1e2a39de757a7fb9c34c424f165525017",
+          "comparison": {
+            "width": 2880,
+            "height": 1800,
+            "changedPixels": 0,
+            "maximumChannelDelta": 0,
+            "changedFraction": 0,
+            "accepted": true
+          },
+          "repeatFirstSha256": "127a23071a52c8a2a98c3df33dbeeac1e2a39de757a7fb9c34c424f165525017",
+          "repeat": {
+            "width": 2880,
+            "height": 1800,
+            "changedPixels": 0,
+            "maximumChannelDelta": 0,
+            "changedFraction": 0,
+            "accepted": true
+          }
+        }
+      ]
+    },
+    {
+      "state": "t2-Analysis-dark",
+      "mode": "linux-monocle-goldens",
+      "reviewSha256": "28363257aab3e5cb2f921da644bcc6f53f8694db4ee74a5b805e5e70ced46ac4",
+      "captures": [
+        {
+          "actual": "target/studio-snapshots/VisualParitySuite/t2-Analysis-dark/dark-1x.png",
+          "actualSha256": "89efc11422f362cddbb75f82bf60753ed57ce8d8feb4248f4df8d67dfaf645a5",
+          "width": 1440,
+          "height": 900,
+          "baseline": "studio/desktop/src/test/resources/eyes4s/studio/desktop/visual-parity/t2-Analysis-dark/dark-1x.png",
+          "baselineSha256": "89efc11422f362cddbb75f82bf60753ed57ce8d8feb4248f4df8d67dfaf645a5",
+          "comparison": {
+            "width": 1440,
+            "height": 900,
+            "changedPixels": 0,
+            "maximumChannelDelta": 0,
+            "changedFraction": 0,
+            "accepted": true
+          },
+          "repeatFirstSha256": "89efc11422f362cddbb75f82bf60753ed57ce8d8feb4248f4df8d67dfaf645a5",
+          "repeat": {
+            "width": 1440,
+            "height": 900,
+            "changedPixels": 0,
+            "maximumChannelDelta": 0,
+            "changedFraction": 0,
+            "accepted": true
+          }
+        },
+        {
+          "actual": "target/studio-snapshots/VisualParitySuite/t2-Analysis-dark/dark-2x.png",
+          "actualSha256": "6f303ecec4282cd7247c829dc683414e3c92c2a999d88d8e05edd8b7224c5c82",
+          "width": 2880,
+          "height": 1800,
+          "baseline": "studio/desktop/src/test/resources/eyes4s/studio/desktop/visual-parity/t2-Analysis-dark/dark-2x.png",
+          "baselineSha256": "6f303ecec4282cd7247c829dc683414e3c92c2a999d88d8e05edd8b7224c5c82",
+          "comparison": {
+            "width": 2880,
+            "height": 1800,
+            "changedPixels": 0,
+            "maximumChannelDelta": 0,
+            "changedFraction": 0,
+            "accepted": true
+          },
+          "repeatFirstSha256": "6f303ecec4282cd7247c829dc683414e3c92c2a999d88d8e05edd8b7224c5c82",
+          "repeat": {
+            "width": 2880,
+            "height": 1800,
+            "changedPixels": 0,
+            "maximumChannelDelta": 0,
+            "changedFraction": 0,
+            "accepted": true
+          }
+        }
+      ]
+    },
+    {
+      "state": "t2-Compare-light",
+      "mode": "linux-monocle-goldens",
+      "reviewSha256": "7849d74ba10e389a45cfd365b37ee6ae35ea133ec6772e6be41293ed998d6034",
+      "captures": [
+        {
+          "actual": "target/studio-snapshots/VisualParitySuite/t2-Compare-light/light-1x.png",
+          "actualSha256": "1de2cc448a7ea8f8c83c46f8b8e517010f23b5424b69725cc8322d2bbb82594e",
+          "width": 1440,
+          "height": 900,
+          "baseline": "studio/desktop/src/test/resources/eyes4s/studio/desktop/visual-parity/t2-Compare-light/light-1x.png",
+          "baselineSha256": "1de2cc448a7ea8f8c83c46f8b8e517010f23b5424b69725cc8322d2bbb82594e",
+          "comparison": {
+            "width": 1440,
+            "height": 900,
+            "changedPixels": 0,
+            "maximumChannelDelta": 0,
+            "changedFraction": 0,
+            "accepted": true
+          },
+          "repeatFirstSha256": "1de2cc448a7ea8f8c83c46f8b8e517010f23b5424b69725cc8322d2bbb82594e",
+          "repeat": {
+            "width": 1440,
+            "height": 900,
+            "changedPixels": 0,
+            "maximumChannelDelta": 0,
+            "changedFraction": 0,
+            "accepted": true
+          }
+        },
+        {
+          "actual": "target/studio-snapshots/VisualParitySuite/t2-Compare-light/light-2x.png",
+          "actualSha256": "02d8b7b7af3f1f75161352393ebd205d40014cbdd47e138161630ed14d63bf1e",
+          "width": 2880,
+          "height": 1800,
+          "baseline": "studio/desktop/src/test/resources/eyes4s/studio/desktop/visual-parity/t2-Compare-light/light-2x.png",
+          "baselineSha256": "02d8b7b7af3f1f75161352393ebd205d40014cbdd47e138161630ed14d63bf1e",
+          "comparison": {
+            "width": 2880,
+            "height": 1800,
+            "changedPixels": 0,
+            "maximumChannelDelta": 0,
+            "changedFraction": 0,
+            "accepted": true
+          },
+          "repeatFirstSha256": "02d8b7b7af3f1f75161352393ebd205d40014cbdd47e138161630ed14d63bf1e",
+          "repeat": {
+            "width": 2880,
+            "height": 1800,
+            "changedPixels": 0,
+            "maximumChannelDelta": 0,
+            "changedFraction": 0,
+            "accepted": true
+          }
+        }
+      ]
+    },
+    {
+      "state": "t2-Compare-dark",
+      "mode": "linux-monocle-goldens",
+      "reviewSha256": "83df4214bf3266341dd811d197e7ce6e1802a1c6a270b7da8e9df33f99e92e90",
+      "captures": [
+        {
+          "actual": "target/studio-snapshots/VisualParitySuite/t2-Compare-dark/dark-1x.png",
+          "actualSha256": "3b47d4a962dd2100800a28d9590f3016c47ae7d06f7aa2a656d27e0645c63c8c",
+          "width": 1440,
+          "height": 900,
+          "baseline": "studio/desktop/src/test/resources/eyes4s/studio/desktop/visual-parity/t2-Compare-dark/dark-1x.png",
+          "baselineSha256": "3b47d4a962dd2100800a28d9590f3016c47ae7d06f7aa2a656d27e0645c63c8c",
+          "comparison": {
+            "width": 1440,
+            "height": 900,
+            "changedPixels": 0,
+            "maximumChannelDelta": 0,
+            "changedFraction": 0,
+            "accepted": true
+          },
+          "repeatFirstSha256": "3b47d4a962dd2100800a28d9590f3016c47ae7d06f7aa2a656d27e0645c63c8c",
+          "repeat": {
+            "width": 1440,
+            "height": 900,
+            "changedPixels": 0,
+            "maximumChannelDelta": 0,
+            "changedFraction": 0,
+            "accepted": true
+          }
+        },
+        {
+          "actual": "target/studio-snapshots/VisualParitySuite/t2-Compare-dark/dark-2x.png",
+          "actualSha256": "1851fd3bac43523d37438ce99600cb73c4571cc73ad964b0382e3631bddae677",
+          "width": 2880,
+          "height": 1800,
+          "baseline": "studio/desktop/src/test/resources/eyes4s/studio/desktop/visual-parity/t2-Compare-dark/dark-2x.png",
+          "baselineSha256": "1851fd3bac43523d37438ce99600cb73c4571cc73ad964b0382e3631bddae677",
+          "comparison": {
+            "width": 2880,
+            "height": 1800,
+            "changedPixels": 0,
+            "maximumChannelDelta": 0,
+            "changedFraction": 0,
+            "accepted": true
+          },
+          "repeatFirstSha256": "1851fd3bac43523d37438ce99600cb73c4571cc73ad964b0382e3631bddae677",
+          "repeat": {
+            "width": 2880,
+            "height": 1800,
+            "changedPixels": 0,
+            "maximumChannelDelta": 0,
+            "changedFraction": 0,
+            "accepted": true
+          }
+        }
+      ]
+    },
+    {
+      "state": "t2-Figures-light",
+      "mode": "linux-monocle-goldens",
+      "reviewSha256": "9e0d6a230bfbbddec9177bc08711ad2ec0d082d3420f920fc19968cade927682",
+      "captures": [
+        {
+          "actual": "target/studio-snapshots/VisualParitySuite/t2-Figures-light/light-1x.png",
+          "actualSha256": "8c1f32edc35ef9b5450aeabc3b8e31bc01ce7ef8de7993d908cb9b716c5c395e",
+          "width": 1440,
+          "height": 900,
+          "baseline": "studio/desktop/src/test/resources/eyes4s/studio/desktop/visual-parity/t2-Figures-light/light-1x.png",
+          "baselineSha256": "8c1f32edc35ef9b5450aeabc3b8e31bc01ce7ef8de7993d908cb9b716c5c395e",
+          "comparison": {
+            "width": 1440,
+            "height": 900,
+            "changedPixels": 0,
+            "maximumChannelDelta": 0,
+            "changedFraction": 0,
+            "accepted": true
+          },
+          "repeatFirstSha256": "8c1f32edc35ef9b5450aeabc3b8e31bc01ce7ef8de7993d908cb9b716c5c395e",
+          "repeat": {
+            "width": 1440,
+            "height": 900,
+            "changedPixels": 0,
+            "maximumChannelDelta": 0,
+            "changedFraction": 0,
+            "accepted": true
+          }
+        },
+        {
+          "actual": "target/studio-snapshots/VisualParitySuite/t2-Figures-light/light-2x.png",
+          "actualSha256": "f5cfab8ccfbad718118e3277af87b97332b3953f8e9eeae5938494efae0bd810",
+          "width": 2880,
+          "height": 1800,
+          "baseline": "studio/desktop/src/test/resources/eyes4s/studio/desktop/visual-parity/t2-Figures-light/light-2x.png",
+          "baselineSha256": "f5cfab8ccfbad718118e3277af87b97332b3953f8e9eeae5938494efae0bd810",
+          "comparison": {
+            "width": 2880,
+            "height": 1800,
+            "changedPixels": 0,
+            "maximumChannelDelta": 0,
+            "changedFraction": 0,
+            "accepted": true
+          },
+          "repeatFirstSha256": "f5cfab8ccfbad718118e3277af87b97332b3953f8e9eeae5938494efae0bd810",
+          "repeat": {
+            "width": 2880,
+            "height": 1800,
+            "changedPixels": 0,
+            "maximumChannelDelta": 0,
+            "changedFraction": 0,
+            "accepted": true
+          }
+        }
+      ]
+    },
+    {
+      "state": "t2-Figures-dark",
+      "mode": "linux-monocle-goldens",
+      "reviewSha256": "fb6a82087902fca86b360ceae71b21def0e89d1470ccbb2fd2b717c765837a1d",
+      "captures": [
+        {
+          "actual": "target/studio-snapshots/VisualParitySuite/t2-Figures-dark/dark-1x.png",
+          "actualSha256": "c69a7ed731e33ec7d6b59b5290975cb65857a3abfa20fdebf1b67da1cf6cb07e",
+          "width": 1440,
+          "height": 900,
+          "baseline": "studio/desktop/src/test/resources/eyes4s/studio/desktop/visual-parity/t2-Figures-dark/dark-1x.png",
+          "baselineSha256": "c69a7ed731e33ec7d6b59b5290975cb65857a3abfa20fdebf1b67da1cf6cb07e",
+          "comparison": {
+            "width": 1440,
+            "height": 900,
+            "changedPixels": 0,
+            "maximumChannelDelta": 0,
+            "changedFraction": 0,
+            "accepted": true
+          },
+          "repeatFirstSha256": "c69a7ed731e33ec7d6b59b5290975cb65857a3abfa20fdebf1b67da1cf6cb07e",
+          "repeat": {
+            "width": 1440,
+            "height": 900,
+            "changedPixels": 0,
+            "maximumChannelDelta": 0,
+            "changedFraction": 0,
+            "accepted": true
+          }
+        },
+        {
+          "actual": "target/studio-snapshots/VisualParitySuite/t2-Figures-dark/dark-2x.png",
+          "actualSha256": "43a37dbf0c1a00b6ab687656beb963cf49e07ff35eeb3d2f9f9b5b226d141d7b",
+          "width": 2880,
+          "height": 1800,
+          "baseline": "studio/desktop/src/test/resources/eyes4s/studio/desktop/visual-parity/t2-Figures-dark/dark-2x.png",
+          "baselineSha256": "43a37dbf0c1a00b6ab687656beb963cf49e07ff35eeb3d2f9f9b5b226d141d7b",
+          "comparison": {
+            "width": 2880,
+            "height": 1800,
+            "changedPixels": 0,
+            "maximumChannelDelta": 0,
+            "changedFraction": 0,
+            "accepted": true
+          },
+          "repeatFirstSha256": "43a37dbf0c1a00b6ab687656beb963cf49e07ff35eeb3d2f9f9b5b226d141d7b",
+          "repeat": {
+            "width": 2880,
+            "height": 1800,
+            "changedPixels": 0,
+            "maximumChannelDelta": 0,
+            "changedFraction": 0,
+            "accepted": true
+          }
+        }
+      ]
+    },
+    {
+      "state": "t3-Data-light",
+      "mode": "linux-monocle-goldens",
+      "reviewSha256": "de391ea04a76f06004364a1017e4814538bb98f19739b4379f87d62e7908b4c9",
+      "captures": [
+        {
+          "actual": "target/studio-snapshots/VisualParitySuite/t3-Data-light/light-1x.png",
+          "actualSha256": "6716ffd9bc15c4d21708c207b8e7193e60b0dc0889e56cbd2447f176d999dbcf",
+          "width": 1440,
+          "height": 900,
+          "baseline": "studio/desktop/src/test/resources/eyes4s/studio/desktop/visual-parity/t3-Data-light/light-1x.png",
+          "baselineSha256": "6716ffd9bc15c4d21708c207b8e7193e60b0dc0889e56cbd2447f176d999dbcf",
+          "comparison": {
+            "width": 1440,
+            "height": 900,
+            "changedPixels": 0,
+            "maximumChannelDelta": 0,
+            "changedFraction": 0,
+            "accepted": true
+          },
+          "repeatFirstSha256": "6716ffd9bc15c4d21708c207b8e7193e60b0dc0889e56cbd2447f176d999dbcf",
+          "repeat": {
+            "width": 1440,
+            "height": 900,
+            "changedPixels": 0,
+            "maximumChannelDelta": 0,
+            "changedFraction": 0,
+            "accepted": true
+          }
+        },
+        {
+          "actual": "target/studio-snapshots/VisualParitySuite/t3-Data-light/light-2x.png",
+          "actualSha256": "3cf51511e628854fe3dc7c08820693fe4e5bfd2ebdb7b981f7edce19de18f184",
+          "width": 2880,
+          "height": 1800,
+          "baseline": "studio/desktop/src/test/resources/eyes4s/studio/desktop/visual-parity/t3-Data-light/light-2x.png",
+          "baselineSha256": "3cf51511e628854fe3dc7c08820693fe4e5bfd2ebdb7b981f7edce19de18f184",
+          "comparison": {
+            "width": 2880,
+            "height": 1800,
+            "changedPixels": 0,
+            "maximumChannelDelta": 0,
+            "changedFraction": 0,
+            "accepted": true
+          },
+          "repeatFirstSha256": "3cf51511e628854fe3dc7c08820693fe4e5bfd2ebdb7b981f7edce19de18f184",
+          "repeat": {
+            "width": 2880,
+            "height": 1800,
+            "changedPixels": 0,
+            "maximumChannelDelta": 0,
+            "changedFraction": 0,
+            "accepted": true
+          }
+        }
+      ]
+    },
+    {
+      "state": "t3-Data-dark",
+      "mode": "linux-monocle-goldens",
+      "reviewSha256": "31ed7962d3edf7a6f3341b233ad69b318269bd379ea98d65a2764438cedcf21d",
+      "captures": [
+        {
+          "actual": "target/studio-snapshots/VisualParitySuite/t3-Data-dark/dark-1x.png",
+          "actualSha256": "9cb1fb4d7e2615b493c9638c14901db73ead3e28f4d884e8759192af34d5c7f0",
+          "width": 1440,
+          "height": 900,
+          "baseline": "studio/desktop/src/test/resources/eyes4s/studio/desktop/visual-parity/t3-Data-dark/dark-1x.png",
+          "baselineSha256": "9cb1fb4d7e2615b493c9638c14901db73ead3e28f4d884e8759192af34d5c7f0",
+          "comparison": {
+            "width": 1440,
+            "height": 900,
+            "changedPixels": 0,
+            "maximumChannelDelta": 0,
+            "changedFraction": 0,
+            "accepted": true
+          },
+          "repeatFirstSha256": "9cb1fb4d7e2615b493c9638c14901db73ead3e28f4d884e8759192af34d5c7f0",
+          "repeat": {
+            "width": 1440,
+            "height": 900,
+            "changedPixels": 0,
+            "maximumChannelDelta": 0,
+            "changedFraction": 0,
+            "accepted": true
+          }
+        },
+        {
+          "actual": "target/studio-snapshots/VisualParitySuite/t3-Data-dark/dark-2x.png",
+          "actualSha256": "792b9b907f7dab20a888432bed5360a8cc1cbc2612890988ed36cf3e27cd5d41",
+          "width": 2880,
+          "height": 1800,
+          "baseline": "studio/desktop/src/test/resources/eyes4s/studio/desktop/visual-parity/t3-Data-dark/dark-2x.png",
+          "baselineSha256": "792b9b907f7dab20a888432bed5360a8cc1cbc2612890988ed36cf3e27cd5d41",
+          "comparison": {
+            "width": 2880,
+            "height": 1800,
+            "changedPixels": 0,
+            "maximumChannelDelta": 0,
+            "changedFraction": 0,
+            "accepted": true
+          },
+          "repeatFirstSha256": "792b9b907f7dab20a888432bed5360a8cc1cbc2612890988ed36cf3e27cd5d41",
+          "repeat": {
+            "width": 2880,
+            "height": 1800,
+            "changedPixels": 0,
+            "maximumChannelDelta": 0,
+            "changedFraction": 0,
+            "accepted": true
+          }
+        }
+      ]
+    },
+    {
+      "state": "t3-Explore-light",
+      "mode": "linux-monocle-goldens",
+      "reviewSha256": "3688cbf33e8ab054a686ec3882f79ba7398afa08733aed1de2f43441ba849ec7",
+      "captures": [
+        {
+          "actual": "target/studio-snapshots/VisualParitySuite/t3-Explore-light/light-1x.png",
+          "actualSha256": "8e7bcc75b89d12d45b46d18a9cb7ec11b816d6c5609a11e83e6bcedfd536a96c",
+          "width": 1440,
+          "height": 900,
+          "baseline": "studio/desktop/src/test/resources/eyes4s/studio/desktop/visual-parity/t3-Explore-light/light-1x.png",
+          "baselineSha256": "207351bcc02b690511b1204d519fc06dd6f07422eeeacefbb4ff0792ca3dd45c",
+          "comparison": {
+            "width": 1440,
+            "height": 900,
+            "changedPixels": 92,
+            "maximumChannelDelta": 1,
+            "changedFraction": 7.098765432098765e-05,
+            "accepted": true
+          },
+          "repeatFirstSha256": "8e7bcc75b89d12d45b46d18a9cb7ec11b816d6c5609a11e83e6bcedfd536a96c",
+          "repeat": {
+            "width": 1440,
+            "height": 900,
+            "changedPixels": 0,
+            "maximumChannelDelta": 0,
+            "changedFraction": 0,
+            "accepted": true
+          }
+        },
+        {
+          "actual": "target/studio-snapshots/VisualParitySuite/t3-Explore-light/light-2x.png",
+          "actualSha256": "5dfeb963f6ca3dcc60a4c5134fda2ffc3ce797d353fa5cabe39407a98e29953e",
+          "width": 2880,
+          "height": 1800,
+          "baseline": "studio/desktop/src/test/resources/eyes4s/studio/desktop/visual-parity/t3-Explore-light/light-2x.png",
+          "baselineSha256": "5dfeb963f6ca3dcc60a4c5134fda2ffc3ce797d353fa5cabe39407a98e29953e",
+          "comparison": {
+            "width": 2880,
+            "height": 1800,
+            "changedPixels": 0,
+            "maximumChannelDelta": 0,
+            "changedFraction": 0,
+            "accepted": true
+          },
+          "repeatFirstSha256": "5dfeb963f6ca3dcc60a4c5134fda2ffc3ce797d353fa5cabe39407a98e29953e",
+          "repeat": {
+            "width": 2880,
+            "height": 1800,
+            "changedPixels": 0,
+            "maximumChannelDelta": 0,
+            "changedFraction": 0,
+            "accepted": true
+          }
+        }
+      ]
+    },
+    {
+      "state": "t3-Explore-dark",
+      "mode": "linux-monocle-goldens",
+      "reviewSha256": "41e0cf472f9ac6d0a0a586566179da036e392e32108d85e44cd4f395b3f8bfba",
+      "captures": [
+        {
+          "actual": "target/studio-snapshots/VisualParitySuite/t3-Explore-dark/dark-1x.png",
+          "actualSha256": "bd72ceb2779df52aa8fe7b4311fc84afba8ab0fc9f65f5ec53e5c8053efe83c1",
+          "width": 1440,
+          "height": 900,
+          "baseline": "studio/desktop/src/test/resources/eyes4s/studio/desktop/visual-parity/t3-Explore-dark/dark-1x.png",
+          "baselineSha256": "bd72ceb2779df52aa8fe7b4311fc84afba8ab0fc9f65f5ec53e5c8053efe83c1",
+          "comparison": {
+            "width": 1440,
+            "height": 900,
+            "changedPixels": 0,
+            "maximumChannelDelta": 0,
+            "changedFraction": 0,
+            "accepted": true
+          },
+          "repeatFirstSha256": "bd72ceb2779df52aa8fe7b4311fc84afba8ab0fc9f65f5ec53e5c8053efe83c1",
+          "repeat": {
+            "width": 1440,
+            "height": 900,
+            "changedPixels": 0,
+            "maximumChannelDelta": 0,
+            "changedFraction": 0,
+            "accepted": true
+          }
+        },
+        {
+          "actual": "target/studio-snapshots/VisualParitySuite/t3-Explore-dark/dark-2x.png",
+          "actualSha256": "fa49cdd20a4c5db9b867cc837e25a1c2c23f2c5565be2617de3b066e3ae46b24",
+          "width": 2880,
+          "height": 1800,
+          "baseline": "studio/desktop/src/test/resources/eyes4s/studio/desktop/visual-parity/t3-Explore-dark/dark-2x.png",
+          "baselineSha256": "fa49cdd20a4c5db9b867cc837e25a1c2c23f2c5565be2617de3b066e3ae46b24",
+          "comparison": {
+            "width": 2880,
+            "height": 1800,
+            "changedPixels": 0,
+            "maximumChannelDelta": 0,
+            "changedFraction": 0,
+            "accepted": true
+          },
+          "repeatFirstSha256": "fa49cdd20a4c5db9b867cc837e25a1c2c23f2c5565be2617de3b066e3ae46b24",
+          "repeat": {
+            "width": 2880,
+            "height": 1800,
+            "changedPixels": 0,
+            "maximumChannelDelta": 0,
+            "changedFraction": 0,
+            "accepted": true
+          }
+        }
+      ]
+    },
+    {
+      "state": "t3-Analysis-light",
+      "mode": "linux-monocle-goldens",
+      "reviewSha256": "02539cfeddbceaef6bb3c8e133b7efebccaf1c48d6d8530b737c3cf6bbe101ab",
+      "captures": [
+        {
+          "actual": "target/studio-snapshots/VisualParitySuite/t3-Analysis-light/light-1x.png",
+          "actualSha256": "e5382e660cae01d712b9cd6ebea66e3b5037337f3ec3342231900ead96acbfb3",
+          "width": 1440,
+          "height": 900,
+          "baseline": "studio/desktop/src/test/resources/eyes4s/studio/desktop/visual-parity/t3-Analysis-light/light-1x.png",
+          "baselineSha256": "e5382e660cae01d712b9cd6ebea66e3b5037337f3ec3342231900ead96acbfb3",
+          "comparison": {
+            "width": 1440,
+            "height": 900,
+            "changedPixels": 0,
+            "maximumChannelDelta": 0,
+            "changedFraction": 0,
+            "accepted": true
+          },
+          "repeatFirstSha256": "e5382e660cae01d712b9cd6ebea66e3b5037337f3ec3342231900ead96acbfb3",
+          "repeat": {
+            "width": 1440,
+            "height": 900,
+            "changedPixels": 0,
+            "maximumChannelDelta": 0,
+            "changedFraction": 0,
+            "accepted": true
+          }
+        },
+        {
+          "actual": "target/studio-snapshots/VisualParitySuite/t3-Analysis-light/light-2x.png",
+          "actualSha256": "0efa8d57634db072404ba1b7ba6299e35ecd96031b4847c9de224a63520b6daa",
+          "width": 2880,
+          "height": 1800,
+          "baseline": "studio/desktop/src/test/resources/eyes4s/studio/desktop/visual-parity/t3-Analysis-light/light-2x.png",
+          "baselineSha256": "0efa8d57634db072404ba1b7ba6299e35ecd96031b4847c9de224a63520b6daa",
+          "comparison": {
+            "width": 2880,
+            "height": 1800,
+            "changedPixels": 0,
+            "maximumChannelDelta": 0,
+            "changedFraction": 0,
+            "accepted": true
+          },
+          "repeatFirstSha256": "0efa8d57634db072404ba1b7ba6299e35ecd96031b4847c9de224a63520b6daa",
+          "repeat": {
+            "width": 2880,
+            "height": 1800,
+            "changedPixels": 0,
+            "maximumChannelDelta": 0,
+            "changedFraction": 0,
+            "accepted": true
+          }
+        }
+      ]
+    },
+    {
+      "state": "t3-Analysis-dark",
+      "mode": "linux-monocle-goldens",
+      "reviewSha256": "25b84d0e19b2a3ed36ea622526959ce3419c42ba8e6e9ff9685bef992d628088",
+      "captures": [
+        {
+          "actual": "target/studio-snapshots/VisualParitySuite/t3-Analysis-dark/dark-1x.png",
+          "actualSha256": "005bd86793cc8b1375077a06f0a38502216f3c620f75f59a0a932784998bff66",
+          "width": 1440,
+          "height": 900,
+          "baseline": "studio/desktop/src/test/resources/eyes4s/studio/desktop/visual-parity/t3-Analysis-dark/dark-1x.png",
+          "baselineSha256": "005bd86793cc8b1375077a06f0a38502216f3c620f75f59a0a932784998bff66",
+          "comparison": {
+            "width": 1440,
+            "height": 900,
+            "changedPixels": 0,
+            "maximumChannelDelta": 0,
+            "changedFraction": 0,
+            "accepted": true
+          },
+          "repeatFirstSha256": "005bd86793cc8b1375077a06f0a38502216f3c620f75f59a0a932784998bff66",
+          "repeat": {
+            "width": 1440,
+            "height": 900,
+            "changedPixels": 0,
+            "maximumChannelDelta": 0,
+            "changedFraction": 0,
+            "accepted": true
+          }
+        },
+        {
+          "actual": "target/studio-snapshots/VisualParitySuite/t3-Analysis-dark/dark-2x.png",
+          "actualSha256": "090245d7349ce0c3ace94f2b479c503f53a0970dec54abc104d275ba53c6c791",
+          "width": 2880,
+          "height": 1800,
+          "baseline": "studio/desktop/src/test/resources/eyes4s/studio/desktop/visual-parity/t3-Analysis-dark/dark-2x.png",
+          "baselineSha256": "090245d7349ce0c3ace94f2b479c503f53a0970dec54abc104d275ba53c6c791",
+          "comparison": {
+            "width": 2880,
+            "height": 1800,
+            "changedPixels": 0,
+            "maximumChannelDelta": 0,
+            "changedFraction": 0,
+            "accepted": true
+          },
+          "repeatFirstSha256": "090245d7349ce0c3ace94f2b479c503f53a0970dec54abc104d275ba53c6c791",
+          "repeat": {
+            "width": 2880,
+            "height": 1800,
+            "changedPixels": 0,
+            "maximumChannelDelta": 0,
+            "changedFraction": 0,
+            "accepted": true
+          }
+        }
+      ]
+    },
+    {
+      "state": "t3-Compare-light",
+      "mode": "linux-monocle-goldens",
+      "reviewSha256": "9e7ad1f1a7ee67dacea93e6d6770009dd80c7539b12140be71f1197c518a3499",
+      "captures": [
+        {
+          "actual": "target/studio-snapshots/VisualParitySuite/t3-Compare-light/light-1x.png",
+          "actualSha256": "a7b7998f34bdcad2fc2d9e6c624bdc8aa0df3f863edf3c42db6eab7e79052dd3",
+          "width": 1440,
+          "height": 900,
+          "baseline": "studio/desktop/src/test/resources/eyes4s/studio/desktop/visual-parity/t3-Compare-light/light-1x.png",
+          "baselineSha256": "a7b7998f34bdcad2fc2d9e6c624bdc8aa0df3f863edf3c42db6eab7e79052dd3",
+          "comparison": {
+            "width": 1440,
+            "height": 900,
+            "changedPixels": 0,
+            "maximumChannelDelta": 0,
+            "changedFraction": 0,
+            "accepted": true
+          },
+          "repeatFirstSha256": "a7b7998f34bdcad2fc2d9e6c624bdc8aa0df3f863edf3c42db6eab7e79052dd3",
+          "repeat": {
+            "width": 1440,
+            "height": 900,
+            "changedPixels": 0,
+            "maximumChannelDelta": 0,
+            "changedFraction": 0,
+            "accepted": true
+          }
+        },
+        {
+          "actual": "target/studio-snapshots/VisualParitySuite/t3-Compare-light/light-2x.png",
+          "actualSha256": "afb02f475b7216fd1efe181200f56d4afdb6f8e1b4c264708d6f270a90f97412",
+          "width": 2880,
+          "height": 1800,
+          "baseline": "studio/desktop/src/test/resources/eyes4s/studio/desktop/visual-parity/t3-Compare-light/light-2x.png",
+          "baselineSha256": "31884b6b024f403357e66a5f5952d77fccecd2b4409a518dc3cf5ac6c4ac68b2",
+          "comparison": {
+            "width": 2880,
+            "height": 1800,
+            "changedPixels": 3012,
+            "maximumChannelDelta": 1,
+            "changedFraction": 0.0005810185185185185,
+            "accepted": true
+          },
+          "repeatFirstSha256": "afb02f475b7216fd1efe181200f56d4afdb6f8e1b4c264708d6f270a90f97412",
+          "repeat": {
+            "width": 2880,
+            "height": 1800,
+            "changedPixels": 0,
+            "maximumChannelDelta": 0,
+            "changedFraction": 0,
+            "accepted": true
+          }
+        }
+      ]
+    },
+    {
+      "state": "t3-Compare-dark",
+      "mode": "linux-monocle-goldens",
+      "reviewSha256": "205bfd8a7c4b0bd4dbee6845817f35f65f608a3a0951625b3b249b168d756be2",
+      "captures": [
+        {
+          "actual": "target/studio-snapshots/VisualParitySuite/t3-Compare-dark/dark-1x.png",
+          "actualSha256": "c8f3ed2c6079991b80cf4c5eb82a7a0f8bf922bd4343d4b675d40c37ba1def2f",
+          "width": 1440,
+          "height": 900,
+          "baseline": "studio/desktop/src/test/resources/eyes4s/studio/desktop/visual-parity/t3-Compare-dark/dark-1x.png",
+          "baselineSha256": "d7ab4e2e306489d211f1b1b66a7673027721492dd81aabacd0cba5dd237e7409",
+          "comparison": {
+            "width": 1440,
+            "height": 900,
+            "changedPixels": 117,
+            "maximumChannelDelta": 1,
+            "changedFraction": 9.027777777777777e-05,
+            "accepted": true
+          },
+          "repeatFirstSha256": "c8f3ed2c6079991b80cf4c5eb82a7a0f8bf922bd4343d4b675d40c37ba1def2f",
+          "repeat": {
+            "width": 1440,
+            "height": 900,
+            "changedPixels": 0,
+            "maximumChannelDelta": 0,
+            "changedFraction": 0,
+            "accepted": true
+          }
+        },
+        {
+          "actual": "target/studio-snapshots/VisualParitySuite/t3-Compare-dark/dark-2x.png",
+          "actualSha256": "315045811a962fa913610b72f1b10df720c78185c16dbaa77c7cc63be4d904e9",
+          "width": 2880,
+          "height": 1800,
+          "baseline": "studio/desktop/src/test/resources/eyes4s/studio/desktop/visual-parity/t3-Compare-dark/dark-2x.png",
+          "baselineSha256": "9843904550bee05f3e89d34071fe4cb1b15f8c03abf3bc5924df711314c6e9ad",
+          "comparison": {
+            "width": 2880,
+            "height": 1800,
+            "changedPixels": 3014,
+            "maximumChannelDelta": 1,
+            "changedFraction": 0.0005814043209876543,
+            "accepted": true
+          },
+          "repeatFirstSha256": "315045811a962fa913610b72f1b10df720c78185c16dbaa77c7cc63be4d904e9",
+          "repeat": {
+            "width": 2880,
+            "height": 1800,
+            "changedPixels": 0,
+            "maximumChannelDelta": 0,
+            "changedFraction": 0,
+            "accepted": true
+          }
+        }
+      ]
+    },
+    {
+      "state": "t3-Figures-light",
+      "mode": "linux-monocle-goldens",
+      "reviewSha256": "7088d7fa2bbd673cb8c8eed3549809b91655c9ca600022e2e5cf13975a7e54c5",
+      "captures": [
+        {
+          "actual": "target/studio-snapshots/VisualParitySuite/t3-Figures-light/light-1x.png",
+          "actualSha256": "96c9e7dec26894853eb603d3e6e489c799c0f7fcbe35ca940094744d965f6895",
+          "width": 1440,
+          "height": 900,
+          "baseline": "studio/desktop/src/test/resources/eyes4s/studio/desktop/visual-parity/t3-Figures-light/light-1x.png",
+          "baselineSha256": "96c9e7dec26894853eb603d3e6e489c799c0f7fcbe35ca940094744d965f6895",
+          "comparison": {
+            "width": 1440,
+            "height": 900,
+            "changedPixels": 0,
+            "maximumChannelDelta": 0,
+            "changedFraction": 0,
+            "accepted": true
+          },
+          "repeatFirstSha256": "96c9e7dec26894853eb603d3e6e489c799c0f7fcbe35ca940094744d965f6895",
+          "repeat": {
+            "width": 1440,
+            "height": 900,
+            "changedPixels": 0,
+            "maximumChannelDelta": 0,
+            "changedFraction": 0,
+            "accepted": true
+          }
+        },
+        {
+          "actual": "target/studio-snapshots/VisualParitySuite/t3-Figures-light/light-2x.png",
+          "actualSha256": "11b8899be0db504465294d7fce6e7e9ad95d5d1cde54e52368e603a76b9b2ee1",
+          "width": 2880,
+          "height": 1800,
+          "baseline": "studio/desktop/src/test/resources/eyes4s/studio/desktop/visual-parity/t3-Figures-light/light-2x.png",
+          "baselineSha256": "11b8899be0db504465294d7fce6e7e9ad95d5d1cde54e52368e603a76b9b2ee1",
+          "comparison": {
+            "width": 2880,
+            "height": 1800,
+            "changedPixels": 0,
+            "maximumChannelDelta": 0,
+            "changedFraction": 0,
+            "accepted": true
+          },
+          "repeatFirstSha256": "11b8899be0db504465294d7fce6e7e9ad95d5d1cde54e52368e603a76b9b2ee1",
+          "repeat": {
+            "width": 2880,
+            "height": 1800,
+            "changedPixels": 0,
+            "maximumChannelDelta": 0,
+            "changedFraction": 0,
+            "accepted": true
+          }
+        }
+      ]
+    },
+    {
+      "state": "t3-Figures-dark",
+      "mode": "linux-monocle-goldens",
+      "reviewSha256": "950f43fe4d10e1942135a2606f594c701aa5cdf35c81dc6a2bc13435796245e5",
+      "captures": [
+        {
+          "actual": "target/studio-snapshots/VisualParitySuite/t3-Figures-dark/dark-1x.png",
+          "actualSha256": "05cc8aaca75378877fe7b71875dd3710eb6ef9f69ac496ac707fb2e616fd4482",
+          "width": 1440,
+          "height": 900,
+          "baseline": "studio/desktop/src/test/resources/eyes4s/studio/desktop/visual-parity/t3-Figures-dark/dark-1x.png",
+          "baselineSha256": "05cc8aaca75378877fe7b71875dd3710eb6ef9f69ac496ac707fb2e616fd4482",
+          "comparison": {
+            "width": 1440,
+            "height": 900,
+            "changedPixels": 0,
+            "maximumChannelDelta": 0,
+            "changedFraction": 0,
+            "accepted": true
+          },
+          "repeatFirstSha256": "05cc8aaca75378877fe7b71875dd3710eb6ef9f69ac496ac707fb2e616fd4482",
+          "repeat": {
+            "width": 1440,
+            "height": 900,
+            "changedPixels": 0,
+            "maximumChannelDelta": 0,
+            "changedFraction": 0,
+            "accepted": true
+          }
+        },
+        {
+          "actual": "target/studio-snapshots/VisualParitySuite/t3-Figures-dark/dark-2x.png",
+          "actualSha256": "d80fa24a4d78e2c6a3f42e4697de442893eacca0e9dd175bef45eb80adeef360",
+          "width": 2880,
+          "height": 1800,
+          "baseline": "studio/desktop/src/test/resources/eyes4s/studio/desktop/visual-parity/t3-Figures-dark/dark-2x.png",
+          "baselineSha256": "d80fa24a4d78e2c6a3f42e4697de442893eacca0e9dd175bef45eb80adeef360",
+          "comparison": {
+            "width": 2880,
+            "height": 1800,
+            "changedPixels": 0,
+            "maximumChannelDelta": 0,
+            "changedFraction": 0,
+            "accepted": true
+          },
+          "repeatFirstSha256": "d80fa24a4d78e2c6a3f42e4697de442893eacca0e9dd175bef45eb80adeef360",
+          "repeat": {
+            "width": 2880,
+            "height": 1800,
+            "changedPixels": 0,
+            "maximumChannelDelta": 0,
+            "changedFraction": 0,
+            "accepted": true
+          }
+        }
+      ]
+    }
+  ],
+  "xmlSha256": "c5c25ba44410dc63ed4ff9c063db7b6fbdccde0ea1954eebccb04660d0f85491",
+  "sourceSha256": "559210037096f0c4ba29054f449c59ae251c2c5a31ded747f8b32547a5f5c519",
+  "schema": 1,
+  "candidate": "ecf67c3f9efaad0a8671f8482018cc8363b68036",
+  "tree": "0b6114908728f13f83bd38a3a8de51686fa9584a",
+  "manifestSha256": "26f547b55fdaca96bf1bb686a05a4de7df3a589ddcfeeebcd730714f8eae9e89",
+  "qualification": "Linux golden matrix passed"
+}

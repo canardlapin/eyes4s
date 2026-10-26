@@ -1,0 +1,76 @@
+{
+  "candidateFingerprint": "0e598d850630bbbfb4f644b03ae18d70800327de8161737bb6668a7fcb412367",
+  "osName": "Linux",
+  "osArch": "amd64",
+  "javaVersion": "25.0.4.1",
+  "javaFxVersion": "24.0.1+4",
+  "glassPlatform": "Monocle",
+  "prismOrder": "sw",
+  "schema": 1,
+  "state": "t2-Analysis-light",
+  "moment": "t2",
+  "perspective": "Analysis",
+  "theme": "light",
+  "logicalWidth": 1440,
+  "logicalHeight": 900,
+  "nativeScaleX": 1,
+  "nativeScaleY": 1,
+  "mode": "linux-monocle-goldens",
+  "focus": "programmatic scene root; no keyboard ring; no active text caret",
+  "maximumChannelDelta": 1,
+  "maximumChangedFraction": 0.001,
+  "sourceSha256": "559210037096f0c4ba29054f449c59ae251c2c5a31ded747f8b32547a5f5c519",
+  "captures": [
+    {
+      "actual": "target/studio-snapshots/VisualParitySuite/t2-Analysis-light/light-1x.png",
+      "actualSha256": "97e660bf3a558d1cf3803237c071e72ea48ba2eef1f2972cd244a96ea4b7219f",
+      "width": 1440,
+      "height": 900,
+      "baseline": "studio/desktop/src/test/resources/eyes4s/studio/desktop/visual-parity/t2-Analysis-light/light-1x.png",
+      "baselineSha256": "97e660bf3a558d1cf3803237c071e72ea48ba2eef1f2972cd244a96ea4b7219f",
+      "comparison": {
+        "width": 1440,
+        "height": 900,
+        "changedPixels": 0,
+        "maximumChannelDelta": 0,
+        "changedFraction": 0,
+        "accepted": true
+      },
+      "repeatFirstSha256": "97e660bf3a558d1cf3803237c071e72ea48ba2eef1f2972cd244a96ea4b7219f",
+      "repeat": {
+        "width": 1440,
+        "height": 900,
+        "changedPixels": 0,
+        "maximumChannelDelta": 0,
+        "changedFraction": 0,
+        "accepted": true
+      }
+    },
+    {
+      "actual": "target/studio-snapshots/VisualParitySuite/t2-Analysis-light/light-2x.png",
+      "actualSha256": "127a23071a52c8a2a98c3df33dbeeac1e2a39de757a7fb9c34c424f165525017",
+      "width": 2880,
+      "height": 1800,
+      "baseline": "studio/desktop/src/test/resources/eyes4s/studio/desktop/visual-parity/t2-Analysis-light/light-2x.png",
+      "baselineSha256": "127a23071a52c8a2a98c3df33dbeeac1e2a39de757a7fb9c34c424f165525017",
+      "comparison": {
+        "width": 2880,
+        "height": 1800,
+        "changedPixels": 0,
+        "maximumChannelDelta": 0,
+        "changedFraction": 0,
+        "accepted": true
+      },
+      "repeatFirstSha256": "127a23071a52c8a2a98c3df33dbeeac1e2a39de757a7fb9c34c424f165525017",
+      "repeat": {
+        "width": 2880,
+        "height": 1800,
+        "changedPixels": 0,
+        "maximumChannelDelta": 0,
+        "changedFraction": 0,
+        "accepted": true
+      }
+    }
+  ],
+  "problems": []
+}

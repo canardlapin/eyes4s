@@ -1,0 +1,76 @@
+{
+  "candidateFingerprint": "0e598d850630bbbfb4f644b03ae18d70800327de8161737bb6668a7fcb412367",
+  "osName": "Linux",
+  "osArch": "amd64",
+  "javaVersion": "25.0.4.1",
+  "javaFxVersion": "24.0.1+4",
+  "glassPlatform": "Monocle",
+  "prismOrder": "sw",
+  "schema": 1,
+  "state": "t3-Explore-light",
+  "moment": "t3",
+  "perspective": "Explore",
+  "theme": "light",
+  "logicalWidth": 1440,
+  "logicalHeight": 900,
+  "nativeScaleX": 1,
+  "nativeScaleY": 1,
+  "mode": "linux-monocle-goldens",
+  "focus": "programmatic scene root; no keyboard ring; no active text caret",
+  "maximumChannelDelta": 1,
+  "maximumChangedFraction": 0.001,
+  "sourceSha256": "559210037096f0c4ba29054f449c59ae251c2c5a31ded747f8b32547a5f5c519",
+  "captures": [
+    {
+      "actual": "target/studio-snapshots/VisualParitySuite/t3-Explore-light/light-1x.png",
+      "actualSha256": "8e7bcc75b89d12d45b46d18a9cb7ec11b816d6c5609a11e83e6bcedfd536a96c",
+      "width": 1440,
+      "height": 900,
+      "baseline": "studio/desktop/src/test/resources/eyes4s/studio/desktop/visual-parity/t3-Explore-light/light-1x.png",
+      "baselineSha256": "207351bcc02b690511b1204d519fc06dd6f07422eeeacefbb4ff0792ca3dd45c",
+      "comparison": {
+        "width": 1440,
+        "height": 900,
+        "changedPixels": 92,
+        "maximumChannelDelta": 1,
+        "changedFraction": 7.098765432098765E-5,
+        "accepted": true
+      },
+      "repeatFirstSha256": "8e7bcc75b89d12d45b46d18a9cb7ec11b816d6c5609a11e83e6bcedfd536a96c",
+      "repeat": {
+        "width": 1440,
+        "height": 900,
+        "changedPixels": 0,
+        "maximumChannelDelta": 0,
+        "changedFraction": 0,
+        "accepted": true
+      }
+    },
+    {
+      "actual": "target/studio-snapshots/VisualParitySuite/t3-Explore-light/light-2x.png",
+      "actualSha256": "5dfeb963f6ca3dcc60a4c5134fda2ffc3ce797d353fa5cabe39407a98e29953e",
+      "width": 2880,
+      "height": 1800,
+      "baseline": "studio/desktop/src/test/resources/eyes4s/studio/desktop/visual-parity/t3-Explore-light/light-2x.png",
+      "baselineSha256": "5dfeb963f6ca3dcc60a4c5134fda2ffc3ce797d353fa5cabe39407a98e29953e",
+      "comparison": {
+        "width": 2880,
+        "height": 1800,
+        "changedPixels": 0,
+        "maximumChannelDelta": 0,
+        "changedFraction": 0,
+        "accepted": true
+      },
+      "repeatFirstSha256": "5dfeb963f6ca3dcc60a4c5134fda2ffc3ce797d353fa5cabe39407a98e29953e",
+      "repeat": {
+        "width": 2880,
+        "height": 1800,
+        "changedPixels": 0,
+        "maximumChannelDelta": 0,
+        "changedFraction": 0,
+        "accepted": true
+      }
+    }
+  ],
+  "problems": []
+}

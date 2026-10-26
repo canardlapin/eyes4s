@@ -1,0 +1,73 @@
+{
+  "schema": 1,
+  "browser": "156.0.8078.47",
+  "phase": "final recorded page",
+  "results": [
+    {
+      "width": 1440,
+      "scrollWidth": 1440,
+      "images": [
+        {
+          "src": "../20261024-results-matrix/native/macos/t2-Compare-light-1x.png",
+          "complete": true,
+          "width": 1024,
+          "height": 656
+        },
+        {
+          "src": "native/macos/t2-Compare-light-1x.png",
+          "complete": true,
+          "width": 1024,
+          "height": 656
+        },
+        {
+          "src": "../20261024-results-matrix/native/macos/t3-Compare-light-1x.png",
+          "complete": true,
+          "width": 1024,
+          "height": 656
+        },
+        {
+          "src": "native/macos/t3-Compare-light-1x.png",
+          "complete": true,
+          "width": 1024,
+          "height": 656
+        }
+      ],
+      "title": "Eyes Studio usability qualification"
+    },
+    {
+      "width": 414,
+      "scrollWidth": 414,
+      "images": [
+        {
+          "src": "../20261024-results-matrix/native/macos/t2-Compare-light-1x.png",
+          "complete": true,
+          "width": 1024,
+          "height": 656
+        },
+        {
+          "src": "native/macos/t2-Compare-light-1x.png",
+          "complete": true,
+          "width": 1024,
+          "height": 656
+        },
+        {
+          "src": "../20261024-results-matrix/native/macos/t3-Compare-light-1x.png",
+          "complete": true,
+          "width": 1024,
+          "height": 656
+        },
+        {
+          "src": "native/macos/t3-Compare-light-1x.png",
+          "complete": true,
+          "width": 1024,
+          "height": 656
+        }
+      ],
+      "title": "Eyes Studio usability qualification"
+    }
+  ],
+  "source": "ecf67c3f9efaad0a8671f8482018cc8363b68036",
+  "htmlSha256": "f64d79527726662f539b9f3aaacc238fb9688f212000896790c49972c0d8e0de",
+  "localLinkTargetsChecked": 15,
+  "brokenLocalLinks": 0
+}

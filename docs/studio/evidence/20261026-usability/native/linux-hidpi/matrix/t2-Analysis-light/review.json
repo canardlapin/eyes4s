@@ -1,0 +1,62 @@
+{
+  "candidateFingerprint": "0e598d850630bbbfb4f644b03ae18d70800327de8161737bb6668a7fcb412367",
+  "osName": "Linux",
+  "osArch": "amd64",
+  "javaVersion": "25.0.4.1",
+  "javaFxVersion": "24.0.1+4",
+  "glassPlatform": "platform-default",
+  "prismOrder": "sw",
+  "schema": 1,
+  "state": "t2-Analysis-light",
+  "moment": "t2",
+  "perspective": "Analysis",
+  "theme": "light",
+  "logicalWidth": 1440,
+  "logicalHeight": 900,
+  "nativeScaleX": 2,
+  "nativeScaleY": 2,
+  "mode": "functional-only",
+  "focus": "programmatic scene root; no keyboard ring; no active text caret",
+  "maximumChannelDelta": 1,
+  "maximumChangedFraction": 0.001,
+  "sourceSha256": "559210037096f0c4ba29054f449c59ae251c2c5a31ded747f8b32547a5f5c519",
+  "captures": [
+    {
+      "actual": "target/studio-snapshots/VisualParitySuite/t2-Analysis-light/light-1x.png",
+      "actualSha256": "329a4564f16c43391053daa735238bfaec58a59d4627041668211011b2a39256",
+      "width": 1440,
+      "height": 900,
+      "baseline": "studio/desktop/src/test/resources/eyes4s/studio/desktop/visual-parity/t2-Analysis-light/light-1x.png",
+      "baselineSha256": null,
+      "comparison": null,
+      "repeatFirstSha256": "329a4564f16c43391053daa735238bfaec58a59d4627041668211011b2a39256",
+      "repeat": {
+        "width": 1440,
+        "height": 900,
+        "changedPixels": 0,
+        "maximumChannelDelta": 0,
+        "changedFraction": 0,
+        "accepted": true
+      }
+    },
+    {
+      "actual": "target/studio-snapshots/VisualParitySuite/t2-Analysis-light/light-2x.png",
+      "actualSha256": "733ae4d89ef80381eb22584fdd2bde1a7c6f5ae43b045cccb1611e5ac54627b8",
+      "width": 2880,
+      "height": 1800,
+      "baseline": "studio/desktop/src/test/resources/eyes4s/studio/desktop/visual-parity/t2-Analysis-light/light-2x.png",
+      "baselineSha256": null,
+      "comparison": null,
+      "repeatFirstSha256": "733ae4d89ef80381eb22584fdd2bde1a7c6f5ae43b045cccb1611e5ac54627b8",
+      "repeat": {
+        "width": 2880,
+        "height": 1800,
+        "changedPixels": 0,
+        "maximumChannelDelta": 0,
+        "changedFraction": 0,
+        "accepted": true
+      }
+    }
+  ],
+  "problems": []
+}

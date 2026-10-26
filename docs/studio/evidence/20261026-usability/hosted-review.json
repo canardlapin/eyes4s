@@ -1,0 +1,1657 @@
+{
+  "schema": 1,
+  "candidate": "ecf67c3f9efaad0a8671f8482018cc8363b68036",
+  "tree": "0b6114908728f13f83bd38a3a8de51686fa9584a",
+  "studioRun": 40357518894,
+  "workflowAttempt": 1,
+  "courts": [
+    {
+      "court": "linux",
+      "artifact": 12669323650,
+      "artifactName": "studio-snapshots-linux-ecf67c3f9efaad0a8671f8482018cc8363b68036",
+      "archiveSha256": "04352647b0b7e4cd3eddc07979f1db0e444a96fd8d1a07a7bd5cabb505954384",
+      "matrixReceiptSha256": "57e0e0c37535bb713a64f22c9079f1001b27bff5aa3e990d73dee447f76a398a",
+      "runtime": {
+        "osName": [
+          "Linux"
+        ],
+        "osArch": [
+          "amd64"
+        ],
+        "javaVersion": [
+          "25.0.4.1"
+        ],
+        "javaFxVersion": [
+          "24.0.1+4"
+        ],
+        "glassPlatform": [
+          "Monocle"
+        ],
+        "prismOrder": [
+          "sw"
+        ],
+        "logicalWidth": [
+          "1440"
+        ],
+        "logicalHeight": [
+          "900"
+        ],
+        "nativeScaleX": [
+          "1"
+        ],
+        "nativeScaleY": [
+          "1"
+        ]
+      },
+      "namedCases": [
+        {
+          "suite": "compare.ParticipantsNavigatorFxSuite",
+          "cases": [
+            "a refused selected scale leaves another scale reachable by keyboard",
+            "Results mounts24served participants with exact refs and separate run counts",
+            "one pane Tab stop carries the row cursor; arrows and Enter activate exact cells",
+            "changing scale clears old cells while refused reports expose their reason",
+            "Results Tab order has one Participants stop and is recorded from actual traversal"
+          ],
+          "xmlSha256": "8dbefc6d0b2d024a0fcb44b86640d90113214b518715979905fd113d42780e78",
+          "notApplicable": []
+        },
+        {
+          "suite": "harness.VisualPixelsSuite",
+          "cases": [
+            "identical rasters pass and a deliberate visible changed pixel is rejected",
+            "bounded one-level rounding passes; a broad one-level change fails",
+            "a missing or differently sized baseline cannot be a match"
+          ],
+          "xmlSha256": "6400aa2de1fe26cbc7aba2a4796f348aae693e319d29e2c87ccb58e9cbee98b4",
+          "notApplicable": []
+        },
+        {
+          "suite": "explore.SourceRecordsFxSuite",
+          "cases": [
+            "the selected record 7,214 is under the cursor with the backend's values",
+            "scrolling all 11,520 records makes at most 60 row cells; median frame within 32 ms",
+            "'Show raw record' shows the verbatim CSV line; Down and Enter select the next fixation",
+            "Enter on 'Show raw record' is the toggle's; End and Home reveal the edge rows",
+            "with no source served, the table says so",
+            "a cursor reveal survives a scroll changed by the next layout",
+            "an unsized list waits without repeated scrolls, then reveals its cursor"
+          ],
+          "xmlSha256": "d90c4e9fc1e1c18280bc00add8b3355e13de44b3d9ad72b06e3aca508d44e0c7",
+          "notApplicable": []
+        },
+        {
+          "suite": "shell.VisualParitySuite",
+          "cases": [
+            "t1-Data-light",
+            "t1-Data-dark",
+            "t1-Explore-light",
+            "t1-Explore-dark",
+            "t1-Analysis-light",
+            "t1-Analysis-dark",
+            "t1-Compare-light",
+            "t1-Compare-dark",
+            "t1-Figures-light",
+            "t1-Figures-dark",
+            "t2-Data-light",
+            "t2-Data-dark",
+            "t2-Explore-light",
+            "t2-Explore-dark",
+            "t2-Analysis-light",
+            "t2-Analysis-dark",
+            "t2-Compare-light",
+            "t2-Compare-dark",
+            "t2-Figures-light",
+            "t2-Figures-dark",
+            "t3-Data-light",
+            "t3-Data-dark",
+            "t3-Explore-light",
+            "t3-Explore-dark",
+            "t3-Analysis-light",
+            "t3-Analysis-dark",
+            "t3-Compare-light",
+            "t3-Compare-dark",
+            "t3-Figures-light",
+            "t3-Figures-dark"
+          ],
+          "xmlSha256": "c5c25ba44410dc63ed4ff9c063db7b6fbdccde0ea1954eebccb04660d0f85491",
+          "notApplicable": []
+        },
+        {
+          "suite": "shell.CanvasBoundaryFxSuite",
+          "cases": [
+            "trial pixels survive restored size and scale light",
+            "trial pixels survive restored size and scale dark"
+          ],
+          "xmlSha256": "7abb27066a25f53922c71b3311d0ddae060d1ee2a4791d31b0426045333b3f35",
+          "notApplicable": []
+        },
+        {
+          "suite": "shell.SmallCanvasBoundaryFxSuite",
+          "cases": [
+            "trial pixels survive restored size and scale light",
+            "trial pixels survive restored size and scale dark"
+          ],
+          "xmlSha256": "3510c94f4ed5b705cffc86ba2b17a048cea2bf2c35f92bf7a44872d72fc2753b",
+          "notApplicable": []
+        },
+        {
+          "suite": "shell.WorkspaceViewportFxSuite",
+          "cases": [
+            "clearing focus does not reveal unrelated rows or scroll the workspace",
+            "small query workspace keeps map space light",
+            "small Results workspace keeps space for axes and annotations light",
+            "small query workspace keeps map space dark",
+            "small Results workspace keeps space for axes and annotations dark"
+          ],
+          "xmlSha256": "40c2cedbf778ff62a260c04c00d1a1d0840958eeefc6f0bbdd0ea5f294ff679f",
+          "notApplicable": []
+        },
+        {
+          "suite": "shell.BoardWorkspaceViewportFxSuite",
+          "cases": [
+            "clearing focus does not reveal unrelated rows or scroll the workspace",
+            "small query workspace keeps map space light",
+            "small Results workspace keeps space for axes and annotations light",
+            "small query workspace keeps map space dark",
+            "small Results workspace keeps space for axes and annotations dark",
+            "Explore fits the viewport without horizontal displacement at board size"
+          ],
+          "xmlSha256": "be5bd17eb802aaad02457d78c8827bdd4fb4019972e94acd98975f7bac496a2d",
+          "notApplicable": []
+        },
+        {
+          "suite": "shell.A11yTreeSuite",
+          "cases": [
+            "data: every focusable node has an accessible role and name",
+            "explore: every focusable node has an accessible role and name",
+            "analysis: every focusable node has an accessible role and name",
+            "compare: every focusable node has an accessible role and name",
+            "compare-results: every focusable node has an accessible role and name",
+            "compare-results-dark: every focusable node has an accessible role and name",
+            "figures: every focusable node has an accessible role and name",
+            "data-empty: every focusable node has an accessible role and name",
+            "data: Tab visits the derived stops; docs/studio/a11y/tab-order-data.txt",
+            "explore: Tab visits the derived stops; docs/studio/a11y/tab-order-explore.txt",
+            "analysis: Tab visits the derived stops; docs/studio/a11y/tab-order-analysis.txt",
+            "compare: Tab visits the derived stops; docs/studio/a11y/tab-order-compare.txt",
+            "compare-results: Tab visits the derived stops; docs/studio/a11y/tab-order-compare-results.txt",
+            "compare-results-dark: Tab visits the derived stops; docs/studio/a11y/tab-order-compare-results-dark.txt",
+            "figures: Tab visits the derived stops; docs/studio/a11y/tab-order-figures.txt",
+            "data: a disabled action's drawn reason is its accessible help",
+            "explore: a disabled action's drawn reason is its accessible help",
+            "analysis: a disabled action's drawn reason is its accessible help",
+            "compare: a disabled action's drawn reason is its accessible help",
+            "compare-results: a disabled action's drawn reason is its accessible help",
+            "compare-results-dark: a disabled action's drawn reason is its accessible help",
+            "figures: a disabled action's drawn reason is its accessible help",
+            "data-empty: a disabled action's drawn reason is its accessible help",
+            "a drawn reason follows its control: enabled, disabled, and a changed reason",
+            "Save & run carries its drawn reason through enabled, disabled and blocked",
+            "focus is drawn in the accent: a crumb, a toggle and a pane"
+          ],
+          "xmlSha256": "ab36529329ba3b5dada0d6ade8e5bf011b1eee35ab3e9dde85d70f64d9cd7c58",
+          "notApplicable": []
+        },
+        {
+          "suite": "compare.CompareMapHostFxSuite",
+          "cases": [
+            "Compare uses served cells, row order, region and thresholds; styles and toggles change no score",
+            "late and wrong-identity map answers cannot replace the selected scale; refusals retry",
+            "a raster failure is visible and Retry redraws the same served cells"
+          ],
+          "xmlSha256": "f44cea86f88ef54118d7c2744f3f3b1eb63bd581e2365e3526f95656af1fab01",
+          "notApplicable": []
+        },
+        {
+          "suite": "harness.HarnessSmokeSuite",
+          "cases": [
+            "opens a 1440x900 stage, clicks, asserts and writes 1x and 2x snapshots",
+            "a headless run draws on Monocle's virtual screen, not the display",
+            "keys reach the focus owner",
+            "a click is hit-tested before it is delivered",
+            "snapshot path segments are file-name safe",
+            "snapshot framing stays at the scene origin when children overflow"
+          ],
+          "xmlSha256": "61cf2d243313d15f6513c387ebb883329c5772849f3970543b815370ffe8cf2d",
+          "notApplicable": []
+        },
+        {
+          "suite": "plot.NativeOutputScaleFxSuite",
+          "cases": [
+            "native output scale keeps one-device-pixel feedback sharp"
+          ],
+          "xmlSha256": "4eb1b3c205f1b50140a6441924e44ebdf5e038eed43437251ce36697d87a1d74",
+          "notApplicable": []
+        },
+        {
+          "suite": "app/.jvm/PaneFocusSuite",
+          "cases": [
+            "a served plot replaces its container while an unread plot keeps a reachable placeholder",
+            "participant table keeps the available selected scale, Explain and its served table",
+            "the navigator retains exactly one composite stop while its values are pending"
+          ],
+          "xmlSha256": "bf25fabff278faad427ab1a76bbd4dfd6e0d4f7c8a80eb247e53f941f6e6a5de"
+        },
+        {
+          "suite": "app/.js/PaneFocusSuite",
+          "cases": [
+            "a served plot replaces its container while an unread plot keeps a reachable placeholder",
+            "participant table keeps the available selected scale, Explain and its served table",
+            "the navigator retains exactly one composite stop while its values are pending"
+          ],
+          "xmlSha256": "a6a4d040fe94b77880676d10f63511f3f8af06aaec9586f57ef2ddd4a72d7598"
+        }
+      ],
+      "executedReportsSha256": "4cfb0f84fc65d958eca53a81d2bd8cc07576d492c501738ecfa7241a9e2b2e42",
+      "workspaceVisibility": [
+        {
+          "path": "target/studio-snapshots/WorkspaceViewportFxSuite/small-query-workspace-keeps-map-space-light/bounds.json",
+          "sha256": "62ddf1b724c6abebc3cabdfffc8e685be5c7603b3b9843ef4fc6a7cdb239201b",
+          "measurements": {
+            "scene": [
+              1024,
+              656
+            ],
+            "mapDataFrameHeights": [
+              176,
+              192
+            ]
+          }
+        },
+        {
+          "path": "target/studio-snapshots/WorkspaceViewportFxSuite/small-query-workspace-keeps-map-space-dark/bounds.json",
+          "sha256": "62ddf1b724c6abebc3cabdfffc8e685be5c7603b3b9843ef4fc6a7cdb239201b",
+          "measurements": {
+            "scene": [
+              1024,
+              656
+            ],
+            "mapDataFrameHeights": [
+              176,
+              192
+            ]
+          }
+        },
+        {
+          "path": "target/studio-snapshots/WorkspaceViewportFxSuite/small-Results-workspace-keeps-space-for-axes-and-annotations-light/bounds-and-focus.json",
+          "sha256": "5d5a310a532b9a053408124efee3a7b677d3bceb786332022ef7db2390b2259d",
+          "measurements": {
+            "scene": [
+              1024,
+              656
+            ],
+            "participantPlotHeight": 257,
+            "forward": [
+              "menu-button: Project memory-study",
+              "toggle-button: Compare (\u23184)",
+              "button: Cancel Run 8 (job 1)",
+              "button: Summary \u00b7 by retrieval response, current location",
+              "list: Participants, P01, overall D +0.42, n 19; run queries 19 contributing of 20, 0 failed",
+              "region: Participant plot of Participant D at 2\u00b0: each participant's mean D in 2 groups, lines join a participant's means, a tick marks each group's grand mean. Annotations: P17 \u00b7 selected, 19 of 20 contributing, Remembered +0.40, n 17, Forgotten +0.22, n 2; P05 \u00b7 17 of 20 contributing, Remembered +0.39, n 13, Forgotten +0.22, n 4, 3 failed queries, 2 Remembered, 1 Forgotten, no value, not zero. One focus stop; arrow keys move to the nearest mark, Page Up and Page Down step in order, Enter selects, Escape clears the selection.",
+              "region: Scale profile of run 7: the whole-report grand mean D at 4 scales, bold, over each participant's mean D, faint. One focus stop; arrow keys move to the nearest mark, Page Up and Page Down step in order, Enter selects, Escape clears the selection.",
+              "toggle-button: \u03c3 2\u00b0",
+              "button: Explain P17 \u2192 keeps: by retrieval response \u203a P17",
+              "table: Participant summary at \u03c3 2\u00b0, run 7. One focus stop; arrow keys move the row cursor, Enter selects, Escape clears the selection.",
+              "region: Reporting",
+              "radio-button: Group by: response",
+              "text-field: First level (minuend)",
+              "text-field: Subtract level (subtrahend)",
+              "button: Apply contrast",
+              "button: Clear contrast",
+              "check-box: Exclude queries with >25% of fixation duration outside the analysis window",
+              "check-box: Minimum queries per group: 3",
+              "radio-button: Summary unit and weighting: Equal weight per participant",
+              "button: Save as\u2026",
+              "button: Cancel Run 8 (job 1)"
+            ],
+            "reverse": [
+              "menu-button: Project memory-study",
+              "button: Cancel Run 8 (job 1)",
+              "button: Save as\u2026",
+              "radio-button: Summary unit and weighting: Equal weight per participant",
+              "check-box: Minimum queries per group: 3",
+              "check-box: Exclude queries with >25% of fixation duration outside the analysis window",
+              "button: Clear contrast",
+              "button: Apply contrast",
+              "text-field: Subtract level (subtrahend)",
+              "text-field: First level (minuend)",
+              "radio-button: Group by: response",
+              "region: Reporting",
+              "table: Participant summary at \u03c3 2\u00b0, run 7. One focus stop; arrow keys move the row cursor, Enter selects, Escape clears the selection.",
+              "button: Explain P17 \u2192 keeps: by retrieval response \u203a P17",
+              "toggle-button: \u03c3 2\u00b0",
+              "region: Scale profile of run 7: the whole-report grand mean D at 4 scales, bold, over each participant's mean D, faint. One focus stop; arrow keys move to the nearest mark, Page Up and Page Down step in order, Enter selects, Escape clears the selection.",
+              "region: Participant plot of Participant D at 2\u00b0: each participant's mean D in 2 groups, lines join a participant's means, a tick marks each group's grand mean. Annotations: P17 \u00b7 selected, 19 of 20 contributing, Remembered +0.40, n 17, Forgotten +0.22, n 2; P05 \u00b7 17 of 20 contributing, Remembered +0.39, n 13, Forgotten +0.22, n 4, 3 failed queries, 2 Remembered, 1 Forgotten, no value, not zero. One focus stop; arrow keys move to the nearest mark, Page Up and Page Down step in order, Enter selects, Escape clears the selection.",
+              "list: Participants, P01, overall D +0.42, n 19; run queries 19 contributing of 20, 0 failed",
+              "button: Summary \u00b7 by retrieval response, current location",
+              "button: Cancel Run 8 (job 1)",
+              "toggle-button: Compare (\u23184)"
+            ]
+          }
+        },
+        {
+          "path": "target/studio-snapshots/WorkspaceViewportFxSuite/small-Results-workspace-keeps-space-for-axes-and-annotations-dark/bounds-and-focus.json",
+          "sha256": "5d5a310a532b9a053408124efee3a7b677d3bceb786332022ef7db2390b2259d",
+          "measurements": {
+            "scene": [
+              1024,
+              656
+            ],
+            "participantPlotHeight": 257,
+            "forward": [
+              "menu-button: Project memory-study",
+              "toggle-button: Compare (\u23184)",
+              "button: Cancel Run 8 (job 1)",
+              "button: Summary \u00b7 by retrieval response, current location",
+              "list: Participants, P01, overall D +0.42, n 19; run queries 19 contributing of 20, 0 failed",
+              "region: Participant plot of Participant D at 2\u00b0: each participant's mean D in 2 groups, lines join a participant's means, a tick marks each group's grand mean. Annotations: P17 \u00b7 selected, 19 of 20 contributing, Remembered +0.40, n 17, Forgotten +0.22, n 2; P05 \u00b7 17 of 20 contributing, Remembered +0.39, n 13, Forgotten +0.22, n 4, 3 failed queries, 2 Remembered, 1 Forgotten, no value, not zero. One focus stop; arrow keys move to the nearest mark, Page Up and Page Down step in order, Enter selects, Escape clears the selection.",
+              "region: Scale profile of run 7: the whole-report grand mean D at 4 scales, bold, over each participant's mean D, faint. One focus stop; arrow keys move to the nearest mark, Page Up and Page Down step in order, Enter selects, Escape clears the selection.",
+              "toggle-button: \u03c3 2\u00b0",
+              "button: Explain P17 \u2192 keeps: by retrieval response \u203a P17",
+              "table: Participant summary at \u03c3 2\u00b0, run 7. One focus stop; arrow keys move the row cursor, Enter selects, Escape clears the selection.",
+              "region: Reporting",
+              "radio-button: Group by: response",
+              "text-field: First level (minuend)",
+              "text-field: Subtract level (subtrahend)",
+              "button: Apply contrast",
+              "button: Clear contrast",
+              "check-box: Exclude queries with >25% of fixation duration outside the analysis window",
+              "check-box: Minimum queries per group: 3",
+              "radio-button: Summary unit and weighting: Equal weight per participant",
+              "button: Save as\u2026",
+              "button: Cancel Run 8 (job 1)"
+            ],
+            "reverse": [
+              "menu-button: Project memory-study",
+              "button: Cancel Run 8 (job 1)",
+              "button: Save as\u2026",
+              "radio-button: Summary unit and weighting: Equal weight per participant",
+              "check-box: Minimum queries per group: 3",
+              "check-box: Exclude queries with >25% of fixation duration outside the analysis window",
+              "button: Clear contrast",
+              "button: Apply contrast",
+              "text-field: Subtract level (subtrahend)",
+              "text-field: First level (minuend)",
+              "radio-button: Group by: response",
+              "region: Reporting",
+              "table: Participant summary at \u03c3 2\u00b0, run 7. One focus stop; arrow keys move the row cursor, Enter selects, Escape clears the selection.",
+              "button: Explain P17 \u2192 keeps: by retrieval response \u203a P17",
+              "toggle-button: \u03c3 2\u00b0",
+              "region: Scale profile of run 7: the whole-report grand mean D at 4 scales, bold, over each participant's mean D, faint. One focus stop; arrow keys move to the nearest mark, Page Up and Page Down step in order, Enter selects, Escape clears the selection.",
+              "region: Participant plot of Participant D at 2\u00b0: each participant's mean D in 2 groups, lines join a participant's means, a tick marks each group's grand mean. Annotations: P17 \u00b7 selected, 19 of 20 contributing, Remembered +0.40, n 17, Forgotten +0.22, n 2; P05 \u00b7 17 of 20 contributing, Remembered +0.39, n 13, Forgotten +0.22, n 4, 3 failed queries, 2 Remembered, 1 Forgotten, no value, not zero. One focus stop; arrow keys move to the nearest mark, Page Up and Page Down step in order, Enter selects, Escape clears the selection.",
+              "list: Participants, P01, overall D +0.42, n 19; run queries 19 contributing of 20, 0 failed",
+              "button: Summary \u00b7 by retrieval response, current location",
+              "button: Cancel Run 8 (job 1)",
+              "toggle-button: Compare (\u23184)"
+            ]
+          }
+        },
+        {
+          "path": "target/studio-snapshots/BoardWorkspaceViewportFxSuite/small-query-workspace-keeps-map-space-light/bounds.json",
+          "sha256": "4d15f2f69c081fd88f717ec3b4f5ecc3ffc89d4ee0fd42e2085e38589190d97f",
+          "measurements": {
+            "scene": [
+              1440,
+              900
+            ],
+            "mapDataFrameHeights": [
+              197,
+              213
+            ]
+          }
+        },
+        {
+          "path": "target/studio-snapshots/BoardWorkspaceViewportFxSuite/small-query-workspace-keeps-map-space-dark/bounds.json",
+          "sha256": "4d15f2f69c081fd88f717ec3b4f5ecc3ffc89d4ee0fd42e2085e38589190d97f",
+          "measurements": {
+            "scene": [
+              1440,
+              900
+            ],
+            "mapDataFrameHeights": [
+              197,
+              213
+            ]
+          }
+        },
+        {
+          "path": "target/studio-snapshots/BoardWorkspaceViewportFxSuite/small-Results-workspace-keeps-space-for-axes-and-annotations-light/bounds-and-focus.json",
+          "sha256": "61a2cf05170e9c9202e085dfbb41f9ba241f2526d0dd18f5affb85a0dc3cb25a",
+          "measurements": {
+            "scene": [
+              1440,
+              900
+            ],
+            "participantPlotHeight": 277,
+            "forward": [
+              "menu-button: Project memory-study",
+              "toggle-button: Compare (\u23184)",
+              "button: Cancel Run 8 (job 1)",
+              "button: Summary \u00b7 by retrieval response, current location",
+              "list: Participants, P01, overall D +0.42, n 19; run queries 19 contributing of 20, 0 failed",
+              "region: Participant plot of Participant D at 2\u00b0: each participant's mean D in 2 groups, lines join a participant's means, a tick marks each group's grand mean. Annotations: P17 \u00b7 selected, 19 of 20 contributing, Remembered +0.40, n 17, Forgotten +0.22, n 2; P05 \u00b7 17 of 20 contributing, Remembered +0.39, n 13, Forgotten +0.22, n 4, 3 failed queries, 2 Remembered, 1 Forgotten, no value, not zero. One focus stop; arrow keys move to the nearest mark, Page Up and Page Down step in order, Enter selects, Escape clears the selection.",
+              "region: Scale profile of run 7: the whole-report grand mean D at 4 scales, bold, over each participant's mean D, faint. One focus stop; arrow keys move to the nearest mark, Page Up and Page Down step in order, Enter selects, Escape clears the selection.",
+              "toggle-button: \u03c3 2\u00b0",
+              "button: Explain P17 \u2192 keeps: by retrieval response \u203a P17",
+              "table: Participant summary at \u03c3 2\u00b0, run 7. One focus stop; arrow keys move the row cursor, Enter selects, Escape clears the selection.",
+              "region: Reporting",
+              "radio-button: Group by: response",
+              "text-field: First level (minuend)",
+              "text-field: Subtract level (subtrahend)",
+              "button: Apply contrast",
+              "button: Clear contrast",
+              "check-box: Exclude queries with >25% of fixation duration outside the analysis window",
+              "check-box: Minimum queries per group: 3",
+              "radio-button: Summary unit and weighting: Equal weight per participant",
+              "button: Save as\u2026",
+              "button: Cancel Run 8 (job 1)"
+            ],
+            "reverse": [
+              "menu-button: Project memory-study",
+              "button: Cancel Run 8 (job 1)",
+              "button: Save as\u2026",
+              "radio-button: Summary unit and weighting: Equal weight per participant",
+              "check-box: Minimum queries per group: 3",
+              "check-box: Exclude queries with >25% of fixation duration outside the analysis window",
+              "button: Clear contrast",
+              "button: Apply contrast",
+              "text-field: Subtract level (subtrahend)",
+              "text-field: First level (minuend)",
+              "radio-button: Group by: response",
+              "region: Reporting",
+              "table: Participant summary at \u03c3 2\u00b0, run 7. One focus stop; arrow keys move the row cursor, Enter selects, Escape clears the selection.",
+              "button: Explain P17 \u2192 keeps: by retrieval response \u203a P17",
+              "toggle-button: \u03c3 2\u00b0",
+              "region: Scale profile of run 7: the whole-report grand mean D at 4 scales, bold, over each participant's mean D, faint. One focus stop; arrow keys move to the nearest mark, Page Up and Page Down step in order, Enter selects, Escape clears the selection.",
+              "region: Participant plot of Participant D at 2\u00b0: each participant's mean D in 2 groups, lines join a participant's means, a tick marks each group's grand mean. Annotations: P17 \u00b7 selected, 19 of 20 contributing, Remembered +0.40, n 17, Forgotten +0.22, n 2; P05 \u00b7 17 of 20 contributing, Remembered +0.39, n 13, Forgotten +0.22, n 4, 3 failed queries, 2 Remembered, 1 Forgotten, no value, not zero. One focus stop; arrow keys move to the nearest mark, Page Up and Page Down step in order, Enter selects, Escape clears the selection.",
+              "list: Participants, P01, overall D +0.42, n 19; run queries 19 contributing of 20, 0 failed",
+              "button: Summary \u00b7 by retrieval response, current location",
+              "button: Cancel Run 8 (job 1)",
+              "toggle-button: Compare (\u23184)"
+            ]
+          }
+        },
+        {
+          "path": "target/studio-snapshots/BoardWorkspaceViewportFxSuite/small-Results-workspace-keeps-space-for-axes-and-annotations-dark/bounds-and-focus.json",
+          "sha256": "61a2cf05170e9c9202e085dfbb41f9ba241f2526d0dd18f5affb85a0dc3cb25a",
+          "measurements": {
+            "scene": [
+              1440,
+              900
+            ],
+            "participantPlotHeight": 277,
+            "forward": [
+              "menu-button: Project memory-study",
+              "toggle-button: Compare (\u23184)",
+              "button: Cancel Run 8 (job 1)",
+              "button: Summary \u00b7 by retrieval response, current location",
+              "list: Participants, P01, overall D +0.42, n 19; run queries 19 contributing of 20, 0 failed",
+              "region: Participant plot of Participant D at 2\u00b0: each participant's mean D in 2 groups, lines join a participant's means, a tick marks each group's grand mean. Annotations: P17 \u00b7 selected, 19 of 20 contributing, Remembered +0.40, n 17, Forgotten +0.22, n 2; P05 \u00b7 17 of 20 contributing, Remembered +0.39, n 13, Forgotten +0.22, n 4, 3 failed queries, 2 Remembered, 1 Forgotten, no value, not zero. One focus stop; arrow keys move to the nearest mark, Page Up and Page Down step in order, Enter selects, Escape clears the selection.",
+              "region: Scale profile of run 7: the whole-report grand mean D at 4 scales, bold, over each participant's mean D, faint. One focus stop; arrow keys move to the nearest mark, Page Up and Page Down step in order, Enter selects, Escape clears the selection.",
+              "toggle-button: \u03c3 2\u00b0",
+              "button: Explain P17 \u2192 keeps: by retrieval response \u203a P17",
+              "table: Participant summary at \u03c3 2\u00b0, run 7. One focus stop; arrow keys move the row cursor, Enter selects, Escape clears the selection.",
+              "region: Reporting",
+              "radio-button: Group by: response",
+              "text-field: First level (minuend)",
+              "text-field: Subtract level (subtrahend)",
+              "button: Apply contrast",
+              "button: Clear contrast",
+              "check-box: Exclude queries with >25% of fixation duration outside the analysis window",
+              "check-box: Minimum queries per group: 3",
+              "radio-button: Summary unit and weighting: Equal weight per participant",
+              "button: Save as\u2026",
+              "button: Cancel Run 8 (job 1)"
+            ],
+            "reverse": [
+              "menu-button: Project memory-study",
+              "button: Cancel Run 8 (job 1)",
+              "button: Save as\u2026",
+              "radio-button: Summary unit and weighting: Equal weight per participant",
+              "check-box: Minimum queries per group: 3",
+              "check-box: Exclude queries with >25% of fixation duration outside the analysis window",
+              "button: Clear contrast",
+              "button: Apply contrast",
+              "text-field: Subtract level (subtrahend)",
+              "text-field: First level (minuend)",
+              "radio-button: Group by: response",
+              "region: Reporting",
+              "table: Participant summary at \u03c3 2\u00b0, run 7. One focus stop; arrow keys move the row cursor, Enter selects, Escape clears the selection.",
+              "button: Explain P17 \u2192 keeps: by retrieval response \u203a P17",
+              "toggle-button: \u03c3 2\u00b0",
+              "region: Scale profile of run 7: the whole-report grand mean D at 4 scales, bold, over each participant's mean D, faint. One focus stop; arrow keys move to the nearest mark, Page Up and Page Down step in order, Enter selects, Escape clears the selection.",
+              "region: Participant plot of Participant D at 2\u00b0: each participant's mean D in 2 groups, lines join a participant's means, a tick marks each group's grand mean. Annotations: P17 \u00b7 selected, 19 of 20 contributing, Remembered +0.40, n 17, Forgotten +0.22, n 2; P05 \u00b7 17 of 20 contributing, Remembered +0.39, n 13, Forgotten +0.22, n 4, 3 failed queries, 2 Remembered, 1 Forgotten, no value, not zero. One focus stop; arrow keys move to the nearest mark, Page Up and Page Down step in order, Enter selects, Escape clears the selection.",
+              "list: Participants, P01, overall D +0.42, n 19; run queries 19 contributing of 20, 0 failed",
+              "button: Summary \u00b7 by retrieval response, current location",
+              "button: Cancel Run 8 (job 1)",
+              "toggle-button: Compare (\u23184)"
+            ]
+          }
+        }
+      ],
+      "fullResultsTranscripts": [
+        {
+          "path": "target/studio-snapshots/A11yTreeSuite/compare-results.json",
+          "sha256": "6bc81e04157be562f4881ca312ca74656b002d493b1a6142a3e8f0cb47d3a7b1",
+          "scene": [
+            1440,
+            900
+          ],
+          "stops": 21
+        },
+        {
+          "path": "target/studio-snapshots/A11yTreeSuite/compare-results-dark.json",
+          "sha256": "6bc81e04157be562f4881ca312ca74656b002d493b1a6142a3e8f0cb47d3a7b1",
+          "scene": [
+            1440,
+            900
+          ],
+          "stops": 21
+        }
+      ],
+      "tabTranscriptSha256": "3531775f16e4a2731582141ba9d9334537ea067b183eec1bbbeb4c98c5ed919e",
+      "tabStops": 21,
+      "tabScene": {
+        "logicalWidth": 1440,
+        "logicalHeight": 900
+      }
+    },
+    {
+      "court": "linux-hidpi",
+      "artifact": 12667754570,
+      "artifactName": "studio-snapshots-linux-hidpi-ecf67c3f9efaad0a8671f8482018cc8363b68036",
+      "archiveSha256": "85e65b4d1ab7a2112b7909e6d03e1e73cbab644885d29255bf6b78109ded1b1c",
+      "matrixReceiptSha256": "1567f3c166511995ae60679105d444df8404f810e6503cb7a4487c8fe44b4dc1",
+      "runtime": {
+        "osName": [
+          "Linux"
+        ],
+        "osArch": [
+          "amd64"
+        ],
+        "javaVersion": [
+          "25.0.4.1"
+        ],
+        "javaFxVersion": [
+          "24.0.1+4"
+        ],
+        "glassPlatform": [
+          "platform-default"
+        ],
+        "prismOrder": [
+          "sw"
+        ],
+        "logicalWidth": [
+          "1440"
+        ],
+        "logicalHeight": [
+          "900"
+        ],
+        "nativeScaleX": [
+          "2"
+        ],
+        "nativeScaleY": [
+          "2"
+        ]
+      },
+      "namedCases": [
+        {
+          "suite": "compare.ParticipantsNavigatorFxSuite",
+          "cases": [
+            "a refused selected scale leaves another scale reachable by keyboard",
+            "Results mounts24served participants with exact refs and separate run counts",
+            "one pane Tab stop carries the row cursor; arrows and Enter activate exact cells",
+            "changing scale clears old cells while refused reports expose their reason",
+            "Results Tab order has one Participants stop and is recorded from actual traversal"
+          ],
+          "xmlSha256": "1f249d2dc52eb2d1b8b4ec34e1f66c18d16e5eb4e07ed958c91a9210f3e5cfdc",
+          "notApplicable": []
+        },
+        {
+          "suite": "harness.VisualPixelsSuite",
+          "cases": [
+            "identical rasters pass and a deliberate visible changed pixel is rejected",
+            "bounded one-level rounding passes; a broad one-level change fails",
+            "a missing or differently sized baseline cannot be a match"
+          ],
+          "xmlSha256": "cb1e820dc50ee65274a18c8ab2a2a9c345124471b13fddf1d090c54b80c9a6d5",
+          "notApplicable": []
+        },
+        {
+          "suite": "explore.SourceRecordsFxSuite",
+          "cases": [
+            "the selected record 7,214 is under the cursor with the backend's values",
+            "scrolling all 11,520 records makes at most 60 row cells; median frame within 32 ms",
+            "'Show raw record' shows the verbatim CSV line; Down and Enter select the next fixation",
+            "Enter on 'Show raw record' is the toggle's; End and Home reveal the edge rows",
+            "with no source served, the table says so",
+            "a cursor reveal survives a scroll changed by the next layout",
+            "an unsized list waits without repeated scrolls, then reveals its cursor"
+          ],
+          "xmlSha256": "feb62c6c61dfbe6f00cb8cfd5bba3bdaa1a3ef01496ce369a74b8ce290f29f7c",
+          "notApplicable": []
+        },
+        {
+          "suite": "shell.VisualParitySuite",
+          "cases": [
+            "t1-Data-light",
+            "t1-Data-dark",
+            "t1-Explore-light",
+            "t1-Explore-dark",
+            "t1-Analysis-light",
+            "t1-Analysis-dark",
+            "t1-Compare-light",
+            "t1-Compare-dark",
+            "t1-Figures-light",
+            "t1-Figures-dark",
+            "t2-Data-light",
+            "t2-Data-dark",
+            "t2-Explore-light",
+            "t2-Explore-dark",
+            "t2-Analysis-light",
+            "t2-Analysis-dark",
+            "t2-Compare-light",
+            "t2-Compare-dark",
+            "t2-Figures-light",
+            "t2-Figures-dark",
+            "t3-Data-light",
+            "t3-Data-dark",
+            "t3-Explore-light",
+            "t3-Explore-dark",
+            "t3-Analysis-light",
+            "t3-Analysis-dark",
+            "t3-Compare-light",
+            "t3-Compare-dark",
+            "t3-Figures-light",
+            "t3-Figures-dark"
+          ],
+          "xmlSha256": "afd4e36b606ff44fe1cf90168b37b035c32d1cd630ec5c4ef6d68405fda7597d",
+          "notApplicable": []
+        },
+        {
+          "suite": "shell.CanvasBoundaryFxSuite",
+          "cases": [
+            "trial pixels survive restored size and scale light",
+            "trial pixels survive restored size and scale dark"
+          ],
+          "xmlSha256": "eda14f3153a4497a1d72ca815b8f26114623da73f2a2c93eec360dfbde1a801d",
+          "notApplicable": []
+        },
+        {
+          "suite": "shell.SmallCanvasBoundaryFxSuite",
+          "cases": [
+            "trial pixels survive restored size and scale light",
+            "trial pixels survive restored size and scale dark"
+          ],
+          "xmlSha256": "b39afad6d853dd8af9e3e99036492f8d21fe91e6d24a102a2fec3f51753e0a9a",
+          "notApplicable": []
+        },
+        {
+          "suite": "shell.WorkspaceViewportFxSuite",
+          "cases": [
+            "clearing focus does not reveal unrelated rows or scroll the workspace",
+            "small query workspace keeps map space light",
+            "small Results workspace keeps space for axes and annotations light",
+            "small query workspace keeps map space dark",
+            "small Results workspace keeps space for axes and annotations dark"
+          ],
+          "xmlSha256": "71506e16a07459e58efc0a92b8aa4faf395df2ebd36f23b9d88911a15606c075",
+          "notApplicable": []
+        },
+        {
+          "suite": "shell.BoardWorkspaceViewportFxSuite",
+          "cases": [
+            "clearing focus does not reveal unrelated rows or scroll the workspace",
+            "small query workspace keeps map space light",
+            "small Results workspace keeps space for axes and annotations light",
+            "small query workspace keeps map space dark",
+            "small Results workspace keeps space for axes and annotations dark",
+            "Explore fits the viewport without horizontal displacement at board size"
+          ],
+          "xmlSha256": "b54e3fd7185ccd615acae71064b52534027b334bedd847712f8b61932ef5880e",
+          "notApplicable": []
+        },
+        {
+          "suite": "shell.A11yTreeSuite",
+          "cases": [
+            "data: every focusable node has an accessible role and name",
+            "explore: every focusable node has an accessible role and name",
+            "analysis: every focusable node has an accessible role and name",
+            "compare: every focusable node has an accessible role and name",
+            "compare-results: every focusable node has an accessible role and name",
+            "compare-results-dark: every focusable node has an accessible role and name",
+            "figures: every focusable node has an accessible role and name",
+            "data-empty: every focusable node has an accessible role and name",
+            "data: Tab visits the derived stops; docs/studio/a11y/tab-order-data.txt",
+            "explore: Tab visits the derived stops; docs/studio/a11y/tab-order-explore.txt",
+            "analysis: Tab visits the derived stops; docs/studio/a11y/tab-order-analysis.txt",
+            "compare: Tab visits the derived stops; docs/studio/a11y/tab-order-compare.txt",
+            "compare-results: Tab visits the derived stops; docs/studio/a11y/tab-order-compare-results.txt",
+            "compare-results-dark: Tab visits the derived stops; docs/studio/a11y/tab-order-compare-results-dark.txt",
+            "figures: Tab visits the derived stops; docs/studio/a11y/tab-order-figures.txt",
+            "data: a disabled action's drawn reason is its accessible help",
+            "explore: a disabled action's drawn reason is its accessible help",
+            "analysis: a disabled action's drawn reason is its accessible help",
+            "compare: a disabled action's drawn reason is its accessible help",
+            "compare-results: a disabled action's drawn reason is its accessible help",
+            "compare-results-dark: a disabled action's drawn reason is its accessible help",
+            "figures: a disabled action's drawn reason is its accessible help",
+            "data-empty: a disabled action's drawn reason is its accessible help",
+            "a drawn reason follows its control: enabled, disabled, and a changed reason",
+            "Save & run carries its drawn reason through enabled, disabled and blocked",
+            "focus is drawn in the accent: a crumb, a toggle and a pane"
+          ],
+          "xmlSha256": "938aa638b16e17f65e2093b8b0f442757f3d9e7a39bb6f3febee169c6434955b",
+          "notApplicable": []
+        },
+        {
+          "suite": "compare.CompareMapHostFxSuite",
+          "cases": [
+            "Compare uses served cells, row order, region and thresholds; styles and toggles change no score",
+            "late and wrong-identity map answers cannot replace the selected scale; refusals retry",
+            "a raster failure is visible and Retry redraws the same served cells"
+          ],
+          "xmlSha256": "a9c3710eb4ecc858150bc0be73bf1fde1e28df67a35e812a2380026d321dd289",
+          "notApplicable": []
+        },
+        {
+          "suite": "harness.HarnessSmokeSuite",
+          "cases": [
+            "opens a 1440x900 stage, clicks, asserts and writes 1x and 2x snapshots",
+            "a headless run draws on Monocle's virtual screen, not the display",
+            "keys reach the focus owner",
+            "a click is hit-tested before it is delivered",
+            "snapshot path segments are file-name safe",
+            "snapshot framing stays at the scene origin when children overflow"
+          ],
+          "xmlSha256": "61e58f834f226dc0b030cf137010b70fae7a98150bfa1d16e9b2dde287af54d2",
+          "notApplicable": [
+            "a headless run draws on Monocle's virtual screen, not the display"
+          ]
+        },
+        {
+          "suite": "plot.NativeOutputScaleFxSuite",
+          "cases": [
+            "native output scale keeps one-device-pixel feedback sharp"
+          ],
+          "xmlSha256": "9adaace7e8e635bd6d7481273f660955b08b1f54f5b716bc220d2279df87fccd",
+          "notApplicable": []
+        }
+      ],
+      "executedReportsSha256": "b9d0f2a880ce3b0e8d63991503a68be55aaaf85591489e8fc16523d308ea7dab",
+      "workspaceVisibility": [
+        {
+          "path": "target/studio-snapshots/WorkspaceViewportFxSuite/small-query-workspace-keeps-map-space-light/bounds.json",
+          "sha256": "62ddf1b724c6abebc3cabdfffc8e685be5c7603b3b9843ef4fc6a7cdb239201b",
+          "measurements": {
+            "scene": [
+              1024,
+              656
+            ],
+            "mapDataFrameHeights": [
+              176,
+              192
+            ]
+          }
+        },
+        {
+          "path": "target/studio-snapshots/WorkspaceViewportFxSuite/small-query-workspace-keeps-map-space-dark/bounds.json",
+          "sha256": "62ddf1b724c6abebc3cabdfffc8e685be5c7603b3b9843ef4fc6a7cdb239201b",
+          "measurements": {
+            "scene": [
+              1024,
+              656
+            ],
+            "mapDataFrameHeights": [
+              176,
+              192
+            ]
+          }
+        },
+        {
+          "path": "target/studio-snapshots/WorkspaceViewportFxSuite/small-Results-workspace-keeps-space-for-axes-and-annotations-light/bounds-and-focus.json",
+          "sha256": "49eadc62f935424f2e32791f81553431e3699cf4ef38cbce913aa6e6dd35d76f",
+          "measurements": {
+            "scene": [
+              1024,
+              656
+            ],
+            "participantPlotHeight": 257.5,
+            "forward": [
+              "menu-button: Project memory-study",
+              "toggle-button: Compare (\u23184)",
+              "button: Cancel Run 8 (job 1)",
+              "button: Summary \u00b7 by retrieval response, current location",
+              "list: Participants, P01, overall D +0.42, n 19; run queries 19 contributing of 20, 0 failed",
+              "region: Participant plot of Participant D at 2\u00b0: each participant's mean D in 2 groups, lines join a participant's means, a tick marks each group's grand mean. Annotations: P17 \u00b7 selected, 19 of 20 contributing, Remembered +0.40, n 17, Forgotten +0.22, n 2; P05 \u00b7 17 of 20 contributing, Remembered +0.39, n 13, Forgotten +0.22, n 4, 3 failed queries, 2 Remembered, 1 Forgotten, no value, not zero. One focus stop; arrow keys move to the nearest mark, Page Up and Page Down step in order, Enter selects, Escape clears the selection.",
+              "region: Scale profile of run 7: the whole-report grand mean D at 4 scales, bold, over each participant's mean D, faint. One focus stop; arrow keys move to the nearest mark, Page Up and Page Down step in order, Enter selects, Escape clears the selection.",
+              "toggle-button: \u03c3 2\u00b0",
+              "button: Explain P17 \u2192 keeps: by retrieval response \u203a P17",
+              "table: Participant summary at \u03c3 2\u00b0, run 7. One focus stop; arrow keys move the row cursor, Enter selects, Escape clears the selection.",
+              "region: Reporting",
+              "radio-button: Group by: response",
+              "text-field: First level (minuend)",
+              "text-field: Subtract level (subtrahend)",
+              "button: Apply contrast",
+              "button: Clear contrast",
+              "check-box: Exclude queries with >25% of fixation duration outside the analysis window",
+              "check-box: Minimum queries per group: 3",
+              "radio-button: Summary unit and weighting: Equal weight per participant",
+              "button: Save as\u2026",
+              "button: Cancel Run 8 (job 1)"
+            ],
+            "reverse": [
+              "menu-button: Project memory-study",
+              "button: Cancel Run 8 (job 1)",
+              "button: Save as\u2026",
+              "radio-button: Summary unit and weighting: Equal weight per participant",
+              "check-box: Minimum queries per group: 3",
+              "check-box: Exclude queries with >25% of fixation duration outside the analysis window",
+              "button: Clear contrast",
+              "button: Apply contrast",
+              "text-field: Subtract level (subtrahend)",
+              "text-field: First level (minuend)",
+              "radio-button: Group by: response",
+              "region: Reporting",
+              "table: Participant summary at \u03c3 2\u00b0, run 7. One focus stop; arrow keys move the row cursor, Enter selects, Escape clears the selection.",
+              "button: Explain P17 \u2192 keeps: by retrieval response \u203a P17",
+              "toggle-button: \u03c3 2\u00b0",
+              "region: Scale profile of run 7: the whole-report grand mean D at 4 scales, bold, over each participant's mean D, faint. One focus stop; arrow keys move to the nearest mark, Page Up and Page Down step in order, Enter selects, Escape clears the selection.",
+              "region: Participant plot of Participant D at 2\u00b0: each participant's mean D in 2 groups, lines join a participant's means, a tick marks each group's grand mean. Annotations: P17 \u00b7 selected, 19 of 20 contributing, Remembered +0.40, n 17, Forgotten +0.22, n 2; P05 \u00b7 17 of 20 contributing, Remembered +0.39, n 13, Forgotten +0.22, n 4, 3 failed queries, 2 Remembered, 1 Forgotten, no value, not zero. One focus stop; arrow keys move to the nearest mark, Page Up and Page Down step in order, Enter selects, Escape clears the selection.",
+              "list: Participants, P01, overall D +0.42, n 19; run queries 19 contributing of 20, 0 failed",
+              "button: Summary \u00b7 by retrieval response, current location",
+              "button: Cancel Run 8 (job 1)",
+              "toggle-button: Compare (\u23184)"
+            ]
+          }
+        },
+        {
+          "path": "target/studio-snapshots/WorkspaceViewportFxSuite/small-Results-workspace-keeps-space-for-axes-and-annotations-dark/bounds-and-focus.json",
+          "sha256": "49eadc62f935424f2e32791f81553431e3699cf4ef38cbce913aa6e6dd35d76f",
+          "measurements": {
+            "scene": [
+              1024,
+              656
+            ],
+            "participantPlotHeight": 257.5,
+            "forward": [
+              "menu-button: Project memory-study",
+              "toggle-button: Compare (\u23184)",
+              "button: Cancel Run 8 (job 1)",
+              "button: Summary \u00b7 by retrieval response, current location",
+              "list: Participants, P01, overall D +0.42, n 19; run queries 19 contributing of 20, 0 failed",
+              "region: Participant plot of Participant D at 2\u00b0: each participant's mean D in 2 groups, lines join a participant's means, a tick marks each group's grand mean. Annotations: P17 \u00b7 selected, 19 of 20 contributing, Remembered +0.40, n 17, Forgotten +0.22, n 2; P05 \u00b7 17 of 20 contributing, Remembered +0.39, n 13, Forgotten +0.22, n 4, 3 failed queries, 2 Remembered, 1 Forgotten, no value, not zero. One focus stop; arrow keys move to the nearest mark, Page Up and Page Down step in order, Enter selects, Escape clears the selection.",
+              "region: Scale profile of run 7: the whole-report grand mean D at 4 scales, bold, over each participant's mean D, faint. One focus stop; arrow keys move to the nearest mark, Page Up and Page Down step in order, Enter selects, Escape clears the selection.",
+              "toggle-button: \u03c3 2\u00b0",
+              "button: Explain P17 \u2192 keeps: by retrieval response \u203a P17",
+              "table: Participant summary at \u03c3 2\u00b0, run 7. One focus stop; arrow keys move the row cursor, Enter selects, Escape clears the selection.",
+              "region: Reporting",
+              "radio-button: Group by: response",
+              "text-field: First level (minuend)",
+              "text-field: Subtract level (subtrahend)",
+              "button: Apply contrast",
+              "button: Clear contrast",
+              "check-box: Exclude queries with >25% of fixation duration outside the analysis window",
+              "check-box: Minimum queries per group: 3",
+              "radio-button: Summary unit and weighting: Equal weight per participant",
+              "button: Save as\u2026",
+              "button: Cancel Run 8 (job 1)"
+            ],
+            "reverse": [
+              "menu-button: Project memory-study",
+              "button: Cancel Run 8 (job 1)",
+              "button: Save as\u2026",
+              "radio-button: Summary unit and weighting: Equal weight per participant",
+              "check-box: Minimum queries per group: 3",
+              "check-box: Exclude queries with >25% of fixation duration outside the analysis window",
+              "button: Clear contrast",
+              "button: Apply contrast",
+              "text-field: Subtract level (subtrahend)",
+              "text-field: First level (minuend)",
+              "radio-button: Group by: response",
+              "region: Reporting",
+              "table: Participant summary at \u03c3 2\u00b0, run 7. One focus stop; arrow keys move the row cursor, Enter selects, Escape clears the selection.",
+              "button: Explain P17 \u2192 keeps: by retrieval response \u203a P17",
+              "toggle-button: \u03c3 2\u00b0",
+              "region: Scale profile of run 7: the whole-report grand mean D at 4 scales, bold, over each participant's mean D, faint. One focus stop; arrow keys move to the nearest mark, Page Up and Page Down step in order, Enter selects, Escape clears the selection.",
+              "region: Participant plot of Participant D at 2\u00b0: each participant's mean D in 2 groups, lines join a participant's means, a tick marks each group's grand mean. Annotations: P17 \u00b7 selected, 19 of 20 contributing, Remembered +0.40, n 17, Forgotten +0.22, n 2; P05 \u00b7 17 of 20 contributing, Remembered +0.39, n 13, Forgotten +0.22, n 4, 3 failed queries, 2 Remembered, 1 Forgotten, no value, not zero. One focus stop; arrow keys move to the nearest mark, Page Up and Page Down step in order, Enter selects, Escape clears the selection.",
+              "list: Participants, P01, overall D +0.42, n 19; run queries 19 contributing of 20, 0 failed",
+              "button: Summary \u00b7 by retrieval response, current location",
+              "button: Cancel Run 8 (job 1)",
+              "toggle-button: Compare (\u23184)"
+            ]
+          }
+        },
+        {
+          "path": "target/studio-snapshots/BoardWorkspaceViewportFxSuite/small-query-workspace-keeps-map-space-light/bounds.json",
+          "sha256": "4d15f2f69c081fd88f717ec3b4f5ecc3ffc89d4ee0fd42e2085e38589190d97f",
+          "measurements": {
+            "scene": [
+              1440,
+              900
+            ],
+            "mapDataFrameHeights": [
+              197,
+              213
+            ]
+          }
+        },
+        {
+          "path": "target/studio-snapshots/BoardWorkspaceViewportFxSuite/small-query-workspace-keeps-map-space-dark/bounds.json",
+          "sha256": "4d15f2f69c081fd88f717ec3b4f5ecc3ffc89d4ee0fd42e2085e38589190d97f",
+          "measurements": {
+            "scene": [
+              1440,
+              900
+            ],
+            "mapDataFrameHeights": [
+              197,
+              213
+            ]
+          }
+        },
+        {
+          "path": "target/studio-snapshots/BoardWorkspaceViewportFxSuite/small-Results-workspace-keeps-space-for-axes-and-annotations-light/bounds-and-focus.json",
+          "sha256": "61a2cf05170e9c9202e085dfbb41f9ba241f2526d0dd18f5affb85a0dc3cb25a",
+          "measurements": {
+            "scene": [
+              1440,
+              900
+            ],
+            "participantPlotHeight": 277,
+            "forward": [
+              "menu-button: Project memory-study",
+              "toggle-button: Compare (\u23184)",
+              "button: Cancel Run 8 (job 1)",
+              "button: Summary \u00b7 by retrieval response, current location",
+              "list: Participants, P01, overall D +0.42, n 19; run queries 19 contributing of 20, 0 failed",
+              "region: Participant plot of Participant D at 2\u00b0: each participant's mean D in 2 groups, lines join a participant's means, a tick marks each group's grand mean. Annotations: P17 \u00b7 selected, 19 of 20 contributing, Remembered +0.40, n 17, Forgotten +0.22, n 2; P05 \u00b7 17 of 20 contributing, Remembered +0.39, n 13, Forgotten +0.22, n 4, 3 failed queries, 2 Remembered, 1 Forgotten, no value, not zero. One focus stop; arrow keys move to the nearest mark, Page Up and Page Down step in order, Enter selects, Escape clears the selection.",
+              "region: Scale profile of run 7: the whole-report grand mean D at 4 scales, bold, over each participant's mean D, faint. One focus stop; arrow keys move to the nearest mark, Page Up and Page Down step in order, Enter selects, Escape clears the selection.",
+              "toggle-button: \u03c3 2\u00b0",
+              "button: Explain P17 \u2192 keeps: by retrieval response \u203a P17",
+              "table: Participant summary at \u03c3 2\u00b0, run 7. One focus stop; arrow keys move the row cursor, Enter selects, Escape clears the selection.",
+              "region: Reporting",
+              "radio-button: Group by: response",
+              "text-field: First level (minuend)",
+              "text-field: Subtract level (subtrahend)",
+              "button: Apply contrast",
+              "button: Clear contrast",
+              "check-box: Exclude queries with >25% of fixation duration outside the analysis window",
+              "check-box: Minimum queries per group: 3",
+              "radio-button: Summary unit and weighting: Equal weight per participant",
+              "button: Save as\u2026",
+              "button: Cancel Run 8 (job 1)"
+            ],
+            "reverse": [
+              "menu-button: Project memory-study",
+              "button: Cancel Run 8 (job 1)",
+              "button: Save as\u2026",
+              "radio-button: Summary unit and weighting: Equal weight per participant",
+              "check-box: Minimum queries per group: 3",
+              "check-box: Exclude queries with >25% of fixation duration outside the analysis window",
+              "button: Clear contrast",
+              "button: Apply contrast",
+              "text-field: Subtract level (subtrahend)",
+              "text-field: First level (minuend)",
+              "radio-button: Group by: response",
+              "region: Reporting",
+              "table: Participant summary at \u03c3 2\u00b0, run 7. One focus stop; arrow keys move the row cursor, Enter selects, Escape clears the selection.",
+              "button: Explain P17 \u2192 keeps: by retrieval response \u203a P17",
+              "toggle-button: \u03c3 2\u00b0",
+              "region: Scale profile of run 7: the whole-report grand mean D at 4 scales, bold, over each participant's mean D, faint. One focus stop; arrow keys move to the nearest mark, Page Up and Page Down step in order, Enter selects, Escape clears the selection.",
+              "region: Participant plot of Participant D at 2\u00b0: each participant's mean D in 2 groups, lines join a participant's means, a tick marks each group's grand mean. Annotations: P17 \u00b7 selected, 19 of 20 contributing, Remembered +0.40, n 17, Forgotten +0.22, n 2; P05 \u00b7 17 of 20 contributing, Remembered +0.39, n 13, Forgotten +0.22, n 4, 3 failed queries, 2 Remembered, 1 Forgotten, no value, not zero. One focus stop; arrow keys move to the nearest mark, Page Up and Page Down step in order, Enter selects, Escape clears the selection.",
+              "list: Participants, P01, overall D +0.42, n 19; run queries 19 contributing of 20, 0 failed",
+              "button: Summary \u00b7 by retrieval response, current location",
+              "button: Cancel Run 8 (job 1)",
+              "toggle-button: Compare (\u23184)"
+            ]
+          }
+        },
+        {
+          "path": "target/studio-snapshots/BoardWorkspaceViewportFxSuite/small-Results-workspace-keeps-space-for-axes-and-annotations-dark/bounds-and-focus.json",
+          "sha256": "61a2cf05170e9c9202e085dfbb41f9ba241f2526d0dd18f5affb85a0dc3cb25a",
+          "measurements": {
+            "scene": [
+              1440,
+              900
+            ],
+            "participantPlotHeight": 277,
+            "forward": [
+              "menu-button: Project memory-study",
+              "toggle-button: Compare (\u23184)",
+              "button: Cancel Run 8 (job 1)",
+              "button: Summary \u00b7 by retrieval response, current location",
+              "list: Participants, P01, overall D +0.42, n 19; run queries 19 contributing of 20, 0 failed",
+              "region: Participant plot of Participant D at 2\u00b0: each participant's mean D in 2 groups, lines join a participant's means, a tick marks each group's grand mean. Annotations: P17 \u00b7 selected, 19 of 20 contributing, Remembered +0.40, n 17, Forgotten +0.22, n 2; P05 \u00b7 17 of 20 contributing, Remembered +0.39, n 13, Forgotten +0.22, n 4, 3 failed queries, 2 Remembered, 1 Forgotten, no value, not zero. One focus stop; arrow keys move to the nearest mark, Page Up and Page Down step in order, Enter selects, Escape clears the selection.",
+              "region: Scale profile of run 7: the whole-report grand mean D at 4 scales, bold, over each participant's mean D, faint. One focus stop; arrow keys move to the nearest mark, Page Up and Page Down step in order, Enter selects, Escape clears the selection.",
+              "toggle-button: \u03c3 2\u00b0",
+              "button: Explain P17 \u2192 keeps: by retrieval response \u203a P17",
+              "table: Participant summary at \u03c3 2\u00b0, run 7. One focus stop; arrow keys move the row cursor, Enter selects, Escape clears the selection.",
+              "region: Reporting",
+              "radio-button: Group by: response",
+              "text-field: First level (minuend)",
+              "text-field: Subtract level (subtrahend)",
+              "button: Apply contrast",
+              "button: Clear contrast",
+              "check-box: Exclude queries with >25% of fixation duration outside the analysis window",
+              "check-box: Minimum queries per group: 3",
+              "radio-button: Summary unit and weighting: Equal weight per participant",
+              "button: Save as\u2026",
+              "button: Cancel Run 8 (job 1)"
+            ],
+            "reverse": [
+              "menu-button: Project memory-study",
+              "button: Cancel Run 8 (job 1)",
+              "button: Save as\u2026",
+              "radio-button: Summary unit and weighting: Equal weight per participant",
+              "check-box: Minimum queries per group: 3",
+              "check-box: Exclude queries with >25% of fixation duration outside the analysis window",
+              "button: Clear contrast",
+              "button: Apply contrast",
+              "text-field: Subtract level (subtrahend)",
+              "text-field: First level (minuend)",
+              "radio-button: Group by: response",
+              "region: Reporting",
+              "table: Participant summary at \u03c3 2\u00b0, run 7. One focus stop; arrow keys move the row cursor, Enter selects, Escape clears the selection.",
+              "button: Explain P17 \u2192 keeps: by retrieval response \u203a P17",
+              "toggle-button: \u03c3 2\u00b0",
+              "region: Scale profile of run 7: the whole-report grand mean D at 4 scales, bold, over each participant's mean D, faint. One focus stop; arrow keys move to the nearest mark, Page Up and Page Down step in order, Enter selects, Escape clears the selection.",
+              "region: Participant plot of Participant D at 2\u00b0: each participant's mean D in 2 groups, lines join a participant's means, a tick marks each group's grand mean. Annotations: P17 \u00b7 selected, 19 of 20 contributing, Remembered +0.40, n 17, Forgotten +0.22, n 2; P05 \u00b7 17 of 20 contributing, Remembered +0.39, n 13, Forgotten +0.22, n 4, 3 failed queries, 2 Remembered, 1 Forgotten, no value, not zero. One focus stop; arrow keys move to the nearest mark, Page Up and Page Down step in order, Enter selects, Escape clears the selection.",
+              "list: Participants, P01, overall D +0.42, n 19; run queries 19 contributing of 20, 0 failed",
+              "button: Summary \u00b7 by retrieval response, current location",
+              "button: Cancel Run 8 (job 1)",
+              "toggle-button: Compare (\u23184)"
+            ]
+          }
+        }
+      ],
+      "fullResultsTranscripts": [
+        {
+          "path": "target/studio-snapshots/A11yTreeSuite/compare-results.json",
+          "sha256": "6bc81e04157be562f4881ca312ca74656b002d493b1a6142a3e8f0cb47d3a7b1",
+          "scene": [
+            1440,
+            900
+          ],
+          "stops": 21
+        },
+        {
+          "path": "target/studio-snapshots/A11yTreeSuite/compare-results-dark.json",
+          "sha256": "6bc81e04157be562f4881ca312ca74656b002d493b1a6142a3e8f0cb47d3a7b1",
+          "scene": [
+            1440,
+            900
+          ],
+          "stops": 21
+        }
+      ],
+      "tabTranscriptSha256": "3531775f16e4a2731582141ba9d9334537ea067b183eec1bbbeb4c98c5ed919e",
+      "tabStops": 21,
+      "tabScene": {
+        "logicalWidth": 1440,
+        "logicalHeight": 900
+      }
+    },
+    {
+      "court": "macos",
+      "artifact": 12669011148,
+      "artifactName": "studio-snapshots-macos-ecf67c3f9efaad0a8671f8482018cc8363b68036",
+      "archiveSha256": "e44e278cd3a8d36a2171349af4bed9276fbde3b04b908a050794a7dc36486a2b",
+      "matrixReceiptSha256": "2fddc0b6f5d101ba638e95b36f42e54f33c9c05f5eb864d06202ba4f19ed7db0",
+      "runtime": {
+        "osName": [
+          "Mac OS X"
+        ],
+        "osArch": [
+          "aarch64"
+        ],
+        "javaVersion": [
+          "25.0.4.1"
+        ],
+        "javaFxVersion": [
+          "24.0.1+4"
+        ],
+        "glassPlatform": [
+          "platform-default"
+        ],
+        "prismOrder": [
+          "sw"
+        ],
+        "logicalWidth": [
+          "1024"
+        ],
+        "logicalHeight": [
+          "656"
+        ],
+        "nativeScaleX": [
+          "1"
+        ],
+        "nativeScaleY": [
+          "1"
+        ]
+      },
+      "namedCases": [
+        {
+          "suite": "compare.ParticipantsNavigatorFxSuite",
+          "cases": [
+            "a refused selected scale leaves another scale reachable by keyboard",
+            "Results mounts24served participants with exact refs and separate run counts",
+            "one pane Tab stop carries the row cursor; arrows and Enter activate exact cells",
+            "changing scale clears old cells while refused reports expose their reason",
+            "Results Tab order has one Participants stop and is recorded from actual traversal"
+          ],
+          "xmlSha256": "58704e7830c24caab3fa63284e63d504cdf128faa0d00892b0b5ad68aac79170",
+          "notApplicable": []
+        },
+        {
+          "suite": "harness.VisualPixelsSuite",
+          "cases": [
+            "identical rasters pass and a deliberate visible changed pixel is rejected",
+            "bounded one-level rounding passes; a broad one-level change fails",
+            "a missing or differently sized baseline cannot be a match"
+          ],
+          "xmlSha256": "b9d5919eeddbd724e08adc36215930ae825256b05c4fe731794d3ca8e9a4692a",
+          "notApplicable": []
+        },
+        {
+          "suite": "explore.SourceRecordsFxSuite",
+          "cases": [
+            "the selected record 7,214 is under the cursor with the backend's values",
+            "scrolling all 11,520 records makes at most 60 row cells; median frame within 32 ms",
+            "'Show raw record' shows the verbatim CSV line; Down and Enter select the next fixation",
+            "Enter on 'Show raw record' is the toggle's; End and Home reveal the edge rows",
+            "with no source served, the table says so",
+            "a cursor reveal survives a scroll changed by the next layout",
+            "an unsized list waits without repeated scrolls, then reveals its cursor"
+          ],
+          "xmlSha256": "8526dbc1c62fd847324936f2c676a6b84084190b427de2edf50cffb670a46ba9",
+          "notApplicable": []
+        },
+        {
+          "suite": "shell.VisualParitySuite",
+          "cases": [
+            "t1-Data-light",
+            "t1-Data-dark",
+            "t1-Explore-light",
+            "t1-Explore-dark",
+            "t1-Analysis-light",
+            "t1-Analysis-dark",
+            "t1-Compare-light",
+            "t1-Compare-dark",
+            "t1-Figures-light",
+            "t1-Figures-dark",
+            "t2-Data-light",
+            "t2-Data-dark",
+            "t2-Explore-light",
+            "t2-Explore-dark",
+            "t2-Analysis-light",
+            "t2-Analysis-dark",
+            "t2-Compare-light",
+            "t2-Compare-dark",
+            "t2-Figures-light",
+            "t2-Figures-dark",
+            "t3-Data-light",
+            "t3-Data-dark",
+            "t3-Explore-light",
+            "t3-Explore-dark",
+            "t3-Analysis-light",
+            "t3-Analysis-dark",
+            "t3-Compare-light",
+            "t3-Compare-dark",
+            "t3-Figures-light",
+            "t3-Figures-dark"
+          ],
+          "xmlSha256": "35c374aa298e3fb5110747218cb581831fff3998ddee95e3ef27365420286f69",
+          "notApplicable": []
+        },
+        {
+          "suite": "shell.CanvasBoundaryFxSuite",
+          "cases": [
+            "trial pixels survive restored size and scale light",
+            "trial pixels survive restored size and scale dark"
+          ],
+          "xmlSha256": "4b146039183d0f8adf527d45d0a2e9ac0a8de6dcfb6acc57a341990bd5662b4e",
+          "notApplicable": []
+        },
+        {
+          "suite": "shell.SmallCanvasBoundaryFxSuite",
+          "cases": [
+            "trial pixels survive restored size and scale light",
+            "trial pixels survive restored size and scale dark"
+          ],
+          "xmlSha256": "1a9efd1c66869180a881edf5556aef741ee213cf26e2403c343aad706f15d27d",
+          "notApplicable": []
+        },
+        {
+          "suite": "shell.WorkspaceViewportFxSuite",
+          "cases": [
+            "clearing focus does not reveal unrelated rows or scroll the workspace",
+            "small query workspace keeps map space light",
+            "small Results workspace keeps space for axes and annotations light",
+            "small query workspace keeps map space dark",
+            "small Results workspace keeps space for axes and annotations dark"
+          ],
+          "xmlSha256": "ac2c47d455b3a45b0a4b2960d37447ba8f59b627493c1db36d85b80ac8961d92",
+          "notApplicable": []
+        },
+        {
+          "suite": "shell.BoardWorkspaceViewportFxSuite",
+          "cases": [
+            "clearing focus does not reveal unrelated rows or scroll the workspace",
+            "small query workspace keeps map space light",
+            "small Results workspace keeps space for axes and annotations light",
+            "small query workspace keeps map space dark",
+            "small Results workspace keeps space for axes and annotations dark",
+            "Explore fits the viewport without horizontal displacement at board size"
+          ],
+          "xmlSha256": "ac3562a8edf66634e399d87e2502521604d4436c585428050c350bf0f75169ce",
+          "notApplicable": []
+        },
+        {
+          "suite": "shell.A11yTreeSuite",
+          "cases": [
+            "data: every focusable node has an accessible role and name",
+            "explore: every focusable node has an accessible role and name",
+            "analysis: every focusable node has an accessible role and name",
+            "compare: every focusable node has an accessible role and name",
+            "compare-results: every focusable node has an accessible role and name",
+            "compare-results-dark: every focusable node has an accessible role and name",
+            "figures: every focusable node has an accessible role and name",
+            "data-empty: every focusable node has an accessible role and name",
+            "data: Tab visits the derived stops; docs/studio/a11y/tab-order-data.txt",
+            "explore: Tab visits the derived stops; docs/studio/a11y/tab-order-explore.txt",
+            "analysis: Tab visits the derived stops; docs/studio/a11y/tab-order-analysis.txt",
+            "compare: Tab visits the derived stops; docs/studio/a11y/tab-order-compare.txt",
+            "compare-results: Tab visits the derived stops; docs/studio/a11y/tab-order-compare-results.txt",
+            "compare-results-dark: Tab visits the derived stops; docs/studio/a11y/tab-order-compare-results-dark.txt",
+            "figures: Tab visits the derived stops; docs/studio/a11y/tab-order-figures.txt",
+            "data: a disabled action's drawn reason is its accessible help",
+            "explore: a disabled action's drawn reason is its accessible help",
+            "analysis: a disabled action's drawn reason is its accessible help",
+            "compare: a disabled action's drawn reason is its accessible help",
+            "compare-results: a disabled action's drawn reason is its accessible help",
+            "compare-results-dark: a disabled action's drawn reason is its accessible help",
+            "figures: a disabled action's drawn reason is its accessible help",
+            "data-empty: a disabled action's drawn reason is its accessible help",
+            "a drawn reason follows its control: enabled, disabled, and a changed reason",
+            "Save & run carries its drawn reason through enabled, disabled and blocked",
+            "focus is drawn in the accent: a crumb, a toggle and a pane"
+          ],
+          "xmlSha256": "5146fd433aaf8701e07f1f056468533f7a7afffeefa3f3636a9e9c1f0abda4ff",
+          "notApplicable": [
+            "data: every focusable node has an accessible role and name",
+            "explore: every focusable node has an accessible role and name",
+            "analysis: every focusable node has an accessible role and name",
+            "compare: every focusable node has an accessible role and name",
+            "compare-results: every focusable node has an accessible role and name",
+            "compare-results-dark: every focusable node has an accessible role and name",
+            "figures: every focusable node has an accessible role and name",
+            "data-empty: every focusable node has an accessible role and name"
+          ]
+        },
+        {
+          "suite": "compare.CompareMapHostFxSuite",
+          "cases": [
+            "Compare uses served cells, row order, region and thresholds; styles and toggles change no score",
+            "late and wrong-identity map answers cannot replace the selected scale; refusals retry",
+            "a raster failure is visible and Retry redraws the same served cells"
+          ],
+          "xmlSha256": "0479d0fdf756cbae79117c49fee57afb71b7db00f17f2bc1ce63e085bfd675ec",
+          "notApplicable": []
+        },
+        {
+          "suite": "harness.HarnessSmokeSuite",
+          "cases": [
+            "opens a 1440x900 stage, clicks, asserts and writes 1x and 2x snapshots",
+            "a headless run draws on Monocle's virtual screen, not the display",
+            "keys reach the focus owner",
+            "a click is hit-tested before it is delivered",
+            "snapshot path segments are file-name safe",
+            "snapshot framing stays at the scene origin when children overflow"
+          ],
+          "xmlSha256": "ddf56d5e3860189be41118ea3f1601f80a7f53d659f26bc0cd8425e1444c0e78",
+          "notApplicable": [
+            "opens a 1440x900 stage, clicks, asserts and writes 1x and 2x snapshots",
+            "a headless run draws on Monocle's virtual screen, not the display"
+          ]
+        },
+        {
+          "suite": "plot.NativeOutputScaleFxSuite",
+          "cases": [
+            "native output scale keeps one-device-pixel feedback sharp"
+          ],
+          "xmlSha256": "5bd54954b4e511f2e1a955bc7441b696b296adf494452c092d2ea11ba7ebb958",
+          "notApplicable": []
+        }
+      ],
+      "executedReportsSha256": "f78a1230ee99628e73b1c338a99d86d0afd9ad8c8e17049280207fcb76103755",
+      "workspaceVisibility": [
+        {
+          "path": "target/studio-snapshots/WorkspaceViewportFxSuite/small-query-workspace-keeps-map-space-light/bounds.json",
+          "sha256": "df91e4271c39139b4e8bacf058acfb1fa064f9dc1e72bc80537f9f82846b31de",
+          "measurements": {
+            "scene": [
+              1024,
+              656
+            ],
+            "mapDataFrameHeights": [
+              194,
+              210
+            ]
+          }
+        },
+        {
+          "path": "target/studio-snapshots/WorkspaceViewportFxSuite/small-query-workspace-keeps-map-space-dark/bounds.json",
+          "sha256": "62ddf1b724c6abebc3cabdfffc8e685be5c7603b3b9843ef4fc6a7cdb239201b",
+          "measurements": {
+            "scene": [
+              1024,
+              656
+            ],
+            "mapDataFrameHeights": [
+              176,
+              192
+            ]
+          }
+        },
+        {
+          "path": "target/studio-snapshots/WorkspaceViewportFxSuite/small-Results-workspace-keeps-space-for-axes-and-annotations-light/bounds-and-focus.json",
+          "sha256": "5d5a310a532b9a053408124efee3a7b677d3bceb786332022ef7db2390b2259d",
+          "measurements": {
+            "scene": [
+              1024,
+              656
+            ],
+            "participantPlotHeight": 257,
+            "forward": [
+              "menu-button: Project memory-study",
+              "toggle-button: Compare (\u23184)",
+              "button: Cancel Run 8 (job 1)",
+              "button: Summary \u00b7 by retrieval response, current location",
+              "list: Participants, P01, overall D +0.42, n 19; run queries 19 contributing of 20, 0 failed",
+              "region: Participant plot of Participant D at 2\u00b0: each participant's mean D in 2 groups, lines join a participant's means, a tick marks each group's grand mean. Annotations: P17 \u00b7 selected, 19 of 20 contributing, Remembered +0.40, n 17, Forgotten +0.22, n 2; P05 \u00b7 17 of 20 contributing, Remembered +0.39, n 13, Forgotten +0.22, n 4, 3 failed queries, 2 Remembered, 1 Forgotten, no value, not zero. One focus stop; arrow keys move to the nearest mark, Page Up and Page Down step in order, Enter selects, Escape clears the selection.",
+              "region: Scale profile of run 7: the whole-report grand mean D at 4 scales, bold, over each participant's mean D, faint. One focus stop; arrow keys move to the nearest mark, Page Up and Page Down step in order, Enter selects, Escape clears the selection.",
+              "toggle-button: \u03c3 2\u00b0",
+              "button: Explain P17 \u2192 keeps: by retrieval response \u203a P17",
+              "table: Participant summary at \u03c3 2\u00b0, run 7. One focus stop; arrow keys move the row cursor, Enter selects, Escape clears the selection.",
+              "region: Reporting",
+              "radio-button: Group by: response",
+              "text-field: First level (minuend)",
+              "text-field: Subtract level (subtrahend)",
+              "button: Apply contrast",
+              "button: Clear contrast",
+              "check-box: Exclude queries with >25% of fixation duration outside the analysis window",
+              "check-box: Minimum queries per group: 3",
+              "radio-button: Summary unit and weighting: Equal weight per participant",
+              "button: Save as\u2026",
+              "button: Cancel Run 8 (job 1)"
+            ],
+            "reverse": [
+              "menu-button: Project memory-study",
+              "button: Cancel Run 8 (job 1)",
+              "button: Save as\u2026",
+              "radio-button: Summary unit and weighting: Equal weight per participant",
+              "check-box: Minimum queries per group: 3",
+              "check-box: Exclude queries with >25% of fixation duration outside the analysis window",
+              "button: Clear contrast",
+              "button: Apply contrast",
+              "text-field: Subtract level (subtrahend)",
+              "text-field: First level (minuend)",
+              "radio-button: Group by: response",
+              "region: Reporting",
+              "table: Participant summary at \u03c3 2\u00b0, run 7. One focus stop; arrow keys move the row cursor, Enter selects, Escape clears the selection.",
+              "button: Explain P17 \u2192 keeps: by retrieval response \u203a P17",
+              "toggle-button: \u03c3 2\u00b0",
+              "region: Scale profile of run 7: the whole-report grand mean D at 4 scales, bold, over each participant's mean D, faint. One focus stop; arrow keys move to the nearest mark, Page Up and Page Down step in order, Enter selects, Escape clears the selection.",
+              "region: Participant plot of Participant D at 2\u00b0: each participant's mean D in 2 groups, lines join a participant's means, a tick marks each group's grand mean. Annotations: P17 \u00b7 selected, 19 of 20 contributing, Remembered +0.40, n 17, Forgotten +0.22, n 2; P05 \u00b7 17 of 20 contributing, Remembered +0.39, n 13, Forgotten +0.22, n 4, 3 failed queries, 2 Remembered, 1 Forgotten, no value, not zero. One focus stop; arrow keys move to the nearest mark, Page Up and Page Down step in order, Enter selects, Escape clears the selection.",
+              "list: Participants, P01, overall D +0.42, n 19; run queries 19 contributing of 20, 0 failed",
+              "button: Summary \u00b7 by retrieval response, current location",
+              "button: Cancel Run 8 (job 1)",
+              "toggle-button: Compare (\u23184)"
+            ]
+          }
+        },
+        {
+          "path": "target/studio-snapshots/WorkspaceViewportFxSuite/small-Results-workspace-keeps-space-for-axes-and-annotations-dark/bounds-and-focus.json",
+          "sha256": "5d5a310a532b9a053408124efee3a7b677d3bceb786332022ef7db2390b2259d",
+          "measurements": {
+            "scene": [
+              1024,
+              656
+            ],
+            "participantPlotHeight": 257,
+            "forward": [
+              "menu-button: Project memory-study",
+              "toggle-button: Compare (\u23184)",
+              "button: Cancel Run 8 (job 1)",
+              "button: Summary \u00b7 by retrieval response, current location",
+              "list: Participants, P01, overall D +0.42, n 19; run queries 19 contributing of 20, 0 failed",
+              "region: Participant plot of Participant D at 2\u00b0: each participant's mean D in 2 groups, lines join a participant's means, a tick marks each group's grand mean. Annotations: P17 \u00b7 selected, 19 of 20 contributing, Remembered +0.40, n 17, Forgotten +0.22, n 2; P05 \u00b7 17 of 20 contributing, Remembered +0.39, n 13, Forgotten +0.22, n 4, 3 failed queries, 2 Remembered, 1 Forgotten, no value, not zero. One focus stop; arrow keys move to the nearest mark, Page Up and Page Down step in order, Enter selects, Escape clears the selection.",
+              "region: Scale profile of run 7: the whole-report grand mean D at 4 scales, bold, over each participant's mean D, faint. One focus stop; arrow keys move to the nearest mark, Page Up and Page Down step in order, Enter selects, Escape clears the selection.",
+              "toggle-button: \u03c3 2\u00b0",
+              "button: Explain P17 \u2192 keeps: by retrieval response \u203a P17",
+              "table: Participant summary at \u03c3 2\u00b0, run 7. One focus stop; arrow keys move the row cursor, Enter selects, Escape clears the selection.",
+              "region: Reporting",
+              "radio-button: Group by: response",
+              "text-field: First level (minuend)",
+              "text-field: Subtract level (subtrahend)",
+              "button: Apply contrast",
+              "button: Clear contrast",
+              "check-box: Exclude queries with >25% of fixation duration outside the analysis window",
+              "check-box: Minimum queries per group: 3",
+              "radio-button: Summary unit and weighting: Equal weight per participant",
+              "button: Save as\u2026",
+              "button: Cancel Run 8 (job 1)"
+            ],
+            "reverse": [
+              "menu-button: Project memory-study",
+              "button: Cancel Run 8 (job 1)",
+              "button: Save as\u2026",
+              "radio-button: Summary unit and weighting: Equal weight per participant",
+              "check-box: Minimum queries per group: 3",
+              "check-box: Exclude queries with >25% of fixation duration outside the analysis window",
+              "button: Clear contrast",
+              "button: Apply contrast",
+              "text-field: Subtract level (subtrahend)",
+              "text-field: First level (minuend)",
+              "radio-button: Group by: response",
+              "region: Reporting",
+              "table: Participant summary at \u03c3 2\u00b0, run 7. One focus stop; arrow keys move the row cursor, Enter selects, Escape clears the selection.",
+              "button: Explain P17 \u2192 keeps: by retrieval response \u203a P17",
+              "toggle-button: \u03c3 2\u00b0",
+              "region: Scale profile of run 7: the whole-report grand mean D at 4 scales, bold, over each participant's mean D, faint. One focus stop; arrow keys move to the nearest mark, Page Up and Page Down step in order, Enter selects, Escape clears the selection.",
+              "region: Participant plot of Participant D at 2\u00b0: each participant's mean D in 2 groups, lines join a participant's means, a tick marks each group's grand mean. Annotations: P17 \u00b7 selected, 19 of 20 contributing, Remembered +0.40, n 17, Forgotten +0.22, n 2; P05 \u00b7 17 of 20 contributing, Remembered +0.39, n 13, Forgotten +0.22, n 4, 3 failed queries, 2 Remembered, 1 Forgotten, no value, not zero. One focus stop; arrow keys move to the nearest mark, Page Up and Page Down step in order, Enter selects, Escape clears the selection.",
+              "list: Participants, P01, overall D +0.42, n 19; run queries 19 contributing of 20, 0 failed",
+              "button: Summary \u00b7 by retrieval response, current location",
+              "button: Cancel Run 8 (job 1)",
+              "toggle-button: Compare (\u23184)"
+            ]
+          }
+        },
+        {
+          "path": "target/studio-snapshots/BoardWorkspaceViewportFxSuite/small-query-workspace-keeps-map-space-light/bounds.json",
+          "sha256": "62ddf1b724c6abebc3cabdfffc8e685be5c7603b3b9843ef4fc6a7cdb239201b",
+          "measurements": {
+            "scene": [
+              1024,
+              656
+            ],
+            "mapDataFrameHeights": [
+              176,
+              192
+            ]
+          }
+        },
+        {
+          "path": "target/studio-snapshots/BoardWorkspaceViewportFxSuite/small-query-workspace-keeps-map-space-dark/bounds.json",
+          "sha256": "62ddf1b724c6abebc3cabdfffc8e685be5c7603b3b9843ef4fc6a7cdb239201b",
+          "measurements": {
+            "scene": [
+              1024,
+              656
+            ],
+            "mapDataFrameHeights": [
+              176,
+              192
+            ]
+          }
+        },
+        {
+          "path": "target/studio-snapshots/BoardWorkspaceViewportFxSuite/small-Results-workspace-keeps-space-for-axes-and-annotations-light/bounds-and-focus.json",
+          "sha256": "5d5a310a532b9a053408124efee3a7b677d3bceb786332022ef7db2390b2259d",
+          "measurements": {
+            "scene": [
+              1024,
+              656
+            ],
+            "participantPlotHeight": 257,
+            "forward": [
+              "menu-button: Project memory-study",
+              "toggle-button: Compare (\u23184)",
+              "button: Cancel Run 8 (job 1)",
+              "button: Summary \u00b7 by retrieval response, current location",
+              "list: Participants, P01, overall D +0.42, n 19; run queries 19 contributing of 20, 0 failed",
+              "region: Participant plot of Participant D at 2\u00b0: each participant's mean D in 2 groups, lines join a participant's means, a tick marks each group's grand mean. Annotations: P17 \u00b7 selected, 19 of 20 contributing, Remembered +0.40, n 17, Forgotten +0.22, n 2; P05 \u00b7 17 of 20 contributing, Remembered +0.39, n 13, Forgotten +0.22, n 4, 3 failed queries, 2 Remembered, 1 Forgotten, no value, not zero. One focus stop; arrow keys move to the nearest mark, Page Up and Page Down step in order, Enter selects, Escape clears the selection.",
+              "region: Scale profile of run 7: the whole-report grand mean D at 4 scales, bold, over each participant's mean D, faint. One focus stop; arrow keys move to the nearest mark, Page Up and Page Down step in order, Enter selects, Escape clears the selection.",
+              "toggle-button: \u03c3 2\u00b0",
+              "button: Explain P17 \u2192 keeps: by retrieval response \u203a P17",
+              "table: Participant summary at \u03c3 2\u00b0, run 7. One focus stop; arrow keys move the row cursor, Enter selects, Escape clears the selection.",
+              "region: Reporting",
+              "radio-button: Group by: response",
+              "text-field: First level (minuend)",
+              "text-field: Subtract level (subtrahend)",
+              "button: Apply contrast",
+              "button: Clear contrast",
+              "check-box: Exclude queries with >25% of fixation duration outside the analysis window",
+              "check-box: Minimum queries per group: 3",
+              "radio-button: Summary unit and weighting: Equal weight per participant",
+              "button: Save as\u2026",
+              "button: Cancel Run 8 (job 1)"
+            ],
+            "reverse": [
+              "menu-button: Project memory-study",
+              "button: Cancel Run 8 (job 1)",
+              "button: Save as\u2026",
+              "radio-button: Summary unit and weighting: Equal weight per participant",
+              "check-box: Minimum queries per group: 3",
+              "check-box: Exclude queries with >25% of fixation duration outside the analysis window",
+              "button: Clear contrast",
+              "button: Apply contrast",
+              "text-field: Subtract level (subtrahend)",
+              "text-field: First level (minuend)",
+              "radio-button: Group by: response",
+              "region: Reporting",
+              "table: Participant summary at \u03c3 2\u00b0, run 7. One focus stop; arrow keys move the row cursor, Enter selects, Escape clears the selection.",
+              "button: Explain P17 \u2192 keeps: by retrieval response \u203a P17",
+              "toggle-button: \u03c3 2\u00b0",
+              "region: Scale profile of run 7: the whole-report grand mean D at 4 scales, bold, over each participant's mean D, faint. One focus stop; arrow keys move to the nearest mark, Page Up and Page Down step in order, Enter selects, Escape clears the selection.",
+              "region: Participant plot of Participant D at 2\u00b0: each participant's mean D in 2 groups, lines join a participant's means, a tick marks each group's grand mean. Annotations: P17 \u00b7 selected, 19 of 20 contributing, Remembered +0.40, n 17, Forgotten +0.22, n 2; P05 \u00b7 17 of 20 contributing, Remembered +0.39, n 13, Forgotten +0.22, n 4, 3 failed queries, 2 Remembered, 1 Forgotten, no value, not zero. One focus stop; arrow keys move to the nearest mark, Page Up and Page Down step in order, Enter selects, Escape clears the selection.",
+              "list: Participants, P01, overall D +0.42, n 19; run queries 19 contributing of 20, 0 failed",
+              "button: Summary \u00b7 by retrieval response, current location",
+              "button: Cancel Run 8 (job 1)",
+              "toggle-button: Compare (\u23184)"
+            ]
+          }
+        },
+        {
+          "path": "target/studio-snapshots/BoardWorkspaceViewportFxSuite/small-Results-workspace-keeps-space-for-axes-and-annotations-dark/bounds-and-focus.json",
+          "sha256": "5d5a310a532b9a053408124efee3a7b677d3bceb786332022ef7db2390b2259d",
+          "measurements": {
+            "scene": [
+              1024,
+              656
+            ],
+            "participantPlotHeight": 257,
+            "forward": [
+              "menu-button: Project memory-study",
+              "toggle-button: Compare (\u23184)",
+              "button: Cancel Run 8 (job 1)",
+              "button: Summary \u00b7 by retrieval response, current location",
+              "list: Participants, P01, overall D +0.42, n 19; run queries 19 contributing of 20, 0 failed",
+              "region: Participant plot of Participant D at 2\u00b0: each participant's mean D in 2 groups, lines join a participant's means, a tick marks each group's grand mean. Annotations: P17 \u00b7 selected, 19 of 20 contributing, Remembered +0.40, n 17, Forgotten +0.22, n 2; P05 \u00b7 17 of 20 contributing, Remembered +0.39, n 13, Forgotten +0.22, n 4, 3 failed queries, 2 Remembered, 1 Forgotten, no value, not zero. One focus stop; arrow keys move to the nearest mark, Page Up and Page Down step in order, Enter selects, Escape clears the selection.",
+              "region: Scale profile of run 7: the whole-report grand mean D at 4 scales, bold, over each participant's mean D, faint. One focus stop; arrow keys move to the nearest mark, Page Up and Page Down step in order, Enter selects, Escape clears the selection.",
+              "toggle-button: \u03c3 2\u00b0",
+              "button: Explain P17 \u2192 keeps: by retrieval response \u203a P17",
+              "table: Participant summary at \u03c3 2\u00b0, run 7. One focus stop; arrow keys move the row cursor, Enter selects, Escape clears the selection.",
+              "region: Reporting",
+              "radio-button: Group by: response",
+              "text-field: First level (minuend)",
+              "text-field: Subtract level (subtrahend)",
+              "button: Apply contrast",
+              "button: Clear contrast",
+              "check-box: Exclude queries with >25% of fixation duration outside the analysis window",
+              "check-box: Minimum queries per group: 3",
+              "radio-button: Summary unit and weighting: Equal weight per participant",
+              "button: Save as\u2026",
+              "button: Cancel Run 8 (job 1)"
+            ],
+            "reverse": [
+              "menu-button: Project memory-study",
+              "button: Cancel Run 8 (job 1)",
+              "button: Save as\u2026",
+              "radio-button: Summary unit and weighting: Equal weight per participant",
+              "check-box: Minimum queries per group: 3",
+              "check-box: Exclude queries with >25% of fixation duration outside the analysis window",
+              "button: Clear contrast",
+              "button: Apply contrast",
+              "text-field: Subtract level (subtrahend)",
+              "text-field: First level (minuend)",
+              "radio-button: Group by: response",
+              "region: Reporting",
+              "table: Participant summary at \u03c3 2\u00b0, run 7. One focus stop; arrow keys move the row cursor, Enter selects, Escape clears the selection.",
+              "button: Explain P17 \u2192 keeps: by retrieval response \u203a P17",
+              "toggle-button: \u03c3 2\u00b0",
+              "region: Scale profile of run 7: the whole-report grand mean D at 4 scales, bold, over each participant's mean D, faint. One focus stop; arrow keys move to the nearest mark, Page Up and Page Down step in order, Enter selects, Escape clears the selection.",
+              "region: Participant plot of Participant D at 2\u00b0: each participant's mean D in 2 groups, lines join a participant's means, a tick marks each group's grand mean. Annotations: P17 \u00b7 selected, 19 of 20 contributing, Remembered +0.40, n 17, Forgotten +0.22, n 2; P05 \u00b7 17 of 20 contributing, Remembered +0.39, n 13, Forgotten +0.22, n 4, 3 failed queries, 2 Remembered, 1 Forgotten, no value, not zero. One focus stop; arrow keys move to the nearest mark, Page Up and Page Down step in order, Enter selects, Escape clears the selection.",
+              "list: Participants, P01, overall D +0.42, n 19; run queries 19 contributing of 20, 0 failed",
+              "button: Summary \u00b7 by retrieval response, current location",
+              "button: Cancel Run 8 (job 1)",
+              "toggle-button: Compare (\u23184)"
+            ]
+          }
+        }
+      ],
+      "fullResultsTranscripts": [
+        {
+          "path": "target/studio-snapshots/A11yTreeSuite/compare-results.json",
+          "sha256": "fb4283bf22464d9a9f60697cb3941de3acd180368f6c6d49677fdbf0646b0a53",
+          "scene": [
+            1024,
+            656
+          ],
+          "stops": 21
+        },
+        {
+          "path": "target/studio-snapshots/A11yTreeSuite/compare-results-dark.json",
+          "sha256": "fb4283bf22464d9a9f60697cb3941de3acd180368f6c6d49677fdbf0646b0a53",
+          "scene": [
+            1024,
+            656
+          ],
+          "stops": 21
+        }
+      ],
+      "tabTranscriptSha256": "e61a063f12dd2695d3be4e4e141423e1ed8a501df48d6415f9db6bc226172adb",
+      "tabStops": 21,
+      "tabScene": {
+        "logicalWidth": 1024,
+        "logicalHeight": 656
+      }
+    }
+  ],
+  "limits": [
+    "Mac retains eight board-size-only role/name audit skips under the existing EYES4S_STUDIO_SMALL_DISPLAY policy; its full Tab traversals, disabled-reason audits and all small-window cases must still execute. Linux and GTK execute those board-size role/name cases.",
+    "Linux Monocle native1 owns pixel goldens;2x snapshots are raster transforms.",
+    "Mac and GTK2 matrix checks are functional/repeat; GTK2 has a separate actual native2 analytic raster proof.",
+    "No G2, physical Mac Retina, VoiceOver, full release performance, packaging or researcher usability acceptance."
+  ],
+  "gtkRecordScrolling": {
+    "medianMs": 16.7,
+    "p99Ms": 16.9,
+    "worstMs": 17.0,
+    "medianLimitMs": 32,
+    "jobLogSha256": "e35d3961f863cc6a446b8b8f3caedd0fcb172675ac80c67df64633701a347a66",
+    "scope": "existing SourceRecords scrolling regression; not full S10.6 performance acceptance"
+  }
+}

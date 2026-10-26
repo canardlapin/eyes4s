@@ -315,3 +315,35 @@ focus model (`bd-01M5NWGK8E9SW3JRKJ69QHMG9B`) were left open by that receipt. Th
 their combined qualification is recorded separately in `evidence/20261026-usability/`.
 This does not qualify
 private-study G2, physical Mac Retina or VoiceOver, nor erase earlier board deviations.
+
+
+## Supported windows and served Results focus, 2026-10-26
+
+The [review](evidence/20261026-usability/index.html) and
+[qualification receipt](evidence/20261026-usability/qualification.json) cover
+frozen source `ecf67c3f`, tree `0b611490`: full canonical gate, 5,259 Studio
+passes, style/boundary checks, all 24 E2E catalogue scenarios and documentation
+consumers. [Hosted run 40357518894](https://github.com/canardlapin/eyes4s/actions/runs/40357518894)
+passed all four jobs. Each platform artifact was independently checked against the
+source fingerprint and executed XML cases; each contains 30 states / 60 captures.
+
+The supported 1024×656 scene retains a 1280×864 scrollable work area. Map frames,
+wrapped disclosures, axes and annotation columns remain readable; keyboard traversal
+and row navigation reveal focused content through inner and outer clips. The Results
+story now has 21 stops rather than 24, removing three redundant container stops. The complete
+portable and live announcements agree in both directions and themes. An unavailable
+selected scale preserves its selection and reason while an available choice remains
+reachable; only activation switches the shown scale.
+
+Qualification exposed additional defects and retained their failing evidence:
+outer viewport caching made native GTK scrolling exceed 32 ms; disabling only that
+cache restores the measured median to 16.7 ms in CI. Disabled scale reasons needed
+the shared ToggleButton style, and an asynchronous accessibility audit retained
+stale detached controls. Capture-origin framing was corrected with a red/green
+regression; eight Explore references were independently regenerated from unchanged
+application code with only that harness correction. Other references and the strict
+pixel thresholds remain unchanged. See [the framing review](evidence/20261026-usability/snapshot-framing/review.json).
+
+This closes the supported-window and Results-focus residuals named above. It does
+not qualify G2, VoiceOver, physical Mac Retina, full release performance, packaging
+or researcher usability, and it preserves earlier recorded board deviations.

@@ -3,7 +3,7 @@
 Ticket S10.5 (bead bd-01M3DPG1XBKAVXA1CDT1T1RPMA). This report has three parts:
 
 - **Slice a, automated audit:** done.
-- **Slice b, keyboard-only journey:** pending.
+- **Slice b, keyboard-only journey:** automated journey passes; see the dated qualification below.
 - **Slice c, VoiceOver pass on macOS:** needs a person at a Mac.
 
 Requirements: DESIGN_SPEC §10 and WCAG 2.2 AA (1.4.3 text contrast, 1.4.11
@@ -22,6 +22,32 @@ visible, 3.2.4 consistent identification, 4.1.2 name and role).
 | Focus order | Reviewed against the boards, 1 finding fixed | `docs/studio/a11y/tab-order-*.txt` |
 | Keyboard-only E2E-01 | Passes, byte-identical to the headless route; 4 findings fixed, 2 to beads | `KeyboardJourneySuite` |
 | VoiceOver on macOS | Pending: slice c, the script is below | a person at a Mac |
+
+## Results focus and supported windows, 2026-10-26
+
+The [qualification receipt](evidence/20261026-usability/qualification.json) and
+[platform review](evidence/20261026-usability/hosted-review.json) cover source
+`ecf67c3f`. The Results story has 21 Tab stops: served plots and tables own their
+stop, without an extra dock-container stop. Unread or empty panes keep a reachable
+container; the Participants navigator keeps one composite stop. Scale selection,
+Explain and the participant table remain separate controls.
+
+`A11yTreeSuite` compares the full live traversal with the portable model in both
+themes and both directions, including each responsive annotation before any
+cross-viewport golden normalization. The native Mac and GTK receipts retain the
+complete spoken text. Unavailable selected scales keep their selection and visible
+reason while an available alternative remains reachable and explicitly activatable.
+Disabled reasons are audited on current attached controls after CSS, in one FX callback.
+
+The supported 1024×656 scene preserves a scrollable work area of at least
+1280×864 logical pixels. Small and board-size tests verify map/plot bounds, full
+forward/reverse traversal, F6/Ctrl+Tab entry, and Home/End cursor visibility through
+nested clips. These checks qualify automated readability and reachability. They do
+not constitute a VoiceOver pass, physical Mac Retina review or researcher usability
+study; S10.5 remains open for its human acceptance.
+
+The earlier findings and method below are retained as audit history. Their original
+statuses are not a replacement for the dated source-bound qualification receipts.
 
 ## Method
 
