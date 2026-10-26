@@ -1,0 +1,3 @@
+{
+  "finding": "A separate Sanctity check-postgres build briefly overlapped the1x phase; observed Java CPU230.9 percent at22:40UTC, then0percent through10x. Its processes were left untouched. A long-running virtualization process used about200percent CPU throughout. All1x targets still passed;10x Compare164.37ms failed. Retain as measured; not qualification."
+}

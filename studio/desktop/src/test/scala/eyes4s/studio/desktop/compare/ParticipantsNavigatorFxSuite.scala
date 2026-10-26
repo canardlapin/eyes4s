@@ -126,6 +126,16 @@ class ParticipantsNavigatorFxSuite extends ShellFxSuite:
         assertEquals(first.getPadding.getLeft, 6.0)
       }
       fx.snapshot(StudioTheme.Light)
+      runOnFx {
+        val cells = descendants(node).collect {
+          case cell: javafx.scene.control.ListCell[?] if !cell.isEmpty => cell
+        }
+        assert(cells.nonEmpty)
+        assertEquals(
+          cells.map(c => (c.getHeight, c.prefHeight(-1))).distinct,
+          Vector((45.0, 45.0))
+        )
+      }
       val picked = rows.find(_.participant == "P05").get
       val row    = runOnFx(descendants(node).find(n => n.getUserData == picked.ref).get)
       fx.robot.click(row)

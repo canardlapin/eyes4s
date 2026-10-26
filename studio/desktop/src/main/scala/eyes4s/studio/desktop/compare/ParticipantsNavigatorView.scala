@@ -36,6 +36,9 @@ final class ParticipantsNavigatorView(
   private val accounting = Label()
   private val status     = Label()
   private val list       = ListView[ParticipantNavRow]()
+  // Two unwrapped mono lines, their 2px gap and existing row/cell insets.
+  // The existing 45px rows do not need VirtualFlow to measure all participants.
+  list.setFixedCellSize(45.0)
   list.getStyleClass.add("participants-list")
   list.setFocusTraversable(false)
   list.setAccessibleRole(AccessibleRole.PARENT)
