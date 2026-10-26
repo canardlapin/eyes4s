@@ -1,0 +1,25 @@
+{
+  "schema": 1,
+  "failedCandidate": "bad4f31e53cea7d036f32d33a1da1dd92c7b7535",
+  "workflow": 40419677740,
+  "job": 121910689543,
+  "failure": "CanvasPlotHostFxSuite reattachment test doubled native2 to override4 at1440x900 and correctly exceeded the unchanged134217728-byte texture budget.",
+  "correction": "Change between1x and2x instead of blindly doubling native output scale; same-frame reattachment assertions and genuine-scale-change invalidation assertions remain.",
+  "productionChanged": false,
+  "performanceMeasuredCandidate": "e34becdf025277bfa5ec0b43d6108f74f040d27b",
+  "performanceInputDifferences": [
+    "studio/desktop/src/test/scala/eyes4s/studio/desktop/plot/CanvasPlotHostFxSuite.scala"
+  ],
+  "focusedCasesPassed": 18,
+  "limits": "A test-only correction is not new production performance evidence; measured production code, benchmark, fixture, and all their dependencies remain byte-identical. Hosted native2 must requalify the corrected test.",
+  "files": [
+    {
+      "path": "focused-fixed-test.log.gz",
+      "sha256": "693662da5a8c368522f3e44d17c1f6b2e454a37267500f00adfe611dbb911fe6"
+    },
+    {
+      "path": "gtk-failed-job.log.gz",
+      "sha256": "a9763d1eb4dddf1a03ca57fa0b0e288246508acae1686cc4c464b630413c8da6"
+    }
+  ]
+}

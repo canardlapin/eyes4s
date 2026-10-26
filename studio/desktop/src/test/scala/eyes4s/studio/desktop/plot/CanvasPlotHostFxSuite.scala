@@ -251,8 +251,9 @@ class CanvasPlotHostFxSuite extends StudioFxSuite:
         assertEquals(runOnFx(host.profile.compiles), profile.compiles)
         assertEquals(runOnFx(host.profile.baseDraws), profile.baseDraws)
       // A genuine scale change still compiles and paints a new frame.
-      runOnFx(host.setOutputScaleOverride(Some(scale * 2.0)))
-      val changed = awaitFrame(host, scale * 2.0)
+      val changedScale = if scale == 1.0 then 2.0 else 1.0
+      runOnFx(host.setOutputScaleOverride(Some(changedScale)))
+      val changed = awaitFrame(host, changedScale)
       assert(!(changed eq frame))
       assert(runOnFx(host.profile.compiles > profile.compiles))
       runOnFx(host.dispose())
