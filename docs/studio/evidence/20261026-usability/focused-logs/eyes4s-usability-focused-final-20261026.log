@@ -1,0 +1,515 @@
+[info] welcome to sbt 1.11.7 (Eclipse Adoptium Java 25.0.4.1)
+[info] loading settings for project eyes4s-usability-20261026-build from plugins.sbt...
+[info] loading project definition from /private/tmp/eyes4s-usability-20261026/project
+[info] loading settings for project root from build.sbt...
+[info] resolving key references (37727 settings) ...
+[info] set scmInfo to https://github.com/canardlapin/eyes4s
+[info] set current project to root (in build file:/private/tmp/eyes4s-usability-20261026/)
+[info] scalafmt: Formatting 7 Scala sources (/private/tmp/eyes4s-usability-20261026)...
+[info] scalafmt: Formatting 2 Scala sources (/private/tmp/eyes4s-usability-20261026)...
+[success] Total time: 2 s, completed Oct 26, 2026, 9:14:47 a.m.
+[success] Total time: 0 s, completed Oct 26, 2026, 9:14:47 a.m.
+[success] Total time: 0 s, completed Oct 26, 2026, 9:14:47 a.m.
+[success] Total time: 0 s, completed Oct 26, 2026, 9:14:47 a.m.
+[warn] javaOptions will be ignored, fork is set to false
+Test run eyes4s.studio.app.vm.PaneFocusSuite started
+eyes4s.studio.app.vm.PaneFocusSuite: finished 0.027s
+Test run eyes4s.studio.app.vm.PaneFocusSuite finished: 0 failed, 0 ignored, 3 total 0.033s
+[info] Passed: Total 3, Failed 0, Errors 0, Passed 3
+[success] Total time: 4 s, completed Oct 26, 2026, 9:14:51 a.m.
+[info] compiling 3 Scala sources to /private/tmp/eyes4s-usability-20261026/studio/app/.js/target/scala-3.7.4/classes ...
+[info] done compiling
+[info] compiling 10 Scala sources to /private/tmp/eyes4s-usability-20261026/studio/app/.js/target/scala-3.7.4/classes ...
+[info] done compiling
+[info] compiling 4 Scala sources to /private/tmp/eyes4s-usability-20261026/studio/app/.js/target/scala-3.7.4/test-classes ...
+[info] done compiling
+[info] Fast optimizing /private/tmp/eyes4s-usability-20261026/studio/app/.js/target/scala-3.7.4/eyes4s-studio-app-test-fastopt
+[warn] javaOptions will be ignored, fork is set to false
+Test run eyes4s.studio.app.vm.PaneFocusSuite started
+eyes4s.studio.app.vm.PaneFocusSuite: finished 0.007s
+Test run eyes4s.studio.app.vm.PaneFocusSuite finished: 0 failed, 0 ignored, 3 total 0.007s
+[info] Passed: Total 3, Failed 0, Errors 0, Passed 3
+[success] Total time: 32 s, completed Oct 26, 2026, 9:15:23 a.m.
+[info] compiling 1 Scala source to /private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes ...
+[info] done compiling
+WARNING: A terminally deprecated method in sun.misc.Unsafe has been called
+WARNING: sun.misc.Unsafe::objectFieldOffset has been called by scala.runtime.LazyVals$ (file:/Users/bbuchsbaum/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/scala-lang/scala3-library_3/3.7.4/scala3-library_3-3.7.4.jar)
+WARNING: Please consider reporting this to the maintainers of class scala.runtime.LazyVals$
+WARNING: sun.misc.Unsafe::objectFieldOffset will be removed in a future release
+Oct 26, 2026 9:15:25 A.M. com.sun.javafx.application.PlatformImpl startup
+WARNING: Unsupported JavaFX configuration: classes were loaded from 'unnamed module @4eeb3652'
+WARNING: A restricted method in java.lang.System has been called
+WARNING: java.lang.System::load has been called by com.sun.glass.utils.NativeLibLoader in an unnamed module (file:/Users/bbuchsbaum/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/openjfx/javafx-graphics/24.0.1/javafx-graphics-24.0.1-mac-aarch64.jar)
+WARNING: Use --enable-native-access=ALL-UNNAMED to avoid a warning for callers in this module
+WARNING: Restricted methods will be blocked in a future release unless native access is enabled
+
+Oct 26, 2026 9:15:50 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-fx-text-background-color' while resolving lookups for '-fx-text-fill' from rule '*.list-cell' in stylesheet jar:file:/Users/bbuchsbaum/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/openjfx/javafx-controls/24.0.1/javafx-controls-24.0.1-mac-aarch64.jar!/com/sun/javafx/scene/control/skin/modena/modena.bss
+Oct 26, 2026 9:15:50 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Caught 'java.lang.ClassCastException: class java.lang.String cannot be cast to class javafx.scene.paint.Paint (java.lang.String is in module java.base of loader 'bootstrap'; javafx.scene.paint.Paint is in unnamed module of loader 'app')' while converting value for '-fx-background-color' from rule '*.table-twin-row' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:15:50 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-fx-text-background-color' while resolving lookups for '-fx-text-fill' from rule '*.list-cell' in stylesheet jar:file:/Users/bbuchsbaum/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/openjfx/javafx-controls/24.0.1/javafx-controls-24.0.1-mac-aarch64.jar!/com/sun/javafx/scene/control/skin/modena/modena.bss
+Oct 26, 2026 9:15:50 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:15:50 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:15:50 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:15:50 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:15:50 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:15:50 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:15:50 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:15:50 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:15:50 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:15:50 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:15:50 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:15:50 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:15:50 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:15:50 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:15:50 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:15:50 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:15:50 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:15:50 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:15:50 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:15:50 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:15:50 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:15:50 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:15:50 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-fx-text-background-color' while resolving lookups for '-fx-text-fill' from rule '*.list-cell' in stylesheet jar:file:/Users/bbuchsbaum/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/openjfx/javafx-controls/24.0.1/javafx-controls-24.0.1-mac-aarch64.jar!/com/sun/javafx/scene/control/skin/modena/modena.bss
+Oct 26, 2026 9:15:50 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Caught 'java.lang.ClassCastException: class java.lang.String cannot be cast to class javafx.scene.paint.Paint (java.lang.String is in module java.base of loader 'bootstrap'; javafx.scene.paint.Paint is in unnamed module of loader 'app')' while converting value for '-fx-background-color' from rule '*.table-twin-row' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:15:50 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-fx-text-background-color' while resolving lookups for '-fx-text-fill' from rule '*.list-cell' in stylesheet jar:file:/Users/bbuchsbaum/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/openjfx/javafx-controls/24.0.1/javafx-controls-24.0.1-mac-aarch64.jar!/com/sun/javafx/scene/control/skin/modena/modena.bss
+Oct 26, 2026 9:15:50 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:15:50 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:15:50 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:15:50 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:15:50 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:15:50 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:15:50 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:15:50 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:15:50 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:15:50 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:15:50 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:15:50 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:15:50 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:15:50 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:15:50 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:15:50 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:15:50 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:15:50 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:15:50 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:15:50 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:15:50 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:15:50 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:15:50 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-fx-text-background-color' while resolving lookups for '-fx-text-fill' from rule '*.list-cell' in stylesheet jar:file:/Users/bbuchsbaum/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/openjfx/javafx-controls/24.0.1/javafx-controls-24.0.1-mac-aarch64.jar!/com/sun/javafx/scene/control/skin/modena/modena.bss
+Oct 26, 2026 9:15:50 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Caught 'java.lang.ClassCastException: class java.lang.String cannot be cast to class javafx.scene.paint.Paint (java.lang.String is in module java.base of loader 'bootstrap'; javafx.scene.paint.Paint is in unnamed module of loader 'app')' while converting value for '-fx-background-color' from rule '*.table-twin-row' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:15:50 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-fx-text-background-color' while resolving lookups for '-fx-text-fill' from rule '*.list-cell' in stylesheet jar:file:/Users/bbuchsbaum/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/openjfx/javafx-controls/24.0.1/javafx-controls-24.0.1-mac-aarch64.jar!/com/sun/javafx/scene/control/skin/modena/modena.bss
+Oct 26, 2026 9:15:50 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:15:50 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:15:50 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:15:50 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:15:50 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:15:50 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:15:50 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:15:50 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:15:50 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:15:50 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:15:50 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:15:50 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:15:50 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:15:50 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:15:50 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:15:50 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:15:50 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:15:50 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:15:50 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:15:50 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:15:50 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:15:50 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:15:50 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-fx-text-background-color' while resolving lookups for '-fx-text-fill' from rule '*.list-cell' in stylesheet jar:file:/Users/bbuchsbaum/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/openjfx/javafx-controls/24.0.1/javafx-controls-24.0.1-mac-aarch64.jar!/com/sun/javafx/scene/control/skin/modena/modena.bss
+Oct 26, 2026 9:15:50 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:15:50 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:15:50 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:15:50 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:15:50 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:15:50 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:15:50 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:15:50 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:15:50 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:15:50 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:15:50 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:15:50 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:15:50 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:15:50 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:15:50 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:15:50 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:15:50 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:15:50 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:15:50 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:15:50 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:15:50 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:15:50 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:15:50 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-fx-text-background-color' while resolving lookups for '-fx-text-fill' from rule '*.list-cell' in stylesheet jar:file:/Users/bbuchsbaum/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/openjfx/javafx-controls/24.0.1/javafx-controls-24.0.1-mac-aarch64.jar!/com/sun/javafx/scene/control/skin/modena/modena.bss
+Oct 26, 2026 9:15:50 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:15:50 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:15:50 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:15:50 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:15:50 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:15:50 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:15:50 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:15:50 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:15:50 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:15:50 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:15:50 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:15:50 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:15:50 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:15:50 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:15:50 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:15:50 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:15:50 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:15:50 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:15:50 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:15:50 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:15:50 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:15:50 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:15:50 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-fx-text-background-color' while resolving lookups for '-fx-text-fill' from rule '*.list-cell' in stylesheet jar:file:/Users/bbuchsbaum/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/openjfx/javafx-controls/24.0.1/javafx-controls-24.0.1-mac-aarch64.jar!/com/sun/javafx/scene/control/skin/modena/modena.bss
+Oct 26, 2026 9:15:50 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:15:50 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:15:50 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:15:50 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:15:50 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:15:50 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:15:50 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:15:50 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:15:50 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:15:50 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:15:50 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:15:50 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:15:50 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:15:50 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:15:50 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:15:50 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:15:50 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:15:50 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:15:50 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:15:50 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:15:50 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:15:50 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:15:50 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-fx-text-background-color' while resolving lookups for '-fx-text-fill' from rule '*.list-cell' in stylesheet jar:file:/Users/bbuchsbaum/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/openjfx/javafx-controls/24.0.1/javafx-controls-24.0.1-mac-aarch64.jar!/com/sun/javafx/scene/control/skin/modena/modena.bss
+Oct 26, 2026 9:15:50 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:15:50 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:15:50 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:15:50 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:15:50 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:15:50 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:15:50 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:15:50 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:15:50 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:15:50 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:15:50 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:15:50 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:15:50 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:15:50 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:15:50 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:15:50 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:15:50 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:15:50 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:15:50 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:15:50 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:15:50 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:15:50 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:15:50 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-fx-text-background-color' while resolving lookups for '-fx-text-fill' from rule '*.list-cell' in stylesheet jar:file:/Users/bbuchsbaum/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/openjfx/javafx-controls/24.0.1/javafx-controls-24.0.1-mac-aarch64.jar!/com/sun/javafx/scene/control/skin/modena/modena.bss
+Oct 26, 2026 9:15:50 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:15:50 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:15:50 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:15:50 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:15:50 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:15:50 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:15:50 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:15:50 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:15:50 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:15:50 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:15:50 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:15:50 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:15:50 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:15:50 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:15:50 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:15:50 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:15:50 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:15:50 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:15:50 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:15:50 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:15:50 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:15:50 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:15:50 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-fx-text-background-color' while resolving lookups for '-fx-text-fill' from rule '*.list-cell' in stylesheet jar:file:/Users/bbuchsbaum/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/openjfx/javafx-controls/24.0.1/javafx-controls-24.0.1-mac-aarch64.jar!/com/sun/javafx/scene/control/skin/modena/modena.bss
+Oct 26, 2026 9:15:50 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:15:50 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:15:50 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:15:50 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:15:50 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:15:50 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:15:50 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:15:50 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:15:50 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:15:50 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:15:50 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:15:50 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:15:50 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:15:50 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:15:50 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:15:50 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:15:50 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:15:50 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:15:50 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:15:50 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:15:50 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Oct 26, 2026 9:15:50 A.M. javafx.scene.CssStyleHelper calculateValue
+WARNING: Could not resolve '-es-ink' while resolving lookups for '-fx-text-fill' from rule '*.table-twin-cell' in stylesheet file:/private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-plot.css
+Test run eyes4s.studio.desktop.shell.A11yTreeSuite started
+eyes4s.studio.desktop.shell.A11yTreeSuite: finished 35.305s
+Test run eyes4s.studio.desktop.shell.A11yTreeSuite finished: 0 failed, 0 ignored, 26 total 35.313s
+Test run eyes4s.studio.desktop.shell.WorkspaceViewportFxSuite started
+eyes4s.studio.desktop.shell.WorkspaceViewportFxSuite: finished 6.621s
+Test run eyes4s.studio.desktop.shell.WorkspaceViewportFxSuite finished: 0 failed, 0 ignored, 4 total 6.621s
+Test run eyes4s.studio.desktop.compare.ParticipantsNavigatorFxSuite started
+eyes4s.studio.desktop.compare.ParticipantsNavigatorFxSuite: finished 2.284s
+Test run eyes4s.studio.desktop.compare.ParticipantsNavigatorFxSuite finished: 0 failed, 0 ignored, 4 total 2.284s
+Test run eyes4s.studio.desktop.shell.KeymapFxSuite started
+eyes4s.studio.desktop.shell.KeymapFxSuite: finished 14.591s
+Test run eyes4s.studio.desktop.shell.KeymapFxSuite finished: 0 failed, 0 ignored, 13 total 14.591s
+Test run eyes4s.studio.desktop.shell.CanvasBoundaryFxSuite started
+eyes4s.studio.desktop.shell.CanvasBoundaryFxSuite: finished 10.479s
+Test run eyes4s.studio.desktop.shell.CanvasBoundaryFxSuite finished: 0 failed, 0 ignored, 2 total 10.479s
+Test run eyes4s.studio.desktop.shell.SmallCanvasBoundaryFxSuite started
+eyes4s.studio.desktop.shell.SmallCanvasBoundaryFxSuite: finished 6.846s
+Test run eyes4s.studio.desktop.shell.SmallCanvasBoundaryFxSuite finished: 0 failed, 0 ignored, 2 total 6.847s
+[info] Passed: Total 51, Failed 0, Errors 0, Passed 51
+[success] Total time: 78 s (0:01:18.0), completed Oct 26, 2026, 9:16:41 a.m.
+[info] studio type scale OK (lint self-test passed; only the five sizes in studio sources)
+[success] Total time: 1 s, completed Oct 26, 2026, 9:16:42 a.m.
+[info] studio notices OK: 45 resolved modules, each with a licence and its text
+[success] Total time: 0 s, completed Oct 26, 2026, 9:16:42 a.m.
+[success] Total time: 0 s, completed Oct 26, 2026, 9:16:42 a.m.
+[success] Total time: 0 s, completed Oct 26, 2026, 9:16:42 a.m.
+[success] Total time: 0 s, completed Oct 26, 2026, 9:16:42 a.m.
+[success] Total time: 0 s, completed Oct 26, 2026, 9:16:42 a.m.
+[success] Total time: 0 s, completed Oct 26, 2026, 9:16:42 a.m.
+[success] Total time: 0 s, completed Oct 26, 2026, 9:16:42 a.m.
+[success] Total time: 0 s, completed Oct 26, 2026, 9:16:42 a.m.
+[info] scalafmt: Checking 89 Scala sources (/private/tmp/eyes4s-usability-20261026/studio/app/.js)...
+[info] scalafmt: Checking 134 Scala sources (/private/tmp/eyes4s-usability-20261026/studio/app/.js)...
+[success] Total time: 4 s, completed Oct 26, 2026, 9:16:46 a.m.
+[success] Total time: 0 s, completed Oct 26, 2026, 9:16:46 a.m.
+[info] scalafmt: Checking 30 Scala sources (/private/tmp/eyes4s-usability-20261026/studio/viz/.jvm)...
+[info] scalafmt: Checking 29 Scala sources (/private/tmp/eyes4s-usability-20261026/studio/viz/.jvm)...
+[success] Total time: 0 s, completed Oct 26, 2026, 9:16:46 a.m.
+[success] Total time: 0 s, completed Oct 26, 2026, 9:16:46 a.m.
+[info] scalafmt: Checking 29 Scala sources (/private/tmp/eyes4s-usability-20261026/studio/viz/.js)...
+[info] scalafmt: Checking 30 Scala sources (/private/tmp/eyes4s-usability-20261026/studio/viz/.js)...
+[success] Total time: 0 s, completed Oct 26, 2026, 9:16:47 a.m.
+[success] Total time: 0 s, completed Oct 26, 2026, 9:16:47 a.m.
+[success] Total time: 0 s, completed Oct 26, 2026, 9:16:47 a.m.

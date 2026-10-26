@@ -1,0 +1,86 @@
+[info] welcome to sbt 1.11.7 (Eclipse Adoptium Java 25.0.4.1)
+[info] loading settings for project eyes4s-usability-20261026-build from plugins.sbt...
+[info] loading project definition from /private/tmp/eyes4s-usability-20261026/project
+[info] loading settings for project root from build.sbt...
+[info] resolving key references (37727 settings) ...
+[info] set scmInfo to https://github.com/canardlapin/eyes4s
+[info] set current project to root (in build file:/private/tmp/eyes4s-usability-20261026/)
+[info] scalafmt: Formatting 1 Scala sources (/private/tmp/eyes4s-usability-20261026/studio/app/.jvm)...
+[info] scalafmt: Formatting 2 Scala sources (/private/tmp/eyes4s-usability-20261026/studio/app/.jvm)...
+[info] scalafmt: Reformatted 1 Scala sources
+[info] scalafmt: Reformatted 1 Scala sources
+[success] Total time: 1 s, completed Oct 26, 2026, 9:09:56 a.m.
+[info] scalafmt: Formatting 93 Scala sources (/private/tmp/eyes4s-usability-20261026/studio/desktop)...
+[info] scalafmt: Formatting 164 Scala sources (/private/tmp/eyes4s-usability-20261026/studio/desktop)...
+[info] scalafmt: Reformatted 4 Scala sources
+[info] scalafmt: Reformatted 3 Scala sources
+[success] Total time: 3 s, completed Oct 26, 2026, 9:10:00 a.m.
+[info] compiling 2 Scala sources to /private/tmp/eyes4s-usability-20261026/studio/app/.jvm/target/scala-3.7.4/classes ...
+[info] done compiling
+[info] compiling 1 Scala source to /private/tmp/eyes4s-usability-20261026/studio/app/.jvm/target/scala-3.7.4/test-classes ...
+[info] compiling 5 Scala sources to /private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes ...
+[info] done compiling
+[info] done compiling
+[info] compiling 3 Scala sources to /private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/test-classes ...
+[info] done compiling
+WARNING: A terminally deprecated method in sun.misc.Unsafe has been called
+WARNING: sun.misc.Unsafe::objectFieldOffset has been called by scala.runtime.LazyVals$ (file:/Users/bbuchsbaum/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/scala-lang/scala3-library_3/3.7.4/scala3-library_3-3.7.4.jar)
+WARNING: Please consider reporting this to the maintainers of class scala.runtime.LazyVals$
+WARNING: sun.misc.Unsafe::objectFieldOffset will be removed in a future release
+Oct 26, 2026 9:10:11 A.M. com.sun.javafx.application.PlatformImpl startup
+WARNING: Unsupported JavaFX configuration: classes were loaded from 'unnamed module @186eeaac'
+WARNING: A restricted method in java.lang.System has been called
+WARNING: java.lang.System::load has been called by com.sun.glass.utils.NativeLibLoader in an unnamed module (file:/Users/bbuchsbaum/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/openjfx/javafx-graphics/24.0.1/javafx-graphics-24.0.1-mac-aarch64.jar)
+WARNING: Use --enable-native-access=ALL-UNNAMED to avoid a warning for callers in this module
+WARNING: Restricted methods will be blocked in a future release unless native access is enabled
+
+Test run eyes4s.studio.desktop.shell.WorkspaceViewportFxSuite started
+==> X eyes4s.studio.desktop.shell.WorkspaceViewportFxSuite.small Results workspace keeps space for axes and annotations light 3.197s munit.FailException: studio/desktop/src/test/scala/eyes4s/studio/desktop/shell/WorkspaceViewportFxSuite.scala:62 BoundingBox [minX:231.0, minY:390.0, minZ:0.0, width:767.0, height:291.0, depth:0.0, maxX:998.0, maxY:681.0, maxZ:0.0] outside BoundingBox [minX:0.0, minY:0.0, minZ:0.0, width:1011.0, height:643.0, depth:0.0, maxX:1011.0, maxY:643.0, maxZ:0.0]
+61:      if a.getHeight <= b.getHeight then
+62:        assert(a.getMaxY <= b.getMaxY + tolerance, s"$a outside $b")
+63:    }
+    at munit.FunSuite.assert(FunSuite.scala:12)
+    at eyes4s.studio.desktop.shell.WorkspaceViewportFxSuite.visibleFocus$$anonfun$1(WorkspaceViewportFxSuite.scala:62)
+    at eyes4s.studio.desktop.shell.WorkspaceViewportFxSuite.visibleFocus$$anonfun$adapted$1(WorkspaceViewportFxSuite.scala:63)
+==> X eyes4s.studio.desktop.shell.WorkspaceViewportFxSuite.small Results workspace keeps space for axes and annotations dark 2.488s munit.FailException: studio/desktop/src/test/scala/eyes4s/studio/desktop/shell/WorkspaceViewportFxSuite.scala:62 BoundingBox [minX:231.0, minY:390.0, minZ:0.0, width:767.0, height:291.0, depth:0.0, maxX:998.0, maxY:681.0, maxZ:0.0] outside BoundingBox [minX:0.0, minY:0.0, minZ:0.0, width:1011.0, height:643.0, depth:0.0, maxX:1011.0, maxY:643.0, maxZ:0.0]
+61:      if a.getHeight <= b.getHeight then
+62:        assert(a.getMaxY <= b.getMaxY + tolerance, s"$a outside $b")
+63:    }
+    at munit.FunSuite.assert(FunSuite.scala:12)
+    at eyes4s.studio.desktop.shell.WorkspaceViewportFxSuite.visibleFocus$$anonfun$1(WorkspaceViewportFxSuite.scala:62)
+    at eyes4s.studio.desktop.shell.WorkspaceViewportFxSuite.visibleFocus$$anonfun$adapted$1(WorkspaceViewportFxSuite.scala:63)
+eyes4s.studio.desktop.shell.WorkspaceViewportFxSuite: finished 11.745s
+Test run eyes4s.studio.desktop.shell.WorkspaceViewportFxSuite finished: 2 failed, 0 ignored, 4 total 11.75s
+Test run eyes4s.studio.desktop.shell.A11yTreeSuite started
+==> X eyes4s.studio.desktop.shell.A11yTreeSuite.figures: Tab visits the derived stops; docs/studio/a11y/tab-order-figures.txt 1.354s munit.FailException: studio/desktop/src/test/scala/eyes4s/studio/desktop/shell/A11yTreeSuite.scala:244 region: Participant plot of Participant D at 2?: each participant's mean D in 2 groups, lines join a participant's means, a tick marks each group's grand mean. One focus stop; arrow keys move to the nearest mark, Page Up and Page Down step in order, Enter selects, Escape clears the selection.
+243:              val end   = line.indexOf(". One focus stop;")
+244:              assert(start >= 0 && end > start, line)
+245:              line.take(
+    at munit.FunSuite.assert(FunSuite.scala:12)
+    at eyes4s.studio.desktop.shell.A11yTreeSuite.$anonfun$7(A11yTreeSuite.scala:244)
+    at scala.collection.Iterator$$anon$9.next(Iterator.scala:584)
+    at scala.collection.IterableOnceOps.addString(IterableOnce.scala:1376)
+    at scala.collection.IterableOnceOps.addString$(IterableOnce.scala:1368)
+    at scala.collection.AbstractIterator.addString(Iterator.scala:1306)
+    at scala.collection.IterableOnceOps.mkString(IterableOnce.scala:1318)
+    at scala.collection.IterableOnceOps.mkString$(IterableOnce.scala:1316)
+    at scala.collection.AbstractIterator.mkString(Iterator.scala:1306)
+    at eyes4s.studio.desktop.shell.A11yTreeSuite.$init$$$anonfun$10$$anonfun$1(A11yTreeSuite.scala:251)
+    at munit.FunFixtures.munit$FunFixtures$FunFixture$$_$test$$anonfun$1$$anonfun$1$$anonfun$1(FunFixtures.scala:23)
+eyes4s.studio.desktop.shell.A11yTreeSuite: finished 27.422s
+Test run eyes4s.studio.desktop.shell.A11yTreeSuite finished: 1 failed, 0 ignored, 26 total 27.423s
+Test run eyes4s.studio.desktop.shell.KeymapFxSuite started
+eyes4s.studio.desktop.shell.KeymapFxSuite: finished 14.076s
+Test run eyes4s.studio.desktop.shell.KeymapFxSuite finished: 0 failed, 0 ignored, 13 total 14.077s
+Test run eyes4s.studio.desktop.shell.CanvasBoundaryFxSuite started
+eyes4s.studio.desktop.shell.CanvasBoundaryFxSuite: finished 10.464s
+Test run eyes4s.studio.desktop.shell.CanvasBoundaryFxSuite finished: 0 failed, 0 ignored, 2 total 10.464s
+Test run eyes4s.studio.desktop.shell.SmallCanvasBoundaryFxSuite started
+eyes4s.studio.desktop.shell.SmallCanvasBoundaryFxSuite: finished 6.734s
+Test run eyes4s.studio.desktop.shell.SmallCanvasBoundaryFxSuite finished: 0 failed, 0 ignored, 2 total 6.734s
+[error] Failed: Total 47, Failed 3, Errors 0, Passed 44
+[error] Failed tests:
+[error] 	eyes4s.studio.desktop.shell.A11yTreeSuite
+[error] 	eyes4s.studio.desktop.shell.WorkspaceViewportFxSuite
+[error] (studioDesktop / Test / testOnly) sbt.TestsFailedException: Tests unsuccessful
+[error] Total time: 82 s (0:01:22.0), completed Oct 26, 2026, 9:11:21 a.m.

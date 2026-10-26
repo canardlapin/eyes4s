@@ -1,0 +1,87 @@
+[info] welcome to sbt 1.11.7 (Eclipse Adoptium Java 25.0.4.1)
+[info] loading settings for project eyes4s-usability-20261026-build from plugins.sbt...
+[info] loading project definition from /private/tmp/eyes4s-usability-20261026/project
+[info] compiling 7 Scala sources to /private/tmp/eyes4s-usability-20261026/project/target/scala-2.12/sbt-1.0/classes ...
+[info] done compiling
+[info] loading settings for project root from build.sbt...
+[info] resolving key references (37727 settings) ...
+[info] set scmInfo to https://github.com/canardlapin/eyes4s
+[info] set current project to root (in build file:/private/tmp/eyes4s-usability-20261026/)
+[info] compiling 30 Scala sources to /private/tmp/eyes4s-usability-20261026/kernel/.jvm/target/scala-3.7.4/classes ...
+[info] done compiling
+[info] compiling 10 Scala sources to /private/tmp/eyes4s-usability-20261026/core/.jvm/target/scala-3.7.4/classes ...
+[info] done compiling
+[info] compiling 6 Scala sources to /private/tmp/eyes4s-usability-20261026/detect/.jvm/target/scala-3.7.4/classes ...
+[info] compiling 7 Scala sources to /private/tmp/eyes4s-usability-20261026/surface/.jvm/target/scala-3.7.4/classes ...
+[info] compiling 2 Scala sources to /private/tmp/eyes4s-usability-20261026/aoi/.jvm/target/scala-3.7.4/classes ...
+[info] done compiling
+[info] done compiling
+[info] compiling 15 Scala sources to /private/tmp/eyes4s-usability-20261026/compare/.jvm/target/scala-3.7.4/classes ...
+[info] done compiling
+[info] done compiling
+[info] compiling 21 Scala sources to /private/tmp/eyes4s-usability-20261026/design/.jvm/target/scala-3.7.4/classes ...
+[info] done compiling
+[info] compiling 79 Scala sources to /private/tmp/eyes4s-usability-20261026/plan/.jvm/target/scala-3.7.4/classes ...
+[info] done compiling
+[info] compiling 19 Scala sources to /private/tmp/eyes4s-usability-20261026/results/.jvm/target/scala-3.7.4/classes ...
+[info] compiling 11 Scala sources to /private/tmp/eyes4s-usability-20261026/fs2/.jvm/target/scala-3.7.4/classes ...
+[info] done compiling
+[info] done compiling
+[info] compiling 46 Scala sources to /private/tmp/eyes4s-usability-20261026/codec/.jvm/target/scala-3.7.4/classes ...
+[info] done compiling
+[info] compiling 44 Scala sources to /private/tmp/eyes4s-usability-20261026/io/.jvm/target/scala-3.7.4/classes ...
+[info] done compiling
+[info] compiling 128 Scala sources to /private/tmp/eyes4s-usability-20261026/studio/core/.jvm/target/scala-3.7.4/classes ...
+[info] done compiling
+[info] compiling 133 Scala sources to /private/tmp/eyes4s-usability-20261026/studio/app/.jvm/target/scala-3.7.4/classes ...
+[info] compiling 133 Scala sources to /private/tmp/eyes4s-usability-20261026/studio/core/.jvm/target/scala-3.7.4/test-classes ...
+[info] done compiling
+[info] compiling 29 Scala sources to /private/tmp/eyes4s-usability-20261026/studio/viz/.jvm/target/scala-3.7.4/classes ...
+[info] done compiling
+[info] compiling 93 Scala sources to /private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes ...
+[info] done compiling
+[info] done compiling
+[info] compiling 88 Scala sources to /private/tmp/eyes4s-usability-20261026/studio/app/.jvm/target/scala-3.7.4/test-classes ...
+[info] done compiling
+[info] compiling 163 Scala sources to /private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/test-classes ...
+[info] done compiling
+WARNING: A terminally deprecated method in sun.misc.Unsafe has been called
+WARNING: sun.misc.Unsafe::objectFieldOffset has been called by scala.runtime.LazyVals$ (file:/Users/bbuchsbaum/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/scala-lang/scala3-library_3/3.7.4/scala3-library_3-3.7.4.jar)
+WARNING: Please consider reporting this to the maintainers of class scala.runtime.LazyVals$
+WARNING: sun.misc.Unsafe::objectFieldOffset will be removed in a future release
+Oct 26, 2026 8:50:46 A.M. com.sun.javafx.application.PlatformImpl startup
+WARNING: Unsupported JavaFX configuration: classes were loaded from 'unnamed module @5aafaf84'
+WARNING: A restricted method in java.lang.System has been called
+WARNING: java.lang.System::load has been called by com.sun.glass.utils.NativeLibLoader in an unnamed module (file:/Users/bbuchsbaum/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/openjfx/javafx-graphics/24.0.1/javafx-graphics-24.0.1-mac-aarch64.jar)
+WARNING: Use --enable-native-access=ALL-UNNAMED to avoid a warning for callers in this module
+WARNING: Restricted methods will be blocked in a future release unless native access is enabled
+
+Test run eyes4s.studio.desktop.shell.A11yTreeSuite started
+==> X eyes4s.studio.desktop.shell.A11yTreeSuite.compare-results: Tab visits the derived stops; docs/studio/a11y/tab-order-compare-results.txt 1.269s munit.ComparisonFailException: studio/desktop/src/test/scala/eyes4s/studio/desktop/shell/A11yTreeSuite.scala:213
+212:        val walked = walk(fx, w)
+213:        assertNoDiff(walked.mkString("", "\n", "\n"), derived)
+214:        val file = buildRoot.resolve(s"docs/studio/a11y/tab-order-$name.txt")
+diff assertion failed
+=> Diff (- expected, + obtained)
+ button: Summary ? by retrieval response, current location
+-list: Participants
++list: Participants, P01, overall D +0.42, n 19; run queries 19 contributing of 20, 0 failed
+ plot: Participant plot
++region: Participant plot of Participant D at 2?: each participant's mean D in 2 groups, lines join a participant's means, a tick marks each group's grand mean. Annotations: P17 ? selected, 19 of 20 contributing, Remembered +0.40, n 17, Forgotten +0.22, n 2; P05 ? 17 of 20 contributing, Remembered +0.39, n 13, Forgotten +0.22, n 4, 3 failed queries, 2 Remembered, 1 Forgotten, no value, not zero. One focus stop; arrow keys move to the nearest mark, Page Up and Page Down step in order, Enter selects, Escape clears the selection.
+ plot: Scale profile
++region: Scale profile of run 7: the whole-report grand mean D at 4 scales, bold, over each participant's mean D, faint. One focus stop; arrow keys move to the nearest mark, Page Up and Page Down step in order, Enter selects, Escape clears the selection.
+ table: Participant table
++toggle-button: ? 2?
++button: Explain P17 ? keeps: by retrieval response ? P17
++table: Participant summary at ? 2?, run 7. One focus stop; arrow keys move the row cursor, Enter selects, Escape clears the selection.
+ region: Reporting
+    at munit.FunSuite.assertNoDiff(FunSuite.scala:12)
+    at eyes4s.studio.desktop.shell.A11yTreeSuite.$init$$$anonfun$9$$anonfun$1(A11yTreeSuite.scala:213)
+    at munit.FunFixtures.munit$FunFixtures$FunFixture$$_$test$$anonfun$1$$anonfun$1$$anonfun$1(FunFixtures.scala:23)
+eyes4s.studio.desktop.shell.A11yTreeSuite: finished 5.956s
+Test run eyes4s.studio.desktop.shell.A11yTreeSuite finished: 1 failed, 0 ignored, 3 total 5.964s
+[error] Failed: Total 3, Failed 1, Errors 0, Passed 2
+[error] Failed tests:
+[error] 	eyes4s.studio.desktop.shell.A11yTreeSuite
+[error] (studioDesktop / Test / testOnly) sbt.TestsFailedException: Tests unsuccessful
+[error] Total time: 84 s (0:01:24.0), completed Oct 26, 2026, 8:50:52 a.m.
