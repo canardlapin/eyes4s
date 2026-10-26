@@ -261,7 +261,10 @@ class InteractionPerformanceFxSuite extends GoldenWindow:
           dispatch(fx, w, Intent.ShowRun(run))
           dispatch(fx, w, Intent.Dispatch(Command.CreateFigure(run, reporting.id, panels)))
           until("complete design rows", 180) {
-            w.resolvedDesign.state.rowState == DesignRows.Complete
+            w.resolvedDesign.state.rowState match
+              case DesignRows.Failed(reason) => fail(s"Design row read failed: $reason")
+              case DesignRows.Complete       => true
+              case _                         => false
           }
           val expectedQueries = String(
             inputs.entries.find(_._1.role == SourceRole.Trials).get._2.toArray,
@@ -413,6 +416,13 @@ class InteractionPerformanceFxSuite extends GoldenWindow:
           write("passed")
         catch
           case error: Throwable =>
+            window.foreach(w =>
+              println(
+                "[performance] failure context " + runOnFx(
+                  s"designRows=${w.resolvedDesign.state.rows.size}; rowState=${w.resolvedDesign.state.rowState}; preview=${w.resolvedDesign.state.preview.productPrefix}"
+                )
+              )
+            )
             write("failed")
             throw error
         finally

@@ -148,7 +148,10 @@ private[real] final class RealRegistry private (
       changedRevisions = (revisions.keySet ++ made.revisions.keySet).filter(id =>
         revisions.get(id) != made.revisions
           .get(id) || made.revisions.get(id).exists((dataset, _) => changedDatasets(dataset)) ||
-          planBindings.get(id) != made.planBindings.get(id)
+          // Promoting an unchanged draft adds an explicit Unbound entry;
+          // it does not change the prepared plan or invalidate its row pages.
+          planBindings.getOrElse(id, CoreBinding.unbound) != made.planBindings
+            .getOrElse(id, CoreBinding.unbound)
       )
     yield RealRegistry.Change(made, changedDatasets, changedRevisions)
 

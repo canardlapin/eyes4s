@@ -67,6 +67,17 @@ class RealRegistrySuite extends munit.FunSuite:
     val extended =
       ok(change.next.synchronize(document(analyses = original.analyses :+ saved, draft = None)))
     assert(extended.next.revisions.contains(StoryMoments.rev5))
+    assertEquals(extended.revisions, Set.empty[AnalysisRevision])
+    assertEquals(extended.datasets, Set.empty[DatasetRevision])
+    // A real new canonical binding still invalidates prepared state.
+    val digest   = ok(eyes4s.codec.CanonicalDigest.parse[StudyPlanArtifact]("a" * 64))
+    val bound    = saved.copy(plan = CoreBinding.Bound(digest))
+    val enriched = ok(
+      extended.next.synchronize(
+        document(analyses = original.analyses :+ bound, draft = None)
+      )
+    )
+    assertEquals(enriched.revisions, Set(StoryMoments.rev5))
   }
 
   test("admitted dataset content and saved recipes cannot change under their ids") {

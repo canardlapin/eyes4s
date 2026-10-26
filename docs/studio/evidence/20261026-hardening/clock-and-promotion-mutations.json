@@ -1,0 +1,18 @@
+{
+  "mutations": [
+    {
+      "mutation": "clock-on-FX",
+      "exitCode": 1,
+      "log": "mutation-logs/eyes4s-hardening-clock-on-FX-mutant.log.gz",
+      "originalSha256": "e51668eb9c1fbfc88f171d200150eaa915b02190b14aa3e840c0ff089b08f2a9"
+    },
+    {
+      "mutation": "draft-promotion-invalidates",
+      "exitCode": 1,
+      "log": "mutation-logs/eyes4s-hardening-draft-promotion-invalidates-mutant.log.gz",
+      "originalSha256": "a79c29641a4b2823b36d19f7c2fe9f5a61b4b43862ad2b6c9f9dafc144b7dbb4"
+    }
+  ],
+  "restoredExitCode": 0,
+  "restoredLog": "mutation-logs/eyes4s-hardening-final-restored.log.gz"
+}

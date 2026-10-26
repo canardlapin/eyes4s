@@ -1,0 +1,7 @@
+{
+  "qualification": false,
+  "baseCandidate": "d78e59cd",
+  "sourceChange": "InteractionPerformanceFxSuite adds explicit DesignRows.Failed diagnostics; no implementation changes during this diagnostic.",
+  "command": "sbt studioDesktop/testOnly *InteractionPerformanceFxSuite -- --tests *10x*",
+  "finding": "960 of4800 design rows loaded; remaining page refused because the completed preview was invalidated by draft promotion."
+}
