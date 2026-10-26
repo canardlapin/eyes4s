@@ -79,6 +79,19 @@ enum A11yRole derives CanEqual:
 final case class FocusStop(role: A11yRole, name: String) derives CanEqual:
   def render: String = s"${role.id}: $name"
 
+/** The container may carry focus itself, or delegate it to served content.
+  * A live plot/table replaces its empty container stop; controls around it
+  * remain separate stops. This is portable data, not a native node inventory.
+  */
+final case class PaneFocus(container: Option[FocusStop], content: Vector[FocusStop])
+    derives CanEqual:
+  def stops: Vector[FocusStop] = container.toVector ++ content
+
+object PaneFocus:
+  def served(decl: PaneDecl, content: Vector[FocusStop]): PaneFocus =
+    if content.isEmpty then PaneFocus(Some(A11y.pane(decl)), Vector.empty)
+    else PaneFocus(None, content)
+
 /** The accessibility baseline of the shell (ticket S1.11): the role of each
   * pane and the Tab order of each perspective, derived from the same
   * view-models the shell renders. A shell's traversal must visit exactly
@@ -107,12 +120,15 @@ object A11y:
     * confirmation, banner, one stop per visible dock group (the pane it
     * shows) followed by that pane's own controls (`inside`: a form pane's
     * controls, derived from its view-model; by default a pane has none),
-    * and the status bar's action. A disabled button is no stop.
+    * and the status bar's action. `focus` replaces a pane's complete plan
+    * when its served content owns focus; it never appends a redundant shell
+    * stop. A disabled button is no stop.
     */
   def tabOrder(
       model: AppModel,
       messages: Messages = Messages.english,
-      inside: PaneId => Vector[FocusStop] = _ => Vector.empty
+      inside: PaneId => Vector[FocusStop] = _ => Vector.empty,
+      focus: PaneId => Option[PaneFocus] = _ => None
   ): Vector[FocusStop] =
     val vm     = Shell.project(model, messages)
     val bar    = vm.appBar
@@ -137,7 +153,7 @@ object A11y:
       if model.isMaximized then layout.groupOf(focused).toVector else layout.groups
     val dock = groups.flatMap { g =>
       val shown = g.panes.find(_.id == focused).getOrElse(layout.selectedPane(g))
-      pane(shown) +: inside(shown.id)
+      focus(shown.id).fold(pane(shown) +: inside(shown.id))(_.stops)
     }
     val status = vm.status.job.action.flatMap(button)
     appBar ++ context ++ notice ++ confirm ++ banner ++ dock ++ status

@@ -24,7 +24,7 @@ package eyes4s.studio.app.text
   */
 enum MessageId derives CanEqual:
   // --- App bar and window --------------------------------------------------
-  case AppName, UntitledProject, WindowTitle
+  case AppName, UntitledProject, WindowTitle, Workspace
   case PerspectiveData, PerspectiveExplore, PerspectiveAnalysis, PerspectiveCompare
   case PerspectiveFigures
 
@@ -105,6 +105,7 @@ object Catalogue:
     import MessageId.*
     id match
       case AppName             => "Eyes Studio"
+      case Workspace           => "Workspace"
       case UntitledProject     => "Untitled project"
       case WindowTitle         => "{0}.eyes"
       case PerspectiveData     => "Data"

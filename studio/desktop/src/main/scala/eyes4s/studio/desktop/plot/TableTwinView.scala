@@ -206,6 +206,11 @@ final class TableTwinView private (initial: TableTwinState, dispatch: Intent => 
   /** The source the table lists, if any. */
   def source: Option[PlotSource] = shown
 
+  /** The same portable table state supplies native and derived announcements. */
+  def focusStops: Vector[eyes4s.studio.app.vm.FocusStop] =
+    import eyes4s.studio.app.vm.{A11yRole, FocusStop}
+    shown.toVector.map(s => FocusStop(A11yRole.Table, current.spoken(s)))
+
   /** What the table shows, if it lists a source. Builds every row: for
     * tests and small tables; the view itself never needs it.
     */

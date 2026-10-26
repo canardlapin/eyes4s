@@ -17,7 +17,7 @@
 package eyes4s.studio.desktop.dock
 
 import eyes4s.studio.app.layout.{LayoutSpec, PaneDecl}
-import eyes4s.studio.app.vm.{A11y, A11yRole}
+import eyes4s.studio.app.vm.{A11y, A11yRole, PaneFocus}
 import eyes4s.studio.desktop.shell.CompositeFocus
 import javafx.collections.SetChangeListener
 import javafx.css.PseudoClass
@@ -41,11 +41,12 @@ final class StudioPanes(spec: LayoutSpec):
   private val declared: Map[String, PaneDecl] =
     spec.all.flatMap(_.panes).map(p => p.id.value -> p).toMap
 
-  private val live    = mutable.LinkedHashMap.empty[PaneId, javafx.scene.Node]
-  private val views   = mutable.Map.empty[PaneId, StudioPanes.Placeholder]
-  private val hosted  = mutable.Map.empty[PaneId, javafx.scene.Node]
-  private val created = mutable.ArrayBuffer.empty[PaneId]
-  private val gone    = mutable.ArrayBuffer.empty[PaneId]
+  private val live       = mutable.LinkedHashMap.empty[PaneId, javafx.scene.Node]
+  private val views      = mutable.Map.empty[PaneId, StudioPanes.Placeholder]
+  private val hosted     = mutable.Map.empty[PaneId, javafx.scene.Node]
+  private val focusPlans = mutable.Map.empty[PaneId, PaneFocus]
+  private val created    = mutable.ArrayBuffer.empty[PaneId]
+  private val gone       = mutable.ArrayBuffer.empty[PaneId]
 
   /** The live view of `pane`, if the dock has built it and not disposed it. */
   def node(pane: PaneId): Option[javafx.scene.Node] = live.get(pane)
@@ -64,6 +65,11 @@ final class StudioPanes(spec: LayoutSpec):
     hosted.update(pane, content)
     views.get(pane).foreach(_.show(content))
 
+  /** Bind the portable contract even when the dock has not mounted the pane yet. */
+  def focus(pane: PaneId, plan: PaneFocus): Unit =
+    focusPlans.update(pane, plan)
+    views.get(pane).foreach(_.focus(plan))
+
   val factories: PaneFactories =
     PaneFactories.empty.register(StudioPanes.placeholder) { state =>
       val id    = summon[PaneContext[ujson.Value]].paneId
@@ -73,6 +79,7 @@ final class StudioPanes(spec: LayoutSpec):
       val name  = decl.fold(title)(_.accessibleName)
       val view  = StudioPanes.Placeholder(id, title, name, role, state)
       hosted.get(id).foreach(view.show)
+      focusPlans.get(id).foreach(view.focus)
       created += id
       views.update(id, view)
       live.update(id, view.node)
@@ -143,6 +150,14 @@ object StudioPanes:
 
     private def followCursor(): Unit =
       CompositeFocus.noCursor(node, hosted.exists(CompositeFocus.hasNoCursor))
+
+    def focus(plan: PaneFocus): Unit =
+      node.setFocusTraversable(plan.container.nonEmpty)
+      if plan.container.isEmpty then node.setAccessibleRole(AccessibleRole.PARENT)
+      plan.container.foreach { stop =>
+        node.setAccessibleRole(accessibleRole(stop.role))
+        node.setAccessibleText(stop.name)
+      }
 
     /** Replace the title with a pane's real content, filling the pane. */
     def show(content: javafx.scene.Node): Unit =

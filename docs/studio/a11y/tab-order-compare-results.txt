@@ -1,0 +1,21 @@
+menu-button: Project memory-study
+toggle-button: Compare (⌘4)
+button: Cancel Run 8 (job 1)
+button: Summary · by retrieval response, current location
+list: Participants, P01, overall D +0.42, n 19; run queries 19 contributing of 20, 0 failed
+region: Participant plot of Participant D at 2°: each participant's mean D in 2 groups, lines join a participant's means, a tick marks each group's grand mean. Annotations: [responsive annotations recorded in A11yTreeSuite transcript]. One focus stop; arrow keys move to the nearest mark, Page Up and Page Down step in order, Enter selects, Escape clears the selection.
+region: Scale profile of run 7: the whole-report grand mean D at 4 scales, bold, over each participant's mean D, faint. One focus stop; arrow keys move to the nearest mark, Page Up and Page Down step in order, Enter selects, Escape clears the selection.
+toggle-button: σ 2°
+button: Explain P17 → keeps: by retrieval response › P17
+table: Participant summary at σ 2°, run 7. One focus stop; arrow keys move the row cursor, Enter selects, Escape clears the selection.
+region: Reporting
+radio-button: Group by: response
+text-field: First level (minuend)
+text-field: Subtract level (subtrahend)
+button: Apply contrast
+button: Clear contrast
+check-box: Exclude queries with >25% of fixation duration outside the analysis window
+check-box: Minimum queries per group: 3
+radio-button: Summary unit and weighting: Equal weight per participant
+button: Save as…
+button: Cancel Run 8 (job 1)

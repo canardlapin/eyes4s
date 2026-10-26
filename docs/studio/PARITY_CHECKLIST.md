@@ -310,5 +310,8 @@ panel-extent refusal and still demands Drawn plus pixels within the unchanged st
 
 The Participants navigator and S10.4 matrix are complete within this recorded scope.
 Small-window readability (`bd-01M5P3EJ0NC4PXQH0CKQY4WHV2`) and the generic Results
-focus model (`bd-01M5NWGK8E9SW3JRKJ69QHMG9B`) remain open. This does not qualify
+focus model (`bd-01M5NWGK8E9SW3JRKJ69QHMG9B`) were left open by that receipt. The
+2026-10-26 implementation adds the §10 scrollable work area and served focus contract;
+their combined qualification is recorded separately in `evidence/20261026-usability/`.
+This does not qualify
 private-study G2, physical Mac Retina or VoiceOver, nor erase earlier board deviations.

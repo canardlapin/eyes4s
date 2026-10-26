@@ -504,10 +504,31 @@ final class CompareSummaryHost(
     * cursor named by the plot it draws, while it shows one, then Prev and Next.
     */
   def contrastStops: Vector[eyes4s.studio.app.vm.FocusStop] =
-    val plot = Option(ladder.plotHost.getAccessibleText)
-      .filter(_ => ladder.plotHost.isFocusTraversable)
-      .map(eyes4s.studio.app.vm.FocusStop(eyes4s.studio.app.vm.A11yRole.Region, _))
-    plot.toVector ++ ContrastPane.focusStops(contrastVM)
+    ladder.focusStops ++ ContrastPane.focusStops(contrastVM)
+
+  /** Complete Results contracts, derived from served view-models and portable
+    * plot/table cursor state. No native role/name introspection is involved.
+    */
+  def focusPlans: Map[eyes4s.studio.app.layout.PaneId, eyes4s.studio.app.vm.PaneFocus] =
+    val contents = Map(
+      "compare.participants"           -> Vector.empty[eyes4s.studio.app.vm.FocusStop],
+      "compare.participant-plot"       -> participantPlot.focusStops,
+      "compare.participant-plot.table" -> participantPlot.table.focusStops,
+      "compare.scale-profile"          -> scaleProfile.focusStops,
+      "compare.scale-profile.table"    -> scaleProfile.table.focusStops,
+      "compare.participant-table"      -> participantTable.focusStops,
+      "compare.query-table"            -> queryTable.focusStops
+    )
+    val nav = ParticipantsNavigator.vm(participantsState, state, model())
+    eyes4s.studio.app.layout.StudioLayouts.spec.all
+      .flatMap(_.panes)
+      .distinct
+      .flatMap(decl =>
+        contents.get(decl.id.value).map { stops =>
+          decl.id -> eyes4s.studio.app.vm.ResultsFocus.pane(decl, vm, nav, stops)
+        }
+      )
+      .toMap
 
   /** The contrast pane's view-model now. */
   def contrastVM: ContrastVM =

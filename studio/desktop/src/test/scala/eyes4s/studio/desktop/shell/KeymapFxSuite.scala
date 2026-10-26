@@ -264,7 +264,14 @@ class KeymapFxSuite extends ShellFxSuite:
         seen += pane.value
         val node = runOnFx(w.host.node(pane))
         assert(
-          node.exists(n => runOnFx(fx.scene.getFocusOwner eq n)),
+          node.exists(n =>
+            runOnFx(
+              Iterator
+                .iterate(fx.scene.getFocusOwner)(_.getParent)
+                .takeWhile(_ != null)
+                .exists(_ eq n)
+            )
+          ),
           s"focus is not in ${pane.value}"
         )
         val tabs = group.panes.toVector.map(_.id)

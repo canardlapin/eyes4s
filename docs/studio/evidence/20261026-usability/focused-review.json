@@ -1,0 +1,96 @@
+{
+  "schema": 1,
+  "status": "focused checks passed; full qualification pending",
+  "base": "ae78d26254e6201532fa53d4bbac99ab3cccf719",
+  "sourceFingerprint": "ee91b3656a8d350ad85ef4664b18a57520765e1fb62be3b46f4ccaf1075198a6",
+  "motes": [
+    "bd-01M5P3EJ0NC4PXQH0CKQY4WHV2",
+    "bd-01M5NWGK8E9SW3JRKJ69QHMG9B"
+  ],
+  "policy": {
+    "board": [
+      1440,
+      900
+    ],
+    "supportedSmallScene": [
+      1024,
+      656
+    ],
+    "minimumWorkArea": [
+      1280,
+      864
+    ],
+    "behavior": "scroll with keyboard reveal; no additional viewport Tab stop"
+  },
+  "redGreen": {
+    "queryDataFrameHeightLogicalPixels": {
+      "before": [
+        37,
+        53
+      ],
+      "after": [
+        176,
+        192
+      ]
+    },
+    "participantPlotHeightLogicalPixels": {
+      "before": 143,
+      "after": 257
+    },
+    "resultsTraversal": {
+      "before": "unmodeled plot/table controls and three redundant containers",
+      "after": "21 stops derived from portable values; exact forward and reverse live comparison"
+    },
+    "scrollReveal": "first visibility probe found a table bottom38px below the viewport after layout; bounds observation fixes the failure"
+  },
+  "focusedChecks": {
+    "desktop": 51,
+    "portableJvm": 3,
+    "portableJs": 3,
+    "style": "passed",
+    "canvasRestoration": "board and small scenes; both themes; unchanged strict comparator"
+  },
+  "visualReview": {
+    "reviewer": "codex-usability-20261026",
+    "viewed": [
+      "focused/WorkspaceViewportFxSuite/small-query-workspace-keeps-map-space-light/light-1x.png",
+      "focused/WorkspaceViewportFxSuite/small-Results-workspace-keeps-space-for-axes-and-annotations-light/light-1x.png"
+    ],
+    "findings": [
+      "Maps have usable data area and complete wrapped disclosures.",
+      "Participant axes and group labels have room above the table.",
+      "Scrolling and clipped offscreen portions are deliberate; keyboard checks require focused controls visible."
+    ],
+    "limits": [
+      "Native Mac and GTK2 qualification pending.",
+      "Full library/Studio gates and Linux board pixel matrix pending.",
+      "No G2, VoiceOver or physical Retina qualification claimed."
+    ]
+  },
+  "logs": [
+    {
+      "path": "docs/studio/evidence/20261026-usability/focused-logs/eyes4s-usability-red-20261026.log",
+      "sha256": "22090cf8f7f838e8253f842c3153b5619b179740e7196b277f75f51405cb97ff"
+    },
+    {
+      "path": "docs/studio/evidence/20261026-usability/focused-logs/eyes4s-usability-focus-and-small-red-20261026.log",
+      "sha256": "8f9ef1facb0fad9781ddcb7484fb346dc6b63d750a8428202ad69a2382644318"
+    },
+    {
+      "path": "docs/studio/evidence/20261026-usability/focused-logs/eyes4s-usability-first-green-20261026.log",
+      "sha256": "c7bbe68465190b253ffa315375b223a1bf2914d06878337649414584ebbf2167"
+    },
+    {
+      "path": "docs/studio/evidence/20261026-usability/focused-logs/eyes4s-usability-keyboard-20261026.log",
+      "sha256": "2e8ee13515d04208bcc29feae1badc963d4e0b708ec2e1bc91cac9c3358275a5"
+    },
+    {
+      "path": "docs/studio/evidence/20261026-usability/focused-logs/eyes4s-usability-reveal-20261026.log",
+      "sha256": "6e358c9d58433c0c1ae32a4405ea8ba24df47c2b02da6af1a03bfc5f0b7c5384"
+    },
+    {
+      "path": "docs/studio/evidence/20261026-usability/focused-logs/eyes4s-usability-focused-final-20261026.log",
+      "sha256": "676e631663d0c96831553ae64cdc0baf5225a0a3be319d715e937c910f9ad737"
+    }
+  ]
+}

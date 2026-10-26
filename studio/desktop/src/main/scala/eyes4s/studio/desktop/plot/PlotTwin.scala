@@ -214,6 +214,14 @@ final class PlotTwin private (
   /** The plot on the canvas host, if the builder accepted the source. */
   def plot: Option[BuiltPlot] = shownPlot
 
+  /** Served focus semantics, without reading a native node's name or role. */
+  def focusStops: Vector[eyes4s.studio.app.vm.FocusStop] =
+    import eyes4s.studio.app.vm.{A11yRole, FocusStop}
+    statusWrapper.get match
+      case PlotTwinStatus.Shown(_) | PlotTwinStatus.Refused(_, _) =>
+        input.spokenText.toVector.map(FocusStop(A11yRole.Region, _))
+      case _ => Vector.empty
+
   private def shownPlot: Option[BuiltPlot] = statusWrapper.get match
     case PlotTwinStatus.Shown(p) => Some(p)
     case _                       => None

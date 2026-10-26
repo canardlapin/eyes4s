@@ -1,0 +1,195 @@
+/*
+ * Copyright 2026 canardlapin
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package eyes4s.studio.desktop.shell
+
+import eyes4s.studio.app.{AppModel, Intent, StoryModels}
+import eyes4s.studio.app.appearance.Appearance
+import eyes4s.studio.app.vm.A11y
+import eyes4s.studio.core.fixture.StoryMoment
+import eyes4s.studio.desktop.StudioWindow
+import eyes4s.studio.desktop.dock.StudioPanes
+import eyes4s.studio.desktop.harness.{FxStage, Modifiers, StageSize, StudioTheme}
+import eyes4s.studio.desktop.plot.PlotHostStatus
+import javafx.scene.Node
+import javafx.scene.input.KeyCode
+import java.nio.file.Files
+
+/** Small windows must preserve a usable data frame, not just return Drawn. */
+class WorkspaceViewportFxSuite extends StoryCaptureFixture:
+  override protected def stageSize: StageSize = StageSize(1024, 656)
+  private val MinimumMapHeight                = 120.0
+  private val MinimumParticipantHeight        = 200.0
+
+  private def contains(parent: Node, node: Node): Boolean =
+    Iterator.iterate(node)(_.getParent).takeWhile(_ != null).exists(_ eq parent)
+
+  /** A large composite may exceed the viewport; its leading edge must still
+    * be visible. Every ordinary control must fit completely inside it.
+    */
+  private def visibleFocus(fx: FxStage, w: StudioWindow): Unit =
+    fx.awaitLayout()
+    runOnFx {
+      val node      = fx.scene.getFocusOwner
+      val view      = w.shell.workspace.lookup(".viewport")
+      val a         = node.localToScene(node.getBoundsInLocal)
+      val b         = view.localToScene(view.getBoundsInLocal)
+      val tolerance = 1.0 // fractional scroll offsets round to device pixels
+      assert(
+        a.getMinX >= b.getMinX - tolerance && a.getMinX <= b.getMaxX,
+        s"${node.getAccessibleText}: horizontal leading edge $a outside $b"
+      )
+      assert(
+        a.getMinY >= b.getMinY - tolerance && a.getMinY <= b.getMaxY,
+        s"${node.getAccessibleText}: vertical leading edge $a outside $b"
+      )
+      if a.getWidth <= b.getWidth then
+        assert(
+          a.getMaxX <= b.getMaxX + tolerance,
+          s"${node.getAccessibleText}: $a outside $b; scroll=${w.shell.workspace.getVvalue}, area=${w.shell.workspace.getContent.getLayoutBounds}; local=${w.shell.workspace.getContent.sceneToLocal(a)}"
+        )
+      if a.getHeight <= b.getHeight then
+        assert(
+          a.getMaxY <= b.getMaxY + tolerance,
+          s"${node.getAccessibleText}: $a outside $b; scroll=${w.shell.workspace.getVvalue}, area=${w.shell.workspace.getContent.getLayoutBounds}; local=${w.shell.workspace.getContent.sceneToLocal(a)}"
+        )
+    }
+
+  private def resultsCycle(fx: FxStage, w: StudioWindow, backwards: Boolean): Vector[String] =
+    runOnFx(w.shell.appBar.project.requestFocus())
+    fx.awaitLayout()
+    val expected = runOnFx(
+      A11y.tabOrder(w.runtime.model, inside = w.paneStops, focus = w.paneFocus)
+    )
+    val ordered = if backwards then expected.head +: expected.tail.reverse else expected
+    val visited = ordered.map { stop =>
+      visibleFocus(fx, w)
+      val actual = runOnFx {
+        val node = fx.scene.getFocusOwner
+        (node.getAccessibleRole, node.getAccessibleText)
+      }
+      assertEquals(actual, (StudioPanes.accessibleRole(stop.role), stop.name))
+      fx.robot.press(KeyCode.TAB, Modifiers(shift = backwards))
+      stop.render
+    }
+    assert(runOnFx(fx.scene.getFocusOwner eq w.shell.appBar.project))
+    visited
+
+  for theme <- StudioTheme.values do
+    fxStage.test("small query workspace keeps map space " + theme.id) { fx =>
+      val model = AppModel
+        .update(
+          StoryModels.t2Compare,
+          Intent.SetAppearance(if theme == StudioTheme.Dark then Appearance.Dark
+          else Appearance.Light)
+        )
+        ._1
+      val w = boot(
+        fx,
+        model,
+        StoryMoment.T2,
+        panels = golden,
+        project = Some(fixtureProject),
+        clock = () => None
+      )
+      val hosts =
+        Vector(w.summary.panels.queryView.plotHost, w.summary.panels.referenceView.plotHost)
+      eventually(fx, "both query maps are drawn") {
+        hosts.forall(_.status.get.isInstanceOf[PlotHostStatus.Drawn])
+      }
+      val heights = runOnFx(
+        hosts.map(h =>
+          h.frame.get.transform.panelFrame.height / h.frame.get.surface.deviceScale
+        )
+      )
+      assert(
+        heights.forall(_ >= MinimumMapHeight),
+        s"map heights $heights, need $MinimumMapHeight"
+      )
+      runOnFx(w.shell.appBar.project.requestFocus())
+      val paths = fx.snapshot(theme)
+      Files.writeString(
+        paths.head.getParent.resolve("bounds.json"),
+        ujson.write(
+          ujson.Obj(
+            "scene"               -> ujson.Arr(fx.sceneSize._1, fx.sceneSize._2),
+            "mapDataFrameHeights" -> ujson.Arr.from(heights)
+          ),
+          indent = 2
+        ) + "\n"
+      )
+    }
+
+    fxStage.test("small Results workspace keeps space for axes and annotations " + theme.id) {
+      fx =>
+        val model = AppModel
+          .update(
+            StoryModels.t3Summary,
+            Intent.SetAppearance(if theme == StudioTheme.Dark then Appearance.Dark
+            else Appearance.Light)
+          )
+          ._1
+        val w = boot(fx, model, StoryMoment.T3, clock = () => None)
+        eventually(fx, "the participant plot is drawn") {
+          w.summary.participantPlot.plotHost.status.get.isInstanceOf[PlotHostStatus.Drawn] &&
+          w.summary.scaleProfile.plot.isDefined && w.summary.participantTable.source.isDefined &&
+          w.summary.vm.scales.forall(_.available)
+        }
+        val height = runOnFx(w.summary.participantPlot.plotHost.getHeight)
+        assert(
+          height >= MinimumParticipantHeight,
+          s"plot height $height, need $MinimumParticipantHeight"
+        )
+        val forward = resultsCycle(fx, w, backwards = false)
+        val reverse = resultsCycle(fx, w, backwards = true)
+        assertEquals(reverse, forward.head +: forward.tail.reverse)
+        val paths = fx.snapshot(theme)
+        // F6 and Ctrl+Tab must land in the content that now owns each pane's
+        // single stop, including both plot/table twins and reporting controls.
+        runOnFx(
+          w.host
+            .node(w.runtime.model.focusedPane)
+            .foreach(eyes4s.studio.desktop.dock.PerspectiveHost.focusInside)
+        )
+        val groups = runOnFx(w.runtime.model.layout.groups.size)
+        (0 until groups).foreach { _ =>
+          val group = runOnFx(w.runtime.model.layout.groupOf(w.runtime.model.focusedPane).get)
+          group.panes.toVector.foreach { _ =>
+            visibleFocus(fx, w)
+            assert(
+              runOnFx(
+                w.host
+                  .node(w.runtime.model.focusedPane)
+                  .exists(contains(_, fx.scene.getFocusOwner))
+              )
+            )
+            fx.robot.press(KeyCode.TAB, Modifiers(control = true))
+          }
+          fx.robot.press(KeyCode.F6)
+        }
+        Files.writeString(
+          paths.head.getParent.resolve("bounds-and-focus.json"),
+          ujson.write(
+            ujson.Obj(
+              "scene"                 -> ujson.Arr(fx.sceneSize._1, fx.sceneSize._2),
+              "participantPlotHeight" -> height,
+              "forward"               -> ujson.Arr.from(forward),
+              "reverse"               -> ujson.Arr.from(reverse)
+            ),
+            indent = 2
+          ) + "\n"
+        )
+    }

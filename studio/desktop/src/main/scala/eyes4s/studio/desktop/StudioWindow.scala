@@ -126,6 +126,9 @@ final class StudioWindow private (
   /** The title the native window shows now. */
   def title: String = eyes4s.studio.app.vm.Menus.windowTitle(runtime.model)
 
+  def paneFocus(pane: PaneId): Option[eyes4s.studio.app.vm.PaneFocus] =
+    summary.focusPlans.get(pane)
+
   /** The controls a pane shows inside its own focus stop, in Tab order. */
   def paneStops(pane: PaneId): Vector[FocusStop] =
     if pane == StudioLayouts.columnMapping then columnMapping.focusStops
@@ -242,6 +245,7 @@ final class StudioWindow private (
     figures.dispose()
     runtime.unlisten(themeListener)
     themes.dispose()
+    shell.dispose()
     host.dock.dispose()
     project.foreach(_.close())
     session.close()
@@ -608,6 +612,7 @@ object StudioWindow:
       "compare.reference-trial.table"  -> summary.referenceTrialTable,
       "compare.items"                  -> summary.items.node
     ).foreach((id, node) => PaneId.of(id).foreach(host.host(_, node)))
+    summary.onRendered(() => summary.focusPlans.foreach((id, plan) => host.focus(id, plan)))
     // Compare's inspector (S8.4): why this reference, beside the panels.
     val compareInspector = CompareInspectorHost(
       () => r.model,

@@ -69,7 +69,7 @@ final class AppShell(
   menuBar.setUseSystemMenuBar(nativeMenu)
   menuBar.setFocusTraversable(false)
 
-  val root: VBox =
+  private val workArea: VBox =
     VBox(
       menuBar,
       appBar.node,
@@ -80,7 +80,16 @@ final class AppShell(
       dockArea,
       statusBar.node
     )
+  val workspace: WorkspaceViewport = WorkspaceViewport(
+    workArea,
+    messages(eyes4s.studio.app.text.MessageId.Workspace)
+  )
+  VBox.setVgrow(workspace, Priority.ALWAYS)
+  val root: VBox = VBox(workspace)
+  root.setMinSize(0.0, 0.0)
   root.getStyleClass.add("studio-shell")
+
+  def dispose(): Unit = workspace.dispose()
 
   // Use the skin's public scene accelerator: it enters JavaFX's transient
   // menu focus, so arrows, submenus and Escape keep the normal behavior and

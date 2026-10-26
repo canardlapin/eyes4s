@@ -54,6 +54,17 @@
   -fx-faint-focus-color: transparent;
 }
 
+/* A smaller window scrolls the readable work area. At the board size there
+ * is no extra border, inset or scroll bar around the existing arrangement. */
+.workspace-viewport {
+  -fx-background-color: transparent;
+  -fx-background-insets: 0;
+  -fx-padding: 0;
+}
+.workspace-viewport > .viewport {
+  -fx-background-color: transparent;
+}
+
 /* Operand hints are field text: override Modena's derived prompt colour
  * on the controls themselves so both themes retain the readable token. */
 .reporting-editor .text-field {

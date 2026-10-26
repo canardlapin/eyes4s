@@ -149,6 +149,27 @@ direction via the picking plan; Enter = select → selection bus; Esc clear; Tab
 focused mark with a 2px accent ring. F6 cycles panes; ⌘⇧↩ maximizes the focused group. Every
 plot has a synced Table tab.
 
+Results derives its complete focus order from served view-models and plot/table cursor
+state. A served plot or table owns the focus stop; its dock container is not an additional
+stop. An unread or empty pane retains a reachable container. The Participants navigator
+keeps one composite stop with its current row announcement. Scale selection and Explain
+remain distinct controls. F6 enters the content that owns a pane's focus, and Ctrl+Tab
+reaches its sibling table. Responsive plot annotations remain in the full announcement.
+
+### Window size
+
+The reference boards and initial window are 1440×900 logical pixels. The supported
+small-window scene is 1024×656 logical pixels, matching the constrained native macOS
+qualification display. The work area keeps at least 1280×864 logical pixels and scrolls
+when the window is smaller; larger windows expand it normally. This preserves useful
+space for map frames, wrapped captions, plot axes and annotation columns without
+requiring an OS window larger than the display. Scroll bars expose the entire work area,
+including its header, inspector and status controls. The viewport adds no Tab stop.
+Tab, Shift+Tab, F6 and Ctrl+Tab reveal the focused control after layout settles; a composite
+larger than the viewport reveals its leading edge and retains its own row navigation.
+Pointer drags continue to belong to plots and dock dividers. Small-window evidence is
+readability and reachability evidence; the 1440×900 Linux pixel court stays separate.
+
 ## 11. Board list (round 2) — 1440×900 each
 0 System (tokens, roles, states, kinds of change, keyboard, component inventory)
 1 Data · first run (empty state)

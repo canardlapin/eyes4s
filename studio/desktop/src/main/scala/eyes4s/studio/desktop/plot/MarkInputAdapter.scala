@@ -135,11 +135,14 @@ final class MarkInputAdapter[R <: StudioRef, E, T <: RovingTargets[R, E]] privat
   private var within: Vector[Node] = Vector.empty
 
   // What attach changed on the host, restored by dispose.
-  private val priorRole                                     = host.getAccessibleRole
-  private val priorRoleDescription                          = host.getAccessibleRoleDescription
-  private val priorText                                     = host.getAccessibleText
-  private val priorTraversable                              = host.isFocusTraversable
-  private var spoken: Option[String]                        = None
+  private val priorRole              = host.getAccessibleRole
+  private val priorRoleDescription   = host.getAccessibleRoleDescription
+  private val priorText              = host.getAccessibleText
+  private val priorTraversable       = host.isFocusTraversable
+  private var spoken: Option[String] = None
+
+  /** The announcement derived from the portable cursor, targets and scene. */
+  def spokenText: Option[String]                            = spoken
   private val frameListener: ChangeListener[PlotHostStatus] = (_, _, status) =>
     status match
       case PlotHostStatus.Drawn(_) =>

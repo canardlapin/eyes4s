@@ -17,7 +17,8 @@
 package eyes4s.studio.desktop.shell
 
 import eyes4s.studio.core.document.Perspective
-import eyes4s.studio.app.{AppModel, StoryModels}
+import eyes4s.studio.app.{AppModel, Intent, StoryModels}
+import eyes4s.studio.app.appearance.Appearance
 import eyes4s.studio.app.figures.{BundleItem, PanelBody}
 import eyes4s.studio.app.tokens.{Theme, ThemedToken, Tokens}
 import eyes4s.studio.app.vm.{A11y, A11yRole}
@@ -63,13 +64,18 @@ class A11yTreeSuite extends ShellFxSuite:
     ("explore", () => StoryModels.t2Explore, StoryMoment.T2),
     ("analysis", () => StoryModels.t2Analysis, StoryMoment.T2),
     ("compare", () => StoryModels.t2Compare, StoryMoment.T2),
+    ("compare-results", () => StoryModels.t3Summary, StoryMoment.T3),
+    (
+      "compare-results-dark",
+      () => AppModel.update(StoryModels.t3Summary, Intent.SetAppearance(Appearance.Dark))._1,
+      StoryMoment.T3
+    ),
     ("figures", () => StoryModels.t2Figures, StoryMoment.T2)
   )
 
   /** More states for the audit: the new project and the running run. */
   private val extra: Vector[(String, () => AppModel, StoryMoment)] = Vector(
-    ("data-empty", () => StoryModels.firstRun, StoryMoment.T2),
-    ("compare-t3", () => StoryModels.t3Summary, StoryMoment.T3)
+    ("data-empty", () => StoryModels.firstRun, StoryMoment.T2)
   )
 
   private def all(n: Node): Vector[Node] = n +: (n match
@@ -123,7 +129,7 @@ class A11yTreeSuite extends ShellFxSuite:
   }
 
   /** Walk the Tab cycle from the first stop back to it. */
-  private def walk(fx: FxStage, w: StudioWindow): Vector[String] =
+  private def walk(fx: FxStage, w: StudioWindow, backwards: Boolean = false): Vector[String] =
     val first = runOnFx(w.shell.appBar.project)
     runOnFx(first.requestFocus())
     fx.awaitLayout()
@@ -133,7 +139,7 @@ class A11yTreeSuite extends ShellFxSuite:
     while n == 0 || !(at eq first) do
       assert(n < 80, s"Tab did not return to the first stop after 80 steps: ${seen.result()}")
       seen += stop(at)
-      fx.robot.press(KeyCode.TAB)
+      fx.robot.press(KeyCode.TAB, eyes4s.studio.desktop.harness.Modifiers(shift = backwards))
       at = runOnFx(fx.scene.getFocusOwner)
       n += 1
     seen.result()
@@ -174,7 +180,14 @@ class A11yTreeSuite extends ShellFxSuite:
           }
         // Derive the served Compare stops after the navigator and contrast
         // have published their controls, which the Tab walk then visits.
-        if runOnFx(w.runtime.model.perspective) == Perspective.Compare then
+        if name.startsWith("compare-results") then
+          eventually(fx, "Results plots, participant rows and all scale reports are served") {
+            w.summary.participants.rows.nonEmpty &&
+            w.summary.participantPlot.plot.isDefined && w.summary.scaleProfile.plot.isDefined &&
+            w.summary.participantTable.source.isDefined &&
+            w.summary.vm.scales.forall(_.available)
+          }
+        else if runOnFx(w.runtime.model.perspective) == Perspective.Compare then
           eventually(fx, "Compare navigation and contrast are served") {
             val nav = w.summary.navigatorVM
             val cv  = w.summary.contrastVM
@@ -201,23 +214,56 @@ class A11yTreeSuite extends ShellFxSuite:
           }
         // A form pane's controls follow its stop (the column-mapping pane).
         val derived =
-          A11y.render(runOnFx(A11y.tabOrder(w.runtime.model, inside = w.paneStops)))
+          A11y.render(
+            runOnFx(A11y.tabOrder(w.runtime.model, inside = w.paneStops, focus = w.paneFocus))
+          )
         val walked = walk(fx, w)
         assertNoDiff(walked.mkString("", "\n", "\n"), derived)
-        val file = buildRoot.resolve(s"docs/studio/a11y/tab-order-$name.txt")
+        // Responsive annotation capacity changes with the native scene size.
+        // Compare every word above; keep full transcripts for review. Only the
+        // cross-viewport golden replaces that capacity-dependent paragraph.
+        val evidence = buildRoot.resolve(s"target/studio-snapshots/A11yTreeSuite/$name.json")
+        Files.createDirectories(evidence.getParent)
+        Files.writeString(
+          evidence,
+          ujson.write(
+            ujson.Obj(
+              "scene"   -> ujson.Arr(fx.sceneSize._1, fx.sceneSize._2),
+              "derived" -> derived,
+              "walked"  -> ujson.Arr.from(walked)
+            ),
+            indent = 2
+          ) + "\n",
+          UTF_8
+        )
+        val stable = derived.linesIterator
+          .map { line =>
+            if name.startsWith("compare-results") && line.startsWith(
+                "region: Participant plot of "
+              )
+            then
+              val start = line.indexOf(". Annotations: ")
+              val end   = line.indexOf(". One focus stop;")
+              assert(start >= 0 && end > start, line)
+              line.take(
+                start
+              ) + ". Annotations: [responsive annotations recorded in A11yTreeSuite transcript]" + line
+                .substring(end)
+            else line
+          }
+          .mkString("", "\n", "\n")
+        val file =
+          buildRoot.resolve(s"docs/studio/a11y/tab-order-${name.stripSuffix("-dark")}.txt")
         if sys.env.contains("EYES4S_UPDATE_GOLDENS") then
           Files.createDirectories(file.getParent)
-          Files.writeString(file, derived, UTF_8): Unit
+          Files.writeString(file, stable, UTF_8): Unit
         assert(
           Files.exists(file),
           s"missing $file; run with EYES4S_UPDATE_GOLDENS=1 to write it"
         )
-        assertNoDiff(Files.readString(file, UTF_8), derived)
+        assertNoDiff(Files.readString(file, UTF_8), stable)
         // Shift+Tab walks the same cycle backwards.
-        val back = runOnFx(fx.scene.getFocusOwner)
-        fx.robot.press(KeyCode.TAB, eyes4s.studio.desktop.harness.Modifiers(shift = true))
-        assertEquals(stop(runOnFx(fx.scene.getFocusOwner)), walked.last)
-        assert(back ne runOnFx(fx.scene.getFocusOwner))
+        assertEquals(walk(fx, w, backwards = true), walked.head +: walked.tail.reverse)
     }
   }
 

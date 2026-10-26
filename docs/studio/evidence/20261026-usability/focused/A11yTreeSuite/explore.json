@@ -1,0 +1,41 @@
+{
+  "scene": [
+    1440,
+    900
+  ],
+  "derived": "menu-button: Project memory-study\ntoggle-button: Explore (⌘2)\nbutton: Back (⌘[)\nbutton: Summary · by retrieval response, opens in Compare\nbutton: Remembered, opens in Compare\nbutton: P17, opens in Compare\nbutton: ret_07 · beach-042, opens in Compare\nbutton: pair ret_07 × enc_03, opens in Compare\nbutton: enc_03 · fixation 6\nbutton: fixations.csv record 7,214, current location\nlist: Trials\ntext-field: Filter trials\nlist: Trials of r3\nplot: Trial view\ntoggle-button: Points, on\ntoggle-button: Order, on\ntoggle-button: Map, on\nbutton: Previous fixation\nbutton: Next fixation\nregion: Fixations of P17 · enc_03. Arrow keys move to the nearest fixation, Page Up and Page Down step in order, Enter selects, Escape clears the selection.\nplot: Timeline\nbutton: Play\nbutton: Step back\nbutton: Step forward\ntoggle-button: 1×\nregion: Timeline of P17 · enc_03 fixations: 13 fixation intervals, each bar as long and as tall as its duration. One focus stop; arrow keys move to the nearest mark, Page Up and Page Down step in order, Enter selects, Escape clears the selection.\ntable: Source records from fixations.csv. One focus stop; arrow keys move the row cursor.\ntoggle-button: Show raw record in the source records\nregion: Inspector\ntoggle-button: Show raw record in the inspector\nhyperlink: ret_07 contrast (matched reference)\nhyperlink: 18 pairs (as a control)\n",
+  "walked": [
+    "menu-button: Project memory-study",
+    "toggle-button: Explore (⌘2)",
+    "button: Back (⌘[)",
+    "button: Summary · by retrieval response, opens in Compare",
+    "button: Remembered, opens in Compare",
+    "button: P17, opens in Compare",
+    "button: ret_07 · beach-042, opens in Compare",
+    "button: pair ret_07 × enc_03, opens in Compare",
+    "button: enc_03 · fixation 6",
+    "button: fixations.csv record 7,214, current location",
+    "list: Trials",
+    "text-field: Filter trials",
+    "list: Trials of r3",
+    "plot: Trial view",
+    "toggle-button: Points, on",
+    "toggle-button: Order, on",
+    "toggle-button: Map, on",
+    "button: Previous fixation",
+    "button: Next fixation",
+    "region: Fixations of P17 · enc_03. Arrow keys move to the nearest fixation, Page Up and Page Down step in order, Enter selects, Escape clears the selection.",
+    "plot: Timeline",
+    "button: Play",
+    "button: Step back",
+    "button: Step forward",
+    "toggle-button: 1×",
+    "region: Timeline of P17 · enc_03 fixations: 13 fixation intervals, each bar as long and as tall as its duration. One focus stop; arrow keys move to the nearest mark, Page Up and Page Down step in order, Enter selects, Escape clears the selection.",
+    "table: Source records from fixations.csv. One focus stop; arrow keys move the row cursor.",
+    "toggle-button: Show raw record in the source records",
+    "region: Inspector",
+    "toggle-button: Show raw record in the inspector",
+    "hyperlink: ret_07 contrast (matched reference)",
+    "hyperlink: 18 pairs (as a control)"
+  ]
+}
