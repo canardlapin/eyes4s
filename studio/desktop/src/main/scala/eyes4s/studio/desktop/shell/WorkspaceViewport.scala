@@ -40,6 +40,12 @@ final class WorkspaceViewport(content: Region, accessibleName: String)
   setAccessibleText(accessibleName)
   getStyleClass.add("workspace-viewport")
 
+  // ScrollPaneSkin caches its viewport by default. A live work area changes
+  // inside that cache on every table scroll or canvas repaint, rebuilding a
+  // whole-window bitmap at native scale. Keep its normal clip and scrolling,
+  // but let the renderer update the changed descendants directly.
+  skinProperty.addListener((_, _, _) => Option(lookup(".viewport")).foreach(_.setCache(false)))
+
   private var disposed = false
   private var pending  = false
   private val focused  = sceneProperty.flatMap[Node](_.focusOwnerProperty)

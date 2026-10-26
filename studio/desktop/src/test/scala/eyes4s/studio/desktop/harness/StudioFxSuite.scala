@@ -227,6 +227,12 @@ final class FxStage private (
         val params = SnapshotParameters()
         params.setTransform(Transform.scale(k, k))
         params.setFill(scene.getFill)
+        // A child stroke/effect can extend beyond the root's layout bounds.
+        // Node.snapshot otherwise derives its origin from those visual bounds
+        // and shifts the entire image. Capture the visible scene coordinates.
+        params.setViewport(
+          javafx.geometry.Rectangle2D(0.0, 0.0, scene.getWidth * k, scene.getHeight * k)
+        )
         val target = WritableImage(
           math.ceil(scene.getWidth * k).toInt,
           math.ceil(scene.getHeight * k).toInt

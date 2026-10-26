@@ -125,3 +125,22 @@ class HarnessSmokeSuite extends StudioFxSuite:
     assertEquals(StudioFxSuite.segment("  a b/c:d  "), "a-b-c-d")
     assertEquals(StudioFxSuite.segment("***"), "unnamed")
   }
+
+  fxStage.test("snapshot framing stays at the scene origin when children overflow") { fx =>
+    val root = fx.runOnFx {
+      val overflow = javafx.scene.shape.Rectangle(-3.0, -2.0, 8.0, 6.0)
+      overflow.setFill(javafx.scene.paint.Color.RED)
+      overflow.setManaged(false)
+      val marker = javafx.scene.shape.Rectangle(20.0, 20.0, 10.0, 10.0)
+      marker.setFill(javafx.scene.paint.Color.BLUE)
+      marker.setManaged(false)
+      Pane(overflow, marker)
+    }
+    fx.show(root)
+    assert(fx.runOnFx(root.getBoundsInLocal.getMinX < 0.0))
+    val images = fx.snapshot(StudioTheme.Light).map(p => ImageIO.read(p.toFile))
+    images.zip(List(1, 2)).foreach { (image, scale) =>
+      assertEquals(image.getRGB(21 * scale, 21 * scale) & 0x00ffffff, 0x000000ff)
+      assert((image.getRGB(31 * scale, 21 * scale) & 0x00ffffff) != 0x000000ff)
+    }
+  }

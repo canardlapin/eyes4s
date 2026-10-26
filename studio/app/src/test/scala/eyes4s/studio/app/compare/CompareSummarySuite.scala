@@ -79,6 +79,19 @@ class CompareSummarySuite extends munit.FunSuite:
     }
   }
 
+  test("unavailable reports explain that no scale is served without changing the shown scale") {
+    loaded(t3Summary).map { state =>
+      val vm = CompareSummaryVM.of(state.copy(reports = Map.empty), t3Summary)
+      assert(vm.scales.nonEmpty)
+      assert(
+        vm.scales.forall(c =>
+          !c.available && c.unavailable.contains(SummaryText(SummaryTextId.NoScalesAvailable))
+        )
+      )
+      assertEquals(vm.scales.filter(_.chosen).map(_.scale), Vector(sigma2))
+    }
+  }
+
   test(
     "an overall report cell resolves its exact derived spec without changing saved reporting"
   ) {

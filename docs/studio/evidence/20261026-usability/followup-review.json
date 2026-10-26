@@ -1,0 +1,104 @@
+{
+  "schema": 1,
+  "status": "corrections implemented; final source qualification pending",
+  "supersedes": "f27487646ae37f12144c3038d221af92f0df1db1",
+  "failedCandidateTree": "4dcf3c9f92435499c063ca80b3d38611895d707c",
+  "canonical": "passed for f274; does not qualify the corrected source",
+  "studio": "4385 portable and 868 desktop passed; two disabled-reason failures; one opt-in private case skipped",
+  "hosted": {
+    "run": 40342953837,
+    "status": "failed",
+    "checksRun": 40342953904,
+    "checksStatus": "success"
+  },
+  "corrections": [
+    "Inspect attached disabled controls and styles atomically; asynchronous report replies could detach nodes between audit callbacks.",
+    "Extend the shared has-reason disabled style to ToggleButton; atomic auditing still exposed actual opacity 0.4 before this fix.",
+    "Use a text id for the no-scales-available reason instead of an empty scale list.",
+    "Await the typed pair-score reply before testing display-toggle score invariance.",
+    "Disable only the outer ScrollPane viewport bitmap cache; preserve its clip, scrolling, focus and geometry.",
+    "Capture the explicit scene rectangle rather than deriving snapshot origin from overflowing child strokes."
+  ],
+  "gtkDiagnostics": {
+    "environment": "Docker Linux aarch64, JDK25, JavaFX24.0.1, Xvfb3840x2400, native GTK2, software pipeline,4CPU/8GiB limit",
+    "thresholdMedianMs": 32,
+    "baselineMedianMs": 18.4,
+    "candidateMedianMs": 41.8,
+    "instrumentedMedianMs": 40.9,
+    "instrumentedRevealCallbacks": 2,
+    "instrumentedTotalForcedLayoutMs": 21.675,
+    "clipRemovedMedianMs": 40.9,
+    "wrapperBypassedMedianMs": 17.5,
+    "viewportCacheDisabledMedianMs": 17.8,
+    "scope": "diagnostic runs, not a broad performance qualification; cache-only rerun filtered out the native-scale case, which was explicitly verified in the initial candidate and will be rerun unfiltered"
+  },
+  "snapshotOrigin": {
+    "baselineProduct": "ae78d26254e6201532fa53d4bbac99ab3cccf719",
+    "visualMinX": -1,
+    "layoutMinX": 0,
+    "regression": "overflowing red rectangle shifts a blue marker before the fix; both1x/2x assertions pass afterward"
+  },
+  "focusedDesktopPasses": 51,
+  "logs": [
+    {
+      "path": "followup-logs/eyes4s-usability-f274-all-failed.log.gz",
+      "sha256": "be10216c009cf59a8f2de3efe49a8d526e90a6f6a6b52c7e324c3b72c6997ccb",
+      "compression": "gzip"
+    },
+    {
+      "path": "followup-logs/eyes4s-usability3-canonical-20261026.log",
+      "sha256": "2fa792cdf5ce99335d0aa43e72323c734c662cfec4b7af05e969d53cf5b13cc6"
+    },
+    {
+      "path": "followup-logs/eyes4s-usability3-studio-20261026.log.gz",
+      "sha256": "33347314d9ddf49145ccf4f89b881b5af5115973ef554e084014a8417b1b87c0",
+      "compression": "gzip"
+    },
+    {
+      "path": "followup-logs/eyes4s-usability-atomic-a11y-20261026.log.gz",
+      "sha256": "ba161be9a9ecccb5520408eb4d2e7a272c5554bf69b8651e956bcb77554e2f3a",
+      "compression": "gzip"
+    },
+    {
+      "path": "followup-logs/eyes4s-usability-reason-stable-20261026.log.gz",
+      "sha256": "3b6f6dab43bf18452fb1397e139be21bb33ecdc364e46c7548c1c76d25982a3e",
+      "compression": "gzip"
+    },
+    {
+      "path": "followup-logs/eyes4s-usability-gtk-baseline-warm.log",
+      "sha256": "a94feb17d46f5a1e6af075ce23c09dd68fa61062b592b994dbb31289d71b1ed7"
+    },
+    {
+      "path": "followup-logs/eyes4s-usability-gtk-candidate-warm.log",
+      "sha256": "7b05237806c911c9cf11aa0b9af3a56daebd38aa435a2b86a0ea4dc297837ceb"
+    },
+    {
+      "path": "followup-logs/eyes4s-usability-gtk-probe.log",
+      "sha256": "e963195d647dde67d0b6b7389671ff0f28c8d732e00c1db7d9119fa002daf03a"
+    },
+    {
+      "path": "followup-logs/eyes4s-usability-gtk-no-clip.log",
+      "sha256": "6a0a53e2bda1f469174221627aafb4345e6443d09e5d1e644faa87b898c129d1"
+    },
+    {
+      "path": "followup-logs/eyes4s-usability-gtk-bypass.log",
+      "sha256": "27cc7044aa887d542cc9f6e6af4d76d5388e7bbc9720c576c28356af1aaeaf83"
+    },
+    {
+      "path": "followup-logs/eyes4s-usability-gtk-no-cache.log",
+      "sha256": "23d4a4f0f54199ba4ed9c8124db1acda3c291dea5b7d1d33e0b4723e56024052"
+    },
+    {
+      "path": "followup-logs/eyes4s-usability-baseline-framing2.log",
+      "sha256": "3823387f7ff91496db9fa8a52318d83051968e6f0eae7b247fd5fc98f8148c63"
+    },
+    {
+      "path": "followup-logs/eyes4s-usability-snapshot-origin-red.log",
+      "sha256": "e5d2bafd368fe3fad4ffe490a84bd2015c55433f5a9ff6733a18dc32468dbf52"
+    },
+    {
+      "path": "followup-logs/eyes4s-usability-framing-focus-green.log",
+      "sha256": "c32c000e914673309d59679c253d3d259ed8c7c08e2719cd14717e73d8192e44"
+    }
+  ]
+}

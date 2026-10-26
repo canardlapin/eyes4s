@@ -1,0 +1,37 @@
+WARNING: A terminally deprecated method in sun.misc.Unsafe has been called
+WARNING: sun.misc.Unsafe::objectFieldOffset has been called by scala.runtime.LazyVals$ (file:/opt/sbt/sbt-launch.jar)
+WARNING: Please consider reporting this to the maintainers of class scala.runtime.LazyVals$
+WARNING: sun.misc.Unsafe::objectFieldOffset will be removed in a future release
+WARNING: A restricted method in java.lang.System has been called
+WARNING: java.lang.System::load has been called by com.sun.jna.Native in an unnamed module (file:/root/.sbt/boot/scala-2.12.20/org.scala-sbt/sbt/1.11.7/jna-5.12.0.jar)
+WARNING: Use --enable-native-access=ALL-UNNAMED to avoid a warning for callers in this module
+WARNING: Restricted methods will be blocked in a future release unless native access is enabled
+
+[info] welcome to sbt 1.11.7 (Eclipse Adoptium Java 25.0.4.1)
+[info] loading settings for project work-build from plugins.sbt...
+[info] loading project definition from /work/project
+[info] loading settings for project root from build.sbt...
+[info] resolving key references (37727 settings) ...
+[info] set current project to root (in build file:/work/)
+[info] compiling 3 Scala sources to /work/studio/desktop/target/scala-3.7.4/classes ...
+[info] done compiling
+WARNING: A terminally deprecated method in sun.misc.Unsafe has been called
+WARNING: sun.misc.Unsafe::objectFieldOffset has been called by scala.runtime.LazyVals$ (file:/root/.cache/coursier/v1/https/repo1.maven.org/maven2/org/scala-lang/scala3-library_3/3.7.4/scala3-library_3-3.7.4.jar)
+WARNING: Please consider reporting this to the maintainers of class scala.runtime.LazyVals$
+WARNING: sun.misc.Unsafe::objectFieldOffset will be removed in a future release
+Test run [36meyes4s.studio.desktop.plot.NativeOutputScaleFxSuite[0m started
+[33m==> i [0m[33meyes4s.studio.desktop.plot.NativeOutputScaleFxSuite[0m[33m ignored[0m [90m0.0s[0m
+Test run [36meyes4s.studio.desktop.plot.NativeOutputScaleFxSuite[0m finished: 0 failed, [33m1 ignored[0m, 0 total [90m0.113s[0m
+Oct 26, 2026 4:04:17 PM com.sun.javafx.application.PlatformImpl startup
+WARNING: Unsupported JavaFX configuration: classes were loaded from 'unnamed module @28e84c50'
+WARNING: A restricted method in java.lang.System has been called
+WARNING: java.lang.System::load has been called by com.sun.glass.utils.NativeLibLoader in an unnamed module (file:/root/.cache/coursier/v1/https/repo1.maven.org/maven2/org/openjfx/javafx-graphics/24.0.1/javafx-graphics-24.0.1-linux-aarch64.jar)
+WARNING: Use --enable-native-access=ALL-UNNAMED to avoid a warning for callers in this module
+WARNING: Restricted methods will be blocked in a future release unless native access is enabled
+
+SourceRecordsFxSuite: median 17.8 ms, p99 20.2 ms, worst 20.7 ms (frame 180 of 181)
+Test run [36meyes4s.studio.desktop.explore.SourceRecordsFxSuite[0m started
+[32meyes4s.studio.desktop.explore.SourceRecordsFxSuite[0m: finished [90m11.667s[0m
+Test run [36meyes4s.studio.desktop.explore.SourceRecordsFxSuite[0m finished: 0 failed, 0 ignored, 1 total [90m11.667s[0m
+[info] Passed: Total 1, Failed 0, Errors 0, Passed 1, Ignored 1
+[success] Total time: 24 s, completed Oct 26, 2026, 4:04:29 PM

@@ -1,0 +1,13 @@
+[hygiene] sbt -batch -J-Xmx6g headerCheckAll scalafmtCheckAll scalafmtSbtCheck githubWorkflowCheck
+[hygiene] ok in 0.4 min
+[werror] GITHUB_ACTIONS=true sbt -batch -J-Xmx6g project rootJVM Test/compile project rootJS Test/compile
+[werror] ok in 1.4 min
+[audit] /Library/Developer/CommandLineTools/usr/bin/python3 tools/api-audit/run.py --record
+[audit] ok in 13.2 min
+[tests] sbt -batch -J-Xmx6g testAll checkBoundaries
+[tests] ok in 6.6 min
+[consumer] /Library/Developer/CommandLineTools/usr/bin/python3 tools/study-consumer/verify.py
+[consumer] ok in 3.4 min
+Gate passed for f27487646ae37f12144c3038d221af92f0df1db1 (tree 4dcf3c9f92435499c063ca80b3d38611895d707c).
+The audit re-recorded these files; commit them before landing:
+M tools/api-audit/evidence.json

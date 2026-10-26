@@ -1,0 +1,45 @@
+[info] welcome to sbt 1.11.7 (Eclipse Adoptium Java 25.0.4.1)
+[info] loading settings for project eyes4s-usability-20261026-build from plugins.sbt...
+[info] loading project definition from /private/tmp/eyes4s-usability-20261026/project
+[info] loading settings for project root from build.sbt...
+[info] resolving key references (37727 settings) ...
+[info] set scmInfo to https://github.com/canardlapin/eyes4s
+[info] set current project to root (in build file:/private/tmp/eyes4s-usability-20261026/)
+[info] compiling 2 Scala sources to /private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes ...
+[info] done compiling
+[info] compiling 1 Scala source to /private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/test-classes ...
+[info] done compiling
+WARNING: A terminally deprecated method in sun.misc.Unsafe has been called
+WARNING: sun.misc.Unsafe::objectFieldOffset has been called by scala.runtime.LazyVals$ (file:/Users/bbuchsbaum/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/scala-lang/scala3-library_3/3.7.4/scala3-library_3-3.7.4.jar)
+WARNING: Please consider reporting this to the maintainers of class scala.runtime.LazyVals$
+WARNING: sun.misc.Unsafe::objectFieldOffset will be removed in a future release
+Oct 26, 2026 12:06:13 P.M. com.sun.javafx.application.PlatformImpl startup
+WARNING: Unsupported JavaFX configuration: classes were loaded from 'unnamed module @550cc047'
+WARNING: A restricted method in java.lang.System has been called
+WARNING: java.lang.System::load has been called by com.sun.glass.utils.NativeLibLoader in an unnamed module (file:/Users/bbuchsbaum/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/openjfx/javafx-graphics/24.0.1/javafx-graphics-24.0.1-mac-aarch64.jar)
+WARNING: Use --enable-native-access=ALL-UNNAMED to avoid a warning for callers in this module
+WARNING: Restricted methods will be blocked in a future release unless native access is enabled
+
+Test run eyes4s.studio.desktop.harness.HarnessSmokeSuite started
+==> X eyes4s.studio.desktop.harness.HarnessSmokeSuite.snapshot framing stays at the scene origin when children overflow 0.485s munit.ComparisonFailException: studio/desktop/src/test/scala/eyes4s/studio/desktop/harness/HarnessSmokeSuite.scala:143
+142:    images.zip(List(1, 2)).foreach { (image, scale) =>
+143:      assertEquals(image.getRGB(21 * scale, 21 * scale) & 0x00ffffff, 0x000000ff)
+144:      assert((image.getRGB(31 * scale, 21 * scale) & 0x00ffffff) != 0x000000ff)
+values are not the same
+=> Obtained
+16777215
+=> Diff (- expected, + obtained)
+-255
++16777215
+    at munit.FunSuite.assertEquals(FunSuite.scala:12)
+    at eyes4s.studio.desktop.harness.HarnessSmokeSuite.$init$$$anonfun$6$$anonfun$3(HarnessSmokeSuite.scala:143)
+    at scala.collection.immutable.List.foreach(List.scala:334)
+    at eyes4s.studio.desktop.harness.HarnessSmokeSuite.$init$$$anonfun$6(HarnessSmokeSuite.scala:142)
+    at munit.FunFixtures.munit$FunFixtures$FunFixture$$_$test$$anonfun$1$$anonfun$1$$anonfun$1(FunFixtures.scala:23)
+eyes4s.studio.desktop.harness.HarnessSmokeSuite: finished 0.575s
+Test run eyes4s.studio.desktop.harness.HarnessSmokeSuite finished: 1 failed, 0 ignored, 1 total 0.585s
+[error] Failed: Total 1, Failed 1, Errors 0, Passed 0
+[error] Failed tests:
+[error] 	eyes4s.studio.desktop.harness.HarnessSmokeSuite
+[error] (studioDesktop / Test / testOnly) sbt.TestsFailedException: Tests unsuccessful
+[error] Total time: 8 s, completed Oct 26, 2026, 12:06:14 p.m.

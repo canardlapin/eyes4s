@@ -1,0 +1,68 @@
+[info] welcome to sbt 1.11.7 (Eclipse Adoptium Java 25.0.4.1)
+[info] loading settings for project eyes4s-usability-20261026-build from plugins.sbt...
+[info] loading project definition from /private/tmp/eyes4s-usability-20261026/project
+[info] loading settings for project root from build.sbt...
+[info] resolving key references (37727 settings) ...
+[info] set scmInfo to https://github.com/canardlapin/eyes4s
+[info] set current project to root (in build file:/private/tmp/eyes4s-usability-20261026/)
+[info] scalafmt: Formatting 1 Scala sources (/private/tmp/eyes4s-usability-20261026/studio/desktop)...
+[success] Total time: 1 s, completed Oct 26, 2026, 12:07:32 p.m.
+[info] scalafmt: Formatting 2 Scala sources (/private/tmp/eyes4s-usability-20261026/studio/desktop)...
+[info] scalafmt: Reformatted 1 Scala sources
+[success] Total time: 0 s, completed Oct 26, 2026, 12:07:32 p.m.
+[info] compiling 1 Scala source to /private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes ...
+[info] done compiling
+[info] compiling 1 Scala source to /private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/test-classes ...
+[info] done compiling
+[info] compiling 164 Scala sources to /private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/test-classes ...
+[info] done compiling
+WARNING: A terminally deprecated method in sun.misc.Unsafe has been called
+WARNING: sun.misc.Unsafe::objectFieldOffset has been called by scala.runtime.LazyVals$ (file:/Users/bbuchsbaum/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/scala-lang/scala3-library_3/3.7.4/scala3-library_3-3.7.4.jar)
+WARNING: Please consider reporting this to the maintainers of class scala.runtime.LazyVals$
+WARNING: sun.misc.Unsafe::objectFieldOffset will be removed in a future release
+Oct 26, 2026 12:07:54 P.M. com.sun.javafx.application.PlatformImpl startup
+WARNING: Unsupported JavaFX configuration: classes were loaded from 'unnamed module @3ac10f35'
+WARNING: A restricted method in java.lang.System has been called
+WARNING: java.lang.System::load has been called by com.sun.glass.utils.NativeLibLoader in an unnamed module (file:/Users/bbuchsbaum/Library/Caches/Coursier/v1/https/repo1.maven.org/maven2/org/openjfx/javafx-graphics/24.0.1/javafx-graphics-24.0.1-mac-aarch64.jar)
+WARNING: Use --enable-native-access=ALL-UNNAMED to avoid a warning for callers in this module
+WARNING: Restricted methods will be blocked in a future release unless native access is enabled
+
+Test run eyes4s.studio.desktop.harness.HarnessSmokeSuite started
+eyes4s.studio.desktop.harness.HarnessSmokeSuite: finished 1.471s
+Test run eyes4s.studio.desktop.harness.HarnessSmokeSuite finished: 0 failed, 0 ignored, 6 total 1.48s
+content=BoundingBox [minX:0.0, minY:0.0, minZ:0.0, width:1440.0, height:900.0, depth:0.0, maxX:1440.0, maxY:900.0, maxZ:0.0] viewport=BoundingBox [minX:0.0, minY:0.0, minZ:0.0, width:1440.0, height:900.0, depth:0.0, maxX:1440.0, maxY:900.0, maxZ:0.0] scroll=0.0 internal=BoundingBox [minX:0.0, minY:0.0, minZ:0.0, width:1440.0, height:900.0, depth:0.0, maxX:1440.0, maxY:900.0, maxZ:0.0]
+Test run eyes4s.studio.desktop.shell.BoardWorkspaceViewportFxSuite started
+eyes4s.studio.desktop.shell.BoardWorkspaceViewportFxSuite: finished 15.15s
+Test run eyes4s.studio.desktop.shell.BoardWorkspaceViewportFxSuite finished: 0 failed, 0 ignored, 6 total 15.15s
+Test run eyes4s.studio.desktop.shell.WorkspaceViewportFxSuite started
+eyes4s.studio.desktop.shell.WorkspaceViewportFxSuite: finished 7.445s
+Test run eyes4s.studio.desktop.shell.WorkspaceViewportFxSuite finished: 0 failed, 0 ignored, 5 total 7.445s
+Test run eyes4s.studio.desktop.shell.A11yTreeSuite started
+eyes4s.studio.desktop.shell.A11yTreeSuite: finished 30.09s
+Test run eyes4s.studio.desktop.shell.A11yTreeSuite finished: 0 failed, 0 ignored, 26 total 30.09s
+Test run eyes4s.studio.desktop.compare.ParticipantsNavigatorFxSuite started
+eyes4s.studio.desktop.compare.ParticipantsNavigatorFxSuite: finished 3.212s
+Test run eyes4s.studio.desktop.compare.ParticipantsNavigatorFxSuite finished: 0 failed, 0 ignored, 5 total 3.212s
+Test run eyes4s.studio.desktop.compare.CompareMapHostFxSuite started
+eyes4s.studio.desktop.compare.CompareMapHostFxSuite: finished 1.499s
+Test run eyes4s.studio.desktop.compare.CompareMapHostFxSuite finished: 0 failed, 0 ignored, 3 total 1.499s
+[info] Passed: Total 51, Failed 0, Errors 0, Passed 51
+[success] Total time: 81 s (0:01:21.0), completed Oct 26, 2026, 12:08:53 p.m.
+[info] studio type scale OK (lint self-test passed; only the five sizes in studio sources)
+[success] Total time: 1 s, completed Oct 26, 2026, 12:08:54 p.m.
+[info] studio notices OK: 45 resolved modules, each with a licence and its text
+[success] Total time: 0 s, completed Oct 26, 2026, 12:08:54 p.m.
+[success] Total time: 0 s, completed Oct 26, 2026, 12:08:55 p.m.
+[success] Total time: 0 s, completed Oct 26, 2026, 12:08:55 p.m.
+[success] Total time: 0 s, completed Oct 26, 2026, 12:08:55 p.m.
+[success] Total time: 0 s, completed Oct 26, 2026, 12:08:55 p.m.
+[success] Total time: 0 s, completed Oct 26, 2026, 12:08:55 p.m.
+[success] Total time: 0 s, completed Oct 26, 2026, 12:08:55 p.m.
+[success] Total time: 0 s, completed Oct 26, 2026, 12:08:55 p.m.
+[success] Total time: 0 s, completed Oct 26, 2026, 12:08:55 p.m.
+[success] Total time: 0 s, completed Oct 26, 2026, 12:08:55 p.m.
+[success] Total time: 0 s, completed Oct 26, 2026, 12:08:55 p.m.
+[success] Total time: 0 s, completed Oct 26, 2026, 12:08:55 p.m.
+[success] Total time: 0 s, completed Oct 26, 2026, 12:08:55 p.m.
+[success] Total time: 0 s, completed Oct 26, 2026, 12:08:55 p.m.
+[success] Total time: 0 s, completed Oct 26, 2026, 12:08:56 p.m.

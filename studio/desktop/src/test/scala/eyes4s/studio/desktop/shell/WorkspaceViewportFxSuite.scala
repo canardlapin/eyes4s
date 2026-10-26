@@ -253,3 +253,36 @@ class WorkspaceViewportFxSuite extends StoryCaptureFixture:
   */
 class BoardWorkspaceViewportFxSuite extends WorkspaceViewportFxSuite:
   override protected def stageSize: StageSize = StageSize.Board
+
+  fxStage.test("Explore fits the viewport without horizontal displacement at board size") {
+    fx =>
+      val w = boot(
+        fx,
+        StoryModels.t2Explore,
+        StoryMoment.T2,
+        project = Some(fixtureProject),
+        clock = () => None
+      )
+      eventually(fx, "the Explore map is drawn") {
+        w.explore.trialView.status.get match
+          case eyes4s.studio.desktop.trial.TrialViewStatus.Shown(s) => s.map.nonEmpty
+          case _                                                    => false
+      }
+      RestingFocus.clear(fx, w)
+      runOnFx {
+        val workspace  = w.shell.workspace
+        val content    = workspace.getContent
+        val viewport   = workspace.lookup(".viewport")
+        val actual     = content.localToScene(content.getLayoutBounds)
+        val visible    = viewport.localToScene(viewport.getLayoutBounds)
+        val excess     = math.max(0.0, actual.getWidth - visible.getWidth)
+        val tolerance  = 0.01
+        val diagnostic =
+          s"content=$actual viewport=$visible scroll=${workspace.getHvalue} internal=${workspace.getViewportBounds}"
+        assert(actual.getMinX <= visible.getMinX + tolerance, diagnostic)
+        assert(actual.getMinX >= visible.getMinX - excess - tolerance, diagnostic)
+        if visible.getWidth >= WorkspaceViewport.MinimumWidth then
+          assertEqualsDouble(actual.getWidth, visible.getWidth, tolerance, diagnostic)
+          assertEqualsDouble(actual.getMinX, visible.getMinX, tolerance, diagnostic)
+      }
+  }

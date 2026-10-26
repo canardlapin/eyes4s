@@ -80,5 +80,6 @@
       "path": "focused-logs/eyes4s-usability-reason-20261026.log",
       "sha256": "4ac7db0a178b72f4ba3e9e11d62a1c89d84336ce901bda604ee7c4cd1504e3fd"
     }
-  ]
+  ],
+  "captureAttribution": "Historical diagnostic captures were made just before final disabled-reason attachment/formatting; sourceFingerprint identifies the later focused-check source, not an exact source attribution for these earlier PNGs. Superseded by final qualification captures."
 }

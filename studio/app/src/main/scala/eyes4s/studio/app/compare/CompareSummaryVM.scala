@@ -161,10 +161,12 @@ object CompareSummaryVM:
             available.contains(scale),
             shown.contains(scale),
             Option.unless(available.contains(scale))(
-              SummaryText(
-                SummaryTextId.ScaleUnavailable,
-                available.flatMap(a => r.scaleLabels.lift(a.value)).mkString(", ")
-              )
+              if available.isEmpty then SummaryText(SummaryTextId.NoScalesAvailable)
+              else
+                SummaryText(
+                  SummaryTextId.ScaleUnavailable,
+                  available.flatMap(a => r.scaleLabels.lift(a.value)).mkString(", ")
+                )
             )
           )
         )

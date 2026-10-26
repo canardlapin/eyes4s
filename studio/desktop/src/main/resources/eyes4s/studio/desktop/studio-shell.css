@@ -141,7 +141,8 @@
  * next to it (DisabledReason, DESIGN_SPEC section 14); only controls with no
  * workflow meaning take Modena's fade. The compound selector outranks a
  * pane's own `.x:disabled` and `.x.primary` rules. */
-.button.has-reason:disabled {
+.button.has-reason:disabled,
+.toggle-button.has-reason:disabled {
   -fx-opacity: 1;
   -fx-background-color: -es-hairline, -es-surface-2;
   -fx-background-insets: 0, 1;

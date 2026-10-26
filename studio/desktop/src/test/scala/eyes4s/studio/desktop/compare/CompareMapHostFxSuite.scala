@@ -93,6 +93,12 @@ class CompareMapHostFxSuite extends ShellFxSuite:
           case TrialViewStatus.Shown(scene) => scene.map.nonEmpty
           case _                            => false)
     }
+    eventually(fx, "the inspected pair score is served") {
+      w.summary.inspectorInputs.panels.inspected.exists(_._2.exists {
+        case PairAnswer.Answered(_) => true
+        case _                      => false
+      })
+    }
     val score    = runOnFx(w.summary.panels.shown)
     val original = runOnFx(w.summary.panels.queryView.requestedMap.get.grid)
     runOnFx(w.summary.panels.queryToggles(2).fire())

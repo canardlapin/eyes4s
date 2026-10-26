@@ -302,9 +302,14 @@ class A11yTreeSuite extends ShellFxSuite:
 
   (perspectives ++ extra).foreach { (name, model, moment) =>
     fxStage.test(s"$name: a disabled action's drawn reason is its accessible help") { fx =>
-      val w        = boot(fx, model(), moment)
-      val attached = runOnFx(all(w.root).filter(DisabledReason.reasons(_).nonEmpty))
-      assertEquals(runOnFx(attached.flatMap(reasonFaults)), Vector.empty[String])
+      val w      = boot(fx, model(), moment)
+      val faults = runOnFx {
+        // Report replies can replace controls between FX callbacks. Inspect
+        // current nodes and their applied styles in the same callback.
+        w.root.applyCss()
+        all(w.root).filter(DisabledReason.reasons(_).nonEmpty).flatMap(reasonFaults)
+      }
+      assertEquals(faults, Vector.empty[String])
     }
   }
 

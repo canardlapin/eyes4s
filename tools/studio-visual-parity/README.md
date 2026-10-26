@@ -7,6 +7,9 @@ application windows, not separately drawn specimens. Sources are digest-checked.
 Stored maps/assets, terminal report replies and relevant preview/figure inputs
 must arrive before capture. The scene root has programmatic focus, with no
 keyboard ring or text caret, and two successive captures must agree.
+Snapshots explicitly cover the scene rectangle at each raster scale. A child's
+stroke or effect outside that rectangle must not move the image origin; the
+harness tests this with deliberately overflowing children at both scales.
 
 Pixel comparison runs only on Linux Monocle at native output scale1, software
 pipeline and bundled Plex fonts. macOS and native GTK2 execute the same cases as

@@ -44,7 +44,7 @@ enum SummaryTextId derives CanEqual:
   case PairedN, WeightingParticipantMeans, WeightingPooledQueries, Unit, GroupRange
 
   /** The σ selector and why a scale cannot be chosen. */
-  case Scale, ScaleUnavailable
+  case Scale, ScaleUnavailable, NoScalesAvailable
 
   /** The Explain action and what it keeps. */
   case Explain, Keeps
@@ -111,6 +111,7 @@ object SummaryText:
       case GroupRange                 => "Per-group n: {0}–{1} queries per participant"
       case Scale                      => "σ {0}"
       case ScaleUnavailable           => "Participant means are served at σ {0} only"
+      case NoScalesAvailable          => "Participant means are not available at any scale"
       case Explain                    => "Explain {0} →"
       case Keeps                      => "keeps: {0}"
       case Reading                    => "Reading run {0}…"
