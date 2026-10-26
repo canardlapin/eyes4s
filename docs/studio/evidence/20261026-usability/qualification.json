@@ -1,6 +1,6 @@
 {
   "schema": 1,
-  "status": "qualified checks; evidence recording and landing pending",
+  "status": "qualified",
   "candidate": "ecf67c3f9efaad0a8671f8482018cc8363b68036",
   "tree": "0b6114908728f13f83bd38a3a8de51686fa9584a",
   "sourceFingerprint": "0e598d850630bbbfb4f644b03ae18d70800327de8161737bb6668a7fcb412367",
@@ -335,5 +335,38 @@
     "brokenImages": 0,
     "brokenLocalLinks": 0,
     "horizontalOverflow": false
+  },
+  "postRecord": {
+    "status": "passed",
+    "checkedAt": "2026-10-26T17:21:34.137758+00:00",
+    "evidenceCommit": "55cc1eaa7832cac1179b287e8c7086053da5d20b",
+    "evidenceTree": "0bfb95e1994d2593941014d0bc2846321580b637",
+    "commands": [
+      [
+        "sbt",
+        "project rootJVM",
+        "Test/compile",
+        "project rootJS",
+        "Test/compile",
+        "checkBoundaries"
+      ],
+      [
+        "python3",
+        "tools/api-audit/check.py"
+      ]
+    ],
+    "environment": {
+      "GITHUB_ACTIONS": "true",
+      "JDK": "registered25"
+    },
+    "sourceFingerprint": "0e598d850630bbbfb4f644b03ae18d70800327de8161737bb6668a7fcb412367",
+    "changedSinceCandidate": "Documentation/evidence and recorded API inventory provenance only; no source, test, resource or build change.",
+    "log": {
+      "path": "qualified-logs/post-record.log.gz",
+      "sha256": "dc33b7d77bf58f43355d2d99e129b7400187933096d4c37ade202af3a8005107",
+      "bytes": 1139
+    },
+    "apiFingerprint": "071fa30ba0d65764fcb2d531ca9f4089dac194f8ca3a7866128525aa2aa7d68b",
+    "qualificationBoundary": "Final receipt and tracker closures are metadata only; canonical and hosted source candidate remains ecf67c3f."
   }
 }
