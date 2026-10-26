@@ -1,0 +1,76 @@
+WARNING: A terminally deprecated method in sun.misc.Unsafe has been called
+WARNING: sun.misc.Unsafe::objectFieldOffset has been called by scala.runtime.LazyVals$ (file:/opt/sbt/sbt-launch.jar)
+WARNING: Please consider reporting this to the maintainers of class scala.runtime.LazyVals$
+WARNING: sun.misc.Unsafe::objectFieldOffset will be removed in a future release
+WARNING: A restricted method in java.lang.System has been called
+WARNING: java.lang.System::load has been called by com.sun.jna.Native in an unnamed module (file:/root/.sbt/boot/scala-2.12.20/org.scala-sbt/sbt/1.11.7/jna-5.12.0.jar)
+WARNING: Use --enable-native-access=ALL-UNNAMED to avoid a warning for callers in this module
+WARNING: Restricted methods will be blocked in a future release unless native access is enabled
+
+[info] welcome to sbt 1.11.7 (Eclipse Adoptium Java 25.0.4.1)
+[info] loading settings for project work-build from plugins.sbt...
+[info] loading project definition from /work/project
+[info] loading settings for project root from build.sbt...
+[info] resolving key references (37727 settings) ...
+[info] set current project to root (in build file:/work/)
+[info] compiling 1 Scala source to /work/studio/desktop/target/scala-3.7.4/classes ...
+[info] done compiling
+[info] compiling 2 Scala sources to /work/studio/desktop/target/scala-3.7.4/test-classes ...
+[info] done compiling
+[info] compiling 163 Scala sources to /work/studio/desktop/target/scala-3.7.4/test-classes ...
+[info] done compiling
+WARNING: A terminally deprecated method in sun.misc.Unsafe has been called
+WARNING: sun.misc.Unsafe::objectFieldOffset has been called by scala.runtime.LazyVals$ (file:/root/.cache/coursier/v1/https/repo1.maven.org/maven2/org/scala-lang/scala3-library_3/3.7.4/scala3-library_3-3.7.4.jar)
+WARNING: Please consider reporting this to the maintainers of class scala.runtime.LazyVals$
+WARNING: sun.misc.Unsafe::objectFieldOffset will be removed in a future release
+Oct 26, 2026 4:08:58 PM com.sun.javafx.application.PlatformImpl startup
+WARNING: Unsupported JavaFX configuration: classes were loaded from 'unnamed module @31f1228b'
+WARNING: A restricted method in java.lang.System has been called
+WARNING: java.lang.System::load has been called by com.sun.glass.utils.NativeLibLoader in an unnamed module (file:/root/.cache/coursier/v1/https/repo1.maven.org/maven2/org/openjfx/javafx-graphics/24.0.1/javafx-graphics-24.0.1-linux-aarch64.jar)
+WARNING: Use --enable-native-access=ALL-UNNAMED to avoid a warning for callers in this module
+WARNING: Restricted methods will be blocked in a future release unless native access is enabled
+
+Test run [36meyes4s.studio.desktop.shell.VisualParitySuite[0m started
+[91m==> X [0m[91meyes4s.studio.desktop.shell.VisualParitySuite[0m.[91mt2-Explore-light[0m [90m3.139s[0m munit.FailException: studio/desktop/src/test/scala/eyes4s/studio/desktop/shell/VisualParitySuite.scala:254
+253:      )
+[7m254:      assert(errors.isEmpty, errors.mkString("\n"))[0m
+255:    }
+/work/studio/desktop/src/test/resources/eyes4s/studio/desktop/visual-parity/t2-Explore-light/light-1x.png versus /work/target/studio-snapshots/VisualParitySuite/t2-Explore-light/light-1x.png: Difference(1440,900,137161,234); diff at /work/target/studio-snapshots/VisualParitySuite/t2-Explore-light/light-1x-diff.png
+/work/studio/desktop/src/test/resources/eyes4s/studio/desktop/visual-parity/t2-Explore-light/light-2x.png versus /work/target/studio-snapshots/VisualParitySuite/t2-Explore-light/light-2x.png: Difference(2880,1800,525570,247); diff at /work/target/studio-snapshots/VisualParitySuite/t2-Explore-light/light-2x-diff.png
+[90m    at [0m[90mmunit.FunSuite.assert[0m[90m([0m[90mFunSuite.scala[0m:[90m12[0m[90m)[0m
+[1m    at [0m[1meyes4s.studio.desktop.shell.VisualParitySuite.$init$$$anonfun$4$$anonfun$1$$anonfun$1$$anonfun$1[0m[1m([0m[1mVisualParitySuite.scala[0m:[1m254[0m[1m)[0m
+[90m    at [0m[90mmunit.FunFixtures.munit$FunFixtures$FunFixture$$_$test$$anonfun$1$$anonfun$1$$anonfun$1[0m[90m([0m[90mFunFixtures.scala[0m:[90m23[0m[90m)[0m
+[91m==> X [0m[91meyes4s.studio.desktop.shell.VisualParitySuite[0m.[91mt2-Explore-dark[0m [90m2.681s[0m munit.FailException: studio/desktop/src/test/scala/eyes4s/studio/desktop/shell/VisualParitySuite.scala:254
+253:      )
+[7m254:      assert(errors.isEmpty, errors.mkString("\n"))[0m
+255:    }
+/work/studio/desktop/src/test/resources/eyes4s/studio/desktop/visual-parity/t2-Explore-dark/dark-1x.png versus /work/target/studio-snapshots/VisualParitySuite/t2-Explore-dark/dark-1x.png: Difference(1440,900,136668,228); diff at /work/target/studio-snapshots/VisualParitySuite/t2-Explore-dark/dark-1x-diff.png
+/work/studio/desktop/src/test/resources/eyes4s/studio/desktop/visual-parity/t2-Explore-dark/dark-2x.png versus /work/target/studio-snapshots/VisualParitySuite/t2-Explore-dark/dark-2x.png: Difference(2880,1800,524801,228); diff at /work/target/studio-snapshots/VisualParitySuite/t2-Explore-dark/dark-2x-diff.png
+[90m    at [0m[90mmunit.FunSuite.assert[0m[90m([0m[90mFunSuite.scala[0m:[90m12[0m[90m)[0m
+[1m    at [0m[1meyes4s.studio.desktop.shell.VisualParitySuite.$init$$$anonfun$4$$anonfun$1$$anonfun$1$$anonfun$1[0m[1m([0m[1mVisualParitySuite.scala[0m:[1m254[0m[1m)[0m
+[90m    at [0m[90mmunit.FunFixtures.munit$FunFixtures$FunFixture$$_$test$$anonfun$1$$anonfun$1$$anonfun$1[0m[90m([0m[90mFunFixtures.scala[0m:[90m23[0m[90m)[0m
+[91m==> X [0m[91meyes4s.studio.desktop.shell.VisualParitySuite[0m.[91mt3-Explore-light[0m [90m2.177s[0m munit.FailException: studio/desktop/src/test/scala/eyes4s/studio/desktop/shell/VisualParitySuite.scala:254
+253:      )
+[7m254:      assert(errors.isEmpty, errors.mkString("\n"))[0m
+255:    }
+/work/studio/desktop/src/test/resources/eyes4s/studio/desktop/visual-parity/t3-Explore-light/light-1x.png versus /work/target/studio-snapshots/VisualParitySuite/t3-Explore-light/light-1x.png: Difference(1440,900,62515,221); diff at /work/target/studio-snapshots/VisualParitySuite/t3-Explore-light/light-1x-diff.png
+/work/studio/desktop/src/test/resources/eyes4s/studio/desktop/visual-parity/t3-Explore-light/light-2x.png versus /work/target/studio-snapshots/VisualParitySuite/t3-Explore-light/light-2x.png: Difference(2880,1800,204004,247); diff at /work/target/studio-snapshots/VisualParitySuite/t3-Explore-light/light-2x-diff.png
+[90m    at [0m[90mmunit.FunSuite.assert[0m[90m([0m[90mFunSuite.scala[0m:[90m12[0m[90m)[0m
+[1m    at [0m[1meyes4s.studio.desktop.shell.VisualParitySuite.$init$$$anonfun$4$$anonfun$1$$anonfun$1$$anonfun$1[0m[1m([0m[1mVisualParitySuite.scala[0m:[1m254[0m[1m)[0m
+[90m    at [0m[90mmunit.FunFixtures.munit$FunFixtures$FunFixture$$_$test$$anonfun$1$$anonfun$1$$anonfun$1[0m[90m([0m[90mFunFixtures.scala[0m:[90m23[0m[90m)[0m
+[91m==> X [0m[91meyes4s.studio.desktop.shell.VisualParitySuite[0m.[91mt3-Explore-dark[0m [90m2.165s[0m munit.FailException: studio/desktop/src/test/scala/eyes4s/studio/desktop/shell/VisualParitySuite.scala:254
+253:      )
+[7m254:      assert(errors.isEmpty, errors.mkString("\n"))[0m
+255:    }
+/work/studio/desktop/src/test/resources/eyes4s/studio/desktop/visual-parity/t3-Explore-dark/dark-1x.png versus /work/target/studio-snapshots/VisualParitySuite/t3-Explore-dark/dark-1x.png: Difference(1440,900,62016,228); diff at /work/target/studio-snapshots/VisualParitySuite/t3-Explore-dark/dark-1x-diff.png
+/work/studio/desktop/src/test/resources/eyes4s/studio/desktop/visual-parity/t3-Explore-dark/dark-2x.png versus /work/target/studio-snapshots/VisualParitySuite/t3-Explore-dark/dark-2x.png: Difference(2880,1800,203234,228); diff at /work/target/studio-snapshots/VisualParitySuite/t3-Explore-dark/dark-2x-diff.png
+[90m    at [0m[90mmunit.FunSuite.assert[0m[90m([0m[90mFunSuite.scala[0m:[90m12[0m[90m)[0m
+[1m    at [0m[1meyes4s.studio.desktop.shell.VisualParitySuite.$init$$$anonfun$4$$anonfun$1$$anonfun$1$$anonfun$1[0m[1m([0m[1mVisualParitySuite.scala[0m:[1m254[0m[1m)[0m
+[90m    at [0m[90mmunit.FunFixtures.munit$FunFixtures$FunFixture$$_$test$$anonfun$1$$anonfun$1$$anonfun$1[0m[90m([0m[90mFunFixtures.scala[0m:[90m23[0m[90m)[0m
+[32meyes4s.studio.desktop.shell.VisualParitySuite[0m: finished [90m77.615s[0m
+Test run [36meyes4s.studio.desktop.shell.VisualParitySuite[0m finished: [91m4 failed[0m, 0 ignored, 30 total [90m77.629s[0m
+[error] Failed: Total 30, Failed 4, Errors 0, Passed 26
+[error] Failed tests:
+[error] 	eyes4s.studio.desktop.shell.VisualParitySuite
+[error] (studioDesktop / Test / testOnly) sbt.TestsFailedException: Tests unsuccessful
+[error] Total time: 121 s (0:02:01.0), completed Oct 26, 2026, 4:10:16 PM

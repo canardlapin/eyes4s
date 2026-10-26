@@ -1,0 +1,126 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<testsuite hostname="16cfaae2a224" name="eyes4s.studio.desktop.shell.VisualParitySuite" tests="30" errors="0" failures="4" skipped="0" time="77.226" timestamp="2026-10-26T16:10:16">
+          <properties>
+      <property name="javafx.platform" value="linux-aarch64"/><property name="java.specification.version" value="25"/><property name="sun.jnu.encoding" value="UTF-8"/><property name="java.class.path" value="/opt/sbt/sbt-launch.jar"/><property name="java.vm.vendor" value="Eclipse Adoptium"/><property name="sun.arch.data.model" value="64"/><property name="sbt.supershell" value="false"/><property name="jline.shutdownhook" value="false"/><property name="java.vendor.url" value="https://adoptium.net/"/><property name="user.timezone" value="Etc/UTC"/><property name="java.vm.specification.version" value="25"/><property name="os.name" value="Linux"/><property name="sun.java.launcher" value="SUN_STANDARD"/><property name="user.country" value="US"/><property name="sun.boot.library.path" value="/opt/java/openjdk/lib"/><property name="sun.java.command" value="/opt/sbt/sbt-launch.jar studioDesktop/testOnly *VisualParitySuite"/><property name="jdk.debug" value="release"/><property name="sun.cpu.endian" value="little"/><property name="user.home" value="/root"/><property name="user.language" value="en"/><property name="java.specification.vendor" value="Oracle Corporation"/><property name="sbt.ipcsocket.tmpdir" value="/tmp/.sbt82f575fe/ipcsocket"/><property name="swoval.tmpdir" value="/tmp/.sbt82f575fe/swoval"/><property name="java.version.date" value="2026-08-18"/><property name="java.home" value="/opt/java/openjdk"/><property name="file.separator" value="/"/><property name="java.vm.compressedOopsMode" value="Zero based"/><property name="line.separator" value="
+"/><property name="java.vm.specification.vendor" value="Oracle Corporation"/><property name="java.specification.name" value="Java Platform API Specification"/><property name="jline.esc.timeout" value="0"/><property name="sun.management.compiler" value="HotSpot 64-Bit Tiered Compilers"/><property name="java.runtime.version" value="25.0.4.1+1-LTS"/><property name="user.name" value="root"/><property name="stdout.encoding" value="UTF-8"/><property name="path.separator" value=":"/><property name="os.version" value="6.10.14-linuxkit"/><property name="jna.nosys" value="true"/><property name="java.runtime.name" value="OpenJDK Runtime Environment"/><property name="sbt.log.noformat" value="true"/><property name="log4j.ignoreTCL" value="true"/><property name="file.encoding" value="UTF-8"/><property name="jnidispatch.path" value="/root/.cache/JNA/temp/jna8509685919403798564.tmp"/><property name="java.vm.name" value="OpenJDK 64-Bit Server VM"/><property name="jna.platform.library.path" value="/usr/lib:/lib:/lib/aarch64-linux-gnu:/opt/java/openjdk/lib:/opt/java/openjdk/lib/server"/><property name="java.vendor.version" value="Temurin-25.0.4.1+1"/><property name="jna.loaded" value="true"/><property name="java.vendor.url.bug" value="https://github.com/adoptium/adoptium-support/issues"/><property name="java.io.tmpdir" value="/tmp"/><property name="java.version" value="25.0.4.1"/><property name="user.dir" value="/work"/><property name="os.arch" value="aarch64"/><property name="java.vm.specification.name" value="Java Virtual Machine Specification"/><property name="native.encoding" value="UTF-8"/><property name="java.library.path" value="/usr/java/packages/lib:/usr/lib64:/lib64:/lib:/usr/lib"/><property name="java.vm.info" value="mixed mode, sharing"/><property name="stderr.encoding" value="UTF-8"/><property name="java.vendor" value="Eclipse Adoptium"/><property name="java.vm.version" value="25.0.4.1+1-LTS"/><property name="stdin.encoding" value="UTF-8"/><property name="eyes4s.studio.test.heap" value="4g"/><property name="sun.io.unicode.encoding" value="UnicodeLittle"/><property name="java.class.version" value="69.0"/>
+    </properties>
+          <testcase classname="eyes4s.studio.desktop.shell.VisualParitySuite" name="t1-Data-light" time="7.303">
+                      
+                    </testcase><testcase classname="eyes4s.studio.desktop.shell.VisualParitySuite" name="t1-Data-dark" time="1.964">
+                      
+                    </testcase><testcase classname="eyes4s.studio.desktop.shell.VisualParitySuite" name="t1-Explore-light" time="1.45">
+                      
+                    </testcase><testcase classname="eyes4s.studio.desktop.shell.VisualParitySuite" name="t1-Explore-dark" time="1.508">
+                      
+                    </testcase><testcase classname="eyes4s.studio.desktop.shell.VisualParitySuite" name="t1-Analysis-light" time="1.489">
+                      
+                    </testcase><testcase classname="eyes4s.studio.desktop.shell.VisualParitySuite" name="t1-Analysis-dark" time="1.453">
+                      
+                    </testcase><testcase classname="eyes4s.studio.desktop.shell.VisualParitySuite" name="t1-Compare-light" time="1.408">
+                      
+                    </testcase><testcase classname="eyes4s.studio.desktop.shell.VisualParitySuite" name="t1-Compare-dark" time="1.443">
+                      
+                    </testcase><testcase classname="eyes4s.studio.desktop.shell.VisualParitySuite" name="t1-Figures-light" time="1.416">
+                      
+                    </testcase><testcase classname="eyes4s.studio.desktop.shell.VisualParitySuite" name="t1-Figures-dark" time="1.413">
+                      
+                    </testcase><testcase classname="eyes4s.studio.desktop.shell.VisualParitySuite" name="t2-Data-light" time="4.477">
+                      
+                    </testcase><testcase classname="eyes4s.studio.desktop.shell.VisualParitySuite" name="t2-Data-dark" time="2.467">
+                      
+                    </testcase><testcase classname="eyes4s.studio.desktop.shell.VisualParitySuite" name="t2-Explore-light" time="3.139">
+                      <failure message="munit.FailException: studio/desktop/src/test/scala/eyes4s/studio/desktop/shell/VisualParitySuite.scala:254
+253:      )
+[7m254:      assert(errors.isEmpty, errors.mkString(&quot;\n&quot;))[0m
+255:    }
+/work/studio/desktop/src/test/resources/eyes4s/studio/desktop/visual-parity/t2-Explore-light/light-1x.png versus /work/target/studio-snapshots/VisualParitySuite/t2-Explore-light/light-1x.png: Difference(1440,900,137161,234); diff at /work/target/studio-snapshots/VisualParitySuite/t2-Explore-light/light-1x-diff.png
+/work/studio/desktop/src/test/resources/eyes4s/studio/desktop/visual-parity/t2-Explore-light/light-2x.png versus /work/target/studio-snapshots/VisualParitySuite/t2-Explore-light/light-2x.png: Difference(2880,1800,525570,247); diff at /work/target/studio-snapshots/VisualParitySuite/t2-Explore-light/light-2x-diff.png" type="sbt.ForkMain$ForkError">sbt.ForkMain$ForkError: munit.FailException: studio/desktop/src/test/scala/eyes4s/studio/desktop/shell/VisualParitySuite.scala:254
+253:      )
+[7m254:      assert(errors.isEmpty, errors.mkString(&quot;\n&quot;))[0m
+255:    }
+/work/studio/desktop/src/test/resources/eyes4s/studio/desktop/visual-parity/t2-Explore-light/light-1x.png versus /work/target/studio-snapshots/VisualParitySuite/t2-Explore-light/light-1x.png: Difference(1440,900,137161,234); diff at /work/target/studio-snapshots/VisualParitySuite/t2-Explore-light/light-1x-diff.png
+/work/studio/desktop/src/test/resources/eyes4s/studio/desktop/visual-parity/t2-Explore-light/light-2x.png versus /work/target/studio-snapshots/VisualParitySuite/t2-Explore-light/light-2x.png: Difference(2880,1800,525570,247); diff at /work/target/studio-snapshots/VisualParitySuite/t2-Explore-light/light-2x-diff.png
+	at munit.FunSuite.assert(FunSuite.scala:12)
+	at eyes4s.studio.desktop.shell.VisualParitySuite.$init$$$anonfun$4$$anonfun$1$$anonfun$1$$anonfun$1(VisualParitySuite.scala:254)
+	at munit.FunFixtures.munit$FunFixtures$FunFixture$$_$test$$anonfun$1$$anonfun$1$$anonfun$1(FunFixtures.scala:23)
+</failure>
+                    </testcase><testcase classname="eyes4s.studio.desktop.shell.VisualParitySuite" name="t2-Explore-dark" time="2.681">
+                      <failure message="munit.FailException: studio/desktop/src/test/scala/eyes4s/studio/desktop/shell/VisualParitySuite.scala:254
+253:      )
+[7m254:      assert(errors.isEmpty, errors.mkString(&quot;\n&quot;))[0m
+255:    }
+/work/studio/desktop/src/test/resources/eyes4s/studio/desktop/visual-parity/t2-Explore-dark/dark-1x.png versus /work/target/studio-snapshots/VisualParitySuite/t2-Explore-dark/dark-1x.png: Difference(1440,900,136668,228); diff at /work/target/studio-snapshots/VisualParitySuite/t2-Explore-dark/dark-1x-diff.png
+/work/studio/desktop/src/test/resources/eyes4s/studio/desktop/visual-parity/t2-Explore-dark/dark-2x.png versus /work/target/studio-snapshots/VisualParitySuite/t2-Explore-dark/dark-2x.png: Difference(2880,1800,524801,228); diff at /work/target/studio-snapshots/VisualParitySuite/t2-Explore-dark/dark-2x-diff.png" type="sbt.ForkMain$ForkError">sbt.ForkMain$ForkError: munit.FailException: studio/desktop/src/test/scala/eyes4s/studio/desktop/shell/VisualParitySuite.scala:254
+253:      )
+[7m254:      assert(errors.isEmpty, errors.mkString(&quot;\n&quot;))[0m
+255:    }
+/work/studio/desktop/src/test/resources/eyes4s/studio/desktop/visual-parity/t2-Explore-dark/dark-1x.png versus /work/target/studio-snapshots/VisualParitySuite/t2-Explore-dark/dark-1x.png: Difference(1440,900,136668,228); diff at /work/target/studio-snapshots/VisualParitySuite/t2-Explore-dark/dark-1x-diff.png
+/work/studio/desktop/src/test/resources/eyes4s/studio/desktop/visual-parity/t2-Explore-dark/dark-2x.png versus /work/target/studio-snapshots/VisualParitySuite/t2-Explore-dark/dark-2x.png: Difference(2880,1800,524801,228); diff at /work/target/studio-snapshots/VisualParitySuite/t2-Explore-dark/dark-2x-diff.png
+	at munit.FunSuite.assert(FunSuite.scala:12)
+	at eyes4s.studio.desktop.shell.VisualParitySuite.$init$$$anonfun$4$$anonfun$1$$anonfun$1$$anonfun$1(VisualParitySuite.scala:254)
+	at munit.FunFixtures.munit$FunFixtures$FunFixture$$_$test$$anonfun$1$$anonfun$1$$anonfun$1(FunFixtures.scala:23)
+</failure>
+                    </testcase><testcase classname="eyes4s.studio.desktop.shell.VisualParitySuite" name="t2-Analysis-light" time="4.784">
+                      
+                    </testcase><testcase classname="eyes4s.studio.desktop.shell.VisualParitySuite" name="t2-Analysis-dark" time="4.385">
+                      
+                    </testcase><testcase classname="eyes4s.studio.desktop.shell.VisualParitySuite" name="t2-Compare-light" time="2.173">
+                      
+                    </testcase><testcase classname="eyes4s.studio.desktop.shell.VisualParitySuite" name="t2-Compare-dark" time="2.102">
+                      
+                    </testcase><testcase classname="eyes4s.studio.desktop.shell.VisualParitySuite" name="t2-Figures-light" time="1.993">
+                      
+                    </testcase><testcase classname="eyes4s.studio.desktop.shell.VisualParitySuite" name="t2-Figures-dark" time="2.243">
+                      
+                    </testcase><testcase classname="eyes4s.studio.desktop.shell.VisualParitySuite" name="t3-Data-light" time="2.168">
+                      
+                    </testcase><testcase classname="eyes4s.studio.desktop.shell.VisualParitySuite" name="t3-Data-dark" time="2.088">
+                      
+                    </testcase><testcase classname="eyes4s.studio.desktop.shell.VisualParitySuite" name="t3-Explore-light" time="2.177">
+                      <failure message="munit.FailException: studio/desktop/src/test/scala/eyes4s/studio/desktop/shell/VisualParitySuite.scala:254
+253:      )
+[7m254:      assert(errors.isEmpty, errors.mkString(&quot;\n&quot;))[0m
+255:    }
+/work/studio/desktop/src/test/resources/eyes4s/studio/desktop/visual-parity/t3-Explore-light/light-1x.png versus /work/target/studio-snapshots/VisualParitySuite/t3-Explore-light/light-1x.png: Difference(1440,900,62515,221); diff at /work/target/studio-snapshots/VisualParitySuite/t3-Explore-light/light-1x-diff.png
+/work/studio/desktop/src/test/resources/eyes4s/studio/desktop/visual-parity/t3-Explore-light/light-2x.png versus /work/target/studio-snapshots/VisualParitySuite/t3-Explore-light/light-2x.png: Difference(2880,1800,204004,247); diff at /work/target/studio-snapshots/VisualParitySuite/t3-Explore-light/light-2x-diff.png" type="sbt.ForkMain$ForkError">sbt.ForkMain$ForkError: munit.FailException: studio/desktop/src/test/scala/eyes4s/studio/desktop/shell/VisualParitySuite.scala:254
+253:      )
+[7m254:      assert(errors.isEmpty, errors.mkString(&quot;\n&quot;))[0m
+255:    }
+/work/studio/desktop/src/test/resources/eyes4s/studio/desktop/visual-parity/t3-Explore-light/light-1x.png versus /work/target/studio-snapshots/VisualParitySuite/t3-Explore-light/light-1x.png: Difference(1440,900,62515,221); diff at /work/target/studio-snapshots/VisualParitySuite/t3-Explore-light/light-1x-diff.png
+/work/studio/desktop/src/test/resources/eyes4s/studio/desktop/visual-parity/t3-Explore-light/light-2x.png versus /work/target/studio-snapshots/VisualParitySuite/t3-Explore-light/light-2x.png: Difference(2880,1800,204004,247); diff at /work/target/studio-snapshots/VisualParitySuite/t3-Explore-light/light-2x-diff.png
+	at munit.FunSuite.assert(FunSuite.scala:12)
+	at eyes4s.studio.desktop.shell.VisualParitySuite.$init$$$anonfun$4$$anonfun$1$$anonfun$1$$anonfun$1(VisualParitySuite.scala:254)
+	at munit.FunFixtures.munit$FunFixtures$FunFixture$$_$test$$anonfun$1$$anonfun$1$$anonfun$1(FunFixtures.scala:23)
+</failure>
+                    </testcase><testcase classname="eyes4s.studio.desktop.shell.VisualParitySuite" name="t3-Explore-dark" time="2.165">
+                      <failure message="munit.FailException: studio/desktop/src/test/scala/eyes4s/studio/desktop/shell/VisualParitySuite.scala:254
+253:      )
+[7m254:      assert(errors.isEmpty, errors.mkString(&quot;\n&quot;))[0m
+255:    }
+/work/studio/desktop/src/test/resources/eyes4s/studio/desktop/visual-parity/t3-Explore-dark/dark-1x.png versus /work/target/studio-snapshots/VisualParitySuite/t3-Explore-dark/dark-1x.png: Difference(1440,900,62016,228); diff at /work/target/studio-snapshots/VisualParitySuite/t3-Explore-dark/dark-1x-diff.png
+/work/studio/desktop/src/test/resources/eyes4s/studio/desktop/visual-parity/t3-Explore-dark/dark-2x.png versus /work/target/studio-snapshots/VisualParitySuite/t3-Explore-dark/dark-2x.png: Difference(2880,1800,203234,228); diff at /work/target/studio-snapshots/VisualParitySuite/t3-Explore-dark/dark-2x-diff.png" type="sbt.ForkMain$ForkError">sbt.ForkMain$ForkError: munit.FailException: studio/desktop/src/test/scala/eyes4s/studio/desktop/shell/VisualParitySuite.scala:254
+253:      )
+[7m254:      assert(errors.isEmpty, errors.mkString(&quot;\n&quot;))[0m
+255:    }
+/work/studio/desktop/src/test/resources/eyes4s/studio/desktop/visual-parity/t3-Explore-dark/dark-1x.png versus /work/target/studio-snapshots/VisualParitySuite/t3-Explore-dark/dark-1x.png: Difference(1440,900,62016,228); diff at /work/target/studio-snapshots/VisualParitySuite/t3-Explore-dark/dark-1x-diff.png
+/work/studio/desktop/src/test/resources/eyes4s/studio/desktop/visual-parity/t3-Explore-dark/dark-2x.png versus /work/target/studio-snapshots/VisualParitySuite/t3-Explore-dark/dark-2x.png: Difference(2880,1800,203234,228); diff at /work/target/studio-snapshots/VisualParitySuite/t3-Explore-dark/dark-2x-diff.png
+	at munit.FunSuite.assert(FunSuite.scala:12)
+	at eyes4s.studio.desktop.shell.VisualParitySuite.$init$$$anonfun$4$$anonfun$1$$anonfun$1$$anonfun$1(VisualParitySuite.scala:254)
+	at munit.FunFixtures.munit$FunFixtures$FunFixture$$_$test$$anonfun$1$$anonfun$1$$anonfun$1(FunFixtures.scala:23)
+</failure>
+                    </testcase><testcase classname="eyes4s.studio.desktop.shell.VisualParitySuite" name="t3-Analysis-light" time="4.638">
+                      
+                    </testcase><testcase classname="eyes4s.studio.desktop.shell.VisualParitySuite" name="t3-Analysis-dark" time="4.924">
+                      
+                    </testcase><testcase classname="eyes4s.studio.desktop.shell.VisualParitySuite" name="t3-Compare-light" time="1.918">
+                      
+                    </testcase><testcase classname="eyes4s.studio.desktop.shell.VisualParitySuite" name="t3-Compare-dark" time="1.965">
+                      
+                    </testcase><testcase classname="eyes4s.studio.desktop.shell.VisualParitySuite" name="t3-Figures-light" time="1.987">
+                      
+                    </testcase><testcase classname="eyes4s.studio.desktop.shell.VisualParitySuite" name="t3-Figures-dark" time="1.905">
+                      
+                    </testcase>
+          <system-out><![CDATA[]]></system-out>
+          <system-err><![CDATA[]]></system-err>
+        </testsuite>

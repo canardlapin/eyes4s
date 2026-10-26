@@ -1,0 +1,12 @@
+diff --git a/studio/desktop/src/test/scala/eyes4s/studio/desktop/harness/StudioFxSuite.scala b/studio/desktop/src/test/scala/eyes4s/studio/desktop/harness/StudioFxSuite.scala
+index a6883d2f..6fa65aec 100644
+--- a/studio/desktop/src/test/scala/eyes4s/studio/desktop/harness/StudioFxSuite.scala
++++ b/studio/desktop/src/test/scala/eyes4s/studio/desktop/harness/StudioFxSuite.scala
+@@ -227,6 +227,7 @@ final class FxStage private (
+         val params = SnapshotParameters()
+         params.setTransform(Transform.scale(k, k))
+         params.setFill(scene.getFill)
++        params.setViewport(javafx.geometry.Rectangle2D(0.0, 0.0, scene.getWidth * k, scene.getHeight * k))
+         val target = WritableImage(
+           math.ceil(scene.getWidth * k).toInt,
+           math.ceil(scene.getHeight * k).toInt

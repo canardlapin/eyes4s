@@ -1,0 +1,79 @@
+{
+  "candidateFingerprint": "24a4cc2b7f8d856c590202de175afc577b91e2a457afa310e1d961958fecd71b",
+  "osName": "Linux",
+  "osArch": "aarch64",
+  "javaVersion": "25.0.4.1",
+  "javaFxVersion": "24.0.1+4",
+  "glassPlatform": "Monocle",
+  "prismOrder": "sw",
+  "schema": 1,
+  "state": "t2-Explore-dark",
+  "moment": "t2",
+  "perspective": "Explore",
+  "theme": "dark",
+  "logicalWidth": 1440,
+  "logicalHeight": 900,
+  "nativeScaleX": 1,
+  "nativeScaleY": 1,
+  "mode": "linux-monocle-goldens",
+  "focus": "programmatic scene root; no keyboard ring; no active text caret",
+  "maximumChannelDelta": 1,
+  "maximumChangedFraction": 0.001,
+  "sourceSha256": "559210037096f0c4ba29054f449c59ae251c2c5a31ded747f8b32547a5f5c519",
+  "captures": [
+    {
+      "actual": "target/studio-snapshots/VisualParitySuite/t2-Explore-dark/dark-1x.png",
+      "actualSha256": "249a8ca736399b9cbf97a863e2aaf58558921855a6d66d1531a65293119e2038",
+      "width": 1440,
+      "height": 900,
+      "baseline": "studio/desktop/src/test/resources/eyes4s/studio/desktop/visual-parity/t2-Explore-dark/dark-1x.png",
+      "baselineSha256": "0a031eb17589c42ce52ee40ee34de42722abcf94ff400153a10f2405adc14aab",
+      "comparison": {
+        "width": 1440,
+        "height": 900,
+        "changedPixels": 136668,
+        "maximumChannelDelta": 228,
+        "changedFraction": 0.1054537037037037,
+        "accepted": false
+      },
+      "repeatFirstSha256": "249a8ca736399b9cbf97a863e2aaf58558921855a6d66d1531a65293119e2038",
+      "repeat": {
+        "width": 1440,
+        "height": 900,
+        "changedPixels": 0,
+        "maximumChannelDelta": 0,
+        "changedFraction": 0,
+        "accepted": true
+      }
+    },
+    {
+      "actual": "target/studio-snapshots/VisualParitySuite/t2-Explore-dark/dark-2x.png",
+      "actualSha256": "0abc66bbf12eb62d773e4c468a57c1f28de34d01f19d8bdb54da56d4959ab728",
+      "width": 2880,
+      "height": 1800,
+      "baseline": "studio/desktop/src/test/resources/eyes4s/studio/desktop/visual-parity/t2-Explore-dark/dark-2x.png",
+      "baselineSha256": "37b9ed0eb756599c185fa199762ea6518b6e9aa17c9c7aaa877af871effea41d",
+      "comparison": {
+        "width": 2880,
+        "height": 1800,
+        "changedPixels": 524801,
+        "maximumChannelDelta": 228,
+        "changedFraction": 0.10123476080246914,
+        "accepted": false
+      },
+      "repeatFirstSha256": "0abc66bbf12eb62d773e4c468a57c1f28de34d01f19d8bdb54da56d4959ab728",
+      "repeat": {
+        "width": 2880,
+        "height": 1800,
+        "changedPixels": 0,
+        "maximumChannelDelta": 0,
+        "changedFraction": 0,
+        "accepted": true
+      }
+    }
+  ],
+  "problems": [
+    "/work/studio/desktop/src/test/resources/eyes4s/studio/desktop/visual-parity/t2-Explore-dark/dark-1x.png versus /work/target/studio-snapshots/VisualParitySuite/t2-Explore-dark/dark-1x.png: Difference(1440,900,136668,228); diff at /work/target/studio-snapshots/VisualParitySuite/t2-Explore-dark/dark-1x-diff.png",
+    "/work/studio/desktop/src/test/resources/eyes4s/studio/desktop/visual-parity/t2-Explore-dark/dark-2x.png versus /work/target/studio-snapshots/VisualParitySuite/t2-Explore-dark/dark-2x.png: Difference(2880,1800,524801,228); diff at /work/target/studio-snapshots/VisualParitySuite/t2-Explore-dark/dark-2x-diff.png"
+  ]
+}

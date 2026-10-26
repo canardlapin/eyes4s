@@ -99,6 +99,26 @@
     {
       "path": "followup-logs/eyes4s-usability-framing-focus-green.log",
       "sha256": "c32c000e914673309d59679c253d3d259ed8c7c08e2719cd14717e73d8192e44"
+    },
+    {
+      "path": "followup-logs/eyes4s-usability-gtk-fixed.log",
+      "sha256": "b292e93519139cab4c94eb7516b6441d01642e834f7c90b10db255450924a130"
     }
-  ]
+  ],
+  "gtkFinalFocused": {
+    "nativeScaleVerificationPassed": true,
+    "medianMs": 17.5,
+    "p99Ms": 19.5,
+    "worstMs": 20.1,
+    "sourceRecordsCases": 1,
+    "nativeScaleCases": 1,
+    "affectedDesktopPassed": 50,
+    "affectedDesktopSkipped": 1,
+    "skip": "Monocle-only harness assertion, intentionally inapplicable to native GTK",
+    "nativeScaleReceipt": {
+      "path": "gtk-focused-native-scale.json",
+      "sha256": "cfc39a4ab7d0b27bfa3f6cc6b20ca27dba96a2988c110a5ab72362ab947e33dc"
+    }
+  },
+  "correctedSourceFingerprint": "0e598d850630bbbfb4f644b03ae18d70800327de8161737bb6668a7fcb412367"
 }

@@ -1,0 +1,102 @@
+{
+  "schema": 1,
+  "status": "reviewed capture-origin correction; final candidate matrix pending",
+  "productCommit": "ae78d26254e6201532fa53d4bbac99ab3cccf719",
+  "sourceMutation": "Only StudioFxSuite snapshot helper adds an explicit scene rectangle; see retained patch. No product changes.",
+  "harnessPatchSha256": "bbf5b253e4f2283b1c50e3e82637b42e13159dccfb7064e209414c1883236b94",
+  "candidateFingerprint": "24a4cc2b7f8d856c590202de175afc577b91e2a457afa310e1d961958fecd71b",
+  "environment": "Linux aarch64 Monocle native1, JDK25.0.4.1, JavaFX24.0.1 software pipeline",
+  "executedStates": 30,
+  "priorGoldenStatesPassed": 26,
+  "priorGoldenStatesFailed": 4,
+  "stableRepeatedCaptures": 60,
+  "updatedReferences": [
+    "studio/desktop/src/test/resources/eyes4s/studio/desktop/visual-parity/t2-Explore-dark/dark-1x.png",
+    "studio/desktop/src/test/resources/eyes4s/studio/desktop/visual-parity/t2-Explore-dark/dark-2x.png",
+    "studio/desktop/src/test/resources/eyes4s/studio/desktop/visual-parity/t2-Explore-light/light-1x.png",
+    "studio/desktop/src/test/resources/eyes4s/studio/desktop/visual-parity/t2-Explore-light/light-2x.png",
+    "studio/desktop/src/test/resources/eyes4s/studio/desktop/visual-parity/t3-Explore-dark/dark-1x.png",
+    "studio/desktop/src/test/resources/eyes4s/studio/desktop/visual-parity/t3-Explore-dark/dark-2x.png",
+    "studio/desktop/src/test/resources/eyes4s/studio/desktop/visual-parity/t3-Explore-light/light-1x.png",
+    "studio/desktop/src/test/resources/eyes4s/studio/desktop/visual-parity/t3-Explore-light/light-2x.png"
+  ],
+  "reviewer": "codex-usability-20261026",
+  "visualReview": "Viewed all four logical-scale states. Header, dock, timeline, records and status align to the scene origin; only offscreen visual overflow is excluded. Both raster scales have stable repeated captures.",
+  "alignedResiduals": [
+    {
+      "state": "t2-Explore-dark",
+      "scale": 1,
+      "old": "0a031eb17589c42ce52ee40ee34de42722abcf94ff400153a10f2405adc14aab",
+      "new": "249a8ca736399b9cbf97a863e2aaf58558921855a6d66d1531a65293119e2038",
+      "alignedMaximumChannelDelta": 1,
+      "alignedPixelsAboveOne": 0,
+      "repeatAccepted": true
+    },
+    {
+      "state": "t2-Explore-dark",
+      "scale": 2,
+      "old": "37b9ed0eb756599c185fa199762ea6518b6e9aa17c9c7aaa877af871effea41d",
+      "new": "0abc66bbf12eb62d773e4c468a57c1f28de34d01f19d8bdb54da56d4959ab728",
+      "alignedMaximumChannelDelta": 1,
+      "alignedPixelsAboveOne": 0,
+      "repeatAccepted": true
+    },
+    {
+      "state": "t2-Explore-light",
+      "scale": 1,
+      "old": "38f2e9460c54dd5e674a2e2db438cc8866e67c3a20fe14a17daf67bbd28c3b22",
+      "new": "cf54614e4a1cc940ba27cc562d56349086e4333c8e05c7700caebbe0e9d8e3ff",
+      "alignedMaximumChannelDelta": 1,
+      "alignedPixelsAboveOne": 0,
+      "repeatAccepted": true
+    },
+    {
+      "state": "t2-Explore-light",
+      "scale": 2,
+      "old": "0a7ccafe5589560d458fa8f2c7e5d5a63a21ce74c1ff9708cd27acc615d546fe",
+      "new": "8ed269355cfdcc873a724d6dc0fa8d22197ad3e828bd9182794eb295bb5704ab",
+      "alignedMaximumChannelDelta": 1,
+      "alignedPixelsAboveOne": 0,
+      "repeatAccepted": true
+    },
+    {
+      "state": "t3-Explore-dark",
+      "scale": 1,
+      "old": "ce8918ec43050ab09773935e43972a4a300977836b649a787b74f226c311c676",
+      "new": "bd72ceb2779df52aa8fe7b4311fc84afba8ab0fc9f65f5ec53e5c8053efe83c1",
+      "alignedMaximumChannelDelta": 1,
+      "alignedPixelsAboveOne": 0,
+      "repeatAccepted": true
+    },
+    {
+      "state": "t3-Explore-dark",
+      "scale": 2,
+      "old": "734d65d62cf1a7572e993396005c1000603c7402d5c8938b992dbb7360b13649",
+      "new": "fa49cdd20a4c5db9b867cc837e25a1c2c23f2c5565be2617de3b066e3ae46b24",
+      "alignedMaximumChannelDelta": 4,
+      "alignedPixelsAboveOne": 6,
+      "repeatAccepted": true
+    },
+    {
+      "state": "t3-Explore-light",
+      "scale": 1,
+      "old": "0f2dd2b39308f1cb0598d45aa354a1fd42b6dbf39a8ae3bd2ff727d3cf8a9ace",
+      "new": "207351bcc02b690511b1204d519fc06dd6f07422eeeacefbb4ff0792ca3dd45c",
+      "alignedMaximumChannelDelta": 22,
+      "alignedPixelsAboveOne": 8,
+      "repeatAccepted": true
+    },
+    {
+      "state": "t3-Explore-light",
+      "scale": 2,
+      "old": "811f945c6d3bdb779287f2ee53ef2edae8facefe6a09dafd6826b20b567045c2",
+      "new": "5dfeb963f6ca3dcc60a4c5134fda2ffc3ce797d353fa5cabe39407a98e29953e",
+      "alignedMaximumChannelDelta": 4,
+      "alignedPixelsAboveOne": 6,
+      "repeatAccepted": true
+    }
+  ],
+  "residualExplanation": "After correcting the one-logical-pixel shift, t3 has eight chip-edge pixels at1x and six text-clip-edge pixels at2x above one channel level. These are produced by the capture-only patch on unchanged product code and are retained explicitly; no thresholds were relaxed.",
+  "thresholdMaximumChannelDelta": 1,
+  "thresholdMaximumChangedFraction": 0.001
+}

@@ -1,0 +1,76 @@
+{
+  "candidateFingerprint": "24a4cc2b7f8d856c590202de175afc577b91e2a457afa310e1d961958fecd71b",
+  "osName": "Linux",
+  "osArch": "aarch64",
+  "javaVersion": "25.0.4.1",
+  "javaFxVersion": "24.0.1+4",
+  "glassPlatform": "Monocle",
+  "prismOrder": "sw",
+  "schema": 1,
+  "state": "t3-Figures-dark",
+  "moment": "t3",
+  "perspective": "Figures",
+  "theme": "dark",
+  "logicalWidth": 1440,
+  "logicalHeight": 900,
+  "nativeScaleX": 1,
+  "nativeScaleY": 1,
+  "mode": "linux-monocle-goldens",
+  "focus": "programmatic scene root; no keyboard ring; no active text caret",
+  "maximumChannelDelta": 1,
+  "maximumChangedFraction": 0.001,
+  "sourceSha256": "559210037096f0c4ba29054f449c59ae251c2c5a31ded747f8b32547a5f5c519",
+  "captures": [
+    {
+      "actual": "target/studio-snapshots/VisualParitySuite/t3-Figures-dark/dark-1x.png",
+      "actualSha256": "05cc8aaca75378877fe7b71875dd3710eb6ef9f69ac496ac707fb2e616fd4482",
+      "width": 1440,
+      "height": 900,
+      "baseline": "studio/desktop/src/test/resources/eyes4s/studio/desktop/visual-parity/t3-Figures-dark/dark-1x.png",
+      "baselineSha256": "05cc8aaca75378877fe7b71875dd3710eb6ef9f69ac496ac707fb2e616fd4482",
+      "comparison": {
+        "width": 1440,
+        "height": 900,
+        "changedPixels": 0,
+        "maximumChannelDelta": 0,
+        "changedFraction": 0,
+        "accepted": true
+      },
+      "repeatFirstSha256": "05cc8aaca75378877fe7b71875dd3710eb6ef9f69ac496ac707fb2e616fd4482",
+      "repeat": {
+        "width": 1440,
+        "height": 900,
+        "changedPixels": 0,
+        "maximumChannelDelta": 0,
+        "changedFraction": 0,
+        "accepted": true
+      }
+    },
+    {
+      "actual": "target/studio-snapshots/VisualParitySuite/t3-Figures-dark/dark-2x.png",
+      "actualSha256": "d80fa24a4d78e2c6a3f42e4697de442893eacca0e9dd175bef45eb80adeef360",
+      "width": 2880,
+      "height": 1800,
+      "baseline": "studio/desktop/src/test/resources/eyes4s/studio/desktop/visual-parity/t3-Figures-dark/dark-2x.png",
+      "baselineSha256": "d80fa24a4d78e2c6a3f42e4697de442893eacca0e9dd175bef45eb80adeef360",
+      "comparison": {
+        "width": 2880,
+        "height": 1800,
+        "changedPixels": 0,
+        "maximumChannelDelta": 0,
+        "changedFraction": 0,
+        "accepted": true
+      },
+      "repeatFirstSha256": "d80fa24a4d78e2c6a3f42e4697de442893eacca0e9dd175bef45eb80adeef360",
+      "repeat": {
+        "width": 2880,
+        "height": 1800,
+        "changedPixels": 0,
+        "maximumChannelDelta": 0,
+        "changedFraction": 0,
+        "accepted": true
+      }
+    }
+  ],
+  "problems": []
+}
