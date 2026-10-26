@@ -1,0 +1,34 @@
+{
+  "qualification": false,
+  "sourceCandidate": "e805ac18f6df0bc686aa37f7d15116897c07be9f",
+  "workflow": 40412495016,
+  "artifact": 12694504345,
+  "artifactSha256": "fd17703c9da0e37084209d2140a67fbcf26b82efa8f2b9ec340d0af9be7dfad7",
+  "review": "Reviewed light and dark Compare at1x, difference raster, and exact2x pixel differences. Intentional ScrollPane-to-virtual-ListView replacement changes only the participant vertical scrollbar; participant row geometry, text, plots, data and focus semantics are preserved. At2x the light image also has3012 one-level rounding pixels outside the scrollbar, within the unchanged0.1% policy; no larger change outside it. Initial repeats are pixel-identical. Thresholds unchanged. Final source must pass the full hosted matrix against these four reviewed baselines.",
+  "baselines": [
+    {
+      "state": "t3-Compare-light",
+      "name": "light-1x.png",
+      "oldSha256": "a7b7998f34bdcad2fc2d9e6c624bdc8aa0df3f863edf3c42db6eab7e79052dd3",
+      "newSha256": "6f3ca9fa2375cbac53c647c7dd297e20ef3dc65163d93c71e6e95acfade0874a"
+    },
+    {
+      "state": "t3-Compare-light",
+      "name": "light-2x.png",
+      "oldSha256": "31884b6b024f403357e66a5f5952d77fccecd2b4409a518dc3cf5ac6c4ac68b2",
+      "newSha256": "c18249adc5ab3f2d333b40093c87bacebb51be46f7273392bd1bf3b3d18a6ac6"
+    },
+    {
+      "state": "t3-Compare-dark",
+      "name": "dark-1x.png",
+      "oldSha256": "d7ab4e2e306489d211f1b1b66a7673027721492dd81aabacd0cba5dd237e7409",
+      "newSha256": "38827a9e12b5d4ae617aa8047c7ad746e542d21cc44c79e63467130308d01cbe"
+    },
+    {
+      "state": "t3-Compare-dark",
+      "name": "dark-2x.png",
+      "oldSha256": "9843904550bee05f3e89d34071fe4cb1b15f8c03abf3bc5924df711314c6e9ad",
+      "newSha256": "395583f6bf28fa9a2fb7124e1021f094d9d1f7f34b9eef8510a0e031427dcf44"
+    }
+  ]
+}

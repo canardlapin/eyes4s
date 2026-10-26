@@ -1,0 +1,79 @@
+{
+  "candidateFingerprint": "cc25ae40a13f53264a5715b40f70b14c421b6157fc663e14105351baeeea0b93",
+  "osName": "Linux",
+  "osArch": "amd64",
+  "javaVersion": "25.0.4.1",
+  "javaFxVersion": "24.0.1+4",
+  "glassPlatform": "Monocle",
+  "prismOrder": "sw",
+  "schema": 1,
+  "state": "t3-Compare-light",
+  "moment": "t3",
+  "perspective": "Compare",
+  "theme": "light",
+  "logicalWidth": 1440,
+  "logicalHeight": 900,
+  "nativeScaleX": 1,
+  "nativeScaleY": 1,
+  "mode": "linux-monocle-goldens",
+  "focus": "programmatic scene root; no keyboard ring; no active text caret",
+  "maximumChannelDelta": 1,
+  "maximumChangedFraction": 0.001,
+  "sourceSha256": "559210037096f0c4ba29054f449c59ae251c2c5a31ded747f8b32547a5f5c519",
+  "captures": [
+    {
+      "actual": "target/studio-snapshots/VisualParitySuite/t3-Compare-light/light-1x.png",
+      "actualSha256": "6f3ca9fa2375cbac53c647c7dd297e20ef3dc65163d93c71e6e95acfade0874a",
+      "width": 1440,
+      "height": 900,
+      "baseline": "studio/desktop/src/test/resources/eyes4s/studio/desktop/visual-parity/t3-Compare-light/light-1x.png",
+      "baselineSha256": "a7b7998f34bdcad2fc2d9e6c624bdc8aa0df3f863edf3c42db6eab7e79052dd3",
+      "comparison": {
+        "width": 1440,
+        "height": 900,
+        "changedPixels": 5721,
+        "maximumChannelDelta": 98,
+        "changedFraction": 0.004414351851851852,
+        "accepted": false
+      },
+      "repeatFirstSha256": "6f3ca9fa2375cbac53c647c7dd297e20ef3dc65163d93c71e6e95acfade0874a",
+      "repeat": {
+        "width": 1440,
+        "height": 900,
+        "changedPixels": 0,
+        "maximumChannelDelta": 0,
+        "changedFraction": 0,
+        "accepted": true
+      }
+    },
+    {
+      "actual": "target/studio-snapshots/VisualParitySuite/t3-Compare-light/light-2x.png",
+      "actualSha256": "c18249adc5ab3f2d333b40093c87bacebb51be46f7273392bd1bf3b3d18a6ac6",
+      "width": 2880,
+      "height": 1800,
+      "baseline": "studio/desktop/src/test/resources/eyes4s/studio/desktop/visual-parity/t3-Compare-light/light-2x.png",
+      "baselineSha256": "31884b6b024f403357e66a5f5952d77fccecd2b4409a518dc3cf5ac6c4ac68b2",
+      "comparison": {
+        "width": 2880,
+        "height": 1800,
+        "changedPixels": 25869,
+        "maximumChannelDelta": 114,
+        "changedFraction": 0.004990162037037037,
+        "accepted": false
+      },
+      "repeatFirstSha256": "c18249adc5ab3f2d333b40093c87bacebb51be46f7273392bd1bf3b3d18a6ac6",
+      "repeat": {
+        "width": 2880,
+        "height": 1800,
+        "changedPixels": 0,
+        "maximumChannelDelta": 0,
+        "changedFraction": 0,
+        "accepted": true
+      }
+    }
+  ],
+  "problems": [
+    "/home/runner/work/eyes4s/eyes4s/studio/desktop/src/test/resources/eyes4s/studio/desktop/visual-parity/t3-Compare-light/light-1x.png versus /home/runner/work/eyes4s/eyes4s/target/studio-snapshots/VisualParitySuite/t3-Compare-light/light-1x.png: Difference(1440,900,5721,98); diff at /home/runner/work/eyes4s/eyes4s/target/studio-snapshots/VisualParitySuite/t3-Compare-light/light-1x-diff.png",
+    "/home/runner/work/eyes4s/eyes4s/studio/desktop/src/test/resources/eyes4s/studio/desktop/visual-parity/t3-Compare-light/light-2x.png versus /home/runner/work/eyes4s/eyes4s/target/studio-snapshots/VisualParitySuite/t3-Compare-light/light-2x.png: Difference(2880,1800,25869,114); diff at /home/runner/work/eyes4s/eyes4s/target/studio-snapshots/VisualParitySuite/t3-Compare-light/light-2x-diff.png"
+  ]
+}
