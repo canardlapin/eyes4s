@@ -1,0 +1,94 @@
+{
+  "candidate": "e34becdf025277bfa5ec0b43d6108f74f040d27b",
+  "reviewed": "All ten1x perspective screenshots inspected;20PNG exports preserve both raster scales. Pixel invariants also pass focused canvas suites; hosted regression matrix remains a separate qualification.",
+  "observations": [
+    "Data retains declared geometry, complete inventory and explicit missing-image/admission accounting at both workloads.",
+    "Explore renders its image, density, fixations, legend and timeline; the inspector/source rows retain the independently selected enc_03 fixation while the viewport navigation shows enc_04, explicitly identified in each pane.",
+    "Analysis retains all480/4800 logical design rows. Large diagnostic participant lists remain scrollable and can place the Run controls below the initial viewport.",
+    "Compare shows24/240 participant means with complete table/navigator rows, annotations and both plots. The synthetic tenfold duplicate marks overplot as expected; values and labels remain present.",
+    "Figures contain native Intaglio participant plots and methods/bundle context. The10x caption truthfully says archive unbound; this run does not qualify cold restoration.",
+    "The participant navigator now uses a virtual ListView with the same45px rows; the native scrollbar appearance is separately reviewed in reviewed-scrollbar-baselines."
+  ],
+  "screenshots": [
+    {
+      "path": "fixture-10x-Analysis-light-1x.png",
+      "sha256": "7b63c14f2c52b58e4532c9a2bcabc4cb31edf6255b1ac4a52f2d18191faf4bd6"
+    },
+    {
+      "path": "fixture-10x-Analysis-light-2x.png",
+      "sha256": "549b5f33943c2a6c93821931cafbc3a79ba621f5bf8e72e03cf6fb042d3cdb58"
+    },
+    {
+      "path": "fixture-10x-Compare-light-1x.png",
+      "sha256": "e7845f80eb6fce30d29b2c4c1e282dd9cb55b96126efbdc287f195f393f256d6"
+    },
+    {
+      "path": "fixture-10x-Compare-light-2x.png",
+      "sha256": "06df2628f4a912e2d8561fadf131db9340aed79913acd40cbd427c8cc70bd2d3"
+    },
+    {
+      "path": "fixture-10x-Data-light-1x.png",
+      "sha256": "e5c84d6224643e6cb1be6c034cc3875024461e4e2dc7f62e6b663d459eb6cf58"
+    },
+    {
+      "path": "fixture-10x-Data-light-2x.png",
+      "sha256": "aa7be257100327e0ed85fc4638b458e05bdcedfa55f5253aaad25528c65addcd"
+    },
+    {
+      "path": "fixture-10x-Explore-light-1x.png",
+      "sha256": "530650a36f43804abe03c021fce360fbd0bc58f1219271b242346e4846d87acc"
+    },
+    {
+      "path": "fixture-10x-Explore-light-2x.png",
+      "sha256": "8bd867644448583afc96d72bef68e0e44af88bf953d0308cef9e98da9f16e348"
+    },
+    {
+      "path": "fixture-10x-Figures-light-1x.png",
+      "sha256": "03f9ed3d0bec2122f6ccb01429c84c0ff14443d110520996e99504bafdd56202"
+    },
+    {
+      "path": "fixture-10x-Figures-light-2x.png",
+      "sha256": "3ce37748e3adee4f8f5c90896dad018390a0be77c5efcbe9dfa691af9449131d"
+    },
+    {
+      "path": "fixture-1x-Analysis-light-1x.png",
+      "sha256": "0e4c43f1a6d7c8ba198306de8e67393207926ed3672561d3adb73db0d243b746"
+    },
+    {
+      "path": "fixture-1x-Analysis-light-2x.png",
+      "sha256": "4673bb26ec28e352b9caa56bbda4fca76c017bc7b1ed05513c9c58b910ff828a"
+    },
+    {
+      "path": "fixture-1x-Compare-light-1x.png",
+      "sha256": "7d48a80304134405073c8526b7bc0fce0cc83eacefa14cf3c252f7852b789140"
+    },
+    {
+      "path": "fixture-1x-Compare-light-2x.png",
+      "sha256": "889aee6c5e70ac7dbc9874bae19e2b19517ae329e53b5ae7079605b317d203ec"
+    },
+    {
+      "path": "fixture-1x-Data-light-1x.png",
+      "sha256": "7474888eb5089394b92ccd1d6b951f67b262cac3456ea48c641efb4246d9cf22"
+    },
+    {
+      "path": "fixture-1x-Data-light-2x.png",
+      "sha256": "0a12da4e655ccbb88790a59bef5bb0604461432427874eca82ef403332e6db7d"
+    },
+    {
+      "path": "fixture-1x-Explore-light-1x.png",
+      "sha256": "c65d9d4107450ccd87ce49faa07e6e9fb3b24ee3fb5dbbcf9578199e3b817fb5"
+    },
+    {
+      "path": "fixture-1x-Explore-light-2x.png",
+      "sha256": "ccf45e51915aa175d1ee471d6816c0ab942fb9e1d98e1bc877d2a479526cefc1"
+    },
+    {
+      "path": "fixture-1x-Figures-light-1x.png",
+      "sha256": "8320c601765ad65c3ed7bb2a1c95c5ea51fa5b6c8e1f662baadfebf0722cf1cb"
+    },
+    {
+      "path": "fixture-1x-Figures-light-2x.png",
+      "sha256": "da28f304086da91e526d1f21383331196fe9bf907513c5d6bfe56c82fe4fb064"
+    }
+  ]
+}
