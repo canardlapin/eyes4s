@@ -622,9 +622,24 @@ final class CompareSummaryHost(
   /** The view-model now shown. */
   private var presentation: Option[(CompareSummary, AppModel, Int, CompareSummaryVM)] = None
 
+  private def summarySelection(m: AppModel) = m.selection.selected.filter {
+    case _: eyes4s.studio.core.selection.StudioRef.ParticipantSummary => true
+    case _: eyes4s.studio.core.selection.StudioRef.ReportParticipant  => true
+    case _: eyes4s.studio.core.selection.StudioRef.Participant        => true
+    case _                                                            => false
+  }
+
+  // These are the model inputs read by CompareSummaryVM: report metadata,
+  // participant selection and the current freshness text. Navigation and a
+  // fixation cursor do not change the served tables or plot sources.
   private def viewModel(m: AppModel): CompareSummaryVM = presentation match
     case Some((previous, model, slots, result))
-        if previous == state && model == m && slots == noteSlots =>
+        if previous == state && slots == noteSlots &&
+          model.document.analyses == m.document.analyses &&
+          model.document.runs == m.document.runs &&
+          model.document.reporting == m.document.reporting &&
+          summarySelection(model) == summarySelection(m) &&
+          result.freshness == eyes4s.studio.app.vm.Shell.context(m).newer.map(_.text) =>
       result
     case _ =>
       val result = CompareSummaryVM.of(state, m, noteSlots = noteSlots)

@@ -92,6 +92,10 @@ class FixationInspectorFxSuite extends ShellFxSuite:
     val w = boot(fx, StoryModels.t2Explore, StoryMoment.T2)
     ready(fx, w)
     assertEquals(runOnFx(w.inspector.rawText), None)
+    val previousLink = runOnFx(w.inspector.node.lookup(".hyperlink"))
+    assert(previousLink != null)
+    runOnFx(w.inspector.sync(w.runtime.model))
+    assert(runOnFx(w.inspector.node.lookup(".hyperlink") eq previousLink))
     runOnFx(w.inspector.toggleRaw())
     fx.awaitLayout()
     assertEquals(

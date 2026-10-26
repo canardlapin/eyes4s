@@ -193,7 +193,12 @@ final class FixationInspectorHost(
         trials.displays(dataset, a => later(InspectorIntent.DisplaysRead(ask, a)))
     }
 
+  private var shownLines = Map.empty[GridPane, Vector[eyes4s.studio.app.explore.InspectorLine]]
+  private var shownLinks = Option.empty[Vector[eyes4s.studio.app.explore.InspectorLink]]
+
   private def fill(g: GridPane, lines: Vector[eyes4s.studio.app.explore.InspectorLine]): Unit =
+    if shownLines.get(g).contains(lines) then return
+    shownLines = shownLines.updated(g, lines)
     g.getChildren.clear()
     lines.zipWithIndex.foreach { (l, i) =>
       val k = label("inspector-key"); k.setText(l.label)
@@ -219,12 +224,14 @@ final class FixationInspectorHost(
     raw.setManaged(v.raw.isDefined)
     showRaw.setSelected(state.raw)
     usedTitle.setText(v.usedByTitle)
-    links.getChildren.setAll(v.usedBy.map { l =>
-      val h = Hyperlink(l.label)
-      h.setAccessibleText(l.label)
-      h.setOnAction(_ => app(l.go))
-      h
-    }*)
+    if !shownLinks.contains(v.usedBy) then
+      shownLinks = Some(v.usedBy)
+      links.getChildren.setAll(v.usedBy.map { l =>
+        val h = Hyperlink(l.label)
+        h.setAccessibleText(l.label)
+        h.setOnAction(_ => app(l.go))
+        h
+      }*): Unit
     usedNote.setText(v.usedByNote.getOrElse(""))
     usedNote.setVisible(v.usedByNote.isDefined)
     usedNote.setManaged(v.usedByNote.isDefined)

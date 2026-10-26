@@ -468,6 +468,7 @@ class CompareSummaryFxSuite extends ShellFxSuite:
       host.scaleProfile.status.get.isInstanceOf[PlotTwinStatus.Shown]
     }
     // A theme change redraws the plots in the new theme, from the same sources.
+    val previousSource       = runOnFx(host.vm.participants.get.toOption.get)
     def sceneOf(t: PlotTwin) = runOnFx(t.plot.map(_.plot.id.value))
     assert(
       sceneOf(host.participantPlot).exists(_.endsWith(".light")),
@@ -483,6 +484,17 @@ class CompareSummaryFxSuite extends ShellFxSuite:
       sceneOf(host.participantPlot)
     )
     assert(sceneOf(host.scaleProfile).exists(_.endsWith(".dark")), sceneOf(host.scaleProfile))
+    assert(runOnFx(host.vm.participants.get.toOption.get eq previousSource))
+    runOnFx(
+      runtime.dispatch(
+        Intent.SwitchPerspective(eyes4s.studio.core.document.Perspective.Explore)
+      )
+    )
+    assert(runOnFx(host.vm.participants.get.toOption.get eq previousSource))
+    assertEquals(
+      runOnFx(host.vm.freshness),
+      runOnFx(eyes4s.studio.app.vm.Shell.context(runtime.model).newer.map(_.text))
+    )
     // Run 5 is shown: while it is read, no pane keeps run 7's values.
     runOnFx(runtime.dispatch(Intent.Dispatch(Command.ShowRun(Some(StoryMoments.run5)))))
     def cleared(): Unit = runOnFx {
