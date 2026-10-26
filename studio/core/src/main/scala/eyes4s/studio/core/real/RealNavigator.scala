@@ -108,7 +108,9 @@ final class RealNavigator[F[_]] private[real] (
             case Some(report) => F.pure(Right(report))
             case None         =>
               held(run)
-                .flatMap(done => reports.evaluate(done.flatMap(RealReports.native(run, spec, scale, _))))
+                .flatMap(done =>
+                  reports.evaluate(done.flatMap(RealReports.native(run, spec, scale, _)))
+                )
                 .flatTap {
                   case Left(_)      => F.unit
                   case Right(value) => evaluatedReport(run, spec, scale, value)

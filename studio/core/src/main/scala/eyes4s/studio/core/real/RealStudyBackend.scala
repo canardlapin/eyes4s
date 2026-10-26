@@ -926,7 +926,9 @@ final class RealStudyBackend[F[_]] private (
     navigator.requestedReport(run, reporting, scale) >>
       held(run)
         .flatMap(done =>
-          reports.evaluate(done.flatMap(RealReports.evaluateWithNative(run, reporting, scale, _)))
+          reports.evaluate(
+            done.flatMap(RealReports.evaluateWithNative(run, reporting, scale, _))
+          )
         )
         .flatTap {
           case Left(_)            => F.unit

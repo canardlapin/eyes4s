@@ -23,21 +23,27 @@ import scala.concurrent.ExecutionContext
 
 class RealReportGateJvmSuite extends munit.FunSuite:
   test("waiting report bindings leave a compute worker available for independent reads") {
-    val executor = Executors.newFixedThreadPool(2, r =>
-      val thread = Thread(r, "report-gate-compute")
-      thread.setDaemon(true)
-      thread
+    val executor = Executors.newFixedThreadPool(
+      2,
+      r =>
+        val thread = Thread(r, "report-gate-compute")
+        thread.setDaemon(true)
+        thread
     )
-    val runtime = IORuntime.builder().setCompute(
-      ExecutionContext.fromExecutor(executor),
-      () => { executor.shutdownNow(): Unit }
-    ).build()
-    val entered = CountDownLatch(1)
-    val release = CountDownLatch(1)
-    val queued = CountDownLatch(1)
+    val runtime = IORuntime
+      .builder()
+      .setCompute(
+        ExecutionContext.fromExecutor(executor),
+        () => { executor.shutdownNow(): Unit }
+      )
+      .build()
+    val entered           = CountDownLatch(1)
+    val release           = CountDownLatch(1)
+    val queued            = CountDownLatch(1)
     lazy val binding: Int =
       entered.countDown()
-      if !release.await(10, TimeUnit.SECONDS) then throw IllegalStateException("binding release timed out")
+      if !release.await(10, TimeUnit.SECONDS) then
+        throw IllegalStateException("binding release timed out")
       42
     def start[A](io: IO[A]): CompletableFuture[Either[Throwable, A]] =
       val result = CompletableFuture[Either[Throwable, A]]()

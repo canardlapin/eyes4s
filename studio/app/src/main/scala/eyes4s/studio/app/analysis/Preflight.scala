@@ -16,7 +16,7 @@
 
 package eyes4s.studio.app.analysis
 
-import eyes4s.studio.app.diagnostics.{DiagnosticsPresenter, DiagnosticsVM}
+import eyes4s.studio.app.diagnostics.DiagnosticsVM
 import eyes4s.studio.app.text.{
   DiagnosticText,
   Format,
@@ -59,7 +59,7 @@ final case class PreflightVM(
 ) derives CanEqual
 
 /** The preflight pane over the resolved design's preview (ticket S7.6): the
-  * findings of its ready receipt, presented by [[DiagnosticsPresenter]], and
+  * findings of its ready receipt, presented by [[eyes4s.studio.app.diagnostics.DiagnosticsPresenter]], and
   * the run card. Save & run is enabled only for the draft, once its design is
   * checked and no finding blocks; otherwise the card says why. Every count is
   * the backend's. Pure.
@@ -74,10 +74,8 @@ object Preflight:
     val target   = design.target
     val label    = target.fold("")(_.revision.label)
     val isDraft  = target.exists(t => m.document.draft.exists(_.id == t.revision))
-    val findings = design.preview.receipt.map(r =>
-      DiagnosticsPresenter.grouped(DiagnosticsPresenter.present(r.diagnostics))
-    )
-    val status = (target, design.preview) match
+    val findings = design.preview.findings
+    val status   = (target, design.preview) match
       case (None, _)                             => Some(PreflightText(NothingToCheck))
       case (Some(_), DesignPreview.Refused(why)) => Some(PreflightText(Refused, label, why))
       case _                                     => None

@@ -1,0 +1,34 @@
+{
+  "candidate": "168f0eb61b7d4802f2bdd8a41634c1c724269d38",
+  "scope": "Separate JFR diagnostic, tenfold only, stopped deliberately after Data-switch evidence; not a qualification run. Complete unprofiled court is corrected-4.",
+  "selection": {
+    "fxSamples": 2503,
+    "stacks": {
+      "TrialsNavigatorVM": 755,
+      "DiagnosticsPresenter": 469,
+      "SourcesVM": 261,
+      "StyleManagerRefList": 115,
+      "CompareSummaryVM": 10
+    }
+  },
+  "afterReports": {
+    "fromUtc": "2026-10-26T21:44:15",
+    "fxSamples": 5169,
+    "stacks": {
+      "CompareSummaryVM": 3109,
+      "focusPlans": 2708,
+      "TrialsNavigatorVM": 717,
+      "StyleManagerRefList": 414,
+      "DiagnosticsPresenter": 128,
+      "SourcesVM": 91
+    }
+  },
+  "findings": [
+    "Trials navigator scans the entire ledger once per participant and constructs phase rows for closed groups.",
+    "Compare focusPlans invokes vm separately for each of seven panes; participant table construction repeatedly linearly scans served participant cells.",
+    "Preflight repeats immutable diagnostic wording and grouping on every model projection; asset summaries repeatedly traverse unchanged registries.",
+    "Participants sidebar replaces unchanged row nodes on every model projection."
+  ],
+  "rawProfileLocal": "/private/tmp/eyes4s-hardening-tenfold-profile4/perspectives.jfr",
+  "rawProfileSha256": "9058429ad21ab2b2e1586523c4054e698a3f9ed9b17860fa153bff97279fd7cb"
+}

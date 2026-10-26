@@ -418,7 +418,9 @@ sealed abstract case class AssetRegistry private (
   def matchItem(trial: TrialKey): Option[MatchItem] = display(trial).flatMap(_.item)
 
   /** Every stored asset the displays name, by file name. */
-  def assets: Vector[AssetRef] =
+  def assets: Vector[AssetRef] = storedAssets
+
+  private lazy val storedAssets: Vector[AssetRef] =
     trials
       .flatMap(_.asset)
       .collect { case AssetLink.Present(a) => a }
@@ -426,7 +428,9 @@ sealed abstract case class AssetRegistry private (
       .sortBy(_.file)
 
   /** Every named file without bytes, with the trials naming it. */
-  def missing: Vector[MissingAsset] =
+  def missing: Vector[MissingAsset] = absentAssets
+
+  private lazy val absentAssets: Vector[MissingAsset] =
     trials
       .flatMap(d => d.asset.collect { case AssetLink.Missing(f) => f -> d.trial })
       .groupMap(_._1)(_._2)
@@ -439,7 +443,9 @@ sealed abstract case class AssetRegistry private (
     val absent  = missing
     AssetSummary(present.size + absent.size, present.size, absent)
 
-  def count(kind: DisplayKind): Int = trials.count(_.kind == kind)
+  private lazy val kindCounts = trials.groupMapReduce(_.kind)(_ => 1)(_ + _)
+
+  def count(kind: DisplayKind): Int = kindCounts.getOrElse(kind, 0)
 
   /** The registry with the document's repairs of its dataset revision (S5.7):
     * every display naming a relinked file shows the repaired bytes, under

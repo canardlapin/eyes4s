@@ -519,13 +519,14 @@ final class CompareSummaryHost(
       "compare.participant-table"      -> participantTable.focusStops,
       "compare.query-table"            -> queryTable.focusStops
     )
-    val nav = ParticipantsNavigator.vm(participantsState, state, model())
+    val nav         = ParticipantsNavigator.vm(participantsState, state, model())
+    val summaryView = vm
     eyes4s.studio.app.layout.StudioLayouts.spec.all
       .flatMap(_.panes)
       .distinct
       .flatMap(decl =>
         contents.get(decl.id.value).map { stops =>
-          decl.id -> eyes4s.studio.app.vm.ResultsFocus.pane(decl, vm, nav, stops)
+          decl.id -> eyes4s.studio.app.vm.ResultsFocus.pane(decl, summaryView, nav, stops)
         }
       )
       .toMap
@@ -619,7 +620,18 @@ final class CompareSummaryHost(
   def summary: CompareSummary = state
 
   /** The view-model now shown. */
-  def vm: CompareSummaryVM = CompareSummaryVM.of(state, model(), noteSlots = noteSlots)
+  private var presentation: Option[(CompareSummary, AppModel, Int, CompareSummaryVM)] = None
+
+  private def viewModel(m: AppModel): CompareSummaryVM = presentation match
+    case Some((previous, model, slots, result))
+        if previous == state && model == m && slots == noteSlots =>
+      result
+    case _ =>
+      val result = CompareSummaryVM.of(state, m, noteSlots = noteSlots)
+      presentation = Some((state, m, noteSlots, result))
+      result
+
+  def vm: CompareSummaryVM = viewModel(model())
 
   /** Follows the model: a newly shown run is read; the views show the bus's selection. */
   def sync(m: AppModel): Unit = if !disposed then
@@ -684,7 +696,7 @@ final class CompareSummaryHost(
       val navigators = navigatorVMOf(m)
       queries.render(navigators)
       items.render(navigators)
-      val v     = CompareSummaryVM.of(state, m, noteSlots = noteSlots)
+      val v     = viewModel(m)
       val theme = m.theme match
         case eyes4s.studio.core.document.Theme.Light => Theme.Light
         case eyes4s.studio.core.document.Theme.Dark  => Theme.Dark

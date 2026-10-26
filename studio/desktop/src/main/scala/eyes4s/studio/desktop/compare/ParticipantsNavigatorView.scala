@@ -75,7 +75,8 @@ final class ParticipantsNavigatorView(
     Option(node.getParent).flatMap(p => Option(p.getAccessibleText))
 
   def render(vm: ParticipantsNavigatorVM): Unit =
-    val oldCursor = shown.rows.find(_.cursor).map(_.ref)
+    val oldCursor   = shown.rows.find(_.cursor).map(_.ref)
+    val rowsChanged = shown.rows != vm.rows
     shown = vm
     heading.setText(vm.heading)
     accounting.setText(vm.accounting)
@@ -85,7 +86,7 @@ final class ParticipantsNavigatorView(
     }
     status.setVisible(vm.status.isDefined)
     status.setManaged(vm.status.isDefined)
-    list.getChildren.setAll(vm.rows.map(row)*)
+    if rowsChanged then list.getChildren.setAll(vm.rows.map(row)*): Unit
     CompositeFocus.noCursor(node, !vm.rows.exists(_.cursor))
     if oldCursor != vm.rows.find(_.cursor).map(_.ref) && vm.rows.nonEmpty then
       val index = vm.rows.indexWhere(_.cursor).max(0)

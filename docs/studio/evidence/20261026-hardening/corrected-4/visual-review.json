@@ -1,0 +1,36 @@
+{
+  "candidate": "168f0eb61b7d4802f2bdd8a41634c1c724269d38",
+  "workload1x": [
+    {
+      "view": "Data",
+      "file": "fixture-1x-Data-light-1x.png",
+      "sha256": "161837f5a1dd75dee2602b602c05425918ddddacca98b4507791c6d41ec869de",
+      "review": "Reviewed at 1440x900: populated native content, readable visible labels and controls, no blank stage or overdraw. Scrollable panes retain their content."
+    },
+    {
+      "view": "Explore",
+      "file": "fixture-1x-Explore-light-1x.png",
+      "sha256": "2bbb7cb13d95b6d78bfc5df048cbc0191f6be388d0cebe3664eca789b8b9c179",
+      "review": "Reviewed at 1440x900: populated native content, readable visible labels and controls, no blank stage or overdraw. Scrollable panes retain their content."
+    },
+    {
+      "view": "Analysis",
+      "file": "fixture-1x-Analysis-light-1x.png",
+      "sha256": "ffa4c6e5d8b9888708b91818053506d6505cfba680d76aee7109ed11267088ec",
+      "review": "Reviewed at 1440x900: populated native content, readable visible labels and controls, no blank stage or overdraw. Scrollable panes retain their content."
+    },
+    {
+      "view": "Compare",
+      "file": "fixture-1x-Compare-light-1x.png",
+      "sha256": "0da593583d2b70668268d180c6af24f2271a0c3bdec249c156a293403b0019fd",
+      "review": "Reviewed at 1440x900: populated native content, readable visible labels and controls, no blank stage or overdraw. Scrollable panes retain their content."
+    },
+    {
+      "view": "Figures",
+      "file": "fixture-1x-Figures-light-1x.png",
+      "sha256": "9ed74a7c9bff852f2370144ff3389a3d1518f0b64dc716d9269dc00a1577b374",
+      "review": "Reviewed at 1440x900: populated native content, readable visible labels and controls, no blank stage or overdraw. Scrollable panes retain their content."
+    }
+  ],
+  "workload10x": "pending"
+}

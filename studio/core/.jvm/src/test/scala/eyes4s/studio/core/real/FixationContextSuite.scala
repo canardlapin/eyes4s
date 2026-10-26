@@ -83,7 +83,7 @@ class FixationContextSuite extends CatsEffectSuite:
       otherSource.revision -> otherSource
     )
     for
-      state <- RealNavigator.empty[IO]
+      state   <- RealNavigator.empty[IO]
       reports <- RealReportGate.create[IO]
       navigator = new RealNavigator[IO](
         Map.empty,

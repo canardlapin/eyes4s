@@ -298,8 +298,9 @@ object TrialsNavigatorVM:
     val label                            = nav.dataset.fold("")(_.id.label)
     val dataset: Option[DatasetRevision] = nav.dataset.map(_.id)
     val participants                     = entries.map(_.trial.participant).distinct
+    val byParticipant                    = entries.groupBy(_.trial.participant)
     val rows                             = participants.flatMap { p =>
-      val all    = entries.filter(_.trial.participant == p)
+      val all    = byParticipant(p)
       val shown  = all.filter(matches(_, nav.filter))
       val group  = NavigatorGroup.Participant(p)
       val open   = filtering || TrialsNavigator.isOpen(nav, group, model)
@@ -319,7 +320,7 @@ object TrialsNavigatorVM:
         Some(NavigatorIntent.Toggle(group)),
         Some(StudioRef.Participant(p))
       )
-      val phases = shown.map(_.trial.phase).distinct.flatMap { phase =>
+      def phases = shown.map(_.trial.phase).distinct.flatMap { phase =>
         val inPhase = shown.filter(_.trial.phase == phase)
         val pg      = NavigatorGroup.PhaseOf(p, phase)
         val pref    = dataset.map(StudioRef.TrialGroup(_, TrialGrouping.PhaseOf(p, phase)))

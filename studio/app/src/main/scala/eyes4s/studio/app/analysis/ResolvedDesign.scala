@@ -17,6 +17,7 @@
 package eyes4s.studio.app.analysis
 
 import eyes4s.studio.app.text.SourcesText
+import eyes4s.studio.app.diagnostics.{DiagnosticsPresenter, DiagnosticsVM}
 import eyes4s.studio.core.assets.SourceBlock
 import eyes4s.studio.app.nav.Place
 import eyes4s.studio.app.{AppModel, Intent, PreparedDesign}
@@ -90,6 +91,10 @@ enum DesignPreview derives CanEqual:
   def receipt: Option[PreviewReady] = this match
     case Ready(r) => Some(r)
     case _        => None
+
+  /** The immutable receipt's wording is shared by every preflight projection. */
+  lazy val findings: Option[DiagnosticsVM] =
+    receipt.map(r => DiagnosticsPresenter.grouped(DiagnosticsPresenter.present(r.diagnostics)))
 
 /** How far the rows of the target have been read. */
 enum DesignRows derives CanEqual:

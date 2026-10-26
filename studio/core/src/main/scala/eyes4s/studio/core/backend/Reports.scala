@@ -169,12 +169,17 @@ final case class ReportView(
   def cell(group: Option[Response], role: ReportRole): Option[ReportCellView] =
     cells.find(c => c.group == group && c.role == role)
 
+  // Preserve first-row lookup even for an unchecked transport value with duplicates.
+  private lazy val participantIndex = participants.reverseIterator
+    .map(p => (p.group, p.role, p.participant) -> p)
+    .toMap
+
   def participant(
       group: Option[Response],
       role: ReportRole,
       participant: String
   ): Option[ReportParticipantView] =
-    participants.find(p => p.group == group && p.role == role && p.participant == participant)
+    participantIndex.get((group, role, participant))
 
   def contrast(role: ReportRole): Option[ReportContrastView] = contrasts.find(_.role == role)
 
