@@ -1,0 +1,69 @@
+[info] welcome to sbt 1.11.7 (Eclipse Adoptium Java 25.0.4.1)
+[info] loading settings for project eyes4s-usability-20261026-build from plugins.sbt...
+[info] loading project definition from /private/tmp/eyes4s-usability-20261026/project
+[info] loading settings for project root from build.sbt...
+[info] resolving key references (37727 settings) ...
+[info] set scmInfo to https://github.com/canardlapin/eyes4s
+[info] set current project to root (in build file:/private/tmp/eyes4s-usability-20261026/)
+[info] compiling 1 Scala source to /private/tmp/eyes4s-usability-20261026/studio/core/.jvm/target/scala-3.7.4/classes ...
+[info] done compiling
+[info] compiling 1 Scala source to /private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/classes ...
+[info] done compiling
+[info] compiling 1 Scala source to /private/tmp/eyes4s-usability-20261026/studio/desktop/target/scala-3.7.4/test-classes ...
+[error] -- [E006] Not Found Error: /private/tmp/eyes4s-usability-20261026/studio/desktop/src/test/scala/eyes4s/studio/desktop/shell/WorkspaceViewportFxSuite.scala:160:39 
+[error] 160 |      runOnFx(KeyboardFocus.byKeyboard(w.summary.participants.node.getParent))
+[error]     |                                       ^
+[error]     |                                       Not found: w
+[error]     |
+[error]     | longer explanation available when compiling with `-explain`
+[error] -- [E006] Not Found Error: /private/tmp/eyes4s-usability-20261026/studio/desktop/src/test/scala/eyes4s/studio/desktop/shell/WorkspaceViewportFxSuite.scala:164:18 
+[error] 164 |        val row = w.summary.participants.node.lookup(".participants-cursor")
+[error]     |                  ^
+[error]     |                  Not found: w
+[error]     |
+[error]     | longer explanation available when compiling with `-explain`
+[error] -- [E006] Not Found Error: /private/tmp/eyes4s-usability-20261026/studio/desktop/src/test/scala/eyes4s/studio/desktop/shell/WorkspaceViewportFxSuite.scala:166:23 
+[error] 166 |        val viewport = w.shell.workspace.lookup(".viewport")
+[error]     |                       ^
+[error]     |                       Not found: w
+[error]     |
+[error]     | longer explanation available when compiling with `-explain`
+[error] -- [E006] Not Found Error: /private/tmp/eyes4s-usability-20261026/studio/desktop/src/test/scala/eyes4s/studio/desktop/shell/WorkspaceViewportFxSuite.scala:174:10 
+[error] 174 |          w.host
+[error]     |          ^
+[error]     |          Not found: w
+[error]     |
+[error]     | longer explanation available when compiling with `-explain`
+[error] -- [E006] Not Found Error: /private/tmp/eyes4s-usability-20261026/studio/desktop/src/test/scala/eyes4s/studio/desktop/shell/WorkspaceViewportFxSuite.scala:178:29 
+[error] 178 |        val groups = runOnFx(w.runtime.model.layout.groups.size)
+[error]     |                             ^
+[error]     |                             Not found: w
+[error]     |
+[error]     | longer explanation available when compiling with `-explain`
+[error] -- [E006] Not Found Error: /private/tmp/eyes4s-usability-20261026/studio/desktop/src/test/scala/eyes4s/studio/desktop/shell/WorkspaceViewportFxSuite.scala:195:10 
+[error] 195 |          paths.head.getParent.resolve("bounds-and-focus.json"),
+[error]     |          ^^^^^
+[error]     |          Not found: paths - did you mean Math? or perhaps math?
+[error]     |
+[error]     | longer explanation available when compiling with `-explain`
+[error] -- [E006] Not Found Error: /private/tmp/eyes4s-usability-20261026/studio/desktop/src/test/scala/eyes4s/studio/desktop/shell/WorkspaceViewportFxSuite.scala:199:41 
+[error] 199 |              "participantPlotHeight" -> height,
+[error]     |                                         ^^^^^^
+[error]     |                                         Not found: height
+[error]     |
+[error]     | longer explanation available when compiling with `-explain`
+[error] -- [E006] Not Found Error: /private/tmp/eyes4s-usability-20261026/studio/desktop/src/test/scala/eyes4s/studio/desktop/shell/WorkspaceViewportFxSuite.scala:200:56 
+[error] 200 |              "forward"               -> ujson.Arr.from(forward),
+[error]     |                                                        ^^^^^^^
+[error]     |                                                    Not found: forward
+[error]     |
+[error]     | longer explanation available when compiling with `-explain`
+[error] -- [E006] Not Found Error: /private/tmp/eyes4s-usability-20261026/studio/desktop/src/test/scala/eyes4s/studio/desktop/shell/WorkspaceViewportFxSuite.scala:201:56 
+[error] 201 |              "reverse"               -> ujson.Arr.from(reverse)
+[error]     |                                                        ^^^^^^^
+[error]     |                                                    Not found: reverse
+[error]     |
+[error]     | longer explanation available when compiling with `-explain`
+[error] 9 errors found
+[error] (studioDesktop / Test / compileIncremental) Compilation failed
+[error] Total time: 9 s, completed Oct 26, 2026, 9:23:32 a.m.

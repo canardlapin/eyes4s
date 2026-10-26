@@ -245,6 +245,7 @@ jobs:
             target/studio-snapshots/CanvasBoundaryFxSuite/
             target/studio-snapshots/SmallCanvasBoundaryFxSuite/
             target/studio-snapshots/WorkspaceViewportFxSuite/
+            target/studio-snapshots/BoardWorkspaceViewportFxSuite/
             target/studio-snapshots/A11yTreeSuite/
             target/studio-visual-parity/
             studio/desktop/target/test-reports/

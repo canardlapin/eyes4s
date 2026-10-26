@@ -18,8 +18,9 @@ package eyes4s.studio.desktop.shell
 
 import javafx.collections.ListChangeListener
 import javafx.css.PseudoClass
-import javafx.scene.Node
+import javafx.scene.{AccessibleAttribute, Node, Parent}
 import javafx.scene.control.ListView
+import scala.jdk.CollectionConverters.*
 
 /** Composite focus (DESIGN_SPEC section 15): a list, a table or a navigator
   * is one focus stop whose cursor row carries the keyboard focus ring, and
@@ -31,6 +32,32 @@ import javafx.scene.control.ListView
   * the JavaFX thread.
   */
 private[desktop] object CompositeFocus:
+
+  private val CursorTarget = new Object
+
+  /** A custom composite supplies the actual drawn row that carries its cursor.
+    * Standard lists/tables already expose this through FOCUS_ITEM.
+    */
+  def registerCursor(content: Node)(target: => Option[Node]): Unit =
+    content.getProperties.put(CursorTarget, () => target): Unit
+
+  def cursorTarget(node: Node): Option[Node] =
+    val custom = Option(node.getProperties.get(CursorTarget))
+      .flatMap(_.asInstanceOf[() => Option[Node]]())
+    val native = Option(node.queryAccessibleAttribute(AccessibleAttribute.FOCUS_ITEM))
+      .collect { case n: Node if n ne node => n }
+    (custom orElse native)
+      .filter(n =>
+        n.getScene != null &&
+          Iterator.iterate(n)(_.getParent).takeWhile(_ != null).forall(_.isVisible)
+      )
+      .orElse(node match
+        case parent: Parent =>
+          parent.getChildrenUnmodifiable.asScala.iterator
+            .filter(_.isVisible)
+            .flatMap(cursorTarget)
+            .nextOption()
+        case _ => None)
 
   /** Set on a composite with no row under its cursor: none, or no rows. */
   val NoCursor: PseudoClass = PseudoClass.getPseudoClass("no-cursor")

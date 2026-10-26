@@ -1,0 +1,40 @@
+{
+  "schema": 1,
+  "status": "corrected focused checks passed; full qualification pending",
+  "supersedes": "897806be301d484c6e44537a413f6b02b30904bf",
+  "sourceFingerprint": "1c9920d121b95b5aaeab4bd63c7b977e13d1e3171ff527be0c05cffda34601d0",
+  "reason": "End put the Participants cursor at y634..677 while the outer clip ended at643. The original pane-level visibility assertion did not detect this.",
+  "correction": "Reveal a composite cursor through inner ScrollPanes before the workspace clip. Use registered drawn rows for custom navigators and FOCUS_ITEM for native lists/tables. Preserve the full focused control when it fits.",
+  "tests": {
+    "latestDesktop": 47,
+    "smallAndBoardThemes": "Home/End through every nested scrolling clip; full Results forward/reverse traversal; F6/Ctrl+Tab; generic A11y and keymap",
+    "canvasRestorationAfterNestedReveal": 4,
+    "style": "passed"
+  },
+  "logs": [
+    {
+      "path": "focused-logs/eyes4s-usability-row-reveal-red-20261026.log",
+      "sha256": "de5c88a74bcf138af1c2f6c7aa2286e697a6d3b475244ee28f454f44b27ba500"
+    },
+    {
+      "path": "focused-logs/eyes4s-usability-row-reveal-red2-20261026.log",
+      "sha256": "4ac08a762ee37e6d6a557bb3727972eafcf869e2a44d8a3b1d5e2d10378cb370"
+    },
+    {
+      "path": "focused-logs/eyes4s-usability-row-reveal-green-20261026.log",
+      "sha256": "32a5f0d8310c028e5cf153c604c00d5d7b56e46d343b55e45c57e3f429d2606b"
+    },
+    {
+      "path": "focused-logs/eyes4s-usability-nested-clips-20261026.log",
+      "sha256": "9dcab2998ec2c78b5150a89927a43ea34db1683de463350a4b611adf39a40dc0"
+    },
+    {
+      "path": "focused-logs/eyes4s-usability-cursor-final-20261026.log",
+      "sha256": "e4ca26f55eb05dd5fc2f4acca26eb997442c0745682acade5912ca546ea17949"
+    }
+  ],
+  "limits": [
+    "First probe attempt had a test indentation compilation error, corrected before the meaningful red run.",
+    "No full release qualification is claimed by this focused receipt."
+  ]
+}

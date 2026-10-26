@@ -1,0 +1,39 @@
+{
+  "scene": [
+    1440,
+    900
+  ],
+  "derived": "menu-button: Project memory-study\ntoggle-button: Compare (⌘4)\nbutton: Back (⌘[)\nbutton: Summary · by retrieval response\nbutton: Remembered\nbutton: P17\nbutton: ret_07 · beach-042\nbutton: pair ret_07 × enc_03 · matched, current location\nbutton: Draft rev 5 · 1 change · ready; review in Analysis\nbutton: Review in Analysis\nbutton: Discard draft\nlist: Queries\ntext-field: Filter participant or item\nplot: Query trial\ntoggle-button: Query trial: Points\ntoggle-button: Query trial: Order\ntoggle-button: Query trial: Map\ntoggle-button: Underlay remembered image\nplot: Reference trial\ntoggle-button: Reference trial: Points\ntoggle-button: Reference trial: Order\ntoggle-button: Reference trial: Map\nplot: Contrast\nregion: Scale ladder of P17 · ret_07 contrast: matched, controls, control mean and D at 4 scales. One focus stop; arrow keys move to the nearest mark, Page Up and Page Down step in order, Enter selects, Escape clears the selection. 57 of 88 rows are not drawn; the Table tab lists every row.\nbutton: Next →, next reference\nregion: Inspector\nbutton: Edit in Analysis ⌘3\nradio-button: Stage: Dark\nradio-button: Colour limits: Shared\nslider: Map opacity\n",
+  "walked": [
+    "menu-button: Project memory-study",
+    "toggle-button: Compare (⌘4)",
+    "button: Back (⌘[)",
+    "button: Summary · by retrieval response",
+    "button: Remembered",
+    "button: P17",
+    "button: ret_07 · beach-042",
+    "button: pair ret_07 × enc_03 · matched, current location",
+    "button: Draft rev 5 · 1 change · ready; review in Analysis",
+    "button: Review in Analysis",
+    "button: Discard draft",
+    "list: Queries",
+    "text-field: Filter participant or item",
+    "plot: Query trial",
+    "toggle-button: Query trial: Points",
+    "toggle-button: Query trial: Order",
+    "toggle-button: Query trial: Map",
+    "toggle-button: Underlay remembered image",
+    "plot: Reference trial",
+    "toggle-button: Reference trial: Points",
+    "toggle-button: Reference trial: Order",
+    "toggle-button: Reference trial: Map",
+    "plot: Contrast",
+    "region: Scale ladder of P17 · ret_07 contrast: matched, controls, control mean and D at 4 scales. One focus stop; arrow keys move to the nearest mark, Page Up and Page Down step in order, Enter selects, Escape clears the selection. 57 of 88 rows are not drawn; the Table tab lists every row.",
+    "button: Next →, next reference",
+    "region: Inspector",
+    "button: Edit in Analysis ⌘3",
+    "radio-button: Stage: Dark",
+    "radio-button: Colour limits: Shared",
+    "slider: Map opacity"
+  ]
+}

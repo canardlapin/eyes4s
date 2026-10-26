@@ -44,6 +44,7 @@ final class ParticipantsNavigatorView(
   val node: VBox = VBox(4.0, heading, accounting, status, scroll)
   node.getStyleClass.add("participants-navigator")
   CompositeFocus.paneContent(node)
+  CompositeFocus.registerCursor(node)(Option(node.lookup(".participants-cursor")))
   Option(getClass.getClassLoader.getResource("eyes4s/studio/desktop/studio-participants.css"))
     .foreach(u => node.getStylesheets.add(u.toExternalForm))
   private var shown: ParticipantsNavigatorVM =

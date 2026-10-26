@@ -18,8 +18,10 @@ package eyes4s.studio.desktop.shell
 
 import javafx.application.Platform
 import javafx.beans.value.ChangeListener
+import javafx.event.EventHandler
 import javafx.scene.Node
 import javafx.scene.control.ScrollPane
+import javafx.scene.input.KeyEvent
 import javafx.scene.layout.Region
 
 /** Keeps the work area legible on smaller displays, with ordinary scroll bars.
@@ -42,10 +44,15 @@ final class WorkspaceViewport(content: Region, accessibleName: String)
   private var pending  = false
   private val focused  = sceneProperty.flatMap[Node](_.focusOwnerProperty)
   private val sizeChanged: ChangeListener[javafx.geometry.Bounds] = (_, _, _) => revealLater()
+  private val textChanged: ChangeListener[String]                 = (_, _, _) => revealLater()
   private val focusChanged: ChangeListener[Node]                  = (_, before, after) =>
     Option(before).foreach(_.boundsInParentProperty.removeListener(sizeChanged))
+    Option(before).foreach(_.accessibleTextProperty.removeListener(textChanged))
     Option(after).foreach(_.boundsInParentProperty.addListener(sizeChanged))
+    Option(after).foreach(_.accessibleTextProperty.addListener(textChanged))
     revealLater()
+  private val keyed: EventHandler[KeyEvent] = _ => revealLater()
+  addEventFilter(KeyEvent.KEY_PRESSED, keyed)
   focused.addListener(focusChanged)
   viewportBoundsProperty.addListener(sizeChanged)
 
@@ -54,7 +61,22 @@ final class WorkspaceViewport(content: Region, accessibleName: String)
       pending = true
       Platform.runLater { () =>
         pending = false
-        if !disposed then Option(focused.getValue).foreach(reveal)
+        if !disposed then
+          // A row may have just been replaced or scrolled by its key handler.
+          // Resolve its actual geometry before revealing it through this clip.
+          content.applyCss()
+          content.layout()
+          Option(focused.getValue).foreach { node =>
+            val b = node.getBoundsInLocal
+            // Row navigation also reveals the row through an inner scroll
+            // area when the complete composite fits the outer viewport.
+            CompositeFocus.cursorTarget(node).foreach(reveal)
+            if b.getHeight <= getViewportBounds.getHeight &&
+              b.getWidth <= getViewportBounds.getWidth || CompositeFocus
+                .cursorTarget(node)
+                .isEmpty
+            then reveal(node)
+          }
       }
 
   private def contains(node: Node): Boolean =
@@ -62,53 +84,65 @@ final class WorkspaceViewport(content: Region, accessibleName: String)
 
   private def reveal(node: Node): Unit =
     if node.getScene != null && contains(node) then
-      val bounds   = content.sceneToLocal(node.localToScene(node.getBoundsInLocal))
-      val viewport = getViewportBounds
-      def position(
-          value: Double,
-          minimum: Double,
-          maximum: Double,
-          total: Double,
-          visible: Double,
-          start: Double,
-          end: Double
-      ): Double =
-        val excess = math.max(0.0, total - visible)
-        if excess == 0.0 || maximum <= minimum then minimum
-        else
-          val offset = (value - minimum) / (maximum - minimum) * excess
-          val next   =
-            if end - start > visible || start < offset then start
-            else if end > offset + visible then end - visible
-            else offset
-          minimum + math.max(0.0, math.min(excess, next)) / excess * (maximum - minimum)
-      setHvalue(
-        position(
-          getHvalue,
-          getHmin,
-          getHmax,
-          content.getWidth,
-          viewport.getWidth,
-          bounds.getMinX,
-          bounds.getMaxX
-        )
-      )
-      setVvalue(
-        position(
-          getVvalue,
-          getVmin,
-          getVmax,
-          content.getHeight,
-          viewport.getHeight,
-          bounds.getMinY,
-          bounds.getMaxY
-        )
-      )
+      // Reveal inner scrolling first, then recalculate scene coordinates for
+      // the outer work area. A cursor cannot escape either clip.
+      Iterator
+        .iterate(node.getParent)(_.getParent)
+        .takeWhile(_ != null)
+        .collect { case pane: ScrollPane => pane }
+        .foreach { pane =>
+          val area     = pane.getContent
+          val bounds   = area.sceneToLocal(node.localToScene(node.getBoundsInLocal))
+          val viewport = pane.getViewportBounds
+          def position(
+              value: Double,
+              minimum: Double,
+              maximum: Double,
+              total: Double,
+              visible: Double,
+              start: Double,
+              end: Double
+          ): Double =
+            val excess = math.max(0.0, total - visible)
+            if excess == 0.0 || maximum <= minimum then minimum
+            else
+              val offset = (value - minimum) / (maximum - minimum) * excess
+              val next   =
+                if end - start > visible || start < offset then start
+                else if end > offset + visible then end - visible
+                else offset
+              minimum + math.max(0.0, math.min(excess, next)) / excess * (maximum - minimum)
+          pane.setHvalue(
+            position(
+              pane.getHvalue,
+              pane.getHmin,
+              pane.getHmax,
+              area.getLayoutBounds.getWidth,
+              viewport.getWidth,
+              bounds.getMinX,
+              bounds.getMaxX
+            )
+          )
+          pane.setVvalue(
+            position(
+              pane.getVvalue,
+              pane.getVmin,
+              pane.getVmax,
+              area.getLayoutBounds.getHeight,
+              viewport.getHeight,
+              bounds.getMinY,
+              bounds.getMaxY
+            )
+          )
+          pane.layout()
+        }
 
   def dispose(): Unit =
     if !disposed then
       disposed = true
       Option(focused.getValue).foreach(_.boundsInParentProperty.removeListener(sizeChanged))
+      Option(focused.getValue).foreach(_.accessibleTextProperty.removeListener(textChanged))
+      removeEventFilter(KeyEvent.KEY_PRESSED, keyed)
       focused.removeListener(focusChanged)
       viewportBoundsProperty.removeListener(sizeChanged)
 

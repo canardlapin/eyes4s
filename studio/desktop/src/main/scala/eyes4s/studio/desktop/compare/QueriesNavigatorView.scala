@@ -82,6 +82,8 @@ final class QueriesNavigatorView(
 
   /** The pane's content. */
   val node: VBox = VBox(4.0, filter, empty, head, scroll, strip)
+  eyes4s.studio.desktop.shell.CompositeFocus
+    .registerCursor(node)(Option(node.lookup(".queries-cursor")))
   node.getStyleClass.add(if byItem then "items-navigator" else "queries-navigator")
   Vector(
     eyes4s.studio.desktop.plot.TableTwinView.stylesheetResource,

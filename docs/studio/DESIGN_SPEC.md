@@ -166,7 +166,8 @@ space for map frames, wrapped captions, plot axes and annotation columns without
 requiring an OS window larger than the display. Scroll bars expose the entire work area,
 including its header, inspector and status controls. The viewport adds no Tab stop.
 Tab, Shift+Tab, F6 and Ctrl+Tab reveal the focused control after layout settles; a composite
-larger than the viewport reveals its leading edge and retains its own row navigation.
+larger than the viewport reveals its cursor row, or its leading edge when no row is active.
+Home, End and arrow navigation keep that row visible through both nested and outer clips.
 Pointer drags continue to belong to plots and dock dividers. Small-window evidence is
 readability and reachability evidence; the 1440×900 Linux pixel court stays separate.
 

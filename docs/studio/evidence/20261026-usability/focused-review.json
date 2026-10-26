@@ -1,6 +1,6 @@
 {
   "schema": 1,
-  "status": "focused checks passed; full qualification pending",
+  "status": "superseded by cursor-review.json; small composite End exposed an additional clip",
   "base": "ae78d26254e6201532fa53d4bbac99ab3cccf719",
   "sourceFingerprint": "ee91b3656a8d350ad85ef4664b18a57520765e1fb62be3b46f4ccaf1075198a6",
   "motes": [

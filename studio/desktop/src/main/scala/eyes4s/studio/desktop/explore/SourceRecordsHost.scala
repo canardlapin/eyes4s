@@ -161,6 +161,7 @@ final class SourceRecordsHost(
   // The rows carry the hosting pane's focus; with no cursor row, the pane
   // draws it.
   CompositeFocus.paneContent(node)
+  CompositeFocus.registerCursor(node)(Option(node.lookup(".records-row:cursor")))
   CompositeFocus.noCursor(node, true)
   Option(getClass.getClassLoader.getResource(TableTwinView.stylesheetResource))
     .foreach(url => node.getStylesheets.add(url.toExternalForm))

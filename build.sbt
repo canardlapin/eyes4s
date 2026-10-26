@@ -1827,7 +1827,7 @@ lazy val studioMacosJob = WorkflowJob(
       cond = Some("always()"),
       params = Map(
         "name" -> "studio-snapshots-macos-${{ github.sha }}",
-        "path" -> "target/studio-snapshots/VisualParitySuite/\ntarget/studio-snapshots/ParticipantsNavigatorFxSuite/\ntarget/studio-snapshots/CanvasBoundaryFxSuite/\ntarget/studio-snapshots/SmallCanvasBoundaryFxSuite/\ntarget/studio-snapshots/WorkspaceViewportFxSuite/\ntarget/studio-snapshots/A11yTreeSuite/\ntarget/studio-visual-parity/\nstudio/desktop/target/test-reports/",
+        "path" -> "target/studio-snapshots/VisualParitySuite/\ntarget/studio-snapshots/ParticipantsNavigatorFxSuite/\ntarget/studio-snapshots/CanvasBoundaryFxSuite/\ntarget/studio-snapshots/SmallCanvasBoundaryFxSuite/\ntarget/studio-snapshots/WorkspaceViewportFxSuite/\ntarget/studio-snapshots/BoardWorkspaceViewportFxSuite/\ntarget/studio-snapshots/A11yTreeSuite/\ntarget/studio-visual-parity/\nstudio/desktop/target/test-reports/",
         "include-hidden-files" -> "true",
         "if-no-files-found"    -> "warn"
       )

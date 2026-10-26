@@ -25,6 +25,7 @@ import eyes4s.studio.desktop.dock.StudioPanes
 import eyes4s.studio.desktop.harness.{FxStage, Modifiers, StageSize, StudioTheme}
 import eyes4s.studio.desktop.plot.PlotHostStatus
 import javafx.scene.Node
+import javafx.scene.control.ScrollPane
 import javafx.scene.input.KeyCode
 import java.nio.file.Files
 
@@ -37,8 +38,8 @@ class WorkspaceViewportFxSuite extends StoryCaptureFixture:
   private def contains(parent: Node, node: Node): Boolean =
     Iterator.iterate(node)(_.getParent).takeWhile(_ != null).exists(_ eq parent)
 
-  /** A large composite may exceed the viewport; its leading edge must still
-    * be visible. Every ordinary control must fit completely inside it.
+  /** A large composite may exceed the viewport; separate probes check its
+    * cursor through every nested clip. Every ordinary control must fit completely inside it.
     */
   private def visibleFocus(fx: FxStage, w: StudioWindow): Unit =
     fx.awaitLayout()
@@ -48,14 +49,16 @@ class WorkspaceViewportFxSuite extends StoryCaptureFixture:
       val a         = node.localToScene(node.getBoundsInLocal)
       val b         = view.localToScene(view.getBoundsInLocal)
       val tolerance = 1.0 // fractional scroll offsets round to device pixels
-      assert(
-        a.getMinX >= b.getMinX - tolerance && a.getMinX <= b.getMaxX,
-        s"${node.getAccessibleText}: horizontal leading edge $a outside $b"
-      )
-      assert(
-        a.getMinY >= b.getMinY - tolerance && a.getMinY <= b.getMaxY,
-        s"${node.getAccessibleText}: vertical leading edge $a outside $b"
-      )
+      if a.getWidth <= b.getWidth then
+        assert(
+          a.getMinX >= b.getMinX - tolerance && a.getMinX <= b.getMaxX,
+          s"${node.getAccessibleText}: horizontal leading edge $a outside $b"
+        )
+      if a.getHeight <= b.getHeight then
+        assert(
+          a.getMinY >= b.getMinY - tolerance && a.getMinY <= b.getMaxY,
+          s"${node.getAccessibleText}: vertical leading edge $a outside $b"
+        )
       if a.getWidth <= b.getWidth then
         assert(
           a.getMaxX <= b.getMaxX + tolerance,
@@ -66,6 +69,7 @@ class WorkspaceViewportFxSuite extends StoryCaptureFixture:
           a.getMaxY <= b.getMaxY + tolerance,
           s"${node.getAccessibleText}: $a outside $b; scroll=${w.shell.workspace.getVvalue}, area=${w.shell.workspace.getContent.getLayoutBounds}; local=${w.shell.workspace.getContent.sceneToLocal(a)}"
         )
+      assert(a.intersects(b), s"${node.getAccessibleText}: $a does not intersect $b")
     }
 
   private def resultsCycle(fx: FxStage, w: StudioWindow, backwards: Boolean): Vector[String] =
@@ -87,6 +91,28 @@ class WorkspaceViewportFxSuite extends StoryCaptureFixture:
     }
     assert(runOnFx(fx.scene.getFocusOwner eq w.shell.appBar.project))
     visited
+
+  private def cursorVisible(fx: FxStage, composite: Node, selector: String): Unit =
+    for key <- Vector(KeyCode.END, KeyCode.HOME) do
+      fx.robot.press(key)
+      fx.awaitLayout()
+      runOnFx {
+        val row = composite.lookup(selector)
+        assert(row != null, s"missing cursor $selector")
+        val a = row.localToScene(row.getBoundsInLocal)
+        Iterator
+          .iterate(row.getParent)(_.getParent)
+          .takeWhile(_ != null)
+          .collect { case pane: ScrollPane => pane }
+          .foreach { pane =>
+            val viewport = pane.lookup(".viewport")
+            val b        = viewport.localToScene(viewport.getBoundsInLocal)
+            assert(
+              a.getMinY >= b.getMinY - 1.0 && a.getMaxY <= b.getMaxY + 1.0,
+              s"$key cursor $a outside scrolling clip $b"
+            )
+          }
+      }
 
   for theme <- StudioTheme.values do
     fxStage.test("small query workspace keeps map space " + theme.id) { fx =>
@@ -121,6 +147,8 @@ class WorkspaceViewportFxSuite extends StoryCaptureFixture:
       )
       runOnFx(w.shell.appBar.project.requestFocus())
       val paths = fx.snapshot(theme)
+      runOnFx(KeyboardFocus.byKeyboard(w.summary.queries.node.getParent))
+      cursorVisible(fx, w.summary.queries.node, ".queries-cursor")
       Files.writeString(
         paths.head.getParent.resolve("bounds.json"),
         ujson.write(
@@ -157,6 +185,8 @@ class WorkspaceViewportFxSuite extends StoryCaptureFixture:
         val reverse = resultsCycle(fx, w, backwards = true)
         assertEquals(reverse, forward.head +: forward.tail.reverse)
         val paths = fx.snapshot(theme)
+        runOnFx(KeyboardFocus.byKeyboard(w.summary.participants.node.getParent))
+        cursorVisible(fx, w.summary.participants.node, ".participants-cursor")
         // F6 and Ctrl+Tab must land in the content that now owns each pane's
         // single stop, including both plot/table twins and reporting controls.
         runOnFx(
@@ -193,3 +223,9 @@ class WorkspaceViewportFxSuite extends StoryCaptureFixture:
           ) + "\n"
         )
     }
+
+/** The same row-reveal contract at the reference board size. Native displays
+  * may clamp it; each receipt records the actual scene dimensions.
+  */
+class BoardWorkspaceViewportFxSuite extends WorkspaceViewportFxSuite:
+  override protected def stageSize: StageSize = StageSize.Board
