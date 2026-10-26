@@ -70,6 +70,16 @@ class QueriesNavigatorFxSuite extends ShellFxSuite:
       w.summary.queries.stripLines.nonEmpty && w.summary.queries.rows.nonEmpty
     }
 
+  fxStage.test("unchanged query groups keep their native row nodes") { fx =>
+    val w = boot(fx, StoryModels.t2Compare, StoryMoment.T2)
+    loaded(fx, w)
+    val before = runOnFx(w.summary.queries.node.lookupAll(".queries-group").asScala.toSet)
+    assert(before.nonEmpty)
+    runOnFx(w.summary.sync(w.runtime.model))
+    val after = runOnFx(w.summary.queries.node.lookupAll(".queries-group").asScala.toSet)
+    assertEquals(after, before)
+  }
+
   fxStage.test("the count strip is 480 = 454 + 3 + 9 + 14, by design n/a") { fx =>
     val w = boot(fx, StoryModels.t2Compare, StoryMoment.T2)
     loaded(fx, w)

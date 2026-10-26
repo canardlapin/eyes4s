@@ -62,3 +62,42 @@ class SaveWarningFxSuite extends ShellFxSuite:
           .startsWith("The project was saved with a warning:")
       )
   }
+
+  fxStage.test("a delayed host clock cannot block the FX thread after a save") { fx =>
+    val entered = java.util.concurrent.CountDownLatch(1)
+    val release = java.util.concurrent.CountDownLatch(1)
+    val onFx    = java.util.concurrent.atomic.AtomicBoolean(true)
+    val port    = new ProjectPort:
+      def journal(entry: JournalEntry): Unit                    = ()
+      def close(): Unit                                         = ()
+      def save(done: Either[String, SaveReceipt] => Unit): Unit = done(
+        Right(
+          SaveReceipt(ByteDigest.sha256(IArray.empty[Byte]), Vector.empty, true, None, None)
+        )
+      )
+    val initial = AppModel
+      .update(AppModel.newProject.toOption.get, Intent.Dispatch(Command.SetTheme(Theme.Dark)))
+      ._1
+    val w = boot(
+      fx,
+      initial,
+      project = Some(port),
+      clock = () => {
+        onFx.set(javafx.application.Platform.isFxApplicationThread)
+        entered.countDown()
+        // Do not hold MUnit's assertion machinery while waiting on the
+        // test thread, which uses that same machinery to check responsiveness.
+        if !release.await(10, java.util.concurrent.TimeUnit.SECONDS) then
+          throw IllegalStateException("clock was not released")
+        ClockTime.of(12, 0).toOption
+      }
+    )
+    try
+      runOnFx(w.effects.perform(AppEffect.Persist(initial.save.edits), w.runtime.dispatch))
+      assert(entered.await(5, java.util.concurrent.TimeUnit.SECONDS), "clock was not requested")
+      assert(!onFx.get(), "host clock was read on the UI thread")
+      // This task must run while the clock is still deliberately blocked.
+      assert(runOnFx(w.runtime.model.save.edited))
+    finally release.countDown()
+    eventually(fx, "saved after clock completion") { !w.runtime.model.save.edited }
+  }

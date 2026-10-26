@@ -191,6 +191,8 @@ final class QueriesNavigatorView(
       }
       .foreach(_.getOnMouseClicked.handle(null))
 
+  private var rendered: Option[QueriesNavigatorVM] = None
+
   def render(vm: QueriesNavigatorVM): Unit =
     rendering = true
     try if filter.getText != vm.filter then filter.setText(vm.filter)
@@ -211,17 +213,20 @@ final class QueriesNavigatorView(
     }
     dHead.setText(vm.dColumn)
     val groups = vm.groupsOf(kind)
-    list.getChildren.setAll(groups.flatMap(groupNodes)*)
-    strip.getChildren.clear()
-    if !byItem then
-      vm.strip.zipWithIndex.foreach { (line, i) =>
-        val count = label(line.count, "mono")
-        if line.failure then count.getStyleClass.add("queries-failed"): Unit
-        strip.add(label(line.label, "t11"), 0, i)
-        strip.add(count, 1, i)
-      }
+    if !rendered.exists(_.groupsOf(kind) == groups) then
+      list.getChildren.setAll(groups.flatMap(groupNodes)*): Unit
+    if !rendered.exists(_.strip == vm.strip) then
+      strip.getChildren.clear()
+      if !byItem then
+        vm.strip.zipWithIndex.foreach { (line, i) =>
+          val count = label(line.count, "mono")
+          if line.failure then count.getStyleClass.add("queries-failed"): Unit
+          strip.add(label(line.label, "t11"), 0, i)
+          strip.add(count, 1, i)
+        }
     strip.setVisible(!byItem && vm.strip.nonEmpty)
     strip.setManaged(!byItem && vm.strip.nonEmpty)
+    rendered = Some(vm)
 
   private def groupNodes(g: QueryGroup): Vector[javafx.scene.Node] =
     val header = Button(s"${g.label}  ${g.summary}")

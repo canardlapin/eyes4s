@@ -537,44 +537,48 @@ final class SourcesView(dispatch: SourcesIntent => Unit):
       case _ => Vector.empty
     }
 
+  private var rendered: Option[SourcesVM] = None
+
   def render(vm: SourcesVM): Unit =
     show(empty, vm.empty)
     show(check, vm.check)
-    sources.getChildren.setAll(vm.sources.map { s =>
-      val name = label("sources-name", "mono", "t12")
-      name.setText(s.name)
-      val kind = label("sources-kind", "t11")
-      kind.setText(s.kind)
-      val spacer = Region()
-      HBox.setHgrow(spacer, javafx.scene.layout.Priority.ALWAYS)
-      val head = HBox(name, spacer, kind)
-      head.setAlignment(Pos.CENTER_LEFT)
-      val lines = s.count.toVector.map { c =>
-        val l = label("sources-count", "mono", "t11"); l.setText(c); l
-      } :+ { val l = label("sources-stored", "mono", "t11"); l.setText(s.stored); l }
-      // A source the project no longer holds as recorded, and its Repair… (S2.5).
-      val problem = s.problem.toVector.map { p =>
-        val l = label("sources-problem", "t11"); l.setText(p); l.setWrapText(true); l
-      }
-      val fix  = s.repair.toVector.map((text, intent) => button(text, intent))
-      val card = VBox((head +: (lines ++ problem ++ fix))*)
-      card.getStyleClass.add("sources-card")
-      card
-    }*)
+    if !rendered.exists(_.sources == vm.sources) then
+      sources.getChildren.setAll(vm.sources.map { s =>
+        val name = label("sources-name", "mono", "t12")
+        name.setText(s.name)
+        val kind = label("sources-kind", "t11")
+        kind.setText(s.kind)
+        val spacer = Region()
+        HBox.setHgrow(spacer, javafx.scene.layout.Priority.ALWAYS)
+        val head = HBox(name, spacer, kind)
+        head.setAlignment(Pos.CENTER_LEFT)
+        val lines = s.count.toVector.map { c =>
+          val l = label("sources-count", "mono", "t11"); l.setText(c); l
+        } :+ { val l = label("sources-stored", "mono", "t11"); l.setText(s.stored); l }
+        // A source the project no longer holds as recorded, and its Repair… (S2.5).
+        val problem = s.problem.toVector.map { p =>
+          val l = label("sources-problem", "t11"); l.setText(p); l.setWrapText(true); l
+        }
+        val fix  = s.repair.toVector.map((text, intent) => button(text, intent))
+        val card = VBox((head +: (lines ++ problem ++ fix))*)
+        card.getStyleClass.add("sources-card")
+        card
+      }*): Unit
     title.setText(vm.displaysTitle)
-    kinds.getChildren.clear()
-    vm.displays.zipWithIndex.foreach { (d, i) =>
-      val text = label("sources-kind-label")
-      text.setText(d.label)
-      val count = label("sources-kind-count", "mono")
-      count.setText(d.count)
-      if !d.shown then
-        text.getStyleClass.add("sources-dim")
-        count.getStyleClass.add("sources-dim"): Unit
-      kinds.add(glyph(Some(d.kinds.head).filter(_ => d.shown)), 0, i)
-      kinds.add(text, 1, i)
-      kinds.add(count, 2, i)
-    }
+    if !rendered.exists(_.displays == vm.displays) then
+      kinds.getChildren.clear()
+      vm.displays.zipWithIndex.foreach { (d, i) =>
+        val text = label("sources-kind-label")
+        text.setText(d.label)
+        val count = label("sources-kind-count", "mono")
+        count.setText(d.count)
+        if !d.shown then
+          text.getStyleClass.add("sources-dim")
+          count.getStyleClass.add("sources-dim"): Unit
+        kinds.add(glyph(Some(d.kinds.head).filter(_ => d.shown)), 0, i)
+        kinds.add(text, 1, i)
+        kinds.add(count, 2, i)
+      }
     show(status, vm.status)
     retry.setVisible(vm.retry)
     retry.setManaged(vm.retry)
@@ -592,15 +596,17 @@ final class SourcesView(dispatch: SourcesIntent => Unit):
         missing.setVisible(false)
         missing.setManaged(false)
     show(repairsTitle, Option.when(vm.repairs.nonEmpty)(vm.repairsTitle))
-    repairs.getChildren.setAll(vm.repairs.map { line =>
-      val l = label("sources-repair", "mono", "t11")
-      l.setText(line)
-      l.setWrapText(true)
-      l
-    }*)
+    if !rendered.exists(_.repairs == vm.repairs) then
+      repairs.getChildren.setAll(vm.repairs.map { line =>
+        val l = label("sources-repair", "mono", "t11")
+        l.setText(line)
+        l.setWrapText(true)
+        l
+      }*): Unit
     repairs.setVisible(vm.repairs.nonEmpty)
     repairs.setManaged(vm.repairs.nonEmpty)
     show(note, vm.note)
+    rendered = Some(vm)
 
   private def show(l: Label, text: Option[String]): Unit =
     l.setText(text.getOrElse(""))

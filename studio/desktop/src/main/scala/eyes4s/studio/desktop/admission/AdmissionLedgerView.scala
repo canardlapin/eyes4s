@@ -168,6 +168,8 @@ final class AdmissionLedgerView(dispatch: LedgerIntent => Unit):
   Option(getClass.getClassLoader.getResource(stylesheetResource))
     .foreach(url => node.getStylesheets.add(url.toExternalForm))
 
+  private var rendered: Option[AdmissionLedgerVM] = None
+
   /** Bind `vm`: text, numbers, choices, enablement and visibility. */
   def render(vm: AdmissionLedgerVM): Unit =
     rendering = true
@@ -186,23 +188,25 @@ final class AdmissionLedgerView(dispatch: LedgerIntent => Unit):
       rowViews.zip(vm.rows).foreach((v, r) => v.render(r))
 
       show(equation, vm.equation)
-      definitionFlow.getChildren.setAll(vm.definitions.map { d =>
-        val term = label("ledger-term", "t11")
-        term.setText(d.term)
-        val rest = label("ledger-definitions", "t11")
-        rest.setText(d.text)
-        rest.setWrapText(true)
-        val line = HBox(term, rest)
-        line.setAlignment(Pos.BASELINE_LEFT)
-        line
-      }*)
+      if !rendered.exists(_.definitions == vm.definitions) then
+        definitionFlow.getChildren.setAll(vm.definitions.map { d =>
+          val term = label("ledger-term", "t11")
+          term.setText(d.term)
+          val rest = label("ledger-definitions", "t11")
+          rest.setText(d.text)
+          rest.setWrapText(true)
+          val line = HBox(term, rest)
+          line.setAlignment(Pos.BASELINE_LEFT)
+          line
+        }*): Unit
       hint.setText(vm.hint)
-      issues.getChildren.setAll(vm.issues.map { i =>
-        val l = label("ledger-warn", "t11")
-        l.setWrapText(true)
-        l.setText(i)
-        l
-      }*)
+      if !rendered.exists(_.issues == vm.issues) then
+        issues.getChildren.setAll(vm.issues.map { i =>
+          val l = label("ledger-warn", "t11")
+          l.setWrapText(true)
+          l.setText(i)
+          l
+        }*): Unit
       visible(issues, vm.issues.nonEmpty)
       visible(text, vm.rows.nonEmpty)
 
@@ -245,6 +249,7 @@ final class AdmissionLedgerView(dispatch: LedgerIntent => Unit):
         retry.setAccessibleText(r)
       }
       visible(retry, vm.retry.isDefined)
+      rendered = Some(vm)
     finally rendering = false
 
   def dispose(): Unit = ()

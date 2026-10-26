@@ -80,6 +80,16 @@ class SourcesFxSuite extends ShellFxSuite:
     eventually(fx, "the displays")(w.sources.vm.missing.isDefined)
     w
 
+  fxStage.test("unchanged source cards stay attached through a model refresh") { fx =>
+    val w     = ready(fx, None, chosen)
+    val cards = runOnFx(w.sources.view.sources.getChildren.toArray.toVector)
+    assert(cards.nonEmpty)
+    runOnFx(w.sources.sync(w.runtime.model))
+    val after = runOnFx(w.sources.view.sources.getChildren.toArray.toVector)
+    assertEquals(after.size, cards.size)
+    assert(cards.zip(after).forall((a, b) => a eq b))
+  }
+
   fxStage.test("t1: r3's sources, 257 of 259 images found, what each trial displayed") { fx =>
     val w    = ready(fx, None, chosen)
     val pane = runOnFx(w.host.node(StudioLayouts.sources)).getOrElse(fail("no Sources pane"))

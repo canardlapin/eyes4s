@@ -157,15 +157,20 @@ final class DesktopEffects(
             )
           )
       } {
-        _.save { outcome =>
-          ui { () =>
-            outcome match
-              case Left(reason)   => dispatch(Intent.SaveFailed(reason))
-              case Right(receipt) =>
-                clock().foreach(t => dispatch(Intent.Saved(t, mark)))
-                if receipt.warnings.nonEmpty then
-                  dispatch(Intent.SaveWarning(receipt.warnings.map(_.message).mkString("\n")))
-          }
+        _.save {
+          case Left(reason)   => ui(() => dispatch(Intent.SaveFailed(reason)))
+          case Right(receipt) =>
+            // The injected clock may await host IO. Never hold the FX thread
+            // behind a busy backend compute pool while reading a timestamp.
+            session.run(IO.blocking(clock())) {
+              case Left(error) => ui(() => defect("save clock", error))
+              case Right(time) =>
+                ui { () =>
+                  time.foreach(t => dispatch(Intent.Saved(t, mark)))
+                  if receipt.warnings.nonEmpty then
+                    dispatch(Intent.SaveWarning(receipt.warnings.map(_.message).mkString("\n")))
+                }
+            }
         }
       }
     case e: AppEffect.Journal =>
