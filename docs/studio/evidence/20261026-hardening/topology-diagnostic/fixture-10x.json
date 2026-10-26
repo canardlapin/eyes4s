@@ -1,0 +1,246 @@
+{
+  "status" : "failed",
+  "factor" : 10,
+  "pid" : 71163,
+  "jvm" : "25.0.4.1+1-LTS",
+  "maximumHeapBytes" : 8589934592,
+  "glassApplication" : "com.sun.glass.ui.monocle.MonocleApplication",
+  "requestedGraphicsPipeline" : "sw",
+  "fixationRows" : 115200,
+  "trialRows" : 9600,
+  "sources" : [
+    {
+      "role" : "Fixations",
+      "sha256" : "d2acc87433d1ecef367879e38d1c4a52cc801ad47609f303b2de18d033fd141c",
+      "bytes" : 6342871
+    },
+    {
+      "role" : "Trials",
+      "sha256" : "f677343db49848d725a2178367df237e010f4dde40291b6bc1c917e4869af30a",
+      "bytes" : 630863
+    }
+  ],
+  "scene" : [
+    1440,
+    900
+  ],
+  "scale" : 1.0,
+  "measurements" : [
+    {
+      "name" : "linked-selection",
+      "requestedCount" : 100,
+      "count" : 1,
+      "warmup" : 10,
+      "limitMs" : 100.0,
+      "p95Ms" : 49.910708,
+      "maximumMs" : 49.910708,
+      "valuesMs" : [
+        49.910708
+      ],
+      "startedUtc" : "2026-10-26T22:56:49.747497Z",
+      "finishedUtc" : "2026-10-26T22:56:50.642862Z",
+      "stages" : [
+        {
+          "dispatchMs" : 11.417208,
+          "readinessMs" : 9.2775,
+          "renderMs" : 29.216
+        }
+      ],
+      "passed" : true
+    },
+    {
+      "name" : "cached-trial-switch",
+      "requestedCount" : 100,
+      "count" : 1,
+      "warmup" : 10,
+      "limitMs" : 250.0,
+      "p95Ms" : 61.254584,
+      "maximumMs" : 61.254584,
+      "valuesMs" : [
+        61.254584
+      ],
+      "startedUtc" : "2026-10-26T22:56:50.847877Z",
+      "finishedUtc" : "2026-10-26T22:56:51.939993Z",
+      "stages" : [
+        {
+          "dispatchMs" : 14.162292,
+          "readinessMs" : 29.034,
+          "renderMs" : 18.058292
+        }
+      ],
+      "passed" : true
+    },
+    {
+      "name" : "perspective-Data",
+      "requestedCount" : 50,
+      "count" : 1,
+      "warmup" : 10,
+      "limitMs" : 150.0,
+      "p95Ms" : 92.45025,
+      "maximumMs" : 92.45025,
+      "valuesMs" : [
+        92.45025
+      ],
+      "startedUtc" : "2026-10-26T22:57:28.819752Z",
+      "finishedUtc" : "2026-10-26T22:57:30.962489Z",
+      "stages" : [
+        {
+          "dispatchMs" : 31.395208,
+          "readinessMs" : 29.322375,
+          "renderMs" : 31.732667
+        }
+      ],
+      "passed" : true
+    },
+    {
+      "name" : "perspective-Explore",
+      "requestedCount" : 50,
+      "count" : 1,
+      "warmup" : 10,
+      "limitMs" : 150.0,
+      "p95Ms" : 82.352958,
+      "maximumMs" : 82.352958,
+      "valuesMs" : [
+        82.352958
+      ],
+      "startedUtc" : "2026-10-26T22:57:31.042324Z",
+      "finishedUtc" : "2026-10-26T22:57:33.080191Z",
+      "stages" : [
+        {
+          "dispatchMs" : 36.951333,
+          "readinessMs" : 18.61375,
+          "renderMs" : 26.787875
+        }
+      ],
+      "passed" : true
+    },
+    {
+      "name" : "perspective-Analysis",
+      "requestedCount" : 50,
+      "count" : 1,
+      "warmup" : 10,
+      "limitMs" : 150.0,
+      "p95Ms" : 79.957958,
+      "maximumMs" : 79.957958,
+      "valuesMs" : [
+        79.957958
+      ],
+      "startedUtc" : "2026-10-26T22:57:33.136844Z",
+      "finishedUtc" : "2026-10-26T22:57:34.820695Z",
+      "stages" : [
+        {
+          "dispatchMs" : 15.570917,
+          "readinessMs" : 16.053416,
+          "renderMs" : 48.333625
+        }
+      ],
+      "passed" : true
+    },
+    {
+      "name" : "perspective-Compare",
+      "requestedCount" : 50,
+      "count" : 1,
+      "warmup" : 10,
+      "limitMs" : 150.0,
+      "p95Ms" : 155.906,
+      "maximumMs" : 155.906,
+      "valuesMs" : [
+        155.906
+      ],
+      "startedUtc" : "2026-10-26T22:57:34.887524Z",
+      "finishedUtc" : "2026-10-26T22:57:37.377073Z",
+      "stages" : [
+        {
+          "dispatchMs" : 20.64525,
+          "readinessMs" : 17.21675,
+          "renderMs" : 118.044
+        }
+      ],
+      "passed" : false
+    },
+    {
+      "name" : "perspective-Figures",
+      "requestedCount" : 50,
+      "count" : 1,
+      "warmup" : 10,
+      "limitMs" : 150.0,
+      "p95Ms" : 68.070916,
+      "maximumMs" : 68.070916,
+      "valuesMs" : [
+        68.070916
+      ],
+      "startedUtc" : "2026-10-26T22:57:37.424577Z",
+      "finishedUtc" : "2026-10-26T22:57:38.832977Z",
+      "stages" : [
+        {
+          "dispatchMs" : 13.622666,
+          "readinessMs" : 7.434459,
+          "renderMs" : 47.013791
+        }
+      ],
+      "passed" : true
+    }
+  ],
+  "memory" : [
+    {
+      "phase" : "before-window",
+      "heapBytes" : 698105384,
+      "rssBytes" : 1856471040,
+      "nonHeapBytes" : 245601984
+    },
+    {
+      "phase" : "linked-selection",
+      "heapBytes" : 4118486928,
+      "rssBytes" : 5349507072,
+      "nonHeapBytes" : 228688104
+    },
+    {
+      "phase" : "cached-trial-switch",
+      "heapBytes" : 4045086608,
+      "rssBytes" : 5371265024,
+      "nonHeapBytes" : 223917208
+    },
+    {
+      "phase" : "perspective-Data",
+      "heapBytes" : 4712351472,
+      "rssBytes" : 6129876992,
+      "nonHeapBytes" : 229494528
+    },
+    {
+      "phase" : "perspective-Explore",
+      "heapBytes" : 3035859296,
+      "rssBytes" : 6130139136,
+      "nonHeapBytes" : 230914936
+    },
+    {
+      "phase" : "perspective-Analysis",
+      "heapBytes" : 4260596064,
+      "rssBytes" : 6132465664,
+      "nonHeapBytes" : 233969128
+    },
+    {
+      "phase" : "perspective-Compare",
+      "heapBytes" : 2338458376,
+      "rssBytes" : 6135955456,
+      "nonHeapBytes" : 235260800
+    },
+    {
+      "phase" : "perspective-Figures",
+      "heapBytes" : 3630304008,
+      "rssBytes" : 6136070144,
+      "nonHeapBytes" : 236133696
+    },
+    {
+      "phase" : "after-collection",
+      "heapBytes" : 1708229792,
+      "rssBytes" : 6129336320,
+      "nonHeapBytes" : 235788600
+    }
+  ],
+  "storage" : {
+    "status" : "documented-budget-refusal",
+    "code" : "native-artifacts.budget",
+    "message" : "run 1 native artifacts need 114769920 density cells; maximum is 20000000.",
+    "coldRestorationQualified" : false
+  }
+}

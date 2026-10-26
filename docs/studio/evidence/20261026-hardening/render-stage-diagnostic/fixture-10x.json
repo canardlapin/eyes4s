@@ -1,0 +1,694 @@
+{
+  "status" : "failed",
+  "factor" : 10,
+  "pid" : 99214,
+  "jvm" : "25.0.4.1+1-LTS",
+  "maximumHeapBytes" : 8589934592,
+  "glassApplication" : "com.sun.glass.ui.monocle.MonocleApplication",
+  "requestedGraphicsPipeline" : "sw",
+  "fixationRows" : 115200,
+  "trialRows" : 9600,
+  "sources" : [
+    {
+      "role" : "Fixations",
+      "sha256" : "d2acc87433d1ecef367879e38d1c4a52cc801ad47609f303b2de18d033fd141c",
+      "bytes" : 6342871
+    },
+    {
+      "role" : "Trials",
+      "sha256" : "f677343db49848d725a2178367df237e010f4dde40291b6bc1c917e4869af30a",
+      "bytes" : 630863
+    }
+  ],
+  "scene" : [
+    1440,
+    900
+  ],
+  "scale" : 1.0,
+  "measurements" : [
+    {
+      "name" : "linked-selection",
+      "count" : 5,
+      "requestedCount" : 100,
+      "warmup" : 10,
+      "limitMs" : 100.0,
+      "p95Ms" : 185.638417,
+      "maximumMs" : 185.638417,
+      "valuesMs" : [
+        94.160708,
+        150.10875,
+        84.206083,
+        79.076875,
+        185.638417
+      ],
+      "startedUtc" : "2026-10-26T23:05:19.002655Z",
+      "finishedUtc" : "2026-10-26T23:05:20.309135Z",
+      "stages" : [
+        {
+          "renderParts" : {
+            "cssQueueMs" : 33.141542,
+            "cssMs" : 2.471041,
+            "layoutMs" : 0.180792,
+            "pulseMs" : 13.902708,
+            "fenceQueueMs" : 0.272375,
+            "fenceWaitMs" : 0.528292
+          },
+          "dispatchMs" : 28.214375,
+          "readinessMs" : 15.435542,
+          "renderMs" : 50.510791
+        },
+        {
+          "renderParts" : {
+            "cssQueueMs" : 19.9205,
+            "cssMs" : 8.592042,
+            "layoutMs" : 1.264792,
+            "pulseMs" : 1.39725,
+            "fenceQueueMs" : 0.771541,
+            "fenceWaitMs" : 75.651209
+          },
+          "dispatchMs" : 14.6825,
+          "readinessMs" : 27.817167,
+          "renderMs" : 107.609083
+        },
+        {
+          "renderParts" : {
+            "cssQueueMs" : 12.065958,
+            "cssMs" : 2.343792,
+            "layoutMs" : 0.471708,
+            "pulseMs" : 11.070584,
+            "fenceQueueMs" : 0.245666,
+            "fenceWaitMs" : 0.482834
+          },
+          "dispatchMs" : 15.467833,
+          "readinessMs" : 42.050667,
+          "renderMs" : 26.687583
+        },
+        {
+          "renderParts" : {
+            "cssQueueMs" : 6.286125,
+            "cssMs" : 2.395667,
+            "layoutMs" : 0.295708,
+            "pulseMs" : 0.11425,
+            "fenceQueueMs" : 8.741917,
+            "fenceWaitMs" : 0.528166
+          },
+          "dispatchMs" : 41.155167,
+          "readinessMs" : 19.554458,
+          "renderMs" : 18.36725
+        },
+        {
+          "renderParts" : {
+            "cssQueueMs" : 0.02025,
+            "cssMs" : 25.880541,
+            "layoutMs" : 102.091542,
+            "pulseMs" : 10.15375,
+            "fenceQueueMs" : 14.249042,
+            "fenceWaitMs" : 3.470375
+          },
+          "dispatchMs" : 11.699958,
+          "readinessMs" : 18.059792,
+          "renderMs" : 155.878667
+        }
+      ],
+      "passed" : false
+    },
+    {
+      "name" : "cached-trial-switch",
+      "count" : 5,
+      "requestedCount" : 100,
+      "warmup" : 10,
+      "limitMs" : 250.0,
+      "p95Ms" : 74.031125,
+      "maximumMs" : 74.031125,
+      "valuesMs" : [
+        74.031125,
+        56.912458,
+        59.300625,
+        55.224,
+        59.51575
+      ],
+      "startedUtc" : "2026-10-26T23:05:20.429408Z",
+      "finishedUtc" : "2026-10-26T23:05:21.459671Z",
+      "stages" : [
+        {
+          "renderParts" : {
+            "cssQueueMs" : 0.478584,
+            "cssMs" : 2.301333,
+            "layoutMs" : 0.751417,
+            "pulseMs" : 9.533583,
+            "fenceQueueMs" : 0.185458,
+            "fenceWaitMs" : 9.585084
+          },
+          "dispatchMs" : 14.862042,
+          "readinessMs" : 36.326958,
+          "renderMs" : 22.842125
+        },
+        {
+          "renderParts" : {
+            "cssQueueMs" : 0.007417,
+            "cssMs" : 2.203083,
+            "layoutMs" : 0.765708,
+            "pulseMs" : 0.580417,
+            "fenceQueueMs" : 9.638958,
+            "fenceWaitMs" : 10.593167
+          },
+          "dispatchMs" : 14.087416,
+          "readinessMs" : 19.029542,
+          "renderMs" : 23.7955
+        },
+        {
+          "renderParts" : {
+            "cssQueueMs" : 1.204041,
+            "cssMs" : 2.069417,
+            "layoutMs" : 0.613708,
+            "pulseMs" : 13.389584,
+            "fenceQueueMs" : 0.167125,
+            "fenceWaitMs" : 0.463708
+          },
+          "dispatchMs" : 14.05025,
+          "readinessMs" : 27.336125,
+          "renderMs" : 17.91425
+        },
+        {
+          "renderParts" : {
+            "cssQueueMs" : 0.578041,
+            "cssMs" : 2.23275,
+            "layoutMs" : 0.734709,
+            "pulseMs" : 0.958333,
+            "fenceQueueMs" : 10.040667,
+            "fenceWaitMs" : 0.501041
+          },
+          "dispatchMs" : 14.34825,
+          "readinessMs" : 25.821917,
+          "renderMs" : 15.053833
+        },
+        {
+          "renderParts" : {
+            "cssQueueMs" : 0.006084,
+            "cssMs" : 2.79775,
+            "layoutMs" : 1.931583,
+            "pulseMs" : 3.022458,
+            "fenceQueueMs" : 1.77175,
+            "fenceWaitMs" : 17.396834
+          },
+          "dispatchMs" : 14.817458,
+          "readinessMs" : 17.766292,
+          "renderMs" : 26.932
+        }
+      ],
+      "passed" : true
+    },
+    {
+      "name" : "perspective-Data",
+      "count" : 5,
+      "requestedCount" : 50,
+      "warmup" : 10,
+      "limitMs" : 150.0,
+      "p95Ms" : 99.016875,
+      "maximumMs" : 99.016875,
+      "valuesMs" : [
+        99.016875,
+        97.337,
+        90.7855,
+        98.305292,
+        96.775042
+      ],
+      "startedUtc" : "2026-10-26T23:05:59.782079Z",
+      "finishedUtc" : "2026-10-26T23:06:02.593210Z",
+      "stages" : [
+        {
+          "renderParts" : {
+            "cssQueueMs" : 2.598125,
+            "cssMs" : 1.97675,
+            "layoutMs" : 3.33E-4,
+            "pulseMs" : 10.896125,
+            "fenceQueueMs" : 11.102542,
+            "fenceWaitMs" : 11.101333
+          },
+          "dispatchMs" : 33.363958,
+          "readinessMs" : 27.961042,
+          "renderMs" : 37.691875
+        },
+        {
+          "renderParts" : {
+            "cssQueueMs" : 2.319541,
+            "cssMs" : 2.007459,
+            "layoutMs" : 3.33E-4,
+            "pulseMs" : 0.039375,
+            "fenceQueueMs" : 22.014083,
+            "fenceWaitMs" : 11.076375
+          },
+          "dispatchMs" : 33.372916,
+          "readinessMs" : 26.502709,
+          "renderMs" : 37.461375
+        },
+        {
+          "renderParts" : {
+            "cssQueueMs" : 2.893334,
+            "cssMs" : 2.085166,
+            "layoutMs" : 4.17E-4,
+            "pulseMs" : 0.031125,
+            "fenceQueueMs" : 18.183708,
+            "fenceWaitMs" : 10.925375
+          },
+          "dispatchMs" : 29.824375,
+          "readinessMs" : 26.837875,
+          "renderMs" : 34.12325
+        },
+        {
+          "renderParts" : {
+            "cssQueueMs" : 2.65625,
+            "cssMs" : 2.052959,
+            "layoutMs" : 2.5E-4,
+            "pulseMs" : 13.553125,
+            "fenceQueueMs" : 8.577041,
+            "fenceWaitMs" : 10.996125
+          },
+          "dispatchMs" : 32.627167,
+          "readinessMs" : 27.825833,
+          "renderMs" : 37.852292
+        },
+        {
+          "renderParts" : {
+            "cssQueueMs" : 2.5575,
+            "cssMs" : 1.996333,
+            "layoutMs" : 2.5E-4,
+            "pulseMs" : 1.979375,
+            "fenceQueueMs" : 20.687625,
+            "fenceWaitMs" : 11.057334
+          },
+          "dispatchMs" : 31.4185,
+          "readinessMs" : 27.058709,
+          "renderMs" : 38.297833
+        }
+      ],
+      "passed" : true
+    },
+    {
+      "name" : "perspective-Explore",
+      "count" : 5,
+      "requestedCount" : 50,
+      "warmup" : 10,
+      "limitMs" : 150.0,
+      "p95Ms" : 83.695458,
+      "maximumMs" : 83.695458,
+      "valuesMs" : [
+        82.1255,
+        79.986416,
+        77.589458,
+        80.297833,
+        83.695458
+      ],
+      "startedUtc" : "2026-10-26T23:06:02.656408Z",
+      "finishedUtc" : "2026-10-26T23:06:05.263403Z",
+      "stages" : [
+        {
+          "renderParts" : {
+            "cssQueueMs" : 0.014625,
+            "cssMs" : 1.826917,
+            "layoutMs" : 0.121708,
+            "pulseMs" : 0.030667,
+            "fenceQueueMs" : 13.839958,
+            "fenceWaitMs" : 13.385084
+          },
+          "dispatchMs" : 32.484292,
+          "readinessMs" : 20.414958,
+          "renderMs" : 29.22625
+        },
+        {
+          "renderParts" : {
+            "cssQueueMs" : 0.006458,
+            "cssMs" : 1.656417,
+            "layoutMs" : 0.059167,
+            "pulseMs" : 3.451875,
+            "fenceQueueMs" : 10.503375,
+            "fenceWaitMs" : 13.4175
+          },
+          "dispatchMs" : 31.261208,
+          "readinessMs" : 19.623542,
+          "renderMs" : 29.101666
+        },
+        {
+          "renderParts" : {
+            "cssQueueMs" : 2.305416,
+            "cssMs" : 1.625459,
+            "layoutMs" : 0.080416,
+            "pulseMs" : 7.779542,
+            "fenceQueueMs" : 13.709625,
+            "fenceWaitMs" : 0.723458
+          },
+          "dispatchMs" : 33.344625,
+          "readinessMs" : 18.013375,
+          "renderMs" : 26.231458
+        },
+        {
+          "renderParts" : {
+            "cssQueueMs" : 0.023875,
+            "cssMs" : 1.547542,
+            "layoutMs" : 0.050667,
+            "pulseMs" : 0.031333,
+            "fenceQueueMs" : 14.153375,
+            "fenceWaitMs" : 13.780375
+          },
+          "dispatchMs" : 31.1325,
+          "readinessMs" : 19.572041,
+          "renderMs" : 29.593292
+        },
+        {
+          "renderParts" : {
+            "cssQueueMs" : 15.459084,
+            "cssMs" : 1.786458,
+            "layoutMs" : 0.072958,
+            "pulseMs" : 13.030584,
+            "fenceQueueMs" : 0.153333,
+            "fenceWaitMs" : 0.334583
+          },
+          "dispatchMs" : 32.533792,
+          "readinessMs" : 20.318333,
+          "renderMs" : 30.843333
+        }
+      ],
+      "passed" : true
+    },
+    {
+      "name" : "perspective-Analysis",
+      "count" : 5,
+      "requestedCount" : 50,
+      "warmup" : 10,
+      "limitMs" : 150.0,
+      "p95Ms" : 97.064916,
+      "maximumMs" : 97.064916,
+      "valuesMs" : [
+        82.531625,
+        95.667708,
+        97.064916,
+        96.800584,
+        80.625875
+      ],
+      "startedUtc" : "2026-10-26T23:06:05.342684Z",
+      "finishedUtc" : "2026-10-26T23:06:07.848764Z",
+      "stages" : [
+        {
+          "renderParts" : {
+            "cssQueueMs" : 27.060417,
+            "cssMs" : 1.926041,
+            "layoutMs" : 0.030959,
+            "pulseMs" : 0.05125,
+            "fenceQueueMs" : 0.995208,
+            "fenceWaitMs" : 20.653
+          },
+          "dispatchMs" : 16.863083,
+          "readinessMs" : 14.945792,
+          "renderMs" : 50.72275
+        },
+        {
+          "renderParts" : {
+            "cssQueueMs" : 1.324083,
+            "cssMs" : 1.843042,
+            "layoutMs" : 2.92E-4,
+            "pulseMs" : 0.399708,
+            "fenceQueueMs" : 17.54625,
+            "fenceWaitMs" : 19.405917
+          },
+          "dispatchMs" : 15.3385,
+          "readinessMs" : 39.8035,
+          "renderMs" : 40.525708
+        },
+        {
+          "renderParts" : {
+            "cssQueueMs" : 1.3005,
+            "cssMs" : 1.752541,
+            "layoutMs" : 2.5E-4,
+            "pulseMs" : 0.022542,
+            "fenceQueueMs" : 18.249833,
+            "fenceWaitMs" : 19.1355
+          },
+          "dispatchMs" : 15.096625,
+          "readinessMs" : 41.500208,
+          "renderMs" : 40.468083
+        },
+        {
+          "renderParts" : {
+            "cssQueueMs" : 1.299291,
+            "cssMs" : 1.845125,
+            "layoutMs" : 1.25E-4,
+            "pulseMs" : 4.545542,
+            "fenceQueueMs" : 12.888167,
+            "fenceWaitMs" : 19.45975
+          },
+          "dispatchMs" : 15.382792,
+          "readinessMs" : 41.373792,
+          "renderMs" : 40.044
+        },
+        {
+          "renderParts" : {
+            "cssQueueMs" : 24.291584,
+            "cssMs" : 1.987166,
+            "layoutMs" : 0.033375,
+            "pulseMs" : 0.044334,
+            "fenceQueueMs" : 1.188958,
+            "fenceWaitMs" : 20.272458
+          },
+          "dispatchMs" : 15.661584,
+          "readinessMs" : 17.140791,
+          "renderMs" : 47.8235
+        }
+      ],
+      "passed" : true
+    },
+    {
+      "name" : "perspective-Compare",
+      "count" : 5,
+      "requestedCount" : 50,
+      "warmup" : 10,
+      "limitMs" : 150.0,
+      "p95Ms" : 160.1655,
+      "maximumMs" : 160.1655,
+      "valuesMs" : [
+        151.000708,
+        160.1655,
+        151.445458,
+        150.93575,
+        152.655625
+      ],
+      "startedUtc" : "2026-10-26T23:06:07.907920Z",
+      "finishedUtc" : "2026-10-26T23:06:11.309924Z",
+      "stages" : [
+        {
+          "renderParts" : {
+            "cssQueueMs" : 1.860416,
+            "cssMs" : 1.1315,
+            "layoutMs" : 0.003584,
+            "pulseMs" : 3.340375,
+            "fenceQueueMs" : 108.187666,
+            "fenceWaitMs" : 0.854709
+          },
+          "dispatchMs" : 19.42275,
+          "readinessMs" : 16.19375,
+          "renderMs" : 115.384208
+        },
+        {
+          "renderParts" : {
+            "cssQueueMs" : 1.659416,
+            "cssMs" : 1.165959,
+            "layoutMs" : 3.75E-4,
+            "pulseMs" : 15.338541,
+            "fenceQueueMs" : 35.906625,
+            "fenceWaitMs" : 65.232334
+          },
+          "dispatchMs" : 20.058375,
+          "readinessMs" : 20.797208,
+          "renderMs" : 119.309917
+        },
+        {
+          "renderParts" : {
+            "cssQueueMs" : 2.026084,
+            "cssMs" : 1.286083,
+            "layoutMs" : 0.003625,
+            "pulseMs" : 0.031917,
+            "fenceQueueMs" : 112.038041,
+            "fenceWaitMs" : 0.849667
+          },
+          "dispatchMs" : 19.421042,
+          "readinessMs" : 15.78225,
+          "renderMs" : 116.242166
+        },
+        {
+          "renderParts" : {
+            "cssQueueMs" : 1.8035,
+            "cssMs" : 1.148875,
+            "layoutMs" : 0.004125,
+            "pulseMs" : 2.224,
+            "fenceQueueMs" : 109.613333,
+            "fenceWaitMs" : 0.783167
+          },
+          "dispatchMs" : 19.654042,
+          "readinessMs" : 15.698875,
+          "renderMs" : 115.582833
+        },
+        {
+          "renderParts" : {
+            "cssQueueMs" : 1.923875,
+            "cssMs" : 1.1505,
+            "layoutMs" : 0.003958,
+            "pulseMs" : 0.95075,
+            "fenceQueueMs" : 111.913833,
+            "fenceWaitMs" : 0.719625
+          },
+          "dispatchMs" : 19.733333,
+          "readinessMs" : 16.253959,
+          "renderMs" : 116.668333
+        }
+      ],
+      "passed" : false
+    },
+    {
+      "name" : "perspective-Figures",
+      "count" : 5,
+      "requestedCount" : 50,
+      "warmup" : 10,
+      "limitMs" : 150.0,
+      "p95Ms" : 70.782375,
+      "maximumMs" : 70.782375,
+      "valuesMs" : [
+        41.8275,
+        43.483708,
+        43.481417,
+        62.771375,
+        70.782375
+      ],
+      "startedUtc" : "2026-10-26T23:06:11.368505Z",
+      "finishedUtc" : "2026-10-26T23:06:13.247242Z",
+      "stages" : [
+        {
+          "renderParts" : {
+            "cssQueueMs" : 5.036125,
+            "cssMs" : 2.395167,
+            "layoutMs" : 0.505791,
+            "pulseMs" : 0.172875,
+            "fenceQueueMs" : 6.483334,
+            "fenceWaitMs" : 5.569791
+          },
+          "dispatchMs" : 13.913541,
+          "readinessMs" : 7.745,
+          "renderMs" : 20.168959
+        },
+        {
+          "renderParts" : {
+            "cssQueueMs" : 0.517333,
+            "cssMs" : 0.684083,
+            "layoutMs" : 4.59E-4,
+            "pulseMs" : 13.897875,
+            "fenceQueueMs" : 2.2515,
+            "fenceWaitMs" : 5.070666
+          },
+          "dispatchMs" : 13.591208,
+          "readinessMs" : 7.464709,
+          "renderMs" : 22.427791
+        },
+        {
+          "renderParts" : {
+            "cssQueueMs" : 2.549041,
+            "cssMs" : 0.757875,
+            "layoutMs" : 4.17E-4,
+            "pulseMs" : 8.153583,
+            "fenceQueueMs" : 4.009,
+            "fenceWaitMs" : 5.825209
+          },
+          "dispatchMs" : 14.973875,
+          "readinessMs" : 7.203792,
+          "renderMs" : 21.30375
+        },
+        {
+          "renderParts" : {
+            "cssQueueMs" : 0.505791,
+            "cssMs" : 0.667125,
+            "layoutMs" : 2.92E-4,
+            "pulseMs" : 5.02575,
+            "fenceQueueMs" : 6.671458,
+            "fenceWaitMs" : 28.476167
+          },
+          "dispatchMs" : 13.676167,
+          "readinessMs" : 7.742625,
+          "renderMs" : 41.352583
+        },
+        {
+          "renderParts" : {
+            "cssQueueMs" : 9.072792,
+            "cssMs" : 0.782166,
+            "layoutMs" : 2.5E-4,
+            "pulseMs" : 1.936667,
+            "fenceQueueMs" : 4.306708,
+            "fenceWaitMs" : 28.207834
+          },
+          "dispatchMs" : 13.976834,
+          "readinessMs" : 12.492583,
+          "renderMs" : 44.312958
+        }
+      ],
+      "passed" : true
+    }
+  ],
+  "memory" : [
+    {
+      "phase" : "before-window",
+      "heapBytes" : 689449840,
+      "rssBytes" : 1948663808,
+      "nonHeapBytes" : 247564096
+    },
+    {
+      "phase" : "linked-selection",
+      "heapBytes" : 3364347040,
+      "rssBytes" : 5698289664,
+      "nonHeapBytes" : 250580232
+    },
+    {
+      "phase" : "cached-trial-switch",
+      "heapBytes" : 4134001824,
+      "rssBytes" : 5703598080,
+      "nonHeapBytes" : 251024888
+    },
+    {
+      "phase" : "perspective-Data",
+      "heapBytes" : 4502173912,
+      "rssBytes" : 5742919680,
+      "nonHeapBytes" : 246751880
+    },
+    {
+      "phase" : "perspective-Explore",
+      "heapBytes" : 3577293152,
+      "rssBytes" : 5743362048,
+      "nonHeapBytes" : 247862456
+    },
+    {
+      "phase" : "perspective-Analysis",
+      "heapBytes" : 3471718336,
+      "rssBytes" : 5744590848,
+      "nonHeapBytes" : 250558200
+    },
+    {
+      "phase" : "perspective-Compare",
+      "heapBytes" : 2600523768,
+      "rssBytes" : 5751832576,
+      "nonHeapBytes" : 251220544
+    },
+    {
+      "phase" : "perspective-Figures",
+      "heapBytes" : 4383102968,
+      "rssBytes" : 5752389632,
+      "nonHeapBytes" : 251959672
+    },
+    {
+      "phase" : "after-collection",
+      "heapBytes" : 1712535296,
+      "rssBytes" : 5902745600,
+      "nonHeapBytes" : 249852256
+    }
+  ],
+  "storage" : {
+    "status" : "documented-budget-refusal",
+    "code" : "native-artifacts.budget",
+    "message" : "run 1 native artifacts need 114769920 density cells; maximum is 20000000.",
+    "coldRestorationQualified" : false
+  }
+}

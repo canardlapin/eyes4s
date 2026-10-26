@@ -1,0 +1,243 @@
+{
+  "status" : "passed",
+  "factor" : 1,
+  "pid" : 71163,
+  "jvm" : "25.0.4.1+1-LTS",
+  "maximumHeapBytes" : 8589934592,
+  "glassApplication" : "com.sun.glass.ui.monocle.MonocleApplication",
+  "requestedGraphicsPipeline" : "sw",
+  "fixationRows" : 11520,
+  "trialRows" : 960,
+  "sources" : [
+    {
+      "role" : "Fixations",
+      "sha256" : "19342ecedb6e089a190b4784a248907b27fedbef03ca3e6d4bc251702fbbc2f2",
+      "bytes" : 572152
+    },
+    {
+      "role" : "Trials",
+      "sha256" : "0668bccf6c672b706c0a138268f632fb5a768170578a01c58ee752176f0f8b99",
+      "bytes" : 57968
+    }
+  ],
+  "scene" : [
+    1440,
+    900
+  ],
+  "scale" : 1.0,
+  "measurements" : [
+    {
+      "name" : "linked-selection",
+      "requestedCount" : 100,
+      "count" : 1,
+      "warmup" : 10,
+      "limitMs" : 100.0,
+      "p95Ms" : 39.403625,
+      "maximumMs" : 39.403625,
+      "valuesMs" : [
+        39.403625
+      ],
+      "startedUtc" : "2026-10-26T22:56:08.801578Z",
+      "finishedUtc" : "2026-10-26T22:56:09.410493Z",
+      "stages" : [
+        {
+          "dispatchMs" : 6.344292,
+          "readinessMs" : 3.541,
+          "renderMs" : 29.518333
+        }
+      ],
+      "passed" : true
+    },
+    {
+      "name" : "cached-trial-switch",
+      "requestedCount" : 100,
+      "count" : 1,
+      "warmup" : 10,
+      "limitMs" : 250.0,
+      "p95Ms" : 67.360042,
+      "maximumMs" : 67.360042,
+      "valuesMs" : [
+        67.360042
+      ],
+      "startedUtc" : "2026-10-26T22:56:09.434888Z",
+      "finishedUtc" : "2026-10-26T22:56:10.146585Z",
+      "stages" : [
+        {
+          "dispatchMs" : 9.781375,
+          "readinessMs" : 41.397917,
+          "renderMs" : 16.18075
+        }
+      ],
+      "passed" : true
+    },
+    {
+      "name" : "perspective-Data",
+      "requestedCount" : 50,
+      "count" : 1,
+      "warmup" : 10,
+      "limitMs" : 150.0,
+      "p95Ms" : 90.148041,
+      "maximumMs" : 90.148041,
+      "valuesMs" : [
+        90.148041
+      ],
+      "startedUtc" : "2026-10-26T22:56:12.149939Z",
+      "finishedUtc" : "2026-10-26T22:56:14.298207Z",
+      "stages" : [
+        {
+          "dispatchMs" : 30.277375,
+          "readinessMs" : 26.585333,
+          "renderMs" : 33.285333
+        }
+      ],
+      "passed" : true
+    },
+    {
+      "name" : "perspective-Explore",
+      "requestedCount" : 50,
+      "count" : 1,
+      "warmup" : 10,
+      "limitMs" : 150.0,
+      "p95Ms" : 87.673542,
+      "maximumMs" : 87.673542,
+      "valuesMs" : [
+        87.673542
+      ],
+      "startedUtc" : "2026-10-26T22:56:14.325174Z",
+      "finishedUtc" : "2026-10-26T22:56:16.238999Z",
+      "stages" : [
+        {
+          "dispatchMs" : 34.151375,
+          "readinessMs" : 21.629292,
+          "renderMs" : 31.892875
+        }
+      ],
+      "passed" : true
+    },
+    {
+      "name" : "perspective-Analysis",
+      "requestedCount" : 50,
+      "count" : 1,
+      "warmup" : 10,
+      "limitMs" : 150.0,
+      "p95Ms" : 74.334291,
+      "maximumMs" : 74.334291,
+      "valuesMs" : [
+        74.334291
+      ],
+      "startedUtc" : "2026-10-26T22:56:16.271515Z",
+      "finishedUtc" : "2026-10-26T22:56:17.922883Z",
+      "stages" : [
+        {
+          "dispatchMs" : 17.2635,
+          "readinessMs" : 12.683041,
+          "renderMs" : 44.38775
+        }
+      ],
+      "passed" : true
+    },
+    {
+      "name" : "perspective-Compare",
+      "requestedCount" : 50,
+      "count" : 1,
+      "warmup" : 10,
+      "limitMs" : 150.0,
+      "p95Ms" : 68.801542,
+      "maximumMs" : 68.801542,
+      "valuesMs" : [
+        68.801542
+      ],
+      "startedUtc" : "2026-10-26T22:56:17.942888Z",
+      "finishedUtc" : "2026-10-26T22:56:19.552446Z",
+      "stages" : [
+        {
+          "dispatchMs" : 18.1375,
+          "readinessMs" : 14.422333,
+          "renderMs" : 36.241709
+        }
+      ],
+      "passed" : true
+    },
+    {
+      "name" : "perspective-Figures",
+      "requestedCount" : 50,
+      "count" : 1,
+      "warmup" : 10,
+      "limitMs" : 150.0,
+      "p95Ms" : 46.766667,
+      "maximumMs" : 46.766667,
+      "valuesMs" : [
+        46.766667
+      ],
+      "startedUtc" : "2026-10-26T22:56:19.578681Z",
+      "finishedUtc" : "2026-10-26T22:56:20.846192Z",
+      "stages" : [
+        {
+          "dispatchMs" : 16.483542,
+          "readinessMs" : 6.521542,
+          "renderMs" : 23.761583
+        }
+      ],
+      "passed" : true
+    }
+  ],
+  "memory" : [
+    {
+      "phase" : "before-window",
+      "heapBytes" : 38531056,
+      "rssBytes" : 271646720,
+      "nonHeapBytes" : 54379304
+    },
+    {
+      "phase" : "linked-selection",
+      "heapBytes" : 2168200352,
+      "rssBytes" : 5261312000,
+      "nonHeapBytes" : 234387808
+    },
+    {
+      "phase" : "cached-trial-switch",
+      "heapBytes" : 1862016160,
+      "rssBytes" : 5270962176,
+      "nonHeapBytes" : 238009264
+    },
+    {
+      "phase" : "perspective-Data",
+      "heapBytes" : 1589386400,
+      "rssBytes" : 3251306496,
+      "nonHeapBytes" : 256995952
+    },
+    {
+      "phase" : "perspective-Explore",
+      "heapBytes" : 1090786696,
+      "rssBytes" : 3455942656,
+      "nonHeapBytes" : 260633232
+    },
+    {
+      "phase" : "perspective-Analysis",
+      "heapBytes" : 2118391176,
+      "rssBytes" : 3465986048,
+      "nonHeapBytes" : 264774912
+    },
+    {
+      "phase" : "perspective-Compare",
+      "heapBytes" : 1374210520,
+      "rssBytes" : 3475767296,
+      "nonHeapBytes" : 268169896
+    },
+    {
+      "phase" : "perspective-Figures",
+      "heapBytes" : 2292763096,
+      "rssBytes" : 3479519232,
+      "nonHeapBytes" : 270256976
+    },
+    {
+      "phase" : "after-collection",
+      "heapBytes" : 360681680,
+      "rssBytes" : 1851981824,
+      "nonHeapBytes" : 245326464
+    }
+  ],
+  "storage" : {
+    "status" : "verified-archive-stored"
+  }
+}

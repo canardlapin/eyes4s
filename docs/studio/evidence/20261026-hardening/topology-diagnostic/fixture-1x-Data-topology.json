@@ -1,0 +1,109 @@
+{
+  "total" : 1570,
+  "panes" : {
+    "pane-data.sources" : 77,
+    "pane-data.column-mapping" : 592,
+    "pane-data.admission" : 205,
+    "pane-data.geometry" : 387
+  },
+  "styles" : {
+    "text" : 341,
+    "label" : 242,
+    "t11" : 141,
+    "t12" : 124,
+    "mono" : 86,
+    "track" : 39,
+    "thumb" : 38,
+    "scroll-bar" : 38,
+    "decrement-button" : 38,
+    "track-background" : 38,
+    "decrement-arrow" : 38,
+    "increment-button" : 38,
+    "increment-arrow" : 38,
+    "cell" : 36,
+    "list-cell" : 36,
+    "indexed-cell" : 36,
+    "button" : 33,
+    "dock-icon" : 28,
+    "arrow-button" : 24,
+    "arrow" : 24,
+    "corner" : 19,
+    "geometry-note" : 18,
+    "text-field" : 17,
+    "geometry-label" : 17,
+    "text-input" : 17,
+    "dock-header-button" : 16,
+    "close" : 15,
+    "geometry-stack" : 14,
+    "list-view" : 13,
+    "sheet" : 13,
+    "virtual-flow" : 13,
+    "clipped-container" : 13,
+    "geometry-value" : 12,
+    "menu-button" : 12,
+    "combo-box" : 12
+  },
+  "stylesheets" : [
+    {
+      "class" : "javafx.scene.layout.VBox",
+      "nodes" : 1570,
+      "stylesheets" : [
+        "file:/private/tmp/eyes4s-hardening-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio.css",
+        "file:/private/tmp/eyes4s-hardening-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-type.css",
+        "file:/private/tmp/eyes4s-hardening-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-icons.css",
+        "file:/private/tmp/eyes4s-hardening-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-shell.css",
+        "file:/private/tmp/eyes4s-hardening-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-controls.css"
+      ]
+    },
+    {
+      "class" : "scaladock.fx.DockRegion",
+      "nodes" : 1421,
+      "stylesheets" : [
+        "jar:file:/Users/bbuchsbaum/.ivy2/local/io.github.canardlapin/scaladock-fx_3/0.0.0-b83a7ecb90529184bd75eb1ad0b322af73ec065f/jars/scaladock-fx_3.jar!/scaladock/dock.css",
+        "file:/private/tmp/eyes4s-hardening-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-dock-light.css"
+      ]
+    },
+    {
+      "class" : "javafx.scene.layout.VBox",
+      "nodes" : 76,
+      "stylesheets" : [
+        "file:/private/tmp/eyes4s-hardening-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-sources.css"
+      ]
+    },
+    {
+      "class" : "javafx.scene.layout.VBox",
+      "nodes" : 584,
+      "stylesheets" : [
+        "file:/private/tmp/eyes4s-hardening-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-import.css"
+      ]
+    },
+    {
+      "class" : "javafx.scene.layout.VBox",
+      "nodes" : 56,
+      "stylesheets" : [
+        "file:/private/tmp/eyes4s-hardening-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-key.css"
+      ]
+    },
+    {
+      "class" : "javafx.scene.layout.VBox",
+      "nodes" : 204,
+      "stylesheets" : [
+        "file:/private/tmp/eyes4s-hardening-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-ledger.css"
+      ]
+    },
+    {
+      "class" : "javafx.scene.layout.VBox",
+      "nodes" : 386,
+      "stylesheets" : [
+        "file:/private/tmp/eyes4s-hardening-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-geometry.css"
+      ]
+    },
+    {
+      "class" : "javafx.scene.layout.VBox",
+      "nodes" : 77,
+      "stylesheets" : [
+        "file:/private/tmp/eyes4s-hardening-20261026/studio/desktop/target/scala-3.7.4/classes/eyes4s/studio/desktop/studio-import.css"
+      ]
+    }
+  ]
+}

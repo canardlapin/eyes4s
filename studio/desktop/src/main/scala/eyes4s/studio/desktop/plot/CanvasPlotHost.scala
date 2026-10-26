@@ -488,17 +488,37 @@ final class CanvasPlotHost private[plot] (
     inDevicePixels(gc, frame)(JavaFxRenderer.draw(frame.program, context))
     baseDraws += 1
 
-  // Paint only the declared frame; the surrounding texture guard remains clear.
+  // The canvas bounds already clip top and left; the host clips its logical
+  // frame. Clear the extra sampling texel after painting instead of adding a
+  // graphics clip around every mark: Prism's software pipeline masks each
+  // operation separately under that clip (S10.6 native-render profile).
+  // Plot-internal clips are unchanged, and the texture guard stays transparent
+  // even when feedback extends past the painted frame.
   private def inDevicePixels(gc: GraphicsContext, frame: PlotFrame)(f: => Unit): Unit =
     val k = layers.pixelScale
     gc.save()
     try
       gc.scale(1.0 / k, 1.0 / k)
-      gc.beginPath()
-      gc.rect(0.0, 0.0, frame.surface.deviceWidth.toDouble, frame.surface.deviceHeight.toDouble)
-      gc.clip()
       f
-    finally gc.restore()
+    finally
+      gc.restore()
+      gc.save()
+      try
+        gc.scale(1.0 / k, 1.0 / k)
+        val s = frame.surface
+        gc.clearRect(
+          s.deviceWidth.toDouble,
+          0.0,
+          (s.canvasTextureWidth - s.deviceWidth).toDouble,
+          s.canvasTextureHeight.toDouble
+        )
+        gc.clearRect(
+          0.0,
+          s.deviceHeight.toDouble,
+          s.canvasTextureWidth.toDouble,
+          (s.canvasTextureHeight - s.deviceHeight).toDouble
+        )
+      finally gc.restore()
 
   private def blank(): Unit =
     shown = None

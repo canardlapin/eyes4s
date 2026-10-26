@@ -1,0 +1,7 @@
+{
+  "qualification": false,
+  "base": "259f9d72",
+  "instrumentation": "Five samples after ten warmups, original render completion split into CSS queue/application, layout, pulse, renderer queue and fence; JFR includes native-method samples.",
+  "finding": "Tenfold Compare mean fenceQueue95.53ms, fenceWait13.69ms. FX thread parks in PaintCollector.waitForRenderingToComplete for approximately110ms;33 of74 QuantumRenderer samples in native SSEBlend_SRC_INPeer.filter. Original Java-only profile missed the native cost. Canvas per-operation clip masking dominates.",
+  "next": "Replace redundant full-frame graphics clip with post-draw sampling-guard clearance; retain host node clip and all plot-internal clipping. Verify pixels and native scales."
+}

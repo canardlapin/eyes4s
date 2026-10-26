@@ -1,0 +1,1476 @@
+{
+  "samplingSeconds": 5,
+  "scope": "Read-only process CPU/load observations; no process altered; one CPU is100percent. Other checkout paths are not recorded.",
+  "observations": [
+    {
+      "utc": "2026-10-26T22:48:22.689403+00:00",
+      "loadAverage": [
+        7.75634765625,
+        8.173828125,
+        7.98876953125
+      ],
+      "java": [
+        {
+          "pid": 31658,
+          "cpuPercent": 0.0,
+          "owner": "other-checkout"
+        },
+        {
+          "pid": 42288,
+          "cpuPercent": 31.5,
+          "owner": "other-checkout"
+        },
+        {
+          "pid": 44282,
+          "cpuPercent": 0.0,
+          "owner": "owned-checkout"
+        },
+        {
+          "pid": 45424,
+          "cpuPercent": 207.8,
+          "owner": "owned-checkout"
+        },
+        {
+          "pid": 90977,
+          "cpuPercent": 0.0,
+          "owner": "other-checkout"
+        }
+      ],
+      "virtualizationCpuPercent": 266.9
+    },
+    {
+      "utc": "2026-10-26T22:48:27.758783+00:00",
+      "loadAverage": [
+        7.775390625,
+        8.1708984375,
+        7.98876953125
+      ],
+      "java": [
+        {
+          "pid": 31658,
+          "cpuPercent": 0.0,
+          "owner": "other-checkout"
+        },
+        {
+          "pid": 42288,
+          "cpuPercent": 40.2,
+          "owner": "other-checkout"
+        },
+        {
+          "pid": 44282,
+          "cpuPercent": 0.0,
+          "owner": "owned-checkout"
+        },
+        {
+          "pid": 45424,
+          "cpuPercent": 111.7,
+          "owner": "owned-checkout"
+        },
+        {
+          "pid": 90977,
+          "cpuPercent": 0.0,
+          "owner": "other-checkout"
+        }
+      ],
+      "virtualizationCpuPercent": 274.4
+    },
+    {
+      "utc": "2026-10-26T22:48:32.824697+00:00",
+      "loadAverage": [
+        7.6328125,
+        8.134765625,
+        7.97705078125
+      ],
+      "java": [
+        {
+          "pid": 31658,
+          "cpuPercent": 0.0,
+          "owner": "other-checkout"
+        },
+        {
+          "pid": 42288,
+          "cpuPercent": 40.6,
+          "owner": "other-checkout"
+        },
+        {
+          "pid": 44282,
+          "cpuPercent": 0.0,
+          "owner": "owned-checkout"
+        },
+        {
+          "pid": 45424,
+          "cpuPercent": 97.7,
+          "owner": "owned-checkout"
+        },
+        {
+          "pid": 90977,
+          "cpuPercent": 0.0,
+          "owner": "other-checkout"
+        }
+      ],
+      "virtualizationCpuPercent": 242.4
+    },
+    {
+      "utc": "2026-10-26T22:48:37.902733+00:00",
+      "loadAverage": [
+        7.822265625,
+        8.16552734375,
+        7.98876953125
+      ],
+      "java": [
+        {
+          "pid": 31658,
+          "cpuPercent": 0.0,
+          "owner": "other-checkout"
+        },
+        {
+          "pid": 42288,
+          "cpuPercent": 43.2,
+          "owner": "other-checkout"
+        },
+        {
+          "pid": 44282,
+          "cpuPercent": 0.0,
+          "owner": "owned-checkout"
+        },
+        {
+          "pid": 45424,
+          "cpuPercent": 125.4,
+          "owner": "owned-checkout"
+        },
+        {
+          "pid": 90977,
+          "cpuPercent": 0.0,
+          "owner": "other-checkout"
+        }
+      ],
+      "virtualizationCpuPercent": 256.5
+    },
+    {
+      "utc": "2026-10-26T22:48:42.970923+00:00",
+      "loadAverage": [
+        7.75634765625,
+        8.14599609375,
+        7.98291015625
+      ],
+      "java": [
+        {
+          "pid": 31658,
+          "cpuPercent": 0.0,
+          "owner": "other-checkout"
+        },
+        {
+          "pid": 42288,
+          "cpuPercent": 22.3,
+          "owner": "other-checkout"
+        },
+        {
+          "pid": 44282,
+          "cpuPercent": 0.0,
+          "owner": "owned-checkout"
+        },
+        {
+          "pid": 45424,
+          "cpuPercent": 259.9,
+          "owner": "owned-checkout"
+        },
+        {
+          "pid": 90977,
+          "cpuPercent": 0.0,
+          "owner": "other-checkout"
+        }
+      ],
+      "virtualizationCpuPercent": 226.8
+    },
+    {
+      "utc": "2026-10-26T22:48:48.052303+00:00",
+      "loadAverage": [
+        7.935546875,
+        8.1767578125,
+        7.99462890625
+      ],
+      "java": [
+        {
+          "pid": 31658,
+          "cpuPercent": 0.0,
+          "owner": "other-checkout"
+        },
+        {
+          "pid": 42288,
+          "cpuPercent": 28.1,
+          "owner": "other-checkout"
+        },
+        {
+          "pid": 44282,
+          "cpuPercent": 0.0,
+          "owner": "owned-checkout"
+        },
+        {
+          "pid": 45424,
+          "cpuPercent": 221.7,
+          "owner": "owned-checkout"
+        },
+        {
+          "pid": 90977,
+          "cpuPercent": 0.0,
+          "owner": "other-checkout"
+        }
+      ],
+      "virtualizationCpuPercent": 264.0
+    },
+    {
+      "utc": "2026-10-26T22:48:53.120627+00:00",
+      "loadAverage": [
+        7.6201171875,
+        8.10693359375,
+        7.97119140625
+      ],
+      "java": [
+        {
+          "pid": 31658,
+          "cpuPercent": 0.0,
+          "owner": "other-checkout"
+        },
+        {
+          "pid": 42288,
+          "cpuPercent": 5.2,
+          "owner": "other-checkout"
+        },
+        {
+          "pid": 44282,
+          "cpuPercent": 0.0,
+          "owner": "owned-checkout"
+        },
+        {
+          "pid": 45424,
+          "cpuPercent": 156.7,
+          "owner": "owned-checkout"
+        },
+        {
+          "pid": 90977,
+          "cpuPercent": 0.0,
+          "owner": "other-checkout"
+        }
+      ],
+      "virtualizationCpuPercent": 201.2
+    },
+    {
+      "utc": "2026-10-26T22:48:58.266604+00:00",
+      "loadAverage": [
+        7.650390625,
+        8.10498046875,
+        7.97119140625
+      ],
+      "java": [
+        {
+          "pid": 31658,
+          "cpuPercent": 0.0,
+          "owner": "other-checkout"
+        },
+        {
+          "pid": 42288,
+          "cpuPercent": 21.4,
+          "owner": "other-checkout"
+        },
+        {
+          "pid": 44282,
+          "cpuPercent": 0.1,
+          "owner": "owned-checkout"
+        },
+        {
+          "pid": 45424,
+          "cpuPercent": 238.7,
+          "owner": "owned-checkout"
+        },
+        {
+          "pid": 90977,
+          "cpuPercent": 0.0,
+          "owner": "other-checkout"
+        }
+      ],
+      "virtualizationCpuPercent": 238.1
+    },
+    {
+      "utc": "2026-10-26T22:49:03.338934+00:00",
+      "loadAverage": [
+        8.07861328125,
+        8.18603515625,
+        8.00048828125
+      ],
+      "java": [
+        {
+          "pid": 31658,
+          "cpuPercent": 0.0,
+          "owner": "other-checkout"
+        },
+        {
+          "pid": 42288,
+          "cpuPercent": 11.3,
+          "owner": "other-checkout"
+        },
+        {
+          "pid": 44282,
+          "cpuPercent": 0.0,
+          "owner": "owned-checkout"
+        },
+        {
+          "pid": 45424,
+          "cpuPercent": 156.3,
+          "owner": "owned-checkout"
+        },
+        {
+          "pid": 90977,
+          "cpuPercent": 0.0,
+          "owner": "other-checkout"
+        }
+      ],
+      "virtualizationCpuPercent": 206.4
+    },
+    {
+      "utc": "2026-10-26T22:49:08.410846+00:00",
+      "loadAverage": [
+        8.79296875,
+        8.33203125,
+        8.052734375
+      ],
+      "java": [
+        {
+          "pid": 31658,
+          "cpuPercent": 0.0,
+          "owner": "other-checkout"
+        },
+        {
+          "pid": 42288,
+          "cpuPercent": 34.9,
+          "owner": "other-checkout"
+        },
+        {
+          "pid": 44282,
+          "cpuPercent": 0.0,
+          "owner": "owned-checkout"
+        },
+        {
+          "pid": 45424,
+          "cpuPercent": 199.4,
+          "owner": "owned-checkout"
+        },
+        {
+          "pid": 90977,
+          "cpuPercent": 0.0,
+          "owner": "other-checkout"
+        }
+      ],
+      "virtualizationCpuPercent": 223.6
+    },
+    {
+      "utc": "2026-10-26T22:49:13.480841+00:00",
+      "loadAverage": [
+        8.48876953125,
+        8.2763671875,
+        8.03466796875
+      ],
+      "java": [
+        {
+          "pid": 31658,
+          "cpuPercent": 0.0,
+          "owner": "other-checkout"
+        },
+        {
+          "pid": 42288,
+          "cpuPercent": 7.4,
+          "owner": "other-checkout"
+        },
+        {
+          "pid": 44282,
+          "cpuPercent": 0.0,
+          "owner": "owned-checkout"
+        },
+        {
+          "pid": 45424,
+          "cpuPercent": 188.7,
+          "owner": "owned-checkout"
+        },
+        {
+          "pid": 90977,
+          "cpuPercent": 0.0,
+          "owner": "other-checkout"
+        }
+      ],
+      "virtualizationCpuPercent": 210.9
+    },
+    {
+      "utc": "2026-10-26T22:49:18.546049+00:00",
+      "loadAverage": [
+        8.76953125,
+        8.337890625,
+        8.0576171875
+      ],
+      "java": [
+        {
+          "pid": 31658,
+          "cpuPercent": 0.0,
+          "owner": "other-checkout"
+        },
+        {
+          "pid": 42288,
+          "cpuPercent": 30.2,
+          "owner": "other-checkout"
+        },
+        {
+          "pid": 44282,
+          "cpuPercent": 0.0,
+          "owner": "owned-checkout"
+        },
+        {
+          "pid": 45424,
+          "cpuPercent": 197.1,
+          "owner": "owned-checkout"
+        },
+        {
+          "pid": 90977,
+          "cpuPercent": 0.0,
+          "owner": "other-checkout"
+        }
+      ],
+      "virtualizationCpuPercent": 281.3
+    },
+    {
+      "utc": "2026-10-26T22:49:23.682945+00:00",
+      "loadAverage": [
+        8.54736328125,
+        8.298828125,
+        8.04541015625
+      ],
+      "java": [
+        {
+          "pid": 31658,
+          "cpuPercent": 0.0,
+          "owner": "other-checkout"
+        },
+        {
+          "pid": 42288,
+          "cpuPercent": 30.6,
+          "owner": "other-checkout"
+        },
+        {
+          "pid": 44282,
+          "cpuPercent": 0.0,
+          "owner": "owned-checkout"
+        },
+        {
+          "pid": 45424,
+          "cpuPercent": 163.9,
+          "owner": "owned-checkout"
+        },
+        {
+          "pid": 90977,
+          "cpuPercent": 0.0,
+          "owner": "other-checkout"
+        }
+      ],
+      "virtualizationCpuPercent": 265.7
+    },
+    {
+      "utc": "2026-10-26T22:49:28.758317+00:00",
+      "loadAverage": [
+        8.26318359375,
+        8.24365234375,
+        8.02734375
+      ],
+      "java": [
+        {
+          "pid": 31658,
+          "cpuPercent": 0.0,
+          "owner": "other-checkout"
+        },
+        {
+          "pid": 42288,
+          "cpuPercent": 43.8,
+          "owner": "other-checkout"
+        },
+        {
+          "pid": 44282,
+          "cpuPercent": 0.0,
+          "owner": "owned-checkout"
+        },
+        {
+          "pid": 45424,
+          "cpuPercent": 168.2,
+          "owner": "owned-checkout"
+        },
+        {
+          "pid": 90977,
+          "cpuPercent": 0.0,
+          "owner": "other-checkout"
+        }
+      ],
+      "virtualizationCpuPercent": 260.2
+    },
+    {
+      "utc": "2026-10-26T22:49:33.842132+00:00",
+      "loadAverage": [
+        8.48193359375,
+        8.2890625,
+        8.04443359375
+      ],
+      "java": [
+        {
+          "pid": 31658,
+          "cpuPercent": 0.0,
+          "owner": "other-checkout"
+        },
+        {
+          "pid": 42288,
+          "cpuPercent": 28.3,
+          "owner": "other-checkout"
+        },
+        {
+          "pid": 44282,
+          "cpuPercent": 0.0,
+          "owner": "owned-checkout"
+        },
+        {
+          "pid": 45424,
+          "cpuPercent": 188.6,
+          "owner": "owned-checkout"
+        },
+        {
+          "pid": 90977,
+          "cpuPercent": 0.0,
+          "owner": "other-checkout"
+        }
+      ],
+      "virtualizationCpuPercent": 223.7
+    },
+    {
+      "utc": "2026-10-26T22:49:38.910950+00:00",
+      "loadAverage": [
+        8.04248046875,
+        8.201171875,
+        8.0146484375
+      ],
+      "java": [
+        {
+          "pid": 31658,
+          "cpuPercent": 0.0,
+          "owner": "other-checkout"
+        },
+        {
+          "pid": 42288,
+          "cpuPercent": 44.9,
+          "owner": "other-checkout"
+        },
+        {
+          "pid": 44282,
+          "cpuPercent": 0.0,
+          "owner": "owned-checkout"
+        },
+        {
+          "pid": 45424,
+          "cpuPercent": 214.8,
+          "owner": "owned-checkout"
+        },
+        {
+          "pid": 90977,
+          "cpuPercent": 0.0,
+          "owner": "other-checkout"
+        }
+      ],
+      "virtualizationCpuPercent": 250.5
+    },
+    {
+      "utc": "2026-10-26T22:49:44.124490+00:00",
+      "loadAverage": [
+        7.71875,
+        8.13134765625,
+        7.99072265625
+      ],
+      "java": [
+        {
+          "pid": 31658,
+          "cpuPercent": 0.0,
+          "owner": "other-checkout"
+        },
+        {
+          "pid": 42288,
+          "cpuPercent": 18.4,
+          "owner": "other-checkout"
+        },
+        {
+          "pid": 44282,
+          "cpuPercent": 0.0,
+          "owner": "owned-checkout"
+        },
+        {
+          "pid": 45424,
+          "cpuPercent": 550.2,
+          "owner": "owned-checkout"
+        },
+        {
+          "pid": 90977,
+          "cpuPercent": 0.0,
+          "owner": "other-checkout"
+        }
+      ],
+      "virtualizationCpuPercent": 244.8
+    },
+    {
+      "utc": "2026-10-26T22:49:49.237728+00:00",
+      "loadAverage": [
+        8.3017578125,
+        8.2451171875,
+        8.03173828125
+      ],
+      "java": [
+        {
+          "pid": 31658,
+          "cpuPercent": 0.0,
+          "owner": "other-checkout"
+        },
+        {
+          "pid": 42288,
+          "cpuPercent": 23.6,
+          "owner": "other-checkout"
+        },
+        {
+          "pid": 44282,
+          "cpuPercent": 0.0,
+          "owner": "owned-checkout"
+        },
+        {
+          "pid": 45424,
+          "cpuPercent": 237.5,
+          "owner": "owned-checkout"
+        },
+        {
+          "pid": 90977,
+          "cpuPercent": 0.0,
+          "owner": "other-checkout"
+        }
+      ],
+      "virtualizationCpuPercent": 271.9
+    },
+    {
+      "utc": "2026-10-26T22:49:54.346562+00:00",
+      "loadAverage": [
+        8.1171875,
+        8.20751953125,
+        8.01953125
+      ],
+      "java": [
+        {
+          "pid": 31658,
+          "cpuPercent": 0.0,
+          "owner": "other-checkout"
+        },
+        {
+          "pid": 42288,
+          "cpuPercent": 12.2,
+          "owner": "other-checkout"
+        },
+        {
+          "pid": 44282,
+          "cpuPercent": 0.0,
+          "owner": "owned-checkout"
+        },
+        {
+          "pid": 45424,
+          "cpuPercent": 535.7,
+          "owner": "owned-checkout"
+        },
+        {
+          "pid": 90977,
+          "cpuPercent": 0.0,
+          "owner": "other-checkout"
+        }
+      ],
+      "virtualizationCpuPercent": 239.0
+    },
+    {
+      "utc": "2026-10-26T22:49:59.432768+00:00",
+      "loadAverage": [
+        8.66796875,
+        8.31982421875,
+        8.06005859375
+      ],
+      "java": [
+        {
+          "pid": 31658,
+          "cpuPercent": 0.0,
+          "owner": "other-checkout"
+        },
+        {
+          "pid": 42288,
+          "cpuPercent": 16.3,
+          "owner": "other-checkout"
+        },
+        {
+          "pid": 44282,
+          "cpuPercent": 0.1,
+          "owner": "owned-checkout"
+        },
+        {
+          "pid": 45424,
+          "cpuPercent": 484.3,
+          "owner": "owned-checkout"
+        },
+        {
+          "pid": 90977,
+          "cpuPercent": 0.0,
+          "owner": "other-checkout"
+        }
+      ],
+      "virtualizationCpuPercent": 385.7
+    },
+    {
+      "utc": "2026-10-26T22:50:04.608686+00:00",
+      "loadAverage": [
+        8.6943359375,
+        8.3310546875,
+        8.0654296875
+      ],
+      "java": [
+        {
+          "pid": 31658,
+          "cpuPercent": 0.0,
+          "owner": "other-checkout"
+        },
+        {
+          "pid": 42288,
+          "cpuPercent": 14.8,
+          "owner": "other-checkout"
+        },
+        {
+          "pid": 44282,
+          "cpuPercent": 0.0,
+          "owner": "owned-checkout"
+        },
+        {
+          "pid": 45424,
+          "cpuPercent": 682.6,
+          "owner": "owned-checkout"
+        },
+        {
+          "pid": 90977,
+          "cpuPercent": 0.0,
+          "owner": "other-checkout"
+        }
+      ],
+      "virtualizationCpuPercent": 233.8
+    },
+    {
+      "utc": "2026-10-26T22:50:09.697844+00:00",
+      "loadAverage": [
+        10.880859375,
+        8.7900390625,
+        8.22900390625
+      ],
+      "java": [
+        {
+          "pid": 31658,
+          "cpuPercent": 0.0,
+          "owner": "other-checkout"
+        },
+        {
+          "pid": 42288,
+          "cpuPercent": 34.8,
+          "owner": "other-checkout"
+        },
+        {
+          "pid": 44282,
+          "cpuPercent": 0.0,
+          "owner": "owned-checkout"
+        },
+        {
+          "pid": 45424,
+          "cpuPercent": 248.0,
+          "owner": "owned-checkout"
+        },
+        {
+          "pid": 90977,
+          "cpuPercent": 0.0,
+          "owner": "other-checkout"
+        }
+      ],
+      "virtualizationCpuPercent": 285.1
+    },
+    {
+      "utc": "2026-10-26T22:50:14.770105+00:00",
+      "loadAverage": [
+        11.29052734375,
+        8.90966796875,
+        8.2744140625
+      ],
+      "java": [
+        {
+          "pid": 31658,
+          "cpuPercent": 0.0,
+          "owner": "other-checkout"
+        },
+        {
+          "pid": 42288,
+          "cpuPercent": 12.2,
+          "owner": "other-checkout"
+        },
+        {
+          "pid": 44282,
+          "cpuPercent": 0.0,
+          "owner": "owned-checkout"
+        },
+        {
+          "pid": 45424,
+          "cpuPercent": 261.9,
+          "owner": "owned-checkout"
+        },
+        {
+          "pid": 90977,
+          "cpuPercent": 0.0,
+          "owner": "other-checkout"
+        }
+      ],
+      "virtualizationCpuPercent": 223.7
+    },
+    {
+      "utc": "2026-10-26T22:50:19.845745+00:00",
+      "loadAverage": [
+        10.7041015625,
+        8.86279296875,
+        8.2646484375
+      ],
+      "java": [
+        {
+          "pid": 31658,
+          "cpuPercent": 0.0,
+          "owner": "other-checkout"
+        },
+        {
+          "pid": 42288,
+          "cpuPercent": 31.3,
+          "owner": "other-checkout"
+        },
+        {
+          "pid": 44282,
+          "cpuPercent": 0.0,
+          "owner": "owned-checkout"
+        },
+        {
+          "pid": 45424,
+          "cpuPercent": 135.6,
+          "owner": "owned-checkout"
+        },
+        {
+          "pid": 90977,
+          "cpuPercent": 0.0,
+          "owner": "other-checkout"
+        }
+      ],
+      "virtualizationCpuPercent": 266.2
+    },
+    {
+      "utc": "2026-10-26T22:50:24.916678+00:00",
+      "loadAverage": [
+        10.1669921875,
+        8.78173828125,
+        8.2392578125
+      ],
+      "java": [
+        {
+          "pid": 31658,
+          "cpuPercent": 0.0,
+          "owner": "other-checkout"
+        },
+        {
+          "pid": 42288,
+          "cpuPercent": 20.0,
+          "owner": "other-checkout"
+        },
+        {
+          "pid": 44282,
+          "cpuPercent": 0.0,
+          "owner": "owned-checkout"
+        },
+        {
+          "pid": 45424,
+          "cpuPercent": 99.7,
+          "owner": "owned-checkout"
+        },
+        {
+          "pid": 90977,
+          "cpuPercent": 0.0,
+          "owner": "other-checkout"
+        }
+      ],
+      "virtualizationCpuPercent": 241.7
+    },
+    {
+      "utc": "2026-10-26T22:50:29.979771+00:00",
+      "loadAverage": [
+        9.7529296875,
+        8.71875,
+        8.22021484375
+      ],
+      "java": [
+        {
+          "pid": 31658,
+          "cpuPercent": 0.0,
+          "owner": "other-checkout"
+        },
+        {
+          "pid": 42288,
+          "cpuPercent": 37.2,
+          "owner": "other-checkout"
+        },
+        {
+          "pid": 44282,
+          "cpuPercent": 0.0,
+          "owner": "owned-checkout"
+        },
+        {
+          "pid": 45424,
+          "cpuPercent": 100.2,
+          "owner": "owned-checkout"
+        },
+        {
+          "pid": 90977,
+          "cpuPercent": 0.0,
+          "owner": "other-checkout"
+        }
+      ],
+      "virtualizationCpuPercent": 282.7
+    },
+    {
+      "utc": "2026-10-26T22:50:35.052445+00:00",
+      "loadAverage": [
+        9.5322265625,
+        8.68994140625,
+        8.212890625
+      ],
+      "java": [
+        {
+          "pid": 31658,
+          "cpuPercent": 0.0,
+          "owner": "other-checkout"
+        },
+        {
+          "pid": 42288,
+          "cpuPercent": 41.9,
+          "owner": "other-checkout"
+        },
+        {
+          "pid": 44282,
+          "cpuPercent": 0.0,
+          "owner": "owned-checkout"
+        },
+        {
+          "pid": 45424,
+          "cpuPercent": 114.9,
+          "owner": "owned-checkout"
+        },
+        {
+          "pid": 90977,
+          "cpuPercent": 0.0,
+          "owner": "other-checkout"
+        }
+      ],
+      "virtualizationCpuPercent": 290.4
+    },
+    {
+      "utc": "2026-10-26T22:50:40.118856+00:00",
+      "loadAverage": [
+        9.3291015625,
+        8.66162109375,
+        8.20556640625
+      ],
+      "java": [
+        {
+          "pid": 31658,
+          "cpuPercent": 0.0,
+          "owner": "other-checkout"
+        },
+        {
+          "pid": 42288,
+          "cpuPercent": 41.8,
+          "owner": "other-checkout"
+        },
+        {
+          "pid": 44282,
+          "cpuPercent": 0.0,
+          "owner": "owned-checkout"
+        },
+        {
+          "pid": 45424,
+          "cpuPercent": 99.7,
+          "owner": "owned-checkout"
+        },
+        {
+          "pid": 90977,
+          "cpuPercent": 0.0,
+          "owner": "other-checkout"
+        }
+      ],
+      "virtualizationCpuPercent": 282.0
+    },
+    {
+      "utc": "2026-10-26T22:50:45.179889+00:00",
+      "loadAverage": [
+        9.302734375,
+        8.6669921875,
+        8.2099609375
+      ],
+      "java": [
+        {
+          "pid": 31658,
+          "cpuPercent": 0.0,
+          "owner": "other-checkout"
+        },
+        {
+          "pid": 42288,
+          "cpuPercent": 29.0,
+          "owner": "other-checkout"
+        },
+        {
+          "pid": 44282,
+          "cpuPercent": 0.0,
+          "owner": "owned-checkout"
+        },
+        {
+          "pid": 45424,
+          "cpuPercent": 211.1,
+          "owner": "owned-checkout"
+        },
+        {
+          "pid": 90977,
+          "cpuPercent": 0.0,
+          "owner": "other-checkout"
+        }
+      ],
+      "virtualizationCpuPercent": 269.3
+    },
+    {
+      "utc": "2026-10-26T22:50:50.273370+00:00",
+      "loadAverage": [
+        9.0380859375,
+        8.62255859375,
+        8.19677734375
+      ],
+      "java": [
+        {
+          "pid": 31658,
+          "cpuPercent": 0.0,
+          "owner": "other-checkout"
+        },
+        {
+          "pid": 42288,
+          "cpuPercent": 29.8,
+          "owner": "other-checkout"
+        },
+        {
+          "pid": 44282,
+          "cpuPercent": 0.0,
+          "owner": "owned-checkout"
+        },
+        {
+          "pid": 45424,
+          "cpuPercent": 191.9,
+          "owner": "owned-checkout"
+        },
+        {
+          "pid": 90977,
+          "cpuPercent": 0.0,
+          "owner": "other-checkout"
+        }
+      ],
+      "virtualizationCpuPercent": 274.8
+    },
+    {
+      "utc": "2026-10-26T22:50:55.382120+00:00",
+      "loadAverage": [
+        9.03466796875,
+        8.62841796875,
+        8.201171875
+      ],
+      "java": [
+        {
+          "pid": 31658,
+          "cpuPercent": 0.0,
+          "owner": "other-checkout"
+        },
+        {
+          "pid": 42288,
+          "cpuPercent": 25.6,
+          "owner": "other-checkout"
+        },
+        {
+          "pid": 44282,
+          "cpuPercent": 0.0,
+          "owner": "owned-checkout"
+        },
+        {
+          "pid": 45424,
+          "cpuPercent": 146.8,
+          "owner": "owned-checkout"
+        },
+        {
+          "pid": 90977,
+          "cpuPercent": 0.0,
+          "owner": "other-checkout"
+        }
+      ],
+      "virtualizationCpuPercent": 248.8
+    },
+    {
+      "utc": "2026-10-26T22:51:00.503471+00:00",
+      "loadAverage": [
+        8.79150390625,
+        8.58447265625,
+        8.18798828125
+      ],
+      "java": [
+        {
+          "pid": 31658,
+          "cpuPercent": 0.0,
+          "owner": "other-checkout"
+        },
+        {
+          "pid": 42288,
+          "cpuPercent": 31.1,
+          "owner": "other-checkout"
+        },
+        {
+          "pid": 44282,
+          "cpuPercent": 0.0,
+          "owner": "owned-checkout"
+        },
+        {
+          "pid": 45424,
+          "cpuPercent": 146.5,
+          "owner": "owned-checkout"
+        },
+        {
+          "pid": 90977,
+          "cpuPercent": 0.0,
+          "owner": "other-checkout"
+        }
+      ],
+      "virtualizationCpuPercent": 288.7
+    },
+    {
+      "utc": "2026-10-26T22:51:05.575631+00:00",
+      "loadAverage": [
+        8.96826171875,
+        8.62451171875,
+        8.2041015625
+      ],
+      "java": [
+        {
+          "pid": 31658,
+          "cpuPercent": 0.0,
+          "owner": "other-checkout"
+        },
+        {
+          "pid": 42288,
+          "cpuPercent": 33.7,
+          "owner": "other-checkout"
+        },
+        {
+          "pid": 44282,
+          "cpuPercent": 0.0,
+          "owner": "owned-checkout"
+        },
+        {
+          "pid": 45424,
+          "cpuPercent": 146.0,
+          "owner": "owned-checkout"
+        },
+        {
+          "pid": 90977,
+          "cpuPercent": 0.0,
+          "owner": "other-checkout"
+        }
+      ],
+      "virtualizationCpuPercent": 267.9
+    },
+    {
+      "utc": "2026-10-26T22:51:10.645057+00:00",
+      "loadAverage": [
+        8.650390625,
+        8.56396484375,
+        8.18505859375
+      ],
+      "java": [
+        {
+          "pid": 31658,
+          "cpuPercent": 0.0,
+          "owner": "other-checkout"
+        },
+        {
+          "pid": 42288,
+          "cpuPercent": 33.9,
+          "owner": "other-checkout"
+        },
+        {
+          "pid": 44282,
+          "cpuPercent": 0.0,
+          "owner": "owned-checkout"
+        },
+        {
+          "pid": 45424,
+          "cpuPercent": 173.4,
+          "owner": "owned-checkout"
+        },
+        {
+          "pid": 90977,
+          "cpuPercent": 0.0,
+          "owner": "other-checkout"
+        }
+      ],
+      "virtualizationCpuPercent": 255.2
+    },
+    {
+      "utc": "2026-10-26T22:51:15.715093+00:00",
+      "loadAverage": [
+        8.43798828125,
+        8.52099609375,
+        8.171875
+      ],
+      "java": [
+        {
+          "pid": 31658,
+          "cpuPercent": 0.0,
+          "owner": "other-checkout"
+        },
+        {
+          "pid": 42288,
+          "cpuPercent": 27.4,
+          "owner": "other-checkout"
+        },
+        {
+          "pid": 44282,
+          "cpuPercent": 0.0,
+          "owner": "owned-checkout"
+        },
+        {
+          "pid": 45424,
+          "cpuPercent": 181.6,
+          "owner": "owned-checkout"
+        },
+        {
+          "pid": 90977,
+          "cpuPercent": 0.0,
+          "owner": "other-checkout"
+        }
+      ],
+      "virtualizationCpuPercent": 237.2
+    },
+    {
+      "utc": "2026-10-26T22:51:20.789686+00:00",
+      "loadAverage": [
+        8.08251953125,
+        8.44580078125,
+        8.14697265625
+      ],
+      "java": [
+        {
+          "pid": 31658,
+          "cpuPercent": 0.0,
+          "owner": "other-checkout"
+        },
+        {
+          "pid": 42288,
+          "cpuPercent": 17.3,
+          "owner": "other-checkout"
+        },
+        {
+          "pid": 44282,
+          "cpuPercent": 0.0,
+          "owner": "owned-checkout"
+        },
+        {
+          "pid": 45424,
+          "cpuPercent": 129.0,
+          "owner": "owned-checkout"
+        },
+        {
+          "pid": 90977,
+          "cpuPercent": 0.0,
+          "owner": "other-checkout"
+        }
+      ],
+      "virtualizationCpuPercent": 265.0
+    },
+    {
+      "utc": "2026-10-26T22:51:25.868310+00:00",
+      "loadAverage": [
+        8.95654296875,
+        8.62060546875,
+        8.21044921875
+      ],
+      "java": [
+        {
+          "pid": 31658,
+          "cpuPercent": 0.0,
+          "owner": "other-checkout"
+        },
+        {
+          "pid": 42288,
+          "cpuPercent": 26.9,
+          "owner": "other-checkout"
+        },
+        {
+          "pid": 44282,
+          "cpuPercent": 0.0,
+          "owner": "owned-checkout"
+        },
+        {
+          "pid": 45424,
+          "cpuPercent": 140.0,
+          "owner": "owned-checkout"
+        },
+        {
+          "pid": 90977,
+          "cpuPercent": 0.0,
+          "owner": "other-checkout"
+        }
+      ],
+      "virtualizationCpuPercent": 249.6
+    },
+    {
+      "utc": "2026-10-26T22:51:30.944441+00:00",
+      "loadAverage": [
+        8.6396484375,
+        8.56005859375,
+        8.19140625
+      ],
+      "java": [
+        {
+          "pid": 31658,
+          "cpuPercent": 0.0,
+          "owner": "other-checkout"
+        },
+        {
+          "pid": 42288,
+          "cpuPercent": 28.0,
+          "owner": "other-checkout"
+        },
+        {
+          "pid": 44282,
+          "cpuPercent": 0.0,
+          "owner": "owned-checkout"
+        },
+        {
+          "pid": 45424,
+          "cpuPercent": 131.3,
+          "owner": "owned-checkout"
+        },
+        {
+          "pid": 90977,
+          "cpuPercent": 0.0,
+          "owner": "other-checkout"
+        }
+      ],
+      "virtualizationCpuPercent": 240.5
+    },
+    {
+      "utc": "2026-10-26T22:51:36.019552+00:00",
+      "loadAverage": [
+        8.34814453125,
+        8.50048828125,
+        8.17236328125
+      ],
+      "java": [
+        {
+          "pid": 31658,
+          "cpuPercent": 0.0,
+          "owner": "other-checkout"
+        },
+        {
+          "pid": 42288,
+          "cpuPercent": 28.7,
+          "owner": "other-checkout"
+        },
+        {
+          "pid": 44282,
+          "cpuPercent": 0.0,
+          "owner": "owned-checkout"
+        },
+        {
+          "pid": 45424,
+          "cpuPercent": 197.4,
+          "owner": "owned-checkout"
+        },
+        {
+          "pid": 90977,
+          "cpuPercent": 0.0,
+          "owner": "other-checkout"
+        }
+      ],
+      "virtualizationCpuPercent": 255.1
+    },
+    {
+      "utc": "2026-10-26T22:51:41.092698+00:00",
+      "loadAverage": [
+        8.15966796875,
+        8.45849609375,
+        8.1591796875
+      ],
+      "java": [
+        {
+          "pid": 31658,
+          "cpuPercent": 0.0,
+          "owner": "other-checkout"
+        },
+        {
+          "pid": 42288,
+          "cpuPercent": 31.2,
+          "owner": "other-checkout"
+        },
+        {
+          "pid": 44282,
+          "cpuPercent": 0.0,
+          "owner": "owned-checkout"
+        },
+        {
+          "pid": 45424,
+          "cpuPercent": 102.6,
+          "owner": "owned-checkout"
+        },
+        {
+          "pid": 90977,
+          "cpuPercent": 0.0,
+          "owner": "other-checkout"
+        }
+      ],
+      "virtualizationCpuPercent": 236.6
+    },
+    {
+      "utc": "2026-10-26T22:51:46.176956+00:00",
+      "loadAverage": [
+        8.546875,
+        8.53369140625,
+        8.1875
+      ],
+      "java": [
+        {
+          "pid": 31658,
+          "cpuPercent": 0.0,
+          "owner": "other-checkout"
+        },
+        {
+          "pid": 42288,
+          "cpuPercent": 22.2,
+          "owner": "other-checkout"
+        },
+        {
+          "pid": 90977,
+          "cpuPercent": 0.0,
+          "owner": "other-checkout"
+        }
+      ],
+      "virtualizationCpuPercent": 257.2
+    }
+  ],
+  "ownershipCorrection": {
+    "pid": 45424,
+    "evidence": "read-only lsof placed the fork in the owned checkout studio/desktop subdirectory; initial exact-root matcher misclassified this subdirectory; CPU observations unchanged."
+  }
+}

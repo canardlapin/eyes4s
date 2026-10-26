@@ -1,0 +1,7 @@
+{
+  "qualification": false,
+  "baseCandidate": "259f9d72",
+  "temporaryChanges": "One measured observation after ten warmups; attached scene topology written outside timing. Temporary benchmark source preserved outside repository and restored before qualification.",
+  "finding": "Compare has 973 attached nodes at 1x and 922 at 10x. Increased attached node count is not the cause of the tenfold render-stage latency.",
+  "protocolUnchangedForQualification": true
+}
