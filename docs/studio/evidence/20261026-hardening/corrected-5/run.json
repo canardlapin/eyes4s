@@ -1,0 +1,43 @@
+{
+  "started": "2026-10-26T21:52:56.323158+00:00",
+  "candidate": "59301d3ccb516aa522711cee27b6a36e22fd8574",
+  "tree": "d3844e896898043282d7c91efe51c3132712364d",
+  "dirty": false,
+  "sourceFingerprint": "f153b83251bb44907de97a0d903e79f5f67e79de74557097fa23f00d732e3324",
+  "runnerSha256": "a5ecbbcd6af6b5ac22f2813cb437c16b48d80f9318e98edd311b8db88506d8ba",
+  "protocolSha256": "71def5934786ca34cd52d2492a8d51c644f24e8e7882a43b7e128d2d23adade3",
+  "machine": {
+    "model": "Mac14,12",
+    "cpu": "Apple M2 Pro",
+    "ramBytes": 34359738368,
+    "os": "15.1.1",
+    "osBuild": "24B91",
+    "architecture": "arm64"
+  },
+  "environment": {
+    "GITHUB_ACTIONS": "true",
+    "JAVA_HOME": "/Users/bbuchsbaum/Library/Java/JavaVirtualMachines/temurin-25.0.4.1+1.jdk/Contents/Home",
+    "manualJvmOverrides": false,
+    "visibleFx": false
+  },
+  "command": [
+    "sbt",
+    "studioDesktop/testOnly *InteractionPerformanceFxSuite"
+  ],
+  "status": "failed",
+  "exitCode": 1,
+  "inputsUnchanged": true,
+  "receipts": [
+    {
+      "path": "fixture-1x.json",
+      "sha256": "39fb121f5eb9258d50bdbad0ecb343c01b180526cecd79fb5c79a8b1b04a3d6a",
+      "status": "failed"
+    },
+    {
+      "path": "fixture-10x.json",
+      "sha256": "f0367cc7f3e641b194b217e00df67ce054dab25aa4cc878eff4364a748630849",
+      "status": "failed"
+    }
+  ],
+  "finished": "2026-10-26T21:58:07.359406+00:00"
+}

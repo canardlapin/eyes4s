@@ -35,6 +35,7 @@ def main():
     for key in ('CI', 'JAVA_TOOL_OPTIONS', 'JDK_JAVA_OPTIONS', '_JAVA_OPTIONS', 'SBT_OPTS', 'JAVA_OPTS'):
         if env.get(key):
             parser.error(f'{key} is set; do not qualify an unrecorded override.')
+    env.pop('EYES4S_STUDIO_PERFORMANCE_DIAGNOSTIC', None)
     env['JAVA_HOME'] = output(['/usr/libexec/java_home', '-v', '25'])
     env['PATH'] = env['JAVA_HOME'] + '/bin:' + env['PATH']
     env['GITHUB_ACTIONS'] = 'true'

@@ -293,26 +293,43 @@ class InteractionPerformanceFxSuite extends GoldenWindow:
           def measure(name: String, count: Int, limit: Double, prepare: Int => Unit = _ => ())(
               action: Int => Unit
           )(ready: Int => Boolean): Unit =
+            val began  = java.time.Instant.now().toString
+            val stages = Vector.newBuilder[Json]
             val values = (0 until count + 10).toVector.map { i =>
               prepare(i)
               val started = System.nanoTime()
               runOnFx(action(i))
+              val dispatched = System.nanoTime()
               until(name)(ready(i))
+              val available = System.nanoTime()
               rendered()
-              val elapsed = (System.nanoTime() - started).toDouble / 1e6
-              if i < 10 then None else Some(elapsed)
+              val finished = System.nanoTime()
+              val elapsed  = (finished - started).toDouble / 1e6
+              if i < 10 then None
+              else
+                stages += Json.obj(
+                  "dispatchMs"  -> Json.fromDoubleOrNull((dispatched - started).toDouble / 1e6),
+                  "readinessMs" -> Json.fromDoubleOrNull(
+                    (available - dispatched).toDouble / 1e6
+                  ),
+                  "renderMs" -> Json.fromDoubleOrNull((finished - available).toDouble / 1e6)
+                )
+                Some(elapsed)
             }.flatten
             val sorted = values.sorted
             val p95    = sorted(math.ceil(values.size * .95).toInt - 1)
             measures += Json.obj(
-              "name"      -> Json.fromString(name),
-              "count"     -> Json.fromInt(values.size),
-              "warmup"    -> Json.fromInt(10),
-              "limitMs"   -> Json.fromDoubleOrNull(limit),
-              "p95Ms"     -> Json.fromDoubleOrNull(p95),
-              "maximumMs" -> Json.fromDoubleOrNull(sorted.last),
-              "valuesMs"  -> Json.arr(values.map(Json.fromDoubleOrNull)*),
-              "passed"    -> Json.fromBoolean(p95 < limit)
+              "name"        -> Json.fromString(name),
+              "count"       -> Json.fromInt(values.size),
+              "warmup"      -> Json.fromInt(10),
+              "limitMs"     -> Json.fromDoubleOrNull(limit),
+              "p95Ms"       -> Json.fromDoubleOrNull(p95),
+              "maximumMs"   -> Json.fromDoubleOrNull(sorted.last),
+              "valuesMs"    -> Json.arr(values.map(Json.fromDoubleOrNull)*),
+              "startedUtc"  -> Json.fromString(began),
+              "finishedUtc" -> Json.fromString(java.time.Instant.now().toString),
+              "stages"      -> Json.arr(stages.result()*),
+              "passed"      -> Json.fromBoolean(p95 < limit)
             )
             memoryAt(name)
             write("measuring")
@@ -331,7 +348,7 @@ class InteractionPerformanceFxSuite extends GoldenWindow:
             }
             .toMap
           def selected(i: Int) = StudioRef.Fixation(key, get(FixationIndex.of(1 + i % 2)))
-          measure("linked-selection", 100, 100.0) { i =>
+          def measureSelection(name: String): Unit = measure(name, 100, 100.0) { i =>
             sequence += 1
             w.runtime.dispatch(
               Intent.Select(
@@ -355,6 +372,7 @@ class InteractionPerformanceFxSuite extends GoldenWindow:
             w.sourceRecords.current.cursor.contains(sourceRows(1 + i % 2)) &&
             w.inspector.titleText.startsWith(s"Fixation ${1 + i % 2} of")
           }
+          measureSelection("linked-selection")
           measure("cached-trial-switch", 100, 250.0)(i => navigate(keys(i % 2)))(i =>
             trialReady(w, keys(i % 2))
           )
@@ -373,6 +391,9 @@ class InteractionPerformanceFxSuite extends GoldenWindow:
             Intent.Navigate(Location(Perspective.Data, Vector(Place.Dataset(dataset))))
           )
           until("source and geometry", 180)(perspectiveReady(w, Perspective.Data))
+          if sys.env.get("EYES4S_STUDIO_PERFORMANCE_DIAGNOSTIC").contains("true") then
+            runOnFx(navigate(key)); until("diagnostic selected trial")(trialReady(w, key))
+            measureSelection("linked-selection-after-reports")
           Perspective.values.foreach { target =>
             val away =
               if target == Perspective.Explore then Perspective.Data else Perspective.Explore
