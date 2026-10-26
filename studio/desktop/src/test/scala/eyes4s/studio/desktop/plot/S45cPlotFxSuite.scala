@@ -33,7 +33,6 @@ import eyes4s.studio.desktop.typography.StudioFonts
 import eyes4s.studio.viz.plot.{ParticipantPlot, PlotTargets, RowMarking}
 import intaglio.DevicePoint
 import io.circe.Json
-import javafx.event.Event
 import javafx.event.EventType
 import javafx.geometry.Point2D
 import javafx.scene.SnapshotParameters
@@ -169,7 +168,7 @@ class S45cPlotFxSuite extends StudioFxSuite:
       kinds.foreach { kind =>
         firing = true
         try
-          Event.fireEvent(
+          eyes4s.studio.desktop.harness.StudioRobot.fireEvent(
             w.host,
             MouseEvent(
               kind,

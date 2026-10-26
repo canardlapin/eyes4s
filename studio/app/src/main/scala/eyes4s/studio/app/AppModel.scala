@@ -194,6 +194,9 @@ enum Notice derives CanEqual:
   /** The platform's save of the project failed; the last save stands. */
   case SaveFailed(reason: String)
 
+  /** The save completed, but maintenance or recovery bookkeeping reported a warning. */
+  case SaveWarning(reason: String)
+
   /** A Save & run was asked while another waits for its check (S2.5). */
   case RunWaiting
 
@@ -222,6 +225,7 @@ enum Notice derives CanEqual:
     case LayoutsReset(ps, reason) =>
       messages(MessageId.NoticeLayoutsReset, ps.map(_.label).mkString(", "), reason)
     case SaveFailed(reason)             => messages(MessageId.NoticeSaveFailed, reason)
+    case SaveWarning(reason)            => messages(MessageId.NoticeSaveWarning, reason)
     case SourcesBlocked(dataset, block) => SourcesText.blocked(dataset, block)
     case RunWaiting => SourcesText(eyes4s.studio.app.text.SourcesTextId.RunWaiting)
     case Outdated(Confirmation.DiscardDraft(d)) =>
@@ -502,6 +506,9 @@ enum Intent derives CanEqual:
 
   /** The project session's save failed; `reason` names what failed. */
   case SaveFailed(reason: String)
+
+  /** The save completed, but maintenance or recovery bookkeeping reported a warning. */
+  case SaveWarning(reason: String)
 
   // --- Project and layouts (S1.4, S1.5a) -------------------------------------------------------
   /** The project chip's Rename…: the platform asks for the name. */
@@ -1069,8 +1076,9 @@ object AppModel:
           val (settled, effects) =
             applyHistory(refused, JournalEntry.Apply(command), refused.history.apply(command))
           (settled.copy(notice = Some(Notice.ExecutionRefused(error))), effects)
-    case Intent.Saved(at, upTo)    => (m.copy(save = m.save.saved(at, upTo)), none)
-    case Intent.SaveFailed(reason) => (m.copy(notice = Some(Notice.SaveFailed(reason))), none)
+    case Intent.Saved(at, upTo)     => (m.copy(save = m.save.saved(at, upTo)), none)
+    case Intent.SaveFailed(reason)  => (m.copy(notice = Some(Notice.SaveFailed(reason))), none)
+    case Intent.SaveWarning(reason) => (m.copy(notice = Some(Notice.SaveWarning(reason))), none)
 
     case Intent.RequestNewProject =>
       (m, Vector(AppEffect.OpenDialog(PlatformDialog.NewProject)))

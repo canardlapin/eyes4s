@@ -816,6 +816,7 @@ final class ProjectSession[F[_]: Concurrent] private (
               .map(_.left.toOption)
           )
         else EitherT.pure[F, SessionError](Option.empty[StoreError])
+      retired <- EitherT.liftF(store.readSidecar(Sidecar.PreviousManifest))
       written <-
         if !swap then EitherT.pure[F, SessionError](Vector.empty[BundlePath])
         else
@@ -832,6 +833,20 @@ final class ProjectSession[F[_]: Concurrent] private (
         else EitherT.pure[F, SessionError](())
       start <- journalLine(CommandJournal.start(document))
       reset <- EitherT.liftF(store.replaceSidecar(lock, Sidecar.Journal, utf8(start + "\n")))
+      retention <-
+        if swap then
+          EitherT.liftF(
+            SavedPartRetention.collect(
+              store,
+              lock,
+              retired,
+              encoded.manifestBytes,
+              s.saved.valid,
+              utf8(start + "\n"),
+              reset
+            )
+          )
+        else EitherT.pure[F, SessionError](PartRetention.NotRequired: PartRetention)
     yield (
       s.copy(
         saved = Saved(document, encoded.manifest, Some(encoded.manifestBytes), Some(digest)),
@@ -842,7 +857,7 @@ final class ProjectSession[F[_]: Concurrent] private (
           History.start(document)
         )
       ),
-      SaveReceipt(digest, written, swap, reconciled, reset.left.toOption)
+      SaveReceipt(digest, written, swap, reconciled, reset.left.toOption, retention)
     )
 
   /** Write one part unless it is already stored; `Some(path)` if written. */

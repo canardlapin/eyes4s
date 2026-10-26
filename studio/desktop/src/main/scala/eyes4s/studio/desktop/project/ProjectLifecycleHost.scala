@@ -420,8 +420,7 @@ final class ProjectLifecycleHost(
       source: Option[(AppModel, Option[Candidate])],
       freshTheme: Theme
   ): IO[Either[String, Candidate]] =
-    def warnings(receipt: SaveReceipt): Vector[String] =
-      (receipt.journalReconcile.toVector ++ receipt.journalReset.toVector).map(_.message)
+    def warnings(receipt: SaveReceipt): Vector[String] = receipt.warnings.map(_.message)
     (for
       label <- cats.data.EitherT.fromEither[IO](name(path))
       _     <- cats.data.EitherT(

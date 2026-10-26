@@ -249,6 +249,7 @@ object AppGen:
     1 -> Gen
       .zip(Gen.choose(0, 23), Gen.choose(0, 59), Gen.choose(0L, m.save.edits.value))
       .map((h, mm, e) => Intent.Saved(ok(ClockTime.of(h, mm)), EditMark(e))),
+    1 -> Gen.const(Intent.SaveWarning("cleanup deferred")),
     1 -> Gen.const(Intent.SaveFailed("disk full"))
   )
 

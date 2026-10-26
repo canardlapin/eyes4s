@@ -28,7 +28,6 @@ import eyes4s.studio.desktop.harness.FxStage
 import eyes4s.studio.desktop.plot.{PlotHostStatus, PlotTwinStatus}
 import eyes4s.studio.desktop.shell.ShellFxSuite
 import eyes4s.studio.viz.plot.{DataPoint, PlotTargets}
-import javafx.event.Event
 import javafx.geometry.Point2D
 import javafx.scene.input.{MouseButton, MouseEvent, PickResult}
 
@@ -84,7 +83,7 @@ class TimelineFxSuite extends ShellFxSuite:
     val c    = t.transform.deviceToCanvas(at)
     runOnFx {
       val p = host.localToScene(Point2D(c.x, c.y))
-      Event.fireEvent(
+      eyes4s.studio.desktop.harness.StudioRobot.fireEvent(
         host,
         MouseEvent(
           kind,
@@ -213,7 +212,7 @@ class TimelineFxSuite extends ShellFxSuite:
     fireAt(w, t, 2000.0, false, MouseEvent.MOUSE_DRAGGED)
     assert(runOnFx(w.timeline.brush.span.isDefined))
     runOnFx {
-      Event.fireEvent(
+      eyes4s.studio.desktop.harness.StudioRobot.fireEvent(
         w.timeline.twin.plotHost,
         javafx.scene.input.KeyEvent(
           javafx.scene.input.KeyEvent.KEY_PRESSED,

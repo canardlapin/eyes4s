@@ -184,8 +184,11 @@ final case class SaveReceipt(
     written: Vector[BundlePath],
     swapped: Boolean,
     journalReconcile: Option[StoreError],
-    journalReset: Option[StoreError]
-) derives CanEqual
+    journalReset: Option[StoreError],
+    retention: PartRetention = PartRetention.NotRequired
+) derives CanEqual:
+  def warnings: Vector[StoreError] =
+    (journalReconcile.toVector ++ journalReset.toVector ++ retention.warnings).distinct
 
 /** How a session autosaves: a checkpoint (the science digest) after every
   * `checkpointEvery` journaled entries; at least 1.

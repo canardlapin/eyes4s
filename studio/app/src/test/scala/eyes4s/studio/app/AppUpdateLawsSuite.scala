@@ -151,9 +151,9 @@ class AppUpdateLawsSuite extends munit.ScalaCheckSuite:
             assertEquals(t.after.document, t.before.document)
           case Intent.Select(_) | Intent.JobsChanged(_) | Intent.SessionChanged(_) |
               Intent.ItemsLoaded(_) | Intent.Saved(_, _) | Intent.SaveFailed(_) |
-              Intent.FocusPane(_) | Intent.FocusNextPane | Intent.ToggleMaximize |
-              Intent.PaneSubject(_, _) | Intent.Dismiss | Intent.RequestDiscardDraft |
-              Intent.RequestImport =>
+              Intent.SaveWarning(_) | Intent.FocusPane(_) | Intent.FocusNextPane |
+              Intent.ToggleMaximize | Intent.PaneSubject(_, _) | Intent.Dismiss |
+              Intent.RequestDiscardDraft | Intent.RequestImport =>
             assertEquals(t.after.document, t.before.document, t.intent)
           case _ => ()
       }

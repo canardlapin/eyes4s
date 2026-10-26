@@ -87,6 +87,7 @@ enum MessageId derives CanEqual:
   // --- Notices ---------------------------------------------------------------------
   case NoticeUnavailable, NoticeBlocked, NoticeLayoutsReset, Dismiss
   case CommandPreviousPane, CommandNextTab, CommandPreviousTab
+  case NoticeSaveWarning
   case NoticeSaveFailed
 
   // --- Shell chrome (S1.6–S1.11) ------------------------------------------------------
@@ -296,6 +297,7 @@ object Catalogue:
       case CommandPreviousPane => "Previous pane"
       case CommandNextTab      => "Next tab"
       case CommandPreviousTab  => "Previous tab"
+      case NoticeSaveWarning   => "The project was saved with a warning: {0}"
       case NoticeSaveFailed    => "The project could not be saved: {0}"
 
       case CommandBack            => "Back"

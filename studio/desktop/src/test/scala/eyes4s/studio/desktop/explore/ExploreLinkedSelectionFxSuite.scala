@@ -27,7 +27,6 @@ import eyes4s.studio.desktop.harness.FxStage
 import eyes4s.studio.desktop.plot.CanvasPlotHost
 import eyes4s.studio.desktop.shell.ShellFxSuite
 import intaglio.DevicePoint
-import javafx.event.Event
 import javafx.geometry.Point2D
 import javafx.scene.input.{MouseButton, MouseEvent, PickResult}
 
@@ -77,7 +76,7 @@ class ExploreLinkedSelectionFxSuite extends ShellFxSuite:
       val p     = host.localToScene(Point2D(c.x, c.y))
       Vector(MouseEvent.MOUSE_PRESSED, MouseEvent.MOUSE_RELEASED, MouseEvent.MOUSE_CLICKED)
         .foreach { kind =>
-          Event.fireEvent(
+          eyes4s.studio.desktop.harness.StudioRobot.fireEvent(
             host,
             MouseEvent(
               kind,
@@ -174,12 +173,12 @@ class ExploreLinkedSelectionFxSuite extends ShellFxSuite:
       b
     }
     runOnFx {
-      Event.fireEvent(
+      eyes4s.studio.desktop.harness.StudioRobot.fireEvent(
         b,
         KeyEvent(KeyEvent.KEY_PRESSED, "", "", KeyCode.SPACE, false, false, false, false)
       )
       b.fire()
-      Event.fireEvent(
+      eyes4s.studio.desktop.harness.StudioRobot.fireEvent(
         b,
         MouseEvent(
           MouseEvent.MOUSE_PRESSED,
@@ -229,16 +228,16 @@ class ExploreLinkedSelectionFxSuite extends ShellFxSuite:
       null
     )
     runOnFx {
-      Event.fireEvent(b, mouse(MouseEvent.MOUSE_PRESSED))
-      Event.fireEvent(b, mouse(MouseEvent.MOUSE_RELEASED))
+      eyes4s.studio.desktop.harness.StudioRobot.fireEvent(b, mouse(MouseEvent.MOUSE_PRESSED))
+      eyes4s.studio.desktop.harness.StudioRobot.fireEvent(b, mouse(MouseEvent.MOUSE_RELEASED))
     }
     runOnFx(b.fire())
     runOnFx {
-      Event.fireEvent(
+      eyes4s.studio.desktop.harness.StudioRobot.fireEvent(
         b,
         KeyEvent(KeyEvent.KEY_PRESSED, "", "", KeyCode.TAB, false, false, false, false)
       )
-      Event.fireEvent(
+      eyes4s.studio.desktop.harness.StudioRobot.fireEvent(
         b,
         KeyEvent(KeyEvent.KEY_RELEASED, "", "", KeyCode.TAB, false, false, false, false)
       )

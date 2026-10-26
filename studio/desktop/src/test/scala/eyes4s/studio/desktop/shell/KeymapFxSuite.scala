@@ -22,7 +22,6 @@ import eyes4s.studio.app.layout.{PaneId as StudioPaneId, StudioLayouts}
 import eyes4s.studio.core.document.Perspective
 import eyes4s.studio.desktop.StudioWindow
 import eyes4s.studio.desktop.harness.{FxStage, Modifiers}
-import javafx.event.Event
 import javafx.scene.control.{ContextMenu, SeparatorMenuItem}
 import javafx.scene.input.{ContextMenuEvent, KeyCode, KeyEvent}
 
@@ -332,7 +331,7 @@ class KeymapFxSuite extends ShellFxSuite:
       val b = tab.getLayoutBounds
       val p = tab.localToScene(b.getCenterX, b.getCenterY)
       val s = tab.localToScreen(b.getCenterX, b.getCenterY)
-      Event.fireEvent(
+      eyes4s.studio.desktop.harness.StudioRobot.fireEvent(
         tab,
         ContextMenuEvent(
           ContextMenuEvent.CONTEXT_MENU_REQUESTED,
@@ -415,7 +414,7 @@ class KeymapFxSuite extends ShellFxSuite:
         }
         .getOrElse(fail("no menu popup"))
       val target = popup.getSkin.getNode
-      Event.fireEvent(
+      eyes4s.studio.desktop.harness.StudioRobot.fireEvent(
         target,
         KeyEvent(
           KeyEvent.KEY_PRESSED,
@@ -428,7 +427,7 @@ class KeymapFxSuite extends ShellFxSuite:
           false
         )
       )
-      Event.fireEvent(
+      eyes4s.studio.desktop.harness.StudioRobot.fireEvent(
         target,
         KeyEvent(
           KeyEvent.KEY_RELEASED,
@@ -469,7 +468,7 @@ class KeymapFxSuite extends ShellFxSuite:
     def alt(kind: javafx.event.EventType[KeyEvent], down: Boolean): Unit =
       runOnFx {
         val target = Option(fx.scene.getFocusOwner).getOrElse(fx.scene.getRoot)
-        Event.fireEvent(
+        eyes4s.studio.desktop.harness.StudioRobot.fireEvent(
           target,
           KeyEvent(
             kind,

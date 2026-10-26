@@ -22,6 +22,7 @@ import java.util.concurrent.atomic.AtomicReference
 import java.util.concurrent.{CompletableFuture, CountDownLatch, ExecutionException, TimeUnit}
 import javafx.animation.AnimationTimer
 import javafx.application.Platform
+import javafx.scene.input.MouseEvent
 import javafx.scene.image.{PixelFormat, WritableImage}
 import javafx.scene.layout.StackPane
 import javafx.scene.shape.Rectangle
@@ -96,14 +97,24 @@ abstract class StudioFxSuite extends munit.FunSuite:
   /** The scene size of each test stage. */
   protected def stageSize: StageSize = StageSize.Board
 
+  /** Opt out only for a suite deliberately testing physical pointer/:hover behavior.
+    * Popup/context-menu windows have separate scenes and are outside this filter.
+    */
+  protected def allowForeignPointerEvents: Boolean = false
+
   override def beforeAll(): Unit =
     super.beforeAll()
     StudioFxSuite.startToolkit()
 
   /** A shown stage per test, closed afterwards whatever the outcome. */
   protected val fxStage: FunFixture[FxStage] = FunFixture[FxStage](
-    setup =
-      test => FxStage.open(StudioFxSuite.segment(getClass.getSimpleName), test.name, stageSize),
+    setup = test =>
+      FxStage.open(
+        StudioFxSuite.segment(getClass.getSimpleName),
+        test.name,
+        stageSize,
+        allowForeignPointerEvents
+      ),
     teardown = _.close()
   )
 
@@ -176,8 +187,24 @@ final class FxStage private (
     val stage: Stage,
     val scene: Scene,
     suiteSegment: String,
-    testSegment: String
+    testSegment: String,
+    val allowsForeignPointerEvents: Boolean
 ):
+  private var foreignCount   = 0L
+  private var foreignSamples = Vector.empty[String]
+  scene.addEventFilter(
+    MouseEvent.ANY,
+    event =>
+      if !allowsForeignPointerEvents && !StudioRobot.firingMouse then
+        foreignCount += 1
+        if foreignSamples.size < 32 then
+          foreignSamples :+= s"${event.getEventType} at (${event.getSceneX}, ${event.getSceneY})"
+        event.consume()
+  )
+
+  def foreignPointerCount: Long             = runOnFx(foreignCount)
+  def foreignPointerSamples: Vector[String] = runOnFx(foreignSamples)
+
   val robot: StudioRobot = StudioRobot(this)
 
   /** Runs `body` on the FX application thread and returns its result. */
@@ -247,18 +274,43 @@ final class FxStage private (
       file
     }
 
-  private[harness] def close(): Unit = runOnFx(stage.close())
+  private[harness] def close(): Unit =
+    runOnFx(stage.close())
+    val receipt = io.circe.Json.obj(
+      "suite"                     -> io.circe.Json.fromString(suiteSegment),
+      "test"                      -> io.circe.Json.fromString(testSegment),
+      "allowForeignPointerEvents" -> io.circe.Json.fromBoolean(allowsForeignPointerEvents),
+      "consumed"                  -> io.circe.Json.fromLong(foreignPointerCount),
+      "sampleLimit"               -> io.circe.Json.fromInt(32),
+      "samples" -> io.circe.Json.arr(foreignPointerSamples.map(io.circe.Json.fromString)*)
+    )
+    val file = StudioFxSuite.snapshotRoot
+      .resolve(suiteSegment)
+      .resolve(testSegment)
+      .resolve("pointer-isolation.json")
+    Files.createDirectories(file.getParent)
+    Files.writeString(file, receipt.spaces2 + "\n"): Unit
+    println(
+      s"[pointer-isolation] $suiteSegment/$testSegment consumed=$foreignPointerCount optedOut=$allowsForeignPointerEvents"
+    )
 
 object FxStage:
-  private[harness] def open(suite: String, test: String, size: StageSize): FxStage =
+  private[harness] def open(
+      suite: String,
+      test: String,
+      size: StageSize,
+      allowForeignPointerEvents: Boolean
+  ): FxStage =
     StudioFxSuite.runOnFx {
       val stage = Stage()
       val scene = Scene(StackPane(), size.width.toDouble, size.height.toDouble)
       stage.setTitle(s"$suite · $test")
       stage.setScene(scene)
       stage.setResizable(false)
+      val fx =
+        FxStage(stage, scene, suite, StudioFxSuite.segment(test), allowForeignPointerEvents)
       stage.show()
-      FxStage(stage, scene, suite, StudioFxSuite.segment(test))
+      fx
     }
 
 object StudioFxSuite:

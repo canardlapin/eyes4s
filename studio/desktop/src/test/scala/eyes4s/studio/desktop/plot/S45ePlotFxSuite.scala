@@ -27,7 +27,6 @@ import eyes4s.studio.desktop.runtime.{EffectPerformer, StudioRuntime}
 import eyes4s.studio.desktop.typography.StudioFonts
 import eyes4s.studio.viz.plot.{DataPoint, PlotTargets, TimelinePlot}
 import intaglio.DevicePoint
-import javafx.event.Event
 import javafx.event.EventType
 import javafx.geometry.Point2D
 import javafx.scene.SnapshotParameters
@@ -193,7 +192,7 @@ class S45ePlotFxSuite extends StudioFxSuite:
       kinds.foreach { kind =>
         firing = true
         try
-          Event.fireEvent(
+          eyes4s.studio.desktop.harness.StudioRobot.fireEvent(
             w.host,
             MouseEvent(
               kind,

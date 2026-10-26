@@ -16,6 +16,7 @@
 
 package eyes4s.studio.desktop.harness
 
+import javafx.application.Platform
 import javafx.event.{Event, EventTarget, EventType}
 import javafx.geometry.Point2D
 import javafx.scene.{Node, Parent}
@@ -91,9 +92,9 @@ final class StudioRobot private[harness] (fx: FxStage):
           true,
           PickResult(picked, inScene.getX, inScene.getY)
         )
-      Event.fireEvent(picked, mouse(MouseEvent.MOUSE_PRESSED, down = true, clicks = 1))
-      Event.fireEvent(picked, mouse(MouseEvent.MOUSE_RELEASED, down = false, clicks = 1))
-      Event.fireEvent(picked, mouse(MouseEvent.MOUSE_CLICKED, down = false, clicks = 1))
+      StudioRobot.fireEvent(picked, mouse(MouseEvent.MOUSE_PRESSED, down = true, clicks = 1))
+      StudioRobot.fireEvent(picked, mouse(MouseEvent.MOUSE_RELEASED, down = false, clicks = 1))
+      StudioRobot.fireEvent(picked, mouse(MouseEvent.MOUSE_CLICKED, down = false, clicks = 1))
     }
     fx.awaitLayout()
 
@@ -101,8 +102,8 @@ final class StudioRobot private[harness] (fx: FxStage):
   def press(key: KeyCode, modifiers: Modifiers = Modifiers.None): Unit =
     fx.runOnFx {
       val target = focusTarget
-      Event.fireEvent(target, keyEvent(KeyEvent.KEY_PRESSED, key, modifiers))
-      Event.fireEvent(target, keyEvent(KeyEvent.KEY_RELEASED, key, modifiers))
+      StudioRobot.fireEvent(target, keyEvent(KeyEvent.KEY_PRESSED, key, modifiers))
+      StudioRobot.fireEvent(target, keyEvent(KeyEvent.KEY_RELEASED, key, modifiers))
     }
     fx.awaitLayout()
 
@@ -111,7 +112,7 @@ final class StudioRobot private[harness] (fx: FxStage):
     fx.runOnFx {
       val target = focusTarget
       text.foreach { c =>
-        Event.fireEvent(
+        StudioRobot.fireEvent(
           target,
           KeyEvent(
             KeyEvent.KEY_TYPED,
@@ -134,7 +135,22 @@ final class StudioRobot private[harness] (fx: FxStage):
   private def keyEvent(kind: EventType[KeyEvent], key: KeyCode, m: Modifiers): KeyEvent =
     KeyEvent(kind, KeyEvent.CHAR_UNDEFINED, key.getName, key, m.shift, m.control, m.alt, m.meta)
 
-private[harness] object StudioRobot:
+object StudioRobot:
+
+  // FX-thread confined; nesting is needed when a test handler dispatches an event.
+  private var mouseDepth                    = 0
+  private[harness] def firingMouse: Boolean = mouseDepth > 0
+
+  /** Deliver a test-owned event through the ordinary dispatch chain. Mouse
+    * ownership lasts only for this synchronous call, including nested dispatch.
+    */
+  def fireEvent(target: EventTarget, event: Event): Unit = event match
+    case _: MouseEvent =>
+      require(Platform.isFxApplicationThread, "test mouse events require the FX thread")
+      mouseDepth += 1
+      try Event.fireEvent(target, event)
+      finally mouseDepth -= 1
+    case _ => Event.fireEvent(target, event)
 
   /** The topmost node under `inScene` at or below `node`, by JavaFX's picking rules. */
   def pick(node: Node, inScene: Point2D): Option[Node] =

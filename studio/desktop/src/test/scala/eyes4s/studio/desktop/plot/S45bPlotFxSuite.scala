@@ -32,7 +32,6 @@ import eyes4s.studio.desktop.typography.StudioFonts
 import eyes4s.studio.viz.plot.{LadderBins, PlotTargets, RingKind, RowMarking, ScaleLadderPlot}
 import intaglio.DevicePoint
 import io.circe.Json
-import javafx.event.Event
 import javafx.geometry.Point2D
 import javafx.scene.SnapshotParameters
 import javafx.scene.image.WritableImage
@@ -170,7 +169,7 @@ class S45bPlotFxSuite extends StudioFxSuite:
         .foreach { kind =>
           firing = true
           try
-            Event.fireEvent(
+            eyes4s.studio.desktop.harness.StudioRobot.fireEvent(
               w.host,
               MouseEvent(
                 kind,

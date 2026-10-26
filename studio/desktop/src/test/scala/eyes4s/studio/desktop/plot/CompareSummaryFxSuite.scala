@@ -38,7 +38,6 @@ import eyes4s.studio.desktop.runtime.{EffectPerformer, StudioRuntime}
 import eyes4s.studio.app.plot.ParticipantNotes
 import eyes4s.studio.viz.plot.{Annotations, DataPoint, ParticipantPlot, RowMarking}
 import javafx.scene.control.{Label, ToggleButton}
-import javafx.event.Event
 import javafx.geometry.Point2D
 import javafx.scene.input.{MouseButton, MouseEvent, PickResult}
 import javafx.scene.layout.{HBox, Region}
@@ -567,7 +566,7 @@ class CompareSummaryFxSuite extends ShellFxSuite:
       runOnFx {
         Vector(MouseEvent.MOUSE_PRESSED, MouseEvent.MOUSE_RELEASED, MouseEvent.MOUSE_CLICKED)
           .foreach { kind =>
-            Event.fireEvent(
+            eyes4s.studio.desktop.harness.StudioRobot.fireEvent(
               twin.plotHost,
               MouseEvent(
                 kind,

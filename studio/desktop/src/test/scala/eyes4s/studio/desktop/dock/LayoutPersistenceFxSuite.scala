@@ -20,7 +20,6 @@ import eyes4s.studio.app.{Intent, StoryModels}
 import eyes4s.studio.core.document.{Perspective, SavedLayout}
 import eyes4s.studio.desktop.shell.ShellFxSuite
 import javafx.stage.{Window, WindowEvent}
-import javafx.event.Event
 import scala.jdk.CollectionConverters.*
 
 class LayoutPersistenceFxSuite extends ShellFxSuite:
@@ -53,7 +52,7 @@ class LayoutPersistenceFxSuite extends ShellFxSuite:
         window
       }
       runOnFx {
-        Event.fireEvent(
+        eyes4s.studio.desktop.harness.StudioRobot.fireEvent(
           pane,
           new javafx.scene.input.KeyEvent(
             javafx.scene.input.KeyEvent.KEY_PRESSED,
@@ -79,7 +78,7 @@ class LayoutPersistenceFxSuite extends ShellFxSuite:
         assertEquals(w.host.dock.state.floating.size, 1)
         assert(w.host.node(id).exists(_ eq pane))
         assert(pane.getScene.getWindow.isShowing)
-        Event.fireEvent(
+        eyes4s.studio.desktop.harness.StudioRobot.fireEvent(
           pane.getScene.getWindow,
           WindowEvent(pane.getScene.getWindow, WindowEvent.WINDOW_CLOSE_REQUEST)
         )

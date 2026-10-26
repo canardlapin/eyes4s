@@ -116,3 +116,7 @@ class FileRecoverySuite extends RecoveryConformance:
         case other => fail(s"expected an offer, got $other")
     }
   }
+
+/** Retired saved-part collection preserves recovery on real disk. */
+class FileSavedPartRetentionSuite extends SavedPartRetentionConformance:
+  def bundle: Resource[IO, IO[ProjectStore[IO]]] = FileBundles.bundle

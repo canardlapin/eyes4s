@@ -160,8 +160,11 @@ final class DesktopEffects(
         _.save { outcome =>
           ui { () =>
             outcome match
-              case Left(reason) => dispatch(Intent.SaveFailed(reason))
-              case Right(_)     => clock().foreach(t => dispatch(Intent.Saved(t, mark)))
+              case Left(reason)   => dispatch(Intent.SaveFailed(reason))
+              case Right(receipt) =>
+                clock().foreach(t => dispatch(Intent.Saved(t, mark)))
+                if receipt.warnings.nonEmpty then
+                  dispatch(Intent.SaveWarning(receipt.warnings.map(_.message).mkString("\n")))
           }
         }
       }

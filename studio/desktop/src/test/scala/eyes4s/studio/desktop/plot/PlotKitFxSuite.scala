@@ -33,7 +33,7 @@ import eyes4s.studio.desktop.runtime.{EffectPerformer, StudioRuntime}
 import eyes4s.studio.desktop.typography.StudioFonts
 import eyes4s.studio.viz.plot.{DotPlot, PlotTarget, PlotTargets, RingKind}
 import intaglio.DevicePoint
-import javafx.event.{Event, EventType}
+import javafx.event.{EventType}
 import javafx.geometry.Point2D
 import javafx.scene.SnapshotParameters
 import javafx.scene.control.Label
@@ -211,7 +211,7 @@ class PlotKitFxSuite extends StudioFxSuite:
     val onScreen = Option(host.localToScreen(at)).getOrElse(inScene)
     firing = true
     try
-      Event.fireEvent(
+      eyes4s.studio.desktop.harness.StudioRobot.fireEvent(
         host,
         MouseEvent(
           kind,

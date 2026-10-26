@@ -35,7 +35,6 @@ import eyes4s.studio.desktop.platform.{
 import eyes4s.studio.desktop.harness.FxStage
 import eyes4s.studio.desktop.shell.ShellFxSuite
 import eyes4s.studio.desktop.harness.StudioTheme
-import javafx.event.Event
 import javafx.scene.control.{Button, Menu, MenuItem}
 import javafx.stage.{Window, WindowEvent}
 import java.nio.file.{Files, Path}
@@ -228,7 +227,8 @@ class ProjectLifecycleFxSuite extends ShellFxSuite:
             assertEquals(runOnFx(host.window), Some(original))
             assert(!runOnFx(original.isClosed))
             runOnFx(
-              Event.fireEvent(fx.stage, WindowEvent(fx.stage, WindowEvent.WINDOW_CLOSE_REQUEST))
+              eyes4s.studio.desktop.harness.StudioRobot
+                .fireEvent(fx.stage, WindowEvent(fx.stage, WindowEvent.WINDOW_CLOSE_REQUEST))
             )
             press(fx, "Keep open")
             assertEquals(runOnFx(host.window), Some(original))
