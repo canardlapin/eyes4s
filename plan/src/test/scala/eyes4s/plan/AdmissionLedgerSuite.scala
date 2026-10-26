@@ -21,6 +21,14 @@ import eyes4s.design.*
 import eyes4s.kernel.*
 import eyes4s.kernel.Unit2D.Px
 
+private final class AdmissionCountedKey(val value: Int, counted: () => Unit):
+  override def hashCode(): Int             = value
+  override def equals(other: Any): Boolean =
+    counted()
+    other match
+      case key: AdmissionCountedKey => key.value == value
+      case _                        => false
+
 /** Ledger invariants that no codec can bypass: a ledger that lies about its
   * own records is refused at construction, and cross-checks against an input
   * report the first offender deterministically.
@@ -98,6 +106,36 @@ class AdmissionLedgerSuite extends munit.FunSuite:
     assertEquals(
       ledger(admitted(2, a, 1), admitted(3, b, 5), admitted(4, b, 5), admitted(5, a, 1)),
       Left(AdmissionError.DuplicateOrdinal(Vector(2, 5), 1))
+    )
+  }
+
+  test("ordinal validation preserves record order across duplicate and negative errors") {
+    assertEquals(
+      ledger(admitted(1, a, 0), admitted(2, b, -1), admitted(3, a, 0)),
+      Left(AdmissionError.DuplicateOrdinal(Vector(1, 3), 0))
+    )
+    assertEquals(
+      ledger(admitted(1, a, -1), admitted(2, b, 0), admitted(3, b, 0)),
+      Left(AdmissionError.NegativeOrdinal(1, -1))
+    )
+  }
+
+  test("distinct admitted keys do not require a pairwise equality scan") {
+    var comparisons = 0
+    val count       = 1024
+    val records     = (1 to count).toVector.map(i =>
+      SourceRecord(
+        i,
+        Disposition.Admitted(new AdmissionCountedKey(i, () => comparisons += 1), 0)
+      )
+    )
+    val result =
+      AdmissionLedger.decide(source, header, records, AdmissionDecision.RequireComplete)
+    assert(result.isRight)
+    assertEquals(result.toOption.map(_.records.size), Some(count))
+    assert(
+      comparisons <= 32 * count,
+      s"$comparisons key comparisons for $count distinct records"
     )
   }
 

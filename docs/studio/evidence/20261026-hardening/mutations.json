@@ -1,0 +1,57 @@
+{
+  "status": "passed",
+  "mutants": [
+    {
+      "name": "retention-protection",
+      "path": "studio/core/src/main/scala/eyes4s/studio/core/session/SavedPartRetention.scala",
+      "originalSha256": "623fa7df03b1fcdcdd04e5d623b4d14b4b4365e1f75aefa5f18f6933fdd3966c",
+      "command": "studioCoreJVM/testOnly *SavedPartRetentionSuite",
+      "exitCode": 1,
+      "killed": true,
+      "restored": true
+    },
+    {
+      "name": "pointer-ownership",
+      "path": "studio/desktop/src/test/scala/eyes4s/studio/desktop/harness/StudioFxSuite.scala",
+      "originalSha256": "4158beebe0f92f28976b2f8ece1b04f292582c06316b96e431ac5a9d32497565",
+      "command": "studioDesktop/testOnly *PointerIsolationFxSuite *PointerOptOutFxSuite",
+      "exitCode": 1,
+      "killed": true,
+      "restored": true
+    },
+    {
+      "name": "renderer-capture",
+      "path": "studio/desktop/src/test/scala/eyes4s/studio/desktop/harness/RenderFailures.scala",
+      "originalSha256": "2dd57266f83f027752feccc2b7f9ad3874e8faa891548650fd73f1a06a879988",
+      "command": "studioDesktop/testOnly *RenderFailureCaptureFxSuite",
+      "exitCode": 1,
+      "killed": true,
+      "restored": true
+    }
+  ],
+  "restoredExit": 0,
+  "finished": "2026-10-26T20:00:50.170823+00:00",
+  "logs": [
+    {
+      "path": "mutation-logs/retention-protection.log.gz",
+      "sha256": "c7f41d9b6610f0e68ab465e5276693bcb6043c86eeb39df7a0033368469d92c7",
+      "uncompressedBytes": 20993
+    },
+    {
+      "path": "mutation-logs/restored-green.log.gz",
+      "sha256": "5a0de5a8494b7ef99b28512a404fb1d529fe93aa5410f010e1f4020753d6ebac",
+      "uncompressedBytes": 16105
+    },
+    {
+      "path": "mutation-logs/renderer-capture.log.gz",
+      "sha256": "bc88a18bd34138be02f0ed6f0fb1844cc8f7ef1fe876542b2a4967d3e5d2d54c",
+      "uncompressedBytes": 15260
+    },
+    {
+      "path": "mutation-logs/pointer-ownership.log.gz",
+      "sha256": "1123ccb6ce6d5dbb25bf6d45ad5a58e90c3e404b70180de0d6c5d23b45359023",
+      "uncompressedBytes": 5854
+    }
+  ],
+  "scope": "Tests deliberately broke retirement protection, pointer ownership and renderer-thread recognition; each failed at runtime and passed after restoration. Formatting and benchmark-readiness refinements followed; final aggregate qualification is separate."
+}

@@ -1,0 +1,35 @@
+{
+  "status" : "failed",
+  "factor" : 10,
+  "pid" : 6616,
+  "jvm" : "25.0.4.1+1-LTS",
+  "fixationRows" : 115200,
+  "trialRows" : 9600,
+  "sources" : [
+    {
+      "role" : "Fixations",
+      "sha256" : "d2acc87433d1ecef367879e38d1c4a52cc801ad47609f303b2de18d033fd141c",
+      "bytes" : 6342871
+    },
+    {
+      "role" : "Trials",
+      "sha256" : "f677343db49848d725a2178367df237e010f4dde40291b6bc1c917e4869af30a",
+      "bytes" : 630863
+    }
+  ],
+  "scene" : [
+    1440,
+    900
+  ],
+  "scale" : 1.0,
+  "measurements" : [
+  ],
+  "memory" : [
+    {
+      "phase" : "before-window",
+      "heapBytes" : 733828384,
+      "rssBytes" : 1882324992,
+      "nonHeapBytes" : 259354104
+    }
+  ]
+}

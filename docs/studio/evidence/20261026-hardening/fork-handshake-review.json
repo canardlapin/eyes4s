@@ -1,0 +1,288 @@
+{
+  "status": "awaiting-current-gate",
+  "mote": "bd-01M3HHR5QV9W9SS9AMM1RR1SM0",
+  "completeHistoricalGates": [
+    {
+      "candidate": "42369cf506fceaf4b6fec079fa28f36d6d94fcbe",
+      "tree": "b8f8e6247e513946e8febeb6e7c661e64cc5a330",
+      "gatePassed": true,
+      "driver": {
+        "path": "fork-gates/42369cf5-driver.log.gz",
+        "sha256": "e6cf77221c9e292c8707e779642cf3c4b90fd95f4616b4b130f5b6dd2428a948",
+        "uncompressedBytes": 773
+      },
+      "steps": {
+        "hygiene": {
+          "path": "fork-gates/42369cf5-hygiene.log.gz",
+          "sha256": "d4c3c96f650a9b060011559dc0b6bba6081078d8d02a56b0b2be44f296d9506c",
+          "uncompressedBytes": 6830
+        },
+        "werror": {
+          "path": "fork-gates/42369cf5-werror.log.gz",
+          "sha256": "74a1f9916c30f449895a722062248e13e4c5acd1492cba7215121979e9b222ba",
+          "uncompressedBytes": 9003
+        },
+        "audit": {
+          "path": "fork-gates/42369cf5-audit.log.gz",
+          "sha256": "9a18d069e8b4e765df10b8a39ad7d13d9305690c05f455d3ce3a3e0912f2cafe",
+          "uncompressedBytes": 381782
+        },
+        "tests": {
+          "path": "fork-gates/42369cf5-tests.log.gz",
+          "sha256": "ad9def6c32779f858ff8a9e08a87f8a7b97a9ebffe77d41584c74ee44d7e8a29",
+          "uncompressedBytes": 193678
+        },
+        "consumer": {
+          "path": "fork-gates/42369cf5-consumer.log.gz",
+          "sha256": "f4afa247ac655349d12ac244d00069c6fa31778ce573cdd4e38edae13a7af1a6",
+          "uncompressedBytes": 180
+        }
+      }
+    },
+    {
+      "candidate": "6bf0b7d9ed3df9a0a30cc87dc2f1243e4604edd9",
+      "tree": "5315000e7468fbaff226051db85179293fc7b46a",
+      "gatePassed": true,
+      "driver": {
+        "path": "fork-gates/6bf0b7d9-driver.log.gz",
+        "sha256": "790a678821a8b907ce1ee17b8dadfb87691e9f25b7d9ef88dbc82a51e8c6a346",
+        "uncompressedBytes": 773
+      },
+      "steps": {
+        "hygiene": {
+          "path": "fork-gates/6bf0b7d9-hygiene.log.gz",
+          "sha256": "5500b9f5ceb8dec115abbb9330c5f822b94858eb0912a1ba98b9ff5499b07986",
+          "uncompressedBytes": 6594
+        },
+        "werror": {
+          "path": "fork-gates/6bf0b7d9-werror.log.gz",
+          "sha256": "31169aacec9b334f0bf2784cba90321e73063920620acb611a62669987a2e154",
+          "uncompressedBytes": 8769
+        },
+        "audit": {
+          "path": "fork-gates/6bf0b7d9-audit.log.gz",
+          "sha256": "8c451b03a9618a6d6952e32b7ef928e36a6f6df90d731b9f3bf7b8682f164ac4",
+          "uncompressedBytes": 381432
+        },
+        "tests": {
+          "path": "fork-gates/6bf0b7d9-tests.log.gz",
+          "sha256": "86d641bbb299850054dba09f30edebb1fc16d9fb666e18361380fc686f26c377",
+          "uncompressedBytes": 193464
+        },
+        "consumer": {
+          "path": "fork-gates/6bf0b7d9-consumer.log.gz",
+          "sha256": "4eb273292fd7136c04a28671e31592de314087c6aa8c712059d4061f9859178a",
+          "uncompressedBytes": 176
+        }
+      }
+    },
+    {
+      "candidate": "779fb4681aa218db2e57c656078774e732675dc6",
+      "tree": "7c11aa665e3517c25d030e40dea19de4a05e07b3",
+      "gatePassed": true,
+      "driver": {
+        "path": "fork-gates/779fb468-driver.log.gz",
+        "sha256": "5c24ba45209781d4f1cd6f898c3e241ec90a1e348498eb9e8fae5ceca8becf6c",
+        "uncompressedBytes": 773
+      },
+      "steps": {
+        "hygiene": {
+          "path": "fork-gates/779fb468-hygiene.log.gz",
+          "sha256": "26ffe9d14295f8c635adbd428f34a672beb2df8a887e5f51af211781a0f21fbf",
+          "uncompressedBytes": 6478
+        },
+        "werror": {
+          "path": "fork-gates/779fb468-werror.log.gz",
+          "sha256": "e4db0a5dd46962454421488622b1a98f8520ec9f543f1fed3e911967860172ad",
+          "uncompressedBytes": 8653
+        },
+        "audit": {
+          "path": "fork-gates/779fb468-audit.log.gz",
+          "sha256": "54fe86b826bb3c60b6a1f15310b51702c86e8f7d339811c1bd6daeb81f245dd2",
+          "uncompressedBytes": 381353
+        },
+        "tests": {
+          "path": "fork-gates/779fb468-tests.log.gz",
+          "sha256": "04949d6b243eca743a3e72583906d686f5bdae759fa1e741cf11282e5a25ef24",
+          "uncompressedBytes": 193377
+        },
+        "consumer": {
+          "path": "fork-gates/779fb468-consumer.log.gz",
+          "sha256": "6f8c4b4570b2ab7595fb2da72982fea382a5a73e117306312d9d1b378d56aeb7",
+          "uncompressedBytes": 174
+        }
+      }
+    },
+    {
+      "candidate": "897806be301d484c6e44537a413f6b02b30904bf",
+      "tree": "793612e8d0bbf119cafad7027b1cd5ccb601a8a4",
+      "gatePassed": true,
+      "driver": {
+        "path": "fork-gates/897806be-driver.log.gz",
+        "sha256": "58a0a6cd704bca0178731858091b48005e7f82ccef2c7a97d18e53155fdac69e",
+        "uncompressedBytes": 666
+      },
+      "steps": {
+        "hygiene": {
+          "path": "fork-gates/897806be-hygiene.log.gz",
+          "sha256": "8b18d035ee012f101a5015494c328d41055c406dd9823122230c55a86f4ddfa1",
+          "uncompressedBytes": 6594
+        },
+        "werror": {
+          "path": "fork-gates/897806be-werror.log.gz",
+          "sha256": "1a427693ea10e4162355739965687d4bf4e8e5735c641bbaa54687640e6d3119",
+          "uncompressedBytes": 8769
+        },
+        "audit": {
+          "path": "fork-gates/897806be-audit.log.gz",
+          "sha256": "05f9e0c151f1ac4cc78584542d4ed1b1fe9692fe69ccef4a4d9f5a9ca8ab787f",
+          "uncompressedBytes": 381430
+        },
+        "tests": {
+          "path": "fork-gates/897806be-tests.log.gz",
+          "sha256": "3fe609ccb0882c162c164a692ddbd2d328e0f709af12d440ccb8b936bc20510b",
+          "uncompressedBytes": 193478
+        },
+        "consumer": {
+          "path": "fork-gates/897806be-consumer.log.gz",
+          "sha256": "198ceffb4cc58cd2420e4261ab54be442e3071867830ab3b9433a4ce6471ea99",
+          "uncompressedBytes": 176
+        }
+      }
+    },
+    {
+      "candidate": "f27487646ae37f12144c3038d221af92f0df1db1",
+      "tree": "4dcf3c9f92435499c063ca80b3d38611895d707c",
+      "gatePassed": true,
+      "driver": {
+        "path": "fork-gates/f2748764-driver.log.gz",
+        "sha256": "7a7a87f46eb4047d8fa82df5c76cc93cd79af4f5609409c049780c57196906c9",
+        "uncompressedBytes": 761
+      },
+      "steps": {
+        "hygiene": {
+          "path": "fork-gates/f2748764-hygiene.log.gz",
+          "sha256": "afa02a87bc58f418f2e2a8e05ff1e6b05210dfc4ede433541ddacbb1c4a3f3b6",
+          "uncompressedBytes": 6656
+        },
+        "werror": {
+          "path": "fork-gates/f2748764-werror.log.gz",
+          "sha256": "ceaa8e3c6de083ced20fec965407a98d97c07460516e856266e6c2bc91ef924f",
+          "uncompressedBytes": 8829
+        },
+        "audit": {
+          "path": "fork-gates/f2748764-audit.log.gz",
+          "sha256": "305e4186a3d73c6161def576d5eacc7917f0144469701d687f750fd5ac03d000",
+          "uncompressedBytes": 381573
+        },
+        "tests": {
+          "path": "fork-gates/f2748764-tests.log.gz",
+          "sha256": "4ba7b2f99ffaeab8b146ba7d2e98d4c438bdce03cb203e3af0c6f0afefe2bb9b",
+          "uncompressedBytes": 193524
+        },
+        "consumer": {
+          "path": "fork-gates/f2748764-consumer.log.gz",
+          "sha256": "6228f0e405eeec97c17ef801b4b290f5af5c27b174dd32894ee26ca7007070e5",
+          "uncompressedBytes": 177
+        }
+      }
+    },
+    {
+      "candidate": "ecf67c3f9efaad0a8671f8482018cc8363b68036",
+      "tree": "0b6114908728f13f83bd38a3a8de51686fa9584a",
+      "gatePassed": true,
+      "driver": {
+        "path": "fork-gates/ecf67c3f-driver.log.gz",
+        "sha256": "f2a478cd2838ed7a89ae23cf6cd3ed087c26cc0f292988c25bad3940114e6e9b",
+        "uncompressedBytes": 666
+      },
+      "steps": {
+        "hygiene": {
+          "path": "fork-gates/ecf67c3f-hygiene.log.gz",
+          "sha256": "c5a25c211f29e4219254f1fa0b8b30b946fb1a4e2f3b73f500e910bb3b4be2c3",
+          "uncompressedBytes": 6656
+        },
+        "werror": {
+          "path": "fork-gates/ecf67c3f-werror.log.gz",
+          "sha256": "21800b0d55a2aa3e38596c1312dd2112eaeeabc1478c3b7871e973ea38d76281",
+          "uncompressedBytes": 8829
+        },
+        "audit": {
+          "path": "fork-gates/ecf67c3f-audit.log.gz",
+          "sha256": "3e9059ef48145296c617c313cf0735026e1d51ca87b45713a9af7c32b6570c0c",
+          "uncompressedBytes": 381638
+        },
+        "tests": {
+          "path": "fork-gates/ecf67c3f-tests.log.gz",
+          "sha256": "d9e5e9f53cfed907f15e22106dc31fe4aa7035153b08830ff1dd1050a6040322",
+          "uncompressedBytes": 193631
+        },
+        "consumer": {
+          "path": "fork-gates/ecf67c3f-consumer.log.gz",
+          "sha256": "41fcc69a16f57ec8996d6d888e7ffe12a971a8c291eac05d6444ce0d03e6b539",
+          "uncompressedBytes": 177
+        }
+      }
+    }
+  ],
+  "attributionNotes": [
+    {
+      "actor": "codex-archive-definition",
+      "kind": "progress",
+      "op_id": "20261006T235219.386531Z-p24284-c0000-r076c-ha6bf3d",
+      "text": "Confirmed remaining default-workaround gap2026-10-06 during archive source9e5618b8 qualification: laws crossProject build.sbt818 does not apply commonSettings (its Munit/Discipline dependencies deliberately live in main scope), so Test/javaOptions never receives forkHandshakeOptions653\u2013661. ApiAudit.settings correctly preserves forkOptions.runJVMOptions; the missing law setting, not audit option replacement, causes the instrumented lawsJVM fork to omit preferIPv6Addresses. CI is absent in this local environment. Exact fork18816 waits in ObjectInputStream.readStreamHeader, sbt18492 waits ForkTests.Acceptor.accept, both idle; thread dumps /private/tmp/eyes4s-archive-definition-law-threads.txt and -law-parent-threads.txt, failed audit log -audit-handshake.log. No source mutation while gate is frozen; resume uses process-scoped JAVA_TOOL_OPTIONS=-Djava.net.preferIPv6Addresses=true. Next bounded fix: apply handshake options to laws test JVMs without moving published law dependencies into test scope, verify forked audit launch and complete local gate. Do not close the default-workaround mote while this gap remains.",
+      "ts": "2026-10-06T23:52:19.386531Z"
+    },
+    {
+      "actor": "codex-studio-followups",
+      "kind": "progress",
+      "op_id": "20261007T004150.234566Z-p18035-c0000-rac70-h870ef6",
+      "text": "Bounded missing-laws option inheritance fix is implemented on work/studio-followups, commit 6eb8660e, slice bd-01M49VP8GD3EMV6WAZ1KA2D5ZR now in review. A default audit-instrumented lawsJVM fork passed with all manual JVM override environment variables removed; CI options remain unchanged. Full default landing-gate evidence is still required for this parent. Do not count the focused fork as a complete gate.",
+      "ts": "2026-10-07T00:41:50.234566Z"
+    },
+    {
+      "actor": "codex-polish-landing",
+      "kind": "progress",
+      "op_id": "20261007T024031.648700Z-p78940-c0000-r0355-h9bd632",
+      "text": "First complete default library gate after the confirmed missing-laws option fix PASSED uninterrupted on30ccb689f5d723145faca07e8824d70e5bb8dd3b/tree3fe9ec88139f477f85440e688b6b8c795343caf9. Command env -u JAVA_TOOL_OPTIONS -u JDK_JAVA_OPTIONS -u _JAVA_OPTIONS -u CI PATH=/private/tmp/eyes4s-native-gate-bin:$PATH python3 tools/landing-gate/gate.py; wrapper supplies JDK25 and cosmetic sbt flags only. Exit0; hygiene0.3min, strict JVM/JS1.2min, audit16.1min (3666 covered runtime entries/540 abstractions/zero gaps), testAll/checkBoundaries6.2min, packaged consumers207 JVM/195 JS3.3min. No handshake stall, no restart, no source/test/build or extra-sbt mutation. Log /private/tmp/eyes4s-polish-library-gate.log; full logs target/landing-gate. This is one post-fix full default receipt; older four receipts preceded the later confirmed stall and do not establish five consecutive post-fix gates. Parent stays open; bounded child closes only after source landing and remaining Studio qualification. CI=true option behavior independently remained Nil.",
+      "ts": "2026-10-07T02:40:31.648700Z"
+    },
+    {
+      "actor": "claude-v1-triage",
+      "kind": "progress",
+      "op_id": "20261009T163719.525025Z-p85832-c0000-r7d2e-h6c1599",
+      "text": "Sweep 2026-10-09: build.sbt forkHandshakeOptions applies preferIPv6Addresses to forked tests locally (not on CI). Left open: only one post-fix default gate receipt exists; close after the further consecutive clean gates this ticket asks for.",
+      "ts": "2026-10-09T16:37:19.525025Z"
+    },
+    {
+      "actor": "codex-results-matrix-20261024",
+      "kind": "progress",
+      "op_id": "20261024T045430.276057Z-p92456-c0000-r66b8-h7371bb",
+      "text": "Additional complete post-fix default local gate receipt2026-10-24:42369cf506fceaf4b6fec079fa28f36d6d94fcbe treeb8f8e6247e513946e8febeb6e7c661e64cc5a330, /private/tmp/eyes4s-results-final-landing-20261024. Registered JDK25; GITHUB_ACTIONS=true python3.13 tools/landing-gate/gate.py, exit0 uninterrupted, hygiene0.5min,werror1.5min,audit13.4min,testAll+boundaries6.6min,consumer3.3min. No handshake stall. No CI/JAVA_TOOL_OPTIONS/JDK_JAVA_OPTIONS/_JAVA_OPTIONS in the inherited local environment and none added by the gate command; build default forkHandshakeSettings applies to common and laws projects and CI still returnsNil. Canonical log /private/tmp/eyes4s-results-final-gate.log; durable copy staged in /private/tmp/eyes4s-results-evidence-stage/canonical-gate.log. The stopped preliminary ea4 run is not counted as a full receipt. Keeping this ticket open: this note does not establish all five consecutive post-fix receipts; audit intervening receipts before closure.",
+      "ts": "2026-10-24T04:54:30.276057Z"
+    },
+    {
+      "actor": "codex-results-matrix-20261024",
+      "kind": "progress",
+      "op_id": "20261024T073147.058412Z-p85338-c0000-r2fda-h08c309",
+      "text": "Additional directly observed post-fix default receipts:6bf0b7d9/tree5315000e completed the entire five-step canonical gate uninterrupted (hygiene0.5m, strictcompile1.4m,audit13.7m,testAll+boundaries7.2m,consumer3.4m);779fb468/tree7c11aa66 also completed uninterrupted (0.4m/1.4m/13.6m/6.8m/3.3m). RegisteredTemurin25 selected for wholeprocess; no manual network/JAVA_TOOL_OPTIONS override introduced; child test JVMs showed repo-default preferIPv6Addresses=true. These join the separately recorded42369cf5 receipt.6bf aggregateStudio was superseded only because of a Mac test resize assumption, not handshake failure; its canonical driver is preserved separately. Do not close based on older pre-fix passes or stopped ea4 run: five fully attributable consecutive default receipts remain to be reconciled; this note establishes only these two additional completed canonical runs.",
+      "ts": "2026-10-24T07:31:47.058412Z"
+    },
+    {
+      "actor": "codex-v1-reconcile-20261024",
+      "kind": "progress",
+      "op_id": "20261024T130738.534330Z-p65763-c0000-r94d8-h44ca49",
+      "text": "Reassessment 2026-10-24 against origin/main 360a326b7e4f5173be08879a7ab0e380485029f6. Tracker consolidation requested by owner; no new software qualification is claimed. Implementation is present. Remaining task is reconciliation of five attributable consecutive full local default-setting gates, not another feature. The three directly documented recent completions remain42369cf5,6bf0b7d9,779fb468; earlier receipts need environment attribution before counting. Reuse valid receipts and naturally required gates; do not run empty full gates just to increase a counter.",
+      "ts": "2026-10-24T13:07:38.534330Z"
+    }
+  ],
+  "limitations": [
+    "Raw historical child environments were not independently snapshotted. October 24 default-environment attribution relies on contemporaneous coordinator receipts plus unchanged checked-in fork policy.",
+    "October 26 canonical completions are supplemental continuity evidence; no environment property is inferred from sbt-parent JUnit XML."
+  ],
+  "excluded": [
+    "October 4-5 passes preceded the confirmed October 6 lawsJVM handshake stall.",
+    "Focused fork checks and interrupted/resumed gates do not count as new full gates.",
+    "ea4 and 488 preliminary gates were deliberately stopped for source/UI correction, not reported as full passes."
+  ]
+}

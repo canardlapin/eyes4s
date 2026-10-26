@@ -54,7 +54,7 @@ class ResolvedDesignFxSuite extends ShellFxSuite:
     w.resolvedDesign.view.chips.find(_.filter == f).getOrElse(fail(s"no chip $f"))
 
   private def shownQueries(w: StudioWindow): Vector[TrialKey] =
-    runOnFx(w.resolvedDesign.view.rows.flatMap(w.resolvedDesign.view.queryOf))
+    runOnFx(w.resolvedDesign.view.queries)
 
   private def backToAnalysis(fx: FxStage, w: StudioWindow): Unit =
     dispatch(fx, w, Intent.Back)
@@ -102,13 +102,17 @@ class ResolvedDesignFxSuite extends ShellFxSuite:
       assert(runOnFx(chip(w, f).button.isSelected), f)
       assertEquals(shownQueries(w).size, n, f)
     }
-    val read = runOnFx(w.resolvedDesign.view.rows.map(_.getAccessibleText))
-    assert(read.contains("P17 · ret_07 · beach-042 · Eligible"), read.take(3))
-    assert(
-      read.contains(
-        "P17 · ret_09 · market-066 · Query not admitted · absent from fixations.csv"
-      )
+    val names = Vector(
+      "P17 · ret_07 · beach-042 · Eligible",
+      "P17 · ret_09 · market-066 · Query not admitted · absent from fixations.csv"
     )
+    names.foreach { name =>
+      val row =
+        runOnFx(ResolvedDesignVM.of(w.resolvedDesign.state).rows.find(_.accessible == name).get)
+      runOnFx(w.resolvedDesign.dispatch(DesignIntent.FocusRow(row.query)))
+      fx.awaitLayout()
+      assert(runOnFx(view.rows.map(_.getAccessibleText)).contains(name))
+    }
     // The receipt the pane counted is the app's prepared design.
     val receipt = runOnFx(w.resolvedDesign.state.preview.receipt).getOrElse(fail("no receipt"))
     assertEquals(
@@ -229,6 +233,29 @@ class ResolvedDesignFxSuite extends ShellFxSuite:
       runOnFx(w.resolvedDesign.state.cursor),
       Some(notAdmitted(notAdmitted.size - 1 - ResolvedDesign.CursorPage).query)
     )
+  }
+
+  fxStage.test("design rows stay bounded while every row remains keyboard reachable") { fx =>
+    val w = boot(fx, StoryModels.t2Analysis, StoryMoment.T2)
+    ready(fx, w)
+    val view = w.resolvedDesign.view
+    assertEquals(shownQueries(w).size, 480)
+    assert(runOnFx(view.rows.size) < 40)
+    runOnFx(view.table.requestFocus())
+    fx.robot.press(KeyCode.END)
+    assertEquals(runOnFx(w.resolvedDesign.state.cursor), shownQueries(w).lastOption)
+    assert(runOnFx(view.rows.flatMap(view.queryOf)).contains(shownQueries(w).last))
+    assertEquals(
+      runOnFx(view.table.queryAccessibleAttribute(javafx.scene.AccessibleAttribute.ROW_COUNT)),
+      Integer.valueOf(480)
+    )
+    val focused =
+      runOnFx(view.table.queryAccessibleAttribute(javafx.scene.AccessibleAttribute.FOCUS_ITEM))
+    assert(runOnFx(view.rows.exists(_ eq focused)))
+    fx.robot.press(KeyCode.HOME)
+    assertEquals(runOnFx(w.resolvedDesign.state.cursor), shownQueries(w).headOption)
+    assert(runOnFx(view.rows.flatMap(view.queryOf)).contains(shownQueries(w).head))
+    assert(runOnFx(view.rows.size) < 40)
   }
 
   fxStage.test("the table takes focus with its cursor on the first row, or where it was") {

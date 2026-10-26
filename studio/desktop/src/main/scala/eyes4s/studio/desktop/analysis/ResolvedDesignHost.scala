@@ -120,10 +120,12 @@ final class ResolvedDesignHost(app: Intent => Unit, inputs: DesignInputs):
   /** Follow the model ([[ResolvedDesign.sync]]). */
   def sync(m: AppModel): Unit =
     val (next, effects) = ResolvedDesign.sync(panel, m)
+    val changed         = next != panel
     panel = next
     perform(effects)
-    view.render(ResolvedDesignVM.of(panel))
-    followers.foreach(_(panel))
+    if changed then
+      view.render(ResolvedDesignVM.of(panel))
+      followers.foreach(_(panel))
 
   /** A user action or a backend answer. */
   def dispatch(intent: DesignIntent): Unit =

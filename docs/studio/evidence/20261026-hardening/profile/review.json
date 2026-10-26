@@ -1,0 +1,12 @@
+{
+  "status": "diagnostic-stopped-after-cause-isolated",
+  "qualification": false,
+  "baselineCandidate": "1e7632c78dc15c1b7471eb774fb84fd28c638a72",
+  "measurementChanges": "Only admission setup wait raised from30s to300s; interaction budgets/warmups/observations unchanged. Extra phase logging. JFR settings=profile are diagnostic only.",
+  "findings": [
+    "CSS RefList add/remove represent2967 of6347FX leaf samples. Perspective switching detaches/reattaches480 or4800 design rows, registering their styles again.",
+    "Tenfold admission stack is inside AdmissionLedger.build ordinals records.exists scan, quadratic in fixation records."
+  ],
+  "rawEvidence": "/private/tmp/eyes4s-hardening-performance-profile contains JFR captures and full samples; summary and active tenfold stack preserved here.",
+  "stopReason": "The 1x measurements completed and the10x stack established repeated ordinal scanning. Diagnostic JVM stopped after JFR dump; this is not a completed or passing qualification run."
+}

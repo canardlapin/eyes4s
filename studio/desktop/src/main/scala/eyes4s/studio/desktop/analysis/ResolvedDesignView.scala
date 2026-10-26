@@ -22,7 +22,7 @@ import eyes4s.studio.desktop.shell.CompositeFocus
 import eyes4s.studio.desktop.tokens.TokenFiles
 import javafx.css.PseudoClass
 import javafx.geometry.Pos
-import javafx.scene.AccessibleRole
+import javafx.scene.{AccessibleAttribute, AccessibleRole}
 import javafx.scene.control.{Label, ScrollPane, ToggleButton}
 import javafx.scene.input.{KeyCode, KeyEvent, MouseEvent}
 import javafx.scene.layout.*
@@ -76,7 +76,15 @@ final class ResolvedDesignView(dispatch: DesignIntent => Unit):
   scroll.getStyleClass.add("edge-to-edge")
 
   /** The table: one focus stop that holds the row cursor. */
-  val table: StackPane = StackPane(scroll)
+  val table: StackPane = new StackPane(scroll):
+    override def queryAccessibleAttribute(
+        attribute: AccessibleAttribute,
+        parameters: AnyRef*
+    ): AnyRef =
+      attribute match
+        case AccessibleAttribute.ROW_COUNT  => Integer.valueOf(shownRows.size)
+        case AccessibleAttribute.FOCUS_ITEM => cursorNode.orNull
+        case _ => super.queryAccessibleAttribute(attribute, parameters*)
   table.getStyleClass.add("design-table")
   table.setFocusTraversable(true)
   table.setAccessibleRole(AccessibleRole.TABLE_VIEW)
@@ -114,6 +122,51 @@ final class ResolvedDesignView(dispatch: DesignIntent => Unit):
   private var shownRows: Vector[DesignRowVM] = Vector.empty
   private var rowNodes: Vector[HBox]         = Vector.empty
   private var hasCursor: Boolean             = false
+  private var rowStart                       = 0
+  private var cursorIndex: Option[Int]       = None
+  private var shownNotes                     = Vector.empty[DesignNoteVM]
+  private val beforeRows                     = Region()
+  private val afterRows                      = Region()
+  private var realizing                      = false
+
+  scroll.vvalueProperty.addListener((_, _, _) => if !rendering then realizeRows())
+  scroll.viewportBoundsProperty.addListener((_, _, _) =>
+    if !rendering then
+      cursorIndex.foreach(reveal)
+      realizeRows()
+  )
+  CompositeFocus.registerCursor(table)(cursorNode)
+
+  private def cursorNode = rowNodes.lift(cursorIndex.getOrElse(0) - rowStart)
+
+  /** Every filtered query remains available; only viewport rows have nodes. */
+  def queries: Vector[TrialKey] = shownRows.map(_.query)
+
+  private def spacerHeight(node: Region, height: Double): Unit =
+    node.setMinHeight(height)
+    node.setPrefHeight(height)
+    node.setMaxHeight(height)
+
+  private def realizeRows(force: Boolean = false): Unit = if !realizing then
+    realizing = true
+    try
+      val viewport = math.max(RowHeight, scroll.getViewportBounds.getHeight)
+      val offset   = scroll.getVvalue * math.max(0.0, shownRows.size * RowHeight - viewport)
+      val first    = math.max(0, math.floor(offset / RowHeight).toInt - 1)
+      val end = math.min(shownRows.size, math.ceil((offset + viewport) / RowHeight).toInt + 1)
+      if force || first != rowStart || end - first != rowNodes.size then
+        val previous = if force then Map.empty[Int, HBox]
+        else rowNodes.zipWithIndex.map((n, i) => (rowStart + i) -> n).toMap
+        rowStart = first
+        rowNodes =
+          (first until end).toVector.map(i => previous.getOrElse(i, rowNode(shownRows(i))))
+        spacerHeight(beforeRows, first * RowHeight)
+        spacerHeight(afterRows, (shownRows.size - end) * RowHeight)
+        rowBox.getChildren.setAll((Vector(beforeRows) ++ rowNodes :+ afterRows)*): Unit
+      rowNodes.zipWithIndex.foreach((n, i) =>
+        n.pseudoClassStateChanged(Cursor, cursorIndex.getOrElse(0) == rowStart + i)
+      )
+    finally realizing = false
 
   /** The row nodes now drawn, in order. */
   def rows: Vector[HBox] = rowNodes
@@ -146,28 +199,26 @@ final class ResolvedDesignView(dispatch: DesignIntent => Unit):
       table.setAccessibleText(vm.accessible)
       table.setAccessibleHelp(vm.accessibleHelp)
       val unfocused = vm.rows.map(_.copy(focused = false))
-      if unfocused != shownRows then
-        shownRows = unfocused
-        rowNodes = vm.rows.map(rowNode)
-        rowBox.getChildren.setAll(rowNodes*): Unit
-      // With no cursor, the first row (where focus puts it) is marked already;
-      // the stylesheet draws :cursor only while the table has focus.
+      val changed   = unfocused != shownRows
+      shownRows = unfocused
       hasCursor = vm.cursor.isDefined
-      rowNodes.zipWithIndex.foreach((n, i) =>
-        n.pseudoClassStateChanged(Cursor, vm.cursor.fold(i == 0)(_ == i))
-      )
+      cursorIndex = vm.cursor
+      if changed && cursorIndex.isEmpty then scroll.setVvalue(0.0)
+      cursorIndex.foreach(reveal)
+      realizeRows(force = changed)
       // Only a table with no rows has no row to draw the cursor on, so only
       // then does the table draw the focus ring.
-      CompositeFocus.noCursor(table, rowNodes.isEmpty)
-      vm.cursor.foreach(reveal)
+      CompositeFocus.noCursor(table, shownRows.isEmpty)
       shown(rowsNote, vm.rowsNote)
-      notes.getChildren.setAll(vm.notes.map { n =>
-        val classes = if n.mono then Vector("design-stamp", "mono", "t11") else Vector("t11")
-        val l       = label(classes*)
-        l.setText(n.text)
-        l.setWrapText(true)
-        l
-      }*): Unit
+      if shownNotes != vm.notes then
+        shownNotes = vm.notes
+        notes.getChildren.setAll(vm.notes.map { n =>
+          val classes = if n.mono then Vector("design-stamp", "mono", "t11") else Vector("t11")
+          val l       = label(classes*)
+          l.setText(n.text)
+          l.setWrapText(true)
+          l
+        }*): Unit
     finally rendering = false
 
   private def rowNode(r: DesignRowVM): HBox =
@@ -194,6 +245,10 @@ final class ResolvedDesignView(dispatch: DesignIntent => Unit):
       status
     )
     n.getStyleClass.addAll("design-row", "t12")
+    n.setMinHeight(RowHeight)
+    n.setPrefHeight(RowHeight)
+    n.setMaxHeight(RowHeight)
+    n.setAccessibleRole(AccessibleRole.TABLE_ROW)
     n.setAccessibleText(r.accessible)
     n.addEventHandler(
       MouseEvent.MOUSE_CLICKED,
@@ -205,26 +260,26 @@ final class ResolvedDesignView(dispatch: DesignIntent => Unit):
 
   /** Keep the cursor's row inside the viewport. */
   private def reveal(index: Int): Unit =
-    if rowNodes.nonEmpty then
-      val content  = rowBox.getHeight
-      val viewport = scroll.getViewportBounds.getHeight
-      if content > viewport && viewport > 0 then
-        val node        = rowNodes(index.min(rowNodes.size - 1))
-        val top         = node.getBoundsInParent.getMinY
-        val bottom      = node.getBoundsInParent.getMaxY
-        val shownTop    = scroll.getVvalue * (content - viewport)
-        val shownBottom = shownTop + viewport
-        if top < shownTop then scroll.setVvalue(top / (content - viewport))
-        else if bottom > shownBottom then
-          scroll.setVvalue((bottom - viewport) / (content - viewport))
+    val content  = shownRows.size * RowHeight
+    val viewport = scroll.getViewportBounds.getHeight
+    if content > viewport && viewport > 0 then
+      val top      = index * RowHeight
+      val bottom   = top + RowHeight
+      val shownTop = scroll.getVvalue * (content - viewport)
+      if top < shownTop then scroll.setVvalue(top / (content - viewport))
+      else if bottom > shownTop + viewport then
+        scroll.setVvalue((bottom - viewport) / (content - viewport))
 
   /** The query of the row a click on `node` opens, if it is a row. */
   def queryOf(node: HBox): Option[TrialKey] =
     rowNodes.indexWhere(_ eq node) match
       case -1 => None
-      case i  => shownRows.lift(i).map(_.query)
+      case i  => shownRows.lift(rowStart + i).map(_.query)
 
 object ResolvedDesignView:
+
+  /** The fixed board row height; also the virtual scroll extent. */
+  val RowHeight: Double = 22.0
 
   val stylesheetResource: String = s"${TokenFiles.resourceDirectory}/studio-design.css"
 

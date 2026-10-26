@@ -20,7 +20,7 @@ import cats.effect.unsafe.implicits.global
 import eyes4s.codec.ByteDigest
 import eyes4s.plan.AdmissionDecision as NativeAdmissionDecision
 import eyes4s.studio.app.{AppModel, Intent}
-import eyes4s.studio.app.analysis.DesignPreview
+import eyes4s.studio.app.analysis.{DesignPreview, DesignRows}
 import eyes4s.studio.app.compare.SummaryAnswer
 import eyes4s.studio.app.figures.{PanelBody, TileMap}
 import eyes4s.studio.app.geometry.Loading
@@ -31,7 +31,7 @@ import eyes4s.studio.core.document.{CoreBinding, Perspective, Preset, SourceRole
 import eyes4s.studio.core.selection.*
 import eyes4s.studio.desktop.StudioWindow
 import eyes4s.studio.desktop.explore.NavigatorDisplays
-import eyes4s.studio.desktop.harness.StudioTheme
+import eyes4s.studio.desktop.harness.{StudioFxSuite, StudioTheme}
 import eyes4s.studio.desktop.platform.TempDirs
 import eyes4s.studio.desktop.runtime.DatasetSourceHosts
 import eyes4s.studio.desktop.trial.TrialViewStatus
@@ -107,12 +107,16 @@ class InteractionPerformanceFxSuite extends GoldenWindow:
           case _                         => false
         } && w.summary.participantPlot.plot.nonEmpty
       case Perspective.Figures =>
-        w.figures.vm.page.exists(page => page.panels.nonEmpty && page.panels.forall(panel =>
-          panel.body match
-            case PanelBody.Waiting(_) => false
-            case PanelBody.Maps(m) => m.tiles.forall(_.map != TileMap.Waiting)
-            case PanelBody.Plot(_) => w.figures.plot(page.figure, panel.letter).exists(_.plot.nonEmpty)
-            case _ => true)))
+        w.figures.vm.page.exists(page =>
+          page.panels.nonEmpty && page.panels.forall(panel =>
+            panel.body match
+              case PanelBody.Waiting(_) => false
+              case PanelBody.Maps(m)    => m.tiles.forall(_.map != TileMap.Waiting)
+              case PanelBody.Plot(_)    =>
+                w.figures.plot(page.figure, panel.letter).exists(_.plot.nonEmpty)
+              case _ => true
+          )
+        ))
 
   private def heap: Long = ManagementFactory.getMemoryMXBean.getHeapMemoryUsage.getUsed
   private def rss: Long  =
@@ -157,10 +161,15 @@ class InteractionPerformanceFxSuite extends GoldenWindow:
         )
         def write(status: String): Unit =
           val receipt = Json.obj(
-            "status"       -> Json.fromString(status),
-            "factor"       -> Json.fromInt(factor),
-            "pid"          -> Json.fromLong(ProcessHandle.current().pid()),
-            "jvm"          -> Json.fromString(System.getProperty("java.runtime.version")),
+            "status"           -> Json.fromString(status),
+            "factor"           -> Json.fromInt(factor),
+            "pid"              -> Json.fromLong(ProcessHandle.current().pid()),
+            "jvm"              -> Json.fromString(System.getProperty("java.runtime.version")),
+            "maximumHeapBytes" -> Json.fromLong(Runtime.getRuntime.maxMemory()),
+            "glassApplication" -> Json.fromString(StudioFxSuite.glassApplication),
+            "requestedGraphicsPipeline" -> Json.fromString(
+              System.getProperty("prism.order", "default")
+            ),
             "fixationRows" -> Json.fromInt(rows(inputs, SourceRole.Fixations)),
             "trialRows"    -> Json.fromInt(rows(inputs, SourceRole.Trials)),
             "sources"      -> Json.arr(inputs.entries.map { (source, bytes) =>
@@ -178,6 +187,7 @@ class InteractionPerformanceFxSuite extends GoldenWindow:
           Files.writeString(receiptFile, receipt.spaces2 + "\n"): Unit
         var window: Option[StudioWindow] = None
         try
+          println(s"[performance] ${factor}x importing and admitting native inputs")
           memoryAt("before-window")
           val w = boot(
             fx,
@@ -205,15 +215,17 @@ class InteractionPerformanceFxSuite extends GoldenWindow:
           runOnFx(w.admission.view.choices(NativeAdmissionDecision.ReviewExclusions).fire())
           until("admission enabled") { !w.admission.view.admit.isDisabled }
           runOnFx(w.admission.view.admit.fire())
-          until("admitted") {
+          until("admitted", 300) {
             w.runtime.model.document.dataset(dataset).exists(_.decision.isAdmitted)
           }
+          println(s"[performance] ${factor}x preparing native analysis")
           dispatch(fx, w, Intent.SwitchPerspective(Perspective.Analysis))
           until("preset enabled") { w.recipe.enabled(Preset.EncodingRetrieval) }
           runOnFx(w.recipe.choose(Preset.EncodingRetrieval))
           until("ready native preview", 600) {
             w.resolvedDesign.state.preview.receipt.isDefined && w.preflight.runButton._2
           }
+          println(s"[performance] ${factor}x executing native analysis")
           runOnFx(w.preflight.pressRun())
           until("completed native run", 1800) {
             w.runtime.model.jobs.ready.exists(_.run == run)
@@ -226,6 +238,17 @@ class InteractionPerformanceFxSuite extends GoldenWindow:
           dispatch(fx, w, Intent.Dispatch(Command.PutReporting(reporting)))
           dispatch(fx, w, Intent.ShowRun(run))
           dispatch(fx, w, Intent.Dispatch(Command.CreateFigure(run, reporting.id, panels)))
+          until("complete design rows", 180) {
+            w.resolvedDesign.state.rowState == DesignRows.Complete
+          }
+          val expectedQueries = String(
+            inputs.entries.find(_._1.role == SourceRole.Trials).get._2.toArray,
+            UTF_8
+          ).linesIterator.drop(1).count(_.split(',')(1) == "Retrieval")
+          assertEquals(runOnFx(w.resolvedDesign.state.rows.size), expectedQueries)
+          println(
+            s"[performance] ${factor}x native run, archive and all $expectedQueries design rows ready"
+          )
           val keys = Vector("enc_03", "enc_04").map(TrialKey("P17", Phase.Encoding, _, 1))
           def navigate(key: TrialKey): Unit = w.runtime.dispatch(
             Intent.Navigate(
@@ -271,11 +294,17 @@ class InteractionPerformanceFxSuite extends GoldenWindow:
             println(s"[performance] ${factor}x $name p95=$p95 ms limit=$limit")
           val key = keys.head
           runOnFx(navigate(key)); until("selected trial")(trialReady(w, key))
-          val sourceRows = String(inputs.entries.find(_._1.role == SourceRole.Fixations).get._2.toArray, UTF_8)
-            .linesIterator.drop(1).zipWithIndex.collect {
+          val sourceRows = String(
+            inputs.entries.find(_._1.role == SourceRole.Fixations).get._2.toArray,
+            UTF_8
+          ).linesIterator
+            .drop(1)
+            .zipWithIndex
+            .collect {
               case (line, index) if line.startsWith("P17,Encoding,enc_03,1,") =>
                 line.split(',')(4).toInt -> index
-            }.toMap
+            }
+            .toMap
           def selected(i: Int) = StudioRef.Fixation(key, get(FixationIndex.of(1 + i % 2)))
           measure("linked-selection", 100, 100.0) { i =>
             sequence += 1
@@ -295,7 +324,9 @@ class InteractionPerformanceFxSuite extends GoldenWindow:
             )
           } { i =>
             w.explore.input.state.selected == Vector(selected(i)) &&
-            w.timeline.twin.table.modelRowSelected.zipWithIndex.collect { case (true, row) => row } == Vector(i % 2) &&
+            w.timeline.twin.table.modelRowSelected.zipWithIndex.collect { case (true, row) =>
+              row
+            } == Vector(i % 2) &&
             w.sourceRecords.current.cursor.contains(sourceRows(1 + i % 2)) &&
             w.inspector.titleText.startsWith(s"Fixation ${1 + i % 2} of")
           }

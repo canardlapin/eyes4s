@@ -1,0 +1,30 @@
+{
+  "status": "passed",
+  "mutants": [
+    {
+      "name": "ordinal-pairwise",
+      "path": "plan/src/main/scala/eyes4s/plan/StudyInputEvidence.scala",
+      "originalSha256": "e680b95db490d3db9e6cda81a0b1d57f3595141f9a632eabc802c2564df76929",
+      "command": "planJVM/testOnly *AdmissionLedgerSuite",
+      "exitCode": 1,
+      "killed": true,
+      "restored": true
+    },
+    {
+      "name": "unbounded-rows",
+      "path": "studio/desktop/src/main/scala/eyes4s/studio/desktop/analysis/ResolvedDesignView.scala",
+      "originalSha256": "fa97c9beb53aa193936c9ad8919365ef2abdec7c55d9dbcd7cfb4615af08db81",
+      "command": "studioDesktop/testOnly *ResolvedDesignFxSuite",
+      "exitCode": 1,
+      "killed": true,
+      "restored": true
+    }
+  ],
+  "restoredExit": 0,
+  "finished": "2026-10-26T20:28:08.428849+00:00",
+  "logs": [
+    "mutation-logs/ordinal-pairwise-performance.log.gz",
+    "mutation-logs/restored-green-performance.log.gz",
+    "mutation-logs/unbounded-rows-performance.log.gz"
+  ]
+}

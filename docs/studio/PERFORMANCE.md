@@ -28,6 +28,8 @@ view state and a layout pulse, then waits for a fence on the real QuantumRendere
 its paint. The fence finishes after the preceding render work. Snapshot export is outside
 timing. Do not subtract harness overhead. Record all timings, nearest-rank p95, maximum and counts.
 A timeout or refused/unready view is a failure, not a discarded observation.
+Admission setup has a separate 300-second allowance; it is outside the interaction timer.
+All retrieval design rows must be loaded and retained before timing starts.
 
 Acceptance on each workload, and individually for every destination perspective:
 

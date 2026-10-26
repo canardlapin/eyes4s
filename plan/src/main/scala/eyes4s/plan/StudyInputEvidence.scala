@@ -665,22 +665,20 @@ object AdmissionLedger:
       case (r, i) if i > 0 && r.record <= records(i - 1).record =>
         AdmissionError.RecordOrder(i, records(i - 1).record, r.record)
     }
-    def ordinals = records.collectFirst {
-      case SourceRecord(r, Disposition.Admitted(_, o)) if o < 0 =>
-        AdmissionError.NegativeOrdinal(r, o)
-      case SourceRecord(r, Disposition.Admitted(k, o)) if records.exists {
-            case SourceRecord(other, Disposition.Admitted(k2, o2)) =>
-              other != r && k2 == k && o2 == o
-            case _ => false
-          } =>
-        AdmissionError.DuplicateOrdinal(
-          records.collect {
-            case SourceRecord(other, Disposition.Admitted(k2, o2)) if k2 == k && o2 == o =>
-              other
-          },
-          o
-        )
-    }
+    def ordinals =
+      // Preserve the first offending source record, including a negative ordinal
+      // before a later duplicate. Index once instead of rescanning every record.
+      val byOrdinal = records
+        .collect { case SourceRecord(r, Disposition.Admitted(k, o)) =>
+          (k, o) -> r
+        }
+        .groupMap(_._1)(_._2)
+      records.collectFirst {
+        case SourceRecord(r, Disposition.Admitted(_, o)) if o < 0 =>
+          AdmissionError.NegativeOrdinal(r, o)
+        case SourceRecord(_, Disposition.Admitted(k, o)) if byOrdinal((k, o)).size > 1 =>
+          AdmissionError.DuplicateOrdinal(byOrdinal((k, o)), o)
+      }
     def scope(entry: SourceRecord[K]): Option[AdmissionError] = entry match
       case SourceRecord(r, Disposition.Rejected(_, key, AdmissionReason.Quarantined(rs, _))) =>
         if !rs.contains(r) || !rs.forall(numbers.contains) then
