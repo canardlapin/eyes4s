@@ -529,10 +529,11 @@ sealed abstract case class AdmissionLedger[K] private (
       .collect { case SourceRecord(r, Disposition.Admitted(k, _)) => k -> r }
       .groupMap(_._1)(_._2)
     val trials    = input.trials.rows.zipWithIndex
-    val known     = trials.map(_._1.key).toSet
+    val indices   = trials.groupMap(_._1.key)(_._2)
+    val known     = indices.keySet
     val ambiguous = trials.collectFirst {
-      case (trial, i) if trials.count(_._1.key == trial.key) > 1 =>
-        AdmissionError.AmbiguousTrial(trials.collect { case (t, j) if t.key == trial.key => j })
+      case (trial, _) if indices(trial.key).size > 1 =>
+        AdmissionError.AmbiguousTrial(indices(trial.key))
     }
     val orphans = records.collect {
       case SourceRecord(r, Disposition.Admitted(k, _)) if !known.contains(k) => r

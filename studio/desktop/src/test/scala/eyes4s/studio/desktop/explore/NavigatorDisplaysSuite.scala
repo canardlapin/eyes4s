@@ -124,11 +124,14 @@ class NavigatorDisplaysSuite extends munit.FunSuite:
     )
 
   /** A project storing `csv` and one stimulus image, beach-042.png. */
-  private final class Project(bytes: IArray[Byte]) extends ProjectPort:
+  private final class Project(var bytes: IArray[Byte]) extends ProjectPort:
     def journal(entry: JournalEntry): Unit                    = ()
     def save(done: Either[String, SaveReceipt] => Unit): Unit = done(Left("not in a test"))
     def close(): Unit                                         = ()
+    var reads                                                 = 0
+    var extra                                                 = Vector.empty[InputEntry]
     override def readInput(source: Source, done: Either[String, IArray[Byte]] => Unit): Unit =
+      reads += 1
       done(Right(bytes))
     override def storedInputs(done: Either[String, Vector[InputEntry]] => Unit): Unit =
       done(
@@ -141,7 +144,7 @@ class NavigatorDisplaysSuite extends munit.FunSuite:
           )
           .left
           .map(_.message)
-          .map(Vector(_))
+          .map(entry => Vector(entry) ++ extra)
       )
 
   test("a real project serves the registry its stored trials.csv and images state") {
@@ -161,4 +164,33 @@ class NavigatorDisplaysSuite extends munit.FunSuite:
       read(changed, mapped).left.exists(_.contains("its source recorded")),
       read(changed, mapped)
     )
+  }
+
+  test("display reuse verifies fresh bytes and sees newly stored images") {
+    val project  = Project(csvBytes)
+    val source   = NavigatorDisplays.stored(project)
+    def served() = read(source, mapped).toOption.get match
+      case DisplaySource.Served(r) => r
+      case _                       => fail("no registry")
+    val first = served()
+    assert(served() eq first)
+    assertEquals(project.reads, 2)
+    project.bytes = IArray.from("corrupted inventory".getBytes(UTF_8))
+    assert(read(source, mapped).isLeft)
+    project.bytes = csvBytes
+    project.extra = Vector(
+      ok(
+        InputEntry.of(
+          InputKind.StimulusImage,
+          "forest-044.png",
+          ByteDigest.sha256(IArray.from("forest".getBytes(UTF_8))),
+          6L
+        )
+      )
+    )
+    val repaired = served()
+    assertEquals(repaired.summary.present, 2)
+    assertEquals(repaired.missing, Vector.empty)
+    assert(repaired ne first)
+    assertEquals(project.reads, 4)
   }

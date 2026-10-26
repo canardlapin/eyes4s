@@ -139,6 +139,26 @@ class AdmissionLedgerSuite extends munit.FunSuite:
     )
   }
 
+  test("input cross-check indexes distinct trial keys instead of rescanning every trial") {
+    var comparisons = 0
+    val count       = 1024
+    def key(i: Int) = new AdmissionCountedKey(i, () => comparisons += 1)
+    val records     =
+      (1 to count).toVector.map(i => SourceRecord(i, Disposition.Admitted(key(i), 0)))
+    val ledger =
+      get(AdmissionLedger.decide(source, header, records, AdmissionDecision.RequireComplete))
+    given KeyDigest[AdmissionCountedKey] with
+      def digest(k: AdmissionCountedKey): ContentHash = KeyDigest[Int].digest(k.value)
+    val scanpath = trial(a, 1).value
+    val input = StudyInput(Trials((1 to count).toVector.map(i => Trial(key(i), (), scanpath))))
+    comparisons = 0
+    assertEquals(ledger.checkAgainst(input), Right(()))
+    assert(
+      comparisons <= 32 * count,
+      s"$comparisons comparisons for $count distinct input trials"
+    )
+  }
+
   test("checkAgainst accepts the source's own ordinal values and names the first offender") {
     val complete = get(ledger(admitted(2, a, 10), admitted(3, a, 30), admitted(4, b, 7)))
     val input    = StudyInput(Trials(Vector(trial(a, 2), trial(b, 1))))
@@ -150,6 +170,12 @@ class AdmissionLedgerSuite extends munit.FunSuite:
     assertEquals(
       complete.checkAgainst(StudyInput(Trials(Vector(trial(b, 1), trial(a, 2), trial(b, 1))))),
       Left(AdmissionError.AmbiguousTrial(Vector(0, 2)))
+    )
+    assertEquals(
+      complete.checkAgainst(
+        StudyInput(Trials(Vector(trial(a, 2), trial(b, 1), trial(b, 1), trial(a, 2))))
+      ),
+      Left(AdmissionError.AmbiguousTrial(Vector(0, 3)))
     )
     assertEquals(
       complete.checkAgainst(StudyInput(Trials(Vector(trial(a, 2))))),

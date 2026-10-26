@@ -1,0 +1,11 @@
+{
+  "candidate": "e805ac18",
+  "scope": "Separate full-tenfold JFR diagnostic, not qualification",
+  "profileSha256": "ad345c53dc66967ed8abc0bdfac838e4d8c6f0886dc0ed4104601f0e9b61acad",
+  "localProfile": "/private/tmp/eyes4s-hardening-tenfold-profile6/stages.jfr",
+  "findings": [
+    "Selection: repeated freshly parsed AssetRegistry rebuilds byTrial on FX (11/145 FX samples); repeated display inventory parsing also consumes background workers. Preserve fresh reads and digest verification, reuse only successful parse with identical dataset, inventory digest and stored asset identities.",
+    "Perspective frames: QueriesNavigator.vm/entriesOf and participant formatting repeatedly scan all rows although navigator state and selected refs are unchanged. Cache these exact projections. CSS reattachment remains measured; thresholds unchanged.",
+    "191/801 early-selection samples include AdmissionLedger.checkAgainst: its ambiguity check counts all9600trials for each trial while ResultInspection constructs StudySources. Deterministic1024-key regression on original algorithm failed with1050644 comparisons; indexed grouping preserves first input-offender order and passes JVM/JS8cases each."
+  ]
+}

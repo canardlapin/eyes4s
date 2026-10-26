@@ -613,8 +613,44 @@ final class CompareSummaryHost(
   /** The navigators' view-model now. */
   def navigatorVM: QueriesNavigatorVM = navigatorVMOf(model())
 
+  private var navigatorProjection: Option[
+    (
+        QueriesNavigator,
+        CompareSummary,
+        Vector[eyes4s.studio.core.selection.StudioRef],
+        QueriesNavigatorVM
+    )
+  ] = None
+  private var participantProjection: Option[
+    (
+        ParticipantsNavigator,
+        CompareSummary,
+        Vector[eyes4s.studio.core.selection.StudioRef],
+        ParticipantsNavigatorVM
+    )
+  ] = None
+
   private def navigatorVMOf(m: AppModel): QueriesNavigatorVM =
-    QueriesNavigator.vm(navigator, state, QueriesNavigator.selection(m))
+    val selected = QueriesNavigator.selection(m)
+    navigatorProjection match
+      case Some((nav, previous, refs, value))
+          if nav == navigator && previous == state && refs == selected =>
+        value
+      case _ =>
+        val value = QueriesNavigator.vm(navigator, state, selected)
+        navigatorProjection = Some((navigator, state, selected, value))
+        value
+
+  private def participantVMOf(m: AppModel): ParticipantsNavigatorVM =
+    val selected = QueriesNavigator.selection(m)
+    participantProjection match
+      case Some((nav, previous, refs, value))
+          if nav == participantsState && previous == state && refs == selected =>
+        value
+      case _ =>
+        val value = ParticipantsNavigator.vm(participantsState, state, m)
+        participantProjection = Some((participantsState, state, selected, value))
+        value
 
   /** The state now. */
   def summary: CompareSummary = state
@@ -705,9 +741,7 @@ final class CompareSummaryHost(
     if !disposed then
       participantsState =
         eyes4s.studio.app.compare.ParticipantsNavigator.follow(participantsState, state)
-      participants.render(
-        eyes4s.studio.app.compare.ParticipantsNavigator.vm(participantsState, state, m)
-      )
+      participants.render(participantVMOf(m))
       val navigators = navigatorVMOf(m)
       queries.render(navigators)
       items.render(navigators)

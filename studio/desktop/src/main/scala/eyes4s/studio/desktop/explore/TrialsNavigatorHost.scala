@@ -82,29 +82,45 @@ object NavigatorDisplays:
     * trial inventory, has none to serve; bytes that are not the source's
     * are refused ([[AssetRegistry.fromInventory]]).
     */
-  def stored(project: ProjectPort): NavigatorDisplays = (dataset, done) =>
-    (dataset.sources.trials, dataset.inventory.flatMap(_.displays)) match
-      case (Some(trials), Some(_)) =>
-        project.storedInputs {
-          case Left(reason)  => done(Left(reason))
-          case Right(inputs) =>
-            val stimuli = inputs
-              .filter(_.kind == InputKind.StimulusImage)
-              .flatMap(e =>
-                e.name.flatMap(n => AssetFile.of(n).toOption).map(AssetRef(_, e.sha256))
+  def stored(project: ProjectPort): NavigatorDisplays =
+    // A fresh read still verifies bytes on every request. Reuse the parsed
+    // immutable registry only when all of its inputs agree, including newly
+    // imported/repaired stimulus entries. Failed reads are never cached.
+    val cached = new java.util.concurrent.atomic.AtomicReference[
+      Option[(DatasetRevisionSpec, Vector[AssetRef], AssetRegistry)]
+    ](None)
+    (dataset, done) =>
+      (dataset.sources.trials, dataset.inventory.flatMap(_.displays)) match
+        case (Some(trials), Some(_)) =>
+          project.storedInputs {
+            case Left(reason)  => done(Left(reason))
+            case Right(inputs) =>
+              val stimuli = inputs
+                .filter(_.kind == InputKind.StimulusImage)
+                .flatMap(e =>
+                  e.name.flatMap(n => AssetFile.of(n).toOption).map(AssetRef(_, e.sha256))
+                )
+              project.readInput(
+                trials,
+                _.flatMap { bytes =>
+                  val digest = eyes4s.codec.ByteDigest.sha256(bytes)
+                  cached.get() match
+                    case Some((previous, assets, registry))
+                        if previous == dataset && assets == stimuli && registry.inventory == digest =>
+                      Right(DisplaySource.Served(registry))
+                    case _ =>
+                      AssetRegistry
+                        .fromInventory(dataset, bytes, stimuli, Vector.empty)
+                        .left
+                        .map(_.message)
+                        .map { registry =>
+                          cached.set(Some((dataset, stimuli, registry)))
+                          DisplaySource.Served(registry)
+                        }
+                }.pipe(done)
               )
-            project.readInput(
-              trials,
-              _.flatMap(bytes =>
-                AssetRegistry
-                  .fromInventory(dataset, bytes, stimuli, Vector.empty)
-                  .left
-                  .map(_.message)
-                  .map(DisplaySource.Served(_))
-              ).pipe(done)
-            )
-        }
-      case _ => done(Right(DisplaySource.NotServed))
+          }
+        case _ => done(Right(DisplaySource.NotServed))
 
 object NavigatorInputs:
   /** The window's backend for the trials, and `source` for the displays. */
