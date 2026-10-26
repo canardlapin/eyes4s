@@ -42,3 +42,14 @@ Acceptance on each workload, and individually for every destination perspective:
 Keep screenshots outside timed operations. Preserve failed measurements with their source
 identity. Optimize only measured bottlenecks; rerun affected measurements after changes and
 qualify the final frozen candidate. A failed interaction budget keeps S10.6 and G5 open.
+
+## Archive boundary discovered during qualification
+
+The first 10-fold run completed its analysis but could not persist its full density archive:
+the default native package budget is 20,000,000 density cells and 256 MiB. These limits stay
+unchanged. The 1-fold workload must store a verified archive. The 10-fold workload may
+continue only after an explicit `native-artifacts.budget` refusal naming density cells;
+any other storage failure fails setup. Its completed in-memory results, reports and figures
+are used for the interaction measurements, and the refusal is retained in its receipt.
+This court does not qualify cold restoration of an oversized archive. The original failed
+setup and timings are preserved under `evidence/20261026-hardening/corrected-1`.

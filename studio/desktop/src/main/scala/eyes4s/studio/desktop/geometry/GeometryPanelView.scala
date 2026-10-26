@@ -294,6 +294,8 @@ final class GeometryPanelView(dispatch: GeometryIntent => Unit):
     }
     visible(title, false)
 
+  private var rendered: Option[GeometryPanelVM] = None
+
   /** Bind `vm`: text, choices, enablement and visibility. */
   def render(vm: GeometryPanelVM): Unit =
     rendering = true
@@ -306,24 +308,25 @@ final class GeometryPanelView(dispatch: GeometryIntent => Unit):
       val hasDataset = vm.empty.isEmpty
       Vector(declared, placement, ledger, policy, counted).foreach(visible(_, hasDataset))
 
-      facts.getChildren.clear()
-      vm.facts.zipWithIndex.foreach { (f, row) =>
-        val key = label("geometry-label", "t11")
-        key.setText(f.label)
-        key.setMinWidth(Region.USE_PREF_SIZE)
-        val value = label("geometry-value", if f.mono then "mono" else "t12")
-        value.getStyleClass.add("t12")
-        value.setText(f.value)
-        val cell = HBox(value)
-        cell.getStyleClass.add("geometry-row")
-        f.note.foreach { n =>
-          val note = label("geometry-warn", "t11")
-          note.setText(n)
-          cell.getChildren.add(note)
+      if !rendered.exists(_.facts == vm.facts) then
+        facts.getChildren.clear()
+        vm.facts.zipWithIndex.foreach { (f, row) =>
+          val key = label("geometry-label", "t11")
+          key.setText(f.label)
+          key.setMinWidth(Region.USE_PREF_SIZE)
+          val value = label("geometry-value", if f.mono then "mono" else "t12")
+          value.getStyleClass.add("t12")
+          value.setText(f.value)
+          val cell = HBox(value)
+          cell.getStyleClass.add("geometry-row")
+          f.note.foreach { n =>
+            val note = label("geometry-warn", "t11")
+            note.setText(n)
+            cell.getChildren.add(note)
+          }
+          facts.add(key, 0, row)
+          facts.add(cell, 1, row)
         }
-        facts.add(key, 0, row)
-        facts.add(cell, 1, row)
-      }
       vm.fields.foreach { f =>
         fieldLabels(f.field).setText(f.label)
         val t = fields(f.field)
@@ -337,18 +340,19 @@ final class GeometryPanelView(dispatch: GeometryIntent => Unit):
       }
       physicalNote.setText(vm.physicalNote)
 
-      example.getChildren.clear()
-      vm.example.zipWithIndex.foreach { (r, row) =>
-        val key = label("geometry-label", "t11")
-        key.setText(r.label)
-        key.setMinWidth(Region.USE_PREF_SIZE)
-        val value = label("geometry-value", "mono")
-        value.setWrapText(true)
-        value.getStyleClass.add("t11")
-        value.setText(r.value)
-        example.add(key, 0, row)
-        example.add(value, 1, row)
-      }
+      if !rendered.exists(_.example == vm.example) then
+        example.getChildren.clear()
+        vm.example.zipWithIndex.foreach { (r, row) =>
+          val key = label("geometry-label", "t11")
+          key.setText(r.label)
+          key.setMinWidth(Region.USE_PREF_SIZE)
+          val value = label("geometry-value", "mono")
+          value.setWrapText(true)
+          value.getStyleClass.add("t11")
+          value.setText(r.value)
+          example.add(key, 0, row)
+          example.add(value, 1, row)
+        }
       visible(example, vm.example.nonEmpty)
 
       placementTitle.setText(vm.placementTitle)
@@ -382,19 +386,20 @@ final class GeometryPanelView(dispatch: GeometryIntent => Unit):
 
       rulesTitle.setText(vm.rulesTitle)
       rulesNote.setText(vm.rulesNote)
-      rules.getChildren.setAll(vm.rules.map { r =>
-        val text = label("geometry-value", "mono")
-        text.getStyleClass.add("t11")
-        text.setText(r.text)
-        val remove = button("geometry-button", "t11")
-        remove.setText("×")
-        remove.setAccessibleText(r.remove)
-        remove.setTooltip(Tooltip(r.remove))
-        remove.setOnAction(_ => fire(GeometryIntent.RemoveRule(r.index)))
-        val row = HBox(text, spacer(), remove)
-        row.getStyleClass.add("geometry-row")
-        row
-      }.asJava)
+      if !rendered.exists(_.rules == vm.rules) then
+        rules.getChildren.setAll(vm.rules.map { r =>
+          val text = label("geometry-value", "mono")
+          text.getStyleClass.add("t11")
+          text.setText(r.text)
+          val remove = button("geometry-button", "t11")
+          remove.setText("×")
+          remove.setAccessibleText(r.remove)
+          remove.setTooltip(Tooltip(r.remove))
+          remove.setOnAction(_ => fire(GeometryIntent.RemoveRule(r.index)))
+          val row = HBox(text, spacer(), remove)
+          row.getStyleClass.add("geometry-row")
+          row
+        }.asJava): Unit
       show(rulesEmpty, vm.rulesEmpty)
 
       policyTitle.setText(vm.policyTitle)
@@ -403,6 +408,7 @@ final class GeometryPanelView(dispatch: GeometryIntent => Unit):
       outsideWindow.render(vm.outsideWindow)
       outsideScreen.render(vm.outsideScreen)
       countsSource.setText(vm.countsSource)
+      rendered = Some(vm)
     finally rendering = false
 
   /** Show one scene per thumbnail (fewer thumbnails clear the rest) and the
@@ -600,8 +606,10 @@ object GeometryPanelView:
       node.setAccessibleText(vm.fold("")(_.accessible))
       node.pseudoClassStateChanged(Selected, marked)
       // A missing asset's caption is in the warning ink, as the board draws it.
-      count.getStyleClass.remove("geometry-warn")
-      if vm.exists(_.assetMissing) then count.getStyleClass.add("geometry-warn"): Unit
+      val missing = vm.exists(_.assetMissing)
+      if missing != count.getStyleClass.contains("geometry-warn") then
+        if missing then count.getStyleClass.add("geometry-warn"): Unit
+        else count.getStyleClass.remove("geometry-warn"): Unit
       node.setVisible(vm.isDefined)
 
   /** The placement thumbnails as the board's listbox (Data.dc.html, check

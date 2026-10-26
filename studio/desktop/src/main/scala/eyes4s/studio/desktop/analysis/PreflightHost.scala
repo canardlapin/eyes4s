@@ -287,6 +287,8 @@ final class PreflightHost(model: () => AppModel, app: Intent => Unit):
     box.setUserData(f)
     box
 
+  private var rendered: Option[PreflightVM] = None
+
   private def render(): Unit =
     val v = vm
     status.setText(v.status.getOrElse(""))
@@ -294,20 +296,26 @@ final class PreflightHost(model: () => AppModel, app: Intent => Unit):
     status.setManaged(v.status.isDefined)
     report.setText(v.report)
     val f = v.findings
-    studio.getChildren.setAll(
-      f.fold(Vector.empty[javafx.scene.Node])(x =>
-        if x.studio.isEmpty then
-          Vector(label(PreflightText(PreflightTextId.NoStudioChecks), "t11", "preflight-note"))
-        else x.studio.map(findingNode)
-      )*
-    )
-    eyes.getChildren.setAll(f.fold(Vector.empty[javafx.scene.Node])(_.eyes4s.map(findingNode))*)
+    if !rendered.exists(_.findings == f) then
+      studio.getChildren.setAll(
+        f.fold(Vector.empty[javafx.scene.Node])(x =>
+          if x.studio.isEmpty then
+            Vector(
+              label(PreflightText(PreflightTextId.NoStudioChecks), "t11", "preflight-note")
+            )
+          else x.studio.map(findingNode)
+        )*
+      )
+      eyes.getChildren.setAll(
+        f.fold(Vector.empty[javafx.scene.Node])(_.eyes4s.map(findingNode))*
+      ): Unit
     notChecked.setText(v.notChecked)
-    lines.getChildren.clear()
-    v.card.lines.zipWithIndex.foreach { (l, i) =>
-      lines.add(label(l.label, "t11", "preflight-key"), 0, i)
-      lines.add(label(l.value, "t11", "mono"), 1, i)
-    }
+    if !rendered.exists(_.card.lines == v.card.lines) then
+      lines.getChildren.clear()
+      v.card.lines.zipWithIndex.foreach { (l, i) =>
+        lines.add(label(l.label, "t11", "preflight-key"), 0, i)
+        lines.add(label(l.value, "t11", "mono"), 1, i)
+      }
     run.setText(v.card.button)
     run.setAccessibleText(v.card.button)
     run.setDisable(!v.card.enabled)
@@ -336,3 +344,4 @@ final class PreflightHost(model: () => AppModel, app: Intent => Unit):
         }
     )
     verdict.setText(editing.orElse(v.card.reason).getOrElse(v.card.verdict))
+    rendered = Some(v)

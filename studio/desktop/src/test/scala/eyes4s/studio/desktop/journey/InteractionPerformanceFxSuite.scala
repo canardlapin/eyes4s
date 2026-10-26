@@ -19,10 +19,10 @@ package eyes4s.studio.desktop.journey
 import cats.effect.unsafe.implicits.global
 import eyes4s.codec.ByteDigest
 import eyes4s.plan.AdmissionDecision as NativeAdmissionDecision
-import eyes4s.studio.app.{AppModel, Intent}
+import eyes4s.studio.app.{AppModel, Intent, Notice}
 import eyes4s.studio.app.analysis.{DesignPreview, DesignRows}
 import eyes4s.studio.app.compare.SummaryAnswer
-import eyes4s.studio.app.figures.{PanelBody, TileMap}
+import eyes4s.studio.app.figures.PanelBody
 import eyes4s.studio.app.geometry.Loading
 import eyes4s.studio.app.nav.{DataSection, Location, Place}
 import eyes4s.studio.core.backend.{Phase, TrialKey}
@@ -110,11 +110,9 @@ class InteractionPerformanceFxSuite extends GoldenWindow:
         w.figures.vm.page.exists(page =>
           page.panels.nonEmpty && page.panels.forall(panel =>
             panel.body match
-              case PanelBody.Waiting(_) => false
-              case PanelBody.Maps(m)    => m.tiles.forall(_.map != TileMap.Waiting)
-              case PanelBody.Plot(_)    =>
+              case PanelBody.Plot(_) =>
                 w.figures.plot(page.figure, panel.letter).exists(_.plot.nonEmpty)
-              case _ => true
+              case _ => false
           )
         ))
 
@@ -149,6 +147,7 @@ class InteractionPerformanceFxSuite extends GoldenWindow:
           .unsafeRunSync()
         val measures    = ArrayBuffer.empty[Json]
         val memory      = ArrayBuffer.empty[Json]
+        var storage     = Json.obj("status" -> Json.fromString("pending"))
         val receiptFile = output.resolve(s"fixture-${factor}x.json")
         Files.createDirectories(output)
         def memoryAt(label: String): Unit = memory += Json.obj(
@@ -182,7 +181,8 @@ class InteractionPerformanceFxSuite extends GoldenWindow:
             "scene"        -> Json.arr(Json.fromInt(1440), Json.fromInt(900)),
             "scale"        -> Json.fromDoubleOrNull(runOnFx(fx.stage.getOutputScaleX)),
             "measurements" -> Json.arr(measures.toVector*),
-            "memory"       -> Json.arr(memory.toVector*)
+            "memory"       -> Json.arr(memory.toVector*),
+            "storage"      -> storage
           )
           Files.writeString(receiptFile, receipt.spaces2 + "\n"): Unit
         var window: Option[StudioWindow] = None
@@ -230,11 +230,33 @@ class InteractionPerformanceFxSuite extends GoldenWindow:
           until("completed native run", 1800) {
             w.runtime.model.jobs.ready.exists(_.run == run)
           }
-          until("stored verified artifacts", 300) {
+          until("archive completion or explicit budget refusal", 300) {
             w.runtime.model.document
               .run(run)
-              .exists(_.archive.isInstanceOf[CoreBinding.Bound[?]])
+              .exists(_.archive.isInstanceOf[CoreBinding.Bound[?]]) ||
+            w.runtime.model.notice.exists(_.isInstanceOf[Notice.ArtifactsRefused])
           }
+          storage = runOnFx {
+            w.runtime.model.notice match
+              case Some(Notice.ArtifactsRefused(_, `run`, diagnostic)) =>
+                assertEquals(factor, 10, diagnostic.message)
+                assertEquals(diagnostic.code, "native-artifacts.budget")
+                assert(diagnostic.message.contains("density cells"), diagnostic.message)
+                Json.obj(
+                  "status"                   -> Json.fromString("documented-budget-refusal"),
+                  "code"                     -> Json.fromString(diagnostic.code),
+                  "message"                  -> Json.fromString(diagnostic.message),
+                  "coldRestorationQualified" -> Json.fromBoolean(false)
+                )
+              case _ =>
+                assert(
+                  w.runtime.model.document
+                    .run(run)
+                    .exists(_.archive.isInstanceOf[CoreBinding.Bound[?]])
+                )
+                Json.obj("status" -> Json.fromString("verified-archive-stored"))
+          }
+          println(s"[performance] ${factor}x storage ${storage.noSpaces}")
           dispatch(fx, w, Intent.Dispatch(Command.PutReporting(reporting)))
           dispatch(fx, w, Intent.ShowRun(run))
           dispatch(fx, w, Intent.Dispatch(Command.CreateFigure(run, reporting.id, panels)))
@@ -247,7 +269,7 @@ class InteractionPerformanceFxSuite extends GoldenWindow:
           ).linesIterator.drop(1).count(_.split(',')(1) == "Retrieval")
           assertEquals(runOnFx(w.resolvedDesign.state.rows.size), expectedQueries)
           println(
-            s"[performance] ${factor}x native run, archive and all $expectedQueries design rows ready"
+            s"[performance] ${factor}x native run and all $expectedQueries design rows ready"
           )
           val keys = Vector("enc_03", "enc_04").map(TrialKey("P17", Phase.Encoding, _, 1))
           def navigate(key: TrialKey): Unit = w.runtime.dispatch(

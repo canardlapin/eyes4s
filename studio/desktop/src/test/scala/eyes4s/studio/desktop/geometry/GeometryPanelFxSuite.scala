@@ -187,6 +187,24 @@ class GeometryPanelFxSuite extends StudioFxSuite:
     assertEquals(positions.position(7214).map(p => (p.x, p.y)), Some((1148.0, 456.0)))
   }
 
+  fxStage.test("unchanged geometry keeps its fact and example nodes attached") { fx =>
+    val rig = mount(fx, t1, StoryMoment.T1)
+    loaded(fx, rig)
+    redraw(fx, rig, 0)
+    val grids = runOnFx(
+      Vector(".geometry-kv", ".geometry-example").map(selector =>
+        rig.host.node.lookup(selector).asInstanceOf[javafx.scene.layout.GridPane]
+      )
+    )
+    val before = runOnFx(grids.map(_.getChildren.asScala.toVector))
+    assert(before.forall(_.nonEmpty))
+    runOnFx(rig.host.sync(rig.model))
+    fx.awaitLayout()
+    val after = runOnFx(grids.map(_.getChildren.asScala.toVector))
+    assertEquals(before.map(_.size), after.map(_.size))
+    assert(before.flatten.zip(after.flatten).forall((a, b) => a eq b))
+  }
+
   fxStage.test("t1: the board's geometry, the worked example of record 7,214 and the counts") {
     fx =>
       assumeFullStage(fx)
@@ -588,30 +606,29 @@ class GeometryPanelFxSuite extends StudioFxSuite:
       // A click moves the cursor to its thumbnail and marks it.
       val first = runOnFx(v.thumbnails(0).trial).getOrElse(fail("no first thumbnail"))
       runOnFx(
-        v.thumbnails(0)
-          .node
-          .fireEvent(
-            javafx.scene.input.MouseEvent(
-              javafx.scene.input.MouseEvent.MOUSE_CLICKED,
-              1,
-              1,
-              1,
-              1,
-              javafx.scene.input.MouseButton.PRIMARY,
-              1,
-              false,
-              false,
-              false,
-              false,
-              true,
-              false,
-              false,
-              true,
-              false,
-              false,
-              null
-            )
+        eyes4s.studio.desktop.harness.StudioRobot.fireEvent(
+          v.thumbnails(0).node,
+          javafx.scene.input.MouseEvent(
+            javafx.scene.input.MouseEvent.MOUSE_CLICKED,
+            1,
+            1,
+            1,
+            1,
+            javafx.scene.input.MouseButton.PRIMARY,
+            1,
+            false,
+            false,
+            false,
+            false,
+            true,
+            false,
+            false,
+            true,
+            false,
+            false,
+            null
           )
+        )
       )
       assertEquals(runOnFx(rig.host.state.marked), Some(first))
       assertEquals(runOnFx(v.strip.cursor), Some(0))

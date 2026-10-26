@@ -35,6 +35,7 @@ import javafx.scene.paint.Color
 import javafx.scene.text.Text
 
 import scala.concurrent.duration.Duration
+import scala.jdk.CollectionConverters.*
 
 /** The preflight pane and run card in the studio window (ticket S7.6;
   * Analysis.dc.html, preflight) at t2: on the fixture draft rev 5 Save & run
@@ -102,6 +103,27 @@ class PreflightFxSuite extends ShellFxSuite:
       }
       assertEquals(runOnFx(host.runButton._2), false)
     }
+  }
+
+  fxStage.test("unchanged preflight keeps the focused remedy attached") { fx =>
+    val w = boot(fx, StoryModels.t2Analysis, StoryMoment.T2)
+    ready(fx, w)
+    val remedy = runOnFx(
+      w.preflight.node
+        .lookupAll(".find .button")
+        .asScala
+        .collectFirst {
+          case b: Button if !b.isDisabled => b
+        }
+        .getOrElse(fail("no remedy"))
+    )
+    runOnFx(remedy.requestFocus())
+    fx.awaitLayout()
+    assert(runOnFx(remedy.isFocused))
+    runOnFx(w.preflight.sync(w.runtime.model))
+    fx.awaitLayout()
+    assert(runOnFx(remedy.isFocused))
+    assert(runOnFx(remedy.getScene eq fx.scene))
   }
 
   fxStage.test("the fixture draft rev 5: Save & run enabled for 44,845 pairs, and it runs") {
