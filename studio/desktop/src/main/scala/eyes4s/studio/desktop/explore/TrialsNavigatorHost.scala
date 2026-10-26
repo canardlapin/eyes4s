@@ -144,8 +144,24 @@ final class TrialsNavigatorHost(
   /** The navigator's state now. */
   def state: TrialsNavigator = navigator
 
-  def trialsVM: NavigatorPaneVM = TrialsNavigatorVM.trials(navigator, model())
-  def itemsVM: NavigatorPaneVM  = TrialsNavigatorVM.items(navigator, model())
+  private var projection
+      : Option[(TrialsNavigator, AppModel, NavigatorPaneVM, NavigatorPaneVM)] = None
+
+  // The portable views read only navigator state, asset repairs and the explored trial.
+  // Selecting another fixation of that trial must not regroup the whole inventory.
+  private def project(m: AppModel): (NavigatorPaneVM, NavigatorPaneVM) = projection match
+    case Some((previous, old, trials, items))
+        if previous == navigator && old.document.relinks == m.document.relinks &&
+          TrialsNavigator.selected(old) == TrialsNavigator.selected(m) =>
+      (trials, items)
+    case _ =>
+      val trials = TrialsNavigatorVM.trials(navigator, m)
+      val items  = TrialsNavigatorVM.items(navigator, m)
+      projection = Some((navigator, m, trials, items))
+      (trials, items)
+
+  def trialsVM: NavigatorPaneVM = project(model())._1
+  def itemsVM: NavigatorPaneVM  = project(model())._2
 
   /** A pane's focus stops after its own (none until it has started). */
   def trialsStops: Vector[FocusStop] =
@@ -170,8 +186,9 @@ final class TrialsNavigatorHost(
     render(model())
 
   private def render(m: AppModel): Unit =
-    trials.render(TrialsNavigatorVM.trials(navigator, m))
-    items.render(TrialsNavigatorVM.items(navigator, m))
+    val (trialView, itemView) = project(m)
+    trials.render(trialView)
+    items.render(itemView)
 
   private def perform(effects: Vector[NavigatorEffect]): Unit =
     effects.foreach {

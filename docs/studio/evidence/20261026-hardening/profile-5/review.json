@@ -1,0 +1,45 @@
+{
+  "candidate": "30e66c74",
+  "scope": "Separate diagnostic with JFR and extra selection repeat after reports. Stopped intentionally after first Data-switch evidence. Not qualification. Ordinary runner explicitly clears diagnostic mode.",
+  "selectionStages": [
+    {
+      "name": "linked-selection",
+      "p95Ms": 232.517917,
+      "stageMeansMs": {
+        "dispatchMs": 27.03526218,
+        "readinessMs": 34.44029028,
+        "renderMs": 34.93130886
+      }
+    },
+    {
+      "name": "cached-trial-switch",
+      "p95Ms": 120.969542,
+      "stageMeansMs": {
+        "dispatchMs": 21.72599912,
+        "readinessMs": 38.19532792,
+        "renderMs": 22.2570629
+      }
+    },
+    {
+      "name": "linked-selection-after-reports",
+      "p95Ms": 115.21725,
+      "stageMeansMs": {
+        "dispatchMs": 33.18828708,
+        "readinessMs": 39.48724622,
+        "renderMs": 21.10758917
+      }
+    },
+    {
+      "name": "perspective-Data",
+      "p95Ms": 180.452209,
+      "stageMeansMs": {
+        "dispatchMs": 59.77328988,
+        "readinessMs": 50.47025504,
+        "renderMs": 42.140909199999996
+      }
+    }
+  ],
+  "finding": "Selection still fails after reports complete (115.22ms under JFR), so keep all existing readiness and timing conditions. Unchanged Trials/Items and Sources projections consume significant FX time; inspector re-reads successful same-trial data on every fixation; perspective CSS cost remains proportional to materialized participant rows.",
+  "localProfile": "/private/tmp/eyes4s-hardening-tenfold-profile5/stages.jfr",
+  "profileSha256": "0bad9bd8ee99f0faefa54e78019bbf2881f64b75b0e7a44cdf28a085232cdef7"
+}

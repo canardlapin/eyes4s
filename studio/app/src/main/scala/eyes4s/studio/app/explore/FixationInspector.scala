@@ -202,8 +202,9 @@ object FixationInspector:
         .orElse(Option.when(ss.nonEmpty)(ScaleIndex.first))
     yield UsedByScale(index, ss(index.value))
 
-  /** Follows the model: a newly selected fixation, or a new revision, is
-    * read afresh.
+  /** Follows the selection. Successful trial-level answers survive a move
+    * within that immutable trial; the new fixation's source record is read.
+    * Display reads remain fresh so repaired external assets can be observed.
     */
   def sync(s: FixationInspector, m: AppModel): (FixationInspector, Vector[InspectorEffect]) =
     val revision = ExploreTrialView.shownRevision(m)
@@ -232,14 +233,29 @@ object FixationInspector:
             r <- run
             x <- scale
           yield StudioRef.TrialMap(r, x.index, f.trial)
+          def answered[A](read: Loading[BackendAnswer[A]]): Boolean = read.toOption.exists {
+            case BackendAnswer.Answered(_) => true
+            case _                         => false
+          }
+          val sameTrial     = s.revision == revision && s.focus.exists(_.trial == f.trial)
+          val keepFixations = sameTrial && answered(s.fixations)
+          val keepUsedBy = sameTrial && s.run == run && s.scale == scale && answered(s.usedBy)
+          val retained   = next.copy(
+            fixations = if keepFixations then s.fixations else Loading.Waiting,
+            usedBy =
+              if keepUsedBy then s.usedBy else map.fold(Loading.Idle)(_ => Loading.Waiting),
+            displays = dataset.fold(Loading.Idle)(_ => Loading.Waiting)
+          )
+          val record = Option.when(keepFixations)(admitted(retained)).flatten
+          val reads  = if keepFixations then
+            record.map(a => InspectorEffect.ReadRecord(r, a.record, ask)).toVector
+          else Vector(InspectorEffect.ReadFixations(r, f.trial, ask))
           (
-            next.copy(
-              fixations = Loading.Waiting,
-              usedBy = map.fold(Loading.Idle)(_ => Loading.Waiting),
-              displays = dataset.fold(Loading.Idle)(_ => Loading.Waiting)
-            ),
-            Vector(InspectorEffect.ReadFixations(r, f.trial, ask)) ++
-              map.map(InspectorEffect.ReadUsedBy(_, ask)) ++
+            if record.isDefined then retained.copy(record = Loading.Waiting) else retained,
+            reads ++ Option
+              .unless(keepUsedBy)(map)
+              .flatten
+              .map(InspectorEffect.ReadUsedBy(_, ask)) ++
               dataset.map(InspectorEffect.ReadDisplays(_, ask))
           )
         case _ => (next, Vector.empty)

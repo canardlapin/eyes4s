@@ -333,7 +333,20 @@ final class SourcesPaneHost(
   def state: SourcesPane = pane
 
   /** The view-model now shown. */
-  def vm: SourcesVM = SourcesVM.of(pane, model())
+  private var projection: Option[(SourcesPane, AppModel, SourcesVM)] = None
+
+  // Source presentation depends on its loaded pane, source health and asset repairs.
+  private def project(m: AppModel): SourcesVM = projection match
+    case Some((previous, old, value))
+        if previous == pane && old.sources == m.sources &&
+          old.document.relinks == m.document.relinks =>
+      value
+    case _ =>
+      val value = SourcesVM.of(pane, m)
+      projection = Some((pane, m, value))
+      value
+
+  def vm: SourcesVM = project(model())
 
   /** The pane's controls after its own stop: each source's Repair…, Retry,
     * Repair… and Show….
@@ -353,7 +366,7 @@ final class SourcesPaneHost(
       val (next, effects) = SourcesPane.sync(pane, m)
       pane = next
       perform(effects)
-      view.render(SourcesVM.of(pane, m))
+      view.render(project(m))
 
   def dispatch(intent: SourcesIntent): Unit =
     if !disposed then

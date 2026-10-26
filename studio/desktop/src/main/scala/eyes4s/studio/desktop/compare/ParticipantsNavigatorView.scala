@@ -21,10 +21,11 @@ import eyes4s.studio.core.selection.StudioRef
 import eyes4s.studio.desktop.shell.CompositeFocus
 import javafx.beans.value.ChangeListener
 import javafx.event.EventHandler
-import javafx.scene.{AccessibleAttribute, Parent}
-import javafx.scene.control.{Label, ScrollPane}
-import javafx.scene.input.{KeyCode, KeyEvent}
+import javafx.scene.{AccessibleAttribute, AccessibleRole, Parent}
+import javafx.scene.control.{Label, ListCell, ListView}
+import javafx.scene.input.{KeyCode, KeyEvent, MouseEvent}
 import javafx.scene.layout.{HBox, Priority, VBox}
+import scala.jdk.CollectionConverters.*
 
 /** One composite pane: the portable cursor and exact activation intent are bound here. */
 final class ParticipantsNavigatorView(
@@ -34,14 +35,33 @@ final class ParticipantsNavigatorView(
   private val heading    = Label()
   private val accounting = Label()
   private val status     = Label()
-  private val list       = VBox(2.0)
-  private val scroll     = ScrollPane(list)
-  scroll.setFitToWidth(true)
-  scroll.setFocusTraversable(false)
-  VBox.setVgrow(scroll, Priority.ALWAYS)
+  private val list       = ListView[ParticipantNavRow]()
+  list.getStyleClass.add("participants-list")
+  list.setFocusTraversable(false)
+  list.setAccessibleRole(AccessibleRole.PARENT)
+  // The portable cursor and selection own interaction, as in TableTwinView.
+  list.addEventFilter(MouseEvent.MOUSE_PRESSED, (e: MouseEvent) => e.consume())
+  list.setCellFactory(_ =>
+    new ListCell[ParticipantNavRow]:
+      private var shownRow: Option[ParticipantNavRow]                        = None
+      override def updateItem(item: ParticipantNavRow, empty: Boolean): Unit =
+        super.updateItem(item, empty)
+        val next = Option(item).filter(_ => !empty)
+        if next != shownRow then
+          shownRow = next
+          setText(null)
+          setGraphic(next.map(row).orNull)
+          setAccessibleText(next.map(_.spoken).orNull)
+      override protected def layoutChildren(): Unit =
+        super.layoutChildren()
+        Option(getGraphic).collect { case box: VBox =>
+          box.resizeRelocate(0, 0, getWidth, math.max(0, getHeight - 2))
+        }: Unit
+  )
+  VBox.setVgrow(list, Priority.ALWAYS)
   Vector(accounting, status).foreach { l => l.getStyleClass.add("t11"); l.setWrapText(true) }
   heading.getStyleClass.add("t12-strong")
-  val node: VBox = VBox(4.0, heading, accounting, status, scroll)
+  val node: VBox = VBox(4.0, heading, accounting, status, list)
   node.getStyleClass.add("participants-navigator")
   CompositeFocus.paneContent(node)
   CompositeFocus.registerCursor(node)(Option(node.lookup(".participants-cursor")))
@@ -86,11 +106,11 @@ final class ParticipantsNavigatorView(
     }
     status.setVisible(vm.status.isDefined)
     status.setManaged(vm.status.isDefined)
-    if rowsChanged then list.getChildren.setAll(vm.rows.map(row)*): Unit
+    if rowsChanged then list.getItems.setAll(vm.rows.asJava): Unit
     CompositeFocus.noCursor(node, !vm.rows.exists(_.cursor))
     if oldCursor != vm.rows.find(_.cursor).map(_.ref) && vm.rows.nonEmpty then
       val index = vm.rows.indexWhere(_.cursor).max(0)
-      scroll.setVvalue(index.toDouble / (vm.rows.size - 1).max(1).toDouble)
+      list.scrollTo(index)
     announce()
 
   private def announce(): Unit = Option(node.getParent).foreach { p =>

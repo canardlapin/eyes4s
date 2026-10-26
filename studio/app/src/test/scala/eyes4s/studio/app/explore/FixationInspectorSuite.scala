@@ -323,6 +323,37 @@ class FixationInspectorSuite extends munit.FunSuite:
     }
   }
 
+  test("moving within a trial reuses successful trial answers but reads the new record") {
+    settled.map { s =>
+      val m                           = StoryModels.t2Explore
+      val seventh: StudioRef.Fixation = StudioRef.Fixation(enc03, right(FixationIndex.of(7)))
+      val selected        = navigate(m, StoryModels.select(m, "inspector-reuse", seventh))
+      val (next, effects) = FixationInspector.sync(s, selected)
+      assertEquals(next.focus, Some(seventh))
+      assertEquals(next.fixations, s.fixations)
+      assertEquals(next.usedBy, s.usedBy)
+      assertEquals(next.record, eyes4s.studio.app.geometry.Loading.Waiting)
+      val record = FixationInspector.admitted(next).get.record
+      assert(effects.contains(InspectorEffect.ReadRecord(rev4, record, next.ask)))
+      assert(!effects.exists {
+        case InspectorEffect.ReadFixations(_, _, _) => true; case _ => false
+      })
+      assert(!effects.exists { case InspectorEffect.ReadUsedBy(_, _) => true; case _ => false })
+      assert(effects.exists {
+        case InspectorEffect.ReadDisplays(_, _) => true; case _ => false
+      })
+      val stale = FixationInspector
+        .update(next, InspectorIntent.RecordRead(rev4, record, s.ask, Left("stale record")))
+        ._1
+      assertEquals(stale, next)
+      val failed = s.copy(fixations = eyes4s.studio.app.geometry.Loading.Failed("retry me"))
+      assert(FixationInspector.sync(failed, selected)._2.exists {
+        case InspectorEffect.ReadFixations(_, _, _) => true
+        case _                                      => false
+      })
+    }
+  }
+
   test("with nothing selected the inspector asks to select a fixation") {
     val vm = FixationInspector.vm(FixationInspector.empty)
     assertEquals(vm.status, Some("Select a fixation to inspect it"))
