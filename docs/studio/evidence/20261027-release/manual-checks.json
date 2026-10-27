@@ -1,8 +1,8 @@
 {
   "schema": 1,
   "status": "not-run",
-  "candidate": null,
-  "package_sha256": null,
+  "candidate": "bdf55a119bb8228de6080f938f55f085c7ebd2dc",
+  "package_sha256": "243d4137735dcc7a65f42e9967389f41dbd1d74d436ced3967903d83380bb84b",
   "installation": {
     "os_required": "macOS 14 VM without JDK",
     "observed": null,

@@ -1,0 +1,93 @@
+{
+  "schema": 1,
+  "candidate": "6540f3b594ca53288e8d2e3ca4b7ab6f19f769bc",
+  "tree": "30b36402af0533880f6b66084b4dd22f1ab7382b",
+  "status": "failed",
+  "steps": [
+    {
+      "name": "canonical",
+      "command": [
+        "python3",
+        "tools/landing-gate/gate.py"
+      ],
+      "exit": 0,
+      "elapsed_seconds": 1888.447115208,
+      "log": "canonical.log",
+      "sha256": "2aba342dba383a1d112ee9720f260cc666286d699788e72bd59023d9543647cb"
+    },
+    {
+      "name": "studio",
+      "command": [
+        "sbt",
+        "-batch",
+        "-J-Xmx3g",
+        "studioAll",
+        "studioStyleCheck"
+      ],
+      "exit": 0,
+      "elapsed_seconds": 1359.8730894579999,
+      "log": "studio.log",
+      "sha256": "e6eaef4d0296e803bfdfbe2423e212a94c5431e6b5d49e0a52a5eba598ba6065"
+    },
+    {
+      "name": "matrix",
+      "command": [
+        "python3",
+        "tools/studio-visual-parity/check.py",
+        "--allow-functional-only"
+      ],
+      "exit": 0,
+      "elapsed_seconds": 0.5834724999999708,
+      "log": "matrix.log",
+      "sha256": "f8c2882bff876158966ef04d1f39e9d117139564ad3841fa13f9adfc84cef0db"
+    },
+    {
+      "name": "e2e",
+      "command": [
+        "python3",
+        "tools/studio-e2e/check.py"
+      ],
+      "exit": 0,
+      "elapsed_seconds": 0.23925579200022185,
+      "log": "e2e.log",
+      "sha256": "74882680e8228c4ef8f6d6756e68ccf73300ef07033e0d4b1fb65389f71ae79e"
+    },
+    {
+      "name": "fixture",
+      "command": [
+        "python3",
+        "tools/studio-fixture/verify_counts.py"
+      ],
+      "exit": 0,
+      "elapsed_seconds": 0.44965970800012656,
+      "log": "fixture.log",
+      "sha256": "b13c59187c0b6dda24e9ab45e36b6fb6013f263696ca2a5e99780d9103e45217"
+    },
+    {
+      "name": "site",
+      "command": [
+        "sbt",
+        "-batch",
+        "-J-Xmx4g",
+        "docs/tlSite",
+        "mimaReportBinaryIssues"
+      ],
+      "exit": 0,
+      "elapsed_seconds": 37.37141958400025,
+      "log": "site.log",
+      "sha256": "48befec4ef599b3ff5d317b084fb2608aa088c25378f2710782482b50889ad25"
+    },
+    {
+      "name": "documentation",
+      "command": [
+        "python3",
+        "tools/check-docs.py"
+      ],
+      "exit": 1,
+      "elapsed_seconds": 1.2564425000000483,
+      "log": "documentation.log",
+      "sha256": "83dd90e5f9c8ef094f95fd82392a0596feec5fa280d070d6466a8d1976fb3dfc"
+    }
+  ],
+  "active": "documentation"
+}

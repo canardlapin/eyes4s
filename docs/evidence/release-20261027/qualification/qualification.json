@@ -1,0 +1,256 @@
+{
+  "schema": 1,
+  "date": "2026-10-27",
+  "status": "qualified-prepublication-and-internal-candidate",
+  "candidate": "bdf55a119bb8228de6080f938f55f085c7ebd2dc",
+  "tree": "443df309ba968c8f3b122c1b0b803c5bb0ee4b31",
+  "local_pipeline": "local/pipeline.json",
+  "library_tests": {
+    "total": 7366,
+    "failed": 0,
+    "errors": 0,
+    "passed": 7366,
+    "project_summaries": 26
+  },
+  "studio_tests": {
+    "total": 5321,
+    "failed": 0,
+    "errors": 0,
+    "passed": 5321,
+    "project_summaries": 7
+  },
+  "api_audit": {
+    "runtime_entries": 3984,
+    "abstractions": 691,
+    "jvm_only": 34,
+    "uncovered": 0
+  },
+  "generated_api_files": {
+    "inventory.json": "782b484408deec90f49009f51afc30959d8327f358b62850a5b64538d56dda6c",
+    "evidence.json": "63787da8b72a13fd56d9b9c35dcbd11a7355d707c558640b6c338b356efc7932",
+    "inventory-provenance.json": "873979a8d44d13ff8fa8e4d58beb6d687997e6903e1d84f5c77dd20afb36c019"
+  },
+  "hosted": {
+    "checks": "hosted/checks.json",
+    "studio": "hosted/studio.json"
+  },
+  "logs": [
+    {
+      "file": "local/site.log.gz",
+      "source_sha256": "edb04050dcbabe1909b57aa72d5b5dfbb7b1d75ac89d026891ba33e30287980c"
+    },
+    {
+      "file": "local/fixture.log.gz",
+      "source_sha256": "b13c59187c0b6dda24e9ab45e36b6fb6013f263696ca2a5e99780d9103e45217"
+    },
+    {
+      "file": "local/baseline.log.gz",
+      "source_sha256": "b5c5d7caa92640686029df3dafc061b238232c1ab6b46434e4b3b4524f1da009"
+    },
+    {
+      "file": "local/canonical.log.gz",
+      "source_sha256": "8505ab5f9979dd700b63992d09882cf7b4912242fe1a6caf73b716bceb027a56"
+    },
+    {
+      "file": "local/matrix.log.gz",
+      "source_sha256": "f8c2882bff876158966ef04d1f39e9d117139564ad3841fa13f9adfc84cef0db"
+    },
+    {
+      "file": "local/studio.log.gz",
+      "source_sha256": "fad2e4c39abc60f5f16eea7b1a07ff62c01c020130ede9f84c2d4461eb486bf9"
+    },
+    {
+      "file": "local/e2e.log.gz",
+      "source_sha256": "74882680e8228c4ef8f6d6756e68ccf73300ef07033e0d4b1fb65389f71ae79e"
+    },
+    {
+      "file": "local/documentation.log.gz",
+      "source_sha256": "83538f0bb7ef6720b48ef8bc976d355616d16227e23d1b2b6804913e5e6131f7"
+    },
+    {
+      "file": "local/canonical/werror.log.gz",
+      "source_sha256": "6f451e62a5c54831ec7d09183e56cda0aed9621e3fafd8e5545db7eefce6e4ee"
+    },
+    {
+      "file": "local/canonical/audit.log.gz",
+      "source_sha256": "b10be0adaa92c2b027f59000720d5115400d46ee265ba5b0edd3dd29c3819efb"
+    },
+    {
+      "file": "local/canonical/tests.log.gz",
+      "source_sha256": "7abcdd6893382b6fa3ff027e79df0c88473c2c7eb66083b0df08e7c532fe2420"
+    },
+    {
+      "file": "local/canonical/hygiene.log.gz",
+      "source_sha256": "9036f5eb58eafe6da5c6881c659d0a62a4a6de559c6c0cf1dca87a146411949e"
+    },
+    {
+      "file": "local/canonical/consumer.log.gz",
+      "source_sha256": "00585a13cbc15976e726d3bc77a57120d04e260d5e4482653eab2d2019f88937"
+    },
+    {
+      "file": "documentation-consumer/consumer.log.gz",
+      "source_sha256": "ac174c4aae0edd6f261b31cc8e5ac697188863c25232a469327b8845f4095c72"
+    },
+    {
+      "file": "documentation-consumer/publish.log.gz",
+      "source_sha256": "1aa27486ea84b93a95d03d2da9dba6ed78759d750cf518a05ee0435903e43d26"
+    },
+    {
+      "file": "documentation-consumer/jvm/TEST-example.TemplateJourneySuite.xml.gz",
+      "source_sha256": "8470320f68b1a3784d871d5f88a46af5acc2d5d782b4a761f8a3d48547253afe"
+    },
+    {
+      "file": "documentation-consumer/jvm/TEST-example.FacadeJourneySuite.xml.gz",
+      "source_sha256": "e4c940491fe1134f292cf48c0c54f7c5a6b5b0f0605bbc5ab400c7ca50857445"
+    },
+    {
+      "file": "documentation-consumer/jvm/TEST-example.ReportJourneySuite.xml.gz",
+      "source_sha256": "3c91cf21a0821dd5e55da57580a90099b86f380c0632aae6f61c80f4ff14087a"
+    },
+    {
+      "file": "documentation-consumer/jvm/TEST-example.FixationJourneySuite.xml.gz",
+      "source_sha256": "f7188bbdec6f5c14a6cb1d889fe6662db84f8564d4f15db7fe73afbd4d12a379"
+    },
+    {
+      "file": "documentation-consumer/jvm/TEST-example.RepetitionJourneySuite.xml.gz",
+      "source_sha256": "ed0a167f66d157e7f1a37e5d23592c23669da07bdd00123599745cabda2a4944"
+    },
+    {
+      "file": "documentation-consumer/jvm/TEST-example.ConsumerSuite.xml.gz",
+      "source_sha256": "3d406c49f46773b5416ecbfbfbccd7ac3fe1e8397f70bdef4a143c29dec132f3"
+    },
+    {
+      "file": "documentation-consumer/jvm/TEST-example.ConsumerLawsSuite.xml.gz",
+      "source_sha256": "cf0b4064ed25571b4e98341bf5f5719173b50fc331cf77db176e69bd8b37e6b0"
+    },
+    {
+      "file": "documentation-consumer/jvm/TEST-example.MixedFailureJourneySuite.xml.gz",
+      "source_sha256": "a37f2071892f72657f2d693d1835e837c733c045dd2e9a38266b20fb47eab96f"
+    },
+    {
+      "file": "documentation-consumer/jvm/TEST-example.ResponseEnvelopeJvmSuite.xml.gz",
+      "source_sha256": "36b57287bce099e171c92bfd85b6766df2a3c73f2c109d594b62c8c47b8e1626"
+    },
+    {
+      "file": "documentation-consumer/jvm/TEST-example.RecordingJourneySuite.xml.gz",
+      "source_sha256": "68fa4cfbcd822b7e8440411a8ed59171adeed2edaa18e1d8e2e74ca884e4f5c8"
+    },
+    {
+      "file": "documentation-consumer/jvm/TEST-example.ArrowArtifactJvmSuite.xml.gz",
+      "source_sha256": "759628db06d695001454e8d4462cd86ba56adc44f3dbdd3a4ad935a52c172b07"
+    },
+    {
+      "file": "documentation-consumer/jvm/TEST-example.FreshProcessJourneyJvmSuite.xml.gz",
+      "source_sha256": "adc5b46f379ae7c33ed379e83b983ddbe4057bd2947df14ca00c3b138e4cf4bd"
+    },
+    {
+      "file": "documentation-consumer/jvm/TEST-example.FreshProcessRoutesJvmSuite.xml.gz",
+      "source_sha256": "bf04ef7be6df8f9de26f622ac769a25ca6d31a5d8a8d16cd4ddb3ab29bb75077"
+    },
+    {
+      "file": "documentation-consumer/jvm/TEST-example.TemporalJourneySuite.xml.gz",
+      "source_sha256": "35b33cf268013a3a279a3ac8a5f2ebfe0c26e34421d35eb2b4fa4fa86ce2c07b"
+    },
+    {
+      "file": "documentation-consumer/js/TEST-example.TemplateJourneySuite.xml.gz",
+      "source_sha256": "ee38317fe18722f6ff4c7e43448c70633f7c7246dd800f1e66591d836543a7f2"
+    },
+    {
+      "file": "documentation-consumer/js/TEST-example.FacadeJourneySuite.xml.gz",
+      "source_sha256": "784830840b0748fef4a5873a2b18eb7974c90eb35345cf5e6dfa223beca75927"
+    },
+    {
+      "file": "documentation-consumer/js/TEST-example.ReportJourneySuite.xml.gz",
+      "source_sha256": "ab69975759d852fb962f99b306c417af13db3850821a0eb95e817f6369cd31df"
+    },
+    {
+      "file": "documentation-consumer/js/TEST-example.FixationJourneySuite.xml.gz",
+      "source_sha256": "1f34a12f0ff1b91d141f6e9532e36d4dbe07ed87238e4a178d41ef82019e133e"
+    },
+    {
+      "file": "documentation-consumer/js/TEST-example.RepetitionJourneySuite.xml.gz",
+      "source_sha256": "ff53b10401cf6b81c58fd9604065a09fd5e4a24cfa8e9339f50967c8d2fce66d"
+    },
+    {
+      "file": "documentation-consumer/js/TEST-example.ConsumerSuite.xml.gz",
+      "source_sha256": "c9d4def6ce447e928fbe2e0d194e16797b04a2d0393de5e9976d6f81680d4e55"
+    },
+    {
+      "file": "documentation-consumer/js/TEST-example.ConsumerLawsSuite.xml.gz",
+      "source_sha256": "6547c4e2b4dc73680dc9fd6eddece7a0b728c1ec8d6e1430f322f93891802a51"
+    },
+    {
+      "file": "documentation-consumer/js/TEST-example.MixedFailureJourneySuite.xml.gz",
+      "source_sha256": "d7b62ac3827637f7b49d4c2ff9e22b0b617f3b8a0286b10959523ce21435ed28"
+    },
+    {
+      "file": "documentation-consumer/js/TEST-example.RecordingJourneySuite.xml.gz",
+      "source_sha256": "4325e33225fc71ef8c1b00c36917b360e8f839772ed6502a260684a72817076e"
+    },
+    {
+      "file": "documentation-consumer/js/TEST-example.TemporalJourneySuite.xml.gz",
+      "source_sha256": "b5e31623660ffc1c898d8bf1cbfd5c96f42a17fa6f7bc15f05a64c611641255f"
+    },
+    {
+      "file": "initial-local/site.log.gz",
+      "source_sha256": "48befec4ef599b3ff5d317b084fb2608aa088c25378f2710782482b50889ad25"
+    },
+    {
+      "file": "initial-local/fixture.log.gz",
+      "source_sha256": "b13c59187c0b6dda24e9ab45e36b6fb6013f263696ca2a5e99780d9103e45217"
+    },
+    {
+      "file": "initial-local/canonical.log.gz",
+      "source_sha256": "2aba342dba383a1d112ee9720f260cc666286d699788e72bd59023d9543647cb"
+    },
+    {
+      "file": "initial-local/matrix.log.gz",
+      "source_sha256": "f8c2882bff876158966ef04d1f39e9d117139564ad3841fa13f9adfc84cef0db"
+    },
+    {
+      "file": "initial-local/studio.log.gz",
+      "source_sha256": "e6eaef4d0296e803bfdfbe2423e212a94c5431e6b5d49e0a52a5eba598ba6065"
+    },
+    {
+      "file": "initial-local/e2e.log.gz",
+      "source_sha256": "74882680e8228c4ef8f6d6756e68ccf73300ef07033e0d4b1fb65389f71ae79e"
+    },
+    {
+      "file": "initial-local/documentation.log.gz",
+      "source_sha256": "83dd90e5f9c8ef094f95fd82392a0596feec5fa280d070d6466a8d1976fb3dfc"
+    },
+    {
+      "file": "initial-local/canonical/werror.log.gz",
+      "source_sha256": "5112aa656ea29e9318d807060d2bf203c80f46b9863538b50182cd052871dda6"
+    },
+    {
+      "file": "initial-local/canonical/audit.log.gz",
+      "source_sha256": "ea76a041e1df4eb008e53d21171fd837e7dc2363094a8429da67a8ff93669e21"
+    },
+    {
+      "file": "initial-local/canonical/tests.log.gz",
+      "source_sha256": "d92a7ce406a9740702b0811b45e4cba5a5847870d2e657b371cd8c2189c3ce49"
+    },
+    {
+      "file": "initial-local/canonical/hygiene.log.gz",
+      "source_sha256": "925f4dc46f60741b7f029a019a60e8f61db73c0c6f94c5f15d6f863fab1cfa84"
+    },
+    {
+      "file": "initial-local/canonical/consumer.log.gz",
+      "source_sha256": "00585a13cbc15976e726d3bc77a57120d04e260d5e4482653eab2d2019f88937"
+    }
+  ],
+  "initial_negative": "Initial6540 passed library/Studio/site but default docs checker lacked the wrapper consumer fingerprint; direct verify.py passed. Its native smoke was mechanically green but visual review rejected missing example results. Final orchestration uses check-docs.py --run-consumer; final code fixes example source resolution and observer requires positive participant rows. All initial receipts retained.",
+  "consumer_dirty_flag": "Expected audit-generated evidence/provenance changes only. No scientific source/test/build changes during either frozen gate. Canonical and documentation-wrapper consumer receipts retained separately.",
+  "scope_limits": [
+    "A16 Central publication and real MiMa baseline pending; empty MiMa task is not compatibility proof.",
+    "G2 has a bounded exploratory private rehearsal, not full production-study qualification.",
+    "Clean macOS14 installation/Gatekeeper, actual VoiceOver/physical Retina and five-researcher sessions remain unobserved.",
+    "Only arm64 package qualified; no Intel proof.",
+    "Oversized tenfold cold archives remain explicitly refused by existing budget."
+  ],
+  "studio_private_fixture_skip": "PrivateDensityFxSuite is opt-in and ignored in the public full suite. Its separate private rehearsal passed on dc507157 with the narrower scope retained in real-study-readiness.json.",
+  "visual_matrix_scope": "30 states / 60 snapshots passed functional and repeat checks only; this is not a universal pixel or physical-display acceptance.",
+  "post_collection": "post-collection/run.json",
+  "landing_scope": "The evidence commit changes only documentation, receipts and generated API evidence/provenance. Its scientific sources, Studio sources, tests and build are identical to qualified candidate bdf55a11. Strict JVM/JS compilation, hygiene, boundaries and documentation checks passed again after collection."
+}

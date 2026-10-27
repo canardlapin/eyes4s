@@ -1,0 +1,14 @@
+{
+  "schema" : 1,
+  "status" : "passed",
+  "scope" : "bundled-runtime-resource-copy-reopen; no native UI claim",
+  "commit" : "bdf55a119bb8228de6080f938f55f085c7ebd2dc",
+  "modified" : false,
+  "version" : "0.1-bdf55a1-SNAPSHOT",
+  "java_home" : "/Users/runner/work/eyes4s/eyes4s/target/studio-package/ci/Eyes Studio.app/Contents/runtime/Contents/Home",
+  "java_version" : "25.0.4.1",
+  "os_arch" : "aarch64",
+  "inputs_verified" : 259,
+  "resources_verified" : 8,
+  "project" : "/Users/runner/work/eyes4s/eyes4s/target/studio-package/ci/runtime-check/memory-study.eyes"
+}

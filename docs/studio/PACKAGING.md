@@ -1,7 +1,7 @@
 # Eyes Studio macOS candidate
 
 S10.7 builds an internal test application. This is not a public 1.0 release and
-is not signed with Developer ID or notarized. macOS requires a positive first version component, so package metadata uses
+is not signed with Developer ID or notarized. The macOS jpackage check requires a positive first version component, so package metadata uses
 1.0.0 for this internal candidate; this is not a published release version. `package.json` and the application's About/error report identify the exact
 source commit. The owner selected unsigned internal testing on 2026-10-27; public signing and
 notarization are deferred.
@@ -70,7 +70,7 @@ SHA, architecture, OS build, runtime receipt and signing/notarization decision.
 
 1. Verify the ZIP hash, unpack, move the app to Applications and launch it from
    Finder. Record Gatekeeper's actual response; stop and report a refusal.
-2. Open the bundled example through File → Open Example. Choose a writable copy
+2. On the empty Data screen, choose “Open the bundled example study (golden fixture)”. Choose a writable copy
    destination. Visit Data, Explore, Analysis, Compare and Figures; retain
    screenshots and confirm inputs, recipe and analysis identifiers are visible.
 3. Save the project, quit, and double-click the saved `.eyes` package in Finder.
@@ -114,7 +114,7 @@ injects a **test-only observer JAR** (never part of the app ZIP), launches the
 packaged app using LaunchServices, then sends a separate OS Open File event for a
 copied project with spaces and non-ASCII text in its name. The observer cannot
 open or seed a project. It requires the expected window title, native Mac Glass,
-native-menu policy and a nonblank scene, captures that scene, then requests the
+native-menu policy, populated participant results and a nonblank scene, captures that scene, then requests the
 ordinary window-close lifecycle. The runner requires normal exit and the bundled
 JVM path. Its receipt and PNG are uploaded with the candidate.
 
@@ -123,3 +123,9 @@ libraries, broken document dispatch and startup rendering. It does not replace
 Finder UX review, actual spoken accessibility, physical Retina or the specified
 clean macOS 14 VM. The script refuses to run without `--allow-visible`; never run
 it on a desktop someone is using.
+
+The [qualified internal candidate](evidence/20261027-release/package-final/review.json)
+retains the archive hash, native receipt and reviewed screenshot. The initial
+package is retained as rejected evidence: a title and nonblank error page did not
+prove that its example results loaded. The corrected observer requires actual
+participant rows. Manual installation and accessibility observations remain pending.

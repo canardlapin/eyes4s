@@ -1,5 +1,7 @@
 # 1.0 pre-publication readiness
 
+The [completed pre-publication review](evidence/release-20261027/review.json) maps PRD A-1–A-27 to the [qualified candidate](evidence/release-20261027/qualification/qualification.json). A-16 publication and first-baseline acceptance remain pending.
+
 The release audit is a requirement-to-evidence review for PRD A-1–A-27. Its current
 candidate receipt belongs in `docs/evidence/release-20261027/`; a list of source
 files alone is not a passing audit. The full candidate gate must record SHA/tree,
@@ -11,8 +13,7 @@ The previous qualified implementation is `a74f86b758653de67235ea0f0d9e4ca0652910
 landed with evidence at `6b02b64256db6f36037bb5b714d09eeae705b947` and tracker closure
 at `01628cbd441ad5de1599adf3c43a0d129ace2a6f`. The packaging tranche changes Studio
 and build/CI tooling; it introduces no scientific-library implementation change.
-The next gate still validates the combined candidate rather than assuming that
-an earlier green run qualifies changed build settings.
+The combined candidate was requalified after the example-loader fix and build/CI changes; its receipts do not rely on earlier green runs.
 
 | PRD | Evidence route | Acceptance boundary |
 | --- | --- | --- |
@@ -68,7 +69,7 @@ retains local and hosted logs, failures, skips and scope limits.
 
 ## Decisions that remain outside this audit
 
-`rel-audit` may close only after its candidate checks and evidence review pass.
+`rel-audit` is satisfied by the linked candidate checks and evidence review.
 [A-16 compatibility policy](BINARY_COMPATIBILITY.md) is preparatory: `rel-publish`
 and `rel-mima` remain open until real Central artifacts and an active baseline
 comparison are proved. A locally packaged artifact is not a Central release.

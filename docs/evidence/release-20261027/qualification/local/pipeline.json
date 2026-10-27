@@ -1,0 +1,105 @@
+{
+  "schema": 1,
+  "candidate": "bdf55a119bb8228de6080f938f55f085c7ebd2dc",
+  "tree": "443df309ba968c8f3b122c1b0b803c5bb0ee4b31",
+  "status": "passed",
+  "steps": [
+    {
+      "name": "canonical",
+      "command": [
+        "python3",
+        "tools/landing-gate/gate.py"
+      ],
+      "exit": 0,
+      "elapsed_seconds": 1939.942897875,
+      "log": "canonical.log",
+      "sha256": "8505ab5f9979dd700b63992d09882cf7b4912242fe1a6caf73b716bceb027a56"
+    },
+    {
+      "name": "studio",
+      "command": [
+        "sbt",
+        "-batch",
+        "-J-Xmx3g",
+        "studioAll",
+        "studioStyleCheck"
+      ],
+      "exit": 0,
+      "elapsed_seconds": 1236.012933834,
+      "log": "studio.log",
+      "sha256": "fad2e4c39abc60f5f16eea7b1a07ff62c01c020130ede9f84c2d4461eb486bf9"
+    },
+    {
+      "name": "matrix",
+      "command": [
+        "python3",
+        "tools/studio-visual-parity/check.py",
+        "--allow-functional-only"
+      ],
+      "exit": 0,
+      "elapsed_seconds": 0.4433850000000348,
+      "log": "matrix.log",
+      "sha256": "f8c2882bff876158966ef04d1f39e9d117139564ad3841fa13f9adfc84cef0db"
+    },
+    {
+      "name": "e2e",
+      "command": [
+        "python3",
+        "tools/studio-e2e/check.py"
+      ],
+      "exit": 0,
+      "elapsed_seconds": 0.14376691699999355,
+      "log": "e2e.log",
+      "sha256": "74882680e8228c4ef8f6d6756e68ccf73300ef07033e0d4b1fb65389f71ae79e"
+    },
+    {
+      "name": "fixture",
+      "command": [
+        "python3",
+        "tools/studio-fixture/verify_counts.py"
+      ],
+      "exit": 0,
+      "elapsed_seconds": 0.3411313329997938,
+      "log": "fixture.log",
+      "sha256": "b13c59187c0b6dda24e9ab45e36b6fb6013f263696ca2a5e99780d9103e45217"
+    },
+    {
+      "name": "site",
+      "command": [
+        "sbt",
+        "-batch",
+        "-J-Xmx4g",
+        "docs/tlSite",
+        "mimaReportBinaryIssues"
+      ],
+      "exit": 0,
+      "elapsed_seconds": 30.36973612499969,
+      "log": "site.log",
+      "sha256": "edb04050dcbabe1909b57aa72d5b5dfbb7b1d75ac89d026891ba33e30287980c"
+    },
+    {
+      "name": "documentation",
+      "command": [
+        "python3",
+        "tools/check-docs.py",
+        "--run-consumer"
+      ],
+      "exit": 0,
+      "elapsed_seconds": 133.98823299999958,
+      "log": "documentation.log",
+      "sha256": "83538f0bb7ef6720b48ef8bc976d355616d16227e23d1b2b6804913e5e6131f7"
+    },
+    {
+      "name": "baseline",
+      "command": [
+        "python3",
+        "tools/r-parity/check_baseline.py"
+      ],
+      "exit": 0,
+      "elapsed_seconds": 0.6879620000004252,
+      "log": "baseline.log",
+      "sha256": "b5c5d7caa92640686029df3dafc061b238232c1ab6b46434e4b3b4524f1da009"
+    }
+  ],
+  "active": null
+}

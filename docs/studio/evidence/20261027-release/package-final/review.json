@@ -1,0 +1,26 @@
+{
+  "schema": 1,
+  "status": "ready-for-unsigned-internal-testing; manual-acceptance-pending",
+  "candidate": "bdf55a119bb8228de6080f938f55f085c7ebd2dc",
+  "tree": "443df309ba968c8f3b122c1b0b803c5bb0ee4b31",
+  "archive": {
+    "file": "Eyes-Studio-arm64-bdf55a119bb8.zip",
+    "bytes": 130482563,
+    "sha256": "243d4137735dcc7a65f42e9967389f41dbd1d74d436ced3967903d83380bb84b"
+  },
+  "download_sha256_verified": true,
+  "architecture": "arm64",
+  "distribution": "owner-selected unsigned internal; ad-hoc integrity only, no Developer ID/notarization",
+  "native_participants": 24,
+  "native_elapsed_seconds": 30.462773250000055,
+  "visual_review": "Actual packaged native app shows 24 participants, a readable response comparison and four-scale Intaglio profile; original missing-registry error absent. Hosted viewport 1024x656 uses workspace scrolling; table/reporting content lies below/right and is not fully reviewed in this single frame. Full 1440x900 production-host screenshot retained separately.",
+  "scope_limits": [
+    "No Finder default-association UX acceptance",
+    "No clean macOS14/no-JDK transfer and Gatekeeper acceptance",
+    "No Intel architecture proof",
+    "No VoiceOver speech or physical Retina review"
+  ],
+  "hosted_workflow": "https://github.com/canardlapin/eyes4s/actions/runs/40562129409",
+  "initial_rejected": "docs/studio/evidence/20261027-release/package-initial-6540/review.json",
+  "qualification": "../../../../evidence/release-20261027/qualification/qualification.json"
+}

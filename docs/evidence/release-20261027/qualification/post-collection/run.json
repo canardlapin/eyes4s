@@ -1,0 +1,19 @@
+{
+  "status": "passed",
+  "qualified_source": "bdf55a119bb8228de6080f938f55f085c7ebd2dc",
+  "steps": [
+    {
+      "name": "hygiene-boundaries",
+      "exit": 0,
+      "elapsed_seconds": 32.009129125,
+      "sha256": "b510b9d14c6d9e50274bd6d1a951aac8ffed5d1a504706606dff5dba7cc495a1"
+    },
+    {
+      "name": "documentation",
+      "exit": 0,
+      "elapsed_seconds": 1.0303895830000016,
+      "sha256": "98ba2c39faad53c8d164d57a55fd23bedc153632883e5e79fb58a27ef9652a9e"
+    }
+  ],
+  "active": null
+}

@@ -1,0 +1,470 @@
+{
+  "schema": 1,
+  "requirements": [
+    {
+      "id": "A-1",
+      "claim": "Supported JVM and Scala.js builds/tests",
+      "evidence": [
+        "build.sbt",
+        ".github/workflows/checks.yml"
+      ],
+      "acceptance": "requires-candidate-gate-and-review",
+      "review": "Supported hosted matrix runs JVM17/21 and Scala.js17; local strict compile and tests use JDK25. Studio requires its separate JDK25 route.",
+      "status": "accepted-on-candidate-evidence-with-stated-contracts"
+    },
+    {
+      "id": "A-2",
+      "claim": "Library effect and dependency boundaries",
+      "evidence": [
+        "project/StudioLint.scala",
+        "build.sbt"
+      ],
+      "acceptance": "requires-candidate-gate-and-review",
+      "review": "Resolved library effect/dependency boundaries and studio boundaries are separate checked obligations. Pure studio source lint also rejects forbidden effects and file-backed imports.",
+      "status": "accepted-on-candidate-evidence-with-stated-contracts"
+    },
+    {
+      "id": "A-3",
+      "claim": "Neutral kernel vocabulary",
+      "evidence": [
+        "build.sbt",
+        "eyes4s.md"
+      ],
+      "acceptance": "requires-candidate-gate-and-review",
+      "review": "Kernel vocabulary and layering enforced by checkKernelPurity using the documented word list; no kernel source changed in this tranche.",
+      "status": "accepted-on-candidate-evidence-with-stated-contracts"
+    },
+    {
+      "id": "A-4",
+      "claim": "Published numerical laws with named tolerances",
+      "evidence": [
+        "laws/src/main/scala",
+        "docs/evidence/mutation-receipts-2026-09-19.md"
+      ],
+      "acceptance": "requires-candidate-gate-and-review",
+      "review": "Published laws execute in JVM/JS tests with named tolerances. Existing mutation receipts are retained with their source hashes, not represented as newly executed mutants.",
+      "status": "accepted-on-candidate-evidence-with-stated-contracts"
+    },
+    {
+      "id": "A-5",
+      "claim": "Negative compile-time claims",
+      "evidence": [
+        "tools/check-docs.py",
+        "tools/doc-examples.json",
+        "docs/EXAMPLE_COVERAGE.md"
+      ],
+      "acceptance": "requires-candidate-gate-and-review",
+      "review": "Executable-document inventory links negative type claims to typeCheckErrors probes; compiler API probes and downstream test compilation supplement mdoc.",
+      "status": "accepted-on-candidate-evidence-with-stated-contracts"
+    },
+    {
+      "id": "A-6",
+      "claim": "MultiMatch no-grouping reference conformance",
+      "evidence": [
+        "compare/src/test/scala/eyes4s/compare/MultiMatchConformanceSuite.scala",
+        "docs/MULTIMATCH_ALIGNMENT.md",
+        "PARITY.md"
+      ],
+      "acceptance": "requires-candidate-gate-and-review",
+      "review": "No-grouping MultiMatch conformance fixture uses its stated tolerance; grouping and other intentional reference differences remain explicitly scoped.",
+      "status": "accepted-on-candidate-evidence-with-stated-contracts"
+    },
+    {
+      "id": "A-7",
+      "claim": "Finite streaming and pure runner agreement",
+      "evidence": [
+        "fs2/src/test/scala/eyes4s/fs2/StreamingSuite.scala"
+      ],
+      "acceptance": "requires-candidate-gate-and-review",
+      "review": "StreamingSuite properties compare finite pure runner and pipe output, including fragmentation and event boundaries.",
+      "status": "accepted-on-candidate-evidence-with-stated-contracts"
+    },
+    {
+      "id": "A-8",
+      "claim": "Portable deterministic RNG",
+      "evidence": [
+        "design/src/test/scala/eyes4s/design/CrossPlatformDeterminismSuite.scala"
+      ],
+      "acceptance": "requires-candidate-gate-and-review",
+      "review": "CrossPlatformDeterminismSuite uses fixed streams/identities, not merely equal distributional statistics.",
+      "status": "accepted-on-candidate-evidence-with-stated-contracts"
+    },
+    {
+      "id": "A-9",
+      "claim": "Portable end-to-end results",
+      "evidence": [
+        "tools/study-consumer/src/test/scala/example/FixationJourneySuite.scala",
+        "tools/study-consumer/src/test/scala/example/RecordingJourneySuite.scala",
+        "tools/study-consumer/src/test/scala/example/TemporalJourneySuite.scala"
+      ],
+      "acceptance": "requires-candidate-gate-and-review",
+      "review": "Fixed journey numerical contracts execute on both consumer axes; fresh-process reload separately verifies persistence identity.",
+      "status": "accepted-on-candidate-evidence-with-stated-contracts"
+    },
+    {
+      "id": "A-10",
+      "claim": "Required offline reference baseline and justified divergences",
+      "evidence": [
+        "tools/r-parity/baseline.json",
+        "tools/r-parity/check_baseline.py",
+        "PARITY.md"
+      ],
+      "acceptance": "requires-candidate-gate-and-review",
+      "review": "Required reference baseline has no implementation gaps. Checker output supplies current counts. Equivalence is contract-specific; documented intentional divergences use independent evidence and are not failures erased by tolerance widening.",
+      "status": "accepted-on-candidate-evidence-with-stated-contracts"
+    },
+    {
+      "id": "A-11",
+      "claim": "Complete public EDF-derived ASC to Scanpath",
+      "evidence": [
+        "io/src/test/scala/eyes4s/io/PublicAscEndToEndSuite.scala",
+        "docs/evidence/public-asc-20261014.json"
+      ],
+      "acceptance": "requires-candidate-gate-and-review",
+      "review": "Complete public EDF-derived ASC fixture is admitted to Scanpath. Public receipt preserves unknown original-EDF/converter provenance; broader vendor certification is not claimed.",
+      "status": "accepted-on-candidate-evidence-with-stated-contracts"
+    },
+    {
+      "id": "A-12",
+      "claim": "Executable public documentation",
+      "evidence": [
+        "site-docs",
+        "tools/check-docs.py",
+        "docs/SCALADOC_RUNTIME.md"
+      ],
+      "acceptance": "requires-candidate-gate-and-review",
+      "review": "mdoc/site, source/example classification and both-platform executable examples pass in the candidate gate. JDK25 Scaladoc observed pass is retained without claiming the cause of the older JDK25.0.1 failure.",
+      "status": "accepted-on-candidate-evidence-with-stated-contracts"
+    },
+    {
+      "id": "A-13",
+      "claim": "Public invariants, scale and units documentation",
+      "evidence": [
+        "tools/api-audit/inventory.json",
+        "tools/api-audit/evidence.json",
+        "docs/PUBLIC_API_COVERAGE.md",
+        "docs/METHOD_DESCRIPTORS.md"
+      ],
+      "acceptance": "requires-candidate-gate-and-review",
+      "review": "Compiler-derived API inventory and evidence review cover public invariants, numerical scale/units, diagnostics and public entry probes. Zero uncovered entries is audited coverage, not a claim of exhaustive theorem proving.",
+      "status": "accepted-on-candidate-evidence-with-stated-contracts"
+    },
+    {
+      "id": "A-14",
+      "claim": "Pure failure values, cardinality and contract review",
+      "evidence": [
+        "AGENTS.md",
+        "docs/DOMAIN_CONSTRUCTORS.md",
+        "docs/evidence/domain-invariants-library-20261014.json",
+        "tools/api-audit/check.py"
+      ],
+      "acceptance": "requires-candidate-gate-and-review",
+      "review": "Constructor/domain invariant evidence includes independent consumer-package negative construction probes and retained mutant failure; current API audit and numerical contract suites exercise recoverable failures/cardinality. No scientific library implementation changes in this tranche.",
+      "status": "accepted-on-candidate-evidence-with-stated-contracts"
+    },
+    {
+      "id": "A-15",
+      "claim": "Abstractions have instances and laws/conformance",
+      "evidence": [
+        "tools/api-audit/evidence.json",
+        "tools/api-audit/check.py",
+        "laws/src/main/scala"
+      ],
+      "acceptance": "requires-candidate-gate-and-review",
+      "review": "Each inventoried abstraction has an instance and published laws or conformance evidence; current compiler audit verifies the map rather than relying on a hand-counted list.",
+      "status": "accepted-on-candidate-evidence-with-stated-contracts"
+    },
+    {
+      "id": "A-16",
+      "claim": "Compatibility policy and real Central/baseline receipts",
+      "evidence": [
+        "docs/BINARY_COMPATIBILITY.md",
+        "build.sbt"
+      ],
+      "acceptance": "external-publication-and-first-baseline-pending",
+      "review": "Policy prepared. MiMa with an empty previous-artifact set proves nothing about compatibility. Central publication and first real baseline/mutation are explicitly pending under rel-publish and rel-mima.",
+      "status": "external-publication-and-baseline-pending"
+    },
+    {
+      "id": "A-17",
+      "claim": "Repository and migration documentation",
+      "evidence": [
+        "README.md",
+        "CONTRIBUTING.md",
+        "AGENTS.md",
+        "CODE_OF_CONDUCT.md",
+        "SECURITY.md",
+        "LICENSE",
+        "PARITY.md",
+        "site-docs/migration.md"
+      ],
+      "acceptance": "requires-candidate-gate-and-review",
+      "review": "Required repository and migration documents are present; compatibility, operational support limits and release boundaries are updated. No Central release claimed.",
+      "status": "accepted-on-candidate-evidence-with-stated-contracts"
+    },
+    {
+      "id": "A-18",
+      "claim": "Versioned codec round trips",
+      "evidence": [
+        "codec/src/test/scala/eyes4s/codec/SchemaCompatibilitySuite.scala",
+        "docs/DOMAIN_CODECS.md"
+      ],
+      "acceptance": "requires-candidate-gate-and-review",
+      "review": "Versioned schema registry, pinned compatibility fixtures and codec laws execute on both axes, including unknown versions and named refusals.",
+      "status": "accepted-on-candidate-evidence-with-stated-contracts"
+    },
+    {
+      "id": "A-19",
+      "claim": "Saved plan reload/execution identity",
+      "evidence": [
+        "tools/study-consumer/src/test/scala/example/FixationJourneySuite.scala",
+        "docs/SAVED_STUDIES.md"
+      ],
+      "acceptance": "requires-candidate-gate-and-review",
+      "review": "Isolated FixationJourneySuite serializes/reloads with fresh registries and reruns with exact numerical identity; saved plans are not accepted merely because JSON parsing succeeds.",
+      "status": "accepted-on-candidate-evidence-with-stated-contracts"
+    },
+    {
+      "id": "A-20",
+      "claim": "Named missing viewing prerequisite",
+      "evidence": [
+        "plan/src/test/scala/eyes4s/plan/ProjectPrerequisitesSuite.scala",
+        "docs/PROJECT_PREREQUISITES.md"
+      ],
+      "acceptance": "requires-candidate-gate-and-review",
+      "review": "ProjectPrerequisitesSuite names missing Viewing for degree-based measures; planned times cannot stand in for observed event provenance.",
+      "status": "accepted-on-candidate-evidence-with-stated-contracts"
+    },
+    {
+      "id": "A-21",
+      "claim": "Method/detector/smoother metadata",
+      "evidence": [
+        "plan/src/test/scala/eyes4s/plan/MethodDescriptorSuite.scala",
+        "detect/src/test/scala/eyes4s/detect/AlgorithmCardSuite.scala",
+        "docs/METHOD_DESCRIPTORS.md"
+      ],
+      "acceptance": "requires-candidate-gate-and-review",
+      "review": "MethodDescriptorSuite and built-in registry coverage check metadata/parameters, citations and interfaces under the comparison/detector/smoother contracts.",
+      "status": "accepted-on-candidate-evidence-with-stated-contracts"
+    },
+    {
+      "id": "A-22",
+      "claim": "Observed ASC messages, not planned timing",
+      "evidence": [
+        "io/src/test/scala/eyes4s/io/EyeLinkAscNativeTimelineSuite.scala",
+        "docs/formats/eyelink-asc.md"
+      ],
+      "acceptance": "requires-candidate-gate-and-review",
+      "review": "EyeLinkAscNativeTimelineSuite retains observed messages and timing identity; planned/observed distinctions also have portable codec and prerequisite tests.",
+      "status": "accepted-on-candidate-evidence-with-stated-contracts"
+    },
+    {
+      "id": "A-23",
+      "claim": "Generic-key metadata/timeline codec contracts",
+      "evidence": [
+        "laws/src/test/scala/eyes4s/laws/StudyInputCodecLawSuite.scala",
+        "laws/src/test/scala/eyes4s/laws/EpochCodecLawSuite.scala",
+        "codec/src/test/scala/eyes4s/codec/StudyCodecSuite.scala",
+        "codec/src/test/scala/eyes4s/codec/EpochComponentCodecSuite.scala",
+        "codec/src/test/scala/eyes4s/codec/InputPayloadCodecSuite.scala",
+        "docs/DOMAIN_CODECS.md",
+        "docs/SAVED_STUDIES.md"
+      ],
+      "acceptance": "requires-candidate-gate-and-review",
+      "review": "Generic Trials custom key/metadata/value codecs, custom occurrence keys, and user marker timeline/MarkSelector/EpochPlan round trips are exercised. Keyed-map duplicate entries are refused. Trials deliberately retains repeated rows: repeated trial rows are not claimed to be rejected as duplicate map keys. Missing/unknown schema versions are explicit refusals.",
+      "status": "accepted-on-candidate-evidence-with-stated-contracts"
+    },
+    {
+      "id": "A-24",
+      "claim": "Complete required capability map and template route",
+      "evidence": [
+        "docs/EYESIM_CAPABILITIES.md",
+        "tools/r-parity/baseline.json",
+        "tools/study-consumer/src/test/scala/example/TemplateJourneySuite.scala"
+      ],
+      "acceptance": "requires-candidate-gate-and-review",
+      "review": "Capability map and frozen baseline require all mandatory public workflows, including TemplateJourneySuite. Optional/deferred scientific methods are not silently promoted to release blockers.",
+      "status": "accepted-on-candidate-evidence-with-stated-contracts"
+    },
+    {
+      "id": "A-25",
+      "claim": "Three isolated public-API journeys",
+      "evidence": [
+        "tools/study-consumer/verify.py",
+        "tools/study-consumer/README.md",
+        "tools/study-consumer/src/test/scala/example/FacadeJourneySuite.scala"
+      ],
+      "acceptance": "requires-candidate-gate-and-review",
+      "review": "Isolated consumer copies only public downstream code, validates artifact classpaths and both-platform journey outcomes; local artifact publication is not Maven Central publication.",
+      "status": "accepted-on-candidate-evidence-with-stated-contracts"
+    },
+    {
+      "id": "A-26",
+      "claim": "Downstream extensions, laws and headless application consumption",
+      "evidence": [
+        "tools/study-consumer/src/test/scala/example/ConsumerLawsSuite.scala",
+        "tools/study-consumer/src/test/scala/example/RecordingJourneySuite.scala",
+        "docs/EXTENDING_STUDIES.md",
+        "tools/study-consumer/README.md"
+      ],
+      "acceptance": "requires-candidate-gate-and-review",
+      "review": "Downstream comparison and detector registration, published conformance laws, save/reload and headless capability/prerequisite/diff/progress/cancel routes are verified by isolated consumer suites and retained M5 evidence.",
+      "status": "accepted-on-candidate-evidence-with-stated-contracts"
+    },
+    {
+      "id": "A-27",
+      "claim": "Persistence identity, invalid schemas, migration/refusal and exports",
+      "evidence": [
+        "codec/src/test/scala/eyes4s/codec/SchemaCompatibilitySuite.scala",
+        "tools/study-consumer/src/test/scala/example/ReportJourneySuite.scala",
+        "docs/RESULT_PAYLOAD_MANIFEST.md",
+        "docs/DOMAIN_CODECS.md"
+      ],
+      "acceptance": "requires-candidate-gate-and-review",
+      "review": "Persistence suites cover alias identity, invalid/unknown nodes and schemas, exact digest checks, previous-version fixtures and explicit migration/refusal. Export numerical/row contracts remain distinct from presentation rounding.",
+      "status": "accepted-on-candidate-evidence-with-stated-contracts"
+    }
+  ],
+  "status": "prepublication-accepted; A16-publication-and-baseline-pending",
+  "milestones": [
+    {
+      "milestone": "M2",
+      "id": "bd-01M214CX2CTADNR6Q9D032Y1FB",
+      "title": "Complete the eyesim baseline through coherent public workflows",
+      "status": "closed",
+      "notes": [
+        {
+          "actor": "claude-eyes4s-core",
+          "kind": "progress",
+          "op_id": "20260926T145316.351674Z-p51050-c0000-rfd9b-h6391b5",
+          "text": "2026-09-26: every blocking ticket is closed (v-parity and eyesim-entropy closed after CR1 merged, main 32eb395). check_baseline --eyesim --mote: 0 implementation gaps. The epic stays open until someone records evidence for the remaining exit criterion: all three public journeys pass the supported-runtime scientific gates.",
+          "ts": "2026-09-26T14:53:16.351674Z"
+        },
+        {
+          "actor": "claude-eyes4s-p0",
+          "kind": "progress",
+          "op_id": "20261004T035957.406661Z-p95115-c0000-r0085-ha6f7f3",
+          "text": "Exit evidence, 2026-10-04, main e526ebc5 (code tree gated at bd375cc7 / 59ee9843):\n(1) check_baseline --eyesim --mote: 13 rows, 30 cases, 7 verified-equivalent, 23 intentional divergences, implementation-gap=0.\n(2) v-parity zero-gap regeneration: check_baseline --run-regeneration with EYES4S_ARROW_PYTHON=python3.12 (pyarrow 21.0.0), exit 0. Every generator --check passed (admission, matched, multiscale, temporal, transforms, template, repetition, entropy, decomposition, decomposition-constrained, compare, derived-entropy, baseline-exports, kde, repetition-methods, sampling, scanpath, template-cv, point-sampling). e526ebc5 made the export receipt check compare artifacts exactly and report the reader's PyArrow version instead of failing on it; all 67 artifact digests are unchanged.\n(3) The three public journeys: testAll 6025/6025 locally, the isolated published-artifact consumer (verify.py) passed on JVM and Scala.js, and hosted Checks passed on main 1ef686d1 (run 37174618848, the JDK matrix) for the first time since 2026-09-27.\nExit criteria met.",
+          "ts": "2026-10-04T03:59:57.406661Z"
+        }
+      ]
+    },
+    {
+      "milestone": "M3",
+      "id": "bd-01M02N4EKAEA6EBB3TE0G4TYMP",
+      "title": "Psychology-facing workflow facade and task-first documentation",
+      "status": "closed",
+      "notes": [
+        {
+          "actor": "codex-eyes4s-ci",
+          "kind": "progress",
+          "op_id": "20261005T202839.788820Z-p22517-c0003-r5078-hd5cac7",
+          "text": "Classify three newly merged internal documents and verify strict documentation inventory",
+          "ts": "2026-10-05T20:28:39.788820Z"
+        },
+        {
+          "actor": "codex-eyes4s-ci",
+          "kind": "note",
+          "op_id": "20261005T231503.651911Z-p78833-c0000-r9633-h32c755",
+          "text": "Documentation classification repair landed on main 001739b8e64a5e3c326b4e4c068ffa09d36c26be (tree dd887661a1d970c953e8b5843d985fe4c7e916eb). Three internal/history Markdown pages classified without weakening inventory. Strict local all-platform documentation/consumer check passed: 65 classified pages, 5 external fences, 24 linked programs, four isolated consumer programs on both axes. Hosted Checks success on that exact SHA: https://github.com/canardlapin/eyes4s/actions/runs/37383450590 (site, JVM Java17/21, JS Java17). Hosted isolated published-artifact consumer also succeeded: https://github.com/canardlapin/eyes4s/actions/runs/37384477300/job/112014239719. Prior closed children already record journey, Scaladoc and rendered-review completion; this resolves the remaining hosted documentation gap.",
+          "ts": "2026-10-05T23:15:03.651911Z"
+        }
+      ]
+    },
+    {
+      "milestone": "M4",
+      "id": "ms-v065",
+      "title": "v0.65 \u2014 Plans and codecs",
+      "status": "closed",
+      "notes": [
+        {
+          "actor": "codex-eyes4s-review-20261005",
+          "kind": "progress",
+          "op_id": "20261005T202051.140080Z-p5872-c000e-rb186-h139391",
+          "text": "Codebase review 2026-10-05 on main 3b2211a7bba7fb5699bd7fef3f9bb078bb6866a8. Classification: partial.\n\nTyped plans/codecs, preflight, and pinned compatibility fixtures are substantial, but the stated user-typed Timeline/MarkSelector/final-bin/prerequisite and direct-vs-serialized end-to-end acceptance is not demonstrated as a complete milestone.\n\nEvidence:\n- plan/src/main/scala/eyes4s/plan/Preflight.scala:580 preflight implementation\n- codec/src/test/scala/eyes4s/codec/SchemaCompatibilitySuite.scala:64 pinned codecs\n- plan/src/test/scala/eyes4s/plan/PreflightSuite.scala:268 current recipe-family coverage\n\nRemaining / next action: Audit each stated exit case, add missing typed Timeline/selector round trips and equivalence fixtures, then review the integrated milestone.\n\nDisposition: Keep open.",
+          "ts": "2026-10-05T20:20:51.140080Z"
+        },
+        {
+          "actor": "claude-v1-triage",
+          "kind": "progress",
+          "op_id": "20261009T163707.480494Z-p85244-c0000-r06e4-h4177c0",
+          "text": "Superseded by 1.0 wave 4 (2026-10-09). Its live blocker p-prereq (A-20) now blocks M4EQXXF8 directly; the remaining exit criteria (user-typed Trials/Timeline codecs, MarkSelector/EpochPlan round trips, serialized = direct execution) are PRD A-19/A-20/A-23 and are checked by the acceptance audit el-audit.",
+          "ts": "2026-10-09T16:37:07.480494Z"
+        }
+      ]
+    },
+    {
+      "milestone": "M5",
+      "id": "bd-01M214CXBZN8R7R4P0M5ACY25H",
+      "title": "Prove downstream method and analysis-consumer extension contracts",
+      "status": "closed",
+      "notes": [
+        {
+          "actor": "codex-eyes4s-ui-foundation-plan",
+          "kind": "progress",
+          "op_id": "20260916T122553.664444Z-p9776-c0000-rcc2e-h034cf0",
+          "text": "-",
+          "ts": "2026-09-16T12:25:53.664444Z"
+        },
+        {
+          "actor": "claude-eyes4s-backlog",
+          "kind": "note",
+          "op_id": "20260918T083034.612647Z-p40930-c0000-ra5fa-h7a51c4",
+          "text": "Closed 2026-09-18 on the evidence of UI-G0 (merge 24b2c65) and UI-G1 (merge 2382e56), verified on main with tools/study-consumer/verify.py (full publish, 192 JVM / 181 JS). Clause by clause: isolated consumer against packaged artifacts = verify.py copies only the consumer, rejects checkout paths and checks the reader classpath jar by jar against the local publish; custom comparison and detector through public interfaces = the scaled cosine (MethodExecution.Bounded via mapScore) and CustomDetector running through RecordingExecution; published laws = ExecutionLaws and ManifestLaws over six consumer routes plus the existing comparison/detector law suites; typed parameters/results and versioned codecs = consumer descriptors, parameter codecs, score codec and detector registration archived under manifests; save and rerun without editing core interpreters = fresh-process reload in a separate JVM with bit-exact rerun; unknown/duplicate versions and invalid parameters as named errors = UnsupportedSchema/MissingMethod/MissingResultCodec/DuplicateResultCodec and descriptor refusals; headless consumer lists capabilities (recipe descriptors, execution capability), explains unmet prerequisites (preflight blockers as coded diagnostics), inspects/diffs/loads/runs plans (StudyPreview, ChangedPlan with field diff, manifests, runners), consumes results (ResultInspection drill-down to CSV records), observes FS2 progress and cancellation (segments with exact totals, Cancelled without result). Documented limits are listed in the plan's G1 outcome.",
+          "ts": "2026-09-18T08:30:34.612647Z"
+        }
+      ]
+    }
+  ],
+  "milestone_interpretation": "M2/M3/M5 retain substantive closure receipts. M4 was superseded, not qualified by closure; A19/A20/A23 require the current executable evidence listed here.",
+  "candidate": "bdf55a119bb8228de6080f938f55f085c7ebd2dc",
+  "tree": "443df309ba968c8f3b122c1b0b803c5bb0ee4b31",
+  "qualification": "qualification/qualification.json",
+  "operational": {
+    "scope": "Operational receipts reviewed; unchanged workload implementations are not rebenchmarked in the packaging tranche. Timings apply to named machines, not a speedup estimate.",
+    "recording": {
+      "receipt": "docs/evidence/release-20261027/performance/review.json",
+      "source": "1872c4797ac76708fd72fdde93af6812c971cef9",
+      "workload": "two-hour 2000 Hz binocular generated ASC stream",
+      "bytes": 489600081,
+      "physical_lines": 14400004,
+      "elapsed_seconds": 22.632296552,
+      "sampled_peak_heap_delta_bytes": 79741360,
+      "maximum_heap_bytes": 268435456,
+      "limits": "Heap sample is not RSS; generated workload is not vendor acquisition certification."
+    },
+    "studio": {
+      "receipt": "docs/studio/evidence/20261026-hardening/performance/run.json",
+      "environment": "Mac14,12 Apple M2 Pro 32 GiB, macOS 15.1.1 (24B91), Temurin 25.0.4.1, Monocle software pipeline",
+      "tenfold_inputs": {
+        "fixations": 115200,
+        "inventory_rows": 9600,
+        "retrieval_rows": 4800
+      },
+      "measured_observations_total": 900,
+      "tenfold_p95_ms": {
+        "selection": 74.15,
+        "cached_trial": 73.59,
+        "worst_perspective_Data": 95.4
+      },
+      "tenfold_retained_heap_GiB": 1.64,
+      "tenfold_largest_sampled_RSS_GiB": 5.86,
+      "limits": "Tenfold live completed results qualified; oversized cold archive refused by unchanged 20-million-cell/256MiB budget. RSS checkpoints are not continuous peak RSS."
+    },
+    "archive": {
+      "receipt": "docs/ARCHIVE_MEMORY.md",
+      "trials": 150,
+      "fixations_per_trial": 32,
+      "scales": 4,
+      "grid": [
+        256,
+        128
+      ],
+      "density_maps": 600,
+      "binary64_cells": 19660800,
+      "native_archive_bytes": 164945432,
+      "process_heap_limit": "1GiB for independent writer and source-free reader",
+      "limits": "Exact canonical identity verified. Does not establish maximum supported study size or total process memory."
+    }
+  }
+}
