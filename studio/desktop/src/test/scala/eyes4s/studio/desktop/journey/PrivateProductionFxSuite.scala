@@ -394,6 +394,12 @@ class PrivateProductionFxSuite extends ShellFxSuite:
           until(fx, "query table view model rendered") {
             w.summary.vm.queries.exists(_.isRight)
           }
+          dispatch(
+            fx,
+            w,
+            Intent.FocusPane(get(eyes4s.studio.app.layout.PaneId.of("compare.query-table")))
+          )
+          until(fx, "query table is visible and drawing rows") { w.summary.queryTable.onScreen }
           val table = get(runOnFx(w.summary.vm.queries).get)
           assertEquals(table.rows.size, found.size)
           assertEquals(runOnFx(w.summary.queryTable.rowTexts), table.rows.map(table.cellsOf))
