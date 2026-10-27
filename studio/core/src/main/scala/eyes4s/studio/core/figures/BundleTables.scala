@@ -221,7 +221,7 @@ object BundleTables:
           .map(BundleTableError.Table("results", _))
       }
 
-  private def participantColumns(attribute: String): Vector[ResultColumn] =
+  private def participantColumns(attribute: String, byDesign: Boolean): Vector[ResultColumn] =
     Vector(
       text("participant", "participant id"),
       text("group", s"reporting group ($attribute)"),
@@ -234,7 +234,11 @@ object BundleTables:
         count("failed", "queries that failed"),
         count("no_match", "queries without an admitted matched reference"),
         count("not_admitted", "queries whose trial was not admitted")
-      )
+      ) ++ Option
+        .when(byDesign)(
+          count("by_design", "queries with no corresponding study trial by design")
+        )
+        .toVector
 
   /** participants.csv: one row per participant and reporting group; a group
     * a participant has no queries in is a row with n 0 and missing means.
@@ -256,8 +260,10 @@ object BundleTables:
       Left(BundleTableError.UnknownScale("participants", report.scale, summary.scaleLabels))
     else
       val attribute = source.reporting.groupBy.fold("all queries")(_.label)
-      val labels    = report.cells.filter(_.role == ReportRole.Difference).map(_.group).distinct
-      val cells     = for
+      val byDesign  =
+        summary.contrasts.byDesign.isDefined || summary.participants.exists(_.byDesign > 0)
+      val labels = report.cells.filter(_.role == ReportRole.Difference).map(_.group).distinct
+      val cells  = for
         p     <- summary.participants
         group <- labels
       yield
@@ -287,11 +293,11 @@ object BundleTables:
             I(p.failed.toLong),
             I(p.noMatch.toLong),
             I(p.notAdmitted.toLong)
-          )
+          ) ++ Option.when(byDesign)(I(p.byDesign.toLong)).toVector
       ResultTable
         .of(
           ResultFamily.ReportParticipants,
-          participantColumns(attribute),
+          participantColumns(attribute, byDesign),
           cells,
           context(source, summary.scaleLabels) match
             case TableJson.Obj(fields) =>
@@ -417,7 +423,10 @@ object BundleTables:
     "table's digest: the same for the same table, whatever wrote it. A column that may be",
     "missing is followed by <column>__valid: true when the cell holds a value, false when it is",
     "missing. A missing cell is empty, never a zero; where the table says why, the reason is in",
-    "<column>_absence, one of the labels listed for it."
+    "<column>_absence, one of the labels listed for it.",
+    "In participants.csv, n and means are per group. Accounting columns requested, contributing,",
+    "failed, no_match, not_admitted and, when recorded, by_design describe the whole participant",
+    "and repeat across group rows; do not add them across groups."
   )
 
   private def kind(c: ResultColumn): String = c.kind match

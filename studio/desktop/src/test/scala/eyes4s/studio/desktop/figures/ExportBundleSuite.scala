@@ -662,6 +662,33 @@ class ExportBundleSuite extends munit.FunSuite:
     }
   }
 
+  test("participant exports retain by-design counts and reconcile whole-participant totals") {
+    served.map { s =>
+      val counts =
+        s.summary.participants.map(p => p.copy(requested = p.requested + 3, byDesign = 3))
+      val changed = s.copy(summary =
+        s.summary.copy(
+          participants = counts,
+          contrasts = s.summary.contrasts.copy(byDesign = Some(counts.size * 3))
+        )
+      )
+      val rows = csv(files(changed)("participants.csv"))
+      assert(rows.forall(_.contains("by_design")))
+      rows.foreach { row =>
+        assertEquals(row("by_design"), "3")
+        val classified = Vector(
+          "contributing",
+          "failed",
+          "no_match",
+          "not_admitted",
+          "by_design"
+        ).map(k => row(k).toInt).sum
+        assertEquals(row("requested").toInt, classified)
+      }
+      assert(!csv(files(s)("participants.csv")).head.contains("by_design"))
+    }
+  }
+
   test("a group without queries is a row with n 0 and missing means, never zero") {
     served.map { s =>
       val source = request(s.composer).source
