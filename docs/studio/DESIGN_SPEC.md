@@ -143,6 +143,9 @@ stale) · "Analysis · rerun" (draft → Save & run) · "Reporting · no rerun" 
   under First/Last, and sampling can omit a reference independently of admission.
 - Identity: show "input digest sha256:9f2c…e41 · plan rev 5", never an invented fingerprint.
 - Reporting: participant means, equal weight; per-group n; paired n; the unit is the query trial.
+  Automatically inferred categorical levels come from the declared focal-phase inventory,
+  before admission, scoring and reporting filters. Reference-only attributes do not declare
+  query groups. Genuine empty focal groups retain their cells and absence reasons.
 - Say "record" (fixations.csv record 7,214), not "row". Show raw and transformed coordinates.
 - Import requires the Participant, Phase and Trial roles (the trial key eyes4s reads), the Ordinal
   and Sample-count roles, x, y, Onset and Duration; time units are DECLARED (ms), never inferred.

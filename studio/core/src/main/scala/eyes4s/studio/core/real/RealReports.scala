@@ -74,7 +74,11 @@ object RealReports:
                 inventory.attributeColumns.map(_.name)
               )
             )
+            // Report outcomes are focal trials. Reference-only metadata cannot
+            // declare a response level; retain every focal declaration, including
+            // unadmitted and unscored trials (bead g2-report-levels).
             values = inventory.trials
+              .filter(_.identity.phase == p.plan.focalPhase)
               .flatMap(_.attributes.get(name))
               .collect {
                 case AttributeValue.Text(value) if value.trim.nonEmpty => value
