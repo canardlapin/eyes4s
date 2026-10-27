@@ -1,0 +1,37 @@
+{
+  "schema": 1,
+  "status": "focused-and-mutation-passed-full-qualification-separate",
+  "failedCandidate": "f169020b206934e2aaf6bcad85a85717fe786eb4",
+  "failedStudioRun": 40430598286,
+  "cause": "The Compare theme test accepted stable n/a participant scores and reading map/pair/ledger placeholders before asynchronous reads completed. After the theme action those reads completed, so it compared different data states. Figures and all other cases passed in the same native Mac run.",
+  "change": "Require served reports and queries, an answered inspected pair, terminal trial-content reads, no pending-map message, a served ladder/pairs table and a completed ledger before the unchanged two equal readings and theme hashes. The ShellFxSuite fixture deliberately has PanelSources.notServed, so explicit unavailable trial content is terminal, not pending. No sleep length, timeout, hash assertion, production code, fixture or performance harness changed.",
+  "regression": "A completed Compare view is given map-reading placeholders; two text captures remain equal 500ms apart, but readiness must remain false.",
+  "mutation": "Removing the map-pending guard fails exactly the new regression (9 passed, 1 failed); restored code passes all10 cases and studioStyleCheck.",
+  "rejectedProbes": [
+    "Requiring Right trial content and drawn trial maps timed out because ShellFxSuite explicitly uses PanelSources.notServed. The diagnostic receipt establishes this terminal state.",
+    "The first terminal-state focused run passed all10 cases but Studio format check failed; the restored run formatted the actual Studio project and passed the full style check."
+  ],
+  "logs": [
+    {
+      "path": "ready.log.gz",
+      "sha256": "1b4ea090cd55e898530dc4dec6e1a9789c83edcec9385ba2194190a10d61ca26"
+    },
+    {
+      "path": "diagnostic.log.gz",
+      "sha256": "92d09bdd001a1de3a65869a5a101a9e819740a8faa46e9fed9d4ba1e2080561b"
+    },
+    {
+      "path": "terminal.log.gz",
+      "sha256": "101bcec92b1af88ab14e305b1efa37f461babed97efad3c972709ba816ce204f"
+    },
+    {
+      "path": "mutant.log.gz",
+      "sha256": "4bd32dd1aac6bc90d9c55e6bcc0d2948eefb0fd0ed0cd02fc13a519b0a71e8e6"
+    },
+    {
+      "path": "restored.log.gz",
+      "sha256": "8bda8738910579fd959cbe3e152f82096c844659d3d1b223da57c8244236d148"
+    }
+  ],
+  "scope": "Only ThemeFxSuite.scala changed from the previously frozen candidate; performance implementation and benchmark remain unchanged."
+}

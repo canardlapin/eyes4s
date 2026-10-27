@@ -1,0 +1,65 @@
+{
+  "total_count": 3,
+  "artifacts": [
+    {
+      "id": 12703131230,
+      "node_id": "MDg6QXJ0aWZhY3QxMjcwMzEzMTIzMA==",
+      "name": "studio-snapshots-linux-f169020b206934e2aaf6bcad85a85717fe786eb4",
+      "size_in_bytes": 148157531,
+      "url": "https://api.github.com/repos/canardlapin/eyes4s/actions/artifacts/12703131230",
+      "archive_download_url": "https://api.github.com/repos/canardlapin/eyes4s/actions/artifacts/12703131230/zip",
+      "expired": false,
+      "digest": "sha256:b3b2351ef4a228899244dcec2d5c1d41ccaa19c888679ee117b6334c2f078145",
+      "created_at": "2026-10-27T01:31:55Z",
+      "updated_at": "2026-10-27T01:31:55Z",
+      "expires_at": "2027-01-25T01:06:38Z",
+      "workflow_run": {
+        "id": 40430598286,
+        "repository_id": 1334091621,
+        "head_repository_id": 1334091621,
+        "head_branch": "work/hardening-20261026",
+        "head_sha": "f169020b206934e2aaf6bcad85a85717fe786eb4"
+      }
+    },
+    {
+      "id": 12702968348,
+      "node_id": "MDg6QXJ0aWZhY3QxMjcwMjk2ODM0OA==",
+      "name": "studio-snapshots-macos-f169020b206934e2aaf6bcad85a85717fe786eb4",
+      "size_in_bytes": 49598098,
+      "url": "https://api.github.com/repos/canardlapin/eyes4s/actions/artifacts/12702968348",
+      "archive_download_url": "https://api.github.com/repos/canardlapin/eyes4s/actions/artifacts/12702968348/zip",
+      "expired": false,
+      "digest": "sha256:81ace3a3bace112928c11eacdf67d31ba3f0744a69e5fc4dffb5ae88367580df",
+      "created_at": "2026-10-27T01:38:49Z",
+      "updated_at": "2026-10-27T01:38:49Z",
+      "expires_at": "2027-01-25T01:06:38Z",
+      "workflow_run": {
+        "id": 40430598286,
+        "repository_id": 1334091621,
+        "head_repository_id": 1334091621,
+        "head_branch": "work/hardening-20261026",
+        "head_sha": "f169020b206934e2aaf6bcad85a85717fe786eb4"
+      }
+    },
+    {
+      "id": 12702877799,
+      "node_id": "MDg6QXJ0aWZhY3QxMjcwMjg3Nzc5OQ==",
+      "name": "studio-snapshots-linux-hidpi-f169020b206934e2aaf6bcad85a85717fe786eb4",
+      "size_in_bytes": 134226844,
+      "url": "https://api.github.com/repos/canardlapin/eyes4s/actions/artifacts/12702877799",
+      "archive_download_url": "https://api.github.com/repos/canardlapin/eyes4s/actions/artifacts/12702877799/zip",
+      "expired": false,
+      "digest": "sha256:71d147f3352ac5b62754b989ae84ba24745579a4dff06a1cdaf2f11f577640a8",
+      "created_at": "2026-10-27T01:34:18Z",
+      "updated_at": "2026-10-27T01:34:18Z",
+      "expires_at": "2027-01-25T01:06:38Z",
+      "workflow_run": {
+        "id": 40430598286,
+        "repository_id": 1334091621,
+        "head_repository_id": 1334091621,
+        "head_branch": "work/hardening-20261026",
+        "head_sha": "f169020b206934e2aaf6bcad85a85717fe786eb4"
+      }
+    }
+  ]
+}

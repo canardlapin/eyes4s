@@ -19,6 +19,8 @@ package eyes4s.studio.desktop.shell
 import cats.effect.IO
 import cats.effect.unsafe.implicits.global
 import eyes4s.studio.app.appearance.Appearance
+import eyes4s.studio.app.compare.{PairAnswer, QueriesAnswer, ReportAnswer, SummaryAnswer}
+import eyes4s.studio.app.text.{PanelText, PanelTextId, WhyText, WhyTextId}
 import eyes4s.studio.app.figures.{BundleItem, PanelBody, TileMap}
 import eyes4s.studio.app.geometry.Loading
 import eyes4s.studio.app.tokens.{ThemedToken, Tokens, Wcag, WcagError}
@@ -151,10 +153,29 @@ class ThemeFxSuite extends ShellFxSuite:
       inspector.record.isInstanceOf[Loading.Ready[?]] &&
       inspector.usedBy != Loading.Waiting && inspector.displays != Loading.Waiting)
 
-  // Figures may show unchanged placeholders while its native reads are pending.
-  // Establish the served page, methods and bundle before comparing themes.
+  // Stable placeholders do not establish readiness: Compare must have its
+  // reports, pair, maps and ledger; Figures its page, methods and bundle.
   private def windowReady(w: StudioWindow): Boolean =
     if !inspectorReady(w) then false
+    else if w.runtime.model.perspective == Perspective.Compare then
+      val summary = w.summary.summary
+      val panels  = w.summary.inspectorInputs.panels
+      val why     = w.compareInspector.vm
+      summary.summary.exists {
+        case SummaryAnswer.Answered(result) =>
+          summary.reports.size == result.scales.size * 2 &&
+          summary.reports.values.forall(_.isInstanceOf[ReportAnswer.Answered])
+        case _ => false
+      } && summary.queries.exists(_.isInstanceOf[QueriesAnswer.Answered]) &&
+      panels.inspected.exists(_._2.exists(_.isInstanceOf[PairAnswer.Answered])) &&
+      // This theme fixture intentionally uses PanelSources.notServed. Its
+      // explicit unavailable content is settled; an unanswered read is not.
+      panels.contents.nonEmpty && panels.contents.values.forall(_.isDefined) &&
+      !values(w.root).contains(PanelText(PanelTextId.MapReading)) &&
+      w.summary.contrastVM.ladder.nonEmpty && w.summary.pairsVM.source.nonEmpty &&
+      why.status.isEmpty && why.retry.isEmpty && why.why.exists(explanation =>
+        !explanation.facts.exists(_.value == WhyText(WhyTextId.ExcludedReading))
+      )
     else if w.runtime.model.perspective != Perspective.Figures then true
     else
       val view = w.figures.vm
@@ -189,7 +210,22 @@ class ThemeFxSuite extends ShellFxSuite:
     var stable   = false
     val deadline = System.nanoTime + 20_000_000_000L
     while !stable do
-      if System.nanoTime > deadline then fail("the window's values did not settle")
+      if System.nanoTime > deadline then
+        val details = runOnFx {
+          val s = w.summary.summary
+          val p = w.summary.inspectorInputs.panels
+          s"perspective=${w.runtime.model.perspective}; " +
+            s"reports=${s.reports.size}, answered=${s.reports.values.count(_.isInstanceOf[ReportAnswer.Answered])}; " +
+            s"pair=${p.inspected.map(_._2.map(_.getClass.getSimpleName))}; " +
+            s"content=${p.contents.values.map(_.map(_.isRight))}; " +
+            s"maps=${Vector(w.summary.panels.queryView, w.summary.panels.referenceView).map(_.status.get match {
+                case TrialViewStatus.Shown(stage) => s"shown:${stage.map.nonEmpty}";
+                case x                            => x.toString
+              })}; " +
+            s"ladder=${w.summary.contrastVM.ladder.nonEmpty}, pairs=${w.summary.pairsVM.source.nonEmpty}; " +
+            s"why=${w.compareInspector.vm.why.map(_.facts.map(_.value))}"
+        }
+        fail(s"the window's values did not settle: $details")
       Thread.sleep(500)
       fx.awaitLayout()
       val (now, ready) = runOnFx((values(w.root), windowReady(w)))
@@ -266,6 +302,29 @@ class ThemeFxSuite extends ShellFxSuite:
         assert(runOnFx(w.root.getStylesheets.asScala.exists(_.endsWith("/studio.css"))))
         assertEquals(hash(settled(fx, w)), hash(before))
     }
+
+  fxStage.test("stable Compare map placeholders do not qualify as theme-ready values") { fx =>
+    val initial = StoryModels.t2Compare
+    val w       = boot(
+      fx,
+      initial,
+      StoryMoment.T2,
+      project = Some(savedProject(initial)),
+      clock = () => Some(StoryModels.savedAt)
+    )
+    settled(fx, w)
+    assert(runOnFx(windowReady(w)))
+    runOnFx {
+      val pending = (None, Some(PanelText(PanelTextId.MapReading)))
+      w.summary.panels.showMaps(pending, pending)
+    }
+    fx.awaitLayout()
+    val placeholders = runOnFx(values(w.root))
+    Thread.sleep(500)
+    fx.awaitLayout()
+    assertEquals(runOnFx(values(w.root)), placeholders)
+    assert(!runOnFx(windowReady(w)), "unchanged pending map text is not a completed view")
+  }
 
   fxStage.test(
     "MainDark: the dark query and matched roles differ by 20 L*; role pills reach 4.5:1"
