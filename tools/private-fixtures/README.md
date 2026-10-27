@@ -333,3 +333,67 @@ posterior predictive plots. Prior choices and seeds must be recorded before
 fitting. These analyses are exploratory, not a preregistration or a statement of
 causality. Diagnostic criteria follow [Stan's guidance](https://mc-stan.org/learn-stan/diagnostics-warnings.html);
 model arguments follow the [brms reference](https://paulbuerkner.com/brms/reference/brm.html).
+
+## Production-host lifecycle from complete prepared exports
+
+`production.py` uses the ordinary `ProjectLifecycleHost`, import wizard, descriptor
+form, real backend, native archive verifier and figure-bundle exporter. It opens
+no native windows: the FX JVMs use Monocle and the normal machine-wide FX lock.
+A second JVM opens the saved project, reads all query rows and checks the same
+scientific result identity. No fixture backend or in-memory project store is used.
+
+Prepare an external directory explicitly containing `fixations.csv`, `trials.csv`
+and `request.json`. The fixation columns are `participant`, `phase`, `trial`,
+`occurrence`, `ordinal`, `x`, `y`, `onset_ms`, `duration_ms`, `sample_count`. Trial
+columns are `participant`, `phase`, `trial`, `occurrence`, `item`, `response`,
+`display_kind`, `image_file`. Every additional column is retained as a declared
+text attribute. Preserve original columns and source-record identities when
+normalizing an export, and verify that normalization independently.
+
+The request declares `screen_width_px`, `screen_height_px`, `sample_rate_hz`,
+`pixels_per_degree`, `sigma_px`, `focal_phase`, `reference_phase`,
+`expected_unmatched_column`, `expected_unmatched_value`, `geometry_note`, and
+`grid_candidates` (ordered `[columns, rows]` pairs). The API picks the first grid
+within the existing density-cell limit, before computing results. Matching uses
+the first reference occurrence, participant-scoped exact item identity and all
+other distinct items under the same occurrence selection. The attribute selection
+is explicit; a missing old reference remains missing rather than becoming a lure.
+
+```sh
+python3 tools/private-fixtures/production.py \
+  --run-dir /absolute/private/prepared-study \
+  --java "$JAVA_HOME/bin/java"
+```
+
+`--stage api|ui|reopen` resumes only an unattempted stage. Attempted stages and
+failure evidence are never overwritten; prepare a new directory for a rerun.
+`--classpath-file` reuses a compiled classpath belonging to this owned checkout;
+keep its sources and classes fixed throughout the run. CI refuses the workflow.
+The generic journey checks complete admission ledgers, all query rows, table
+cells, actually drawn query/reference maps, source-record navigation, a figure
+bundle and normal project close. Screenshots and exports come from Studio's
+Intaglio scene builders. This is automated software acceptance, not manual
+usability, physical-display or accessibility qualification.
+
+The current demonstration uses duration weighting, cosine and a single 80-pixel
+sigma. Any computational angular adapter must be labelled explicitly in
+`geometry_note` and the saved run. A virtual scale is not acquisition calibration;
+unknown image placement and time provenance remain unknown. Do not interpret
+these exploratory spatial checks as calibrated or temporal evidence.
+
+Native archive budgets remain unchanged. A refusal is evidence of an unsupported
+project size, not permission to raise the limits. Complete participant partitions
+can preserve the numerical analysis when every comparison is within participant:
+prove row/column conservation, keep the full reference pool for each participant,
+fix the same grid and sigma, and compare merged query results with the unpartitioned
+API result. Record every failed larger attempt and declare the partition scope.
+
+`production_reference.R` consumes an explicit external manifest of participant
+map requests and exhaustive matched/control identities. Install a freshly checked
+exact upstream eyesim revision in an external R library first. It evaluates the
+native eyesim maps and both score directions on shared arrays;
+`production_verify.py --reference DIR --repo OWNED_CHECKOUT` independently checks
+maps, scores and the largest native estimator disagreement using the direct
+Gaussian oracle. NumPy is needed only for that independent reference calculation.
+Neither script draws plots. Keep the manifest, raw data, images, outputs and
+failed attempts outside Git; commit only generic code and aggregate receipts.

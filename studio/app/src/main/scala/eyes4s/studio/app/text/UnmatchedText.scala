@@ -34,7 +34,7 @@ object UnmatchedText:
         .mkString(", ")
     case UnmatchedKind.ReferenceNotPairable(references) =>
       "No match · " + references.map(_.trial).mkString(", ") + " cannot be paired"
-    case UnmatchedKind.Undetermined => "No match"
+    case UnmatchedKind.Undetermined | UnmatchedKind.ReferenceNotDeclared => "No match"
 
   private def disposition(d: TrialDisposition): String = d match
     case TrialDisposition.Quarantined(cause) => s"quarantined (${cause.productPrefix})"

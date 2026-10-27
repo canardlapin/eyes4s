@@ -87,6 +87,52 @@ class NativeArtifactRestoreSuite extends munit.FunSuite:
   )
 
   test(
+    "inventory-selected expected-unmatched recipe survives native verification and restore"
+  ) {
+    val rule     = get(eyes4s.plan.ExpectedUnmatchedRule.of("response", Vector("Remembered")))
+    val selected = get(
+      RealPrepared.of(
+        prepared.revision,
+        prepared.dataset,
+        prepared.recipe.copy(expectedUnmatched = Some(rule)),
+        prepared.admitted match
+          case data: AdmittedDataset => data
+          case _                     => fail("Expected live admitted data")
+      )
+    )
+    val live = RealStudyBackend.RealRun(
+      selected,
+      get(selected.work.run),
+      RealStudyBackend.RunOrigin.Computed
+    )
+    val saved  = get(NativeArtifacts.build(run, live, NativeArtifactBudget.Default))
+    val loaded = get(
+      NativeArtifactPackage.verify(
+        saved.files.map((name, bytes) => name -> bytes.map(identity))
+      )
+    )
+    val selectedRef      = ref.copy(archive = CoreBinding.Bound(loaded.facts.result))
+    val selectedRevision = revision.copy(
+      plan = loaded.facts.stamp.plan,
+      recipe = selected.recipe.copy(input = Some(loaded.facts.source)),
+      studio = revision.studio
+    )
+    val cold = get(
+      NativeArtifactRestore.of(loaded, selectedRef, selectedRevision, selected.admitted.spec)
+    )
+    assertEquals(cold.prepared.plan.expectedUnmatched, selected.plan.expectedUnmatched)
+    assertEquals(
+      get(RealResults.of(run, cold)).queryRows,
+      get(RealResults.of(run, live)).queryRows
+    )
+    assert(
+      get(get(RealResults.of(run, cold)).queryRows)
+        .forall(_.status.isInstanceOf[QueryStatus.ByDesign])
+    )
+    assertEquals(loaded.facts.recipeSnapshot.expectedUnmatched, Some(rule))
+  }
+
+  test(
     "materialization retains the checked stored result, plan and input without executing the study"
   ) {
     assert(restored.result eq exported.checked.result)

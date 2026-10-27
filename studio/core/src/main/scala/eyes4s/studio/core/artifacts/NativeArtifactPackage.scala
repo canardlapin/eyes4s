@@ -220,7 +220,9 @@ object NativeArtifactPackage:
           )
         )
       expected <- RealPlan
-        .plan(facts.revision, facts.recipeSnapshot, frame, input)
+        // The selector binds to pre-admission declarations, including absent trials.
+        // The verified ledger retains them; bead g2-unmatched-persistence.
+        .plan(facts.revision, facts.recipeSnapshot, frame, input, ledger.inventory)
         .leftMap(e => NativeArtifactError.InvalidFacts(facts.run, "recipe", e.message))
       nativePlans   = StudyCodecs.trialSimilarity[Px](expected._2)
       nativeResults = StudyResultCodecs.trialRegistered[Px](expected._2)

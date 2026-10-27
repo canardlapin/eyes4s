@@ -265,6 +265,8 @@ enum StudyFinding[K, U <: Unit2D] extends PreflightFinding[K] derives CanEqual:
         case UnmatchedKind.Undetermined        => "."
         case UnmatchedKind.NoReferenceInDesign =>
           "; the trial inventory declares none (by design)."
+        case UnmatchedKind.ReferenceNotDeclared =>
+          "; the trial inventory declares none, and the explicit expected-unmatched selection does not select this trial."
         case UnmatchedKind.ReferenceNotAdmitted(rs) =>
           "; the inventory declares " +
             rs.map(r => s"${r.trial.render} (${r.disposition.label})").mkString(", ") +

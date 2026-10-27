@@ -234,7 +234,7 @@ class UnmatchedReasonsSuite extends munit.FunSuite:
     assertEquals(
       UnmatchedReasons
         .byDesignKeys(p.layout, p.pairing, "study", focal, ledger, Some(selected)),
-      Vector(oldBeach.key, lure.key, novel.key)
+      Vector(oldBeach.key)
     )
     val occurrence2 = get(TrialOccurrence.of(2))
     val select2     =
@@ -243,6 +243,49 @@ class UnmatchedReasonsSuite extends munit.FunSuite:
       UnmatchedReasons.byDesignKeys(p.layout, select2, "study", focal, ledger),
       focal
     )
+  }
+
+  test("an explicitly unselected old probe without a declared reference is not by design") {
+    val missing = Declared(
+      "recognition",
+      "old-without-reference",
+      "missing-scene",
+      TrialDisposition.Admitted,
+      Vector(20)
+    )
+    val all       = declared :+ missing
+    val inventory = this.inventory(all)
+    val focal     = all.filter(_.phase == "recognition").map(_.key)
+    val expected  = get(
+      ExpectedUnmatched.of(
+        "probe",
+        Vector("new"),
+        all.map(t => t.id -> (if t == lure || t == novel then "new" else "old"))
+      )
+    )
+    val p       = plan(input, StudyPairing.default)
+    val reasons = UnmatchedReasons.of(
+      p.layout,
+      p.pairing,
+      "study",
+      Vector(lure.key, novel.key, missing.key),
+      inventory,
+      Some(expected)
+    )
+    assertEquals(reasons.reason(missing.key), Some(UnmatchedKind.ReferenceNotDeclared))
+    assertEquals(reasons.reason(lure.key), Some(UnmatchedKind.NoReferenceInDesign))
+    assertEquals(reasons.reason(novel.key), Some(UnmatchedKind.NoReferenceInDesign))
+    assertEquals(reasons.byDesign, 2)
+    assertEquals(
+      UnmatchedReasons
+        .byDesignKeys(p.layout, p.pairing, "study", focal, inventory, Some(expected)),
+      Vector(lure.key, novel.key)
+    )
+    assertEquals(UnmatchedKind.ReferenceNotDeclared.code, "reference-not-declared")
+    val finding =
+      StudyFinding.UnmatchedFocal[TrialKey, Px](missing.key, UnmatchedKind.ReferenceNotDeclared)
+    assert(finding.message.contains("does not select this trial"))
+    assert(!finding.message.contains("by design"))
   }
 
   test("indexed by-design metadata agrees with occurrence and reference-selection rules") {

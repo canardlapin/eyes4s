@@ -37,7 +37,8 @@ class RealPreviewCursorSuite extends CatsEffectSuite:
   private def admitPair(
       withReference: Boolean,
       focalOutsideWindow: Boolean = false,
-      mixed: Boolean = false
+      mixed: Boolean = false,
+      declareReference: Boolean = true
   ): AdmittedDataset =
     val original = get(document.dataset(StoryMoments.r3).toRight("no dataset"))
     val displays = get(GoldenAssets.rows)
@@ -59,8 +60,9 @@ class RealPreviewCursorSuite extends CatsEffectSuite:
     val missingRef =
       reference.copy(trial = reference.trial.copy(trial = "missing_ref"), item = "missing-item")
     val absent   = focal.copy(trial = focal.trial.copy(trial = "absent_lure"))
-    val selected = if mixed then Vector(focal, reference, lure, missing, missingRef, absent)
-    else Vector(focal, reference)
+    val selected =
+      (if mixed then Vector(focal, reference, lure, missing, missingRef, absent)
+       else Vector(focal, reference)).filter(row => declareReference || row != reference)
     val fixations =
       "participant,phase,trial,occurrence,ordinal,onset_ms,duration_ms,x,y,sample_count\n" +
         selected
@@ -445,6 +447,41 @@ class RealPreviewCursorSuite extends CatsEffectSuite:
         assertEquals(summary.contrasts.noMatch, 0)
         assertEquals(summary.participants.head.byDesign, 1)
     }
+  }
+
+  test(
+    "a nonselected query with no inventory reference remains no-match in preview and result"
+  ) {
+    val data       = admitPair(false, declareReference = false)
+    val rule       = get(eyes4s.plan.ExpectedUnmatchedRule.of("response", Vector("Lure")))
+    val changed    = recipe.copy(expectedUnmatched = Some(rule))
+    val configured =
+      get(RealPrepared.configure(StoryMoments.rev4, StoryMoments.r3, changed, data))
+    for
+      service <- RealPreview.create[IO]
+      opening <- service.begin(configured, onePage).take(1).compile.toVector
+      initial = get(opening.head) match
+        case value: PreviewEvent.Initial => value
+        case other                       => fail(s"expected Initial, got $other")
+      events <- finish(service, initial.id)
+      rows   <- service.rows(configured.revision, get(PageRequest.of(0, 10)))
+      ready = events.collectFirst { case PreviewEvent.Ready(r) => r }.get
+      accepted <- service.accept(ready)(_ => IO.pure(Right(ready.stamp)))
+    yield
+      assertEquals(initial.candidates.byDesignQueries.map(_.value), Some(0))
+      assertEquals(ready.counts.unmatchedQueries.value, 1)
+      assert(get(rows).rows.head.eligibility.isInstanceOf[Eligibility.NoMatch])
+      val prepared = get(accepted)
+      val held     = RealStudyBackend.RealRun(
+        prepared,
+        get(prepared.work.run),
+        RealStudyBackend.RunOrigin.Computed
+      )
+      val result = get(RealResults.of(RunId(92), held))
+      val query  = get(result.queryRows).head
+      assert(query.status.isInstanceOf[QueryStatus.NoMatch])
+      assertEquals(get(result.summary).contrasts.byDesign, Some(0))
+      assertEquals(get(result.summary).contrasts.noMatch, 1)
   }
 
   test(

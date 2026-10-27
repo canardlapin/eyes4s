@@ -1,0 +1,89 @@
+{
+  "schema": 1,
+  "date": "2026-10-27",
+  "status": "numerical-reference-passed; production-lifecycle-qualification-in-progress",
+  "privacy": "No source records, trial/item/participant identifiers, images or private plots in Git. Full receipts and failed attempts retained privately.",
+  "scope": "Exploratory pixel-space processed-export software validation; no acquisition calibration, event-relative timing, biological inference or manuscript replication claim.",
+  "source": {
+    "participants": 103,
+    "fixation_rows": 509182,
+    "encoding_rows": 419462,
+    "testdelay_rows": 89720,
+    "observed_trials": 60922,
+    "offscreen_rows_retained": 2954,
+    "shorter_than_80ms_flagged_not_excluded": 23266,
+    "all_offscreen_map_failures": 2,
+    "successful_maps": 60920,
+    "planned_absent_trials": "unknown; observed-only inventory"
+  },
+  "geometry": {
+    "screen_pixels": [
+      1024,
+      768
+    ],
+    "image_pixels": [
+      800,
+      600
+    ],
+    "tracker_hz": 500,
+    "source": "Hashed local methods documents; extracted paragraphs retained privately.",
+    "unknown": [
+      "image placement",
+      "viewing distance and physical pixels per degree",
+      "export time origin and interval endpoint convention"
+    ],
+    "computation": "Whole-screen viewport; sigma80px;16x12 grid selected before outcome computation by existing20M-cell budget.40px per virtual angular unit adapts current controls only; saved declarations explicitly deny acquisition calibration."
+  },
+  "queries": {
+    "contributing": 6100,
+    "by_design": 6112,
+    "no_match": 1,
+    "selected_pairs": 729948,
+    "selection": "Explicit repetition=new expected-unmatched rule; exact-version participant-scoped items; first encoding occurrence for matched and exhaustive distinct-item controls; all original exposures remain admitted."
+  },
+  "eyesim": {
+    "revision": "b6ccc1bc9967d32ab548db136a27d10dbaa0fd48",
+    "upstream_default_branch": "master",
+    "R": "4.6.1",
+    "algorithm": "Duration-weighted ks KDE; binned=FALSE,supp=3.7,normalized; cosine on explicit pairs. No assumption that eyesim is the oracle.",
+    "reference_manifest_sha256": "197276c28975b17181e90b0a3e5a3adc4f9f69db307d242596b7b4ad43e9b85a",
+    "R_session_sha256": "1f8bafd12559cab41e6c58e8eace795655f8c16402cf9546eefd683cb8b1c9bc"
+  },
+  "comparison": {
+    "counts": {
+      "maps": 60920,
+      "queries": 6100,
+      "selected_pairs": 729948,
+      "opposite_contrast_signs": 384,
+      "participants": 103
+    },
+    "maximum_absolute": {
+      "eyes4s_map_oracle": 1.8041124150158794e-16,
+      "eyesim_map_oracle": 4.9999978423096806e-09,
+      "native_map_abs": 0.04987101481315517,
+      "api_score_oracle": 1.5543122344752192e-15,
+      "eyesim_on_eyes4s_score": 4.440892098500626e-16,
+      "eyesim_score_oracle": 1.6653345369377348e-15,
+      "native_contrast_abs": 0.21659985617122168
+    },
+    "map_tolerance": {
+      "absolute": 2e-13,
+      "relative": 2e-12
+    },
+    "score_tolerance": {
+      "absolute": 2e-12,
+      "relative": 2e-12
+    },
+    "native_difference": "Largest native corrected-score difference0.21659985617122168;384opposite contrast signs. Independent staged reconstruction attributes dominant difference to point binning at coarse resolution; endpoint locations,support and decimal rounding recorded separately. Native estimators are not declared equivalent.",
+    "reverse_bridge": "All729948 eyesim-array pairs through eyes4s; maximum absolute score difference1.9984014443252818e-15."
+  },
+  "result_sha256": "3af5c241cd88ce00ba6e50af3a9b9728ad9f5b04520f89aa00dd0d455b29799c",
+  "retained_negative_paths": [
+    "Initial old-probe missing reference misclassified by-design; classification fix leaves full-cohort numerical digest unchanged.",
+    "All-cohort native archive refusal:1870156structuralrows>1000000.",
+    "20-participant native archive refusal:619605491bytes>268435456;576seconds.",
+    "Five-participant initial archive refusal: expectedUnmatched reconstruction omitted retained inventory."
+  ],
+  "followup": "g2-archive-scaling remains open; no archive budget limits raised.",
+  "g2_closed": false
+}

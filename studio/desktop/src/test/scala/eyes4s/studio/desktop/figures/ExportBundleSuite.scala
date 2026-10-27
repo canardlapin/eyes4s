@@ -532,6 +532,25 @@ class ExportBundleSuite extends munit.FunSuite:
     }
   }
 
+  test("results.csv preserves by-design queries and missing scores at every scale") {
+    served.map { s =>
+      val failed     = s.rows.find(_.status.isFailed).getOrElse(fail("no failed query"))
+      val diagnostic = failed.status.diagnosticAt(0).getOrElse(fail("no diagnostic"))
+      val row        = failed.copy(status = QueryStatus.ByDesign(diagnostic))
+      val rows       = csv(files(s.copy(rows = Vector(row)))("results.csv"))
+      assertEquals(rows.size, s.summary.scaleLabels.size)
+      rows.foreach { r =>
+        assertEquals(r("status"), "by-design")
+        assertEquals(r("reason__valid"), "true")
+        Vector("m", "b", "d").foreach { name =>
+          assertEquals(r(name), "")
+          assertEquals(r(s"${name}__valid"), "false")
+          assertEquals(r(s"${name}_absence"), "by-design")
+        }
+      }
+    }
+  }
+
   test("results.csv retains each scale failure and refuses an incomplete vector") {
     served.map { s =>
       val failed      = s.rows.find(_.status.isFailed).getOrElse(fail("no failed query"))

@@ -38,6 +38,13 @@ enum UnmatchedKind derives CanEqual:
     */
   case NoReferenceInDesign
 
+  /** An explicit expected-unmatched selection does not select this focal trial,
+    * but its pairing key has no reference in the supplied inventory. An observed
+    * inventory's absence does not establish an intentionally unmatched design
+    * (bead g2-reference-absence).
+    */
+  case ReferenceNotDeclared
+
   /** The inventory declares such trials and admission admitted none of them:
     * each with its disposition, in inventory order.
     */
@@ -52,6 +59,7 @@ enum UnmatchedKind derives CanEqual:
   def code: String = this match
     case Undetermined            => "undetermined"
     case NoReferenceInDesign     => "no-reference-in-design"
+    case ReferenceNotDeclared    => "reference-not-declared"
     case ReferenceNotAdmitted(_) => "reference-not-admitted"
     case ReferenceNotPairable(_) => "reference-not-pairable"
 
@@ -107,8 +115,10 @@ object UnmatchedReasons:
         .filter(t => selected.forall(_ == t.identity.occurrence.value))
       val admitted = references.filter(_.disposition == TrialDisposition.Admitted)
       key -> (
-        if expected.exists(_.contains(layout, key)) || references.isEmpty then
-          UnmatchedKind.NoReferenceInDesign
+        if expected.exists(_.contains(layout, key)) then UnmatchedKind.NoReferenceInDesign
+        else if references.isEmpty then
+          if expected.isDefined then UnmatchedKind.ReferenceNotDeclared
+          else UnmatchedKind.NoReferenceInDesign
         else if admitted.isEmpty then
           UnmatchedKind.ReferenceNotAdmitted(
             references.map(t => DeclaredReference(t.identity, t.disposition))
@@ -119,8 +129,9 @@ object UnmatchedReasons:
 
   /** Focal keys which cannot have a reference under the declared design.
     * Unlike `of`, this accepts every admitted focal key, before pair counting.
-    * Explicit selections and absent inventory references use the same pairing
-    * key and occurrence rules as completed unmatched reasons. Other reasons
+    * An explicit selection supplies the by-design keys; an unselected key's
+    * missing reference remains undeclared. Without a selection, absent inventory
+    * references retain the inventory-only design convention. Other reasons
     * are deliberately not exposed for keys that may still pair.
     */
   def byDesignKeys[K](
@@ -153,13 +164,15 @@ object UnmatchedReasons:
       )
       .toSet
     focal.filter { key =>
-      expected.exists(_.contains(layout, key)) || !declared(
-        (
-          layout.participant(key),
-          layout.stimulus(key),
-          if sameOccurrence then layout.occurrence.map(_(key).value) else None
+      expected.fold(
+        !declared(
+          (
+            layout.participant(key),
+            layout.stimulus(key),
+            if sameOccurrence then layout.occurrence.map(_(key).value) else None
+          )
         )
-      )
+      )(_.contains(layout, key))
     }
 
   /** Declared expected-unmatched trials need no admission inference. */

@@ -62,6 +62,7 @@ def implementation():
     files += [ROOT / "tools/study-cli" / name for name in
               ("PrivateFixationCli.scala", "SharedDensityParityCli.scala", "EndToEndDensityCli.scala", "PrivateMultiMatchCli.scala", "PlannedDensityCheckCli.scala")]
     files += sorted((ROOT / "studio/desktop/src/test/scala/eyes4s/studio/desktop/journey").glob("PrivateDensity*.scala"))
+    files += sorted((ROOT / "studio/desktop/src/test/scala/eyes4s/studio/desktop/journey").glob("PrivateProduction*.scala"))
     files += sorted((ROOT / "studio/core/src/main/scala/eyes4s/studio/core/scanpath").glob("*.scala"))
     files += sorted((ROOT / "studio/desktop/src/main/scala/eyes4s/studio/desktop/scanpath").glob("*.scala"))
     files += [ROOT / "studio/desktop/src/test/scala/eyes4s/studio/desktop/journey/ScanpathWorkbenchFxSuite.scala"]

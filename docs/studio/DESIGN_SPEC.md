@@ -121,6 +121,10 @@ stale) · "Analysis · rerun" (draft → Save & run) · "Reporting · no rerun" 
   category separate from data-error "no match", in every count strip. A known category with no
   admitted members shows 0; an unavailable category shows n/a. An unadmitted focal trial
   belongs to the unadmitted count, so the four query categories remain a partition.
+  With an explicit expected-unmatched selection, an unselected query whose reference
+  is absent from the supplied inventory is "no match", not "by design". In particular,
+  an observed-only export cannot turn an old probe's undeclared study trial into a lure.
+  Without an explicit selection, the existing inventory-only design convention applies.
 - Duplicate references: eyes4s preflight reports DuplicateTrial as a Warning; ByLeft reduction
   would AVERAGE two matched pairs. A "Studio check" (labelled as such, not eyes4s) blocks the run:
   "Matched cardinality ≠ 1 for 5 queries — choose occurrence".

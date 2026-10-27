@@ -81,7 +81,8 @@ object BundleTables:
   )
 
   /** A query's outcome. */
-  val Statuses: Vector[String] = Vector("contributing", "failed", "no-match", "not-admitted")
+  val Statuses: Vector[String] =
+    Vector("contributing", "failed", "no-match", "not-admitted")
 
   private def text(name: String, meaning: String) =
     ResultColumn(name, ResultColumnType.Utf8, false, "text", meaning)
@@ -93,7 +94,7 @@ object BundleTables:
     ResultColumn(name, ResultColumnType.Int64, false, "count", meaning)
   private def optionalCount(name: String, meaning: String) =
     ResultColumn(name, ResultColumnType.Int64, true, "count", meaning)
-  private def score(name: String, meaning: String, absences: Vector[String] = Absences) =
+  private def score(name: String, meaning: String, absences: Vector[String]) =
     Vector(
       ResultColumn(name, ResultColumnType.Float64, true, "score", meaning),
       ResultColumn(
@@ -123,7 +124,11 @@ object BundleTables:
       "difference" -> TableJson.text("D = M - B: matched minus control mean")
     )
 
-  private val queryColumns: Vector[ResultColumn] =
+  private def queryColumns(byDesign: Boolean): Vector[ResultColumn] =
+    // Preserve existing schemas and table identities for runs without this outcome.
+    // A selected-unmatched run adds its emitted label; bead g2-unmatched-persistence.
+    val statuses = if byDesign then Statuses :+ "by-design" else Statuses
+    val absences = if byDesign then Absences :+ "by-design" else Absences
     Vector(
       text("participant", "participant id"),
       text("phase", "query phase"),
@@ -135,10 +140,14 @@ object BundleTables:
       optionalCount("controls", "control references the query was compared with"),
       count("scale", "estimation scale index, from 0"),
       text("sigma", "estimation scale"),
-      label("status", "what became of the query", Statuses),
+      label("status", "what became of the query", statuses),
       note("reason", "why the query has no scores, as eyes4s reported it")
-    ) ++ score("m", "matched similarity") ++ score("b", "control mean similarity") ++
-      score("d", "M minus B")
+    ) ++ score("m", "matched similarity", absences) ++ score(
+      "b",
+      "control mean similarity",
+      absences
+    ) ++
+      score("d", "M minus B", absences)
 
   private def status(s: QueryStatus, scale: Int): (String, Option[String]) = s match
     case QueryStatus.Contributing(_, _, _)       => ("contributing", None)
@@ -204,7 +213,7 @@ object BundleTables:
         ResultTable
           .of(
             ResultFamily.StudyContrasts,
-            queryColumns,
+            queryColumns(rows.exists(_.status.isInstanceOf[QueryStatus.ByDesign])),
             cells,
             context(source, summary.scaleLabels)
           )
