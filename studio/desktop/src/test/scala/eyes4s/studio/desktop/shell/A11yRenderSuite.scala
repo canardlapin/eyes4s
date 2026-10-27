@@ -197,6 +197,31 @@ class A11yRenderSuite extends ShellFxSuite:
       assertEquals(runOnFx(A11yChecks.unmarked(w.root)), Vector.empty[String])
     }
 
+  fxStage.test("the focus audit realizes newly served virtual participant rows") { fx =>
+    val w = boot(fx, StoryModels.t3Summary, StoryMoment.T3)
+    eventually(fx, "all participant rows are served")(w.summary.participants.rows.size == 24)
+    runOnFx {
+      val pane  = w.summary.participants.node.getParent.asInstanceOf[javafx.scene.layout.VBox]
+      val fresh = eyes4s.studio.desktop.compare.ParticipantsNavigatorView(_ => (), _ => ())
+      fresh.render(
+        eyes4s.studio.app.compare.ParticipantsNavigatorVM(
+          "Participants",
+          "All rows",
+          None,
+          w.summary.participants.rows
+        )
+      )
+      pane.getChildren.setAll(fresh.node)
+      pane.applyCss()
+      try
+        assertEquals(Option(fresh.node.lookup(".participants-cursor")), None)
+        assert(A11yChecks.focusable(pane).contains(pane))
+        assertEquals(A11yChecks.unmarked(pane), Vector.empty[String])
+        assert(Option(fresh.node.lookup(".participants-cursor")).nonEmpty)
+      finally fresh.dispose()
+    }
+  }
+
   perspectives.foreach { (name, model, moment) =>
     fxStage.test(s"$name: no two Tab stops share a role and a name") { fx =>
       val w = settled(fx, boot(fx, model(), moment))

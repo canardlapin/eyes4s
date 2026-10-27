@@ -281,6 +281,10 @@ object A11yChecks:
 
   /** The Tab stops drawn the same focused and not. */
   def unmarked(root: Parent): Vector[String] =
+    // Virtual cells are created during layout, after their report rows arrive.
+    // Compare actual drawn rows, not the CSS-only state before realization.
+    root.applyCss()
+    root.layout()
     focusable(root).flatMap { n =>
       val (before, after) = (as(n, false), as(n, true))
       // Back to the state JavaFX holds.

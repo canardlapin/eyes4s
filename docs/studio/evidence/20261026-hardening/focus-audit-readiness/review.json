@@ -1,0 +1,35 @@
+{
+  "schema": 1,
+  "priorCandidate": "bad4f31e53cea7d036f32d33a1da1dd92c7b7535",
+  "failedCase": "A11yRenderSuite.compare-t3, dark: every Tab stop is drawn differently when focused",
+  "cause": "The CSS-only audit could run after report rows arrived but before VirtualFlow layout realized their cursor graphic. It compared two unrealized states, so no row focus border could differ.",
+  "fix": "Apply CSS and complete layout before inspecting focusable nodes. Production focus styling and behavior are unchanged.",
+  "regression": "Create a fresh served ParticipantsNavigatorView in the live dock; assert no cursor graphic exists before audit, require an empty unmarked result and a realized cursor afterward. Removing layout deterministically fails exactly this case.",
+  "focusedCasesPassed": 45,
+  "mutation": {
+    "cases": 40,
+    "failed": 1,
+    "case": "the focus audit realizes newly served virtual participant rows"
+  },
+  "restoredCasesPassed": 40,
+  "studioStylePassed": true,
+  "productionChanged": false,
+  "files": [
+    {
+      "path": "focused-pass.log.gz",
+      "sha256": "13e645e6289ede7c9f970cdfe368db8c67de764c7381ce15cfda398b5f5da973"
+    },
+    {
+      "path": "missing-layout-mutant.log.gz",
+      "sha256": "a658232e0287c94ea44a248f352e8941f4e0eef5c7851fafbe41281953d90977"
+    },
+    {
+      "path": "prior-full-studio-failure.log.gz",
+      "sha256": "b727cd2e13233238d87a7cb7d620f55092e2bfe6671e2ce3be8d3e7d68cf8dc9"
+    },
+    {
+      "path": "restored-pass-and-style.log.gz",
+      "sha256": "ff6d6516d5882803f791624e8b4cf0d8119a8f5520addde8fa7e90d8707aa602"
+    }
+  ]
+}
