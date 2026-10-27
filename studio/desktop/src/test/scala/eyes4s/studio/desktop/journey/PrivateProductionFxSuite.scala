@@ -385,13 +385,27 @@ class PrivateProductionFxSuite extends ShellFxSuite:
           )
           dispatch(fx, w, Intent.ShowRun(RunId(1)))
           dispatch(fx, w, Intent.SwitchPerspective(Perspective.Compare))
+          dispatch(
+            fx,
+            w,
+            Intent.FocusPane(get(eyes4s.studio.app.layout.PaneId.of("compare.query-table")))
+          )
           until(fx, "complete query table served") {
             w.summary.summary.queries.exists {
               case QueriesAnswer.Answered(rows) => rows.size == expected.size
               case _                            => false
             }
           }
+          capture(fx, root, "plot-requested")
+          var plotPoll = 0
           until(fx, "participant and scale-profile plots are drawn", 60.seconds) {
+            plotPoll += 1
+            if plotPoll % 100 == 1 then
+              val vm = w.summary.vm
+              println(
+                s"[private-production/plots] participant=${vm.participantPlot.map(_.fold(identity, p => s"served(${p.rows.size})"))}; profile=${vm.profile.map(_.fold(identity, p => s"served(${p.rows.size})"))}; layout=${w.runtime.model.layout}"
+              )
+
             Vector(w.summary.participantPlot, w.summary.scaleProfile).forall { twin =>
               twin.status.get match
                 case eyes4s.studio.desktop.plot.PlotTwinStatus.Shown(_)          => true
@@ -405,11 +419,6 @@ class PrivateProductionFxSuite extends ShellFxSuite:
           until(fx, "query table view model rendered") {
             w.summary.vm.queries.exists(_.isRight)
           }
-          dispatch(
-            fx,
-            w,
-            Intent.FocusPane(get(eyes4s.studio.app.layout.PaneId.of("compare.query-table")))
-          )
           until(fx, "query table is visible and drawing rows") { w.summary.queryTable.onScreen }
           val table = get(runOnFx(w.summary.vm.queries).get)
           assertEquals(table.rows.size, found.size)
