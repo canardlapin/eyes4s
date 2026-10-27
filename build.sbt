@@ -1352,6 +1352,7 @@ lazy val studioDesktop = project
   .dependsOn(studioLocalRefs(intaglioLocal, "javafxJVM", "pdfJVM", "java2dJVM"): _*)
   .dependsOn(studioLocalRefs(scaladockLocal, "core", "fx"): _*)
   .settings(commonSettings)
+  .settings(StudioPackaging.settings)
   .settings(
     name := "eyes4s-studio-desktop",
     Compile / resourceGenerators += Def.task {
@@ -1821,6 +1822,23 @@ lazy val studioMacosJob = WorkflowJob(
       List("python3 tools/studio-visual-parity/check.py --allow-functional-only"),
       name = Some("Require all30 native macOS functional states")
     ),
+    WorkflowStep.Run(
+      List(
+        "python3 tools/studio-package/build.py --output target/studio-package/ci",
+        "python3 tools/studio-package/native-smoke.py --package target/studio-package/ci --allow-visible"
+      ),
+      name = Some("Build the internal macOS app and check its bundled runtime")
+    ),
+    WorkflowStep.Use(
+      UseRef.Public("actions", "upload-artifact", "v4"),
+      name = Some("Upload the macOS candidate and package receipts"),
+      cond = Some("always()"),
+      params = Map(
+        "name" -> "eyes-studio-macos-${{ github.sha }}",
+        "path" -> "target/studio-package/ci/*.zip\ntarget/studio-package/ci/*.json\ntarget/studio-package/ci/*.log\ntarget/studio-package/ci/runtime-check/package-check.json\ntarget/studio-package/ci/native-smoke/*.json\ntarget/studio-package/ci/native-smoke/*.png\ntarget/studio-package/ci/native-smoke/*.log\ntarget/studio-package/ci/native-smoke/*error.txt",
+        "if-no-files-found" -> "warn"
+      )
+    ),
     WorkflowStep.Use(
       UseRef.Public("actions", "upload-artifact", "v4"),
       name = Some("Upload macOS functional matrix and full Tab transcript"),
@@ -1837,7 +1855,7 @@ lazy val studioMacosJob = WorkflowJob(
   oses = List("macos-15"),
   scalas = Nil,
   javas = List(studioJdk),
-  timeoutMinutes = Some(60)
+  timeoutMinutes = Some(90)
 )
 
 // studio.yml: rendered with the same generator as checks.yml, and listed in
@@ -1849,6 +1867,7 @@ lazy val studioWorkflowPaths = List(
   "tools/studio-fixture/**",
   "tools/studio-e2e/**",
   "tools/studio-visual-parity/**",
+  "tools/studio-package/**",
   "docs/studio/fixture/**",
   "build.sbt",
   "project/**",

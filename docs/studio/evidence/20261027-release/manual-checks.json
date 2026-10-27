@@ -1,0 +1,73 @@
+{
+  "schema": 1,
+  "status": "not-run",
+  "candidate": null,
+  "package_sha256": null,
+  "installation": {
+    "os_required": "macOS 14 VM without JDK",
+    "observed": null,
+    "status": "not-run"
+  },
+  "distribution_decision": null,
+  "voiceover": {
+    "status": "not-run",
+    "speech_transcript": null
+  },
+  "physical_retina": {
+    "status": "not-run",
+    "backing_scale": null,
+    "observations": null
+  },
+  "usability": {
+    "protocol": "docs/studio/USABILITY.md",
+    "minimum_passing": 4,
+    "required_observed": 5,
+    "researchers": [
+      {
+        "id": "R1",
+        "status": "not-run",
+        "comparison": null,
+        "exclusion_and_freshness": null,
+        "meaning": null,
+        "assistance": null,
+        "evidence": null
+      },
+      {
+        "id": "R2",
+        "status": "not-run",
+        "comparison": null,
+        "exclusion_and_freshness": null,
+        "meaning": null,
+        "assistance": null,
+        "evidence": null
+      },
+      {
+        "id": "R3",
+        "status": "not-run",
+        "comparison": null,
+        "exclusion_and_freshness": null,
+        "meaning": null,
+        "assistance": null,
+        "evidence": null
+      },
+      {
+        "id": "R4",
+        "status": "not-run",
+        "comparison": null,
+        "exclusion_and_freshness": null,
+        "meaning": null,
+        "assistance": null,
+        "evidence": null
+      },
+      {
+        "id": "R5",
+        "status": "not-run",
+        "comparison": null,
+        "exclusion_and_freshness": null,
+        "meaning": null,
+        "assistance": null,
+        "evidence": null
+      }
+    ]
+  }
+}

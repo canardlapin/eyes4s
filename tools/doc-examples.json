@@ -72,7 +72,10 @@
     "docs/ARCHIVE_MEMORY.md": "public guide",
     "docs/DOMAIN_CONSTRUCTORS.md": "public guide",
     "docs/MULTIMATCH_ALIGNMENT.md": "public guide",
-    "docs/PROJECT_PREREQUISITES.md": "public guide"
+    "docs/PROJECT_PREREQUISITES.md": "public guide",
+    "docs/BINARY_COMPATIBILITY.md": "public guide",
+    "docs/SCALADOC_RUNTIME.md": "public guide",
+    "docs/RELEASE_READINESS.md": "internal decision or historical evidence"
   },
   "fences": {
     "README.md": {

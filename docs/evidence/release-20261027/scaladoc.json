@@ -1,0 +1,19 @@
+{
+  "exit": 0,
+  "timed_out": false,
+  "elapsed_seconds": 34.745426583000004,
+  "java_home": "/Users/bbuchsbaum/Library/Java/JavaVirtualMachines/temurin-25.0.4.1+1.jdk/Contents/Home",
+  "command": [
+    "sbt",
+    "-batch",
+    "-J-Xmx4g",
+    "rootJVM/doc"
+  ],
+  "schema": 1,
+  "scope": "First all-module JVM doc generation in a fresh standalone clone; existing compile products, no pre-existing API output",
+  "base_commit": "01628cbd441ad5de1599adf3c43a0d129ace2a6f",
+  "source_state": "Packaging-only development edits; library sources unchanged",
+  "workaround": false,
+  "log_sha256": "e138ad4e5918db73759761a5304e29438b6c6e8c3fa3b461eca051f6aec5dcbf",
+  "claim": "Observed pass on JDK25.0.4.1; does not identify the cause or prove a fix in the older JDK25.0.1"
+}

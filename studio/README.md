@@ -170,3 +170,11 @@ annotation slots are recorded in full, together with the actual scene size, at
 structural golden is `docs/studio/a11y/tab-order-results.txt`. Participant activation
 opens its query group unless the user explicitly closed it, and retains the exact
 overall report reference.
+
+## Internal macOS application
+
+See [Packaging](../docs/studio/PACKAGING.md) for the bundled-runtime build, package
+check, architecture-specific ZIP receipts and clean-machine acceptance script.
+`python3 tools/studio-package/build.py --output <new-directory>` builds from a
+committed checkout without opening an OS window. This is an internal candidate;
+public signing, notarization and clean macOS 14 acceptance remain separate gates.

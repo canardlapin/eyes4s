@@ -10,10 +10,10 @@ name: Studio
 on:
   pull_request:
     branches: ['**', '!update/**', '!pr/**']
-    paths: [studio/**, fixtures/studio-golden/**, fixtures/studio-bundles/**, tools/studio-fixture/**, tools/studio-e2e/**, tools/studio-visual-parity/**, docs/studio/fixture/**, build.sbt, project/**, .github/workflows/studio.yml, kernel/**, core/**, detect/**, surface/**, aoi/**, compare/**, design/**, plan/**, results/**, codec/**, fs2/**]
+    paths: [studio/**, fixtures/studio-golden/**, fixtures/studio-bundles/**, tools/studio-fixture/**, tools/studio-e2e/**, tools/studio-visual-parity/**, tools/studio-package/**, docs/studio/fixture/**, build.sbt, project/**, .github/workflows/studio.yml, kernel/**, core/**, detect/**, surface/**, aoi/**, compare/**, design/**, plan/**, results/**, codec/**, fs2/**]
   push:
     branches: ['**', '!update/**', '!pr/**']
-    paths: [studio/**, fixtures/studio-golden/**, fixtures/studio-bundles/**, tools/studio-fixture/**, tools/studio-e2e/**, tools/studio-visual-parity/**, docs/studio/fixture/**, build.sbt, project/**, .github/workflows/studio.yml, kernel/**, core/**, detect/**, surface/**, aoi/**, compare/**, design/**, plan/**, results/**, codec/**, fs2/**]
+    paths: [studio/**, fixtures/studio-golden/**, fixtures/studio-bundles/**, tools/studio-fixture/**, tools/studio-e2e/**, tools/studio-visual-parity/**, tools/studio-package/**, docs/studio/fixture/**, build.sbt, project/**, .github/workflows/studio.yml, kernel/**, core/**, detect/**, surface/**, aoi/**, compare/**, design/**, plan/**, results/**, codec/**, fs2/**]
 
 permissions:
   actions: none
@@ -198,7 +198,7 @@ jobs:
         os: [macos-15]
         java: [temurin@25]
     runs-on: ${{ matrix.os }}
-    timeout-minutes: 60
+    timeout-minutes: 90
     steps:
       - name: Checkout current branch (full)
         uses: actions/checkout@v6
@@ -233,6 +233,27 @@ jobs:
 
       - name: Require all30 native macOS functional states
         run: python3 tools/studio-visual-parity/check.py --allow-functional-only
+
+      - name: Build the internal macOS app and check its bundled runtime
+        run: |
+          python3 tools/studio-package/build.py --output target/studio-package/ci
+          python3 tools/studio-package/native-smoke.py --package target/studio-package/ci --allow-visible
+
+      - name: Upload the macOS candidate and package receipts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: eyes-studio-macos-${{ github.sha }}
+          path: |
+            target/studio-package/ci/*.zip
+            target/studio-package/ci/*.json
+            target/studio-package/ci/*.log
+            target/studio-package/ci/runtime-check/package-check.json
+            target/studio-package/ci/native-smoke/*.json
+            target/studio-package/ci/native-smoke/*.png
+            target/studio-package/ci/native-smoke/*.log
+            target/studio-package/ci/native-smoke/*error.txt
+          if-no-files-found: warn
 
       - name: Upload macOS functional matrix and full Tab transcript
         if: always()

@@ -1,0 +1,28 @@
+{
+  "schema": 1,
+  "date": "2026-10-27",
+  "status": "provenance-blocked",
+  "prior_audit_reproduced": true,
+  "private_receipt_sha256": "ce98cdcd3f1bcfb9de7551f46a1adcd1276a7d371671017d94642555cc028ded",
+  "source_policy": "Retain all exported rows; flags and eligibility dispositions separately. No source data or derived records in Git.",
+  "findings": {
+    "pic_sequences": "Published image and screen pixel geometry available; scanner physical calibration and fixation-export timing/boundary provenance unresolved.",
+    "pcmri": "Numeric onset/duration relationships reproduce; physical geometry and retrieval event origin remain unsupported, with mixed endpoint conventions.",
+    "behavioral_pattern_completion": "Stored methods identify screen/image pixel sizes and tracker rate; viewing distance/pixels-per-degree and placement unresolved."
+  },
+  "production_harness": "tools/private-fixtures/end_to_end.py --ui / PrivateDensityFxSuite",
+  "harness_requires": [
+    "positive declared screen width/height",
+    "positive declared sample rate",
+    "positive declared pixels per degree and a geometry provenance note",
+    "explicit phase/trial/item identity",
+    "source-row eligibility accounting before any cropping"
+  ],
+  "not_run_reason": "No source-verified physical calibration found. Supplying an assumed pixels-per-degree value would test a declared synthetic calibration, not establish acquisition provenance.",
+  "pending": [
+    "Authoritative calibration/timing declaration, or owner-approved narrower spatial software-validation qualification",
+    "Production import, review, exclusions, recipe controls, save/run, inspect, export and fresh reopen on that frozen request",
+    "API result and pair-identity comparison plus screenshots through Studio/Intaglio"
+  ],
+  "g2_closed": false
+}

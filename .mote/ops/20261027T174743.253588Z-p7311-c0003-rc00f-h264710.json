@@ -1,0 +1,1 @@
+{"actor":"codex-release-candidate-20261027","entity":"bd-01M3EE1CZ6B7VE87N1HVK9MK5C","kind":"note","note_kind":"progress","op":"20261027T174743.253588Z-p7311-c0003-rc00f-h264710","text":"Bounded recheck on current registered JDK25, retaining failure if any; qualify supported JDK17/21 route separately using current hosted receipts.","ts":"2026-10-27T17:47:43.253588Z","v":1}

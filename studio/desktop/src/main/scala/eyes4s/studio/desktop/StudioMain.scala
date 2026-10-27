@@ -31,6 +31,9 @@ import eyes4s.studio.desktop.platform.{
   JavaFxFonts
 }
 import eyes4s.studio.desktop.project.ProjectLifecycleHost
+import eyes4s.studio.desktop.packaging.{MacProjectFiles, PackageCheck, ProjectLaunch}
+import eyes4s.studio.app.project.ProjectOperation
+import eyes4s.studio.core.platform.HostPath
 import javafx.application.{Application, Platform}
 import eyes4s.studio.desktop.explore.{NavigatorDisplays, SessionBackend}
 import eyes4s.studio.app.report.LogState
@@ -49,8 +52,9 @@ final class StudioApplication extends Application:
   private var lifecycle: Option[ProjectLifecycleHost]                 = None
   private var appearancePreferences: Option[AppearancePreferenceHost] = None
 
-  private var owner: Option[Stage] = None
-  private lazy val platform        = DesktopPlatform.create(
+  private var nativeFiles: Option[() => Unit] = None
+  private var owner: Option[Stage]            = None
+  private lazy val platform                   = DesktopPlatform.create(
     getHostServices.showDocument,
     () => owner
   )
@@ -76,6 +80,7 @@ final class StudioApplication extends Application:
     problems.foreach(m => System.err.println(PreferencesLocation.redact(m)))
 
   override def start(stage: Stage): Unit =
+    nativeFiles = Some(MacProjectFiles.install(StudioMain.launchRequests.submit))
     owner = Some(stage)
     stage.setTitle(StudioMain.title)
     // S1.12: the log, then the error reporter, before anything can fail.
@@ -125,8 +130,18 @@ final class StudioApplication extends Application:
     lifecycle = Some(projects)
     projects.start()
     stage.show()
+    StudioMain.launchRequests.attach(path =>
+      Platform.runLater(() =>
+        HostPath.of(path) match
+          case Right(chosen) => projects.request(ProjectOperation.Open, Some(chosen))
+          case Left(error)   => System.err.println(error.message)
+      )
+    )
 
   override def stop(): Unit =
+    nativeFiles.foreach(_())
+    nativeFiles = None
+    StudioMain.launchRequests.detach()
     lifecycle.foreach(_.shutdown())
     lifecycle = None
     appearancePreferences.foreach(_.close.unsafeRunSync())
@@ -190,5 +205,14 @@ object StudioMain:
       )
       ._1
 
+  private[desktop] val launchRequests: ProjectLaunch = ProjectLaunch()
+
   def main(args: Array[String]): Unit =
-    Application.launch(classOf[StudioApplication], args*)
+    args.toList match
+      case "--package-check" :: output :: Nil => PackageCheck.run(java.nio.file.Path.of(output))
+      case "--package-check" :: _             =>
+        System.err.println("Usage: Eyes Studio --package-check <new output directory>")
+        sys.exit(2)
+      case _ =>
+        launchRequests.submit(args.toVector)
+        Application.launch(classOf[StudioApplication])
