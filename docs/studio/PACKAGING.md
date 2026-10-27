@@ -3,7 +3,8 @@
 S10.7 builds an internal test application. This is not a public 1.0 release and
 is not signed with Developer ID or notarized. macOS requires a positive first version component, so package metadata uses
 1.0.0 for this internal candidate; this is not a published release version. `package.json` and the application's About/error report identify the exact
-source commit. Distribution policy remains an owner decision.
+source commit. The owner selected unsigned internal testing on 2026-10-27; public signing and
+notarization are deferred.
 
 ## Build
 
@@ -70,7 +71,7 @@ SHA, architecture, OS build, runtime receipt and signing/notarization decision.
 1. Verify the ZIP hash, unpack, move the app to Applications and launch it from
    Finder. Record Gatekeeper's actual response; stop and report a refusal.
 2. Open the bundled example through File → Open Example. Choose a writable copy
-   destination. Visit Data, Analysis, Compare, Results and Figures; retain
+   destination. Visit Data, Explore, Analysis, Compare and Figures; retain
    screenshots and confirm inputs, recipe and analysis identifiers are visible.
 3. Save the project, quit, and double-click the saved `.eyes` package in Finder.
    Confirm it opens in Studio, with the same revisions, runs and stored inputs.
@@ -84,7 +85,7 @@ SHA, architecture, OS build, runtime receipt and signing/notarization decision.
    `A11Y_AUDIT.md`. Record actual backing scale, input method and observed output.
 
 Keep step-level pass/fail/not-run results and screenshots. S10.7 stays open until
-the VM journey and distribution decision are recorded. A hosted macOS 15 run
+the VM journey is recorded; the internal unsigned distribution decision is recorded. A hosted macOS 15 run
 cannot silently replace the specified macOS 14 VM.
 
 ## macOS document-event bridge

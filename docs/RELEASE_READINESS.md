@@ -75,7 +75,7 @@ comparison are proved. A locally packaged artifact is not a Central release.
 Studio G2 still needs a provenance-declared real-study production journey. Its
 private source audit cannot invent acquisition geometry or event origins.
 S10.5 needs actual VoiceOver/physical Retina observations; S10.7 needs the specified
-clean-machine installation and signing decision; S10.8 needs five real researchers.
+clean-machine installation (unsigned internal distribution was selected by the owner); S10.8 needs five real researchers.
 The [prepared manual packet](studio/evidence/20261027-release/manual-checks.json)
 starts unobserved. Their implementation and test infrastructure do not close these
 gates. Meridian integration remains deferred.

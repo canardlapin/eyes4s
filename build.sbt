@@ -179,7 +179,8 @@ def eyeLinkPerformanceWorkflow: String =
     |        uses: actions/upload-artifact@v4
     |        with:
     |          name: eyelink-performance-${{ github.sha }}
-    |          path: target/eyelink-performance-scheduled.tsv
+    |          path: io/.jvm/target/eyelink-performance-scheduled.tsv
+    |          include-hidden-files: true
     |          if-no-files-found: error
     |""".stripMargin
 
