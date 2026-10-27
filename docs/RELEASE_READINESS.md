@@ -53,8 +53,9 @@ retains local and hosted logs, failures, skips and scope limits.
 
 - The [recording importer court](formats/eyelink-asc.md#streaming-memory-and-performance-evidence) records a
   two-hour 2000 Hz binocular stream, physical lines/bytes, elapsed time, heap and
-  allocation limits on its named machine. Its raw receipt remains historical;
-  it is not a new benchmark of the package candidate.
+  allocation limits on its named machine. The clean scheduled
+  artifact at `1872c479` supplements the retained historical baseline; its source
+  archive identity and all original thresholds were independently verified.
 - [Archive memory](ARCHIVE_MEMORY.md) qualifies a bounded density workload and
   independent writer/reader processes under a 1 GiB heap. GC live-heap samples
   are not peak process memory, and neither establishes a maximum supported study.

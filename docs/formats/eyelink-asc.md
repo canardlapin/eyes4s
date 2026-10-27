@@ -281,12 +281,30 @@ thresholds.
 
 This first baseline deliberately records `source_dirty=true` and the exact working-source digest.
 It proves the current implementation under the named local environment; it is not hosted CI proof
-and does not upgrade any EyeLink hardware or licensed EDF cell to validated. Release evidence must
-replace or supplement it with a clean-revision scheduled artifact.
+and does not upgrade any EyeLink hardware or licensed EDF cell to validated. It is supplemented by the clean-revision scheduled artifact below.
 
 The local working-source digest is the SHA-256 of the sorted SHA-256 manifest for `build.sbt` and
 the Scala files under `io/src/main/scala`, `io/src/test/scala`, `io/.jvm/src/test/scala`, and
 `io/.js/src/test/scala`. The performance TSV itself is excluded, avoiding a self-referential digest.
+
+### Clean scheduled candidate, 2026-10-27
+
+The [retained hosted court](../evidence/release-20261027/performance/review.json)
+on clean `1872c4797ac76708fd72fdde93af6812c971cef9` passed all seven original
+workload thresholds on Ubuntu 22.04 x64, OpenJDK 21.0.12.1, with a 256 MiB heap.
+The two-hour 2000 Hz binocular stream emitted all 14,400,004 physical lines from
+489,600,081 bytes in 22.632 seconds; its sampled peak heap delta was 79,741,360
+bytes. The raw TSV also records allocation, all other workload measurements and
+the source revision/archive digest, independently rechecked after download.
+These single-run figures do not establish a cross-machine speedup or peak RSS.
+
+Earlier scheduled runs computed successfully but the uploader looked in the
+repository's `target/`, while the fork wrote under `io/.jvm/target/`. The generated
+workflow now uploads the exact TSV from the latter directory and permits that
+hidden path. The failed run's log is retained alongside the successful artifact;
+a green computation without its measured artifact was not counted as release
+qualification. This synthetic stream court does not certify licensed converter
+or hardware behavior.
 
 The local commands are:
 
