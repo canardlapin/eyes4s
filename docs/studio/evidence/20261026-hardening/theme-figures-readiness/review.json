@@ -1,0 +1,29 @@
+{
+  "schema": 1,
+  "priorCandidate": "546978670078fc620695b0d0cd5f2c0358f6c4ad",
+  "workflow": 40425629494,
+  "failedCase": "ThemeFxSuite.Figures: Dark restyles the window and its dock; no shown value changes",
+  "cause": "The first stable-half-second text sample still contained Reading placeholders. Native figure fixations, density maps, reports and methods completed later, so a theme-only comparison incorrectly compared350pending entries with375served entries.",
+  "fix": "Keep the existing inspector prerequisite and stable-half-second comparison, and additionally require served Figures gaze assets, density grids, plot frames, generated methods and participant/methods bundle rows before either theme baseline.",
+  "focusedCasesPassed": 9,
+  "studioStylePassed": true,
+  "productionChanged": false,
+  "limits": [
+    "A broader uncommitted readiness probe was rejected: Data and Analysis theme fixtures intentionally leave some work unbound and cannot satisfy full-board acquisition prerequisites. The final change is bounded to Figures.",
+    "No value-equality assertion, timeout, pixel tolerance, production behavior or performance harness changed."
+  ],
+  "files": [
+    {
+      "path": "focused-pass-and-style.log.gz",
+      "sha256": "7703f4105fe01eb0acddcbdf48c0d57462af96ddf538e6d32b1cb6f745de73d4"
+    },
+    {
+      "path": "native-mac-failure.log.gz",
+      "sha256": "5cae3d637a422d797fb22fb33ed34fa08a6d877bc6f585abe77a7a8c57c52fba"
+    },
+    {
+      "path": "rejected-broad-readiness-probe.log.gz",
+      "sha256": "9fcd4bd413ade5c5c811e92140ac2a6ce54591bfe90fa6a98041b5ca8152d915"
+    }
+  ]
+}

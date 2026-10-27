@@ -19,6 +19,7 @@ package eyes4s.studio.desktop.shell
 import cats.effect.IO
 import cats.effect.unsafe.implicits.global
 import eyes4s.studio.app.appearance.Appearance
+import eyes4s.studio.app.figures.{BundleItem, PanelBody, TileMap}
 import eyes4s.studio.app.geometry.Loading
 import eyes4s.studio.app.tokens.{ThemedToken, Tokens, Wcag, WcagError}
 import eyes4s.studio.app.{AppModel, Intent, StoryModels}
@@ -33,6 +34,9 @@ import eyes4s.studio.core.fixture.StoryMoment
 import eyes4s.studio.core.session.ProjectSession
 import eyes4s.studio.desktop.harness.StudioTheme
 import eyes4s.studio.desktop.runtime.{ProjectPort, SessionPort}
+import eyes4s.studio.desktop.plot.PlotTwinStatus
+import eyes4s.studio.desktop.trial.TrialViewStatus
+import eyes4s.studio.viz.trial.FrameArt
 import eyes4s.studio.desktop.{StudioWindow, ThemeHost}
 import javafx.scene.Node
 import javafx.scene.control.{Labeled, Menu, RadioMenuItem, TextInputControl}
@@ -147,6 +151,38 @@ class ThemeFxSuite extends ShellFxSuite:
       inspector.record.isInstanceOf[Loading.Ready[?]] &&
       inspector.usedBy != Loading.Waiting && inspector.displays != Loading.Waiting)
 
+  // Figures may show unchanged placeholders while its native reads are pending.
+  // Establish the served page, methods and bundle before comparing themes.
+  private def windowReady(w: StudioWindow): Boolean =
+    if !inspectorReady(w) then false
+    else if w.runtime.model.perspective != Perspective.Figures then true
+    else
+      val view = w.figures.vm
+      view.page.exists(page =>
+        page.panels.forall(panel =>
+          panel.body match
+            case PanelBody.Waiting(_) | PanelBody.Unavailable(_) => false
+            case PanelBody.Maps(m)                               =>
+              m.tiles.nonEmpty && m.tiles.forall(_.map.isInstanceOf[TileMap.Drawn])
+            case PanelBody.Gaze(_) =>
+              w.figures
+                .gaze(page.figure, panel.letter)
+                .exists(_.status.get match
+                  case TrialViewStatus.Shown(stage) =>
+                    stage.frameArt.isInstanceOf[FrameArt.Picture] ||
+                    stage.frameArt == FrameArt.ScreenWithCross
+                  case _ => false)
+            case PanelBody.Plot(_) =>
+              w.figures
+                .plot(page.figure, panel.letter)
+                .exists(_.status.get.isInstanceOf[PlotTwinStatus.Shown])
+        )
+      ) && view.methods.exists(_.text.isRight) && view.bundle.exists(bundle =>
+        Vector(BundleItem.Participants, BundleItem.Methods).forall(item =>
+          bundle.rows.exists(r => r.item == item && r.unavailable.isEmpty)
+        )
+      )
+
   // The ready window's values on two reads half a second apart.
   private def settled(fx: eyes4s.studio.desktop.harness.FxStage, w: StudioWindow) =
     var last     = runOnFx(values(w.root))
@@ -156,7 +192,7 @@ class ThemeFxSuite extends ShellFxSuite:
       if System.nanoTime > deadline then fail("the window's values did not settle")
       Thread.sleep(500)
       fx.awaitLayout()
-      val (now, ready) = runOnFx((values(w.root), inspectorReady(w)))
+      val (now, ready) = runOnFx((values(w.root), windowReady(w)))
       stable = ready && now == last
       last = now
     last
