@@ -1,0 +1,148 @@
+{
+  "candidate": "a74f86b758653de67235ea0f0d9e4ca0652910fd",
+  "tree": "40e578eccc1a5aa1953bcb7c698734d039c527d7",
+  "checkout": "/private/tmp/eyes4s-hardening-final4-20261026",
+  "status": "passed",
+  "steps": [
+    {
+      "phase": "canonical",
+      "command": [
+        "python3",
+        "tools/landing-gate/gate.py"
+      ],
+      "started": "2026-10-27T01:52:05.861732+00:00",
+      "log": "/private/tmp/eyes4s-hardening-final4-canonical-20261026.log",
+      "status": "passed",
+      "exitCode": 0,
+      "elapsedSeconds": 1510.73
+    },
+    {
+      "phase": "studio",
+      "command": [
+        "sbt",
+        "studioAll",
+        "studioStyleCheck",
+        "studioBoundaries"
+      ],
+      "started": "2026-10-27T02:17:16.575332+00:00",
+      "log": "/private/tmp/eyes4s-hardening-final4-studio-20261026.log",
+      "status": "passed",
+      "exitCode": 0,
+      "elapsedSeconds": 1044.76
+    },
+    {
+      "phase": "matrix",
+      "command": [
+        "python3",
+        "tools/studio-visual-parity/check.py",
+        "--allow-functional-only"
+      ],
+      "started": "2026-10-27T02:34:41.335317+00:00",
+      "log": "/private/tmp/eyes4s-hardening-final4-matrix-20261026.log",
+      "status": "passed",
+      "exitCode": 0,
+      "elapsedSeconds": 0.45
+    },
+    {
+      "phase": "e2e",
+      "command": [
+        "python3",
+        "tools/studio-e2e/check.py"
+      ],
+      "started": "2026-10-27T02:34:41.786506+00:00",
+      "log": "/private/tmp/eyes4s-hardening-final4-e2e-20261026.log",
+      "status": "passed",
+      "exitCode": 0,
+      "elapsedSeconds": 0.13
+    },
+    {
+      "phase": "matrix-verifier",
+      "command": [
+        "python3",
+        "-m",
+        "unittest",
+        "discover",
+        "-s",
+        "tools/studio-visual-parity",
+        "-p",
+        "test_*.py"
+      ],
+      "started": "2026-10-27T02:34:41.917121+00:00",
+      "log": "/private/tmp/eyes4s-hardening-final4-matrix-verifier-20261026.log",
+      "status": "passed",
+      "exitCode": 0,
+      "elapsedSeconds": 1.46
+    },
+    {
+      "phase": "e2e-verifier",
+      "command": [
+        "python3",
+        "-m",
+        "unittest",
+        "discover",
+        "-s",
+        "tools/studio-e2e",
+        "-p",
+        "test_*.py"
+      ],
+      "started": "2026-10-27T02:34:43.382649+00:00",
+      "log": "/private/tmp/eyes4s-hardening-final4-e2e-verifier-20261026.log",
+      "status": "passed",
+      "exitCode": 0,
+      "elapsedSeconds": 0.09
+    },
+    {
+      "phase": "fixture",
+      "command": [
+        "python3",
+        "tools/studio-fixture/verify_counts.py"
+      ],
+      "started": "2026-10-27T02:34:43.474954+00:00",
+      "log": "/private/tmp/eyes4s-hardening-final4-fixture-20261026.log",
+      "status": "passed",
+      "exitCode": 0,
+      "elapsedSeconds": 0.27
+    },
+    {
+      "phase": "docs-build",
+      "command": [
+        "sbt",
+        "docs/tlSite",
+        "rootJVM/mimaReportBinaryIssues",
+        "rootJS/mimaReportBinaryIssues"
+      ],
+      "started": "2026-10-27T02:34:43.744988+00:00",
+      "log": "/private/tmp/eyes4s-hardening-final4-docs-build-20261026.log",
+      "status": "passed",
+      "exitCode": 0,
+      "elapsedSeconds": 23.65
+    },
+    {
+      "phase": "docs",
+      "command": [
+        "python3",
+        "tools/check-docs.py",
+        "--run-consumer"
+      ],
+      "started": "2026-10-27T02:35:07.394757+00:00",
+      "log": "/private/tmp/eyes4s-hardening-final4-docs-20261026.log",
+      "status": "passed",
+      "exitCode": 0,
+      "elapsedSeconds": 201.86
+    }
+  ],
+  "environment": {
+    "JAVA_HOME": "/Users/bbuchsbaum/Library/Java/JavaVirtualMachines/temurin-25.0.4.1+1.jdk/Contents/Home",
+    "GITHUB_ACTIONS": "true",
+    "explicitlyUnset": [
+      "CI",
+      "JAVA_TOOL_OPTIONS",
+      "JDK_JAVA_OPTIONS",
+      "_JAVA_OPTIONS",
+      "JAVA_OPTS",
+      "SBT_OPTS"
+    ],
+    "visibleFx": false,
+    "extraRootSbt": ""
+  }
+}

@@ -58,13 +58,13 @@ setup and timings are preserved under `evidence/20261026-hardening/corrected-1`.
 
 Measured source commit `e34becdf025277bfa5ec0b43d6108f74f040d27b`, tree
 `44d6edc0e82c2f0825c23432a0a053b8db7f86bf`; clean committed input remained unchanged.
-Machine: Mac14,12, Apple M2 Pro,32GiB RAM, arm64, macOS15.1.1 (24B91).
-Temurin25.0.4.1+1-LTS, default8GiB FX heap, Monocle software pipeline,
-1440x900 logical viewport at native scale1. Only this court's build was active;
+Machine: Mac14,12, Apple M2 Pro, 32 GiB RAM, arm64, macOS 15.1.1 (24B91).
+Temurin 25.0.4.1+1-LTS, default 8 GiB FX heap, Monocle software pipeline,
+1440x900 logical viewport at native scale 1. Only this court's build was active;
 the ordinary background virtualization process remained running and is recorded.
 No JVM workaround, visible window, timing subtraction, filtered rows or reduced sample count.
 
-| Interaction p95 (ms) | Fixture |10x fixture | Strict limit |
+| Interaction p95 (ms) | Fixture | 10x fixture | Strict limit |
 | --- | ---: | ---: | ---: |
 | linked-selection | 55.17 | 74.15 | <100 |
 | cached-trial-switch | 65.84 | 73.59 | <250 |
@@ -74,19 +74,19 @@ No JVM workaround, visible window, timing subtraction, filtered rows or reduced 
 | perspective-Compare | 55.87 | 66.48 | <150 |
 | perspective-Figures | 50.56 | 47.34 | <150 |
 
-Each workload has450 measured observations, in addition to its unchanged warmups.
-The fixture retains11,520 fixation rows and960 trial-inventory rows; the tenfold
-workload retains115,200 and9,600, respectively. All480/4,800 retrieval design
+Each workload has 450 measured observations, in addition to its unchanged warmups.
+The fixture retains 11,520 fixation rows and 960 trial-inventory rows; the tenfold
+workload retains 115,200 and 9,600, respectively. All 480/4,800 retrieval design
 rows are present before measurement.
 
-| Memory (GiB) | Fixture |10x fixture | Limit |
+| Memory (GiB) | Fixture | 10x fixture | Limit |
 | --- | ---: | ---: | ---: |
-| Retained heap after collection | 0.383 | 1.640 |4 |
-| Largest observed process RSS | 2.109 | 5.860 |8 |
+| Retained heap after collection | 0.383 | 1.640 | 4 |
+| Largest observed process RSS | 2.109 | 5.860 | 8 |
 
 RSS is sampled at the named checkpoints; this is not a continuous peak-RSS claim.
-Transient pre-collection heap can exceed the retained-heap limit. The1x archive is
-verified and stored. The10x density archive is explicitly refused at the unchanged
+Transient pre-collection heap can exceed the retained-heap limit. The 1x archive is
+verified and stored. The 10x density archive is explicitly refused at the unchanged
 20-million-cell budget, so its successful interactions cover live completed results,
 not reopening an oversized archive. That storage work remains tracked separately.
 
@@ -102,8 +102,22 @@ failed courts and diagnostic profiles remain under `evidence/20261026-hardening/
 Measured bottlenecks were duplicate-key scans, repeated unchanged view projections,
 nonvirtual rows, blocking report/clock work, preview invalidation during draft promotion,
 and canvas repainting after temporary dock detachment. Tenfold Compare p95 was
-186.48 ms before the rendering fixes,169.35 ms after reducing frame clipping,
-and66.48 ms after preserving the painted frame across dock detachment. No scientific rows,
+186.48 ms before the rendering fixes, 169.35 ms after reducing frame clipping,
+and 66.48 ms after preserving the painted frame across dock detachment. No scientific rows,
 render completion requirement, sample counts or acceptance limits were relaxed.
 These measurements qualify S10.6 on this machine; they do not qualify G2, physical
 Retina/VoiceOver, installation, publication or researcher usability.
+
+The final [release qualification](evidence/20261026-hardening/qualification/qualification.json)
+uses the same measured production code, fixture and performance harness. A later
+[test-only native-scale correction](evidence/20261026-hardening/native-scale-test-correction/review.json)
+keeps the reattachment regression within supported 1×/2× texture bounds; the
+[focus-audit correction](evidence/20261026-hardening/focus-audit-readiness/review.json)
+realizes virtual rows before their focus is inspected, and the
+[Figures theme correction](evidence/20261026-hardening/theme-figures-readiness/review.json)
+waits for served data before comparing themes. The
+[Compare theme correction](evidence/20261026-hardening/theme-compare-readiness/review.json)
+also waits for reports, pair scores, maps and ledger reads while accepting the
+fixture's intentional unavailable trial content. These changes affect
+no measured implementation or workload. The qualification records this explicit
+test-only difference rather than claiming identical whole-test-tree fingerprints.

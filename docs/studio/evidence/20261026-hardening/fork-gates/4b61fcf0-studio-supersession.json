@@ -1,0 +1,8 @@
+{
+  "candidate": "4b61fcf0cea9da1b3842d3b61c8c2966e810b994",
+  "canonicalPassed": true,
+  "stoppedPhase": "studio",
+  "stoppedPid": 77366,
+  "reason": "Superseded by deterministic test-only focus-layout correction; preserve completed canonical gate, do not continue redundant prior Studio qualification.",
+  "at": "2026-10-27T00:29:09.942830+00:00"
+}

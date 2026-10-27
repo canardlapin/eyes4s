@@ -1,0 +1,104 @@
+{
+  "schema": 1,
+  "status": "qualified",
+  "candidate": "a74f86b758653de67235ea0f0d9e4ca0652910fd",
+  "tree": "40e578eccc1a5aa1953bcb7c698734d039c527d7",
+  "sourceFingerprint": "82083ca838a4fc9ed471dd9154697fc2cbc49591880d3e5c27218e55d6815ba1",
+  "performanceCandidate": "e34becdf025277bfa5ec0b43d6108f74f040d27b",
+  "performanceImplementationIdentical": true,
+  "performanceTestOnlyDifferences": [
+    "studio/desktop/src/test/scala/eyes4s/studio/desktop/plot/CanvasPlotHostFxSuite.scala",
+    "studio/desktop/src/test/scala/eyes4s/studio/desktop/shell/A11yChecks.scala",
+    "studio/desktop/src/test/scala/eyes4s/studio/desktop/shell/A11yRenderSuite.scala",
+    "studio/desktop/src/test/scala/eyes4s/studio/desktop/shell/ThemeFxSuite.scala"
+  ],
+  "local": "local-review.json",
+  "hosted": "hosted/hosted-review.json",
+  "hostedChecks": "hosted/checks-workflow.json",
+  "hostedVerifier": {
+    "path": "verify-hosted.py",
+    "sha256": "6c139cf6910d04859c1f973a31d59ea3fabd9d24816f96e9c62c6844a0eb41e6"
+  },
+  "studioPassed": 5315,
+  "studioSkipped": 2,
+  "hostedFiles": [
+    {
+      "path": "hosted/artifacts.json",
+      "sha256": "8e6fe77ece63f458e67d5bbd024aef94defc66aaa24fbcefbd94c819caaa8dad"
+    },
+    {
+      "path": "hosted/checks-workflow.json",
+      "sha256": "678b830f3cbd5cf8c8d60772d848a772cfe9473e65a6cb2473f72901dbc44e7f"
+    },
+    {
+      "path": "hosted/e2e-receipt.json",
+      "sha256": "2b1006ee9af20281981c9b03f355cbc5e6af2b094bf0d52a8636a475d107da4f"
+    },
+    {
+      "path": "hosted/gtk-job.log.gz",
+      "sha256": "72b4cb0fb2dd9e082024c4e0ee1b45ebf23b5690afbb46ae0b4ab63cea87808f"
+    },
+    {
+      "path": "hosted/gtk2-native-output-scale.json",
+      "sha256": "9c7654c410102f66b8b900951d02eb968bd57a622b6d9f2879d2b5b3c93e4e3a"
+    },
+    {
+      "path": "hosted/hosted-review.json",
+      "sha256": "4ffc940615de323ef0c5247737ef41ed34246e23b37c810652d941e84a635629"
+    },
+    {
+      "path": "hosted/linux-canvas-boundaries.json",
+      "sha256": "aa1abf24b67b1928856ef3db925b7909d72984652fba4721217801af65a20ad3"
+    },
+    {
+      "path": "hosted/linux-executed-reports.json",
+      "sha256": "2dfa64d3fec3fcd82871ca79ca7315d4584d012aa9eba5825b0b554d0b627f77"
+    },
+    {
+      "path": "hosted/linux-hidpi-canvas-boundaries.json",
+      "sha256": "020fb0585916263480128a65d77a308bb62ebf3a3dda4bfb1cfb98ef9bda0978"
+    },
+    {
+      "path": "hosted/linux-hidpi-executed-reports.json",
+      "sha256": "a83868196718603d46f972a688fea80dee28b4ef36cf50f7abc1c65b45b403ca"
+    },
+    {
+      "path": "hosted/linux-hidpi-matrix-receipt.json",
+      "sha256": "f0cb31866ff8d8fb447bc4250c20bd95c1443e88d5e666fbdda3e5d60d9af6f8"
+    },
+    {
+      "path": "hosted/linux-matrix-receipt.json",
+      "sha256": "0a572b40ca26f6a98a21fd05c19e02dbd045f4f72f5e6be382788b1fc1175cdd"
+    },
+    {
+      "path": "hosted/macos-canvas-boundaries.json",
+      "sha256": "78e004c70cae99d5fc6ff70a1c0c7af32ed3aabc6fc4fcbc25c76dfd30b7cd26"
+    },
+    {
+      "path": "hosted/macos-executed-reports.json",
+      "sha256": "8b1ca884bdd0fe32d920f5d8ea01d06b55731db4f34693662fefcae3a9f59f15"
+    },
+    {
+      "path": "hosted/macos-matrix-receipt.json",
+      "sha256": "5718280723e5b7b35a94f5e99bb710c35fa6396027362ec110bf7c3328448cc5"
+    },
+    {
+      "path": "hosted/verification-notes.json",
+      "sha256": "06e81268bb6d5181d00639981c02b001058de0ebfb820a1b9f4b3a6b7d1fb4ff"
+    },
+    {
+      "path": "hosted/workflow.json",
+      "sha256": "5d86805a3fb641f22805fa00c6811568c2a28f0c213a06dd1b1b235dbfb21089"
+    }
+  ],
+  "limits": [
+    "Local JavaFX matrix is functional/repeat; hosted Linux owns pixel goldens.",
+    "Physical Retina, VoiceOver, real-study G2 and installation/publication/usability remain separate.",
+    "Tenfold archive cold restoration is not qualified.",
+    "Mac retains one oversized-surface board-size skip, eight board-size-only role/name skips and 28 board-size contrast/focus-render skips under the existing EYES4S_STUDIO_SMALL_DISPLAY policy; its full Tab traversals, virtual-row audit regression, disabled-reason audits and all small-window cases must still execute. Linux and GTK execute the board-size cases.",
+    "Linux Monocle native1 owns pixel goldens;2x snapshots are raster transforms.",
+    "Mac and GTK2 matrix checks are functional/repeat; GTK2 has a separate actual native2 analytic raster proof.",
+    "Canvas boundary before-capture diagnostics may catch an initial replacement compile after the test has awaited Drawn; only that initial baseline transient is accepted, with an existing frame, every post-capture host Drawn, and all 16 restored pixel comparisons accepted. It is reported per court, not omitted.",
+    "These hosted checks do not qualify G2, physical Mac Retina, VoiceOver, performance, packaging or researcher usability; local performance has its own source-bound receipt."
+  ]
+}

@@ -1,0 +1,11 @@
+{
+  "candidate": "f169020b206934e2aaf6bcad85a85717fe786eb4",
+  "canonicalPassed": true,
+  "stoppedPhase": "studio",
+  "stoppedPids": [
+    6183,
+    76377
+  ],
+  "reason": "Superseded after native Mac exposed the same stable-placeholder theme-test race in Compare; preserve completed canonical gate and qualify the test-only readiness correction separately.",
+  "at": "2026-10-27T01:43:40.131124+00:00"
+}

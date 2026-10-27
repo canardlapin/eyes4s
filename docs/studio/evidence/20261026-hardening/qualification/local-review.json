@@ -1,0 +1,125 @@
+{
+  "schema": 1,
+  "status": "local-passed-hosted-separate",
+  "candidate": "a74f86b758653de67235ea0f0d9e4ca0652910fd",
+  "tree": "40e578eccc1a5aa1953bcb7c698734d039c527d7",
+  "sourceFingerprint": "82083ca838a4fc9ed471dd9154697fc2cbc49591880d3e5c27218e55d6815ba1",
+  "performanceSourceFingerprint": "101100982db3d994f2abf516d7053aee9add7206261a9722a7c737c328e76065",
+  "environment": {
+    "JAVA_HOME": "/Users/bbuchsbaum/Library/Java/JavaVirtualMachines/temurin-25.0.4.1+1.jdk/Contents/Home",
+    "GITHUB_ACTIONS": "true",
+    "explicitlyUnset": [
+      "CI",
+      "JAVA_TOOL_OPTIONS",
+      "JDK_JAVA_OPTIONS",
+      "_JAVA_OPTIONS",
+      "JAVA_OPTS",
+      "SBT_OPTS"
+    ],
+    "visibleFx": false,
+    "extraRootSbt": ""
+  },
+  "logs": [
+    {
+      "path": "canonical-werror.log.gz",
+      "sha256": "0738f7e1061dc7cb202b5d0471410e94fd0d2b976f6a2ed9076b3973fac2ac6e",
+      "uncompressedSha256": "4ccda7d80754d498e6ecfca10abe4da518e8ca2858008fb5efbca35dfbae9bb5"
+    },
+    {
+      "path": "canonical-audit.log.gz",
+      "sha256": "117ceafecf48413c5786622237b5beeb70cf211be6d5a84e171b02f96163d4da",
+      "uncompressedSha256": "b961bc4be4f8b298ef352aa88bd52d1dd81558122f0a4ea57ac43b86cc5e958a"
+    },
+    {
+      "path": "canonical-tests.log.gz",
+      "sha256": "83c117fd6369f49b36e8ea096eafe0a666b588104b13c1c850071004cb5ec7ac",
+      "uncompressedSha256": "84d4ac2963f70182bd0f2313cbf308caf60e28ac7c8660ed6358ddc129377c17"
+    },
+    {
+      "path": "canonical-hygiene.log.gz",
+      "sha256": "2bb078aca915687d04e39dcbdabe3cc353f582bdb8f87354c05aa2a0fb555539",
+      "uncompressedSha256": "f693776456b1bd252d195ff3318ef10ae2dc2f153c9d8802dd730827e3839405"
+    },
+    {
+      "path": "canonical-consumer.log.gz",
+      "sha256": "139565c4d7c4c444f7927738a4b835abac6364e47a51ad09384cc485a1258c58",
+      "uncompressedSha256": "e0f7cb821d70c605f2a6a9302d543811dc4d0d89899ee4f983ce7aefac9b72cd"
+    },
+    {
+      "path": "eyes4s-hardening-final4-canonical-20261026.log.gz",
+      "sha256": "c3c5289975924a0d5d47349501d017bc314deb7386f593314014e778c794ab84",
+      "uncompressedSha256": "3cca8c87e71a633aaefc837fa66946b77704ba180569d8a9ec094d31043ada1b"
+    },
+    {
+      "path": "eyes4s-hardening-final4-studio-20261026.log.gz",
+      "sha256": "a1c5fddb817256366496ef2283bb5b1f7bab262bc7d31b94d72f031980738b88",
+      "uncompressedSha256": "7016cf3a898ed7060929a97de96467fe0d4389541fd3503f2e21b05ec06c5b16"
+    },
+    {
+      "path": "eyes4s-hardening-final4-matrix-20261026.log.gz",
+      "sha256": "65e4136032aec4a97eeb03710b49f12dafae46db14f69f6c7c76bfcc76e1c09e",
+      "uncompressedSha256": "f8c2882bff876158966ef04d1f39e9d117139564ad3841fa13f9adfc84cef0db"
+    },
+    {
+      "path": "eyes4s-hardening-final4-e2e-20261026.log.gz",
+      "sha256": "5d4df121336e45089f4a7b0a709042585deb25b94adffa2ce79e9bc84900225e",
+      "uncompressedSha256": "0a97025c261be974e96302c3c5251c8733266294cb17d748fdbfde4ee3bec939"
+    },
+    {
+      "path": "eyes4s-hardening-final4-matrix-verifier-20261026.log.gz",
+      "sha256": "16150a3cc70ba88eda17009f3153526dff5f61c1b780aea3e2d7424e32629335",
+      "uncompressedSha256": "a16901861b8b211ed33682f120e17a996521842bfc434db12b6e1be98c274c4b"
+    },
+    {
+      "path": "eyes4s-hardening-final4-e2e-verifier-20261026.log.gz",
+      "sha256": "42335891df3fbf7f08ad6108f5b76b36170e69f5c4c8a6791859c4d22222ebb5",
+      "uncompressedSha256": "d03ce458f2a6cd2b4f27522f3aacad03ce1872c028853507c3ad02ca621bdcad"
+    },
+    {
+      "path": "eyes4s-hardening-final4-fixture-20261026.log.gz",
+      "sha256": "def092d132029560269a577e2ecd853b623bfe9ae77b77bd13a02bf82d552301",
+      "uncompressedSha256": "b13c59187c0b6dda24e9ab45e36b6fb6013f263696ca2a5e99780d9103e45217"
+    },
+    {
+      "path": "eyes4s-hardening-final4-docs-build-20261026.log.gz",
+      "sha256": "3119f7afa302722c6fe21b2a10183581d78671d1288347760181f6f88accaee8",
+      "uncompressedSha256": "bcc8116488dce5a381129d200b60104c0c829e8b3ddff08890675b8ea484e432"
+    },
+    {
+      "path": "eyes4s-hardening-final4-docs-20261026.log.gz",
+      "sha256": "ce8b7ebef6e7f6a113796046b807f2045678cf16d2147ac0f11d0d9b1cdc7c16",
+      "uncompressedSha256": "e09ce11d50eb80ef258df15ebc12f91d13ce9284029095de3df45f9272979f10"
+    }
+  ],
+  "studioPassed": 5315,
+  "studioSkipped": 2,
+  "studioReportCount": 573,
+  "studioExecutedReportsSha256": "34085bf7932500613fc61aef543f319d1e4543a909c2a568515a1570d09ea5e1",
+  "generatedApiEvidence": [
+    {
+      "path": "tools/api-audit/evidence.json",
+      "sha256": "2d171e67218bb4c3e2721e8d908fe214ebd3e64ae7d9090ef22b8e9e7b1e7c1f"
+    },
+    {
+      "path": "tools/api-audit/inventory-provenance.json",
+      "sha256": "bfbf7d7af9d2fa1d43cf051f644c7d3a3015055ef39c875da8576ad9ac536ff8"
+    },
+    {
+      "path": "tools/api-audit/inventory.json",
+      "sha256": "782b484408deec90f49009f51afc30959d8327f358b62850a5b64538d56dda6c"
+    }
+  ],
+  "performanceCandidate": "e34becdf025277bfa5ec0b43d6108f74f040d27b",
+  "performanceImplementationIdentical": true,
+  "performanceTestOnlyDifferences": [
+    "studio/desktop/src/test/scala/eyes4s/studio/desktop/plot/CanvasPlotHostFxSuite.scala",
+    "studio/desktop/src/test/scala/eyes4s/studio/desktop/shell/A11yChecks.scala",
+    "studio/desktop/src/test/scala/eyes4s/studio/desktop/shell/A11yRenderSuite.scala",
+    "studio/desktop/src/test/scala/eyes4s/studio/desktop/shell/ThemeFxSuite.scala"
+  ],
+  "limits": [
+    "Local JavaFX matrix is functional/repeat; hosted Linux owns pixel goldens.",
+    "Physical Retina, VoiceOver, real-study G2 and installation/publication/usability remain separate.",
+    "Tenfold archive cold restoration is not qualified."
+  ]
+}

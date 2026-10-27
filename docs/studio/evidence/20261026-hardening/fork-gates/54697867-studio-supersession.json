@@ -1,0 +1,11 @@
+{
+  "candidate": "546978670078fc620695b0d0cd5f2c0358f6c4ad",
+  "canonicalPassed": true,
+  "stoppedPhase": "studio",
+  "stoppedPids": [
+    36209,
+    66479
+  ],
+  "reason": "Superseded after native Mac exposed a Figures theme-test readiness race; preserve completed canonical gate and qualify the test-only correction separately.",
+  "at": "2026-10-27T01:02:59.869244+00:00"
+}

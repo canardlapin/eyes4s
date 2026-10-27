@@ -25,6 +25,16 @@ Participants navigator was unfinished. Its served implementation and the complet
 JavaFX matrix are now qualified in the [2026-10-24 receipt](evidence/20261024-results-matrix/qualification.json),
 with a [signed navigator review](evidence/20261024-results-matrix/navigator-review.json).
 
+Reliability/performance follow-up (2026-10-26): [qualification](evidence/20261026-hardening/qualification/qualification.json)
+records the complete 30-state JavaFX matrix on the optimized source, including
+Linux pixel goldens and native Mac/GTK functional and focus checks. Analysis design
+rows and Compare participants now use virtual lists while retaining all logical
+rows, selection, type, row geometry and one-stop keyboard behavior. The Compare
+scrollbar appearance is the only intentionally updated golden region; its four
+light/dark 1×/2× baselines received a separate [review](evidence/20261026-hardening/reviewed-scrollbar-baselines/review.json).
+Canvas frames survive temporary dock detachment and still rebuild for real size
+or scale changes. No board content or pixel tolerance was changed.
+
 ## Shared shell (every board except System)
 
 - [x] Title bar: native and system-drawn. The app does not tint it.

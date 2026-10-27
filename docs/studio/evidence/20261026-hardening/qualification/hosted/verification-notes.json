@@ -1,0 +1,10 @@
+{
+  "schema": 1,
+  "candidate": "a74f86b758653de67235ea0f0d9e4ca0652910fd",
+  "initialVerifierResult": "The supplementary artifact checker rejected Compiling in initial before-capture metadata. All frozen CI suites, pixel comparisons and post-capture host states passed.",
+  "sourceContract": "CanvasBoundaryFxSuite.capture records its before diagnostic before fx.snapshot awaits its pulse. A replacement compile can begin between the prior drawn() wait and that diagnostic. Only an initial baseline Compiling state with an existing frame is admitted, requiring every after-capture host Drawn and all16 restored pixel comparisons accepted. Every restored before-capture state must still be Drawn.",
+  "observed": "Linux SmallCanvasBoundaryFxSuite dark initial baseline recorded four Compiling hosts. All other before/after capture states in all three courts were Drawn. The original full boundary JSON receipts are preserved beside this note.",
+  "additionalExistingSkip": "The supplementary checker also names the pre-existing Mac oversized-surface skip, whose test calls assumeFullStage; no test skip or application source was added during artifact review.",
+  "finalVerifierResult": "All three courts verified; source-bound matrix, named JUnit cases, E2E, focus, viewport geometry, native GTK2 raster, and boundary pixel checks passed.",
+  "verifierSha256": "6c139cf6910d04859c1f973a31d59ea3fabd9d24816f96e9c62c6844a0eb41e6"
+}

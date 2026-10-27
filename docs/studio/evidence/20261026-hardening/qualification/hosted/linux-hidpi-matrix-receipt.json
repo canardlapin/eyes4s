@@ -1,0 +1,1302 @@
+{
+  "candidateFingerprint": "82083ca838a4fc9ed471dd9154697fc2cbc49591880d3e5c27218e55d6815ba1",
+  "states": [
+    {
+      "state": "t1-Data-light",
+      "mode": "functional-only",
+      "reviewSha256": "30a8b68305738f2c077fbf96b5a83175d21d46d02c050997e168b1debe1823b4",
+      "captures": [
+        {
+          "actual": "target/studio-snapshots/VisualParitySuite/t1-Data-light/light-1x.png",
+          "actualSha256": "531ed983faa46f9f5688abe1f124ac69920d03b161ab34657866c91bb8f590e8",
+          "width": 1440,
+          "height": 900,
+          "baseline": "studio/desktop/src/test/resources/eyes4s/studio/desktop/visual-parity/t1-Data-light/light-1x.png",
+          "baselineSha256": null,
+          "comparison": null,
+          "repeatFirstSha256": "531ed983faa46f9f5688abe1f124ac69920d03b161ab34657866c91bb8f590e8",
+          "repeat": {
+            "width": 1440,
+            "height": 900,
+            "changedPixels": 0,
+            "maximumChannelDelta": 0,
+            "changedFraction": 0,
+            "accepted": true
+          }
+        },
+        {
+          "actual": "target/studio-snapshots/VisualParitySuite/t1-Data-light/light-2x.png",
+          "actualSha256": "7eadb5aedb5665707d02101fca681c43facd61179d177bc624aba359a2cbdc3d",
+          "width": 2880,
+          "height": 1800,
+          "baseline": "studio/desktop/src/test/resources/eyes4s/studio/desktop/visual-parity/t1-Data-light/light-2x.png",
+          "baselineSha256": null,
+          "comparison": null,
+          "repeatFirstSha256": "7eadb5aedb5665707d02101fca681c43facd61179d177bc624aba359a2cbdc3d",
+          "repeat": {
+            "width": 2880,
+            "height": 1800,
+            "changedPixels": 0,
+            "maximumChannelDelta": 0,
+            "changedFraction": 0,
+            "accepted": true
+          }
+        }
+      ]
+    },
+    {
+      "state": "t1-Data-dark",
+      "mode": "functional-only",
+      "reviewSha256": "4a2fd6f2729f60937765e61aec7110f01166763928fedde14eed7f2d5a9c3e9f",
+      "captures": [
+        {
+          "actual": "target/studio-snapshots/VisualParitySuite/t1-Data-dark/dark-1x.png",
+          "actualSha256": "72cddad970ba8850d03c470aacd39d08c191240d55c71c409ff020805d8afb47",
+          "width": 1440,
+          "height": 900,
+          "baseline": "studio/desktop/src/test/resources/eyes4s/studio/desktop/visual-parity/t1-Data-dark/dark-1x.png",
+          "baselineSha256": null,
+          "comparison": null,
+          "repeatFirstSha256": "72cddad970ba8850d03c470aacd39d08c191240d55c71c409ff020805d8afb47",
+          "repeat": {
+            "width": 1440,
+            "height": 900,
+            "changedPixels": 0,
+            "maximumChannelDelta": 0,
+            "changedFraction": 0,
+            "accepted": true
+          }
+        },
+        {
+          "actual": "target/studio-snapshots/VisualParitySuite/t1-Data-dark/dark-2x.png",
+          "actualSha256": "0aaeb012381dc22174b7f2e8195e2cac24ed2844bf9965c58ae7faa497c4ee35",
+          "width": 2880,
+          "height": 1800,
+          "baseline": "studio/desktop/src/test/resources/eyes4s/studio/desktop/visual-parity/t1-Data-dark/dark-2x.png",
+          "baselineSha256": null,
+          "comparison": null,
+          "repeatFirstSha256": "0aaeb012381dc22174b7f2e8195e2cac24ed2844bf9965c58ae7faa497c4ee35",
+          "repeat": {
+            "width": 2880,
+            "height": 1800,
+            "changedPixels": 0,
+            "maximumChannelDelta": 0,
+            "changedFraction": 0,
+            "accepted": true
+          }
+        }
+      ]
+    },
+    {
+      "state": "t1-Explore-light",
+      "mode": "functional-only",
+      "reviewSha256": "1d33f8df2bbd5368a401002791b1b9efe7ce9f987b0e73d10f7814a019001b57",
+      "captures": [
+        {
+          "actual": "target/studio-snapshots/VisualParitySuite/t1-Explore-light/light-1x.png",
+          "actualSha256": "d4e6e1298a2ad24bbf4cdf47d64e5e9cb52d638318c701a546e0ba3b7dfa3611",
+          "width": 1440,
+          "height": 900,
+          "baseline": "studio/desktop/src/test/resources/eyes4s/studio/desktop/visual-parity/t1-Explore-light/light-1x.png",
+          "baselineSha256": null,
+          "comparison": null,
+          "repeatFirstSha256": "d4e6e1298a2ad24bbf4cdf47d64e5e9cb52d638318c701a546e0ba3b7dfa3611",
+          "repeat": {
+            "width": 1440,
+            "height": 900,
+            "changedPixels": 0,
+            "maximumChannelDelta": 0,
+            "changedFraction": 0,
+            "accepted": true
+          }
+        },
+        {
+          "actual": "target/studio-snapshots/VisualParitySuite/t1-Explore-light/light-2x.png",
+          "actualSha256": "d6cea3cfc852e9a99f21ceb457fb6a9da13a70aeb63f431942e27ce1c189b26c",
+          "width": 2880,
+          "height": 1800,
+          "baseline": "studio/desktop/src/test/resources/eyes4s/studio/desktop/visual-parity/t1-Explore-light/light-2x.png",
+          "baselineSha256": null,
+          "comparison": null,
+          "repeatFirstSha256": "d6cea3cfc852e9a99f21ceb457fb6a9da13a70aeb63f431942e27ce1c189b26c",
+          "repeat": {
+            "width": 2880,
+            "height": 1800,
+            "changedPixels": 0,
+            "maximumChannelDelta": 0,
+            "changedFraction": 0,
+            "accepted": true
+          }
+        }
+      ]
+    },
+    {
+      "state": "t1-Explore-dark",
+      "mode": "functional-only",
+      "reviewSha256": "8d18e7c37f70ec71201a561c364ec3192ceb37861feab005742ca4c5147380e0",
+      "captures": [
+        {
+          "actual": "target/studio-snapshots/VisualParitySuite/t1-Explore-dark/dark-1x.png",
+          "actualSha256": "0202efe517d8b02ea9f66396e574e075cba2afbac599e40baba341d1e57076a4",
+          "width": 1440,
+          "height": 900,
+          "baseline": "studio/desktop/src/test/resources/eyes4s/studio/desktop/visual-parity/t1-Explore-dark/dark-1x.png",
+          "baselineSha256": null,
+          "comparison": null,
+          "repeatFirstSha256": "0202efe517d8b02ea9f66396e574e075cba2afbac599e40baba341d1e57076a4",
+          "repeat": {
+            "width": 1440,
+            "height": 900,
+            "changedPixels": 0,
+            "maximumChannelDelta": 0,
+            "changedFraction": 0,
+            "accepted": true
+          }
+        },
+        {
+          "actual": "target/studio-snapshots/VisualParitySuite/t1-Explore-dark/dark-2x.png",
+          "actualSha256": "417f4811b823918e91e91267edad5abdde54aa09d4d77bb8a9c2427c21f240a6",
+          "width": 2880,
+          "height": 1800,
+          "baseline": "studio/desktop/src/test/resources/eyes4s/studio/desktop/visual-parity/t1-Explore-dark/dark-2x.png",
+          "baselineSha256": null,
+          "comparison": null,
+          "repeatFirstSha256": "417f4811b823918e91e91267edad5abdde54aa09d4d77bb8a9c2427c21f240a6",
+          "repeat": {
+            "width": 2880,
+            "height": 1800,
+            "changedPixels": 0,
+            "maximumChannelDelta": 0,
+            "changedFraction": 0,
+            "accepted": true
+          }
+        }
+      ]
+    },
+    {
+      "state": "t1-Analysis-light",
+      "mode": "functional-only",
+      "reviewSha256": "c81d8ce3bceb4ace7bd0e7d651e0c2839867544512724c93bfdd6cc4ef134f56",
+      "captures": [
+        {
+          "actual": "target/studio-snapshots/VisualParitySuite/t1-Analysis-light/light-1x.png",
+          "actualSha256": "ecc9bc129286162d474818646c07fa731863dbb17cd55a8782ff00ff88afd22f",
+          "width": 1440,
+          "height": 900,
+          "baseline": "studio/desktop/src/test/resources/eyes4s/studio/desktop/visual-parity/t1-Analysis-light/light-1x.png",
+          "baselineSha256": null,
+          "comparison": null,
+          "repeatFirstSha256": "ecc9bc129286162d474818646c07fa731863dbb17cd55a8782ff00ff88afd22f",
+          "repeat": {
+            "width": 1440,
+            "height": 900,
+            "changedPixels": 0,
+            "maximumChannelDelta": 0,
+            "changedFraction": 0,
+            "accepted": true
+          }
+        },
+        {
+          "actual": "target/studio-snapshots/VisualParitySuite/t1-Analysis-light/light-2x.png",
+          "actualSha256": "191d56f9e80036b653e5ceaa37931910c3849c50330a97012866edc0b70470ab",
+          "width": 2880,
+          "height": 1800,
+          "baseline": "studio/desktop/src/test/resources/eyes4s/studio/desktop/visual-parity/t1-Analysis-light/light-2x.png",
+          "baselineSha256": null,
+          "comparison": null,
+          "repeatFirstSha256": "191d56f9e80036b653e5ceaa37931910c3849c50330a97012866edc0b70470ab",
+          "repeat": {
+            "width": 2880,
+            "height": 1800,
+            "changedPixels": 0,
+            "maximumChannelDelta": 0,
+            "changedFraction": 0,
+            "accepted": true
+          }
+        }
+      ]
+    },
+    {
+      "state": "t1-Analysis-dark",
+      "mode": "functional-only",
+      "reviewSha256": "2a6a9574103ecc6a638bd87cd4e06febd312682aa65147001f54620afc46068c",
+      "captures": [
+        {
+          "actual": "target/studio-snapshots/VisualParitySuite/t1-Analysis-dark/dark-1x.png",
+          "actualSha256": "a5e5075e148cd622744167f2d7a9f7d1c6cdacf3804599e6333ab0f005cc4b42",
+          "width": 1440,
+          "height": 900,
+          "baseline": "studio/desktop/src/test/resources/eyes4s/studio/desktop/visual-parity/t1-Analysis-dark/dark-1x.png",
+          "baselineSha256": null,
+          "comparison": null,
+          "repeatFirstSha256": "a5e5075e148cd622744167f2d7a9f7d1c6cdacf3804599e6333ab0f005cc4b42",
+          "repeat": {
+            "width": 1440,
+            "height": 900,
+            "changedPixels": 0,
+            "maximumChannelDelta": 0,
+            "changedFraction": 0,
+            "accepted": true
+          }
+        },
+        {
+          "actual": "target/studio-snapshots/VisualParitySuite/t1-Analysis-dark/dark-2x.png",
+          "actualSha256": "e75c604968c55036a8c1eb7e42fdd095a002747f3dfa65abd6fe061e55e99929",
+          "width": 2880,
+          "height": 1800,
+          "baseline": "studio/desktop/src/test/resources/eyes4s/studio/desktop/visual-parity/t1-Analysis-dark/dark-2x.png",
+          "baselineSha256": null,
+          "comparison": null,
+          "repeatFirstSha256": "e75c604968c55036a8c1eb7e42fdd095a002747f3dfa65abd6fe061e55e99929",
+          "repeat": {
+            "width": 2880,
+            "height": 1800,
+            "changedPixels": 0,
+            "maximumChannelDelta": 0,
+            "changedFraction": 0,
+            "accepted": true
+          }
+        }
+      ]
+    },
+    {
+      "state": "t1-Compare-light",
+      "mode": "functional-only",
+      "reviewSha256": "a7b717a1561edf1551eeb9010bcc76713cf8a2a7560ca5f806657cd8d5115364",
+      "captures": [
+        {
+          "actual": "target/studio-snapshots/VisualParitySuite/t1-Compare-light/light-1x.png",
+          "actualSha256": "f45cae9bf7bf6bb95baee4c2b00530bd9e82137aa8aa53f7ab103da47ca5ab25",
+          "width": 1440,
+          "height": 900,
+          "baseline": "studio/desktop/src/test/resources/eyes4s/studio/desktop/visual-parity/t1-Compare-light/light-1x.png",
+          "baselineSha256": null,
+          "comparison": null,
+          "repeatFirstSha256": "f45cae9bf7bf6bb95baee4c2b00530bd9e82137aa8aa53f7ab103da47ca5ab25",
+          "repeat": {
+            "width": 1440,
+            "height": 900,
+            "changedPixels": 0,
+            "maximumChannelDelta": 0,
+            "changedFraction": 0,
+            "accepted": true
+          }
+        },
+        {
+          "actual": "target/studio-snapshots/VisualParitySuite/t1-Compare-light/light-2x.png",
+          "actualSha256": "ad373920f2ad284d4e90ffe27d2a43ea500dd772111265601cb2304d9b64ab29",
+          "width": 2880,
+          "height": 1800,
+          "baseline": "studio/desktop/src/test/resources/eyes4s/studio/desktop/visual-parity/t1-Compare-light/light-2x.png",
+          "baselineSha256": null,
+          "comparison": null,
+          "repeatFirstSha256": "ad373920f2ad284d4e90ffe27d2a43ea500dd772111265601cb2304d9b64ab29",
+          "repeat": {
+            "width": 2880,
+            "height": 1800,
+            "changedPixels": 0,
+            "maximumChannelDelta": 0,
+            "changedFraction": 0,
+            "accepted": true
+          }
+        }
+      ]
+    },
+    {
+      "state": "t1-Compare-dark",
+      "mode": "functional-only",
+      "reviewSha256": "f94d52431ccf2dcdbe23483a150b680efee75eeed4edc95a216dd972400946b8",
+      "captures": [
+        {
+          "actual": "target/studio-snapshots/VisualParitySuite/t1-Compare-dark/dark-1x.png",
+          "actualSha256": "827687e6472543d835d18ada5616d3f65605df33033f8e75f5f045b6831a8aa4",
+          "width": 1440,
+          "height": 900,
+          "baseline": "studio/desktop/src/test/resources/eyes4s/studio/desktop/visual-parity/t1-Compare-dark/dark-1x.png",
+          "baselineSha256": null,
+          "comparison": null,
+          "repeatFirstSha256": "827687e6472543d835d18ada5616d3f65605df33033f8e75f5f045b6831a8aa4",
+          "repeat": {
+            "width": 1440,
+            "height": 900,
+            "changedPixels": 0,
+            "maximumChannelDelta": 0,
+            "changedFraction": 0,
+            "accepted": true
+          }
+        },
+        {
+          "actual": "target/studio-snapshots/VisualParitySuite/t1-Compare-dark/dark-2x.png",
+          "actualSha256": "5b183f371720bc4e68e15dd3ab801bde164b2eca6f696e2ad2cdec6a6580a263",
+          "width": 2880,
+          "height": 1800,
+          "baseline": "studio/desktop/src/test/resources/eyes4s/studio/desktop/visual-parity/t1-Compare-dark/dark-2x.png",
+          "baselineSha256": null,
+          "comparison": null,
+          "repeatFirstSha256": "5b183f371720bc4e68e15dd3ab801bde164b2eca6f696e2ad2cdec6a6580a263",
+          "repeat": {
+            "width": 2880,
+            "height": 1800,
+            "changedPixels": 0,
+            "maximumChannelDelta": 0,
+            "changedFraction": 0,
+            "accepted": true
+          }
+        }
+      ]
+    },
+    {
+      "state": "t1-Figures-light",
+      "mode": "functional-only",
+      "reviewSha256": "a754d9e718b43c7d25353fc35c78578235053f5ee89ea42c1f3fe15b1c940b9c",
+      "captures": [
+        {
+          "actual": "target/studio-snapshots/VisualParitySuite/t1-Figures-light/light-1x.png",
+          "actualSha256": "6fdd9988852958d02343d2d589a033ecdd08298cbd28c46ebf34e64306f0c59f",
+          "width": 1440,
+          "height": 900,
+          "baseline": "studio/desktop/src/test/resources/eyes4s/studio/desktop/visual-parity/t1-Figures-light/light-1x.png",
+          "baselineSha256": null,
+          "comparison": null,
+          "repeatFirstSha256": "6fdd9988852958d02343d2d589a033ecdd08298cbd28c46ebf34e64306f0c59f",
+          "repeat": {
+            "width": 1440,
+            "height": 900,
+            "changedPixels": 0,
+            "maximumChannelDelta": 0,
+            "changedFraction": 0,
+            "accepted": true
+          }
+        },
+        {
+          "actual": "target/studio-snapshots/VisualParitySuite/t1-Figures-light/light-2x.png",
+          "actualSha256": "f32e4cd9bf0202b0ff33bc610f47c73e4372a38c96492b9b18e31e2101ff1ea7",
+          "width": 2880,
+          "height": 1800,
+          "baseline": "studio/desktop/src/test/resources/eyes4s/studio/desktop/visual-parity/t1-Figures-light/light-2x.png",
+          "baselineSha256": null,
+          "comparison": null,
+          "repeatFirstSha256": "f32e4cd9bf0202b0ff33bc610f47c73e4372a38c96492b9b18e31e2101ff1ea7",
+          "repeat": {
+            "width": 2880,
+            "height": 1800,
+            "changedPixels": 0,
+            "maximumChannelDelta": 0,
+            "changedFraction": 0,
+            "accepted": true
+          }
+        }
+      ]
+    },
+    {
+      "state": "t1-Figures-dark",
+      "mode": "functional-only",
+      "reviewSha256": "843c744fcd7bd5c0c9c80b677f1bc8ad903a2d5c8c38d246f180b06d67fd25de",
+      "captures": [
+        {
+          "actual": "target/studio-snapshots/VisualParitySuite/t1-Figures-dark/dark-1x.png",
+          "actualSha256": "5c84159c589106deebb867fa74b9037ae0f6983f4cd83bff471993e6c06a6ad4",
+          "width": 1440,
+          "height": 900,
+          "baseline": "studio/desktop/src/test/resources/eyes4s/studio/desktop/visual-parity/t1-Figures-dark/dark-1x.png",
+          "baselineSha256": null,
+          "comparison": null,
+          "repeatFirstSha256": "5c84159c589106deebb867fa74b9037ae0f6983f4cd83bff471993e6c06a6ad4",
+          "repeat": {
+            "width": 1440,
+            "height": 900,
+            "changedPixels": 0,
+            "maximumChannelDelta": 0,
+            "changedFraction": 0,
+            "accepted": true
+          }
+        },
+        {
+          "actual": "target/studio-snapshots/VisualParitySuite/t1-Figures-dark/dark-2x.png",
+          "actualSha256": "14db2c2cb1fbf5c641a80fc22147121438a2539cc91ff701e3dcfc41dc87e506",
+          "width": 2880,
+          "height": 1800,
+          "baseline": "studio/desktop/src/test/resources/eyes4s/studio/desktop/visual-parity/t1-Figures-dark/dark-2x.png",
+          "baselineSha256": null,
+          "comparison": null,
+          "repeatFirstSha256": "14db2c2cb1fbf5c641a80fc22147121438a2539cc91ff701e3dcfc41dc87e506",
+          "repeat": {
+            "width": 2880,
+            "height": 1800,
+            "changedPixels": 0,
+            "maximumChannelDelta": 0,
+            "changedFraction": 0,
+            "accepted": true
+          }
+        }
+      ]
+    },
+    {
+      "state": "t2-Data-light",
+      "mode": "functional-only",
+      "reviewSha256": "d9edee6fb5272136ae87c99652d9f0e52c455984b820651c6b1044ddb5e16b9a",
+      "captures": [
+        {
+          "actual": "target/studio-snapshots/VisualParitySuite/t2-Data-light/light-1x.png",
+          "actualSha256": "2b1e15a2462dafb160615716e01db7b5cd0e527e0e22807f9970be56145cc410",
+          "width": 1440,
+          "height": 900,
+          "baseline": "studio/desktop/src/test/resources/eyes4s/studio/desktop/visual-parity/t2-Data-light/light-1x.png",
+          "baselineSha256": null,
+          "comparison": null,
+          "repeatFirstSha256": "2b1e15a2462dafb160615716e01db7b5cd0e527e0e22807f9970be56145cc410",
+          "repeat": {
+            "width": 1440,
+            "height": 900,
+            "changedPixels": 0,
+            "maximumChannelDelta": 0,
+            "changedFraction": 0,
+            "accepted": true
+          }
+        },
+        {
+          "actual": "target/studio-snapshots/VisualParitySuite/t2-Data-light/light-2x.png",
+          "actualSha256": "65dbb00dd00141e9fd7c316e7950f8dea1d7a000506a0c7cd39bae44942e158b",
+          "width": 2880,
+          "height": 1800,
+          "baseline": "studio/desktop/src/test/resources/eyes4s/studio/desktop/visual-parity/t2-Data-light/light-2x.png",
+          "baselineSha256": null,
+          "comparison": null,
+          "repeatFirstSha256": "65dbb00dd00141e9fd7c316e7950f8dea1d7a000506a0c7cd39bae44942e158b",
+          "repeat": {
+            "width": 2880,
+            "height": 1800,
+            "changedPixels": 0,
+            "maximumChannelDelta": 0,
+            "changedFraction": 0,
+            "accepted": true
+          }
+        }
+      ]
+    },
+    {
+      "state": "t2-Data-dark",
+      "mode": "functional-only",
+      "reviewSha256": "8f2620fb65186d8597bbfc63f1b6e41845c303ca461aa93dbef21b3e547fd85c",
+      "captures": [
+        {
+          "actual": "target/studio-snapshots/VisualParitySuite/t2-Data-dark/dark-1x.png",
+          "actualSha256": "eb6fb6ceedfb4f4be28c28b55ce97e69c02e4ec659c961befd617374bb937d46",
+          "width": 1440,
+          "height": 900,
+          "baseline": "studio/desktop/src/test/resources/eyes4s/studio/desktop/visual-parity/t2-Data-dark/dark-1x.png",
+          "baselineSha256": null,
+          "comparison": null,
+          "repeatFirstSha256": "eb6fb6ceedfb4f4be28c28b55ce97e69c02e4ec659c961befd617374bb937d46",
+          "repeat": {
+            "width": 1440,
+            "height": 900,
+            "changedPixels": 0,
+            "maximumChannelDelta": 0,
+            "changedFraction": 0,
+            "accepted": true
+          }
+        },
+        {
+          "actual": "target/studio-snapshots/VisualParitySuite/t2-Data-dark/dark-2x.png",
+          "actualSha256": "37be1a95775276b229e893931de3d4d715df626187ae65669907c4bd166bab7b",
+          "width": 2880,
+          "height": 1800,
+          "baseline": "studio/desktop/src/test/resources/eyes4s/studio/desktop/visual-parity/t2-Data-dark/dark-2x.png",
+          "baselineSha256": null,
+          "comparison": null,
+          "repeatFirstSha256": "37be1a95775276b229e893931de3d4d715df626187ae65669907c4bd166bab7b",
+          "repeat": {
+            "width": 2880,
+            "height": 1800,
+            "changedPixels": 0,
+            "maximumChannelDelta": 0,
+            "changedFraction": 0,
+            "accepted": true
+          }
+        }
+      ]
+    },
+    {
+      "state": "t2-Explore-light",
+      "mode": "functional-only",
+      "reviewSha256": "8b17d5c7feea826156a311404f5c160f4210b3ce085fe1c4e3f11a886e562a20",
+      "captures": [
+        {
+          "actual": "target/studio-snapshots/VisualParitySuite/t2-Explore-light/light-1x.png",
+          "actualSha256": "6763653aa1e20aab356e022be2f09ebd0a184fbdc27f0f524b591527b7fe7198",
+          "width": 1440,
+          "height": 900,
+          "baseline": "studio/desktop/src/test/resources/eyes4s/studio/desktop/visual-parity/t2-Explore-light/light-1x.png",
+          "baselineSha256": null,
+          "comparison": null,
+          "repeatFirstSha256": "6763653aa1e20aab356e022be2f09ebd0a184fbdc27f0f524b591527b7fe7198",
+          "repeat": {
+            "width": 1440,
+            "height": 900,
+            "changedPixels": 0,
+            "maximumChannelDelta": 0,
+            "changedFraction": 0,
+            "accepted": true
+          }
+        },
+        {
+          "actual": "target/studio-snapshots/VisualParitySuite/t2-Explore-light/light-2x.png",
+          "actualSha256": "c3a4dbcae94363f56e37086128f5f8429f736c5ecabbb5ab921a07942d7eecb3",
+          "width": 2880,
+          "height": 1800,
+          "baseline": "studio/desktop/src/test/resources/eyes4s/studio/desktop/visual-parity/t2-Explore-light/light-2x.png",
+          "baselineSha256": null,
+          "comparison": null,
+          "repeatFirstSha256": "c3a4dbcae94363f56e37086128f5f8429f736c5ecabbb5ab921a07942d7eecb3",
+          "repeat": {
+            "width": 2880,
+            "height": 1800,
+            "changedPixels": 0,
+            "maximumChannelDelta": 0,
+            "changedFraction": 0,
+            "accepted": true
+          }
+        }
+      ]
+    },
+    {
+      "state": "t2-Explore-dark",
+      "mode": "functional-only",
+      "reviewSha256": "5eb93c632e83dd02134ff3df47d4cf17a581b644d55ad7a14b012efe242fb86c",
+      "captures": [
+        {
+          "actual": "target/studio-snapshots/VisualParitySuite/t2-Explore-dark/dark-1x.png",
+          "actualSha256": "3869d6ede6f3e8e0f5f86f52005d3d9a95b838906cdab2f4e3635e07e0859e0a",
+          "width": 1440,
+          "height": 900,
+          "baseline": "studio/desktop/src/test/resources/eyes4s/studio/desktop/visual-parity/t2-Explore-dark/dark-1x.png",
+          "baselineSha256": null,
+          "comparison": null,
+          "repeatFirstSha256": "3869d6ede6f3e8e0f5f86f52005d3d9a95b838906cdab2f4e3635e07e0859e0a",
+          "repeat": {
+            "width": 1440,
+            "height": 900,
+            "changedPixels": 0,
+            "maximumChannelDelta": 0,
+            "changedFraction": 0,
+            "accepted": true
+          }
+        },
+        {
+          "actual": "target/studio-snapshots/VisualParitySuite/t2-Explore-dark/dark-2x.png",
+          "actualSha256": "881ee78a29b1b7f811062c6a3644457b8685870df5c53d7ca187be7905b0b166",
+          "width": 2880,
+          "height": 1800,
+          "baseline": "studio/desktop/src/test/resources/eyes4s/studio/desktop/visual-parity/t2-Explore-dark/dark-2x.png",
+          "baselineSha256": null,
+          "comparison": null,
+          "repeatFirstSha256": "881ee78a29b1b7f811062c6a3644457b8685870df5c53d7ca187be7905b0b166",
+          "repeat": {
+            "width": 2880,
+            "height": 1800,
+            "changedPixels": 0,
+            "maximumChannelDelta": 0,
+            "changedFraction": 0,
+            "accepted": true
+          }
+        }
+      ]
+    },
+    {
+      "state": "t2-Analysis-light",
+      "mode": "functional-only",
+      "reviewSha256": "556a5b5135e94e669933faeda23bfbbc13d3f2da314de87df1e2dcdf4e256e88",
+      "captures": [
+        {
+          "actual": "target/studio-snapshots/VisualParitySuite/t2-Analysis-light/light-1x.png",
+          "actualSha256": "329a4564f16c43391053daa735238bfaec58a59d4627041668211011b2a39256",
+          "width": 1440,
+          "height": 900,
+          "baseline": "studio/desktop/src/test/resources/eyes4s/studio/desktop/visual-parity/t2-Analysis-light/light-1x.png",
+          "baselineSha256": null,
+          "comparison": null,
+          "repeatFirstSha256": "329a4564f16c43391053daa735238bfaec58a59d4627041668211011b2a39256",
+          "repeat": {
+            "width": 1440,
+            "height": 900,
+            "changedPixels": 0,
+            "maximumChannelDelta": 0,
+            "changedFraction": 0,
+            "accepted": true
+          }
+        },
+        {
+          "actual": "target/studio-snapshots/VisualParitySuite/t2-Analysis-light/light-2x.png",
+          "actualSha256": "733ae4d89ef80381eb22584fdd2bde1a7c6f5ae43b045cccb1611e5ac54627b8",
+          "width": 2880,
+          "height": 1800,
+          "baseline": "studio/desktop/src/test/resources/eyes4s/studio/desktop/visual-parity/t2-Analysis-light/light-2x.png",
+          "baselineSha256": null,
+          "comparison": null,
+          "repeatFirstSha256": "733ae4d89ef80381eb22584fdd2bde1a7c6f5ae43b045cccb1611e5ac54627b8",
+          "repeat": {
+            "width": 2880,
+            "height": 1800,
+            "changedPixels": 0,
+            "maximumChannelDelta": 0,
+            "changedFraction": 0,
+            "accepted": true
+          }
+        }
+      ]
+    },
+    {
+      "state": "t2-Analysis-dark",
+      "mode": "functional-only",
+      "reviewSha256": "333d44f2ccf4ba0345dac01638a5564a7d90d0ab3d31ab0bddba8aa5949e139d",
+      "captures": [
+        {
+          "actual": "target/studio-snapshots/VisualParitySuite/t2-Analysis-dark/dark-1x.png",
+          "actualSha256": "7f40c15fa95e71050613c5fb19c11dd1c488eaca1e57a0dadc4d2ba9ce866a0c",
+          "width": 1440,
+          "height": 900,
+          "baseline": "studio/desktop/src/test/resources/eyes4s/studio/desktop/visual-parity/t2-Analysis-dark/dark-1x.png",
+          "baselineSha256": null,
+          "comparison": null,
+          "repeatFirstSha256": "7f40c15fa95e71050613c5fb19c11dd1c488eaca1e57a0dadc4d2ba9ce866a0c",
+          "repeat": {
+            "width": 1440,
+            "height": 900,
+            "changedPixels": 0,
+            "maximumChannelDelta": 0,
+            "changedFraction": 0,
+            "accepted": true
+          }
+        },
+        {
+          "actual": "target/studio-snapshots/VisualParitySuite/t2-Analysis-dark/dark-2x.png",
+          "actualSha256": "f8b3462c5826e466676b4e4097f0e22201fb8ad1a7108bf1c6ce5f13201a4731",
+          "width": 2880,
+          "height": 1800,
+          "baseline": "studio/desktop/src/test/resources/eyes4s/studio/desktop/visual-parity/t2-Analysis-dark/dark-2x.png",
+          "baselineSha256": null,
+          "comparison": null,
+          "repeatFirstSha256": "f8b3462c5826e466676b4e4097f0e22201fb8ad1a7108bf1c6ce5f13201a4731",
+          "repeat": {
+            "width": 2880,
+            "height": 1800,
+            "changedPixels": 0,
+            "maximumChannelDelta": 0,
+            "changedFraction": 0,
+            "accepted": true
+          }
+        }
+      ]
+    },
+    {
+      "state": "t2-Compare-light",
+      "mode": "functional-only",
+      "reviewSha256": "35c4e5af97bb84cf87a5aca82d72fd98bbd4c5874028ebc1bcda86e38881e11a",
+      "captures": [
+        {
+          "actual": "target/studio-snapshots/VisualParitySuite/t2-Compare-light/light-1x.png",
+          "actualSha256": "40562c4f943f0f71f751b6668d9f99beafa45f944fcf10c036f72f62facef1b9",
+          "width": 1440,
+          "height": 900,
+          "baseline": "studio/desktop/src/test/resources/eyes4s/studio/desktop/visual-parity/t2-Compare-light/light-1x.png",
+          "baselineSha256": null,
+          "comparison": null,
+          "repeatFirstSha256": "40562c4f943f0f71f751b6668d9f99beafa45f944fcf10c036f72f62facef1b9",
+          "repeat": {
+            "width": 1440,
+            "height": 900,
+            "changedPixels": 0,
+            "maximumChannelDelta": 0,
+            "changedFraction": 0,
+            "accepted": true
+          }
+        },
+        {
+          "actual": "target/studio-snapshots/VisualParitySuite/t2-Compare-light/light-2x.png",
+          "actualSha256": "0e7f3fb7311baa5ef43c22e48738a3454acc30fbe781a406e9b2f28c87b0f68d",
+          "width": 2880,
+          "height": 1800,
+          "baseline": "studio/desktop/src/test/resources/eyes4s/studio/desktop/visual-parity/t2-Compare-light/light-2x.png",
+          "baselineSha256": null,
+          "comparison": null,
+          "repeatFirstSha256": "0e7f3fb7311baa5ef43c22e48738a3454acc30fbe781a406e9b2f28c87b0f68d",
+          "repeat": {
+            "width": 2880,
+            "height": 1800,
+            "changedPixels": 0,
+            "maximumChannelDelta": 0,
+            "changedFraction": 0,
+            "accepted": true
+          }
+        }
+      ]
+    },
+    {
+      "state": "t2-Compare-dark",
+      "mode": "functional-only",
+      "reviewSha256": "9ef44c089ddafca5815799d3c1c8f523dbb3deadadd8f24993ef03f5efc5e86c",
+      "captures": [
+        {
+          "actual": "target/studio-snapshots/VisualParitySuite/t2-Compare-dark/dark-1x.png",
+          "actualSha256": "d84011761468c91f83d350e70d044ca0fbab94fc2f66d32a13f1de0a54745257",
+          "width": 1440,
+          "height": 900,
+          "baseline": "studio/desktop/src/test/resources/eyes4s/studio/desktop/visual-parity/t2-Compare-dark/dark-1x.png",
+          "baselineSha256": null,
+          "comparison": null,
+          "repeatFirstSha256": "d84011761468c91f83d350e70d044ca0fbab94fc2f66d32a13f1de0a54745257",
+          "repeat": {
+            "width": 1440,
+            "height": 900,
+            "changedPixels": 0,
+            "maximumChannelDelta": 0,
+            "changedFraction": 0,
+            "accepted": true
+          }
+        },
+        {
+          "actual": "target/studio-snapshots/VisualParitySuite/t2-Compare-dark/dark-2x.png",
+          "actualSha256": "c16e9a60acbeb7ee5acd568307deeee36c2dedeee290721c160bd64547078461",
+          "width": 2880,
+          "height": 1800,
+          "baseline": "studio/desktop/src/test/resources/eyes4s/studio/desktop/visual-parity/t2-Compare-dark/dark-2x.png",
+          "baselineSha256": null,
+          "comparison": null,
+          "repeatFirstSha256": "c16e9a60acbeb7ee5acd568307deeee36c2dedeee290721c160bd64547078461",
+          "repeat": {
+            "width": 2880,
+            "height": 1800,
+            "changedPixels": 0,
+            "maximumChannelDelta": 0,
+            "changedFraction": 0,
+            "accepted": true
+          }
+        }
+      ]
+    },
+    {
+      "state": "t2-Figures-light",
+      "mode": "functional-only",
+      "reviewSha256": "0e4232ca01a4a8fbcb16763e02aa816a92af986f3c2a350b839ec2680a0ac949",
+      "captures": [
+        {
+          "actual": "target/studio-snapshots/VisualParitySuite/t2-Figures-light/light-1x.png",
+          "actualSha256": "c21084e1e2cc617120b836226c7558cf54a219d317b3e80b0ab6689be568799a",
+          "width": 1440,
+          "height": 900,
+          "baseline": "studio/desktop/src/test/resources/eyes4s/studio/desktop/visual-parity/t2-Figures-light/light-1x.png",
+          "baselineSha256": null,
+          "comparison": null,
+          "repeatFirstSha256": "c21084e1e2cc617120b836226c7558cf54a219d317b3e80b0ab6689be568799a",
+          "repeat": {
+            "width": 1440,
+            "height": 900,
+            "changedPixels": 0,
+            "maximumChannelDelta": 0,
+            "changedFraction": 0,
+            "accepted": true
+          }
+        },
+        {
+          "actual": "target/studio-snapshots/VisualParitySuite/t2-Figures-light/light-2x.png",
+          "actualSha256": "e49a0d274e31e817757072130a8e1369e33d08ceb3f693f0fd74d3da3c5f24ba",
+          "width": 2880,
+          "height": 1800,
+          "baseline": "studio/desktop/src/test/resources/eyes4s/studio/desktop/visual-parity/t2-Figures-light/light-2x.png",
+          "baselineSha256": null,
+          "comparison": null,
+          "repeatFirstSha256": "e49a0d274e31e817757072130a8e1369e33d08ceb3f693f0fd74d3da3c5f24ba",
+          "repeat": {
+            "width": 2880,
+            "height": 1800,
+            "changedPixels": 0,
+            "maximumChannelDelta": 0,
+            "changedFraction": 0,
+            "accepted": true
+          }
+        }
+      ]
+    },
+    {
+      "state": "t2-Figures-dark",
+      "mode": "functional-only",
+      "reviewSha256": "18f962279affaf42b7c261c6d521442bded924f6cc8c9f3ff6b3e4b5399ea9e4",
+      "captures": [
+        {
+          "actual": "target/studio-snapshots/VisualParitySuite/t2-Figures-dark/dark-1x.png",
+          "actualSha256": "9a069a424f2852a6bf8f7f2d62e4aa4987c9aad5c88e688b4e4b7c4c3acae30f",
+          "width": 1440,
+          "height": 900,
+          "baseline": "studio/desktop/src/test/resources/eyes4s/studio/desktop/visual-parity/t2-Figures-dark/dark-1x.png",
+          "baselineSha256": null,
+          "comparison": null,
+          "repeatFirstSha256": "9a069a424f2852a6bf8f7f2d62e4aa4987c9aad5c88e688b4e4b7c4c3acae30f",
+          "repeat": {
+            "width": 1440,
+            "height": 900,
+            "changedPixels": 0,
+            "maximumChannelDelta": 0,
+            "changedFraction": 0,
+            "accepted": true
+          }
+        },
+        {
+          "actual": "target/studio-snapshots/VisualParitySuite/t2-Figures-dark/dark-2x.png",
+          "actualSha256": "bb95d3c1a3a859cdc01006310e461d7935b712375429395671fce17337a23b60",
+          "width": 2880,
+          "height": 1800,
+          "baseline": "studio/desktop/src/test/resources/eyes4s/studio/desktop/visual-parity/t2-Figures-dark/dark-2x.png",
+          "baselineSha256": null,
+          "comparison": null,
+          "repeatFirstSha256": "bb95d3c1a3a859cdc01006310e461d7935b712375429395671fce17337a23b60",
+          "repeat": {
+            "width": 2880,
+            "height": 1800,
+            "changedPixels": 0,
+            "maximumChannelDelta": 0,
+            "changedFraction": 0,
+            "accepted": true
+          }
+        }
+      ]
+    },
+    {
+      "state": "t3-Data-light",
+      "mode": "functional-only",
+      "reviewSha256": "b79b79dd0f812de9252bb070df849f0f3524c94214fade967358e6f066089815",
+      "captures": [
+        {
+          "actual": "target/studio-snapshots/VisualParitySuite/t3-Data-light/light-1x.png",
+          "actualSha256": "0027f9ec77d22f05fe8ba9beb8f859a786af5ab4634968ea1f1e089bb6c285bb",
+          "width": 1440,
+          "height": 900,
+          "baseline": "studio/desktop/src/test/resources/eyes4s/studio/desktop/visual-parity/t3-Data-light/light-1x.png",
+          "baselineSha256": null,
+          "comparison": null,
+          "repeatFirstSha256": "0027f9ec77d22f05fe8ba9beb8f859a786af5ab4634968ea1f1e089bb6c285bb",
+          "repeat": {
+            "width": 1440,
+            "height": 900,
+            "changedPixels": 0,
+            "maximumChannelDelta": 0,
+            "changedFraction": 0,
+            "accepted": true
+          }
+        },
+        {
+          "actual": "target/studio-snapshots/VisualParitySuite/t3-Data-light/light-2x.png",
+          "actualSha256": "20ea250d0aab1eaa6ca7438132ddebe718b6b4902102882efb9acbc252e3adaf",
+          "width": 2880,
+          "height": 1800,
+          "baseline": "studio/desktop/src/test/resources/eyes4s/studio/desktop/visual-parity/t3-Data-light/light-2x.png",
+          "baselineSha256": null,
+          "comparison": null,
+          "repeatFirstSha256": "20ea250d0aab1eaa6ca7438132ddebe718b6b4902102882efb9acbc252e3adaf",
+          "repeat": {
+            "width": 2880,
+            "height": 1800,
+            "changedPixels": 0,
+            "maximumChannelDelta": 0,
+            "changedFraction": 0,
+            "accepted": true
+          }
+        }
+      ]
+    },
+    {
+      "state": "t3-Data-dark",
+      "mode": "functional-only",
+      "reviewSha256": "4955f28e3d4a1605964ca3c43812bbfefbb16202ae6ff9302d2195fd71117cf4",
+      "captures": [
+        {
+          "actual": "target/studio-snapshots/VisualParitySuite/t3-Data-dark/dark-1x.png",
+          "actualSha256": "c57e93b9c5f392e3d57e6bf4a567966cb50eb2c3b4524c1ced152d4c8b128b5c",
+          "width": 1440,
+          "height": 900,
+          "baseline": "studio/desktop/src/test/resources/eyes4s/studio/desktop/visual-parity/t3-Data-dark/dark-1x.png",
+          "baselineSha256": null,
+          "comparison": null,
+          "repeatFirstSha256": "c57e93b9c5f392e3d57e6bf4a567966cb50eb2c3b4524c1ced152d4c8b128b5c",
+          "repeat": {
+            "width": 1440,
+            "height": 900,
+            "changedPixels": 0,
+            "maximumChannelDelta": 0,
+            "changedFraction": 0,
+            "accepted": true
+          }
+        },
+        {
+          "actual": "target/studio-snapshots/VisualParitySuite/t3-Data-dark/dark-2x.png",
+          "actualSha256": "4a1a196a400576bca8f025b08384979bda4fab333224c5e5c598362f5b57ac6e",
+          "width": 2880,
+          "height": 1800,
+          "baseline": "studio/desktop/src/test/resources/eyes4s/studio/desktop/visual-parity/t3-Data-dark/dark-2x.png",
+          "baselineSha256": null,
+          "comparison": null,
+          "repeatFirstSha256": "4a1a196a400576bca8f025b08384979bda4fab333224c5e5c598362f5b57ac6e",
+          "repeat": {
+            "width": 2880,
+            "height": 1800,
+            "changedPixels": 0,
+            "maximumChannelDelta": 0,
+            "changedFraction": 0,
+            "accepted": true
+          }
+        }
+      ]
+    },
+    {
+      "state": "t3-Explore-light",
+      "mode": "functional-only",
+      "reviewSha256": "35a7a32a822b60f5cac15054aba4308d58cac71048de005d58756205ad767461",
+      "captures": [
+        {
+          "actual": "target/studio-snapshots/VisualParitySuite/t3-Explore-light/light-1x.png",
+          "actualSha256": "8c9d30cebb1c28aa71fdd408f64566374821217cc916e1b362357c20da25e449",
+          "width": 1440,
+          "height": 900,
+          "baseline": "studio/desktop/src/test/resources/eyes4s/studio/desktop/visual-parity/t3-Explore-light/light-1x.png",
+          "baselineSha256": null,
+          "comparison": null,
+          "repeatFirstSha256": "8c9d30cebb1c28aa71fdd408f64566374821217cc916e1b362357c20da25e449",
+          "repeat": {
+            "width": 1440,
+            "height": 900,
+            "changedPixels": 0,
+            "maximumChannelDelta": 0,
+            "changedFraction": 0,
+            "accepted": true
+          }
+        },
+        {
+          "actual": "target/studio-snapshots/VisualParitySuite/t3-Explore-light/light-2x.png",
+          "actualSha256": "98f8b978beaf4b7a06795faf94999202884aa76e2fbd89bd131626a204dd1b9d",
+          "width": 2880,
+          "height": 1800,
+          "baseline": "studio/desktop/src/test/resources/eyes4s/studio/desktop/visual-parity/t3-Explore-light/light-2x.png",
+          "baselineSha256": null,
+          "comparison": null,
+          "repeatFirstSha256": "98f8b978beaf4b7a06795faf94999202884aa76e2fbd89bd131626a204dd1b9d",
+          "repeat": {
+            "width": 2880,
+            "height": 1800,
+            "changedPixels": 0,
+            "maximumChannelDelta": 0,
+            "changedFraction": 0,
+            "accepted": true
+          }
+        }
+      ]
+    },
+    {
+      "state": "t3-Explore-dark",
+      "mode": "functional-only",
+      "reviewSha256": "6e7bc0507a279d5f853e3706c20f417fa11d7c4b662e2f4b63ffd54828391603",
+      "captures": [
+        {
+          "actual": "target/studio-snapshots/VisualParitySuite/t3-Explore-dark/dark-1x.png",
+          "actualSha256": "befa4c5a276654efd2e357c815b70f333fb18485225209698baa58d4e8f26b05",
+          "width": 1440,
+          "height": 900,
+          "baseline": "studio/desktop/src/test/resources/eyes4s/studio/desktop/visual-parity/t3-Explore-dark/dark-1x.png",
+          "baselineSha256": null,
+          "comparison": null,
+          "repeatFirstSha256": "befa4c5a276654efd2e357c815b70f333fb18485225209698baa58d4e8f26b05",
+          "repeat": {
+            "width": 1440,
+            "height": 900,
+            "changedPixels": 0,
+            "maximumChannelDelta": 0,
+            "changedFraction": 0,
+            "accepted": true
+          }
+        },
+        {
+          "actual": "target/studio-snapshots/VisualParitySuite/t3-Explore-dark/dark-2x.png",
+          "actualSha256": "ddbd61305aff5cd610fe38030d387d6080481d442501e2af9aeb15167534c7d6",
+          "width": 2880,
+          "height": 1800,
+          "baseline": "studio/desktop/src/test/resources/eyes4s/studio/desktop/visual-parity/t3-Explore-dark/dark-2x.png",
+          "baselineSha256": null,
+          "comparison": null,
+          "repeatFirstSha256": "ddbd61305aff5cd610fe38030d387d6080481d442501e2af9aeb15167534c7d6",
+          "repeat": {
+            "width": 2880,
+            "height": 1800,
+            "changedPixels": 0,
+            "maximumChannelDelta": 0,
+            "changedFraction": 0,
+            "accepted": true
+          }
+        }
+      ]
+    },
+    {
+      "state": "t3-Analysis-light",
+      "mode": "functional-only",
+      "reviewSha256": "a3120f4da380ae700d2313fcc35a9d31d4ef7124a5820c1cbf80fd7bbc3a505b",
+      "captures": [
+        {
+          "actual": "target/studio-snapshots/VisualParitySuite/t3-Analysis-light/light-1x.png",
+          "actualSha256": "3ad2ac53bf8fc4d20bc8b19e4b2984558772ff38e1ad774a7f55bd0295fe44f9",
+          "width": 1440,
+          "height": 900,
+          "baseline": "studio/desktop/src/test/resources/eyes4s/studio/desktop/visual-parity/t3-Analysis-light/light-1x.png",
+          "baselineSha256": null,
+          "comparison": null,
+          "repeatFirstSha256": "3ad2ac53bf8fc4d20bc8b19e4b2984558772ff38e1ad774a7f55bd0295fe44f9",
+          "repeat": {
+            "width": 1440,
+            "height": 900,
+            "changedPixels": 0,
+            "maximumChannelDelta": 0,
+            "changedFraction": 0,
+            "accepted": true
+          }
+        },
+        {
+          "actual": "target/studio-snapshots/VisualParitySuite/t3-Analysis-light/light-2x.png",
+          "actualSha256": "2fab32434c005d5c8d35650d3a2014360fbb9495e46419f4cbba6b97932324fd",
+          "width": 2880,
+          "height": 1800,
+          "baseline": "studio/desktop/src/test/resources/eyes4s/studio/desktop/visual-parity/t3-Analysis-light/light-2x.png",
+          "baselineSha256": null,
+          "comparison": null,
+          "repeatFirstSha256": "2fab32434c005d5c8d35650d3a2014360fbb9495e46419f4cbba6b97932324fd",
+          "repeat": {
+            "width": 2880,
+            "height": 1800,
+            "changedPixels": 0,
+            "maximumChannelDelta": 0,
+            "changedFraction": 0,
+            "accepted": true
+          }
+        }
+      ]
+    },
+    {
+      "state": "t3-Analysis-dark",
+      "mode": "functional-only",
+      "reviewSha256": "c7967118a33170062da0c34014fcb0051eca49f92c3fc8269f1ec1b6e533b16e",
+      "captures": [
+        {
+          "actual": "target/studio-snapshots/VisualParitySuite/t3-Analysis-dark/dark-1x.png",
+          "actualSha256": "3d0ba4f02c54d45d9b6732659dac39bad131503bf7d6c2ec4eb46be35b58db1c",
+          "width": 1440,
+          "height": 900,
+          "baseline": "studio/desktop/src/test/resources/eyes4s/studio/desktop/visual-parity/t3-Analysis-dark/dark-1x.png",
+          "baselineSha256": null,
+          "comparison": null,
+          "repeatFirstSha256": "3d0ba4f02c54d45d9b6732659dac39bad131503bf7d6c2ec4eb46be35b58db1c",
+          "repeat": {
+            "width": 1440,
+            "height": 900,
+            "changedPixels": 0,
+            "maximumChannelDelta": 0,
+            "changedFraction": 0,
+            "accepted": true
+          }
+        },
+        {
+          "actual": "target/studio-snapshots/VisualParitySuite/t3-Analysis-dark/dark-2x.png",
+          "actualSha256": "1ee8746a01b022e9c0e52a32e15ff0b7a4e9359def44ab0df22447ee78c5265a",
+          "width": 2880,
+          "height": 1800,
+          "baseline": "studio/desktop/src/test/resources/eyes4s/studio/desktop/visual-parity/t3-Analysis-dark/dark-2x.png",
+          "baselineSha256": null,
+          "comparison": null,
+          "repeatFirstSha256": "1ee8746a01b022e9c0e52a32e15ff0b7a4e9359def44ab0df22447ee78c5265a",
+          "repeat": {
+            "width": 2880,
+            "height": 1800,
+            "changedPixels": 0,
+            "maximumChannelDelta": 0,
+            "changedFraction": 0,
+            "accepted": true
+          }
+        }
+      ]
+    },
+    {
+      "state": "t3-Compare-light",
+      "mode": "functional-only",
+      "reviewSha256": "c5805ac5bc627cabb70b4c4f0f39b250495fa29b8f6db4ce8a964a720b92aef1",
+      "captures": [
+        {
+          "actual": "target/studio-snapshots/VisualParitySuite/t3-Compare-light/light-1x.png",
+          "actualSha256": "830c4f57c36493072533aa0ae93f9a63b13b5b4c8a8532ad04437ac02deae390",
+          "width": 1440,
+          "height": 900,
+          "baseline": "studio/desktop/src/test/resources/eyes4s/studio/desktop/visual-parity/t3-Compare-light/light-1x.png",
+          "baselineSha256": null,
+          "comparison": null,
+          "repeatFirstSha256": "830c4f57c36493072533aa0ae93f9a63b13b5b4c8a8532ad04437ac02deae390",
+          "repeat": {
+            "width": 1440,
+            "height": 900,
+            "changedPixels": 0,
+            "maximumChannelDelta": 0,
+            "changedFraction": 0,
+            "accepted": true
+          }
+        },
+        {
+          "actual": "target/studio-snapshots/VisualParitySuite/t3-Compare-light/light-2x.png",
+          "actualSha256": "e89b00f1bc920d8d92376344066b28d64a0c212a253ac84e21ac959a780c9c99",
+          "width": 2880,
+          "height": 1800,
+          "baseline": "studio/desktop/src/test/resources/eyes4s/studio/desktop/visual-parity/t3-Compare-light/light-2x.png",
+          "baselineSha256": null,
+          "comparison": null,
+          "repeatFirstSha256": "e89b00f1bc920d8d92376344066b28d64a0c212a253ac84e21ac959a780c9c99",
+          "repeat": {
+            "width": 2880,
+            "height": 1800,
+            "changedPixels": 0,
+            "maximumChannelDelta": 0,
+            "changedFraction": 0,
+            "accepted": true
+          }
+        }
+      ]
+    },
+    {
+      "state": "t3-Compare-dark",
+      "mode": "functional-only",
+      "reviewSha256": "c75e5cd122fb1a81c9e5fe88624745fe6df1927abf553197881aaee202e60d98",
+      "captures": [
+        {
+          "actual": "target/studio-snapshots/VisualParitySuite/t3-Compare-dark/dark-1x.png",
+          "actualSha256": "adc344d675d16deac1f2856f8b8b86ae7976226fb95ec10be9472eaed7067650",
+          "width": 1440,
+          "height": 900,
+          "baseline": "studio/desktop/src/test/resources/eyes4s/studio/desktop/visual-parity/t3-Compare-dark/dark-1x.png",
+          "baselineSha256": null,
+          "comparison": null,
+          "repeatFirstSha256": "adc344d675d16deac1f2856f8b8b86ae7976226fb95ec10be9472eaed7067650",
+          "repeat": {
+            "width": 1440,
+            "height": 900,
+            "changedPixels": 0,
+            "maximumChannelDelta": 0,
+            "changedFraction": 0,
+            "accepted": true
+          }
+        },
+        {
+          "actual": "target/studio-snapshots/VisualParitySuite/t3-Compare-dark/dark-2x.png",
+          "actualSha256": "7b97e925b6a25737b18db14a6d6180bcb2970230bbaac622afc14fa24e9fd820",
+          "width": 2880,
+          "height": 1800,
+          "baseline": "studio/desktop/src/test/resources/eyes4s/studio/desktop/visual-parity/t3-Compare-dark/dark-2x.png",
+          "baselineSha256": null,
+          "comparison": null,
+          "repeatFirstSha256": "7b97e925b6a25737b18db14a6d6180bcb2970230bbaac622afc14fa24e9fd820",
+          "repeat": {
+            "width": 2880,
+            "height": 1800,
+            "changedPixels": 0,
+            "maximumChannelDelta": 0,
+            "changedFraction": 0,
+            "accepted": true
+          }
+        }
+      ]
+    },
+    {
+      "state": "t3-Figures-light",
+      "mode": "functional-only",
+      "reviewSha256": "d87d3aea97bf14668001db51e0322ad6833e44ef3c65cd9d5907dfd7fd55dcf9",
+      "captures": [
+        {
+          "actual": "target/studio-snapshots/VisualParitySuite/t3-Figures-light/light-1x.png",
+          "actualSha256": "432e4709c86b6465a2a56d1381838f7504011f735d37148e5fa8490dc3519771",
+          "width": 1440,
+          "height": 900,
+          "baseline": "studio/desktop/src/test/resources/eyes4s/studio/desktop/visual-parity/t3-Figures-light/light-1x.png",
+          "baselineSha256": null,
+          "comparison": null,
+          "repeatFirstSha256": "432e4709c86b6465a2a56d1381838f7504011f735d37148e5fa8490dc3519771",
+          "repeat": {
+            "width": 1440,
+            "height": 900,
+            "changedPixels": 0,
+            "maximumChannelDelta": 0,
+            "changedFraction": 0,
+            "accepted": true
+          }
+        },
+        {
+          "actual": "target/studio-snapshots/VisualParitySuite/t3-Figures-light/light-2x.png",
+          "actualSha256": "83f2c72fa295948009491ef1f358168eecede733b156454e0e3cd4532f95a8b7",
+          "width": 2880,
+          "height": 1800,
+          "baseline": "studio/desktop/src/test/resources/eyes4s/studio/desktop/visual-parity/t3-Figures-light/light-2x.png",
+          "baselineSha256": null,
+          "comparison": null,
+          "repeatFirstSha256": "83f2c72fa295948009491ef1f358168eecede733b156454e0e3cd4532f95a8b7",
+          "repeat": {
+            "width": 2880,
+            "height": 1800,
+            "changedPixels": 0,
+            "maximumChannelDelta": 0,
+            "changedFraction": 0,
+            "accepted": true
+          }
+        }
+      ]
+    },
+    {
+      "state": "t3-Figures-dark",
+      "mode": "functional-only",
+      "reviewSha256": "4e2c6c927316f229725468cb09adb6f3010e49df6ce4639f4f75992b4223fc3b",
+      "captures": [
+        {
+          "actual": "target/studio-snapshots/VisualParitySuite/t3-Figures-dark/dark-1x.png",
+          "actualSha256": "8bfc7669e12994bf8b22f2ded23b50edc7b2a3f26fe748945e2729d9923d8fcc",
+          "width": 1440,
+          "height": 900,
+          "baseline": "studio/desktop/src/test/resources/eyes4s/studio/desktop/visual-parity/t3-Figures-dark/dark-1x.png",
+          "baselineSha256": null,
+          "comparison": null,
+          "repeatFirstSha256": "8bfc7669e12994bf8b22f2ded23b50edc7b2a3f26fe748945e2729d9923d8fcc",
+          "repeat": {
+            "width": 1440,
+            "height": 900,
+            "changedPixels": 0,
+            "maximumChannelDelta": 0,
+            "changedFraction": 0,
+            "accepted": true
+          }
+        },
+        {
+          "actual": "target/studio-snapshots/VisualParitySuite/t3-Figures-dark/dark-2x.png",
+          "actualSha256": "e7b60f099a72aa49e554408b5da11561c1a134b16ce5f3a7bed40d6003704b6d",
+          "width": 2880,
+          "height": 1800,
+          "baseline": "studio/desktop/src/test/resources/eyes4s/studio/desktop/visual-parity/t3-Figures-dark/dark-2x.png",
+          "baselineSha256": null,
+          "comparison": null,
+          "repeatFirstSha256": "e7b60f099a72aa49e554408b5da11561c1a134b16ce5f3a7bed40d6003704b6d",
+          "repeat": {
+            "width": 2880,
+            "height": 1800,
+            "changedPixels": 0,
+            "maximumChannelDelta": 0,
+            "changedFraction": 0,
+            "accepted": true
+          }
+        }
+      ]
+    }
+  ],
+  "xmlSha256": "359e60a06265ba4b806d9527bf6684c519c487153e97449a90f93001b98142b7",
+  "sourceSha256": "559210037096f0c4ba29054f449c59ae251c2c5a31ded747f8b32547a5f5c519",
+  "schema": 1,
+  "candidate": "a74f86b758653de67235ea0f0d9e4ca0652910fd",
+  "tree": "40e578eccc1a5aa1953bcb7c698734d039c527d7",
+  "manifestSha256": "26f547b55fdaca96bf1bb686a05a4de7df3a589ddcfeeebcd730714f8eae9e89",
+  "qualification": "functional/repeat only"
+}

@@ -1652,7 +1652,15 @@ Freeze a named machine and workloads (fixture and 10× fixture); targets: select
 - p95 of each target met on the named machine (selection < 100 ms, cached trial switch < 250 ms, perspective switch < 150 ms); a failure blocks G5.
 - Results in docs/studio/PERFORMANCE.md with machine and commit.
 
-**Tests:** PerfHarness (JMH or FX timing).
+**Qualified 2026-10-26:** all original p95 budgets pass on the named M2 Pro machine
+for the complete fixture and 10× fixture (900 measured interactions).
+[Performance results](PERFORMANCE.md) record the exact source, machine, memory
+bounds and raw observations; [qualification](evidence/20261026-hardening/qualification/qualification.json)
+records the final library/Studio/hosted checks. The 10× live analysis is qualified;
+cold restoration of its oversized result archive remains explicitly outside the
+unchanged archive budget. This acceptance does not close the other G5 obligations.
+
+**Tests:** `InteractionPerformanceFxSuite`, run by `tools/studio-performance/run.py`.
 
 #### S10.7 · macOS packaging
 

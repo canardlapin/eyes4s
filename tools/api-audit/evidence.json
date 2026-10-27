@@ -4923,6 +4923,7 @@
           "lawsJVM/eyes4s.laws.StudyInputCodecLawSuite",
           "lawsJVM/eyes4s.laws.WindowLawsSuite",
           "planJVM/consumer.ValidatedKeyDigestSuite",
+          "planJVM/eyes4s.plan.AdmissionLedgerSuite",
           "planJVM/eyes4s.plan.CountedStudyCursorSuite",
           "planJVM/eyes4s.plan.ExpectedUnmatchedSuite",
           "planJVM/eyes4s.plan.OccurrencePairingSuite",
@@ -9807,7 +9808,6 @@
           "ioJVM/eyes4s.io.DiagnosticCoverageJvmSuite",
           "ioJVM/eyes4s.io.DiagnosticsDocJvmSuite",
           "ioJVM/eyes4s.io.IoDiagnosticCatalogSuite",
-          "lawsJVM/eyes4s.laws.FormLawSuite",
           "planJVM/eyes4s.plan.DiagnosticCatalogSuite",
           "planJVM/eyes4s.plan.FormDescriptorSuite",
           "planJVM/eyes4s.plan.UnmatchedReasonsSuite",
@@ -14682,7 +14682,7 @@
     "class eyes4s.plan.AdmissionDecision": {
       "classification": "data-sum",
       "instance": "eyes4s/plan/AdmissionDecision$$anon$2",
-      "suite": "planJVM/eyes4s.plan.AdmissionLedgerSuite"
+      "suite": "planJVM/eyes4s.plan.ResultNavigationSuite"
     },
     "class eyes4s.plan.AdmissionError": {
       "classification": "data-sum",
@@ -14691,13 +14691,13 @@
     },
     "class eyes4s.plan.AdmissionLedger": {
       "classification": "behavior-or-sealed-data",
-      "instance": "eyes4s/plan/AdmissionLedger$$anon$21",
-      "suite": "planJVM/eyes4s.plan.AdmissionLedgerSuite"
+      "instance": "eyes4s/plan/AdmissionLedger$$anon$20",
+      "suite": "planJVM/eyes4s.plan.ResultNavigationSuite"
     },
     "class eyes4s.plan.AdmissionOutcome": {
       "classification": "data-sum",
       "instance": "eyes4s/plan/AdmissionOutcome$$anon$3",
-      "suite": "planJVM/eyes4s.plan.AdmissionLedgerSuite"
+      "suite": "planJVM/eyes4s.plan.ResultNavigationSuite"
     },
     "class eyes4s.plan.AdmissionReason": {
       "classification": "data-sum",
@@ -14872,7 +14872,7 @@
     "class eyes4s.plan.Disposition": {
       "classification": "behavior-or-sealed-data",
       "instance": "eyes4s/plan/Disposition$Admitted",
-      "suite": "planJVM/eyes4s.plan.AdmissionLedgerSuite"
+      "suite": "planJVM/eyes4s.plan.RecordIdentitySuite"
     },
     "class eyes4s.plan.Endpoint": {
       "classification": "data-sum",
@@ -15167,7 +15167,7 @@
     "class eyes4s.plan.OffScreenPolicy": {
       "classification": "data-sum",
       "instance": "eyes4s/plan/OffScreenPolicy$$anon$4",
-      "suite": "planJVM/eyes4s.plan.AdmissionLedgerSuite"
+      "suite": "planJVM/eyes4s.plan.ResultNavigationSuite"
     },
     "class eyes4s.plan.OffWindowPolicy": {
       "classification": "data-sum",
@@ -18057,13 +18057,13 @@
     "method eyes4s.laws.WindowLaws.tally():": "lawsJVM/eyes4s.laws.WindowLawsSuite",
     "method eyes4s.plan.AdmissionError.message():": "planJVM/eyes4s.plan.UnmatchedReasonsSuite",
     "method eyes4s.plan.AdmissionLedger$.decide(1,eyes4s.plan.SourceRef,scala.collection.immutable.Vector,scala.collection.immutable.Vector,eyes4s.plan.AdmissionDecision):scala.util.Either": "planJVM/eyes4s.plan.AdmissionLedgerSuite",
-    "method eyes4s.plan.AdmissionLedger$.decide(1,eyes4s.plan.SourceRef,scala.collection.immutable.Vector,scala.collection.immutable.Vector,eyes4s.plan.AdmissionDecision,eyes4s.plan.AdmissionPolicy,scala.collection.immutable.Vector):scala.util.Either": "planJVM/eyes4s.plan.AdmissionLedgerSuite",
+    "method eyes4s.plan.AdmissionLedger$.decide(1,eyes4s.plan.SourceRef,scala.collection.immutable.Vector,scala.collection.immutable.Vector,eyes4s.plan.AdmissionDecision,eyes4s.plan.AdmissionPolicy,scala.collection.immutable.Vector):scala.util.Either": "planJVM/eyes4s.plan.ResultNavigationSuite",
     "method eyes4s.plan.AdmissionLedger$.decide(1,eyes4s.plan.SourceRef,scala.collection.immutable.Vector,scala.collection.immutable.Vector,eyes4s.plan.AdmissionDecision,eyes4s.plan.AdmissionPolicy,scala.collection.immutable.Vector,eyes4s.plan.InventoryLedger,scala.Function1,scala.Function1):scala.util.Either": "planJVM/eyes4s.plan.InventoryLedgerSuite",
     "method eyes4s.plan.AdmissionLedger$.inventoried(1,eyes4s.plan.SourceRef,scala.collection.immutable.Vector,scala.collection.immutable.Vector,eyes4s.plan.AdmissionOutcome,eyes4s.plan.AdmissionPolicy,scala.collection.immutable.Vector,eyes4s.plan.InventoryLedger,scala.Function1,scala.Function1):scala.util.Either": "planJVM/eyes4s.plan.InventoryLedgerSuite",
     "method eyes4s.plan.AdmissionLedger$.of(1,eyes4s.plan.SourceRef,scala.collection.immutable.Vector,scala.collection.immutable.Vector,eyes4s.plan.AdmissionOutcome):scala.util.Either": "planJVM/eyes4s.plan.InventoryLedgerSuite",
-    "method eyes4s.plan.AdmissionLedger$.of(1,eyes4s.plan.SourceRef,scala.collection.immutable.Vector,scala.collection.immutable.Vector,eyes4s.plan.AdmissionOutcome,eyes4s.plan.AdmissionPolicy,scala.collection.immutable.Vector):scala.util.Either": "planJVM/eyes4s.plan.AdmissionLedgerSuite",
+    "method eyes4s.plan.AdmissionLedger$.of(1,eyes4s.plan.SourceRef,scala.collection.immutable.Vector,scala.collection.immutable.Vector,eyes4s.plan.AdmissionOutcome,eyes4s.plan.AdmissionPolicy,scala.collection.immutable.Vector):scala.util.Either": "planJVM/eyes4s.plan.ResultNavigationSuite",
     "method eyes4s.plan.AdmissionLedger.admitted():": "lawsJVM/eyes4s.laws.StudyInputCodecLawSuite",
-    "method eyes4s.plan.AdmissionLedger.checkAgainst(1,eyes4s.plan.StudyInput):scala.util.Either": "planJVM/eyes4s.plan.AdmissionLedgerSuite",
+    "method eyes4s.plan.AdmissionLedger.checkAgainst(1,eyes4s.plan.StudyInput):scala.util.Either": "planJVM/eyes4s.plan.ResultNavigationSuite",
     "method eyes4s.plan.AdmissionLedger.checkCorrections(scala.Function1):scala.util.Either": "lawsJVM/eyes4s.laws.ManifestLawSuite",
     "method eyes4s.plan.AdmissionLedger.isVersion1():": "ioJVM/eyes4s.io.AdmissionPolicySuite",
     "method eyes4s.plan.AdmissionLedger.quarantined():": "codecJVM/eyes4s.codec.StudyInputV1Suite",
@@ -18736,7 +18736,7 @@
     "method eyes4s.plan.SourceLine$.of(scala.Long):scala.util.Either": "planJVM/eyes4s.plan.RecordIdentitySuite",
     "method eyes4s.plan.SourceLink.mapKeys(1,scala.Function1):eyes4s.plan.SourceLink": "planJVM/eyes4s.plan.DiagnosticCatalogSuite",
     "method eyes4s.plan.SourceLink.trialKeys():": "planJVM/eyes4s.plan.DiagnosticCatalogSuite",
-    "method eyes4s.plan.SourceRecord.isAdmitted():": "planJVM/eyes4s.plan.AdmissionLedgerSuite",
+    "method eyes4s.plan.SourceRecord.isAdmitted():": "planJVM/eyes4s.plan.ResultNavigationSuite",
     "method eyes4s.plan.SourceRecordListing.admission():": "ioJVM/eyes4s.io.FixationSourceTextSuite",
     "method eyes4s.plan.SourceRecordListing.first(eyes4s.plan.PageSize):scala.util.Either": "planJVM/eyes4s.plan.CoordinateProvenanceSuite",
     "method eyes4s.plan.SourceRecordListing.page(eyes4s.plan.DataRecord,eyes4s.plan.PageSize):scala.util.Either": "lawsJVM/eyes4s.laws.CoordinateProvenanceLawsSuite",
@@ -23742,8 +23742,11 @@
       "a quarantine scope naming an admitted record is refused",
       "a quarantined key that is also admitted is refused, naming both records",
       "checkAgainst accepts the source's own ordinal values and names the first offender",
+      "distinct admitted keys do not require a pairwise equality scan",
       "every scanpath error becomes a typed quarantine cause with its operands",
-      "negative ordinals are refused; duplicate ordinals name the first offender in record order"
+      "input cross-check indexes distinct trial keys instead of rescanning every trial",
+      "negative ordinals are refused; duplicate ordinals name the first offender in record order",
+      "ordinal validation preserves record order across duplicate and negative errors"
     ],
     "planJS/eyes4s.plan.AnalysisReportSuite": [
       "a data-dependent finding names at least one trial, by type",
@@ -28258,8 +28261,11 @@
       "a quarantine scope naming an admitted record is refused",
       "a quarantined key that is also admitted is refused, naming both records",
       "checkAgainst accepts the source's own ordinal values and names the first offender",
+      "distinct admitted keys do not require a pairwise equality scan",
       "every scanpath error becomes a typed quarantine cause with its operands",
-      "negative ordinals are refused; duplicate ordinals name the first offender in record order"
+      "input cross-check indexes distinct trial keys instead of rescanning every trial",
+      "negative ordinals are refused; duplicate ordinals name the first offender in record order",
+      "ordinal validation preserves record order across duplicate and negative errors"
     ],
     "planJVM/eyes4s.plan.AnalysisReportSuite": [
       "a data-dependent finding names at least one trial, by type",

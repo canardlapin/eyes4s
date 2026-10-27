@@ -1,0 +1,65 @@
+{
+  "total_count": 3,
+  "artifacts": [
+    {
+      "id": 12705766129,
+      "node_id": "MDg6QXJ0aWZhY3QxMjcwNTc2NjEyOQ==",
+      "name": "studio-snapshots-linux-a74f86b758653de67235ea0f0d9e4ca0652910fd",
+      "size_in_bytes": 148178999,
+      "url": "https://api.github.com/repos/canardlapin/eyes4s/actions/artifacts/12705766129",
+      "archive_download_url": "https://api.github.com/repos/canardlapin/eyes4s/actions/artifacts/12705766129/zip",
+      "expired": false,
+      "digest": "sha256:75eaba66e9e4f1f12fec8fd9188110106f78385b51800cd9298d0d1f025b7be6",
+      "created_at": "2026-10-27T02:31:21Z",
+      "updated_at": "2026-10-27T02:31:21Z",
+      "expires_at": "2027-01-25T01:51:46Z",
+      "workflow_run": {
+        "id": 40435050835,
+        "repository_id": 1334091621,
+        "head_repository_id": 1334091621,
+        "head_branch": "work/hardening-20261026",
+        "head_sha": "a74f86b758653de67235ea0f0d9e4ca0652910fd"
+      }
+    },
+    {
+      "id": 12704711303,
+      "node_id": "MDg6QXJ0aWZhY3QxMjcwNDcxMTMwMw==",
+      "name": "studio-snapshots-linux-hidpi-a74f86b758653de67235ea0f0d9e4ca0652910fd",
+      "size_in_bytes": 133414025,
+      "url": "https://api.github.com/repos/canardlapin/eyes4s/actions/artifacts/12704711303",
+      "archive_download_url": "https://api.github.com/repos/canardlapin/eyes4s/actions/artifacts/12704711303/zip",
+      "expired": false,
+      "digest": "sha256:af1063b92d71e5b48818fe6b19b2f0668626cc60b5a4dbae32c51abbfcca0662",
+      "created_at": "2026-10-27T02:08:54Z",
+      "updated_at": "2026-10-27T02:08:54Z",
+      "expires_at": "2027-01-25T01:51:46Z",
+      "workflow_run": {
+        "id": 40435050835,
+        "repository_id": 1334091621,
+        "head_repository_id": 1334091621,
+        "head_branch": "work/hardening-20261026",
+        "head_sha": "a74f86b758653de67235ea0f0d9e4ca0652910fd"
+      }
+    },
+    {
+      "id": 12704513363,
+      "node_id": "MDg6QXJ0aWZhY3QxMjcwNDUxMzM2Mw==",
+      "name": "studio-snapshots-macos-a74f86b758653de67235ea0f0d9e4ca0652910fd",
+      "size_in_bytes": 49257636,
+      "url": "https://api.github.com/repos/canardlapin/eyes4s/actions/artifacts/12704513363",
+      "archive_download_url": "https://api.github.com/repos/canardlapin/eyes4s/actions/artifacts/12704513363/zip",
+      "expired": false,
+      "digest": "sha256:436865e92bb02a543e5d531305f922a27fdd4569b11dfbfa48cd2b2e0a7ca677",
+      "created_at": "2026-10-27T02:15:36Z",
+      "updated_at": "2026-10-27T02:15:36Z",
+      "expires_at": "2027-01-25T01:51:46Z",
+      "workflow_run": {
+        "id": 40435050835,
+        "repository_id": 1334091621,
+        "head_repository_id": 1334091621,
+        "head_branch": "work/hardening-20261026",
+        "head_sha": "a74f86b758653de67235ea0f0d9e4ca0652910fd"
+      }
+    }
+  ]
+}

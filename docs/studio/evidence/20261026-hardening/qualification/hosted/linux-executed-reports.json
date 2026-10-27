@@ -1,0 +1,4017 @@
+[
+  {
+    "path": "studio/app/.js/target/test-reports/TEST-consumer.StudioAppDomainProductMirrorSuite.xml",
+    "cases": 47,
+    "passed": 47,
+    "skipped": [],
+    "sha256": "4859dd6fd7a5f74cc0b9585c92e3e9e18bef0f4acdf46683eec4d5e1d9ccace8"
+  },
+  {
+    "path": "studio/app/.js/target/test-reports/TEST-eyes4s.studio.app.AppUpdateLawsSuite.xml",
+    "cases": 18,
+    "passed": 18,
+    "skipped": [],
+    "sha256": "637aaff139f0841db5c7880bd3a38603f1f02f6864e5469f979e3184cfb99f66"
+  },
+  {
+    "path": "studio/app/.js/target/test-reports/TEST-eyes4s.studio.app.InputChecksSuite.xml",
+    "cases": 1,
+    "passed": 1,
+    "skipped": [],
+    "sha256": "b0c4020c38fbc6a81aa5a24a2b10ff1c473c5b137d78d41156f22cd69c807ea6"
+  },
+  {
+    "path": "studio/app/.js/target/test-reports/TEST-eyes4s.studio.app.NativeArtifactsAppSuite.xml",
+    "cases": 6,
+    "passed": 6,
+    "skipped": [],
+    "sha256": "7909f8e22f8a10d83150b818d351ceaa76b9b17c357df2f12be4882cb0ee7280"
+  },
+  {
+    "path": "studio/app/.js/target/test-reports/TEST-eyes4s.studio.app.NativeRunControlsSuite.xml",
+    "cases": 6,
+    "passed": 6,
+    "skipped": [],
+    "sha256": "78aaaf49cb02b8a0d278e89b45d8caaf254a672a8b3141c10b01f98950910074"
+  },
+  {
+    "path": "studio/app/.js/target/test-reports/TEST-eyes4s.studio.app.RunInProgressSuite.xml",
+    "cases": 4,
+    "passed": 4,
+    "skipped": [],
+    "sha256": "b0e9ca41cf6657cfbb549c5b206e403677a87aef074a905f036abcc4cda7f814"
+  },
+  {
+    "path": "studio/app/.js/target/test-reports/TEST-eyes4s.studio.app.RunOutcomeSuite.xml",
+    "cases": 3,
+    "passed": 3,
+    "skipped": [],
+    "sha256": "e3ec21694e4a5f063e9c4db1154f87f64c1ff265ae6d56af7e061edd2dfe73da"
+  },
+  {
+    "path": "studio/app/.js/target/test-reports/TEST-eyes4s.studio.app.about.AboutBoxSuite.xml",
+    "cases": 7,
+    "passed": 7,
+    "skipped": [],
+    "sha256": "b5109d13e72d7bfe2798cb3c76c848b7ab325eb57e821fc982765b600855581c"
+  },
+  {
+    "path": "studio/app/.js/target/test-reports/TEST-eyes4s.studio.app.admission.AdmissionLedgerSuite.xml",
+    "cases": 23,
+    "passed": 23,
+    "skipped": [],
+    "sha256": "f2b542022bfd03eb90da22c654c53c0140da44f448365c31117e7bbf81cead1d"
+  },
+  {
+    "path": "studio/app/.js/target/test-reports/TEST-eyes4s.studio.app.analysis.AnalysesNavigatorSuite.xml",
+    "cases": 6,
+    "passed": 6,
+    "skipped": [],
+    "sha256": "1bb49cafdfad60f8ee04eea57ef8cb2c47d2da70c3169ec062d76f0996320eae"
+  },
+  {
+    "path": "studio/app/.js/target/test-reports/TEST-eyes4s.studio.app.analysis.DescriptorEditorSuite.xml",
+    "cases": 3,
+    "passed": 3,
+    "skipped": [],
+    "sha256": "ff6380dd084f577311adc09540bc8863320a329c3ae3bc5109953aafd15436d3"
+  },
+  {
+    "path": "studio/app/.js/target/test-reports/TEST-eyes4s.studio.app.analysis.FamilyNavigatorSuite.xml",
+    "cases": 8,
+    "passed": 8,
+    "skipped": [],
+    "sha256": "5bfced0b78783bf130c47390312da591aeebcc87df8a35f09ce2503c9bd5fa78"
+  },
+  {
+    "path": "studio/app/.js/target/test-reports/TEST-eyes4s.studio.app.analysis.PreflightSuite.xml",
+    "cases": 5,
+    "passed": 5,
+    "skipped": [],
+    "sha256": "0fff9528a771dca838933eece23eda7d75e3fc8fad9c422026e761f3410decd8"
+  },
+  {
+    "path": "studio/app/.js/target/test-reports/TEST-eyes4s.studio.app.analysis.PresetSuite.xml",
+    "cases": 13,
+    "passed": 13,
+    "skipped": [],
+    "sha256": "95ee4e82d8a8472f77d38dae88c6cbb3e17ca018485c5051b4f0ff31287f4ab5"
+  },
+  {
+    "path": "studio/app/.js/target/test-reports/TEST-eyes4s.studio.app.analysis.RecipeEditorSuite.xml",
+    "cases": 3,
+    "passed": 3,
+    "skipped": [],
+    "sha256": "c1932af28d9805184057decb32c13528e7b703a12db55c36fbf707de95cb5fa5"
+  },
+  {
+    "path": "studio/app/.js/target/test-reports/TEST-eyes4s.studio.app.analysis.ResolvedDesignSuite.xml",
+    "cases": 21,
+    "passed": 21,
+    "skipped": [],
+    "sha256": "e88cdcd760edbbefbd16665f608f2c6334953527625ffbe1cf3999250afa2a11"
+  },
+  {
+    "path": "studio/app/.js/target/test-reports/TEST-eyes4s.studio.app.appearance.AppearancePreferenceSuite.xml",
+    "cases": 5,
+    "passed": 5,
+    "skipped": [],
+    "sha256": "90624801c039f605624f8bbe4d250bafb928c7fcb6e4867c4a4b870d5deab31d"
+  },
+  {
+    "path": "studio/app/.js/target/test-reports/TEST-eyes4s.studio.app.appearance.AppearanceSuite.xml",
+    "cases": 4,
+    "passed": 4,
+    "skipped": [],
+    "sha256": "dae97669c05c8c389529eb43707070344a531bc532d8cf4a1f394df2b6a07c71"
+  },
+  {
+    "path": "studio/app/.js/target/test-reports/TEST-eyes4s.studio.app.appearance.ReviewProbeSuite.xml",
+    "cases": 2,
+    "passed": 2,
+    "skipped": [],
+    "sha256": "a11d7ae061191e125cafd8ab2ad42d1d6457ecc3aab506acb9abb0fc7cda1197"
+  },
+  {
+    "path": "studio/app/.js/target/test-reports/TEST-eyes4s.studio.app.compare.CompareMapsSuite.xml",
+    "cases": 6,
+    "passed": 6,
+    "skipped": [],
+    "sha256": "4ff0dbeee058a1a3f647e4a715b6ad5df3cc5dc815ceedfec2f657c7ea57c7d0"
+  },
+  {
+    "path": "studio/app/.js/target/test-reports/TEST-eyes4s.studio.app.compare.CompareSummarySuite.xml",
+    "cases": 19,
+    "passed": 19,
+    "skipped": [],
+    "sha256": "6e44fa58f4f770dd09d3e939be5a4b9b983214b6ba0bd4bfd25064973996f00a"
+  },
+  {
+    "path": "studio/app/.js/target/test-reports/TEST-eyes4s.studio.app.compare.ContrastPaneSuite.xml",
+    "cases": 7,
+    "passed": 7,
+    "skipped": [],
+    "sha256": "39431fce8b7921fba2a29a32d8135527b72de30d6bf866ed67c4fae22f6a229c"
+  },
+  {
+    "path": "studio/app/.js/target/test-reports/TEST-eyes4s.studio.app.compare.PairedDescriptiveSuite.xml",
+    "cases": 7,
+    "passed": 7,
+    "skipped": [],
+    "sha256": "f6e51a09142bc14fa497c3fb94e9562d190d31cd26d43a124dfece70af7d1ff2"
+  },
+  {
+    "path": "studio/app/.js/target/test-reports/TEST-eyes4s.studio.app.compare.PairsTableSuite.xml",
+    "cases": 9,
+    "passed": 9,
+    "skipped": [],
+    "sha256": "cd4dc13c04762ec62f4be135bb4b28168e821d0cba5a404101a25e67ed368eae"
+  },
+  {
+    "path": "studio/app/.js/target/test-reports/TEST-eyes4s.studio.app.compare.ParticipantNotesSuite.xml",
+    "cases": 11,
+    "passed": 11,
+    "skipped": [],
+    "sha256": "2056d77e5862f7418d791ccb2dbf536cbfebfaa3e19f55e92ab38eba2d528452"
+  },
+  {
+    "path": "studio/app/.js/target/test-reports/TEST-eyes4s.studio.app.compare.ParticipantsNavigatorSuite.xml",
+    "cases": 6,
+    "passed": 6,
+    "skipped": [],
+    "sha256": "c4e21ce68b4500369e71139dc505de267e53a396a60b416867ed23d19a13574a"
+  },
+  {
+    "path": "studio/app/.js/target/test-reports/TEST-eyes4s.studio.app.compare.QueriesNavigatorSuite.xml",
+    "cases": 16,
+    "passed": 16,
+    "skipped": [],
+    "sha256": "fa6e7959ba0684b37f4cc1e403f5a9f5844070eff98d00cb6120b825f32888f1"
+  },
+  {
+    "path": "studio/app/.js/target/test-reports/TEST-eyes4s.studio.app.compare.ReportingEditorSuite.xml",
+    "cases": 13,
+    "passed": 13,
+    "skipped": [],
+    "sha256": "a256aff2555eb0f8491136c9b5283db5afd942246e9300a076c70ed4c5d52204"
+  },
+  {
+    "path": "studio/app/.js/target/test-reports/TEST-eyes4s.studio.app.compare.TrialPanelsSuite.xml",
+    "cases": 9,
+    "passed": 9,
+    "skipped": [],
+    "sha256": "d6fa8b2b483fa4bde7af95fefdc8ab3a4bdaf9232a3ce49ff1d604b248308a70"
+  },
+  {
+    "path": "studio/app/.js/target/test-reports/TEST-eyes4s.studio.app.compare.WhyReferenceSuite.xml",
+    "cases": 21,
+    "passed": 21,
+    "skipped": [],
+    "sha256": "e35ba7f10415f09f2bca9d4455137586dc296ec041c21c1a20047d85f9aa5edc"
+  },
+  {
+    "path": "studio/app/.js/target/test-reports/TEST-eyes4s.studio.app.data.FirstRunImportSuite.xml",
+    "cases": 3,
+    "passed": 3,
+    "skipped": [],
+    "sha256": "0ab328042951c8376dd33cdd841a35bf0115288fb4edd89612c74f80e2b6801d"
+  },
+  {
+    "path": "studio/app/.js/target/test-reports/TEST-eyes4s.studio.app.data.SourceRepairSuite.xml",
+    "cases": 11,
+    "passed": 11,
+    "skipped": [],
+    "sha256": "d18e14e1fbd8822a207e56873c4b9930d5aaaba47cc0a7ba8eefe563ee137ca7"
+  },
+  {
+    "path": "studio/app/.js/target/test-reports/TEST-eyes4s.studio.app.data.SourcesPaneSuite.xml",
+    "cases": 3,
+    "passed": 3,
+    "skipped": [],
+    "sha256": "15b2317d6bb190c1d96ebba3c98325088a892650a292f21f41f4a5200194fe1e"
+  },
+  {
+    "path": "studio/app/.js/target/test-reports/TEST-eyes4s.studio.app.diagnostics.DiagnosticsPresenterSuite.xml",
+    "cases": 7,
+    "passed": 7,
+    "skipped": [],
+    "sha256": "d9924fc1c3618925617bb179ae8a6a6944f72d59fa3a555fb4407f96e1560a39"
+  },
+  {
+    "path": "studio/app/.js/target/test-reports/TEST-eyes4s.studio.app.diagnostics.StudioChecksSuite.xml",
+    "cases": 3,
+    "passed": 3,
+    "skipped": [],
+    "sha256": "6738cfebcbe4393a60e082aae4f2d8fef1b0a78c026e4409a5a498be163c6815"
+  },
+  {
+    "path": "studio/app/.js/target/test-reports/TEST-eyes4s.studio.app.driver.GoldenJourneyHeadlessSuite.xml",
+    "cases": 1,
+    "passed": 1,
+    "skipped": [],
+    "sha256": "4a1d26dcaf74cef43585c14c84c30c37699e5c0783194f9eff9ec13df3095d47"
+  },
+  {
+    "path": "studio/app/.js/target/test-reports/TEST-eyes4s.studio.app.driver.StudioDriverSuite.xml",
+    "cases": 8,
+    "passed": 8,
+    "skipped": [],
+    "sha256": "3ab539daadbbf4a893475b41389773e70b6080796f6558221c660a3947063810"
+  },
+  {
+    "path": "studio/app/.js/target/test-reports/TEST-eyes4s.studio.app.driver.VerifyContentSuite.xml",
+    "cases": 2,
+    "passed": 2,
+    "skipped": [],
+    "sha256": "c9a99c2a444ef6cafedc64b503f877dd8933c2f48b2551b930ba4c5343902886"
+  },
+  {
+    "path": "studio/app/.js/target/test-reports/TEST-eyes4s.studio.app.explore.ExploreLinkedSuite.xml",
+    "cases": 7,
+    "passed": 7,
+    "skipped": [],
+    "sha256": "3a4dd118337d2d5523597949bc39cd43236336ee9efbe6f960ff8e8b7778bf24"
+  },
+  {
+    "path": "studio/app/.js/target/test-reports/TEST-eyes4s.studio.app.explore.ExploreTimelineSuite.xml",
+    "cases": 10,
+    "passed": 10,
+    "skipped": [],
+    "sha256": "f6c1e9e4fe4a65e3707734d58fbd2c364543e7612f8ea2305ca79a44f0ecaa09"
+  },
+  {
+    "path": "studio/app/.js/target/test-reports/TEST-eyes4s.studio.app.explore.ExploreTrialViewSuite.xml",
+    "cases": 11,
+    "passed": 11,
+    "skipped": [],
+    "sha256": "fc3a158347298f3feee662f633586033e84700b571fd775227289cde58f15b90"
+  },
+  {
+    "path": "studio/app/.js/target/test-reports/TEST-eyes4s.studio.app.explore.FixationInspectorSuite.xml",
+    "cases": 10,
+    "passed": 10,
+    "skipped": [],
+    "sha256": "1303992d5cfc4afe36edc1774d145fd168da4cb40ee7f817aec6f1d9213ce523"
+  },
+  {
+    "path": "studio/app/.js/target/test-reports/TEST-eyes4s.studio.app.explore.SourceRecordsSuite.xml",
+    "cases": 12,
+    "passed": 12,
+    "skipped": [],
+    "sha256": "eab32c35c3ce6ea8916a591ee438aea1e92702e859eea0dc6538537b1092acbf"
+  },
+  {
+    "path": "studio/app/.js/target/test-reports/TEST-eyes4s.studio.app.explore.TrialsNavigatorSuite.xml",
+    "cases": 14,
+    "passed": 14,
+    "skipped": [],
+    "sha256": "a8cfcd3ace84fb12981f25813bd8f8174e388e7c70d9b4e9678c419f827bd649"
+  },
+  {
+    "path": "studio/app/.js/target/test-reports/TEST-eyes4s.studio.app.figures.FigureAppearanceSuite.xml",
+    "cases": 6,
+    "passed": 6,
+    "skipped": [],
+    "sha256": "e821c9d0a85fc966ed3c6fe743a0d6163ac5c59503717d25e16d1bb80a59deee"
+  },
+  {
+    "path": "studio/app/.js/target/test-reports/TEST-eyes4s.studio.app.figures.FigureBindingSuite.xml",
+    "cases": 9,
+    "passed": 9,
+    "skipped": [],
+    "sha256": "2eeea03197343634ae86dc3be428ef92575a8b3e6e5be54098491df012475d4b"
+  },
+  {
+    "path": "studio/app/.js/target/test-reports/TEST-eyes4s.studio.app.figures.FigureComposerSuite.xml",
+    "cases": 32,
+    "passed": 32,
+    "skipped": [],
+    "sha256": "91a6a459c3414f3f9078b8c4dc153f6ea9495af64825ebd9d3cb858855ebaddb"
+  },
+  {
+    "path": "studio/app/.js/target/test-reports/TEST-eyes4s.studio.app.figures.MethodsGeneratorSuite.xml",
+    "cases": 26,
+    "passed": 26,
+    "skipped": [],
+    "sha256": "ea63ac0f095232697ddea6e60f8ea4a6b2072cac6701e29b74ae2001e9a350b4"
+  },
+  {
+    "path": "studio/app/.js/target/test-reports/TEST-eyes4s.studio.app.geometry.DensityLevelsSuite.xml",
+    "cases": 9,
+    "passed": 9,
+    "skipped": [],
+    "sha256": "34f421543ad98ec7d3339bbb03b8f69b08a437b773913820b26e730ec921dbb1"
+  },
+  {
+    "path": "studio/app/.js/target/test-reports/TEST-eyes4s.studio.app.geometry.GeometryPanelSuite.xml",
+    "cases": 29,
+    "passed": 29,
+    "skipped": [],
+    "sha256": "585b3c4bbbd26971eaba44c05f36ef597aeda33ea2307ac3c849129a9f72cb2a"
+  },
+  {
+    "path": "studio/app/.js/target/test-reports/TEST-eyes4s.studio.app.icons.SvgPathSuite.xml",
+    "cases": 5,
+    "passed": 5,
+    "skipped": [],
+    "sha256": "c009cdb89c5bacdeb1b0e9d85138a069668c173c68bb9675f4d3fc47718ef18f"
+  },
+  {
+    "path": "studio/app/.js/target/test-reports/TEST-eyes4s.studio.app.importing.ColumnMappingPaneSuite.xml",
+    "cases": 12,
+    "passed": 12,
+    "skipped": [],
+    "sha256": "c01cd388e2428ce2b3ac0f70cb67eeb7324c588d68837d2d2c28e461585dc8af"
+  },
+  {
+    "path": "studio/app/.js/target/test-reports/TEST-eyes4s.studio.app.importing.ImportWizardSuite.xml",
+    "cases": 20,
+    "passed": 20,
+    "skipped": [],
+    "sha256": "708f6c8b2ce88cb019e90d09a852d11e0ada5ed0012245b831864a933295da74"
+  },
+  {
+    "path": "studio/app/.js/target/test-reports/TEST-eyes4s.studio.app.importing.InventorySourceSuite.xml",
+    "cases": 4,
+    "passed": 4,
+    "skipped": [],
+    "sha256": "fd6773f1c18f6f520a2bbe3422d27bfaee18af8e5666add86dfcdf91b7bdc105"
+  },
+  {
+    "path": "studio/app/.js/target/test-reports/TEST-eyes4s.studio.app.importing.TrialKeyBuilderSuite.xml",
+    "cases": 14,
+    "passed": 14,
+    "skipped": [],
+    "sha256": "5ee23ff45a3f40d2ffd7932e1f9bb416a7e2450719fea1f29b43e66777b6e3e1"
+  },
+  {
+    "path": "studio/app/.js/target/test-reports/TEST-eyes4s.studio.app.keys.CommandRegistrySuite.xml",
+    "cases": 8,
+    "passed": 8,
+    "skipped": [],
+    "sha256": "cde82103e38a912938a3ebc641f177ee290ff9a91037d604e72dbe115819e220"
+  },
+  {
+    "path": "studio/app/.js/target/test-reports/TEST-eyes4s.studio.app.layout.LayoutSpecSuite.xml",
+    "cases": 11,
+    "passed": 11,
+    "skipped": [],
+    "sha256": "b44d7b72d0f8942dd51d79a2550febe808c112014fd73f0287db858d55dbd230"
+  },
+  {
+    "path": "studio/app/.js/target/test-reports/TEST-eyes4s.studio.app.layout.TableTwinSuite.xml",
+    "cases": 3,
+    "passed": 3,
+    "skipped": [],
+    "sha256": "4b167382cc331e1d565508c9366a82ad86446d7c927efc2da79cd8f3fb65f63d"
+  },
+  {
+    "path": "studio/app/.js/target/test-reports/TEST-eyes4s.studio.app.maps.IsolinesSuite.xml",
+    "cases": 7,
+    "passed": 7,
+    "skipped": [],
+    "sha256": "781aa0f23c8d9c0fd90f11cfbe3208344d8bf17622a4df2ec47d4aeac56bbf0e"
+  },
+  {
+    "path": "studio/app/.js/target/test-reports/TEST-eyes4s.studio.app.maps.MapRasterCacheSuite.xml",
+    "cases": 7,
+    "passed": 7,
+    "skipped": [],
+    "sha256": "898c6c31c105c56a30a5f0c7a336086f4394f83ae6cc9952bcd4a2305d3bd55f"
+  },
+  {
+    "path": "studio/app/.js/target/test-reports/TEST-eyes4s.studio.app.maps.PaletteSuite.xml",
+    "cases": 9,
+    "passed": 9,
+    "skipped": [],
+    "sha256": "e9042701935d7cc75cc0a62146f3a88fefaa8330b82fe07125b6d739cd31d22a"
+  },
+  {
+    "path": "studio/app/.js/target/test-reports/TEST-eyes4s.studio.app.maps.StageCasingSuite.xml",
+    "cases": 4,
+    "passed": 4,
+    "skipped": [],
+    "sha256": "cc664a2e9d9453c182829bc1e0b9e98df6ca417ade4ac815306b70e6d9a55e6b"
+  },
+  {
+    "path": "studio/app/.js/target/test-reports/TEST-eyes4s.studio.app.nav.ExplainNavigationSuite.xml",
+    "cases": 8,
+    "passed": 8,
+    "skipped": [],
+    "sha256": "0dca0af465fc1c24eb1d84db203406ea4d9a80c50d3c8d3d2bf7b2f02219b6b3"
+  },
+  {
+    "path": "studio/app/.js/target/test-reports/TEST-eyes4s.studio.app.nav.TrailModelSuite.xml",
+    "cases": 17,
+    "passed": 17,
+    "skipped": [],
+    "sha256": "5f681e308cfe5aa14b9d351ee25d26cee303c7391cdc17973297b9305dc959b0"
+  },
+  {
+    "path": "studio/app/.js/target/test-reports/TEST-eyes4s.studio.app.plot.ParticipantMeansSuite.xml",
+    "cases": 4,
+    "passed": 4,
+    "skipped": [],
+    "sha256": "5cd8d6dca18a0df2941858769f255c79ee32147580369b391c5dc2c304be57a0"
+  },
+  {
+    "path": "studio/app/.js/target/test-reports/TEST-eyes4s.studio.app.plot.PlotSourceSuite.xml",
+    "cases": 4,
+    "passed": 4,
+    "skipped": [],
+    "sha256": "a6d68f904c51ba7321781d886f630f7786ebe11189c3dbe1d1539d18c6057a27"
+  },
+  {
+    "path": "studio/app/.js/target/test-reports/TEST-eyes4s.studio.app.plot.ScaleLadderSuite.xml",
+    "cases": 7,
+    "passed": 7,
+    "skipped": [],
+    "sha256": "690e2b79a015a42dc0c9cd544a6c8626b74700316abe204a0c3e4cf621d7b9e5"
+  },
+  {
+    "path": "studio/app/.js/target/test-reports/TEST-eyes4s.studio.app.plot.ScaleProfileSuite.xml",
+    "cases": 7,
+    "passed": 7,
+    "skipped": [],
+    "sha256": "5e3293ea57f732611a8f544f481795f6b710d9d8bc8143a7724a9c7811678329"
+  },
+  {
+    "path": "studio/app/.js/target/test-reports/TEST-eyes4s.studio.app.plot.TableTwinSuite.xml",
+    "cases": 13,
+    "passed": 13,
+    "skipped": [],
+    "sha256": "81594fabe297a5e7426d1a61f0e14e70c321cb4be1d14d07590a053f09533c21"
+  },
+  {
+    "path": "studio/app/.js/target/test-reports/TEST-eyes4s.studio.app.plot.TimelineSuite.xml",
+    "cases": 6,
+    "passed": 6,
+    "skipped": [],
+    "sha256": "fa39357494a648219460886b915004aa0f10d965561263275917043f2ae00d91"
+  },
+  {
+    "path": "studio/app/.js/target/test-reports/TEST-eyes4s.studio.app.plot.ViewSelectionSuite.xml",
+    "cases": 5,
+    "passed": 5,
+    "skipped": [],
+    "sha256": "f57d4ba1d28e889d0eac9f118c10cdaa4d575f3e3f0de3c49d28c6c8a85cc5ca"
+  },
+  {
+    "path": "studio/app/.js/target/test-reports/TEST-eyes4s.studio.app.project.ProjectCopyModelSuite.xml",
+    "cases": 3,
+    "passed": 3,
+    "skipped": [],
+    "sha256": "54be0e5179eed93f10f6bae3171e30080307345a6ef4c3def24bcb4947e1bdc0"
+  },
+  {
+    "path": "studio/app/.js/target/test-reports/TEST-eyes4s.studio.app.project.ProjectLifecycleSuite.xml",
+    "cases": 7,
+    "passed": 7,
+    "skipped": [],
+    "sha256": "d924f9526ae89aa0648a028c2cd8346ae887466eeda617931ec7ebbca17894b5"
+  },
+  {
+    "path": "studio/app/.js/target/test-reports/TEST-eyes4s.studio.app.project.RecentProjectsModelSuite.xml",
+    "cases": 2,
+    "passed": 2,
+    "skipped": [],
+    "sha256": "4eb6009fba805b54e97f2901e6f3cae76aa5ac96ee1a8cbed49099bd070b045f"
+  },
+  {
+    "path": "studio/app/.js/target/test-reports/TEST-eyes4s.studio.app.report.ErrorDialogSuite.xml",
+    "cases": 2,
+    "passed": 2,
+    "skipped": [],
+    "sha256": "36c8287a9f4c06d2c538e1945820e923dacbef07019d9c079294de590f810d40"
+  },
+  {
+    "path": "studio/app/.js/target/test-reports/TEST-eyes4s.studio.app.runs.RunStoragePanelSuite.xml",
+    "cases": 7,
+    "passed": 7,
+    "skipped": [],
+    "sha256": "f9d0058e2e63c69188ad00f2c0325a0136b883de3191e494b79dedfdd0ce36a8"
+  },
+  {
+    "path": "studio/app/.js/target/test-reports/TEST-eyes4s.studio.app.text.MessagesSuite.xml",
+    "cases": 6,
+    "passed": 6,
+    "skipped": [],
+    "sha256": "d96a1180cdf3fd60cfe684e98e54bc3a77ccdae2209c756ce232e2e9dfdfa06a"
+  },
+  {
+    "path": "studio/app/.js/target/test-reports/TEST-eyes4s.studio.app.tokens.GreyscaleSuite.xml",
+    "cases": 7,
+    "passed": 7,
+    "skipped": [],
+    "sha256": "c1b822abd39323bd55c3b05abe130a9f1dcc25ef8e07a870ca8e5c120965e5e3"
+  },
+  {
+    "path": "studio/app/.js/target/test-reports/TEST-eyes4s.studio.app.tokens.TokenContrastSuite.xml",
+    "cases": 25,
+    "passed": 25,
+    "skipped": [],
+    "sha256": "327c687106cd7abcd8c6d9b93749a853a76221e8951740f7932d79695becabc3"
+  },
+  {
+    "path": "studio/app/.js/target/test-reports/TEST-eyes4s.studio.app.tokens.TokenCssSuite.xml",
+    "cases": 8,
+    "passed": 8,
+    "skipped": [],
+    "sha256": "6f3e5817d7f8e0725bc2e317ce83360e48e1d01ef383c991d0398d510ec3cc8a"
+  },
+  {
+    "path": "studio/app/.js/target/test-reports/TEST-eyes4s.studio.app.tokens.TypeScaleSuite.xml",
+    "cases": 6,
+    "passed": 6,
+    "skipped": [],
+    "sha256": "0e7907cc327c0e638308315e642174643609b9a4d714b9b259827bb4925d5150"
+  },
+  {
+    "path": "studio/app/.js/target/test-reports/TEST-eyes4s.studio.app.vm.MenusSuite.xml",
+    "cases": 14,
+    "passed": 14,
+    "skipped": [],
+    "sha256": "78b644c73a94928cb68b30694d950dee6115bd722011f33c32deef7a78906504"
+  },
+  {
+    "path": "studio/app/.js/target/test-reports/TEST-eyes4s.studio.app.vm.PaneFocusSuite.xml",
+    "cases": 3,
+    "passed": 3,
+    "skipped": [],
+    "sha256": "2b7b4b2ae6d8f070b1c1d0656cde5e16d389f67067734319cd338f49b3a0eafe"
+  },
+  {
+    "path": "studio/app/.js/target/test-reports/TEST-eyes4s.studio.app.vm.ViewModelSnapshotSuite.xml",
+    "cases": 15,
+    "passed": 15,
+    "skipped": [],
+    "sha256": "c031efc933c020333d523fb843106848350a70d2368accbac80074630d3ed357"
+  },
+  {
+    "path": "studio/app/.jvm/target/test-reports/TEST-consumer.StudioAppDomainProductMirrorSuite.xml",
+    "cases": 47,
+    "passed": 47,
+    "skipped": [],
+    "sha256": "7e4d05bf81efd2665bbb469fbf69ed3d078912bb51978c046c86511064dccf25"
+  },
+  {
+    "path": "studio/app/.jvm/target/test-reports/TEST-eyes4s.studio.app.AppUpdateLawsSuite.xml",
+    "cases": 18,
+    "passed": 18,
+    "skipped": [],
+    "sha256": "62ce9eb546cb70e52ba190f132cdb6c84cccb242c8010012aedd9560ada3d937"
+  },
+  {
+    "path": "studio/app/.jvm/target/test-reports/TEST-eyes4s.studio.app.InputChecksSuite.xml",
+    "cases": 1,
+    "passed": 1,
+    "skipped": [],
+    "sha256": "1a4388dc1fc7606415bcde96cf4d77ec677edc643c3594bc180b8ef5d36f472b"
+  },
+  {
+    "path": "studio/app/.jvm/target/test-reports/TEST-eyes4s.studio.app.NativeArtifactsAppSuite.xml",
+    "cases": 6,
+    "passed": 6,
+    "skipped": [],
+    "sha256": "37de025045f1c5f62e854b3b3884c58e0f8e5b4fd1de8153de2d2e4ff978530c"
+  },
+  {
+    "path": "studio/app/.jvm/target/test-reports/TEST-eyes4s.studio.app.NativeRunControlsSuite.xml",
+    "cases": 6,
+    "passed": 6,
+    "skipped": [],
+    "sha256": "d707c4aee4cae7a0e799a3b0d0fb01ab49137e273e0f885e550612126e4a49ad"
+  },
+  {
+    "path": "studio/app/.jvm/target/test-reports/TEST-eyes4s.studio.app.RunInProgressSuite.xml",
+    "cases": 4,
+    "passed": 4,
+    "skipped": [],
+    "sha256": "434d8273106f4f871cef86acd87e1448e674706529226206c64b199a517c877d"
+  },
+  {
+    "path": "studio/app/.jvm/target/test-reports/TEST-eyes4s.studio.app.RunOutcomeSuite.xml",
+    "cases": 3,
+    "passed": 3,
+    "skipped": [],
+    "sha256": "beea2d93db6d9041e0f09f9b3246a47c9ffea9bb439fb9e6cfb45a26f9a82e79"
+  },
+  {
+    "path": "studio/app/.jvm/target/test-reports/TEST-eyes4s.studio.app.about.AboutBoxSuite.xml",
+    "cases": 7,
+    "passed": 7,
+    "skipped": [],
+    "sha256": "ddcdc0a8f9a1d0815a107764a21caaaf7d4eafd7f7df2e41d525545d4122b357"
+  },
+  {
+    "path": "studio/app/.jvm/target/test-reports/TEST-eyes4s.studio.app.admission.AdmissionLedgerSuite.xml",
+    "cases": 23,
+    "passed": 23,
+    "skipped": [],
+    "sha256": "a2fa986d10e1cdcb740be4bc7a01fa9d050e389e9c9709c55c8d855403caadf7"
+  },
+  {
+    "path": "studio/app/.jvm/target/test-reports/TEST-eyes4s.studio.app.analysis.AnalysesNavigatorSuite.xml",
+    "cases": 6,
+    "passed": 6,
+    "skipped": [],
+    "sha256": "f14e636bd74e782cb00595129b1f4e535c6467b9c4ab5d36967ccf8c4d01d198"
+  },
+  {
+    "path": "studio/app/.jvm/target/test-reports/TEST-eyes4s.studio.app.analysis.DescriptorEditorSuite.xml",
+    "cases": 3,
+    "passed": 3,
+    "skipped": [],
+    "sha256": "9114ee5483ad6a62677454b2a566c9bf3e7401f77cf7560e8cd737951ee88692"
+  },
+  {
+    "path": "studio/app/.jvm/target/test-reports/TEST-eyes4s.studio.app.analysis.FamilyNavigatorSuite.xml",
+    "cases": 8,
+    "passed": 8,
+    "skipped": [],
+    "sha256": "3fe6d26f137cb03bcdba9f526c3379c2697553b61536a4dabbf163f6d4365474"
+  },
+  {
+    "path": "studio/app/.jvm/target/test-reports/TEST-eyes4s.studio.app.analysis.PreflightSuite.xml",
+    "cases": 5,
+    "passed": 5,
+    "skipped": [],
+    "sha256": "61b6ce1ef4c0850c3c32328668283d6515a3475a030291c54777618cfeccd0ee"
+  },
+  {
+    "path": "studio/app/.jvm/target/test-reports/TEST-eyes4s.studio.app.analysis.PresetSuite.xml",
+    "cases": 13,
+    "passed": 13,
+    "skipped": [],
+    "sha256": "435a01e933c9c687a28c3627e948f350658bfac59856cc88356e02636ae08a58"
+  },
+  {
+    "path": "studio/app/.jvm/target/test-reports/TEST-eyes4s.studio.app.analysis.RecipeEditorSuite.xml",
+    "cases": 3,
+    "passed": 3,
+    "skipped": [],
+    "sha256": "85ab5ba92bd57335969f7530a6d0d9aaf1172f82bec9f328852ea11c759cfdca"
+  },
+  {
+    "path": "studio/app/.jvm/target/test-reports/TEST-eyes4s.studio.app.analysis.ResolvedDesignSuite.xml",
+    "cases": 21,
+    "passed": 21,
+    "skipped": [],
+    "sha256": "5c35beab033dea4c77841945f6efc0294e7ec34545475ab46130c0f314508474"
+  },
+  {
+    "path": "studio/app/.jvm/target/test-reports/TEST-eyes4s.studio.app.appearance.AppearancePreferenceSuite.xml",
+    "cases": 5,
+    "passed": 5,
+    "skipped": [],
+    "sha256": "8f374bad9dc80f2b123a7fca93a024e889841a0db43263452bf173738c088f69"
+  },
+  {
+    "path": "studio/app/.jvm/target/test-reports/TEST-eyes4s.studio.app.appearance.AppearanceSuite.xml",
+    "cases": 4,
+    "passed": 4,
+    "skipped": [],
+    "sha256": "8c1f922503a27bb2ca62a97fdd91d60630eb9ba3e27998c30e9bf1ea727243a8"
+  },
+  {
+    "path": "studio/app/.jvm/target/test-reports/TEST-eyes4s.studio.app.appearance.ReviewProbeSuite.xml",
+    "cases": 2,
+    "passed": 2,
+    "skipped": [],
+    "sha256": "d4f961712b105a2d040a38808481d47e35ef0de56d1aa72f36132e47a4c12368"
+  },
+  {
+    "path": "studio/app/.jvm/target/test-reports/TEST-eyes4s.studio.app.compare.CompareMapsSuite.xml",
+    "cases": 6,
+    "passed": 6,
+    "skipped": [],
+    "sha256": "f1ec968345689ac23d3ba30ae72d0cf1e535892004feaa59d2a1eb4973522a5c"
+  },
+  {
+    "path": "studio/app/.jvm/target/test-reports/TEST-eyes4s.studio.app.compare.CompareSummarySuite.xml",
+    "cases": 19,
+    "passed": 19,
+    "skipped": [],
+    "sha256": "f2fbacc4b080e94c1a8e9cb5d5e7bfb625446d67cac23a82280e4b162990c409"
+  },
+  {
+    "path": "studio/app/.jvm/target/test-reports/TEST-eyes4s.studio.app.compare.ContrastPaneSuite.xml",
+    "cases": 7,
+    "passed": 7,
+    "skipped": [],
+    "sha256": "f319ebf542311ad0c8de521a1b3b00af8f1c0593e7dffe98cda1fdce7155904f"
+  },
+  {
+    "path": "studio/app/.jvm/target/test-reports/TEST-eyes4s.studio.app.compare.PairedDescriptiveSuite.xml",
+    "cases": 7,
+    "passed": 7,
+    "skipped": [],
+    "sha256": "16e4d7650a964949b2c7560f77e237b0e7a2c1b208215e8c8136f8fce24a6e6f"
+  },
+  {
+    "path": "studio/app/.jvm/target/test-reports/TEST-eyes4s.studio.app.compare.PairsTableSuite.xml",
+    "cases": 9,
+    "passed": 9,
+    "skipped": [],
+    "sha256": "39db4cd0133ab7590d0dd34e032a1d52ffa0288ebab83cb9af43e92adfb660fb"
+  },
+  {
+    "path": "studio/app/.jvm/target/test-reports/TEST-eyes4s.studio.app.compare.ParticipantNotesSuite.xml",
+    "cases": 11,
+    "passed": 11,
+    "skipped": [],
+    "sha256": "5b611a3bec6b5c2e43d9ad2e4096d93da20d69170fe42a1af98661824d1f81f4"
+  },
+  {
+    "path": "studio/app/.jvm/target/test-reports/TEST-eyes4s.studio.app.compare.ParticipantsNavigatorSuite.xml",
+    "cases": 6,
+    "passed": 6,
+    "skipped": [],
+    "sha256": "894ed4b11f9e227e2afe65f87279034e0120e09a4e13dc2edd4d80061e27fd40"
+  },
+  {
+    "path": "studio/app/.jvm/target/test-reports/TEST-eyes4s.studio.app.compare.QueriesNavigatorSuite.xml",
+    "cases": 16,
+    "passed": 16,
+    "skipped": [],
+    "sha256": "decb339b007d832978f5d30958e6f7a193f0745017558139f427b4cd0868019c"
+  },
+  {
+    "path": "studio/app/.jvm/target/test-reports/TEST-eyes4s.studio.app.compare.ReportingEditorSuite.xml",
+    "cases": 13,
+    "passed": 13,
+    "skipped": [],
+    "sha256": "40463895f89a08aeed1a622712364d08c1f222b860c7ac57bcdb5bd6bad622af"
+  },
+  {
+    "path": "studio/app/.jvm/target/test-reports/TEST-eyes4s.studio.app.compare.TrialPanelsSuite.xml",
+    "cases": 9,
+    "passed": 9,
+    "skipped": [],
+    "sha256": "330fd6c61619e8a6b4c1e231ff593ae1de79e781052735c3b27c257890a5c796"
+  },
+  {
+    "path": "studio/app/.jvm/target/test-reports/TEST-eyes4s.studio.app.compare.WhyReferenceSuite.xml",
+    "cases": 21,
+    "passed": 21,
+    "skipped": [],
+    "sha256": "5d751da6d010a7d9e379a0e0108e0fa1ee386accb5d24c93f3a5a1dc9d20ef78"
+  },
+  {
+    "path": "studio/app/.jvm/target/test-reports/TEST-eyes4s.studio.app.data.FirstRunImportSuite.xml",
+    "cases": 3,
+    "passed": 3,
+    "skipped": [],
+    "sha256": "7918855cf45a0a70a21dbbf5b415e138f9f0f00144b361f011cde7f1e38a214c"
+  },
+  {
+    "path": "studio/app/.jvm/target/test-reports/TEST-eyes4s.studio.app.data.SourceRepairSuite.xml",
+    "cases": 11,
+    "passed": 11,
+    "skipped": [],
+    "sha256": "362d3d297a95feb68744222d2f70ff80782ca89b91004c1ec47e17a5b61c9a51"
+  },
+  {
+    "path": "studio/app/.jvm/target/test-reports/TEST-eyes4s.studio.app.data.SourcesPaneSuite.xml",
+    "cases": 3,
+    "passed": 3,
+    "skipped": [],
+    "sha256": "fab0cfc201f24ee120925e7c9c8860fe357fcf9f00225ad96092e18da46e9fa2"
+  },
+  {
+    "path": "studio/app/.jvm/target/test-reports/TEST-eyes4s.studio.app.diagnostics.DiagnosticsPresenterSuite.xml",
+    "cases": 7,
+    "passed": 7,
+    "skipped": [],
+    "sha256": "600f4cecca4c85afe548b2001a769e8d7a33c26208917db5d504fb764a9aef0a"
+  },
+  {
+    "path": "studio/app/.jvm/target/test-reports/TEST-eyes4s.studio.app.diagnostics.StudioChecksSuite.xml",
+    "cases": 3,
+    "passed": 3,
+    "skipped": [],
+    "sha256": "1a35e4b2f388e88de2ba938bf6364b68d71b9a62155b2389e627a8500162d5b9"
+  },
+  {
+    "path": "studio/app/.jvm/target/test-reports/TEST-eyes4s.studio.app.driver.GoldenJourneyHeadlessSuite.xml",
+    "cases": 1,
+    "passed": 1,
+    "skipped": [],
+    "sha256": "e8981fe5c9aa07a098af5d6b94cc3470be3481c619df98e279fcbcc34ed06f7f"
+  },
+  {
+    "path": "studio/app/.jvm/target/test-reports/TEST-eyes4s.studio.app.driver.StudioDriverSuite.xml",
+    "cases": 8,
+    "passed": 8,
+    "skipped": [],
+    "sha256": "0c97ee8cf345d7c11787632a46c48bcd9ae105dfdbac122e6fdb72955beebd5b"
+  },
+  {
+    "path": "studio/app/.jvm/target/test-reports/TEST-eyes4s.studio.app.driver.VerifyContentSuite.xml",
+    "cases": 2,
+    "passed": 2,
+    "skipped": [],
+    "sha256": "794b4cc24ce773ab880e85e86692753df15ed6846fd012f85d287d49d13bb290"
+  },
+  {
+    "path": "studio/app/.jvm/target/test-reports/TEST-eyes4s.studio.app.explore.ExploreLinkedSuite.xml",
+    "cases": 7,
+    "passed": 7,
+    "skipped": [],
+    "sha256": "a079197e191be67640bbb70b9a5b45600b8809fa76df88de847dbec870efbb0d"
+  },
+  {
+    "path": "studio/app/.jvm/target/test-reports/TEST-eyes4s.studio.app.explore.ExploreTimelineSuite.xml",
+    "cases": 10,
+    "passed": 10,
+    "skipped": [],
+    "sha256": "6a59c42cd8d1d8c0c879d67b7f16d62aa392ccef80058cfa4be3338b4d0a032f"
+  },
+  {
+    "path": "studio/app/.jvm/target/test-reports/TEST-eyes4s.studio.app.explore.ExploreTrialViewSuite.xml",
+    "cases": 11,
+    "passed": 11,
+    "skipped": [],
+    "sha256": "02511dfb0a1fdca6a37bc68896e25c5bbee4a146570b28645780a91ceef275af"
+  },
+  {
+    "path": "studio/app/.jvm/target/test-reports/TEST-eyes4s.studio.app.explore.FixationInspectorSuite.xml",
+    "cases": 10,
+    "passed": 10,
+    "skipped": [],
+    "sha256": "77c4e832e439585624b205d3fb4305fd0ed5bad4b7c301bbb45d5e5adf405ed8"
+  },
+  {
+    "path": "studio/app/.jvm/target/test-reports/TEST-eyes4s.studio.app.explore.SourceRecordsSuite.xml",
+    "cases": 12,
+    "passed": 12,
+    "skipped": [],
+    "sha256": "4762d256e04a84ccda80e485353670e4e993260cc0c7bd833b25d1ea6986b81e"
+  },
+  {
+    "path": "studio/app/.jvm/target/test-reports/TEST-eyes4s.studio.app.explore.TrialsNavigatorSuite.xml",
+    "cases": 14,
+    "passed": 14,
+    "skipped": [],
+    "sha256": "3b9828ce1b161ea0553020c8189b8020dd7f405a0cdaa36d4b3e1b90bc9f2419"
+  },
+  {
+    "path": "studio/app/.jvm/target/test-reports/TEST-eyes4s.studio.app.figures.FigureAppearanceSuite.xml",
+    "cases": 6,
+    "passed": 6,
+    "skipped": [],
+    "sha256": "daabe78d0a2892d76d9cb6a94521865c67ab0cbe5c07c332a7f3b64772687ebd"
+  },
+  {
+    "path": "studio/app/.jvm/target/test-reports/TEST-eyes4s.studio.app.figures.FigureBindingSuite.xml",
+    "cases": 9,
+    "passed": 9,
+    "skipped": [],
+    "sha256": "7e4b9c230c7c3b46af1002767ce3161c53b4dc3ffbb647c8c430cdfb44ee15e7"
+  },
+  {
+    "path": "studio/app/.jvm/target/test-reports/TEST-eyes4s.studio.app.figures.FigureComposerSuite.xml",
+    "cases": 32,
+    "passed": 32,
+    "skipped": [],
+    "sha256": "44fd210c141018bcb4f40510fd28174edefbf956ef20dde4fc6928c0aa880fcc"
+  },
+  {
+    "path": "studio/app/.jvm/target/test-reports/TEST-eyes4s.studio.app.figures.MethodsGeneratorSuite.xml",
+    "cases": 26,
+    "passed": 26,
+    "skipped": [],
+    "sha256": "173bd4a27e4ab2e7acea6f0ae63a7fe4162eb1e41db1bc3149eef40ad61f6340"
+  },
+  {
+    "path": "studio/app/.jvm/target/test-reports/TEST-eyes4s.studio.app.geometry.DensityLevelsSuite.xml",
+    "cases": 9,
+    "passed": 9,
+    "skipped": [],
+    "sha256": "1332a4f0662b416377eaa952b46a6a1a51c099cfff835bcbab0ba475f566d418"
+  },
+  {
+    "path": "studio/app/.jvm/target/test-reports/TEST-eyes4s.studio.app.geometry.GeometryPanelSuite.xml",
+    "cases": 29,
+    "passed": 29,
+    "skipped": [],
+    "sha256": "5f8f9f71e50cec6292c39d8d9414a29e954965279ecacb36741cb2511fc4ff84"
+  },
+  {
+    "path": "studio/app/.jvm/target/test-reports/TEST-eyes4s.studio.app.icons.SvgPathSuite.xml",
+    "cases": 5,
+    "passed": 5,
+    "skipped": [],
+    "sha256": "695f08dc6a90373adb16299929bf1297468c3ebaa41739b14ef0c5a0a83a662e"
+  },
+  {
+    "path": "studio/app/.jvm/target/test-reports/TEST-eyes4s.studio.app.importing.ColumnMappingPaneSuite.xml",
+    "cases": 12,
+    "passed": 12,
+    "skipped": [],
+    "sha256": "abad36d588a21aead3980e552d7036d33c0eec248f86ded8a715475194e1f8ba"
+  },
+  {
+    "path": "studio/app/.jvm/target/test-reports/TEST-eyes4s.studio.app.importing.ImportWizardSuite.xml",
+    "cases": 20,
+    "passed": 20,
+    "skipped": [],
+    "sha256": "b482d10f2ec2d44e32efd400f3f78a69376cac72971447a5dabaf0a6681b71bd"
+  },
+  {
+    "path": "studio/app/.jvm/target/test-reports/TEST-eyes4s.studio.app.importing.InventorySourceSuite.xml",
+    "cases": 4,
+    "passed": 4,
+    "skipped": [],
+    "sha256": "deada102038c57258d87b16e87f157fb7773e078481a1805324896d576e6ea0d"
+  },
+  {
+    "path": "studio/app/.jvm/target/test-reports/TEST-eyes4s.studio.app.importing.TrialKeyBuilderSuite.xml",
+    "cases": 14,
+    "passed": 14,
+    "skipped": [],
+    "sha256": "9c867e3f9ac4dd4f9c06d9f4388142b6a1fca71e2dd0616c92226d2f8f57b7dc"
+  },
+  {
+    "path": "studio/app/.jvm/target/test-reports/TEST-eyes4s.studio.app.keys.CommandRegistrySuite.xml",
+    "cases": 8,
+    "passed": 8,
+    "skipped": [],
+    "sha256": "c2c120d5a0d3bd36563618189eefd5aee8839284480fce5230ce6ba87bfae642"
+  },
+  {
+    "path": "studio/app/.jvm/target/test-reports/TEST-eyes4s.studio.app.layout.LayoutSpecSuite.xml",
+    "cases": 11,
+    "passed": 11,
+    "skipped": [],
+    "sha256": "66a26d36ca4e43228af8d4d0a8f11e9348d8ac5e79e2f1b181c6abd2f73d61f7"
+  },
+  {
+    "path": "studio/app/.jvm/target/test-reports/TEST-eyes4s.studio.app.layout.TableTwinSuite.xml",
+    "cases": 3,
+    "passed": 3,
+    "skipped": [],
+    "sha256": "75122918ff54c3663bf6f6a0ad34a2aa88975093a0f6e8adb95affca7ef10f43"
+  },
+  {
+    "path": "studio/app/.jvm/target/test-reports/TEST-eyes4s.studio.app.maps.IsolinesSuite.xml",
+    "cases": 7,
+    "passed": 7,
+    "skipped": [],
+    "sha256": "057bdfc48a9110a704fb5e7d6e7a5adb1ade3670987c7b6581e18982b2c4a29f"
+  },
+  {
+    "path": "studio/app/.jvm/target/test-reports/TEST-eyes4s.studio.app.maps.MapRasterCacheSuite.xml",
+    "cases": 7,
+    "passed": 7,
+    "skipped": [],
+    "sha256": "b3f3800bcf75bf97e5a8db5449c8fe8a986c4d1fb09e40fdbd489b45fd85b252"
+  },
+  {
+    "path": "studio/app/.jvm/target/test-reports/TEST-eyes4s.studio.app.maps.PaletteSuite.xml",
+    "cases": 9,
+    "passed": 9,
+    "skipped": [],
+    "sha256": "c9cd1409f8703b5e20f87dc4bf52f182d1fd252df0a1c24574fc555dac26b7e1"
+  },
+  {
+    "path": "studio/app/.jvm/target/test-reports/TEST-eyes4s.studio.app.maps.StageCasingSuite.xml",
+    "cases": 4,
+    "passed": 4,
+    "skipped": [],
+    "sha256": "8a201bb0a721a19a0c2e64e8804fa6d6e6646f441d981f3ff9450ee4b69faa8e"
+  },
+  {
+    "path": "studio/app/.jvm/target/test-reports/TEST-eyes4s.studio.app.nav.ExplainNavigationSuite.xml",
+    "cases": 8,
+    "passed": 8,
+    "skipped": [],
+    "sha256": "76c6f3acaaeb8f9b8e1606d61b31884551b873dd799efcc52c43459a618e0bd9"
+  },
+  {
+    "path": "studio/app/.jvm/target/test-reports/TEST-eyes4s.studio.app.nav.TrailModelSuite.xml",
+    "cases": 17,
+    "passed": 17,
+    "skipped": [],
+    "sha256": "94f35464b3ed535ad1fc6498934ace9e8983eb8cbd17510d9064750fd326f437"
+  },
+  {
+    "path": "studio/app/.jvm/target/test-reports/TEST-eyes4s.studio.app.plot.ParticipantMeansSuite.xml",
+    "cases": 4,
+    "passed": 4,
+    "skipped": [],
+    "sha256": "428d7c0a3179d6f6294a80f2479deda0b0614f19443083580d35352a15815703"
+  },
+  {
+    "path": "studio/app/.jvm/target/test-reports/TEST-eyes4s.studio.app.plot.PlotSourceSuite.xml",
+    "cases": 4,
+    "passed": 4,
+    "skipped": [],
+    "sha256": "9461885e671654d1e32970b61fb3a35eac75933e94eed5b803ae362dd7e24d1b"
+  },
+  {
+    "path": "studio/app/.jvm/target/test-reports/TEST-eyes4s.studio.app.plot.ScaleLadderSuite.xml",
+    "cases": 7,
+    "passed": 7,
+    "skipped": [],
+    "sha256": "bc7eff92963fdfb36de8796f64f47d8e9cc8c8e2ed6e806e48e322b41cdf0832"
+  },
+  {
+    "path": "studio/app/.jvm/target/test-reports/TEST-eyes4s.studio.app.plot.ScaleProfileSuite.xml",
+    "cases": 7,
+    "passed": 7,
+    "skipped": [],
+    "sha256": "e8170e53a07ea3a4a41609a98d2f3e2bf10e7caec7c738607bc9e76cef7a6dd5"
+  },
+  {
+    "path": "studio/app/.jvm/target/test-reports/TEST-eyes4s.studio.app.plot.TableTwinSuite.xml",
+    "cases": 13,
+    "passed": 13,
+    "skipped": [],
+    "sha256": "2d9422cc35fc36dd3fef992091a8fba80a3e8c5682f156e1ec1282a75ff77b7e"
+  },
+  {
+    "path": "studio/app/.jvm/target/test-reports/TEST-eyes4s.studio.app.plot.TimelineSuite.xml",
+    "cases": 6,
+    "passed": 6,
+    "skipped": [],
+    "sha256": "02a22b4b1a6866bc1be4e3c772e14ab4f65b5f307d02f1df30e4cc0f8f852067"
+  },
+  {
+    "path": "studio/app/.jvm/target/test-reports/TEST-eyes4s.studio.app.plot.ViewSelectionSuite.xml",
+    "cases": 5,
+    "passed": 5,
+    "skipped": [],
+    "sha256": "497d3fd8f39d2d76a3238aaa0a6113c490d2e7526f3b80916c76e3523e49f858"
+  },
+  {
+    "path": "studio/app/.jvm/target/test-reports/TEST-eyes4s.studio.app.project.ProjectCopyModelSuite.xml",
+    "cases": 3,
+    "passed": 3,
+    "skipped": [],
+    "sha256": "3b8c633a5e892a66a589fbc074f752c391d92bc6e136e196015975ed8136d0f8"
+  },
+  {
+    "path": "studio/app/.jvm/target/test-reports/TEST-eyes4s.studio.app.project.ProjectLifecycleSuite.xml",
+    "cases": 7,
+    "passed": 7,
+    "skipped": [],
+    "sha256": "e6aec3e63a02cfd4aec8614c61ea942cadfbeec1760c53d89dae1a26a2c8d064"
+  },
+  {
+    "path": "studio/app/.jvm/target/test-reports/TEST-eyes4s.studio.app.project.RecentProjectsModelSuite.xml",
+    "cases": 2,
+    "passed": 2,
+    "skipped": [],
+    "sha256": "26277ca92fbccbd9775ee7bdf69114351fe070ee57fb631c09f21ef41aba0165"
+  },
+  {
+    "path": "studio/app/.jvm/target/test-reports/TEST-eyes4s.studio.app.report.ErrorDialogSuite.xml",
+    "cases": 2,
+    "passed": 2,
+    "skipped": [],
+    "sha256": "e0d92bd86b93c71107ca80836c0419376783eb80670a3f5911984a8f2b01929d"
+  },
+  {
+    "path": "studio/app/.jvm/target/test-reports/TEST-eyes4s.studio.app.runs.RunStoragePanelSuite.xml",
+    "cases": 7,
+    "passed": 7,
+    "skipped": [],
+    "sha256": "b5384a0d34d8dad68b62a6e3e36ae3505ed3c1367ad53f73b9c2f956eda8c112"
+  },
+  {
+    "path": "studio/app/.jvm/target/test-reports/TEST-eyes4s.studio.app.text.MessagesSuite.xml",
+    "cases": 6,
+    "passed": 6,
+    "skipped": [],
+    "sha256": "14dece751796fb9436e7526020cdc439226d3bfeb46ca6a7f2634bea5b4d4dca"
+  },
+  {
+    "path": "studio/app/.jvm/target/test-reports/TEST-eyes4s.studio.app.tokens.GreyscaleSuite.xml",
+    "cases": 7,
+    "passed": 7,
+    "skipped": [],
+    "sha256": "89aeeb5bc7c9560bb486222d6a266ee2bd11d200a7dee16b1a6aed135980d693"
+  },
+  {
+    "path": "studio/app/.jvm/target/test-reports/TEST-eyes4s.studio.app.tokens.TokenContrastSuite.xml",
+    "cases": 25,
+    "passed": 25,
+    "skipped": [],
+    "sha256": "b00a7befd9c28c0ad3bc31e2f1cc72cc3626e985438318976a572441f7b14dc2"
+  },
+  {
+    "path": "studio/app/.jvm/target/test-reports/TEST-eyes4s.studio.app.tokens.TokenCssSuite.xml",
+    "cases": 8,
+    "passed": 8,
+    "skipped": [],
+    "sha256": "1f312aa7b014ffd18e93422f8970e857ef2c14c9f0f4bda8d8e99488cfb4c2f8"
+  },
+  {
+    "path": "studio/app/.jvm/target/test-reports/TEST-eyes4s.studio.app.tokens.TypeScaleSuite.xml",
+    "cases": 6,
+    "passed": 6,
+    "skipped": [],
+    "sha256": "873dc5bc14a155c335fdac933ab24cf7f45c355e929a76e67d3e1b462fd495f6"
+  },
+  {
+    "path": "studio/app/.jvm/target/test-reports/TEST-eyes4s.studio.app.vm.MenusSuite.xml",
+    "cases": 14,
+    "passed": 14,
+    "skipped": [],
+    "sha256": "20123e86392ba65eeee1bbd959a6ea5ef3909422290dcc6932c4c36b5e46f5c9"
+  },
+  {
+    "path": "studio/app/.jvm/target/test-reports/TEST-eyes4s.studio.app.vm.PaneFocusSuite.xml",
+    "cases": 3,
+    "passed": 3,
+    "skipped": [],
+    "sha256": "dd6388f26ef4e34f437c9a8b69acd51b8a4936e0e2c8f5df2af5da11933236e1"
+  },
+  {
+    "path": "studio/app/.jvm/target/test-reports/TEST-eyes4s.studio.app.vm.ViewModelSnapshotSuite.xml",
+    "cases": 15,
+    "passed": 15,
+    "skipped": [],
+    "sha256": "869722011c83bfefd6b2f4829c2b6dfddd3ca484e27eb09a8de94ad5ec656185"
+  },
+  {
+    "path": "studio/core/.js/target/test-reports/TEST-consumer.StudioCoreDomainProductMirrorSuite.xml",
+    "cases": 109,
+    "passed": 109,
+    "skipped": [],
+    "sha256": "73c3f77b5a145d94024bd9581ca7094bfde4a4cf5856960cc08d90b4bce2d3e1"
+  },
+  {
+    "path": "studio/core/.js/target/test-reports/TEST-eyes4s.studio.core.StudioCoreSuite.xml",
+    "cases": 1,
+    "passed": 1,
+    "skipped": [],
+    "sha256": "3c1e4a386cb7a504ed027c33c9286dbe7d5b7b6a9dc46340eca2a01fe316090d"
+  },
+  {
+    "path": "studio/core/.js/target/test-reports/TEST-eyes4s.studio.core.artifacts.NativeArtifactBytesSuite.xml",
+    "cases": 3,
+    "passed": 3,
+    "skipped": [],
+    "sha256": "0ec457bab796aa9efab9bbd73260de7f611f3e1e8a24be3cdd5c09409f1ee082"
+  },
+  {
+    "path": "studio/core/.js/target/test-reports/TEST-eyes4s.studio.core.artifacts.NativeBindingFactsCodecSuite.xml",
+    "cases": 3,
+    "passed": 3,
+    "skipped": [],
+    "sha256": "0870672dcc52acfd5b88531387d45c670288da9d70d2cc3b1b6e15db73e44979"
+  },
+  {
+    "path": "studio/core/.js/target/test-reports/TEST-eyes4s.studio.core.assets.AssetRegistrySuite.xml",
+    "cases": 20,
+    "passed": 20,
+    "skipped": [],
+    "sha256": "264c508f4bc22c94bc998c988b45877a63de59c265b684cebdc96294744116fd"
+  },
+  {
+    "path": "studio/core/.js/target/test-reports/TEST-eyes4s.studio.core.assets.AssetRepairSuite.xml",
+    "cases": 7,
+    "passed": 7,
+    "skipped": [],
+    "sha256": "87088085f47ea69007e3372f9ba25c361e50d543ce846b44a4c4944f6593507b"
+  },
+  {
+    "path": "studio/core/.js/target/test-reports/TEST-eyes4s.studio.core.backend.PlacementPreviewSuite.xml",
+    "cases": 4,
+    "passed": 4,
+    "skipped": [],
+    "sha256": "ddcd77f0c7ddad0bcb1d111f31dc8a2d7121095c1ffde4542c2937f298dc9fc9"
+  },
+  {
+    "path": "studio/core/.js/target/test-reports/TEST-eyes4s.studio.core.backend.ProtocolCodecSuite.xml",
+    "cases": 22,
+    "passed": 22,
+    "skipped": [],
+    "sha256": "692b0930f624ff3930ca9d4da6e6c7b33f1e25d4acfa5c0ed0ae4ded8640eacc"
+  },
+  {
+    "path": "studio/core/.js/target/test-reports/TEST-eyes4s.studio.core.backend.ProtocolLongSuite.xml",
+    "cases": 14,
+    "passed": 14,
+    "skipped": [],
+    "sha256": "085d8e776c8e8515b8af8c04dba0685fa13e230af4c2581f6943665159e1e101"
+  },
+  {
+    "path": "studio/core/.js/target/test-reports/TEST-eyes4s.studio.core.backend.ReportViewLookupSuite.xml",
+    "cases": 3,
+    "passed": 3,
+    "skipped": [],
+    "sha256": "d5360da938b0bc4eff4bb5748ff39008ce9393d8897db426d5f107ae4b8304ae"
+  },
+  {
+    "path": "studio/core/.js/target/test-reports/TEST-eyes4s.studio.core.backend.TrialTemporalExtentSuite.xml",
+    "cases": 5,
+    "passed": 5,
+    "skipped": [],
+    "sha256": "0a9c32ceadbf1c0f6f4f91ee1c8554b10a56216d7d1756259bc4bb2536a8b1d1"
+  },
+  {
+    "path": "studio/core/.js/target/test-reports/TEST-eyes4s.studio.core.bundle.FamilyBundleSuite.xml",
+    "cases": 3,
+    "passed": 3,
+    "skipped": [],
+    "sha256": "3ec271e610147f5408742697ff57a48396c66d18c9f9f337f587a80e3007dec8"
+  },
+  {
+    "path": "studio/core/.js/target/test-reports/TEST-eyes4s.studio.core.bundle.InMemoryProjectStoreSuite.xml",
+    "cases": 9,
+    "passed": 9,
+    "skipped": [],
+    "sha256": "410d37e72695abfd9dbe40e3ea55a0ec9c3f93dfde2e13f3ab5e940a6467996d"
+  },
+  {
+    "path": "studio/core/.js/target/test-reports/TEST-eyes4s.studio.core.bundle.ProjectBundlePropertySuite.xml",
+    "cases": 1,
+    "passed": 1,
+    "skipped": [],
+    "sha256": "2354d299ab4323648f3e3d4bb982d6cf5b3c379f710757cee993d70193c6839d"
+  },
+  {
+    "path": "studio/core/.js/target/test-reports/TEST-eyes4s.studio.core.bundle.ProjectBundleSuite.xml",
+    "cases": 23,
+    "passed": 23,
+    "skipped": [],
+    "sha256": "01fe2c82d6bd12a5aa3fa28a0443e2998ec9422077dd7c903e48d71daa1de832"
+  },
+  {
+    "path": "studio/core/.js/target/test-reports/TEST-eyes4s.studio.core.command.BindCompletedArtifactsSuite.xml",
+    "cases": 8,
+    "passed": 8,
+    "skipped": [],
+    "sha256": "4e6085a21a56a413c6fef0eb4e4584af21cdebd8bd8305f03663e1445f24e11d"
+  },
+  {
+    "path": "studio/core/.js/target/test-reports/TEST-eyes4s.studio.core.command.CommandJournalSuite.xml",
+    "cases": 17,
+    "passed": 17,
+    "skipped": [],
+    "sha256": "31dc2e85824d378bc53d933216841b2e103cee96600bc63758a5dde13651b685"
+  },
+  {
+    "path": "studio/core/.js/target/test-reports/TEST-eyes4s.studio.core.command.CommandLawsSuite.xml",
+    "cases": 10,
+    "passed": 10,
+    "skipped": [],
+    "sha256": "49b6ab5b4b5e6f9e8ab6de18cc6ef901398b5a053d66f65e3486316ad144b99c"
+  },
+  {
+    "path": "studio/core/.js/target/test-reports/TEST-eyes4s.studio.core.command.CommandReducerSuite.xml",
+    "cases": 25,
+    "passed": 25,
+    "skipped": [],
+    "sha256": "e15b5838e44b9603578bdbcfab03a6c150d72ed31fa9f0880b11891e2f051ecf"
+  },
+  {
+    "path": "studio/core/.js/target/test-reports/TEST-eyes4s.studio.core.command.FamilyReducerSuite.xml",
+    "cases": 6,
+    "passed": 6,
+    "skipped": [],
+    "sha256": "732a6967813bebba19bffaba3a8bde9d097a3076bec97029d2226470a18da47c"
+  },
+  {
+    "path": "studio/core/.js/target/test-reports/TEST-eyes4s.studio.core.command.FigureEditingSuite.xml",
+    "cases": 13,
+    "passed": 13,
+    "skipped": [],
+    "sha256": "f750adb683151e19799fb190014019f2cd9c3fbb178de9dea1049f2dfe8e3cc8"
+  },
+  {
+    "path": "studio/core/.js/target/test-reports/TEST-eyes4s.studio.core.command.LegacyPhaseSuite.xml",
+    "cases": 7,
+    "passed": 7,
+    "skipped": [],
+    "sha256": "dcb7cb1628a85a3428df3a72c259545aa30a91826a28af80ac377737e808a097"
+  },
+  {
+    "path": "studio/core/.js/target/test-reports/TEST-eyes4s.studio.core.command.ReviseDatasetSuite.xml",
+    "cases": 9,
+    "passed": 9,
+    "skipped": [],
+    "sha256": "0f767c392a75eba7b8f581f8ed173654909cd6b10e609cd4f09b05d6304ea77e"
+  },
+  {
+    "path": "studio/core/.js/target/test-reports/TEST-eyes4s.studio.core.diff.DatasetDiffSuite.xml",
+    "cases": 12,
+    "passed": 12,
+    "skipped": [],
+    "sha256": "5fcb12e276c33cdf2f21ff09eed75c343f75cffa7bbd28255d33c12898a2cdaa"
+  },
+  {
+    "path": "studio/core/.js/target/test-reports/TEST-eyes4s.studio.core.document.AnalysisFamilySuite.xml",
+    "cases": 8,
+    "passed": 8,
+    "skipped": [],
+    "sha256": "c1bd9a2e9c77507e06fe77fdfbc04e9bf47a6aece3ba8ac211ac52a0b010b819"
+  },
+  {
+    "path": "studio/core/.js/target/test-reports/TEST-eyes4s.studio.core.document.DocumentHashSuite.xml",
+    "cases": 8,
+    "passed": 8,
+    "skipped": [],
+    "sha256": "65d60fed2d88193a4fd7a63281109063fa0e5f9d0b80cc6f7932fc9e6ef68bc1"
+  },
+  {
+    "path": "studio/core/.js/target/test-reports/TEST-eyes4s.studio.core.document.ExpectedUnmatchedDocumentSuite.xml",
+    "cases": 4,
+    "passed": 4,
+    "skipped": [],
+    "sha256": "0015cd04d79e09c8e3d3fc6caba2a6bfef0c88d51517207e6337bd8e66054259"
+  },
+  {
+    "path": "studio/core/.js/target/test-reports/TEST-eyes4s.studio.core.document.FamilyPersistenceSuite.xml",
+    "cases": 7,
+    "passed": 7,
+    "skipped": [],
+    "sha256": "1eba7fc3a9fc51b13b69740241a952bffdc0f27480f4ee823037febb4a219415"
+  },
+  {
+    "path": "studio/core/.js/target/test-reports/TEST-eyes4s.studio.core.document.InitialDraftSuite.xml",
+    "cases": 7,
+    "passed": 7,
+    "skipped": [],
+    "sha256": "50c38d1c5fc7f8403c92c1a6b9a2b352868d2d08bc98816ee5d9fbfe1135791f"
+  },
+  {
+    "path": "studio/core/.js/target/test-reports/TEST-eyes4s.studio.core.document.InventoryDurationSuite.xml",
+    "cases": 6,
+    "passed": 6,
+    "skipped": [],
+    "sha256": "284c91800acbd29259d19c5a29c445d157d919d03648467f108d7a1d16d6f472"
+  },
+  {
+    "path": "studio/core/.js/target/test-reports/TEST-eyes4s.studio.core.document.LegacyAnalysisFamilyCodecSuite.xml",
+    "cases": 3,
+    "passed": 3,
+    "skipped": [],
+    "sha256": "1591c40fdea2f812cedca1b53b56689f899eb142382fc79a513664180966c738"
+  },
+  {
+    "path": "studio/core/.js/target/test-reports/TEST-eyes4s.studio.core.document.ReportingContrastSuite.xml",
+    "cases": 4,
+    "passed": 4,
+    "skipped": [],
+    "sha256": "62cd5dcc2e88fdcc7bf5cddf8e4ddd662ba31b32e8b3ebce2c4e9d34a1a0fdf8"
+  },
+  {
+    "path": "studio/core/.js/target/test-reports/TEST-eyes4s.studio.core.document.SeededFamilyDraftSuite.xml",
+    "cases": 8,
+    "passed": 8,
+    "skipped": [],
+    "sha256": "539d98784730fdcdfea0abc4c7d2a0e80df0b674e1f859ba5968bc7faa660cc5"
+  },
+  {
+    "path": "studio/core/.js/target/test-reports/TEST-eyes4s.studio.core.document.StudioDocumentCodecSuite.xml",
+    "cases": 50,
+    "passed": 50,
+    "skipped": [],
+    "sha256": "465fd6d27b07ee790d4df63b507d9386e0b99d5faa9554429407bab7b06e6796"
+  },
+  {
+    "path": "studio/core/.js/target/test-reports/TEST-eyes4s.studio.core.document.StudioSchemaIdsSuite.xml",
+    "cases": 3,
+    "passed": 3,
+    "skipped": [],
+    "sha256": "c7716c32113ebd35e70f19a57c893cd7a2291a95bec5d3f67406f6f550d5e9a8"
+  },
+  {
+    "path": "studio/core/.js/target/test-reports/TEST-eyes4s.studio.core.execution.ExecutionArtifactsSuite.xml",
+    "cases": 4,
+    "passed": 4,
+    "skipped": [],
+    "sha256": "0fc8963d4bab74c6fcef8f35400e8af79df53c1c0197a2072126d2a4fff0a7f3"
+  },
+  {
+    "path": "studio/core/.js/target/test-reports/TEST-eyes4s.studio.core.execution.ExecutionServiceSuite.xml",
+    "cases": 14,
+    "passed": 14,
+    "skipped": [],
+    "sha256": "2890f53c59245578e071013cbe27255ef2945c02346faee7b7f493b8295d2887"
+  },
+  {
+    "path": "studio/core/.js/target/test-reports/TEST-eyes4s.studio.core.execution.ExecutionTrackerSuite.xml",
+    "cases": 16,
+    "passed": 16,
+    "skipped": [],
+    "sha256": "b313013e3b23f1762d0091637aca9fe671dd5c90842c57efe3a9c1ff4758b537"
+  },
+  {
+    "path": "studio/core/.js/target/test-reports/TEST-eyes4s.studio.core.execution.RunShelfSuite.xml",
+    "cases": 2,
+    "passed": 2,
+    "skipped": [],
+    "sha256": "828a3aa11e3506ada4893fae75d243d97f44ec275203f35e8eceece94be1ebb7"
+  },
+  {
+    "path": "studio/core/.js/target/test-reports/TEST-eyes4s.studio.core.figures.FigureModelSuite.xml",
+    "cases": 10,
+    "passed": 10,
+    "skipped": [],
+    "sha256": "abf5594f13eb49d1e5bcb4e1d1498a6360c4513d8f45f017e98971255275855c"
+  },
+  {
+    "path": "studio/core/.js/target/test-reports/TEST-eyes4s.studio.core.fixture.FakeBackendConformanceSuite.xml",
+    "cases": 12,
+    "passed": 12,
+    "skipped": [],
+    "sha256": "3cf8bc7a0db44934ceef12f2c0005b7b1a53b2216ad09d2433eb9d6ef778aa98"
+  },
+  {
+    "path": "studio/core/.js/target/test-reports/TEST-eyes4s.studio.core.fixture.FakeStudyBackendSuite.xml",
+    "cases": 14,
+    "passed": 14,
+    "skipped": [],
+    "sha256": "19eedd9f7da8fd1ba02d7c37999e037d19feccc2b37155a3758e2a46e4d8a1a0"
+  },
+  {
+    "path": "studio/core/.js/target/test-reports/TEST-eyes4s.studio.core.fixture.InProcessTransportSuite.xml",
+    "cases": 21,
+    "passed": 21,
+    "skipped": [],
+    "sha256": "4c7a6b841b10799a37cf3530ba5186baa90e3e6adc0e5d940692668cf51de745"
+  },
+  {
+    "path": "studio/core/.js/target/test-reports/TEST-eyes4s.studio.core.fixture.LoopbackTransportSuite.xml",
+    "cases": 28,
+    "passed": 28,
+    "skipped": [],
+    "sha256": "8694db409a757fb88c3e6fe571765d92727e44db4728aa898c93cc79219972bd"
+  },
+  {
+    "path": "studio/core/.js/target/test-reports/TEST-eyes4s.studio.core.fixture.MapGridSuite.xml",
+    "cases": 6,
+    "passed": 6,
+    "skipped": [],
+    "sha256": "1968faf64c31b2d4a2540b749c393df9bd24cf718958219fbfcc3d7f6399c83b"
+  },
+  {
+    "path": "studio/core/.js/target/test-reports/TEST-eyes4s.studio.core.fixture.PairRowsSuite.xml",
+    "cases": 8,
+    "passed": 8,
+    "skipped": [],
+    "sha256": "fa69ef90400240ee7159080bd06e1643dad09e1c2acbf7035da25c67b66722e0"
+  },
+  {
+    "path": "studio/core/.js/target/test-reports/TEST-eyes4s.studio.core.fixture.PreviewSnapshotSuite.xml",
+    "cases": 6,
+    "passed": 6,
+    "skipped": [],
+    "sha256": "5c11a0f610b14ed957f4c205f2bd364a61d341b19205133fa69ecd8eb81685aa"
+  },
+  {
+    "path": "studio/core/.js/target/test-reports/TEST-eyes4s.studio.core.fixture.ReportsSuite.xml",
+    "cases": 14,
+    "passed": 14,
+    "skipped": [],
+    "sha256": "73ef387bee33f2a7b96ea52e9513ea0090e7e6fe9147a30dacff069ee176df3e"
+  },
+  {
+    "path": "studio/core/.js/target/test-reports/TEST-eyes4s.studio.core.fixture.ScanpathRecordsSuite.xml",
+    "cases": 8,
+    "passed": 8,
+    "skipped": [],
+    "sha256": "b63b6514b739d58087d7400707db30e97e1e93baf6ff34798d6f60e7e197df46"
+  },
+  {
+    "path": "studio/core/.js/target/test-reports/TEST-eyes4s.studio.core.fixture.SourceRecordsSuite.xml",
+    "cases": 8,
+    "passed": 8,
+    "skipped": [],
+    "sha256": "f7fe244c0036b11a4e69e4b4c99af841d462e80a4a781b83fdfa1346319b2b3f"
+  },
+  {
+    "path": "studio/core/.js/target/test-reports/TEST-eyes4s.studio.core.fixture.StoryMomentsSuite.xml",
+    "cases": 5,
+    "passed": 5,
+    "skipped": [],
+    "sha256": "dc3ae0f00664cf833a0523022c47046c8a863309149bd942417e482f79b154f3"
+  },
+  {
+    "path": "studio/core/.js/target/test-reports/TEST-eyes4s.studio.core.fixture.StorySeedSuite.xml",
+    "cases": 6,
+    "passed": 6,
+    "skipped": [],
+    "sha256": "0e97496c4b0676f5d8127da80e557495e13c0a223fb65cc5d7a2f81f59fb59e4"
+  },
+  {
+    "path": "studio/core/.js/target/test-reports/TEST-eyes4s.studio.core.fixture.StudioFixtureCountsSuite.xml",
+    "cases": 8,
+    "passed": 8,
+    "skipped": [],
+    "sha256": "9ce86f8752f92d49f61fd71c7ebec67e009df9bac2ba7ffe8acd0e1c8792648a"
+  },
+  {
+    "path": "studio/core/.js/target/test-reports/TEST-eyes4s.studio.core.fixture.TrialViewsSuite.xml",
+    "cases": 7,
+    "passed": 7,
+    "skipped": [],
+    "sha256": "801de8065d2b0736e2208d6a79375aa0ee242df9841b2e2e49ea40c149d9e411"
+  },
+  {
+    "path": "studio/core/.js/target/test-reports/TEST-eyes4s.studio.core.fixture.WindowSelectionSuite.xml",
+    "cases": 2,
+    "passed": 2,
+    "skipped": [],
+    "sha256": "b770ace581a8fcdf0c9c79192f172ac34e9714713560bca7866dc2cf6b3be555"
+  },
+  {
+    "path": "studio/core/.js/target/test-reports/TEST-eyes4s.studio.core.freshness.FamilyFreshnessSuite.xml",
+    "cases": 8,
+    "passed": 8,
+    "skipped": [],
+    "sha256": "9b459247d8497fcad4efc4c4a2c34cc19fe997575f357e309b3d311a2e40c264"
+  },
+  {
+    "path": "studio/core/.js/target/test-reports/TEST-eyes4s.studio.core.freshness.FreshnessTruthTableSuite.xml",
+    "cases": 17,
+    "passed": 17,
+    "skipped": [],
+    "sha256": "088f553543d54bc2b32de19d25b86bf272b8a0d1728ef2befd0cff53bd21ed21"
+  },
+  {
+    "path": "studio/core/.js/target/test-reports/TEST-eyes4s.studio.core.geometry.CorrectionLedgerSuite.xml",
+    "cases": 12,
+    "passed": 12,
+    "skipped": [],
+    "sha256": "f0529d84cdbf08d9b01351ddb3580a725dd2a5722d1d6e44abc6f826e7ec1519"
+  },
+  {
+    "path": "studio/core/.js/target/test-reports/TEST-eyes4s.studio.core.headless.NativeArchiveHostSuite.xml",
+    "cases": 1,
+    "passed": 1,
+    "skipped": [],
+    "sha256": "6f67c7f7bf4550e751520077944774981c553030f7bf80529b38074cc4983349"
+  },
+  {
+    "path": "studio/core/.js/target/test-reports/TEST-eyes4s.studio.core.headless.SynchronizedBackendSuite.xml",
+    "cases": 1,
+    "passed": 1,
+    "skipped": [],
+    "sha256": "3158fc3b222d9f9030e1b3af36c06b7b181b33cd1b54d404faac80133c9dc007"
+  },
+  {
+    "path": "studio/core/.js/target/test-reports/TEST-eyes4s.studio.core.importing.ColumnMappingSuite.xml",
+    "cases": 29,
+    "passed": 29,
+    "skipped": [],
+    "sha256": "b55c4266f83a141ee6edeed51f441c6e149761c8fd68b252f1e9486226c6d14c"
+  },
+  {
+    "path": "studio/core/.js/target/test-reports/TEST-eyes4s.studio.core.importing.InventoryJoinSuite.xml",
+    "cases": 10,
+    "passed": 10,
+    "skipped": [],
+    "sha256": "6ea4fbf0e331b5352adc121eefcb78458aa565fd0ee64b3a8abd999b1cde207a"
+  },
+  {
+    "path": "studio/core/.js/target/test-reports/TEST-eyes4s.studio.core.importing.StreamedSourceSuite.xml",
+    "cases": 6,
+    "passed": 6,
+    "skipped": [],
+    "sha256": "bf99f67adec8fba83c8273f02c0272cdd602c90e5320883cfda18d7e404a0db9"
+  },
+  {
+    "path": "studio/core/.js/target/test-reports/TEST-eyes4s.studio.core.importing.TrialKeySuite.xml",
+    "cases": 16,
+    "passed": 16,
+    "skipped": [],
+    "sha256": "78321b89b8e3be938b76b53cf8ec9773337fc005579bb5c364ba3cb1867b3f4a"
+  },
+  {
+    "path": "studio/core/.js/target/test-reports/TEST-eyes4s.studio.core.platform.PlatformInterfacesSuite.xml",
+    "cases": 18,
+    "passed": 18,
+    "skipped": [],
+    "sha256": "3086c799773e66a87a8b21a3e15bf61db66197f22dec65e622e3d4f7b28161c8"
+  },
+  {
+    "path": "studio/core/.js/target/test-reports/TEST-eyes4s.studio.core.preferences.PreferencesSuite.xml",
+    "cases": 19,
+    "passed": 19,
+    "skipped": [],
+    "sha256": "d4a1765cd7de1fe28c87c4eb49b85fa48e62a2f607bb23ee91fa78399b5952a4"
+  },
+  {
+    "path": "studio/core/.js/target/test-reports/TEST-eyes4s.studio.core.preset.InitialRecipeSuite.xml",
+    "cases": 2,
+    "passed": 2,
+    "skipped": [],
+    "sha256": "e8d39487ebee066a428fc7108b07dff384ece9df1a66970802a687dc02df7867"
+  },
+  {
+    "path": "studio/core/.js/target/test-reports/TEST-eyes4s.studio.core.preview.PreviewPagingSuite.xml",
+    "cases": 16,
+    "passed": 16,
+    "skipped": [],
+    "sha256": "f0e7c8e2612c13e5a658c80cc3ff63e7f69f1e71e82653768f50d42bb66492bf"
+  },
+  {
+    "path": "studio/core/.js/target/test-reports/TEST-eyes4s.studio.core.real.NativeArchiveRestoreSuite.xml",
+    "cases": 7,
+    "passed": 7,
+    "skipped": [],
+    "sha256": "a4ccdbc323ffae1fdd6ce94771684888d3ccedfaf76f4c58117f1ad23b943951"
+  },
+  {
+    "path": "studio/core/.js/target/test-reports/TEST-eyes4s.studio.core.real.NativeArtifactDeliverySuite.xml",
+    "cases": 2,
+    "passed": 2,
+    "skipped": [],
+    "sha256": "23206471a541a5a4d44477abd2aa57ff4051ee9e724478a9a8232d2d2599e1ab"
+  },
+  {
+    "path": "studio/core/.js/target/test-reports/TEST-eyes4s.studio.core.real.NativeArtifactPackageSuite.xml",
+    "cases": 5,
+    "passed": 5,
+    "skipped": [],
+    "sha256": "cdc557be985cb7f0888b6ef4f3154c87d52a67f1273a323b5aad6240fa69fd8e"
+  },
+  {
+    "path": "studio/core/.js/target/test-reports/TEST-eyes4s.studio.core.real.NativeArtifactPersistenceSuite.xml",
+    "cases": 18,
+    "passed": 18,
+    "skipped": [],
+    "sha256": "aca071666bf43620dcf640739c76d929a290e4aa3cbb5a4923703dc70fc73435"
+  },
+  {
+    "path": "studio/core/.js/target/test-reports/TEST-eyes4s.studio.core.real.NativeArtifactProviderSuite.xml",
+    "cases": 1,
+    "passed": 1,
+    "skipped": [],
+    "sha256": "a8c599885056c3d07ffc76b254216f6c026fd315d66a1281d4f728c2c4ad20f2"
+  },
+  {
+    "path": "studio/core/.js/target/test-reports/TEST-eyes4s.studio.core.real.NativeArtifactRestoreSuite.xml",
+    "cases": 21,
+    "passed": 21,
+    "skipped": [],
+    "sha256": "6d8981955e7096a3f18f5d1ff9a40838f43d54bd9d2cf8dbc6857df1784556ea"
+  },
+  {
+    "path": "studio/core/.js/target/test-reports/TEST-eyes4s.studio.core.real.RealPlacementSuite.xml",
+    "cases": 5,
+    "passed": 5,
+    "skipped": [],
+    "sha256": "ded7ecd35241311af6e8b9046ef1463690a91bcfc68fb36a1bb8d53888b2dfd3"
+  },
+  {
+    "path": "studio/core/.js/target/test-reports/TEST-eyes4s.studio.core.real.RealPreviewCursorSuite.xml",
+    "cases": 9,
+    "passed": 9,
+    "skipped": [],
+    "sha256": "8b52b43407ab2cf143d6459cbfeea25e7e49f7c3721345b58bc7e9cf63301397"
+  },
+  {
+    "path": "studio/core/.js/target/test-reports/TEST-eyes4s.studio.core.real.RealReferenceDeclarationsSuite.xml",
+    "cases": 2,
+    "passed": 2,
+    "skipped": [],
+    "sha256": "199cf7c965ae1a29607936d469acf8b225ba8c2fbfd184947a1c876cf75d6e3d"
+  },
+  {
+    "path": "studio/core/.js/target/test-reports/TEST-eyes4s.studio.core.real.RealRegistrySuite.xml",
+    "cases": 3,
+    "passed": 3,
+    "skipped": [],
+    "sha256": "a685c415a987a23f104f620fa7121fa3d0340a7bc90e93359bee4255c94403d7"
+  },
+  {
+    "path": "studio/core/.js/target/test-reports/TEST-eyes4s.studio.core.real.RealTemporalExtentSuite.xml",
+    "cases": 3,
+    "passed": 3,
+    "skipped": [],
+    "sha256": "7aec701cf60e8fe25bf0cec625b60a8da12109fd81ebeb3f6519c20b7ffac90e"
+  },
+  {
+    "path": "studio/core/.js/target/test-reports/TEST-eyes4s.studio.core.real.RecipeFormServiceSuite.xml",
+    "cases": 8,
+    "passed": 8,
+    "skipped": [],
+    "sha256": "fd53a5fc353fcd33546e19570db53018e0e04093b035e55fcbfa7ddd520e4cde"
+  },
+  {
+    "path": "studio/core/.js/target/test-reports/TEST-eyes4s.studio.core.real.SemanticInputRegistrySuite.xml",
+    "cases": 1,
+    "passed": 1,
+    "skipped": [],
+    "sha256": "eabcab6b36ee9bacaf2eb15585a12a141e203ef28736a12567ecec6898c9521e"
+  },
+  {
+    "path": "studio/core/.js/target/test-reports/TEST-eyes4s.studio.core.report.ErrorReportSuite.xml",
+    "cases": 8,
+    "passed": 8,
+    "skipped": [],
+    "sha256": "0ecab7a7e62266aa4b5fa8956b2c5d39f376b334207660ecbfe09b8c87bd5a5e"
+  },
+  {
+    "path": "studio/core/.js/target/test-reports/TEST-eyes4s.studio.core.reports.ReportDirectionSuite.xml",
+    "cases": 5,
+    "passed": 5,
+    "skipped": [],
+    "sha256": "257da58338060966adfc615d9e5e23ec0408e21f65469bfcb28e8fa7bcf6c2ea"
+  },
+  {
+    "path": "studio/core/.js/target/test-reports/TEST-eyes4s.studio.core.runs.RunStoreSuite.xml",
+    "cases": 24,
+    "passed": 24,
+    "skipped": [],
+    "sha256": "3feb4ae02ca8677fa1053bca3cb459daaf091067cd031c86e496c73e6e7cf4b6"
+  },
+  {
+    "path": "studio/core/.js/target/test-reports/TEST-eyes4s.studio.core.scanpath.ScanpathStudySuite.xml",
+    "cases": 4,
+    "passed": 4,
+    "skipped": [],
+    "sha256": "2d98f350907bf90aa3170cf010ed3fdb43d01473226405e87d74c016de69b1b8"
+  },
+  {
+    "path": "studio/core/.js/target/test-reports/TEST-eyes4s.studio.core.selection.LedgerCountsSuite.xml",
+    "cases": 7,
+    "passed": 7,
+    "skipped": [],
+    "sha256": "a19d5b1061ce158d687fa7f8b216fcd8f7138f265d6000d8642563f2f18ca172"
+  },
+  {
+    "path": "studio/core/.js/target/test-reports/TEST-eyes4s.studio.core.selection.SelectionBusSuite.xml",
+    "cases": 18,
+    "passed": 18,
+    "skipped": [],
+    "sha256": "f15566f0c064a5f1ca91e7082d783a6eccba1e32e50cccdd0c7fd275837b67a4"
+  },
+  {
+    "path": "studio/core/.js/target/test-reports/TEST-eyes4s.studio.core.session.AtomicSaveFaultSuite.xml",
+    "cases": 10,
+    "passed": 10,
+    "skipped": [],
+    "sha256": "f832c1458a7c30c52cc90f9e4209233f977a7b3079955a26a2dfeedf4291b209"
+  },
+  {
+    "path": "studio/core/.js/target/test-reports/TEST-eyes4s.studio.core.session.ReadInputSuite.xml",
+    "cases": 1,
+    "passed": 1,
+    "skipped": [],
+    "sha256": "6cb29475d71faeeeb5d85ab5a42387fb468760caee2f9a515df490b211062e5f"
+  },
+  {
+    "path": "studio/core/.js/target/test-reports/TEST-eyes4s.studio.core.session.RecoveryFaultSuite.xml",
+    "cases": 17,
+    "passed": 17,
+    "skipped": [],
+    "sha256": "9798776f28a085c91840b36fb0480e9a79822e129950b196a3f4c376a0065949"
+  },
+  {
+    "path": "studio/core/.js/target/test-reports/TEST-eyes4s.studio.core.session.RecoverySuite.xml",
+    "cases": 31,
+    "passed": 31,
+    "skipped": [],
+    "sha256": "44207168319a7ae0b35e0c4b9300fb338e4b655f3b3a9fd1f2c398567f21948c"
+  },
+  {
+    "path": "studio/core/.js/target/test-reports/TEST-eyes4s.studio.core.session.SavedPartRetentionSuite.xml",
+    "cases": 11,
+    "passed": 11,
+    "skipped": [],
+    "sha256": "123cbdf18e5a7e4afd7b49cc47812cc7aaca68f2a46c7c5b0649b075864f62c6"
+  },
+  {
+    "path": "studio/core/.js/target/test-reports/TEST-eyes4s.studio.core.session.SessionCancellationSuite.xml",
+    "cases": 8,
+    "passed": 8,
+    "skipped": [],
+    "sha256": "9895e007261daf28aa59e02434e1c1d2dfdc6afe35d7a2ba1d91a7f3d3f05da5"
+  },
+  {
+    "path": "studio/core/.js/target/test-reports/TEST-eyes4s.studio.core.session.SessionSaveAsSuite.xml",
+    "cases": 9,
+    "passed": 9,
+    "skipped": [],
+    "sha256": "b72ff5f5fda6a857b49a3fbfa10382152572ba7008dceac4ad88282091868fa7"
+  },
+  {
+    "path": "studio/core/.js/target/test-reports/TEST-eyes4s.studio.core.session.SessionShareSuite.xml",
+    "cases": 4,
+    "passed": 4,
+    "skipped": [],
+    "sha256": "15b651d70413cddd7199aa22290996ca008dc0b26f8ae97fdd211ecb3e3b16da"
+  },
+  {
+    "path": "studio/core/.js/target/test-reports/TEST-eyes4s.studio.core.session.SourceRepairSessionSuite.xml",
+    "cases": 3,
+    "passed": 3,
+    "skipped": [],
+    "sha256": "1e2ec863f7c9c2166d2f47c8e4353eea6c6da039f895f1181ec72fb470b8e46e"
+  },
+  {
+    "path": "studio/core/.jvm/target/test-reports/TEST-consumer.StudioCoreDomainProductMirrorSuite.xml",
+    "cases": 109,
+    "passed": 109,
+    "skipped": [],
+    "sha256": "b0ab51f99992fa1482439c2216ef9b90324b7dd7a11e3c2e5ba43b9d5e7bad49"
+  },
+  {
+    "path": "studio/core/.jvm/target/test-reports/TEST-eyes4s.studio.core.StudioCoreSuite.xml",
+    "cases": 1,
+    "passed": 1,
+    "skipped": [],
+    "sha256": "1613af3b6d2844a2f1d7185afa52694add39f0ad2ab1e4e340362d965afd2c58"
+  },
+  {
+    "path": "studio/core/.jvm/target/test-reports/TEST-eyes4s.studio.core.artifacts.NativeArtifactBytesSuite.xml",
+    "cases": 3,
+    "passed": 3,
+    "skipped": [],
+    "sha256": "59667726bd2dd6b1d936a8ae2fde58e250c9b9ec303102b5c7abdb9dbe430c48"
+  },
+  {
+    "path": "studio/core/.jvm/target/test-reports/TEST-eyes4s.studio.core.artifacts.NativeBindingFactsCodecSuite.xml",
+    "cases": 3,
+    "passed": 3,
+    "skipped": [],
+    "sha256": "2c96a41b28a6db406ed5d98403b31d2e702c0532d018f34d92b92c37400cda94"
+  },
+  {
+    "path": "studio/core/.jvm/target/test-reports/TEST-eyes4s.studio.core.assets.AssetRegistryInventoryJvmSuite.xml",
+    "cases": 1,
+    "passed": 1,
+    "skipped": [],
+    "sha256": "a884f722607261738d703a2a6c274198c13da72a8ed00232a5750f460124ea4e"
+  },
+  {
+    "path": "studio/core/.jvm/target/test-reports/TEST-eyes4s.studio.core.assets.AssetRegistrySuite.xml",
+    "cases": 20,
+    "passed": 20,
+    "skipped": [],
+    "sha256": "f333466cd5a9d77a0f26096906ffccdd6fa4d9bd3a4323eccfc9d0b0de7af2c6"
+  },
+  {
+    "path": "studio/core/.jvm/target/test-reports/TEST-eyes4s.studio.core.assets.AssetRepairSuite.xml",
+    "cases": 7,
+    "passed": 7,
+    "skipped": [],
+    "sha256": "c0e18425585dcf6a1ea5ecafb6b55b83f41195dac128f6982c6ed0448e711957"
+  },
+  {
+    "path": "studio/core/.jvm/target/test-reports/TEST-eyes4s.studio.core.backend.PlacementPreviewSuite.xml",
+    "cases": 4,
+    "passed": 4,
+    "skipped": [],
+    "sha256": "70ca5e8aeab1a48e85e0fe59c5eab22513ca60127b9425dbcb3e96942c8f9c73"
+  },
+  {
+    "path": "studio/core/.jvm/target/test-reports/TEST-eyes4s.studio.core.backend.ProtocolCodecSuite.xml",
+    "cases": 22,
+    "passed": 22,
+    "skipped": [],
+    "sha256": "cf3a3dff9c6147d4e36b51b7162b5c346fe1698ec5b1c6962e00d0002c1b1b15"
+  },
+  {
+    "path": "studio/core/.jvm/target/test-reports/TEST-eyes4s.studio.core.backend.ProtocolLongSuite.xml",
+    "cases": 14,
+    "passed": 14,
+    "skipped": [],
+    "sha256": "366e13cf6f825061d51bd66ad74aa471e73ad6e1dc545b07da412d7293fa42ca"
+  },
+  {
+    "path": "studio/core/.jvm/target/test-reports/TEST-eyes4s.studio.core.backend.ReportViewLookupSuite.xml",
+    "cases": 3,
+    "passed": 3,
+    "skipped": [],
+    "sha256": "03501d4dbfcf676cbafaa5506507ba8a5dc0040007192a22a9ea1fb8b89a1267"
+  },
+  {
+    "path": "studio/core/.jvm/target/test-reports/TEST-eyes4s.studio.core.backend.TrialTemporalExtentSuite.xml",
+    "cases": 5,
+    "passed": 5,
+    "skipped": [],
+    "sha256": "7566637fae7a3a6e6b80394eab77cb1a30eabc1aaf969b33f3557922b39cd824"
+  },
+  {
+    "path": "studio/core/.jvm/target/test-reports/TEST-eyes4s.studio.core.bundle.FamilyBundleSuite.xml",
+    "cases": 3,
+    "passed": 3,
+    "skipped": [],
+    "sha256": "ede48e4ee585969b21a2ac3a1056d55e7574d8d053e090af821a86949dda9244"
+  },
+  {
+    "path": "studio/core/.jvm/target/test-reports/TEST-eyes4s.studio.core.bundle.InMemoryProjectStoreSuite.xml",
+    "cases": 9,
+    "passed": 9,
+    "skipped": [],
+    "sha256": "5df7997b9dd1a73b6f6277a7a579028bea6aaed9fe006f7c6af20b6229be2da8"
+  },
+  {
+    "path": "studio/core/.jvm/target/test-reports/TEST-eyes4s.studio.core.bundle.ProjectBundlePropertySuite.xml",
+    "cases": 1,
+    "passed": 1,
+    "skipped": [],
+    "sha256": "5620185ed1bc210563d6a5a8771b661ed1cccfbef3db785aee28482223b97563"
+  },
+  {
+    "path": "studio/core/.jvm/target/test-reports/TEST-eyes4s.studio.core.bundle.ProjectBundleSuite.xml",
+    "cases": 23,
+    "passed": 23,
+    "skipped": [],
+    "sha256": "cab7e0dc668d1614aba2714348dc6707c3a8264752c66c65fdc6fc358c332f59"
+  },
+  {
+    "path": "studio/core/.jvm/target/test-reports/TEST-eyes4s.studio.core.command.BindCompletedArtifactsSuite.xml",
+    "cases": 8,
+    "passed": 8,
+    "skipped": [],
+    "sha256": "69bbba5da2e66a8149cdc60d32f05d3c436ed7841f712e26895a5bf7d524b7ef"
+  },
+  {
+    "path": "studio/core/.jvm/target/test-reports/TEST-eyes4s.studio.core.command.CommandJournalSuite.xml",
+    "cases": 17,
+    "passed": 17,
+    "skipped": [],
+    "sha256": "2ec0307278d375eb2583c6de2c274d924b36b0626257d4c9872a51500f7e6e95"
+  },
+  {
+    "path": "studio/core/.jvm/target/test-reports/TEST-eyes4s.studio.core.command.CommandLawsSuite.xml",
+    "cases": 10,
+    "passed": 10,
+    "skipped": [],
+    "sha256": "64bd056d89f02386ea1aa43c59ca61b3cc16831fef3aacc9996d0d6cf137ecc6"
+  },
+  {
+    "path": "studio/core/.jvm/target/test-reports/TEST-eyes4s.studio.core.command.CommandReducerSuite.xml",
+    "cases": 25,
+    "passed": 25,
+    "skipped": [],
+    "sha256": "07c8f7770c924bccc48b155d0cf9475a89bcfbe35aaa0000b6d1924eb7785da9"
+  },
+  {
+    "path": "studio/core/.jvm/target/test-reports/TEST-eyes4s.studio.core.command.FamilyReducerSuite.xml",
+    "cases": 6,
+    "passed": 6,
+    "skipped": [],
+    "sha256": "5a51999ecb533545cccd63259042dc1fcd839bfbf83b334a0d282f1fa0f30aa5"
+  },
+  {
+    "path": "studio/core/.jvm/target/test-reports/TEST-eyes4s.studio.core.command.FigureEditingSuite.xml",
+    "cases": 13,
+    "passed": 13,
+    "skipped": [],
+    "sha256": "c329d6837f5e3f3a596d373c093dad483e34ba22b02ea419cfe8f21d3539cf0d"
+  },
+  {
+    "path": "studio/core/.jvm/target/test-reports/TEST-eyes4s.studio.core.command.LegacyPhaseSuite.xml",
+    "cases": 7,
+    "passed": 7,
+    "skipped": [],
+    "sha256": "678cd59796cfcd115160187db79e8f113140b846126a4d6520c6d6a125b777c2"
+  },
+  {
+    "path": "studio/core/.jvm/target/test-reports/TEST-eyes4s.studio.core.command.ReviseDatasetSuite.xml",
+    "cases": 9,
+    "passed": 9,
+    "skipped": [],
+    "sha256": "4ed0d249d5792b3851db2984c3170a49bfc7d83ab4324223a21e7844d0770c88"
+  },
+  {
+    "path": "studio/core/.jvm/target/test-reports/TEST-eyes4s.studio.core.diff.DatasetDiffSuite.xml",
+    "cases": 12,
+    "passed": 12,
+    "skipped": [],
+    "sha256": "64400f06549b3627feda391887982e2526ea94cd4b50b8fe3b713eb39bdb4bd8"
+  },
+  {
+    "path": "studio/core/.jvm/target/test-reports/TEST-eyes4s.studio.core.document.AnalysisFamilySuite.xml",
+    "cases": 8,
+    "passed": 8,
+    "skipped": [],
+    "sha256": "2b3df9f079bcf9c45d023fa143290f22697a10c8d2d5682dd7fc3e520c890c53"
+  },
+  {
+    "path": "studio/core/.jvm/target/test-reports/TEST-eyes4s.studio.core.document.DocumentHashSuite.xml",
+    "cases": 8,
+    "passed": 8,
+    "skipped": [],
+    "sha256": "cc9be472c400b45ae724597ee752d4da6b75ba97852c5a95574984198072d6f1"
+  },
+  {
+    "path": "studio/core/.jvm/target/test-reports/TEST-eyes4s.studio.core.document.ExpectedUnmatchedDocumentSuite.xml",
+    "cases": 4,
+    "passed": 4,
+    "skipped": [],
+    "sha256": "b164fedea211fff92247b94f0a332339853f829b7cbe8f53a10f87eb83dc4e3e"
+  },
+  {
+    "path": "studio/core/.jvm/target/test-reports/TEST-eyes4s.studio.core.document.FamilyPersistenceSuite.xml",
+    "cases": 7,
+    "passed": 7,
+    "skipped": [],
+    "sha256": "f8dae2b4c5252e456229a376d01429636b66544293121753c43931ee8b288d72"
+  },
+  {
+    "path": "studio/core/.jvm/target/test-reports/TEST-eyes4s.studio.core.document.InitialDraftSuite.xml",
+    "cases": 7,
+    "passed": 7,
+    "skipped": [],
+    "sha256": "f2d12c746f47de4f6330485b40baf3bf9b22e3284ab93bc818848bf42b02b518"
+  },
+  {
+    "path": "studio/core/.jvm/target/test-reports/TEST-eyes4s.studio.core.document.InventoryDurationSuite.xml",
+    "cases": 6,
+    "passed": 6,
+    "skipped": [],
+    "sha256": "c12060f984de4ddb9827d4ddc6148ba71d77f010e98772bdf9706c8369ef9b1a"
+  },
+  {
+    "path": "studio/core/.jvm/target/test-reports/TEST-eyes4s.studio.core.document.LegacyAnalysisFamilyCodecSuite.xml",
+    "cases": 3,
+    "passed": 3,
+    "skipped": [],
+    "sha256": "005be0569e74eaeffc80268844fed1879ba18770a96efbacca3ec9ba559779d4"
+  },
+  {
+    "path": "studio/core/.jvm/target/test-reports/TEST-eyes4s.studio.core.document.ReportingContrastSuite.xml",
+    "cases": 4,
+    "passed": 4,
+    "skipped": [],
+    "sha256": "f76e2af2fa0ee815b99deacf82ab5ac2c8620a5de4520c46737c6fcbd4dc2337"
+  },
+  {
+    "path": "studio/core/.jvm/target/test-reports/TEST-eyes4s.studio.core.document.SeededFamilyDraftSuite.xml",
+    "cases": 8,
+    "passed": 8,
+    "skipped": [],
+    "sha256": "16c3e9e29b7f761c391fcd1d5d29ede964f48311a80a834a339726b6772909cb"
+  },
+  {
+    "path": "studio/core/.jvm/target/test-reports/TEST-eyes4s.studio.core.document.StudioDocumentCodecSuite.xml",
+    "cases": 50,
+    "passed": 50,
+    "skipped": [],
+    "sha256": "69e50218a188b2343b05f896dbdaf576c3d83279aeef2ecd672901faa2267364"
+  },
+  {
+    "path": "studio/core/.jvm/target/test-reports/TEST-eyes4s.studio.core.document.StudioSchemaIdsSuite.xml",
+    "cases": 3,
+    "passed": 3,
+    "skipped": [],
+    "sha256": "ccf0301dcfe1680bc566f145a7f6cc5ed26dd5c3eb91108089f1480130bd2a2d"
+  },
+  {
+    "path": "studio/core/.jvm/target/test-reports/TEST-eyes4s.studio.core.execution.ExecutionArtifactsSuite.xml",
+    "cases": 4,
+    "passed": 4,
+    "skipped": [],
+    "sha256": "bcb4c8492e227840f42fd47f9bc2769572452a77ea8177dde13d9ed19067034c"
+  },
+  {
+    "path": "studio/core/.jvm/target/test-reports/TEST-eyes4s.studio.core.execution.ExecutionServiceSuite.xml",
+    "cases": 14,
+    "passed": 14,
+    "skipped": [],
+    "sha256": "cdb48dddfd9bb8cbdc906d463db2afdf8be02934dfde1604c1ae9fca029f504d"
+  },
+  {
+    "path": "studio/core/.jvm/target/test-reports/TEST-eyes4s.studio.core.execution.ExecutionTrackerSuite.xml",
+    "cases": 16,
+    "passed": 16,
+    "skipped": [],
+    "sha256": "c1617954a69c0481cf131d26489415ecafc1d267103618b2107ba85ae516a022"
+  },
+  {
+    "path": "studio/core/.jvm/target/test-reports/TEST-eyes4s.studio.core.execution.RunShelfSuite.xml",
+    "cases": 2,
+    "passed": 2,
+    "skipped": [],
+    "sha256": "591884bc345ea900604f5a3acd96c4ee52a41bd5dc3d09c27f3215fddd28008a"
+  },
+  {
+    "path": "studio/core/.jvm/target/test-reports/TEST-eyes4s.studio.core.figures.FigureModelSuite.xml",
+    "cases": 10,
+    "passed": 10,
+    "skipped": [],
+    "sha256": "6a47af9edd4fde9949f9950f752f6ff7d63441abe39ddba8f477338079ff512e"
+  },
+  {
+    "path": "studio/core/.jvm/target/test-reports/TEST-eyes4s.studio.core.fixture.FakeBackendConformanceSuite.xml",
+    "cases": 12,
+    "passed": 12,
+    "skipped": [],
+    "sha256": "644b364a683d02742f823265ee0624ad26395756fc8059ac719ef07c147feb96"
+  },
+  {
+    "path": "studio/core/.jvm/target/test-reports/TEST-eyes4s.studio.core.fixture.FakePlacementJvmSuite.xml",
+    "cases": 2,
+    "passed": 2,
+    "skipped": [],
+    "sha256": "301e8a841ad7f691b6a50161f834f0e7706130e7f0160444aca113036e5e60e5"
+  },
+  {
+    "path": "studio/core/.jvm/target/test-reports/TEST-eyes4s.studio.core.fixture.FakeStudyBackendSuite.xml",
+    "cases": 14,
+    "passed": 14,
+    "skipped": [],
+    "sha256": "e77bbc37b5cacfafe8b2533635768fa70c22bd3b3a1c0dd54d313be55d6caa12"
+  },
+  {
+    "path": "studio/core/.jvm/target/test-reports/TEST-eyes4s.studio.core.fixture.InProcessTransportSuite.xml",
+    "cases": 21,
+    "passed": 21,
+    "skipped": [],
+    "sha256": "908bd66746fe991ef1c72b0894938151a7871b4b6b43f16dd2d2352fab4c19f6"
+  },
+  {
+    "path": "studio/core/.jvm/target/test-reports/TEST-eyes4s.studio.core.fixture.LoopbackTransportSuite.xml",
+    "cases": 28,
+    "passed": 28,
+    "skipped": [],
+    "sha256": "e101e891249ad748cdd9a2057da234abe91a194e29ea9f4d4c80682d69afdba5"
+  },
+  {
+    "path": "studio/core/.jvm/target/test-reports/TEST-eyes4s.studio.core.fixture.MapGridSuite.xml",
+    "cases": 6,
+    "passed": 6,
+    "skipped": [],
+    "sha256": "7ff57cda12ed4b7fdfa512061ae6cb24313b3cd79c3c4434e8741c89905cd17b"
+  },
+  {
+    "path": "studio/core/.jvm/target/test-reports/TEST-eyes4s.studio.core.fixture.MockScoresGoldenJvmSuite.xml",
+    "cases": 5,
+    "passed": 5,
+    "skipped": [],
+    "sha256": "c26a4ec6644319b9c6770a3d5c2291aa80d919c3710b912f7a3519c1a2a090d3"
+  },
+  {
+    "path": "studio/core/.jvm/target/test-reports/TEST-eyes4s.studio.core.fixture.PairRowsSuite.xml",
+    "cases": 8,
+    "passed": 8,
+    "skipped": [],
+    "sha256": "c4ee77f924ecf6779abcd8913b18baae7b786003f452a488d3c41e812c529fca"
+  },
+  {
+    "path": "studio/core/.jvm/target/test-reports/TEST-eyes4s.studio.core.fixture.PreviewSnapshotSuite.xml",
+    "cases": 6,
+    "passed": 6,
+    "skipped": [],
+    "sha256": "4f581a06b910eef1789d772e56e19e764c0f3a3812b36208d2d2e32e093a3e16"
+  },
+  {
+    "path": "studio/core/.jvm/target/test-reports/TEST-eyes4s.studio.core.fixture.ReportsSuite.xml",
+    "cases": 14,
+    "passed": 14,
+    "skipped": [],
+    "sha256": "1295561f2292207d8d4fa851a29574f6462f0dd38ffbff97f1e4ea0d74df6995"
+  },
+  {
+    "path": "studio/core/.jvm/target/test-reports/TEST-eyes4s.studio.core.fixture.ScanpathAgreementJvmSuite.xml",
+    "cases": 4,
+    "passed": 4,
+    "skipped": [],
+    "sha256": "62135f5831b28eb43eeea937fd808599bd1d4c13bfe5c4cc0379c71e682c669e"
+  },
+  {
+    "path": "studio/core/.jvm/target/test-reports/TEST-eyes4s.studio.core.fixture.ScanpathRecordsSuite.xml",
+    "cases": 8,
+    "passed": 8,
+    "skipped": [],
+    "sha256": "63b76f6d578d5875e333d740a6060848f756f72cedea59ae6b7afc9e18d2b82f"
+  },
+  {
+    "path": "studio/core/.jvm/target/test-reports/TEST-eyes4s.studio.core.fixture.SourceRecordsJvmSuite.xml",
+    "cases": 2,
+    "passed": 2,
+    "skipped": [],
+    "sha256": "a7cb11512ce618a6c0a1099116c12115a62b33feb2b30cc51d4980c3c4015f75"
+  },
+  {
+    "path": "studio/core/.jvm/target/test-reports/TEST-eyes4s.studio.core.fixture.SourceRecordsSuite.xml",
+    "cases": 8,
+    "passed": 8,
+    "skipped": [],
+    "sha256": "f6110f4c060f525700307daf021073c772e25b75d65b0f1221b97c59f1d93584"
+  },
+  {
+    "path": "studio/core/.jvm/target/test-reports/TEST-eyes4s.studio.core.fixture.StoryMomentsSuite.xml",
+    "cases": 5,
+    "passed": 5,
+    "skipped": [],
+    "sha256": "8487c9ab81d7b9077b93046b6b5c64e5bb5b138119a71b9fbcc88690b2340911"
+  },
+  {
+    "path": "studio/core/.jvm/target/test-reports/TEST-eyes4s.studio.core.fixture.StorySeedSuite.xml",
+    "cases": 6,
+    "passed": 6,
+    "skipped": [],
+    "sha256": "fa1d27ddf3676eb6754dae39da1c4a9e1992e1c485ab196e08b11b0a92db3cd2"
+  },
+  {
+    "path": "studio/core/.jvm/target/test-reports/TEST-eyes4s.studio.core.fixture.StudioFixtureCountsSuite.xml",
+    "cases": 8,
+    "passed": 8,
+    "skipped": [],
+    "sha256": "845c7e28371041bd40eae516479ae2876914205da82dea21dc633ef62a1ffedd"
+  },
+  {
+    "path": "studio/core/.jvm/target/test-reports/TEST-eyes4s.studio.core.fixture.TrialViewsJvmSuite.xml",
+    "cases": 2,
+    "passed": 2,
+    "skipped": [],
+    "sha256": "b9c5c542344c2a25873c24163c527c3305561a9205007d164273fda4ce7cc14b"
+  },
+  {
+    "path": "studio/core/.jvm/target/test-reports/TEST-eyes4s.studio.core.fixture.TrialViewsSuite.xml",
+    "cases": 7,
+    "passed": 7,
+    "skipped": [],
+    "sha256": "f8727fbe376c4e10a858489c6e61aa2cdae9aa60fa5d51548c0b7fa22ca07a81"
+  },
+  {
+    "path": "studio/core/.jvm/target/test-reports/TEST-eyes4s.studio.core.fixture.WindowSelectionSuite.xml",
+    "cases": 2,
+    "passed": 2,
+    "skipped": [],
+    "sha256": "6baf55894d5ec6e601cb282ac53ff436a7c97df8cc242033f23701a4a14f3b4e"
+  },
+  {
+    "path": "studio/core/.jvm/target/test-reports/TEST-eyes4s.studio.core.freshness.FamilyFreshnessSuite.xml",
+    "cases": 8,
+    "passed": 8,
+    "skipped": [],
+    "sha256": "799bbc3701916c221115fc5ae535a9eb14bdddc2a1dbdaae77aa26d8b0ef05c8"
+  },
+  {
+    "path": "studio/core/.jvm/target/test-reports/TEST-eyes4s.studio.core.freshness.FreshnessTruthTableSuite.xml",
+    "cases": 17,
+    "passed": 17,
+    "skipped": [],
+    "sha256": "c99812853f838943d8b14138581f2d6950b527fb60f8645f59d0dd4c06493eab"
+  },
+  {
+    "path": "studio/core/.jvm/target/test-reports/TEST-eyes4s.studio.core.geometry.CorrectionLedgerSuite.xml",
+    "cases": 12,
+    "passed": 12,
+    "skipped": [],
+    "sha256": "d692d7c843560b27b21784acdb8a1d1ce7a115987b89a7035b38626b08667a71"
+  },
+  {
+    "path": "studio/core/.jvm/target/test-reports/TEST-eyes4s.studio.core.geometry.GoldenPlacementJvmSuite.xml",
+    "cases": 4,
+    "passed": 4,
+    "skipped": [],
+    "sha256": "5fa5d5c8e5fb9a00b6ebfd3404b72062506280d6dd021d6637ee1e590e71b600"
+  },
+  {
+    "path": "studio/core/.jvm/target/test-reports/TEST-eyes4s.studio.core.headless.NativeArchiveHostSuite.xml",
+    "cases": 1,
+    "passed": 1,
+    "skipped": [],
+    "sha256": "545815e1106db5e3ca735abf9b6cfc1d3b2a1e37e8e8ab95670050c98f7a53b0"
+  },
+  {
+    "path": "studio/core/.jvm/target/test-reports/TEST-eyes4s.studio.core.headless.SynchronizedBackendSuite.xml",
+    "cases": 1,
+    "passed": 1,
+    "skipped": [],
+    "sha256": "ce200e3abc621d9931ae5557d43bb4d06c30e3be47501ce1f47c0f664f979027"
+  },
+  {
+    "path": "studio/core/.jvm/target/test-reports/TEST-eyes4s.studio.core.importing.ColumnMappingSuite.xml",
+    "cases": 29,
+    "passed": 29,
+    "skipped": [],
+    "sha256": "8c2fc019ba9c431b0a8fcebdb19ced0375ebf761d3855f70fb1af4f27b296f7c"
+  },
+  {
+    "path": "studio/core/.jvm/target/test-reports/TEST-eyes4s.studio.core.importing.InventoryJoinJvmSuite.xml",
+    "cases": 4,
+    "passed": 4,
+    "skipped": [],
+    "sha256": "000c5334263daec227eee2643160d35edc6d35a53fe5a0d0685787bb9ab25b79"
+  },
+  {
+    "path": "studio/core/.jvm/target/test-reports/TEST-eyes4s.studio.core.importing.InventoryJoinSuite.xml",
+    "cases": 10,
+    "passed": 10,
+    "skipped": [],
+    "sha256": "d44786830cadafcea769334629901fe1afb34fa06639429948bffda9ed78827a"
+  },
+  {
+    "path": "studio/core/.jvm/target/test-reports/TEST-eyes4s.studio.core.importing.KeyRetentionJvmSuite.xml",
+    "cases": 3,
+    "passed": 3,
+    "skipped": [],
+    "sha256": "47293014fd52c8f1c05ea9340c404b7938c5df4147e491ffc00ff1fa8106a97b"
+  },
+  {
+    "path": "studio/core/.jvm/target/test-reports/TEST-eyes4s.studio.core.importing.StreamedSourceSuite.xml",
+    "cases": 6,
+    "passed": 6,
+    "skipped": [],
+    "sha256": "a0a623e8df26ce22c530cd89c7ac059d0a99c78a1f26d81dc2b9369416901f9d"
+  },
+  {
+    "path": "studio/core/.jvm/target/test-reports/TEST-eyes4s.studio.core.importing.TrialKeyAgreementJvmSuite.xml",
+    "cases": 3,
+    "passed": 3,
+    "skipped": [],
+    "sha256": "7276e57f67e728d92a0c811f25ef711d8da3738a8ec0f298aac0fe298bc0f4de"
+  },
+  {
+    "path": "studio/core/.jvm/target/test-reports/TEST-eyes4s.studio.core.importing.TrialKeySuite.xml",
+    "cases": 16,
+    "passed": 16,
+    "skipped": [],
+    "sha256": "104fc0415cbea66d427e5bf2e681dab165007a250e11826fe9097e8524bb2e8f"
+  },
+  {
+    "path": "studio/core/.jvm/target/test-reports/TEST-eyes4s.studio.core.platform.PlatformInterfacesSuite.xml",
+    "cases": 18,
+    "passed": 18,
+    "skipped": [],
+    "sha256": "48a8722d755e82c34646e1cb529a21fe7657ad5089e93213ce7d0f3d4c3a0d16"
+  },
+  {
+    "path": "studio/core/.jvm/target/test-reports/TEST-eyes4s.studio.core.preferences.PreferencesSuite.xml",
+    "cases": 19,
+    "passed": 19,
+    "skipped": [],
+    "sha256": "059ea31b50942d1dbd1ca3dd458b22ec1cdbbb3ccf00c23ffd8215c2b0930013"
+  },
+  {
+    "path": "studio/core/.jvm/target/test-reports/TEST-eyes4s.studio.core.preset.InitialRecipeSuite.xml",
+    "cases": 2,
+    "passed": 2,
+    "skipped": [],
+    "sha256": "1686329dfb5ad9fdd0b0125d1a7a1bfd42f1205d2acc8104223223b3afc47232"
+  },
+  {
+    "path": "studio/core/.jvm/target/test-reports/TEST-eyes4s.studio.core.preview.PreviewPagingSuite.xml",
+    "cases": 16,
+    "passed": 16,
+    "skipped": [],
+    "sha256": "1dea8fbb1ccd7a844b73592340d48b090e95e857de903bd32634ac8508dc1140"
+  },
+  {
+    "path": "studio/core/.jvm/target/test-reports/TEST-eyes4s.studio.core.real.FixationContextSuite.xml",
+    "cases": 1,
+    "passed": 1,
+    "skipped": [],
+    "sha256": "3e561c8380e778ead6d1bfa9dc3dccba1d6266d2cb4b6fa3cb8b42c05c2644f6"
+  },
+  {
+    "path": "studio/core/.jvm/target/test-reports/TEST-eyes4s.studio.core.real.NativeArchiveRestoreSuite.xml",
+    "cases": 7,
+    "passed": 7,
+    "skipped": [],
+    "sha256": "96837335a41216d5877301b964686237664264ee3a84c19d75382a2023cc9f93"
+  },
+  {
+    "path": "studio/core/.jvm/target/test-reports/TEST-eyes4s.studio.core.real.NativeArtifactDeliverySuite.xml",
+    "cases": 2,
+    "passed": 2,
+    "skipped": [],
+    "sha256": "f963f8ead474a95a9e682476302675e58c1d452a0e4ace3f1eea5cab5c54da63"
+  },
+  {
+    "path": "studio/core/.jvm/target/test-reports/TEST-eyes4s.studio.core.real.NativeArtifactPackageSuite.xml",
+    "cases": 5,
+    "passed": 5,
+    "skipped": [],
+    "sha256": "168eb926528a8ed073fb0ccb542ced37e62208caacbc55a0af1da3ace7ce51e7"
+  },
+  {
+    "path": "studio/core/.jvm/target/test-reports/TEST-eyes4s.studio.core.real.NativeArtifactPersistenceSuite.xml",
+    "cases": 18,
+    "passed": 18,
+    "skipped": [],
+    "sha256": "fc72fc32db18686afff8342948fd304731bf693ca17415a95fd8432f97f2ba1c"
+  },
+  {
+    "path": "studio/core/.jvm/target/test-reports/TEST-eyes4s.studio.core.real.NativeArtifactProviderSuite.xml",
+    "cases": 1,
+    "passed": 1,
+    "skipped": [],
+    "sha256": "39e4b97eb1ce0579a1ce68dc8187219c8b49628bf089fc32fdf5083ea5966099"
+  },
+  {
+    "path": "studio/core/.jvm/target/test-reports/TEST-eyes4s.studio.core.real.NativeArtifactRestoreSuite.xml",
+    "cases": 21,
+    "passed": 21,
+    "skipped": [],
+    "sha256": "79a2aa1491c862e030e801e18424fe86d5f61b449465c2cafc7ad19dcf4b434f"
+  },
+  {
+    "path": "studio/core/.jvm/target/test-reports/TEST-eyes4s.studio.core.real.NativeReadsSuite.xml",
+    "cases": 5,
+    "passed": 5,
+    "skipped": [],
+    "sha256": "f3b00eb2ca478adf135edfbd2f4ed8c5fe75515a514d817cefb27c8ee629b62c"
+  },
+  {
+    "path": "studio/core/.jvm/target/test-reports/TEST-eyes4s.studio.core.real.RealBackendConformanceSuite.xml",
+    "cases": 12,
+    "passed": 12,
+    "skipped": [],
+    "sha256": "2a177fbc7f4b7ac59c672493ea68df93d4bda4768d2e4455fd1248f75aa203f1"
+  },
+  {
+    "path": "studio/core/.jvm/target/test-reports/TEST-eyes4s.studio.core.real.RealNavigatorSuite.xml",
+    "cases": 2,
+    "passed": 2,
+    "skipped": [],
+    "sha256": "9935d11c1c8bcb300d0147f55a77ff4ea40425fd6d989079378b3cedc3383aba"
+  },
+  {
+    "path": "studio/core/.jvm/target/test-reports/TEST-eyes4s.studio.core.real.RealPlacementSuite.xml",
+    "cases": 5,
+    "passed": 5,
+    "skipped": [],
+    "sha256": "2fc542a03b284e1d60938d4657a544d97bce0fd161683f49d2466ef23aedb017"
+  },
+  {
+    "path": "studio/core/.jvm/target/test-reports/TEST-eyes4s.studio.core.real.RealPlanBindingSuite.xml",
+    "cases": 1,
+    "passed": 1,
+    "skipped": [],
+    "sha256": "4b17b8f1f406c0120ea88c87d154dd5d0b0279f21309fbf2ec08e4af2233e0ad"
+  },
+  {
+    "path": "studio/core/.jvm/target/test-reports/TEST-eyes4s.studio.core.real.RealPreviewCursorSuite.xml",
+    "cases": 9,
+    "passed": 9,
+    "skipped": [],
+    "sha256": "efaeedb68c02208a1341c3f4a82f76f9bacff820a68b866bc16a63effb746d52"
+  },
+  {
+    "path": "studio/core/.jvm/target/test-reports/TEST-eyes4s.studio.core.real.RealPreviewLifecycleSuite.xml",
+    "cases": 2,
+    "passed": 2,
+    "skipped": [],
+    "sha256": "70bf6979a34049c7c4e4b81a3f9402a79c6832c0099fe4d751f823c0eacdaccc"
+  },
+  {
+    "path": "studio/core/.jvm/target/test-reports/TEST-eyes4s.studio.core.real.RealReferenceDeclarationsSuite.xml",
+    "cases": 2,
+    "passed": 2,
+    "skipped": [],
+    "sha256": "62cb1bbbcbfb7d899bae642ecad0205b4b38dac6b151ee8444910811be693d96"
+  },
+  {
+    "path": "studio/core/.jvm/target/test-reports/TEST-eyes4s.studio.core.real.RealRegistryBackendSuite.xml",
+    "cases": 5,
+    "passed": 5,
+    "skipped": [],
+    "sha256": "af75ee141f1968e00dc9b1e06d9a93d895dd21060ed1e6452db478db4cf2a38b"
+  },
+  {
+    "path": "studio/core/.jvm/target/test-reports/TEST-eyes4s.studio.core.real.RealRegistrySuite.xml",
+    "cases": 3,
+    "passed": 3,
+    "skipped": [],
+    "sha256": "ce6363a03f94227f3dfc1ef8c95680055b80c04f95ea4fb8152c7ea3719b9be9"
+  },
+  {
+    "path": "studio/core/.jvm/target/test-reports/TEST-eyes4s.studio.core.real.RealReportGateJvmSuite.xml",
+    "cases": 1,
+    "passed": 1,
+    "skipped": [],
+    "sha256": "94e148e61fe2cbedc0e46d68def29e9f7b4bdf7eb72ed7dfc040cd70b80af3bb"
+  },
+  {
+    "path": "studio/core/.jvm/target/test-reports/TEST-eyes4s.studio.core.real.RealSemanticInputBindingSuite.xml",
+    "cases": 2,
+    "passed": 2,
+    "skipped": [],
+    "sha256": "e7c34ed7a56793f8f2b4af2e8deb127250350286fbc378971c2d4e3d835e84ed"
+  },
+  {
+    "path": "studio/core/.jvm/target/test-reports/TEST-eyes4s.studio.core.real.RealStudyBackendSuite.xml",
+    "cases": 31,
+    "passed": 31,
+    "skipped": [],
+    "sha256": "c77bbd51fbf5a40be9a8b76e731b6d649e0ca60b1737737a547beb81a620db25"
+  },
+  {
+    "path": "studio/core/.jvm/target/test-reports/TEST-eyes4s.studio.core.real.RealTemporalExtentSuite.xml",
+    "cases": 3,
+    "passed": 3,
+    "skipped": [],
+    "sha256": "260db72ff9dcc285100b2daa6ea3dcd61d886663ae9669bba6b7b918236f5b34"
+  },
+  {
+    "path": "studio/core/.jvm/target/test-reports/TEST-eyes4s.studio.core.real.RealTrialPreviewSuite.xml",
+    "cases": 2,
+    "passed": 2,
+    "skipped": [],
+    "sha256": "4f2f3949f95ffa874eff9843315be5a1846a026417a825c4a824a4d527b03a2d"
+  },
+  {
+    "path": "studio/core/.jvm/target/test-reports/TEST-eyes4s.studio.core.real.RecipeFormServiceSuite.xml",
+    "cases": 8,
+    "passed": 8,
+    "skipped": [],
+    "sha256": "ae801e8fc608bb77ad0f5f5133d20b554d61f62e31f427dbc55ab010957d7c46"
+  },
+  {
+    "path": "studio/core/.jvm/target/test-reports/TEST-eyes4s.studio.core.real.SemanticInputRegistrySuite.xml",
+    "cases": 1,
+    "passed": 1,
+    "skipped": [],
+    "sha256": "9df85cba7643d85fa3c2fd16d86e62e1613fcc43afba74cd28f361f8614d7d35"
+  },
+  {
+    "path": "studio/core/.jvm/target/test-reports/TEST-eyes4s.studio.core.report.ErrorReportSuite.xml",
+    "cases": 8,
+    "passed": 8,
+    "skipped": [],
+    "sha256": "3823effc8f25f797f30d1a7d69916b4bd56fa8f512bff943558cd94f6a0b5698"
+  },
+  {
+    "path": "studio/core/.jvm/target/test-reports/TEST-eyes4s.studio.core.reports.ReportDirectionSuite.xml",
+    "cases": 5,
+    "passed": 5,
+    "skipped": [],
+    "sha256": "ee4b1046d594fcfd66f8043c55cea55df9a0d71a567b12b88e7db3b803f7adbf"
+  },
+  {
+    "path": "studio/core/.jvm/target/test-reports/TEST-eyes4s.studio.core.runs.RunStoreSuite.xml",
+    "cases": 24,
+    "passed": 24,
+    "skipped": [],
+    "sha256": "1c168b31d23c0b667de72dcfbaf0592a03c49264ce09532eefa84c6a7e5c0618"
+  },
+  {
+    "path": "studio/core/.jvm/target/test-reports/TEST-eyes4s.studio.core.scanpath.ScanpathStudySuite.xml",
+    "cases": 4,
+    "passed": 4,
+    "skipped": [],
+    "sha256": "9679989f5b671a60b2bb6f8787f355b3eaff967bcc54aacfb8c37cd190e52b60"
+  },
+  {
+    "path": "studio/core/.jvm/target/test-reports/TEST-eyes4s.studio.core.selection.LedgerCountsSuite.xml",
+    "cases": 7,
+    "passed": 7,
+    "skipped": [],
+    "sha256": "43ad6776ca001fe959be60fcb809b62c1d3717d18e3d6353e36deebef8727575"
+  },
+  {
+    "path": "studio/core/.jvm/target/test-reports/TEST-eyes4s.studio.core.selection.SelectionBusSuite.xml",
+    "cases": 18,
+    "passed": 18,
+    "skipped": [],
+    "sha256": "04f3cd5ee9df41ea65662a9b8e7fca752edbb50682cb90106329c36b28607e1e"
+  },
+  {
+    "path": "studio/core/.jvm/target/test-reports/TEST-eyes4s.studio.core.session.AtomicSaveFaultSuite.xml",
+    "cases": 10,
+    "passed": 10,
+    "skipped": [],
+    "sha256": "bcb081177b874449044bbd4afc647952aa9b011f19f6fd6dfbdd65d36012be97"
+  },
+  {
+    "path": "studio/core/.jvm/target/test-reports/TEST-eyes4s.studio.core.session.ReadInputSuite.xml",
+    "cases": 1,
+    "passed": 1,
+    "skipped": [],
+    "sha256": "ed984621dbbefbf8d14013d3c6ae8d44da4dfd2f63d889eb72f231466ed64fc1"
+  },
+  {
+    "path": "studio/core/.jvm/target/test-reports/TEST-eyes4s.studio.core.session.RecoveryFaultSuite.xml",
+    "cases": 17,
+    "passed": 17,
+    "skipped": [],
+    "sha256": "43677d2017459f03ecffa177a66b15f03274daee24ab0c7237f59b91d38b155f"
+  },
+  {
+    "path": "studio/core/.jvm/target/test-reports/TEST-eyes4s.studio.core.session.RecoverySuite.xml",
+    "cases": 31,
+    "passed": 31,
+    "skipped": [],
+    "sha256": "5de8b51af740654aa3eb0d8c3c47cc2bbc59860418a98b2e37ebb8e8c8f876d9"
+  },
+  {
+    "path": "studio/core/.jvm/target/test-reports/TEST-eyes4s.studio.core.session.SavedPartRetentionSuite.xml",
+    "cases": 11,
+    "passed": 11,
+    "skipped": [],
+    "sha256": "05dfcf8b9224da7a8ce2918a65d2948fab80358494e7508b809776cf2c061912"
+  },
+  {
+    "path": "studio/core/.jvm/target/test-reports/TEST-eyes4s.studio.core.session.SessionCancellationSuite.xml",
+    "cases": 8,
+    "passed": 8,
+    "skipped": [],
+    "sha256": "a92889a702735c202d4e06eff3454ff88859345f439a862a5ceede5a3c7a5a6a"
+  },
+  {
+    "path": "studio/core/.jvm/target/test-reports/TEST-eyes4s.studio.core.session.SessionSaveAsSuite.xml",
+    "cases": 9,
+    "passed": 9,
+    "skipped": [],
+    "sha256": "b0faaf2852e422ab27508e7c260d0441f8ed07b31bd9c6f6b02cd1129d728c4d"
+  },
+  {
+    "path": "studio/core/.jvm/target/test-reports/TEST-eyes4s.studio.core.session.SessionShareSuite.xml",
+    "cases": 4,
+    "passed": 4,
+    "skipped": [],
+    "sha256": "ede911115bdbb6900897133512392a57447e6ef8c9576f95ce9da502a4de96c9"
+  },
+  {
+    "path": "studio/core/.jvm/target/test-reports/TEST-eyes4s.studio.core.session.SourceRepairSessionSuite.xml",
+    "cases": 3,
+    "passed": 3,
+    "skipped": [],
+    "sha256": "4e7ffabf4722f6382577e6e891a95040049cc4bfe5cfc7b81bdb21f2f2aa50b9"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-consumer.StudioDesktopDomainProductMirrorSuite.xml",
+    "cases": 1,
+    "passed": 1,
+    "skipped": [],
+    "sha256": "4fe068209456d01fcc839bdad72d3b71d7cdf88f5083156daae296d1e0051edb"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.PinnedProvidersSuite.xml",
+    "cases": 4,
+    "passed": 4,
+    "skipped": [],
+    "sha256": "7956367209ca463651332546bc4617c66f48a7bc5e9bd4bbe15ed00e5c9e265a"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.StudioMainSuite.xml",
+    "cases": 2,
+    "passed": 2,
+    "skipped": [],
+    "sha256": "8c2510942afe00a7d47365674b0ae9e90aef105e5d80190750ae0c5f4a98b518"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.admission.AdmissionLedgerFxSuite.xml",
+    "cases": 6,
+    "passed": 6,
+    "skipped": [],
+    "sha256": "7b2df55d63ccf19cc2fc780b3347b71b52858816e5e9751151a163557710f1d4"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.analysis.AnalysesNavigatorFxSuite.xml",
+    "cases": 10,
+    "passed": 10,
+    "skipped": [],
+    "sha256": "14a1348f47cafaf16474764da67ee6d309462b1b6dc72dce9052881d5a782446"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.analysis.DescriptorFormSuite.xml",
+    "cases": 2,
+    "passed": 2,
+    "skipped": [],
+    "sha256": "4e69b8d5887b64273ccf1c3969d9e76f41e57e4ee92b5fae19196a3e9c6d25de"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.analysis.DraftLifecycleSuite.xml",
+    "cases": 2,
+    "passed": 2,
+    "skipped": [],
+    "sha256": "47c99e3c11846a01ba521fd4dc7784b0f057fa695a6284b842a31deddfb9ac9f"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.analysis.PreflightFxSuite.xml",
+    "cases": 5,
+    "passed": 5,
+    "skipped": [],
+    "sha256": "304a740d5301e4c966e687dfdd15ff2d8ce17d7c9e9791a3c4c4b5f9daec1523"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.analysis.ResolvedDesignFxSuite.xml",
+    "cases": 8,
+    "passed": 8,
+    "skipped": [],
+    "sha256": "cc2e93bddf3a38cba60608e072a51915ad83720b2ff37014ad5138d036b649ea"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.analysis.ScalesEditorSuite.xml",
+    "cases": 1,
+    "passed": 1,
+    "skipped": [],
+    "sha256": "c0a0e0e27faae11d84f08952d3c9be5888f4dd74ad31ec5b85962965c17237ac"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.compare.CompareInspectorFxSuite.xml",
+    "cases": 1,
+    "passed": 1,
+    "skipped": [],
+    "sha256": "31616a43949c05cb3b4f4ee28e46ff64193886e022ca27e70eb13a2d9b46d05a"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.compare.CompareMapHostFxSuite.xml",
+    "cases": 3,
+    "passed": 3,
+    "skipped": [],
+    "sha256": "6ea1e27137e2f061abc4e4747081101e62c7267df6c7db5737bbbaf1ac83d269"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.compare.PairsTableFxSuite.xml",
+    "cases": 6,
+    "passed": 6,
+    "skipped": [],
+    "sha256": "3c29a9a7568d770a11ecaa17ea462b3a09b096b55569d5e042f90cd4bb2739bf"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.compare.ParticipantsNavigatorFxSuite.xml",
+    "cases": 5,
+    "passed": 5,
+    "skipped": [],
+    "sha256": "43f97502b5fac8ef82b21a42d2a3b3d754d8f2665cb7f60afe055e8f823f8603"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.compare.QueriesNavigatorFxSuite.xml",
+    "cases": 5,
+    "passed": 5,
+    "skipped": [],
+    "sha256": "690aa5e6bc0c536261d49bd5fe0a8786ff33aa780d2fa9038205474dc1b1aa2e"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.compare.ReportingEditorFxSuite.xml",
+    "cases": 3,
+    "passed": 3,
+    "skipped": [],
+    "sha256": "a25d296ec087af6a3b8656e99214b0718d1826a4a7d0fb9f3440b1bf359a85fd"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.compare.ScaleLadderFxSuite.xml",
+    "cases": 3,
+    "passed": 3,
+    "skipped": [],
+    "sha256": "0158541f8e7f1848e10f2951579564ccbd1f683ab0da1dd701e34e0f50457e1b"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.compare.TrialPanelsFxSuite.xml",
+    "cases": 6,
+    "passed": 6,
+    "skipped": [],
+    "sha256": "80ef8d90f51342e654661d8805964a5e2fde4ac78f984b92bebe093a7db536c8"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.data.AssetFilesSuite.xml",
+    "cases": 5,
+    "passed": 5,
+    "skipped": [],
+    "sha256": "b7454cf9e951587deddfcdf112e7b7fbb6373f14e8f3e29971776177d0958cd0"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.data.DataFirstRunFxSuite.xml",
+    "cases": 7,
+    "passed": 7,
+    "skipped": [],
+    "sha256": "2a15ea76a1ada17b4963553d263b0ccc9a406f832324636c6eb2deff3bc08ab4"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.data.PlatformAssetFilesSuite.xml",
+    "cases": 3,
+    "passed": 3,
+    "skipped": [],
+    "sha256": "7448a26ecc5ac10dbfa4212ebe65c48af2341784fd4fcf62d42a75be0302677c"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.data.SourceRepairFileFxSuite.xml",
+    "cases": 3,
+    "passed": 3,
+    "skipped": [],
+    "sha256": "c859dd790638e296390bf90ccd96a3db10d77f684990d55132e266c1df96bf2b"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.data.SourceRepairFileSuite.xml",
+    "cases": 3,
+    "passed": 3,
+    "skipped": [],
+    "sha256": "ad9d04c5313266894ae577f9afd165cd31097c1166bd0ea378d5fe1a713cde36"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.data.SourcesFxSuite.xml",
+    "cases": 5,
+    "passed": 5,
+    "skipped": [],
+    "sha256": "84e8cc6f2f343b238b762870eb284f353c84885c2e233065c353220999c83447"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.dock.DockLayoutsSuite.xml",
+    "cases": 7,
+    "passed": 7,
+    "skipped": [],
+    "sha256": "5a4e2bb61e1b0ed640d761d49e5bb1383796f50478f871535caeac2b29fba562"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.dock.LayoutPersistenceFxSuite.xml",
+    "cases": 3,
+    "passed": 3,
+    "skipped": [],
+    "sha256": "74a5a37488aa8c9c25b22dd1e9dac291bebec231bc3cc3a3e8ad3f82831b57a3"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.explore.ExploreLinkedSelectionFxSuite.xml",
+    "cases": 2,
+    "passed": 2,
+    "skipped": [],
+    "sha256": "e99adaeda06d77530bb1ad8042a41ac64e89e3d6000ee72a526dc8d4c02bfea1"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.explore.ExploreTrialViewFxSuite.xml",
+    "cases": 4,
+    "passed": 4,
+    "skipped": [],
+    "sha256": "945c9aad36f3d69d6c18a9b4154f0f099e3717ed3c864032b690339f8c940bd8"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.explore.ExploreTrialViewHostSuite.xml",
+    "cases": 2,
+    "passed": 2,
+    "skipped": [],
+    "sha256": "74f9c8b171cce890e2db8b57017418af70873f60e87476daedf7724f7c5b89e4"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.explore.FixationInspectorFxSuite.xml",
+    "cases": 3,
+    "passed": 3,
+    "skipped": [],
+    "sha256": "4ffd6ade529114390b12d786a610146e3a3b83253fe0eeb327b28143b5c809ef"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.explore.NavigatorDisplaysSuite.xml",
+    "cases": 5,
+    "passed": 5,
+    "skipped": [],
+    "sha256": "190996fdcff9253b297897335bfc9dacc0d62675b05c0a4859cd666a056b845e"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.explore.SourceRecordsFxSuite.xml",
+    "cases": 7,
+    "passed": 7,
+    "skipped": [],
+    "sha256": "da61b0362251edf4cd921d2f67210ebd9ce2c14161900d8d5f886d53e8136930"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.explore.TimelineFxSuite.xml",
+    "cases": 8,
+    "passed": 8,
+    "skipped": [],
+    "sha256": "1d157bfc21f8c759ad695f75d9b807929f4141c2897060820196ba6dcfae4791"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.explore.TrialExtentFxSuite.xml",
+    "cases": 3,
+    "passed": 3,
+    "skipped": [],
+    "sha256": "6814e893b8b1b40ebdd6b9c6acecf9a16d704702bab3261cf6153cd9cf702c4e"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.explore.TrialsNavigatorFxSuite.xml",
+    "cases": 4,
+    "passed": 4,
+    "skipped": [],
+    "sha256": "6bb221dc580f9c226c0c374212cece28f2884d7621a5a514463d43df31749f3b"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.figures.BundleSnapshotSuite.xml",
+    "cases": 1,
+    "passed": 1,
+    "skipped": [],
+    "sha256": "d7921708e796590e24f7a04777120fdfab6f2fb8e48f55164b21ace7d0b55cb3"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.figures.ExportBundleSuite.xml",
+    "cases": 19,
+    "passed": 19,
+    "skipped": [],
+    "sha256": "d7a8a97c8110e4ebab0fae30338dd891d30440f6566f3fff9467ca276ecb3d5b"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.figures.FigureAppearanceFxSuite.xml",
+    "cases": 3,
+    "passed": 3,
+    "skipped": [],
+    "sha256": "9ed64c4d226627020ba3f45246c3e7d40d89be3f3a770ca417d2a5152340913a"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.figures.FigureComposerFxSuite.xml",
+    "cases": 12,
+    "passed": 12,
+    "skipped": [],
+    "sha256": "5ea7af58a1ff49efd160c9e621156e73407ddc8564905b5e3064e2bb951faab8"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.figures.FigureExportSuite.xml",
+    "cases": 10,
+    "passed": 10,
+    "skipped": [],
+    "sha256": "9add5ce6dfd5875a215ea3f0a5a38c97c7764a665190960d41112018948f5eba"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.figures.FigureGazeFxSuite.xml",
+    "cases": 1,
+    "passed": 1,
+    "skipped": [],
+    "sha256": "71ce0993518dfdc6f9c7b23cacbc90a3f82b10ba917f536eaaf74e2947368ebb"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.figures.FigureMethodsFxSuite.xml",
+    "cases": 7,
+    "passed": 7,
+    "skipped": [],
+    "sha256": "c34fff479f64698f346a18a6729d2061b1db1cedccb78a54167c87a97ec02e56"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.figures.MapTileHatchFxSuite.xml",
+    "cases": 1,
+    "passed": 1,
+    "skipped": [],
+    "sha256": "0c2c04035238463addb18103feaaf11f1e2c53b9d68ee2755b813832cc6d7de2"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.geometry.GeometryCountsFxSuite.xml",
+    "cases": 2,
+    "passed": 2,
+    "skipped": [],
+    "sha256": "c515a538a7591c794236d3bf38ffea3aef32a56a5b057db9287a35dfa7c59997"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.geometry.GeometryPanelFxSuite.xml",
+    "cases": 10,
+    "passed": 10,
+    "skipped": [],
+    "sha256": "270843abc491ab6a21bed4fa975a7c12313c5df1a3a6fe19ef3d089eae27fffa"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.geometry.GeometryPicturesTimingSuite.xml",
+    "cases": 1,
+    "passed": 1,
+    "skipped": [],
+    "sha256": "80e127a3f98e64856d0af14615bc016ee07e2e3555c85b79bea25336c28b6c1d"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.harness.FxRunLockSuite.xml",
+    "cases": 4,
+    "passed": 4,
+    "skipped": [],
+    "sha256": "7b9d6a167abf947254c058bb0a02794ec6d7b439e388df3c4462a7f0762507aa"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.harness.HarnessSmokeSuite.xml",
+    "cases": 6,
+    "passed": 6,
+    "skipped": [],
+    "sha256": "20d3cd9377149d9f005aeafc5f29d5a89e45cf800125c1f1b3e0ee666174a4f1"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.harness.PointerIsolationFxSuite.xml",
+    "cases": 2,
+    "passed": 2,
+    "skipped": [],
+    "sha256": "dc643b5d35c6e21f4499c7e1bde2cd72c8963ca3e64cd52e55b2296693eed199"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.harness.PointerOptOutFxSuite.xml",
+    "cases": 1,
+    "passed": 1,
+    "skipped": [],
+    "sha256": "35b491d99f5dffc869beca5c33f97e605b1c3fb286685b5291be731157d3d34a"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.harness.RenderFailureCaptureFxSuite.xml",
+    "cases": 4,
+    "passed": 4,
+    "skipped": [],
+    "sha256": "99cf71417fe1836fa36ba10cd9e11a9b19214cf8314081334792902a077ebddd"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.harness.UnevaluatedEffectsFxSuite.xml",
+    "cases": 2,
+    "passed": 2,
+    "skipped": [],
+    "sha256": "aaa83e06a4909d54f1638765c80ae8f91843f53b96fb58aaf2f9031ec8b00bb8"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.harness.VisualPixelsSuite.xml",
+    "cases": 3,
+    "passed": 3,
+    "skipped": [],
+    "sha256": "d563dfc6815906c83fa2071f5fa94efa261d876bc0b4ba58a3536317fab7bce4"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.icons.IconCatalogSuite.xml",
+    "cases": 8,
+    "passed": 8,
+    "skipped": [],
+    "sha256": "389ef966f6b52dd731c44c2cde746ef2d4e7addd2748f5ede04663c103af8fe8"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.importing.ColumnMappingPaneFxSuite.xml",
+    "cases": 12,
+    "passed": 12,
+    "skipped": [],
+    "sha256": "bf6308beab5a40a7a2e04e6b5fe29c2fecbb4e026b527b13e74816bc721fc902"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.importing.ImportAdmissionSuite.xml",
+    "cases": 3,
+    "passed": 3,
+    "skipped": [],
+    "sha256": "325d05d3137848577604c360fc9252cb38bb146e0564ed526d58b1b525e3e78e"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.importing.ImportFollowSuite.xml",
+    "cases": 2,
+    "passed": 2,
+    "skipped": [],
+    "sha256": "bf1009387e56b3691eaf7902226af9806613f359f3b4ebe6403da82383a058c2"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.importing.ImportWizardFxSuite.xml",
+    "cases": 19,
+    "passed": 19,
+    "skipped": [],
+    "sha256": "bc9e361270c331414f9b4c3ef279bd93592616834d90ff04b1cb0167d612af9f"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.importing.PlatformImportSuite.xml",
+    "cases": 2,
+    "passed": 2,
+    "skipped": [],
+    "sha256": "38a39dd0f1a6ba982b79dc793b1d7abcfa3988f9104c9b53b7ecbd6b77a800c0"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.importing.TrialKeyFxSuite.xml",
+    "cases": 4,
+    "passed": 4,
+    "skipped": [],
+    "sha256": "5fe2401c4cac473080217493f3d6360f8f2083dbde54406307f073466d8e859f"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.journey.GoldenJourneyFxSuite.xml",
+    "cases": 1,
+    "passed": 1,
+    "skipped": [],
+    "sha256": "3b7b8f7d4d9de44bc0c5f6a55da0316127e4ccffc311e3bb0a64c88160fee73e"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.journey.GoldenJourneySuite.xml",
+    "cases": 1,
+    "passed": 1,
+    "skipped": [],
+    "sha256": "2fb0d8315a7916d8642ec3c4e493a5fdc8e2e2317c9602aecee530f7d648af5e"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.journey.InteractionPerformanceFxSuite.xml",
+    "cases": 1,
+    "passed": 0,
+    "skipped": [
+      ""
+    ],
+    "sha256": "8a78f17471d1b9364f73ed8890537ae68a6790974184d7f64af9d61bda0fe522"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.journey.KeyboardJourneySuite.xml",
+    "cases": 1,
+    "passed": 1,
+    "skipped": [],
+    "sha256": "5c8dce535caac5c17f1b39a0d464fe8247f1b65aa66973cc3ccde8708aed3713"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.journey.NativeCommandJourneySuite.xml",
+    "cases": 1,
+    "passed": 1,
+    "skipped": [],
+    "sha256": "762f28f246321538347096b3d57fd6b1da26916f2ea23d2d4f35d24140ab3b64"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.journey.NativeGoldenCommandFxSuite.xml",
+    "cases": 1,
+    "passed": 1,
+    "skipped": [],
+    "sha256": "7d5f30791f60b66ec1ef717d265c8bc54f97d4c6f8c7c1f815b1794ad953b79b"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.journey.NativeGoldenWorkflowSuite.xml",
+    "cases": 1,
+    "passed": 1,
+    "skipped": [],
+    "sha256": "1267b26c2dec8a22d6f17678a9f60ce8b5b6bb57767cac1dd39e349d635478a5"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.journey.PrivateDensityFxSuite.xml",
+    "cases": 1,
+    "passed": 0,
+    "skipped": [
+      ""
+    ],
+    "sha256": "48bd8ba3194d2a70249cc1a2dc77748225c3656ace92d9cf9ee8b5dd82f4504f"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.journey.ScanpathWorkbenchFxSuite.xml",
+    "cases": 2,
+    "passed": 2,
+    "skipped": [],
+    "sha256": "7c224711cfe5d7398efca6ab0a26873ce57bdce4ceba68875cd3d2f03e6c7e8f"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.maps.MapRasterStoreSuite.xml",
+    "cases": 9,
+    "passed": 9,
+    "skipped": [],
+    "sha256": "e61df597f442304a2dbc778469698564816db62e0ff3ecddc96ac0ee11e78799"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.platform.AppearancePreferenceFxSuite.xml",
+    "cases": 2,
+    "passed": 2,
+    "skipped": [],
+    "sha256": "5a0dccb980d50d21b7cc2610d8f03201e6f857a7f2057971138b9a1c203c72fc"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.platform.AppearancePreferenceHostSuite.xml",
+    "cases": 5,
+    "passed": 5,
+    "skipped": [],
+    "sha256": "a0d649c3f0795aa07d3c224613e8f2fc8394bfbc4d2b61b5860b6a5cd4e1ba43"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.platform.DesktopPlatformSuite.xml",
+    "cases": 18,
+    "passed": 18,
+    "skipped": [],
+    "sha256": "6197125992436980db68fbe4c67e89cf9be6b940f6ab30d833063e6e995a2051"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.platform.DesktopPreferencesSuite.xml",
+    "cases": 4,
+    "passed": 4,
+    "skipped": [],
+    "sha256": "d9248424c0709a6d2febd146897d89535bec8ed47a6f05b93b35dfb294d37b66"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.platform.ExampleBundleSuite.xml",
+    "cases": 3,
+    "passed": 3,
+    "skipped": [],
+    "sha256": "1e391c44d9f275dd65f5a0f7865f37168cc907bc584891efd045327b6c1ab8c8"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.platform.FileAtomicSaveFaultSuite.xml",
+    "cases": 10,
+    "passed": 10,
+    "skipped": [],
+    "sha256": "6e71290cc8af27267154155daf40b4cb9d335826242ab9c93bc2b6b6bf924a13"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.platform.FilePresetStoreSuite.xml",
+    "cases": 2,
+    "passed": 2,
+    "skipped": [],
+    "sha256": "600a01ca57f4de9a96c160a5e76d7cca3d153d10aff457552e7de01bf05f254e"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.platform.FileProjectStoreSuite.xml",
+    "cases": 12,
+    "passed": 12,
+    "skipped": [],
+    "sha256": "647bad78cdeca8c90569324f2a204ca9248a91d40746579739db4f9474e8f043"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.platform.FileRecoveryFaultSuite.xml",
+    "cases": 17,
+    "passed": 17,
+    "skipped": [],
+    "sha256": "55a5273442f78f1317f0619bd06e2fb2362f8e950ada694a5aa9a84f160b1841"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.platform.FileRecoverySuite.xml",
+    "cases": 33,
+    "passed": 33,
+    "skipped": [],
+    "sha256": "32666c99e700b2be8b239854db7541b1414b61d2df030613403e3172f05e1b9b"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.platform.FileSavedPartRetentionSuite.xml",
+    "cases": 11,
+    "passed": 11,
+    "skipped": [],
+    "sha256": "f68764af8152edca9b15f5eed248a4860c2561ee6c20f3606984d86f79a97d30"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.platform.FileSessionCancellationSuite.xml",
+    "cases": 8,
+    "passed": 8,
+    "skipped": [],
+    "sha256": "6115ad125102c67736e9d12566209b7869f7137f5ea6d13bc3770ebafdc567f0"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.platform.NoticesSuite.xml",
+    "cases": 5,
+    "passed": 5,
+    "skipped": [],
+    "sha256": "747cc4efb0389b1c3047c10147872740aff25c0bff58496e16c3af51c2173354"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.platform.PlatformPresetStoreSuite.xml",
+    "cases": 4,
+    "passed": 4,
+    "skipped": [],
+    "sha256": "44358ca5cd377194038d8bfe5a43a28145fd6ad208cb82b480550994d14e4524"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.platform.PlatformRoutesFxSuite.xml",
+    "cases": 4,
+    "passed": 4,
+    "skipped": [],
+    "sha256": "2c595c10918c139551fec60de2a194af1f8fbe48154ae1cf53f7d160594c6d3a"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.platform.PreferenceWritesSuite.xml",
+    "cases": 1,
+    "passed": 1,
+    "skipped": [],
+    "sha256": "9648f14fcfa7dbf1d5da881cca845631d0acbfd12a36f1c7cbe9b3a581a665ff"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.platform.PreferencesFileSuite.xml",
+    "cases": 6,
+    "passed": 6,
+    "skipped": [],
+    "sha256": "34b1112af55039d6755e439ca02627d5f9191839ab6a9b8b703a0973a5faf0b6"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.platform.ProjectBundleGoldenSuite.xml",
+    "cases": 3,
+    "passed": 3,
+    "skipped": [],
+    "sha256": "304af6b60e3f42f2dd3edd3aa5b00441bebdbb010e2aeee02cc9d900bf5c3d69"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.plot.CanvasPlotHostFxSuite.xml",
+    "cases": 18,
+    "passed": 18,
+    "skipped": [],
+    "sha256": "e5ca93f69840dcdca5400d363233ffd5a70e9744e6eddf5a0995f9daeca32315"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.plot.CompareSummaryFxSuite.xml",
+    "cases": 9,
+    "passed": 9,
+    "skipped": [],
+    "sha256": "edf1068e0ab2a9d9aef143cb44dfee25cf824f905156b37a0d9ebdd1246570bf"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.plot.MissingAssetHatchFxSuite.xml",
+    "cases": 2,
+    "passed": 2,
+    "skipped": [],
+    "sha256": "62dcd829accbd57e6e15095e25c2c189cf9c4ae1e374cb1eb874108e1568b930"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.plot.NativeOutputScaleFxSuite.xml",
+    "cases": 1,
+    "passed": 1,
+    "skipped": [],
+    "sha256": "3c83fc717d85349ee4648c992a0bfbeca83f3996c7d88d732d515d83aef0a64f"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.plot.PlotKitFxSuite.xml",
+    "cases": 16,
+    "passed": 16,
+    "skipped": [],
+    "sha256": "2028226a98568218c0e9ffb9e210730d6b469bfc64315af42dc81022d7ff45ad"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.plot.S45bPlotFxSuite.xml",
+    "cases": 2,
+    "passed": 2,
+    "skipped": [],
+    "sha256": "f3e3d2e404edaf9294320d4895390401fcc559225ff5f479a5391e5e0629a413"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.plot.S45cPlotFxSuite.xml",
+    "cases": 3,
+    "passed": 3,
+    "skipped": [],
+    "sha256": "6538cb14d00f962f1a81d0988872c4a03990da43bcfcf8dc3a1d044a17689761"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.plot.S45dPlotFxSuite.xml",
+    "cases": 2,
+    "passed": 2,
+    "skipped": [],
+    "sha256": "84769e03685ad18e1069bd31339235b99dd209c9cf16aa7156021c6ae0491cbd"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.plot.S45ePlotFxSuite.xml",
+    "cases": 1,
+    "passed": 1,
+    "skipped": [],
+    "sha256": "755818cd520ba0624ec61bf2a04d60c03c784b3369219530cb651716bd6fb77f"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.plot.TableTwinViewFxSuite.xml",
+    "cases": 8,
+    "passed": 8,
+    "skipped": [],
+    "sha256": "df6598bc53049499c7fcb3b7fb0b604f9be64d63d88d73125b576634ba99e0ba"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.project.ProjectLifecycleFxSuite.xml",
+    "cases": 22,
+    "passed": 22,
+    "skipped": [],
+    "sha256": "215bc50ec28d630760f2e0fc32bc853facad34af974ac50755e03d72606489b2"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.report.ErrorReporterSuite.xml",
+    "cases": 1,
+    "passed": 1,
+    "skipped": [],
+    "sha256": "cc0fc522ba9cf9e8ccc4b66988b9b3fd5aa509af4dd858cd68a23029fcd83ba4"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.report.ErrorReportingSuite.xml",
+    "cases": 6,
+    "passed": 6,
+    "skipped": [],
+    "sha256": "16df097e58cc2e3013affab7fa8404e04e40285333ee39b2f8c4b4fecd12bcdd"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.report.StudioLogSuite.xml",
+    "cases": 3,
+    "passed": 3,
+    "skipped": [],
+    "sha256": "57da11390a170d292ccd6e41c14f49ff012155e6bb3f27311f1229143c1ab70a"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.runtime.AdversarialScienceSuite.xml",
+    "cases": 8,
+    "passed": 8,
+    "skipped": [],
+    "sha256": "df9b0611a76e72bcf7d9bee3cbc708cb6daeb83d82df9412763b2a59fbf0e1be"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.runtime.DatasetSourceHostsSuite.xml",
+    "cases": 2,
+    "passed": 2,
+    "skipped": [],
+    "sha256": "2870486b6f10ad91f28869e3fd125a88a85da30d650ca94e001915c91dd65cb7"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.runtime.ExecutionEventDeliverySuite.xml",
+    "cases": 3,
+    "passed": 3,
+    "skipped": [],
+    "sha256": "ff54ee00a0b2d2c32bbe0f0273ddefccbe71bd4c17a42b9ecbccdf69f5d7bdcf"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.runtime.NativeAdmissionPolicySuite.xml",
+    "cases": 4,
+    "passed": 4,
+    "skipped": [],
+    "sha256": "a48333f30a33ac25a11d5a3ec63f7b79ae09e37059edbc3b15bb9413489c47e1"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.runtime.NativeExecutionSafetySuite.xml",
+    "cases": 7,
+    "passed": 7,
+    "skipped": [],
+    "sha256": "c5ba0b5c06de25817cfbca36e4833fe9172e724639ff333679471d053309f01f"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.runtime.NativePlatformSuite.xml",
+    "cases": 3,
+    "passed": 3,
+    "skipped": [],
+    "sha256": "c1df5dbfc2eea5828bc171e40281434bd5dffc68492aaeb6accf0c56a0e030b2"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.runtime.NativeWindowFxSuite.xml",
+    "cases": 1,
+    "passed": 1,
+    "skipped": [],
+    "sha256": "6de9f6c751b93904155cdbc46682d5fae8b449acba093ca685f827c44d2f96c9"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.runtime.PreparedRefusalSuite.xml",
+    "cases": 1,
+    "passed": 1,
+    "skipped": [],
+    "sha256": "4ec5134830d0d1ac29ec48a8e3439fc1cbd45ba976a255304420ec96356776eb"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.runtime.SessionPortSuite.xml",
+    "cases": 7,
+    "passed": 7,
+    "skipped": [],
+    "sha256": "9c4f5fa2849ed78c6e3cd111dfb1dc7450229409a29d42eeed629031a5bb0639"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.runtime.StudioRuntimeSuite.xml",
+    "cases": 3,
+    "passed": 3,
+    "skipped": [],
+    "sha256": "8dd91e11b00f7d49bf4039a6af6174fc9b8a69fca8cecbf818bf3abdac5d4920"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.shell.A11yRenderSuite.xml",
+    "cases": 40,
+    "passed": 40,
+    "skipped": [],
+    "sha256": "1614c7574213514ed1c4651d7e42c3bf046c35f44343135571c5f565b14d572e"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.shell.A11yTreeSuite.xml",
+    "cases": 26,
+    "passed": 26,
+    "skipped": [],
+    "sha256": "e26344dfa7ea88412997b39e3ee4ac7d6aabaafe1bd97ba9a50f93afb86474ae"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.shell.AboutFxSuite.xml",
+    "cases": 1,
+    "passed": 1,
+    "skipped": [],
+    "sha256": "ccdd41ea79d9d81e252924552bf471edaae85d26cd55cb6ce45bfebf8cbb6879"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.shell.AppShellFxSuite.xml",
+    "cases": 23,
+    "passed": 23,
+    "skipped": [],
+    "sha256": "0bb105355c34cb8a925ca67af967fb605e82c715c678289f622ea45f7b1bc89c"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.shell.BoardParityCaptureFxSuite.xml",
+    "cases": 7,
+    "passed": 7,
+    "skipped": [],
+    "sha256": "3a1cab5e88a652dee6dea4f8cb78bb392bf9a6fc3aef2a0dc0091b52ec12ae3d"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.shell.BoardWorkspaceViewportFxSuite.xml",
+    "cases": 6,
+    "passed": 6,
+    "skipped": [],
+    "sha256": "9187937f2e24af6dd50edb08c42a5df1ea67bf5e911aaf0cdf0acf0496ff97d2"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.shell.CanvasBoundaryFxSuite.xml",
+    "cases": 2,
+    "passed": 2,
+    "skipped": [],
+    "sha256": "c025fdb6d1add3c1bd1623115d84b8c561586210378832122f0cbc5922cd2fc9"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.shell.CompositeCursorFxSuite.xml",
+    "cases": 4,
+    "passed": 4,
+    "skipped": [],
+    "sha256": "13352cd3b5d68248f6155c94a978a6b2f05ed7cd9d814b86d4a4841d34172b53"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.shell.ContextStripFxSuite.xml",
+    "cases": 8,
+    "passed": 8,
+    "skipped": [],
+    "sha256": "20d5a8ac43861309cdcbbf7f24023daba36e77267ccfba34048961dbe3843945"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.shell.ControlsFxSuite.xml",
+    "cases": 5,
+    "passed": 5,
+    "skipped": [],
+    "sha256": "200fe7f163454cf8a898e7d4b4acec4276a2a7171a537a16efab738aa2cb8227"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.shell.DockFollowSuite.xml",
+    "cases": 5,
+    "passed": 5,
+    "skipped": [],
+    "sha256": "a510d56e999a63264c5ae93616e2a1e1ca3ec26aca05fb6a09e353cae0c015a1"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.shell.DraftBannerFxSuite.xml",
+    "cases": 4,
+    "passed": 4,
+    "skipped": [],
+    "sha256": "6e16c7ac03630b269de2faf81fe87f264934ffd888b2851115a6b67cd2de2cc2"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.shell.FocusVisibleFxSuite.xml",
+    "cases": 10,
+    "passed": 10,
+    "skipped": [],
+    "sha256": "71fec3832726292034a5dd41fbeedc2363689ac77f6ba04db1740b282f03f3f4"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.shell.KeymapFxSuite.xml",
+    "cases": 13,
+    "passed": 13,
+    "skipped": [],
+    "sha256": "383ee326ad5448c7f80d7315f4c81592f0d346dc3c9cc4a87179628e8e5d86c7"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.shell.ParityChecklistSuite.xml",
+    "cases": 1,
+    "passed": 1,
+    "skipped": [],
+    "sha256": "80998bf2344348b68db112fcddb1e06780ce477955982d383d0fb946ecee40c3"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.shell.RunInProgressFxSuite.xml",
+    "cases": 1,
+    "passed": 1,
+    "skipped": [],
+    "sha256": "9575eb9fd1db32ba744c0c57277d1b81ce17abd99aef0782f8920c1b5f073f33"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.shell.SaveWarningFxSuite.xml",
+    "cases": 2,
+    "passed": 2,
+    "skipped": [],
+    "sha256": "90e0d5fe149130a46ed6cfd82b813f2f8eca7afdfbc0c98023970eb1a0555419"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.shell.SegmentedBarFxSuite.xml",
+    "cases": 8,
+    "passed": 8,
+    "skipped": [],
+    "sha256": "d8e153482f8dcb95556f8f7b648247d5a79d057cc8e704510ea577d235b82f8e"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.shell.SelectionFillFxSuite.xml",
+    "cases": 5,
+    "passed": 5,
+    "skipped": [],
+    "sha256": "3eb930bbaf78f0b79ed339d229fc4deeb70876e53b16e0f5ae484f679748579f"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.shell.ShellMomentsFxSuite.xml",
+    "cases": 17,
+    "passed": 17,
+    "skipped": [],
+    "sha256": "a67ee7c192393b71577cb928e77c274003d71759a6df7762f02066178564159e"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.shell.SmallCanvasBoundaryFxSuite.xml",
+    "cases": 2,
+    "passed": 2,
+    "skipped": [],
+    "sha256": "27ff77c869e01e4aa7e438dc37612611fa4ae2f731afd9cedf96efd10cdea658"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.shell.SourceChecksFxSuite.xml",
+    "cases": 1,
+    "passed": 1,
+    "skipped": [],
+    "sha256": "1c8cc35367418dbc78509c76b1dbd8ae07fefb6268a7b6d4030c380ad4a8aaa0"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.shell.StatusBarFxSuite.xml",
+    "cases": 6,
+    "passed": 6,
+    "skipped": [],
+    "sha256": "17bcc0d7f99949f8aa86374e16553fb0c651698d59f7574a53554b8bc789a400"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.shell.SystemSpecimenFxSuite.xml",
+    "cases": 2,
+    "passed": 2,
+    "skipped": [],
+    "sha256": "d865b76ae471b91aaae2093f5635725d1b41b6ab389338279b7fa4a7581845f4"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.shell.ThemeFxSuite.xml",
+    "cases": 10,
+    "passed": 10,
+    "skipped": [],
+    "sha256": "0b5c476736591eb4e31269363f292f4579bf461900deaf63f0c7b05092f0d0ad"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.shell.VisualParitySuite.xml",
+    "cases": 30,
+    "passed": 30,
+    "skipped": [],
+    "sha256": "cf6fecee766c40eddd1acd237ad2e12f4a22531f32c375bbd61d7ebe250db4fc"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.shell.WorkspaceViewportFxSuite.xml",
+    "cases": 5,
+    "passed": 5,
+    "skipped": [],
+    "sha256": "963176f72d8dff575ccc77e2086db981ca0fe4131ae6902af7e6a752348d772e"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.tokens.TokenFilesSuite.xml",
+    "cases": 6,
+    "passed": 6,
+    "skipped": [],
+    "sha256": "0c99dedce1b9cc1f322c99decf9b5b6b00d34a4e319120a4d207fccf1e88c6c9"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.tokens.TokenReferencesSuite.xml",
+    "cases": 2,
+    "passed": 2,
+    "skipped": [],
+    "sha256": "5a5d4c2d722b54669186bb1e3ae2aeb92764e5969f3bb230d50c75578c7ef479"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.trial.InputAdapterFxSuite.xml",
+    "cases": 13,
+    "passed": 13,
+    "skipped": [],
+    "sha256": "3b03b326385293b9e378a9eef88632635376fa8cf861ca4bffbb0b4fa224614f"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.trial.TrialViewCacheFxSuite.xml",
+    "cases": 2,
+    "passed": 2,
+    "skipped": [],
+    "sha256": "b81c0c948fad32cf94c2651c5c2a4e00d88448c862ca785c9eb125550736867c"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.trial.TrialViewFxSuite.xml",
+    "cases": 26,
+    "passed": 26,
+    "skipped": [],
+    "sha256": "3c5ba770d5f906455f438f9441c9245a837945471d488d1e2c92c976f7a16327"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.trial.TrialViewMapFxSuite.xml",
+    "cases": 12,
+    "passed": 12,
+    "skipped": [],
+    "sha256": "1d150dffa0a554d81298fbd188340faa8e5124c68ff8ba77f15c021cf8cb78f5"
+  },
+  {
+    "path": "studio/desktop/target/test-reports/TEST-eyes4s.studio.desktop.typography.FontLoadSuite.xml",
+    "cases": 8,
+    "passed": 8,
+    "skipped": [],
+    "sha256": "4378250df6e555a218ad89fbfe246388d03589594f8c1edee3da5bfa0afe06df"
+  },
+  {
+    "path": "studio/viz/.js/target/test-reports/TEST-consumer.StudioVizDomainProductMirrorSuite.xml",
+    "cases": 17,
+    "passed": 17,
+    "skipped": [],
+    "sha256": "fe59e51b579103eda37132d98442851395b188e2f53ac1ab49e563542e2499a9"
+  },
+  {
+    "path": "studio/viz/.js/target/test-reports/TEST-eyes4s.studio.viz.StudioScenesSuite.xml",
+    "cases": 2,
+    "passed": 2,
+    "skipped": [],
+    "sha256": "049300e3660dc53b94faf447e3c7c99ca8cc8e0633c6cfe2b8bc7bb300187ba7"
+  },
+  {
+    "path": "studio/viz/.js/target/test-reports/TEST-eyes4s.studio.viz.StudioVizSuite.xml",
+    "cases": 1,
+    "passed": 1,
+    "skipped": [],
+    "sha256": "0e38d32c5f1d027a5a28d669616f5380caf6bca6867b7062d92896d38a6d008a"
+  },
+  {
+    "path": "studio/viz/.js/target/test-reports/TEST-eyes4s.studio.viz.figure.FigureGazeSuite.xml",
+    "cases": 5,
+    "passed": 5,
+    "skipped": [],
+    "sha256": "249fad592ad7b7c5ec82481cb7a1a81badc5d813478d282b39d15682f88e0d9a"
+  },
+  {
+    "path": "studio/viz/.js/target/test-reports/TEST-eyes4s.studio.viz.figure.FigurePageMapSuite.xml",
+    "cases": 5,
+    "passed": 5,
+    "skipped": [],
+    "sha256": "643cf309ff0261419c83362a3722ab39b068abb3b1bc4d7f4ec74d700ca8414a"
+  },
+  {
+    "path": "studio/viz/.js/target/test-reports/TEST-eyes4s.studio.viz.figure.FigureSvgSuite.xml",
+    "cases": 4,
+    "passed": 4,
+    "skipped": [],
+    "sha256": "1a5e6662372e1af2e983f8003fc7ac3223b684401883e614a5fa2caaa788ba15"
+  },
+  {
+    "path": "studio/viz/.js/target/test-reports/TEST-eyes4s.studio.viz.geometry.GeometrySceneSuite.xml",
+    "cases": 12,
+    "passed": 12,
+    "skipped": [],
+    "sha256": "c6375dd66eac166434f32183f2528eab7bad6001c3bee80530b2f90dd555f74d"
+  },
+  {
+    "path": "studio/viz/.js/target/test-reports/TEST-eyes4s.studio.viz.maps.MapLegendSceneSuite.xml",
+    "cases": 10,
+    "passed": 10,
+    "skipped": [],
+    "sha256": "a23444c4acb83177f827582bd5fc56f44c8f09ead8581a24af11170d485a33cf"
+  },
+  {
+    "path": "studio/viz/.js/target/test-reports/TEST-eyes4s.studio.viz.maps.MapTileSceneSuite.xml",
+    "cases": 6,
+    "passed": 6,
+    "skipped": [],
+    "sha256": "ad75dd374113f90981e419da1c177f269e8b66d9716d88762f7667ccc5449380"
+  },
+  {
+    "path": "studio/viz/.js/target/test-reports/TEST-eyes4s.studio.viz.plot.AnnotationsSuite.xml",
+    "cases": 10,
+    "passed": 10,
+    "skipped": [],
+    "sha256": "e81075583f2dce5e373f6557a60c4d7bbb5af4e53f441bd8ad27dd7a3364a863"
+  },
+  {
+    "path": "studio/viz/.js/target/test-reports/TEST-eyes4s.studio.viz.plot.OverlaySelectionsSuite.xml",
+    "cases": 2,
+    "passed": 2,
+    "skipped": [],
+    "sha256": "ce695825b50e280d1a0ffd4027d99b5c3910c3927b47e5bb583e53ff90388c85"
+  },
+  {
+    "path": "studio/viz/.js/target/test-reports/TEST-eyes4s.studio.viz.plot.ParticipantLinesSuite.xml",
+    "cases": 1,
+    "passed": 1,
+    "skipped": [],
+    "sha256": "8b8adfa4fa6bbb3da8e15a6b914ef32c7768cec2b6d98f26be412f6eda84f978"
+  },
+  {
+    "path": "studio/viz/.js/target/test-reports/TEST-eyes4s.studio.viz.plot.ParticipantPlotSuite.xml",
+    "cases": 13,
+    "passed": 13,
+    "skipped": [],
+    "sha256": "272acebf2f943f72efd45c1d8606fc45254aefc181de45137a700ee87504290c"
+  },
+  {
+    "path": "studio/viz/.js/target/test-reports/TEST-eyes4s.studio.viz.plot.PlotReadoutSuite.xml",
+    "cases": 3,
+    "passed": 3,
+    "skipped": [],
+    "sha256": "c842be704714af1218c7d01c5f7d1343fd2581a37979cece9b396d8d0be03e68"
+  },
+  {
+    "path": "studio/viz/.js/target/test-reports/TEST-eyes4s.studio.viz.plot.PlotTableParitySuite.xml",
+    "cases": 19,
+    "passed": 19,
+    "skipped": [],
+    "sha256": "5d9cd1cfebf7ec919975529dd1f3efc3be939e73750103e5ad615996e0792015"
+  },
+  {
+    "path": "studio/viz/.js/target/test-reports/TEST-eyes4s.studio.viz.plot.PlotTransformSuite.xml",
+    "cases": 8,
+    "passed": 8,
+    "skipped": [],
+    "sha256": "480a19b12e8167501535f98d3d374b307beca695726479691791fde006505c96"
+  },
+  {
+    "path": "studio/viz/.js/target/test-reports/TEST-eyes4s.studio.viz.plot.ScaleLadderPlotSuite.xml",
+    "cases": 15,
+    "passed": 15,
+    "skipped": [],
+    "sha256": "718d8c56abf2e1deb7ec4513c4f8fe35d1aa5d134aeca9d1c9a7a126c48509ed"
+  },
+  {
+    "path": "studio/viz/.js/target/test-reports/TEST-eyes4s.studio.viz.plot.ScaleProfilePlotSuite.xml",
+    "cases": 11,
+    "passed": 11,
+    "skipped": [],
+    "sha256": "79e097ac0aee5513dda65eec0e677ad48532f850280c81e6a0108992931e6a53"
+  },
+  {
+    "path": "studio/viz/.js/target/test-reports/TEST-eyes4s.studio.viz.plot.SemanticBindingSuite.xml",
+    "cases": 10,
+    "passed": 10,
+    "skipped": [],
+    "sha256": "7a993e8ce630fe0dd3e199e5d7f0b5cb0267d7cda8bd45a5ac8cf4bb55869a0a"
+  },
+  {
+    "path": "studio/viz/.js/target/test-reports/TEST-eyes4s.studio.viz.plot.TimelinePlotSuite.xml",
+    "cases": 14,
+    "passed": 14,
+    "skipped": [],
+    "sha256": "1105f247e1501d0b389dd82891884843d9d61c0689d7e24bf0376923e5dba625"
+  },
+  {
+    "path": "studio/viz/.js/target/test-reports/TEST-eyes4s.studio.viz.trial.RovingCursorSuite.xml",
+    "cases": 22,
+    "passed": 22,
+    "skipped": [],
+    "sha256": "29d6dd32a69242a106c8ff9842fa7383b302f46e8b8c098c372281fb494f8b62"
+  },
+  {
+    "path": "studio/viz/.js/target/test-reports/TEST-eyes4s.studio.viz.trial.TrialMapSceneSuite.xml",
+    "cases": 13,
+    "passed": 13,
+    "skipped": [],
+    "sha256": "08d5056b029faaacdeaead149d6ea73b23d2d0637b4b15f00fb2df53e875afe5"
+  },
+  {
+    "path": "studio/viz/.js/target/test-reports/TEST-eyes4s.studio.viz.trial.TrialSceneSuite.xml",
+    "cases": 116,
+    "passed": 116,
+    "skipped": [],
+    "sha256": "522dd772917c70702fb9bcf85136d51dfaf2e8dddda7ff0e79dfb597c8a0d5fa"
+  },
+  {
+    "path": "studio/viz/.jvm/target/test-reports/TEST-consumer.StudioVizDomainProductMirrorSuite.xml",
+    "cases": 17,
+    "passed": 17,
+    "skipped": [],
+    "sha256": "2746633c18ccde1960757a42d761e9fa4114563e3839bbb39723617fd3b0c5a6"
+  },
+  {
+    "path": "studio/viz/.jvm/target/test-reports/TEST-eyes4s.studio.viz.StudioScenesSuite.xml",
+    "cases": 2,
+    "passed": 2,
+    "skipped": [],
+    "sha256": "f02620fd5be02f10c031a3590aba8e1945b4ba62ed572ddd546e882cd971dcfc"
+  },
+  {
+    "path": "studio/viz/.jvm/target/test-reports/TEST-eyes4s.studio.viz.StudioVizSuite.xml",
+    "cases": 1,
+    "passed": 1,
+    "skipped": [],
+    "sha256": "1dc9103870a3d515cd46d1a26c66c20723dfdf2a3e76f188573f9e715832424c"
+  },
+  {
+    "path": "studio/viz/.jvm/target/test-reports/TEST-eyes4s.studio.viz.figure.FigureGazeSuite.xml",
+    "cases": 5,
+    "passed": 5,
+    "skipped": [],
+    "sha256": "1a7a89bf36e5eb361f4d5a9ef6686099ffb6a39d3cc473d29b8a6eb9c7ece52e"
+  },
+  {
+    "path": "studio/viz/.jvm/target/test-reports/TEST-eyes4s.studio.viz.figure.FigurePageMapSuite.xml",
+    "cases": 5,
+    "passed": 5,
+    "skipped": [],
+    "sha256": "cb7cea271f764b498fec39b34917203a4bf15b946918bd293e9479a95a0e13a2"
+  },
+  {
+    "path": "studio/viz/.jvm/target/test-reports/TEST-eyes4s.studio.viz.figure.FigureSvgSuite.xml",
+    "cases": 4,
+    "passed": 4,
+    "skipped": [],
+    "sha256": "2be813ae36bf9fd9ff1c919b1ab3edaaac6f3a1fc3b6e40edc82fe3ff595ea0a"
+  },
+  {
+    "path": "studio/viz/.jvm/target/test-reports/TEST-eyes4s.studio.viz.geometry.GeometrySceneSuite.xml",
+    "cases": 12,
+    "passed": 12,
+    "skipped": [],
+    "sha256": "c54ac47103a6a69f36a945d2fa2c885fd8b874226b387207e2593d1f3ec17da7"
+  },
+  {
+    "path": "studio/viz/.jvm/target/test-reports/TEST-eyes4s.studio.viz.maps.MapLegendSceneSuite.xml",
+    "cases": 10,
+    "passed": 10,
+    "skipped": [],
+    "sha256": "26a48f1bd08cf97793417d1a7eebdcf9c59b5b3471b78b05f16888f076096290"
+  },
+  {
+    "path": "studio/viz/.jvm/target/test-reports/TEST-eyes4s.studio.viz.maps.MapTileSceneSuite.xml",
+    "cases": 6,
+    "passed": 6,
+    "skipped": [],
+    "sha256": "92e84f4cedb363abafd6552b497aa9923593f4d3e06cbfbc2eeb15ba28004a4d"
+  },
+  {
+    "path": "studio/viz/.jvm/target/test-reports/TEST-eyes4s.studio.viz.plot.AnnotationsSuite.xml",
+    "cases": 10,
+    "passed": 10,
+    "skipped": [],
+    "sha256": "145e0a556b2944c219092ffa2eb5caadfa04c7c3d1dc6f1039b3c910397dc931"
+  },
+  {
+    "path": "studio/viz/.jvm/target/test-reports/TEST-eyes4s.studio.viz.plot.OverlaySelectionsSuite.xml",
+    "cases": 2,
+    "passed": 2,
+    "skipped": [],
+    "sha256": "58ee068ab45dceb6cf47adb26d8ead7ebb2aabfb5fd33cb43098b281750d5ab3"
+  },
+  {
+    "path": "studio/viz/.jvm/target/test-reports/TEST-eyes4s.studio.viz.plot.ParticipantLinesSuite.xml",
+    "cases": 1,
+    "passed": 1,
+    "skipped": [],
+    "sha256": "24bb818bb193962f87bd57e61c4fa31a8a28b76b73a30ed4526c92f702352259"
+  },
+  {
+    "path": "studio/viz/.jvm/target/test-reports/TEST-eyes4s.studio.viz.plot.ParticipantPlotSuite.xml",
+    "cases": 13,
+    "passed": 13,
+    "skipped": [],
+    "sha256": "7a58f1b169736a147f7f8bf781aaad05d8f1b0aee2c71a2fdb054671d883ff48"
+  },
+  {
+    "path": "studio/viz/.jvm/target/test-reports/TEST-eyes4s.studio.viz.plot.PlotReadoutSuite.xml",
+    "cases": 3,
+    "passed": 3,
+    "skipped": [],
+    "sha256": "e36a59b2cb2e11db2d5aeb0fd4f4b1b5f0869389d928ba489c7c9bb254432ec0"
+  },
+  {
+    "path": "studio/viz/.jvm/target/test-reports/TEST-eyes4s.studio.viz.plot.PlotTableParitySuite.xml",
+    "cases": 19,
+    "passed": 19,
+    "skipped": [],
+    "sha256": "e54bedd5172e8d08984b68f521fc6d44fb3a3a9de8113f5dc0a4de32ecc79e24"
+  },
+  {
+    "path": "studio/viz/.jvm/target/test-reports/TEST-eyes4s.studio.viz.plot.PlotTransformSuite.xml",
+    "cases": 8,
+    "passed": 8,
+    "skipped": [],
+    "sha256": "197b2c152bb06a21fd27a84c9282f8f833a13553140825e3d9f9af2c454659d0"
+  },
+  {
+    "path": "studio/viz/.jvm/target/test-reports/TEST-eyes4s.studio.viz.plot.ScaleLadderPlotSuite.xml",
+    "cases": 15,
+    "passed": 15,
+    "skipped": [],
+    "sha256": "22b3f76ffaad6ed016dee893b237e91290098a7cf56b45aac5ceecbf694b532b"
+  },
+  {
+    "path": "studio/viz/.jvm/target/test-reports/TEST-eyes4s.studio.viz.plot.ScaleProfilePlotSuite.xml",
+    "cases": 11,
+    "passed": 11,
+    "skipped": [],
+    "sha256": "87c0f2bfe57d2f4e3c45c4e09ca990326495f468d1382a97058ee2229e6b13ab"
+  },
+  {
+    "path": "studio/viz/.jvm/target/test-reports/TEST-eyes4s.studio.viz.plot.SemanticBindingSuite.xml",
+    "cases": 10,
+    "passed": 10,
+    "skipped": [],
+    "sha256": "b1c7c79342d412624aaff477ca6e0bc75a438d636cd3a6f1892af3030d6aef0e"
+  },
+  {
+    "path": "studio/viz/.jvm/target/test-reports/TEST-eyes4s.studio.viz.plot.TimelinePlotSuite.xml",
+    "cases": 14,
+    "passed": 14,
+    "skipped": [],
+    "sha256": "be6878b859e3a00065a3f1d9c25c5b124ce32133db85414c1492fac2f37aea85"
+  },
+  {
+    "path": "studio/viz/.jvm/target/test-reports/TEST-eyes4s.studio.viz.trial.RovingCursorSuite.xml",
+    "cases": 22,
+    "passed": 22,
+    "skipped": [],
+    "sha256": "c292c2f1857ed004330adcd064b5a538b18202b4c60bf6e4951fe3e47b6b79c7"
+  },
+  {
+    "path": "studio/viz/.jvm/target/test-reports/TEST-eyes4s.studio.viz.trial.TrialMapSceneSuite.xml",
+    "cases": 13,
+    "passed": 13,
+    "skipped": [],
+    "sha256": "3daaf4bbb263bff66a51b36a8ef35147f904bc1bb465cfe87618c47038b2e3cd"
+  },
+  {
+    "path": "studio/viz/.jvm/target/test-reports/TEST-eyes4s.studio.viz.trial.TrialSceneSuite.xml",
+    "cases": 116,
+    "passed": 116,
+    "skipped": [],
+    "sha256": "0c63ecd621846869a5879596ba385726368c6f1f73a99d10eb2e08d2c3c5b7ce"
+  }
+]

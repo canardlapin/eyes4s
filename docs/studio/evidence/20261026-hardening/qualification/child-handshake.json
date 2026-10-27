@@ -1,0 +1,1509 @@
+{
+  "candidate": "a74f86b758653de67235ea0f0d9e4ca0652910fd",
+  "scope": "Actual Java executables running sbt.ForkMain in the frozen landing checkout; shell command text and plain readers excluded.",
+  "ownForkArguments": [
+    {
+      "pid": 48965,
+      "entryPoint": "sbt.ForkMain",
+      "scope": "candidate-checkout (includes standalone audit-tool build)",
+      "captured": "2026-10-27T01:54:41.471180+00:00",
+      "defaultHandshakeFlags": [
+        "-Djava.net.preferIPv6Addresses=true"
+      ],
+      "argumentsSha256": "6dd5588e6ed16c49d92cf7c13b458dc775ecc6aa5ccecb3e65eaf38454e3bc84"
+    },
+    {
+      "pid": 48981,
+      "entryPoint": "sbt.ForkMain",
+      "scope": "candidate-checkout (includes standalone audit-tool build)",
+      "captured": "2026-10-27T01:54:43.543968+00:00",
+      "defaultHandshakeFlags": [
+        "-Djava.net.preferIPv6Addresses=true"
+      ],
+      "argumentsSha256": "8b3312a452d7e3995e57b92a63279cfcddd91c24df9f07673600523b5966bca7"
+    },
+    {
+      "pid": 48991,
+      "entryPoint": "sbt.ForkMain",
+      "scope": "candidate-checkout (includes standalone audit-tool build)",
+      "captured": "2026-10-27T01:54:45.612563+00:00",
+      "defaultHandshakeFlags": [
+        "-Djava.net.preferIPv6Addresses=true"
+      ],
+      "argumentsSha256": "f686a56cb68317e8a129ab82677d2d7247bd2db375d49e6a2ebf9682975c18d6"
+    },
+    {
+      "pid": 49299,
+      "entryPoint": "sbt.ForkMain",
+      "scope": "candidate-checkout (includes standalone audit-tool build)",
+      "captured": "2026-10-27T01:54:47.676967+00:00",
+      "defaultHandshakeFlags": [
+        "-Djava.net.preferIPv6Addresses=true"
+      ],
+      "argumentsSha256": "922b2ce9a196b4b0f518fa3b59cdbe520e0a30aee3886069832dbf9dcead8000"
+    },
+    {
+      "pid": 50131,
+      "entryPoint": "sbt.ForkMain",
+      "scope": "candidate-checkout (includes standalone audit-tool build)",
+      "captured": "2026-10-27T01:55:02.259985+00:00",
+      "defaultHandshakeFlags": [
+        "-Djava.net.preferIPv6Addresses=true"
+      ],
+      "argumentsSha256": "073c3878fa2af6c7340e89892e6243292b1a9b22ab44f600efe6f15d795e44c5"
+    },
+    {
+      "pid": 50136,
+      "entryPoint": "sbt.ForkMain",
+      "scope": "candidate-checkout (includes standalone audit-tool build)",
+      "captured": "2026-10-27T01:55:04.331918+00:00",
+      "defaultHandshakeFlags": [
+        "-Djava.net.preferIPv6Addresses=true"
+      ],
+      "argumentsSha256": "f9d8126b211602f70ed9ba8de122f3f063fe3407cffa84c651cc3bff3069b3de"
+    },
+    {
+      "pid": 50936,
+      "entryPoint": "sbt.ForkMain",
+      "scope": "candidate-checkout (includes standalone audit-tool build)",
+      "captured": "2026-10-27T01:55:16.775120+00:00",
+      "defaultHandshakeFlags": [
+        "-Djava.net.preferIPv6Addresses=true"
+      ],
+      "argumentsSha256": "4a1502855253e3cb376c395aacfbde30896226385e6b6f130f98c9b37337126b"
+    },
+    {
+      "pid": 51242,
+      "entryPoint": "sbt.ForkMain",
+      "scope": "candidate-checkout (includes standalone audit-tool build)",
+      "captured": "2026-10-27T01:55:18.842196+00:00",
+      "defaultHandshakeFlags": [
+        "-Djava.net.preferIPv6Addresses=true"
+      ],
+      "argumentsSha256": "0343eeecbf9d1212fba90bde8df0c48c5b7066bafbfe25697869550275f3806a"
+    },
+    {
+      "pid": 51254,
+      "entryPoint": "sbt.ForkMain",
+      "scope": "candidate-checkout (includes standalone audit-tool build)",
+      "captured": "2026-10-27T01:55:20.912775+00:00",
+      "defaultHandshakeFlags": [
+        "-Djava.net.preferIPv6Addresses=true"
+      ],
+      "argumentsSha256": "49b0a711d73fd9abd080394bbd694f877d4d812ab72befd46f84626864143d60"
+    },
+    {
+      "pid": 52069,
+      "entryPoint": "sbt.ForkMain",
+      "scope": "candidate-checkout (includes standalone audit-tool build)",
+      "captured": "2026-10-27T01:55:33.534427+00:00",
+      "defaultHandshakeFlags": [
+        "-Djava.net.preferIPv6Addresses=true"
+      ],
+      "argumentsSha256": "cc955d7e3adcca43def32dfebf3463705084f9e2a3a9bc53dd75b253056ac7d6"
+    },
+    {
+      "pid": 52089,
+      "entryPoint": "sbt.ForkMain",
+      "scope": "candidate-checkout (includes standalone audit-tool build)",
+      "captured": "2026-10-27T01:55:35.598335+00:00",
+      "defaultHandshakeFlags": [
+        "-Djava.net.preferIPv6Addresses=true"
+      ],
+      "argumentsSha256": "127a99462d0c7c96ff137c1cd55529402c99c2cf19cf5d0ea71aa9bbb84938c3"
+    },
+    {
+      "pid": 52903,
+      "entryPoint": "sbt.ForkMain",
+      "scope": "candidate-checkout (includes standalone audit-tool build)",
+      "captured": "2026-10-27T01:55:48.088149+00:00",
+      "defaultHandshakeFlags": [
+        "-Djava.net.preferIPv6Addresses=true"
+      ],
+      "argumentsSha256": "ac03edd811fdc2c8588cfc1a57fcab065c07d8936d25f66368b0dcb0fad8d8c2"
+    },
+    {
+      "pid": 53850,
+      "entryPoint": "sbt.ForkMain",
+      "scope": "candidate-checkout (includes standalone audit-tool build)",
+      "captured": "2026-10-27T01:56:00.574583+00:00",
+      "defaultHandshakeFlags": [
+        "-Djava.net.preferIPv6Addresses=true"
+      ],
+      "argumentsSha256": "1293e649b85983094c6117ae68237f485755e250df6fd77d5125ae2918d42227"
+    },
+    {
+      "pid": 53997,
+      "entryPoint": "sbt.ForkMain",
+      "scope": "candidate-checkout (includes standalone audit-tool build)",
+      "captured": "2026-10-27T01:56:02.644655+00:00",
+      "defaultHandshakeFlags": [
+        "-Djava.net.preferIPv6Addresses=true"
+      ],
+      "argumentsSha256": "5c1d2c0089a84944bdf2e7e8681de95384eec8364ab941aaa3215fa005a6e9b3"
+    },
+    {
+      "pid": 54008,
+      "entryPoint": "sbt.ForkMain",
+      "scope": "candidate-checkout (includes standalone audit-tool build)",
+      "captured": "2026-10-27T01:56:04.712594+00:00",
+      "defaultHandshakeFlags": [
+        "-Djava.net.preferIPv6Addresses=true"
+      ],
+      "argumentsSha256": "d27ca953b6a4bbe905d517917d5960a4121c7aac3339c607df4c0b8238488dbc"
+    },
+    {
+      "pid": 54298,
+      "entryPoint": "sbt.ForkMain",
+      "scope": "candidate-checkout (includes standalone audit-tool build)",
+      "captured": "2026-10-27T01:56:06.776102+00:00",
+      "defaultHandshakeFlags": [
+        "-Djava.net.preferIPv6Addresses=true"
+      ],
+      "argumentsSha256": "77dd3de5dcab2bd9b1a585716dbad1d9ebe2fd7e23e4eb4aaf4ed1d601041513"
+    },
+    {
+      "pid": 55396,
+      "entryPoint": "sbt.ForkMain",
+      "scope": "candidate-checkout (includes standalone audit-tool build)",
+      "captured": "2026-10-27T01:56:25.518759+00:00",
+      "defaultHandshakeFlags": [
+        "-Djava.net.preferIPv6Addresses=true"
+      ],
+      "argumentsSha256": "5d54ea237a9a7189679136979ca9bfdce507a43d16242c95cd8d5154d57260d6"
+    },
+    {
+      "pid": 55453,
+      "entryPoint": "sbt.ForkMain",
+      "scope": "candidate-checkout (includes standalone audit-tool build)",
+      "captured": "2026-10-27T01:56:27.588976+00:00",
+      "defaultHandshakeFlags": [
+        "-Djava.net.preferIPv6Addresses=true"
+      ],
+      "argumentsSha256": "c640745c5e17fcfbf1b8fc6848c0bb12965c52cabfc3aecf29d4cbf65ff98aaf"
+    },
+    {
+      "pid": 55463,
+      "entryPoint": "sbt.ForkMain",
+      "scope": "candidate-checkout (includes standalone audit-tool build)",
+      "captured": "2026-10-27T01:56:29.663697+00:00",
+      "defaultHandshakeFlags": [
+        "-Djava.net.preferIPv6Addresses=true"
+      ],
+      "argumentsSha256": "01b086bd5091ddfcfca90c86dd763cb7074df153f3943c0ccac37c0d08509762"
+    },
+    {
+      "pid": 55768,
+      "entryPoint": "sbt.ForkMain",
+      "scope": "candidate-checkout (includes standalone audit-tool build)",
+      "captured": "2026-10-27T01:56:31.729417+00:00",
+      "defaultHandshakeFlags": [
+        "-Djava.net.preferIPv6Addresses=true"
+      ],
+      "argumentsSha256": "f24dede07cf78207b6ec7e3a12f5a7e8c143316de44ab32c833639f9f98729a7"
+    },
+    {
+      "pid": 55774,
+      "entryPoint": "sbt.ForkMain",
+      "scope": "candidate-checkout (includes standalone audit-tool build)",
+      "captured": "2026-10-27T01:56:33.785910+00:00",
+      "defaultHandshakeFlags": [
+        "-Djava.net.preferIPv6Addresses=true"
+      ],
+      "argumentsSha256": "8cc548c4e9d61b5e8fff29560caeb700621b28efdd0cae1f5196ba8344c52264"
+    },
+    {
+      "pid": 55786,
+      "entryPoint": "sbt.ForkMain",
+      "scope": "candidate-checkout (includes standalone audit-tool build)",
+      "captured": "2026-10-27T01:56:35.851692+00:00",
+      "defaultHandshakeFlags": [
+        "-Djava.net.preferIPv6Addresses=true"
+      ],
+      "argumentsSha256": "4fc6e777b917ef60f7d867313d6748319a4ac761fe18140bc14b5ee911f698ed"
+    },
+    {
+      "pid": 56126,
+      "entryPoint": "sbt.ForkMain",
+      "scope": "candidate-checkout (includes standalone audit-tool build)",
+      "captured": "2026-10-27T01:56:37.924262+00:00",
+      "defaultHandshakeFlags": [
+        "-Djava.net.preferIPv6Addresses=true"
+      ],
+      "argumentsSha256": "0a59ea4c04cc45c91ce48217559fddc8a6ad467649204e075521b3106536fc7d"
+    },
+    {
+      "pid": 56972,
+      "entryPoint": "sbt.ForkMain",
+      "scope": "candidate-checkout (includes standalone audit-tool build)",
+      "captured": "2026-10-27T01:56:52.389384+00:00",
+      "defaultHandshakeFlags": [
+        "-Djava.net.preferIPv6Addresses=true"
+      ],
+      "argumentsSha256": "6a5a4ade26d8ec9876b814712eed0f35006a411340e4d06dc2365a4f9a46b85a"
+    },
+    {
+      "pid": 56983,
+      "entryPoint": "sbt.ForkMain",
+      "scope": "candidate-checkout (includes standalone audit-tool build)",
+      "captured": "2026-10-27T01:56:54.455056+00:00",
+      "defaultHandshakeFlags": [
+        "-Djava.net.preferIPv6Addresses=true"
+      ],
+      "argumentsSha256": "fead9c02d154b3f3db88c0e9564068d4560dfc6edfe59ac1e00e1de0db0c11df"
+    },
+    {
+      "pid": 57289,
+      "entryPoint": "sbt.ForkMain",
+      "scope": "candidate-checkout (includes standalone audit-tool build)",
+      "captured": "2026-10-27T01:56:56.522242+00:00",
+      "defaultHandshakeFlags": [
+        "-Djava.net.preferIPv6Addresses=true"
+      ],
+      "argumentsSha256": "d954424639dcc05fcc4c30c8f25c3d438556d0482a4b93f47780c3591d3300b3"
+    },
+    {
+      "pid": 57293,
+      "entryPoint": "sbt.ForkMain",
+      "scope": "candidate-checkout (includes standalone audit-tool build)",
+      "captured": "2026-10-27T01:56:58.590586+00:00",
+      "defaultHandshakeFlags": [
+        "-Djava.net.preferIPv6Addresses=true"
+      ],
+      "argumentsSha256": "85645052397b557b2928db3918b0d72f327501ab067dea8716eecac5c1aa5e51"
+    },
+    {
+      "pid": 57304,
+      "entryPoint": "sbt.ForkMain",
+      "scope": "candidate-checkout (includes standalone audit-tool build)",
+      "captured": "2026-10-27T01:57:00.669505+00:00",
+      "defaultHandshakeFlags": [
+        "-Djava.net.preferIPv6Addresses=true"
+      ],
+      "argumentsSha256": "7924d6c413018c5fb00b6f57377fe66298e700c41eb7baee539ade22d357cf77"
+    },
+    {
+      "pid": 57609,
+      "entryPoint": "sbt.ForkMain",
+      "scope": "candidate-checkout (includes standalone audit-tool build)",
+      "captured": "2026-10-27T01:57:02.745552+00:00",
+      "defaultHandshakeFlags": [
+        "-Djava.net.preferIPv6Addresses=true"
+      ],
+      "argumentsSha256": "ff760975ee161632e57acab6629f5c65474c139be4d1ef7640fb12aaf76a07d0"
+    },
+    {
+      "pid": 57612,
+      "entryPoint": "sbt.ForkMain",
+      "scope": "candidate-checkout (includes standalone audit-tool build)",
+      "captured": "2026-10-27T01:57:04.819865+00:00",
+      "defaultHandshakeFlags": [
+        "-Djava.net.preferIPv6Addresses=true"
+      ],
+      "argumentsSha256": "44d062013d108b1038b80f8f56b7b431439fcfae22716557cda7cfc1bc80d926"
+    },
+    {
+      "pid": 57621,
+      "entryPoint": "sbt.ForkMain",
+      "scope": "candidate-checkout (includes standalone audit-tool build)",
+      "captured": "2026-10-27T01:57:06.888416+00:00",
+      "defaultHandshakeFlags": [
+        "-Djava.net.preferIPv6Addresses=true"
+      ],
+      "argumentsSha256": "c28ab4be019c53e8f033a85049fa70e2431b7e6dbcab8533e5781772fd7e8500"
+    },
+    {
+      "pid": 57924,
+      "entryPoint": "sbt.ForkMain",
+      "scope": "candidate-checkout (includes standalone audit-tool build)",
+      "captured": "2026-10-27T01:57:08.963922+00:00",
+      "defaultHandshakeFlags": [
+        "-Djava.net.preferIPv6Addresses=true"
+      ],
+      "argumentsSha256": "af522e30e9a6cc498c6f9db7e4e6de36435f0da51f5c6e102fa9e9279638e3fa"
+    },
+    {
+      "pid": 57940,
+      "entryPoint": "sbt.ForkMain",
+      "scope": "candidate-checkout (includes standalone audit-tool build)",
+      "captured": "2026-10-27T01:57:11.030572+00:00",
+      "defaultHandshakeFlags": [
+        "-Djava.net.preferIPv6Addresses=true"
+      ],
+      "argumentsSha256": "ea75599de057c746e16ae41bdd2965c7d21e9a44e25f466fbb45dd923274d2fe"
+    },
+    {
+      "pid": 57971,
+      "entryPoint": "sbt.ForkMain",
+      "scope": "candidate-checkout (includes standalone audit-tool build)",
+      "captured": "2026-10-27T01:57:13.095066+00:00",
+      "defaultHandshakeFlags": [
+        "-Djava.net.preferIPv6Addresses=true"
+      ],
+      "argumentsSha256": "a51b9b80e5bae0af77d523d09c33a1e692eeb03a47fe582f5b7118e2d5edc820"
+    },
+    {
+      "pid": 58252,
+      "entryPoint": "sbt.ForkMain",
+      "scope": "candidate-checkout (includes standalone audit-tool build)",
+      "captured": "2026-10-27T01:57:15.160722+00:00",
+      "defaultHandshakeFlags": [
+        "-Djava.net.preferIPv6Addresses=true"
+      ],
+      "argumentsSha256": "1be95116c83b4a538d275386413f1e592a480898d5de1c58d1c7f0662bcc9dff"
+    },
+    {
+      "pid": 58261,
+      "entryPoint": "sbt.ForkMain",
+      "scope": "candidate-checkout (includes standalone audit-tool build)",
+      "captured": "2026-10-27T01:57:17.229091+00:00",
+      "defaultHandshakeFlags": [
+        "-Djava.net.preferIPv6Addresses=true"
+      ],
+      "argumentsSha256": "30aa4b9af33c1fd2185ba7a0306c1940da7527c7a3adc5146a959b286793b36c"
+    },
+    {
+      "pid": 58278,
+      "entryPoint": "sbt.ForkMain",
+      "scope": "candidate-checkout (includes standalone audit-tool build)",
+      "captured": "2026-10-27T01:57:19.315705+00:00",
+      "defaultHandshakeFlags": [
+        "-Djava.net.preferIPv6Addresses=true"
+      ],
+      "argumentsSha256": "1405f9c34d6d351d430ac0626d545560f24c3d7702ecd5016232f2ae328e8f19"
+    },
+    {
+      "pid": 58584,
+      "entryPoint": "sbt.ForkMain",
+      "scope": "candidate-checkout (includes standalone audit-tool build)",
+      "captured": "2026-10-27T01:57:21.384019+00:00",
+      "defaultHandshakeFlags": [
+        "-Djava.net.preferIPv6Addresses=true"
+      ],
+      "argumentsSha256": "6dda2d28a102d7bf6c6b09f1f2b68769492bf1425bf393f7f1fc2856989cfa40"
+    },
+    {
+      "pid": 58587,
+      "entryPoint": "sbt.ForkMain",
+      "scope": "candidate-checkout (includes standalone audit-tool build)",
+      "captured": "2026-10-27T01:57:23.458755+00:00",
+      "defaultHandshakeFlags": [
+        "-Djava.net.preferIPv6Addresses=true"
+      ],
+      "argumentsSha256": "7782567793c38f16568e288b374cdcdca817145ae41589994b10501797455489"
+    },
+    {
+      "pid": 58632,
+      "entryPoint": "sbt.ForkMain",
+      "scope": "candidate-checkout (includes standalone audit-tool build)",
+      "captured": "2026-10-27T01:57:25.532318+00:00",
+      "defaultHandshakeFlags": [
+        "-Djava.net.preferIPv6Addresses=true"
+      ],
+      "argumentsSha256": "b11fcee6bd75f05bd24785a26bd2ae7d4cd075e5aee763e1d1375074189e983d"
+    },
+    {
+      "pid": 59700,
+      "entryPoint": "sbt.ForkMain",
+      "scope": "candidate-checkout (includes standalone audit-tool build)",
+      "captured": "2026-10-27T01:57:44.339309+00:00",
+      "defaultHandshakeFlags": [
+        "-Djava.net.preferIPv6Addresses=true"
+      ],
+      "argumentsSha256": "4abbea8af9076715f17ba9bee048aab975daca54970130cb94a6e863198228ee"
+    },
+    {
+      "pid": 59992,
+      "entryPoint": "sbt.ForkMain",
+      "scope": "candidate-checkout (includes standalone audit-tool build)",
+      "captured": "2026-10-27T01:57:46.407913+00:00",
+      "defaultHandshakeFlags": [
+        "-Djava.net.preferIPv6Addresses=true"
+      ],
+      "argumentsSha256": "14fdd2f786b415ef8111deaf87e0775e1526a348cc6326472a63e54b66a0d1cf"
+    },
+    {
+      "pid": 60021,
+      "entryPoint": "sbt.ForkMain",
+      "scope": "candidate-checkout (includes standalone audit-tool build)",
+      "captured": "2026-10-27T01:57:48.484708+00:00",
+      "defaultHandshakeFlags": [
+        "-Djava.net.preferIPv6Addresses=true"
+      ],
+      "argumentsSha256": "13466a32c176751a7d8762c663042a9881501da9c05443c9272d5efee9decad0"
+    },
+    {
+      "pid": 60201,
+      "entryPoint": "sbt.ForkMain",
+      "scope": "candidate-checkout (includes standalone audit-tool build)",
+      "captured": "2026-10-27T01:57:50.554496+00:00",
+      "defaultHandshakeFlags": [
+        "-Djava.net.preferIPv6Addresses=true"
+      ],
+      "argumentsSha256": "01ed7666fafb3434f1b4974059bd1a8d414a4293ad9ef0eadeb3dad528973d1d"
+    },
+    {
+      "pid": 61150,
+      "entryPoint": "sbt.ForkMain",
+      "scope": "candidate-checkout (includes standalone audit-tool build)",
+      "captured": "2026-10-27T01:58:09.307121+00:00",
+      "defaultHandshakeFlags": [
+        "-Djava.net.preferIPv6Addresses=true"
+      ],
+      "argumentsSha256": "05505daaf8cce9d0ff96078e0db54672d025ee43d81fc35ac17f081ec544698b"
+    },
+    {
+      "pid": 61446,
+      "entryPoint": "sbt.ForkMain",
+      "scope": "candidate-checkout (includes standalone audit-tool build)",
+      "captured": "2026-10-27T01:58:11.366404+00:00",
+      "defaultHandshakeFlags": [
+        "-Djava.net.preferIPv6Addresses=true"
+      ],
+      "argumentsSha256": "d8a49935cd4382b98d16ac8dbb235c53a839c49ecffb0596c1c443b1cc3cf4db"
+    },
+    {
+      "pid": 61455,
+      "entryPoint": "sbt.ForkMain",
+      "scope": "candidate-checkout (includes standalone audit-tool build)",
+      "captured": "2026-10-27T01:58:13.427450+00:00",
+      "defaultHandshakeFlags": [
+        "-Djava.net.preferIPv6Addresses=true"
+      ],
+      "argumentsSha256": "1c1c600f305d9aa3f3b267e3a63aea57e1c35947c1f8459485f8674abae92472"
+    },
+    {
+      "pid": 61755,
+      "entryPoint": "sbt.ForkMain",
+      "scope": "candidate-checkout (includes standalone audit-tool build)",
+      "captured": "2026-10-27T01:58:15.503448+00:00",
+      "defaultHandshakeFlags": [
+        "-Djava.net.preferIPv6Addresses=true"
+      ],
+      "argumentsSha256": "f38177b599b6fd6b33993b3d18894286e4f41853038e472acf91540c13f674c1"
+    },
+    {
+      "pid": 61762,
+      "entryPoint": "sbt.ForkMain",
+      "scope": "candidate-checkout (includes standalone audit-tool build)",
+      "captured": "2026-10-27T01:58:17.584430+00:00",
+      "defaultHandshakeFlags": [
+        "-Djava.net.preferIPv6Addresses=true"
+      ],
+      "argumentsSha256": "9c32f4d73de7424816f3d409cefc2afdc7746e20a827386ada596252f2d70fab"
+    },
+    {
+      "pid": 61777,
+      "entryPoint": "sbt.ForkMain",
+      "scope": "candidate-checkout (includes standalone audit-tool build)",
+      "captured": "2026-10-27T01:58:19.651266+00:00",
+      "defaultHandshakeFlags": [
+        "-Djava.net.preferIPv6Addresses=true"
+      ],
+      "argumentsSha256": "a0e5d2ff439d41aca7a514a3eb1e8cf1a534394a8a6c10e6d4e6a457d6e296a5"
+    },
+    {
+      "pid": 62086,
+      "entryPoint": "sbt.ForkMain",
+      "scope": "candidate-checkout (includes standalone audit-tool build)",
+      "captured": "2026-10-27T01:58:21.725894+00:00",
+      "defaultHandshakeFlags": [
+        "-Djava.net.preferIPv6Addresses=true"
+      ],
+      "argumentsSha256": "2b5cb8778f85dc165eda86f4aa272397b6eabff02e1326997c272d9fc21512a7"
+    },
+    {
+      "pid": 62096,
+      "entryPoint": "sbt.ForkMain",
+      "scope": "candidate-checkout (includes standalone audit-tool build)",
+      "captured": "2026-10-27T01:58:23.791255+00:00",
+      "defaultHandshakeFlags": [
+        "-Djava.net.preferIPv6Addresses=true"
+      ],
+      "argumentsSha256": "abfe4247b9ddbdd50e987954d2b7fac152a93cdf063b558bdfc82d36fabc46eb"
+    },
+    {
+      "pid": 62098,
+      "entryPoint": "sbt.ForkMain",
+      "scope": "candidate-checkout (includes standalone audit-tool build)",
+      "captured": "2026-10-27T01:58:25.863098+00:00",
+      "defaultHandshakeFlags": [
+        "-Djava.net.preferIPv6Addresses=true"
+      ],
+      "argumentsSha256": "a6cab582ed262305629f37074c0ce27ab33058c4b46aa82760a1d46e116453e4"
+    },
+    {
+      "pid": 62403,
+      "entryPoint": "sbt.ForkMain",
+      "scope": "candidate-checkout (includes standalone audit-tool build)",
+      "captured": "2026-10-27T01:58:27.934861+00:00",
+      "defaultHandshakeFlags": [
+        "-Djava.net.preferIPv6Addresses=true"
+      ],
+      "argumentsSha256": "46078928fec3940e89e8fcebc324a4ba44a0bc4e588e8df5acf59f0a320220d6"
+    },
+    {
+      "pid": 62411,
+      "entryPoint": "sbt.ForkMain",
+      "scope": "candidate-checkout (includes standalone audit-tool build)",
+      "captured": "2026-10-27T01:58:30.021121+00:00",
+      "defaultHandshakeFlags": [
+        "-Djava.net.preferIPv6Addresses=true"
+      ],
+      "argumentsSha256": "8f75d2ada75ad66d1f6d1a0c4b408d83a1149c7a14d1e8a3935a66360480067c"
+    },
+    {
+      "pid": 62423,
+      "entryPoint": "sbt.ForkMain",
+      "scope": "candidate-checkout (includes standalone audit-tool build)",
+      "captured": "2026-10-27T01:58:32.093238+00:00",
+      "defaultHandshakeFlags": [
+        "-Djava.net.preferIPv6Addresses=true"
+      ],
+      "argumentsSha256": "d2d5f41e83bf5b7897b0e27556f8d2d78177589ab9c3856b2f954e73996aa11c"
+    },
+    {
+      "pid": 62725,
+      "entryPoint": "sbt.ForkMain",
+      "scope": "candidate-checkout (includes standalone audit-tool build)",
+      "captured": "2026-10-27T01:58:34.162995+00:00",
+      "defaultHandshakeFlags": [
+        "-Djava.net.preferIPv6Addresses=true"
+      ],
+      "argumentsSha256": "df15e896164db2d1f0be369af9c6764deb4c16e0df09636f6d6aecd9f6cdc9c0"
+    },
+    {
+      "pid": 62733,
+      "entryPoint": "sbt.ForkMain",
+      "scope": "candidate-checkout (includes standalone audit-tool build)",
+      "captured": "2026-10-27T01:58:36.237454+00:00",
+      "defaultHandshakeFlags": [
+        "-Djava.net.preferIPv6Addresses=true"
+      ],
+      "argumentsSha256": "4fe5766688b817bedd5616e3be9a02f7d4e54630edf8d17d0a8ab3c155337cfe"
+    },
+    {
+      "pid": 62747,
+      "entryPoint": "sbt.ForkMain",
+      "scope": "candidate-checkout (includes standalone audit-tool build)",
+      "captured": "2026-10-27T01:58:38.302144+00:00",
+      "defaultHandshakeFlags": [
+        "-Djava.net.preferIPv6Addresses=true"
+      ],
+      "argumentsSha256": "4b793f9bd98d2f19f30e33af514ba0a6d171a628afa4b286351b8a86e05b1064"
+    },
+    {
+      "pid": 63045,
+      "entryPoint": "sbt.ForkMain",
+      "scope": "candidate-checkout (includes standalone audit-tool build)",
+      "captured": "2026-10-27T01:58:40.381529+00:00",
+      "defaultHandshakeFlags": [
+        "-Djava.net.preferIPv6Addresses=true"
+      ],
+      "argumentsSha256": "379e7fffc5e5847faaa712a5029f84a9c3dc7136fe0d195e06ce245a0fb1fd22"
+    },
+    {
+      "pid": 63055,
+      "entryPoint": "sbt.ForkMain",
+      "scope": "candidate-checkout (includes standalone audit-tool build)",
+      "captured": "2026-10-27T01:58:42.461640+00:00",
+      "defaultHandshakeFlags": [
+        "-Djava.net.preferIPv6Addresses=true"
+      ],
+      "argumentsSha256": "82e732ecbfcd189a59718c5e5d770263dea7e12fce0a192de269d1472282bed3"
+    },
+    {
+      "pid": 63064,
+      "entryPoint": "sbt.ForkMain",
+      "scope": "candidate-checkout (includes standalone audit-tool build)",
+      "captured": "2026-10-27T01:58:44.530177+00:00",
+      "defaultHandshakeFlags": [
+        "-Djava.net.preferIPv6Addresses=true"
+      ],
+      "argumentsSha256": "5e5473c328e0493248b64909295d72dd1e99e9d4d89bf37244667897c9ffc490"
+    },
+    {
+      "pid": 63363,
+      "entryPoint": "sbt.ForkMain",
+      "scope": "candidate-checkout (includes standalone audit-tool build)",
+      "captured": "2026-10-27T01:58:46.608279+00:00",
+      "defaultHandshakeFlags": [
+        "-Djava.net.preferIPv6Addresses=true"
+      ],
+      "argumentsSha256": "ba293d844170eefe860ea31cedececfb50f9ad509d0f2fed4e251e3637dcea3b"
+    },
+    {
+      "pid": 63391,
+      "entryPoint": "sbt.ForkMain",
+      "scope": "candidate-checkout (includes standalone audit-tool build)",
+      "captured": "2026-10-27T01:58:48.675907+00:00",
+      "defaultHandshakeFlags": [
+        "-Djava.net.preferIPv6Addresses=true"
+      ],
+      "argumentsSha256": "f8ff97ce3fb7a999eaec1ae9f20c234c1c34e95c8d81eb9816859563d9f41920"
+    },
+    {
+      "pid": 63400,
+      "entryPoint": "sbt.ForkMain",
+      "scope": "candidate-checkout (includes standalone audit-tool build)",
+      "captured": "2026-10-27T01:58:50.749689+00:00",
+      "defaultHandshakeFlags": [
+        "-Djava.net.preferIPv6Addresses=true"
+      ],
+      "argumentsSha256": "75b6fc5cbe5483c0ff8fe5eaab454726dd0f3d4dbc3d40ec7975a6fbdff692ec"
+    },
+    {
+      "pid": 63706,
+      "entryPoint": "sbt.ForkMain",
+      "scope": "candidate-checkout (includes standalone audit-tool build)",
+      "captured": "2026-10-27T01:58:52.817077+00:00",
+      "defaultHandshakeFlags": [
+        "-Djava.net.preferIPv6Addresses=true"
+      ],
+      "argumentsSha256": "c201257cc89212c210c3473af6197346629fc08d0fbfcb24d950b74df7bf1484"
+    },
+    {
+      "pid": 63715,
+      "entryPoint": "sbt.ForkMain",
+      "scope": "candidate-checkout (includes standalone audit-tool build)",
+      "captured": "2026-10-27T01:58:54.887128+00:00",
+      "defaultHandshakeFlags": [
+        "-Djava.net.preferIPv6Addresses=true"
+      ],
+      "argumentsSha256": "6703e98268b3adbe6edd9d30acb6cb698778672e85dbb84aac7257e35e6815c6"
+    },
+    {
+      "pid": 64977,
+      "entryPoint": "sbt.ForkMain",
+      "scope": "candidate-checkout (includes standalone audit-tool build)",
+      "captured": "2026-10-27T01:59:19.655900+00:00",
+      "defaultHandshakeFlags": [
+        "-Djava.net.preferIPv6Addresses=true"
+      ],
+      "argumentsSha256": "7d0cf6badae58ad088431e548e459fb96481b3a10c91dd453a24fc9a833f57b1"
+    },
+    {
+      "pid": 65174,
+      "entryPoint": "sbt.ForkMain",
+      "scope": "candidate-checkout (includes standalone audit-tool build)",
+      "captured": "2026-10-27T01:59:21.737007+00:00",
+      "defaultHandshakeFlags": [
+        "-Djava.net.preferIPv6Addresses=true"
+      ],
+      "argumentsSha256": "59ea3257a5aba5ff7f44a3dde4def0740d975f79576cdf2cf56311c15485f5cd"
+    },
+    {
+      "pid": 65290,
+      "entryPoint": "sbt.ForkMain",
+      "scope": "candidate-checkout (includes standalone audit-tool build)",
+      "captured": "2026-10-27T01:59:23.809824+00:00",
+      "defaultHandshakeFlags": [
+        "-Djava.net.preferIPv6Addresses=true"
+      ],
+      "argumentsSha256": "feecc49fbab2b4beadf3a431be6c8fe5c7274256d8ece5191ab173f180d5e942"
+    },
+    {
+      "pid": 65302,
+      "entryPoint": "sbt.ForkMain",
+      "scope": "candidate-checkout (includes standalone audit-tool build)",
+      "captured": "2026-10-27T01:59:25.883034+00:00",
+      "defaultHandshakeFlags": [
+        "-Djava.net.preferIPv6Addresses=true"
+      ],
+      "argumentsSha256": "b845a06f0bdb9b7104084285e41e4aa6ae2a39641c8195e29e4eeb8069dbed85"
+    },
+    {
+      "pid": 65314,
+      "entryPoint": "sbt.ForkMain",
+      "scope": "candidate-checkout (includes standalone audit-tool build)",
+      "captured": "2026-10-27T01:59:27.975494+00:00",
+      "defaultHandshakeFlags": [
+        "-Djava.net.preferIPv6Addresses=true"
+      ],
+      "argumentsSha256": "219f49103cbbd1cfa87e42c59bf714193653aad555b86ecb7390aabfee041fac"
+    },
+    {
+      "pid": 65621,
+      "entryPoint": "sbt.ForkMain",
+      "scope": "candidate-checkout (includes standalone audit-tool build)",
+      "captured": "2026-10-27T01:59:30.041876+00:00",
+      "defaultHandshakeFlags": [
+        "-Djava.net.preferIPv6Addresses=true"
+      ],
+      "argumentsSha256": "6766a625f88ad1bc6f06ad7309331c072e57372cf2ef5fcf72da9688be60d87b"
+    },
+    {
+      "pid": 65630,
+      "entryPoint": "sbt.ForkMain",
+      "scope": "candidate-checkout (includes standalone audit-tool build)",
+      "captured": "2026-10-27T01:59:32.104661+00:00",
+      "defaultHandshakeFlags": [
+        "-Djava.net.preferIPv6Addresses=true"
+      ],
+      "argumentsSha256": "bf973aad621b456cc423fc9aae11fb1f8fcb35c5622fca28009ad9418db8de32"
+    },
+    {
+      "pid": 65812,
+      "entryPoint": "sbt.ForkMain",
+      "scope": "candidate-checkout (includes standalone audit-tool build)",
+      "captured": "2026-10-27T01:59:34.167325+00:00",
+      "defaultHandshakeFlags": [
+        "-Djava.net.preferIPv6Addresses=true"
+      ],
+      "argumentsSha256": "1e3c95bec5c02582e21775cb00d34709a7b974d2022a51385f93e015f7f8cfdd"
+    },
+    {
+      "pid": 65944,
+      "entryPoint": "sbt.ForkMain",
+      "scope": "candidate-checkout (includes standalone audit-tool build)",
+      "captured": "2026-10-27T01:59:38.313206+00:00",
+      "defaultHandshakeFlags": [
+        "-Djava.net.preferIPv6Addresses=true"
+      ],
+      "argumentsSha256": "04a94fc13d1a0b54025a362f2540f9d519bcce1cf4d68857637be6c9be5ac117"
+    },
+    {
+      "pid": 66163,
+      "entryPoint": "sbt.ForkMain",
+      "scope": "candidate-checkout (includes standalone audit-tool build)",
+      "captured": "2026-10-27T01:59:40.389108+00:00",
+      "defaultHandshakeFlags": [
+        "-Djava.net.preferIPv6Addresses=true"
+      ],
+      "argumentsSha256": "7d72a432f5b22e69d4ffcbcd871e5fc9df9c3fdc7164be92956e094a6de1dc9c"
+    },
+    {
+      "pid": 66256,
+      "entryPoint": "sbt.ForkMain",
+      "scope": "candidate-checkout (includes standalone audit-tool build)",
+      "captured": "2026-10-27T01:59:42.455066+00:00",
+      "defaultHandshakeFlags": [
+        "-Djava.net.preferIPv6Addresses=true"
+      ],
+      "argumentsSha256": "aecef65ed3fd45626e77e66e8da083dd4709a06767793e86cd1e95907b9865d8"
+    },
+    {
+      "pid": 66264,
+      "entryPoint": "sbt.ForkMain",
+      "scope": "candidate-checkout (includes standalone audit-tool build)",
+      "captured": "2026-10-27T01:59:44.528214+00:00",
+      "defaultHandshakeFlags": [
+        "-Djava.net.preferIPv6Addresses=true"
+      ],
+      "argumentsSha256": "9ddc3d79ebd3cda7b431eb98c5aad75e505540da7e62b0921b5cbd7b1e0e950d"
+    },
+    {
+      "pid": 66568,
+      "entryPoint": "sbt.ForkMain",
+      "scope": "candidate-checkout (includes standalone audit-tool build)",
+      "captured": "2026-10-27T01:59:46.599013+00:00",
+      "defaultHandshakeFlags": [
+        "-Djava.net.preferIPv6Addresses=true"
+      ],
+      "argumentsSha256": "0c69948d71a90a61572cc37cfc79341fb17ad9a018767edc4dab3dea3e71fd62"
+    },
+    {
+      "pid": 66590,
+      "entryPoint": "sbt.ForkMain",
+      "scope": "candidate-checkout (includes standalone audit-tool build)",
+      "captured": "2026-10-27T01:59:48.668728+00:00",
+      "defaultHandshakeFlags": [
+        "-Djava.net.preferIPv6Addresses=true"
+      ],
+      "argumentsSha256": "16a5f53ea9d4d256b022ea87c1127fcc325ec05c38ec906d8cb30cda5262911b"
+    },
+    {
+      "pid": 72569,
+      "entryPoint": "sbt.ForkMain",
+      "scope": "candidate-checkout (includes standalone audit-tool build)",
+      "captured": "2026-10-27T02:01:44.854932+00:00",
+      "defaultHandshakeFlags": [
+        "-Djava.net.preferIPv6Addresses=true"
+      ],
+      "argumentsSha256": "e9d1ac51e0d46e6fd5cdb535b7c5e2ac0f6ab2774f6beb5e66f683f841eec651"
+    },
+    {
+      "pid": 72578,
+      "entryPoint": "sbt.ForkMain",
+      "scope": "candidate-checkout (includes standalone audit-tool build)",
+      "captured": "2026-10-27T02:01:46.928255+00:00",
+      "defaultHandshakeFlags": [
+        "-Djava.net.preferIPv6Addresses=true"
+      ],
+      "argumentsSha256": "f6be41dcfc2fd9a2f1a200053a8f605cd98ffb9bcafa5c605a941391c4886e17"
+    },
+    {
+      "pid": 72900,
+      "entryPoint": "sbt.ForkMain",
+      "scope": "candidate-checkout (includes standalone audit-tool build)",
+      "captured": "2026-10-27T02:01:48.995819+00:00",
+      "defaultHandshakeFlags": [
+        "-Djava.net.preferIPv6Addresses=true"
+      ],
+      "argumentsSha256": "c5b9f70a76851fe634f46721d82d7ab313d1bb4ab46b8832bad62d871464cb6b"
+    },
+    {
+      "pid": 72909,
+      "entryPoint": "sbt.ForkMain",
+      "scope": "candidate-checkout (includes standalone audit-tool build)",
+      "captured": "2026-10-27T02:01:51.071326+00:00",
+      "defaultHandshakeFlags": [
+        "-Djava.net.preferIPv6Addresses=true"
+      ],
+      "argumentsSha256": "c0b80fec3d0843f91391ddeae9c8a8a96ea050d4dab7940f0072773ea1e6988a"
+    },
+    {
+      "pid": 72919,
+      "entryPoint": "sbt.ForkMain",
+      "scope": "candidate-checkout (includes standalone audit-tool build)",
+      "captured": "2026-10-27T02:01:53.141175+00:00",
+      "defaultHandshakeFlags": [
+        "-Djava.net.preferIPv6Addresses=true"
+      ],
+      "argumentsSha256": "bba41a5be5d46b75dd379bc51421518f04a874c667f33ee3551bbbed6a271cf3"
+    },
+    {
+      "pid": 73223,
+      "entryPoint": "sbt.ForkMain",
+      "scope": "candidate-checkout (includes standalone audit-tool build)",
+      "captured": "2026-10-27T02:01:55.204067+00:00",
+      "defaultHandshakeFlags": [
+        "-Djava.net.preferIPv6Addresses=true"
+      ],
+      "argumentsSha256": "a5a1ae560a992346b0688a06b831f25cd44906254d7f3f20b4025be72ab5f33e"
+    },
+    {
+      "pid": 73236,
+      "entryPoint": "sbt.ForkMain",
+      "scope": "candidate-checkout (includes standalone audit-tool build)",
+      "captured": "2026-10-27T02:01:57.267755+00:00",
+      "defaultHandshakeFlags": [
+        "-Djava.net.preferIPv6Addresses=true"
+      ],
+      "argumentsSha256": "095a830167dd461619bbfb3900c6dc99e02b7fd2455c159f058b5dbf3a69c7a5"
+    },
+    {
+      "pid": 73238,
+      "entryPoint": "sbt.ForkMain",
+      "scope": "candidate-checkout (includes standalone audit-tool build)",
+      "captured": "2026-10-27T02:01:59.343541+00:00",
+      "defaultHandshakeFlags": [
+        "-Djava.net.preferIPv6Addresses=true"
+      ],
+      "argumentsSha256": "08cdb1f94a48f3e3870341a5aaa1a3574741e116e47927ff06a43442cdddf446"
+    },
+    {
+      "pid": 73544,
+      "entryPoint": "sbt.ForkMain",
+      "scope": "candidate-checkout (includes standalone audit-tool build)",
+      "captured": "2026-10-27T02:02:01.402966+00:00",
+      "defaultHandshakeFlags": [
+        "-Djava.net.preferIPv6Addresses=true"
+      ],
+      "argumentsSha256": "bf0b36d9646a7e12f62a24fc802297d97ed9ef5fdbd0b7781ccef896dd7b7666"
+    },
+    {
+      "pid": 73552,
+      "entryPoint": "sbt.ForkMain",
+      "scope": "candidate-checkout (includes standalone audit-tool build)",
+      "captured": "2026-10-27T02:02:03.475637+00:00",
+      "defaultHandshakeFlags": [
+        "-Djava.net.preferIPv6Addresses=true"
+      ],
+      "argumentsSha256": "2400cb555bbc52a31c0b220ac1772ebcd156659c6b6b441323b69874c6e474b4"
+    },
+    {
+      "pid": 73608,
+      "entryPoint": "sbt.ForkMain",
+      "scope": "candidate-checkout (includes standalone audit-tool build)",
+      "captured": "2026-10-27T02:02:05.556235+00:00",
+      "defaultHandshakeFlags": [
+        "-Djava.net.preferIPv6Addresses=true"
+      ],
+      "argumentsSha256": "f82676911bb605978901e089eaf45758f0f52997a6a9be2e990c59835e7ee71b"
+    },
+    {
+      "pid": 73854,
+      "entryPoint": "sbt.ForkMain",
+      "scope": "candidate-checkout (includes standalone audit-tool build)",
+      "captured": "2026-10-27T02:02:07.642900+00:00",
+      "defaultHandshakeFlags": [
+        "-Djava.net.preferIPv6Addresses=true"
+      ],
+      "argumentsSha256": "9581d78326d8aa763562fa5c4bdb523ae1138409ecd1d7749564fd5030ba8f9a"
+    },
+    {
+      "pid": 73914,
+      "entryPoint": "sbt.ForkMain",
+      "scope": "candidate-checkout (includes standalone audit-tool build)",
+      "captured": "2026-10-27T02:02:09.704297+00:00",
+      "defaultHandshakeFlags": [
+        "-Djava.net.preferIPv6Addresses=true"
+      ],
+      "argumentsSha256": "ce03f1735a8e3d4b7db2af0e4db98e4d97792d50dd1b1614753a6b4483d2f8b0"
+    },
+    {
+      "pid": 73927,
+      "entryPoint": "sbt.ForkMain",
+      "scope": "candidate-checkout (includes standalone audit-tool build)",
+      "captured": "2026-10-27T02:02:11.777795+00:00",
+      "defaultHandshakeFlags": [
+        "-Djava.net.preferIPv6Addresses=true"
+      ],
+      "argumentsSha256": "f4a3811e44538899b7c77c5d1f4c7ad205d0def76c51112c34757c4c912960c0"
+    },
+    {
+      "pid": 74221,
+      "entryPoint": "sbt.ForkMain",
+      "scope": "candidate-checkout (includes standalone audit-tool build)",
+      "captured": "2026-10-27T02:02:13.849011+00:00",
+      "defaultHandshakeFlags": [
+        "-Djava.net.preferIPv6Addresses=true"
+      ],
+      "argumentsSha256": "e9c6a7bba78ecc19a978f6ad76432d7255c3cb4eaae6e03ea345a732b5c45d33"
+    },
+    {
+      "pid": 74230,
+      "entryPoint": "sbt.ForkMain",
+      "scope": "candidate-checkout (includes standalone audit-tool build)",
+      "captured": "2026-10-27T02:02:15.917984+00:00",
+      "defaultHandshakeFlags": [
+        "-Djava.net.preferIPv6Addresses=true"
+      ],
+      "argumentsSha256": "c890fc5620d13992228bc1a662752a8b8c5926109ef963cb9478a67944c4bb7b"
+    },
+    {
+      "pid": 74293,
+      "entryPoint": "sbt.ForkMain",
+      "scope": "candidate-checkout (includes standalone audit-tool build)",
+      "captured": "2026-10-27T02:02:17.986683+00:00",
+      "defaultHandshakeFlags": [
+        "-Djava.net.preferIPv6Addresses=true"
+      ],
+      "argumentsSha256": "a4d757c3e84e1dd73c35681efa2b5697c3b3d184a21f117fe09394008610ffc2"
+    },
+    {
+      "pid": 74504,
+      "entryPoint": "sbt.ForkMain",
+      "scope": "candidate-checkout (includes standalone audit-tool build)",
+      "captured": "2026-10-27T02:02:20.063813+00:00",
+      "defaultHandshakeFlags": [
+        "-Djava.net.preferIPv6Addresses=true"
+      ],
+      "argumentsSha256": "5a75e20685879e6b4fd45dd8a9716900b3017eb3f8a697ba8334f655e88227eb"
+    },
+    {
+      "pid": 74550,
+      "entryPoint": "sbt.ForkMain",
+      "scope": "candidate-checkout (includes standalone audit-tool build)",
+      "captured": "2026-10-27T02:02:22.132783+00:00",
+      "defaultHandshakeFlags": [
+        "-Djava.net.preferIPv6Addresses=true"
+      ],
+      "argumentsSha256": "12c40472e802fbd2d89fa662cdd95bbe983cdde07a52f838959fa4e4500f3888"
+    },
+    {
+      "pid": 74871,
+      "entryPoint": "sbt.ForkMain",
+      "scope": "candidate-checkout (includes standalone audit-tool build)",
+      "captured": "2026-10-27T02:02:26.286060+00:00",
+      "defaultHandshakeFlags": [
+        "-Djava.net.preferIPv6Addresses=true"
+      ],
+      "argumentsSha256": "b5d578879f023fd4c15ee00103dabf0fc0fea4b1404432a1a114c6ca23175b10"
+    },
+    {
+      "pid": 74877,
+      "entryPoint": "sbt.ForkMain",
+      "scope": "candidate-checkout (includes standalone audit-tool build)",
+      "captured": "2026-10-27T02:02:28.350592+00:00",
+      "defaultHandshakeFlags": [
+        "-Djava.net.preferIPv6Addresses=true"
+      ],
+      "argumentsSha256": "840269585fe5d61f5064a7a244c2a4642e3ec0130cef088a1e1daf1280a1a204"
+    },
+    {
+      "pid": 74961,
+      "entryPoint": "sbt.ForkMain",
+      "scope": "candidate-checkout (includes standalone audit-tool build)",
+      "captured": "2026-10-27T02:02:30.435764+00:00",
+      "defaultHandshakeFlags": [
+        "-Djava.net.preferIPv6Addresses=true"
+      ],
+      "argumentsSha256": "7ce0bcf551b3cf5340e9e0f7d09c303d3992325ddeedb72d6b1cfb72850ca4f9"
+    },
+    {
+      "pid": 75183,
+      "entryPoint": "sbt.ForkMain",
+      "scope": "candidate-checkout (includes standalone audit-tool build)",
+      "captured": "2026-10-27T02:02:32.511294+00:00",
+      "defaultHandshakeFlags": [
+        "-Djava.net.preferIPv6Addresses=true"
+      ],
+      "argumentsSha256": "ee201eefc85654da656193728e4bac2fb3d8fab8bea35f79b6a7e25bdc71d162"
+    },
+    {
+      "pid": 75190,
+      "entryPoint": "sbt.ForkMain",
+      "scope": "candidate-checkout (includes standalone audit-tool build)",
+      "captured": "2026-10-27T02:02:34.583022+00:00",
+      "defaultHandshakeFlags": [
+        "-Djava.net.preferIPv6Addresses=true"
+      ],
+      "argumentsSha256": "ca3b675f55eb09064abe0068838936f99bba2e81e593fcb8de4dd9ea6fff0bef"
+    },
+    {
+      "pid": 75495,
+      "entryPoint": "sbt.ForkMain",
+      "scope": "candidate-checkout (includes standalone audit-tool build)",
+      "captured": "2026-10-27T02:02:38.726608+00:00",
+      "defaultHandshakeFlags": [
+        "-Djava.net.preferIPv6Addresses=true"
+      ],
+      "argumentsSha256": "07b6035e81d1178db3f7dba5269e5137de16bbbf27e47c577a4d580fe008f0ef"
+    },
+    {
+      "pid": 75509,
+      "entryPoint": "sbt.ForkMain",
+      "scope": "candidate-checkout (includes standalone audit-tool build)",
+      "captured": "2026-10-27T02:02:40.795693+00:00",
+      "defaultHandshakeFlags": [
+        "-Djava.net.preferIPv6Addresses=true"
+      ],
+      "argumentsSha256": "421f2a91426e067ac513f6c00dd7d3e1a2e86e986e69987cb14333e67c7b6d19"
+    },
+    {
+      "pid": 75754,
+      "entryPoint": "sbt.ForkMain",
+      "scope": "candidate-checkout (includes standalone audit-tool build)",
+      "captured": "2026-10-27T02:02:42.866367+00:00",
+      "defaultHandshakeFlags": [
+        "-Djava.net.preferIPv6Addresses=true"
+      ],
+      "argumentsSha256": "dceee0a2eb2f3c28a24353f38b1be4a4713cfb540b30db7a66faa0b965b1f5cf"
+    },
+    {
+      "pid": 75827,
+      "entryPoint": "sbt.ForkMain",
+      "scope": "candidate-checkout (includes standalone audit-tool build)",
+      "captured": "2026-10-27T02:02:47.008140+00:00",
+      "defaultHandshakeFlags": [
+        "-Djava.net.preferIPv6Addresses=true"
+      ],
+      "argumentsSha256": "07e6e24f010402d46fc1af6fa58a0b1988658be93fb5503982ef9ff6ce77a1b9"
+    },
+    {
+      "pid": 76133,
+      "entryPoint": "sbt.ForkMain",
+      "scope": "candidate-checkout (includes standalone audit-tool build)",
+      "captured": "2026-10-27T02:02:49.072497+00:00",
+      "defaultHandshakeFlags": [
+        "-Djava.net.preferIPv6Addresses=true"
+      ],
+      "argumentsSha256": "0f9d9d84b0e47f3a69c7ff94ad48d0ca62e76fec5955764c88d352019677dd1b"
+    },
+    {
+      "pid": 76154,
+      "entryPoint": "sbt.ForkMain",
+      "scope": "candidate-checkout (includes standalone audit-tool build)",
+      "captured": "2026-10-27T02:02:51.147678+00:00",
+      "defaultHandshakeFlags": [
+        "-Djava.net.preferIPv6Addresses=true"
+      ],
+      "argumentsSha256": "634bb486b4532a008fad5c50d38d7a018eb2b1dab5e88af35b605ef42296bbd8"
+    },
+    {
+      "pid": 76469,
+      "entryPoint": "sbt.ForkMain",
+      "scope": "candidate-checkout (includes standalone audit-tool build)",
+      "captured": "2026-10-27T02:02:57.354384+00:00",
+      "defaultHandshakeFlags": [
+        "-Djava.net.preferIPv6Addresses=true"
+      ],
+      "argumentsSha256": "b7138f38b14c425ed5cbc5e40e6485b4ef6dcc356673b50a156000edd3b95835"
+    },
+    {
+      "pid": 79104,
+      "entryPoint": "sbt.ForkMain",
+      "scope": "candidate-checkout (includes standalone audit-tool build)",
+      "captured": "2026-10-27T02:03:49.427174+00:00",
+      "defaultHandshakeFlags": [
+        "-Djava.net.preferIPv6Addresses=true"
+      ],
+      "argumentsSha256": "b199123591c82632e86fe85fb7f9c1ed3cbed4bc34a1cd4513945d90b47148b8"
+    },
+    {
+      "pid": 79420,
+      "entryPoint": "sbt.ForkMain",
+      "scope": "candidate-checkout (includes standalone audit-tool build)",
+      "captured": "2026-10-27T02:03:53.561271+00:00",
+      "defaultHandshakeFlags": [
+        "-Djava.net.preferIPv6Addresses=true"
+      ],
+      "argumentsSha256": "47ddc3ce82f61c8333f9a37b792d9a6488f39166fc781a1a8552b299621125a3"
+    },
+    {
+      "pid": 79425,
+      "entryPoint": "sbt.ForkMain",
+      "scope": "candidate-checkout (includes standalone audit-tool build)",
+      "captured": "2026-10-27T02:03:55.627078+00:00",
+      "defaultHandshakeFlags": [
+        "-Djava.net.preferIPv6Addresses=true"
+      ],
+      "argumentsSha256": "8bc7c6869f8108e17877863c28465c5970bbc8e4a54855fa918dc69ca083d1ff"
+    },
+    {
+      "pid": 79729,
+      "entryPoint": "sbt.ForkMain",
+      "scope": "candidate-checkout (includes standalone audit-tool build)",
+      "captured": "2026-10-27T02:03:57.704863+00:00",
+      "defaultHandshakeFlags": [
+        "-Djava.net.preferIPv6Addresses=true"
+      ],
+      "argumentsSha256": "823fdc8a983da17240bf94a3609136c8cbbbcc8718d9996993ec9102d6404342"
+    },
+    {
+      "pid": 79737,
+      "entryPoint": "sbt.ForkMain",
+      "scope": "candidate-checkout (includes standalone audit-tool build)",
+      "captured": "2026-10-27T02:03:59.783737+00:00",
+      "defaultHandshakeFlags": [
+        "-Djava.net.preferIPv6Addresses=true"
+      ],
+      "argumentsSha256": "b24e741e739b168444195225d2d9dcf33d3ca8af4699dd87a25cfcb4735264d8"
+    },
+    {
+      "pid": 80842,
+      "entryPoint": "sbt.ForkMain",
+      "scope": "candidate-checkout (includes standalone audit-tool build)",
+      "captured": "2026-10-27T02:04:16.448532+00:00",
+      "defaultHandshakeFlags": [
+        "-Djava.net.preferIPv6Addresses=true"
+      ],
+      "argumentsSha256": "e28c0320b1943d830ce1ce01a678b09e72188d7247fc0c032ab3405e99a167f9"
+    },
+    {
+      "pid": 80853,
+      "entryPoint": "sbt.ForkMain",
+      "scope": "candidate-checkout (includes standalone audit-tool build)",
+      "captured": "2026-10-27T02:04:18.521907+00:00",
+      "defaultHandshakeFlags": [
+        "-Djava.net.preferIPv6Addresses=true"
+      ],
+      "argumentsSha256": "7e1595df5c34b2dbd3f535b1021cb846eb890a5938927dca4c01e0b880a16026"
+    },
+    {
+      "pid": 80858,
+      "entryPoint": "sbt.ForkMain",
+      "scope": "candidate-checkout (includes standalone audit-tool build)",
+      "captured": "2026-10-27T02:04:20.591684+00:00",
+      "defaultHandshakeFlags": [
+        "-Djava.net.preferIPv6Addresses=true"
+      ],
+      "argumentsSha256": "3f49df916500b84fe1cab41a302d5e7b28f18248cc13109918eb349e5cdb222f"
+    },
+    {
+      "pid": 81164,
+      "entryPoint": "sbt.ForkMain",
+      "scope": "candidate-checkout (includes standalone audit-tool build)",
+      "captured": "2026-10-27T02:04:22.661539+00:00",
+      "defaultHandshakeFlags": [
+        "-Djava.net.preferIPv6Addresses=true"
+      ],
+      "argumentsSha256": "57fc64eb9529afbceaa35a256e8c20ad7da08f34a9f9f18b8c1829b8017d96d3"
+    },
+    {
+      "pid": 81174,
+      "entryPoint": "sbt.ForkMain",
+      "scope": "candidate-checkout (includes standalone audit-tool build)",
+      "captured": "2026-10-27T02:04:24.734611+00:00",
+      "defaultHandshakeFlags": [
+        "-Djava.net.preferIPv6Addresses=true"
+      ],
+      "argumentsSha256": "a67fc807573e341ff05ff0323104a710728ac058b210b5a5a8c588fda8d59ccb"
+    },
+    {
+      "pid": 81484,
+      "entryPoint": "sbt.ForkMain",
+      "scope": "candidate-checkout (includes standalone audit-tool build)",
+      "captured": "2026-10-27T02:04:28.870251+00:00",
+      "defaultHandshakeFlags": [
+        "-Djava.net.preferIPv6Addresses=true"
+      ],
+      "argumentsSha256": "471cbe473e26a8c8248c156e7c40d3428d174a7b7d372d892b9103d76912d5f7"
+    },
+    {
+      "pid": 81492,
+      "entryPoint": "sbt.ForkMain",
+      "scope": "candidate-checkout (includes standalone audit-tool build)",
+      "captured": "2026-10-27T02:04:30.941247+00:00",
+      "defaultHandshakeFlags": [
+        "-Djava.net.preferIPv6Addresses=true"
+      ],
+      "argumentsSha256": "c125d1a8105a4bff27c5aca01ea53d9525080e88eb73eb3d0cfa05b57f468999"
+    },
+    {
+      "pid": 81499,
+      "entryPoint": "sbt.ForkMain",
+      "scope": "candidate-checkout (includes standalone audit-tool build)",
+      "captured": "2026-10-27T02:04:33.016727+00:00",
+      "defaultHandshakeFlags": [
+        "-Djava.net.preferIPv6Addresses=true"
+      ],
+      "argumentsSha256": "4ab748894e8483a17c974d7d2bfe33dd4dd61056ccd3b8ccc959c41fc10ea7c9"
+    },
+    {
+      "pid": 81802,
+      "entryPoint": "sbt.ForkMain",
+      "scope": "candidate-checkout (includes standalone audit-tool build)",
+      "captured": "2026-10-27T02:04:35.087948+00:00",
+      "defaultHandshakeFlags": [
+        "-Djava.net.preferIPv6Addresses=true"
+      ],
+      "argumentsSha256": "f252cb0ff3bf2c8c659293c481163b3a99b58ecdefca9e011c6e5508ea6172d6"
+    },
+    {
+      "pid": 81812,
+      "entryPoint": "sbt.ForkMain",
+      "scope": "candidate-checkout (includes standalone audit-tool build)",
+      "captured": "2026-10-27T02:04:37.154374+00:00",
+      "defaultHandshakeFlags": [
+        "-Djava.net.preferIPv6Addresses=true"
+      ],
+      "argumentsSha256": "9dcd6ff05140d2de9f36a4fe8347d0534b047ac432a4503f307207f5f91b3db7"
+    },
+    {
+      "pid": 82463,
+      "entryPoint": "sbt.ForkMain",
+      "scope": "candidate-checkout (includes standalone audit-tool build)",
+      "captured": "2026-10-27T02:04:51.684168+00:00",
+      "defaultHandshakeFlags": [
+        "-Djava.net.preferIPv6Addresses=true"
+      ],
+      "argumentsSha256": "7cef63f66563cc94838f2bf9d31ac831d572665e90fd0e98dc4ca6bfbbc87bb4"
+    },
+    {
+      "pid": 82769,
+      "entryPoint": "sbt.ForkMain",
+      "scope": "candidate-checkout (includes standalone audit-tool build)",
+      "captured": "2026-10-27T02:04:53.773569+00:00",
+      "defaultHandshakeFlags": [
+        "-Djava.net.preferIPv6Addresses=true"
+      ],
+      "argumentsSha256": "b7d4091befd275a5e8f15448808369418c93ccb61faeac805150930636c38ae5"
+    },
+    {
+      "pid": 82782,
+      "entryPoint": "sbt.ForkMain",
+      "scope": "candidate-checkout (includes standalone audit-tool build)",
+      "captured": "2026-10-27T02:04:55.848429+00:00",
+      "defaultHandshakeFlags": [
+        "-Djava.net.preferIPv6Addresses=true"
+      ],
+      "argumentsSha256": "c375bafafa1007b002bf32203b49e9095bb268a8e0d04560cc2673fe6e7df4d0"
+    },
+    {
+      "pid": 82851,
+      "entryPoint": "sbt.ForkMain",
+      "scope": "candidate-checkout (includes standalone audit-tool build)",
+      "captured": "2026-10-27T02:04:57.925604+00:00",
+      "defaultHandshakeFlags": [
+        "-Djava.net.preferIPv6Addresses=true"
+      ],
+      "argumentsSha256": "c92ea9aaa13c035e0a7bd2d6b0b00fb2d719a63311a6aec821484d3945dfc165"
+    },
+    {
+      "pid": 84063,
+      "entryPoint": "sbt.ForkMain",
+      "scope": "candidate-checkout (includes standalone audit-tool build)",
+      "captured": "2026-10-27T02:05:20.700948+00:00",
+      "defaultHandshakeFlags": [
+        "-Djava.net.preferIPv6Addresses=true"
+      ],
+      "argumentsSha256": "493eec5b60860519548c5bc7de9476b9bf44cc1e18456f7c1a5ee3f33ce83bae"
+    },
+    {
+      "pid": 84143,
+      "entryPoint": "sbt.ForkMain",
+      "scope": "candidate-checkout (includes standalone audit-tool build)",
+      "captured": "2026-10-27T02:05:22.775187+00:00",
+      "defaultHandshakeFlags": [
+        "-Djava.net.preferIPv6Addresses=true"
+      ],
+      "argumentsSha256": "b784be4932b2bd213d8b96597e74b6cab3c65ad7f032dd9e75632f8f84f1b4a6"
+    },
+    {
+      "pid": 84374,
+      "entryPoint": "sbt.ForkMain",
+      "scope": "candidate-checkout (includes standalone audit-tool build)",
+      "captured": "2026-10-27T02:05:24.853350+00:00",
+      "defaultHandshakeFlags": [
+        "-Djava.net.preferIPv6Addresses=true"
+      ],
+      "argumentsSha256": "346b62fd5cd9fe48d48e5a34041fd661ef6891d84d5e4bc78879286885520107"
+    },
+    {
+      "pid": 84385,
+      "entryPoint": "sbt.ForkMain",
+      "scope": "candidate-checkout (includes standalone audit-tool build)",
+      "captured": "2026-10-27T02:05:26.925934+00:00",
+      "defaultHandshakeFlags": [
+        "-Djava.net.preferIPv6Addresses=true"
+      ],
+      "argumentsSha256": "e2882109dcc57f84bddef7d482efc28c53dbe3ca414a248a8ea8c834248d4a10"
+    },
+    {
+      "pid": 84526,
+      "entryPoint": "sbt.ForkMain",
+      "scope": "candidate-checkout (includes standalone audit-tool build)",
+      "captured": "2026-10-27T02:05:29.004534+00:00",
+      "defaultHandshakeFlags": [
+        "-Djava.net.preferIPv6Addresses=true"
+      ],
+      "argumentsSha256": "21e328fc2cf9e4fc9ac292fa98f7c1f674768c40305d366d27e3627f00f0105d"
+    },
+    {
+      "pid": 84692,
+      "entryPoint": "sbt.ForkMain",
+      "scope": "candidate-checkout (includes standalone audit-tool build)",
+      "captured": "2026-10-27T02:05:31.082234+00:00",
+      "defaultHandshakeFlags": [
+        "-Djava.net.preferIPv6Addresses=true"
+      ],
+      "argumentsSha256": "bdcfab1c32845239f633efd55db8741321271d628465c8b1ca341d4f4cd4a196"
+    },
+    {
+      "pid": 84704,
+      "entryPoint": "sbt.ForkMain",
+      "scope": "candidate-checkout (includes standalone audit-tool build)",
+      "captured": "2026-10-27T02:05:33.146303+00:00",
+      "defaultHandshakeFlags": [
+        "-Djava.net.preferIPv6Addresses=true"
+      ],
+      "argumentsSha256": "1f06575c32255ea47a51b47d8932bac1739cc32c00857387b893f0a1e30e7b3e"
+    },
+    {
+      "pid": 84717,
+      "entryPoint": "sbt.ForkMain",
+      "scope": "candidate-checkout (includes standalone audit-tool build)",
+      "captured": "2026-10-27T02:05:35.242222+00:00",
+      "defaultHandshakeFlags": [
+        "-Djava.net.preferIPv6Addresses=true"
+      ],
+      "argumentsSha256": "d5f63f8688c33d01fcf8278cbf23eb97eecb7235cab41f02e6489feb7f0bfbac"
+    },
+    {
+      "pid": 85029,
+      "entryPoint": "sbt.ForkMain",
+      "scope": "candidate-checkout (includes standalone audit-tool build)",
+      "captured": "2026-10-27T02:05:37.315505+00:00",
+      "defaultHandshakeFlags": [
+        "-Djava.net.preferIPv6Addresses=true"
+      ],
+      "argumentsSha256": "62d5803d9f188bc0ce55e733000add29704a69dff7adfa83ff54b89f43ba8e05"
+    },
+    {
+      "pid": 85039,
+      "entryPoint": "sbt.ForkMain",
+      "scope": "candidate-checkout (includes standalone audit-tool build)",
+      "captured": "2026-10-27T02:05:39.373187+00:00",
+      "defaultHandshakeFlags": [
+        "-Djava.net.preferIPv6Addresses=true"
+      ],
+      "argumentsSha256": "c0c3c571075ddea3b621e74316ccadfda758d54d835a158250aac0f3f0b3f9ea"
+    },
+    {
+      "pid": 85210,
+      "entryPoint": "sbt.ForkMain",
+      "scope": "candidate-checkout (includes standalone audit-tool build)",
+      "captured": "2026-10-27T02:05:41.444708+00:00",
+      "defaultHandshakeFlags": [
+        "-Djava.net.preferIPv6Addresses=true"
+      ],
+      "argumentsSha256": "8f8170c4cf6aee28e91f8858f48eb3daf3eca6145f23745438f5b99b802ae72c"
+    },
+    {
+      "pid": 85349,
+      "entryPoint": "sbt.ForkMain",
+      "scope": "candidate-checkout (includes standalone audit-tool build)",
+      "captured": "2026-10-27T02:05:43.517634+00:00",
+      "defaultHandshakeFlags": [
+        "-Djava.net.preferIPv6Addresses=true"
+      ],
+      "argumentsSha256": "f3c6f29b202c642b5096c821bb6617d96b25cdd1827987dfe9c50df2674a6426"
+    },
+    {
+      "pid": 85688,
+      "entryPoint": "sbt.ForkMain",
+      "scope": "candidate-checkout (includes standalone audit-tool build)",
+      "captured": "2026-10-27T02:05:49.737669+00:00",
+      "defaultHandshakeFlags": [
+        "-Djava.net.preferIPv6Addresses=true"
+      ],
+      "argumentsSha256": "dfc5ef7f54d5e54dfed57b8641705ca844088fa3c936de134db9812be135554a"
+    },
+    {
+      "pid": 85691,
+      "entryPoint": "sbt.ForkMain",
+      "scope": "candidate-checkout (includes standalone audit-tool build)",
+      "captured": "2026-10-27T02:05:51.813031+00:00",
+      "defaultHandshakeFlags": [
+        "-Djava.net.preferIPv6Addresses=true"
+      ],
+      "argumentsSha256": "a78209b02383aac9f91a0bb87de548c23367e8fc628287a633e001f7f0c9a82a"
+    },
+    {
+      "pid": 86016,
+      "entryPoint": "sbt.ForkMain",
+      "scope": "candidate-checkout (includes standalone audit-tool build)",
+      "captured": "2026-10-27T02:05:55.949807+00:00",
+      "defaultHandshakeFlags": [
+        "-Djava.net.preferIPv6Addresses=true"
+      ],
+      "argumentsSha256": "09c2ddbee403353008566aeac57bae27e4208bb545c96e8a67c676a4ca9b0475"
+    },
+    {
+      "pid": 86019,
+      "entryPoint": "sbt.ForkMain",
+      "scope": "candidate-checkout (includes standalone audit-tool build)",
+      "captured": "2026-10-27T02:05:58.033924+00:00",
+      "defaultHandshakeFlags": [
+        "-Djava.net.preferIPv6Addresses=true"
+      ],
+      "argumentsSha256": "acef207b61fc37c5a6f54b17f9c8347b9a6d7d9a06044a14e0e0c60c5306f0c7"
+    },
+    {
+      "pid": 86333,
+      "entryPoint": "sbt.ForkMain",
+      "scope": "candidate-checkout (includes standalone audit-tool build)",
+      "captured": "2026-10-27T02:06:02.192618+00:00",
+      "defaultHandshakeFlags": [
+        "-Djava.net.preferIPv6Addresses=true"
+      ],
+      "argumentsSha256": "a4bc4751a8d8e135acda19ec200c9d63245b76a9acc021546f0f80d0b5ead805"
+    },
+    {
+      "pid": 6972,
+      "entryPoint": "sbt.ForkMain",
+      "scope": "candidate-checkout (includes standalone audit-tool build)",
+      "captured": "2026-10-27T02:12:43.643521+00:00",
+      "defaultHandshakeFlags": [
+        "-Djava.net.preferIPv6Addresses=true"
+      ],
+      "argumentsSha256": "3fefa9fa5b20d223340090c6524f10b078248354a329e3226dc54e5b6d41a7ab"
+    },
+    {
+      "pid": 18757,
+      "entryPoint": "sbt.ForkMain",
+      "scope": "consumer",
+      "captured": "2026-10-27T02:16:29.284379+00:00",
+      "defaultHandshakeFlags": [],
+      "argumentsSha256": "8d9f0fd6757bc674918db418d56f5c2fb165e3d9268b5026caffcf038b5c9442"
+    }
+  ],
+  "limitations": [
+    "Only actual Java sbt.ForkMain launches are recorded; this path-level scope includes the standalone API-audit-tool sub-build, whose own build does not install root common/laws fork settings.",
+    "The artifact consumer is a separate build. Empty IPv6 options in those separate builds are not interpreted as missing root common/laws settings.",
+    "Default-setting attribution also uses the frozen launcher environment and uninterrupted full gate; no property is inferred from parent JUnit XML."
+  ]
+}
