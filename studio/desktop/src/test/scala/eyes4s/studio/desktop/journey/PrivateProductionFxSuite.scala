@@ -396,7 +396,7 @@ class PrivateProductionFxSuite extends ShellFxSuite:
               case _                            => false
             }
           }
-          capture(fx, root, "plot-requested")
+          capture(fx, root, if reopen then "reopen-plot-requested" else "plot-requested")
           var plotPoll = 0
           until(fx, "participant and scale-profile plots are drawn", 60.seconds) {
             plotPoll += 1
