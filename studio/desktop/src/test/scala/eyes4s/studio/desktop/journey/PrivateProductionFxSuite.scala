@@ -482,11 +482,31 @@ class PrivateProductionFxSuite extends ShellFxSuite:
             )
             val source = get(w.session.await(w.session.navigator.record(points.entries.head)))
             dispatch(fx, w, Intent.Explain(Place.At(source)))
-            until(fx, "original source record displayed") {
-              !w.sourceRecords.rows.getItems.isEmpty
+            dispatch(
+              fx,
+              w,
+              Intent.FocusPane(eyes4s.studio.app.layout.StudioLayouts.sourceRecords)
+            )
+            val selectSource = runOnFx(
+              w.sourceRecords.current.selection
+                .submit(
+                  eyes4s.studio.core.selection.SelectionMode.Replace,
+                  Vector(source),
+                  eyes4s.studio.core.selection.InputCause.Programmatic
+                )
+                ._2
+            )
+            dispatch(fx, w, selectSource)
+            until(fx, "exact original source record selected and displayed", 60.seconds) {
+              val state = w.sourceRecords.current
+              state.cursor
+                .flatMap(i => eyes4s.studio.app.explore.SourceRecords.rowAt(state, i))
+                .exists(_.ref == source)
             }
             runOnFx(w.sourceRecords.toggleRaw())
-            until(fx, "verbatim source fields displayed") { w.sourceRecords.rawText.isDefined }
+            until(fx, "verbatim source fields displayed", 60.seconds) {
+              w.sourceRecords.rawText.isDefined
+            }
             capture(fx, root, "source-record")
             source match
               case StudioRef.SourceRecord(_, _, _, number) =>
