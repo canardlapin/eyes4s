@@ -786,6 +786,27 @@ class WhyReferenceSuite extends munit.FunSuite:
     assertEquals(a2.limits.find(_.chosen).map(_.value), Some(LimitsScope.PerPanel))
   }
 
+  test("trial tallies retain fractional milliseconds and refuse unrepresentable durations") {
+    val key      = GoldenAssets.rows.toOption.get.head.trial
+    val fixation = ContentFixation(
+      key,
+      eyes4s.studio.core.selection.FixationIndex.of(1).toOption.get,
+      1,
+      2,
+      3000000000.125,
+      0.125,
+      eyes4s.plan.MapPlacement.InWindow
+    )
+    val outside =
+      fixation.copy(durationMs = 0.375, placement = eyes4s.plan.MapPlacement.OutsideScreen)
+    val tally = WhyReference.tally(Vector(fixation, outside)).get
+    assertEquals(tally.totalDuration.toMicros, 500L)
+    assertEquals(tally.outsideScreenDuration.toMicros, 375L)
+    assertEquals(tally.outsideScreenShare, Some(0.75))
+    for duration <- Vector(Double.NaN, Double.PositiveInfinity, -1.0, 0.0001, Double.MaxValue)
+    do assertEquals(WhyReference.tally(Vector(fixation.copy(durationMs = duration))), None)
+  }
+
   test("the inspector's stops: Edit, the chosen stage and limits, the opacity slider") {
     val vm = WhyReference.vm(
       WhyReference.empty,

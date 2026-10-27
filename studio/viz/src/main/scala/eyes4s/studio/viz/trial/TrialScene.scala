@@ -106,7 +106,7 @@ enum TrialSceneError derives CanEqual:
   case NonFinitePosition(trial: TrialKey, fixation: Int, x: Double, y: Double)
 
   /** A fixation duration that is not a positive number of milliseconds. */
-  case DurationNotPositive(trial: TrialKey, fixation: Int, durationMs: Int)
+  case DurationNotPositive(trial: TrialKey, fixation: Int, durationMs: Double)
 
   /** Two fixations of one trial with the same index. */
   case DuplicateFixation(trial: TrialKey, fixation: Int)
@@ -130,7 +130,7 @@ enum TrialSceneError derives CanEqual:
     case NonFinitePosition(t, i, x, y) =>
       s"Trial ${t.label}: fixation $i is at ($x, $y), which is not a finite screen position."
     case DurationNotPositive(t, i, d) =>
-      s"Trial ${t.label}: fixation $i lasts $d ms; a duration must be positive."
+      s"Trial ${t.label}: fixation $i lasts $d ms; a duration must be finite and positive."
     case DuplicateFixation(t, i) => s"Trial ${t.label}: fixation $i is listed more than once."
     case EmptyExtent(l, t, r, b) =>
       s"The trial extent [$l, $r] × [$t, $b] (screen px) has no area or is not finite."
@@ -156,7 +156,7 @@ sealed abstract case class TrialFixation private (
     index: FixationIndex,
     screenX: Double,
     screenY: Double,
-    durationMs: Int,
+    durationMs: Double,
     placement: MapPlacement
 ) derives CanEqual:
   /** Whether core includes this fixation in the trial map. */
@@ -167,7 +167,7 @@ object TrialFixation:
       index: FixationIndex,
       screenX: Double,
       screenY: Double,
-      durationMs: Int,
+      durationMs: Double,
       placement: MapPlacement
   ): TrialFixation =
     new TrialFixation(index, screenX, screenY, durationMs, placement) {}
@@ -177,12 +177,12 @@ object TrialFixation:
       index: FixationIndex,
       screenX: Double,
       screenY: Double,
-      durationMs: Int,
+      durationMs: Double,
       placement: MapPlacement
   ): Either[TrialSceneError, TrialFixation] =
     if !screenX.isFinite || !screenY.isFinite then
       Left(TrialSceneError.NonFinitePosition(trial, index.value, screenX, screenY))
-    else if durationMs <= 0 then
+    else if !durationMs.isFinite || durationMs <= 0 then
       Left(TrialSceneError.DurationNotPositive(trial, index.value, durationMs))
     else Right(TrialFixation(index, screenX, screenY, durationMs, placement))
 
@@ -504,7 +504,7 @@ object TrialScene:
   private val WindowDash           = DashPattern.unsafe(8.0, 6.0)
 
   /** The radius of a mark for a fixation of `durationMs`, in logical pixels. */
-  def radiusPx(durationMs: Int): Double = RadiusPerRootMs * math.sqrt(durationMs.toDouble)
+  def radiusPx(durationMs: Double): Double = RadiusPerRootMs * math.sqrt(durationMs)
 
   /** Width over height of a canvas showing `extent` above the caption band. */
   def aspectOf(extent: ScreenRect): Double =

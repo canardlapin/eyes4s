@@ -183,6 +183,24 @@ class NativeGoldenCommandFxSuite extends GoldenWindow:
       dispatch(fx, w, Intent.ShowRun(run))
       val sigma = get(ScaleIndex.of(scale))
       dispatch(fx, w, Intent.Explain(Place.At(StudioRef.QueryContrast(run, sigma, focus))))
+      until(fx, "native Compare content replies") {
+        Vector(w.summary.panelsVM.query, w.summary.panelsVM.reference)
+          .forall(_.exists(p => p.content != eyes4s.studio.app.compare.PanelContent.Reading))
+      }
+      assert(
+        Vector(w.summary.panelsVM.query, w.summary.panelsVM.reference).forall(
+          _.exists(
+            _.content.isInstanceOf[eyes4s.studio.app.compare.PanelContent.Shown]
+          )
+        ),
+        w.summary.panelsVM.toString
+      )
+      until(fx, "native Compare query and reference density maps drawn") {
+        Vector(w.summary.panels.queryView, w.summary.panels.referenceView)
+          .forall(_.status.get match
+            case eyes4s.studio.desktop.trial.TrialViewStatus.Shown(scene) => scene.map.nonEmpty
+            case _                                                        => false)
+      }
       val inspection = get(
         w.session.await(w.session.reads.inspect(run, ResultAddress.ContrastRow(scale, focus)))
       )

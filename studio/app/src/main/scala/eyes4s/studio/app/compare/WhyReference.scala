@@ -491,14 +491,35 @@ object WhyReference:
 
   /** The trial's [[WindowTally]], from its fixations' placements. */
   def tally(fixations: Vector[ContentFixation]): Option[WindowTally] =
-    def sum(fs: Vector[ContentFixation]) = Span.millis(fs.map(_.durationMs.toLong).sum)
+    def sum(fs: Vector[ContentFixation]): Option[Span] =
+      fs.foldLeft(Option(BigDecimal(0))) { (total, f) =>
+        for
+          n  <- total
+          us <- Option.when(f.durationMs.isFinite && f.durationMs >= 0)(
+            BigDecimal.decimal(f.durationMs) * 1000
+          )
+        yield n + us
+      }.filter(us => us.isWhole && us.isValidLong)
+        .map(us => Span.micros(us.toLong))
     val screen = fixations.filter(_.placement == MapPlacement.OutsideScreen)
     val window = fixations.filter(_.placement match
       case MapPlacement.OutsideWindow(_) => true
       case _                             => false)
-    WindowTally
-      .of(screen.size, window.size, fixations.size, sum(screen), sum(window), sum(fixations))
-      .toOption
+    for
+      screenDuration <- sum(screen)
+      windowDuration <- sum(window)
+      totalDuration  <- sum(fixations)
+      tally          <- WindowTally
+        .of(
+          screen.size,
+          window.size,
+          fixations.size,
+          screenDuration,
+          windowDuration,
+          totalDuration
+        )
+        .toOption
+    yield tally
 
   // --- Analysis ------------------------------------------------------------------------------
 

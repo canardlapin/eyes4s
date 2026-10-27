@@ -593,8 +593,19 @@ object StudioWindow:
     host.host(StudioLayouts.admission, admission.node)
     r.listen(admission.sync)
     // Compare's summary layout (Results board): the shown run's summary.
+    val trialInputs    = TrialViewInputs.of(session, displays)
+    val compareSources = nativeSources.fold(panels)(_ =>
+      PanelSources.of(
+        trialInputs,
+        revision =>
+          val snapshot = authoritativeDocument.get()
+          snapshot.analysis(revision).flatMap(a => snapshot.dataset(a.dataset))
+        ,
+        stimuli
+      )
+    )
     val summary =
-      CompareSummaryHost(() => r.model, dispatch, SummaryInputs.of(session), panels)
+      CompareSummaryHost(() => r.model, dispatch, SummaryInputs.of(session), compareSources)
     Vector(
       "compare.participants"           -> summary.participants.node,
       "compare.participant-plot"       -> summary.participantPlotNode,
@@ -673,7 +684,7 @@ object StudioWindow:
     val explore =
       ExploreTrialViewHost(
         () => r.model,
-        TrialViewInputs.of(session, displays),
+        trialInputs,
         stimuli,
         dispatch
       )

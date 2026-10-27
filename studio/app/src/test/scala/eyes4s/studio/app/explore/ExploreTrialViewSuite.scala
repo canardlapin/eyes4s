@@ -103,8 +103,8 @@ class ExploreTrialViewSuite extends munit.FunSuite:
       val shown = vm.shown.getOrElse(fail("nothing shown"))
       assertEquals((shown.trial, shown.display.kind), (enc03, DisplayKind.Image))
       assertEquals(shown.marks.size, 13)
-      // Durations are drawn to the millisecond; the document's stage is dark.
-      assertEquals(shown.marks(5).durationMs, 412)
+      // Duration is retained; the document's stage is dark.
+      assertEquals(shown.marks(5).durationMs, 412.0)
       assertEquals(shown.stage, eyes4s.studio.app.tokens.StageVariant.Dark)
       // The map is the preview, identified as one: never a run's result.
       val preview = shown.map.getOrElse(fail("no preview map"))
@@ -277,7 +277,7 @@ class ExploreTrialViewSuite extends munit.FunSuite:
     }
   }
 
-  test("a fixation too short to draw is left out and said, not the whole trial") {
+  test("fractional-duration fixations remain in the marks with their exact duration") {
     served(enc03).map { answers =>
       val fs = answers._1 match
         case Right(BackendAnswer.Answered(f)) => f
@@ -296,11 +296,9 @@ class ExploreTrialViewSuite extends munit.FunSuite:
         )
       )
       val (kept, said) = ExploreTrialViewVM.marks(short +: fs.fixations.tail)
-      assertEquals(kept.map(_.index.value), (2 to 13).toVector)
-      assertEquals(
-        said,
-        Vector("Fixation 1 lasts 0.25 ms, too short to draw; it is not shown.")
-      )
+      assertEquals(kept.map(_.index.value), (1 to 13).toVector)
+      assertEquals(kept.head.durationMs, 0.25)
+      assertEquals(said, Vector.empty)
     }
   }
 

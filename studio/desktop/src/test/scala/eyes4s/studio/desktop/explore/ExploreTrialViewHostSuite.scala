@@ -80,5 +80,5 @@ class ExploreTrialViewHostSuite extends munit.FunSuite:
     assertEquals(input.marks, MarkStyle.Neutral)
     assertEquals((input.options.points, input.options.order), (true, false))
     assertEquals((input.theme, input.stage), (Theme.Dark, StageVariant.Mid))
-    assertEquals(input.fixations.map(_.durationMs), Vector(330))
+    assertEquals(input.fixations.map(_.durationMs), Vector(330.0))
   }

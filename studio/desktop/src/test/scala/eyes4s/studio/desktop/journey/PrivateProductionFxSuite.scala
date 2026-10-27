@@ -60,8 +60,10 @@ class PrivateProductionFxSuite extends ShellFxSuite:
   private def read(path: Path): Json  = get(parser.parse(Files.readString(path)))
   private def path(p: Path): HostPath = get(HostPath.of(p.toString))
 
-  private def until(fx: FxStage, what: String)(condition: => Boolean): Unit =
-    val deadline = System.nanoTime() + 15.minutes.toNanos
+  private def until(fx: FxStage, what: String, timeout: FiniteDuration = 15.minutes)(
+      condition: => Boolean
+  ): Unit =
+    val deadline = System.nanoTime() + timeout.toNanos
     while !runOnFx(condition) do
       if System.nanoTime() > deadline then fail(s"Timed out: $what")
       Thread.sleep(50)
@@ -389,6 +391,15 @@ class PrivateProductionFxSuite extends ShellFxSuite:
               case _                            => false
             }
           }
+          until(fx, "participant and scale-profile plots are drawn", 60.seconds) {
+            Vector(w.summary.participantPlot, w.summary.scaleProfile).forall { twin =>
+              twin.status.get match
+                case eyes4s.studio.desktop.plot.PlotTwinStatus.Shown(_)          => true
+                case eyes4s.studio.desktop.plot.PlotTwinStatus.Refused(_, error) =>
+                  fail(error.toString)
+                case _ => false
+            }
+          }
           val found = queries(w)
           compareRows(found, expected)
           until(fx, "query table view model rendered") {
@@ -418,7 +429,23 @@ class PrivateProductionFxSuite extends ShellFxSuite:
                 Place.At(StudioRef.QueryContrast(RunId(1), get(ScaleIndex.of(0)), focus))
               )
             )
-            until(fx, "query and reference density maps served") {
+            capture(fx, root, "map-requested")
+            var mapPoll = 0
+            until(fx, "query and reference density maps served", 60.seconds) {
+              mapPoll += 1
+              if mapPoll % 100 == 1 then
+                val states =
+                  Vector(w.summary.panels.queryView, w.summary.panels.referenceView).map {
+                    view =>
+                      val status = view.status.get match
+                        case TrialViewStatus.Shown(scene) => s"shown/map=${scene.map.nonEmpty}"
+                        case other                        => other.toString
+                      s"request=${view.requestedMap.isDefined}; input=${view.input.isDefined}; status=$status; refusal=${view.mapRefused}"
+                  }
+                println(
+                  s"[private-production/maps] ${states.mkString(" | ")}; panels=${w.summary.panelsVM.toString.take(1600)}; trail=${w.runtime.model.location}"
+                )
+
               Vector(w.summary.panels.queryView, w.summary.panels.referenceView).forall(view =>
                 view.requestedMap.nonEmpty && (view.status.get match
                   case TrialViewStatus.Shown(scene) => scene.map.nonEmpty

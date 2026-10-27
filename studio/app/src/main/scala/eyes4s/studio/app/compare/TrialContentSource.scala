@@ -31,8 +31,8 @@ final case class ContentFixation(
     index: FixationIndex,
     screenX: Double,
     screenY: Double,
-    onsetMs: Int,
-    durationMs: Int,
+    onsetMs: Double,
+    durationMs: Double,
     placement: MapPlacement
 ) derives CanEqual:
   def ref: StudioRef = StudioRef.Fixation(trial, index)

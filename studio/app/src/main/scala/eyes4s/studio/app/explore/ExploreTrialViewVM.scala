@@ -54,7 +54,7 @@ final case class MarkVM(
     index: FixationIndex,
     screenX: Double,
     screenY: Double,
-    durationMs: Int,
+    durationMs: Double,
     placement: MapPlacement
 ) derives CanEqual
 
@@ -131,22 +131,13 @@ object ExploreTrialViewVM:
       case StageAppearance.Light => StageVariant.Light
     (theme, stage)
 
-  /** The marks of `fixations`, each duration rounded to the millisecond, and
-    * the notes of those too short to draw (under half a millisecond).
+  /** Every admitted fixation as a mark, retaining fractional duration.
+    * Mark area is proportional to duration; no integer-millisecond quantization.
     */
   def marks(fixations: Vector[AdmittedFixation]): (Vector[MarkVM], Vector[String]) =
-    val (drawn, skipped) = fixations.partition(f => math.round(f.durationMs) >= 1)
     (
-      drawn.map(f =>
-        MarkVM(
-          f.ref.index,
-          f.screenX,
-          f.screenY,
-          math.round(f.durationMs).toInt,
-          f.placement
-        )
-      ),
-      skipped.map(f => t(SkippedMark, f.ref.index.value.toString, f.durationMs.toString))
+      fixations.map(f => MarkVM(f.ref.index, f.screenX, f.screenY, f.durationMs, f.placement)),
+      Vector.empty
     )
 
   private def kindName(kind: DisplayKind): String =

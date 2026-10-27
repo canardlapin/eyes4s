@@ -739,6 +739,18 @@ class TrialSceneSuite extends ScalaCheckSuite:
   private def underlayPer(style: MarkStyle): Int =
     if style == MarkStyle.Role(TrialRole.Control) then 1 else 0
 
+  test("fractional fixation durations are retained in mark area; nonfinite durations refuse") {
+    val index  = FixationIndex.of(1).toOption.get
+    val tiny   = right(TrialFixation.of(ret07, index, 1, 2, 0.125, MapPlacement.InWindow))
+    val larger = right(TrialFixation.of(ret07, index, 1, 2, 0.5, MapPlacement.InWindow))
+    assertEquals(tiny.durationMs, 0.125)
+    val ratio =
+      math.pow(TrialScene.radiusPx(larger.durationMs) / TrialScene.radiusPx(tiny.durationMs), 2)
+    assertEqualsDouble(ratio, 4.0, Tolerance)
+    for duration <- Vector(Double.NaN, Double.PositiveInfinity, Double.NegativeInfinity) do
+      assert(TrialFixation.of(ret07, index, 1, 2, duration, MapPlacement.InWindow).isLeft)
+  }
+
   test("mark area is proportional to duration") {
     val scene = right(TrialScene(input(Display.Blank)))
     val pairs = scene.marks.map(m => (m.radiusPx, ret07Fixations(m.order).durationMs))
