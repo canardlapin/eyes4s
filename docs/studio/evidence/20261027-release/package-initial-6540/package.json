@@ -1,0 +1,361 @@
+{
+  "schema": 1,
+  "status": "passed",
+  "source": {
+    "commit": "6540f3b594ca53288e8d2e3ca4b7ab6f19f769bc",
+    "tree": "30b36402af0533880f6b66084b4dd22f1ab7382b",
+    "dirty": false,
+    "files_sha256": "f6dc84899e2f1a1d4e139d48dc006ec0b4382d15da8532077d9be151fdfb330c"
+  },
+  "architecture": "arm64",
+  "jdk": "openjdk version \"25.0.4.1\" 2026-08-18 LTS\nOpenJDK Runtime Environment Temurin-25.0.4.1+1 (build 25.0.4.1+1-LTS)\nOpenJDK 64-Bit Server VM Temurin-25.0.4.1+1 (build 25.0.4.1+1-LTS, mixed mode, sharing)",
+  "signing": "ad-hoc only; no Developer ID or notarization",
+  "input_jars": [
+    {
+      "name": "runtime-000.jar",
+      "bytes": 4403130,
+      "sha256": "170528d4349cd45ec083bdbfc5eaa1b81209c2010c1444f0626f45f7c5a97ffe"
+    },
+    {
+      "name": "runtime-001.jar",
+      "bytes": 1757547,
+      "sha256": "987794bfedbd8b52f40526a88aed0c5d8f8b9d67ad785afc3f4640ed4641176c"
+    },
+    {
+      "name": "runtime-002.jar",
+      "bytes": 8211789,
+      "sha256": "d7f743be47fed16ea290919b6be5aa18b18a29f10f2e20050006587ab3838d9b"
+    },
+    {
+      "name": "runtime-003.jar",
+      "bytes": 11899678,
+      "sha256": "344a6665b268847bb15b50d89d2d02e49d3b136a7583700ed2d2d12e6521a820"
+    },
+    {
+      "name": "runtime-004.jar",
+      "bytes": 7199077,
+      "sha256": "8ddf5251c9ae66a737b474c04c5f9f42ca4995184dc1ccc03b45a7d199511310"
+    },
+    {
+      "name": "runtime-005.jar",
+      "bytes": 1616592,
+      "sha256": "7ee65f6d907ae78ffccfa43fef89334d6495b3d54798b99cba33d093b981b563"
+    },
+    {
+      "name": "runtime-006.jar",
+      "bytes": 856198,
+      "sha256": "ae66cd1118cb489eae4c82f10b197e5fcec81b62336f0e1378177430feb76f91"
+    },
+    {
+      "name": "runtime-007.jar",
+      "bytes": 962224,
+      "sha256": "8df1faf5aa67d6837440fb92879415ac80e95dc71cf1913627b8dd4084e45250"
+    },
+    {
+      "name": "runtime-008.jar",
+      "bytes": 783306,
+      "sha256": "d36b8cbf82e4ea0994d0b4511cedd6ee4ff80861cf0aff4536f83bb023332dfb"
+    },
+    {
+      "name": "runtime-009.jar",
+      "bytes": 450457,
+      "sha256": "65856f456fc7daee2e6acf6a8743d494770efd4ec8695314aac1a6c36097c3b0"
+    },
+    {
+      "name": "runtime-010.jar",
+      "bytes": 200546,
+      "sha256": "fc11ccc47c9f8b1491f20a4502ab3cf100dc4516277cc7a8746b88b326f479a7"
+    },
+    {
+      "name": "runtime-011.jar",
+      "bytes": 578947,
+      "sha256": "cd4a3aef7c9f55995fb5fec67de0cfa233dffff82a03bdd31258f3b6316a9680"
+    },
+    {
+      "name": "runtime-012.jar",
+      "bytes": 3270057,
+      "sha256": "0a48bf8795c179a2be0b49f3c5dbe9ba5f0370ee8cf93d7ba9287681ef0d286c"
+    },
+    {
+      "name": "runtime-013.jar",
+      "bytes": 1177313,
+      "sha256": "556585c5c750e065077b5ee8a8746d36bc92561af7fdbf1c47f3661e4361c2c6"
+    },
+    {
+      "name": "runtime-014.jar",
+      "bytes": 246861,
+      "sha256": "39a901d2402ccd55b6bebc8b9ed29d73e0c18b77ec156f516111fe6f8951cc5f"
+    },
+    {
+      "name": "runtime-015.jar",
+      "bytes": 3543122,
+      "sha256": "98595574a1ab08e5d106c4a1b42254c79d7fa0a64ebd1f285e2f076779769983"
+    },
+    {
+      "name": "runtime-016.jar",
+      "bytes": 1277321,
+      "sha256": "73089d33f763b94758170e0a66be978f9397c14b7795e343898aa89b3d7b6639"
+    },
+    {
+      "name": "runtime-017.jar",
+      "bytes": 747928,
+      "sha256": "0ea913712b982e24be7fb20d1a90b45dafc38403f49dd9d494d1d0d3b43e8794"
+    },
+    {
+      "name": "runtime-018.jar",
+      "bytes": 4975802,
+      "sha256": "90b9c1c89ebd0d79a8af6951517516828cd08896def96871af015cf0a09cdf53"
+    },
+    {
+      "name": "runtime-019.jar",
+      "bytes": 2604500,
+      "sha256": "0c90550f1989637741c2f08bfb8c37216c2d55b0a7d047169d60815cc9e44dbf"
+    },
+    {
+      "name": "runtime-020.jar",
+      "bytes": 69908,
+      "sha256": "7b751d952061954d5abfed7181c1f645d336091b679891591d63329c622eb832"
+    },
+    {
+      "name": "runtime-021.jar",
+      "bytes": 306760,
+      "sha256": "3e1533d0321f8815eef46750aee0111b41554f9a4644c3c4d2d404744b09f60f"
+    },
+    {
+      "name": "runtime-022.jar",
+      "bytes": 611382,
+      "sha256": "66c8c78dec48ff6ec832f664d678427d11161c501ba144933c744fb2c4e40bb9"
+    },
+    {
+      "name": "runtime-023.jar",
+      "bytes": 168689,
+      "sha256": "a145130b3c84421218ea27eb6fed76b5872a8d89ff1ca652767a2b561136ec65"
+    },
+    {
+      "name": "runtime-024.jar",
+      "bytes": 233588,
+      "sha256": "5af41f46005c4030d023a498cb773f2a90cb1689e37a190d032aba0ad0db4931"
+    },
+    {
+      "name": "runtime-025.jar",
+      "bytes": 411633,
+      "sha256": "0794367e6c21921794b0dcc20a01ef42f264afa4582b424b29f865a27604b28f"
+    },
+    {
+      "name": "runtime-026.jar",
+      "bytes": 354765,
+      "sha256": "50b5c237139f95c5b8eb2d7fca7fd97b332f64fd2cff6b51a4a09c1c7ed73d3e"
+    },
+    {
+      "name": "runtime-027.jar",
+      "bytes": 5483259,
+      "sha256": "96382cc9d31830b69b5338525d2c263288201204adfcb138b9f602d868ab70bd"
+    },
+    {
+      "name": "runtime-028.jar",
+      "bytes": 1269995,
+      "sha256": "80cc407feb70e4bc9153b5142919d9afae55e96f9d0ce59eaf457e6c1fd6728c"
+    },
+    {
+      "name": "runtime-029.jar",
+      "bytes": 344430,
+      "sha256": "57b33e85bca1e2c94d1eb236596ac2acf597c8272afcbfec2a235e615c5a0865"
+    },
+    {
+      "name": "runtime-030.jar",
+      "bytes": 1004671,
+      "sha256": "25b313239259f883a76d6673347f0b78651df625f1b845480bb29df1a1cf924e"
+    },
+    {
+      "name": "runtime-031.jar",
+      "bytes": 5926340,
+      "sha256": "1ebb2b6f9e4eb4022497c19b1e1e825019c08514f962aaac197145f88ed730f1"
+    },
+    {
+      "name": "runtime-032.jar",
+      "bytes": 302,
+      "sha256": "c07204453236b8a7ca5babeecb1e213cd68b6daf10adfaccf12077acfda7a4df"
+    },
+    {
+      "name": "runtime-033.jar",
+      "bytes": 306,
+      "sha256": "211ee0c993e150cc9943f54d4cc3968dea7e59bbc4d6318834c5bb92ae1ab9a3"
+    },
+    {
+      "name": "runtime-034.jar",
+      "bytes": 627250,
+      "sha256": "85139e7b57b464f8e5e36326dd81317648bed199ccc4f98cd42585f8d7571027"
+    },
+    {
+      "name": "runtime-035.jar",
+      "bytes": 2070583,
+      "sha256": "97647cfbde61ebcfc06b4cf8c9b0ffcaaee073396eceb4a7f6836a9b9128903c"
+    },
+    {
+      "name": "runtime-036.jar",
+      "bytes": 106696,
+      "sha256": "36d3566e73726a6922ae816cea6b924f42044e8e6637343a0095883d023d97f8"
+    },
+    {
+      "name": "runtime-037.jar",
+      "bytes": 975386,
+      "sha256": "38dd9fbd8f8d2ace1f070b3de3dd7492a4d2fddc4981cd8ea480139e2e5a24f7"
+    },
+    {
+      "name": "runtime-038.jar",
+      "bytes": 1675783,
+      "sha256": "66a3cc3561604588162a02b7d05a3ced9c9d2b712b73da50d57a1e5c7bcf5415"
+    },
+    {
+      "name": "runtime-039.jar",
+      "bytes": 1870896,
+      "sha256": "57ab3b600d36bec7955f16f6660204d55ea83ad786c07b02cd22940fd1dd290f"
+    },
+    {
+      "name": "runtime-040.jar",
+      "bytes": 3165,
+      "sha256": "cf4064a971b8c57c42741623a18037d45155744e6731a03485d9f04be5591954"
+    },
+    {
+      "name": "runtime-041.jar",
+      "bytes": 329152,
+      "sha256": "103bbf7c14a79ae5dd54c7085fe8b05312195aa88af3993d5fd69e1e8224807f"
+    },
+    {
+      "name": "runtime-042.jar",
+      "bytes": 51906,
+      "sha256": "36a0e04001010b4c764857817412b96339930b19755e728959805cc0352061b2"
+    },
+    {
+      "name": "runtime-043.jar",
+      "bytes": 1647000,
+      "sha256": "a1915c24e3edbe0ecec93896dfbf6d41427810b663ade97bd4e8bae86ec3fdab"
+    },
+    {
+      "name": "runtime-044.jar",
+      "bytes": 75828,
+      "sha256": "d175dbd751dd782a63bde28c7a039520e971f25e84b79c19b8435edc3603e0dc"
+    },
+    {
+      "name": "runtime-045.jar",
+      "bytes": 265322,
+      "sha256": "6a6fc2c9c8643cedb0ebd02e957b4c50dc09d1aef6573ca1e15a8a424c4fa535"
+    },
+    {
+      "name": "runtime-046.jar",
+      "bytes": 141817,
+      "sha256": "94901d8f63d6c80b332bbf78248a1fbc08c4ca293598d093716e1eaa4e181c42"
+    },
+    {
+      "name": "runtime-047.jar",
+      "bytes": 332331,
+      "sha256": "faff41c45f65807ba0e285d96cc342680a1f47857ee83770c852c9b9a60c34a4"
+    },
+    {
+      "name": "runtime-048.jar",
+      "bytes": 35952,
+      "sha256": "b8826679907cb6f2a9590ec7fab3d59abef59f4d9dc0f0f0dd5bd0d13cf241d4"
+    },
+    {
+      "name": "runtime-049.jar",
+      "bytes": 1318787,
+      "sha256": "720f8c4bd3c10295628f1ee00bf029a4f8667bc2d10960a725fbe28b76d22eb6"
+    },
+    {
+      "name": "runtime-050.jar",
+      "bytes": 791388,
+      "sha256": "e11f6215fefdb495e1024b5efa6858292ca76086d6bd69f3db02b2b2d2874e3e"
+    },
+    {
+      "name": "runtime-051.jar",
+      "bytes": 479400,
+      "sha256": "083f98d611d5e4af9000e9b9e57a1635fbc03d33872f21a0e54d3cb90c439e06"
+    },
+    {
+      "name": "runtime-052.jar",
+      "bytes": 390810,
+      "sha256": "ce4b7d3f1d5a2b421b3724e74b8a2e43456acca8141fc02a2e96fc9772c198c0"
+    },
+    {
+      "name": "runtime-053.jar",
+      "bytes": 7123338,
+      "sha256": "e2abfcdfe041ce08d8407412b09d55eb33eb85655c22c9c8815712d3aad633c6"
+    },
+    {
+      "name": "runtime-054.jar",
+      "bytes": 21216,
+      "sha256": "095131d41def084c02a04860092913288365453da1f69c1d0114abea0a287ebd"
+    },
+    {
+      "name": "runtime-055.jar",
+      "bytes": 4080,
+      "sha256": "bc986f37586680fb97082cae2becd38f4b0fd19df4e8da9cde0f20efa7f8e6a9"
+    },
+    {
+      "name": "runtime-056.jar",
+      "bytes": 572016,
+      "sha256": "1c2af6fb7bbf894ed3ece11c111d980f1283002ef4a6af93423081d0316d40bb"
+    },
+    {
+      "name": "runtime-057.jar",
+      "bytes": 353146,
+      "sha256": "3d4dbd23edca088a83d722998472c1c5c27678bd01f13572c36627d7061cf596"
+    },
+    {
+      "name": "runtime-058.jar",
+      "bytes": 135423,
+      "sha256": "cfdf2ccf3a9daf61b300a53de73a388a88d5ac308915da9b1927d779edb4ef83"
+    },
+    {
+      "name": "runtime-059.jar",
+      "bytes": 1592447,
+      "sha256": "a6afaad274e2a0fbbd189bfe3a0e91810bd562745573995011943427ea489040"
+    },
+    {
+      "name": "runtime-060.jar",
+      "bytes": 639295,
+      "sha256": "9db07413c4f133f1a0deb80582a515b4a94bfb4bc1c3f7026b15518b5dd2deed"
+    },
+    {
+      "name": "runtime-061.jar",
+      "bytes": 102389,
+      "sha256": "39658649f90b631a4fd63187724f16ba8a045e1b10a513528f34517fb2edf98b"
+    },
+    {
+      "name": "runtime-062.jar",
+      "bytes": 859746,
+      "sha256": "c2751d6b6b02650e56065b6b5affc116de186f9c8e47519d5bc58728991fce41"
+    },
+    {
+      "name": "studio-launcher.jar",
+      "bytes": 457,
+      "sha256": "21a5b53e6bfc41d0f99a67bb94a554fb4460d2c89f514d37442da29f4122ff9a"
+    }
+  ],
+  "runtime_check": {
+    "schema": 1,
+    "status": "passed",
+    "scope": "bundled-runtime-resource-copy-reopen; no native UI claim",
+    "commit": "6540f3b594ca53288e8d2e3ca4b7ab6f19f769bc",
+    "modified": false,
+    "version": "0.1-6540f3b-SNAPSHOT",
+    "java_home": "/Users/runner/work/eyes4s/eyes4s/target/studio-package/ci/Eyes Studio.app/Contents/runtime/Contents/Home",
+    "java_version": "25.0.4.1",
+    "os_arch": "aarch64",
+    "inputs_verified": 259,
+    "resources_verified": 8,
+    "project": "/Users/runner/work/eyes4s/eyes4s/target/studio-package/ci/runtime-check/memory-study.eyes"
+  },
+  "archive": {
+    "file": "Eyes-Studio-arm64-6540f3b594ca.zip",
+    "bytes": 130481589,
+    "sha256": "edc67d0b0f1409d909556cc9d00004a9627816250957f455082fdd8bee1622f0"
+  },
+  "unqualified": [
+    "native UI from installed app",
+    "Finder file association dispatch",
+    "clean macOS 14 with no JDK",
+    "Gatekeeper distribution acceptance",
+    "physical Retina review"
+  ]
+}

@@ -1,0 +1,17 @@
+{
+  "status": "passed",
+  "title": "Package smoke \u03b1.eyes",
+  "java_home": "/Users/runner/work/eyes4s/eyes4s/target/studio-package/ci/Eyes Studio.app/Contents/runtime/Contents/Home",
+  "glass": "com.sun.glass.ui.mac.MacApplication",
+  "native_menu_policy": true,
+  "scene_width": 1024,
+  "scene_height": 656,
+  "output_scale_x": 1.0,
+  "output_scale_y": 1.0,
+  "distinct_pixel_colours": 1165,
+  "schema": 1,
+  "elapsed_seconds": 14.187186500000053,
+  "mechanism": "Packaged native launcher; separate LaunchServices Open File; observer only",
+  "scope": "Native Mac launch/document-open/render/ordinary-close. No clean-macOS14, VoiceOver or physical Retina claim.",
+  "screenshot_sha256": "f31eede9ddc88b3948cf981c6381d66b0707118630cdf4c17f3fc264469c40a4"
+}

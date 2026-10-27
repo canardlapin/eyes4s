@@ -20,6 +20,7 @@ import cats.effect.{Deferred, IO}
 import cats.effect.unsafe.implicits.global
 import eyes4s.studio.app.{AppModel, Intent, PlatformDialog, ProjectName}
 import eyes4s.studio.app.keys.{CommandId, CommandRegistry}
+import eyes4s.studio.app.project.ProjectOperation
 import eyes4s.studio.core.bundle.*
 import eyes4s.studio.core.document.Theme
 import eyes4s.studio.core.platform.*
@@ -1169,6 +1170,50 @@ class ProjectLifecycleFxSuite extends ShellFxSuite:
             )
             runOnFx(assertEquals(host.window.get.host.dock.state.floating.size, 0))
           finally runOnFx(host.shutdown())
+        }
+      }
+      .unsafeRunSync()
+  }
+
+  fxStage.test(
+    "bundled example opens and reopens with real Compare results through the project host"
+  ) { fx =>
+    TempDirs
+      .resource("eyes4s-example-lifecycle-")
+      .use { directory =>
+        IO.blocking {
+          val project          = directory.resolve("Example copy.eyes")
+          val (platform, host) = setup(fx, directory)
+          try
+            runOnFx(host.request(ProjectOperation.OpenExample, Some(path(project))))
+            def results(): Int =
+              eventually(fx, "example project opened") {
+                !host.busy && host.window.exists(_.runtime.model.project.nonEmpty)
+              }
+              val window = runOnFx(host.window.get)
+              assert(runOnFx(window.session.fixture.isEmpty))
+              eventually(fx, "example Compare query response") {
+                window.summary.summary.queries.nonEmpty
+              }
+              val rows = runOnFx(window.summary.summary.queries).get match
+                case eyes4s.studio.app.compare.QueriesAnswer.Answered(value) => value
+                case other => fail(s"Example must serve real query rows, got $other")
+              assert(rows.nonEmpty)
+              eventually(fx, "example participant plot") {
+                window.summary.vm.participantPlot.exists(_.isRight)
+              }
+              rows.size
+            val before = results()
+            fx.snapshot(StudioTheme.Light, List(eyes4s.studio.desktop.harness.SnapshotScale.X1))
+            invoke(host, CommandRegistry.closeProject.id)
+            eventually(fx, "example closed") {
+              !host.busy && host.window.exists(_.runtime.model.project.isEmpty)
+            }
+            platform.answer(Some(path(project))).unsafeRunSync()
+            invoke(host, CommandRegistry.openProject.id)
+            assertEquals(results(), before)
+          finally runOnFx(host.shutdown())
+          assert(usable(project))
         }
       }
       .unsafeRunSync()

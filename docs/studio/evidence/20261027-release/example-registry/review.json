@@ -1,0 +1,12 @@
+{
+  "schema": 1,
+  "status": "targeted-regression-passed; final-gates-pending",
+  "ticket": "studio-example-registry",
+  "tests": 29,
+  "failed": 0,
+  "route": "Real ProjectLifecycleHost OpenExample then close/File Open; no fixture session backend; real query response and participant plot required, nonempty query count equal after reopening.",
+  "integrity": "Stored registry uses example rows only for verified exact inventory bytes when no generic display mapping is present. Actual stored image availability retained. Changed bytes refused; unrelated inventory remains not-served.",
+  "visual_review": "Participant response comparison and scale profile rendered clearly with source accounting and draft banner; explicit fixture failures remain visible, not zero-filled. Participant table headers truncate within narrow columns; full labels remain an accessibility/manual review concern, not hidden by this receipt.",
+  "screenshot_sha256": "6bd55296acedb14138a8ee351d1234c9377c5c6bace1827bf4a75b924b4204d4",
+  "prior_negative": "../package-initial-6540/review.json"
+}

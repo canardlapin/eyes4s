@@ -156,7 +156,7 @@ class NavigatorDisplaysSuite extends munit.FunSuite:
         assertEquals(r.missing.map(_.file.value), Vector("forest-044.png"))
       case other => fail(s"expected a registry, got $other")
     // A revision that maps no display columns has none to serve.
-    assertEquals(read(project, r3), Right(DisplaySource.NotServed))
+    assertEquals(read(project, otherTrials), Right(DisplaySource.NotServed))
     // Bytes that are not the source's are refused, not served.
     val changed =
       NavigatorDisplays.of(SessionBackend.Real, Some(Project(IArray.from("x".getBytes(UTF_8)))))
@@ -193,4 +193,27 @@ class NavigatorDisplaysSuite extends munit.FunSuite:
     assertEquals(repaired.missing, Vector.empty)
     assert(repaired ne first)
     assertEquals(project.reads, 4)
+  }
+
+  test("stored example uses verified bundled rows and only actually stored images") {
+    val stream = getClass.getClassLoader
+      .getResourceAsStream("eyes4s/studio/desktop/build-root.txt")
+    val root = try java.nio.file.Path.of(String(stream.readAllBytes(), UTF_8).trim)
+    finally stream.close()
+    val bytes = IArray.from(
+      java.nio.file.Files.readAllBytes(root.resolve("fixtures/studio-golden/trials.csv"))
+    )
+    val project  = Project(bytes)
+    val displays = NavigatorDisplays.stored(project)
+    val registry = read(displays, r3).toOption.get match
+      case DisplaySource.Served(value) => value
+      case other => fail(s"Expected the stored example registry, got $other")
+    assertEquals(registry.summary.present, 1)
+    assertEquals(
+      registry.count(eyes4s.studio.core.assets.DisplayKind.BlankWithFixationCross),
+      480
+    )
+    project.bytes = csvBytes
+    assert(read(displays, r3).left.exists(_.contains("its source recorded")))
+    assertEquals(read(displays, otherTrials), Right(DisplaySource.NotServed))
   }

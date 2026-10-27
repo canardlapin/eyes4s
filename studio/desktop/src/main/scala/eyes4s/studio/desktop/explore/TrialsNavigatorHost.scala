@@ -80,7 +80,9 @@ object NavigatorDisplays:
     * states through the revision's display columns, with the stimulus
     * images it stores. A revision that maps no display columns, or has no
     * trial inventory, has none to serve; bytes that are not the source's
-    * are refused ([[AssetRegistry.fromInventory]]).
+    * are refused ([[AssetRegistry.fromInventory]]). The bundled example has
+    * build-time display rows bound to its exact inventory digest; it uses
+    * those rows with the images this project actually stores.
     */
   def stored(project: ProjectPort): NavigatorDisplays =
     // A fresh read still verifies bytes on every request. Reuse the parsed
@@ -90,8 +92,11 @@ object NavigatorDisplays:
       Option[(DatasetRevisionSpec, Vector[AssetRef], AssetRegistry)]
     ](None)
     (dataset, done) =>
-      (dataset.sources.trials, dataset.inventory.flatMap(_.displays)) match
-        case (Some(trials), Some(_)) =>
+      dataset.sources.trials match
+        case Some(trials)
+            if dataset.inventory.flatMap(_.displays).nonEmpty || GoldenAssets.describes(
+              dataset
+            ) =>
           project.storedInputs {
             case Left(reason)  => done(Left(reason))
             case Right(inputs) =>
@@ -109,14 +114,28 @@ object NavigatorDisplays:
                         if previous == dataset && assets == stimuli && registry.inventory == digest =>
                       Right(DisplaySource.Served(registry))
                     case _ =>
-                      AssetRegistry
-                        .fromInventory(dataset, bytes, stimuli, Vector.empty)
-                        .left
-                        .map(_.message)
-                        .map { registry =>
-                          cached.set(Some((dataset, stimuli, registry)))
-                          DisplaySource.Served(registry)
-                        }
+                      val registry =
+                        if digest != trials.bytes then
+                          Left(
+                            eyes4s.studio.core.assets.AssetError
+                              .InventoryBytes(dataset.id, digest, trials.bytes)
+                              .message
+                          )
+                        else if dataset.inventory.flatMap(_.displays).isEmpty && GoldenAssets
+                            .describes(dataset)
+                        then
+                          GoldenAssets.rows.flatMap(rows =>
+                            AssetRegistry.fromRows(dataset, rows, stimuli).left.map(_.message)
+                          )
+                        else
+                          AssetRegistry
+                            .fromInventory(dataset, bytes, stimuli, Vector.empty)
+                            .left
+                            .map(_.message)
+                      registry.map { registry =>
+                        cached.set(Some((dataset, stimuli, registry)))
+                        DisplaySource.Served(registry)
+                      }
                 }.pipe(done)
               )
           }

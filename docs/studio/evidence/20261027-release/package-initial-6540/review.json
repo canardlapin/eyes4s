@@ -1,0 +1,8 @@
+{
+  "status": "rejected-as-usable-candidate",
+  "mechanical_checks": "Native launcher, open-file routing, bundled runtime and nonblank scene passed.",
+  "visual_finding": "Compare shows missing stimulus registry and no results. Initial observer was too weak: title and nonblank pixels did not establish useful content.",
+  "ticket": "studio-example-registry",
+  "replacement_requirement": "Verified source-bound example registry, production lifecycle regression and positive participant result rows in native observer.",
+  "source_commit": "6540f3b594ca53288e8d2e3ca4b7ab6f19f769bc"
+}

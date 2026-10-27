@@ -1,7 +1,7 @@
 {
   "schema": 1,
   "date": "2026-10-27",
-  "status": "provenance-blocked",
+  "status": "exploratory-software-rehearsal-passed; acquisition-qualification-pending",
   "prior_audit_reproduced": true,
   "private_receipt_sha256": "ce98cdcd3f1bcfb9de7551f46a1adcd1276a7d371671017d94642555cc028ded",
   "source_policy": "Retain all exported rows; flags and eligibility dispositions separately. No source data or derived records in Git.",
@@ -18,11 +18,19 @@
     "explicit phase/trial/item identity",
     "source-row eligibility accounting before any cropping"
   ],
-  "not_run_reason": "No source-verified physical calibration found. Supplying an assumed pixels-per-degree value would test a declared synthetic calibration, not establish acquisition provenance.",
   "pending": [
-    "Authoritative calibration/timing declaration, or owner-approved narrower spatial software-validation qualification",
-    "Production import, review, exclusions, recipe controls, save/run, inspect, export and fresh reopen on that frozen request",
-    "API result and pair-identity comparison plus screenshots through Studio/Intaglio"
+    "Source-verified geometry/timing for calibrated/temporal analysis; pixel-space exploratory checks remain permitted with explicit declarations.",
+    "Full-study admission/eligibility accounting, production-host import through exports and fresh desktop reopen with API identity comparison."
   ],
-  "g2_closed": false
+  "g2_closed": false,
+  "rehearsal": {
+    "implementation": "dc5071576708fe20398897619d5f20ea628e3966",
+    "private_path": "fixtures/private/behavioral_pattern_completion/runs/20261027-release-rehearsal",
+    "receipt_sha256": "78aecfee9ee0eddb48c5cca7a17cddbbd7e0879b3934cda56cf0fc58678bd8d4",
+    "scope": "Frozen historical subset, two participants, 120 fixations, eight queries, one spatial scale. All frozen-request rows retained. Not full-study G2 acceptance.",
+    "api_ui": "Production import/recipe/save-run/Compare and bundle reopen passed; exact pair identity and M/B/D within named absolute/relative tolerance 2e-12.",
+    "reference": "Frozen eyesim output from 2026-10-13 replayed with independent Gaussian oracle; no current-upstream eyesim claim.",
+    "geometry": "40 px/virtual-degree computational adapter, sigma80 px, whole-screen1024x768. NOT acquisition calibration; no calibrated or temporal inference.",
+    "screenshots": "Three reviewed; production Intaglio result plots readable. Import-only detached harness scene emits CSS warnings, not treated as full UI qualification."
+  }
 }

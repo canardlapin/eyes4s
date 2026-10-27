@@ -218,7 +218,11 @@
       "id": "A-23",
       "claim": "Generic-key metadata/timeline codec contracts",
       "evidence": [
-        "codec/src/test/scala",
+        "laws/src/test/scala/eyes4s/laws/StudyInputCodecLawSuite.scala",
+        "laws/src/test/scala/eyes4s/laws/EpochCodecLawSuite.scala",
+        "codec/src/test/scala/eyes4s/codec/StudyCodecSuite.scala",
+        "codec/src/test/scala/eyes4s/codec/EpochComponentCodecSuite.scala",
+        "codec/src/test/scala/eyes4s/codec/InputPayloadCodecSuite.scala",
         "docs/DOMAIN_CODECS.md",
         "docs/SAVED_STUDIES.md"
       ],

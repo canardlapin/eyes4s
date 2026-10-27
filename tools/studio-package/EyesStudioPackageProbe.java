@@ -7,6 +7,7 @@ import java.util.concurrent.*;
 import javax.imageio.ImageIO;
 import javafx.application.Platform;
 import javafx.scene.control.MenuBar;
+import javafx.scene.control.ListView;
 import javafx.scene.image.PixelFormat;
 import javafx.stage.Stage;
 import javafx.stage.Window;
@@ -47,6 +48,10 @@ public final class EyesStudioPackageProbe {
           Files.writeString(output.resolve("ready.json"), "{\"title\":" + quote(stage.getTitle()) + "}\n");
         }
         if (!stage.getTitle().contains(expected)) continue;
+        var participants = stage.getScene().getRoot().lookup(".participants-list");
+        // A title and nonblank scene can also describe an error page. Require
+        // actual backend results before accepting the bundled example.
+        if (!(participants instanceof ListView<?> rows) || rows.getItems().isEmpty()) continue;
         if (matchedAt == 0) matchedAt = System.nanoTime();
         if (System.nanoTime() - matchedAt < TimeUnit.SECONDS.toNanos(5)) continue;
         var scene = stage.getScene();
@@ -74,6 +79,7 @@ public final class EyesStudioPackageProbe {
           ",\"scene_width\":" + width + ",\"scene_height\":" + height +
           ",\"output_scale_x\":" + stage.getOutputScaleX() +
           ",\"output_scale_y\":" + stage.getOutputScaleY() +
+          ",\"participant_rows\":" + rows.getItems().size() +
           ",\"distinct_pixel_colours\":" + colours.size() + "}\n");
         finished = true;
         // Exercise the application's ordinary quit/save/lock-release lifecycle.
