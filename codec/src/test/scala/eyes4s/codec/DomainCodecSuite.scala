@@ -243,3 +243,26 @@ class DomainCodecSuite extends munit.FunSuite:
         .isLeft
     )
   }
+
+  test(
+    "clock lookup index retains insertion order, hash collisions and later frame/grid additions"
+  ) {
+    val names = Vector("Aa", "BB") ++ Vector.tabulate(2000)(i => s"trial-$i")
+    val once  =
+      names.foldLeft(DocumentIdentities.empty)((table, name) => table.addClock(ClockId(name)))
+    val grid     = checked(Grid.of(GridId("indexed"), frame("screen"), 2, 3))
+    val withGrid = checked(once.addGrid(grid))
+    val repeated =
+      names.reverse.foldLeft(withGrid)((table, name) => table.addClock(ClockId(name)))
+    assert(repeated eq withGrid)
+    val codec   = DomainCodecs.identities(schema)
+    val encoded = checked(codec.encode(repeated))
+    assertEquals(encoded.hcursor.downField("value").get[Vector[String]]("clocks"), Right(names))
+    val restored = checked(codec.decode(encoded))
+    names.foreach(name => assertEquals(restored.clock(ClockId(name)), Right(ClockId(name))))
+    assertEquals(
+      restored.clock(ClockId("missing")),
+      Left(CodecError.MissingIdentity("clock", "missing"))
+    )
+    assertEquals(checked(codec.encode(restored)), encoded)
+  }

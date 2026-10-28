@@ -422,3 +422,24 @@ class InventoryLedgerSuite extends munit.FunSuite:
     assert(value.accountingBalances)
     assert(get(inventory(Vector.empty)).accountingBalances)
   }
+
+  test(
+    "duplicate labels select the first declared trial, rather than the first repeated arrival"
+  ) {
+    val a2      = get(TrialIdentity.of("P1", "Encoding", "a", get(TrialOccurrence.of(2))))
+    val b2      = get(TrialIdentity.of("P1", "Encoding", "b", get(TrialOccurrence.of(2))))
+    val ordered = Vector(
+      good(0),
+      good(1),
+      good(1).copy(identity = b2, records = Vector(5)),
+      good(0).copy(identity = a2, records = Vector(6))
+    )
+    assertEquals(
+      inventory(ordered),
+      Left(InventoryError.DuplicateTrial("P1", "Encoding", "a", 1))
+    )
+    assertEquals(
+      inventory(ordered.reverse),
+      Left(InventoryError.DuplicateTrial("P1", "Encoding", "a", 2))
+    )
+  }

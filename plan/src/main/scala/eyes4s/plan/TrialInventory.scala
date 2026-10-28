@@ -484,11 +484,9 @@ object InventoryLedger:
       identities.diff(identities.distinct).headOption.map { id =>
         InventoryError.DuplicateTrial(id.participant, id.phase, id.trial, id.occurrence.value)
       }
-    def sharedLabel = trials.collectFirst {
-      case t
-          if labels.count(
-            _ == (t.identity.participant, t.identity.phase, t.identity.trial)
-          ) > 1 =>
+    lazy val labelCounts = labels.groupMapReduce(identity)(_ => 1)(_ + _)
+    def sharedLabel      = trials.collectFirst {
+      case t if labelCounts((t.identity.participant, t.identity.phase, t.identity.trial)) > 1 =>
         InventoryError.DuplicateTrial(
           t.identity.participant,
           t.identity.phase,

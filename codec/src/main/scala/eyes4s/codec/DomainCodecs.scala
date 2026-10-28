@@ -156,7 +156,8 @@ object DomainCodecs:
 final class DocumentIdentities private (
     private val frames: Vector[DocumentIdentities.FrameEntry],
     private val grids: Vector[DocumentIdentities.GridEntry],
-    private val clocks: Vector[ClockId]
+    private val clocks: Vector[ClockId],
+    private val clockIndex: Map[ClockId, ClockId]
 ):
   import DocumentIdentities.*
 
@@ -167,7 +168,7 @@ final class DocumentIdentities private (
 
   private def addFrameEntry(entry: FrameEntry): Either[CodecError, DocumentIdentities] =
     frames.find(_.id == entry.id) match
-      case None      => Right(new DocumentIdentities(frames :+ entry, grids, clocks))
+      case None => Right(new DocumentIdentities(frames :+ entry, grids, clocks, clockIndex))
       case Some(old) =>
         Agreement
           .frames(old.id, old.spec, entry.id, entry.spec)
@@ -200,7 +201,7 @@ final class DocumentIdentities private (
 
   private def addGridEntry(entry: GridEntry): Either[CodecError, DocumentIdentities] =
     grids.find(_.id == entry.id) match
-      case None      => Right(new DocumentIdentities(frames, grids :+ entry, clocks))
+      case None => Right(new DocumentIdentities(frames, grids :+ entry, clocks, clockIndex))
       case Some(old) =>
         Agreement
           .grids(old.id, old.spec, entry.id, entry.spec)
@@ -209,8 +210,9 @@ final class DocumentIdentities private (
           .map(_ => this)
 
   def addClock(clock: ClockId): DocumentIdentities =
-    if clocks.contains(clock) then this
-    else new DocumentIdentities(frames, grids, clocks :+ clock)
+    if clockIndex.contains(clock) then this
+    else
+      new DocumentIdentities(frames, grids, clocks :+ clock, clockIndex.updated(clock, clock))
 
   def frame[U <: Unit2D: UnitLabel](id: FrameId): Either[CodecError, Frame[U]] =
     frames
@@ -231,7 +233,7 @@ final class DocumentIdentities private (
       )
 
   def clock(id: ClockId): Either[CodecError, ClockId] =
-    clocks.find(_ == id).toRight(CodecError.MissingIdentity("clock", id.name))
+    clockIndex.get(id).toRight(CodecError.MissingIdentity("clock", id.name))
 
   private[codec] def json: Json = Json.obj(
     "frames" -> Json.arr(frames.map(_.json)*),
@@ -243,7 +245,7 @@ object DocumentIdentities:
   private final case class FrameEntry(id: FrameId, spec: FrameSpec, json: Json)
   private final case class GridEntry(id: GridId, spec: GridSpec, json: Json)
   val empty: DocumentIdentities =
-    new DocumentIdentities(Vector.empty, Vector.empty, Vector.empty)
+    new DocumentIdentities(Vector.empty, Vector.empty, Vector.empty, Map.empty)
 
   private def frameEntry[U <: Unit2D: UnitLabel](j: Json): Either[CodecError, FrameEntry] =
     DomainWire.readFrame[U](j).map(f => FrameEntry(f.id, f.spec, DomainWire.frame(f)))
