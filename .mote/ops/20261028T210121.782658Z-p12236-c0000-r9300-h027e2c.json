@@ -1,0 +1,1 @@
+{"actor":"codex-core-hardening-20261028","entity":"g2-inventory-label-scaling","kind":"reserve_open","mode":"exclusive","op":"20261028T210121.782658Z-p12236-c0000-r9300-h027e2c","paths":["plan/src/test/scala/eyes4s/plan/InventoryLedgerSuite.scala"],"reservation_id":"rv-01M6252HZP54DFG90YSFTVKKTS","ts":"2026-10-28T21:01:21.782658Z","ttl_s":43200,"v":2}
