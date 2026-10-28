@@ -365,27 +365,30 @@ class PrivateProductionFxSuite extends ShellFxSuite:
               fail(diagnostic.message)
             }
           assertEquals(archive(w), expectedDigest)
+          val reportingSpec = get(
+            ReportingSpec.of(
+              get(ReportingId.of("private-response")),
+              "Exploratory spatial validation: sigma80 px",
+              Some(get(Covariate.of("response"))),
+              Vector.empty,
+              None,
+              ReportingWeight.ParticipantMeans,
+              None
+            )
+          )
+          if reopen then
+            assertEquals(
+              runOnFx(w.runtime.model.document.reporting.find(_.id == reportingSpec.id)),
+              Some(reportingSpec)
+            )
+          else dispatch(fx, w, Intent.Dispatch(Command.PutReporting(reportingSpec)))
+          dispatch(fx, w, Intent.ShowRun(RunId(1)))
           dispatch(
             fx,
             w,
-            Intent.Dispatch(
-              Command.PutReporting(
-                get(
-                  ReportingSpec.of(
-                    get(ReportingId.of("private-response")),
-                    "Exploratory spatial validation: sigma80 px",
-                    Some(get(Covariate.of("response"))),
-                    Vector.empty,
-                    None,
-                    ReportingWeight.ParticipantMeans,
-                    None
-                  )
-                )
-              )
-            )
+            Intent
+              .Navigate(Location(Perspective.Compare, Vector(Place.Summary(reportingSpec.id))))
           )
-          dispatch(fx, w, Intent.ShowRun(RunId(1)))
-          dispatch(fx, w, Intent.SwitchPerspective(Perspective.Compare))
           dispatch(
             fx,
             w,
@@ -583,33 +586,52 @@ class PrivateProductionFxSuite extends ShellFxSuite:
                 )
               )
             )
-            dispatch(
-              fx,
-              w,
-              Intent.Navigate(Location(Perspective.Figures, Vector(Place.Figures)))
+          val savedFigures = runOnFx(w.runtime.model.document.figures)
+          assertEquals(savedFigures.size, 1)
+          val savedFigure = savedFigures.head
+          dispatch(
+            fx,
+            w,
+            Intent.Navigate(Location(Perspective.Figures, Vector(Place.Figure(savedFigure.id))))
+          )
+          until(fx, "figure export data served") {
+            w.figures.vm.bundle.exists(b => BundleItem.Default.subsetOf(b.written.toSet))
+          }
+          capture(fx, root, if reopen then "08-reopened-figure" else "06-figure")
+          val exportDir = root.resolve(if reopen then "reopened-exports" else "exports")
+          Files.createDirectories(exportDir)
+          memory.answer(Some(path(exportDir))).unsafeRunSync()
+          val exportButton = runOnFx(
+            w.root
+              .lookupAll(".button")
+              .asScala
+              .collectFirst {
+                case button: Button
+                    if button.getText == "Export bundle…" && !button.isDisabled =>
+                  button
+              }
+              .getOrElse(fail("No enabled export bundle button"))
+          )
+          runOnFx(exportButton.fire())
+          until(fx, "complete figure and result bundle exported") {
+            val target = exportDir.resolve("figure-1-bundle")
+            val files  = Vector(
+              "README.txt",
+              "figure-1.svg",
+              "results.csv",
+              "comparisons.csv",
+              "participants.csv",
+              "methods.md"
             )
-            until(fx, "figure export data served") {
-              w.figures.vm.bundle.exists(b => BundleItem.Default.subsetOf(b.written.toSet))
-            }
-            capture(fx, root, "06-figure")
-            val exportDir = root.resolve("exports")
-            Files.createDirectories(exportDir)
-            memory.answer(Some(path(exportDir))).unsafeRunSync()
-            val exportButton = runOnFx(
-              w.root
-                .lookupAll(".button")
-                .asScala
-                .collectFirst {
-                  case button: Button
-                      if button.getText == "Export bundle…" && !button.isDisabled =>
-                    button
-                }
-                .getOrElse(fail("No enabled export bundle button"))
-            )
-            runOnFx(exportButton.fire())
-            until(fx, "complete figure and result bundle exported") {
-              Files.isRegularFile(exportDir.resolve("figure-1-bundle/README.txt"))
-            }
+            w.figures.vm.bundle.flatMap(_.status) match
+              case None         => false
+              case Some(status) =>
+                assertEquals(
+                  status,
+                  eyes4s.studio.app.figures.FigureBundle.exported(Right(target.toString))
+                )
+                files.forall(name => Files.isRegularFile(target.resolve(name)))
+          }
           until(fx, "production document saved") { !w.runtime.model.save.edited }
           invoke(host, CommandRegistry.closeProject.id)
           until(fx, "normal project close released the window") {
