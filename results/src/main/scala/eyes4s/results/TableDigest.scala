@@ -16,8 +16,6 @@
 
 package eyes4s.results
 
-import scala.collection.mutable.ArrayBuffer
-
 /** The SHA-256 identity of a result table: of its schema, family, context,
   * columns and cells, in the length-framed canonical text
   * [[ResultTable.of]] builds. The digest is pure Scala, identical on the JVM
@@ -48,16 +46,16 @@ object TableDigest:
   /** The digest of the UTF-8 bytes of `value`, lone surrogates encoded as
     * `eyes4s.io.Sha256.ofUtf8` has always encoded them.
     */
-  def ofUtf8(value: String): TableDigest = new TableDigest(
-    Sha256Core.digest(Utf8Lenient(value))
-  )
+  def ofUtf8(value: String): TableDigest =
+    val hash = new Sha256Core.Hasher
+    Utf8Lenient.foreach(value)(hash.update(_))
+    new TableDigest(hash.finish())
 
 /** UTF-8 with a lone surrogate replaced by U+FFFD, except a high surrogate
   * that ends the text, which is encoded as it stands.
   */
 private[eyes4s] object Utf8Lenient:
-  def apply(value: String): IArray[Byte] =
-    val bytes = ArrayBuffer.empty[Byte]
+  def foreach(value: String)(out: Byte => Unit): Unit =
     var index = 0
     while index < value.length do
       val first     = value.charAt(index).toInt
@@ -72,18 +70,17 @@ private[eyes4s] object Utf8Lenient:
         // `eyes4s.io.Sha256.ofUtf8` has always encoded it.
         else if first >= 0xdc00 && first <= 0xdfff then 0xfffd
         else first
-      if codePoint <= 0x7f then bytes += codePoint.toByte
+      if codePoint <= 0x7f then out(codePoint.toByte)
       else if codePoint <= 0x7ff then
-        bytes += (0xc0 | (codePoint >>> 6)).toByte
-        bytes += (0x80 | (codePoint & 0x3f)).toByte
+        out((0xc0 | (codePoint >>> 6)).toByte)
+        out((0x80 | (codePoint & 0x3f)).toByte)
       else if codePoint <= 0xffff then
-        bytes += (0xe0 | (codePoint >>> 12)).toByte
-        bytes += (0x80 | ((codePoint >>> 6) & 0x3f)).toByte
-        bytes += (0x80 | (codePoint & 0x3f)).toByte
+        out((0xe0 | (codePoint >>> 12)).toByte)
+        out((0x80 | ((codePoint >>> 6) & 0x3f)).toByte)
+        out((0x80 | (codePoint & 0x3f)).toByte)
       else
-        bytes += (0xf0 | (codePoint >>> 18)).toByte
-        bytes += (0x80 | ((codePoint >>> 12) & 0x3f)).toByte
-        bytes += (0x80 | ((codePoint >>> 6) & 0x3f)).toByte
-        bytes += (0x80 | (codePoint & 0x3f)).toByte
+        out((0xf0 | (codePoint >>> 18)).toByte)
+        out((0x80 | ((codePoint >>> 12) & 0x3f)).toByte)
+        out((0x80 | ((codePoint >>> 6) & 0x3f)).toByte)
+        out((0x80 | (codePoint & 0x3f)).toByte)
       index += 1
-    IArray.from(bytes)
