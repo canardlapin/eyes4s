@@ -1,0 +1,346 @@
+{
+  "schema": 1,
+  "updatedUtc": "2026-10-28T23:53:30.053364+00:00",
+  "candidate": "b1558e2f56e669c30bb2272130c18c9c31ae2a12",
+  "tree": "8bc37be4075bf33aa43b7d685fbb93b238c62f81",
+  "scope": "Complete 103-participant single-project exploratory pixel-space software validation; retained source clock; no calibrated-angle, event-relative timing or biological replication claim.",
+  "qualification": "Complete canonical gate, local Studio validation, hosted source workflows and complete8g five-person/full-cohort production lifecycle passed",
+  "nativeDefaults": {
+    "densityCells": 20000000,
+    "structuralRows": 1000000,
+    "entries": 512,
+    "bytes": 268435456
+  },
+  "sourceCounts": {
+    "participants": 103,
+    "observedTrials": 60922,
+    "fixationRows": 509182,
+    "offscreenRowsRetained": 2954,
+    "shortFixationFlagsRetained": 23266
+  },
+  "resultCounts": {
+    "maps": 60920,
+    "explicitMapFailures": 2,
+    "queries": 12213,
+    "contributing": 6100,
+    "expectedUnmatched": 6112,
+    "unexpectedNoMatch": 1,
+    "comparisons": 729948,
+    "participantExportRows": 206
+  },
+  "capacity": {
+    "scientificArchiveEntryBytes": 243893043,
+    "physicalStructuralDescriptors": 753249,
+    "entries": 109,
+    "densityCells": 11696640,
+    "wholeProjectDirectoryIsLargerThanScientificArchive": true
+  },
+  "runtime": {
+    "heap": "8g explicitly for each process, matching this32GB host default Java25 max heap",
+    "headless": "Monocle 1920x1200 at scale 1; software pipeline",
+    "freshJvms": true,
+    "classAndJarFilesHashed": 18865,
+    "compiledInputsUnchanged": true,
+    "plotReadinessLimitSeconds": 60,
+    "limitUnchanged": true
+  },
+  "privateCourt": {
+    "native-five-b1558e2f": {
+      "status": "passed",
+      "resultSha256": "f64e0bc38abb95966b9e883375db565bfbf8c65a3534b7c6fc15eec10895c630",
+      "entries": 11,
+      "storedBytes": 154215484,
+      "compactEntries": {},
+      "allApiMapsAndFlagsByteIdentical": true,
+      "queriesByteIdentical": true,
+      "exportsByteIdenticalAcrossReopen": true,
+      "legacyArchiveByteIdentical": true,
+      "processSeconds": {
+        "api": 3.867140458,
+        "ui": 31.038361000000002,
+        "reopen": 17.643177625
+      }
+    },
+    "native-cohort-b1558e2f": {
+      "status": "passed",
+      "resultSha256": "3af5c241cd88ce00ba6e50af3a9b9728ad9f5b04520f89aa00dd0d455b29799c",
+      "entries": 109,
+      "storedBytes": 243893043,
+      "compactEntries": {
+        "input": 25226117,
+        "ledger": 78426777,
+        "result": 36434105
+      },
+      "allApiMapsAndFlagsByteIdentical": true,
+      "queriesByteIdentical": true,
+      "exportsByteIdenticalAcrossReopen": true,
+      "legacyArchiveByteIdentical": false,
+      "processSeconds": {
+        "api": 39.419566541,
+        "ui": 267.22789291600003,
+        "reopen": 131.065534708
+      }
+    }
+  },
+  "independentExportAudit": {
+    "status": "passed",
+    "everyQueryFieldChecked": true,
+    "everyComparisonFieldAndWindowTallyChecked": true,
+    "participantCellsAndMissingReasonsChecked": true,
+    "allSixFilesByteIdenticalAcrossReopen": true,
+    "numericTolerance": {
+      "absolute": 2e-12,
+      "relative": 2e-12
+    },
+    "tableDigestAlgorithmIndependentlyReimplemented": false,
+    "auditedPrecedingSource": "af6eee304586eb3a8deafca82451c2ca7b620d71",
+    "finalExportBytesExactlyEqualAuditedSource": true
+  },
+  "preservedGenerations": [
+    {
+      "candidate": "3af0f47a",
+      "outcome": "saved within unchanged caps; initial UI failed plot-readiness wait"
+    },
+    {
+      "candidate": "4fc14f9b",
+      "outcome": "initial UI/export passed; fresh-JVM failed plot-readiness wait"
+    },
+    {
+      "candidate": "af6eee30",
+      "outcome": "complete production journey passed; subsequent trial lookup index addresses observed repeated report join"
+    },
+    {
+      "candidate": "d63cf3b8",
+      "heap": "8g",
+      "generation": "first preparation",
+      "outcome": "Missing api-admission reference in probe preparation; refused before analysis; separate corrected preparation retained"
+    },
+    {
+      "candidate": "d63cf3b8",
+      "heap": "8g",
+      "generation": "corrected preparation",
+      "outcome": "Native save and plots passed; export exhausted heap in whole-table UTF8 buffering; failed JVM terminated and evidence retained"
+    }
+  ],
+  "remainingManualAcceptance": [
+    "installed native UI",
+    "Finder dispatch",
+    "clean no-JDK macOS and Gatekeeper",
+    "physical Retina",
+    "researcher usability"
+  ],
+  "voiceOver": "owner deferred manual acceptance beyond v1; not performed",
+  "privateEvidence": "Original data, source-record views and native project files remain local and ignored by Git.",
+  "canonicalGate": {
+    "status": "passed",
+    "source": "b1558e2f56e669c30bb2272130c18c9c31ae2a12",
+    "tree": "8bc37be4075bf33aa43b7d685fbb93b238c62f81",
+    "steps": {
+      "hygiene": {
+        "minutes": 0.2
+      },
+      "werror": {
+        "minutes": 1.7
+      },
+      "audit": {
+        "minutes": 18.1
+      },
+      "tests": {
+        "minutes": 7.4
+      },
+      "consumer": {
+        "minutes": 3.4
+      }
+    },
+    "apiCoverage": {
+      "publicDeclarations": 21627,
+      "runtimeEntries": 3986,
+      "uncovered": 0,
+      "abstractions": 691,
+      "phantomUnits": 5,
+      "jvmOnlyDeclarations": 34,
+      "executedSuites": 735,
+      "mappedSuites": 387,
+      "mappedJsSuites": 348
+    }
+  },
+  "hostedSource": {
+    "status": "all passed on test-only successor cee3a3b2",
+    "runs": {
+      "Checks": {
+        "conclusion": "success",
+        "databaseId": 40785545118,
+        "headSha": "cee3a3b2da2d5a252da7c23a7bf3c19ba9d8d8ce",
+        "name": "Checks",
+        "status": "completed",
+        "url": "https://github.com/canardlapin/eyes4s/actions/runs/40785545118"
+      },
+      "Clean": {
+        "conclusion": "success",
+        "databaseId": 40785545058,
+        "headSha": "cee3a3b2da2d5a252da7c23a7bf3c19ba9d8d8ce",
+        "name": "Clean",
+        "status": "completed",
+        "url": "https://github.com/canardlapin/eyes4s/actions/runs/40785545058"
+      },
+      "Studio": {
+        "conclusion": "success",
+        "databaseId": 40785545066,
+        "headSha": "cee3a3b2da2d5a252da7c23a7bf3c19ba9d8d8ce",
+        "name": "Studio",
+        "status": "completed",
+        "url": "https://github.com/canardlapin/eyes4s/actions/runs/40785545066"
+      }
+    }
+  },
+  "defaultHeapProbe": {
+    "heap": "8g",
+    "nativeSave": "passed",
+    "reportPlots": "passed",
+    "export": "heap-space failure in TableDigest.ofUtf8 -> Utf8Lenient byte buffering",
+    "failurePreserved": true,
+    "mote": "g2-export-utf8",
+    "heapAndAcceptanceLimitsNotRaised": true,
+    "successor": "b1558e2f56e669c30bb2272130c18c9c31ae2a12",
+    "successorOutcome": "Complete API/UI/save/cold-JVM reopen/export passed at8g with unchanged limits and waits"
+  },
+  "streamedTableDigest": {
+    "change": "UTF8 bytes feed existing SHA256 state without a complete encoded byte buffer",
+    "digestAndUnicodeConventionsUnchanged": true,
+    "testsPerPlatform": 15,
+    "surrogateNormalizationMutantKilled": true,
+    "boundedHeapProbe": {
+      "buffered": {
+        "exit": 1,
+        "heap": "128m",
+        "textBytes": 67108864
+      },
+      "streamed": {
+        "exit": 0,
+        "heap": "128m",
+        "textBytes": 67108864,
+        "result": {
+          "status": "passed",
+          "textBytes": 67108864,
+          "maxHeap": 134217728,
+          "seconds": 0.524224625,
+          "sha256": "dbfaca2662cb70b69dfefd5ac95d1f54a73663092d46cefdc9609dc695a12c98"
+        }
+      }
+    },
+    "independentOracle": "Java MessageDigest SHA256 for bounded ASCII probe; explicit UTF8 byte vectors and pinned SHA vectors on JVM/JS"
+  },
+  "productionByteChecks": {
+    "allApiMapsAndFlagsByteIdentical": true,
+    "allSixExportsByteIdenticalAcrossReopen": true,
+    "fullCohortArchiveByteIdenticalToFirstCompactSave": true,
+    "fullCohortExportsByteIdenticalToIndependentlyAuditedAf6Source": true,
+    "fivePersonLegacyArchiveAndExportsByteIdentical": true
+  },
+  "scopeNotes": [
+    "Whole native project includes original CSVs beyond the scientific archive bytes.",
+    "This8g lifecycle uses production classes and a headless test host, not an installed package or physical display.",
+    "Old eyesim and independent numerical parity evidence remains applicable through exact output identity; no new eyesim algorithm sweep is claimed."
+  ],
+  "localStudio": {
+    "status": "passed",
+    "exit": 0,
+    "candidate": "04b4c5d9bfc1b2766b23e84eb963cc1e08c0ed97",
+    "tree": "f886a61a0dc5929f6d7dd063d28ce6c47ef920a4",
+    "startedUtc": "2026-10-28T23:15:29.938201+00:00",
+    "seconds": 1147.0751622505486,
+    "commands": [
+      "sbt",
+      "-batch",
+      "-J-Xmx6g",
+      "studioAll",
+      "studioStyleCheck",
+      "project rootJVM",
+      "Test/compile",
+      "project rootJS",
+      "Test/compile",
+      "project root",
+      "checkBoundaries"
+    ],
+    "fx": "default Monocle headless; FxRunLock enabled",
+    "libraryGate": "b1558e2f full canonical gate; unchanged production source and library audit fingerprint; only test readiness and generated audit metadata differ"
+  },
+  "nativeMacAcceptance": {
+    "status": "passed",
+    "source": "cee3a3b2da2d5a252da7c23a7bf3c19ba9d8d8ce",
+    "run": 40785545066,
+    "job": 123157690232,
+    "viewportSuite": {
+      "passed": 5,
+      "failed": 0,
+      "ignored": 0,
+      "seconds": 15.935
+    },
+    "nativeDesktop": {
+      "passed": 769,
+      "failed": 0,
+      "skipped": 142,
+      "ignored": 3
+    },
+    "requiredFunctionalStates": 30,
+    "requiredStateVerificationStep": "success",
+    "bundledRuntimePackageStep": "success",
+    "manualVoiceOver": "not performed; owner deferred beyond v1"
+  },
+  "testOnlySuccessor": {
+    "status": "passed",
+    "candidates": [
+      {
+        "candidate": "b1558e2f56e669c30bb2272130c18c9c31ae2a12",
+        "tree": "8bc37be4075bf33aa43b7d685fbb93b238c62f81",
+        "libraryAuditFingerprint": "976345b74465a76c43b4cce44e3d9ef95f11334f1529c5582fe5062a65ec1da0"
+      },
+      {
+        "candidate": "cee3a3b2da2d5a252da7c23a7bf3c19ba9d8d8ce",
+        "tree": "0ceb369f8c88d5085055e855349be808013401eb",
+        "libraryAuditFingerprint": "976345b74465a76c43b4cce44e3d9ef95f11334f1529c5582fe5062a65ec1da0"
+      }
+    ],
+    "changedFiles": [
+      "studio/desktop/src/test/scala/eyes4s/studio/desktop/shell/WorkspaceViewportFxSuite.scala"
+    ],
+    "scope": "Only Studio viewport test readiness differs; all library sources/tests/build and production Studio sources remain identical. Canonical library inventory/probes retain the same fingerprint."
+  },
+  "candidateRole": "Production court and canonical library source; separately identified test-only and assembled successors retain the same production sources",
+  "assembly": {
+    "status": "passed",
+    "assembledSource": "04b4c5d9bfc1b2766b23e84eb963cc1e08c0ed97",
+    "tree": "f886a61a0dc5929f6d7dd063d28ce6c47ef920a4",
+    "hostedSource": "cee3a3b2da2d5a252da7c23a7bf3c19ba9d8d8ce",
+    "diffFromHostedSource": [
+      "tools/api-audit/evidence.json",
+      "tools/api-audit/inventory-provenance.json"
+    ],
+    "productionAndTestSourcesIdenticalToHostedSuccessor": true,
+    "libraryAuditFingerprint": "976345b74465a76c43b4cce44e3d9ef95f11334f1529c5582fe5062a65ec1da0"
+  },
+  "internalPackage": {
+    "source": "04b4c5d9bfc1b2766b23e84eb963cc1e08c0ed97",
+    "tree": "f886a61a0dc5929f6d7dd063d28ce6c47ef920a4",
+    "clean": true,
+    "architecture": "arm64",
+    "signing": "ad-hoc only; no Developer ID or notarization",
+    "archive": {
+      "file": "Eyes-Studio-arm64-04b4c5d9bfc1.zip",
+      "bytes": 130837003,
+      "sha256": "fece241ca924a1b08076a80b3e460ef98fc3e03766bb5a860ac831f99aa04494"
+    },
+    "runtimeSelfCheck": "passed bundled-runtime resource/copy/reopen; no installed UI claim",
+    "bundledJava": "25.0.4.1",
+    "distribution": "local internal candidate; ZIP not published"
+  },
+  "preservedNativeCiFailure": {
+    "source": "b1558e2f56e669c30bb2272130c18c9c31ae2a12",
+    "run": 40780975183,
+    "job": 123142281507,
+    "outcome": "Small query viewport END assertion inspected a new cursor row with0x0 bounds",
+    "followup": "cee3a3b2 waits for positive layout bounds before the same immediate full-row visibility assertion; existing20s helper and30s test limit unchanged",
+    "productionCodeUnchanged": true,
+    "otherMacTimeoutTicket": "ci-macos-row-navigation-timeout remains open"
+  }
+}

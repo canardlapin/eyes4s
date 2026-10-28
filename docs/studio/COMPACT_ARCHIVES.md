@@ -1,10 +1,11 @@
 # Compact native archives
 
-Status: native storage foundation qualified on `d63cf3b8` with unchanged limits,
-including a complete-cohort production journey at 12g and all source gates.
-An additional 8g run exposed table-digest UTF-8 buffering during export;
-`g2-export-utf8` tracks the separate streaming fix. Default-heap export and main
-landing remain pending. Owner selected compact storage on 28 October 2026.
+Status: complete single-cohort API, application, save, fresh-JVM reopen and
+export qualified at 8g on `b1558e2f`, under unchanged limits. The canonical,
+local Studio and hosted source gates passed. All source rows, flags, raw clocks
+and scientific/export identities are retained. See the
+[aggregate qualification](evidence/20261028-compact-native/README.md).
+Owner selected compact storage on 28 October 2026.
 
 The current defaults remain 20,000,000 density cells, 1,000,000 structural rows,
 512 entries and 268,435,456 stored bytes. Existing JSON archives retain their
@@ -48,7 +49,7 @@ Private sizing estimates and compression of partitioned archives are not this pr
 
 ## Private document format, version 1
 
-This is an internal codec format. The unqualified native candidate admits it
+This is an internal codec format. The qualified native implementation admits it
 through the explicit media type described below. Its byte sequence is:
 
 1. ASCII `E4CD` and a version byte `1`.
@@ -152,8 +153,8 @@ participant/scale-profile plot-readiness wait. Its source, failure receipt and
 saved project are preserved. These capacity measurements are not an application,
 reopen or export qualification. A successor indexes repeated inventory-label and
 nominal clock-identity scans while retaining first-error selection, canonical
-identity order and all capacity and readiness limits. A fresh complete journey
-and the full release gate remain required.
+identity order and all capacity and readiness limits. At that checkpoint a fresh complete journey
+and full release gate were still required; see the final qualification below.
 
 The indexed successor (`4fc14f9b`) passed the complete-cohort initial application
 and export journey, but fresh-process reopening still reached the unchanged
@@ -163,4 +164,26 @@ candidate gives the ledger codec the same lazy earliest-schema envelope already
 used for compact storage. The logical JSON writer, schema ladder and every
 canonical digest remain unchanged. Tests pin all four versions and require lazy
 record descriptions; deliberately restoring the old route fails three regressions.
-Both failed generations remain preserved. Full qualification is still pending.
+Both failed generations remain preserved; neither failed candidate was qualified.
+The final qualified successor is recorded below.
+
+
+## Final production qualification
+
+The final candidate `b1558e2f` completed the full 103-participant journey at an
+explicit 8g heap (this host's Java default), including native save, separate-JVM
+reopen and all six export files. Its 243,893,043 scientific archive bytes and
+753,249 physical structural descriptors stay within the unchanged defaults.
+All 60,922 trials, 509,182 fixation rows and 729,948 comparisons remain present.
+Five-person legacy archive/export bytes and full-cohort audited export bytes
+are unchanged. Full local and hosted gates passed; details and prior failures
+are retained in the linked aggregate qualification.
+
+The additional default-heap check of `d63cf3b8` exposed an export-only allocation
+in table-digest UTF-8 buffering. Streaming bytes into the existing hash state
+fixed that observed failure without changing its Unicode or digest convention.
+The failed generation and bounded-memory old/new comparison are preserved.
+Historical pilot failures above describe their named source candidates; the
+final receipt supersedes their pending status. This qualifies computational
+pixel-space behavior, not physical geometry, event origins or manual release
+acceptance.

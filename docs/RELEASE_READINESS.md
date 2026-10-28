@@ -74,10 +74,15 @@ retains local and hosted logs, failures, skips and scope limits.
 and `rel-mima` remain open until real Central artifacts and an active baseline
 comparison are proved. A locally packaged artifact is not a Central release.
 
-Studio G2 still needs a provenance-declared real-study production journey. Its
-private source audit cannot invent acquisition geometry or event origins.
-S10.5 needs actual VoiceOver/physical Retina observations; S10.7 needs the specified
-clean-machine installation (unsigned internal distribution was selected by the owner); S10.8 needs five real researchers.
+Studio G2 is qualified for the declared exploratory pixel-space processed-export
+scope. The [complete-cohort compact-storage qualification](studio/evidence/20261028-compact-native/README.md)
+adds one 103-participant native project within the unchanged archive limits,
+including an 8g API/application/save/fresh-JVM reopen/export journey. Acquisition
+geometry and event-relative timing remain unqualified.
+Manual VoiceOver acceptance is owner-deferred beyond v1, not passed. Physical
+Retina review remains unobserved; S10.7 needs the specified clean-machine
+installation (unsigned internal distribution was selected by the owner), native
+Finder dispatch and Gatekeeper acceptance; S10.8 needs five real researchers.
 The [prepared manual packet](studio/evidence/20261027-release/manual-checks.json)
 starts unobserved. Their implementation and test infrastructure do not close these
 gates. Meridian integration remains deferred.
