@@ -358,6 +358,30 @@ class DensityArchiveSuite extends munit.FunSuite:
     })
   }
 
+  test(
+    "a recomputer cannot hide canonical signed-zero geometry behind numeric grid agreement"
+  ) {
+    val bounds = mass.grid.frame.bounds
+    assertEquals(java.lang.Double.doubleToLongBits(bounds.xMin), 0L)
+    val changedFrame = Frame.of(
+      mass.grid.frame.id,
+      get(Bounds.of[Px](-0.0, bounds.yMin, bounds.xMax, bounds.yMax)),
+      mass.grid.frame.yAxis
+    )
+    val changedGrid = get(Grid.of(mass.grid.id, changedFrame, mass.grid.nx, mass.grid.ny))
+    assert(Agreement.grids(mass.grid, changedGrid).isRight)
+    val changed  = get(Surface.mass(changedGrid, mass.values, mass.provenance))
+    val expected = get(DensityDigest.of(mass, result.description)).sha256
+    val actual   = get(DensityDigest.of(changed, result.description)).sha256
+    assertNotEquals(actual, expected)
+    assertEquals(actual.hex, "c89a591d634a458397f395bc034aee30f94a544e14eebdcb00d594ac79dff427")
+    val (bundle, _) = doc(DensityStorage.Recomputable)
+    val read        = bundle.archive
+      .densityReader(recompute = Some((_, _, _) => Right(changed)))
+      .density(0, key)
+    assertEquals(read, Left(DensityError.DigestMismatch(0, key, expected, actual)))
+  }
+
   test("declared provenance is checked even if a recomputer returns the original map") {
     val (_, document) = doc(DensityStorage.Recomputable)
     val forged        = changeOutcome(document)(

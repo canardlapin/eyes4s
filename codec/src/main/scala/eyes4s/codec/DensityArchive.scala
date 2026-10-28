@@ -393,10 +393,14 @@ final class DensityReader[K, U <: Unit2D] private[codec] (
                     .map(e => CodecError.Field("digest", source, e.message))
                 )
             )
-            actual <- decoded(
-              prefixes(mass.grid.id.name).flatMap(DensityDigest.continued(_, mass))
-            )
-            _ <- Either.cond(
+            // Numeric agreement allows signed zero; canonical bytes distinguish it.
+            // Reuse the prefix only for the exact serialized geometry of this mass.
+            prefix =
+              if DensityDigest.geometryKey(grid) == DensityDigest.geometryKey(mass.grid) then
+                prefixes.getOrElse(grid.id.name, DensityDigest.prepare(mass.grid, description))
+              else DensityDigest.prepare(mass.grid, description)
+            actual <- decoded(prefix.flatMap(DensityDigest.continued(_, mass)))
+            _      <- Either.cond(
               actual == expected,
               (),
               DensityError.DigestMismatch(scale, key, expected, actual)
