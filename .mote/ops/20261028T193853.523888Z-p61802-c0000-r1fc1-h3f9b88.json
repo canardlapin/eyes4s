@@ -1,0 +1,1 @@
+{"actor":"codex-core-hardening-20261028","entity":"g2-compact-native","kind":"reserve_open","mode":"exclusive","op":"20261028T193853.523888Z-p61802-c0000-r1fc1-h3f9b88","paths":["laws/src/test/scala/eyes4s/laws/CompactManifestLawSuite.scala"],"reservation_id":"rv-01M620BHPKFT773SA0D7SEA5V8","ts":"2026-10-28T19:38:53.523888Z","ttl_s":43200,"v":2}
